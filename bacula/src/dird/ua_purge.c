@@ -705,7 +705,7 @@ int truncate_cmd(UAContext *ua, const char *cmd)
     */
    mr.Recycle = 1;
    mr.Enabled = 1;
-   mr.VolBytes = 10000;
+   mr.VolBytes = 200;
    set_storageid_in_mr(store, &mr);
    bstrncpy(mr.VolStatus, "Purged", sizeof(mr.VolStatus));
    if (!db_get_media_ids(ua->jcr, ua->db, &mr, &nb, &results)) {
