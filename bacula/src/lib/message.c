@@ -1847,7 +1847,7 @@ static struct debugtags debug_tags[] = {
 
 #define MAX_TAG (sizeof(debug_tags) / sizeof(struct debugtags))
 
-const char *debug_get_tag(uint32_t pos, const char **desc)
+const char *debug_get_tag(uint pos, const char **desc)
 {
    if (pos < MAX_TAG) {
       if (desc) {

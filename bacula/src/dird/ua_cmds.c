@@ -173,7 +173,7 @@ static struct cmdstruct commands[] = {                                      /* C
 
  { NT_("stop"),       cancel_cmd,    _("Stop a job"), NT_("jobid=<number-list> job=<job-name> ujobid=<unique-jobid> all"), false},
  { NT_("setdebug"),   setdebug_cmd,  _("Sets debug level"),
-   NT_("level=<nn> trace=0/1 options=<0tTc> tags=<tags> | client=<client-name> | dir | storage=<storage-name> | all"), true},
+   NT_("level=<nn> tags=<tags> trace=0/1 options=<0tTc> tags=<tags> | client=<client-name> | dir | storage=<storage-name> | all"), true},
 
  { NT_("setbandwidth"),   setbwlimit_cmd,  _("Sets bandwidth"),
    NT_("limit=<speed> client=<client-name> jobid=<number> job=<job-name> ujobid=<unique-jobid>"), true},

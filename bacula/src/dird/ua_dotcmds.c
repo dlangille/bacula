@@ -1872,7 +1872,7 @@ static bool typescmd(UAContext *ua, const char *cmd)
 
 static bool tagscmd(UAContext *ua, const char *cmd)
 {
-   uint32_t i = 0;
+   uint i = 0;
    for (const char *p = debug_get_tag(i++, NULL) ; p ; p = debug_get_tag(i++, NULL)) {
       ua->send_msg("%s\n", p);
    }

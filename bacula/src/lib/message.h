@@ -165,7 +165,7 @@ struct MQUEUE_ITEM {
 #define    DT_ASX        (1<<16)                /* used by Alain for personal debugging */
 #define    DT_ALL        (0x7FFF0000)           /* all (up to debug_level 65635, 15 flags available) */
 
-const char *debug_get_tag(uint32_t pos, const char **desc);
+const char *debug_get_tag(uint pos, const char **desc);
 bool debug_find_tag(const char *tagname, bool add, int64_t *current_level);
 bool debug_parse_tags(const char *options, int64_t *current_level);
 
