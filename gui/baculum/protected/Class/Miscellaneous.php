@@ -1,7 +1,18 @@
 <?php
 
-// small sorting callback function to sort by name
-function sortListByName($a, $b) {
+/*
+ * Small sorting callback function to sort files and directories by name.
+ * Function keeps '.' and '..' names always in the beginning of array.
+ * Used to sort files and directories from Bvfs.
+ */
+function sortFilesListByName($a, $b) {
+	$firstLeft = substr($a['name'], 0, 1);
+	$firstRight = substr($b['name'], 0, 1);
+	if ($firstLeft == '.' && $firstRight != '.') {
+		return -1;
+	} else if ($firstRight == '.' && $firstLeft != '.') {
+		return 1;
+	}
 	return strcasecmp($a['name'], $b['name']);
 }
 
@@ -210,7 +221,7 @@ class Miscellaneous extends TModule {
 				$elements[] = array('pathid' => $match['pathid'], 'filenameid' => $match['filenameid'], 'fileid' => $match['fileid'], 'jobid' => $match['jobid'], 'lstat' => $match['lstat'], 'name' => $match['name'], 'type' => 'file'); 
 			}
 		}
-		usort($elements, 'sortListByName');
+		usort($elements, 'sortFilesListByName');
 		return $elements;
 	}
 
