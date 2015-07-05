@@ -137,6 +137,15 @@
 	height: 206px;
 }
 
+#restore-browser-files-loading {
+	position: absolute;
+	z-index: 10;
+	width: 347px;
+	height: 438px;
+	border-radius: 4px;
+	background: rgba(182,182,182,0.7) url('progress.gif') no-repeat center center;
+}
+
 .file-browser-watermark {
 	padding: 64px 10px;
 	text-align: center;
@@ -151,4 +160,14 @@ div.button-cancel {
 
 div.button-prev-next {
 	margin-left: 84px
+}
+
+a.link {
+	color: #3f4449;
+	font-weight: bold;
+	text-decoration: none;
+}
+
+a.link:hover {
+	text-decoration: underline;
 }

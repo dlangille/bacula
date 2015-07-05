@@ -20,6 +20,7 @@
 Prado::using('System.Exceptions.TException');
 Prado::using('System.Web.UI.ActiveControls.TActiveDropDownList');
 Prado::using('System.Web.UI.ActiveControls.TActivePanel');
+Prado::using('System.Web.UI.ActiveControls.TActiveLinkButton');
 Prado::using('System.Web.UI.ActiveControls.TActiveImageButton');
 Prado::using('System.Web.UI.ActiveControls.TDropContainer');
 Prado::using('System.Web.UI.ActiveControls.TDraggable');
@@ -36,6 +37,8 @@ class RestoreWizard extends BaculumPage
 	private $clients = null;
 	private $browserRootDir = array('name' => '.', 'type' => 'dir');
 	private $browserUpDir = array('name' => '..', 'type' => 'dir');
+
+	public $excludedElementsFromAdd = array('.', '..');
 
 	const BVFS_PATH_PREFIX = 'b2';
 
@@ -67,14 +70,24 @@ class RestoreWizard extends BaculumPage
 	}
 
 	public function addFileToRestore($sender, $param) {
-		$control=$param->getDroppedControl();
-        $item=$control->getNamingContainer();
-		list(, , , $dragElementID, , ) = explode('_', $param->getDragElementID(), 6); // I know that it is ugly.
-		if($dragElementID == $this->VersionsDataGrid->ID) {
-			$fileid = $this->VersionsDataGrid->getDataKeys()->itemAt($item->getItemIndex());
+		$fileid = null;
+		if (isset($param->callbackParameter)) {
+			list(, , , $sourceElementID, , ) = explode('_', $sender->ClientID, 6);
+			$fileid = $param->callbackParameter;
+		} else {
+			$control = $param->getDroppedControl();
+		        $item = $control->getNamingContainer();
+			list(, , , $sourceElementID, , ) = explode('_', $param->getDragElementID(), 6); // I know that it is ugly.
+		}
+		if($sourceElementID == $this->VersionsDataGrid->ID) {
+			if (is_null($fileid)) {
+				$fileid = $this->VersionsDataGrid->getDataKeys()->itemAt($item->getItemIndex());
+			}
 			$fileProperties = $this->getFileVersions($fileid);
 		} else {
-			$fileid = $this->DataGridFiles->getDataKeys()->itemAt($item->getItemIndex());
+			if (is_null($fileid)) {
+				$fileid = $this->DataGridFiles->getDataKeys()->itemAt($item->getItemIndex());
+			}
 			$fileProperties = $this->getBrowserFile($fileid);
 		}
 		if($fileProperties['name'] != $this->browserRootDir['name'] && $fileProperties['name'] != $this->browserUpDir['name']) {

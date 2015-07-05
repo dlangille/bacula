@@ -419,11 +419,11 @@ msgstr "Uruchom"
 msgid "It seems that there is no files for choosing or file records in database for this job has been purged (file retention period expired)"
 msgstr "Wygląda na to, że nie ma żadnych plików do przywrócenia lub rekordy plików w bazie danych dla tego wybranego backupu zostały wyczyszczone (miała zastosowanie retencja plików)"
 
-msgid "For see a file versions please double click file on the left files browser."
-msgstr "Aby zobaczyć wersje pliku proszę podwójnie klinąć plik z przeglądarki plików po lewej stronie."
+msgid "For see a file versions please click file on the left files browser."
+msgstr "Aby zobaczyć wersje pliku proszę klinąć plik z przeglądarki plików po lewej stronie."
 
-msgid "For add a file to restore please drag a file from frame on left or from above frame and drop it here"
-msgstr "Aby dodać plik do przywrócenia proszę złapać plik z panelu po lewej lub z panelu powyżej, przeciągnąć go tutaj i upuścić go"
+msgid "For add a file to restore please click 'Add' link or drag a file from frame on left or from above frame and drop it here"
+msgstr "Aby dodać plik do przywrócenia proszę kliknąć link 'Dodaj' lub złapać plik z panelu po lewej lub z panelu powyżej, przeciągnąć go tutaj i upuścić go"
 
 msgid "Source parameters"
 msgstr "Parametry źródła"
@@ -1010,4 +1010,7 @@ msgstr "Uruchomione zadania:"
 
 msgid "Finished jobs:"
 msgstr "Zakończone zadania:"
+
+msgid "Add"
+msgstr "Dodaj"
 

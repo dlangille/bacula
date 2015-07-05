@@ -109,6 +109,7 @@
 			<table id="restore-browser">
 				<tr>
 					<td rowspan="2">
+						<div id="restore-browser-files-loading" style="display: none"></div>
 						<div id="restore-browser-files">
 							<com:TActiveDataGrid
 								ID="DataGridFiles"
@@ -127,29 +128,32 @@
 										<prop:ItemTemplate>
 											<com:TDraggable ID="FileElementLeft" Revert="false" Handle="<%=$this->FileElementLeft->ClientID%>" Ghosting="true" CssClass="draggable">
 												<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/<%=($this->getParent()->Data['type'] == 'dir' ? 'directory-icon' : 'file-icon')%>.png" alt="<%=$this->getParent()->Data['type'] == 'dir' ? 'directory' : 'file' %>" /> <%=($this->getParent()->Data['name'] != '/') ? preg_replace('/\/$/', '', $this->getParent()->Data['name']) : '/'%>
+														<com:TActiveLinkButton CssClass="link" Style="float: right;" OnCallback="Page.addFileToRestore" ActiveControl.CallbackParameter="<%=isset($this->getParent()->Data['fileid']) ? $this->getParent()->Data['fileid'] : null%>" ActiveControl.EnableUpdate="false" Visible="<%=!in_array($this->getParent()->Data['name'], $this->getPage()->excludedElementsFromAdd)%>" Text="<%[ Add ]%>" />
 											</com:TDraggable>
 											<com:TCallback ID="FileElementCall" OnCallback="Page.getVersions" ActiveControl.CallbackParameter="<%=$this->getParent()->Data['name'] . '|' . @$this->getParent()->Data['pathid'] . '|' . @$this->getParent()->Data['filenameid'] . '|' . @$this->getParent()->Data['jobid']%>">
+												<prop:ClientSide.OnLoading>
+													$('restore-browser-files-loading').show();
+												</prop:ClientSide.OnLoading>
 												<prop:ClientSide.OnComplete>
-													<%=$this->getPage()->UniqueID%>_lock = false;
+													$('restore-browser-files-loading').hide();
 												</prop:ClientSide.OnComplete>
 											</com:TCallback>
 											<script type="text/javascript">
-												$('<%=$this->FileElementLeft->ClientID%>').observe('mouseup', function(event) {
-													event.findElement('div').setStyle({'position' : 'static', 'top' : '0', 'left' : '0'});
-													$('<%=$this->FileElementLeft->ClientID%>').setStyle({'position' : 'static', 'top' : '0', 'left' : '0'});
+												document.getElementById('<%=$this->FileElementLeft->ClientID%>').addEventListener('mouseup', function(event) {
+													event.findElement('div').setStyle({'position' : 'static', 'top' : '-1px', 'left' : '-1px'});
+													$('<%=$this->FileElementLeft->ClientID%>').setStyle({'position' : 'static', 'top' : '-1px', 'left' : '-1px'});
 												});
 												
-												var <%=$this->getPage()->UniqueID%>_lock;
-												
-												$('<%=$this->FileElementLeft->ClientID%>').up('tr').observe('dblclick', function(event) {
-													if(<%=$this->getPage()->UniqueID%>_lock){
+												document.getElementById('<%=$this->FileElementLeft->ClientID%>').addEventListener('click', function(event) {
+													var el = event.target || event.srcElement;
+													var vposition = $(el).getStyle('left');
+													if(vposition == null || vposition == '0px'){
 														event.stop();
 													} else {
 														var request = <%=$this->FileElementCall->ActiveControl->Javascript %>;
 														request.dispatch();
-														<%=$this->getPage()->UniqueID%>_lock = true;
 													}
-												}.bind(<%=$this->getPage()->UniqueID%>_lock));
+												});
 											</script>
 										</prop:ItemTemplate>
 									</com:TActiveTemplateColumn>
@@ -169,15 +173,16 @@
 							>
 								<prop:EmptyTemplate>
 									<div class="file-browser-watermark">
-										<%[ For see a file versions please double click file on the left files browser. ]%>
+										<%[ For see a file versions please click file on the left files browser. ]%>
 									</div>
 								</prop:EmptyTemplate>
 								<com:TActiveTemplateColumn>
 									<prop:ItemTemplate>
-										<com:TDraggable ID="FileElementToRestore" Revert="false" Handle="<%=$this->FileElementToRestore->ClientID%>" Ghosting="true" CssClass="draggable">
+										<com:TDraggable ID="FileElementToRestore" Revert="false" Handle="<%=$this->FileElementToRestore->ClientID%>" Ghosting="true" CssClass="draggable" Style="float: left">
 											<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/<%=($this->getParent()->Data['type'] == 'dir' ? 'directory-icon' : 'file-icon')%>.png" alt="<%=$this->getParent()->Data['type'] == 'dir' ? 'directory' : 'file'%>" />
 											<com:TLabel Text="<%=$this->getParent()->Data['name']%>" Width="50%" /> <%=is_array($this->getParent()->Data['lstat']) && array_key_exists('mtime', $this->getParent()->Data['lstat']) ? date("Y-m-d H:i:s", $this->getParent()->Data['lstat']['mtime']) : ''%>
 										</com:TDraggable>
+										<com:TActiveLinkButton CssClass="link" Style="float: right;" OnCallback="Page.addFileToRestore" ActiveControl.CallbackParameter="<%=isset($this->getParent()->Data['fileid']) ? $this->getParent()->Data['fileid'] : false%>" ActiveControl.EnableUpdate="false" Text="<%[ Add ]%>"/>
 										<script type="text/javascript">
 											$('<%=$this->FileElementToRestore->ClientID%>').observe('mouseup', function(event) {
 												event.findElement('div').setStyle({'position' : 'static', 'top' : '0', 'left' : '0'});
@@ -209,7 +214,7 @@
 									>
 									<prop:EmptyTemplate>
 										<div class="file-browser-watermark" style="padding: 50px 10px">
-											<%[ For add a file to restore please drag a file from frame on left or from above frame and drop it here ]%>
+											<%[ For add a file to restore please click 'Add' link or drag a file from frame on left or from above frame and drop it here ]%>
 										</div>
 									</prop:EmptyTemplate>
 										<com:TActiveTemplateColumn>
