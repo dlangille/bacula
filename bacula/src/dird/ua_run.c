@@ -311,8 +311,13 @@ static bool get_next_pool(UAContext *ua, run_ctx &rc)
          rc.next_pool = select_pool_resource(ua);
       }
    }
+   /* NextPool can come from Job resource NextPool or Pool resource NextPool */
    if (!rc.next_pool) {
-      rc.next_pool = rc.pool->NextPool;      /* use default */
+      if (rc.job->next_pool) {
+         rc.next_pool = rc.job->next_pool;
+      } else {
+         rc.next_pool = rc.pool->NextPool;      /* use default */
+      }
    }
    if (rc.next_pool && !acl_access_ok(ua, Pool_ACL, rc.next_pool->name())) {
       ua->error_msg(_("No authorization. NextPool \"%s\".\n"), rc.next_pool->name());
@@ -896,6 +901,8 @@ static bool set_run_context_in_jcr(UAContext *ua, JCR *jcr, run_ctx &rc)
    }
    if (rc.next_pool_name) {
       pm_strcpy(jcr->next_pool_source, _("Command input"));
+   } else if (jcr->next_pool == jcr->job->next_pool) {
+      pm_strcpy(jcr->next_pool_source, _("Job resource"));
    } else if (jcr->next_pool != jcr->pool->NextPool) {
       pm_strcpy(jcr->next_pool_source, _("User input"));
    }
