@@ -1,12 +1,14 @@
 Summary:	WebGUI tool for Bacula Community program
 Name:		baculum
 Version:	7.0.6
-Release:	0.1.a%{?dist}
+Release:	0.1.b%{?dist}
 License:	AGPLv3
 Group:		Applications/Internet
 URL:		http://bacula.org/
-Source0:	http://www.bacula.org/downloads/baculum/baculum-7.0.6a.tar.gz
+Source:		%{name}-%{version}b.tar.gz
 BuildRequires:	systemd-units
+BuildRequires:	selinux-policy
+BuildRequires:	checkpolicy
 Requires:	lighttpd
 Requires:	lighttpd-fastcgi
 Requires:	bacula-console
@@ -58,6 +60,7 @@ can be run in enforcing mode.
 
 %files selinux
 %defattr(-,lighttpd,lighttpd)
+%{_datadir}/selinux/packages/%{name}/%{name}.pp
 
 %install
 mkdir -p %{buildroot}%{_datadir}/%{name}/htdocs
@@ -65,6 +68,7 @@ mkdir -p %{buildroot}%{_sysconfdir}/%{name}
 mkdir -p %{buildroot}%{_unitdir}
 mkdir -p %{buildroot}%{_localstatedir}/cache/%{name}
 mkdir -p %{buildroot}%{_var}/log/%{name}
+mkdir -p %{buildroot}%{_datadir}/selinux/packages/%{name}
 
 cp -ra framework protected themes index.php AUTHORS INSTALL LICENSE README %{buildroot}%{_datadir}/%{name}/htdocs
 ln -s  %{_localstatedir}/cache/%{name} %{buildroot}%{_datadir}/%{name}/htdocs/assets
@@ -72,6 +76,7 @@ ln -s  %{_localstatedir}/cache/%{name} %{buildroot}%{_datadir}/%{name}/htdocs/pr
 install -m 640 examples/rpm/baculum.lighttpd.conf %{buildroot}%{_sysconfdir}/%{name}/
 install -m 600 examples/rpm/baculum.users %{buildroot}%{_sysconfdir}/%{name}/%{name}.users
 install -m 644 examples/rpm/baculum.service %{buildroot}%{_unitdir}/
+install -m 644 examples/selinux/%{name}.pp %{buildroot}%{_datadir}/selinux/packages/%{name}/%{name}.pp
 
 %post
 [ -e %{_datadir}/baculum/htdocs/protected/Data/baculum.users ] ||
@@ -85,14 +90,13 @@ install -m 644 examples/rpm/baculum.service %{buildroot}%{_unitdir}/
 
 %post selinux
 if [ $1 -le 1 ] ; then
-    semanage port -a -t http_port_t -p tcp 9095
-    semanage fcontext -a -t httpd_cache_t '%{_localstatedir}/cache/%{name}(/.*)?' 2>/dev/null || :
-    restorecon -R %{_localstatedir}/cache/%{name} || :
     semanage fcontext -a -t httpd_sys_rw_content_t '%{_datadir}/%{name}/htdocs/protected/Data(/.*)?' 2>/dev/null || :
     restorecon '%{_datadir}/%{name}/htdocs/protected/Data' || :
-    chcon -t httpd_user_content_rw_t '%{_datadir}/%{name}/htdocs/protected/Data/baculum.users' || :
-    chcon -t httpd_user_content_rw_t '%{_sysconfdir}/%{name}/baculum.users' || :
-    setsebool -P httpd_can_network_connect 1 || :
+    semanage fcontext -a -t httpd_sys_rw_content_t '%{_sysconfdir}/%{name}/baculum.users' 2>/dev/null || :
+    restorecon '%{_sysconfdir}/%{name}/baculum.users' || :
+    semanage fcontext -a -t httpd_cache_t '%{_localstatedir}/cache/%{name}(/.*)?' 2>/dev/null || :
+    restorecon -R %{_localstatedir}/cache/%{name} || :
+    semodule -i %{_datadir}/selinux/packages/%{name}/%{name}.pp 2>/dev/null || :
 fi
 
 %preun
@@ -111,12 +115,12 @@ fi
 
 %postun selinux
 if [ $1 -eq 0 ] ; then
-    semanage port -d -t http_port_t -p tcp 9095
     semanage fcontext -d -t httpd_sys_rw_content_t '%{_datadir}/%{name}/htdocs/protected/Data(/.*)?' 2>/dev/null || :
+    semanage fcontext -d -t httpd_sys_rw_content_t '%{_sysconfdir}/%{name}/baculum.users' 2>/dev/null || :
     semanage fcontext -d -t httpd_cache_t '%{_localstatedir}/cache/%{name}(/.*)?' 2>/dev/null || :
-    setsebool -P httpd_can_network_connect 0 || :
+    semodule -r %{name} 2>/dev/null || :
 fi
 
 %changelog
- * Tue Mar 24 2015 Marcin Haba <marcin.haba@bacula.pl> - 7.0.6-0.1.a
+ * Mon Jul 06 2015 Marcin Haba <marcin.haba@bacula.pl> - 7.0.6-0.1.b
  - Spec create
