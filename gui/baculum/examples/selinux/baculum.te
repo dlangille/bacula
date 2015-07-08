@@ -12,6 +12,7 @@ require {
 	class dir { search read write create getattr };
 	class file { read write create getattr open execute };
 	class netlink_audit_socket { write nlmsg_relay create read };
+	class capability { audit_write };
 }
 
 #============= httpd_t ==============
@@ -27,3 +28,4 @@ allow httpd_t sudo_exec_t:file { read execute open };
 allow httpd_t httpd_cache_t:dir { read create };
 allow httpd_t httpd_cache_t:file { read write create };
 allow httpd_t self:netlink_audit_socket { write nlmsg_relay create read };
+allow httpd_t self:capability { audit_write };
