@@ -7,20 +7,29 @@
 	var default_refresh_interval = 60000;
 	var default_fast_refresh_interval = 10000;
 	var timeout_handler;
+	var last_callback_time = 0;
+	var callback_time_offset = 0;
 	document.observe("dom:loaded", function() {
 		oMonitor = function() {
 			return new Ajax.Request('<%=$this->Service->constructUrl("Monitor")%>', {
+				onCreate: function() {
+					if (job_callback_duration) {
+						callback_time_offset = job_callback_duration - last_callback_time;
+					}
+					last_callback_time = new Date().getTime();
+				},
 				onSuccess: function(response) {
 					if (timeout_handler) {
 						clearTimeout(timeout_handler);
 					}
 					var jobs = (response.responseText).evalJSON();
 					if (jobs.running_jobs.length > 0) {
-						refreshInterval = default_fast_refresh_interval;
+						refreshInterval =  callback_time_offset + default_fast_refresh_interval;
 					} else {
 						refreshInterval = default_refresh_interval;
 					}
 					job_callback_func();
+					status_callback_func();
 					$('running_jobs').update(jobs.running_jobs.length);
 					$('finished_jobs').update(jobs.terminated_jobs.length);
 					timeout_handler = setTimeout("oMonitor()", refreshInterval);

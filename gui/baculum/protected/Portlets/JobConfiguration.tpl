@@ -111,8 +111,9 @@
 				<com:TActiveCustomValidator ID="PriorityValidator" ValidationGroup="JobGroup" ControlToValidate="Priority" ErrorMessage="<%[ Priority value must be integer greather than 0. ]%>" ControlCssClass="validation-error" Display="None" OnServerValidate="priorityValidator" />
 			</div>
 		</div>
-		<com:TCallback ID="ReloadJobs" OnCallback="Page.JobWindow.prepareData" ClientSide.OnComplete="SlideWindow.getObj('JobWindow').setLoadRequest();" />
+		<com:TCallback ID="ReloadJobs" OnCallback="Page.JobWindow.prepareData" ClientSide.OnComplete="SlideWindow.getObj('JobWindow').setLoadRequest(); job_callback_duration = new Date().getTime();" />
 		<script type="text/javascript">
+			var job_callback_duration;
 			var job_callback_func = function() {
 				/*
 				 * Check if Job list window is open and if any checkbox from actions is not checked.
@@ -134,18 +135,13 @@
 			<com:TActiveLabel ID="CancelButton"><com:BActiveButton ID="Cancel" Text="<%[ Cancel job ]%>" CausesValidation="false" OnClick="cancel" ClientSide.OnSuccess="ConfigurationWindow.getObj('JobWindow').progress(false);job_callback_func();" CssClass="bbutton" /> </com:TActiveLabel>
 			<com:BActiveButton ID="Run" Text="<%[ Run job again ]%>" ValidationGroup="JobGroup" CausesValidation="true" OnClick="run_again" ClientSide.OnSuccess="ConfigurationWindow.getObj('JobWindow').progress(false);job_callback_func();oMonitor();"/>
 		</div>
-		<com:TCallback ID="RefreshStatus" OnCallback="status" ClientSide.OnComplete="status_callback_timeout = setTimeout('status_callback_func()', 10000);" />
+		<com:TCallback ID="RefreshStatus" OnCallback="status" ClientSide.OnComplete="job_callback_duration = new Date().getTime();" />
 		<script type="text/javascript">
-			var status_callback_timeout;
 			var status_prev = false;
 			var status_callback_func = function() {
-				if(status_callback_timeout) {
-					clearTimeout(status_callback_timeout);
-				}
 				if($('<%=$this->getID()%>configuration').visible() && ($('<%=$this->RefreshStart->ClientID%>').value === 'true' || status_prev === true)) {
 					status_prev = ($('<%=$this->RefreshStart->ClientID%>').value === 'true');
 					var callback = <%=$this->RefreshStatus->ActiveControl->Javascript%>;
-					oMonitor();
 					callback.dispatch();
 				} else {
 					status_prev = false;
