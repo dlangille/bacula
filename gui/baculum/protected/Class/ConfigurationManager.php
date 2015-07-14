@@ -159,6 +159,7 @@ class ConfigurationManager extends TModule
 	 */
 	public function setUsersConfig($user, $password, $firstUsage = false, $oldUser = null) {
 		$usersFile = Prado::getPathOfNamespace(self::USERS_FILE, '.users');
+		$password = crypt($password, base64_encode($password));
 		if($firstUsage === true) {
 			$this->clearUsersConfig();
 		}
