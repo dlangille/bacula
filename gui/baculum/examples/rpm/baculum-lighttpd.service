@@ -4,7 +4,7 @@ After=network.target
 
 [Service]
 PIDFile=/var/run/baculum.pid
-ExecStart=/usr/sbin/lighttpd -f /etc/baculum/baculum.lighttpd.conf
+ExecStart=/usr/sbin/lighttpd -f /etc/baculum/baculum-lighttpd.conf
 
 [Install]
 WantedBy=multi-user.target
