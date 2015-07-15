@@ -111,10 +111,10 @@ ln -s  %{_localstatedir}/cache/%{name} %{buildroot}%{_datadir}/%{name}/htdocs/pr
 
 %post selinux
 if [ $1 -le 1 ] ; then
-    # Write access is possible for web servers user only to two directories
-    # -  Data/ directory stores settings and web server HTTP Basic credentials
-    # - /var/cache/baculum - cache used by framework in specific locations (assets/ and protected/runtime/)
-    #   by symbolic links to cache directory
+# Write access is possible for web servers user only to two directories
+# -  Data/ directory stores settings and web server HTTP Basic credentials
+# - /var/cache/baculum - cache used by framework in specific locations (assets/ and protected/runtime/)
+#   by symbolic links to cache directory
     semanage fcontext -a -t httpd_sys_rw_content_t '%{_datadir}/%{name}/htdocs/protected/Data(/.*)?' 2>/dev/null || :
     restorecon -i -R '%{_datadir}/%{name}/htdocs/protected/Data' || :
     semanage fcontext -a -t httpd_cache_t '%{_localstatedir}/cache/%{name}(/.*)?' 2>/dev/null || :
@@ -162,14 +162,14 @@ fi
 # Apache logs are stored in /var/log/httpd/
 %config %{_sysconfdir}/httpd/conf.d/%{name}.conf
 %attr(700,apache,apache) %{_localstatedir}/cache/%{name}/
-%attr(700,apache,apache) %{_datadir}/%{name}/htdocs/protected/Data/
+%attr(-,apache,apache) %{_datadir}/%{name}/htdocs/protected/Data/
 
 %files lighttpd
-%defattr(-,root,root)
+%defattr(644,root,root)
 # Lighttpd logs are stored in /var/log/baculum
 %attr(750,lighttpd,lighttpd) %{_var}/log/%{name}/
 %attr(700,lighttpd,lighttpd) %{_localstatedir}/cache/%{name}/
-%attr(700,lighttpd,lighttpd) %{_datadir}/%{name}/htdocs/protected/Data/
+%attr(-,lighttpd,lighttpd) %{_datadir}/%{name}/htdocs/protected/Data/
 %{_unitdir}/%{name}-lighttpd.service
 %config %{_sysconfdir}/%{name}/%{name}-lighttpd.conf
 
