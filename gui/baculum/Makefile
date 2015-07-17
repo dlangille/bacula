@@ -1,12 +1,29 @@
+NAME = baculum
+VERSION = 7.0.6b
+SAMPLETYPE = rpm-template
+SYSUSRDIR = /usr
+SYSCONFDIR = /etc
+SYSVARDIR = /var
+CONFDIR = $(SYSCONFDIR)/$(NAME)
+HTTPDCONFDIR = $(SYSCONFDIR)/httpd/conf.d
+UNITDIR = $(SYSUSRDIR)/lib/systemd/system
+WWWDIR = $(SYSUSRDIR)/share/$(NAME)/htdocs
+SELINUXDIR = $(SYSUSRDIR)/share/selinux/packages/$(NAME)
+CACHEDIR = $(SYSVARDIR)/cache/$(NAME)
+LOGDIR = $(SYSVARDIR)/log
+HTTPDLOGS = $(LOGDIR)/httpd
+LIGHTTPDLOGS = $(LOGDIR)/$(NAME)
 
-prefix = .
-builddir = $(prefix)/build
+# Internal application directories
 datadir = protected
 frameworkdir = framework
 themesdir = themes
+cachedir = assets
+configdir = $(datadir)/Data
+configcachedir = $(datadir)/runtime
+samplesdir = examples/$(SAMPLETYPE)
 
 datadirsrc = $(datadir)/Class \
-    $(datadir)/Data \
     $(datadir)/JavaScript \
     $(datadir)/Lang \
     $(datadir)/Layouts \
@@ -23,26 +40,40 @@ miscfilesrc = .htaccess \
     LICENSE \
     README
 
-all: build
-
-build: prepare_build prepare_data prepare_externals prepare_themes
-
+build: prepare_build prepare_data prepare_externals prepare_themes setup
 
 prepare_build:
-	[ -d $(builddir) ] || mkdir -p $(builddir)
+	mkdir -p $(DESTDIR)$(SYSCONFDIR) \
+	$(DESTDIR)$(CONFDIR) \
+	$(DESTDIR)$(HTTPDCONFDIR) \
+	$(DESTDIR)$(UNITDIR) \
+	$(DESTDIR)$(WWWDIR) \
+	$(DESTDIR)$(SELINUXDIR) \
+	$(DESTDIR)$(LIGHTTPDLOGS) \
+	$(DESTDIR)$(CACHEDIR)
+	mkdir -p -m 700 $(DESTDIR)$(WWWDIR)/$(cachedir) \
+	$(DESTDIR)$(WWWDIR)/$(configdir) \
+	$(DESTDIR)$(WWWDIR)/$(configcachedir)
 
 prepare_data: prepare_build
-	[ -d "$(builddir)/$(datadir)" ] || mkdir -p $(builddir)/$(datadir)
-	cp -ra $(datadirsrc) $(builddir)/$(datadir)
-	cp -a $(datafilesrc) $(builddir)/$(datadir)
-	cp -a $(miscfilesrc) $(builddir)
+	mkdir -p $(DESTDIR)$(WWWDIR)/$(datadir)
+	cp -ra $(datadirsrc) $(DESTDIR)$(WWWDIR)/$(datadir)
+	cp -a $(datafilesrc) $(DESTDIR)$(WWWDIR)/$(datadir)
+	cp -a $(miscfilesrc) $(DESTDIR)$(WWWDIR)/
 
 prepare_externals: prepare_build
-	cp -ra $(frameworkdir) $(builddir)
+	cp -ra $(frameworkdir) $(DESTDIR)$(WWWDIR)
 
 prepare_themes: prepare_build
-	cp -ra $(themesdir) $(builddir)
+	cp -ra $(themesdir) $(DESTDIR)$(WWWDIR)
 
-install: build
-	[ -d $(INSTALL_ROOT) ] || mkdir -p $(INSTALL_ROOT)
-	cp -ra $(builddir) $(INSTALL_ROOT)/
+prepare_samples:
+	install -m 640 $(samplesdir)/$(NAME)-lighttpd.conf $(DESTDIR)$(CONFDIR)
+	install -m 644 $(samplesdir)/$(NAME)-lighttpd.service $(DESTDIR)$(UNITDIR)
+	install -m 640 $(samplesdir)/$(NAME)-apache.conf $(DESTDIR)$(HTTPDCONFDIR)/$(NAME).conf
+	install -m 600 $(samplesdir)/$(NAME).users $(DESTDIR)$(WWWDIR)/$(configdir)
+
+setup: prepare_samples
+	sed -i -e "s#%DOCUMENTROOT#$(WWWDIR)#g" -e "s#%LOGDIR#$(HTTPDLOGS)#g" $(DESTDIR)$(HTTPDCONFDIR)/$(NAME).conf
+	sed -i -e "s#%DOCUMENTROOT#$(WWWDIR)#g" -e "s#%LOGDIR#$(LIGHTTPDLOGS)#g" $(DESTDIR)$(CONFDIR)/$(NAME)-lighttpd.conf
+	sed -i -e "s#%CONFDIR#$(CONFDIR)#g" $(DESTDIR)$(UNITDIR)/$(NAME)-lighttpd.service
