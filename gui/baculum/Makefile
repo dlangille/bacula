@@ -7,12 +7,13 @@ SYSVARDIR = /var
 CONFDIR = $(SYSCONFDIR)/$(NAME)
 HTTPDCONFDIR = $(SYSCONFDIR)/httpd/conf.d
 UNITDIR = $(SYSUSRDIR)/lib/systemd/system
+LOCALEDIR = $(SYSUSRDIR)/share/locale
 WWWDIR = $(SYSUSRDIR)/share/$(NAME)/htdocs
 SELINUXDIR = $(SYSUSRDIR)/share/selinux/packages/$(NAME)
 CACHEDIR = $(SYSVARDIR)/cache/$(NAME)
 LOGDIR = $(SYSVARDIR)/log
 HTTPDLOGS = $(LOGDIR)/httpd
-LIGHTTPDLOGS = $(LOGDIR)/$(NAME)
+LIGHTTPDLOGS = $(LOGDIR)/lighttpd
 
 # Internal application directories
 datadir = protected
@@ -24,23 +25,28 @@ configcachedir = $(datadir)/runtime
 samplesdir = examples/$(SAMPLETYPE)
 
 datadirsrc = $(datadir)/Class \
-    $(datadir)/JavaScript \
-    $(datadir)/Lang \
-    $(datadir)/Layouts \
-    $(datadir)/Pages \
-    $(datadir)/Portlets
+	$(datadir)/JavaScript \
+	$(datadir)/Layouts \
+	$(datadir)/Pages \
+	$(datadir)/Portlets
 
-datafilesrc = $(datadir)/.htaccess \
-    $(datadir)/application.xml
+datafilesrc = $(datadir)/application.xml
 
-miscfilesrc = .htaccess \
-    index.php \
-    AUTHORS \
-    INSTALL \
-    LICENSE \
-    README
+miscfilesrc = index.php \
+	AUTHORS \
+	INSTALL \
+	LICENSE \
+	README
 
-build: prepare_build prepare_data prepare_externals prepare_themes setup
+localelang = en pl
+localedirsrc = $(datadir)/Lang
+localefile = messages.mo
+
+excluded_dirs = '.*/\(3rdParty\|tinymce-405\).*'
+excluded_files = '.*\(\.htaccess\)$$'
+
+
+build: prepare_build prepare_data prepare_externals prepare_themes prepare_locale setup
 
 prepare_build:
 	mkdir -p $(DESTDIR)$(SYSCONFDIR) \
@@ -49,9 +55,9 @@ prepare_build:
 	$(DESTDIR)$(UNITDIR) \
 	$(DESTDIR)$(WWWDIR) \
 	$(DESTDIR)$(SELINUXDIR) \
-	$(DESTDIR)$(LIGHTTPDLOGS) \
-	$(DESTDIR)$(CACHEDIR)
-	mkdir -p -m 700 $(DESTDIR)$(WWWDIR)/$(cachedir) \
+	$(DESTDIR)$(CACHEDIR) \
+	$(DESTDIR)$(LOCALEDIR) \
+	$(DESTDIR)$(WWWDIR)/$(cachedir) \
 	$(DESTDIR)$(WWWDIR)/$(configdir) \
 	$(DESTDIR)$(WWWDIR)/$(configcachedir)
 
@@ -62,10 +68,19 @@ prepare_data: prepare_build
 	cp -a $(miscfilesrc) $(DESTDIR)$(WWWDIR)/
 
 prepare_externals: prepare_build
-	cp -ra $(frameworkdir) $(DESTDIR)$(WWWDIR)
+	find $(frameworkdir) -type d ! -regex $(excluded_dirs) -exec mkdir -p $(DESTDIR)$(WWWDIR)/{} \;
+	find $(frameworkdir) -type f ! -regex $(excluded_files) -a ! -regex $(excluded_dirs) -exec cp -a {} $(DESTDIR)$(WWWDIR)/{} \;
 
 prepare_themes: prepare_build
 	cp -ra $(themesdir) $(DESTDIR)$(WWWDIR)
+
+prepare_locale: prepare_build
+	for lang in $(localelang) ; do \
+		mkdir -p $(DESTDIR)$(LOCALEDIR)/$$lang/LC_MESSAGES ; \
+		mkdir -p $(DESTDIR)$(WWWDIR)/$(localedirsrc)/$$lang ; \
+		install -m 644 $(localedirsrc)/$$lang/$(localefile) $(DESTDIR)$(LOCALEDIR)/$$lang/LC_MESSAGES/$(NAME).mo ; \
+		ln -s $(LOCALEDIR)/$$lang/LC_MESSAGES/$(NAME).mo $(DESTDIR)$(WWWDIR)/$(localedirsrc)/$$lang/$(localefile) ; \
+	done
 
 prepare_samples:
 	install -m 640 $(samplesdir)/$(NAME)-lighttpd.conf $(DESTDIR)$(CONFDIR)
