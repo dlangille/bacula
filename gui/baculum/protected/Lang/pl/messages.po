@@ -659,8 +659,8 @@ msgstr "Odznacz elementy i zamknij"
 msgid "Job name:"
 msgstr "Nazwa zadania:"
 
-msgid "Enable logging"
-msgstr "Włącz tryb logowania"
+msgid "Enable debug"
+msgstr "Włącz tryb debugu"
 
 msgid "For need defining more Baculum users with custom access or restricted console access (Bconsole ACLs) here is possible to determine custom bconsole configuration file format for each user."
 msgstr "Jeżeli potrzebujesz zdefiniować użytkowników z ograniczonym dostępem (np. do zadań, akcji, zasobów, kopii zapasowych...itp), to tutaj jest możliwość określenia formatu nazwy plików konfiguracyjnych Bconsole, które będą używa konsolowych list dostępu (tzw. Bconsole ACLs)."
@@ -680,8 +680,8 @@ msgstr "W przypadku gdy używasz swojego backend'u HTTP Basic oraz w szczególno
 msgid "This action will clear bvfs cache that was created during preparing restore files. Please note that clear bvfs action does not clear nor remove temporary tables created for restore action purpose. They are tables with prefix b2[0-9]+ which need manual remove. There is not recommended use this action during restore job working. Are you sure?"
 msgstr "Ta akcja wyczyści bvfs cache który był stworzony podczas przygotowania każdej akcji przywracania danych.\\n\\nProszę mieć na uwadze, że akcja clear bvfs nie czyści ani nie usuwa tymaczowych tabel SQL stworzonych na potrzeby akcji przywracania danych. Są to tabele z prefiksem b2[0-9]+ które można usunąć samodzielnie.\\n\\nNie jest zalecane używanie tej akcji podczas gdy jest uruchomione zadanie przywracania danych.\\n\\nCzy chcesz kontynuować?"
 
-msgid "Log files enables possibility to save most of actions executed on Baculum WebGUI. Logs functionality should be enabled if is happening shomething wrong with Baculum or something that looks like a bug. Logs can be useful for detecting a problems in Baculum working. After confirmation this message Baculum log files will be continuously saving in /protected/Data/ directory. Are you sure?"
-msgstr "Pliki dzienników programu (tzw. logów programu) umożliwiają zapisywanie akcji wykonywanych na interfejsie Baculum.\\n\\nFunkcjonalność dzienników programu powinna być załączana jeśli wydarzy się coś złego z interfejsem Baculum lub coś co wygląda jak błąd.\\n\\nDzienniki programu mogą być użyteczne przy wykrywaniu problemów w działaniu Baculum. Po potwierdzeniu tej wiadomości dzienniki Baculum będą zapisywany w lokalizacji /protected/Data/.\\n\\nCzy chcesz kontynuować?"
+msgid "Debug files enable possibility to save most of actions executed on Baculum WebGUI. Debug functionality should be enabled if is happening shomething wrong with Baculum or something that looks like a bug. Logs can be useful for detecting a problems in Baculum working. After confirmation this message Baculum debug files will be continuously saving in /protected/Data/ directory. Are you sure?"
+msgstr "Pliki rozszerzonych dzienników programu (tzw. debug programu) umożliwiają zapisywanie akcji wykonywanych na interfejsie Baculum.\\n\\nFunkcjonalność dzienników programu powinna być załączana jeśli wydarzy się coś złego z interfejsem Baculum lub coś co wygląda jak błąd.\\n\\nRozszerzone dzienniki programu mogą być użyteczne przy wykrywaniu problemów w działaniu Baculum. Po potwierdzeniu tej wiadomości debug Baculum będą zapisywany w lokalizacji /protected/Data/.\\n\\nCzy chcesz kontynuować?"
 
 msgid "unlimited"
 msgstr "bez limitu"
