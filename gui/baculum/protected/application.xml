@@ -89,7 +89,7 @@
 			<translation type="gettext" source="Application.Lang" marker="@@" autosave="false" cache="false" DefaultCulture="en" />
 		</module>
 		<module id="log" class="System.Util.TLogRouter">
-			<route class="TFileLogRoute"  Categories="Execute, External, Application, General, Security" LogPath="Application.Data" LogFile="baculum.log" MaxFileSize="1000" MaxLogFiles="5" />
+			<route class="TFileLogRoute"  Categories="Execute, External, Application, General, Security" LogPath="Application.Data" LogFile="baculum.dbg" MaxFileSize="1000" MaxLogFiles="5" />
 		</module>
 	</modules>
 	<services>
