@@ -192,7 +192,10 @@ class ConfigurationManager extends TModule
 		}
 
 		$usersToFile = implode("\n", $users);
+		$old_umask = umask(0);
+		umask(0077);
 		$result = file_put_contents($usersFile, $usersToFile) !== false;
+		umask($old_umask);
 		return $result;
 	}
 

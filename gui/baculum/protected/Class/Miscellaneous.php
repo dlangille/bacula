@@ -143,7 +143,11 @@ class Miscellaneous extends TModule {
 				}
 			$tmp .= "\n";
 		}
-		return file_put_contents($file, $tmp);
+		$old_umask = umask(0);
+		umask(0077);
+		$result = file_put_contents($file, $tmp);
+		umask($old_umask);
+		return $result;
 	}
 
 	/**
