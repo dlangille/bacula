@@ -20,7 +20,7 @@ datadir = protected
 frameworkdir = framework
 themesdir = themes
 cachedir = assets
-configdir = $(datadir)/Data
+configdir = Data
 configcachedir = $(datadir)/runtime
 samplesdir = examples/$(SAMPLETYPE)
 
@@ -58,8 +58,9 @@ prepare_build:
 	$(DESTDIR)$(CACHEDIR) \
 	$(DESTDIR)$(LOCALEDIR) \
 	$(DESTDIR)$(WWWDIR)/$(cachedir) \
-	$(DESTDIR)$(WWWDIR)/$(configdir) \
 	$(DESTDIR)$(WWWDIR)/$(configcachedir)
+	mkdir -m 700 -p $(DESTDIR)$(CONFDIR)/$(configdir)-apache \
+	$(DESTDIR)$(CONFDIR)/$(configdir)-lighttpd
 
 prepare_data: prepare_build
 	mkdir -p $(DESTDIR)$(WWWDIR)/$(datadir)
@@ -86,7 +87,10 @@ prepare_samples:
 	install -m 640 $(samplesdir)/$(NAME)-lighttpd.conf $(DESTDIR)$(CONFDIR)
 	install -m 644 $(samplesdir)/$(NAME)-lighttpd.service $(DESTDIR)$(UNITDIR)
 	install -m 640 $(samplesdir)/$(NAME)-apache.conf $(DESTDIR)$(HTTPDCONFDIR)/$(NAME).conf
-	install -m 600 $(samplesdir)/$(NAME).users $(DESTDIR)$(WWWDIR)/$(configdir)
+	install -m 600 $(samplesdir)/$(NAME).users $(DESTDIR)$(CONFDIR)/$(configdir)-lighttpd
+	install -m 600 $(samplesdir)/$(NAME).users $(DESTDIR)$(CONFDIR)/$(configdir)-apache
+	# Default link apache config file
+	ln -s $(DESTDIR)$(CONFDIR)/$(configdir)-apache $(DESTDIR)$(WWWDIR)/$(datadir)/$(configdir)
 
 setup: prepare_samples
 	sed -i -e "s#%DOCUMENTROOT#$(WWWDIR)#g" -e "s#%LOGDIR#$(HTTPDLOGS)#g" $(DESTDIR)$(HTTPDCONFDIR)/$(NAME).conf
