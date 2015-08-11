@@ -227,6 +227,7 @@ CAT *get_catalog_resource(UAContext *ua)
 {
    char name[MAX_NAME_LENGTH];
    CAT *catalog = NULL;
+   CLIENT *client = NULL;
    int i;
 
    for (i=1; i<ua->argc; i++) {
@@ -236,6 +237,15 @@ CAT *get_catalog_resource(UAContext *ua)
             break;
          }
       }
+      if (strcasecmp(ua->argk[i], NT_("client")) == 0 && ua->argv[i]) {
+         if (acl_access_ok(ua, Client_ACL, ua->argv[i])) {
+            client = (CLIENT *)GetResWithName(R_CLIENT, ua->argv[i]);
+            break;
+         }
+      }
+   }
+   if (!catalog && client) {    /* Try to take the catalog from the client */
+      catalog = client->catalog;
    }
    if (ua->gui && !catalog) {
       LockRes();
