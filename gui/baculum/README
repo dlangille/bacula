@@ -25,7 +25,7 @@ In this field there is required to define location for restricted consoles.
 In defined path exists one keyword {user}. It will be replaced into current
 logged in username.
 
-For example, if logged is user named "john", keyword {user} will be replaced
+For example, if there is logged user named "john", keyword {user} will be replaced
 into "john".
 
 
@@ -35,7 +35,7 @@ Example:
 
 /usr/local/bacula/etc/bconsole-{user}.conf
 
-After log in user "john" to Baculum webGUI, for each bconsole request will be
+After login user "john" to Baculum webGUI, for each bconsole request will be
 used file:
 
 /usr/local/bacula/etc/bconsole-john.conf
@@ -58,14 +58,14 @@ In configuration wizard step "Console" there is also field:
 "Bconsole admin config file path:": ___________________
 
 Config file defined in this field will be used by administrator only. For this
-reason the best parctice is define here console configuration file that gives
+reason the best practice is to define here console configuration file that gives
 full access for administrator.
 
 Administrator user and password will be defined in next configuration wizard
 step named "Authorization" (fifth step).
 
 
-Baculum users are defined on web server level as described in instriction
+Baculum users are defined on web server level as described in instruction
 in attached to Baculum INSTALL file.
 
 Example:
@@ -129,7 +129,7 @@ restore
 Catalog Database restriction
 
 Because Baculum in few parts of interface uses data from Bacula Catalog Database,
-for each user who IS NOT administrator there has beed disabled EVERY write to
+for each user who IS NOT administrator there has been disabled EVERY write to
 Bacula Catalog database by Baculum webGUI. Modification Bacula Catalog Database
 tables is possible ONLY for Baculum administrator.
 

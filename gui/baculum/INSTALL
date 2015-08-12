@@ -6,10 +6,13 @@
 3. Preparing Baculum files
 4. Preparing Apache Web Server
 5. Example configuration VirtualHost
+6. Useful configuration samples
+7. Makefile
 
 =========================================
 
 1. Baculum overview
+
 
 Baculum is Bacula web based interface. It enables Bacula administration
 functions such as:
@@ -19,7 +22,7 @@ functions such as:
 - Bacula console available via web interface
 - Support for customized and restricted consoles (Console ACL functionality)
 - Multiple Directors support
-- Volumes managenment including labeling new volumes
+- Volumes management including labeling new volumes
 - User friendly graphs
 - Basic storage daemon operations on volumes (mount, umount, release actions)
 - Easy in use configuration and restore wizards
@@ -61,7 +64,7 @@ about it.
 2.2 Linux Fedora
 
 
-Packages required for run Baculum in Fedora environemnt can be installed by command:
+Packages required for run Baculum in Fedora environment can be installed by command:
 
 # yum install httpd \
 php \
@@ -75,7 +78,7 @@ php-bcmath
 In Fedora 20 PHP module for cURL support and for JSON support are compiled in PHP.
 
 In case of using SELinux functionality in Baculum environment, recommended way
-is switching "httpd_t" SELinux security doman to permissive domain like below:
+is switching "httpd_t" SELinux security domain to permissive domain like below:
 
 # semanage permissive -a httpd_t
 
@@ -102,7 +105,7 @@ apache	ALL= NOPASSWD:	/usr/sbin/bconsole
 2.3 Linux Debian
 
 
-Packages required for run Baculum in Debian environemnt can be installed by command:
+Packages required for run Baculum in Debian environment can be installed by command:
 
 apt-get install apache2 \
 libapache2-mod-php5 \
@@ -128,11 +131,13 @@ Suggested method for Baculum webGUI access to Bacula Console (bconsole) is using
 "sudo" functionality for that. In this case there is need to add to /etc/sudoers below
 line according next template:
 
+Defaults:apache_user	!requiretty
 apache_user ALL= NOPASSWD:	bconsole_path
 
 For example for user called "www-data" from that HTTP service working with Baculum
 there is need to add line like below:
 
+Defaults:www-data	!requiretty
 www-data	ALL= NOPASSWD:	/usr/sbin/bconsole
 
 
@@ -147,7 +152,7 @@ permissions for web server for three below directories:
 /[files base location]/protected/runtime
 
 These directories permissions are validated during Baculum start. If web server
-will not be able to write data in some from above directries then you be
+will not be able to write data in some from above directoriesthen you be
 informed about this fact.
 
 
@@ -176,7 +181,7 @@ For creating passwords file you may use htpasswd binary file in next way:
 
 # htpasswd -c /var/www/baculum/protected/Data/baculum.users someuser
 
-You will be asked about inputing password and retype password for user.
+You will be asked about inputting password and retype password for user.
 
 NOTE!
 "-c" switcher you should use only for new created passwords file. For existing
@@ -186,6 +191,7 @@ At the end there is need to give web server user possibility to manage the auth 
 For example:
 
 chown www-data:www-data /var/www/baculum/protected/Data/baculum.users
+
 
 5. Example configuration VirtualHost
 
@@ -203,8 +209,53 @@ chown www-data:www-data /var/www/baculum/protected/Data/baculum.users
 </VirtualHost>
 
 
-Above configuration should be writen in a new Apache configuration file.
+Above configuration should be written in a new Apache configuration file.
 for example, location for that can be put to /etc/apache2/sites-enabled/baculum.conf.
 
-In this way, configuration file baculum.conf will be loaded automaticly during
+In this way, configuration file baculum.conf will be loaded automatically during
 Apache server start.
+
+
+6. Useful configuration samples
+
+
+In directory examples/ exists following configuration samples:
+ ./examples/selinux/                                 <=== SELinux module example
+ ./examples/selinux/baculum.te                       <--- SELinux text module format
+ ./examples/selinux/baculum.pp                       <--- SELinux binary module format
+ ./examples/deb/                                     <=== samples for some deb-based distributions
+ ./examples/deb/baculum.lighttpd.conf                <--- sample Lighttpd config
+ ./examples/deb/baculum.users                        <--- sample HTTP Basic auth file (user: admin, pass: admin)
+ ./examples/rpm-template/                            <=== Directory with templates used by Makefile
+ ./examples/rpm-template/baculum-apache.conf         <--- Apache config template
+ ./examples/rpm-template/baculum-lighttpd.service    <--- Baculum systemd unit for Lighttpd
+ ./examples/rpm-template/baculum.spec                <--- SPEC file
+ ./examples/rpm-template/baculum-lighttpd.conf       <--- Lighttpd config template
+ ./examples/rpm-template/baculum.users               <--- HTTP Basic auth file used by SPEC (user: admin, pass: admin)
+ ./examples/rpm-template/baculum.startup             <--- Baculum SysVinit startup script
+ ./examples/sudo/                                    <=== example sudoers.d configurations
+ ./examples/sudo/baculum-httpd                       <--- sample sudo for Apache user
+ ./examples/sudo/baculum-lighttpd                    <--- sample sudo for Lighttpd
+ ./examples/rpm/                                     <=== samples for some rpm-based distributions
+ ./examples/rpm/baculum-apache.conf                  <--- Apache config file
+ ./examples/rpm/baculum-lighttpd.service             <--- Baculum system unit
+ ./examples/rpm/baculum.spec                         <--- example SPEC file
+ ./examples/rpm/baculum-lighttpd.conf                <--- Lighttpd config file
+ ./examples/rpm/baculum.users                        <--- HTTP Basic auth file (user: admin, pass: admin)
+ ./examples/rpm/baculum.startup                      <--- Baculum SysVinit startup script
+
+
+7 Makefile
+
+
+Together with Baculum source code is provided Makefile file. The Makefile is dedicated
+mainly for separating and generating runtime files (including web servers configuration,
+systemd unit and others).
+
+Generating runtime files can be useful to prepare Baculum binary packages by execute
+the Makefile in deb metafiles or in rpm SPEC file.
+
+Example usage:
+
+# cd baculum/
+# make DESTDIR=/home/abc/baculum_runtime
