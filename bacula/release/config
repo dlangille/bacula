@@ -6,10 +6,10 @@
 #
 # Set to the Branch you are working on
 #
-branch=${branch:-Branch-5.3}
+branch=${branch:-Branch-7.2}
 #
 # set reltype to release or beta -- for upload and setting DEVELOPER
-reltype=beta
+reltype=release
 
 repo=$reltype
 
