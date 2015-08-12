@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2004-2014 Free Software Foundation Europe e.V.
+   Copyright (C) 2000-2015 Kern Sibbald
+   Copyright (C) 2004-2013 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *
@@ -26,8 +30,8 @@
  *
  */
 
+#include "winhdrs.h"
 #include "tray-monitor.h"
-#include "jcr.h"
 
 void senditf(const char *fmt, ...);
 void sendit(const char *buf);
@@ -74,7 +78,7 @@ int authenticate_director(JCR *jcr, MONITOR *mon, DIRRES *director)
       stop_bsock_timer(tid);
       Jmsg0(jcr, M_FATAL, 0, _("Director authorization problem.\n"
             "Most likely the passwords do not agree.\n"
-       "Please see " MANUAL_AUTH_URL " for help.\n"));
+       "For help, please see " MANUAL_AUTH_URL "\n"));
       return 0;
    }
 
@@ -123,7 +127,7 @@ int authenticate_storage_daemon(JCR *jcr, MONITOR *monitor, STORE* store)
        !cram_md5_challenge(sd, store->password, tls_local_need, compatible)) {
       stop_bsock_timer(tid);
       Jmsg0(jcr, M_FATAL, 0, _("Director and Storage daemon passwords or names not the same.\n"
-       "Please see " MANUAL_AUTH_URL " for help.\n"));
+       "For help, please see " MANUAL_AUTH_URL "\n"));
       return 0;
    }
    Dmsg1(116, ">stored: %s", sd->msg);
@@ -169,7 +173,7 @@ int authenticate_file_daemon(JCR *jcr, MONITOR *monitor, CLIENT* client)
        !cram_md5_challenge(fd, client->password, tls_local_need, compatible)) {
       stop_bsock_timer(tid);
       Jmsg(jcr, M_FATAL, 0, _("Director and File daemon passwords or names not the same.\n"
-       "Please see " MANUAL_AUTH_URL " for help.\n"));
+       "For help, please see " MANUAL_AUTH_URL "\n"));
       return 0;
    }
    Dmsg1(116, ">filed: %s", fd->msg);

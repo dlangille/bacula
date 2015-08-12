@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2003-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  * Bacula job queue routines.
@@ -186,6 +190,30 @@ void *sched_wait(void *arg)
    free_jcr(jcr);                     /* we are done with jcr */
    Dmsg0(2300, "Exit sched_wait\n");
    return NULL;
+}
+
+/* Procedure to update the Client->NumConcurrentJobs */
+static void update_client_numconcurrentjobs(JCR *jcr, int val)
+{
+   if (!jcr->client) {
+      return;
+   }
+
+   switch (jcr->getJobType())
+   {
+   case JT_MIGRATE:
+   case JT_COPY:
+   case JT_ADMIN:
+      break;
+   case JT_BACKUP:
+      if (jcr->no_client_used()) {
+         break;
+      }
+   /* Failback wanted */
+   default:
+      jcr->client->NumConcurrentJobs += val;
+      break;
+   }
 }
 
 /*
@@ -442,9 +470,6 @@ void *jobq_server(void *arg)
          remove_jcr_from_tsd(je->jcr);
          je->jcr->set_killable(false);
 
-         /* Clear the threadid, probably not necessary */
-         memset(&jcr->my_thread_id, 0, sizeof(jcr->my_thread_id));
-
          Dmsg2(2300, "Back from user engine jobid=%d use=%d.\n", jcr->JobId,
             jcr->use_count());
 
@@ -460,9 +485,7 @@ void *jobq_server(void *arg)
          if (jcr->acquired_resource_locks) {
             dec_read_store(jcr);
             dec_write_store(jcr);
-            if (jcr->client) {
-               jcr->client->NumConcurrentJobs--;
-            }
+            update_client_numconcurrentjobs(jcr, -1);
             jcr->job->NumConcurrentJobs--;
             jcr->acquired_resource_locks = false;
          }
@@ -614,6 +637,10 @@ static bool reschedule_job(JCR *jcr, jobq_t *jq, jobq_item_t *je)
    if (jcr->job->RescheduleTimes == 0 ||
        jcr->reschedule_count < jcr->job->RescheduleTimes) {
       resched =
+         /* Check for incomplete jobs */
+         (jcr->RescheduleIncompleteJobs &&
+          jcr->is_incomplete() && jcr->is_JobType(JT_BACKUP) &&
+          !(jcr->HasBase||jcr->is_JobLevel(L_BASE))) ||
          /* Check for failed jobs */
          (jcr->job->RescheduleOnError &&
           !jcr->is_JobStatus(JS_Terminated) &&
@@ -627,6 +654,7 @@ static bool reschedule_job(JCR *jcr, jobq_t *jq, jobq_item_t *je)
         * Reschedule this job by cleaning it up, but
         *  reuse the same JobId if possible.
         */
+      jcr->rerunning = jcr->is_incomplete();   /* save incomplete status */
       time_t now = time(NULL);
       jcr->reschedule_count++;
       jcr->sched_time = now + jcr->job->RescheduleInterval;
@@ -644,8 +672,8 @@ static bool reschedule_job(JCR *jcr, jobq_t *jq, jobq_item_t *je)
       if (!allow_duplicate_job(jcr)) {
          return false;
       }
-      /* Only jobs with no output jobs can run on same JCR */
-      if (jcr->JobBytes == 0) {
+      /* Only jobs with no output or Incomplete jobs can run on same JCR */
+      if (jcr->JobBytes == 0 || jcr->rerunning) {
          Dmsg2(2300, "Requeue job=%d use=%d\n", jcr->JobId, jcr->use_count());
          V(jq->mutex);
          /*
@@ -655,9 +683,9 @@ static bool reschedule_job(JCR *jcr, jobq_t *jq, jobq_item_t *je)
          if (jcr->wasVirtualFull) {
             jcr->setJobLevel(L_VIRTUAL_FULL);
          }
-         /* 
+         /*
           * When we are using the same jcr then make sure to reset
-          *   RealEndTime back to zero.  
+          *   RealEndTime back to zero.
           */
          jcr->jr.RealEndTime = 0;
          jobq_add(jq, jcr);     /* queue the job to run again */
@@ -674,6 +702,21 @@ static bool reschedule_job(JCR *jcr, jobq_t *jq, jobq_item_t *je)
        */
       JCR *njcr = new_jcr(sizeof(JCR), dird_free_jcr);
       set_jcr_defaults(njcr, jcr->job);
+      /*
+       * Eliminate the new job_end_push, then copy the one from
+       *  the old job, and set the old one to be empty.
+       */
+      void *v;
+      lock_jobs();              /* protect ourself from reload_config() */
+      LockRes();
+      foreach_alist(v, (&jcr->job_end_push)) {
+         njcr->job_end_push.append(v);
+      }
+      jcr->job_end_push.destroy();
+      jcr->job_end_push.init(1, false);
+      UnlockRes();
+      unlock_jobs();
+
       njcr->reschedule_count = jcr->reschedule_count;
       njcr->sched_time = jcr->sched_time;
       njcr->initial_sched_time = jcr->initial_sched_time;
@@ -776,7 +819,7 @@ static bool acquire_resources(JCR *jcr)
 
    if (jcr->client) {
       if (jcr->client->NumConcurrentJobs < jcr->client->MaxConcurrentJobs) {
-         jcr->client->NumConcurrentJobs++;
+         update_client_numconcurrentjobs(jcr, 1);
       } else {
          /* Back out previous locks */
          dec_write_store(jcr);
@@ -791,9 +834,7 @@ static bool acquire_resources(JCR *jcr)
       /* Back out previous locks */
       dec_write_store(jcr);
       dec_read_store(jcr);
-      if (jcr->client) {
-         jcr->client->NumConcurrentJobs--;
-      }
+      update_client_numconcurrentjobs(jcr, -1);
       jcr->setJobStatus(JS_WaitJobRes);
       return false;
    }

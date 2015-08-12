@@ -1,0 +1,14 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+
+
+while test 1 ; do
+  read a
+  if test $? != 0; then
+    exit 0
+  fi
+done
+exit 0

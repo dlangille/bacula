@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2008-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 
 /*
@@ -44,7 +48,7 @@
 
  */
 
-#define _LOCKMGR_COMPLIANT
+#define LOCKMGR_COMPLIANT
 #include "bacula.h"
 
 #undef ASSERT
@@ -69,14 +73,14 @@
   http://www.cs.berkeley.edu/~kamil/teaching/sp03/041403.pdf
 
   This lock manager will replace some pthread calls. It can be
-  enabled with _USE_LOCKMGR
+  enabled with USE_LOCKMGR
 
   Some part of the code can't use this manager, for example the
   rwlock object or the smartalloc lib. To disable LMGR, just add
-  _LOCKMGR_COMPLIANT before the inclusion of "bacula.h"
+  LOCKMGR_COMPLIANT before the inclusion of "bacula.h"
 
   cd build/src/tools
-  g++ -g -c lockmgr.c -I.. -I../lib -D_USE_LOCKMGR -D_TEST_IT
+  g++ -g -c lockmgr.c -I.. -I../lib -DUSE_LOCKMGR -D_TEST_IT
   g++ -o lockmgr lockmgr.o -lbac -L../lib/.libs -lssl -lpthread
 
 */
@@ -85,7 +89,7 @@
 
 /*
  * pthread_mutex_lock for memory allocator and other
- * parts that are _LOCKMGR_COMPLIANT
+ * parts that are LOCKMGR_COMPLIANT
  */
 void lmgr_p(pthread_mutex_t *m)
 {
@@ -107,13 +111,13 @@ void lmgr_v(pthread_mutex_t *m)
    }
 }
 
-#ifdef _USE_LOCKMGR
+#ifdef USE_LOCKMGR
 
 typedef enum
 {
    LMGR_WHITE,                  /* never seen */
    LMGR_BLACK,                  /* no loop */
-   LMGR_GREY                    /* seen before */
+   LMGR_GRAY                    /* already seen */
 } lmgr_color_t;
 
 /*
@@ -207,11 +211,11 @@ static void search_all_node(dlist *g, lmgr_node_t *v, alist *ret)
    }
 }
 
-static bool visite(dlist *g, lmgr_node_t *v)
+static bool visit(dlist *g, lmgr_node_t *v)
 {
    bool ret=false;
    lmgr_node_t *n;
-   v->mark_as_seen(LMGR_GREY);
+   v->mark_as_seen(LMGR_GRAY);
 
    alist *d = New(alist(5, false)); /* use alist because own=false */
    search_all_node(g, v, d);
@@ -221,11 +225,11 @@ static bool visite(dlist *g, lmgr_node_t *v)
    //}
 
    foreach_alist(n, d) {
-      if (n->seen == LMGR_GREY) { /* already seen this node */
+      if (n->seen == LMGR_GRAY) { /* already seen this node */
          ret = true;
          goto bail_out;
       } else if (n->seen == LMGR_WHITE) {
-         if (visite(g, n)) {
+         if (visit(g, n)) {
             ret = true;
             goto bail_out;
          }
@@ -242,7 +246,7 @@ static bool contains_cycle(dlist *g)
    lmgr_node_t *n;
    foreach_dlist(n, g) {
       if (n->seen == LMGR_WHITE) {
-         if (visite(g, n)) {
+         if (visit(g, n)) {
             return true;
          }
       }
@@ -271,6 +275,8 @@ typedef struct
 
 static int32_t global_event_id=0;
 
+static int global_int_thread_id=0; /* Keep an integer for each thread */
+
 /* Keep this number of event per thread */
 #ifdef _TEST_IT
 # define LMGR_THREAD_EVENT_MAX  15
@@ -286,6 +292,7 @@ public:
    dlink link;
    pthread_mutex_t mutex;
    pthread_t       thread_id;
+   intptr_t        int_thread_id;
    lmgr_lock_t     lock_list[LMGR_MAX_LOCK];
    int current;
    int max;
@@ -377,8 +384,13 @@ public:
    }
 
    void _dump(FILE *fp) {
+#ifdef HAVE_WIN32
+      fprintf(fp, "thread_id=%p int_threadid=%p max=%i current=%i\n",
+              (void *)(intptr_t)GetCurrentThreadId(), (void *)int_thread_id, max, current);
+#else
       fprintf(fp, "threadid=%p max=%i current=%i\n",
               (void *)thread_id, max, current);
+#endif
       for(int i=0; i<=current; i++) {
          fprintf(fp, "   lock=%p state=%s priority=%i %s:%i\n",
                  lock_list[i].lock,
@@ -570,6 +582,7 @@ void lmgr_register_thread(lmgr_thread_t *item)
 {
    lmgr_p(&lmgr_global_mutex);
    {
+      item->int_thread_id = ++global_int_thread_id;
       global_mgr->prepend(item);
    }
    lmgr_v(&lmgr_global_mutex);
@@ -590,6 +603,11 @@ void lmgr_unregister_thread(lmgr_thread_t *item)
    lmgr_v(&lmgr_global_mutex);
 }
 
+#ifdef HAVE_WIN32
+# define TID int_thread_id
+#else
+# define TID thread_id
+#endif
 /*
  * Search for a deadlock when it's secure to walk across
  * locks list. (after lmgr_detect_deadlock or a fatal signal)
@@ -616,9 +634,9 @@ bool lmgr_detect_deadlock_unlocked()
           *
           */
          if (lock->state == LMGR_LOCK_GRANTED) {
-            node = New(lmgr_node_t((void*)lock->lock, (void*)item->thread_id));
+            node = New(lmgr_node_t((void*)lock->lock, (void*)item->TID));
          } else if (lock->state == LMGR_LOCK_WANTED) {
-            node = New(lmgr_node_t((void*)item->thread_id, (void*)lock->lock));
+            node = New(lmgr_node_t((void*)item->TID, (void*)lock->lock));
          }
          if (node) {
             g->append(node);
@@ -745,6 +763,15 @@ inline lmgr_thread_t *lmgr_get_thread_info()
    }
 }
 
+/* On windows, the thread id is a struct, and sometime (for debug or openssl),
+ * we need a int
+ */
+intptr_t bthread_get_thread_id()
+{
+   lmgr_thread_t *self = lmgr_get_thread_info();
+   return self->int_thread_id;
+}
+
 /*
  * launch once for all threads
  */
@@ -817,6 +844,10 @@ void lmgr_cleanup_main()
    }
    if (use_undertaker) {
       pthread_cancel(undertaker);
+#ifdef DEVELOPER
+      /* Should avoid memory leak reporting */
+      pthread_join(undertaker, NULL);
+#endif
    }
    lmgr_cleanup_thread();
    lmgr_p(&lmgr_global_mutex);
@@ -1106,7 +1137,16 @@ int lmgr_thread_create(pthread_t *thread,
    return pthread_create(thread, attr, lmgr_thread_launcher, a);
 }
 
-#else  /* _USE_LOCKMGR */
+#else  /* USE_LOCKMGR */
+
+intptr_t bthread_get_thread_id()
+{
+# ifdef HAVE_WIN32
+   return (intptr_t)GetCurrentThreadId();
+# else
+   return (intptr_t)pthread_self();
+# endif
+}
 
 /*
  * !!! WARNING !!!
@@ -1118,7 +1158,7 @@ void dbg_print_lock(FILE *fp)
    Pmsg0(000, "lockmgr disabled\n");
 }
 
-#endif  /* _USE_LOCKMGR */
+#endif  /* USE_LOCKMGR */
 
 #ifdef _TEST_IT
 

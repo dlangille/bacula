@@ -1,5 +1,8 @@
 #!/bin/sh
 #
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
 # shell script to update SQLite from version 2.0 to 3.0
 #
 echo " "
@@ -85,7 +88,7 @@ CREATE TABLE Pool (
    MaxVolBytes BIGINT UNSIGNED DEFAULT 0,
    AutoPrune TINYINT DEFAULT 0,
    Recycle TINYINT DEFAULT 0,
-   ActionOnPurge     TINYINT    DEFAULT 0,
+   ActionOnPurge     TINYINT	DEFAULT 0,
    PoolType VARCHAR(20) NOT NULL,
    LabelType TINYINT DEFAULT 0,
    LabelFormat VARCHAR(128) NOT NULL,
@@ -142,7 +145,7 @@ CREATE TABLE Media (
    VolStatus VARCHAR(20) NOT NULL,
    Enabled TINYINT DEFAULT 1,
    Recycle TINYINT DEFAULT 0,
-   ActionOnPurge     TINYINT    DEFAULT 0,
+   ActionOnPurge     TINYINT	DEFAULT 0,
    VolRetention BIGINT UNSIGNED DEFAULT 0,
    VolUseDuration BIGINT UNSIGNED DEFAULT 0,
    MaxVolJobs INTEGER UNSIGNED DEFAULT 0,

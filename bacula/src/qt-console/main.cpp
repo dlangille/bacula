@@ -1,24 +1,28 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2007-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *  Main program for bat (qt-console)
  *
  *   Written by Kern Sibbald, January MMVII
  *
- */
+ */ 
 
 
 #include "bat.h"
@@ -38,7 +42,7 @@ MainWin *mainWin;
 QApplication *app;
 
 /* Forward referenced functions */
-void terminate_console(int sig);
+void terminate_console(int sig);                                
 static void usage();
 static int check_resources();
 
@@ -59,11 +63,11 @@ int main(int argc, char *argv[])
    bool test_config = false;
 
 
-   app = new QApplication(argc, argv);
+   app = new QApplication(argc, argv);        
    app->setStyle(new QPlastiqueStyle());
    app->setQuitOnLastWindowClosed(true);
    QTextCodec::setCodecForCStrings(QTextCodec::codecForName("UTF-8"));
-
+     
    QTranslator qtTranslator;
    qtTranslator.load(QString("qt_") + QLocale::system().name(),QLibraryInfo::location(QLibraryInfo::TranslationsPath));
    app->installTranslator(&qtTranslator);
@@ -90,13 +94,14 @@ int main(int argc, char *argv[])
    init_msg(NULL, NULL);
    working_directory  = "/tmp";
 
+#ifndef HAVE_WIN32
    struct sigaction sigignore;
    sigignore.sa_flags = 0;
    sigignore.sa_handler = SIG_IGN;
    sigfillset(&sigignore.sa_mask);
    sigaction(SIGPIPE, &sigignore, NULL);
    sigaction(SIGUSR2, &sigignore, NULL);
-
+#endif
 
    while ((ch = getopt(argc, argv, "bc:d:r:st?")) != -1) {
       switch (ch) {
@@ -169,7 +174,9 @@ int main(int argc, char *argv[])
 
 void terminate_console(int /*sig*/)
 {
-// WSA_Cleanup();                  /* TODO: check when we have to call it */
+#ifdef HAVE_WIN32
+   WSACleanup();                  /* TODO: check when we have to call it */
+#endif
    exit(0);
 }
 
@@ -225,7 +232,7 @@ static int check_resources()
          ok = false;
       }
    }
-
+   
    if (numdir == 0) {
       Emsg1(M_FATAL, 0, _("No Director resource defined in %s\n"
                           "Without that I don't how to speak to the Director :-(\n"), configfile);

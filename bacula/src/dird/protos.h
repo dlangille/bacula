@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  * Director external function prototypes
@@ -121,7 +125,8 @@ extern DBId_t get_or_create_pool_record(JCR *jcr, char *pool_name);
 extern void apply_pool_overrides(JCR *jcr);
 extern bool apply_wstorage_overrides(JCR *jcr, POOL *original_pool);
 extern JobId_t run_job(JCR *jcr);
-extern bool cancel_job(UAContext *ua, JCR *jcr, bool cancel = true);
+extern JobId_t resume_job(JCR *jcr, JOB_DBR *jr);
+extern bool cancel_job(UAContext *ua, JCR *jcr, bool cancel=true);
 extern void get_job_storage(USTORE *store, JOB *job, RUN *run);
 extern void init_jcr_job_record(JCR *jcr);
 extern void update_job_end(JCR *jcr, int TermCode);
@@ -205,11 +210,11 @@ enum e_pool_op {
    POOL_OP_UPDATE,
    POOL_OP_CREATE
 };
-int create_pool(JCR *jcr, B_DB *db, POOL *pool, e_pool_op op);
+int create_pool(JCR *jcr, BDB *db, POOL *pool, e_pool_op op);
 void set_pool_dbr_defaults_in_media_dbr(MEDIA_DBR *mr, POOL_DBR *pr);
-bool set_pooldbr_references(JCR *jcr, B_DB *db, POOL_DBR *pr, POOL *pool);
+bool set_pooldbr_references(JCR *jcr, BDB *db, POOL_DBR *pr, POOL *pool);
 void set_pooldbr_from_poolres(POOL_DBR *pr, POOL *pool, e_pool_op op);
-int update_pool_references(JCR *jcr, B_DB *db, POOL *pool);
+int update_pool_references(JCR *jcr, BDB *db, POOL *pool);
 
 /* ua_input.c */
 bool get_cmd(UAContext *ua, const char *prompt, bool subprompt=false);
@@ -237,6 +242,9 @@ bool acl_access_jobid_ok(UAContext *ua, const char *jobids);
 
 /* ua_restore.c */
 void find_storage_resource(UAContext *ua, RESTORE_CTX &rx, char *Storage, char *MediaType);
+bool insert_table_into_findex_list(UAContext *ua, RESTORE_CTX *rx, char *table);
+void new_rx(RESTORE_CTX *rx);
+void free_rx(RESTORE_CTX *rx);
 
 /* ua_server.c */
 void bsendmsg(void *ua_ctx, const char *fmt, ...);
@@ -252,8 +260,10 @@ STORE   *select_storage_resource(UAContext *ua, bool unique=false);
 JOB     *select_job_resource(UAContext *ua);
 JOB     *select_enable_disable_job_resource(UAContext *ua, bool enable);
 JOB     *select_restore_job_resource(UAContext *ua);
+CLIENT  *select_enable_disable_client_resource(UAContext *ua, bool enable);
 CLIENT  *select_client_resource(UAContext *ua);
 FILESET *select_fileset_resource(UAContext *ua);
+SCHED   *select_enable_disable_schedule_resource(UAContext *ua, bool enable);
 int     select_pool_and_media_dbr(UAContext *ua, POOL_DBR *pr, MEDIA_DBR *mr);
 int     select_media_dbr(UAContext *ua, MEDIA_DBR *mr);
 bool    select_pool_dbr(UAContext *ua, POOL_DBR *pr, const char *argk="pool");
@@ -283,6 +293,7 @@ int find_arg(UAContext *ua, const char *keyword);
 int find_arg_with_value(UAContext *ua, const char *keyword);
 int do_keyword_prompt(UAContext *ua, const char *msg, const char **list);
 int confirm_retention(UAContext *ua, utime_t *ret, const char *msg);
+int confirm_retention_yesno(UAContext *ua, utime_t ret, const char *msg);
 bool get_level_from_name(JCR *jcr, const char *level_name);
 
 /* ua_status.c */
@@ -316,8 +327,19 @@ void purge_files_from_job_list(UAContext *ua, del_ctx &del);
 
 /* ua_run.c */
 extern int run_cmd(UAContext *ua, const char *cmd);
+extern int restart_cmd(UAContext *ua, const char *cmd);
 
 /* verify.c */
 extern bool do_verify(JCR *jcr);
 extern bool do_verify_init(JCR *jcr);
 extern void verify_cleanup(JCR *jcr, int TermCode);
+
+/* snapshot.c */
+int  select_snapshot_dbr(UAContext *ua, SNAPSHOT_DBR *sr);
+void snapshot_list(UAContext *ua, int i, DB_LIST_HANDLER *sendit, e_list_type llist);
+int  snapshot_cmd(UAContext *ua, const char *cmd);
+int  snapshot_catreq(JCR *jcr, BSOCK *bs);
+int  delete_snapshot(UAContext *ua);
+bool update_snapshot(UAContext *ua);
+int prune_snapshot(UAContext *ua);
+bool send_snapshot_retention(JCR *jcr, utime_t val);

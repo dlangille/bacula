@@ -1,55 +1,49 @@
-
+#ifndef VERSION_H
+#define VERSION_H
 #undef  VERSION
-#define VERSION "7.0.6"
-#define BDATE   "21 November 2014"
-#define LSMDATE "21Nov14"
 
-#define PROG_COPYRIGHT "Copyright (C) %d-2014 Free Software Foundation Europe e.V.\n"
-#define BYEAR "2014"       /* year for copyright messages in progs */
+#define COMMUNITY 1      /* Define to create a Windows community binary */
 
-/*
- * Versions of packages needed to build Bacula components
- */
-#define DEPKGS_QT_VERSION  "01Jan13"
-#define DEPKGS_VERSION     "29Feb12"
-#define BQT4_VERSION       "4.8.4"
+/* Note: there can be only *one* VERSION in this file */
+#define VERSION "7.2.0"
+#define BDATE   "12 August 2015"
+#define LSMDATE "02Aug15"
 
+#define RELEASE 1   /* Use ONLY in rpms */
+
+#define PROG_COPYRIGHT "Copyright (C) %d-2015 Kern Sibbald.\n"
+#define BYEAR "2015"       /* year for copyright messages in progs */
 
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
+   Copyright (C) 2000-2015 Kern Sibbald
+   Copyright (C) 2000-2015 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
-
-/* Shared object library versions */
-
-/* Uncomment to overwrite default value from VERSION */
-/* #define LIBBAC_LT_RELEASE     "5.1.0" */
-/* #define LIBBACCFG_LT_RELEASE  "5.1.0" */
-/* #define LIBBACPY_LT_RELEASE   "5.1.0" */
-/* #define LIBBACSQL_LT_RELEASE  "5.1.0" */
-/* #define LIBBACCATS_LT_RELEASE  "5.1.0" */
-/* #define LIBBACFIND_LT_RELEASE "5.1.0" */
-
 
 /* Debug flags */
 #undef  DEBUG
 #define DEBUG 1
 #define TRACEBACK 1
 #define TRACE_FILE 1
+#define ENTER_LEAVE 1
+//#define FORCE_ALIGNED 1
 
 /* If this is set stdout will not be closed on startup */
-/* #define DEVELOPER 1 */
+#define DEVELOPER 1
 
 /* adjust DEVELOPER_MODE for status command */
 #ifdef DEVELOPER
@@ -66,6 +60,8 @@
 #ifdef DEVELOPER
 # define SMCHECK
 #endif
+
+#define BEEF 0
 
 /*
  * _USE_LOCKMGR does lock/unlock mutex tracking (dead lock)
@@ -119,7 +115,7 @@
  * for more safety, but is 30 times slower than above
  */
 #define SQLITE3_INIT_QUERY "PRAGMA synchronous = NORMAL"
-
+   
 /*
  * This should always be on. It enables data encryption code
  *  providing it is configured.
@@ -140,7 +136,6 @@
 /* #define DEBUG_MEMSET 1 */
 /* #define DEBUG_MUTEX 1 */
 /* #define DEBUG_BLOCK_CHECKSUM 1 */
-#define BEEF 0
 
 /*
  * Set SMALLOC_SANITY_CHECK to zero to turn off, otherwise
@@ -190,3 +185,5 @@
  *  eliminate the comm time sending to the SD.
  */
 /* #define FD_NO_SEND_TEST 1 */
+
+#endif  /* VERSION_H */

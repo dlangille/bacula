@@ -1,27 +1,29 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2007-2009 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
-*/
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
 
+   Bacula(R) is a registered trademark of Kern Sibbald.
+*/
+ 
 /*
- *   Version $Id$
- *
  *  Clients Class
  *
  *   Dirk Bartley, March 2007
  *
- */
+ */ 
 
 #include "bat.h"
 #include <QAbstractEventDispatcher>
@@ -55,7 +57,7 @@ Clients::~Clients()
 }
 
 /*
- * The main meat of the class!!  The function that queries the director and
+ * The main meat of the class!!  The function that queries the director and 
  * creates the widgets with appropriate values.
  */
 void Clients::populateTable()
@@ -115,6 +117,10 @@ void Clients::populateTable()
          foreach (QString resultline, results) {
             QStringList fieldlist = resultline.split("\t");
 
+            if (fieldlist.size() < 5) { // Uname is checked after
+               Pmsg1(0, "Unexpected line %s\n", resultline.toUtf8().data());
+               continue;
+            }
             if (m_firstpopulation) {
                settingsOpenStatus(fieldlist[0]);
             }
@@ -141,7 +147,11 @@ void Clients::populateTable()
             item.setNumericFld(col++, fld.next());
 
             /* uname */
-            item.setTextFld(col++, fld.next());
+            if (fld.hasNext()) {
+               item.setTextFld(col++, fld.next());
+            } else {
+               item.setTextFld(col++, "");
+            }
 
             row++;
          }
@@ -150,7 +160,7 @@ void Clients::populateTable()
    /* set default sorting */
    tableWidget->sortByColumn(sortcol, sortord);
    tableWidget->setSortingEnabled(true);
-
+   
    /* Resize rows and columns */
    tableWidget->resizeColumnsToContents();
    tableWidget->resizeRowsToContents();
@@ -214,8 +224,8 @@ void Clients::tableItemChanged(QTableWidgetItem *currentwidgetitem, QTableWidget
    }
 }
 
-/*
- * Setup a context menu
+/* 
+ * Setup a context menu 
  * Made separate from populate so that it would not create context menu over and
  * over as the tree is repopulated.
  */
@@ -274,7 +284,7 @@ void Clients::currentStackItem()
 }
 
 /*
- * Function responding to actionPurgeJobs
+ * Function responding to actionPurgeJobs 
  */
 void Clients::consolePurgeJobs()
 {

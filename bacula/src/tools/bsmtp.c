@@ -1,55 +1,46 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2001-2014 Free Software Foundation Europe e.V.
+   Copyright (C) 2000-2015 Kern Sibbald
+   Copyright (C) 2001-2015 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
-   Derived from a SMTPclient:
+   Derived from smtp-orig.c
 
-  ======== Original copyrights ==========
-
-       SMTPclient -- simple SMTP client
-
-       Copyright (c) 1997 Ralf S. Engelschall, All rights reserved.
-
-       This program is free software; it may be redistributed and/or modified
-       only under the terms of either the Artistic License or the GNU General
-       Public License, which may be found in the SMTP source distribution.
-       Look at the file COPYING.
-
-       This program is distributed in the hope that it will be useful, but
-       WITHOUT ANY WARRANTY; without even the implied warranty of
-       MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-       GNU General Public License for more details.
-
-       ======================================================================
-
-       smtpclient_main.c -- program source
-
-       Based on smtp.c as of August 11, 1995 from
-           W.Z. Venema,
-           Eindhoven University of Technology,
-           Department of Mathematics and Computer Science,
-           Den Dolech 2, P.O. Box 513, 5600 MB Eindhoven, The Netherlands.
-
-   =========
-
+   AUTHOR(S)
+     W.Z. Venema
+     Eindhoven University of Technology
+     Department of Mathematics and Computer Science
+     Den Dolech 2, P.O. Box 513, 5600 MB Eindhoven, The Netherlands
+   CREATION DATE
+     Wed Dec 1 14:51:13 MET 1993
+   LAST UPDATE
+     Fri Aug 11 12:29:23 MET DST 1995
+   COPYRIGHT
+     None specified.
 
    Kern Sibbald, July 2001
 
      Note, the original W.Z. Venema smtp.c had no license and no
      copyright.  See:
         http://archives.neohapsis.com/archives/postfix/2000-05/1520.html
+
+    In previous versions, I believed that this code cam from
+     Ralf S. Engelshall's smtpclient_main.c, but in fact 99% was
+     Wietse Venema's code.
  */
 
 #include "bacula.h"
@@ -59,7 +50,6 @@
 #if defined(HAVE_WIN32)
 #include <lmcons.h>
 #endif
-
 
 #ifndef MAXSTRING
 #define MAXSTRING 254
@@ -85,7 +75,7 @@ static char my_hostname[MAXSTRING];
 static bool content_utf8 = false;
 static resolv_type default_resolv_type = RESOLV_PROTO_IPV4;
 
-/*
+/* 
  * Take input that may have names and other stuff and strip
  *  it down to the mail box address ... i.e. what is enclosed
  *  in < >.  Otherwise add < >.
@@ -105,68 +95,71 @@ static char *cleanup_addr(char *addr, char *buf, int buf_len)
          *q++ = *p;
       }
       *q = 0;
-  }
-  Dmsg2(100, "cleanup in=%s out=%s\n", addr, buf);
-  return buf;
+   }
+   Dmsg2(100, "cleanup in=%s out=%s\n", addr, buf);
+   return buf;
 }
 
 /*
- *  examine message from server
+ * get_response - examine message from server
  */
 static void get_response(void)
 {
-    char buf[1000];
+   char buf[1000];
 
-    Dmsg0(50, "Calling fgets on read socket rfp.\n");
-    buf[3] = 0;
-    while (fgets(buf, sizeof(buf), rfp)) {
-        int len = strlen(buf);
-        if (len > 0) {
-           buf[len-1] = 0;
-        }
-        if (debug_level >= 10) {
-            fprintf(stderr, "%s <-- %s\n", mailhost, buf);
-        }
-        Dmsg2(10, "%s --> %s\n", mailhost, buf);
-        if (!isdigit((int)buf[0]) || buf[0] > '3') {
-            Pmsg2(0, _("Fatal malformed reply from %s: %s\n"), mailhost, buf);
-            exit(1);
-        }
-        if (buf[3] != '-') {
-            break;
-        }
-    }
-    if (ferror(rfp)) {
-        fprintf(stderr, _("Fatal fgets error: ERR=%s\n"), strerror(errno));
-    }
-    return;
+   Dmsg0(50, "Calling fgets on read socket rfp.\n");
+   buf[3] = 0;
+   while (fgets(buf, sizeof(buf), rfp)) {
+      int len = strlen(buf);
+      if (len > 0) {
+         buf[len-1] = 0;
+      }
+      if (debug_level >= 10) {
+         fprintf(stderr, "%s <-- %s\n", mailhost, buf);
+      }
+      Dmsg2(10, "%s --> %s\n", mailhost, buf);
+      if (!isdigit((int)buf[0]) || buf[0] > '3') {
+         Pmsg2(0, _("Fatal malformed reply from %s: %s\n"), mailhost, buf);
+         exit(1);
+      }
+      if (buf[3] != '-') {
+         break;
+      }
+   }
+   if (ferror(rfp)) {
+      fprintf(stderr, _("Fatal fgets error: ERR=%s\n"), strerror(errno));
+   }
+   return;
 }
 
 /*
- *  say something to server and check the response
+ * chat - say something to server and check the response
  */
 static void chat(const char *fmt, ...)
 {
-    va_list ap;
+   va_list ap;
 
-    va_start(ap, fmt);
-    vfprintf(sfp, fmt, ap);
-    va_end(ap);
-    if (debug_level >= 10) {
-       fprintf(stdout, "%s --> ", my_hostname);
-       va_start(ap, fmt);
-       vfprintf(stdout, fmt, ap);
-       va_end(ap);
-    }
+   va_start(ap, fmt);
+   vfprintf(sfp, fmt, ap);
+   va_end(ap);
+   if (debug_level >= 10) {
+      fprintf(stdout, "%s --> ", my_hostname);
+      va_start(ap, fmt);
+      vfprintf(stdout, fmt, ap);
+      va_end(ap);
+   }
 
-    fflush(sfp);
-    if (debug_level >= 10) {
-       fflush(stdout);
-    }
-    get_response();
+   /* Send message to server and parse its response. */
+   fflush(sfp);
+   if (debug_level >= 10) {
+      fflush(stdout);
+   }
+   get_response();
 }
 
-
+/*
+ * usage - explain and bail out
+ */
 static void usage()
 {
    fprintf(stderr,
@@ -274,7 +267,7 @@ int main (int argc, char *argv[])
 #else
    const char *options = "48ac:d:f:h:r:s:l:?";
 #endif
-
+    
    setlocale(LC_ALL, "en_US");
    bindtextdomain("bacula", LOCALEDIR);
    textdomain("bacula");
@@ -382,7 +375,7 @@ int main (int argc, char *argv[])
 
    /*
     *  Find out my own host name for HELO;
-    *  if possible, get the fully qualified domain name
+    *  if possible, get the FQDN - fully qualified domain name
     */
    if (gethostname(my_hostname, sizeof(my_hostname) - 1) < 0) {
       Pmsg1(0, _("Fatal gethostname error: ERR=%s\n"), strerror(errno));
@@ -568,14 +561,14 @@ lookup_host:
 #endif
 
    /*
-    *  Send SMTP headers.  Note, if any of the strings have a <
-    *   in them already, we do not enclose the string in < >, otherwise
-    *   we do.
+    * Send SMTP headers.  Note, if any of the strings have a <
+    *  in them already, we do not enclose the string in < >, otherwise
+    *  we do.
     */
    get_response(); /* banner */
    chat("HELO %s\r\n", my_hostname);
    chat("MAIL FROM:%s\r\n", cleanup_addr(from_addr, buf, sizeof(buf)));
-
+   
    for (i = 0; i < argc; i++) {
       Dmsg1(20, "rcpt to: %s\n", argv[i]);
       chat("RCPT TO:%s\r\n", cleanup_addr(argv[i], buf, sizeof(buf)));
@@ -588,7 +581,7 @@ lookup_host:
    chat("DATA\r\n");
 
    /*
-    *  Send message header
+    * Send header
     */
    fprintf(sfp, "From: %s\r\n", from_addr);
    Dmsg1(10, "From: %s\r\n", from_addr);
@@ -652,7 +645,7 @@ lookup_host:
    fprintf(sfp, "\r\n");
 
    /*
-    *  Send message body
+    * Send message body
     */
    lines = 0;
    while (fgets(buf, sizeof(buf), stdin)) {
@@ -682,9 +675,5 @@ lookup_host:
     */
    chat(".\r\n");
    chat("QUIT\r\n");
-
-   /*
-    *  Go away gracefully ...
-    */
    exit(0);
 }

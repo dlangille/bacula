@@ -1,9 +1,13 @@
 #!/bin/sh
 #
-# Run a simple backup of the Bacula build directory then create some           
-#   new files, do an Incremental and restore those two files.
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
 #
-TestName="incremental-test"
+
+#
+# Test the "comment" option of "run" command
+#
+TestName="comment-test"
 JobName=Incremental 
 . scripts/functions
 
@@ -21,7 +25,7 @@ change_jobname CompressedTest $JobName
 start_test
 
 cat <<END_OF_DATA >${tmp}/bconcmds
-@$out /dev/null
+@output /dev/null
 messages
 @$out ${tmp}/log1.out
 run comment="This is a comment for $JobName" job=$JobName yes
@@ -49,7 +53,7 @@ echo "ficheriro1.txt" >${tmpsrc}/ficheriro1.txt
 cp -f ${tmpsrc}/dird.c ${tmpsrc}/ficheriro2.txt
 
 cat <<END_OF_DATA >${tmp}/bconcmds
-@$out /dev/null
+@output /dev/null
 messages
 @$out ${tmp}/log1.out
 @# Force Incremental on the second Volume
@@ -71,7 +75,7 @@ END_OF_DATA
 run_bconsole
 
 cat <<END_OF_DATA >${tmp}/bconcmds
-@$out /dev/null
+@output /dev/null
 messages
 @$out ${tmp}/log2.out
 @# 

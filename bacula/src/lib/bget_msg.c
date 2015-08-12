@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2001-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *  Subroutines to receive network data and handle
@@ -21,7 +25,8 @@
  *
  */
 
-#include "bacula.h"                   /* pull in global headers */
+#include "bacula.h"
+#include "jcr.h"
 
 static char OK_msg[]   = "2000 OK\n";
 static char TERM_msg[] = "2999 Terminate\n";
@@ -38,6 +43,7 @@ static char TERM_msg[] = "2999 Terminate\n";
  * Returns -1 on signal (BNET_SIGNAL)
  * Returns -2 on hard end of file (BNET_HARDEOF)
  * Returns -3 on error  (BNET_ERROR)
+ * Returns -4 on Command (BNET_COMMAND)
  */
 int bget_msg(BSOCK *sock)
 {
@@ -90,4 +96,70 @@ int bget_msg(BSOCK *sock)
          break;
       }
    }
+}
+
+bmessage::bmessage(int bufsize)
+{
+   msg = get_pool_memory(PM_BSOCK);
+   msg = realloc_pool_memory(msg, bufsize);
+   status = bmessage::bm_busy;
+   jobbytes = 0;
+}
+
+bmessage::~bmessage()
+{
+   free_pool_memory(msg);
+}
+
+void bmessage::swap(BSOCK *sock)
+{
+   POOLMEM *swap = sock->msg;
+   sock->msg = msg;
+   msg = swap;
+}
+
+GetMsg::GetMsg(JCR *a_jcr, BSOCK *a_bsock, const char *a_rec_header, int32_t a_bufsize):
+      jcr(a_jcr),
+      bsock(a_bsock),
+      rec_header(a_rec_header),
+      bufsize(a_bufsize),
+      m_is_stop(false),
+      m_is_done(false),
+      m_is_error(false),
+      m_use_count(1)
+{
+   jcr->inc_use_count();        /* We own a copy of the JCR */
+   bmsg_aux = New(bmessage(bufsize));
+   bmsg = bmsg_aux;
+   pthread_mutex_init(&mutex, 0);
+   pthread_cond_init(&cond, NULL);
+};
+
+GetMsg::~GetMsg()
+{
+   free_jcr(jcr);               /* Release our copy of the JCR */
+   delete bmsg_aux;
+   pthread_mutex_destroy(&mutex);
+   pthread_cond_destroy(&cond);
+};
+
+int GetMsg::bget_msg(bmessage **pbmsg)
+{
+   // Get our own local copy of the socket
+
+   if (pbmsg == NULL) {
+      pbmsg = &bmsg_aux;
+   }
+   bmessage *bmsg = *pbmsg;
+   bmsg->ret = ::bget_msg(bsock);
+   bmsg->status = bmessage::bm_ready;
+   bmsg->rbuflen = bmsg->msglen = bmsg->origlen = bsock->msglen;
+/*   bmsg->is_header = !bmsg->is_header; ALAIN SAYS: I think this line is useless */
+   /* swap msg instead of copying */
+   bmsg->swap(bsock);
+   bmsg->rbuf = bmsg->msg;
+
+   msglen = bmsg->msglen;
+   msg = bmsg->msg;
+   return bmsg->ret;
 }

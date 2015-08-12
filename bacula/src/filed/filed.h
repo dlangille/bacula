@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2001-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  * Bacula File Daemon specific configuration and defines
@@ -20,45 +24,45 @@
  *
  */
 
-/*
- * Number of acl errors to report per job.
- */
-#define ACL_REPORT_ERR_MAX_PER_JOB      25
+//#define TEST_WORKER
+#ifdef  TEST_WORKER
+#define ERROR_BUFFER_OVERFLOW 1
+#define ERROR_SUCCESS 0
+#endif
 
-/*
- * Number of xattr errors to report per job.
- */
-#define XATTR_REPORT_ERR_MAX_PER_JOB    25
 
-/*
- * Return codes from acl subroutines.
- */
-typedef enum {
-   bacl_exit_fatal = -1,
-   bacl_exit_error = 0,
-   bacl_exit_ok = 1
-} bacl_exit_code;
-
-/*
- * Return codes from xattr subroutines.
- */
-typedef enum {
-   bxattr_exit_fatal = -1,
-   bxattr_exit_error = 0,
-   bxattr_exit_ok = 1
-} bxattr_exit_code;
+/* acl errors to report per job. */
+#define ACL_MAX_ERROR_PRINT_PER_JOB   25
+ 
+/* xattr errors to report per job. */
+#define XATTR_MAX_ERROR_PRINT_PER_JOB 25
+ 
+/* Return values from acl subroutines. */
+enum bacl_rtn_code {
+   bacl_rtn_fatal = -1,
+   bacl_rtn_error =  0,
+   bacl_rtn_ok    =  1
+};
+ 
+/* Return values from xattr subroutines. */
+enum bxattr_rtn_code {
+   bxattr_rtn_fatal = -1,
+   bxattr_rtn_error =  0,
+   bxattr_rtn_ok    =  1
+};
 
 #define FILE_DAEMON 1
-#include "lib/htable.h"
-#include "filed_conf.h"
-#include "fd_plugins.h"
-#include "findlib/find.h"
-#include "acl.h"
-#include "xattr.h"
-#include "jcr.h"
-#include "protos.h"                   /* file daemon prototypes */
-#include "lib/runscript.h"
-#include "lib/breg.h"
+#include  "lib/htable.h"
+#include  "filed_conf.h"
+#include  "fd_plugins.h"
+#include  "fd_snapshot.h"
+#include  "findlib/find.h"
+#include  "acl.h"
+#include  "xattr.h"
+#include  "jcr.h"
+#include  "protos.h"                   /* file daemon prototypes */
+#include  "lib/runscript.h"
+#include  "lib/breg.h"
 #ifdef HAVE_LIBZ
 #include <zlib.h>                     /* compression headers */
 #else

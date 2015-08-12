@@ -9,6 +9,10 @@
 #   "Media Type" in the Device resource, please ensure
 #   that dird.conf has corresponding changes.
 #
+#
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
 
 Storage {                             # definition of myself
   Name = @basename@-sd
@@ -39,6 +43,8 @@ Director {
 #
 # Note, for a list of additional Device templates please
 #  see the directory <bacula-source>/examples/devices
+# Or follow the following link:
+#  http://bacula.svn.sourceforge.net/viewvc/bacula/trunk/bacula/examples/devices/
 #
 
 #

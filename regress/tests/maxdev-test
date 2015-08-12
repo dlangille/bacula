@@ -1,4 +1,4 @@
-#!/bin/sh
+                                  #!/bin/sh
 #
 # Run backups with dummy tape driver
 # This test setups an Autochanger with 80 slots
@@ -135,4 +135,3 @@ if [ $? -ne 0 ]; then
     estat=1
 fi
 end_test
-

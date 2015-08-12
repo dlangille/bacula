@@ -1,5 +1,10 @@
 #!/bin/sh
 #
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+
+#
 # Run backups with dummy tape driver
 # This test setups an Autochanger with 800 slots
 # and 5 drives (3 LTO3 and 2 LTO1)
@@ -101,15 +106,19 @@ run level=full storage=LTO3 when="$when1" job=NightlySave9 pool=Full    yes
 @#sleep 30
 cancel
 1
+yes
 @sleep 1
 cancel
 1
+yes
 @sleep 1
 cancel
 1
+yes
 @sleep 1
 cancel
 1
+yes
 wait
 messages
 quit

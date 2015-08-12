@@ -1,24 +1,28 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2007-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
-*/
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
 
+   Bacula(R) is a registered trademark of Kern Sibbald.
+*/
+ 
 /*
  *  Jobs Class
  *
  *   Dirk Bartley, March 2007
- */
+ */ 
 
 #include "bat.h"
 #include "jobs/jobs.h"
@@ -51,7 +55,7 @@ Jobs::~Jobs()
 }
 
 /*
- * The main meat of the class!!  The function that querries the director and
+ * The main meat of the class!!  The function that querries the director and 
  * creates the widgets with appropriate values.
  */
 void Jobs::populateTable()
@@ -65,9 +69,9 @@ void Jobs::populateTable()
    m_checkcurwidget = false;
    tableWidget->clear();
    m_checkcurwidget = true;
-   QStringList headerlist = (QStringList() << tr("Job Name")
-      << tr("Pool") << tr("Messages") << tr("Client")
-      << tr("Storage") << tr("Level") << tr("Type")
+   QStringList headerlist = (QStringList() << tr("Job Name") 
+      << tr("Pool") << tr("Messages") << tr("Client") 
+      << tr("Storage") << tr("Level") << tr("Type") 
       << tr("FileSet") << tr("Catalog") << tr("Enabled")
       << tr("Where"));
 
@@ -89,7 +93,7 @@ void Jobs::populateTable()
       if (m_console->get_job_defaults(job_defs)) {
          int col = 0;
          TableItemFormatter jobsItem(*tableWidget, row);
-         jobsItem.setTextFld(col++, jobName);
+         jobsItem.setTextFld(col++, jobName); 
          jobsItem.setTextFld(col++, job_defs.pool_name);
          jobsItem.setTextFld(col++, job_defs.messages_name);
          jobsItem.setTextFld(col++, job_defs.client_name);
@@ -106,7 +110,7 @@ void Jobs::populateTable()
    /* set default sorting */
    tableWidget->sortByColumn(headerlist.indexOf(tr("Job Name")), Qt::AscendingOrder);
    tableWidget->setSortingEnabled(true);
-
+   
    /* Resize rows and columns */
    tableWidget->resizeColumnsToContents();
    tableWidget->resizeRowsToContents();
@@ -165,8 +169,8 @@ void Jobs::tableItemChanged(QTableWidgetItem *currentwidgetitem, QTableWidgetIte
    }
 }
 
-/*
- * Setup a context menu
+/* 
+ * Setup a context menu 
  * Made separate from populate so that it would not create context menu over and
  * over as the table is repopulated.
  */
@@ -252,7 +256,7 @@ void Jobs::listJobs()
 }
 
 /*
- * Open a new job run page with the currently selected job
+ * Open a new job run page with the currently selected job 
  * defaulted In
  */
 void Jobs::runJob()

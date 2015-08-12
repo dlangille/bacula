@@ -1,23 +1,25 @@
 #ifndef _JOBPLOT_H_
 #define _JOBPLOT_H_
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2007-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
- *   Version $Id$
- *
  *   Dirk Bartley, March 2007
  */
 
@@ -48,7 +50,7 @@ struct PlotJobData
 
 /*
  * Class for the purpose of having a single object to pass data to the JobPlot
- * Constructor.  The other option was a constructor with this many passed
+ * Constructor.  The other option was a constructor with this many passed 
  * values or some sort of code to parse a list.  I liked this best at the time.
  */
 class JobPlotPass
@@ -100,7 +102,7 @@ public:
  */
 class JobPlot : public Pages
 {
-   Q_OBJECT
+   Q_OBJECT 
 
 public:
    JobPlot(QTreeWidgetItem *parentTreeWidgetItem, JobPlotPass &);

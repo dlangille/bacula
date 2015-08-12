@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2002-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *
@@ -103,6 +107,7 @@ int prunecmd(UAContext *ua, const char *cmd)
       NT_("Jobs"),
       NT_("Volume"),
       NT_("Stats"),
+      NT_("Snapshots"),
       NULL};
 
    if (!open_new_client_db(ua)) {
@@ -111,7 +116,7 @@ int prunecmd(UAContext *ua, const char *cmd)
 
    /* First search args */
    kw = find_arg_keyword(ua, keywords);
-   if (kw < 0 || kw > 3) {
+   if (kw < 0 || kw > 4) {
       /* no args, so ask user */
       kw = do_keyword_prompt(ua, _("Choose item to prune"), keywords);
    }
@@ -189,6 +194,9 @@ int prunecmd(UAContext *ua, const char *cmd)
       }
       prune_stats(ua, retention);
       return true;
+   case 4:  /* prune snapshots */
+      prune_snapshot(ua);
+      return true;
    default:
       break;
    }
@@ -237,7 +245,7 @@ bool prune_set_filter(UAContext *ua, CLIENT *client, POOL *pool, utime_t period,
    db_lock(ua->db);
    if (client) {
       db_escape_string(ua->jcr, ua->db, ed2,
-                       client->name(), strlen(client->name()));
+         client->name(), strlen(client->name()));
       Mmsg(tmp, " AND Client.Name = '%s' ", ed2);
       pm_strcat(*add_where, tmp.c_str());
       pm_strcat(*add_from, " JOIN Client USING (ClientId) ");
@@ -245,7 +253,7 @@ bool prune_set_filter(UAContext *ua, CLIENT *client, POOL *pool, utime_t period,
 
    if (pool) {
       db_escape_string(ua->jcr, ua->db, ed2,
-                       pool->name(), strlen(pool->name()));
+              pool->name(), strlen(pool->name()));
       Mmsg(tmp, " AND Pool.Name = '%s' ", ed2);
       pm_strcat(*add_where, tmp.c_str());
       /* Use ON() instead of USING for some old SQLite */
@@ -360,7 +368,7 @@ static void drop_temp_tables(UAContext *ua)
 static bool create_temp_tables(UAContext *ua)
 {
    /* Create temp tables and indicies */
-   if (!db_sql_query(ua->db, create_deltabs[db_get_type_index(ua->db)], NULL, (void *)NULL)) {
+   if (!db_sql_query(ua->db, create_deltabs[ua->db->bdb_get_type_index()], NULL, (void *)NULL)) {
       ua->error_msg("%s", db_strerror(ua->db));
       Dmsg0(100, "create DelTables table failed\n");
       return false;
@@ -543,7 +551,7 @@ int prune_jobs(UAContext *ua, CLIENT *client, POOL *pool, int JobType)
    foreach_alist(elt, jobids_check) {
       jr.ClientId = elt->ClientId;   /* should be always the same */
       jr.FileSetId = elt->FileSetId;
-      db_accurate_get_jobids(ua->jcr, ua->db, &jr, &tempids);
+      db_get_accurate_jobids(ua->jcr, ua->db, &jr, &tempids);
       jobids.add(tempids);
    }
 
@@ -647,7 +655,7 @@ static bool prune_expired_volumes(UAContext *ua)
    if ((i = find_arg_with_value(ua, "mediatype")) >= 0) {
       char ed1[MAX_ESCAPE_NAME_LENGTH];
       db_escape_string(ua->jcr, ua->db, ed1,
-                       ua->argv[i], strlen(ua->argv[i]));
+         ua->argv[i], strlen(ua->argv[i]));
       Mmsg(query, " AND MediaType = '%s' ", ed1);
       pm_strcat(filter, query.c_str());
    }
@@ -665,7 +673,7 @@ static bool prune_expired_volumes(UAContext *ua)
 
    lst = New(alist(5, owned_by_alist));
 
-   Mmsg(query,  expired_volumes[db_get_type_index(ua->db)], filter.c_str());
+   Mmsg(query, expired_volumes[db_get_type_index(ua->db)], filter.c_str());
    db_sql_query(ua->db, query.c_str(), db_string_list_handler, &lst);
 
    foreach_alist(val, lst) {
@@ -673,7 +681,9 @@ static bool prune_expired_volumes(UAContext *ua)
       bstrncpy(mr.VolumeName, val, sizeof(mr.VolumeName));
       db_get_media_record(ua->jcr, ua->db, &mr);
       Mmsg(query, _("Volume \"%s\""), val);
+      Dmsg1(100, "Do prune %s\n", query.c_str());
       if (confirm_retention(ua, &mr.VolRetention, query.c_str())) {
+         Dmsg1(100, "Call Prune %s\n", query.c_str());
          prune_volume(ua, &mr);
       }
    }
@@ -715,9 +725,15 @@ bool prune_volume(UAContext *ua, MEDIA_DBR *mr)
       count = get_prune_list_for_volume(ua, mr, &del);
       Dmsg1(100, "Num pruned = %d\n", count);
       if (count != 0) {
+         ua->info_msg(_("Found %d Job(s) associated with the Volume \"%s\" that will be pruned\n"),
+                      count, mr->VolumeName);
          purge_job_list_from_catalog(ua, del);
+
+      } else {
+         ua->info_msg(_("Found no Job associated with the Volume \"%s\" to prune\n"),
+                      mr->VolumeName);
       }
-      ok = is_volume_purged(ua, mr);
+      ok = is_volume_purged(ua, mr, false);
    }
 
    db_unlock(ua->db);
@@ -749,7 +765,7 @@ int get_prune_list_for_volume(UAContext *ua, MEDIA_DBR *mr, del_ctx *del)
    now = (utime_t)time(NULL);
    edit_int64(now-period, ed2);
    Mmsg(query, sel_JobMedia, ed1, ed2);
-   Dmsg3(250, "Now=%d period=%d now-period=%s\n", (int)now, (int)period,
+   Dmsg3(200, "Now=%d period=%d now-period=%s\n", (int)now, (int)period,
       ed2);
 
    Dmsg1(100, "Query=%s\n", query.c_str());

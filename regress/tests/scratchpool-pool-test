@@ -1,5 +1,10 @@
 #!/bin/sh
 #
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+
+#
 # Run a simple backup of the Bacula build directory 
 #  to two tapes where the maximum tape file size is set to 1M
 #  Note, this test simulates the tape filling and writing to
@@ -15,7 +20,7 @@ JobName=scratchpool-pool
 . scripts/functions
 
 # This test hangs so disable it
-exit
+#exit
 
 cwd=`pwd`
 scripts/cleanup
@@ -34,12 +39,13 @@ start_test
 
 # Write out bconsole commands
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
-@$out /dev/null
+@output /dev/null
 messages
 @$out ${cwd}/tmp/log1.out
 label storage=tape volume=TestVolume001 slot=1 pool=SpecialScratch drive=0
 label storage=tape volume=TestVolume002 slot=2 pool=SpecialScratch drive=0
-label storage=tape volume=TestVolume003 slot=3 pool=Scratch drive=0
+@#label storage=tape volume=TestVolume003 slot=3 pool=SpecialScratch drive=0
+label storage=tape volume=TestVolume004 slot=4 pool=Scratch drive=0
 show pool=Default
 show pool=Special
 @########################
@@ -61,9 +67,13 @@ messages
 @########################
 @# no more volume in SpecialScratch (but Scrach have one)
 run job=$JobName pool=Special level=Full yes
-wait mount
-@sleep 1
+@# Wait mount seems to be broken so use sleep instead
+@#wait mount
+@sleep 10
+@# At this point jobid=3 should be blocked waiting for 
+@#  the sysop to create a new Volume, so cancel the job
 cancel jobid=3
+wait
 messages
 @$out ${cwd}/tmp/log4.out
 list volume pool=Special
@@ -113,7 +123,7 @@ if [ $? -ne 0 ]; then
     dstat=2
 fi
 
-grep 'Backup Error' tmp/log3.out > /dev/null
+grep 'Backup Canceled' tmp/log3.out > /dev/null
 if [ $? -ne 0 ]; then
     print_debug "Job 3 should be in error"
     dstat=2

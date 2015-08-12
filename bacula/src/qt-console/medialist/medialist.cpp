@@ -1,25 +1,29 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2007-2010 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
-*/
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
 
+   Bacula(R) is a registered trademark of Kern Sibbald.
+*/
+ 
 /*
  *  MediaList Class
  *
  *   Dirk Bartley, March 2007
  *
- */
+ */ 
 
 #include "bat.h"
 #include <QAbstractEventDispatcher>
@@ -57,7 +61,7 @@ MediaList::~MediaList()
 }
 
 /*
- * The main meat of the class!!  The function that querries the director and
+ * The main meat of the class!!  The function that querries the director and 
  * creates the widgets with appropriate values.
  */
 void MediaList::populateTree()
@@ -86,7 +90,7 @@ void MediaList::populateTree()
    m_topItem->setText(0, tr("Pools"));
    m_topItem->setData(0, Qt::UserRole, 0);
    m_topItem->setExpanded(true);
-
+   
    mp_treeWidget->setHeaderLabels(headerlist);
 
    QSettings settings(m_console->m_dir->name(), "bat");
@@ -155,20 +159,21 @@ void MediaList::populateTree()
                pooltreeitem->setExpanded(true);
             }
 
-            if (fieldlist.size() < 18)
+            if (fieldlist.size() < 21) { // Handle recyclepool specifically, and pool is already removed
+               Pmsg2(000, "Unexpected line %s %d", resultline.toUtf8().data(), fieldlist.size());
                continue; // some fields missing, ignore row
-
+            }
             int index = 0;
             TreeItemFormatter mediaitem(*pooltreeitem, 2);
-
+  
             /* Iterate through fields in the record */
             QStringListIterator fld(fieldlist);
 
             /* volname */
-            mediaitem.setTextFld(index++, fld.next());
+            mediaitem.setTextFld(index++, fld.next()); 
 
             /* id */
-            mediaitem.setNumericFld(index++, fld.next());
+            mediaitem.setNumericFld(index++, fld.next()); 
 
             /* status */
             mediaitem.setVolStatusFld(index++, fld.next());
@@ -180,24 +185,25 @@ void MediaList::populateTree()
             mediaitem.setBytesFld(index++, fld.next());
 
             /* files */
-            mediaitem.setNumericFld(index++, fld.next());
+            mediaitem.setNumericFld(index++, fld.next()); 
 
             /* jobs */
-            mediaitem.setNumericFld(index++, fld.next());
+            mediaitem.setNumericFld(index++, fld.next()); 
 
             /* retention */
             mediaitem.setDurationFld(index++, fld.next());
 
             /* media type */
-            mediaitem.setTextFld(index++, fld.next());
+            mediaitem.setTextFld(index++, fld.next()); 
 
             /* inchanger + slot */
             int inchanger = fld.next().toInt();
             if (inchanger) {
-               mediaitem.setNumericFld(index++, fld.next());
-            } else {
+               mediaitem.setNumericFld(index++, fld.next()); 
+            }
+            else {
                /* volume not in changer, show blank slot */
-               mediaitem.setNumericFld(index++, "");
+               mediaitem.setNumericFld(index++, ""); 
                fld.next();
             }
 
@@ -205,10 +211,10 @@ void MediaList::populateTree()
             mediaitem.setDurationFld(index++, fld.next());
 
             /* max jobs */
-            mediaitem.setNumericFld(index++, fld.next());
+            mediaitem.setNumericFld(index++, fld.next()); 
 
             /* max files */
-            mediaitem.setNumericFld(index++, fld.next());
+            mediaitem.setNumericFld(index++, fld.next()); 
 
             /* max bytes */
             mediaitem.setBytesFld(index++, fld.next());
@@ -217,10 +223,10 @@ void MediaList::populateTree()
             mediaitem.setBoolFld(index++, fld.next());
 
             /* last written */
-            mediaitem.setTextFld(index++, fld.next());
+            mediaitem.setTextFld(index++, fld.next()); 
 
             /* first written */
-            mediaitem.setTextFld(index++, fld.next());
+            mediaitem.setTextFld(index++, fld.next()); 
 
             /* read time */
             mediaitem.setDurationFld(index++, fld.next());
@@ -229,10 +235,14 @@ void MediaList::populateTree()
             mediaitem.setDurationFld(index++, fld.next());
 
             /* Recycle Count */
-            mediaitem.setNumericFld(index++, fld.next());
+            mediaitem.setNumericFld(index++, fld.next()); 
 
             /* recycle pool */
-            mediaitem.setTextFld(index++, fld.next());
+            if (fld.hasNext()) {
+               mediaitem.setTextFld(index++, fld.next());
+            } else {
+               mediaitem.setTextFld(index++, "");
+            }
 
          } /* foreach resultline */
          counter += 1;
@@ -322,8 +332,8 @@ void MediaList::treeItemChanged(QTreeWidgetItem *currentwidgetitem, QTreeWidgetI
    }
 }
 
-/*
- * Setup a context menu
+/* 
+ * Setup a context menu 
  * Made separate from populate so that it would not create context menu over and
  * over as the tree is repopulated.
  */

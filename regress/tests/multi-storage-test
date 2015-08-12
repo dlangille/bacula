@@ -1,5 +1,10 @@
 #!/bin/sh
 #
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+
+#
 # This script uses the virtual disk autochanger
 #
 TestName="multi-storage-test"
@@ -42,7 +47,7 @@ start_test
 
 # Write out bconsole commands
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
-@$out /dev/null
+@output /dev/null
 messages
 @$out ${cwd}/tmp/log1.out
 label storage=tape volume=TestVolume001 Pool=Default slot=1 drive=0
@@ -61,7 +66,7 @@ echo "ficheriro2.txt" >${cwd}/build/po/ficheriro2.txt
 
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
-@$out /dev/null
+@output /dev/null
 messages
 @$out ${cwd}/tmp/log1.out
 @# Force Incremental on the second Volume

@@ -1,4 +1,8 @@
 #!/usr/bin/perl -w
+#
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
 
 =head1 NAME
 

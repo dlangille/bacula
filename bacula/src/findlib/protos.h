@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  * Prototypes for finlib directory of Bacula
@@ -31,13 +35,14 @@ int    create_file       (JCR *jcr, ATTR *attr, BFILE *ofd, int replace);
 
 /* From find.c */
 FF_PKT *init_find_files();
+void set_find_snapshot_function(FF_PKT *ff, 
+                                bool convert_path(JCR *jcr, FF_PKT *ff, dlist *filelist, dlistString *node));
 void  set_find_options(FF_PKT *ff, int incremental, time_t mtime);
 void set_find_changed_function(FF_PKT *ff, bool check_fct(JCR *jcr, FF_PKT *ff));
 int   find_files(JCR *jcr, FF_PKT *ff, int file_sub(JCR *, FF_PKT *ff_pkt, bool),
                  int plugin_sub(JCR *, FF_PKT *ff_pkt, bool));
 int   match_files(JCR *jcr, FF_PKT *ff, int sub(JCR *, FF_PKT *ff_pkt, bool));
 int   term_find_files(FF_PKT *ff);
-int   get_win32_driveletters(FF_PKT *ff, char* szDrives);
 bool  is_in_fileset(FF_PKT *ff);
 bool accept_file(FF_PKT *ff);
 
@@ -75,10 +80,11 @@ bool path_list_add(JCR *jcr, uint32_t len, char *fname);
 
 
 /* from fstype.c */
-bool fstype(const char *fname, char *fs, int fslen);
-bool fstype_equals(const char *fname, const char *fstypename);
+bool fstype(FF_PKT *ff_pkt, char *fs, int fslen);
+bool fstype_equals(const char *fname, const char *fstype_name);
 
 /* from drivetype.c */
 bool drivetype(const char *fname, char *fs, int fslen);
 
 /* from bfile.c -- see bfile.h */
+/* from namedpipe.c -- see namedpipe.h */

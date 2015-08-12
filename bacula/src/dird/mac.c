@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2004-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *
@@ -179,6 +183,13 @@ bool do_mac_init(JCR *jcr)
     *   the previous backup job "prev_job".
     */
    set_jcr_defaults(wjcr, prev_job);
+   /* fix MA 987 cannot copy/migrate jobs with a Level=VF in the job resource
+    * If the prev_job level definition is VirtualFull,
+    * change it to Incremental, otherwise the writing SD would do a VF
+    */
+   if (wjcr->getJobLevel() == L_VIRTUAL_FULL) {
+      wjcr->setJobLevel(L_INCREMENTAL);
+   }
    if (!setup_job(wjcr)) {
       Jmsg(jcr, M_FATAL, 0, _("setup job failed.\n"));
       return false;
@@ -361,7 +372,7 @@ bool do_mac(JCR *jcr)
    /* TODO: See priority with bandwidth parameter */
    if (jcr->job->max_bandwidth > 0) {
       jcr->max_bandwidth = jcr->job->max_bandwidth;
-   } else if (jcr->client->max_bandwidth > 0) {
+   } else if (jcr->client && jcr->client->max_bandwidth > 0) {
       jcr->max_bandwidth = jcr->client->max_bandwidth;
    }
 
@@ -395,7 +406,9 @@ bool do_mac(JCR *jcr)
       goto bail_out;
    }
    sd = jcr->store_bsock;
-   jcr->sd_calls_client = jcr->client->sd_calls_client;
+   if (jcr->client) {
+      jcr->sd_calls_client = jcr->client->sd_calls_client;
+   }
 
    Dmsg2(dbglevel, "Read store=%s, write store=%s\n",
       ((STORE *)jcr->rstorage->first())->name(),
@@ -607,7 +620,7 @@ void mac_cleanup(JCR *jcr, int TermCode, int writeTermCode)
 {
    char sdt[MAX_TIME_LENGTH], edt[MAX_TIME_LENGTH];
    char ec1[30], ec2[30], ec3[30], ec4[30], ec5[30], elapsed[50];
-   char ec6[50], ec7[50], ec8[50];
+   char ec6[50], ec7[50], ec8[50], ec9[30], ec10[30];
    char term_code[100], sd_term_msg[100];
    const char *term_msg;
    int msg_type = M_INFO;
@@ -662,6 +675,11 @@ void mac_cleanup(JCR *jcr, int TermCode, int writeTermCode)
            new_jobid, old_jobid);
          db_sql_query(wjcr->db, query.c_str(), NULL, NULL);
 
+         /* Move RestoreObjects */
+         Mmsg(query, "UPDATE RestoreObject SET JobId=%s WHERE JobId=%s",
+           new_jobid, old_jobid);
+         db_sql_query(wjcr->db, query.c_str(), NULL, NULL);
+
          if (jcr->job->PurgeMigrateJob) {
             /* Purge old Job record */
             purge_jobs_from_catalog(ua, old_jobid);
@@ -684,8 +702,19 @@ void mac_cleanup(JCR *jcr, int TermCode, int writeTermCode)
                       "SELECT %s, Time, LogText FROM Log WHERE JobId=%s",
               new_jobid, old_jobid);
          db_sql_query(wjcr->db, query.c_str(), NULL, NULL);
+
          Mmsg(query, "UPDATE Job SET Type='%c' WHERE JobId=%s",
               (char)JT_JOB_COPY, new_jobid);
+         db_sql_query(wjcr->db, query.c_str(), NULL, NULL);
+
+         /* Copy RestoreObjects */
+         Mmsg(query, "INSERT INTO RestoreObject (ObjectName,PluginName,RestoreObject,"
+              "ObjectLength,ObjectFullLength,ObjectIndex,ObjectType,"
+              "ObjectCompression,FileIndex,JobId) "
+        "SELECT ObjectName,PluginName,RestoreObject,"
+          "ObjectLength,ObjectFullLength,ObjectIndex,ObjectType,"
+          "ObjectCompression,FileIndex,%s FROM RestoreObject WHERE JobId=%s",
+           new_jobid, old_jobid);
          db_sql_query(wjcr->db, query.c_str(), NULL, NULL);
       }
 
@@ -792,9 +821,17 @@ void mac_cleanup(JCR *jcr, int TermCode, int writeTermCode)
    jobstatus_to_ascii(jcr->SDJobStatus, sd_term_msg, sizeof(sd_term_msg));
 
    /* Edit string for last volume size */
-   Mmsg(vol_info, _("%s (%sB)"),
+   if (mr.VolABytes != 0) {
+      Mmsg(vol_info, _("meta: %s (%sB) aligned: %s (%sB)"),
+        edit_uint64_with_commas(mr.VolBytes, ec4),
+        edit_uint64_with_suffix(mr.VolBytes, ec5),
+        edit_uint64_with_commas(mr.VolABytes, ec9),
+        edit_uint64_with_suffix(mr.VolBytes, ec10));
+   } else {
+     Mmsg(vol_info, _("%s (%sB)"),
         edit_uint64_with_commas(mr.VolBytes, ec4),
         edit_uint64_with_suffix(mr.VolBytes, ec5));
+   }
 
    Jmsg(jcr, msg_type, 0, _("%s %s %s (%s):\n"
 "  Build OS:               %s %s %s\n"
@@ -858,11 +895,6 @@ void mac_cleanup(JCR *jcr, int TermCode, int writeTermCode)
         sd_term_msg,
         term_code);
 
-   Dmsg1(100, "migrate_cleanup() wjcr=0x%x\n", jcr->wjcr);
-   if (jcr->wjcr) {
-      free_jcr(jcr->wjcr);
-      jcr->wjcr = NULL;
-   }
    Dmsg0(100, "Leave migrate_cleanup()\n");
 }
 

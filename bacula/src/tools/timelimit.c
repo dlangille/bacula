@@ -25,6 +25,8 @@
  */
 
 
+#include "../config.h"
+
 /* we hope all OS's have those..*/
 #include <sys/types.h>
 #include <sys/signal.h>
@@ -68,11 +70,15 @@
 #endif /* HAVE_SYSEXITS_H */
 
 #ifndef __unused
-#ifdef __GNUC__
-#define __unused __attribute__((unused))
-#else  /* __GNUC__ */
-#define __unused
-#endif /* __GNUC__ */
+# ifdef __GNUC__
+#  if GCC_VERSION >= 3004
+#   define __unused __attribute__((unused))
+#  else
+#   define __unused
+#  endif
+# else  /* __GNUC__ */
+#  define __unused
+# endif /* __GNUC__ */
 #endif /* __unused */
 
 #ifndef __dead2

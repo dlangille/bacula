@@ -1,22 +1,26 @@
 #ifndef _FMTWIDGETITEM_H_
 #define _FMTWIDGETITEM_H_
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2007-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
- *   TreeView formatting helpers - Riccardo Ghetta, May 2008
+ *   TreeView formatting helpers - Riccardo Ghetta, May 2008 
  */
 
 class QWidget;
@@ -68,7 +72,7 @@ public:
    };
 
 public:
-   virtual ~ItemFormatterBase();
+   virtual ~ItemFormatterBase(); 
 
    /* Prints Yes if fld is != 0, No otherwise. Centers field if center true*/
    void setBoolFld(int index, const QString &fld, bool center = true);
@@ -98,19 +102,19 @@ public:
 
    /* fld value interpreted as volume status. Colored accordingly */
    void setVolStatusFld(int index, const QString &fld, bool center = true);
-
+  
    /* fld value interpreted as job status. Colored accordingly */
    void setJobStatusFld(int index, const QString &status, bool center = true);
-
+  
    /* fld value interpreted as job type. */
    void setJobTypeFld(int index, const QString &fld, bool center = false);
-
+  
    /* fld value interpreted as job level. */
    void setJobLevelFld(int index, const QString &fld, bool center = false);
 
    /* fld value interpreted as Online/Offline */
    void setInChanger(int index, const QString &InChanger);
-
+  
    /* fld value interpreted as file or folder */
    void setFileType(int index, const QString &type);
 
@@ -174,14 +178,14 @@ class TableItemFormatter : public ItemFormatterBase
 {
 private:
 
-   /* specialized widget item - allows an optional data property for sorting */
+   /* specialized widget item - allows an optional data property for sorting */ 
    class BatSortingTableItem : public QTableWidgetItem
    {
    private:
       static const int SORTDATA_ROLE = Qt::UserRole + 100;
    public:
       BatSortingTableItem();
-
+      
       /* uses the sort data if available, reverts to default behavior othervise */
       virtual bool operator< ( const QTableWidgetItem & o ) const;
 

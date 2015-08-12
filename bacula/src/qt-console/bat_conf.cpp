@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
+   Copyright (C) 2000-2015 Kern Sibbald
+   Copyright (C) 2000-2013 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *   Main configuration file parser for Bacula User Agent
@@ -34,7 +38,6 @@
  *
  *     Kern Sibbald, January MM, September MM
  *
- *     Version $Id$
  */
 
 #include "bacula.h"
@@ -80,7 +83,7 @@ static RES_ITEM dir_items[] = {
    {"tlscacertificatedir", store_dir,  ITEM(dir_res.tls_ca_certdir), 0, 0, 0},
    {"tlscertificate", store_dir,       ITEM(dir_res.tls_certfile), 0, 0, 0},
    {"tlskey",         store_dir,       ITEM(dir_res.tls_keyfile), 0, 0, 0},
-   {"heartbeatinterval", store_time, ITEM(dir_res.heartbeat_interval), 0, ITEM_DEFAULT, 0},
+   {"heartbeatinterval", store_time, ITEM(dir_res.heartbeat_interval), 0, ITEM_DEFAULT, 5 * 60},
    {NULL, NULL, {0}, 0, 0, 0}
 };
 
@@ -95,7 +98,7 @@ static RES_ITEM con_items[] = {
    {"tlscacertificatedir", store_dir,  ITEM(con_res.tls_ca_certdir), 0, 0, 0},
    {"tlscertificate", store_dir,       ITEM(con_res.tls_certfile), 0, 0, 0},
    {"tlskey",         store_dir,       ITEM(con_res.tls_keyfile), 0, 0, 0},
-   {"heartbeatinterval", store_time, ITEM(con_res.heartbeat_interval), 0, ITEM_DEFAULT, 0},
+   {"heartbeatinterval", store_time, ITEM(con_res.heartbeat_interval), 0, ITEM_DEFAULT, 5 * 60},
    {"director",       store_str,       ITEM(con_res.director), 0, 0, 0},
    {NULL, NULL, {0}, 0, 0, 0}
 };
@@ -121,9 +124,9 @@ RES_TABLE resources[] = {
 
 
 /* Dump contents of resource */
-void dump_resource(int type, RES *reshdr, void sendit(void *sock, const char *fmt, ...), void *sock)
+void dump_resource(int type, RES *ares, void sendit(void *sock, const char *fmt, ...), void *sock)
 {
-   URES *res = (URES *)reshdr;
+   URES *res = (URES *)ares;
    bool recurse = true;
 
    if (res == NULL) {
@@ -136,15 +139,15 @@ void dump_resource(int type, RES *reshdr, void sendit(void *sock, const char *fm
    }
    switch (type) {
    case R_DIRECTOR:
-      printf(_("Director: name=%s address=%s DIRport=%d\n"), reshdr->name,
+      printf(_("Director: name=%s address=%s DIRport=%d\n"), ares->name,
               res->dir_res.address, res->dir_res.DIRport);
       break;
    case R_CONSOLE:
-      printf(_("Console: name=%s\n"), reshdr->name);
+      printf(_("Console: name=%s\n"), ares->name);
       break;
    case R_CONSOLE_FONT:
       printf(_("ConsoleFont: name=%s font face=%s\n"),
-             reshdr->name, NPRT(res->con_font.fontface));
+             ares->name, NPRT(res->con_font.fontface));
       break;
    default:
       printf(_("Unknown resource type %d\n"), type);
@@ -183,7 +186,7 @@ void free_resource(RES *sres, int type)
       if (res->dir_res.address) {
          free(res->dir_res.address);
       }
-      if (res->dir_res.tls_ctx) {
+      if (res->dir_res.tls_ctx) { 
          free_tls_context(res->dir_res.tls_ctx);
       }
       if (res->dir_res.tls_ca_certfile) {
@@ -203,7 +206,7 @@ void free_resource(RES *sres, int type)
       if (res->con_res.password) {
          free(res->con_res.password);
       }
-      if (res->con_res.tls_ctx) {
+      if (res->con_res.tls_ctx) { 
          free_tls_context(res->con_res.tls_ctx);
       }
       if (res->con_res.tls_ca_certfile) {
@@ -231,7 +234,9 @@ void free_resource(RES *sres, int type)
       printf(_("Unknown resource type %d\n"), type);
    }
    /* Common stuff again -- free the resource, recurse to next one */
-   free(res);
+   if (res) {
+      free(res);
+   }
    if (nres) {
       free_resource(nres, type);
    }

@@ -1,5 +1,10 @@
 #!/bin/sh
 #
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+
+#
 # Attempt to backup and restore a file with the bpipe plugin
 #
 TestName="plugin-test"
@@ -17,7 +22,7 @@ echo "${cwd}/README" >${cwd}/tmp/file-list
 start_test
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
-@$out /dev/null
+@output /dev/null
 messages
 @$out ${cwd}/tmp/log1.out
 label storage=File1 volume=TestVolume001
@@ -31,6 +36,8 @@ messages
 setdebug level=50 trace=1 client=$CLIENT
 run job=TestPluginTest storage=File1 yes
 wait
+run job=$JobName fileset=TestPluginSetAcceptFile1 storage=File1 yes
+wait
 status client=$CLIENT
 messages
 setdebug level=50 trace=0 client=$CLIENT
@@ -39,6 +46,23 @@ END_OF_DATA
 
 
 run_bacula
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@$out $tmp/list
+llist pluginrestoreconf jobid=2
+@$out $tmp/conf
+llist pluginrestoreconf jobid=2 id=2
+END_OF_DATA
+
+run_bconsole
+
+grep string1 $tmp/conf
+
+cat <<EOF >$tmp/obj
+string1="My string"
+string2="My other string"
+ok=no
+EOF
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
 messages
@@ -92,7 +116,8 @@ messages
 @#
 @$out ${cwd}/tmp/log3.out
 setdebug level=50 client=$CLIENT trace=1
-restore fileset=TestPluginSet where=${cwd}/tmp  select all storage=File1 done
+@putfile obj1 $tmp/obj
+restore pluginrestoreconf="2:obj1" fileset=TestPluginSet where=${cwd}/tmp  select all storage=File1 done
 yes
 wait
 setdebug level=0 client=$CLIENT trace=0
@@ -101,6 +126,41 @@ quit
 END_OF_DATA
 
 run_bconsole
+
+grep "My other string" $working/*trace > /dev/null
+if [ $? != 0 ]; then
+    print_debug "ERROR: Should find plugin restore conf"
+    estat=1
+fi
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+messages
+@# 
+@# now do a restore
+@#
+@$out ${cwd}/tmp/log3.out
+setdebug level=50 client=$CLIENT trace=1
+restore fileset=TestPluginSet where=${cwd}/tmp  select all storage=File1 done
+mod
+13
+mod
+1
+My new string
+yes
+yes
+wait
+setdebug level=0 client=$CLIENT trace=0
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+
+grep "My new string" $working/*trace > /dev/null
+if [ $? != 0 ]; then
+    print_debug "ERROR: Should find second plugin restore conf"
+    estat=1
+fi
 
 check_for_zombie_jobs storage=File1
 stop_bacula
@@ -115,6 +175,32 @@ check_two_logs
 #
 diff ${cwd}/${file} ${cwd}/tmp/${file}
 dstat=$?
+
+diff $working/restore.0 $working/torestore.0
+if [ $? != 0 ]; then
+    print_debug "ERROR: Restore object difference found"
+    dstat=$?
+fi
+
+# Look if bRC_OK = 0, bRC_Skip = 7
+grep "AcceptFile=takeme.h = 0" $working/*trace > /dev/null
+if [ $? != 0 ]; then
+    print_debug "ERROR: AcceptFile API problem, look at takeme.h"
+    estat=1
+fi
+
+grep "excludeme.o = 7" $working/*trace > /dev/null
+if [ $? != 0 ]; then
+    print_debug "ERROR: AcceptFile API problem, look at excludeme.o"
+    estat=1
+fi
+
+grep "excludeme.c = 7" $working/*trace > /dev/null
+if [ $? != 0 ]; then
+    print_debug "ERROR: AcceptFile API problem, look at excludeme.c"
+    estat=1
+fi
+
 
 # the test-plugin should create a RestoreObject, just check 
 # compare restore object before/after

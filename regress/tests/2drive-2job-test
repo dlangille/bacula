@@ -1,5 +1,10 @@
 #!/bin/sh
 #
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+
+#
 # Set prefer mounted volumes to no to try to force use of
 #   the drive swap code.
 #
@@ -29,7 +34,7 @@ sed -f ${outf} ${cwd}/tmp/1 >${cwd}/bin/bacula-dir.conf
 
 # Write out bconsole commands
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
-@$out /dev/null
+@output /dev/null
 messages
 @$out ${cwd}/tmp/log1.out
 label storage=tape volume=TestVolume001 slot=2 Pool=Default drive=0
@@ -56,7 +61,7 @@ END_OF_DATA
 run_bacula
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
-@$out /dev/null
+@output /dev/null
 messages
 @# now do a restore
 @#

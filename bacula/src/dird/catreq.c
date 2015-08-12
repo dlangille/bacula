@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2001-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *
@@ -37,27 +41,25 @@
  */
 
 /* Requests from the Storage daemon */
-static char Find_media[] = "CatReq Job=%127s FindMedia=%d pool_name=%127s media_type=%127s\n";
+static char Find_media[] = "CatReq Job=%127s FindMedia=%d pool_name=%127s media_type=%127s vol_type=%d\n";
 static char Get_Vol_Info[] = "CatReq Job=%127s GetVolInfo VolName=%127s write=%d\n";
 
 static char Update_media[] = "CatReq Job=%127s UpdateMedia VolName=%s"
-   " VolJobs=%u VolFiles=%u VolBlocks=%u VolBytes=%lld VolMounts=%u"
+   " VolJobs=%u VolFiles=%u VolBlocks=%u VolBytes=%lld VolABytes=%lld"
+   " VolHoleBytes=%lld VolHoles=%u VolMounts=%u"
    " VolErrors=%u VolWrites=%lld MaxVolBytes=%lld EndTime=%lld VolStatus=%10s"
    " Slot=%d relabel=%d InChanger=%d VolReadTime=%lld VolWriteTime=%lld"
-   " VolFirstWritten=%lld VolParts=%u\n";
+   " VolFirstWritten=%lld VolType=%u\n";
 
-static char Create_job_media[] = "CatReq Job=%127s CreateJobMedia "
-   " FirstIndex=%u LastIndex=%u StartFile=%u EndFile=%u "
-   " StartBlock=%u EndBlock=%u Copy=%d Strip=%d MediaId=%" lld "\n";
-
+static char Create_jobmedia[] = "CatReq Job=%127s CreateJobMedia\n";
 
 /* Responses  sent to Storage daemon */
 static char OK_media[] = "1000 OK VolName=%s VolJobs=%u VolFiles=%u"
-   " VolBlocks=%u VolBytes=%s"
+   " VolBlocks=%u VolBytes=%s VolABytes=%s VolHoleBytes=%s VolHoles=%u"
    " VolMounts=%u VolErrors=%u VolWrites=%s"
    " MaxVolBytes=%s VolCapacityBytes=%s VolStatus=%s Slot=%d"
    " MaxVolJobs=%u MaxVolFiles=%u InChanger=%d VolReadTime=%s"
-   " VolWriteTime=%s EndFile=%u EndBlock=%u VolParts=%u LabelType=%d"
+   " VolWriteTime=%s EndFile=%u EndBlock=%u VolType=%u LabelType=%d"
    " MediaId=%s ScratchPoolId=%s\n";
 
 static char OK_create[] = "1000 OK CreateJobMedia\n";
@@ -66,7 +68,7 @@ static char OK_create[] = "1000 OK CreateJobMedia\n";
 static int send_volume_info_to_storage_daemon(JCR *jcr, BSOCK *sd, MEDIA_DBR *mr)
 {
    int stat;
-   char ed1[50], ed4[50], ed5[50], ed6[50], ed7[50], ed8[50],
+   char ed1[50], ed2[50], ed3[50], ed4[50], ed5[50], ed6[50], ed7[50], ed8[50],
         ed9[50], ed10[50];
 
    jcr->MediaId = mr->MediaId;
@@ -74,7 +76,9 @@ static int send_volume_info_to_storage_daemon(JCR *jcr, BSOCK *sd, MEDIA_DBR *mr
    bash_spaces(mr->VolumeName);
    stat = sd->fsend(OK_media, mr->VolumeName, mr->VolJobs,
       mr->VolFiles, mr->VolBlocks, edit_uint64(mr->VolBytes, ed1),
-      mr->VolMounts, mr->VolErrors,
+      edit_uint64(mr->VolABytes, ed2),
+      edit_uint64(mr->VolHoleBytes, ed3),
+      mr->VolHoles, mr->VolMounts, mr->VolErrors,
       edit_uint64(mr->VolWrites, ed4),
       edit_uint64(mr->MaxVolBytes, ed5),
       edit_uint64(mr->VolCapacityBytes, ed6),
@@ -83,7 +87,7 @@ static int send_volume_info_to_storage_daemon(JCR *jcr, BSOCK *sd, MEDIA_DBR *mr
       edit_int64(mr->VolReadTime, ed7),
       edit_int64(mr->VolWriteTime, ed8),
       mr->EndFile, mr->EndBlock,
-      mr->VolParts,
+      mr->VolType,
       mr->LabelType,
       edit_uint64(mr->MediaId, ed9),
       edit_uint64(mr->ScratchPoolId, ed10));
@@ -92,6 +96,9 @@ static int send_volume_info_to_storage_daemon(JCR *jcr, BSOCK *sd, MEDIA_DBR *mr
    return stat;
 }
 
+/* TODO: See if we want to let the FD do all kind
+ *       of catalog request/update
+ */
 void catalog_request(JCR *jcr, BSOCK *bs)
 {
    MEDIA_DBR mr, sdmr;
@@ -101,7 +108,6 @@ void catalog_request(JCR *jcr, BSOCK *bs)
    int index, ok, label, writing;
    POOLMEM *omsg;
    POOL_DBR pr;
-   uint32_t Stripe, Copy;
    uint64_t MediaId;
    utime_t VolFirstWritten;
    utime_t VolLastWritten;
@@ -126,8 +132,8 @@ void catalog_request(JCR *jcr, BSOCK *bs)
    /*
     * Find next appendable medium for SD
     */
-   n = sscanf(bs->msg, Find_media, &Job, &index, &pool_name, &mr.MediaType);
-   if (n == 4) {
+   n = sscanf(bs->msg, Find_media, &Job, &index, &pool_name, &mr.MediaType, &mr.VolType);
+   if (n == 5) {
       memset(&pr, 0, sizeof(pr));
       bstrncpy(pr.Name, pool_name, sizeof(pr.Name));
       unbash_spaces(pr.Name);
@@ -222,11 +228,12 @@ void catalog_request(JCR *jcr, BSOCK *bs)
     */
    n = sscanf(bs->msg, Update_media, &Job, &sdmr.VolumeName,
       &sdmr.VolJobs, &sdmr.VolFiles, &sdmr.VolBlocks, &sdmr.VolBytes,
+      &sdmr.VolABytes, &sdmr.VolHoleBytes, &sdmr.VolHoles,
       &sdmr.VolMounts, &sdmr.VolErrors, &sdmr.VolWrites, &sdmr.MaxVolBytes,
       &VolLastWritten, &sdmr.VolStatus, &sdmr.Slot, &label, &sdmr.InChanger,
       &sdmr.VolReadTime, &sdmr.VolWriteTime, &VolFirstWritten,
-      &sdmr.VolParts);
-    if (n == 19) {
+      &sdmr.VolType);
+    if (n == 22) {
       db_lock(jcr->db);
       Dmsg3(400, "Update media %s oldStat=%s newStat=%s\n", sdmr.VolumeName,
          mr.VolStatus, sdmr.VolStatus);
@@ -298,12 +305,15 @@ void catalog_request(JCR *jcr, BSOCK *bs)
       mr.VolFiles     = sdmr.VolFiles;
       mr.VolBlocks    = sdmr.VolBlocks;
       mr.VolBytes     = sdmr.VolBytes;
+      mr.VolABytes    = sdmr.VolABytes;
+      mr.VolHoleBytes = sdmr.VolHoleBytes;
+      mr.VolHoles     = sdmr.VolHoles;
       mr.VolMounts    = sdmr.VolMounts;
       mr.VolErrors    = sdmr.VolErrors;
       mr.VolWrites    = sdmr.VolWrites;
       mr.Slot         = sdmr.Slot;
       mr.InChanger    = sdmr.InChanger;
-      mr.VolParts     = sdmr.VolParts;
+      mr.VolType     = sdmr.VolType;
       bstrncpy(mr.VolStatus, sdmr.VolStatus, sizeof(mr.VolStatus));
       if (sdmr.VolReadTime >= 0) {
          mr.VolReadTime  = sdmr.VolReadTime;
@@ -334,28 +344,48 @@ void catalog_request(JCR *jcr, BSOCK *bs)
    /*
     * Request to create a JobMedia record
     */
-   n = sscanf(bs->msg, Create_job_media, &Job,
-      &jm.FirstIndex, &jm.LastIndex, &jm.StartFile, &jm.EndFile,
-      &jm.StartBlock, &jm.EndBlock, &Copy, &Stripe, &MediaId);
-   if (n == 10) {
+   if (sscanf(bs->msg, Create_jobmedia, &Job) == 1) {
       if (jcr->wjcr) {
          jm.JobId = jcr->wjcr->JobId;
       } else {
          jm.JobId = jcr->JobId;
       }
-      jm.MediaId = MediaId;
-      Dmsg6(400, "create_jobmedia JobId=%d MediaId=%d SF=%d EF=%d FI=%d LI=%d\n",
-         jm.JobId, jm.MediaId, jm.StartFile, jm.EndFile, jm.FirstIndex, jm.LastIndex);
-      if (!db_create_jobmedia_record(jcr, jcr->db, &jm)) {
+      ok = true;
+      db_lock(jcr->db);
+      db_start_transaction(jcr, jcr->db);
+      while (bs->recv() >= 0) {
+         if (ok && sscanf(bs->msg, "%u %u %u %u %u %u %lld\n",
+             &jm.FirstIndex, &jm.LastIndex, &jm.StartFile, &jm.EndFile,
+             &jm.StartBlock, &jm.EndBlock, &MediaId) != 7) {
+            ok = false;
+            continue;
+         }
+         if (ok) {
+            jm.MediaId = MediaId;
+            Dmsg6(400, "create_jobmedia JobId=%d MediaId=%d SF=%d EF=%d FI=%d LI=%d\n",
+              jm.JobId, jm.MediaId, jm.StartFile, jm.EndFile, jm.FirstIndex, jm.LastIndex);
+            ok = db_create_jobmedia_record(jcr, jcr->db, &jm);
+         }
+      }
+      db_end_transaction(jcr, jcr->db);
+      if (!ok) {
          Jmsg(jcr, M_FATAL, 0, _("Catalog error creating JobMedia record. %s"),
             db_strerror(jcr->db));
+         db_unlock(jcr->db);
          bs->fsend(_("1992 Create JobMedia error\n"));
-      } else {
-         Dmsg0(400, "JobMedia record created\n");
-         bs->fsend(OK_create);
+         goto ok_out; 
       }
+      db_unlock(jcr->db);
+      Dmsg0(400, "JobMedia record created\n");
+      bs->fsend(OK_create);
       goto ok_out;
    }
+
+   /* Handle snapshot catalog request */
+   if (snapshot_catreq(jcr, bs)) {
+      goto ok_out;
+   }
+
    Dmsg1(1000, "Tried create_jobmedia. fields wanted=10, got=%d\n", n);
 
    /* Everything failed. Send error message. */
@@ -389,7 +419,7 @@ static void update_attribute(JCR *jcr, char *msg, int32_t msglen)
    uint32_t reclen;
 
    /* Start transaction allocates jcr->attr and jcr->ar if needed */
-   db_start_transaction(jcr, jcr->db);     /* start transaction if not already open */
+   db_start_transaction(jcr, jcr->db); /* start transaction if not already open */
    ar = jcr->ar;
 
    /*
@@ -595,7 +625,7 @@ static void update_attribute(JCR *jcr, char *msg, int32_t msglen)
 
             /* Update BaseFile table */
             if (!db_create_attributes_record(jcr, jcr->db, ar)) {
-               Jmsg1(jcr, M_FATAL, 0, _("attribute create error. %s"),
+               Jmsg1(jcr, M_FATAL, 0, _("attribute create error. ERR=%s"),
                         db_strerror(jcr->db));
             }
             jcr->cached_attribute = false;

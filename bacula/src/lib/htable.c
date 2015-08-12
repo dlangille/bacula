@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2003-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *  Bacula hash table routines
@@ -37,20 +41,16 @@
  */
 
 #include "bacula.h"
+#include "htable.h"
 
-#define B_PAGE_SIZE 4096
-#define MIN_PAGES 32
-#define MAX_PAGES 2400
-#define MIN_BUF_SIZE (MIN_PAGES * B_PAGE_SIZE) /* 128 Kb */
-#define MAX_BUF_SIZE (MAX_PAGES * B_PAGE_SIZE) /* approx 10MB */
-
-#define dbglvl     500
-#define dbglvl_mem DT_MEMORY|100
+#define lli long long int
+static const int dbglvl = 500;
 
 /* ===================================================================
  *    htable
  */
 
+#ifdef BIG_MALLOC
 /*
  * This subroutine gets a big buffer.
  */
@@ -65,7 +65,7 @@ void htable::malloc_big_buf(int size)
    mem_block = hmem;
    hmem->mem = mem_block->first;
    hmem->rem = (char *)hmem + size - hmem->mem;
-   Dmsg3(dbglvl_mem, "malloc buf=%p size=%d rem=%d\n", hmem, size, hmem->rem);
+   Dmsg3(100, "malloc buf=%p size=%d rem=%d\n", hmem, size, hmem->rem);
 }
 
 /* This routine frees the whole tree */
@@ -76,35 +76,45 @@ void htable::hash_big_free()
    for (hmem=mem_block; hmem; ) {
       rel = hmem;
       hmem = hmem->next;
-      Dmsg1(dbglvl_mem, "free malloc buf=%p\n", rel);
+      Dmsg1(100, "free malloc buf=%p\n", rel);
       free(rel);
    }
 }
 
+#endif
+
 /*
- * Normal hash malloc routine that gets a
+ * Normal hash malloc routine that gets a 
  *  "small" buffer from the big buffer
  */
 char *htable::hash_malloc(int size)
 {
-   int mb_size;
+#ifdef BIG_MALLOC
    char *buf;
    int asize = BALIGN(size);
 
    if (mem_block->rem < asize) {
-      if (total_size >= (extend_length / 2)) {
-         mb_size = extend_length;
+      uint32_t mb_size;
+      if (total_size >= 1000000) {
+         mb_size = 1000000;
       } else {
-         mb_size = extend_length / 2;
+         mb_size = 100000;
       }
       malloc_big_buf(mb_size);
-      Dmsg1(dbglvl_mem, "Created new big buffer of %ld bytes\n", mb_size);
    }
    mem_block->rem -= asize;
    buf = mem_block->mem;
    mem_block->mem += asize;
    return buf;
+#else 
+   total_size += size;
+   blocks++;
+   return (char *)malloc(size);
+#endif
 }
+
+
+ 
 
 /*
  * Create hash of key, stored in hash then
@@ -117,39 +127,29 @@ void htable::hash_index(char *key)
       hash +=  ((hash << 5) | (hash >> (sizeof(hash)*8-5))) + (uint32_t)*p;
    }
    /* Multiply by large prime number, take top bits, mask for remainder */
-   index = ((hash * 1103515249) >> rshift) & mask;
-   Dmsg2(dbglvl, "Leave hash_index hash=0x%llx index=%d\n", hash, index);
-}
-
-void htable::hash_index(uint32_t key)
-{
-   hash = key;
-   /* Multiply by large prime number, take top bits, mask for remainder */
-   index = ((hash * 1103515249) >> rshift) & mask;
-   Dmsg2(dbglvl, "Leave hash_index hash=0x%llx index=%d\n", hash, index);
-}
-
-void htable::hash_index(uint64_t key)
-{
-   hash = key;
-   /* Multiply by large prime number, take top bits, mask for remainder */
-   index = ((hash * 1103515249) >> rshift) & mask;
-   Dmsg2(dbglvl, "Leave hash_index hash=0x%llx index=%d\n", hash, index);
-}
-
+   index = ((hash * 1103515249LL) >> rshift) & mask;
+   Dmsg2(dbglvl, "Leave hash_index hash=0x%x index=%d\n", hash, index);
+} 
+ 
+void htable::hash_index(uint64_t ikey)
+{ 
+   hash = ikey;           /* already have starting binary hash */
+   /* Same algorithm as for char * */
+   index = ((hash * 1103515249LL) >> rshift) & mask;
+   Dmsg2(dbglvl, "Leave hash_index hash=0x%x index=%d\n", hash, index);
+} 
+ 
 /*
  * tsize is the estimated number of entries in the hash table
  */
-htable::htable(void *item, void *link, int tsize, int nr_pages)
+htable::htable(void *item, void *link, int tsize)
 {
-   init(item, link, tsize, nr_pages);
+   init(item, link, tsize);
 }
 
-void htable::init(void *item, void *link, int tsize, int nr_pages)
+void htable::init(void *item, void *link, int tsize)
 {
    int pwr;
-   int pagesize;
-   int buffer_size;
 
    memset(this, 0, sizeof(htable));
    if (tsize < 31) {
@@ -160,31 +160,15 @@ void htable::init(void *item, void *link, int tsize, int nr_pages)
       tsize >>= 1;
    }
    loffset = (char *)link - (char *)item;
-   mask = ~((~0) << pwr);             /* 3 bits => table size = 8 */
+   mask = ~((~0)<<pwr);               /* 3 bits => table size = 8 */
    rshift = 30 - pwr;                 /* start using bits 28, 29, 30 */
-   buckets = 1 << pwr;                /* hash table size -- power of two */
+   buckets = 1<<pwr;                  /* hash table size -- power of two */
    max_items = buckets * 4;           /* allow average 4 entries per chain */
    table = (hlink **)malloc(buckets * sizeof(hlink *));
    memset(table, 0, buckets * sizeof(hlink *));
-
-#ifdef HAVE_GETPAGESIZE
-   pagesize = getpagesize();
-#else
-   pagesize = B_PAGE_SIZE;
-#endif
-   if (nr_pages == 0) {
-      buffer_size = MAX_BUF_SIZE;
-   } else {
-      buffer_size = pagesize * nr_pages;
-      if (buffer_size > MAX_BUF_SIZE) {
-         buffer_size = MAX_BUF_SIZE;
-      } else if (buffer_size < MIN_BUF_SIZE) {
-         buffer_size = MIN_BUF_SIZE;
-      }
-   }
-   malloc_big_buf(buffer_size);
-   extend_length = buffer_size;
-   Dmsg1(dbglvl_mem, "Allocated big buffer of %ld bytes\n", buffer_size);
+#ifdef BIG_MALLOC
+   malloc_big_buf(1000000);   /* ***FIXME*** need variable or some estimate */
+#endif /* BIG_MALLOC */
 }
 
 uint32_t htable::size()
@@ -194,7 +178,7 @@ uint32_t htable::size()
 
 /*
  * Take each hash link and walk down the chain of items
- *  that hash there counting them (i.e. the hits),
+ *  that hash there counting them (i.e. the hits), 
  *  then report that number.
  * Obiously, the more hits in a chain, the more time
  *  it takes to reference them. Empty chains are not so
@@ -231,20 +215,17 @@ void htable::stats()
    }
    printf("buckets=%d num_items=%d max_items=%d\n", buckets, num_items, max_items);
    printf("max hits in a bucket = %d\n", max);
-   printf("total bytes malloced = %lld\n", (long long int)total_size);
-   printf("total bytes malloced = %lld\n", (long long int)total_size);
+#ifdef BIG_MALLOC
+   printf("total bytes malloced = %lld\n", (lli)total_size);
    printf("total blocks malloced = %d\n", blocks);
+#endif
 }
 
 void htable::grow_table()
 {
-   htable *big;
-   hlink *cur;
-   void *ni;
-
    Dmsg1(100, "Grow called old size = %d\n", buckets);
    /* Setup a bigger table */
-   big = (htable *)malloc(sizeof(htable));
+   htable *big = (htable *)malloc(sizeof(htable));
    memcpy(big, this, sizeof(htable));  /* start with original class data */
    big->loffset = loffset;
    big->mask = mask<<1 | 1;
@@ -267,22 +248,15 @@ void htable::grow_table()
     * to the next bucket.
     */
    for (void *item=first(); item; ) {
-      cur = (hlink *)((char *)item+loffset);
-      ni = cur->next; /* save link overwritten by insert */
-      switch (cur->key_type) {
-      case KEY_TYPE_CHAR:
-         Dmsg1(100, "Grow insert: %s\n", cur->key.char_key);
-         big->insert(cur->key.char_key, item);
-         break;
-      case KEY_TYPE_UINT32:
-         Dmsg1(100, "Grow insert: %ld\n", cur->key.uint32_key);
-         big->insert(cur->key.uint32_key, item);
-         break;
-      case KEY_TYPE_UINT64:
-         Dmsg1(100, "Grow insert: %ld\n", cur->key.uint64_key);
-         big->insert(cur->key.uint64_key, item);
-         break;
-      }
+      void *ni = ((hlink *)((char *)item+loffset))->next;  /* save link overwritten by insert */
+      hlink *hp = (hlink *)((char *)item+loffset);
+      if (hp->is_ikey) {
+         Dmsg1(100, "Grow insert: %lld\n", hp->key.ikey);
+         big->insert(hp->key.ikey, item);
+      } else {
+         Dmsg1(100, "Grow insert: %s\n", hp->key.key);
+         big->insert(hp->key.key, item);
+      }  
       if (ni) {
          item = (void *)((char *)ni-loffset);
       } else {
@@ -303,7 +277,6 @@ void htable::grow_table()
 bool htable::insert(char *key, void *item)
 {
    hlink *hp;
-
    if (lookup(key)) {
       return false;                   /* already exists */
    }
@@ -314,11 +287,11 @@ bool htable::insert(char *key, void *item)
       index, item, loffset);
    hp->next = table[index];
    hp->hash = hash;
-   hp->key_type = KEY_TYPE_CHAR;
-   hp->key.char_key = key;
+   hp->key.key = key;
+   hp->is_ikey = false;
    table[index] = hp;
-   Dmsg3(dbglvl, "Insert hp->next=%p hp->hash=0x%llx hp->key=%s\n",
-      hp->next, hp->hash, hp->key.char_key);
+   Dmsg3(dbglvl, "Insert hp->next=%p hp->hash=0x%x hp->key=%s\n",
+      hp->next, hp->hash, hp->key.key);
 
    if (++num_items >= max_items) {
       Dmsg2(dbglvl, "num_items=%d max_items=%d\n", num_items, max_items);
@@ -328,102 +301,60 @@ bool htable::insert(char *key, void *item)
    return true;
 }
 
-bool htable::insert(uint32_t key, void *item)
-{
-   hlink *hp;
-
-   if (lookup(key)) {
-      return false;                   /* already exists */
-   }
-   ASSERT(index < buckets);
-   Dmsg2(dbglvl, "Insert: hash=%p index=%d\n", hash, index);
-   hp = (hlink *)(((char *)item)+loffset);
-   Dmsg4(dbglvl, "Insert hp=%p index=%d item=%p offset=%u\n", hp,
-      index, item, loffset);
-   hp->next = table[index];
-   hp->hash = hash;
-   hp->key_type = KEY_TYPE_UINT32;
-   hp->key.uint32_key = key;
-   table[index] = hp;
-   Dmsg3(dbglvl, "Insert hp->next=%p hp->hash=0x%llx hp->key=%d\n",
-      hp->next, hp->hash, hp->key.uint32_key);
-
-   if (++num_items >= max_items) {
-      Dmsg2(dbglvl, "num_items=%d max_items=%d\n", num_items, max_items);
-      grow_table();
-   }
-   Dmsg3(dbglvl, "Leave insert index=%d num_items=%d key=%d\n", index, num_items, key);
-   return true;
-}
-
-bool htable::insert(uint64_t key, void *item)
-{
-   hlink *hp;
-
-   if (lookup(key)) {
-      return false;                   /* already exists */
-   }
-   ASSERT(index < buckets);
-   Dmsg2(dbglvl, "Insert: hash=%p index=%d\n", hash, index);
-   hp = (hlink *)(((char *)item)+loffset);
-   Dmsg4(dbglvl, "Insert hp=%p index=%d item=%p offset=%u\n", hp,
-      index, item, loffset);
-   hp->next = table[index];
-   hp->hash = hash;
-   hp->key_type = KEY_TYPE_UINT64;
-   hp->key.uint64_key = key;
-   table[index] = hp;
-   Dmsg3(dbglvl, "Insert hp->next=%p hp->hash=0x%llx hp->key=%ld\n",
-      hp->next, hp->hash, hp->key.uint64_key);
-
-   if (++num_items >= max_items) {
-      Dmsg2(dbglvl, "num_items=%d max_items=%d\n", num_items, max_items);
-      grow_table();
-   }
-   Dmsg3(dbglvl, "Leave insert index=%d num_items=%d key=%lld\n", index, num_items, key);
-   return true;
-}
-
 void *htable::lookup(char *key)
-{
-   hash_index(key);
-   for (hlink *hp=table[index]; hp; hp=(hlink *)hp->next) {
-      ASSERT(hp->key_type == KEY_TYPE_CHAR);
-//    Dmsg2(100, "hp=%p key=%s\n", hp, hp->key.char_key);
-      if (hash == hp->hash && strcmp(key, hp->key.char_key) == 0) {
-         Dmsg1(dbglvl, "lookup return %p\n", ((char *)hp)-loffset);
-         return ((char *)hp)-loffset;
-      }
-   }
-   return NULL;
-}
-
-void *htable::lookup(uint32_t key)
-{
-   hash_index(key);
-   for (hlink *hp=table[index]; hp; hp=(hlink *)hp->next) {
-      ASSERT(hp->key_type == KEY_TYPE_UINT32);
-      if (hash == hp->hash && key == hp->key.uint32_key) {
-         Dmsg1(dbglvl, "lookup return %p\n", ((char *)hp)-loffset);
-         return ((char *)hp)-loffset;
-      }
-   }
-   return NULL;
-}
-
-void *htable::lookup(uint64_t key)
-{
-   hash_index(key);
-   for (hlink *hp=table[index]; hp; hp=(hlink *)hp->next) {
-      ASSERT(hp->key_type == KEY_TYPE_UINT64);
-      if (hash == hp->hash && key == hp->key.uint64_key) {
-         Dmsg1(dbglvl, "lookup return %p\n", ((char *)hp)-loffset);
-         return ((char *)hp)-loffset;
-      }
-   }
-   return NULL;
-}
-
+{ 
+   hash_index(key); 
+   for (hlink *hp=table[index]; hp; hp=(hlink *)hp->next) { 
+//    Dmsg2(100, "hp=%p key=%s\n", hp, hp->key.key);
+      if (hash == hp->hash && strcmp(key, hp->key.key) == 0) {
+         Dmsg1(dbglvl, "lookup return %p\n", ((char *)hp)-loffset); 
+         return ((char *)hp)-loffset; 
+      } 
+   } 
+   return NULL; 
+} 
+ 
+bool htable::insert(uint64_t ikey, void *item)
+{ 
+   hlink *hp; 
+   if (lookup(ikey)) {
+      return false;                  /* already exists */
+   } 
+   ASSERT(index < buckets); 
+   Dmsg2(dbglvl, "Insert: hash=%p index=%d\n", hash, index); 
+   hp = (hlink *)(((char *)item)+loffset); 
+   Dmsg4(dbglvl, "Insert hp=%p index=%d item=%p offset=%u\n", hp, index, 
+     item, loffset);
+   hp->next = table[index]; 
+   hp->hash = hash; 
+   hp->key.ikey = ikey;
+   hp->is_ikey = true;
+   table[index] = hp; 
+   Dmsg3(dbglvl, "Insert hp->next=%p hp->hash=0x%x hp->ikey=%lld\n", hp->next, 
+      hp->hash, hp->key.ikey);
+ 
+   if (++num_items >= max_items) { 
+      Dmsg2(dbglvl, "num_items=%d max_items=%d\n", num_items, max_items); 
+      grow_table(); 
+   } 
+   Dmsg3(dbglvl, "Leave insert index=%d num_items=%d key=%lld\n",
+      index, num_items, ikey);
+   return true;  
+} 
+ 
+void *htable::lookup(uint64_t ikey)
+{ 
+   hash_index(ikey);
+   for (hlink *hp=table[index]; hp; hp=(hlink *)hp->next) { 
+//    Dmsg2(100, "hp=%p key=%lld\n", hp, hp->key.ikey);
+      if (hash == hp->hash && ikey == hp->key.ikey) {
+         Dmsg1(dbglvl, "lookup return %p\n", ((char *)hp)-loffset); 
+         return ((char *)hp)-loffset; 
+      } 
+   } 
+   return NULL; 
+} 
+ 
 void *htable::next()
 {
    Dmsg1(dbglvl, "Enter next: walkptr=%p\n", walkptr);
@@ -469,11 +400,21 @@ void *htable::first()
 /* Destroy the table and its contents */
 void htable::destroy()
 {
+#ifdef BIG_MALLOC
    hash_big_free();
+#else
+   void *ni;
+   void *li = first();
+
+   while (li) {
+      ni = next();
+      free(li);
+      li=ni;
+   }
+#endif
 
    free(table);
    table = NULL;
-   garbage_collect_memory();
    Dmsg0(100, "Done destroy.\n");
 }
 
@@ -482,19 +423,11 @@ void htable::destroy()
 #ifdef TEST_PROGRAM
 
 struct MYJCR {
-#ifndef TEST_NON_CHAR
    char *key;
-#else
-   uint32_t key;
-#endif
    hlink link;
 };
 
-#ifndef TEST_SMALL_HTABLE
 #define NITEMS 5000000
-#else
-#define NITEMS 5000
-#endif
 
 int main()
 {
@@ -505,25 +438,16 @@ int main()
    int count = 0;
 
    jcrtbl = (htable *)malloc(sizeof(htable));
+   jcrtbl->init(jcr, &jcr->link, NITEMS); 
 
-#ifndef TEST_SMALL_HTABLE
-   jcrtbl->init(jcr, &jcr->link, NITEMS);
-#else
-   jcrtbl->init(jcr, &jcr->link, NITEMS, 128);
-#endif
    Dmsg1(000, "Inserting %d items\n", NITEMS);
    for (int i=0; i<NITEMS; i++) {
-#ifndef TEST_NON_CHAR
       int len;
       len = sprintf(mkey, "This is htable item %d", i) + 1;
 
       jcr = (MYJCR *)jcrtbl->hash_malloc(sizeof(MYJCR));
       jcr->key = (char *)jcrtbl->hash_malloc(len);
       memcpy(jcr->key, mkey, len);
-#else
-      jcr = (MYJCR *)jcrtbl->hash_malloc(sizeof(MYJCR));
-      jcr->key = i;
-#endif
       Dmsg2(100, "link=%p jcr=%p\n", jcr->link, jcr);
 
       jcrtbl->insert(jcr->key, jcr);
@@ -534,21 +458,15 @@ int main()
    if (!(item = (MYJCR *)jcrtbl->lookup(save_jcr->key))) {
       printf("Bad news: %s not found.\n", save_jcr->key);
    } else {
-#ifndef TEST_NON_CHAR
       printf("Item 10's key is: %s\n", item->key);
-#else
-      printf("Item 10's key is: %ld\n", item->key);
-#endif
    }
 
    jcrtbl->stats();
    printf("Walk the hash table:\n");
    foreach_htable (jcr, jcrtbl) {
-#ifndef TEST_NON_CHAR
 //    printf("htable item = %s\n", jcr->key);
 #ifndef BIG_MALLOC
       free(jcr->key);
-#endif
 #endif
       count++;
    }

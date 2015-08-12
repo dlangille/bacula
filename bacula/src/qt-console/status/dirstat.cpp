@@ -1,23 +1,27 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2007-2010 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *
  *   Dirk Bartley, March 2007
  */
-
+ 
 #include "bat.h"
 #include <QAbstractEventDispatcher>
 #include <QTableWidgetItem>
@@ -131,10 +135,10 @@ void DirStat::populateTerminated()
    terminatedTable->clear();
    QStringList headerlist = (QStringList()
       << tr("Job Id") << tr("Job Level") << tr("Job Files")
-      << tr("Job Bytes") << tr("Job Status") << tr("Job Time")
+      << tr("Job Bytes") << tr("Job Status") << tr("Job Time") 
       << tr("Job Name"));
    QStringList flaglist = (QStringList()
-      << "R" << "L" << "R" << "R" << "LC"
+      << "R" << "L" << "R" << "R" << "LC" 
       << "L" << "L");
 
    terminatedTable->setColumnCount(headerlist.size());
@@ -187,7 +191,7 @@ void DirStat::populateScheduled()
 
    scheduledTable->clear();
    QStringList headerlist = (QStringList()
-      << tr("Job Level") << tr("Job Type") << tr("Priority") << tr("Job Time")
+      << tr("Job Level") << tr("Job Type") << tr("Priority") << tr("Job Time") 
       << tr("Job Name") << tr("Volume"));
    QStringList flaglist = (QStringList()
       << "L" << "L" << "R" << "L" << "L" << "L");

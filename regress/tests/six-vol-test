@@ -1,5 +1,10 @@
 #!/bin/sh
 #
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+
+#
 # Create a 60MB file with random bytes. Back it up to 6 Volumes
 #   each constrained to 10MB using the automatic labeling feature.
 #
@@ -27,10 +32,10 @@ change_jobname MultiVol $JobName
 start_test
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
-@$out /dev/null
+@output /dev/null
 messages
 @$out ${cwd}/tmp/log1.out
-setdebug level=150 storage=File
+setdebug level=50 storage=File
 run job=$JobName storage=File yes
 run job=$JobName storage=File yes
 run job=$JobName storage=File yes
@@ -47,7 +52,7 @@ sql
 select * from JobMedia where JobId=4;
 select * from JobMedia where JobId=5;
 
-setdebug level=150 storage=File
+setdebug level=50 storage=File
 restore where=${cwd}/tmp/bacula-restores select storage=File
 unmark *
 mark *
@@ -63,6 +68,7 @@ check_for_zombie_jobs storage=File
 stop_bacula
 
 check_two_logs
-diff ${cwd}/tmp/largefile  ${cwd}/tmp/bacula-restores${cwd}/tmp/largefile 2>&1 >/dev/null
+#diff ${cwd}/tmp/largefile  ${cwd}/tmp/bacula-restores${cwd}/tmp/largefile 2>&1 >/dev/null
+diff ${cwd}/tmp/largefile  ${cwd}/tmp/bacula-restores${cwd}/tmp/largefile
 dstat=$?
 end_test

@@ -4,6 +4,7 @@ time.out
 1
 */1
 config
+config.*
 DartConfiguration.tcl
 DartTestfile.txt
 Testing
@@ -31,3 +32,4 @@ scripts/prepare-two-tapes
 scripts/regress-config
 scripts/update-ctest
 scripts/mtx-changer
+/tmp2/

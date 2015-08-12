@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2006-2014 Free Software Foundation Europe e.V.
+   Copyright (C) 2000-2015 Kern Sibbald
+   Copyright (C) 2007-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  * Manipulation routines for BREGEXP list
@@ -243,19 +247,19 @@ char *BREGEXP::return_fname(const char *fname, int len)
    return result;
 }
 
-int BREGEXP::compute_dest_len(const char *fname, regmatch_t pmatch[])
+int BREGEXP::compute_dest_len(const char *fname, regmatch_t breg[])
 {
    int len=0;
    char *p;
    char *psubst = subst;
    int no;
 
-   if (!fname || !pmatch) {
+   if (!fname || !breg) {
       return 0;
    }
 
    /* match failed ? */
-   if (pmatch[0].rm_so < 0) {
+   if (breg[0].rm_so < 0) {
       return 0;
    }
 
@@ -267,8 +271,8 @@ int BREGEXP::compute_dest_len(const char *fname, regmatch_t pmatch[])
          /* we check if the back reference exists */
          /* references can not match if we are using (..)? */
 
-         if (pmatch[no].rm_so >= 0 && pmatch[no].rm_eo >= 0) {
-            len += pmatch[no].rm_eo - pmatch[no].rm_so;
+         if (breg[no].rm_so >= 0 && breg[no].rm_eo >= 0) {
+            len += breg[no].rm_eo - breg[no].rm_so;
          }
 
       } else {
@@ -277,13 +281,13 @@ int BREGEXP::compute_dest_len(const char *fname, regmatch_t pmatch[])
    }
 
    /* $0 is replaced by subst */
-   len -= pmatch[0].rm_eo - pmatch[0].rm_so;
+   len -= breg[0].rm_eo - breg[0].rm_so;
    len += strlen(fname) + 1;
 
    return len;
 }
 
-char *BREGEXP::edit_subst(const char *fname, regmatch_t pmatch[])
+char *BREGEXP::edit_subst(const char *fname, regmatch_t breg[])
 {
    int i;
    char *p;
@@ -292,10 +296,10 @@ char *BREGEXP::edit_subst(const char *fname, regmatch_t pmatch[])
    int len;
 
    /* il faut recopier fname dans dest
-    *  on recopie le debut fname -> pmatch->start[0]
+    *  on recopie le debut fname -> breg->start[0]
     */
 
-   for (i = 0; i < pmatch[0].rm_so ; i++) {
+   for (i = 0; i < breg[0].rm_so ; i++) {
       result[i] = fname[i];
    }
 
@@ -307,9 +311,9 @@ char *BREGEXP::edit_subst(const char *fname, regmatch_t pmatch[])
          no = *psubst++ - '0';
 
          /* have a back reference ? */
-         if (pmatch[no].rm_so >= 0 && pmatch[no].rm_eo >= 0) {
-            len = pmatch[no].rm_eo - pmatch[no].rm_so;
-            bstrncpy(result + i, fname + pmatch[no].rm_so, len + 1);
+         if (breg[no].rm_so >= 0 && breg[no].rm_eo >= 0) {
+            len = breg[no].rm_eo - breg[no].rm_so;
+            bstrncpy(result + i, fname + breg[no].rm_so, len + 1);
             i += len ;
          }
 
@@ -319,7 +323,7 @@ char *BREGEXP::edit_subst(const char *fname, regmatch_t pmatch[])
    }
 
    /* we copy what is out of the match */
-   strcpy(result + i, fname + pmatch[0].rm_eo);
+   strcpy(result + i, fname + breg[0].rm_eo);
 
    return result;
 }

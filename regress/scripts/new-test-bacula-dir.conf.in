@@ -43,8 +43,23 @@ Job {
   Max Run Time = 30min
   Reschedule On Error = no
   Reschedule Interval = 10
-  Reschedule Times = 1
+  Reschedule Times = 5
 }
+
+Job {
+  Name = "Simple"
+  Type = Backup
+  Client=@hostname@-fd 
+  FileSet="SimpleSet"
+  Storage = File
+  Messages = Standard
+  Pool = Default
+  Maximum Concurrent Jobs = 10
+  Write Bootstrap = "@working_dir@/NightlySave.bsr"
+  Max Run Time = 30min
+# SpoolData=yes
+}
+
 
 Job {
   Name = "MonsterSave"
@@ -105,6 +120,19 @@ Job {
 }
 
 Job {
+  Name = "DeltaTest"
+  Type = Backup
+  Client=@hostname@-fd 
+  FileSet="DeltaSet"
+  Storage = File
+  Messages = Standard
+  Pool = Default
+  Write Bootstrap = "@working_dir@/NightlySave.bsr"
+  Max Run Time = 30min
+  Maximum Concurrent Jobs = 10
+}
+
+Job {
   Name = "CompressedTest"
   Type = Backup
   Client=@hostname@-fd 
@@ -130,6 +158,19 @@ Job {
   Max Run Time = 30min
   SpoolData=yes
   Maximum Concurrent Jobs = 10
+}
+
+Job {
+  Name = "vSphereTest"
+  Type = Backup
+  Client=@hostname@-fd
+  FileSet="vSphereSet"
+  Storage = File
+  Messages = Standard
+  Pool = Default
+  Maximum Concurrent Jobs = 10
+  Write Bootstrap = "@working_dir@/NightlySave.bsr"
+  Max Run Time = 30min
 }
 
 Job {
@@ -246,6 +287,38 @@ FileSet {
 }
 
 FileSet {
+  Name = "SimpleSet"
+  Include {  
+     Options { signature=MD5 }
+     File =  <@tmpdir@/file-list
+  }
+}
+
+
+FileSet {
+  Name = vSphereSet
+   Include {
+    Options {
+      signature=MD5
+      compression = GZIP1
+    }
+    Plugin = "vsphere: host=@VSPHERE_HOST1@"
+  }
+}
+
+FileSet {
+  Name = vSphereSet2
+   Include {
+    Options {
+      signature=MD5
+      compression = GZIP1
+    }
+    Plugin = "vsphere: host=@VSPHERE_HOST1@"
+    Plugin = "vsphere: host=@VSPHERE_HOST2@"
+  }
+}
+
+FileSet {
   Name = "SparseSet"
   Include {
     Options {
@@ -261,7 +334,8 @@ FileSet {
   Include {
     Options {
       signature=MD5 
-      compression=GZIP 
+      compression=GZIP
+      onefs=no
     }
     File = <@tmpdir@/file-list
   }
@@ -273,6 +347,17 @@ FileSet {
     Options {
       signature=MD5
       compression=LZO
+    }
+    File = <@tmpdir@/file-list
+  }
+}
+
+FileSet {
+  Name = "DeltaSet"
+  Include {
+    Options {
+      signature=MD5
+      plugin = delta
     }
     File = <@tmpdir@/file-list
   }
@@ -483,6 +568,16 @@ Storage {
   Heartbeat Interval = 330
 }
 
+Storage {
+  Name = File2
+  Address = @hostname@                # N.B. Use a fully qualified name here
+  SDPort = @sdport@
+  Password = "ccV3lVTsQRsdIUGyab0N4sMDavui2hOBkmpBU0aQKOr9"
+  Device = FileStorage2
+  Media Type = File
+  Maximum Concurrent Jobs = 10
+  Heartbeat Interval = 330
+}
 
 # Definition of DLT tape storage device
 #Storage {
@@ -564,5 +659,5 @@ Pool {
 # Label Format = "TEST-${Year}-${Month:p/2/0/r}-${Day:p/2/0/r}:${NumVols}"
 # Simple Label Format = "Backup-"
 # Maximum Volume Jobs = 1
-# Maximum Volume Bytes = 512000
+# Maximum Volume Bytes = 1500000
 }

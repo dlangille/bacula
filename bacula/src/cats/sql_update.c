@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  * Bacula Catalog Database Update record interface routines
@@ -20,13 +24,11 @@
  *
  */
 
-#include "bacula.h"
+#include  "bacula.h"
 
 #if HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL
-
-#include "cats.h"
-#include "bdb_priv.h"
-#include "sql_glue.h"
+ 
+#include  "cats.h"
 
 /* -----------------------------------------------------------------------
  *
@@ -42,37 +44,36 @@
  * -----------------------------------------------------------------------
  */
 /* Update the attributes record by adding the file digest */
-int
-db_add_digest_to_file_record(JCR *jcr, B_DB *mdb, FileId_t FileId, char *digest,
+int BDB::bdb_add_digest_to_file_record(JCR *jcr, FileId_t FileId, char *digest,
                           int type)
 {
    int ret;
    char ed1[50];
    int len = strlen(digest);
 
-   db_lock(mdb);
-   mdb->esc_name = check_pool_memory_size(mdb->esc_name, len*2+1);
-   mdb->db_escape_string(jcr, mdb->esc_name, digest, len);
-   Mmsg(mdb->cmd, "UPDATE File SET MD5='%s' WHERE FileId=%s", mdb->esc_name,
+   bdb_lock();
+   esc_name = check_pool_memory_size(esc_name, len*2+1);
+   bdb_escape_string(jcr, esc_name, digest, len);
+   Mmsg(cmd, "UPDATE File SET MD5='%s' WHERE FileId=%s", esc_name,
         edit_int64(FileId, ed1));
-   ret = UPDATE_DB(jcr, mdb, mdb->cmd);
-   db_unlock(mdb);
+   ret = UpdateDB(jcr, cmd);
+   bdb_unlock();
    return ret;
 }
 
 /* Mark the file record as being visited during database
  * verify compare. Stuff JobId into the MarkId field
  */
-int db_mark_file_record(JCR *jcr, B_DB *mdb, FileId_t FileId, JobId_t JobId)
+int BDB::bdb_mark_file_record(JCR *jcr, FileId_t FileId, JobId_t JobId)
 {
    int stat;
    char ed1[50], ed2[50];
 
-   db_lock(mdb);
-   Mmsg(mdb->cmd, "UPDATE File SET MarkId=%s WHERE FileId=%s",
+   bdb_lock();
+   Mmsg(cmd, "UPDATE File SET MarkId=%s WHERE FileId=%s",
       edit_int64(JobId, ed1), edit_int64(FileId, ed2));
-   stat = UPDATE_DB(jcr, mdb, mdb->cmd);
-   db_unlock(mdb);
+   stat = UpdateDB(jcr, cmd);
+   bdb_unlock();
    return stat;
 }
 
@@ -82,8 +83,7 @@ int db_mark_file_record(JCR *jcr, B_DB *mdb, FileId_t FileId, JobId_t JobId)
  *  Returns: false on failure
  *           true  on success
  */
-bool
-db_update_job_start_record(JCR *jcr, B_DB *mdb, JOB_DBR *jr)
+bool BDB::bdb_update_job_start_record(JCR *jcr, JOB_DBR *jr)
 {
    char dt[MAX_TIME_LENGTH];
    time_t stime;
@@ -97,8 +97,8 @@ db_update_job_start_record(JCR *jcr, B_DB *mdb, JOB_DBR *jr)
    strftime(dt, sizeof(dt), "%Y-%m-%d %H:%M:%S", &tm);
    JobTDate = (btime_t)stime;
 
-   db_lock(mdb);
-   Mmsg(mdb->cmd, "UPDATE Job SET JobStatus='%c',Level='%c',StartTime='%s',"
+   bdb_lock();
+   Mmsg(cmd, "UPDATE Job SET JobStatus='%c',Level='%c',StartTime='%s',"
 "ClientId=%s,JobTDate=%s,PoolId=%s,FileSetId=%s WHERE JobId=%s",
       (char)(jcr->JobStatus),
       (char)(jr->JobLevel), dt,
@@ -108,9 +108,9 @@ db_update_job_start_record(JCR *jcr, B_DB *mdb, JOB_DBR *jr)
       edit_int64(jr->FileSetId, ed4),
       edit_int64(jr->JobId, ed5));
 
-   stat = UPDATE_DB(jcr, mdb, mdb->cmd);
-   mdb->changes = 0;
-   db_unlock(mdb);
+   stat = UpdateDB(jcr, cmd);
+   changes = 0;
+   bdb_unlock();
    return stat;
 }
 
@@ -118,21 +118,21 @@ db_update_job_start_record(JCR *jcr, B_DB *mdb, JOB_DBR *jr)
  * Update Long term statistics with all jobs that were run before
  * age seconds
  */
-int
-db_update_stats(JCR *jcr, B_DB *mdb, utime_t age)
+int BDB::bdb_update_stats(JCR *jcr, utime_t age)
 {
    char ed1[30];
    int rows;
+
    utime_t now = (utime_t)time(NULL);
    edit_uint64(now - age, ed1);
 
-   db_lock(mdb);
+   bdb_lock();
 
-   Mmsg(mdb->cmd, fill_jobhisto, ed1);
-   QUERY_DB(jcr, mdb, mdb->cmd); /* TODO: get a message ? */
-   rows = sql_affected_rows(mdb);
+   Mmsg(cmd, fill_jobhisto, ed1);
+   QueryDB(jcr, cmd); /* TODO: get a message ? */
+   rows = sql_affected_rows();
 
-   db_unlock(mdb);
+   bdb_unlock();
 
    return rows;
 }
@@ -143,8 +143,7 @@ db_update_stats(JCR *jcr, B_DB *mdb, utime_t age)
  *  Returns: 0 on failure
  *           1 on success
  */
-int
-db_update_job_end_record(JCR *jcr, B_DB *mdb, JOB_DBR *jr)
+int BDB::bdb_update_job_end_record(JCR *jcr, JOB_DBR *jr)
 {
    char dt[MAX_TIME_LENGTH];
    char rdt[MAX_TIME_LENGTH];
@@ -164,7 +163,7 @@ db_update_job_end_record(JCR *jcr, B_DB *mdb, JOB_DBR *jr)
    ttime = jr->EndTime;
    (void)localtime_r(&ttime, &tm);
    strftime(dt, sizeof(dt), "%Y-%m-%d %H:%M:%S", &tm);
-                                            
+
    if (jr->RealEndTime == 0 || jr->RealEndTime < jr->EndTime) {
       jr->RealEndTime = jr->EndTime;
    }
@@ -174,8 +173,8 @@ db_update_job_end_record(JCR *jcr, B_DB *mdb, JOB_DBR *jr)
 
    JobTDate = ttime;
 
-   db_lock(mdb);
-   Mmsg(mdb->cmd,
+   bdb_lock();
+   Mmsg(cmd,
       "UPDATE Job SET JobStatus='%c',EndTime='%s',"
 "ClientId=%u,JobBytes=%s,ReadBytes=%s,JobFiles=%u,JobErrors=%u,VolSessionId=%u,"
 "VolSessionTime=%u,PoolId=%u,FileSetId=%u,JobTDate=%s,"
@@ -187,9 +186,9 @@ db_update_job_end_record(JCR *jcr, B_DB *mdb, JOB_DBR *jr)
       rdt, PriorJobId, jr->HasBase, jr->PurgedFiles,
       edit_int64(jr->JobId, ed3));
 
-   stat = UPDATE_DB(jcr, mdb, mdb->cmd);
+   stat = UpdateDB(jcr, cmd);
 
-   db_unlock(mdb);
+   bdb_unlock();
    return stat;
 }
 
@@ -198,8 +197,7 @@ db_update_job_end_record(JCR *jcr, B_DB *mdb, JOB_DBR *jr)
  *   Returns: 0 on failure
  *            1 on success
  */
-int
-db_update_client_record(JCR *jcr, B_DB *mdb, CLIENT_DBR *cr)
+int BDB::bdb_update_client_record(JCR *jcr, CLIENT_DBR *cr)
 {
    int stat;
    char ed1[50], ed2[50];
@@ -207,16 +205,16 @@ db_update_client_record(JCR *jcr, B_DB *mdb, CLIENT_DBR *cr)
    char esc_uname[MAX_ESCAPE_NAME_LENGTH];
    CLIENT_DBR tcr;
 
-   db_lock(mdb);
+   bdb_lock();
    memcpy(&tcr, cr, sizeof(tcr));
-   if (!db_create_client_record(jcr, mdb, &tcr)) {
-      db_unlock(mdb);
+   if (!bdb_create_client_record(jcr, &tcr)) {
+      bdb_unlock();
       return 0;
    }
 
-   mdb->db_escape_string(jcr, esc_name, cr->Name, strlen(cr->Name));
-   mdb->db_escape_string(jcr, esc_uname, cr->Uname, strlen(cr->Uname));
-   Mmsg(mdb->cmd,
+   bdb_escape_string(jcr, esc_name, cr->Name, strlen(cr->Name));
+   bdb_escape_string(jcr, esc_uname, cr->Uname, strlen(cr->Uname));
+   Mmsg(cmd,
 "UPDATE Client SET AutoPrune=%d,FileRetention=%s,JobRetention=%s,"
 "Uname='%s' WHERE Name='%s'",
       cr->AutoPrune,
@@ -224,8 +222,8 @@ db_update_client_record(JCR *jcr, B_DB *mdb, CLIENT_DBR *cr)
       edit_uint64(cr->JobRetention, ed2),
       esc_uname, esc_name);
 
-   stat = UPDATE_DB(jcr, mdb, mdb->cmd);
-   db_unlock(mdb);
+   stat = UpdateDB(jcr, cmd);
+   bdb_unlock();
    return stat;
 }
 
@@ -235,37 +233,37 @@ db_update_client_record(JCR *jcr, B_DB *mdb, CLIENT_DBR *cr)
  *   Returns: 0 on failure
  *            1 on success
  */
-int db_update_counter_record(JCR *jcr, B_DB *mdb, COUNTER_DBR *cr)
+int BDB::bdb_update_counter_record(JCR *jcr, COUNTER_DBR *cr)
 {
    char esc[MAX_ESCAPE_NAME_LENGTH];
-   db_lock(mdb);
-   mdb->db_escape_string(jcr, esc, cr->Counter, strlen(cr->Counter));
-   Mmsg(mdb->cmd,
-        update_counter_values[mdb->db_get_type_index()],
-        cr->MinValue, cr->MaxValue, cr->CurrentValue,
-        cr->WrapCounter, esc);
 
-   int stat = UPDATE_DB(jcr, mdb, mdb->cmd);
-   db_unlock(mdb);
+   bdb_lock();
+   bdb_escape_string(jcr, esc, cr->Counter, strlen(cr->Counter));
+   Mmsg(cmd, update_counter_values[bdb_get_type_index()],
+      cr->MinValue, cr->MaxValue, cr->CurrentValue,
+      cr->WrapCounter, esc);
+
+   int stat = UpdateDB(jcr, cmd);
+   bdb_unlock();
    return stat;
 }
 
 
-int db_update_pool_record(JCR *jcr, B_DB *mdb, POOL_DBR *pr)
+int BDB::bdb_update_pool_record(JCR *jcr, POOL_DBR *pr)
 {
    int stat;
    char ed1[50], ed2[50], ed3[50], ed4[50], ed5[50], ed6[50];
    char esc[MAX_ESCAPE_NAME_LENGTH];
 
-   db_lock(mdb);
-   mdb->db_escape_string(jcr, esc, pr->LabelFormat, strlen(pr->LabelFormat));
+   bdb_lock();
+   bdb_escape_string(jcr, esc, pr->LabelFormat, strlen(pr->LabelFormat));
 
-   Mmsg(mdb->cmd, "SELECT count(*) from Media WHERE PoolId=%s",
+   Mmsg(cmd, "SELECT count(*) from Media WHERE PoolId=%s",
       edit_int64(pr->PoolId, ed4));
-   pr->NumVols = get_sql_record_max(jcr, mdb);
+   pr->NumVols = get_sql_record_max(jcr, this);
    Dmsg1(400, "NumVols=%d\n", pr->NumVols);
 
-   Mmsg(mdb->cmd,
+   Mmsg(cmd,
 "UPDATE Pool SET NumVols=%u,MaxVols=%u,UseOnce=%d,UseCatalog=%d,"
 "AcceptAnyVolume=%d,VolRetention='%s',VolUseDuration='%s',"
 "MaxVolJobs=%u,MaxVolFiles=%u,MaxVolBytes=%s,Recycle=%d,"
@@ -281,22 +279,22 @@ int db_update_pool_record(JCR *jcr, B_DB *mdb, POOL_DBR *pr)
       edit_int64(pr->ScratchPoolId,ed6),
       pr->ActionOnPurge,
       ed4);
-   stat = UPDATE_DB(jcr, mdb, mdb->cmd);
-   db_unlock(mdb);
+   stat = UpdateDB(jcr, cmd);
+   bdb_unlock();
    return stat;
 }
 
-bool
-db_update_storage_record(JCR *jcr, B_DB *mdb, STORAGE_DBR *sr)
+bool BDB::bdb_update_storage_record(JCR *jcr, STORAGE_DBR *sr)
 {
    int stat;
    char ed1[50];
-   db_lock(mdb);
-   Mmsg(mdb->cmd, "UPDATE Storage SET AutoChanger=%d WHERE StorageId=%s",
+
+   bdb_lock();
+   Mmsg(cmd, "UPDATE Storage SET AutoChanger=%d WHERE StorageId=%s",
       sr->AutoChanger, edit_int64(sr->StorageId, ed1));
 
-   stat = UPDATE_DB(jcr, mdb, mdb->cmd);
-   db_unlock(mdb);
+   stat = UpdateDB(jcr, cmd);
+   bdb_unlock();
    return stat;
 }
 
@@ -307,33 +305,32 @@ db_update_storage_record(JCR *jcr, B_DB *mdb, STORAGE_DBR *sr)
  * Returns: 0 on failure
  *          numrows on success
  */
-int
-db_update_media_record(JCR *jcr, B_DB *mdb, MEDIA_DBR *mr)
+int BDB::bdb_update_media_record(JCR *jcr, MEDIA_DBR *mr)
 {
    char dt[MAX_TIME_LENGTH];
    time_t ttime;
    struct tm tm;
    int stat;
-   char ed1[50], ed4[50];
+   char ed1[50], ed2[50],  ed3[50],  ed4[50];
    char ed5[50], ed6[50],  ed7[50],  ed8[50];
    char ed9[50], ed10[50], ed11[50], ed12[50];
-   char ed13[50];
+   char ed13[50], ed14[50];
    char esc_name[MAX_ESCAPE_NAME_LENGTH];
    char esc_status[MAX_ESCAPE_NAME_LENGTH];
 
    Dmsg1(100, "update_media: FirstWritten=%d\n", mr->FirstWritten);
-   db_lock(mdb);
-   mdb->db_escape_string(jcr, esc_name, mr->VolumeName, strlen(mr->VolumeName));
-   mdb->db_escape_string(jcr, esc_status, mr->VolStatus, strlen(mr->VolStatus));
+   bdb_lock();
+   bdb_escape_string(jcr, esc_name, mr->VolumeName, strlen(mr->VolumeName));
+   bdb_escape_string(jcr, esc_status, mr->VolStatus, strlen(mr->VolStatus));
 
    if (mr->set_first_written) {
       Dmsg1(400, "Set FirstWritten Vol=%s\n", mr->VolumeName);
       ttime = mr->FirstWritten;
       (void)localtime_r(&ttime, &tm);
       strftime(dt, sizeof(dt), "%Y-%m-%d %H:%M:%S", &tm);
-      Mmsg(mdb->cmd, "UPDATE Media SET FirstWritten='%s'"
+      Mmsg(cmd, "UPDATE Media SET FirstWritten='%s'"
            " WHERE VolumeName='%s'", dt, esc_name);
-      stat = UPDATE_DB(jcr, mdb, mdb->cmd);
+      stat = UpdateDB(jcr, cmd);
       Dmsg1(400, "Firstwritten=%d\n", mr->FirstWritten);
    }
 
@@ -345,18 +342,18 @@ db_update_media_record(JCR *jcr, B_DB *mdb, MEDIA_DBR *mr)
       }
       (void)localtime_r(&ttime, &tm);
       strftime(dt, sizeof(dt), "%Y-%m-%d %H:%M:%S", &tm);
-      Mmsg(mdb->cmd, "UPDATE Media SET LabelDate='%s' "
+      Mmsg(cmd, "UPDATE Media SET LabelDate='%s' "
            "WHERE VolumeName='%s'", dt, esc_name);
-      UPDATE_DB(jcr, mdb, mdb->cmd);
+      UpdateDB(jcr, cmd);
    }
 
    if (mr->LastWritten != 0) {
       ttime = mr->LastWritten;
       (void)localtime_r(&ttime, &tm);
       strftime(dt, sizeof(dt), "%Y-%m-%d %H:%M:%S", &tm);
-      Mmsg(mdb->cmd, "UPDATE Media Set LastWritten='%s' "
+      Mmsg(cmd, "UPDATE Media Set LastWritten='%s' "
            "WHERE VolumeName='%s'", dt, esc_name);
-      UPDATE_DB(jcr, mdb, mdb->cmd);
+      UpdateDB(jcr, cmd);
    }
 
    /* sanity checks for #1066 */
@@ -367,43 +364,47 @@ db_update_media_record(JCR *jcr, B_DB *mdb, MEDIA_DBR *mr)
       mr->VolWriteTime = 0;
    }
 
-   Mmsg(mdb->cmd, "UPDATE Media SET VolJobs=%u,"
-        "VolFiles=%u,VolBlocks=%u,VolBytes=%s,"
-        "VolMounts=%u,VolErrors=%u,"
-        "VolWrites=%u,MaxVolBytes=%s,VolStatus='%s',"
+   Mmsg(cmd, "UPDATE Media SET VolJobs=%u,"
+        "VolFiles=%u,VolBlocks=%u,VolBytes=%s,VolABytes=%s,"
+        "VolHoleBytes=%s,VolHoles=%u,VolMounts=%u,VolErrors=%u,"
+        "VolWrites=%s,MaxVolBytes=%s,VolStatus='%s',"
         "Slot=%d,InChanger=%d,VolReadTime=%s,VolWriteTime=%s,VolParts=%d,"
         "LabelType=%d,StorageId=%s,PoolId=%s,VolRetention=%s,VolUseDuration=%s,"
         "MaxVolJobs=%d,MaxVolFiles=%d,Enabled=%d,LocationId=%s,"
-        "ScratchPoolId=%s,RecyclePoolId=%s,RecycleCount=%d,Recycle=%d,ActionOnPurge=%d"
+        "ScratchPoolId=%s,RecyclePoolId=%s,RecycleCount=%d,Recycle=%d,"
+        "ActionOnPurge=%d"
         " WHERE VolumeName='%s'",
         mr->VolJobs, mr->VolFiles, mr->VolBlocks,
         edit_uint64(mr->VolBytes, ed1),
-        mr->VolMounts, mr->VolErrors, mr->VolWrites,
-        edit_uint64(mr->MaxVolBytes, ed4),
+        edit_uint64(mr->VolABytes, ed2),
+        edit_uint64(mr->VolHoleBytes, ed3),
+        mr->VolHoles, mr->VolMounts, mr->VolErrors,
+        edit_uint64(mr->VolWrites, ed4),
+        edit_uint64(mr->MaxVolBytes, ed5),
         esc_status, mr->Slot, mr->InChanger,
-        edit_int64(mr->VolReadTime, ed5),
-        edit_int64(mr->VolWriteTime, ed6),
-        mr->VolParts,
+        edit_int64(mr->VolReadTime, ed6),
+        edit_int64(mr->VolWriteTime, ed7),
+        mr->VolType,  /* formerly VolParts */
         mr->LabelType,
-        edit_int64(mr->StorageId, ed7),
-        edit_int64(mr->PoolId, ed8),
-        edit_uint64(mr->VolRetention, ed9),
-        edit_uint64(mr->VolUseDuration, ed10),
+        edit_int64(mr->StorageId, ed8),
+        edit_int64(mr->PoolId, ed9),
+        edit_uint64(mr->VolRetention, ed10),
+        edit_uint64(mr->VolUseDuration, ed11),
         mr->MaxVolJobs, mr->MaxVolFiles,
-        mr->Enabled, edit_uint64(mr->LocationId, ed11),
-        edit_uint64(mr->ScratchPoolId, ed12),
-        edit_uint64(mr->RecyclePoolId, ed13),
+        mr->Enabled, edit_uint64(mr->LocationId, ed12),
+        edit_uint64(mr->ScratchPoolId, ed13),
+        edit_uint64(mr->RecyclePoolId, ed14),
         mr->RecycleCount,mr->Recycle, mr->ActionOnPurge,
         esc_name);
 
-   Dmsg1(400, "%s\n", mdb->cmd);
+   Dmsg1(400, "%s\n", cmd);
 
-   stat = UPDATE_DB(jcr, mdb, mdb->cmd);
+   stat = UpdateDB(jcr, cmd);
 
    /* Make sure InChanger is 0 for any record having the same Slot */
-   db_make_inchanger_unique(jcr, mdb, mr);
+   db_make_inchanger_unique(jcr, this, mr);
 
-   db_unlock(mdb);
+   bdb_unlock();
    return stat;
 }
 
@@ -413,17 +414,16 @@ db_update_media_record(JCR *jcr, B_DB *mdb, MEDIA_DBR *mr)
  * Returns: 0 on failure
  *          numrows on success
  */
-int
-db_update_media_defaults(JCR *jcr, B_DB *mdb, MEDIA_DBR *mr)
+int BDB::bdb_update_media_defaults(JCR *jcr, MEDIA_DBR *mr)
 {
    int stat;
    char ed1[50], ed2[50], ed3[50], ed4[50], ed5[50];
    char esc[MAX_ESCAPE_NAME_LENGTH];
 
-   db_lock(mdb);
+   bdb_lock();
    if (mr->VolumeName[0]) {
-      mdb->db_escape_string(jcr, esc, mr->VolumeName, strlen(mr->VolumeName));
-      Mmsg(mdb->cmd, "UPDATE Media SET "
+      bdb_escape_string(jcr, esc, mr->VolumeName, strlen(mr->VolumeName));
+      Mmsg(cmd, "UPDATE Media SET "
            "ActionOnPurge=%d, Recycle=%d,VolRetention=%s,VolUseDuration=%s,"
            "MaxVolJobs=%u,MaxVolFiles=%u,MaxVolBytes=%s,RecyclePoolId=%s"
            " WHERE VolumeName='%s'",
@@ -434,7 +434,7 @@ db_update_media_defaults(JCR *jcr, B_DB *mdb, MEDIA_DBR *mr)
            edit_uint64(mr->RecyclePoolId, ed4),
            esc);
    } else {
-      Mmsg(mdb->cmd, "UPDATE Media SET "
+      Mmsg(cmd, "UPDATE Media SET "
            "ActionOnPurge=%d, Recycle=%d,VolRetention=%s,VolUseDuration=%s,"
            "MaxVolJobs=%u,MaxVolFiles=%u,MaxVolBytes=%s,RecyclePoolId=%s"
            " WHERE PoolId=%s",
@@ -446,11 +446,11 @@ db_update_media_defaults(JCR *jcr, B_DB *mdb, MEDIA_DBR *mr)
            edit_int64(mr->PoolId, ed5));
    }
 
-   Dmsg1(400, "%s\n", mdb->cmd);
+   Dmsg1(400, "%s\n", cmd);
 
-   stat = UPDATE_DB(jcr, mdb, mdb->cmd);
+   stat = UpdateDB(jcr, cmd);
 
-   db_unlock(mdb);
+   bdb_unlock();
    return stat;
 }
 
@@ -461,35 +461,54 @@ db_update_media_defaults(JCR *jcr, B_DB *mdb, MEDIA_DBR *mr)
  *
  * This routine assumes the database is already locked.
  */
-void
-db_make_inchanger_unique(JCR *jcr, B_DB *mdb, MEDIA_DBR *mr)
+void BDB::bdb_make_inchanger_unique(JCR *jcr, MEDIA_DBR *mr)
 {
    char ed1[50], ed2[50];
    char esc[MAX_ESCAPE_NAME_LENGTH];
-   if (mr->InChanger != 0 && mr->Slot != 0 && mr->StorageId != 0) {
 
+   if (mr->InChanger != 0 && mr->Slot != 0 && mr->StorageId != 0) {
        if (mr->MediaId != 0) {
-          Mmsg(mdb->cmd, "UPDATE Media SET InChanger=0, Slot=0 WHERE "
+          Mmsg(cmd, "UPDATE Media SET InChanger=0, Slot=0 WHERE "
                "Slot=%d AND StorageId=%s AND MediaId!=%s",
                mr->Slot,
                edit_int64(mr->StorageId, ed1), edit_int64(mr->MediaId, ed2));
 
        } else if (*mr->VolumeName) {
-          mdb->db_escape_string(jcr, esc,mr->VolumeName,strlen(mr->VolumeName));
-          Mmsg(mdb->cmd, "UPDATE Media SET InChanger=0, Slot=0 WHERE "
+          bdb_escape_string(jcr, esc,mr->VolumeName,strlen(mr->VolumeName));
+          Mmsg(cmd, "UPDATE Media SET InChanger=0, Slot=0 WHERE "
                "Slot=%d AND StorageId=%s AND VolumeName!='%s'",
                mr->Slot,
                edit_int64(mr->StorageId, ed1), esc);
 
        } else {  /* used by ua_label to reset all volume with this slot */
-          Mmsg(mdb->cmd, "UPDATE Media SET InChanger=0, Slot=0 WHERE "
+          Mmsg(cmd, "UPDATE Media SET InChanger=0, Slot=0 WHERE "
                "Slot=%d AND StorageId=%s",
                mr->Slot,
                edit_int64(mr->StorageId, ed1), mr->VolumeName);
        }
-       Dmsg1(100, "%s\n", mdb->cmd);
-       UPDATE_DB(jcr, mdb, mdb->cmd);
+       Dmsg1(100, "%s\n", cmd);
+       UpdateDB(jcr, cmd);
    }
+}
+
+/* Update only Retention */
+bool BDB::bdb_update_snapshot_record(JCR *jcr, SNAPSHOT_DBR *sr)
+{
+   int stat, len;
+   char ed1[50], ed2[50];
+
+   len = strlen(sr->Comment);
+   bdb_lock();
+
+   esc_name = check_pool_memory_size(esc_name, len*2+1);
+   bdb_escape_string(jcr, esc_name, sr->Comment, len);
+
+   Mmsg(cmd, "UPDATE Snapshot SET Retention=%s, Comment='%s' WHERE SnapshotId=%s",
+        edit_int64(sr->Retention, ed2), sr->Comment, edit_int64(sr->SnapshotId, ed1));
+
+   stat = UpdateDB(jcr, cmd);
+   bdb_unlock();
+   return stat;
 }
 
 #endif /* HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL */

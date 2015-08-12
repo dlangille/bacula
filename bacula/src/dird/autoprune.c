@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2002-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *
@@ -136,7 +140,7 @@ void prune_volumes(JCR *jcr, bool InChanger, MEDIA_DBR *mr,
 
    set_storageid_in_mr(store, mr);
    if (InChanger) {
-      Mmsg(changer, "AND InChanger=1 AND StorageId IN (%s) ", edit_int64(mr->StorageId, ed3));
+      Mmsg(changer, "AND InChanger=1 AND StorageId=%s ", edit_int64(mr->StorageId, ed3));
    }
 
    Mmsg(query, select, ed1, ed2, mr->MediaType, changer.c_str());
@@ -174,7 +178,7 @@ void prune_volumes(JCR *jcr, bool InChanger, MEDIA_DBR *mr,
             purge_job_list_from_catalog(ua, prune_list);
             prune_list.num_ids = 0;             /* reset count */
          }
-         if (!is_volume_purged(ua, &lmr)) {
+         if (!is_volume_purged(ua, &lmr, false)) {
             Dmsg1(100, "Vol=%s not pruned\n", lmr.VolumeName);
             continue;
          }

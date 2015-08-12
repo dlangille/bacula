@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *
@@ -1107,13 +1111,74 @@ static void dump_session_label(DEV_RECORD *rec, const char *type)
    debug_level = dbl;
 }
 
-void dump_label_record(DEVICE *dev, DEV_RECORD *rec, int verbose)
+static int check_label(SESSION_LABEL *label)
+{
+   int  errors = 0;
+
+   if (label->JobId > 10000000 || label->JobId < 0) {
+      Pmsg0(-1, _("***** ERROR ****** : Found error with the JobId\n"));
+      errors++;
+   }
+
+   if (!errors) {
+      switch (label->JobLevel) {
+      case L_FULL:
+      case L_INCREMENTAL:
+      case L_DIFFERENTIAL:
+      case L_SINCE:
+      case L_VERIFY_CATALOG:
+      case L_VERIFY_INIT:
+      case L_VERIFY_VOLUME_TO_CATALOG:
+      case L_VERIFY_DISK_TO_CATALOG:
+      case L_VERIFY_DATA:
+      case L_BASE:
+      case L_NONE:
+      case L_VIRTUAL_FULL:
+         break;
+      default:
+         Pmsg0(-1, _("***** ERROR ****** : Found error with the JobLevel\n"));
+         errors++;
+      }
+   }
+   if (!errors) {
+      switch (label->JobType) {
+      case JT_BACKUP:
+            case JT_MIGRATED_JOB:
+      case JT_VERIFY:
+      case JT_RESTORE:
+      case JT_CONSOLE:
+      case JT_SYSTEM:
+      case JT_ADMIN:
+      case JT_ARCHIVE:
+      case JT_JOB_COPY:
+      case JT_COPY:
+      case JT_MIGRATE:
+      case JT_SCAN:
+               break;
+      default:
+         Pmsg0(-1, _("***** ERROR ****** : Found error with the JobType\n"));
+         errors++;
+      }
+   }
+   if (!errors) {
+      POOLMEM *err = get_pool_memory(PM_EMSG);
+      if (!is_name_valid(label->Job, &err)) {
+         Pmsg1(-1, _("***** ERROR ****** : Found error with the Job name %s\n"), err);
+         errors++;
+      }
+      free_pool_memory(err);
+   }
+   return errors;
+}
+
+int dump_label_record(DEVICE *dev, DEV_RECORD *rec, int verbose, bool check_err)
 {
    const char *type;
    int64_t dbl;
+   int errors = 0;
 
    if (rec->FileIndex == 0 && rec->VolSessionId == 0 && rec->VolSessionTime == 0) {
-      return;
+      return 0;
    }
    dbl = debug_level;
    debug_level = 1;
@@ -1147,10 +1212,9 @@ void dump_label_record(DEVICE *dev, DEV_RECORD *rec, int verbose)
          unser_volume_label(dev, rec);
          dump_volume_label(dev);
          break;
-      case SOS_LABEL:
-         dump_session_label(rec, type);
-         break;
+
       case EOS_LABEL:
+      case SOS_LABEL:
          dump_session_label(rec, type);
          break;
       case EOM_LABEL:
@@ -1178,6 +1242,9 @@ void dump_label_record(DEVICE *dev, DEV_RECORD *rec, int verbose)
             type, dev->file, dev->block_num, rec->VolSessionId, rec->VolSessionTime, label.JobId);
          Pmsg4(-1, _("   Job=%s Date=%s Level=%c Type=%c\n"),
             label.Job, dt, label.JobLevel, label.JobType);
+         if (check_err) {
+            errors += check_label(&label);
+         }
          break;
       case EOS_LABEL:
          char ed1[30], ed2[30];
@@ -1190,6 +1257,9 @@ void dump_label_record(DEVICE *dev, DEV_RECORD *rec, int verbose)
             edit_uint64_with_commas(label.JobFiles, ed1),
             edit_uint64_with_commas(label.JobBytes, ed2),
             label.JobErrors, (char)label.JobStatus);
+         if (check_err) {
+            errors += check_label(&label);
+         }
          break;
       case EOM_LABEL:
       case PRE_LABEL:
@@ -1204,4 +1274,5 @@ void dump_label_record(DEVICE *dev, DEV_RECORD *rec, int verbose)
       }
    }
    debug_level = dbl;
+   return errors;
 }

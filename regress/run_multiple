@@ -1,9 +1,21 @@
 #!/bin/sh
+#
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+
+if [ $# != 1 ] ; then
+  echo " "
+  echo "Missing test name ..."
+  echo "./run_multiple test/<test-name>"
+  echo " "
+  exit 1
+fi
 ./starttime
 export REGRESS_DEBUG=1
 for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 ; do
   echo "$i. Doing $1 at `date +%R:%S`"
-  nice $1 >1
+  nice ./run $1 >1
   r=$?
   if [ $r -ne 0 ] ; then
      echo "Exit $r"

@@ -1,24 +1,30 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 1981-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
-
 /*
-  Generalized console input/output handler
-  A maintanable replacement for readline()
+      Generalized console input/output handler
+      A maintanable replacement for readline()
 
-  Written in 1981, updated for Bacula, Kern Sibbald, December MMIII
+         Updated for Bacula, Kern Sibbald, December MMIII
+
+      This code is in part derived from code that I wrote in
+      1981, so some of it is a bit old and could use a cleanup.
 
 */
 
@@ -30,6 +36,7 @@
  *    it is the start of a series of chars (up to 5)
  *  Each subsequent character starts with 10 (i.e. (c & 0xC0) == 0x80)
  */
+
 
 #ifdef  TEST_PROGRAM
 #include <stdio.h>

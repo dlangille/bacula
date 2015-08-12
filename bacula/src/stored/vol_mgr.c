@@ -1,22 +1,26 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *   Volume management functions for Storage Daemon
  *
- *   Written by Kern Sibbald, MM
+ *   Kern Sibbald, MM
  *
  *   Split from reserve.c October 2008
  *
@@ -503,26 +507,27 @@ VOLRES *reserve_volume(DCR *dcr, const char *VolumeName)
             if (dev) {
                Jmsg8(jcr, M_WARNING, 0, "Need volume for %s from other drive, "
                   "but swap not possible. Status: reader=%d writers=%d "
-                  "reserves=%d swap=%d vol=%s from dev=%s to %s\n", 
+                  "reserves=%d swap=%d vol=%s from dev=%s to %s\n",
                   dcr->is_writing()?"write":"read",
                   vol->dev->can_read(), vol->dev->num_writers,
                   vol->dev->num_reserved(), vol->is_swapping(),
                   VolumeName, vol->dev->print_name(), dev->print_name());
             }
             if (vol->is_swapping()) {
-               if (vol->dev && vol->dev->swap_dev && dev && dev->swap_dev) {
+               DEVICE *swapdev = dev->swap_dev;
+               if (vol && dev && swapdev) {
                   Mmsg3(jcr->errmsg, _("Volume %s is busy swapping from %s to %s\n"),
-                     vol->vol_name, dev->print_name(), dev->swap_dev->print_name());
+                     NPRT(vol->vol_name), dev->print_name(), swapdev->print_name());
                } else {
                   Mmsg1(jcr->errmsg, _("Volume %s is busy swapping.\n"),
-                     vol->vol_name);
+                     NPRT(vol->vol_name));
                }
             } else if (vol->dev) {
-               Mmsg2(jcr->errmsg, _("%s device %s is busy.\n"), 
+               Mmsg2(jcr->errmsg, _("%s device %s is busy.\n"),
                   vol->dev->print_type(), vol->dev->print_name());
             } else {
                Mmsg1(jcr->errmsg, _("Volume %s is busy swapping.\n"),
-                  vol->vol_name);
+                  NPRT(vol->vol_name));
             }
             debug_list_volumes("failed swap");
             vol = NULL;                  /* device busy */

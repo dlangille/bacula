@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  * Bacula message handling routines
@@ -21,15 +25,15 @@
  *   otherwise you may get into recursive calls if there are
  *   errors, and that can lead to looping or deadlocks.
  *
- *   Written by Kern Sibbald, April 2000
+ *   Kern Sibbald, April 2000
  *
  */
 
 #include "bacula.h"
 #include "jcr.h"
 
-sql_query_func p_sql_query = NULL;
-sql_escape_func p_sql_escape = NULL;
+sql_query_call  p_sql_query = NULL;
+sql_escape_call p_sql_escape = NULL;
 
 #define FULL_LOCATION 1               /* set for file:line in Debug messages */
 
@@ -43,20 +47,21 @@ const char *version = VERSION " (" BDATE ")";
 const char *dist_name = DISTNAME " " DISTVER;
 char *exepath = (char *)NULL;
 char *exename = (char *)NULL;
-char *catalog_db = NULL;              /* database type */
+char db_engine_name[50] = {0};        /* Database engine name or type */
 char con_fname[500];                  /* Console filename */
 char my_name[MAX_NAME_LENGTH] = {0};  /* daemon name is stored here */
 char host_name[50] = {0};             /* host machine name */
 char fail_time[30] = {0};             /* Time of failure */
 int verbose = 0;                      /* increase User messages */
 int64_t debug_level = 0;              /* debug level */
+int64_t debug_level_tags = 0;         /* debug tags */
 int32_t debug_flags = 0;              /* debug flags */
-int beef = BEEF;
 int console_msg_pending = false;
 utime_t daemon_start_time = 0;        /* Daemon start time */
 FILE *con_fd = NULL;                  /* Console file descriptor */
 brwlock_t con_lock;                   /* Console lock structure */
 bool dbg_timestamp = false;           /* print timestamp in debug output */
+bool dbg_thread = false;              /* add thread_id to details */
 bool prt_kaboom = false;              /* Print kaboom output */
 job_code_callback_t message_job_code_callback = NULL;   /* Job code callback. Only used by director. */
 
@@ -81,6 +86,7 @@ static bool trace = true;
 static bool trace = false;
 #endif
 static int hangup = 0;
+static int blowup = 0;
 
 /* Constants */
 const char *host_os = HOST_OS;
@@ -103,16 +109,6 @@ static const char *bstrrpath(const char *start, const char *end)
       }
    }
    return end;
-}
-
-/*
- * Returns: 0 if not configured
- *         -1 on error
- *          1 OK
- */
-int generate_daemon_event(JCR *jcr, const char *event)
-{
-   return 0;
 }
 
 /* Some message class methods */
@@ -195,6 +191,14 @@ void set_debug_flags(char *options)
 
       case 'T':
          dbg_timestamp = false;
+         break;
+
+      case 'h':
+         dbg_thread = true;
+         break;
+
+      case 'H':
+         dbg_thread = false;
          break;
 
       case 'c':
@@ -300,15 +304,11 @@ set_assert_msg(const char *file, int line, const char *msg)
    assert_msg = bstrdup(buf);
 }
 
-void
-set_db_type(const char *name)
-{
-   if (catalog_db != NULL) {
-      free(catalog_db);
-   }
-   catalog_db = bstrdup(name);
-}
-
+void set_db_engine_name(const char *name)
+{ 
+   bstrncpy(db_engine_name, name, sizeof(db_engine_name)-1);
+} 
+ 
 /*
  * Initialize message handler for a daemon or a Job
  *   We make a copy of the MSGS resource passed, so it belows
@@ -584,6 +584,7 @@ void close_msg(JCR *jcr)
    Dmsg1(850, "===Begin close msg resource at %p\n", msgs);
    cmd = get_pool_memory(PM_MESSAGE);
    for (d=msgs->dest_chain; d; ) {
+      bool success;
       if (d->fd) {
          switch (d->dest_code) {
          case MD_FILE:
@@ -600,39 +601,18 @@ void close_msg(JCR *jcr)
             if (!d->fd) {
                break;
             }
+            success = jcr && (jcr->JobStatus == JS_Terminated || jcr->JobStatus == JS_Warnings);
 
-            switch (d->dest_code) {
-            case MD_MAIL_ON_ERROR:
-               if (jcr) {
-                  switch (jcr->JobStatus) {
-                  case JS_Terminated:
-                  case JS_Warnings:
-                     goto rem_temp_file;
-                  default:
-                     break;
-                  }
-               }
-               break;
-            case MD_MAIL_ON_SUCCESS:
-               if (jcr) {
-                  switch (jcr->JobStatus) {
-                  case JS_Terminated:
-                  case JS_Warnings:
-                     break;
-                  default:
-                     goto rem_temp_file;
-                  }
-               }
-               break;
-            default:
-               break;
+            if (d->dest_code == MD_MAIL_ON_ERROR && success) {
+               goto rem_temp_file;       /* no mail */
+            } else if (d->dest_code == MD_MAIL_ON_SUCCESS && !success) {
+               goto rem_temp_file;       /* no mail */
             }
 
             if (!(bpipe=open_mail_pipe(jcr, cmd, d))) {
                Pmsg0(000, _("open mail pipe failed.\n"));
-               goto rem_temp_file;
+               goto rem_temp_file;       /* error get out */
             }
-
             Dmsg0(850, "Opened mail pipe\n");
             len = d->max_len+10;
             line = get_memory(len);
@@ -667,6 +647,7 @@ void close_msg(JCR *jcr)
                                  "ERR=%s\n"), cmd, be.bstrerror());
             }
             free_memory(line);
+
 rem_temp_file:
             /* Remove temp mail file */
             if (d->fd) {
@@ -754,11 +735,9 @@ void term_msg()
    if (trace_fd) {
       fclose(trace_fd);
       trace_fd = NULL;
+      trace = false;
    }
-   if (catalog_db) {
-      free(catalog_db);
-      catalog_db = NULL;
-   }
+   working_directory = NULL;
    term_last_jobs_list();
 }
 
@@ -872,10 +851,11 @@ void dispatch_message(JCR *jcr, int type, utime_t mtime, char *msg)
 
     for (d=msgs->dest_chain; d; d=d->next) {
        if (bit_is_set(type, d->msg_types)) {
+          bool ok;
           switch (d->dest_code) {
              case MD_CATALOG:
                 char ed1[50];
-                if (!jcr || !jcr->db) {
+                if (!jcr || !jcr->db) { 
                    break;
                 }
                 if (p_sql_query && p_sql_escape) {
@@ -883,18 +863,17 @@ void dispatch_message(JCR *jcr, int type, utime_t mtime, char *msg)
                    POOLMEM *esc_msg = get_pool_memory(PM_MESSAGE);
 
                    int len = strlen(msg) + 1;
-                   esc_msg = check_pool_memory_size(esc_msg, len * 2 + 1);
-                   if (p_sql_escape(jcr, jcr->db, esc_msg, msg, len)) {
-                      bstrutime(dt, sizeof(dt), mtime);
-                      Mmsg(cmd, "INSERT INTO Log (JobId, Time, LogText) VALUES (%s,'%s','%s')",
-                            edit_int64(jcr->JobId, ed1), dt, esc_msg);
-                      if (!p_sql_query(jcr, cmd)) {
-                         delivery_error(_("Msg delivery error: Unable to store data in database.\n"));
-                      }
-                   } else {
-                      delivery_error(_("Msg delivery error: Unable to store data in database.\n"));
-                   }
-
+                   esc_msg = check_pool_memory_size(esc_msg, len*2+1);
+                   ok = p_sql_escape(jcr, jcr->db, esc_msg, msg, len);
+                   if (ok) {
+                      bstrutime(dt, sizeof(dt), mtime); 
+                      Mmsg(cmd, "INSERT INTO Log (JobId, Time, LogText) VALUES (%s,'%s','%s')", 
+                           edit_int64(jcr->JobId, ed1), dt, esc_msg);
+                      ok = p_sql_query(jcr, cmd);
+                   } 
+                   if (!ok) {
+                      delivery_error(_("Message delivery error: Unable to store data in database.\n"));
+                   } 
                    free_pool_memory(cmd);
                    free_pool_memory(esc_msg);
                 }
@@ -1099,13 +1078,13 @@ static void pt_out(char *buf)
  *
  *  If the level is negative, the details of file and line number
  *  are not printed.
+ *
  */
 void
-d_msg(const char *file, int line, int64_t level, const char *fmt,...)
+vd_msg(const char *file, int line, int64_t level, const char *fmt, va_list arg_ptr)
 {
     char      buf[5000];
-    int       len;
-    va_list   arg_ptr;
+    int       len = 0; /* space used in buf */
     bool      details = true;
     utime_t   mtime;
 
@@ -1117,30 +1096,38 @@ d_msg(const char *file, int line, int64_t level, const char *fmt,...)
     if (chk_dbglvl(level)) {
        if (dbg_timestamp) {
           mtime = time(NULL);
-          bstrftimes(buf, sizeof(buf), mtime);
+          bstrftimes(buf+len, sizeof(buf)-len, mtime);
           len = strlen(buf);
           buf[len++] = ' ';
-          buf[len] = 0;
-          pt_out(buf);
        }
 
 #ifdef FULL_LOCATION
        if (details) {
-          len = bsnprintf(buf, sizeof(buf), "%s: %s:%d-%u ",
-                my_name, get_basename(file), line, get_jobid_from_tsd());
-       } else {
-          len = 0;
+          if (dbg_thread) {
+             len += bsnprintf(buf+len, sizeof(buf)-len, "%s[%lld]: %s:%d-%u ",
+                             my_name, bthread_get_thread_id(),
+                             get_basename(file), line, get_jobid_from_tsd());
+          } else {
+             len += bsnprintf(buf+len, sizeof(buf)-len, "%s: %s:%d-%u ",
+                   my_name, get_basename(file), line, get_jobid_from_tsd());
+          }
        }
-#else
-       len = 0;
 #endif
-       va_start(arg_ptr, fmt);
        bvsnprintf(buf+len, sizeof(buf)-len, (char *)fmt, arg_ptr);
-       va_end(arg_ptr);
 
        pt_out(buf);
     }
 }
+
+void
+d_msg(const char *file, int line, int64_t level, const char *fmt,...)
+{
+   va_list arg_ptr;
+   va_start(arg_ptr, fmt);
+   vd_msg(file, line, level, fmt, arg_ptr); /* without tags */
+   va_end(arg_ptr);
+}
+
 
 /*
  * Set trace flag on/off. If argument is negative, there is no change
@@ -1176,6 +1163,21 @@ int get_hangup(void)
    return hangup;
 }
 
+void set_blowup(int blowup_value)
+{
+   if (blowup_value < 0) {
+      return;
+   } else {
+      blowup = blowup_value;
+   }
+}
+
+int get_blowup(void)
+{
+   return blowup;
+}
+
+
 bool get_trace(void)
 {
    return trace;
@@ -1192,18 +1194,21 @@ void
 p_msg(const char *file, int line, int level, const char *fmt,...)
 {
     char      buf[5000];
-    int       len;
+    int       len = 0; /* space used in buf */
     va_list   arg_ptr;
+
+    if (dbg_timestamp) {
+       utime_t mtime = time(NULL);
+       bstrftimes(buf+len, sizeof(buf)-len, mtime);
+       len = strlen(buf);
+       buf[len++] = ' ';
+    }
 
 #ifdef FULL_LOCATION
     if (level >= 0) {
-       len = bsnprintf(buf, sizeof(buf), "%s: %s:%d-%u ",
+       len += bsnprintf(buf+len, sizeof(buf)-len, "%s: %s:%d-%u ",
              my_name, get_basename(file), line, get_jobid_from_tsd());
-    } else {
-       len = 0;
     }
-#else
-       len = 0;
 #endif
 
     va_start(arg_ptr, fmt);
@@ -1232,12 +1237,14 @@ t_msg(const char *file, int line, int64_t level, const char *fmt,...)
     va_list   arg_ptr;
     int       details = TRUE;
 
+    level = level & ~DT_ALL;    /* level should be tag free */
+
     if (level < 0) {
        details = FALSE;
        level = -level;
     }
 
-    if (chk_dbglvl(level)) {
+    if (level <= debug_level) {
        if (!trace_fd) {
           bsnprintf(buf, sizeof(buf), "%s/%s.trace", working_directory ? working_directory : ".", my_name);
           trace_fd = fopen(buf, "a+b");
@@ -1318,6 +1325,7 @@ e_msg(const char *file, int line, int type, int level, const char *fmt,...)
     bvsnprintf(buf+len, sizeof(buf)-len, (char *)fmt, arg_ptr);
     va_end(arg_ptr);
 
+    pt_out(buf);
     dispatch_message(NULL, type, 0, buf);
 
     if (type == M_ABORT) {
@@ -1456,6 +1464,10 @@ void j_msg(const char *file, int line, JCR *jcr, int type, utime_t mtime, const 
    va_list   arg_ptr;
    int i, len, maxlen;
    POOLMEM *pool_buf;
+
+   va_start(arg_ptr, fmt);
+   vd_msg(file, line, 0, fmt, arg_ptr);
+   va_end(arg_ptr);
 
    pool_buf = get_pool_memory(PM_EMSG);
    i = Mmsg(pool_buf, "%s:%d ", get_basename(file), line);
@@ -1619,6 +1631,12 @@ void Qmsg(JCR *jcr, int type, utime_t mtime, const char *fmt,...)
    if (!jcr) {
       jcr = get_jcr_from_tsd();
    }
+
+   if (jcr && type==M_FATAL) {
+      // TODO ASX MUST use a lock to protect access jcr->JobStatus from another thread
+      jcr->setJobStatus(JS_FatalError);
+    }
+
    /* If no jcr or no queue or dequeuing send to syslog */
    if (!jcr || !jcr->msg_queue || jcr->dequeuing_msgs) {
       syslog(LOG_DAEMON|LOG_ERR, "%s", item->msg);
@@ -1702,9 +1720,24 @@ static struct debugtags debug_tags[] = {
  { NT_("memory"),      DT_MEMORY,   _("Debug memory allocation")},
  { NT_("scheduler"),   DT_SCHEDULER,_("Debug scheduler information")},
  { NT_("protocol"),    DT_PROTOCOL, _("Debug protocol information")},
+ { NT_("snapshot"),    DT_SNAPSHOT, _("Debug snapshots")},
+ { NT_("asx"),         DT_ASX,      _("ASX personal's debugging")},
  { NT_("all"),         DT_ALL,      _("Debug all information")},
  { NULL,               0,   NULL}
 };
+
+#define MAX_TAG (sizeof(debug_tags) / sizeof(struct debugtags))
+
+const char *debug_get_tag(uint32_t pos, const char **desc)
+{
+   if (pos < MAX_TAG) {
+      if (desc) {
+         *desc = debug_tags[pos].help;
+      }
+      return debug_tags[pos].tag;
+   }
+   return NULL;
+}
 
 /* Allow +-, */
 bool debug_find_tag(const char *tagname, bool add, int64_t *current_level)
@@ -1783,3 +1816,5 @@ bool debug_parse_tags(const char *options, int64_t *current_level)
    *current_level = level;
    return ret;
 }
+
+int generate_daemon_event(JCR *jcr, const char *event) { return 0; }

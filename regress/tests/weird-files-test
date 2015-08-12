@@ -1,5 +1,10 @@
 #!/bin/sh
 #
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+
+#
 # Run a simple backup of the Bacula build directory
 #   then restore it.
 #
@@ -34,7 +39,7 @@ cd ..
 start_test
 
 cat <<END_OF_DATA >tmp/bconcmds
-@$out /dev/null
+@output /dev/null
 messages
 @$out tmp/log1.out
 label storage=File

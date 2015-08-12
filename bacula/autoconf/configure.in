@@ -2,8 +2,8 @@ dnl
 dnl
 dnl Process this file with autoconf to produce a configure script.
 dnl
-dnl Author: Kern Sibbald, Copyright, 2000-2015
-dnl License: BSD 2-Clause
+dnl Copyright (C) 2000-2015 Kern Sibbald
+dnl License: BSD 2-Clause; see file LICENSE-FOSS
 dnl
 dnl require a recent autoconf
 AC_PREREQ(2.61)
@@ -52,6 +52,7 @@ dnl src/lib
 dnl can be overwritten by specific values from version.h
 LIBBAC_LT_RELEASE=`sed -n -e 's/^#.*LIBBAC_LT_RELEASE.*"\(.*\)"$/\1/p' ${srcdir}/src/version.h`
 LIBBACCFG_LT_RELEASE=`sed -n -e 's/^#.*LIBBACCFG_LT_RELEASE.*"\(.*\)"$/\1/p' ${srcdir}/src/version.h`
+LIBBACPY_LT_RELEASE=`sed -n -e 's/^#.*LIBBACPY_LT_RELEASE.*"\(.*\)"$/\1/p' ${srcdir}/src/version.h`
 
 LIBBAC_LT_RELEASE=${LIBBAC_LT_RELEASE:-$VERSION}
 LIBBACCFG_LT_RELEASE=${LIBBACCFG_LT_RELEASE:-$VERSION}
@@ -77,6 +78,10 @@ LIBBACFIND_LT_RELEASE=`sed -n -e 's/^#.*LIBBACFIND_LT_RELEASE.*"\(.*\)"$/\1/p' $
 LIBBACFIND_LT_RELEASE=${LIBBACFIND_LT_RELEASE:-$VERSION}
 
 AC_SUBST(LIBBACFIND_LT_RELEASE)dnl
+
+
+dnl PFILES are platform or plugin specific files
+PFILES="platforms/Makefile"
 
 echo "configuring for ${BACULA} $VERSION ($DATE)"
 
@@ -129,7 +134,6 @@ AC_PATH_PROG(DVDRWFORMAT, dvd+rw-format, dvd+rw-format)
 AC_PATH_PROG(PKGCONFIG, pkg-config, pkg-config)
 AC_PATH_PROG(QMAKE, qmake, none)
 AC_PATH_PROG(GMAKE, gmake, none)
-AC_PATH_PROG(CDRECORD, cdrecord, cdrecord)
 AC_PATH_PROG(PIDOF, pidof, pidof)
 AC_PROG_AWK
 # Some AWK programs fail, so test it and warn the user
@@ -469,7 +473,6 @@ AC_SUBST(QWT_LDFLAGS)
 AC_SUBST(QWT_LIB)
 AC_SUBST(QWT)
 
-
 dnl -------------------------------------------
 dnl smartalloc (default off)
 dnl -------------------------------------------
@@ -499,7 +502,7 @@ AC_ARG_ENABLE(lockmgr,
 )
 
 if test x$support_lockmgr = xyes; then
-   AC_DEFINE(_USE_LOCKMGR, 1, [Set if you want Lock Manager enabled])
+   AC_DEFINE(USE_LOCKMGR, 1, [Set if you want Lock Manager enabled])
 fi
 
 
@@ -644,13 +647,10 @@ AC_ARG_ENABLE(build-dird,
        fi
    ]
 )
-if test x$build_dird = xyes; then
-   DIRD_DIR="src/dird"
-   DIR_TOOLS="DIRTOOLS"
-else
-   DIRD_DIR=""
-   DIR_TOOLS="NODIRTOOLS"
-fi
+
+DIRD_DIR="src/dird"
+DIR_TOOLS="DIRTOOLS"
+
 AC_SUBST(DIRD_DIR)
 AC_SUBST(DIR_TOOLS)
 
@@ -703,12 +703,27 @@ AC_ARG_ENABLE(ipv6,
 if test x$support_ipv6 = xyes; then
     AC_TRY_LINK([ #include <sys/types.h>
 #include <sys/socket.h>
-#include <netinet/in.h>], [struct sockaddr_in6 s; struct in6_addr t=in6addr_any; int i=AF_INET6; s; t.s6_addr[0] = 0;],
+#include <netinet/in.h>], [struct in6_addr t=in6addr_any; t.s6_addr[0] = 0;],
+      [support_in6addr_any=yes], [support_in6addr_any=no])
+
+   if test x$support_in6addr_any = xno ; then
+       in6addr_any="const struct in6_addr in6addr_any"
+   else 
+       in6addr_any="1"
+   fi
+
+   AC_TRY_LINK([ #include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>], [$in6addr_any; struct sockaddr_in6 s; struct in6_addr t=in6addr_any; int i=AF_INET6; s; t.s6_addr[0] = 0;],
       [support_ipv6=yes], [support_ipv6=no])
 fi
 
 if test x$support_ipv6 = xyes; then
    AC_DEFINE(HAVE_IPV6,1,[Whether to enable IPv6 support])
+
+   if test x$support_in6addr_any = xno ; then
+      AC_DEFINE(NEED_IN6ADDR_ANY,1,[Whether to have in6addr_any support])
+   fi
 fi
 
 TERM_LIB=""
@@ -835,6 +850,7 @@ AC_HEADER_DIRENT
 AC_CHECK_FUNCS(strcasecmp select setenv putenv tcgetattr)
 AC_CHECK_FUNCS(lstat lchown lchmod futimes fchmod fchown)
 AC_CHECK_FUNCS(nanosleep nl_langinfo)
+AC_CHECK_FUNCS(be64toh htobe64)
 AC_CHECK_HEADERS(varargs.h)
 
 dnl End of readline/conio stuff
@@ -906,7 +922,6 @@ AC_ARG_WITH(tcp-wrappers,
        fi
    ]
 )
-
 
 dnl -----------------------------------------------------------
 dnl Check whether OpenSSL is available
@@ -1153,6 +1168,10 @@ AC_ARG_WITH(plugindir,
 )
 
 AC_SUBST(plugindir)
+
+dnl ------------------------------------------
+dnl Where to send dump email
+dnl ------------------------------------------
 
 dnl ------------------------------------------
 dnl Where to send dump email
@@ -1880,6 +1899,7 @@ AC_STRUCT_ST_BLOCKS
 AC_STRUCT_ST_RDEV
 AC_STRUCT_TM
 AC_C_CONST
+AC_C_RESTRICT
 
 AC_CHECK_SIZEOF(char, 1)
 AC_CHECK_SIZEOF(short int, 2)
@@ -2160,6 +2180,13 @@ AC_CHECK_DECL(
     [#include <fcntl.h>]
 )
 
+AC_CHECK_DECL(
+    F_SETLK,
+    AC_DEFINE(HAVE_FCNTL_LOCK, 1, [Set if fcntl supports file locking]),
+    ,
+    [#include <fcntl.h>]
+)
+
 AC_CHECK_FUNC(closefrom, [AC_DEFINE(HAVE_CLOSEFROM, 1, [Define to 1 if you have the 'closefrom' function.])])
 AC_CHECK_FUNCS(getpagesize, [AC_DEFINE(HAVE_GETPAGESIZE, 1, [Set if have getpagesize])])
 AC_CHECK_FUNCS(malloc_trim, [AC_DEFINE(HAVE_MALLOC_TRIM, 1, [Set if have malloc_trim])])
@@ -2167,6 +2194,7 @@ AC_CHECK_FUNCS(malloc_trim, [AC_DEFINE(HAVE_MALLOC_TRIM, 1, [Set if have malloc_
 AC_CHECK_FUNCS(fchdir, [AC_DEFINE(HAVE_FCHDIR)])
 AC_CHECK_FUNCS(strtoll, [AC_DEFINE(HAVE_STRTOLL)])
 AC_CHECK_FUNCS(posix_fadvise)
+AC_CHECK_FUNCS(posix_fallocate)
 AC_CHECK_FUNCS(fdatasync)
 
 AC_CHECK_FUNCS(chflags)
@@ -2893,9 +2921,8 @@ dnl
 dnl Finally we set appropriate distribution specific
 dnl  variables and defaults
 dnl
-dnl PFILES are platform specific files
-PFILES="platforms/Makefile"
 PSCMD="ps -e"
+WIN32=
 MACOSX=
 COMPRESS_MANPAGES=yes
 
@@ -2903,10 +2930,9 @@ case "$DISTNAME" in
 aix)
    DISTVER=`uname -r`
    PSCMD="ps -e -o pid,comm"
-   PFILES="${PFILES} \
-      platforms/aix/Makefile"
-   TAPEDRIVE="/dev/rmt0.1"
-  ;;	
+   PFILES="${PFILES} platforms/aix/Makefile"
+   TAPEDRIVE="/dev/rmt0.1" 
+  ;;	 
 alpha)
    DISTVER=`uname -r`
    PTHREAD_LIB="-lpthread -lexc"
@@ -2933,6 +2959,13 @@ bsdi)
        platforms/bsdi/bacula-sd \
        platforms/bsdi/bacula-dir"
    largefile_support="yes"
+  ;;
+cygwin)
+   DISTVER=`uname -a |awk '{print $3}'`
+   TAPEDRIVE="/dev/nrst0"
+   WIN32=win32
+   WCFLAGS="-mwindows"
+   WLDFLAGS="-mwindows"
   ;;
 darwin)
    DISTVER=`uname -r`
@@ -3180,7 +3213,6 @@ AC_ARG_WITH(systemd,
 
 	   PFILES="${PFILES} \
 		   platforms/systemd/Makefile \
-		   platforms/systemd/bacula.conf \
 		   platforms/systemd/bacula-dir.service \
 		   platforms/systemd/bacula-fd.service \
 		   platforms/systemd/bacula-sd.service"
@@ -3206,6 +3238,7 @@ AC_DEFINE_UNQUOTED(lld, "$lld")
 AC_DEFINE_UNQUOTED(llu, "$llu")
 AC_SUBST(TAPEDRIVE)
 AC_SUBST(PSCMD)
+AC_SUBST(WIN32)
 AC_SUBST(MACOSX)
 AC_SUBST(DISTNAME)
 AC_SUBST(DISTVER)
@@ -3228,6 +3261,7 @@ if test "x${subsysdir}" = "x${sbindir}" ; then
    echo " "
    exit 1
 fi
+
 
 AC_OUTPUT([autoconf/Make.common \
 	   Makefile \
@@ -3258,7 +3292,10 @@ AC_OUTPUT([autoconf/Make.common \
 	   src/qt-console/bat.conf \
 	   src/qt-console/bat.pro \
 	   src/qt-console/bat.pro.mingw32 \
+	   src/qt-console/bat.pro.mingw64 \
 	   src/qt-console/install_conf_file \
+	   src/qt-console/tray-monitor/tray-monitor.pro.mingw32 \
+	   src/qt-console/tray-monitor/tray-monitor.pro.mingw64 \
 	   src/dird/Makefile \
 	   src/dird/bacula-dir.conf \
 	   src/lib/Makefile \
@@ -3303,6 +3340,9 @@ AC_OUTPUT([autoconf/Make.common \
 	   src/plugins/sd/Makefile \
 	   src/plugins/dir/Makefile \
 	   po/Makefile.in \
+	   updatedb/update_mysql_tables \
+	   updatedb/update_sqlite3_tables \
+	   updatedb/update_postgresql_tables \
 	   updatedb/update_mysql_tables_9_to_10 \
 	   updatedb/update_sqlite3_tables_9_to_10 \
 	   updatedb/update_postgresql_tables_9_to_10 \
@@ -3312,9 +3352,10 @@ AC_OUTPUT([autoconf/Make.common \
 	   updatedb/update_mysql_tables_11_to_12 \
 	   updatedb/update_sqlite3_tables_11_to_12 \
 	   updatedb/update_postgresql_tables_11_to_12 \
-	   updatedb/update_mysql_tables_12_to_14 \
-	   updatedb/update_sqlite3_tables_12_to_14 \
-	   updatedb/update_postgresql_tables_12_to_14 \
+	   updatedb/update_mysql_tables_12_to_13 \
+	   updatedb/update_postgresql_tables_12_to_13 \
+	   updatedb/update_mysql_tables_13_to_14 \
+	   updatedb/update_postgresql_tables_13_to_14 \
 	   examples/nagios/check_bacula/Makefile \
 	   platforms/rpms/redhat/bacula.spec \
 	   platforms/rpms/redhat/bacula-bat.spec \
@@ -3358,7 +3399,7 @@ chmod 755 install_conf_file build-depkgs-qt-console
 cd ${BUILD_DIR}
 
 cd scripts
-chmod 755 bacula btraceback mtx-changer storage-ctl bsg_persist
+chmod 755 bacula btraceback mtx-changer
 chmod 755 dvd-handler dvd-simulator
 chmod 755 bconsole disk-changer devel_bacula logrotate
 cd ..
@@ -3419,70 +3460,70 @@ ${MAKE:-make} clean
 echo "
 Configuration on `date`:
 
-   Host:		    ${host}${post_host} -- ${DISTNAME} ${DISTVER}
-   Bacula version:	    ${BACULA} ${VERSION} (${DATE})
-   Source code location:    ${srcdir}
-   Install binaries:	    ${sbindir}
-   Install libraries:	    ${libdir}
-   Install config files:    ${sysconfdir}
-   Scripts directory:	    ${scriptdir}
-   Archive directory:	    ${archivedir}
-   Working directory:	    ${working_dir}
-   PID directory:	    ${piddir}
-   Subsys directory:	    ${subsysdir}
-   Man directory:	    ${mandir}
-   Data directory:	    ${datarootdir}
-   Plugin directory:	    ${plugindir}
-   C Compiler:		    ${CC} ${CCVERSION}
-   C++ Compiler:	    ${CXX} ${CXXVERSION}
-   Compiler flags:	    ${WCFLAGS} ${CFLAGS}
-   Linker flags:	    ${WLDFLAGS} ${LDFLAGS}
-   Libraries:		    ${LIBS}
-   Statically Linked Tools: ${support_static_tools}
-   Statically Linked FD:    ${support_static_fd}
-   Statically Linked SD:    ${support_static_sd}
-   Statically Linked DIR:   ${support_static_dir}
-   Statically Linked CONS:  ${support_static_cons}
-   Database backends:	    ${db_backends}
-   Database port:	    ${db_port}
-   Database name:	    ${db_name}
-   Database user:	    ${db_user}
+   Host:		     ${host}${post_host} -- ${DISTNAME} ${DISTVER}
+   Bacula version:	     ${BACULA} ${VERSION} (${DATE})
+   Source code location:     ${srcdir}
+   Install binaries:	     ${sbindir}
+   Install libraries:	     ${libdir}
+   Install config files:     ${sysconfdir}
+   Scripts directory:	     ${scriptdir}
+   Archive directory:	     ${archivedir}
+   Working directory:	     ${working_dir}
+   PID directory:	     ${piddir}
+   Subsys directory:	     ${subsysdir}
+   Man directory:	     ${mandir}
+   Data directory:	     ${datarootdir}
+   Plugin directory:	     ${plugindir}
+   C Compiler:		     ${CC} ${CCVERSION}
+   C++ Compiler:	     ${CXX} ${CXXVERSION}
+   Compiler flags:	     ${WCFLAGS} ${CFLAGS}
+   Linker flags:	     ${WLDFLAGS} ${LDFLAGS}
+   Libraries:		     ${LIBS}
+   Statically Linked Tools:  ${support_static_tools}
+   Statically Linked FD:     ${support_static_fd}
+   Statically Linked SD:     ${support_static_sd}
+   Statically Linked DIR:    ${support_static_dir}
+   Statically Linked CONS:   ${support_static_cons}
+   Database backends:	     ${db_backends}
+   Database port:	     ${db_port}
+   Database name:	     ${db_name}
+   Database user:	     ${db_user}
 
-   Job Output Email:	    ${job_email}
-   Traceback Email:	    ${dump_email}
-   SMTP Host Address:	    ${smtp_host}
+   Job Output Email:	     ${job_email}
+   Traceback Email:	     ${dump_email}
+   SMTP Host Address:	     ${smtp_host}
 
-   Director Port:	    ${dir_port}
-   File daemon Port:	    ${fd_port}
-   Storage daemon Port:     ${sd_port}
+   Director Port:	     ${dir_port}
+   File daemon Port:	     ${fd_port}
+   Storage daemon Port:      ${sd_port}
 
-   Director User:	    ${dir_user}
-   Director Group:	    ${dir_group}
-   Storage Daemon User:     ${sd_user}
-   Storage DaemonGroup:     ${sd_group}
-   File Daemon User:	    ${fd_user}
-   File Daemon Group:	    ${fd_group}
+   Director User:	     ${dir_user}
+   Director Group:	     ${dir_group}
+   Storage Daemon User:      ${sd_user}
+   Storage DaemonGroup:      ${sd_group}
+   File Daemon User:	     ${fd_user}
+   File Daemon Group:	     ${fd_group}
 
-   Large file support:	    $largefile_support
-   Bacula conio support:    ${got_conio} ${CONS_LIBS}
-   readline support:	    ${got_readline} ${PRTREADLINE_SRC}
-   TCP Wrappers support:    ${TCPW_MSG} ${WRAPLIBS}
-   TLS support: 	    ${support_tls}
-   Encryption support:	    ${support_crypto}
-   ZLIB support:	    ${have_zlib}
-   LZO support: 	    ${have_lzo}
-   enable-smartalloc:	    ${support_smartalloc}
-   enable-lockmgr:	    ${support_lockmgr}
-   bat support: 	    ${support_bat}
-   client-only: 	    ${build_client_only}
-   build-dird:		    ${build_dird}
-   build-stored:	    ${build_stored}
-   Plugin support:	    ${have_plugins}
-   AFS support: 	    ${have_afs}
-   ACL support: 	    ${have_acl}
-   XATTR support:	    ${have_xattr}
-   systemd support:	    ${support_systemd} ${SYSTEMD_UNITDIR}
-   Batch insert enabled:    ${batch_insert_db_backends}
+   Large file support:	     $largefile_support
+   Bacula conio support:     ${got_conio} ${CONS_LIBS}
+   readline support:	     ${got_readline} ${PRTREADLINE_SRC}
+   TCP Wrappers support:     ${TCPW_MSG} ${WRAPLIBS}
+   TLS support: 	     ${support_tls}
+   Encryption support:	     ${support_crypto}
+   ZLIB support:	     ${have_zlib}
+   LZO support: 	     ${have_lzo}
+   enable-smartalloc:	     ${support_smartalloc}
+   enable-lockmgr:	     ${support_lockmgr}
+   bat support: 	     ${support_bat}
+   client-only: 	     ${build_client_only}
+   build-dird:		     ${build_dird}
+   build-stored:	     ${build_stored}
+   Plugin support:	     ${have_plugins}
+   AFS support: 	     ${have_afs}
+   ACL support: 	     ${have_acl}
+   XATTR support:	     ${have_xattr}
+   systemd support:	     ${support_systemd} ${SYSTEMD_UNITDIR}
+   Batch insert enabled:     ${batch_insert_db_backends}
 
   " > config.out
 

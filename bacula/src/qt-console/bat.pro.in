@@ -5,7 +5,7 @@
 #      Edit only bat.pro.in  -- bat.pro is built by the ./configure program
 #
 #   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#    
+#
 CONFIG += qt debug @QWT@
 
 bins.path = /$(DESTDIR)@sbindir@
@@ -27,7 +27,7 @@ QMAKE_INSTALL_PROGRAM = $${LIBTOOL_INSTALL} install -m @SBINPERM@ -p
 QMAKE_CLEAN += .libs/* bat
 
 qwt {
-  INCLUDEPATH += @QWT_INC@ 
+  INCLUDEPATH += @QWT_INC@
   LIBS        += @QWT_LDFLAGS@ @QWT_LIB@
 }
 
@@ -41,10 +41,10 @@ OBJECTS_DIR  = obj
 UI_DIR       = ui
 
 # Main window
-FORMS += main.ui 
+FORMS += main.ui
 FORMS += prefs.ui
-FORMS += label/label.ui 
-FORMS += relabel/relabel.ui 
+FORMS += label/label.ui
+FORMS += relabel/relabel.ui
 FORMS += mount/mount.ui
 FORMS += console/console.ui
 FORMS += restore/restore.ui restore/prerestore.ui restore/brestore.ui

@@ -1,4 +1,9 @@
 #!/bin/sh
+#
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+
 . scripts/functions
 scripts/cleanup
 scripts/copy-2disk-confs

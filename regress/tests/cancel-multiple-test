@@ -1,5 +1,10 @@
 #!/bin/sh
 #
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+
+#
 # Run four concurrent jobs and then cancel 2 of them
 #
 
@@ -32,12 +37,11 @@ cat <<EOF >>${cwd}/bin/bacula-dir.conf
 JobDefs {
   Name = "DefaultJob"
   Type = Backup
-  Client=rufus-fd 
+  Client=${HOST}-fd 
   FileSet="Full Set"
   Storage = File
   Messages = Standard
   Pool = Default
-  Write Bootstrap = "/home/kern/bacula/k/regress/working/NightlySave.bsr"
   Maximum Concurrent Jobs = 10
   SpoolData=yes
   Max Run Time = 30min
@@ -85,7 +89,12 @@ done
 yes
 wait
 messages
-@output
+@$out $tmp/log3.out
+run job=RUN4 level=Full yes
+@# it will cancel the jobid 6 even if jobid 1 is requested
+cancel jobid=1 yes
+wait
+messages
 quit
 END_OF_DATA
 
@@ -96,4 +105,12 @@ stop_bacula
 check_two_logs
 diff ${cwd}/tmp/largefile  ${cwd}/tmp/bacula-restores${cwd}/tmp/largefile 2>&1 >/dev/null
 dstat=$?
+
+grep "Backup Canceled" $tmp/log3.out > /dev/null
+if [ $? -eq 0 ]; then
+    print_debug "ERROR: 'cancel jobid=1 yes' command should not cancel an other job"
+    estat=1
+fi
+
+
 end_test

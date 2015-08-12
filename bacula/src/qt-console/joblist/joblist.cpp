@@ -1,24 +1,26 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2007-2009 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
- *   Version $Id$
- *
  *   Dirk Bartley, March 2007
  */
-
+ 
 #include "bat.h"
 #include <QAbstractEventDispatcher>
 #include <QTableWidgetItem>
@@ -110,8 +112,8 @@ void JobList::populateTable()
 
    /* Set up the Header for the table */
    QStringList headerlist = (QStringList()
-      << tr("Job Id") << tr("Job Name") << tr("Client") << tr("Job Starttime")
-      << tr("Job Type") << tr("Job Level") << tr("Job Files")
+      << tr("Job Id") << tr("Job Name") << tr("Client") << tr("Job Starttime") 
+      << tr("Job Type") << tr("Job Level") << tr("Job Files") 
       << tr("Job Bytes") << tr("Job Status")  << tr("Purged") << tr("File Set")
       << tr("Pool Name") << tr("First Volume") << tr("VolCount"));
 
@@ -157,7 +159,7 @@ void JobList::populateTable()
             continue; /* some fields missing, ignore row */
 
          TableItemFormatter jobitem(*mp_tableWidget, row);
-
+  
          /* Iterate through fields in the record */
          QStringListIterator fld(fieldlist);
          int col = 0;
@@ -205,11 +207,11 @@ void JobList::populateTable()
          jobitem.setNumericFld(col++, fld.next());
          row++;
       }
-   }
+   } 
    /* set default sorting */
    mp_tableWidget->sortByColumn(m_jobIdIndex, Qt::DescendingOrder);
    mp_tableWidget->setSortingEnabled(true);
-
+   
    /* Resize the columns */
    mp_tableWidget->resizeColumnsToContents();
    mp_tableWidget->resizeRowsToContents();
@@ -266,7 +268,7 @@ void JobList::fillQueryString(QString &query)
       m_mediaName = volumeComboBox->itemText(volumeIndex);
    QString distinct = "";
    if (m_mediaName != tr("Any")) { distinct = "DISTINCT "; }
-   query += "SELECT " + distinct + "Job.JobId AS JobId, Job.Name AS JobName, "
+   query += "SELECT " + distinct + "Job.JobId AS JobId, Job.Name AS JobName, " 
             " Client.Name AS Client,"
             " Job.Starttime AS JobStart, Job.Type AS JobType,"
             " Job.Level AS BackupLevel, Job.Jobfiles AS FileCount,"
@@ -384,7 +386,7 @@ void JobList::treeWidgetName(QString &desc)
  */
 void JobList::createConnections()
 {
-   /* connect to the action specific to this pages class that shows up in the
+   /* connect to the action specific to this pages class that shows up in the 
     * page selector tree */
    connect(actionRefreshJobList, SIGNAL(triggered()), this, SLOT(populateTable()));
    connect(refreshButton, SIGNAL(pressed()), this, SLOT(populateTable()));

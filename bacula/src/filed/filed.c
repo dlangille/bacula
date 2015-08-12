@@ -1,28 +1,31 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *  Bacula File Daemon
  *
- *    Written by Kern Sibbald, March MM
+ *    Kern Sibbald, March MM
  *
  */
 
 #include "bacula.h"
 #include "filed.h"
-#include "lib/mntent_cache.h"
 
 /* Imported Functions */
 extern void *handle_connection_request(void *dir_sock);
@@ -37,7 +40,10 @@ bool no_signals = false;
 void *start_heap;
 extern struct s_cmds cmds[];
 
-#define CONFIG_FILE "bacula-fd.conf" /* default config file */
+#ifndef CONFIG_FILE                   /* Might be overwritten */
+ #define CONFIG_FILE "bacula-fd.conf" /* default config file */
+ #define PROG_NAME   "bacula-fd"
+#endif
 
 char *configfile = NULL;
 static bool foreground = false;
@@ -48,23 +54,23 @@ static CONFIG *config;
 static void usage()
 {
    fprintf(stderr, _(
-PROG_COPYRIGHT
-"\n%sVersion: %s (%s)\n\n"
-"Usage: bacula-fd [-f -s] [-c config_file] [-d debug_level]\n"
-"     -c <file>        use <file> as configuration file\n"
-"     -d <n>[,<tags>]  set debug level to <nn>, debug tags to <tags>\n"
-"     -dt              print a timestamp in debug output\n"
-"     -f               run in foreground (for debugging)\n"
-"     -g               groupid\n"
-"     -k               keep readall capabilities\n"
-"     -m               print kaboom output (for debugging)\n"
-"     -s               no signals (for debugging)\n"
-"     -t               test configuration file and exit\n"
-"     -T               set trace on\n"
-"     -u               userid\n"
-"     -v               verbose user messages\n"
-"     -?               print this message.\n"
-"\n"), 2000, "", VERSION, BDATE);
+      PROG_COPYRIGHT
+      "\nVersion: %s (%s)\n\n"
+      "Usage: bacula-fd [-f -s] [-c config_file] [-d debug_level]\n"
+      "     -c <file>        use <file> as configuration file\n"
+      "     -d <n>[,<tags>]  set debug level to <nn>, debug tags to <tags>\n"
+      "     -dt              print a timestamp in debug output\n"
+      "     -f               run in foreground (for debugging)\n"
+      "     -g               groupid\n"
+      "     -k               keep readall capabilities\n"
+      "     -m               print kaboom output (for debugging)\n"
+      "     -s               no signals (for debugging)\n"
+      "     -t               test configuration file and exit\n"
+      "     -T               set trace on\n"
+      "     -u               userid\n"
+      "     -v               verbose user messages\n"
+      "     -?               print this message.\n"
+      "\n"), 2000, VERSION, BDATE);
 
    exit(1);
 }
@@ -75,9 +81,6 @@ PROG_COPYRIGHT
  *  Main Bacula Unix Client Program
  *
  */
-#if defined(HAVE_WIN32)
-#define main BaculaMain
-#endif
 
 int main (int argc, char *argv[])
 {
@@ -93,7 +96,7 @@ int main (int argc, char *argv[])
    textdomain("bacula");
 
    init_stack_dump();
-   my_name_is(argc, argv, "bacula-fd");
+   my_name_is(argc, argv, PROG_NAME);
    init_msg(NULL, NULL);
    daemon_start_time = time(NULL);
 
@@ -120,7 +123,7 @@ int main (int argc, char *argv[])
                debug_level = 1;
             }
             if (p) {
-               debug_parse_tags(p+1, &debug_level);
+               debug_parse_tags(p+1, &debug_level_tags);
             }
          }
          break;
@@ -225,9 +228,9 @@ int main (int argc, char *argv[])
    lmgr_init_thread(); /* initialize the lockmanager stack */
 
    /* Maximum 1 daemon at a time */
-   create_pid_file(me->pid_directory, "bacula-fd",
+   create_pid_file(me->pid_directory, PROG_NAME,
                    get_first_port_host_order(me->FDaddrs));
-   read_state_file(me->working_directory, "bacula-fd",
+   read_state_file(me->working_directory, PROG_NAME,
                    get_first_port_host_order(me->FDaddrs));
 
    load_fd_plugins(me->plugin_directory);
@@ -237,6 +240,11 @@ int main (int argc, char *argv[])
 #ifdef BOMB
    me += 1000000;
 #endif
+
+   /* Setup default value for the the snapshot handler */
+   if (!me->snapshot_command) {
+      me->snapshot_command = snapshot_get_command();
+   }
 
    if (!no_signals) {
       start_watchdog();               /* start watchdog thread */
@@ -271,7 +279,6 @@ void terminate_filed(int sig)
    bnet_stop_thread_server(server_tid);
    generate_daemon_event(NULL, "Exit");
    unload_plugins();
-   flush_mntent_cache();
    write_state_file(me->working_directory, "bacula-fd", get_first_port_host_order(me->FDaddrs));
    delete_pid_file(me->pid_directory, "bacula-fd", get_first_port_host_order(me->FDaddrs));
 
@@ -282,6 +289,7 @@ void terminate_filed(int sig)
    if (debug_level > 0) {
       print_memory_pool_stats();
    }
+
    if (config) {
       config->free_resources();
       free(config);

@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  * Network Utility Routines
@@ -33,6 +37,8 @@
 #endif
 
 #ifdef HAVE_WIN32
+#undef inet_pton
+#define inet_pton binet_pton
 #define socketRead(fd, buf, len)  recv(fd, buf, len, 0)
 #define socketWrite(fd, buf, len) send(fd, buf, len, 0)
 #define socketClose(fd)           closesocket(fd)
@@ -73,7 +79,7 @@ int32_t read_nbytes(BSOCK * bsock, char *ptr, int32_t nbytes)
 
 #ifdef HAVE_WIN32
       /*
-       * For Windows, we must simulate Unix errno on a socket
+       * We simulate errno on Windows for a socket
        *  error in order to handle errors correctly.
        */
       if (nread == SOCKET_ERROR) {
@@ -151,7 +157,7 @@ int32_t write_nbytes(BSOCK * bsock, char *ptr, int32_t nbytes)
 
 #ifdef HAVE_WIN32
          /*
-          * For Windows, we must simulate Unix errno on a socket
+          * We simulate errno on Windows for a socket
           *  error in order to handle errors correctly.
           */
          if (nwritten == SOCKET_ERROR) {
@@ -322,65 +328,61 @@ bool bnet_tls_client(TLS_CONTEXT *ctx, BSOCK * bsock, alist *verify_list)
 #define NO_DATA         4          /* Valid name, no data record of requested type. */
 #endif
 
-#if HAVE_GETADDRINFO
-const char *resolv_host(int family, const char *host, dlist *addr_list)
-{
-   int res;
-   struct addrinfo hints;
-   struct addrinfo *ai, *rp;
-   IPADDR *addr;
+#if defined(HAVE_GETADDRINFO)
+/* 
+ * getaddrinfo.c - Simple example of using getaddrinfo(3) function.
+ * 
+ * Michal Ludvig <michal@logix.cz> (c) 2002, 2003
+ * http://www.logix.cz/michal/devel/
+ *
+ * License: public domain.
+ */
+const char *resolv_host(int family, const char *host, dlist *addr_list) 
+{ 
+   IPADDR *ipaddr;
+   struct addrinfo hints, *res, *rp;
+   int errcode;
+   //char addrstr[100];
+   void *ptr;
 
-   memset(&hints, 0, sizeof(struct addrinfo));
-   hints.ai_family = family;
-   hints.ai_socktype = SOCK_STREAM;
-   hints.ai_protocol = IPPROTO_TCP;
-   hints.ai_flags = 0;
+   memset (&hints, 0, sizeof(hints));
+   hints.ai_family = family; 
+   hints.ai_socktype = SOCK_STREAM; 
+   //hints.ai_flags |= AI_CANONNAME;
 
-   res = getaddrinfo(host, NULL, &hints, &ai);
-   if (res != 0) {
-      return gai_strerror(res);
-   }
+   errcode = getaddrinfo (host, NULL, &hints, &res);
+   if (errcode != 0) return gai_strerror(errcode);
 
-   for (rp = ai; rp != NULL; rp = rp->ai_next) {
-      switch (rp->ai_addr->sa_family) {
-      case AF_INET:
-         addr = New(IPADDR(rp->ai_addr->sa_family));
-         addr->set_type(IPADDR::R_MULTIPLE);
-         /*
-          * Some serious casting to get the struct in_addr *
-          * rp->ai_addr == struct sockaddr
-          * as this is AF_INET family we can cast that
-          * to struct_sockaddr_in. Of that we need the
-          * address of the sin_addr member which contains a
-          * struct in_addr
-          */
-         addr->set_addr4(&(((struct sockaddr_in *)rp->ai_addr)->sin_addr));
-         break;
-#ifdef HAVE_IPV6
-      case AF_INET6:
-         addr = New(IPADDR(rp->ai_addr->sa_family));
-         addr->set_type(IPADDR::R_MULTIPLE);
-         /*
-          * Some serious casting to get the struct in6_addr *
-          * rp->ai_addr == struct sockaddr
-          * as this is AF_INET6 family we can cast that
-          * to struct_sockaddr_in6. Of that we need the
-          * address of the sin6_addr member which contains a
-          * struct in6_addr
-          */
-         addr->set_addr6(&(((struct sockaddr_in6 *)rp->ai_addr)->sin6_addr));
-         break;
-#endif
-      default:
-         continue;
-      }
-      addr_list->append(addr);
-   }
-   freeaddrinfo(ai);
-   return NULL;
-}
+   for (rp=res; res; res=res->ai_next) {
+      //inet_ntop (res->ai_family, res->ai_addr->sa_data, addrstr, 100);
+      switch (res->ai_family) {
+      case AF_INET: 
+         ipaddr = New(IPADDR(rp->ai_addr->sa_family));
+         ipaddr->set_type(IPADDR::R_MULTIPLE);
+         ptr = &((struct sockaddr_in *) res->ai_addr)->sin_addr;
+         ipaddr->set_addr4((in_addr *)ptr);
+         break; 
+#if defined(HAVE_IPV6)
+      case AF_INET6: 
+         ipaddr = New(IPADDR(rp->ai_addr->sa_family));
+         ipaddr->set_type(IPADDR::R_MULTIPLE);
+         ptr = &((struct sockaddr_in6 *) res->ai_addr)->sin6_addr;
+         ipaddr->set_addr6((in6_addr *)ptr);
+         break; 
+#endif 
+      default: 
+         continue; 
+      } 
+      //inet_ntop (res->ai_family, ptr, addrstr, 100);
+      //Pmsg3(000, "IPv%d address: %s (%s)\n", res->ai_family == PF_INET6 ? 6 : 4,
+      //         addrstr, res->ai_canonname);
+      addr_list->append(ipaddr);
+   } 
+   freeaddrinfo(rp);
+   return NULL; 
+} 
 
-#else
+#else 
 
 /*
  * Get human readable error for gethostbyname()
@@ -439,15 +441,14 @@ static const char *resolv_host(int family, const char *host, dlist * addr_list)
          IPADDR *addr =  New(IPADDR(hp->h_addrtype));
          addr->set_type(IPADDR::R_MULTIPLE);
          if (addr->get_family() == AF_INET) {
-            addr->set_addr4((struct in_addr*)*p);
-            addr_list->append(addr);
+             addr->set_addr4((struct in_addr*)*p);
          }
 #ifdef HAVE_IPV6
-         else if (addr->get_family() == AF_INET6) {
-            addr->set_addr6((struct in6_addr*)*p);
-            addr_list->append(addr);
+         else {
+             addr->set_addr6((struct in6_addr*)*p);
          }
 #endif
+         addr_list->append(addr);
       }
       V(ip_mutex);
    }
@@ -464,7 +465,7 @@ static IPADDR *add_any(int family)
 }
 
 /*
- * i host = 0 mean INADDR_ANY only ipv4
+ * i host = 0 means INADDR_ANY only for IPv4
  */
 dlist *bnet_host2ipaddrs(const char *host, int family, const char **errstr)
 {
@@ -491,13 +492,13 @@ dlist *bnet_host2ipaddrs(const char *host, int family, const char **errstr)
       addr->set_addr4(&inaddr);
       addr_list->append(addr);
 #ifdef HAVE_IPV6
-   } else if (inet_pton(AF_INET6, host, &inaddr6) == 1) {
+   } else if (inet_pton(AF_INET6, host, &inaddr6) == 1) { 
       addr = New(IPADDR(AF_INET6));
       addr->set_type(IPADDR::R_MULTIPLE);
       addr->set_addr6(&inaddr6);
       addr_list->append(addr);
 #endif
-   } else {
+   } else { 
       if (family != 0) {
          errmsg = resolv_host(family, host, addr_list);
          if (errmsg) {
@@ -529,10 +530,10 @@ dlist *bnet_host2ipaddrs(const char *host, int family, const char **errstr)
  * Convert a network "signal" code into
  * human readable ASCII.
  */
-const char *bnet_sig_to_ascii(BSOCK * bs)
+const char *bnet_sig_to_ascii(int32_t msglen)
 {
    static char buf[30];
-   switch (bs->msglen) {
+   switch (msglen) {
    case BNET_EOD:
       return "BNET_EOD";           /* end of data stream */
    case BNET_EOD_POLL:
@@ -552,7 +553,7 @@ const char *bnet_sig_to_ascii(BSOCK * bs)
    case BNET_TEXT_INPUT:
       return "BNET_TEXT_INPUT";
    default:
-      sprintf(buf, _("Unknown sig %d"), (int)bs->msglen);
+      bsnprintf(buf, sizeof(buf), _("Unknown sig %d"), (int)msglen);
       return buf;
    }
 }
@@ -570,6 +571,7 @@ BSOCK *init_bsock(JCR * jcr, int sockfd, const char *who, const char *host, int 
    bsock->tls = NULL;
    bsock->errors = 0;
    bsock->m_blocking = 1;
+   bsock->pout_msg_no = &bsock->out_msg_no;
    bsock->msg = get_pool_memory(PM_BSOCK);
    bsock->errmsg = get_pool_memory(PM_MESSAGE);
    bsock->set_who(bstrdup(who));
@@ -585,6 +587,7 @@ BSOCK *init_bsock(JCR * jcr, int sockfd, const char *who, const char *host, int 
 BSOCK *dup_bsock(BSOCK *osock)
 {
    BSOCK *bsock = (BSOCK *)malloc(sizeof(BSOCK));
+   osock->set_locking();
    memcpy(bsock, osock, sizeof(BSOCK));
    bsock->msg = get_pool_memory(PM_BSOCK);
    bsock->errmsg = get_pool_memory(PM_MESSAGE);

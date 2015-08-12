@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2002-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *   Parse a Bootstrap Records (used for restores)
@@ -843,9 +847,11 @@ void dump_bsr(BSR *bsr, bool recurse)
 
 static void free_bsr_item(BSR *bsr)
 {
-   if (bsr) {
-      free_bsr_item(bsr->next);
+   BSR *next;
+   while (bsr) {
+      next = bsr->next;
       free(bsr);
+      bsr = next;
    }
 }
 
@@ -891,15 +897,13 @@ void remove_bsr(BSR *bsr)
 void free_bsr(BSR *bsr)
 {
    BSR *next_bsr;
-
-   if (!bsr) {
-      return;
+   while (bsr) {
+      next_bsr = bsr->next;
+      /* Remove (free) current bsr */
+      remove_bsr(bsr);
+      /* Now get the next one */
+      bsr = next_bsr;
    }
-   next_bsr = bsr->next;
-   /* Remove (free) current bsr */
-   remove_bsr(bsr);
-   /* Now get the next one */
-   free_bsr(next_bsr);
 }
 
 /*****************************************************************

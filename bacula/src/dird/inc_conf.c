@@ -1,23 +1,27 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *   Configuration file parser for new and old Include and
  *      Exclude records
  *
- *     Written by Kern Sibbald, March MMIII
+ *     Kern Sibbald, March MMIII
  *
  */
 
@@ -34,19 +38,20 @@
 void store_inc(LEX *lc, RES_ITEM *item, int index, int pass);
 
 static void store_newinc(LEX *lc, RES_ITEM *item, int index, int pass);
-static void store_regex(LEX *lc, RES_ITEM *item, int index, int pass);
-static void store_wild(LEX *lc, RES_ITEM *item, int index, int pass);
-static void store_fstype(LEX *lc, RES_ITEM *item, int index, int pass);
-static void store_drivetype(LEX *lc, RES_ITEM *item, int index, int pass);
-static void store_opts(LEX *lc, RES_ITEM *item, int index, int pass);
-static void store_base(LEX *lc, RES_ITEM *item, int index, int pass);
-static void store_plugin(LEX *lc, RES_ITEM *item, int index, int pass);
+void store_regex(LEX *lc, RES_ITEM *item, int index, int pass);
+void store_wild(LEX *lc, RES_ITEM *item, int index, int pass);
+void store_fstype(LEX *lc, RES_ITEM *item, int index, int pass);
+void store_drivetype(LEX *lc, RES_ITEM *item, int index, int pass);
+void store_opts(LEX *lc, RES_ITEM *item, int index, int pass);
+void store_lopts(LEX *lc, RES_ITEM *item, int index, int pass);
+void store_base(LEX *lc, RES_ITEM *item, int index, int pass);
+void store_plugin(LEX *lc, RES_ITEM *item, int index, int pass);
 static void setup_current_opts(void);
 
 /* Include and Exclude items */
 static void store_fname(LEX *lc, RES_ITEM2 *item, int index, int pass, bool exclude);
 static void store_plugin_name(LEX *lc, RES_ITEM2 *item, int index, int pass, bool exclude);
-static void options_res(LEX *lc, RES_ITEM2 *item, int index, int pass, bool exclude);
+static void store_options_res(LEX *lc, RES_ITEM2 *item, int index, int pass, bool exclude);
 static void store_excludedir(LEX *lc, RES_ITEM2 *item, int index, int pass, bool exclude);
 
 
@@ -71,84 +76,59 @@ static INCEXE res_incexe;
  * new Include/Exclude items
  *   name             handler     value    code flags default_value
  */
-static RES_ITEM2 newinc_items[] = {
-   {"file",            store_fname,       {0},      0, 0, 0},
-   {"plugin",          store_plugin_name, {0},      0, 0, 0},
-   {"excludedircontaining", store_excludedir,  {0}, 0, 0, 0},
-   {"options",         options_res,       {0},      0, 0, 0},
+RES_ITEM2 newinc_items[] = {
+   {"File",            store_fname,       {0},      0, 0, 0},
+   {"Plugin",          store_plugin_name, {0},      0, 0, 0},
+   {"ExcludeDirContaining", store_excludedir,  {0}, 0, 0, 0},
+   {"Options",         store_options_res,      {0},      0, 0, 0},
    {NULL, NULL, {0}, 0, 0, 0}
 };
 
 /*
  * Items that are valid in an Options resource
+ *
+ *   name             handler      value    code flags default_value
+ *
+ *  Encryption in FS_option_kw table ???
+ *  ReadFifo not in FS_option_kw table ???
+ *
  */
-static RES_ITEM options_items[] = {
-   {"compression",     store_opts,    {0},     0, 0, 0},
-   {"signature",       store_opts,    {0},     0, 0, 0},
-   {"basejob",         store_opts,    {0},     0, 0, 0},
-   {"accurate",        store_opts,    {0},     0, 0, 0},
-   {"verify",          store_opts,    {0},     0, 0, 0},
-   {"onefs",           store_opts,    {0},     0, 0, 0},
-   {"recurse",         store_opts,    {0},     0, 0, 0},
-   {"sparse",          store_opts,    {0},     0, 0, 0},
-   {"hardlinks",       store_opts,    {0},     0, 0, 0},
-   {"readfifo",        store_opts,    {0},     0, 0, 0},
-   {"replace",         store_opts,    {0},     0, 0, 0},
-   {"portable",        store_opts,    {0},     0, 0, 0},
-   {"mtimeonly",       store_opts,    {0},     0, 0, 0},
-   {"keepatime",       store_opts,    {0},     0, 0, 0},
-   {"regex",           store_regex,   {0},     0, 0, 0},
-   {"regexdir",        store_regex,   {0},     1, 0, 0},
-   {"regexfile",       store_regex,   {0},     2, 0, 0},
-   {"base",            store_base,    {0},     0, 0, 0},
-   {"wild",            store_wild,    {0},     0, 0, 0},
-   {"wilddir",         store_wild,    {0},     1, 0, 0},
-   {"wildfile",        store_wild,    {0},     2, 0, 0},
-   {"exclude",         store_opts,    {0},     0, 0, 0},
-   {"aclsupport",      store_opts,    {0},     0, 0, 0},
-   {"plugin",          store_plugin,  {0},     0, 0, 0},
-   {"ignorecase",      store_opts,    {0},     0, 0, 0},
-   {"fstype",          store_fstype,  {0},     0, 0, 0},
-   {"hfsplussupport",  store_opts,    {0},     0, 0, 0},
-   {"noatime",         store_opts,    {0},     0, 0, 0},
-   {"enhancedwild",    store_opts,    {0},     0, 0, 0},
-   {"drivetype",       store_drivetype, {0},   0, 0, 0},
-   {"checkfilechanges",store_opts,    {0},     0, 0, 1},
-   {"strippath",       store_opts,    {0},     0, 0, 0},
-   {"honornodumpflag", store_opts,    {0},     0, 0, 0},
-   {"xattrsupport",    store_opts,    {0},     0, 0, 0},
+RES_ITEM options_items[] = {
+   {"Compression",     store_opts,    {0},   0, INC_KW_COMPRESSION,  0},
+   {"Signature",       store_opts,    {0},   0, INC_KW_DIGEST,       0},
+   {"OneFs",           store_opts,    {0},   0, INC_KW_ONEFS,        0},
+   {"Recurse",         store_opts,    {0},   0, INC_KW_RECURSE,      0},
+   {"Sparse",          store_opts,    {0},   0, INC_KW_SPARSE,       0},
+   {"HardLinks",       store_opts,    {0},   0, INC_KW_HARDLINK,     0},
+   {"Replace",         store_opts,    {0},   0, INC_KW_REPLACE,      0},
+   {"Portable",        store_opts,    {0},   0, INC_KW_PORTABLE,     0},
+   {"MtimeOnly",       store_opts,    {0},   0, INC_KW_MTIMEONLY,    0},
+   {"KeepAtime",       store_opts,    {0},   0, INC_KW_KEEPATIME,    0},
+   {"Exclude",         store_opts,    {0},   0, INC_KW_EXCLUDE,      0},
+   {"AclSupport",      store_opts,    {0},   0, INC_KW_ACL,          0},
+   {"IgnoreCase",      store_opts,    {0},   0, INC_KW_IGNORECASE,   0},
+   {"HfsPlusSupport",  store_opts,    {0},   0, INC_KW_HFSPLUS,      0},
+   {"NoAtime",         store_opts,    {0},   0, INC_KW_NOATIME,      0},
+   {"EnhancedWild",    store_opts,    {0},   0, INC_KW_ENHANCEDWILD, 0},
+   {"CheckFileChanges",store_opts,    {0},   0, INC_KW_CHKCHANGES,   1},
+   {"HonorNoDumpFlag", store_opts,    {0},   0, INC_KW_HONOR_NODUMP, 0},
+   {"XattrSupport",    store_opts,    {0},   0, INC_KW_XATTR,        0},
+   {"ReadFifo",        store_opts,    {0},   0, INC_KW_READFIFO,     0},
+   {"BaseJob",         store_lopts,   {0}, 'J', INC_KW_BASEJOB,      0},
+   {"Accurate",        store_lopts,   {0}, 'C', INC_KW_ACCURATE,     0},
+   {"Verify",          store_lopts,   {0}, 'V', INC_KW_VERIFY,       0},
+   {"StripPath",       store_lopts,   {0}, 'P', INC_KW_STRIPPATH,    0},
+   {"Regex",           store_regex,   {0},   0, 0, 0},
+   {"RegexDir",        store_regex,   {0},   1, 0, 0},
+   {"RegexFile",       store_regex,   {0},   2, 0, 0},
+   {"Base",            store_base,    {0},   0, 0, 0},
+   {"Wild",            store_wild,    {0},   0, 0, 0},
+   {"WildDir",         store_wild,    {0},   1, 0, 0},
+   {"WildFile",        store_wild,    {0},   2, 0, 0},
+   {"Plugin",          store_plugin,  {0},   0, 0, 0},
+   {"FsType",          store_fstype,  {0},   0, 0, 0},
+   {"DriveType",       store_drivetype, {0}, 0, 0, 0},
    {NULL, NULL, {0}, 0, 0, 0}
-};
-
-
-/* Define FileSet KeyWord values */
-enum {
-   INC_KW_NONE,
-   INC_KW_COMPRESSION,
-   INC_KW_DIGEST,
-   INC_KW_ENCRYPTION,
-   INC_KW_VERIFY,
-   INC_KW_BASEJOB,
-   INC_KW_ACCURATE,
-   INC_KW_ONEFS,
-   INC_KW_RECURSE,
-   INC_KW_SPARSE,
-   INC_KW_HARDLINK,
-   INC_KW_REPLACE,               /* restore options */
-   INC_KW_READFIFO,              /* Causes fifo data to be read */
-   INC_KW_PORTABLE,
-   INC_KW_MTIMEONLY,
-   INC_KW_KEEPATIME,
-   INC_KW_EXCLUDE,
-   INC_KW_ACL,
-   INC_KW_IGNORECASE,
-   INC_KW_HFSPLUS,
-   INC_KW_NOATIME,
-   INC_KW_ENHANCEDWILD,
-   INC_KW_CHKCHANGES,
-   INC_KW_STRIPPATH,
-   INC_KW_HONOR_NODUMP,
-   INC_KW_XATTR
 };
 
 /*
@@ -156,42 +136,36 @@ enum {
  *   Note, now that the old style Include/Exclude code is gone,
  *   the INC_KW code could be put into the "code" field of the
  *   options given above.
+ *
+ *    name            token
  */
-static struct s_kw FS_option_kw[] = {
-   {"compression", INC_KW_COMPRESSION},
-   {"signature",   INC_KW_DIGEST},
-   {"encryption",  INC_KW_ENCRYPTION},
-   {"verify",      INC_KW_VERIFY},
-   {"basejob",     INC_KW_BASEJOB},
-   {"accurate",    INC_KW_ACCURATE},
-   {"onefs",       INC_KW_ONEFS},
-   {"recurse",     INC_KW_RECURSE},
-   {"sparse",      INC_KW_SPARSE},
-   {"hardlinks",   INC_KW_HARDLINK},
-   {"replace",     INC_KW_REPLACE},
-   {"readfifo",    INC_KW_READFIFO},
-   {"portable",    INC_KW_PORTABLE},
-   {"mtimeonly",   INC_KW_MTIMEONLY},
-   {"keepatime",   INC_KW_KEEPATIME},
-   {"exclude",     INC_KW_EXCLUDE},
-   {"aclsupport",  INC_KW_ACL},
-   {"ignorecase",  INC_KW_IGNORECASE},
-   {"hfsplussupport", INC_KW_HFSPLUS},
-   {"noatime",     INC_KW_NOATIME},
-   {"enhancedwild", INC_KW_ENHANCEDWILD},
-   {"checkfilechanges", INC_KW_CHKCHANGES},
-   {"strippath",   INC_KW_STRIPPATH},
-   {"honornodumpflag", INC_KW_HONOR_NODUMP},
-   {"xattrsupport", INC_KW_XATTR},
+s_kw FS_option_kw[] = {
+   {"Compression", INC_KW_COMPRESSION},
+   {"Signature",   INC_KW_DIGEST},
+   {"Encryption",  INC_KW_ENCRYPTION},
+   {"Verify",      INC_KW_VERIFY},
+   {"BaseJob",     INC_KW_BASEJOB},
+   {"Accurate",    INC_KW_ACCURATE},
+   {"OneFs",       INC_KW_ONEFS},
+   {"Recurse",     INC_KW_RECURSE},
+   {"Sparse",      INC_KW_SPARSE},
+   {"HardLinks",   INC_KW_HARDLINK},
+   {"Replace",     INC_KW_REPLACE},
+   {"ReadFifo",    INC_KW_READFIFO},
+   {"Portable",    INC_KW_PORTABLE},
+   {"MtimeOnly",   INC_KW_MTIMEONLY},
+   {"KeepAtime",   INC_KW_KEEPATIME},
+   {"Exclude",     INC_KW_EXCLUDE},
+   {"AclSupport",  INC_KW_ACL},
+   {"IgnoreCase",  INC_KW_IGNORECASE},
+   {"HfsPlusSupport", INC_KW_HFSPLUS},
+   {"NoAtime",     INC_KW_NOATIME},
+   {"EnhancedWild", INC_KW_ENHANCEDWILD},
+   {"CheckFileChanges", INC_KW_CHKCHANGES},
+   {"StripPath",   INC_KW_STRIPPATH},
+   {"HonorNoDumpFlag", INC_KW_HONOR_NODUMP},
+   {"XattrSupport", INC_KW_XATTR},
    {NULL,          0}
-};
-
-/* Options for FileSet keywords */
-
-struct s_fs_opt {
-   const char *name;
-   int keyword;
-   const char *option;
 };
 
 /*
@@ -199,62 +173,73 @@ struct s_fs_opt {
  * The output goes into opts, which are then transmitted to
  * the FD for application as options to the following list of
  * included files.
+ *
+ * Note! all 0's in options must come after the value that
+ *       is non-zero.
+ *
+ * NOTE!!  The following long options (see scan_include_options())
+ *   V = Verify
+ *   C = Accurate
+ *   J = BaseJob
+ *   P = StripPath
+ *
+ *   name       keyword             option
  */
-static struct s_fs_opt FS_options[] = {
-   {"md5",      INC_KW_DIGEST,        "M"},
-   {"sha1",     INC_KW_DIGEST,        "S"},
-   {"sha256",   INC_KW_DIGEST,       "S2"},
-   {"sha512",   INC_KW_DIGEST,       "S3"},
-   {"gzip",     INC_KW_COMPRESSION,  "Z6"},
-   {"gzip1",    INC_KW_COMPRESSION,  "Z1"},
-   {"gzip2",    INC_KW_COMPRESSION,  "Z2"},
-   {"gzip3",    INC_KW_COMPRESSION,  "Z3"},
-   {"gzip4",    INC_KW_COMPRESSION,  "Z4"},
-   {"gzip5",    INC_KW_COMPRESSION,  "Z5"},
-   {"gzip6",    INC_KW_COMPRESSION,  "Z6"},
-   {"gzip7",    INC_KW_COMPRESSION,  "Z7"},
-   {"gzip8",    INC_KW_COMPRESSION,  "Z8"},
-   {"gzip9",    INC_KW_COMPRESSION,  "Z9"},
-   {"lzo",      INC_KW_COMPRESSION,  "Zo"},
+struct s_fs_opt FS_options[] = {
+   {"Md5",      INC_KW_DIGEST,        "M"},
+   {"Sha1",     INC_KW_DIGEST,        "S"},
+   {"Sha256",   INC_KW_DIGEST,       "S2"},
+   {"Sha512",   INC_KW_DIGEST,       "S3"},
+   {"Gzip",     INC_KW_COMPRESSION,  "Z6"},
+   {"Gzip1",    INC_KW_COMPRESSION,  "Z1"},
+   {"Gzip2",    INC_KW_COMPRESSION,  "Z2"},
+   {"Gzip3",    INC_KW_COMPRESSION,  "Z3"},
+   {"Gzip4",    INC_KW_COMPRESSION,  "Z4"},
+   {"Gzip5",    INC_KW_COMPRESSION,  "Z5"},
+   {"Gzip6",    INC_KW_COMPRESSION,  "Z6"},
+   {"Gzip7",    INC_KW_COMPRESSION,  "Z7"},
+   {"Gzip8",    INC_KW_COMPRESSION,  "Z8"},
+   {"Gzip9",    INC_KW_COMPRESSION,  "Z9"},
+   {"Lzo",      INC_KW_COMPRESSION,  "Zo"},
    {"blowfish", INC_KW_ENCRYPTION,    "B"},   /* ***FIXME*** not implemented */
    {"3des",     INC_KW_ENCRYPTION,    "3"},   /* ***FIXME*** not implemented */
-   {"yes",      INC_KW_ONEFS,         "0"},
-   {"no",       INC_KW_ONEFS,         "f"},
-   {"yes",      INC_KW_RECURSE,       "0"},
-   {"no",       INC_KW_RECURSE,       "h"},
-   {"yes",      INC_KW_SPARSE,        "s"},
-   {"no",       INC_KW_SPARSE,        "0"},
-   {"yes",      INC_KW_HARDLINK,      "0"},
-   {"no",       INC_KW_HARDLINK,      "H"},
-   {"always",   INC_KW_REPLACE,       "a"},
-   {"ifnewer",  INC_KW_REPLACE,       "w"},
-   {"never",    INC_KW_REPLACE,       "n"},
-   {"yes",      INC_KW_READFIFO,      "r"},
-   {"no",       INC_KW_READFIFO,      "0"},
-   {"yes",      INC_KW_PORTABLE,      "p"},
-   {"no",       INC_KW_PORTABLE,      "0"},
-   {"yes",      INC_KW_MTIMEONLY,     "m"},
-   {"no",       INC_KW_MTIMEONLY,     "0"},
-   {"yes",      INC_KW_KEEPATIME,     "k"},
-   {"no",       INC_KW_KEEPATIME,     "0"},
-   {"yes",      INC_KW_EXCLUDE,       "e"},
-   {"no",       INC_KW_EXCLUDE,       "0"},
-   {"yes",      INC_KW_ACL,           "A"},
-   {"no",       INC_KW_ACL,           "0"},
-   {"yes",      INC_KW_IGNORECASE,    "i"},
-   {"no",       INC_KW_IGNORECASE,    "0"},
-   {"yes",      INC_KW_HFSPLUS,       "R"},   /* "R" for resource fork */
-   {"no",       INC_KW_HFSPLUS,       "0"},
-   {"yes",      INC_KW_NOATIME,       "K"},
-   {"no",       INC_KW_NOATIME,       "0"},
-   {"yes",      INC_KW_ENHANCEDWILD,  "K"},
-   {"no",       INC_KW_ENHANCEDWILD,  "0"},
-   {"yes",      INC_KW_CHKCHANGES,    "c"},
-   {"no",       INC_KW_CHKCHANGES,    "0"},
-   {"yes",      INC_KW_HONOR_NODUMP,  "N"},
-   {"no",       INC_KW_HONOR_NODUMP,  "0"},
-   {"yes",      INC_KW_XATTR,         "X"},
-   {"no",       INC_KW_XATTR,         "0"},
+   {"No",       INC_KW_ONEFS,         "f"},
+   {"Yes",      INC_KW_ONEFS,         "0"},
+   {"No",       INC_KW_RECURSE,       "h"},
+   {"Yes",      INC_KW_RECURSE,       "0"},
+   {"Yes",      INC_KW_SPARSE,        "s"},
+   {"No",       INC_KW_SPARSE,        "0"},
+   {"No",       INC_KW_HARDLINK,      "H"},
+   {"Yes",      INC_KW_HARDLINK,      "0"},
+   {"Always",   INC_KW_REPLACE,       "a"},
+   {"IfNewer",  INC_KW_REPLACE,       "w"},
+   {"Never",    INC_KW_REPLACE,       "n"},
+   {"Yes",      INC_KW_READFIFO,      "r"},
+   {"No",       INC_KW_READFIFO,      "0"},
+   {"Yes",      INC_KW_PORTABLE,      "p"},
+   {"No",       INC_KW_PORTABLE,      "0"},
+   {"Yes",      INC_KW_MTIMEONLY,     "m"},
+   {"No",       INC_KW_MTIMEONLY,     "0"},
+   {"Yes",      INC_KW_KEEPATIME,     "k"},
+   {"No",       INC_KW_KEEPATIME,     "0"},
+   {"Yes",      INC_KW_EXCLUDE,       "e"},
+   {"No",       INC_KW_EXCLUDE,       "0"},
+   {"Yes",      INC_KW_ACL,           "A"},
+   {"No",       INC_KW_ACL,           "0"},
+   {"Yes",      INC_KW_IGNORECASE,    "i"},
+   {"No",       INC_KW_IGNORECASE,    "0"},
+   {"Yes",      INC_KW_HFSPLUS,       "R"},   /* "R" for resource fork */
+   {"No",       INC_KW_HFSPLUS,       "0"},
+   {"Yes",      INC_KW_NOATIME,       "K"},
+   {"No",       INC_KW_NOATIME,       "0"},
+   {"Yes",      INC_KW_ENHANCEDWILD,  "K"},
+   {"No",       INC_KW_ENHANCEDWILD,  "0"},
+   {"Yes",      INC_KW_CHKCHANGES,    "c"},
+   {"No",       INC_KW_CHKCHANGES,    "0"},
+   {"Yes",      INC_KW_HONOR_NODUMP,  "N"},
+   {"No",       INC_KW_HONOR_NODUMP,  "0"},
+   {"Yes",      INC_KW_XATTR,         "X"},
+   {"No",       INC_KW_XATTR,         "0"},
    {NULL,       0,                      0}
 };
 
@@ -262,9 +247,12 @@ static struct s_fs_opt FS_options[] = {
 
 /*
  * Scan for right hand side of Include options (keyword=option) is
- *    converted into one or two characters. Verifyopts=xxxx is Vxxxx:
+ *    converted into one or two characters. Verify=xxxx is Vxxxx:
  *    Whatever is found is concatenated to the opts string.
  * This code is also used inside an Options resource.
+ *
+ * This function returns true for a long option (terminates with :)
+ *   and false for a normal 1 or 2 character option.
  */
 static void scan_include_options(LEX *lc, int keyword, char *opts, int optlen)
 {
@@ -276,20 +264,20 @@ static void scan_include_options(LEX *lc, int keyword, char *opts, int optlen)
    option[2] = 0;                     /* terminate options */
    lc->options |= LOPT_STRING;        /* force string */
    lex_get_token(lc, T_STRING);       /* expect at least one option */
+   /*
+    * ***FIXME**** ensure these are in permitted set
+    */
    if (keyword == INC_KW_VERIFY) { /* special case */
-      /* ***FIXME**** ensure these are in permitted set */
       bstrncat(opts, "V", optlen);         /* indicate Verify */
       bstrncat(opts, lc->str, optlen);
       bstrncat(opts, ":", optlen);         /* terminate it */
       Dmsg3(900, "Catopts=%s option=%s optlen=%d\n", opts, option,optlen);
    } else if (keyword == INC_KW_ACCURATE) { /* special case */
-      /* ***FIXME**** ensure these are in permitted set */
       bstrncat(opts, "C", optlen);         /* indicate Accurate */
       bstrncat(opts, lc->str, optlen);
       bstrncat(opts, ":", optlen);         /* terminate it */
       Dmsg3(900, "Catopts=%s option=%s optlen=%d\n", opts, option,optlen);
    } else if (keyword == INC_KW_BASEJOB) { /* special case */
-      /* ***FIXME**** ensure these are in permitted set */
       bstrncat(opts, "J", optlen);         /* indicate BaseJob */
       bstrncat(opts, lc->str, optlen);
       bstrncat(opts, ":", optlen);         /* terminate it */
@@ -428,7 +416,7 @@ static void store_newinc(LEX *lc, RES_ITEM *item, int index, int pass)
 
 
 /* Store regex info */
-static void store_regex(LEX *lc, RES_ITEM *item, int index, int pass)
+void store_regex(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    int token, rc;
    regex_t preg;
@@ -476,7 +464,7 @@ static void store_regex(LEX *lc, RES_ITEM *item, int index, int pass)
 }
 
 /* Store Base info */
-static void store_base(LEX *lc, RES_ITEM *item, int index, int pass)
+void store_base(LEX *lc, RES_ITEM *item, int index, int pass)
 {
 
    lex_get_token(lc, T_NAME);
@@ -490,7 +478,7 @@ static void store_base(LEX *lc, RES_ITEM *item, int index, int pass)
 }
 
 /* Store reader info */
-static void store_plugin(LEX *lc, RES_ITEM *item, int index, int pass)
+void store_plugin(LEX *lc, RES_ITEM *item, int index, int pass)
 {
 
    lex_get_token(lc, T_NAME);
@@ -505,7 +493,7 @@ static void store_plugin(LEX *lc, RES_ITEM *item, int index, int pass)
 
 
 /* Store Wild-card info */
-static void store_wild(LEX *lc, RES_ITEM *item, int index, int pass)
+void store_wild(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    int token;
    const char *type;
@@ -550,23 +538,24 @@ static void store_wild(LEX *lc, RES_ITEM *item, int index, int pass)
 }
 
 /* Store fstype info */
-static void store_fstype(LEX *lc, RES_ITEM *item, int index, int pass)
+void store_fstype(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    int token;
-
-   token = lex_get_token(lc, T_SKIP_EOL);
    if (pass == 1) {
-      /* Pickup fstype string */
-      switch (token) {
-      case T_IDENTIFIER:
-      case T_UNQUOTED_STRING:
-      case T_QUOTED_STRING:
+      for (;;) {
+         token = lex_get_token(lc, T_STRING);   /* scan next item */
+         if (token == T_ERROR) {
+            break;
+         }
          res_incexe.current_opts->fstype.append(bstrdup(lc->str));
+
          Dmsg3(900, "set fstype %p size=%d %s\n",
-            res_incexe.current_opts, res_incexe.current_opts->fstype.size(), lc->str);
-         break;
-      default:
-         scan_err1(lc, _("Expected an fstype string, got: %s\n"), lc->str);
+            res_incexe.current_opts, res_incexe.current_opts->fstype.size(),lc->str);
+
+         if (lc->ch != ',') {         /* if no other item follows */
+            break;                    /* get out */
+         }
+         lex_get_token(lc, T_ALL);    /* eat comma */
       }
    }
    scan_to_eol(lc);
@@ -588,23 +577,22 @@ static void store_excludedir(LEX *lc, RES_ITEM2 *item, int index, int pass, bool
 }
 
 /* Store drivetype info */
-static void store_drivetype(LEX *lc, RES_ITEM *item, int index, int pass)
+void store_drivetype(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    int token;
-
-   token = lex_get_token(lc, T_SKIP_EOL);
    if (pass == 1) {
-      /* Pickup drivetype string */
-      switch (token) {
-      case T_IDENTIFIER:
-      case T_UNQUOTED_STRING:
-      case T_QUOTED_STRING:
+      for (;;) {
+         token = lex_get_token(lc, T_STRING);   /* scan next item */
+         if (token == T_ERROR) {
+            break;
+         }
          res_incexe.current_opts->drivetype.append(bstrdup(lc->str));
          Dmsg3(900, "set drivetype %p size=%d %s\n",
-            res_incexe.current_opts, res_incexe.current_opts->drivetype.size(), lc->str);
-         break;
-      default:
-         scan_err1(lc, _("Expected an drivetype string, got: %s\n"), lc->str);
+            res_incexe.current_opts, res_incexe.current_opts->drivetype.size(),lc->str);
+         if (lc->ch != ',') {         /* if no other item follows */
+            break;                    /* get out */
+         }
+         lex_get_token(lc, T_ALL);    /* eat comma */
       }
    }
    scan_to_eol(lc);
@@ -698,7 +686,7 @@ static void store_plugin_name(LEX *lc, RES_ITEM2 *item, int index, int pass, boo
 /*
  * Come here when Options seen in Include/Exclude
  */
-static void options_res(LEX *lc, RES_ITEM2 *item, int index, int pass, bool exclude)
+static void store_options_res(LEX *lc, RES_ITEM2 *item, int index, int pass, bool exclude)
 {
    int token, i;
 
@@ -743,11 +731,18 @@ static void options_res(LEX *lc, RES_ITEM2 *item, int index, int pass, bool excl
    }
 }
 
+/*
+ * Different subroutine, but uses store_opts
+ */
+void store_lopts(LEX *lc, RES_ITEM *item, int index, int pass)
+{
+   store_opts(lc, item, index, pass);
+}
 
 /*
  * New style options come here
  */
-static void store_opts(LEX *lc, RES_ITEM *item, int index, int pass)
+void store_opts(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    int i;
    int keyword;
@@ -772,7 +767,9 @@ static void store_opts(LEX *lc, RES_ITEM *item, int index, int pass)
       Dmsg2(900, "new pass=%d incexe opts=%s\n", pass, res_incexe.current_opts->opts);
    }
    scan_to_eol(lc);
+   set_bit(keyword, res_incexe.opt_present);
 }
+
 
 
 

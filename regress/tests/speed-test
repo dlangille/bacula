@@ -1,5 +1,10 @@
 #!/bin/sh
 #
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+
+#
 # Run a big test with backup of millions of files then run 100 incremental
 # modifying 10% each time
 #
@@ -48,7 +53,7 @@ echo "Creating $NB_FILES files"
 perl -Mscripts::functions -e "create_many_files('$cwd/files', $NB_FILES);"
 
 cat <<END_OF_DATA >${tmp}/bconcmds
-@$out /dev/null
+@output /dev/null
 messages
 @$out ${tmp}/log1.out
 label storage=File volume=TestVolume001
@@ -62,7 +67,7 @@ run_bacula
 check_for_zombie_jobs storage=File
 
 cat <<END_OF_DATA >${tmp}/bconcmds
-@$out /dev/null
+@output /dev/null
 messages
 @$out ${tmp}/log1.out
 END_OF_DATA
@@ -98,7 +103,7 @@ do
 done
 
 cat <<END_OF_DATA >${tmp}/bconcmds
-@$out /dev/null
+@output /dev/null
 messages
 @# 
 @# now do a restore

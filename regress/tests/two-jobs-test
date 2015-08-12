@@ -1,5 +1,10 @@
 #!/bin/sh
 #
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+
+#
 # Run a simple backup of the Bacula build directory using the compressed option
 #   then backup a second time and finally restore it
 #
@@ -12,12 +17,23 @@ scripts/cleanup
 scripts/copy-test-confs
 echo "${cwd}/build" >${cwd}/tmp/file-list
 
+#echo "${cwd}/build/src/Makefile" >${cwd}/tmp/file-list
+#echo "${cwd}/build/src/Makefile.in" >>${cwd}/tmp/file-list
+#echo "${cwd}/build/src/testprogs.tar.gz" >>${cwd}/tmp/file-list
+#echo "${cwd}/build/src/dummy" >>${cwd}/tmp/file-list
+#echo "${cwd}/build/src/stored" >>${cwd}/tmp/file-list
+#echo "${cwd}/build/src/dird" >>${cwd}/tmp/file-list
+#echo "${cwd}/build/src/filed" >>${cwd}/tmp/file-list
+#echo "${cwd}/build/src/console" >>${cwd}/tmp/file-list
+#echo "${cwd}/build/src/qt-console" >>${cwd}/tmp/file-list
+#echo "${cwd}/build/src/cats" >>${cwd}/tmp/file-list
+
 change_jobname CompressedTest $JobName
 start_test
 
 cat >tmp/bconcmds <<END_OF_DATA
-setdebug level=150  storage=File
-@$out /dev/null
+setdebug level=4  storage=File
+@output /dev/null
 messages
 @$out/dev/null
 estimate job=$JobName listing
@@ -36,37 +52,43 @@ run_bacula
 check_for_zombie_jobs storage=File 
 
 echo "Backup 1 done"
-touch ${cwd}/build/src/dird/*.c
+#$bin/bls -d 4 -v -c $conf/bacula-sd.conf -V 'TestVolume001' FileStorage
+touch ${cwd}/build/src/dird/dird_conf.c
 #
 # run a second job
 #
 cat >tmp/bconcmds <<END_OF_DATA
-@$out /dev/null
+@output /dev/null
 messages
 @$out tmp/log1.out
-run job=$JobName
+setdebug level=4  storage=File
+run level=Full job=$JobName
 yes
 wait
 messages
 @# 
 @# now do several restores to ensure we cleanup between jobs
 @#
-@$out /dev/null
+@output /dev/null
 restore where=${cwd}/tmp/bacula-restores select all storage=File done
 yes
 wait
+setdebug level=4  storage=File
 restore where=${cwd}/tmp/bacula-restores select all storage=File done
 yes
 wait
 @$out tmp/log2.out
+setdebug level=4  storage=File
 restore where=${cwd}/tmp/bacula-restores select storage=File
 unmark *
 mark *
+lsmark
 done
 yes
 wait
 messages
 quit
+$bin/bls -d 4 -v -c $conf/bacula-sd.conf -V 'TestVolume001' FileStorage
 END_OF_DATA
 
 run_bconsole
@@ -75,4 +97,11 @@ stop_bacula
 
 check_two_logs
 check_restore_diff
+#cd ${cwd}/tmp/bacula-restores/${cwd}/build
+#for i in src/*; do \
+#  diff -ur $i ${cwd}/build/$i
+#  if test $? -ne 0; then
+#    dstat=$?
+#  fi
+# done
 end_test

@@ -37,6 +37,7 @@ Device {
   Name = LTO3_0
   Media Type = LTO3
   Archive Device = @working_dir@/ach/drive0
+  Control Device = @working_dir@/ach/sg0
   AutomaticMount = yes;               # when device opened, read it
   Autochanger = yes
   Drive Index = 0
@@ -54,6 +55,7 @@ Device {
   Name = LTO3_1
   Media Type = LTO3
   Archive Device = @working_dir@/ach/drive1
+  Control Device = @working_dir@/ach/sg1
   AutomaticMount = yes;               # when device opened, read it
   Autochanger = yes
   Drive Index = 1
@@ -72,6 +74,7 @@ Device {
   Name = LTO3_2
   Media Type = LTO3
   Archive Device = @working_dir@/ach/drive2
+  Control Device = @working_dir@/ach/sg2
   AutomaticMount = yes;               # when device opened, read it
   Autochanger = yes
   Drive Index = 2
@@ -91,6 +94,7 @@ Device {
   Name = LTO1_3
   Media Type = LTO1
   Archive Device = @working_dir@/ach/drive3
+  Control Device = @working_dir@/ach/sg3
   AutomaticMount = yes;               # when device opened, read it
   Autochanger = yes
   Drive Index = 3
@@ -109,6 +113,7 @@ Device {
   Name = LTO1_4
   Media Type = LTO1
   Archive Device = @working_dir@/ach/drive4
+  Control Device = @working_dir@/ach/sg4
   AutomaticMount = yes;               # when device opened, read it
   Autochanger = yes
   Drive Index = 4
@@ -126,6 +131,7 @@ Device {
   Name = LTO1_5
   Media Type = LTO1
   Archive Device = @working_dir@/ach/drive5
+  Control Device = @working_dir@/ach/sg5
   AutomaticMount = yes;               # when device opened, read it
   Autochanger = yes
   Drive Index = 5
@@ -144,6 +150,7 @@ Device {
   Name = LTO1-ANSI_6
   Media Type = LTO1-ANSI
   Archive Device = @working_dir@/ach/drive6
+  Control Device = @working_dir@/ach/sg6
   AutomaticMount = yes;               # when device opened, read it
   Autochanger = yes
   Drive Index = 6

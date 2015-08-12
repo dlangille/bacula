@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2004-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *  Bacula errno handler
@@ -21,7 +25,7 @@
  *
  *    See berrno.h for how to use berrno.
  *
- *   Written by Kern Sibbald, July MMIV
+ *   Kern Sibbald, July MMIV
  *
  *
  */
@@ -38,7 +42,7 @@ const char *berrno::bstrerror()
 {
    *m_buf = 0;
 #ifdef HAVE_WIN32
-   if (m_berrno & (b_errno_win32)) {
+   if (m_berrno & (b_errno_win32 | b_errno_WSA)) {
       format_win32_message();
       return (const char *)m_buf;
    }
@@ -84,7 +88,7 @@ void berrno::format_win32_message()
    FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER |
        FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
        NULL,
-       GetLastError(),
+       m_berrno & b_errno_WSA ? WSAGetLastError() : GetLastError(),
        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
        (LPTSTR)&msg,
        0,

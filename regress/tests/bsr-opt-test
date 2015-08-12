@@ -1,5 +1,10 @@
 #!/bin/sh
 #
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+
+#
 # Run a simple backup of the Bacula build directory but 
 #   split the archive into two volumes, then restore
 #   files on only one of the volumes and ensure that
@@ -17,13 +22,14 @@ echo "${cwd}/build" >${cwd}/tmp/file-list
 change_jobname NightlySave $JobName
 start_test
 
+MaxVolBytes=3000000
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
 @$out /dev/null
 messages
 @$out ${cwd}/tmp/log1.out
 label storage=File1 volume=TestVolume001
 label storage=File1 volume=TestVolume002
-update Volume=TestVolume001 MaxVolBytes=3000000
+update Volume=TestVolume001 MaxVolBytes=$MaxVolBytes
 run job=$JobName storage=File1 yes
 wait
 messages

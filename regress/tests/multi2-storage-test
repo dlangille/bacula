@@ -1,10 +1,17 @@
 #!/bin/sh
 #
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+
+#
 # This script uses the virtual disk autochanger
 #
 TestName="multi-storage-test"
-JobName=backup
+JobName=NightlySave
 . scripts/functions
+
+export REGRESS_CHECK_CORRUPTION=no
 
 scripts/cleanup
 scripts/copy-2disk-confs
@@ -39,7 +46,7 @@ print;
 ' $conf/bacula-dir.conf > $tmp/1
 cp $tmp/1 $conf/bacula-dir.conf
 
-disable_pluguins
+disable_plugins
 
 echo "${cwd}/build" >${cwd}/tmp/file-list
 
@@ -147,7 +154,7 @@ status storage=File3
 @#
 setdebug trace=1 level=110 client
 setdebug trace=1 level=110 director
-restore where=${cwd}/tmp/bacula-restores select all done yes
+restore where=${cwd}/tmp/bacula-restores1 select all done yes
 @sleep 10
 messages
 status dir
@@ -160,6 +167,10 @@ sql
 select * FROM Storage;
 select VolumeName, Name, StorageId, MediaType FROM Media JOIN Storage USING (StorageId);
 
+@$out ${cwd}/tmp/log24.out
+restore where=${cwd}/tmp/bacula-restores select all done yes
+wait
+messages
 quit
 END_OF_DATA
 
@@ -180,6 +191,8 @@ done
 cp $tmp/log22.out $tmp/log2.out
 check_two_logs
 cp $tmp/log23.out $tmp/log2.out
+check_two_logs
+cp $tmp/log24.out $tmp/log2.out
 check_two_logs
 
 check_restore_diff

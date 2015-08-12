@@ -1,5 +1,10 @@
 #!/bin/sh
 #
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+
+#
 # Run a simple backup of the Bacula build directory then copy it
 #   to another device.
 #
@@ -46,6 +51,7 @@ list volumes
 @#setdebug level=100 dir
 @# should copy two jobs
 @#setdebug level=51 storage=DiskChanger
+@#setdebug level=100 storage=File tags=dedup,asx,network options=h
 run job=copy-job yes
 wait
 messages

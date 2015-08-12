@@ -1,23 +1,27 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *
  *   Bacula Director daemon -- this is the main program
  *
- *     Written by Kern Sibbald, March MM
+ *     Kern Sibbald, March MM
  *
  */
 
@@ -59,6 +63,7 @@ void store_replace(LEX *lc, RES_ITEM *item, int index, int pass);
 void store_migtype(LEX *lc, RES_ITEM *item, int index, int pass);
 void init_device_resources();
 
+
 static char *runjob = NULL;
 static bool background = true;
 static void init_reload(void);
@@ -70,6 +75,7 @@ int FDConnectTimeout;
 int SDConnectTimeout;
 char *configfile = NULL;
 void *start_heap;
+utime_t last_reload_time = 0;
 
 /* Globals Imported */
 extern RES_ITEM job_items[];
@@ -90,56 +96,57 @@ static bool check_catalog(cat_op mode);
 
 #define CONFIG_FILE "bacula-dir.conf" /* default configuration file */
 
-/*
- * This allows the message handler to operate on the database
- *   by using a pointer to this function. The pointer is
- *   needed because the other daemons do not have access
- *   to the database.  If the pointer is
- *   not defined (other daemons), then writing the database
- *   is disabled.
- */
-static bool dir_sql_query(JCR *jcr, const char *cmd)
-{
-   if (!jcr || !jcr->db || !jcr->db->is_connected()) {
-      return false;
-   }
+static bool dir_sql_query(JCR *jcr, const char *cmd) 
+{ 
+   if (jcr && jcr->db && jcr->db->is_connected()) {
+      return db_sql_query(jcr->db, cmd, NULL, NULL);
+   } 
+   return false; 
+} 
 
-   return db_sql_query(jcr->db, cmd);
-}
-
-static bool dir_sql_escape(JCR *jcr, B_DB *mdb, char *snew, char *old, int len)
-{
-   if (!jcr || !jcr->db || !jcr->db->is_connected()) {
-      return false;
-   }
-
-   db_escape_string(jcr, mdb, snew, old, len);
-   return true;
-}
+static bool dir_sql_escape(JCR *jcr, BDB *mdb, char *snew, char *sold, int len) 
+{ 
+   if (jcr && jcr->db && jcr->db->is_connected()) { 
+      db_escape_string(jcr, mdb, snew, sold, len);
+      return true;
+   } 
+   return false; 
+} 
 
 static void usage()
 {
    fprintf(stderr, _(
-PROG_COPYRIGHT
-"\nVersion: %s (%s)\n\n"
-"Usage: bacula-dir [-f -s] [-c config_file] [-d debug_level] [config_file]\n"
-"       -c <file>   set configuration file to file\n"
-"       -d <nn>     set debug level to <nn>\n"
-"       -dt         print timestamp in debug output\n"
-"       -f          run in foreground (for debugging)\n"
-"       -g          groupid\n"
-"       -m          print kaboom output (for debugging)\n"
-"       -r <job>    run <job> now\n"
-"       -s          no signals\n"
-"       -t          test - read configuration and exit\n"
-"       -u          userid\n"
-"       -v          verbose user messages\n"
-"       -?          print this message.\n"
-"\n"), 2000, VERSION, BDATE);
+      PROG_COPYRIGHT
+      "\nVersion: %s (%s)\n\n"
+      "Usage: bacula-dir [-f -s] [-c config_file] [-d debug_level] [config_file]\n"
+      "     -c <file>        set configuration file to file\n"
+      "     -d <nn>[,<tags>] set debug level to <nn>, debug tags to <tags>\n"
+      "     -dt              print timestamp in debug output\n"
+      "     -T               set trace on\n"
+      "     -f               run in foreground (for debugging)\n"
+      "     -g               groupid\n"
+      "     -m               print kaboom output (for debugging)\n"
+      "     -r <job>         run <job> now\n"
+      "     -s               no signals\n"
+      "     -t               test - read configuration and exit\n"
+      "     -u               userid\n"
+      "     -v               verbose user messages\n"
+      "     -?               print this message.\n"
+      "\n"), 2000, VERSION, BDATE);
 
    exit(1);
 }
 
+/*
+ * !!! WARNING !!! Use this function only when bacula is stopped.
+ * ie, after a fatal signal and before exiting the program
+ * Print information about a JCR
+ */
+static void dir_debug_print(JCR *jcr, FILE *fp)
+{
+   fprintf(fp, "\twstore=%p rstore=%p wjcr=%p client=%p reschedule_count=%d SD_msg_chan_started=%d\n",
+           jcr->wstore, jcr->rstore, jcr->wjcr, jcr->client, jcr->reschedule_count, (int)jcr->SD_msg_chan_started);
+}
 
 /*********************************************************************
  *
@@ -173,7 +180,7 @@ int main (int argc, char *argv[])
 
    console_command = run_console_command;
 
-   while ((ch = getopt(argc, argv, "c:d:fg:mr:stu:v?")) != -1) {
+   while ((ch = getopt(argc, argv, "c:d:fg:mr:stu:v?T")) != -1) {
       switch (ch) {
       case 'c':                    /* specify config file */
          if (configfile != NULL) {
@@ -186,12 +193,24 @@ int main (int argc, char *argv[])
          if (*optarg == 't') {
             dbg_timestamp = true;
          } else {
+            char *p;
+            /* We probably find a tag list -d 10,sql,bvfs */
+            if ((p = strchr(optarg, ',')) != NULL) {
+               *p = 0;
+            }
             debug_level = atoi(optarg);
             if (debug_level <= 0) {
                debug_level = 1;
             }
+            if (p) {
+               debug_parse_tags(p+1, &debug_level_tags);
+            }
          }
-         Dmsg1(10, "Debug level = %d\n", debug_level);
+         Dmsg1(10, "Debug level = %lld\n", debug_level);
+         break;
+
+      case 'T':
+         set_trace(true);
          break;
 
       case 'f':                    /* run in foreground */
@@ -268,6 +287,7 @@ int main (int argc, char *argv[])
    }
 
    config = new_config_parser();
+
    parse_dir_config(config, configfile, M_ERROR_TERM);
 
    if (init_crypto() != 0) {
@@ -311,8 +331,8 @@ int main (int argc, char *argv[])
    cleanup_old_files();
 
    /* Plug database interface for library routines */
-   p_sql_query = (sql_query_func)dir_sql_query;
-   p_sql_escape = (sql_escape_func)dir_sql_escape;
+   p_sql_query = (sql_query_call)dir_sql_query;
+   p_sql_escape = (sql_escape_call)dir_sql_escape;
 
    FDConnectTimeout = (int)director->FDConnectTimeout;
    SDConnectTimeout = (int)director->SDConnectTimeout;
@@ -332,7 +352,10 @@ int main (int argc, char *argv[])
 
    init_job_server(director->MaxConcurrentJobs);
 
-   dbg_jcr_add_hook(db_debug_print); /* used to debug B_DB connexion after fatal signal */
+   dbg_jcr_add_hook(dir_debug_print); /* used to director variables */
+   dbg_jcr_add_hook(bdb_debug_print);     /* used to debug B_DB connexion after fatal signal */
+
+//   init_device_resources();
 
    Dmsg0(200, "wait for next job\n");
    /* Main loop -- call scheduler to get next job to run */
@@ -350,53 +373,12 @@ int main (int argc, char *argv[])
    return 0;
 }
 
-/* Cleanup and then exit */
-void terminate_dird(int sig)
-{
-   static bool already_here = false;
-
-   if (already_here) {                /* avoid recursive temination problems */
-      bmicrosleep(2, 0);              /* yield */
-      exit(1);
-   }
-   already_here = true;
-   debug_level = 0;                   /* turn off debug */
-   stop_watchdog();
-   generate_daemon_event(NULL, "Exit");
-   unload_plugins();
-   write_state_file(director->working_directory, "bacula-dir", get_first_port_host_order(director->DIRaddrs));
-   delete_pid_file(director->pid_directory, "bacula-dir", get_first_port_host_order(director->DIRaddrs));
-   term_scheduler();
-   term_job_server();
-   if (runjob) {
-      free(runjob);
-   }
-   if (configfile != NULL) {
-      free(configfile);
-   }
-   if (debug_level > 5) {
-      print_memory_pool_stats();
-   }
-   if (config) {
-      config->free_resources();
-      free(config);
-      config = NULL;
-   }
-   term_ua_server();
-   term_msg();                        /* terminate message handler */
-   cleanup_crypto();
-   close_memory_pool();               /* release free memory in pool */
-   lmgr_cleanup_main();
-   sm_dump(false);
-   exit(sig);
-}
-
 struct RELOAD_TABLE {
    int job_count;
    RES **res_table;
 };
 
-static const int max_reloads = 32;
+static const int max_reloads = 50;
 static RELOAD_TABLE reload_table[max_reloads];
 
 static void init_reload(void)
@@ -407,6 +389,10 @@ static void init_reload(void)
    }
 }
 
+/*
+ * This subroutine frees a saved resource table.
+ *  It was saved when a new table was created with "reload"
+ */
 static void free_saved_resources(int table)
 {
    int num = r_last - r_first + 1;
@@ -565,6 +551,47 @@ bail_out:
    signal(SIGHUP, reload_config);
 #endif
    already_here = false;
+}
+
+/* Cleanup and then exit */
+void terminate_dird(int sig)
+{
+   static bool already_here = false;
+
+   if (already_here) {                /* avoid recursive temination problems */
+      bmicrosleep(2, 0);              /* yield */
+      exit(1);
+   }
+   already_here = true;
+   debug_level = 0;                   /* turn off debug */
+   stop_watchdog();
+   generate_daemon_event(NULL, "Exit");
+   unload_plugins();
+   write_state_file(director->working_directory, "bacula-dir", get_first_port_host_order(director->DIRaddrs));
+   delete_pid_file(director->pid_directory, "bacula-dir", get_first_port_host_order(director->DIRaddrs));
+   term_scheduler();
+   term_job_server();
+   if (runjob) {
+      free(runjob);
+   }
+   if (configfile != NULL) {
+      free(configfile);
+   }
+   if (chk_dbglvl(5)) {
+      print_memory_pool_stats();
+   }
+   if (config) {
+      config->free_resources();
+      free(config);
+      config = NULL;
+   }
+   term_ua_server();
+   term_msg();                        /* terminate message handler */
+   cleanup_crypto();
+   close_memory_pool();               /* release free memory in pool */
+   lmgr_cleanup_main();
+   sm_dump(false);
+   exit(sig);
 }
 
 /*
@@ -760,6 +787,7 @@ static bool check_resources()
                 */
                } else if (job_items[i].handler == store_time   ||
                           job_items[i].handler == store_size64 ||
+                          job_items[i].handler == store_speed  ||
                           job_items[i].handler == store_int64) {
                   def_lvalue = (int64_t *)((char *)(job->jobdefs) + offset);
                   Dmsg5(400, "Job \"%s\", field \"%s\" def_lvalue=%" lld " item %d offset=%u\n",
@@ -899,50 +927,11 @@ static bool check_resources()
       }
    }
 
-   /* Loop over Storages */
-   STORE *store;
-   foreach_res(store, R_STORAGE) {
-      /* tls_require implies tls_enable */
-      if (store->tls_require) {
-         if (have_tls) {
-            store->tls_enable = true;
-         } else {
-            Jmsg(NULL, M_FATAL, 0, _("TLS required but not configured in Bacula.\n"));
-            OK = false;
-            continue;
-         }
-      }
-
-      need_tls = store->tls_enable || store->tls_authenticate;
-
-      if ((!store->tls_ca_certfile && !store->tls_ca_certdir) && need_tls) {
-         Jmsg(NULL, M_FATAL, 0, _("Neither \"TLS CA Certificate\""
-              " or \"TLS CA Certificate Dir\" are defined for Storage \"%s\" in %s.\n"),
-              store->name(), configfile);
-         OK = false;
-      }
-
-      /* If everything is well, attempt to initialize our per-resource TLS context */
-      if (OK && (need_tls || store->tls_require)) {
-        /* Initialize TLS context:
-         * Args: CA certfile, CA certdir, Certfile, Keyfile,
-         * Keyfile PEM Callback, Keyfile CB Userdata, DHfile, Verify Peer */
-         store->tls_ctx = new_tls_context(store->tls_ca_certfile,
-            store->tls_ca_certdir, store->tls_certfile,
-            store->tls_keyfile, NULL, NULL, NULL, true);
-
-         if (!store->tls_ctx) {
-            Jmsg(NULL, M_FATAL, 0, _("Failed to initialize TLS context for Storage \"%s\" in %s.\n"),
-                 store->name(), configfile);
-            OK = false;
-         }
-      }
-   }
-
    UnlockRes();
    if (OK) {
       close_msg(NULL);                /* close temp message handler */
       init_msg(NULL, director->messages); /* open daemon message handler */
+      last_reload_time = time(NULL);
    }
    return OK;
 }
@@ -956,20 +945,22 @@ static bool check_resources()
 static bool check_catalog(cat_op mode)
 {
    bool OK = true;
+   bool need_tls;
 
    /* Loop over databases */
    CAT *catalog;
    foreach_res(catalog, R_CATALOG) {
-      B_DB *db;
+      BDB *db;
       /*
        * Make sure we can open catalog, otherwise print a warning
        * message because the server is probably not running.
        */
-      db = db_init_database(NULL, catalog->db_driver, catalog->db_name, catalog->db_user,
-                            catalog->db_password, catalog->db_address,
-                            catalog->db_port, catalog->db_socket,
-                            catalog->mult_db_connections,
-                            catalog->disable_batch_insert);
+      db = db_init_database(NULL, catalog->db_driver, catalog->db_name, 
+              catalog->db_user,
+              catalog->db_password, catalog->db_address,
+              catalog->db_port, catalog->db_socket,
+              catalog->mult_db_connections,
+              catalog->disable_batch_insert);
       if (!db || !db_open_database(NULL, db)) {
          Pmsg2(000, _("Could not open Catalog \"%s\", database \"%s\".\n"),
               catalog->name(), catalog->db_name);
@@ -992,7 +983,7 @@ static bool check_catalog(cat_op mode)
 
       /* we are in testing mode, so don't touch anything in the catalog */
       if (mode == CHECK_CONNECTION) {
-         db_close_database(NULL, db);
+         if (db) db_close_database(NULL, db);
          continue;
       }
 
@@ -1035,6 +1026,7 @@ static bool check_catalog(cat_op mode)
                client->catalog->name(), client->name());
          memset(&cr, 0, sizeof(cr));
          bstrncpy(cr.Name, client->name(), sizeof(cr.Name));
+
          db_create_client_record(NULL, db, &cr);
       }
 
@@ -1065,6 +1057,41 @@ static bool check_catalog(cat_op mode)
             if (!db_update_storage_record(NULL, db, &sr)) {
                Jmsg(NULL, M_FATAL, 0, _("Could not update storage record for %s\n"),
                     store->name());
+               OK = false;
+            }
+         }
+
+         /* tls_require implies tls_enable */
+         if (store->tls_require) {
+            if (have_tls) {
+               store->tls_enable = true;
+            } else {
+               Jmsg(NULL, M_FATAL, 0, _("TLS required but not configured in Bacula.\n"));
+               OK = false;
+            }
+         }
+
+         need_tls = store->tls_enable || store->tls_authenticate;
+
+         if ((!store->tls_ca_certfile && !store->tls_ca_certdir) && need_tls) {
+            Jmsg(NULL, M_FATAL, 0, _("Neither \"TLS CA Certificate\""
+                 " or \"TLS CA Certificate Dir\" are defined for Storage \"%s\" in %s.\n"),
+                 store->name(), configfile);
+            OK = false;
+         }
+
+         /* If everything is well, attempt to initialize our per-resource TLS context */
+         if (OK && (need_tls || store->tls_require)) {
+           /* Initialize TLS context:
+            * Args: CA certfile, CA certdir, Certfile, Keyfile,
+            * Keyfile PEM Callback, Keyfile CB Userdata, DHfile, Verify Peer */
+            store->tls_ctx = new_tls_context(store->tls_ca_certfile,
+               store->tls_ca_certdir, store->tls_certfile,
+               store->tls_keyfile, NULL, NULL, NULL, true);
+
+            if (!store->tls_ctx) {
+               Jmsg(NULL, M_FATAL, 0, _("Failed to initialize TLS context for Storage \"%s\" in %s.\n"),
+                    store->name(), configfile);
                OK = false;
             }
          }
@@ -1102,10 +1129,9 @@ static bool check_catalog(cat_op mode)
          db_sql_query(db, cleanup_running_job, NULL, NULL);
       }
 
-      /* Set type in global for debugging */
-      set_db_type(db_get_type(db));
-
-      db_close_database(NULL, db);
+      /* Set SQL engine name in global for debugging */
+      set_db_engine_name(db_get_engine_name(db));
+      if (db) db_close_database(NULL, db);
    }
    return OK;
 }
@@ -1125,8 +1151,8 @@ static void cleanup_old_files()
    regmatch_t pmatch[nmatch];
    berrno be;
 
-   /* Exclude spaces and look for .mail or .restore.xx.bsr files */
-   const char *pat1 = "^[^ ]+\\.(restore\\.[^ ]+\\.bsr|mail)$";
+   /* Exclude spaces and look for .mail, .tmp or .restore.xx.bsr files */
+   const char *pat1 = "^[^ ]+\\.(restore\\.[^ ]+\\.bsr|mail|tmp)$";
 
    /* Setup working directory prefix */
    pm_strcpy(basename, director->working_directory);

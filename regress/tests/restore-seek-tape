@@ -1,5 +1,10 @@
 #!/bin/sh
 #
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+
+#
 # Run a simple backup of the Bacula build directory 
 #   to a tape where the maximum tape file size is set to 1M
 #   then restore a few files from it.  Note, by setting the maximum 

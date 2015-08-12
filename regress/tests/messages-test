@@ -1,5 +1,10 @@
 #!/bin/sh
 #
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+
+#
 # Run a simple backup of the Bacula build directory
 #   then restore it.
 # We have bad configuration for Messages resources, everything
@@ -36,7 +41,7 @@ sed -f ${outf} $tmp/1 >$scripts/bacula-dir.conf
 
 
 cat <<END_OF_DATA >$tmp/bconcmds
-@$out /dev/null
+@output /dev/null
 messages
 @$out $tmp/log1.out
 @#setdebug level=100 storage=File

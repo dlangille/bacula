@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  * Test program for find files
@@ -23,7 +27,6 @@
 #include "bacula.h"
 #include "dird/dird.h"
 #include "findlib/find.h"
-#include "lib/mntent_cache.h"
 #include "ch.h"
 
 #if defined(HAVE_WIN32)
@@ -144,7 +147,7 @@ main (int argc, char *const *argv)
       FILESET *var;
 
       fprintf(stderr, "Valid FileSets:\n");
-
+      
       foreach_res(var, R_FILESET) {
          fprintf(stderr, "    %s\n", var->hdr.name);
       }
@@ -153,7 +156,7 @@ main (int argc, char *const *argv)
    }
 
    ff = init_find_files();
-
+   
    copy_fileset(ff, jcr);
 
    find_files(jcr, ff, print_file, NULL);
@@ -164,7 +167,7 @@ main (int argc, char *const *argv)
       free(config);
       config = NULL;
    }
-
+   
    term_last_jobs_list();
 
    /* Clean up fileset */
@@ -229,8 +232,6 @@ main (int argc, char *const *argv)
      num_files, max_file_len, max_path_len,
      trunc_fname, trunc_path, hard_links);
 
-   flush_mntent_cache();
-
    term_msg();
 
    close_memory_pool();
@@ -239,7 +240,7 @@ main (int argc, char *const *argv)
    exit(0);
 }
 
-static int print_file(JCR *jcr, FF_PKT *ff, bool top_level)
+static int print_file(JCR *jcr, FF_PKT *ff, bool top_level) 
 {
 
    switch (ff->type) {

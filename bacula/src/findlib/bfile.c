@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2003-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *  Bacula low level File I/O routines.  This routine simulates
@@ -53,78 +57,6 @@ void pause_msg(const char *file, const char *func, int line, const char *msg)
    }
    MessageBox(NULL, buf, "Pause", MB_OK);
 }
-
-/*
- * The following code was contributed by Graham Keeling from his
- *  burp project.  August 2014
- */
-static int encrypt_bopen(BFILE *bfd, const char *fname, uint64_t flags, mode_t mode)
-{
-   ULONG ulFlags = 0;
-   POOLMEM *win32_fname;
-   POOLMEM *win32_fname_wchar;
-
-   bfd->mode = BF_CLOSED;
-   bfd->fid = -1;
-
-   if (!(p_OpenEncryptedFileRawA || p_OpenEncryptedFileRawW)) {
-      Dmsg0(50, "No OpenEncryptedFileRawA and no OpenEncryptedFileRawW APIs!!!\n");
-      return -1;
-   }
-
-   /* Convert to Windows path format */
-   win32_fname = get_pool_memory(PM_FNAME);
-   win32_fname_wchar = get_pool_memory(PM_FNAME);
-
-   unix_name_to_win32(&win32_fname, (char *)fname);
-
-   if (p_CreateFileW && p_MultiByteToWideChar) {
-      make_win32_path_UTF8_2_wchar(&win32_fname_wchar, fname);
-   }
-
-   if ((flags & O_CREAT) || (flags & O_WRONLY)) {
-      ulFlags = CREATE_FOR_IMPORT | OVERWRITE_HIDDEN;
-      if (bfd->fattrs & FILE_ATTRIBUTE_DIRECTORY) {
-         mkdir(fname, 0777);
-         ulFlags |= CREATE_FOR_DIR;
-      }
-      bfd->mode = BF_WRITE;
-   } else {
-      /* Open existing for read */
-      ulFlags = CREATE_FOR_EXPORT;
-      bfd->mode = BF_READ;
-   }
-
-   if (p_OpenEncryptedFileRawW && p_MultiByteToWideChar) {
-      /* unicode open */
-      if (p_OpenEncryptedFileRawW((LPCWSTR)win32_fname_wchar,
-                   ulFlags, &(bfd->pvContext))) {
-         bfd->mode = BF_CLOSED;
-      }
-   } else {
-      /* ascii open */
-      if (p_OpenEncryptedFileRawA(win32_fname, ulFlags, &(bfd->pvContext))) {
-         bfd->mode = BF_CLOSED;
-      }
-   }
-   free_pool_memory(win32_fname_wchar);
-   free_pool_memory(win32_fname);
-   bfd->fid = (bfd->mode == BF_CLOSED) ? -1 : 0;
-   return bfd->mode==BF_CLOSED ? -1: 1;
-}
-
-static int encrypt_bclose(BFILE *bfd)
-{
-   if (p_CloseEncryptedFileRaw) {
-      p_CloseEncryptedFileRaw(bfd->pvContext);
-   }
-   bfd->pvContext = NULL;
-   bfd->mode = BF_CLOSED;
-   bfd->fattrs = 0;
-   bfd->fid = -1;
-   return 0;
-}
-
 #endif
 
 /* ===============================================================
@@ -153,136 +85,136 @@ const char *stream_to_ascii(int stream)
    static char buf[20];
 
    switch (stream & STREAMMASK_TYPE) {
-   case STREAM_UNIX_ATTRIBUTES:
-      return _("Unix attributes");
-   case STREAM_FILE_DATA:
-      return _("File data");
-   case STREAM_MD5_DIGEST:
-      return _("MD5 digest");
-   case STREAM_GZIP_DATA:
-      return _("GZIP data");
-   case STREAM_COMPRESSED_DATA:
-      return _("Compressed data");
-   case STREAM_UNIX_ATTRIBUTES_EX:
-      return _("Extended attributes");
-   case STREAM_SPARSE_DATA:
-      return _("Sparse data");
-   case STREAM_SPARSE_GZIP_DATA:
-      return _("GZIP sparse data");
-   case STREAM_SPARSE_COMPRESSED_DATA:
-      return _("Compressed sparse data");
-   case STREAM_PROGRAM_NAMES:
-      return _("Program names");
-   case STREAM_PROGRAM_DATA:
-      return _("Program data");
-   case STREAM_SHA1_DIGEST:
-      return _("SHA1 digest");
-   case STREAM_WIN32_DATA:
-      return _("Win32 data");
-   case STREAM_WIN32_GZIP_DATA:
-      return _("Win32 GZIP data");
-   case STREAM_WIN32_COMPRESSED_DATA:
-      return _("Win32 compressed data");
-   case STREAM_MACOS_FORK_DATA:
-      return _("MacOS Fork data");
-   case STREAM_HFSPLUS_ATTRIBUTES:
-      return _("HFS+ attribs");
-   case STREAM_UNIX_ACCESS_ACL:
-      return _("Standard Unix ACL attribs");
-   case STREAM_UNIX_DEFAULT_ACL:
-      return _("Default Unix ACL attribs");
-   case STREAM_SHA256_DIGEST:
-      return _("SHA256 digest");
-   case STREAM_SHA512_DIGEST:
-      return _("SHA512 digest");
-   case STREAM_SIGNED_DIGEST:
-      return _("Signed digest");
-   case STREAM_ENCRYPTED_FILE_DATA:
-      return _("Encrypted File data");
-   case STREAM_ENCRYPTED_WIN32_DATA:
-      return _("Encrypted Win32 data");
-   case STREAM_ENCRYPTED_SESSION_DATA:
-      return _("Encrypted session data");
-   case STREAM_ENCRYPTED_FILE_GZIP_DATA:
-      return _("Encrypted GZIP data");
-   case STREAM_ENCRYPTED_FILE_COMPRESSED_DATA:
-      return _("Encrypted compressed data");
-   case STREAM_ENCRYPTED_WIN32_GZIP_DATA:
-      return _("Encrypted Win32 GZIP data");
-   case STREAM_ENCRYPTED_WIN32_COMPRESSED_DATA:
-      return _("Encrypted Win32 Compressed data");
-   case STREAM_ENCRYPTED_MACOS_FORK_DATA:
-      return _("Encrypted MacOS fork data");
-   case STREAM_PLUGIN_NAME:
-      return _("Plugin Name");
-   case STREAM_PLUGIN_DATA:
-      return _("Plugin Data");
-   case STREAM_RESTORE_OBJECT:
-      return _("Restore Object");
-   case STREAM_ACL_AIX_TEXT:
-      return _("AIX Specific ACL attribs");
-   case STREAM_ACL_DARWIN_ACCESS_ACL:
-      return _("Darwin Specific ACL attribs");
-   case STREAM_ACL_FREEBSD_DEFAULT_ACL:
-      return _("FreeBSD Specific Default ACL attribs");
-   case STREAM_ACL_FREEBSD_ACCESS_ACL:
-      return _("FreeBSD Specific Access ACL attribs");
-   case STREAM_ACL_HPUX_ACL_ENTRY:
-      return _("HPUX Specific ACL attribs");
-   case STREAM_ACL_IRIX_DEFAULT_ACL:
-      return _("Irix Specific Default ACL attribs");
-   case STREAM_ACL_IRIX_ACCESS_ACL:
-      return _("Irix Specific Access ACL attribs");
-   case STREAM_ACL_LINUX_DEFAULT_ACL:
-      return _("Linux Specific Default ACL attribs");
-   case STREAM_ACL_LINUX_ACCESS_ACL:
-      return _("Linux Specific Access ACL attribs");
-   case STREAM_ACL_TRU64_DEFAULT_ACL:
-      return _("TRU64 Specific Default ACL attribs");
-   case STREAM_ACL_TRU64_ACCESS_ACL:
-      return _("TRU64 Specific Access ACL attribs");
-   case STREAM_ACL_SOLARIS_ACLENT:
-      return _("Solaris Specific POSIX ACL attribs");
-   case STREAM_ACL_SOLARIS_ACE:
-      return _("Solaris Specific NFSv4/ZFS ACL attribs");
-   case STREAM_ACL_AFS_TEXT:
-      return _("AFS Specific ACL attribs");
-   case STREAM_ACL_AIX_AIXC:
-      return _("AIX Specific POSIX ACL attribs");
-   case STREAM_ACL_AIX_NFS4:
-      return _("AIX Specific NFSv4 ACL attribs");
-   case STREAM_ACL_FREEBSD_NFS4_ACL:
-      return _("FreeBSD Specific NFSv4/ZFS ACL attribs");
-   case STREAM_ACL_HURD_DEFAULT_ACL:
-      return _("GNU Hurd Specific Default ACL attribs");
-   case STREAM_ACL_HURD_ACCESS_ACL:
-      return _("GNU Hurd Specific Access ACL attribs");
-   case STREAM_XATTR_HURD:
-      return _("GNU Hurd Specific Extended attribs");
-   case STREAM_XATTR_IRIX:
-      return _("IRIX Specific Extended attribs");
-   case STREAM_XATTR_TRU64:
-      return _("TRU64 Specific Extended attribs");
-   case STREAM_XATTR_AIX:
-      return _("AIX Specific Extended attribs");
-   case STREAM_XATTR_OPENBSD:
-      return _("OpenBSD Specific Extended attribs");
-   case STREAM_XATTR_SOLARIS_SYS:
-      return _("Solaris Specific Extensible attribs or System Extended attribs");
-   case STREAM_XATTR_SOLARIS:
-      return _("Solaris Specific Extended attribs");
-   case STREAM_XATTR_DARWIN:
-      return _("Darwin Specific Extended attribs");
-   case STREAM_XATTR_FREEBSD:
-      return _("FreeBSD Specific Extended attribs");
-   case STREAM_XATTR_LINUX:
-      return _("Linux Specific Extended attribs");
-   case STREAM_XATTR_NETBSD:
-      return _("NetBSD Specific Extended attribs");
-   default:
-      sprintf(buf, "%d", stream);
-      return (const char *)buf;
-   }
+      case STREAM_UNIX_ATTRIBUTES:
+         return _("Unix attributes");
+      case STREAM_FILE_DATA:
+         return _("File data");
+      case STREAM_MD5_DIGEST:
+         return _("MD5 digest");
+      case STREAM_GZIP_DATA:
+         return _("GZIP data");
+      case STREAM_COMPRESSED_DATA:
+         return _("Compressed data");
+      case STREAM_UNIX_ATTRIBUTES_EX:
+         return _("Extended attributes");
+      case STREAM_SPARSE_DATA:
+         return _("Sparse data");
+      case STREAM_SPARSE_GZIP_DATA:
+         return _("GZIP sparse data");
+      case STREAM_SPARSE_COMPRESSED_DATA:
+         return _("Compressed sparse data");
+      case STREAM_PROGRAM_NAMES:
+         return _("Program names");
+      case STREAM_PROGRAM_DATA:
+         return _("Program data");
+      case STREAM_SHA1_DIGEST:
+         return _("SHA1 digest");
+      case STREAM_WIN32_DATA:
+         return _("Win32 data");
+      case STREAM_WIN32_GZIP_DATA:
+         return _("Win32 GZIP data");
+      case STREAM_WIN32_COMPRESSED_DATA:
+         return _("Win32 compressed data");
+      case STREAM_MACOS_FORK_DATA:
+         return _("MacOS Fork data");
+      case STREAM_HFSPLUS_ATTRIBUTES:
+         return _("HFS+ attribs");
+      case STREAM_UNIX_ACCESS_ACL:
+         return _("Standard Unix ACL attribs");
+      case STREAM_UNIX_DEFAULT_ACL:
+         return _("Default Unix ACL attribs");
+      case STREAM_SHA256_DIGEST:
+         return _("SHA256 digest");
+      case STREAM_SHA512_DIGEST:
+         return _("SHA512 digest");
+      case STREAM_SIGNED_DIGEST:
+         return _("Signed digest");
+      case STREAM_ENCRYPTED_FILE_DATA:
+         return _("Encrypted File data");
+      case STREAM_ENCRYPTED_WIN32_DATA:
+         return _("Encrypted Win32 data");
+      case STREAM_ENCRYPTED_SESSION_DATA:
+         return _("Encrypted session data");
+      case STREAM_ENCRYPTED_FILE_GZIP_DATA:
+         return _("Encrypted GZIP data");
+      case STREAM_ENCRYPTED_FILE_COMPRESSED_DATA:
+         return _("Encrypted compressed data");
+      case STREAM_ENCRYPTED_WIN32_GZIP_DATA:
+         return _("Encrypted Win32 GZIP data");
+      case STREAM_ENCRYPTED_WIN32_COMPRESSED_DATA:
+         return _("Encrypted Win32 Compressed data");
+      case STREAM_ENCRYPTED_MACOS_FORK_DATA:
+         return _("Encrypted MacOS fork data");
+      case STREAM_PLUGIN_NAME:
+         return _("Plugin Name");
+      case STREAM_PLUGIN_DATA:
+         return _("Plugin Data");
+      case STREAM_RESTORE_OBJECT:
+         return _("Restore Object");
+      case STREAM_ACL_AIX_TEXT:
+         return _("AIX ACL attribs");
+      case STREAM_ACL_DARWIN_ACCESS:
+         return _("Darwin ACL attribs");
+      case STREAM_ACL_FREEBSD_DEFAULT:
+         return _("FreeBSD Default ACL attribs");
+      case STREAM_ACL_FREEBSD_ACCESS:
+         return _("FreeBSD Access ACL attribs");
+      case STREAM_ACL_HPUX_ACL_ENTRY:
+         return _("HPUX ACL attribs");
+      case STREAM_ACL_IRIX_DEFAULT:
+         return _("Irix Default ACL attribs");
+      case STREAM_ACL_IRIX_ACCESS:
+         return _("Irix Access ACL attribs");
+      case STREAM_ACL_LINUX_DEFAULT:
+         return _("Linux Default ACL attribs");
+      case STREAM_ACL_LINUX_ACCESS:
+         return _("Linux Access ACL attribs");
+      case STREAM_ACL_TRU64_DEFAULT:
+         return _("TRU64 Default ACL attribs");
+      case STREAM_ACL_TRU64_ACCESS:
+         return _("TRU64 Access ACL attribs");
+      case STREAM_ACL_SOLARIS_POSIX:
+         return _("Solaris POSIX ACL attribs");
+      case STREAM_ACL_SOLARIS_NFS4:
+         return _("Solaris NFSv4/ZFS ACL attribs");
+      case STREAM_ACL_AFS_TEXT:
+         return _("AFS ACL attribs");
+      case STREAM_ACL_AIX_AIXC:
+         return _("AIX POSIX ACL attribs");
+      case STREAM_ACL_AIX_NFS4:
+         return _("AIX NFSv4 ACL attribs");
+      case STREAM_ACL_FREEBSD_NFS4:
+         return _("FreeBSD NFSv4/ZFS ACL attribs");
+      case STREAM_ACL_HURD_DEFAULT:
+         return _("GNU Hurd Default ACL attribs");
+      case STREAM_ACL_HURD_ACCESS:
+         return _("GNU Hurd Access ACL attribs");
+      case STREAM_XATTR_HURD:
+         return _("GNU Hurd Extended attribs");
+      case STREAM_XATTR_IRIX:
+         return _("IRIX Extended attribs");
+      case STREAM_XATTR_TRU64:
+         return _("TRU64 Extended attribs");
+      case STREAM_XATTR_AIX:
+         return _("AIX Extended attribs");
+      case STREAM_XATTR_OPENBSD:
+         return _("OpenBSD Extended attribs");
+      case STREAM_XATTR_SOLARIS_SYS:
+         return _("Solaris Extensible attribs or System Extended attribs");
+      case STREAM_XATTR_SOLARIS:
+         return _("Solaris Extended attribs");
+      case STREAM_XATTR_DARWIN:
+         return _("Darwin Extended attribs");
+      case STREAM_XATTR_FREEBSD:
+         return _("FreeBSD Extended attribs");
+      case STREAM_XATTR_LINUX:
+         return _("Linux Extended attribs");
+      case STREAM_XATTR_NETBSD:
+         return _("NetBSD Extended attribs");
+      default:
+         sprintf(buf, "%d", stream);
+         return (const char *)buf;
+      }
 }
 
 /**
@@ -326,7 +258,7 @@ void int32_LE2BE(int32_t* pBE, const int32_t v)
 }
 
 
-/*
+/**
  *  Read a BackupRead block and pull out the file data
  */
 bool processWin32BackupAPIBlock (BFILE *bfd, void *pBuffer, ssize_t dwSize)
@@ -627,12 +559,12 @@ int bopen_rsrc(BFILE *bfd, const char *fname, uint64_t flags, mode_t mode)
    free_pool_memory(rsrc_fname);
    return bfd->fid;
 }
-#else
+#else /* Unix */
+
 /* Unix */
 int bopen_rsrc(BFILE *bfd, const char *fname, uint64_t flags, mode_t mode)
-{
-   return -1;
-}
+    { return -1; }
+
 #endif
 
 
@@ -641,7 +573,7 @@ int bclose(BFILE *bfd)
 {
    int stat;
 
-   Dmsg1(400, "Close file %d\n", bfd->fid);
+   Dmsg2(400, "Close bfd=%p file %d\n", bfd, bfd->fid);
 
    if (bfd->fid == -1) {
       return 0;
@@ -721,3 +653,4 @@ boffset_t blseek(BFILE *bfd, boffset_t offset, int whence)
    bfd->berrno = errno;
    return pos;
 }
+

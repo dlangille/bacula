@@ -1,22 +1,26 @@
 /*
+   Bacula(R) - The Network Backup Solution
 
-                   Serialisation Support Functions
-                          John Walker
-*/
-/*
-   Bacula® - The Network Backup Solution
-
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
+*/
+/*
+
+                   Serialisation Support Functions
+                          John Walker
 */
 
 
@@ -214,6 +218,29 @@ uint32_t unserial_uint32(uint8_t * * const ptr)
     memcpy(&vo, *ptr, sizeof vo);
     *ptr += sizeof vo;
     return ntohl(vo);
+}
+
+/*  unserial_int64  --  Unserialise a 64 bit integer.  */
+
+int64_t unserial_int64(uint8_t * * const ptr)
+{
+    int64_t v;
+
+    if (bigendian()) {
+        memcpy(&v, *ptr, sizeof(int64_t));
+    } else {
+        int i;
+        uint8_t rv[sizeof(int64_t)];
+        uint8_t *pv = (uint8_t *) &v;
+
+        memcpy(&v, *ptr, sizeof(uint64_t));
+        for (i = 0; i < 8; i++) {
+            rv[i] = pv[7 - i];
+        }
+        memcpy(&v, &rv, sizeof(uint64_t));
+    }
+    *ptr += sizeof(uint64_t);
+    return v;
 }
 
 /*  unserial_uint64  --  Unserialise an unsigned 64 bit integer.  */

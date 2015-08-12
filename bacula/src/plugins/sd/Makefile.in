@@ -1,10 +1,8 @@
 #
-# Simple Makefile for building test FD plugins for Bacula
+# Simple Makefile for building test SD plugins for Bacula
 #
-#
-#
-# Author: Kern Sibbald
-# License: LGPLv3
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
 #
 @MCOMMON@
 
@@ -15,14 +13,14 @@ SDDIR=../../stored
 SRCDIR=../..
 LIBDIR=../../lib
 
-.SUFFIXES:    .c .o .lo
+.SUFFIXES:    .c .lo
 
 .c.lo:
 	$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) $(CPPFLAGS) -I${SRCDIR} -I${SDDIR} -DTEST_PROGRAM -c $<
 
 all: example-plugin-sd.la
 
-example-plugin-sd.lo: example-plugin-sd.c ${SDDIR}/sd_plugins.h
+example-plugin-sd.lo: example-plugin-sd.c
 	$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) $(CFLAGS) -I../.. -I${SDDIR} -c example-plugin-sd.c
 
 example-plugin-sd.la: Makefile example-plugin-sd$(DEFAULT_OBJECT_TYPE)
@@ -36,16 +34,13 @@ install: all
 libtool-clean:
 	find . -name '*.lo' -print | xargs $(LIBTOOL_CLEAN) $(RMF)
 	$(RMF) *.la
-	$(RMF) -rf .libs _libs
+	$(RMF) -r .libs _libs
 
 clean: @LIBTOOL_CLEAN_TARGET@
-	rm -f main *.so *.o 1 2 3 *.la *.lo
-	rm -rf .libs
-
+	rm -f main *.la *.so *.o 1 2 3
 
 distclean: clean
-	rm -f Makefile *.la *.lo
-	rm -rf .libs
+	rm -f Makefile
 
 libtool-uninstall:
 	$(LIBTOOL_UNINSTALL) $(RMF) $(DESTDIR)$(plugindir)/example-plugin-sd.so

@@ -1,9 +1,9 @@
 #!/bin/sh
 #
-# shell script to create Bacula SQLite tables
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
 #
-#  Author:  Kern Sibbald
-#  License: LGPLv3
+# shell script to create Bacula SQLite tables
 
 bindir=@SQLITE_BINDIR@
 PATH=$bindir:$PATH
@@ -11,9 +11,5 @@ cd @working_dir@
 db_name=@db_name@
 
 sqlite3 $* ${db_name}.db <<END-OF-DATA
-.databases
 END-OF-DATA
-# Allow non root access
-chown @dir_user@:@dir_group@ ${db_name}.db
-chmod 0640 ${db_name}.db
 exit 0

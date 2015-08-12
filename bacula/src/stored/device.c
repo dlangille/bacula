@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *
@@ -44,16 +48,7 @@
  */
 
 #include "bacula.h"                   /* pull in global headers */
-#ifdef HAVE_SYS_STATVFS_H
-#include <sys/statvfs.h>
-#else
-#define statvfs statfs
-#endif
-/* statvfs.h defines ST_APPEND, which is also used by Bacula */
-#undef ST_APPEND
-
 #include "stored.h"                   /* pull in Storage Deamon headers */
-
 
 /* Forward referenced functions */
 
@@ -83,6 +78,7 @@ bool fixup_device_block_write_error(DCR *dcr, int retries)
    char PrevVolName[MAX_NAME_LENGTH];
    DEV_BLOCK *label_blk;
    DEV_BLOCK *block;
+   DEV_BLOCK *ameta_block = dcr->ameta_block;
    char b1[30], b2[30];
    time_t wait_time;
    char dt[MAX_TIME_LENGTH];
@@ -114,7 +110,7 @@ bool fixup_device_block_write_error(DCR *dcr, int retries)
    bstrncpy(dev->VolHdr.PrevVolumeName, PrevVolName, sizeof(dev->VolHdr.PrevVolumeName));
 
    label_blk = new_block(dev);
-   dcr->block = label_blk;
+   dcr->ameta_block = dcr->block = label_blk;
 
    /* Inform User about end of medium */
    Jmsg(jcr, M_INFO, 0, _("End of medium on Volume \"%s\" Bytes=%s Blocks=%s at %s.\n"),
@@ -132,6 +128,7 @@ bool fixup_device_block_write_error(DCR *dcr, int retries)
    if (!dcr->mount_next_write_volume()) {
       free_block(label_blk);
       dcr->block = block;
+      dcr->ameta_block = ameta_block;
       dev->Lock();
       goto bail_out;
    }
@@ -159,10 +156,12 @@ bool fixup_device_block_write_error(DCR *dcr, int retries)
         be.bstrerror(dev->dev_errno));
       free_block(label_blk);
       dcr->block = block;
+      dcr->ameta_block = ameta_block;
       goto bail_out;
    }
    free_block(label_blk);
    dcr->block = block;
+   dcr->ameta_block = ameta_block;
 
    /* Clear NewVol now because dir_get_volume_info() already done */
    jcr->dcr->NewVol = false;
@@ -204,12 +203,9 @@ void set_start_vol_position(DCR *dcr)
    DEVICE *dev = dcr->dev;
    /* Set new start position */
    if (dev->is_tape()) {
-      dcr->StartBlock = dev->block_num;
-      dcr->StartFile = dev->file;
+      dcr->StartBlock = dcr->EndBlock = dev->block_num;
+      dcr->StartFile = dcr->EndFile = dev->file;
    } else {
-      /*
-       * Note: we only update the DCR values for blocks
-       */
       dcr->StartBlock = dcr->EndBlock = (uint32_t)dev->file_addr;
       dcr->StartFile  = dcr->EndFile = (uint32_t)(dev->file_addr >> 32);
    }
@@ -314,7 +310,7 @@ bail_out:
 /*
  * Make sure device is open, if not do so
  */
-bool open_dev(DCR *dcr)
+bool open_device(DCR *dcr)
 {
    DEVICE *dev = dcr->dev;
    /* Open device */
@@ -337,97 +333,4 @@ bool open_dev(DCR *dcr)
       return false;
    }
    return true;
-}
-
-/*
- */
-void DEVICE::updateVolCatBytes(uint64_t bytes)
-{
-   DEVICE *dev;
-   Lock_VolCatInfo();
-   dev = this;
-   dev->VolCatInfo.VolCatAmetaBytes += bytes;
-   dev->VolCatInfo.VolCatBytes += bytes;
-   setVolCatInfo(false);
-   Unlock_VolCatInfo();
-}
-
-void DEVICE::updateVolCatBlocks(uint32_t blocks)
-{
-   DEVICE *dev;
-   Lock_VolCatInfo();
-   dev = this;
-   dev->VolCatInfo.VolCatAmetaBlocks += blocks;
-   dev->VolCatInfo.VolCatBlocks += blocks;
-   setVolCatInfo(false);
-   Unlock_VolCatInfo();
-}
-
-void DEVICE::updateVolCatWrites(uint32_t writes)
-{
-   DEVICE *dev;
-   Lock_VolCatInfo();
-   dev = this;
-   dev->VolCatInfo.VolCatAmetaWrites += writes;
-   dev->VolCatInfo.VolCatWrites += writes;
-   setVolCatInfo(false);
-   Unlock_VolCatInfo();
-}
-
-void DEVICE::updateVolCatReads(uint32_t reads)
-{
-   DEVICE *dev;
-   Lock_VolCatInfo();
-   dev = this;
-   dev->VolCatInfo.VolCatAmetaReads += reads;
-   dev->VolCatInfo.VolCatReads += reads;
-   setVolCatInfo(false);
-   Unlock_VolCatInfo();
-}
-
-void DEVICE::updateVolCatReadBytes(uint64_t bytes)
-{
-   DEVICE *dev;
-   Lock_VolCatInfo();
-   dev = this;
-   dev->VolCatInfo.VolCatAmetaRBytes += bytes;
-   dev->VolCatInfo.VolCatRBytes += bytes;
-   setVolCatInfo(false);
-   Unlock_VolCatInfo();
-}
-
-void DEVICE::set_nospace()
-{
-   state |= ST_NOSPACE;
-}
-
-void DEVICE::clear_nospace()
-{
-   state &= ~ST_NOSPACE;
-}
-
-/* Put device in append mode */
-void DEVICE::set_append()
-{
-   state &= ~(ST_NOSPACE|ST_READ|ST_EOT|ST_EOF|ST_WEOT);  /* remove EOF/EOT flags */
-   state |= ST_APPEND;
-}
-
-/* Clear append mode */
-void DEVICE::clear_append()
-{
-   state &= ~ST_APPEND;
-}
-
-/* Put device in read mode */
-void DEVICE::set_read()
-{
-   state &= ~(ST_APPEND|ST_EOT|ST_EOF|ST_WEOT);  /* remove EOF/EOT flags */
-   state |= ST_READ;
-}
-
-/* Clear read mode */
-void DEVICE::clear_read()
-{
-   state &= ~ST_READ;
 }

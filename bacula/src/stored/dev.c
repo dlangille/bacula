@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *
@@ -79,7 +83,7 @@ extern uint32_t status_dev(DEVICE *dev);
 
 /* Forward referenced functions */
 const char *mode_to_str(int mode);
-DEVICE *m_init_dev(JCR *jcr, DEVRES *device, bool alt);
+DEVICE *m_init_dev(JCR *jcr, DEVRES *device);
 /*
  * Device types for printing
  */
@@ -91,8 +95,7 @@ static const char *prt_dev_types[] = {
    "FIFO",
    "Vtape",
    "FTP",
-   "VTL",
-   "virtual"
+   "VTL"
 };
 
 /*
@@ -109,16 +112,16 @@ static const char *prt_dev_types[] = {
 DEVICE *init_dev(JCR *jcr, DEVRES *device)
 {
    generate_global_plugin_event(bsdGlobalEventDeviceInit, device);
-   DEVICE *dev = m_init_dev(jcr, device, false);
+   DEVICE *dev = m_init_dev(jcr, device);
    return dev;
 }
 
-DEVICE *m_init_dev(JCR *jcr, DEVRES *device, bool alt)
+DEVICE *m_init_dev(JCR *jcr, DEVRES *device)
 {
    struct stat statp;
    int errstat;
    DCR *dcr = NULL;
-   DEVICE *dev;
+   DEVICE *dev = NULL;
    uint32_t max_bs;
 
    /* If no device type specified, try to guess */
@@ -151,13 +154,13 @@ DEVICE *m_init_dev(JCR *jcr, DEVRES *device, bool alt)
       } else {
          device->dev_type = B_DVD_DEV;
       }
+      if (strcmp(device->device_name, "/dev/null") == 0) {
+         device->dev_type = B_NULL_DEV;
+      }
    }
    switch (device->dev_type) {
    case B_DVD_DEV:
       Jmsg0(jcr, M_FATAL, 0, _("DVD support is now deprecated.\n"));
-      return NULL;
-   case B_VIRTUAL_DEV:
-      Jmsg0(jcr, M_FATAL, 0, _("Aligned device not supported. Please use \"DeviceType = File\"\n"));
       return NULL;
    case B_VTAPE_DEV:
       dev = New(vtape);
@@ -167,26 +170,16 @@ DEVICE *m_init_dev(JCR *jcr, DEVRES *device, bool alt)
       dev = New(ftp_device);
       break;
 #endif
-#ifdef xHAVE_WIN32
-/* TODO: defined in src/win32/stored/mtops.cpp */
-   case B_TAPE_DEV:
-      dev = New(win_tape_dev);
-      break;
-   case B_FILE_DEV:
-      dev = New(win_file_dev);
-      break;
-#else
    case B_TAPE_DEV:
       dev = New(tape_dev);
       break;
    case B_FILE_DEV:
    case B_FIFO_DEV:
+   case B_NULL_DEV:
       dev = New(file_dev);
       break;
-      break;
-#endif
    default:
-         return NULL;
+      return NULL;
    }
    dev->clear_slot();         /* unknown */
 
@@ -198,6 +191,7 @@ DEVICE *m_init_dev(JCR *jcr, DEVRES *device, bool alt)
    Mmsg(dev->prt_name, "\"%s\" (%s)", device->hdr.name, device->device_name);
    Dmsg1(400, "Allocate dev=%s\n", dev->print_name());
    dev->capabilities = device->cap_bits;
+   dev->min_free_space = device->min_free_space;
    dev->min_block_size = device->min_block_size;
    dev->max_block_size = device->max_block_size;
    dev->max_volume_size = device->max_volume_size;
@@ -209,6 +203,7 @@ DEVICE *m_init_dev(JCR *jcr, DEVRES *device, bool alt)
    dev->vol_poll_interval = device->vol_poll_interval;
    dev->max_spool_size = device->max_spool_size;
    dev->drive_index = device->drive_index;
+   dev->enabled = device->enabled;
    dev->autoselect = device->autoselect;
    dev->read_only = device->read_only;
    dev->dev_type = device->dev_type;
@@ -222,24 +217,13 @@ DEVICE *m_init_dev(JCR *jcr, DEVRES *device, bool alt)
    if (dev->vol_poll_interval && dev->vol_poll_interval < 60) {
       dev->vol_poll_interval = 60;
    }
-   /*
-    * ***FIXME*** remove this when we implement write device
-    *  switching.
-    *
-    * We limit aligned Jobs to run one at a time.
-    * This is required because:
-    *  1. BlockAddr must be local for each JCR, today it
-    *     is global.
-    *  2. When flushing buffers, all other processes must
-    *     be locked out, and they currently are not.
-    *  3. We need to reserve the full space for a job, but
-    *     currently space for only one block is reserved.
-    *  4. In the case that the file grows, we must be able
-    *     to create multiple references to the correct data
-    *     blocks, if they are not contiguous.
-    */
 
-   device->dev = dev;
+   if (!device->dev) {
+      /* The first time we create a DEVICE from the DEVRES, we keep a pointer
+       * to the DEVICE accessible from the DEVRES.
+       */
+      device->dev = dev;
+   }
 
    if (dev->is_fifo()) {
       dev->capabilities |= CAP_STREAM; /* set stream device */
@@ -260,6 +244,11 @@ DEVICE *m_init_dev(JCR *jcr, DEVRES *device, bool alt)
       if (!device->mount_command || !device->unmount_command) {
          Jmsg0(jcr, M_ERROR_TERM, 0, _("Mount and unmount commands must defined for a device which requires mount.\n"));
       }
+   } 
+
+   /* Keep the device ID in the DEVICE struct to identify the hardware */
+   if (dev->is_file() && stat(dev->archive_name(), &statp) == 0) {
+         dev->devno = statp.st_dev;
    }
 
    /* Sanity check */
@@ -394,7 +383,7 @@ bool DEVICE::open(DCR *dcr, int omode)
    if (is_tape() || is_fifo()) {
       open_tape_device(dcr, omode);
    } else if (is_ftp()) {
-      this->open_device(dcr, omode);
+      open_device(dcr, omode);
    } else {
       Dmsg1(100, "call open_file_device mode=%s\n", mode_to_str(omode));
       open_file_device(dcr, omode);
@@ -539,12 +528,207 @@ void DEVICE::clear_volhdr()
    setVolCatInfo(false);
 }
 
+void DEVICE::set_nospace()
+{
+   state |= ST_NOSPACE;
+}
+
+void DEVICE::clear_nospace()
+{
+   state &= ~ST_NOSPACE;
+}
+
+/* Put device in append mode */
+void DEVICE::set_append()
+{
+   state &= ~(ST_NOSPACE|ST_READ|ST_EOT|ST_EOF|ST_WEOT);  /* remove EOF/EOT flags */
+   state |= ST_APPEND;
+}
+
+/* Clear append mode */
+void DEVICE::clear_append()
+{
+   state &= ~ST_APPEND;
+}
+
+/* Put device in read mode */
+void DEVICE::set_read()
+{
+   state &= ~(ST_APPEND|ST_EOT|ST_EOF|ST_WEOT);  /* remove EOF/EOT flags */
+   state |= ST_READ;
+}
+
+/* Clear read mode */
+void DEVICE::clear_read()
+{
+   state &= ~ST_READ;
+}
+
+/*
+ * Get freespace using OS calls
+ * TODO: See if it's working with mount commands
+ */
+bool DEVICE::get_os_device_freespace()
+{
+   int64_t freespace, totalspace;
+
+   if (!is_file()) {
+      return true;
+   }
+   if (fs_get_free_space(dev_name, &freespace, &totalspace) == 0) {
+      set_freespace(freespace,  totalspace, 0, true);
+      Mmsg(errmsg, "");
+      return true;
+
+   } else {
+      set_freespace(0, 0, 0, false); /* No valid freespace */
+   }
+   return false;
+}
+
+/* Update the free space on the device */
+bool DEVICE::update_freespace()
+{
+   POOL_MEM ocmd(PM_FNAME);
+   POOLMEM* results;
+   char* icmd;
+   char* p;
+   uint64_t free, total;
+   char ed1[50];
+   bool ok = false;
+   int status;
+   berrno be;
+
+   if (!is_file()) {
+      Mmsg(errmsg, "");
+      return true;
+   }
+
+   /* The device must be mounted in order for freespace to work */
+   if (requires_mount()) {
+      mount(1);
+   }
+
+   if (get_os_device_freespace()) {
+      Dmsg4(20, "get_os_device_freespace: free_space=%s freespace_ok=%d free_space_errno=%d have_media=%d\n",
+         edit_uint64(free_space, ed1), !!is_freespace_ok(), free_space_errno, !!have_media());
+      return true;
+   }
+
+   icmd = device->free_space_command;
+
+   if (!icmd) {
+      set_freespace(0, 0, 0, false);
+      Dmsg2(20, "ERROR: update_free_space_dev: free_space=%s, free_space_errno=%d (!icmd)\n",
+            edit_uint64(free_space, ed1), free_space_errno);
+      Mmsg(errmsg, _("No FreeSpace command defined.\n"));
+      return false;
+   }
+
+   edit_mount_codes(ocmd, icmd);
+
+   Dmsg1(20, "update_freespace: cmd=%s\n", ocmd.c_str());
+
+   results = get_pool_memory(PM_MESSAGE);
+
+   Dmsg1(20, "Run freespace prog=%s\n", ocmd.c_str());
+   status = run_program_full_output(ocmd.c_str(), max_open_wait/2, results);
+   Dmsg2(20, "Freespace status=%d result=%s\n", status, results);
+   /* Should report "1223232 12323232\n"  "free  total\n" */
+   if (status == 0) {
+      free = str_to_int64(results) * 1024;
+      p = results;
+
+      if (skip_nonspaces(&p)) {
+         total = str_to_int64(p) * 1024;
+
+      } else {
+         total = 0;
+      }
+
+      Dmsg1(400, "Free space program run: Freespace=%s\n", results);
+      if (free >= 0) {
+         set_freespace(free, total, 0, true); /* have valid freespace */
+         Mmsg(errmsg, "");
+         ok = true;
+      }
+   } else {
+      set_freespace(0, 0, EPIPE, false); /* no valid freespace */
+      Mmsg2(errmsg, _("Cannot run free space command. Results=%s ERR=%s\n"),
+            results, be.bstrerror(status));
+
+      dev_errno = free_space_errno;
+      Dmsg4(20, "Cannot get free space on device %s. free_space=%s, "
+         "free_space_errno=%d ERR=%s\n",
+            print_name(), edit_uint64(free_space, ed1),
+            free_space_errno, errmsg);
+   }
+   free_pool_memory(results);
+   Dmsg4(20, "leave update_freespace: free_space=%s freespace_ok=%d free_space_errno=%d have_media=%d\n",
+      edit_uint64(free_space, ed1), !!is_freespace_ok(), free_space_errno, !!have_media());
+   return ok;
+}
+
+void DEVICE::updateVolCatBytes(uint64_t bytes)
+{
+   DEVICE *dev = this;
+   Lock_VolCatInfo();
+   dev->VolCatInfo.VolCatAmetaBytes += bytes;
+   Dmsg1(200, "updateVolBytes ameta=%lld\n",
+      dev->VolCatInfo.VolCatAmetaBytes);
+   dev->VolCatInfo.VolCatBytes += bytes;
+   setVolCatInfo(false);
+   Unlock_VolCatInfo();
+}
+
+void DEVICE::updateVolCatBlocks(uint32_t blocks)
+{
+   DEVICE *dev = this;
+   Lock_VolCatInfo();
+   dev->VolCatInfo.VolCatAmetaBlocks += blocks;
+   dev->VolCatInfo.VolCatBlocks += blocks;
+   setVolCatInfo(false);
+   Unlock_VolCatInfo();
+}
+
+
+void DEVICE::updateVolCatWrites(uint32_t writes)
+{
+   DEVICE *dev = this;
+   Lock_VolCatInfo();
+   dev->VolCatInfo.VolCatAmetaWrites += writes;
+   dev->VolCatInfo.VolCatWrites += writes;
+   setVolCatInfo(false);
+   Unlock_VolCatInfo();
+}
+
+void DEVICE::updateVolCatReads(uint32_t reads)
+{
+   DEVICE *dev = this;
+   Lock_VolCatInfo();
+   dev->VolCatInfo.VolCatAmetaReads += reads;
+   dev->VolCatInfo.VolCatReads += reads;
+   setVolCatInfo(false);
+   Unlock_VolCatInfo();
+}
+
+void DEVICE::updateVolCatReadBytes(uint64_t bytes)
+{
+   DEVICE *dev = this;
+   Lock_VolCatInfo();
+   dev->VolCatInfo.VolCatAmetaRBytes += bytes;
+   dev->VolCatInfo.VolCatRBytes += bytes;
+   setVolCatInfo(false);
+   Unlock_VolCatInfo();
+}
 
 /*
  * Close the device
  */
-void DEVICE::close()
+bool DEVICE::close()
 {
+   bool ok = true;
+
    Dmsg4(40, "close_dev vol=%s fd=%d dev=%p dev=%s\n",
       VolHdr.VolumeName, m_fd, this, print_name());
    offline_or_rewind();
@@ -552,7 +736,7 @@ void DEVICE::close()
    if (!is_open()) {
       Dmsg2(200, "device %s already closed vol=%s\n", print_name(),
          VolHdr.VolumeName);
-      return;                         /* already closed */
+      return true;                    /* already closed */
    }
 
    switch (dev_type) {
@@ -562,12 +746,18 @@ void DEVICE::close()
       unlock_door();
       /* Fall through wanted */
    default:
-      d_close(m_fd);
+      if (d_close(m_fd) != 0) {
+         berrno be;
+         dev_errno = errno;
+         Mmsg2(errmsg, _("Error closing device %s. ERR=%s.\n"),
+               print_name(), be.bstrerror());
+         ok = false;
+      }
       break;
    }
 
-   unmount(1);                        /* do unmount if required */
-
+   unmount(1);                       /* do unmount if required */
+ 
    /* Clean up device packet so it can be reused */
    clear_opened();
 
@@ -589,6 +779,7 @@ void DEVICE::close()
       stop_thread_timer(tid);
       tid = 0;
    }
+   return ok;
 }
 
 /*
@@ -613,70 +804,30 @@ void DEVICE::close_part(DCR * /*dcr*/)
    VolCatInfo = saveVolCatInfo;       /* structure assignment */
 }
 
-/*
- * Mount the device.
+/* 
  * If timeout, wait until the mount command returns 0.
  * If !timeout, try to mount the device only once.
  */
 bool DEVICE::mount(int timeout)
 {
    Dmsg0(190, "Enter mount\n");
-
-   if (is_mounted()) {
-      return true;
-   }
-
-   switch (dev_type) {
-   case B_VTL_DEV:
-   case B_VTAPE_DEV:
-   case B_TAPE_DEV:
-      if (device->mount_command) {
-         return do_tape_mount(1, timeout);
-      }
-      break;
-   case B_FILE_DEV:
-      if (requires_mount() && device->mount_command) {
-         return do_file_mount(1, timeout);
-      }
-      break;
-   default:
-      break;
-   }
-
+   if (!is_mounted() && device->mount_command) {
+      return mount_file(1, timeout);
+   } 
    return true;
 }
 
-/*
- * Unmount the device
+/* 
+ * Unmount the device 
  * If timeout, wait until the unmount command returns 0.
  * If !timeout, try to unmount the device only once.
  */
 bool DEVICE::unmount(int timeout)
 {
    Dmsg0(100, "Enter unmount\n");
-
-   if (!is_mounted()) {
-      return true;
-   }
-
-   switch (dev_type) {
-   case B_VTL_DEV:
-   case B_VTAPE_DEV:
-   case B_TAPE_DEV:
-      if (device->unmount_command) {
-         return do_tape_mount(0, timeout);
-      }
-      break;
-   case B_FILE_DEV:
-   case B_DVD_DEV:
-      if (requires_mount() && device->unmount_command) {
-         return do_file_mount(0, timeout);
-      }
-      break;
-   default:
-      break;
-   }
-
+   if (is_mounted() && requires_mount() && device->unmount_command) {
+      return mount_file(0, timeout);
+   } 
    return true;
 }
 
@@ -813,7 +964,7 @@ uint32_t DEVICE::get_file()
    if (is_dvd() || is_tape()) {
       return file;
    } else {
-      uint64_t bytes = VolCatInfo.VolCatAmetaBytes;
+      uint64_t bytes = VolCatInfo.VolCatAdataBytes + VolCatInfo.VolCatAmetaBytes;
       return (uint32_t)(bytes >> 32);
    }
 }
@@ -823,7 +974,7 @@ uint32_t DEVICE::get_block_num()
    if (is_dvd() || is_tape()) {
       return block_num;
    } else {
-      return  VolCatInfo.VolCatAmetaBlocks;
+      return  VolCatInfo.VolCatAdataBlocks + VolCatInfo.VolCatAmetaBlocks;
    }
 }
 
@@ -898,17 +1049,48 @@ void DEVICE::term(void)
    pthread_cond_destroy(&wait);
    pthread_cond_destroy(&wait_next_vol);
    pthread_mutex_destroy(&spool_mutex);
+   pthread_mutex_destroy(&freespace_mutex);
    if (attached_dcrs) {
       delete attached_dcrs;
       attached_dcrs = NULL;
    }
-   if (device) {
+   /* We let the DEVRES pointer if not our device */
+   if (device && device->dev == this) {
       device->dev = NULL;
    }
    delete this;
    if (dev) {
       dev->term();
    }
+}
+
+/* Get freespace values */
+void DEVICE::get_freespace(uint64_t *freeval, uint64_t *totalval)
+{
+   get_os_device_freespace();
+   P(freespace_mutex);
+   if (is_freespace_ok()) {
+      *freeval = free_space;
+      *totalval = total_space;
+   } else {
+      *freeval = *totalval = 0;
+   }
+   V(freespace_mutex);
+}
+
+/* Set freespace values */
+void DEVICE::set_freespace(uint64_t freeval, uint64_t totalval, int errnoval, bool valid)
+{
+   P(freespace_mutex);
+   free_space = freeval;
+   total_space = totalval;
+   free_space_errno = errnoval;
+   if (valid) {
+      set_freespace_ok();
+   } else {
+      clear_freespace_ok();
+   }
+   V(freespace_mutex);
 }
 
 /*

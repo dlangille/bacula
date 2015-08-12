@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
 
@@ -30,7 +34,7 @@
 
 */
 
-#define _LOCKMGR_COMPLIANT
+#define LOCKMGR_COMPLIANT
 
 #include "bacula.h"
 /* Use the real routines here */
@@ -132,7 +136,7 @@ static void *smalloc(const char *fname, int lineno, unsigned int nbytes)
    } else {
       Emsg0(M_ABORT, 0, _("Out of memory\n"));
    }
-   Dmsg4(DT_MEMORY|50, "smalloc %d at %p from %s:%d\n", nbytes, buf, fname, lineno);
+   Dmsg4(DT_MEMORY|1050, "smalloc %d at %p from %s:%d\n", nbytes, buf, fname, lineno);
 #if    SMALLOC_SANITY_CHECK > 0
    if (sm_bytes > SMALLOC_SANITY_CHECK) {
       Emsg0(M_ABORT, 0, _("Too much memory used."));
@@ -147,9 +151,11 @@ static void *smalloc(const char *fname, int lineno, unsigned int nbytes)
 void sm_new_owner(const char *fname, int lineno, char *buf)
 {
    buf -= HEAD_SIZE;  /* Decrement to header */
+   P(mutex);
    ((struct abufhead *)buf)->abfname = bufimode ? NULL : fname;
    ((struct abufhead *)buf)->ablineno = (uint32_t) lineno;
    ((struct abufhead *)buf)->abin_use = true;
+   V(mutex);
    return;
 }
 
@@ -173,13 +179,13 @@ void sm_free(const char *file, int line, void *fp)
    struct abufhead *head = (struct abufhead *)cp;
 
    P(mutex);
-   Dmsg4(DT_MEMORY|50, "sm_free %d at %p from %s:%d\n",
+   Dmsg4(DT_MEMORY|1050, "sm_free %d at %p from %s:%d\n",
          head->ablen, fp,
          get_basename(head->abfname), head->ablineno);
 
    if (!head->abin_use) {
       V(mutex);
-      Emsg2(M_ABORT, 0, _("double free from %s:%d\n"), file, lineno);
+      Emsg2(M_ABORT, 0, _("in-use bit not set: double free from %s:%d\n"), file, lineno);
    }
    head->abin_use = false;
 
@@ -276,7 +282,7 @@ void *sm_realloc(const char *fname, int lineno, void *ptr, unsigned int size)
    void *buf;
    char *cp = (char *) ptr;
 
-   Dmsg4(DT_MEMORY|50, "sm_realloc %s:%d %p %d\n", get_basename(fname), (uint32_t)lineno, ptr, size);
+   Dmsg4(DT_MEMORY|1050, "sm_realloc %s:%d %p %d\n", get_basename(fname), (uint32_t)lineno, ptr, size);
    if (size <= 0) {
       e_msg(fname, lineno, M_ABORT, 0, _("sm_realloc size: %d\n"), size);
    }
@@ -316,7 +322,7 @@ void *sm_realloc(const char *fname, int lineno, void *ptr, unsigned int size)
       /* All done.  Free and dechain the original buffer. */
       sm_free(fname, lineno, ptr);
    }
-   Dmsg4(DT_MEMORY|60, _("sm_realloc %d at %p from %s:%d\n"), size, buf, get_basename(fname), (uint32_t)lineno);
+   Dmsg4(DT_MEMORY|1060, _("sm_realloc %d at %p from %s:%d\n"), size, buf, get_basename(fname), (uint32_t)lineno);
    return buf;
 }
 
@@ -347,7 +353,7 @@ void *actuallycalloc(unsigned int nelem, unsigned int elsize)
 
 void *actuallyrealloc(void *ptr, unsigned int size)
 {
-   Dmsg2(DT_MEMORY|40, "Actuallyrealloc %p %d\n", ptr, size);
+   Dmsg2(DT_MEMORY|1040, "Actuallyrealloc %p %d\n", ptr, size);
    return realloc(ptr, size);
 }
 

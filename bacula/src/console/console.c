@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *
@@ -47,7 +51,7 @@
 //extern int rl_catch_signals;
 
 /* Imported functions */
-int authenticate_director(JCR *jcr, DIRRES *director, CONRES *cons);
+int authenticate_director(BSOCK *dir, DIRRES *director, CONRES *cons);
 extern bool parse_cons_config(CONFIG *config, const char *configfile, int exit_code);
 
 /* Forward referenced functions */
@@ -93,6 +97,7 @@ static int echocmd(FILE *input, BSOCK *UA_sock);
 static int timecmd(FILE *input, BSOCK *UA_sock);
 static int sleepcmd(FILE *input, BSOCK *UA_sock);
 static int execcmd(FILE *input, BSOCK *UA_sock);
+
 #ifdef HAVE_READLINE
 static int eolcmd(FILE *input, BSOCK *UA_sock);
 
@@ -111,7 +116,7 @@ static void usage()
 {
    fprintf(stderr, _(
 PROG_COPYRIGHT
-"\nVersion: " VERSION " (" BDATE ") %s %s %s\n\n"
+"\n%sVersion: " VERSION " (" BDATE ") %s %s %s\n\n"
 "Usage: bconsole [-s] [-c config_file] [-d debug_level]\n"
 "       -D <dir>    select a Director\n"
 "       -l          list Directors defined\n"
@@ -123,7 +128,7 @@ PROG_COPYRIGHT
 "       -u <nn>     set command execution timeout to <nn> seconds\n"
 "       -t          test - read configuration and exit\n"
 "       -?          print this message.\n"
-"\n"), 2000, HOST_OS, DISTNAME, DISTVER);
+"\n"), 2000, "", HOST_OS, DISTNAME, DISTVER);
 }
 
 
@@ -217,7 +222,6 @@ static int do_a_command(FILE *input, BSOCK *UA_sock)
    return stat;
 }
 
-
 static void read_and_process_input(FILE *input, BSOCK *UA_sock)
 {
    const char *prompt = "*";
@@ -243,11 +247,10 @@ static void read_and_process_input(FILE *input, BSOCK *UA_sock)
          }
       } else {
          /* Reading input from a file */
-         int len = sizeof_pool_memory(UA_sock->msg) - 1;
          if (usrbrk()) {
             break;
          }
-         if (fgets(UA_sock->msg, len, input) == NULL) {
+         if (bfgets(UA_sock->msg, input) == NULL) {
             stat = -1;
          } else {
             sendit(UA_sock->msg);  /* echo to terminal */
@@ -283,11 +286,17 @@ static void read_and_process_input(FILE *input, BSOCK *UA_sock)
          }
          stop_bsock_timer(tid);
       }
-      if (strcmp(UA_sock->msg, ".quit") == 0 || strcmp(UA_sock->msg, ".exit") == 0) {
+      if (strcasecmp(UA_sock->msg, ".quit") == 0 || strcasecmp(UA_sock->msg, ".exit") == 0) {
          break;
       }
       tid = start_bsock_timer(UA_sock, timeout);
-      while ((stat = UA_sock->recv()) >= 0) {
+      while (1) {
+         stat = UA_sock->recv();
+
+         if (stat < 0) {
+            break;
+         }
+
          if (at_prompt) {
             if (!stop) {
                sendit("\n");
@@ -314,7 +323,7 @@ static void read_and_process_input(FILE *input, BSOCK *UA_sock)
          if (UA_sock->msglen == BNET_SUB_PROMPT) {
             at_prompt = true;
          }
-         Dmsg1(100, "Got poll %s\n", bnet_sig_to_ascii(UA_sock));
+         Dmsg1(100, "Got poll %s\n", bnet_sig_to_ascii(UA_sock->msglen));
       }
    }
 }
@@ -448,12 +457,12 @@ static void match_kw(regex_t *preg, const char *what, int len, POOLMEM **buf)
 {
    int rc, size;
    int nmatch=20;
-   regmatch_t pmatch[20];
+   regmatch_t pmatch[nmatch];
 
    if (len <= 0) {
       return;
    }
-   rc = regexec(preg, what, nmatch, pmatch, 0);
+   rc = regexec(preg, what, nmatch, pmatch,  0);
    if (rc == 0) {
 #if 0
       Pmsg1(0, "\n\n%s\n0123456789012345678901234567890123456789\n        10         20         30\n", what);
@@ -599,7 +608,10 @@ static struct cpl_keywords_t cpl_keywords[] = {
    {"m",          ".ls"            },
    {"unmark",     ".lsmark"        },
    {"catalog=",   ".catalogs"      },
-   {"actiononpurge=", ".actiononpurge" }
+   {"actiononpurge=", ".actiononpurge" },
+   {"tags=",      ".tags"          },
+   {"recylepool=", ".pool"         },
+   {"allfrompool=",".pool"         }
 };
 #define key_size ((int)(sizeof(cpl_keywords)/sizeof(struct cpl_keywords_t)))
 
@@ -873,7 +885,7 @@ static int console_init_history(const char *histfile)
    return ret;
 }
 
-bool select_director(const char *director, DIRRES **ret_dir, CONRES **ret_cons)
+static bool select_director(const char *director, DIRRES **ret_dir, CONRES **ret_cons)
 {
    int numcon=0, numdir=0;
    int i=0, item=0;
@@ -1189,13 +1201,15 @@ int main(int argc, char *argv[])
    }
    if (!UA_sock->connect(NULL, 5, 15, heart_beat, "Director daemon", dir->address,
                           NULL, dir->DIRport, 0)) {
+      UA_sock->destroy();
+      UA_sock = NULL;
       terminate_console(0);
       return 1;
    }
    jcr.dir_bsock = UA_sock;
 
    /* If cons==NULL, default console will be used */
-   if (!authenticate_director(&jcr, dir, cons)) {
+   if (!authenticate_director(UA_sock, dir, cons)) {
       terminate_console(0);
       return 1;
    }
@@ -1454,7 +1468,6 @@ static int execcmd(FILE *input, BSOCK *UA_sock)
    }
    return 1;
 }
-
 
 /* @echo xxx yyy */
 static int echocmd(FILE *input, BSOCK *UA_sock)

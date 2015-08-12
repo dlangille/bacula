@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *
@@ -53,7 +57,8 @@ STORES *me = NULL;                    /* our Global resource */
 bool forge_on = false;
 pthread_mutex_t device_release_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t wait_device_release = PTHREAD_COND_INITIALIZER;
-
+bool detect_errors = false;
+int  errors = 0;
 
 static FF_PKT *ff;
 
@@ -63,7 +68,7 @@ static void usage()
 {
    fprintf(stderr, _(
 PROG_COPYRIGHT
-"\nVersion: %s (%s)\n\n"
+"\n%sVersion: %s (%s)\n\n"
 "Usage: bls [options] <device-name>\n"
 "       -b <file>       specify a bootstrap file\n"
 "       -c <file>       specify a Storage configuration file\n"
@@ -78,7 +83,8 @@ PROG_COPYRIGHT
 "       -p              proceed inspite of errors\n"
 "       -v              be verbose\n"
 "       -V              specify Volume names (separated by |)\n"
-"       -?              print this message\n\n"), 2000, VERSION, BDATE);
+"       -E              Check records to detect errors\n"
+"       -?              print this message\n\n"), 2000, "", VERSION, BDATE);
    exit(1);
 }
 
@@ -106,10 +112,14 @@ int main (int argc, char *argv[])
 
    ff = init_find_files();
 
-   while ((ch = getopt(argc, argv, "b:c:d:e:i:jkLpvV:?")) != -1) {
+   while ((ch = getopt(argc, argv, "b:c:d:e:i:jkLpvV:?E")) != -1) {
       switch (ch) {
       case 'b':
          bsrName = optarg;
+         break;
+
+      case 'E':
+         detect_errors = true;
          break;
 
       case 'c':                    /* specify config file */
@@ -252,6 +262,10 @@ int main (int argc, char *argv[])
    }
    term_include_exclude_files(ff);
    term_find_files(ff);
+
+   if (detect_errors) {
+      return (errors > 0)? 1 : 0;
+   }
    return 0;
 }
 
@@ -298,6 +312,7 @@ static void do_blocks(char *infname)
             continue;
          } else {
             /* I/O error */
+            errors++;
             display_tape_error_status(jcr, dev);
             break;
          }
@@ -335,7 +350,7 @@ static void do_blocks(char *infname)
 static bool jobs_cb(DCR *dcr, DEV_RECORD *rec)
 {
    if (rec->FileIndex < 0) {
-      dump_label_record(dcr->dev, rec, verbose);
+      dump_label_record(dcr->dev, rec, verbose, detect_errors);
    }
    rec->remainder = 0;
    return true;
@@ -344,7 +359,9 @@ static bool jobs_cb(DCR *dcr, DEV_RECORD *rec)
 /* Do list job records */
 static void do_jobs(char *infname)
 {
-   read_records(dcr, jobs_cb, mount_next_read_volume);
+   if (!read_records(dcr, jobs_cb, mount_next_read_volume)) {
+      errors++;
+   }
 }
 
 /* Do an ls type listing of an archive */
@@ -354,7 +371,9 @@ static void do_ls(char *infname)
       dump_volume_label(dev);
       return;
    }
-   read_records(dcr, record_cb, mount_next_read_volume);
+   if (!read_records(dcr, record_cb, mount_next_read_volume)) {
+      errors++;
+   }
    printf("%u files found.\n", num_files);
 }
 
@@ -364,7 +383,7 @@ static void do_ls(char *infname)
 static bool record_cb(DCR *dcr, DEV_RECORD *rec)
 {
    if (verbose && rec->FileIndex < 0) {
-      dump_label_record(dcr->dev, rec, verbose);
+      dump_label_record(dcr->dev, rec, verbose, false);
       return true;
    }
    if (verbose) {
@@ -464,6 +483,7 @@ static void get_session_record(DEVICE *dev, DEV_RECORD *rec, SESSION_LABEL *sess
 bool    dir_find_next_appendable_volume(DCR *dcr) { return 1;}
 bool    dir_update_volume_info(DCR *dcr, bool relabel, bool update_LastWritten) { return 1; }
 bool    dir_create_jobmedia_record(DCR *dcr, bool zero) { return 1; }
+bool    flush_jobmedia_queue(JCR *jcr) { return true; }
 bool    dir_ask_sysop_to_create_appendable_volume(DCR *dcr) { return 1; }
 bool    dir_update_file_attributes(DCR *dcr, DEV_RECORD *rec) { return 1;}
 bool    dir_send_job_status(JCR *jcr) {return 1;}
@@ -484,9 +504,6 @@ bool dir_get_volume_info(DCR *dcr, enum get_vol_info_rw  writing)
 {
    Dmsg0(100, "Fake dir_get_volume_info\n");
    dcr->setVolCatName(dcr->VolumeName);
-#ifdef BUILD_DVD
-   dcr->VolCatInfo.VolCatParts = find_num_dvd_parts(dcr);
-#endif
-   Dmsg2(500, "Vol=%s num_parts=%d\n", dcr->getVolCatName(), dcr->VolCatInfo.VolCatParts);
+   Dmsg2(500, "Vol=%s VolType=%d\n", dcr->getVolCatName(), dcr->VolCatInfo.VolCatType);
    return 1;
 }

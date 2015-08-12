@@ -1,8 +1,8 @@
 #
 #  Bacula Director Makefile
 #
-# Author: Kern Sibbald
-# License: LGPLv3
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
 #
 @MCOMMON@
 
@@ -13,9 +13,9 @@ VPATH = 	.
 dir_group=@dir_group@
 
 # one up
-basedir = ..
+basedir = @BUILD_DIR@/src
 # top dir
-topdir = ../..
+topdir = @BUILD_DIR@
 # this dir relative to top dir
 thisdir = src/dird
 
@@ -23,7 +23,6 @@ DEBUG=@DEBUG@
 
 GETTEXT_LIBS = @LIBINTL@
 CAP_LIBS = @CAP_LIBS@
-
 DB_LIBS=@DB_LIBS@
 
 first_rule: all
@@ -42,7 +41,7 @@ SVRSRCS = dird.c admin.c authenticate.c \
 	  ua_query.c \
 	  ua_input.c ua_label.c ua_output.c ua_prune.c \
 	  ua_purge.c ua_restore.c ua_run.c \
-	  ua_select.c ua_server.c \
+	  ua_select.c ua_server.c snapshot.c \
 	  ua_status.c ua_tree.c ua_update.c vbackup.c verify.c
 SVROBJS = $(SVRSRCS:.c=.o)
 
@@ -117,7 +116,7 @@ install: all
 	@if  test -f ${DESTDIR}${scriptdir}/query.sql; then \
 	   echo "  ==> Saving existing query.sql to query.sql.old"; \
 	   $(MV) -f ${DESTDIR}${scriptdir}/query.sql ${DESTDIR}${scriptdir}/query.sql.old; \
-	fi 
+	fi
 	${INSTALL_DATA} query.sql ${DESTDIR}${scriptdir}/query.sql
 	@if test -f static-bacula-dir; then \
 	   $(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) static-bacula-dir $(DESTDIR)$(sbindir)/static-bacula-dir; \
@@ -125,7 +124,6 @@ install: all
 
 
 uninstall:
-	(cd $(DESTDIR)$(sbindir); $(RMF) bacula-dir
 	(cd $(DESTDIR)$(sysconfdir); $(RMF) bacula-dir.conf bacula-dir.conf.new)
 	(cd $(DESTDIR)$(scriptdir); $(RMF) query.sql)
 

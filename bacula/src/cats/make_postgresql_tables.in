@@ -2,12 +2,12 @@
 #
 # shell script to create Bacula PostgreSQL tables
 #
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
 # Important note: 
 #   You won't get any support for performance issue if you changed the default
 #   schema.
-#
-#  Author:  Kern Sibbald
-#  License: LGPLv3
 #
 bindir=@POSTGRESQL_BINDIR@
 PATH="$bindir:$PATH"
@@ -23,7 +23,7 @@ CREATE TABLE Filename
 );
 
 ALTER TABLE Filename ALTER COLUMN Name SET STATISTICS 1000;
-CREATE UNIQUE INDEX filename_name_idx on Filename (Name);
+CREATE UNIQUE INDEX filename_name_idx on Filename (Name text_pattern_ops);
 
 CREATE TABLE Path
 (
@@ -33,7 +33,7 @@ CREATE TABLE Path
 );
 
 ALTER TABLE Path ALTER COLUMN Path SET STATISTICS 1000;
-CREATE UNIQUE INDEX path_name_idx on Path (Path);
+CREATE UNIQUE INDEX path_name_idx on Path (Path text_pattern_ops);
 
 -- We strongly recommend to avoid the temptation to add new indexes.
 -- In general, these will cause very significant performance
@@ -69,7 +69,7 @@ CREATE INDEX file_jobid_idx on File (JobId);
 --
 -- Add this if you have a good number of job
 -- that run at the same time
--- ALTER SEQUENCE file_fileid_seq CACHE 1000;
+-- ALTER SEQUENCE file_fileid_seq CACHE 10;
 
 --
 -- Possibly add one or more of the following indexes
@@ -125,10 +125,11 @@ CREATE TABLE Job
     HasCache	      smallint	  default 0,
     Reviewed	      smallint	  default 0,
     Comment	      text,
+    FileTable	      text	  default 'File',
     primary key (jobid)
 );
 
-CREATE INDEX job_name_idx on job (name);
+CREATE INDEX job_name_idx on job (name text_pattern_ops);
 
 -- Create a table like Job for long term statistics 
 CREATE TABLE JobHisto (LIKE Job);
@@ -153,7 +154,7 @@ CREATE TABLE fileset
     primary key (filesetid)
 );
 
-CREATE INDEX fileset_name_idx on fileset (fileset);
+CREATE INDEX fileset_name_idx on fileset (fileset text_pattern_ops);
 
 CREATE TABLE jobmedia
 (
@@ -189,9 +190,13 @@ CREATE TABLE media
     volblocks	      integer	  default 0,
     volmounts	      integer	  default 0,
     volbytes	      bigint	  default 0,
-    volparts	      integer	  default 0,
+    volabytes	      bigint	  default 0,
+    volapadding       bigint	  default 0,
+    volholebytes      bigint	  default 0,
+    volholes	      integer	  default 0,
+    volparts	      integer	  default 0,   /* Now used for VolType */
     volerrors	      integer	  default 0,
-    volwrites	      integer	  default 0,
+    volwrites	      bigint	  default 0,
     volcapacitybytes  bigint	  default 0,
     volstatus	      text	  not null
 	check (volstatus in ('Full','Archive','Append',
@@ -222,9 +227,9 @@ CREATE TABLE media
     primary key (mediaid)
 );
 
-CREATE UNIQUE INDEX media_volumename_id ON Media (VolumeName);
+CREATE UNIQUE INDEX media_volumename_id ON Media (VolumeName text_pattern_ops);
 CREATE INDEX media_poolid_idx ON Media (PoolId);
-
+CREATE INDEX media_storageid_idx ON Media (StorageId);
  
 CREATE TABLE MediaType (
    MediaTypeId SERIAL,
@@ -291,7 +296,7 @@ CREATE TABLE pool
     primary key (poolid)
 );
 
-CREATE INDEX pool_name_idx on pool (name);
+CREATE INDEX pool_name_idx on pool (name text_pattern_ops);
 
 CREATE TABLE client
 (
@@ -304,7 +309,7 @@ CREATE TABLE client
     primary key (clientid)
 );
 
-create unique index client_name_idx on client (name);
+create unique index client_name_idx on client (name text_pattern_ops);
 
 CREATE TABLE Log
 (
@@ -448,8 +453,30 @@ INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
    ('a', 'SD despooling attributes',15);
 INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
    ('i', 'Doing batch insert file records',15);
+INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
+   ('I', 'Incomplete Job',25);
 
-INSERT INTO Version (VersionId) VALUES (@BDB_VERSION@);
+CREATE TABLE Snapshot (
+  SnapshotId	  serial,
+  Name		  text not null,
+  JobId 	  integer default 0,
+  FileSetId	  integer default 0,
+  CreateTDate	  bigint default 0,
+  CreateDate	  timestamp without time zone not null,
+  ClientId	  int default 0,
+  Volume	  text not null,
+  Device	  text not null,
+  Type		  text not null,
+  Retention	  integer default 0,
+  Comment	  text,
+  primary key (SnapshotId)
+);
+
+CREATE UNIQUE INDEX snapshot_idx ON Snapshot (Device text_pattern_ops, 
+					      Volume text_pattern_ops,
+					      Name text_pattern_ops);
+
+INSERT INTO Version (VersionId) VALUES (15);
 
 -- Make sure we have appropriate permissions
 

@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2008-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 
 /*
@@ -436,11 +440,13 @@ int vtape::weof()
    ASSERT(online);
    ASSERT(current_file >= 0);
 
+#if 0
    if (atEOT) {
       errno = ENOSPC;
       current_block = -1;
       return -1;
    }
+#endif
 
    if (!atEOD) {
       truncate_file();             /* nothing after this point */
@@ -881,8 +887,6 @@ int vtape::d_open(const char *pathname, int uflags)
    online = true;               /* assume that drive contains a tape */
    struct flock lock;
    struct stat statp;
-
-   ASSERT(!m_shstore || (m_shstore_lock && m_shstore_register));
 
    if (stat(pathname, &statp) != 0) {
       fd = -1;

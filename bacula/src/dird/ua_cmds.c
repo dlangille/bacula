@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *
@@ -78,6 +82,7 @@ static void do_job_delete(UAContext *ua, JobId_t JobId);
 static int delete_volume(UAContext *ua);
 static int delete_pool(UAContext *ua);
 static void delete_job(UAContext *ua);
+static void do_storage_cmd(UAContext *ua, const char *command);
 
 int qhelp_cmd(UAContext *ua, const char *cmd);
 int quit_cmd(UAContext *ua, const char *cmd);
@@ -97,7 +102,7 @@ static struct cmdstruct commands[] = {                                      /* C
  { NT_("automount"),   automount_cmd,  _("Automount after label"),        NT_("on | off"),    false},
  { NT_("cancel"),     cancel_cmd,    _("Cancel a job"), NT_("jobid=<number-list> | job=<job-name> | ujobid=<unique-jobid> | inactive client=<client-name> storage=<storage-name> | all"), false},
  { NT_("create"),     create_cmd,    _("Create DB Pool from resource"), NT_("pool=<pool-name>"),                    false},
- { NT_("delete"),     delete_cmd,    _("Delete volume, pool or job"), NT_("volume=<vol-name> pool=<pool-name> jobid=<id>"), true},
+ { NT_("delete"),     delete_cmd,    _("Delete volume, pool or job"), NT_("volume=<vol-name> | pool=<pool-name> | jobid=<id> | snapshot"), true},
  { NT_("disable"),    disable_cmd,   _("Disable a job, attributes batch process"), NT_("job=<name> | batch"),  true},
  { NT_("enable"),     enable_cmd,    _("Enable a job, attributes batch process"), NT_("job=<name> | batch"),   true},
  { NT_("estimate"),   estimate_cmd,  _("Performs FileSet estimate, listing gives full listing"),
@@ -108,23 +113,24 @@ static struct cmdstruct commands[] = {                                      /* C
  { NT_("help"),       help_cmd,      _("Print help on specific command"),
    NT_("add autodisplay automount cancel create delete disable\n\tenable estimate exit gui label list llist"
        "\n\tmessages memory mount prune purge quit query\n\trestore relabel release reload run status"
-       "\n\tsetbandwidth setdebug setip show sqlquery time trace unmount\n\tumount update use var version wait"),         false},
+       "\n\tsetbandwidth setdebug setip show sqlquery time trace unmount\n\tumount update use var version wait"
+       "\n\tsnapshot"),         false},
 
  { NT_("label"),      label_cmd,     _("Label a tape"), NT_("storage=<storage> volume=<vol> pool=<pool> slot=<slot> barcodes"), false},
  { NT_("list"),       list_cmd,      _("List objects from catalog"),
    NT_("pools | jobs | jobtotals | volume | media <pool=pool-name> | files jobid=<nn> | copies jobid=<nn> |\n"
-       "\tjoblog jobid=<nn>"), false},
+       "\tjoblog jobid=<nn> | snapshot"), false},
 
  { NT_("llist"),      llist_cmd,     _("Full or long list like list command"),
-   NT_("pools | jobs | joblog jobid=<nn> | jobtotals | media <pool=pool-name> | files jobid=<nn> | copies jobid=<nn>"), true},
+   NT_("pools | jobs | joblog jobid=<nn> | jobtotals | media <pool=pool-name> | files jobid=<nn> | copies jobid=<nn> | snapshot"), false},
 
  { NT_("messages"),   messagescmd,   _("Display pending messages"),   NT_(""),    false},
  { NT_("memory"),     memory_cmd,    _("Print current memory usage"), NT_(""),    true},
  { NT_("mount"),      mount_cmd,     _("Mount storage"),
-   NT_("storage=<storage-name> slot=<num> drive=<num> [ jobid=<id> | job=<job-name> ]"), false},
+   NT_("storage=<storage-name> slot=<num> drive=<num> [ device=<device-name> ] [ jobid=<id> | job=<job-name> ]"), false},
 
  { NT_("prune"),      prunecmd,      _("Prune expired records from catalog"),
-   NT_("files | jobs | pool=<pool> | client=<client-name> | [ expired ] volume=<volume-name> "), true},
+   NT_("files | jobs | pool=<pool> | snapshot  [client=<client-name>] | client=<client-name> | [ expired ] volume=<volume-name> "), true},
 
  { NT_("purge"),      purge_cmd,     _("Purge records from catalog"), NT_("files jobs volume=<vol> [mediatype=<type> pool=<pool> allpools storage=<st> drive=<num>]"),  true},
  { NT_("quit"),       quit_cmd,      _("Terminate Bconsole session"), NT_(""),              false},
@@ -137,26 +143,40 @@ static struct cmdstruct commands[] = {                                      /* C
  { NT_("relabel"),    relabel_cmd,   _("Relabel a tape"),
    NT_("storage=<storage-name> oldvolume=<old-volume-name>\n\tvolume=<newvolume-name> pool=<pool>"), false},
 
- { NT_("release"),    release_cmd,   _("Release storage"),  NT_("storage=<storage-name>"),      false},
+ { NT_("release"),    release_cmd,   _("Release storage"),  NT_("storage=<storage-name> [ device=<device-name> ] "),      false},
  { NT_("reload"),     reload_cmd,    _("Reload conf file"), NT_(""),                  true},
  { NT_("run"),        run_cmd,       _("Run a job"),
    NT_("job=<job-name> client=<client-name>\n\tfileset=<FileSet-name> level=<level-keyword>\n\tstorage=<storage-name>"
        " where=<directory-prefix>\n\twhen=<universal-time-specification> pool=<pool-name>\n\t"
        " nextpool=<next-pool-name> comment=<text> accurate=<bool> spooldata=<bool> yes"), false},
 
+ { NT_("restart"),    restart_cmd,   _("Restart a job"),
+   NT_("incomplete job=<job-name> client=<client-name>\n\tfileset=<FileSet-name> level=<level-keyword>\n\tstorage=<storage-name>"
+       "when=<universal-time-specification>\n\tcomment=<text> spooldata=<bool> jobid=<jobid>"), false},
+
+ { NT_("resume"),    restart_cmd,   _("Resume a job"),
+   NT_("incomplete job=<job-name> client=<client-name>\n\tfileset=<FileSet-name> level=<level-keyword>\n\tstorage=<storage-name>"
+       "when=<universal-time-specification>\n\tcomment=<text> spooldata=<bool> jobid=<jobid>"), false},
+
  { NT_("status"),     status_cmd,    _("Report status"),
-   NT_("all | dir=<dir-name> | director | client=<client-name> | storage=<storage-name> slots | days=nnn"), true},
+   NT_("all | dir=<dir-name> | director | client=<client-name> |\n"
+       "\tstorage=<storage-name> slots |\n"
+       "\tschedule [job=<job-name>] [days=<nn>] [limit=<nn>] [toto]\n"
+       "\t\t[time=<universal-time-specification>]"), true},
 
  { NT_("stop"),       cancel_cmd,    _("Stop a job"), NT_("jobid=<number-list> job=<job-name> ujobid=<unique-jobid> all"), false},
  { NT_("setdebug"),   setdebug_cmd,  _("Sets debug level"),
-   NT_("level=<nn> trace=0/1 client=<client-name> | dir | storage=<storage-name> | all"), true},
+   NT_("level=<nn> tags=<tags> trace=0/1 options=<0tTc> tags=<tags> | client=<client-name> | dir | storage=<storage-name> | all"), true},
 
  { NT_("setbandwidth"),   setbwlimit_cmd,  _("Sets bandwidth"),
    NT_("limit=<nn-kbs> client=<client-name> jobid=<number> job=<job-name> ujobid=<unique-jobid>"), true},
 
+ { NT_("snapshot"),   snapshot_cmd,  _("Handle snapshots"), 
+   NT_("[client=<client-name> | job=<job-name> | jobid=<jobid>] [delete | list | listclient | prune | sync | update]"), true},
+
  { NT_("setip"),      setip_cmd,     _("Sets new client address -- if authorized"), NT_(""),   false},
  { NT_("show"),       show_cmd,      _("Show resource records"),
-   NT_("job=<xxx> |  pool=<yyy> | fileset=<aaa> schedule=<sss> | client=<zzz> | disabled | all"), true},
+   NT_("job=<xxx> |  pool=<yyy> | fileset=<aaa> | schedule=<sss> | client=<zzz> | storage=<sss> | disabled | all"), true},
 
  { NT_("sqlquery"),   sqlquerycmd,   _("Use SQL to query catalog"), NT_(""),          false},
  { NT_("time"),       time_cmd,      _("Print current time"),       NT_(""),          true},
@@ -166,10 +186,10 @@ static struct cmdstruct commands[] = {                                      /* C
    NT_("storage=<storage-name> [ drive=<num> ] | jobid=<id> | job=<job-name>"), false},
 
  { NT_("umount"),     unmount_cmd,   _("Umount - for old-time Unix guys, see unmount"),
-   NT_("storage=<storage-name> [ drive=<num> ] | jobid=<id> | job=<job-name>"), false},
+   NT_("storage=<storage-name> [ drive=<num> ] [ device=<dev-name> ]| jobid=<id> | job=<job-name>"), false},
 
  { NT_("update"),     update_cmd,    _("Update volume, pool or stats"),
-   NT_("stats\n\tpool=<poolname>\n\tslots storage=<storage> scan"
+   NT_("stats\n\tsnapshot\n\tpool=<poolname>\n\tslots storage=<storage> scan"
        "\n\tvolume=<volname> volstatus=<status> volretention=<time-def>"
        "\n\t pool=<pool> recycle=<yes/no> slot=<number>\n\t inchanger=<yes/no>"
        "\n\t maxvolbytes=<size> maxvolfiles=<nb> maxvoljobs=<nb>"
@@ -226,7 +246,7 @@ bool do_a_command(UAContext *ua)
          if (ua->api) user->signal(BNET_CMD_BEGIN);
          ok = (*commands[i].func)(ua, ua->cmd);   /* go execute command */
          if (ua->api) user->signal(ok?BNET_CMD_OK:BNET_CMD_FAILED);
-         found = true;
+         found = (user && user->is_stop()) ? false : true;
          break;
       }
    }
@@ -430,7 +450,8 @@ int automount_cmd(UAContext *ua, const char *cmd)
 }
 
 /*
- * Cancel a job
+ * Cancel/Stop a job -- Stop marks it as Incomplete
+ *   so that it can be restarted.
  */
 static int cancel_cmd(UAContext *ua, const char *cmd)
 {
@@ -499,7 +520,7 @@ void set_pooldbr_from_poolres(POOL_DBR *pr, POOL *pool, e_pool_op op)
 }
 
 /* set/update Pool.RecyclePoolId and Pool.ScratchPoolId in Catalog */
-int update_pool_references(JCR *jcr, B_DB *db, POOL *pool)
+int update_pool_references(JCR *jcr, BDB *db, POOL *pool)
 {
    POOL_DBR  pr;
 
@@ -531,7 +552,7 @@ int update_pool_references(JCR *jcr, B_DB *db, POOL *pool)
 /* set POOL_DBR.RecyclePoolId and POOL_DBR.ScratchPoolId from Pool resource
  * works with set_pooldbr_from_poolres
  */
-bool set_pooldbr_references(JCR *jcr, B_DB *db, POOL_DBR *pr, POOL *pool)
+bool set_pooldbr_references(JCR *jcr, BDB *db, POOL_DBR *pr, POOL *pool)
 {
    POOL_DBR rpool;
    bool ret = true;
@@ -583,7 +604,7 @@ bool set_pooldbr_references(JCR *jcr, B_DB *db, POOL_DBR *pr, POOL *pool)
  *           1  record created
  */
 
-int create_pool(JCR *jcr, B_DB *db, POOL *pool, e_pool_op op)
+int create_pool(JCR *jcr, BDB *db, POOL *pool, e_pool_op op)
 {
    POOL_DBR  pr;
    memset(&pr, 0, sizeof(POOL_DBR));
@@ -729,8 +750,8 @@ static int setbwlimit_cmd(UAContext *ua, const char *cmd)
          jcr->max_bandwidth = limit; /* TODO: see for locking (Should be safe)*/
          bstrncpy(Job, jcr->Job, sizeof(Job));
          client = jcr->client;
-         free_jcr(jcr);
          setbwlimit_client(ua, client, Job, limit);
+         free_jcr(jcr);
       }
 
    } else {
@@ -776,10 +797,15 @@ get_out:
    return 1;
 }
 
-
-static void do_en_disable_cmd(UAContext *ua, bool setting)
+/*
+ * Does all sorts of enable/disable commands: batch, scheduler (not implemented)
+ *  job, client, schedule, storage
+ */
+static void do_enable_disable_cmd(UAContext *ua, bool setting)
 {
-   JOB *job;
+   JOB *job = NULL;
+   CLIENT *client = NULL;
+   SCHED *sched = NULL;
    int i;
 
    if (find_arg(ua, NT_("batch")) > 0) {
@@ -795,45 +821,99 @@ static void do_en_disable_cmd(UAContext *ua, bool setting)
     * }
     */
 
-   i = find_arg_with_value(ua, NT_("job"));
-   if (i < 0) {
-      job = select_enable_disable_job_resource(ua, setting);
-      if (!job) {
+   i = find_arg(ua, NT_("job"));
+   if (i >= 0) {
+      if (ua->argv[i]) {
+         LockRes();
+         job = GetJobResWithName(ua->argv[i]);
+         UnlockRes();
+      } else {
+         job = select_enable_disable_job_resource(ua, setting);
+         if (!job) {
+            return;
+         }
+      }
+   }
+   if (job) {
+      if (!acl_access_ok(ua, Job_ACL, job->name())) {
+         ua->error_msg(_("Unauthorized command from this console.\n"));
          return;
       }
-   } else {
-      LockRes();
-      job = GetJobResWithName(ua->argv[i]);
-      UnlockRes();
-   }
-   if (!job) {
-      ua->error_msg(_("Job \"%s\" not found.\n"), ua->argv[i]);
-      return;
+      job->enabled = setting;
+      ua->send_msg(_("Job \"%s\" %sabled\n"), job->name(), setting?"en":"dis");
    }
 
-   if (!acl_access_ok(ua, Job_ACL, job->name())) {
-      ua->error_msg(_("Unauthorized command from this console.\n"));
-      return;
+   i = find_arg(ua, NT_("client"));
+   if (i >= 0) {
+      if (ua->argv[i]) {
+         LockRes();
+         client = GetClientResWithName(ua->argv[i]);
+         UnlockRes();
+      } else {
+         client = select_enable_disable_client_resource(ua, setting);
+         if (!client) {
+            return;
+         }
+      }
    }
-   job->enabled = setting;
-   ua->send_msg(_("Job \"%s\" %sabled\n"), job->name(), setting?"en":"dis");
+   if (client) {
+      if (!acl_access_ok(ua, Client_ACL, client->name())) {
+         ua->error_msg(_("Unauthorized command from this console.\n"));
+         return;
+      }
+      client->enabled = setting;
+      ua->send_msg(_("Client \"%s\" %sabled\n"), client->name(), setting?"en":"dis");
+   }
+
+   i = find_arg(ua, NT_("schedule"));
+   if (i >= 0) {
+      if (ua->argv[i]) {
+         LockRes();
+         sched = (SCHED *)GetResWithName(R_SCHEDULE, ua->argv[i]);
+         UnlockRes();
+      } else {
+         sched = select_enable_disable_schedule_resource(ua, setting);
+         if (!sched) {
+            return;
+         }
+      }
+   }
+   if (sched) {
+      if (!acl_access_ok(ua, Schedule_ACL, sched->name())) {
+         ua->error_msg(_("Unauthorized command from this console.\n"));
+         return;
+      }
+      sched->enabled = setting;
+      ua->send_msg(_("Schedule \"%s\" %sabled\n"), sched->name(), setting?"en":"dis");
+   }
+
+   i = find_arg(ua, NT_("storage"));
+   if (i >= 0) {
+      do_storage_cmd(ua, setting?"enable":"disable");
+   }
+
+   if (i < 0 && !sched && !client && !job) {
+      ua->error_msg(_("You must enter one of the following keywords: job, client, schedule, or storage.\n"));
+   }
+
    return;
 }
 
 static int enable_cmd(UAContext *ua, const char *cmd)
 {
-   do_en_disable_cmd(ua, true);
+   do_enable_disable_cmd(ua, true);
    return 1;
 }
 
 static int disable_cmd(UAContext *ua, const char *cmd)
 {
-   do_en_disable_cmd(ua, false);
+   do_enable_disable_cmd(ua, false);
    return 1;
 }
 
 static void do_storage_setdebug(UAContext *ua, STORE *store,
-                                int64_t level, int trace_flag, char *options, char *tags)
+               int64_t level, int trace_flag, int hangup, int blowup,
+               char *options, char *tags)
 {
    BSOCK *sd;
    USTORE lstore;
@@ -850,8 +930,8 @@ static void do_storage_setdebug(UAContext *ua, STORE *store,
    }
    Dmsg0(120, _("Connected to storage daemon\n"));
    sd = ua->jcr->store_bsock;
-   sd->fsend("setdebug=%ld trace=%ld hangup=0 options=%s tags=%s\n",
-             (int32_t)level, trace_flag, options, NPRTB(tags));
+   sd->fsend("setdebug=%ld trace=%ld hangup=%ld blowup=%ld options=%s tags=%s\n",
+             (int32_t)level, trace_flag, hangup, blowup, options, NPRTB(tags));
    if (sd->recv() >= 0) {
       ua->send_msg("%s", sd->msg);
    }
@@ -865,12 +945,14 @@ static void do_storage_setdebug(UAContext *ua, STORE *store,
  *  level = debug level
  *  trace = send debug output to a file
  *  options = various options for debug or specific FD behavior
- *  hangup = how many records to send to SD before hanging up
+ *  hangup = how many records to send to FD before hanging up
  *    obviously this is most useful for testing restarting
  *    failed jobs.
+ *  blowup = how many records to send to FD before blowing up the FD.
  */
 static void do_client_setdebug(UAContext *ua, CLIENT *client,
-                               int64_t level, int trace, int hangup, char *options, char *tags)
+               int64_t level, int trace, int hangup, int blowup,
+               char *options, char *tags)
 {
    CLIENT *old_client;
    BSOCK *fd;
@@ -890,12 +972,12 @@ static void do_client_setdebug(UAContext *ua, CLIENT *client,
    Dmsg0(120, "Connected to file daemon\n");
 
    fd = ua->jcr->file_bsock;
-   if (ua->jcr->FDVersion < 8 || !options) {
+   if (ua->jcr->FDVersion <= 10) {
       fd->fsend("setdebug=%ld trace=%d hangup=%d\n",
                 (int32_t)level, trace, hangup);
    } else {
-      fd->fsend("setdebug=%ld trace=%d hangup=%d options=%s tags=%s\n",
-                (int32_t)level, trace, hangup, options, NPRTB(tags));
+      fd->fsend("setdebug=%ld trace=%d hangup=%d blowup=%d options=%s tags=%s\n",
+                (int32_t)level, trace, hangup, blowup, options, NPRTB(tags));
    }
    if (fd->recv() >= 0) {
       ua->send_msg("%s", fd->msg);
@@ -907,7 +989,9 @@ static void do_client_setdebug(UAContext *ua, CLIENT *client,
 }
 
 
-static void do_all_setdebug(UAContext *ua, int64_t level, int trace_flag, int hangup, char *options, char *tags)
+static void do_all_setdebug(UAContext *ua, int64_t level,
+               int trace_flag, int hangup, int blowup,
+               char *options, char *tags)
 {
    STORE *store, **unique_store;
    CLIENT *client, **unique_client;
@@ -946,7 +1030,8 @@ static void do_all_setdebug(UAContext *ua, int64_t level, int trace_flag, int ha
 
    /* Call each unique Storage daemon */
    for (j=0; j<i; j++) {
-      do_storage_setdebug(ua, unique_store[j], level, trace_flag, options, tags);
+      do_storage_setdebug(ua, unique_store[j], level, trace_flag,
+         hangup, blowup, options, tags);
    }
    free(unique_store);
 
@@ -980,7 +1065,8 @@ static void do_all_setdebug(UAContext *ua, int64_t level, int trace_flag, int ha
 
    /* Call each unique File daemon */
    for (j=0; j<i; j++) {
-      do_client_setdebug(ua, unique_client[j], level, trace_flag, hangup, options, tags);
+      do_client_setdebug(ua, unique_client[j], level, trace_flag,
+         hangup, blowup, options, tags);
    }
    free(unique_client);
 }
@@ -995,6 +1081,7 @@ static int setdebug_cmd(UAContext *ua, const char *cmd)
    int64_t level=0, tags=0;
    int trace_flag = -1;
    int hangup = -1;
+   int blowup = -1;
    int i;
    char *tags_str=NULL;
    char options[60];
@@ -1039,22 +1126,28 @@ static int setdebug_cmd(UAContext *ua, const char *cmd)
       }
    }
 
-   /* Look for hangup (debug only)flag. -1 => not change */
+   /* Look for hangup (debug only) flag. -1 => not change */
    i = find_arg_with_value(ua, "hangup");
    if (i >= 0) {
       hangup = atoi(ua->argv[i]);
    }
 
+   /* Look for blowup (debug only) flag. -1 => not change */
+   i = find_arg_with_value(ua, "blowup");
+   if (i >= 0) {
+      blowup = atoi(ua->argv[i]);
+   }
 
    /* General debug? */
    for (i=1; i<ua->argc; i++) {
       if (strcasecmp(ua->argk[i], "all") == 0) {
-         do_all_setdebug(ua, level, trace_flag, hangup, options, tags_str);
+         do_all_setdebug(ua, level, trace_flag, hangup, blowup, options, tags_str);
          return 1;
       }
       if (strcasecmp(ua->argk[i], "dir") == 0 ||
           strcasecmp(ua->argk[i], "director") == 0) {
-         debug_level = level | tags;
+         debug_level = level;
+         debug_level_tags = tags;
          set_trace(trace_flag);
          set_debug_flags(options);
          return 1;
@@ -1065,13 +1158,15 @@ static int setdebug_cmd(UAContext *ua, const char *cmd)
          if (ua->argv[i]) {
             client = GetClientResWithName(ua->argv[i]);
             if (client) {
-               do_client_setdebug(ua, client, level, trace_flag, hangup, options, tags_str);
+               do_client_setdebug(ua, client, level, trace_flag,
+                  hangup, blowup, options, tags_str);
                return 1;
             }
          }
          client = select_client_resource(ua);
          if (client) {
-            do_client_setdebug(ua, client, level, trace_flag, hangup, options, tags_str);
+            do_client_setdebug(ua, client, level, trace_flag,
+               hangup, blowup, options, tags_str);
             return 1;
          }
       }
@@ -1083,13 +1178,15 @@ static int setdebug_cmd(UAContext *ua, const char *cmd)
          if (ua->argv[i]) {
             store = GetStoreResWithName(ua->argv[i]);
             if (store) {
-               do_storage_setdebug(ua, store, level, trace_flag, options, tags_str);
+               do_storage_setdebug(ua, store, level, trace_flag,
+                  hangup, blowup, options, tags_str);
                return 1;
             }
          }
          store = get_storage_resource(ua, false/*no default*/, true/*unique*/);
          if (store) {
-            do_storage_setdebug(ua, store, level, trace_flag, options, tags_str);
+            do_storage_setdebug(ua, store, level, trace_flag,
+               hangup, blowup, options, tags_str);
             return 1;
          }
       }
@@ -1105,24 +1202,26 @@ static int setdebug_cmd(UAContext *ua, const char *cmd)
    add_prompt(ua, _("All"));
    switch(do_prompt(ua, "", _("Select daemon type to set debug level"), NULL, 0)) {
    case 0:                         /* Director */
-      debug_level = level | tags;
+      debug_level = level;
       set_trace(trace_flag);
       set_debug_flags(options);
       break;
    case 1:
       store = get_storage_resource(ua, false/*no default*/, true/*unique*/);
       if (store) {
-         do_storage_setdebug(ua, store, level, trace_flag, options, tags_str);
+         do_storage_setdebug(ua, store, level, trace_flag, hangup, blowup,
+            options, tags_str);
       }
       break;
    case 2:
       client = select_client_resource(ua);
       if (client) {
-         do_client_setdebug(ua, client, level, trace_flag, hangup, options, tags_str);
+         do_client_setdebug(ua, client, level, trace_flag, hangup, blowup,
+            options, tags_str);
       }
       break;
    case 3:
-      do_all_setdebug(ua, level, trace_flag, hangup, options, tags_str);
+      do_all_setdebug(ua, level, trace_flag, hangup, blowup, options, tags_str);
       break;
    default:
       break;
@@ -1139,7 +1238,7 @@ static int trace_cmd(UAContext *ua, const char *cmd)
 
    if (ua->argc != 2) {
       if (!get_cmd(ua, _("Turn on or off? "))) {
-            return 1;
+         return 1;
       }
       onoff = ua->cmd;
    } else {
@@ -1148,7 +1247,6 @@ static int trace_cmd(UAContext *ua, const char *cmd)
 
    set_trace((strcasecmp(onoff, NT_("off")) == 0) ? false : true);
    return 1;
-
 }
 
 static int var_cmd(UAContext *ua, const char *cmd)
@@ -1245,11 +1343,12 @@ static int estimate_cmd(UAContext *ua, const char *cmd)
          if (ua->argv[i]) {
             if (!get_level_from_name(ua->jcr, ua->argv[i])) {
                ua->error_msg(_("Level \"%s\" not valid.\n"), ua->argv[i]);
+               return 1;
             }
             continue;
          } else {
-            ua->error_msg(_("Level value missing.\n"));
-            return 1;
+            ua->error_msg(_("Level value missing.\n")); 
+            return 1; 
          }
       }
       if (strcasecmp(ua->argk[i], NT_("accurate")) == 0) {
@@ -1257,11 +1356,12 @@ static int estimate_cmd(UAContext *ua, const char *cmd)
             if (!is_yesno(ua->argv[i], &accurate)) {
                ua->error_msg(_("Invalid value for accurate. "
                                "It must be yes or no.\n"));
+               return 1;
             }
             continue;
          } else {
             ua->error_msg(_("Accurate value missing.\n"));
-            return 1;
+            return 1; 
          }
       }
    }
@@ -1364,7 +1464,6 @@ bail_out:
    return 1;
 }
 
-
 /*
  * print time
  */
@@ -1403,6 +1502,7 @@ static int delete_cmd(UAContext *ua, const char *cmd)
       NT_("volume"),
       NT_("pool"),
       NT_("jobid"),
+      NT_("snapshot"),
       NULL};
 
    /* Deleting large jobs can take time! */
@@ -1419,10 +1519,13 @@ static int delete_cmd(UAContext *ua, const char *cmd)
       return 1;
    case 2:
       int i;
-      while ((i = find_arg(ua, "jobid")) > 0) {
+      while ((i=find_arg(ua, "jobid")) > 0) {
          delete_job(ua);
          *ua->argk[i] = 0;         /* zap keyword already visited */
       }
+      return 1;
+   case 3:
+      delete_snapshot(ua);
       return 1;
    default:
       break;
@@ -1442,6 +1545,9 @@ static int delete_cmd(UAContext *ua, const char *cmd)
    case 2:
       delete_job(ua);
       return 1;
+   case 3:
+      delete_snapshot(ua);
+      return 1;
    default:
       ua->warning_msg(_("Nothing done.\n"));
       break;
@@ -1450,31 +1556,31 @@ static int delete_cmd(UAContext *ua, const char *cmd)
 }
 
 /*
- * delete_job has been modified to parse JobID lists like the following:
+ * delete_job has been modified to parse JobID lists like the
+ * following:
  * delete JobID=3,4,6,7-11,14
  *
  * Thanks to Phil Stracchino for the above addition.
  */
 static void delete_job(UAContext *ua)
 {
-   int i;
    int JobId;               /* not JobId_t because it's unsigned and not compatible with sellist */
    char buf[256];
    sellist sl;
 
-   i = find_arg_with_value(ua, NT_("jobid"));
+   int i = find_arg_with_value(ua, NT_("jobid"));
    if (i >= 0) {
       if (!sl.set_string(ua->argv[i], true)) {
          ua->warning_msg("%s", sl.get_errmsg());
          return;
-      }
-
+      } 
+ 
       if (sl.size() > 25 && (find_arg(ua, "yes") < 0)) {
          bsnprintf(buf, sizeof(buf),
                    _("Are you sure you want to delete %d JobIds ? (yes/no): "), sl.size());
          if (!get_yesno(ua, buf)) {
             return;
-         }
+         } 
       }
 
       foreach_sellist(JobId, &sl) {
@@ -1499,7 +1605,7 @@ static void do_job_delete(UAContext *ua, JobId_t JobId)
 
    edit_int64(JobId, ed1);
    purge_jobs_from_catalog(ua, ed1);
-   ua->send_msg(_("Jobid %s and associated records deleted from the catalog.\n"), ed1);
+   ua->send_msg(_("JobId=%s and associated records deleted from the catalog.\n"), ed1);
 }
 
 /*
@@ -1578,14 +1684,14 @@ int memory_cmd(UAContext *ua, const char *cmd)
    return 1;
 }
 
-static void do_mount_cmd(UAContext *ua, const char *command)
+static void do_storage_cmd(UAContext *ua, const char *command)
 {
    USTORE store;
    BSOCK *sd;
    JCR *jcr = ua->jcr;
    char dev_name[MAX_NAME_LENGTH];
-   int drive;
-   int slot = -1;
+   int drive, i;
+   int slot;
 
    if (!open_client_db(ua)) {
       return;
@@ -1599,25 +1705,34 @@ static void do_mount_cmd(UAContext *ua, const char *command)
    pm_strcpy(store.store_source, _("unknown source"));
    set_wstorage(jcr, &store);
    drive = get_storage_drive(ua, store.store);
-   if (strcmp(command, "mount") == 0) {
-      slot = get_storage_slot(ua, store.store);
+   slot = get_storage_slot(ua, store.store);
+
+   /* Users may set a device name directly on the command line */
+   if ((i = find_arg_with_value(ua, "device")) > 0) {
+      POOLMEM *errmsg = get_pool_memory(PM_NAME);
+      if (!is_name_valid(ua->argv[i], &errmsg)) {
+         ua->error_msg(_("Invalid device name. %s"), errmsg);
+         free_pool_memory(errmsg);
+         return;
+      }
+      free_pool_memory(errmsg);
+      bstrncpy(dev_name, ua->argv[i], sizeof(dev_name));
+
+   } else {                     /* We take the default device name */
+      bstrncpy(dev_name, store.store->dev_name(), sizeof(dev_name));
    }
 
    Dmsg3(120, "Found storage, MediaType=%s DevName=%s drive=%d\n",
       store.store->media_type, store.store->dev_name(), drive);
+   Dmsg4(120, "Cmd: %s %s drive=%d slot=%d\n", command, dev_name, drive, slot);
 
    if (!connect_to_storage_daemon(jcr, 10, SDConnectTimeout, 1)) {
       ua->error_msg(_("Failed to connect to Storage daemon.\n"));
       return;
    }
    sd = jcr->store_bsock;
-   bstrncpy(dev_name, store.store->dev_name(), sizeof(dev_name));
    bash_spaces(dev_name);
-   if (slot > 0) {
-      sd->fsend("%s %s drive=%d slot=%d", command, dev_name, drive, slot);
-   } else {
-      sd->fsend("%s %s drive=%d", command, dev_name, drive);
-   }
+   sd->fsend("%s %s drive=%d slot=%d", command, dev_name, drive, slot);
    while (sd->recv() >= 0) {
       ua->send_msg("%s", sd->msg);
    }
@@ -1630,7 +1745,7 @@ static void do_mount_cmd(UAContext *ua, const char *command)
  */
 static int mount_cmd(UAContext *ua, const char *cmd)
 {
-   do_mount_cmd(ua, "mount");          /* mount */
+   do_storage_cmd(ua, "mount")  ;          /* mount */
    return 1;
 }
 
@@ -1640,7 +1755,7 @@ static int mount_cmd(UAContext *ua, const char *cmd)
  */
 static int unmount_cmd(UAContext *ua, const char *cmd)
 {
-   do_mount_cmd(ua, "unmount");          /* unmount */
+   do_storage_cmd(ua, "unmount");          /* unmount */
    return 1;
 }
 
@@ -1650,7 +1765,7 @@ static int unmount_cmd(UAContext *ua, const char *cmd)
  */
 static int release_cmd(UAContext *ua, const char *cmd)
 {
-   do_mount_cmd(ua, "release");          /* release */
+   do_storage_cmd(ua, "release");          /* release */
    return 1;
 }
 
@@ -1834,14 +1949,14 @@ int wait_cmd(UAContext *ua, const char *cmd)
              "SELECT JobStatus FROM Job WHERE JobId='%i'", jobid);
 
 
-   db_sql_query(ua->db, buf,
-                status_handler, (void *)&jobstatus);
+   db_sql_query(ua->db, buf, status_handler, (void *)&jobstatus);
 
    switch (jobstatus) {
    case JS_Error:
       status = 1 ;         /* Warning */
       break;
 
+   case JS_Incomplete:
    case JS_FatalError:
    case JS_ErrorTerminated:
    case JS_Canceled:
@@ -1860,8 +1975,8 @@ int wait_cmd(UAContext *ua, const char *cmd)
 
    ua->send_msg("JobId=%i\n", jobid) ;
    ua->send_msg("JobStatus=%s (%c)\n",
-            job_status_to_str(jobstatus),
-            jobstatus) ;
+                job_status_to_str(jobstatus, 0),
+                jobstatus) ;
 
    if (ua->gui || ua->api) {
       ua->send_msg("ExitStatus=%i\n", status) ;
@@ -2088,7 +2203,7 @@ bool open_db(UAContext *ua)
                              ua->catalog->db_user,
                              ua->catalog->db_password, ua->catalog->db_address,
                              ua->catalog->db_port, ua->catalog->db_socket,
-                             mult_db_conn, ua->catalog->disable_batch_insert);
+                             mult_db_conn, ua->catalog->disable_batch_insert); 
    if (!ua->db || !db_open_database(ua->jcr, ua->db)) {
       ua->error_msg(_("Could not open catalog database \"%s\".\n"),
                  ua->catalog->db_name);

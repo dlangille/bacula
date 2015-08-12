@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
+   Copyright (C) 2000-2015 Kern Sibbald
+   Copyright (C) 2000-2015 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /**
  *   Bacula Director -- restore.c -- responsible for restoring files
@@ -178,7 +182,8 @@ static bool is_on_same_storage(JCR *jcr, char *new_one)
    if (!new_store) {
       Jmsg(jcr, M_WARNING, 0,
            _("Could not get storage resource '%s'.\n"), new_one);
-      return false;
+      /* If not storage found, use last one */
+      return true;
    }
    /* if Port and Hostname/IP are same, we are talking to the same
     * Storage Daemon
@@ -403,7 +408,7 @@ bool restore_bootstrap(JCR *jcr)
          /*
           * SD must call "client" i.e. FD
           */
-         if (jcr->FDVersion < 5) {
+         if (jcr->FDVersion < 10) {
             Jmsg(jcr, M_FATAL, 0, _("The File daemon does not support SDCallsClient.\n"));
             goto bail_out;
          }
@@ -413,8 +418,9 @@ bool restore_bootstrap(JCR *jcr)
          if (!run_storage_and_start_message_thread(jcr, sd)) {
             goto bail_out;
          }
-         store_address = jcr->wstore->address;  /* dummy */
-         store_port = 0;           /* flag that SD calls FD */
+
+         store_address = jcr->rstore->address;  /* dummy */
+         store_port = 0;                        /* flag that SD calls FD */
 
       } else {
          /*
@@ -464,6 +470,14 @@ bool restore_bootstrap(JCR *jcr)
       if (first_time) {
          first_time = false;
          if (!send_runscripts_commands(jcr)) {
+            goto bail_out;
+         }
+         if (!send_component_info(jcr)) {
+            Pmsg0(000, "FAIL: Send component info\n");
+            goto bail_out;
+         }
+         if (!send_restore_objects(jcr)) {
+            Pmsg0(000, "FAIL: Send restore objects\n");
             goto bail_out;
          }
       }
@@ -532,6 +546,10 @@ bool do_restore(JCR *jcr)
    /* Print Job Start message */
    Jmsg(jcr, M_INFO, 0, _("Start Restore Job %s\n"), jcr->Job);
 
+   if (jcr->client) {
+      jcr->sd_calls_client = jcr->client->sd_calls_client;
+   }
+
    /* Read the bootstrap file and do the restore */
    if (!restore_bootstrap(jcr)) {
       goto bail_out;
@@ -568,6 +586,15 @@ void restore_cleanup(JCR *jcr, int TermCode)
 
    Dmsg0(20, "In restore_cleanup\n");
    update_job_end(jcr, TermCode);
+
+   if (jcr->component_fd) {
+      fclose(jcr->component_fd);
+      jcr->component_fd = NULL;
+   }
+   if (jcr->component_fname && *jcr->component_fname) {
+      unlink(jcr->component_fname);
+   }
+   free_and_null_pool_memory(jcr->component_fname);
 
    if (jcr->unlink_bsr && jcr->RestoreBootstrap) {
       unlink(jcr->RestoreBootstrap);

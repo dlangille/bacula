@@ -1,5 +1,10 @@
 #!/bin/sh
 #
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+
+#
 # This is a simple dummy test (copied from incremental-test), which
 #   simply runs some jobs then does not clean up at the end.
 #   This permits testing programs such as bconsole and bat with a little
@@ -23,7 +28,7 @@ change_jobname CompressedTest $JobName
 start_test
 
 cat <<END_OF_DATA >${tmp}/bconcmds
-@$out /dev/null
+@output /dev/null
 messages
 @$out ${tmp}/log1.out
 @#setdebug level=100 storage=File
@@ -48,7 +53,7 @@ echo "ficheriro1.txt" >${tmpsrc}/ficheriro1.txt
 cp -f ${tmpsrc}/dird.c ${tmpsrc}/ficheriro2.txt
 
 cat <<END_OF_DATA >${tmp}/bconcmds
-@$out /dev/null
+@output /dev/null
 messages
 @$out ${tmp}/log1.out
 @# Force Incremental on the second Volume
@@ -66,7 +71,7 @@ touch ${tmpsrc}/ficheriro1.txt
 touch ${tmpsrc}/ficheriro2.txt
 
 cat <<END_OF_DATA >${tmp}/bconcmds
-@$out /dev/null
+@output /dev/null
 messages
 @$out ${tmp}/log1.out
 run level=Incremental job=$JobName yes
@@ -84,7 +89,7 @@ sed "s%a%b%g" 1 >ficheriro2.txt
 rm -f 1
 cd ${cwd}
 cat <<END_OF_DATA >${tmp}/bconcmds
-@$out /dev/null
+@output /dev/null
 messages
 @$out ${tmp}/log1.out
 run level=Differential job=$JobName yes
@@ -99,7 +104,7 @@ sleep 1
 touch ${tmpsrc}/ficheriro1.txt
 touch ${tmpsrc}/ficheriro2.txt
 cat <<END_OF_DATA >${tmp}/bconcmds
-@$out /dev/null
+@output /dev/null
 messages
 @$out ${tmp}/log1.out
 run level=Incremental job=$JobName yes
@@ -114,7 +119,7 @@ sleep 1
 touch ${tmpsrc}/ficheriro1.txt
 touch ${tmpsrc}/ficheriro2.txt
 cat <<END_OF_DATA >${tmp}/bconcmds
-@$out /dev/null
+@output /dev/null
 messages
 @$out ${tmp}/log1.out
 run level=Incremental job=$JobName yes
@@ -129,7 +134,7 @@ sleep 1
 touch ${tmpsrc}/ficheriro1.txt
 touch ${tmpsrc}/ficheriro2.txt
 cat <<END_OF_DATA >${tmp}/bconcmds
-@$out /dev/null
+@output /dev/null
 messages
 @$out ${tmp}/log1.out
 run level=Incremental job=$JobName yes
@@ -144,7 +149,7 @@ touch ${tmpsrc}/ficheriro1.txt
 touch ${tmpsrc}/ficheriro2.txt
 
 cat <<END_OF_DATA >${tmp}/bconcmds
-@$out /dev/null
+@output /dev/null
 messages
 @$out ${tmp}/log1.out
 setdebug level=200 storage=File

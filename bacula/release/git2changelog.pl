@@ -1,5 +1,8 @@
 #!/usr/bin/perl -w
 #
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
 =head USAGE
     
     ./git2changelog.pl Release-3.0.1..Release-3.0.2

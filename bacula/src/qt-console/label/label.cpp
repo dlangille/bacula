@@ -1,25 +1,29 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2007-2011 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
-*/
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
 
+   Bacula(R) is a registered trademark of Kern Sibbald.
+*/
+ 
 /*
  *  Label Page class
  *
  *   Kern Sibbald, February MMVII
  *
- */
+ */ 
 
 #include "bat.h"
 #include "label.h"
@@ -81,7 +85,7 @@ void labelPage::okButtonPushed()
    scmd = QString("label volume=\"%1\" pool=\"%2\" storage=\"%3\" slot=%4\n")
                   .arg(volumeName->text())
                   .arg(poolCombo->currentText())
-                  .arg(storageCombo->currentText())
+                  .arg(storageCombo->currentText()) 
                   .arg(slotSpin->value());
    if (mainWin->m_commandDebug) {
       Pmsg1(000, "sending command : %s\n", scmd.toUtf8().data());

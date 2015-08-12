@@ -1,5 +1,10 @@
 #!/bin/sh
 #
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+
+#
 # Run a backup of the build directory but force it to have
 #   a comm error, and check that it restarts correctly.
 #
@@ -9,6 +14,8 @@ JobName=RestartJob
 
 scripts/cleanup
 scripts/copy-test-confs
+
+
 echo "${cwd}/build" >${cwd}/tmp/file-list
 
 change_jobname NightlySave $JobName
@@ -18,7 +25,7 @@ start_test
 touch $cwd/build/po/testfile
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
-@$out /dev/null
+@output /dev/null
 messages
 @$out ${cwd}/tmp/log1.out
 label storage=File volume=TestVolume001
@@ -38,7 +45,7 @@ run_bacula
 scripts/check_for_zombie_jobs storage=File
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
-@$out /dev/null
+@output /dev/null
 @$out ${cwd}/tmp/log1.out
 setdebug level=0 trace=0 hangup=50 client
 @exec "sh -c 'touch $cwd/build/po/*'"

@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *   Master Configuration routines.
@@ -86,22 +90,22 @@ static bool find_config_file(const char *config_file, char *full_path, int max_p
  *  name         handler      value       code   flags  default_value
  */
 RES_ITEM msgs_items[] = {
-   {"name",        store_name,    ITEM(res_msgs.hdr.name),  0, 0, 0},
-   {"description", store_str,     ITEM(res_msgs.hdr.desc),  0, 0, 0},
-   {"mailcommand", store_str,     ITEM(res_msgs.mail_cmd),  0, 0, 0},
-   {"operatorcommand", store_str, ITEM(res_msgs.operator_cmd), 0, 0, 0},
-   {"syslog",      store_msgs, ITEM(res_msgs), MD_SYSLOG,   0, 0},
-   {"mail",        store_msgs, ITEM(res_msgs), MD_MAIL,     0, 0},
-   {"mailonerror", store_msgs, ITEM(res_msgs), MD_MAIL_ON_ERROR, 0, 0},
-   {"mailonsuccess", store_msgs, ITEM(res_msgs), MD_MAIL_ON_SUCCESS, 0, 0},
-   {"file",        store_msgs, ITEM(res_msgs), MD_FILE,     0, 0},
-   {"append",      store_msgs, ITEM(res_msgs), MD_APPEND,   0, 0},
-   {"stdout",      store_msgs, ITEM(res_msgs), MD_STDOUT,   0, 0},
-   {"stderr",      store_msgs, ITEM(res_msgs), MD_STDERR,   0, 0},
-   {"director",    store_msgs, ITEM(res_msgs), MD_DIRECTOR, 0, 0},
-   {"console",     store_msgs, ITEM(res_msgs), MD_CONSOLE,  0, 0},
-   {"operator",    store_msgs, ITEM(res_msgs), MD_OPERATOR, 0, 0},
-   {"catalog",     store_msgs, ITEM(res_msgs), MD_CATALOG,  0, 0},
+   {"Name",        store_name,    ITEM(res_msgs.hdr.name),  0, 0, 0},
+   {"Description", store_str,     ITEM(res_msgs.hdr.desc),  0, 0, 0},
+   {"MailCommand", store_str,     ITEM(res_msgs.mail_cmd),  0, 0, 0},
+   {"OperatorCommand", store_str, ITEM(res_msgs.operator_cmd), 0, 0, 0},
+   {"Syslog",      store_msgs, ITEM(res_msgs), MD_SYSLOG,   0, 0},
+   {"Mail",        store_msgs, ITEM(res_msgs), MD_MAIL,     0, 0},
+   {"MailOnError", store_msgs, ITEM(res_msgs), MD_MAIL_ON_ERROR, 0, 0},
+   {"MailOnSuccess", store_msgs, ITEM(res_msgs), MD_MAIL_ON_SUCCESS, 0, 0},
+   {"File",        store_msgs, ITEM(res_msgs), MD_FILE,     0, 0},
+   {"Append",      store_msgs, ITEM(res_msgs), MD_APPEND,   0, 0},
+   {"Stdout",      store_msgs, ITEM(res_msgs), MD_STDOUT,   0, 0},
+   {"Stderr",      store_msgs, ITEM(res_msgs), MD_STDERR,   0, 0},
+   {"Director",    store_msgs, ITEM(res_msgs), MD_DIRECTOR, 0, 0},
+   {"Console",     store_msgs, ITEM(res_msgs), MD_CONSOLE,  0, 0},
+   {"Operator",    store_msgs, ITEM(res_msgs), MD_OPERATOR, 0, 0},
+   {"Catalog",     store_msgs, ITEM(res_msgs), MD_CATALOG,  ITEM_LAST, 0},
    {NULL,          NULL,       {0},       0, 0, 0}
 };
 
@@ -111,29 +115,24 @@ struct s_mtypes {
 };
 /* Various message types */
 static struct s_mtypes msg_types[] = {
-   {"debug",         M_DEBUG},
-   {"abort",         M_ABORT},
-   {"fatal",         M_FATAL},
-   {"error",         M_ERROR},
-   {"warning",       M_WARNING},
-   {"info",          M_INFO},
-   {"saved",         M_SAVED},
-   {"notsaved",      M_NOTSAVED},
-   {"skipped",       M_SKIPPED},
-   {"mount",         M_MOUNT},
-   {"terminate",     M_TERM},
-   {"restored",      M_RESTORED},
-   {"security",      M_SECURITY},
-   {"alert",         M_ALERT},
-   {"volmgmt",       M_VOLMGMT},
-   {"all",           M_MAX+1},
+   {"Debug",         M_DEBUG},
+   {"Abort",         M_ABORT},
+   {"Fatal",         M_FATAL},
+   {"Error",         M_ERROR},
+   {"Warning",       M_WARNING},
+   {"Info",          M_INFO},
+   {"Saved",         M_SAVED},
+   {"NotSaved",      M_NOTSAVED},
+   {"Skipped",       M_SKIPPED},
+   {"Mount",         M_MOUNT},
+   {"Terminate",     M_TERM},
+   {"Restored",      M_RESTORED},
+   {"Security",      M_SECURITY},
+   {"Alert",         M_ALERT},
+   {"VolMgmt",       M_VOLMGMT},
+   {"ErrorTerm",     M_ERROR_TERM},
+   {"All",           M_MAX+1},
    {NULL,            0}
-};
-
-/* Used for certain KeyWord tables */
-struct s_kw {
-   const char *name;
-   int token;
 };
 
 /*
@@ -141,10 +140,10 @@ struct s_kw {
  *
  *   tape label      label code = token
  */
-static s_kw tapelabels[] = {
-   {"bacula",        B_BACULA_LABEL},
-   {"ansi",          B_ANSI_LABEL},
-   {"ibm",           B_IBM_LABEL},
+s_kw tapelabels[] = {
+   {"Bacula",        B_BACULA_LABEL},
+   {"ANSI",          B_ANSI_LABEL},
+   {"IBM",           B_IBM_LABEL},
    {NULL,            0}
 };
 
@@ -544,15 +543,20 @@ void store_alist_str(LEX *lc, RES_ITEM *item, int index, int pass)
    if (pass == 2) {
       if (*(item->value) == NULL) {
          list = New(alist(10, owned_by_alist));
+         *(item->value) = (char *)list;
       } else {
          list = (alist *)(*(item->value));
       }
-
-      lex_get_token(lc, T_STRING);   /* scan next item */
-      Dmsg4(900, "Append %s to alist %p size=%d %s\n",
-         lc->str, list, list->size(), item->name);
-      list->append(bstrdup(lc->str));
-      *(item->value) = (char *)list;
+      for (;;) {
+         lex_get_token(lc, T_STRING);   /* scan next item */
+         Dmsg4(900, "Append %s to alist 0x%p size=%d %s\n",
+            lc->str, list, list->size(), item->name);
+         list->append(bstrdup(lc->str));
+         if (lc->ch != ',') {         /* if no other item follows */
+            break;                    /* get out */
+         }
+         lex_get_token(lc, T_ALL);    /* eat comma */
+      }
    }
    scan_to_eol(lc);
    set_bit(index, res_all.hdr.item_present);
@@ -840,21 +844,6 @@ void CONFIG::init(
  *  Note, the default behavior unless you have set an alternate
  *  scan_error handler is to die on an error.
  */
-#ifdef xxx
-int
-parse_config(const char *cf, LEX_ERROR_HANDLER *scan_error, int err_type)
-{
-   int ok;
-   CONFIG *config = new_config_parser();
-   config->init(cf, scan_error, err_type, (void *)&res_all, res_all_size,
-                r_first, r_last, resources, res_head);
-   ok = config->parse_config();
-   free(config);
-   return ok;
-}
-#endif
-
-
 bool CONFIG::parse_config()
 {
    LEX *lc = NULL;
@@ -1031,28 +1020,7 @@ bail_out:
 
 const char *get_default_configdir()
 {
-#if defined(HAVE_WIN32)
-   HRESULT hr;
-   static char szConfigDir[MAX_PATH + 1] = { 0 };
-
-   if (!p_SHGetFolderPath) {
-      bstrncpy(szConfigDir, DEFAULT_CONFIGDIR, sizeof(szConfigDir));
-      return szConfigDir;
-   }
-
-   if (szConfigDir[0] == '\0') {
-      hr = p_SHGetFolderPath(NULL, CSIDL_COMMON_APPDATA, NULL, 0, szConfigDir);
-
-      if (SUCCEEDED(hr)) {
-         bstrncat(szConfigDir, "\\Bacula", sizeof(szConfigDir));
-      } else {
-         bstrncpy(szConfigDir, DEFAULT_CONFIGDIR, sizeof(szConfigDir));
-      }
-   }
-   return szConfigDir;
-#else
    return SYSCONFDIR;
-#endif
 }
 
 /*

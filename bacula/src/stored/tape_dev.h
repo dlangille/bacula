@@ -1,17 +1,21 @@
-/*
-   Bacula® - The Network Backup Solution
+/*                                                              [vssfs.c] IQ
+   Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2014-2014 Free Software Foundation Europe e.V.
+   Copyright (C) 2000-2015 Kern Sibbald
+   Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  * Inspired by vtape.h
@@ -34,6 +38,9 @@ public:
    void lock_door();
    void unlock_door();
    bool reposition(DCR *dcr, uint32_t rfile, uint32_t rblock);
+   bool mount(int timeout);
+   bool unmount(int timeout);
+   bool mount_tape(int mount, int dotimeout);
 };
 
 #endif /* __TAPE_DEV_ */

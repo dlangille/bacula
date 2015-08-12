@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
 
@@ -85,12 +89,22 @@ static FF_PKT *new_dir_ff_pkt(FF_PKT *ff_pkt)
    dir_ff_pkt->fname = bstrdup(ff_pkt->fname);
    dir_ff_pkt->link = bstrdup(ff_pkt->link);
    dir_ff_pkt->sys_fname = get_pool_memory(PM_FNAME);
+
+   if (ff_pkt->strip_snap_path) {
+      dir_ff_pkt->fname_save = get_pool_memory(PM_FNAME);
+      dir_ff_pkt->link_save = get_pool_memory(PM_FNAME);
+      pm_strcpy(dir_ff_pkt->fname_save, ff_pkt->fname_save);
+      pm_strcpy(dir_ff_pkt->link_save, ff_pkt->link_save);
+
+   } else {
+      dir_ff_pkt->fname_save = NULL;
+      dir_ff_pkt->link_save = NULL;
+   }
+
    dir_ff_pkt->included_files_list = NULL;
    dir_ff_pkt->excluded_files_list = NULL;
    dir_ff_pkt->excluded_paths_list = NULL;
    dir_ff_pkt->linkhash = NULL;
-   dir_ff_pkt->fname_save = NULL;
-   dir_ff_pkt->link_save = NULL;
    dir_ff_pkt->ignoredir_fname = NULL;
    return dir_ff_pkt;
 }
@@ -109,9 +123,6 @@ static void free_dir_ff_pkt(FF_PKT *dir_ff_pkt)
    if (dir_ff_pkt->link_save) {
       free_pool_memory(dir_ff_pkt->link_save);
    }
-   if (dir_ff_pkt->ignoredir_fname) {
-      free_pool_memory(dir_ff_pkt->ignoredir_fname);
-   }
    free(dir_ff_pkt);
 }
 
@@ -126,7 +137,7 @@ static int accept_fstype(FF_PKT *ff, void *dummy) {
 
    if (ff->fstypes.size()) {
       accept = false;
-      if (!fstype(ff->fname, fs, sizeof(fs))) {
+      if (!fstype(ff, fs, sizeof(fs))) {
          Dmsg1(50, "Cannot determine file system type for \"%s\"\n", ff->fname);
       } else {
          for (i = 0; i < ff->fstypes.size(); ++i) {
@@ -376,7 +387,7 @@ find_one_file(JCR *jcr, FF_PKT *ff_pkt,
 
          char fs[100];
 
-         if (!fstype(ff_pkt->fname, fs, sizeof(fs))) {
+         if (!fstype(ff_pkt, fs, sizeof(fs))) {
              bstrncpy(fs, "unknown", sizeof(fs));
          }
 
@@ -634,10 +645,12 @@ find_one_file(JCR *jcr, FF_PKT *ff_pkt,
        * to cross, or we may be restricted by a list of permitted
        * file systems.
        */
+      bool is_win32_mount_point = false;
       if (!top_level && ff_pkt->flags & FO_NO_RECURSION) {
          ff_pkt->type = FT_NORECURSE;
          recurse = false;
-      } else if (!top_level && (parent_device != ff_pkt->statp.st_dev)) {
+      } else if (!top_level && (parent_device != ff_pkt->statp.st_dev ||
+                 is_win32_mount_point)) {
          if(!(ff_pkt->flags & FO_MULTIFS)) {
             ff_pkt->type = FT_NOFSCHG;
             recurse = false;

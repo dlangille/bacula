@@ -1,5 +1,10 @@
 #!/bin/sh
 #
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+
+#
 # Author: Kern Sibbald, 2006
 # License: AGPLv3
 #
@@ -32,7 +37,7 @@ echo "${cwd}/weird-files" >>${cwd}/tmp/file-list
 start_test
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
-@$out /dev/null
+@output /dev/null
 messages
 @$out ${cwd}/tmp/log1.out
 label storage=File

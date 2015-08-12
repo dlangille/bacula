@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2003-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *
@@ -671,8 +675,9 @@ static bool send_label_request(UAContext *ua, MEDIA_DBR *mr, MEDIA_DBR *omr,
    BSOCK *sd;
    char dev_name[MAX_NAME_LENGTH];
    bool ok = false;
-   bool is_dvd = false;
    uint64_t VolBytes = 0;
+   uint64_t VolABytes = 0;
+   uint32_t VolType = 0;
 
    if (!(sd=open_sd_bsock(ua))) {
       return false;
@@ -702,11 +707,9 @@ static bool send_label_request(UAContext *ua, MEDIA_DBR *mr, MEDIA_DBR *omr,
    }
 
    while (sd->recv() >= 0) {
-      int dvd;
       ua->send_msg("%s", sd->msg);
-      if (sscanf(sd->msg, "3000 OK label. VolBytes=%llu DVD=%d ", &VolBytes,
-                 &dvd) == 2) {
-         is_dvd = dvd;
+      if (sscanf(sd->msg, "3000 OK label. VolBytes=%llu VolABytes=%lld VolType=%d ",
+                 &VolBytes, &VolABytes, &VolType) == 3) {
          ok = true;
       }
    }
@@ -715,14 +718,11 @@ static bool send_label_request(UAContext *ua, MEDIA_DBR *mr, MEDIA_DBR *omr,
    unbash_spaces(pr->Name);
    mr->LabelDate = time(NULL);
    mr->set_label_date = true;
-   if (is_dvd) {
-      /* We know that a freshly labelled DVD has 1 VolParts */
-      /* This does not apply to auto-labelled DVDs. */
-      mr->VolParts = 1;
-   }
    if (ok) {
       if (media_record_exists) {      /* we update it */
          mr->VolBytes = VolBytes;
+         mr->VolABytes = VolABytes;
+         mr->VolType = VolType;
          mr->InChanger = mr->Slot > 0;  /* if slot give assume in changer */
          set_storageid_in_mr(ua->jcr->wstore, mr);
          if (!db_update_media_record(ua->jcr, ua->db, mr)) {
@@ -732,6 +732,8 @@ static bool send_label_request(UAContext *ua, MEDIA_DBR *mr, MEDIA_DBR *omr,
       } else {                        /* create the media record */
          set_pool_dbr_defaults_in_media_dbr(mr, pr);
          mr->VolBytes = VolBytes;
+         mr->VolABytes = VolABytes;
+         mr->VolType = VolType;
          mr->InChanger = mr->Slot > 0;  /* if slot give assume in changer */
          mr->Enabled = 1;
          set_storageid_in_mr(ua->jcr->wstore, mr);
@@ -854,7 +856,7 @@ static vol_list_t *get_vol_list_from_SD(UAContext *ua, bool scan)
          if (!is_volume_name_legal(ua, p)) {
             p--;
             *p = ':';
-            ua->error_msg(_("Invalid Volume name: %s\n"), sd->msg);
+            ua->error_msg(_("Invalid Volume name: %s. Volume skipped.\n"), sd->msg);
             continue;
          }
       }

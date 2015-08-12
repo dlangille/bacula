@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  * Lexical scanner for Bacula configuration file
@@ -34,7 +38,7 @@ static const int dbglvl = 5000;
 void scan_to_eol(LEX *lc)
 {
    int token;
-   Dmsg0(dbglvl, "start scan to eof\n");
+   Dmsg0(dbglvl, "start scan to eol\n");
    while ((token = lex_get_token(lc, T_ALL)) != T_EOL) {
       if (token == T_EOB) {
          lex_unget_char(lc);
@@ -127,7 +131,9 @@ LEX *lex_close_file(LEX *lf)
       fclose(lf->fd);
    }
    Dmsg1(dbglvl, "Close cfg file %s\n", lf->fname);
-   free(lf->fname);
+   if (lf->fname) {
+      free(lf->fname);
+   }
    free_memory(lf->line);
    lf->line = NULL;
    free_memory(lf->str);
@@ -143,6 +149,56 @@ LEX *lex_close_file(LEX *lf)
    if (of) {
       free(of);
    }
+   return lf;
+}
+
+/*
+ * Open a configuration in memory buffer. We push the
+ * state of the current file (lf) so that we
+ * can do includes.  This is a bit of a hammer.
+ * Instead of passing back the pointer to the
+ * new packet, I simply replace the contents
+ * of the caller's packet with the new packet,
+ * and link the contents of the old packet into
+ * the next field.
+ *
+ */
+LEX *lex_open_buf(LEX *lf, const char *buffer, LEX_ERROR_HANDLER *scan_error)
+
+{
+   LEX *nf;
+
+   Dmsg0(400, "Open config buffer\n");
+   nf = (LEX *)malloc(sizeof(LEX));
+   if (lf) {
+      memcpy(nf, lf, sizeof(LEX));
+      memset(lf, 0, sizeof(LEX));
+      lf->next = nf;                  /* if have lf, push it behind new one */
+      lf->options = nf->options;      /* preserve user options */
+      /*
+       * preserve err_type to prevent bacula exiting on 'reload'
+       * if config is invalid. Fixes bug #877
+       */
+      lf->err_type = nf->err_type;
+   } else {
+      lf = nf;                        /* start new packet */
+      memset(lf, 0, sizeof(LEX));
+      lex_set_error_handler_error_type(lf, M_ERROR_TERM);
+   }
+   if (scan_error) {
+      lf->scan_error = scan_error;
+   } else {
+      lex_set_default_error_handler(lf);
+   }
+   lf->fd = NULL;
+   lf->bpipe = NULL;
+   lf->fname = NULL;
+   lf->line = get_memory(5000);
+   pm_strcpy(lf->line, buffer);
+   pm_strcat(lf->line, "");
+   lf->state = lex_none;
+   lf->ch = 0;
+   lf->str = get_memory(5000);
    return lf;
 }
 
@@ -220,7 +276,7 @@ int lex_get_char(LEX *lf)
       Emsg0(M_ABORT, 0, _("get_char: called after EOF."
          " You may have a open double quote without the closing double quote.\n"));
    }
-   if (lf->ch == L_EOL) {
+   if (lf->fd && lf->ch == L_EOL) {
       if (bfgets(lf->line, lf->fd) == NULL) {
          lf->ch = L_EOF;
          if (lf->next) {
@@ -231,14 +287,32 @@ int lex_get_char(LEX *lf)
       lf->line_no++;
       lf->col_no = 0;
       Dmsg2(1000, "fget line=%d %s", lf->line_no, lf->line);
-   }
-   lf->ch = (uint8_t)lf->line[lf->col_no];
-   if (lf->ch == 0) {
-      lf->ch = L_EOL;
-   } else {
+   } else if (lf->ch == L_EOL) {
+      lf->line_no++;
       lf->col_no++;
    }
-   Dmsg2(dbglvl, "lex_get_char: %c %d\n", lf->ch, lf->ch);
+   lf->ch = (uint8_t)lf->line[lf->col_no];
+   if (lf->fd) {
+      if (lf->ch == 0) {
+         lf->ch = L_EOL;           /* reached end of line, force bfgets */
+      } else {
+         lf->col_no++;
+      }
+   } else {
+      if (lf->ch == 0) {           /* End of buffer, stop scan */
+         lf->ch = L_EOF;
+         if (lf->next) {
+            lex_close_file(lf);
+         }
+         return lf->ch;
+      } else if (lf->ch == '\n') {  /* End of line */
+         Dmsg0(dbglvl, "Found newline return L_EOL\n");
+         lf->ch = L_EOL;
+      } else {
+         lf->col_no++;
+      }
+   }
+   Dmsg3(dbglvl, "lex_get_char: %c %d col=%d\n", lf->ch, lf->ch, lf->col_no);
    return lf->ch;
 }
 
@@ -380,12 +454,12 @@ lex_get_token(LEX *lf, int expect)
       to tell which byte we are expecting. */
    int bom_bytes_seen = 0;
 
-   Dmsg0(dbglvl, "enter lex_get_token\n");
+   Dmsg1(dbglvl, "enter lex_get_token state=%s\n", lex_state_to_str(lf->state));
    while (token == T_NONE) {
       ch = lex_get_char(lf);
       switch (lf->state) {
       case lex_none:
-         Dmsg2(dbglvl, "Lex state lex_none ch=%d,%x\n", ch, ch);
+         Dmsg2(dbglvl, "Lex state lex_none ch=%c,%d\n", ch, ch);
          if (B_ISSPACE(ch))
             break;
          if (B_ISALPHA(ch)) {

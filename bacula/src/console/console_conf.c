@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *   Main configuration file parser for Bacula User Agent
@@ -71,52 +75,53 @@ int32_t res_all_size = sizeof(res_all);
 
 /*  Console "globals" */
 static RES_ITEM cons_items[] = {
-   {"name",           store_name,     ITEM(res_cons.hdr.name), 0, ITEM_REQUIRED, 0},
-   {"description",    store_str,      ITEM(res_cons.hdr.desc), 0, 0, 0},
-   {"rcfile",         store_dir,      ITEM(res_cons.rc_file), 0, 0, 0},
-   {"historyfile",    store_dir,      ITEM(res_cons.hist_file), 0, 0, 0},
-   {"password",       store_password, ITEM(res_cons.password), 0, ITEM_REQUIRED, 0},
-   {"tlsauthenticate",store_bool,    ITEM(res_cons.tls_authenticate), 0, 0, 0},
-   {"tlsenable",      store_bool,    ITEM(res_cons.tls_enable), 0, 0, 0},
-   {"tlsrequire",     store_bool,    ITEM(res_cons.tls_require), 0, 0, 0},
-   {"tlscacertificatefile", store_dir, ITEM(res_cons.tls_ca_certfile), 0, 0, 0},
-   {"tlscacertificatedir", store_dir,  ITEM(res_cons.tls_ca_certdir), 0, 0, 0},
-   {"tlscertificate", store_dir,       ITEM(res_cons.tls_certfile), 0, 0, 0},
-   {"tlskey",         store_dir,       ITEM(res_cons.tls_keyfile), 0, 0, 0},
-   {"director",       store_str,       ITEM(res_cons.director), 0, 0, 0},
-   {"heartbeatinterval", store_time, ITEM(res_cons.heartbeat_interval), 0, ITEM_DEFAULT, 0},
+   {"Name",           store_name,     ITEM(res_cons.hdr.name), 0, ITEM_REQUIRED, 0},
+   {"Description",    store_str,      ITEM(res_cons.hdr.desc), 0, 0, 0},
+   {"RCFile",         store_dir,      ITEM(res_cons.rc_file), 0, 0, 0},
+   {"HistoryFile",    store_dir,      ITEM(res_cons.hist_file), 0, 0, 0},
+   {"Password",       store_password, ITEM(res_cons.password), 0, ITEM_REQUIRED, 0},
+   {"TlsAuthenticate",store_bool,    ITEM(res_cons.tls_authenticate), 0, 0, 0},
+   {"TlsEnable",      store_bool,    ITEM(res_cons.tls_enable), 0, 0, 0},
+   {"TlsRequire",     store_bool,    ITEM(res_cons.tls_require), 0, 0, 0},
+   {"TlsCaCertificateFile", store_dir, ITEM(res_cons.tls_ca_certfile), 0, 0, 0},
+   {"TlsCaCertificateDir", store_dir,  ITEM(res_cons.tls_ca_certdir), 0, 0, 0},
+   {"TlsCertificate", store_dir,       ITEM(res_cons.tls_certfile), 0, 0, 0},
+   {"TlsKey",         store_dir,       ITEM(res_cons.tls_keyfile), 0, 0, 0},
+   {"Director",       store_str,       ITEM(res_cons.director), 0, 0, 0},
+   {"HeartbeatInterval", store_time, ITEM(res_cons.heartbeat_interval), 0, ITEM_DEFAULT, 5 * 60},
    {NULL, NULL, {0}, 0, 0, 0}
 };
 
 
 /*  Director's that we can contact */
 static RES_ITEM dir_items[] = {
-   {"name",           store_name,      ITEM(res_dir.hdr.name), 0, ITEM_REQUIRED, 0},
-   {"description",    store_str,       ITEM(res_dir.hdr.desc), 0, 0, 0},
-   {"dirport",        store_pint32,    ITEM(res_dir.DIRport),  0, ITEM_DEFAULT, 9101},
-   {"address",        store_str,       ITEM(res_dir.address),  0, 0, 0},
-   {"password",       store_password,  ITEM(res_dir.password), 0, ITEM_REQUIRED, 0},
-   {"tlsauthenticate",store_bool,    ITEM(res_dir.tls_enable), 0, 0, 0},
-   {"tlsenable",      store_bool,    ITEM(res_dir.tls_enable), 0, 0, 0},
-   {"tlsrequire",     store_bool,    ITEM(res_dir.tls_require), 0, 0, 0},
-   {"tlscacertificatefile", store_dir, ITEM(res_dir.tls_ca_certfile), 0, 0, 0},
-   {"tlscacertificatedir", store_dir,  ITEM(res_dir.tls_ca_certdir), 0, 0, 0},
-   {"tlscertificate", store_dir,       ITEM(res_dir.tls_certfile), 0, 0, 0},
-   {"tlskey",         store_dir,       ITEM(res_dir.tls_keyfile), 0, 0, 0},
-   {"heartbeatinterval", store_time, ITEM(res_dir.heartbeat_interval), 0, ITEM_DEFAULT, 0},
+   {"Name",           store_name,      ITEM(res_dir.hdr.name), 0, ITEM_REQUIRED, 0},
+   {"Description",    store_str,       ITEM(res_dir.hdr.desc), 0, 0, 0},
+   {"DirPort",        store_pint32,    ITEM(res_dir.DIRport),  0, ITEM_DEFAULT, 9101},
+   {"Address",        store_str,       ITEM(res_dir.address),  0, 0, 0},
+   {"Password",       store_password,  ITEM(res_dir.password), 0, ITEM_REQUIRED, 0},
+   {"TlsAuthenticate",store_bool,    ITEM(res_dir.tls_enable), 0, 0, 0},
+   {"TlsEnable",      store_bool,    ITEM(res_dir.tls_enable), 0, 0, 0},
+   {"TlsRequire",     store_bool,    ITEM(res_dir.tls_require), 0, 0, 0},
+   {"TlsCaCertificateFile", store_dir, ITEM(res_dir.tls_ca_certfile), 0, 0, 0},
+   {"TlsCaCertificateDir", store_dir,  ITEM(res_dir.tls_ca_certdir), 0, 0, 0},
+   {"TlsCertificate", store_dir,       ITEM(res_dir.tls_certfile), 0, 0, 0},
+   {"TlsKey",         store_dir,       ITEM(res_dir.tls_keyfile), 0, 0, 0},
+   {"HeartbeatInterval", store_time, ITEM(res_dir.heartbeat_interval), 0, ITEM_DEFAULT, 5 * 60},
    {NULL, NULL, {0}, 0, 0, 0}
 };
 
 /*
  * This is the master resource definition.
  * It must have one item for each of the resources.
+ *
+ *   name            item         rcode
  */
 RES_TABLE resources[] = {
-   {"console",       cons_items,  R_CONSOLE},
-   {"director",      dir_items,   R_DIRECTOR},
+   {"Console",       cons_items,  R_CONSOLE},
+   {"Director",      dir_items,   R_DIRECTOR},
    {NULL,            NULL,        0}
 };
-
 
 /* Dump contents of resource */
 void dump_resource(int type, RES *reshdr, void sendit(void *sock, const char *fmt, ...), void *sock)
@@ -161,8 +166,9 @@ void free_resource(RES *sres, int type)
    RES *nres;
    URES *res = (URES *)sres;
 
-   if (res == NULL)
+   if (res == NULL) {
       return;
+   }
 
    /* common stuff -- free the resource name */
    nres = (RES *)res->res_dir.hdr.next;
@@ -247,7 +253,7 @@ void save_resource(int type, RES_ITEM *items, int pass)
    for (i=0; items[i].name; i++) {
       if (items[i].flags & ITEM_REQUIRED) {
             if (!bit_is_set(i, res_all.res_dir.hdr.item_present)) {
-               Emsg2(M_ABORT, 0, _("%s item is required in %s resource, but not found.\n"),
+               Emsg2(M_ERROR_TERM, 0, _("%s item is required in %s resource, but not found.\n"),
                  items[i].name, resources[rindex]);
              }
       }

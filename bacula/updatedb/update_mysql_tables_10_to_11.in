@@ -1,5 +1,8 @@
 #!/bin/sh
 #
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
 # Shell script to update MySQL tables from version 2.0 to 3.0	
 #
 echo " "
@@ -10,7 +13,9 @@ bindir=@MYSQL_BINDIR@
 PATH="$bindir:$PATH"
 db_name=${db_name:-@db_name@}
 
-if mysql -D ${db_name} $* -f <<END-OF-DATA
+if mysql $* -f <<END-OF-DATA
+USE ${db_name};
+
 -- Fix bad index on Media table
 DROP INDEX inx8 ON Media;
 CREATE UNIQUE INDEX inx8 ON Media (VolumeName(128));

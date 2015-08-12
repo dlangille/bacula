@@ -1,16 +1,30 @@
 #!/bin/sh
+# This is Kern's configure script for Bacula
 #
-# This is Kern's configure script for a test Bacula
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
 #
-CFLAGS="-g -O2 -Wall" ./configure \
-    --sbindir=$HOME/bacula/bin \
-    --sysconfdir=$HOME/bacula/bin \
-    --with-pid-dir=$HOME/bacula/bin/working \
-    --with-subsys-dir=$HOME/bacula/bin/working \
+
+PREFIX=/opt/bacula
+CFLAGS="-g -O2 -Wall" \
+  ./configure \
+    --sbindir=${PREFIX}/bin \
+    --sysconfdir=${PREFIX}/etc \
+    --docdir=${PREFIX}/html \
+    --htmldir=${PREFIX}/html \
+    --with-working-dir=${PREFIX}/working \
+    --with-pid-dir=${PREFIX}/working \
+    --with-scriptdir=${PREFIX}/scripts \
+    --with-plugindir=${PREFIX}/plugins \
+    --libdir=${PREFIX}/lib \
     --enable-smartalloc \
-    --with-mysql=$HOME/mysql \
-    --with-working-dir=$HOME/bacula/working \
-    --with-dump-email=$USER \
-    --with-job-email=$USER
+    --disable-conio \
+    --enable-readline \
+    --enable-bat \
+    --with-mysql \
+    --with-dump-email=localhost \
+    --with-job-email=localhost \
+    --with-smtp-host=localhost \
+    --with-baseport=9101
 
 exit 0

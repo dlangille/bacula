@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *
@@ -46,7 +50,10 @@ static bool extract = false;
 static int non_support_data = 0;
 static long total = 0;
 static ATTR *attr;
+static POOLMEM *curr_fname;
 static char *where;
+static uint64_t num_errors = 0;
+static uint64_t num_records = 0;
 static uint32_t num_files = 0;
 static uint32_t compress_buf_size = 70000;
 static POOLMEM *compress_buf;
@@ -65,6 +72,7 @@ void *start_heap;
 char *configfile = NULL;
 STORES *me = NULL;                    /* our Global resource */
 bool forge_on = false;
+bool skip_extract = false;
 pthread_mutex_t device_release_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t wait_device_release = PTHREAD_COND_INITIALIZER;
 
@@ -72,18 +80,20 @@ static void usage()
 {
    fprintf(stderr, _(
 PROG_COPYRIGHT
-"\nVersion: %s (%s)\n\n"
+"\n%sVersion: %s (%s)\n\n"
 "Usage: bextract <options> <bacula-archive-device-name> <directory-to-store-files>\n"
 "       -b <file>       specify a bootstrap file\n"
 "       -c <file>       specify a Storage configuration file\n"
 "       -d <nn>         set debug level to <nn>\n"
 "       -dt             print timestamp in debug output\n"
+"       -T              send debug traces to trace file\n"
 "       -e <file>       exclude list\n"
 "       -i <file>       include list\n"
 "       -p              proceed inspite of I/O errors\n"
+"       -t              read data from volume, do not write anything\n"
 "       -v              verbose\n"
 "       -V <volumes>    specify Volume names (separated by |)\n"
-"       -?              print this message\n\n"), 2000, VERSION, BDATE);
+"       -?              print this message\n\n"), 2000, "", VERSION, BDATE);
    exit(1);
 }
 
@@ -110,11 +120,19 @@ int main (int argc, char *argv[])
    ff = init_find_files();
    binit(&bfd);
 
-   while ((ch = getopt(argc, argv, "b:c:d:e:i:pvV:?")) != -1) {
+   while ((ch = getopt(argc, argv, "Ttb:c:d:e:i:pvV:?")) != -1) {
       switch (ch) {
+      case 't':
+         skip_extract = true;
+         break;
+
       case 'b':                    /* bootstrap file */
          bsr = parse_bsr(NULL, optarg);
 //       dump_bsr(bsr, true);
+         break;
+
+      case 'T':                 /* Send debug to trace file */
+         set_trace(1);
          break;
 
       case 'c':                    /* specify config file */
@@ -226,11 +244,12 @@ int main (int argc, char *argv[])
 
 static void do_extract(char *devname)
 {
+   char ed1[50];
    struct stat statp;
 
    enable_backup_privileges(NULL, 1);
 
-   jcr = setup_jcr("bextract", devname, bsr, VolumeName, SD_READ);
+   jcr = setup_jcr("bextract", devname, bsr, VolumeName, SD_READ, false/*read dedup data*/);
    if (!jcr) {
       exit(1);
    }
@@ -255,6 +274,8 @@ static void do_extract(char *devname)
    attr = new_attr(jcr);
 
    compress_buf = get_memory(compress_buf_size);
+   curr_fname = get_pool_memory(PM_FNAME);
+   *curr_fname = 0;
 
    read_records(dcr, record_cb, mount_next_read_volume);
    /* If output file is still open, it was the last one in the
@@ -267,8 +288,12 @@ static void do_extract(char *devname)
    free_attr(attr);
    free_jcr(jcr);
    dev->term();
+   free_pool_memory(curr_fname);
 
    printf(_("%u files restored.\n"), num_files);
+   if (num_errors) {
+      printf(_("Found %s error%s\n"), edit_uint64(num_errors, ed1), num_errors>1? "s":"");
+   }
    return;
 }
 
@@ -297,11 +322,44 @@ static bool store_data(BFILE *bfd, char *data, const int32_t length)
  */
 static bool record_cb(DCR *dcr, DEV_RECORD *rec)
 {
-   int stat;
+   int stat, ret=true;
    JCR *jcr = dcr->jcr;
+   char ed1[50];
+
+   bool     restoredatap = false;
+   POOLMEM *orgdata = NULL;
+   uint32_t orgdata_len = 0;
 
    if (rec->FileIndex < 0) {
       return true;                    /* we don't want labels */
+   }
+
+   /* In this mode, we do not create any file on disk, just read
+    * everything from the volume.
+    */
+   if (skip_extract) {
+      switch (rec->maskedStream) {
+      case STREAM_UNIX_ATTRIBUTES:
+      case STREAM_UNIX_ATTRIBUTES_EX:
+         if (!unpack_attributes_record(jcr, rec->Stream, rec->data, rec->data_len, attr)) {
+            Emsg0(M_ERROR_TERM, 0, _("Cannot continue.\n"));
+         }
+         if (verbose) {
+            attr->data_stream = decode_stat(attr->attr, &attr->statp, sizeof(attr->statp), &attr->LinkFI);
+            build_attr_output_fnames(jcr, attr);
+            print_ls_output(jcr, attr);
+         }
+         pm_strcpy(curr_fname, attr->fname);
+         num_files++;
+         break;
+      }
+      num_records++;
+
+      /* We display some progress information if verbose not set or set to 2 */
+      if (verbose != 1 && (num_records % 200000) == 0L) {
+         fprintf(stderr, "\rfiles=%d records=%s\n", num_files, edit_uint64(num_records, ed1));
+      }
+      return true;
    }
 
    /* File Attributes stream */
@@ -325,6 +383,9 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
          Emsg0(M_ERROR_TERM, 0, _("Cannot continue.\n"));
       }
 
+      /* Keep the name of the current file if we find a bad block */
+      pm_strcpy(curr_fname, attr->fname);
+
       if (file_is_included(ff, attr->fname) && !file_is_excluded(ff, attr->fname)) {
          attr->data_stream = decode_stat(attr->attr, &attr->statp, sizeof(attr->statp), &attr->LinkFI);
          if (!is_restore_stream_supported(attr->data_stream)) {
@@ -333,7 +394,7 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
                   stream_to_ascii(attr->data_stream));
             }
             extract = false;
-            return true;
+            goto bail_out;
          }
 
          build_attr_output_fnames(jcr, attr);
@@ -341,11 +402,12 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
          if (attr->type == FT_DELETED) { /* TODO: choose the right fname/ofname */
             Jmsg(jcr, M_INFO, 0, _("%s was deleted.\n"), attr->fname);
             extract = false;
-            return true;
+            goto bail_out;
          }
 
          extract = false;
          stat = create_file(jcr, attr, &bfd, REPLACE_ALWAYS);
+
          switch (stat) {
          case CF_ERROR:
          case CF_SKIP:
@@ -426,7 +488,7 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
                   Emsg3(M_ERROR, 0, _("Seek to %s error on %s: ERR=%s\n"),
                      edit_uint64(fileAddr, ec1), attr->ofname, be.bstrerror());
                   extract = false;
-                  return true;
+                  goto bail_out;
                }
             }
          } else {
@@ -444,7 +506,7 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
          if (stat != Z_OK) {
             Emsg1(M_ERROR, 0, _("Uncompression error. ERR=%d\n"), stat);
             extract = false;
-            return true;
+            goto bail_out;
          }
 
          Dmsg2(100, "Write uncompressed %d bytes, total before write=%d\n", compress_len, total);
@@ -458,7 +520,7 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
       if (extract) {
          Emsg0(M_ERROR, 0, _("GZIP data stream found, but GZIP not configured!\n"));
          extract = false;
-         return true;
+         goto bail_out;
       }
 #endif
       break;
@@ -491,7 +553,7 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
                   Emsg3(M_ERROR, 0, _("Seek to %s error on %s: ERR=%s\n"),
                      edit_uint64(fileAddr, ec1), attr->ofname, be.bstrerror());
                   extract = false;
-                  return true;
+                  goto bail_out;
                }
             }
          } else {
@@ -512,13 +574,15 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
          /* version check */
          if (comp_version != COMP_HEAD_VERSION) {
             Emsg1(M_ERROR, 0, _("Compressed header version error. version=0x%x\n"), comp_version);
-            return false;
+            ret = false;
+            goto bail_out;
          }
          /* size check */
          if (comp_len + sizeof(comp_stream_header) != wsize) {
             Emsg2(M_ERROR, 0, _("Compressed header size error. comp_len=%d, msglen=%d\n"),
                  comp_len, wsize);
-            return false;
+            ret = false;
+            goto bail_out;
          }
 
           switch(comp_magic) {
@@ -540,7 +604,7 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
                if (r != LZO_E_OK) {
                   Emsg1(M_ERROR, 0, _("LZO uncompression error. ERR=%d\n"), r);
                   extract = false;
-                  return true;
+                  goto bail_out;
                }
                Dmsg2(100, "Write uncompressed %d bytes, total before write=%d\n", compress_len, total);
                store_data(&bfd, compress_buf, compress_len);
@@ -552,7 +616,7 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
             default:
                Emsg1(M_ERROR, 0, _("Compression algorithm 0x%x found, but not supported!\n"), comp_magic);
                extract = false;
-               return true;
+               goto bail_out;
          }
 
       }
@@ -591,13 +655,19 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
       break;
 
    } /* end switch */
-   return true;
+bail_out:
+   if (restoredatap) {
+      rec->data = orgdata;
+      rec->data_len = orgdata_len;
+   }
+   return ret;
 }
 
 /* Dummies to replace askdir.c */
 bool    dir_find_next_appendable_volume(DCR *dcr) { return 1;}
 bool    dir_update_volume_info(DCR *dcr, bool relabel, bool update_LastWritten) { return 1; }
 bool    dir_create_jobmedia_record(DCR *dcr, bool zero) { return 1; }
+bool    flush_jobmedia_queue(JCR *jcr) { return true; }
 bool    dir_ask_sysop_to_create_appendable_volume(DCR *dcr) { return 1; }
 bool    dir_update_file_attributes(DCR *dcr, DEV_RECORD *rec) { return 1;}
 bool    dir_send_job_status(JCR *jcr) {return 1;}
@@ -617,9 +687,6 @@ bool dir_get_volume_info(DCR *dcr, enum get_vol_info_rw  writing)
 {
    Dmsg0(100, "Fake dir_get_volume_info\n");
    dcr->setVolCatName(dcr->VolumeName);
-#ifdef BUILD_DVD
-   dcr->VolCatInfo.VolCatParts = find_num_dvd_parts(dcr);
-#endif
-   Dmsg2(500, "Vol=%s num_parts=%d\n", dcr->getVolCatName(), dcr->VolCatInfo.VolCatParts);
+   Dmsg2(500, "Vol=%s VolType=%d\n", dcr->getVolCatName(), dcr->VolCatInfo.VolCatType);
    return 1;
 }

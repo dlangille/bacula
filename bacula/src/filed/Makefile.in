@@ -1,8 +1,8 @@
 #
 # Bacula Makefile for the File daemon
 #
-# Author: Kern Sibbald, 2002
-# License: LGPLv3
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
 #
 @MCOMMON@
 
@@ -30,9 +30,10 @@ first_rule: all
 dummy:
 
 #
-SVRSRCS = filed.c authenticate.c acl.c backup.c estimate.c \
+SVRSRCS = filed.c authenticate.c acl.c backup.c crypto.c \
+	  estimate.c \
 	  fd_plugins.c accurate.c \
-	  filed_conf.c heartbeat.c job.c \
+	  filed_conf.c heartbeat.c hello.c job.c fd_snapshot.c \
 	  restore.c status.c verify.c verify_vol.c xattr.c
 SVROBJS = $(SVRSRCS:.c=.o)
 
@@ -62,40 +63,15 @@ acl.o: acl.c
 	@echo "Compiling $<"
 	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) $(LZO_INC) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) $(AFS_CFLAGS) $<
 
-win32/winlib.a:
-	@if test -f win32/Makefile -a "${GMAKE}" != "none"; then \
-	   (cd win32; $(GMAKE) DESTDIR=$(DESTDIR)); \
-	fi
-	@rm -f bacula-fd.exe
-
-win32/winmain.o:
-	@if test -f win32/Makefile -a "${GMAKE}" != "none"; then \
-	   (cd win32; $(GMAKE) DESTDIR=$(DESTDIR)); \
-	fi
-	@rm -f bacula-fd.exe
-
-win32/winres.res:
-	@if test -f win32/Makefile -a "${GMAKE}" != "none"; then \
-	   (cd win32; $(GMAKE) DESTDIR=$(DESTDIR)); \
-	fi
-	@rm -f bacula-fd.exe
-
-# win32 libraries if needed
-win32:	$(WIN32OBJS)
-	@if test -f win32/Makefile -a "${GMAKE}" != "none"; then \
-	   (cd win32; $(GMAKE) DESTDIR=$(DESTDIR)); \
-	fi
-	@rm -f bacula-fd.exe
-
 bacula-fd:  Makefile $(SVROBJS) ../findlib/libbacfind$(DEFAULT_ARCHIVE_TYPE) ../lib/libbaccfg$(DEFAULT_ARCHIVE_TYPE) ../lib/libbac$(DEFAULT_ARCHIVE_TYPE)
 	@echo "Linking $@ ..."
 	$(LIBTOOL_LINK) $(CXX) $(WLDFLAGS) $(LDFLAGS) -L../lib -L../findlib -o $@ $(SVROBJS) \
-	  $(WIN32LIBS) $(FDLIBS) $(ZLIBS) -lbacfind -lbaccfg -lbac -lm $(LIBS) \
+	  $(FDLIBS) $(ZLIBS) -lbacfind -lbaccfg -lbac -lm $(LIBS) \
 	  $(DLIB) $(WRAPLIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS) $(CAP_LIBS) $(AFS_LIBS) $(LZO_LIBS)
 
 static-bacula-fd: Makefile $(SVROBJS) ../findlib/libbacfind.a ../lib/libbaccfg$(DEFAULT_ARCHIVE_TYPE) ../lib/libbac$(DEFAULT_ARCHIVE_TYPE)
 	$(LIBTOOL_LINK) $(CXX) $(WLDFLAGS) $(LDFLAGS) -static -L../lib -L../findlib -o $@ $(SVROBJS) \
-	   $(WIN32LIBS) $(FDLIBS) $(ZLIBS) -lbacfind -lbaccfg -lbac -lm $(LIBS) \
+	   $(FDLIBS) $(ZLIBS) -lbacfind -lbaccfg -lbac -lm $(LIBS) \
 	   $(DLIB) $(WRAPLIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS) $(CAP_LIBS) $(AFS_LIBS) $(LZO_LIBS)
 	strip $@
 
@@ -109,9 +85,6 @@ libtool-clean:
 clean:	libtool-clean
 	@$(RMF) bacula-fd filed core core.* a.out *.o *.bak *~ *.intpro *.extpro 1 2 3
 	@$(RMF) static-bacula-fd
-	@if test -f win32/Makefile -a "${GMAKE}" != "none"; then \
-	   (cd win32; $(GMAKE) clean); \
-	fi
 
 realclean: clean
 	@$(RMF) tags bacula-fd.conf
@@ -119,19 +92,13 @@ realclean: clean
 distclean: realclean
 	if test $(srcdir) = .; then $(MAKE) realclean; fi
 	(cd $(srcdir); $(RMF) Makefile)
-	@if test -f win32/Makefile -a "${GMAKE}" != "none"; then \
-	   (cd win32; $(GMAKE) distclean); \
-	fi
 
 devclean: realclean
 	if test $(srcdir) = .; then $(MAKE) realclean; fi
 	(cd $(srcdir); $(RMF) Makefile)
-	@if test -f win32/Makefile -a "${GMAKE}" != "none"; then \
-	   (cd win32; $(GMAKE) devclean); \
-	fi
 
 install: all
-	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bacula-fd $(DESTDIR)$(sbindir)/bacula-fd 
+	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bacula-fd $(DESTDIR)$(sbindir)/bacula-fd
 	@srcconf=bacula-fd.conf; \
 	if  test -f ${DESTDIR}${sysconfdir}/$$srcconf; then \
 	   destconf=$$srcconf.new; \
@@ -149,7 +116,6 @@ install: all
 	fi
 
 uninstall:
-	(cd $(DESTDIR)$(sbindir); $(RMF) bacula-fd)
 	(cd $(DESTDIR)$(sysconfdir); $(RMF) bacula-fd.conf)
 	(cd $(DESTDIR)$(sysconfdir); $(RMF) bacula-fd.conf.new)
 

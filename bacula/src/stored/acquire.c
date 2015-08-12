@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2002-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *  Routines to acquire and release a device for read/write
@@ -34,8 +38,8 @@ static void set_dcr_from_vol(DCR *dcr, VOL_LIST *vol);
  *  reserve_device_for_read(). We read the Volume label from the block and
  *  leave the block pointers just after the label.
  *
- *  Returns: NULL if failed for any reason
- *           dcr  if successful
+ *  Returns: false if failed for any reason
+ *           true  if successful
  */
 bool acquire_device_for_read(DCR *dcr)
 {
@@ -193,7 +197,7 @@ bool acquire_device_for_read(DCR *dcr)
                              dev->is_labeled();
 // tape_initially_mounted = tape_previously_mounted;
 
-   /* Volume info is always needed because of VolParts */
+   /* Volume info is always needed because of VolType */
    Dmsg1(rdbglvl, "dir_get_volume_info vol=%s\n", dcr->VolumeName);
    if (!dir_get_volume_info(dcr, GET_VOL_INFO_FOR_READ)) {
       Dmsg2(rdbglvl, "dir_get_vol_info failed for vol=%s: %s\n",
@@ -304,7 +308,7 @@ default_path:
             goto get_out;             /* error return */
          }
 
-         /* Volume info is always needed because of VolParts */
+         /* Volume info is always needed because of VolType */
          Dmsg1(150, "dir_get_volume_info vol=%s\n", dcr->VolumeName);
          if (!dir_get_volume_info(dcr, GET_VOL_INFO_FOR_READ)) {
             Dmsg2(150, "dir_get_vol_info failed for vol=%s: %s\n",
@@ -550,7 +554,9 @@ bool release_device(DCR *dcr)
    /* If no writers, close if file or !CAP_ALWAYS_OPEN */
    if (dev->num_writers == 0 && (!dev->is_tape() || !dev->has_cap(CAP_ALWAYSOPEN))) {
       generate_plugin_event(jcr, bsdEventDeviceClose, dcr);
-      dev->close();
+      if (!dev->close()) {
+         Jmsg(jcr, M_ERROR, 0, "%s", dev->errmsg);
+      }
       free_volume(dev);
    }
    unlock_volumes();
@@ -653,6 +659,7 @@ DCR *new_dcr(JCR *jcr, DCR *dcr, DEVICE *dev, bool writing)
    if (dev) {
       dcr->free_blocks();
       dcr->block = new_block(dev);
+      dcr->ameta_block = dcr->block;
       if (dcr->rec) {
          free_record(dcr->rec);
       }
@@ -741,6 +748,12 @@ void DEVICE::detach_dcr_from_dev(DCR *dcr)
       if (attached_dcrs->size()) {
          attached_dcrs->remove(dcr);  /* detach dcr from device */
       }
+   }
+   /* Check if someone accidentally left a drive reserved, and clear it */
+   if (attached_dcrs->size() == 0 && num_reserved() > 0) {
+      Pmsg2(000, "Warning!!! dcrs=0 reserved=%d setting reserved==0. dev=%s\n",
+         num_reserved(), print_name());
+      m_num_reserved = 0;
    }
    dcr->attached_to_dev = false;
    Unlock_dcrs();

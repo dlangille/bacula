@@ -1,21 +1,25 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2008-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 
-#ifndef _LOCKMGR_H
-#define _LOCKMGR_H 1
+#ifndef LOCKMGR_H
+#define LOCKMGR_H 1
 
 #include "mutex_list.h"     /* Manage mutex with priority in a central place */
 
@@ -26,7 +30,12 @@
 void lmgr_p(pthread_mutex_t *m);
 void lmgr_v(pthread_mutex_t *m);
 
-#ifdef _USE_LOCKMGR
+/*
+ * Get integer thread id
+ */
+intptr_t bthread_get_thread_id();
+
+#ifdef USE_LOCKMGR
 
 typedef struct bthread_mutex_t
 {
@@ -181,17 +190,21 @@ int bthread_kill(pthread_t thread, int sig,
 #define bthread_cond_timedwait(x,y,z) bthread_cond_timedwait_p(x,y,z, __FILE__, __LINE__)
 
 /*
- * Define _LOCKMGR_COMPLIANT to use real pthread functions
+ * Define LOCKMGR_COMPLIANT to use real pthread functions
  */
 #define real_P(x) lmgr_p(&(x))
 #define real_V(x) lmgr_v(&(x))
 
-#ifdef _LOCKMGR_COMPLIANT
-# define P(x) lmgr_p(&(x))
-# define V(x) lmgr_v(&(x))
+#ifdef LOCKMGR_COMPLIANT
+# define P(x)  lmgr_p(&(x))
+# define pP(x) lmgr_p(x)
+# define V(x)  lmgr_v(&(x))
+# define pV(x) lmgr_v(x)
 #else
-# define P(x)                   bthread_mutex_lock_p(&(x), __FILE__, __LINE__)
-# define V(x)                   bthread_mutex_unlock_p(&(x), __FILE__, __LINE__)
+# define P(x)  bthread_mutex_lock_p(&(x), __FILE__, __LINE__)
+# define pP(x) bthread_mutex_lock_p((x), __FILE__, __LINE__)
+# define V(x)  bthread_mutex_unlock_p(&(x), __FILE__, __LINE__)
+# define pV(x) bthread_mutex_unlock_p((x), __FILE__, __LINE__)
 # define pthread_create(a, b, c, d)      lmgr_thread_create(a,b,c,d)
 # define pthread_mutex_lock(x)           bthread_mutex_lock(x)
 # define pthread_mutex_unlock(x)         bthread_mutex_unlock(x)
@@ -203,7 +216,7 @@ int bthread_kill(pthread_t thread, int sig,
 # endif
 #endif
 
-#else   /* _USE_LOCKMGR */
+#else   /* !USE_LOCKMGR */
 
 # define lmgr_detect_deadloc()
 # define lmgr_add_event_p(c, u, f, l)
@@ -224,14 +237,15 @@ int bthread_kill(pthread_t thread, int sig,
 # define lmgr_cond_wait(a,b)             pthread_cond_wait(a,b)
 # define lmgr_cond_timedwait(a,b,c)      pthread_cond_timedwait(a,b,c)
 # define bthread_mutex_t                 pthread_mutex_t
-# define P(x) lmgr_p(&(x))
-# define V(x) lmgr_v(&(x))
+# define P(x)  lmgr_p(&(x))
+# define pP(x) lmgr_p((x))
+# define V(x)  lmgr_v(&(x))
+# define pV(x) lmgr_v((x))
 # define BTHREAD_MUTEX_PRIORITY(p)      PTHREAD_MUTEX_INITIALIZER
 # define BTHREAD_MUTEX_NO_PRIORITY      PTHREAD_MUTEX_INITIALIZER
 # define BTHREAD_MUTEX_INITIALIZER      PTHREAD_MUTEX_INITIALIZER
 # define lmgr_mutex_is_locked(m)        (1)
 # define bthread_cond_wait_p(w, x, y, z) pthread_cond_wait(w,x)
+#endif  /* USE_LOCKMGR */
 
-#endif  /* _USE_LOCKMGR */
-
-#endif  /* _LOCKMGR_H */
+#endif  /* LOCKMGR_H */

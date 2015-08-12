@@ -1,5 +1,10 @@
 #!/bin/sh
 #
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+
+#
 # Show the broken media bug(s) again. Test by Graham Keeling.
 #
 # This test will wait forever whilst the last job waits for an appendable

@@ -1,12 +1,17 @@
 #!/bin/sh
 #
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+
+#
 #
 TestName="tls-duplicate-job-test"
 . scripts/functions
 
 scripts/cleanup
 scripts/copy-tls-confs
-echo "${cwd}/build/technotes" >${cwd}/tmp/file-list
+echo "${cwd}/build/ChangeLog" >${cwd}/tmp/file-list
 
 # increase the maximum concurrent jobs for FD, SD and DIR
 perl -Mscripts::functions -e 'set_maximum_concurrent_jobs("$conf/bacula-dir.conf",100)'
@@ -45,7 +50,7 @@ when=`perl -Mscripts::functions -e "get_time(300)"`
 start_test
       
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
-@$out /dev/null
+@output /dev/null
 messages
 @$out ${cwd}/tmp/log1.out
 messages
@@ -155,22 +160,29 @@ check_two_logs
 
 grep '^| *[0-9]' $tmp/log7.out > /dev/null
 if [ $? = 0 ]; then
-    print_debug "ERROR: Found errors in $tmp/log7.out"
-    print_debug `cat $tmp/log7.out`
+    print_debug "ERROR: Found errors in $tmp/log7.out. Jobs that 'Should fail' are OK (T) and/or Jobs that 'Should work' are in Error (A, a, f, ...)"
+    if [ "$debug" -eq 1 ]; then
+        cat $tmp/log7.out
+    fi
     estat=1
 fi
 
 grep '^| *[0-9]' $tmp/log8.out > /dev/null
 if [ $? = 0 ]; then
-    print_debug "ERROR: Found errors in $tmp/log8.out"
-    print_debug `cat $tmp/log8.out`
+    print_debug "ERROR: Found errors in $tmp/log8.out. Jobs that 'Should fail' are OK (T) and/or Jobs that 'Should work' are in Error (A, a, f, ...)"
+    if [ "$debug" -eq 1 ]; then
+        cat $tmp/log8.out
+    fi
     estat=1
 fi
 
 nb=`grep '^| *[0-9]' $tmp/log9.out | wc -l`
 if [ $nb -lt 10 ]; then
-    print_debug "ERROR: less than 10 lines of SQL output in $tmp/log9.out"
-    print_debug `cat $tmp/log9.out`
+    print_debug "ERROR: less than 10 lines of SQL output in $tmp/log9.out. Jobs that 'Should fail' are OK (T) and/or Jobs that 'Should work' are in Error (A, a, f, ...)"
+    if [ "$debug" -eq 1 ]; then
+        cat $tmp/log9.out
+    fi
+
     estat=1
 fi
 

@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2002-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *
@@ -123,7 +127,7 @@ bool user_select_files_from_tree(TREE_CTX *tree)
       if (ua->api) user->signal(BNET_CMD_BEGIN);
       parse_args_only(ua->cmd, &ua->args, &ua->argc, ua->argk, ua->argv, MAX_CMD_ARGS);
       if (ua->argc == 0) {
-         ua->warning_msg(_("Invalid command \"%s\". Enter \"done\" to exit.\n"), ua->cmd);
+         ua->warning_msg(_("Invalid command \"%s\".  Enter \"done\" to exit.\n"), ua->cmd);
          if (ua->api) user->signal(BNET_CMD_FAILED);
          continue;
       }
@@ -142,7 +146,7 @@ bool user_select_files_from_tree(TREE_CTX *tree)
             /* Some unknow dot command -- probably .messages, ignore it */
             continue;
          }
-         ua->warning_msg(_("Invalid command \"%s\". Enter \"done\" to exit.\n"), ua->cmd);
+         ua->warning_msg(_("Invalid command \"%s\".  Enter \"done\" to exit.\n"), ua->cmd);
          if (ua->api) user->signal(BNET_CMD_FAILED);
          continue;
       }

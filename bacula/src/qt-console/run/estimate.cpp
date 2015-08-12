@@ -1,26 +1,30 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2007-2009 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
-*/
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
 
+   Bacula(R) is a registered trademark of Kern Sibbald.
+*/
+ 
 /*
  *  Run Dialog class
  *
  *   Kern Sibbald, February MMVII
  *
  *  $Id$
- */
+ */ 
 
 #include "bat.h"
 #include "run.h"
@@ -61,7 +65,7 @@ void estimatePage::okButtonPushed()
    m_aButtonPushed = true;
    this->hide();
    QString cmd;
-   QTextStream(&cmd) << "estimate" <<
+   QTextStream(&cmd) << "estimate" << 
       " job=\"" << jobCombo->currentText() << "\"" <<
       " fileset=\"" << filesetCombo->currentText() << "\"" <<
       " level=\"" << levelCombo->currentText() << "\"" <<

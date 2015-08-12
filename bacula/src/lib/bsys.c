@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  * Miscellaneous Bacula memory and thread safe routines
@@ -55,6 +59,14 @@ POOLMEM *quote_string(POOLMEM *snew, const char *old)
       case '\\':
          *n++ = '\\';
          *n++ = '\\';
+         break;
+      case '\r':
+         *n++ = '\\';
+         *n++ = 'r';
+         break;
+      case '\n':
+         *n++ = '\\';
+         *n++ = 'n';
          break;
       default:
          *n++ = old[i];
@@ -515,21 +527,40 @@ void b_memset(const char *file, int line, void *mem, int val, size_t num)
 
 #if !defined(HAVE_WIN32)
 static int del_pid_file_ok = FALSE;
+static int pid_fd = -1;
 #endif
 
-/*
- * Create a standard "Unix" pid file.
+#ifdef HAVE_FCNTL_LOCK
+/* a convenient function [un]lock file using fnctl()
+ * code must be in F_UNLCK, F_RDLCK, F_WRLCK
+ * return -1 for error and errno is set
  */
-void create_pid_file(char *dir, const char *progname, int port)
+int fcntl_lock(int fd, int code)
 {
+   struct flock l;
+   l.l_type = code;
+   l.l_whence = l.l_start = l.l_len = 0;
+   l.l_len = 1;
+   return fcntl(fd, F_SETLK, &l);
+}
+#endif
+
+/* Create a disk pid "lock" file
+ *  returns
+ *    0: Error with the error message in errmsg
+ *    1: Succcess
+ *    2: Successs, but a previous file was found
+ */
+#if !defined(HAVE_FCNTL_LOCK) || defined(HAVE_WIN32)
+int create_lock_file(char *fname, const char *progname, const char *filetype, POOLMEM **errmsg)
+{
+   int ret = 1;
 #if !defined(HAVE_WIN32)
    int pidfd, len;
    int oldpid;
    char  pidbuf[20];
-   POOLMEM *fname = get_pool_memory(PM_FNAME);
    struct stat statp;
 
-   Mmsg(&fname, "%s/%s.%d.pid", dir, progname, port);
    if (stat(fname, &statp) == 0) {
       /* File exists, see what we have */
       *pidbuf = 0;
@@ -537,8 +568,10 @@ void create_pid_file(char *dir, const char *progname, int port)
            read(pidfd, &pidbuf, sizeof(pidbuf)) < 0 ||
            sscanf(pidbuf, "%d", &oldpid) != 1) {
          berrno be;
-         Emsg2(M_ERROR_TERM, 0, _("Cannot open pid file. %s ERR=%s\n"), fname,
-               be.bstrerror());
+         Mmsg(errmsg, _("Cannot open %s file. %s ERR=%s\n"), filetype, fname,
+              be.bstrerror());
+         close(pidfd); /* if it was successfully opened */
+         return 0;
       }
       /* Some OSes (IRIX) don't bother to clean out the old pid files after a crash, and
        * since they use a deterministic algorithm for assigning PIDs, we can have
@@ -552,27 +585,84 @@ void create_pid_file(char *dir, const char *progname, int port)
        * For more details see bug #797.
        */
        if ((oldpid != (int)getpid()) && (kill(oldpid, 0) != -1 || errno != ESRCH)) {
-         Emsg3(M_ERROR_TERM, 0, _("%s is already running. pid=%d\nCheck file %s\n"),
+          Mmsg(errmsg, _("%s is already running. pid=%d\nCheck file %s\n"),
                progname, oldpid, fname);
+          return 0;
       }
       /* He is not alive, so take over file ownership */
       unlink(fname);                  /* remove stale pid file */
+      ret = 2;
    }
    /* Create new pid file */
    if ((pidfd = open(fname, O_CREAT|O_TRUNC|O_WRONLY|O_BINARY, 0640)) >= 0) {
       len = sprintf(pidbuf, "%d\n", (int)getpid());
       write(pidfd, pidbuf, len);
       close(pidfd);
-      del_pid_file_ok = TRUE;         /* we created it so we can delete it */
+      /* ret is already 1 */
    } else {
       berrno be;
-      Emsg2(M_ERROR_TERM, 0, _("Could not open pid file. %s ERR=%s\n"), fname,
-            be.bstrerror());
+      Mmsg(errmsg, _("Could not open %s file. %s ERR=%s\n"), filetype, fname, be.bstrerror());
+      return 0;
    }
-   free_pool_memory(fname);
 #endif
+   return ret;
 }
+#else /* defined(HAVE_FCNTL_LOCK) */
+int create_lock_file(char *fname, const char *progname, const char *filetype, POOLMEM **errmsg)
+{
+   int len;
+   int oldpid;
+   char pidbuf[20];
 
+   /* Open the pidfile for writing */
+   if ((pid_fd = open(fname, O_CREAT|O_RDWR, 0640)) >= 0) {
+      if (fcntl_lock(pid_fd, F_WRLCK) == -1) {
+         berrno be;
+         /* already locked by someone else, try to read the pid */
+         if (read(pid_fd, &pidbuf, sizeof(pidbuf)) > 0 &&
+             sscanf(pidbuf, "%d", &oldpid) == 1) {
+            Mmsg(errmsg, _("%s is already running. pid=%d\nCheck file %s\n"),
+                 progname, oldpid, fname);
+         } else {
+            Mmsg(errmsg, _("Cannot lock %s file. %s ERR=%s\n"), filetype, fname, be.bstrerror());
+         }
+         close(pid_fd);
+         pid_fd=-1;
+         return 0;
+      }
+      /* write the pid */
+      len = sprintf(pidbuf, "%d\n", (int)getpid());
+      write(pid_fd, pidbuf, len);
+      /* KEEP THE FILE OPEN TO KEEP THE LOCK !!! */
+      return 1;
+   } else {
+      berrno be;
+      Mmsg(errmsg, _("Cannot not open %s file. %s ERR=%s\n"), filetype, fname, be.bstrerror());
+      return 0;
+   }
+}
+#endif
+
+/*
+ * Create a standard "Unix" pid file.
+ */
+void create_pid_file(char *dir, const char *progname, int port)
+{
+   POOLMEM *errmsg = get_pool_memory(PM_MESSAGE);
+   POOLMEM *fname = get_pool_memory(PM_FNAME);
+
+   Mmsg(fname, "%s/%s.%d.pid", dir, progname, port);
+   if (create_lock_file(fname, progname, "pid", &errmsg) == 0) {
+      Emsg1(M_ERROR_TERM, 0, "%s", errmsg);
+      /* never return */
+   }
+#if !defined(HAVE_WIN32)
+   del_pid_file_ok = TRUE;         /* we created it so we can delete it */
+#endif
+
+   free_pool_memory(fname);
+   free_pool_memory(errmsg);
+}
 
 /*
  * Delete the pid file if we created it
@@ -581,7 +671,9 @@ int delete_pid_file(char *dir, const char *progname, int port)
 {
 #if !defined(HAVE_WIN32)
    POOLMEM *fname = get_pool_memory(PM_FNAME);
-
+   if (pid_fd!=-1) {
+      close(pid_fd);
+   }
    if (!del_pid_file_ok) {
       free_pool_memory(fname);
       return 0;
@@ -913,3 +1005,102 @@ void stack_trace()
 #else /* HAVE_BACKTRACE && HAVE_GCC */
 void stack_trace() {}
 #endif /* HAVE_BACKTRACE && HAVE_GCC */
+
+#ifdef HAVE_SYS_STATVFS_H
+#include <sys/statvfs.h>
+#else
+#define statvfs statfs
+#endif
+/* statvfs.h defines ST_APPEND, which is also used by Bacula */
+#undef ST_APPEND
+
+
+int fs_get_free_space(const char *path, int64_t *freeval, int64_t *totalval)
+{
+#ifndef HAVE_WIN32
+   struct statvfs st;
+
+   if (statvfs(path, &st) == 0) {
+      *freeval = (uint64_t)st.f_bsize * (uint64_t)st.f_bavail;
+      *totalval = (uint64_t)st.f_blocks * (uint64_t)st.f_frsize;
+      return 0;
+   }
+#endif
+   *totalval = *freeval = 0;
+   return -1;
+}
+
+void setup_env(char *envp[])
+{
+   if (envp) {
+#if defined(HAVE_SETENV)
+      char *p;
+      POOLMEM *tmp = get_pool_memory(PM_FNAME);
+      for (int i=0; envp[i] ; i++) {
+         pm_strcpy(tmp, envp[i]);
+         p = strchr(tmp, '='); /* HOME=/tmp */
+         if (p) {
+            *p=0;                       /* HOME\0tmp\0 */
+            setenv(tmp, p+1, true);
+         }
+      }
+      free_pool_memory(tmp);
+#elif defined(HAVE_PUTENV)
+      for (int i=0; envp[i] ; i++) {
+         putenv(envp[i]);
+      }
+#else
+#error "putenv() and setenv() are not available on this system"
+#endif
+   }
+}
+
+/* Small function to copy a file somewhere else, 
+ * for debug purpose.
+ */
+int copyfile(const char *src, const char *dst)
+{
+   int     fd_src=-1, fd_dst=-1;
+   ssize_t len, lenw;
+   char    buf[4096];
+   berrno  be;
+   fd_src = open(src, O_RDONLY);
+   if (fd_src < 0) {
+      Dmsg2(0, "Unable to open %s ERR=%s\n", src, be.bstrerror(errno));
+      goto bail_out;
+   }
+   fd_dst = open(dst, O_WRONLY | O_CREAT | O_EXCL, 0600);
+   if (fd_dst < 0) {
+      Dmsg2(0, "Unable to open %s ERR=%s\n", dst, be.bstrerror(errno));
+      goto bail_out;
+   }
+
+   while ((len = read(fd_src, buf, sizeof(buf))) > 0)
+    {
+        char *out_ptr = buf;
+        do {
+            lenw = write(fd_dst, out_ptr, len);
+            if (lenw >= 0) {
+                len -= lenw;
+                out_ptr += lenw;
+            } else if (errno != EINTR) {
+               Dmsg3(0, "Unable to write %d bytes in %s. ERR=%s\n", len, dst, be.bstrerror(errno));
+               goto bail_out;
+            }
+        } while (len > 0);
+    }
+
+    if (len == 0) {
+       close(fd_src);
+       if (close(fd_dst) < 0) {
+          Dmsg2(0, "Unable to close %s properly. ERR=%s\n", dst, be.bstrerror(errno));
+          return -1;
+       }
+       /* Success! */
+       return 0;
+    }
+bail_out:
+    close(fd_src);
+    close(fd_dst);
+    return -1;
+}

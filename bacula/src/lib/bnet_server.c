@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
  /*
   * Originally written by Kern Sibbald for inclusion in apcupsd,
@@ -51,17 +55,15 @@ void bnet_stop_thread_server(pthread_t tid)
    }
 }
 
-/*
- * Become Threaded Network Server
- *
- * This function is able to handle multiple server ips in
- * ipv4 and ipv6 style. The Addresses are given in a comma
- * seperated string in bind_addr
- *
- * At the moment it is inpossible to bind different ports.
- */
-void bnet_thread_server(dlist *addr_list, int max_clients, workq_t *client_wq,
-                        void *handle_client_request(void *bsock))
+ /*
+     Become Threaded Network Server
+     This function is able to handle multiple server ips in
+     ipv4 and ipv6 style. The Addresse are give in a comma
+     seperated string in bind_addr
+     In the moment it is inpossible to bind different ports.
+  */
+void bnet_thread_server(dlist *addrs, int max_clients, 
+        workq_t *client_wq, void *handle_client_request(void *bsock))
 {
    int newsockfd, stat;
    socklen_t clilen;
@@ -71,7 +73,7 @@ void bnet_thread_server(dlist *addr_list, int max_clients, workq_t *client_wq,
 #ifdef HAVE_LIBWRAP
    struct request_info request;
 #endif
-   IPADDR *ipaddr;
+   IPADDR *addr;
    struct s_sockfd {
       dlink link;                     /* this MUST be the first item */
       int fd;
@@ -81,29 +83,26 @@ void bnet_thread_server(dlist *addr_list, int max_clients, workq_t *client_wq,
    dlist sockfds;
 
    char allbuf[256 * 10];
-
-   remove_duplicate_addresses(addr_list);
-
-   Dmsg1(20, "Addresses %s\n", build_addresses_str(addr_list, allbuf, sizeof(allbuf)));
-
+   remove_duplicate_addresses(addrs);
+   Dmsg1(20, "Addresses %s\n", build_addresses_str(addrs, allbuf, sizeof(allbuf)));
    /*
     * Listen on each address provided.
     */
-   foreach_dlist(ipaddr, addr_list) {
+   foreach_dlist(addr, addrs) {
       /* Allocate on stack from -- no need to free */
       fd_ptr = (s_sockfd *)alloca(sizeof(s_sockfd));
-      fd_ptr->port = ipaddr->get_port_net_order();
+      fd_ptr->port = addr->get_port_net_order();
       /*
        * Open a TCP socket
        */
-      for (tlog= 60; (fd_ptr->fd=socket(ipaddr->get_family(), SOCK_STREAM, 0)) < 0; tlog -= 10) {
+      for (tlog= 60; (fd_ptr->fd=socket(addr->get_family(), SOCK_STREAM, 0)) < 0; tlog -= 10) {
          if (tlog <= 0) {
             berrno be;
             char curbuf[256];
             Emsg3(M_ABORT, 0, _("Cannot open stream socket. ERR=%s. Current %s All %s\n"),
                        be.bstrerror(),
-                       ipaddr->build_address_str(curbuf, sizeof(curbuf)),
-                       build_addresses_str(addr_list, allbuf, sizeof(allbuf)));
+                       addr->build_address_str(curbuf, sizeof(curbuf)),
+                       build_addresses_str(addrs, allbuf, sizeof(allbuf)));
          }
          bmicrosleep(10, 0);
       }
@@ -118,7 +117,7 @@ void bnet_thread_server(dlist *addr_list, int max_clients, workq_t *client_wq,
       }
 
       int tmax = 1 * (60 / 5);    /* wait 1 minute max */
-      for (tlog = 0; bind(fd_ptr->fd, ipaddr->get_sockaddr(), ipaddr->get_sockaddr_len()) == SOCKET_ERROR; tlog -= 5) {
+      for (tlog = 0; bind(fd_ptr->fd, addr->get_sockaddr(), addr->get_sockaddr_len()) == SOCKET_ERROR; tlog -= 5) {
          berrno be;
          if (tlog <= 0) {
             tlog = 1 * 60;         /* Complain every 1 minute */

@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *
@@ -19,8 +23,6 @@
  *     I.e. messages, listing database, showing resources, ...
  *
  *     Kern Sibbald, September MM
- *
- *   Version $Id$
  */
 
 #include "bacula.h"
@@ -148,18 +150,20 @@ int show_cmd(UAContext *ua, const char *cmd)
 
    LockRes();
    for (i=1; i<ua->argc; i++) {
-      if (strcasecmp(ua->argk[i], _("disabled")) == 0) {
+      if (strcasecmp(ua->argk[i], NT_("disabled")) == 0) {
          show_disabled_jobs(ua);
          goto bail_out;
       }
+
       type = 0;
+
       res_name = ua->argk[i];
       if (!ua->argv[i]) {             /* was a name given? */
          /* No name, dump all resources of specified type */
          recurse = 1;
          len = strlen(res_name);
          for (j=0; reses[j].res_name; j++) {
-            if (strncasecmp(res_name, _(reses[j].res_name), len) == 0) {
+            if (strncasecmp(res_name, reses[j].res_name, len) == 0) {
                type = reses[j].type;
                if (type > 0) {
                   res = res_head[type-r_first];
@@ -175,7 +179,7 @@ int show_cmd(UAContext *ua, const char *cmd)
          recurse = 0;
          len = strlen(res_name);
          for (j=0; reses[j].res_name; j++) {
-            if (strncasecmp(res_name, _(reses[j].res_name), len) == 0) {
+            if (strncasecmp(res_name, reses[j].res_name, len) == 0) {
                type = reses[j].type;
                res = (RES *)GetResWithName(type, ua->argv[i]);
                if (!res) {
@@ -187,7 +191,8 @@ int show_cmd(UAContext *ua, const char *cmd)
       }
 
       switch (type) {
-      case -1:                           /* all */
+      /* All resources */
+      case -1:
          for (j=r_first; j<=r_last; j++) {
             /* Skip R_DEVICE since it is really not used or updated */
             if (j != R_DEVICE) {
@@ -195,18 +200,22 @@ int show_cmd(UAContext *ua, const char *cmd)
             }
          }
          break;
+      /* Help */
       case -2:
          ua->send_msg(_("Keywords for the show command are:\n"));
          for (j=0; reses[j].res_name; j++) {
-            ua->error_msg("%s\n", _(reses[j].res_name));
+            ua->error_msg("%s\n", reses[j].res_name);
          }
          goto bail_out;
+      /* Resource not found */
       case -3:
          ua->error_msg(_("%s resource %s not found.\n"), res_name, ua->argv[i]);
          goto bail_out;
+      /* Resource not found */
       case 0:
          ua->error_msg(_("Resource %s not found\n"), res_name);
          goto bail_out;
+      /* Dump a specific type */
       default:
          dump_resource(recurse?type:-type, res, bsendmsg, ua);
          break;
@@ -217,8 +226,72 @@ bail_out:
    return 1;
 }
 
+/*
+ * Check if the access is permitted for a list of jobids
+ *
+ * Not in ua_acl.c because it's using db access, and tools such
+ * as bdirjson are not linked with cats.
+ */
+bool acl_access_jobid_ok(UAContext *ua, const char *jobids)
+{
+   char     *tmp=NULL, *p;
+   bool      ret=false;
+   JOB_DBR   jr;
+   uint32_t  jid;
 
+   if (!jobids) {
+      return false;
+   }
 
+   if (!is_a_number_list(jobids)) {
+      return false;
+   }
+
+   /* If no console resource => default console and all is permitted */
+   if (!ua || !ua->cons) {
+      Dmsg0(1400, "Root cons access OK.\n");
+      return true;     /* No cons resource -> root console OK for everything */
+   }
+
+   alist *list = ua->cons->ACL_lists[Job_ACL];
+   if (!list) {                       /* empty list */
+      return false;                   /* List empty, reject everything */
+   }
+
+   /* Special case *all* gives full access */
+   if (list->size() == 1 && strcasecmp("*all*", (char *)list->get(0)) == 0) {
+      return true;
+   }
+
+   /* If we can't open the database, just say no */
+   if (!open_new_client_db(ua)) {
+      return false;
+   }
+
+   p = tmp = bstrdup(jobids);
+
+   while (get_next_jobid_from_list(&p, &jid) > 0) {
+      memset(&jr, 0, sizeof(jr));
+      jr.JobId = jid;
+
+      if (db_get_job_record(ua->jcr, ua->db, &jr)) {
+         for (int i=0; i<list->size(); i++) {
+            if (strcasecmp(jr.Name, (char *)list->get(i)) == 0) {
+               Dmsg3(1400, "ACL found %s in %d %s\n", jr.Name,
+                     Job_ACL, (char *)list->get(i));
+               ret = true;
+               goto bail_out;
+            }
+         }
+      }
+   }
+
+bail_out:
+   if (tmp) {
+      free(tmp);
+   }
+   return ret;
+}
 
 /*
  *  List contents of database
@@ -266,7 +339,7 @@ static int do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
    POOL_DBR pr;
    MEDIA_DBR mr;
 
-   if (!open_client_db(ua))
+   if (!open_new_client_db(ua))
       return 1;
 
    memset(&jr, 0, sizeof(jr));
@@ -413,7 +486,6 @@ static int do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
       } else if (strcasecmp(ua->argk[i], NT_("clients")) == 0) {
          db_list_client_records(ua->jcr, ua->db, prtit, ua, llist);
 
-
       /* List MEDIA or VOLUMES */
       } else if (strcasecmp(ua->argk[i], NT_("media")) == 0 ||
                  strcasecmp(ua->argk[i], NT_("volume")) == 0 ||
@@ -442,7 +514,7 @@ static int do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
             int num_pools;
             uint32_t *ids;
             /* List a specific volume? */
-            if (ua->argv[i]) {
+            if (ua->argv[i] && *ua->argv[i]) {
                bstrncpy(mr.VolumeName, ua->argv[i], sizeof(mr.VolumeName));
                db_list_media_records(ua->jcr, ua->db, &mr, prtit, ua, llist);
                return 1;
@@ -509,6 +581,12 @@ static int do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
       } else if (strcasecmp(ua->argk[i], NT_("limit")) == 0
                  || strcasecmp(ua->argk[i], NT_("days")) == 0) {
          /* Ignore it */
+      } else if (strcasecmp(ua->argk[i], NT_("snapshot")) == 0 ||
+                 strcasecmp(ua->argk[i], NT_("snapshots")) == 0) 
+      {
+         snapshot_list(ua, i, prtit, llist);
+         return 1;
+
       } else {
          ua->error_msg(_("Unknown list keyword: %s\n"), NPRT(ua->argk[i]));
       }
@@ -573,10 +651,8 @@ static bool list_nextvol(UAContext *ua, int ndays)
    }
 
 get_out:
-   if (jcr->db) {
-      db_close_database(jcr, jcr->db);
-      jcr->db = NULL;
-   }
+   if (jcr->db) db_close_database(jcr, jcr->db);
+   jcr->db = NULL;
    free_jcr(jcr);
    if (!found) {
       ua->error_msg(_("Could not find next Volume for Job %s.\n"),
@@ -602,7 +678,8 @@ RUN *find_next_run(RUN *run, JOB *job, utime_t &runtime, int ndays)
    bool is_scheduled;
 
    sched = job->schedule;
-   if (sched == NULL) {            /* scheduled? */
+   if (!sched || !job->enabled || (sched && !sched->enabled) ||
+       (job->client && !job->client->enabled)) {
       return NULL;                 /* no nothing to report */
    }
 
@@ -705,11 +782,11 @@ bool complete_jcr_for_job(JCR *jcr, JOB *job, POOL *pool)
 
    Dmsg0(100, "complete_jcr open db\n");
    jcr->db = db_init_database(jcr, jcr->catalog->db_driver, jcr->catalog->db_name,
-                              jcr->catalog->db_user,
-                              jcr->catalog->db_password, jcr->catalog->db_address,
-                              jcr->catalog->db_port, jcr->catalog->db_socket,
-                              jcr->catalog->mult_db_connections,
-                              jcr->catalog->disable_batch_insert);
+                jcr->catalog->db_user,
+                jcr->catalog->db_password, jcr->catalog->db_address,
+                jcr->catalog->db_port, jcr->catalog->db_socket,
+                jcr->catalog->mult_db_connections,
+                jcr->catalog->disable_batch_insert);
    if (!jcr->db || !db_open_database(jcr, jcr->db)) {
       Jmsg(jcr, M_FATAL, 0, _("Could not open database \"%s\".\n"),
                  jcr->catalog->db_name);
@@ -800,7 +877,7 @@ void prtit(void *ctx, const char *msg)
 {
    UAContext *ua = (UAContext *)ctx;
 
-   ua->UA_sock->fsend("%s", msg);
+   if (ua) ua->send_msg("%s", msg);
 }
 
 /*

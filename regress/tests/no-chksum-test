@@ -1,5 +1,10 @@
 #!/bin/sh
 #
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+
+#
 # Run a simple backup of the Bacula build directory without
 # md5 signature then restore it.
 #
@@ -24,7 +29,7 @@ change_jobname BackupClient1 $JobName
 start_test
 
 cat <<END_OF_DATA >$tmp/bconcmds
-@$out /dev/null
+@output /dev/null
 messages
 @$out $tmp/log1.out
 label volume=TestVolume001 storage=File pool=File
@@ -57,7 +62,7 @@ run_bconsole
 rm -f $cwd/build/bigfile 
 
 cat <<END_OF_DATA >$tmp/bconcmds
-@$out /dev/null
+@output /dev/null
 messages
 @$out $tmp/log1.out
 @# don't restore the bigfile, and try to see if it reads the whole volume

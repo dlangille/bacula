@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2001-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *
@@ -19,6 +23,7 @@
  *
  *            Kern Sibbald, April MMI
  *              added BB02 format October MMII
+ *
  */
 
 
@@ -27,9 +32,8 @@
 
 /* Imported subroutines */
 
-
 static const int read_dbglvl = 200;
-static const int dbgep = 250;         /* debug execution path */
+static const int dbgep = 200;         /* debug execution path */
 
 /*
  * Read the header record
@@ -232,9 +236,10 @@ bool read_record_from_block(DCR *dcr,  DEV_RECORD *rec)
    for ( ;; ) {
       switch (rec->rstate) {
       case st_none:
-         dump_block(dcr->block, "st_none");
+         dump_block(dcr->ameta_block, "st_none");
       case st_header:
          Dmsg0(dbgep, "=== rpath 33 st_header\n");
+         dcr->set_ameta();
          rec->remlen = dcr->block->binbuf;
          /* Note read_header sets rec->rstate on return true */
          if (!read_header(dcr, dcr->block, rec)) {  /* sets state */

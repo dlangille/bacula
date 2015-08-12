@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *   Job control and execution for Storage Daemon
@@ -63,7 +67,8 @@ bool job_cmd(JCR *jcr)
    BSOCK *dir = jcr->dir_bsock;
    POOL_MEM job_name, client_name, job, fileset_name, fileset_md5;
    int32_t JobType, level, spool_attributes, no_attributes, spool_data;
-   int32_t write_part_after_job, PreferMountedVols, rerunning;
+   int32_t write_part_after_job, PreferMountedVols;
+   int32_t rerunning;
    int32_t is_client;
    int stat;
    JCR *ojcr;
@@ -87,7 +92,7 @@ bool job_cmd(JCR *jcr)
       jcr->setJobStatus(JS_ErrorTerminated);
       return false;
    }
-   jcr->rerunning = (rerunning) ? true : false;
+   jcr->rerunning = rerunning;
    jcr->sd_client = is_client;
    if (is_client) {
       jcr->sd_auth_key = bstrdup(sd_auth_key);
@@ -108,6 +113,11 @@ bool job_cmd(JCR *jcr)
    Dmsg2(800, "Start JobId=%d %p\n", JobId, jcr);
    set_jcr_in_tsd(jcr);
 
+   /*
+    * If job rescheduled because previous was incomplete,
+    * the Resched flag is set and VolSessionId and VolSessionTime
+    * are given to us (same as restarted job).
+    */
    if (!jcr->rerunning) {
       jcr->VolSessionId = newVolSessionId();
       jcr->VolSessionTime = VolSessionTime;
@@ -164,12 +174,6 @@ bool run_cmd(JCR *jcr)
    struct timezone tz;
    struct timespec timeout;
    int errstat = 0;
-   BSOCK *cl;
-   int fd_version = 0;
-   int sd_version = 0;
-   char job_name[500];
-   int i;
-   int stat;
 
    Dsm_check(200);
    Dmsg1(200, "Run_cmd: %s\n", jcr->dir_bsock->msg);
@@ -184,46 +188,14 @@ bool run_cmd(JCR *jcr)
 
    Dmsg2(050, "sd_calls_client=%d sd_client=%d\n", jcr->sd_calls_client, jcr->sd_client);
    if (jcr->sd_calls_client) {
-      /* We connected to Client, so finish work */
-      cl = jcr->file_bsock;
-      if (!cl) {
-         Jmsg0(jcr, M_FATAL, 0, _("Client socket not open. Could not connect to Client.\n"));
-         Dmsg0(050, "Client socket not open. Could not connect to Client.\n");
+      if (!read_client_hello(jcr)) {
          return false;
       }
-      /* Get response to Hello command sent earlier */
-      Dmsg0(050, "Read Hello command from Client\n");
-      for (i=0; i<60; i++) {
-         stat = cl->recv();
-         if (stat <= 0) {
-            bmicrosleep(1, 0);
-         } else {
-            break;
-         }
-      }
-      if (stat <= 0) {
-         berrno be;
-         Jmsg1(jcr, M_FATAL, 0, _("Recv request to Client failed. ERR=%s\n"),
-            be.bstrerror());
-         Dmsg1(050, _("Recv request to Client failed. ERR=%s\n"), be.bstrerror());
-         return false;
-      }
-      Dmsg1(050, "Got from FD: %s\n", cl->msg);
-      if (sscanf(cl->msg, "Hello Bacula SD: Start Job %127s %d %d", job_name, &fd_version, &sd_version) != 3) {
-         Jmsg1(jcr, M_FATAL, 0, _("Bad Hello from Client: %s.\n"), cl->msg);
-         Dmsg1(050, _("Bad Hello from Client: %s.\n"), cl->msg);
-         return false;
-      }
-      unbash_spaces(job_name);
-      jcr->FDVersion = fd_version;
-      jcr->SDVersion = sd_version;
-      Dmsg1(050, "FDVersion=%d\n", fd_version);
-
       /*
        * Authenticate the File daemon
        */
       Dmsg0(050, "=== Authenticate FD\n");
-      if (jcr->authenticated || !authenticate_filed(jcr)) {
+      if (jcr->authenticated || !authenticate_filed(jcr, jcr->file_bsock, jcr->FDVersion)) {
          Dmsg1(050, "Authentication failed Job %s\n", jcr->Job);
          Jmsg(jcr, M_FATAL, 0, _("Unable to authenticate File daemon\n"));
       } else {
@@ -267,63 +239,6 @@ bool run_cmd(JCR *jcr)
    }
    Dmsg2(800, "Done jid=%d %p\n", jcr->JobId, jcr);
    return false;
-}
-
-/*
- * After receiving a connection (in dircmd.c) if it is
- *   from the File daemon, this routine is called.
- */
-void handle_filed_connection(BSOCK *fd, char *job_name, int fd_version,
-        int sd_version)
-{
-   JCR *jcr;
-
-   if (!(jcr=get_jcr_by_full_name(job_name))) {
-      Jmsg1(NULL, M_FATAL, 0, _("FD connect failed: Job name not found: %s\n"), job_name);
-      Dmsg1(3, "**** Job \"%s\" not found.\n", job_name);
-      fd->destroy();
-      return;
-   }
-
-   Dmsg1(100, "Found Filed Job %s\n", job_name);
-
-   if (jcr->authenticated) {
-      Jmsg2(jcr, M_FATAL, 0, _("Hey!!!! JobId %u Job %s already authenticated.\n"),
-         (uint32_t)jcr->JobId, jcr->Job);
-      Dmsg2(050, "Hey!!!! JobId %u Job %s already authenticated.\n",
-         (uint32_t)jcr->JobId, jcr->Job);
-      fd->destroy();
-      free_jcr(jcr);
-      return;
-   }
-
-   jcr->file_bsock = fd;
-   jcr->file_bsock->set_jcr(jcr);
-   jcr->FDVersion = fd_version;
-   jcr->SDVersion = sd_version;
-   Dmsg2(050, "fd_version=%d sd_version=%d\n", fd_version, sd_version);
-
-   /*
-    * Authenticate the File daemon
-    */
-   if (jcr->authenticated || !authenticate_filed(jcr)) {
-      Dmsg1(50, "Authentication failed Job %s\n", jcr->Job);
-      Jmsg(jcr, M_FATAL, 0, _("Unable to authenticate File daemon\n"));
-   } else {
-      jcr->authenticated = true;
-      Dmsg2(050, "OK Authentication jid=%u Job %s\n", (uint32_t)jcr->JobId, jcr->Job);
-   }
-
-   if (!jcr->authenticated) {
-      jcr->setJobStatus(JS_ErrorTerminated);
-   }
-   Dmsg3(050, "=== Auth OK, unblock Job %s jid=%d sd_ver=%d\n", job_name, jcr->JobId, sd_version);
-   if (sd_version > 0) {
-      jcr->sd_client = true;
-   }
-   pthread_cond_signal(&jcr->job_start_wait); /* wake waiting job */
-   free_jcr(jcr);
-   return;
 }
 
 
@@ -407,6 +322,11 @@ bool query_cmd(JCR *jcr)
 void stored_free_jcr(JCR *jcr)
 {
    Dmsg2(800, "End Job JobId=%u %p\n", jcr->JobId, jcr);
+   if (jcr->jobmedia_queue) {
+      flush_jobmedia_queue(jcr);
+      delete jcr->jobmedia_queue;
+      jcr->jobmedia_queue = NULL;
+   }
    if (jcr->dir_bsock) {
       Dmsg2(800, "Send terminate jid=%d %p\n", jcr->JobId, jcr);
       jcr->dir_bsock->signal(BNET_EOD);

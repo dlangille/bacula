@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *   scan.c -- scanning routines for Bacula
@@ -20,17 +24,15 @@
  *
  */
 
+
 #include "bacula.h"
 #include "jcr.h"
 #include "findlib/find.h"
 
-/*
- * Strip leading space from command line arguments
- */
+/* Strip leading space from command line arguments */
 void strip_leading_space(char *str)
 {
    char *p = str;
-
    while (B_ISSPACE(*p)) {
       p++;
    }
@@ -39,49 +41,35 @@ void strip_leading_space(char *str)
    }
 }
 
-/*
- * Strip any trailing junk from the command
- */
+
+/* Strip any trailing junk from the command */
 void strip_trailing_junk(char *cmd)
 {
    char *p;
 
-   /*
-    * Strip trailing junk from command
-    */
-   p = cmd + strlen(cmd) - 1;
-   while ((p >= cmd) && (*p == '\n' || *p == '\r' || *p == ' ')) {
+   /* strip trailing junk from command */
+   p = cmd - 1 + strlen(cmd);
+   while ((p >= cmd) && (B_ISSPACE(*p) || *p == '\n' || *p == '\r')) {
       *p-- = 0;
-   }
+   } 
 }
 
-/*
- * Strip any trailing newline characters from the string
- */
+/* Strip any trailing newline characters from the string */
 void strip_trailing_newline(char *cmd)
 {
    char *p;
-
-   p = cmd + strlen(cmd) - 1;
-   while ((p >= cmd) && (*p == '\n' || *p == '\r')) {
-      *p-- = 0;
-   }
+   p = cmd - 1 + strlen(cmd);
+   while ((p >= cmd) && (*p == '\n' || *p == '\r')) *p-- = 0;
 }
 
-/*
- * Strip any trailing slashes from a directory path
- */
+/* Strip any trailing slashes from a directory path */
 void strip_trailing_slashes(char *dir)
 {
    char *p;
 
-   /*
-    * Strip trailing slashes
-    */
-   p = dir + strlen(dir) - 1;
-   while (p >= dir && IsPathSeparator(*p)) {
-      *p-- = 0;
-   }
+   /* strip trailing slashes */
+   p = dir -1 + strlen(dir);
+   while (p >= dir && IsPathSeparator(*p)) *p-- = 0;
 }
 
 /*
@@ -123,10 +111,9 @@ bool skip_nonspaces(char **msg)
    return *p ? true : false;
 }
 
-/*
- * Folded search for string - case insensitive
- */
-int fstrsch(const char *a, const char *b)   /* folded case search */
+/* folded search for string - case insensitive */
+int
+fstrsch(const char *a, const char *b)   /* folded case search */
 {
    const char *s1,*s2;
    char c1, c2;
@@ -152,6 +139,7 @@ int fstrsch(const char *a, const char *b)   /* folded case search */
    }
    return 1;
 }
+
 
 /*
  * Return next argument from command line.  Note, this
@@ -280,9 +268,7 @@ int parse_args_only(POOLMEM *cmd, POOLMEM **args, int *argc,
    strip_trailing_junk(*args);
    p = *args;
    *argc = 0;
-   /*
-    * Pick up all arguments
-    */
+   /* Pick up all arguments */
    while (*argc < max_args) {
       n = next_arg(&p);
       if (*n) {
@@ -295,13 +281,14 @@ int parse_args_only(POOLMEM *cmd, POOLMEM **args, int *argc,
    return 1;
 }
 
+
 /*
  * Given a full filename, split it into its path
  *  and filename parts. They are returned in pool memory
  *  in the arguments provided.
  */
 void split_path_and_filename(const char *fname, POOLMEM **path, int *pnl,
-                             POOLMEM **file, int *fnl)
+        POOLMEM **file, int *fnl)
 {
    const char *f;
    int slen;

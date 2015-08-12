@@ -1,22 +1,26 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  * Block definitions for Bacula media data format.
  *
- *    Written by Kern Sibbald, MM
+ *    Kern Sibbald, MM
  *
  */
 
@@ -92,12 +96,14 @@ class DEVICE;                         /* for forward reference */
  */
 struct DEV_BLOCK {
    DEV_BLOCK *next;                   /* pointer to next one */
-   DEVICE *dev;                       /* pointer to device */
+   DEVICE    *dev;                    /* pointer to device */
    /* binbuf is the number of bytes remaining in the buffer.
     *   For writes, it is bytes not yet written.
     *   For reads, it is remaining bytes not yet read.
     */
    uint64_t BlockAddr;                /* Block address */
+   uint32_t File;                     /* Block address on volume */
+   uint32_t Block;                    /* Block address on volume */
    uint32_t binbuf;                   /* bytes in buffer */
    uint32_t block_len;                /* length of current block read */
    uint32_t buf_len;                  /* max/default block length */
@@ -108,10 +114,12 @@ struct DEV_BLOCK {
    uint32_t VolSessionTime;           /* */
    uint32_t read_errors;              /* block errors (checksum, header, ...) */
    uint32_t CheckSum;                 /* Block checksum */
+   uint32_t RecNum;                   /* Number of records read from the current block */
    int      BlockVer;                 /* block version 1 or 2 */
    bool     write_failed;             /* set if write failed */
    bool     block_read;               /* set when block read */
    bool     needs_write;              /* block must be written */
+   bool     adata;                    /* adata block */
    bool     no_header;                /* Set if no block header */
    bool     new_fi;                   /* New FI arrived */
    int32_t  FirstIndex;               /* first index this block */

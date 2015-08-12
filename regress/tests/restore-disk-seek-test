@@ -1,5 +1,10 @@
 #!/bin/sh
 #
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+
+#
 # Run a backup of the full bacula build directory, but with the
 #   Maximum File Size set. Then do a restore of a few files to kick in
 #   disk seeking (not yet enabled), and ensure that the restored files
@@ -49,7 +54,7 @@ change_jobname CompressedTest $JobName
 start_test
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
-@$out /dev/null
+@output /dev/null
 messages
 @$out ${cwd}/tmp/log1.out
 label storage=File volume=TestVolume001

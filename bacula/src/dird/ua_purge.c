@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2002-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *
@@ -384,11 +388,11 @@ void purge_files_from_job_list(UAContext *ua, del_ctx &del)
 void upgrade_copies(UAContext *ua, char *jobs)
 {
    POOL_MEM query(PM_MESSAGE);
+   int dbtype = ua->db->bdb_get_type_index();
 
    db_lock(ua->db);
-
-   /* Do it in two times for mysql */
-   Mmsg(query, uap_upgrade_copies_oldest_job[db_get_type_index(ua->db)], JT_JOB_COPY, jobs, jobs);
+   
+   Mmsg(query, uap_upgrade_copies_oldest_job[dbtype], JT_JOB_COPY, jobs, jobs);
    db_sql_query(ua->db, query.c_str(), NULL, (void *)NULL);
    Dmsg1(050, "Upgrade copies Log sql=%s\n", query.c_str());
 
@@ -425,6 +429,12 @@ void purge_jobs_from_catalog(UAContext *ua, char *jobs)
    Mmsg(query, "DELETE FROM RestoreObject WHERE JobId IN (%s)", jobs);
    db_sql_query(ua->db, query.c_str(), NULL, (void *)NULL);
    Dmsg1(050, "Delete RestoreObject sql=%s\n", query.c_str());
+
+   /* The JobId of the Snapshot record is no longer usable 
+    * TODO: Migth want to use a copy for the jobid? 
+    */
+   Mmsg(query, "UPDATE Snapshot SET JobId=0 WHERE JobId IN (%s)", jobs);
+   db_sql_query(ua->db, query.c_str(), NULL, (void *)NULL);
 
    upgrade_copies(ua, jobs);
 
@@ -554,9 +564,10 @@ static void do_truncate_on_purge(UAContext *ua, MEDIA_DBR *mr,
                                  char *pool, char *storage,
                                  int drive, BSOCK *sd)
 {
-   int dvd;
-   bool ok=false;
+   bool ok = false;
    uint64_t VolBytes = 0;
+   uint64_t VolABytes = 0;
+   uint32_t VolType = 0;
 
    /* TODO: Return if not mr->Recyle ? */
    if (!mr->Recycle) {
@@ -593,13 +604,16 @@ static void do_truncate_on_purge(UAContext *ua, MEDIA_DBR *mr,
    /* Send relabel command, and check for valid response */
    while (sd->recv() >= 0) {
       ua->send_msg("%s", sd->msg);
-      if (sscanf(sd->msg, "3000 OK label. VolBytes=%llu DVD=%d ", &VolBytes, &dvd) == 2) {
+      if (sscanf(sd->msg, "3000 OK label. VolBytes=%llu VolABytes=%lld VolType=%d ",
+         &VolBytes, &VolABytes, &VolType) == 3) {
          ok = true;
       }
    }
 
    if (ok) {
       mr->VolBytes = VolBytes;
+      mr->VolABytes = VolABytes;
+      mr->VolType = VolType;
       mr->VolFiles = 0;
       set_storageid_in_mr(NULL, mr);
       if (!db_update_media_record(ua->jcr, ua->db, mr)) {
@@ -700,7 +714,7 @@ int truncate_cmd(UAContext *ua, const char *cmd)
    }
 
    if (!nb) {
-      ua->send_msg(_("No Volumes found to perform %s action.\n"), action);
+      ua->send_msg(_("No Volumes found to perform \"truncate\" command.\n"));
       goto bail_out;
    }
 
@@ -764,8 +778,7 @@ bool mark_media_purged(UAContext *ua, MEDIA_DBR *mr)
          newpr.PoolId = mr->RecyclePoolId;
          oldpr.PoolId = mr->PoolId;
          if (   db_get_pool_numvols(jcr, ua->db, &oldpr)
-             && db_get_pool_numvols(jcr, ua->db, &newpr))
-         {
+             && db_get_pool_numvols(jcr, ua->db, &newpr)) {
             /* check if destination pool size is ok */
             if (newpr.MaxVols > 0 && newpr.NumVols >= newpr.MaxVols) {
                ua->error_msg(_("Unable move recycled Volume in full "

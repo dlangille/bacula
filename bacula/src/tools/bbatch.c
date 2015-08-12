@@ -1,33 +1,38 @@
 /*
- *  Program to test batch mode
- *
- *   Eric Bollengier, March 2007
- *
- */
-/*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2001-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
+/*
+ *
+ *  Program to test batch mode
+ *
+ *   Eric Bollengier, March 2007
+ *
+ */
 
 /*
   to create datafile
-
+ 
   for i in $(seq 10000 99999) ; do
      j=$((($i % 1000) + 555))
      echo "$i;/tmp/totabofds$j/fiddddle${j}$i;xxxLSTATxxxx;xxxxxxxMD5xxxxxx"
   done  > dat1
-
+ 
   or
 
   j=0
@@ -41,14 +46,13 @@
 #include "stored/stored.h"
 #include "findlib/find.h"
 #include "cats/cats.h"
-#include "cats/sql_glue.h"
-
+ 
 /* Forward referenced functions */
 static void *do_batch(void *);
 
 
 /* Local variables */
-static B_DB *db;
+static BDB *db;
 
 static const char *db_name = "bacula";
 static const char *db_user = "bacula";
@@ -61,7 +65,7 @@ static void usage()
 {
    fprintf(stderr, _(
 PROG_COPYRIGHT
-"\nVersion: %s (%s)\n"
+"\n%sVersion: %s (%s)\n"
 "Example : bbatch -w /path/to/workdir -h localhost -f dat1 -f dat -f datx\n"
 " will start 3 thread and load dat1, dat and datx in your catalog\n"
 "See bbatch.c to generate datafile\n\n"
@@ -78,7 +82,7 @@ PROG_COPYRIGHT
 "       -r <jobids>       call restore code with given jobids\n"
 "       -v                verbose\n"
 "       -f <file>         specify data file\n"
-"       -?                print this message\n\n"), 2001, VERSION, BDATE);
+"       -?                print this message\n\n"), 2001, "", VERSION, BDATE);
    exit(1);
 }
 
@@ -102,7 +106,7 @@ int main (int argc, char *argv[])
    textdomain("bacula");
    init_stack_dump();
    lmgr_init_thread();
-
+   
    char **files = (char **) malloc (10 * sizeof(char *));
    int i;
    my_name_is(argc, argv, "bbatch");
@@ -180,7 +184,7 @@ int main (int argc, char *argv[])
       uint64_t nb_file=0;
       btime_t start, end;
       /* To use the -r option, the catalog should already contains records */
-
+      
       if ((db = db_init_database(NULL, NULL, db_name, db_user, db_password,
                                  db_host, 0, NULL, false, disable_batch)) == NULL) {
          Emsg0(M_ERROR_TERM, 0, _("Could not init Bacula database\n"));
@@ -193,9 +197,9 @@ int main (int argc, char *argv[])
       db_get_file_list(NULL, db, restore_list, false, false, list_handler, &nb_file);
       end = get_current_btime();
 
-      Pmsg3(0, _("Computing file list for jobid=%s files=%lld secs=%d\n"),
+      Pmsg3(0, _("Computing file list for jobid=%s files=%lld secs=%d\n"), 
             restore_list, nb_file, (uint32_t)btime_to_unix(end-start));
-
+      
       free(restore_list);
       return 0;
    }
@@ -229,7 +233,7 @@ int main (int argc, char *argv[])
       pm_strcpy(bjcr->fileset_name, "Dummy.fileset.name");
       bjcr->fileset_md5 = get_pool_memory(PM_FNAME);
       pm_strcpy(bjcr->fileset_md5, "Dummy.fileset.md5");
-
+      
       if ((db = db_init_database(NULL, NULL, db_name, db_user, db_password,
                                  db_host, 0, NULL, false, false)) == NULL) {
          Emsg0(M_ERROR_TERM, 0, _("Could not init Bacula database\n"));
@@ -241,7 +245,7 @@ int main (int argc, char *argv[])
       if (verbose) {
          Pmsg2(000, _("Using Database: %s, User: %s\n"), db_name, db_user);
       }
-
+      
       bjcr->db = db;
 
       pthread_create(&thid, NULL, do_batch, bjcr);
@@ -313,12 +317,12 @@ static void *do_batch(void *jcr)
    fclose(fd);
    db_write_batch_file_records(bjcr);
    btime_t end = get_current_btime();
-
+   
    P(mutex);
    char ed1[200], ed2[200];
    printf("\rbegin = %s, end = %s\n", edit_int64(begin, ed1),edit_int64(end, ed2));
    printf("Insert time = %sms\n", edit_int64((end - begin) / 10000, ed1));
-   printf("Create %u files at %.2f/s\n", lineno,
+   printf("Create %u files at %.2f/s\n", lineno, 
           (lineno / ((float)((end - begin) / 1000000))));
    nb--;
    V(mutex);

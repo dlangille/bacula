@@ -1,24 +1,28 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2007-2011 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *  DirComm, Director communications,class
  *
  *   Kern Sibbald, January MMVII
  *
- */
+ */ 
 
 #include "bat.h"
 #include "console.h"
@@ -63,7 +67,7 @@ void DirComm::terminate()
 }
 
 /*
- * Connect to Director.
+ * Connect to Director. 
  */
 bool DirComm::connect_dir()
 {
@@ -100,7 +104,7 @@ bool DirComm::connect_dir()
 
    /* Give GUI a chance */
    app->processEvents();
-
+   
    LockRes();
    /* If cons==NULL, default console will be used */
    for (i=0; i<numcon; i++) {
@@ -135,12 +139,12 @@ bool DirComm::connect_dir()
    /* Initialize Console TLS context once */
    if (cons && !cons->tls_ctx && (cons->tls_enable || cons->tls_require)) {
       /* Generate passphrase prompt */
-      bsnprintf(buf, sizeof(buf), "Passphrase for Console \"%s\" TLS private key: ",
+      bsnprintf(buf, sizeof(buf), "Passphrase for Console \"%s\" TLS private key: ", 
                 cons->name());
 
       /* Initialize TLS context:
        * Args: CA certfile, CA certdir, Certfile, Keyfile,
-       * Keyfile PEM Callback, Keyfile CB Userdata, DHfile, Verify Peer
+       * Keyfile PEM Callback, Keyfile CB Userdata, DHfile, Verify Peer   
        */
       cons->tls_ctx = new_tls_context(cons->tls_ca_certfile,
          cons->tls_ca_certdir, cons->tls_certfile,
@@ -159,7 +163,7 @@ bool DirComm::connect_dir()
    /* Initialize Director TLS context once */
    if (!m_console->m_dir->tls_ctx && (m_console->m_dir->tls_enable || m_console->m_dir->tls_require)) {
       /* Generate passphrase prompt */
-      bsnprintf(buf, sizeof(buf), "Passphrase for Director \"%s\" TLS private key: ",
+      bsnprintf(buf, sizeof(buf), "Passphrase for Director \"%s\" TLS private key: ", 
                 m_console->m_dir->name());
 
       /* Initialize TLS context:
@@ -186,7 +190,7 @@ bool DirComm::connect_dir()
       heart_beat = cons->heartbeat_interval;
    } else {
       heart_beat = 0;
-   }
+   }        
 
    if (!m_sock) {
       m_sock = new_bsock();
@@ -232,7 +236,7 @@ bool DirComm::connect_dir()
 
    mainWin->set_status(_("Initializing ..."));
 
-   /*
+   /* 
     * Set up input notifier
     */
    m_notifier = new QSocketNotifier(m_sock->m_fd, QSocketNotifier::Read, 0);
@@ -261,8 +265,8 @@ bail_out:
    return false;
 }
 
-/*
- * This should be moved into a bSocket class
+/* 
+ * This should be moved into a bSocket class 
  */
 char *DirComm::msg()
 {
@@ -315,7 +319,7 @@ int DirComm::sock_read()
    return stat;
 }
 
-/*
+/* 
  * Blocking read from director
  */
 int DirComm::read()
@@ -331,7 +335,7 @@ int DirComm::read()
          stat = m_sock->wait_data_intr(0, 50000);
          if (stat > 0) {
             break;
-         }
+         } 
          app->processEvents();
          if (m_api_set && m_console->is_messagesPending() && is_notify_enabled() && m_console->hasFocus()) {
             if (mainWin->m_commDebug) Pmsg1(000, "conn %i process_events\n", m_conn);
@@ -394,7 +398,7 @@ int DirComm::read()
          mainWin->set_status(_("At prompt waiting for input ..."));
          break;
       case BNET_TEXT_INPUT:
-         if (mainWin->m_commDebug) Pmsg4(000, "conn %i TEXT_INPUT at_prompt=%d  m_in_select=%d notify=%d\n",
+         if (mainWin->m_commDebug) Pmsg4(000, "conn %i TEXT_INPUT at_prompt=%d  m_in_select=%d notify=%d\n", 
                m_conn, m_at_prompt, m_in_select, is_notify_enabled());
          if (!m_in_select && is_notify_enabled()) {
             new textInputDialog(m_console, m_conn);
@@ -485,7 +489,7 @@ int DirComm::read()
          stat = BNET_HARDEOF;
       }
       break;
-   }
+   } 
    return stat;
 }
 
@@ -509,7 +513,7 @@ void DirComm::notify_read_dir(int /* fd */)
 
 /*
  * When the notifier is enabled, read_dir() will automatically be
- * called by the Qt event loop when ever there is any output
+ * called by the Qt event loop when ever there is any output 
  * from the Director, and read_dir() will then display it on
  * the console.
  *
@@ -517,13 +521,13 @@ void DirComm::notify_read_dir(int /* fd */)
  * from the Directory, so we set notify to off.
  *    m_console->notify(false);
  */
-bool DirComm::notify(bool enable)
-{
+bool DirComm::notify(bool enable) 
+{ 
    bool prev_enabled = false;
    /* Set global flag */
    mainWin->m_notify = enable;
    if (m_notifier) {
-      prev_enabled = m_notifier->isEnabled();
+      prev_enabled = m_notifier->isEnabled();   
       m_notifier->setEnabled(enable);
       m_notify = enable;
       if (mainWin->m_connDebug) Pmsg3(000, "conn=%i set_notify=%d prev=%d\n", m_conn, enable, prev_enabled);
@@ -540,7 +544,7 @@ bool DirComm::is_notify_enabled() const
 
 /*
  * Call-back for reading a passphrase for an encrypted PEM file
- * This function uses getpass(),
+ * This function uses getpass(), 
  *  which uses a static buffer and is NOT thread-safe.
  */
 static int tls_pem_callback(char *buf, int size, const void *userdata)

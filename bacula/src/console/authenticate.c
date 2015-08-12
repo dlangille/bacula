@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2001-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *
@@ -28,13 +32,12 @@
 
 #include "bacula.h"
 #include "console_conf.h"
-#include "jcr.h"
 
 /*
  * Version at end of Hello
  *   prior to 06Aug13 no version
  */
-#define UA_VERSION 1
+#define UA_VERSION 100
 
 void senditf(const char *fmt, ...);
 void sendit(const char *buf);
@@ -51,9 +54,8 @@ static char newOKhello[]   = "1000 OK: %d";
 /*
  * Authenticate Director
  */
-int authenticate_director(JCR *jcr, DIRRES *director, CONRES *cons)
+int authenticate_director(BSOCK *dir, DIRRES *director, CONRES *cons)
 {
-   BSOCK *dir = jcr->dir_bsock;
    int tls_local_need = BNET_TLS_NONE;
    int tls_remote_need = BNET_TLS_NONE;
    bool tls_authenticate;
@@ -166,6 +168,6 @@ bail_out:
    sendit( _("Director authorization problem.\n"
              "Most likely the passwords do not agree.\n"
              "If you are using TLS, there may have been a certificate validation error during the TLS handshake.\n"
-             "Please see " MANUAL_AUTH_URL " for help.\n"));
+             "For help, please see " MANUAL_AUTH_URL "\n"));
    return 0;
 }

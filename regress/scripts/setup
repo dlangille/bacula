@@ -1,11 +1,10 @@
 #!/bin/sh
 #
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
 # Script to setup running Bacula regression tests
 #
-# Author: Kern Sibbald, 2003
-# License: LGPLv3
-#
-
 check_exit_code()
 {
    if [ $? != 0 ] ; then
@@ -31,6 +30,7 @@ rm -rf build bin
 # Copy new source
 echo "Copying source from ${BACULA_SOURCE}"
 cp -rp ${BACULA_SOURCE} build
+check_exit_code
 which git >/dev/null 2>/dev/null
 if [ $? = 0 ] ; then
   git show HEAD | grep -m 1 commit | awk '{print $2}' > build/git-version
@@ -78,7 +78,7 @@ make installall
 check_exit_code
 
 cd ${cwd}
-bin/bacula stop
+bin/bacula stop -KILL
 
 mkdir -p working
 cd bin
@@ -95,3 +95,4 @@ bin/bacula stop
 # Save Bacula default conf files for later use
 #
 cp -f bin/*.conf scripts
+check_exit_code

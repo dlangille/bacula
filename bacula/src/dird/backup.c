@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *
@@ -39,7 +43,6 @@ static char storaddr[]  = "storage address=%s port=%d ssl=%d\n";
 /* Responses received from File daemon */
 static char OKbackup[]   = "2000 OK backup\n";
 static char OKstore[]    = "2000 OK storage\n";
-/* Pre 17 Aug 2013 */
 static char EndJob[]     = "2800 End Job TermCode=%d JobFiles=%u "
                            "ReadBytes=%llu JobBytes=%llu Errors=%u "
                            "VSS=%d Encrypt=%d\n";
@@ -240,6 +243,7 @@ bool send_accurate_current_files(JCR *jcr)
    db_list_ctx nb;
    char ed1[50];
 
+   /* In base level, no previous job is used and no restart incomplete jobs */
    if (jcr->is_canceled() || jcr->is_JobLevel(L_BASE)) {
       return true;
    }
@@ -257,7 +261,7 @@ bool send_accurate_current_files(JCR *jcr)
       }
    } else {
       /* For Incr/Diff level, we search for older jobs */
-      db_accurate_get_jobids(jcr, jcr->db, &jcr->jr, &jobids);
+      db_get_accurate_jobids(jcr, jcr->db, &jcr->jr, &jobids);
 
       /* We are in Incr/Diff, but no Full to build the accurate list... */
       if (jobids.count == 0) {
@@ -266,6 +270,7 @@ bool send_accurate_current_files(JCR *jcr)
       }
    }
 
+   /* For incomplete Jobs, we add our own id */
    if (jcr->rerunning) {
       edit_int64(jcr->JobId, ed1);
       jobids.add(ed1);
@@ -305,7 +310,7 @@ bool send_accurate_current_files(JCR *jcr)
       if (!db_get_file_list(jcr, jcr->db_batch,
                        jobids.list, jcr->use_accurate_chksum, false /* no delta */,
                        accurate_list_handler, (void *)jcr)) {
-         Jmsg1(jcr, M_FATAL, 0, "%s", db_strerror(jcr->db));
+         Jmsg1(jcr, M_FATAL, 0, "%s", db_strerror(jcr->db_batch));
          return false;
       }
    }
@@ -432,8 +437,13 @@ bool do_backup(JCR *jcr)
    }
 
    /* Print Job Start message */
-   Jmsg(jcr, M_INFO, 0, _("Start Backup JobId %s, Job=%s\n"),
+   if (jcr->rerunning) {
+      Jmsg(jcr, M_INFO, 0, _("Restart Incomplete Backup JobId %s, Job=%s\n"),
            edit_uint64(jcr->JobId, ed1), jcr->Job);
+   } else {
+      Jmsg(jcr, M_INFO, 0, _("Start Backup JobId %s, Job=%s\n"),
+           edit_uint64(jcr->JobId, ed1), jcr->Job);
+   }
 
    jcr->setJobStatus(JS_Running);
    Dmsg2(100, "JobId=%d JobLevel=%c\n", jcr->jr.JobId, jcr->jr.JobLevel);
@@ -442,6 +452,34 @@ bool do_backup(JCR *jcr)
       return false;
    }
 
+   /* For incomplete Jobs, we add our own id */
+   if (jcr->rerunning) {
+      edit_int64(jcr->JobId, ed1);
+      Mmsg(buf, "SELECT max(FileIndex) FROM File WHERE JobId=%s", ed1);
+      if (db_sql_query(jcr->db, buf.c_str(), db_int64_handler, &job)) {
+         Jmsg(jcr, M_INFO, 0, _("Found %ld files from prior incomplete Job.\n"),
+            (int32_t)job.value);
+      } else {
+         Jmsg(jcr, M_FATAL, 0, "%s", db_strerror(jcr->db));
+         return false;
+      }
+      jcr->JobFiles = job.value;
+      Dmsg1(100, "==== FI=%ld\n", jcr->JobFiles);
+      Mmsg(buf, "SELECT VolSessionId FROM Job WHERE JobId=%s", ed1);
+      if (!db_sql_query(jcr->db, buf.c_str(), db_int64_handler, &job)) {
+         Jmsg(jcr, M_FATAL, 0, "%s", db_strerror(jcr->db));
+         return false;
+      }
+      jcr->VolSessionId = job.value;
+      Mmsg(buf, "SELECT VolSessionTime FROM Job WHERE JobId=%s", ed1);
+      if (!db_sql_query(jcr->db, buf.c_str(), db_int64_handler, &job)) {
+         Jmsg(jcr, M_FATAL, 0, "%s", db_strerror(jcr->db));
+         return false;
+      }
+      jcr->VolSessionTime = job.value;
+      Dmsg4(100, "JobId=%s JobFiles=%ld VolSessionId=%ld VolSessionTime=%ld\n", ed1,
+            jcr->JobFiles, jcr->VolSessionId, jcr->VolSessionTime);
+   }
 
    /*
     * Open a message channel connection with the Storage
@@ -507,10 +545,12 @@ bool do_backup(JCR *jcr)
       send_bwlimit(jcr, jcr->Job); /* Old clients don't have this command */
    }
 
+   send_snapshot_retention(jcr, jcr->snapshot_retention);
+
    store = jcr->wstore;
 
    if (jcr->sd_calls_client) {
-      if (jcr->FDVersion < 5) {
+      if (jcr->FDVersion < 10) {
          Jmsg(jcr, M_FATAL, 0, _("The File daemon does not support SDCallsClient.\n"));
          goto bail_out;
       }
@@ -620,7 +660,7 @@ int wait_for_job_termination(JCR *jcr, int timeout)
    uint32_t JobWarnings = 0;
    uint64_t ReadBytes = 0;
    uint64_t JobBytes = 0;
-   int VSS = 0;
+   int VSS = 0;                 /* or Snapshot on Unix */
    int Encrypt = 0;
    btimer_t *tid=NULL;
 
@@ -630,10 +670,10 @@ int wait_for_job_termination(JCR *jcr, int timeout)
       }
       /* Wait for Client to terminate */
       while ((n = bget_dirmsg(fd)) >= 0) {
-         if (!fd_ok &&
+         if (!fd_ok && 
               (sscanf(fd->msg, EndJob, &jcr->FDJobStatus, &JobFiles,
                      &ReadBytes, &JobBytes, &JobErrors, &VSS, &Encrypt) == 7 ||
-              sscanf(fd->msg, OldEndJob, &jcr->FDJobStatus, &JobFiles,
+               sscanf(fd->msg, OldEndJob, &jcr->FDJobStatus, &JobFiles,
                      &ReadBytes, &JobBytes, &JobErrors) == 5)) {
             fd_ok = true;
             jcr->setJobStatus(jcr->FDJobStatus);
@@ -662,7 +702,7 @@ int wait_for_job_termination(JCR *jcr, int timeout)
    }
 
    /*
-    * Force cancel in SD if failing,
+    * Force cancel in SD if failing, but not for Incomplete jobs
     *  so that we let the SD despool.
     */
    Dmsg5(100, "cancel=%d fd_ok=%d FDJS=%d JS=%d SDJS=%d\n", jcr->is_canceled(), fd_ok, jcr->FDJobStatus,
@@ -683,7 +723,7 @@ int wait_for_job_termination(JCR *jcr, int timeout)
       jcr->ReadBytes = ReadBytes;
       jcr->JobBytes = JobBytes;
       jcr->JobWarnings = JobWarnings;
-      jcr->VSS = VSS;
+      jcr->Snapshot = VSS;
       jcr->Encrypt = Encrypt;
    } else if (jcr->getJobStatus() != JS_Canceled) {
       Jmsg(jcr, M_FATAL, 0, _("No Job status returned from FD.\n"));
@@ -713,7 +753,7 @@ void backup_cleanup(JCR *jcr, int TermCode)
 {
    char sdt[50], edt[50], schedt[50];
    char ec1[30], ec2[30], ec3[30], ec4[30], ec5[30];
-   char ec6[30], ec7[30], ec8[30], elapsed[50];
+   char ec6[30], ec7[30], ec8[30], ec9[30], ec10[30], elapsed[50];
    char data_compress[200];
    char term_code[100], fd_term_msg[100], sd_term_msg[100];
    const char *term_msg;
@@ -732,18 +772,6 @@ void backup_cleanup(JCR *jcr, int TermCode)
 
    Dmsg2(100, "Enter backup_cleanup %d %c\n", TermCode, TermCode);
    memset(&cr, 0, sizeof(cr));
-
-#ifdef xxxx
-   /* The current implementation of the JS_Warning status is not
-    * completed. SQL part looks to be ok, but the code is using
-    * JS_Terminated almost everywhere instead of (JS_Terminated || JS_Warning)
-    * as we do with is_canceled()
-    */
-   if (jcr->getJobStatus() == JS_Terminated &&
-        (jcr->JobErrors || jcr->SDErrors || jcr->JobWarnings)) {
-      TermCode = JS_Warnings;
-   }
-#endif
 
    update_job_end(jcr, TermCode);
 
@@ -775,6 +803,9 @@ void backup_cleanup(JCR *jcr, int TermCode)
          } else {
             term_msg = _("Backup OK");
          }
+         break;
+      case JS_Incomplete:
+         term_msg = _("Backup failed -- incomplete");
          break;
       case JS_Warnings:
          term_msg = _("Backup OK -- with warnings");
@@ -829,12 +860,12 @@ void backup_cleanup(JCR *jcr, int TermCode)
    if (jcr->ReadBytes == 0) {
       bstrncpy(data_compress, "None", sizeof(data_compress));
    } else {
-      compression = (double)100 - 100.0 * ((double)jcr->JobBytes / (double)jcr->ReadBytes);
+      compression = (double)100 - 100.0 * ((double)jcr->SDJobBytes / (double)jcr->ReadBytes);
       if (compression < 0.5) {
          bstrncpy(data_compress, "None", sizeof(data_compress));
       } else {
-         if (jcr->JobBytes > 0) {
-            ratio = (double)jcr->ReadBytes / (double)jcr->JobBytes;
+         if (jcr->SDJobBytes > 0) {
+            ratio = (double)jcr->ReadBytes / (double)jcr->SDJobBytes;
          } else {
             ratio = 1.0;
          }
@@ -852,10 +883,19 @@ void backup_cleanup(JCR *jcr, int TermCode)
            jcr->nb_base_files_used*100.0/jcr->nb_base_files);
    }
    /* Edit string for last volume size */
-   Mmsg(vol_info, _("%s (%sB)"),
+   if (mr.VolABytes != 0) {
+      Mmsg(vol_info, _("meta: %s (%sB) aligned: %s (%sB)"),
+        edit_uint64_with_commas(mr.VolBytes, ec7),
+        edit_uint64_with_suffix(mr.VolBytes, ec8),
+        edit_uint64_with_commas(mr.VolABytes, ec9),
+        edit_uint64_with_suffix(mr.VolABytes, ec10));
+   } else {
+     Mmsg(vol_info, _("%s (%sB)"),
         edit_uint64_with_commas(mr.VolBytes, ec7),
         edit_uint64_with_suffix(mr.VolBytes, ec8));
+   }
 
+// bmicrosleep(15, 0);                /* for debugging SIGHUP */
 
    Jmsg(jcr, msg_type, 0, _("%s %s %s (%s):\n"
 "  Build OS:               %s %s %s\n"
@@ -879,7 +919,7 @@ void backup_cleanup(JCR *jcr, int TermCode)
 "  Rate:                   %.1f KB/s\n"
 "  Software Compression:   %s\n"
 "%s"                                         /* Basefile info */
-"  VSS:                    %s\n"
+"  Snapshot/VSS:           %s\n"
 "  Encryption:             %s\n"
 "  Accurate:               %s\n"
 "  Volume name(s):         %s\n"
@@ -915,7 +955,7 @@ void backup_cleanup(JCR *jcr, int TermCode)
         kbps,
         data_compress,
         base_info.c_str(),
-        jcr->VSS?_("yes"):_("no"),
+        jcr->Snapshot?_("yes"):_("no"),
         jcr->Encrypt?_("yes"):_("no"),
         jcr->accurate?_("yes"):_("no"),
         jcr->VolumeName,

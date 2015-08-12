@@ -1,5 +1,10 @@
 #!/bin/sh
 #
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+
+#
 # Attempt to strip the path
 #
 TestName="strip-test"
@@ -25,7 +30,7 @@ change_jobname NightlySave $JobName
 start_test
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
-@$out /dev/null
+@output /dev/null
 messages
 @#
 @# Do a backup
@@ -47,7 +52,7 @@ run_bacula
 rm -rf ${cwd}/tmp/bacula-restores
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
-@$out /dev/null
+@output /dev/null
 messages
 @# 
 @# now do a restore

@@ -1,5 +1,10 @@
 #!/bin/sh
 #
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+
+#
 # Run a simple backup of the Bacula build directory then do a 
 #   Virtual Full backup to another device.
 #
@@ -26,7 +31,7 @@ start_test
 
 # Write out bconsole commands
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
-@$out /dev/null
+@output /dev/null
 messages
 @$out ${cwd}/tmp/log1.out
 @#setdebug level=100 storage=File
@@ -67,8 +72,8 @@ done
 yes
 list volumes
 @# should Consolidate Full, Differential and Incremental
-setdebug level=150 storage=DiskChanger
-setdebug level=100 dir
+@#setdebug level=150 storage=DiskChanger
+@#setdebug level=100 dir
 run job=$JobName level=VirtualFull yes
 wait
 messages

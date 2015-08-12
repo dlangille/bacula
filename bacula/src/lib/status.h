@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2008-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *  Status packet definition that is used in both the SD and FD. It
@@ -20,8 +24,6 @@
  *    the output can be sent directly to a BSOCK.
  *
  *     Kern Sibbald, March MMVII
- *
- *   Version $Id: $
  *
  */
 
@@ -61,6 +63,9 @@ static void sendit(const char *msg, int len, STATUS_PKT *sp)
       sp->callback(msg, len, sp->context);
    }
 }
+
+#ifndef STATUS_FUNCTIONS
+#define STATUS_FUNCTIONS
 
 /* common to SD/FD */
 static void list_terminated_jobs(STATUS_PKT *sp)
@@ -117,6 +122,8 @@ static void list_terminated_jobs(STATUS_PKT *sp)
       case JS_Warnings:
          termstat = _("OK -- with warnings");
          break;
+      case JS_Incomplete:
+         termstat = _("Incomplete");
          break;
       default:
          termstat = _("Other");
@@ -217,5 +224,6 @@ done:
 
 #endif /* HAVE_WIN32 */
 
+#endif  /* ! STATUS_FUNCTIONS */
 
 #endif

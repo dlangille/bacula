@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2001-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *  This file handles accepting Director Commands
@@ -72,6 +76,8 @@ static bool setdebug_cmd(JCR *jcr);
 static bool cancel_cmd(JCR *cjcr);
 static bool mount_cmd(JCR *jcr);
 static bool unmount_cmd(JCR *jcr);
+static bool enable_cmd(JCR *jcr);
+static bool disable_cmd(JCR *jcr);
 //static bool action_on_purge_cmd(JCR *jcr);
 static bool bootstrap_cmd(JCR *jcr);
 static bool changer_cmd(JCR *sjcr);
@@ -110,6 +116,8 @@ static struct s_cmds cmds[] = {
    {".die",        die_cmd,         0},
    {"label",       label_cmd,       0},     /* label a tape */
    {"mount",       mount_cmd,       0},
+   {"enable",      enable_cmd,       0},
+   {"disable",     disable_cmd,       0},
    {"readlabel",   readlabel_cmd,   0},
    {"release",     release_cmd,     0},
    {"relabel",     relabel_cmd,     0},     /* relabel a tape */
@@ -130,7 +138,7 @@ static struct s_cmds cmds[] = {
  * Connection request. We accept connections either from the
  *  Director or a Client (File daemon).
  *
- * Note, we are running as a seperate thread of the Storage daemon.
+ * Note, we are running as a separate thread of the Storage daemon.
  *  and it is because a Director has made a connection with
  *  us on the "Message" channel.
  *
@@ -147,10 +155,8 @@ void *handle_connection_request(void *arg)
    BSOCK *bs = (BSOCK *)arg;
    JCR *jcr;
    int i;
-   int fd_version, sd_version;
    bool found, quit;
    int bnet_stat = 0;
-   char name[500];
    char tbuf[100];
 
    if (bs->recv() <= 0) {
@@ -160,31 +166,9 @@ void *handle_connection_request(void *arg)
       return NULL;
    }
 
-   /*
-    * Do a sanity check on the message received
-    */
-   if (bs->msglen < 25 || bs->msglen > (int)sizeof(name)) {
-      Pmsg1(000, "<filed: %s", bs->msg);
-      Jmsg2(NULL, M_ERROR, 0, _("Invalid connection from %s. Len=%d\n"), bs->who(), bs->msglen);
-      bmicrosleep(5, 0);   /* make user wait 5 seconds */
-      bs->destroy();
-      return NULL;
-   }
-
-   Dmsg1(100, "Conn: %s", bs->msg);
-   fd_version = 0;
-   sd_version = 0;
-   /*
-    * See if this is a File daemon connection. If so
-    *   call FD handler.
-    */
-   if (sscanf(bs->msg, "Hello Bacula SD: Start Job %127s %d %d", name, &fd_version, &sd_version) == 3 ||
-       sscanf(bs->msg, "Hello FD: Bacula Storage calling Start Job %127s %d", name, &sd_version) == 2 ||
-       sscanf(bs->msg, "Hello Start Job %127s", name) == 1) {
-      Dmsg1(050, "Got a FD connection at %s\n", bstrftimes(tbuf, sizeof(tbuf),
-            (utime_t)time(NULL)));
-      Dmsg1(50, "%s", bs->msg);
-      handle_filed_connection(bs, name, fd_version, sd_version);
+   /* Check for client connection */
+   if (is_client_connection(bs)) {
+      handle_client_connection(bs);
       return NULL;
    }
 
@@ -197,6 +181,7 @@ void *handle_connection_request(void *arg)
    jcr->dir_bsock = bs;               /* save Director bsock */
    jcr->dir_bsock->set_jcr(jcr);
    jcr->dcrs = New(alist(10, not_owned_by_alist));
+   create_jobmedia_queue(jcr);
    /* Initialize FD start condition variable */
    int errstat = pthread_cond_init(&jcr->job_start_wait, NULL);
    if (errstat != 0) {
@@ -208,9 +193,11 @@ void *handle_connection_request(void *arg)
    Dmsg0(1000, "stored in start_job\n");
 
    /*
-    * Authenticate the Director
+    * Validate then authenticate the Director
     */
-   /* We should have: Hello SD: Bacula Director <dirname> calling */
+   if (!validate_dir_hello(jcr)) {
+      goto bail_out;
+   }
    if (!authenticate_director(jcr)) {
       Jmsg(jcr, M_FATAL, 0, _("Unable to authenticate Director\n"));
       goto bail_out;
@@ -255,6 +242,7 @@ void *handle_connection_request(void *arg)
 bail_out:
    generate_daemon_event(jcr, "JobEnd");
    generate_plugin_event(jcr, bsdEventJobEnd);
+   flush_jobmedia_queue(jcr);
    dequeue_messages(jcr);             /* send any queued messages */
    bs->signal(BNET_TERMINATE);
    free_plugins(jcr);                 /* release instantiated plugins */
@@ -290,6 +278,7 @@ static bool die_cmd(JCR *jcr)
 
 /*
  * Get address of client from Director
+ *   This initiates SD Calls Client.
  *   We attempt to connect to the client (an FD or SD) and
  *   authenticate it.
  */
@@ -326,10 +315,12 @@ static bool client_cmd(JCR *jcr)
    }
    Dmsg0(110, "SD connection OK to Client.\n");
 
-   /* Send Hello */
-   cl->fsend("Hello FD: Bacula Storage calling Start Job %s 1\n", jcr->Job);
    jcr->file_bsock = cl;
    jcr->file_bsock->set_jcr(jcr);
+   if (!send_hello_client(jcr, jcr->Job)) {
+      goto bail_out;
+   }
+
    /* Send OK to Director */
    return dir->fsend(OKclient);
 
@@ -400,7 +391,11 @@ static bool storage_cmd(JCR *jcr)
       }
    }
 
-   if (!authenticate_storagedaemon(jcr, Job)) {
+   if (!send_hello_sd(jcr, Job)) {
+      goto bail_out;
+   }
+
+   if (!authenticate_storagedaemon(jcr)) {
       goto bail_out;
    }
    /*
@@ -430,16 +425,16 @@ bail_out:
 static bool setdebug_cmd(JCR *jcr)
 {
    BSOCK *dir = jcr->dir_bsock;
-   int32_t trace_flag, lvl, hangup; /* hangup is ignored right now */
-   int64_t level;
+   int32_t trace_flag, lvl, hangup, blowup;
+   int64_t level, level_tags = 0;
    char options[60];
    char tags[512];
    *tags = *options = 0;
 
    Dmsg1(10, "setdebug_cmd: %s", dir->msg);
 
-   if (sscanf(dir->msg, "setdebug=%ld trace=%ld hangup=%ld options=%55s tags=%511s",
-              &lvl, &trace_flag, &hangup, options, tags) != 5)
+   if (sscanf(dir->msg, "setdebug=%ld trace=%ld hangup=%ld blowup=%ld options=%55s tags=%511s",
+              &lvl, &trace_flag, &hangup, &blowup, options, tags) != 6)
    {
       if (sscanf(dir->msg, "setdebug=%ld trace=%ld", &lvl, &trace_flag) != 2 || lvl < 0) {
          dir->fsend(_("3991 Bad setdebug command: %s\n"), dir->msg);
@@ -448,11 +443,16 @@ static bool setdebug_cmd(JCR *jcr)
    }
    level = lvl;
    set_trace(trace_flag);
+   set_hangup(hangup);
+   set_blowup(blowup);
    set_debug_flags(options);
-   if (!debug_parse_tags(tags, &level)) {
+   if (!debug_parse_tags(tags, &level_tags)) {
       *tags = 0;
    }
-   debug_level = level;
+   if (level >= 0) {
+      debug_level = level;
+   }
+   debug_level_tags = level_tags;
 
    return dir->fsend(OKsetdebug, lvl, trace_flag, options, tags);
 }
@@ -475,6 +475,9 @@ static bool cancel_cmd(JCR *cjcr)
    if (sscanf(dir->msg, "cancel Job=%127s", Job) == 1) {
       status = JS_Canceled;
       reason = "canceled";
+   } else if (sscanf(dir->msg, "stop Job=%127s", Job) == 1) {
+      status = JS_Incomplete;
+      reason = "stopped";
    } else {
       dir->fsend(_("3903 Error scanning cancel command.\n"));
       goto bail_out;
@@ -619,7 +622,6 @@ static void label_volume_if_ok(DCR *dcr, char *oldname,
    int label_status;
    int mode;
    const char *volname = (relabel == 1) ? oldname : newname;
-   char ed1[50];
 
    steal_device_lock(dev, &hold, BST_WRITING_LABEL);
    Dmsg1(100, "Stole device %s lock, writing label.\n", dev->print_name());
@@ -683,9 +685,15 @@ static void label_volume_if_ok(DCR *dcr, char *oldname,
       }
       bstrncpy(dcr->VolumeName, newname, sizeof(dcr->VolumeName));
       /* The following 3000 OK label. string is scanned in ua_label.c */
-      dir->fsend("3000 OK label. VolBytes=%s DVD=%d Volume=\"%s\" Device=%s\n",
-                 edit_uint64(dev->VolCatInfo.VolCatBytes, ed1),
-                 dev->is_dvd()?1:0, newname, dev->print_name());
+      int type;
+      if (dev->dev_type == B_FILE_DEV) {
+         type = dev->dev_type;
+      } else {
+         type = 0;
+      }
+      dir->fsend("3000 OK label. VolBytes=%lld VolABytes=%lld VolType=%d Volume=\"%s\" Device=%s\n",
+                 dev->VolCatInfo.VolCatBytes, dev->VolCatInfo.VolCatAdataBytes,
+                 type, newname, dev->print_name());
       break;
    case VOL_TYPE_ERROR:
       dir->fsend(_("3915 Failed to label Volume: ERR=%s\n"), dev->errmsg);
@@ -695,7 +703,7 @@ static void label_volume_if_ok(DCR *dcr, char *oldname,
       break;
    default:
       dir->fsend(_("3913 Cannot label Volume. "
-"Unknown status %d from read_volume_label()\n"), label_status);
+                   "Unknown status %d from read_volume_label()\n"), label_status);
       break;
    }
 
@@ -796,6 +804,9 @@ static DCR *find_device(JCR *jcr, POOL_MEM &devname,
                if (!device->dev->autoselect) {
                   Dmsg1(100, "Device %s not autoselect skipped.\n", devname.c_str());
                   continue;              /* device is not available */
+               } else if (!device->dev->enabled) {
+                  Dmsg1(100, "Device %s disabled skipped.\n", devname.c_str());
+                  continue;              /* device disabled */
                }
                if ((drive < 0 || drive == (int)device->dev->drive_index) &&
                    (!media_type || strcmp(device->media_type, media_type) ==0)) {
@@ -819,7 +830,6 @@ static DCR *find_device(JCR *jcr, POOL_MEM &devname,
    return dcr;
 }
 
-
 /*
  * Mount command from Director
  */
@@ -829,16 +839,18 @@ static bool mount_cmd(JCR *jcr)
    BSOCK *dir = jcr->dir_bsock;
    DEVICE *dev;
    DCR *dcr;
-   int32_t drive;
-   int32_t slot = 0;
+   int32_t drive;      /* device index */
+   int32_t slot;
    bool ok;
 
+   Dmsg1(100, "%s\n", dir->msg);
    ok = sscanf(dir->msg, "mount %127s drive=%d slot=%d", devname.c_str(),
                &drive, &slot) == 3;
    if (!ok) {
+      slot = 0;
       ok = sscanf(dir->msg, "mount %127s drive=%d", devname.c_str(), &drive) == 2;
    }
-   Dmsg3(100, "ok=%d drive=%d slot=%d\n", ok, drive, slot);
+   Dmsg3(100, "ok=%d device_index=%d slot=%d\n", ok, drive, slot);
    if (ok) {
       dcr = find_device(jcr, devname, NULL, drive);
       if (dcr) {
@@ -978,6 +990,71 @@ static bool mount_cmd(JCR *jcr)
    dir->signal(BNET_EOD);
    return true;
 }
+
+/* enable command from Director */
+static bool enable_cmd(JCR *jcr)
+{
+   POOL_MEM devname;
+   BSOCK *dir = jcr->dir_bsock;
+   DEVICE *dev;
+   DCR *dcr;
+   int32_t drive;
+   bool ok;
+
+   ok = sscanf(dir->msg, "enable %127s drive=%d", devname.c_str(),
+               &drive) == 2;
+   Dmsg3(100, "ok=%d device=%s device_index=%d\n", ok, devname.c_str(), drive);
+   if (ok) {
+      dcr = find_device(jcr, devname, NULL, drive);
+      if (dcr) {
+         dev = dcr->dev;
+         dev->Lock();                 /* Use P to avoid indefinite block */
+         dev->enabled = true;
+         dir->fsend(_("3002 Device \"%s\" enabled.\n"), dev->print_name());
+         dev->Unlock();
+         free_dcr(dcr);
+      }
+   } else {
+      /* NB dir->msg gets clobbered in bnet_fsend, so save command */
+      pm_strcpy(jcr->errmsg, dir->msg);
+      dir->fsend(_("3907 Error scanning \"enable\" command: %s\n"), jcr->errmsg);
+   }
+   dir->signal(BNET_EOD);
+   return true;
+}
+
+/* enable command from Director */
+static bool disable_cmd(JCR *jcr)
+{
+   POOL_MEM devname;
+   BSOCK *dir = jcr->dir_bsock;
+   DEVICE *dev;
+   DCR *dcr;
+   int32_t drive;
+   bool ok;
+
+   ok = sscanf(dir->msg, "disable %127s drive=%d", devname.c_str(),
+               &drive) == 2;
+   Dmsg3(100, "ok=%d device=%s device_index=%d\n", ok, devname.c_str(), drive);
+   if (ok) {
+      dcr = find_device(jcr, devname, NULL, drive);
+      if (dcr) {
+         dev = dcr->dev;
+         dev->Lock();
+         dev->enabled = false;
+         dir->fsend(_("3002 Device \"%s\" disabled.\n"), dev->print_name());
+         dev->Unlock();
+         free_dcr(dcr);
+      }
+   } else {
+      /* NB dir->msg gets clobbered in bnet_fsend, so save command */
+      pm_strcpy(jcr->errmsg, dir->msg);
+      dir->fsend(_("3907 Error scanning \"disable\" command: %s\n"), jcr->errmsg);
+   }
+   dir->signal(BNET_EOD);
+   return true;
+}
+
 
 /*
  * unmount command from Director

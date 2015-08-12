@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  * Bacula Catalog Database Find record interface routines
@@ -24,13 +28,11 @@
  *
  */
 
-#include "bacula.h"
+#include  "bacula.h"
 
 #if HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL
 
 #include "cats.h"
-#include "bdb_priv.h"
-#include "sql_glue.h"
 
 /* -----------------------------------------------------------------------
  *
@@ -49,22 +51,21 @@
  * Returns: 0 on failure
  *          1 on success, jr is unchanged, but stime and job are set
  */
-bool
-db_find_job_start_time(JCR *jcr, B_DB *mdb, JOB_DBR *jr, POOLMEM **stime, char *job)
+bool BDB::bdb_find_job_start_time(JCR *jcr, JOB_DBR *jr, POOLMEM **stime, char *job)
 {
    SQL_ROW row;
    char ed1[50], ed2[50];
    char esc_name[MAX_ESCAPE_NAME_LENGTH];
 
-   db_lock(mdb);
-   mdb->db_escape_string(jcr, esc_name, jr->Name, strlen(jr->Name));
+   bdb_lock();
+   bdb_escape_string(jcr, esc_name, jr->Name, strlen(jr->Name));
    pm_strcpy(stime, "0000-00-00 00:00:00");   /* default */
    job[0] = 0;
 
    /* If no Id given, we must find corresponding job */
    if (jr->JobId == 0) {
       /* Differential is since last Full backup */
-      Mmsg(mdb->cmd,
+      Mmsg(cmd,
 "SELECT StartTime, Job FROM Job WHERE JobStatus IN ('T','W') AND Type='%c' AND "
 "Level='%c' AND Name='%s' AND ClientId=%s AND FileSetId=%s "
 "ORDER BY StartTime DESC LIMIT 1",
@@ -82,58 +83,58 @@ db_find_job_start_time(JCR *jcr, B_DB *mdb, JOB_DBR *jr, POOLMEM **stime, char *
           *  then we do a second look to find the most recent
           *  backup
           */
-         if (!QUERY_DB(jcr, mdb, mdb->cmd)) {
-            Mmsg2(&mdb->errmsg, _("Query error for start time request: ERR=%s\nCMD=%s\n"),
-               sql_strerror(mdb), mdb->cmd);
+         if (!QueryDB(jcr, cmd)) {
+            Mmsg2(&errmsg, _("Query error for start time request: ERR=%s\nCMD=%s\n"),
+               sql_strerror(), cmd);
             goto bail_out;
          }
-         if ((row = sql_fetch_row(mdb)) == NULL) {
-            sql_free_result(mdb);
-            Mmsg(mdb->errmsg, _("No prior Full backup Job record found.\n"));
+         if ((row = sql_fetch_row()) == NULL) {
+            sql_free_result();
+            Mmsg(errmsg, _("No prior Full backup Job record found.\n"));
             goto bail_out;
          }
-         sql_free_result(mdb);
+         sql_free_result();
          /* Now edit SQL command for Incremental Job */
-         Mmsg(mdb->cmd,
+         Mmsg(cmd,
 "SELECT StartTime, Job FROM Job WHERE JobStatus IN ('T','W') AND Type='%c' AND "
 "Level IN ('%c','%c','%c') AND Name='%s' AND ClientId=%s "
 "AND FileSetId=%s ORDER BY StartTime DESC LIMIT 1",
             jr->JobType, L_INCREMENTAL, L_DIFFERENTIAL, L_FULL, esc_name,
             edit_int64(jr->ClientId, ed1), edit_int64(jr->FileSetId, ed2));
       } else {
-         Mmsg1(mdb->errmsg, _("Unknown level=%d\n"), jr->JobLevel);
+         Mmsg1(errmsg, _("Unknown level=%d\n"), jr->JobLevel);
          goto bail_out;
       }
    } else {
-      Dmsg1(100, "Submitting: %s\n", mdb->cmd);
-      Mmsg(mdb->cmd, "SELECT StartTime, Job FROM Job WHERE Job.JobId=%s",
+      Dmsg1(100, "Submitting: %s\n", cmd);
+      Mmsg(cmd, "SELECT StartTime, Job FROM Job WHERE Job.JobId=%s",
            edit_int64(jr->JobId, ed1));
    }
 
-   if (!QUERY_DB(jcr, mdb, mdb->cmd)) {
+   if (!QueryDB(jcr, cmd)) {
       pm_strcpy(stime, "");                   /* set EOS */
-      Mmsg2(&mdb->errmsg, _("Query error for start time request: ERR=%s\nCMD=%s\n"),
-         sql_strerror(mdb),  mdb->cmd);
+      Mmsg2(&errmsg, _("Query error for start time request: ERR=%s\nCMD=%s\n"),
+         sql_strerror(),  cmd);
       goto bail_out;
    }
 
-   if ((row = sql_fetch_row(mdb)) == NULL) {
-      Mmsg2(&mdb->errmsg, _("No Job record found: ERR=%s\nCMD=%s\n"),
-         sql_strerror(mdb),  mdb->cmd);
-      sql_free_result(mdb);
+   if ((row = sql_fetch_row()) == NULL) {
+      Mmsg2(&errmsg, _("No Job record found: ERR=%s\nCMD=%s\n"),
+         sql_strerror(),  cmd);
+      sql_free_result();
       goto bail_out;
    }
    Dmsg2(100, "Got start time: %s, job: %s\n", row[0], row[1]);
    pm_strcpy(stime, row[0]);
    bstrncpy(job, row[1], MAX_NAME_LENGTH);
 
-   sql_free_result(mdb);
+   sql_free_result();
 
-   db_unlock(mdb);
+   bdb_unlock();
    return true;
 
 bail_out:
-   db_unlock(mdb);
+   bdb_unlock();
    return false;
 }
 
@@ -147,45 +148,44 @@ bail_out:
  * Returns: false on failure
  *          true  on success, jr is unchanged, but stime and job are set
  */
-bool
-db_find_last_job_start_time(JCR *jcr, B_DB *mdb, JOB_DBR *jr,
+bool BDB::bdb_find_last_job_start_time(JCR *jcr, JOB_DBR *jr,
                             POOLMEM **stime, char *job, int JobLevel)
 {
    SQL_ROW row;
    char ed1[50], ed2[50];
    char esc_name[MAX_ESCAPE_NAME_LENGTH];
 
-   db_lock(mdb);
-   mdb->db_escape_string(jcr, esc_name, jr->Name, strlen(jr->Name));
+   bdb_lock();
+   bdb_escape_string(jcr, esc_name, jr->Name, strlen(jr->Name));
    pm_strcpy(stime, "0000-00-00 00:00:00");   /* default */
    job[0] = 0;
 
-   Mmsg(mdb->cmd,
+   Mmsg(cmd,
 "SELECT StartTime, Job FROM Job WHERE JobStatus IN ('T','W') AND Type='%c' AND "
 "Level='%c' AND Name='%s' AND ClientId=%s AND FileSetId=%s "
 "ORDER BY StartTime DESC LIMIT 1",
       jr->JobType, JobLevel, esc_name,
       edit_int64(jr->ClientId, ed1), edit_int64(jr->FileSetId, ed2));
-   if (!QUERY_DB(jcr, mdb, mdb->cmd)) {
-      Mmsg2(&mdb->errmsg, _("Query error for start time request: ERR=%s\nCMD=%s\n"),
-         sql_strerror(mdb), mdb->cmd);
+   if (!QueryDB(jcr, cmd)) {
+      Mmsg2(&errmsg, _("Query error for start time request: ERR=%s\nCMD=%s\n"),
+         sql_strerror(), cmd);
       goto bail_out;
    }
-   if ((row = sql_fetch_row(mdb)) == NULL) {
-      sql_free_result(mdb);
-      Mmsg(mdb->errmsg, _("No prior Full backup Job record found.\n"));
+   if ((row = sql_fetch_row()) == NULL) {
+      sql_free_result();
+      Mmsg(errmsg, _("No prior Full backup Job record found.\n"));
       goto bail_out;
    }
    Dmsg1(100, "Got start time: %s\n", row[0]);
    pm_strcpy(stime, row[0]);
    bstrncpy(job, row[1], MAX_NAME_LENGTH);
 
-   sql_free_result(mdb);
-   db_unlock(mdb);
+   sql_free_result();
+   bdb_unlock();
    return true;
 
 bail_out:
-   db_unlock(mdb);
+   bdb_unlock();
    return false;
 }
 
@@ -197,18 +197,17 @@ bail_out:
  *          true  on success, jr is unchanged and stime unchanged
  *                level returned in JobLevel
  */
-bool
-db_find_failed_job_since(JCR *jcr, B_DB *mdb, JOB_DBR *jr, POOLMEM *stime, int &JobLevel)
+bool BDB::bdb_find_failed_job_since(JCR *jcr, JOB_DBR *jr, POOLMEM *stime, int &JobLevel)
 {
    SQL_ROW row;
    char ed1[50], ed2[50];
    char esc_name[MAX_ESCAPE_NAME_LENGTH];
 
-   db_lock(mdb);
-   mdb->db_escape_string(jcr, esc_name, jr->Name, strlen(jr->Name));
+   bdb_lock();
+   bdb_escape_string(jcr, esc_name, jr->Name, strlen(jr->Name));
 
    /* Differential is since last Full backup */
-   Mmsg(mdb->cmd,
+   Mmsg(cmd,
 "SELECT Level FROM Job WHERE JobStatus NOT IN ('T','W') AND "
 "Type='%c' AND Level IN ('%c','%c') AND Name='%s' AND ClientId=%s "
 "AND FileSetId=%s AND StartTime>'%s' "
@@ -216,20 +215,20 @@ db_find_failed_job_since(JCR *jcr, B_DB *mdb, JOB_DBR *jr, POOLMEM *stime, int &
          jr->JobType, L_FULL, L_DIFFERENTIAL, esc_name,
          edit_int64(jr->ClientId, ed1), edit_int64(jr->FileSetId, ed2),
          stime);
-   if (!QUERY_DB(jcr, mdb, mdb->cmd)) {
-      db_unlock(mdb);
+   if (!QueryDB(jcr, cmd)) {
+      bdb_unlock();
       return false;
    }
 
-   if ((row = sql_fetch_row(mdb)) == NULL) {
-      sql_free_result(mdb);
-      db_unlock(mdb);
+   if ((row = sql_fetch_row()) == NULL) {
+      sql_free_result();
+      bdb_unlock();
       return false;
    }
    JobLevel = (int)*row[0];
-   sql_free_result(mdb);
+   sql_free_result();
 
-   db_unlock(mdb);
+   bdb_unlock();
    return true;
 }
 
@@ -242,19 +241,18 @@ db_find_failed_job_since(JCR *jcr, B_DB *mdb, JOB_DBR *jr, POOLMEM *stime, int &
  * Returns: true  on success
  *          false on failure
  */
-bool
-db_find_last_jobid(JCR *jcr, B_DB *mdb, const char *Name, JOB_DBR *jr)
+bool BDB::bdb_find_last_jobid(JCR *jcr, const char *Name, JOB_DBR *jr)
 {
    SQL_ROW row;
    char ed1[50];
    char esc_name[MAX_ESCAPE_NAME_LENGTH];
 
-   db_lock(mdb);
+   bdb_lock();
    /* Find last full */
    Dmsg2(100, "JobLevel=%d JobType=%d\n", jr->JobLevel, jr->JobType);
    if (jr->JobLevel == L_VERIFY_CATALOG) {
-      mdb->db_escape_string(jcr, esc_name, jr->Name, strlen(jr->Name));
-      Mmsg(mdb->cmd,
+      bdb_escape_string(jcr, esc_name, jr->Name, strlen(jr->Name));
+      Mmsg(cmd,
 "SELECT JobId FROM Job WHERE Type='V' AND Level='%c' AND "
 " JobStatus IN ('T','W') AND Name='%s' AND "
 "ClientId=%s ORDER BY StartTime DESC LIMIT 1",
@@ -264,45 +262,45 @@ db_find_last_jobid(JCR *jcr, B_DB *mdb, const char *Name, JOB_DBR *jr)
               jr->JobLevel == L_VERIFY_DISK_TO_CATALOG ||
               jr->JobType == JT_BACKUP) {
       if (Name) {
-         mdb->db_escape_string(jcr, esc_name, (char*)Name,
+         bdb_escape_string(jcr, esc_name, (char*)Name,
                                MIN(strlen(Name), sizeof(esc_name)));
-         Mmsg(mdb->cmd,
+         Mmsg(cmd,
 "SELECT JobId FROM Job WHERE Type='B' AND JobStatus IN ('T','W') AND "
 "Name='%s' ORDER BY StartTime DESC LIMIT 1", esc_name);
       } else {
-         Mmsg(mdb->cmd,
+         Mmsg(cmd,
 "SELECT JobId FROM Job WHERE Type='B' AND JobStatus IN ('T','W') AND "
 "ClientId=%s ORDER BY StartTime DESC LIMIT 1",
            edit_int64(jr->ClientId, ed1));
       }
    } else {
-      Mmsg1(&mdb->errmsg, _("Unknown Job level=%d\n"), jr->JobLevel);
-      db_unlock(mdb);
+      Mmsg1(&errmsg, _("Unknown Job level=%d\n"), jr->JobLevel);
+      bdb_unlock();
       return false;
    }
-   Dmsg1(100, "Query: %s\n", mdb->cmd);
-   if (!QUERY_DB(jcr, mdb, mdb->cmd)) {
-      db_unlock(mdb);
+   Dmsg1(100, "Query: %s\n", cmd);
+   if (!QueryDB(jcr, cmd)) {
+      bdb_unlock();
       return false;
    }
-   if ((row = sql_fetch_row(mdb)) == NULL) {
-      Mmsg1(&mdb->errmsg, _("No Job found for: %s.\n"), mdb->cmd);
-      sql_free_result(mdb);
-      db_unlock(mdb);
+   if ((row = sql_fetch_row()) == NULL) {
+      Mmsg1(&errmsg, _("No Job found for: %s.\n"), cmd);
+      sql_free_result();
+      bdb_unlock();
       return false;
    }
 
    jr->JobId = str_to_int64(row[0]);
-   sql_free_result(mdb);
+   sql_free_result();
 
    Dmsg1(100, "db_get_last_jobid: got JobId=%d\n", jr->JobId);
    if (jr->JobId <= 0) {
-      Mmsg1(&mdb->errmsg, _("No Job found for: %s\n"), mdb->cmd);
-      db_unlock(mdb);
+      Mmsg1(&errmsg, _("No Job found for: %s\n"), cmd);
+      bdb_unlock();
       return false;
    }
 
-   db_unlock(mdb);
+   bdb_unlock();
    return true;
 }
 
@@ -314,8 +312,7 @@ db_find_last_jobid(JCR *jcr, B_DB *mdb, const char *Name, JOB_DBR *jr)
  * Returns: 0 on failure
  *          numrows on success
  */
-int
-db_find_next_volume(JCR *jcr, B_DB *mdb, int item, bool InChanger, MEDIA_DBR *mr)
+int BDB::bdb_find_next_volume(JCR *jcr, int item, bool InChanger, MEDIA_DBR *mr)
 {
    SQL_ROW row = NULL;
    int numrows;
@@ -324,13 +321,13 @@ db_find_next_volume(JCR *jcr, B_DB *mdb, int item, bool InChanger, MEDIA_DBR *mr
    char esc_status[MAX_ESCAPE_NAME_LENGTH];
    char ed1[50];
 
-   db_lock(mdb);
-   mdb->db_escape_string(jcr, esc_type, mr->MediaType, strlen(mr->MediaType));
-   mdb->db_escape_string(jcr, esc_status, mr->VolStatus, strlen(mr->VolStatus));
+   bdb_lock();
+   bdb_escape_string(jcr, esc_type, mr->MediaType, strlen(mr->MediaType));
+   bdb_escape_string(jcr, esc_status, mr->VolStatus, strlen(mr->VolStatus));
 
    if (item == -1) {       /* find oldest volume */
       /* Find oldest volume */
-      Mmsg(mdb->cmd, "SELECT MediaId,VolumeName,VolJobs,VolFiles,VolBlocks,"
+      Mmsg(cmd, "SELECT MediaId,VolumeName,VolJobs,VolFiles,VolBlocks,"
          "VolBytes,VolMounts,VolErrors,VolWrites,MaxVolBytes,VolCapacityBytes,"
          "MediaType,VolStatus,PoolId,VolRetention,VolUseDuration,MaxVolJobs,"
          "MaxVolFiles,Recycle,Slot,FirstWritten,LastWritten,InChanger,"
@@ -344,23 +341,19 @@ db_find_next_volume(JCR *jcr, B_DB *mdb, int item, bool InChanger, MEDIA_DBR *mr
      item = 1;
    } else {
       POOL_MEM changer(PM_FNAME);
+      POOL_MEM voltype(PM_FNAME);
       /* Find next available volume */
-      /* ***FIXME***
-       * replace switch with
-       *  if (StorageId == 0)
-       *    break;
-       */
       if (InChanger) {
          Mmsg(changer, " AND InChanger=1 AND StorageId=%s ",
-              edit_int64(mr->StorageId, ed1));
+                 edit_int64(mr->StorageId, ed1));
       }
       if (strcmp(mr->VolStatus, "Recycle") == 0 ||
           strcmp(mr->VolStatus, "Purged") == 0) {
          order = "AND Recycle=1 ORDER BY LastWritten ASC,MediaId";  /* take oldest that can be recycled */
       } else {
-         order = sql_media_order_most_recently_written[db_get_type_index(mdb)];    /* take most recently written */
+         order = sql_media_order_most_recently_written[bdb_get_type_index()];    /* take most recently written */
       }
-      Mmsg(mdb->cmd, "SELECT MediaId,VolumeName,VolJobs,VolFiles,VolBlocks,"
+      Mmsg(cmd, "SELECT MediaId,VolumeName,VolJobs,VolFiles,VolBlocks,"
          "VolBytes,VolMounts,VolErrors,VolWrites,MaxVolBytes,VolCapacityBytes,"
          "MediaType,VolStatus,PoolId,VolRetention,VolUseDuration,MaxVolJobs,"
          "MaxVolFiles,Recycle,Slot,FirstWritten,LastWritten,InChanger,"
@@ -370,37 +363,40 @@ db_find_next_volume(JCR *jcr, B_DB *mdb, int item, bool InChanger, MEDIA_DBR *mr
          "FROM Media WHERE PoolId=%s AND MediaType='%s' AND Enabled=1 "
          "AND VolStatus='%s' "
          "%s "
+         "%s "
          "%s LIMIT %d",
          edit_int64(mr->PoolId, ed1), esc_type,
-         esc_status, changer.c_str(), order, item);
+         esc_status,
+         voltype.c_str(),
+         changer.c_str(), order, item);
    }
-   Dmsg1(100, "fnextvol=%s\n", mdb->cmd);
-   if (!QUERY_DB(jcr, mdb, mdb->cmd)) {
-      db_unlock(mdb);
+   Dmsg1(100, "fnextvol=%s\n", cmd);
+   if (!QueryDB(jcr, cmd)) {
+      bdb_unlock();
       return 0;
    }
 
-   numrows = sql_num_rows(mdb);
+   numrows = sql_num_rows();
    if (item > numrows || item < 1) {
       Dmsg2(050, "item=%d got=%d\n", item, numrows);
-      Mmsg2(&mdb->errmsg, _("Request for Volume item %d greater than max %d or less than 1\n"),
+      Mmsg2(&errmsg, _("Request for Volume item %d greater than max %d or less than 1\n"),
          item, numrows);
-      db_unlock(mdb);
+      bdb_unlock();
       return 0;
    }
 
    /* Note, we previously seeked to the row using:
-    *  sql_data_seek(mdb, item-1);
+    *  sql_data_seek(item-1);
     * but this failed on PostgreSQL, so now we loop
     * over all the records.  This should not be too horrible since
     * the maximum Volumes we look at in any case is 20.
     */
    while (item-- > 0) {
-      if ((row = sql_fetch_row(mdb)) == NULL) {
+      if ((row = sql_fetch_row()) == NULL) {
          Dmsg1(050, "Fail fetch item=%d\n", item+1);
-         Mmsg1(&mdb->errmsg, _("No Volume record found for item %d.\n"), item);
-         sql_free_result(mdb);
-         db_unlock(mdb);
+         Mmsg1(&errmsg, _("No Volume record found for item %d.\n"), item);
+         sql_free_result();
+         bdb_unlock();
          return 0;
       }
    }
@@ -433,7 +429,7 @@ db_find_next_volume(JCR *jcr, B_DB *mdb, int item, bool InChanger, MEDIA_DBR *mr
    mr->InChanger = str_to_uint64(row[22]);
    mr->EndFile = str_to_uint64(row[23]);
    mr->EndBlock = str_to_uint64(row[24]);
-   mr->VolParts = str_to_int64(row[25]);
+   mr->VolType = str_to_int64(row[25]);   /* formerly VolParts */
    mr->LabelType = str_to_int64(row[26]);
    bstrncpy(mr->cLabelDate, row[27]!=NULL?row[27]:"", sizeof(mr->cLabelDate));
    mr->LabelDate = (time_t)str_to_utime(mr->cLabelDate);
@@ -449,9 +445,9 @@ db_find_next_volume(JCR *jcr, B_DB *mdb, int item, bool InChanger, MEDIA_DBR *mr
    mr->VolWriteTime = str_to_int64(row[36]);
    mr->ActionOnPurge = str_to_int64(row[37]);
 
-   sql_free_result(mdb);
+   sql_free_result();
 
-   db_unlock(mdb);
+   bdb_unlock();
    Dmsg1(050, "Rtn numrows=%d\n", numrows);
    return numrows;
 }

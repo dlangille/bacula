@@ -1,5 +1,10 @@
 #!/bin/sh
 #
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+
+#
 # Run a simple backup of the Bacula build directory 
 #  to two tapes where the maximum tape file size is set to 1M
 #  Note, this test simulates the tape filling and writing to
@@ -36,7 +41,7 @@ start_test
 
 # Write out bconsole commands
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
-@$out /dev/null
+@output /dev/null
 messages
 @$out ${cwd}/tmp/log1.out
 label storage=tape volume=TestVolume001 slot=1 pool=Scratch drive=0
@@ -54,6 +59,11 @@ llist volume=TestVolume001
 @# 
 @# now do a restore
 @#
+@# Check if JobMedia OK (run under Aligned)
+sql
+select jobid, mediaid, firstindex,lastindex,volindex from JobMedia order by jobid,volindex;
+select * from JobMedia order by jobid,volindex;
+
 @$out ${cwd}/tmp/log2.out
 restore where=${cwd}/tmp/bacula-restores select all storage=tape done
 yes

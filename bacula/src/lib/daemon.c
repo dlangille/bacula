@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *  daemon.c by Kern Sibbald 2000
@@ -32,20 +36,18 @@
 void
 daemon_start()
 {
-#if !defined(HAVE_WIN32)
-   int i;
-   int fd;
+#ifndef HAVE_WIN32
+   int i, fd, next_fd;
    pid_t cpid;
    mode_t oldmask;
 #ifdef DEVELOPER
-   int low_fd = 2;
+   next_fd = 3;
 #else
-   int low_fd = -1;
+   next_fd = 0;
 #endif
    /*
     *  Become a daemon.
     */
-
    Dmsg0(900, "Enter daemon_start\n");
    if ( (cpid = fork() ) < 0) {
       berrno be;
@@ -53,35 +55,23 @@ daemon_start()
    } else if (cpid > 0) {
       exit(0);              /* parent exits */
    }
-   /* Child continues */
 
+   /* Child continues */
    setsid();
 
    /* In the PRODUCTION system, we close ALL
     * file descriptors except stdin, stdout, and stderr.
     */
    if (debug_level > 0) {
-      low_fd = 2;                     /* don't close debug output */
+      next_fd = 3;                    /* don't close debug output */
    }
 
 #if defined(HAVE_FCNTL_F_CLOSEM)
-   /*
-    * fcntl(fd, F_CLOSEM) needs the minimum filedescriptor
-    * to close. the current code sets the last one to keep
-    * open. So increment it with 1 and use that as argument.
-    */
-   low_fd++;
-   fcntl(low_fd, F_CLOSEM);
+   fcntl(next_fd, F_CLOSEM);
 #elif defined(HAVE_CLOSEFROM)
-   /*
-    * closefrom needs the minimum filedescriptor to close.
-    * the current code sets the last one to keep open.
-    * So increment it with 1 and use that as argument.
-    */
-   low_fd++;
-   closefrom(low_fd);
+   closefrom(next_fd);
 #else
-   for (i=sysconf(_SC_OPEN_MAX)-1; i > low_fd; i--) {
+   for (i=sysconf(_SC_OPEN_MAX); i >= next_fd; i--) {
       close(i);
    }
 #endif

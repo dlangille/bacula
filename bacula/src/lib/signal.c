@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *  Signal handlers for Bacula daemons
@@ -85,7 +89,7 @@ static void dbg_print_bacula()
 
    fprintf(stderr, "Dumping: %s\n", buf);
 
-   /* Print also B_DB and RWLOCK structure
+   /* Print also BDB and RWLOCK structure
     * Can add more info about JCR with dbg_jcr_add_hook()
     */
    dbg_print_lock(fp);
@@ -140,7 +144,7 @@ extern "C" void signal_handler(int sig)
    }
    already_dead++;
    /* Don't use Emsg here as it may lock and thus block us */
-   if (sig == SIGTERM) {
+   if (sig == SIGTERM || sig == SIGINT) {
        syslog(LOG_DAEMON|LOG_ERR, "Shutting down Bacula service: %s ...\n", my_name);
    } else {
       fprintf(stderr, _("Bacula interrupted by signal %d: %s\n"), sig, get_signal_name(sig));
@@ -152,7 +156,7 @@ extern "C" void signal_handler(int sig)
    }
 
 #ifdef TRACEBACK
-   if (sig != SIGTERM) {
+   if (sig != SIGTERM && sig != SIGINT) {
       struct sigaction sigdefault;
       static char *argv[5];
       static char pid_buf[20];
@@ -247,7 +251,7 @@ extern "C" void signal_handler(int sig)
 #ifdef direct_print
       if (prt_kaboom) {
          FILE *fd;
-         snprintf(buf, sizeof(buf), "%s/bacula.%s.traceback", working_directory, pid_buf);
+         snprintf(buf, sizeof(buf), "%s/%s.%s.traceback", working_directory, my_name, pid_buf);
          fd = fopen(buf, "r");
          if (fd != NULL) {
             printf("\n\n ==== Traceback output ====\n\n");
@@ -260,7 +264,7 @@ extern "C" void signal_handler(int sig)
       }
 #else
       if (prt_kaboom) {
-         snprintf(buf, sizeof(buf), "/bin/cat %s/bacula.%s.traceback", working_directory, pid_buf);
+         snprintf(buf, sizeof(buf), "/bin/cat %s/%s.%s.traceback", working_directory, my_name, pid_buf);
          fprintf(stderr, "\n\n ==== Traceback output ====\n\n");
          system(buf);
          fprintf(stderr, " ==== End traceback output ====\n\n");
@@ -387,7 +391,7 @@ void init_signals(void terminate(int sig))
    sigaction(SIGWINCH,  &sigignore, NULL);
    sigaction(SIGIO,     &sighandle, NULL);
 
-   sigaction(SIGINT,    &sigdefault, NULL);
+   sigaction(SIGINT,    &sighandle, NULL);
    sigaction(SIGXCPU,   &sigdefault, NULL);
    sigaction(SIGXFSZ,   &sigdefault, NULL);
 

@@ -1,5 +1,10 @@
 #!/bin/sh
 #
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+
+#
 #  Test RunScript
 #
 
@@ -21,7 +26,7 @@ echo "${cwd}/build/po" >${cwd}/tmp/file-list
 start_test
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
-@$out /dev/null
+@output /dev/null
 messages
 label volume=TestVolume001 pool=Scratch
 setdebug dir level=200

@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2001-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *
@@ -288,29 +292,30 @@ static void do_all_status(UAContext *ua)
 
 void list_dir_status_header(UAContext *ua)
 {
-   char dt[MAX_TIME_LENGTH];
+   char dt[MAX_TIME_LENGTH], dt1[MAX_TIME_LENGTH];
    char b1[35], b2[35], b3[35], b4[35], b5[35];
 
-   ua->send_msg(_("%s Version: %s (%s) %s %s %s\n"), my_name, VERSION, BDATE,
-            HOST_OS, DISTNAME, DISTVER);
+   ua->send_msg(_("%s %sVersion: %s (%s) %s %s %s\n"), my_name,
+            "", VERSION, BDATE, HOST_OS, DISTNAME, DISTVER);
    bstrftime_nc(dt, sizeof(dt), daemon_start_time);
-   ua->send_msg(_("Daemon started %s. Jobs: run=%d, running=%d "
-                  "mode=%d,%d\n"), dt,
-                num_jobs_run, job_count(), (int)DEVELOPER_MODE, (int)BEEF);
+   bstrftimes(dt1, sizeof(dt1), last_reload_time);
+   ua->send_msg(_("Daemon started %s, conf reloaded %s\n"), dt, dt1);
+   ua->send_msg(_(" Jobs: run=%d, running=%d mode=%d\n"),
+      num_jobs_run, job_count(), (int)DEVELOPER_MODE);
    ua->send_msg(_(" Heap: heap=%s smbytes=%s max_bytes=%s bufs=%s max_bufs=%s\n"),
-            edit_uint64_with_commas((char *)sbrk(0)-(char *)start_heap, b1),
-            edit_uint64_with_commas(sm_bytes, b2),
-            edit_uint64_with_commas(sm_max_bytes, b3),
-            edit_uint64_with_commas(sm_buffers, b4),
-            edit_uint64_with_commas(sm_max_buffers, b5));
+      edit_uint64_with_commas((char *)sbrk(0)-(char *)start_heap, b1),
+      edit_uint64_with_commas(sm_bytes, b2),
+      edit_uint64_with_commas(sm_max_bytes, b3),
+      edit_uint64_with_commas(sm_buffers, b4),
+      edit_uint64_with_commas(sm_max_buffers, b5));
 
    /* TODO: use this function once for all daemons */
-   if (bplugin_list->size() > 0) {
+   if (b_plugin_list->size() > 0) {
       int len;
       Plugin *plugin;
       POOL_MEM msg(PM_FNAME);
       pm_strcpy(msg, " Plugin: ");
-      foreach_alist(plugin, bplugin_list) {
+      foreach_alist(plugin, b_plugin_list) {
          len = pm_strcat(msg, plugin->file);
          if (len > 80) {
             pm_strcat(msg, "\n   ");
@@ -355,7 +360,7 @@ static void do_storage_status(UAContext *ua, STORE *store, char *cmd)
    }
    /*
     * The Storage daemon is problematic because it shows information
-    *  related to multiple Jobs, so if there is a Client or Job
+    *  related to multiple Job, so if there is a Client or Job
     *  ACL restriction, we forbid all access to the Storage.
     */
    if (have_restricted_acl(ua, Client_ACL) ||
@@ -379,13 +384,29 @@ static void do_storage_status(UAContext *ua, STORE *store, char *cmd)
    sd = ua->jcr->store_bsock;
    if (cmd) {
       POOL_MEM devname;
-      int i = find_arg_with_value(ua, "device");
-      if (i>0) {
-         Mmsg(devname, "device=%s", ua->argv[i]);
+      /*
+       * For .status storage=xxx shstore list
+       *  send .status shstore list xxx-device
+       */
+      if (strcasecmp(cmd, "shstore") == 0) {
+         if (!ua->argk[3]) {
+            ua->send_msg(_("Must have three aguments\n"));
+            return;
+         }
+         pm_strcpy(devname, store->dev_name());
          bash_spaces(devname.c_str());
+         sd->fsend(".status %s %s %s api=%d api_opts=%s",
+                   cmd, ua->argk[3], devname.c_str(),
+                   ua->api, ua->api_opts);
+      } else {
+         int i = find_arg_with_value(ua, "device");
+         if (i>0) {
+            Mmsg(devname, "device=%s", ua->argv[i]);
+            bash_spaces(devname.c_str());
+         }
+         sd->fsend(".status %s api=%d api_opts=%s %s",
+                   cmd, ua->api, ua->api_opts, devname.c_str());
       }
-      sd->fsend(".status %s api=%d api_opts=%s %s",
-                cmd, ua->api, ua->api_opts, devname.c_str());
    } else {
       sd->fsend("status");
    }
@@ -509,7 +530,7 @@ static void prt_runtime(UAContext *ua, sched_pkt *sp)
       level_ptr = level_to_str(sp->level);
       break;
    }
-   if (ua->api) {
+   if (ua->api == 1) {
       ua->send_msg(_("%-14s\t%-8s\t%3d\t%-18s\t%-18s\t%s\n"),
          level_ptr, job_type_to_str(sp->job->JobType), sp->priority, dt,
          sp->job->name(), mr.VolumeName);
@@ -595,10 +616,11 @@ static void llist_scheduled_jobs(UAContext *ua)
    LockRes();
    foreach_res(job, R_JOB) {
       sched = job->schedule;
-      if (sched == NULL || !job->enabled) { /* scheduled? or enabled? */
+      if (!sched || !job->enabled || (sched && !sched->enabled) ||
+         (job->client && !job->client->enabled)) {
          continue;                    /* no, skip this job */
       }
-      if (job_name[0] && bstrcmp(job_name, job->name()) != 0) {
+      if (job_name[0] && strcmp(job_name, job->name()) != 0) {
          continue;
       }
       for (run=sched->run; run; run=run->next) {
@@ -808,38 +830,46 @@ static void list_running_jobs(UAContext *ua)
 {
    JCR *jcr;
    int njobs = 0;
+   int i;
    const char *msg;
    char *emsg;                        /* edited message */
    char dt[MAX_TIME_LENGTH];
    char level[10];
    bool pool_mem = false;
+   JobId_t jid = 0;
+
+   if ((i = find_arg_with_value(ua, "jobid")) >= 0) {
+      jid = str_to_int64(ua->argv[i]);
+   }
 
    Dmsg0(200, "enter list_run_jobs()\n");
-   if (!ua->api) ua->send_msg(_("\nRunning Jobs:\n"));
-   foreach_jcr(jcr) {
-      if (jcr->JobId == 0) {      /* this is us */
-         /* this is a console or other control job. We only show console
-          * jobs in the status output.
-          */
-         if (jcr->getJobType() == JT_CONSOLE && !ua->api) {
-            bstrftime_nc(dt, sizeof(dt), jcr->start_time);
-            ua->send_msg(_("Console connected at %s\n"), dt);
-         }
-         continue;
-      }
-      njobs++;
-   }
-   endeach_jcr(jcr);
 
-   if (njobs == 0) {
-      /* Note the following message is used in regress -- don't change */
-      if (!ua->api)  {
-         ua->send_msg(_("No Jobs running.\n====\n"));
+   if (!ua->api) {
+      ua->send_msg(_("\nRunning Jobs:\n"));
+      foreach_jcr(jcr) {
+         if (jcr->JobId == 0) {      /* this is us */
+            /* this is a console or other control job. We only show console
+             * jobs in the status output.
+             */
+            if (jcr->getJobType() == JT_CONSOLE) {
+               bstrftime_nc(dt, sizeof(dt), jcr->start_time);
+               ua->send_msg(_("Console connected %sat %s\n"),
+                            (ua->UA_sock && ua->UA_sock->tls)?_("using TLS "):"",
+                            dt);
+            }
+            continue;
+         }
+         njobs++;
       }
-      Dmsg0(200, "leave list_run_jobs()\n");
-      return;
+      endeach_jcr(jcr);
+      if (njobs == 0) {
+         /* Note the following message is used in regress -- don't change */
+         ua->send_msg(_("No Jobs running.\n====\n"));
+         Dmsg0(200, "leave list_run_jobs()\n");
+         return;
+      }
    }
-   njobs = 0;
+
    if (!ua->api) {
       ua->send_msg(_(" JobId  Type Level     Files     Bytes  Name              Status\n"));
       ua->send_msg(_("======================================================================\n"));
@@ -848,7 +878,10 @@ static void list_running_jobs(UAContext *ua)
       if (jcr->JobId == 0 || !acl_access_ok(ua, Job_ACL, jcr->job->name())) {
          continue;
       }
-      njobs++;
+      /* JobId keyword found in command line */
+      if (jid > 0 && jcr->JobId != jid) {
+         continue;
+      }
       switch (jcr->JobStatus) {
       case JS_Created:
          msg = _("is waiting execution");
@@ -864,6 +897,9 @@ static void list_running_jobs(UAContext *ua)
          break;
       case JS_Warnings:
          msg = _("has terminated with warnings");
+         break;
+      case JS_Incomplete:
+         msg = _("has terminated in incomplete state");
          break;
       case JS_ErrorTerminated:
          msg = _("has erred");
@@ -1007,6 +1043,7 @@ static void list_running_jobs(UAContext *ua)
          ua->send_msg(_("%6d\t%-6s\t%-20s\t%s\t%s\n"),
                       jcr->JobId, level, jcr->Job, msg, jcr->comment);
          unbash_spaces(jcr->comment);
+
       } else {
          char b1[50], b2[50], b3[50];
          level[4] = 0;
@@ -1094,6 +1131,9 @@ static void list_terminated_jobs(UAContext *ua)
          break;
       case JS_Warnings:
          termstat = _("OK -- with warnings");
+         break;
+      case JS_Incomplete:
+         termstat = _("Incomplete");
          break;
       default:
          termstat = _("Other");

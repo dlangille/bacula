@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 
 
@@ -40,7 +44,7 @@ typedef enum {
 
 typedef enum {
    BVFS_Type    = 0,            /* Could be D, F, V, L */
-   BVFS_PathId  = 1,
+   BVFS_PathId  = 1, 
    BVFS_FilenameId = 2,
 
    BVFS_Name    = 3,
@@ -58,7 +62,7 @@ typedef enum {
 class Bvfs {
 
 public:
-   Bvfs(JCR *j, B_DB *mdb);
+   Bvfs(JCR *j, BDB *mdb);
    virtual ~Bvfs();
 
    void set_jobid(JobId_t id);
@@ -79,13 +83,13 @@ public:
    void set_pattern(char *p) {
       uint32_t len = strlen(p);
       pattern = check_pool_memory_size(pattern, len*2+1);
-      db_escape_string(jcr, db, pattern, p, len);
+      db->bdb_escape_string(jcr, pattern, p, len);
    }
 
    void set_filename(char *p) {
       uint32_t len = strlen(p);
       filename = check_pool_memory_size(filename, len*2+1);
-      db_escape_string(jcr, db, filename, p, len);
+      db->bdb_escape_string(jcr, filename, p, len);
    }
 
    /* Get the root point */
@@ -107,7 +111,7 @@ public:
    bool ls_files();             /* Returns true if we have more files to read */
    bool ls_dirs();              /* Returns true if we have more dir to read */
    void ls_special_dirs();      /* get . and .. */
-   void get_all_file_versions(DBId_t pathid, DBId_t fnid, const char *client);
+   void get_all_file_versions(DBId_t pathid, FileId_t fnid, const char *client);
 
    void update_cache();
 
@@ -195,16 +199,17 @@ public:
    int _handle_path(void *, int, char **);
 
    /* Handle Delta parts if any */
+   void insert_missing_delta(char *output_table, int64_t *res);
 
    /* Get a list of volumes */
-   void get_volumes(DBId_t fileid);
+   void get_volumes(FileId_t fileid);
 
 private:
    Bvfs(const Bvfs &);               /* prohibit pass by value */
    Bvfs & operator = (const Bvfs &); /* prohibit class assignment */
 
    JCR *jcr;
-   B_DB *db;
+   BDB *db;
    POOLMEM *jobids;
    char *username;              /* Used with Bweb */
 
@@ -250,11 +255,10 @@ private:
 #define bvfs_is_version(row) ((row)[BVFS_Type][0] == BVFS_FILE_VERSION)
 #define bvfs_is_volume_list(row) ((row)[BVFS_Type][0] == BVFS_VOLUME_LIST)
 
-void bvfs_update_fv_cache(JCR *jcr, B_DB *mdb, char *jobids);
-int bvfs_update_path_hierarchy_cache(JCR *jcr, B_DB *mdb, char *jobids);
-void bvfs_update_cache(JCR *jcr, B_DB *mdb);
+void bvfs_update_fv_cache(JCR *jcr, BDB *mdb, char *jobids);
+int bvfs_update_path_hierarchy_cache(JCR *jcr, BDB *mdb, char *jobids);
+void bvfs_update_cache(JCR *jcr, BDB *mdb);
 char *bvfs_parent_dir(char *path);
-extern const char *bvfs_select_delta_version_with_basejob_and_delta[];
 
 /* Return the basename of the with the trailing /  (update the given string)
  * TODO: see in the rest of bacula if we don't have

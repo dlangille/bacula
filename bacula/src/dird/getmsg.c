@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *
@@ -82,6 +86,10 @@ static void set_jcr_sd_job_status(JCR *jcr, int SDJobStatus)
       jcr->wait_time = time(NULL);
    }
    jcr->SDJobStatus = SDJobStatus;
+   if (jcr->SDJobStatus == JS_Incomplete) {
+      jcr->setJobStatus(JS_Incomplete);
+   }
+
 }
 
 /*
@@ -214,17 +222,17 @@ int bget_dirmsg(BSOCK *bs)
        *   CatReq Job=nn Catalog-Request-Message
        */
       if (bs->msg[0] == 'C') {        /* Catalog request */
-         Dmsg2(900, "Catalog req jcr 0x%x: %s", jcr, bs->msg);
+         Dmsg2(900, "Catalog req jcr=%p: %s", jcr, bs->msg);
          catalog_request(jcr, bs);
          continue;
       }
       if (bs->msg[0] == 'U') {        /* SD sending attributes */
-         Dmsg2(900, "Catalog upd jcr 0x%x: %s", jcr, bs->msg);
+         Dmsg2(900, "Catalog upd jcr=%p: %s", jcr, bs->msg);
          catalog_update(jcr, bs);
          continue;
       }
       if (bs->msg[0] == 'B') {        /* SD sending file spool attributes */
-         Dmsg2(100, "Blast attributes jcr 0x%x: %s", jcr, bs->msg);
+         Dmsg2(100, "Blast attributes jcr=%p: %s", jcr, bs->msg);
          char filename[256];
          if (sscanf(bs->msg, "BlastAttr Job=%127s File=%255s",
                     Job, filename) != 2) {

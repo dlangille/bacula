@@ -1,7 +1,10 @@
 #
 # Bacula RPM spec file
 #
-# Copyright (C) 2000-2014 Bacula Systems SA
+#
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
 
 # Platform Build Configuration
 
@@ -58,14 +61,13 @@ Distribution: Bacula Bat
 Source: http://www.prdownloads.sourceforge.net/bacula/depkgs-%{depkgs_version}.tar.gz
 
 # define the basic package description
-%define blurb Bacula - The Leading Open Source Backup Solution.
+%define blurb Bacula - The Network Backup Solution.
 %define blurb2 Bacula is a set of computer programs that permit you (or the system
 %define blurb3 administrator) to manage backup, recovery, and verification of computer
 %define blurb4 data across a network of computers of different kinds. In technical terms,
 %define blurb5 it is a network client/server based backup program. Bacula is relatively
 %define blurb6 easy to use and efficient, while offering many advanced storage management
 %define blurb7 features that make it easy to find and recover lost or damaged files.
-%define blurb8 Bacula source code has been released under the AGPL version 3 license.
 
 Summary: Bacula - The Network Backup Solution
 Group: System Environment/Daemons
@@ -79,7 +81,6 @@ Group: System Environment/Daemons
 %{blurb5}
 %{blurb6}
 %{blurb7}
-%{blurb8}
 
 This is Bacula's version of mtx tape utilities for Linux distributions that
 do not provide their own mtx package

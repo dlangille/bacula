@@ -2,19 +2,17 @@
 # To generate this file, type 'make gen-potfiles'
 autoconf/acconfig.h
 autoconf/confdefs.h
-examples/nagios/check_bacula/check_bacula.h
 src/baconfig.h
 src/bacula.h
 src/bc_types.h
+src/cats/bdb.h
 src/cats/bdb_mysql.h
 src/cats/bdb_postgresql.h
-src/cats/bdb_priv.h
 src/cats/bdb_sqlite.h
 src/cats/bvfs.h
 src/cats/cats.h
 src/cats/protos.h
 src/cats/sql_cmds.h
-src/cats/sql_glue.h
 src/ch.h
 src/console/conio.h
 src/console/console_conf.h
@@ -27,7 +25,9 @@ src/dird/jobq.h
 src/dird/protos.h
 src/dird/ua.h
 src/filed/acl.h
+src/filed/backup.h
 src/filed/fd_plugins.h
+src/filed/fd_snapshot.h
 src/filed/filed.h
 src/filed/filed_conf.h
 src/filed/protos.h
@@ -38,12 +38,14 @@ src/filetypes.h
 src/findlib/bfile.h
 src/findlib/find.h
 src/findlib/protos.h
+src/findlib/savecwd.h
 src/jcr.h
 src/lib/address_conf.h
 src/lib/alist.h
 src/lib/attr.h
 src/lib/base64.h
 src/lib/berrno.h
+src/lib/bget_msg.h
 src/lib/bits.h
 src/lib/bmtio.h
 src/lib/bpipe.h
@@ -65,7 +67,6 @@ src/lib/lockmgr.h
 src/lib/md5.h
 src/lib/mem_pool.h
 src/lib/message.h
-src/lib/mntent_cache.h
 src/lib/mutex_list.h
 src/lib/openssl.h
 src/lib/parse_conf.h
@@ -88,6 +89,7 @@ src/lib/waitq.h
 src/lib/watchdog.h
 src/lib/workq.h
 src/plugins/fd/fd_common.h
+src/plugins/sd/sd_common.h
 src/qt-console/bat.h
 src/qt-console/bat_conf.cpp
 src/qt-console/bat_conf.h
@@ -175,6 +177,7 @@ src/qt-console/util/comboutil.h
 src/qt-console/util/fmtwidgetitem.cpp
 src/qt-console/util/fmtwidgetitem.h
 src/qt-console/win32/qplatformdefs.h
+src/stored/bitarray.h
 src/stored/block.h
 src/stored/bsr.h
 src/stored/dev.h
@@ -190,5 +193,4 @@ src/stored/tape_dev.h
 src/stored/vol_mgr.h
 src/stored/vtape_dev.h
 src/streams.h
-src/tools/assert_macro.h
 src/version.h

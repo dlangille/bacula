@@ -1,18 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2010-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
 
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 
 /* You can include this file to your plugin to have
@@ -59,49 +62,144 @@ DLL_IMP_EXP void reallyfree(const char *file, int line, void *fp);
 #define malloc(s)    sm_malloc(__FILE__, __LINE__, (s))
 #define free(o)      sm_free(__FILE__, __LINE__, (o))
 
-inline void *operator new(size_t size, char const * file, int line)
-{
-   void *pnew = sm_malloc(file,line, size);
-   memset((char *)pnew, 0, size);
-   return pnew;
-}
-
-inline void *operator new[](size_t size, char const * file, int line)
-{
-   void *pnew = sm_malloc(file, line, size);
-   memset((char *)pnew, 0, size);
-   return pnew;
-}
-
-inline void *operator new(size_t size)
-{
-   void *pnew = sm_malloc(__FILE__, __LINE__, size);
-   memset((char *)pnew, 0, size);
-   return pnew;
-}
-
-inline void *operator new[](size_t size)
-{
-   void *pnew = sm_malloc(__FILE__, __LINE__, size);
-   memset((char *)pnew, 0, size);
-   return pnew;
-}
-
-#define new   new(__FILE__, __LINE__)
-
-inline void operator delete(void *buf)
-{
-   sm_free( __FILE__, __LINE__, buf);
-}
-
-inline void operator delete[] (void *buf)
-{
-  sm_free(__FILE__, __LINE__, buf);
-}
-
 #define Dmsg(context, level,  ...) bfuncs->DebugMessage(context, __FILE__, __LINE__, level, __VA_ARGS__ )
 #define Jmsg(context, type,  ...) bfuncs->JobMessage(context, __FILE__, __LINE__, type, 0, __VA_ARGS__ )
 
+
+#ifdef USE_CMD_PARSER
+/* from lib/scan.c */
+extern int parse_args(POOLMEM *cmd, POOLMEM **args, int *argc,
+                      char **argk, char **argv, int max_args);
+extern int parse_args_only(POOLMEM *cmd, POOLMEM **args, int *argc,
+                           char **argk, char **argv, int max_args);
+
+class cmd_parser {
+public:
+   POOLMEM *args;
+   POOLMEM *cmd;                /* plugin command line */
+   POOLMEM *org;                /* original command line */
+
+   char **argk;                  /* Argument keywords */
+   char **argv;                  /* Argument values */
+   int argc;                    /* Number of arguments */
+   int max_cmd;                 /* Max number of arguments */
+   bool  use_name;              /* Search for : */
+
+   cmd_parser() {
+      org = get_pool_memory(PM_FNAME);
+      args = get_pool_memory(PM_FNAME);
+      cmd = get_pool_memory(PM_FNAME);
+      *args = *org  = *cmd = 0;
+      argc = 0; 
+      use_name = true;
+      max_cmd = MAX_CMD_ARGS;
+      argk = argv = NULL;
+   };
+
+   virtual ~cmd_parser() {
+      free_pool_memory(org);
+      free_pool_memory(cmd);
+      free_pool_memory(args);
+      if (argk) {
+         free(argk);
+      }
+      if (argv) {
+         free(argv);
+      }
+   }
+
+   /*
+    * Given a single keyword, find it in the argument list, but
+    *   it must have a value
+    * Returns: -1 if not found or no value
+    *           list index (base 0) on success
+    */
+   int find_arg_with_value(const char *keyword)
+   {
+      for (int i=1; i<argc; i++) {
+         if (strcasecmp(keyword, argk[i]) == 0) {
+            if (argv[i]) {
+               return i;
+            } else {
+               return -1;
+            }
+         }
+      }
+      return -1;
+   }
+
+   /*
+    * Given a single keyword, find it in the argument list
+    * Returns: -1 if not found
+    *           list index (base 0) on success
+    */
+   int find_arg(const char *keyword)
+   {
+      for (int i=1; i<argc; i++) {
+         if (strcasecmp(keyword, argk[i]) == 0) {
+            return i;
+         }
+      }
+      return -1;
+   }
+
+   /* 
+    * Build args, argc, argk from Plugin Restore|Backup command
+    */
+
+   bRC parse_cmd(const char *line)
+   {
+      char *a;
+      int nbequal = 0;
+      if (!line || *line == '\0') {
+         return bRC_Error;
+      }
+
+      /* Same command line that before */
+      if (!strcmp(line, org)) {
+         return bRC_OK;
+      }
+      
+      /* 
+       * line = delta:minsize=10002 param1=xxx
+       *             |     backup command
+       */
+      pm_strcpy(org, line);
+      pm_strcpy(cmd, line);
+
+      if (use_name) {
+         if ((a = strchr(cmd, ':')) != NULL) {
+            *a = ' ';              /* replace : by ' ' for command line processing */
+         } else {
+            return bRC_Error;
+         }
+      }
+
+      for (char *p = cmd; *p ; p++) {
+         if (*p == '=') {
+            nbequal++;
+         }
+      }
+
+      if (argk) {
+         free(argk);
+      }
+      if (argv) {
+         free(argv);
+      }
+
+      max_cmd = MAX(nbequal, MAX_CMD_ARGS) + 1;
+
+      argk = (char **) malloc(sizeof(char **) * max_cmd);
+      argv = (char **) malloc(sizeof(char **) * max_cmd);
+      
+      parse_args(cmd, &args, &argc, argk, argv, max_cmd);
+      
+      return bRC_OK;
+   }
+
+};
+#endif  /* USE_CMD_PARSER */
 
 #ifdef USE_ADD_DRIVE
 /* Keep drive letters for windows vss snapshot */
@@ -114,7 +212,7 @@ static void add_drive(char *drives, int *nCount, char *fname) {
          drives[*nCount] = ch;
          drives[*nCount+1] = 0;
          (*nCount)++;
-      }
+      }                                
    }
 }
 
@@ -128,6 +226,6 @@ static void copy_drives(char *drives, char *dest) {
       }
    }
 }
-#endif
+#endif  /* USE_ADD_DRIVE */
 
-#endif
+#endif  /* ! PCOMMON_H */

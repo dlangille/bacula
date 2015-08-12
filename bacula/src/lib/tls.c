@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2005-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  * tls.c TLS support functions
@@ -56,6 +60,8 @@ struct TLS_Context {
 
 struct TLS_Connection {
    SSL *openssl;
+   pthread_mutex_t wlock;  /* make openssl_bsock_readwrite() atomic when writing */
+   pthread_mutex_t rwlock; /* only one SSL_read() or SSL_write() at a time */
 };
 
 /*
@@ -462,6 +468,9 @@ TLS_CONNECTION *new_tls_connection(TLS_CONTEXT *ctx, int fd)
    /* Non-blocking partial writes */
    SSL_set_mode(tls->openssl, SSL_MODE_ENABLE_PARTIAL_WRITE|SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER);
 
+   pthread_mutex_init(&tls->wlock, NULL);
+   pthread_mutex_init(&tls->rwlock, NULL);
+
    return tls;
 
 err:
@@ -477,6 +486,8 @@ err:
  */
 void free_tls_connection(TLS_CONNECTION *tls)
 {
+   pthread_mutex_destroy(&tls->rwlock);
+   pthread_mutex_destroy(&tls->wlock);
    SSL_free(tls->openssl);
    free(tls);
 }
@@ -653,12 +664,18 @@ static inline int openssl_bsock_readwrite(BSOCK *bsock, char *ptr, int nbytes, b
 
    nleft = nbytes;
 
+   if (write) {
+      pthread_mutex_lock(&tls->wlock);
+   }
    while (nleft > 0) {
+
+      pthread_mutex_lock(&tls->rwlock);
       if (write) {
          nwritten = SSL_write(tls->openssl, ptr, nleft);
       } else {
          nwritten = SSL_read(tls->openssl, ptr, nleft);
       }
+      pthread_mutex_unlock(&tls->rwlock);
 
       /* Handle errors */
       switch (SSL_get_error(tls->openssl, nwritten)) {
@@ -721,6 +738,9 @@ static inline int openssl_bsock_readwrite(BSOCK *bsock, char *ptr, int nbytes, b
    }
 
 cleanup:
+   if (write) {
+      pthread_mutex_unlock(&tls->wlock);
+   }
    /* Restore saved flags */
    bsock->restore_blocking(flags);
 
@@ -742,6 +762,14 @@ int tls_bsock_readn(BSOCK *bsock, char *ptr, int32_t nbytes)
    /* SSL_read(bsock->tls->openssl, ptr, nbytes) */
    return openssl_bsock_readwrite(bsock, ptr, nbytes, false);
 }
+
+/* test if 4 bytes can be read without "blocking" */
+bool tls_bsock_probe(BSOCK *bsock)
+{
+   int32_t pktsiz;
+   return SSL_peek(bsock->tls->openssl, &pktsiz, sizeof(pktsiz))==sizeof(pktsiz);
+}
+
 
 #else /* HAVE_OPENSSL */
 # error No TLS implementation available.

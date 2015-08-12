@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  * Manipulation routines for Job Control Records and
@@ -321,7 +325,6 @@ JCR *new_jcr(int size, JCR_free_HANDLER *daemon_free_jcr)
 {
    JCR *jcr;
    MQUEUE_ITEM *item = NULL;
-   struct sigaction sigtimer;
    int status;
 
    Dmsg0(dbglvl, "Enter new_jcr\n");
@@ -358,10 +361,13 @@ JCR *new_jcr(int size, JCR_free_HANDLER *daemon_free_jcr)
    jcr->setJobType(JT_SYSTEM);           /* internal job until defined */
    jcr->setJobLevel(L_NONE);
    jcr->setJobStatus(JS_Created);        /* ready to run */
+#ifndef HAVE_WIN32
+   struct sigaction sigtimer;
    sigtimer.sa_flags = 0;
    sigtimer.sa_handler = timeout_handler;
    sigfillset(&sigtimer.sa_mask);
    sigaction(TIMEOUT_SIGNAL, &sigtimer, NULL);
+#endif
 
    /*
     * Locking jobs is a global lock that is needed
@@ -493,10 +499,10 @@ void free_jcr(JCR *jcr)
 
    lock_jcr_chain();
    jcr->dec_use_count();              /* decrement use count */
-   if (jcr->use_count() < 0) {
-      Jmsg2(jcr, M_ERROR, 0, _("JCR use_count=%d JobId=%d\n"),
-         jcr->use_count(), jcr->JobId);
-   }
+   ASSERT2(jcr->use_count() >= 0, "JCR use_count < 0");
+   //    Jmsg2(jcr, M_ERROR, 0, _("JCR use_count=%d JobId=%d\n"),
+   //      jcr->use_count(), jcr->JobId);
+   //}
    if (jcr->JobId > 0) {
       Dmsg3(dbglvl, "Dec free_jcr jid=%u use_count=%d Job=%s\n",
          jcr->JobId, jcr->use_count(), jcr->Job);
@@ -509,6 +515,7 @@ void free_jcr(JCR *jcr)
       Dmsg3(dbglvl, "remove jcr jid=%u use_count=%d Job=%s\n",
             jcr->JobId, jcr->use_count(), jcr->Job);
    }
+   jcr->exiting = true;
    remove_jcr(jcr);                   /* remove Jcr from chain */
    unlock_jcr_chain();
 
@@ -583,10 +590,9 @@ void remove_jcr_from_tsd(JCR *jcr)
 
 void JCR::set_killable(bool killable)
 {
-   JCR *jcr = this;
-   jcr->lock();
-   jcr->my_thread_killable = killable;
-   jcr->unlock();
+   lock();
+   my_thread_killable = killable;
+   unlock();
 }
 
 /*
@@ -606,17 +612,24 @@ void set_jcr_in_tsd(JCR *jcr)
 
 void JCR::my_thread_send_signal(int sig)
 {
+   lock_jcr_chain();   /* use global lock */
    this->lock();
+   if (this->exiting) {
+      goto get_out;
+   }
    if (this->is_killable() &&
        !pthread_equal(this->my_thread_id, pthread_self()))
    {
       Dmsg1(800, "Send kill to jid=%d\n", this->JobId);
       pthread_kill(this->my_thread_id, sig);
+      this->exiting = true;
 
    } else if (!this->is_killable()) {
       Dmsg1(10, "Warning, can't send kill to jid=%d\n", this->JobId);
    }
+get_out:
    this->unlock();
+   unlock_jcr_chain();
 }
 
 /*
@@ -830,6 +843,9 @@ static int get_status_priority(int JobStatus)
 {
    int priority = 0;
    switch (JobStatus) {
+   case JS_Incomplete:
+      priority = 10;
+      break;
    case JS_ErrorTerminated:
    case JS_FatalError:
    case JS_Canceled:
@@ -850,9 +866,8 @@ static int get_status_priority(int JobStatus)
  */
 bool JCR::sendJobStatus()
 {
-   JCR *jcr = this;
-   if (jcr->dir_bsock) {
-      return jcr->dir_bsock->fsend(Job_status, jcr->Job, jcr->JobStatus);
+   if (dir_bsock) {
+      return dir_bsock->fsend(Job_status, Job, JobStatus);
    }
    return true;
 }
@@ -860,13 +875,12 @@ bool JCR::sendJobStatus()
 /*
  * Set and send Job status to Director
  */
-bool JCR::sendJobStatus(int newJobStatus)
+bool JCR::sendJobStatus(int aJobStatus)
 {
-   JCR *jcr = this;
-   if (!jcr->is_JobStatus(newJobStatus)) {
-      setJobStatus(newJobStatus);
-      if (jcr->dir_bsock) {
-         return jcr->dir_bsock->fsend(Job_status, jcr->Job, jcr->JobStatus);
+   if (!is_JobStatus(aJobStatus)) {
+      setJobStatus(aJobStatus);
+      if (dir_bsock) {
+         return dir_bsock->fsend(Job_status, Job, JobStatus);
       }
    }
    return true;
@@ -874,23 +888,21 @@ bool JCR::sendJobStatus(int newJobStatus)
 
 void JCR::setJobStarted()
 {
-   JCR *jcr = this;
-   jcr->job_started = true;
-   jcr->job_started_time = time(NULL);
+   job_started = true;
+   job_started_time = time(NULL);
 }
 
 void JCR::setJobStatus(int newJobStatus)
 {
-   JCR *jcr = this;
    int priority, old_priority;
-   int oldJobStatus = jcr->JobStatus;
+   int oldJobStatus = JobStatus;
    priority = get_status_priority(newJobStatus);
    old_priority = get_status_priority(oldJobStatus);
 
    Dmsg2(800, "set_jcr_job_status(%s, %c)\n", Job, newJobStatus);
 
    /* Update wait_time depending on newJobStatus and oldJobStatus */
-   update_wait_time(jcr, newJobStatus);
+   update_wait_time(this, newJobStatus);
 
    /*
     * For a set of errors, ... keep the current status
@@ -907,13 +919,13 @@ void JCR::setJobStatus(int newJobStatus)
    if (priority > old_priority || (
        priority == 0 && old_priority == 0)) {
       Dmsg4(800, "Set new stat. old: %c,%d new: %c,%d\n",
-         jcr->JobStatus, old_priority, newJobStatus, priority);
-      jcr->JobStatus = newJobStatus;     /* replace with new status */
+         JobStatus, old_priority, newJobStatus, priority);
+      JobStatus = newJobStatus;     /* replace with new status */
    }
 
-   if (oldJobStatus != jcr->JobStatus) {
+   if (oldJobStatus != JobStatus) {
       Dmsg2(800, "leave setJobStatus old=%c new=%c\n", oldJobStatus, newJobStatus);
-//    generate_plugin_event(jcr, bEventStatusChange, NULL);
+//    generate_plugin_event(this, bEventStatusChange, NULL);
    }
 }
 
@@ -1159,7 +1171,7 @@ extern "C" void timeout_handler(int sig)
 }
 
 /* Used to display specific daemon information after a fatal signal
- * (like B_DB in the director)
+ * (like BDB in the director)
  */
 #define MAX_DBG_HOOK 10
 static dbg_jcr_hook_t *dbg_jcr_hooks[MAX_DBG_HOOK];
@@ -1186,6 +1198,7 @@ void dbg_jcr_add_hook(dbg_jcr_hook_t *hook)
 void dbg_print_jcr(FILE *fp)
 {
    char buf1[128], buf2[128], buf3[128], buf4[128];
+
    if (!jcrs) {
       return;
    }
@@ -1195,11 +1208,8 @@ void dbg_print_jcr(FILE *fp)
    for (JCR *jcr = (JCR *)jcrs->first(); jcr ; jcr = (JCR *)jcrs->next(jcr)) {
       fprintf(fp, "threadid=%p JobId=%d JobStatus=%c jcr=%p name=%s\n",
               get_threadid(jcr->my_thread_id), (int)jcr->JobId, jcr->JobStatus, jcr, jcr->Job);
-      fprintf(fp, "threadid=%p killable=%d JobId=%d JobStatus=%c "
-                  "jcr=%p name=%s\n",
-              get_threadid(jcr->my_thread_id), jcr->is_killable(),
-              (int)jcr->JobId, jcr->JobStatus, jcr, jcr->Job);
-      fprintf(fp, "\tuse_count=%i\n", jcr->use_count());
+      fprintf(fp, "\tuse_count=%i killable=%d\n",
+              jcr->use_count(), jcr->is_killable());
       fprintf(fp, "\tJobType=%c JobLevel=%c\n",
               jcr->getJobType(), jcr->getJobLevel());
       bstrftime(buf1, sizeof(buf1), jcr->sched_time);

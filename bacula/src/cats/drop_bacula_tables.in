@@ -1,23 +1,14 @@
 #!/bin/sh
 #
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
 #  Drop Bacula tables -- works for whatever is configured,
 #  MySQL, SQLite, Ingres, or PostgreSQL
 #
-#
-#  Bacula® - The Network Backup Solution
-#
-#  Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
-#
-#  The main author of Bacula is Kern Sibbald, with contributions from many
-#  others, a complete list can be found in the file AUTHORS.
-#
-#  You may use this file and others of this release according to the
-#  license defined in the LICENSE file, which includes the Affero General
-#  Public License, v3.0 ("AGPLv3") and some additional permissions and
-#  terms pursuant to its AGPLv3 Section 7.
-#
-#  Bacula® is a registered trademark of Kern Sibbald.
-#
+
+# can be used to change the current user with su
+pre_command="sh -c"
 
 default_db_type=@DEFAULT_DB_TYPE@
 
@@ -39,10 +30,6 @@ if [ $# -gt 0 ]; then
        db_type=$1
        shift
        ;;
-     ingres)
-       db_type=$1
-       shift
-       ;;
      *)
        ;;
    esac
@@ -55,5 +42,9 @@ if [ -z "${db_type}" ]; then
    db_type="${default_db_type}"
 fi
 
-@scriptdir@/drop_${db_type}_tables $*
+if [ $db_type = postgresql -a "$UID" = 0 ]; then
+    pre_command="su - postgres -c"
+fi
+
+$pre_command "@scriptdir@/drop_${db_type}_tables $*"
 echo "Dropped ${db_type} tables"

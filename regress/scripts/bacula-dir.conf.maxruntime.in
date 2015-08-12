@@ -87,7 +87,7 @@ Job {
   Max Full Interval = 28 days
   Full Max Run Time = 1min
   Cancel Queued Duplicates = no
-
+  Maximum Bandwidth = 5MB/s
 }
 
 # Client (File Services) to backup

@@ -1,11 +1,14 @@
 #!/bin/sh
 #
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
 # This routine makes the appropriately configured
 # Bacula tables for PostgreSQL, Ingres, MySQL, or SQLite.
 #
-#  Author:  Kern Sibbald
-#  License: LGPLv3
-#
+
+# can be used to change the current user with su
+pre_command="sh -c"
 
 default_db_type=@DEFAULT_DB_TYPE@
 
@@ -27,10 +30,6 @@ if [ $# -gt 0 ]; then
        db_type=$1
        shift
        ;;
-     ingres)
-       db_type=$1
-       shift
-       ;;
      *)
        ;;
    esac
@@ -43,5 +42,9 @@ if [ -z "${db_type}" ]; then
    db_type="${default_db_type}"
 fi
 
+if [ $db_type = postgresql -a "$UID" = 0 ]; then
+    pre_command="su - postgres -c"
+fi
+
 echo "Making ${db_type} tables"
-@scriptdir@/make_${db_type}_tables $*
+$pre_command "@scriptdir@/make_${db_type}_tables $*"

@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2001-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  * File types as returned by find_files()
@@ -64,9 +68,9 @@ int readdir_r(DIR *dirp, struct dirent *entry, struct dirent **result);
 
 struct s_included_file {
    struct s_included_file *next;
-   uint32_t options;                  /* backup options */
+   uint64_t options;                  /* backup options */
    uint32_t algo;                     /* compression algorithm. 4 letters stored as an interger */
-   int level;                         /* compression level */
+   int Compress_level;                /* compression level */
    int len;                           /* length of fname */
    int pattern;                       /* set if wild card pattern */
    char VerifyOpts[20];               /* Options for verify */
@@ -96,7 +100,7 @@ enum {
 
 /* File options structure */
 struct findFOPTS {
-   uint32_t flags;                    /* options in bits */
+   uint64_t flags;                    /* options in bits */
    uint32_t Compress_algo;            /* compression algorithm. 4 letters stored as an interger */
    int Compress_level;                /* compression level */
    int strip_path;                    /* strip path count */
@@ -154,6 +158,16 @@ struct FF_PKT {
    char *object_name;                 /* Object name */
    char *object;                      /* restore object */
    char *plugin;                      /* Current Options{Plugin=} name */
+
+   /* Specific snapshot part */
+   char *volume_path;                 /* volume path */
+   char *snapshot_path;               /* snapshot path */
+   char *top_fname_save;
+   POOLMEM *snap_fname;               /* buffer used when stripping path */
+   POOLMEM *snap_top_fname;
+   bool strip_snap_path;              /* convert snapshot path or not */
+   bool (*snapshot_convert_fct)(JCR *jcr, FF_PKT *ff, dlist *filelist, dlistString *node);
+
    POOLMEM *sys_fname;                /* system filename */
    POOLMEM *fname_save;               /* save when stripping path */
    POOLMEM *link_save;                /* save when stripping path */
@@ -190,14 +204,18 @@ struct FF_PKT {
    bool (*check_fct)(JCR *, FF_PKT *); /* optionnal user fct to check file changes */
 
    /* Values set by accept_file while processing Options */
-   uint32_t flags;                    /* backup options */
+   uint64_t flags;                    /* backup options */
    uint32_t Compress_algo;            /* compression algorithm. 4 letters stored as an interger */
    int Compress_level;                /* compression level */
    int strip_path;                    /* strip path count */
    bool cmd_plugin;                   /* set if we have a command plugin */
    bool opt_plugin;                   /* set if we have an option plugin */
+   rblist *mtab_list;                 /* List of mtab entries */
+   uint64_t last_fstype;              /* cache last file system type */
+   char *last_fstypename;             /* cache last file system type name */
    alist fstypes;                     /* allowed file system types */
    alist drivetypes;                  /* allowed drive types */
+   alist mount_points;                /* Possible mount points to be snapshotted */
 
    /* List of all hard linked files found */
    struct f_link **linkhash;          /* hard linked files */
@@ -209,6 +227,10 @@ struct FF_PKT {
    struct HFSPLUS_INFO hfsinfo;       /* Finder Info and resource fork size */
 };
 
+typedef void (mtab_handler_t)(void *user_ctx, struct stat *st,
+               const char *fstype, const char *mountpoint,
+               const char *mntopts, const char *fsname);
+bool read_mtab(mtab_handler_t *mtab_handler, void *user_ctx);
 
 #include "protos.h"
 

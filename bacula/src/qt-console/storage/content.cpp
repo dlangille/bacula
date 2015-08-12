@@ -1,19 +1,23 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2007-2009 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
-*/
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
 
+   Bacula(R) is a registered trademark of Kern Sibbald.
+*/
+ 
 #include "bat.h"
 #include <QAbstractEventDispatcher>
 #include <QMenu>
@@ -24,11 +28,11 @@
 #include "util/fmtwidgetitem.h"
 #include "status/storstat.h"
 
-//
+// 
 // TODO: List tray
 //       List drives in autochanger
 //       use user selection to add slot= argument
-//
+// 
 
 Content::Content(QString storage, QTreeWidgetItem *parentWidget) : Pages()
 {
@@ -91,8 +95,12 @@ void table_get_selection(QTableWidget *table, QString &sel)
     * We take only one instance
     */
    int s = table->rowCount();
+   if (s == 0) {
+      /* No selection?? */
+      return;
+   }
    bool *tab = (bool *)malloc(s * sizeof(bool));
-   memset(tab, 0, s);
+   memset(tab, 0, s); 
 
    foreach (item, table->selectedItems()) {
       current = item->row();
@@ -161,7 +169,7 @@ void Content::statusStorageWindow()
 }
 
 /*
- * The main meat of the class!!  The function that querries the director and
+ * The main meat of the class!!  The function that querries the director and 
  * creates the widgets with appropriate values.
  */
 void Content::populateContent()
@@ -212,33 +220,33 @@ void Content::populateContent()
       }
 
       /* Slot */
-      slotitem.setNumericFld(index++, fld.next());
+      slotitem.setNumericFld(index++, fld.next()); 
 
       /* Real Slot */
       if (fld.next() != "") {
 
          /* Volume */
          slotitem.setTextFld(index++, fld.next());
-
+         
          /* Bytes */
          slotitem.setBytesFld(index++, fld.next());
-
+         
          /* Status */
          slotitem.setVolStatusFld(index++, fld.next());
-
+         
          /* MediaType */
          slotitem.setTextFld(index++, fld.next());
-
+         
          /* Pool */
          slotitem.setTextFld(index++, fld.next());
-
+         
          tim = fld.next().toInt();
          if (tim > 0) {
             /* LastW */
             localtime_r(&tim, &tm);
             strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &tm);
             slotitem.setTextFld(index++, QString(buf));
-
+            
             /* Expire */
             tim = fld.next().toInt();
             localtime_r(&tim, &tm);
@@ -248,6 +256,7 @@ void Content::populateContent()
       }
       row++;
    }
+
 
    tableContent->verticalHeader()->hide();
    tableContent->sortByColumn(0, Qt::AscendingOrder);
@@ -262,17 +271,16 @@ void Content::populateContent()
    tableTray->setEditTriggers(QAbstractItemView::NoEditTriggers);
 
    tableDrive->verticalHeader()->hide();
+   /* Get count of rows needed (Drives) */
    QStringList drives = results_all.filter(QRegExp("^D\\|[0-9]+\\|"));
+   /* Ensure we have sufficient rows for Drive display */
    tableDrive->setRowCount(drives.size());
-
    row = 0;
    foreach (resultline, drives) {
       fieldlist = resultline.split("|");
       if (fieldlist.size() < 4) {
-         Pmsg1(0, "Discarding %s\n", resultline.data());
          continue; /* some fields missing, ignore row */
       }
-
       int index=0;
       QStringListIterator fld(fieldlist);
       TableItemFormatter slotitem(*tableDrive, row);
@@ -281,14 +289,14 @@ void Content::populateContent()
       fld.next();
 
       /* Number */
-      slotitem.setNumericFld(index++, fld.next());
+      slotitem.setNumericFld(index++, fld.next()); 
 
       /* Slot */
       fld.next();
-
+      
       /* Volume */
       slotitem.setTextFld(index++, fld.next());
-
+         
       row++;
    }
 
@@ -316,7 +324,7 @@ void Content::consoleUpdateSlots()
 {
    QString sel = "";
    table_get_selection(tableContent, sel);
-
+   
    QString cmd("update slots");
    if (sel != "") {
       cmd += sel;

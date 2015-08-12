@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2001-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  * Includes specific to the Director User Agent Server
@@ -28,9 +32,9 @@ public:
    BSOCK *UA_sock;
    BSOCK *sd;
    JCR *jcr;
-   B_DB *db;                          /* Pointing to shared or private db */
-   B_DB *shared_db;                   /* Main Bacula DB access */
-   B_DB *private_db;                  /* Private DB access */
+   BDB *db;                          /* Pointing to shared or private db */
+   BDB *shared_db;                   /* Main Bacula DB access */
+   BDB *private_db;                  /* Private DB access */
    CAT *catalog;
    CONRES *cons;                      /* console resource */
    POOLMEM *cmd;                      /* return command/name buffer */
@@ -122,6 +126,8 @@ struct RESTORE_CTX {
    bool all;                          /* mark all as default */
    bool hardlinks_in_mem;             /* keep hard links in memory */
    NAME_LIST name_list;
+   POOLMEM *component_fname;
+   FILE *component_fd;
 };
 
 #define MAX_ID_LIST_LEN 2000000

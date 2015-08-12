@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2003-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
 **  OSSP var - Variable Expansion
@@ -1863,6 +1867,7 @@ lookup_value(
     if (ctx->rel_lookup_flag && rc == VAR_ERR_UNDEFINED_VARIABLE) {
         ctx->rel_lookup_cnt--;
         buf[0] = EOS;
+        /* ****FIXME**** passing back stack variable!!! */
         *val_ptr  = buf;
         *val_len  = 0;
         *val_size = 0;
@@ -2403,7 +2408,7 @@ var_create(
         return VAR_RC(VAR_ERR_INVALID_ARGUMENT);
     if ((var = (var_t *)malloc(sizeof(var_t))) == NULL)
         return VAR_RC(VAR_ERR_OUT_OF_MEMORY);
-    memset(var, 0, sizeof(*var));
+    memset(var, 0, sizeof(var_t));
     var_config(var, VAR_CONFIG_SYNTAX, &var_syntax_default);
     *pvar = var;
     return VAR_OK;
@@ -2428,7 +2433,7 @@ var_config(
     ...)
 {
     va_list ap;
-    var_rc_t rc;
+    var_rc_t rc = VAR_OK;
 
     if (var == NULL)
         return VAR_RC(VAR_ERR_INVALID_ARGUMENT);

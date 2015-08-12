@@ -1,22 +1,26 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  * Director specific configuration and defines
  *
- *     Written by Kern Sibbald, Feb MM
+ *     Kern Sibbald, Feb MM
  *
  */
 
@@ -38,7 +42,8 @@ enum {
    R_COUNTER,
    R_CONSOLE,
    R_JOBDEFS,
-   R_DEVICE,
+   R_DEVICE,       /* This is the real last device class */
+
    R_FIRST = R_DIRECTOR,
    R_LAST  = R_DEVICE                 /* keep this updated */
 };
@@ -55,11 +60,11 @@ enum {
    R_BACKUP
 };
 
-
-/* Used for certain KeyWord tables */
-struct s_kw {
+/* Options for FileSet keywords */
+struct s_fs_opt {
    const char *name;
-   uint32_t token;
+   int keyword;
+   const char *option;
 };
 
 /* Job Level keyword structure */
@@ -105,6 +110,7 @@ public:
    uint32_t MaxConcurrentJobs;        /* Max concurrent jobs for whole director */
    uint32_t MaxSpawnedJobs;           /* Max Jobs that can be started by Migration/Copy */
    uint32_t MaxConsoleConnect;        /* Max concurrent console session */
+   uint32_t MaxReload;                /* Maximum reload requests */
    utime_t FDConnectTimeout;          /* timeout for connect in seconds */
    utime_t SDConnectTimeout;          /* timeout in seconds */
    utime_t heartbeat_interval;        /* Interval to send heartbeats */
@@ -222,8 +228,8 @@ public:
    char *db_user;
    char *db_name;
    char *db_driver;                   /* Select appropriate driver */
-   uint32_t mult_db_connections;      /* set if multiple connections wanted */
-   bool disable_batch_insert;         /* set if batch inserts should be disabled */
+   uint32_t mult_db_connections;      /* set for multiple db connections */
+   bool disable_batch_insert;         /* set to disable batch inserts */
 
    /* Methods */
    char *name() const;
@@ -244,6 +250,7 @@ public:
    uint32_t FDport;                   /* Where File daemon listens */
    utime_t FileRetention;             /* file retention period in seconds */
    utime_t JobRetention;              /* job retention period in seconds */
+   utime_t SnapRetention;             /* Snapshot retention period in seconds */
    utime_t heartbeat_interval;        /* Interval to send heartbeats */
    char *address;
    char *fd_storage_address;          /* Storage address to use from FD side  */
@@ -260,6 +267,7 @@ public:
    bool tls_authenticate;             /* Authenticated with TLS */
    bool tls_enable;                   /* Enable TLS */
    bool tls_require;                  /* Require TLS */
+   bool enabled;                      /* Set if client enabled */
    bool AutoPrune;                    /* Do automatic pruning? */
    bool sd_calls_client;              /* SD calls the client */
    int64_t max_bandwidth;             /* Limit speed on this client */
@@ -299,8 +307,8 @@ public:
    bool tls_enable;                   /* Enable TLS */
    bool tls_require;                  /* Require TLS */
    bool enabled;                      /* Set if device is enabled */
-   bool  autochanger;                 /* set if autochanger */
    bool AllowCompress;                /* set if this Storage should allow jobs to enable compression */
+   bool autochanger;                  /* set if we are part of an autochanger */
    int64_t StorageId;                 /* Set from Storage DB record */
    utime_t heartbeat_interval;        /* Interval to send heartbeats */
    uint32_t drives;                   /* number of drives in autochanger */
@@ -361,13 +369,14 @@ class JOB {
 public:
    RES   hdr;
 
-   uint32_t   JobType;                /* job type (backup, verify, restore */
-   uint32_t   JobLevel;               /* default backup/verify level */
-   int32_t   Priority;                /* Job priority */
-   uint32_t   RestoreJobId;           /* What -- JobId to restore */
-   int32_t   RescheduleTimes;         /* Number of times to reschedule job */
-   uint32_t   replace;                /* How (overwrite, ..) */
-   uint32_t   selection_type;
+   uint32_t JobType;                  /* job type (backup, verify, restore */
+   uint32_t JobLevel;                 /* default backup/verify level */
+   uint32_t RestoreJobId;             /* What -- JobId to restore */
+   uint32_t replace;                  /* How (overwrite, ..) */
+   uint32_t selection_type;
+
+   int32_t  Priority;                 /* Job priority */
+   int32_t  RescheduleTimes;          /* Number of times to reschedule job */
 
    char *RestoreWhere;                /* Where on disk to restore -- directory */
    char *RegexWhere;                  /* RegexWhere option */
@@ -391,6 +400,7 @@ public:
    utime_t MaxFullInterval;           /* Maximum time interval between Fulls */
    utime_t MaxDiffInterval;           /* Maximum time interval between Diffs */
    utime_t DuplicateJobProximity;     /* Permitted time between duplicicates */
+   utime_t SnapRetention;             /* Snapshot retention period in seconds */
    int64_t spool_size;                /* Size of spool file for this job */
    int32_t MaxConcurrentJobs;         /* Maximum concurrent jobs */
    int32_t NumConcurrentJobs;         /* number of concurrent jobs running */
@@ -435,7 +445,7 @@ public:
    bool CancelQueuedDuplicates;       /* Cancel queued jobs */
    bool CancelRunningDuplicates;      /* Cancel Running jobs */
    bool PurgeMigrateJob;              /* Purges source job on completion */
-   bool IgnoreDuplicateJobChecking;   /* Ignore Duplicate Job Checking */
+   bool IgnoreDuplicateJobChecking;   /* Set to ignore Duplicate Job Checking */
 
    alist *base;                       /* Base jobs */
    int64_t max_bandwidth;             /* Speed limit on this job */
@@ -446,8 +456,40 @@ public:
 
 inline char *JOB::name() const { return hdr.name; }
 
+/* Define FileSet Options keyword values */
+enum {
+   INC_KW_NONE,
+   INC_KW_COMPRESSION,
+   INC_KW_DIGEST,
+   INC_KW_ENCRYPTION,
+   INC_KW_VERIFY,
+   INC_KW_BASEJOB,
+   INC_KW_ACCURATE,
+   INC_KW_ONEFS,
+   INC_KW_RECURSE,
+   INC_KW_SPARSE,
+   INC_KW_HARDLINK,
+   INC_KW_REPLACE,               /* restore options */
+   INC_KW_READFIFO,              /* Causes fifo data to be read */
+   INC_KW_PORTABLE,
+   INC_KW_MTIMEONLY,
+   INC_KW_KEEPATIME,
+   INC_KW_EXCLUDE,
+   INC_KW_ACL,
+   INC_KW_IGNORECASE,
+   INC_KW_HFSPLUS,
+   INC_KW_NOATIME,
+   INC_KW_ENHANCEDWILD,
+   INC_KW_CHKCHANGES,
+   INC_KW_STRIPPATH,
+   INC_KW_HONOR_NODUMP,
+   INC_KW_XATTR,
+   INC_KW_MAX                   /* Keep this last */
+};
+
+
 #undef  MAX_FOPTS
-#define MAX_FOPTS 40
+#define MAX_FOPTS 50
 
 /* File options structure */
 struct FOPTS {
@@ -470,6 +512,7 @@ struct FOPTS {
 
 /* This is either an include item or an exclude item */
 struct INCEXE {
+   char  opt_present[INC_KW_MAX+1]; /* set if option is present in conf file */
    FOPTS *current_opts;               /* points to current options structure */
    FOPTS **opts_list;                 /* options list */
    int32_t num_opts;                  /* number of options items */
@@ -496,6 +539,7 @@ public:
    char MD5[30];                      /* base 64 representation of MD5 */
    bool ignore_fs_changes;            /* Don't force Full if FS changed */
    bool enable_vss;                   /* Enable Volume Shadow Copy */
+   bool enable_snapshot;              /* Enable Snapshot */
 
    /* Methods */
    char *name() const;
@@ -512,6 +556,8 @@ public:
    RES   hdr;
 
    RUN *run;
+   bool enabled;                      /* set if enabled */
+   /* Methods */
    char *name() const;
 };
 
@@ -582,8 +628,6 @@ public:
 inline char *POOL::name() const { return hdr.name; }
 
 
-
-
 /* Define the Union of all the above
  * resource structure definitions.
  */
@@ -636,6 +680,7 @@ public:
    uint32_t minute;                   /* minute to run job */
    time_t last_run;                   /* last time run */
    time_t next_run;                   /* next time to run */
+   bool last_day_set;                 /* set if last_day is used */
    char hour[nbytes_for_bits(24)];    /* bit set for each hour */
    char mday[nbytes_for_bits(32)];    /* bit set for each day of month */
    char month[nbytes_for_bits(12)];   /* bit set for each month */
@@ -650,3 +695,23 @@ public:
 #define GetJobResWithName(x) ((JOB *)GetResWithName(R_JOB, (x)))
 #define GetFileSetResWithName(x) ((FILESET *)GetResWithName(R_FILESET, (x)))
 #define GetCatalogResWithName(x) ((CAT *)GetResWithName(R_CATALOG, (x)))
+
+/* Imported subroutines */
+void store_jobtype(LEX *lc, RES_ITEM *item, int index, int pass);
+void store_level(LEX *lc, RES_ITEM *item, int index, int pass);
+void store_replace(LEX *lc, RES_ITEM *item, int index, int pass);
+void store_migtype(LEX *lc, RES_ITEM *item, int index, int pass);
+void store_acl(LEX *lc, RES_ITEM *item, int index, int pass);
+void store_ac_res(LEX *lc, RES_ITEM *item, int index, int pass);
+void store_actiononpurge(LEX *lc, RES_ITEM *item, int index, int pass);
+void store_inc(LEX *lc, RES_ITEM *item, int index, int pass);
+void store_regex(LEX *lc, RES_ITEM *item, int index, int pass);
+void store_wild(LEX *lc, RES_ITEM *item, int index, int pass);
+void store_fstype(LEX *lc, RES_ITEM *item, int index, int pass);
+void store_drivetype(LEX *lc, RES_ITEM *item, int index, int pass);
+void store_opts(LEX *lc, RES_ITEM *item, int index, int pass);
+void store_lopts(LEX *lc, RES_ITEM *item, int index, int pass);
+void store_base(LEX *lc, RES_ITEM *item, int index, int pass);
+void store_plugin(LEX *lc, RES_ITEM *item, int index, int pass);
+void store_run(LEX *lc, RES_ITEM *item, int index, int pass);
+void store_runscript(LEX *lc, RES_ITEM *item, int index, int pass);

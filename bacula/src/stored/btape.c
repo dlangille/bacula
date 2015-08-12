@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *
@@ -135,7 +139,6 @@ static const char *VolumeName = NULL;
 static int vol_num = 0;
 
 static JCR *jcr = NULL;
-
 
 static void usage();
 static void terminate_btape(int sig);
@@ -1114,7 +1117,7 @@ static bool write_two_files()
    /*
     * Set big max_file_size so that write_record_to_block
     * doesn't insert any additional EOF marks
-    * Do calculation in 64 bits to avoid overflow.  
+    * Do calculation in 64 bits to avoid overflow.
     */
    dev->max_file_size = (uint64_t)2 * (uint64_t)num_recs * (uint64_t)dev->max_block_size;
    Pmsg2(-1, _("\n=== Write, rewind, and re-read test ===\n\n"
@@ -2952,7 +2955,7 @@ static void usage()
 {
    fprintf(stderr, _(
 PROG_COPYRIGHT
-"\nVersion: %s (%s)\n\n"
+"\n%sVersion: %s (%s)\n\n"
 "Usage: btape <options> <device_name>\n"
 "       -b <file>   specify bootstrap file\n"
 "       -c <file>   set configuration file to file\n"
@@ -2962,7 +2965,7 @@ PROG_COPYRIGHT
 "       -s          turn off signals\n"
 "       -v          be verbose\n"
 "       -?          print this message.\n"
-"\n"), 2000, VERSION, BDATE);
+"\n"), 2000, "", VERSION, BDATE);
 
 }
 
@@ -3004,6 +3007,7 @@ get_cmd(const char *prompt)
 /* Dummies to replace askdir.c */
 bool    dir_update_file_attributes(DCR *dcr, DEV_RECORD *rec) { return 1;}
 bool    dir_send_job_status(JCR *jcr) {return 1;}
+bool    flush_jobmedia_queue(JCR *jcr) { return true; }
 
 bool dir_update_volume_info(DCR *dcr, bool relabel, bool update_LastWritten)
 {

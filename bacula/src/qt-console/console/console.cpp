@@ -1,24 +1,28 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2007-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *  Console Class
  *
  *   Written by Kern Sibbald, January MMVII
  *
- */
+ */ 
 
 #include "bat.h"
 #include "console.h"
@@ -37,7 +41,7 @@ Console::Console(QTabWidget *parent) : Pages()
    m_warningPrevent = false;
    m_dircommCounter = 0;
 
-   /*
+   /* 
     * Create a connection to the Director and put it in a hash table
     */
    m_dircommHash.insert(m_dircommCounter, new DirComm(this, m_dircommCounter));
@@ -128,7 +132,7 @@ void Console::connect_dir()
       beginNewCommand(0);
    }
    mainWin->set_status(_("Connected"));
-
+   
    startTimer();                      /* start message timer */
 }
 
@@ -166,7 +170,7 @@ void Console::populateLists(int conn)
    dir_cmd(conn, ".jobs", job_list);
    dir_cmd(conn, ".jobs type=R", restore_list);
    dir_cmd(conn, ".clients", client_list);
-   dir_cmd(conn, ".filesets", fileset_list);
+   dir_cmd(conn, ".filesets", fileset_list);  
    dir_cmd(conn, ".msgs", messages_list);
    dir_cmd(conn, ".pools", pool_list);
    dir_cmd(conn, ".storage", storage_list);
@@ -219,7 +223,7 @@ bool Console::dir_cmd(const char *cmd, QStringList &results)
 
 /*
  * Send a command to the Director, and return the
- *  results in a QStringList.
+ *  results in a QStringList.  
  */
 bool Console::dir_cmd(int conn, const char *cmd, QStringList &results)
 {
@@ -278,7 +282,7 @@ bool Console::sql_cmd(const char *query, QStringList &results)
 
 /*
  * Send an sql query to the Director, and return the
- *  results in a QStringList.
+ *  results in a QStringList.  
  */
 bool Console::sql_cmd(int &conn, const char *query, QStringList &results, bool donotify)
 {
@@ -296,7 +300,7 @@ bool Console::sql_cmd(int &conn, const char *query, QStringList &results, bool d
       dircomm->notify(false);
    }
    mainWin->waitEnter();
-
+   
    pm_strcpy(cmd, ".sql query=\"");
    pm_strcat(cmd, query);
    pm_strcat(cmd, "\"");
@@ -329,7 +333,7 @@ bool Console::sql_cmd(int &conn, const char *query, QStringList &results, bool d
    return !mainWin->isClosing();      /* return false if closing */
 }
 
-/*
+/* 
  * Overloads for
  * Sending a command to the Director
  */
@@ -396,9 +400,9 @@ bool Console::get_job_defaults(int &conn, struct job_defaults &job_defs)
    return get_job_defaults(conn, job_defs, true);
 }
 
-/*
+/*  
  * Send a job name to the director, and read all the resulting
- *  defaults.
+ *  defaults. 
  */
 bool Console::get_job_defaults(int &conn, struct job_defaults &job_defs, bool donotify)
 {
@@ -414,10 +418,12 @@ bool Console::get_job_defaults(int &conn, struct job_defaults &job_defs, bool do
    }
    beginNewCommand(conn);
    bool prevWaitState = mainWin->getWaitState();
-   if (!prevWaitState)
+   if (!prevWaitState) {
       mainWin->waitEnter();
-   if (mainWin->m_connDebug)
+   }
+   if (mainWin->m_connDebug) {
       Pmsg2(000, "job_defaults conn %i %s\n", conn, m_dir->name());
+   }
    scmd = QString(".defaults job=\"%1\"").arg(job_defs.job_name);
    dircomm->write(scmd);
    while ((stat = dircomm->read()) > 0) {
@@ -509,7 +515,7 @@ void Console::writeSettings()
  * Read and restore user settings associated with this console
  */
 void Console::readSettings()
-{
+{ 
    QFont font = get_font();
 
    QSettings settings(m_dir->name(), "bat");
@@ -576,6 +582,7 @@ void Console::display_textf(const char *fmt, ...)
 
 void Console::display_text(const QString buf)
 {
+   if (mainWin->isClosing()) return;
    if (buf.size() != 0) {
       m_cursor->insertText(buf);
       update_cursor();
@@ -585,6 +592,7 @@ void Console::display_text(const QString buf)
 
 void Console::display_text(const char *buf)
 {
+   if (mainWin->isClosing()) return;
    if (*buf != 0) {
       m_cursor->insertText(buf);
       update_cursor();
@@ -593,6 +601,7 @@ void Console::display_text(const char *buf)
 
 void Console::display_html(const QString buf)
 {
+   if (mainWin->isClosing()) return;
    if (buf.size() != 0) {
       m_cursor->insertHtml(buf);
       update_cursor();
@@ -610,6 +619,9 @@ void Console::beginNewCommand(int conn)
 {
    DirComm *dircomm = m_dircommHash.value(conn);
 
+   if (dircomm->m_at_main_prompt) {
+      return;
+   }
    for (int i=0; i < 3; i++) {
       dircomm->write(".");
       while (dircomm->read() > 0) {
@@ -620,11 +632,11 @@ void Console::beginNewCommand(int conn)
          break;
       }
    }
-   display_text("\n");
+   //display_text("\n");
 }
 
 void Console::displayToPrompt(int conn)
-{
+{ 
    DirComm *dircomm = m_dircommHash.value(conn);
 
    int stat = 0;
@@ -666,7 +678,7 @@ void Console::discardToPrompt(int conn)
 }
 
 QString Console::returnFromPrompt(int conn)
-{
+{ 
    DirComm *dircomm = m_dircommHash.value(conn);
    QString text("");
 
@@ -686,7 +698,7 @@ QString Console::returnFromPrompt(int conn)
 
 /*
  * When the notifier is enabled, read_dir() will automatically be
- * called by the Qt event loop when ever there is any output
+ * called by the Qt event loop when ever there is any output 
  * from the Director, and read_dir() will then display it on
  * the console.
  *
@@ -697,7 +709,7 @@ QString Console::returnFromPrompt(int conn)
 
 /* dual purpose function to turn notify off and return a connection */
 int Console::notifyOff()
-{
+{ 
    int conn = 0;
    if (getDirComm(conn)) {
       notify(conn, false);
@@ -707,7 +719,7 @@ int Console::notifyOff()
 
 /* knowing a connection, turn notify off or on */
 bool Console::notify(int conn, bool enable)
-{
+{ 
    DirComm *dircomm = m_dircommHash.value(conn);
    if (dircomm) {
       return dircomm->notify(enable);
@@ -732,8 +744,8 @@ void Console::setDirectorTreeItem(QTreeWidgetItem *item)
    m_directorTreeItem = item;
 }
 
-void Console::setDirRes(DIRRES *dir)
-{
+void Console::setDirRes(DIRRES *dir) 
+{ 
    m_dir = dir;
 }
 
@@ -769,7 +781,7 @@ bool Console::hasFocus()
       return false;
 }
 
-/* For adding feature to have the gui's messages button change when
+/* For adding feature to have the gui's messages button change when 
  * messages are pending */
 bool Console::messagesPending(bool pend)
 {
@@ -864,13 +876,13 @@ bool Console::getDirComm(int &conn)
 /*
  * Try to find a free (unused but established) connection
  * KES: Note, I think there is a problem here because for
- *   some reason, the notifier is often turned off on file
+ *   some reason, the notifier is often turned off on file  
  *   descriptors that seem to me to be available.  That means
  *   that we do not use a free descriptor and thus we will create
  *   a new connection that is maybe not necessary.  Someone needs
  *   to look into whether or not notify() is correctly turned on
  *   when we are back at the command prompt and idle.
- *
+ *                         
  */
 bool Console::findDirComm(int &conn)
 {
@@ -882,7 +894,7 @@ bool Console::findDirComm(int &conn)
          return true;
       }
       if (mainWin->m_connDebug) {
-         Pmsg4(000, "currentDirComm=%d at_prompt=%d at_main=%d && notify=%d\n",
+         Pmsg4(000, "currentDirComm=%d at_prompt=%d at_main=%d && notify=%d\n",                                      
             dircomm->m_conn, dircomm->m_at_prompt, dircomm->m_at_main_prompt, dircomm->is_notify_enabled());
       }
       ++iter;

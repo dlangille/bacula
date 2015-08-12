@@ -1,33 +1,34 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  * Bacula Catalog Database Delete record interface routines
  *
- *    Written by Kern Sibbald, December 2000
+ *    Written by Kern Sibbald, December 2000-2014
  *
  */
 
-#include "bacula.h"
+#include  "bacula.h"
 
 #if HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL
-
-#include "cats.h"
-#include "bdb_priv.h"
-#include "sql_glue.h"
-
+#include  "cats.h"
+ 
 /* -----------------------------------------------------------------------
  *
  *   Generic Routines (or almost generic)
@@ -44,57 +45,54 @@
  *           PoolId = number of Pools deleted (should be 1)
  *           NumVols = number of Media records deleted
  */
-int
-db_delete_pool_record(JCR *jcr, B_DB *mdb, POOL_DBR *pr)
+int BDB::bdb_delete_pool_record(JCR *jcr, POOL_DBR *pr)
 {
    SQL_ROW row;
-   int num_rows;
    char esc[MAX_ESCAPE_NAME_LENGTH];
 
-   db_lock(mdb);
-   mdb->db_escape_string(jcr, esc, pr->Name, strlen(pr->Name));
-   Mmsg(mdb->cmd, "SELECT PoolId FROM Pool WHERE Name='%s'", esc);
-   Dmsg1(10, "selectpool: %s\n", mdb->cmd);
+   bdb_lock();
+   bdb_escape_string(jcr, esc, pr->Name, strlen(pr->Name));
+   Mmsg(cmd, "SELECT PoolId FROM Pool WHERE Name='%s'", esc);
+   Dmsg1(10, "selectpool: %s\n", cmd);
 
    pr->PoolId = pr->NumVols = 0;
 
-   if (QUERY_DB(jcr, mdb, mdb->cmd)) {
-
-      num_rows = sql_num_rows(mdb);
-      if (num_rows == 0) {
-         Mmsg(mdb->errmsg, _("No pool record %s exists\n"), pr->Name);
-         sql_free_result(mdb);
-         db_unlock(mdb);
+   if (QueryDB(jcr, cmd)) {
+      int nrows = sql_num_rows();
+      if (nrows == 0) {
+         Mmsg(errmsg, _("No pool record %s exists\n"), pr->Name);
+         sql_free_result();
+         bdb_unlock();
          return 0;
-      } else if (num_rows != 1) {
-         Mmsg(mdb->errmsg, _("Expecting one pool record, got %d\n"), num_rows);
-         sql_free_result(mdb);
-         db_unlock(mdb);
+      } else if (nrows != 1) {
+         Mmsg(errmsg, _("Expecting one pool record, got %d\n"), nrows);
+         sql_free_result();
+         bdb_unlock();
          return 0;
       }
-      if ((row = sql_fetch_row(mdb)) == NULL) {
-         Mmsg1(&mdb->errmsg, _("Error fetching row %s\n"), sql_strerror(mdb));
-         db_unlock(mdb);
+      if ((row = sql_fetch_row()) == NULL) {
+         Mmsg1(&errmsg, _("Error fetching row %s\n"), sql_strerror());
+         bdb_unlock();
          return 0;
       }
       pr->PoolId = str_to_int64(row[0]);
-      sql_free_result(mdb);
+      sql_free_result();
    }
 
    /* Delete Media owned by this pool */
-   Mmsg(mdb->cmd,
+   Mmsg(cmd,
 "DELETE FROM Media WHERE Media.PoolId = %d", pr->PoolId);
 
-   pr->NumVols = DELETE_DB(jcr, mdb, mdb->cmd);
+   pr->NumVols = DeleteDB(jcr, cmd);
    Dmsg1(200, "Deleted %d Media records\n", pr->NumVols);
 
    /* Delete Pool */
-   Mmsg(mdb->cmd,
+   Mmsg(cmd,
 "DELETE FROM Pool WHERE Pool.PoolId = %d", pr->PoolId);
-   pr->PoolId = DELETE_DB(jcr, mdb, mdb->cmd);
+   pr->PoolId = DeleteDB(jcr, cmd);
    Dmsg1(200, "Deleted %d Pool records\n", pr->PoolId);
 
-   db_unlock(mdb);
+   bdb_unlock();
    return 1;
 }
 
@@ -141,7 +139,7 @@ static int delete_handler(void *ctx, int num_fields, char **row)
  *       We call it from relabel and delete volume=, both ensure
  *       that the volume is properly purged.
  */
-static int do_media_purge(B_DB *mdb, MEDIA_DBR *mr)
+static int do_media_purge(BDB *mdb, MEDIA_DBR *mr)
 {
    POOLMEM *query = get_pool_memory(PM_MESSAGE);
    struct s_del_ctx del;
@@ -160,16 +158,16 @@ static int do_media_purge(B_DB *mdb, MEDIA_DBR *mr)
       del.max_ids = MAX_DEL_LIST_LEN;
    }
    del.JobId = (JobId_t *)malloc(sizeof(JobId_t) * del.max_ids);
-   db_sql_query(mdb, mdb->cmd, delete_handler, (void *)&del);
+   mdb->bdb_sql_query(mdb->cmd, delete_handler, (void *)&del);
 
    for (i=0; i < del.num_ids; i++) {
       Dmsg1(400, "Delete JobId=%d\n", del.JobId[i]);
       Mmsg(query, "DELETE FROM Job WHERE JobId=%s", edit_int64(del.JobId[i], ed1));
-      db_sql_query(mdb, query, NULL, (void *)NULL);
+      mdb->bdb_sql_query(query, NULL, (void *)NULL);
       Mmsg(query, "DELETE FROM File WHERE JobId=%s", edit_int64(del.JobId[i], ed1));
-      db_sql_query(mdb, query, NULL, (void *)NULL);
+      mdb->bdb_sql_query(query, NULL, (void *)NULL);
       Mmsg(query, "DELETE FROM JobMedia WHERE JobId=%s", edit_int64(del.JobId[i], ed1));
-      db_sql_query(mdb, query, NULL, (void *)NULL);
+      mdb->bdb_sql_query(query, NULL, (void *)NULL);
    }
    free(del.JobId);
    free_pool_memory(query);
@@ -179,22 +177,22 @@ static int do_media_purge(B_DB *mdb, MEDIA_DBR *mr)
 /* Delete Media record and all records that
  * are associated with it.
  */
-int db_delete_media_record(JCR *jcr, B_DB *mdb, MEDIA_DBR *mr)
+int BDB::bdb_delete_media_record(JCR *jcr, MEDIA_DBR *mr)
 {
-   db_lock(mdb);
-   if (mr->MediaId == 0 && !db_get_media_record(jcr, mdb, mr)) {
-      db_unlock(mdb);
+   bdb_lock();
+   if (mr->MediaId == 0 && !bdb_get_media_record(jcr, mr)) {
+      bdb_unlock();
       return 0;
    }
    /* Do purge if not already purged */
    if (strcmp(mr->VolStatus, "Purged") != 0) {
       /* Delete associated records */
-      do_media_purge(mdb, mr);
+      do_media_purge(this, mr);
    }
 
-   Mmsg(mdb->cmd, "DELETE FROM Media WHERE MediaId=%d", mr->MediaId);
-   db_sql_query(mdb, mdb->cmd, NULL, (void *)NULL);
-   db_unlock(mdb);
+   Mmsg(cmd, "DELETE FROM Media WHERE MediaId=%d", mr->MediaId);
+   bdb_sql_query(cmd, NULL, (void *)NULL);
+   bdb_unlock();
    return 1;
 }
 
@@ -204,26 +202,40 @@ int db_delete_media_record(JCR *jcr, B_DB *mdb, MEDIA_DBR *mr)
  * media record itself. But the media status
  * is changed to "Purged".
  */
-int db_purge_media_record(JCR *jcr, B_DB *mdb, MEDIA_DBR *mr)
+int BDB::bdb_purge_media_record(JCR *jcr, MEDIA_DBR *mr)
 {
-   db_lock(mdb);
-   if (mr->MediaId == 0 && !db_get_media_record(jcr, mdb, mr)) {
-      db_unlock(mdb);
+   bdb_lock();
+   if (mr->MediaId == 0 && !bdb_get_media_record(jcr, mr)) {
+      bdb_unlock();
       return 0;
    }
    /* Delete associated records */
-   do_media_purge(mdb, mr);           /* Note, always purge */
+   do_media_purge(this, mr);           /* Note, always purge */
 
    /* Mark Volume as purged */
    strcpy(mr->VolStatus, "Purged");
-   if (!db_update_media_record(jcr, mdb, mr)) {
-      db_unlock(mdb);
+   if (!bdb_update_media_record(jcr, mr)) {
+      bdb_unlock();
       return 0;
    }
 
-   db_unlock(mdb);
+   bdb_unlock();
    return 1;
 }
 
+/* Delete Snapshot record */
+int BDB::bdb_delete_snapshot_record(JCR *jcr, SNAPSHOT_DBR *sr)
+{
+   bdb_lock();
+   if (sr->SnapshotId == 0 && !bdb_get_snapshot_record(jcr, sr)) {
+      bdb_unlock();
+      return 0;
+   }
+
+   Mmsg(cmd, "DELETE FROM Snapshot WHERE SnapshotId=%d", sr->SnapshotId);
+   bdb_sql_query(cmd, NULL, (void *)NULL);
+   bdb_unlock();
+   return 1;
+}
 
 #endif /* HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL */

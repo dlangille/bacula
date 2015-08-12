@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2002-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *
@@ -52,6 +56,7 @@ static bool schedulescmd(UAContext *ua, const char *cmd);
 static bool storagecmd(UAContext *ua, const char *cmd);
 static bool defaultscmd(UAContext *ua, const char *cmd);
 static bool typescmd(UAContext *ua, const char *cmd);
+static bool tagscmd(UAContext *ua, const char *cmd);
 static bool backupscmd(UAContext *ua, const char *cmd);
 static bool levelscmd(UAContext *ua, const char *cmd);
 static bool getmsgscmd(UAContext *ua, const char *cmd);
@@ -71,7 +76,9 @@ static bool dot_bvfs_restore(UAContext *ua, const char *cmd);
 static bool dot_bvfs_cleanup(UAContext *ua, const char *cmd);
 static bool dot_bvfs_clear_cache(UAContext *ua, const char *cmd);
 static bool dot_bvfs_decode_lstat(UAContext *ua, const char *cmd);
+static bool dot_bvfs_update_fv(UAContext *ua, const char *cmd);
 static bool dot_bvfs_get_volumes(UAContext *ua, const char *cmd);
+static bool dot_bvfs_get_jobs(UAContext *ua, const char *cmd);
 
 static bool putfile_cmd(UAContext *ua, const char *cmd);
 static bool api_cmd(UAContext *ua, const char *cmd);
@@ -113,12 +120,15 @@ static struct cmdstruct commands[] = { /* help */  /* can be used in runscript *
  { NT_(".bvfs_get_volumes"),dot_bvfs_get_volumes,NULL,       true},
  { NT_(".bvfs_update"), dot_bvfs_update,         NULL,       true},
  { NT_(".bvfs_get_jobids"), dot_bvfs_get_jobids, NULL,       true},
+ { NT_(".bvfs_get_jobs"), dot_bvfs_get_jobs,     NULL,       true},
  { NT_(".bvfs_versions"), dot_bvfs_versions,     NULL,       true},
  { NT_(".bvfs_restore"),  dot_bvfs_restore,      NULL,       true},
  { NT_(".bvfs_cleanup"),  dot_bvfs_cleanup,      NULL,       true},
  { NT_(".bvfs_decode_lstat"),dot_bvfs_decode_lstat,NULL,     true},
  { NT_(".bvfs_clear_cache"),dot_bvfs_clear_cache,NULL,       false},
- { NT_(".types"),      typescmd,                 NULL,       false}
+ { NT_(".bvfs_update_fv"),dot_bvfs_update_fv,    NULL,       true},
+ { NT_(".types"),      typescmd,                 NULL,       false},
+ { NT_(".tags"),      tagscmd,                   NULL,       false}
 };
 #define comsize ((int)(sizeof(commands)/sizeof(struct cmdstruct)))
 
@@ -133,8 +143,8 @@ bool do_a_dot_command(UAContext *ua)
    bool found = false;
    BSOCK *user = ua->UA_sock;
 
-   Dmsg1(1400, "Dot command: %s\n", user->msg);
-   if (ua->argc == 0) {
+   Dmsg1(1400, "Dot command: %s\n", user?user->msg:"");
+   if (ua->argc == 0 || !user) {
       return false;
    }
 
@@ -163,7 +173,7 @@ bool do_a_dot_command(UAContext *ua)
          ok = (*commands[i].func)(ua, ua->cmd);   /* go execute command */
          if (ua->api) user->signal(ok?BNET_CMD_OK:BNET_CMD_FAILED);
          ua->gui = gui;
-         found = true;
+         found = user->is_stop() ? false : true;
          break;
       }
    }
@@ -174,6 +184,17 @@ bool do_a_dot_command(UAContext *ua)
    return ok;
 }
 
+static void bvfs_set_acl(UAContext *ua, Bvfs *bvfs)
+{
+   /* If no console resource => default console and all is permitted */
+   if (!ua || !ua->cons) {
+      return;
+   }
+   bvfs->set_job_acl(ua->cons->ACL_lists[Job_ACL]);
+   bvfs->set_client_acl(ua->cons->ACL_lists[Client_ACL]);
+   bvfs->set_fileset_acl(ua->cons->ACL_lists[FileSet_ACL]);
+   bvfs->set_pool_acl(ua->cons->ACL_lists[Pool_ACL]);
+}
 
 static bool dot_bvfs_decode_lstat(UAContext *ua, const char *cmd)
 {
@@ -229,6 +250,27 @@ static bool dot_bvfs_update(UAContext *ua, const char *cmd)
       /* update cache for all jobids */
       bvfs_update_cache(ua->jcr, ua->db);
    }
+
+   return true;
+}
+
+static bool dot_bvfs_update_fv(UAContext *ua, const char *cmd)
+{
+   int pos = find_arg_with_value(ua, "jobid");
+
+   if (pos == -1 || !is_a_number_list(ua->argv[pos])) {
+      ua->error_msg("Expecting to find jobid=1,2,3 argument\n");
+      return 1;
+   }
+
+   if (!open_new_client_db(ua)) {
+      return 1;
+   }
+
+   bvfs_update_path_hierarchy_cache(ua->jcr, ua->db, ua->argv[pos]);
+   bvfs_update_fv_cache(ua->jcr, ua->db, ua->argv[pos]);
+
+   ua->info_msg("OK\n");
 
    return true;
 }
@@ -366,6 +408,25 @@ static bool bvfs_parse_arg(UAContext *ua,
          }
       }
 
+      if (strcasecmp(ua->argk[i], NT_("ujobid")) == 0) {
+         JOB_DBR jr;
+         memset(&jr, 0, sizeof(jr));
+         bstrncpy(jr.Job, ua->argv[i], sizeof(jr.Job));
+         if (!open_new_client_db(ua)) {
+            return false;
+         }
+         if (!db_get_job_record(ua->jcr, ua->db, &jr)) {
+            return false;
+         }
+         if (!acl_access_ok(ua, Job_ACL, jr.Name)) {
+            return false;
+         }
+         /* Store the jobid after the ua->cmd, a bit kluggy */
+         int len = strlen(ua->cmd);
+         ua->cmd = check_pool_memory_size(ua->cmd, len + 1 + 50);
+         *jobid = edit_uint64(jr.JobId, ua->cmd + len + 1);
+      }
+
       if (strcasecmp(ua->argk[i], NT_("limit")) == 0) {
          if (is_a_number(ua->argv[i])) {
             *limit = str_to_int64(ua->argv[i]);
@@ -428,6 +489,7 @@ static bool dot_bvfs_restore(UAContext *ua, const char *cmd)
    }
 
    Bvfs fs(ua->jcr, ua->db);
+   bvfs_set_acl(ua, &fs);
    fs.set_username(username);
    fs.set_jobids(jobid);
 
@@ -488,6 +550,7 @@ static bool dot_bvfs_get_volumes(UAContext *ua, const char *cmd)
    }
 
    Bvfs fs(ua->jcr, ua->db);
+   bvfs_set_acl(ua, &fs);
    fs.set_username(username);
    fs.set_handler(bvfs_result_handler, ua);
    fs.set_limit(limit);
@@ -532,6 +595,7 @@ static bool dot_bvfs_lsfiles(UAContext *ua, const char *cmd)
    }
 
    Bvfs fs(ua->jcr, ua->db);
+   bvfs_set_acl(ua, &fs);
    fs.set_username(username);
    fs.set_jobids(jobid);
    fs.set_handler(bvfs_result_handler, ua);
@@ -563,8 +627,11 @@ static bool dot_bvfs_lsfiles(UAContext *ua, const char *cmd)
 static bool dot_bvfs_lsdirs(UAContext *ua, const char *cmd)
 {
    DBId_t pathid=0;
-   int limit=2000, offset=0;
+   int   limit=2000, offset=0;
    char *path=NULL, *jobid=NULL, *username=NULL;
+   char *pattern=NULL;
+   int   dironly;
+   int i;
 
    if (!bvfs_parse_arg(ua, &pathid, &path, &jobid, &username,
                        &limit, &offset))
@@ -573,15 +640,26 @@ static bool dot_bvfs_lsdirs(UAContext *ua, const char *cmd)
       return true;              /* not enough param */
    }
 
+   if ((i = find_arg_with_value(ua, "pattern")) >= 0) {
+      pattern = ua->argv[i];
+   }
+
+   dironly = find_arg(ua, "dironly");
+
    if (!open_new_client_db(ua)) {
       return 1;
    }
 
    Bvfs fs(ua->jcr, ua->db);
+   bvfs_set_acl(ua, &fs);
    fs.set_username(username);
    fs.set_jobids(jobid);
    fs.set_limit(limit);
    fs.set_handler(bvfs_result_handler, ua);
+
+   if (pattern) {
+      fs.set_pattern(pattern);
+   }
 
    if (pathid) {
       fs.ch_dir(pathid);
@@ -592,13 +670,15 @@ static bool dot_bvfs_lsdirs(UAContext *ua, const char *cmd)
    fs.set_offset(offset);
 
    fs.ls_special_dirs();
-   fs.ls_dirs();
 
+   if (dironly < 0) {
+      fs.ls_dirs();
+   }
    return true;
 }
 
 /*
- * .bvfs_versions fnid=10 pathid=10 copies versions
+ * .bvfs_versions fnid=10 pathid=10 client=xxx copies versions
  *
  */
 static bool dot_bvfs_versions(UAContext *ua, const char *cmd)
@@ -626,6 +706,7 @@ static bool dot_bvfs_versions(UAContext *ua, const char *cmd)
    }
 
    Bvfs fs(ua->jcr, ua->db);
+   bvfs_set_acl(ua, &fs);
    fs.set_limit(limit);
    fs.set_see_all_versions(versions);
    fs.set_see_copies(copies);
@@ -667,6 +748,7 @@ static bool dot_bvfs_get_jobids(UAContext *ua, const char *cmd)
    }
 
    Bvfs fs(ua->jcr, ua->db);
+   bvfs_set_acl(ua, &fs);
 
    if ((pos = find_arg_with_value(ua, "username")) >= 0) {
       fs.set_username(ua->argv[pos]);
@@ -791,7 +873,7 @@ static bool dot_bvfs_get_jobids(UAContext *ua, const char *cmd)
    /* Foreach different FileSet, we build a restore jobid list */
    for (int i=0; i < ids.num_ids; i++) {
       jr.FileSetId = ids.DBId[i];
-      if (!db_accurate_get_jobids(ua->jcr, ua->db, &jr, &tempids)) {
+      if (!db_get_accurate_jobids(ua->jcr, ua->db, &jr, &tempids)) {
          return true;
       }
       jobids.add(tempids);
@@ -799,6 +881,55 @@ static bool dot_bvfs_get_jobids(UAContext *ua, const char *cmd)
 
    fs.set_jobids(jobids.list);
    ua->send_msg("%s\n", fs.get_jobids());
+   return true;
+}
+
+static int jobs_handler(void *ctx, int num_field, char **row)
+{
+   UAContext *ua = (UAContext *)ctx;
+   ua->send_msg("%s %s %s\n", row[0], row[1], row[2]);
+   return 0;
+}
+
+/* .bvfs_get_jobs client=xxx [fileset=yyyy]
+ * 1 yyyyy Backup1_xxx_xxx_xxxx_xxx
+ * 2 yyyyy Backup1_xxx_xxx_xxxx_xxx
+ */
+static bool dot_bvfs_get_jobs(UAContext *ua, const char *cmd)
+{
+   int pos, posj;
+   POOL_MEM tmp;
+   char esc_cli[MAX_ESCAPE_NAME_LENGTH];
+   char esc_job[MAX_ESCAPE_NAME_LENGTH];
+   if (!open_new_client_db(ua)) {
+      return true;
+   }
+
+   if ((pos = find_arg_with_value(ua, "client")) < 0) {
+      return true;
+   }
+
+   posj = find_arg_with_value(ua, "ujobid");
+
+   if (!acl_access_ok(ua, Client_ACL, ua->argv[pos])) {
+      return true;
+   }
+   
+   db_lock(ua->db);
+   db_escape_string(ua->jcr, ua->db, esc_cli, ua->argv[pos], sizeof(esc_cli));
+   if (posj >= 0) {
+      db_escape_string(ua->jcr, ua->db, esc_job, ua->argv[posj], sizeof(esc_job));
+      Mmsg(tmp, "AND Job.Job = '%s'", esc_job);
+   }
+   Mmsg(ua->db->cmd,
+      "SELECT JobId, JobTDate, Job "
+        "FROM Job JOIN Client USING (ClientId) "
+         "WHERE Client.Name = '%s' AND Job.Type = 'B' AND Job.JobStatus IN ('T', 'W') "
+         "%s "
+         "ORDER By JobTDate DESC",
+        esc_cli, tmp.c_str());
+   db_sql_query(ua->db, ua->db->cmd, jobs_handler, ua);
+   db_unlock(ua->db);
    return true;
 }
 
@@ -1204,6 +1335,15 @@ static bool typescmd(UAContext *ua, const char *cmd)
    return true;
 }
 
+static bool tagscmd(UAContext *ua, const char *cmd)
+{
+   uint32_t i = 0;
+   for (const char *p = debug_get_tag(i++, NULL) ; p ; p = debug_get_tag(i++, NULL)) {
+      ua->send_msg("%s\n", p);
+   }
+   return true;
+}
+
 /*
  * If this command is called, it tells the director that we
  *  are a program that wants a sort of API, and hence,
@@ -1324,8 +1464,8 @@ static bool mediatypescmd(UAContext *ua, const char *cmd)
       return true;
    }
    if (!db_sql_query(ua->db,
-                  "SELECT DISTINCT MediaType FROM MediaType ORDER BY MediaType",
-                  one_handler, (void *)ua))
+           "SELECT DISTINCT MediaType FROM MediaType ORDER BY MediaType",
+           one_handler, (void *)ua))
    {
       ua->error_msg(_("List MediaType failed: ERR=%s\n"), db_strerror(ua->db));
    }
@@ -1338,8 +1478,8 @@ static bool mediacmd(UAContext *ua, const char *cmd)
       return true;
    }
    if (!db_sql_query(ua->db,
-                  "SELECT DISTINCT Media.VolumeName FROM Media ORDER BY VolumeName",
-                  one_handler, (void *)ua))
+          "SELECT DISTINCT Media.VolumeName FROM Media ORDER BY VolumeName",
+          one_handler, (void *)ua))
    {
       ua->error_msg(_("List Media failed: ERR=%s\n"), db_strerror(ua->db));
    }
@@ -1352,8 +1492,8 @@ static bool locationscmd(UAContext *ua, const char *cmd)
       return true;
    }
    if (!db_sql_query(ua->db,
-                  "SELECT DISTINCT Location FROM Location ORDER BY Location",
-                  one_handler, (void *)ua))
+           "SELECT DISTINCT Location FROM Location ORDER BY Location",
+           one_handler, (void *)ua))
    {
       ua->error_msg(_("List Location failed: ERR=%s\n"), db_strerror(ua->db));
    }
@@ -1406,22 +1546,17 @@ static bool volstatuscmd(UAContext *ua, const char *cmd)
  */
 static bool defaultscmd(UAContext *ua, const char *cmd)
 {
-   JOB *job;
-   CLIENT *client;
-   STORE *storage;
-   POOL *pool;
    char ed1[50];
-
    if (ua->argc != 2 || !ua->argv[1]) {
       return true;
    }
 
-   /* Job defaults */
+   /* Send Job defaults */
    if (strcmp(ua->argk[1], "job") == 0) {
       if (!acl_access_ok(ua, Job_ACL, ua->argv[1])) {
          return true;
       }
-      job = (JOB *)GetResWithName(R_JOB, ua->argv[1]);
+      JOB *job = (JOB *)GetResWithName(R_JOB, ua->argv[1]);
       if (job) {
          USTORE store;
          ua->send_msg("job=%s", job->name());
@@ -1438,50 +1573,12 @@ static bool defaultscmd(UAContext *ua, const char *cmd)
          ua->send_msg("catalog=%s", job->client?job->client->catalog->name():_("*None*"));
       }
    }
-   /* Client defaults */
-   else if (strcmp(ua->argk[1], "client") == 0) {
-      if (!acl_access_ok(ua, Client_ACL, ua->argv[1])) {
-         return true;
-      }
-      client = (CLIENT *)GetResWithName(R_CLIENT, ua->argv[1]);
-      if (client) {
-         ua->send_msg("client=%s", client->name());
-         ua->send_msg("address=%s", client->address);
-         ua->send_msg("fdport=%d", client->FDport);
-         ua->send_msg("file_retention=%s", edit_uint64(client->FileRetention, ed1));
-         ua->send_msg("job_retention=%s", edit_uint64(client->JobRetention, ed1));
-         ua->send_msg("autoprune=%d", client->AutoPrune);
-         ua->send_msg("catalog=%s", client->catalog->name());
-      }
-   }
-   /* Storage defaults */
-   else if (strcmp(ua->argk[1], "storage") == 0) {
-      if (!acl_access_ok(ua, Storage_ACL, ua->argv[1])) {
-         return true;
-      }
-      storage = (STORE *)GetResWithName(R_STORAGE, ua->argv[1]);
-      DEVICE *device;
-      if (storage) {
-         ua->send_msg("storage=%s", storage->name());
-         ua->send_msg("address=%s", storage->address);
-         ua->send_msg("enabled=%d", storage->enabled);
-         ua->send_msg("media_type=%s", storage->media_type);
-         ua->send_msg("sdport=%d", storage->SDport);
-         device = (DEVICE *)storage->device->first();
-         ua->send_msg("device=%s", device->name());
-         if (storage->device->size() > 1) {
-            while ((device = (DEVICE *)storage->device->next())) {
-               ua->send_msg(",%s", device->name());
-            }
-         }
-      }
-   }
-   /* Pool defaults */
+   /* Send Pool defaults */
    else if (strcmp(ua->argk[1], "pool") == 0) {
       if (!acl_access_ok(ua, Pool_ACL, ua->argv[1])) {
          return true;
       }
-      pool = (POOL *)GetResWithName(R_POOL, ua->argv[1]);
+      POOL *pool = (POOL *)GetResWithName(R_POOL, ua->argv[1]);
       if (pool) {
          ua->send_msg("pool=%s", pool->name());
          ua->send_msg("pool_type=%s", pool->pool_type);
@@ -1500,6 +1597,44 @@ static bool defaultscmd(UAContext *ua, const char *cmd)
          ua->send_msg("recycle=%d", pool->Recycle);
          ua->send_msg("file_retention=%s", edit_uint64(pool->FileRetention, ed1));
          ua->send_msg("job_retention=%s", edit_uint64(pool->JobRetention, ed1));
+      }
+   } 
+   /* Send Storage defaults */
+   else if (strcmp(ua->argk[1], "storage") == 0) {
+      if (!acl_access_ok(ua, Storage_ACL, ua->argv[1])) {
+         return true;
+      }
+      STORE *storage = (STORE *)GetResWithName(R_STORAGE, ua->argv[1]);
+      DEVICE *device;
+      if (storage) {
+         ua->send_msg("storage=%s", storage->name());
+         ua->send_msg("address=%s", storage->address);
+         ua->send_msg("enabled=%d", storage->enabled);
+         ua->send_msg("media_type=%s", storage->media_type);
+         ua->send_msg("sdport=%d", storage->SDport);
+         device = (DEVICE *)storage->device->first();
+         ua->send_msg("device=%s", device->name());
+         if (storage->device->size() > 1) {
+            while ((device = (DEVICE *)storage->device->next())) {
+               ua->send_msg(",%s", device->name());
+            }
+         }
+      }
+   } 
+   /* Send Client defaults */
+   else if (strcmp(ua->argk[1], "client") == 0) {
+      if (!acl_access_ok(ua, Client_ACL, ua->argv[1])) {
+         return true;
+      }
+      CLIENT *client = (CLIENT *)GetResWithName(R_CLIENT, ua->argv[1]);
+      if (client) {
+         ua->send_msg("client=%s", client->name());
+         ua->send_msg("address=%s", client->address);
+         ua->send_msg("fdport=%d", client->FDport);
+         ua->send_msg("file_retention=%s", edit_uint64(client->FileRetention, ed1));
+         ua->send_msg("job_retention=%s", edit_uint64(client->JobRetention, ed1));
+         ua->send_msg("autoprune=%d", client->AutoPrune);
+         ua->send_msg("catalog=%s", client->catalog->name());
       }
    }
    return true;

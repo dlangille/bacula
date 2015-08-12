@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2002-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *
@@ -42,7 +46,6 @@ static int fileset_handler(void *ctx, int num_fields, char **row);
 static void free_name_list(NAME_LIST *name_list);
 static bool select_backups_before_date(UAContext *ua, RESTORE_CTX *rx, char *date);
 static bool build_directory_tree(UAContext *ua, RESTORE_CTX *rx);
-static void free_rx(RESTORE_CTX *rx);
 static void split_path_and_filename(UAContext *ua, RESTORE_CTX *rx, char *fname);
 static int jobid_fileindex_handler(void *ctx, int num_fields, char **row);
 static bool insert_file_into_findex_list(UAContext *ua, RESTORE_CTX *rx, char *file,
@@ -54,8 +57,33 @@ static int get_client_name(UAContext *ua, RESTORE_CTX *rx);
 static int get_restore_client_name(UAContext *ua, RESTORE_CTX &rx);
 static bool get_date(UAContext *ua, char *date, int date_len);
 static int restore_count_handler(void *ctx, int num_fields, char **row);
-static bool insert_table_into_findex_list(UAContext *ua, RESTORE_CTX *rx, char *table);
 static void get_and_display_basejobs(UAContext *ua, RESTORE_CTX *rx);
+
+void new_rx(RESTORE_CTX *rx)
+{
+   RBSR *bsr = NULL;
+   memset(rx, 0, sizeof(*rx));
+   rx->path = get_pool_memory(PM_FNAME);
+   rx->path[0] = 0;
+
+   rx->fname = get_pool_memory(PM_FNAME);
+   rx->fname[0] = 0;
+
+   rx->JobIds = get_pool_memory(PM_FNAME);
+   rx->JobIds[0] = 0;
+
+   rx->component_fname = get_pool_memory(PM_FNAME);
+   rx->component_fname[0] = 0;
+
+   rx->BaseJobIds = get_pool_memory(PM_FNAME);
+   rx->BaseJobIds[0] = 0;
+
+   rx->query = get_pool_memory(PM_FNAME);
+   rx->query[0] = 0;
+
+   rx->bsr = new_bsr();
+   rx->hardlinks_in_mem = true;
+}
 
 /*
  *   Restore files
@@ -73,25 +101,8 @@ int restore_cmd(UAContext *ua, const char *cmd)
    char *strip_prefix, *add_prefix, *add_suffix, *regexp;
    strip_prefix = add_prefix = add_suffix = regexp = NULL;
 
-   memset(&rx, 0, sizeof(rx));
-   rx.path = get_pool_memory(PM_FNAME);
-   rx.path[0] = 0;
-
-   rx.fname = get_pool_memory(PM_FNAME);
-   rx.fname[0] = 0;
-
-   rx.JobIds = get_pool_memory(PM_FNAME);
-   rx.JobIds[0] = 0;
-
-   rx.BaseJobIds = get_pool_memory(PM_FNAME);
-   rx.BaseJobIds[0] = 0;
-
-   rx.query = get_pool_memory(PM_FNAME);
-   rx.query[0] = 0;
-
-   rx.bsr = new_bsr();
-   rx.hardlinks_in_mem = true;
-
+   new_rx(&rx);                 /* Initialize RESTORE_CTX */
+   
    if (!open_new_client_db(ua)) {
       goto bail_out;
    }
@@ -204,6 +215,8 @@ int restore_cmd(UAContext *ua, const char *cmd)
          ua->warning_msg(_("No files selected to be restored.\n"));
          goto bail_out;
       }
+
+      ua->send_msg(_("Bootstrap records written to %s\n"), ua->jcr->RestoreBootstrap);
       display_bsr_info(ua, rx);          /* display vols needed, etc */
 
       if (rx.selected_files==1) {
@@ -289,7 +302,7 @@ int restore_cmd(UAContext *ua, const char *cmd)
    }
    Dmsg1(200, "Submitting: %s\n", ua->cmd);
    /*
-    * Transfer jobids, to jcr to
+    * Transfer jobids, component stuff to jcr to
     *  pass to run_cmd().  Note, these are fields and
     *  other things that are not passed on the command
     *  line.
@@ -297,6 +310,10 @@ int restore_cmd(UAContext *ua, const char *cmd)
    /* ***FIXME*** pass jobids on command line */
    jcr->JobIds = rx.JobIds;
    rx.JobIds = NULL;
+   jcr->component_fname = rx.component_fname;
+   rx.component_fname = NULL;
+   jcr->component_fd = rx.component_fd;
+   rx.component_fd = NULL;
    parse_ua_args(ua);
    run_cmd(ua, ua->cmd);
    free_rx(&rx);
@@ -342,7 +359,7 @@ static void get_and_display_basejobs(UAContext *ua, RESTORE_CTX *rx)
    pm_strcpy(rx->BaseJobIds, jobids.list);
 }
 
-static void free_rx(RESTORE_CTX *rx)
+void free_rx(RESTORE_CTX *rx)
 {
    free_bsr(rx->bsr);
    rx->bsr = NULL;
@@ -351,6 +368,14 @@ static void free_rx(RESTORE_CTX *rx)
    free_and_null_pool_memory(rx->fname);
    free_and_null_pool_memory(rx->path);
    free_and_null_pool_memory(rx->query);
+   if (rx->component_fd) {
+      fclose(rx->component_fd);
+      rx->component_fd = NULL;
+   }
+   if (rx->component_fname) {
+      unlink(rx->component_fname);
+   }
+   free_and_null_pool_memory(rx->component_fname);
    free_name_list(&rx->name_list);
 }
 
@@ -791,7 +816,7 @@ static int user_select_jobids_or_files(UAContext *ua, RESTORE_CTX *rx)
          ua->send_msg(_("Selecting jobs to build the Full state at %s\n"),
                       jr.cStartTime);
          jr.JobLevel = L_INCREMENTAL; /* Take Full+Diff+Incr */
-         if (!db_accurate_get_jobids(ua->jcr, ua->db, &jr, &jobids)) {
+         if (!db_get_accurate_jobids(ua->jcr, ua->db, &jr, &jobids)) {
             return 0;
          }
          pm_strcpy(rx->JobIds, jobids.list);
@@ -986,7 +1011,7 @@ static bool insert_dir_into_findex_list(UAContext *ua, RESTORE_CTX *rx, char *di
 /*
  * Get the JobId and FileIndexes of all files in the specified table
  */
-static bool insert_table_into_findex_list(UAContext *ua, RESTORE_CTX *rx, char *table)
+bool insert_table_into_findex_list(UAContext *ua, RESTORE_CTX *rx, char *table)
 {
    strip_trailing_junk(table);
    Mmsg(rx->query, uar_jobid_fileindex_from_table, table);
@@ -1106,6 +1131,43 @@ static void add_delta_list_findex(RESTORE_CTX *rx, struct delta_list *lst)
    add_findex(rx->bsr, lst->JobId, lst->FileIndex);
 }
 
+/*
+ * This is a list of all the files (components) that the
+ *  user has requested for restore. It is requested by
+ *  the plugin (for now hard coded only for VSS).
+ *  In the future, this will be requested by a RestoreObject
+ *  and the plugin name will be sent to the FD.
+ */
+static bool write_component_file(UAContext *ua, RESTORE_CTX *rx, char *fname)
+{
+   int fd;
+   if (!rx->component_fd) {
+      Mmsg(rx->component_fname, "%s/%s.restore.sel.XXXXXX", working_directory, my_name);
+      fd = mkstemp(rx->component_fname);
+      if (fd < 0) {
+         berrno be;
+         ua->error_msg(_("Unable to create component file %s. ERR=%s\n"),
+            rx->component_fname, be.bstrerror());
+         return false;
+      }
+      rx->component_fd = fdopen(fd, "w+");
+      if (!rx->component_fd) {
+         berrno be;
+         ua->error_msg(_("Unable to fdopen component file %s. ERR=%s\n"),
+            rx->component_fname, be.bstrerror());
+         return false;
+      }
+   }
+   fprintf(rx->component_fd, "%s\n", fname);
+   if (ferror(rx->component_fd)) {
+      ua->error_msg(_("Error writing component file.\n"));
+     fclose(rx->component_fd);
+     unlink(rx->component_fname);
+     rx->component_fd = NULL;
+     return false;
+   }
+   return true;
+}
 
 static bool build_directory_tree(UAContext *ua, RESTORE_CTX *rx)
 {
@@ -1230,6 +1292,7 @@ static bool build_directory_tree(UAContext *ua, RESTORE_CTX *rx)
        *  extracted making a bootstrap file.
        */
       if (OK) {
+         char cwd[2000];
          for (TREE_NODE *node=first_tree_node(tree.root); node; node=next_tree_node(node)) {
             Dmsg2(400, "FI=%d node=0x%x\n", node->FileIndex, node);
             if (node->extract || node->extract_dir) {
@@ -1237,6 +1300,18 @@ static bool build_directory_tree(UAContext *ua, RESTORE_CTX *rx)
                /* TODO: optimize bsr insertion when jobid are non sorted */
                add_delta_list_findex(rx, node->delta_list);
                add_findex(rx->bsr, node->JobId, node->FileIndex);
+               /*
+                * Special VSS plugin code to return selected
+                *   components. For the moment, it is hard coded
+                *   for the VSS plugin.
+                */
+               if (fnmatch(":component_info_*", node->fname, 0) == 0) {
+                  tree_getpath(node, cwd, sizeof(cwd));
+                  if (!write_component_file(ua, rx, cwd)) {
+                     OK = false;
+                     break;
+                  }
+               }
                if (node->extract && node->type != TN_NEWDIR) {
                   rx->selected_files++;  /* count only saved files */
                }
@@ -1265,8 +1340,8 @@ static bool select_backups_before_date(UAContext *ua, RESTORE_CTX *rx, char *dat
    int i;
 
    /* Create temp tables */
-   db_sql_query(ua->db, uar_del_temp, NULL, NULL);
-   db_sql_query(ua->db, uar_del_temp1, NULL, NULL);
+  db_sql_query(ua->db, uar_del_temp, NULL, NULL);
+  db_sql_query(ua->db, uar_del_temp1, NULL, NULL);
    if (!db_sql_query(ua->db, uar_create_temp[db_get_type_index(ua->db)], NULL, NULL)) {
       ua->error_msg("%s\n", db_strerror(ua->db));
    }
@@ -1406,8 +1481,8 @@ static bool select_backups_before_date(UAContext *ua, RESTORE_CTX *rx, char *dat
    }
 
 bail_out:
-   db_sql_query(ua->db, uar_del_temp, NULL, NULL);
-   db_sql_query(ua->db, uar_del_temp1, NULL, NULL);
+  db_sql_query(ua->db, uar_del_temp, NULL, NULL);
+  db_sql_query(ua->db, uar_del_temp1, NULL, NULL);
    return ok;
 }
 
@@ -1560,7 +1635,7 @@ void find_storage_resource(UAContext *ua, RESTORE_CTX &rx, char *Storage, char *
             if (acl_access_ok(ua, Storage_ACL, store->name())) {
                rx.store = store;
                Dmsg1(200, "Set store=%s\n", rx.store->name());
-               if (Storage == NULL) {
+               if (Storage == NULL || Storage[0] == 0) {
                   ua->warning_msg(_("Using Storage \"%s\" from MediaType \"%s\".\n"),
                      store->name(), MediaType);
                } else {

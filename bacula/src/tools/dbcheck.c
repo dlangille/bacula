@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2002-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *
@@ -24,7 +28,6 @@
 
 #include "bacula.h"
 #include "cats/cats.h"
-#include "cats/sql_glue.h"
 #include "lib/runscript.h"
 #include "dird/dird_conf.h"
 
@@ -51,7 +54,7 @@ typedef struct s_name_ctx {
  */
 static bool fix = false;
 static bool batch = false;
-static B_DB *db;
+static BDB *db;
 static ID_LIST id_list;
 static NAME_LIST name_list;
 static char buf[20000];
@@ -95,6 +98,8 @@ static int check_idx_handler(void *ctx, int num_fields, char **row);
 static void usage()
 {
    fprintf(stderr,
+PROG_COPYRIGHT
+"\n%sVersion: %s (%s)\n\n"
 "Usage: dbcheck [-c config ] [-B] [-C catalog name] [-d debug_level] <working-directory> <bacula-database> <user> <password> [<dbhost>] [<dbport>]\n"
 "       -b              batch mode\n"
 "       -C              catalog name in the director conf file\n"
@@ -105,7 +110,9 @@ static void usage()
 "       -f              fix inconsistencies\n"
 "       -t              test if client library is thread-safe\n"
 "       -v              verbose\n"
-"       -?              print this message\n\n");
+"       -?              print this message\n"
+"\n", 2002, "", VERSION, BDATE);
+
    exit(1);
 }
 
@@ -280,7 +287,7 @@ int main (int argc, char *argv[])
     * Open database
     */
    db = db_init_database(NULL, NULL, db_name, user, password, dbhost, dbport, NULL, false, false);
-   if (!db_open_database(NULL, db)) {
+   if (!db || !db_open_database(NULL, db)) {
       Emsg1(M_FATAL, 0, "%s", db_strerror(db));
           return 1;
    }
@@ -313,7 +320,7 @@ int main (int argc, char *argv[])
     */
    drop_tmp_idx("idxPIchk", "File");
 
-   db_close_database(NULL, db);
+   if (db) db_close_database(NULL, db);
    close_msg(NULL);
    term_msg();
    lmgr_cleanup_main();
@@ -325,7 +332,7 @@ static void print_catalog_details(CAT *catalog, const char *working_dir)
    POOLMEM *catalog_details = get_pool_memory(PM_MESSAGE);
 
    /*
-    * Instantiate a B_DB class and see what db_type gets assigned to it.
+    * Instantiate a BDB class and see what db_type gets assigned to it.
     */
    db = db_init_database(NULL, catalog->db_driver, catalog->db_name, catalog->db_user,
                          catalog->db_password, catalog->db_address,
@@ -334,7 +341,7 @@ static void print_catalog_details(CAT *catalog, const char *working_dir)
                          catalog->disable_batch_insert);
    if (db) {
       printf("%sdb_type=%s\nworking_dir=%s\n", catalog->display(catalog_details),
-             db->db_get_type(), working_directory);
+             db_get_engine_name(db), working_directory);
       db_close_database(NULL, db);
    }
    free_pool_memory(catalog_details);
@@ -741,7 +748,7 @@ static void eliminate_duplicate_paths()
          /*
           * Get all the Ids of each name
           */
-         db_escape_string(NULL, db, esc_name, name_list.name[i], strlen(name_list.name[i]));
+         db_escape_string(NULL, db,  esc_name, name_list.name[i], strlen(name_list.name[i]));
          bsnprintf(buf, sizeof(buf), "SELECT PathId FROM Path WHERE Path='%s'", esc_name);
          if (verbose > 1) {
             printf("%s\n", buf);
@@ -866,9 +873,9 @@ static void eliminate_orphaned_path_records()
 {
    db_int64_ctx lctx;
    lctx.count=0;
-   db_sql_query(db, "SELECT 1 FROM Job WHERE HasCache=1 LIMIT 1",
+   db_sql_query(db, "SELECT 1 FROM Job WHERE HasCache=1 LIMIT 1", 
                 db_int64_handler, &lctx);
-
+   
    if (lctx.count == 1) {
       printf(_("Pruning orphaned Path entries isn't possible when using BVFS.\n"));
       return;
@@ -1294,7 +1301,7 @@ static void repair_bad_paths()
           * Add trailing slash
           */
          len = pm_strcat(&name, "/");
-         db_escape_string(NULL, db, esc_name, name, len);
+         db_escape_string(NULL, db,  esc_name, name, len);
          bsnprintf(buf, sizeof(buf), "UPDATE Path SET Path='%s' WHERE PathId=%s",
             esc_name, edit_int64(id_list.Id[i], ed1));
          if (verbose > 1) {

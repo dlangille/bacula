@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2011-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 
 #ifndef TRAYUI_H
@@ -23,6 +27,7 @@
 # endif
 #endif
 
+#include "winhdrs.h"
 #include <QAction>
 #include <QApplication>
 #include <QButtonGroup>
@@ -45,7 +50,7 @@
 #include <QFont>
 
 #include "version.h"
-#include "ui/ui_run.h"
+#include "ui_run.h"
 #include "tray-monitor.h"
 
 class RunDlg: public QDialog, public Ui::runForm
@@ -70,7 +75,7 @@ public:
 
       qDebug() << "start getting elements";
       get_list(item, ".jobs type=B", res.job_list);
-
+      
       if (res.job_list.length() == 0) {
          QMessageBox msgBox;
          msgBox.setText("This restricted console doesn't have access to Backup jobs");
@@ -192,7 +197,7 @@ public:
        return hash.value(QString(title));
     }
 
-    void clearText(char *title)
+    void clearText(char *title) 
     {
        QPlainTextEdit *w = getTextEdit(title);
        if (!w) {
@@ -201,7 +206,7 @@ public:
        w->clear();
     }
 
-    void appendText(char *title, char *line)
+    void appendText(char *title, char *line) 
     {
        QPlainTextEdit *w = getTextEdit(title);
        if (!w) {
@@ -244,7 +249,7 @@ public:
         director = NULL;
         if (TrayMonitor->objectName().isEmpty())
             TrayMonitor->setObjectName(QString::fromUtf8("TrayMonitor"));
-        TrayMonitor->setWindowIcon(QIcon(":/images/cartridge1.png"));
+        TrayMonitor->setWindowIcon(QIcon(":/images/cartridge1.png")); 
         TrayMonitor->resize(789, 595);
         centralwidget = new QWidget(TrayMonitor);
         centralwidget->setObjectName(QString::fromUtf8("centralwidget"));
@@ -306,7 +311,7 @@ public:
         stmenu->addAction(actAbout);
         stmenu->addSeparator();
         stmenu->addAction(actQuit);
-
+        
         connect(actRun, SIGNAL(triggered()), this, SLOT(cb_run()));
         connect(actShow, SIGNAL(triggered()), this, SLOT(cb_show()));
         connect(actQuit, SIGNAL(triggered()), this, SLOT(cb_quit()));
@@ -344,8 +349,8 @@ private slots:
     void cb_about() {
        QMessageBox::about(this, "Bacula Tray Monitor", "Bacula Tray Monitor\n"
                           "For more information, see: www.baculasystems.com\n"
-                          "Copyright (C) 1999-2010, Bacula Systems(R) SA\n"
-                          "Licensed under GNU AGPLv3.");
+                          "Copyright (C) 1999-2015, Kern Sibbald.\n"
+                          "License AGPLv3 see LICENSE.");
     }
 
     void cb_run() {

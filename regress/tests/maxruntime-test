@@ -1,5 +1,10 @@
 #!/bin/sh
 #
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+
+#
 #  Test MaxRunTime
 #  Note: this test doesn't really do anything yet. It is used in helping
 #    to duplicate bug #1268, but so far not successful ...
@@ -16,7 +21,7 @@ rm -f ${cwd}/tmp/RUN*log
 cp -f ${cwd}/scripts/bacula-dir.conf.maxruntime ${cwd}/bin/bacula-dir.conf
 WHEN=`date '+%Y-%m-%d %H:%M:%S'`
 
-echo "${cwd}/build/po" >${cwd}/tmp/file-list
+echo "${cwd}/build" >${cwd}/tmp/file-list
 
 start_test
 
@@ -30,6 +35,7 @@ wait
 messages
 setdebug level=60 dir
 run job=RUN_MAXRUNTIME pool=PoolA yes
+run job=RUN_MAXRUNTIME fileset=FS_TESTJOB pool=PoolA yes
 wait
 messages
 st dir
@@ -57,6 +63,15 @@ then
     [ "$debug" = 1 ] && echo MAXRUNTIME ok
 else
    echo "MAXRUNTIME in error"
+   bstat=1
+fi
+
+nb=`grep -e ': Fatal error: Max run time exceeded. Job canceled.' ${cwd}/tmp/log1.out | wc -l`
+if [ $nb -eq 1 ]
+then
+    [ "$debug" = 1 ] && echo MAXRUNTIME ok
+else
+   echo "MAXRUNTIME in error, should not cancel the second job"
    bstat=1
 fi
 

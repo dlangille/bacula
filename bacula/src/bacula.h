@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  * bacula.h -- main header file to include in all Bacula source
@@ -35,8 +39,9 @@
 
 #if defined(HAVE_WIN32)
 #if defined(HAVE_MINGW)
-#include "mingwconfig.h"
+#include "winhdrs.h"
 #else
+#error "Only MINGW is supported"
 #include "winconfig.h"
 #endif
 #else
@@ -51,16 +56,18 @@
 
 
 /* System includes */
-#if HAVE_STDINT_H
+#if defined(HAVE_STDINT_H)
 #ifndef __sgi
 #include <stdint.h>
 #endif
+#elif defined(HAVE_INTTYPES_H)
+#include  <inttypes.h>
 #endif
-#if HAVE_STDARG_H
+#if defined(HAVE_STDARG_H)
 #include <stdarg.h>
 #endif
 #include <stdio.h>
-#if HAVE_STDLIB_H
+#if defined(HAVE_STDLIB_H)
 #include <stdlib.h>
 #endif
 #if HAVE_UNISTD_H
@@ -123,10 +130,10 @@ extern "C" {
 #endif
 #if defined(HAVE_WIN32) & !defined(HAVE_MINGW)
 #include <winsock2.h>
-#endif
+#endif 
 #if !defined(HAVE_WIN32) & !defined(HAVE_MINGW)
 #include <sys/stat.h>
-#endif
+#endif 
 #include <sys/time.h>
 #if HAVE_SYS_WAIT_H
 #include <sys/wait.h>
@@ -151,8 +158,8 @@ extern "C" {
  *  includes before these.
  */
 #if defined(HAVE_WIN32)
-#include <windows.h>
-#include "win32/compat/compat.h"
+//#include <windows.h>
+#include "compat.h"
 #endif
 
 #include "version.h"
@@ -163,7 +170,7 @@ extern "C" {
 #include "lib/lib.h"
 
 #if defined(HAVE_WIN32)
-#include "win32/winapi.h"
+#include "winapi.h"
 #include "winhost.h"
 #else
 #include "host.h"

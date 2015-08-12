@@ -1,5 +1,8 @@
 #!/bin/sh
 #
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
 # Shell script to update SQLite3 tables from Bacula Community version 3.0.x to 5.0.0
 #
 echo " "

@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  * Append code for Storage daemon
@@ -27,6 +31,28 @@
 static char OK_data[]    = "3000 OK data\n";
 static char OK_append[]  = "3000 OK append data\n";
 
+/* Forward referenced functions */
+
+
+/*
+ * Check if we can mark this job incomplete
+ *
+ */
+void possible_incomplete_job(JCR *jcr, int32_t last_file_index)
+{
+   /*
+    * Note, here we decide if it is worthwhile to restart
+    *  the Job at this point. For the moment, if at least
+    *  10 Files have been seen.
+    *  We must be sure that the saved files are safe.
+    *  Using this function when their is as comm line problem is probably safe,
+    *  it is inappropriate to use it for a any failure that could
+    *  involve corrupted data.
+    */
+   if (jcr->spool_attributes && last_file_index > 10) {
+      jcr->setJobStatus(JS_Incomplete);
+   }
+}
 /*
  *  Append Data sent from Client (FD/SD)
  *
@@ -43,7 +69,8 @@ bool do_append_data(JCR *jcr)
    DCR *dcr = jcr->dcr;
    DEVICE *dev;
    char ec[50];
-
+   POOLMEM *eblock = NULL;
+   POOL_MEM errmsg(PM_EMSG);
 
    if (!dcr) {
       pm_strcpy(jcr->errmsg, _("DCR is NULL!!!\n"));
@@ -98,6 +125,7 @@ bool do_append_data(JCR *jcr)
       jcr->setJobStatus(JS_ErrorTerminated);
       ok = false;
    }
+
    //ASSERT(dev->VolCatInfo.VolCatName[0]);
    if (dev->VolCatInfo.VolCatName[0] == 0) {
       Pmsg0(000, _("NULL Volume name. This shouldn't happen!!!\n"));
@@ -118,7 +146,7 @@ bool do_append_data(JCR *jcr)
     *     - Multiple records of data
     *     - EOD record
     *
-    *    The Stream header is just used to sychronize things, and
+    *    The Stream header is just used to synchronize things, and
     *    none of the stream header is written to tape.
     *    The Multiple records of data, contain first the Attributes,
     *    then after another stream header, the file data, then
@@ -130,6 +158,12 @@ bool do_append_data(JCR *jcr)
     */
    dcr->VolFirstIndex = dcr->VolLastIndex = 0;
    jcr->run_time = time(NULL);              /* start counting time for rates */
+
+   GetMsg *qfd;
+
+   qfd = New(GetMsg(jcr, fd, NULL, GETMSG_MAX_MSG_SIZE));
+   qfd->start_read_sock();
+
    for (last_file_index = 0; ok && !jcr->is_job_canceled(); ) {
 
       /* Read Stream header from the File daemon.
@@ -140,20 +174,26 @@ bool do_append_data(JCR *jcr)
        *       will be the size backed up if the file does not
        *       grow during the backup.
        */
-     if ((n=bget_msg(fd)) <= 0) {
-         if (n == BNET_SIGNAL && fd->msglen == BNET_EOD) {
+      n = qfd->bget_msg(NULL);
+      if (n <= 0) {
+         if (n == BNET_SIGNAL && qfd->msglen == BNET_EOD) {
             Dmsg0(200, "Got EOD on reading header.\n");
             break;                    /* end of data */
          }
          Jmsg3(jcr, M_FATAL, 0, _("Error reading data header from FD. n=%d msglen=%d ERR=%s\n"),
-               n, fd->msglen, fd->bstrerror());
+               n, qfd->msglen, fd->bstrerror());
+         // ASX TODO the fd->bstrerror() can be related to the wrong error, I should Queue the error too
+         possible_incomplete_job(jcr, last_file_index);
          ok = false;
          break;
       }
 
-      if (sscanf(fd->msg, "%ld %ld %lld", &file_index, &stream, &stream_len) != 3) {
-         Jmsg1(jcr, M_FATAL, 0, _("Malformed data header from FD: %s\n"), fd->msg);
+      if (sscanf(qfd->msg, "%ld %ld %lld", &file_index, &stream, &stream_len) != 3) {
+         // TODO ASX already done in bufmsg, should reuse the values
+         char buf[256];
+         Jmsg1(jcr, M_FATAL, 0, _("Malformed data header from FD: %s\n"), asciidump(qfd->msg, qfd->msglen, buf, sizeof(buf)));
          ok = false;
+         possible_incomplete_job(jcr, last_file_index);
          break;
       }
 
@@ -162,6 +202,8 @@ bool do_append_data(JCR *jcr)
 
       /*
        * We make sure the file_index is advancing sequentially.
+       * An incomplete job can start the file_index at any number.
+       * otherwise, it must start at 1.
        */
       if (jcr->rerunning && file_index > 0 && last_file_index == 0) {
          goto fi_checked;
@@ -173,6 +215,7 @@ bool do_append_data(JCR *jcr)
       }
       Jmsg2(jcr, M_FATAL, 0, _("FI=%d from FD not positive or last_FI=%d\n"),
             file_index, last_file_index);
+      possible_incomplete_job(jcr, last_file_index);
       ok = false;
       break;
 
@@ -185,21 +228,21 @@ fi_checked:
       /* Read data stream from the File daemon.
        *  The data stream is just raw bytes
        */
-      while ((n=bget_msg(fd)) > 0 && !jcr->is_job_canceled()) {
+      while ((n=qfd->bget_msg(NULL)) > 0 && !jcr->is_job_canceled()) {
+
          rec.VolSessionId = jcr->VolSessionId;
          rec.VolSessionTime = jcr->VolSessionTime;
          rec.FileIndex = file_index;
          rec.Stream = stream;
          rec.StreamLen = stream_len;
          rec.maskedStream = stream & STREAMMASK_TYPE;   /* strip high bits */
-         rec.data_len = fd->msglen;
-         rec.data = fd->msg;            /* use message buffer */
+         rec.data_len = qfd->msglen;
+         rec.data = qfd->msg;            /* use message buffer */
 
          Dmsg4(850, "before writ_rec FI=%d SessId=%d Strm=%s len=%d\n",
             rec.FileIndex, rec.VolSessionId,
             stream_to_ascii(buf1, rec.Stream,rec.FileIndex),
             rec.data_len);
-
          ok = dcr->write_record(&rec);
          if (!ok) {
             Dmsg2(90, "Got write_block_to_dev error on device %s. %s\n",
@@ -207,6 +250,7 @@ fi_checked:
             break;
          }
          jcr->JobBytes += rec.data_len;   /* increment bytes this job */
+         jcr->JobBytes += qfd->bmsg->jobbytes; // if the block as been downloaded, count it
          Dmsg4(850, "write_record FI=%s SessId=%d Strm=%s len=%d\n",
             FI_to_ascii(buf1, rec.FileIndex), rec.VolSessionId,
             stream_to_ascii(buf2, rec.Stream, rec.FileIndex), rec.data_len);
@@ -221,10 +265,18 @@ fi_checked:
             Dmsg1(350, "Network read error from FD. ERR=%s\n", fd->bstrerror());
             Jmsg1(jcr, M_FATAL, 0, _("Network error reading from FD. ERR=%s\n"),
                   fd->bstrerror());
+            possible_incomplete_job(jcr, last_file_index);
          }
          ok = false;
          break;
       }
+   }
+
+   qfd->wait_read_sock();
+   free_GetMsg(qfd);
+
+   if (eblock != NULL) {
+      free_pool_memory(eblock);
    }
 
    /* Create Job status for end of session label */
@@ -250,24 +302,26 @@ fi_checked:
          if (ok && !jcr->is_job_canceled()) {
             Jmsg1(jcr, M_FATAL, 0, _("Error writing end session label. ERR=%s\n"),
                   dev->bstrerror());
+            possible_incomplete_job(jcr, last_file_index);
          }
          jcr->setJobStatus(JS_ErrorTerminated);
          ok = false;
       }
       /* Flush out final partial block of this session */
-      if (!dcr->write_block_to_device()) {
+      if (!dcr->write_final_block_to_device()) {
          /* Print only if ok and not cancelled to avoid spurious messages */
          if (ok && !jcr->is_job_canceled()) {
             Jmsg2(jcr, M_FATAL, 0, _("Fatal append error on device %s: ERR=%s\n"),
                   dev->print_name(), dev->bstrerror());
-            Dmsg0(100, _("Set ok=FALSE after write_block_to_device.\n"));
+            Dmsg0(100, _("Set ok=FALSE after write_final_block_to_device.\n"));
+            possible_incomplete_job(jcr, last_file_index);
          }
          jcr->setJobStatus(JS_ErrorTerminated);
          ok = false;
       }
    }
-
-   if (!ok) {
+   flush_jobmedia_queue(jcr);
+   if (!ok && !jcr->is_JobStatus(JS_Incomplete)) {
       discard_data_spool(dcr);
    } else {
       /* Note: if commit is OK, the device will remain blocked */
@@ -294,7 +348,7 @@ fi_checked:
     */
    release_device(dcr);
 
-   if (!ok || jcr->is_job_canceled()) {
+   if ((!ok || jcr->is_job_canceled()) && !jcr->is_JobStatus(JS_Incomplete)) {
       discard_attribute_spool(jcr);
    } else {
       commit_attribute_spool(jcr);

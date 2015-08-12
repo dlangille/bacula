@@ -1,5 +1,10 @@
 #!/bin/sh
 #
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+
+#
 # Author: Eric Bollengier, 2009
 # License: AGPLv3
 #
@@ -46,7 +51,7 @@ touch ${cwd}/build/src/xxtestdir/.nobkp
 cp ${cwd}/build/src/dird/*.c ${cwd}/build/src/xxtestdir
 
 cat >tmp/bconcmds <<END_OF_DATA
-@$out /dev/null
+@output /dev/null
 messages
 @$out $tmp/log3.out
 estimate job=$JobName listing

@@ -1,5 +1,10 @@
 #!/bin/sh
 #
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+
+#
 # Run a simple backup of the Bacula build directory then create some           
 #   new files, do an Incremental and restore those two files.
 # test the bvfs interface
@@ -26,6 +31,9 @@ start_test
 cat <<END_OF_DATA >${tmp}/bconcmds
 @$out /dev/null
 messages
+sql
+SELECT pg_catalog.setval('file_fileid_seq', 21474836471, false);
+
 @$out ${tmp}/log1.out
 label storage=File volume=TestVolume001
 label storage=File volume=TestVolume002
@@ -156,6 +164,8 @@ messages
 .bvfs_lsfile path=$tmpsrc/ jobid=1,2,3,4,5,6,7,8
 @$out ${tmp}/log31.out
 .bvfs_lsfile path=$tmpsrc/ jobid=1,2,3,4,5,6,7
+@$out ${tmp}/log32.out
+.bvfs_lsfile path=$tmpsrc/ jobid=1,2,3,4,5,6,7,8 filename=ficheriro1.txt
 quit
 END_OF_DATA
 
@@ -182,7 +192,7 @@ END_OF_DATA
 
 run_bconsole
 
-diff $tmpsrc/ficheriro1.txt $tmp/bacula-restores/$tmpsrc/ficheriro1.txt &>> $tmp/d1
+diff $tmpsrc/ficheriro1.txt $tmp/bacula-restores/$tmpsrc/ficheriro1.txt > $tmp/d1 2>&1 
 if [ $? != 0 ]; then
     print_debug "ERROR: ficheriro1.txt is different"
     rstat=1
@@ -280,6 +290,13 @@ if [ $? != 0 ]; then
     print_debug "ERROR: Should find dird_conf.c in bvfs_lsfiles output $tmp/log31.out"
     estat=1
 fi
+
+awk '/\tficheriro1.txt/ { print "ok"} ' $tmp/log32.out | grep ok > /dev/null
+if [ $? != 0 ]; then
+    print_debug "ERROR: Should find ficheriro1.txt in bvfs_lsfiles output $tmp/log32.out"
+    estat=1
+fi
+
 
 #
 # Delete .c files because we will only restored the txt files

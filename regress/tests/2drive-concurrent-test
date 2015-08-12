@@ -1,5 +1,10 @@
 #!/bin/sh
 #
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+
+#
 # Run four jobs at the same time, with two Volumes.
 #   Set max Vol bytes of first volume
 #   to less than total backup to force Bacula to use the second

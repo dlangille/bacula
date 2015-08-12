@@ -1,7 +1,8 @@
 #!/bin/sh
 #
-# License: LGPLv2
-# Author: Kern Sibbald
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
 #
 # Cleanup left over files -- both before and after test run
 #
@@ -24,7 +25,7 @@ find . -name "gigaslam.gif" -exec rm -f {} \;
 # bin directory does not always exist
 if [ -d ${bin} ] ; then
   if [ -f ${bin}/bacula ] ; then
-     ${bin}/bacula stop 2>&1 >/dev/null
+     ${bin}/bacula stop -KILL 2>&1 >/dev/null
   fi
   cd ${scripts}
   ./drop_bacula_tables      >/dev/null 2>&1

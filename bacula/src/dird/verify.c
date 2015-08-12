@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *
@@ -271,7 +275,7 @@ bool do_verify(JCR *jcr)
       break;
    case L_VERIFY_VOLUME_TO_CATALOG:
       if (jcr->sd_calls_client) {
-         if (jcr->FDVersion < 5) {
+         if (jcr->FDVersion < 10) {
             Jmsg(jcr, M_FATAL, 0, _("The File daemon does not support SDCallsClient.\n"));
             goto bail_out;
          }
@@ -552,22 +556,27 @@ void get_attributes_and_compare_to_catalog(JCR *jcr, JobId_t JobId)
     *   Link name  ???
     */
    while ((n=bget_dirmsg(fd)) >= 0 && !job_canceled(jcr)) {
-      int stream;
+      int32_t stream, full_stream;
       char *attr, *p, *fn;
       char Opts_Digest[MAXSTRING];        /* Verify Opts or MD5/SHA1 digest */
 
       if (job_canceled(jcr)) {
-         goto bail_out;
+         free_pool_memory(fname);
+         return;
       }
       fname = check_pool_memory_size(fname, fd->msglen);
       jcr->fname = check_pool_memory_size(jcr->fname, fd->msglen);
       Dmsg1(200, "Atts+Digest=%s\n", fd->msg);
-      if ((len = sscanf(fd->msg, "%ld %d %100s", &file_index, &stream,
+      if ((len = sscanf(fd->msg, "%ld %d %100s", &file_index, &full_stream,
             fname)) != 3) {
          Jmsg3(jcr, M_FATAL, 0, _("bird<filed: bad attributes, expected 3 fields got %d\n"
 " mslen=%d msg=%s\n"), len, fd->msglen, fd->msg);
-         goto bail_out;
+         free_pool_memory(fname);
+         return;
       }
+      stream = full_stream & STREAMMASK_TYPE;
+      Dmsg4(30, "Got hdr: FilInx=%d FullStream=%d Stream=%d fname=%s.\n", file_index, full_stream, stream, fname);
+
       /*
        * We read the Options or Signature into fname
        *  to prevent overrun, now copy it to proper location.
@@ -737,7 +746,8 @@ void get_attributes_and_compare_to_catalog(JCR *jcr, JobId_t JobId)
          if (jcr->FileIndex != (uint32_t)file_index) {
             Jmsg2(jcr, M_FATAL, 0, _("MD5/SHA1 index %d not same as attributes %d\n"),
                file_index, jcr->FileIndex);
-            goto bail_out;
+            free_pool_memory(fname);
+            return;
          }
          if (do_Digest != CRYPTO_DIGEST_NONE) {
             db_escape_string(jcr, jcr->db, buf, Opts_Digest, strlen(Opts_Digest));
@@ -756,7 +766,8 @@ void get_attributes_and_compare_to_catalog(JCR *jcr, JobId_t JobId)
       berrno be;
       Jmsg2(jcr, M_FATAL, 0, _("bdird<filed: bad attributes from filed n=%d : %s\n"),
                         n, be.bstrerror());
-      goto bail_out;
+      free_pool_memory(fname);
+      return;
    }
 
    /* Now find all the files that are missing -- i.e. all files in
@@ -774,8 +785,6 @@ void get_attributes_and_compare_to_catalog(JCR *jcr, JobId_t JobId)
    if (jcr->fn_printed) {
       jcr->setJobStatus(JS_Differences);
    }
-
-bail_out:
    free_pool_memory(fname);
 }
 

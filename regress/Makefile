@@ -1,4 +1,8 @@
 #
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+#
 # Makefile for Bacula regression testing
 #
 # Before running, you must create a file named config containing

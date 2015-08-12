@@ -1,12 +1,19 @@
 #!/bin/sh
 #
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+
+#
 #
 TestName="duplicate-job-test"
 . scripts/functions
 
 scripts/cleanup
 scripts/copy-test-confs
-echo "${cwd}/build/technotes" >${cwd}/tmp/file-list
+
+
+echo "${cwd}/build/ChangeLog" >${cwd}/tmp/file-list
 
 # increase the maximum concurrent jobs for FD, SD and DIR
 perl -Mscripts::functions -e 'set_maximum_concurrent_jobs("$conf/bacula-dir.conf",100)'
@@ -45,11 +52,11 @@ when=`perl -Mscripts::functions -e "get_time(300)"`
 start_test
       
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
-@$out /dev/null
+@output /dev/null
 messages
 @$out ${cwd}/tmp/log1.out
 messages
-label storage=File volume=TestVolume001
+label storage=File volume=TestVolume001 slot=1 drive=0
 @#setdebug level=100 storage=File
 @##############################################
 @# AllowDuplicates = Yes, both jobs should work

@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2004-2014 Free Software Foundation Europe e.V.
+   Copyright (C) 2000-2015 Kern Sibbald
+   Copyright (C) 2004-2013 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 
 #include "tray-ui.h"
@@ -141,11 +145,13 @@ int main(int argc, char *argv[])
    init_msg(NULL, NULL, NULL);
    working_directory = "/tmp";
 
+#ifndef HAVE_WIN32
    struct sigaction sigignore;
    sigignore.sa_flags = 0;
    sigignore.sa_handler = SIG_IGN;
    sigfillset(&sigignore.sa_mask);
    sigaction(SIGPIPE, &sigignore, NULL);
+#endif
 
    while ((ch = getopt(argc, argv, "bc:d:th?f:s:")) != -1) {
       switch (ch) {
@@ -444,7 +450,7 @@ int docmd(monitoritem* item, const char* command)
             item->D_sock->signal(BNET_HB_RESPONSE);
          }
          else {
-            qDebug() << bnet_sig_to_ascii(item->D_sock);
+            qDebug() << bnet_sig_to_ascii(item->D_sock->msglen);
          }
       }
       else { /* BNET_HARDEOF || BNET_ERROR */

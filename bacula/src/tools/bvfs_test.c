@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2009-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *
@@ -24,12 +28,11 @@
 
 #include "bacula.h"
 #include "cats/cats.h"
-#include "cats/sql_glue.h"
 #include "cats/bvfs.h"
 #include "findlib/find.h"
-
+ 
 /* Local variables */
-static B_DB *db;
+static BDB *db;
 static const char *file = "COPYRIGHT";
 static DBId_t fnid=0;
 static const char *db_name = "regress";
@@ -41,7 +44,7 @@ static void usage()
 {
    fprintf(stderr, _(
 PROG_COPYRIGHT
-"\nVersion: %s (%s)\n"
+"\n%sVersion: %s (%s)\n"
 "       -d <nn>           set debug level to <nn>\n"
 "       -dt               print timestamp in debug output\n"
 "       -n <name>         specify the database name (default bacula)\n"
@@ -55,7 +58,7 @@ PROG_COPYRIGHT
 "       -l <limit>        maximum tuple to fetch\n"
 "       -T                truncate cache table before starting\n"
 "       -v                verbose\n"
-"       -?                print this message\n\n"), 2001, VERSION, BDATE);
+"       -?                print this message\n\n"), 2001, "", VERSION, BDATE);
    exit(1);
 }
 
@@ -73,13 +76,13 @@ static int result_handler(void *ctx, int fields, char **row)
       /* display clean stuffs */
 
       if (bvfs_is_dir(row)) {
-         pm_strcpy(attr->ofname, bvfs_basename_dir(row[BVFS_Name]));
+         pm_strcpy(attr->ofname, bvfs_basename_dir(row[BVFS_Name]));   
       } else {
          /* if we see the requested file, note his filenameid */
          if (bstrcmp(row[BVFS_Name], file)) {
             fnid = str_to_int64(row[BVFS_FilenameId]);
          }
-         pm_strcpy(attr->ofname, row[BVFS_Name]);
+         pm_strcpy(attr->ofname, row[BVFS_Name]);   
       }
       print_ls_output(vfs->get_jcr(), attr);
 
@@ -110,7 +113,7 @@ int main (int argc, char *argv[])
    init_stack_dump();
 
    Dmsg0(0, "Starting bvfs_test tool\n");
-
+   
    my_name_is(argc, argv, "bvfs_test");
    init_msg(NULL, NULL);
 
@@ -197,12 +200,12 @@ int main (int argc, char *argv[])
    bjcr->client_name = get_pool_memory(PM_FNAME);
    pm_strcpy(bjcr->client_name, "Dummy.Client.Name");
    bstrncpy(bjcr->Job, "bvfs_test", sizeof(bjcr->Job));
-
+   
    if ((db = db_init_database(NULL, NULL, db_name, db_user, db_password,
                               db_host, 0, NULL, false, false)) == NULL) {
       Emsg0(M_ERROR_TERM, 0, _("Could not init Bacula database\n"));
    }
-   Dmsg1(0, "db_type=%s\n", db_get_type(db));
+   Dmsg1(0, "db_type=%s\n", db_get_engine_name(db));
 
    if (!db_open_database(NULL, db)) {
       Emsg0(M_ERROR_TERM, 0, db_strerror(db));
@@ -211,7 +214,7 @@ int main (int argc, char *argv[])
    if (verbose) {
       Pmsg2(000, _("Using Database: %s, User: %s\n"), db_name, db_user);
    }
-
+   
    bjcr->db = db;
 
    if (clean) {
@@ -247,7 +250,7 @@ int main (int argc, char *argv[])
       exit (0);
    }
 
-
+   
    Pmsg0(0, "list /\n");
    fs.ch_dir("/");
    fs.ls_special_dirs();

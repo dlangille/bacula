@@ -1,19 +1,23 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2007-2009 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
-*/
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
 
+   Bacula(R) is a registered trademark of Kern Sibbald.
+*/
+ 
 #include "bat.h"
 #include <QAbstractEventDispatcher>
 #include <QTableWidgetItem>
@@ -26,9 +30,9 @@
 #include "job/job.h"
 
 /*
- * A constructor
+ * A constructor 
  */
-MediaInfo::MediaInfo(QTreeWidgetItem *parentWidget, QString &mediaName)
+MediaInfo::MediaInfo(QTreeWidgetItem *parentWidget, QString &mediaName) 
   : Pages()
 {
    setupUi(this);
@@ -41,7 +45,7 @@ MediaInfo::MediaInfo(QTreeWidgetItem *parentWidget, QString &mediaName)
    connect(pbDelete, SIGNAL(clicked()), this, SLOT(deleteVol()));
    connect(pbEdit, SIGNAL(clicked()), this, SLOT(editVol()));
    connect(tableJob, SIGNAL(itemDoubleClicked(QTableWidgetItem*)), this, SLOT(showInfoForJob(QTableWidgetItem *)));
-
+   
    dockPage();
    setCurrent();
    populateForm();
@@ -121,7 +125,7 @@ void MediaInfo::populateForm()
    QString stat, LastWritten;
    struct tm tm;
    char buf[256];
-   QString query =
+   QString query = 
       "SELECT MediaId, VolumeName, Pool.Name, MediaType, FirstWritten,"
       "LastWritten, VolMounts, VolBytes, Media.Enabled,"
       "Location.Location, VolStatus, RecyclePool.Name, Media.Recycle, "
@@ -159,7 +163,7 @@ void MediaInfo::populateForm()
          label_Location->setText(fld.next());
          label_VolStatus->setText(fld.next());
          label_RecyclePool->setText(fld.next());
-         chkbox_Recycle->setCheckState(fld.next().toInt()?Qt::Checked:Qt::Unchecked);
+         chkbox_Recycle->setCheckState(fld.next().toInt()?Qt::Checked:Qt::Unchecked);         
          edit_utime(fld.next().toULongLong(), buf, sizeof(buf));
          label_VolReadTime->setText(QString(buf));
 
@@ -181,7 +185,7 @@ void MediaInfo::populateForm()
             t = str_to_utime(LastWritten.toAscii().data());
             t = t + stat.toULongLong();
             ttime = t;
-            localtime_r(&ttime, &tm);
+            localtime_r(&ttime, &tm);         
             strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &tm);
             label_Expire->setText(QString(buf));
          }
@@ -193,11 +197,11 @@ void MediaInfo::populateForm()
 
 //         jobstatus_to_ascii_gui(stat[0].toAscii(), buf, sizeof(buf));
 //         stat = buf;
-//
+//       
       }
    }
 
-   query =
+   query = 
       "SELECT DISTINCT JobId, Name, StartTime, Type, Level, JobFiles,"
       "JobBytes,JobStatus "
       "FROM Job JOIN JobMedia USING (JobId) JOIN Media USING (MediaId) "
@@ -219,7 +223,7 @@ void MediaInfo::populateForm()
          TableItemFormatter jobitem(*tableJob, row);
 
          /* JobId */
-         jobitem.setNumericFld(index++, fld.next());
+         jobitem.setNumericFld(index++, fld.next()); 
 
          /* job name */
          jobitem.setTextFld(index++, fld.next());

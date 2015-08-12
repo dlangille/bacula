@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2007-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  * Main program to test loading and running Bacula plugins.
@@ -41,7 +45,7 @@ static bFuncs bfuncs = {
    NULL,
    NULL
 };
-
+    
 
 
 
@@ -51,8 +55,8 @@ int main(int argc, char *argv[])
    bpContext ctx;
    bEvent event;
    Plugin *plugin;
-
-   bplugin_list = New(alist(10, not_owned_by_alist));
+    
+   b_plugin_list = New(alist(10, not_owned_by_alist));
 
    ctx.bContext = NULL;
    ctx.pContext = NULL;
@@ -60,24 +64,24 @@ int main(int argc, char *argv[])
 
    load_plugins((void *)&bfuncs, plugin_dir, plugin_type);
 
-   foreach_alist(plugin, bplugin_list) {
-      printf("bacula: plugin_size=%d plugin_version=%d\n",
+   foreach_alist(plugin, b_plugin_list) {
+      printf("bacula: plugin_size=%d plugin_version=%d\n", 
               pref(plugin)->size, pref(plugin)->interface);
       printf("License: %s\nAuthor: %s\nDate: %s\nVersion: %s\nDescription: %s\n",
-         pref(plugin)->plugin_license, pref(plugin)->plugin_author,
-         pref(plugin)->plugin_date, pref(plugin)->plugin_version,
+         pref(plugin)->plugin_license, pref(plugin)->plugin_author, 
+         pref(plugin)->plugin_date, pref(plugin)->plugin_version, 
          pref(plugin)->plugin_description);
 
       /* Start a new instance of the plugin */
       pref(plugin)->newPlugin(&ctx);
-      event.eventType = bEventNewVolume;
+      event.eventType = bEventNewVolume;   
       pref(plugin)->handlePluginEvent(&ctx, &event);
       /* Free the plugin instance */
       pref(plugin)->freePlugin(&ctx);
 
       /* Start a new instance of the plugin */
       pref(plugin)->newPlugin(&ctx);
-      event.eventType = bEventNewVolume;
+      event.eventType = bEventNewVolume;   
       pref(plugin)->handlePluginEvent(&ctx, &event);
       /* Free the plugin instance */
       pref(plugin)->freePlugin(&ctx);

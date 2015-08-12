@@ -2,8 +2,8 @@
 #
 # shell script to grant privileges to the bacula database
 #
-#  Author:  Kern Sibbald
-#  License: LGPLv3
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
 #
 db_user=${db_user:-@db_user@}
 bindir=@POSTGRESQL_BINDIR@
@@ -17,6 +17,9 @@ fi
 $bindir/psql -f - -d ${db_name} $* <<END-OF-DATA
 
 create user ${db_user} ${pass};
+
+-- for the database
+alter database ${db_name} owner to ${db_user} ;
 
 -- for tables
 grant all on unsavedfiles to ${db_user};
@@ -44,6 +47,7 @@ grant all on jobhisto	  to ${db_user};
 grant all on PathHierarchy  to ${db_user};
 grant all on PathVisibility to ${db_user};
 grant all on RestoreObject to ${db_user};
+grant all on Snapshot to ${db_user};
 -- for sequences on those tables
 
 grant select, update on filename_filenameid_seq    to ${db_user};
@@ -63,6 +67,7 @@ grant select, update on location_locationid_seq    to ${db_user};
 grant select, update on locationlog_loclogid_seq   to ${db_user};
 grant select, update on log_logid_seq		   to ${db_user};
 grant select, update on restoreobject_restoreobjectid_seq to ${db_user};
+grant select, update on snapshot_snapshotid_seq to ${db_user};
 END-OF-DATA
 if [ $? -eq 0 ]
 then

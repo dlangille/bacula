@@ -1,5 +1,10 @@
 #!/bin/sh
 #
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+
+#
 # Run a simple backup of the Bacula build directory then migrate it
 #   to another device.
 #
@@ -32,7 +37,7 @@ start_test
 
 # Write out bconsole commands
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
-@$out /dev/null
+@output /dev/null
 messages
 @$out ${cwd}/tmp/log1.out
 @#setdebug level=10 dir
@@ -61,6 +66,11 @@ wait
 @# 
 @# now do a restore
 @#
+@# Check if JobMedia OK (run under Aligned)
+sql
+select jobid, mediaid, firstindex,lastindex,volindex from JobMedia order by jobid,volindex;
+select * from JobMedia order by jobid,volindex;
+
 @$out ${cwd}/tmp/log2.out
 restore where=${cwd}/tmp/bacula-restores select storage=DiskChanger
 unmark *

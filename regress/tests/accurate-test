@@ -1,5 +1,10 @@
 #!/bin/sh
 #
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+
+#
 # TODO:
 #  - test bextract
 #  - with strip path 
@@ -167,12 +172,6 @@ rm -rf ${cwd}/tmp/bacula-restores
 p Check with bls
 ################################################################
 
-$bin/bls -c $conf/bacula-sd.conf -V 'TestVolume001' FileStorage > $tmp/bls.out
-grep -- '----' $tmp/bls.out | grep xxx > /dev/null
-if [ $? != 0 ] ; then
-    print_debug "ERROR: Should find deleted files into $tmp/bls.out"
-    bstat=2
-fi
 
 ################################################################
 p Now do a backup after making few changes
@@ -292,7 +291,14 @@ echo "volume=TestVolume001" >tmp/bscan.bsr
 
 bscan_libdbi
 
-$bin/bscan -c $conf/bacula-sd.conf $BSCANLIBDBI -n "$db_name" -u "$db_user" -m -s -b $tmp/bscan.bsr FileStorage 2>&1 > $tmp/bscan.log
+# If the database has a password pass it to bscan
+if test "x${db_password}" = "x"; then
+  PASSWD=
+else
+  PASSWD="-P ${db_password}"
+fi
+
+$bin/bscan -c $conf/bacula-sd.conf $BSCANLIBDBI $PASSWD -n "$db_name" -u "$db_user" -m -s -b $tmp/bscan.bsr FileStorage 2>&1 > $tmp/bscan.log
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
 @$out ${cwd}/tmp/log1.out

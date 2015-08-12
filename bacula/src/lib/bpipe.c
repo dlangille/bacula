@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2002-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *   bpipe.c bi-directional pipe
@@ -60,7 +64,7 @@ void build_sh_argc_argv(char *cmd, int *bargc, char *bargv[], int max_arg)
  *   a bi-directional pipe so that the user can read from and
  *   write to the program.
  */
-BPIPE *open_bpipe(char *prog, int wait, const char *mode)
+BPIPE *open_bpipe(char *prog, int wait, const char *mode, char *envp[])
 {
    char *bargv[MAX_ARGV];
    int bargc, i;
@@ -143,6 +147,13 @@ BPIPE *open_bpipe(char *prog, int wait, const char *mode)
       for (i=3; i<=32; i++) {         /* close any open file descriptors */
          close(i);
       }
+
+      /* Setup the environment if requested, we do not use execvpe()
+       * because it's not wildly available
+       * TODO: Implement envp to windows version of bpipe
+       */
+      setup_env(envp);
+
       execvp(bargv[0], bargv);        /* call the program */
       /* Convert errno into an exit code for later analysis */
       for (i=0; i< num_execvp_errors; i++) {
@@ -388,7 +399,7 @@ int run_program(char *prog, int wait, POOLMEM *&results)
  *           non-zero on error == berrno status
  *
  */
-int run_program_full_output(char *prog, int wait, POOLMEM *&results)
+int run_program_full_output(char *prog, int wait, POOLMEM *&results, char *env[])
 {
    BPIPE *bpipe;
    int stat1, stat2;
@@ -405,7 +416,7 @@ int run_program_full_output(char *prog, int wait, POOLMEM *&results)
 
    results[0] = 0;
    mode = (char *)"r";
-   bpipe = open_bpipe(prog, wait, mode);
+   bpipe = open_bpipe(prog, wait, mode, env);
    if (!bpipe) {
       stat1 = ENOENT;
       goto bail_out;

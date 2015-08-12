@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  * This file handles commands from the File daemon.
@@ -81,6 +85,7 @@ static char read_open[]       = "read open session = %127s %ld %ld %ld %ld %ld %
 /* Responses sent to the File daemon */
 static char NO_open[]         = "3901 Error session already open\n";
 static char NOT_opened[]      = "3902 Error session not opened\n";
+static char ERROR_open[]      = "3904 Error open session, bad parameters\n";
 static char OK_end[]          = "3000 OK end\n";
 static char OK_close[]        = "3000 OK close Status = %d\n";
 static char OK_open[]         = "3000 OK open ticket = %d\n";
@@ -121,7 +126,7 @@ void run_job(JCR *jcr)
    Dmsg3(050, "==== JobType=%c run_job=%d sd_client=%d\n", jcr->getJobType(), jcr->JobId, jcr->sd_client);
    if (jcr->is_JobType(JT_BACKUP) && jcr->sd_client) {
       jcr->session_opened = true;
-      Dmsg0(050, "Do: receive for 3000 OK data then append");
+      Dmsg0(050, "Do: receive for 3000 OK data then append\n");
       if (!response(jcr, jcr->file_bsock, "3000 OK data\n", "Append data")) {
          Dmsg1(050, "Expect: 3000 OK data, got: %s", jcr->file_bsock->msg);
          Jmsg0(jcr, M_FATAL, 0, "Append data not accepted\n");
@@ -131,8 +136,8 @@ void run_job(JCR *jcr)
       append_end_session(jcr);
    } else if (jcr->is_JobType(JT_MIGRATE) || jcr->is_JobType(JT_COPY)) {
       jcr->session_opened = true;
-      Dmsg1(050, "Do: read_data_cmd file_bsock=%p\n", jcr->file_bsock);
       read_data_cmd(jcr);
+      Dmsg0(050, "Do: receive for 3000 OK data then read\n");
       if (!response(jcr, jcr->file_bsock, "3000 OK data\n", "Data received")) {
          Dmsg1(050, "Expect 3000 OK data, got: %s", jcr->file_bsock->msg);
          Jmsg0(jcr, M_FATAL, 0, "Read data not accepted\n");
@@ -147,6 +152,7 @@ void run_job(JCR *jcr)
    }
 bail_out:
    jcr->end_time = time(NULL);
+   flush_jobmedia_queue(jcr);
    dequeue_messages(jcr);             /* send any queued messages */
    jcr->setJobStatus(JS_Terminated);
    generate_daemon_event(jcr, "JobEnd");
@@ -245,7 +251,7 @@ static bool append_end_session(JCR *jcr)
 {
    BSOCK *fd = jcr->file_bsock;
 
-   Dmsg1(120, "store<file: %s", fd->msg);
+   Dmsg1(120, ">filed: %s", fd->msg);
    if (!jcr->session_opened) {
       pm_strcpy(jcr->errmsg, _("Attempt to close non-open session.\n"));
       fd->fsend(NOT_opened);
@@ -299,7 +305,6 @@ static bool append_close_session(JCR *jcr)
    Dmsg1(120, ">filed: %s", fd->msg);
 
    fd->signal(BNET_EOD);              /* send EOD to File daemon */
-
    jcr->session_opened = false;
    return true;
 }
@@ -337,7 +342,7 @@ static bool read_open_session(JCR *jcr)
 
    Dmsg1(120, "%s", fd->msg);
    if (jcr->session_opened) {
-      pm_strcpy(jcr->errmsg, _("Attempt to open read on non-open session.\n"));
+      pm_strcpy(jcr->errmsg, _("Attempt to open an already open session.\n"));
       fd->fsend(NO_open);
       return false;
    }
@@ -345,17 +350,17 @@ static bool read_open_session(JCR *jcr)
    if (sscanf(fd->msg, read_open, jcr->read_dcr->VolumeName, &jcr->read_VolSessionId,
          &jcr->read_VolSessionTime, &jcr->read_StartFile, &jcr->read_EndFile,
          &jcr->read_StartBlock, &jcr->read_EndBlock) == 7) {
-      if (jcr->session_opened) {
-         pm_strcpy(jcr->errmsg, _("Attempt to open read on non-open session.\n"));
-         fd->fsend(NOT_opened);
-         return false;
-      }
       Dmsg4(100, "read_open_session got: JobId=%d Vol=%s VolSessId=%ld VolSessT=%ld\n",
          jcr->JobId, jcr->read_dcr->VolumeName, jcr->read_VolSessionId,
          jcr->read_VolSessionTime);
       Dmsg4(100, "  StartF=%ld EndF=%ld StartB=%ld EndB=%ld\n",
          jcr->read_StartFile, jcr->read_EndFile, jcr->read_StartBlock,
          jcr->read_EndBlock);
+
+   } else {
+      pm_strcpy(jcr->errmsg, _("Cannot open session, received bad parameters.\n"));
+      fd->fsend(ERROR_open);
+      return false;
    }
 
    jcr->session_opened = true;

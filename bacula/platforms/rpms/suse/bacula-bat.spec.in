@@ -1,7 +1,10 @@
 #
 # Bacula RPM spec file
 #
-# Copyright (C) 2000-2014 Bacula Systems SA
+#
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
 
 # Platform Build Configuration
 
@@ -147,14 +150,13 @@ BuildRequires: freetype-devel
 %define depkgs_qt ../depkgs-qt
 
 # define the basic package description
-%define blurb Bacula - The Leading Open Source Backup Solution.
+%define blurb Bacula - The Network Backup Solution.
 %define blurb2 Bacula is a set of computer programs that permit you (or the system
 %define blurb3 administrator) to manage backup, recovery, and verification of computer
 %define blurb4 data across a network of computers of different kinds. In technical terms,
 %define blurb5 it is a network client/server based backup program. Bacula is relatively
 %define blurb6 easy to use and efficient, while offering many advanced storage management
 %define blurb7 features that make it easy to find and recover lost or damaged files.
-%define blurb8 Bacula source code has been released under the AGPL version 3 license.
 
 %define group_file /etc/group
 %define groupadd /usr/sbin/groupadd
@@ -171,13 +173,12 @@ Group: System Environment/Daemons
 %{blurb5}
 %{blurb6}
 %{blurb7}
-%{blurb8}
 
 This is the Bacula Administration Tool (bat) graphical user interface package.
 It is an add-on to the client or server packages.
 
 # Don't strip symbols
-%define debug_package %{nil}
+%define debug_package %{nil} 
 
 # Must explicitly enable debug pkg on SuSE
 # but not in opensuse_bs
@@ -289,7 +290,7 @@ ln -sf consolehelper $RPM_BUILD_ROOT/usr/bin/bat
 %files
 %defattr(-,root,root)
 %attr(-, root, %{daemon_group}) %{_sbindir}/bat
-%attr(-, root, %{daemon_group}) %dir %{sysconf_dir}
+%attr(770, root, %{daemon_group}) %dir %{sysconf_dir}
 %attr(-, root, %{daemon_group}) %config(noreplace) %{sysconf_dir}/bat.conf
 %attr(-, root, %{daemon_group}) %{docs_dir}/*.html
 %attr(-, root, %{daemon_group}) %{docs_dir}/*.png

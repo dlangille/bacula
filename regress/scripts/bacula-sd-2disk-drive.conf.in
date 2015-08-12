@@ -102,6 +102,81 @@ Device {
 # Maximum File Size = 1000000
 }
 
+Device {
+  Name = vDrive-Disk-restore
+  Device Type = File
+  Media Type = Disk
+  Archive Device = @tmpdir@
+  AutomaticMount = yes;               # when device opened, read it
+  Autochanger = yes
+  Drive Index = 1
+  AlwaysOpen = yes;
+  RemovableMedia = yes;
+  Maximum Concurrent Jobs = 3
+  Volume Poll Interval = 15
+# Maximum File Size = 1000000
+}
+
+Autochanger {
+  Name = Virtual2
+  Changer Device = /dev/null
+  Changer Command =""
+  Device = vDrive-3, vDrive-4
+}
+
+Device {
+  Name = vDrive-3
+  Device Type = File
+  Media Type = Disk2
+  Archive Device = @tmpdir@
+  AutomaticMount = yes;               # when device opened, read it
+  Autochanger = yes
+  Drive Index = 0
+  AlwaysOpen = yes;
+  RemovableMedia = yes;
+  Maximum Concurrent Jobs = 3
+  Volume Poll Interval = 15
+# Maximum File Size = 1000000
+}
+
+Device {
+  Name = vDrive-4
+  Device Type = File
+  Media Type = Disk2
+  Archive Device = @tmpdir@
+  AutomaticMount = yes;               # when device opened, read it
+  Autochanger = yes
+  Drive Index = 1
+  AlwaysOpen = yes;
+  RemovableMedia = yes;
+  Maximum Concurrent Jobs = 3
+  Volume Poll Interval = 15
+# Maximum File Size = 1000000
+}
+
+Device {
+  Name = vDrive-Disk2-restore
+  Device Type = File
+  Media Type = Disk2
+  Archive Device = @tmpdir@
+  AutomaticMount = yes;               # when device opened, read it
+  Autochanger = yes
+  Drive Index = 1
+  AlwaysOpen = yes;
+  RemovableMedia = yes;
+  Maximum Concurrent Jobs = 3
+  Volume Poll Interval = 15
+# Maximum File Size = 1000000
+}
+
+Autochanger {
+  Name = VirtualRestore
+  Changer Device = /dev/null
+  Changer Command =""
+  Device = vDrive-Disk-restore, vDrive-Disk2-restore
+}
+
+
 # 
 # Send all messages to the Director, 
 # mount messages also are sent to the email address

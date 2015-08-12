@@ -1,6 +1,9 @@
 # Bacula RPM spec file
 #
-# Copyright (C) 2000-2014 Bacula Systems SA
+#
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
 
 # Platform Build Configuration
 

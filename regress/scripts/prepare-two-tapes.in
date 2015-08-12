@@ -1,5 +1,10 @@
 #!/bin/sh
 #
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+
+#
 # Cleanup left over files -- both before and after test run
 #
 # Write an EOF on tape in slot $SLOT1  and  on tape in $SLOT2

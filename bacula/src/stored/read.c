@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  * Read code for Storage daemon
@@ -26,7 +30,6 @@
 /* Forward referenced subroutines */
 static bool read_record_cb(DCR *dcr, DEV_RECORD *rec);
 static bool mac_record_cb(DCR *dcr, DEV_RECORD *rec);
-
 
 /* Responses sent to the File daemon */
 static char OK_data[]    = "3000 OK data\n";
@@ -67,7 +70,11 @@ bool do_read_data(JCR *jcr)
    }
 
    /* Tell File daemon we will send data */
-   fd->fsend(OK_data);
+   if (!jcr->is_ok_data_sent) {
+      /* OK_DATA can have been already sent for copy/migrate by run_job() to avoid dead lock*/
+      fd->fsend(OK_data);
+      jcr->is_ok_data_sent = true;
+   }
 
    jcr->sendJobStatus(JS_Running);
    jcr->run_time = time(NULL);
@@ -104,11 +111,6 @@ bool do_read_data(JCR *jcr)
    return ok;
 }
 
-/*
- * Called here for reading (restore) for each record from read_records()
- *  Returns: true if OK
- *           false if error
- */
 static bool read_record_cb(DCR *dcr, DEV_RECORD *rec)
 {
    JCR *jcr = dcr->jcr;
@@ -116,25 +118,27 @@ static bool read_record_cb(DCR *dcr, DEV_RECORD *rec)
    bool ok = true;
    POOLMEM *save_msg;
    char ec1[50], ec2[50];
+   POOLMEM *wbuf = rec->data;                 /* send buffer */
+   uint32_t wsize = rec->data_len;            /* send size */
 
    if (rec->FileIndex < 0) {
       return true;
    }
+
    Dmsg5(400, "Send to FD: SessId=%u SessTim=%u FI=%s Strm=%s, len=%d\n",
       rec->VolSessionId, rec->VolSessionTime,
       FI_to_ascii(ec1, rec->FileIndex),
       stream_to_ascii(ec2, rec->Stream, rec->FileIndex),
-      rec->data_len);
+      wsize);
 
    /* Send record header to File daemon */
    if (!fd->fsend(rec_header, rec->VolSessionId, rec->VolSessionTime,
-          rec->FileIndex, rec->Stream, rec->data_len)) {
+          rec->FileIndex, rec->Stream, wsize)) {
       Pmsg1(000, _(">filed: Error Hdr=%s\n"), fd->msg);
-      Jmsg1(jcr, M_FATAL, 0, _("Error sending to File daemon. ERR=%s\n"),
+      Jmsg1(jcr, M_FATAL, 0, _("Error sending header to Client. ERR=%s\n"),
          fd->bstrerror());
       return false;
    }
-
    /*
     * For normal migration jobs, FileIndex values are sequential because
     *  we are dealing with one job.  However, for Vbackup (consolidation),
@@ -155,20 +159,32 @@ static bool read_record_cb(DCR *dcr, DEV_RECORD *rec)
       }
    }
 
-   /* Send data record to File daemon */
+   /* Debug code: check if we must hangup */
+   if (get_hangup() > 0 && (jcr->JobFiles > (uint32_t)get_hangup())) {
+      jcr->setJobStatus(JS_Incomplete);
+      Jmsg1(jcr, M_FATAL, 0, "Debug hangup requested after %d files.\n",
+         get_hangup());
+      set_hangup(0);
+      return false;
+   }
+   if (get_blowup() > 0 && (jcr->JobFiles > (uint32_t)get_blowup())) {
+      Jmsg1(jcr, M_ABORT, 0, "Debug blowup() requested after %d files.\n",
+         get_blowup());
+      return false;
+   }
+
    save_msg = fd->msg;          /* save fd message pointer */
-   fd->msg = rec->data;         /* pass data directly to the FD */
-   fd->msglen = rec->data_len;
-   jcr->JobBytes += rec->data_len;   /* increment bytes this job */
-   Dmsg1(400, ">filed: send %d bytes data.\n", fd->msglen);
+   fd->msg = wbuf;
+   fd->msglen = wsize;
+   /* Send data record to File daemon */
+   jcr->JobBytes += wsize;   /* increment bytes this job */
    if (!fd->send()) {
       Pmsg1(000, _("Error sending to FD. ERR=%s\n"), fd->bstrerror());
-      Jmsg1(jcr, M_FATAL, 0, _("Error sending to File daemon. ERR=%s\n"),
+      Jmsg1(jcr, M_FATAL, 0, _("Error sending data to Client. ERR=%s\n"),
          fd->bstrerror());
-
       ok = false;
    }
-   fd->msg = save_msg;                /* restore fd message pointer */
+   fd->msg = save_msg;
    return ok;
 }
 
@@ -187,6 +203,8 @@ static bool mac_record_cb(DCR *dcr, DEV_RECORD *rec)
    POOLMEM *save_msg;
    char ec1[50], ec2[50];
    bool ok = true;
+   POOLMEM *wbuf = rec->data;;                 /* send buffer */
+   uint32_t wsize = rec->data_len;             /* send size */
 
 #ifdef xxx
    Pmsg5(000, "on entry     JobId=%d FI=%s SessId=%d Strm=%s len=%d\n",
@@ -239,14 +257,14 @@ static bool mac_record_cb(DCR *dcr, DEV_RECORD *rec)
 
    if (new_header) {
       new_header = false;
-      Dmsg5(400, "Send header to FD: SessId=%u SessTim=%u FI=%s Strm=%s, len=%d\n",
+      Dmsg5(400, "Send header to FD: SessId=%u SessTim=%u FI=%s Strm=%s, len=%ld\n",
          rec->VolSessionId, rec->VolSessionTime,
          FI_to_ascii(ec1, rec->FileIndex),
          stream_to_ascii(ec2, rec->Stream, rec->FileIndex),
-         rec->data_len);
+         wsize);
 
       /* Send data header to File daemon */
-      if (!fd->fsend("%ld %ld %ld", rec->FileIndex, rec->Stream, rec->data_len)) {
+      if (!fd->fsend("%ld %ld %ld", rec->FileIndex, rec->Stream, wsize)) {
          Pmsg1(000, _(">filed: Error Hdr=%s\n"), fd->msg);
          Jmsg1(jcr, M_FATAL, 0, _("Error sending to File daemon. ERR=%s\n"),
             fd->bstrerror());
@@ -257,9 +275,9 @@ static bool mac_record_cb(DCR *dcr, DEV_RECORD *rec)
    Dmsg1(400, "FI=%d\n", rec->FileIndex);
    /* Send data record to File daemon */
    save_msg = fd->msg;          /* save fd message pointer */
-   fd->msg = rec->data;         /* pass data directly to the FD */
-   fd->msglen = rec->data_len;
-   jcr->JobBytes += rec->data_len;   /* increment bytes this job */
+   fd->msg = wbuf;         /* pass data directly to the FD */
+   fd->msglen = wsize;
+   jcr->JobBytes += wsize;   /* increment bytes this job */
    Dmsg1(400, ">filed: send %d bytes data.\n", fd->msglen);
    if (!fd->send()) {
       Pmsg1(000, _("Error sending to FD. ERR=%s\n"), fd->bstrerror());

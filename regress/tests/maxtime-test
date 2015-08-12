@@ -1,5 +1,10 @@
 #!/bin/sh
 #
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+
+#
 #  Test MaxWaitTime, MaxRunTime and MaxStartDelay
 #
 
@@ -19,18 +24,21 @@ echo "${cwd}/build/po" >${cwd}/tmp/file-list
 start_test
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
-@$out /dev/null
+@output /dev/null
 messages
 @$out ${cwd}/tmp/log1.out
 label volume=TestVolume001 pool=PoolA
 @$out ${cwd}/tmp/RUN_MAXTIME.log
 @# no media => have to wait
+@# JobId 1
 run job=RUN_MAXWAITTIME comment="Should fail" pool=Default yes
 @sleep 2
 @# storage is used by RUN_MAXWAITTIME => have to wait
+@# JobId 2
 run job=RUN_MAXSTARTDELAY comment="Should fail" pool=PoolA when="$WHEN" yes
 @sleep 2
 @# storage is used by the first MAXWAITTIME, but should work
+@# JobId 3
 run job=RUN_MAXWAITTIME comment="Should work" pool=PoolA yes
 @sleep 60
 label volume=TestVolume002 pool=Default
@@ -39,10 +47,13 @@ mount
 mount
 wait
 messages
+@# JobId 4
 run job=RUN_MAXRUNTIME comment="Should fail" pool=PoolA yes
 wait
 messages
-st dir
+status dir
+status client
+@sleep 2
 quit
 END_OF_DATA
 

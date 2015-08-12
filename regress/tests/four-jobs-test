@@ -1,5 +1,10 @@
 #!/bin/sh
 #
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+
+#
 # Run a simple backup of the Bacula build directory using the compressed option
 #   then backup four times, each with incremental then finally restore.
 #   It should require at least 4 different bsrs.
@@ -16,7 +21,7 @@ change_jobname CompressedTest $JobName
 start_test
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
-@$out /dev/null
+@output /dev/null
 estimate job=$JobName listing
 estimate job=$JobName
 estimate job=$JobName
@@ -39,7 +44,7 @@ touch ${cwd}/build/src/lib/*.c ${cwd}/build/src/lib/*.o
 # run a second job
 #
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
-@$out /dev/null
+@output /dev/null
 messages
 @$out  ${cwd}/tmp/log1.out
 run job=$JobName yes
@@ -57,7 +62,7 @@ touch ${cwd}/build/src/lib/*.c ${cwd}/build/src/lib/*.o
 # run a third job
 #
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
-@$out /dev/null
+@output /dev/null
 messages
 @$out ${cwd}/tmp/log1.out
 run job=$JobName yes
@@ -75,7 +80,7 @@ touch ${cwd}/build/src/lib/*.c ${cwd}/build/src/lib/*.o
 # run a fourth job
 #
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
-@$out /dev/null
+@output /dev/null
 messages
 @$out ${cwd}/tmp/log1.out
 run job=$JobName yes
@@ -91,7 +96,7 @@ check_for_zombie_jobs storage=File
 # now do several restores to ensure we cleanup between jobs
 #
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
-@$out /dev/null
+@output /dev/null
 restore where=${cwd}/tmp/bacula-restores select all storage=File done
 yes
 wait

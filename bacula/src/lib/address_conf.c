@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2004-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *   Configuration file parser for IP-Addresse ipv4 and ipv6
@@ -65,7 +69,7 @@ IPADDR::IPADDR(int af) : type(R_EMPTY)
      saddr4->sin_port = 0xffff;
   }
 #ifdef HAVE_IPV6
-  else if (af  == AF_INET6) {
+  else {
      saddr6->sin6_port = 0xffff;
   }
 #endif
@@ -96,11 +100,11 @@ unsigned short IPADDR::get_port_net_order() const
       port = saddr4->sin_port;
    }
 #ifdef HAVE_IPV6
-   else if (saddr->sa_family == AF_INET6) {
+   else {
       port = saddr6->sin6_port;
    }
 #endif
-   return port;
+    return port;
 }
 
 void IPADDR::set_port_net(unsigned short port)
@@ -109,7 +113,7 @@ void IPADDR::set_port_net(unsigned short port)
       saddr4->sin_port = port;
    }
 #ifdef HAVE_IPV6
-   else if (saddr->sa_family == AF_INET6) {
+   else {
       saddr6->sin6_port = port;
    }
 #endif
@@ -150,6 +154,14 @@ void IPADDR::copy_addr(IPADDR *src)
    }
 #endif
 }
+
+#ifdef NEED_IN6ADDR_ANY
+/* The <netinet/in.h> header shall declare the following external variable
+ * On Oses such as Solaris, it requires to define also XPG4_2 and EXTENSIONS
+ * and we have no real idea on what it will change.
+ */
+extern const struct in6_addr in6addr_any;
+#endif
 
 void IPADDR::set_addr_any()
 {
@@ -201,11 +213,10 @@ const char *IPADDR::get_address(char *outputbuf, int outlen)
 const char *IPADDR::build_address_str(char *buf, int blen)
 {
    char tmp[1024];
-   *buf = 0;
    if (get_family() == AF_INET) {
       bsnprintf(buf, blen, "%s:%hu ",
                 get_address(tmp, sizeof(tmp) - 1), get_port_host_order());
-   } else if (get_family() == AF_INET6) {
+   } else {
       bsnprintf(buf, blen, "[%s]:%hu ",
                 get_address(tmp, sizeof(tmp) - 1), get_port_host_order());
    }
@@ -575,7 +586,7 @@ int sockaddr_get_port_net_order(const struct sockaddr *client_addr)
       return ((struct sockaddr_in *)client_addr)->sin_port;
    }
 #ifdef HAVE_IPV6
-   else if (client_addr->sa_family == AF_INET6) {
+   else {
       return ((struct sockaddr_in6 *)client_addr)->sin6_port;
    }
 #endif
@@ -588,7 +599,7 @@ int sockaddr_get_port(const struct sockaddr *client_addr)
       return ntohs(((struct sockaddr_in *)client_addr)->sin_port);
    }
 #ifdef HAVE_IPV6
-   else if (client_addr->sa_family == AF_INET6) {
+   else {
       return ntohs(((struct sockaddr_in6 *)client_addr)->sin6_port);
    }
 #endif

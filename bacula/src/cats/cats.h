@@ -1,26 +1,33 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
- * Catalog header file
+ *  Catalog DB header file
  *
- *   Written by Kern E. Sibbald
+ *  Written by Kern E. Sibbald
  *
- * Anyone who accesses the database will need to include
- * this file.
+ *  Anyone who accesses the database will need to include
+ *   this file.
  */
+
+#ifndef __CATS_H_
+#define __CATS_H_ 1
 
 /*
    Here is how database versions work.
@@ -40,8 +47,28 @@
    will be copied to the updatedb directory with the correct name
    (in the present case 8 to 9).
  */
-#ifndef __CATS_H_
-#define __CATS_H_ 1
+
+/* Current database version number for all drivers */
+#define BDB_VERSION 15
+
+typedef void (DB_LIST_HANDLER)(void *, const char *);
+typedef int (DB_RESULT_HANDLER)(void *, int, char **);
+
+/* What kind of database we have */
+typedef enum {
+   SQL_TYPE_MYSQL      = 0,
+   SQL_TYPE_POSTGRESQL = 1,
+   SQL_TYPE_SQLITE3    = 2,
+   SQL_TYPE_UNKNOWN    = 99
+} SQL_DBTYPE;
+
+/* What kind of driver we have */
+typedef enum {
+   SQL_DRIVER_TYPE_MYSQL      = 0,
+   SQL_DRIVER_TYPE_POSTGRESQL = 1,
+   SQL_DRIVER_TYPE_SQLITE3    = 2,
+} SQL_DRIVER;
+
 
 /* ==============================================================
  *
@@ -51,6 +78,22 @@
  */
 
 #define faddr_t long
+
+/*
+ * Generic definition of a sql_row.
+ */
+typedef char **SQL_ROW;
+
+/*
+ * Generic definition of a a sql_field.
+ */
+typedef struct sql_field {
+   char *name;                        /* name of column */
+   int max_length;                    /* max length */
+   uint32_t type;                     /* type */
+   uint32_t flags;                    /* flags */
+} SQL_FIELD;
+
 
 /*
  * Structure used when calling db_get_query_ids()
@@ -135,7 +178,6 @@ struct JOBMEDIA_DBR {
    uint32_t EndFile;                  /* End file on Volume */
    uint32_t StartBlock;               /* start block on tape */
    uint32_t EndBlock;                 /* last block */
-// uint32_t Copy;                     /* identical copy */
 };
 
 
@@ -151,8 +193,6 @@ struct VOL_PARAMS {
    uint64_t StartAddr;                /* Start address */
    uint64_t EndAddr;                  /* End address */
    int32_t InChanger;                 /* InChanger flag */
-// uint32_t Copy;                     /* identical copy */
-// uint32_t Stripe;                   /* RAIT strip number */
 };
 
 
@@ -181,6 +221,7 @@ struct ROBJECT_DBR {
    char *object_name;
    char *object;
    char *plugin_name;
+   char *JobIds;
    uint32_t object_len;
    uint32_t object_full_len;
    uint32_t object_index;
@@ -268,7 +309,6 @@ public:
    int ReadOnly;                      /* Set if read-only */
 };
 
-
 /* Media record -- same as the database */
 class MEDIA_DBR {
 public:
@@ -291,10 +331,13 @@ public:
    uint32_t VolBlocks;                /* Number of blocks */
    uint32_t VolMounts;                /* Number of times mounted */
    uint32_t VolErrors;                /* Number of read/write errors */
-   uint32_t VolWrites;                /* Number of writes */
-   uint32_t VolReads;                 /* Number of reads */
+   uint64_t VolWrites;                /* Number of writes */
+   uint64_t VolReads;                 /* Number of reads */
    uint64_t VolBytes;                 /* Number of bytes written */
-   uint32_t VolParts;                 /* Number of parts written */
+   uint64_t VolABytes;                /* Size of aligned volume */
+   uint64_t VolHoleBytes;             /* The size of Holes */
+   uint32_t VolHoles;                 /* Number of holes */
+   uint32_t VolType;                  /* Device type of where Volume labeled */
    uint64_t MaxVolBytes;              /* Max bytes to write to Volume */
    uint64_t VolCapacityBytes;         /* capacity estimate */
    uint64_t VolReadTime;              /* time spent reading volume */
@@ -364,6 +407,92 @@ struct FILESET_DBR {
    bool created;                      /* set when record newly created */
 };
 
+class SNAPSHOT_DBR {
+public:
+   SNAPSHOT_DBR() {
+      memset(this, 0, sizeof(SNAPSHOT_DBR));
+   };
+   ~SNAPSHOT_DBR() {
+      reset();
+   };
+   void debug(int level) {
+      Dmsg8(DT_SNAPSHOT|level,
+            "Snapshot      %s:\n"
+            "  Volume:     %s\n"
+            "  Device:     %s\n"
+            "  Id:         %d\n"
+            "  FileSet:    %s\n"
+            "  CreateDate: %s\n"
+            "  Client:     %s\n"
+            "  Type:       %s\n",
+            Name, NPRT(Volume), NPRT(Device), SnapshotId,
+            FileSet, CreateDate, Client, Type);
+   };
+   char *as_arg(POOLMEM **out) {
+      bash_spaces(Name);
+      bash_spaces(Type);
+
+      if (Volume) {
+         bash_spaces(Volume);
+      }
+      if (Device) {
+         bash_spaces(Device);
+      }
+
+      Mmsg(out, "name=%s volume=%s device=%s tdate=%d type=%s",
+           Name, NPRTB(Volume), NPRTB(Device), CreateTDate, Type);
+
+      unbash_spaces(Name);
+      unbash_spaces(Type);
+      if (Volume) {
+         unbash_spaces(Volume);
+      }
+      if (Device) {
+         unbash_spaces(Device);
+      }
+      return *out;
+   };
+   void reset() {
+      if (need_to_free) {
+         if (Volume) {
+            free(Volume);
+         }
+         if (Device) {
+            free(Device);
+         }
+         if (errmsg) {
+            free(errmsg);
+         }
+         errmsg = Volume = Device = NULL;
+      }
+      need_to_free = false;
+   };
+   bool    need_to_free;             /* Need to free the internal memory */
+   /* Used when searching snapshots */
+   char    created_after[MAX_TIME_LENGTH];
+   char    created_before[MAX_TIME_LENGTH];
+   bool    expired;                 /* Look for CreateTDate > (NOW - Retention) */
+   bool    sorted_client;           /* Results sorted by Client, SnapshotId */
+   int     status;                  /* Status of the snapshot */
+
+   DBId_t  SnapshotId;              /* Unique Snapshot ID */
+   DBId_t  JobId;                   /* Related JobId */
+   DBId_t  FileSetId;               /* FileSetId if any */
+   DBId_t  ClientId;                /* From which client this snapshot comes */
+   char    Name[MAX_NAME_LENGTH];   /* Snapshot Name */
+   char    FileSet[MAX_NAME_LENGTH];/* FileSet name if any */
+   char    Client[MAX_NAME_LENGTH]; /* Client name */
+   char    Type[MAX_NAME_LENGTH];   /* zfs, btrfs, lvm, netapp, */
+   char    Comment[MAX_NAME_LENGTH];/* Comment */
+   char    CreateDate[MAX_TIME_LENGTH]; /* Create date as string */
+   time_t  CreateTDate;             /* Create TDate (in sec, since epoch) */
+   char   *Volume;                  /* Volume taken in snapshot */
+   char   *Device;                  /* Device, Pool, Directory, ...  */
+   char   *errmsg;                  /* Error associated with a snapshot */
+   utime_t Retention;               /* Number of second before pruning the snapshot */
+   uint64_t Size;                   /* Snapshot Size */
+};
+
 /* Call back context for getting a 32/64 bit value from the database */
 class db_int64_ctx {
 public:
@@ -409,114 +538,23 @@ private:
    db_list_ctx &operator=(const db_list_ctx&); /* prohibit class assignment */
 };
 
-typedef enum {
-   SQL_INTERFACE_TYPE_MYSQL      = 0,
-   SQL_INTERFACE_TYPE_POSTGRESQL = 1,
-   SQL_INTERFACE_TYPE_SQLITE3    = 2,
-} SQL_INTERFACETYPE;
-
-typedef enum {
-   SQL_TYPE_MYSQL      = 0,
-   SQL_TYPE_POSTGRESQL = 1,
-   SQL_TYPE_SQLITE3    = 2,
-   SQL_TYPE_UNKNOWN    = 99
-} SQL_DBTYPE;
-
-typedef void (DB_LIST_HANDLER)(void *, const char *);
-typedef int (DB_RESULT_HANDLER)(void *, int, char **);
-
-#define db_lock(mdb)   mdb->_db_lock(__FILE__, __LINE__)
-#define db_unlock(mdb) mdb->_db_unlock(__FILE__, __LINE__)
-
-/* Current database version number for all drivers */
-#define BDB_VERSION 14
-
-class B_DB: public SMARTALLOC {
-protected:
-   brwlock_t m_lock;                      /* transaction lock */
-   dlink m_link;                          /* queue control */
-   SQL_INTERFACETYPE m_db_interface_type; /* type of backend used */
-   SQL_DBTYPE m_db_type;                  /* database type */
-   int m_ref_count;                       /* reference count */
-   bool m_connected;                      /* connection made to db */
-   bool m_have_batch_insert;              /* have batch insert support ? */
-   char *m_db_driver;                     /* database driver */
-   char *m_db_driverdir;                  /* database driver dir */
-   char *m_db_name;                       /* database name */
-   char *m_db_user;                       /* database user */
-   char *m_db_address;                    /* host name address */
-   char *m_db_socket;                     /* socket for local access */
-   char *m_db_password;                   /* database password */
-   int m_db_port;                         /* port for host name address */
-   bool m_disabled_batch_insert;          /* explicitly disabled batch insert mode ? */
-   bool m_dedicated;                      /* is this connection dedicated? */
-
-public:
-   POOLMEM *errmsg;                       /* nicely edited error message */
-   POOLMEM *cmd;                          /* SQL command string */
-   POOLMEM *cached_path;                  /* cached path name */
-   int cached_path_len;                   /* length of cached path */
-   uint32_t cached_path_id;               /* cached path id */
-   int changes;                           /* changes during transaction */
-   POOLMEM *fname;                        /* Filename only */
-   POOLMEM *path;                         /* Path only */
-   POOLMEM *esc_name;                     /* Escaped file name */
-   POOLMEM *esc_path;                     /* Escaped path name */
-   POOLMEM *esc_obj;                      /* Escaped restore object */
-   int fnl;                               /* file name length */
-   int pnl;                               /* path name length */
-
-   /* methods */
-   B_DB() {};
-   virtual ~B_DB() {};
-   const char *get_db_name(void) { return m_db_name; };
-   const char *get_db_user(void) { return m_db_user; };
-   bool is_connected(void) { return m_connected; };
-   bool batch_insert_available(void) { return m_have_batch_insert; };
-   void increment_refcount(void) { m_ref_count++; };
-
-   /* low level methods */
-   bool db_match_database(const char *db_driver, const char *db_name,
-                          const char *db_address, int db_port);
-   B_DB *db_clone_database_connection(JCR *jcr, bool mult_db_connections);
-   int db_get_type_index(void) { return m_db_type; };
-   const char *db_get_type(void);
-   void _db_lock(const char *file, int line);
-   void _db_unlock(const char *file, int line);
-   bool db_sql_query(const char *query, int flags=0);
-   void print_lock_info(FILE *fp);
-
-   /* Pure virtual low level methods */
-   virtual bool db_open_database(JCR *jcr) = 0;
-   virtual void db_close_database(JCR *jcr) = 0;
-   virtual void db_thread_cleanup(void) = 0;
-   virtual void db_escape_string(JCR *jcr, char *snew, char *old, int len) = 0;
-   virtual char *db_escape_object(JCR *jcr, char *old, int len) = 0;
-   virtual void db_unescape_object(JCR *jcr, char *from, int32_t expected_len,
-                                   POOLMEM **dest, int32_t *len) = 0;
-   virtual void db_start_transaction(JCR *jcr) = 0;
-   virtual void db_end_transaction(JCR *jcr) = 0;
-   virtual bool db_sql_query(const char *query, DB_RESULT_HANDLER *result_handler, void *ctx) = 0;
-
-   /* By default, we use db_sql_query */
-   virtual bool db_big_sql_query(const char *query,
-                                 DB_RESULT_HANDLER *result_handler, void *ctx) {
-      return db_sql_query(query, result_handler, ctx);
-   };
-};
-
-/* sql_query Query Flags */
+/* sql_query flags */
 #define QF_STORE_RESULT 0x01
-
-/* Use for better error location printing */
-#define UPDATE_DB(jcr, db, cmd) UpdateDB(__FILE__, __LINE__, jcr, db, cmd)
-#define INSERT_DB(jcr, db, cmd) InsertDB(__FILE__, __LINE__, jcr, db, cmd)
-#define QUERY_DB(jcr, db, cmd) QueryDB(__FILE__, __LINE__, jcr, db, cmd)
-#define DELETE_DB(jcr, db, cmd) DeleteDB(__FILE__, __LINE__, jcr, db, cmd)
-
+ 
+/* sql_list.c */
+enum e_list_type {
+   HORZ_LIST,                   /* list */
+   VERT_LIST,                   /* llist */
+   ARG_LIST,                    /* key1=v1 key2=v2 key3=v3 */
+   FAILED_JOBS,
+   INCOMPLETE_JOBS
+};
+ 
+#include "bdb.h"
 #include "protos.h"
 #include "jcr.h"
 #include "sql_cmds.h"
+
 
 /* Object used in db_list_xxx function */
 class LIST_CTX {
@@ -528,7 +566,7 @@ public:
    DB_LIST_HANDLER *send;       /* send data back */
    bool once;                   /* Used to print header one time */
    void *ctx;                   /* send() user argument */
-   B_DB *mdb;
+   BDB *mdb;
    JCR *jcr;
 
    void empty() {
@@ -542,7 +580,7 @@ public:
       }
    }
 
-   LIST_CTX(JCR *j, B_DB *m, DB_LIST_HANDLER *h, void *c, e_list_type t) {
+   LIST_CTX(JCR *j, BDB *m, DB_LIST_HANDLER *h, void *c, e_list_type t) {
       line[0] = '\0';
       once = false;
       num_rows = 0;
@@ -554,21 +592,17 @@ public:
    }
 };
 
-/*
- * Some functions exported by sql.c for use within the cats directory.
- */
+/* Functions exported by sql.c for use within the cats directory. */
 int list_result(void *vctx, int cols, char **row);
-int list_result(JCR *jcr, B_DB *mdb, DB_LIST_HANDLER *send, void *ctx, e_list_type type);
-void list_dashes(B_DB *mdb, DB_LIST_HANDLER *send, void *ctx);
-int get_sql_record_max(JCR *jcr, B_DB *mdb);
-bool check_tables_version(JCR *jcr, B_DB *mdb);
-bool db_check_max_connections(JCR *jcr, B_DB *mdb, uint32_t nb);
+int list_result(JCR *jcr, BDB *mdb, DB_LIST_HANDLER *send, void *ctx, e_list_type type);
+int get_sql_record_max(JCR *jcr, BDB *mdb);
+void list_dashes(BDB *mdb, DB_LIST_HANDLER *send, void *ctx);
 
-void print_dashes(B_DB *mdb);
-void print_result(B_DB *mdb);
-int QueryDB(const char *file, int line, JCR *jcr, B_DB *db, char *select_cmd);
-int InsertDB(const char *file, int line, JCR *jcr, B_DB *db, char *select_cmd);
-int DeleteDB(const char *file, int line, JCR *jcr, B_DB *db, char *delete_cmd);
-int UpdateDB(const char *file, int line, JCR *jcr, B_DB *db, char *update_cmd);
-void split_path_and_file(JCR *jcr, B_DB *mdb, const char *fname);
-#endif /* __CATS_H_ */
+void print_dashes(BDB *mdb);
+void print_result(BDB *mdb);
+int QueryDB(const char *file, int line, JCR *jcr, BDB *db, char *select_cmd);
+int InsertDB(const char *file, int line, JCR *jcr, BDB *db, char *select_cmd);
+int DeleteDB(const char *file, int line, JCR *jcr, BDB *db, char *delete_cmd);
+void split_path_and_file(JCR *jcr, BDB *mdb, const char *fname);
+
+#endif  /* __CATS_H_ */

@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2011-2014 Free Software Foundation Europe e.V.
+   Copyright (C) 2000-2015 Kern Sibbald
+   Copyright (C) 2010-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  * Handle simple configuration file such as "ini" files.
@@ -42,6 +46,8 @@ static struct ini_store funcs[] = {
    {"@STR@",    "String",           ini_store_str},
    {"@BOOL@",   "on/off",           ini_store_bool},
    {"@ALIST@",  "String list",      ini_store_alist_str},
+   {"@DATE@",   "Date",             ini_store_date},
+/* TODO: Add protocol for the FD @ASKFD@ */
    {NULL,       NULL,               NULL}
 };
 
@@ -140,6 +146,8 @@ void ConfigFile::free_items()
          bfree_and_null_const(items[i].comment);
          bfree_and_null_const(items[i].default_value);
       }
+   }
+   if (items) {
       free(items);
    }
    items = NULL;
@@ -219,7 +227,7 @@ bool ConfigFile::serialize(const char *fname)
 int ConfigFile::serialize(POOLMEM **buf)
 {
    int len;
-   POOLMEM *tmp;
+   POOLMEM *tmp, *tmp2;
    if (!items) {
       **buf = 0;
       return 0;
@@ -228,14 +236,16 @@ int ConfigFile::serialize(POOLMEM **buf)
    len = Mmsg(buf, "# Plugin configuration file\n# Version %d\n", version);
 
    tmp = get_pool_memory(PM_MESSAGE);
+   tmp2 = get_pool_memory(PM_MESSAGE);
 
    for (int i=0; items[i].name ; i++) {
       if (items[i].comment) {
-         Mmsg(tmp, "OptPrompt=\"%s\"\n", items[i].comment);
+         Mmsg(tmp, "OptPrompt=%s\n", quote_string(tmp2, items[i].comment));
          pm_strcat(buf, tmp);
       }
       if (items[i].default_value) {
-         Mmsg(tmp, "OptDefault=\"%s\"\n", items[i].default_value);
+         Mmsg(tmp, "OptDefault=%s\n",
+              quote_string(tmp2, items[i].default_value));
          pm_strcat(buf, tmp);
       }
       if (items[i].required) {
@@ -243,12 +253,14 @@ int ConfigFile::serialize(POOLMEM **buf)
          pm_strcat(buf, tmp);
       }
 
-      /* variable = @INT64@ */
       Mmsg(tmp, "%s=%s\n\n",
            items[i].name, ini_get_store_code(items[i].handler));
+
+      /* variable = @INT64@ */
       len = pm_strcat(buf, tmp);
    }
    free_pool_memory(tmp);
+   free_pool_memory(tmp2);
 
    return len ;
 }
@@ -257,7 +269,7 @@ int ConfigFile::serialize(POOLMEM **buf)
 int ConfigFile::dump_results(POOLMEM **buf)
 {
    int len;
-   POOLMEM *tmp;
+   POOLMEM *tmp, *tmp2;
    if (!items) {
       **buf = 0;
       return 0;
@@ -265,6 +277,7 @@ int ConfigFile::dump_results(POOLMEM **buf)
    len = Mmsg(buf, "# Plugin configuration file\n# Version %d\n", version);
 
    tmp = get_pool_memory(PM_MESSAGE);
+   tmp2 = get_pool_memory(PM_MESSAGE);
 
    for (int i=0; items[i].name ; i++) {
       if (items[i].found) {
@@ -273,63 +286,67 @@ int ConfigFile::dump_results(POOLMEM **buf)
             Mmsg(tmp, "# %s\n", items[i].comment);
             pm_strcat(buf, tmp);
          }
-         Mmsg(tmp, "%s=%s\n\n", items[i].name, this->edit);
+         if (items[i].handler == ini_store_str  ||
+             items[i].handler == ini_store_name ||
+             items[i].handler == ini_store_date)
+         {
+            Mmsg(tmp, "%s=%s\n\n",
+                 items[i].name,
+                 quote_string(tmp2, this->edit));
+
+         } else {
+            Mmsg(tmp, "%s=%s\n\n", items[i].name, this->edit);
+         }
          len = pm_strcat(buf, tmp);
       }
    }
    free_pool_memory(tmp);
+   free_pool_memory(tmp2);
 
    return len ;
 }
 
-/* Parse a config file used by Plugin/Director */
-bool ConfigFile::parse(const char *fname)
+bool ConfigFile::parse()
 {
    int token, i;
-   bool ret=false;
+   bool ret = false;
+   bool found;
 
-   if (!items) {
-      return false;
-   }
-
-   if ((lc = lex_open_file(lc, fname, s_err)) == NULL) {
-      berrno be;
-      Emsg2(M_ERROR, 0, _("Cannot open config file %s: %s\n"),
-            fname, be.bstrerror());
-      return false;
-   }
    lc->options |= LOPT_NO_EXTERN;
    lc->caller_ctx = (void *)this;
 
    while ((token=lex_get_token(lc, T_ALL)) != T_EOF) {
-      Dmsg1(dbglevel, "parse got token=%s\n", lex_tok_to_str(token));
       if (token == T_EOL) {
          continue;
       }
+      found = false;
       for (i=0; items[i].name; i++) {
          if (strcasecmp(items[i].name, lc->str) == 0) {
             if ((token = lex_get_token(lc, T_EQUALS)) == T_ERROR) {
-               Dmsg1(dbglevel, "in T_IDENT got token=%s\n",
-                     lex_tok_to_str(token));
+               Dmsg2(dbglevel, "in T_IDENT got token=%s str=%s\n", lex_tok_to_str(token), lc->str);
                break;
             }
-
+            Dmsg2(dbglevel, "parse got token=%s str=%s\n", lex_tok_to_str(token), lc->str);
             Dmsg1(dbglevel, "calling handler for %s\n", items[i].name);
             /* Call item handler */
             ret = items[i].found = items[i].handler(lc, this, &items[i]);
-            i = -1;
+            found = true;
             break;
          }
       }
-      if (i >= 0) {
-         Dmsg1(dbglevel, "Keyword = %s\n", lc->str);
+      if (!found) {
+         Dmsg1(dbglevel, "Unfound keyword=%s\n", lc->str);
          scan_err1(lc, "Keyword %s not found", lc->str);
          /* We can raise an error here */
          break;
+      } else {
+         Dmsg1(dbglevel, "Found keyword=%s\n", items[i].name);
       }
       if (!ret) {
+         Dmsg1(dbglevel, "Error getting value for keyword=%s\n", items[i].name);
          break;
       }
+      Dmsg0(dbglevel, "Continue with while(token) loop\n");
    }
 
    for (i=0; items[i].name; i++) {
@@ -340,9 +357,39 @@ bool ConfigFile::parse(const char *fname)
    }
 
    lc = lex_close_file(lc);
-
    return ret;
 }
+
+/* Parse a config file used by Plugin/Director */
+bool ConfigFile::parse(const char *fname)
+{
+   if (!items) {
+      return false;
+   }
+
+   if ((lc = lex_open_file(lc, fname, s_err)) == NULL) {
+      berrno be;
+      Emsg2(M_ERROR, 0, _("Cannot open config file %s: %s\n"),
+            fname, be.bstrerror());
+      return false;
+   }
+   return parse();          /* Parse file */
+}
+
+/* Parse a config buffer used by Plugin/Director */
+bool ConfigFile::parse_buf(const char *buffer)
+{
+   if (!items) {
+      return false;
+   }
+
+   if ((lc = lex_open_buf(lc, buffer, s_err)) == NULL) {
+      Emsg0(M_ERROR, 0, _("Cannot open lex\n"));
+      return false;
+   }
+   return parse();         /* Parse memory buffer */
+}
+
 
 /* Analyse the content of a ini file to build the item list
  * It uses special syntax for datatype. Used by Director on Restore object
@@ -475,8 +522,10 @@ bool ini_store_name(LEX *lc, ConfigFile *inifile, ini_items *item)
       return true;
    }
    if (lex_get_token(lc, T_NAME) == T_ERROR) {
+      Dmsg0(dbglevel, "Want token=T_NAME got T_ERROR\n");
       return false;
    }
+   Dmsg1(dbglevel, "ini_store_name: %s\n", lc->str);
    strncpy(item->val.nameval, lc->str, sizeof(item->val.nameval));
    scan_to_eol(lc);
    return true;
@@ -575,19 +624,38 @@ bool ini_store_bool(LEX *lc, ConfigFile *inifile, ini_items *item)
    }
    if (strcasecmp(lc->str, "yes")  == 0 ||
        strcasecmp(lc->str, "true") == 0 ||
-       strcasecmp(lc->str, "on")   == 0)
+       strcasecmp(lc->str, "on")   == 0 ||
+       strcasecmp(lc->str, "1")    == 0)
    {
       item->val.boolval = true;
 
    } else if (strcasecmp(lc->str, "no")    == 0 ||
               strcasecmp(lc->str, "false") == 0 ||
-              strcasecmp(lc->str, "off")   == 0)
+              strcasecmp(lc->str, "off")   == 0 ||
+              strcasecmp(lc->str, "0")     == 0)
    {
       item->val.boolval = false;
 
    } else {
       /* YES and NO must not be translated */
-      scan_err2(lc, _("Expect %s, got: %s"), "YES, NO, ON, OFF, TRUE, or FALSE", lc->str);
+      scan_err2(lc, _("Expect %s, got: %s"), "YES, NO, ON, OFF, 0, 1, TRUE, or FALSE", lc->str);
+      return false;
+   }
+   scan_to_eol(lc);
+   return true;
+}
+
+bool ini_store_date(LEX *lc, ConfigFile *inifile, ini_items *item)
+{
+   if (!lc) {
+      bstrutime(inifile->edit,sizeof_pool_memory(inifile->edit),item->val.btimeval);
+      return true;
+   }
+   if (lex_get_token(lc, T_STRING) == T_ERROR) {
+      return false;
+   }
+   item->val.btimeval = str_to_utime(lc->str);
+   if (item->val.btimeval == 0) {
       return false;
    }
    scan_to_eol(lc);
@@ -637,6 +705,15 @@ int report()
    return err>0;
 }
 
+struct ini_items membuf_items[] = {
+   /* name          handler           comment             req */
+   {"client",      ini_store_name,    "Client name",       0},
+   {"serial",      ini_store_int32,   "Serial number",     1},
+   {"max_clients", ini_store_int32,   "Max Clients",       0},
+   {NULL,          NULL,              NULL,                0}
+};
+
+
 struct ini_items test_items[] = {
    /* name          handler           comment             req */
    {"datastore",   ini_store_name,    "Target Datastore", 0},
@@ -647,16 +724,62 @@ struct ini_items test_items[] = {
    {"pint64",      ini_store_pint64,  "pint",             0},
    {"int32",       ini_store_int32,   "int 32bit",        0},
    {"plugin.test", ini_store_str,     "test with .",      0},
+   {"adate",       ini_store_date,    "test with date",   0},
    {NULL,          NULL,              NULL,               0}
 };
+
+/* In order to link with libbaccfg */
+int32_t r_last;
+int32_t r_first;
+RES_HEAD **res_head;
+void save_resource(int type, RES_ITEM *items, int pass){}
+void dump_resource(int type, RES *ares, void sendit(void *sock, const char *fmt, ...), void *sock){}
+void free_resource(RES *rres, int type){}
+union URES {
+};
+RES_TABLE resources[] = {};
+URES res_all;
 
 int main()
 {
    FILE *fp;
-   int pos;
+   int pos, size;
    ConfigFile *ini = new ConfigFile();
    POOLMEM *buf = get_pool_memory(PM_BSOCK);
+   char buffer[2000];
 
+   //debug_level=500;
+   printf("Begin Memory buffer Test\n");
+   ok(ini->register_items(membuf_items, sizeof(struct ini_items)), "Check sizeof ini_items");
+
+   if ((fp = fopen("test.cfg", "w")) == NULL) {
+      exit (1);
+   }
+   fprintf(fp, "client=JohnDoe\n");
+   fprintf(fp, "serial=2\n");
+   fprintf(fp, "max_clients=3\n");
+   fflush(fp);
+   fseek(fp, 0, SEEK_END);
+   size = ftell(fp);
+   fclose(fp);
+
+   if ((fp = fopen("test.cfg", "rb")) == NULL) {
+      printf("Could not open file test.cfg\n");
+      exit (1);
+   }
+
+   size = fread(buffer, 1, size, fp);
+   buffer[size] = 0;
+   //printf("size of read buffer is: %d\n", size);
+   //printf("====buf=%s\n", buffer);
+
+   ok(ini->parse_buf(buffer), "Test memory read with all members");
+
+   ini->clear_items();
+   fclose(fp);
+
+   //debug_level = 0;
+   printf("\n\nBegin Original Full Tests\n");
    nok(ini->register_items(test_items, 5), "Check bad sizeof ini_items");
    ok(ini->register_items(test_items, sizeof(struct ini_items)), "Check sizeof ini_items");
 
@@ -674,6 +797,7 @@ int main()
    fprintf(fp, "int32=100\n");
    fprintf(fp, "bool=yes\n");
    fprintf(fp, "plugin.test=parameter\n");
+   fprintf(fp, "adate=\"1970-01-02 12:00:00\"\n");
 
    fflush(fp);
 
@@ -687,6 +811,7 @@ int main()
    ok(ini->items[2].val.int64val == 10, "Test int");
    ok(ini->items[4].val.boolval == true, "Test bool");
    ok(ini->items[6].val.int32val == 100, "Test int 32");
+   ok(ini->items[6].val.btimeval != 126000, "Test btime");
 
    alist *list = ini->items[3].val.alistval;
    nok(ini->items[3].found, "Test presence of alist");
@@ -740,6 +865,7 @@ int main()
            "pouet=@STR@\n"
            "int32=@INT32@\n"
            "plugin.test=@STR@\n"
+           "adate=@DATE@\n"
       );
    fclose(fp);
 
@@ -766,6 +892,9 @@ int main()
 
    ok((pos = ini->get_item("bool")) == 4, "Check bool definition");
    ok(ini->items[pos].val.boolval == true, "Test bool");
+
+   ok((pos = ini->get_item("adate")) == 9, "Check adate definition");
+   ok(ini->items[pos].val.btimeval == 126000, "Test date");
 
    ok(ini->dump_results(&buf), "Test to dump results");
    printf("<%s>\n", buf);

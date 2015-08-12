@@ -1,25 +1,26 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
+   Copyright (C) 2000-2015 Kern Sibbald
+   Copyright (C) 2000-2015 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
-/*
- *  Version $Id $
- *
- */
 
 #include "bacula.h"
 #include "filed.h"
+#include "backup.h"
 
 static int dbglvl=100;
 
@@ -86,8 +87,11 @@ static bool accurate_send_base_file_list(JCR *jcr)
    CurFile *elt;
    struct stat statc;
    int32_t LinkFIc;
-   FF_PKT *ff_pkt;
-   int stream = STREAM_UNIX_ATTRIBUTES;
+   bctx_t bctx;
+
+   memset(&bctx, 0, sizeof(bctx));
+   bctx.jcr = jcr;
+   bctx.data_stream = STREAM_UNIX_ATTRIBUTES;
 
    if (!jcr->accurate || jcr->getJobLevel() != L_FULL) {
       return true;
@@ -97,22 +101,22 @@ static bool accurate_send_base_file_list(JCR *jcr)
       return true;
    }
 
-   ff_pkt = init_find_files();
-   ff_pkt->type = FT_BASE;
+   bctx.ff_pkt = init_find_files();
+   bctx.ff_pkt->type = FT_BASE;
 
    foreach_htable(elt, jcr->file_list) {
       if (elt->seen) {
          Dmsg2(dbglvl, "base file fname=%s seen=%i\n", elt->fname, elt->seen);
          /* TODO: skip the decode and use directly the lstat field */
          decode_stat(elt->lstat, &statc, sizeof(statc), &LinkFIc); /* decode catalog stat */
-         ff_pkt->fname = elt->fname;
-         ff_pkt->statp = statc;
-         encode_and_send_attributes(jcr, ff_pkt, stream);
+         bctx.ff_pkt->fname = elt->fname;
+         bctx.ff_pkt->statp = statc;
+         encode_and_send_attributes(bctx);
 //       free(elt->fname);
       }
    }
 
-   term_find_files(ff_pkt);
+   term_find_files(bctx.ff_pkt);
    return true;
 }
 
@@ -126,8 +130,11 @@ static bool accurate_send_deleted_list(JCR *jcr)
    CurFile *elt;
    struct stat statc;
    int32_t LinkFIc;
-   FF_PKT *ff_pkt;
-   int stream = STREAM_UNIX_ATTRIBUTES;
+   bctx_t bctx;
+
+   memset(&bctx, 0, sizeof(bctx));
+   bctx.jcr = jcr;
+   bctx.data_stream = STREAM_UNIX_ATTRIBUTES;
 
    if (!jcr->accurate) {
       return true;
@@ -137,8 +144,8 @@ static bool accurate_send_deleted_list(JCR *jcr)
       return true;
    }
 
-   ff_pkt = init_find_files();
-   ff_pkt->type = FT_DELETED;
+   bctx.ff_pkt = init_find_files();
+   bctx.ff_pkt->type = FT_DELETED;
 
    foreach_htable(elt, jcr->file_list) {
       if (elt->seen || plugin_check_file(jcr, elt->fname)) {
@@ -147,14 +154,14 @@ static bool accurate_send_deleted_list(JCR *jcr)
       Dmsg2(dbglvl, "deleted fname=%s seen=%i\n", elt->fname, elt->seen);
       /* TODO: skip the decode and use directly the lstat field */
       decode_stat(elt->lstat, &statc, sizeof(statc), &LinkFIc); /* decode catalog stat */
-      ff_pkt->fname = elt->fname;
-      ff_pkt->statp.st_mtime = statc.st_mtime;
-      ff_pkt->statp.st_ctime = statc.st_ctime;
-      encode_and_send_attributes(jcr, ff_pkt, stream);
+      bctx.ff_pkt->fname = elt->fname;
+      bctx.ff_pkt->statp.st_mtime = statc.st_mtime;
+      bctx.ff_pkt->statp.st_ctime = statc.st_ctime;
+      encode_and_send_attributes(bctx);
 //    free(elt->fname);
    }
 
-   term_find_files(ff_pkt);
+   term_find_files(bctx.ff_pkt);
    return true;
 }
 
@@ -172,7 +179,7 @@ bool accurate_finish(JCR *jcr)
 {
    bool ret = true;
 
-   if (jcr->is_canceled()) {
+   if (jcr->is_canceled() || jcr->is_incomplete()) {
       accurate_free(jcr);
       return ret;
    }
@@ -268,9 +275,11 @@ bool accurate_check_file(JCR *jcr, FF_PKT *ff_pkt)
    if (!accurate_lookup(jcr, fname, &elt)) {
       Dmsg1(dbglvl, "accurate %s (not found)\n", fname);
       stat = true;
+      unstrip_path(ff_pkt);
       goto bail_out;
    }
 
+   unstrip_path(ff_pkt);     /* Get full path back */
    ff_pkt->accurate_found = true;
    ff_pkt->delta_seq = elt.delta_seq;
 
@@ -351,6 +360,16 @@ bool accurate_check_file(JCR *jcr, FF_PKT *ff_pkt)
       case 'm':                 /* modification time */
          if (statc.st_mtime != ff_pkt->statp.st_mtime) {
             Dmsg1(dbglvl-1, "%s      st_mtime differs\n", fname);
+            stat = true;
+         }
+         break;
+      case 'M':                 /* Look mtime/ctime like normal incremental backup */
+         if (ff_pkt->incremental &&
+             (ff_pkt->statp.st_mtime > ff_pkt->save_time &&
+              ((ff_pkt->flags & FO_MTIMEONLY) ||
+               ff_pkt->statp.st_ctime > ff_pkt->save_time)))
+         {
+            Dmsg1(dbglvl-1, "%s      mtime/ctime more recent than save_time\n", fname);
             stat = true;
          }
          break;
@@ -475,7 +494,6 @@ bool accurate_check_file(JCR *jcr, FF_PKT *ff_pkt)
    }
 
 bail_out:
-   unstrip_path(ff_pkt);
    return stat;
 }
 

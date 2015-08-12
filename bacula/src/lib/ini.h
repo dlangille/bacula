@@ -1,28 +1,21 @@
 /*
-   Copyright (C) 2011-2011 Bacula Systems(R) SA
+   Bacula(R) - The Network Backup Solution
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
-   This program is Free Software; you can modify it under the terms of
-   version three of the GNU Affero General Public License as published by the
-   Free Software Foundation, which is listed in the file LICENSE.
+   Copyright (C) 2000-2015 Kern Sibbald
+   Copyright (C) 2010-2014 Free Software Foundation Europe e.V.
 
-   This program is distributed in the hope that it will be useful, but
-   WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   General Public License for more details.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
-   You should have received a copy of the GNU Affero General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-   02110-1301, USA.
+   You may use this file and others of this release according to the
+   license defined in the LICENSE file, which includes the Affero General
+   Public License, v3.0 ("AGPLv3") and some additional permissions and
+   terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
-   Bacula Systems(R) is a trademark of Bacula Systems SA.
-   Bacula Enterprise(TM) is a trademark of Bacula Systems SA.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
 
-   The licensor of Bacula Enterprise(TM) is Bacula Systems(R) SA,
-   Rue Galilee 5, 1400 Yverdon-les-Bains, Switzerland.
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 
 #ifndef INI_H
@@ -61,6 +54,7 @@ typedef union {
    char    nameval[MAX_NAME_LENGTH];
    int64_t int64val;
    int32_t int32val;
+   btime_t btimeval;
    alist   *alistval;
    bool    boolval;
 } item_value;
@@ -141,7 +135,7 @@ public:
       sizeof_ini_items = sizeof(struct ini_items);
    }
 
-   ~ConfigFile() {
+   virtual ~ConfigFile() {
       if (lc) {
          lex_close_file(lc);
       }
@@ -198,7 +192,7 @@ public:
    int dump_results(POOLMEM **buf);
 
    /* Get item position in items list (useful when dynamic) */
-   int get_item(const char *name);
+   virtual int get_item(const char *name);
 
    /* Register config file structure, if size doesn't match */
    bool register_items(struct ini_items *aitems, int size) {
@@ -213,8 +207,14 @@ public:
       return false;
    }
 
-   /* Parse a ini file with a item list previously registred (plugin side) */
+   /* Parse an ini file with a item list previously registred (plugin side) */
    bool parse(const char *filename);
+
+   /* Parse an ini buffer */
+   bool parse_buf(const char *buf);
+
+   /* Parse file or buffer already setup */
+   bool parse();
 
    /* Create a item list from a ini file (director side) */
    bool unserialize(const char *filename);
@@ -239,6 +239,7 @@ bool ini_store_int64(LEX *lc, ConfigFile *inifile, ini_items *item);
 bool ini_store_pint32(LEX *lc, ConfigFile *inifile, ini_items *item);
 bool ini_store_int32(LEX *lc, ConfigFile *inifile, ini_items *item);
 bool ini_store_bool(LEX *lc, ConfigFile *inifile, ini_items *item);
+bool ini_store_date(LEX *lc, ConfigFile *inifile, ini_items *item);
 
 /* Get handler code from handler @ */
 const char *ini_get_store_code(INI_ITEM_HANDLER *handler);

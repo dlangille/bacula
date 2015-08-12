@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  * Prototypes for lib directory of Bacula
@@ -42,6 +46,8 @@ int       bin_to_base64          (char *buf, int buflen, char *bin, int binlen,
 int       base64_to_bin(char *dest, int destlen, char *src, int srclen);
 
 /* bsys.c */
+int copyfile(const char *src, const char *dst);
+void setup_env(char *envp[]);
 POOLMEM  *quote_string           (POOLMEM *snew, const char *old);
 POOLMEM  *quote_where            (POOLMEM *snew, const char *old);
 char     *bstrncpy               (char *dest, const char *src, int maxlen);
@@ -61,6 +67,7 @@ void     *bcalloc                (size_t size1, size_t size2);
 int       bsnprintf              (char *str, int32_t size, const char *format, ...);
 int       bvsnprintf             (char *str, int32_t size, const char *format, va_list ap);
 int       pool_sprintf           (char *pool_buf, const char *fmt, ...);
+int       create_lock_file       (char *fname, const char *progname, const char *filetype, POOLMEM **errmsg);
 void      create_pid_file        (char *dir, const char *progname, int port);
 int       delete_pid_file        (char *dir, const char *progname, int port);
 void      drop                   (char *uid, char *gid, bool keep_readall_caps);
@@ -78,6 +85,7 @@ int       Zdeflate(char *in, int in_len, char *out, int &out_len);
 int       Zinflate(char *in, int in_len, char *out, int &out_len);
 void      stack_trace();
 int       safer_unlink(const char *pathname, const char *regex);
+int fs_get_free_space(const char *path, int64_t *freeval, int64_t *totalval);
 
 /* bnet.c */
 bool       bnet_tls_server       (TLS_CONTEXT *ctx, BSOCK *bsock,
@@ -95,7 +103,7 @@ int        bnet_get_peer           (BSOCK *bs, char *buf, socklen_t buflen);
 BSOCK *    dup_bsock             (BSOCK *bsock);
 void       term_bsock            (BSOCK *bsock);
 const char *bnet_strerror         (BSOCK *bsock);
-const char *bnet_sig_to_ascii     (BSOCK *bsock);
+const char *bnet_sig_to_ascii     (int32_t msglen);
 dlist *bnet_host2ipaddrs(const char *host, int family, const char **errstr);
 void       bnet_restore_blocking (BSOCK *sock, int flags);
 int        set_socket_errno(int sockstat);
@@ -104,7 +112,7 @@ int        set_socket_errno(int sockstat);
 int      bget_msg(BSOCK *sock);
 
 /* bpipe.c */
-BPIPE *          open_bpipe(char *prog, int wait, const char *mode);
+BPIPE *          open_bpipe(char *prog, int wait, const char *mode, char *envp[]=NULL);
 int              close_wpipe(BPIPE *bpipe);
 int              close_bpipe(BPIPE *bpipe);
 
@@ -115,7 +123,7 @@ void hmac_md5(uint8_t* text, int text_len, uint8_t* key, int key_len, uint8_t *h
 
 /* crc32.c */
 
-uint32_t bcrc32(uint8_t *buf, int len);
+uint32_t bcrc32(unsigned char *buf, int len);
 
 /* crypto.c */
 int                init_crypto                 (void);
@@ -199,6 +207,7 @@ uint32_t get_jobid_from_tid(pthread_t tid);
 /* lex.c */
 LEX *     lex_close_file         (LEX *lf);
 LEX *     lex_open_file          (LEX *lf, const char *fname, LEX_ERROR_HANDLER *scan_error);
+LEX *     lex_open_buf           (LEX *lf, const char *buf, LEX_ERROR_HANDLER *scan_error);
 int       lex_get_char           (LEX *lf);
 void      lex_unget_char         (LEX *lf);
 const char *  lex_tok_to_str     (int token);
@@ -223,23 +232,26 @@ void       dispatch_message      (JCR *jcr, int type, utime_t mtime, char *buf);
 void       init_console_msg      (const char *wd);
 void       free_msgs_res         (MSGS *msgs);
 void       dequeue_messages      (JCR *jcr);
+void       set_db_engine_name    (const char *name);
 void       set_trace             (int trace_flag);
 bool       get_trace             (void);
 void       set_hangup            (int hangup_value);
+void       set_blowup            (int blowup_value);
 int        get_hangup            (void);
-void       set_db_type           (const char *name);
+int        get_blowup            (void);
 void       set_assert_msg        (const char *file, int line, const char *msg);
 void       register_message_callback(void msg_callback(int type, char *msg));
 
 /* bnet_server.c */
-void       bnet_thread_server(dlist *addr_list, int max_clients, workq_t *client_wq,
-                   void *handle_client_request(void *bsock));
+void       bnet_thread_server(dlist *addr_list, int max_clients, 
+              workq_t *client_wq, void *handle_client_request(void *bsock));
 void       bnet_stop_thread_server(pthread_t tid);
 void             bnet_server             (int port, void handle_client_request(BSOCK *bsock));
 int              net_connect             (int port);
 BSOCK *          bnet_bind               (int port);
 BSOCK *          bnet_accept             (BSOCK *bsock, char *who);
 
+/* message.c */
 typedef int (EVENT_HANDLER)(JCR *jcr, const char *event);
 int generate_daemon_event(JCR *jcr, const char *event);
 
@@ -285,6 +297,7 @@ TLS_CONNECTION   *new_tls_connection     (TLS_CONTEXT *ctx, int fd);
 bool             tls_bsock_accept        (BSOCK *bsock);
 int              tls_bsock_writen        (BSOCK *bsock, char *ptr, int32_t nbytes);
 int              tls_bsock_readn         (BSOCK *bsock, char *ptr, int32_t nbytes);
+bool             tls_bsock_probe         (BSOCK *bsock);
 #endif /* HAVE_TLS */
 bool             tls_bsock_connect       (BSOCK *bsock);
 void             tls_bsock_shutdown      (BSOCK *bsock);
@@ -294,7 +307,7 @@ bool             get_tls_enable          (TLS_CONTEXT *ctx);
 
 
 /* util.c */
-bool             is_buf_zero             (char *buf, int len);
+bool             is_buf_zero             (const char *buf, int len);
 void             lcase                   (char *str);
 void             bash_spaces             (char *str);
 void             bash_spaces             (POOL_MEM &pm);
@@ -302,14 +315,17 @@ void             unbash_spaces           (char *str);
 void             unbash_spaces           (POOL_MEM &pm);
 char *           encode_time             (utime_t time, char *buf);
 char *           encode_mode             (mode_t mode, char *buf);
+char *           hexdump(const char *data, int len, char *buf, int capacity);
+char *           asciidump(const char *data, int len, char *buf, int capacity);
+char *           smartdump(const char *data, int len, char *buf, int capacity, bool *is_ascii=NULL);
 int              do_shell_expansion      (char *name, int name_len);
 void             jobstatus_to_ascii      (int JobStatus, char *msg, int maxlen);
 void             jobstatus_to_ascii_gui  (int JobStatus, char *msg, int maxlen);
 int              run_program             (char *prog, int wait, POOLMEM *&results);
-int              run_program_full_output (char *prog, int wait, POOLMEM *&results);
+int              run_program_full_output (char *prog, int wait, POOLMEM *&results, char *env[]=NULL);
 char *           action_on_purge_to_string(int aop, POOL_MEM &ret);
 const char *     job_type_to_str         (int type);
-const char *     job_status_to_str       (int stat);
+const char *     job_status_to_str       (int stat, int errors);
 const char *     job_level_to_str        (int level);
 const char *     volume_status_to_str    (const char *status);
 void             make_session_key        (char *key, char *seed, int mode);

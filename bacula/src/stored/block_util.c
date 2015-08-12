@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2001-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *
@@ -554,6 +558,7 @@ bool terminate_writing_volume(DCR *dcr)
        Jmsg(dcr->jcr, M_FATAL, 0, "%s", dev->errmsg);
        ok = false;
    }
+   flush_jobmedia_queue(dcr->jcr);
    dcr->block->write_failed = true;
    if (dev->can_append() && !dev->weof(1)) {     /* end the tape */
       dev->VolCatInfo.VolCatErrors++;
@@ -626,6 +631,7 @@ bool check_for_newvol_or_newfile(DCR *dcr)
          return false;
       }
       if (dcr->NewVol) {
+         flush_jobmedia_queue(jcr);
          /* Note, setting a new volume also handles any pending new file */
          set_new_volume_parameters(dcr);
       } else {

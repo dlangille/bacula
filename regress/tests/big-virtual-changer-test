@@ -1,5 +1,10 @@
 #!/bin/sh
 #
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+
+#
 # Run a simple backup of the Bacula build directory. Create three
 #   tapes, each in a different pool, then run two jobs both of which
 #   want the disk that is not loaded.  Note, they both have     

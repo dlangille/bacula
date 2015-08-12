@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2006-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  * SD -- vbackup.c --  responsible for doing virtual backup jobs.
@@ -87,7 +91,6 @@ bool do_vbackup(JCR *jcr)
    }
 
    Dmsg2(200, "===== After acquire pos %u:%u\n", jcr->dcr->dev->file, jcr->dcr->dev->block_num);
-
    jcr->sendJobStatus(JS_Running);
 
    begin_data_spool(jcr->dcr);
@@ -98,6 +101,8 @@ bool do_vbackup(JCR *jcr)
    set_start_vol_position(jcr->dcr);
 
    jcr->JobFiles = 0;
+   jcr->dcr->set_ameta();
+   jcr->read_dcr->set_ameta();
    ok = read_records(jcr->read_dcr, record_cb, mount_next_read_volume);
    goto ok_out;
 
@@ -106,19 +111,20 @@ bail_out:
 
 ok_out:
    if (jcr->dcr) {
+      jcr->dcr->set_ameta();
       dev = jcr->dcr->dev;
       Dmsg1(100, "ok=%d\n", ok);
       if (ok || dev->can_write()) {
-         /* Flush out final partial block of this session */
-         if (!jcr->dcr->write_block_to_device()) {
+         /* Flush out final ameta partial block of this session */
+         if (!jcr->dcr->write_final_block_to_device()) {
             Jmsg2(jcr, M_FATAL, 0, _("Fatal append error on device %s: ERR=%s\n"),
                   dev->print_name(), dev->bstrerror());
-            Dmsg0(100, _("Set ok=FALSE after write_block_to_device.\n"));
+            Dmsg0(100, _("Set ok=FALSE after write_final_block_to_device.\n"));
             ok = false;
          }
          Dmsg2(200, "Flush block to device pos %u:%u\n", dev->file, dev->block_num);
       }
-
+      flush_jobmedia_queue(jcr);
       if (!ok) {
          discard_data_spool(jcr->dcr);
       } else {
@@ -139,12 +145,6 @@ ok_out:
       Jmsg(jcr, M_INFO, 0, _("Elapsed time=%02d:%02d:%02d, Transfer rate=%s Bytes/second\n"),
             job_elapsed / 3600, job_elapsed % 3600 / 60, job_elapsed % 60,
             edit_uint64_with_suffix(jcr->JobBytes / job_elapsed, ec1));
-
-#ifdef BUILD_DVD
-      if (ok && dev->is_dvd()) {
-         ok = dvd_close_job(jcr->dcr);   /* do DVD cleanup if any */
-      }
-#endif
 
       /* Release the device -- and send final Vol info to DIR */
       release_device(jcr->dcr);
@@ -193,16 +193,15 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
    JCR *jcr = dcr->jcr;
    DEVICE *dev = jcr->dcr->dev;
    char buf1[100], buf2[100];
+   bool     restoredatap = false;
+   POOLMEM *orgdata = NULL;
+   uint32_t orgdata_len = 0;
+   bool ret = false;
 
-#ifdef xxx
-   Pmsg5(000, "on entry     JobId=%d FI=%s SessId=%d Strm=%s len=%d\n",
-      jcr->JobId,
-      FI_to_ascii(buf1, rec->FileIndex), rec->VolSessionId,
-      stream_to_ascii(buf2, rec->Stream, rec->FileIndex), rec->data_len);
-#endif
    /* If label and not for us, discard it */
    if (rec->FileIndex < 0 && rec->match_stat <= 0) {
-      return true;
+      ret = true;
+      goto bail_out;
    }
    /* We want to write SOS_LABEL and EOS_LABEL discard all others */
    switch (rec->FileIndex) {
@@ -210,7 +209,8 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
    case VOL_LABEL:
    case EOT_LABEL:
    case EOM_LABEL:
-      return true;                    /* don't write vol labels */
+      ret = true;                    /* don't write vol labels */
+      goto bail_out;
    }
 
    /*
@@ -244,16 +244,18 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
       jcr->JobId,
       FI_to_ascii(buf1, rec->FileIndex), rec->VolSessionId,
       stream_to_ascii(buf2, rec->Stream, rec->FileIndex), rec->data_len);
+
    if (!jcr->dcr->write_record(rec)) {
       Jmsg2(jcr, M_FATAL, 0, _("Fatal append error on device %s: ERR=%s\n"),
             dev->print_name(), dev->bstrerror());
-      return false;
+      goto bail_out;
    }
    /* Restore packet */
    rec->VolSessionId = rec->last_VolSessionId;
    rec->VolSessionTime = rec->last_VolSessionTime;
    if (rec->FileIndex < 0) {
-      return true;                    /* don't send LABELs to Dir */
+      ret = true;                    /* don't send LABELs to Dir */
+      goto bail_out;
    }
    jcr->JobBytes += rec->data_len;   /* increment bytes this job */
    Dmsg5(500, "wrote_record JobId=%d FI=%s SessId=%d Strm=%s len=%d\n",
@@ -262,6 +264,12 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
       stream_to_ascii(buf2, rec->Stream, rec->FileIndex), rec->data_len);
 
    send_attrs_to_dir(jcr, rec);
+   ret = true;
 
-   return true;
+bail_out:
+   if (restoredatap) {
+      rec->data = orgdata;
+      rec->data_len = orgdata_len;
+   }
+   return ret;
 }

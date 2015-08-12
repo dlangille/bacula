@@ -5,7 +5,7 @@
  # shell script to create Bacula SQLite tables
  
 -bindir=@SQLITE_BINDIR@
-+bindir=/usr/lib/bacula/sqlite
++bindir=/opt/bacula/sqlite
  cd @working_dir@
  db_name=@db_name@
- 
+

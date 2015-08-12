@@ -1,5 +1,10 @@
 #!/bin/sh
 #
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+
+#
 # Run a simple backup of the Bacula build directory then create some           
 #   new files, do an Incremental and restore those two files.
 #
@@ -21,11 +26,11 @@ change_jobname CompressedTest $JobName
 start_test
 
 cat <<END_OF_DATA >${tmp}/bconcmds
-@$out /dev/null
+@output /dev/null
 messages
 @$out ${tmp}/log1.out
-@#setdebug level=100 storage=File
-@#setdebug level=200 client
+setdebug level=200 storage=File
+setdebug level=200 client
 @#setdebug level=100 director
 label storage=File volume=TestVolume001
 label storage=File volume=TestVolume002
@@ -46,11 +51,13 @@ echo "ficheriro1.txt" >${tmpsrc}/ficheriro1.txt
 cp -f ${tmpsrc}/dird.c ${tmpsrc}/ficheriro2.txt
 
 cat <<END_OF_DATA >${tmp}/bconcmds
-@$out /dev/null
+@output /dev/null
 messages
 @$out ${tmp}/log1.out
 @# Force Incremental on the second Volume
-update volume=TestVolume001 VolStatus=Used
+@#update volume=TestVolume001 VolStatus=Used
+setdebug level=4 storage=File
+setdebug level=4 client
 run level=Differential job=$JobName yes
 wait
 messages
@@ -60,10 +67,10 @@ END_OF_DATA
 run_bconsole
 
 cat <<END_OF_DATA >${tmp}/bconcmds
-@$out /dev/null
+@output /dev/null
 messages
 @$out ${tmp}/log1.out
-setdebug level=200 storage=File
+setdebug level=4 storage=File
 run level=Incremental job=$JobName yes
 wait
 messages

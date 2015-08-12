@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2007-2011 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *   Dirk Bartley, March 2007
@@ -21,7 +25,7 @@
 #include "pages.h"
 
 /* A global function */
-bool isWin32Path(QString &fullPath)
+bool isWin32Path(QString &fullPath) 
 {
    if (fullPath.size()<2) {
       return false;
@@ -121,8 +125,8 @@ void Pages::undockPage()
 }
 
 /*
- * This function is intended to be called with the subclasses.  When it is
- * called the specific sublclass does not have to be known to Pages.  When it
+ * This function is intended to be called with the subclasses.  When it is 
+ * called the specific sublclass does not have to be known to Pages.  When it 
  * is called this function will change the page from it's current state of being
  * docked or undocked and change it to the other.
  */
@@ -137,7 +141,7 @@ void Pages::togglePageDocking()
 }
 
 /*
- * This function is because I wanted for some reason to keep it protected but still
+ * This function is because I wanted for some reason to keep it protected but still 
  * give any subclasses the ability to find out if it is currently stacked or not.
  */
 bool Pages::isDocked()
@@ -194,8 +198,8 @@ void Pages::closeEvent(QCloseEvent* event)
    /* this fixes my woes of getting the widget to show up on top when closed */
    event->ignore();
 
-   /* Set the current tree widget item in the Page Selector window to the item
-    * which represents "this"
+   /* Set the current tree widget item in the Page Selector window to the item 
+    * which represents "this" 
     * Which will also bring "this" to the top of the stacked widget */
    setCurrent();
 }
@@ -265,7 +269,7 @@ void Pages::pgInitialize(const QString &tname, QTreeWidgetItem *parentTreeWidget
    }
 
    QTreeWidgetItem *item = new QTreeWidgetItem(parentTreeWidgetItem);
-   QString name;
+   QString name; 
    treeWidgetName(name);
    item->setText(0, name);
    mainWin->hashInsert(item, this);
@@ -365,7 +369,7 @@ void Pages::setCurrent()
 
 /*
  * Function to set the text of the toggle dock context menu when page and
- * widget item are NOT known.
+ * widget item are NOT known.  
  */
 void Pages::setContextMenuDockText()
 {
@@ -376,7 +380,7 @@ void Pages::setContextMenuDockText()
    } else {
       docktext = tr("ReDock %1 Window").arg(item->text(0));
    }
-
+      
    mainWin->actionToggleDock->setText(docktext);
    setTreeWidgetItemDockColor();
 }

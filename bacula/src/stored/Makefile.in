@@ -1,6 +1,6 @@
 #
-# Author: Kern Sibbald
-# License: LGPLv3
+# Copyright (C) 2000-2015 by Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
 #
 @MCOMMON@
 
@@ -32,6 +32,7 @@ SDOBJS =  stored.o ansi_label.o vtape_dev.o \
 	  askdir.o authenticate.o \
 	  block.o block_util.o butil.o dev.o os.o file_dev.o tape_dev.o \
 	  device.o dircmd.o ebcdic.o fd_cmds.o job.o \
+	  hello.o \
 	  label.o lock.o match_bsr.o mount.o parse_bsr.o \
 	  read.o read_records.o \
 	  record_read.o record_write.o record_util.o \

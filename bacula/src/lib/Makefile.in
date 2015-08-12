@@ -1,6 +1,6 @@
 #
-# Author: Kern Sibbald
-# License: LGPLv3
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
 #
 @MCOMMON@
 
@@ -9,7 +9,6 @@ LIBBAC_LT_RELEASE = @LIBBAC_LT_RELEASE@
 LIBBACCFG_LT_RELEASE = @LIBBACCFG_LT_RELEASE@
 
 #
-
 srcdir =	.
 VPATH = 	.
 .PATH:		.
@@ -37,7 +36,7 @@ INCLUDE_FILES = ../baconfig.h ../bacula.h ../bc_types.h \
 		berrno.h bits.h bpipe.h breg.h bregex.h \
 		bsock.h btime.h btimers.h crypto.h dlist.h \
 		fnmatch.h guid_to_name.h htable.h lex.h \
-		lib.h md5.h mem_pool.h message.h mntent_cache.h \
+		lib.h md5.h mem_pool.h message.h \
 		openssl.h plugins.h protos.h queue.h rblist.h \
 		runscript.h rwlock.h serial.h sellist.h sha1.h \
 		smartall.h status.h tls.h tree.h var.h \
@@ -49,13 +48,13 @@ INCLUDE_FILES = ../baconfig.h ../bacula.h ../bc_types.h \
 # libbac
 #
 LIBBAC_SRCS = attr.c base64.c berrno.c bsys.c binflate.c bget_msg.c \
-	      bnet.c bnet_server.c runscript.c \
-	      bsock.c bpipe.c bsnprintf.c btime.c \
-	      cram-md5.c crc32.c crypto.c daemon.c edit.c fnmatch.c \
+	      crc32.c \
+	      bnet.c bnet_server.c bsock.c bpipe.c bsnprintf.c btime.c \
+	      cram-md5.c crypto.c daemon.c edit.c fnmatch.c \
 	      guid_to_name.c hmac.c jcr.c lex.c alist.c dlist.c \
-	      md5.c message.c mem_pool.c mntent_cache.c openssl.c \
+	      md5.c message.c mem_pool.c openssl.c \
 	      plugins.c priv.c queue.c bregex.c \
-	      rwlock.c scan.c sellist.c serial.c sha1.c \
+	      runscript.c rwlock.c scan.c sellist.c serial.c sha1.c \
 	      signal.c smartall.c rblist.c tls.c tree.c \
 	      util.c var.c watchdog.c workq.c btimers.c \
 	      address_conf.c breg.c htable.c lockmgr.c devlock.c
@@ -69,7 +68,6 @@ LIBBAC_LOBJS = $(LIBBAC_SRCS:.c=.lo)
 LIBBACCFG_SRCS = ini.c parse_conf.c res.c
 LIBBACCFG_OBJS = $(LIBBACCFG_SRCS:.c=.o)
 LIBBACCFG_LOBJS = $(LIBBACCFG_SRCS:.c=.lo)
-
 
 .SUFFIXES:	.c .cc .o .lo .ch .dvi .pdf .tex .view .w .1
 .PHONY:
@@ -94,9 +92,8 @@ LIBBACCFG_LOBJS = $(LIBBACCFG_SRCS:.c=.lo)
 
 # specific build rules
 
-
 #-------------------------------------------------------------------------
-all: Makefile libbac$(DEFAULT_ARCHIVE_TYPE) libbaccfg$(DEFAULT_ARCHIVE_TYPE) 
+all: Makefile libbac$(DEFAULT_ARCHIVE_TYPE) libbaccfg$(DEFAULT_ARCHIVE_TYPE)
 	@echo "==== Make of lib is good ===="
 	@echo " "
 
@@ -109,12 +106,12 @@ libbac.la: Makefile $(LIBBAC_LOBJS)
 	@echo "Making $@ ..."
 	$(LIBTOOL_LINK) $(CXX) $(DEFS) $(DEBUG) $(LDFLAGS) -o $@ $(LIBBAC_LOBJS) -export-dynamic -rpath $(libdir) -release $(LIBBAC_LT_RELEASE) $(WRAPLIBS) $(CAP_LIBS) $(ZLIBS) $(OPENSSL_LIBS) $(LIBS) $(DLLIBS)
 
-libbaccfg.a: $(LIBBACCFG_OBJS) 
+libbaccfg.a: $(LIBBACCFG_OBJS)
 	@echo "Making $@ ..."
 	$(AR) rc  $@ $(LIBBACCFG_OBJS)
 	$(RANLIB) $@
 
-libbaccfg.la: Makefile $(LIBBACCFG_LOBJS) 
+libbaccfg.la: Makefile $(LIBBACCFG_LOBJS)
 	@echo "Making $@ ..."
 	$(LIBTOOL_LINK) $(CXX) $(DEFS) $(DEBUG) $(LDFLAGS) -o $@ $(LIBBACCFG_LOBJS) -export-dynamic -rpath $(libdir) -release $(LIBBACCFG_LT_RELEASE) $(OPENSSL_LIBS) $(LIBS)
 
@@ -122,21 +119,21 @@ Makefile: $(srcdir)/Makefile.in $(topdir)/config.status
 	cd $(topdir) \
 	  && CONFIG_FILES=$(thisdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
 
-lockmgr_test: Makefile
+lockmgr_test: Makefile lockmgr.c
 	$(RMF) lockmgr.o
 	$(CXX) -D _TEST_IT $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE)  $(CFLAGS) lockmgr.c
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -o $@ lockmgr.o $(DLIB) -lbac -lm $(LIBS) $(OPENSSL_LIBS)
 	rm -f lockmgr.o
 	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) lockmgr.c
 
-base64_test: Makefile 
+base64_test: Makefile base64.c
 	$(RMF) base64.o
 	$(CXX) -DBIN_TEST $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE)	$(CFLAGS) base64.c
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -o $@ base64.o $(DLIB) -lbac -lm $(LIBS) $(OPENSSL_LIBS)
 	rm -f base64.o
 	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) base64.c
 
-rwlock_test: Makefile
+rwlock_test: Makefile rwlock.c
 	$(RMF) rwlock.o
 	$(CXX) -DTEST_RWLOCK $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE)  $(CFLAGS) rwlock.c
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -o $@ rwlock.o $(DLIB) -lbac -lm $(LIBS) $(OPENSSL_LIBS)
@@ -157,14 +154,22 @@ htable_test: Makefile
 	$(RMF) htable.o
 	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) htable.c
 
-crc32sum: Makefile crc32.o	 
-	$(RMF) crc32.o
-	$(CXX) -DCRC32_SUM $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE)  $(CFLAGS) crc32.c
-	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -o $@ crc32.o $(DLIB) -lbac -lm $(LIBS) $(OPENSSL_LIBS)
-	$(RMF) crc32.o
-	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) crc32.c
+sellist_test: Makefile sellist.c
+	$(RMF) sellist.o
+	$(CXX) -DTEST_PROGRAM $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE)	$(CFLAGS) sellist.c
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -o $@ sellist.o $(DLIB) -lbac -lm $(LIBS) $(OPENSSL_LIBS)
+	$(RMF) sellist.o
+	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) sellist.c
 
-md5sum: Makefile md5.o	 
+
+xml_test: Makefile xml.o
+	$(RMF) xml.o
+	$(CXX) -DTEST_PROG $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE)  $(CFLAGS) xml.c
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -o $@ xml.o $(DLIB) -lbac -lm $(LIBS) $(OPENSSL_LIBS)
+	$(RMF) xml.o
+	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) xml.c
+
+md5sum: Makefile md5.o	
 	$(RMF) md5.o
 	$(CXX) -DMD5_SUM $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE)  $(CFLAGS) md5.c
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -o $@ md5.o $(DLIB) -lbac -lm $(LIBS) $(OPENSSL_LIBS)

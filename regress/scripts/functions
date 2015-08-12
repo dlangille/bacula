@@ -5,8 +5,7 @@
 
 check_encoding()
 {
-   ${bin}/bacula-dir -d50 -t -c ${conf}/bacula-dir.conf 2>&1 | grep 'Wanted SQL_ASCII, got UTF8' >/dev/null
-   if [ $? = 0 ]; then
+   if ${bin}/bacula-dir -d50 -t -c ${conf}/bacula-dir.conf 2>&1 | grep 'Wanted SQL_ASCII, got UTF8' >/dev/null ; then
        echo "Found database encoding problem, please modify the database encoding (SQL_ASCII)"
        exit 1
    fi
@@ -16,20 +15,25 @@ start_test()
 {
    check_encoding
    rm -rf ${working}/@*
-   # Turn off email
-   outf="${tmp}/sed_tmp"
-   echo "s%  mail =%# mail = %g" >${outf}
-   echo "s%  operator =%# operator =%g" >>${outf}
-   cp ${conf}/bacula-dir.conf ${tmp}/1
-   sed -f ${outf} ${tmp}/1 > ${conf}/bacula-dir.conf
-   if [ x$FORCE_SDCALLS = xyes ]; then
-      $bperl -e 'add_attribute("$conf/bacula-dir.conf", "SD Calls Client", "yes", "Client")'
-   fi   
+   variant_name=""
+
+   # If no or dummy smtp_host, use dummy email handler
+   if [ x${SMTP_HOST} = x -o x${SMTP_HOST} = xdummy ]; then
+      cp scripts/dummy_bsmtp bin/bsmtp
+      chmod 755 bin/bsmtp
+   else
+      # Deactivate all email
+      outf="${tmp}/sed_tmp"
+      echo "s%  mail =%# mail = %g" >${outf}
+      echo "s%  operator =%# operator =%g" >>${outf}
+      cp ${conf}/bacula-dir.conf ${tmp}/1
+      sed -f ${outf} ${tmp}/1 > ${conf}/bacula-dir.conf
+   fi
    ./test_starttime
    echo " "
    echo " "
-   echo " === Starting $TestName at `date +%R:%S` ==="
-   echo " === Starting $TestName at `date +%R:%S` ===" >> ${working}/log
+   echo " === Starting $TestName ${variant_name} at `date +%R:%S` ==="
+   echo " === Starting $TestName ${variant_name} at `date +%R:%S` ===" >> ${working}/log
    echo " "
    export TestName
    export zstat
@@ -155,12 +159,12 @@ get_duration()
 check_duration()
 {
    LOG=$1
-   $2
-   OP=${3-gt}
+   TIME=$2
+   OP=${3:-gt}
 
    get_duration $LOG
    if [ "$RET" -$OP "$TIME" ]; then
-       print_debug "Expect $OP than $TIME sec, get $RET"
+       print_debug "Error, got $RET $OP $TIME sec on $LOG"
        bstat=2
    fi
 }
@@ -265,6 +269,14 @@ check_two_logs()
    if test $? -eq 0; then
       bstat=2
    fi
+   # Do not check for restart jobs in restart tests
+   echo "$TestName" | grep restart.*-test > /dev/null
+   if [ $? -ne 0 ]; then
+      grep "^  Termination: .*Backup failed" ${tmp}/log1.out 2>&1 >/dev/null
+      if test $? -eq 0; then
+         bstat=3
+      fi
+   fi
    grep "^  Termination: *Restore OK" ${tmp}/log2.out 2>&1 >/dev/null
    rstat=${rstat:-$?}
    grep "^  Termination: .*Restore Error" ${tmp}/log2.out 2>&1 >/dev/null
@@ -286,8 +298,33 @@ check_two_logs()
    fi
    grep "Orphaned buffer" ${tmp}/log1.out ${tmp}/log2.out
    if test $? -eq 0; then
+      print_debug "Found orphaned buffers"
       estat=1
    fi
+}
+
+dtitle()
+{
+   if test "$debug" -eq 1 ; then
+      echo "============================================================"
+      echo $*
+      echo "============================================================"
+   fi
+}
+
+dmsg()
+{
+   test "$debug" -eq 1 && echo $*
+}
+
+check_size_interval()
+{
+   # if mi == -1 then then ignore mi (idem for ma)
+   mi=$1        
+   value=$2
+   ma=$3
+   
+   test \( -1 -eq $mi -o $mi -le $value \) -a \( -1 -eq $ma -o $value -le $ma \) 
 }
 
 check_restore_diff()
@@ -407,7 +444,7 @@ end_test()
       echo "  !!!!! $TestName failed!!! $t $d !!!!! "
       echo "     Status: zombie=$zstat backup=$bstat restore=$rstat diff=$dstat"
       echo " " >>test.out
-      echo "  !!!!! $TestName failed!!! $t %d !!!!! " >>test.out
+      echo "  !!!!! $TestName failed!!! $t $d !!!!! " >>test.out
       echo "     Status: zombie=$zstat backup=$bstat restore=$rstat diff=$dstat" >>test.out
       if [ $bstat != 0 -o $rstat != 0 ] ; then
          echo "     !!! Bad termination status       !!! "

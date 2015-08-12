@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /**
  * General header file configurations that apply to
@@ -46,8 +50,8 @@
 #define ioctl_req_t int
 #endif
 
-#define MANUAL_AUTH_URL "http://www.bacula.org/en/rel-manual/Bacula_Freque_Asked_Questi.html#SECTION00260000000000000000"
-
+#define MANUAL_AUTH_URL "http://www.bacula.org/rel-manual/en/problems/Bacula_Frequently_Asked_Que.html"
+ 
 #ifdef PROTOTYPES
 # define __PROTO(p)     p
 #else
@@ -70,6 +74,17 @@
 #else
 #define ASSERT(x)
 #define ASSERT2(x, y)
+#endif
+
+#ifdef DEVELOPER
+#define ASSERTD(x, y) if (!(x)) { \
+   set_assert_msg(__FILE__, __LINE__, y); \
+   Emsg1(M_ERROR, 0, _("Failed ASSERT: %s\n"), #x); \
+   Pmsg1(000, _("Failed ASSERT: %s\n"), #x); \
+   char *jcr = NULL; \
+   jcr[0] = 0; }
+#else
+#define ASSERTD(x, y)
 #endif
 
 /* Allow printing of NULL pointers */
@@ -154,7 +169,7 @@ void InitWinAPIWrapper();
 
 
 /* Use the following for strings not to be translated */
-#define NT_(s) (s)
+#define NT_(s) (s)   
 
 /* This should go away! ****FIXME***** */
 #define MAXSTRING 500
@@ -174,7 +189,7 @@ void InitWinAPIWrapper();
 /* All tape operations MUST be a multiple of this */
 #define TAPE_BSIZE 1024
 
-#ifdef DEV_BSIZE
+#ifdef DEV_BSIZE 
 #define B_DEV_BSIZE DEV_BSIZE
 #endif
 
@@ -229,6 +244,7 @@ void InitWinAPIWrapper();
 #define B_ISALPHA(c) (isascii((int)(c)) && isalpha((int)(c)))
 #define B_ISUPPER(c) (isascii((int)(c)) && isupper((int)(c)))
 #define B_ISDIGIT(c) (isascii((int)(c)) && isdigit((int)(c)))
+#define B_ISXDIGIT(c) (isascii((int)(c)) && isxdigit((int)(c)))
 
 /** For multiplying by 10 with shift and addition */
 #define B_TIMES10(d) ((d<<3)+(d<<1))
@@ -307,14 +323,31 @@ typedef off_t     boffset_t;
 void b_memset(const char *file, int line, void *mem, int val, size_t num);
 #endif
 
-/* First we look if we have a debug_level set,
- * then we look for simple debug level without tags
+/* we look for simple debug level 
  * then finally we check if tags are set on debug_level and lvl
  */
-#define chk_dbglvl(lvl) (debug_level > 0 && (                              \
-     ((((lvl) & DT_ALL) == 0)        && ((lvl) <= (debug_level & ~DT_ALL))) || \
-     (((lvl) & DT_ALL & debug_level) && (((lvl) & ~DT_ALL) <= (debug_level & ~DT_ALL)))))
 
+/*
+  lvl   |   debug_level  | tags  | result
+ -------+----------------+-------+-------
+  0     |   0            |       |  OK
+  T1|0  |   0            |       |  NOK
+  T1|0  |   0            |  T1   |  OK
+  10    |   0            |       |  NOK
+  10    |   10           |       |  OK
+  T1|10 |   10           |       |  NOK
+  T1|10 |   10           |  T1   |  OK
+  T1|10 |   10           |  T2   |  NOK
+ */
+
+/* The basic test is working because tags are on high bits */
+#if 1
+#define chk_dbglvl(lvl) ((lvl) <= debug_level ||                     \
+    (((lvl) & debug_level_tags) && (((lvl) & ~DT_ALL) <= debug_level)))
+#else
+/* Alain's macro for debug */
+#define chk_dbglvl(lvl) (((lvl) & debug_level_tags) || (((lvl) & ~DT_ALL) <= debug_level))
+#endif
 /**
  * The digit following Dmsg and Emsg indicates the number of substitutions in
  * the message string. We need to do this kludge because non-GNU compilers
@@ -422,13 +455,13 @@ void b_memset(const char *file, int line, void *mem, int val, size_t num);
 #define Jmsg8(jcr, typ, lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8) j_msg(__FILE__, __LINE__, jcr, typ, lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8)
 
 /** Queued Job Error Messages that are delivered according to the message resource */
-#define Qmsg0(jcr, typ, lvl, msg)             q_msg(__FILE__, __LINE__, jcr, typ, lvl, msg)
-#define Qmsg1(jcr, typ, lvl, msg, a1)         q_msg(__FILE__, __LINE__, jcr, typ, lvl, msg, a1)
-#define Qmsg2(jcr, typ, lvl, msg, a1, a2)     q_msg(__FILE__, __LINE__, jcr, typ, lvl, msg, a1, a2)
-#define Qmsg3(jcr, typ, lvl, msg, a1, a2, a3) q_msg(__FILE__, __LINE__, jcr, typ, lvl, msg, a1, a2, a3)
-#define Qmsg4(jcr, typ, lvl, msg, a1, a2, a3, a4) q_msg(__FILE__, __LINE__, jcr, typ, lvl, msg, a1, a2, a3, a4)
-#define Qmsg5(jcr, typ, lvl, msg, a1, a2, a3, a4, a5) q_msg(__FILE__, __LINE__, jcr, typ, lvl, msg, a1, a2, a3, a4, a5)
-#define Qmsg6(jcr, typ, lvl, msg, a1, a2, a3, a4, a5, a6) q_msg(__FILE__, __LINE__, jcr, typ, lvl, msg, a1, a2, a3, a4, a5, a6)
+#define Qmsg0(jcr, typ, mtime, msg)             q_msg(__FILE__, __LINE__, jcr, typ, mtime, msg)
+#define Qmsg1(jcr, typ, mtime, msg, a1)         q_msg(__FILE__, __LINE__, jcr, typ, mtime, msg, a1)
+#define Qmsg2(jcr, typ, mtime, msg, a1, a2)     q_msg(__FILE__, __LINE__, jcr, typ, mtime, msg, a1, a2)
+#define Qmsg3(jcr, typ, mtime, msg, a1, a2, a3) q_msg(__FILE__, __LINE__, jcr, typ, mtime, msg, a1, a2, a3)
+#define Qmsg4(jcr, typ, mtime, msg, a1, a2, a3, a4) q_msg(__FILE__, __LINE__, jcr, typ, mtime, msg, a1, a2, a3, a4)
+#define Qmsg5(jcr, typ, mtime, msg, a1, a2, a3, a4, a5) q_msg(__FILE__, __LINE__, jcr, typ, mtime, msg, a1, a2, a3, a4, a5)
+#define Qmsg6(jcr, typ, mtime, msg, a1, a2, a3, a4, a5, a6) q_msg(__FILE__, __LINE__, jcr, typ, mtime, msg, a1, a2, a3, a4, a5, a6)
 
 
 /** Memory Messages that are edited into a Pool Memory buffer */
@@ -450,6 +483,20 @@ int  Mmsg(POOLMEM **msgbuf, const char *fmt,...);
 int  Mmsg(POOLMEM *&msgbuf, const char *fmt,...);
 int  Mmsg(POOL_MEM &msgbuf, const char *fmt,...);
 
+#define MmsgD0(level, msgbuf, fmt) \
+   { Mmsg(msgbuf, fmt); Dmsg1(level, "%s", msgbuf); }
+#define MmsgD1(level, msgbuf, fmt, a1) \
+   { Mmsg(msgbuf, fmt, a1); Dmsg1(level, "%s", msgbuf); }
+#define MmsgD2(level, msgbuf, fmt, a1, a2) \
+   { Mmsg(msgbuf, fmt, a1, a2); Dmsg1(level, "%s", msgbuf); }
+#define MmsgD3(level, msgbuf, fmt, a1, a2, a3) \
+   { Mmsg(msgbuf, fmt, a1, a2, a3); Dmsg1(level, "%s", msgbuf); }
+#define MmsgD4(level, msgbuf, fmt, a1, a2, a3, a4) \
+   { Mmsg(msgbuf, fmt, a1, a2, a3, a4); Dmsg1(level, "%s", msgbuf); }
+#define MmsgD5(level, msgbuf, fmt, a1, a2, a3, a4, a5) \
+   { Mmsg(msgbuf, fmt, a1, a2, a3, a4, a5); Dmsg1(level, "%s", msgbuf); }
+#define MmsgD6(level, msgbuf, fmt, a1, a2, a3, a4, a5, a6) \
+   { Mmsg(msgbuf, fmt, a1, a2, a3, a4, a5, a6); Dmsg1(level, "%s", msgbuf); }
 
 class JCR;
 void d_msg(const char *file, int line, int64_t level, const char *fmt,...);
@@ -465,14 +512,14 @@ int  m_msg(const char *file, int line, POOLMEM *&pool_buf, const char *fmt, ...)
 #ifndef HAVE_WXCONSOLE
 #undef strdup
 #define strdup(buf) bad_call_on_strdup_use_bstrdup(buf)
-#else
+#else 
 /* Groan, WxWidgets has its own way of doing NLS so cleanup */
 #ifndef ENABLE_NLS
 #undef _
 #undef setlocale
 #undef textdomain
 #undef bindtextdomain
-#endif
+#endif  
 #endif
 
 /** Use our fgets which handles interrupts */
@@ -512,55 +559,22 @@ int  m_msg(const char *file, int line, POOLMEM *&pool_buf, const char *fmt, ...)
 
 /* =============================================================
  *               OS Dependent defines
- * =============================================================
+ * ============================================================= 
  */
 #if defined (__digital__) && defined (__unix__)
-/* Tru64 - it does have fseeko and ftello , but since ftell/fseek are also 64 bit */
-/* take this 'shortcut' */
-#define fseeko fseek
-#define ftello ftell
-#else
+/* Tru64 - has 64 bit fseeko and ftello */
+#define  fseeko fseek
+#define  ftello ftell
+#endif /* digital stuff */
+
 #ifndef HAVE_FSEEKO
-/* Bad news. This OS cannot handle 64 bit fseeks and ftells */
-#define fseeko fseek
-#define ftello ftell
-#endif
-#endif
-
-#ifdef HAVE_SUN_OS
-/*
- * On Solaris 2.5/2.6/7 and 8, threads are not timesliced by default,
- * so we need to explictly increase the conncurrency level.
- */
-#ifdef USE_THR_SETCONCURRENCY
-#include <thread.h>
-#define set_thread_concurrency(x)  thr_setconcurrency(x)
-extern int thr_setconcurrency(int);
-#define SunOS 1
-#else
-#define set_thread_concurrency(x)
+/* This OS does not handle 64 bit fseeks and ftells */
+#define  fseeko fseek
+#define  ftello ftell
 #endif
 
-#else
-/*
- * Not needed on most systems
- */
-#define set_thread_concurrency(x)
 
-#endif
-
-#ifdef HAVE_DARWIN_OS
-/* Apparently someone forgot to wrap getdomainname as a C function */
-#ifdef  __cplusplus
-extern "C" {
-#endif /* __cplusplus */
-int getdomainname(char *name, int len);
-#ifdef  __cplusplus
-}
-#endif /* __cplusplus */
-#endif /* HAVE_DARWIN_OS */
-
-#if defined(HAVE_WIN32)
+#ifdef HAVE_WIN32
 /*
  *   Windows
  */
@@ -573,10 +587,7 @@ inline const char *first_path_separator(const char *path) { return strpbrk(path,
 extern void pause_msg(const char *file, const char *func, int line, const char *msg);
 #define pause(msg) if (debug_level) pause_msg(__FILE__, __func__, __LINE__, (msg))
 
-#else
-/*
- *   Unix/Linix
- */
+#else /* Unix/Linux */
 #define PathSeparator '/'
 /* Define Winsock functions if we aren't on Windows */
 
@@ -587,10 +598,53 @@ inline bool IsPathSeparator(int ch) { return ch == '/'; }
 inline char *first_path_separator(char *path) { return strchr(path, '/'); }
 inline const char *first_path_separator(const char *path) { return strchr(path, '/'); }
 #define pause(msg)
+#endif /* HAVE_WIN32 */
+
+#ifdef HAVE_DARWIN_OS
+/* Apparently someone forgot to wrap getdomainname as a C function */
+#ifdef __cplusplus
+extern "C" {
+#endif
+int getdomainname(char *name, int namelen);
+#ifdef __cplusplus
+}
+#endif
+#endif /* HAVE_DARWIN_OS */
+
+
+/* **** Unix Systems **** */
+#ifdef HAVE_SUN_OS
+/*
+ * On Solaris 2.5/2.6/7 and 8, threads are not timesliced by default,
+ * so we need to explictly increase the conncurrency level.
+ */
+#ifdef USE_THR_SETCONCURRENCY
+#include <thread.h>
+#define set_thread_concurrency(x)  thr_setconcurrency(x)
+extern int thr_setconcurrency(int);
+#define SunOS 1
+#else
+#define set_thread_concurrency(x)
+#define thr_setconcurrency(x)
 #endif
 
+#else
+#define set_thread_concurrency(x)
+#endif /* HAVE_SUN_OS */
 
-/** HP-UX 11 specific workarounds */
+
+#ifdef HAVE_OSF1_OS
+#ifdef __cplusplus
+extern "C" {
+#endif
+int fchdir(int filedes);
+long gethostid(void);
+int getdomainname(char *name, int namelen);
+#ifdef __cplusplus
+}
+#endif
+#endif /* HAVE_OSF1_OS */
+
 
 #ifdef HAVE_HPUX_OS
 # undef h_errno
@@ -600,28 +654,15 @@ extern int h_errno;
  * the problem is no system headers declares the prototypes for these functions
  * this is done below
  */
-#ifdef  __cplusplus
-extern "C" {
-#endif /* __cplusplus */
-int getdomainname(char *name, int namelen);
-int setdomainname(char *name, int namelen);
-#ifdef  __cplusplus
-}
-#endif /* __cplusplus */
+#ifdef __cplusplus
+extern  "C" {
+#endif
+int getdomainname(char *name, int namlen);
+int setdomainname(char *name, int namlen);
+#ifdef __cplusplus
+} 
+#endif
 #endif /* HAVE_HPUX_OS */
-
-
-#ifdef HAVE_OSF1_OS
-#ifdef  __cplusplus
-extern "C" {
-#endif /* __cplusplus */
-int fchdir(int filedes);
-long gethostid(void);
-int getdomainname(char *name, int len);
-#ifdef  __cplusplus
-}
-#endif /* __cplusplus */
-#endif /* HAVE_OSF1_OS */
 
 
 /** Disabled because it breaks internationalisation...

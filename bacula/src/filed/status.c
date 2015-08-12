@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2001-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *  Bacula File Daemon Status routines
@@ -40,16 +44,7 @@ static char qstatus2[] = ".status %127s api=%d api_opts=%127s";
 static char OKqstatus[]   = "2000 OK .status\n";
 static char DotStatusJob[] = "JobId=%d JobStatus=%c JobErrors=%d\n";
 
-#if defined(HAVE_WIN32)
-static int privs = 0;
-#endif
-#ifdef WIN32_VSS
-#include "vss.h"
-#define VSS " VSS"
-extern VSSClient *g_pVSSClient;
-#else
 #define VSS ""
-#endif
 
 /*
  * General status generator
@@ -67,6 +62,7 @@ static const bool have_lzo = true;
 static const bool have_lzo = false;
 #endif
 
+
 static void  list_status_header(STATUS_PKT *sp)
 {
    POOL_MEM msg(PM_MESSAGE);
@@ -74,65 +70,14 @@ static void  list_status_header(STATUS_PKT *sp)
    int len;
    char dt[MAX_TIME_LENGTH];
 
-   len = Mmsg(msg, _("%s Version: %s (%s) %s %s %s %s\n"),
-              my_name, VERSION, BDATE, VSS, HOST_OS,
+   len = Mmsg(msg, _("%s %sVersion: %s (%s) %s %s %s %s\n"),
+              my_name, "", VERSION, BDATE, VSS, HOST_OS,
               DISTNAME, DISTVER);
    sendit(msg.c_str(), len, sp);
    bstrftime_nc(dt, sizeof(dt), daemon_start_time);
    len = Mmsg(msg, _("Daemon started %s. Jobs: run=%d running=%d.\n"),
         dt, num_jobs_run, job_count());
    sendit(msg.c_str(), len, sp);
-#if defined(HAVE_WIN32)
-   char buf[300];
-   if (GetWindowsVersionString(buf, sizeof(buf))) {
-      len = Mmsg(msg, "%s\n", buf);
-      sendit(msg.c_str(), len, sp);
-   }
-   if (debug_level > 0) {
-      if (!privs) {
-         privs = enable_backup_privileges(NULL, 1);
-      }
-      len = Mmsg(msg, "VSS %s, Priv 0x%x\n", g_pVSSClient?"enabled":"disabled", privs);
-      sendit(msg.c_str(), len, sp);
-      len = Mmsg(msg, "APIs=%sOPT,%sATP,%sLPV,%sCFA,%sCFW,\n",
-                 p_OpenProcessToken?"":"!",
-                 p_AdjustTokenPrivileges?"":"!",
-                 p_LookupPrivilegeValue?"":"!",
-                 p_CreateFileA?"":"!",
-                 p_CreateFileW?"":"!");
-      sendit(msg.c_str(), len, sp);
-      len = Mmsg(msg, " %sWUL,%sWMKD,%sGFAA,%sGFAW,%sGFAEA,%sGFAEW,%sSFAA,%sSFAW,%sBR,%sBW,%sSPSP,\n",
-                 p_wunlink?"":"!",
-                 p_wmkdir?"":"!",
-                 p_GetFileAttributesA?"":"!",
-                 p_GetFileAttributesW?"":"!",
-                 p_GetFileAttributesExA?"":"!",
-                 p_GetFileAttributesExW?"":"!",
-                 p_SetFileAttributesA?"":"!",
-                 p_SetFileAttributesW?"":"!",
-                 p_BackupRead?"":"!",
-                 p_BackupWrite?"":"!",
-                 p_SetProcessShutdownParameters?"":"!");
-      sendit(msg.c_str(), len, sp);
-      len = Mmsg(msg, " %sWC2MB,%sMB2WC,%sFFFA,%sFFFW,%sFNFA,%sFNFW,%sSCDA,%sSCDW,\n",
-                 p_WideCharToMultiByte?"":"!",
-                 p_MultiByteToWideChar?"":"!",
-                 p_FindFirstFileA?"":"!",
-                 p_FindFirstFileW?"":"!",
-                 p_FindNextFileA?"":"!",
-                 p_FindNextFileW?"":"!",
-                 p_SetCurrentDirectoryA?"":"!",
-                 p_SetCurrentDirectoryW?"":"!");
-      sendit(msg.c_str(), len, sp);
-      len = Mmsg(msg, " %sGCDA,%sGCDW,%sGVPNW,%sGVNFVMPW,%sLZO\n",
-                 p_GetCurrentDirectoryA?"":"!",
-                 p_GetCurrentDirectoryW?"":"!",
-                 p_GetVolumePathNameW?"":"!",
-                 p_GetVolumeNameForVolumeMountPointW?"":"!",
-                 have_lzo?"":"!");
-      sendit(msg.c_str(), len, sp);
-   }
-#endif
    len = Mmsg(msg, _(" Heap: heap=%s smbytes=%s max_bytes=%s bufs=%s max_bufs=%s\n"),
          edit_uint64_with_commas((char *)sbrk(0)-(char *)start_heap, b1),
          edit_uint64_with_commas(sm_bytes, b2),
@@ -141,16 +86,16 @@ static void  list_status_header(STATUS_PKT *sp)
          edit_uint64_with_commas(sm_max_buffers, b5));
    sendit(msg.c_str(), len, sp);
    len = Mmsg(msg, _(" Sizes: boffset_t=%d size_t=%d debug=%s trace=%d "
-                     "mode=%d,%d bwlimit=%skB/s\n"),
+                     "mode=%d bwlimit=%skB/s\n"),
               sizeof(boffset_t), sizeof(size_t),
-              edit_uint64(debug_level, b2), get_trace(), (int)DEVELOPER_MODE, (int)BEEF,
+              edit_uint64(debug_level, b2), get_trace(), (int)DEVELOPER_MODE,
               edit_uint64_with_commas(me->max_bandwidth_per_job/1024, b1));
    sendit(msg.c_str(), len, sp);
-   if (bplugin_list->size() > 0) {
+   if (b_plugin_list->size() > 0) {
       Plugin *plugin;
       int len;
       pm_strcpy(msg, " Plugin: ");
-      foreach_alist(plugin, bplugin_list) {
+      foreach_alist(plugin, b_plugin_list) {
          len = pm_strcat(msg, plugin->file);
          /* Print plugin version when debug activated */
          if (debug_level > 0 && plugin->pinfo) {
@@ -175,9 +120,10 @@ static void  list_status_header(STATUS_PKT *sp)
  */
 static void  list_running_jobs_plain(STATUS_PKT *sp)
 {
-   int total_sec, inst_sec, total_bps, inst_bps;
+   int total_sec, inst_sec;
+   uint64_t total_bps, inst_bps;
    POOL_MEM msg(PM_MESSAGE);
-   char b1[50], b2[50], b3[50], b4[50], b5[50];
+   char b1[50], b2[50], b3[50], b4[50], b5[50], b6[50];
    int len;
    bool found = false;
    JCR *njcr;
@@ -188,15 +134,12 @@ static void  list_running_jobs_plain(STATUS_PKT *sp)
    len = Mmsg(msg, _("\nRunning Jobs:\n"));
    sendit(msg.c_str(), len, sp);
    const char *vss = "";
-#ifdef WIN32_VSS
-   if (g_pVSSClient && g_pVSSClient->IsInitialized()) {
-      vss = "VSS ";
-   }
-#endif
    foreach_jcr(njcr) {
       bstrftime_nc(dt, sizeof(dt), njcr->start_time);
       if (njcr->JobId == 0) {
-         len = Mmsg(msg, _("Director connected at: %s\n"), dt);
+         len = Mmsg(msg, _("Director connected %sat: %s\n"),
+                    (njcr->dir_bsock && njcr->dir_bsock->tls)?_("using TLS "):"",
+                    dt);
       } else {
          len = Mmsg(msg, _("JobId %d Job %s is running.\n"),
                     njcr->JobId, njcr->Job);
@@ -230,12 +173,13 @@ static void  list_running_jobs_plain(STATUS_PKT *sp)
       /* total bps (AveBytes/sec) since start of job */
       total_bps = njcr->JobBytes / total_sec;
       len = Mmsg(msg,  _("    Files=%s Bytes=%s AveBytes/sec=%s LastBytes/sec=%s Errors=%d\n"
-                         "    Bwlimit=%s\n"),
+                         "    Bwlimit=%s ReadBytes=%s\n"),
            edit_uint64_with_commas(njcr->JobFiles, b1),
            edit_uint64_with_commas(njcr->JobBytes, b2),
            edit_uint64_with_commas(total_bps, b3),
            edit_uint64_with_commas(inst_bps, b4),
-           njcr->JobErrors, edit_uint64_with_commas(njcr->max_bandwidth, b5));
+           njcr->JobErrors, edit_uint64_with_commas(njcr->max_bandwidth, b5),
+           edit_uint64_with_commas(njcr->ReadBytes, b6));
       sendit(msg.c_str(), len, sp);
 
       if (njcr->is_JobType(JT_RESTORE) && njcr->ExpectedFiles > 0) {
@@ -264,8 +208,9 @@ static void  list_running_jobs_plain(STATUS_PKT *sp)
 
       found = true;
       if (njcr->store_bsock) {
-         len = Mmsg(msg, "    SDReadSeqNo=%" lld " fd=%d\n",
-             njcr->store_bsock->read_seqno, njcr->store_bsock->m_fd);
+         len = Mmsg(msg, "    SDReadSeqNo=%" lld " fd=%d SDtls=%d\n",
+                    njcr->store_bsock->read_seqno, njcr->store_bsock->m_fd,
+                    (njcr->store_bsock->tls)?1:0);
          sendit(msg.c_str(), len, sp);
       } else {
          len = Mmsg(msg, _("    SDSocket closed.\n"));
@@ -281,79 +226,9 @@ static void  list_running_jobs_plain(STATUS_PKT *sp)
    sendit(_("====\n"), 5, sp);
 }
 
-static void  list_running_jobs_api(STATUS_PKT *sp)
-{
-   int sec, bps;
-   POOL_MEM msg(PM_MESSAGE);
-   char b1[32], b2[32], b3[32];
-   int len;
-   JCR *njcr;
-   char dt[MAX_TIME_LENGTH];
-   /*
-    * List running jobs for Bat/Bweb (simple to parse)
-    */
-   int vss = 0;
-#ifdef WIN32_VSS
-   if (g_pVSSClient && g_pVSSClient->IsInitialized()) {
-      vss = 1;
-   }
-#endif
-   foreach_jcr(njcr) {
-      bstrutime(dt, sizeof(dt), njcr->start_time);
-      if (njcr->JobId == 0) {
-         len = Mmsg(msg, "DirectorConnected=%s\n", dt);
-      } else {
-         len = Mmsg(msg, "JobId=%d\n Job=%s\n",
-                    njcr->JobId, njcr->Job);
-         sendit(msg.c_str(), len, sp);
-         len = Mmsg(msg," VSS=%d\n Level=%c\n JobType=%c\n JobStarted=%s\n",
-                    vss, njcr->getJobLevel(),
-                    njcr->getJobType(), dt);
-      }
-      sendit(msg.c_str(), len, sp);
-      if (njcr->JobId == 0) {
-         continue;
-      }
-      sec = time(NULL) - njcr->start_time;
-      if (sec <= 0) {
-         sec = 1;
-      }
-      bps = (int)(njcr->JobBytes / sec);
-      len = Mmsg(msg, " Files=%s\n Bytes=%s\n Bytes/sec=%s\n Errors=%d\n",
-                 edit_uint64(njcr->JobFiles, b1),
-                 edit_uint64(njcr->JobBytes, b2),
-                 edit_uint64(bps, b3),
-                 njcr->JobErrors);
-      sendit(msg.c_str(), len, sp);
-      len = Mmsg(msg, " Files Examined=%s\n",
-           edit_uint64(njcr->num_files_examined, b1));
-      sendit(msg.c_str(), len, sp);
-      if (njcr->JobFiles > 0) {
-         njcr->lock();
-         len = Mmsg(msg, " Processing file=%s\n", njcr->last_fname);
-         njcr->unlock();
-         sendit(msg.c_str(), len, sp);
-      }
-
-      if (njcr->store_bsock) {
-         len = Mmsg(msg, " SDReadSeqNo=%" lld "\n fd=%d\n",
-             njcr->store_bsock->read_seqno, njcr->store_bsock->m_fd);
-         sendit(msg.c_str(), len, sp);
-      } else {
-         len = Mmsg(msg, _(" SDSocket=closed\n"));
-         sendit(msg.c_str(), len, sp);
-      }
-   }
-   endeach_jcr(njcr);
-}
-
 static void  list_running_jobs(STATUS_PKT *sp)
 {
-   if (sp->api) {
-      list_running_jobs_api(sp);
-   } else {
-      list_running_jobs_plain(sp);
-   }
+   list_running_jobs_plain(sp);
 }
 
 /*

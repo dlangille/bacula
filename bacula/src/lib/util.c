@@ -1,24 +1,26 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *   util.c  miscellaneous utility subroutines for Bacula
  *
  *    Kern Sibbald, MM
- *
- *   Version $Id$
  */
 
 #include "bacula.h"
@@ -31,10 +33,10 @@
  */
 
 /* Return true of buffer has all zero bytes */
-bool is_buf_zero(char *buf, int len)
+bool is_buf_zero(const char *buf, int len)
 {
    uint64_t *ip;
-   char *p;
+   const char *p;
    int i, len64, done, rem;
 
    if (buf[0] != 0) {
@@ -155,6 +157,95 @@ char *encode_time(utime_t utime, char *buf)
 
 
 
+static char hexatable[]="0123456789abcdef";
+
+/*
+ * do an hexadump of data[0:len] into buf[0:capacity]
+ * a space is inserted between every 4 bytes
+ * usage:
+ *    char buf[10];
+ *    Dmsg2("msglen=%d msg=%s", fd->msglen, hexdump(fd->msg, fd->msglen, buf, sizeof(buf));
+ * ==>
+ *    msglen=36 msg=12345678 12345678
+ */
+char *hexdump(const char *data, int len, char *buf, int capacity)
+{
+   char *b=buf;
+   int i=0;
+   while (i<len && capacity>2) {
+      if (i>0 && i%4==0) {
+         *(b++)=' ';
+         capacity--;
+      }
+      if (capacity>2) {
+         *(b++)=hexatable[(data[i]&0xF0)>>4];
+         *(b++)=hexatable[data[i++]&0x0F];
+      }
+      capacity-=2;
+   }
+   *b='\0';
+   return buf;
+}
+
+/*
+ * do an ASCII dump of data[0:len] into buf[0:capacity]
+ * non printable chars are replaced by hexa "\xx"
+ * usage:
+ *    char buf[10];
+ *    Dmsg2("msglen=%d msg=%s", fd->msglen, asciidump(fd->msg, fd->msglen, buf, sizeof(buf));
+ * ==>
+ *    msglen=5 msg=abcd\10
+ */
+char *asciidump(const char *data, int len, char *buf, int capacity)
+{
+   char *b=buf;
+   const unsigned char *p=(const unsigned char *)data;
+   while (len>0 && capacity>1) {
+      if (isprint(*p)) {
+         *(b++)=*(p++);
+         capacity--;
+      } else {
+         if (capacity>3) {
+            *(b++)='\\';
+            *(b++)=hexatable[((*p)&0xF0)>>4];
+            *(b++)=hexatable[(*(p++))&0x0F];
+         }
+         capacity-=3;
+      }
+      len--;
+   }
+   *b='\0';
+   return buf;
+}
+
+char *smartdump(const char *data, int len, char *buf, int capacity, bool *is_ascii)
+{
+   char *b=buf;
+   int l=len;
+   int c=capacity;
+   const unsigned char *p=(const unsigned char *)data;
+   if (is_ascii != NULL) {
+      *is_ascii = false;
+   }
+   while (l>0 && c>1) {
+      if (isprint(*p)) {
+         *(b++)=*(p++);
+      } else if (isspace(*p) || *p=='\0') {
+         *(b++)=' ';
+         p++;
+      } else {
+         return hexdump(data, len, buf, capacity);
+      }
+      c--;
+      l--;
+   }
+   *b='\0';
+   if (is_ascii != NULL) {
+      *is_ascii = true;
+   }
+   return buf;
+}
+
 /*
  * Convert a JobStatus code into a human readable form
  */
@@ -175,6 +266,9 @@ void jobstatus_to_ascii(int JobStatus, char *msg, int maxlen)
       break;
    case JS_Terminated:
       jobstat = _("OK");
+      break;
+   case JS_Incomplete:
+      jobstat = _("Incomplete job");
       break;
    case JS_FatalError:
    case JS_ErrorTerminated:
@@ -296,17 +390,20 @@ void jobstatus_to_ascii_gui(int JobStatus, char *msg, int maxlen)
    }
 }
 
-
 /*
  * Convert Job Termination Status into a string
  */
-const char *job_status_to_str(int stat)
+const char *job_status_to_str(int status, int errors)
 {
    const char *str;
 
-   switch (stat) {
+   switch (status) {
    case JS_Terminated:
-      str = _("OK");
+      if (errors > 0) {
+         str = _("OK -- with warnings");
+      } else {
+         str = _("OK");
+      }
       break;
    case JS_Warnings:
       str = _("OK -- with warnings");
@@ -707,6 +804,8 @@ void decode_session_key(char *decode, char *session, char *key, int maxlen)
  *  %v = Volume name
  *  %b = Job Bytes
  *  %F = Job Files
+ *  %E = Job Errors
+ *  %R = Job ReadBytes
  *
  *  omsg = edited output message
  *  imsg = input string containing edit codes (%x)
@@ -741,10 +840,13 @@ POOLMEM *edit_job_codes(JCR *jcr, char *omsg, char *imsg, const char *to, job_co
             break;
          case 'e':
             if (jcr) {
-               str = job_status_to_str(jcr->JobStatus);
+               str = job_status_to_str(jcr->JobStatus, jcr->getErrors());
             } else {
                str = _("*none*");
             }
+            break;
+         case 'E':                    /* Job Errors */
+            str = edit_uint64(jcr->getErrors(), add);
             break;
          case 'i':
             if (jcr) {
@@ -819,6 +921,9 @@ POOLMEM *edit_job_codes(JCR *jcr, char *omsg, char *imsg, const char *to, job_co
          case 'P':
             edit_uint64(getpid(), add);
             str = add;
+            break;
+         case 'R':                    /* Job ReadBytes */
+            str = edit_uint64(jcr->ReadBytes, add);
             break;
          default:
             str = NULL;

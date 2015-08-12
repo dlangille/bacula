@@ -1,5 +1,10 @@
 #!/bin/sh
 #
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+
+#
 # Attempt to backup from a fifo and restore to a fifo
 #
 TestName="fifo-test"
@@ -19,13 +24,18 @@ cat ${file} >${cwd}/tmp/bfifo&
 start_test
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
-@$out /dev/null
+@output /dev/null
 messages
 @$out ${cwd}/tmp/log1.out
-label storage=File1 volume=TestVolume001
+label storage=File1 volume=TestVolume001 slot=1 drive=0
+setdebug level=10 storage=File1
 run job=$JobName storage=File1 yes
 wait
 messages
+list volumes
+sql
+select jobid,mediaid,startblock,endblock from JobMedia;
+
 quit
 END_OF_DATA
 
@@ -33,7 +43,7 @@ END_OF_DATA
 run_bacula
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
-@$out /dev/null
+@output /dev/null
 messages
 @# 
 @# now do a restore
@@ -54,7 +64,12 @@ run_bconsole
 check_for_zombie_jobs storage=File1
 stop_bacula
 
+if [ "$debug" = 1 ] ; then
+  $bin/bls -d 50 -v -c $conf/bacula-sd.conf -V 'TestVolume001' FileStorage1
+  ls -l ${cwd}/tmp/TestVolume*
+fi
+
 check_two_logs
-diff ${file} ${cwd}/tmp/${file}
+diff ${file} ${cwd}/tmp/${file} >/dev/null 2>&1
 dstat=$?
 end_test

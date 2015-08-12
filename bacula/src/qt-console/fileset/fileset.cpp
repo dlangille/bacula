@@ -1,27 +1,29 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2007-2009 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
-*/
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
 
+   Bacula(R) is a registered trademark of Kern Sibbald.
+*/
+ 
 /*
- *   Version $Id$
- *
  *  FileSet Class
  *
  *   Dirk Bartley, March 2007
  *
- */
+ */ 
 
 #include "bat.h"
 #include <QAbstractEventDispatcher>
@@ -53,7 +55,7 @@ FileSet::~FileSet()
 }
 
 /*
- * The main meat of the class!!  The function that querries the director and
+ * The main meat of the class!!  The function that querries the director and 
  * creates the widgets with appropriate values.
  */
 void FileSet::populateTable()
@@ -109,13 +111,17 @@ void FileSet::populateTable()
          /* Iterate through the record returned from the query */
          foreach (QString resultline, results) {
             fieldlist = resultline.split("\t");
+            if (fieldlist.size() != 3) {
+               Pmsg1(000, "Unexpected line %s", resultline.toUtf8().data());
+               continue;
+            }
 
             /* remove this fileSet from notFoundList */
             int indexOf = notFoundList.indexOf(fieldlist[0]);
             if (indexOf != -1) { notFoundList.removeAt(indexOf); }
 
             TableItemFormatter item(*tableWidget, row);
-
+  
             /* Iterate through fields in the record */
             QStringListIterator fld(fieldlist);
             int col = 0;
@@ -138,11 +144,11 @@ void FileSet::populateTable()
       item.setTextFld(0, filesetName);
       row++;
    }
-
+   
    /* set default sorting */
    tableWidget->sortByColumn(headerlist.indexOf(tr("FileSet Name")), Qt::AscendingOrder);
    tableWidget->setSortingEnabled(true);
-
+   
    /* Resize rows and columns */
    tableWidget->resizeColumnsToContents();
    tableWidget->resizeRowsToContents();
@@ -203,8 +209,8 @@ void FileSet::tableItemChanged(QTableWidgetItem *currentwidgetitem, QTableWidget
    }
 }
 
-/*
- * Setup a context menu
+/* 
+ * Setup a context menu 
  * Made separate from populate so that it would not create context menu over and
  * over as the tree is repopulated.
  */
@@ -262,7 +268,7 @@ void FileSet::writeSettings()
  * Read and restore user settings associated with this page
  */
 void FileSet::readSettings()
-{
+{ 
    QSettings settings(m_console->m_dir->name(), "bat");
    settings.beginGroup("FileSet");
    restoreGeometry(settings.value("geometry").toByteArray());

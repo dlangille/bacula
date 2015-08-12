@@ -1,5 +1,10 @@
 #!/bin/sh
 #
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+
+#
 # Run a simple backup of the Bacula build directory. Create three
 #   tapes, each in a different pool, then run some jobs asking for the
 #   volume on drive three.  It should find it without moving the 
@@ -7,7 +12,7 @@
 #
 # This script uses the virtual disk autochanger and two drives
 #
-TestName="2drive-3pool-disk"
+TestName="2drive-3pool-test"
 JobName="2dr3pooldisk"
 . scripts/functions
 
@@ -19,6 +24,7 @@ CLIENT=2drive2disk
 echo "${cwd}/build" >${cwd}/tmp/file-list
 change_jobname NightlySave $JobName
 start_test
+rm -f working/disk-changer.log
 
 # Turn off Prefer Mounted Volumes so we use 2 drives
 # outf="tmp/sed_tmp"
@@ -30,18 +36,19 @@ start_test
 
 # Write out bconsole commands
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
-@$out /dev/null
+@output /dev/null
 messages
 @$out ${cwd}/tmp/log1.out
-setdebug level=51 storage=tape
+@#setdebug level=51 storage=tape
 label storage=tape volume=TestVolume001 slot=1 Pool=Default drive=0
 label storage=tape volume=TestVolume002 slot=2 Pool=Full    drive=1
 @#label storage=tape volume=TestVolume003 slot=3 Pool=Inc     drive=2
 status storage=tape
 @#run job=$JobName level=Full Pool=Inc yes
+setdebug level=15 storage=tape
+@#setdebug level=50 dir
 run job=$JobName level=Full Pool=Full yes
 run job=$JobName level=Full Pool=Default yes
-setdebug level=200 storage=tape
 run job=$JobName level=Full Pool=Default yes
 run job=$JobName level=Full Pool=Default yes
 @sleep 10
@@ -65,6 +72,8 @@ messages
 @# now do a restore
 @#
 @$out ${cwd}/tmp/log2.out
+setdebug level=0 storage=tape
+setdebug level=0 dir
 restore where=${cwd}/tmp/bacula-restores select all storage=tape done
 yes
 wait

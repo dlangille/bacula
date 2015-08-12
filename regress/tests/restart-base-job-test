@@ -1,7 +1,15 @@
 #!/bin/sh
 #
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+
+#
 # Run a backup of the build directory but force it to have
 #   a comm error, and check that it restarts correctly.
+#
+#  NOTE!!!  This test will always fail, because currently we cannot
+#           restart a Backup Job that has Base files specified.
 #
 TestName="restart-base-job-test"
 JobName=RestartJobWithBase
@@ -18,7 +26,7 @@ $bperl -e "add_attribute('$conf/bacula-dir.conf', 'Accurate', 'yes', 'Job', '$Jo
 start_test
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
-@$out /dev/null
+@output /dev/null
 messages
 @$out ${cwd}/tmp/log1.out
 label storage=File volume=TestVolume001
@@ -45,7 +53,7 @@ run_bacula
 scripts/check_for_zombie_jobs storage=File
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
-@$out /dev/null
+@output /dev/null
 messages
 @# 
 @# now do a restore
@@ -59,7 +67,7 @@ quit
 END_OF_DATA
 
 run_bconsole
-scripts/check_for_zombie_jobs storage=File
+scripts/check_for_zombie_jobs storage=File1
 stop_bacula
 
 check_two_logs
@@ -81,4 +89,3 @@ if [ $nb_F -gt 1000000 ]; then
     estat=2
 fi
 
-end_test

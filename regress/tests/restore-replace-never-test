@@ -1,5 +1,10 @@
 #!/bin/sh
 #
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+
+#
 # Run a simple backup of the Bacula build directory using the compressed option
 #   then restore it.
 #
@@ -10,23 +15,24 @@ JobName=restore-replace-never
 
 scripts/cleanup
 scripts/copy-test-confs
+
 mkdir -p ${cwd}/tmp/dir/dir1
+
+# use non usual rights to compare
+chmod 711 ${cwd}/tmp/dir/dir1
+GRP=`id -G`                     # should display the group list
+set $GRP                        # affect $1, $2 to this list
+chgrp $2 ${cwd}/tmp/dir/dir1    # the first one is the default, choose the 2nd
+
 touch ${cwd}/tmp/dir/dir1/file1
 touch ${cwd}/tmp/dir/dir1/file2
 echo ${cwd}/tmp/dir >${cwd}/tmp/file-list
-
-stat ${cwd}/tmp/dir                >${cwd}/tmp/1
-stat ${cwd}/tmp/dir/dir1          >>${cwd}/tmp/1
-stat ${cwd}/tmp/dir/dir1/file1    >>${cwd}/tmp/1
-stat ${cwd}/tmp/dir/dir1/file2    >>${cwd}/tmp/1
-# Strip Change: lines
-grep -v "Change:" ${cwd}/tmp/1 >${cwd}/tmp/stat-before
 
 change_jobname CompressedTest $JobName
 start_test
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
-@$out /dev/null
+@output /dev/null
 messages
 @$out ${cwd}/tmp/log1.out
 label storage=File volume=TestVolume001
@@ -38,14 +44,12 @@ END_OF_DATA
 
 run_bacula
 
-rm -rf ${cwd}/tmp/dir
-
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
-@$out /dev/null
+@output /dev/null
 messages
 @$out ${cwd}/tmp/log2.out
-restore where=/ storage=File replace=never select all done yes
-@#restore where=/ storage=File select all done yes
+restore where=$cwd/tmp storage=File replace=never select all done yes
+@#restore storage=File select all done yes
 wait
 messages
 quit
@@ -53,22 +57,12 @@ END_OF_DATA
 
 run_bconsole
 
-stat ${cwd}/tmp/dir                >${cwd}/tmp/1
-stat ${cwd}/tmp/dir/dir1          >>${cwd}/tmp/1
-stat ${cwd}/tmp/dir/dir1/file1    >>${cwd}/tmp/1
-stat ${cwd}/tmp/dir/dir1/file2    >>${cwd}/tmp/1
-# Strip Change: lines
-grep -v "Change:" ${cwd}/tmp/1 >${cwd}/tmp/stat-after
-
 check_for_zombie_jobs storage=File
 stop_bacula
 
 check_two_logs
-if test "$debug" -eq 1 ; then
-  diff -u ${cwd}/tmp/stat-before ${cwd}/tmp/stat-after
-else
-  diff -u ${cwd}/tmp/stat-before ${cwd}/tmp/stat-after 2>&1 >/dev/null
-fi
+
+scripts/diff.pl -s ${cwd}/tmp/dir -d ${cwd}/tmp/$cwd/tmp/dir
 if [ $? != 0 ]; then
   dstat=1
 fi

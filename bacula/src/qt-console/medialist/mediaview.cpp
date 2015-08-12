@@ -1,19 +1,23 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2007-2010 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
-*/
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
 
+   Bacula(R) is a registered trademark of Kern Sibbald.
+*/
+ 
 #include "bat.h"
 #include <QAbstractEventDispatcher>
 #include <QMenu>
@@ -38,7 +42,7 @@ MediaView::MediaView() : Pages()
    connect(m_pbPurge, SIGNAL(pressed()), this, SLOT(purgePushed()));
    connect(m_pbDelete, SIGNAL(pressed()), this, SLOT(deletePushed()));
    connect(m_pbPrune, SIGNAL(pressed()), this, SLOT(prunePushed()));
-   connect(m_tableMedia, SIGNAL(itemDoubleClicked(QTableWidgetItem*)),
+   connect(m_tableMedia, SIGNAL(itemDoubleClicked(QTableWidgetItem*)), 
            this, SLOT(showInfoForMedia(QTableWidgetItem *)));
 
    /* mp_treeWidget, Storage Tree Tree Widget inherited from ui_medialist.h */
@@ -70,7 +74,7 @@ void MediaView::editPushed()
    QStringList sel;
    QString cmd;
    getSelection(sel);
-
+   
    for(int i=0; i<sel.count(); i++) {
       cmd = sel.at(i);
       new MediaEdit(mainWin->getFromHash(this), cmd);
@@ -103,28 +107,19 @@ void MediaView::purgePushed()
 
 bool MediaView::getSelection(QStringList &list)
 {
-   int i, nb, nr_rows, row;
-   bool *tab;
    QTableWidgetItem *it;
    QList<QTableWidgetItem*> items = m_tableMedia->selectedItems();
-
-   /*
-    * See if anything is selected.
-    */
-   nb = items.count();
+   int row;
+   int nrows;                      /* number of rows */
+   bool *tab;
+   int nb = items.count();
    if (!nb) {
       return false;
    }
-
-   /*
-    * Create a nibble map for each row so we can see if its
-    * selected or not.
-    */
-   nr_rows = m_tableMedia->rowCount();
-   tab = (bool *)malloc (nr_rows * sizeof(bool));
-   memset(tab, 0, sizeof(bool) * nr_rows);
-
-   for (i = 0; i < nb; ++i) {
+   nrows = m_tableMedia->rowCount();
+   tab = (bool *) malloc (nrows * sizeof(bool));
+   memset(tab, 0, sizeof(bool)*nrows);
+   for (int i = 0; i < nb; ++i) {
       row = items[i]->row();
       if (!tab[row]) {
          tab[row] = true;
@@ -133,7 +128,6 @@ bool MediaView::getSelection(QStringList &list)
       }
    }
    free(tab);
-
    return list.count() > 0;
 }
 
@@ -193,7 +187,7 @@ void MediaView::populateForm()
    m_cbLocation->addItems(m_console->location_list);
 }
 
-/*
+/* 
  * If chkExpired button is checked, we can remove all non Expired
  * entries
  */
@@ -225,7 +219,7 @@ void MediaView::filterExipired(QStringList &list)
 }
 
 /*
- * The main meat of the class!!  The function that querries the director and
+ * The main meat of the class!!  The function that querries the director and 
  * creates the widgets with appropriate values.
  */
 void MediaView::populateTable()
@@ -248,7 +242,7 @@ void MediaView::populateTable()
    if (m_cbPool->currentText() != "") {
       cmd = " Pool.Name = '" + m_cbPool->currentText() + "'";
       where.append(cmd);
-   }
+   } 
 
    if (m_cbStatus->currentText() != "") {
       cmd = " Media.VolStatus = '" + m_cbStatus->currentText() + "'";
@@ -293,22 +287,26 @@ void MediaView::populateTable()
    if (m_console->sql_cmd(query, results)) {
       foreach (resultline, results) {
          fieldlist = resultline.split("\t");
-         if (fieldlist.at(1).toInt() >= 1) {
+         if (fieldlist.size() != 3) {
+            Pmsg1(000, "Unexpected line %s", resultline.toUtf8().data());
+            continue;
+         }
+         if (fieldlist.at(1).toInt() >= 1) { 
             //           MediaType
-            hash_size[fieldlist.at(2)]
-               = fieldlist.at(0).toFloat();
+            hash_size[fieldlist.at(2)] 
+               = fieldlist.at(0).toFloat(); 
          }
       }
-   }
-
+   }      
+   
    m_tableMedia->clearContents();
-   query =
+   query = 
       "SELECT VolumeName, InChanger, "
       "Slot, MediaType, VolStatus, VolBytes, Pool.Name,  "
       "LastWritten, Media.VolRetention "
       "FROM Media JOIN Pool USING (PoolId) "
       "LEFT JOIN Location ON (Media.LocationId=Location.LocationId) "
-      + cmd +
+      + cmd + 
       " ORDER BY VolumeName LIMIT " + m_sbLimit->cleanText();
 
    m_tableMedia->sortByColumn(0, Qt::AscendingOrder);
@@ -321,25 +319,25 @@ void MediaView::populateTable()
       int row=0;
       filterExipired(results);
       m_tableMedia->setRowCount(results.size());
-
       foreach (resultline, results) { // should have only one result
          int index = 0;
-         QString VolBytes, MediaType, LastWritten, VolStatus;
+         QString Slot, VolBytes, MediaType, LastWritten, VolStatus;
          fieldlist = resultline.split("\t");
-         if (fieldlist.size() != 10) {
+         if (fieldlist.size() != 9) {
+            Pmsg1(000, "Unexpected line %s", resultline.toUtf8().data());
             continue;
          }
          QStringListIterator fld(fieldlist);
          TableItemFormatter mediaitem(*m_tableMedia, row);
 
          /* VolumeName */
-         mediaitem.setTextFld(index++, fld.next());
-
+         mediaitem.setTextFld(index++, fld.next()); 
+         
          /* Online */
          mediaitem.setInChanger(index++, fld.next());
 
-         /* Slot */
-         mediaitem.setNumericFld(index++, fld.next());
+         Slot = fld.next();            // Slot
+         mediaitem.setNumericFld(index++, Slot);
 
          MediaType = fld.next();
          VolStatus = fld.next();
@@ -372,10 +370,10 @@ void MediaView::populateTable()
             t = str_to_utime(LastWritten.toAscii().data());
             t = t + stat.toULongLong();
             ttime = t;
-            localtime_r(&ttime, &tm);
+            localtime_r(&ttime, &tm);         
             strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &tm);
          }
-
+         
          /* LastWritten */
          mediaitem.setTextFld(index++, LastWritten);
 
@@ -427,7 +425,7 @@ void MediaView::currentStackItem()
 //    setConsoleCurrent();
 //    new relabelDialog(m_console, m_currentVolumeName);
 // }
-//
+// 
 // /*
 //  * Called from the signal of the context sensitive menu to purge!
 //  */
@@ -437,14 +435,14 @@ void MediaView::currentStackItem()
 //    consoleCommand(cmd);
 //    populateTable();
 // }
-//
+// 
 // void MediaView::allVolumes()
 // {
 //    QString cmd = "update volume allfrompools";
 //    consoleCommand(cmd);
 //    populateTable();
 // }
-//
+// 
 //  /*
 //   * Called from the signal of the context sensitive menu to purge!
 //   */
@@ -458,4 +456,4 @@ void MediaView::currentStackItem()
 //     consoleCommand(cmd);
 //     populateTable();
 //  }
-//
+//  

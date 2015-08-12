@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  * Main routine for finding files on a file system.
@@ -91,21 +95,11 @@ set_find_changed_function(FF_PKT *ff, bool check_fct(JCR *jcr, FF_PKT *ff))
    ff->check_fct = check_fct;
 }
 
-/*
- * For VSS we need to know which windows drives
- * are used, because we create a snapshot of all used
- * drives before operation
- *
- * the function returns the number of used drives and
- * fills "drives" with up to 26 (A..Z) drive names
- *
- * szDrives must be at least 27 bytes long
- */
-int
-get_win32_driveletters(FF_PKT *ff, char* szDrives)
+void
+set_find_snapshot_function(FF_PKT *ff, 
+                           bool convert_path(JCR *jcr, FF_PKT *ff, dlist *filelist, dlistString *node))
 {
-   int nCount = 0;
-   return nCount;
+   ff->snapshot_convert_fct = convert_path;
 }
 
 /*
@@ -172,10 +166,17 @@ find_files(JCR *jcr, FF_PKT *ff, int file_save(JCR *jcr, FF_PKT *ff_pkt, bool to
          foreach_dlist(node, &incexe->name_list) {
             char *fname = node->c_str();
             Dmsg1(dbglvl, "F %s\n", fname);
+
             ff->top_fname = fname;
+            /* Convert the filename if needed */
+            if (ff->snapshot_convert_fct) {
+               ff->snapshot_convert_fct(jcr, ff, &incexe->name_list, node);
+            }
+
             if (find_one_file(jcr, ff, our_callback, ff->top_fname, (dev_t)-1, true) == 0) {
                return 0;                  /* error return */
             }
+
             if (job_canceled(jcr)) {
                return 0;
             }
@@ -464,6 +465,15 @@ term_find_files(FF_PKT *ff)
    }
    if (ff->ignoredir_fname) {
       free_pool_memory(ff->ignoredir_fname);
+   }
+   if (ff->snap_fname) {
+      free_pool_memory(ff->snap_fname);
+   }
+   if (ff->snap_top_fname) {
+      free_pool_memory(ff->snap_top_fname);
+   }
+   if (ff->mtab_list) {
+      delete ff->mtab_list;
    }
    hard_links = term_find_one(ff);
    free(ff);

@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2002-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *   edit.c  edit string to ascii, and ascii to internal
@@ -38,9 +42,23 @@ uint64_t str_to_uint64(char *str)
    if (*p == '+') {
       p++;
    }
-   while (B_ISDIGIT(*p)) {
-      value = B_TIMES10(value) + *p - '0';
-      p++;
+   if (*p == '0' && *(p+1) == 'x') {
+      p = p + 2; /* skip 0x */
+
+      while (B_ISXDIGIT(*p)) {
+         if (B_ISDIGIT(*p)) {
+            value = (value<<4) + (*p - '0');
+
+         } else {
+            value = (value<<4) + (tolower(*p) - 'a' + 10);
+         }
+         p++;
+      }
+   } else {
+      while (B_ISDIGIT(*p)) {
+         value = B_TIMES10(value) + *p - '0';
+         p++;
+      }
    }
    return value;
 }

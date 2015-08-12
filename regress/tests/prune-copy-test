@@ -1,4 +1,9 @@
 #!/bin/sh
+#
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+
 # Not yet working
 #
 # Run a simple backup of the Bacula build directory then copy it
@@ -39,7 +44,7 @@ label storage=DiskChanger volume=ChangerVolume001 slot=1 Pool=Full drive=0
 label storage=DiskChanger volume=ChangerVolume002 slot=2 Pool=Full drive=0
 @# run two jobs (both will be copied)
 run job=$JobName level=Full yes
-@sleep 5
+wait
 run job=$JobName level=Full yes
 wait
 list jobs

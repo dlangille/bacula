@@ -1,24 +1,26 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2005-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  * openssl.c OpenSSL support functions
  *
  * Author: Landon Fuller <landonf@opendarwin.org>
- *
- * Version $Id$
  *
  * This file was contributed to the Bacula project by Landon Fuller.
  *
@@ -37,6 +39,9 @@
 #include <assert.h>
 
 #ifdef HAVE_OPENSSL
+
+/* Are we initialized? */
+static int crypto_initialized = false;
 
 /* Array of mutexes for use with OpenSSL static locking */
 static pthread_mutex_t *mutexes;
@@ -82,9 +87,6 @@ void openssl_post_errors(JCR *jcr, int code, const char *errstring)
  */
 static unsigned long get_openssl_thread_id(void)
 {
-#ifdef HAVE_WIN32
-   return (unsigned long)getpid();
-#else
    /*
     * Comparison without use of pthread_equal() is mandated by the OpenSSL API
     *
@@ -92,7 +94,6 @@ static unsigned long get_openssl_thread_id(void)
     *   emulation code, which defines pthread_t as a structure.
     */
    return ((unsigned long)pthread_self());
-#endif
 }
 
 /*
@@ -253,5 +254,82 @@ int openssl_save_prng (void)
    // Implement PRNG state save
    return 1;
 }
+
+/*
+ * Perform global initialization of OpenSSL
+ * This function is not thread safe.
+ *  Returns: 0 on success
+ *           errno on failure
+ */
+int init_crypto (void)
+{
+   int stat;
+
+   if ((stat = openssl_init_threads()) != 0) {
+      berrno be;
+      Jmsg1(NULL, M_ABORT, 0,
+        _("Unable to init OpenSSL threading: ERR=%s\n"), be.bstrerror(stat));
+   }
+
+   /* Load libssl and libcrypto human-readable error strings */
+   SSL_load_error_strings();
+
+   /* Initialize OpenSSL SSL  library */
+   SSL_library_init();
+
+   /* Register OpenSSL ciphers and digests */
+   OpenSSL_add_all_algorithms();
+
+   if (!openssl_seed_prng()) {
+      Jmsg0(NULL, M_ERROR_TERM, 0, _("Failed to seed OpenSSL PRNG\n"));
+   }
+
+   crypto_initialized = true;
+
+   return stat;
+}
+
+/*
+ * Perform global cleanup of OpenSSL
+ * All cryptographic operations must be completed before calling this function.
+ * This function is not thread safe.
+ *  Returns: 0 on success
+ *           errno on failure
+ */
+int cleanup_crypto (void)
+{
+   /*
+    * Ensure that we've actually been initialized; Doing this here decreases the
+    * complexity of client's termination/cleanup code.
+    */
+   if (!crypto_initialized) {
+      return 0;
+   }
+
+   if (!openssl_save_prng()) {
+      Jmsg0(NULL, M_ERROR, 0, _("Failed to save OpenSSL PRNG\n"));
+   }
+
+   openssl_cleanup_threads();
+
+   /* Free libssl and libcrypto error strings */
+   ERR_free_strings();
+
+   /* Free all ciphers and digests */
+   EVP_cleanup();
+
+   /* Free memory used by PRNG */
+   RAND_cleanup();
+
+   crypto_initialized = false;
+
+   return 0;
+}
+
+#else
+
+/* Dummy routines */
+int init_crypto (void) { return 0; }
+int cleanup_crypto (void) { return 0; }
 
 #endif /* HAVE_OPENSSL */

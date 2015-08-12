@@ -1,5 +1,10 @@
 #!/bin/sh
 #
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+
+#
 # test the reload and test command
 #
 TestName="reload-test"
@@ -18,7 +23,7 @@ detect_error()
     $bin/bacula-dir -t $conf/bacula-dir.conf 2>&1 >> $tmp/testconf.log
     if [ $? = 0 ]; then
         estat=1
-        print_debug "Should detect error on bacula-dir.conf"
+        print_debug "ERROR: Should detect error on bacula-dir.conf"
     fi
 }
 
@@ -28,18 +33,18 @@ do_reload()
 reload
 messages
 EOF
-    cat $tmp/bcons | $bin/bconsole -c $conf/bconsole.conf 2>&1 >>$tmp/reload.log
+    cat $tmp/bcons | $bin/bconsole -c $conf/bconsole.conf 2>&1 | tee -a $tmp/reload.log
 
     ps $pid > /dev/null
     if [ $? != 0 ]; then
         estat=1
-        print_debug "Bacula shouldn't die with a reload"
+        print_debug "ERROR: Bacula shouldn't die with a reload"
     fi
 
     ls -l /proc/$pid/fd | grep bacula-dir.conf
     if [ $? = 0 ]; then
         estat=1
-        print_debug "Should not have bacula-dir.conf open"
+        print_debug "ERROR: Should not have bacula-dir.conf open"
     fi
 }
 
@@ -49,18 +54,20 @@ start_test
 $bin/bacula-dir -t $conf/bacula-dir.conf
 if [ $? != 0 ]; then
     estat=1
-    print_debug "Error on bacula-dir.conf"
+    print_debug "ERROR: Error on bacula-dir.conf"
 fi
 
 $bin/bacula-ctl-dir start >/dev/null
 pid=`cat $working/bacula-dir.$BASEPORT.pid`
-read a
+
+echo "bacula-dir pid is $pid"
+
 sleep 2
 
 ls -l /proc/$pid/fd | grep bacula-dir.conf
 if [ $? = 0 ]; then
     estat=1
-    print_debug "Should not have bacula-dir.conf open"
+    print_debug "ERROR: Should not have bacula-dir.conf open"
 fi
 
 # should work well

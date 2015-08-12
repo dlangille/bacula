@@ -1,19 +1,24 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 
+extern s_kw dev_types[];
 
 /*
  * Resource codes -- they must be sequential for indexing
@@ -91,6 +96,7 @@ public:
    alist *tls_allowed_cns;            /* TLS Allowed Clients */
    char *verid;                       /* Custom Id to print in version command */
    TLS_CONTEXT *tls_ctx;              /* Shared TLS Context */
+
 };
 typedef class s_res_store STORES;
 
@@ -117,6 +123,7 @@ public:
    char *spool_directory;             /* Spool file directory */
    uint32_t dev_type;                 /* device type */
    uint32_t label_type;               /* label type */
+   bool enabled;                      /* Set when enabled (default) */
    bool autoselect;                   /* Automatically select from AutoChanger */
    bool read_only;                    /* Drive is read only */
    uint32_t drive_index;              /* Autochanger drive index */
@@ -124,6 +131,8 @@ public:
    utime_t max_changer_wait;          /* Changer timeout */
    utime_t max_rewind_wait;           /* maximum secs to wait for rewind */
    utime_t max_open_wait;             /* maximum secs to wait for open */
+   uint32_t padding_size;             /* adata block padding -- bytes */
+   uint32_t file_alignment;           /* adata file alignment -- bytes */
    uint32_t min_block_size;           /* min block size */
    uint32_t max_block_size;           /* max block size */
    uint32_t max_volume_jobs;          /* max jobs to put on one volume */

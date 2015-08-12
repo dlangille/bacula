@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2007-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  * A simple pipe plugin for the Bacula File Daemon
@@ -35,7 +39,7 @@ extern "C" {
 
 static const int dbglvl = 150;
 
-#define PLUGIN_LICENSE      "Bacula AGPLv3"
+#define PLUGIN_LICENSE      "AGPLv3"
 #define PLUGIN_AUTHOR       "Kern Sibbald"
 #define PLUGIN_DATE         "January 2008"
 #define PLUGIN_VERSION      "1"
@@ -100,7 +104,7 @@ static pFuncs pluginFuncs = {
  */
 struct plugin_ctx {
    boffset_t offset;
-   FILE *fd;                          /* pipe file descriptor */
+   BPIPE *pfd;                        /* bpipe file descriptor */
    bool backup;                       /* set for backup (not needed) */
    char *cmd;                         /* plugin command line */
    char *fname;                       /* filename to "backup/restore" */
@@ -130,16 +134,16 @@ bRC loadPlugin(bInfo *lbinfo, bFuncs *lbfuncs, pInfo **pinfo, pFuncs **pfuncs)
 }
 
 /*
- * External entry point to unload the plugin
+ * External entry point to unload the plugin 
  */
-bRC unloadPlugin()
+bRC unloadPlugin() 
 {
 // printf("bpipe-fd: Unloaded\n");
    return bRC_OK;
 }
 
 /*
- * The following entry points are accessed through the function
+ * The following entry points are accessed through the function 
  *   pointers we supplied to Bacula. Each plugin type (dir, fd, sd)
  *   has its own set of entry points that the plugin must define.
  */
@@ -177,7 +181,7 @@ static bRC freePlugin(bpContext *ctx)
 /*
  * Return some plugin value (none defined)
  */
-static bRC getPluginValue(bpContext *ctx, pVariable var, void *value)
+static bRC getPluginValue(bpContext *ctx, pVariable var, void *value) 
 {
    return bRC_OK;
 }
@@ -185,7 +189,7 @@ static bRC getPluginValue(bpContext *ctx, pVariable var, void *value)
 /*
  * Set a plugin value (none defined)
  */
-static bRC setPluginValue(bpContext *ctx, pVariable var, void *value)
+static bRC setPluginValue(bpContext *ctx, pVariable var, void *value) 
 {
    return bRC_OK;
 }
@@ -209,7 +213,7 @@ static bRC handlePluginEvent(bpContext *ctx, bEvent *event, void *value)
     */
    switch (event->eventType) {
    case bEventPluginCommand:
-      bfuncs->DebugMessage(ctx, fi, li, dbglvl,
+      bfuncs->DebugMessage(ctx, fi, li, dbglvl, 
                            "bpipe-fd: PluginCommand=%s\n", (char *)value);
       break;
    case bEventJobStart:
@@ -270,7 +274,7 @@ static bRC handlePluginEvent(bpContext *ctx, bEvent *event, void *value)
       }
       *p++ = 0;           /* terminate reader string */
       p_ctx->writer = p;
-//    printf("bpipe-fd: plugin=%s fname=%s reader=%s writer=%s\n",
+//    printf("bpipe-fd: plugin=%s fname=%s reader=%s writer=%s\n", 
 //         p_ctx->cmd, p_ctx->fname, p_ctx->reader, p_ctx->writer);
       break;
 
@@ -281,7 +285,7 @@ static bRC handlePluginEvent(bpContext *ctx, bEvent *event, void *value)
    return bRC_OK;
 }
 
-/*
+/* 
  * Start the backup of a specific file
  */
 static bRC startBackupFile(bpContext *ctx, struct save_pkt *sp)
@@ -327,8 +331,8 @@ static bRC pluginIO(bpContext *ctx, struct io_pkt *io)
    if (!p_ctx) {
       return bRC_Error;
    }
-
-   io->status = 0;
+    
+   io->status = -1;
    io->io_errno = 0;
    switch(io->func) {
    case IO_OPEN:
@@ -336,12 +340,12 @@ static bRC pluginIO(bpContext *ctx, struct io_pkt *io)
       if (io->flags & (O_CREAT | O_WRONLY)) {
          char *writer_codes = apply_rp_codes(p_ctx);
 
-         p_ctx->fd = popen(writer_codes, "w");
-         bfuncs->DebugMessage(ctx, fi, li, dbglvl, "bpipe-fd: IO_OPEN fd=%d writer=%s\n",
-             p_ctx->fd, writer_codes);
-         if (!p_ctx->fd) {
+         p_ctx->pfd = open_bpipe(writer_codes, 0, "ws");
+         bfuncs->DebugMessage(ctx, fi, li, dbglvl, "bpipe-fd: IO_OPEN fd=%p writer=%s\n", 
+             p_ctx->pfd, writer_codes);
+         if (!p_ctx->pfd) {
             io->io_errno = errno;
-            bfuncs->JobMessage(ctx, fi, li, M_FATAL, 0,
+            bfuncs->JobMessage(ctx, fi, li, M_FATAL, 0, 
                "Open pipe writer=%s failed: ERR=%s\n", writer_codes, strerror(errno));
             if (writer_codes) {
                free(writer_codes);
@@ -351,85 +355,70 @@ static bRC pluginIO(bpContext *ctx, struct io_pkt *io)
          if (writer_codes) {
             free(writer_codes);
          }
+         io->status = fileno(p_ctx->pfd->wfd);
       } else {
-         p_ctx->fd = popen(p_ctx->reader, "r");
-         bfuncs->DebugMessage(ctx, fi, li, dbglvl, "bpipe-fd: IO_OPEN fd=%p reader=%s\n",
-            p_ctx->fd, p_ctx->reader);
-         if (!p_ctx->fd) {
+         p_ctx->pfd = open_bpipe(p_ctx->reader, 0, "rs");
+         bfuncs->DebugMessage(ctx, fi, li, dbglvl, "bpipe-fd: IO_OPEN fd=%p reader=%s\n", 
+            p_ctx->pfd, p_ctx->reader);
+         if (!p_ctx->pfd) {
             io->io_errno = errno;
-            bfuncs->JobMessage(ctx, fi, li, M_FATAL, 0,
+            bfuncs->JobMessage(ctx, fi, li, M_FATAL, 0, 
                "Open pipe reader=%s failed: ERR=%s\n", p_ctx->reader, strerror(errno));
             return bRC_Error;
          }
+         io->status = fileno(p_ctx->pfd->rfd);
       }
       sleep(1);                 /* let pipe connect */
       break;
 
    case IO_READ:
-      if (!p_ctx->fd) {
+      if (!p_ctx->pfd) {
          bfuncs->JobMessage(ctx, fi, li, M_FATAL, 0, "Logic error: NULL read FD\n");
          return bRC_Error;
       }
-      io->status = fread(io->buf, 1, io->count, p_ctx->fd);
+      io->status = fread(io->buf, 1, io->count, p_ctx->pfd->rfd);
 //    bfuncs->DebugMessage(ctx, fi, li, dbglvl, "bpipe-fd: IO_READ buf=%p len=%d\n", io->buf, io->status);
-      if (io->status == 0 && ferror(p_ctx->fd)) {
-         bfuncs->JobMessage(ctx, fi, li, M_FATAL, 0,
+      if (io->status == 0 && ferror(p_ctx->pfd->rfd)) {
+         bfuncs->JobMessage(ctx, fi, li, M_FATAL, 0, 
             "Pipe read error: ERR=%s\n", strerror(errno));
-         bfuncs->DebugMessage(ctx, fi, li, dbglvl,
+         bfuncs->DebugMessage(ctx, fi, li, dbglvl, 
             "Pipe read error: ERR=%s\n", strerror(errno));
          return bRC_Error;
       }
       break;
 
    case IO_WRITE:
-      if (!p_ctx->fd) {
+      if (!p_ctx->pfd) {
          bfuncs->JobMessage(ctx, fi, li, M_FATAL, 0, "Logic error: NULL write FD\n");
          return bRC_Error;
       }
 //    printf("bpipe-fd: IO_WRITE fd=%p buf=%p len=%d\n", p_ctx->fd, io->buf, io->count);
-      io->status = fwrite(io->buf, 1, io->count, p_ctx->fd);
+      io->status = fwrite(io->buf, 1, io->count, p_ctx->pfd->wfd);
 //    printf("bpipe-fd: IO_WRITE buf=%p len=%d\n", io->buf, io->status);
-      if (io->status == 0 && ferror(p_ctx->fd)) {
-         bfuncs->JobMessage(ctx, fi, li, M_FATAL, 0,
+      if (io->status == 0 && ferror(p_ctx->pfd->wfd)) {
+         bfuncs->JobMessage(ctx, fi, li, M_FATAL, 0, 
             "Pipe write error\n");
-         bfuncs->DebugMessage(ctx, fi, li, dbglvl,
+         bfuncs->DebugMessage(ctx, fi, li, dbglvl, 
             "Pipe read error: ERR=%s\n", strerror(errno));
          return bRC_Error;
       }
       break;
 
    case IO_CLOSE:
-      if (!p_ctx->fd) {
+      if (!p_ctx->pfd) {
          bfuncs->JobMessage(ctx, fi, li, M_FATAL, 0, "Logic error: NULL FD on bpipe close\n");
          return bRC_Error;
       }
-      io->status = pclose(p_ctx->fd);
-
-      /* Problem during execution */
-      if (io->status < 0) {
-         io->io_errno = errno;
-         bfuncs->JobMessage(ctx, fi, li, M_ERROR, 0, "bpipe-fd: Error closing stream for pseudo file %s: %d (%s)\n",
-                            p_ctx->fname, io->status, strerror(errno));
-
-      /* Problem inside the subprogram */
-      } else if (io->status > 0) {
-         int status=1;
-         if (WIFEXITED(io->status)) {    /* process exit()ed */
-            status = WEXITSTATUS(io->status);
-
-         } else if (WIFSIGNALED(io->status)) {  /* process died */
-#ifndef HAVE_WIN32
-            status = WTERMSIG(io->status);
-#endif
-         }
-         bfuncs->DebugMessage(ctx, fi, li, dbglvl, "bpipe-fd: exit=%d\n", io->status);
-         bfuncs->JobMessage(ctx, fi, li, M_ERROR, 0, "bpipe-fd: Error closing stream for pseudo file %s: exit %d\n",
-               p_ctx->fname, status);
+      io->status = close_bpipe(p_ctx->pfd);
+      if (io->status != 0) {
+         bfuncs->JobMessage(ctx, fi, li, M_ERROR, 0, "bpipe-fd: Error closing for file %s: %d\n", 
+                            p_ctx->fname, io->status);
       }
       break;
 
    case IO_SEEK:
       io->offset = p_ctx->offset;
+      io->status = 0;
       break;
    }
    return bRC_OK;
@@ -458,7 +447,7 @@ static bRC endRestoreFile(bpContext *ctx)
 /*
  * This is called during restore to create the file (if necessary)
  * We must return in rp->create_status:
- *
+ *   
  *  CF_ERROR    -- error
  *  CF_SKIP     -- skip processing this file
  *  CF_EXTRACT  -- extract the file (i.e.call i/o routines)
@@ -536,9 +525,9 @@ static char *apply_rp_codes(struct plugin_ctx * p_ctx)
       }
    }
 
-   /* Required mem:
-    * len(imsg)
-    * + number of "where" codes * (len(where)-2)
+   /* Required mem: 
+    * len(imsg) 
+    * + number of "where" codes * (len(where)-2) 
     * - number of "replace" codes
     */
    omsg = (char*)malloc(strlen(imsg) + (w_count * (strlen(p_ctx->where)-2)) - r_count + 1);

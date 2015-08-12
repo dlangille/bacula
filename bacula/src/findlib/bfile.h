@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2003-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *  Bacula low level File I/O routines.  This routine simulates
@@ -52,7 +56,7 @@ typedef struct _PROCESS_WIN32_BACKUPAPIBLOCK_CONTEXT {
  *
  *  =======================================================
  */
-#if defined(HAVE_WIN32)
+#ifdef HAVE_WIN32
 
 enum {
    BF_CLOSED,
@@ -63,7 +67,8 @@ enum {
 /* In bfile.c */
 
 /* Basic Win32 low level I/O file packet */
-struct BFILE {
+class BFILE {
+public:
    bool use_backup_api;               /* set if using BackupRead/Write */
    int mode;                          /* set if file is open */
    HANDLE fh;                         /* Win32 file handle */
@@ -72,6 +77,7 @@ struct BFILE {
    POOLMEM *errmsg;                   /* error message buffer */
    DWORD rw_bytes;                    /* Bytes read or written */
    DWORD lerror;                      /* Last error code */
+   DWORD fattrs;                      /* Windows file attributes */
    int berrno;                        /* errno */
    int block;                         /* Count of read/writes */
    uint64_t total_bytes;              /* bytes written */
@@ -81,9 +87,15 @@ struct BFILE {
    int use_backup_decomp;             /* set if using BackupRead Stream Decomposition */
    bool reparse_point;                /* set if reparse point */
    bool cmd_plugin;                   /* set if we have a command plugin */
+   bool const is_encrypted() const;
 };
 
+/* Windows encrypted file system */
+inline const bool BFILE::is_encrypted() const
+  { return (fattrs & FILE_ATTRIBUTE_ENCRYPTED) != 0; };
+
 HANDLE bget_handle(BFILE *bfd);
+
 
 #else   /* Linux/Unix systems */
 
@@ -114,6 +126,11 @@ struct BFILE {
 
 void    binit(BFILE *bfd);
 bool    is_bopen(BFILE *bfd);
+#ifdef HAVE_WIN32
+void    set_fattrs(BFILE *bfd, struct stat *statp);
+#else
+#define set_fattrs(bfd, fattrs)
+#endif
 bool    set_win32_backup(BFILE *bfd);
 bool    set_portable_backup(BFILE *bfd);
 bool    set_cmd_plugin(BFILE *bfd, JCR *jcr);

@@ -1,23 +1,33 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *
  *     Kern Sibbald, January MM
  *
  */
+
+/* Used for certain keyword tables */
+struct s_kw {
+   const char *name;
+   uint32_t token;
+};
 
 struct RES_ITEM;                    /* Declare forward referenced structure */
 struct RES_ITEM2;                  /* Declare forward referenced structure */
@@ -113,6 +123,7 @@ struct RES_TABLE {
 #define ITEM_REQUIRED    0x1          /* item required */
 #define ITEM_DEFAULT     0x2          /* default supplied */
 #define ITEM_NO_EQUALS   0x4          /* Don't scan = after name */
+#define ITEM_LAST        0x8          /* Last item in list */
 
 /* Message Resource */
 class MSGS {

@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /**
  * Stream definitions.  Split from baconfig.h Nov 2010
@@ -36,7 +40,7 @@
 #define STREAMBITS_TYPE               11         /* type bit size */
 #define STREAMMASK_TYPE               (~((~0)<< STREAMBITS_TYPE) << STREAMBASE_TYPE)
 /*
- * Note additional base, bits, and masks can be defined for new
+ * Note additional base, bits, and masks can be defined for new     
  *  ranges or subranges of stream attributes.
  */
 
@@ -85,9 +89,11 @@
 #define STREAM_PLUGIN_NAME                 26    /* Plugin "file" string */
 #define STREAM_PLUGIN_DATA                 27    /* Plugin specific data */
 #define STREAM_RESTORE_OBJECT              28    /* Plugin restore object */
-/* Non GZip compressed streams. Those streams can handle arbitrary compression algorithm data
- * as an additional header is stored at the beginning of the stream.
- * see stream_compressed_header definition for more details.
+/*
+ * Non-gzip compressed streams. Those streams can handle arbitrary 
+ *  compression algorithm data as an additional header is stored 
+ *  at the beginning of the stream. See comp_stream_header definition 
+ *  in ch.h for more details.
  */
 #define STREAM_COMPRESSED_DATA                 29    /* Compressed file data */
 #define STREAM_SPARSE_COMPRESSED_DATA          30    /* Sparse compressed data stream */
@@ -95,7 +101,7 @@
 #define STREAM_ENCRYPTED_FILE_COMPRESSED_DATA  32    /* Encrypted, compressed data */
 #define STREAM_ENCRYPTED_WIN32_COMPRESSED_DATA 33    /* Encrypted, compressed Win32 BackupRead data */
 
-/**
+/*
  * Additional Stream definitions. Once defined these must NEVER
  *   change as they go on the storage media.
  *
@@ -106,76 +112,39 @@
  * different acl streams from 1000 on and the different extended attributes streams from
  * 1999 down. So the two naming spaces grows towards each other.
  */
-#define STREAM_ACL_AIX_TEXT              1000    /* AIX specific string representation from acl_get */
-#define STREAM_ACL_DARWIN_ACCESS_ACL     1001    /* Darwin (OSX) specific acl_t string representation
-                                                  * from acl_to_text (POSIX acl)
-                                                  */
-#define STREAM_ACL_FREEBSD_DEFAULT_ACL   1002    /* FreeBSD specific acl_t string representation
-                                                  * from acl_to_text (POSIX acl) for default acls.
-                                                  */
-#define STREAM_ACL_FREEBSD_ACCESS_ACL    1003    /* FreeBSD specific acl_t string representation
-                                                  * from acl_to_text (POSIX acl) for access acls.
-                                                  */
-#define STREAM_ACL_HPUX_ACL_ENTRY        1004    /* HPUX specific acl_entry string representation
-                                                  * from acltostr (POSIX acl)
-                                                  */
-#define STREAM_ACL_IRIX_DEFAULT_ACL      1005    /* IRIX specific acl_t string representation
-                                                  * from acl_to_text (POSIX acl) for default acls.
-                                                  */
-#define STREAM_ACL_IRIX_ACCESS_ACL       1006    /* IRIX specific acl_t string representation
-                                                  * from acl_to_text (POSIX acl) for access acls.
-                                                  */
-#define STREAM_ACL_LINUX_DEFAULT_ACL     1007    /* Linux specific acl_t string representation
-                                                  * from acl_to_text (POSIX acl) for default acls.
-                                                  */
-#define STREAM_ACL_LINUX_ACCESS_ACL      1008    /* Linux specific acl_t string representation
-                                                  * from acl_to_text (POSIX acl) for access acls.
-                                                  */
-#define STREAM_ACL_TRU64_DEFAULT_ACL     1009    /* Tru64 specific acl_t string representation
-                                                  * from acl_to_text (POSIX acl) for default acls.
-                                                  */
-#define STREAM_ACL_TRU64_DEFAULT_DIR_ACL 1010    /* Tru64 specific acl_t string representation
-                                                  * from acl_to_text (POSIX acl) for default acls.
-                                                  */
-#define STREAM_ACL_TRU64_ACCESS_ACL      1011    /* Tru64 specific acl_t string representation
-                                                  * from acl_to_text (POSIX acl) for access acls.
-                                                  */
-#define STREAM_ACL_SOLARIS_ACLENT        1012    /* Solaris specific aclent_t string representation
-                                                  * from acltotext or acl_totext (POSIX acl)
-                                                  */
-#define STREAM_ACL_SOLARIS_ACE           1013    /* Solaris specific ace_t string representation from
-                                                  * from acl_totext (NFSv4 or ZFS acl)
-                                                  */
-#define STREAM_ACL_AFS_TEXT              1014    /* AFS specific string representation from pioctl */
-
-#define STREAM_ACL_AIX_AIXC              1015    /* AIX specific string representation from
-                                                  * aclx_printStr (POSIX acl)
-                                                  */
-#define STREAM_ACL_AIX_NFS4              1016    /* AIX specific string representation from
-                                                  * aclx_printStr (NFSv4 acl)
-                                                  */
-#define STREAM_ACL_FREEBSD_NFS4_ACL      1017    /* FreeBSD specific acl_t string representation
-                                                  * from acl_to_text (NFSv4 or ZFS acl)
-                                                  */
-#define STREAM_ACL_HURD_DEFAULT_ACL      1018    /* GNU HURD specific acl_t string representation
-                                                  * from acl_to_text (POSIX acl) for default acls.
-                                                  */
-#define STREAM_ACL_HURD_ACCESS_ACL       1019    /* GNU HURD specific acl_t string representation
-                                                  * from acl_to_text (POSIX acl) for access acls.
-                                                  */
-#define STREAM_XATTR_HURD                1989    /* GNU HURD specific extended attributes */
-#define STREAM_XATTR_IRIX                1990    /* IRIX specific extended attributes */
-#define STREAM_XATTR_TRU64               1991    /* TRU64 specific extended attributes */
-#define STREAM_XATTR_AIX                 1992    /* AIX specific extended attributes */
-#define STREAM_XATTR_OPENBSD             1993    /* OpenBSD specific extended attributes */
-#define STREAM_XATTR_SOLARIS_SYS         1994    /* Solaris specific extensible attributes or
-                                                  * otherwise named extended system attributes.
-                                                  */
-#define STREAM_XATTR_SOLARIS             1995    /* Solaris specific extented attributes */
-#define STREAM_XATTR_DARWIN              1996    /* Darwin (OSX) specific extended attributes */
-#define STREAM_XATTR_FREEBSD             1997    /* FreeBSD specific extended attributes */
-#define STREAM_XATTR_LINUX               1998    /* Linux specific extended attributes */
-#define STREAM_XATTR_NETBSD              1999    /* NetBSD specific extended attributes */
+#define STREAM_ACL_AIX_TEXT          1000    /* AIX string of acl_get */
+#define STREAM_ACL_DARWIN_ACCESS     1001    /* Darwin (OSX) acl_t string of acl_to_text (POSIX acl) */
+#define STREAM_ACL_FREEBSD_DEFAULT   1002    /* FreeBSD acl_t string of acl_to_text (POSIX acl) for default acls */
+#define STREAM_ACL_FREEBSD_ACCESS    1003    /* FreeBSD acl_t string of acl_to_text (POSIX acl) for access acls */
+#define STREAM_ACL_HPUX_ACL_ENTRY    1004    /* HPUX acl_entry string of acltostr (POSIX acl) */
+#define STREAM_ACL_IRIX_DEFAULT      1005    /* IRIX acl_t string of acl_to_text (POSIX acl) for default acls */
+#define STREAM_ACL_IRIX_ACCESS       1006    /* IRIX acl_t string of acl_to_text (POSIX acl) for access acls */
+#define STREAM_ACL_LINUX_DEFAULT     1007    /* Linux acl_t string of acl_to_text (POSIX acl) for default acls */
+#define STREAM_ACL_LINUX_ACCESS      1008    /* Linux acl_t string of acl_to_text (POSIX acl) for access acls */
+#define STREAM_ACL_TRU64_DEFAULT     1009    /* Tru64 acl_t string of acl_to_text (POSIX acl) for default acls */
+#define STREAM_ACL_TRU64_DEFAULT_DIR 1010    /* Tru64 acl_t string of acl_to_text (POSIX acl) for default acls */
+#define STREAM_ACL_TRU64_ACCESS      1011    /* Tru64 acl_t string of acl_to_text (POSIX acl) for access acls */
+#define STREAM_ACL_SOLARIS_POSIX     1012    /* Solaris aclent_t string of acltotext or acl_totext (POSIX acl) */
+#define STREAM_ACL_SOLARIS_NFS4      1013    /* Solaris ace_t string of of acl_totext (NFSv4 or ZFS acl) */
+#define STREAM_ACL_AFS_TEXT          1014    /* AFS string of pioctl */
+#define STREAM_ACL_AIX_AIXC          1015    /* AIX string of aclx_printStr (POSIX acl) */
+#define STREAM_ACL_AIX_NFS4          1016    /* AIX string of aclx_printStr (NFSv4 acl) */
+#define STREAM_ACL_FREEBSD_NFS4      1017    /* FreeBSD acl_t string of acl_to_text (NFSv4 or ZFS acl) */
+#define STREAM_ACL_HURD_DEFAULT      1018    /* GNU HURD acl_t string of acl_to_text (POSIX acl) for default acls */
+#define STREAM_ACL_HURD_ACCESS       1019    /* GNU HURD acl_t string of acl_to_text (POSIX acl) for access acls */
+#define STREAM_XATTR_HURD            1989    /* GNU HURD extended attributes */
+#define STREAM_XATTR_IRIX            1990    /* IRIX extended attributes */
+#define STREAM_XATTR_TRU64           1991    /* TRU64 extended attributes */
+#define STREAM_XATTR_AIX             1992    /* AIX extended attributes */
+#define STREAM_XATTR_OPENBSD         1993    /* OpenBSD extended attributes */
+#define STREAM_XATTR_SOLARIS_SYS     1994    /* Solaris extensible attributes or
+                                              * otherwise named extended system attributes.
+                                              */
+#define STREAM_XATTR_SOLARIS         1995    /* Solaris extented attributes */
+#define STREAM_XATTR_DARWIN          1996    /* Darwin (OSX) extended attributes */
+#define STREAM_XATTR_FREEBSD         1997    /* FreeBSD extended attributes */
+#define STREAM_XATTR_LINUX           1998    /* Linux specific attributes */
+#define STREAM_XATTR_NETBSD          1999    /* NetBSD extended attributes */
 
 /* WARNING!!! do not define more than 2047 of these old types */
 

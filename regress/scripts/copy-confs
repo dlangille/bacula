@@ -1,9 +1,14 @@
 #!/bin/sh
+#
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+
 . scripts/functions
-/bin/cp -f ${rscripts}/bacula-dir.conf ${scripts}/bacula-dir.conf
-/bin/cp -f ${rscripts}/bacula-sd.conf ${scripts}/bacula-sd.conf
-/bin/cp -f ${rscripts}/bacula-fd.conf ${scripts}/bacula-fd.conf
-/bin/cp -f ${rscripts}/bconsole.conf ${scripts}/bconsole.conf
-/bin/cp -f ${rscripts}/bconsole.conf ${scripts}/bat.conf
+/bin/cp -f ${rscripts}/bacula-dir.conf ${conf}/bacula-dir.conf
+/bin/cp -f ${rscripts}/bacula-sd.conf ${conf}/bacula-sd.conf
+/bin/cp -f ${rscripts}/bacula-fd.conf ${conf}/bacula-fd.conf
+/bin/cp -f ${rscripts}/bconsole.conf ${conf}/bconsole.conf
+/bin/cp -f ${rscripts}/bconsole.conf ${conf}/bat.conf
 
 ${rscripts}/set_tape_options

@@ -32,10 +32,19 @@ qwt {
   LIBS        += @QWT_LDFLAGS@ @QWT_LIB@
 }
 
-RESOURCES    = main.qrc
-MOC_DIR      = moc32
-OBJECTS_DIR  = obj32
-UI_DIR       = ui32
+RESOURCES               = main.qrc
+MOC_DIR                 = moc32
+OBJECTS_DIR             = obj32
+UI_DIR                  = ui32
+QMAKE_CC                = i686-w64-mingw32-gcc
+QMAKE_CXX               = i686-w64-mingw32-g++
+QMAKE_INCDIR            = $(DEPKGS)/depkgs-mingw32/include/pthreads $(DEPKGS)/depkgs-mingw32/include/ ../win32/compat 
+QMAKE_INCDIR_QT         = $(DEPKGS)/depkgs-mingw32/include/qt
+QMAKE_LIBDIR_QT         = $(DEPKGS)/depkgs-mingw32/lib/qt
+QMAKE_LINK              = i686-w64-mingw32-g++
+QMAKE_LFLAGS            = -mthreads -Wl,-enable-stdcall-fixup -Wl,-enable-auto-import  -m32 -fno-strict-aliasing -Wl,-enable-runtime-pseudo-reloc
+QMAKE_LIB               = i686-w64-mingw32-ar -ru
+QMAKE_RC                = i686-w64-mingw32-windres
 
 # Main window
 FORMS += main.ui 

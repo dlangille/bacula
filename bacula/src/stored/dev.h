@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  * Definitions for using the Device functions in Bacula
@@ -79,8 +83,8 @@ enum {
    B_FIFO_DEV,
    B_VTAPE_DEV,                       /* change to B_TAPE_DEV after init */
    B_FTP_DEV,
-   B_VTL_DEV,
-   B_VIRTUAL_DEV                      /* Virtual device */
+   B_VTL_DEV,                         /* Virtual tape library device */
+   B_NULL_DEV
 };
 
 /* Generic status bits returned from status_dev() */
@@ -118,7 +122,7 @@ enum {
 #define CAP_CLOSEONPOLL    (1<<18)    /* Close device on polling */
 #define CAP_POSITIONBLOCKS (1<<19)    /* Use block positioning */
 #define CAP_MTIOCGET       (1<<20)    /* Basic support for fileno and blkno */
-#define CAP_REQMOUNT       (1<<21)    /* Require mount/unmount */
+#define CAP_REQMOUNT       (1<<21)    /* Require mount and unmount */
 #define CAP_CHECKLABELS    (1<<22)    /* Check for ANSI/IBM labels */
 #define CAP_BLOCKCHECKSUM  (1<<23)    /* Create/test block checksum */
 
@@ -155,19 +159,28 @@ struct VOLUME_CAT_INFO {
    /* Media info for the current Volume */
    uint64_t VolCatBytes;              /* Total bytes written */
    uint64_t VolCatAmetaBytes;         /* Ameta bytes written */
+   uint64_t VolCatAdataBytes;         /* Adata bytes written */
    uint64_t VolCatPadding;            /* Total padding bytes written */
+   uint64_t VolCatAmetaPadding;       /* Ameta zeros (padding) written */
+   uint64_t VolCatAdataPadding;       /* Adata zeros (padding) written */
    uint32_t VolCatBlocks;             /* Total blocks */
    uint32_t VolCatAmetaBlocks;        /* Ameta blocks */
+   uint32_t VolCatAdataBlocks;        /* Adata blocks */
    uint32_t VolCatWrites;             /* Total writes this volume */
    uint32_t VolCatAmetaWrites;        /* Ameta writes this volume */
+   uint32_t VolCatAdataWrites;        /* Adata writes this volume */
    uint32_t VolCatReads;              /* Total reads this volume */
    uint32_t VolCatAmetaReads;         /* Ameta reads this volume */
+   uint32_t VolCatAdataReads;         /* Adata reads this volume */
    uint64_t VolCatRBytes;             /* Total bytes read */
    uint64_t VolCatAmetaRBytes;        /* Ameta bytes read */
+   uint64_t VolCatAdataRBytes;        /* Adata bytes read */
+   uint64_t VolCatHoleBytes;          /* Total hole bytes */
 
+   uint32_t VolCatHoles;              /* Number of holes */
    uint32_t VolCatJobs;               /* Number of jobs on this Volume */
    uint32_t VolCatFiles;              /* Number of files */
-   uint32_t VolCatParts;              /* Number of parts written */
+   uint32_t VolCatType;               /* Volume drive type */
    uint32_t VolCatMounts;             /* Number of mounts this volume */
    uint32_t VolCatErrors;             /* Number of errors this volume */
    uint32_t VolCatRecycles;           /* Number of recycles this volume */
@@ -207,17 +220,18 @@ private:
    int m_blocked;                     /* set if we must wait (i.e. change tape) */
    int m_count;                       /* Mutex use count -- DEBUG only */
    int m_num_reserved;                /* counter of device reservations */
-   bool m_append_reserve;             /* reserved for append or read in m_num_reserved set */
-   int32_t m_slot;                    /* slot loaded in drive or -1 if none */
    pthread_t m_pid;                   /* Thread that locked -- DEBUG only */
+   int32_t m_slot;                    /* slot loaded in drive or -1 if none */
    bool m_unload;                     /* set when Volume must be unloaded */
    bool m_load;                       /* set when Volume must be loaded */
    bool m_wait;                       /* must wait for device to free volume */
+   bool m_append_reserve;             /* reserved for append or read in m_num_reserved set */
    bthread_mutex_t m_mutex;           /* access control */
    bthread_mutex_t acquire_mutex;     /* mutex for acquire code */
    pthread_mutex_t read_acquire_mutex; /* mutex for acquire read code */
    pthread_mutex_t volcat_mutex;      /* VolCatInfo mutex */
    pthread_mutex_t dcrs_mutex;        /* Attached dcr mutex */
+   pthread_mutex_t freespace_mutex;   /* mutex to compute the freespace */
 
 public:
    DEVICE() {};
@@ -237,14 +251,10 @@ public:
    int mode;                          /* read/write modes */
    int openmode;                      /* parameter passed to open_dev (useful to reopen the device) */
    int dev_type;                      /* device type */
+   bool enabled;                      /* Set when enabled */
    bool autoselect;                   /* Autoselect in autochanger */
    bool read_only;                    /* Device is read only */
    bool initiated;                    /* set when init_dev() called */
-   bool m_shstore;                    /* Shares storage can be used */
-   bool m_shstore_lock;               /* set if shared lock set */
-   bool m_shstore_user_lock;          /* set if user set shared lock */
-   bool m_shstore_register;           /* set if register key set */
-   bool m_shstore_blocked;            /* Set if I am blocked */
    int label_type;                    /* Bacula/ANSI/IBM label types */
    uint32_t drive_index;              /* Autochanger drive index (base 0) */
    POOLMEM *dev_name;                 /* Physical device name */
@@ -275,6 +285,8 @@ public:
    uint32_t num_dvd_parts;            /* number of parts WRITTEN on the DVD */
    /* state ST_FREESPACE_OK is set if free_space is valid */
    uint64_t free_space;               /* current free space on device */
+   uint64_t total_space;              /* current used space on device */
+   uint64_t devno;                    /* device id */
    uint64_t min_free_space;           /* Minimum free disk space */
    int free_space_errno;              /* indicates errno getting freespace */
    bool truncating;                   /* if set, we are currently truncating the DVD */
@@ -320,15 +332,16 @@ public:
    int is_autochanger() const { return capabilities & CAP_AUTOCHANGER; }
    int requires_mount() const { return capabilities & CAP_REQMOUNT; }
    int is_removable() const { return capabilities & CAP_REM; }
-   int is_tape() const { return (dev_type == B_TAPE_DEV ||
+   bool is_tape() const { return (dev_type == B_TAPE_DEV ||
                                  dev_type == B_VTAPE_DEV); }
-   int is_ftp() const { return dev_type == B_FTP_DEV; }
-   int is_file() const { return (dev_type == B_FILE_DEV); }
-   int is_fifo() const { return dev_type == B_FIFO_DEV; }
-   int is_dvd() const  { return dev_type == B_DVD_DEV; }
-   int is_vtl() const  { return dev_type == B_VTL_DEV; }
-   int is_vtape() const  { return dev_type == B_VTAPE_DEV; }
-   int is_open() const { return m_fd >= 0; }
+   bool is_ftp() const { return dev_type == B_FTP_DEV; }
+   bool is_file() const { return (dev_type == B_FILE_DEV); }
+   bool is_null() const { return dev_type == B_NULL_DEV; }
+   bool is_fifo() const { return dev_type == B_FIFO_DEV; }
+   bool is_dvd() const  { return dev_type == B_DVD_DEV; }
+   bool is_vtl() const  { return dev_type == B_VTL_DEV; }
+   bool is_vtape() const  { return dev_type == B_VTAPE_DEV; }
+   bool is_open() const { return m_fd >= 0; }
    int is_offline() const { return state & ST_OFFLINE; }
    int is_labeled() const { return state & ST_LABEL; }
    int is_mounted() const { return state & ST_MOUNTED; }
@@ -382,6 +395,8 @@ public:
    void set_part_spooled(int val) { if (val) state |= ST_PART_SPOOLED; \
           else state &= ~ST_PART_SPOOLED;
    };
+   void get_freespace(uint64_t *freeval, uint64_t *totalval); /* in dev.c */
+   void set_freespace(uint64_t freeval, uint64_t totalval, int errnoval, bool valid); /* in dev.c */
    bool is_volume_to_unload() const { \
       return m_unload && strcmp(VolHdr.VolumeName, UnloadVolName) == 0; };
    void set_load() { m_load = true; };
@@ -422,6 +437,7 @@ public:
    void clearVolCatBytes() {
       VolCatInfo.VolCatBytes = 0;
       VolCatInfo.VolCatAmetaBytes = 0;
+      VolCatInfo.VolCatAdataBytes = 0;
    };
 
    char *getVolCatName() { return VolCatInfo.VolCatName; };
@@ -438,8 +454,6 @@ public:
    void term(void);              /* in dev.c */
    ssize_t read(void *buf, size_t len); /* in dev.c */
    ssize_t write(const void *buf, size_t len);  /* in dev.c */
-   bool mount(int timeout);      /* in dev.c */
-   bool unmount(int timeout);    /* in dev.c */
    void edit_mount_codes(POOL_MEM &omsg, const char *imsg); /* in dev.c */
    bool offline_or_rewind();     /* in dev.c */
    bool eod(DCR *dcr);           /* in dev.c */
@@ -451,6 +465,8 @@ public:
    void clrerror(int func);      /* in dev.c */
    void set_slot(int32_t slot);  /* in dev.c */
    void clear_slot();            /* in dev.c */
+   bool update_freespace();              /* in dev.c */
+   bool get_os_device_freespace();       /* in dev.c */
    void notify_newvol_in_attached_dcrs(const char *VolumeName); /* in dev.c */
    void notify_newfile_in_attached_dcrs();/* in dev.c */
    void attach_dcr_to_dev(DCR *dcr);      /* in acquire.c */
@@ -461,11 +477,14 @@ public:
    void updateVolCatWrites(uint32_t);     /* in dev.c */
    void updateVolCatReads(uint32_t);      /* in dev.c */
    void updateVolCatReadBytes(uint64_t);  /* in dev.c */
+   void updateVolCatPadding(uint64_t);    /* in dev.c */
+   void updateVolCatHoleBytes(uint64_t);  /* in dev.c */
 
    uint32_t get_file();                   /* in dev.c */
    uint32_t get_block_num();              /* in dev.c */
 
    int fd() const { return m_fd; };
+   bool mount_file(int mount, int dottimout);
 
    /* Virtual functions that can be overridden */
    virtual int d_ioctl(int fd, ioctl_req_t request, char *mt_com=NULL);
@@ -478,8 +497,11 @@ public:
    virtual bool rewind(DCR *dcr);
    virtual bool truncate(DCR *dcr);
    virtual void open_device(DCR *dcr, int omode);
-   virtual void close();                 /* in dev.c */
+   virtual bool close();                  /* in dev.c */
    virtual bool open(DCR *dcr, int mode); /* in dev.c */
+   virtual bool mount(int timeout);
+   virtual bool unmount(int timeout);
+
 
    /* These could probably be made tape_dev only */
    virtual bool bsf(int count) { return true; }
@@ -488,7 +510,6 @@ public:
    virtual void lock_door() { return; }
    virtual void unlock_door() { return; }
    virtual bool reposition(DCR *dcr, uint32_t rfile, uint32_t rblock);
-
 
    /*
     * Locking and blocking calls
@@ -527,6 +548,7 @@ public:
    int init_read_acquire_mutex();         /* in lock.c */
    int init_volcat_mutex();               /* in lock.c */
    int init_dcrs_mutex();                 /* in lock.c */
+   int init_freespace_mutex();            /* in lock.c */
    void set_mutex_priorities();           /* in lock.c */
    int next_vol_timedwait(const struct timespec *timeout);  /* in lock.c */
    void dblock(int why);                  /* in lock.c */
@@ -536,17 +558,17 @@ public:
    int blocked() const { return m_blocked; };
    bool is_blocked() const { return m_blocked != BST_NOT_BLOCKED; };
    const char *print_blocked() const;     /* in dev.c */
-   void open_tape_device(DCR *dcr, int omode);    /* in dev.c */
-   void open_file_device(DCR *dcr, int omode);    /* in dev.c */
+   void open_tape_device(DCR *dcr, int omode);   /* in dev.c */
+   void open_file_device(DCR *dcr, int omode);   /* in dev.c */
 
 private:
-   bool do_tape_mount(int mount, int dotimeout);  /* in dev.c */
-   bool do_file_mount(int mount, int dotimeout);  /* in dev.c */
-   void set_mode(int omode);                      /* in dev.c */
+   bool mount_tape(int mount, int dotimeout); /* in dev.c */
+protected:
+   void set_mode(int omode);                     /* in dev.c */
 };
 inline const char *DEVICE::strerror() const { return errmsg; }
 inline const char *DEVICE::archive_name() const { return dev_name; }
-inline const char *DEVICE::print_name() const { return prt_name; }
+inline const char *DEVICE::print_name() const { return NPRT(prt_name); }
 
 
 #define CHECK_BLOCK_NUMBERS    true
@@ -579,6 +601,7 @@ public:
    DEVICE *ameta_dev;                 /* pointer to ameta_dev */
    DEVRES *device;                    /* pointer to device resource */
    DEV_BLOCK *block;                  /* pointer to block */
+   DEV_BLOCK *ameta_block;            /* meta data block */
    DEV_RECORD *rec;                   /* pointer to record */
    pthread_t tid;                     /* Thread running this dcr */
    int spool_fd;                      /* fd if spooling */
@@ -593,6 +616,7 @@ public:
    bool any_volume;                   /* Any OK for dir_find_next... */
    bool attached_to_dev;              /* set when attached to dev */
    bool keep_dcr;                     /* do not free dcr in release_dcr */
+   bool no_mount_request;             /* do not submit any mount request */
    uint32_t VolFirstIndex;            /* First file index this Volume */
    uint32_t VolLastIndex;             /* Last file index this Volume */
    uint32_t FileIndex;                /* Current File Index */
@@ -613,7 +637,9 @@ public:
    VOLUME_CAT_INFO VolCatInfo;        /* Catalog info for desired volume */
 
    /* Methods */
+   void set_no_mount_request() { no_mount_request = true; }; /* Just fail in case of mount request */
    void set_dev(DEVICE *ndev) { dev = ndev; ameta_dev = ndev; };
+   void set_ameta() { dev = ameta_dev; block = ameta_block; };
    void set_dev_locked() { m_dev_locked = true; };
    void set_writing() { m_writing = true; };
    void clear_writing() { m_writing = false; };
@@ -634,6 +660,7 @@ public:
      setVolCatInfo(false);
    };
    char *getVolCatName() { return VolCatInfo.VolCatName; };
+   bool write_final_block_to_device() { return write_block_to_device(true); };
 
    /* Methods in autochanger.c */
    bool is_virtual_autochanger();
@@ -679,7 +706,7 @@ public:
 
    /* Methods in block.c */
    void free_blocks();
-   bool write_block_to_device();
+   bool write_block_to_device(bool final=false);
    bool write_block_to_dev();
    bool read_block_from_device(bool check_block_numbers);
    bool read_block_from_dev(bool check_block_numbers);
@@ -703,4 +730,4 @@ public:
 #endif
 #endif
 
-#endif
+#endif /* __DEV_H */

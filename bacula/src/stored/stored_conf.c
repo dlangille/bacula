@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  * Configuration file parser for Bacula Storage daemon
@@ -27,7 +31,6 @@ int32_t r_first = R_FIRST;
 int32_t r_last  = R_LAST;
 static RES *sres_head[R_LAST - R_FIRST + 1];
 RES **res_head = sres_head;
-
 
 /* We build the current resource here statically,
  * then move it to dynamic memory */
@@ -45,122 +48,131 @@ int32_t res_all_size = sizeof(res_all);
  * information.
  */
 
-/* Globals for the Storage daemon. */
+/*
+ * Globals for the Storage daemon.
+ *  name         handler      value       code   flags  default_value
+ */
 static RES_ITEM store_items[] = {
-   {"name",                  store_name, ITEM(res_store.hdr.name),   0, ITEM_REQUIRED, 0},
-   {"description",           store_str,  ITEM(res_dir.hdr.desc),     0, 0, 0},
-   {"sdaddress",             store_addresses_address,  ITEM(res_store.sdaddrs),     0, ITEM_DEFAULT, 9103},
-   {"sdaddresses",           store_addresses,  ITEM(res_store.sdaddrs), 0, ITEM_DEFAULT, 9103},
-   {"messages",              store_res,  ITEM(res_store.messages),   R_MSGS, 0, 0},
-   {"sdport",                store_addresses_port,  ITEM(res_store.sdaddrs),     0, ITEM_DEFAULT, 9103},
-   {"workingdirectory",      store_dir,  ITEM(res_store.working_directory), 0, ITEM_REQUIRED, 0},
-   {"piddirectory",          store_dir,  ITEM(res_store.pid_directory), 0, ITEM_REQUIRED, 0},
-   {"subsysdirectory",       store_dir,  ITEM(res_store.subsys_directory), 0, 0, 0},
-   {"plugindirectory",       store_dir,  ITEM(res_store.plugin_directory), 0, 0, 0},
-   {"scriptsdirectory",      store_dir,  ITEM(res_store.scripts_directory), 0, 0, 0},
-   {"maximumconcurrentjobs", store_pint32, ITEM(res_store.max_concurrent_jobs), 0, ITEM_DEFAULT, 20},
-   {"heartbeatinterval",     store_time, ITEM(res_store.heartbeat_interval), 0, ITEM_DEFAULT, 5 * 60},
-   {"tlsauthenticate",       store_bool,    ITEM(res_store.tls_authenticate), 0, 0, 0},
-   {"tlsenable",             store_bool,    ITEM(res_store.tls_enable), 0, 0, 0},
-   {"tlsrequire",            store_bool,    ITEM(res_store.tls_require), 0, 0, 0},
-   {"tlsverifypeer",         store_bool,    ITEM(res_store.tls_verify_peer), 1, ITEM_DEFAULT, 1},
-   {"tlscacertificatefile",  store_dir,       ITEM(res_store.tls_ca_certfile), 0, 0, 0},
-   {"tlscacertificatedir",   store_dir,       ITEM(res_store.tls_ca_certdir), 0, 0, 0},
-   {"tlscertificate",        store_dir,       ITEM(res_store.tls_certfile), 0, 0, 0},
-   {"tlskey",                store_dir,       ITEM(res_store.tls_keyfile), 0, 0, 0},
-   {"tlsdhfile",             store_dir,       ITEM(res_store.tls_dhfile), 0, 0, 0},
-   {"tlsallowedcn",          store_alist_str, ITEM(res_store.tls_allowed_cns), 0, 0, 0},
-   {"clientconnectwait",     store_time,  ITEM(res_store.client_wait), 0, ITEM_DEFAULT, 30 * 60},
-   {"verid",                 store_str,       ITEM(res_store.verid), 0, 0, 0},
+   {"Name",                  store_name, ITEM(res_store.hdr.name),   0, ITEM_REQUIRED, 0},
+   {"Description",           store_str,  ITEM(res_dir.hdr.desc),     0, 0, 0},
+   {"SdAddress",             store_addresses_address,  ITEM(res_store.sdaddrs),     0, ITEM_DEFAULT, 9103},
+   {"SdAddresses",           store_addresses,  ITEM(res_store.sdaddrs), 0, ITEM_DEFAULT, 9103},
+   {"Messages",              store_res,  ITEM(res_store.messages),   R_MSGS, 0, 0},
+   {"SdPort",                store_addresses_port,  ITEM(res_store.sdaddrs),     0, ITEM_DEFAULT, 9103},
+   {"WorkingDirectory",      store_dir,  ITEM(res_store.working_directory), 0, ITEM_REQUIRED, 0},
+   {"PidDirectory",          store_dir,  ITEM(res_store.pid_directory), 0, ITEM_REQUIRED, 0},
+   {"SubsysDirectory",       store_dir,  ITEM(res_store.subsys_directory), 0, 0, 0},
+   {"PluginDirectory",       store_dir,  ITEM(res_store.plugin_directory), 0, 0, 0},
+   {"ScriptsDirectory",      store_dir,  ITEM(res_store.scripts_directory), 0, 0, 0},
+   {"MaximumConcurrentJobs", store_pint32, ITEM(res_store.max_concurrent_jobs), 0, ITEM_DEFAULT, 20},
+   {"ClientConnectTimeout",  store_time, ITEM(res_store.ClientConnectTimeout), 0, ITEM_DEFAULT, 60 * 30},
+   {"HeartbeatInterval",     store_time, ITEM(res_store.heartbeat_interval), 0, ITEM_DEFAULT, 5 * 60},
+   {"TlsAuthenticate",       store_bool,    ITEM(res_store.tls_authenticate), 0, 0, 0},
+   {"TlsEnable",             store_bool,    ITEM(res_store.tls_enable), 0, 0, 0},
+   {"TlsRequire",            store_bool,    ITEM(res_store.tls_require), 0, 0, 0},
+   {"TlsVerifyPeer",         store_bool,    ITEM(res_store.tls_verify_peer), 1, ITEM_DEFAULT, 1},
+   {"TlsCaCertificateFile",  store_dir,       ITEM(res_store.tls_ca_certfile), 0, 0, 0},
+   {"TlsCaCertificateDir",   store_dir,       ITEM(res_store.tls_ca_certdir), 0, 0, 0},
+   {"TlsCertificate",        store_dir,       ITEM(res_store.tls_certfile), 0, 0, 0},
+   {"TlsKey",                store_dir,       ITEM(res_store.tls_keyfile), 0, 0, 0},
+   {"TlsDhFile",             store_dir,       ITEM(res_store.tls_dhfile), 0, 0, 0},
+   {"TlsAllowedCn",          store_alist_str, ITEM(res_store.tls_allowed_cns), 0, 0, 0},
+   {"ClientConnectWait",     store_time,  ITEM(res_store.client_wait), 0, ITEM_DEFAULT, 30 * 60},
+   {"VerId",                 store_str,   ITEM(res_store.verid), 0, 0, 0},
    {NULL, NULL, {0}, 0, 0, 0}
 };
 
 
 /* Directors that can speak to the Storage daemon */
 static RES_ITEM dir_items[] = {
-   {"name",        store_name,     ITEM(res_dir.hdr.name),   0, ITEM_REQUIRED, 0},
-   {"description", store_str,      ITEM(res_dir.hdr.desc),   0, 0, 0},
-   {"password",    store_password, ITEM(res_dir.password),   0, ITEM_REQUIRED, 0},
-   {"monitor",     store_bool,     ITEM(res_dir.monitor),    0, 0, 0},
-   {"tlsauthenticate",      store_bool,    ITEM(res_dir.tls_authenticate), 0, 0, 0},
-   {"tlsenable",            store_bool,    ITEM(res_dir.tls_enable), 0, 0, 0},
-   {"tlsrequire",           store_bool,    ITEM(res_dir.tls_require), 0, 0, 0},
-   {"tlsverifypeer",        store_bool,    ITEM(res_dir.tls_verify_peer), 1, ITEM_DEFAULT, 1},
-   {"tlscacertificatefile", store_dir,       ITEM(res_dir.tls_ca_certfile), 0, 0, 0},
-   {"tlscacertificatedir",  store_dir,       ITEM(res_dir.tls_ca_certdir), 0, 0, 0},
-   {"tlscertificate",       store_dir,       ITEM(res_dir.tls_certfile), 0, 0, 0},
-   {"tlskey",               store_dir,       ITEM(res_dir.tls_keyfile), 0, 0, 0},
-   {"tlsdhfile",            store_dir,       ITEM(res_dir.tls_dhfile), 0, 0, 0},
-   {"tlsallowedcn",         store_alist_str, ITEM(res_dir.tls_allowed_cns), 0, 0, 0},
+   {"Name",        store_name,     ITEM(res_dir.hdr.name),   0, ITEM_REQUIRED, 0},
+   {"Description", store_str,      ITEM(res_dir.hdr.desc),   0, 0, 0},
+   {"Password",    store_password, ITEM(res_dir.password),   0, ITEM_REQUIRED, 0},
+   {"Monitor",     store_bool,     ITEM(res_dir.monitor),    0, 0, 0},
+   {"TlsAuthenticate",      store_bool,    ITEM(res_dir.tls_authenticate), 0, 0, 0},
+   {"TlsEnable",            store_bool,    ITEM(res_dir.tls_enable), 0, 0, 0},
+   {"TlsRequire",           store_bool,    ITEM(res_dir.tls_require), 0, 0, 0},
+   {"TlsVerifyPeer",        store_bool,    ITEM(res_dir.tls_verify_peer), 1, ITEM_DEFAULT, 1},
+   {"TlsCaCertificateFile", store_dir,       ITEM(res_dir.tls_ca_certfile), 0, 0, 0},
+   {"TlsCaCertificateDir",  store_dir,       ITEM(res_dir.tls_ca_certdir), 0, 0, 0},
+   {"TlsCertificate",       store_dir,       ITEM(res_dir.tls_certfile), 0, 0, 0},
+   {"TlsKey",               store_dir,       ITEM(res_dir.tls_keyfile), 0, 0, 0},
+   {"TlsDhFile",            store_dir,       ITEM(res_dir.tls_dhfile), 0, 0, 0},
+   {"TlsAllowedCn",         store_alist_str, ITEM(res_dir.tls_allowed_cns), 0, 0, 0},
    {NULL, NULL, {0}, 0, 0, 0}
 };
 
 /* Device definition */
 static RES_ITEM dev_items[] = {
-   {"name",                  store_name,   ITEM(res_dev.hdr.name),    0, ITEM_REQUIRED, 0},
-   {"description",           store_str,    ITEM(res_dir.hdr.desc),    0, 0, 0},
-   {"mediatype",             store_strname,ITEM(res_dev.media_type),  0, ITEM_REQUIRED, 0},
-   {"devicetype",            store_devtype,ITEM(res_dev.dev_type),    0, 0, 0},
-   {"archivedevice",         store_strname,ITEM(res_dev.device_name), 0, ITEM_REQUIRED, 0},
-   {"hardwareendoffile",     store_bit,  ITEM(res_dev.cap_bits), CAP_EOF,  ITEM_DEFAULT, 1},
-   {"hardwareendofmedium",   store_bit,  ITEM(res_dev.cap_bits), CAP_EOM,  ITEM_DEFAULT, 1},
-   {"backwardspacerecord",   store_bit,  ITEM(res_dev.cap_bits), CAP_BSR,  ITEM_DEFAULT, 1},
-   {"backwardspacefile",     store_bit,  ITEM(res_dev.cap_bits), CAP_BSF,  ITEM_DEFAULT, 1},
-   {"bsfateom",              store_bit,  ITEM(res_dev.cap_bits), CAP_BSFATEOM, ITEM_DEFAULT, 0},
-   {"twoeof",                store_bit,  ITEM(res_dev.cap_bits), CAP_TWOEOF, ITEM_DEFAULT, 0},
-   {"forwardspacerecord",    store_bit,  ITEM(res_dev.cap_bits), CAP_FSR,  ITEM_DEFAULT, 1},
-   {"forwardspacefile",      store_bit,  ITEM(res_dev.cap_bits), CAP_FSF,  ITEM_DEFAULT, 1},
-   {"fastforwardspacefile",  store_bit,  ITEM(res_dev.cap_bits), CAP_FASTFSF, ITEM_DEFAULT, 1},
-   {"removablemedia",        store_bit,  ITEM(res_dev.cap_bits), CAP_REM,  ITEM_DEFAULT, 1},
-   {"randomaccess",          store_bit,  ITEM(res_dev.cap_bits), CAP_RACCESS, 0, 0},
-   {"automaticmount",        store_bit,  ITEM(res_dev.cap_bits), CAP_AUTOMOUNT,  ITEM_DEFAULT, 0},
-   {"labelmedia",            store_bit,  ITEM(res_dev.cap_bits), CAP_LABEL,      ITEM_DEFAULT, 0},
-   {"alwaysopen",            store_bit,  ITEM(res_dev.cap_bits), CAP_ALWAYSOPEN, ITEM_DEFAULT, 1},
-   {"autochanger",           store_bit,  ITEM(res_dev.cap_bits), CAP_AUTOCHANGER, ITEM_DEFAULT, 0},
-   {"closeonpoll",           store_bit,  ITEM(res_dev.cap_bits), CAP_CLOSEONPOLL, ITEM_DEFAULT, 0},
-   {"blockpositioning",      store_bit,  ITEM(res_dev.cap_bits), CAP_POSITIONBLOCKS, ITEM_DEFAULT, 1},
-   {"usemtiocget",           store_bit,  ITEM(res_dev.cap_bits), CAP_MTIOCGET, ITEM_DEFAULT, 1},
-   {"checklabels",           store_bit,  ITEM(res_dev.cap_bits), CAP_CHECKLABELS, ITEM_DEFAULT, 0},
-   {"requiresmount",         store_bit,  ITEM(res_dev.cap_bits), CAP_REQMOUNT, ITEM_DEFAULT, 0},
-   {"offlineonunmount",      store_bit,  ITEM(res_dev.cap_bits), CAP_OFFLINEUNMOUNT, ITEM_DEFAULT, 0},
-   {"blockchecksum",         store_bit,  ITEM(res_dev.cap_bits), CAP_BLOCKCHECKSUM, ITEM_DEFAULT, 1},
-   {"autoselect",            store_bool, ITEM(res_dev.autoselect), 1, ITEM_DEFAULT, 1},
-   {"readonly",              store_bool, ITEM(res_dev.read_only), 1, ITEM_DEFAULT, 0},
-   {"changerdevice",         store_strname,ITEM(res_dev.changer_name), 0, 0, 0},
-   {"changercommand",        store_strname,ITEM(res_dev.changer_command), 0, 0, 0},
-   {"alertcommand",          store_strname,ITEM(res_dev.alert_command), 0, 0, 0},
-   {"maximumchangerwait",    store_time,   ITEM(res_dev.max_changer_wait), 0, ITEM_DEFAULT, 5 * 60},
-   {"maximumopenwait",       store_time,   ITEM(res_dev.max_open_wait), 0, ITEM_DEFAULT, 5 * 60},
-   {"maximumnetworkbuffersize", store_pint32, ITEM(res_dev.max_network_buffer_size), 0, 0, 0},
-   {"volumepollinterval",    store_time,   ITEM(res_dev.vol_poll_interval), 0, ITEM_DEFAULT, 5 * 60},
-   {"maximumrewindwait",     store_time,   ITEM(res_dev.max_rewind_wait), 0, ITEM_DEFAULT, 5 * 60},
-   {"minimumblocksize",      store_pint32,   ITEM(res_dev.min_block_size), 0, 0, 0},
-   {"maximumblocksize",      store_maxblocksize, ITEM(res_dev.max_block_size), 0, 0, 0},
-   {"maximumvolumesize",     store_size64,   ITEM(res_dev.max_volume_size), 0, 0, 0},
-   {"maximumfilesize",       store_size64,   ITEM(res_dev.max_file_size), 0, ITEM_DEFAULT, 1000000000},
-   {"volumecapacity",        store_size64,   ITEM(res_dev.volume_capacity), 0, 0, 0},
-   {"maximumconcurrentjobs", store_pint32, ITEM(res_dev.max_concurrent_jobs), 0, 0, 0},
-   {"spooldirectory",        store_dir,    ITEM(res_dev.spool_directory), 0, 0, 0},
-   {"maximumspoolsize",      store_size64,   ITEM(res_dev.max_spool_size), 0, 0, 0},
-   {"maximumjobspoolsize",   store_size64,   ITEM(res_dev.max_job_spool_size), 0, 0, 0},
-   {"driveindex",            store_pint32,   ITEM(res_dev.drive_index), 0, 0, 0},
-   {"maximumpartsize",       store_size64,   ITEM(res_dev.max_part_size), 0, ITEM_DEFAULT, 0},
-   {"mountpoint",            store_strname,ITEM(res_dev.mount_point), 0, 0, 0},
-   {"mountcommand",          store_strname,ITEM(res_dev.mount_command), 0, 0, 0},
-   {"unmountcommand",        store_strname,ITEM(res_dev.unmount_command), 0, 0, 0},
-   {"writepartcommand",      store_strname,ITEM(res_dev.write_part_command), 0, 0, 0},
-   {"freespacecommand",      store_strname,ITEM(res_dev.free_space_command), 0, 0, 0},
-   {"labeltype",             store_label,  ITEM(res_dev.label_type), 0, 0, 0},
+   {"Name",                  store_name,   ITEM(res_dev.hdr.name),    0, ITEM_REQUIRED, 0},
+   {"Description",           store_str,    ITEM(res_dir.hdr.desc),    0, 0, 0},
+   {"MediaType",             store_strname,ITEM(res_dev.media_type),  0, ITEM_REQUIRED, 0},
+   {"DeviceType",            store_devtype,ITEM(res_dev.dev_type),    0, 0, 0},
+   {"ArchiveDevice",         store_strname,ITEM(res_dev.device_name), 0, ITEM_REQUIRED, 0},
+   {"HardwareEndOfFile",     store_bit,  ITEM(res_dev.cap_bits), CAP_EOF,  ITEM_DEFAULT, 1},
+   {"HardwareEndOfMedium",   store_bit,  ITEM(res_dev.cap_bits), CAP_EOM,  ITEM_DEFAULT, 1},
+   {"BackwardSpaceRecord",   store_bit,  ITEM(res_dev.cap_bits), CAP_BSR,  ITEM_DEFAULT, 1},
+   {"BackwardSpaceFile",     store_bit,  ITEM(res_dev.cap_bits), CAP_BSF,  ITEM_DEFAULT, 1},
+   {"BsfAtEom",              store_bit,  ITEM(res_dev.cap_bits), CAP_BSFATEOM, ITEM_DEFAULT, 0},
+   {"TwoEof",                store_bit,  ITEM(res_dev.cap_bits), CAP_TWOEOF, ITEM_DEFAULT, 0},
+   {"ForwardSpaceRecord",    store_bit,  ITEM(res_dev.cap_bits), CAP_FSR,  ITEM_DEFAULT, 1},
+   {"ForwardSpaceFile",      store_bit,  ITEM(res_dev.cap_bits), CAP_FSF,  ITEM_DEFAULT, 1},
+   {"FastForwardSpaceFile",  store_bit,  ITEM(res_dev.cap_bits), CAP_FASTFSF, ITEM_DEFAULT, 1},
+   {"RemovableMedia",        store_bit,  ITEM(res_dev.cap_bits), CAP_REM,  ITEM_DEFAULT, 1},
+   {"RandomAccess",          store_bit,  ITEM(res_dev.cap_bits), CAP_RACCESS, 0, 0},
+   {"AutomaticMount",        store_bit,  ITEM(res_dev.cap_bits), CAP_AUTOMOUNT,  ITEM_DEFAULT, 0},
+   {"LabelMedia",            store_bit,  ITEM(res_dev.cap_bits), CAP_LABEL,      ITEM_DEFAULT, 0},
+   {"AlwaysOpen",            store_bit,  ITEM(res_dev.cap_bits), CAP_ALWAYSOPEN, ITEM_DEFAULT, 1},
+   {"Autochanger",           store_bit,  ITEM(res_dev.cap_bits), CAP_AUTOCHANGER, ITEM_DEFAULT, 0},
+   {"CloseOnPoll",           store_bit,  ITEM(res_dev.cap_bits), CAP_CLOSEONPOLL, ITEM_DEFAULT, 0},
+   {"BlockPositioning",      store_bit,  ITEM(res_dev.cap_bits), CAP_POSITIONBLOCKS, ITEM_DEFAULT, 1},
+   {"UseMtiocGet",           store_bit,  ITEM(res_dev.cap_bits), CAP_MTIOCGET, ITEM_DEFAULT, 1},
+   {"CheckLabels",           store_bit,  ITEM(res_dev.cap_bits), CAP_CHECKLABELS, ITEM_DEFAULT, 0},
+   {"RequiresMount",         store_bit,  ITEM(res_dev.cap_bits), CAP_REQMOUNT, ITEM_DEFAULT, 0},
+   {"OfflineOnUnmount",      store_bit,  ITEM(res_dev.cap_bits), CAP_OFFLINEUNMOUNT, ITEM_DEFAULT, 0},
+   {"BlockChecksum",         store_bit,  ITEM(res_dev.cap_bits), CAP_BLOCKCHECKSUM, ITEM_DEFAULT, 1},
+   {"Enabled",               store_bool, ITEM(res_dev.enabled), 0, ITEM_DEFAULT, 1},
+   {"AutoSelect",            store_bool, ITEM(res_dev.autoselect), 0, ITEM_DEFAULT, 1},
+   {"ReadOnly",              store_bool, ITEM(res_dev.read_only), 0, ITEM_DEFAULT, 0},
+   {"ChangerDevice",         store_strname,ITEM(res_dev.changer_name), 0, 0, 0},
+   {"ControlDevice",         store_strname,ITEM(res_dev.control_name), 0, 0, 0},
+   {"ChangerCommand",        store_strname,ITEM(res_dev.changer_command), 0, 0, 0},
+   {"AlertCommand",          store_strname,ITEM(res_dev.alert_command), 0, 0, 0},
+   {"MaximumChangerWait",    store_time,   ITEM(res_dev.max_changer_wait), 0, ITEM_DEFAULT, 5 * 60},
+   {"MaximumOpenWait",       store_time,   ITEM(res_dev.max_open_wait), 0, ITEM_DEFAULT, 5 * 60},
+   {"MaximumNetworkBufferSize", store_pint32, ITEM(res_dev.max_network_buffer_size), 0, 0, 0},
+   {"VolumePollInterval",    store_time,   ITEM(res_dev.vol_poll_interval), 0, ITEM_DEFAULT, 5 * 60},
+   {"MaximumRewindWait",     store_time,   ITEM(res_dev.max_rewind_wait), 0, ITEM_DEFAULT, 5 * 60},
+   {"MinimumBlockSize",      store_size32, ITEM(res_dev.min_block_size), 0, 0, 0},
+   {"MaximumBlockSize",      store_maxblocksize, ITEM(res_dev.max_block_size), 0, 0, 0},
+   {"PaddingSize",           store_size32, ITEM(res_dev.padding_size), 0, ITEM_DEFAULT, 4096},
+   {"FileAlignment",         store_size32, ITEM(res_dev.file_alignment), 0, ITEM_DEFAULT, 4096},
+   {"MaximumVolumeSize",     store_size64, ITEM(res_dev.max_volume_size), 0, 0, 0},
+   {"MaximumFileSize",       store_size64, ITEM(res_dev.max_file_size), 0, ITEM_DEFAULT, 1000000000},
+   {"VolumeCapacity",        store_size64, ITEM(res_dev.volume_capacity), 0, 0, 0},
+   {"MinimumFeeSpace",       store_size64, ITEM(res_dev.min_free_space), 0, ITEM_DEFAULT, 5000000},
+   {"MaximumConcurrentJobs", store_pint32, ITEM(res_dev.max_concurrent_jobs), 0, 0, 0},
+   {"SpoolDirectory",        store_dir,    ITEM(res_dev.spool_directory), 0, 0, 0},
+   {"MaximumSpoolSize",      store_size64, ITEM(res_dev.max_spool_size), 0, 0, 0},
+   {"MaximumJobSpoolSize",   store_size64, ITEM(res_dev.max_job_spool_size), 0, 0, 0},
+   {"DriveIndex",            store_pint32, ITEM(res_dev.drive_index), 0, 0, 0},
+   {"MaximumPartSize",       store_size64, ITEM(res_dev.max_part_size), 0, ITEM_DEFAULT, 0},
+   {"MountPoint",            store_strname,ITEM(res_dev.mount_point), 0, 0, 0},
+   {"MountCommand",          store_strname,ITEM(res_dev.mount_command), 0, 0, 0},
+   {"UnmountCommand",        store_strname,ITEM(res_dev.unmount_command), 0, 0, 0},
+   {"WritePartCommand",      store_strname,ITEM(res_dev.write_part_command), 0, 0, 0},
+   {"FreeSpaceCommand",      store_strname,ITEM(res_dev.free_space_command), 0, 0, 0},
+   {"LabelType",             store_label,  ITEM(res_dev.label_type), 0, 0, 0},
    {NULL, NULL, {0}, 0, 0, 0}
 };
 
 /* Autochanger definition */
 static RES_ITEM changer_items[] = {
-   {"name",              store_name,      ITEM(res_changer.hdr.name),        0, ITEM_REQUIRED, 0},
-   {"description",       store_str,       ITEM(res_changer.hdr.desc),        0, 0, 0},
-   {"device",            store_alist_res, ITEM(res_changer.device),   R_DEVICE, ITEM_REQUIRED, 0},
-   {"changerdevice",     store_strname,   ITEM(res_changer.changer_name),    0, ITEM_REQUIRED, 0},
-   {"changercommand",    store_strname,   ITEM(res_changer.changer_command), 0, ITEM_REQUIRED, 0},
+   {"Name",              store_name,      ITEM(res_changer.hdr.name),        0, ITEM_REQUIRED, 0},
+   {"Description",       store_str,       ITEM(res_changer.hdr.desc),        0, 0, 0},
+   {"Device",            store_alist_res, ITEM(res_changer.device),   R_DEVICE, ITEM_REQUIRED, 0},
+   {"ChangerDevice",     store_strname,   ITEM(res_changer.changer_name),    0, ITEM_REQUIRED, 0},
+   {"ChangerCommand",    store_strname,   ITEM(res_changer.changer_command), 0, ITEM_REQUIRED, 0},
    {NULL, NULL, {0}, 0, 0, 0}
 };
 
@@ -174,11 +186,11 @@ extern RES_ITEM msgs_items[];
 
 /* This is the master resource definition */
 RES_TABLE resources[] = {
-   {"director",      dir_items,     R_DIRECTOR},
-   {"storage",       store_items,   R_STORAGE},
-   {"device",        dev_items,     R_DEVICE},
-   {"messages",      msgs_items,    R_MSGS},
-   {"autochanger",   changer_items, R_AUTOCHANGER},
+   {"Director",      dir_items,     R_DIRECTOR},
+   {"Storage",       store_items,   R_STORAGE},
+   {"Device",        dev_items,     R_DEVICE},
+   {"Messages",      msgs_items,    R_MSGS},
+   {"Autochanger",   changer_items, R_AUTOCHANGER},
    {NULL,            NULL,          0}
 };
 
@@ -187,18 +199,13 @@ RES_TABLE resources[] = {
  *
  *   device type     device code = token
  */
-struct s_kw {
-   const char *name;
-   int32_t token;
-};
-
-static s_kw dev_types[] = {
-   {"file",          B_FILE_DEV},
-   {"tape",          B_TAPE_DEV},
-   {"dvd",           B_DVD_DEV},
-   {"fifo",          B_FIFO_DEV},
-   {"vtl",           B_VTL_DEV},
-   {"vtape",         B_VTAPE_DEV},
+s_kw dev_types[] = {
+   {"File",          B_FILE_DEV},
+   {"Tape",          B_TAPE_DEV},
+   {"Dvd",           B_DVD_DEV},
+   {"Fifo",          B_FIFO_DEV},
+   {"Vtl",           B_VTL_DEV},
+   {"VTape",         B_VTAPE_DEV},
    {NULL,            0}
 };
 
@@ -240,11 +247,10 @@ void store_maxblocksize(LEX *lc, RES_ITEM *item, int index, int pass)
    }
 }
 
-
 /* Dump contents of resource */
-void dump_resource(int type, RES *reshdr, void sendit(void *sock, const char *fmt, ...), void *sock)
+void dump_resource(int type, RES *rres, void sendit(void *sock, const char *fmt, ...), void *sock)
 {
-   URES *res = (URES *)reshdr;
+   URES *res = (URES *)rres;
    char buf[1000];
    int recurse = 1;
    IPADDR *p;
@@ -286,16 +292,18 @@ void dump_resource(int type, RES *reshdr, void sendit(void *sock, const char *fm
          res->res_dev.hdr.name,
          res->res_dev.media_type, res->res_dev.device_name,
          res->res_dev.label_type);
-      sendit(sock, "        rew_wait=%" lld " min_bs=%d max_bs=%d chgr_wait=%" lld "\n",
+      sendit(sock, "        rew_wait=%lld min_bs=%d max_bs=%d chgr_wait=%lld\n",
          res->res_dev.max_rewind_wait, res->res_dev.min_block_size,
          res->res_dev.max_block_size, res->res_dev.max_changer_wait);
-      sendit(sock, "        max_jobs=%d max_files=%" lld " max_size=%" lld "\n",
+      sendit(sock, "        max_jobs=%d max_files=%lld max_size=%lld\n",
          res->res_dev.max_volume_jobs, res->res_dev.max_volume_files,
          res->res_dev.max_volume_size);
-      sendit(sock, "        max_file_size=%" lld " capacity=%" lld "\n",
+      sendit(sock, "        min_block_size=%lld max_block_size=%lld\n",
+         res->res_dev.min_block_size, res->res_dev.max_block_size);
+      sendit(sock, "        max_file_size=%lld capacity=%lld\n",
          res->res_dev.max_file_size, res->res_dev.volume_capacity);
       sendit(sock, "        spool_directory=%s\n", NPRT(res->res_dev.spool_directory));
-      sendit(sock, "        max_spool_size=%" lld " max_job_spool_size=%" lld "\n",
+      sendit(sock, "        max_spool_size=%lld max_job_spool_size=%lld\n",
          res->res_dev.max_spool_size, res->res_dev.max_job_spool_size);
       if (res->res_dev.changer_res) {
          sendit(sock, "         changer=%p\n", res->res_dev.changer_res);
@@ -371,8 +379,9 @@ void dump_resource(int type, RES *reshdr, void sendit(void *sock, const char *fm
       sendit(sock, _("Warning: unknown resource type %d\n"), type);
       break;
    }
-   if (recurse && res->res_dir.hdr.next)
+   if (recurse && res->res_dir.hdr.next) {
       dump_resource(type, (RES *)res->res_dir.hdr.next, sendit, sock);
+   }
 }
 
 /*
@@ -495,6 +504,9 @@ void free_resource(RES *sres, int type)
       }
       if (res->res_dev.device_name) {
          free(res->res_dev.device_name);
+      }
+      if (res->res_dev.control_name) {
+         free(res->res_dev.control_name);
       }
       if (res->res_dev.changer_name) {
          free(res->res_dev.changer_name);
@@ -678,7 +690,7 @@ void save_resource(int type, RES_ITEM *items, int pass)
             last = next;
             if (strcmp(next->name, res->res_dir.hdr.name) == 0) {
                Emsg2(M_ERROR_TERM, 0,
-                  _("Attempt to define second \"%s\" resource named \"%s\" is not permitted.\n"),
+                  _("Attempt to define second %s resource named \"%s\" is not permitted.\n"),
                   resources[rindex].name, res->res_dir.hdr.name);
             }
          }

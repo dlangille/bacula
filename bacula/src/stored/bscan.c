@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2001-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *
@@ -27,32 +31,31 @@
 #include "stored.h"
 #include "findlib/find.h"
 #include "cats/cats.h"
-#include "cats/sql_glue.h"
 
 extern bool parse_sd_config(CONFIG *config, const char *configfile, int exit_code);
 
 /* Forward referenced functions */
 static void do_scan(void);
 static bool record_cb(DCR *dcr, DEV_RECORD *rec);
-static int  create_file_attributes_record(B_DB *db, JCR *mjcr,
+static int  create_file_attributes_record(BDB *db, JCR *mjcr,
                                char *fname, char *lname, int type,
                                char *ap, DEV_RECORD *rec);
-static int  create_media_record(B_DB *db, MEDIA_DBR *mr, VOLUME_LABEL *vl);
-static bool update_media_record(B_DB *db, MEDIA_DBR *mr);
-static int  create_pool_record(B_DB *db, POOL_DBR *pr);
-static JCR *create_job_record(B_DB *db, JOB_DBR *mr, SESSION_LABEL *label, DEV_RECORD *rec);
-static int  update_job_record(B_DB *db, JOB_DBR *mr, SESSION_LABEL *elabel,
+static int  create_media_record(BDB *db, MEDIA_DBR *mr, VOLUME_LABEL *vl);
+static bool update_media_record(BDB *db, MEDIA_DBR *mr);
+static int  create_pool_record(BDB *db, POOL_DBR *pr);
+static JCR *create_job_record(BDB *db, JOB_DBR *mr, SESSION_LABEL *label, DEV_RECORD *rec);
+static int  update_job_record(BDB *db, JOB_DBR *mr, SESSION_LABEL *elabel,
                               DEV_RECORD *rec);
-static int  create_client_record(B_DB *db, CLIENT_DBR *cr);
-static int  create_fileset_record(B_DB *db, FILESET_DBR *fsr);
-static int  create_jobmedia_record(B_DB *db, JCR *jcr);
+static int  create_client_record(BDB *db, CLIENT_DBR *cr);
+static int  create_fileset_record(BDB *db, FILESET_DBR *fsr);
+static int  create_jobmedia_record(BDB *db, JCR *jcr);
 static JCR *create_jcr(JOB_DBR *jr, DEV_RECORD *rec, uint32_t JobId);
-static int update_digest_record(B_DB *db, char *digest, DEV_RECORD *rec, int type);
+static int update_digest_record(BDB *db, char *digest, DEV_RECORD *rec, int type);
 
 
 /* Local variables */
 static DEVICE *dev = NULL;
-static B_DB *db;
+static BDB *db;
 static JCR *bjcr;                     /* jcr for bscan */
 static BSR *bsr = NULL;
 static MEDIA_DBR mr;
@@ -98,12 +101,11 @@ bool forge_on = false;                /* proceed inspite of I/O errors */
 pthread_mutex_t device_release_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t wait_device_release = PTHREAD_COND_INITIALIZER;
 
-
 static void usage()
 {
    fprintf(stderr, _(
 PROG_COPYRIGHT
-"\nVersion: %s (%s)\n\n"
+"\n%sVersion: %s (%s)\n\n"
 "Usage: bscan [ options ] <bacula-archive>\n"
 "       -b bootstrap      specify a bootstrap file\n"
 "       -c <file>         specify configuration file\n"
@@ -124,7 +126,7 @@ PROG_COPYRIGHT
 "       -V <Volumes>      specify Volume names (separated by |)\n"
 "       -w <dir>          specify working directory (default from conf file)\n"
 "       -?                print this message\n\n"),
-      2001, VERSION, BDATE);
+      2001, "", VERSION, BDATE);
    exit(1);
 }
 
@@ -281,12 +283,18 @@ int main (int argc, char *argv[])
          edit_uint64(currentVolumeSize, ed1));
    }
 
-   if ((db = db_init_database(NULL, db_driver, db_name, db_user, db_password,
-                              db_host, db_port, NULL, false, false)) == NULL) {
-      Emsg0(M_ERROR_TERM, 0, _("Could not init Bacula database\n"));
-   }
-   if (!db_open_database(NULL, db)) {
-      Emsg0(M_ERROR_TERM, 0, db_strerror(db));
+   db = db_init_database(NULL, db_driver, db_name, db_user, db_password,
+                            db_host, db_port, NULL, false, false);
+   if (!db || !db_open_database(NULL, db)) {
+      Pmsg2(000, _("Could not open Catalog \"%s\", database \"%s\".\n"),
+           db_driver, db_name);
+      if (db) {
+         Jmsg(NULL, M_FATAL, 0, _("%s"), db_strerror(db));
+         Pmsg1(000, "%s", db_strerror(db));
+         db_close_database(NULL, db);
+      }
+      Jmsg(NULL, M_ERROR_TERM, 0, _("Could not open Catalog \"%s\", database \"%s\".\n"),
+           db_driver, db_name);
    }
    Dmsg0(200, "Database opened\n");
    if (verbose) {
@@ -421,7 +429,7 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
       bool save_update_db = update_db;
 
       if (verbose > 1) {
-         dump_label_record(dev, rec, 1);
+         dump_label_record(dev, rec, 1, false);
       }
       switch (rec->FileIndex) {
       case PRE_LABEL:
@@ -802,43 +810,43 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
       }
       break;
 
-   case STREAM_UNIX_ACCESS_ACL:          /* Deprecated Standard ACL attributes on UNIX */
-   case STREAM_UNIX_DEFAULT_ACL:         /* Deprecated Default ACL attributes on UNIX */
-   case STREAM_HFSPLUS_ATTRIBUTES:
-   case STREAM_ACL_AIX_TEXT:
-   case STREAM_ACL_DARWIN_ACCESS_ACL:
-   case STREAM_ACL_FREEBSD_DEFAULT_ACL:
-   case STREAM_ACL_FREEBSD_ACCESS_ACL:
-   case STREAM_ACL_HPUX_ACL_ENTRY:
-   case STREAM_ACL_IRIX_DEFAULT_ACL:
-   case STREAM_ACL_IRIX_ACCESS_ACL:
-   case STREAM_ACL_LINUX_DEFAULT_ACL:
-   case STREAM_ACL_LINUX_ACCESS_ACL:
-   case STREAM_ACL_TRU64_DEFAULT_ACL:
-   case STREAM_ACL_TRU64_DEFAULT_DIR_ACL:
-   case STREAM_ACL_TRU64_ACCESS_ACL:
-   case STREAM_ACL_SOLARIS_ACLENT:
-   case STREAM_ACL_SOLARIS_ACE:
-   case STREAM_ACL_AFS_TEXT:
-   case STREAM_ACL_AIX_AIXC:
-   case STREAM_ACL_AIX_NFS4:
-   case STREAM_ACL_FREEBSD_NFS4_ACL:
-   case STREAM_ACL_HURD_DEFAULT_ACL:
-   case STREAM_ACL_HURD_ACCESS_ACL:
+   case  STREAM_UNIX_ACCESS_ACL:          /* Deprecated Standard ACL attributes on UNIX */
+   case  STREAM_UNIX_DEFAULT_ACL:         /* Deprecated Default ACL attributes on UNIX */
+   case  STREAM_HFSPLUS_ATTRIBUTES:
+   case  STREAM_ACL_AIX_TEXT:
+   case  STREAM_ACL_DARWIN_ACCESS:
+   case  STREAM_ACL_FREEBSD_DEFAULT:
+   case  STREAM_ACL_FREEBSD_ACCESS:
+   case  STREAM_ACL_HPUX_ACL_ENTRY:
+   case  STREAM_ACL_IRIX_DEFAULT:
+   case  STREAM_ACL_IRIX_ACCESS:
+   case  STREAM_ACL_LINUX_DEFAULT:
+   case  STREAM_ACL_LINUX_ACCESS:
+   case  STREAM_ACL_TRU64_DEFAULT:
+   case  STREAM_ACL_TRU64_DEFAULT_DIR:
+   case  STREAM_ACL_TRU64_ACCESS:
+   case  STREAM_ACL_SOLARIS_POSIX:
+   case  STREAM_ACL_SOLARIS_NFS4:
+   case  STREAM_ACL_AFS_TEXT:
+   case  STREAM_ACL_AIX_AIXC:
+   case  STREAM_ACL_AIX_NFS4:
+   case  STREAM_ACL_FREEBSD_NFS4:
+   case  STREAM_ACL_HURD_DEFAULT:
+   case  STREAM_ACL_HURD_ACCESS:
       /* Ignore Unix ACL attributes */
       break;
 
-   case STREAM_XATTR_HURD:
-   case STREAM_XATTR_IRIX:
-   case STREAM_XATTR_TRU64:
-   case STREAM_XATTR_AIX:
-   case STREAM_XATTR_OPENBSD:
-   case STREAM_XATTR_SOLARIS_SYS:
-   case STREAM_XATTR_SOLARIS:
-   case STREAM_XATTR_DARWIN:
-   case STREAM_XATTR_FREEBSD:
-   case STREAM_XATTR_LINUX:
-   case STREAM_XATTR_NETBSD:
+   case  STREAM_XATTR_HURD:
+   case  STREAM_XATTR_IRIX:
+   case  STREAM_XATTR_TRU64:
+   case  STREAM_XATTR_AIX:
+   case  STREAM_XATTR_OPENBSD:
+   case  STREAM_XATTR_SOLARIS_SYS:
+   case  STREAM_XATTR_SOLARIS:
+   case  STREAM_XATTR_DARWIN:
+   case  STREAM_XATTR_FREEBSD:
+   case  STREAM_XATTR_LINUX:
+   case  STREAM_XATTR_NETBSD:
       /* Ignore Unix Extended attributes */
       break;
 
@@ -878,7 +886,7 @@ static void bscan_free_jcr(JCR *jcr)
  * We got a File Attributes record on the tape.  Now, lookup the Job
  *   record, and then create the attributes record.
  */
-static int create_file_attributes_record(B_DB *db, JCR *mjcr,
+static int create_file_attributes_record(BDB *db, JCR *mjcr,
                                char *fname, char *lname, int type,
                                char *ap, DEV_RECORD *rec)
 {
@@ -919,7 +927,7 @@ static int create_file_attributes_record(B_DB *db, JCR *mjcr,
 /*
  * For each Volume we see, we create a Medium record
  */
-static int create_media_record(B_DB *db, MEDIA_DBR *mr, VOLUME_LABEL *vl)
+static int create_media_record(BDB *db, MEDIA_DBR *mr, VOLUME_LABEL *vl)
 {
    struct date_time dt;
    struct tm tm;
@@ -973,7 +981,7 @@ static int create_media_record(B_DB *db, MEDIA_DBR *mr, VOLUME_LABEL *vl)
 /*
  * Called at end of media to update it
  */
-static bool update_media_record(B_DB *db, MEDIA_DBR *mr)
+static bool update_media_record(BDB *db, MEDIA_DBR *mr)
 {
    if (!update_db && !update_vol_info) {
       return true;
@@ -992,7 +1000,7 @@ static bool update_media_record(B_DB *db, MEDIA_DBR *mr)
 }
 
 
-static int create_pool_record(B_DB *db, POOL_DBR *pr)
+static int create_pool_record(BDB *db, POOL_DBR *pr)
 {
    pr->NumVols++;
    pr->UseCatalog = 1;
@@ -1016,7 +1024,7 @@ static int create_pool_record(B_DB *db, POOL_DBR *pr)
 /*
  * Called from SOS to create a client for the current Job
  */
-static int create_client_record(B_DB *db, CLIENT_DBR *cr)
+static int create_client_record(BDB *db, CLIENT_DBR *cr)
 {
    /*
     * Note, update_db can temporarily be set false while
@@ -1040,7 +1048,7 @@ static int create_client_record(B_DB *db, CLIENT_DBR *cr)
    return 1;
 }
 
-static int create_fileset_record(B_DB *db, FILESET_DBR *fsr)
+static int create_fileset_record(BDB *db, FILESET_DBR *fsr)
 {
    if (!update_db) {
       return 1;
@@ -1072,7 +1080,7 @@ static int create_fileset_record(B_DB *db, FILESET_DBR *fsr)
  *  the Job record and to update it when the Job actually
  *  begins running.
  */
-static JCR *create_job_record(B_DB *db, JOB_DBR *jr, SESSION_LABEL *label,
+static JCR *create_job_record(BDB *db, JOB_DBR *jr, SESSION_LABEL *label,
                              DEV_RECORD *rec)
 {
    JCR *mjcr;
@@ -1127,7 +1135,7 @@ static JCR *create_job_record(B_DB *db, JOB_DBR *jr, SESSION_LABEL *label,
  * Simulate the database call that updates the Job
  *  at Job termination time.
  */
-static int update_job_record(B_DB *db, JOB_DBR *jr, SESSION_LABEL *elabel,
+static int update_job_record(BDB *db, JOB_DBR *jr, SESSION_LABEL *elabel,
                               DEV_RECORD *rec)
 {
    struct date_time dt;
@@ -1238,7 +1246,7 @@ static int update_job_record(B_DB *db, JOB_DBR *jr, SESSION_LABEL *elabel,
    return 1;
 }
 
-static int create_jobmedia_record(B_DB *db, JCR *mjcr)
+static int create_jobmedia_record(BDB *db, JCR *mjcr)
 {
    JOBMEDIA_DBR jmr;
    DCR *dcr = mjcr->read_dcr;
@@ -1276,7 +1284,7 @@ static int create_jobmedia_record(B_DB *db, JCR *mjcr)
 /*
  * Simulate the database call that updates the MD5/SHA1 record
  */
-static int update_digest_record(B_DB *db, char *digest, DEV_RECORD *rec, int type)
+static int update_digest_record(BDB *db, char *digest, DEV_RECORD *rec, int type)
 {
    JCR *mjcr;
 
@@ -1339,6 +1347,7 @@ static JCR *create_jcr(JOB_DBR *jr, DEV_RECORD *rec, uint32_t JobId)
 bool    dir_find_next_appendable_volume(DCR *dcr) { return 1;}
 bool    dir_update_volume_info(DCR *dcr, bool relabel, bool update_LastWritten) { return 1; }
 bool    dir_create_jobmedia_record(DCR *dcr, bool zero) { return 1; }
+bool    flush_jobmedia_queue(JCR *jcr) { return true; }
 bool    dir_ask_sysop_to_create_appendable_volume(DCR *dcr) { return 1; }
 bool    dir_update_file_attributes(DCR *dcr, DEV_RECORD *rec) { return 1;}
 bool    dir_send_job_status(JCR *jcr) {return 1;}
@@ -1360,9 +1369,6 @@ bool dir_get_volume_info(DCR *dcr, enum get_vol_info_rw writing)
 {
    Dmsg0(100, "Fake dir_get_volume_info\n");
    dcr->setVolCatName(dcr->VolumeName);
-#ifdef BUILD_DVD
-   dcr->VolCatInfo.VolCatParts = find_num_dvd_parts(dcr);
-#endif
-   Dmsg2(500, "Vol=%s num_parts=%d\n", dcr->getVolCatName(), dcr->VolCatInfo.VolCatParts);
+   Dmsg2(500, "Vol=%s VolType=%d\n", dcr->getVolCatName(), dcr->VolCatInfo.VolCatType);
    return 1;
 }

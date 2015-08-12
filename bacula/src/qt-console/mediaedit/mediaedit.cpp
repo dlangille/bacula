@@ -1,24 +1,26 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2007-2009 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
- *   Version $Id$
- *
  *   Dirk Bartley, March 2007
  */
-
+ 
 #include "bat.h"
 #include <QAbstractEventDispatcher>
 #include <QTableWidgetItem>
@@ -26,9 +28,9 @@
 #include "mediaedit.h"
 
 /*
- * A constructor
+ * A constructor 
  */
-MediaEdit::MediaEdit(QTreeWidgetItem *parentWidget, QString &mediaId)
+MediaEdit::MediaEdit(QTreeWidgetItem *parentWidget, QString &mediaId) 
   : Pages()
 {
    setupUi(this);
@@ -55,7 +57,7 @@ MediaEdit::MediaEdit(QTreeWidgetItem *parentWidget, QString &mediaId)
    poolCombo->addItems(m_console->pool_list);
 
    /* The media's Status */
-   QStringList statusList = (QStringList() << "Full" << "Used" << "Append"
+   QStringList statusList = (QStringList() << "Full" << "Used" << "Append" 
        << "Error" << "Purged" << "Recycle" << "Read-Only" << "Cleaning");
    statusCombo->addItems(statusList);
 
@@ -290,7 +292,7 @@ void MediaEdit::useDurationChanged()
 void MediaEdit::setSpins(int value)
 {
    int years, months, days, hours, minutes, seconds, left;
-
+        
    years = abs(value / 31536000);
    left = value - years * 31536000;
    months = abs(left / 2592000);
@@ -364,7 +366,7 @@ void MediaEdit::durationChanged()
    connectSpins();
    if (retentionRadio->isChecked()) {
       int retention;
-      retention = secondsSpin->value() + minutesSpin->value() * 60 +
+      retention = secondsSpin->value() + minutesSpin->value() * 60 + 
          hoursSpin->value() * 3600 + daysSpin->value() * 86400 +
          monthsSpin->value() * 2592000 +
          yearsSpin->value() * 31536000;
@@ -374,7 +376,7 @@ void MediaEdit::durationChanged()
    }
    if (useDurationRadio->isChecked()) {
       int useDuration;
-      useDuration = secondsSpin->value() + minutesSpin->value() * 60 +
+      useDuration = secondsSpin->value() + minutesSpin->value() * 60 + 
          hoursSpin->value() * 3600 + daysSpin->value() * 86400 +
          monthsSpin->value() * 2592000 +
          yearsSpin->value() * 31536000;

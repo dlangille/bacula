@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *
@@ -34,13 +38,14 @@
 const int dbglvl = 400;
 
 /* Commands sent to File daemon */
-static char filesetcmd[]  = "fileset%s\n"; /* set full fileset */
+static char filesetcmd[]  = "fileset%s%s\n"; /* set full fileset */
 static char jobcmd[]      = "JobId=%s Job=%s SDid=%u SDtime=%u Authorization=%s\n";
 /* Note, mtime_only is not used here -- implemented as file option */
 static char levelcmd[]    = "level = %s%s%s mtime_only=%d %s%s\n";
 static char runscript[]   = "Run OnSuccess=%u OnFailure=%u AbortOnError=%u When=%u Command=%s\n";
 static char runbeforenow[]= "RunBeforeNow\n";
 static char bandwidthcmd[] = "setbandwidth=%lld Job=%s\n";
+static char component_info[] = "component_info\n";
 
 /* Responses received from File daemon */
 static char OKinc[]          = "2000 OK include\n";
@@ -49,6 +54,7 @@ static char OKlevel[]        = "2000 OK level\n";
 static char OKRunScript[]    = "2000 OK RunScript\n";
 static char OKRunBeforeNow[] = "2000 OK RunBeforeNow\n";
 static char OKRestoreObject[] = "2000 OK ObjectRestored\n";
+static char OKComponentInfo[] = "2000 OK ComponentInfo\n";
 static char OKBandwidth[]    = "2000 OK Bandwidth\n";
 
 /* Forward referenced functions */
@@ -73,6 +79,12 @@ int connect_to_file_daemon(JCR *jcr, int retry_interval, int max_retry_time,
    BSOCK   *fd = jcr->file_bsock;
    char ed1[30];
    utime_t heart_beat;
+
+   if (!jcr->client) {
+      Jmsg(jcr, M_FATAL, 0, _("File daemon not defined for current Job\n"));
+      Dmsg0(10, "No Client defined for the job.\n");
+      return 0;
+   }
 
    if (jcr->client->heartbeat_interval) {
       heart_beat = jcr->client->heartbeat_interval;
@@ -193,7 +205,7 @@ void get_level_since_time(JCR *jcr, char *since, int since_len)
        * This is probably redundant, but some of the code below
        * uses jcr->stime, so don't remove unless you are sure.
        */
-      if (!db_find_job_start_time(jcr,jcr->db, &jcr->jr, &jcr->stime, jcr->PrevJob)) {
+      if (!db_find_job_start_time(jcr, jcr->db, &jcr->jr, &jcr->stime, jcr->PrevJob)) {
          do_full = true;
       }
       have_full = db_find_last_job_start_time(jcr, jcr->db, &jcr->jr,
@@ -371,8 +383,11 @@ static bool send_fileset(JCR *jcr)
          }
          for (j=0; j<ie->num_opts; j++) {
             FOPTS *fo = ie->opts_list[j];
-
             bool enhanced_wild = false;
+            bool stripped_opts = false;
+            bool compress_disabled = false;
+            char newopts[MAX_FOPTS];
+
             for (k=0; fo->opts[k]!='\0'; k++) {
                if (fo->opts[k]=='W') {
                   enhanced_wild = true;
@@ -380,34 +395,41 @@ static bool send_fileset(JCR *jcr)
                }
             }
 
-            /* Strip out compression option Zn if disallowed for this Storage */
-            if (store && !store->AllowCompress) {
-               char newopts[MAX_FOPTS];
-               bool done=false;         /* print warning only if compression enabled in FS */
+            /*
+             * Strip out compression option Zn if disallowed
+             *  for this Storage.
+             * Strip out dedup option dn if old FD
+             */
+            bool strip_compress = store && !store->AllowCompress;
+            if (strip_compress || jcr->FDVersion >= 11) {
                int j = 0;
                for (k=0; fo->opts[k]!='\0'; k++) {
-                 /* Z compress option is followed by the single-digit compress level or 'o' */
-                 if (fo->opts[k]=='Z') {
-                    done=true;
-                    k++;                /* skip option and level */
-                 } else {
-                    newopts[j] = fo->opts[k];
-                    j++;
-                 }
+                  /* Z compress option is followed by the single-digit compress level or 'o' */
+                  if (strip_compress && fo->opts[k]=='Z') {
+                     stripped_opts = true;
+                     compress_disabled = true;
+                     k++;                /* skip level */
+                  } else if (jcr->FDVersion < 11 && fo->opts[k]=='d') {
+                     stripped_opts = true;
+                     k++;              /* skip level */
+                  } else {
+                     newopts[j] = fo->opts[k];
+                     j++;
+                  }
                }
                newopts[j] = '\0';
-
-               if (done) {
+               if (compress_disabled) {
                   Jmsg(jcr, M_INFO, 0,
                       _("FD compression disabled for this Job because AllowCompress=No in Storage resource.\n") );
                }
+            }
+            if (stripped_opts) {
                /* Send the new trimmed option set without overwriting fo->opts */
                fd->fsend("O %s\n", newopts);
             } else {
                /* Send the original options */
                fd->fsend("O %s\n", fo->opts);
             }
-
             for (k=0; k<fo->regex.size(); k++) {
                fd->fsend("R %s\n", fo->regex.get(k));
             }
@@ -566,7 +588,9 @@ bool send_include_list(JCR *jcr)
 {
    BSOCK *fd = jcr->file_bsock;
    if (jcr->fileset->new_include) {
-      fd->fsend(filesetcmd, jcr->fileset->enable_vss ? " vss=1" : "");
+      fd->fsend(filesetcmd,
+                jcr->fileset->enable_vss ? " vss=1" : "",
+                jcr->fileset->enable_snapshot ? " snap=1" : "");
       return send_fileset(jcr);
    }
    return true;
@@ -783,6 +807,48 @@ bool send_restore_objects(JCR *jcr)
 }
 
 /*
+ * Send the plugin a list of component info files.  These
+ *  were files that were created during the backup for
+ *  the VSS plugin.  The list is a list of those component
+ *  files that have been chosen for restore.  We
+ *  send them before the Restore Objects.
+ */
+bool send_component_info(JCR *jcr)
+{
+   BSOCK *fd;
+   char buf[2000];
+   bool ok = true;
+
+   if (!jcr->component_fd) {
+      return true;           /* nothing to send */
+   }
+   /* Don't send if old version FD */
+   if (jcr->FDVersion < 6) {
+      goto bail_out;
+   }
+
+   rewind(jcr->component_fd);
+   fd = jcr->file_bsock;
+   fd->fsend(component_info);
+   while (fgets(buf, sizeof(buf), jcr->component_fd)) {
+      fd->fsend("%s", buf);
+      Dmsg1(050, "Send component_info to FD: %s\n", buf);
+   }
+   fd->signal(BNET_EOD);
+   if (!response(jcr, fd, OKComponentInfo, "ComponentInfo", DISPLAY_ERROR)) {
+      Jmsg(jcr, M_FATAL, 0, _("ComponentInfo failed.\n"));
+      ok = false;
+   }
+
+bail_out:
+   fclose(jcr->component_fd);
+   jcr->component_fd = NULL;
+   unlink(jcr->component_fname);
+   free_and_null_pool_memory(jcr->component_fname);
+   return ok;
+}
+
+/*
  * Read the attributes from the File daemon for
  * a Verify job and store them in the catalog.
  */
@@ -856,6 +922,7 @@ int get_attributes_and_put_in_catalog(JCR *jcr)
          ar->JobId = jcr->JobId;
          ar->ClientId = jcr->ClientId;
          ar->PathId = 0;
+         ar->FilenameId = 0;
          ar->Digest = NULL;
          ar->DigestType = CRYPTO_DIGEST_NONE;
          ar->DeltaSeq = 0;

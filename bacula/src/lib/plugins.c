@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2007-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *    Plugin load/unloader for all Bacula daemons
@@ -43,7 +47,7 @@ static const int dbglvl = 50;
  * NOTE!!! This is a global do not try walking it with
  *   foreach_alist, you must use foreach_alist_index !!!!!!
  */
-alist *bplugin_list = NULL;
+alist *b_plugin_list = NULL;
 
 /*
  * Create a new plugin "class" entry and enter it in the
@@ -194,7 +198,7 @@ bool load_plugins(void *binfo, void *bfuncs, const char *plugin_dir,
       }
 
       found = true;                /* found a plugin */
-      bplugin_list->append(plugin);
+      b_plugin_list->append(plugin);
    }
 
 get_out:
@@ -217,10 +221,10 @@ void unload_plugins()
 {
    Plugin *plugin;
 
-   if (!bplugin_list) {
+   if (!b_plugin_list) {
       return;
    }
-   foreach_alist(plugin, bplugin_list) {
+   foreach_alist(plugin, b_plugin_list) {
       /* Shut it down and unload it */
       plugin->unloadPlugin();
       dlclose(plugin->pHandle);
@@ -229,8 +233,8 @@ void unload_plugins()
       }
       free(plugin);
    }
-   delete bplugin_list;
-   bplugin_list = NULL;
+   delete b_plugin_list;
+   b_plugin_list = NULL;
 }
 
 /*
@@ -251,12 +255,12 @@ void dbg_plugin_add_hook(dbg_plugin_hook_t *fct)
 void dbg_print_plugin(FILE *fp)
 {
    Plugin *plugin;
-   fprintf(fp, "Attempt to dump plugins. Hook count=%d\n", dbg_plugin_hook_count);
+   fprintf(fp, "List plugins. Hook count=%d\n", dbg_plugin_hook_count);
 
-   if (!bplugin_list) {
+   if (!b_plugin_list) {
       return;
    }
-   foreach_alist(plugin, bplugin_list) {
+   foreach_alist(plugin, b_plugin_list) {
       for(int i=0; i < dbg_plugin_hook_count; i++) {
 //       dbg_plugin_hook_t *fct = dbg_plugin_hooks[i];
          fprintf(fp, "Plugin %p name=\"%s\" disabled=%d\n",

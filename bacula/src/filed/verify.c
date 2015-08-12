@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *  Bacula File Daemon  verify.c  Verify files.
@@ -22,12 +26,6 @@
 
 #include "bacula.h"
 #include "filed.h"
-
-#ifdef HAVE_DARWIN_OS
-const bool have_darwin_os = true;
-#else
-const bool have_darwin_os = false;
-#endif
 
 static int verify_file(JCR *jcr, FF_PKT *ff_pkt, bool);
 static int read_digest(BFILE *bfd, DIGEST *digest, JCR *jcr);
@@ -285,9 +283,8 @@ int digest_file(JCR *jcr, FF_PKT *ff_pkt, DIGEST *digest)
    Dmsg0(50, "=== digest_file\n");
    binit(&bfd);
 
-   if (ff_pkt->statp.st_size > 0 ||
-       ff_pkt->type == FT_RAW ||
-       ff_pkt->type == FT_FIFO) {
+   if (ff_pkt->statp.st_size > 0 || ff_pkt->type == FT_RAW
+         || ff_pkt->type == FT_FIFO) {
       int noatime = ff_pkt->flags & FO_NOATIME ? O_NOATIME : 0;
       if ((bopen(&bfd, ff_pkt->fname, O_RDONLY | O_BINARY | noatime, 0)) < 0) {
          ff_pkt->ff_errno = errno;
@@ -302,27 +299,26 @@ int digest_file(JCR *jcr, FF_PKT *ff_pkt, DIGEST *digest)
       bclose(&bfd);
    }
 
-   if (have_darwin_os) {
-      /* Open resource fork if necessary */
-      if (ff_pkt->flags & FO_HFSPLUS && ff_pkt->hfsinfo.rsrclength > 0) {
-         if (bopen_rsrc(&bfd, ff_pkt->fname, O_RDONLY | O_BINARY, 0) < 0) {
-            ff_pkt->ff_errno = errno;
-            berrno be;
-            Jmsg(jcr, M_ERROR, -1, _("     Cannot open resource fork for %s: ERR=%s.\n"),
-                  ff_pkt->fname, be.bstrerror());
-            if (is_bopen(&ff_pkt->bfd)) {
-               bclose(&ff_pkt->bfd);
-            }
-            return 1;
+#ifdef HAVE_DARWIN_OS
+   /* Open resource fork if necessary */
+   if (ff_pkt->flags & FO_HFSPLUS && ff_pkt->hfsinfo.rsrclength > 0) {
+      if (bopen_rsrc(&bfd, ff_pkt->fname, O_RDONLY | O_BINARY, 0) < 0) {
+         ff_pkt->ff_errno = errno;
+         berrno be;
+         Jmsg(jcr, M_ERROR, -1, _("     Cannot open resource fork for %s: ERR=%s.\n"),
+               ff_pkt->fname, be.bstrerror());
+         if (is_bopen(&ff_pkt->bfd)) {
+            bclose(&ff_pkt->bfd);
          }
-         read_digest(&bfd, digest, jcr);
-         bclose(&bfd);
-      }
-
-      if (digest && ff_pkt->flags & FO_HFSPLUS) {
-         crypto_digest_update(digest, (uint8_t *)ff_pkt->hfsinfo.fndrinfo, 32);
-      }
-   }
+         return 1;
+      } 
+      read_digest(&bfd, digest, jcr);
+      bclose(&bfd);
+   } 
+   if (digest && ff_pkt->flags & FO_HFSPLUS) {
+      crypto_digest_update(digest, (uint8_t *)ff_pkt->hfsinfo.fndrinfo, 32);
+   } 
+#endif
    return 0;
 }
 

@@ -1,6 +1,10 @@
 
 Bacula Regression Suite and CTest
 ==================================================================
+#
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
 
 Thanks to Frank Sweetser, the Bacula regression scripts have now been modified
 to use the ctest component of cmake.  The major gain from this, since Bacula

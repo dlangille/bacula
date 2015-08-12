@@ -1,31 +1,35 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2007-2010 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
-*/
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
 
+   Bacula(R) is a registered trademark of Kern Sibbald.
+*/
+ 
 /*
  *  Run Command Dialog class
  *
  *  This is called when a Run Command signal is received from the
- *    Director. We parse the Director's output and throw up a
+ *    Director. We parse the Director's output and throw up a 
  *    dialog box.  This happens, for example, after the user finishes
  *    selecting files to be restored. The Director will then submit a
  *    run command, that causes this page to be popped up.
  *
  *   Kern Sibbald, March MMVII
  *
- */
+ */ 
 
 #include "bat.h"
 #include "run.h"
@@ -61,7 +65,7 @@ void runCmdPage::fill()
 
    clientCombo->addItems(m_console->client_list);
    filesetCombo->addItems(m_console->fileset_list);
-   replaceCombo->addItems(QStringList() << tr("never") << tr("always") << tr("ifnewer")
+   replaceCombo->addItems(QStringList() << tr("never") << tr("always") << tr("ifnewer") 
         << tr("ifolder"));
    replaceCombo->setCurrentIndex(replaceCombo->findText(tr("never"), Qt::MatchExactly));
    storageCombo->addItems(m_console->storage_list);
@@ -114,7 +118,7 @@ void runCmdPage::fill()
       if (item.startsWith("Priority:")) {
          bool okay;
          int pri = val.toInt(&okay, 10);
-         if (okay)
+         if (okay) 
             prioritySpin->setValue(pri);
          continue;
       }
@@ -141,7 +145,7 @@ void runCmdPage::okButtonPushed()
    QTextStream(&pri) << " priority=\"" << prioritySpin->value() << "\"";
    cmd += pri;
    cmd += " yes\n";
-
+   
    setConsoleCurrent();
    QString displayhtml("<font color=\"blue\">");
    displayhtml += cmd + "</font>\n";

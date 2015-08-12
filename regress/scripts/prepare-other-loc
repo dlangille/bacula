@@ -1,4 +1,9 @@
 #!/bin/sh
+#
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+
 
 . scripts/functions
 
@@ -11,4 +16,8 @@ sed "s:BACFDBIN=$cwd/bin:BACFDBIN=$bin:" $SCR-fd > tmp/1
 mv tmp/1 $SCR-fd
 chmod -x $cwd/bin/bacula-fd $cwd/bin/bacula-sd $cwd/bin/bacula-dir $cwd/bin/bconsole    
 chmod +x $SCR-*
+if [ x$plugins != x ]; then
+    mv $cwd/bin/plugins $cwd/bin/plugins.org
+    ln -s $plugins $cwd/bin/plugins
+fi
 

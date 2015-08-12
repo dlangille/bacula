@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2001-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  * Bacula Thread Read/Write locking code. It permits
@@ -26,7 +30,7 @@
  *
  */
 
-#define _LOCKMGR_COMPLIANT
+#define LOCKMGR_COMPLIANT
 #include "bacula.h"
 
 /*
@@ -99,11 +103,6 @@ int rwl_destroy(brwlock_t *rwl)
   stat1 = pthread_cond_destroy(&rwl->read);
   stat2 = pthread_cond_destroy(&rwl->write);
   return (stat != 0 ? stat : (stat1 != 0 ? stat1 : stat2));
-}
-
-bool rwl_is_init(brwlock_t *rwl)
-{
-   return (rwl->valid == RWLOCK_VALID);
 }
 
 /*
@@ -314,6 +313,12 @@ int rwl_writeunlock(brwlock_t *rwl)
    return (stat == 0 ? stat2 : stat);
 }
 
+bool is_rwl_valid(brwlock_t *rwl)
+{
+   return (rwl->valid == RWLOCK_VALID);
+}
+
+
 #ifdef TEST_RWLOCK
 
 #define THREADS     300
@@ -437,14 +442,11 @@ int main (int argc, char *argv[])
     int thread_writes = 0;
     int data_writes = 0;
 
-#ifdef USE_THR_SETCONCURRENCY
     /*
-     * On Solaris 2.5,2.6,7 and 8 threads are not timesliced. To ensure
-     * that our threads can run concurrently, we need to
-     * increase the concurrency level to THREADS.
+     * For Solaris 2.5,2.6,7 and 8 threads are not timesliced.
+     * Ensure our threads can run concurrently.
      */
-    thr_setconcurrency (THREADS);
-#endif
+    thr_setconcurrency(THREADS);      /* Only implemented on Solaris */
 
     /*
      * Initialize the shared data.
@@ -520,7 +522,7 @@ int main (int argc, char *argv[])
  *
  * Demonstrate use of non-blocking read-write locks.
  *
- * Special notes: On older Solaris system, call thr_setconcurrency()
+ * On older Solaris systems, call thr_setconcurrency()
  * to allow interleaved thread execution, since threads are not
  * timesliced.
  */
@@ -610,15 +612,12 @@ int main (int argc, char *argv[])
     int thread_updates = 0, data_updates = 0;
     int status;
 
-#ifdef USE_THR_SETCONCURRENCY
     /*
-     * On Solaris 2.5,2.6,7 and 8 threads are not timesliced. To ensure
-     * that our threads can run concurrently, we need to
-     * increase the concurrency level to THREADS.
+     * For Solaris 2.5,2.6,7 and 8 threads are not timesliced.
+     * Ensure our threads can run concurrently.
      */
     DPRINTF (("Setting concurrency level to %d\n", THREADS));
-    thr_setconcurrency (THREADS);
-#endif
+    thr_setconcurrency(THREADS);      /* Only implemented on Solaris */
 
     /*
      * Initialize the shared data.

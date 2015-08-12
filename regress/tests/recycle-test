@@ -1,5 +1,10 @@
 #!/bin/sh
 #
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+
+#
 # Run a simple backup of the Bacula build directory but 
 #   create three volumes and do six backups causing the
 #   volumes to be recycled, and cycling through the volumes
@@ -22,9 +27,10 @@ change_jobname NightlySave $JobName
 start_test
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
-@$out /dev/null
+@output /dev/null
 messages
 @$out ${cwd}/tmp/log1.out
+setdebug level=15 storage=File1
 label storage=File1 volume=TestVolume001
 label storage=File1 volume=TestVolume002
 label storage=File1 volume=TestVolume003
@@ -34,50 +40,82 @@ label storage=File1 volume=TestVolume004
 @#  In that case, either add another volume, or
 @#  increase the volume capacity a bit.
 update Volume=TestVolume001 volretention=5s
-update Volume=TestVolume001 maxvolbytes=200000000
+update Volume=TestVolume001 maxvolbytes=250000000
 update Volume=TestVolume002 volretention=5s
-update Volume=TestVolume002 maxvolbytes=200000000
+update Volume=TestVolume002 maxvolbytes=250000000
 update Volume=TestVolume003 volretention=5s
-update Volume=TestVolume003 maxvolbytes=200000000
+update Volume=TestVolume003 maxvolbytes=250000000
 update Volume=TestVolume004 volretention=5s
-update Volume=TestVolume004 maxvolbytes=200000000
-list volumes
-setdebug level=150 storage=File1
-setdebug level=50 dir
+update Volume=TestVolume004 maxvolbytes=250000000
+sql
+select mediaid,volumename,volstatus,volbytes,maxvolbytes,voljobs,volretention from Media;
+select * from JobMedia;
+select VolumeName,FirstWritten,LastWritten,VolBytes from Media;
+
+@#setdebug level=110 storage=File1
+setdebug level=60 dir
 run job=$JobName storage=File1 level=full yes
 run job=$JobName storage=File1 level=full yes
 run job=$JobName storage=File1 level=full yes
+sql
+select * from JobMedia;
+select VolumeName,FirstWritten,LastWritten,VolStatus,VolBytes from Media;
+
 wait
 messages
-list volumes
+sql
+select mediaid,volumename,volstatus,volbytes,maxvolbytes,voljobs,volretention from Media;
+select * from JobMedia;
+select VolumeName,FirstWritten,LastWritten,VolStatus,VolBlocks,VolBytes from Media;
+
 @sleep 12 
 run job=$JobName storage=File1 level=full yes
 run job=$JobName storage=File1 level=full yes
 run job=$JobName storage=File1 level=full yes
+sql
+select * from JobMedia;
+select VolumeName,FirstWritten,LastWritten,VolStatus,VolBlocks,VolBytes from Media;
+
 wait
 messages
-list volumes
+sql
+select mediaid,volumename,volstatus,volbytes,maxvolbytes,voljobs,volretention from Media;
+select * from JobMedia;
+select VolumeName,FirstWritten,LastWritten,VolStatus,VolBlocks,VolBytes from Media;
+
 @sleep 12
 run job=$JobName storage=File1 level=full yes
 run job=$JobName storage=File1 level=full yes
 run job=$JobName storage=File1 level=full yes
 wait
 messages
-list volumes
+sql
+select mediaid,volumename,volstatus,volbytes,maxvolbytes,voljobs,volretention from Media;
+select * from JobMedia;
+select VolumeName,FirstWritten,LastWritten,VolStatus,VolBlocks,VolBytes from Media;
+
 @sleep 12
 run job=$JobName storage=File1 level=full yes
 run job=$JobName storage=File1 level=full yes
 run job=$JobName storage=File1 level=full yes
 wait
 messages
-list volumes
+sql
+select mediaid,volumename,volstatus,volbytes,maxvolbytes,voljobs,volretention from Media;
+select * from JobMedia;
+select VolumeName,FirstWritten,LastWritten,VolStatus,VolBlocks,VolBytes from Media;
+
 @sleep 12
 run job=$JobName storage=File1 level=full yes
 run job=$JobName storage=File1 level=full yes
 run job=$JobName storage=File1 level=full yes
 wait
 messages
-list volumes
+sql
+select mediaid,volumename,volstatus,volbytes,maxvolbytes,voljobs,volretention from Media;
+select * from JobMedia;
+select VolumeName,FirstWritten,LastWritten,VolStatus,VolBlocks,VolBytes from Media;
+
 @# 
 @# now do a restore
 @#

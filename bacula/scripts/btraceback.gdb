@@ -3,14 +3,13 @@ print my_name
 print exename
 print exepath
 print assert_msg
-print catalog_db
+print db_engine_name
 print version
 print host_os
 print distname
 print distver
 print host_name
 print dist_name
-print beef
 show env TestName
 bt
 thread apply all bt

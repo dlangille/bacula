@@ -1,5 +1,10 @@
 #!/bin/sh
 #
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+
+#
 # Run a simple backup of the Bacula build directory but 
 #   split the archive into two volumes, then build a BSR with
 #   the restore command and use bextract to restore the files.
@@ -23,7 +28,7 @@ label storage=File1 volume=TestVolume001 pool=Default
 label storage=File1 volume=TestVolume002 pool=Default
 update Volume=TestVolume001 MaxVolBytes=3000000
 @#setdebug level=400 dir
-setdebug level=400 storage=File1
+@#setdebug level=400 storage=File1
 run job=$JobName storage=File1 yes
 wait
 messages
@@ -41,6 +46,7 @@ END_OF_DATA
 run_bacula
 check_for_zombie_jobs storage=File1
 stop_bacula
+sleep 1
 
 mkdir -p ${cwd}/tmp/bacula-restores
 if test "$debug" -eq 1 ; then

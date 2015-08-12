@@ -1,24 +1,26 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2002-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  * BootStrap record definition -- for restoring files.
  *
  *    Kern Sibbald, June 2002
- *
- *   Version $Id$
  *
  */
 
@@ -140,6 +142,7 @@ struct BSR {
    BSR          *next;                /* pointer to next one */
    BSR          *prev;                /* pointer to previous one */
    BSR          *root;                /* root bsr */
+   BSR          *cur_bsr;
    bool          reposition;          /* set when any bsr is marked done */
    bool          mount_next_volume;   /* set when next volume should be mounted */
    bool          done;                /* set when everything found for this bsr */
@@ -149,6 +152,7 @@ struct BSR {
    BSR_VOLUME   *volume;
    uint32_t      count;               /* count of files to restore this bsr */
    uint32_t      found;               /* count of restored files this bsr */
+   int32_t       LastFI;              /* LastFI seen by this bsr */
    BSR_VOLFILE  *volfile;
    BSR_VOLBLOCK *volblock;
    BSR_VOLADDR  *voladdr;

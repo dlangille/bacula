@@ -1,27 +1,29 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2007-2007 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
-*/
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
 
+   Bacula(R) is a registered trademark of Kern Sibbald.
+*/
+ 
 /*
- *   Version $Id$
- *
  *  JobPlots Class
  *
  *   Dirk Bartley, March 2007
  *
- */
+ */ 
 
 #include "bat.h"
 #include <QtGui>
@@ -181,7 +183,7 @@ void JobPlot::setupControls()
       controls->limitSpinBox->setValue(mainWin->m_recordLimitVal);
       controls->daysCheckBox->setCheckState(mainWin->m_daysLimitCheck ? Qt::Checked : Qt::Unchecked);
       controls->daysSpinBox->setValue(mainWin->m_daysLimitVal);
-   }
+   } 
 }
 
 /*
@@ -248,7 +250,7 @@ void JobPlot::runQuery()
 
       QString field;
       QStringList fieldlist;
-
+   
       int row = 0;
       /* Iterate through the record returned from the query */
       foreach (resultline, results) {
@@ -271,7 +273,7 @@ void JobPlot::runQuery()
          }
          row++;
       }
-   }
+   } 
    if ((controls->volumeComboBox->itemText(volumeIndex) != tr("Any")) && (results.count() == 0)){
       /* for context sensitive searches, let the user know if there were no
        *        * results */
@@ -308,7 +310,7 @@ void JobPlot::setupUserInterface()
    area->setObjectName(QString::fromUtf8("area"));
    controls = new JobPlotControls();
    area->setWidget(controls);
-
+   
    m_splitter->addWidget(m_jobPlot);
    m_splitter->addWidget(area);
 
@@ -386,7 +388,7 @@ void JobPlot::addCurve()
          }
          QDateTime mdt = QDateTime::fromString(monthBegin, mainWin->m_dtformat);
          double monbeg = mdt.toTime_t();
-
+   
          //  ...a vertical line at the first of each month
          QwtPlotMarker *mX = new QwtPlotMarker();
          mX->setLabel(mdt.toString("MMM-d"));
@@ -436,7 +438,7 @@ void JobPlot::setPlotType(QString currentText)
 void JobPlot::fillSymbolCombo(QComboBox *q)
 {
   q->addItem( tr("Ellipse"), (int)QwtSymbol::Ellipse);
-  q->addItem( tr("Rect"), (int)QwtSymbol::Rect);
+  q->addItem( tr("Rect"), (int)QwtSymbol::Rect); 
   q->addItem( tr("Diamond"), (int)QwtSymbol::Diamond);
   q->addItem( tr("Triangle"), (int)QwtSymbol::Triangle);
   q->addItem( tr("DTrianle"), (int)QwtSymbol::DTriangle);
@@ -449,7 +451,7 @@ void JobPlot::fillSymbolCombo(QComboBox *q)
   q->addItem( tr("Vline"), (int)QwtSymbol::VLine);
   q->addItem( tr("Star1"), (int)QwtSymbol::Star1);
   q->addItem( tr("Star2"), (int)QwtSymbol::Star2);
-  q->addItem( tr("Hexagon"), (int)QwtSymbol::Hexagon);
+  q->addItem( tr("Hexagon"), (int)QwtSymbol::Hexagon); 
   q->addItem( tr("None"), (int)QwtSymbol::NoSymbol);
 }
 
@@ -478,7 +480,7 @@ void JobPlot::setSymbolType(int index, int type)
       sym.setStyle( (QwtSymbol::Style)style.toInt() );
       sym.setBrush(QColor(Qt::yellow));
       m_fileCurve->setSymbol(sym);
-
+   
    } else {
       style = controls->byteSymbolTypeCombo->itemData(index);
       sym.setStyle( (QwtSymbol::Style)style.toInt() );
@@ -533,7 +535,7 @@ void JobPlot::writeSettings()
    settings.endGroup();
 }
 
-/*
+/* 
  * Read settings values for Controls
  */
 void JobPlot::readControlSettings()
@@ -559,7 +561,7 @@ void JobPlot::readSplitterSettings()
 {
    QSettings settings(m_console->m_dir->name(), "bat");
    settings.beginGroup("JobPlot");
-   if (settings.contains("m_splitterSizes")) {
+   if (settings.contains("m_splitterSizes")) { 
       m_splitter->restoreState(settings.value("m_splitterSizes").toByteArray());
    }
    settings.endGroup();

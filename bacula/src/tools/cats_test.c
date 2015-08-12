@@ -1,34 +1,36 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2011-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *  Program to test CATS DB routines
  *
- *
+ *  
  */
 #define _BDB_PRIV_INTERFACE_
 
 #include "bacula.h"
 #include "cats/cats.h"
-#include "cats/bdb_priv.h"
-#include "cats/sql_glue.h"
 #include "cats/bvfs.h"
 #include "findlib/find.h"
-
+ 
 /* Local variables */
-static B_DB *db;
+static BDB *db;
 static const char *file = "COPYRIGHT";
 //static DBId_t fnid=0;
 static const char *db_name = "bacula";
@@ -45,7 +47,7 @@ static void usage()
 {
    fprintf(stderr, _(
 PROG_COPYRIGHT
-"\nVersion: %s (%s)\n"
+"\n%sVersion: %s (%s)\n"
 "       -d <nn>           set debug level to <nn>\n"
 "       -dt               print timestamp in debug output\n"
 "       -n <name>         specify the database name (default bacula)\n"
@@ -58,7 +60,7 @@ PROG_COPYRIGHT
 "       -l <limit>        maximum tuple to fetch\n"
 "       -q                print only errors\n"
 "       -v                verbose\n"
-"       -?                print this message\n\n"), 2011, VERSION, BDATE);
+"       -?                print this message\n\n"), 2011, BDEMO, VERSION, BDATE);
    exit(1);
 }
 
@@ -151,7 +153,7 @@ static void cmp_client(CLIENT_DBR &cr, CLIENT_DBR &cr2)
    ok(!strcmp(cr2.Name, cr.Name),           "  Check Client Name");
    ok(!strcmp(cr2.Uname, cr.Uname),         "  Check Client Uname");
    ok(cr.AutoPrune == cr2.AutoPrune,        "  Check Client Autoprune");
-   ok(cr.JobRetention == cr2.JobRetention,  "  Check Client JobRetention");
+   ok(cr.JobRetention == cr2.JobRetention,  "  Check Client JobRetention");   
    ok(cr.FileRetention == cr2.FileRetention,"  Check Client FileRetention");
 }
 
@@ -227,7 +229,7 @@ int main (int argc, char *argv[])
    pid = getpid();
 
    Pmsg0(0, "Starting cats_test tool" PLINE);
-
+   
    my_name_is(argc, argv, "");
    init_msg(NULL, NULL);
 
@@ -334,7 +336,7 @@ int main (int argc, char *argv[])
    Pmsg1(0, PLINE "Test DB connection \"%s\"" PLINE, db_name);
 
    if (full_test) {
-      db = db_init_database(jcr /* JCR */,
+      db = db_init_database(jcr /* JCR */, 
                    NULL /* dbi driver */,
                    db_name, db_user, db_password, db_address, db_port + 100,
                    NULL /* db_socket */,
@@ -348,7 +350,7 @@ int main (int argc, char *argv[])
       db_close_database(jcr, db);
    }
 
-   db = db_init_database(jcr /* JCR */,
+   db = db_init_database(jcr /* JCR */, 
                 NULL /* dbi driver */,
                 db_name, db_user, db_password, db_address, db_port,
                 NULL /* db_socket */,
@@ -372,9 +374,8 @@ int main (int argc, char *argv[])
 
 
    /* Check if the SQL library is thread-safe */
-   //db_check_backend_thread_safe();
    ok(check_tables_version(jcr, db), "Check table version");
-   ok(db_sql_query(db, "SELECT VersionId FROM Version",
+   ok(db_sql_query(db, "SELECT VersionId FROM Version", 
                    db_int_handler, &j), "SELECT VersionId");
 
    ok(UPDATE_DB(jcr, db, (char*)"UPDATE Version SET VersionId = 1"),
@@ -387,15 +388,15 @@ int main (int argc, char *argv[])
       ok(db_check_max_connections(jcr, db, 1), "Test min Max Connexion");
       nok(db_check_max_connections(jcr, db, 10000), "Test max Max Connexion");
    }
-
+   
    ok(db_open_batch_connexion(jcr, db), "Opening batch connection");
    db_close_database(jcr, jcr->db_batch);
    jcr->db_batch = NULL;
 
    /* ---------------------------------------------------------------- */
-
+   
    uint32_t storageid=0;
-   ok(db_sql_query(db, "SELECT MIN(StorageId) FROM Storage",
+   ok(db_sql_query(db, "SELECT MIN(StorageId) FROM Storage", 
                    db_int_handler, &storageid), "Get StorageId");
    ok(storageid > 0, "Check StorageId");
    if (!storageid) {
@@ -407,7 +408,7 @@ int main (int argc, char *argv[])
    Pmsg0(0, PLINE "Doing Basic SQL tests" PLINE);
    ok(db_sql_query(db, "SELECT 1,2,3,4,5", count_col, &j), "Count 5 rows");
    ok(j == 5, "Check number of columns");
-   ok(db_sql_query(db, "SELECT 1,2,3,4,5,'a','b','c','d','e'",
+   ok(db_sql_query(db, "SELECT 1,2,3,4,5,'a','b','c','d','e'", 
                    count_col, &j), "Count 10 rows");
    ok(j == 10, "Check number of columns");
 
@@ -415,7 +416,7 @@ int main (int argc, char *argv[])
    ok(db_sql_query(db, "SELECT 2", db_int_handler, &j), "Good SELECT query");
    ok(db_sql_query(db, "SELECT 1 FROM Media WHERE VolumeName='missing'",
                    db_int_handler, &j), "Good empty SELECT query");
-
+   
    db_int64_ctx i64;
    i64.value = 0; i64.count = 0;
    ok(db_sql_query(db, "SELECT 1",db_int64_handler, &i64),"db_int64_handler");
@@ -454,10 +455,10 @@ int main (int argc, char *argv[])
    Mmsg(buf, "DELETE FROM %s", temp);
    ok(DELETE_DB(jcr, db, buf), "DELETE query");
    nok(DELETE_DB(jcr, db, buf), "Empty DELETE query"); /* TODO bug ? */
-
+      
    Mmsg(buf, "DELETE FROM aaa%s", temp);
    ok(DELETE_DB(jcr, db, buf), "Bad DELETE query"); /* TODO bug ? */
-
+   
    Mmsg(buf, "DROP TABLE %s", temp);
    ok(QUERY_DB(jcr, db, buf), "DROP query");
    nok(QUERY_DB(jcr, db, buf), "Empty DROP query");
@@ -471,7 +472,7 @@ int main (int argc, char *argv[])
    ok(db_sql_query(db, buf, NULL, NULL), "Inserting quoted string");
 
    /* ---------------------------------------------------------------- */
-   Pmsg0(0, PLINE "Doing Job tests" PLINE);
+   Pmsg0(0, PLINE "Doing Job tests" PLINE);   
 
    JOB_DBR jr, jr2;
    memset(&jr, 0, sizeof(jr));
@@ -479,7 +480,7 @@ int main (int argc, char *argv[])
    jr.JobId = 1;
    ok(db_get_job_record(jcr, db, &jr), "Get Job record for JobId=1");
    ok(jr.JobFiles > 10, "Check number of files");
-
+   
    jr.JobId = (JobId_t)pid;
    Mmsg(buf, "%s-%lld", jr.Job, pid);
    strcpy(jr.Job, buf);
@@ -554,7 +555,7 @@ int main (int argc, char *argv[])
 
    ok(db_get_client_record(jcr, db, &cr2), "Search client by ClientId");
    cmp_client(cr, cr2);
-
+   
    Pmsg0(0, "Search client by Name\n");
    memset(&cr2, 0, sizeof(cr2));
    strcpy(cr2.Name, cr.Name);
@@ -591,7 +592,7 @@ int main (int argc, char *argv[])
    POOL_DBR pr, pr2;
    memset(&pr, 0, sizeof(pr));
    memset(&pr2, 0, sizeof(pr2));
-
+   
    bsnprintf(pr.Name, sizeof(pr.Name), "pool-%lld", pid);
    pr.MaxVols = 10;
    pr.UseOnce = 0;
@@ -610,16 +611,16 @@ int main (int argc, char *argv[])
    pr.RecyclePoolId = 0;
    pr.ScratchPoolId = 0;
    pr.ActionOnPurge = 1;
-
+   
    ok(db_create_pool_record(jcr, db, &pr), "db_create_pool_record()");
    ok(pr.PoolId > 0, "Check PoolId");
-
+   
    pr2.PoolId = pr.PoolId;
    pr.PoolId = 0;
 
    Pmsg0(0, "Search pool by PoolId\n");
    nok(db_create_pool_record(jcr, db, &pr),"Can't create pool twice");
-   ok(db_get_pool_record(jcr, db, &pr2), "Search pool by PoolId");
+   ok(db_get_pool_numvols(jcr, db, &pr2), "Search pool by PoolId");
    cmp_pool(pr, pr2);
 
    pr2.MaxVols++;
@@ -639,7 +640,7 @@ int main (int argc, char *argv[])
    ok(db_update_pool_record(jcr, db, &pr2), "Update Pool record");
    memset(&pr, 0, sizeof(pr));
    pr.PoolId = pr2.PoolId;
-   ok(db_get_pool_record(jcr, db, &pr), "Search pool by PoolId");
+   ok(db_get_pool_numvols(jcr, db, &pr), "Search pool by PoolId");
    cmp_pool(pr, pr2);
 
    ok(db_delete_pool_record(jcr, db, &pr), "Delete Pool");
@@ -649,11 +650,11 @@ int main (int argc, char *argv[])
 
    /* ---------------------------------------------------------------- */
    Pmsg0(0, PLINE "Doing Media tests" PLINE);
-
+   
    MEDIA_DBR mr, mr2;
    memset(&mr, 0, sizeof(mr));
    memset(&mr2, 0, sizeof(mr2));
-
+   
    bsnprintf(mr.VolumeName, sizeof(mr.VolumeName), "media-%lld", pid);
    bsnprintf(mr.MediaType, sizeof(mr.MediaType), "type-%lld", pid);
 
@@ -688,7 +689,7 @@ int main (int argc, char *argv[])
 
    /* ---------------------------------------------------------------- */
    Pmsg0(0, PLINE "Doing ... tests" PLINE);
-
+   
    db_close_database(jcr, db);
    report();
    free_pool_memory(buf);

@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *
@@ -174,11 +178,11 @@ again:
    jcr = new_jcr(sizeof(JCR), dird_free_jcr);
    run = next_job->run;               /* pick up needed values */
    job = next_job->job;
-   if (job->enabled) {
-      dump_job(next_job, _("Run job"));
+   if (job->enabled && (!job->client || job->client->enabled)) {
+      dump_job(next_job, _("Run job"));  /* no client and job enabled */
    }
    free(next_job);
-   if (!job->enabled) {
+   if (!job->enabled || (job->client && !job->client->enabled)) {
       free_jcr(jcr);
       goto again;                     /* ignore this job */
    }
@@ -300,7 +304,8 @@ static void find_runs()
    LockRes();
    foreach_res(job, R_JOB) {
       sched = job->schedule;
-      if (sched == NULL || !job->enabled) { /* scheduled? or enabled? */
+      if (!sched || !job->enabled || (sched && !sched->enabled) ||
+         (job->client && !job->client->enabled)) {
          continue;                    /* no, skip this job */
       }
       Dmsg1(dbglvl, "Got job: %s\n", job->hdr.name);
@@ -434,6 +439,7 @@ static void dump_job(job_item *ji, const char *msg)
 #ifdef SCHED_DEBUG
    char dt[MAX_TIME_LENGTH];
    int64_t save_debug = debug_level;
+
    if (!chk_dbglvl(dbglvl)) {
       return;
    }

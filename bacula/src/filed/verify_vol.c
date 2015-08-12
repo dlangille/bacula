@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2002-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *  Bacula File Daemon  verify-vol.c Verify files on a Volume
@@ -39,7 +43,7 @@ void do_verify_volume(JCR *jcr)
    BSOCK *sd, *dir;
    POOLMEM *fname;                    /* original file name */
    POOLMEM *lname;                    /* link name */
-   int32_t stream;
+   int32_t stream, full_stream;
    uint32_t size;
    uint32_t VolSessionId, VolSessionTime, file_index;
    uint32_t record_file_index;
@@ -73,32 +77,37 @@ void do_verify_volume(JCR *jcr)
    fname = get_pool_memory(PM_FNAME);
    lname = get_pool_memory(PM_FNAME);
 
+   GetMsg *fdmsg = New(GetMsg(jcr, sd, rec_header, GETMSG_MAX_MSG_SIZE));
+   fdmsg->start_read_sock();
+   bmessage *bmsg = New(bmessage(GETMSG_MAX_MSG_SIZE));
+
    /*
     * Get a record from the Storage daemon
     */
-   while (bget_msg(sd) >= 0 && !job_canceled(jcr)) {
+   while (fdmsg->bget_msg(&bmsg) >= 0 && !job_canceled(jcr)) {
       /*
        * First we expect a Stream Record Header
        */
-      if (sscanf(sd->msg, rec_header, &VolSessionId, &VolSessionTime, &file_index,
-          &stream, &size) != 5) {
-         Jmsg1(jcr, M_FATAL, 0, _("Record header scan error: %s\n"), sd->msg);
+      if (sscanf(bmsg->rbuf, rec_header, &VolSessionId, &VolSessionTime, &file_index,
+          &full_stream, &size) != 5) {
+         Jmsg1(jcr, M_FATAL, 0, _("Record header scan error: %s\n"), bmsg->rbuf);
          goto bail_out;
       }
-      Dmsg3(30, "Got hdr: FilInx=%d Stream=%d size=%d.\n", file_index, stream, size);
+      stream = full_stream & STREAMMASK_TYPE;
+      Dmsg4(30, "Got hdr: FilInx=%d FullStream=%d Stream=%d size=%d.\n", file_index, full_stream, stream, size);
 
       /*
        * Now we expect the Stream Data
        */
-      if (bget_msg(sd) < 0) {
+      if (fdmsg->bget_msg(&bmsg) < 0) {
          Jmsg1(jcr, M_FATAL, 0, _("Data record error. ERR=%s\n"), sd->bstrerror());
          goto bail_out;
       }
-      if (size != ((uint32_t)sd->msglen)) {
-         Jmsg2(jcr, M_FATAL, 0, _("Actual data size %d not same as header %d\n"), sd->msglen, size);
+      if (size != ((uint32_t)bmsg->origlen)) {
+         Jmsg2(jcr, M_FATAL, 0, _("Actual data size %d not same as header %d\n"), bmsg->origlen, size);
          goto bail_out;
       }
-      Dmsg2(30, "Got stream data %s, len=%d\n", stream_to_ascii(stream), sd->msglen);
+      Dmsg2(30, "Got stream data %s, len=%d\n", stream_to_ascii(stream), bmsg->rbuflen);
 
       /* File Attributes stream */
       switch (stream) {
@@ -108,12 +117,12 @@ void do_verify_volume(JCR *jcr)
 
          Dmsg0(400, "Stream=Unix Attributes.\n");
 
-         if ((int)sizeof_pool_memory(fname) < sd->msglen) {
-            fname = realloc_pool_memory(fname, sd->msglen + 1);
+         if ((int)sizeof_pool_memory(fname) < bmsg->rbuflen) {
+            fname = realloc_pool_memory(fname, bmsg->rbuflen + 1);
          }
 
-         if ((int)sizeof_pool_memory(lname) < sd->msglen) {
-            lname = realloc_pool_memory(lname, sd->msglen + 1);
+         if ((int)sizeof_pool_memory(lname) < bmsg->rbuflen) {
+            lname = realloc_pool_memory(lname, bmsg->rbuflen + 1);
          }
          *fname = 0;
          *lname = 0;
@@ -127,13 +136,13 @@ void do_verify_volume(JCR *jcr)
           *    Link name (if file linked i.e. FT_LNK)
           *    Extended Attributes (if Win32)
           */
-         if (sscanf(sd->msg, "%d %d", &record_file_index, &type) != 2) {
-            Jmsg(jcr, M_FATAL, 0, _("Error scanning record header: %s\n"), sd->msg);
+         if (sscanf(bmsg->rbuf, "%d %d", &record_file_index, &type) != 2) {
+            Jmsg(jcr, M_FATAL, 0, _("Error scanning record header: %s\n"), bmsg->rbuf);
             Dmsg0(0, "\nError scanning header\n");
             goto bail_out;
          }
          Dmsg2(30, "Got Attr: FilInx=%d type=%d\n", record_file_index, type);
-         ap = sd->msg;
+         ap = bmsg->rbuf;
          while (*ap++ != ' ')         /* skip record file index */
             ;
          while (*ap++ != ' ')         /* skip type */
@@ -197,7 +206,7 @@ void do_verify_volume(JCR *jcr)
          break;
 
       case STREAM_MD5_DIGEST:
-         bin_to_base64(digest, sizeof(digest), (char *)sd->msg, CRYPTO_DIGEST_MD5_SIZE, true);
+         bin_to_base64(digest, sizeof(digest), (char *)bmsg->rbuf, CRYPTO_DIGEST_MD5_SIZE, true);
          Dmsg2(400, "send inx=%d MD5=%s\n", jcr->JobFiles, digest);
          dir->fsend("%d %d %s *MD5-%d*", jcr->JobFiles, STREAM_MD5_DIGEST, digest,
                     jcr->JobFiles);
@@ -205,7 +214,7 @@ void do_verify_volume(JCR *jcr)
          break;
 
       case STREAM_SHA1_DIGEST:
-         bin_to_base64(digest, sizeof(digest), (char *)sd->msg, CRYPTO_DIGEST_SHA1_SIZE, true);
+         bin_to_base64(digest, sizeof(digest), (char *)bmsg->rbuf, CRYPTO_DIGEST_SHA1_SIZE, true);
          Dmsg2(400, "send inx=%d SHA1=%s\n", jcr->JobFiles, digest);
          dir->fsend("%d %d %s *SHA1-%d*", jcr->JobFiles, STREAM_SHA1_DIGEST,
                     digest, jcr->JobFiles);
@@ -213,7 +222,7 @@ void do_verify_volume(JCR *jcr)
          break;
 
       case STREAM_SHA256_DIGEST:
-         bin_to_base64(digest, sizeof(digest), (char *)sd->msg, CRYPTO_DIGEST_SHA256_SIZE, true);
+         bin_to_base64(digest, sizeof(digest), (char *)bmsg->rbuf, CRYPTO_DIGEST_SHA256_SIZE, true);
          Dmsg2(400, "send inx=%d SHA256=%s\n", jcr->JobFiles, digest);
          dir->fsend("%d %d %s *SHA256-%d*", jcr->JobFiles, STREAM_SHA256_DIGEST,
                     digest, jcr->JobFiles);
@@ -221,7 +230,7 @@ void do_verify_volume(JCR *jcr)
          break;
 
       case STREAM_SHA512_DIGEST:
-         bin_to_base64(digest, sizeof(digest), (char *)sd->msg, CRYPTO_DIGEST_SHA512_SIZE, true);
+         bin_to_base64(digest, sizeof(digest), (char *)bmsg->rbuf, CRYPTO_DIGEST_SHA512_SIZE, true);
          Dmsg2(400, "send inx=%d SHA512=%s\n", jcr->JobFiles, digest);
          dir->fsend("%d %d %s *SHA512-%d*", jcr->JobFiles, STREAM_SHA512_DIGEST,
                     digest, jcr->JobFiles);
@@ -251,6 +260,11 @@ bail_out:
    jcr->setJobStatus(JS_ErrorTerminated);
 
 ok_out:
+   Dmsg0(215, "wait BufferedMsg\n");
+   fdmsg->wait_read_sock();
+   delete bmsg;
+   free_GetMsg(fdmsg);
+
    if (jcr->compress_buf) {
       free(jcr->compress_buf);
       jcr->compress_buf = NULL;

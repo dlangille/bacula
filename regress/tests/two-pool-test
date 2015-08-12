@@ -1,5 +1,10 @@
 #!/bin/sh
 #
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+
+#
 # This is Arno's test.  It uses two pools, two tapes, and
 #  an autochanger. Note, the Director has three Pools in its 
 #  conf:  Default, Full, and Inc.  Default is used in the
@@ -28,10 +33,10 @@ start_test
 
 # Write out bconsole commands to a file
 cat <<END_OF_DATA >tmp/bconcmds
-@$out /dev/null
+@output /dev/null
 messages
 @$out tmp/log1.out
-setdebug level=150 storage=tape
+setdebug level=20 storage=tape
 label storage=tape volume=TestVolume001 slot=1 pool=Full drive=0
 label storage=tape volume=TestVolume002 slot=2 pool=Default drive=0
 list volumes

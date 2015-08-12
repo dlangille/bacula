@@ -1,19 +1,23 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2007-2014 Free Software Foundation Europe e.V.
+   Copyright (C) 2000-2015 Kern Sibbald
+   Copyright (C) 2007-2009 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
-*/
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
 
+   Bacula(R) is a registered trademark of Kern Sibbald.
+*/
+ 
 #include "bat.h"
 #include "job.h"
 #include "util/fmtwidgetitem.h"
@@ -28,6 +32,7 @@ Job::Job(QString &jobId, QTreeWidgetItem *parentTreeWidgetItem) : Pages()
    thisitem->setIcon(0,QIcon(QString::fromUtf8(":images/joblog.png")));
    m_cursor = new QTextCursor(textJobLog->document());
 
+   m_bwlimit = 0;
    m_jobId = jobId;
    m_timer = NULL;
    getFont();
@@ -37,6 +42,7 @@ Job::Job(QString &jobId, QTreeWidgetItem *parentTreeWidgetItem) : Pages()
    connect(pbCancel, SIGNAL(clicked()), this, SLOT(cancelJob()));
    connect(pbRun, SIGNAL(clicked()), this, SLOT(rerun()));
    connect(list_Volume, SIGNAL(itemDoubleClicked(QListWidgetItem*)), this, SLOT(showInfoVolume(QListWidgetItem *)));
+   connect(spin_Bwlimit, SIGNAL(valueChanged(int)), this, SLOT(storeBwLimit(int)));
 
    populateAll();
    dockPage();
@@ -131,7 +137,7 @@ void Job::populateText()
    if (mainWin->m_sqlDebug) {
       Pmsg1(000, "Log query cmd : %s\n", query.toUtf8().data());
    }
-
+  
    QStringList results;
    if (m_console->sql_cmd(query, results)) {
 
@@ -141,13 +147,13 @@ void Job::populateText()
                "It is possible you may need to add \"catalog = all\" "
                "to the Messages resource for this job.\n"), QMessageBox::Ok);
          return;
-      }
+      } 
 
       QString jobstr("JobId "); /* FIXME: should this be translated ? */
       jobstr += m_jobId;
 
       QString htmlbuf("<html><body><pre>");
-
+  
       /* Iterate through the lines of results. */
       QString field;
       QStringList fieldlist;
@@ -155,7 +161,7 @@ void Job::populateText()
       QString lastSvc;
       foreach (QString resultline, results) {
          fieldlist = resultline.split("\t");
-
+         
          if (fieldlist.size() < 2)
             continue;
 
@@ -164,12 +170,12 @@ void Job::populateText()
          field = fieldlist[1].trimmed();
          int colon = field.indexOf(":");
          if (colon > 0) {
-            /* string is like <service> <jobId xxxx>: ..."
-             * we split at ':' then remove the jobId xxxx string (always the same) */
+            /* string is like <service> <jobId xxxx>: ..." 
+             * we split at ':' then remove the jobId xxxx string (always the same) */ 
             QString curSvc(field.left(colon).replace(jobstr,"").trimmed());
             if (curSvc == lastSvc  && curTime == lastTime) {
                curTime.clear();
-               curSvc.clear();
+               curSvc.clear(); 
             } else {
                lastTime = curTime;
                lastSvc = curSvc;
@@ -196,7 +202,7 @@ void Job::populateText()
 //          htmlbuf += "<td>" + curTime + "</td>";
             htmlbuf += "\n" + field ;
          }
-
+  
       } /* foreach resultline */
 
       htmlbuf += "</pre></body></html>";
@@ -204,13 +210,17 @@ void Job::populateText()
       /* full text ready. Here a custom sheet is used to align columns */
       QString logSheet(".err {color:#FF0000;}");
       textJobLog->document()->setDefaultStyleSheet(logSheet);
-      textJobLog->document()->setHtml(htmlbuf);
+      textJobLog->document()->setHtml(htmlbuf); 
       textJobLog->moveCursor(QTextCursor::Start);
 
    } /* if results from query */
-
+  
 }
 
+void Job::storeBwLimit(int val)
+{
+   m_bwlimit = val;
+}
 
 void Job::updateRunInfo()
 {
@@ -218,6 +228,17 @@ void Job::updateRunInfo()
    QStringList results;
    QStringList lst;
    bool parseit=false;
+
+#ifdef xxx
+   /* This doesn't seem like the right thing to do */
+   if (m_bwlimit >= 100) {
+      cmd = QString("setbandwidth limit=" + QString::number(m_bwlimit) 
+                    + " jobid=" + m_jobId);
+      m_console->dir_cmd(cmd, results);
+      results.clear();
+      m_bwlimit = 0;
+   }
+#endif
 
    cmd = QString(".status client=\"" + m_client + "\" running");
 /*
@@ -238,13 +259,17 @@ void Job::updateRunInfo()
  */
    QRegExp jobline("(JobId) (\\d+) Job ");
    QRegExp itemline("([\\w /]+)[:=]\\s*(.+)");
+   QRegExp filesline("Files: Examined=([\\d,]+) Backed up=([\\d,])");
    QRegExp oldline("Files=([\\d,]+) Bytes=([\\d,]+) Bytes/sec=([\\d,]+) Errors=([\\d,]+)");
+   QRegExp restoreline("Files: Restored=([\\d,]+) Expected=([\\d,]+) Completed=([\\d,]+)%");
+   QRegExp restoreline2("Files Examined=([\\d,]+) Expected Files=([\\d,]+) Percent Complete=([\\d,]+)");
+
    QString com(",");
    QString empty("");
-
+   
    if (m_console->dir_cmd(cmd, results)) {
       foreach (QString mline, results) {
-         foreach (QString line, mline.split("\n")) {
+         foreach (QString line, mline.split("\n")) { 
             line = line.trimmed();
             if (oldline.indexIn(line) >= 0) {
                if (parseit) {
@@ -256,6 +281,21 @@ void Job::updateRunInfo()
                }
                continue;
 
+            } else if (filesline.indexIn(line) >= 0) {
+               if (parseit) {
+                  lst = filesline.capturedTexts(); // Will also catch Backed up
+                  label_FilesExamined->setText(lst[1]);
+               }
+               continue;
+
+// TODO: Need to be fixed
+//            } else if (restoreline2.indexIn(line) >= 0) {
+//               if (parseit) {
+//                  lst = filesline.capturedTexts();
+//                  label_FilesExamined->setText(lst[1]); // Can also handle Expected and Completed
+//               }
+//               continue;
+
             } else if (jobline.indexIn(line) >= 0) {
                lst = jobline.capturedTexts();
                lst.removeFirst();
@@ -265,12 +305,12 @@ void Job::updateRunInfo()
                lst.removeFirst();
 
             } else {
-               if (mainWin->m_miscDebug)
+               if (mainWin->m_miscDebug) 
                   Pmsg1(0, "bad line=%s\n", line.toUtf8().data());
                continue;
             }
             if (lst.count() < 2) {
-               if (mainWin->m_miscDebug)
+               if (mainWin->m_miscDebug) 
                   Pmsg2(0, "bad line=%s count=%d\n", line.toUtf8().data(), lst.count());
             }
             if (lst[0] == "JobId") {
@@ -283,36 +323,53 @@ void Job::updateRunInfo()
             if (!parseit) {
                continue;
             }
-
+            
 //         } else if (lst[0] == "Job") {
 //            grpRun->setTitle(lst[1]);
-
-//
+            
+//               
 //         } else if (lst[0] == "VSS") {
 
 //         } else if (lst[0] == "Level") {
 //            Info->setText(lst[1]);
 //
-//         } else if (lst[0] == "JobType") {
+//         } else if (lst[0] == "JobType" || lst[0] == "Type") {
 //
-//         } else if (lst[0] == "JobStarted") {
+//         } else if (lst[0] == "JobStarted" || lst[0] == "StartTime") {
 //            Started->setText(lst[1]);
 
+#ifdef xxx
+            if (lst[0] == "Bwlimit") {
+               int val = lst[1].toInt();
+               if (val > 0) {
+                  chk_Bwlimit->setChecked(true);
+                  spin_Bwlimit->setEnabled(true);
+                  spin_Bwlimit->setValue(lst[1].toInt()/1024);
+               } else {
+                  chk_Bwlimit->setEnabled(false);
+                  spin_Bwlimit->setEnabled(false);
+                  spin_Bwlimit->setValue(0);
+               }
+#endif
+               
             if (lst[0] == "Errors") {
                label_JobErrors->setText(lst[1]);
-
+               
             } else if (lst[0] == "Bytes/sec") {
                label_Speed->setText(convertBytesSI(lst[1].toULongLong())+"/s");
-
-            } else if (lst[0] == "Files") {
+               
+            } else if (lst[0] == "Files" || lst[0] == "JobFiles") {
                label_JobFiles->setText(lst[1]);
-
-            } else if (lst[0] == "Bytes") {
+               
+            } else if (lst[0] == "Bytes" || lst[0] == "JobBytes") {
                label_JobBytes->setText(convertBytesSI(lst[1].toULongLong()));
+               
+            } else if (lst[0] == "Examined") {
+               label_FilesExamined->setText(lst[1]);
 
             } else if (lst[0] == "Files Examined") {
                label_FilesExamined->setText(lst[1]);
-
+               
             } else if (lst[0] == "Processing file") {
                label_CurrentFile->setText(lst[1]);
             }
@@ -328,14 +385,14 @@ void Job::populateForm()
 {
    QString stat, err;
    char buf[256];
-   QString query =
+   QString query = 
       "SELECT JobId, Job.Name, Level, Client.Name, Pool.Name, FileSet,"
       "SchedTime, StartTime, EndTime, EndTime-StartTime AS Duration, "
       "JobBytes, JobFiles, JobErrors, JobStatus, PurgedFiles "
       "FROM Job JOIN Client USING (ClientId) "
         "LEFT JOIN Pool ON (Job.PoolId = Pool.PoolId) "
         "LEFT JOIN FileSet ON (Job.FileSetId = FileSet.FileSetId)"
-      "WHERE JobId=" + m_jobId;
+      "WHERE JobId=" + m_jobId; 
    QStringList results;
    if (m_console->sql_cmd(query, results)) {
       QString resultline, duration;
@@ -343,10 +400,14 @@ void Job::populateForm()
 
       foreach (resultline, results) { // should have only one result
          fieldlist = resultline.split("\t");
+         if (fieldlist.size() != 15) {
+            Pmsg1(000, "Unexpected line %s", resultline.toUtf8().data());
+            continue;
+         }
          QStringListIterator fld(fieldlist);
          label_JobId->setText(fld.next());
          label_Name->setText(fld.next());
-
+         
          label_Level->setText(job_level_to_str(fld.next()[0].toAscii()));
 
          m_client = fld.next();
@@ -357,9 +418,9 @@ void Job::populateForm()
          label_StartTime->setText(fld.next());
          label_EndTime->setText(fld.next());
          duration = fld.next();
-         /*
+         /* 
           * Note: if we have a negative duration, it is because the EndTime
-          *  is zero (i.e. the Job is still running).  We should use
+          *  is zero (i.e. the Job is still running).  We should use 
           *  duration = StartTime - current_time
           */
          if (duration.left(1) == "-") {
@@ -405,16 +466,16 @@ void Job::populateForm()
       }
    }
 }
-
+  
 void Job::populateVolumes()
 {
 
-   QString query =
+   QString query = 
       "SELECT DISTINCT VolumeName, InChanger, Slot "
       "FROM Job JOIN JobMedia USING (JobId) JOIN Media USING (MediaId) "
-      "WHERE JobId=" + m_jobId + " ORDER BY VolumeName ";
+      "WHERE JobId=" + m_jobId + " ORDER BY VolumeName "; 
    if (mainWin->m_sqlDebug) Pmsg1(0, "Query cmd : %s\n",query.toUtf8().data());
-
+         
 
    QStringList results;
    if (m_console->sql_cmd(query, results)) {
@@ -424,7 +485,7 @@ void Job::populateVolumes()
       foreach (resultline, results) { // should have only one result
          fieldlist = resultline.split("\t");
          QStringListIterator fld(fieldlist);
-//         QListWidgetItem(QIcon(":/images/inchanger" + fld.next() + ".png"),
+//         QListWidgetItem(QIcon(":/images/inchanger" + fld.next() + ".png"), 
 //                         fld.next(), list_Volume);
          list_Volume->addItem(fld.next());
       }

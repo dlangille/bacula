@@ -1,5 +1,8 @@
 #!/bin/sh
 #
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
 # Shell script to update MySQL tables from version 1.38 to 2.0	
 #
 echo " "

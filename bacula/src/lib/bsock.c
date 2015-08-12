@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2007-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  * Network Utility Routines
@@ -25,26 +29,17 @@
 #include <netdb.h>
 #include <netinet/tcp.h>
 
-#ifndef ENODATA                    /* not defined on BSD systems */
-#define ENODATA EPIPE
-#endif
-
-#ifndef SOL_TCP
-#define SOL_TCP IPPROTO_TCP
-#endif
-
-#ifdef HAVE_WIN32
-#include <mswsock.h>
-#define socketRead(fd, buf, len)  ::recv(fd, buf, len, 0)
-#define socketWrite(fd, buf, len) ::send(fd, buf, len, 0)
-#define socketClose(fd)           ::closesocket(fd)
-static void win_close_wait(int fd);
-#else
+#if !defined(ENODATA)              /* not defined on BSD systems */
+#define ENODATA  EPIPE
+#endif 
+ 
+#if !defined(SOL_TCP)              /* Not defined on some systems */
+#define SOL_TCP  IPPROTO_TCP
+#endif 
+ 
 #define socketRead(fd, buf, len)  ::read(fd, buf, len)
 #define socketWrite(fd, buf, len) ::write(fd, buf, len)
 #define socketClose(fd)           ::close(fd)
-#endif
-
 
 /*
  * This is a non-class BSOCK "constructor"  because we want to
@@ -63,6 +58,7 @@ void BSOCK::init()
    set_closed();
    set_terminated();
    m_blocking = 1;
+   pout_msg_no = &out_msg_no;
    msg = get_pool_memory(PM_BSOCK);
    errmsg = get_pool_memory(PM_MESSAGE);
    timeout = BSOCK_TIMEOUT;
@@ -223,7 +219,7 @@ bool BSOCK::open(JCR *jcr, const char *name, char *host, char *service,
             *fatal = 1;
             Qmsg3(jcr, M_ERROR, 0,  _("Socket open error. proto=%d port=%d. ERR=%s\n"),
                ipaddr->get_family(), ipaddr->get_port_host_order(), be.bstrerror());
-            Pmsg3(000, _("Socket open error. proto=%d port=%d. ERR=%s\n"),
+            Pmsg3(300, _("Socket open error. proto=%d port=%d. ERR=%s\n"),
                ipaddr->get_family(), ipaddr->get_port_host_order(), be.bstrerror());
             break;
          }
@@ -321,9 +317,17 @@ bool BSOCK::set_locking()
    if (m_use_locking) {
       return true;                      /* already set */
    }
-   if ((stat = pthread_mutex_init(&m_mutex, NULL)) != 0) {
+   pm_rmutex = &m_rmutex;
+   pm_wmutex = &m_wmutex;
+   if ((stat = pthread_mutex_init(pm_rmutex, NULL)) != 0) {
       berrno be;
-      Qmsg(m_jcr, M_FATAL, 0, _("Could not init bsock mutex. ERR=%s\n"),
+      Qmsg(m_jcr, M_FATAL, 0, _("Could not init bsock read mutex. ERR=%s\n"),
+         be.bstrerror(stat));
+      return false;
+   }
+   if ((stat = pthread_mutex_init(pm_wmutex, NULL)) != 0) {
+      berrno be;
+      Qmsg(m_jcr, M_FATAL, 0, _("Could not init bsock write mutex. ERR=%s\n"),
          be.bstrerror(stat));
       return false;
    }
@@ -333,30 +337,32 @@ bool BSOCK::set_locking()
 
 void BSOCK::clear_locking()
 {
-   if (!m_use_locking) {
+   if (!m_use_locking || m_duped) {
       return;
    }
    m_use_locking = false;
-   pthread_mutex_destroy(&m_mutex);
+   pthread_mutex_destroy(pm_rmutex);
+   pthread_mutex_destroy(pm_wmutex);
+   pm_rmutex = NULL;
+   pm_wmutex = NULL;
    return;
 }
 
 /*
- * Send a message over the network. The send consists of
- * two network packets. The first is sends a 32 bit integer containing
- * the length of the data packet which follows.
  *
  * Returns: false on failure
  *          true  on success
  */
-bool BSOCK::send()
+bool BSOCK::send(int aflags)
 {
    int32_t rc;
    int32_t pktsiz;
-   int32_t *hdr;
+   int32_t *hdrptr;
+   int hdrsiz;
    bool ok = true;
    int32_t save_msglen;
    POOLMEM *save_msg;
+   bool locked = false;
 
    if (is_closed()) {
       if (!m_suppress_error_msgs) {
@@ -378,6 +384,7 @@ bool BSOCK::send()
       }
       return false;
    }
+
    if (msglen > 4000000) {
       if (!m_suppress_error_msgs) {
          Qmsg4(m_jcr, M_ERROR, 0,
@@ -387,30 +394,45 @@ bool BSOCK::send()
       return false;
    }
 
-   if (m_use_locking) P(m_mutex);
+   if (m_use_locking) {
+      pP(pm_wmutex);
+      locked = true;
+   }
    save_msglen = msglen;
    save_msg = msg;
+   m_flags = aflags;
+
    /* Compute total packet length */
    if (msglen <= 0) {
-      pktsiz = sizeof(pktsiz);               /* signal, no data */
+      hdrsiz = sizeof(pktsiz);
+      pktsiz = hdrsiz;                     /* signal, no data */
+   } else if (m_flags) {
+      hdrsiz = 2 * sizeof(pktsiz);         /* have 64 bit header */
+      pktsiz = msglen + hdrsiz;
    } else {
-      pktsiz = msglen + sizeof(pktsiz);      /* data */
+      hdrsiz = sizeof(pktsiz);             /* have 32 bit header */
+      pktsiz = msglen + hdrsiz;
    }
+
    /*
     * Store packet length at head of message -- note, we
     *  have reserved an int32_t just before msg, so we can
     *  store there
     */
-   hdr = (int32_t *)(msg - (int)sizeof(pktsiz));
-   *hdr = htonl(msglen);              /* store signal/length */
+   hdrptr = (int32_t *)(msg - hdrsiz);
+   *hdrptr = htonl(msglen);             /* store signal/length */
+   if (m_flags) {
+      *(hdrptr+1) = htonl(m_flags);     /* store flags */
+   }
 
-   out_msg_no++;            /* increment message number */
+   (*pout_msg_no)++;        /* increment message number */
 
    /* send data packet */
    timer_start = watchdog_time;  /* start timer */
    clear_timed_out();
    /* Full I/O done in one write */
-   rc = write_nbytes(this, (char *)hdr, pktsiz);
+   rc = write_nbytes(this, (char *)hdrptr, pktsiz);
+//   if (chk_dbglvl(DT_NETWORK|1900)) dump_bsock_msg(m_fd, *pout_msg_no, "SEND", rc, msglen, m_flags, save_msg, save_msglen);
    timer_start = 0;         /* clear timer */
    if (rc != pktsiz) {
       errors++;
@@ -435,7 +457,7 @@ bool BSOCK::send()
    }
    msglen = save_msglen;
    msg = save_msg;
-   if (m_use_locking) V(m_mutex);
+   if (locked) pV(pm_wmutex);
    return ok;
 }
 
@@ -478,7 +500,7 @@ bool BSOCK::fsend(const char *fmt, ...)
  * Returns -1 on signal (BNET_SIGNAL)
  * Returns -2 on hard end of file (BNET_HARDEOF)
  * Returns -3 on error  (BNET_ERROR)
- *
+ * Returns -4 on COMMAND (BNET_COMMAND)
  *  Unfortunately, it is a bit complicated because we have these
  *    four return types:
  *    1. Normal data
@@ -495,14 +517,15 @@ int32_t BSOCK::recv()
 
    msg[0] = 0;
    msglen = 0;
+   m_flags = 0;
    if (errors || is_terminated() || is_closed()) {
       return BNET_HARDEOF;
    }
-
    if (m_use_locking) {
-      P(m_mutex);
+      pP(pm_rmutex);
       locked = true;
    }
+
    read_seqno++;            /* bump sequence number */
    timer_start = watchdog_time;  /* set start wait time */
    clear_timed_out();
@@ -602,7 +625,9 @@ int32_t BSOCK::recv()
    Dsm_check(300);
 
 get_out:
-   if (locked) V(m_mutex);
+//   if ((chk_dbglvl(DT_NETWORK|1900))) dump_bsock_msg(m_fd, read_seqno, "RECV", nbytes, o_pktsiz, m_flags, msg, msglen);
+
+   if (locked) pV(pm_rmutex);
    return nbytes;                  /* return actual length of message */
 }
 
@@ -647,8 +672,8 @@ bool BSOCK::despool(void update_attr_spool_size(ssize_t size), ssize_t tsize)
          if (nbytes != (size_t)msglen) {
             berrno be;
             Dmsg2(400, "nbytes=%d msglen=%d\n", nbytes, msglen);
-            Qmsg3(get_jcr(), M_FATAL, 0, _("fread attr spool error. Wanted=%d got=%d bytes. ERR=%s\n"),
-                  msglen, nbytes, be.bstrerror());
+            Qmsg2(get_jcr(), M_FATAL, 0, _("fread attr spool error. Wanted=%d got=%d bytes.\n"),
+                  msglen, nbytes);
             update_attr_spool_size(tsize - last);
             return false;
          }
@@ -681,13 +706,16 @@ const char *BSOCK::bstrerror()
    if (errmsg == NULL) {
       errmsg = get_pool_memory(PM_MESSAGE);
    }
-   pm_strcpy(errmsg, be.bstrerror(b_errno));
+   if (b_errno == 0) {
+      pm_strcpy(errmsg, "I/O Error");
+   } else {
+      pm_strcpy(errmsg, be.bstrerror(b_errno));
+   }
    return errmsg;
 }
 
 int BSOCK::get_peer(char *buf, socklen_t buflen)
 {
-#if !defined(HAVE_WIN32)
     if (peer_addr.sin_family == 0) {
         socklen_t salen = sizeof(peer_addr);
         int rval = (getpeername)(m_fd, (struct sockaddr *)&peer_addr, &salen);
@@ -697,9 +725,6 @@ int BSOCK::get_peer(char *buf, socklen_t buflen)
         return -1;
 
     return 0;
-#else
-    return -1;
-#endif
 }
 
 /*
@@ -783,7 +808,6 @@ bool BSOCK::set_buffer_size(uint32_t size, int rw)
  */
 int BSOCK::set_nonblocking()
 {
-#ifndef HAVE_WIN32
    int oflags;
 
    /* Get current flags */
@@ -800,16 +824,6 @@ int BSOCK::set_nonblocking()
 
    m_blocking = 0;
    return oflags;
-#else
-   int flags;
-   u_long ioctlArg = 1;
-
-   flags = m_blocking;
-   ioctlsocket(m_fd, FIONBIO, &ioctlArg);
-   m_blocking = 0;
-
-   return flags;
-#endif
 }
 
 /*
@@ -818,7 +832,6 @@ int BSOCK::set_nonblocking()
  */
 int BSOCK::set_blocking()
 {
-#ifndef HAVE_WIN32
    int oflags;
    /* Get current flags */
    if ((oflags = fcntl(m_fd, F_GETFL, 0)) < 0) {
@@ -834,16 +847,6 @@ int BSOCK::set_blocking()
 
    m_blocking = 1;
    return oflags;
-#else
-   int flags;
-   u_long ioctlArg = 0;
-
-   flags = m_blocking;
-   ioctlsocket(m_fd, FIONBIO, &ioctlArg);
-   m_blocking = 1;
-
-   return flags;
-#endif
 }
 
 void BSOCK::set_killable(bool killable)
@@ -858,19 +861,12 @@ void BSOCK::set_killable(bool killable)
  */
 void BSOCK::restore_blocking (int flags)
 {
-#ifndef HAVE_WIN32
    if ((fcntl(m_fd, F_SETFL, flags)) < 0) {
       berrno be;
       Qmsg1(get_jcr(), M_ABORT, 0, _("fcntl F_SETFL error. ERR=%s\n"), be.bstrerror());
    }
 
    m_blocking = (flags & O_NONBLOCK) ? true : false;
-#else
-   u_long ioctlArg = flags;
-
-   ioctlsocket(m_fd, FIONBIO, &ioctlArg);
-   m_blocking = 1;
-#endif
 }
 
 /*
@@ -903,6 +899,11 @@ int BSOCK::wait_data(int sec, int usec)
          return -1;                /* error return */
       default:
          b_errno = 0;
+#ifdef HAVE_TLS
+         if (this->tls && !tls_bsock_probe(this)) {
+            continue; /* false alarm, maybe a session key negotiation in progress on the socket */
+         }
+#endif
          return 1;
       }
    }
@@ -932,6 +933,12 @@ int BSOCK::wait_data_intr(int sec, int usec)
       return -1;                /* error return */
    default:
       b_errno = 0;
+#ifdef HAVE_TLS
+      if (this->tls && !tls_bsock_probe(this)) {
+         /* maybe a session key negotiation waked up the socket */
+         return 0;
+      }
+#endif
       break;
    }
    return 1;
@@ -974,15 +981,9 @@ void BSOCK::close()
             bsock->tls = NULL;
          }
 
-#ifdef HAVE_WIN32
-         if (!bsock->is_timed_out()) {
-            win_close_wait(bsock->m_fd);  /* Ensure that data is not discarded */
-         }
-#else
          if (bsock->is_timed_out()) {
             shutdown(bsock->m_fd, SHUT_RDWR);   /* discard any pending I/O */
          }
-#endif
          /* On Windows this discards data if we did not do a close_wait() */
          socketClose(bsock->m_fd);      /* normal close */
       }
@@ -1120,7 +1121,7 @@ bail_out:
    bsnprintf(errmsg, errmsg_len, _("Authorization error with Director at \"%s:%d\"\n"
              "Most likely the passwords do not agree.\n"
              "If you are using TLS, there may have been a certificate validation error during the TLS handshake.\n"
-             "Please see " MANUAL_AUTH_URL " for help.\n"),
+             "For help, please see: " MANUAL_AUTH_URL "\n"),
              dir->host(), dir->port());
    return false;
 }
@@ -1139,14 +1140,14 @@ void BSOCK::control_bwlimit(int bytes)
 
    m_nb_bytes += bytes;
 
-   /* Less than 0.1ms since the last call, see the next time */
-   if (temp < 100) {
+   if (temp < 0 || temp > 10000000) { /* Take care of clock problems (>10s) or back in time */
+      m_nb_bytes = bytes;
+      m_last_tick = now;
       return;
    }
 
-   if (temp > 10000000) { /* Take care of clock problems (>10s) */
-      m_nb_bytes = bytes;
-      m_last_tick = now;
+   /* Less than 0.1ms since the last call, see the next time */
+   if (temp < 100) {
       return;
    }
 
@@ -1167,25 +1168,3 @@ void BSOCK::control_bwlimit(int bytes)
       m_last_tick = now;
    }
 }
-
-#ifdef HAVE_WIN32
-/*
- * closesocket is supposed to do a graceful disconnect under Window
- *   but it doesn't. Comments on http://msdn.microsoft.com/en-us/li
- *   confirm this behaviour. DisconnectEx is required instead, but
- *   that function needs to be retrieved via WS IOCTL
- */
-static void
-win_close_wait(int fd)
-{
-   int ret;
-   GUID disconnectex_guid = WSAID_DISCONNECTEX;
-   DWORD bytes_returned;
-   LPFN_DISCONNECTEX DisconnectEx;
-   ret = WSAIoctl(fd, SIO_GET_EXTENSION_FUNCTION_POINTER, &disconnectex_guid, sizeof(disconnectex_guid), &DisconnectEx, sizeof(DisconnectEx), &bytes_returned, NULL, NULL);
-   Dmsg1(100, "WSAIoctl(SIO_GET_EXTENSION_FUNCTION_POINTER, WSAID_DISCONNECTEX) ret = %d\n", ret);
-   if (!ret) {
-      DisconnectEx(fd, NULL, 0, 0);
-   }
-}
-#endif

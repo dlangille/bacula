@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *
@@ -54,6 +58,8 @@ int update_cmd(UAContext *ua, const char *cmd)
       NT_("slot"),   /* 4 */
       NT_("jobid"),  /* 5 */
       NT_("stats"),  /* 6 */
+      NT_("snap"),   /* 7 */
+      NT_("snapshot"),/* 8 */
       NULL};
 
    if (!open_client_db(ua)) {
@@ -78,6 +84,10 @@ int update_cmd(UAContext *ua, const char *cmd)
    case 6:
       update_stats(ua);
       return 1;
+   case 7:
+   case 8:
+      update_snapshot(ua);
+      return 1;
    default:
       break;
    }
@@ -87,6 +97,7 @@ int update_cmd(UAContext *ua, const char *cmd)
    add_prompt(ua, _("Pool from resource"));
    add_prompt(ua, _("Slots from autochanger"));
    add_prompt(ua, _("Long term statistics"));
+   add_prompt(ua, _("Snapshot parameters"));
    switch (do_prompt(ua, _("item"), _("Choose catalog item to update"), NULL, 0)) {
    case 0:
       update_volume(ua);
@@ -99,6 +110,9 @@ int update_cmd(UAContext *ua, const char *cmd)
       break;
    case 3:
       update_stats(ua);
+      break;
+   case 4:
+      update_snapshot(ua);
       break;
    default:
       break;

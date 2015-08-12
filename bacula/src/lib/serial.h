@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *
@@ -67,12 +71,17 @@ extern void unserial_string(uint8_t * * const ptr, char * const str, int max);
 #define unser_length(x) ((uint32_t)(ser_ptr - (uint8_t *)(x)))
 
 /*  ser_end(x, s)  --  End serialisation into a buffer x of size s.  */
-#define ser_end(x, s)   ASSERT(ser_length(x) <= (s))
-#define unser_end(x, s)   ASSERT(ser_length(x) <= (s))
+#define ser_end(x, s)   ASSERT(ser_length(x) <= ((uint32_t)(s)))
+#define unser_end(x, s)   ASSERT(unser_length(x) <= ((uint32_t)(s)))
 
 /*  ser_check(x, s)  --  Verify length of serialised data in buffer x is
                          expected length s.  */
-#define ser_check(x, s) ASSERT(ser_length(x) == (s))
+#define ser_check(x, s) ASSERT(ser_length(x) == ((uint32_t)(s)))
+#define unser_check(x, s) ASSERT(unser_length(x) == ((uint32_t)(s)))
+
+/*  ser_assign(ptr, len) -- assign current position to ptr and go len bytes forward  */
+#define ser_assign(ptr, len) { ptr = (typeof(ptr))ser_ptr; ser_ptr += (len); }
+#define unser_assign(ptr, len) { ptr = (typeof(ptr))ser_ptr; ser_ptr += (len); }
 
 /*                          Serialisation                   */
 

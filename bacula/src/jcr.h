@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  * Bacula JCR Structure definition for Daemons and the Library
@@ -62,6 +66,7 @@
 #define JS_Differences           'D'  /* Verify differences */
 #define JS_ErrorTerminated       'E'  /* Job terminated in error */
 #define JS_WaitFD                'F'  /* waiting on File daemon */
+#define JS_Incomplete            'I'  /* Incomplete Job */
 #define JS_DataCommitting        'L'  /* Committing data (last despool) */
 #define JS_WaitMount             'M'  /* waiting for Mount */
 #define JS_Running               'R'  /* running */
@@ -133,17 +138,18 @@ enum {
 class JCR;
 class BSOCK;
 struct FF_PKT;
-class  B_DB;
+class  BDB;
 struct ATTR_DBR;
 class Plugin;
 struct save_pkt;
 struct bpContext;
-struct xattr_private_data_t;
+
 
 #ifdef FILE_DAEMON
 class htable;
-struct acl_data_t;
-struct xattr_data_t;
+struct acl_ctx_t;
+struct xattr_ctx_t;
+class snapshot_manager;
 
 struct CRYPTO_CTX {
    bool pki_sign;                     /* Enable PKI Signatures? */
@@ -165,6 +171,7 @@ typedef void (JCR_free_HANDLER)(JCR *jcr);
 class JCR {
 private:
    pthread_mutex_t mutex;             /* jcr mutex */
+   pthread_mutex_t mutex_auth;        /* used during authentication */
    volatile int32_t _use_count;       /* use count */
    int32_t m_JobType;                 /* backup, restore, verify ... */
    int32_t m_JobLevel;                /* Job level */
@@ -172,13 +179,22 @@ private:
 public:
    void lock() {P(mutex); };
    void unlock() {V(mutex); };
+   void lock_auth() {P(mutex_auth);};
+   void unlock_auth() {V(mutex_auth);};
    void inc_use_count(void) {lock(); _use_count++; unlock(); };
    void dec_use_count(void) {lock(); _use_count--; unlock(); };
    int32_t use_count() const { return _use_count; };
-   void init_mutex(void) {pthread_mutex_init(&mutex, NULL); };
-   void destroy_mutex(void) {pthread_mutex_destroy(&mutex); };
+   void init_mutex(void) {
+      pthread_mutex_init(&mutex, NULL);
+      pthread_mutex_init(&mutex_auth, NULL);
+   };
+   void destroy_mutex(void) {
+      pthread_mutex_destroy(&mutex_auth);
+      pthread_mutex_destroy(&mutex);
+   };
    bool is_job_canceled() {return job_canceled(this); };
    bool is_canceled() {return job_canceled(this); };
+   bool is_incomplete() { return JobStatus == JS_Incomplete; };
    bool is_JobLevel(int32_t JobLevel) { return JobLevel == m_JobLevel; };
    bool is_JobType(int32_t JobType) { return JobType == m_JobType; };
    bool is_JobStatus(int32_t aJobStatus) { return aJobStatus == JobStatus; };
@@ -194,9 +210,9 @@ public:
    };
    const char *get_OperationName();       /* in lib/jcr.c */
    const char *get_ActionName(bool past); /* in lib/jcr.c */
-   void setJobStatus(int newJobStatus);   /* in lib/jcr.c */
+   void setJobStatus(int JobStatus);      /* in lib/jcr.c */
    bool sendJobStatus();                  /* in lib/jcr.c */
-   bool sendJobStatus(int newJobStatus);  /* in lib/jcr.c */
+   bool sendJobStatus(int JobStatus);     /* in lib/jcr.c */
    bool JobReads();                       /* in lib/jcr.c */
    void my_thread_send_signal(int sig);   /* in lib/jcr.c */
    void set_killable(bool killable);      /* in lib/jcr.c */
@@ -224,11 +240,14 @@ public:
    uint32_t VolSessionTime;
    uint32_t JobFiles;                 /* Number of files written, this job */
    uint32_t JobErrors;                /* Number of non-fatal errors this job */
+   uint32_t SDErrors;                 /* Number of non-fatal SD errors */
    uint32_t JobWarnings;              /* Number of warning messages */
    uint32_t LastRate;                 /* Last sample bytes/sec */
    uint64_t JobBytes;                 /* Number of bytes processed this job */
    uint64_t LastJobBytes;             /* Last sample number bytes */
-   uint64_t ReadBytes;                /* Bytes read */
+   uint64_t ReadBytes;                /* Bytes read -- before compression */
+   uint64_t CommBytes;                /* FD comm line bytes sent to SD */
+   uint64_t CommCompressedBytes;      /* FD comm line compressed bytes sent to SD */
    FileId_t FileId;                   /* Last FileId used */
    volatile int32_t JobStatus;        /* ready, running, blocked, terminated */
    int32_t JobPriority;               /* Job priority */
@@ -266,12 +285,13 @@ public:
    bool rerunning;                    /* rerunning an incomplete job */
    bool job_started;                  /* Set when the job is actually started */
    bool sd_calls_client;              /* Set for SD to call client (FD/SD) */
+   bool exiting;                      /* Set when exiting */
 
    void *Python_job;                  /* Python Job Object */
    void *Python_events;               /* Python Events Object */
    POOLMEM *attr;                     /* Attribute string from SD */
-   B_DB *db;                          /* database pointer */
-   B_DB *db_batch;                    /* database pointer for batch and accurate */
+   BDB *db;                          /* database pointer */
+   BDB *db_batch;                    /* database pointer for batch and accurate */
    uint64_t nb_base_files;            /* Number of base files */
    uint64_t nb_base_files_used;       /* Number of useful files in base */
 
@@ -287,11 +307,14 @@ public:
    int64_t max_bandwidth;             /* Bandwidth limit for this Job */
    htable *path_list;                 /* Directory list (used by findlib) */
 
+   uint32_t getErrors() { return JobErrors + SDErrors; }; /* Get error count */
+
    /* Daemon specific part of JCR */
    /* This should be empty in the library */
 
 #ifdef DIRECTOR_DAEMON
    /* Director Daemon specific data part of JCR */
+   bool SD_msg_chan_started;          /* True if the msg thread is started */
    pthread_t SD_msg_chan;             /* Message channel thread id */
    pthread_cond_t term_wait;          /* Wait for job termination */
    workq_ele_t *work_item;            /* Work queue item if scheduled */
@@ -315,7 +338,6 @@ public:
    MSGS *messages;                    /* Default message handler */
    uint32_t SDJobFiles;               /* Number of files written, this job */
    uint64_t SDJobBytes;               /* Number of bytes processed this job */
-   uint32_t SDErrors;                 /* Number of non-fatal errors */
    volatile int32_t SDJobStatus;      /* Storage Job Status */
    volatile int32_t FDJobStatus;      /* File daemon Job Status */
    uint32_t ExpectedFiles;            /* Expected restore files */
@@ -323,7 +345,9 @@ public:
    uint32_t FileIndex;                /* Last FileIndex processed */
    utime_t MaxRunSchedTime;           /* max run time in seconds from Initial Scheduled time */
    POOLMEM *fname;                    /* name to put into catalog */
+   POOLMEM *component_fname;          /* Component info file name */
    POOLMEM *media_type;               /* Set if user supplied Storage */
+   FILE *component_fd;                /* Component info file desc */
    JOB_DBR jr;                        /* Job DB record for current job */
    JOB_DBR previous_jr;               /* previous job database record */
    JOB *previous_job;                 /* Job resource of migration previous job */
@@ -348,8 +372,8 @@ public:
    int32_t FDVersion;                 /* File daemon version number */
    int32_t SDVersion;                 /* Storage daemon version number */
    int64_t spool_size;                /* Spool size for this job */
+   utime_t snapshot_retention;        /* Snapshot retention (from Client/Job resource) */
    volatile bool sd_msg_thread_done;  /* Set when Storage message thread done */
-   bool SD_msg_chan_started;          /* Set if message thread started */
    bool wasVirtualFull;               /* set if job was VirtualFull */
    bool IgnoreDuplicateJobChecking;   /* set in migration jobs */
    bool spool_data;                   /* Spool data in SD */
@@ -360,13 +384,14 @@ public:
    bool needs_sd;                     /* set if SD needed by Job */
    bool cloned;                       /* set if cloned */
    bool unlink_bsr;                   /* Unlink bsr file created */
-   bool VSS;                          /* VSS used by FD */
+   bool Snapshot;                     /* Snapshot used by FD (VSS on Windows) */
    bool Encrypt;                      /* Encryption used by FD */
    bool stats_enabled;                /* Keep all job records in a table for long term statistics */
    bool no_maxtime;                   /* Don't check Max*Time for this JCR */
    bool keep_sd_auth_key;             /* Clear or not the SD auth key after connection*/
    bool use_accurate_chksum;          /* Use or not checksum option in accurate code */
    bool run_pool_override;
+   bool cmdline_next_pool_override;   /* Next pool is overridden */
    bool run_next_pool_override;       /* Next pool is overridden */
    bool run_full_pool_override;
    bool run_inc_pool_override;
@@ -380,12 +405,13 @@ public:
 
 #ifdef FILE_DAEMON
    /* File Daemon specific part of JCR */
+   BSOCK *sd_calls_client_bsock;      /* Socket used by SDCallsClient feature */
    uint32_t num_files_examined;       /* files examined this job */
    POOLMEM *last_fname;               /* last file saved/verified */
    POOLMEM *job_metadata;             /* VSS job metadata */
    pthread_cond_t job_start_wait;     /* Wait for SD to start Job */
-   acl_data_t *acl_data;              /* ACLs for backup/restore */
-   xattr_data_t *xattr_data;          /* Extended Attributes for backup/restore */
+   acl_ctx_t *acl_ctx;                /* ACLs for backup/restore */
+   xattr_ctx_t *xattr_ctx;            /* Extended Attributes for backup/restore */
    int32_t last_type;                 /* type of last file saved/verified */
    int incremental;                   /* set if incremental for SINCE */
    time_t last_stat_time;             /* Last time stats sent to Dir */
@@ -415,11 +441,14 @@ public:
    alist *RunScripts;                 /* Commands to run before and after job */
    CRYPTO_CTX crypto;                 /* Crypto ctx */
    DIRRES* director;                  /* Director resource */
-   bool VSS;                          /* VSS used by FD */
+   bool Snapshot;                     /* Snapshot used by FD (or VSS) */
    bool got_metadata;                 /* set when found job_metatdata */
    bool multi_restore;                /* Dir can do multiple storage restore */
+   bool interactive_session;          /* Use interactive session with the SD */
    htable *file_list;                 /* Previous file list (accurate mode) */
    uint64_t base_size;                /* compute space saved with base job */
+   utime_t snapshot_retention;        /* Snapshot retention (from director) */
+   snapshot_manager *snap_mgr;        /* Snapshot manager */
 #endif /* FILE_DAEMON */
 
 
@@ -427,6 +456,7 @@ public:
    /* Storage Daemon specific part of JCR */
    JCR *next_dev;                     /* next JCR attached to device */
    JCR *prev_dev;                     /* previous JCR attached to device */
+   dlist *jobmedia_queue;             /* JobMedia queue */
    char *dir_auth_key;                /* Dir auth key */
    pthread_cond_t job_start_wait;     /* Wait for FD to start Job */
    int32_t type;
@@ -438,7 +468,7 @@ public:
    POOLMEM *fileset_md5;              /* MD5 for FileSet */
    char stored_addr[MAX_NAME_LENGTH]; /* storage daemon address */
    char client_addr[MAX_NAME_LENGTH]; /* client daemon address */
-   VOL_LIST *VolList;                 /* list to read */
+   VOL_LIST *VolList;                 /* list to read, freed at the end of the job */
    int32_t NumWriteVolumes;           /* number of volumes written */
    int32_t NumReadVolumes;            /* total number of volumes to read */
    int32_t CurReadVolume;             /* current read volume number */
@@ -447,6 +477,8 @@ public:
    int32_t FDVersion;                 /* File daemon version number */
    int32_t SDVersion;                 /* Storage daemon version number */
    bool session_opened;
+   bool interactive_session;          /* Interactive session with the FD */
+   bool is_ok_data_sent;              /* the "3000 OK data" has been sent */
    long Ticket;                       /* ticket for this job */
    bool ignore_label_errors;          /* ignore Volume label errors */
    bool spool_attributes;             /* set if spooling attributes */

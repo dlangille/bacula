@@ -1,5 +1,10 @@
 #!/bin/sh
 #
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+
+#
 # This script is used to test multiple devices grouped in
 # the director configuration
 #
@@ -32,7 +37,7 @@ for i in 2 3 4; do
     sed "s/FileStorage/FileStorage$i/" $tmp/2 >> $conf/bacula-sd.conf
 done
 
-disable_pluguins
+disable_plugins
 
 echo "$cwd/build" >${cwd}/tmp/file-list
 echo "$tmp/fifo" >>${cwd}/tmp/file-list

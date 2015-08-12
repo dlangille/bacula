@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2001-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *
@@ -27,6 +31,28 @@
 /* Imported variables */
 extern struct s_jl joblevels[];
 
+int confirm_retention_yesno(UAContext *ua, utime_t ret, const char *msg)
+{
+   char ed1[100];
+   int val;
+
+   /* Look for "yes" in command line */
+   if (find_arg(ua, NT_("yes")) != -1) {
+      return 1;
+   }
+
+   for ( ;; ) {
+       ua->info_msg(_("The current %s retention period is: %s\n"),
+          msg, edit_utime(ret, ed1, sizeof(ed1)));
+       if (!get_cmd(ua, _("Continue? (yes/no): "))) {
+          return 0;
+       }
+       if (is_yesno(ua->cmd, &val)) {
+          return val;           /* is 1 for yes, 0 for no */
+       }
+    }
+    return 1;
+}
 
 /*
  * Confirm a retention period
@@ -36,14 +62,15 @@ int confirm_retention(UAContext *ua, utime_t *ret, const char *msg)
    char ed1[100];
    int val;
 
-   int yes_in_arg = find_arg(ua, NT_("yes"));
+   /* Look for "yes" in command line */
+   if (find_arg(ua, NT_("yes")) != -1) {
+      return 1;
+   }
 
    for ( ;; ) {
        ua->info_msg(_("The current %s retention period is: %s\n"),
           msg, edit_utime(*ret, ed1, sizeof(ed1)));
-       if (yes_in_arg != -1) {
-          return 1;
-       }
+
        if (!get_cmd(ua, _("Continue? (yes/mod/no): "))) {
           return 0;
        }
@@ -251,7 +278,11 @@ JOB *select_enable_disable_job_resource(UAContext *ua, bool enable)
    JOB *job;
 
    LockRes();
-   start_prompt(ua, _("The defined Job resources are:\n"));
+   if (enable) {
+      start_prompt(ua, _("The disabled Job resources are:\n"));
+   } else {
+      start_prompt(ua, _("The enabled Job resources are:\n"));
+   }
    foreach_res(job, R_JOB) {
       if (!acl_access_ok(ua, Job_ACL, job->name())) {
          continue;
@@ -333,6 +364,32 @@ JOB *select_restore_job_resource(UAContext *ua)
    return job;
 }
 
+/*
+ * Select a client to enable or disable
+ */
+CLIENT *select_enable_disable_client_resource(UAContext *ua, bool enable)
+{
+   char name[MAX_NAME_LENGTH];
+   CLIENT *client;
+
+   LockRes();
+   start_prompt(ua, _("The defined Client resources are:\n"));
+   foreach_res(client, R_CLIENT) {
+      if (!acl_access_ok(ua, Client_ACL, client->name())) {
+         continue;
+      }
+      if (client->enabled == enable) {   /* Already enabled/disabled? */
+         continue;                       /* yes, skip */
+      }
+      add_prompt(ua, client->name());
+   }
+   UnlockRes();
+   if (do_prompt(ua, _("Client"), _("Select Client resource"), name, sizeof(name)) < 0) {
+      return NULL;
+   }
+   client = (CLIENT *)GetResWithName(R_CLIENT, name);
+   return client;
+}
 
 
 /*
@@ -384,6 +441,34 @@ CLIENT *get_client_resource(UAContext *ua)
    }
    return select_client_resource(ua);
 }
+
+/*
+ * Select a schedule to enable or disable
+ */
+SCHED *select_enable_disable_schedule_resource(UAContext *ua, bool enable)
+{
+   char name[MAX_NAME_LENGTH];
+   SCHED *sched;
+
+   LockRes();
+   start_prompt(ua, _("The defined Schedule resources are:\n"));
+   foreach_res(sched, R_SCHEDULE) {
+      if (!acl_access_ok(ua, Schedule_ACL, sched->name())) {
+         continue;
+      }
+      if (sched->enabled == enable) {   /* Already enabled/disabled? */
+         continue;                      /* yes, skip */
+      }
+      add_prompt(ua, sched->name());
+   }
+   UnlockRes();
+   if (do_prompt(ua, _("Schedule"), _("Select Schedule resource"), name, sizeof(name)) < 0) {
+      return NULL;
+   }
+   sched = (SCHED *)GetResWithName(R_SCHEDULE, name);
+   return sched;
+}
+
 
 /* Scan what the user has entered looking for:
  *
@@ -1299,13 +1384,20 @@ int select_running_jobs(UAContext *ua, alist *jcrs, const char *reason)
             ua->error_msg(_("No value given for \"job\".\n"));
             goto bail_out;
          }
-         if (!(jcr=get_jcr_by_partial_name(ua->argv[i]))) {
-            ua->warning_msg(_("Warning Job %s is not running.\n"), ua->argv[i]);
-            jcr = new_jcr(sizeof(JCR), dird_free_jcr);
-            bstrncpy(jcr->Job, ua->argv[i], sizeof(jcr->Job));
-         }
+         jcr = get_jcr_by_partial_name(ua->argv[i]);
+
          if (jcr && jcr->job && acl_access_ok(ua, Job_ACL, jcr->job->name())) {
             jcrs->append(jcr);
+
+         } else if (jcr) {
+            if (jcr->job) {
+               ua->error_msg(_("Unauthorized command from this console "
+                               "for job=%s.\n"), ua->argv[i]);
+            }
+            free_jcr(jcr);
+
+         } else {
+            ua->warning_msg(_("Warning Job %s is not running.\n"), ua->argv[i]);
          }
          if (jcrs->size() == 0) {
             goto bail_out;               /* If we did not find specified jobid, get out */
@@ -1317,13 +1409,20 @@ int select_running_jobs(UAContext *ua, alist *jcrs, const char *reason)
             ua->error_msg(_("No value given for \"ujobid\".\n"));
             goto bail_out;
          }
-         if (!(jcr=get_jcr_by_full_name(ua->argv[i]))) {
-            ua->warning_msg(_("Warning Job %s is not running.\n"), ua->argv[i]);
-            jcr = new_jcr(sizeof(JCR), dird_free_jcr);
-            bstrncpy(jcr->Job, ua->argv[i], sizeof(jcr->Job));
-         }
+         jcr = get_jcr_by_full_name(ua->argv[i]);
+
          if (jcr && jcr->job && acl_access_ok(ua, Job_ACL, jcr->job->name())) {
             jcrs->append(jcr);
+
+         } else if (jcr) {
+            if (jcr->job) {
+               ua->error_msg(_("Unauthorized command from this console "
+                               "for ujobid=%s.\n"), ua->argv[i]);
+            }
+            free_jcr(jcr);
+
+         } else {
+            ua->warning_msg(_("Warning Job %s is not running.\n"), ua->argv[i]);
          }
          if (jcrs->size() == 0) {
             goto bail_out;               /* If we did not find specified jobid, get out */

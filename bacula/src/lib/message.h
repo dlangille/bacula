@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  * Define Message Types for Bacula
@@ -153,8 +157,11 @@ struct MQUEUE_ITEM {
 #define    DT_MEMORY     (1<<24)                /* memory  */
 #define    DT_SCHEDULER  (1<<23)                /* scheduler */
 #define    DT_PROTOCOL   (1<<22)                /* protocol */
+#define    DT_SNAPSHOT   (1<<19)                /* Snapshot */
+#define    DT_ASX        (1<<16)                /* used by Alain for personal debugging */
 #define    DT_ALL        (0x7FFF0000)           /* all (up to debug_level 65635, 15 flags available) */
 
+const char *debug_get_tag(uint32_t pos, const char **desc);
 bool debug_find_tag(const char *tagname, bool add, int64_t *current_level);
 bool debug_parse_tags(const char *options, int64_t *current_level);
 
@@ -167,14 +174,15 @@ bool get_trace(void);
 void set_debug_flags(char *options);
 const char *get_basename(const char *pathname);
 
-class B_DB;
-typedef bool (*sql_query_func)(JCR *jcr, const char *cmd);
-typedef bool (*sql_escape_func)(JCR *jcr, B_DB *db, char *snew, char *old, int len);
+class BDB;                                              /* define forward reference */
+typedef bool (*sql_query_call)(JCR *jcr, const char *cmd);
+typedef bool (*sql_escape_call)(JCR *jcr, BDB *db, char *snew, char *sold, int len);
 
-extern DLL_IMP_EXP sql_query_func     p_sql_query;
-extern DLL_IMP_EXP sql_escape_func    p_sql_escape;
+extern DLL_IMP_EXP sql_query_call  p_sql_query;
+extern DLL_IMP_EXP sql_escape_call p_sql_escape;
 
 extern DLL_IMP_EXP int64_t       debug_level;
+extern DLL_IMP_EXP int64_t       debug_level_tags;
 extern DLL_IMP_EXP int32_t       debug_flags;
 extern DLL_IMP_EXP bool          dbg_timestamp;          /* print timestamp in debug output */
 extern DLL_IMP_EXP bool          prt_kaboom;             /* Print kaboom output */

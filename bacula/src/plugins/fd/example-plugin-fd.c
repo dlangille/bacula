@@ -1,19 +1,22 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2010-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
-*/
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
 
+   Bacula(R) is a registered trademark of Kern Sibbald.
+*/
 #define BUILD_PLUGIN
 #define BUILDING_DLL            /* required for Windows plugin */
 
@@ -102,7 +105,7 @@ loadPlugin(bInfo *lbinfo, bFuncs *lbfuncs, pInfo **pinfo, pFuncs **pfuncs)
  *  Bacula is going to exit.
  */
 bRC DLL_IMP_EXP
-unloadPlugin()
+unloadPlugin() 
 {
    printf("plugin: Unloaded\n");
    return bRC_OK;
@@ -125,7 +128,7 @@ static bRC newPlugin(bpContext *ctx)
 }
 
 /*
- * Release everything concerning a particular instance of a
+ * Release everything concerning a particular instance of a 
  *  plugin. Normally called when the Job terminates.
  */
 static bRC freePlugin(bpContext *ctx)
@@ -140,17 +143,17 @@ static bRC freePlugin(bpContext *ctx)
  * Called by core code to get a variable from the plugin.
  *   Not currently used.
  */
-static bRC getPluginValue(bpContext *ctx, pVariable var, void *value)
+static bRC getPluginValue(bpContext *ctx, pVariable var, void *value) 
 {
 // printf("plugin: getPluginValue var=%d\n", var);
    return bRC_OK;
 }
 
-/*
+/* 
  * Called by core code to set a plugin variable.
  *  Not currently used.
  */
-static bRC setPluginValue(bpContext *ctx, pVariable var, void *value)
+static bRC setPluginValue(bpContext *ctx, pVariable var, void *value) 
 {
 // printf("plugin: setPluginValue var=%d\n", var);
    return bRC_OK;
@@ -228,13 +231,13 @@ static bRC startBackupFile(bpContext *ctx, struct save_pkt *sp)
  * Done backing up a file.
  */
 static bRC endBackupFile(bpContext *ctx)
-{
+{ 
    return bRC_OK;
 }
 
 /*
  * Do actual I/O.  Bacula calls this after startBackupFile
- *   or after startRestoreFile to do the actual file
+ *   or after startRestoreFile to do the actual file 
  *   input or output.
  */
 static bRC pluginIO(bpContext *ctx, struct io_pkt *io)

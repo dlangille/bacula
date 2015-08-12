@@ -2,8 +2,8 @@
 #
 # shell script to create Bacula SQLite tables
 #
-#  Author:  Kern Sibbald
-#  License: LGPLv3
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
 #
 
 bindir=@SQLITE_BINDIR@
@@ -98,6 +98,7 @@ CREATE TABLE Job (
    HasCache TINYINT DEFAULT 0,
    Reviewed TINYINT DEFAULT 0,
    Comment TEXT,
+   FileTable TEXT DEFAULT 'File',
    PRIMARY KEY(JobId) 
    );
 CREATE INDEX inx6 ON Job (Name);
@@ -130,7 +131,8 @@ CREATE TABLE JobHisto (
    HasBase TINYINT DEFAULT 0,
    HasCache TINYINT DEFAULT 0,
    Reviewed TINYINT DEFAULT 0,
-   Comment TEXT
+   Comment TEXT,
+   FileTable TEXT DEFAULT 'File'
    );
 CREATE INDEX inx61 ON JobHisto (StartTime);
 
@@ -205,9 +207,13 @@ CREATE TABLE Media (
    VolBlocks INTEGER UNSIGNED DEFAULT 0,
    VolMounts INTEGER UNSIGNED DEFAULT 0,
    VolBytes BIGINT UNSIGNED DEFAULT 0,
-   VolParts INTEGER UNSIGNED DEFAULT 0,
+   VolABytes BIGINT UNSIGNED DEFAULT 0,
+   VolAPadding BIGINT UNSIGNED DEFAULT 0,
+   VolHoleBytes BIGINT UNSIGNED DEFAULT 0,
+   VolHoles INTEGER UNSIGNED DEFAULT 0,
+   VolParts INTEGER UNSIGNED DEFAULT 0,    /* Now used for VolType */
    VolErrors INTEGER UNSIGNED DEFAULT 0,
-   VolWrites INTEGER UNSIGNED DEFAULT 0,
+   VolWrites BIGINT UNSIGNED DEFAULT 0,
    VolCapacityBytes BIGINT UNSIGNED DEFAULT 0,
    VolStatus VARCHAR(20) NOT NULL,
    Enabled TINYINT DEFAULT 1,
@@ -236,6 +242,8 @@ CREATE TABLE Media (
    );
 
 CREATE INDEX inx8 ON Media (PoolId);
+CREATE INDEX inx9 ON Media (StorageId);
+
 
 CREATE TABLE MediaType (
    MediaTypeId INTEGER,
@@ -386,6 +394,25 @@ CREATE TABLE PathVisibility
 CREATE INDEX pathvisibility_jobid
 	  ON PathVisibility (JobId);
 
+
+CREATE TABLE Snapshot (
+  SnapshotId	  serial,
+  Name		  text NOT NULL,
+  JobId 	  integer default 0,
+  FileSetId	  integer default 0,
+  CreateTDate	  bigint default 0,
+  CreateDate	  datetime not null,
+  ClientId	  int default 0,
+  Volume	  text not null,
+  Device	  text not null,
+  Type		  text not null,
+  Retention	  int default 0,
+  Comment	  text,
+  primary key (SnapshotId)
+);
+
+CREATE UNIQUE INDEX snapshot_idx ON Snapshot (Device, Volume, Name);
+
 CREATE TABLE Status (
    JobStatus CHAR(1) NOT NULL,
    JobStatusLong BLOB, 
@@ -435,11 +462,11 @@ INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
    ('a', 'SD despooling attributes',15);
 INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
    ('i', 'Doing batch insert file records',15);
-
+INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
+   ('I', 'Incomplete Job',25);
 
 -- Initialize Version		 
-INSERT INTO Version (VersionId) VALUES (@BDB_VERSION@);
-
+INSERT INTO Version (VersionId) VALUES (15);
 
 PRAGMA default_cache_size = 100000;
 PRAGMA synchronous = NORMAL;

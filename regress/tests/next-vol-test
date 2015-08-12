@@ -1,5 +1,10 @@
 #!/bin/sh
 #
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+
+#
 # This script will test next vol algo with
 # vtape
 #
@@ -8,6 +13,10 @@
 #       Test with enabled=false
 #       Test with recycle=no
 #       Track scratch usage
+#
+# Please do not write any more tests with so many Jobs and combinations,
+#  because when something goes wrong it is very hard and time consuming
+#  to know what caused the failure.
 #
 . scripts/functions
 
@@ -67,24 +76,28 @@ cat <<EOF > ${cwd}/tmp/bconcmds
 @$out ${cwd}/tmp/log2.out
 @# Must choose vol56
 @# Pool + Append + Enabled + InChanger
+@# JobId=1
 run level=full pool=Test NightlySave yes
 wait
 message
 list volumes
 @# Must choose vol58
 @# Pool + Recycled + Enabled + InChanger
+@# JobId=2
 run level=full pool=Test NightlySave yes
 wait
 message
 list volume
 @# Must choose vol46
 @# Pool + Purged + Enabled + InChanger
+@# JobId=3
 run level=full pool=Test NightlySave yes
 wait
 message
 list volumes
 @# Must choose vol55
 @# Pool + Full + Recycle + Enabled + InChanger
+@# JobId=4
 run level=full pool=Test NightlySave yes
 wait
 message
@@ -93,29 +106,35 @@ list volumes
 @# No more in Test pool, get from scratch
 @# vol52 is Append, but have 1 job and MaxJob
 @# Scratch + Recycle + Enabled + InChanger
+@# JobId=5
 run level=full pool=Test NightlySave yes
 wait
 message
 list volume
 @# Must choose vol52
 @# Scratch + Purged + Enabled + InChanger + LastW
-run level=full pool=Test NightlySave yes
+@# JobId=6
+run level=Full pool=Test NightlySave yes
 wait
 message
 list volume
 @# Must choose vol57
 @# Scratch + Purged + Enabled + InChanger + LastW
+@# JobId=7
 run level=full pool=Test NightlySave yes
 wait
 message
 list volumes
 @# Must choose vol53
 @# Scratch + Purged + Enabled + InChanger + LastW
+@# JobId=8
 run level=full pool=Test NightlySave yes
 wait
 messages
 list volumes
+@# JobId=9
 restore fileset="Full Set" pool=Test where=${cwd}/tmp/bacula-restores select all done
+1
 yes
 wait
 messages
@@ -180,30 +199,35 @@ list volume
 messages
 @# Must choose file1
 @# Pool + Append + Lowest MediaId
+@# JobId=10
 run level=full pool=Test storage=File NightlySave yes
 wait
 message
 list volume
 @# Must choose file5
 @# Pool + Append + Lowest MediaId (only once)
+@# JobId=11
 run level=full pool=Test storage=File NightlySave yes
 wait
 message
 list volume
 @# Must choose file8
 @# Pool + Append + Lowest MediaId
+@# JobId=12
 run level=full pool=Test storage=File NightlySave yes
 wait
 message
 list volume
 @# Must choose file3
 @# Pool + Recycle
+@# JobId=13
 run level=full pool=Test storage=File NightlySave yes
 wait
 message
 list volume
 @# Must choose file11
 @# Pool + Purged
+@# JobId=14
 run level=full pool=Test storage=File NightlySave yes
 wait
 message
@@ -211,6 +235,7 @@ list volume
 @# Must choose file6
 @# Pool + Full (prunable)
 setdebug level=50 director
+@# JobId=15
 run level=full pool=Test storage=File NightlySave yes
 wait
 message
@@ -219,6 +244,7 @@ list volume
 @sleep 5
 @# Must choose file8
 @# Pool + Full (prunable)
+@# JobId=16
 run level=full pool=Test storage=File NightlySave yes
 wait
 message
@@ -226,12 +252,14 @@ update volume=file8 enabled=no
 list volume
 @# Must choose file10
 @# (no more Pool) Scratch + Append
+@# JobId=17
 run level=full pool=Test storage=File NightlySave yes
 wait
 message
 list volume
 @# Must choose file9
 @# (no more Pool) Scratch + Recycle
+@# JobId=18
 run level=full pool=Test storage=File NightlySave yes
 wait
 message
@@ -239,6 +267,7 @@ list volume
 @sleep 10
 @# Must choose file6
 @# Used (prunable) + Pool
+@# JobId=19
 run level=full pool=Test storage=File NightlySave yes
 wait
 message
@@ -251,6 +280,7 @@ message
 list volume
 @# Must choose file7
 @# Used (prunable) + oldest + Scratch
+@# JobId=20
 run level=full pool=Test storage=File NightlySave yes
 wait
 message
@@ -291,6 +321,7 @@ update Media SET FirstWritten='2005-01-01 01:00:00', LastWritten='2005-01-01 01:
 WHERE VolumeName IN ('vol47', 'vol48', 'vol49');
 
 list volume
+@# JobId=21
 run level=full pool=Test NightlySave yes
 wait
 messages

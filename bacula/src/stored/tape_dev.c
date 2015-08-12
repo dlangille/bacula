@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *
@@ -895,7 +899,6 @@ bool tape_dev::reposition(DCR *dcr, uint32_t rfile, uint32_t rblock)
    return true;
 }
 
-
 /*
  * Write an end of file on the device
  *   Returns: true on success
@@ -945,9 +948,39 @@ bool DEVICE::weof(int num)
 }
 
 /*
+ * If timeout, wait until the mount command returns 0.
+ * If !timeout, try to mount the device only once.
+ */
+bool tape_dev::mount(int timeout)
+{
+   Dmsg0(190, "Enter tape mount\n");
+
+   if (!is_mounted() && device->mount_command) {
+      return mount_tape(1, timeout);
+   }
+   return true;
+}
+
+/*
+ * Unmount the device
+ * If timeout, wait until the unmount command returns 0.
+ * If !timeout, try to unmount the device only once.
+ */
+bool tape_dev::unmount(int timeout)
+{
+   Dmsg0(100, "Enter tape  unmount\n");
+
+   if (!is_mounted() && requires_mount() && device->unmount_command) {
+      return mount_tape(0, timeout);
+   }
+   return true;
+}
+
+
+/*
  * (Un)mount the device (for tape devices)
  */
-bool DEVICE::do_tape_mount(int mount, int dotimeout)
+bool tape_dev::mount_tape(int mount, int dotimeout)
 {
    POOL_MEM ocmd(PM_FNAME);
    POOLMEM *results;
@@ -964,7 +997,7 @@ bool DEVICE::do_tape_mount(int mount, int dotimeout)
 
    edit_mount_codes(ocmd, icmd);
 
-   Dmsg2(100, "do_tape_mount: cmd=%s mounted=%d\n", ocmd.c_str(), !!is_mounted());
+   Dmsg2(100, "mount_tape: cmd=%s mounted=%d\n", ocmd.c_str(), !!is_mounted());
 
    if (dotimeout) {
       /* Try at most 10 times to (un)mount the device. This should perhaps be configurable. */
@@ -975,7 +1008,7 @@ bool DEVICE::do_tape_mount(int mount, int dotimeout)
    results = get_memory(4000);
 
    /* If busy retry each second */
-   Dmsg1(100, "do_tape_mount run_prog=%s\n", ocmd.c_str());
+   Dmsg1(100, "mount_tape run_prog=%s\n", ocmd.c_str());
    while ((status = run_program_full_output(ocmd.c_str(), max_open_wait/2, results)) != 0) {
       if (tries-- > 0) {
          continue;

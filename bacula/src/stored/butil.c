@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *
@@ -30,7 +34,8 @@
 #include "stored.h"
 
 /* Forward referenced functions */
-static DCR *setup_to_access_device(JCR *jcr, char *dev_name, const char *VolumeName, bool writing);
+static DCR *setup_to_access_device(JCR *jcr, char *dev_name,
+   const char *VolumeName, bool writing, bool read_dedup_data);
 static DEVRES *find_device_res(char *device_name, bool writing);
 static void my_free_jcr(JCR *jcr);
 
@@ -84,7 +89,7 @@ void setup_me()
  *  tools (e.g. bls, bextract, bscan, ...)
  */
 JCR *setup_jcr(const char *name, char *dev_name, BSR *bsr,
-               const char *VolumeName, bool writing)
+               const char *VolumeName, bool writing, bool read_dedup_data)
 {
    DCR *dcr;
    JCR *jcr = new_jcr(sizeof(JCR), my_free_jcr);
@@ -110,7 +115,7 @@ JCR *setup_jcr(const char *name, char *dev_name, BSR *bsr,
    init_autochangers();
    create_volume_lists();
 
-   dcr = setup_to_access_device(jcr, dev_name, VolumeName, writing);
+   dcr = setup_to_access_device(jcr, dev_name, VolumeName, writing, read_dedup_data);
    if (!dcr) {
       return NULL;
    }
@@ -128,7 +133,7 @@ JCR *setup_jcr(const char *name, char *dev_name, BSR *bsr,
  *     the caller will do it.
  */
 static DCR *setup_to_access_device(JCR *jcr, char *dev_name,
-              const char *VolumeName, bool writing)
+              const char *VolumeName, bool writing, bool read_dedup_data)
 {
    DEVICE *dev;
    char *p;

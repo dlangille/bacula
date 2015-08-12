@@ -1,5 +1,10 @@
 #!/bin/sh
 #
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+
+#
 # Test lockmanager
 #
 TestName="lockmgr-test"
@@ -40,10 +45,14 @@ if [ "$debug" = 1 ]; then
 fi
 
 cat <<END_OF_DATA >$tmp/bconcmds
-@$out /dev/null
+@output /dev/null
 messages
 @$out $tmp/log1.out
-.die deadlock storage
+setdebug level=15 dir
+setdebug level=15 storage=File1
+status dir
+status storage=File1
+.die deadlock storage=File1
 .die deadlock dir
 quit
 END_OF_DATA
@@ -51,7 +60,7 @@ END_OF_DATA
 run_bacula
 stop_bacula
 
-nb=`ls $working/*.traceback $working/*.bactrace | wc -l`
+nb=`ls $working/*.traceback $working/*.lockdump | wc -l`
 if [ $nb != 4 ]; then
     print_debug "ERROR: Should find 4 traces, not $nb"
     estat=1

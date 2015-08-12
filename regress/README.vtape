@@ -1,6 +1,12 @@
 HOWTO SETUP A FAKE TAPE ENVIRONMENT
 -----------------------------------
 
+#
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+
+
 Introduction:
 -------------
 
@@ -32,7 +38,6 @@ Setup a quite big autochanger (5 drives and 80 slots)
 Just run "./tests/vtape-test-changer" test to use right configuration files,
 then you can use "./scripts/prepare-fake-autochanger" script to initialize the
 dummy autochanger.
-
 
 
 

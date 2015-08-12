@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2001-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  * Bacula Thread Read/Write locking code. It permits
@@ -21,9 +25,6 @@
  *
  *  This code adapted from "Programming with POSIX Threads", by
  *    David R. Butenhof
- *
- *   Version $Id$
- *
  */
 
 #ifndef __RWLOCK_H
@@ -61,7 +62,6 @@ typedef struct s_rwsteal_tag {
  */
 extern int rwl_init(brwlock_t *wrlock, int priority=0);
 extern int rwl_destroy(brwlock_t *rwlock);
-extern bool rwl_is_init(brwlock_t *rwl);
 extern int rwl_readlock(brwlock_t *rwlock);
 extern int rwl_readtrylock(brwlock_t *rwlock);
 extern int rwl_readunlock(brwlock_t *rwlock);
@@ -69,5 +69,6 @@ extern int rwl_writelock_p(brwlock_t *rwlock,
                            const char *file="*unknown*", int line=0);
 extern int rwl_writetrylock(brwlock_t *rwlock);
 extern int rwl_writeunlock(brwlock_t *rwlock);
+extern bool is_rwl_valid(brwlock_t *rwl);
 
 #endif /* __RWLOCK_H */

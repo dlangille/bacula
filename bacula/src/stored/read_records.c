@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2002-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *
@@ -233,6 +237,8 @@ bool read_records(DCR *dcr,
           */
          if (jcr->bsr) {
             rec->match_stat = match_bsr(jcr->bsr, rec, &dev->VolHdr, &sessrec, jcr);
+            Dmsg2(dbglvl, "match_bsr=%d bsr->reposition=%d\n", rec->match_stat,
+               jcr->bsr->reposition);
             if (rec->match_stat == -1) { /* no more possible matches */
                done = true;   /* all items found, stop */
                Dmsg2(dbglvl, "All done=(file:block) %u:%u\n", dev->file, dev->block_num);
@@ -315,6 +321,7 @@ static bool try_repositioning(JCR *jcr, DEV_RECORD *rec, DCR *dcr)
    DEVICE *dev = dcr->dev;
 
    bsr = find_next_bsr(jcr->bsr, dev);
+   Dmsg2(dbglvl, "nextbsr=%p mount_next_volume=%d\n", bsr, jcr->bsr->mount_next_volume);
    if (bsr == NULL && jcr->bsr->mount_next_volume) {
       Dmsg0(dbglvl, "Would mount next volume here\n");
       Dmsg2(dbglvl, "Current postion (file:block) %u:%u\n",
@@ -346,6 +353,7 @@ static bool try_repositioning(JCR *jcr, DEV_RECORD *rec, DCR *dcr)
             dev->file, dev->block_num, file, block);
       dev->reposition(dcr, file, block);
       rec->Block = 0;
+      return true;
    }
    return false;
 }

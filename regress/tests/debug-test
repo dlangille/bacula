@@ -1,5 +1,10 @@
 #!/bin/sh
 #
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+
+#
 # Attempt to backup and restore a file with the bpipe plugin
 #
 TestName="debug-test"
@@ -14,7 +19,7 @@ rm -f ${cwd}/working/*trace*
 start_test
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
-@$out /dev/null
+@output /dev/null
 messages
 @$out ${cwd}/tmp/log1.out
 label storage=File1 volume=TestVolume001
@@ -29,11 +34,11 @@ run_bacula
 
 killall -SEGV bacula-dir bacula-sd bacula-fd
 
-test -f working/*dir*bactrace
+test -f working/*dir*lockdump
 dstat=$?
-test -f working/*fd*bactrace
+test -f working/*fd*lockdump
 dstat=`expr $dstat + $?`
-test -f working/*sd*bactrace
+test -f working/*sd*lockdump
 dstat=`expr $dstat + $?`
 test -f working/*dir*traceback
 dstat=`expr $dstat + $?`
@@ -42,11 +47,11 @@ dstat=`expr $dstat + $?`
 test -f working/*sd*traceback
 dstat=`expr $dstat + $?`
 
-grep $JobName working/*dir*bactrace > /dev/null 2>&1
+grep $JobName working/*dir*lockdump > /dev/null 2>&1
 dstat=`expr $dstat + $?`
-grep bpipe-fd.so working/*fd*bactrace > /dev/null 2>&1
+grep bpipe-fd.so working/*fd*lockdump > /dev/null 2>&1
 dstat=`expr $dstat + $?`
-grep $JobName working/*fd*bactrace > /dev/null 2>&1
+grep $JobName working/*fd*lockdump > /dev/null 2>&1
 dstat=`expr $dstat + $?`
 
 bstat=0

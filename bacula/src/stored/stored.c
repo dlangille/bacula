@@ -1,22 +1,26 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  * Second generation Storage daemon.
  *
- *  Kern Sibbald, MM
+ *  Written by Kern Sibbald, MM
  *
  * It accepts a number of simple commands from the File daemon
  * and acts on them. When a request to append data is made,
@@ -50,6 +54,7 @@ extern "C" void *device_initialization(void *arg);
 char OK_msg[]   = "3000 OK\n";
 char TERM_msg[] = "3999 Terminate\n";
 STORES *me = NULL;                    /* our Global resource */
+
 bool forge_on = false;                /* proceed inspite of I/O errors */
 pthread_mutex_t device_release_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t wait_device_release = PTHREAD_COND_INITIALIZER;
@@ -73,23 +78,23 @@ static CONFIG *config;
 static void usage()
 {
    fprintf(stderr, _(
-PROG_COPYRIGHT
-"\nVersion: %s (%s)\n\n"
-"Usage: bacula-sd [options] [-c config_file] [config_file]\n"
-"        -c <file>   use <file> as configuration file\n"
-"        -d <nn>     set debug level to <nn>\n"
-"        -dt         print timestamp in debug output\n"
-"        -f          run in foreground (for debugging)\n"
-"        -g <group>  set groupid to group\n"
-"        -m          print kaboom output (for debugging)\n"
-"        -p          proceed despite I/O errors\n"
-"        -s          no signals (for debugging)\n"
-"        -t          test - read config and exit\n"
-"        -u <user>   userid to <user>\n"
-"        -v          verbose user messages\n"
-"        -?          print this message.\n"
-"\n"), 2000, VERSION, BDATE);
-
+      PROG_COPYRIGHT
+      "\n%sVersion: %s (%s)\n\n"
+      "Usage: bacula-sd [options] [-c config_file] [config_file]\n"
+      "     -c <file>         use <file> as configuration file\n"
+      "     -d <nn>[,<tags>]  set debug level to <nn>, debug tags to <tags>\n"
+      "     -dt               print timestamp in debug output\n"
+      "     -T                set trace on\n"
+      "     -f                run in foreground (for debugging)\n"
+      "     -g <group>        set groupid to group\n"
+      "     -m                print kaboom output (for debugging)\n"
+      "     -p                proceed despite I/O errors\n"
+      "     -s                no signals (for debugging)\n"
+      "     -t                test - read config and exit\n"
+      "     -u <user>         userid to <user>\n"
+      "     -v                verbose user messages\n"
+      "     -?                print this message.\n"
+      "\n"), 2000, "", VERSION, BDATE);
    exit(1);
 }
 
@@ -130,7 +135,7 @@ int main (int argc, char *argv[])
       Emsg1(M_ABORT, 0, _("Tape block size (%d) is not a power of 2\n"), TAPE_BSIZE);
    }
 
-   while ((ch = getopt(argc, argv, "c:d:fg:mpstu:v?")) != -1) {
+   while ((ch = getopt(argc, argv, "c:d:fg:mpstu:v?T")) != -1) {
       switch (ch) {
       case 'c':                    /* configuration file */
          if (configfile != NULL) {
@@ -143,11 +148,23 @@ int main (int argc, char *argv[])
          if (*optarg == 't') {
             dbg_timestamp = true;
          } else {
+            char *p;
+            /* We probably find a tag list -d 10,sql,bvfs */
+            if ((p = strchr(optarg, ',')) != NULL) {
+               *p = 0;
+            }
             debug_level = atoi(optarg);
             if (debug_level <= 0) {
                debug_level = 1;
             }
+            if (p) {
+               debug_parse_tags(p+1, &debug_level_tags);
+            }
          }
+         break;
+
+      case 'T':
+         set_trace(true);
          break;
 
       case 'f':                    /* run in foreground */
@@ -296,7 +313,6 @@ static int check_resources()
 {
    bool OK = true;
    bool tls_needed;
-
 
    me = (STORES *)GetNextRes(R_STORAGE, NULL);
    if (!me) {
@@ -528,7 +544,6 @@ get_out2:
    free_pool_memory(basename);
 }
 
-
 /*
  * Here we attempt to init and open each device. This is done
  *  once at startup in a separate thread.
@@ -545,6 +560,7 @@ void *device_initialization(void *arg)
 
    pthread_detach(pthread_self());
    jcr = new_jcr(sizeof(JCR), stored_free_jcr);
+   new_plugins(jcr);  /* instantiate plugins */
    jcr->setJobType(JT_SYSTEM);
    /* Initialize FD start condition variable */
    int errstat = pthread_cond_init(&jcr->job_start_wait, NULL);
@@ -564,20 +580,29 @@ void *device_initialization(void *arg)
 
       jcr->dcr = dcr = new_dcr(jcr, NULL, dev);
       generate_plugin_event(jcr, bsdEventDeviceInit, dcr);
-      if (dev->is_autochanger()) {
-         /* If autochanger set slot in dev sturcture */
-         get_autochanger_loaded_slot(dcr);
-      }
 
       if (device->cap_bits & CAP_ALWAYSOPEN) {
+         if (dev->is_autochanger()) {
+            /* If autochanger set slot in dev sturcture */
+            get_autochanger_loaded_slot(dcr);
+         }
          Dmsg1(20, "calling first_open_device %s\n", dev->print_name());
+         if (generate_plugin_event(jcr, bsdEventDeviceOpen, dcr) != bRC_OK) {
+            Jmsg(jcr, M_FATAL, 0, _("generate_plugin_event(bsdEventDeviceOpen) Failed\n"));
+            continue;
+         }
+
          if (!first_open_device(dcr)) {
             Jmsg1(NULL, M_ERROR, 0, _("Could not open device %s\n"), dev->print_name());
             Dmsg1(20, "Could not open device %s\n", dev->print_name());
+            generate_plugin_event(jcr, bsdEventDeviceClose, dcr);
             free_dcr(dcr);
             jcr->dcr = NULL;
             continue;
          }
+      } else {
+         /* If not always open, we don't know what is in the drive */
+         dev->clear_slot();
       }
       if (device->cap_bits & CAP_AUTOMOUNT && dev->is_open()) {
          switch (read_dev_volume_label(dcr)) {
@@ -590,12 +615,15 @@ void *device_initialization(void *arg)
             break;
          }
       }
+
       free_dcr(dcr);
       jcr->dcr = NULL;
    }
+
+
 #ifdef xxx
    if (jcr->dcr) {
-      Dmsg1(000, "free_dcr=%p\n", jcr->dcr);
+      Pmsg1(000, "free_dcr=%p\n", jcr->dcr);
       free_dcr(jcr->dcr);
       jcr->dcr = NULL;
    }
@@ -623,7 +651,7 @@ void terminate_stored(int sig)
    debug_level = 0;                   /* turn off any debug */
    stop_watchdog();
 
-   if (sig == SIGTERM) {              /* normal shutdown request? */
+   if (sig == SIGTERM || sig == SIGINT) { /* normal shutdown request? or ^C */
       /*
        * This is a normal shutdown request. We wiffle through
        *   all open jobs canceling them and trying to wake
@@ -635,6 +663,10 @@ void terminate_stored(int sig)
          if (jcr->JobId == 0) {
             free_jcr(jcr);
             continue;                 /* ignore console */
+         }
+         if (jcr->dcr) {
+            /* Make sure no device remains locked */
+            generate_plugin_event(jcr, bsdEventDeviceClose, jcr->dcr);
          }
          jcr->setJobStatus(JS_Canceled);
          fd = jcr->file_bsock;
@@ -680,6 +712,7 @@ void terminate_stored(int sig)
    if (server_tid_valid) {
       bnet_stop_thread_server(server_tid);
    }
+
    if (configfile) {
       free(configfile);
       configfile = NULL;

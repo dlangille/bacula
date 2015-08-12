@@ -1,5 +1,10 @@
 #!/bin/sh
 #
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+
+#
 # Run a backup of the Bacula build directory with some acls then restore it.
 #
 # For Linux:
@@ -205,13 +210,13 @@ change_jobname BackupClient1 $JobName
 start_test
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
-@$out /dev/null
+@output /dev/null
 messages
 @$out ${cwd}/tmp/log1.out
 label volume=TestVolume001 storage=File1 pool=File slot=1 drive=0
-setdebug level=400 trace=1 client
-setdebug level=300 trace=1 director
-setdebug level=300 trace=1 storage=File1
+@#setdebug level=400 trace=1 client
+@#setdebug level=300 trace=1 director
+@#setdebug level=300 trace=1 storage=File1
 run job=$JobName yes
 wait
 messages

@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *     Old style
@@ -39,11 +43,7 @@
 #endif
 
 /* Fold case in fnmatch() on Win32 */
-#ifdef HAVE_WIN32
-static const int fnmode = FNM_CASEFOLD;
-#else
 static const int fnmode = 0;
-#endif
 
 
 #undef bmalloc
@@ -179,14 +179,14 @@ void add_fname_to_include_list(FF_PKT *ff, int prefixed, const char *fname)
             if (*rp >= '0' && *rp <= '9') {
                inc->options |= FO_COMPRESS;
                inc->algo = COMPRESS_GZIP;
-               inc->level = *rp - '0';
+               inc->Compress_level = *rp - '0';
             }
-            else if (*rp == 'o') {
+               else if (*rp == 'o') {
                inc->options |= FO_COMPRESS;
                inc->algo = COMPRESS_LZO1X;
-               inc->level = 1; /* not used with LZO */
+               inc->Compress_level = 1; /* not used with LZO */
             }
-            Dmsg2(200, "Compression alg=%d level=%d\n", inc->algo, inc->level);
+            Dmsg2(200, "Compression alg=%d level=%d\n", inc->algo, inc->Compress_level);
             break;
          case 'K':
             inc->options |= FO_NOATIME;
@@ -285,7 +285,7 @@ struct s_included_file *get_next_included_file(FF_PKT *ff, struct s_included_fil
    if (inc) {
       ff->flags = inc->options;
       ff->Compress_algo = inc->algo;
-      ff->Compress_level = inc->level;
+      ff->Compress_level = inc->Compress_level;
    }
    return inc;
 }

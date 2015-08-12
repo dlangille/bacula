@@ -1,5 +1,10 @@
 #!/bin/sh
 #
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+
+#
 # Test different cancel cases
 # Can be quite long
 
@@ -19,6 +24,8 @@ outf="tmp/sed_tmp"
 echo "s%  Schedule =%# Schedule =%g" >$outf
 cp ${cwd}/bin/bacula-dir.conf ${cwd}/tmp/1
 sed -f ${outf} ${cwd}/tmp/1 >${cwd}/bin/bacula-dir.conf
+
+MAXVOLBYTES=1MB
 
 touch tmp/log1.out
 
@@ -48,9 +55,10 @@ Job {
 }
 Job {
   Name = RUN_ERR3
-  ClientRunBeforeJob="sleep 10"
+  ClientRunBeforeJob="/bin/sleep 10"
   RunScript {
-    Command = "sleep 600"
+    Command = "/bin/sleep 600"
+    Command = "touch $tmp/RUN_ERR3.after.%i"
     RunsWhen = After
     RunsOnFailure = Yes
   }
@@ -58,9 +66,10 @@ Job {
 }
 Job {
   Name = RUN_ERR4
-  ClientRunBeforeJob="sleep 10"
+  ClientRunBeforeJob="/bin/sleep 10"
   RunScript {
-    Command = "sleep 40"
+    Command = "touch $tmp/RUN_ERR4.after"
+    Command = "/bin/sleep 40"
     RunsWhen = After
     RunsOnFailure = Yes
   }
@@ -74,8 +83,9 @@ start_test
 when=`perl -MPOSIX -e "print strftime('%F %T', localtime(time+6000))"`
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
-@$out /dev/null
+@output /dev/null
 messages
+setbandwidth limit=500 client
 @$out ${cwd}/tmp/logfile1.out
 @################################################################
 @# run a first test without volume
@@ -93,8 +103,8 @@ messages
 @# run test with a small volume
 @# Expect: duration < 60
 @################################################################
-label volume=TestVolume001 storage=File pool=Default
-update volume=TestVolume001 MaxVolBytes=1MB
+label volume=TestVolume001 storage=File1 drive=0 slot=0 pool=Default
+update volume=TestVolume001 MaxVolBytes=$MAXVOLBYTES
 run job=$JobName yes
 @sleep 5
 messages
@@ -109,7 +119,7 @@ messages
 @# expect that the second job don't stay in the list
 @# Expect: Job2 not present at the end
 @################################################################
-label volume=TestVolume002 storage=File pool=Default
+label volume=TestVolume002 storage=File1 drive=0 slot=0 pool=Default
 run job=$JobName yes
 @sleep 1
 messages
@@ -201,7 +211,7 @@ messages
 @#         print sleep 600
 @################################################################
 update volume=TestVolume002 volstatus=Used
-label volume=TestVolume003 storage=File pool=Default
+label volume=TestVolume003 storage=File1 drive=0 slot=0 pool=Default
 update volume=TestVolume003 MaxVolBytes=1MB
 run job=RUN_ERR3 yes
 @sleep 20
@@ -221,7 +231,7 @@ messages
 @# Expect: print sleep 40
 @################################################################
 update volume=TestVolume003 volstatus=Used
-label volume=TestVolume004 storage=File pool=Default
+label volume=TestVolume004 storage=File1 drive=0 slot=0 pool=Default
 update volume=TestVolume004 MaxVolBytes=1MB
 run job=RUN_ERR4 yes
 @sleep 20
@@ -241,7 +251,7 @@ messages
 @# Test to cancel the job immediately
 @# Expect: duration < 30
 @################################################################
-label volume=TestVolume005 storage=File pool=Default
+label volume=TestVolume005 storage=File1 drive=0 slot=0 pool=Default
 run job=$JobName yes
 time
 cancel
@@ -277,7 +287,7 @@ messages
 @# Expect: duration < 400
 @################################################################
 update volume=TestVolume005 volstatus=Used
-label volume=TestVolume006 storage=File pool=Default
+label volume=TestVolume006 storage=File1 drive=0 slot=0 pool=Default
 update volume=TestVolume006 MaxVolBytes=1MB
 run job=$JobName yes
 @sleep 5
@@ -289,7 +299,8 @@ run_bacula
 
 print_debug "Stopping FD"
 # stop the bacula-fd and cancel the job
-kill -STOP $(pidof bacula-fd)
+pid=`cat $working/bacula-fd.*.pid`
+kill -STOP $pid
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
 @$out ${cwd}/tmp/logfile20.out
@@ -306,39 +317,54 @@ END_OF_DATA
 
 run_bconsole
 
-kill -CONT $(pidof bacula-fd)
+kill -CONT $pid
 
-check_for_zombie_jobs storage=File
+check_for_zombie_jobs storage=File1
 stop_bacula
 
 # A fileset or runscript error goes fast
-check_duration ${cwd}/tmp/logfile1.out 30
-check_duration ${cwd}/tmp/logfile3.out 30
-check_duration ${cwd}/tmp/logfile4.out 30
-check_duration ${cwd}/tmp/logfile5.out 30
-check_duration ${cwd}/tmp/logfile6.out 30
+check_duration $tmp/logfile1.out 30
+check_duration $tmp/logfile3.out 30
+check_duration $tmp/logfile4.out 30
+check_duration $tmp/logfile5.out 30
+check_duration $tmp/logfile6.out 30
 
-check_duration ${cwd}/tmp/logfile8.out 550 lt
-grep 'ClientAfterJob "sleep 600"' tmp/logfile8.out >/dev/null
+check_duration $tmp/logfile8.out 550 lt
+grep 'ClientAfterJob "/bin/sleep 600"' $tmp/logfile8.out >/dev/null
 if [ $? -ne 0 ]; then
-    print_debug "Can't find ClientAfterJob"
-    bstat=2
+    print_debug "Can't find ClientAfterJob in $tmp/logfile8.out"
+    if [ -f $tmp/RUN_ERR3.after.9 ]; then
+        print_debug "No log found, but the $tmp/RUN_ERR3.after.9 was created"
+    else
+        print_debug "ERROR: No log found, AND the $tmp/RUN_ERR3.after.9 was not created"
+    fi
+    estat=2
 fi
 
-check_duration ${cwd}/tmp/logfile9.out 550 lt
-grep 'ClientAfterJob "sleep 600"' tmp/logfile9.out >/dev/null
+check_duration $tmp/logfile9.out 550 lt
+grep 'ClientAfterJob "/bin/sleep 600"' $tmp/logfile9.out >/dev/null
 if [ $? -ne 0 ]; then
-    print_debug "Can't find ClientAfterJob"
-    bstat=2
+    print_debug "Can't find ClientAfterJob in $tmp/logfile9.out"
+    if [ -f $tmp/RUN_ERR3.after.10 ]; then
+        print_debug "No log found, but the $tmp/RUN_ERR3.after.10 was created"
+    else
+        print_debug "ERROR: No log found, AND the $tmp/RUN_ERR3.after.10 was not created"
+    fi
+    estat=2
 fi
 
-grep 'ClientAfterJob "sleep 40"' tmp/logfile10.out >/dev/null
+grep 'ClientAfterJob "/bin/sleep 40"' $tmp/logfile10.out >/dev/null
 if [ $? -ne 0 ]; then
-    print_debug "Can't find ClientAfterJob"
-    bstat=2
+    print_debug "Can't find ClientAfterJob in $tmp/logfile10.out"
+    if [ -f $tmp/RUN_ERR4.after ]; then
+        print_debug "No log found, but the $tmp/RUN_ERR4.after was created"
+    else
+        print_debug "ERROR: No log found, AND the $tmp/RUN_ERR4.after was not created..."
+    fi
+    estat=2
 fi
 
 # Verify the broken connection
-check_duration ${cwd}/tmp/logfile20.out 400 lt
+check_duration $tmp/logfile20.out 400 lt
 
 end_test

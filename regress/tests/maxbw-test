@@ -1,0 +1,117 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+
+#
+# Verify Maximum Bandwidth FD parameter
+#
+
+TestName="maxbw-test"
+JobName=NightlySave
+. scripts/functions
+
+scripts/cleanup
+scripts/copy-test-confs
+
+$bperl -e 'add_attribute("$conf/bacula-fd.conf", "CommCompression", "no", "FileDaemon")'
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "CommCompression", "no", "Director")'
+$bperl -e 'add_attribute("$conf/bacula-sd.conf", "CommCompression", "no", "Storage")'
+$bperl -e 'add_attribute("$conf/bacula-fd.conf", "MaximumBandwidthPerJob", "3MB/s", "FileDaemon")'
+
+echo $cwd/build > $tmp/file-list
+
+start_test
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@output /dev/null
+messages
+@$out ${cwd}/tmp/log1.out
+label storage=File volume=TestVolume001
+run level=full job=$JobName yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bacula
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@# 
+@# now do a restore
+@#
+@$out ${cwd}/tmp/log2.out
+restore where=$tmp select all done
+yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+
+stop_bacula
+
+awk '/Rate:/ { if ($2 > 2500 && $2 < 3500) { print "OK" } 
+               else { print "ERROR " $0 "(> 2500 && < 3500)" }}' $tmp/log1.out > $tmp/res
+
+awk '/Rate:/ { if ($2 > 2500 && $2 < 3500) { print "OK" } 
+               else { print "ERROR" $0 "(> 2500 && < 3500)" }}' $tmp/log2.out >> $tmp/res
+
+a=`grep OK $tmp/res | wc -l`
+if [ $a -ne 2 ]; then
+    print_debug "ERROR: problem with backup or restore speed on bacula-fd.conf"
+    cat $tmp/res
+    estat=1
+fi
+
+sed 's/MaximumBandwidth.*//g' $conf/bacula-fd.conf >$conf/bacula-fd.conf.tmp
+mv -f $conf/bacula-fd.conf.tmp $conf/bacula-fd.conf
+
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "MaximumBandwidth", "3MB/s", "Job", "$JobName")'
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@output /dev/null
+messages
+@$out ${cwd}/tmp/log1.out
+run level=full job=$JobName yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bacula
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@# 
+@# now do a restore
+@#
+@$out ${cwd}/tmp/log2.out
+restore where=$tmp select all done
+yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+
+stop_bacula
+
+check_two_logs
+
+awk '/Rate:/ { if ($2 > 2500 && $2 < 3500) { print "OK" } 
+               else { print "ERROR" $0 "(> 2500 && < 3500)" }}' $tmp/log1.out > $tmp/res
+
+awk '/Rate:/ { if ($2 > 2500 && $2 < 3500) { print "OK" } 
+               else { print "ERROR" $0 "(>2500 && < 3500)" }}' $tmp/log2.out >> $tmp/res
+
+a=`grep OK $tmp/res | wc -l`
+if [ $a -ne 3 ]; then
+    print_debug "ERROR: problem with backup or restore speed on bacula-dir.conf"
+    cat $tmp/res
+    estat=2
+fi
+
+end_test

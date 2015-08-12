@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  * Bacula Sock Class definition
@@ -54,6 +58,7 @@ public:
    IPADDR *src_addr;                  /* IP address to source connections from */
    uint32_t in_msg_no;                /* input message number */
    uint32_t out_msg_no;               /* output message number */
+   uint32_t *pout_msg_no;             /* pointer to the above */
    int32_t msglen;                    /* message length */
    volatile time_t timer_start;       /* time started read/write */
    volatile time_t timeout;           /* timeout BSOCK after this interval */
@@ -67,9 +72,12 @@ public:
    struct sockaddr_in peer_addr;      /* peer's IP address */
 
 private:
-   BSOCK *m_next;                     /* next BSOCK if duped */
+   BSOCK *m_next;                     /* next BSOCK if duped (not actually used) */
    JCR *m_jcr;                        /* jcr or NULL for error msgs */
-   pthread_mutex_t m_mutex;           /* for locking if use_locking set */
+   pthread_mutex_t m_rmutex;          /* for read locking if use_locking set */
+   pthread_mutex_t m_wmutex;          /* for write locking if use_locking set */
+   pthread_mutex_t *pm_rmutex;        /* Pointer to the read mutex */
+   pthread_mutex_t *pm_wmutex;        /* Pointer to the write mutex */
    char *m_who;                       /* Name of daemon to which we are talking */
    char *m_host;                      /* Host name/IP */
    int m_port;                        /* desired port */
@@ -78,6 +86,7 @@ private:
    boffset_t m_last_data_end;          /* offset of last valid data written */
    int32_t m_FileIndex;               /* attr spool FI */
    int32_t m_lastFileIndex;           /* last valid attr spool FI */
+   uint32_t m_flags;                  /* Special flags */
    volatile bool m_timed_out: 1;      /* timed out in read/write */
    volatile bool m_terminated: 1;     /* set when BNET_TERMINATE arrives */
    bool m_closed: 1;                  /* set when socket is closed */
@@ -102,7 +111,8 @@ public:
                 utime_t heart_beat, const char *name, char *host,
                 char *service, int port, int verbose);
    int32_t recv();
-   bool send();
+   bool send() { return send(0); };
+   bool send(int flags);
    bool fsend(const char*, ...);
    bool signal(int signal);
    void close();                      /* close connection and destroy packet */
@@ -118,7 +128,7 @@ public:
    int wait_data(int sec, int usec=0);
    int wait_data_intr(int sec, int usec=0);
    bool authenticate_director(const char *name, const char *password,
-                  TLS_CONTEXT *tls_ctx, char *response, int response_len);
+           TLS_CONTEXT *tls_ctx, char *response, int response_len);
    bool set_locking();                /* in bsock.c */
    void clear_locking();              /* in bsock.c */
    void set_source_address(dlist *src_addr_list);
@@ -165,6 +175,7 @@ public:
    void start_timer(int sec) { m_tid = start_bsock_timer(this, sec); };
    void stop_timer() { stop_bsock_timer(m_tid); };
    void swap_msgs();
+
 };
 
 /*

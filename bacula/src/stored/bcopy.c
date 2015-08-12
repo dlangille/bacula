@@ -1,23 +1,27 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2002-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *
  *  Program to copy a Bacula from one volume to another.
  *
- *   Written by Kern E. Sibbald, October 2002
+ *   Kern E. Sibbald, October 2002
  *
  */
 
@@ -54,12 +58,11 @@ bool forge_on = false;                /* proceed inspite of I/O errors */
 pthread_mutex_t device_release_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t wait_device_release = PTHREAD_COND_INITIALIZER;
 
-
 static void usage()
 {
    fprintf(stderr, _(
 PROG_COPYRIGHT
-"\nVersion: %s (%s)\n\n"
+"\n%sVersion: %s (%s)\n\n"
 "Usage: bcopy [-d debug_level] <input-archive> <output-archive>\n"
 "       -b bootstrap      specify a bootstrap file\n"
 "       -c <file>         specify a Storage configuration file\n"
@@ -70,7 +73,7 @@ PROG_COPYRIGHT
 "       -p                proceed inspite of errors\n"
 "       -v                verbose\n"
 "       -w <dir>          specify working directory (default /tmp)\n"
-"       -?                print this message\n\n"), 2002, VERSION, BDATE);
+"       -?                print this message\n\n"), 2002, "", VERSION, BDATE);
    exit(1);
 }
 
@@ -165,7 +168,7 @@ int main (int argc, char *argv[])
 
    /* Setup and acquire input device for reading */
    Dmsg0(100, "About to setup input jcr\n");
-   in_jcr = setup_jcr("bcopy", argv[0], bsr, iVolumeName, SD_READ); /* read device */
+   in_jcr = setup_jcr("bcopy", argv[0], bsr, iVolumeName, SD_READ, true/*read dedup data*/); /* read device */
    if (!in_jcr) {
       exit(1);
    }
@@ -203,7 +206,7 @@ int main (int argc, char *argv[])
    ok = read_records(in_jcr->dcr, record_cb, mount_next_read_volume);
 
    if (ok || out_dev->can_write()) {
-      if (!out_jcr->dcr->write_block_to_device()) {
+      if (!out_jcr->dcr->write_final_block_to_device()) {
          Pmsg0(000, _("Write of last block failed.\n"));
       }
    }
@@ -237,7 +240,7 @@ static bool record_cb(DCR *in_dcr, DEV_RECORD *rec)
       get_session_record(in_dcr->dev, rec, &sessrec);
 
       if (verbose > 1) {
-         dump_label_record(in_dcr->dev, rec, 1);
+         dump_label_record(in_dcr->dev, rec, 1/*verbose*/, false/*check err*/);
       }
       switch (rec->FileIndex) {
       case PRE_LABEL:
@@ -352,6 +355,7 @@ static void get_session_record(DEVICE *dev, DEV_RECORD *rec, SESSION_LABEL *sess
 bool    dir_find_next_appendable_volume(DCR *dcr) { return 1;}
 bool    dir_update_volume_info(DCR *dcr, bool relabel, bool update_LastWritten) { return 1; }
 bool    dir_create_jobmedia_record(DCR *dcr, bool zero) { return 1; }
+bool    flush_jobmedia_queue(JCR *jcr) { return true; }
 bool    dir_ask_sysop_to_create_appendable_volume(DCR *dcr) { return 1; }
 bool    dir_update_file_attributes(DCR *dcr, DEV_RECORD *rec) { return 1;}
 bool    dir_send_job_status(JCR *jcr) {return 1;}
@@ -371,9 +375,6 @@ bool dir_get_volume_info(DCR *dcr, enum get_vol_info_rw  writing)
 {
    Dmsg0(100, "Fake dir_get_volume_info\n");
    dcr->setVolCatName(dcr->VolumeName);
-#ifdef BUILD_DVD
-   dcr->VolCatInfo.VolCatParts = find_num_dvd_parts(dcr);
-#endif
-   Dmsg2(500, "Vol=%s num_parts=%d\n", dcr->getVolCatName(), dcr->VolCatInfo.VolCatParts);
+   Dmsg2(500, "Vol=%s VolType=%d\n", dcr->getVolCatName(), dcr->VolCatInfo.VolCatType);
    return 1;
 }

@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2001-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *
@@ -33,9 +37,9 @@ extern DIRRES *director;
 
 /* Version at end of Hello
  *   prior to 06Aug13 no version
- *   1 06Aug13 - added comm line compression
+ *      102 04Jun15 - added jobmedia change
  */
-#define DIR_VERSION 1
+#define DIR_VERSION 102
 
 
 /* Command sent to SD */
@@ -110,7 +114,7 @@ bool authenticate_storage_daemon(JCR *jcr, STORE *store)
             "Passwords or names not the same or\n"
             "Maximum Concurrent Jobs exceeded on the SD or\n"
             "SD networking messed up (restart daemon).\n"
-            "Please see " MANUAL_AUTH_URL " for help.\n"),
+            "For help, please see: " MANUAL_AUTH_URL "\n"),
             sd->host(), sd->port());
       return 0;
    }
@@ -157,6 +161,11 @@ bool authenticate_storage_daemon(JCR *jcr, STORE *store)
        strncmp(sd->msg, OKhello, sizeof(OKhello)) != 0) {
       Dmsg0(dbglvl, _("Storage daemon rejected Hello command\n"));
       Jmsg2(jcr, M_FATAL, 0, _("Storage daemon at \"%s:%d\" rejected Hello command\n"),
+         sd->host(), sd->port());
+      return 0;
+   }
+   if (jcr->SDVersion < 305) {
+      Jmsg2(jcr, M_FATAL, 0, _("Older Storage daemon at \"%s:%d\" incompatible with this Director.\n"),
          sd->host(), sd->port());
       return 0;
    }
@@ -223,7 +232,7 @@ int authenticate_file_daemon(JCR *jcr)
             "Passwords or names not the same or\n"
             "Maximum Concurrent Jobs exceeded on the FD or\n"
             "FD networking messed up (restart daemon).\n"
-            "Please see " MANUAL_AUTH_URL " for help.\n"),
+            "For help, please see: " MANUAL_AUTH_URL "\n"),
             fd->host(), fd->port());
       return 0;
    }
@@ -416,7 +425,7 @@ auth_done:
       sleep(5);
       return 0;
    }
-   ua->fsend(_("1000 OK: %d %s Version: %s (%s)\n"),
-      DIR_VERSION, my_name, VERSION, BDATE);
+   ua->fsend(_("1000 OK: %d %s %sVersion: %s (%s)\n"),
+      DIR_VERSION, my_name, "", VERSION, BDATE);
    return 1;
 }

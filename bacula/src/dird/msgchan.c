@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  *
@@ -185,7 +189,11 @@ bool start_storage_daemon_job(JCR *jcr, alist *rstore, alist *wstore, bool send_
     */
    pm_strcpy(job_name, jcr->job->name());
    bash_spaces(job_name);
-   pm_strcpy(client_name, jcr->client->name());
+   if (jcr->client) {
+      pm_strcpy(client_name, jcr->client->name());
+   } else {
+      pm_strcpy(client_name, "**Dummy**");
+   }
    bash_spaces(client_name);
    pm_strcpy(fileset_name, jcr->fileset->name());
    bash_spaces(fileset_name);
@@ -375,7 +383,7 @@ bool start_storage_daemon_message_thread(JCR *jcr)
       Jmsg1(jcr, M_ABORT, 0, _("Cannot create message thread: %s\n"), be.bstrerror(status));
    }
    /* Wait for thread to start */
-   while (!jcr->SD_msg_chan_started) {
+   while (jcr->SD_msg_chan_started == false) {
       bmicrosleep(0, 50);
       if (job_canceled(jcr) || jcr->sd_msg_thread_done) {
          return false;
@@ -388,15 +396,15 @@ bool start_storage_daemon_message_thread(JCR *jcr)
 extern "C" void msg_thread_cleanup(void *arg)
 {
    JCR *jcr = (JCR *)arg;
-   db_end_transaction(jcr, jcr->db);        /* terminate any open transaction */
+   db_end_transaction(jcr, jcr->db);      /* terminate any open transaction */
    jcr->lock();
    jcr->sd_msg_thread_done = true;
    jcr->SD_msg_chan_started = false;
    jcr->unlock();
    pthread_cond_broadcast(&jcr->term_wait); /* wakeup any waiting threads */
    Dmsg2(100, "=== End msg_thread. JobId=%d usecnt=%d\n", jcr->JobId, jcr->use_count());
-   db_thread_cleanup(jcr->db);              /* remove thread specific data */
-   free_jcr(jcr);                           /* release jcr */
+   db_thread_cleanup(jcr->db);           /* remove thread specific data */
+   free_jcr(jcr);                        /* release jcr */
 }
 
 /*

@@ -1,17 +1,21 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
+   Copyright (C) 2000-2015 Kern Sibbald
    Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
-   The main author of Bacula is Kern Sibbald, with contributions from many
-   others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
    You may use this file and others of this release according to the
    license defined in the LICENSE file, which includes the Affero General
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is 
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
  * Protypes for stored
@@ -46,13 +50,15 @@ bool    dir_ask_sysop_to_mount_volume(DCR *dcr, bool read_access);
 bool    dir_update_file_attributes(DCR *dcr, DEV_RECORD *rec);
 bool    dir_send_job_status(JCR *jcr);
 bool    dir_create_jobmedia_record(DCR *dcr, bool zero=false);
+void    create_jobmedia_queue(JCR *jcr);
+bool    flush_jobmedia_queue(JCR *jcr);
 bool    dir_update_device(JCR *jcr, DEVICE *dev);
 bool    dir_update_changer(JCR *jcr, AUTOCHANGER *changer);
 
 /* authenticate.c */
-int     authenticate_director(JCR *jcr);
-int     authenticate_filed(JCR *jcr);
-bool    authenticate_storagedaemon(JCR *jcr, char *Job);
+bool    authenticate_director(JCR *jcr);
+int     authenticate_filed(JCR *jcr, BSOCK *fd, int FDVersion);
+bool    authenticate_storagedaemon(JCR *jcr);
 
 /* From autochanger.c */
 bool     init_autochangers();
@@ -84,7 +90,7 @@ bool    check_for_newvol_or_newfile(DCR *dcr);
 void    setup_me();
 void    print_ls_output(const char *fname, const char *link, int type, struct stat *statp);
 JCR    *setup_jcr(const char *name, char *dev_name, BSR *bsr,
-                  const char *VolumeName, bool writing);
+                  const char *VolumeName, bool writing, bool read_dedup_data=true);
 void    display_tape_error_status(JCR *jcr, DEVICE *dev);
 
 
@@ -114,7 +120,7 @@ boffset_t   lseek_dvd(DCR *dcr, boffset_t offset, int whence);
 void    dvd_remove_empty_part(DCR *dcr);
 
 /* From device.c */
-bool     open_dev(DCR *dcr);
+bool     open_device(DCR *dcr);
 bool     first_open_device(DCR *dcr);
 bool     fixup_device_block_write_error(DCR *dcr, int retries=4);
 void     set_start_vol_position(DCR *dcr);
@@ -127,13 +133,22 @@ void     *handle_connection_request(void *arg);
 
 /* From fd_cmds.c */
 void     run_job(JCR *jcr);
+void     do_fd_commands(JCR *jcr);
+bool     do_handle_command(JCR *jcr);
 void     do_client_commands(JCR *jcr);
 
 /* From job.c */
 void     stored_free_jcr(JCR *jcr);
-void     connection_from_filed(void *arg);
-void     handle_filed_connection(BSOCK *fd, char *job_name,
-           int fdversion, int sdversion);
+
+/* From hello.c */
+bool     validate_dir_hello(JCR* jcr);
+bool     send_hello_ok(BSOCK *bs);
+bool     send_sorry(BSOCK *bs);
+bool     send_hello_sd(JCR *jcr, char *Job);
+bool     send_hello_client(JCR *jcr, char *Job);
+bool     read_client_hello(JCR *jcr);
+bool     is_client_connection(BSOCK *bs);
+void     handle_client_connection(BSOCK *fd);
 
 /* From label.c */
 int      read_dev_volume_label(DCR *dcr);
@@ -147,7 +162,7 @@ bool     write_ansi_ibm_labels(DCR *dcr, int type, const char *VolName);
 int      read_ansi_ibm_label(DCR *dcr);
 bool     write_session_label(DCR *dcr, int label);
 void     dump_volume_label(DEVICE *dev);
-void     dump_label_record(DEVICE *dev, DEV_RECORD *rec, int verbose);
+int      dump_label_record(DEVICE *dev, DEV_RECORD *rec, int verbose, bool check_err);
 bool     unser_volume_label(DEVICE *dev, DEV_RECORD *rec);
 bool     unser_session_label(SESSION_LABEL *label, DEV_RECORD *rec);
 bool     write_new_volume_label_to_dev(DCR *dcr, const char *VolName,
@@ -194,6 +209,7 @@ DEV_RECORD *new_record();
 void        free_record(DEV_RECORD *rec);
 void        empty_record(DEV_RECORD *rec);
 uint64_t    get_record_address(DEV_RECORD *rec);
+bool        flush_adata_to_device(DCR *dcr);
 
 /* From read_record.c */
 bool read_records(DCR *dcr,

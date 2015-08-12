@@ -1,5 +1,10 @@
 #!/bin/sh
 #
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+
+#
 # Run a couple of tests with bconsole
 #
 TestName="bconsole-test"
@@ -27,7 +32,7 @@ run_bacula
 
 print_debug "Test bconsole -l and -D with a single director definition"
 
-$bin/bconsole -c $conf/bconsole.conf -l > $tmp/1
+$bin/bconsole -c $conf/bconsole.conf -l > $tmp/1 < /dev/null
 if [ $? -ne 0 ]; then
     print_debug "Bconsole doesn't support -l option"
     estat=1
@@ -63,13 +68,13 @@ perl -Mscripts::functions \
 
 sed "s/$HOST-dir/bconsole-test-dir/" $tmp/1 >> $conf/bconsole.conf
 
-$bin/bconsole -t -c $conf/bconsole.conf > $tmp/1
+$bin/bconsole -t -c $conf/bconsole.conf > $tmp/1 < /dev/null
 if [ $? -ne 0 ]; then
     print_debug "configuration tweak failed"
     estat=6
 fi
 
-$bin/bconsole -c $conf/bconsole.conf -l > $tmp/1
+$bin/bconsole -c $conf/bconsole.conf -l > $tmp/1 < /dev/null
 if [ $? -ne 0 ]; then
     print_debug "Bconsole doesn't support -l option"
     estat=7
@@ -111,6 +116,8 @@ if [ $? -ne 0 ]; then
     estat=13
 fi
 
+# Do not try to check jobmedia with this test
+export CHECK_JOBMEDIA=0
 
 stop_bacula
 end_test
