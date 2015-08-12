@@ -183,3 +183,12 @@ show any content, then please consider increase "memory_limit" option in php.ini
 PHP configuration file to higher value than 256M. There is also possible to set
 limit window list elements on webGUI in window tools option (on window bottom
 bar), without changing "memory_limit" value.
+
+b) Just after finish initial wizard there is not possible to login to Baculum
+
+   From Baculum 7.2.0 has been changed format storing passwords. Passwords
+stored by Baculum for HTTP Basic authentication are encrypted by MD5. It is default
+alghoritm used by "htpasswd" program. Plain text passwords for HTTP Basic auth
+are not longer supported by Baculum.
+   From this reason good to check if used web server for Baculum is set to using
+MD5 type passwords in HTTP Basic authentication.

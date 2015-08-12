@@ -177,7 +177,7 @@ AuthType Basic
 AuthUserFile /var/www/baculum/protected/Data/baculum.users
 Require valid-user
 
-For creating passwords file you may use htpasswd binary file in next way:
+For creating passwords file you can use htpasswd binary file in next way:
 
 # htpasswd -c /var/www/baculum/protected/Data/baculum.users someuser
 
@@ -186,6 +186,10 @@ You will be asked about inputting password and retype password for user.
 NOTE!
 "-c" switcher you should use only for new created passwords file. For existing
 passwords file "-c" switcher should not be provided.
+
+NOTE!
+From version 7.2.0 plain text passwords for HTTP Basic authentication are no longer
+supported by Baculum. For more information please see README file (FAQ, point "b").
 
 At the end there is need to give web server user possibility to manage the auth file:
 For example:
