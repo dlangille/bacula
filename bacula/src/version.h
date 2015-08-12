@@ -43,7 +43,7 @@
 //#define FORCE_ALIGNED 1
 
 /* If this is set stdout will not be closed on startup */
-#define DEVELOPER 1
+/* #define DEVELOPER 1 */
 
 /* adjust DEVELOPER_MODE for status command */
 #ifdef DEVELOPER
