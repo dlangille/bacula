@@ -13,3 +13,5 @@ PACKAGE_NAME = baculum
 
 %:
 	dh $@ 
+override_dh_auto_build:
+	true
