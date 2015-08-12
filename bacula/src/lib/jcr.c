@@ -573,6 +573,7 @@ void free_jcr(JCR *jcr)
    }
 
    free_common_jcr(jcr);
+   close_msg(NULL);                   /* flush any daemon messages */
    Dmsg0(dbglvl, "Exit free_jcr\n");
 }
 
