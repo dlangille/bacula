@@ -1,4 +1,4 @@
-# Makefile to prepare runtime files in rpm based distributions
+# Makefile to prepare runtime files (mainly for rpm based distributions)
 #
 # usage: make DESTDIR=/some/runtime_dir
 
