@@ -61,7 +61,6 @@ static void get_and_display_basejobs(UAContext *ua, RESTORE_CTX *rx);
 
 void new_rx(RESTORE_CTX *rx)
 {
-   RBSR *bsr = NULL;
    memset(rx, 0, sizeof(*rx));
    rx->path = get_pool_memory(PM_FNAME);
    rx->path[0] = 0;
