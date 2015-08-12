@@ -146,58 +146,30 @@ function for all users except administrator.
 
 ================================================================================
 
-=== 2. Baculum users configuration file for Lighttpd ===
+=== 2. Baculum users configuration file ===
 
 There is possible to manage Baculum administrator login and password directly
 in configuration wizard step titled "Step 5 - authorization params to Baculum".
 
-It means that Baculum administrator may change administrator auth params by
+It means that Baculum administrator may change admin auth params by
 configuration wizard.
 
-So far in Step 5 configuration wizard there were need to input admin auth params
-the same as in pre-defined file by "htpasswd" program.
+---------------- NOTE ---------------
+In older Baculum versions (before 7.0.5) in Step 5 configuration wizard there were
+need to input admin auth params the same as in pre-defined file by "htpasswd"
+program.
 
-For getting possibility to change admin login and password on wizard level
-there is need to run Baculum on Lighttpd web server and create admin password
-file locatied in:
+In version 7.0.5 has been introduced partial support for possibility changing
+username and password from Baculum interface working on Lighttpd web server.
 
-protected/Data/baculum.users
+From version 7.2.0 this limitation has been abolished. As long as Web Server uses
+HTTP Basic auth file located in:
 
-where syntax is:
+./protected/Data/baculum.users
 
-someuser:somepassword
-myser123:password3213
-...etc.
-
-
-NOTE!
-Login and password are stored as plain text.
-
-Next in Lighttpd web server configuration file is need to define above file
-as authfile for access to Baculum, for example:
-
-auth.backend = "plain"
-auth.backend.plain.userfile = "/var/www/baculum/protected/Data/baculum.users"
-auth.require = ( "/" => (
-        "method" => "basic",
-        "realm" => "Baculum Auth",
-        "require" => "valid-user"
-))
-
-
-Sample with whole Lighttpd configuration file you can find in directory:
-
-examples/baculum.lighttpd.conf
-
-NOTE!
-Due to Apache web server can use plain text password only for Windows,
-BEOS and Netware systems, described admin auth modification is not supported
-for Apache.
-
-NOTE!
-Functionality has been tested with Lighttpd. It has not been tested with other
-web servers that supports plain text stored password.
-
+and Web Server is capable to write (write permission) to this passwords file as
+long is possible to change username and password from Baculum interface level.
+------------ NOTE END -------------
 
 ================================================================================
 
