@@ -1,5 +1,9 @@
+# Makefile to prepare runtime files in rpm based distributions
+#
+# usage: make DESTDIR=/some/runtime_dir
+
 NAME = baculum
-VERSION = 7.0.6b
+VERSION = 7.2.0
 SAMPLETYPE = rpm-template
 SYSUSRDIR = /usr
 SYSCONFDIR = /etc
@@ -49,6 +53,7 @@ excluded_files = '.*\(\.htaccess\)$$'
 build: prepare_build prepare_data prepare_externals prepare_themes prepare_locale setup
 
 prepare_build:
+	if [ -z "$(DESTDIR)" ]; then @echo "No DESTDIR given"; exit 1; fi
 	mkdir -p $(DESTDIR)$(SYSCONFDIR) \
 	$(DESTDIR)$(CONFDIR) \
 	$(DESTDIR)$(HTTPDCONFDIR) \
