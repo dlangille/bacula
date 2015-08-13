@@ -3,8 +3,79 @@
 
 Release version 7.2.0
 
+Bacula code: Total files = 733 Total lines = 303,426
+The diff between Bacula 7.0.6 and Bacula 7.2.0 is 254,442
+which represents very large change, for the most part 
+contributed to the Bacula project by Bacula Systems SA.
+
+This is a major new release with many new features and a
+number of changes. Please take care to test this code carefully
+before putting it into production.  Although the new features
+have been tested, they have not run in a production environment.
+
+============== !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ===================
+New Catalog format in version 7.2.0 and greater
+-----------------------------------------------
+This release of Bacula uses a new catalog format.  We provide a script
+(update_bacula_tables in bacula/src/cats and in bacula/updatedb) that
+will update from Bacula 3.x, 5.2, or 7.0 to version 7.2.0 format.
+The database upgrade is fast and simply.  As always we strongly 
+recommand that you make a dump of your database prior to doing the
+upgrade.
+
+NOTE: The upgrade will work only for PostgreSQL and MySQL. Upgrading is
+not (yet) supported for SQLite3.
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+For packagers, if you change options, naming, and the way 
+we link our shared object files, as at least one of you does,
+you are creating a situation where the user may not be able
+to run multiple versions of Bacula on the same machine, which
+is often very useful, and in addition, you create a configuration
+that the project cannot properly support.
+
+Please note that the documentation has significantly changed.
+You will need additional packages to build it such as inkscape.
+Please see the README and README.pct files in the docs directory.
+The packages come with pre-build English pdf and html files,
+which are located in the docs/docs/manuals/en/pdf-and-html directory.
+
+Packagers: please note that the Bacula LICENSE has changed, it is still
+AGPLv3 and still open source. A new requirement has been added which
+requires other projects using the source to keep the acreditations.
+
+Packagers: please note that the docs license has changed. It is now 
+licensed: Creative Commons Attribution-ShareAlike 4.0 International
+This is a common open source license.
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+Compatibility:
+--------------
+As always, both the Community Director and Storage daemon(s) must be upgraded
+at the same time.  Any File daemon running on the same machine as a Director
+or Storage daemon must be of the same version.
+
+Older File Daemons should be compatible with the 7.2.0 Director and Storage
+daemons.  There should be no need to upgrade older File Daemons. However,
+this has not been fully tested yet.  Since we expect some problems, please 
+test before putting it into production.
+
+New Features:
+Please see the New Features chapter of the manual for documentation on
+the new features.  The new features are currently only in the New Features
+chapter and have not yet been integrated into the main chapters of the
+manual.  Also, since there were so many new features, it is possible that
+a few that previously existed in version 7.0.x are documented a second
+time in the 7.2.0 new features section.
+
+More detailed changes:
+
+12Aug15
+ - Put back missing close_msg(NULL) to flush daemon messages at job end
+ - Add LICENSE-FOSS and update LICENSE for baculum
+ - Backport from Bacula Enterprise
 29Jul15
- - Put back old pruning
  - Fix max vol size test accidently deleted
  - Remove gigaslam and grow on uninstall -- from bug report
  - Revert to Branch-8.3 fd_snapshot.c
@@ -320,6 +391,14 @@ Release version 7.2.0
 
 =========================================================================
 
+Bugs fixed in this version:
+1099 1209 536 1108 1127 876 1075 1083 1008 1047 861 858 965 940
+983 969 965 972 951 13680 431 875 843 1934 805 776 743
+
+
+
+
+
 
 ================= Old 7.0.x Release ====================================
 
@@ -595,3 +674,4 @@ Detailed changes:
  - Improve SQL failure reporting
  - First cut backport BEE to community
  - Add copyright to mtx-changer.in
+
