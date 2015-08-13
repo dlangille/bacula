@@ -96,7 +96,8 @@ cd ${cwd}
 tar xfz $base_pkg-$ver.tar.gz 
 # First remove Enterprise Win32 plugin source
 cd $base_pkg-$ver/bacula
-cp -fp ReleaseNotes ${cwd}/ReleaseNotes
+cp -fp ReleaseNotes ChangeLog src/version.h ${cwd}/
+cp -fp LICENSE* ${cwd}/
 
 cd ${cwd}/$base_pkg-$ver
 # Move directories to release names including version
