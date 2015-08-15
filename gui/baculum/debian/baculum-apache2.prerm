@@ -1,0 +1,9 @@
+#!/bin/sh
+
+set -e
+
+rm /usr/share/baculum/htdocs/protected/Data/baculum.users
+
+#DEBHELPER#
+
+exit 0

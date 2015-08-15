@@ -14,7 +14,7 @@ DESC="Baculum WebGUI Bacula Community tool"
 NAME=baculum
 SCRIPTNAME=/etc/init.d/$NAME
 DAEMON=/usr/sbin/lighttpd
-DAEMON_OPTS="-f /etc/baculum/baculum.lighttpd.conf"
+DAEMON_OPTS="-f /etc/baculum/baculum-lighttpd.conf"
 PIDFILE="/var/run/$NAME.pid"
 
 test -x $DAEMON || exit 0

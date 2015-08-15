@@ -4,7 +4,8 @@ set -e
 
 case "$1" in
     configure)
-	chown -R www-data:www-data /usr/share/baculum/htdocs
+	chown -R www-data:www-data /etc/baculum/Data-apache
+	chmod 750 /etc/baculum/Data-apache
 	chown -R www-data:www-data /var/cache/baculum
     ;;
 esac

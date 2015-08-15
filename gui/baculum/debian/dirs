@@ -1,5 +1,0 @@
-etc/baculum
-usr/share/baculum/htdocs
-usr/share/baculum/htdocs/protected
-var/cache/baculum
-var/log/baculum

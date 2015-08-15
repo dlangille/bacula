@@ -3,7 +3,6 @@
 set -e
 
 rm /usr/share/baculum/htdocs/protected/JavaScript/excanvas.js
-rm /usr/share/baculum/htdocs/protected/Data/baculum.users
 rm /usr/share/baculum/htdocs/LICENSE
 
 #DEBHELPER#

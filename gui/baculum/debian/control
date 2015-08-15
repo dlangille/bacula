@@ -8,9 +8,28 @@ Standards-Version: 3.9.6
 Package: baculum
 Section: web
 Architecture: all
-Depends: ${misc:Depends}, php5-cgi, php5-curl, php5-mysql, php5-pgsql, php5-sqlite, php5-json, lighttpd, libjs-excanvas
+Depends: ${misc:Depends}, php5-cgi, php5-curl, php5-mysql, php5-pgsql, php5-sqlite, php5-json, libjs-excanvas
 Description: WebGUI tool for Bacula Community program
- Baculum is web based tool to manage, administrate and monitor Bacula services.
- From server side Baculum is written in PHP and works basing on PRADO Framework.
+ Baculum is web based tool to manage, administer and monitor Bacula services.
+ From server side Baculum is written in PHP and it works basing on PRADO Framework.
  Baculum interface enables e.g. to run Bacula backup and restore actions, take
  access to Bacula console via web, watch backup graphs and others.
+
+Package: baculum-apache2
+Section: web
+Architecture: all
+Depends: ${misc:Depends}, apache2, libapache2-mod-php5, baculum
+Conflicts: baculum-lighttpd
+Description: WebGUI tool for Bacula Community program
+ This package provides the Apache configuration for Baculum WebGUI tool.
+ By using this module it is possible to run Baculum in Apache environment.
+
+Package: baculum-lighttpd
+Section: web
+Architecture: all
+Depends: ${misc:Depends}, lighttpd
+Conflicts: baculum-httpd
+Description: WebGUI tool for Bacula Community program, baculum
+ This package provides the Lighttpd configuration for Baculum WebGUI tool.
+ By using this module it is possible to run Baculum in Lighttpd environment.
+

@@ -1,0 +1,2 @@
+build/etc/baculum/baculum-lighttpd.conf          /etc/baculum/
+build/etc/baculum/Data-lighttpd/baculum.users    /etc/baculum/Data-lighttpd/

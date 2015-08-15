@@ -1,5 +1,18 @@
-baculum (7.0.5) stable; urgency=low
+baculum (7.2.0-1~vivid1) vivid; urgency=medium
 
-   * new upstream
+  [ Marcin Haba ]
+  * update upstream to 7.2.0
+  * Tweak typo in package description
+  * runtime symbolic link is not included in install file
+  * override dh_auto_build in rules file
+  * update copyright
+  * split package into baculum, baculum-apache2 and baculum-lighttpd packages
 
- -- Marcin Haba <marcin.haba@bacula.pl>  Sun, 08 Feb 2015 21:00:01 +0200
+ -- Marcin Haba <marcin.haba@bacula.pl>  Sun, 16 Aug 2015 00:48:01 +0200
+
+baculum (7.0+git20150616ppa1~vivid1) vivid; urgency=low
+
+  [ Marcin Haba ]
+  * new upstream
+
+ -- Marcin Haba <marcin.haba@bacula.pl>  Tue, 16 Jun 2015 22:52:01 +0200
