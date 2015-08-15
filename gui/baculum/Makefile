@@ -1,22 +1,24 @@
-# Makefile to prepare runtime files (mainly for rpm based distributions)
+# Makefile to prepare runtime files (for rpm-based and deb-based distributions)
 #
 # usage: make DESTDIR=/some/runtime_dir
 
 NAME = baculum
 VERSION = 7.2.0
-SAMPLETYPE = rpm-template
+SAMPLETYPE = $(SAMPLETYPE:-rpm-template)
+HTTPDNAME = $(HTTPDNAME:-httpd)
+HTTPDSITECONF = $(HTTPDSITECONF:-conf.d)
 SYSUSRDIR = /usr
 SYSCONFDIR = /etc
 SYSVARDIR = /var
 CONFDIR = $(SYSCONFDIR)/$(NAME)
-HTTPDCONFDIR = $(SYSCONFDIR)/httpd/conf.d
+HTTPDCONFDIR = $(SYSCONFDIR)/$(HTTPDNAME)/$(HTTPDSITECONF)
 UNITDIR = $(SYSUSRDIR)/lib/systemd/system
 LOCALEDIR = $(SYSUSRDIR)/share/locale
 WWWDIR = $(SYSUSRDIR)/share/$(NAME)/htdocs
 SELINUXDIR = $(SYSUSRDIR)/share/selinux/packages/$(NAME)
 CACHEDIR = $(SYSVARDIR)/cache/$(NAME)
 LOGDIR = $(SYSVARDIR)/log
-HTTPDLOGS = $(LOGDIR)/httpd
+HTTPDLOGS = $(LOGDIR)/$(HTTPDNAME)
 LIGHTTPDLOGS = $(LOGDIR)/lighttpd
 
 # Internal application directories
