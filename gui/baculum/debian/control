@@ -20,16 +20,16 @@ Section: web
 Architecture: all
 Depends: ${misc:Depends}, apache2, libapache2-mod-php5, baculum
 Conflicts: baculum-lighttpd
-Description: WebGUI tool for Bacula Community program
+Description: Apache configuration for Baculum WebGUI tool
  This package provides the Apache configuration for Baculum WebGUI tool.
  By using this module it is possible to run Baculum in Apache environment.
 
 Package: baculum-lighttpd
 Section: web
 Architecture: all
-Depends: ${misc:Depends}, lighttpd
+Depends: ${misc:Depends}, lighttpd, baculum
 Conflicts: baculum-httpd
-Description: WebGUI tool for Bacula Community program, baculum
+Description: Lighttpd configuration for Baculum WebGUI tool
  This package provides the Lighttpd configuration for Baculum WebGUI tool.
  By using this module it is possible to run Baculum in Lighttpd environment.
 
