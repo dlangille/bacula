@@ -2479,7 +2479,7 @@ if test x$support_lzo = xyes; then
 	     AC_CHECK_HEADER(${with_lzo}/lzo/lzoconf.h,
 		[
 		    AC_DEFINE(HAVE_LZO, 1, [Define to 1 if you have LZO compression])
-		    LZO_LIBS="${LZO_LDFLAGS} -lzo2"
+		    LZO_LIBS="${LZO_LDFLAGS} -llzo2"
 		    have_lzo="yes"	
 		], [
 		    echo " "
