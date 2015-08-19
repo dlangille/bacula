@@ -15,6 +15,12 @@
 #define BYEAR "2015"       /* year for copyright messages in progs */
 
 /*
+ * Versions of packages needed to build Bacula components
+ */
+#define DEPKGS_QT_VERSION  "01Jan13"
+#define DEPKGS_VERSION     "26Jun14"
+
+/*
    Bacula(R) - The Network Backup Solution
 
    Copyright (C) 2000-2015 Kern Sibbald
