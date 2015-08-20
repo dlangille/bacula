@@ -65,6 +65,8 @@
 %define log_dir        %_libdir/bacula/log
 %endif
 
+%define systemd_dir    /lib/systemd/system
+
 # Daemon user:group Don't change them unless you know what you are doing
 %define director_daemon_user    bacula
 %define storage_daemon_user     bacula
@@ -75,7 +77,7 @@
 
 %define depkgs ../depkgs
 
-# probems with mandriva build:
+# problems with mandriva build:
 # nothing provides libbonobo2_0-devel, nothing provides libbonoboui2_0-devel
 
 #--------------------------------------------------------------------------
@@ -142,6 +144,8 @@ Source2: Release_Notes-%{version}-%{release}.tar.gz
 %{?build_fc17:%define fc17 1}
 %define fc18 0
 %{?build_fc18:%define fc18 1}
+%define fc22 0
+%{?build_fc22:%define fc22 1}
 # Whitebox Enterprise build
 %define wb3 0
 %{?build_wb3:%define wb3 1}
@@ -162,6 +166,9 @@ Source2: Release_Notes-%{version}-%{release}.tar.gz
 %define rhel6 0
 %{?build_rhel6:%define rhel6 1}
 %{?build_el6:%define rhel6 1}
+%define rhel7 0
+%{?build_rhel7:%define rhel7 1}
+%{?build_el7:%define rhel7 1}
 # CentOS build
 %define centos3 0
 %{?build_centos3:%define centos3 1}
@@ -199,6 +206,8 @@ Source2: Release_Notes-%{version}-%{release}.tar.gz
 %{?build_su111:%define su111 1}
 %define su112 0
 %{?build_su112:%define su112 1}
+%define su113 0
+%{?build_su113:%define su113 1}
 %define su120 0
 %{?build_su120:%define su120 1}
 %define su131 0
@@ -214,13 +223,29 @@ Source2: Release_Notes-%{version}-%{release}.tar.gz
 %define client_only 0
 %{?build_client_only:%define client_only 1}
 
+# if the platform is using systemd
+%define usesystemd 0
+
+%if %{rhel7} || %{fc22}
+%define usesystemd 1
+%endif
+
+# depending if we use systemd or not, we use chkconfig or systemctl
+%if %{usesystemd}
+%define service_enable    systemctl enable
+%define service_disable   systemctl disable
+%else
+%define service_enable    /sbin/chkconfig --add
+%define service_disable   /sbin/chkconfig --del
+%endif
+
 # Setup some short cuts
 %define rhat 0
 %if %{rh7} || %{rh8} || %{rh9}
 %define rhat 1
 %endif
 %define fed 0
-%if %{fc16} || %{fc17} || %{fc18}
+%if %{fc16} || %{fc17} || %{fc18} || %{fc22}
 %define fed 1
 %endif
 %define suse 0
@@ -228,7 +253,7 @@ Source2: Release_Notes-%{version}-%{release}.tar.gz
 %define suse 1
 %endif
 %define rhel 0
-%if %{rhel3} || %{rhel4} || %{rhel5} || %{rhel6} || %{centos3} || %{centos4} || %{centos5} || %{centos6}
+%if %{rhel3} || %{rhel4} || %{rhel5} || %{rhel6} || %{rhel7} || %{centos3} || %{centos4} || %{centos5} || %{centos6}
 %define rhel 1
 %endif
 %define scil 0
@@ -283,7 +308,7 @@ exit 1
 %{?build_x86_64:%define x86_64 1}
 
 # check what distribution we are
-%if %{fc16} || %{fc17} || %{fc18}
+%if %{fc16} || %{fc17} || %{fc18} || %{fc22}
 %define _dist %(grep Fedora /etc/redhat-release)
 %endif
 %if %{centos5} || %{centos4} || %{centos3}
@@ -361,6 +386,7 @@ BuildRequires: libstdc++-devel, zlib-devel
 BuildRequires: openssl-devel
 BuildRequires: libacl-devel
 BuildRequires: pkgconfig
+BuildRequires: bzip2-devel
 %if ! %{rh7}
 BuildRequires: libxml2-devel
 %endif
@@ -486,7 +512,7 @@ Provides: %{product}
 Provides: %{product}-libs
 %endif
 
-Requires: libstdc++, zlib, openssl
+Requires: libstdc++, zlib, openssl, bzip2-libs
 Requires: glibc, readline, %{name}-libs
 
 %if %{python}
@@ -656,6 +682,9 @@ export BACULA="Bacula"
 %if %{rh7} || %{rh8} || %{rh9}
         --disable-batch-insert \
 %endif
+%if %{usesystemd}
+        --with-systemd=%{systemd_dir} \
+%endif
         --with-tcp-wrappers  \
         --with-dir-user=%{director_daemon_user} \
         --with-dir-group=%{daemon_group} \
@@ -696,10 +725,22 @@ mkdir -p $RPM_BUILD_ROOT%{sqlite_bindir}
 
 make DESTDIR=$RPM_BUILD_ROOT install
 
+# bsnapshot
+make DESTDIR=$RPM_BUILD_ROOT -C ../bacula-%{_version}/src/tools/ install-bsnapshot
+
+%if %{usesystemd}
+make DESTDIR=$RPM_BUILD_ROOT -C platforms/systemd install-dir install-service
+%endif
+
 # Remove docs for programs that are depreciated
 rm -f $RPM_BUILD_ROOT%{_mandir}/man1/bacula-bgnome-console.1.%{manpage_ext}
 rm -f $RPM_BUILD_ROOT%{_mandir}/man1/bacula-bwxconsole.1.%{manpage_ext}
+rm -f $RPM_BUILD_ROOT%{_mandir}/man1/bacula-tray-monitor.1.%{manpage_ext}
 rm -f $RPM_BUILD_ROOT%{script_dir}/gconsole
+
+# Remove docs for programs only included in bee
+rm -f $RPM_BUILD_ROOT%{_mandir}/man8/bpluginfo.8.%{manpage_ext}
+
 # Storage-ctl packaged in shstore rpm
 rm -f $RPM_BUILD_ROOT%{script_dir}/storage-ctl
 rm -f $RPM_BUILD_ROOT%{script_dir}/storage-ctl.conf
@@ -718,25 +759,32 @@ rm -f $RPM_BUILD_ROOT%{script_dir}/stopmysql
 %endif
 
 # install the init scripts
+%if !%{usesystemd}
 %if %{suse}
 cp -p platforms/suse/bacula-dir $RPM_BUILD_ROOT/etc/init.d/bacula-dir
 cp -p platforms/suse/bacula-fd $RPM_BUILD_ROOT/etc/init.d/bacula-fd
 cp -p platforms/suse/bacula-sd $RPM_BUILD_ROOT/etc/init.d/bacula-sd
-%endif
+%endif				 # suse
 %if %{mdk}
 cp -p platforms/mandrake/bacula-dir $RPM_BUILD_ROOT/etc/init.d/bacula-dir
 cp -p platforms/mandrake/bacula-fd $RPM_BUILD_ROOT/etc/init.d/bacula-fd
 cp -p platforms/mandrake/bacula-sd $RPM_BUILD_ROOT/etc/init.d/bacula-sd
-%endif
+%endif				 # mdk
 %if ! %{suse} && ! %{mdk}
 cp -p platforms/redhat/bacula-dir $RPM_BUILD_ROOT/etc/init.d/bacula-dir
 cp -p platforms/redhat/bacula-fd $RPM_BUILD_ROOT/etc/init.d/bacula-fd
 cp -p platforms/redhat/bacula-sd $RPM_BUILD_ROOT/etc/init.d/bacula-sd
-%endif
+%endif				 # !suse && !mdk
 chmod 0754 $RPM_BUILD_ROOT/etc/init.d/*
+%endif				 # ! usesystemd
+
 %if %{client_only}
 rm -f $RPM_BUILD_ROOT/etc/init.d/bacula-dir
 rm -f $RPM_BUILD_ROOT/etc/init.d/bacula-sd
+rm -f $RPM_BUILD_ROOT%{script_dir}/breload
+rm -f $RPM_BUILD_ROOT%{script_dir}/manual_prune.pl
+rm -f $RPM_BUILD_ROOT%{systemd_dir}/bacula-dir.service
+rm -f $RPM_BUILD_ROOT%{systemd_dir}/bacula-sd.service
 %endif
 
 # install sqlite
@@ -756,6 +804,8 @@ cp -p updatedb/* $RPM_BUILD_ROOT%{script_dir}/updatedb/
 # install specific scripts
 
 # install special upgrade script, except for sqlite3
+%if ! %{sqlite}
+%endif
 
 %if ! %{client_only}
 # install the sample-query.sql file
@@ -789,7 +839,6 @@ rm -f $RPM_BUILD_ROOT%{_mandir}/man8/dbcheck.8.%{manpage_ext}
 rm -f $RPM_BUILD_ROOT%{_mandir}/man8/bregex.8.%{manpage_ext}
 rm -f $RPM_BUILD_ROOT%{_mandir}/man8/bwild.8.%{manpage_ext}
 rm -f $RPM_BUILD_ROOT%{_mandir}/man1/bsmtp.1.%{manpage_ext}
-rm -f $RPM_BUILD_ROOT%{_mandir}/man8/bpluginfo.8.gz
 rm -f $RPM_BUILD_ROOT%{script_dir}/bacula
 rm -f $RPM_BUILD_ROOT%{script_dir}/bacula_config
 rm -f $RPM_BUILD_ROOT%{script_dir}/bacula-ctl-dir
@@ -803,7 +852,6 @@ rm -rf $RPM_BUILD_ROOT%{script_dir}/updatedb
 rm -f $RPM_BUILD_ROOT%{script_dir}/bconsole
 rm -f $RPM_BUILD_ROOT%{script_dir}/mtx-changer.conf
 rm -f $RPM_BUILD_ROOT%{_sbindir}/bacula
-rm -f $RPM_BUILD_ROOT%{_sbindir}/bpluginfo
 
 %endif
 
@@ -887,14 +935,23 @@ rm -f $RPM_BUILD_DIR/Release_Notes-%{version}-%{release}.txt
 %attr(-, root, %{daemon_group}) %{script_dir}/bacula-ctl-fd
 %attr(-, root, %{daemon_group}) %{script_dir}/bacula-ctl-sd
 %attr(-, root, %{daemon_group}) %{plugin_dir}/bpipe-fd.so
-%attr(-, root, %{daemon_group}) /etc/init.d/bacula-dir
-%attr(-, root, %{daemon_group}) /etc/init.d/bacula-fd
+#%attr(-, root, %{daemon_group}) /etc/init.d/bacula-dir
+#%attr(-, root, %{daemon_group}) /etc/init.d/bacula-fd
 %attr(-, root, %{daemon_group}) %{_sbindir}/dbcheck
-%attr(-, root, %{daemon_group}) %{_sbindir}/bpluginfo
 %attr(-, root, %{storage_daemon_group}) %{script_dir}/dvd-handler
-%attr(-, root, %{storage_daemon_group}) /etc/init.d/bacula-sd
+#%attr(-, root, %{storage_daemon_group}) /etc/init.d/bacula-sd
 %attr(-, root, %{storage_daemon_group}) %{script_dir}/mtx-changer
 %attr(-, root, %{storage_daemon_group}) %config(noreplace) %{script_dir}/mtx-changer.conf
+
+%if %{usesystemd}
+%attr(-, root, %{daemon_group}) %{systemd_dir}/bacula-dir.service
+%attr(-, root, %{daemon_group}) %{systemd_dir}/bacula-fd.service
+%attr(-, root, %{daemon_group}) %{systemd_dir}/bacula-sd.service
+%else
+%attr(-, root, %{daemon_group}) /etc/init.d/bacula-dir
+%attr(-, root, %{daemon_group}) /etc/init.d/bacula-fd
+%attr(-, root, %{storage_daemon_group}) /etc/init.d/bacula-sd
+%endif
 
 /etc/logrotate.d/bacula
 %{logwatch_dir}/scripts/services/bacula
@@ -916,6 +973,8 @@ rm -f $RPM_BUILD_DIR/Release_Notes-%{version}-%{release}.txt
 %attr(-, root, %{daemon_group}) %{_sbindir}/bsmtp
 %attr(-, root, %{daemon_group}) %{_sbindir}/bscan
 %attr(-, root, %{daemon_group}) %{_sbindir}/btape
+
+%attr(755, root, root) %{_sbindir}/bsnapshot
 
 %{_sbindir}/bacula-fd
 %{_sbindir}/bacula
@@ -940,7 +999,6 @@ rm -f $RPM_BUILD_DIR/Release_Notes-%{version}-%{release}.txt
 %{_mandir}/man8/bwild.8.%{manpage_ext}
 %{_mandir}/man1/bsmtp.1.%{manpage_ext}
 %{_mandir}/man1/bat.1.%{manpage_ext}
-%{_mandir}/man8/bpluginfo.8.gz
 
 %_prefix/share/doc/*
 
@@ -1079,14 +1137,14 @@ fi
 # add our links
 if [ "$1" -ge 1 ] ; then
 %if %{suse} && %{mysql}
-  /sbin/chkconfig --add mysql
+  %{service_enable} mysql
 %endif
 %if %{suse} && %{postgresql}
-  /sbin/chkconfig --add postgresql
+  %{service_enable} postgresql
 %endif
-  /sbin/chkconfig --add bacula-dir
-  /sbin/chkconfig --add bacula-fd
-  /sbin/chkconfig --add bacula-sd
+  %{service_enable} bacula-dir
+  %{service_enable} bacula-fd
+  %{service_enable} bacula-sd
 fi
 %endif
 
@@ -1103,6 +1161,9 @@ if [ -d %{sysconf_dir} ]; then
        done
    fi
    host=`hostname -s`
+   if [ "$host" = "" ]; then
+       host=localhost
+   fi
    for file in *.conf; do
       sed -f .rpm.sed $file > $file.new
       sed "s@XXX_HOSTNAME_XXX@${host}@g" $file.new > $file
@@ -1212,6 +1273,9 @@ if [ -d %{sysconf_dir} ]; then
        done
    fi
    host=`hostname -s`
+   if [ "$host" = "" ]; then
+       host=localhost
+   fi
    for file in *.conf; do
       sed -f .rpm.sed $file > $file.new
       sed "s@XXX_HOSTNAME_XXX@${host}@g" $file.new > $file
@@ -1234,9 +1298,9 @@ fi
 %if ! %{client_only}
 # delete our links
 if [ $1 = 0 ]; then
-  /sbin/chkconfig --del bacula-dir
-  /sbin/chkconfig --del bacula-fd
-  /sbin/chkconfig --del bacula-sd
+  %{service_disable} bacula-dir
+  %{service_disable} bacula-fd
+  %{service_disable} bacula-sd
 fi
 %endif
 
@@ -1246,8 +1310,17 @@ fi
 %attr(-, root, %{daemon_group}) %dir %{plugin_dir}
 #%attr(-, root, %{daemon_group}) %dir %{log_dir}
 %attr(-, root, %{daemon_group}) %dir %{sysconf_dir}
+
+# SD/DIR might write here
+%attr(-, %{storage_daemon_user}, %{daemon_group}) %dir %{log_dir}
+#%attr(-, root, %{daemon_group}) %{script_dir}/bacula-ctl-fd
+
+%if %{usesystemd}
+%attr(-, root, %{daemon_group})  %{systemd_dir}/bacula-fd.service
+%else
 %{script_dir}/bacula-ctl-fd
 /etc/init.d/bacula-fd
+%endif
 
 /etc/logrotate.d/bacula
 
@@ -1295,7 +1368,7 @@ fi
 %post client
 # add our link
 if [ "$1" -ge 1 ] ; then
-   /sbin/chkconfig --add bacula-fd
+   %{service_enable} bacula-fd
 fi
 
 if [ -d %{sysconf_dir} ]; then
@@ -1311,6 +1384,9 @@ if [ -d %{sysconf_dir} ]; then
        done
    fi
    host=`hostname -s`
+   if [ "$host" = "" ]; then
+       host=localhost
+   fi
    for file in *.conf; do
       sed -f .rpm.sed $file > $file.new
       sed "s@XXX_HOSTNAME_XXX@${host}@g" $file.new > $file
@@ -1321,7 +1397,7 @@ fi
 %preun client
 # delete our link
 if [ $1 = 0 ]; then
-   /sbin/chkconfig --del bacula-fd
+   %{service_disable} bacula-fd
 fi
 
 %files libs
