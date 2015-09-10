@@ -475,7 +475,7 @@ checkName:
          bstrncpy(dev_name, store.store->dev_name(), sizeof(dev_name));
          ua->info_msg(_("Requesting to mount %s ...\n"), dev_name);
          bash_spaces(dev_name);
-         sd->fsend("mount %s drive=%d", dev_name, drive);
+         sd->fsend("mount %s drive=%d slot=%d", dev_name, drive, mr.Slot);
          unbash_spaces(dev_name);
          while (sd->recv() >= 0) {
             ua->send_msg("%s", sd->msg);
