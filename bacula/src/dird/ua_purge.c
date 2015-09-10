@@ -209,11 +209,11 @@ static int purge_files_from_client(UAContext *ua, CLIENT *client)
 
    purge_files_from_job_list(ua, del);
 
-   if (del.num_ids == 0) {
+   if (del.num_del == 0) {
       ua->warning_msg(_("No Files found for client %s to purge from %s catalog.\n"),
          client->name(), client->catalog->name());
    } else {
-      ua->info_msg(_("Files for %d Jobs for client \"%s\" purged from %s catalog.\n"), del.num_ids,
+      ua->info_msg(_("Files for %d Jobs for client \"%s\" purged from %s catalog.\n"), del.num_del,
          client->name(), client->catalog->name());
    }
 
@@ -259,11 +259,11 @@ static int purge_jobs_from_client(UAContext *ua, CLIENT *client)
 
    purge_job_list_from_catalog(ua, del);
 
-   if (del.num_ids == 0) {
+   if (del.num_del == 0) {
       ua->warning_msg(_("No Files found for client %s to purge from %s catalog.\n"),
          client->name(), client->catalog->name());
    } else {
-      ua->info_msg(_("%d Jobs for client %s purged from %s catalog.\n"), del.num_ids,
+      ua->info_msg(_("%d Jobs for client %s purged from %s catalog.\n"), del.num_del,
          client->name(), client->catalog->name());
    }
 
