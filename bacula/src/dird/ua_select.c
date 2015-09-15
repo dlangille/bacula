@@ -911,7 +911,7 @@ int do_prompt(UAContext *ua, const char *automsg, const char *msg,
       if (prompt) {
          bstrncpy(prompt, ua->prompt[1], max_prompt);
       }
-      ua->send_msg(_("Automatically selected %s: %s\n"), automsg, ua->prompt[1]);
+      ua->send_msg(_("Automatically selected %s: %s\n"), NPRTB(automsg), ua->prompt[1]);
       goto done;
    }
    /* If running non-interactive, bail out */
