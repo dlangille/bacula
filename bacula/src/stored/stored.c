@@ -59,6 +59,7 @@ bool forge_on = false;                /* proceed inspite of I/O errors */
 pthread_mutex_t device_release_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t wait_device_release = PTHREAD_COND_INITIALIZER;
 void *start_heap;
+static bool test_config = false;
 
 
 static uint32_t VolSessionId = 0;
@@ -111,7 +112,6 @@ int main (int argc, char *argv[])
 {
    int ch;
    bool no_signals = false;
-   bool test_config = false;
    pthread_t thid;
    char *uid = NULL;
    char *gid = NULL;
@@ -691,8 +691,12 @@ void terminate_stored(int sig)
       bmicrosleep(0, 500000);         /* give them 1/2 sec to clean up */
    }
 
-   write_state_file(me->working_directory, "bacula-sd", get_first_port_host_order(me->sdaddrs));
-   delete_pid_file(me->pid_directory, "bacula-sd", get_first_port_host_order(me->sdaddrs));
+   if (!test_config) {
+      write_state_file(me->working_directory,
+                       "bacula-sd", get_first_port_host_order(me->sdaddrs));
+      delete_pid_file(me->pid_directory,
+                      "bacula-sd", get_first_port_host_order(me->sdaddrs));
+   }
 
    Dmsg1(200, "In terminate_stored() sig=%d\n", sig);
 

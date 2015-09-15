@@ -68,6 +68,7 @@ static char *runjob = NULL;
 static bool background = true;
 static void init_reload(void);
 static CONFIG *config;
+static bool test_config = false;
 
 /* Globals Exported */
 DIRRES *director;                     /* Director resource */
@@ -163,7 +164,6 @@ int main (int argc, char *argv[])
    int ch;
    JCR *jcr;
    bool no_signals = false;
-   bool test_config = false;
    char *uid = NULL;
    char *gid = NULL;
 
@@ -567,8 +567,10 @@ void terminate_dird(int sig)
    stop_watchdog();
    generate_daemon_event(NULL, "Exit");
    unload_plugins();
-   write_state_file(director->working_directory, "bacula-dir", get_first_port_host_order(director->DIRaddrs));
-   delete_pid_file(director->pid_directory, "bacula-dir", get_first_port_host_order(director->DIRaddrs));
+   if (!test_config) {
+      write_state_file(director->working_directory, "bacula-dir", get_first_port_host_order(director->DIRaddrs));
+      delete_pid_file(director->pid_directory, "bacula-dir", get_first_port_host_order(director->DIRaddrs));
+   }
    term_scheduler();
    term_job_server();
    if (runjob) {

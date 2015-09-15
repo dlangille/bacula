@@ -46,6 +46,7 @@ extern struct s_cmds cmds[];
 #endif
 
 char *configfile = NULL;
+static bool test_config = false;
 static bool foreground = false;
 static workq_t dir_workq;             /* queue of work from Director */
 static pthread_t server_tid;
@@ -85,7 +86,6 @@ static void usage()
 int main (int argc, char *argv[])
 {
    int ch;
-   bool test_config = false;
    bool keep_readall_caps = false;
    char *uid = NULL;
    char *gid = NULL;
@@ -279,8 +279,13 @@ void terminate_filed(int sig)
    bnet_stop_thread_server(server_tid);
    generate_daemon_event(NULL, "Exit");
    unload_plugins();
-   write_state_file(me->working_directory, "bacula-fd", get_first_port_host_order(me->FDaddrs));
-   delete_pid_file(me->pid_directory, "bacula-fd", get_first_port_host_order(me->FDaddrs));
+
+   if (!test_config) {
+      write_state_file(me->working_directory,
+                       "bacula-fd", get_first_port_host_order(me->FDaddrs));
+      delete_pid_file(me->pid_directory,
+                      "bacula-fd", get_first_port_host_order(me->FDaddrs));
+   }
 
    if (configfile != NULL) {
       free(configfile);
