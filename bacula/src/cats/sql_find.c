@@ -343,10 +343,18 @@ int BDB::bdb_find_next_volume(JCR *jcr, int item, bool InChanger, MEDIA_DBR *mr)
    } else {
       POOL_MEM changer(PM_FNAME);
       POOL_MEM voltype(PM_FNAME);
+      POOL_MEM exclude(PM_FNAME);
       /* Find next available volume */
       if (InChanger) {
          Mmsg(changer, " AND InChanger=1 AND StorageId=%s ",
                  edit_int64(mr->StorageId, ed1));
+      }
+      /* Volumes will be automatically excluded from the query, we just take the
+       * first one of the list 
+       */
+      if (mr->exclude_list && *mr->exclude_list) {
+         item = 1;
+         Mmsg(exclude, " AND MediaId NOT IN (%s) ", mr->exclude_list);
       }
       if (strcmp(mr->VolStatus, "Recycle") == 0 ||
           strcmp(mr->VolStatus, "Purged") == 0) {
@@ -365,11 +373,12 @@ int BDB::bdb_find_next_volume(JCR *jcr, int item, bool InChanger, MEDIA_DBR *mr)
          "AND VolStatus='%s' "
          "%s "
          "%s "
+         "%s "
          "%s LIMIT %d",
          edit_int64(mr->PoolId, ed1), esc_type,
          esc_status,
          voltype.c_str(),
-         changer.c_str(), order, item);
+         changer.c_str(), exclude.c_str(), order, item);
    }
    Dmsg1(100, "fnextvol=%s\n", cmd);
    if (!QueryDB(jcr, cmd)) {

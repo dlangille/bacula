@@ -47,6 +47,29 @@ void set_storageid_in_mr(STORE *store, MEDIA_DBR *mr)
    mr->StorageId = store->StorageId;
 }
 
+static void add_volume_to_exclude_list(JCR *jcr, int index, MEDIA_DBR *mr)
+{
+   char ed1[50];
+   if (index == 1) {
+      *jcr->next_vol_list = 0;
+
+   } else if (*jcr->next_vol_list) {
+      pm_strcat(jcr->next_vol_list, ",");
+   }
+   pm_strcat(jcr->next_vol_list, edit_int64(mr->MediaId, ed1));
+
+   /* The list is valid only in find_next_volume_for_append() */
+   mr->exclude_list = NULL;
+}
+
+static void set_volume_to_exclude_list(JCR *jcr, int index, MEDIA_DBR *mr)
+{
+   if (index == 1) {
+      *jcr->next_vol_list = 0;
+   }
+   mr->exclude_list = jcr->next_vol_list;
+}
+
 /*
  *  Items needed:
  *   mr.PoolId must be set
@@ -74,6 +97,9 @@ int find_next_volume_for_append(JCR *jcr, MEDIA_DBR *mr, int index,
     *   search to the Autochanger on the first pass
     */
    InChanger = (store->autochanger)? true : false;
+
+   /* Make sure we don't send two times the same volume in the same session */
+   set_volume_to_exclude_list(jcr, index, mr);
 
    /*
     * Find the Next Volume for Append
@@ -197,6 +223,11 @@ int find_next_volume_for_append(JCR *jcr, MEDIA_DBR *mr, int index,
    } /* end for loop */
    db_unlock(jcr->db);
    Dmsg1(dbglvl, "return ok=%d find_next_vol\n", ok);
+
+   /* We keep the record of all previous volumes requested */
+   if (ok) {
+      add_volume_to_exclude_list(jcr, index, mr);;
+   }
    return ok;
 }
 

@@ -370,6 +370,7 @@ public:
    char    cLastWritten[MAX_TIME_LENGTH];  /* LastWritten returned from DB */
    char    cLabelDate[MAX_TIME_LENGTH];    /* LabelData returned from DB */
    char    cInitialWrite[MAX_TIME_LENGTH]; /* InitialWrite returned from DB */
+   char   *exclude_list;                   /* Optionnal exclude list for db_find_next_volume() */
    bool    set_first_written;
    bool    set_label_date;
 };

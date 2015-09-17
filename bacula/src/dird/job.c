@@ -1433,6 +1433,7 @@ void dird_free_jcr(JCR *jcr)
    free_and_null_pool_memory(jcr->rpool_source);
    free_and_null_pool_memory(jcr->wstore_source);
    free_and_null_pool_memory(jcr->rstore_source);
+   free_and_null_pool_memory(jcr->next_vol_list);
 
    /* Delete lists setup to hold storage pointers */
    free_rwstorage(jcr);
@@ -1495,7 +1496,9 @@ void set_jcr_defaults(JCR *jcr, JOB *job)
       jcr->setJobLevel(job->JobLevel);
       break;
    }
-
+   if (!jcr->next_vol_list) {
+      jcr->next_vol_list = get_pool_memory(PM_FNAME);
+   }
    if (!jcr->fname) {
       jcr->fname = get_pool_memory(PM_FNAME);
    }
