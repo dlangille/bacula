@@ -727,6 +727,9 @@ sub add_attribute
     my ($cur_obj, $cur_name, $done);
 
     my $is_options = $obj && $obj eq 'Options';
+    if ($value =~ /\s/ && $value !~ m:[/"]:) { # exclude speed from the escape
+        $value = "\"$value\"";
+    }
     open(FP, ">$tmp/1.$$") or die "Can't write to $tmp/1.$$";
     open(SRC, $file) or die "Can't open $file";
     while (my $l = <SRC>)
