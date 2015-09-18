@@ -74,6 +74,12 @@ BPIPE *open_bpipe(char *prog, int wait, const char *mode, char *envp[])
    BPIPE *bpipe;
    int save_errno;
 
+   if (!prog || !*prog) {
+      /* execve(3) A component of the file does not name an existing file or file is an empty string. */
+      errno = ENOENT; 
+      return NULL;
+   }
+   
    bpipe = (BPIPE *)malloc(sizeof(BPIPE));
    memset(bpipe, 0, sizeof(BPIPE));
    mode_read = (mode[0] == 'r');
