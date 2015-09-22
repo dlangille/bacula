@@ -50,6 +50,7 @@ struct bctx_t {
 
    /* Compression variables */
 #if defined(HAVE_LIBZ) || defined(HAVE_LZO)
+   uLong max_compress_len;
    uLong compress_len;
    Bytef *cbuf;
    Bytef *cbuf2;
