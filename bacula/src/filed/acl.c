@@ -2027,7 +2027,7 @@ bool backup_acl_streams(JCR *jcr, FF_PKT *ff_pkt)
        * AFS is a non OS specific filesystem so see if this path is on an AFS filesystem
        * Set the BACL_FLAG_SAVE_AFS flag if it is. If not set the BACL_FLAG_SAVE_NATIVE flag.
        */
-      if (fstype_equals(jcr->last_fname, "afs")) {
+      if (fstype_cmp(ff_pkt, "afs")) {
          jcr->acl_ctx->flags |= BACL_FLAG_SAVE_AFS;
       } else {
          jcr->acl_ctx->flags |= BACL_FLAG_SAVE_NATIVE;
@@ -2128,7 +2128,7 @@ bacl_rtn_code restore_acl_streams(JCR *jcr, int stream,
        * AFS is a non OS specific filesystem so see if this path is on an AFS filesystem
        * Set the BACL_FLAG_RESTORE_AFS flag if it is. If not set the BACL_FLAG_RETORE_NATIVE flag.
        */
-      if (fstype_equals(jcr->last_fname, "afs")) {
+      if (fstype_cmp(ff_pkt, "afs")) {
          jcr->acl_ctx->flags |= BACL_FLAG_RESTORE_AFS;
       } else {
          jcr->acl_ctx->flags |= BACL_FLAG_RESTORE_NATIVE;
