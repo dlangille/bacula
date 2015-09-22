@@ -87,7 +87,7 @@ void add_mtab_item(void *user_ctx, struct stat *st, const char *fstype,
 }
 
 /* Compare directly the FS from a fname with a string */
-bool fstype_cmp(FF_PKT *ff_pkt, const char fsname)
+bool fstype_cmp(FF_PKT *ff_pkt, const char *fsname)
 {
    char buf[256];
    if (fstype(ff_pkt, buf, sizeof(buf))) {
