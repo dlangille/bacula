@@ -537,9 +537,10 @@ int bopen(BFILE *bfd, const char *fname, uint64_t flags, mode_t mode)
    bfd->win32DecompContext.liNextHeader = 0;
 
 #if defined(HAVE_POSIX_FADVISE) && defined(POSIX_FADV_WILLNEED)
-   if (bfd->fid != -1 && flags & O_RDONLY) {
+   /* If not RDWR or WRONLY must be Read Only */
+   if (bfd->fid != -1 && !(flags & (O_RDWR|O_WRONLY))) {
       int stat = posix_fadvise(bfd->fid, 0, 0, POSIX_FADV_WILLNEED);
-      Dmsg2(400, "Did posix_fadvise on %s stat=%d\n", fname, stat);
+      Dmsg3(400, "Did posix_fadvise WILLNEED on %s fid=%d stat=%d\n", fname, bfd->fid, stat);
    }
 #endif
 
@@ -585,10 +586,12 @@ int bclose(BFILE *bfd)
    }
 
 #if defined(HAVE_POSIX_FADVISE) && defined(POSIX_FADV_DONTNEED)
-   if (bfd->m_flags & O_RDONLY) {
+   /* If not RDWR or WRONLY must be Read Only */
+   if (!(bfd->m_flags & (O_RDWR|O_WRONLY))) {
       fdatasync(bfd->fid);            /* sync the file */
       /* Tell OS we don't need it any more */
       posix_fadvise(bfd->fid, 0, 0, POSIX_FADV_DONTNEED);
+      Dmsg1(400, "Did posix_fadvise DONTNEED on fid=%d\n", bfd->fid);
    }
 #endif
 
@@ -653,4 +656,3 @@ boffset_t blseek(BFILE *bfd, boffset_t offset, int whence)
    bfd->berrno = errno;
    return pos;
 }
-
