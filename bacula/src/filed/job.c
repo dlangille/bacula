@@ -353,7 +353,6 @@ bail_out:
    /* Inform Director that we are done */
    dir->signal(BNET_TERMINATE);
 
-   free_plugins(jcr);                 /* release instantiated plugins */
    free_and_null_pool_memory(jcr->job_metadata);
 
    /* Clean up fileset */
@@ -2443,6 +2442,7 @@ static void filed_free_jcr(JCR *jcr)
    if (jcr->last_fname) {
       free_pool_memory(jcr->last_fname);
    }
+   free_plugins(jcr);                 /* release instantiated plugins */
    free_runscripts(jcr->RunScripts);
    delete jcr->RunScripts;
    free_path_list(jcr);
