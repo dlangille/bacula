@@ -613,10 +613,19 @@ char *sockaddr_to_ascii(const struct sockaddr *sa, int socklen, char *buf, int b
   /* This is the more modern way of doing it */
   char clienthost[NI_MAXHOST];
   char clientservice[NI_MAXSERV];
-  int status;
-  status = getnameinfo(sa, socklen, clienthost, sizeof(clienthost),
-                       clientservice, sizeof(clientservice),
-                       NI_NUMERICHOST | NI_NUMERICSERV);
+  int status = 1;
+  if (sa->sa_family == AF_INET) {
+     status = getnameinfo(sa, socklen, clienthost, sizeof(clienthost),
+                 clientservice, sizeof(clientservice),
+                 NI_NUMERICHOST | NI_NUMERICSERV);
+  }
+#ifdef HAVE_IPV6
+  else {
+     status = getnameinfo(sa, sizeof(sockaddr_in6), clienthost, sizeof(clienthost),
+                 clientservice, sizeof(clientservice),
+                 NI_NUMERICHOST | NI_NUMERICSERV);
+  }
+#endif
   if (status == 0) {
      /* Enclose IPv6 in [] */
      if (strchr(clienthost, ':') != NULL) {
