@@ -359,7 +359,8 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
       if (verbose != 1 && (num_records % 200000) == 0L) {
          fprintf(stderr, "\rfiles=%d records=%s\n", num_files, edit_uint64(num_records, ed1));
       }
-      return true;
+      ret = true;
+      goto bail_out;
    }
 
    /* File Attributes stream */
