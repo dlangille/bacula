@@ -652,7 +652,9 @@ static bool prune_expired_volumes(UAContext *ua)
    }
 
    /* We can restrict by MediaType */
-   if ((i = find_arg_with_value(ua, "mediatype")) >= 0) {
+   if (((i = find_arg_with_value(ua, "mediatype")) >= 0) &&
+       (strlen(ua->argv[i]) <= MAX_NAME_LENGTH))
+   {
       char ed1[MAX_ESCAPE_NAME_LENGTH];
       db_escape_string(ua->jcr, ua->db, ed1,
          ua->argv[i], strlen(ua->argv[i]));

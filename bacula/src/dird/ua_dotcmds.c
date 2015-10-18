@@ -905,20 +905,28 @@ static bool dot_bvfs_get_jobs(UAContext *ua, const char *cmd)
       return true;
    }
 
-   if ((pos = find_arg_with_value(ua, "client")) < 0) {
+   if (((pos = find_arg_with_value(ua, "client")) < 0) ||
+       (strlen(ua->argv[pos]) > MAX_NAME_LENGTH))
+   {
       return true;
    }
-
-   posj = find_arg_with_value(ua, "ujobid");
 
    if (!acl_access_ok(ua, Client_ACL, ua->argv[pos])) {
       return true;
    }
-   
+
+   posj = find_arg_with_value(ua, "ujobid");
+   /* Do a little check on the size of the argument */
+   if (posj >= 0 && strlen(ua->argv[posj]) > MAX_NAME_LENGTH) {
+      return true;
+   }
+
    db_lock(ua->db);
-   db_escape_string(ua->jcr, ua->db, esc_cli, ua->argv[pos], sizeof(esc_cli));
+   db_escape_string(ua->jcr, ua->db, esc_cli,
+                    ua->argv[pos], strlen(ua->argv[pos]));
    if (posj >= 0) {
-      db_escape_string(ua->jcr, ua->db, esc_job, ua->argv[posj], sizeof(esc_job));
+      db_escape_string(ua->jcr, ua->db, esc_job,
+                       ua->argv[posj], strlen(ua->argv[pos]));
       Mmsg(tmp, "AND Job.Job = '%s'", esc_job);
    }
    Mmsg(ua->db->cmd,
