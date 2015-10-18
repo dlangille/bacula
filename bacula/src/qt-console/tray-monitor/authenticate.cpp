@@ -30,7 +30,7 @@
  *
  */
 
-#include "winhdrs.h"
+//#include "winhdrs.h"
 #include "tray-monitor.h"
 
 void senditf(const char *fmt, ...);

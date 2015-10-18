@@ -27,7 +27,7 @@
 # endif
 #endif
 
-#include "winhdrs.h"
+//#include "winhdrs.h"
 #include <QAction>
 #include <QApplication>
 #include <QButtonGroup>
