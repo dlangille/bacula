@@ -482,7 +482,7 @@ static int update_path_hierarchy_cache(JCR *jcr,
       "AND h.PPathId NOT IN (SELECT PathId FROM PathVisibility WHERE JobId=%s)",
            jobid, jobid, jobid );
 
-   }  else if (mdb->bdb_get_type_index() == SQL_TYPE_MYSQL) {
+   } else if (mdb->bdb_get_type_index() == SQL_TYPE_MYSQL) {
       Mmsg(mdb->cmd,
   "INSERT INTO PathVisibility (PathId, JobId)  "
    "SELECT a.PathId,%s "
@@ -494,7 +494,7 @@ static int update_path_hierarchy_cache(JCR *jcr,
       "LEFT JOIN PathVisibility AS b ON (b.JobId=%s and a.PathId = b.PathId) "
       "WHERE b.PathId IS NULL",  jobid, jobid, jobid);
 
-   } else {                     /* TODO: Test the MYSQL Query with PostgreSQL */
+   } else {
       Mmsg(mdb->cmd,
   "INSERT INTO PathVisibility (PathId, JobId)  "
    "SELECT a.PathId,%s "
