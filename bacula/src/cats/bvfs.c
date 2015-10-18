@@ -472,6 +472,7 @@ static int update_path_hierarchy_cache(JCR *jcr,
       free(result);
    }
 
+   
    if (mdb->bdb_get_type_index() == SQL_TYPE_SQLITE3) {
       Mmsg(mdb->cmd,
  "INSERT INTO PathVisibility (PathId, JobId) "
