@@ -3294,6 +3294,8 @@ AC_OUTPUT([autoconf/Make.common \
 	   src/qt-console/bat.pro.mingw32 \
 	   src/qt-console/bat.pro.mingw64 \
 	   src/qt-console/install_conf_file \
+	   src/qt-console/tray-monitor/tray-monitor.conf \
+	   src/qt-console/tray-monitor/tray-monitor.pro \
 	   src/qt-console/tray-monitor/tray-monitor.pro.mingw32 \
 	   src/qt-console/tray-monitor/tray-monitor.pro.mingw64 \
 	   src/dird/Makefile \
