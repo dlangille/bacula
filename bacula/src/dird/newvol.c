@@ -117,6 +117,7 @@ static bool create_simple_name(JCR *jcr, MEDIA_DBR *mr, POOL_DBR *pr)
    mr->VolumeName[0] = 0;
    bstrncpy(name, pr->LabelFormat, sizeof(name));
    ctx.value = 0;
+   /* TODO: Remove Pool as it is not used in the query */
    Mmsg(query, "SELECT MAX(MediaId) FROM Media,Pool WHERE Pool.PoolId=%s",
         edit_int64(pr->PoolId, ed1));
    if (!db_sql_query(jcr->db, query.c_str(), db_int64_handler, (void *)&ctx)) {
