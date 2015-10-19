@@ -127,7 +127,6 @@ BuildRequires: openssl-devel, fontconfig-devel, libpng-devel, libstdc++-devel, z
 
 Requires: openssl
 Requires: fontconfig
-Requires: libgcc
 Requires: libpng
 %if 0%{?suse_version} > 1210
 Requires: libstdc++.6
