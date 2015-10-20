@@ -665,16 +665,6 @@ static void llist_scheduled_jobs(UAContext *ua)
                next += 24 * 60 * 60;   /* Add one day */
                continue;
             }
-            for (int j=0; j < 24; j++) {
-               if (bit_is_set(j, run->hour)) {
-                  tm.tm_hour = j;
-                  tm.tm_min = run->minute;
-                  tm.tm_sec = 0;
-                  runtime = mktime(&tm);
-                  bstrftime_dn(dt, sizeof(dt), runtime);
-                  break;
-               }
-            }
 
             level = job->JobLevel;
             if (run->level) {
@@ -699,14 +689,24 @@ static void llist_scheduled_jobs(UAContext *ua)
                prt_lrunhdr(ua);
                hdr_printed = true;
             }
-            if (ua->api) {
-               ua->send_msg(_("%-14s\t%-8s\t%3d\t%-18s\t%-18s\t%s\n"),
-                  level_ptr, job_type_to_str(job->JobType), priority, dt,
-                  job->name(), sched->name());
-            } else {
-               ua->send_msg(_("%-14s %-8s %3d  %-18s %-18s %s\n"),
-                  level_ptr, job_type_to_str(job->JobType), priority, dt,
-                  job->name(), sched->name());
+
+            for (int j=0; j < 24; j++) {
+               if (bit_is_set(j, run->hour)) {
+                  tm.tm_hour = j;
+                  tm.tm_min = run->minute;
+                  tm.tm_sec = 0;
+                  runtime = mktime(&tm);
+                  bstrftime_dn(dt, sizeof(dt), runtime);
+                  if (ua->api) {
+                     ua->send_msg(_("%-14s\t%-8s\t%3d\t%-18s\t%-18s\t%s\n"),
+                     level_ptr, job_type_to_str(job->JobType), priority, dt,
+                     job->name(), sched->name());
+                  } else {
+                     ua->send_msg(_("%-14s %-8s %3d  %-18s %-18s %s\n"),
+                     level_ptr, job_type_to_str(job->JobType), priority, dt,
+                     job->name(), sched->name());
+                  }
+               }
             }
             next += 24 * 60 * 60;   /* Add one day */
             num_jobs++;
