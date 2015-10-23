@@ -559,11 +559,11 @@ static bxattr_rtn_code aix_restore_xattr_streams(JCR *jcr, int stream, char *con
              * change from one filesystem to an other.
              */
             jcr->xattr_ctx->flags &= ~BXATTR_FLAG_RESTORE_NATIVE;
-            break;
+            /* Failback wanted */
          default:
-            Mmsg2(jcr->errmsg, _("XATTR lsetea error on file \"%s\": ERR=%s\n"),
-                  jcr->last_fname, be.bstrerror());
-            Dmsg1(100, "%s", jcr->errmsg);
+            MmsgD2(100, jcr->errmsg,
+                   _("XATTR lsetea error on file \"%s\": ERR=%s\n"),
+                   jcr->last_fname, be.bstrerror());
             break;
          }
          goto get_out;
@@ -1298,11 +1298,10 @@ static bxattr_rtn_code generic_restore_xattr_streams(JCR *jcr, int stream,
              * change from one filesystem to an other.
              */
             jcr->xattr_ctx->flags &= ~BXATTR_FLAG_RESTORE_NATIVE;
-         } else {
-            Mmsg2(jcr->errmsg, _("lsetxattr error on file \"%s\": ERR=%s\n"),
-                  jcr->last_fname, be.bstrerror());
-            Dmsg1(100, "%s", jcr->errmsg);
          }
+         MmsgD2(100, jcr->errmsg,
+                _("lsetxattr error on file \"%s\": ERR=%s\n"),
+                jcr->last_fname, be.bstrerror());
          goto get_out;
       }
    }
