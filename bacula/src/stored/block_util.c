@@ -82,8 +82,11 @@ void dump_block(DEV_BLOCK *b, const char *msg)
       rhl = RECHDR1_LENGTH;
    }
 
-   if (block_len > 4000000) {
-      Dmsg3(20, "!!!Dump block %s 0x%x blocksize too big %u\n", msg, b, block_len);
+   if (block_len > 4000000 || block_len < BLKHDR_CS_LENGTH) {
+      Dmsg3(20, "!!!Dump block %s 0x%x blocksize too %s %u\n",
+            msg, b,
+            (block_len < BLKHDR_CS_LENGTH)?"small":"big",
+            block_len);
       return;
    }
 
@@ -271,8 +274,11 @@ bool unser_block_header(JCR *jcr, DEVICE *dev, DEV_BLOCK *block)
    unser_uint32(BlockNumber);
    unser_bytes(Id, BLKHDR_ID_LENGTH);
    ASSERT(unser_length(block->buf) == BLKHDR1_LENGTH);
-
    Id[BLKHDR_ID_LENGTH] = 0;
+
+   char buf[512];
+   Dmsg3(0, "len=%d block = %s (id=%s)\n", block->block_len, hexdump(block->buf, MIN(block->block_len, 512), buf, sizeof(buf)), Id);
+      
    if (Id[3] == '1') {
       bhl = BLKHDR1_LENGTH;
       block->BlockVer = 1;
