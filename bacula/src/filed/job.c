@@ -2462,10 +2462,12 @@ static void filed_free_jcr(JCR *jcr)
  */
 int response(JCR *jcr, BSOCK *sd, char *resp, const char *cmd)
 {
+   int ret;
+
    if (sd->errors) {
       return 0;
    }
-   if (bget_msg(sd) > 0) {
+   if ((ret = bget_msg(sd)) > 0) {
       Dmsg0(110, sd->msg);
       if (strcmp(sd->msg, resp) == 0) {
          return 1;
@@ -2479,8 +2481,13 @@ int response(JCR *jcr, BSOCK *sd, char *resp, const char *cmd)
          cmd, sd->bstrerror());
    } else {
       char buf[256];
-      Jmsg4(jcr, M_FATAL, 0, _("Bad response from SD to %s command. Wanted %s, got len=%ld msg=\"%s\"\n"),
-         cmd, resp, sd->msglen, smartdump(sd->msg, sd->msglen, buf, sizeof(buf)));
+      if (ret > 0) {
+         Jmsg4(jcr, M_FATAL, 0, _("Bad response from SD to %s command. Wanted %s, got len=%ld msg=\"%s\"\n"),
+            cmd, resp, sd->msglen, smartdump(sd->msg, sd->msglen, buf, sizeof(buf)));
+      } else {
+         Jmsg3(jcr, M_FATAL, 0, _("Bad response from SD to %s command. Wanted %s, got SIGNAL %s\n"),
+            cmd, resp, bnet_sig_to_ascii(ret));
+      }
    }
    return 0;
 }
