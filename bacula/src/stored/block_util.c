@@ -276,9 +276,6 @@ bool unser_block_header(JCR *jcr, DEVICE *dev, DEV_BLOCK *block)
    ASSERT(unser_length(block->buf) == BLKHDR1_LENGTH);
    Id[BLKHDR_ID_LENGTH] = 0;
 
-   char buf[512];
-   Dmsg3(0, "len=%d block = %s (id=%s)\n", block->block_len, hexdump(block->buf, MIN(block->block_len, 512), buf, sizeof(buf)), Id);
-      
    if (Id[3] == '1') {
       bhl = BLKHDR1_LENGTH;
       block->BlockVer = 1;
