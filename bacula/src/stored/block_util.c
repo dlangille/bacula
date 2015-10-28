@@ -83,7 +83,7 @@ void dump_block(DEV_BLOCK *b, const char *msg)
    }
 
    if (block_len > 4000000 || block_len < BLKHDR_CS_LENGTH) {
-      Dmsg3(20, "!!!Dump block %s 0x%x blocksize too %s %u\n",
+      Dmsg4(20, "!!!Dump block %s %p blocksize too %s %lu\n",
             msg, b,
             (block_len < BLKHDR_CS_LENGTH)?"small":"big",
             block_len);
