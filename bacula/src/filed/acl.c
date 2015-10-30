@@ -956,7 +956,7 @@ static bacl_rtn_code darwin_backup_acl_streams(JCR *jcr, FF_PKT *ff_pkt)
 #endif
 
    if (jcr->acl_ctx->content_length > 0) {
-      return send_acl_stream(jcr, STREAM_ACL_DARWIN_ACCESS_ACL);
+      return send_acl_stream(jcr, STREAM_ACL_DARWIN_ACCESS);
    }
    return bacl_rtn_ok;
 }
