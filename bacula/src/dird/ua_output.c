@@ -350,11 +350,37 @@ static int do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
    if (!ua->db) {
       ua->error_msg(_("Hey! DB is NULL\n"));
    }
-
    /* Apply any limit */
-   j = find_arg_with_value(ua, NT_("limit"));
-   if (j >= 0) {
-      jr.limit = atoi(ua->argv[j]);
+   for (j = 1; j < ua->argc ; j++) {
+      if (strcasecmp(ua->argk[j], NT_("joberrors")) == 0) {
+         jr.JobErrors = 1;
+      } else if (!ua->argv[j]) {
+         /* skip */
+      } else if (strcasecmp(ua->argk[j], NT_("order")) == 0) {
+         if (strcasecmp(ua->argv[j], NT_("desc")) == 0) {
+            jr.order = 1;
+         } else if (strcasecmp(ua->argv[j], NT_("asc")) == 0) {
+            jr.order = 0;
+         } else {
+            ua->error_msg(_("Unknown order type %s\n"), ua->argv[j]);
+            return 1;
+         }
+      } else if (strcasecmp(ua->argk[j], NT_("limit")) == 0) {
+         jr.limit = atoi(ua->argv[j]);
+
+      } else if (strcasecmp(ua->argk[j], NT_("jobstatus")) == 0) {
+         if (B_ISALPHA(ua->argv[j][0])) {
+            jr.JobStatus = ua->argv[j][0];
+         }
+      } else if (strcasecmp(ua->argk[j], NT_("client")) == 0) {
+         if (is_name_valid(ua->argv[j], NULL)) {
+            CLIENT_DBR cr;
+            memset(&cr, 0, sizeof(cr));
+            if(get_client_dbr(ua, &cr)) {
+               jr.ClientId = cr.ClientId;
+            }
+         }
+      }
    }
 
    /* Scan arguments looking for things to do */
@@ -579,7 +605,12 @@ static int do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
          }
          db_list_copies_records(ua->jcr,ua->db,limit,jobids,prtit,ua,llist);
       } else if (strcasecmp(ua->argk[i], NT_("limit")) == 0
-                 || strcasecmp(ua->argk[i], NT_("days")) == 0) {
+                 || strcasecmp(ua->argk[i], NT_("days")) == 0
+                 || strcasecmp(ua->argk[i], NT_("joberrors")) == 0
+                 || strcasecmp(ua->argk[i], NT_("order")) == 0
+                 || strcasecmp(ua->argk[i], NT_("jobstatus")) == 0
+                 || strcasecmp(ua->argk[i], NT_("client")) == 0
+         ) {
          /* Ignore it */
       } else if (strcasecmp(ua->argk[i], NT_("snapshot")) == 0 ||
                  strcasecmp(ua->argk[i], NT_("snapshots")) == 0) 
