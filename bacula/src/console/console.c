@@ -75,6 +75,7 @@ static DIRRES *dir = NULL;
 static CONRES *cons = NULL;
 static FILE *output = stdout;
 static bool teeout = false;               /* output to output and stdout */
+static bool teein = false;                /* input to output and stdout */
 static bool stop = false;
 static bool no_conio = false;
 static int timeout = 0;
@@ -91,6 +92,7 @@ static int versioncmd(FILE *input, BSOCK *UA_sock);
 static int inputcmd(FILE *input, BSOCK *UA_sock);
 static int outputcmd(FILE *input, BSOCK *UA_sock);
 static int teecmd(FILE *input, BSOCK *UA_sock);
+static int teeallcmd(FILE *input, BSOCK *UA_sock);
 static int quitcmd(FILE *input, BSOCK *UA_sock);
 static int helpcmd(FILE *input, BSOCK *UA_sock);
 static int echocmd(FILE *input, BSOCK *UA_sock);
@@ -172,6 +174,7 @@ static struct cmdstruct commands[] = {
  { N_("output"),     outputcmd,    _("output to file")},
  { N_("quit"),       quitcmd,      _("quit")},
  { N_("tee"),        teecmd,       _("output to file and terminal")},
+ { N_("tall"),       teeallcmd,    _("output everything to file and terminal (tee all)")},
  { N_("sleep"),      sleepcmd,     _("sleep specified time")},
  { N_("time"),       timecmd,      _("print current time")},
  { N_("version"),    versioncmd,   _("print Console's version")},
@@ -725,6 +728,14 @@ get_cmd(FILE *input, const char *prompt, BSOCK *sock, int sec)
    }
    if (command != line && isatty(fileno(input))) {
       senditf("%s%s\n", prompt, command);
+
+   } else {
+      /* Send the intput to the output file if needed */
+      if (teein && output != stdout) {
+         fputs(prompt, output);
+         fputs(command, output);
+         fputs("\n", output);
+      }
    }
 
    sock->msglen = pm_strcpy(&sock->msg, command);
@@ -841,6 +852,13 @@ again:
    }
    strip_trailing_junk(sock->msg);
    sock->msglen = strlen(sock->msg);
+
+   /* Send input to log file if needed */
+   if (teein && output != stdout) {
+      fputs(sock->msg, output);
+      fputs("\n", output);
+   }
+
    return 1;
 }
 
@@ -1384,11 +1402,21 @@ static int inputcmd(FILE *input, BSOCK *UA_sock)
    return 1;
 }
 
+/* @tall <output-filename> */
+/* Send input/output to both terminal and specified file */
+static int teeallcmd(FILE *input, BSOCK *UA_sock)
+{
+   teeout = true;
+   teein = true;
+   return do_outputcmd(input, UA_sock);
+}
+
 /* @tee <output-filename> */
 /* Send output to both terminal and specified file */
 static int teecmd(FILE *input, BSOCK *UA_sock)
 {
    teeout = true;
+   teein = false;
    return do_outputcmd(input, UA_sock);
 }
 
@@ -1397,6 +1425,7 @@ static int teecmd(FILE *input, BSOCK *UA_sock)
 static int outputcmd(FILE *input, BSOCK *UA_sock)
 {
    teeout = false;
+   teein  = false;
    return do_outputcmd(input, UA_sock);
 }
 
@@ -1415,6 +1444,7 @@ static int do_outputcmd(FILE *input, BSOCK *UA_sock)
          fclose(output);
          output = stdout;
          teeout = false;
+         teein = false;
       }
       return 1;
    }
