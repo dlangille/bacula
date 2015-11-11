@@ -61,6 +61,8 @@ int purge_cmd(UAContext *ua, const char *cmd)
    CLIENT *client;
    MEDIA_DBR mr;
    JOB_DBR  jr;
+   memset(&jr, 0, sizeof(jr));
+
    static const char *keywords[] = {
       NT_("files"),
       NT_("jobs"),
