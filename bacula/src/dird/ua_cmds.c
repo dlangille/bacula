@@ -118,11 +118,14 @@ static struct cmdstruct commands[] = {                                      /* C
 
  { NT_("label"),      label_cmd,     _("Label a tape"), NT_("storage=<storage> volume=<vol> pool=<pool> slot=<slot> barcodes"), false},
  { NT_("list"),       list_cmd,      _("List objects from catalog"),
-   NT_("pools | jobs | jobtotals | volume | media <pool=pool-name> | files jobid=<nn> | copies jobid=<nn> |\n"
-       "\tjoblog jobid=<nn> | snapshot"), false},
+   NT_("jobs [client=<cli>] [jobid=<nn>] [ujobid=<name>] [job=<name>] [joberrors] [jobstatus=<s>] [limit=<n>]|\n"
+       "\tjobtotals | pools | volume | media <pool=pool-name> | files jobid=<nn> | copies jobid=<nn> |\n"
+       "\tjoblog jobid=<nn> | pluginrestoreconf jobid=<nn> restoreobjectid=<nn> | snapshot"), false},
 
  { NT_("llist"),      llist_cmd,     _("Full or long list like list command"),
-   NT_("pools | jobs | joblog jobid=<nn> | jobtotals | media <pool=pool-name> | files jobid=<nn> | copies jobid=<nn> | snapshot"), false},
+   NT_("jobs [client=<cli>] [jobid=<nn>] [ujobid=<name>] [job=<name>] [joberrors] [jobstatus=<s>] [limit=<n>]|\n"
+       "\tjobtotals | pools | volume | media <pool=pool-name> | files jobid=<nn> | copies jobid=<nn> |\n"
+       "\tjoblog jobid=<nn> | pluginrestoreconf jobid=<nn> restoreobjectid=<nn> | snapshot"), false},
 
  { NT_("messages"),   messagescmd,   _("Display pending messages"),   NT_(""),    false},
  { NT_("memory"),     memory_cmd,    _("Print current memory usage"), NT_(""),    true},
