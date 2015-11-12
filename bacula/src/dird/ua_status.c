@@ -1002,17 +1002,21 @@ static void list_running_jobs(UAContext *ua)
          msg = _("is waiting for an appendable Volume");
          break;
       case JS_WaitFD:
-         if (!pool_mem) {
-            emsg = (char *)get_pool_memory(PM_FNAME);
-            pool_mem = true;
+         /* Special case when JobStatus=JS_WaitFD, we don't have a FD link yet 
+          * we need to stay in WaitFD status See bee mantis #1414 */
+         if (jcr->JobStatus != JS_WaitFD) {
+            if (!pool_mem) {
+               emsg = (char *)get_pool_memory(PM_FNAME);
+               pool_mem = true;
+            }
+            if (!jcr->client || !jcr->wstore) {
+               Mmsg(emsg, _("is waiting for Client to connect to Storage daemon"));
+            } else {
+               Mmsg(emsg, _("is waiting for Client %s to connect to Storage %s"),
+                    jcr->client->name(), jcr->wstore->name());
+            }
+            msg = emsg;
          }
-         if (!jcr->client || !jcr->wstore) {
-            Mmsg(emsg, _("is waiting for Client to connect to Storage daemon"));
-         } else {
-            Mmsg(emsg, _("is waiting for Client %s to connect to Storage %s"),
-                 jcr->client->name(), jcr->wstore->name());
-        }
-        msg = emsg;
         break;
       case JS_DataCommitting:
          msg = _("SD committing Data");
