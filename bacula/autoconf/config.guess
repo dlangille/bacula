@@ -1001,6 +1001,9 @@ EOF
     ppcle:Linux:*:*)
 	echo powerpcle-unknown-linux-${LIBC}
 	exit ;;
+    ppc64el:Linux:*:*)
+	echo powerpc64le-unknown-linux-${LIBC}
+	exit ;;
     s390:Linux:*:* | s390x:Linux:*:*)
 	echo ${UNAME_MACHINE}-ibm-linux-${LIBC}
 	exit ;;
