@@ -135,7 +135,6 @@ DEV_BLOCK *new_block(DEVICE *dev)
     */
    block->buf_len = len;
    block->buf = get_memory(block->buf_len);
-   block->rechdr_queue = get_memory(block->buf_len);
    block->rechdr_items = 0;
    empty_block(block);
    block->BlockVer = BLOCK_VER;       /* default write version */
@@ -187,7 +186,6 @@ void free_block(DEV_BLOCK *block)
    if (block) {
       Dmsg1(999, "free_block buffer %x\n", block->buf);
       free_memory(block->buf);
-      free_memory(block->rechdr_queue);
       Dmsg1(999, "free_block block %x\n", block);
       free_memory((POOLMEM *)block);
    }

@@ -127,7 +127,6 @@ struct DEV_BLOCK {
    int32_t  rechdr_items;             /* number of items in rechdr queue */
    char    *bufp;                     /* pointer into buffer */
    char     ser_buf[BLKHDR2_LENGTH];  /* Serial buffer for data */
-   POOLMEM *rechdr_queue;             /* record header queue */
    POOLMEM *buf;                      /* actual data buffer */
 };
 
