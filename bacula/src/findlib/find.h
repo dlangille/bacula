@@ -212,7 +212,7 @@ struct FF_PKT {
    bool opt_plugin;                   /* set if we have an option plugin */
    rblist *mtab_list;                 /* List of mtab entries */
    uint64_t last_fstype;              /* cache last file system type */
-   char *last_fstypename;             /* cache last file system type name */
+   char last_fstypename[32];          /* cache last file system type name */
    alist fstypes;                     /* allowed file system types */
    alist drivetypes;                  /* allowed drive types */
    alist mount_points;                /* Possible mount points to be snapshotted */

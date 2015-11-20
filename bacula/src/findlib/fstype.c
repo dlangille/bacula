@@ -176,7 +176,7 @@ bool fstype(FF_PKT *ff_pkt, char *fs, int fslen)
 
    if (statfs(fname, &st) == 0) {
       mtab_item *item, search_item;
-      if (ff_pkt->last_fstypename && ff_pkt->last_fstype == (uint64_t)st.f_type) {
+      if (*ff_pkt->last_fstypename && ff_pkt->last_fstype == (uint64_t)st.f_type) {
          bstrncpy(fs, ff_pkt->last_fstypename, fslen);
          return true; 
       }
@@ -188,7 +188,7 @@ bool fstype(FF_PKT *ff_pkt, char *fs, int fslen)
       item = (mtab_item *)ff_pkt->mtab_list->search((void *)&search_item, compare_mtab_items);
       if (item) {
          ff_pkt->last_fstype = st.f_type;
-         bstrncpy(ff_pkt->last_fstypename, item->fstype, sizeof(ff_pkt->last_fstype));
+         bstrncpy(ff_pkt->last_fstypename, item->fstype, sizeof(ff_pkt->last_fstypename));
          bstrncpy(fs, ff_pkt->last_fstypename, fslen);
          return true;
       }
@@ -237,13 +237,13 @@ bool fstype(FF_PKT *ff_pkt, char *fs, int fslen)
       case 0x7275:         fstype = "romfs"; break;          /* QNX4_SUPER_MAGIC */
       case 0x012ff7b6:     fstype = "sysv2"; break;
       case 0x012ff7b5:     fstype = "sysv4"; break;
-      case 0x01021994:     fstype = "tempfs"; break;
+      case 0x01021994:     fstype = "tmpfs"; break;
       case 0x15013346:     fstype = "udf"; break;
       case 0x00011954:     fstype = "ufs"; break;
       case 0xa501FCF5:     fstype = "vxfs"; break;
       case 0x012FF7B4:     fstype = "xenix"; break;
       case 0x012FD16D:     fstype = "xiafs"; break;
-
+      case 0x9123683e:     fstype = "btrfs"; break;
 
 #if 0       /* These need confirmation */
       case 0x6B414653:     fstype = "afs"; break;           /* AFS_FS_MAGIC */
