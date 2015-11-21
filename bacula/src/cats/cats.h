@@ -159,6 +159,7 @@ struct JOB_DBR {
    char cEndTime[MAX_TIME_LENGTH];
    char cRealEndTime[MAX_TIME_LENGTH];
    /* Extra stuff not in DB */
+   int order;                         /* 0 ASC, 1 DESC */
    int limit;                         /* limit records to display */
    faddr_t rec_addr;
    uint32_t FileIndex;                /* added during Verify */
