@@ -25,6 +25,8 @@
    Bacula® is a registered trademark of Kern Sibbald.
 */
 
+#ifdef working /* currently will not compile KES 21 Nov 2015 */
+
 #include <stdio.h>
 #include <unistd.h>
 #include <limits.h>
@@ -623,3 +625,5 @@ int main(int argc, char *argv[])
 
    return 0;
 }
+
+#endif /* working */
