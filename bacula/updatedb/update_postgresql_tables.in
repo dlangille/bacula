@@ -3,14 +3,14 @@
 # Copyright (C) 2000-2015 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
-# Shell script to update MySQL tables from Bacula Community version 
+# Shell script to update PostgreSQL tables from Bacula Community version 
 #  5.0.x, 5.2.x, 7.0.x
 #
 echo " "
-echo "This script will update a Bacula MySQL database from version 12-14 to 15"
+echo "This script will update a Bacula PostgreSQL database from version 12-14 to 15"
 echo " "
-echo "Depending on the current version of your catalog, you may have to run this script"
-echo "	multiple times"
+echo "Depending on the current version of your catalog,"
+echo "you may have to run this script multiple times."
 echo " "
 
 bindir=@POSTGRESQL_BINDIR@

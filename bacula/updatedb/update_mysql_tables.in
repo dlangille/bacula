@@ -9,8 +9,8 @@
 echo " "
 echo "This script will update a Bacula MySQL database from version 12-14 to 15"
 echo " "
-echo "Depending on the current version of your catalog, you may have to run this script"
-echo "	multiple times"
+echo "Depending on the current version of your catalog,"
+echo "you may have to run this script multiple times."
 echo " "
 
 bindir=@MYSQL_BINDIR@
@@ -116,10 +116,10 @@ CREATE TABLE Snapshot (
   SnapshotId	  INTEGER UNSIGNED AUTO_INCREMENT,
   Name		  TINYBLOB NOT NULL,
   JobId 	  INTEGER UNSIGNED DEFAULT 0,
-  FileSetId INTEGER UNSIGNED DEFAULT 0;
+  FileSetId	  INTEGER UNSIGNED DEFAULT 0,
   CreateTDate	  BIGINT   NOT NULL,
   CreateDate	  DATETIME NOT NULL,
-  ClientId	  INTEGER DEFAULT 0,
+  ClientId	  INTEGER UNSIGNED DEFAULT 0,
   Volume	  TINYBLOB NOT NULL,
   Device	  TINYBLOB NOT NULL,
   Type		  TINYBLOB NOT NULL,
