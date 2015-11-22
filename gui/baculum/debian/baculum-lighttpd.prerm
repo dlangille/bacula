@@ -2,7 +2,15 @@
 
 set -e
 
-rm /usr/share/baculum/htdocs/protected/Data/baculum.users
+if [ "$1" = "remove" ]
+then
+	[ ! -e /usr/share/baculum/htdocs/protected/Data/settings.conf ] ||
+		mv /usr/share/baculum/htdocs/protected/Data/settings.conf \
+		/usr/share/baculum/htdocs/protected/Data/settings.conf.lighttpd
+	# remove debug files if any
+	[ ! -e /usr/share/baculum/htdocs/protected/Data/baculum.dbg ] ||
+		rm /usr/share/baculum/htdocs/protected/Data/baculum*.dbg
+fi
 
 #DEBHELPER#
 
