@@ -1,18 +1,14 @@
-baculum (7.2.0-1~vivid1) vivid; urgency=medium
+baculum (7.2.0ppa1~wily1) wily; urgency=medium
 
   [ Marcin Haba ]
-  * update upstream to 7.2.0
-  * Tweak typo in package description
-  * runtime symbolic link is not included in install file
-  * override dh_auto_build in rules file
-  * update copyright
-  * split package into baculum, baculum-apache2 and baculum-lighttpd packages
+  * rebuild upstream 7.2.0 for Ubuntu 15.10
+  * fix and recreate lost baculum.users file after upgrade
+  * do not remove baculum.users file during upgrade
+  * rename setting.conf to settings.conf.apache or settings.conf.lighttpd
+    when baculum-apache2 or baculum-lighttpd is removed
+  * remove debug files while remove baculum package
+  * add bacula-console to baculum dependencies
+  * add baculum package to baculum-lighttpd dependencies
+  * correct baculum-lighttpd short description
 
- -- Marcin Haba <marcin.haba@bacula.pl>  Sun, 16 Aug 2015 00:48:01 +0200
-
-baculum (7.0+git20150616ppa1~vivid1) vivid; urgency=low
-
-  [ Marcin Haba ]
-  * new upstream
-
- -- Marcin Haba <marcin.haba@bacula.pl>  Tue, 16 Jun 2015 22:52:01 +0200
+ -- Marcin Haba <marcin.haba@bacula.pl>  Wed, 14 Nov 2015 19:41:01 +0200
