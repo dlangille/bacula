@@ -28,7 +28,7 @@ class Bconsole extends TModule {
 
 	const SUDO = 'sudo';
 
-	const BCONSOLE_COMMAND_PATTERN = "%s%s -c %s %s <<END_OF_DATA\n%s\nquit\n<<END_OF_DATA";
+	const BCONSOLE_COMMAND_PATTERN = "%s%s -c %s %s <<END_OF_DATA\n%s\nquit\nEND_OF_DATA";
 
 	const BCONSOLE_DIRECTORS_PATTERN = "%s%s -c %s -l";
 
