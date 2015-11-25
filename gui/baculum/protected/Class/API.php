@@ -94,7 +94,7 @@ class API extends TModule {
 		$ch = $this->getConnection();
 		curl_setopt($ch, CURLOPT_URL, $url);
 		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'PUT');
-		curl_setopt($ch, CURLOPT_HTTPHEADER, array($this->getAPIHeader(), 'Accept: application/json', 'X-HTTP-Method-Override: PUT', 'Content-Length: ' . strlen($data)));
+		curl_setopt($ch, CURLOPT_HTTPHEADER, array($this->getAPIHeader(), 'Accept: application/json', 'X-HTTP-Method-Override: PUT', 'Content-Length: ' . strlen($data), 'Expect:'));
 		curl_setopt($ch, CURLOPT_POST, true);
 		curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
 		$result = curl_exec($ch);
@@ -108,7 +108,7 @@ class API extends TModule {
 		$data = http_build_query(array('create' => $options));
 		$ch = $this->getConnection();
 		curl_setopt($ch, CURLOPT_URL, $url);
-		curl_setopt($ch, CURLOPT_HTTPHEADER, array($this->getAPIHeader(), 'Accept: application/json'));
+		curl_setopt($ch, CURLOPT_HTTPHEADER, array($this->getAPIHeader(), 'Accept: application/json', 'Expect:'));
 		curl_setopt($ch, CURLOPT_POST, true);
 		curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
 		$result = curl_exec($ch);
