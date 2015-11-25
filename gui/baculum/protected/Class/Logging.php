@@ -72,6 +72,7 @@ class Logging extends TModule {
 		if($this->debugEnabled !== true) {
 			return;
 		}
+		$this->Application->setMode('Debug');
 
 		if(!in_array($category, $this->getLogCategories())) {
 			$category = self::CATEGORY_SECURITY;

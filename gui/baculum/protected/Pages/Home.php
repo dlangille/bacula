@@ -81,6 +81,7 @@ class Home extends BaculumPage
 	public function setDebug($sender, $param) {
 		if($this->User->getIsAdmin() === true) {
 			$this->getModule('logging')->enableDebug($this->Logging->Checked);
+			$this->goToDefaultPage();
 		}
 	}
 
