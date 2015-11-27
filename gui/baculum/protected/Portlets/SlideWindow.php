@@ -43,6 +43,9 @@ class SlideWindow extends Portlets {
 		1000 => '1000 elements',
 		'unlimited' => 'unlimited'
 	);
+
+	private $defaultElementsLimit = 1000;
+
         public $actions = array(
 		'VolumeWindow' => array(
 			'NoAction' => 'select action',
@@ -63,7 +66,7 @@ class SlideWindow extends Portlets {
 		parent::onInit($param);
 		if(empty($_SESSION['view' . $this->getParent()->ID]) && empty($_SESSION['limit' . $this->getParent()->ID])) {
 			$_SESSION['view' . $this->getParent()->ID] = self::DETAIL_VIEW;
-			$_SESSION['limit' . $this->getParent()->ID] = $this->elementsLimit['unlimited'];
+			$_SESSION['limit' . $this->getParent()->ID] = $this->defaultElementsLimit;
 		}
 	}
 
