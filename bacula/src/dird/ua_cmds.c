@@ -914,6 +914,14 @@ static int disable_cmd(UAContext *ua, const char *cmd)
    return 1;
 }
 
+static void do_dir_setdebug(UAContext *ua, int64_t level, int trace_flag, char *options, int64_t tags)
+{
+   debug_level = level;
+   debug_level_tags = tags;
+   set_trace(trace_flag);
+   set_debug_flags(options);
+}
+
 static void do_storage_setdebug(UAContext *ua, STORE *store,
                int64_t level, int trace_flag, int hangup, int blowup,
                char *options, char *tags)
@@ -999,9 +1007,11 @@ static void do_all_setdebug(UAContext *ua, int64_t level,
    STORE *store, **unique_store;
    CLIENT *client, **unique_client;
    int i, j, found;
+   int64_t t=0;
 
    /* Director */
-   debug_level = level;
+   debug_parse_tags(tags, &t);
+   do_dir_setdebug(ua, level, trace_flag, options, t);
 
    /* Count Storage items */
    LockRes();
@@ -1149,10 +1159,7 @@ static int setdebug_cmd(UAContext *ua, const char *cmd)
       }
       if (strcasecmp(ua->argk[i], "dir") == 0 ||
           strcasecmp(ua->argk[i], "director") == 0) {
-         debug_level = level;
-         debug_level_tags = tags;
-         set_trace(trace_flag);
-         set_debug_flags(options);
+         do_dir_setdebug(ua, level, trace_flag, options, tags);
          return 1;
       }
       if (strcasecmp(ua->argk[i], "client") == 0 ||
@@ -1205,9 +1212,7 @@ static int setdebug_cmd(UAContext *ua, const char *cmd)
    add_prompt(ua, _("All"));
    switch(do_prompt(ua, "", _("Select daemon type to set debug level"), NULL, 0)) {
    case 0:                         /* Director */
-      debug_level = level;
-      set_trace(trace_flag);
-      set_debug_flags(options);
+      do_dir_setdebug(ua, level, trace_flag, options, tags);
       break;
    case 1:
       store = get_storage_resource(ua, false/*no default*/, true/*unique*/);
