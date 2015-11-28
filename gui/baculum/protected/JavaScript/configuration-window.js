@@ -13,6 +13,7 @@ var ConfigurationWindowClass = new Class.create({
 
 	show: function() {
 		this.hideAll();
+		this.initTabs();
 		$(this.window_id).setStyle({'display' : 'block'});
 		$$('div[id=' + this.window_id + '] input[type="submit"]').each(function(el) {
 			el.observe('click', function() {
@@ -60,6 +61,38 @@ var ConfigurationWindowClass = new Class.create({
 	is_progress: function() {
 		return $(this.progress_id).getStyle('display') == 'block';
 	},
+
+	initTabs: function() {
+		var show_elements = [];
+		var element;
+		var tabs = $$('div[id=' + this.window_id + '] span.tab');
+		tabs.each(function(el) {
+			element = el.readAttribute('rel');
+			show_elements.push($(element));
+			el.observe('click', function() {
+				show_elements.invoke('hide');
+				tabs.invoke('removeClassName', 'tab_active');
+				el.addClassName('tab_active');
+				var show_el = $(el.readAttribute('rel'));
+				$(show_el).show();
+			}.bind(this));
+		}.bind(this));
+	},
+
+	switchTab: function(tab_rel) {
+		var tabs = $$('div[id=' + this.window_id + '] span.tab');
+		tabs.each(function(el) {
+			element = el.readAttribute('rel');
+			if (element == tab_rel) {
+				el.addClassName('tab_active');
+			} else {
+				el.removeClassName('tab_active');
+			}
+			$(element).hide();
+		});
+		$(tab_rel).show();
+	},
+
 	openConfigurationWindow: function(slideWindowObj) {
 		if(this.is_progress() === false) {
 			this.progress(true);

@@ -113,6 +113,9 @@ class JobConfiguration extends Portlets {
 		$this->Priority->Text = ($jobdata->priorjobid == 0) ? self::DEFAULT_JOB_PRIORITY : $jobdata->priorjobid;
 		$this->DeleteButton->Visible = true;
 		$this->CancelButton->Visible = $this->RefreshStart->Value = in_array($jobdata->jobstatus, $runningJobStates);
+		$this->Run->Display = 'Dynamic';
+		$this->EstimateLine->Display = 'Dynamic';
+		$this->Status->Visible = true;
 	}
 
 	public function status($sender, $param) {
@@ -131,12 +134,16 @@ class JobConfiguration extends Portlets {
 
 	public function delete($sender, $param) {
 		$this->Application->getModule('api')->remove(array('jobs', $this->JobID->Text));
+		$this->Status->Visible = false;
+		$this->Run->Display = 'None';
 		$this->DeleteButton->Visible = false;
+		$this->EstimateLine->Display = 'None';
 	}
 
 	public function cancel($sender, $param) {
 		$this->Application->getModule('api')->set(array('jobs', 'cancel', $this->JobID->Text), array('a' => 'b'));
 		$this->CancelButton->Visible = false;
+		$this->status(null, null);
 	}
 
 	public function run_again($sender, $param) {

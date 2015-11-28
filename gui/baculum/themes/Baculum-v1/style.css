@@ -384,7 +384,7 @@ input.bbutton {
 	cursor: pointer;
 	display: inline-block;
 	width: auto;
-	margin: 0 8px;
+	margin: 5px 8px;
 	padding: 0 18px;
 	min-width: 65px;
 	border-radius: 4px;
@@ -748,9 +748,13 @@ div.window-section span {
 	padding-left: 12px;
 }
 
-div.button {
+div.button, div.button_line {
 	text-align: right;
 	margin: 3px 2px 5px 0;
+}
+
+div.button_line {
+	display: inline;
 }
 
 div.button-center {
@@ -811,6 +815,13 @@ textarea.console {
 	border: 0;
 }
 
+.description {
+	display: inline-block;
+	font-style: italic;
+	font-size: 12px;
+	padding: 4px 0;
+}
+
 fieldset {
 	margin-bottom: 15px;
 	font-size: 14px;
@@ -835,8 +846,21 @@ img {
 	border: none;
 }
 
-div.small {
-	font-size: 12px;
+h4 {
+	margin: 6px 0;
+}
+
+hr.tabs {
+	margin-top: 0;
+	background-color: black; /* Firefox and Opera */
+	border-color: black; /* Chrome and Safari */
+	color: black; /* IE 7+ */
+	clear: both;
+}
+
+span.tab, span.tab_active {
+	font-size: 13px;
+	font-weight: bold;
 	text-align: center;
 	width: 130px;
 	background-color: rgb(115, 143, 172);
@@ -845,7 +869,12 @@ div.small {
 	border-left: 1px solid black;
 	border-right: 1px solid black;
 	border-top: 1px solid black;
-	margin: 3px 0;
+	padding: 4px;
+	cursor: pointer;
+}
+
+span.tab_active {
+	background-color: rgb(163, 180, 197);
 }
 
 #graphs {

@@ -46,7 +46,7 @@ class StorageConfiguration extends Portlets {
 	}
 
 	public function umount($sender, $param) {
-		$isValid = $this->DriveValidator->IsValid === true && $this->SlotValidator->IsValid === true;
+		$isValid = $this->DriveValidator->IsValid === true;
 		if($isValid === false) {
 			return;
 		}
@@ -57,7 +57,12 @@ class StorageConfiguration extends Portlets {
 	}
 
 	public function release($sender, $param) {
-		$release = $this->Application->getModule('api')->get(array('storages', 'release', $this->StorageID->Text))->output;
+		$isValid = $this->DriveValidator->IsValid === true;
+		if($isValid === false) {
+			return;
+		}
+		$drive = ($this->AutoChanger->Visible === true) ? intval($this->Drive->Text) : 0;
+		$release = $this->Application->getModule('api')->get(array('storages', 'release', $this->StorageID->Text, $drive))->output;
 		$this->ShowStorage->Text = implode(PHP_EOL, $release);
 	}
 

@@ -1014,3 +1014,6 @@ msgstr "Zakończone zadania:"
 msgid "Add"
 msgstr "Dodaj"
 
+msgid "Actions"
+msgstr "Akcje"
+

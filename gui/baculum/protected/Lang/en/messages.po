@@ -1013,3 +1013,6 @@ msgstr "Finished jobs:"
 msgid "Add"
 msgstr "Add"
 
+msgid "Actions"
+msgstr "Actions"
+
