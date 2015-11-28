@@ -59,7 +59,7 @@
 		</div>
 		<div id="client_console_tab" style="display: none">
 			<div class="field-full">
-				<com:TActiveTextBox ID="ShowClient" TextMode="MultiLine" CssClass="textbox-auto" Style="height: 475px" ReadOnly="true" />
+				<com:TActiveTextBox ID="ShowClient" TextMode="MultiLine" CssClass="textbox-auto" Style="height: 440px" ReadOnly="true" />
 			</div>
 		</div>
 	</com:TActivePanel>

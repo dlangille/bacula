@@ -90,7 +90,7 @@
 				}
 			}
 		</script>
-		<div class="button-center">
+		<div class="button">
 			<com:BActiveButton ID="RestoreConfiguration" Text="<%[ Restore configuration ]%>" OnClick="restore_configuration" ClientSide.OnSuccess="ConfigurationWindow.getObj('PoolWindow').progress(false); pool_callback_func();" />
 			<com:BActiveButton ID="UpdateVolumes" Text="<%[ Update volumes ]%>" OnClick="update_volumes" ClientSide.OnSuccess="ConfigurationWindow.getObj('PoolWindow').progress(false); pool_callback_func();"/>
 			<com:BActiveButton ID="Apply" ValidationGroup="PoolGroup" CausesValidation="true" Text="<%[ Apply ]%>" OnClick="apply" ClientSide.OnSuccess="ConfigurationWindow.getObj('PoolWindow').progress(false); pool_callback_func();"/>
