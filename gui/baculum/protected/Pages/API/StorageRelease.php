@@ -23,9 +23,11 @@
 class StorageRelease extends BaculumAPI {
 	public function get() {
 		$storageid = intval($this->Request['id']);
+		$drive = intval($this->Request['drive']);
+
 		$storage = $this->getModule('storage')->getStorageById($storageid);
 		if(!is_null($storage)) {
-			$storageRelease = $this->getModule('bconsole')->bconsoleCommand($this->director, array('release', 'storage="' . $storage->name . '"'), $this->user);
+			$storageRelease = $this->getModule('bconsole')->bconsoleCommand($this->director, array('release', 'storage="' . $storage->name . '"', 'drive="' . $drive . '"'), $this->user);
 			$this->output = $storageRelease->output;
 			$this->error = (integer)$storageRelease->exitcode;
 		} else {

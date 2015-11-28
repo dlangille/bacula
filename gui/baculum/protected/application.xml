@@ -35,7 +35,7 @@
 			<url ServiceParameter="API.StorageStatus" pattern="storages/status/{id}/" parameters.id="\d+" />
 			<url ServiceParameter="API.StorageMount" pattern="storages/mount/{id}/{drive}/{slot}/" parameters.id="\d+" parameters.drive="\d+" parameters.slot="\d+" />
 			<url ServiceParameter="API.StorageUmount" pattern="storages/umount/{id}/{drive}/" parameters.id="\d+" parameters.drive="\d+" />
-			<url ServiceParameter="API.StorageRelease" pattern="storages/release/{id}/" parameters.id="\d+" />
+			<url ServiceParameter="API.StorageRelease" pattern="storages/release/{id}/{drive}/" parameters.id="\d+" parameters.drive="\d+" />
 			<!-- END Storages (storage daemons) -->
 			<!-- START Volumes (media) -->
 			<url ServiceParameter="API.Volumes" pattern="volumes/" />
