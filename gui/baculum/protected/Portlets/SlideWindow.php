@@ -44,7 +44,7 @@ class SlideWindow extends Portlets {
 		'unlimited' => 'unlimited'
 	);
 
-	private $defaultElementsLimit = 1000;
+	private $defaultElementsLimit = 500;
 
         public $actions = array(
 		'VolumeWindow' => array(
