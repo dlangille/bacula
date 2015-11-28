@@ -77,10 +77,19 @@ php-bcmath
 
 In Fedora 20 PHP module for cURL support and for JSON support are compiled in PHP.
 
-In case of using SELinux functionality in Baculum environment, recommended way
-is switching "httpd_t" SELinux security domain to permissive domain like below:
+In case of using SELinux functionality in Baculum environment there is need
+to load SELinux policy module provided together with Baculum sources in location:
 
-# semanage permissive -a httpd_t
+examples/selinux/baculum.pp
+
+For load the policy module there can be used following command:
+
+semodule -i baculum.pp
+
+Source file the policy module is located in:
+
+examples/selinux/baculum.te
+
 
 Please be sure that in PHP configuration file (usually located in /etc/php.ini)
 there is option error_reporting set as below:
