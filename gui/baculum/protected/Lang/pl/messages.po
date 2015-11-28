@@ -674,9 +674,6 @@ msgstr "Słowo kluczowe {user}  będzie zamieniane na nazwę każdego użytkowni
 msgid "Above administration login and administration password will be used for login as administrator to Baculum WebGUI. They are your HTTP Basic authorization params by using which you will be logged in to Baculum."
 msgstr "Powyższy login administratora i hasło administratora będą używane do logowania jako administrator Baculum WebGUI. To są Twoje dane autoryzacyjne HTTP Basic, przy pomocy których będziesz logować się do Baculum."
 
-msgid "In case when you use your selected HTTP Basic auth backend and in particular manual Baculum installation from source tar.gz archive, in above fields you need to provide your defined login and password which you used for access to this wizard."
-msgstr "W przypadku gdy używasz swojego backend'u HTTP Basic oraz w szczególności gdy instalujesz Baculum z pakietu źródłowego tar.gz, W POWYŻSZE POLA potrzeba wprowadzić TE SAME DANE LOGOWANIA, przy pomocy których zalogowałeś się do tego instalatora Baculum."
-
 msgid "This action will clear bvfs cache that was created during preparing restore files. Please note that clear bvfs action does not clear nor remove temporary tables created for restore action purpose. They are tables with prefix b2[0-9]+ which need manual remove. There is not recommended use this action during restore job working. Are you sure?"
 msgstr "Ta akcja wyczyści bvfs cache który był stworzony podczas przygotowania każdej akcji przywracania danych.\\n\\nProszę mieć na uwadze, że akcja clear bvfs nie czyści ani nie usuwa tymaczowych tabel SQL stworzonych na potrzeby akcji przywracania danych. Są to tabele z prefiksem b2[0-9]+ które można usunąć samodzielnie.\\n\\nNie jest zalecane używanie tej akcji podczas gdy jest uruchomione zadanie przywracania danych.\\n\\nCzy chcesz kontynuować?"
 
