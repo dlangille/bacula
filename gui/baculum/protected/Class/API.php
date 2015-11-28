@@ -30,7 +30,8 @@ class API extends TModule {
 
 	private $allowedErrors = array(
 		GenericError::ERROR_NO_ERRORS,
-		BconsoleError::ERROR_INVALID_COMMAND
+		BconsoleError::ERROR_INVALID_COMMAND,
+		PoolError::ERROR_NO_VOLUMES_IN_POOL_TO_UPDATE
 	);
 
 	private function getConnection() {

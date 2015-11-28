@@ -77,7 +77,7 @@ class PoolError extends GenericError {
 	const ERROR_NO_VOLUMES_IN_POOL_TO_UPDATE = 41;
 
 	const MSG_ERROR_POOL_DOES_NOT_EXISTS = 'Pool with inputed poolid does not exist.';
-	const MSG_NO_VOLUMES_IN_POOL_TO_UPDATE= 'Pool with inputed poolid does not contain any volume to update.';
+	const MSG_ERROR_NO_VOLUMES_IN_POOL_TO_UPDATE= 'Pool with inputed poolid does not contain any volume to update.';
 }
 
 class JobError extends GenericError {
