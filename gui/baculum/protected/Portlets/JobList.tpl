@@ -1,7 +1,7 @@
 <%@ MasterClass="Application.Portlets.SlideWindow" %>
 <com:TContent ID="SlideWindowContent">
-	<com:TActivePanel ID="RepeaterShow">
-	<com:TActiveRepeater ID="Repeater">
+	<com:TActivePanel ID="RepeaterShow" EnableViewState="false">
+	<com:TActiveRepeater ID="Repeater" EnableViewState="false">
 		<prop:ItemTemplate>
 			<com:TPanel ID="JobElement" CssClass="slide-window-element">
 				<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/job-icon.png" alt="" /> [<%=@$this->DataItem->jobid%>] <%=@$this->DataItem->name%>
@@ -13,6 +13,7 @@
 	<com:TActivePanel ID="DataGridShow">
 	<com:TActiveDataGrid
 		ID="DataGrid"
+		EnableViewState="false"
 		AutoGenerateColumns="false"
 		AllowSorting="false"
 		OnSortCommand="sortDataGrid"
