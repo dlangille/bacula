@@ -541,7 +541,7 @@ static bool do_label(JCR *jcr, int relabel)
    POOLMEM *newname, *oldname, *poolname, *mtype;
    POOL_MEM dev_name;
    BSOCK *dir = jcr->dir_bsock;
-   DCR *dcr;
+   DCR *dcr = NULL;;
    DEVICE *dev;
    bool ok = false;
    int32_t slot, drive;
@@ -572,8 +572,34 @@ static bool do_label(JCR *jcr, int relabel)
       unbash_spaces(mtype);
       dcr = find_device(jcr, dev_name, mtype, drive);
       if (dcr) {
+         uint32_t max_jobs;
          dev = dcr->dev;
+         ok = true;
          dev->Lock();                 /* Use P to avoid indefinite block */
+#ifdef DEVELOPER
+         if (chk_dbglvl(DT_VOLUME)) {
+            Dmsg0(0, "Waiting few seconds to force a bug...\n");
+            bmicrosleep(30, 0);
+         }
+#endif
+         max_jobs = dev->max_concurrent_jobs;
+         dev->max_concurrent_jobs = 1;
+         bstrncpy(dcr->VolumeName, newname, sizeof(dcr->VolumeName));
+         if (dcr->can_i_write_volume()) {
+            if (reserve_volume(dcr, newname) == NULL) {
+               ok = false;
+            }
+            Dmsg1(000, "Reserved volume \"%s\"\n", newname);
+         } else {
+            ok = false;
+         }
+         if (!ok) {
+            Dmsg2(000, "Reserve error on volume \"%s\": ERR=%s\n", newname, jcr->errmsg);
+            dir->fsend(_("3908 Error reserving volume: %s\n"), jcr->errmsg);
+            dev->max_concurrent_jobs = max_jobs;
+            dev->Unlock();
+            goto bail_out;
+         }
          if (!dev->is_open() && !dev->is_busy()) {
             Dmsg1(400, "Can %slabel. Device is not open\n", relabel?"re":"");
             label_volume_if_ok(dcr, oldname, newname, poolname, slot, relabel);
@@ -588,8 +614,9 @@ static bool do_label(JCR *jcr, int relabel)
             Dmsg0(400, "Can relabel. device not used\n");
             label_volume_if_ok(dcr, oldname, newname, poolname, slot, relabel);
          }
+         dev->max_concurrent_jobs = max_jobs;
          dev->Unlock();
-         free_dcr(dcr);
+         free_volume(dcr->dev);
       } else {
          dir->fsend(_("3999 Device \"%s\" not found or could not be opened.\n"), dev_name.c_str());
       }
@@ -597,6 +624,10 @@ static bool do_label(JCR *jcr, int relabel)
       /* NB dir->msg gets clobbered in bnet_fsend, so save command */
       pm_strcpy(jcr->errmsg, dir->msg);
       dir->fsend(_("3903 Error scanning label command: %s\n"), jcr->errmsg);
+   }
+bail_out:
+   if (dcr) {
+      free_dcr(dcr);
    }
    free_memory(oldname);
    free_memory(newname);
