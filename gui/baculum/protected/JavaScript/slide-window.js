@@ -156,8 +156,8 @@ var SlideWindowClass = Class.create({
 
 	openWindow : function() {
 		this.hideOtherWindows();
-		Effect.toggle(this.window, 'slide', { duration: 0.3, afterFinish : function() {
-				this.normalSizeWindow();
+		Effect.toggle(this.window, 'slide', { duration: 0.1, afterFinish : function() {
+				this.halfSizeWindow();
 			}.bind(this)
 		});
 	},
