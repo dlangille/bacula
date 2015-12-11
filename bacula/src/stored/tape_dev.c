@@ -163,6 +163,9 @@ void DEVICE::open_tape_device(DCR *dcr, int omode)
       berrno be;
       Mmsg2(errmsg, _("Unable to open device %s: ERR=%s\n"),
             print_name(), be.bstrerror(dev_errno));
+      if (dcr->jcr) {
+         pm_strcpy(dcr->jcr->errmsg, errmsg);
+      }
       Dmsg1(100, "%s", errmsg);
    }
 

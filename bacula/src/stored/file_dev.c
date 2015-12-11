@@ -155,6 +155,9 @@ void DEVICE::open_file_device(DCR *dcr, int omode)
       if (VolCatInfo.VolCatName[0] == 0) {
          Mmsg(errmsg, _("Could not open file device %s. No Volume name given.\n"),
             print_name());
+         if (dcr->jcr) {
+            pm_strcpy(dcr->jcr->errmsg, errmsg);
+         }
          clear_opened();
          return;
       }
@@ -193,6 +196,10 @@ void DEVICE::open_file_device(DCR *dcr, int omode)
       /* Refresh the underline device id */
       if (fstat(m_fd, &sp) == 0) {
          devno = sp.st_dev;
+      }
+   } else {
+      if (dcr->jcr) {
+         pm_strcpy(dcr->jcr->errmsg, errmsg);
       }
    }
    Dmsg1(100, "open dev: disk fd=%d opened\n", m_fd);

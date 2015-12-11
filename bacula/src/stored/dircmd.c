@@ -680,7 +680,7 @@ static void label_volume_if_ok(DCR *dcr, char *oldname,
    case VOL_NO_LABEL:
       if (!write_new_volume_label_to_dev(dcr, newname, poolname,
               relabel, true /* write dvd now */)) {
-         dir->fsend(_("3912 Failed to label Volume: ERR=%s\n"), dev->bstrerror());
+         dir->fsend(_("3912 Failed to label Volume: ERR=%s\n"), dcr->jcr->errmsg);
          break;
       }
       bstrncpy(dcr->VolumeName, newname, sizeof(dcr->VolumeName));
@@ -696,10 +696,10 @@ static void label_volume_if_ok(DCR *dcr, char *oldname,
                  type, newname, dev->print_name());
       break;
    case VOL_TYPE_ERROR:
-      dir->fsend(_("3915 Failed to label Volume: ERR=%s\n"), dev->errmsg);
+      dir->fsend(_("3912 Failed to label Volume: ERR=%s\n"), dcr->jcr->errmsg);
       break;
    case VOL_NO_MEDIA:
-      dir->fsend(_("3914 Failed to label Volume (no media): ERR=%s\n"), dev->bstrerror());
+      dir->fsend(_("3914 Failed to label Volume (no media): ERR=%s\n"), dcr->jcr->errmsg);
       break;
    default:
       dir->fsend(_("3913 Cannot label Volume. "

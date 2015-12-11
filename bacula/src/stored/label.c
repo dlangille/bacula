@@ -236,7 +236,7 @@ int read_dev_volume_label(DCR *dcr)
          Mmsg3(jcr->errmsg, _("Could not reserve volume %s on %s device %s\n"),
               dev->VolHdr.VolumeName, dev->print_type(), dev->print_name());
       }
-      Dmsg2(150, "Could not reserve volume %s on %s\n", dev->VolHdr.VolumeName, dev->print_name());
+      Dmsg2(100, "Could not reserve volume %s on %s\n", dev->VolHdr.VolumeName, dev->print_name());
       stat = VOL_NAME_ERROR;
       goto bail_out;
    }
@@ -338,6 +338,9 @@ bool write_new_volume_label_to_dev(DCR *dcr, const char *VolName,
 
    Dmsg0(150, "write_volume_label()\n");
    if (*VolName == 0) {
+      if (dcr->jcr) {
+         Mmsg(dcr->jcr->errmsg, "ERROR: new_volume_label_to_dev called with NULL VolName\n");
+      }
       Pmsg0(0, "=== ERROR: write_new_volume_label_to_dev called with NULL VolName\n");
       goto bail_out;
    }
