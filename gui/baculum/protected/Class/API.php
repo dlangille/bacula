@@ -49,6 +49,7 @@ class API extends TModule {
 	}
 
 	public function init($config) {
+		$this->initSessionCache();
 		$this->appCfg = $this->Application->getModule('configuration')->getApplicationConfig();
 	}
 
@@ -77,15 +78,28 @@ class API extends TModule {
 	 * API REQUESTS METHODS (get, set, create, delete)
 	 */
 
-	public function get(array $params) {
-		$url = $this->getURL() . implode('/', $params);
-		$this->setParamsToUrl($url);
-		$ch = $this->getConnection();
-		curl_setopt($ch, CURLOPT_URL, $url);
-		curl_setopt($ch, CURLOPT_HTTPHEADER, array($this->getAPIHeader(), 'Accept: application/json'));
-		$result = curl_exec($ch);
-		curl_close($ch);
-		return $this->preParseOutput($result);
+	public function get(array $params, $use_cache = false) {
+		$cached = null;
+		$ret = null;
+		if ($use_cache === true) {
+			$cached = $this->getSessionCache($params);
+		}
+		if (!is_null($cached)) {
+			$ret = $cached;
+		} else {
+			$url = $this->getURL() . implode('/', $params);
+			$this->setParamsToUrl($url);
+			$ch = $this->getConnection();
+			curl_setopt($ch, CURLOPT_URL, $url);
+			curl_setopt($ch, CURLOPT_HTTPHEADER, array($this->getAPIHeader(), 'Accept: application/json'));
+			$result = curl_exec($ch);
+			curl_close($ch);
+			$ret = $this->preParseOutput($result);
+			if ($use_cache === true && $ret->error === 0) {
+				$this->setSessionCache($params, $ret);
+			}
+		}
+		return $ret;
 	}
 
 	public function set(array $params, array $options) {
@@ -148,6 +162,37 @@ class API extends TModule {
 		}
 
 		return $resource;
+	}
+
+	public function initSessionCache($force = false) {
+		if (!isset($_SESSION) || !array_key_exists('cache', $_SESSION) || !is_array($_SESSION['cache']) || $force === true) {
+			$_SESSION['cache'] = array();
+		}
+	}
+
+	private function getSessionCache(array $params) {
+		$cached = null;
+		$key = $this->getSessionKey($params);
+		if ($this->isSessionValue($key)) {
+			$cached = $_SESSION['cache'][$key];
+		}
+		return $cached;
+	}
+
+	private function setSessionCache(array $params, $value) {
+		$key = $this->getSessionKey($params);
+		$_SESSION['cache'][$key] = $value;
+	}
+
+	private function getSessionKey(array $params) {
+		$key = implode(';', $params);
+		$key = base64_encode($key);
+		return $key;
+	}
+
+	private function isSessionValue($key) {
+		$is_value = array_key_exists($key, $_SESSION['cache']);
+		return $is_value;
 	}
 }
 ?>

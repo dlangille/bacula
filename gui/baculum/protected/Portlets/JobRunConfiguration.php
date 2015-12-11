@@ -53,7 +53,7 @@ class JobRunConfiguration extends Portlets {
 		$this->JobToVerifyOptions->dataSource = $verifyValues;
 		$this->JobToVerifyOptions->dataBind();
 
-		$jobTasks = $this->Application->getModule('api')->get(array('jobs', 'tasks'))->output;
+		$jobTasks = $this->Application->getModule('api')->get(array('jobs', 'tasks'), true)->output;
 
 		$jobsAllDirs = array();
 		foreach($jobTasks as $director => $tasks) {
@@ -63,7 +63,7 @@ class JobRunConfiguration extends Portlets {
 		$this->JobToVerifyJobName->dataSource = array_combine($jobsAllDirs, $jobsAllDirs);
 		$this->JobToVerifyJobName->dataBind();
 
-		$clients = $this->Application->getModule('api')->get(array('clients'))->output;
+		$clients = $this->Application->getModule('api')->get(array('clients'), true)->output;
 		$clientsList = array();
 		foreach($clients as $client) {
 			$clientsList[$client->clientid] = $client->name;
@@ -71,7 +71,7 @@ class JobRunConfiguration extends Portlets {
 		$this->Client->dataSource = $clientsList;
 		$this->Client->dataBind();
 
-		$filesetsAll = $this->Application->getModule('api')->get(array('filesets'))->output;
+		$filesetsAll = $this->Application->getModule('api')->get(array('filesets'), true)->output;
 		$filesetsList = array();
 		foreach($filesetsAll as $director => $filesets) {
 			$filesetsList = array_merge($filesets, $filesetsList);
@@ -79,7 +79,7 @@ class JobRunConfiguration extends Portlets {
 		$this->FileSet->dataSource = array_combine($filesetsList, $filesetsList);
 		$this->FileSet->dataBind();
 
-		$pools = $this->Application->getModule('api')->get(array('pools'))->output;
+		$pools = $this->Application->getModule('api')->get(array('pools'), true)->output;
 		$poolList = array();
 		foreach($pools as $pool) {
 			$poolList[$pool->poolid] = $pool->name;
@@ -87,7 +87,7 @@ class JobRunConfiguration extends Portlets {
 		$this->Pool->dataSource = $poolList;
 		$this->Pool->dataBind();
 
-		$storages = $this->Application->getModule('api')->get(array('storages'))->output;
+		$storages = $this->Application->getModule('api')->get(array('storages'), true)->output;
 		$storagesList = array();
 		foreach($storages as $storage) {
 			$storagesList[$storage->storageid] = $storage->name;

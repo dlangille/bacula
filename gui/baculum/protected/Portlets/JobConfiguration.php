@@ -61,7 +61,7 @@ class JobConfiguration extends Portlets {
 		$this->JobToVerifyOptions->dataSource = $verifyValues;
 		$this->JobToVerifyOptions->dataBind();
 
-		$jobTasks = $this->Application->getModule('api')->get(array('jobs', 'tasks'))->output;
+		$jobTasks = $this->Application->getModule('api')->get(array('jobs', 'tasks'), true)->output;
 
 		$jobsAllDirs = array();
 		foreach($jobTasks as $director => $tasks) {
@@ -71,7 +71,7 @@ class JobConfiguration extends Portlets {
 		$this->JobToVerifyJobName->dataSource = array_combine($jobsAllDirs, $jobsAllDirs);
 		$this->JobToVerifyJobName->dataBind();
 
-		$clients = $this->Application->getModule('api')->get(array('clients'))->output;
+		$clients = $this->Application->getModule('api')->get(array('clients'), true)->output;
 		$clientsList = array();
 		foreach($clients as $client) {
 			$clientsList[$client->clientid] = $client->name;
@@ -80,19 +80,19 @@ class JobConfiguration extends Portlets {
 		$this->Client->SelectedValue = $jobdata->clientid;
 		$this->Client->dataBind();
 
-		$filesetsAll = $this->Application->getModule('api')->get(array('filesets'))->output;
+		$filesetsAll = $this->Application->getModule('api')->get(array('filesets'), true)->output;
 		$filesetsList = array();
 		foreach($filesetsAll as $director => $filesets) {
 			$filesetsList = array_merge($filesets, $filesetsList);
 		}
 		if($jobdata->filesetid != 0) {
-			$selectedFileset = $this->Application->getModule('api')->get(array('filesets', $jobdata->filesetid))->output;
+			$selectedFileset = $this->Application->getModule('api')->get(array('filesets', $jobdata->filesetid), true)->output;
 		}
 		$this->FileSet->dataSource = array_combine($filesetsList, $filesetsList);
 		$this->FileSet->SelectedValue = @$selectedFileset->fileset;
 		$this->FileSet->dataBind();
 
-		$pools = $this->Application->getModule('api')->get(array('pools'))->output;
+		$pools = $this->Application->getModule('api')->get(array('pools'), true)->output;
 		$poolList = array();
 		foreach($pools as $pool) {
 			$poolList[$pool->poolid] = $pool->name;
@@ -101,11 +101,11 @@ class JobConfiguration extends Portlets {
 		$this->Pool->SelectedValue = $jobdata->poolid;
 		$this->Pool->dataBind();
 
-		$jobshow = $this->Application->getModule('api')->get(array('jobs', 'show', $jobdata->jobid))->output;
+		$jobshow = $this->Application->getModule('api')->get(array('jobs', 'show', $jobdata->jobid), true)->output;
 		$storageShow = $this->getResourceName('storage', $jobshow);
 		$storagesList = array();
 		$selectedStorageId = null;
-		$storages = $this->Application->getModule('api')->get(array('storages'))->output;
+		$storages = $this->Application->getModule('api')->get(array('storages'), true)->output;
 		foreach($storages as $storage) {
 			if ($storage->name == $storageShow) {
 				$selectedStorageId = $storage->storageid;
@@ -244,7 +244,7 @@ class JobConfiguration extends Portlets {
 
 	private function getPoolByName($name) {
 		$pool = null;
-		$pools = $this->Application->getModule('api')->get(array('pools'))->output;
+		$pools = $this->Application->getModule('api')->get(array('pools'), true)->output;
 		for ($i = 0; $i < count($pools); $i++) {
 			if ($pools[$i]->name == $name) {
 				$pool = $pools[$i];
@@ -256,7 +256,7 @@ class JobConfiguration extends Portlets {
 
 	private function getStorageByName($name) {
 		$storage = null;
-		$storages = $this->Application->getModule('api')->get(array('storages'))->output;
+		$storages = $this->Application->getModule('api')->get(array('storages'), true)->output;
 		for ($i = 0; $i < count($storages); $i++) {
 			if ($storages[$i]->name == $name) {
 				$storage = $storages[$i];

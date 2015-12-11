@@ -36,6 +36,11 @@ class Home extends BaculumPage
 
 	public function onInit($param) {
 		parent::onInit($param);
+
+		if (!$this->IsPostBack && !$this->IsCallBack) {
+			$this->getModule('api')->initSessionCache(true);
+		}
+
 		$isConfigExists = $this->getModule('configuration')->isApplicationConfig();
 		if($isConfigExists === false) {
 			$this->goToPage('ConfigurationWizard');
