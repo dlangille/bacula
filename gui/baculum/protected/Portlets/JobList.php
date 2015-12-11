@@ -22,7 +22,6 @@
 
 Prado::using('System.Web.UI.ActiveControls.TActiveDataGrid');
 Prado::using('System.Web.UI.ActiveControls.TActiveRepeater');
-Prado::using('System.Web.UI.ActiveControls.TActiveLinkButton');
 Prado::using('System.Web.UI.ActiveControls.TActivePanel');
 Prado::using('System.Web.UI.ActiveControls.TCallback');
 Prado::using('Application.Portlets.ISlideWindow');
@@ -35,6 +34,7 @@ class JobList extends Portlets implements ISlideWindow {
 	public $windowTitle;
 	public $jobLevels;
 	public $jobStates;
+	public $runningJobStates;
 	public $jobTypes;
 
 	public function setID($id) {
@@ -63,15 +63,21 @@ class JobList extends Portlets implements ISlideWindow {
 
 	public function onLoad($param) {
 		parent::onLoad($param);
-		$this->prepareData();
+		$allowedButtons = array('JobBtn', 'ReloadJobs', 'Run', 'RunJobAgain');
+		if($this->Page->IsPostBack || $this->Page->IsCallBack) {
+			if(in_array($this->getPage()->CallBackEventTarget->ID, $allowedButtons)) {
+				$this->prepareData();
+			}
+		}
 		$misc = $this->Application->getModule('misc');
 		$this->jobLevels = $misc->getJobLevels();
 		$this->jobStates = $misc->getJobState();
 		$this->jobTypes = $misc->getJobType();
+		$this->runningJobStates = $misc->getRunningJobStates();
 	}
 
 	public function prepareData($forceReload = false) {
-		$allowedButtons = array('JobBtn', 'ReloadJobs', 'Run');
+		$allowedButtons = array('JobBtn', 'ReloadJobs', 'Run', 'RunJobAgain');
 		if($this->Page->IsPostBack || $this->Page->IsCallBack || $forceReload) {
 			if(in_array($this->getPage()->CallBackEventTarget->ID, $allowedButtons) || $forceReload) {
 				$params = $this->getUrlParams('jobs', $this->getPage()->JobWindow->ID);
@@ -103,6 +109,12 @@ class JobList extends Portlets implements ISlideWindow {
 	public function configure($sender, $param) {
 		if($this->Page->IsCallBack) {
 			$this->getPage()->JobConfiguration->configure($param->CallbackParameter);
+		}
+	}
+
+	public function run_again($sender, $param) {
+		if($this->Page->IsCallBack) {
+			$this->getPage()->JobConfiguration->run_again(null, $param->CallbackParameter);
 		}
 	}
 

@@ -12,6 +12,7 @@ var SlideWindowClass = Class.create({
 	options: null,
 	configurationObj: null,
 	loadRequest : null,
+	actionsRequest: null,
 	repeaterEl: null,
 	gridEl: null,
 	checked: [],
@@ -29,16 +30,19 @@ var SlideWindowClass = Class.create({
 	},
 
 	elements : {
-		containerSuffix : '-slide-window-container',
-		configurationWindows : 'div.configuration',
+		content: 'div.slide-window-content',
+		containerSuffix: '-slide-window-container',
+		containerProgressSuffix: '-slide-window-progress',
+		configurationWindows: 'div.configuration',
 		configurationProgress: 'div.configuration-progress',
-		contentItems : 'slide-window-element',
-		contentAlternatingItems : 'slide-window-element-alternating',
-		toolsButtonSuffix : '-slide-window-tools',
-		optionsButtonSuffix : '-slide-window-options',
-		actionsSuffix : '-slide-window-actions',
-		toolbarSuffix : '-slide-window-toolbar',
-		titleSuffix : '-slide-window-title'
+		contentItems: 'slide-window-element',
+		contentAlternatingItems: 'slide-window-element-alternating',
+		toolsButtonSuffix: '-slide-window-tools',
+		optionsButtonSuffix: '-slide-window-options',
+		actionsSuffix: '-slide-window-actions',
+		toolbarSuffix: '-slide-window-toolbar',
+		titleSuffix: '-slide-window-title',
+		actionsButton : 'actions_btn'
 	},
 
 	initialize: function(windowId, data) {
@@ -128,8 +132,28 @@ var SlideWindowClass = Class.create({
 		this.options.observe('click', function() {
 			this.toggleToolbar();
 		}.bind(this));
+
+		this.setActionsBtnEvents();
 	},
-	
+
+	setActionsBtnEvents: function() {
+		var actions_btn_container = this.window.getElementsByClassName(this.elements.actionsButton);
+		if (actions_btn_container.length === 1) {
+			var actions_btn = actions_btn_container[0].getElementsByTagName('INPUT');
+			if (actions_btn.length === 1) {
+				actions_btn[0].addEventListener('mouseup', function(e) {
+					var row = this.getGridRowUnderCursor(e);
+					var el = $(row).down('input[type=hidden]');
+					if(el) {
+						var val = el.getValue();
+						this.actionsRequest.ActiveControl.CallbackParameter = val;
+						this.actionsRequest.dispatch();
+					}
+				}.bind(this));
+			}
+		}
+	},
+
 	openWindow : function() {
 		this.hideOtherWindows();
 		Effect.toggle(this.window, 'slide', { duration: 0.3, afterFinish : function() {
@@ -148,7 +172,16 @@ var SlideWindowClass = Class.create({
 	isWindowOpen: function() {
 		return !(this.window.style.display === 'none');
 	},
-	
+
+	showProgress: function(show) {
+		var progress = $(this.windowId + this.elements.containerProgressSuffix);
+		if (show === true) {
+			progress.setStyle({display: 'block'});
+		} else if (show === false) {
+			progress.hide();
+		}
+	},
+
 	resetSize : function() {
 		if(this.isConfigurationOpen()) {
 			if(this.isFullSize()) {
@@ -210,10 +243,14 @@ var SlideWindowClass = Class.create({
 		this.configurationObj = obj;
 	},
 
-	setWindowElementsEvent: function(repeaterEl, gridEl, requestObj) {
-		this.repeaterEl = repeaterEl;
-		this.gridEl = gridEl;
-		this.loadRequest = requestObj;
+	setWindowElementsEvent: function(opts) {
+		this.repeaterEl = opts.repeater_id;
+		this.gridEl = opts.grid_id;
+		this.loadRequest = opts.request_obj;
+		if (opts.hasOwnProperty('actions_obj')) {
+			this.actionsRequest = opts.actions_obj;
+		}
+		this.showProgress(false);
 		this.markAllChecked(false);
 		this.setLoadRequest();
 		this.postWindowOpen();
@@ -228,6 +265,15 @@ var SlideWindowClass = Class.create({
 			dataList = $(this.repeaterEl + '_Container').select('div.slide-window-element');
 		}
 
+		var set_callback_parameter = function(element) {
+			var el = $(element).down('input[type=hidden]')
+			if(el) {
+				var val = el.getValue();
+				this.loadRequest.ActiveControl.CallbackParameter = val;
+				this.loadRequest.dispatch();
+				this.configurationObj.openConfigurationWindow(this);
+			}
+		}.bind(this);
 		dataList.each(function(tr) {
 			$(tr).observe('click', function(index, clickedEl) {
 				var target = clickedEl.target || clickedEl.srcElement;
@@ -236,14 +282,7 @@ var SlideWindowClass = Class.create({
 				if(clicked && clicked.hasAttribute('type') && clicked.readAttribute('type') == 'checkbox') {
 					return;
 				}
-
-				var el = $(tr).down('input[type=hidden]')
-				if(el) {
-					var val = el.getValue();
-					this.loadRequest.ActiveControl.CallbackParameter = val;
-					this.loadRequest.dispatch();
-					this.configurationObj.openConfigurationWindow(this);
-				}
+				set_callback_parameter(tr);
 			}.bind(this, tr));
 		}.bind(this));
 	},
@@ -445,6 +484,48 @@ var SlideWindowClass = Class.create({
 	postWindowOpen: function() {
 		this.setActions();
 		this.setElementsCount();
+		this.setOptionsBtn();
+	},
+	setOptionsBtn: function() {
+		var options_btn = this.window.getElementsByClassName(this.elements.actionsButton);
+		var table_window = $(this.windowId + this.elements.containerSuffix).down(this.elements.content);
+		if (options_btn.length === 1) {
+			options_btn = options_btn[0];
+			table_window.stopObserving('mouseover');
+			table_window.observe('mouseover', function(e) {
+				var el = this.getGridRowUnderCursor(e);
+				if (el && (el.className == this.elements.contentItems || el.className == this.elements.contentAlternatingItems)) {
+					el.style.backgroundColor = '#aeb2b6';
+					options_btn.setStyle({display: ''});
+					var scroll_y = document.viewport.getScrollOffsets().top;
+					var y = (el.viewportOffset().top + scroll_y - 57).toString() + 'px';
+					options_btn.setStyle({top: y});
+				} else {
+					options_btn.setStyle({display: 'none'});
+				}
+			}.bind(this));
+			table_window.stopObserving('mouseout');
+			table_window.observe('mouseout', function(e) {
+				table_window.select('TR').forEach(function(el) {
+					el.style.backgroundColor = '';
+				});;
+				options_btn.setStyle({display: 'none'});
+			});
+		}
+	},
+	getGridRowUnderCursor: function(e) {
+		var x = e.clientX - 100;
+		var y = e.clientY;
+		var element_mouse_is_over = document.elementFromPoint(x, y);
+		var el;
+		var el_over = $(element_mouse_is_over);
+		if (el_over && el_over.nodeName != 'TR') {
+			el = el_over.down('tr');
+			if (!el) {
+				el = el_over.up('tr');
+			}
+		}
+		return el;
 	}
 });
 
@@ -452,7 +533,7 @@ var SlideWindow = new SlideWindowClass()
 
 document.observe("dom:loaded", function() {
 	if(Prototype.Browser.IE  || Prototype.Browser.Gecko || Prototype.Browser.WebKit) {
-		$$('input[type=checkbox], input[type=submit], input[type=radio], a').each(function(el) {
+		$$('input[type=checkbox], input[type=submit], input[type=radio], input[type=image], a').each(function(el) {
 			el.observe('focus', function() {
 				el.blur();
 			}.bind(el));

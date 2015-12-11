@@ -28,6 +28,7 @@ class JobConfiguration extends Portlets {
 
 	const DEFAULT_JOB_PRIORITY = 10;
 
+	const RESOURCE_SHOW_PATTERN = '/^\s+--> %resource: name=(.+?(?=\s\S+\=.+)|.+$)/i';
 
 	public $jobToVerify = array('C', 'O', 'd');
 
@@ -100,12 +101,21 @@ class JobConfiguration extends Portlets {
 		$this->Pool->SelectedValue = $jobdata->poolid;
 		$this->Pool->dataBind();
 
-		$storages = $this->Application->getModule('api')->get(array('storages'))->output;
+		$jobshow = $this->Application->getModule('api')->get(array('jobs', 'show', $jobdata->jobid))->output;
+		$storageShow = $this->getResourceName('storage', $jobshow);
 		$storagesList = array();
+		$selectedStorageId = null;
+		$storages = $this->Application->getModule('api')->get(array('storages'))->output;
 		foreach($storages as $storage) {
+			if ($storage->name == $storageShow) {
+				$selectedStorageId = $storage->storageid;
+			}
 			$storagesList[$storage->storageid] = $storage->name;
 		}
 		$this->Storage->dataSource = $storagesList;
+		if (!is_null($selectedStorageId)) {
+			$this->Storage->SelectedValue = $selectedStorageId;
+		}
 		$this->Storage->dataBind();
 
 		$runningJobStates = $this->Application->getModule('misc')->getRunningJobStates();
@@ -150,26 +160,41 @@ class JobConfiguration extends Portlets {
 		if($this->PriorityValidator->IsValid === false) {
 			return false;
 		}
-		$params = array();
-		$params['id'] = $this->JobID->Text;
-		$params['level'] = $this->Level->SelectedValue;
-		$params['fileset'] = $this->FileSet->SelectedValue;
-		$params['clientid'] = $this->Client->SelectedValue;
-		$params['storageid'] = $this->Storage->SelectedValue;
-		$params['poolid'] = $this->Pool->SelectedValue;
-		$params['priority'] = $this->Priority->Text;
 
-		if (in_array($this->Level->SelectedItem->Value, $this->jobToVerify)) {
-			$verifyVals = $this->getVerifyVals();
-			if ($this->JobToVerifyOptions->SelectedItem->Value == $verifyVals['jobname']) {
-				$params['verifyjob'] = $this->JobToVerifyJobName->SelectedValue;
-			} elseif ($this->JobToVerifyOptions->SelectedItem->Value == $verifyVals['jobid']) {
-				$params['jobid'] = $this->JobToVerifyJobId->Text;
+		$params = array();
+		if (is_null($sender) && is_numeric($param)) {
+			$jobdata = $this->Application->getModule('api')->get(array('jobs', $param))->output;
+			$jobshow = $this->Application->getModule('api')->get(array('jobs', 'show', $jobdata->jobid))->output;
+			$params['id'] = $jobdata->jobid;
+			$params['level'] = $jobdata->level;
+			$params['fileset'] = $this->getResourceName('fileset', $jobshow);
+			$params['clientid'] = $jobdata->clientid;
+			$storage = $this->getResourceName('storage', $jobshow);
+			$params['storageid'] = $this->getStorageByName($storage)->storageid;
+			$pool = $this->getResourceName('pool', $jobshow);
+			$params['poolid'] = $this->getPoolByName($pool)->poolid;
+		} else {
+			$params['id'] = $this->JobID->Text;
+			$params['level'] = $this->Level->SelectedValue;
+			$params['fileset'] = $this->FileSet->SelectedValue;
+			$params['clientid'] = $this->Client->SelectedValue;
+			$params['storageid'] = $this->Storage->SelectedValue;
+			$params['poolid'] = $this->Pool->SelectedValue;
+			$params['priority'] = $this->Priority->Text;
+
+			if (in_array($this->Level->SelectedItem->Value, $this->jobToVerify)) {
+				$verifyVals = $this->getVerifyVals();
+				if ($this->JobToVerifyOptions->SelectedItem->Value == $verifyVals['jobname']) {
+					$params['verifyjob'] = $this->JobToVerifyJobName->SelectedValue;
+				} elseif ($this->JobToVerifyOptions->SelectedItem->Value == $verifyVals['jobid']) {
+					$params['jobid'] = $this->JobToVerifyJobId->Text;
+				}
 			}
 		}
-
 		$result = $this->Application->getModule('api')->create(array('jobs', 'run'), $params)->output;
-		$this->Estimation->Text = implode(PHP_EOL, $result);
+		if (!is_null($sender) || !is_numeric($param)) {
+			$this->Estimation->Text = implode(PHP_EOL, $result);
+		}
 	}
 
 	public function estimate($sender, $param) {
@@ -203,6 +228,42 @@ class JobConfiguration extends Portlets {
 		$verifyOpt = array_keys($this->verifyOptions);
 		$verifyVals = array_combine($verifyOpt, $verifyOpt);
 		return $verifyVals;
+	}
+
+	private function getResourceName($resource, $jobshow) {
+		$resource_name = null;
+		$pattern = str_replace('%resource', $resource, self::RESOURCE_SHOW_PATTERN);
+		for ($i = 0; $i < count($jobshow); $i++) {
+			if (preg_match($pattern, $jobshow[$i], $match) === 1) {
+				$resource_name = $match[1];
+				break;
+			}
+		}
+		return $resource_name;
+	}
+
+	private function getPoolByName($name) {
+		$pool = null;
+		$pools = $this->Application->getModule('api')->get(array('pools'))->output;
+		for ($i = 0; $i < count($pools); $i++) {
+			if ($pools[$i]->name == $name) {
+				$pool = $pools[$i];
+				break;
+			}
+		}
+		return $pool;
+	}
+
+	private function getStorageByName($name) {
+		$storage = null;
+		$storages = $this->Application->getModule('api')->get(array('storages'))->output;
+		for ($i = 0; $i < count($storages); $i++) {
+			if ($storages[$i]->name == $name) {
+				$storage = $storages[$i];
+				break;
+			}
+		}
+		return $storage;
 	}
 }
 ?>

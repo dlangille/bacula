@@ -191,6 +191,16 @@ div.slide-window-progress {
 	display: none;
 }
 
+div.actions_btn {
+	position: absolute;
+	width: 35px;
+	height: 35px;
+	right: 22px;
+	top: 0px;
+	margin: 3px 0;
+	text-align: right;
+}
+
 #console {
 	clear: left;
 	min-width: 973px;
@@ -385,7 +395,7 @@ input.bbutton {
 	display: inline-block;
 	width: auto;
 	margin: 5px 8px;
-	padding: 0 18px;
+	padding: 0 16px;
 	min-width: 65px;
 	border-radius: 4px;
 	border: 1px solid #8f2626;
@@ -394,7 +404,7 @@ input.bbutton {
 }
 
 input.bbutton:hover {
-	padding: 0 18px;
+	padding: 0 16px;
 	box-shadow: inset 0 0 3px #faeded;
 	background: #ff7474;
 	border: 1px solid #8f2626;
@@ -446,26 +456,35 @@ tr.slide-window-element-alternating {
 tr.slide-window-element td, tr.slide-window-element-alternating td {
 	font-style: italic;
 	word-break: break-all;
+	line-height: 30px;
 }
+
 tr.slide-window-element:hover, tr.slide-window-element-alternating:hover {
 	float: none;
 	cursor: pointer;
 }
 
-tr.slide-window-element:hover td, tr.slide-window-element-alternating:hover td{
+tr.slide-window-element:hover td, tr.slide-window-element-alternating:hover td {
 	background-color: #aeb2b6;
 }
 
-table.window-section-detail, table.file-browser-detail {
+tr.slide-window-element img, tr.slide-window-element-alternating img {
+	float: right;
+}
+
+table.window-section-detail, table.window-section-detail-smallrow, table.file-browser-detail {
 	background-color: rgba(0,0,0,0.5);
 	width: 100%;
 	font-size: 10px;
 	font-weight: normal;
 }
 
-table.window-section-detail th, table.file-browser-detail th {
+table.window-section-detail th, table.window-section-detail-smallrow th, table.file-browser-detail th {
 	background-color: black;
 	color: white;
+}
+table.window-section-detail-smallrow td {
+	line-height: 15px;
 }
 
 table.file-browser-detail {
@@ -677,7 +696,7 @@ div.status-bar-detail-append, div.status-bar-detail-full, div.status-bar-detail-
 
 div.job-status-C, div.job-status-R, div.job-status-B, div.job-status-T, div.job-status-W, div.job-status-E, div.job-status-e, div.job-status-f, div.job-status-D, div.job-status-A, div.job-status-I, div.job-status-F, div.job-status-S, div.job-status-m, div.job-status-M, div.job-status-s, div.job-status-j, div.job-status-c, div.job-status-d, div.job-status-t, div.job-status-p, div.job-status-i, div.job-status-a, div.job-status-l, div.job-status-L {
 	border: 1px solid black;
-	min-width: 80px;
+	min-width: 52px;
 	height: 20px;
 	line-height: 20px;
 	font-size: 9px;

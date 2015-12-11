@@ -48,7 +48,20 @@ class JobRun extends BaculumAPI {
 						if(!is_null($storage)) {
 							if(!is_null($pool)) {
 								$joblevels  = $this->getModule('misc')->getJobLevels();
-								$run = $this->getModule('bconsole')->bconsoleCommand($this->director, array('run', 'job="' . $job . '"', 'level="' . $joblevels[$level] . '"', 'fileset="' . $fileset . '"', 'client="' . $client->name . '"', 'storage="' . $storage->name . '"', 'pool="' . $pool->name . '"' , 'priority="' . $priority . '"',  $jobid , $verifyjob, 'yes'), $this->user);
+								$command = array(
+									'run',
+									'job="' . $job . '"',
+									'level="' . $joblevels[$level] . '"',
+									'fileset="' . $fileset . '"',
+									'client="' . $client->name . '"',
+									'storage="' . $storage->name . '"',
+									'pool="' . $pool->name . '"' ,
+									'priority="' . $priority . '"',
+									$jobid,
+									$verifyjob,
+									'yes'
+								);
+								$run = $this->getModule('bconsole')->bconsoleCommand($this->director, $command, $this->user);
 								$this->output = $run->output;
 								$this->error = (integer)$run->exitcode;
 							} else {

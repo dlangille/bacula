@@ -20,7 +20,7 @@
 		AllowSorting="false"
 		OnSortCommand="sortDataGrid"
 		CellPadding="5px"
-		CssClass="window-section-detail"
+		CssClass="window-section-detail-smallrow"
 		ItemStyle.CssClass="slide-window-element"
 		AlternatingItemStyle.CssClass="slide-window-element-alternating"
 	>

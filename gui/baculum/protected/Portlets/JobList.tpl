@@ -53,11 +53,12 @@
 				<div class="job-status-<%=isset($this->getParent()->Data['jobstatus']) ? $this->getParent()->Data['jobstatus'] : ''%>" title="<%=isset($this->getPage()->JobWindow->jobStates[$this->getParent()->Data['jobstatus']]['description']) ? $this->getPage()->JobWindow->jobStates[$this->getParent()->Data['jobstatus']]['description'] : ''%>"><%=isset($this->getPage()->JobWindow->jobStates[$this->getParent()->Data['jobstatus']]['value']) ? $this->getPage()->JobWindow->jobStates[$this->getParent()->Data['jobstatus']]['value'] : ''%></div>
 			</prop:ItemTemplate>
 		</com:TActiveTemplateColumn>
-		<com:TActiveBoundColumn
-			SortExpression="endtime"
-			HeaderText="<%[ End time ]%>"
-			DataField="endtime"
-		/>
+		<com:TActiveTemplateColumn HeaderText="<%[ End time ]%>" SortExpression="endtime">
+			<prop:ItemTemplate>
+				<%=$this->getParent()->Data['endtime']%>
+				<%=in_array($this->getParent()->Data['jobstatus'], $this->getPage()->JobWindow->runningJobStates) ? '<img src="' . $this->getPage()->getTheme()->getBaseUrl() . '/loader-alter.gif" />' : ''%>
+			</prop:ItemTemplate>
+		</com:TActiveTemplateColumn>
 	</com:TActiveDataGrid>
 	<com:TActiveHiddenField ID="CheckedValues" />
 	</com:TActivePanel>
@@ -68,4 +69,23 @@
 			status_callback_func();
 		</prop:ClientSide.OnComplete>
 	</com:TCallback>
+	<com:TCallback ID="RunJobCall" OnCallback="Page.JobWindow.run_again">
+		<prop:ClientSide.OnLoading>
+			var img_btn = $('run_job_again_btn');
+			var img_src_path = img_btn.readAttribute('src').replace(/[^\/]+\S$/, '');
+			img_btn.writeAttribute('disabled', 'disabled');
+			img_btn.writeAttribute('src', img_src_path + 'loader.gif');
+		</prop:ClientSide.OnLoading>
+		<prop:ClientSide.OnComplete>
+			var img_btn = $('run_job_again_btn');
+			var img_src_path = img_btn.readAttribute('src').replace(/[^\/]+\S$/, '');
+			img_btn.writeAttribute('src', img_src_path + 'play.png');
+			img_btn.removeAttribute('disabled');
+			status_callback_func();
+			oMonitor();
+		</prop:ClientSide.OnComplete>
+	</com:TCallback>
+	<div class="actions_btn" style="display: none">
+		<input type="image" id="run_job_again_btn" title="<%[ Run job again ]%>" src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/play.png" onclick="return false" />
+	</div>
 </com:TContent>

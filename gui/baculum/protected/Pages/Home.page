@@ -13,15 +13,139 @@
 	</div>
 	<div id="container">
 		<div id="menu-left">
-			<com:TActiveButton ID="StorageBtn" CssClass="storage-btn" Attributes.onmouseover="javascript:showTip(this, '<%=Prado::localize('Storage Daemons')%>', '<%=Prado::localize('Configuration of storage daemons.')%>');" ClientSide.OnLoading="$('StorageWindow-slide-window-progress').setStyle({'display': 'block'});" ClientSide.OnComplete="$('StorageWindow-slide-window-progress').setStyle({'display': 'none'});SlideWindow.getObj('StorageWindow').setWindowElementsEvent('<%=$this->StorageWindow->Repeater->ClientID%>', '<%=$this->StorageWindow->DataGrid->ClientID%>', <%=$this->StorageWindow->DataElementCall->ActiveControl->Javascript%>);" />
-			<com:TActiveButton ID="ClientBtn" CssClass="client-btn" Attributes.onmouseover="javascript:showTip(this, '<%=Prado::localize('Clients')%>', '<%=Prado::localize('Configuration of clients daemons.')%>');" ClientSide.OnLoading="$('ClientWindow-slide-window-progress').setStyle({'display': 'block'});" ClientSide.OnComplete="$('ClientWindow-slide-window-progress').setStyle({'display': 'none'});SlideWindow.getObj('ClientWindow').setWindowElementsEvent('<%=$this->ClientWindow->Repeater->ClientID%>', '<%=$this->ClientWindow->DataGrid->ClientID%>', <%=$this->ClientWindow->DataElementCall->ActiveControl->Javascript%>);" />
-			<com:TActiveButton ID="MediaBtn" CssClass="media-btn" Attributes.onmouseover="javascript:showTip(this, '<%=Prado::localize('Volumes')%>', '<%=Prado::localize('Management of volumes.')%>');" ClientSide.OnLoading="$('VolumeWindow-slide-window-progress').setStyle({'display': 'block'});" ClientSide.OnComplete="$('VolumeWindow-slide-window-progress').setStyle({'display': 'none'});SlideWindow.getObj('VolumeWindow').setWindowElementsEvent('<%=$this->VolumeWindow->Repeater->ClientID%>', '<%=$this->VolumeWindow->DataGrid->ClientID%>', <%=$this->VolumeWindow->DataElementCall->ActiveControl->Javascript%>);" />
-
-			<com:TActiveButton ID="PoolBtn" CssClass="pool-btn" Attributes.onmouseover="javascript:showTip(this, '<%=Prado::localize('Pools')%>', '<%=Prado::localize('Management of volumes pools.')%>');" ClientSide.OnLoading="$('PoolWindow-slide-window-progress').setStyle({'display': 'block'});" ClientSide.OnComplete="$('PoolWindow-slide-window-progress').setStyle({'display': 'none'});SlideWindow.getObj('PoolWindow').setWindowElementsEvent('<%=$this->PoolWindow->Repeater->ClientID%>', '<%=$this->PoolWindow->DataGrid->ClientID%>', <%=$this->PoolWindow->DataElementCall->ActiveControl->Javascript%>);" />
-			<com:TActiveButton ID="JobBtn" CssClass="job-btn" Attributes.onmouseover="javascript:showTip(this, '<%=Prado::localize('Jobs')%>', '<%=Prado::localize('Jobs settings.')%>');" ClientSide.OnLoading="$('JobWindow-slide-window-progress').setStyle({'display': 'block'});" ClientSide.OnComplete="$('JobWindow-slide-window-progress').setStyle({'display': 'none'});SlideWindow.getObj('JobWindow').setWindowElementsEvent('<%=$this->JobWindow->Repeater->ClientID%>', '<%=$this->JobWindow->DataGrid->ClientID%>', <%=$this->JobWindow->DataElementCall->ActiveControl->Javascript%>);" />
-			<com:TActiveButton ID="JobRunBtn" CssClass="jobrun-btn" Attributes.onmouseover="javascript:showTip(this, '<%=Prado::localize('Run job')%>', '<%=Prado::localize('Starting jobs.')%>');" ClientSide.OnLoading="$('JobRunWindow-slide-window-progress').setStyle({'display': 'block'});" ClientSide.OnComplete="$('JobRunWindow-slide-window-progress').setStyle({'display': 'none'});SlideWindow.getObj('JobRunWindow').setWindowElementsEvent('<%=$this->JobRunWindow->Repeater->ClientID%>', '<%=$this->JobRunWindow->DataGrid->ClientID%>', <%=$this->JobRunWindow->DataElementCall->ActiveControl->Javascript%>);" />
-			<com:TActiveButton CssClass="restore-btn" OnClick="restore" Attributes.onmouseover="javascript:showTip(this, '<%=Prado::localize('Restore')%>', '<%=Prado::localize('Restore wizard.')%>');" />
-			<com:TActiveButton ID="SettingsWizardBtn" CssClass="setting-btn" OnClick="configuration" Attributes.onmouseover="javascript:showTip(this, '<%=Prado::localize('Settings')%>', '<%=Prado::localize('Management settings wizard.')%>');" />
+			<com:TActiveButton ID="StorageBtn" CssClass="storage-btn">
+				<prop:Attributes.onmouseover>
+					showTip(
+						this,
+						'<%=Prado::localize('Storage Daemons')%>',
+						'<%=Prado::localize('Configuration of storage daemons.')%>'
+					);
+				</prop:Attributes.onmouseover>
+				<prop:ClientSide.OnLoading>
+					SlideWindow.getObj('StorageWindow').showProgress(true);
+				</prop:ClientSide.OnLoading>
+				<prop:ClientSide.OnComplete>
+					SlideWindow.getObj('StorageWindow').setWindowElementsEvent({
+						repeater_id: '<%=$this->StorageWindow->Repeater->ClientID%>',
+						grid_id: '<%=$this->StorageWindow->DataGrid->ClientID%>',
+						request_obj: <%=$this->StorageWindow->DataElementCall->ActiveControl->Javascript%>
+					});
+				</prop:ClientSide.OnComplete>
+			</com:TActiveButton>
+			<com:TActiveButton ID="ClientBtn" CssClass="client-btn">
+				<prop:Attributes.onmouseover>
+					showTip(
+						this,
+						'<%=Prado::localize('Clients')%>',
+						'<%=Prado::localize('Configuration of clients daemons.')%>'
+					);
+				</prop:Attributes.onmouseover>
+				<prop:ClientSide.OnLoading>
+					SlideWindow.getObj('ClientWindow').showProgress(true);
+				</prop:ClientSide.OnLoading>
+				<prop:ClientSide.OnComplete>
+					SlideWindow.getObj('ClientWindow').setWindowElementsEvent({
+						repeater_id: '<%=$this->ClientWindow->Repeater->ClientID%>',
+						grid_id: '<%=$this->ClientWindow->DataGrid->ClientID%>',
+						request_obj: <%=$this->ClientWindow->DataElementCall->ActiveControl->Javascript%>
+					});
+				</prop:ClientSide.OnComplete>
+			</com:TActiveButton>
+			<com:TActiveButton ID="MediaBtn" CssClass="media-btn">
+				<prop:Attributes.onmouseover>
+					showTip(
+						this,
+						'<%=Prado::localize('Volumes')%>',
+						'<%=Prado::localize('Management of volumes.')%>'
+					);
+				</prop:Attributes.onmouseover>
+				<prop:ClientSide.OnLoading>
+					SlideWindow.getObj('VolumeWindow').showProgress(true);
+				</prop:ClientSide.OnLoading>
+				<prop:ClientSide.OnComplete>
+					SlideWindow.getObj('VolumeWindow').setWindowElementsEvent({
+						repeater_id: '<%=$this->VolumeWindow->Repeater->ClientID%>',
+						grid_id: '<%=$this->VolumeWindow->DataGrid->ClientID%>',
+						request_obj: <%=$this->VolumeWindow->DataElementCall->ActiveControl->Javascript%>
+					});
+				</prop:ClientSide.OnComplete>
+			</com:TActiveButton>
+			<com:TActiveButton ID="PoolBtn" CssClass="pool-btn">
+				<prop:Attributes.onmouseover>
+					showTip(
+						this,
+						'<%=Prado::localize('Pools')%>',
+						'<%=Prado::localize('Management of volumes pools.')%>'
+					);
+				</prop:Attributes.onmouseover>
+				<prop:ClientSide.OnLoading>
+					SlideWindow.getObj('PoolWindow').showProgress(true);
+				</prop:ClientSide.OnLoading>
+				<prop:ClientSide.OnComplete>
+					SlideWindow.getObj('PoolWindow').setWindowElementsEvent({
+						repeater_id: '<%=$this->PoolWindow->Repeater->ClientID%>',
+						grid_id: '<%=$this->PoolWindow->DataGrid->ClientID%>',
+						request_obj: <%=$this->PoolWindow->DataElementCall->ActiveControl->Javascript%>
+					});
+				</prop:ClientSide.OnComplete>
+			</com:TActiveButton>
+			<com:TActiveButton ID="JobBtn" CssClass="job-btn">
+				<prop:Attributes.onmouseover>
+					showTip(
+						this,
+						'<%=Prado::localize('Jobs')%>',
+						'<%=Prado::localize('Jobs settings.')%>'
+					);
+				</prop:Attributes.onmouseover>
+				<prop:ClientSide.OnLoading>
+					SlideWindow.getObj('JobWindow').showProgress(true);
+				</prop:ClientSide.OnLoading>
+				<prop:ClientSide.OnComplete>
+					SlideWindow.getObj('JobWindow').setWindowElementsEvent({
+						repeater_id: '<%=$this->JobWindow->Repeater->ClientID%>',
+						grid_id: '<%=$this->JobWindow->DataGrid->ClientID%>',
+						request_obj: <%=$this->JobWindow->DataElementCall->ActiveControl->Javascript%>,
+						actions_obj: <%=$this->JobWindow->RunJobCall->ActiveControl->Javascript%>
+					});
+				</prop:ClientSide.OnComplete>
+			</com:TActiveButton>
+			<com:TActiveButton ID="JobRunBtn" CssClass="jobrun-btn">
+				<prop:Attributes.onmouseover>
+					showTip(
+						this,
+						'<%=Prado::localize('Run job')%>',
+						'<%=Prado::localize('Starting jobs.')%>'
+					);
+				</prop:Attributes.onmouseover>
+				<prop:ClientSide.OnLoading>
+					SlideWindow.getObj('JobRunWindow').showProgress(true);
+				</prop:ClientSide.OnLoading>
+				<prop:ClientSide.OnComplete>
+					SlideWindow.getObj('JobRunWindow').setWindowElementsEvent({
+						repeater_id: '<%=$this->JobRunWindow->Repeater->ClientID%>',
+						grid_id: '<%=$this->JobRunWindow->DataGrid->ClientID%>',
+						request_obj: <%=$this->JobRunWindow->DataElementCall->ActiveControl->Javascript%>
+					});
+				</prop:ClientSide.OnComplete>
+			</com:TActiveButton>
+			<com:TActiveButton CssClass="restore-btn" OnClick="restore">
+				<prop:Attributes.onmouseover>
+					showTip(
+						this,
+						'<%=Prado::localize('Restore')%>',
+						'<%=Prado::localize('Restore wizard.')%>'
+					);
+				</prop:Attributes.onmouseover>
+			</com:TActiveButton>
+			<com:TActiveButton ID="SettingsWizardBtn" CssClass="setting-btn" OnClick="configuration">
+				<prop:Attributes.onmouseover>
+					showTip(
+						this,
+						'<%=Prado::localize('Settings')%>',
+						'<%=Prado::localize('Management settings wizard.')%>'
+					);
+				</prop:Attributes.onmouseover>
+			</com:TActiveButton>
 		</div>
 		<com:TActivePanel ID="Content">
 			<div id="content">
