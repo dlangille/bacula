@@ -746,8 +746,8 @@ msgstr "Action:"
 msgid "unmark all and close"
 msgstr "unmark all and close"
 
-msgid "This action will clear bvfs cache that was created during preparing restore files. Please note that clear bvfs action does not clear nor remove temporary tables created for restore action purpose. They are tables with prefix b2[0-9]+ which need manual remove. There is not recommended use this action during restore job working. Are you sure?"
-msgstr "This action will clear bvfs cache that was created during preparing restore files.\\n\\nPlease note that clear bvfs action does not clear nor remove temporary tables created for restore action purpose. They are tables with prefix b2[0-9]+ which need manual remove.\\n\\nThere is not recommended use this action during restore job working.\\n\\nAre you sure?"
+msgid "This action will clear bvfs cache that was created during preparing restore files. There is not recommended use this action during restore job working. Are you sure?"
+msgstr "This action will clear bvfs cache that was created during preparing restore files.\\n\\nThere is not recommended use this action during restore job working.\\n\\nAre you sure?"
 
 msgid "Debug files enable possibility to save most of actions executed on Baculum WebGUI. Debug functionality should be enabled if is happening shomething wrong with Baculum or something that looks like a bug. Logs can be useful for detecting a problems in Baculum working. After confirmation this message Baculum debug files will be continuously saving in /protected/Data/ directory. Are you sure?"
 msgstr "Debug files enable possibility to save most of actions executed on Baculum WebGUI.\\n\\nDebug functionality should be enabled if is happening shomething wrong with Baculum or something that looks like a bug. Logs can be useful for detecting a problems in Baculum working.\\n\\nAfter confirmation this message Baculum debug files will be continuously saving in /protected/Data/ directory.\\n\\nAre you sure?"
