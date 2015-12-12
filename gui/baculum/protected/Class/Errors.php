@@ -110,9 +110,11 @@ class FileSetError extends GenericError {
 
 class BVFSError extends GenericError {
 	const ERROR_JOB_DOES_NOT_EXISTS = 70;
-	const ERROR_INVALID_PATH = 71;
+	const ERROR_INVALID_RPATH = 71;
+	const ERROR_INVALID_RESTORE_PATH = 72;
 
 	const MSG_ERROR_JOB_DOES_NOT_EXISTS = 'Job with inputed jobid does not exist.';
-	const MSG_ERROR_INVALID_PATH = 'Inputed path for restore is invalid. Proper format is b2[0-9]+.';
+	const MSG_ERROR_INVALID_RPATH = 'Inputed path for restore is invalid. Proper format is b2[0-9]+.';
+	const MSG_ERROR_INVALID_RESTORE_PATH = 'Inputted BVFS path param is invalid.';
 }
 ?>

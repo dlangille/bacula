@@ -69,13 +69,13 @@
 			<url ServiceParameter="API.RestoreRun" pattern="jobs/restore/" />
 			<!-- END Jobs -->
 			<!-- START BVFS -->
-			<url ServiceParameter="API.BVFSUpdate" pattern="bvfs/update/{id}/" parameters.id="[\d\,]+" />
-			<url ServiceParameter="API.BVFSLsDirs" pattern="bvfs/lsdirs/{id}/" parameters.id="[\d\,]+" parameters.path=".+" />
-			<url ServiceParameter="API.BVFSLsDirs" pattern="bvfs/lsdirs/{id}/limit/{limit}/" parameters.id="[\d\,]+" parameters.path=".+" parameters.limit="\d+" />
-			<url ServiceParameter="API.BVFSLsDirs" pattern="bvfs/lsdirs/{id}/limit/{limit}/{offset}/" parameters.id="[\d\,]+" parameters.path=".+" parameters.limit="\d+" parameters.offset="\d+" />
-			<url ServiceParameter="API.BVFSLsFiles" pattern="bvfs/lsfiles/{id}/" parameters.id="[\d\,]+" parameters.path=".+" />
-			<url ServiceParameter="API.BVFSLsFiles" pattern="bvfs/lsfiles/{id}/limit/{limit}/" parameters.id="[\d\,]+" parameters.path=".+" parameters.limit="\d+" />
-			<url ServiceParameter="API.BVFSLsFiles" pattern="bvfs/lsfiles/{id}/limit/{limit}/{offset}/" parameters.id="[\d\,]+" parameters.path=".+" parameters.limit="\d+" parameters.offset="\d+" />
+			<url ServiceParameter="API.BVFSUpdate" pattern="bvfs/update/" />
+			<url ServiceParameter="API.BVFSLsDirs" pattern="bvfs/lsdirs/" />
+			<url ServiceParameter="API.BVFSLsDirs" pattern="bvfs/lsdirs/limit/{limit}/" parameters.limit="\d+" />
+			<url ServiceParameter="API.BVFSLsDirs" pattern="bvfs/lsdirs/limit/{limit}/{offset}/" parameters.limit="\d+" parameters.offset="\d+" />
+			<url ServiceParameter="API.BVFSLsFiles" pattern="bvfs/lsfiles/" />
+			<url ServiceParameter="API.BVFSLsFiles" pattern="bvfs/lsfiles/limit/{limit}/" parameters.limit="\d+" />
+			<url ServiceParameter="API.BVFSLsFiles" pattern="bvfs/lsfiles/limit/{limit}/{offset}/" parameters.limit="\d+" parameters.offset="\d+" />
 			<url ServiceParameter="API.BVFSVersions" pattern="bvfs/versions/{client}/{jobid}/{pathid}/{filenameid}/" parameters.client=".+" parameters.jobid="\d+" parameters.pathid="\d+" parameters.filenameid="\d+" />
 			<url ServiceParameter="API.BVFSGetJobids" pattern="bvfs/getjobids/{id}/" parameters.id="[\d\,]+" />
 			<url ServiceParameter="API.BVFSRestore" pattern="bvfs/restore/" />

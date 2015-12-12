@@ -295,10 +295,10 @@ class RestoreWizard extends BaculumPage
 	
 		// generating Bvfs may takes a moment
 		$this->generateBvfsCacheByJobids($jobids);
-		$bvfsDirsList = $this->getModule('api')->get(array('bvfs', 'lsdirs', $jobids, '?path=' .  urlencode($this->getBrowserPath(true)) . ''));
+		$bvfsDirsList = $this->getModule('api')->set(array('bvfs', 'lsdirs'), array('jobids' => $jobids, 'path' => $this->getBrowserPath(true)));
 		$bvfsDirs = is_object($bvfsDirsList) ? $bvfsDirsList->output : array();
 		$dirs = $this->getModule('misc')->parseBvfsList($bvfsDirs);
-		$bvfsFilesList = $this->getModule('api')->get(array('bvfs', 'lsfiles', $jobids, '?path=' .  urlencode($this->getBrowserPath(true)) . ''));
+		$bvfsFilesList = $this->getModule('api')->set(array('bvfs', 'lsfiles'), array('jobids' => $jobids, 'path' => $this->getBrowserPath(true)));
 		$bvfsFiles = is_object($bvfsFilesList) ? $bvfsFilesList->output : array();
 		$files = $this->getModule('misc')->parseBvfsList($bvfsFiles);
 		$elements = array_merge($dirs, $files);
@@ -332,7 +332,7 @@ class RestoreWizard extends BaculumPage
 	}
 
 	private function generateBvfsCacheByJobids($jobids) {
-		$this->getModule('api')->set(array('bvfs', 'update', $jobids), array());
+		$this->getModule('api')->set(array('bvfs', 'update'), array('jobids' => $jobids));
 	}
 
 	private function setFileVersions($versions) {

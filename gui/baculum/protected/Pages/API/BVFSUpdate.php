@@ -24,19 +24,23 @@ class BVFSUpdate extends BaculumAPI {
 
 	public function get() {}
 
-	public function set($ids, $params) {
-		$jobids = explode(',', $ids);
+	public function set($param, $ids) {
 		$isValid = true;
-		for($i = 0; $i < count($jobids); $i++) {
-			$job = $this->getModule('job')->getJobById($jobids[$i]);
-			if(is_null($job)) {
-				$isValid = false;
-				break;
+		if (property_exists($ids, 'jobids')) {
+			$jobids = explode(',', $ids->jobids);
+			for($i = 0; $i < count($jobids); $i++) {
+				$job = $this->getModule('job')->getJobById($jobids[$i]);
+				if(is_null($job)) {
+					$isValid = false;
+					break;
+				}
 			}
+		} else {
+			$isValid = false;
 		}
 		
 		if($isValid === true) {
-			$result = $this->getModule('bconsole')->bconsoleCommand($this->director, array('.bvfs_update', 'jobid="' . $ids . '"'), $this->user);
+			$result = $this->getModule('bconsole')->bconsoleCommand($this->director, array('.bvfs_update', 'jobid="' . $ids->jobids . '"'), $this->user);
 			$this->output = $result->output;
 			$this->error = (integer)$result->exitcode;
 		} else {

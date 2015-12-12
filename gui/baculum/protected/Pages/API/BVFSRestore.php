@@ -57,8 +57,8 @@ class BVFSRestore extends BaculumAPI {
 				$this->output = $result->output;
 				$this->error = (integer)$result->exitcode;
 			} else {
-				$this->output = BVFSError::MSG_ERROR_INVALID_PATH;
-				$this->error = BVFSError::ERROR_INVALID_PATH;
+				$this->output = BVFSError::MSG_ERROR_INVALID_RPATH;
+				$this->error = BVFSError::ERROR_INVALID_RPATH;
 			}
 		} else {
 			$this->output = BVFSError::MSG_ERROR_JOB_DOES_NOT_EXISTS;

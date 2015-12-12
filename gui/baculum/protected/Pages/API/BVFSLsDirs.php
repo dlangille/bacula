@@ -22,33 +22,47 @@
  
 class BVFSLsDirs extends BaculumAPI {
 
-	public function get() {
-		$ids = $this->Request['id'];
-		$path = $this->Request['path'];
+	public function get() {}
+
+	public function set($param, $ids) {
 		$limit = intval($this->Request['limit']);
 		$offset = intval($this->Request['offset']);
-		$jobids = explode(',', $ids);
 		$isValid = true;
-		for($i = 0; $i < count($jobids); $i++) {
-			$job = $this->getModule('job')->getJobById($jobids[$i]);
-			if(is_null($job)) {
-				$isValid = false;
-				break;
+		if (property_exists($ids, 'jobids')) {
+			$jobids = explode(',', $ids->jobids);
+			for($i = 0; $i < count($jobids); $i++) {
+				$job = $this->getModule('job')->getJobById($jobids[$i]);
+				if(is_null($job)) {
+					$isValid = false;
+					break;
+				}
 			}
+		} else {
+			$isValid = false;
+		}
+
+		$path = null;
+		if (property_exists($ids, 'path')) {
+			$path = $ids->path;
 		}
 		
 		if($isValid === true) {
-			$cmd = array('.bvfs_lsdirs', 'jobid="' . $ids . '"', 'path="' . $path . '"');
-			
-			if($offset > 0) {
-				array_push($cmd, 'offset="' .  $offset . '"');
+			if (!is_null($path)) {
+				$cmd = array('.bvfs_lsdirs', 'jobid="' . $ids->jobids . '"', 'path="' . $path . '"');
+
+				if($offset > 0) {
+					array_push($cmd, 'offset="' .  $offset . '"');
+				}
+				if($limit > 0) {
+					array_push($cmd, 'limit="' .  $limit . '"');
+				}
+				$result = $this->getModule('bconsole')->bconsoleCommand($this->director, $cmd, $this->user);
+				$this->output = $result->output;
+				$this->error = (integer)$result->exitcode;
+			} else {
+				$this->output = BVFSError::ERROR_INVALID_RESTORE_PATH;
+				$this->error = BVFSError::MSG_ERROR_INVALID_RESTORE_PATH;
 			}
-			if($limit > 0) {
-				array_push($cmd, 'limit="' .  $limit . '"');
-			}
-			$result = $this->getModule('bconsole')->bconsoleCommand($this->director, $cmd, $this->user);
-			$this->output = $result->output;
-			$this->error = (integer)$result->exitcode;
 		} else {
 			$this->output = BVFSError::MSG_ERROR_JOB_DOES_NOT_EXISTS;
 			$this->error = BVFSError::ERROR_JOB_DOES_NOT_EXISTS;
