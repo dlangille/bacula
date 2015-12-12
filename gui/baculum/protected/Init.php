@@ -19,11 +19,24 @@
  *
  * Bacula(R) is a registered trademark of Kern Sibbald.
  */
-define('APPLICATION_DIRECTORY', __DIR__);
 
-require_once('./protected/Init.php');
-require_once('./framework/prado.php');
+$timezone = 'UTC';
+if (!ini_get('date.timezone')) {
+	if (strtoupper(substr(PHP_OS, 0, 3)) != 'WIN') {
+		exec('date +%Z', $tz, $retcode);
+		if ($retcode === 0 && count($tz) === 1) {
+			$timezone = $tz[0];
+		}
+	}
+	date_default_timezone_set($timezone);
+}
 
-$application=new TApplication;
-$application->run();
+// Support for web servers which do not provide direct info about HTTP Basic auth to PHP superglobal $_SERVER array.
+if(!isset($_SERVER['PHP_AUTH_USER']) && !isset($_SERVER['PHP_AUTH_PW'])) {
+    list($_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW']) = explode(':', base64_decode(substr($_SERVER['HTTP_AUTHORIZATION'], 6)));
+}
+
+require_once('./protected/Pages/Requirements.php');
+new Requirements(__DIR__);
+
 ?>

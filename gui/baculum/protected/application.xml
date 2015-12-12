@@ -4,6 +4,8 @@
 		<using namespace="Application.Class.*" />
 		<using namespace="System.Data.ActiveRecord.*" />
 		<using namespace="System.I18N.*" />
+		<using namespace="Application.Portlets.BButton" />
+		<using namespace="Application.Portlets.BActiveButton" />
 	</paths>
 	<modules>
 		<module id="request" class="THttpRequest" EnableCookieValidation="true" />
