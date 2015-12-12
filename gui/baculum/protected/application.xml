@@ -65,6 +65,7 @@
 			<url ServiceParameter="API.JobCancel" pattern="jobs/cancel/{id}/" parameters.id="\d+"/>
 			<url ServiceParameter="API.JobsShow" pattern="jobs/show/" />
 			<url ServiceParameter="API.JobShow" pattern="jobs/show/{id}/" parameters.id="\d+" />
+			<url ServiceParameter="API.JobShow" pattern="jobs/show/name/{name}/" parameters.name=".+" />
 			<url ServiceParameter="API.RestoreRun" pattern="jobs/restore/" />
 			<!-- END Jobs -->
 			<!-- START BVFS -->
