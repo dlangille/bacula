@@ -29,6 +29,7 @@ class JobConfiguration extends Portlets {
 	const DEFAULT_JOB_PRIORITY = 10;
 
 	const RESOURCE_SHOW_PATTERN = '/^\s+--> %resource: name=(.+?(?=\s\S+\=.+)|.+$)/i';
+	const JOB_SHOW_PATTERN = '/^Job:\sname=(?P<jobname>.+)\sJobType=\d+\slevel=(?P<level>\w+)\sPriority=(?P<priority>\d+)/i';
 
 	public $jobToVerify = array('C', 'O', 'd');
 
@@ -230,7 +231,7 @@ class JobConfiguration extends Portlets {
 		return $verifyVals;
 	}
 
-	private function getResourceName($resource, $jobshow) {
+	public function getResourceName($resource, $jobshow) {
 		$resource_name = null;
 		$pattern = str_replace('%resource', $resource, self::RESOURCE_SHOW_PATTERN);
 		for ($i = 0; $i < count($jobshow); $i++) {
@@ -240,6 +241,19 @@ class JobConfiguration extends Portlets {
 			}
 		}
 		return $resource_name;
+	}
+
+	public function getJobAttr($jobshow) {
+		$attr = array();
+		for ($i = 0; $i < count($jobshow); $i++) {
+			if (preg_match(self::JOB_SHOW_PATTERN, $jobshow[$i], $match) === 1) {
+				$attr['jobname'] = $match['jobname'];
+				$attr['level'] = $match['level'];
+				$attr['priority'] = $match['priority'];
+				break;
+			}
+		}
+		return $attr;
 	}
 
 	private function getPoolByName($name) {

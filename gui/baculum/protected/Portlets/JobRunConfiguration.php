@@ -32,15 +32,26 @@ class JobRunConfiguration extends Portlets {
 	public $verifyOptions = array('jobname' => 'Verify by Job Name', 'jobid' => 'Verify by JobId');
 
 	public function configure($jobname) {
+		$jobshow = $this->Application->getModule('api')->get(array('jobs', 'show', 'name', rawurlencode($jobname)), true)->output;
+
 		$this->JobName->Text = $jobname;
 		$this->Estimation->Text = '';
 
-		$this->Level->dataSource = $this->Application->getModule('misc')->getJobLevels();
+		$levels = $this->Application->getModule('misc')->getJobLevels();
+		$jobAttr = $this->getPage()->JobConfiguration->getJobAttr($jobshow);
+		$levelsFlip = array_flip($levels);
+
+		$this->Level->dataSource = $levels;
+		if (array_key_exists('level', $jobAttr) && array_key_exists($jobAttr['level'], $levelsFlip)) {
+			$this->Level->SelectedValue = $levelsFlip[$jobAttr['level']];
+
+			$isVerifyOption = in_array($levelsFlip[$jobAttr['level']], $this->getPage()->JobConfiguration->jobToVerify);
+			$this->JobToVerifyOptionsLine->Display = ($isVerifyOption === true) ? 'Dynamic' : 'None';
+			$this->JobToVerifyJobNameLine->Display = ($isVerifyOption === true) ? 'Dynamic' : 'None';
+			$this->JobToVerifyJobIdLine->Display = 'None';
+		}
 		$this->Level->dataBind();
 
-		$this->JobToVerifyOptionsLine->Display = 'None';
-		$this->JobToVerifyJobNameLine->Display = 'None';
-		$this->JobToVerifyJobIdLine->Display = 'None';
 		$this->AccurateLine->Display = 'Dynamic';
 		$this->EstimateLine->Display = 'Dynamic';
 
@@ -64,38 +75,58 @@ class JobRunConfiguration extends Portlets {
 		$this->JobToVerifyJobName->dataBind();
 
 		$clients = $this->Application->getModule('api')->get(array('clients'), true)->output;
+		$selectedClient = $this->getPage()->JobConfiguration->getResourceName('client', $jobshow);
+		$selectedClientId = null;
 		$clientsList = array();
 		foreach($clients as $client) {
+			if ($client->name === $selectedClient) {
+				$selectedClientId = $client->clientid;
+			}
 			$clientsList[$client->clientid] = $client->name;
 		}
 		$this->Client->dataSource = $clientsList;
+		$this->Client->SelectedValue = $selectedClientId;
 		$this->Client->dataBind();
 
 		$filesetsAll = $this->Application->getModule('api')->get(array('filesets'), true)->output;
+		$selectedFileset = $this->getPage()->JobConfiguration->getResourceName('fileset', $jobshow);
 		$filesetsList = array();
 		foreach($filesetsAll as $director => $filesets) {
 			$filesetsList = array_merge($filesets, $filesetsList);
 		}
 		$this->FileSet->dataSource = array_combine($filesetsList, $filesetsList);
+		$this->FileSet->SelectedValue = $selectedFileset;
 		$this->FileSet->dataBind();
 
 		$pools = $this->Application->getModule('api')->get(array('pools'), true)->output;
+		$selectedPool = $this->getPage()->JobConfiguration->getResourceName('pool', $jobshow);
+		$selectedPoolId = null;
 		$poolList = array();
 		foreach($pools as $pool) {
+			if ($pool->name === $selectedPool) {
+				$selectedPoolId = $pool->poolid;
+			}
 			$poolList[$pool->poolid] = $pool->name;
 		}
 		$this->Pool->dataSource = $poolList;
+		$this->Pool->SelectedValue = $selectedPoolId;
 		$this->Pool->dataBind();
 
 		$storages = $this->Application->getModule('api')->get(array('storages'), true)->output;
+		$selectedStorage = $this->getPage()->JobConfiguration->getResourceName('storage', $jobshow);
+		$selectedStorageId = null;
 		$storagesList = array();
 		foreach($storages as $storage) {
+			if ($storage->name === $selectedStorage) {
+				$selectedStorageId = $storage->storageid;
+			}
 			$storagesList[$storage->storageid] = $storage->name;
 		}
 		$this->Storage->dataSource = $storagesList;
+		$this->Storage->SelectedValue = $selectedStorageId;
 		$this->Storage->dataBind();
 
-		$this->Priority->Text = self::DEFAULT_JOB_PRIORITY;
+		$this->Priority->Text = array_key_exists('priority', $jobAttr) ? $jobAttr['priority'] : self::DEFAULT_JOB_PRIORITY;
 	}
 
 	public function run_job($sender, $param) {
