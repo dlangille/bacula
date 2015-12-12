@@ -29,6 +29,7 @@ class Miscellaneous extends TModule {
 		'D' => 'Admin',
 		'A' => 'Archive',
 		'C' => 'Copy',
+		'c' => 'Copy Job',
 		'g' => 'Migration'
 	);
 
