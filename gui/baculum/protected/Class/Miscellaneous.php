@@ -20,6 +20,8 @@ class Miscellaneous extends TModule {
 
 	const LICENCE_FILE = 'LICENSE';
 
+	const RPATH_PATTERN = '/^b2\d+$/';
+
 	private $jobTypes = array(
 		'B' => 'Backup',
 		'M' => 'Migrated',

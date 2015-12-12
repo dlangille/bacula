@@ -33,13 +33,15 @@ class RestoreRun extends BaculumAPI {
 		$replace = property_exists($params, 'replace') ? $params->replace : null;
 
 		$client = $this->getModule('client')->getClientById($clientid);
+		$misc = $this->getModule('misc');
 
 		if(!is_null($fileset)) {
 			if(!is_null($client)) {
-				if(preg_match('/^b2[\d]+$/', $rfile) === 1) {
+				if(preg_match($misc::RPATH_PATTERN, $rfile) === 1) {
 					if(!is_null($where)) {
 						if(!is_null($replace)) {
 							$restore = $this->getModule('bconsole')->bconsoleCommand($this->director, array('restore', 'file="?' . $rfile . '"', 'client="' . $client->name . '"', 'where="' . $where . '"', 'replace="' . $replace . '"', 'fileset="' . $fileset . '"', 'priority="' . $priority . '"', 'yes'), $this->user);
+							$this->removeTmpRestoreTable($rfile);
 							$this->output = $restore->output;
 							$this->error = (integer)$restore->exitcode;
 						} else {
@@ -61,6 +63,19 @@ class RestoreRun extends BaculumAPI {
 		} else {
 			$this->output = JobError::MSG_ERROR_FILESETID_DOES_NOT_EXISTS;
 			$this->error = JobError::ERROR_FILESETID_DOES_NOT_EXISTS;
+		}
+	}
+
+	private function removeTmpRestoreTable($tableName) {
+		$misc = $this->getModule('misc');
+		if (preg_match($misc::RPATH_PATTERN, $tableName) === 1) {
+			$db = new ActiveRecord();
+			$connection = $db->getDbConnection();
+			$connection->setActive(true);
+			$sql = "DROP TABLE $tableName";
+			$pdo = $connection->getPdoInstance();
+			$pdo->exec($sql);
+			$pdo = null;
 		}
 	}
 }
