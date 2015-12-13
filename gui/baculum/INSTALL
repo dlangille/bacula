@@ -237,8 +237,15 @@ In directory examples/ exists following configuration samples:
  ./examples/selinux/baculum.te                       <--- SELinux text module format
  ./examples/selinux/baculum.pp                       <--- SELinux binary module format
  ./examples/deb/                                     <=== samples for some deb-based distributions
+ ./examples/deb/baculum.startup                      <--- Baculum SysVinit startup script
  ./examples/deb/baculum.lighttpd.conf                <--- sample Lighttpd config
  ./examples/deb/baculum.users                        <--- sample HTTP Basic auth file (user: admin, pass: admin)
+ ./examples/deb/baculum-apache.conf                  <--- sample Apache config
+ ./examples/deb-template                             <=== Directory with templates used by Makefile
+ ./examples/deb-template/baculum.users               <--- sample HTTP Basic auth file (user: admin, pass: admin)
+ ./examples/deb-template/baculum-lighttpd.conf       <--- Lighttpd config template
+ ./examples/deb-template/baculum-lighttpd.service    <--- Baculum systemd unit for Lighttpd
+ ./examples/deb-template/baculum-apache.conf         <--- Apache config template
  ./examples/rpm-template/                            <=== Directory with templates used by Makefile
  ./examples/rpm-template/baculum-apache.conf         <--- Apache config template
  ./examples/rpm-template/baculum-lighttpd.service    <--- Baculum systemd unit for Lighttpd
@@ -248,7 +255,8 @@ In directory examples/ exists following configuration samples:
  ./examples/rpm-template/baculum.startup             <--- Baculum SysVinit startup script
  ./examples/sudo/                                    <=== example sudoers.d configurations
  ./examples/sudo/baculum-httpd                       <--- sample sudo for Apache user
- ./examples/sudo/baculum-lighttpd                    <--- sample sudo for Lighttpd
+ ./examples/sudo/baculum-lighttpd                    <--- sample sudo for Lighttpd user
+ ./examples/sudo/baculum-nginx                       <--- sample sudo for Nginx user
  ./examples/rpm/                                     <=== samples for some rpm-based distributions
  ./examples/rpm/baculum-apache.conf                  <--- Apache config file
  ./examples/rpm/baculum-lighttpd.service             <--- Baculum system unit
@@ -256,6 +264,9 @@ In directory examples/ exists following configuration samples:
  ./examples/rpm/baculum-lighttpd.conf                <--- Lighttpd config file
  ./examples/rpm/baculum.users                        <--- HTTP Basic auth file (user: admin, pass: admin)
  ./examples/rpm/baculum.startup                      <--- Baculum SysVinit startup script
+ ./examples/nginx/                                   <=== example Nginx configurations
+ ./examples/nginx/php-fpm/baculum-php.conf           <--- example PHP-FPM config for Nginx
+ ./examples/nginx/baculum.conf                       <--- sample Nginx config
 
 
 7 Makefile
