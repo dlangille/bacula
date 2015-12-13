@@ -1,15 +1,17 @@
 var Units = {
 	get_decimal_size: function(size) {
+		size = parseInt(size, 10);
 		var size_unit = 'B';
 		var units = ['K', 'M', 'G', 'T', 'P'];
 		var unit;
 		var dec_size = size.toString() + ((size > 0 ) ? size_unit : '');
-		while(size > 1000) {
+		while(size >= 1000) {
 			size /= 1000;
 			unit = units.shift(units);
 		}
 		if (unit) {
-			dec_size = size.toFixed(1) + unit + size_unit;
+			dec_size = (Math.floor(size * 10) / 10).toFixed(1);
+			dec_size += unit + size_unit;
 		}
 		return dec_size;
 	}
