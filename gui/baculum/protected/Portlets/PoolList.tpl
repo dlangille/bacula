@@ -36,7 +36,7 @@
 			/>
 			<com:TActiveTemplateColumn HeaderText="Vol. retention" SortExpression="volretention">
 				<prop:ItemTemplate>
-					<%=(integer)($this->getParent()->Data['volretention'] / 3600 / 24)%> <%=$this->getParent()->Data['volretention'] < 172800 ? 'day' : 'days'%>
+					<div rel="<%=$this->getParent()->Data['volretention']%>"><%=(integer)($this->getParent()->Data['volretention'] / 3600 / 24)%> <%=$this->getParent()->Data['volretention'] < 172800 ? 'day' : 'days'%>
 				</prop:ItemTemplate>
 			</com:TActiveTemplateColumn>
 			<com:TActiveTemplateColumn HeaderText="AutoPrune" SortExpression="autoprune" ItemStyle.HorizontalAlign="Center">

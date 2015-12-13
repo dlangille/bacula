@@ -34,7 +34,7 @@
 			</com:TActiveTemplateColumn>
 			<com:TActiveTemplateColumn HeaderText="<%[ File Retention ]%>" SortExpression="fileretention">
 				<prop:ItemTemplate>
-					<%=(integer)($this->getParent()->Data['fileretention'] / 3600 / 24)%> <%=$this->getParent()->Data['fileretention'] < 172800 ? Prado::localize('day') : Prado::localize('days')%>
+					<div rel="<%=$this->getParent()->Data['fileretention']%>"><%=(integer)($this->getParent()->Data['fileretention'] / 3600 / 24)%> <%=$this->getParent()->Data['fileretention'] < 172800 ? Prado::localize('day') : Prado::localize('days')%></div>
 				</prop:ItemTemplate>
 			</com:TActiveTemplateColumn>
 			<com:TActiveTemplateColumn HeaderText="<%[ Job Retention ]%>" SortExpression="jobretention">

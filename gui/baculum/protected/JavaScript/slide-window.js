@@ -304,9 +304,16 @@ var SlideWindowClass = Class.create({
 		var tb = table.tBodies[0], tr = Array.prototype.slice.call(tb.rows, 0), i;
 		reverse = -((+reverse) || -1);
 		tr = tr.sort(function (a, b) {
-			var val;
-			var val_a = a.cells[col].textContent.trim();
-			var val_b = b.cells[col].textContent.trim();
+			var val, val_a, val_b, el_a, el_b;
+			el_a = a.cells[col].childNodes[1];
+			el_b = b.cells[col].childNodes[1];
+			if (el_a && el_b && el_a.nodeType === 1 && el_b.nodeType === 1 && el_a.hasAttribute('rel') && el_b.hasAttribute('rel')) {
+				val_a = el_a.getAttribute('rel');
+				val_b = el_b.getAttribute('rel');
+			} else {
+				val_a = a.cells[col].textContent.trim();
+				val_b = b.cells[col].textContent.trim();
+			}
 			if (!isNaN(parseFloat(val_a)) && isFinite(val_a) && !isNaN(parseFloat(val_b)) && isFinite(val_b)) {
 				val = val_a - val_b
 			} else {

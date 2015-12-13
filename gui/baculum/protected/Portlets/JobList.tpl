@@ -56,7 +56,7 @@
 		</com:TActiveTemplateColumn>
 		<com:TActiveTemplateColumn HeaderText="<%[ Size ]%>" SortExpression="jobbytes">
 			<prop:ItemTemplate>
-				<div class="size"><%=$this->getParent()->Data['jobbytes']%></div>
+				<div class="size" rel="<%=$this->getParent()->Data['jobbytes']%>"><%=$this->getParent()->Data['jobbytes']%></div>
 			</prop:ItemTemplate>
 		</com:TActiveTemplateColumn>
 		<com:TActiveBoundColumn SortExpression="jobfiles" HeaderText="<%[ Files ]%>" DataField="jobfiles" />
