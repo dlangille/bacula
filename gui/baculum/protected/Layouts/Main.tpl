@@ -12,6 +12,7 @@
 			<com:TClientScript ScriptUrl=<%~ ../JavaScript/panel-window.js %> />
 			<com:TClientScript ScriptUrl=<%~ ../JavaScript/flotr2.js %> />
 			<com:TClientScript ScriptUrl=<%~ ../JavaScript/graph.js %> />
+			<com:TClientScript ScriptUrl=<%~ ../JavaScript/misc.js %> />
 			<com:TContentPlaceHolder ID="Main" />
 		</com:TForm>
 	</body>

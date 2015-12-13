@@ -35,7 +35,7 @@
 		/>
 		<com:TActiveTemplateColumn HeaderText="<%[ Job name ]%>" SortExpression="name">
 			<prop:ItemTemplate>
-				<div><%=$this->getParent()->Data['name']%></div>
+				<div title="<%=$this->getParent()->Data['name']%>"><%=$this->getPage()->JobWindow->formatJobName($this->getParent()->Data['name'])%></div>
                                 <input type="hidden" name="<%=$this->getParent()->ClientID%>" value="<%=$this->getParent()->Data['jobid']%>" />
 			</prop:ItemTemplate>
 		</com:TActiveTemplateColumn>
@@ -54,6 +54,12 @@
 				<div class="job-status-<%=isset($this->getParent()->Data['jobstatus']) ? $this->getParent()->Data['jobstatus'] : ''%>" title="<%=isset($this->getPage()->JobWindow->jobStates[$this->getParent()->Data['jobstatus']]['description']) ? $this->getPage()->JobWindow->jobStates[$this->getParent()->Data['jobstatus']]['description'] : ''%>"><%=isset($this->getPage()->JobWindow->jobStates[$this->getParent()->Data['jobstatus']]['value']) ? $this->getPage()->JobWindow->jobStates[$this->getParent()->Data['jobstatus']]['value'] : ''%></div>
 			</prop:ItemTemplate>
 		</com:TActiveTemplateColumn>
+		<com:TActiveTemplateColumn HeaderText="<%[ Size ]%>" SortExpression="jobbytes">
+			<prop:ItemTemplate>
+				<div class="size"><%=$this->getParent()->Data['jobbytes']%></div>
+			</prop:ItemTemplate>
+		</com:TActiveTemplateColumn>
+		<com:TActiveBoundColumn SortExpression="jobfiles" HeaderText="<%[ Files ]%>" DataField="jobfiles" />
 		<com:TActiveTemplateColumn HeaderText="<%[ End time ]%>" SortExpression="endtime">
 			<prop:ItemTemplate>
 				<%=$this->getParent()->Data['endtime']%>

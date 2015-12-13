@@ -1014,3 +1014,6 @@ msgstr "Dodaj"
 msgid "Actions"
 msgstr "Akcje"
 
+msgid "Size"
+msgstr "Rozmiar"
+

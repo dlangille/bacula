@@ -1013,3 +1013,6 @@ msgstr "Add"
 msgid "Actions"
 msgstr "Actions"
 
+msgid "Size"
+msgstr "Size"
+

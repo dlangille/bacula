@@ -57,7 +57,7 @@ class Miscellaneous extends TModule {
 		'e' => array('value' => 'Non-fatal error', 'description' =>'Non-fatal error'),
 		'f' => array('value' => 'Fatal error', 'description' =>'Fatal error'),
 		'D' => array('value' => 'Verify Diff.', 'description' =>'Verify Differences'),
-		'A' => array('value' => 'Canceled by user', 'description' =>'Canceled by the user'),
+		'A' => array('value' => 'Canceled', 'description' =>'Canceled by the user'),
 		'I' => array('value' => 'Incomplete', 'description' =>'Incomplete Job'),
 		'F' => array('value' => 'Waiting on FD', 'description' =>'Waiting on the File daemon'),
 		'S' => array('value' => 'Waiting on SD', 'description' =>'Waiting on the Storage daemon'),

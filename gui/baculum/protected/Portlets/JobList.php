@@ -137,5 +137,12 @@ class JobList extends Portlets implements ISlideWindow {
 		}
 		$this->CheckedValues->Value = "";
 	}
+
+	public function formatJobName($name) {
+		if (strlen($name) > 25) {
+			$name = substr($name, 0, 10) . '...' . substr($name, -13);
+		}
+		return $name;
+	}
 }
 ?>

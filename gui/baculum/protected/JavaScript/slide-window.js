@@ -285,6 +285,7 @@ var SlideWindowClass = Class.create({
 				set_callback_parameter(tr);
 			}.bind(this, tr));
 		}.bind(this));
+		Formatters.set_formatters();
 	},
 
 	isConfigurationOpen: function() {
