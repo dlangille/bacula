@@ -286,6 +286,7 @@ var SlideWindowClass = Class.create({
 			}.bind(this, tr));
 		}.bind(this));
 		Formatters.set_formatters();
+		this.revertSortingFromCookie();
 	},
 
 	isConfigurationOpen: function() {
@@ -299,7 +300,7 @@ var SlideWindowClass = Class.create({
 		return is_open;
 	},
 
-	sortTable: function (col, reverse) {
+	sortTable: function (col, reverse, set_cookie) {
 		var table = document.getElementById(this.gridEl);
 		var tb = table.tBodies[0], tr = Array.prototype.slice.call(tb.rows, 0), i;
 		reverse = -((+reverse) || -1);
@@ -321,14 +322,18 @@ var SlideWindowClass = Class.create({
 			}
 			return reverse * (val);
 		});
-		for(i = 0; i < tr.length; i++) {
-			var even = ((i % 2) == 0);
+		var even;
+		for (i = 0; i < tr.length; i++) {
+			even = ((i % 2) == 0);
 			if (even) {
 				tr[i].className = this.elements.contentItems;
 			} else {
 				tr[i].className = this.elements.contentAlternatingItems;
 			}
 			tb.appendChild(tr[i]);
+		}
+		if (set_cookie === true) {
+			Cookies.set_cookie(this.gridEl, col + ':' + reverse);
 		}
 	},
 
@@ -351,9 +356,19 @@ var SlideWindowClass = Class.create({
 		while (--i >= downCounter) (function (i) {
 			var dir = 1;
 			th[i].addEventListener('click', function () {
-				self.sortTable(i, (dir = 1 - dir));
+				self.sortTable(i, (dir = 1 - dir), true);
 			});
 		}(i));
+	},
+
+	revertSortingFromCookie: function() {
+		var sorting = Cookies.get_cookie(this.gridEl);
+		if (sorting != null) {
+			var sort_param = sorting.split(':');
+			var col = parseInt(sort_param[0], 10);
+			var order = -(parseInt(sort_param[1], 10));
+			this.sortTable(col, order);
+		}
 	},
 
 	setSearch: function() {
