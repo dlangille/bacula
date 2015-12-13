@@ -1016,3 +1016,6 @@ msgstr "Actions"
 msgid "Size"
 msgstr "Size"
 
+msgid "Job:"
+msgstr "Job:"
+
