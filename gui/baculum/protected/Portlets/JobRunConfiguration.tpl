@@ -121,6 +121,13 @@
 			<com:TCallback ID="ReloadRunJobs" OnCallback="Page.JobRunWindow.prepareData" ClientSide.OnComplete="RunSlideWindow.getObj('JobRunWindow').setLoadRequest();" />
 			<script type="text/javascript">
 				var jobrun_callback_func = function() {
+					/* If Job Run list window is not open or if actually toolbar is used
+					 * then Job Run window refresh does not take place.
+					 */
+					var obj = SlideWindow.getObj('JobRunWindow');
+					if (obj.isWindowOpen() === false || obj.isToolbarOpen() === true) {
+						return;
+					}
 					var mainForm = Prado.Validation.getForm();
 					var callback = <%=$this->ReloadRunJobs->ActiveControl->Javascript%>;
 					if (Prado.Validation.managers[mainForm].getValidatorsWithError('JobRunGroup').length == 0) {

@@ -79,10 +79,19 @@
 		<com:TCallback ID="ReloadVolumes" OnCallback="Page.VolumeWindow.prepareData" ClientSide.OnComplete="SlideWindow.getObj('VolumeWindow').setLoadRequest();" />
 		<script type="text/javascript">
 			var volume_callback_func = function() {
+				/*
+				 * Check if Volume list window is open and if any checkbox from actions is not checked.
+				 * Also check if toolbar is open.
+				 * If yes, then is possible to refresh Volume list window.
+				 */
+				var obj = SlideWindow.getObj('VolumeWindow');
+				if (obj.isWindowOpen() === false || obj.areCheckboxesChecked() === true || obj.isToolbarOpen() === true) {
+					return;
+				}
 				var mainForm = Prado.Validation.getForm();
 				var callback = <%=$this->ReloadVolumes->ActiveControl->Javascript%>;
 				if (Prado.Validation.managers[mainForm].getValidatorsWithError('VolumeGroup').length == 0) {
-					SlideWindow.getObj('VolumeWindow').markAllChecked(false);
+					obj.markAllChecked(false);
 					callback.dispatch();
 				}
 			}

@@ -124,15 +124,18 @@
 				var job_callback_func = function() {
 					/*
 					 * Check if Job list window is open and if any checkbox from actions is not checked.
+				 	 * Also check if toolbar is open.
 					 * If yes, then is possible to refresh Job list window.
 					 */
-					if(SlideWindow.getObj('JobWindow').isWindowOpen() === true && SlideWindow.getObj('JobWindow').areActionsOpen() === false) {
-						var mainForm = Prado.Validation.getForm();
-						var callback = <%=$this->ReloadJobs->ActiveControl->Javascript%>;
-						if (Prado.Validation.managers[mainForm].getValidatorsWithError('JobGroup').length == 0) {
-							SlideWindow.getObj('JobWindow').markAllChecked(false);
-							callback.dispatch();
-						}
+					var obj = SlideWindow.getObj('JobWindow');
+					if (obj.isWindowOpen() === false || obj.areCheckboxesChecked() === true || obj.isToolbarOpen() === true) {
+						return;
+					}
+					var mainForm = Prado.Validation.getForm();
+					var callback = <%=$this->ReloadJobs->ActiveControl->Javascript%>;
+					if (Prado.Validation.managers[mainForm].getValidatorsWithError('JobGroup').length == 0) {
+						obj.markAllChecked(false);
+						callback.dispatch();
 					}
 				}
 			</script>

@@ -35,6 +35,13 @@
 			<com:TCallback ID="ReloadClients" OnCallback="Page.ClientWindow.prepareData" ClientSide.OnComplete="SlideWindow.getObj('ClientWindow').setLoadRequest();" />
 			<script type="text/javascript">
 				var client_callback_func = function() {
+					/* If Client list window is not open or if actually toolbar is used
+					 * then Client window refresh does not take place.
+					 */
+					var obj = SlideWindow.getObj('ClientWindow');
+					if (obj.isWindowOpen() === false || obj.isToolbarOpen() === true) {
+						return;
+					}
 					var mainForm = Prado.Validation.getForm();
 					var callback = <%=$this->ReloadClients->ActiveControl->Javascript%>;
 					if (Prado.Validation.managers[mainForm].getValidatorsWithError('ClientGroup').length == 0) {

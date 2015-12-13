@@ -405,11 +405,10 @@ var SlideWindowClass = Class.create({
 		return $(this.windowId + this.elements.toolbarSuffix).visible();
 	},
 	setActions: function() {
-		var table = $(this.window).down('table');
-		var checkboxes = table.select('input[name="actions_checkbox"]');
+		var checkboxes = this.getCheckboxes();
 		checkboxes.each(function(el) {
 			el.observe('change', function() {
-				var is_checked = this.is_any_checked(checkboxes);
+				var is_checked = this.isAnyChecked(checkboxes);
 				if(is_checked === true && !this.areActionsOpen()) {
 					this.showActions();
 				} else if (is_checked === false && this.areActionsOpen()) {
@@ -418,7 +417,7 @@ var SlideWindowClass = Class.create({
 			}.bind(this));
                 }.bind(this));
 	},
-	is_any_checked: function(checkboxes) {
+	isAnyChecked: function(checkboxes) {
 		var is_checked = false;
 		checkboxes.each(function(ch) {
 			if(ch.checked == true) {
@@ -429,10 +428,19 @@ var SlideWindowClass = Class.create({
 		return is_checked;
 	},
 
+	getCheckboxes: function() {
+		var checkboxes = $(this.gridEl).select('input[name="actions_checkbox"]');
+		return checkboxes;
+	},
+
+	areCheckboxesChecked: function() {
+		var checkboxes = this.getCheckboxes();
+		return this.isAnyChecked(checkboxes);
+	},
+
 	markAllChecked: function(check) {
 		this.checked = [];
-		var table = $(this.window).down('table');
-		var checkboxes = table.select('input[name="actions_checkbox"]');
+		var checkboxes = this.getCheckboxes();
 		var containerId;
 		if(checkboxes.length > 0) {
 			checkboxes.each(function(ch, index) {

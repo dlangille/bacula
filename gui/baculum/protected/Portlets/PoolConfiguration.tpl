@@ -83,6 +83,13 @@
 		<com:TCallback ID="ReloadPools" OnCallback="Page.PoolWindow.prepareData" ClientSide.OnComplete="SlideWindow.getObj('PoolWindow').setLoadRequest();" />
 		<script type="text/javascript">
 			var pool_callback_func = function() {
+				/* If Pool list window is not open or if actually toolbar is used
+				 * then Pool window refresh does not take place.
+				 */
+				var obj = SlideWindow.getObj('PoolWindow');
+				if (obj.isWindowOpen() === false || obj.isToolbarOpen() === true) {
+					return;
+				}
 				var mainForm = Prado.Validation.getForm();
 				var callback = <%=$this->ReloadPools->ActiveControl->Javascript%>;
 				if (Prado.Validation.managers[mainForm].getValidatorsWithError('PoolGroup').length == 0) {
