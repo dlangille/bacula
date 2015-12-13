@@ -428,6 +428,9 @@ bool dir_update_volume_info(DCR *dcr, bool label, bool update_LastWritten)
       }
       Dmsg1(100, "get_volume_info() %s", dir->msg);
       /* Update dev Volume info in case something changed (e.g. expired) */
+      vol->Slot = dev->VolCatInfo.Slot;
+      bstrncpy(vol->VolCatStatus, dcr->VolCatInfo.VolCatStatus, sizeof(vol->VolCatStatus));
+
       dcr->VolCatInfo.VolCatAdataBytes = dev->VolCatInfo.VolCatAdataBytes;
       dcr->VolCatInfo.VolCatAmetaBytes = dev->VolCatInfo.VolCatAmetaBytes;
       dcr->VolCatInfo.VolCatHoleBytes = dev->VolCatInfo.VolCatHoleBytes;
@@ -436,8 +439,13 @@ bool dir_update_volume_info(DCR *dcr, bool label, bool update_LastWritten)
       dcr->VolCatInfo.VolCatAmetaPadding = dev->VolCatInfo.VolCatAmetaPadding;
       dcr->VolCatInfo.VolCatAdataPadding = dev->VolCatInfo.VolCatAdataPadding;
       dcr->VolCatInfo.VolCatFiles = dev->VolCatInfo.VolCatFiles;
-      bstrncpy(vol->VolCatStatus, dcr->VolCatInfo.VolCatStatus, sizeof(vol->VolCatStatus));
-      /* ***FIXME***  copy other fields that can change, if any */
+      dcr->VolCatInfo.VolCatBytes = dev->VolCatInfo.VolCatBytes;
+      dcr->VolCatInfo.VolCatMounts = dev->VolCatInfo.VolCatMounts;
+      dcr->VolCatInfo.VolCatJobs = dev->VolCatInfo.VolCatJobs;
+      dcr->VolCatInfo.VolCatFiles = dev->VolCatInfo.VolCatFiles;
+      dcr->VolCatInfo.VolCatRecycles = dev->VolCatInfo.VolCatRecycles;
+      dcr->VolCatInfo.VolCatWrites = dev->VolCatInfo.VolCatWrites;
+      dcr->VolCatInfo.VolCatReads = dev->VolCatInfo.VolCatReads;
       ok = true;
    }
 

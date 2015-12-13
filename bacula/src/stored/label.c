@@ -593,7 +593,7 @@ bool DCR::rewrite_volume_label(bool recycle)
    dev->setVolCatStatus("Append");
    ASSERT(dcr->VolumeName[0]);
    dev->setVolCatName(dcr->VolumeName);
-   if (!dir_update_volume_info(dcr, true, true)) {  /* indicate doing relabel */
+   if (!dir_update_volume_info(dcr, true, true)) {  /* indicate relabel */
       Leave(100);
       return false;
    }
