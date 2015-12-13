@@ -53,7 +53,11 @@ abstract class BaculumAPI extends TPage
 		if(is_null($this->user) && $this->Application->getModule('configuration')->isApplicationConfig() === true) {
 			$appConfig = ConfigurationManager::getApplicationConfig();
 			// @TOFIX: Baculum API layer should not use $_SERVER variables.
-			$this->user = isset($_SERVER['PHP_AUTH_USER']) && $_SERVER['PHP_AUTH_USER'] != $appConfig['baculum']['login'] ? $_SERVER['PHP_AUTH_USER'] : null;
+			if (isset($_SERVER['PHP_AUTH_USER'])) {
+				// NOTE: With php-fpm $_SERVER['PHP_AUTH_USER'] value is empty string here
+				$user = trim($_SERVER['PHP_AUTH_USER']);
+				$this->user = (!empty($user) && $user != $appConfig['baculum']['login']) ? $user : null;
+			}
 		}
 
 		switch($_SERVER['REQUEST_METHOD']) {
