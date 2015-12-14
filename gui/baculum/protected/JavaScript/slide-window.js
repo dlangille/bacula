@@ -389,7 +389,7 @@ var SlideWindowClass = Class.create({
 		}
 
 		if (grid) {
-			grid.select('tr').each(function(value){
+			grid.select('tbody tr').each(function(value) {
 				var tds = value.select('td');
 				var td;
 				var found = false;
