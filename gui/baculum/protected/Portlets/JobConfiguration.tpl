@@ -1,7 +1,7 @@
 <%@ MasterClass="Application.Portlets.ConfigurationPanel"%>
 <com:TContent ID="ConfigurationWindowContent">
 	<com:TActivePanel DefaultButton="Run">
-		<h4><%[ Job: ]%> [ <com:TActiveLabel ID="JobID" /> ] <com:TActiveLabel ID="JobName" /></h4>
+		<h4><%[ Job: ]%> [ <com:TActiveLabel ID="JobID" /> ] <com:TActiveLabel ID="JobName" Style="word-break: break-all;" /></h4>
 		<span class="text tab tab_active" rel="job_actions_tab"><%[ Actions ]%></span>
 		<span class="text tab" rel="job_console_tab"><%[ Console status ]%></span>
 		<hr class="tabs" />
