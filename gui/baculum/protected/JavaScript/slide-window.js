@@ -244,7 +244,7 @@ var SlideWindowClass = Class.create({
 	},
 
 	setWindowElementsEvent: function(opts) {
-		this.repeaterEl = opts.repeater_id;
+		this.repeaterEl = opts.repeater_id + '_Container';
 		this.gridEl = opts.grid_id;
 		this.loadRequest = opts.request_obj;
 		if (opts.hasOwnProperty('actions_obj')) {
@@ -258,11 +258,13 @@ var SlideWindowClass = Class.create({
 
 	setLoadRequest: function() {
 		var dataList = [];
-		if($(this.gridEl)) {
-			dataList = $(this.gridEl).select('tr');
+		var repeater = $(this.repeaterEl);
+		var grid = $(this.gridEl);
+		if(grid) {
+			dataList = grid.select('tr');
 			this.makeSortable();
-		} else if ($(this.repeaterEl + '_Container')) {
-			dataList = $(this.repeaterEl + '_Container').select('div.slide-window-element');
+		} else if (repeater) {
+			dataList = repeater.select('div.slide-window-element');
 		}
 
 		var set_callback_parameter = function(element) {
@@ -274,6 +276,7 @@ var SlideWindowClass = Class.create({
 				this.configurationObj.openConfigurationWindow(this);
 			}
 		}.bind(this);
+		this.setSearch();
 		dataList.each(function(tr) {
 			$(tr).observe('click', function(index, clickedEl) {
 				var target = clickedEl.target || clickedEl.srcElement;
@@ -372,23 +375,39 @@ var SlideWindowClass = Class.create({
 	},
 
 	setSearch: function() {
-		var search_pattern = new RegExp(this.search.value)
-		$$('div[id="' + this.windowId + this.elements.containerSuffix + '"] div.' + this.elements.contentItems).each(function(value){
-				
-				if(search_pattern.match(value.childNodes[2].textContent) == false) {
+		var search_pattern = new RegExp(this.search.value, 'i');
+		var repeater = $(this.repeaterEl);
+		var grid = $(this.gridEl);
+		if (repeater) {
+			repeater.select('div.' + this.elements.contentItems).each(function(value){
+				if(search_pattern.test(value.childNodes[2].textContent) == false) {
 					value.setStyle({'display' : 'none'});
 				} else {
 					value.setStyle({'display' : ''});
 				}
 			}.bind(search_pattern));
-			
-			$$('div[id="' + this.windowId + this.elements.containerSuffix + '"] tr.' + this.elements.contentItems + ', div[id="' + this.windowId + this.elements.containerSuffix + '"] tr.' + this.elements.contentAlternatingItems).each(function(value){
-				if(search_pattern.match(value.down('div').innerHTML) == false) {
-					value.setStyle({'display' : 'none'});
+		}
+
+		if (grid) {
+			grid.select('tr').each(function(value){
+				var tds = value.select('td');
+				var td;
+				var found = false;
+				for (var i = 0; i < tds.length; i++) {
+					td = tds[i].textContent.trim();
+					if(search_pattern.test(td) == true) {
+						found = true;
+						break;
+					}
+				}
+
+				if(found === true) {
+					value.show();
 				} else {
-					value.setStyle({'display' : ''});
+					value.hide();
 				}
 			}.bind(search_pattern));
+		}
 	},
 	setElementsCount : function() {
 		var elements_count = $$('div[id="' + this.windowId + this.elements.containerSuffix + '"] div.' + this.elements.contentItems).length || $$('div[id="' + this.windowId + this.elements.containerSuffix + '"] tr.' + this.elements.contentItems + ', div[id="' + this.windowId + this.elements.containerSuffix + '"] tr.' + this.elements.contentAlternatingItems).length;
@@ -429,7 +448,11 @@ var SlideWindowClass = Class.create({
 	},
 
 	getCheckboxes: function() {
-		var checkboxes = $(this.gridEl).select('input[name="actions_checkbox"]');
+		var grid = $(this.gridEl);
+		var checkboxes = [];
+		if (grid) {
+			checkboxes = grid.select('input[name="actions_checkbox"]');
+		}
 		return checkboxes;
 	},
 

@@ -76,9 +76,9 @@
 		</com:TCallback>
 		<script type="text/javascript">
 			var <%=$this->getParent()->getID()%>_refresh_window_func = function() {
-					var request = <%= $this->DetailView->ActiveControl->Javascript %>;
-					request.dispatch();
-				}
+				var request = <%= $this->DetailView->ActiveControl->Javascript %>;
+				request.dispatch();
+			}
 			$$('input[id=<%=$this->Simple->ClientID%>], input[id=<%=$this->Details->ClientID%>], select[id=<%=$this->Limit->ClientID%>]').each(function(el) {
 				el.observe('change', <%=$this->getParent()->getID()%>_refresh_window_func);
 			});
