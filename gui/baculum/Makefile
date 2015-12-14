@@ -39,7 +39,8 @@ datadirsrc = $(datadir)/Class \
 	$(datadir)/Pages \
 	$(datadir)/Portlets
 
-datafilesrc = $(datadir)/application.xml
+datafilesrc = $(datadir)/application.xml \
+	$(datadir)/Init.php
 
 miscfilesrc = index.php \
 	AUTHORS \
