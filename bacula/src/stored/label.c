@@ -488,7 +488,7 @@ bool DCR::rewrite_volume_label(bool recycle)
    DCR *dcr = this;
 
    Enter(100);
-   ASSERT(dcr->VolumeName[0]);
+   ASSERT2(dcr->VolumeName[0], "Empty Volume name");
    if (!dev->open(dcr, OPEN_READ_WRITE)) {
        Jmsg4(jcr, M_WARNING, 0, _("Open %s device %s Volume \"%s\" failed: ERR=%s\n"),
              dev->print_type(), dev->print_name(), dcr->VolumeName, dev->bstrerror());
@@ -534,7 +534,7 @@ bool DCR::rewrite_volume_label(bool recycle)
    }
    Dmsg1(100, "wrote vol label to block. Vol=%s\n", dcr->VolumeName);
 
-   ASSERT(dcr->VolumeName[0]);
+   ASSERT2(dcr->VolumeName[0], "Empty Volume name");
    dev->setVolCatInfo(false);
 
    /*
@@ -591,7 +591,7 @@ bool DCR::rewrite_volume_label(bool recycle)
    Dmsg1(100, "dir_update_vol_info. Set Append vol=%s\n", dcr->VolumeName);
    dev->VolCatInfo.VolFirstWritten = time(NULL);
    dev->setVolCatStatus("Append");
-   ASSERT(dcr->VolumeName[0]);
+   ASSERT2(dcr->VolumeName[0], "Empty Volume name");
    dev->setVolCatName(dcr->VolumeName);
    if (!dir_update_volume_info(dcr, true, true)) {  /* indicate relabel */
       Leave(100);
@@ -668,7 +668,7 @@ static void create_volume_label_record(DCR *dcr, DEVICE *dev,
 
    ser_end(rec->data, SER_LENGTH_Volume_Label);
    bstrncpy(dcr->VolumeName, dev->VolHdr.VolumeName, sizeof(dcr->VolumeName));
-   ASSERT(dcr->VolumeName[0]);
+   ASSERT2(dcr->VolumeName[0], "Empty Volume name");
    rec->data_len = ser_length(rec->data);
    rec->FileIndex = dev->VolHdr.LabelType;
    Dmsg1(100, "LabelType=%d\n", dev->VolHdr.LabelType);
