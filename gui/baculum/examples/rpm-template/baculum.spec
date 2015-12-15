@@ -3,12 +3,12 @@
 
 Summary:	WebGUI tool for Bacula Community program
 Name:		baculum
-Version:	7.0.6
-Release:	0.5.b%{?dist}
+Version:	7.2.0
+Release:	0%{?dist}
 License:	AGPLv3
 Group:		Applications/Internet
 URL:		http://bacula.org/
-Source0:	http://bacula.pl/downloads/baculum/baculum-7.0.6b.tar.gz
+Source0:	bacula-gui-7.2.0.tar.gz
 BuildRequires:	systemd-units
 BuildRequires:	selinux-policy
 BuildRequires:	selinux-policy-devel
@@ -78,7 +78,7 @@ This package provides the Lighttpd configuration for Baculum WebGUI tool.
 By using this module it is possible to run Baculum in Lighttpd environment.
 
 %prep
-%autosetup
+%setup -n bacula-gui-%version/baculum
 
 %build
 # Execute files preparation in build directory by Makefile
@@ -123,9 +123,11 @@ fi
 
 %post httpd
 %systemd_post httpd.service
+ln -s  %{_sysconfdir}/%{name}/Data-apache %{_datadir}/%{name}/htdocs/protected/Data
 
 %post lighttpd
 %systemd_post baculum-lighttpd.service
+ln -s  %{_sysconfdir}/%{name}/Data-lighttpd %{_datadir}/%{name}/htdocs/protected/Data
 
 %preun
 for lang in  %{langs}; do
@@ -133,6 +135,7 @@ for lang in  %{langs}; do
 done
 rm %{_datadir}/%{name}/htdocs/assets
 rm %{_datadir}/%{name}/htdocs/protected/runtime
+
 
 %preun httpd
 %systemd_preun httpd.service
@@ -147,6 +150,8 @@ if [ $1 -lt 1 ] ; then
 	# remove debug files if any
 	[ ! -e %{_datadir}/%{name}/htdocs/protected/Data/baculum.dbg ] ||
 		rm %{_datadir}/%{name}/htdocs/protected/Data/baculum*.dbg
+	rm %{_datadir}/%{name}/htdocs/protected/Data
+
 fi
 
 %preun lighttpd
@@ -162,6 +167,7 @@ if [ $1 -lt 1 ] ; then
 	# remove debug files if any
 	[ ! -e %{_datadir}/%{name}/htdocs/protected/Data/baculum.dbg ] ||
 		rm %{_datadir}/%{name}/htdocs/protected/Data/baculum*.dbg
+	rm %{_datadir}/%{name}/htdocs/protected/Data
 fi
 
 %postun selinux
@@ -181,7 +187,7 @@ fi
 %defattr(-,root,root)
 # directory excluded here, because it needs to be provided
 # with selected web server privileges (lighttpd or apache)
-%exclude %{_datadir}/%{name}/htdocs/protected/Data/
+%exclude %{_datadir}/%{name}/htdocs/protected/Data
 %{_datadir}/%{name}
 %license LICENSE
 %doc AUTHORS README
@@ -195,19 +201,22 @@ fi
 # Apache logs are stored in /var/log/httpd/
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/%{name}.conf
 %attr(755,apache,apache) %{_localstatedir}/cache/%{name}/
-%attr(-,apache,apache) %{_datadir}/%{name}/htdocs/protected/Data/
-%attr(600,apache,apache) %{_datadir}/%{name}/htdocs/protected/Data/%{name}.users
+%attr(700,apache,apache) %{_sysconfdir}/%{name}/Data-apache/
+%attr(600,apache,apache) %{_sysconfdir}/%{name}/Data-apache/%{name}.users
 
 %files lighttpd
 %defattr(644,root,root)
 # Lighttpd logs are stored in /var/log/lighttpd
 %attr(755,lighttpd,lighttpd) %{_localstatedir}/cache/%{name}/
-%attr(-,lighttpd,lighttpd) %{_datadir}/%{name}/htdocs/protected/Data/
-%attr(600,lighttpd,lighttpd) %{_datadir}/%{name}/htdocs/protected/Data/%{name}.users
+%attr(700,lighttpd,lighttpd) %{_sysconfdir}/%{name}/Data-lighttpd
+%attr(600,lighttpd,lighttpd) %{_sysconfdir}/%{name}/Data-lighttpd/%{name}.users
 %{_unitdir}/%{name}-lighttpd.service
 %config(noreplace) %{_sysconfdir}/%{name}/%{name}-lighttpd.conf
 
 %changelog
+ * Tue Dec 15 2015 Marcin Haba <marcin.haba@bacula.pl> - 7.2.0
+ - Add creating and removing Data/ directory symbolic link
+ - Match locations to bacula-gui directories structure
  * Sat Jul 18 2015 Marcin Haba <marcin.haba@bacula.pl> - 7.0.6-0.5.b
  - Change baculum.users and Data/ directory permissions to more
    restrictive
