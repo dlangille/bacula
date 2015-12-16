@@ -1,16 +1,7 @@
 /*
- *
- *   Bacula Director -- User Agent Database Query Commands
- *
- *     Kern Sibbald, December MMI
- *
- *   Version $Id$
- */
-/*
    Bacula(R) - The Network Backup Solution
 
    Copyright (C) 2000-2015 Kern Sibbald
-   Copyright (C) 2001-2014 Free Software Foundation Europe e.V.
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -25,6 +16,13 @@
 
    Bacula(R) is a registered trademark of Kern Sibbald.
 */
+/*
+ *
+ *   Bacula Director -- User Agent Database Query Commands
+ *
+ *     Kern Sibbald, December MMI
+ *
+ */
 
 #include "bacula.h"
 #include "dird.h"

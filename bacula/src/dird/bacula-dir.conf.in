@@ -11,7 +11,10 @@
 #   from root to your address.  See the "mail" and "operator"
 #   directives in the Messages resource.
 #
-
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+ 
 Director {                            # define myself
   Name = @basename@-dir
   DIRport = @dir_port@                # where we listen for UA connections
