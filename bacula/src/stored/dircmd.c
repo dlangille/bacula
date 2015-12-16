@@ -576,12 +576,6 @@ static bool do_label(JCR *jcr, int relabel)
          dev = dcr->dev;
          ok = true;
          dev->Lock();                 /* Use P to avoid indefinite block */
-#ifdef DEVELOPER
-         if (chk_dbglvl(DT_VOLUME)) {
-            Dmsg0(0, "Waiting few seconds to force a bug...\n");
-            bmicrosleep(30, 0);
-         }
-#endif
          max_jobs = dev->max_concurrent_jobs;
          dev->max_concurrent_jobs = 1;
          bstrncpy(dcr->VolumeName, newname, sizeof(dcr->VolumeName));
@@ -615,8 +609,8 @@ static bool do_label(JCR *jcr, int relabel)
             label_volume_if_ok(dcr, oldname, newname, poolname, slot, relabel);
          }
          dev->max_concurrent_jobs = max_jobs;
+         volume_unused(dcr);
          dev->Unlock();
-         free_volume(dcr->dev);
       } else {
          dir->fsend(_("3999 Device \"%s\" not found or could not be opened.\n"), dev_name.c_str());
       }
