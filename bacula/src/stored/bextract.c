@@ -86,7 +86,7 @@ PROG_COPYRIGHT
 "       -c <file>       specify a Storage configuration file\n"
 "       -d <nn>         set debug level to <nn>\n"
 "       -dt             print timestamp in debug output\n"
-"       -T              send debug traces to trace file\n"
+"       -T              send debug traces to trace file (stored in /tmp)\n"
 "       -e <file>       exclude list\n"
 "       -i <file>       include list\n"
 "       -p              proceed inspite of I/O errors\n"
