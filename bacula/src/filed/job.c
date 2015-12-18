@@ -341,7 +341,6 @@ static void *handle_director_request(BSOCK *dir)
       dir->fsend(EndJob, jcr->JobStatus, jcr->JobFiles,
               jcr->ReadBytes, jcr->JobBytes, jcr->JobErrors, vss,
               encrypt, 0, 0);
-      //Dmsg0(0/*110*/, dir->msg);
    }
 
    generate_daemon_event(jcr, "JobEnd");
@@ -2153,6 +2152,7 @@ static int verify_cmd(JCR *jcr)
    case L_VERIFY_CATALOG:
       do_verify(jcr);
       break;
+   case L_VERIFY_DATA:
    case L_VERIFY_VOLUME_TO_CATALOG:
       if (!open_sd_read_session(jcr)) {
          return 0;

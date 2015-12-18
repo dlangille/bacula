@@ -260,6 +260,7 @@ bool BDB::bdb_find_last_jobid(JCR *jcr, const char *Name, JOB_DBR *jr)
            edit_int64(jr->ClientId, ed1));
    } else if (jr->JobLevel == L_VERIFY_VOLUME_TO_CATALOG ||
               jr->JobLevel == L_VERIFY_DISK_TO_CATALOG ||
+              jr->JobLevel == L_VERIFY_DATA ||
               jr->JobType == JT_BACKUP) {
       if (Name) {
          bdb_escape_string(jcr, esc_name, (char*)Name,

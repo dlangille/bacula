@@ -27,6 +27,9 @@ extern void do_verify_volume(JCR *jcr);
 extern void do_restore(JCR *jcr);
 extern int make_estimate(JCR *jcr);
 
+/* From restore.c */
+bool decompress_data(JCR *jcr, int32_t stream, char **data, uint32_t *length);
+
 /* From authenticate.c */
 bool authenticate_director(JCR *jcr);
 bool authenticate_storagedaemon(JCR *jcr);

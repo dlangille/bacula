@@ -65,10 +65,9 @@ bool do_verify_init(JCR *jcr)
       free_rstorage(jcr);
       free_wstorage(jcr);
       break;
+   case L_VERIFY_DATA:
    case L_VERIFY_VOLUME_TO_CATALOG:
       free_wstorage(jcr);
-      break;
-   case L_VERIFY_DATA:
       break;
    default:
       Jmsg2(jcr, M_FATAL, 0, _("Unimplemented Verify level %d(%c)\n"), jcr->getJobLevel(),
@@ -115,11 +114,13 @@ bool do_verify(JCR *jcr)
     */
    if (jcr->getJobLevel() == L_VERIFY_CATALOG ||
        jcr->getJobLevel() == L_VERIFY_VOLUME_TO_CATALOG ||
-       jcr->getJobLevel() == L_VERIFY_DISK_TO_CATALOG) {
+       jcr->getJobLevel() == L_VERIFY_DISK_TO_CATALOG ||
+       jcr->getJobLevel() == L_VERIFY_DATA) {
       memcpy(&jr, &jcr->jr, sizeof(jr));
       if (jcr->verify_job &&
           (jcr->getJobLevel() == L_VERIFY_VOLUME_TO_CATALOG ||
-           jcr->getJobLevel() == L_VERIFY_DISK_TO_CATALOG)) {
+           jcr->getJobLevel() == L_VERIFY_DISK_TO_CATALOG   ||
+           jcr->getJobLevel() == L_VERIFY_DATA)) {
          Name = jcr->verify_job->name();
       } else {
          Name = NULL;
@@ -154,7 +155,8 @@ bool do_verify(JCR *jcr)
     */
    if (jcr->getJobLevel() == L_VERIFY_CATALOG ||
        jcr->getJobLevel() == L_VERIFY_VOLUME_TO_CATALOG ||
-       jcr->getJobLevel() == L_VERIFY_DISK_TO_CATALOG) {
+       jcr->getJobLevel() == L_VERIFY_DISK_TO_CATALOG ||
+       jcr->getJobLevel() == L_VERIFY_DATA) {
       jcr->previous_jr.JobId = verify_jobid;
       if (!db_get_job_record(jcr, jcr->db, &jcr->previous_jr)) {
          Jmsg(jcr, M_FATAL, 0, _("Could not get job record for previous Job. ERR=%s"),
@@ -177,7 +179,7 @@ bool do_verify(JCR *jcr)
     *   create a dummy authorization key (passed to
     *   File daemon but not used).
     */
-   if (jcr->getJobLevel() == L_VERIFY_VOLUME_TO_CATALOG) {
+   if (jcr->getJobLevel() == L_VERIFY_VOLUME_TO_CATALOG || jcr->getJobLevel() == L_VERIFY_DATA) {
       int stat;
       /*
        * Note: negative status is an error, zero status, means
@@ -195,10 +197,43 @@ bool do_verify(JCR *jcr)
       jcr->sd_auth_key = bstrdup("dummy");    /* dummy Storage daemon key */
    }
 
+   /* Pass the original fileset to the client */
+   if (jcr->getJobLevel() == L_VERIFY_DATA) {
+      FILESET_DBR fdbr;
+      memset(&fdbr, 0, sizeof(fdbr));
+      fdbr.FileSetId = jcr->previous_jr.FileSetId;
+      if (!db_get_fileset_record(jcr, jcr->db, &fdbr)) {
+         Jmsg(jcr, M_FATAL, 0,
+              _("Could not get fileset record from previous Job. ERR=%s"),
+              db_strerror(jcr->db));
+         return false;
+      }
+
+      jcr->fileset = (FILESET *)GetResWithName(R_FILESET, fdbr.FileSet);
+      if (!jcr->fileset) {
+         if (jcr->verify_job) {
+            jcr->fileset = jcr->verify_job->fileset;
+            Jmsg(jcr, M_WARNING, 0,
+                 _("Could not find FileSet resource \"%s\" from previous Job\n"),
+                 fdbr.FileSet);
+            Jmsg(jcr, M_INFO, 0,
+                 _("Using FileSet \"%\"\n"), jcr->fileset->name());
+
+         } else {
+            Jmsg(jcr, M_FATAL, 0,
+                 _("Could not get FileSet resource for verify Job."));
+            return false;
+         }
+      }
+      Dmsg1(50, "FileSet = %s\n", jcr->fileset->name());
+   }
+
+   /* Pass the current fileset to the client */
    if (jcr->getJobLevel() == L_VERIFY_DISK_TO_CATALOG && jcr->verify_job) {
       jcr->fileset = jcr->verify_job->fileset;
    }
-   Dmsg2(100, "ClientId=%u JobLevel=%c\n", jcr->previous_jr.ClientId, jcr->getJobLevel());
+   Dmsg2(100, "ClientId=%u JobLevel=%c\n",
+         jcr->previous_jr.ClientId, jcr->getJobLevel());
 
    if (!db_update_job_start_record(jcr, jcr->db, &jcr->jr)) {
       Jmsg(jcr, M_FATAL, 0, "%s", db_strerror(jcr->db));
@@ -209,7 +244,9 @@ bool do_verify(JCR *jcr)
    Jmsg(jcr, M_INFO, 0, _("Start Verify JobId=%s Level=%s Job=%s\n"),
       edit_uint64(jcr->JobId, ed1), level_to_str(jcr->getJobLevel()), jcr->Job);
 
-   if (jcr->getJobLevel() == L_VERIFY_VOLUME_TO_CATALOG) {
+   if (jcr->getJobLevel() == L_VERIFY_VOLUME_TO_CATALOG ||
+       jcr->getJobLevel() == L_VERIFY_DATA)
+   {
       /*
        * Start conversation with Storage daemon
        */
@@ -272,6 +309,7 @@ bool do_verify(JCR *jcr)
    case L_VERIFY_CATALOG:
       level = "catalog";
       break;
+   case L_VERIFY_DATA:
    case L_VERIFY_VOLUME_TO_CATALOG:
       if (jcr->sd_calls_client) {
          if (jcr->FDVersion < 10) {
@@ -308,18 +346,19 @@ bool do_verify(JCR *jcr)
          Jmsg0(jcr, M_FATAL, 0, _("Deprecated feature ... use bootstrap.\n"));
          goto bail_out;
       }
-
-      level = "volume";
-      break;
-   case L_VERIFY_DATA:
-      level = "data";
+      if (jcr->getJobLevel() == L_VERIFY_VOLUME_TO_CATALOG) {
+         level = "volume";
+      } else {
+         level = "data";
+      }
       break;
    case L_VERIFY_DISK_TO_CATALOG:
       level="disk_to_catalog";
       break;
    default:
-      Jmsg2(jcr, M_FATAL, 0, _("Unimplemented Verify level %d(%c)\n"), jcr->getJobLevel(),
-         jcr->getJobLevel());
+      Jmsg2(jcr, M_FATAL, 0, _("Unimplemented Verify level %d(%c)\n"),
+            jcr->getJobLevel(),
+            jcr->getJobLevel());
       goto bail_out;
    }
 
@@ -371,6 +410,10 @@ bool do_verify(JCR *jcr)
       db_write_batch_file_records(jcr);
       break;
 
+   case L_VERIFY_DATA:
+      /* Nothing special to do */
+      bget_dirmsg(fd);          /* eat EOD */
+      break;
    default:
       Jmsg1(jcr, M_FATAL, 0, _("Unimplemented verify level %d\n"), jcr->getJobLevel());
       goto bail_out;
@@ -402,7 +445,7 @@ void verify_cleanup(JCR *jcr, int TermCode)
 
    Dmsg3(900, "JobLevel=%c Expected=%u JobFiles=%u\n", jcr->getJobLevel(),
       jcr->ExpectedFiles, jcr->JobFiles);
-   if (jcr->getJobLevel() == L_VERIFY_VOLUME_TO_CATALOG &&
+   if ((jcr->getJobLevel() == L_VERIFY_VOLUME_TO_CATALOG || jcr->getJobLevel() == L_VERIFY_DATA) &&
        jcr->ExpectedFiles != jcr->JobFiles) {
       TermCode = JS_ErrorTerminated;
    }
@@ -421,7 +464,11 @@ void verify_cleanup(JCR *jcr, int TermCode)
    msg_type = M_INFO;                 /* by default INFO message */
    switch (TermCode) {
    case JS_Terminated:
-      term_msg = _("Verify OK");
+      if (jcr->JobErrors || jcr->SDErrors) {
+         term_msg = _("Verify OK -- with warnings");
+      } else {
+         term_msg = _("Verify OK");
+      }
       break;
    case JS_FatalError:
    case JS_ErrorTerminated:
@@ -452,7 +499,7 @@ void verify_cleanup(JCR *jcr, int TermCode)
    }
 
    jobstatus_to_ascii(jcr->FDJobStatus, fd_term_msg, sizeof(fd_term_msg));
-   if (jcr->getJobLevel() == L_VERIFY_VOLUME_TO_CATALOG) {
+   if (jcr->getJobLevel() == L_VERIFY_VOLUME_TO_CATALOG || jcr->getJobLevel() == L_VERIFY_DATA) {
       jobstatus_to_ascii(jcr->SDJobStatus, sd_term_msg, sizeof(sd_term_msg));
       Jmsg(jcr, msg_type, 0, _("%s %s %s (%s):\n"
 "  Build OS:               %s %s %s\n"
@@ -468,6 +515,7 @@ void verify_cleanup(JCR *jcr, int TermCode)
 "  Files Expected:         %s\n"
 "  Files Examined:         %s\n"
 "  Non-fatal FD errors:    %d\n"
+"  SD Errors:              %d\n"
 "  FD termination status:  %s\n"
 "  SD termination status:  %s\n"
 "  Termination:            %s\n\n"),
@@ -485,6 +533,7 @@ void verify_cleanup(JCR *jcr, int TermCode)
            edit_uint64_with_commas(jcr->ExpectedFiles, ec1),
            edit_uint64_with_commas(jcr->JobFiles, ec2),
            jcr->JobErrors,
+           jcr->SDErrors,
            fd_term_msg,
            sd_term_msg,
            term_msg);
