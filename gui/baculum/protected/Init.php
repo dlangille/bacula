@@ -37,6 +37,6 @@ if(!isset($_SERVER['PHP_AUTH_USER']) && !isset($_SERVER['PHP_AUTH_PW'])) {
 }
 
 require_once('./protected/Pages/Requirements.php');
-new Requirements(__DIR__);
+new Requirements(dirname(__DIR__));
 
 ?>
