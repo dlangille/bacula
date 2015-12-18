@@ -1295,9 +1295,7 @@ static bool store_data(r_ctx &rctx, char *data, const int32_t length, bool win32
                jcr->last_fname, be.bstrerror(bfd->berrno));
          return false;
       }
-   }
-
-   if ((wstat=bwrite(bfd, data, length)) != (ssize_t)length) {
+   } else if ((wstat=bwrite(bfd, data, length)) != (ssize_t)length) {
       berrno be;
       int type = M_ERROR;
       int len = strlen(jcr->last_fname);
