@@ -76,6 +76,7 @@ rm -f dumps/*
 ./run tests/strip-test
 ./run tests/two-jobs-test
 ./run tests/two-vol-test
+./run tests/verify-data-test
 ./run tests/verify-cat-test
 ./run tests/verify-vol-test
 ./run tests/verify-voltocat-test

@@ -46,6 +46,7 @@ rm -f dumps/*
 ./run tests/strip-test
 ./run tests/sqlite-test
 ./run tests/two-vol-test
+./run tests/verify-data-test
 ./run tests/verify-vol-test
 ./run tests/weird-files2-test
 ./run tests/weird-files-test

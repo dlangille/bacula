@@ -1,0 +1,108 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+#
+# Run a simple backup of the Bacula build directory
+#   then verify the data on the volume.           
+#
+TestName="verify-data-test"
+JobName=VerifyVol
+. scripts/functions
+
+cwd=`pwd`
+scripts/cleanup
+scripts/copy-test-confs
+echo "${cwd}/tmp/files" >$tmp/file-list
+echo "${cwd}/build/src/dird"      >>$tmp/file-list
+echo "${cwd}/build/src/filed"     >>$tmp/file-list
+
+#
+# Add this back when verify can handle sparse files
+#  the same way that backup does
+#
+mkdir -p $tmp/files
+dd if=${cwd}/build/configure of=$tmp/files/sparsefile bs=1 count=1 seek=10M > /dev/null
+
+change_jobname NightlySave $JobName
+start_test
+
+cat <<END_OF_DATA >tmp/bconcmds
+@output /dev/null
+messages
+@$out tmp/log1.out
+label storage=File volume=TestVolume001
+run job=$JobName level=full fileset=FS1 yes
+run job=$JobName level=full fileset=FS5 yes
+run job=$JobName level=full fileset=FSno5 yes
+run job=$JobName level=full fileset=FS5nocheck yes
+wait
+messages
+@# 
+@# now do a verify volume
+@#
+@$out ${cwd}/tmp/log2.out
+setdebug level=10 client
+run job=VerifyData jobid=1 yes
+run job=VerifyData jobid=2 yes
+run job=VerifyData jobid=3 yes
+run job=VerifyData jobid=4 yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bacula
+
+sleep 2
+check_for_zombie_jobs storage=File 
+stop_bacula
+
+$bperl -e 'add_attribute("$conf/bacula-sd.conf", "BlockChecksum", "no", "Device")'
+
+nbok=2
+if [ x$FORCE_DEDUP = xyes ]; then
+    nbok=4
+elif [ x$FORCE_ALIGNED = xyes ]; then
+    sed -i 's/DUALCASE/PUALCASE/g' $tmp/TestVolume001.add
+else
+    sed -i 's/DUALCASE/PUALCASE/g' $tmp/TestVolume001
+fi
+
+cat <<END_OF_DATA >tmp/bconcmds
+@$out tmp/log3.out
+@# 
+@# now do a verify volume with errors
+@#
+@$out ${cwd}/tmp/log3.out
+setdebug level=10 client
+run job=VerifyData jobid=1 yes
+run job=VerifyData jobid=2 yes
+run job=VerifyData jobid=3 yes
+run job=VerifyData jobid=4 yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bacula
+
+sleep 2
+check_for_zombie_jobs storage=File
+stop_bacula
+
+nb=`grep "^  Termination: *Backup OK" tmp/log1.out | wc -l`
+if [ $nb -ne 4 ]; then
+    bstat=1
+fi
+nb=`grep "^  Termination: *Verify OK" tmp/log2.out | wc -l`
+if [ $nb -ne 4 ]; then
+    rstat=1
+fi
+nb=`grep "^  Termination: *Verify OK" tmp/log3.out | wc -l`
+if [ $nb -ne $nbok ]; then
+    rstat=2
+fi
+dstat=0
+end_test

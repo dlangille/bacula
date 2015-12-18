@@ -104,6 +104,19 @@ Job {
   Max Run Time = 30min
 }
 
+Job {
+  Name = "VerifyData"
+  Type = Verify
+  Level = Data
+  Client=@hostname@-fd 
+  FileSet="Full Set"
+  Storage = File
+  Messages = Standard
+  Pool = Default
+  Write Bootstrap = "@working_dir@/NightlySave.bsr"
+  Max Run Time = 30min
+}
+
 
 Job {
   Name = "SparseTest"
@@ -283,6 +296,94 @@ FileSet {
      Options { signature=MD5; sparse=yes;
        verify=pins5 }
      File =  <@tmpdir@/file-list
+  }
+}
+
+FileSet {
+  Name = "FSno5"
+  Include  { Options { verify=s5 }
+    File = <@tmpdir@/file-list
+  }
+  Include  { Options { sparse=yes }
+    File = <@tmpdir@/file-list
+  }
+  Include  { Options { compression=GZIP }
+    File = <@tmpdir@/file-list
+  }
+  Include  { Options { compression=LZO }
+    File = <@tmpdir@/file-list
+  }
+  Include  { Options { compression=LZO; sparse=yes }
+    File = <@tmpdir@/file-list
+  }
+  Include  { Options { compression=GZIP; sparse=yes }
+    File = <@tmpdir@/file-list
+  }
+}
+
+FileSet {
+  Name = "FS5"
+  Include  { Options { signature=MD5; verify=s5 }
+    File = <@tmpdir@/file-list
+  }
+  Include  { Options { signature=MD5; sparse=yes }
+    File = <@tmpdir@/file-list
+  }
+  Include  { Options { signature=MD5; compression=GZIP }
+    File = <@tmpdir@/file-list
+  }
+  Include  { Options { signature=MD5; compression=LZO }
+    File = <@tmpdir@/file-list
+  }
+  Include  { Options { signature=MD5; compression=LZO; sparse=yes }
+    File = <@tmpdir@/file-list
+  }
+  Include  { Options { signature=MD5; compression=GZIP; sparse=yes }
+    File = <@tmpdir@/file-list
+  }
+}
+
+FileSet {
+  Name = "FS5nocheck"
+  Include  { Options { verify="nog"; signature=MD5 }
+    File = <@tmpdir@/file-list
+  }
+  Include  { Options { signature=MD5; sparse=yes }
+    File = <@tmpdir@/file-list
+  }
+  Include  { Options { signature=MD5; compression=GZIP }
+    File = <@tmpdir@/file-list
+  }
+  Include  { Options { signature=MD5; compression=LZO }
+    File = <@tmpdir@/file-list
+  }
+  Include  { Options { signature=MD5; compression=LZO; sparse=yes }
+    File = <@tmpdir@/file-list
+  }
+  Include  { Options { signature=MD5; compression=GZIP; sparse=yes }
+    File = <@tmpdir@/file-list
+  }
+}
+
+FileSet {
+  Name = "FS1"
+  Include  { Options { verify=s1; signature=SHA1 }
+    File = <@tmpdir@/file-list
+  }
+  Include  { Options { signature=SHA1; sparse=yes }
+    File = <@tmpdir@/file-list
+  }
+  Include  { Options { signature=SHA1; compression=GZIP }
+    File = <@tmpdir@/file-list
+  }
+  Include  { Options { signature=SHA1; compression=LZO }
+    File = <@tmpdir@/file-list
+  }
+  Include  { Options { signature=SHA1; compression=LZO; sparse=yes }
+    File = <@tmpdir@/file-list
+  }
+  Include  { Options { signature=SHA1; compression=GZIP; sparse=yes }
+    File = <@tmpdir@/file-list
   }
 }
 
