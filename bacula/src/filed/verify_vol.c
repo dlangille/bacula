@@ -41,6 +41,9 @@ const bool have_lzo = true;
 const bool have_lzo = false;
 #endif
 
+/* Context used during Verify Data job. We use it in the
+ * verify loop to compute checksums and check attributes.
+ */
 class v_ctx {
 public:
    JCR *jcr;
