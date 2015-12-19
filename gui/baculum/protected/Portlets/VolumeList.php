@@ -169,5 +169,12 @@ class VolumeList extends Portlets implements ISlideWindow {
 		}
 		$this->CheckedValues->Value = "";
 	}
+
+	public function formatVolumeField($name) {
+		if (strlen($name) > 20) {
+			$name = substr($name, 0, 7) . '...' . substr($name, -10);
+		}
+		return $name;
+	}
 }
 ?>

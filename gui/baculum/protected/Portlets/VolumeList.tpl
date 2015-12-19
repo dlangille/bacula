@@ -31,7 +31,7 @@
                 </com:TActiveTemplateColumn>
 		<com:TActiveTemplateColumn HeaderText="<%[ Volume name ]%>" SortExpression="volumename">
 			<prop:ItemTemplate>
-				<div><%=$this->getParent()->Data['volumename']%></div>
+				<div title="<%=$this->getParent()->Data['volumename']%>"><%=$this->getPage()->VolumeWindow->formatVolumeField($this->getParent()->Data['volumename'])%></div>
 				<input type="hidden" name="<%=$this->getParent()->ClientID%>" value="<%=$this->getParent()->Data['mediaid']%>" />
 			</prop:ItemTemplate>
 		</com:TActiveTemplateColumn>
@@ -43,12 +43,22 @@
 		/>
 		<com:TActiveTemplateColumn HeaderText="<%[ Pool ]%>" SortExpression="pool">
 			<prop:ItemTemplate>
-				<%=$this->getParent()->Data['pool']['name']%>
+				<div title="<%=$this->getParent()->Data['pool']['name']%>"><%=$this->getPage()->VolumeWindow->formatVolumeField($this->getParent()->Data['pool']['name'])%></div>
 			</prop:ItemTemplate>
 		</com:TActiveTemplateColumn>
 		<com:TActiveTemplateColumn HeaderText="<%[ Status ]%>" SortExpression="volstatus">
 			<prop:ItemTemplate>
 				<div id="<%=$this->getParent()->Data['volumename']%>_sizebar" class="status-bar-detail-<%=strtolower($this->getParent()->Data['volstatus'])%>"><%=$this->getParent()->Data['volstatus']%></div>
+			</prop:ItemTemplate>
+		</com:TActiveTemplateColumn>
+		<com:TActiveTemplateColumn HeaderText="<%[ Size ]%>" SortExpression="volbytes">
+			<prop:ItemTemplate>
+				<div class="size" rel="<%=$this->getParent()->Data['volbytes']%>"><%=$this->getParent()->Data['volbytes']%></div>
+			</prop:ItemTemplate>
+		</com:TActiveTemplateColumn>
+		<com:TActiveTemplateColumn HeaderText="<%[ Media Type ]%>" SortExpression="mediatype">
+			<prop:ItemTemplate>
+				<div title="<%=$this->getParent()->Data['mediatype']%>"><%=$this->getPage()->VolumeWindow->formatVolumeField($this->getParent()->Data['mediatype'])%></div>
 			</prop:ItemTemplate>
 		</com:TActiveTemplateColumn>
 		<com:TActiveBoundColumn

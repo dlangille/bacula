@@ -139,8 +139,8 @@ class JobList extends Portlets implements ISlideWindow {
 	}
 
 	public function formatJobName($name) {
-		if (strlen($name) > 25) {
-			$name = substr($name, 0, 10) . '...' . substr($name, -13);
+		if (strlen($name) > 24) {
+			$name = substr($name, 0, 10) . '...' . substr($name, -11);
 		}
 		return $name;
 	}

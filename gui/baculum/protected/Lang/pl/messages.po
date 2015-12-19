@@ -1020,3 +1020,6 @@ msgstr "Rozmiar"
 msgid "Job:"
 msgstr "Zadanie:"
 
+msgid "Media Type"
+msgstr "Media Type"
+

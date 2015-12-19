@@ -1019,3 +1019,6 @@ msgstr "Size"
 msgid "Job:"
 msgstr "Job:"
 
+msgid "Media Type"
+msgstr "Media Type"
+
