@@ -1234,7 +1234,7 @@ static void select_job_level(UAContext *ua, JCR *jcr)
       add_prompt(ua, _("Verify Catalog"));
       add_prompt(ua, _("Verify Volume to Catalog"));
       add_prompt(ua, _("Verify Disk to Catalog"));
-      add_prompt(ua, _("Verify Volume Data (not yet implemented)"));
+      add_prompt(ua, _("Verify Volume Data"));
       switch (do_prompt(ua, "",  _("Select level"), NULL, 0)) {
       case 0:
          jcr->setJobLevel(L_VERIFY_INIT);
