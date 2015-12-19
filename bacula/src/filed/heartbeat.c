@@ -48,6 +48,7 @@ extern "C" void *sd_heartbeat_thread(void *arg)
    time_t last_heartbeat = time(NULL);
    time_t now;
 
+   set_jcr_in_tsd(jcr);
    pthread_detach(pthread_self());
 
    /* Get our own local copy */
