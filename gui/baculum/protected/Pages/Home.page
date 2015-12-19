@@ -51,7 +51,7 @@
 					});
 				</prop:ClientSide.OnComplete>
 			</com:TActiveButton>
-			<com:TActiveButton ID="MediaBtn" CssClass="media-btn">
+			<com:TActiveButton ID="VolumeBtn" CssClass="media-btn">
 				<prop:Attributes.onmouseover>
 					showTip(
 						this,
@@ -151,7 +151,7 @@
 			<div id="content">
 				<com:Application.Portlets.StorageList ID="StorageWindow" ButtonID="<%=$this->StorageBtn->ClientID%>" WindowTitle="<%[ Storage Daemons ]%>" />
 				<com:Application.Portlets.ClientList ID="ClientWindow" ButtonID="<%=$this->ClientBtn->ClientID%>" WindowTitle="<%[ Clients ]%>" />
-				<com:Application.Portlets.VolumeList ID="VolumeWindow" ButtonID="<%=$this->MediaBtn->ClientID%>" WindowTitle="<%[ Volumes ]%>" />
+				<com:Application.Portlets.VolumeList ID="VolumeWindow" ButtonID="<%=$this->VolumeBtn->ClientID%>" WindowTitle="<%[ Volumes ]%>" />
 				<com:Application.Portlets.PoolList ID="PoolWindow" ButtonID="<%=$this->PoolBtn->ClientID%>" WindowTitle="<%[ Pools ]%>" />
 				<com:Application.Portlets.JobList ID="JobWindow" ButtonID="<%=$this->JobBtn->ClientID%>" WindowTitle="<%[ Jobs ]%>" />
 				<com:Application.Portlets.JobRunList ID="JobRunWindow" ButtonID="<%=$this->JobRunBtn->ClientID%>" WindowTitle="<%[ Jobs for run ]%>" />
@@ -227,9 +227,12 @@
 	<script type="text/javascript">
 		var oMonitor;
 		document.observe("dom:loaded", function() {
+			<%=(!is_null($this->initWindowId) && !is_null($this->initElementId) ?
+				'SlideWindow.getObj("' . $this->initWindowId . 'Window").setInitElementId("' . $this->initElementId . '");'
+			: '')%>
 			<%=(!is_null($this->openWindow) ?
 				'$("' . $this->openWindow . '").click(); window.history.pushState("", "", "/");'
-			 : '')%>
+			: '')%>
 		});
 	</script>
 </com:TContent>

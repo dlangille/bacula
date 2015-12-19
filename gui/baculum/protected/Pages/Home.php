@@ -32,7 +32,11 @@ class Home extends BaculumPage
 
 	public $openWindow = null;
 
-	public $windowIds = array('Storage', 'Client', 'Media', 'Pool', 'Job', 'JobRun');
+	public $initWindowId = null;
+
+	public $initElementId = null;
+
+	public $windowIds = array('Storage', 'Client', 'Volume', 'Pool', 'Job', 'JobRun');
 
 	public function onInit($param) {
 		parent::onInit($param);
@@ -49,7 +53,7 @@ class Home extends BaculumPage
 		$appConfig = $this->getModule('configuration')->getApplicationConfig();
 
 		$this->SettingsWizardBtn->Visible = $this->User->getIsAdmin();
-		$this->MediaBtn->Visible = $this->User->getIsAdmin();
+		$this->VolumeBtn->Visible = $this->User->getIsAdmin();
 		$this->ClearBvfsCache->Visible = $this->User->getIsAdmin();
 		$this->Logging->Visible = $this->User->getIsAdmin();
 
@@ -122,9 +126,13 @@ class Home extends BaculumPage
 	}
 
 	public function setWindowOpen() {
-		if (isset($this->Request['open']) && in_array($this->Request['open'], $this->windowIds)) {
+		if (isset($this->Request['open']) && in_array($this->Request['open'], $this->windowIds) && $this->Request['open'] != 'JobRun') {
 			$btn = $this->Request['open'] . 'Btn';
 			$this->openWindow = $this->{$btn}->ClientID;
+			if (isset($this->Request['id']) && (is_numeric($this->Request['id']))) {
+				$this->initWindowId = $this->Request['open'];
+				$this->initElementId = $this->Request['id'];
+			}
 		}
 	}
 }

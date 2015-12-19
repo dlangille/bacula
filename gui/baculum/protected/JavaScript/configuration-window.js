@@ -93,6 +93,21 @@ var ConfigurationWindowClass = new Class.create({
 		$(tab_rel).show();
 	},
 
+	switchTabByNo: function(tab_no) {
+		var tab_rel;
+		var tabs = $$('div[id=' + this.window_id + '] span.tab');
+		for (var i = 0, j = 1; i < tabs.length; i++, j++) {
+			if (tab_no === j) {
+				tab_rel = tabs[i].readAttribute('rel');
+				break;
+			}
+		}
+
+		if (tab_rel) {
+			this.switchTab(tab_rel);
+		}
+	},
+
 	openConfigurationWindow: function(slideWindowObj) {
 		if(this.is_progress() === false) {
 			this.progress(true);

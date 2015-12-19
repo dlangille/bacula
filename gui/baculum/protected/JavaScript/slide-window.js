@@ -18,6 +18,7 @@ var SlideWindowClass = Class.create({
 	checked: [],
 	objects: {},
 	windowSize: null,
+	initElementId: null,
 
 	size: {
 		widthNormal : '53%',
@@ -250,6 +251,14 @@ var SlideWindowClass = Class.create({
 		if (opts.hasOwnProperty('actions_obj')) {
 			this.actionsRequest = opts.actions_obj;
 		}
+
+		if (this.initElementId) {
+			this.openConfigurationById(this.initElementId);
+			this.initElementId = null;
+			// for open window by init element, default set second tab
+			this.configurationObj.switchTabByNo(2);
+		}
+
 		this.showProgress(false);
 		this.markAllChecked(false);
 		this.setLoadRequest();
@@ -271,9 +280,7 @@ var SlideWindowClass = Class.create({
 			var el = $(element).down('input[type=hidden]')
 			if(el) {
 				var val = el.getValue();
-				this.loadRequest.ActiveControl.CallbackParameter = val;
-				this.loadRequest.dispatch();
-				this.configurationObj.openConfigurationWindow(this);
+				this.openConfigurationById(val);
 			}
 		}.bind(this);
 		this.setSearch();
@@ -291,6 +298,12 @@ var SlideWindowClass = Class.create({
 		Formatters.set_formatters();
 		this.revertSortingFromCookie();
 	},
+
+	openConfigurationById: function(id) {
+		this.loadRequest.ActiveControl.CallbackParameter = id;
+		this.loadRequest.dispatch();
+		this.configurationObj.openConfigurationWindow(this);
+        },
 
 	isConfigurationOpen: function() {
 		var is_open = false;
@@ -580,6 +593,9 @@ var SlideWindowClass = Class.create({
 			}
 		}
 		return el;
+	},
+	setInitElementId: function(id) {
+		this.initElementId = id;
 	}
 });
 

@@ -68,7 +68,7 @@ class VolumeList extends Portlets implements ISlideWindow {
 	}
 
 	public function prepareData($forceReload = false) {
-		$allowedButtons = array('MediaBtn', 'ReloadVolumes');
+		$allowedButtons = array('VolumeBtn', 'ReloadVolumes');
 		if($this->Page->IsPostBack || $this->Page->IsCallBack || $forceReload) {
 			if(in_array($this->getPage()->CallBackEventTarget->ID, $allowedButtons) || $forceReload) {
 				$params = $this->getUrlParams('volumes', $this->getPage()->VolumeWindow->ID);
