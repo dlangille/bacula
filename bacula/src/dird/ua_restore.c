@@ -1614,12 +1614,13 @@ void find_storage_resource(UAContext *ua, RESTORE_CTX &rx, char *Storage, char *
          ua->info_msg(_("\nWarning Storage is overridden by \"%s\" on the command line.\n"),
             store->name());
          rx.store = store;
-         bstrncpy(rx.RestoreMediaType, MediaType, sizeof(rx.RestoreMediaType));
+         bstrncpy(Storage, store->name(), MAX_NAME_LENGTH); /* Return overridden Storage */
          if (strcmp(MediaType, store->media_type) != 0) {
-            ua->info_msg(_("This may not work because of two different MediaTypes:\n"
-               "  Storage MediaType=\"%s\"\n"
-               "  Volume  MediaType=\"%s\".\n\n"),
+            ua->info_msg(_("Warning MediaType overridden by Storage Media Type:\n"
+               "  New Storage MediaType=\"%s\"\n"
+               "  Old Volume  MediaType=\"%s\".\n\n"),
                store->media_type, MediaType);
+            bstrncpy(MediaType, store->media_type, MAX_NAME_LENGTH); /* Return overridden MediaType */
          }
          Dmsg2(200, "Set store=%s MediaType=%s\n", rx.store->name(), rx.RestoreMediaType);
       }
