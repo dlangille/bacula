@@ -2,7 +2,6 @@
    Bacula(R) - The Network Backup Solution
 
    Copyright (C) 2000-2015 Kern Sibbald
-   Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -34,8 +33,7 @@ bool no_win32_write_errors = false;
 
 /* Static variables */
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-
-
+ 
 const bool have_win32 = false;
 
 #ifdef HAVE_ACL
@@ -43,7 +41,7 @@ const bool have_acl = true;
 #else 
 const bool have_acl = false; 
 #endif 
-
+ 
 #if HAVE_XATTR
 const bool have_xattr = true; 
 #else 

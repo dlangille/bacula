@@ -2,7 +2,6 @@
    Bacula(R) - The Network Backup Solution
 
    Copyright (C) 2000-2015 Kern Sibbald
-   Copyright (C) 2001-2014 Free Software Foundation Europe e.V.
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -29,8 +28,7 @@
 #define ERROR_BUFFER_OVERFLOW 1
 #define ERROR_SUCCESS 0
 #endif
-
-
+ 
 /* acl errors to report per job. */
 #define ACL_MAX_ERROR_PRINT_PER_JOB   25
  
