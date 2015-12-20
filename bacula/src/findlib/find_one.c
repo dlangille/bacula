@@ -765,7 +765,7 @@ find_one_file(JCR *jcr, FF_PKT *ff_pkt,
     *  a block device, we do a raw backup of it or if it is
     *  a fifo, we simply read it.
     */
-#ifdef HAVE_FREEBSD_OS
+#if defined(HAVE_FREEBSD_OS) || defined(__FreeBSD_kernel__)
    /*
     * On FreeBSD, all block devices are character devices, so
     *   to be able to read a raw disk, we need the check for

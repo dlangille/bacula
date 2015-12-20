@@ -627,7 +627,7 @@ static int send_data(bctx_t &bctx, int stream)
    if ((bctx.ff_pkt->flags & FO_SPARSE) || (bctx.ff_pkt->flags & FO_OFFSETS)) {
       bctx.rbuf += OFFSET_FADDR_SIZE;
       bctx.rsize -= OFFSET_FADDR_SIZE;
-#ifdef HAVE_FREEBSD_OS
+#if defined(HAVE_FREEBSD_OS) || defined(__FreeBSD_kernel__)
       /**
        * To read FreeBSD partitions, the read size must be
        *  a multiple of 512.

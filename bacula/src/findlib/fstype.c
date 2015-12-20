@@ -103,6 +103,7 @@ bool fstype_cmp(FF_PKT *ff_pkt, const char *fsname)
  */
 #if defined(HAVE_DARWIN_OS) \
    || defined(HAVE_FREEBSD_OS ) \
+   || defined(HAVE_KFREEBSD_OS ) \
    || defined(HAVE_OPENBSD_OS)
 
 #include <sys/param.h>
