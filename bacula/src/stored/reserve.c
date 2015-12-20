@@ -608,8 +608,12 @@ static bool is_vol_in_autochanger(RCTX &rctx, VOLRES *vol)
 {
    AUTOCHANGER *changer = vol->dev->device->changer_res;
 
+   if (!changer) {
+      return false;
+   }
+
    /* Find resource, and make sure we were able to open it */
-   if (changer && strcmp(rctx.device_name, changer->hdr.name) == 0) {
+   if (strcmp(rctx.device_name, changer->hdr.name) == 0) {
       Dmsg1(dbglvl, "Found changer device %s\n", vol->dev->device->hdr.name);
       return true;
    }
