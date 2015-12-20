@@ -2132,7 +2132,7 @@ extern "C" char *job_code_callback_director(JCR *jcr, const char* param)
          }
          break;
       case 'h':
-         if (jcr->client) {
+         if (jcr->client && jcr->client->address) {
             return jcr->client->address;
          }
          break;
