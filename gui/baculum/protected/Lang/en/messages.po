@@ -1022,3 +1022,6 @@ msgstr "Job:"
 msgid "Media Type"
 msgstr "Media Type"
 
+msgid "Go to started job after start:"
+msgstr "Go to started job after start:"
+

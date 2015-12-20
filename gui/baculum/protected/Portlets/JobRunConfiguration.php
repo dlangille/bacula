@@ -152,7 +152,14 @@ class JobRunConfiguration extends Portlets {
 		}
 
 		$result = $this->Application->getModule('api')->create(array('jobs', 'run'), $params)->output;
-		$this->Estimation->Text = implode(PHP_EOL, $result);
+
+		$startedJobId = $this->Application->getModule('misc')->findJobIdStartedJob($result);
+		if ($this->GoToStartedJob->Checked === true && is_numeric($startedJobId)) {
+			$params['jobid'] = $startedJobId;
+			$this->getPage()->JobConfiguration->configure($startedJobId, $params);
+		} else {
+			$this->Estimation->Text = implode(PHP_EOL, $result);
+		}
 	}
 
 	public function estimate($sender, $param) {

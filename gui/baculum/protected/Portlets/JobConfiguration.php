@@ -35,11 +35,17 @@ class JobConfiguration extends Portlets {
 
 	public $verifyOptions = array('jobname' => 'Verify by Job Name', 'jobid' => 'Verify by JobId');
 
-	public function configure($jobId) {
+	public function configure($jobId, $params = array()) {
 		$jobdata = $this->Application->getModule('api')->get(array('jobs', $jobId))->output;
 		$this->JobName->Text = $jobdata->job;
 		$this->JobID->Text = $jobdata->jobid;
 		$joblog = $this->Application->getModule('api')->get(array('joblog', $jobdata->jobid))->output;
+		$runningJobStates = $this->Application->getModule('misc')->getRunningJobStates();
+		if (in_array($jobdata->jobstatus, $runningJobStates)) {
+			$this->Estimation->CssClass = 'textbox-auto wheel-loader';
+		} else {
+			$this->Estimation->CssClass = 'textbox-auto';
+		}
 		$this->Estimation->Text = is_array($joblog) ? implode(PHP_EOL, $joblog) : Prado::localize("Output for selected job is not available yet or you do not have enabled logging job logs to catalog database. For watching job log there is need to add to the job Messages resource next directive: console = all, !skipped, !saved");
 
 		$this->Level->dataSource = $this->Application->getModule('misc')->getJobLevels();
@@ -86,11 +92,12 @@ class JobConfiguration extends Portlets {
 		foreach($filesetsAll as $director => $filesets) {
 			$filesetsList = array_merge($filesets, $filesetsList);
 		}
+		$selectedFileset = '';
 		if($jobdata->filesetid != 0) {
-			$selectedFileset = $this->Application->getModule('api')->get(array('filesets', $jobdata->filesetid), true)->output;
+			$selectedFileset = $this->Application->getModule('api')->get(array('filesets', $jobdata->filesetid), true)->output->fileset;
 		}
 		$this->FileSet->dataSource = array_combine($filesetsList, $filesetsList);
-		$this->FileSet->SelectedValue = @$selectedFileset->fileset;
+		$this->FileSet->SelectedValue = array_key_exists('fileset', $params) ? $params['fileset'] : $selectedFileset;
 		$this->FileSet->dataBind();
 
 		$pools = $this->Application->getModule('api')->get(array('pools'), true)->output;
@@ -99,7 +106,7 @@ class JobConfiguration extends Portlets {
 			$poolList[$pool->poolid] = $pool->name;
 		}
 		$this->Pool->dataSource = $poolList;
-		$this->Pool->SelectedValue = $jobdata->poolid;
+		$this->Pool->SelectedValue = array_key_exists('poolid', $params) ? $params['poolid'] : $jobdata->poolid;
 		$this->Pool->dataBind();
 
 		$jobshow = $this->Application->getModule('api')->get(array('jobs', 'show', $jobdata->jobid), true)->output;
@@ -120,24 +127,27 @@ class JobConfiguration extends Portlets {
 		$this->Storage->dataBind();
 
 		$runningJobStates = $this->Application->getModule('misc')->getRunningJobStates();
+		$isJobRunning = in_array($jobdata->jobstatus, $runningJobStates);
 
 		$this->Priority->Text = ($jobdata->priorjobid == 0) ? self::DEFAULT_JOB_PRIORITY : $jobdata->priorjobid;
 		$this->DeleteButton->Visible = true;
-		$this->CancelButton->Visible = $this->RefreshStart->Value = in_array($jobdata->jobstatus, $runningJobStates);
+		$this->CancelButton->Visible = $isJobRunning;
+		$this->RefreshStart->Value = $isJobRunning;
 		$this->Run->Display = 'Dynamic';
 		$this->EstimateLine->Display = 'Dynamic';
 		$this->Status->Visible = true;
 	}
 
 	public function status($sender, $param) {
-		$refreshStart = false;
-		for ($i = 0; $i < count($_SESSION['monitor_data']['running_jobs']); $i++) {
-			if ($_SESSION['monitor_data']['running_jobs'][$i]->jobid == $this->JobID->Text) {
-				$refreshStart = true;
-				break;
-			}
+		$jobdata = $this->Application->getModule('api')->get(array('jobs', $this->JobID->Text))->output;
+		$runningJobStates = $this->Application->getModule('misc')->getRunningJobStates();
+		if (in_array($jobdata->jobstatus, $runningJobStates)) {
+			$this->RefreshStart->Value = true;
+		} else {
+			$this->RefreshStart->Value = false;
+			$this->CancelButton->Visible = false;
+			$this->Estimation->CssClass = 'textbox-auto';
 		}
-		$this->RefreshStart->Value = $refreshStart;
 
 		$joblog = $this->Application->getModule('api')->get(array('joblog', $this->JobID->Text))->output;
 		$this->Estimation->Text = is_array($joblog) ? implode(PHP_EOL, $joblog) : Prado::localize("Output for selected job is not available yet or you do not have enabled logging job logs to catalog database. For watching job log there is need to add to the job Messages resource next directive: console = all, !skipped, !saved");
@@ -149,12 +159,14 @@ class JobConfiguration extends Portlets {
 		$this->Run->Display = 'None';
 		$this->DeleteButton->Visible = false;
 		$this->EstimateLine->Display = 'None';
+		$this->Estimation->CssClass = 'textbox-auto';
 	}
 
 	public function cancel($sender, $param) {
 		$this->Application->getModule('api')->set(array('jobs', 'cancel', $this->JobID->Text), array('a' => 'b'));
 		$this->CancelButton->Visible = false;
 		$this->status(null, null);
+		$this->Estimation->CssClass = 'textbox-auto';
 	}
 
 	public function run_again($sender, $param) {
@@ -193,7 +205,11 @@ class JobConfiguration extends Portlets {
 			}
 		}
 		$result = $this->Application->getModule('api')->create(array('jobs', 'run'), $params)->output;
-		if (!is_null($sender) || !is_numeric($param)) {
+		$startedJobId = $this->Application->getModule('misc')->findJobIdStartedJob($result);
+		if (is_numeric($startedJobId)) {
+			$params['jobid'] = $startedJobId;
+			$this->configure($startedJobId, $params);
+		} else {
 			$this->Estimation->Text = implode(PHP_EOL, $result);
 		}
 	}

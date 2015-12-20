@@ -118,7 +118,11 @@
 				<div class="text"><com:TLabel ForControl="Accurate" Text="<%[ Accurate: ]%>" /></div>
 				<div class="field"><com:TActiveCheckBox ID="Accurate" AutoPostBack="false" /></div>
 			</com:TPanel>
-			<com:TCallback ID="ReloadRunJobs" OnCallback="Page.JobRunWindow.prepareData" ClientSide.OnComplete="RunSlideWindow.getObj('JobRunWindow').setLoadRequest();" />
+			<div class="line">
+				<div class="text"><com:TLabel ForControl="GoToStartedJob" Text="<%[ Go to started job after start: ]%>" /></div>
+				<div class="field"><com:TActiveCheckBox ID="GoToStartedJob" AutoPostBack="false" Checked="true" /></div>
+			</div>
+			<com:TCallback ID="ReloadRunJobs" OnCallback="Page.JobRunWindow.prepareData" ClientSide.OnComplete="SlideWindow.getObj('JobRunWindow').setLoadRequest();" />
 			<script type="text/javascript">
 				var jobrun_callback_func = function() {
 					/* If Job Run list window is not open or if actually toolbar is used
@@ -139,9 +143,16 @@
 				<com:BActiveButton ID="Run" Text="<%[ Run job ]%>" ValidationGroup="JobRunGroup" CausesValidation="true" OnClick="run_job">
 					<prop:ClientSide.OnSuccess>
 						ConfigurationWindow.getObj('JobRunWindow').progress(false);
+						oMonitor();
 						jobrun_callback_func();
 						if (Prado.Validation.isValid(Prado.Validation.getForm(), 'JobRunGroup') === true) {
-							ConfigurationWindow.getObj('JobRunWindow').switchTab('jobrun_console_tab');
+							if ($('<%=$this->GoToStartedJob->ClientID%>').checked === true) {
+								ConfigurationWindow.getObj('JobWindow').progress(false);
+								ConfigurationWindow.getObj('JobWindow').show();
+								ConfigurationWindow.getObj('JobWindow').switchTabByNo(2);
+							} else {
+								ConfigurationWindow.getObj('JobRunWindow').switchTab('jobrun_console_tab');
+							}
 						}
 					</prop:ClientSide.OnSuccess>
 				</com:BActiveButton>
@@ -149,8 +160,6 @@
 					<com:BActiveButton ID="Estimate" Text="<%[ Estimate job ]%>" OnClick="estimate">
 						<prop:ClientSide.OnSuccess>
 							ConfigurationWindow.getObj('JobRunWindow').progress(false);
-							jobrun_callback_func();
-							oMonitor();
 							if (Prado.Validation.isValid(Prado.Validation.getForm(), 'JobRunGroup') === true) {
 								ConfigurationWindow.getObj('JobRunWindow').switchTab('jobrun_console_tab');
 							}

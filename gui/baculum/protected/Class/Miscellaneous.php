@@ -241,5 +241,17 @@ class Miscellaneous extends TModule {
 		}
 		return $elements;
 	}
+
+	public function findJobIdStartedJob($output) {
+		$jobid = null;
+		$output = array_reverse($output); // jobid is ussually at the end of output
+		for ($i = 0; $i < count($output); $i++) {
+			if (preg_match('/^Job queued\.\sJobId=(?P<jobid>\d+)$/', $output[$i], $match) === 1) {
+				$jobid = $match['jobid'];
+				break;
+			}
+		}
+		return $jobid;
+	}
 }
 ?>

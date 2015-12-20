@@ -191,6 +191,9 @@ div.slide-window-progress {
 	display: none;
 }
 
+.wheel-loader {
+	background: #ffffff url('wheel.gif') no-repeat center center;
+}
 div.actions_btn {
 	position: absolute;
 	width: 35px;

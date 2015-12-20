@@ -78,6 +78,7 @@
 	</com:TCallback>
 	<com:TCallback ID="RunJobCall" OnCallback="Page.JobWindow.run_again">
 		<prop:ClientSide.OnLoading>
+			ConfigurationWindow.getObj('JobWindow').progress(true);
 			var img_btn = $('run_job_again_btn');
 			var img_src_path = img_btn.readAttribute('src').replace(/[^\/]+\S$/, '');
 			img_btn.writeAttribute('disabled', 'disabled');
@@ -88,6 +89,9 @@
 			var img_src_path = img_btn.readAttribute('src').replace(/[^\/]+\S$/, '');
 			img_btn.writeAttribute('src', img_src_path + 'play.png');
 			img_btn.removeAttribute('disabled');
+			ConfigurationWindow.getObj('JobWindow').progress(false);
+			ConfigurationWindow.getObj('JobWindow').show();
+			ConfigurationWindow.getObj('JobWindow').switchTabByNo(2);
 			status_callback_func();
 			oMonitor();
 		</prop:ClientSide.OnComplete>

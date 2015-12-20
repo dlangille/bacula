@@ -174,9 +174,10 @@
 				</com:TActivePanel>
 				<com:BActiveButton ID="Run" Text="<%[ Run job again ]%>" ValidationGroup="JobGroup" CausesValidation="true" OnClick="run_again">
 					<prop:ClientSide.OnSuccess>
+						ConfigurationWindow.getObj('JobWindow').switchTab('job_console_tab');
 						ConfigurationWindow.getObj('JobWindow').progress(false);
-						job_callback_func();
 						oMonitor();
+						job_callback_func();
 					</prop:ClientSide.OnSuccess>
 				</com:BActiveButton>
 			</div>

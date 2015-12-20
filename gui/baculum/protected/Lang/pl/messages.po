@@ -1023,3 +1023,6 @@ msgstr "Zadanie:"
 msgid "Media Type"
 msgstr "Media Type"
 
+msgid "Go to started job after start:"
+msgstr "Przejdź do uruchomionego zadania po starcie:"
+
