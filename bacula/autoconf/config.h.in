@@ -116,9 +116,6 @@
 /* Define if you have lzo lib */
 #undef HAVE_LZO
 
-/* Define if you have libacl */
-#undef HAVE_ACL
-
 /* General libs */
 #undef LIBS
 
@@ -622,9 +619,6 @@
 /* Define to 1 if you have the `lstat' function. */
 #undef HAVE_LSTAT
 
-/* Define to 1 if you have LZO compression */
-#undef HAVE_LZO
-
 /* Define to 1 if you have the <malloc.h> header file. */
 #undef HAVE_MALLOC_H
 
@@ -1099,9 +1093,9 @@
 /* If using the C implementation of alloca, define if you know the
    direction of stack growth for your system; otherwise it will be
    automatically deduced at runtime.
-	STACK_DIRECTION > 0 => grows toward higher addresses
-	STACK_DIRECTION < 0 => grows toward lower addresses
-	STACK_DIRECTION = 0 => direction of growth unknown */
+        STACK_DIRECTION > 0 => grows toward higher addresses
+        STACK_DIRECTION < 0 => grows toward lower addresses
+        STACK_DIRECTION = 0 => direction of growth unknown */
 #undef STACK_DIRECTION
 
 /* Define to 1 if the `S_IS*' macros in <sys/stat.h> do not work properly. */
