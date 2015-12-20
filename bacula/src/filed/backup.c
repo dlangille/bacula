@@ -28,19 +28,19 @@
 #include "bacula.h"
 #include "filed.h"
 #include "backup.h"
-
+ 
 #ifdef HAVE_LZO
 const bool have_lzo = true;
-#else
+#else 
 const bool have_lzo = false;
-#endif
-
+#endif 
+ 
 #ifdef HAVE_LIBZ
 const bool have_libz = true;
-#else
+#else 
 const bool have_libz = false;
-#endif
-
+#endif 
+ 
 /* Forward referenced functions */
 int save_file(JCR *jcr, FF_PKT *ff_pkt, bool top_level);
 static int send_data(bctx_t &bctx, int stream);
@@ -166,9 +166,8 @@ bool blast_data_to_storage_daemon(JCR *jcr, char *addr)
    memset(jcr->xattr_ctx, 0, sizeof(xattr_ctx_t));
    jcr->xattr_ctx->content = get_pool_memory(PM_MESSAGE);
 #endif
-
-
-   /** Subroutine save_file() is called for each file */
+ 
+   /* Subroutine save_file() is called for each file */
    if (!find_files(jcr, (FF_PKT *)jcr->ff, save_file, plugin_save)) {
       ok = false;                     /* error */
       jcr->setJobStatus(JS_ErrorTerminated);
