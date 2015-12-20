@@ -162,6 +162,9 @@ int main (int argc, char *argv[])
          }
          while (fgets(line, sizeof(line), fd) != NULL) {
             strip_trailing_junk(line);
+            if (line[0] == 0) { /* skip blank lines */
+               continue;
+            }
             Dmsg1(900, "add_exclude %s\n", line);
             add_fname_to_exclude_list(ff, line);
          }
@@ -177,6 +180,9 @@ int main (int argc, char *argv[])
          }
          while (fgets(line, sizeof(line), fd) != NULL) {
             strip_trailing_junk(line);
+            if (line[0] == 0) { /* skip blank lines */
+               continue;
+            }
             Dmsg1(900, "add_include %s\n", line);
             add_fname_to_include_list(ff, 0, line);
          }
