@@ -29,7 +29,7 @@ struct s_kw {
    uint32_t token;
 };
 
-struct RES_ITEM;                    /* Declare forward referenced structure */
+struct RES_ITEM;                   /* Declare forward referenced structure */
 struct RES_ITEM2;                  /* Declare forward referenced structure */
 class RES;                         /* Declare forware referenced structure */
 typedef void (MSG_RES_HANDLER)(LEX *lc, RES_ITEM *item, int index, int pass);
