@@ -2,7 +2,6 @@
    Bacula(R) - The Network Backup Solution
 
    Copyright (C) 2000-2015 Kern Sibbald
-   Copyright (C) 2004-2014 Free Software Foundation Europe e.V.
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -191,7 +190,7 @@ bool fstype(FF_PKT *ff_pkt, char *fs, int fslen)
          ff_pkt->last_fstype = st.f_type;
          bstrncpy(ff_pkt->last_fstypename, item->fstype, sizeof(ff_pkt->last_fstypename));
          bstrncpy(fs, ff_pkt->last_fstypename, fslen);
-         return true;
+         return true; 
       }
       /*
        * Values obtained from statfs(2), testing and
@@ -273,7 +272,7 @@ bool fstype(FF_PKT *ff_pkt, char *fs, int fslen)
       case 0x858458f6:     fstype = "tmpfs"; break;         /* RAMFS_MAGIC */
       case 0x01021994:     fstype = "tmpfs"; break;         /* TMPFS_MAGIC */
 #endif
-
+ 
       default:
          Dmsg2(10, "Unknown file system type \"0x%x\" for \"%s\".\n", st.f_type,
                fname);
@@ -304,7 +303,7 @@ bool fstype(FF_PKT *ff_pkt, char *fs, int fslen)
 /* Tru64 */
 #include <sys/stat.h>
 #include <sys/mount.h>
-
+ 
 bool fstype(FF_PKT *ff_pkt, char *fs, int fslen)
 {
    char *fname = ff_pkt->fname;
@@ -420,12 +419,12 @@ bool read_mtab(mtab_handler_t *mtab_handler, void *user_ctx)
             mntinfo->f_mntonname, mntinfo->f_fstypename, NULL);
          mntinfo++;
       }
-   }
+   } 
    V(mutex);
 #endif /* HAVE_GETMNTINFO */
    return true;
 } 
-
+ 
 #ifdef TEST_PROGRAM
 int main(int argc, char **argv)
 {
