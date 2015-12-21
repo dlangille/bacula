@@ -22,7 +22,6 @@
  *
  *   Written by Robert Nelson, June 2006
  *
- *   Version $Id$
  */
 
 #ifndef TEST_PROGRAM
