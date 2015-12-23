@@ -12,11 +12,15 @@ db_password=@db_password@
 if [ "$db_password" != "" ]; then
    pass="identified by '$db_password'"
 fi
-
+db_ssl_options=@db_ssl_options@
+if [ "$db_ssl_options" != "" ]; then
+   ssl_options="require $db_ssl_options"
+fi
+ 
 if $bindir/mysql $* -u root -f <<END-OF-DATA
 use mysql
-grant all privileges on ${db_name}.* to ${db_user}@localhost ${pass};
-grant all privileges on ${db_name}.* to ${db_user}@"%" ${pass};
+grant all privileges on ${db_name}.* to ${db_user}@localhost ${pass} ${ssl_options};
+grant all privileges on ${db_name}.* to ${db_user}@"%" ${pass} ${ssl_options};
 select * from user;
 flush privileges;
 END-OF-DATA

@@ -340,6 +340,8 @@ int main (int argc, char *argv[])
                    NULL /* dbi driver */,
                    db_name, db_user, db_password, db_address, db_port + 100,
                    NULL /* db_socket */,
+                   db_ssl_key, db_ssl_cert, db_ssl_ca,
+                   db_ssl_capath, db_ssl_cipher,
                    0 /* mult_db_connections */, false);
       ok(db != NULL, "Test bad connection");
       if (!db) {
@@ -354,6 +356,8 @@ int main (int argc, char *argv[])
                 NULL /* dbi driver */,
                 db_name, db_user, db_password, db_address, db_port,
                 NULL /* db_socket */,
+                db_ssl_key, db_ssl_cert, db_ssl_ca,
+                db_ssl_capath, db_ssl_cipher,
                 false /* mult_db_connections */, false);
 
    ok(db != NULL, "Test db connection");

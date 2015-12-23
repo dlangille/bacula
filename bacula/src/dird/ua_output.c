@@ -815,6 +815,8 @@ bool complete_jcr_for_job(JCR *jcr, JOB *job, POOL *pool)
                 jcr->catalog->db_user,
                 jcr->catalog->db_password, jcr->catalog->db_address,
                 jcr->catalog->db_port, jcr->catalog->db_socket,
+                jcr->catalog->db_ssl_key, jcr->catalog->db_ssl_cert, jcr->catalog->db_ssl_ca,
+                jcr->catalog->db_ssl_capath, jcr->catalog->db_ssl_cipher,
                 jcr->catalog->mult_db_connections,
                 jcr->catalog->disable_batch_insert);
    if (!jcr->db || !db_open_database(jcr, jcr->db)) {

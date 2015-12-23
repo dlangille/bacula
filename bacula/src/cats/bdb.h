@@ -42,6 +42,11 @@ public:
    char *m_db_driverdir;              /* database driver dir */
    int m_ref_count;                   /* reference count */
    int m_db_port;                     /* port for host name address */
+   char *m_db_ssl_key;                /* path name to the key file */
+   char *m_db_ssl_cert;               /* path name to the certificate file */
+   char *m_db_ssl_ca;                 /* path name to the certificate authority file */
+   char *m_db_ssl_capath;             /* path name to a directory that contains trusted SSL CA certificates in PEM format */
+   char *m_db_ssl_cipher;             /* a list of permissible ciphers to use for SSL encryption */
    bool m_disabled_batch_insert;      /* explicitly disabled batch insert mode ? */
    bool m_dedicated;                  /* is this connection dedicated? */
    bool m_use_fatal_jmsg;             /* use Jmsg(M_FATAL) after bad queries? */

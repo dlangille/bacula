@@ -100,7 +100,7 @@ static void usage()
    fprintf(stderr,
 PROG_COPYRIGHT
 "\n%sVersion: %s (%s)\n\n"
-"Usage: dbcheck [-c config ] [-B] [-C catalog name] [-d debug_level] <working-directory> <bacula-database> <user> <password> [<dbhost>] [<dbport>]\n"
+"Usage: dbcheck [-c config ] [-B] [-C catalog name] [-d debug_level] <working-directory> <bacula-database> <user> <password> [<dbhost>] [<dbport>] [<dbport>] [<dbsslkey>] [<dbsslcert>] [<dbsslca>]\n"
 "       -b              batch mode\n"
 "       -C              catalog name in the director conf file\n"
 "       -c              Director conf filename\n"
@@ -120,6 +120,8 @@ int main (int argc, char *argv[])
 {
    int ch;
    const char *user, *password, *db_name, *dbhost;
+   const char *dbsslkey = NULL, *dbsslcert = NULL, *dbsslca = NULL;
+   const char *dbsslcapath = NULL, *dbsslcipher = NULL;
    int dbport = 0;
    bool print_catalog=false;
    char *configfile = NULL;
@@ -230,9 +232,14 @@ int main (int argc, char *argv[])
             dbhost = NULL;
          }
          dbport = catalog->db_port;
+         dbsslkey = catalog->db_ssl_key;
+         dbsslcert = catalog->db_ssl_cert;
+         dbsslca = catalog->db_ssl_ca;
+         dbsslcapath = catalog->db_ssl_capath;
+         dbsslcipher = catalog->db_ssl_cipher;
       }
    } else {
-      if (argc > 6) {
+      if (argc > 9) {
          Pmsg0(0, _("Wrong number of arguments.\n"));
          usage();
       }
@@ -251,42 +258,43 @@ int main (int argc, char *argv[])
       password = "";
       dbhost = NULL;
 
-      if (argc == 2) {
+      if (argc >= 2) {
          db_name = argv[1];
          user = db_name;
-      } else if (argc == 3) {
-         db_name = argv[1];
-         user = argv[2];
-      } else if (argc == 4) {
-         db_name = argv[1];
-         user = argv[2];
-         password = argv[3];
-      } else if (argc == 5) {
-         db_name = argv[1];
-         user = argv[2];
-         password = argv[3];
-         dbhost = argv[4];
-      } else if (argc == 6) {
-         db_name = argv[1];
-         user = argv[2];
-         password = argv[3];
-         dbhost = argv[4];
-         errno = 0;
-         dbport = strtol(argv[5], &endptr, 10);
-         if (*endptr != '\0') {
-            Pmsg0(0, _("Database port must be a numeric value.\n"));
-            exit(1);
-         } else if (errno == ERANGE) {
-            Pmsg0(0, _("Database port must be a int value.\n"));
-            exit(1);
-         }
-      }
+         if (argc >= 3) {
+            user = argv[2];
+            if (argc >= 4) {
+               password = argv[3];
+               if (argc >= 5) {
+                  dbhost = argv[4];
+                  if (argc >= 6) {
+                     errno = 0;
+                     dbport = strtol(argv[5], &endptr, 10);
+                     if (*endptr != '\0') {
+                        Pmsg0(0, _("Database port must be a numeric value.\n"));
+                        exit(1);
+                     } else if (errno == ERANGE) {
+                        Pmsg0(0, _("Database port must be a int value.\n"));
+                        exit(1);
+                     }
+                     if (argc >= 7) {
+                        dbsslkey = argv[6];
+                        dbsslcert = argv[7];
+                        if (argc == 9) {
+                           dbsslca = argv[8];
+                        } /* if (argc == 9) */
+                     } /* if (argc >= 7) */
+                  } /* if (argc >= 6) */
+               } /* if (argc >= 5) */
+            } /* if (argc >= 4) */
+         } /* if (argc >= 3) */
+      } /* if (argc >= 2) */
    }
 
    /*
     * Open database
     */
-   db = db_init_database(NULL, NULL, db_name, user, password, dbhost, dbport, NULL, false, false);
+   db = db_init_database(NULL, NULL, db_name, user, password, dbhost, dbport, NULL, dbsslkey, dbsslcert, dbsslca, dbsslcapath, dbsslcipher, false, false);
    if (!db || !db_open_database(NULL, db)) {
       Emsg1(M_FATAL, 0, "%s", db_strerror(db));
           return 1;
@@ -337,6 +345,8 @@ static void print_catalog_details(CAT *catalog, const char *working_dir)
    db = db_init_database(NULL, catalog->db_driver, catalog->db_name, catalog->db_user,
                          catalog->db_password, catalog->db_address,
                          catalog->db_port, catalog->db_socket,
+                         catalog->db_ssl_key, catalog->db_ssl_cert, catalog->db_ssl_ca,
+                         catalog->db_ssl_capath, catalog->db_ssl_cipher,
                          catalog->mult_db_connections,
                          catalog->disable_batch_insert);
    if (db) {

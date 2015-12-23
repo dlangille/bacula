@@ -58,6 +58,11 @@ static const char *db_name = "bacula";
 static const char *db_user = "bacula";
 static const char *db_password = "";
 static const char *db_host = NULL;
+static const char *db_ssl_key= NULL;
+static const char *db_ssl_cert= NULL;
+static const char *db_ssl_ca= NULL;
+static const char *db_ssl_capath= NULL;
+static const char *db_ssl_cipher= NULL;
 
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -78,6 +83,9 @@ PROG_COPYRIGHT
 "       -u <user>         specify database user name (default bacula)\n"
 "       -P <password      specify database password (default none)\n"
 "       -h <host>         specify database host (default NULL)\n"
+"       -k <sslkey>       path name to the key file (default NULL)\n"
+"       -e <sslcert>      path name to the certificate file (default NULL)\n"
+"       -a <sslca>        path name to the CA certificate file (default NULL)\n"
 "       -w <working>      specify working directory\n"
 "       -r <jobids>       call restore code with given jobids\n"
 "       -v                verbose\n"
@@ -114,7 +122,7 @@ int main (int argc, char *argv[])
 
    OSDependentInit();
 
-   while ((ch = getopt(argc, argv, "bBh:c:d:n:P:Su:vf:w:r:?")) != -1) {
+   while ((ch = getopt(argc, argv, "bBh:k:e:a:c:d:n:P:Su:vf:w:r:?")) != -1) {
       switch (ch) {
       case 'r':
          restore_list=bstrdup(optarg);
@@ -138,6 +146,18 @@ int main (int argc, char *argv[])
 
       case 'h':
          db_host = optarg;
+         break;
+
+      case 'k':
+         db_ssl_key = optarg;
+         break;
+
+      case 'e':
+         db_ssl_cert = optarg;
+         break;
+
+      case 'a':
+         db_ssl_ca = optarg;
          break;
 
       case 'n':
@@ -186,7 +206,9 @@ int main (int argc, char *argv[])
       /* To use the -r option, the catalog should already contains records */
       
       if ((db = db_init_database(NULL, NULL, db_name, db_user, db_password,
-                                 db_host, 0, NULL, false, disable_batch)) == NULL) {
+                                 db_host, 0, NULL, db_ssl_key, db_ssl_cert,
+                                 db_ssl_ca, db_ssl_capath, db_ssl_cipher,
+                                 false, disable_batch)) == NULL) {
          Emsg0(M_ERROR_TERM, 0, _("Could not init Bacula database\n"));
       }
       if (!db_open_database(NULL, db)) {
@@ -235,7 +257,9 @@ int main (int argc, char *argv[])
       pm_strcpy(bjcr->fileset_md5, "Dummy.fileset.md5");
       
       if ((db = db_init_database(NULL, NULL, db_name, db_user, db_password,
-                                 db_host, 0, NULL, false, false)) == NULL) {
+                                 db_host, 0, NULL, db_ssl_key, db_ssl_cert,
+                                 db_ssl_ca, db_ssl_capath, db_ssl_cipher,
+                                 false, false)) == NULL) {
          Emsg0(M_ERROR_TERM, 0, _("Could not init Bacula database\n"));
       }
       if (!db_open_database(NULL, db)) {

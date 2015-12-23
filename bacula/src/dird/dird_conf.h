@@ -228,6 +228,11 @@ public:
    char *db_user;
    char *db_name;
    char *db_driver;                   /* Select appropriate driver */
+   char *db_ssl_key;                  /* the path name to the key file */
+   char *db_ssl_cert;                 /* the path name to the certificate file */
+   char *db_ssl_ca;                   /* the path name to the certificate authority file */
+   char *db_ssl_capath;               /* the path name to a directory that contains trusted SSL CA certificates in PEM format */
+   char *db_ssl_cipher;               /* a list of permissible ciphers to use for SSL encryption */
    uint32_t mult_db_connections;      /* set for multiple db connections */
    bool disable_batch_insert;         /* set to disable batch inserts */
 

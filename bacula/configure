@@ -685,6 +685,7 @@ db_port
 db_password
 db_user
 db_name
+db_ssl_options
 mon_sd_password
 mon_fd_password
 mon_dir_password
@@ -986,6 +987,7 @@ with_db_name
 with_db_user
 with_db_password
 with_db_port
+with_db_ssl_options
 with_dir_user
 with_dir_group
 with_sd_user
@@ -23655,6 +23657,19 @@ if test "${with_db_port+set}" = set; then :
 
 
 fi
++db_ssl_options=
+
+
+
+# Check whether --with-db_ssl_options was given.
+if test "${with_db_ssl_options+set}" = set; then :
+  withval=$with_db_ssl_options;
+       if test "x$withval" != "x" ; then
+         db_ssl_options=$withval
+       fi
+
+
+fi
 
 
 
@@ -33730,6 +33745,7 @@ Configuration on `date`:
    Database port:	     ${db_port}
    Database name:	     ${db_name}
    Database user:	     ${db_user}
+   Database SSL options:     ${db_ssl_options}
 
    Job Output Email:	     ${job_email}
    Traceback Email:	     ${dump_email}

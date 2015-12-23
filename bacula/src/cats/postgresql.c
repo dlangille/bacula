@@ -99,11 +99,11 @@ BDB_POSTGRESQL::~BDB_POSTGRESQL()
  * Initialize database data structure. In principal this should
  * never have errors, or it is really fatal.
  */
-BDB *db_init_database(JCR *jcr, const char *db_driver, const char *db_name,
-                       const char *db_user, const char *db_password,
-                       const char *db_address, int db_port,
-                       const char *db_socket, bool mult_db_connections,
-                       bool disable_batch_insert)
+BDB *db_init_database(JCR *jcr, const char *db_driver, const char *db_name, const char *db_user, 
+                       const char *db_password, const char *db_address, int db_port, const char *db_socket, 
+                       const char *db_ssl_key, const char *db_ssl_cert, const char *db_ssl_ca,
+                       const char *db_ssl_capath, const char *db_ssl_cipher,
+                       bool mult_db_connections, bool disable_batch_insert) 
 {
    BDB_POSTGRESQL *mdb = NULL;
 

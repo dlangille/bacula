@@ -39,6 +39,11 @@ static const char *db_name = "regress";
 static const char *db_user = "regress";
 static const char *db_password = "";
 static const char *db_host = NULL;
+static const char *db_ssl_key = NULL;
+static const char *db_ssl_cert = NULL;
+static const char *db_ssl_ca = NULL;
+static const char *db_ssl_capath = NULL;
+static const char *db_ssl_cipher = NULL;
 
 static void usage()
 {
@@ -51,6 +56,9 @@ PROG_COPYRIGHT
 "       -u <user>         specify database user name (default bacula)\n"
 "       -P <password      specify database password (default none)\n"
 "       -h <host>         specify database host (default NULL)\n"
+"       -k <sslkey>       path name to the key file (default NULL)\n"
+"       -e <sslcert>      path name to the certificate file (default NULL)\n"
+"       -a <sslca>        path name to the CA certificate file (default NULL)\n"
 "       -w <working>      specify working directory\n"
 "       -j <jobids>       specify jobids\n"
 "       -p <path>         specify path\n"
@@ -119,7 +127,7 @@ int main (int argc, char *argv[])
 
    OSDependentInit();
 
-   while ((ch = getopt(argc, argv, "h:c:l:d:n:P:Su:vf:w:?j:p:f:T")) != -1) {
+   while ((ch = getopt(argc, argv, "h:k:e:a:c:l:d:n:P:Su:vf:w:?j:p:f:T")) != -1) {
       switch (ch) {
       case 'd':                    /* debug level */
          if (*optarg == 't') {
@@ -141,6 +149,18 @@ int main (int argc, char *argv[])
 
       case 'h':
          db_host = optarg;
+         break;
+
+      case 'k':
+         db_ssl_key= optarg;
+         break;
+
+      case 'e':
+         db_ssl_cert= optarg;
+         break;
+
+      case 'a':
+         db_ssl_ca= optarg;
          break;
 
       case 'n':
@@ -202,7 +222,10 @@ int main (int argc, char *argv[])
    bstrncpy(bjcr->Job, "bvfs_test", sizeof(bjcr->Job));
    
    if ((db = db_init_database(NULL, NULL, db_name, db_user, db_password,
-                              db_host, 0, NULL, false, false)) == NULL) {
+                              db_host, 0, NULL,
+                              db_ssl_key, db_ssl_cert, db_ssl_ca,
+                              db_ssl_capath, db_ssl_cipher,
+                              false, false)) == NULL) {
       Emsg0(M_ERROR_TERM, 0, _("Could not init Bacula database\n"));
    }
    Dmsg1(0, "db_type=%s\n", db_get_engine_name(db));

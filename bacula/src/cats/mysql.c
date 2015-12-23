@@ -93,6 +93,8 @@ BDB_MYSQL::~BDB_MYSQL()
  */ 
 BDB *db_init_database(JCR *jcr, const char *db_driver, const char *db_name, const char *db_user, 
                        const char *db_password, const char *db_address, int db_port, const char *db_socket, 
+                       const char *db_ssl_key, const char *db_ssl_cert, const char *db_ssl_ca,
+                       const char *db_ssl_capath, const char *db_ssl_cipher,
                        bool mult_db_connections, bool disable_batch_insert) 
 { 
    BDB_MYSQL *mdb = NULL; 
@@ -130,9 +132,24 @@ BDB *db_init_database(JCR *jcr, const char *db_driver, const char *db_name, cons
    if (db_address) { 
       mdb->m_db_address = bstrdup(db_address); 
    } 
-   if (db_socket) { 
+   if (db_socket) {
       mdb->m_db_socket = bstrdup(db_socket); 
    } 
+   if (db_ssl_key) {
+      mdb->m_db_ssl_key = bstrdup(db_ssl_key);
+   }
+   if (db_ssl_cert) {
+      mdb->m_db_ssl_cert = bstrdup(db_ssl_cert);
+   }
+   if (db_ssl_ca) {
+      mdb->m_db_ssl_ca = bstrdup(db_ssl_ca);
+   }
+   if (db_ssl_capath) {
+      mdb->m_db_ssl_capath = bstrdup(db_ssl_capath);
+   }
+   if (db_ssl_cipher) {
+      mdb->m_db_ssl_cipher = bstrdup(db_ssl_cipher);
+   }
    mdb->m_db_port = db_port; 
  
    if (disable_batch_insert) { 
@@ -200,6 +217,20 @@ bool BDB_MYSQL::bdb_open_database(JCR *jcr)
    mysql_init(&mdb->m_instance); 
  
    Dmsg0(50, "mysql_init done\n"); 
+
+   /*
+   * Sets the appropriate certificate options for
+   * establishing secure connection using SSL to the database.
+   */
+   if (mdb->m_db_ssl_key) {
+      mysql_ssl_set(&(mdb->m_instance),
+                   mdb->m_db_ssl_key,
+                   mdb->m_db_ssl_cert,
+                   mdb->m_db_ssl_ca,
+                   mdb->m_db_ssl_capath,
+                   mdb->m_db_ssl_cipher);
+   }
+
    /* 
     * If connection fails, try at 5 sec intervals for 30 seconds. 
     */ 
@@ -227,7 +258,7 @@ bool BDB_MYSQL::bdb_open_database(JCR *jcr)
    Dmsg0(50, "mysql_real_connect done\n"); 
    Dmsg3(50, "db_user=%s db_name=%s db_password=%s\n", mdb->m_db_user, mdb->m_db_name, 
         (mdb->m_db_password == NULL) ? "(NULL)" : mdb->m_db_password); 
- 
+
    if (mdb->m_db_handle == NULL) { 
       Mmsg2(&mdb->errmsg, _("Unable to connect to MySQL server.\n" 
 "Database=%s User=%s\n" 
@@ -244,6 +275,19 @@ bool BDB_MYSQL::bdb_open_database(JCR *jcr)
       goto get_out; 
    } 
  
+   /* get the current cipher used for SSL connection */
+   if (mdb->m_db_ssl_key) {
+      const char *cipher;
+      if (mdb->m_db_ssl_cipher) {
+         free(mdb->m_db_ssl_cipher);
+      }
+      cipher = (const char *)mysql_get_ssl_cipher(&(mdb->m_instance));
+      if (cipher) {
+         mdb->m_db_ssl_cipher = bstrdup(cipher);
+      }
+      Dmsg1(50, "db_ssl_ciper=%s\n", (mdb->m_db_ssl_cipher == NULL) ? "(NULL)" : mdb->m_db_ssl_cipher);
+   }
+
    mdb->m_connected = true; 
    if (!bdb_check_version(jcr)) { 
       goto get_out; 
@@ -311,7 +355,22 @@ void BDB_MYSQL::bdb_close_database(JCR *jcr)
       } 
       if (mdb->m_db_socket) { 
          free(mdb->m_db_socket); 
-      } 
+      }
+      if (mdb->m_db_ssl_key) {
+         free(mdb->m_db_ssl_key);
+      }
+      if (mdb->m_db_ssl_cert) {
+         free(mdb->m_db_ssl_cert);
+      }
+      if (mdb->m_db_ssl_ca) {
+         free(mdb->m_db_ssl_ca);
+      }
+      if (mdb->m_db_ssl_capath) {
+         free(mdb->m_db_ssl_capath);
+      }
+      if (mdb->m_db_ssl_cipher) {
+         free(mdb->m_db_ssl_cipher);
+      }
       delete mdb; 
       if (db_list->size() == 0) { 
          delete db_list; 

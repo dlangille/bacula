@@ -960,6 +960,8 @@ static bool check_catalog(cat_op mode)
               catalog->db_user,
               catalog->db_password, catalog->db_address,
               catalog->db_port, catalog->db_socket,
+              catalog->db_ssl_key, catalog->db_ssl_cert, catalog->db_ssl_ca,
+              catalog->db_ssl_capath, catalog->db_ssl_cipher,
               catalog->mult_db_connections,
               catalog->disable_batch_insert);
       if (!db || !db_open_database(NULL, db)) {

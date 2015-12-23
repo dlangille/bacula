@@ -1452,6 +1452,20 @@ AC_ARG_WITH(db_port,
 )
 AC_SUBST(db_port)
 
+dnl
+dnl Pickup MySQL SSL options for database user connection 
+dnl
+db_ssl_options=
+AC_ARG_WITH(db_ssl_options,
+   AC_HELP_STRING([--with-db-ssl-options=DBSSLOPTIONS], [specify SSL options for database user connection @<:@default=null@:>@]),
+   [
+       if test "x$withval" != "x" ; then
+         db_ssl_options=$withval
+       fi
+   ]
+)
+AC_SUBST(db_ssl_options)
+
 #
 # Handle users and groups for each daemon
 #
@@ -3490,6 +3504,7 @@ Configuration on `date`:
    Database port:	     ${db_port}
    Database name:	     ${db_name}
    Database user:	     ${db_user}
+   Database SSL options:     ${db_ssl_options}
 
    Job Output Email:	     ${job_email}
    Traceback Email:	     ${dump_email}

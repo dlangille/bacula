@@ -1367,7 +1367,7 @@ bool Bvfs::compute_restore_list(char *fileid, char *dirid, char *hardlink,
          result[i++] = str_to_int64(row[1]); /* JobId */
          result[i++] = str_to_int64(row[2]); /* FilenameId */
          result[i++] = str_to_int64(row[3]); /* PathId */
-      }
+      } 
 
       i=0;
       while (num > 0) {
@@ -1440,5 +1440,5 @@ void Bvfs::insert_missing_delta(char *output_table, int64_t *res)
       Dmsg1(dbglevel_sql, "Can't exec q=%s\n", db->cmd);
    }
 }
-
+ 
 #endif /* HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL */
