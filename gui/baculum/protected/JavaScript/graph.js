@@ -411,6 +411,67 @@ var GraphClass = Class.create({
 	}
 });
 
+var GraphPieClass = Class.create({
+	jobs: [],
+	container: null,
+	series: null,
+	pie: null,
+	graph_options: {
+		colors: ['#63c422', '#d70808', '#FFFF66', 'orange', 'blue'],
+		HtmlText: false,
+		fontColor: '#ffffff',
+		grid: {
+			verticalLines : false,
+			horizontalLines : false,
+			outlineWidth: 0,
+		},
+		xaxis: { showLabels : false,},
+		yaxis: { showLabels : false },
+		pie: {
+			show : true,
+			explode : 5,
+			labelFormatter: PieGraph.pie_label_formatter,
+			shadowSize: 4,
+			fillOpacity: 1,
+			sizeRatio: 0.6
+		},
+		mouse: {
+			track : true,
+			trackFormatter: PieGraph.pie_track_formatter,
+			relative: true
+		},
+		legend: {
+			position : 'se',
+			backgroundColor : '#D2E8FF',
+			margin: 0
+		}
+	},
+	initialize: function(jobs, container_id) {
+		this.jobs = jobs;
+		this.container = document.getElementById(container_id);
+		this.series = this.prepare_series();
+		this.draw_grah();
+	},
+	prepare_series: function() {
+		var series = [];
+		var label, serie;
+		var job_types = Object.keys(this.jobs);
+		var jobs_count;
+		for (var i = 0; i < job_types.length; i++) {
+			label = job_types[i];
+			jobs_count = this.jobs[label].length;
+			serie = {
+				data: [[0, jobs_count]],
+				label: label + ' (' + jobs_count.toString() + ')'
+			}
+			series.push(serie);
+		}
+		return series;
+	},
+	draw_grah: function() {
+		this.pie = Flotr.draw(this.container, this.series, this.graph_options);
+	}
+});
 
 var iso_date_to_timestamp = function(iso_date) {
 	var date_split = iso_date.split(' ');

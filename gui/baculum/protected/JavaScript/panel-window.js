@@ -1,18 +1,28 @@
 var PanelWindowClass = Class.create({
 
-	currentWindow: null,
-	windowElements: ['container', 'graphs'],
+	currentWindowId: null,
+	windowIds: ['dashboard', 'container', 'graphs'],
 	onShow: null,
 
+	initialize: function() {
+		this.currentWindowId = this.windowIds[0];
+	},
+
 	hideOthers: function() {
-		 this.windowElements.each(function(element) {
-			 if(element != this.currentWindow) {
-				Effect.toggle(element, 'slide', {duration: 0.3, afterFinish : function() {
-						$(element).hide();
-					}.bind(element)
+		var hide_panel_by_id = function(id) {
+			var el = $(id);
+			if(el.visible() === true && id != this.currentWindowId) {
+				Effect.toggle(el, 'slide', {
+					duration: 0.3,
+					afterFinish: function() {
+						el.hide();
+					}.bind(el)
 				});
 			}
-		 }.bind(this));
+		}
+		for (var i = 0, j = 1; i < this.windowIds.length; i++, j++) {
+			hide_panel_by_id(this.windowIds[i]);
+		}
 	},
 
 	show: function(id) {
@@ -20,7 +30,7 @@ var PanelWindowClass = Class.create({
 			return;
 		}
 
-		this.currentWindow = id;
+		this.currentWindowId = id;
 		Effect.toggle(id, 'slide', {
 			duration: 0.3,
 			beforeStart: function() {
@@ -30,6 +40,7 @@ var PanelWindowClass = Class.create({
 				if (this.onShow) {
 					this.onShow();
 				}
+				setContentWidth();
 			}.bind(this)
 		});
 	}

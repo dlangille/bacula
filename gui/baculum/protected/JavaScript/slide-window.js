@@ -596,6 +596,15 @@ var SlideWindowClass = Class.create({
 	},
 	setInitElementId: function(id) {
 		this.initElementId = id;
+	},
+	quickJumpToElement: function(id, btn_id, panel_obj) {
+		this.setInitElementId(id);
+		panel_obj.show('container');
+		if (this.isWindowOpen() === true) {
+			this.openConfigurationById(id);
+		} else {
+			$(btn_id).click();
+		}
 	}
 });
 

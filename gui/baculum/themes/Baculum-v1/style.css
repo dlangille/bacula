@@ -56,19 +56,25 @@ textarea.textbox-auto {
 	font-size: 11px;
 }
 
-a {
+a, a.big {
 	font-size: 12px;
 	color: white;
 	padding: 3px 4px;
 	text-decoration: none;
 }
 
-a:hover {
+a:hover, a.big {
 	text-decoration: underline;
 }
+
+a.big {
+	font-size: 17px;
+	font-weight: bold;
+}
+
 #container {
 	margin: 0 auto;
-	min-width: 975px;
+	min-width: 987px;
 	max-width: 100%;
 	border-right: 1px solid black;
 	background-color: #585758;
@@ -76,7 +82,7 @@ a:hover {
 
 #top {
 	margin: 0 auto;
-	min-width: 975px;
+	min-width: 987px;
 	max-width: 100%;
 	height: 51px;
 	background-image: url('bls_top.png');
@@ -89,8 +95,12 @@ a:hover {
 }
 
 #top img {
-	padding: 11px 0 11px 35px;
+	padding: 11px 0 11px 5px;
 	float: left;
+}
+
+#logo {
+	margin-left: 20px;
 }
 
 #menu-left {
@@ -125,18 +135,25 @@ a:hover {
 }
 
 #panel_switcher {
-	margin: 17px 20px 0 0;
+	margin: 2px 6px 0 0;
 	font-weight: bold;
 }
 
+#panel_switcher img {
+	margin: 0;
+	padding-left: 12px;
+	float: none;
+	cursor: pointer;
+}
+
 #tray_bar {
-	margin: 2px 30px 2px 0;
+	margin: 2px 0;
 }
 
 #tray_bar img {
 	float: none;
 	margin: 0;
-	padding: auto 12px;
+	padding: auto 7px;
 }
 
 #tray_bar span{
@@ -243,7 +260,7 @@ div.actions_btn {
 
 #bottom {
 	max-width: 100%;
-	min-width: 975px;
+	min-width: 987px;
 	height: 11px;
 	margin: 0 auto;
 	background: transparent url('bls_bottom.png') repeat-x top left;
@@ -899,8 +916,7 @@ span.tab_active {
 	background-color: rgb(163, 180, 197);
 }
 
-#graphs {
-	height: 600px;
+#graphs, #dashboard {
 	min-width: 954px;
 	max-width: 100%;
 	padding: 10px;
@@ -928,6 +944,63 @@ span.tab_active {
 	margin: 0 auto;
 	width: 98%;
 	height: 425px;
+}
+
+.dashboard_graph {
+	height: 450px;
+	text-align: center;
+	font-size: 12px;
+	color: white;
+	font-weight: bold;
+	float: right;
+}
+
+#dashboard_icons  {
+	min-width: 500px;
+	min-height: 600px;
+}
+
+.dashboard_field {
+	max-width: 450px;
+	min-width: 320px;
+	height: 86px;
+	margin: 4px;
+	border-radius: 5px;
+	float: left;
+}
+
+.dashboard_field img {
+	float: left;
+}
+
+.dashboard_field p {
+	font-size: 10px;
+	margin-top: 5px;
+}
+
+.dashboard_field p span:nth-of-type(1) {
+	display: inline-block;
+	width: 122px;
+}
+
+.dashboard_field p span:nth-of-type(2) {
+	font-size: 12px;
+	padding-left: 5px;
+	font-weight: bold;
+}
+
+.dashboard_field a {
+	text-decoration: underline;
+}
+
+#jobs_summary_graph {
+	width: 380px;
+	height: 380px;
+}
+
+#jobs_to_view {
+    width: 240px;
+    margin: 0 2px 0 5px;
 }
 
 /* Overwrite date picker classes */

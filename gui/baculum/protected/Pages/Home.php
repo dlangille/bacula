@@ -36,6 +36,10 @@ class Home extends BaculumPage
 
 	public $initElementId = null;
 
+	public $jobs_states = null;
+
+	public $dbtype = null;
+
 	public $windowIds = array('Storage', 'Client', 'Volume', 'Pool', 'Job', 'JobRun');
 
 	public function onInit($param) {
@@ -63,12 +67,14 @@ class Home extends BaculumPage
 
 		if(!$this->IsPostBack && !$this->IsCallBack) {
 			$directors = $this->getModule('api')->get(array('directors'))->output;
-			if(!array_key_exists('director', $_SESSION)) {
+			if(!array_key_exists('director', $_SESSION) || $directors[0] != $_SESSION['director']) {
 				$_SESSION['director'] = $directors[0];
 			}
 			$this->Director->dataSource = array_combine($directors, $directors);
 			$this->Director->SelectedValue = $_SESSION['director'];
 			$this->Director->dataBind();
+			$this->dbtype = $this->getModule('configuration')->getDbNameByType($appConfig['db']['type']);
+			$this->setJobsStates();
 			$this->setJobs();
 			$this->setClients();
 			$this->setWindowOpen();
@@ -104,6 +110,29 @@ class Home extends BaculumPage
 		return json_encode($this->jobs);
 	}
 
+	public function setJobsStates() {
+		$jobs_summary = array(
+			'ok' => array(),
+			'error' => array(),
+			'warning' => array(),
+			'cancel' => array(),
+			'running' => array()
+		);
+		$job_types = $jobs_summary;
+		$job_states = array();
+
+		$misc = $this->getModule('misc');
+		foreach($job_types as $type => $arr) {
+			$states = $misc->getJobStatesByType($type);
+			foreach($states as $state => $desc) {
+				$desc['type'] = $type;
+				$jobs_states[$state] = $desc;
+			}
+		}
+
+		$this->jobs_states = json_encode($jobs_states);
+	}
+
 	public function setJobs() {
 		$this->jobs = $this->getModule('api')->get(array('jobs'));
 		$jobs = array('@' => Prado::localize('select job'));
@@ -122,7 +151,6 @@ class Home extends BaculumPage
 		}
 		$this->Clients->dataSource = $clients;
 		$this->Clients->dataBind();
-
 	}
 
 	public function setWindowOpen() {

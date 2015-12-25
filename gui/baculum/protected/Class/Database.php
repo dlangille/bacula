@@ -119,5 +119,38 @@ class Database extends TModule {
 		$ret = (array_key_exists('versionid', $result) === true) ? $result['versionid'] : false;
 		return $ret;
 	}
+
+	public function getDatabaseSize() {
+		$configuration = $this->Application->getModule('configuration');
+		$db_params = $this->getDBParams();
+		$dbtype = $db_params['type'];
+		$dbname = $db_params['name'];
+
+		$db = new ActiveRecord();
+		$connection = $db->getDbConnection();
+		$connection->setActive(true);
+		$pdo = $connection->getPdoInstance();
+
+		$dbsize = 0;
+		if ($configuration->isPostgreSQLType($dbtype)) {
+			$sql = "SELECT pg_database_size('$dbname') AS dbsize";
+			$result = $pdo->query($sql);
+			$dbsize = $result->fetch();
+		} else if ($configuration->isMySQLType($dbtype)) {
+			$sql = "SELECT Sum(data_length + index_length) AS dbsize FROM information_schema.tables";
+			$result = $pdo->query($sql);
+			$dbsize = $result->fetch();
+		} else if ($configuration->isSQLiteType($dbtype)) {
+			$sql = "PRAGMA page_count";
+			$result = $pdo->query($sql);
+			$page_count = $result->fetch();
+			$sql = "PRAGMA page_size";
+			$result = $pdo->query($sql);
+			$page_size = $result->fetch();
+			$dbsize = array('dbsize' => ($page_count['page_count'] * $page_size['page_size']));
+		}
+		$pdo = null;
+		return $dbsize['dbsize'];
+	}
 }
 ?>

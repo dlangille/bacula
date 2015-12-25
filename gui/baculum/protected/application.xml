@@ -68,6 +68,7 @@
 			<url ServiceParameter="API.JobsShow" pattern="jobs/show/" />
 			<url ServiceParameter="API.JobShow" pattern="jobs/show/{id}/" parameters.id="\d+" />
 			<url ServiceParameter="API.JobShow" pattern="jobs/show/name/{name}/" parameters.name=".+" />
+			<url ServiceParameter="API.JobTotals" pattern="jobs/totals/" />
 			<url ServiceParameter="API.RestoreRun" pattern="jobs/restore/" />
 			<!-- END Jobs -->
 			<!-- START BVFS -->
@@ -89,6 +90,7 @@
 			<url ServiceParameter="API.FileSets" pattern="filesets/" />
 			<url ServiceParameter="API.FileSet" pattern="filesets/{id}/" parameters.id="\d+" />
 			<url ServiceParameter="API.ConsoleCommand" pattern="console/" />
+			<url ServiceParameter="API.DbSize" pattern="dbsize/" />
 		</module>
 		<module id="globalization" class="TGlobalization">
 			<translation type="gettext" source="Application.Lang" marker="@@" autosave="false" cache="false" DefaultCulture="en" />

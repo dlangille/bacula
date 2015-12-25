@@ -1023,6 +1023,78 @@ msgstr "Zadanie:"
 msgid "Media Type"
 msgstr "Media Type"
 
+msgid "Dashboard"
+msgstr "Start"
+
 msgid "Go to started job after start:"
 msgstr "Przejdź do uruchomionego zadania po starcie:"
+
+msgid "Jobs status summary"
+msgstr "Podsumowanie statusu zadań"
+
+msgid "Quick job access"
+msgstr "Quick job access"
+
+msgid "Finished jobs"
+msgstr "Zakończone zadania"
+
+msgid "Most often used:"
+msgstr "Najczęściej używany:"
+
+msgid "Number of clients:"
+msgstr "Ilość klientów:"
+
+msgid "jobs"
+msgstr "zadań"
+
+msgid "Jobs count on most used:"
+msgstr "Ilość zadań na najczęściej używanym:"
+
+msgid "level"
+msgstr "poziom"
+
+msgid "status"
+msgstr "status"
+
+msgid "Jump to job (last 100):"
+msgstr "Skocz do zadania (ostatnie 100):"
+
+msgid "View"
+msgstr "Zobacz"
+
+msgid "Total bytes:"
+msgstr "Całkowita ilość danych:"
+
+msgid "Total files:"
+msgstr "Całkowita ilość plików:"
+
+msgid "Database size:"
+msgstr "Rozmiar bazy danych:"
+
+msgid "Number of pools:"
+msgstr "Ilość puli wolumenów:"
+
+msgid "times"
+msgstr "razy"
+
+msgid "Execution count most used:"
+msgstr "Ilość wykonań najczęściej używanego:"
+
+msgid "Job Totals"
+msgstr "Podsumowanie zadań"
+
+msgid "Restore Wizard"
+msgstr "Kreator przywracania danych"
+
+msgid "Perform Restore"
+msgstr "Wykonaj przywracanie danych"
+
+msgid "Configuration Wizard"
+msgstr "Kreator Konfiguracji"
+
+msgid "Baculum Settings"
+msgstr "Ustawienia Baculum"
+
+msgid "start time"
+msgstr "czas rozpoczęcia"
 

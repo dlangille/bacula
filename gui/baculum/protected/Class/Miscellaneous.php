@@ -75,6 +75,12 @@ class Miscellaneous extends TModule {
 		'L' => array('value' => 'Commiting data', 'description' =>'Committing data (last despool)')
 	);
 
+	private $jobStatesOK = array('T', 'D');
+	private $jobStatesWarning = array('W');
+	private $jobStatesError = array('E', 'e', 'f', 'I');
+	private $jobStatesCancel = array('A');
+	private $jobStatesRunning = array('C', 'R', 'B', 'F', 'S', 'm', 'M', 's', 'j', 'c', 'd','t', 'p', 'i', 'a', 'l', 'L');
+
 	private $runningJobStates = array('C', 'R');
 
 	/**
@@ -115,6 +121,34 @@ class Miscellaneous extends TModule {
 		}
 		return $type;
 
+	}
+
+	public function getJobStatesByType($type) {
+		$statesByType = array();
+		$states = array();
+		switch($type) {
+			case 'ok':
+				$states = $this->jobStatesOK;
+				break;
+			case 'warning':
+				$states = $this->jobStatesWarning;
+				break;
+			case 'error':
+				$states = $this->jobStatesError;
+				break;
+			case 'cancel':
+				$states = $this->jobStatesCancel;
+				break;
+			case 'running':
+				$states = $this->jobStatesRunning;
+				break;
+		}
+
+		for ($i = 0; $i < count($states); $i++) {
+			$statesByType[$states[$i]] = $this->getJobState($states[$i]);
+		}
+
+		return $statesByType;
 	}
 
 	public function isValidJobLevel($jobLevel) {

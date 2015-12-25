@@ -91,6 +91,7 @@ class Bconsole extends TModule {
 	}
 
 	private function execCommand($director, array $command, $user) {
+		$cmd = '';
 		if(!is_null($director) && $this->isValidDirector($director) === false) {
 			$output = array(BconsoleError::MSG_ERROR_INVALID_DIRECTOR, '');
 			$exitcode = BconsoleError::ERROR_INVALID_DIRECTOR;

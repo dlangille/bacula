@@ -1,5 +1,9 @@
 var Units = {
 	get_decimal_size: function(size) {
+		if (size === null) {
+			size = 0;
+		}
+
 		size = parseInt(size, 10);
 		var size_unit = 'B';
 		var units = ['K', 'M', 'G', 'T', 'P'];
@@ -14,6 +18,35 @@ var Units = {
 			dec_size += unit + size_unit;
 		}
 		return dec_size;
+	}
+}
+
+var Strings = {
+	limits: {
+		label: 15
+	},
+	get_short_label: function(txt) {
+		var short_txt = txt;
+		var cut = ((this.limits.label - 2) / 2);
+		if (txt.length > this.limits.label) {
+			short_txt = txt.substr(0, cut) + '..' + txt.substr(-cut);
+		}
+		return short_txt;
+	}
+}
+
+var PieGraph  = {
+	pie_label_formatter: function (total, value) {
+		var percents =  (100 * value / total).toFixed(1);
+		if (percents >= 1) {
+			percents = percents.toString() + '%';
+		} else {
+			percents = '';
+		}
+		return percents;
+	},
+	pie_track_formatter: function(e) {
+		return e.series.label;
 	}
 }
 
@@ -60,5 +93,135 @@ var Cookies = {
 			}
 		}
 		return cookie_val;
+	}
+}
+
+var Dashboard = {
+	stats: null,
+	txt: null,
+	pie: null,
+	noval: '-',
+	ids: {
+		clients: {
+			no: 'clients_no',
+			most: 'clients_most',
+			jobs: 'clients_jobs'
+		},
+		jobs: {
+			to_view: 'jobs_to_view',
+			most: 'jobs_most',
+			most_count: 'jobs_most_count'
+		},
+		jobtotals: {
+			total_bytes: 'jobs_total_bytes',
+			total_files: 'jobs_total_files'
+		},
+		database: {
+			size: 'database_size'
+		},
+		pools: {
+			no: 'pools_no',
+			most: 'pools_most',
+			jobs: 'pools_jobs'
+		},
+		pie_summary: 'jobs_summary_graph'
+	},
+	update_all: function(statistics, txt) {
+		this.stats = statistics;
+		this.txt = txt;
+		this.update_pie_jobstatus();
+		this.update_clients();
+		this.update_job_access();
+		this.update_jobs();
+		this.update_jobtotals();
+		this.update_database();
+		this.update_pools();
+	},
+	update_clients: function() {
+		var clients = this.stats.clients_occupancy;
+		var most_occuped_client = this.noval;
+		var occupancy = -1;
+		for (client in clients) {
+			if (occupancy < clients[client]) {
+				most_occuped_client = client;
+				occupancy = clients[client];
+			}
+		}
+
+		if (occupancy === -1) {
+			occupancy = 0;
+		}
+
+		document.getElementById(this.ids.clients.no).textContent = Object.keys(this.stats.clients).length;
+		document.getElementById(this.ids.clients.most).setAttribute('title', most_occuped_client);
+		document.getElementById(this.ids.clients.most).textContent = Strings.get_short_label(most_occuped_client);
+		document.getElementById(this.ids.clients.jobs).textContent = occupancy;
+	},
+	update_job_access: function() {
+		var jobs_combobox= document.getElementById(this.ids.jobs.to_view);
+		jobs_combobox.innerHTML = '';
+		var last_jobs = this.stats.jobs.slice(0, 100);
+		for (var i = 0; i < last_jobs.length; i++) {
+			var opt = document.createElement('OPTION');
+			var txt = '[' + last_jobs[i].jobid + '] ' + last_jobs[i].name + ' (' + this.txt.level + ': ' + last_jobs[i].level + ' ' + this.txt.status + ': ' + last_jobs[i].jobstatus + ' ' + this.txt.starttime + ': ' + last_jobs[i].starttime + ')';
+			var label = document.createTextNode(txt);
+			opt.value = last_jobs[i].jobid;
+			opt.appendChild(label);
+			jobs_combobox.appendChild(opt);
+		}
+	},
+	update_jobs: function() {
+		var jobs = this.stats.jobs_occupancy;
+		var most_occuped_job = this.noval;
+		var occupancy = -1;
+		for (job in jobs) {
+			if (occupancy < jobs[job]) {
+				most_occuped_job = job;
+				occupancy = jobs[job];
+			}
+		}
+
+		if (occupancy === -1) {
+			occupancy = 0;
+		}
+
+		document.getElementById(this.ids.jobs.most).setAttribute('title',most_occuped_job);
+		document.getElementById(this.ids.jobs.most).textContent = Strings.get_short_label(most_occuped_job);
+		document.getElementById(this.ids.jobs.most_count).textContent = occupancy;
+	},
+	update_jobtotals: function() {
+		document.getElementById(this.ids.jobtotals.total_bytes).textContent = Units.get_decimal_size(this.stats.jobtotals.bytes);
+		document.getElementById(this.ids.jobtotals.total_files).textContent = this.stats.jobtotals.files || 0;
+	},
+	update_database: function() {
+		document.getElementById(this.ids.database.size).textContent = Units.get_decimal_size(this.stats.dbsize);
+	},
+	update_pools: function() {
+		var pools = this.stats.pools_occupancy;
+		var most_occuped_pool = this.noval;
+		var occupancy = -1;
+		for (pool in pools) {
+			if (occupancy < pools[pool]) {
+				most_occuped_pool = pool;
+				occupancy = pools[pool];
+			}
+		}
+
+		if (occupancy === -1) {
+			occupancy = 0;
+		}
+
+		document.getElementById(this.ids.pools.no).textContent = Object.keys(this.stats.pools).length;
+		document.getElementById(this.ids.pools.most).setAttribute('title', most_occuped_pool);
+		document.getElementById(this.ids.pools.most).textContent = Strings.get_short_label(most_occuped_pool);
+		document.getElementById(this.ids.pools.jobs).textContent = occupancy;
+	},
+	update_pie_jobstatus: function() {
+		if (PanelWindow.currentWindowId === 'dashboard') {
+			if (this.pie != null) {
+				this.pie.pie.destroy();
+			}
+			this.pie = new GraphPieClass(this.stats.jobs_summary, this.ids.pie_summary);
+		}
 	}
 }

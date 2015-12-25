@@ -71,5 +71,19 @@ class JobManager extends TModule {
 		}
 		return $jobids;
 	}
+
+	public function getJobTotals() {
+		$jobtotals = array('bytes' => 0, 'files' => 0);
+		$connection = JobRecord::finder()->getDbConnection();
+		$connection->setActive(true);
+		$sql = "SELECT sum(JobFiles) AS files, sum(JobBytes) AS bytes FROM Job";
+		$pdo = $connection->getPdoInstance();
+		$result = $pdo->query($sql);
+		$ret = $result->fetch();
+		$jobtotals['bytes'] = $ret['bytes'];
+		$jobtotals['files'] = $ret['files'];
+		$pdo = null;
+		return $jobtotals;
+	}
 }
 ?>

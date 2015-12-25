@@ -23,8 +23,20 @@
 class Monitor extends BaculumPage {
 	public function onInit($param) {
 		parent::onInit($param);
-		$_SESSION['monitor_data'] = array('jobs' => array(), 'running_jobs' => array(), 'terminated_jobs' => array());
+		$_SESSION['monitor_data'] = array(
+			'jobs' => array(),
+			'running_jobs' => array(),
+			'terminated_jobs' => array(),
+			'pools' => array(),
+			'jobtotals' => array(),
+			'dbsize' => 0
+		);
+
 		$_SESSION['monitor_data']['jobs'] = $this->Application->getModule('api')->get(array('jobs'))->output;
+		$_SESSION['monitor_data']['clients'] = $this->getModule('api')->get(array('clients'))->output;
+		$_SESSION['monitor_data']['pools'] = $this->getModule('api')->get(array('pools'))->output;
+		$_SESSION['monitor_data']['jobtotals'] = $this->getModule('api')->get(array('jobs', 'totals'))->output;
+		$_SESSION['monitor_data']['dbsize'] = $this->getModule('api')->get(array('dbsize'))->output;
 
 		$runningJobStates = $this->Application->getModule('misc')->getRunningJobStates();
 

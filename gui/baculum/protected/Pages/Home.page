@@ -1,17 +1,82 @@
 <%@ MasterClass="Application.Layouts.Main" Theme="Baculum-v1"%>
 <com:TContent ID="Main">
 	<div id="top">
-		<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/logo.png" alt="Baculum" />
+		<img id="logo" src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/logo.png" alt="Baculum" />
 		<div id="directors"><com:TLabel ForControl="Director" Text="<%[ Director: ]%>" />
 			<com:TActiveDropDownList ID="Director" OnTextChanged="director" />
 		</div>
 		<div id="panel_switcher">
-			<com:TActiveLinkButton ID="Workspace" Text="<%[ Workspace ]%>" Attributes.onclick="PanelWindow.show('container');" />
-			<com:TActiveLinkButton ID="Graphs" Text="<%[ Graphs ]%>" Attributes.onclick="PanelWindow.show('graphs');" />
+			<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/dashboard.png" alt="" onclick="$('<%=$this->Dashboard->ClientID%>').click()" />
+			<com:TActiveLinkButton ID="Dashboard" Text="<%[ Dashboard ]%>" Attributes.onclick="PanelWindow.show('dashboard'); return false;" />
+			<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/workspace.png" alt="" onclick="$('<%=$this->Workspace->ClientID%>').click()"/>
+			<com:TActiveLinkButton ID="Workspace" Text="<%[ Workspace ]%>" Attributes.onclick="PanelWindow.show('container'); return false;" />
+			<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/graphs.png" alt="" onclick="$('<%=$this->Graphs->ClientID%>').click()" />
+			<com:TActiveLinkButton ID="Graphs" Text="<%[ Graphs ]%>" Attributes.onclick="PanelWindow.show('graphs'); return false;" />
 		</div>
 		<com:Application.Portlets.TrayBar ID="TrayBar" />
 	</div>
-	<div id="container">
+	<div id="dashboard">
+		<div>
+			<div class="dashboard_graph">
+				<div id="jobs_summary_graph">
+					<script type="text/javascript">
+						var oJobsStates = <%=$this->jobs_states%>;
+					</script>
+				</div>
+				<span><%[ Jobs status summary ]%></span>
+			</div>
+			<div id="dashboard_icons">
+				<fieldset class="dashboard_field">
+					<legend><%[ Clients ]%></legend>
+					<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/client.png" alt="" />
+					<p><span><%[ Number of clients: ]%></span><span id="clients_no"></span></p>
+					<p><span><%[ Most often used: ]%></span><span id="clients_most"></span></p>
+					<p><span><%[ Jobs count on most used: ]%></span><span id="clients_jobs"></span> <%[ jobs ]%></p>
+				</fieldset>
+				<fieldset class="dashboard_field">
+					<legend><%[ Quick job access ]%></legend>
+					<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/quick-access.png" alt="" />
+					<p><span><%[ Jump to job (last 100): ]%></span></p><select id="jobs_to_view"></select>
+					<p class="right"><a href="javascript:void(0)" onclick="SlideWindow.getObj('JobWindow').quickJumpToElement($('jobs_to_view').value, '<%=$this->JobBtn->ClientID%>', PanelWindow);"><%[ View ]%></a></p>
+				</fieldset>
+				<fieldset class="dashboard_field">
+					<legend><%[ Finished jobs ]%></legend>
+					<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/finished-jobs.png" alt="" />
+					<p><span><%[ Most often used: ]%></span><span id="jobs_most"></span></p>
+					<p><span><%[ Execution count most used: ]%></span><span id="jobs_most_count"></span> <%[ times ]%></p>
+				</fieldset>
+				<fieldset class="dashboard_field">
+					<legend><%[ Database ]%></legend>
+					<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/database.png" alt="" />
+					<p><span><%[ Database type: ]%></span><span><%=$this->dbtype%></span></p>
+					<p><span><%[ Database size: ]%></span><span id="database_size"></span></p>
+				</fieldset>
+				<fieldset class="dashboard_field">
+					<legend><%[ Pools ]%></legend>
+					<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/tapes.png" alt="" />
+					<p><span><%[ Number of pools: ]%></span><span id="pools_no"></span></p>
+					<p><span><%[ Most often used: ]%></span><span id="pools_most"></span></p>
+					<p><span><%[ Jobs count on most used: ]%></span><span id="pools_jobs"></span> <%[ jobs ]%></p>
+				</fieldset>
+				<fieldset class="dashboard_field">
+					<legend><%[ Job Totals ]%></legend>
+					<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/jobtotals.png" alt="" />
+					<p><span><%[ Total bytes: ]%></span><span id="jobs_total_bytes"></span></p>
+					<p><span><%[ Total files: ]%></span><span id="jobs_total_files"></span></p>
+				</fieldset>
+				<fieldset class="dashboard_field">
+					<legend><%[ Restore Wizard ]%></legend>
+					<a class="big" href="<%=$this->Service->constructUrl('RestoreWizard')%>" style="line-height: 73px; margin: 0 45px"><img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/restore.png" alt="" /><%[ Perform Restore ]%></a>
+				</fieldset>
+				<fieldset class="dashboard_field">
+					<legend><%[ Configuration Wizard ]%></legend>
+					<a class="big" href="<%=$this->Service->constructUrl('ConfigurationWizard')%>" style="line-height: 73px; margin: 0 45px"><img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/setting.png" alt="" /><%[ Baculum Settings ]%></a>
+				</fieldset>
+			</div>
+				<div style="clear: both"></div>
+		</div>
+	</div>
+	<div id="container" style="display: none;">
 		<div id="menu-left">
 			<com:TActiveButton ID="StorageBtn" CssClass="storage-btn">
 				<prop:Attributes.onmouseover>
@@ -206,8 +271,10 @@
 			var graph;
 			document.observe("dom:loaded", function() {
 				PanelWindow.onShow = function() {
-					if(typeof(graph) == "undefined") {
+					if (PanelWindow.currentWindowId === 'graphs' && typeof(graph) == "undefined") {
 						graph = new GraphClass(jobs, graph_lang, 'graphs_content', 'legend', 'time_range', '<%=$this->DateFrom->ClientID%>', '<%=$this->DateTo->ClientID%>', '<%=$this->Clients->ClientID%>', '<%=$this->Jobs->ClientID%>');
+					} else if (PanelWindow.currentWindowId === 'dashboard') {
+						Dashboard.update_all(Statistics, TEXT);
 					}
 				};
 			});
@@ -231,8 +298,15 @@
 				'SlideWindow.getObj("' . $this->initWindowId . 'Window").setInitElementId("' . $this->initElementId . '");'
 			: '')%>
 			<%=(!is_null($this->openWindow) ?
-				'$("' . $this->openWindow . '").click(); window.history.pushState("", "", "/");'
+				'PanelWindow.show("container");
+				$("' . $this->openWindow . '").click();
+				window.history.pushState("", "", "/");'
 			: '')%>
 		});
+		var TEXT = {
+			level: '<%[ level ]%>',
+			status: '<%[ status ]%>',
+			starttime: '<%[ start time ]%>'
+		}
 	</script>
 </com:TContent>
