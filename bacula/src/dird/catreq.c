@@ -576,7 +576,6 @@ static void update_attribute(JCR *jcr, char *msg, int32_t msglen)
       /* Send it */
       if (!db_create_restore_object_record(jcr, jcr->db, &ro)) {
          Jmsg1(jcr, M_FATAL, 0, _("Restore object create error. %s"), db_strerror(jcr->db));
-         jcr->cached_attribute = false;
       }
 
    } else if (crypto_digest_stream_type(Stream) != CRYPTO_DIGEST_NONE) {
