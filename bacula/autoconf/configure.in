@@ -1460,7 +1460,7 @@ AC_ARG_WITH(db_ssl_options,
    AC_HELP_STRING([--with-db-ssl-options=DBSSLOPTIONS], [specify SSL options for database user connection @<:@default=null@:>@]),
    [
        if test "x$withval" != "x" ; then
-         db_ssl_options=$withval
+	 db_ssl_options=$withval
        fi
    ]
 )
@@ -2901,7 +2901,7 @@ CFLAGS=${CFLAGS--O}
 
 if test x$have_gcc = xyes ; then
    CPPFLAGS="$CPPFLAGS -fno-strict-aliasing -fno-exceptions -fno-rtti"
-   CFLAGS="$CFLAGS -fno-strict-aliasing -fno-exceptions -fno-rtti"
+   CFLAGS="$CFLAGS -x c++ -fno-strict-aliasing -fno-exceptions -fno-rtti"
 fi
 LDFLAGS=${LDFLAGS--O}
 CPPFLAGS="$CPPFLAGS"
