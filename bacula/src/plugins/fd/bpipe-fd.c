@@ -377,7 +377,7 @@ static bRC pluginIO(bpContext *ctx, struct io_pkt *io)
       }
       io->status = fread(io->buf, 1, io->count, p_ctx->pfd->rfd);
 //    bfuncs->DebugMessage(ctx, fi, li, dbglvl, "bpipe-fd: IO_READ buf=%p len=%d\n", io->buf, io->status);
-      if (io->status == 0 && ferror(p_ctx->pfd->rfd)) {
+      if (!feof(p_ctx->pfd->rfd) && io->status == 0 && ferror(p_ctx->pfd->rfd)) {
          bfuncs->JobMessage(ctx, fi, li, M_FATAL, 0, 
             "Pipe read error: ERR=%s\n", strerror(errno));
          bfuncs->DebugMessage(ctx, fi, li, dbglvl, 
@@ -394,11 +394,11 @@ static bRC pluginIO(bpContext *ctx, struct io_pkt *io)
 //    printf("bpipe-fd: IO_WRITE fd=%p buf=%p len=%d\n", p_ctx->fd, io->buf, io->count);
       io->status = fwrite(io->buf, 1, io->count, p_ctx->pfd->wfd);
 //    printf("bpipe-fd: IO_WRITE buf=%p len=%d\n", io->buf, io->status);
-      if (io->status == 0 && ferror(p_ctx->pfd->wfd)) {
+      if (!feof(p_ctx->pfd->wfd) && io->status == 0 && ferror(p_ctx->pfd->wfd)) {
          bfuncs->JobMessage(ctx, fi, li, M_FATAL, 0, 
             "Pipe write error\n");
          bfuncs->DebugMessage(ctx, fi, li, dbglvl, 
-            "Pipe read error: ERR=%s\n", strerror(errno));
+            "Pipe write error: ERR=%s\n", strerror(errno));
          return bRC_Error;
       }
       break;
