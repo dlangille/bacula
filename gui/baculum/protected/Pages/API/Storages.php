@@ -25,15 +25,20 @@ class Storages extends BaculumAPI {
 	public function get() {
 		$limit = intval($this->Request['limit']);
 		$storages = $this->getModule('storage')->getStorages($limit);
-		$allowedStorages = $this->getModule('bconsole')->bconsoleCommand($this->director, array('.storage'), $this->user)->output;
-		$storagesOutput = array();
-		foreach($storages as $storage) {
-			if(in_array($storage->name, $allowedStorages)) {
-				$storagesOutput[] = $storage;
+		$allowedStorages = $this->getModule('bconsole')->bconsoleCommand($this->director, array('.storage'), $this->user);
+		if ($allowedStorages->exitcode === 0) {
+			$storagesOutput = array();
+			foreach($storages as $storage) {
+				if(in_array($storage->name, $allowedStorages->output)) {
+					$storagesOutput[] = $storage;
+				}
 			}
+			$this->output = $storagesOutput;
+			$this->error = StorageError::ERROR_NO_ERRORS;
+		} else {
+			$this->output = $allowedStorages->output;
+			$this->error = $allowedStorages->exitcode;
 		}
-		$this->output = $storagesOutput;
-		$this->error = StorageError::ERROR_NO_ERRORS;
 	}
 }
 ?>

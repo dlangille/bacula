@@ -25,21 +25,34 @@ class FileSets extends BaculumAPI {
 		$directors = $this->getModule('bconsole')->getDirectors();
 		if($directors->exitcode === 0) {
 			$filesets = array();
+			$error = false;
+			$error_obj = null;
 			for($i = 0; $i < count($directors->output); $i++) {
-				$filesetsshow = $this->getModule('bconsole')->bconsoleCommand($directors->output[$i], array('show', 'fileset'), $this->user)->output;
+				$filesetsshow = $this->getModule('bconsole')->bconsoleCommand($directors->output[$i], array('show', 'fileset'), $this->user);
+				if ($filesetsshow->exitcode != 0) {
+					$error_obj = $filesetsshow;
+					$error = true;
+					break;
+				}
 				$filesets[$directors->output[$i]] = array();
 				
-				for($j = 0; $j < count($filesetsshow); $j++) {
-					if(preg_match('/^FileSet:\ name=(.*)$/', $filesetsshow[$j], $match) === 1) {
+				for($j = 0; $j < count($filesetsshow->output); $j++) {
+					if(preg_match('/^FileSet:\ name=(.*)$/', $filesetsshow->output[$j], $match) === 1) {
 						$filesets[$directors->output[$i]][] = $match[1];
 					}
 				}
 			}
-			$this->output = $filesets;
-			$this->error =  BconsoleError::ERROR_NO_ERRORS;
+
+			if ($error === true) {
+				$this->output = $error_obj->output;
+				$this->error = $error_obj->exitcode;
+			} else {
+				$this->output = $filesets;
+				$this->error =  BconsoleError::ERROR_NO_ERRORS;
+			}
 		} else {
-			$this->output = BconsoleError::MSG_ERROR_BCONSOLE_CONNECTION_PROBLEM;
-			$this->error = BconsoleError::ERROR_BCONSOLE_CONNECTION_PROBLEM;
+			$this->output = $directors->output;
+			$this->error = $directors->exitcode;
 		}
 	}
 }

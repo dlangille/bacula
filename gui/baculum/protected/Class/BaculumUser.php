@@ -25,6 +25,7 @@ Prado::using('System.Security.TUser');
 class BaculumUser extends TUser {
 
 	private $_id;
+	private $_pwd;
 
 	public function getID() {
 		return $this->_id;
@@ -32,6 +33,14 @@ class BaculumUser extends TUser {
 
 	public function setID($id) {
 		$this->_id = $id;
+	}
+
+	public function getPwd() {
+		return $this->_pwd;
+	}
+
+	public function setPwd($pwd) {
+		$this->_pwd = $pwd;
 	}
 
 	public function getIsAdmin() {

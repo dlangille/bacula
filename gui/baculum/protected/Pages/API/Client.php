@@ -25,13 +25,18 @@ class Client extends BaculumAPI {
 	public function get() {
 		$clientid = intval($this->Request['id']);
 		$client = $this->getModule('client')->getClientById($clientid);
-		$allowedClients = $this->getModule('bconsole')->bconsoleCommand($this->director, array('.client'), $this->user)->output;
-		if(!is_null($client) && in_array($client->name, $allowedClients)) {
-			$this->output = $client;
-			$this->error = ClientError::ERROR_NO_ERRORS;
+		$allowedClients = $this->getModule('bconsole')->bconsoleCommand($this->director, array('.client'), $this->user);
+		if ($allowedClients->exitcode === 0) {
+			if(!is_null($client) && in_array($client->name, $allowedClients->output)) {
+				$this->output = $client;
+				$this->error = ClientError::ERROR_NO_ERRORS;
+			} else {
+				$this->output = ClientError::MSG_ERROR_CLIENT_DOES_NOT_EXISTS;
+				$this->error =ClientError::ERROR_CLIENT_DOES_NOT_EXISTS;
+			}
 		} else {
-			$this->output = ClientError::MSG_ERROR_CLIENT_DOES_NOT_EXISTS;
-			$this->error =ClientError::ERROR_CLIENT_DOES_NOT_EXISTS;
+			$this->output = $allowedClients->output;
+			$this->error = $allowedClients->exitcode;
 		}
 	}
 

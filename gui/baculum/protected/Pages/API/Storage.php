@@ -24,13 +24,18 @@ class Storage extends BaculumAPI {
 	public function get() {
 		$storageid = intval($this->Request['id']);
 		$storage = $this->getModule('storage')->getStorageById($storageid);
-		$allowedStorages = $this->getModule('bconsole')->bconsoleCommand($this->director, array('.storage'), $this->user)->output;
-		if(!is_null($storage) && in_array($storage->name, $allowedStorages)) {
-			$this->output = $storage;
-			$this->error =  StorageError::ERROR_NO_ERRORS;
+		$allowedStorages = $this->getModule('bconsole')->bconsoleCommand($this->director, array('.storage'), $this->user);
+		if ($allowedStorages->exitcode === 0) {
+			if(!is_null($storage) && in_array($storage->name, $allowedStorages->output)) {
+				$this->output = $storage;
+				$this->error =  StorageError::ERROR_NO_ERRORS;
+			} else {
+				$this->output = StorageError::MSG_ERROR_STORAGE_DOES_NOT_EXISTS;
+				$this->error = StorageError::ERROR_STORAGE_DOES_NOT_EXISTS;
+			}
 		} else {
-			$this->output = StorageError::MSG_ERROR_STORAGE_DOES_NOT_EXISTS;
-			$this->error = StorageError::ERROR_STORAGE_DOES_NOT_EXISTS;
+			$this->output = $allowedStorages->output;
+			$this->error = $allowedStorages->exitcode;
 		}
 	}
 }

@@ -24,13 +24,18 @@ class Pool extends BaculumAPI {
 	public function get() {
 		$poolid = intval($this->Request['id']);
 		$pool = $this->getModule('pool')->getPoolById($poolid);
-		$allowedPools = $this->getModule('bconsole')->bconsoleCommand($this->director, array('.pool'), $this->user)->output;
-		if(!is_null($pool) && in_array($pool->name, $allowedPools)) {
-			$this->output = $pool;
-			$this->error = PoolError::ERROR_NO_ERRORS;
+		$allowedPools = $this->getModule('bconsole')->bconsoleCommand($this->director, array('.pool'), $this->user);
+		if ($allowedPools->exitcode === 0) {
+			if(!is_null($pool) && in_array($pool->name, $allowedPools->output)) {
+				$this->output = $pool;
+				$this->error = PoolError::ERROR_NO_ERRORS;
+			} else {
+				$this->output = PoolError::MSG_ERROR_POOL_DOES_NOT_EXISTS;
+				$this->error = PoolError::ERROR_POOL_DOES_NOT_EXISTS;
+			}
 		} else {
-			$this->output = PoolError::MSG_ERROR_POOL_DOES_NOT_EXISTS;
-			$this->error = PoolError::ERROR_POOL_DOES_NOT_EXISTS;
+			$this->output = $allowedPools->output;
+			$this->error = $allowedPools->exitcode;
 		}
 	}
 	

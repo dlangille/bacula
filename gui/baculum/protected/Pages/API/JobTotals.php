@@ -22,9 +22,25 @@
  
 class JobTotals extends BaculumAPI {
 	public function get() {
-		$jobtotals = $this->getModule('job')->getJobTotals();
-		$this->output = $jobtotals;
-		$this->error = JobError::ERROR_NO_ERRORS;
+		$error = false;
+		$allowed = array();
+		if (!is_null($this->user)) {
+			$allowedJobs = $this->getModule('bconsole')->bconsoleCommand($this->director, array('.jobs'), $this->user);
+			if ($allowedJobs->exitcode === 0) {
+				array_shift($allowedJobs->output);
+				$allowed = $allowedJobs->output;
+			} else {
+				$error = true;
+				$this->output = $allowedJobs->output;
+				$this->error = $allowedJobs->error;
+			}
+		}
+
+		if ($error === false) {
+			$jobtotals = $this->getModule('job')->getJobTotals($allowed);
+			$this->output = $jobtotals;
+			$this->error = JobError::ERROR_NO_ERRORS;
+		}
 	}
 }
 ?>

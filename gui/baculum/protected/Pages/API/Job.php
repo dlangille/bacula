@@ -24,13 +24,18 @@ class Job extends BaculumAPI {
 	public function get() {
 		$jobid = intval($this->Request['id']);
 		$job = $this->getModule('job')->getJobById($jobid);
-		$allowedJobs = $this->getModule('bconsole')->bconsoleCommand($this->director, array('.jobs'), $this->user)->output;
-		if(!is_null($job) && in_array($job->name, $allowedJobs)) {
-			$this->output = $job;
-			$this->error = JobError::ERROR_NO_ERRORS;
+		$allowedJobs = $this->getModule('bconsole')->bconsoleCommand($this->director, array('.jobs'), $this->user);
+		if ($allowedJobs->exitcode === 0) {
+			if(!is_null($job) && in_array($job->name, $allowedJobs->output)) {
+				$this->output = $job;
+				$this->error = JobError::ERROR_NO_ERRORS;
+			} else {
+				$this->output = JobError::MSG_ERROR_JOB_DOES_NOT_EXISTS;
+				$this->error = JobError::ERROR_JOB_DOES_NOT_EXISTS;
+			}
 		} else {
-			$this->output = JobError::MSG_ERROR_JOB_DOES_NOT_EXISTS;
-			$this->error = JobError::ERROR_JOB_DOES_NOT_EXISTS;
+			$this->output = $allowedJobs->output;
+			$this->error = $allowedJobs->exitcode;
 		}
 	}
 

@@ -44,8 +44,14 @@ class API extends TModule {
 		return $ch;
 	}
 
-	private function getAPIHeader() {
-		return 'X-Baculum-API: ' . self::API_VERSION;
+	private function getAPIHeaders() {
+		$headers = array(
+			'X-Baculum-API: ' . self::API_VERSION,
+			'X-Baculum-User: ' . $this->Application->User->getName(),
+			'X-Baculum-Pwd: ' . $this->Application->User->getPwd(),
+			'Accept: application/json'
+		);
+		return $headers;
 	}
 
 	public function init($config) {
@@ -64,13 +70,6 @@ class API extends TModule {
 
 	private function setParamsToUrl(&$url) {
 		$url .= (preg_match('/\?/', $url) === 1 ? '&' : '?' ) . 'director=' . ((array_key_exists('director', $_SESSION)) ? $_SESSION['director'] : '');
-		/**
-		 * If user is not equal admin user then it is added to URL,
-		 * then will be used custom console for this user.
-		 */
-		if($this->User->getIsAdmin() === false) {
-			$url .= '&user=' . $this->User->getName();
-		}
 		$this->Application->getModule('logging')->log(__FUNCTION__, PHP_EOL . PHP_EOL . 'EXECUTE URL ==> ' . $url . ' <==' . PHP_EOL . PHP_EOL, Logging::CATEGORY_APPLICATION, __FILE__, __LINE__);
 	}
 
@@ -91,7 +90,7 @@ class API extends TModule {
 			$this->setParamsToUrl($url);
 			$ch = $this->getConnection();
 			curl_setopt($ch, CURLOPT_URL, $url);
-			curl_setopt($ch, CURLOPT_HTTPHEADER, array($this->getAPIHeader(), 'Accept: application/json'));
+			curl_setopt($ch, CURLOPT_HTTPHEADER, $this->getAPIHeaders());
 			$result = curl_exec($ch);
 			curl_close($ch);
 			$ret = $this->preParseOutput($result);
@@ -109,7 +108,7 @@ class API extends TModule {
 		$ch = $this->getConnection();
 		curl_setopt($ch, CURLOPT_URL, $url);
 		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'PUT');
-		curl_setopt($ch, CURLOPT_HTTPHEADER, array($this->getAPIHeader(), 'Accept: application/json', 'X-HTTP-Method-Override: PUT', 'Content-Length: ' . strlen($data), 'Expect:'));
+		curl_setopt($ch, CURLOPT_HTTPHEADER, array_merge($this->getAPIHeaders(), array('X-HTTP-Method-Override: PUT', 'Content-Length: ' . strlen($data), 'Expect:')));
 		curl_setopt($ch, CURLOPT_POST, true);
 		curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
 		$result = curl_exec($ch);
@@ -123,7 +122,7 @@ class API extends TModule {
 		$data = http_build_query(array('create' => $options));
 		$ch = $this->getConnection();
 		curl_setopt($ch, CURLOPT_URL, $url);
-		curl_setopt($ch, CURLOPT_HTTPHEADER, array($this->getAPIHeader(), 'Accept: application/json', 'Expect:'));
+		curl_setopt($ch, CURLOPT_HTTPHEADER, array_merge($this->getAPIHeaders(), array('Expect:')));
 		curl_setopt($ch, CURLOPT_POST, true);
 		curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
 		$result = curl_exec($ch);
@@ -137,7 +136,7 @@ class API extends TModule {
 		$ch = $this->getConnection();
 		curl_setopt($ch, CURLOPT_URL, $url);
 		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'DELETE');
-		curl_setopt($ch, CURLOPT_HTTPHEADER, array($this->getAPIHeader(), 'Accept: application/json', 'X-HTTP-Method-Override: DELETE'));
+		curl_setopt($ch, CURLOPT_HTTPHEADER, array_merge($this->getAPIHeaders(), array('X-HTTP-Method-Override: DELETE')));
 		$result = curl_exec($ch);
 		curl_close($ch);
 		return $this->preParseOutput($result);

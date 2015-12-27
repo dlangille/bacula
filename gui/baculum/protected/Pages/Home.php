@@ -44,6 +44,7 @@ class Home extends BaculumPage
 
 	public function onInit($param) {
 		parent::onInit($param);
+		$this->Application->getModule('users')->loginUser();
 
 		if (!$this->IsPostBack && !$this->IsCallBack) {
 			$this->getModule('api')->initSessionCache(true);
@@ -57,6 +58,7 @@ class Home extends BaculumPage
 		$appConfig = $this->getModule('configuration')->getApplicationConfig();
 
 		$this->SettingsWizardBtn->Visible = $this->User->getIsAdmin();
+		$this->PoolBtn->Visible = $this->User->getIsAdmin();
 		$this->VolumeBtn->Visible = $this->User->getIsAdmin();
 		$this->ClearBvfsCache->Visible = $this->User->getIsAdmin();
 		$this->Logging->Visible = $this->User->getIsAdmin();

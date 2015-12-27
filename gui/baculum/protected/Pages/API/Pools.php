@@ -24,15 +24,20 @@ class Pools extends BaculumAPI {
 	public function get() {
 		$limit = intval($this->Request['limit']);
 		$pools = $this->getModule('pool')->getPools($limit);
-		$allowedPools = $this->getModule('bconsole')->bconsoleCommand($this->director, array('.pool'), $this->user)->output;
-		$poolsOutput = array();
-		foreach($pools as $pool) {
-			if(in_array($pool->name, $allowedPools)) {
-				$poolsOutput[] = $pool;
+		$allowedPools = $this->getModule('bconsole')->bconsoleCommand($this->director, array('.pool'), $this->user);
+		if ($allowedPools->exitcode === 0) {
+			$poolsOutput = array();
+			foreach($pools as $pool) {
+				if(in_array($pool->name, $allowedPools->output)) {
+					$poolsOutput[] = $pool;
+				}
 			}
+			$this->output = $poolsOutput;
+			$this->error = PoolError::ERROR_NO_ERRORS;
+		} else {
+			$this->output = $allowedPools->output;
+			$this->error = $allowedPools->exitcode;
 		}
-		$this->output = $poolsOutput;
-		$this->error = PoolError::ERROR_NO_ERRORS;
 	}
 }
 ?>

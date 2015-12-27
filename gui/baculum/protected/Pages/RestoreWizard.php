@@ -47,6 +47,7 @@ class RestoreWizard extends BaculumPage
 
 	public function onInit($param) {
 		parent::onInit($param);
+		$this->Application->getModule('users')->loginUser();
 		if(!$this->IsPostBack && !$this->IsCallBack) {
 			$this->setBrowserFiles(array());
 			$this->setFileVersions(array());

@@ -77,7 +77,7 @@ class Bconsole extends TModule {
 			}
 		}
 		$output = count($output) > 1 ? array_values($output) : array_shift($output);
-		return (object)array('output' => $output, 'exitcode' => $exitcode);
+		return (object)array('output' => $output, 'exitcode' => (integer)$exitcode);
 	}
 
 	public function bconsoleCommand($director, array $command, $user = null) {

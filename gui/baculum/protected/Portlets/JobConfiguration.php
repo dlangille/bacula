@@ -183,9 +183,13 @@ class JobConfiguration extends Portlets {
 			$params['fileset'] = $this->getResourceName('fileset', $jobshow);
 			$params['clientid'] = $jobdata->clientid;
 			$storage = $this->getResourceName('storage', $jobshow);
-			$params['storageid'] = $this->getStorageByName($storage)->storageid;
+			if (is_object($storage)) {
+				$params['storageid'] = $this->getStorageByName($storage)->storageid;
+			}
 			$pool = $this->getResourceName('pool', $jobshow);
-			$params['poolid'] = $this->getPoolByName($pool)->poolid;
+			if (is_object($pool)) {
+				$params['poolid'] = $this->getPoolByName($pool)->poolid;
+			}
 		} else {
 			$params['id'] = $this->JobID->Text;
 			$params['level'] = $this->Level->SelectedValue;

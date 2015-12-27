@@ -23,6 +23,8 @@
 class Monitor extends BaculumPage {
 	public function onInit($param) {
 		parent::onInit($param);
+		$this->Application->getModule('users')->loginUser();
+
 		$_SESSION['monitor_data'] = array(
 			'jobs' => array(),
 			'running_jobs' => array(),

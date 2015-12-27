@@ -22,7 +22,7 @@
  
 class JobManager extends TModule {
 
-	public function getJobs($limit) {
+	public function getJobs($limit, $allowedJobs = array()) {
 		$criteria = new TActiveRecordCriteria;
 		$order = 'JobId';
 		$cfg = $this->Application->getModule('configuration');
@@ -33,6 +33,19 @@ class JobManager extends TModule {
 		$criteria->OrdersBy[$order] = 'desc';
 		if(is_int($limit) && $limit > 0) {
 			$criteria->Limit = $limit;
+		}
+
+		if (count($allowedJobs) > 0) {
+			$where = array();
+			$names = array();
+			for ($i = 0; $i < count($allowedJobs); $i++) {
+				$where[] = "name = :name$i";
+				$names[":name$i"] = $allowedJobs[$i];
+			}
+			$criteria->Condition = implode(' OR ', $where);
+			foreach($names as $name => $jobname) {
+				$criteria->Parameters[$name] = $jobname;
+			}
 		}
 		return JobRecord::finder()->findAll($criteria);
 	}
@@ -72,11 +85,17 @@ class JobManager extends TModule {
 		return $jobids;
 	}
 
-	public function getJobTotals() {
+	public function getJobTotals($allowedJobs = array()) {
 		$jobtotals = array('bytes' => 0, 'files' => 0);
 		$connection = JobRecord::finder()->getDbConnection();
 		$connection->setActive(true);
-		$sql = "SELECT sum(JobFiles) AS files, sum(JobBytes) AS bytes FROM Job";
+
+		$where = '';
+		if (count($allowedJobs) > 0) {
+			$where = " WHERE name='" . implode("' OR name='", $allowedJobs) . "'";
+		}
+
+		$sql = "SELECT sum(JobFiles) AS files, sum(JobBytes) AS bytes FROM Job $where";
 		$pdo = $connection->getPdoInstance();
 		$result = $pdo->query($sql);
 		$ret = $result->fetch();

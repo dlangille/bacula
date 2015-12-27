@@ -53,15 +53,21 @@ class Clients extends BaculumAPI {
 	public function get() {
 		$limit = intval($this->Request['limit']);
 		$clients = $this->getModule('client')->getClients($limit);
-		$allowedClients = $this->getModule('bconsole')->bconsoleCommand($this->director, array('.client'), $this->user)->output;
-		$clientsOutput = array();
-		foreach($clients as $client) {
-			if(in_array($client->name, $allowedClients)) {
-				$clientsOutput[] = $client;
+		$allowedClients = $this->getModule('bconsole')->bconsoleCommand($this->director, array('.client'), $this->user);
+		if ($allowedClients->exitcode === 0) {
+			$clientsOutput = array();
+			foreach($clients as $client) {
+				if(in_array($client->name, $allowedClients->output)) {
+					$clientsOutput[] = $client;
+				}
 			}
+			$this->output = $clientsOutput;
+			$this->error = ClientError::ERROR_NO_ERRORS;
+		} else {
+
+			$this->output = $allowedClients->output;
+			$this->error = $allowedClients->exitcode;
 		}
-		$this->output = $clientsOutput;
-		$this->error = ClientError::ERROR_NO_ERRORS;
 	}
 }
 

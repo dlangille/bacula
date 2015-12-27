@@ -143,6 +143,11 @@ class ConfigurationManager extends TModule
 		return file_exists(Prado::getPathOfNamespace(self::CONFIG_FILE, '.conf'));
 	}
 
+	public function getCryptedPassword($password) {
+		$enc_pwd = crypt($password, base64_encode($password));
+		return $enc_pwd;
+	}
+
 	/**
 	 * Saving user to users configuration file.
 	 *
@@ -161,37 +166,37 @@ class ConfigurationManager extends TModule
 	 * @return boolean true if user saved successfully, otherwise false
 	 */
 	public function setUsersConfig($user, $password, $firstUsage = false, $oldUser = null) {
+		$allUsers = $this->getAllUsers();
 		$usersFile = Prado::getPathOfNamespace(self::USERS_FILE, '.users');
-		$password = crypt($password, base64_encode($password));
+		$password = $this->getCryptedPassword($password);
+
 		if($firstUsage === true) {
 			$this->clearUsersConfig();
 		}
 
-		$users = $this->isUsersConfig() === true ? file($usersFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) : array();
-		$userExists = false;
+		$userExists = array_key_exists($user, $allUsers);
 
-		for($i = 0; $i < count($users); $i++) {
-			// checking if user already exist in configuration file and if exist then update password
-			if(preg_match("/^{$user}\:/", $users[$i]) === 1) {
-				$users[$i] = "{$user}:{$password}";
-				$userExists = true;
-				break;
-			}
+
+		if ($userExists === true) {
+			// update user password;
+			$allUsers[$user] = $password;
 		}
 
 		if(!is_null($oldUser) && $oldUser !== $user) {
 			// delete old username with password from configuration file
-			for($j = 0; $j < count($users); $j++) {
-				if(preg_match("/^{$oldUser}\:/", $users[$j]) === 1) {
-					unset($users[$j]);
-					break;
-				}
+			if(array_key_exists($oldUser, $allUsers)) {
+				unset($allUsers[$oldUser]);
 			}
 		}
 
 		// add new user if does not exist
 		if($userExists === false) {
-			array_push($users, "{$user}:{$password}");
+			$allUsers[$user] = $password;
+		}
+
+		$users = array();
+		foreach ($allUsers as $user => $pwd) {
+			$users[] = "$user:$pwd";
 		}
 
 		$usersToFile = implode("\n", $users);
@@ -200,6 +205,21 @@ class ConfigurationManager extends TModule
 		$result = file_put_contents($usersFile, $usersToFile) !== false;
 		umask($old_umask);
 		return $result;
+	}
+
+	public function getAllUsers() {
+		$allUsers = array();
+		if ($this->isUsersConfig() === true) {
+			$usersFile = Prado::getPathOfNamespace(self::USERS_FILE, '.users');
+			$users = file($usersFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+
+			for($i = 0; $i < count($users); $i++) {
+				if(preg_match("/^(?P<user>\S+)\:(?P<hash>\S+)$/", $users[$i], $match) === 1) {
+					$allUsers[$match['user']] = $match['hash'];
+				}
+			}
+		}
+		return $allUsers;
 	}
 
 	/**

@@ -24,13 +24,18 @@ class FileSet extends BaculumAPI {
 	public function get() {
 		$filesetid = intval($this->Request['id']);
 		$fileset = $this->getModule('fileset')->getFileSetById($filesetid);
-		$allowedFileSets = $this->getModule('bconsole')->bconsoleCommand($this->director, array('.fileset'), $this->user)->output;
-		if(!is_null($fileset) && in_array($fileset->fileset, $allowedFileSets)) {
-			$this->output = $fileset;
-			$this->error = FileSetError::ERROR_NO_ERRORS;
+		$allowedFileSets = $this->getModule('bconsole')->bconsoleCommand($this->director, array('.fileset'), $this->user);
+		if ($allowedFileSets->exitcode === 0) {
+			if(!is_null($fileset) && in_array($fileset->fileset, $allowedFileSets->output)) {
+				$this->output = $fileset;
+				$this->error = FileSetError::ERROR_NO_ERRORS;
+			} else {
+				$this->output = FileSetError::MSG_ERROR_FILESET_DOES_NOT_EXISTS;
+				$this->error = FileSetError::ERROR_FILESET_DOES_NOT_EXISTS;
+			}
 		} else {
-			$this->output = FileSetError::MSG_ERROR_FILESET_DOES_NOT_EXISTS;
-			$this->error = FileSetError::ERROR_FILESET_DOES_NOT_EXISTS;
+			$this->output = $allowedFileSets->output;
+			$this->error = $allowedFileSets->exitcode;
 		}
 	}
 }

@@ -26,9 +26,13 @@ Prado::using('Application.Class.BaculumUser');
 class BaculumUsersManager extends TModule implements IUserManager {
 
 	private $config;
+	private $configMod;
+	private $users;
 
 	public function init($config) {
-		$this->config = $this->Application->getModule('configuration')->isApplicationConfig() ? $this->Application->getModule('configuration')->getApplicationConfig() : null;
+		$this->configMod = $this->Application->getModule('configuration');
+		$this->config = $this->configMod->isApplicationConfig() ? $this->configMod->getApplicationConfig() : null;
+		$this->users = $this->configMod->getAllUsers();
 	}
 
 	public function getGuestName() {
@@ -36,16 +40,24 @@ class BaculumUsersManager extends TModule implements IUserManager {
 	}
 
 	public function validateUser($username, $password) {
-		return !empty($username);
+		$valid = false;
+		if(!empty($username) && !empty($password)) {
+			$users = $this->configMod->getAllUsers();
+			$valid = (array_key_exists($username, $users) && $password === $users[$username]);
+		}
+		return $valid;
 	}
 
 	public function getUser($username = null) {
 		$user = new BaculumUser($this);
 		$id = sha1(time());
 		$user->setID($id);
-		$user->setName($_SERVER['PHP_AUTH_USER']);
+		$user->setName($username);
 		$user->setIsGuest(false);
-		if($this->config['baculum']['login'] == $_SERVER['PHP_AUTH_USER'] || is_null($this->config)) {
+		if ($username != null) {
+			$user->setPwd($this->users[$username]);
+		}
+		if(is_null($this->config) || $this->config['baculum']['login'] === $username) {
 			$user->setRoles('admin');
 		} else {
 			$user->setRoles('user');
@@ -59,6 +71,11 @@ class BaculumUsersManager extends TModule implements IUserManager {
 
 	public function saveUserToCookie($cookie) {
 		return;
+	}
+
+	public function loginUser() {
+		$enc_pwd = $this->Application->getModule('configuration')->getCryptedPassword($_SERVER['PHP_AUTH_PW']);
+		$logged = $this->Application->getModule('auth')->login($_SERVER['PHP_AUTH_USER'], $enc_pwd);
 	}
 }
 ?>

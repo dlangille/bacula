@@ -27,8 +27,8 @@ class Directors extends BaculumAPI {
 			$this->output = $directors->output;
 			$this->error = BconsoleError::ERROR_NO_ERRORS;
 		} else {
-			$this->output = BconsoleError::MSG_ERROR_BCONSOLE_CONNECTION_PROBLEM;
-			$this->error = BconsoleError::ERROR_BCONSOLE_CONNECTION_PROBLEM;
+			$this->output = $directors->output;
+			$this->error = $directors->exitcode;
 		}
 	}
 }

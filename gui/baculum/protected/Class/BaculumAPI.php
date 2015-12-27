@@ -49,15 +49,22 @@ abstract class BaculumAPI extends TPage
 		$db = new ActiveRecord();
 		$db->getDbConnection();
 		$this->director = isset($this->Request['director']) ? $this->Request['director'] : null;
-		$this->user = isset($this->Request['user']) ? $this->Request['user'] : null;
-		if(is_null($this->user) && $this->Application->getModule('configuration')->isApplicationConfig() === true) {
-			$appConfig = ConfigurationManager::getApplicationConfig();
-			// @TOFIX: Baculum API layer should not use $_SERVER variables.
-			if (isset($_SERVER['PHP_AUTH_USER'])) {
-				// NOTE: With php-fpm $_SERVER['PHP_AUTH_USER'] value is empty string here
-				$user = trim($_SERVER['PHP_AUTH_USER']);
-				$this->user = (!empty($user) && $user != $appConfig['baculum']['login']) ? $user : null;
+
+		$user = isset($_SERVER['HTTP_X_BACULUM_USER']) ? $_SERVER['HTTP_X_BACULUM_USER']: null;
+		$pwd = isset($_SERVER['HTTP_X_BACULUM_PWD']) ? $_SERVER['HTTP_X_BACULUM_PWD']: null;
+		if(!is_null($user) && !is_null($pwd)) {
+			$logged = $this->Application->getModule('auth')->login($user, $pwd);
+			if ($logged === true) {
+				$this->user = ($this->User->getIsAdmin() === false) ? $user : null;
+			} else {
+				$this->output = AuthorizationError::MSG_ERROR_AUTHORIZATION_TO_WEBGUI_PROBLEM;
+				$this->error = AuthorizationError::ERROR_AUTHORIZATION_TO_WEBGUI_PROBLEM;
+				return;
 			}
+		} else {
+			$this->output = AuthorizationError::MSG_ERROR_AUTHORIZATION_TO_WEBGUI_PROBLEM;
+			$this->error = AuthorizationError::ERROR_AUTHORIZATION_TO_WEBGUI_PROBLEM;
+			return;
 		}
 
 		switch($_SERVER['REQUEST_METHOD']) {
