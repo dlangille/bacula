@@ -45,9 +45,13 @@ class RestoreWizard extends BaculumPage
 
 	const BVFS_PATH_PREFIX = 'b2';
 
+	public function onPreInit($param) {
+		parent::onPreInit($param);
+		$this->Application->getModule('users')->loginUser();
+	}
+
 	public function onInit($param) {
 		parent::onInit($param);
-		$this->Application->getModule('users')->loginUser();
 		if(!$this->IsPostBack && !$this->IsCallBack) {
 			$this->setBrowserFiles(array());
 			$this->setFileVersions(array());

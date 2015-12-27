@@ -38,7 +38,7 @@ class Home extends BaculumPage
 
 	public $jobs_states = null;
 
-	public $dbtype = null;
+	public $dbtype = '';
 
 	public $windowIds = array('Storage', 'Client', 'Volume', 'Pool', 'Job', 'JobRun');
 
@@ -75,7 +75,9 @@ class Home extends BaculumPage
 			$this->Director->dataSource = array_combine($directors, $directors);
 			$this->Director->SelectedValue = $_SESSION['director'];
 			$this->Director->dataBind();
-			$this->dbtype = $this->getModule('configuration')->getDbNameByType($appConfig['db']['type']);
+			if ($this->User->getIsAdmin() === true) {
+				$this->dbtype = $this->getModule('configuration')->getDbNameByType($appConfig['db']['type']);
+			}
 			$this->setJobsStates();
 			$this->setJobs();
 			$this->setClients();

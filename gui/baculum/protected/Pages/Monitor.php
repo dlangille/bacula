@@ -38,7 +38,9 @@ class Monitor extends BaculumPage {
 		$_SESSION['monitor_data']['clients'] = $this->getModule('api')->get(array('clients'))->output;
 		$_SESSION['monitor_data']['pools'] = $this->getModule('api')->get(array('pools'))->output;
 		$_SESSION['monitor_data']['jobtotals'] = $this->getModule('api')->get(array('jobs', 'totals'))->output;
-		$_SESSION['monitor_data']['dbsize'] = $this->getModule('api')->get(array('dbsize'))->output;
+		if ($this->User->getIsAdmin() === true) {
+			$_SESSION['monitor_data']['dbsize'] = $this->getModule('api')->get(array('dbsize'))->output;
+		}
 
 		$runningJobStates = $this->Application->getModule('misc')->getRunningJobStates();
 
