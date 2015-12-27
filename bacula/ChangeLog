@@ -3,8 +3,6 @@
 
 Release Version 7.2.0
 
-
-
 12Aug15
  - Put back missing close_msg(NULL) to flush daemon messages at job end
  - Add LICENSE-FOSS and update LICENSE for baculum
