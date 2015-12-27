@@ -27,7 +27,6 @@ General Public License are as follows:
    Bacula(R) - The Network Backup Solution
 
    Copyright (C) 2000-2015 Kern Sibbald
-   Copyright (C) 2000-2015 Free Software Foundation Europe e.V.
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -58,6 +57,15 @@ AGPLv3 are as follows:
    distribute the linked executables.  You must follow the requirements of
    the AGPLv3 in all respects for all of the code used other than for the
    Microsoft VSS code.
+
+The copyright for certain source files may include in addition to what is
+listed above the following copyright:
+
+   Copyright (C) 2000-2015 Free Software Foundation Europe e.V.
+
+The copyright on the Baculum code is:
+
+   Copyright (C) 2013-2015 Marcin Haba
 
 Copyrights of certain "script" files such as headers, shell script, Makefiles,
 etc ... were never explicitly defined. In almost all cases, they have
