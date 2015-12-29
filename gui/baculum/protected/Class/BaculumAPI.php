@@ -53,7 +53,7 @@ abstract class BaculumAPI extends TPage
 		$user = isset($_SERVER['HTTP_X_BACULUM_USER']) ? $_SERVER['HTTP_X_BACULUM_USER']: null;
 		$pwd = isset($_SERVER['HTTP_X_BACULUM_PWD']) ? $_SERVER['HTTP_X_BACULUM_PWD']: null;
 		if(!is_null($user) && !is_null($pwd)) {
-			$logged = $this->Application->getModule('auth')->login($user, $pwd);
+			$logged = $this->Application->getModule('users')->loginUser($user, $pwd);
 			if ($logged === true) {
 				$this->user = ($this->User->getIsAdmin() === false) ? $user : null;
 			} else {

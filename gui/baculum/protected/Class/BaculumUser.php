@@ -22,7 +22,7 @@
 
 Prado::using('System.Security.TUser');
 
-class BaculumUser extends TUser {
+class BaculumUser extends TUser implements IUser {
 
 	private $_id;
 	private $_pwd;
@@ -45,6 +45,10 @@ class BaculumUser extends TUser {
 
 	public function getIsAdmin() {
 		return $this->isInRole('admin');
+	}
+
+	public function getIsUser() {
+		return $this->isInRole('user');
 	}
 }
 ?>

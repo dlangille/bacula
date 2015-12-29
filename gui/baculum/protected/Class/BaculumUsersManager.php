@@ -50,11 +50,11 @@ class BaculumUsersManager extends TModule implements IUserManager {
 
 	public function getUser($username = null) {
 		$user = new BaculumUser($this);
+		$user->setIsGuest(false);
 		$id = sha1(time());
 		$user->setID($id);
 		$user->setName($username);
-		$user->setIsGuest(false);
-		if ($username != null) {
+		if (!is_null($username)) {
 			$user->setPwd($this->users[$username]);
 		}
 		if(is_null($this->config) || $this->config['baculum']['login'] === $username) {
@@ -66,16 +66,36 @@ class BaculumUsersManager extends TModule implements IUserManager {
 	}
 
 	public function getUserFromCookie($cookie) {
-		return;
+		$data = $cookie->Value;
+		if (!empty($data)) {
+			$data = $this->Application->SecurityManager->validateData($data);
+			if ($data != false) {
+				$data = unserialize($data);
+				if (is_array($data) && count($data) === 3) {
+					list($username, $address, $token) = $data;
+					return $this->getUser($username);
+				}
+			}
+		}
 	}
 
 	public function saveUserToCookie($cookie) {
-		return;
+		$address = $this->Application->Request->UserHostAddress;
+		$username = $this->User->getName();
+		$token = $this->User->getID();
+		$data = array($username, $address, $token);
+		$data = serialize($data);
+		$data = $this->Application->SecurityManager->hashData($data);
+		$cookie->setValue($data);
 	}
 
-	public function loginUser() {
-		$enc_pwd = $this->Application->getModule('configuration')->getCryptedPassword($_SERVER['PHP_AUTH_PW']);
-		$logged = $this->Application->getModule('auth')->login($_SERVER['PHP_AUTH_USER'], $enc_pwd);
+	public function loginUser($user = null, $pwd = null) {
+		if (is_null($user) && is_null($pwd)) {
+			$user = $_SERVER['PHP_AUTH_USER'];
+			$pwd = $this->Application->getModule('configuration')->getCryptedPassword($_SERVER['PHP_AUTH_PW']);
+		}
+		$logged = $this->Application->getModule('auth')->login($user, $pwd, 86400);
+		return $logged;
 	}
 }
 ?>
