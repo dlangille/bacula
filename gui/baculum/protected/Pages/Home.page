@@ -1,19 +1,24 @@
 <%@ MasterClass="Application.Layouts.Main" Theme="Baculum-v1"%>
 <com:TContent ID="Main">
 	<div id="top">
-		<img id="logo" src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/logo.png" alt="Baculum" />
-		<div id="directors"><com:TLabel ForControl="Director" Text="<%[ Director: ]%>" />
-			<com:TActiveDropDownList ID="Director" OnTextChanged="director" />
-		</div>
-		<div id="panel_switcher">
-			<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/dashboard.png" alt="" onclick="$('<%=$this->Dashboard->ClientID%>').click()" />
-			<com:TActiveLinkButton ID="Dashboard" Text="<%[ Dashboard ]%>" Attributes.onclick="PanelWindow.show('dashboard'); return false;" />
-			<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/workspace.png" alt="" onclick="$('<%=$this->Workspace->ClientID%>').click()"/>
-			<com:TActiveLinkButton ID="Workspace" Text="<%[ Workspace ]%>" Attributes.onclick="PanelWindow.show('container'); return false;" />
-			<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/graphs.png" alt="" onclick="$('<%=$this->Graphs->ClientID%>').click()" />
-			<com:TActiveLinkButton ID="Graphs" Text="<%[ Graphs ]%>" Attributes.onclick="PanelWindow.show('graphs'); return false;" />
-		</div>
+		<div id="topbar">
+			<div id="directors"><com:TLabel ForControl="Director" Text="<%[ Director: ]%>" />
+				<com:TActiveDropDownList ID="Director" OnTextChanged="director" />
+			</div>
+			<div id="panel_switcher">
+				<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/dashboard.png" alt="" onclick="$('<%=$this->Dashboard->ClientID%>').click()" />
+				<com:TActiveLinkButton ID="Dashboard" Text="<%[ Dashboard ]%>" Attributes.onclick="PanelWindow.show('dashboard'); return false;" />
+				<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/workspace.png" alt="" onclick="$('<%=$this->Workspace->ClientID%>').click()"/>
+				<com:TActiveLinkButton ID="Workspace" Text="<%[ Workspace ]%>" Attributes.onclick="PanelWindow.show('container'); return false;" />
+				<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/graphs.png" alt="" onclick="$('<%=$this->Graphs->ClientID%>').click()" />
+				<com:TActiveLinkButton ID="Graphs" Text="<%[ Graphs ]%>" Attributes.onclick="PanelWindow.show('graphs'); return false;" />
+				<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/users.png" alt="" onclick="$('<%=$this->Users->ClientID%>').click()" <%=$this->User->getIsAdmin() === false ? ' style="display: none;"' : ''%>/>
+				<com:TActiveLinkButton ID="Users" Text="<%[ Users ]%>" Attributes.onclick="PanelWindow.show('users'); return false;" />
+				<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/logout.png" alt="" onclick="$('<%=$this->Logout->ClientID%>').click()" />
+				<com:TActiveLinkButton ID="Logout" Text="<%[ Logout ]%>" OnClick="logout" ClientSide.OnComplete="document.location.href = document.location.protocol + '//' + document.location.host;" />
+			</div>
 		<com:Application.Portlets.TrayBar ID="TrayBar" />
+		</div>
 	</div>
 	<div id="dashboard">
 		<div>
@@ -281,6 +286,73 @@
 		</script>
 		<p class="right bold italic"><%[ Tip: for getting zoom, please mark area on graph. ]%></p>
 		<p class="right bold italic"><%[ Tip 2: for back from zoom, please click somewhere on graph. ]%></p>
+	</div>
+	<div id="users" style="display: none">
+		<div>
+			<a href="javascript:void(0)" id="add_user_btn"><strong><%[ Add new user ]%></strong></a>
+			<div id="add_user" style="display: none">
+				<p><%[ Username: ]%><input id="newuser" type="text" /><%[ Password: ]%><input id="newpwd" type="password" />
+				<a href="javascript:void(0)" onclick="Users.addUser()">
+					<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/icon_ok.png" alt="<%[ Save ]%>" title="<%[ Save ]%>"/>
+				</a>
+				<a href="javascript:void(0)" onclick="Users.cancelAddUser()">
+					<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/icon_err.png" alt="<%[ Close ]%>" title="<%[ Close ]%>" />
+				</a></p>
+			</div>
+			<com:TActiveRepeater ID="UsersList">
+				<prop:HeaderTemplate>
+				<table id="users_list" class="window-section-detail-smallrow">
+					<tr>
+						<th><%[ User name ]%></th>
+						<th><%[ Role ]%></th>
+						<th><%[ Actions ]%></th>
+					</tr>
+				</prop:HeaderTemplate>
+				<prop:ItemTemplate>
+					<tr class="slide-window-element">
+						<td><%=$this->DataItem%></td>
+						<td><%=$this->User->getName() == $this->DataItem ? Prado::localize('Administrator') :  Prado::localize('Normal user')%></td>
+						<td>
+							<a href="javascript:void(0)" <%=$this->User->getName() == $this->DataItem ? 'style="visibility: hidden"' : ''%> onclick="Users.rmUser('<%=$this->DataItem%>')"><img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/user-del.png"> <%[ Remove user ]%></a>
+							<a href="javascript:void(0)" onclick="Users.showChangePwd(this)" rel="chpwd_btn">
+								<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/key.png" alt="" />
+								<%[ Change password ]%>
+							</a>
+							<span style="display: none;" rel="chpwd">
+								<input type="password" onkeypress="event.keyCode == 13 ? $(this.nextElementSibling).click(): '';" />
+								<a href="javascript:void(0)" onclick="Users.changePwd(this, '<%=$this->DataItem%>')">
+									<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/icon_ok.png" alt="<%[ Save ]%>" title="<%[ Save ]%>"/>
+								</a>
+								<a href="javascript:void(0)" onclick="Users.cancelChangePwd(this)">
+									<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/icon_err.png" alt="<%[ Close ]%>" title="<%[ Close ]%>" />
+								</a>
+							</span>
+						</td>
+					</tr>
+				</prop:ItemTemplate>
+				<prop:FooterTemplate>
+					</table>
+				</prop:FooterTemplate>
+			</com:TActiveRepeater>
+			<p><em><%[ Please note that for each user (excluding administrator) there should exist separate Bconsole config file in form: ]%> <strong><com:TLabel ID="BconsoleCustomPath" /></strong></em></p>
+			<com:TCallback ID="UserAction" OnCallback="userAction" />
+			<script type="text/javascript">
+				var send_user_action = function(action, param, value) {
+					if (!value) {
+						value = '';
+					}
+					var user_action_callback = <%=$this->UserAction->ActiveControl->Javascript%>;
+					user_action_callback.ActiveControl.CallbackParameter = [action, param, value].join(';');
+					user_action_callback.dispatch();
+				};
+				Users.txt = {
+					enter_login: '<%[ Please enter login. ]%>',
+					invalid_pwd: '<%[ Password must be longer than 4 chars. ]%>'
+				};
+				Users.action_callback = send_user_action;
+				Users.init();
+			</script>
+		</div>
 	</div>
 	<div id="console">
 		<a id="clear_bvfs_cache" href="javascript: void(0)"><com:TActiveImageButton ID="ClearBvfsCache" OnCallback="clearBvfsCache" Attributes.onclick="return (confirm('<%=Prado::localize('This action will clear bvfs cache that was created during preparing restore files. There is not recommended use this action during restore job working. Are you sure?')%>'));" ImageUrl="<%=$this->getPage()->getTheme()->getBaseUrl()%>/trash_icon.png" AlternateText="<%[ clear bvfs cache ]%>" /><com:TLabel ForControl="ClearBvfsCache"><%[ clear bvfs cache ]%></com:TLabel></a>

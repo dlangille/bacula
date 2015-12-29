@@ -225,3 +225,100 @@ var Dashboard = {
 		}
 	}
 }
+
+var Users = {
+	ids: {
+		create_user: {
+			add_user: 'add_user',
+			add_user_btn: 'add_user_btn',
+			newuser: 'newuser',
+			newpwd: 'newpwd'
+		},
+		change_pwd: {
+			rel_chpwd: 'chpwd',
+			rel_chpwd_btn: 'chpwd_btn'
+		}
+	},
+	init: function() {
+		this.setEvents();
+	},
+	setEvents: function() {
+		document.getElementById(this.ids.create_user.add_user_btn).addEventListener('click', function(e) {
+			$(this.ids.create_user.add_user).show();
+			$(this.ids.create_user.newuser).focus();
+		}.bind(this));
+		document.getElementById(this.ids.create_user.newuser).addEventListener('keypress', function(e) {
+			var target = e.target || e.srcElement;
+			if (e.keyCode == 13) {
+				target.parentNode.getElementsByTagName('A')[0].click();
+			}
+			return false;
+		}.bind(this));
+		document.getElementById(this.ids.create_user.newpwd).addEventListener('keypress', function(e) {
+			var target = e.target || e.srcElement;
+			if (e.keyCode == 13) {
+				$(target.nextElementSibling).click();
+			}
+			return false;
+		}.bind(this));
+	},
+	userValidator: function(user) {
+		user = user.replace(/\s/g, '');
+		var valid =  user != '';
+		return valid;
+	},
+	pwdValidator: function(pwd) {
+		var valid = pwd.length > 4;
+		return valid;
+	},
+	addUser: function() {
+		var valid = true;
+		var user = document.getElementById(this.ids.create_user.newuser).value;
+		var pwd = document.getElementById(this.ids.create_user.newpwd).value;
+		if (this.userValidator(user) === false) {
+			alert(this.txt.enter_login);
+			valid = false;
+		}
+		if (this.pwdValidator(pwd) === false) {
+			alert(this.txt.invalid_pwd);
+			valid = false;
+		}
+		if (valid === true) {
+			$(this.ids.create_user.add_user).hide();
+			this.action_callback('newuser', user, pwd);
+		}
+		return valid;
+	},
+	rmUser: function(user) {
+		this.action_callback('rmuser', user);
+	},
+	showChangePwd: function(el) {
+		$$('a[rel=\'' + this.ids.change_pwd.rel_chpwd_btn + '\']').invoke('show');
+		$(el).hide();
+		$$('span[rel=\'' + this.ids.change_pwd.rel_chpwd + '\']').invoke('hide');
+		$(el.nextElementSibling).show();
+		$(el.nextElementSibling).select('input')[0].focus();
+	},
+	changePwd: function(el, user) {
+		var valid = true;
+		var pwd = el.previousElementSibling.value;
+
+		if (this.pwdValidator(pwd) === false) {
+			alert(this.txt.invalid_pwd);
+			valid = false;
+		}
+		if (valid === true) {
+			$(el.parentNode).hide();
+			$(el.parentNode.previousElementSibling).show();
+			this.action_callback('chpwd', user, pwd);
+		}
+	},
+	cancelAddUser: function(el) {
+		$(this.ids.create_user.add_user).hide();
+	},
+	cancelChangePwd: function(el) {
+		$(el.parentNode).hide();
+		$(el.parentNode.previousElementSibling).show();
+	}
+
+}

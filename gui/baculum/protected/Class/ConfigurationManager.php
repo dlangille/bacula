@@ -167,7 +167,6 @@ class ConfigurationManager extends TModule
 	 */
 	public function setUsersConfig($user, $password, $firstUsage = false, $oldUser = null) {
 		$allUsers = $this->getAllUsers();
-		$usersFile = Prado::getPathOfNamespace(self::USERS_FILE, '.users');
 		$password = $this->getCryptedPassword($password);
 
 		if($firstUsage === true) {
@@ -194,16 +193,7 @@ class ConfigurationManager extends TModule
 			$allUsers[$user] = $password;
 		}
 
-		$users = array();
-		foreach ($allUsers as $user => $pwd) {
-			$users[] = "$user:$pwd";
-		}
-
-		$usersToFile = implode("\n", $users);
-		$old_umask = umask(0);
-		umask(0077);
-		$result = file_put_contents($usersFile, $usersToFile) !== false;
-		umask($old_umask);
+		$result = $this->saveUserConfig($allUsers);
 		return $result;
 	}
 
@@ -220,6 +210,30 @@ class ConfigurationManager extends TModule
 			}
 		}
 		return $allUsers;
+	}
+
+	public function saveUserConfig($allUsers) {
+		$users = array();
+		foreach ($allUsers as $user => $pwd) {
+			$users[] = "$user:$pwd";
+		}
+		$usersFile = Prado::getPathOfNamespace(self::USERS_FILE, '.users');
+		$usersToFile = implode("\n", $users);
+		$old_umask = umask(0);
+		umask(0077);
+		$result = file_put_contents($usersFile, $usersToFile) !== false;
+		umask($old_umask);
+		return $result;
+	}
+
+	public function removeUser($username) {
+		$result = false;
+		$allUsers = $this->getAllUsers();
+		if (array_key_exists($username, $allUsers)) {
+			unset($allUsers[$username]);
+			$result = $this->saveUserConfig($allUsers);
+		}
+		return $result;
 	}
 
 	/**
@@ -242,6 +256,18 @@ class ConfigurationManager extends TModule
 		$usersFile = Prado::getPathOfNamespace(self::USERS_FILE, '.users');
 		$result = file_put_contents($usersFile, '') !== false;
 		return $result;
+	}
+
+	public function switchToUser($http_protocol, $host, $port, $user, $password) {
+		$urlPrefix = $this->Application->getModule('friendly-url')->getUrlPrefix();
+		$location = sprintf("%s://%s:%s@%s:%d%s", $http_protocol, $user, $password, $host, $port, $urlPrefix);
+		header("Location: $location");
+	}
+
+	public function getRandomString() {
+		$characters = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+		$rand_string = str_shuffle($characters);
+		return $rand_string;
 	}
 }
 ?>

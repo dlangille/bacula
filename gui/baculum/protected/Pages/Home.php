@@ -57,11 +57,13 @@ class Home extends BaculumPage
 
 		$appConfig = $this->getModule('configuration')->getApplicationConfig();
 
+		$this->Users->Visible = $this->User->getIsAdmin();
 		$this->SettingsWizardBtn->Visible = $this->User->getIsAdmin();
 		$this->PoolBtn->Visible = $this->User->getIsAdmin();
 		$this->VolumeBtn->Visible = $this->User->getIsAdmin();
 		$this->ClearBvfsCache->Visible = $this->User->getIsAdmin();
 		$this->Logging->Visible = $this->User->getIsAdmin();
+		$this->BconsoleCustomPath->Text = $appConfig['bconsole']['cfg_custom_path'];
 
 		if(!$this->IsPostBack && !$this->IsCallBack) {
 			$this->Logging->Checked = $this->getModule('logging')->isDebugOn();
@@ -81,6 +83,7 @@ class Home extends BaculumPage
 			$this->setJobsStates();
 			$this->setJobs();
 			$this->setClients();
+			$this->setUsers();
 			$this->setWindowOpen();
 		}
 	}
@@ -157,6 +160,37 @@ class Home extends BaculumPage
 		$this->Clients->dataBind();
 	}
 
+	public function setUsers() {
+		if($this->User->getIsAdmin() === true) {
+			$allUsers = $this->getModule('configuration')->getAllUsers();
+			$users = array_keys($allUsers);
+			sort($users);
+			$this->UsersList->dataSource = $users;
+			$this->UsersList->dataBind();
+		}
+	}
+
+	public function userAction($sender, $param) {
+		if($this->User->getIsAdmin() === true) {
+			list($action, $param, $value) = explode(';', $param->CallbackParameter, 3);
+			switch($action) {
+				case 'newuser':
+				case 'chpwd': {
+						$this->getmodule('configuration')->setusersconfig($param, $value);
+						$this->setUsers();
+						}
+						break;
+				case 'rmuser': {
+						if ($param != $this->User->getName()) {
+							$this->getModule('configuration')->removeUser($param);
+							$this->setUsers();
+						}
+						break;
+					}
+			}
+		}
+	}
+
 	public function setWindowOpen() {
 		if (isset($this->Request['open']) && in_array($this->Request['open'], $this->windowIds) && $this->Request['open'] != 'JobRun') {
 			$btn = $this->Request['open'] . 'Btn';
@@ -166,6 +200,13 @@ class Home extends BaculumPage
 				$this->initElementId = $this->Request['id'];
 			}
 		}
+	}
+
+	public function logout($sender, $param) {
+		$cfg = $this->getModule('configuration');
+		$http_protocol = isset($_SERVER['HTTPS']) && !empty($_SERVER['HTTPS']) ? 'https' : 'http';
+		$fake_pwd = $cfg->getRandomString();
+		$cfg->switchToUser($http_protocol, $_SERVER['SERVER_NAME'], $_SERVER['SERVER_PORT'], $this->User->getName(), $fake_pwd);
 	}
 }
 ?>

@@ -1,7 +1,7 @@
 var PanelWindowClass = Class.create({
 
 	currentWindowId: null,
-	windowIds: ['dashboard', 'container', 'graphs'],
+	windowIds: ['dashboard', 'container', 'graphs', 'users'],
 	onShow: null,
 
 	initialize: function() {
@@ -20,7 +20,7 @@ var PanelWindowClass = Class.create({
 				});
 			}
 		}
-		for (var i = 0, j = 1; i < this.windowIds.length; i++, j++) {
+		for (var i = 0; i < this.windowIds.length; i++) {
 			hide_panel_by_id(this.windowIds[i]);
 		}
 	},

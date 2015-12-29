@@ -1098,3 +1098,36 @@ msgstr "Ustawienia Baculum"
 msgid "start time"
 msgstr "czas rozpoczęcia"
 
+msgid "Users"
+msgstr "Użytkownicy"
+
+msgid "User name"
+msgstr "Nazwa użytkownika"
+
+msgid "Role"
+msgstr "Rola"
+
+msgid "Remove user"
+msgstr "Usuń użytkownika"
+
+msgid "Logout"
+msgstr "Wyloguj"
+
+msgid "Change password"
+msgstr "Zmień hasło"
+
+msgid "Administrator"
+msgstr "Administrator"
+
+msgid "Normal user"
+msgstr "Użytkownik"
+
+msgid "Add new user"
+msgstr "Dodaj nowego użytkownika"
+
+msgid "Username:"
+msgstr "Nazwa użytkownika:"
+
+msgid "Please note that for each user (excluding administrator) there should exist separate Bconsole config file in form:"
+msgstr "Uwaga! Dla każdego użytkownika (wyłączając administratora) powinien istnieć osobny plik konfiguracyjny Bconsole w postaci:"
+
