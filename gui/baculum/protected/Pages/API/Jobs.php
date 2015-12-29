@@ -33,7 +33,7 @@ class Jobs extends BaculumAPI {
 			} else {
 				$error = true;
 				$this->output = $allowedJobs->output;
-				$this->error = $allowedJobs->error;
+				$this->error = $allowedJobs->exitcode;
 			}
 		}
 
