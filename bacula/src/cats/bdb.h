@@ -119,6 +119,7 @@ public:
    int bdb_delete_snapshot_record(JCR *jcr, SNAPSHOT_DBR *sr);
 
    /* sql_find.c */
+   bool bdb_find_last_job_end_time(JCR *jcr, JOB_DBR *jr, POOLMEM **etime, char *job);
    bool bdb_find_last_job_start_time(JCR *jcr, JOB_DBR *jr, POOLMEM **stime, char *job, int JobLevel);
    bool bdb_find_job_start_time(JCR *jcr, JOB_DBR *jr, POOLMEM **stime, char *job);
    bool bdb_find_last_jobid(JCR *jcr, const char *Name, JOB_DBR *jr);

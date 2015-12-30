@@ -257,16 +257,33 @@ void get_level_since_time(JCR *jcr, char *since, int since_len)
          jcr->setJobLevel(jcr->jr.JobLevel = L_DIFFERENTIAL);
       } else {
          if (jcr->job->rerun_failed_levels) {
-            if (db_find_failed_job_since(jcr, jcr->db, &jcr->jr,
-                                         jcr->stime, JobLevel)) {
-               Jmsg(jcr, M_INFO, 0, _("Prior failed job found in catalog. Upgrading to %s.\n"),
-                  level_to_str(JobLevel));
-               bsnprintf(since, since_len, _(" (upgraded from %s)"),
-                  level_to_str(jcr->getJobLevel()));
-               jcr->setJobLevel(jcr->jr.JobLevel = JobLevel);
-               jcr->jr.JobId = jcr->JobId;
-               break;
+
+            POOLMEM *etime = get_pool_memory(PM_MESSAGE);
+
+            /* Get the end time of our most recent successfull backup for this job */
+            /* This will be used to see if there have been any failures since then */
+	    if (db_find_last_job_end_time(jcr, jcr->db, &jcr->jr, &etime, prev_job)) {
+
+	       /* See if there are any failed Differential/Full backups since the completion */
+               /* of our last successful backup for this job                                 */
+               if (db_find_failed_job_since(jcr, jcr->db, &jcr->jr,
+                                         etime, JobLevel)) {
+                 /* If our job is an Incremental and we have a failed job then upgrade.              */
+                 /* If our job is a Differential and the failed job is a Full then upgrade.          */
+                 /* Otherwise there is no reason to upgrade.                                         */
+		 if ((jcr->getJobLevel() == L_INCREMENTAL) || 
+                     ((jcr->getJobLevel() == L_DIFFERENTIAL) && (JobLevel == L_FULL))) {
+                    Jmsg(jcr, M_INFO, 0, _("Prior failed job found in catalog. Upgrading to %s.\n"),
+                       level_to_str(JobLevel));
+                    bsnprintf(since, since_len, _(" (upgraded from %s)"),
+                             level_to_str(jcr->getJobLevel()));
+                    jcr->setJobLevel(jcr->jr.JobLevel = JobLevel);
+                    jcr->jr.JobId = jcr->JobId;
+                    break;
+                 }
+               }
             }
+            free_pool_memory(etime);
          }
          bstrncpy(since, _(", since="), since_len);
          bstrncat(since, jcr->stime, since_len);

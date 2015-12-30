@@ -163,6 +163,8 @@ void bdb_free_restoreobject_record(JCR *jcr, ROBJECT_DBR *rr);
 
 
 /* sql_find.c */
+#define db_find_last_job_end_time(jcr, mdb, jr, etime, job) \
+           mdb->bdb_find_last_job_end_time(jcr, jr, etime, job)
 #define db_find_last_job_start_time(jcr, mdb, jr, stime, job, JobLevel) \
            mdb->bdb_find_last_job_start_time(jcr, jr, stime, job, JobLevel)
 #define db_find_job_start_time(jcr, mdb, jr, stime, job) \

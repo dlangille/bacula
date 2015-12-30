@@ -42,14 +42,66 @@
  */
 
 /*
+ * Find the most recent successful real end time for a job given.
+ *
+ *  RealEndTime is returned in etime
+ *  Job name is returned in job (MAX_NAME_LENGTH)
+ *
+ * Returns: false on failure
+ *          true  on success, jr is unchanged, but etime and job are set
+ */
+bool BDB::bdb_find_last_job_end_time(JCR *jcr, JOB_DBR *jr, POOLMEM **etime, 
+          char *job)
+{
+   SQL_ROW row;
+   char ed1[50], ed2[50];
+   char esc_name[MAX_ESCAPE_NAME_LENGTH];
+
+   bdb_lock();
+   bdb_escape_string(jcr, esc_name, jr->Name, strlen(jr->Name));
+   pm_strcpy(etime, "0000-00-00 00:00:00");   /* default */
+   job[0] = 0;
+
+   Mmsg(cmd,
+        "SELECT RealEndTime, Job FROM Job WHERE JobStatus IN ('T','W') AND Type='%c' AND "
+        "Level IN ('%c','%c','%c') AND Name='%s' AND ClientId=%s AND FileSetId=%s "
+        "ORDER BY RealEndTime DESC LIMIT 1", jr->JobType, 
+        L_FULL, L_DIFFERENTIAL, L_INCREMENTAL, esc_name, 
+        edit_int64(jr->ClientId, ed1), edit_int64(jr->FileSetId, ed2));
+
+   if (!QueryDB(jcr, cmd)) {
+      Mmsg2(&errmsg, _("Query error for end time request: ERR=%s\nCMD=%s\n"),
+         sql_strerror(), cmd);
+      goto bail_out;
+   }
+   if ((row = sql_fetch_row()) == NULL) {
+      sql_free_result();
+      Mmsg(errmsg, _("No prior backup Job record found.\n"));
+      goto bail_out;
+   }
+   Dmsg1(100, "Got end time: %s\n", row[0]);
+   pm_strcpy(etime, row[0]);
+   bstrncpy(job, row[1], MAX_NAME_LENGTH);
+
+   sql_free_result();
+   bdb_unlock();
+   return true;
+
+bail_out:
+   bdb_unlock();
+   return false;
+}
+
+
+/*
  * Find job start time if JobId specified, otherwise
  * find last Job start time Incremental and Differential saves.
  *
  *  StartTime is returned in stime
  *  Job name is returned in job (MAX_NAME_LENGTH)
  *
- * Returns: 0 on failure
- *          1 on success, jr is unchanged, but stime and job are set
+ * Returns: false on failure
+ *          true  on success, jr is unchanged, but stime and job are set
  */
 bool BDB::bdb_find_job_start_time(JCR *jcr, JOB_DBR *jr, POOLMEM **stime, char *job)
 {
@@ -208,10 +260,11 @@ bool BDB::bdb_find_failed_job_since(JCR *jcr, JOB_DBR *jr, POOLMEM *stime, int &
 
    /* Differential is since last Full backup */
    Mmsg(cmd,
-"SELECT Level FROM Job WHERE JobStatus NOT IN ('T','W') AND "
-"Type='%c' AND Level IN ('%c','%c') AND Name='%s' AND ClientId=%s "
-"AND FileSetId=%s AND StartTime>'%s' "
-"ORDER BY StartTime DESC LIMIT 1",
+   "SELECT Level FROM Job WHERE JobStatus IN ('%c','%c', '%c', '%c') AND "
+      "Type='%c' AND Level IN ('%c','%c') AND Name='%s' AND ClientId=%s "
+      "AND FileSetId=%s AND StartTime>'%s' "
+      "ORDER BY StartTime DESC LIMIT 1",
+         JS_Canceled, JS_ErrorTerminated, JS_Error, JS_FatalError,
          jr->JobType, L_FULL, L_DIFFERENTIAL, esc_name,
          edit_int64(jr->ClientId, ed1), edit_int64(jr->FileSetId, ed2),
          stime);
