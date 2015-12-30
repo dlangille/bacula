@@ -247,17 +247,21 @@ var Users = {
 			$(this.ids.create_user.add_user).show();
 			$(this.ids.create_user.newuser).focus();
 		}.bind(this));
-		document.getElementById(this.ids.create_user.newuser).addEventListener('keypress', function(e) {
-			var target = e.target || e.srcElement;
-			if (e.keyCode == 13) {
-				target.parentNode.getElementsByTagName('A')[0].click();
-			}
-			return false;
-		}.bind(this));
-		document.getElementById(this.ids.create_user.newpwd).addEventListener('keypress', function(e) {
+		document.getElementById(this.ids.create_user.newuser).addEventListener('keydown', function(e) {
 			var target = e.target || e.srcElement;
 			if (e.keyCode == 13) {
 				$(target.nextElementSibling).click();
+			} else if (e.keyCode == 27) {
+				this.cancelAddUser();
+			}
+			return false;
+		}.bind(this));
+		document.getElementById(this.ids.create_user.newpwd).addEventListener('keydown', function(e) {
+			var target = e.target || e.srcElement;
+			if (e.keyCode == 13) {
+				$(target.nextElementSibling).click();
+			} else if (e.keyCode == 27) {
+				this.cancelAddUser();
 			}
 			return false;
 		}.bind(this));
@@ -301,7 +305,7 @@ var Users = {
 	},
 	changePwd: function(el, user) {
 		var valid = true;
-		var pwd = el.previousElementSibling.value;
+		var pwd = el.value;
 
 		if (this.pwdValidator(pwd) === false) {
 			alert(this.txt.invalid_pwd);
@@ -313,7 +317,7 @@ var Users = {
 			this.action_callback('chpwd', user, pwd);
 		}
 	},
-	cancelAddUser: function(el) {
+	cancelAddUser: function() {
 		$(this.ids.create_user.add_user).hide();
 	},
 	cancelChangePwd: function(el) {

@@ -319,8 +319,8 @@
 								<%[ Change password ]%>
 							</a>
 							<span style="display: none;" rel="chpwd">
-								<input type="password" onkeypress="event.keyCode == 13 ? $(this.nextElementSibling).click(): '';" />
-								<a href="javascript:void(0)" onclick="Users.changePwd(this, '<%=$this->DataItem%>')">
+								<input type="password" onkeydown="event.keyCode == 13 ? Users.changePwd(this, '<%=$this->DataItem%>') : (event.keyCode == 27 ? Users.cancelChangePwd(this.nextElementSibling.nextElementSibling) : '');" />
+								<a href="javascript:void(0)" onclick="Users.changePwd(this.prevousElementSibling, '<%=$this->DataItem%>')">
 									<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/icon_ok.png" alt="<%[ Save ]%>" title="<%[ Save ]%>"/>
 								</a>
 								<a href="javascript:void(0)" onclick="Users.cancelChangePwd(this)">
