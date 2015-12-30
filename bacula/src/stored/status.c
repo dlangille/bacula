@@ -517,8 +517,7 @@ static void list_running_jobs(STATUS_PKT *sp)
                    rdcr->dev?rdcr->dev->print_name():
                             rdcr->device->device_name);
             sendit(msg, len, sp);
-         }
-         if (dcr && dcr->device && dcr != rdcr) {
+         } else if (dcr && dcr->device) {
             len = Mmsg(msg, _("Writing: %s %s job %s JobId=%d Volume=\"%s\"\n"
                             "    pool=\"%s\" device=%s\n"),
                    job_level_to_str(jcr->getJobLevel()),
