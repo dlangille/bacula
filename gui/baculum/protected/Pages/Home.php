@@ -207,6 +207,7 @@ class Home extends BaculumPage
 		$http_protocol = isset($_SERVER['HTTPS']) && !empty($_SERVER['HTTPS']) ? 'https' : 'http';
 		$fake_pwd = $cfg->getRandomString();
 		$cfg->switchToUser($http_protocol, $_SERVER['SERVER_NAME'], $_SERVER['SERVER_PORT'], $this->User->getName(), $fake_pwd);
+		exit();
 	}
 }
 ?>
