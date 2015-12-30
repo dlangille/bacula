@@ -144,5 +144,35 @@ class JobList extends Portlets implements ISlideWindow {
 		}
 		return $name;
 	}
+
+	public function getJobStatusLetter($job) {
+		$statusLetter = '';
+		if (array_key_exists('jobstatus', $job)) {
+			$errors = intval($job['joberrors']);
+			if ($job['jobstatus'] === 'T' && $errors > 0) {
+				$job['jobstatus'] = 'W';
+			}
+			$statusLetter = $job['jobstatus'];
+		}
+		return $statusLetter;
+	}
+
+	public function getJobStatusValue($job) {
+		$statusValue = '';
+		$jobLetter = $this->getJobStatusLetter($job);
+		if (array_key_exists($jobLetter, $this->jobStates)) {
+			$statusValue = $this->jobStates[$jobLetter]['value'];
+		}
+		return $statusValue;
+	}
+
+	public function getJobStatusDescription($job) {
+		$statusDescription = '';
+		$jobLetter = $this->getJobStatusLetter($job);
+		if (array_key_exists($jobLetter, $this->jobStates)) {
+			$statusDescription = $this->jobStates[$jobLetter]['description'];
+		}
+		return $statusDescription;
+	}
 }
 ?>

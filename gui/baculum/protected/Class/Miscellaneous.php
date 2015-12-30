@@ -52,7 +52,7 @@ class Miscellaneous extends TModule {
 		'R' => array('value' => 'Running', 'description' => 'Running'),
 		'B' => array('value' => 'Blocked', 'description' => 'Blocked'),
 		'T' => array('value' => 'Terminated', 'description' =>'Terminated normally'),
-		'W' => array('value' => 'Terminated with warnings', 'description' =>'Terminated normally with warnings'),
+		'W' => array('value' => 'Terminated', 'description' =>'Terminated normally with warnings'),
 		'E' => array('value' => 'Error', 'description' =>'Terminated in Error'),
 		'e' => array('value' => 'Non-fatal error', 'description' =>'Non-fatal error'),
 		'f' => array('value' => 'Fatal error', 'description' =>'Fatal error'),

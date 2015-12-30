@@ -51,7 +51,7 @@
 		</com:TActiveTemplateColumn>
 		<com:TActiveTemplateColumn HeaderText="<%[ Job status ]%>" SortExpression="jobstatus">
 			<prop:ItemTemplate>
-				<div class="job-status-<%=isset($this->getParent()->Data['jobstatus']) ? $this->getParent()->Data['jobstatus'] : ''%>" title="<%=isset($this->getPage()->JobWindow->jobStates[$this->getParent()->Data['jobstatus']]['description']) ? $this->getPage()->JobWindow->jobStates[$this->getParent()->Data['jobstatus']]['description'] : ''%>"><%=isset($this->getPage()->JobWindow->jobStates[$this->getParent()->Data['jobstatus']]['value']) ? $this->getPage()->JobWindow->jobStates[$this->getParent()->Data['jobstatus']]['value'] : ''%></div>
+				<div class="job-status-<%=$this->getPage()->JobWindow->getJobStatusLetter($this->getParent()->Data)%>" title="<%=$this->getPage()->JobWindow->getJobStatusDescription($this->getParent()->Data)%>"><%=$this->getPage()->JobWindow->getJobStatusValue($this->getParent()->Data)%></div>
 			</prop:ItemTemplate>
 		</com:TActiveTemplateColumn>
 		<com:TActiveTemplateColumn HeaderText="<%[ Size ]%>" SortExpression="jobbytes">
