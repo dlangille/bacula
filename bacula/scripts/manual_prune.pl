@@ -216,13 +216,13 @@ quit
     while (my $l = <FP>)
     {
                   # |        1 |   TestVolume001 | Used
-        if ($l =~ /^\s*\|\s*\d+\s*\|\s*([\w\d-]+)\s*\|\s*Used/) {
+        if ($l =~ /^\s*\|\s*[\d,]+\s*\|\s*([\w\d-]+)\s*\|\s*Used/) {
             push @vol, $1;
         }
-        if ($l =~ /^\s*\|\s*\d+\s*\|\s*([\w\d-]+)\s*\|\s*Full/) {
+        if ($l =~ /^\s*\|\s*[\d,]+\s*\|\s*([\w\d-]+)\s*\|\s*Full/) {
             push @vol, $1;
         }
-        if ($l =~ /^\s*\|\s*\d+\s*\|\s*([\w\d-]+)\s*\|\s*Purged/) {
+        if ($l =~ /^\s*\|\s*[\d,]+\s*\|\s*([\w\d-]+)\s*\|\s*Purged/) {
             push @vol_purged, $1;
         }
     }
