@@ -90,14 +90,14 @@ dnl -------------------------------------------------------
 dnl Check for compiler.
 dnl ------------------------------------------------------
 
-AC_PROG_CC
+AC_PROG_CC		dnl this sets $GCC if using GNU C compiler
 AC_PROG_CXX
-AC_PROG_CC_C_O	       dnl Determine if C compiler support -c -o.
-AC_PROG_GCC_TRADITIONAL    dnl Determine if ioctl() need -traditional.
+AC_PROG_CC_C_O		dnl Determine if C compiler support -c -o.
+AC_PROG_GCC_TRADITIONAL dnl Determine if ioctl() need -traditional.
 
 BASECC=`basename $CC`
 have_gcc=no
-if test "x$BASECC" = xgcc; then
+if test x"$GCC" = "xyes"; then
    AC_DEFINE(HAVE_GCC)
    have_gcc=yes
 fi
