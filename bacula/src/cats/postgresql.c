@@ -2,7 +2,6 @@
    Bacula(R) - The Network Backup Solution
 
    Copyright (C) 2000-2015 Kern Sibbald
-   Copyright (C) 2003-2014 Free Software Foundation Europe e.V.
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -41,7 +40,7 @@
 #include  "postgres_ext.h"       /* needed for NAMEDATALEN */
 #include  "pg_config_manual.h"   /* get NAMEDATALEN on version 8.3 or later */
 #define __BDB_POSTGRESQL_H_ 1
-#include "bdb_postgresql.h"
+#include  "bdb_postgresql.h"
 
 #define dbglvl_dbg   DT_SQL|100
 #define dbglvl_info  DT_SQL|50
@@ -129,9 +128,7 @@ BDB *db_init_database(JCR *jcr, const char *db_driver, const char *db_name, cons
    mdb = New(BDB_POSTGRESQL());
    if (!mdb) goto get_out;
 
-   /*
-    * Initialize the parent class members.
-    */
+   /* Initialize the parent class members. */
    mdb->m_db_name = bstrdup(db_name);
    mdb->m_db_user = bstrdup(db_user);
    if (db_password) {
@@ -165,7 +162,7 @@ BDB *db_init_database(JCR *jcr, const char *db_driver, const char *db_name, cons
 #endif /* USE_BATCH_FILE_INSERT */ 
    } 
    mdb->m_allow_transactions = mult_db_connections;
-
+ 
    /* At this time, when mult_db_connections == true, this is for
     * specific console command such as bvfs or batch mode, and we don't
     * want to share a batch mode or bvfs. In the future, we can change
@@ -315,7 +312,7 @@ void BDB_POSTGRESQL::bdb_close_database(JCR *jcr)
       db_list->remove(mdb);
       if (mdb->m_connected && mdb->m_db_handle) {
          PQfinish(mdb->m_db_handle);
-      }
+      } 
       if (is_rwl_valid(&mdb->m_lock)) {
          rwl_destroy(&mdb->m_lock);
       } 
@@ -678,7 +675,7 @@ get_out:
 ok_out: 
    return retval; 
 }  
-
+ 
 void BDB_POSTGRESQL::sql_free_result(void)
 {
    BDB_POSTGRESQL *mdb = this;
@@ -743,10 +740,10 @@ SQL_ROW BDB_POSTGRESQL::sql_fetch_row(void)
    Dmsg1(dbglvl_info, "sql_fetch_row finishes returning %p\n", row);
  
    return row; 
-}
+} 
 
 const char *BDB_POSTGRESQL::sql_strerror(void)
-{
+{   
    BDB_POSTGRESQL *mdb = this;
    return PQerrorMessage(mdb->m_db_handle);
 } 

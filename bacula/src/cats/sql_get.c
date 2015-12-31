@@ -2,7 +2,6 @@
    Bacula(R) - The Network Backup Solution
 
    Copyright (C) 2000-2015 Kern Sibbald
-   Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -177,7 +176,6 @@ int BDB::bdb_get_filename_record(JCR *jcr)
 {
    SQL_ROW row;
    int FilenameId = 0;
-   int num_rows;
 
    esc_name = check_pool_memory_size(esc_name, 2*fnl+2);
    bdb_escape_string(jcr, esc_name, fname, fnl);
@@ -185,13 +183,12 @@ int BDB::bdb_get_filename_record(JCR *jcr)
    Mmsg(cmd, "SELECT FilenameId FROM Filename WHERE Name='%s'", esc_name);
    if (QueryDB(jcr, cmd)) {
       char ed1[30];
-      num_rows = sql_num_rows();
-      if (num_rows > 1) {
+      if (sql_num_rows() > 1) { 
          Mmsg2(errmsg, _("More than one Filename!: %s for file: %s\n"),
-            edit_uint64(num_rows, ed1), fname);
+            edit_uint64(sql_num_rows(), ed1), fname);
          Jmsg(jcr, M_WARNING, 0, "%s", errmsg);
       }
-      if (num_rows >= 1) {
+      if (sql_num_rows() >= 1) { 
          if ((row = sql_fetch_row()) == NULL) {
             Mmsg1(errmsg, _("error fetching row: %s\n"), sql_strerror());
          } else {
