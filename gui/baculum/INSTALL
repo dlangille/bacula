@@ -50,6 +50,7 @@ PDO MySQL or PDO SQLite.
     * cURL PHP module.
     * MB String PHP module.
     * JSON PHP module.
+    * XML PHP module.
 - Bconsole - configured Bacula text based console
 - Access to Bacula catalog database - computer with Baculum installation should be
 able to connect to Bacula catalog database. There is not need to install Baculum
@@ -73,7 +74,8 @@ php-pdo \
 php-pgsql \
 php-mysqlnd \
 php-mbstring \
-php-bcmath
+php-bcmath \
+php-xml
 
 In Fedora 20 PHP module for cURL support and for JSON support are compiled in PHP.
 

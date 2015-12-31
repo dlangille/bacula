@@ -63,6 +63,10 @@ class Requirements {
 			$requirements[] = 'Please install <b>Module for JSON functions in PHP scripts</b>.';
 		}
 
+		if(!class_exists('DOMDocument')) {
+			$requirements[] = 'Please install <b>PHP DOM XML</b> to support XML documents (usually included in php-xml binary package).';
+		}
+
 		if(count($requirements) > 0) {
 			echo '<html><body><h2>Baculum - Missing dependencies</h2><ul>';
 			for($i = 0; $i < count($requirements); $i++) {
