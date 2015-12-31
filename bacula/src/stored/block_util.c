@@ -186,7 +186,7 @@ void DCR::free_blocks()
  */
 void free_block(DEV_BLOCK *block)
 {
-   if (block) {
+   if (block && block->buf) {
       Dmsg1(999, "free_block buffer %x\n", block->buf);
       free_memory(block->buf);
       Dmsg1(999, "free_block block %x\n", block);
