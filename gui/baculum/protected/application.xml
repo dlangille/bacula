@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <application id="baculum" mode="Normal">
 	<paths>
-		<using namespace="Application.Class.*" />
 		<using namespace="System.Data.ActiveRecord.*" />
 		<using namespace="System.I18N.*" />
+		<using namespace="Application.Class.*" />
 		<using namespace="Application.Portlets.BButton" />
 		<using namespace="Application.Portlets.BActiveButton" />
 	</paths>

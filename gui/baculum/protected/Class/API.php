@@ -22,29 +22,58 @@
 
 Prado::using('Application.Class.Errors');
 
+/**
+ * Internal API client module.
+ *
+ * @author Marcin Haba
+ */
 class API extends TModule {
 
+	/**
+	 * API version (used in HTTP header)
+	 */
 	const API_VERSION = '0.1';
 
+	/**
+	 * Store configuration data from settings file
+	 * @access protected
+	 */
 	protected $appCfg;
 
+	/**
+	 * These errors are allowed in API response and they do not cause
+	 * disturb application working (no direction to error page)
+	 * @access private
+	 */
 	private $allowedErrors = array(
 		GenericError::ERROR_NO_ERRORS,
 		BconsoleError::ERROR_INVALID_COMMAND,
 		PoolError::ERROR_NO_VOLUMES_IN_POOL_TO_UPDATE
 	);
 
-	private function getConnection() {
+	/**
+	 * Get connection request handler.
+	 * For data requests is used cURL interface.
+	 * @access public
+	 * @return resource connection handler on success, false on errors
+	 */
+	public function getConnection() {
 		$ch = curl_init();
+		$userpwd = sprintf('%s:%s', $this->appCfg['baculum']['login'], $this->appCfg['baculum']['password']);
+		curl_setopt($ch, CURLOPT_USERPWD, $userpwd);
+		curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_ANY);
 		curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
 		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 		curl_setopt($ch, CURLOPT_COOKIE, 'PHPSESSID=' . md5(session_id()));
-		curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_ANY);
-		curl_setopt($ch, CURLOPT_USERPWD, $this->appCfg['baculum']['login'] . ':' . $this->appCfg['baculum']['password']);
 		return $ch;
 	}
 
+	/**
+	 * Get API specific headers used in HTTP requests.
+	 * @access private
+	 * @return API specific headers
+	 */
 	private function getAPIHeaders() {
 		$headers = array(
 			'X-Baculum-API: ' . self::API_VERSION,
@@ -55,29 +84,61 @@ class API extends TModule {
 		return $headers;
 	}
 
+	/**
+	 * Initializes API module (framework module constructor)
+	 * @access public
+	 * @param TXmlElement $config API module configuration
+	 */
 	public function init($config) {
 		$this->initSessionCache();
 		$this->appCfg = $this->Application->getModule('configuration')->getApplicationConfig();
 	}
 
+	/**
+	 * Get URL to use by internal API client's request.
+	 * @access private
+	 * @return string URL to internal API server
+	 */
 	private function getURL() {
 		$protocol = !empty($_SERVER['HTTPS']) ? 'https' : 'http';
 		$host = $_SERVER['SERVER_NAME'];
 		$port = $_SERVER['SERVER_PORT'];
+
+		// support for document root subdirectory
 		$urlPrefix = $this->Application->getModule('friendly-url')->getUrlPrefix();
+
 		$url = sprintf('%s://%s:%d%s/', $protocol, $host, $port, $urlPrefix);
 		return $url;
 	}
 
-	private function setParamsToUrl(&$url) {
-		$url .= (preg_match('/\?/', $url) === 1 ? '&' : '?' ) . 'director=' . ((array_key_exists('director', $_SESSION)) ? $_SESSION['director'] : '');
-		$this->Application->getModule('logging')->log(__FUNCTION__, PHP_EOL . PHP_EOL . 'EXECUTE URL ==> ' . $url . ' <==' . PHP_EOL . PHP_EOL, Logging::CATEGORY_APPLICATION, __FILE__, __LINE__);
+	/**
+	 * Set URL parameters and prepare URL to request send.
+	 * @access private
+	 * @param string &$url reference to URL string variable
+	 */
+	private function setUrlParams(&$url) {
+		$url .= (preg_match('/\?/', $url) === 1 ? '&' : '?');
+		$url .= 'director=';
+		if (array_key_exists('director', $_SESSION)) {
+			$url .= $_SESSION['director'];
+		}
+
+		$this->Application->getModule('logging')->log(
+			__FUNCTION__,
+			PHP_EOL . PHP_EOL . 'EXECUTE URL ==> ' . $url . ' <==' . PHP_EOL . PHP_EOL,
+			Logging::CATEGORY_APPLICATION,
+			__FILE__,
+			__LINE__
+		);
 	}
 
 	/**
-	 * API REQUESTS METHODS (get, set, create, delete)
+	 * Internal API GET request.
+	 * @access public
+	 * @param array $params GET params to send in request
+	 * @param bool $use_cache if true then try to use session cache, if false then always use fresh data
+	 * @return object stdClass with request result as two properties: 'output' and 'error'
 	 */
-
 	public function get(array $params, $use_cache = false) {
 		$cached = null;
 		$ret = null;
@@ -88,7 +149,7 @@ class API extends TModule {
 			$ret = $cached;
 		} else {
 			$url = $this->getURL() . implode('/', $params);
-			$this->setParamsToUrl($url);
+			$this->setUrlParams($url);
 			$ch = $this->getConnection();
 			curl_setopt($ch, CURLOPT_URL, $url);
 			curl_setopt($ch, CURLOPT_HTTPHEADER, $this->getAPIHeaders());
@@ -102,14 +163,24 @@ class API extends TModule {
 		return $ret;
 	}
 
+	/**
+	 * Internal API SET request.
+	 * @access public
+	 * @param array $params GET params to send in request
+	 * @param array $options POST params to send in request
+	 * @return object stdClass with request result as two properties: 'output' and 'error'
+	 */
 	public function set(array $params, array $options) {
 		$url = $this->getURL() . implode('/', $params);
-		$this->setParamsToUrl($url);
+		$this->setUrlParams($url);
 		$data = http_build_query(array('update' => $options));
 		$ch = $this->getConnection();
 		curl_setopt($ch, CURLOPT_URL, $url);
 		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'PUT');
-		curl_setopt($ch, CURLOPT_HTTPHEADER, array_merge($this->getAPIHeaders(), array('X-HTTP-Method-Override: PUT', 'Content-Length: ' . strlen($data), 'Expect:')));
+		curl_setopt($ch, CURLOPT_HTTPHEADER, array_merge(
+			$this->getAPIHeaders(),
+			array('X-HTTP-Method-Override: PUT', 'Content-Length: ' . strlen($data), 'Expect:')
+		));
 		curl_setopt($ch, CURLOPT_POST, true);
 		curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
 		$result = curl_exec($ch);
@@ -117,9 +188,16 @@ class API extends TModule {
 		return $this->preParseOutput($result);
 	}
 
+	/**
+	 * Internal API CREATE request.
+	 * @access public
+	 * @param array $params GET params to send in request
+	 * @param array $options POST params to send in request
+	 * @return object stdClass with request result as two properties: 'output' and 'error'
+	 */
 	public function create(array $params, array $options) {
 		$url = $this->getURL() . implode('/', $params);
-		$this->setParamsToUrl($url);
+		$this->setUrlParams($url);
 		$data = http_build_query(array('create' => $options));
 		$ch = $this->getConnection();
 		curl_setopt($ch, CURLOPT_URL, $url);
@@ -131,9 +209,15 @@ class API extends TModule {
 		return $this->preParseOutput($result);
 	}
 
+	/**
+	 * Internal API REMOVE request.
+	 * @access public
+	 * @param array $params GET params to send in request
+	 * @return object stdClass with request result as two properties: 'output' and 'error'
+	 */
 	public function remove(array $params) {
 		$url = $this->getURL() . implode('/', $params);
-		$this->setParamsToUrl($url);
+		$this->setUrlParams($url);
 		$ch = $this->getConnection();
 		curl_setopt($ch, CURLOPT_URL, $url);
 		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'DELETE');
@@ -143,10 +227,28 @@ class API extends TModule {
 		return $this->preParseOutput($result);
 	}
 
+	/**
+	 * Initially parse and prepare every Internal API response.
+	 * If a error occurs then redirect to appropriate error page.
+	 * @access private
+	 * @param string $result response output as JSON string (not object yet)
+	 * @return object stdClass parsed response with two top level properties 'output' and 'error'
+	 */
 	private function preParseOutput($result) {
-		$this->Application->getModule('logging')->log(__FUNCTION__, $result, Logging::CATEGORY_APPLICATION, __FILE__, __LINE__);
+		// first write log with that what comes
+		$this->Application->getModule('logging')->log(
+			__FUNCTION__,
+			$result,
+			Logging::CATEGORY_APPLICATION,
+			__FILE__,
+			__LINE__
+		);
+
+		// decode JSON to object
 		$resource = json_decode($result);
+
 		$error = null;
+
 		if(is_object($resource) && property_exists($resource, 'error')) {
 			if(!in_array($resource->error, $this->allowedErrors)) {
 				$error = $resource->error;
@@ -155,10 +257,24 @@ class API extends TModule {
 			$error = AuthorizationError::ERROR_AUTHORIZATION_TO_WEBGUI_PROBLEM;
 		}
 
-		$this->Application->getModule('logging')->log(__FUNCTION__, $resource, Logging::CATEGORY_APPLICATION, __FILE__, __LINE__);
+		$this->Application->getModule('logging')->log(
+			__FUNCTION__,
+			$resource,
+			Logging::CATEGORY_APPLICATION,
+			__FILE__,
+			__LINE__
+		);
+
+		// if other than allowed errors exist then show error page (redirect)
 		if(!is_null($error)) {
 			// Note! Redirection to error page takes place here.
-			$this->Response->redirect($this->Service->constructUrl('BaculumError',array('error' => $error), false));
+			$this->Response->redirect(
+				$this->Service->constructUrl(
+					'BaculumError',
+					array('error' => $error),
+					false
+				)
+			);
 		}
 
 		return $resource;

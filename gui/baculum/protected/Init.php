@@ -31,11 +31,23 @@ if (!ini_get('date.timezone')) {
 	date_default_timezone_set($timezone);
 }
 
-// Support for web servers which do not provide direct info about HTTP Basic auth to PHP superglobal $_SERVER array.
-if(!isset($_SERVER['PHP_AUTH_USER']) && !isset($_SERVER['PHP_AUTH_PW']) && isset($_SERVER['HTTP_AUTHORIZATION'])) {
-    list($_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW']) = explode(':', base64_decode(substr($_SERVER['HTTP_AUTHORIZATION'], 6)));
+/*
+ * Support for web servers (for example Lighttpd) which do not provide direct
+ * info about HTTP Basic auth to PHP superglobal $_SERVER array.
+ */
+if (!isset($_SERVER['PHP_AUTH_USER']) && !isset($_SERVER['PHP_AUTH_PW']) && isset($_SERVER['HTTP_AUTHORIZATION'])) {
+	/*
+	 * Substring 'Basic ' from  HTTP authorization header
+	 * Example 'Basic YWRtaW46YWRtaW4=' becomes 'YWRtaW46YWRtaW4='
+	 */
+	$encoded_credentials = substr($_SERVER['HTTP_AUTHORIZATION'], 6);
+	$decoded_credentials = base64_decode($encoded_credentials);
+
+	// initialize required auth superglobal $_SERVER array
+	list($_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW']) = explode(':', $decoded_credentials);
 }
 
+// Check requirements and if are some needed then show requirements page
 require_once('./protected/Pages/Requirements.php');
 new Requirements(dirname(__DIR__));
 

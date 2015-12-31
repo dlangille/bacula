@@ -19,11 +19,17 @@
  *
  * Bacula(R) is a registered trademark of Kern Sibbald.
  */
+
+/*
+ * Constant is used to localize always valid document root directory
+ * Using for placing Baculum files in document root subdirectory
+ */
 define('APPLICATION_DIRECTORY', __DIR__);
 
 require_once('./protected/Init.php');
 require_once('./framework/prado.php');
 
+// Start application
 $application=new TApplication;
 $application->run();
 ?>
