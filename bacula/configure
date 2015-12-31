@@ -30511,7 +30511,7 @@ $as_echo "#define FDLIBS 1" >>confdefs.h
 CFLAGS=${CFLAGS--O}
 
 if test x$have_gcc = xyes ; then
-   CPPFLAGS="$CPPFLAGS -fno-strict-aliasing -fno-exceptions -fno-rtti"
+   CPPFLAGS="$CPPFLAGS -x c++ -fno-strict-aliasing -fno-exceptions -fno-rtti"
    CFLAGS="$CFLAGS -x c++ -fno-strict-aliasing -fno-exceptions -fno-rtti"
 fi
 LDFLAGS=${LDFLAGS--O}
