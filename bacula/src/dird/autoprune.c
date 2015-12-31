@@ -200,11 +200,6 @@ void prune_volumes(JCR *jcr, bool InChanger, MEDIA_DBR *mr,
             continue;
          }
 
-         if (has_volume_expired(jcr, &lmr)) {
-            Dmsg1(100, "Vol=%s has expired\n", lmr.VolumeName);
-            continue;                     /* Volume not usable */
-         }
-
          /*
           * If purged and not moved to another Pool,
           *   then we stop pruning and take this volume.
