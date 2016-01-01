@@ -42,6 +42,23 @@ class Home extends BaculumPage
 
 	public $windowIds = array('Storage', 'Client', 'Volume', 'Pool', 'Job', 'JobRun');
 
+	public function onPreInit($param) {
+		parent::onPreInit($param);
+		if (!$this->IsPostBack && !$this->IsCallBack) {
+			/**
+			 * Reload page if refresh_page written in session.
+			 * Useful in login and re-login (back from wizards).
+			 * Otherwise HTTP Basic login prompt occurs.
+			 */
+			if (array_key_exists('refresh_page', $_SESSION)) {
+				$refresh_page = $_SESSION['refresh_page'];
+				header('Location: ' . $refresh_page);
+				unset($_SESSION['refresh_page']);
+				exit();
+			}
+		}
+	}
+
 	public function onInit($param) {
 		parent::onInit($param);
 		$this->Application->getModule('users')->loginUser();
