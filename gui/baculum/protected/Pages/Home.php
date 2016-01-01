@@ -42,6 +42,8 @@ class Home extends BaculumPage
 
 	public $windowIds = array('Storage', 'Client', 'Volume', 'Pool', 'Job', 'JobRun');
 
+	public $userPattern;
+
 	public function onPreInit($param) {
 		parent::onPreInit($param);
 		if (!$this->IsPostBack && !$this->IsCallBack) {
@@ -72,6 +74,7 @@ class Home extends BaculumPage
 			$this->goToPage('ConfigurationWizard');
 		}
 
+		$this->userPattern = $this->getModule('configuration')->getUserPattern();
 		$appConfig = $this->getModule('configuration')->getApplicationConfig();
 
 		$this->Users->Visible = $this->User->getIsAdmin();

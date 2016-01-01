@@ -239,6 +239,9 @@ var Users = {
 			rel_chpwd_btn: 'chpwd_btn'
 		}
 	},
+	validators: {
+		user_pattern: null
+	},
 	init: function() {
 		this.setEvents();
 	},
@@ -250,7 +253,7 @@ var Users = {
 		document.getElementById(this.ids.create_user.newuser).addEventListener('keydown', function(e) {
 			var target = e.target || e.srcElement;
 			if (e.keyCode == 13) {
-				$(target.nextElementSibling).click();
+				$(target.parentNode.getElementsByTagName('A')[0]).click();
 			} else if (e.keyCode == 27) {
 				this.cancelAddUser();
 			}
@@ -268,30 +271,37 @@ var Users = {
 	},
 	userValidator: function(user) {
 		user = user.replace(/\s/g, '');
-		var valid =  user != '';
-		return valid;
+		if (user == '') {
+			alert(this.txt.enter_login);
+			return false;
+		}
+		var valid =  this.validators.user_pattern.test(user);
+		if (valid === false) {
+			alert(this.txt.invalid_login);
+			return false;
+		}
+		return true;
 	},
 	pwdValidator: function(pwd) {
 		var valid = pwd.length > 4;
+		if (valid === false) {
+			alert(this.txt.invalid_pwd);
+		}
 		return valid;
 	},
 	addUser: function() {
-		var valid = true;
 		var user = document.getElementById(this.ids.create_user.newuser).value;
 		var pwd = document.getElementById(this.ids.create_user.newpwd).value;
 		if (this.userValidator(user) === false) {
-			alert(this.txt.enter_login);
-			valid = false;
+			return false;
 		}
 		if (this.pwdValidator(pwd) === false) {
-			alert(this.txt.invalid_pwd);
-			valid = false;
+			return false;
 		}
-		if (valid === true) {
-			$(this.ids.create_user.add_user).hide();
-			this.action_callback('newuser', user, pwd);
-		}
-		return valid;
+
+		$(this.ids.create_user.add_user).hide();
+		this.action_callback('newuser', user, pwd);
+		return true;
 	},
 	rmUser: function(user) {
 		this.action_callback('rmuser', user);
@@ -304,18 +314,16 @@ var Users = {
 		$(el.nextElementSibling).select('input')[0].focus();
 	},
 	changePwd: function(el, user) {
-		var valid = true;
 		var pwd = el.value;
 
 		if (this.pwdValidator(pwd) === false) {
-			alert(this.txt.invalid_pwd);
-			valid = false;
+			return false;
 		}
-		if (valid === true) {
-			$(el.parentNode).hide();
-			$(el.parentNode.previousElementSibling).show();
-			this.action_callback('chpwd', user, pwd);
-		}
+
+		$(el.parentNode).hide();
+		$(el.parentNode.previousElementSibling).show();
+		this.action_callback('chpwd', user, pwd);
+		return true;
 	},
 	cancelAddUser: function() {
 		$(this.ids.create_user.add_user).hide();

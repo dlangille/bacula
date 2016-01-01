@@ -347,9 +347,11 @@
 				};
 				Users.txt = {
 					enter_login: '<%[ Please enter login. ]%>',
+					invalid_login: '<%[ Invalid login value. Login may contain a-z A-Z 0-9 characters. ]%>',
 					invalid_pwd: '<%[ Password must be longer than 4 chars. ]%>'
 				};
 				Users.action_callback = send_user_action;
+				Users.validators = { user_pattern: new RegExp('^<%=$this->userPattern%>$') };
 				Users.init();
 			</script>
 		</div>
