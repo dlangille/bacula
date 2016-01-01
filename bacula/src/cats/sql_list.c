@@ -386,7 +386,7 @@ alist *BDB::bdb_list_job_records(JCR *jcr, JOB_DBR *jr, DB_LIST_HANDLER *sendit,
             "StartTime,EndTime,RealEndTime,JobTDate,"
             "VolSessionId,VolSessionTime,JobFiles,JobBytes,ReadBytes,JobErrors,"
             "JobMissingFiles,Job.PoolId,Pool.Name as PooLname,PriorJobId,"
-            "Job.FileSetId,FileSet.FileSet,Job.HasCache "
+            "Job.FileSetId,FileSet.FileSet,Job.HasBase,Job.HasCache,Job.Comment "
             "FROM Job JOIN Client USING (ClientId) LEFT JOIN Pool USING (PoolId) "
             "LEFT JOIN FileSet USING (FileSetId) ",
             "ORDER BY StartTime%s", limit);
@@ -397,7 +397,7 @@ alist *BDB::bdb_list_job_records(JCR *jcr, JOB_DBR *jr, DB_LIST_HANDLER *sendit,
             "StartTime,EndTime,RealEndTime,JobTDate,"
             "VolSessionId,VolSessionTime,JobFiles,JobBytes,ReadBytes,JobErrors,"
             "JobMissingFiles,Job.PoolId,Pool.Name as PooLname,PriorJobId,"
-            "Job.FileSetId,FileSet.FileSet,Job.HasCache "
+            "Job.FileSetId,FileSet.FileSet,Job.HasBase,Job.HasCache,Job.Comment "
             "FROM Job JOIN Client USING (ClientId) LEFT JOIN Pool USING (PoolId) "
             "LEFT JOIN FileSet USING (FileSetId) WHERE Job.JobId=%s ",
             edit_int64(jr->JobId, ed1));
