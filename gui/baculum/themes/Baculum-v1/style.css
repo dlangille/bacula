@@ -376,7 +376,7 @@ div.actions_btn {
 }
 
 .line {
-	height: 35px;
+	min-height: 35px;
 	clear: both;
 }
 
@@ -397,10 +397,14 @@ div.actions_btn {
 	width: 98%;
 }
 
-.validator, .validate {
+.validator, .validate, .validator-block {
 	color: #e3454b !important;
 	font-size: 10pt;
 	/*margin-left: 5px;*/
+}
+
+.validator-block {
+	display: block;
 }
 
 .validate {
@@ -873,6 +877,7 @@ fieldset {
 }
 
 fieldset .line {
+	min-height: initial;
 	height: 25px;
 }
 

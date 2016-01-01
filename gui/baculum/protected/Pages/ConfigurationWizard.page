@@ -61,7 +61,7 @@
 						<com:TListItem Value="en" Text="<%[ English ]%>" />
 						<com:TListItem Value="pl" Text="<%[ Polish ]%>" />
 					</com:TActiveDropDownList>
-					<com:TCompareValidator CssClass="validator" Display="Dynamic" ControlToValidate="Lang" DataType="String" ValueToCompare="none" Operator="NotEqual" Text="<%[ Please select language. ]%>" />
+					<com:TCompareValidator CssClass="validator-block" Display="Dynamic" ControlToValidate="Lang" DataType="String" ValueToCompare="none" Operator="NotEqual" Text="<%[ Please select language. ]%>" />
 				</div>
 			</div>
 		</com:TWizardStep>
@@ -70,7 +70,7 @@
 			<div id="licence-agree">
 				<com:TCheckBox ID="LicenceAgree"  Checked="<%=$this->getPage()->firstRun === false || $this->LicenceAgree->Checked === true%>" />
 				<com:TLabel  ForControl="LicenceAgree" Text="<%[ I have read the license terms and agree to ]%>" /><br />
-				<com:TRequiredFieldValidator CssClass="validator" ControlToValidate="LicenceAgree" FocusOnError="true" Display="Dynamic" Text="<%[ Need to move on to accept the license. ]%>" />
+				<com:TRequiredFieldValidator CssClass="validator-block" ControlToValidate="LicenceAgree" FocusOnError="true" Display="Dynamic" Text="<%[ Need to move on to accept the license. ]%>" />
 			</div>
 		</com:TWizardStep>
 		<com:TWizardStep ID="Step3" Title="<%[ Step 3 - params of Bacula database connection ]%>" StepType="Auto">
@@ -84,7 +84,7 @@
 							<com:TListItem Value="mysql" Text="MySQL" />
 							<com:TListItem Value="sqlite" Text="SQLite" />
 						</com:TActiveDropDownList>
-						<com:TCompareValidator CssClass="validator" Display="Dynamic" ControlToValidate="DBType" DataType="String" ValueToCompare="none" Operator="NotEqual" Text="<%[ Please select database type. ]%>" />
+						<com:TCompareValidator CssClass="validator-block" Display="Dynamic" ControlToValidate="DBType" DataType="String" ValueToCompare="none" Operator="NotEqual" Text="<%[ Please select database type. ]%>" />
 					</div>
 				</div>
 				
@@ -92,14 +92,14 @@
 					<div class="text"><com:TLabel ForControl="DBName" Text="<%[ Database name: ]%>" /></div>
 					<div class="field">
 						<com:TTextBox ID="DBName" CssClass="textbox" />
-						<com:TRequiredFieldValidator CssClass="validator" Display="Dynamic" ControlCssClass="invalidate" ControlToValidate="DBName" Text="<%[ Please enter database name. ]%>" />
+						<com:TRequiredFieldValidator CssClass="validator-block" Display="Dynamic" ControlCssClass="invalidate" ControlToValidate="DBName" Text="<%[ Please enter database name. ]%>" />
 					</div>
 				</div>
 				<div class="line">
 					<div class="text"><com:TLabel ForControl="Login" Text="<%[ Login: ]%>" /></div>
 					<div class="field">
 						<com:TActiveTextBox ID="Login" CssClass="textbox" />
-						<com:TRequiredFieldValidator ID="LoginValidator" CssClass="validator" Display="Dynamic" ControlCssClass="invalidate" ControlToValidate="Login" Text="<%[ Please enter login. ]%>" />
+						<com:TRequiredFieldValidator ID="LoginValidator" CssClass="validator-block" Display="Dynamic" ControlCssClass="invalidate" ControlToValidate="Login" Text="<%[ Please enter login. ]%>" />
 					</div>
 				</div>
 				<div class="line">
@@ -110,21 +110,21 @@
 					<div class="text"><com:TLabel ForControl="IP" Text="<%[ IP address (or hostname): ]%>" /></div>
 					<div class="field">
 						<com:TActiveTextBox ID="IP" CssClass="textbox" />
-						<com:TRequiredFieldValidator ID="IPValidator" CssClass="validator" Display="Dynamic" ControlCssClass="invalidate" ControlToValidate="IP" Text="<%[ Please enter IP address or hostname. ]%>" />
+						<com:TRequiredFieldValidator ID="IPValidator" CssClass="validator-block" Display="Dynamic" ControlCssClass="invalidate" ControlToValidate="IP" Text="<%[ Please enter IP address or hostname. ]%>" />
 					</div>
 				</div>
 				<div class="line">
 					<div class="text"><com:TLabel ForControl="Port" Text="<%[ Port: ]%>" /></div>
 					<div class="field">
 						<com:TActiveTextBox ID="Port" CssClass="textbox" Width="55px" MaxLength="5" Enabled="false" />
-						<com:TRequiredFieldValidator ID="PortValidator" CssClass="validator" Display="Dynamic" ControlCssClass="invalidate" ControlToValidate="Port" Text="<%[ Please enter database port. ]%>" />
+						<com:TRequiredFieldValidator ID="PortValidator" CssClass="validator-block" Display="Dynamic" ControlCssClass="invalidate" ControlToValidate="Port" Text="<%[ Please enter database port. ]%>" />
 					</div>
 				</div>
 				<com:TActivePanel ID="DBPathField" CssClass="line" Display="<%=$this->getPage()->firstRun === false && !$this->IsCallBack && $this->getPage()->applicationConfig['db']['type'] == 'sqlite' ? 'Fixed' : $this->DBPathField->Display%>">
 					<div class="text"><com:TLabel ForControl="DBPath" Text="<%[ SQLite database path: ]%>" /></div>
 					<div class="field">
 						<com:TActiveTextBox ID="DBPath" CssClass="textbox" Enabled="false" />
-						<com:TRequiredFieldValidator ID="DBPathValidator" Display="Dynamic" CssClass="validator" ControlCssClass="invalidate" ControlToValidate="DBPath" Text="<%[ Please enter database path. ]%>" />
+						<com:TRequiredFieldValidator ID="DBPathValidator" Display="Dynamic" CssClass="validator-block" ControlCssClass="invalidate" ControlToValidate="DBPath" Text="<%[ Please enter database path. ]%>" />
 					</div>
 				</com:TActivePanel>
 				<div class="line">
@@ -147,7 +147,7 @@
 								<td align="center" valign="middle">
 									<com:TActiveLabel ID="DbTestLoader" Display="None"><img src="<%=$this->getTheme()->getBaseUrl()%>/ajax-loader.gif" alt="<%[ Loading... ]%>" /></com:TActiveLabel>
 									<com:TActiveLabel ID="DbTestResultOk" Display="None" CssClass="validate"><img src="<%=$this->getTheme()->getBaseUrl()%>/icon_ok.png" alt="Validate" /> <%[ OK ]%></com:TActiveLabel>
-									<com:TActiveLabel ID="DbTestResultErr" Display="None" CssClass="validator"><img src="<%=$this->getTheme()->getBaseUrl()%>/icon_err.png" alt="Invalidate" /> <%[ Connection error ]%></com:TActiveLabel>
+									<com:TActiveLabel ID="DbTestResultErr" Display="None" CssClass="validator-block"><img src="<%=$this->getTheme()->getBaseUrl()%>/icon_err.png" alt="Invalidate" /> <%[ Connection error ]%></com:TActiveLabel>
 								</td>
 							</tr>
 						</table>
@@ -162,14 +162,14 @@
 					<div class="text"><com:TLabel ForControl="BconsolePath" Text="<%[ Bconsole binary file path: ]%>" /></div>
 					<div class="field">
 						<com:TTextBox ID="BconsolePath" CssClass="textbox" CausesValidation="false" />
-						<com:TRequiredFieldValidator CssClass="validator" Display="Dynamic" ControlCssClass="invalidate" ControlToValidate="BconsolePath" Text="<%[ Please enter bconsole path. ]%>" />
+						<com:TRequiredFieldValidator CssClass="validator-block" Display="Dynamic" ControlCssClass="invalidate" ControlToValidate="BconsolePath" Text="<%[ Please enter bconsole path. ]%>" />
 					</div>
 				</div>
 				<div class="line">
 					<div class="text"><com:TLabel ForControl="BconsoleConfigPath" Text="<%[ Bconsole admin config file path: ]%>" /></div>
 					<div class="field">
 						<com:TTextBox ID="BconsoleConfigPath" CssClass="textbox" CausesValidation="false" />
-						<com:TRequiredFieldValidator CssClass="validator" Display="Dynamic" ControlCssClass="invalidate" ControlToValidate="BconsoleConfigPath" Text="<%[ Please enter bconsole config file path. ]%>" />
+						<com:TRequiredFieldValidator CssClass="validator-block" Display="Dynamic" ControlCssClass="invalidate" ControlToValidate="BconsoleConfigPath" Text="<%[ Please enter bconsole config file path. ]%>" />
 					</div>
 				</div>
 				<div class="line">
@@ -198,7 +198,7 @@
 								<td align="center" valign="middle">
 									<com:TActiveLabel ID="BconsoleTestLoader" Display="None"><img src="<%=$this->getTheme()->getBaseUrl()%>/ajax-loader.gif" alt="<%[ Loading... ]%>" /></com:TActiveLabel>
 									<com:TActiveLabel ID="BconsoleTestResultOk" Display="None" CssClass="validate"><img src="<%=$this->getTheme()->getBaseUrl()%>/icon_ok.png" alt="Validate" /> <%[ OK ]%></com:TActiveLabel>
-									<com:TActiveLabel ID="BconsoleTestResultErr" Display="None" CssClass="validator"><img src="<%=$this->getTheme()->getBaseUrl()%>/icon_err.png" alt="Invalidate" /> <%[ Connection error ]%></com:TActiveLabel>
+									<com:TActiveLabel ID="BconsoleTestResultErr" Display="None" CssClass="validator-block"><img src="<%=$this->getTheme()->getBaseUrl()%>/icon_err.png" alt="Invalidate" /> <%[ Connection error ]%></com:TActiveLabel>
 								</td>
 							</tr>
 						</table>
@@ -218,7 +218,7 @@
 					<div class="text"><com:TLabel ForControl="BconsoleConfigCustomPath" Text="<%[ Bconsole custom config file path: ]%>" /></div>
 					<div class="field">
 						<com:TTextBox ID="BconsoleConfigCustomPath" CssClass="textbox" CausesValidation="false" />
-						<com:TRequiredFieldValidator CssClass="validator" Display="Dynamic" ControlCssClass="invalidate" ControlToValidate="BconsoleConfigCustomPath" Text="<%[ Please enter bconsole custom config file path. ]%>" />
+						<com:TRequiredFieldValidator CssClass="validator-block" Display="Dynamic" ControlCssClass="invalidate" ControlToValidate="BconsoleConfigCustomPath" Text="<%[ Please enter bconsole custom config file path. ]%>" />
 					</div>
 				</div>
 				<div class="line">
@@ -231,24 +231,25 @@
 				<div class="text"><com:TLabel ForControl="PanelLogin" Text="<%[ Administration login: ]%>" /></div>
 				<div class="field">
 					<com:TTextBox ID="PanelLogin" CssClass="textbox" CausesValidation="false" />
-					<com:TRequiredFieldValidator CssClass="validator" Display="Dynamic" ControlCssClass="invalidate" ControlToValidate="PanelLogin" Text="<%[ Please enter login. ]%>" />
+					<com:TRequiredFieldValidator CssClass="validator-block" Display="Dynamic" ControlCssClass="invalidate" ControlToValidate="PanelLogin" Text="<%[ Please enter login. ]%>" />
+					<com:TRegularExpressionValidator CssClass="validator-block" Display="Dynamic" ControlCssClass="invalidate" ControlToValidate="PanelLogin" RegularExpression="<%=$this->userPattern%>" Text="<%[ Invalid login value. Login may contain a-z A-Z 0-9 characters. ]%>" />
 				</div>
 			</div>
 			<div class="line">
 				<div class="text"><com:TLabel ForControl="PanelPassword" Text="<%[ Administration password: ]%>" /></div>
 				<div class="field">
 					<com:TTextBox ID="PanelPassword" CssClass="textbox" TextMode="Password" MaxLength="30" PersistPassword="true" />
-					<com:TRequiredFieldValidator CssClass="validator" Display="Dynamic" ControlCssClass="invalidate" ControlToValidate="PanelPassword" Text="<%[ Please enter password. ]%>"/>
-					<com:TRegularExpressionValidator CssClass="validator" Display="Dynamic" ControlCssClass="invalidate" ControlToValidate="PanelPassword" RegularExpression="[\S\s]{5,30}" Text="<%[ Password must be longer than 4 chars. ]%>" />
+					<com:TRequiredFieldValidator CssClass="validator-block" Display="Dynamic" ControlCssClass="invalidate" ControlToValidate="PanelPassword" Text="<%[ Please enter password. ]%>"/>
+					<com:TRegularExpressionValidator CssClass="validator-block" Display="Dynamic" ControlCssClass="invalidate" ControlToValidate="PanelPassword" RegularExpression="[\S\s]{5,30}" Text="<%[ Password must be longer than 4 chars. ]%>" />
 				</div>
 			</div>
 			<div class="line">
 				<div class="text"><com:TLabel ForControl="RetypePanelPassword" Text="<%[ Retype administration password: ]%>" /></div>
 				<div class="field">
 					<com:TTextBox ID="RetypePanelPassword" CssClass="textbox" TextMode="Password" MaxLength="30" PersistPassword="true" />
-					<com:TRequiredFieldValidator ID="RetypePasswordRequireValidator" CssClass="validator" Display="Dynamic" ControlCssClass="invalidate" ControlToValidate="RetypePanelPassword" Text="<%[ Please enter retype password. ]%>"/>
-					<com:TRegularExpressionValidator ID="RetypePasswordRegexpValidator" CssClass="validator" Display="Dynamic" ControlCssClass="invalidate" ControlToValidate="RetypePanelPassword" RegularExpression="[\S\s]{5,30}" Text="<%[ Password must be longer than 4 chars. ]%>" />
-					<com:TCustomValidator ID="RetypePasswordCustomValidator" CssClass="validator" Display="Dynamic" ControlCssClass="invalidate" ControlToValidate="RetypePanelPassword" OnServerValidate="validateAdministratorPassword" Text="<%[ Passwords must be the same. ]%>" />
+					<com:TRequiredFieldValidator ID="RetypePasswordRequireValidator" CssClass="validator-block" Display="Dynamic" ControlCssClass="invalidate" ControlToValidate="RetypePanelPassword" Text="<%[ Please enter retype password. ]%>"/>
+					<com:TRegularExpressionValidator ID="RetypePasswordRegexpValidator" CssClass="validator-block" Display="Dynamic" ControlCssClass="invalidate" ControlToValidate="RetypePanelPassword" RegularExpression="[\S\s]{5,30}" Text="<%[ Password must be longer than 4 chars. ]%>" />
+					<com:TCustomValidator ID="RetypePasswordCustomValidator" CssClass="validator-block" Display="Dynamic" ControlCssClass="invalidate" ControlToValidate="RetypePanelPassword" OnServerValidate="validateAdministratorPassword" Text="<%[ Passwords must be the same. ]%>" />
 				</div>
 			</div>
 			<div class="line">

@@ -32,6 +32,7 @@ class ConfigurationWizard extends BaculumPage
 {
 	public $firstRun;
 	public $applicationConfig;
+	public $userPattern;
 
 	const DEFAULT_DB_NAME = 'bacula';
 	const DEFAULT_DB_LOGIN = 'bacula';
@@ -42,8 +43,10 @@ class ConfigurationWizard extends BaculumPage
 	public function onInit($param) {
 		parent::onInit($param);
 		$this->Lang->SelectedValue = $_SESSION['language'];
-		$this->firstRun = !$this->getModule('configuration')->isApplicationConfig();
-		$this->applicationConfig = $this->getModule('configuration')->getApplicationConfig();
+		$config = $this->getModule('configuration');
+		$this->firstRun = !$config->isApplicationConfig();
+		$this->applicationConfig = $config->getApplicationConfig();
+		$this->userPattern = $config->getUserPattern();
 		if($this->firstRun === false && $this->User->getIsAdmin() === false) {
 			die('Access denied.');
 		}
@@ -112,6 +115,7 @@ class ConfigurationWizard extends BaculumPage
 			if($this->getModule('configuration')->isUsersConfig() === true) { // version with users config file, so next is try to auto-login
 				$previousUser = ($this->firstRun === false) ? $this->applicationConfig['baculum']['login'] : null;
 				$this->getModule('configuration')->setUsersConfig($cfgData['baculum']['login'], $cfgData['baculum']['password'], $this->firstRun, $previousUser);
+
 				// Automatic login after finish wizard.
 				$http_protocol = isset($_SERVER['HTTPS']) && !empty($_SERVER['HTTPS']) ? 'https' : 'http';
 				$this->getModule('configuration')->switchToUser($http_protocol, $_SERVER['SERVER_NAME'], $_SERVER['SERVER_PORT'], $cfgData['baculum']['login'], $cfgData['baculum']['password']);

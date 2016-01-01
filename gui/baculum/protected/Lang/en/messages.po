@@ -1130,3 +1130,6 @@ msgstr "Username:"
 msgid "Please note that for each user (excluding administrator) there should exist separate Bconsole config file in form:"
 msgstr "Please note that for each user (excluding administrator) there should exist separate Bconsole config file in form:"
 
+msgid "Invalid login value. Login may contain a-z A-Z 0-9 characters."
+msgstr "Invalid login value. Login may contain a-z A-Z 0-9 characters."
+

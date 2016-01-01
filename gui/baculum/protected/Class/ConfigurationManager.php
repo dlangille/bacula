@@ -44,6 +44,11 @@ class ConfigurationManager extends TModule
 	const USERS_FILE = 'Application.Data.baculum';
 
 	/**
+	 * User name allowed characters pattern
+	 */
+	const USER_PATTERN = '[a-zA-Z0-9]+';
+
+	/**
 	 * PostgreSQL default params
 	 */
 	const PGSQL = 'pgsql';
@@ -71,6 +76,7 @@ class ConfigurationManager extends TModule
 
 	/**
 	 * Get database name by database type (short name).
+	 *
 	 * @access public
 	 * @param string $type database type ('pgsql', 'mysql' ...)
 	 * @return mixed database name or null if database name not found
@@ -88,6 +94,7 @@ class ConfigurationManager extends TModule
 
 	/**
 	 * Check if given database type is PostgreSQL type.
+	 *
 	 * @access public
 	 * @param string $type database type ('pgsql', 'mysql' ...)
 	 * @return boolean true if database type is PostgreSQL, otherwise false
@@ -98,6 +105,7 @@ class ConfigurationManager extends TModule
 
 	/**
 	 * Check if given database type is MySQL type.
+	 *
 	 * @access public
 	 * @param string $type database type ('pgsql', 'mysql' ...)
 	 * @return boolean true if database type is MySQL, otherwise false
@@ -108,6 +116,7 @@ class ConfigurationManager extends TModule
 
 	/**
 	 * Check if given database type is SQLite type.
+	 *
 	 * @access public
 	 * @param string $type database type ('sqlite', 'mysql' ...)
 	 * @return boolean true if database type is SQLite, otherwise false
@@ -119,6 +128,7 @@ class ConfigurationManager extends TModule
 	/**
 	 * Get currently set application language short name.
 	 * If no language set then default language is taken.
+	 *
 	 * @access public
 	 * @return string lanuage short name
 	 */
@@ -135,6 +145,7 @@ class ConfigurationManager extends TModule
 
 	/**
 	 * Save application configuration.
+	 *
 	 * @access public
 	 * @param array $config structure of config file params
 	 * @return boolean true if config save is successfully, false if config save is failure
@@ -146,6 +157,7 @@ class ConfigurationManager extends TModule
 
 	/**
 	 * Get application configuration.
+	 *
 	 * @access public
 	 * @return array application configuration
 	 */
@@ -156,11 +168,22 @@ class ConfigurationManager extends TModule
 
 	/**
 	 * Check if application configuration file exists.
+	 *
 	 * @access public
 	 * @return boolean true if file exists, otherwise false
 	 */
 	public function isApplicationConfig() {
 		return file_exists(Prado::getPathOfNamespace(self::CONFIG_FILE, '.conf'));
+	}
+
+	/**
+	 * Get user name allowed characters pattern
+	 *
+	 * @access public
+	 * @return string user name pattern
+	 */
+	public function getUserPattern() {
+		return self::USER_PATTERN;
 	}
 
 	/**
@@ -284,6 +307,7 @@ class ConfigurationManager extends TModule
 
 	/**
 	 * Check if users configuration file exists.
+	 *
 	 * @access public
 	 * @return boolean true if file exists, otherwise false
 	 */
@@ -293,6 +317,7 @@ class ConfigurationManager extends TModule
 
 	/**
 	 * Clear all content of users file.
+	 *
 	 * @access public
 	 * @return boolean true if file cleared successfully, otherwise false
 	 */
@@ -320,6 +345,15 @@ class ConfigurationManager extends TModule
 	public function switchToUser($http_protocol, $host, $port, $user, $password) {
 		$urlPrefix = $this->Application->getModule('friendly-url')->getUrlPrefix();
 		$location = sprintf("%s://%s:%s@%s:%d%s", $http_protocol, $user, $password, $host, $port, $urlPrefix);
+		$refresh_url = sprintf("%s://%s:%d%s", $http_protocol, $host, $port, $urlPrefix);
+
+		/**
+		 * Refresh page is required due to lack of auth data in $_SERVER superglobal array
+		 * after re-login by URI.
+		 */
+		$_SESSION['refresh_page'] = $refresh_url;
+
+		// Log in by header
 		header("Location: $location");
 	}
 
