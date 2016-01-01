@@ -108,6 +108,54 @@ class ConfigurationManagerTest extends PHPUnit_Framework_TestCase {
 		$result = $mock->getLanguage();
 		$this->assertEquals($testData, $result);
 	}
+
+	public function testGetCryptedPassword() {
+		$testData = array();
+		$testData[] = array('password' => 'zzzzzzzzz', 'hash' => 'enEzofZKX2/wM');
+		$testData[] = array('password' => 'admin', 'hash' => 'YWG41BPzVAkN6');
+		$testData[] = array('password' => 'a dmin', 'hash' => 'YSz/JgtyVAHuc');
+		$testData[] = array('password' => 'a', 'hash' => 'YQebj.HAzzu1c');
+		$testData[] = array('password' => 'ADMIN', 'hash' => 'QUtX9W0NVx75o');
+		$testData[] = array('password' => ' ', 'hash' => 'IAeLKSsdm161I');
+		$testData[] = array('password' => 'a b c', 'hash' => 'YSMYQTGUwHPTE');
+		$testData[] = array('password' => 'ąśćłóżźćń', 'hash' => 'xIObay0jyQnD2');
+		$testData[] = array('password' => '$$$$', 'hash' => 'JCgedtNc0KHRw');
+		$testData[] = array('password' => '\$$\$$', 'hash' => 'XCFJMFspzHfN6');
+		$testData[] = array('password' => '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ', 'hash' => 'MD.GrjSxikZ26');
+		$testData[] = array('password' => "\t\n\t\r", 'hash' => 'CQUexWT5q3vHc');
+		$testData[] = array('password' => '\t\n\t\r', 'hash' => 'XHACZ9CpS6KIw');
+		$testData[] = array('password' => '$a=1;print $a;', 'hash' => 'JGr9Nl2UPwz1Y');
+
+		for ($i = 0; $i < count($testData); $i++) {
+			$result = self::$application->getModule('configuration')->getCryptedPassword($testData[$i]['password']);
+			$this->assertEquals($testData[$i]['hash'], $result);
+		}
+	}
+
+	public function testGetRandomString() {
+		$testData = array(
+			'iterations' => 50,
+			'pattern' => '/^[a-zA-Z0-9]{62}$/',
+			'characters' => "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+		);
+		for ($i = 0; $i < $testData['iterations']; $i++) {
+			$str = self::$application->getModule('configuration')->getRandomString();
+			$result = preg_match($testData['pattern'], $str);
+			$this->assertEquals(1, $result);
+		}
+
+		$charactersCopy = $testData['characters'];
+		$str = self::$application->getModule('configuration')->getRandomString();
+		for ($i = 0; $i < strlen($testData['characters']); $i++) {
+			$pos = strpos($str, $charactersCopy[$i]);
+			$len = strlen($str);
+			$str_l = substr($str, 0, $pos);
+			$str_r = ($len > 1) ? substr($str, ($pos+1), $len) : '';
+			$str = $str_l . $str_r;
+		}
+		$result = empty($str);
+		$this->assertTrue($result);
+	}
 }
 
 ?>

@@ -156,5 +156,71 @@ class ConfigurationManagerUsersConfigTest extends PHPUnit_Framework_TestCase {
 		$result = self::$application->getModule('configuration')->clearUsersConfig();
 		$this->assertTrue($result);
 	}
+
+	public function testGetAllUsers() {
+		$testData = array();
+		$testData[] = array(
+			'user' => 'hmS2Tbx4VispuvjgRcDPIqadG3ylkn9AELeo1FYQCHWKOZw8N6J5MfBtX7rUz',
+			'password' => 'enEzofZKX2/wM'
+		);
+		$testData[] = array(
+			'user' => 'hmS2Tbx4VispuvjgRcDPIqadG3ylkn9AELeo1FYQCHWKOZw8N6J5MfBtX7rUz$',
+			'password' => 'xbe9m5cgdFzc2'
+		);
+		$testData[] = array(
+			'user' => 'ąśźćłóżźćń',
+			'password' => 'ąśźćłóżźćń'
+		);
+		$testData[] = array(
+			'user' => '0',
+			'password' => 'enEzofZK!X2/wM'
+		);
+		$testData[] = array(
+			'user' => '-1-',
+			'password' => '!@#$%^&*()_)O(*&^%$#@@!}{PO|":L?><M~><][\';/.,<'
+		);
+		$testData[] = array(
+			'user' => '(myUsEr$^)',
+			'password' => ':::::'
+		);
+		$testData[] = array(
+			'user' => 'abcd#$@!',
+			'password' => 'MzfDL89YPyQeM'
+		);
+		$testData[] = array(
+			'user' => '^$$#@@!!!:-)',
+			'password' => 'PTwuUMPFz/0PE'
+		);
+
+		// check if config does not exist
+		$result = self::$application->getModule('configuration')->isUsersConfig();
+		$this->assertFalse($result);
+
+		// add users to config
+		for ($i = 0; $i < count($testData); $i++) {
+			$result = self::$application->getModule('configuration')->setUsersConfig(
+				$testData[$i]['user'],
+				$testData[$i]['password']
+			);
+			$this->assertTrue($result);
+		}
+
+		// read users from config
+		$result = self::$application->getModule('configuration')->getAllUsers();
+
+		$this->assertEquals(count($testData), count($result));
+
+		/*
+		 * Check if users (and passwords) added to config and users (and passwords) read from
+		 * config are the same
+		 */
+		for ($i = 0; $i < count($result); $i++) {
+			$user = $testData[$i]['user'];
+			$plain_pwd = $testData[$i]['password'];
+			$this->assertTrue(array_key_exists($user, $result));
+			$enc_pwd = self::$application->getModule('configuration')->getCryptedPassword($plain_pwd);
+			$this->assertEquals($enc_pwd, $result[$testData[$i]['user']]);
+		}
+	}
 }
 ?>
