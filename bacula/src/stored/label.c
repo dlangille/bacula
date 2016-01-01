@@ -850,7 +850,7 @@ bool write_session_label(DCR *dcr, int label)
       rec->remainder);
 
    free_record(rec);
-   Dmsg2(150, "Leave write_session_label Block=%ud File=%ud\n",
+   Dmsg2(150, "Leave write_session_label Block=%u File=%u\n",
       dev->get_block_num(), dev->get_file());
    Leave(100);
    return true;

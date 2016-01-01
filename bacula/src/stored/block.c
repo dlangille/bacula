@@ -230,7 +230,7 @@ bool DCR::write_block_to_dev()
    if (debug_block_checksum) {
       uint32_t achecksum = ser_block_header(block, dev->do_checksum());
       if (checksum != achecksum) {
-         Jmsg2(jcr, M_ERROR, 0, _("Block checksum changed during write: before=%ud after=%ud\n"),
+         Jmsg2(jcr, M_ERROR, 0, _("Block checksum changed during write: before=%u after=%u\n"),
             checksum, achecksum);
          dump_block(block, "with checksum error");
       }
@@ -314,7 +314,7 @@ bool DCR::write_block_to_dev()
       uint64_t addr = dev->file_addr + wlen - 1;
       if (dcr->EndFile == (uint32_t)(addr >> 32) &&
           (uint32_t)addr < dcr->EndBlock) {
-         Pmsg4(000, "Possible incorrect EndBlock oldEndBlock=%d newEndBlock=%d oldEndFile=%d newEndFile=%d\n",
+         Pmsg4(000, "Possible incorrect EndBlock oldEndBlock=%u newEndBlock=%u oldEndFile=%u newEndFile=%u\n",
             dcr->EndBlock, (uint32_t)addr, dcr->EndFile, (uint32_t)(addr >> 32));
       } else {
          dcr->EndBlock = (uint32_t)addr;
