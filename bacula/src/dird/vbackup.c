@@ -576,15 +576,9 @@ static bool create_bootstrap_file(JCR *jcr, char *jobids)
 
    complete_bsr(ua, rx.bsr);
    jcr->ExpectedFiles = write_bsr_file(ua, rx);
-   if (chk_dbglvl(10)) {
-      Pmsg1(000,  "Found %d files to consolidate.\n", jcr->ExpectedFiles);
-   }
-   if (jcr->ExpectedFiles == 0) {
-      free_ua_context(ua);
-      free_bsr(rx.bsr);
-      return false;
-   }
+   Jmsg(jcr, M_INFO, 0, _("Found %d files to consolidate into Virtual Full.\n"),
+        jcr->ExpectedFiles);
    free_ua_context(ua);
    free_bsr(rx.bsr);
-   return true;
+   return jcr->ExpectedFiles==0?false:true;
 }
