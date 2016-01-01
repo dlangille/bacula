@@ -27,12 +27,10 @@ class BaculumUsersManager extends TModule implements IUserManager {
 
 	private $config;
 	private $configMod;
-	private $users;
 
 	public function init($config) {
 		$this->configMod = $this->Application->getModule('configuration');
 		$this->config = $this->configMod->isApplicationConfig() ? $this->configMod->getApplicationConfig() : null;
-		$this->users = $this->configMod->getAllUsers();
 	}
 
 	public function getGuestName() {
@@ -55,7 +53,8 @@ class BaculumUsersManager extends TModule implements IUserManager {
 		$user->setID($id);
 		$user->setName($username);
 		if (!is_null($username)) {
-			$user->setPwd($this->users[$username]);
+			$users = $this->configMod->getAllUsers();
+			$user->setPwd($users[$username]);
 		}
 		if(is_null($this->config) || $this->config['baculum']['login'] === $username) {
 			$user->setRoles('admin');
@@ -90,7 +89,7 @@ class BaculumUsersManager extends TModule implements IUserManager {
 	}
 
 	public function loginUser($user = null, $pwd = null) {
-		if (is_null($user) && is_null($pwd)) {
+		if (is_null($user) && is_null($pwd) && isset($_SERVER['PHP_AUTH_USER']) && isset($_SERVER['PHP_AUTH_PW'])) {
 			$user = $_SERVER['PHP_AUTH_USER'];
 			$pwd = $this->Application->getModule('configuration')->getCryptedPassword($_SERVER['PHP_AUTH_PW']);
 		}
