@@ -229,7 +229,6 @@ class ConfigurationWizard extends BaculumPage
 		$isValidate = ($result === 0);
 		$this->BconsoleTestResultOk->Display = ($isValidate === true) ? 'Dynamic' : 'None';
 		$this->BconsoleTestResultErr->Display = ($isValidate === false) ? 'Dynamic' : 'None';
-		$this->Step4Content->render($param->NewWriter);
 	}
 }
 ?>

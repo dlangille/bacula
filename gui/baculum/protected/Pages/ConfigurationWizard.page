@@ -157,7 +157,6 @@
 			</com:TActivePanel>
 		</com:TWizardStep>
 		<com:TWizardStep ID="Step4" Title="<%[ Step 4 - Baculum access to bconsole ]%>" StepType="Auto">
-			<com:TActivePanel ID="Step4Content">
 				<div class="line">
 					<div class="text"><com:TLabel ForControl="BconsolePath" Text="<%[ Bconsole binary file path: ]%>" /></div>
 					<div class="field">
@@ -197,8 +196,8 @@
 								</td>
 								<td align="center" valign="middle">
 									<com:TActiveLabel ID="BconsoleTestLoader" Display="None"><img src="<%=$this->getTheme()->getBaseUrl()%>/ajax-loader.gif" alt="<%[ Loading... ]%>" /></com:TActiveLabel>
-									<com:TActiveLabel ID="BconsoleTestResultOk" Display="None" CssClass="validate"><img src="<%=$this->getTheme()->getBaseUrl()%>/icon_ok.png" alt="Validate" /> <%[ OK ]%></com:TActiveLabel>
-									<com:TActiveLabel ID="BconsoleTestResultErr" Display="None" CssClass="validator-block"><img src="<%=$this->getTheme()->getBaseUrl()%>/icon_err.png" alt="Invalidate" /> <%[ Connection error ]%></com:TActiveLabel>
+									<com:TActiveLabel ID="BconsoleTestResultOk" Display="None" CssClass="validate" EnableViewState="false"><img src="<%=$this->getTheme()->getBaseUrl()%>/icon_ok.png" alt="Validate" /> <%[ OK ]%></com:TActiveLabel>
+									<com:TActiveLabel ID="BconsoleTestResultErr" Display="None" CssClass="validator-block" EnableViewState="false"><img src="<%=$this->getTheme()->getBaseUrl()%>/icon_err.png" alt="Invalidate" /> <%[ Connection error ]%></com:TActiveLabel>
 								</td>
 							</tr>
 						</table>
@@ -224,7 +223,6 @@
 				<div class="line">
 					<p><b><%[ NOTE! ]%></b><br /><%[ {user} keyword will be replaced for each logged user into according username. ]%></p>
 				</div>
-			</com:TActivePanel>
 		</com:TWizardStep>
 		<com:TWizardStep ID="Step5" Title="<%[ Step 5 - authorization params to Baculum ]%>" StepType="Auto">
 			<div class="line">
