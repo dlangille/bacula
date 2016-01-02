@@ -36,6 +36,16 @@
  * -----------------------------------------------------------------------
  */
 
+#define append_filter(buf, sql)  \
+   do {                          \
+      if (*buf) {                \
+         pm_strcat(buf, " AND ");\
+      } else {                   \
+         pm_strcpy(buf, " WHERE ");\
+      }                          \
+      pm_strcat(buf, sql);       \
+   } while (0)
+
 /*
  * Submit general SQL query
  */
@@ -366,94 +376,95 @@ alist *BDB::bdb_list_job_records(JCR *jcr, JOB_DBR *jr, DB_LIST_HANDLER *sendit,
                     void *ctx, e_list_type type)
 {
    char ed1[50];
-   char limit[100];
-   char status[100];
+   char limit[50];
    char esc[MAX_ESCAPE_NAME_LENGTH];
    alist *list = NULL;
+   POOLMEM *where  = get_pool_memory(PM_MESSAGE);
+   POOLMEM *tmp    = get_pool_memory(PM_MESSAGE);
+   const char *order = "ASC";
+   *where = 0;
 
    bdb_lock();
+   if (jr->order == 1) {
+      order = "DESC";
+   }
    if (jr->limit > 0) {
       snprintf(limit, sizeof(limit), " LIMIT %d", jr->limit);
    } else {
       limit[0] = 0;
    }
+   if (jr->Name[0]) {
+      bdb_escape_string(jcr, esc, jr->Name, strlen(jr->Name));
+      Mmsg(tmp, " Name='%s' ", esc);
+      append_filter(where, tmp);
+
+   } else if (jr->JobId != 0) {
+      Mmsg(tmp, " JobId=%s ", edit_int64(jr->JobId, ed1));
+      append_filter(where, tmp);
+
+   } else if (jr->Job[0] != 0) {
+      bdb_escape_string(jcr, esc, jr->Job, strlen(jr->Job));
+      Mmsg(tmp, " Job='%s' ", esc);
+      append_filter(where, tmp);
+   }
+
+   if (type == INCOMPLETE_JOBS && jr->JobStatus == JS_FatalError) {
+      Mmsg(tmp, " JobStatus IN ('E', 'f') ");
+      append_filter(where, tmp);
+
+   } else if (jr->JobStatus) {
+      Mmsg(tmp, " JobStatus='%c' ", jr->JobStatus);
+      append_filter(where, tmp);
+   }
+
+   if (jr->JobType) {
+      Mmsg(tmp, " Type='%c' ", jr->JobType);
+      append_filter(where, tmp);
+   }
+
+   if (jr->JobErrors > 0) {
+      Mmsg(tmp, " JobErrors > 0 ");
+      append_filter(where, tmp);
+   }
+
+   if (jr->ClientId > 0) {
+      Mmsg(tmp, " ClientId=%s ", edit_int64(jr->ClientId, ed1));
+      append_filter(where, tmp);
+   }
+
    switch (type) {
    case VERT_LIST:
-      if (jr->JobId == 0 && jr->Job[0] == 0) {
-         Mmsg(cmd,
-            "SELECT JobId,Job,Job.Name,PurgedFiles,Type,Level,"
-            "Job.ClientId,Client.Name as ClientName,JobStatus,SchedTime,"
-            "StartTime,EndTime,RealEndTime,JobTDate,"
-            "VolSessionId,VolSessionTime,JobFiles,JobBytes,ReadBytes,JobErrors,"
-            "JobMissingFiles,Job.PoolId,Pool.Name as PooLname,PriorJobId,"
-            "Job.FileSetId,FileSet.FileSet,Job.HasBase,Job.HasCache,Job.Comment "
-            "FROM Job JOIN Client USING (ClientId) LEFT JOIN Pool USING (PoolId) "
-            "LEFT JOIN FileSet USING (FileSetId) ",
-            "ORDER BY StartTime%s", limit);
-      } else {                           /* single record */
-         Mmsg(cmd,
-            "SELECT JobId,Job,Job.Name,PurgedFiles,Type,Level,"
-            "Job.ClientId,Client.Name as ClientName,JobStatus,SchedTime,"
-            "StartTime,EndTime,RealEndTime,JobTDate,"
-            "VolSessionId,VolSessionTime,JobFiles,JobBytes,ReadBytes,JobErrors,"
-            "JobMissingFiles,Job.PoolId,Pool.Name as PooLname,PriorJobId,"
-            "Job.FileSetId,FileSet.FileSet,Job.HasBase,Job.HasCache,Job.Comment "
-            "FROM Job JOIN Client USING (ClientId) LEFT JOIN Pool USING (PoolId) "
-            "LEFT JOIN FileSet USING (FileSetId) WHERE Job.JobId=%s ",
-            edit_int64(jr->JobId, ed1));
-      }
+      Mmsg(cmd,
+           "SELECT JobId,Job,Job.Name,PurgedFiles,Type,Level,"
+           "Job.ClientId,Client.Name as ClientName,JobStatus,SchedTime,"
+           "StartTime,EndTime,RealEndTime,JobTDate,"
+           "VolSessionId,VolSessionTime,JobFiles,JobBytes,ReadBytes,JobErrors,"
+           "JobMissingFiles,Job.PoolId,Pool.Name as PooLname,PriorJobId,"
+           "Job.FileSetId,FileSet.FileSet,Job.HasBase,Job.HasCache,Job.Comment "
+           "FROM Job JOIN Client USING (ClientId) LEFT JOIN Pool USING (PoolId) "
+           "LEFT JOIN FileSet USING (FileSetId) %s "
+           "ORDER BY StartTime %s %s", where, order, limit);
       break;
    case HORZ_LIST:
-      if (jr->Name[0] != 0) {
-         bdb_escape_string(jcr, esc, jr->Name, strlen(jr->Name));
-         Mmsg(cmd,
+      Mmsg(cmd,
            "SELECT JobId,Name,StartTime,Type,Level,JobFiles,JobBytes,JobStatus "
-             "FROM Job WHERE Name='%s' ORDER BY StartTime,JobId ASC", esc);
-      } else if (jr->Job[0] != 0) {
-         bdb_escape_string(jcr, esc, jr->Job, strlen(jr->Job));
-         Mmsg(cmd,
-            "SELECT JobId,Name,StartTime,Type,Level,JobFiles,JobBytes,JobStatus "
-            "FROM Job WHERE Job='%s' ORDER BY StartTime,JobId ASC", esc);
-      } else if (jr->JobId != 0) {
-         Mmsg(cmd,
-            "SELECT JobId,Name,StartTime,Type,Level,JobFiles,JobBytes,JobStatus "
-            "FROM Job WHERE JobId=%s", edit_int64(jr->JobId, ed1));
-      } else {                           /* all records */
-         Mmsg(cmd,
-           "SELECT JobId,Name,StartTime,Type,Level,JobFiles,JobBytes,JobStatus "
-           "FROM Job ORDER BY StartTime,JobId ASC%s", limit);
-      }
+           "FROM Job %s ORDER BY StartTime %s,JobId %s %s", where, order, order, limit);
       break;
    case INCOMPLETE_JOBS:
-      if (jr->Name[0] != 0) {
-         bdb_escape_string(jcr, esc, jr->Name, strlen(jr->Name));
-         if (jr->JobStatus == JS_FatalError) {
-            snprintf(status, sizeof(status), "JobStatus IN ('E','f') AND");
-         } else if (jr->JobStatus != 0) {
-            snprintf(status, sizeof(status), "JobStatus='%c' AND", jr->JobStatus);
-         } else {
-            status[0] = 0;
-         }
-         Mmsg(cmd,
+      Mmsg(cmd,
            "SELECT JobId,Name,StartTime,Type,Level,JobFiles,JobBytes,JobStatus "
-             "FROM Job WHERE %s Name='%s' ORDER BY StartTime,JobId ASC%s",
-              status, esc, limit);
-         Dmsg1(100, "SQL: %s\n", cmd);
-      } else {                           /* all records */
-         if (jr->JobStatus != 0) {
-            snprintf(status, sizeof(status), "WHERE JobStatus='%c'", jr->JobStatus);
-         } else {
-            status[0] = 0;
-         }
-         Mmsg(cmd,
-           "SELECT JobId,Name,StartTime,Type,Level,JobFiles,JobBytes,JobStatus "
-           "FROM Job %s ORDER BY StartTime,JobId ASC%s", status, limit);
-         Dmsg1(100, "SQL: %s\n", cmd);
-      }
+             "FROM Job %s ORDER BY StartTime %s,JobId %s %s",
+           where, order, order, limit);
       break;
    default:
       break;
    }
+   Dmsg1(100, "SQL: %s\n", cmd);
+
+   free_pool_memory(tmp);
+   free_pool_memory(where);
+
+   Dmsg1(000, "cmd: %s\n", cmd);
    if (!QueryDB(jcr, cmd)) {
       bdb_unlock();
       return NULL;
@@ -567,19 +578,17 @@ void BDB::bdb_list_base_files_for_job(JCR *jcr, JobId_t jobid, DB_LIST_HANDLER *
     * Stupid MySQL is NON-STANDARD !
     */
    if (bdb_get_type_index() == SQL_TYPE_MYSQL) {
-      Mmsg(cmd, "SELECT CONCAT(Path.Path,Filename.Name) AS Filename "
-           "FROM BaseFiles, File, Filename, Path "
+      Mmsg(cmd, "SELECT CONCAT(Path.Path,File.Filename) AS Filename "
+           "FROM BaseFiles, File, Path "
            "WHERE BaseFiles.JobId=%s AND BaseFiles.BaseJobId = File.JobId "
            "AND BaseFiles.FileId = File.FileId "
-           "AND Filename.FilenameId=File.FilenameId "
            "AND Path.PathId=File.PathId",
          edit_int64(jobid, ed1));
    } else {
-      Mmsg(cmd, "SELECT Path.Path||Filename.Name AS Filename "
-           "FROM BaseFiles, File, Filename, Path "
+      Mmsg(cmd, "SELECT Path.Path||File.Filename AS Filename "
+           "FROM BaseFiles, File, Path "
            "WHERE BaseFiles.JobId=%s AND BaseFiles.BaseJobId = File.JobId "
            "AND BaseFiles.FileId = File.FileId "
-           "AND Filename.FilenameId=File.FilenameId "
            "AND Path.PathId=File.PathId",
            edit_int64(jobid, ed1));
    }
@@ -594,16 +603,6 @@ void BDB::bdb_list_base_files_for_job(JCR *jcr, JobId_t jobid, DB_LIST_HANDLER *
    sql_free_result();
    bdb_unlock();
 }
-
-#define append_filter(buf, sql)  \
-   do {                          \
-      if (*buf) {                \
-         pm_strcat(buf, " AND ");\
-      } else {                   \
-         pm_strcpy(buf, " WHERE ");\
-      }                          \
-      pm_strcat(buf, sql);       \
-   } while (0)
 
 void BDB::bdb_list_snapshot_records(JCR *jcr, SNAPSHOT_DBR *sdbr,
               DB_LIST_HANDLER *sendit, void *ctx, e_list_type type)
