@@ -107,7 +107,7 @@ static int list_handler(void *ctx, int num_fields, char **row)
 int main (int argc, char *argv[])
 {
    int ch;
-   bool disable_batch = false;
+   bool use_batch_insert = true;
    char *restore_list=NULL;
    setlocale(LC_ALL, "");
    bindtextdomain("bacula", LOCALEDIR);
@@ -128,10 +128,10 @@ int main (int argc, char *argv[])
          restore_list=bstrdup(optarg);
          break;
       case 'B':
-         disable_batch = true;
+         use_batch_insert = true;
          break;
       case 'b':
-         disable_batch = false;
+         use_batch_insert = false;
          break;
       case 'd':                    /* debug level */
          if (*optarg == 't') {
@@ -208,7 +208,7 @@ int main (int argc, char *argv[])
       if ((db = db_init_database(NULL, NULL, db_name, db_user, db_password,
                                  db_host, 0, NULL, db_ssl_key, db_ssl_cert,
                                  db_ssl_ca, db_ssl_capath, db_ssl_cipher,
-                                 false, disable_batch)) == NULL) {
+                                 false, !use_batch_insert)) == NULL) {
          Emsg0(M_ERROR_TERM, 0, _("Could not init Bacula database\n"));
       }
       if (!db_open_database(NULL, db)) {
@@ -226,10 +226,10 @@ int main (int argc, char *argv[])
       return 0;
    }
 
-   if (disable_batch) {
-      printf("Without new Batch mode\n");
+   if (use_batch_insert) {
+      printf("With Batch Insert mode\n");
    } else {
-      printf("With new Batch mode\n");
+      printf("Without Batch Insert mode\n");
    }
 
    i = nb;
