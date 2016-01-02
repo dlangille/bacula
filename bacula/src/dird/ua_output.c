@@ -356,9 +356,11 @@ static int do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
       } else if (!ua->argv[j]) {
          /* skip */
       } else if (strcasecmp(ua->argk[j], NT_("order")) == 0) {
-         if (strcasecmp(ua->argv[j], NT_("desc")) == 0) {
+         if (strcasecmp(ua->argv[j], NT_("desc")) == 0 ||
+             strcasecmp(ua->argv[j], NT_("descending")) == 0) {
             jr.order = 1;
-         } else if (strcasecmp(ua->argv[j], NT_("asc")) == 0) {
+         } else if (strcasecmp(ua->argv[j], NT_("asc")) == 0 ||
+                    strcasecmp(ua->argv[j], NT_("ascending")) == 0) {
             jr.order = 0;
          } else {
             ua->error_msg(_("Unknown order type %s\n"), ua->argv[j]);

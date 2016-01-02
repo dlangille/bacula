@@ -78,7 +78,7 @@ run job=$JobName level=VirtualFull yes
 wait
 messages
 list volumes
-list jobs
+llist jobs
 @# 
 @# now do a restore of the consolidated Full
 @#

@@ -112,7 +112,7 @@ if [ $? -ne 0 ]; then
     bstat=2
 fi
 
-grep -e 'Using BaseJobId(s): 1$'  ${cwd}/tmp/log4.out > /dev/null
+grep -e 'Using Base JobId(s): 1$'  ${cwd}/tmp/log4.out > /dev/null
 if [ $? -ne 0 ]; then
     print_debug "ERROR: The first full job should use only jobid=1 as basejob"
     bstat=2

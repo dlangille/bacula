@@ -254,7 +254,7 @@ bool send_accurate_current_files(JCR *jcr)
       /* On Full mode, if no previous base job, no accurate things */
       if (get_base_jobids(jcr, &jobids)) {
          jcr->HasBase = true;
-         Jmsg(jcr, M_INFO, 0, _("Using BaseJobId(s): %s\n"), jobids.list);
+         Jmsg(jcr, M_INFO, 0, _("Using Base JobId(s): %s\n"), jobids.list);
       } else if (!jcr->rerunning) {
          return true;
       }

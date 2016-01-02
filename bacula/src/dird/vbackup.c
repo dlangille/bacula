@@ -284,6 +284,10 @@ _("This Job is not an Accurate backup so is not equivalent to a Full backup.\n")
    jcr->jr.JobTDate = jcr->start_time;
    jcr->setJobStatus(JS_Running);
 
+   /* Add the following when support for base jobs is added to virtual full */
+   //jcr->HasBase = jcr->job->base != NULL;
+   //jcr->jr.HasBase = jcr->HasBase;
+
    /* Update job start record */
    if (!db_update_job_start_record(jcr, jcr->db, &jcr->jr)) {
       Jmsg(jcr, M_FATAL, 0, "%s", db_strerror(jcr->db));
