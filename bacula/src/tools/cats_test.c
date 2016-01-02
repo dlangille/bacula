@@ -1,8 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2015 Kern Sibbald
-   Copyright (C) 2011-2014 Free Software Foundation Europe e.V.
+   Copyright (C) 2000-2016 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -325,8 +324,8 @@ int main (int argc, char *argv[])
     */
 
    jcr = new_jcr(sizeof(JCR), NULL);
-   jcr->setJobType(JT_CONSOLE);
-   jcr->setJobLevel(L_NONE);
+   jcr->setJobType(JT_CONSOLE); 
+   jcr->setJobLevel(L_NONE); 
    jcr->JobStatus = JS_Running;
    bstrncpy(jcr->Job, "**dummy**", sizeof(jcr->Job));
    jcr->JobId = pid;      /* this is JobId on tape */

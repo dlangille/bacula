@@ -1,8 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2015 Kern Sibbald
-   Copyright (C) 2009-2014 Free Software Foundation Europe e.V.
+   Copyright (C) 2000-2016 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -221,7 +220,7 @@ int main (int argc, char *argv[])
    pm_strcpy(bjcr->client_name, "Dummy.Client.Name");
    bstrncpy(bjcr->Job, "bvfs_test", sizeof(bjcr->Job));
    
-   if ((db = db_init_database(NULL, NULL, db_name, db_user, db_password,
+   if ((db = db_init_database(NULL, NULL, db_name, db_user, db_password, 
                               db_host, 0, NULL,
                               db_ssl_key, db_ssl_cert, db_ssl_ca,
                               db_ssl_capath, db_ssl_cipher,
