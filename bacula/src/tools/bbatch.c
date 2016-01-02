@@ -1,8 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2015 Kern Sibbald
-   Copyright (C) 2001-2014 Free Software Foundation Europe e.V.
+   Copyright (C) 2000-2016 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -205,7 +204,7 @@ int main (int argc, char *argv[])
       btime_t start, end;
       /* To use the -r option, the catalog should already contains records */
       
-      if ((db = db_init_database(NULL, NULL, db_name, db_user, db_password,
+      if ((db = db_init_database(NULL, NULL, db_name, db_user, db_password, 
                                  db_host, 0, NULL, db_ssl_key, db_ssl_cert,
                                  db_ssl_ca, db_ssl_capath, db_ssl_cipher,
                                  false, !use_batch_insert)) == NULL) {
@@ -228,7 +227,7 @@ int main (int argc, char *argv[])
 
    if (use_batch_insert) {
       printf("With Batch Insert mode\n");
-   } else {
+   } else { 
       printf("Without Batch Insert mode\n");
    }
 
@@ -256,7 +255,7 @@ int main (int argc, char *argv[])
       bjcr->fileset_md5 = get_pool_memory(PM_FNAME);
       pm_strcpy(bjcr->fileset_md5, "Dummy.fileset.md5");
       
-      if ((db = db_init_database(NULL, NULL, db_name, db_user, db_password,
+      if ((db = db_init_database(NULL, NULL, db_name, db_user, db_password, 
                                  db_host, 0, NULL, db_ssl_key, db_ssl_cert,
                                  db_ssl_ca, db_ssl_capath, db_ssl_cipher,
                                  false, false)) == NULL) {
