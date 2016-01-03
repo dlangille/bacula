@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2015 Marcin Haba
+ * Copyright (C) 2013-2016 Marcin Haba
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -19,19 +19,34 @@
  *
  * Bacula(R) is a registered trademark of Kern Sibbald.
  */
- 
-class BaculumPage extends TPage
-{
+
+/**
+ * Base pages module.
+ * The module contains methods that are common for all pages (wizards, main
+ * page and error pages).
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ */
+class BaculumPage extends TPage {
 
 	public function onPreInit($param) {
 		parent::onPreInit($param);
-		$configuration = $this->getModule('configuration');
 		$this->Application->getGlobalization()->Culture = $this->getLanguage();
-		$this->setPrefixForSubdir();
+		$this->setURLPrefixForSubdir();
 	}
 
+	/**
+	 * Get curently set language short name (for example: en, pl).
+	 * If language short name is not set in session then the language value
+	 * is taken from Baculum config file, saved in session and returned.
+	 * If the language setting is set in session, then the value from
+	 * session is returned.
+	 *
+	 * @access public
+	 * @return string currently set language short name
+	 */
 	public function getLanguage() {
-		if(isset($_SESSION['language']) && !empty($_SESSION['language'])) {
+		if (isset($_SESSION['language']) && !empty($_SESSION['language'])) {
 			$language =  $_SESSION['language'];
 		} else {
 			$language = $this->getModule('configuration')->getLanguage();
@@ -40,40 +55,84 @@ class BaculumPage extends TPage
 		return $language;
 	}
 
+	/**
+	 * Shortcut method for getting application modules instances by
+	 * module name.
+	 *
+	 * @access public
+	 * @param string $name application module name
+	 * @return object module class instance
+	 */
 	public function getModule($name) {
 		return $this->Application->getModule($name);
 	}
 
-	public function goToPage($pagePath,$getParameters = null) {
-		$this->Response->redirect($this->Service->constructUrl($pagePath,$getParameters,false));
+	/**
+	 * Redirection to a page.
+	 * Page name is given in PRADO notation with "dot", for example: (Home.SomePage).
+	 *
+	 * @access public
+	 * @param string $page_name page name to redirect
+	 * @param array $params HTTP GET method parameters in associative array
+         * @return none
+	 */
+	public function goToPage($page_name, $params = null) {
+		$url = $this->Service->constructUrl($page_name, $params, false);
+		$this->Response->redirect($url);
 	}
 
-	public function goToDefaultPage($getParameters = null) {
-		$this->goToPage($this->Service->DefaultPage, $getParameters);
+	/**
+	 * Redirection to default page defined in application config.
+	 *
+	 * @access public
+	 * @param array $params HTTP GET method parameters in associative array
+	 * @return none
+	 */
+	public function goToDefaultPage($params = null) {
+		$this->goToPage($this->Service->DefaultPage, $params);
 	}
 
-	public function setPrefixForSubdir() {
-		$fullDocumentRoot = preg_replace('#(\/)$#', '', $this->getFullDocumentRoot());
-		$urlPrefix = str_replace($fullDocumentRoot, '', APPLICATION_DIRECTORY);
-		if(!empty($urlPrefix)) {
-			$this->Application->getModule('friendly-url')->setUrlPrefix($urlPrefix);
+	/**
+	 * Set prefix when Baculum is running in document root subdirectory.
+	 * For example:
+	 *   web server document root: /var/www/
+	 *   Baculum directory /var/www/baculum/
+	 *   URL prefix: /baculum/
+	 * In this case to base url is added '/baculum/' such as:
+	 * http://localhost:9095/baculum/
+	 *
+	 * @access private
+	 * @return none
+	 */
+	private function setURLPrefixForSubdir() {
+		$full_document_root = preg_replace('#(\/)$#', '', $this->getFullDocumentRoot());
+		$url_prefix = str_replace($full_document_root, '', APPLICATION_DIRECTORY);
+		if (!empty($url_prefix)) {
+			$this->Application->getModule('friendly-url')->setUrlPrefix($url_prefix);
 		}
 	}
 
+	/**
+	 * Get full document root directory path.
+	 * Symbolic links in document root path are translated to full paths.
+	 *
+	 * @access private
+	 * return string full document root directory path
+	 */
 	private function getFullDocumentRoot() {
-		$rootDir = array();
+		$root_dir = array();
 		$dirs = explode('/', $_SERVER['DOCUMENT_ROOT']);
 		for($i = 0; $i < count($dirs); $i++) {
-			$documentRootPart =  implode('/', $rootDir) . '/' . $dirs[$i];
-			if(is_link($documentRootPart)) {
-				$rootDir = array(readlink($documentRootPart));
+			$document_root_part =  implode('/', $root_dir) . '/' . $dirs[$i];
+			if (is_link($document_root_part)) {
+				$root_dir = array(readlink($document_root_part));
 			} else {
-				$rootDir[] = $dirs[$i];
+				$root_dir[] = $dirs[$i];
 			}
 		}
 
-		$rootDir = implode('/', $rootDir);
-		return $rootDir;
+		$root_dir = implode('/', $root_dir);
+		return $root_dir;
 	}
 }
 ?>

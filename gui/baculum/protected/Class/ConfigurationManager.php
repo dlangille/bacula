@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2015 Marcin Haba
+ * Copyright (C) 2013-2016 Marcin Haba
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -28,7 +28,7 @@ Prado::using('Application.Class.Miscellaneous');
  * read/write application config and usersfiles, get application language
  * and others.
  *
- * @author Marcin Haba
+ * @author Marcin Haba <marcin.haba@bacula.pl>
  */
 class ConfigurationManager extends TModule
 {
@@ -209,7 +209,7 @@ class ConfigurationManager extends TModule
 	 * @return boolean true if user saved successfully, otherwise false
 	 */
 	public function setUsersConfig($user, $password, $firstUsage = false, $oldUser = null) {
-		if($firstUsage === true) {
+		if ($firstUsage === true) {
 			$this->clearUsersConfig();
 		}
 
@@ -224,15 +224,15 @@ class ConfigurationManager extends TModule
 			$allUsers[$user] = $password;
 		}
 
-		if(!is_null($oldUser) && $oldUser !== $user) {
+		if (!is_null($oldUser) && $oldUser !== $user) {
 			// delete old username with password from configuration file
-			if(array_key_exists($oldUser, $allUsers)) {
+			if (array_key_exists($oldUser, $allUsers)) {
 				unset($allUsers[$oldUser]);
 			}
 		}
 
 		// add new user if does not exist
-		if($userExists === false) {
+		if ($userExists === false) {
 			$allUsers[$user] = $password;
 		}
 
@@ -255,7 +255,7 @@ class ConfigurationManager extends TModule
 			$users = file($usersFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
 
 			for($i = 0; $i < count($users); $i++) {
-				if(preg_match("/^(?P<user>\S+)\:(?P<hash>\S+)$/", $users[$i], $match) === 1) {
+				if (preg_match("/^(?P<user>\S+)\:(?P<hash>\S+)$/", $users[$i], $match) === 1) {
 					$allUsers[$match['user']] = $match['hash'];
 				}
 			}
