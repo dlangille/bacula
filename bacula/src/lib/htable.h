@@ -70,8 +70,8 @@ struct hlink {
 
 struct h_mem {
    struct h_mem *next;                /* next buffer */
-   char *mem;                         /* memory pointer */
-   int32_t rem;                       /* remaining bytes in big_buffer */
+   char   *mem;                       /* memory pointer */
+   int64_t rem;                       /* remaining bytes in big_buffer */
    char first[1];                     /* first byte */
 };
 
