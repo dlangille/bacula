@@ -1013,3 +1013,12 @@ const char *expired_volumes[] = {
    /* SQLite */
    expired_volumes_defaults
 };
+
+const char *expires_in[] = {
+   /* MySQL */
+   "(GREATEST(0, CAST(UNIX_TIMESTAMP(LastWritten) + VolRetention AS SIGNED) - UNIX_TIMESTAMP(NOW())))",
+   /* PostgreSQL */
+   "GREATEST(0, (extract('epoch' from LastWritten + VolRetention * interval '1second' - NOW())::bigint))",
+   /* SQLite */
+   "MAX(0, (strftime('%s', LastWritten) + VolRetention - strftime('%s', datetime('now', 'localtime'))))"
+};

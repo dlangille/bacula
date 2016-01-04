@@ -87,3 +87,4 @@ extern const char CATS_IMP_EXP *uar_sel_fileset;
 extern const char CATS_IMP_EXP *uar_sel_filesetid;
 extern const char CATS_IMP_EXP *uar_sel_jobid_temp;
 extern const char CATS_IMP_EXP *update_counter_values[]; 
+extern const char CATS_IMP_EXP *expires_in[];

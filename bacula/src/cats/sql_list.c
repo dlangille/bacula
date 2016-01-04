@@ -195,6 +195,7 @@ void BDB::bdb_list_media_records(JCR *jcr, MEDIA_DBR *mdbr,
 {
    char ed1[50];
    char esc[MAX_ESCAPE_NAME_LENGTH];
+   const char *expiresin = expires_in[bdb_get_type_index()];
 
    bdb_lock();
    bdb_escape_string(jcr, esc, mdbr->VolumeName, strlen(mdbr->VolumeName));
@@ -210,8 +211,8 @@ void BDB::bdb_list_media_records(JCR *jcr, MEDIA_DBR *mdbr,
             "EndFile,EndBlock,VolParts,LabelType,StorageId,DeviceId,"
             "MediaAddressing,VolReadTime,VolWriteTime,"
             "LocationId,RecycleCount,InitialWrite,ScratchPoolId,RecyclePoolId, "
-            "ActionOnPurge,Comment"
-            " FROM Media WHERE Media.VolumeName='%s'", esc);
+            "ActionOnPurge,%s AS ExpiresIn, Comment"
+            " FROM Media WHERE Media.VolumeName='%s'", expiresin, esc);
       } else {
          Mmsg(cmd, "SELECT MediaId,VolumeName,Slot,PoolId,"
             "MediaType,MediaTypeId,FirstWritten,LastWritten,LabelDate,VolJobs,"
@@ -222,20 +223,20 @@ void BDB::bdb_list_media_records(JCR *jcr, MEDIA_DBR *mdbr,
             "EndFile,EndBlock,VolParts,LabelType,StorageId,DeviceId,"
             "MediaAddressing,VolReadTime,VolWriteTime,"
             "LocationId,RecycleCount,InitialWrite,ScratchPoolId,RecyclePoolId, "
-            "ActionOnPurge,Comment"
+            "ActionOnPurge,%s AS ExpiresIn, Comment"
             " FROM Media WHERE Media.PoolId=%s ORDER BY MediaId",
-            edit_int64(mdbr->PoolId, ed1));
+              expiresin, edit_int64(mdbr->PoolId, ed1));
       }
    } else {
       if (mdbr->VolumeName[0] != 0) {
          Mmsg(cmd, "SELECT MediaId,VolumeName,VolStatus,Enabled,"
-            "VolBytes,VolFiles,VolRetention,Recycle,Slot,InChanger,MediaType,VolParts,LastWritten "
-            "FROM Media WHERE Media.VolumeName='%s'", esc);
+            "VolBytes,VolFiles,VolRetention,Recycle,Slot,InChanger,MediaType,LastWritten,%s AS ExpiresIn "
+              "FROM Media WHERE Media.VolumeName='%s'", expiresin, esc);
       } else {
          Mmsg(cmd, "SELECT MediaId,VolumeName,VolStatus,Enabled,"
-            "VolBytes,VolFiles,VolRetention,Recycle,Slot,InChanger,MediaType,VolParts,LastWritten "
+            "VolBytes,VolFiles,VolRetention,Recycle,Slot,InChanger,MediaType,LastWritten,%s AS ExpiresIn "
             "FROM Media WHERE Media.PoolId=%s ORDER BY MediaId",
-            edit_int64(mdbr->PoolId, ed1));
+              expiresin, edit_int64(mdbr->PoolId, ed1));
       }
    }
 
