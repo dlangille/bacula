@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2015 Marcin Haba
+ * Copyright (C) 2013-2016 Marcin Haba
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -36,16 +36,18 @@ class API extends TModule {
 
 	/**
 	 * Store configuration data from settings file
+	 *
 	 * @access protected
 	 */
-	protected $appCfg;
+	protected $app_cfg;
 
 	/**
 	 * These errors are allowed in API response and they do not cause
 	 * disturb application working (no direction to error page)
+	 *
 	 * @access private
 	 */
-	private $allowedErrors = array(
+	private $allowed_errors = array(
 		GenericError::ERROR_NO_ERRORS,
 		BconsoleError::ERROR_INVALID_COMMAND,
 		PoolError::ERROR_NO_VOLUMES_IN_POOL_TO_UPDATE
@@ -54,12 +56,13 @@ class API extends TModule {
 	/**
 	 * Get connection request handler.
 	 * For data requests is used cURL interface.
+	 *
 	 * @access public
 	 * @return resource connection handler on success, false on errors
 	 */
 	public function getConnection() {
 		$ch = curl_init();
-		$userpwd = sprintf('%s:%s', $this->appCfg['baculum']['login'], $this->appCfg['baculum']['password']);
+		$userpwd = sprintf('%s:%s', $this->app_cfg['baculum']['login'], $this->app_cfg['baculum']['password']);
 		curl_setopt($ch, CURLOPT_USERPWD, $userpwd);
 		curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_ANY);
 		curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
@@ -71,6 +74,7 @@ class API extends TModule {
 
 	/**
 	 * Get API specific headers used in HTTP requests.
+	 *
 	 * @access private
 	 * @return API specific headers
 	 */
@@ -86,16 +90,18 @@ class API extends TModule {
 
 	/**
 	 * Initializes API module (framework module constructor)
+	 *
 	 * @access public
 	 * @param TXmlElement $config API module configuration
 	 */
 	public function init($config) {
 		$this->initSessionCache();
-		$this->appCfg = $this->Application->getModule('configuration')->getApplicationConfig();
+		$this->app_cfg = $this->Application->getModule('configuration')->getApplicationConfig();
 	}
 
 	/**
 	 * Get URL to use by internal API client's request.
+	 *
 	 * @access private
 	 * @return string URL to internal API server
 	 */
@@ -113,6 +119,7 @@ class API extends TModule {
 
 	/**
 	 * Set URL parameters and prepare URL to request send.
+	 *
 	 * @access private
 	 * @param string &$url reference to URL string variable
 	 */
@@ -134,6 +141,7 @@ class API extends TModule {
 
 	/**
 	 * Internal API GET request.
+	 *
 	 * @access public
 	 * @param array $params GET params to send in request
 	 * @param bool $use_cache if true then try to use session cache, if false then always use fresh data
@@ -165,6 +173,7 @@ class API extends TModule {
 
 	/**
 	 * Internal API SET request.
+	 *
 	 * @access public
 	 * @param array $params GET params to send in request
 	 * @param array $options POST params to send in request
@@ -190,6 +199,7 @@ class API extends TModule {
 
 	/**
 	 * Internal API CREATE request.
+	 *
 	 * @access public
 	 * @param array $params GET params to send in request
 	 * @param array $options POST params to send in request
@@ -211,6 +221,7 @@ class API extends TModule {
 
 	/**
 	 * Internal API REMOVE request.
+	 *
 	 * @access public
 	 * @param array $params GET params to send in request
 	 * @return object stdClass with request result as two properties: 'output' and 'error'
@@ -230,6 +241,7 @@ class API extends TModule {
 	/**
 	 * Initially parse and prepare every Internal API response.
 	 * If a error occurs then redirect to appropriate error page.
+	 *
 	 * @access private
 	 * @param string $result response output as JSON string (not object yet)
 	 * @return object stdClass parsed response with two top level properties 'output' and 'error'
@@ -250,7 +262,7 @@ class API extends TModule {
 		$error = null;
 
 		if(is_object($resource) && property_exists($resource, 'error')) {
-			if(!in_array($resource->error, $this->allowedErrors)) {
+			if(!in_array($resource->error, $this->allowed_errors)) {
 				$error = $resource->error;
 			}
 		} else {
@@ -280,12 +292,26 @@ class API extends TModule {
 		return $resource;
 	}
 
+	/**
+	 * Initialize session cache.
+	 *
+	 * @access public
+	 * @param bool $force if true then cache is force initialized
+	 * @return none
+	 */
 	public function initSessionCache($force = false) {
 		if (!isset($_SESSION) || !array_key_exists('cache', $_SESSION) || !is_array($_SESSION['cache']) || $force === true) {
 			$_SESSION['cache'] = array();
 		}
 	}
 
+	/**
+	 * Get session cache value by params.
+	 *
+	 * @access private
+	 * @param array $params command parameters as numeric array
+	 * @return mixed if cache exists then returned is cached data, otherwise null
+	 */
 	private function getSessionCache(array $params) {
 		$cached = null;
 		$key = $this->getSessionKey($params);
@@ -295,17 +321,39 @@ class API extends TModule {
 		return $cached;
 	}
 
+	/**
+	 * Save data to session cache.
+	 *
+	 * @access private
+	 * @param array $params command parameters as numeric array
+	 * @param mixed $value value to save in cache
+	 * @return none
+	 */
 	private function setSessionCache(array $params, $value) {
 		$key = $this->getSessionKey($params);
 		$_SESSION['cache'][$key] = $value;
 	}
 
+	/**
+	 * Get session key by command parameters.
+	 *
+	 * @access private
+	 * @param array $params command parameters as numeric array
+	 * @return string session key for given command
+	 */
 	private function getSessionKey(array $params) {
 		$key = implode(';', $params);
 		$key = base64_encode($key);
 		return $key;
 	}
 
+	/**
+	 * Check if session key exists in session cache.
+	 *
+	 * @access private
+	 * @param string $key session key
+	 * @return bool true if session key exists, otherwise false
+	 */
 	private function isSessionValue($key) {
 		$is_value = array_key_exists($key, $_SESSION['cache']);
 		return $is_value;

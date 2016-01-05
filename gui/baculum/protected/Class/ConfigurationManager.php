@@ -84,12 +84,12 @@ class ConfigurationManager extends TModule
 	public function getDbNameByType($type) {
 		$type = (string) $type;
 		switch($type) {
-			case self::PGSQL: $dbName = self::PGSQL_NAME; break;
-			case self::MYSQL: $dbName = self::MYSQL_NAME; break;
-			case self::SQLITE: $dbName = self::SQLITE_NAME; break;
-			default: $dbName = null; break;
+			case self::PGSQL: $db_name = self::PGSQL_NAME; break;
+			case self::MYSQL: $db_name = self::MYSQL_NAME; break;
+			case self::SQLITE: $db_name = self::SQLITE_NAME; break;
+			default: $db_name = null; break;
 		}
-		return $dbName;
+		return $db_name;
 	}
 
 	/**
@@ -151,8 +151,8 @@ class ConfigurationManager extends TModule
 	 * @return boolean true if config save is successfully, false if config save is failure
 	 */
 	public function setApplicationConfig(array $config) {
-		$cfgFile = Prado::getPathOfNamespace(self::CONFIG_FILE, '.conf');
-		return ($this->Application->getModule('misc')->writeINIFile($cfgFile, $config) != false);
+		$cfg_file = Prado::getPathOfNamespace(self::CONFIG_FILE, '.conf');
+		return ($this->Application->getModule('misc')->writeINIFile($cfg_file, $config) != false);
 	}
 
 	/**
@@ -162,8 +162,8 @@ class ConfigurationManager extends TModule
 	 * @return array application configuration
 	 */
 	public static function getApplicationConfig() {
-		$cfgFile = Prado::getPathOfNamespace(self::CONFIG_FILE, '.conf');
-		return Miscellaneous::parseINIFile($cfgFile);
+		$cfg_file = Prado::getPathOfNamespace(self::CONFIG_FILE, '.conf');
+		return Miscellaneous::parseINIFile($cfg_file);
 	}
 
 	/**
@@ -204,39 +204,39 @@ class ConfigurationManager extends TModule
 	 * @access public
 	 * @param string $user username
 	 * @param string $password user's password
-	 * @param boolean $firstUsage determine if it is first saved user during first Baculum run
-	 * @param mixed $oldUser previous username before change
+	 * @param boolean $first_usage determine if it is first saved user during first Baculum run
+	 * @param mixed $old_user previous username before change
 	 * @return boolean true if user saved successfully, otherwise false
 	 */
-	public function setUsersConfig($user, $password, $firstUsage = false, $oldUser = null) {
-		if ($firstUsage === true) {
+	public function setUsersConfig($user, $password, $first_usage = false, $old_user = null) {
+		if ($first_usage === true) {
 			$this->clearUsersConfig();
 		}
 
-		$allUsers = $this->getAllUsers();
+		$all_users = $this->getAllUsers();
 		$password = $this->getCryptedPassword($password);
 
-		$userExists = array_key_exists($user, $allUsers);
+		$userExists = array_key_exists($user, $all_users);
 
 
 		if ($userExists === true) {
 			// update user password;
-			$allUsers[$user] = $password;
+			$all_users[$user] = $password;
 		}
 
-		if (!is_null($oldUser) && $oldUser !== $user) {
+		if (!is_null($old_user) && $old_user !== $user) {
 			// delete old username with password from configuration file
-			if (array_key_exists($oldUser, $allUsers)) {
-				unset($allUsers[$oldUser]);
+			if (array_key_exists($old_user, $all_users)) {
+				unset($all_users[$old_user]);
 			}
 		}
 
 		// add new user if does not exist
 		if ($userExists === false) {
-			$allUsers[$user] = $password;
+			$all_users[$user] = $password;
 		}
 
-		$result = $this->saveUserConfig($allUsers);
+		$result = $this->saveUserConfig($all_users);
 		return $result;
 	}
 
@@ -249,18 +249,18 @@ class ConfigurationManager extends TModule
 	 * @return array users/passwords list
 	 */
 	public function getAllUsers() {
-		$allUsers = array();
+		$all_users = array();
 		if ($this->isUsersConfig() === true) {
-			$usersFile = Prado::getPathOfNamespace(self::USERS_FILE, '.users');
-			$users = file($usersFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+			$users_file = Prado::getPathOfNamespace(self::USERS_FILE, '.users');
+			$users = file($users_file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
 
 			for($i = 0; $i < count($users); $i++) {
 				if (preg_match("/^(?P<user>\S+)\:(?P<hash>\S+)$/", $users[$i], $match) === 1) {
-					$allUsers[$match['user']] = $match['hash'];
+					$all_users[$match['user']] = $match['hash'];
 				}
 			}
 		}
-		return $allUsers;
+		return $all_users;
 	}
 
 	/**
@@ -269,19 +269,19 @@ class ConfigurationManager extends TModule
 	 * and encrypted passwords as values.
 	 *
 	 * @access public
-	 * @param array $allUsers users/passwords list
+	 * @param array $all_users users/passwords list
 	 * @return boolean true if users file saved successfully, otherwise false
 	 */
-	public function saveUserConfig($allUsers) {
+	public function saveUserConfig($all_users) {
 		$users = array();
-		foreach ($allUsers as $user => $pwd) {
+		foreach ($all_users as $user => $pwd) {
 			$users[] = "$user:$pwd";
 		}
-		$usersFile = Prado::getPathOfNamespace(self::USERS_FILE, '.users');
+		$users_file = Prado::getPathOfNamespace(self::USERS_FILE, '.users');
 		$usersToFile = implode("\n", $users);
 		$old_umask = umask(0);
 		umask(0077);
-		$result = file_put_contents($usersFile, $usersToFile) !== false;
+		$result = file_put_contents($users_file, $usersToFile) !== false;
 		umask($old_umask);
 		return $result;
 	}
@@ -297,10 +297,10 @@ class ConfigurationManager extends TModule
 	 */
 	public function removeUser($username) {
 		$result = false;
-		$allUsers = $this->getAllUsers();
-		if (array_key_exists($username, $allUsers)) {
-			unset($allUsers[$username]);
-			$result = $this->saveUserConfig($allUsers);
+		$all_users = $this->getAllUsers();
+		if (array_key_exists($username, $all_users)) {
+			unset($all_users[$username]);
+			$result = $this->saveUserConfig($all_users);
 		}
 		return $result;
 	}
@@ -322,8 +322,8 @@ class ConfigurationManager extends TModule
 	 * @return boolean true if file cleared successfully, otherwise false
 	 */
 	public function clearUsersConfig() {
-		$usersFile = Prado::getPathOfNamespace(self::USERS_FILE, '.users');
-		$result = file_put_contents($usersFile, '') !== false;
+		$users_file = Prado::getPathOfNamespace(self::USERS_FILE, '.users');
+		$result = file_put_contents($users_file, '') !== false;
 		return $result;
 	}
 
@@ -343,9 +343,9 @@ class ConfigurationManager extends TModule
 	 * @return none
 	 */
 	public function switchToUser($http_protocol, $host, $port, $user, $password) {
-		$urlPrefix = $this->Application->getModule('friendly-url')->getUrlPrefix();
-		$location = sprintf("%s://%s:%s@%s:%d%s", $http_protocol, $user, $password, $host, $port, $urlPrefix);
-		$refresh_url = sprintf("%s://%s:%d%s", $http_protocol, $host, $port, $urlPrefix);
+		$url_prefix = $this->Application->getModule('friendly-url')->getUrlPrefix();
+		$location = sprintf("%s://%s:%s@%s:%d%s", $http_protocol, $user, $password, $host, $port, $url_prefix);
+		$refresh_url = sprintf("%s://%s:%d%s", $http_protocol, $host, $port, $url_prefix);
 
 		/**
 		 * Refresh page is required due to lack of auth data in $_SERVER superglobal array
