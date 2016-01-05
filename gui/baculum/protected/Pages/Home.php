@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2015 Marcin Haba
+ * Copyright (C) 2013-2016 Marcin Haba
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -28,6 +28,8 @@ Prado::using('System.Web.UI.ActiveControls.TActiveLinkButton');
 
 class Home extends BaculumPage
 {
+	protected $app_config;
+
 	public $jobs;
 
 	public $openWindow = null;
@@ -75,7 +77,7 @@ class Home extends BaculumPage
 		}
 
 		$this->userPattern = $this->getModule('configuration')->getUserPattern();
-		$appConfig = $this->getModule('configuration')->getApplicationConfig();
+		$this->app_config = $this->getModule('configuration')->getApplicationConfig();
 
 		$this->Users->Visible = $this->User->getIsAdmin();
 		$this->SettingsWizardBtn->Visible = $this->User->getIsAdmin();
@@ -83,7 +85,7 @@ class Home extends BaculumPage
 		$this->VolumeBtn->Visible = $this->User->getIsAdmin();
 		$this->ClearBvfsCache->Visible = $this->User->getIsAdmin();
 		$this->Logging->Visible = $this->User->getIsAdmin();
-		$this->BconsoleCustomPath->Text = $appConfig['bconsole']['cfg_custom_path'];
+		$this->BconsoleCustomPath->Text = $this->app_config['bconsole']['cfg_custom_path'];
 
 		if(!$this->IsPostBack && !$this->IsCallBack) {
 			$this->Logging->Checked = $this->getModule('logging')->isDebugOn();
@@ -98,7 +100,7 @@ class Home extends BaculumPage
 			$this->Director->SelectedValue = $_SESSION['director'];
 			$this->Director->dataBind();
 			if ($this->User->getIsAdmin() === true) {
-				$this->dbtype = $this->getModule('configuration')->getDbNameByType($appConfig['db']['type']);
+				$this->dbtype = $this->getModule('configuration')->getDbNameByType($this->app_config['db']['type']);
 			}
 			$this->setJobsStates();
 			$this->setJobs();
@@ -196,16 +198,39 @@ class Home extends BaculumPage
 			switch($action) {
 				case 'newuser':
 				case 'chpwd': {
-						$this->getmodule('configuration')->setusersconfig($param, $value);
-						$this->setUsers();
+						$admin = false;
+						$valid = true;
+						if ($param === $this->app_config['baculum']['login']) {
+							$this->app_config['baculum']['password'] = $value;
+							$valid = $this->getModule('configuration')->setApplicationConfig($this->app_config);
+							$admin = true;
 						}
-						break;
+						if ($valid === true) {
+							$this->getModule('configuration')->setUsersConfig($param, $value);
+						}
+						if ($admin === true) {
+							// if admin password changed then try to auto-login by async request
+							$http_protocol = isset($_SERVER['HTTPS']) && !empty($_SERVER['HTTPS']) ? 'https' : 'http';
+							$this->getModule('configuration')->switchToUser(
+								$http_protocol,
+								$_SERVER['SERVER_NAME'],
+								$_SERVER['SERVER_PORT'],
+								$param,
+								$value
+							);
+							exit();
+						} else {
+							// if normal user's password changed then update users grid
+							$this->setUsers();
+						}
+					}
+					break;
 				case 'rmuser': {
 						if ($param != $this->User->getName()) {
 							$this->getModule('configuration')->removeUser($param);
 							$this->setUsers();
 						}
-						break;
+					break;
 					}
 			}
 		}
