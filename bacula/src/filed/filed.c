@@ -543,7 +543,7 @@ static bool check_resources()
 
       /* Construct disabled command array */
       for (i=0; cmds[i].cmd; i++) { }  /* Count commands */
-      if (me->disable_cmds) {
+      if (director->disable_cmds) {
          director->disabled_cmds_array = (bool *)malloc(i);
          memset(director->disabled_cmds_array, 0, i);
          foreach_alist(cmd, director->disable_cmds) {
