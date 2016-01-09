@@ -63,8 +63,17 @@ class JobManager extends TModule {
 	}
 
 	public function getRecentJobids($jobname, $clientid) {
-		$sql = "name='$jobname' AND clientid='$clientid' AND jobstatus IN ('T', 'W') AND level IN ('F', 'I', 'D') ORDER BY endtime DESC";
+		$sql = "name='$jobname' AND clientid='$clientid' AND jobstatus IN ('T', 'W') AND level IN ('F', 'I', 'D')";
 		$finder = JobRecord::finder();
+		$criteria = new TActiveRecordCriteria;
+		$order = 'endtime';
+		$cfg = $this->Application->getModule('configuration');
+		$appCfg = $cfg->getApplicationConfig();
+		if($cfg->isPostgreSQLType($appCfg['db']['type'])) {
+		    $order = strtolower($order);
+		}
+		$criteria->OrdersBy[$order] = 'desc';
+		$criteria->Condition = $sql;
 		$jobs = $finder->findAll($sql);
 
 		$jobids = array();
