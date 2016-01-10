@@ -1,8 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2015 Kern Sibbald
-   Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
+   Copyright (C) 2000-2016 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -602,7 +601,6 @@ void close_msg(JCR *jcr)
                break;
             }
             success = jcr && (jcr->JobStatus == JS_Terminated || jcr->JobStatus == JS_Warnings);
-
             if (d->dest_code == MD_MAIL_ON_ERROR && success) {
                goto rem_temp_file;       /* no mail */
             } else if (d->dest_code == MD_MAIL_ON_SUCCESS && !success) {

@@ -1,8 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2015 Kern Sibbald
-   Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
+   Copyright (C) 2000-2016 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -48,9 +47,9 @@
 #define socketClose(fd)           close(fd)
 #endif
 
-#ifndef HAVE_GETADDRINFO
+#ifndef HAVE_GETADDRINFO 
 static pthread_mutex_t ip_mutex = PTHREAD_MUTEX_INITIALIZER;
-#endif
+#endif 
 
 /*
  * Read a nbytes from the network.
@@ -328,6 +327,14 @@ bool bnet_tls_client(TLS_CONTEXT *ctx, BSOCK * bsock, alist *verify_list)
 #define NO_DATA         4          /* Valid name, no data record of requested type. */
 #endif
 
+static IPADDR *add_any(int family)
+{
+   IPADDR *addr = New(IPADDR(family));
+   addr->set_type(IPADDR::R_MULTIPLE);
+   addr->set_addr_any();
+   return addr;
+}
+
 #if defined(HAVE_GETADDRINFO)
 /* 
  * getaddrinfo.c - Simple example of using getaddrinfo(3) function.
@@ -446,7 +453,7 @@ static const char *resolv_host(int family, const char *host, dlist * addr_list)
 #ifdef HAVE_IPV6
          else {
              addr->set_addr6((struct in6_addr*)*p);
-         }
+         } 
 #endif
          addr_list->append(addr);
       }
@@ -454,16 +461,8 @@ static const char *resolv_host(int family, const char *host, dlist * addr_list)
    }
    return NULL;
 }
-#endif
-
-static IPADDR *add_any(int family)
-{
-   IPADDR *addr = New(IPADDR(family));
-   addr->set_type(IPADDR::R_MULTIPLE);
-   addr->set_addr_any();
-   return addr;
-}
-
+#endif 
+ 
 /*
  * i host = 0 means INADDR_ANY only for IPv4
  */
