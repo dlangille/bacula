@@ -1,8 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2015 Kern Sibbald
-   Copyright (C) 2007-2009 Free Software Foundation Europe e.V.
+   Copyright (C) 2000-2016 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -274,13 +273,13 @@ void Content::populateContent()
    /* Get count of rows needed (Drives) */
    QStringList drives = results_all.filter(QRegExp("^D\\|[0-9]+\\|"));
    /* Ensure we have sufficient rows for Drive display */
-   tableDrive->setRowCount(drives.size());
+   tableDrive->setRowCount(drives.size()); 
    row = 0;
    foreach (resultline, drives) {
       fieldlist = resultline.split("|");
-      if (fieldlist.size() < 4) {
+      if (fieldlist.size() < 4) { 
          continue; /* some fields missing, ignore row */
-      }
+      } 
       int index=0;
       QStringListIterator fld(fieldlist);
       TableItemFormatter slotitem(*tableDrive, row);

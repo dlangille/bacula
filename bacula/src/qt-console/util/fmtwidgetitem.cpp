@@ -1,8 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2015 Kern Sibbald
-   Copyright (C) 2007-2010 Free Software Foundation Europe e.V.
+   Copyright (C) 2000-2016 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -120,9 +119,10 @@ QString convertBytesIEC(qint64 qfld)
       return QString("%1 B").arg(qfld); 
    }
 
-   /* having divided for a smaller unit, now we can safely convert to double and
-      use the extra room for decimals */
-   return QString("%1 %2iB").arg(qfld / 1024.0, 0, 'f', 2).arg(suffix);
+   /* After dividing into a smaller value, we can safely convert from
+    *  to a double double and use the extra room for decimals
+    */
+   return QString("%1 %2iB").arg(qfld / 1024.0, 0, 'f', 2).arg(suffix); 
 }
 
 /* String to human value based on k=1000 */
@@ -135,7 +135,7 @@ QString convertBytesSI(qint64 qfld)
    static const qint64 PB = (TB * KB);
    static const qint64 EB = (PB * KB);
 
-   /* note: division is integer, so to have some decimals we divide for a
+   /* Note: division is integer, so to have some decimals we divide for a
       smaller unit (e.g. GB for a TB number and so on) */
    char suffix;
    if (qfld >= EB) {

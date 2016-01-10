@@ -1,8 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2015 Kern Sibbald
-   Copyright (C) 2007-2014 Free Software Foundation Europe e.V.
+   Copyright (C) 2000-2016 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -101,14 +100,14 @@ int generate_plugin_event(JCR *jcr, bsdEventType eventType, void *value)
 
    if (!b_plugin_list) {
       Dmsg0(dbglvl, "No b_plugin_list: generate_plugin_event ignored.\n");
-      return bRC_OK;
-   }
-   if (!jcr) {
-      Dmsg0(dbglvl, "No jcr: generate_plugin_event ignored.\n");
-      return bRC_OK;
-   }
-   if (!jcr->plugin_ctx_list) {
-       Dmsg0(dbglvl, "No plugin_ctx_list: generate_plugin_event ignored.\n");
+      return bRC_OK; 
+   } 
+   if (!jcr) { 
+      Dmsg0(dbglvl, "jcr==NULL: generate_plugin_event ignored.\n"); 
+      return bRC_OK; 
+   } 
+   if (!jcr->plugin_ctx_list) { 
+       Dmsg0(dbglvl, "No plugin_ctx_list: generate_plugin_event ignored.\n"); 
        return bRC_OK;                  /* Return if no plugins loaded */
    }
 
@@ -289,12 +288,9 @@ void new_plugins(JCR *jcr)
    if (jcr->is_job_canceled()) {
       return;
    }
-   /*
-    * If plugins already loaded, just return
-    */
-   if (jcr->plugin_ctx_list) {
-      return;
-   }
+
+   /* If plugins already loaded, just return */
+   if (jcr->plugin_ctx_list) return;
 
    int num = b_plugin_list->size();
 

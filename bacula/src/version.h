@@ -5,7 +5,7 @@
 #define COMMUNITY 1      /* Define to create a Windows community binary */
 
 /* Note: there can be only *one* VERSION in this file */
-#define VERSION "7.2.1"
+#define VERSION "7.4.0"
 #define BDATE   "10 January 2016"
 #define LSMDATE "10Jan16"
 
@@ -24,7 +24,6 @@
    Bacula(R) - The Network Backup Solution
 
    Copyright (C) 2000-2016 Kern Sibbald
-   Copyright (C) 2000-2015 Free Software Foundation Europe e.V.
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.

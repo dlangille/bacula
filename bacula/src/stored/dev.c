@@ -1,8 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2015 Kern Sibbald
-   Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
+   Copyright (C) 2000-2016 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -249,7 +248,7 @@ DEVICE *m_init_dev(JCR *jcr, DEVRES *device)
    /* Keep the device ID in the DEVICE struct to identify the hardware */
    if (dev->is_file() && stat(dev->archive_name(), &statp) == 0) {
          dev->devno = statp.st_dev;
-   }
+   } 
 
    /* Sanity check */
    if (dev->max_block_size == 0) {
@@ -753,7 +752,7 @@ bool DEVICE::close()
                print_name(), be.bstrerror());
          ok = false;
       }
-      break;
+      break; 
    }
 
    unmount(1);                       /* do unmount if required */
