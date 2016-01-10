@@ -18,8 +18,8 @@
    Bacula(R) is a registered trademark of Kern Sibbald.
 */
 
-#ifndef __BXATTR_H_
-#define __BXATTR_H_
+#ifndef BACULA_XATTR_H_
+#define BACULA_XATTR_H_
 
 #if defined(HAVE_LINUX_OS)
 #define BXATTR_ENOTSUP EOPNOTSUPP
@@ -74,4 +74,4 @@ struct xattr_ctx_t {
 
 #define XATTR_BUFSIZ    1024
 
-#endif /* __BXATTR_H_ */
+#endif /* BACULA_XATTR_H_ */
