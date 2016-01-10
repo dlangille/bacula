@@ -66,7 +66,7 @@ class JobManager extends TModule {
 		$sql = "name='$jobname' AND clientid='$clientid' AND jobstatus IN ('T', 'W') AND level IN ('F', 'I', 'D')";
 		$finder = JobRecord::finder();
 		$criteria = new TActiveRecordCriteria;
-		$order = 'endtime';
+		$order = 'EndTime';
 		$cfg = $this->Application->getModule('configuration');
 		$appCfg = $cfg->getApplicationConfig();
 		if($cfg->isPostgreSQLType($appCfg['db']['type'])) {
@@ -74,7 +74,7 @@ class JobManager extends TModule {
 		}
 		$criteria->OrdersBy[$order] = 'desc';
 		$criteria->Condition = $sql;
-		$jobs = $finder->findAll($sql);
+		$jobs = $finder->findAll($criteria);
 
 		$jobids = array();
 		$waitForFull = false;
