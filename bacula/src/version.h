@@ -6,8 +6,8 @@
 
 /* Note: there can be only *one* VERSION in this file */
 #define VERSION "7.2.1"
-#define BDATE   "2 January 2016"
-#define LSMDATE "02Jan16"
+#define BDATE   "10 January 2016"
+#define LSMDATE "10Jan16"
 
 #define RELEASE 1   /* Use ONLY in rpms */
 
@@ -23,7 +23,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2015 Kern Sibbald
+   Copyright (C) 2000-2016 Kern Sibbald
    Copyright (C) 2000-2015 Free Software Foundation Europe e.V.
 
    The original author of Bacula is Kern Sibbald, with contributions
