@@ -39,6 +39,7 @@ src/findlib/bfile.h
 src/findlib/find.h
 src/findlib/protos.h
 src/findlib/savecwd.h
+src/findlib/win32filter.h
 src/jcr.h
 src/lib/address_conf.h
 src/lib/alist.h
@@ -89,7 +90,6 @@ src/lib/waitq.h
 src/lib/watchdog.h
 src/lib/workq.h
 src/plugins/fd/fd_common.h
-src/plugins/sd/sd_common.h
 src/qt-console/bat.h
 src/qt-console/bat_conf.cpp
 src/qt-console/bat_conf.h
@@ -177,7 +177,6 @@ src/qt-console/util/comboutil.h
 src/qt-console/util/fmtwidgetitem.cpp
 src/qt-console/util/fmtwidgetitem.h
 src/qt-console/win32/qplatformdefs.h
-src/stored/bitarray.h
 src/stored/block.h
 src/stored/bsr.h
 src/stored/dev.h

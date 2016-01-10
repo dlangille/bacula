@@ -1083,7 +1083,6 @@ msgstr ""
 #: src/filed/filed.c:288 src/filed/filed.c:446
 #: src/gnome2-console/console.c:153 src/gnome2-console/console.c:182
 #: src/stored/stored.c:332 src/wx-console/console_thread.cpp:114
-#: src/wx-console/console_thread.cpp:140
 msgid "TLS required but not configured in Bacula.\n"
 msgstr ""
 
@@ -1473,7 +1472,6 @@ msgstr ""
 #: src/dird/dird_conf.c:1231 src/dird/dird_conf.c:1246
 #: src/dird/dird_conf.c:1842 src/console/console_conf.c:257
 #: src/filed/filed_conf.c:347 src/gnome2-console/console_conf.c:258
-#: src/tray-monitor/tray_conf.c:288 src/wx-console/console_conf.c:265
 #, c-format
 msgid "%s item is required in %s resource, but not found.\n"
 msgstr ""
@@ -2965,33 +2963,12 @@ msgid "Director"
 msgstr ""
 
 #: src/dird/ua_cmds.c:998 src/dird/ua_dotcmds.c:284 src/dird/ua_run.c:265
-#: src/dird/ua_select.c:168 src/wx-console/wxbrestorepanel.cpp:339
-#: src/wx-console/wxbrestorepanel.cpp:355
-#: src/wx-console/wxbrestorepanel.cpp:479
-#: src/wx-console/wxbrestorepanel.cpp:480
-#: src/wx-console/wxbrestorepanel.cpp:490
-#: src/wx-console/wxbrestorepanel.cpp:491
-#: src/wx-console/wxbrestorepanel.cpp:1154
-#: src/wx-console/wxbrestorepanel.cpp:1818
-#: src/wx-console/wxbrestorepanel.cpp:1889
+#: src/dird/ua_select.c:168 
 msgid "Storage"
 msgstr ""
 
 #: src/dird/ua_cmds.c:999 src/dird/ua_dotcmds.c:285 src/dird/ua_run.c:271
 #: src/dird/ua_select.c:311 src/dird/ua_select.c:420
-#: src/wx-console/wxbrestorepanel.cpp:336
-#: src/wx-console/wxbrestorepanel.cpp:354
-#: src/wx-console/wxbrestorepanel.cpp:431
-#: src/wx-console/wxbrestorepanel.cpp:432
-#: src/wx-console/wxbrestorepanel.cpp:442
-#: src/wx-console/wxbrestorepanel.cpp:443
-#: src/wx-console/wxbrestorepanel.cpp:690
-#: src/wx-console/wxbrestorepanel.cpp:1124
-#: src/wx-console/wxbrestorepanel.cpp:1211
-#: src/wx-console/wxbrestorepanel.cpp:1811
-#: src/wx-console/wxbrestorepanel.cpp:1813
-#: src/wx-console/wxbrestorepanel.cpp:1887
-#: src/wx-console/wxbrestorepanel.cpp:1943
 msgid "Client"
 msgstr ""
 
@@ -3705,7 +3682,6 @@ msgid "Enter a list of directories to restore for found JobIds"
 msgstr ""
 
 #: src/dird/ua_restore.c:418 src/dird/ua_status.c:760 src/filed/status.c:256
-#: src/stored/status.c:521 src/wx-console/wxbconfigpanel.cpp:212
 msgid "Cancel"
 msgstr ""
 
@@ -3999,23 +3975,16 @@ msgstr ""
 msgid "Restore Client"
 msgstr ""
 
-#: src/dird/ua_run.c:273 src/wx-console/wxbrestorepanel.cpp:356
-#: src/wx-console/wxbrestorepanel.cpp:844
-#: src/wx-console/wxbrestorepanel.cpp:1891
+#: src/dird/ua_run.c:273 
 msgid "When"
 msgstr ""
 
-#: src/dird/ua_run.c:274 src/wx-console/wxbrestorepanel.cpp:357
-#: src/wx-console/wxbrestorepanel.cpp:1117
-#: src/wx-console/wxbrestorepanel.cpp:1894
+#: src/dird/ua_run.c:274 
 msgid "Priority"
 msgstr ""
 
 #: src/dird/ua_run.c:278 src/dird/ua_select.c:506 src/dird/ua_select.c:596
-#: src/dird/ua_update.c:529 src/wx-console/wxbrestorepanel.cpp:338
-#: src/wx-console/wxbrestorepanel.cpp:527
-#: src/wx-console/wxbrestorepanel.cpp:537
-#: src/wx-console/wxbrestorepanel.cpp:1807
+#: src/dird/ua_update.c:529 
 msgid "Pool"
 msgstr ""
 
@@ -4023,14 +3992,11 @@ msgstr ""
 msgid "Verify Job"
 msgstr ""
 
-#: src/dird/ua_run.c:283 src/wx-console/wxbrestorepanel.cpp:349
-#: src/wx-console/wxbrestorepanel.cpp:1872
+#: src/dird/ua_run.c:283 
 msgid "Bootstrap"
 msgstr ""
 
-#: src/dird/ua_run.c:284 src/wx-console/wxbrestorepanel.cpp:350
-#: src/wx-console/wxbrestorepanel.cpp:1093
-#: src/wx-console/wxbrestorepanel.cpp:1874
+#: src/dird/ua_run.c:284
 msgid "Where"
 msgstr ""
 
@@ -4038,13 +4004,7 @@ msgstr ""
 msgid "File Relocation"
 msgstr ""
 
-#: src/dird/ua_run.c:286 src/wx-console/wxbrestorepanel.cpp:352
-#: src/wx-console/wxbrestorepanel.cpp:1101
-#: src/wx-console/wxbrestorepanel.cpp:1878
-#: src/wx-console/wxbrestorepanel.cpp:1879
-#: src/wx-console/wxbrestorepanel.cpp:1880
-#: src/wx-console/wxbrestorepanel.cpp:1881
-#: src/wx-console/wxbrestorepanel.cpp:1882
+#: src/dird/ua_run.c:286 
 msgid "Replace"
 msgstr ""
 
@@ -5021,7 +4981,6 @@ msgstr ""
 
 #: src/dird/ua_status.c:763 src/filed/status.c:259 src/lib/util.c:188
 #: src/lib/util.c:255 src/stored/btape.c:1189 src/stored/status.c:524
-#: src/wx-console/wxbconfigpanel.cpp:201
 msgid "OK"
 msgstr ""
 
@@ -5790,7 +5749,7 @@ msgstr ""
 msgid "File: %s\n"
 msgstr ""
 
-#: src/console/authenticate.c:131 src/wx-console/authenticate.c:142
+#: src/console/authenticate.c:131 
 msgid "TLS negotiation failed\n"
 msgstr ""
 
@@ -5801,18 +5760,8 @@ msgid "Bad response to Hello command: ERR=%s\n"
 msgstr ""
 
 #: src/console/authenticate.c:150 src/gnome2-console/authenticate.c:108
-#: src/tray-monitor/authenticate.c:104 src/wx-console/authenticate.c:157
+#: src/tray-monitor/authenticate.c:104 
 msgid "Director rejected Hello command\n"
-msgstr ""
-
-#: src/console/authenticate.c:160 src/wx-console/authenticate.c:167
-msgid ""
-"Director authorization problem.\n"
-"Most likely the passwords do not agree.\n"
-"If you are using TLS, there may have been a certificate validation error "
-"during the TLS handshake.\n"
-"Please see http://www.bacula.org/rel-manual/faq.html#AuthorizationErrors for "
-"help.\n"
 msgstr ""
 
 #: src/console/console.c:114
@@ -5902,13 +5851,11 @@ msgid "Connecting to Director %s:%d\n"
 msgstr ""
 
 #: src/console/console.c:538 src/gnome2-console/console.c:526
-#: src/wx-console/console_thread.cpp:391
 #, c-format
 msgid "Failed to initialize TLS context for Console \"%s\".\n"
 msgstr ""
 
 #: src/console/console.c:558 src/gnome2-console/console.c:548
-#: src/wx-console/console_thread.cpp:412
 #, c-format
 msgid "Failed to initialize TLS context for Director \"%s\".\n"
 msgstr ""
@@ -5974,19 +5921,17 @@ msgstr ""
 msgid "Autochanger error: ERR=%s\n"
 msgstr ""
 
-#: src/console/console_conf.c:138 src/gnome2-console/console_conf.c:134
-#: src/wx-console/console_conf.c:147
+#: src/console/console_conf.c:138
 #, c-format
 msgid "No record for %d %s\n"
 msgstr ""
 
-#: src/console/console_conf.c:147 src/wx-console/console_conf.c:156
+#: src/console/console_conf.c:147
 #, c-format
 msgid "Console: name=%s rcfile=%s histfile=%s\n"
 msgstr ""
 
 #: src/console/console_conf.c:151 src/gnome2-console/console_conf.c:143
-#: src/wx-console/console_conf.c:160
 #, c-format
 msgid "Director: name=%s address=%s DIRport=%d\n"
 msgstr ""
@@ -5995,11 +5940,7 @@ msgstr ""
 #: src/console/console_conf.c:276 src/console/console_conf.c:303
 #: src/filed/filed_conf.c:319 src/filed/filed_conf.c:384
 #: src/filed/filed_conf.c:414 src/gnome2-console/console_conf.c:154
-#: src/gnome2-console/console_conf.c:232 src/gnome2-console/console_conf.c:280
-#: src/gnome2-console/console_conf.c:310 src/stored/stored_conf.c:528
 #: src/stored/stored_conf.c:616 src/stored/stored_conf.c:651
-#: src/wx-console/console_conf.c:164 src/wx-console/console_conf.c:239
-#: src/wx-console/console_conf.c:284 src/wx-console/console_conf.c:311
 #, c-format
 msgid "Unknown resource type %d\n"
 msgstr ""
@@ -7288,345 +7229,6 @@ msgstr ""
 #: src/findlib/save-cwd.c:119
 #, c-format
 msgid "Cannot return to saved working directory: %s\n"
-msgstr ""
-
-#: src/gnome2-console/authenticate.c:87
-#, c-format
-msgid "%s: Director authorization problem.\n"
-msgstr ""
-
-#: src/gnome2-console/authenticate.c:88
-msgid "Director authorization problem.\n"
-msgstr ""
-
-#: src/gnome2-console/authenticate.c:90
-msgid ""
-"Please see http://www.bacula.org/rel-manual/faq.html#AuthorizationErrors for "
-"help.\n"
-msgstr ""
-
-#: src/gnome2-console/authenticate.c:100
-#, c-format
-msgid "%s: Bad response to Hello command: ERR=%s\n"
-msgstr ""
-
-#: src/gnome2-console/authenticate.c:102
-msgid "The Director is probably not running.\n"
-msgstr ""
-
-#: src/gnome2-console/console.c:102
-#, c-format
-msgid ""
-"\n"
-"Version: %s (%s) %s %s %s\n"
-"\n"
-"Usage: bgnome-console [-s] [-c config_file] [-d debug_level] [config_file]\n"
-"       -c <file>   set configuration file to file\n"
-"       -dnn        set debug level to nn\n"
-"       -s          no signals\n"
-"       -t          test - read configuration and exit\n"
-"       -?          print this message.\n"
-"\n"
-msgstr ""
-
-#: src/gnome2-console/console.c:234
-#, c-format
-msgid "Pthread cond init error = %s\n"
-msgstr ""
-
-#: src/gnome2-console/console.c:379
-msgid " Not Connected"
-msgstr ""
-
-#: src/gnome2-console/console.c:500
-#, c-format
-msgid " Connecting to Director %s:%d"
-msgstr ""
-
-#: src/gnome2-console/console.c:501
-#, c-format
-msgid ""
-"Connecting to Director %s:%d\n"
-"\n"
-msgstr ""
-
-#: src/gnome2-console/console.c:516 src/wx-console/console_thread.cpp:381
-#, c-format
-msgid "Passphrase for Console \"%s\" TLS private key: "
-msgstr ""
-
-#: src/gnome2-console/console.c:538 src/wx-console/console_thread.cpp:402
-#, c-format
-msgid "Passphrase for Director \"%s\" TLS private key: "
-msgstr ""
-
-#: src/gnome2-console/console.c:557 src/tray-monitor/tray-monitor.c:907
-#: src/wx-console/console_thread.cpp:420
-msgid "Director daemon"
-msgstr ""
-
-#: src/gnome2-console/console.c:569
-msgid " Initializing ..."
-msgstr ""
-
-#: src/gnome2-console/console.c:605
-msgid " Connected"
-msgstr ""
-
-#: src/gnome2-console/console.c:613
-msgid " Processing command ..."
-msgstr ""
-
-#: src/gnome2-console/console.c:648
-msgid " At prompt waiting for input ..."
-msgstr ""
-
-#: src/gnome2-console/console.c:768
-msgid " Ready"
-msgstr ""
-
-#: src/gnome2-console/console_conf.c:147
-#, c-format
-msgid "Console: name=%s\n"
-msgstr ""
-
-#: src/gnome2-console/console_conf.c:150 src/tray-monitor/tray_conf.c:195
-#, c-format
-msgid "ConsoleFont: name=%s font face=%s\n"
-msgstr ""
-
-#: src/gnome2-console/interface.c:202
-msgid "Bacula Console"
-msgstr ""
-
-#: src/gnome2-console/interface.c:235 src/wx-console/wxbmainframe.cpp:248
-#: src/wx-console/wxbmainframe.cpp:619
-msgid "Connect"
-msgstr ""
-
-#: src/gnome2-console/interface.c:238
-msgid "Connect to Director"
-msgstr ""
-
-#: src/gnome2-console/interface.c:242
-msgid "Run"
-msgstr ""
-
-#: src/gnome2-console/interface.c:245 src/gnome2-console/interface.c:682
-#: src/gnome2-console/interface.c:696
-msgid "Run a Job"
-msgstr ""
-
-#: src/gnome2-console/interface.c:249
-msgid "Dir Status"
-msgstr ""
-
-#: src/gnome2-console/interface.c:255 src/lib/util.c:293
-#: src/wx-console/wxbrestorepanel.cpp:404
-#: src/wx-console/wxbrestorepanel.cpp:1974
-msgid "Restore"
-msgstr ""
-
-#: src/gnome2-console/interface.c:261
-msgid "Label"
-msgstr ""
-
-#: src/gnome2-console/interface.c:267
-msgid "Msgs"
-msgstr ""
-
-#: src/gnome2-console/interface.c:270
-msgid "Display Messages"
-msgstr ""
-
-#: src/gnome2-console/interface.c:294
-msgid " Command: "
-msgstr ""
-
-#: src/gnome2-console/interface.c:303
-msgid "Enter Commands Here"
-msgstr ""
-
-#: src/gnome2-console/interface.c:314
-msgid " Status: "
-msgstr ""
-
-#: src/gnome2-console/interface.c:323 src/gnome2-console/interface.c:1709
-msgid "  "
-msgstr ""
-
-#: src/gnome2-console/interface.c:424
-msgid "About Bacula Console"
-msgstr ""
-
-#: src/gnome2-console/interface.c:439
-msgid "Bacula Console\n"
-msgstr ""
-
-#: src/gnome2-console/interface.c:448
-msgid "Copyright (c) 2000 - 2004, Kern Sibbald and John Walker"
-msgstr ""
-
-#: src/gnome2-console/interface.c:453
-msgid "Authors: Kern Sibbald and John Walker"
-msgstr ""
-
-#: src/gnome2-console/interface.c:458
-msgid "The Leading Open Source Backup Solution."
-msgstr ""
-
-#: src/gnome2-console/interface.c:523 src/gnome2-console/interface.c:540
-msgid "Select Director"
-msgstr ""
-
-#: src/gnome2-console/interface.c:570
-msgid "         "
-msgstr ""
-
-#: src/gnome2-console/interface.c:715 src/gnome2-console/interface.c:1631
-msgid "Job:"
-msgstr ""
-
-#: src/gnome2-console/interface.c:736
-msgid "   Type:"
-msgstr ""
-
-#: src/gnome2-console/interface.c:756 src/gnome2-console/interface.c:785
-#: src/gnome2-console/interface.c:1284 src/gnome2-console/interface.c:1680
-msgid " "
-msgstr ""
-
-#: src/gnome2-console/interface.c:765 src/gnome2-console/interface.c:1660
-#: src/wx-console/wxbrestorepanel.cpp:1886
-msgid "Client:"
-msgstr ""
-
-#: src/gnome2-console/interface.c:795 src/gnome2-console/interface.c:1689
-msgid "FileSet: "
-msgstr ""
-
-#: src/gnome2-console/interface.c:820 src/wx-console/wxbrestorepanel.cpp:1893
-msgid "Priority:"
-msgstr ""
-
-#: src/gnome2-console/interface.c:836
-msgid "Level:"
-msgstr ""
-
-#: src/gnome2-console/interface.c:857
-msgid "             "
-msgstr ""
-
-#: src/gnome2-console/interface.c:867 src/gnome2-console/interface.c:1433
-#: src/gnome2-console/interface.c:1718
-msgid "Pool:"
-msgstr ""
-
-#: src/gnome2-console/interface.c:888 src/gnome2-console/interface.c:919
-#: src/gnome2-console/interface.c:949 src/gnome2-console/interface.c:969
-#: src/gnome2-console/interface.c:989 src/gnome2-console/interface.c:1009
-#: src/gnome2-console/interface.c:1014 src/gnome2-console/interface.c:1483
-#: src/gnome2-console/interface.c:1739 src/gnome2-console/interface.c:1769
-#: src/gnome2-console/interface.c:1788 src/gnome2-console/interface.c:1793
-msgid "   "
-msgstr ""
-
-#: src/gnome2-console/interface.c:898 src/gnome2-console/interface.c:1407
-#: src/gnome2-console/interface.c:1748 src/wx-console/wxbrestorepanel.cpp:1888
-msgid "Storage:"
-msgstr ""
-
-#: src/gnome2-console/interface.c:929
-msgid "Messages:"
-msgstr ""
-
-#: src/gnome2-console/interface.c:959
-msgid "Where: "
-msgstr ""
-
-#: src/gnome2-console/interface.c:979 src/wx-console/wxbrestorepanel.cpp:1890
-msgid "When:"
-msgstr ""
-
-#: src/gnome2-console/interface.c:999 src/wx-console/wxbrestorepanel.cpp:1871
-msgid "Bootstrap:"
-msgstr ""
-
-#: src/gnome2-console/interface.c:1194
-msgid "Restore File Selection"
-msgstr ""
-
-#: src/gnome2-console/interface.c:1238
-msgid "Current dir:"
-msgstr ""
-
-#: src/gnome2-console/interface.c:1265
-msgid "Files Selected: "
-msgstr ""
-
-#: src/gnome2-console/interface.c:1385 src/gnome2-console/interface.c:1396
-msgid "Label a Volume"
-msgstr ""
-
-#: src/gnome2-console/interface.c:1458
-msgid "Volume Name:"
-msgstr ""
-
-#: src/gnome2-console/interface.c:1472
-msgid "Slot:"
-msgstr ""
-
-#: src/gnome2-console/interface.c:1598
-msgid "Restore Files Dialog"
-msgstr ""
-
-#: src/gnome2-console/interface.c:1613
-msgid "Restore Files"
-msgstr ""
-
-#: src/gnome2-console/interface.c:1778
-msgid "Before:"
-msgstr ""
-
-#: src/gnome2-console/interface.c:1824
-msgid "Select Files"
-msgstr ""
-
-#: src/gnome2-console/interface.c:1907
-msgid "Progress"
-msgstr ""
-
-#: src/gnome2-console/restore.c:149
-msgid "Mark"
-msgstr ""
-
-#: src/gnome2-console/restore.c:149
-msgid "File"
-msgstr ""
-
-#: src/gnome2-console/restore.c:149
-msgid "Mode"
-msgstr ""
-
-#: src/gnome2-console/restore.c:149 src/wx-console/wxbrestorepanel.cpp:306
-msgid "User"
-msgstr ""
-
-#: src/gnome2-console/restore.c:149 src/wx-console/wxbrestorepanel.cpp:310
-msgid "Group"
-msgstr ""
-
-#: src/gnome2-console/restore.c:149 src/wx-console/wxbrestorepanel.cpp:294
-msgid "Size"
-msgstr ""
-
-#: src/gnome2-console/restore.c:149 src/wx-console/wxbrestorepanel.cpp:298
-msgid "Date"
-msgstr ""
-
-#: src/gnome2-console/support.c:60 src/gnome2-console/support.c:85
-#, c-format
-msgid "Couldn't find pixmap file: %s"
 msgstr ""
 
 #: src/lib/address_conf.c:63
