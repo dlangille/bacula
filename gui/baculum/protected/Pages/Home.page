@@ -71,11 +71,11 @@
 				</fieldset>
 				<fieldset class="dashboard_field">
 					<legend><%[ Restore Wizard ]%></legend>
-					<a class="big" href="<%=$this->Service->constructUrl('RestoreWizard')%>" style="line-height: 73px; margin: 0 45px"><img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/restore.png" alt="" /><%[ Perform Restore ]%></a>
+					<a class="big" href="<%=$this->Service->constructUrl('RestoreWizard')%>" style="line-height: 73px; display: block; text-align: center;"><img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/restore.png" alt="" /><%[ Perform Restore ]%></a>
 				</fieldset>
 				<fieldset class="dashboard_field"<%=$this->User->getIsAdmin() === false ? ' style="display: none;"' : ''%>>
 					<legend><%[ Configuration Wizard ]%></legend>
-					<a class="big" href="<%=$this->Service->constructUrl('ConfigurationWizard')%>" style="line-height: 73px; margin: 0 45px"><img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/setting.png" alt="" /><%[ Baculum Settings ]%></a>
+					<a class="big" href="<%=$this->Service->constructUrl('ConfigurationWizard')%>" style="line-height: 73px; display: block; text-align: center;"><img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/setting.png" alt="" /><%[ Baculum Settings ]%></a>
 				</fieldset>
 			</div>
 				<div style="clear: both"></div>
