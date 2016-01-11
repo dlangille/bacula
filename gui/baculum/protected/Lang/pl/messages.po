@@ -41,6 +41,9 @@ msgstr "angielski"
 msgid "Polish"
 msgstr "polski"
 
+msgid "Portuguese"
+msgstr "portugalski"
+
 msgid "Console"
 msgstr "Konsola"
 
