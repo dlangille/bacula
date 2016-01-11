@@ -1327,6 +1327,7 @@ e_msg(const char *file, int line, int type, int level, const char *fmt,...)
     dispatch_message(NULL, type, 0, buf);
 
     if (type == M_ABORT) {
+       assert_msg = bstrdup(buf);
        char *p = 0;
        p[0] = 0;                      /* generate segmentation violation */
     }
@@ -1446,6 +1447,7 @@ Jmsg(JCR *jcr, int type, utime_t mtime, const char *fmt,...)
        char *p = 0;
        printf("Bacula forced SEG FAULT to obtain traceback.\n");
        syslog(LOG_DAEMON|LOG_ERR, "Bacula forced SEG FAULT to obtain traceback.\n");
+       assert_msg = bstrdup(rbuf);
        p[0] = 0;                      /* generate segmentation violation */
     }
     if (type == M_ERROR_TERM) {
