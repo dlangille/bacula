@@ -116,6 +116,9 @@ select mediaid,volumename,volstatus,volbytes,maxvolbytes,voljobs,volretention fr
 select * from JobMedia;
 select VolumeName,FirstWritten,LastWritten,VolStatus,VolBlocks,VolBytes from Media;
 
+time
+list volumes
+time
 @# 
 @# now do a restore
 @#
