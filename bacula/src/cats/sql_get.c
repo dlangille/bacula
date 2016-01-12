@@ -68,7 +68,7 @@ bool BDB::bdb_get_file_attributes_record(JCR *jcr, char *afname, JOB_DBR *jr, FI
 }
 
 
-/**
+/*
  * Get a File record
  *
  *  DO NOT use Jmsg in this routine.
@@ -162,10 +162,9 @@ bool BDB::bdb_get_file_record(JCR *jcr, JOB_DBR *jr, FILE_DBR *fdbr)
       Mmsg(errmsg, _("File record not found in Catalog.\n"));
    }
    return ok;
-
 }
 
-/**
+/*
  * Get Filename record
  * Returns: 0 on failure
  *          FilenameId on success
