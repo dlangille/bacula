@@ -6,8 +6,7 @@
 #
 #   Bacula(R) - The Network Backup Solution
 #
-#   Copyright (C) 2000-2015 Kern Sibbald
-#   Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
+#   Copyright (C) 2000-2016 Kern Sibbald
 #
 #   The original author of Bacula is Kern Sibbald, with contributions
 #   from many others, a complete list can be found in the file AUTHORS.
@@ -31,7 +30,7 @@
 #    included.
 #
 #  disk-changer "changer-device" "command" "slot" "archive-device" "drive-index" "volume"
-#                   $1              $2       $3        $4               $5         $6
+#		    $1		    $2	     $3        $4		$5	   $6
 #
 # By default the autochanger has 10 Volumes and 1 Drive.
 #
@@ -41,8 +40,8 @@
 #
 # changer-device is the name of a file that overrides the default
 #   volumes and drives.  It may have:
-#        maxslot=n   where n is one based (default 10)
-#        maxdrive=m  where m is zero based (default 1 -- i.e. 2 drives)
+#	 maxslot=n   where n is one based (default 10)
+#	 maxdrive=m  where m is zero based (default 1 -- i.e. 2 drives)
 #  
 #   This code can also simulate barcodes. You simply put
 #   a list of the slots and barcodes in the "base" directory/barcodes.
@@ -86,7 +85,7 @@ wd=@working_dir@
 dbgfile="$wd/disk-changer.log"
 debug() {
     if test -f $dbgfile; then
-        echo "`date +\"%Y%m%d-%H:%M:%S\"` $*" >> $dbgfile
+	echo "`date +\"%Y%m%d-%H:%M:%S\"` $*" >> $dbgfile
     fi
 }
 
@@ -99,8 +98,8 @@ make_temp_file() {
   if test x${TMPFILE} = x; then
      TMPFILE="$wd/disk-changer.$$"
      if test -f ${TMPFILE}; then
-        echo "Temp file security problem on: ${TMPFILE}"
-        exit 1
+	echo "Temp file security problem on: ${TMPFILE}"
+	exit 1
      fi
   fi
 }
@@ -111,14 +110,14 @@ check_parm_count() {
     pCount=$1
     pCountNeed=$2
     if test $pCount -lt $pCountNeed; then
-        echo "usage: disk-changer ctl-device command [slot archive-device drive-index]"
-        echo "  Insufficient number of arguments arguments given."
-        if test $pCount -lt 2; then
-            echo "  Mimimum usage is first two arguments ..."
-        else
-            echo "  Command expected $pCountNeed arguments"
-        fi
-        exit 1
+	echo "usage: disk-changer ctl-device command [slot archive-device drive-index]"
+	echo "	Insufficient number of arguments arguments given."
+	if test $pCount -lt 2; then
+	    echo "  Mimimum usage is first two arguments ..."
+	else
+	    echo "  Command expected $pCountNeed arguments"
+	fi
+	exit 1
     fi
 }
 
@@ -131,7 +130,7 @@ get_dir() {
    dir=`echo "$device" | sed -e s%/$bn%%g`
    if [ ! -d $dir ]; then
       echo "ERROR: Autochanger directory \"$dir\" does not exist."
-      echo "       You must create it."
+      echo "	   You must create it."
       exit 1
    fi
 }
@@ -178,32 +177,32 @@ fi
 #
 case $2 in
     list|listall)
-        check_parm_count $# 2
-        ;;
+	check_parm_count $# 2
+	;;
     slots)
-        check_parm_count $# 2
-        ;;
+	check_parm_count $# 2
+	;;
     transfer)
-        check_parm_count $# 4
-        if [ $slot -gt $maxslot ]; then
-           echo "Slot ($slot) out of range (1-$maxslot)"
-           debug "Error: Slot ($slot) out of range (1-$maxslot)"
-           exit 1
-        fi
-        ;;
+	check_parm_count $# 4
+	if [ $slot -gt $maxslot ]; then
+	   echo "Slot ($slot) out of range (1-$maxslot)"
+	   debug "Error: Slot ($slot) out of range (1-$maxslot)"
+	   exit 1
+	fi
+	;;
     *)
-        check_parm_count $# 5
-        if [ $drive -gt $maxdrive ]; then
-           echo "Drive ($drive) out of range (0-$maxdrive)"
-           debug "Error: Drive ($drive) out of range (0-$maxdrive)"
-           exit 1
-        fi
-        if [ $slot -gt $maxslot ]; then
-           echo "Slot ($slot) out of range (1-$maxslot)"
-           debug "Error: Slot ($slot) out of range (1-$maxslot)"
-           exit 1
-        fi
-        ;;
+	check_parm_count $# 5
+	if [ $drive -gt $maxdrive ]; then
+	   echo "Drive ($drive) out of range (0-$maxdrive)"
+	   debug "Error: Drive ($drive) out of range (0-$maxdrive)"
+	   exit 1
+	fi
+	if [ $slot -gt $maxslot ]; then
+	   echo "Slot ($slot) out of range (1-$maxslot)"
+	   debug "Error: Slot ($slot) out of range (1-$maxslot)"
+	   exit 1
+	fi
+	;;
 esac
 
 
@@ -214,21 +213,21 @@ case $cmd in
       debug "Doing disk -f $ctl unload $slot $device $drive $volume"
       get_dir
       if [ -f $dir/loaded${drive} ]; then
-         ld=`cat $dir/loaded${drive}`
+	 ld=`cat $dir/loaded${drive}`
       else 
-         echo "Storage Element $slot is Already Full"
-         debug "Unload error: $dir/loaded${drive} is already unloaded"
-         exit 1
+	 echo "Storage Element $slot is Already Full"
+	 debug "Unload error: $dir/loaded${drive} is already unloaded"
+	 exit 1
       fi
       if [ $slot -eq $ld ]; then
-         echo "0" >$dir/loaded${drive}
-         unlink $device 2>/dev/null >/dev/null
-         unlink ${device}.add 2>/dev/null >/dev/null
-         rm -f ${device} ${device}.add
+	 echo "0" >$dir/loaded${drive}
+	 unlink $device 2>/dev/null >/dev/null
+	 unlink ${device}.add 2>/dev/null >/dev/null
+	 rm -f ${device} ${device}.add
       else
-         echo "Storage Element $slot is Already Full"
-         debug "Unload error: $dir/loaded${drive} slot=$ld is already unloaded"
-         exit 1
+	 echo "Storage Element $slot is Already Full"
+	 debug "Unload error: $dir/loaded${drive} slot=$ld is already unloaded"
+	 exit 1
       fi
       ;;
 
@@ -238,53 +237,53 @@ case $cmd in
       i=0
       # Check if slot already in a drive
       while [ $i -le $maxdrive ]; do
-         if [ -f $dir/loaded${i} ]; then
-            ld=`cat $dir/loaded${i}`
-         else    
-            ld=0
-         fi
-         if [ $ld -eq $slot ]; then
-            echo "Drive ${i} Full (Storage element ${ld} loaded)"
-            debug "Load error: Cannot load Slot=${ld} in drive=$drive. Already in drive=${i}"
-            exit 1
-         fi
-         i=`expr $i + 1`
+	 if [ -f $dir/loaded${i} ]; then
+	    ld=`cat $dir/loaded${i}`
+	 else	 
+	    ld=0
+	 fi
+	 if [ $ld -eq $slot ]; then
+	    echo "Drive ${i} Full (Storage element ${ld} loaded)"
+	    debug "Load error: Cannot load Slot=${ld} in drive=$drive. Already in drive=${i}"
+	    exit 1
+	 fi
+	 i=`expr $i + 1`
       done
       # Check if we have a Volume name
       get_vol
       if [ $havevol -eq 0 ]; then
-         # check if slot exists
-         if [ ! -f $dir/slot${slot} ] ; then
-            echo "source Element Address $slot is Empty"
-            debug "Load error: source Element Address $slot is Empty"
-            exit 1
-         fi
+	 # check if slot exists
+	 if [ ! -f $dir/slot${slot} ] ; then
+	    echo "source Element Address $slot is Empty"
+	    debug "Load error: source Element Address $slot is Empty"
+	    exit 1
+	 fi
       fi
       if [ -f $dir/loaded${drive} ]; then
-         ld=`cat $dir/loaded${drive}`
+	 ld=`cat $dir/loaded${drive}`
       else
-         ld=0
+	 ld=0
       fi
       if [ $ld -ne 0 ]; then
-         echo "Drive ${drive} Full (Storage element ${ld} loaded)"
-         echo "Load error: Drive ${drive} Full (Storage element ${ld} loaded)"
-         exit 1
+	 echo "Drive ${drive} Full (Storage element ${ld} loaded)"
+	 echo "Load error: Drive ${drive} Full (Storage element ${ld} loaded)"
+	 exit 1
       fi
       echo "0" >$dir/loaded${drive}
       unlink $device 2>/dev/null >/dev/null
       unlink ${device}.add 2>/dev/null >/dev/null
       rm -f ${device} ${device}.add
       if [ $havevol -ne 0 ]; then
-         ln -s $dir/$volume $device
-         ln -s $dir/${volume}.add ${device}.add
-         rtn=$?
+	 ln -s $dir/$volume $device
+	 ln -s $dir/${volume}.add ${device}.add
+	 rtn=$?
       else
-         ln -s $dir/slot${slot} $device
-         ln -s $dir/slot${slot}.add ${device}.add
-         rtn=$?
+	 ln -s $dir/slot${slot} $device
+	 ln -s $dir/slot${slot}.add ${device}.add
+	 rtn=$?
       fi
       if [ $rtn -eq 0 ]; then
-         echo $slot >$dir/loaded${drive}
+	 echo $slot >$dir/loaded${drive}
       fi
       exit $rtn
       ;;
@@ -293,20 +292,20 @@ case $cmd in
       debug "Doing disk -f $ctl -- to list volumes"
       get_dir 
       if [ -f $dir/barcodes ]; then
-         cat $dir/barcodes
+	 cat $dir/barcodes
       else
-         i=1
-         while [ $i -le $maxslot ]; do
-            slot=$i
-            volume=
-            get_vol
-            if [ $havevol -eq 0 ]; then
-               echo "$i:"
-            else
-               echo "$i:$volume"
-            fi
-            i=`expr $i + 1`
-         done
+	 i=1
+	 while [ $i -le $maxslot ]; do
+	    slot=$i
+	    volume=
+	    get_vol
+	    if [ $havevol -eq 0 ]; then
+	       echo "$i:"
+	    else
+	       echo "$i:$volume"
+	    fi
+	    i=`expr $i + 1`
+	 done
       fi
       exit 0
       ;;
@@ -317,20 +316,20 @@ case $cmd in
       debug "Doing disk -f $ctl -- to list volumes"
       get_dir 
       if [ ! -f $dir/barcodes ]; then
-          exit 0
+	  exit 0
       fi
 
       # we print drive content seen by autochanger
       # and we also remove loaded media from the barcode list
       i=0
       while [ $i -le $maxdrive ]; do
-         if [ -f $dir/loaded${i} ]; then
-             ld=`cat $dir/loaded${i}`
-             v=`awk -F: "/^$ld:/"' { print $2 }' $dir/barcodes`
-             echo "D:$i:F:$ld:$v"
-             echo "^$ld:" >> $TMPFILE
-         fi
-         i=`expr $i + 1`
+	 if [ -f $dir/loaded${i} ]; then
+	     ld=`cat $dir/loaded${i}`
+	     v=`awk -F: "/^$ld:/"' { print $2 }' $dir/barcodes`
+	     echo "D:$i:F:$ld:$v"
+	     echo "^$ld:" >> $TMPFILE
+	 fi
+	 i=`expr $i + 1`
       done
 
       # Empty slots are not in barcodes file
@@ -339,15 +338,15 @@ case $cmd in
       grep -v -f $TMPFILE $dir/barcodes | sort -n | \
       perl -ne 'BEGIN { $cur=1 } 
        if (/(\d+):(.+)?/) {
-         if ($cur == $1) { 
-           print "S:$1:F:$2\n" 
-         } else { 
-           while ($cur < $1) {
-              print "S:$cur:E\n";
-              $cur++;
-           }
-         }
-         $cur++;
+	 if ($cur == $1) { 
+	   print "S:$1:F:$2\n" 
+	 } else { 
+	   while ($cur < $1) {
+	      print "S:$cur:E\n";
+	      $cur++;
+	   }
+	 }
+	 $cur++;
        } 
        END { while ($cur < '"$maxslot"') { print "S:$cur:E\n"; $cur++; } } '
 
@@ -360,12 +359,12 @@ case $cmd in
       make_temp_file
       slotdest=$device
       if [ -f $dir/slot{$slotdest} ]; then
-         echo "destination Element Address $slot is Full"
-         exit 1
+	 echo "destination Element Address $slot is Full"
+	 exit 1
       fi
       if [ ! -f $dir/slot${slot} ] ; then
-         echo "source Element Address $slot is Empty"
-         exit 1
+	 echo "source Element Address $slot is Empty"
+	 exit 1
       fi
 
       echo "Transfering $slot to $slotdest"
@@ -373,8 +372,8 @@ case $cmd in
       mv $dir/slot${slot}.add $dir/slot{$slotdest}.add
 
       if [ -f $dir/barcodes ]; then
-         sed "s/^$slot:/$slotdest:/" >  $TMPFILE
-         sort -n $TMPFILE > $dir/barcodes
+	 sed "s/^$slot:/$slotdest:/" >	$TMPFILE
+	 sort -n $TMPFILE > $dir/barcodes
       fi
       exit 0
       ;;
@@ -382,9 +381,9 @@ case $cmd in
       debug "Doing disk -f $ctl $drive -- to find what is loaded"
       get_dir
       if [ -f $dir/loaded${drive} ]; then
-         a=`cat $dir/loaded${drive}`
+	 a=`cat $dir/loaded${drive}`
       else
-         a="0"
+	 a="0"
       fi
       debug "Loaded: drive=$drive is $a"
       echo $a

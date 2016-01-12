@@ -2,8 +2,7 @@
 #
 #   Bacula(R) - The Network Backup Solution
 #
-#   Copyright (C) 2000-2015 Kern Sibbald
-#   Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
+#   Copyright (C) 2000-2016 Kern Sibbald
 #
 #   The original author of Bacula is Kern Sibbald, with contributions
 #   from many others, a complete list can be found in the file AUTHORS.
@@ -27,7 +26,7 @@
 #    in come cases, not all are used.
 #
 #  mtx-changer "changer-device" "command" "slot" "archive-device" "drive-index"
-#                  $1              $2       $3        $4               $5
+#		   $1		   $2	    $3	      $4	       $5
 #
 #  for example:
 #
@@ -38,13 +37,13 @@
 #   is /dev/nst0.
 #
 #  The commands are:
-#      Command            Function
-#      unload             unload a given slot
-#      load               load a given slot
-#      loaded             which slot is loaded?
-#      list               list Volume names (requires barcode reader)
-#      slots              how many slots total?
-#      listall            list all info
+#      Command		  Function
+#      unload		  unload a given slot
+#      load		  load a given slot
+#      loaded		  which slot is loaded?
+#      list		  list Volume names (requires barcode reader)
+#      slots		  how many slots total?
+#      listall		  list all info
 #      transfer
 #
 #  Slots are numbered from 1 ...
@@ -89,7 +88,7 @@ fi
 dbgfile="@working_dir@/mtx.log"
 debug() {
     if test -f $dbgfile -a ${debug_level} -ge $1; then
-        echo "`date +%m%d-%H:%M:%S.%N|cut -c1-16` ${chgr_id} $2" >> $dbgfile
+	echo "`date +%m%d-%H:%M:%S.%N|cut -c1-16` ${chgr_id} $2" >> $dbgfile
     fi
 }
 
@@ -102,8 +101,8 @@ make_temp_file() {
   if test x${TMPFILE} = x; then
      TMPFILE="@working_dir@/mtx.$$"
      if test -f ${TMPFILE}; then
-        echo "ERROR: Temp file security problem on: ${TMPFILE}"
-        exit 1
+	echo "ERROR: Temp file security problem on: ${TMPFILE}"
+	exit 1
      fi
   fi
 }
@@ -124,8 +123,8 @@ make_err_file() {
   if test x${ERRFILE} = x; then
      ERRFILE="@working_dir@/mtx.err.$$"
      if test -f ${ERRFILE}; then
-        echo "ERROR: Temp file security problem on: ${ERRFILE}"
-        exit 1
+	echo "ERROR: Temp file security problem on: ${ERRFILE}"
+	exit 1
      fi
   fi
 }
@@ -160,14 +159,14 @@ check_parm_count() {
     pCount=$1
     pCountNeed=$2
     if test $pCount -lt $pCountNeed; then
-        echo "ERROR: usage: mtx-changer ctl-device command [slot archive-device drive-index]"
-        echo "  Insufficient number of arguments given."
-        if test $pCount -lt 2; then
-            echo "  Mimimum usage is first two arguments ..."
-        else
-            echo "  Command expected $pCountNeed arguments"
-        fi
-        exit 1
+	echo "ERROR: usage: mtx-changer ctl-device command [slot archive-device drive-index]"
+	echo "	Insufficient number of arguments given."
+	if test $pCount -lt 2; then
+	    echo "  Mimimum usage is first two arguments ..."
+	else
+	    echo "  Command expected $pCountNeed arguments"
+	fi
+	exit 1
     fi
 }
 
@@ -176,17 +175,17 @@ check_parm_count() {
 #
 case $2 in
     list|listall)
-        check_parm_count $# 2
-        ;;
+	check_parm_count $# 2
+	;;
     slots)
-        check_parm_count $# 2
-        ;;
+	check_parm_count $# 2
+	;;
     transfer)
-        check_parm_count $# 4
-        ;;
+	check_parm_count $# 4
+	;;
     *)
-        check_parm_count $# 5
-        ;;
+	check_parm_count $# 5
+	;;
 esac
 
 
@@ -203,29 +202,29 @@ case $cmd in
    unload)
 
       if test ${offline} -eq 1 ; then
-        mt -f $device offline
+	mt -f $device offline
       fi
       if test ${offline_sleep} -ne 0 ; then
-        sleep ${offline_sleep}
+	sleep ${offline_sleep}
       fi
       make_err_file
       for i in 1 2 3 4 5 ; do
-         debug $idbglvl "Doing mtx -f $ctl unload slot=$slot drv=$drive"
-         ${MTX} -f $ctl unload $slot $drive 2>${ERRFILE}
-         rtn=$?
-         if test $rtn -eq 0 ; then
-            break
-         fi
-         grep "Error Code=" ${ERRFILE} 2>/dev/null 1>/dev/null
-         if test $? -ne 0 ; then
-            break
-         fi
-         sleep $i
+	 debug $idbglvl "Doing mtx -f $ctl unload slot=$slot drv=$drive"
+	 ${MTX} -f $ctl unload $slot $drive 2>${ERRFILE}
+	 rtn=$?
+	 if test $rtn -eq 0 ; then
+	    break
+	 fi
+	 grep "Error Code=" ${ERRFILE} 2>/dev/null 1>/dev/null
+	 if test $? -ne 0 ; then
+	    break
+	 fi
+	 sleep $i
       done
       cat ${ERRFILE}
       rm -f ${ERRFILE} >/dev/null 2>&1
       if test $rtn -ne 0 ; then
-         debug $idbglvl "FAIL: mtx -f $ctl unload slot=$slot drv=$drive"
+	 debug $idbglvl "FAIL: mtx -f $ctl unload slot=$slot drv=$drive"
       fi
       exit $rtn
       ;;
@@ -233,26 +232,26 @@ case $cmd in
    load)
       make_err_file
       for i in 1 2 3 4 5 ; do
-         debug $idbglvl "Doing mtx -f $ctl load slot=$slot drv=$drive"
-         ${MTX} -f $ctl load $slot $drive 2>${ERRFILE}
-         rtn=$?
-         if test $rtn -eq 0 ; then
-            break
-         fi
-         grep "Error Code=" ${ERRFILE} 2>/dev/null 1>/dev/null
-         if test $? -ne 0 ; then
-            break
-         fi
-         sleep $i
+	 debug $idbglvl "Doing mtx -f $ctl load slot=$slot drv=$drive"
+	 ${MTX} -f $ctl load $slot $drive 2>${ERRFILE}
+	 rtn=$?
+	 if test $rtn -eq 0 ; then
+	    break
+	 fi
+	 grep "Error Code=" ${ERRFILE} 2>/dev/null 1>/dev/null
+	 if test $? -ne 0 ; then
+	    break
+	 fi
+	 sleep $i
       done
       if test ${load_sleep} -ne 0 ; then
-        sleep ${load_sleep}
+	sleep ${load_sleep}
       fi
       wait_for_drive $device
       cat ${ERRFILE}
       rm -f ${ERRFILE} >/dev/null 2>&1
       if test $rtn -ne 0 ; then
-         debug $idbglvl "FAIL: mtx -f $ctl load slot=$slot drv=$drive"
+	 debug $idbglvl "FAIL: mtx -f $ctl load slot=$slot drv=$drive"
       fi
       exit $rtn
       ;;
@@ -260,43 +259,43 @@ case $cmd in
    list) 
       make_temp_file
       if test ${inventory} -ne 0 ; then
-        ${MTX} -f $ctl inventory
+	${MTX} -f $ctl inventory
       fi
       debug $dbglvl "Doing mtx -f $ctl list"
       ${MTX} -f $ctl status >${TMPFILE}
       rtn=$?
       if test ${vxa_packetloader} -ne 0 ; then
-        cat ${TMPFILE} | grep " *Storage Element [0-9]*:.*Full" | sed "s/ Storage Element //" | sed "s/Full :VolumeTag=//"
+	cat ${TMPFILE} | grep " *Storage Element [0-9]*:.*Full" | sed "s/ Storage Element //" | sed "s/Full :VolumeTag=//"
       else
-        cat ${TMPFILE} | grep " Storage Element [0-9]*:.*Full" | awk "{print \$3 \$4}" | sed "s/Full *\(:VolumeTag=\)*//"
+	cat ${TMPFILE} | grep " Storage Element [0-9]*:.*Full" | awk "{print \$3 \$4}" | sed "s/Full *\(:VolumeTag=\)*//"
       fi
       cat ${TMPFILE} | grep "^Data Transfer Element [0-9]*:Full (Storage Element [0-9]" | awk '{printf "%s:%s\n",$7,$10}'
       rm -f ${TMPFILE} >/dev/null 2>&1
       if test $rtn -ne 0 ; then
-         debug $idbglvl "FAIL: mtx -f $ctl list"
+	 debug $idbglvl "FAIL: mtx -f $ctl list"
       fi
       exit $rtn
       ;;
 
    listall)
-#  Drive content:         D:Drive num:F:Slot loaded:Volume Name
+#  Drive content:	  D:Drive num:F:Slot loaded:Volume Name
 #  D:0:F:2:vol2        or D:Drive num:E
 #  D:1:F:42:vol42   
 #  D:3:E
 # 
 #  Slot content:
-#  S:1:F:vol1             S:Slot num:F:Volume Name
-#  S:2:E               or S:Slot num:E
+#  S:1:F:vol1		  S:Slot num:F:Volume Name
+#  S:2:E	       or S:Slot num:E
 #  S:3:F:vol4
 # 
 #  Import/Export tray slots:
-#  I:10:F:vol10           I:Slot num:F:Volume Name
-#  I:11:E              or I:Slot num:E
+#  I:10:F:vol10 	  I:Slot num:F:Volume Name
+#  I:11:E	       or I:Slot num:E
 #  I:12:F:vol40
  
       make_temp_file
       if test ${inventory} -ne 0 ; then
-        ${MTX} -f $ctl inventory
+	${MTX} -f $ctl inventory
       fi
       debug $dbglvl "Doing mtx -f $ctl -- to list all"
       ${MTX} -f $ctl status >${TMPFILE}
@@ -324,7 +323,7 @@ case $cmd in
       ${MTX} -f $ctl transfer $slot $slotdest
       rtn=$?
       if test $rtn -ne 0 ; then
-         debug $idbglvl "FAIL: mtx -f $ctl transfer from=$slot to=$slotdest"
+	 debug $idbglvl "FAIL: mtx -f $ctl transfer from=$slot to=$slotdest"
       fi
       exit $rtn
       ;;
@@ -338,7 +337,7 @@ case $cmd in
       cat ${TMPFILE} | grep "^Data Transfer Element $drive:Empty" | awk "{print 0}"
       rm -f ${TMPFILE} >/dev/null 2>&1
       if test $rtn -ne 0 ; then
-         debug $idbglvl "FAIL: mtx -f $ctl loaded drv=$drive"
+	 debug $idbglvl "FAIL: mtx -f $ctl loaded drv=$drive"
       fi
       exit $rtn
       ;;
@@ -348,7 +347,7 @@ case $cmd in
       ${MTX} -f $ctl status | grep " *Storage Changer" | awk "{print \$5}"
       rtn=$?
       if test $rtn -ne 0 ; then
-         debug $idbglvl "FAIL: mtx -f $ctl slots"
+	 debug $idbglvl "FAIL: mtx -f $ctl slots"
       fi
       ;;
 esac
