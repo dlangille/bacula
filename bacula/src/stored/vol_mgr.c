@@ -209,12 +209,13 @@ static void debug_list_volumes(const char *imsg)
 
    foreach_vol(vol) {
       if (vol->dev) {
-         Mmsg(msg, "List %s: %s in_use=%d swap=%d on %s device %s\n", imsg,
+         Mmsg(msg, "List %s: %s in_use=%d swap=%d slot=%d on %s device %s\n", imsg,
               vol->vol_name, vol->is_in_use(), vol->is_swapping(),
+              vol->get_slot(),
               vol->dev->print_type(), vol->dev->print_name());
       } else {
-         Mmsg(msg, "List %s: %s in_use=%d swap=%d no dev\n", imsg, vol->vol_name,
-              vol->is_in_use(), vol->is_swapping());
+         Mmsg(msg, "List %s: %s in_use=%d swap=%d slot=%d no dev\n", imsg, vol->vol_name,
+              vol->is_in_use(), vol->is_swapping(), vol->get_slot());
       }
       Dmsg1(dbglvl, "%s", msg.c_str());
    }
@@ -281,8 +282,8 @@ static VOLRES *new_vol_item(DCR *dcr, const char *VolumeName)
    vol->vol_name = bstrdup(VolumeName);
    if (dcr) {
       vol->dev = dcr->dev;
-      Dmsg3(dbglvl, "new Vol=%s at %p dev=%s\n",
-            VolumeName, vol->vol_name, vol->dev->print_name());
+      Dmsg4(dbglvl, "new Vol=%s slot=%d at %p dev=%s\n",
+            VolumeName, vol->get_slot(), vol->vol_name, vol->dev->print_name());
    }
    vol->init_mutex();
    vol->inc_use_count();
@@ -407,8 +408,8 @@ VOLRES *reserve_volume(DCR *dcr, const char *VolumeName)
        *  is not being used and is marked as not reserved.
        */
       if (strcmp(vol->vol_name, VolumeName) == 0) {
-         Dmsg2(dbglvl, "set reserved vol=%s dev=%s\n", VolumeName,
-               vol->dev->print_name());
+         Dmsg3(dbglvl, "set reserved vol=%s slot=%d dev=%s\n", VolumeName,
+               vol->get_slot(), vol->dev->print_name());
          goto get_out;                  /* Volume already on this device */
       } else {
          /* Don't release a volume if it was reserved by someone other than us */
@@ -423,7 +424,7 @@ VOLRES *reserve_volume(DCR *dcr, const char *VolumeName)
          Dmsg2(dbglvl, "reserve_vol free vol=%s at %p\n", vol->vol_name, vol->vol_name);
          /* If old Volume is still mounted, must unload it */
          if (strcmp(vol->vol_name, dev->VolHdr.VolumeName) == 0) {
-            Dmsg0(50, "set_unload\n");
+            Dmsg2(50, "set_unload vol=%s slot=%d\n", vol->vol_name, vol->get_slot());
             dev->set_unload();          /* have to unload current volume */
          }
          free_volume(dev);              /* Release old volume entry */
@@ -489,7 +490,8 @@ VOLRES *reserve_volume(DCR *dcr, const char *VolumeName)
             Dmsg3(dbglvl, "==== Swap vol=%s from dev=%s to %s\n",
                VolumeName, vol->dev->print_name(), dev->print_name());
             free_volume(dev);            /* free any volume attached to our drive */
-            Dmsg1(50, "set_unload dev=%s\n", dev->print_name());
+            Dmsg3(50, "set_unload vol=%s slot=%d dev=%s\n", vol->vol_name,
+               vol->get_slot(), dev->print_name());
             dev->set_unload();           /* Unload any volume that is on our drive */
             dcr->set_dev(vol->dev);      /* temp point to other dev */
             slot = get_autochanger_loaded_slot(dcr);  /* get slot on other drive */
@@ -687,7 +689,8 @@ bool volume_unused(DCR *dcr)
       return false;
    }
 
-   Dmsg1(dbglvl, "Clear in_use vol=%s\n", dev->vol->vol_name);
+   Dmsg2(dbglvl, "Clear in_use vol=%s slot=%d\n", dev->vol->vol_name,
+         dev->vol->get_slot());
    dev->vol->clear_in_use();
 
    if (dev->vol->is_swapping()) {
@@ -702,8 +705,9 @@ bool volume_unused(DCR *dcr)
     *  explicitly read in this drive. This allows the SD to remember
     *  where the tapes are or last were.
     */
-   Dmsg4(dbglvl, "set not reserved vol=%s writers=%d reserves=%d dev=%s\n",
-      dev->vol->vol_name, dev->num_writers, dev->num_reserved(), dev->print_name());
+   Dmsg5(dbglvl, "set not reserved vol=%s slot=%d writers=%d reserves=%d dev=%s\n",
+      dev->vol->vol_name, dev->vol->get_slot(), dev->num_writers, 
+      dev->num_reserved(), dev->print_name());
    if (dev->is_tape() || dev->is_autochanger()) {
       return true;
    } else {
@@ -733,12 +737,13 @@ bool free_volume(DEVICE *dev)
    }
    /* Don't free a volume while it is being swapped */
    if (!vol->is_swapping()) {
-      Dmsg1(dbglvl, "Clear in_use vol=%s\n", vol->vol_name);
+      Dmsg2(dbglvl, "Clear in_use vol=%s slot=%d\n", vol->vol_name, vol->get_slot());
       dev->vol = NULL;
       if (vol->is_writing()) {
          vol_list->remove(vol);
       }
-      Dmsg2(dbglvl, "Remove volume %s dev=%s\n", vol->vol_name, dev->print_name());
+      Dmsg3(dbglvl, "Remove volume %s slot=%d dev=%s\n", vol->vol_name, 
+         vol->get_slot(), dev->print_name());
       free_vol_item(vol);
       debug_list_volumes("free_volume");
    } else {
