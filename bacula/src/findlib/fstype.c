@@ -337,7 +337,41 @@ bool fstype(FF_PKT *ff_pkt, char *fs, int fslen)
 /* Read mtab entries  */
 bool read_mtab(mtab_handler_t *mtab_handler, void *user_ctx)
 { 
-#ifdef HAVE_GETMNTENT
+/* Debian stretch GNU/KFreeBSD has both getmntinfo and getmntent, but
+   only the first seems to work, so ordering is important here */
+#ifdef HAVE_GETMNTINFO
+   struct stat st;
+#if defined(ST_NOWAIT)
+   int flags = ST_NOWAIT;
+#elif defined(MNT_NOWAIT)
+   int flags = MNT_NOWAIT;
+#else
+   int flags = 0;
+#endif
+#if defined(HAVE_NETBSD_OS)
+   struct statvfs *mntinfo;
+#else
+   struct statfs *mntinfo;
+#endif
+   int nument;
+
+   P(mutex);
+   if ((nument = getmntinfo(&mntinfo, flags)) > 0) {
+      while (nument-- > 0) {
+         if (is_rootfs(mntinfo->f_fstypename)) {
+            continue;
+         }
+         if (stat(mntinfo->f_mntonname, &st) < 0) {
+            continue;
+         }
+         mtab_handler(user_ctx, &st, mntinfo->f_mntfromname,
+            mntinfo->f_mntonname, mntinfo->f_fstypename, NULL);
+         mntinfo++;
+      }
+   }
+   V(mutex);
+/* HAVE_GETMNTINFO */
+#elif defined(HAVE_GETMNTENT)
    FILE *mntfp;
    struct stat st;
  
@@ -389,39 +423,6 @@ bool read_mtab(mtab_handler_t *mtab_handler, void *user_ctx)
 #endif
 
 #endif /* HAVE_GETMNTENT */
-
-#ifdef HAVE_GETMNTINFO
-   struct stat st;
-#if defined(ST_NOWAIT)
-   int flags = ST_NOWAIT;
-#elif defined(MNT_NOWAIT)
-   int flags = MNT_NOWAIT;
-#else
-   int flags = 0;
-#endif
-#if defined(HAVE_NETBSD_OS)
-   struct statvfs *mntinfo;
-#else
-   struct statfs *mntinfo;
-#endif
-   int nument;
-
-   P(mutex);
-   if ((nument = getmntinfo(&mntinfo, flags)) > 0) {
-      while (nument-- > 0) {
-         if (is_rootfs(mntinfo->f_fstypename)) {
-            continue;
-         }
-         if (stat(mntinfo->f_mntonname, &st) < 0) {
-            continue;
-         }
-         mtab_handler(user_ctx, &st, mntinfo->f_mntfromname,
-            mntinfo->f_mntonname, mntinfo->f_fstypename, NULL);
-         mntinfo++;
-      }
-   } 
-   V(mutex);
-#endif /* HAVE_GETMNTINFO */
    return true;
 } 
  

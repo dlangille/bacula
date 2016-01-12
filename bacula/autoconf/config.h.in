@@ -137,6 +137,7 @@
 /* OSes */
 #undef HAVE_LINUX_OS
 #undef HAVE_FREEBSD_OS
+#undef HAVE_KFREEBSD_OS
 #undef HAVE_NETBSD_OS
 #undef HAVE_OPENBSD_OS
 #undef HAVE_BSDI_OS
