@@ -37,7 +37,7 @@
  
 #include "cats.h" 
 #include <mysql.h> 
-#define __BDB_MYSQL_H_ 1 
+#define  BDB_MYSQL_H_ 1 
 #include "bdb_mysql.h" 
  
 /* ----------------------------------------------------------------------- 
