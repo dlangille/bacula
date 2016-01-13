@@ -570,6 +570,12 @@ bool DCR::rewrite_volume_label(bool recycle)
          return false;
       }
    }
+   ASSERT2(dcr->VolumeName[0], "Empty Volume name");
+   dev->setVolCatName(dcr->VolumeName);
+   if (!dir_get_volume_info(dcr, GET_VOL_INFO_FOR_WRITE)) {
+      Leave(100);
+      return false;
+   }
    dev->set_labeled();
    /* Set or reset Volume statistics */
    dev->VolCatInfo.VolCatJobs = 0;
@@ -590,8 +596,6 @@ bool DCR::rewrite_volume_label(bool recycle)
    Dmsg1(100, "dir_update_vol_info. Set Append vol=%s\n", dcr->VolumeName);
    dev->VolCatInfo.VolFirstWritten = time(NULL);
    dev->setVolCatStatus("Append");
-   ASSERT2(dcr->VolumeName[0], "Empty Volume name");
-   dev->setVolCatName(dcr->VolumeName);
    if (!dir_update_volume_info(dcr, true, true)) {  /* indicate relabel */
       Leave(100);
       return false;
@@ -607,7 +611,8 @@ bool DCR::rewrite_volume_label(bool recycle)
     * End writing real Volume label (from pre-labeled tape), or recycling
     *  the volume.
     */
-   Dmsg1(100, "OK from rewrite vol label. Vol=%s\n", dcr->VolumeName);
+   Dmsg3(100, "OK from rewrite vol label. adata=%d slot=%d Vol=%s\n",
+      dcr->block->adata, dev->VolCatInfo.Slot, dcr->VolumeName);
    Leave(100);
    return true;
 }
