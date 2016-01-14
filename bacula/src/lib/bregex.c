@@ -16,6 +16,7 @@
  *
  * This code draws many ideas from the regular expression packages by
  * Henry Spencer of the University of Toronto and Richard Stallman of
+ * the Free Software Foundation.
  *
  * Emacs-specific code and syntax table code is almost directly borrowed
  * from GNU regexp.
