@@ -204,6 +204,10 @@ again:
       jcr->full_pool = run->full_pool; /* override full pool */
       jcr->run_full_pool_override = true;
    }
+   if (run->vfull_pool) {
+      jcr->vfull_pool = run->vfull_pool; /* override virtual full pool */
+      jcr->run_vfull_pool_override = true;
+   }
    if (run->inc_pool) {
       jcr->inc_pool = run->inc_pool;  /* override inc pool */
       jcr->run_inc_pool_override = true;

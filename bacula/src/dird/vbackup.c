@@ -50,23 +50,13 @@ void vbackup_cleanup(JCR *jcr, int TermCode);
 bool do_vbackup_init(JCR *jcr)
 {
 
-   if (!get_or_create_fileset_record(jcr)) {
-      Dmsg1(dbglevel, "JobId=%d no FileSet\n", (int)jcr->JobId);
-      return false;
-   }
+  /* 
+   * if the read pool has not been allocated yet due to the job 
+   * being upgraded to a virtual full then allocate it now 
+   */
+  if (!jcr->rpool_source)
+    jcr->rpool_source = get_pool_memory(PM_MESSAGE);
 
-   apply_pool_overrides(jcr);
-
-   if (!allow_duplicate_job(jcr)) {
-      return false;
-   }
-
-   jcr->jr.PoolId = get_or_create_pool_record(jcr, jcr->pool->name());
-   if (jcr->jr.PoolId == 0) {
-      Dmsg1(dbglevel, "JobId=%d no PoolId\n", (int)jcr->JobId);
-      Jmsg(jcr, M_FATAL, 0, _("Could not get or create a Pool record.\n"));
-      return false;
-   }
    /*
     * Note, at this point, pool is the pool for this job.  We
     *  transfer it to rpool (read pool), and a bit later,
@@ -76,7 +66,7 @@ bool do_vbackup_init(JCR *jcr)
    jcr->rpool = jcr->pool;            /* save read pool */
    pm_strcpy(jcr->rpool_source, jcr->pool_source);
 
-   /* If pool storage specified, use it for restore */
+   /* If pool storage specified, use it for virtual full */
    copy_rstorage(jcr, jcr->pool->storage, _("Pool resource"));
 
    Dmsg2(dbglevel, "Read pool=%s (From %s)\n", jcr->rpool->name(), jcr->rpool_source);

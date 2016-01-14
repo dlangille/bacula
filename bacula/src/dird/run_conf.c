@@ -259,6 +259,7 @@ void store_run(LEX *lc, RES_ITEM *item, int index, int pass)
             case 'P':                 /* Pool */
             case 'N':                 /* NextPool */
             case 'f':                 /* FullPool */
+            case 'v':                 /* VFullPool */
             case 'i':                 /* IncPool */
             case 'd':                 /* DifPool */
                token = lex_get_token(lc, T_NAME);
@@ -278,6 +279,9 @@ void store_run(LEX *lc, RES_ITEM *item, int index, int pass)
                      break;
                   case 'f':
                      lrun.full_pool = (POOL *)res;
+                     break;
+                  case 'v':
+                     lrun.vfull_pool = (POOL *)res;
                      break;
                   case 'i':
                      lrun.inc_pool = (POOL *)res;

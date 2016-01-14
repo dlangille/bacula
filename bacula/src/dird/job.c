@@ -1175,6 +1175,17 @@ void apply_pool_overrides(JCR *jcr)
          }
       }
       break;
+   case L_VIRTUAL_FULL:
+      if (jcr->vfull_pool) {
+         jcr->pool = jcr->vfull_pool;
+         pool_override = true;
+         if (jcr->run_vfull_pool_override) {
+            pm_strcpy(jcr->pool_source, _("Run VFullPool override"));
+         } else {
+            pm_strcpy(jcr->pool_source, _("Job VFullPool override"));
+         }
+      }
+      break;
    case L_INCREMENTAL:
       if (jcr->inc_pool) {
          jcr->pool = jcr->inc_pool;
@@ -1543,6 +1554,7 @@ void set_jcr_defaults(JCR *jcr, JOB *job)
       pm_strcpy(jcr->next_pool_source, _("Job Pool's NextPool resource"));
    }
    jcr->full_pool = job->full_pool;
+   jcr->vfull_pool = job->vfull_pool;
    jcr->inc_pool = job->inc_pool;
    jcr->diff_pool = job->diff_pool;
    if (job->pool->catalog) {

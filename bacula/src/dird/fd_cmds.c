@@ -171,6 +171,7 @@ void get_level_since_time(JCR *jcr, char *since, int since_len)
    int JobLevel;
    bool have_full;
    bool do_full = false;
+   bool do_vfull = false;
    bool do_diff = false;
    utime_t now;
    utime_t last_full_time = 0;
@@ -236,10 +237,15 @@ void get_level_since_time(JCR *jcr, char *since, int since_len)
          do_diff = ((now - last_diff_time) >= jcr->job->MaxDiffInterval);
          Dmsg2(50, "do_diff=%d diffInter=%lld\n", do_diff, jcr->job->MaxDiffInterval);
       }
-      /* Note, do_full takes precedence over do_diff */
+      /* Note, do_full takes precedence over do_vfull and do_diff */
       if (have_full && jcr->job->MaxFullInterval > 0) {
          do_full = ((now - last_full_time) >= jcr->job->MaxFullInterval);
       }
+      else
+      if (have_full && jcr->job->MaxVirtualFullInterval > 0) {
+         do_vfull = ((now - last_full_time) >= jcr->job->MaxVirtualFullInterval);
+      }
+      
       free_pool_memory(stime);
 
       if (do_full) {
@@ -249,7 +255,14 @@ void get_level_since_time(JCR *jcr, char *since, int since_len)
          bsnprintf(since, since_len, _(" (upgraded from %s)"),
             level_to_str(jcr->getJobLevel()));
          jcr->setJobLevel(jcr->jr.JobLevel = L_FULL);
-       } else if (do_diff) {
+      } else if (do_vfull) {
+         /* No recent Full job found, and MaxVirtualFull is set so upgrade this one to Virtual Full */
+         Jmsg(jcr, M_INFO, 0, "%s", db_strerror(jcr->db));
+         Jmsg(jcr, M_INFO, 0, _("No prior or suitable Full backup found in catalog. Doing Virtual FULL backup.\n"));
+         bsnprintf(since, since_len, _(" (upgraded from %s)"),
+            level_to_str(jcr->getJobLevel()));
+         jcr->setJobLevel(jcr->jr.JobLevel = L_VIRTUAL_FULL);
+      } else if (do_diff) {
          /* No recent diff job found, so upgrade this one to Diff */
          Jmsg(jcr, M_INFO, 0, _("No prior or suitable Differential backup found in catalog. Doing Differential backup.\n"));
          bsnprintf(since, since_len, _(" (upgraded from %s)"),

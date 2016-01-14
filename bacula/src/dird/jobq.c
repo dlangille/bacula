@@ -733,7 +733,9 @@ static bool reschedule_job(JCR *jcr, jobq_t *jq, jobq_item_t *je)
       njcr->next_pool = jcr->next_pool;
       njcr->run_next_pool_override = jcr->run_next_pool_override;
       njcr->full_pool = jcr->full_pool;
+      njcr->vfull_pool = jcr->vfull_pool;
       njcr->run_full_pool_override = jcr->run_full_pool_override;
+      njcr->run_vfull_pool_override = jcr->run_vfull_pool_override;
       njcr->inc_pool = jcr->inc_pool;
       njcr->run_inc_pool_override = jcr->run_inc_pool_override;
       njcr->diff_pool = jcr->diff_pool;

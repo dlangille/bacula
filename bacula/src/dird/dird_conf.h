@@ -403,6 +403,7 @@ public:
    utime_t MaxRunSchedTime;           /* max run time in seconds from Scheduled time*/
    utime_t RescheduleInterval;        /* Reschedule interval */
    utime_t MaxFullInterval;           /* Maximum time interval between Fulls */
+   utime_t MaxVirtualFullInterval;    /* Maximum time interval between Virtual Fulls */
    utime_t MaxDiffInterval;           /* Maximum time interval between Diffs */
    utime_t DuplicateJobProximity;     /* Permitted time between duplicicates */
    utime_t SnapRetention;             /* Snapshot retention period in seconds */
@@ -420,6 +421,7 @@ public:
    POOL      *pool;                   /* Where is media -- Media Pool */
    POOL      *next_pool;              /* Next Pool for Copy/Migrate/VirtualFull */
    POOL      *full_pool;              /* Pool for Full backups */
+   POOL      *vfull_pool;             /* Pool for Virtual Full backups */
    POOL      *inc_pool;               /* Pool for Incremental backups */
    POOL      *diff_pool;              /* Pool for Differental backups */
    char      *selection_pattern;
@@ -676,6 +678,7 @@ public:
    POOL *pool;                        /* Pool override */
    POOL *next_pool;                   /* Next pool override */
    POOL *full_pool;                   /* Pool override */
+   POOL *vfull_pool;                  /* Pool override */
    POOL *inc_pool;                    /* Pool override */
    POOL *diff_pool;                   /* Pool override */
    STORE *storage;                    /* Storage override */

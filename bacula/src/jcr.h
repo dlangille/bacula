@@ -331,6 +331,7 @@ public:
    POOL *next_pool;                   /* Next pool override */
    POOL *rpool;                       /* Read pool. Used only in migration */
    POOL *full_pool;                   /* Full backup pool resource */
+   POOL *vfull_pool;                  /* Virtual Full backup pool resource */
    POOL *inc_pool;                    /* Incremental backup pool resource */
    POOL *diff_pool;                   /* Differential backup pool resource */
    FILESET *fileset;                  /* FileSet resource */
@@ -395,6 +396,7 @@ public:
    bool cmdline_next_pool_override;   /* Next pool is overridden */
    bool run_next_pool_override;       /* Next pool is overridden */
    bool run_full_pool_override;
+   bool run_vfull_pool_override;
    bool run_inc_pool_override;
    bool run_diff_pool_override;
    bool sd_canceled;                  /* set if SD canceled */

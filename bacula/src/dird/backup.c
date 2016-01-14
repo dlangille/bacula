@@ -64,19 +64,19 @@ bool do_backup_init(JCR *jcr)
    /* Make local copy */
    jcr->RescheduleIncompleteJobs = jcr->job->RescheduleIncompleteJobs;
 
-   if (jcr->is_JobLevel(L_VIRTUAL_FULL)) {
-      return do_vbackup_init(jcr);
-   }
-   free_rstorage(jcr);                   /* we don't read so release */
-
    if (!get_or_create_fileset_record(jcr)) {
+      Dmsg1(100, "JobId=%d no FileSet\n", (int)jcr->JobId);
       return false;
    }
 
    /*
     * Get definitive Job level and since time
+    * unless it's a virtual full.  In that case
+    * it is not needed.
     */
-   get_level_since_time(jcr, jcr->since, sizeof(jcr->since));
+   if (!jcr->is_JobLevel(L_VIRTUAL_FULL)) {
+      get_level_since_time(jcr, jcr->since, sizeof(jcr->since));
+   }
 
    apply_pool_overrides(jcr);
 
@@ -86,8 +86,21 @@ bool do_backup_init(JCR *jcr)
 
    jcr->jr.PoolId = get_or_create_pool_record(jcr, jcr->pool->name());
    if (jcr->jr.PoolId == 0) {
+      Dmsg1(100, "JobId=%d no PoolId\n", (int)jcr->JobId);
+      Jmsg(jcr, M_FATAL, 0, _("Could not get or create a Pool record.\n"));
       return false;
    }
+
+   /*
+    * If we are a virtual full job or got upgraded to one
+    * then we divert at this point and call the virtual full 
+    * backup init method
+    */ 
+   if (jcr->is_JobLevel(L_VIRTUAL_FULL)) {
+     return do_vbackup_init(jcr);
+   }
+
+   free_rstorage(jcr);                   /* we don't read so release */
 
    /* If pool storage specified, use it instead of job storage */
    copy_wstorage(jcr, jcr->pool->storage, _("Pool resource"));
