@@ -579,17 +579,19 @@ void BDB::bdb_list_base_files_for_job(JCR *jcr, JobId_t jobid, DB_LIST_HANDLER *
     * Stupid MySQL is NON-STANDARD !
     */
    if (bdb_get_type_index() == SQL_TYPE_MYSQL) {
-      Mmsg(cmd, "SELECT CONCAT(Path.Path,File.Filename) AS Filename "
-           "FROM BaseFiles, File, Path "
+      Mmsg(cmd, "SELECT CONCAT(Path.Path,Filename.Name) AS Filename "
+           "FROM BaseFiles, File, Filename, Path "
            "WHERE BaseFiles.JobId=%s AND BaseFiles.BaseJobId = File.JobId "
            "AND BaseFiles.FileId = File.FileId "
+           "AND Filename.FilenameId=File.FilenameId "
            "AND Path.PathId=File.PathId",
          edit_int64(jobid, ed1));
    } else {
-      Mmsg(cmd, "SELECT Path.Path||File.Filename AS Filename "
-           "FROM BaseFiles, File, Path "
+      Mmsg(cmd, "SELECT Path.Path||Filename.Name AS Filename "
+           "FROM BaseFiles, File, Filename, Path "
            "WHERE BaseFiles.JobId=%s AND BaseFiles.BaseJobId = File.JobId "
            "AND BaseFiles.FileId = File.FileId "
+           "AND Filename.FilenameId=File.FilenameId "
            "AND Path.PathId=File.PathId",
            edit_int64(jobid, ed1));
    }
