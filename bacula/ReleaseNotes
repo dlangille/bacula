@@ -35,6 +35,8 @@ New Features and changes summary:
 - Configure SSL connection to MySQL
 - New chio-changer-freebase in examples/autochangers
   New directives in bacula-dir.conf in Catalog{} resource
+     for the MySQL backend (not currently implemented for
+     Postgresql or SQLite).
    dbsslkey
    dbsslcert
    dbsslca
