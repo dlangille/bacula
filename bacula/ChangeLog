@@ -1,5 +1,317 @@
-              Changelog on version 7.2.0
+              Changelog on version 7.4.0
 
+
+Release Version 7.4.0
+
+
+
+14Jan16
+ - Put back missing line in copyright
+ - Update date
+ - Implement MaxVirtualFullInterval
+ - Update AUTHORS
+
+13Jan16
+ - Ensure relabel has latest vol info may fix bug #1412
+ - Update AUTHORS
+
+12Jan16
+ - Change license as per agreement with FSFE
+ - Apply Carsten's patch that fixes bug #2192 builds on kfreebsd
+ - Update AUTHORS file
+ - Add some additional tape slot debug code
+
+11Jan16
+ - baculum: Add Wanderlei Huttel to AUTHORS
+ - baculum: Enable Portuguese language on web interface
+ - baculum: Implement Portuguese language support
+ - baculum: Assign Baculum copyright to Kern Sibbald
+ - Add more debug to recycle-test
+ - More debug info when aborting
+
+10Jan16
+ - baculum: Fix sorting in restore by group most recent backups
+ - Change copyright as per agreement with FSFE
+ - Update po files
+ - Change copyright as per agreement with FSFE
+
+09Jan16
+ - baculum: Fix restore group most recent backups for MySQL
+
+06Jan16
+ - Fix FD DisableCommands
+
+05Jan16
+ - baculum: Fix to change user password
+
+04Jan16
+ - Add ExpiresIn field in list and llist media output
+ - Fix #1548 about Solaris SIGBUS with accurate mode backup
+
+02Jan16
+ - Change copyright as per agreement with FSFE + update copyright year
+ - Finish revert of patch
+ - Revert commit 1157f172ea1c3b3
+ - Update year to 2016
+ - Backport some Enterprise code to sql_list.c
+
+01Jan16
+ - Change copyright as per agreement with FSFE
+ - Add info message of #jobs consolidated in Virtual Full
+ - baculum: Unify user validation
+ - baculum: Fix showing bconsole test result in configuration wizard
+ - baculum: Fix auto-login after finishing wizard
+ - baculum: Check if auth data exists before log in try
+ - Add HasBase+Comment to llist Jobs
+ - Fix a few debug outputs that should be unsigned
+
+31Dec15
+ - baculum: Add php-xml to requirements
+ - Fix seg fault in btape fixes bug #2180
+ - Fix slight error in autoprune -- should fix bug #2151
+ - Change copyright as per agreement with FSFE
+ - baculum: Add first unit tests
+
+30Dec15
+ - Fix #1545 about fix in manual_prune.pl script with large number of volumes
+ - Fix false status output. Fixes bug #2103
+ - Integrate patch into latest version, which fixes bug #1882
+ - Fix bug #2090 correct detection of GCC
+ - baculum: Add support for terminated with warnings job status
+ - baculum: Hide users input on ESC key press
+ - baculum: Fix logout action on Apache web server
+ - baculum: Implement users management from web interface
+ - baculum: Prevent opening new sessions for each request
+
+27Dec15
+ - Fix CLANG warning messages -- fixes bug #2090
+ - Add new chio-changer-freebase from bug #2115
+ - Applied modified patch from bug#2117 to fix bpipe end of stream
+ - Apply patch from bug #2165 to fix the update sqlite3 script
+ - baculum: Rework access by restricted consoles
+
+26Dec15
+ - Fix update MD5 failure bug reported by Peter Keller
+
+25Dec15
+ - baculum: Add dashboard panel
+
+23Dec15
+ - Patch to add MySQL ssl access
+
+21Dec15
+ - Change copyright as per agreement with FSFE
+
+20Dec15
+ - Manually apply patch in bug #2156 to allow building on KFreeBSD
+ - Fix bug #2153 with patch submitted by Ana Arruda
+ - Prevent possible seg fault
+ - Fix possible seg fault if debug mode set
+ - baculum: Close console on press ESC key
+ - Change copyright as per agreement with FSFE
+ - baculum: Switch to started job status just after job start
+
+19Dec15
+ - baculum: Add possibility to open configuration windows from URL
+ - Fix restore when storage specified on command line
+ - baculum: Add jobbytes and media type to volumes list
+ - Set jcr in heartbeat thread of FD
+ - Remove not yet implemented from UA Verify Volume Data message
+
+18Dec15
+ - Fix restore of Windows streams to non-Windows machines
+ - Add new verify data test
+ - Implement level=Data to the Verify job
+ - baculum: Fix requirements path
+
+16Dec15
+ - Fix #1524 about bextract trace file location
+ - Partial modification of copyrights as per agreement with FSFE
+ - Fix truncate bug free_volume problem
+
+14Dec15
+ - baculum: Fix showing table header
+ - baculum: Search field works with all table cells
+
+13Dec15
+ - baculum: Do not refresh window lists if toolbar is open or elements are 
+  checked
+ - baculum: Remember sort order for data grids
+ - baculum: Add example Nginx config
+ - baculum: Fix working with php-fpm
+ - baculum: Fix sorting formatted values in tables
+ - baculum: Improve size formatter precision
+ - baculum: Fix jobs count in job list
+ - baculum: Show jobid in job configuration window
+ - baculum: Add jobbytes and jobfiles columns in job list
+
+12Dec15
+ - baculum: Get system timezone for PHP if possible
+ - baculum: Fix restore when a lot of jobids given
+ - baculum: Remove temporary Bvfs table when restore starts
+ - baculum: Show copy job label in job list
+ - baculum: Set default job attributes (level, client, fileset, pool, storage, 
+  priority) in Run job panel
+ - baculum: Get job show result by job name or jobid
+
+11Dec15
+ - baculum: Set half size window as default window size
+ - baculum: Not remember controls state in jobs window
+ - baculum: Add session cache
+ - Fix truncate race bug #1382
+ - Fix some low level messages to display correctly
+
+28Nov15
+ - baculum: Remove deprecated message in initial wizard
+ - baculum: Update SELinux policy module
+ - baculum: Fix update pool action when no volumes in pool
+ - baculum: Split configuration windows into two tabs: actions and console
+ - baculum: Change default elements limit to 500 elements
+ - baculum: Add drive parameter to bconsole release command execution
+ - baculum: Switch interface from performance mode to normal mode due to no 
+  cache checking in performance mode
+
+27Nov15
+ - Fix #1470 Fix setdebug command when all components are selected
+ - baculum: Set default elements limit in window to 1000 elements
+
+25Nov15
+ - baculum: Fix expectation failed error during restore
+ - baculum: Switch to debug mode only when debug is enabled in config
+ - baculum: Switch interface to performance mode
+ - baculum: Add JSMin from framework for complete switch interface to performance 
+  mode
+ - baculum: Add Ulrich Leodolter to AUTHORS
+ - baculum: Fix end-of-file warning in bconsole calls. Patch from Ulrich Leodolter
+
+22Nov15
+ - baculum: Fix remove users file during upgrade deb packages
+
+21Nov15
+ - Add new JOB_DBR field
+ - #ifdef out bpluginfo since it does not compile
+
+20Nov15
+ - Fix #1449 about a FileDaemon segfault with the fstype option
+
+17Nov15
+ - Remove vestiges of rechdr_queue hopefully fixes bug #2180
+ - Apply bconsole manpage patch from bug #2182
+ - Apply ppc64el configure detection patch from bug #2183
+
+12Nov15
+ - Fix #1414 When the FD is down, status dir now prints "is waiting for Client 
+  xx-fd"
+
+11Nov15
+ - Ensure that JOB_DBR is properly initialized before a db_list_job_records()
+
+10Nov15
+ - Implement new options in list command
+ - Add @tall command to log both input/output in a log file
+
+31Oct15
+ - Fix #1360 about bextract -t not documented in the man page
+
+30Oct15
+ - Update spec file for latest OSX versions
+ - Fix compilation on MacOS
+
+28Oct15
+ - fix syntax error
+
+27Oct15
+ - Improve Jmsg in response(), display SIGNAL number when appropriate
+ - Avoid segfault in dump_block() when the block_len is invalid
+
+23Oct15
+ - Fix #1368 about xattr error not displayed correctly at restore time
+
+22Oct15
+ - If we swapped a Volume, clear in_use bit on Volume
+
+19Oct15
+ - Fix #1362 about libgcc dependency in sles12 bat package
+ - Remove installation of manpage for bplugininfo
+ - Fix bug 2171 cannot build tray-monitor
+
+18Oct15
+ - Enhance bvfs performance .bvfs_update for MySQL
+ - Do some sanity checks on user inputs
+ - Enhance bvfs performance .bvfs_update for MySQL
+ - Enhance bvfs performance .bvfs_update for MySQL
+ - Recompile configure.in
+ - Fix bug 2173 QT tray monitor can not be built due to missing files in configure
+
+16Oct15
+ - dedup fix bextract bug
+
+15Oct15
+ - Move plugin_free() in free_jcr()
+ - Fix bug #2083 -- Fix sockaddr_to_ascii for FreeBSD
+
+10Oct15
+ - Fix fadvise bug found by Robert Heinzmann
+
+22Sep15
+ - Fix compilation without zlib and lzo
+ - Fix compilation error with new fstype_cmp() function
+ - Fix compilation problem with AFS
+
+19Sep15
+ - Fix compilation on Solaris/FreeBSD
+
+18Sep15
+ - Fix segfault in open_bpipe() when the program is empty
+
+17Sep15
+ - Modify find_next_volume_for_append() to not send the same volume twice
+
+15Sep15
+ - Avoid <NULL> string displayed in restore menu
+ - Do not update state file after a bacula-xxx -t
+
+10Sep15
+ - Fix #804 about misleading message with the purge command
+ - Fix automount feature after a label command
+
+20Aug15
+ - rpms: Add Fedora22 and Systemd support for redhat rpms
+
+19Aug15
+ - Add missing required packages versions
+
+18Aug15
+ - Reinsert tabs in systemd Makefile.in
+
+17Aug15
+ - Remove old DVD.conf in examples
+
+16Aug15
+ - baculum: Fix default values in Makefile
+ - baculum: Split deb result package into baculum, baculum-lighttpd and baculum-apache2 
+  packages
+ - baculum: Provide LICENSE-FOSS file content in Baculum deb packages (copyright 
+  file)
+ - baculum: Add deb template files and deb configs examples
+ - baculum: Change Makefile to using also for deb packages template
+
+11Aug15
+ - Use Client Catalog resource in get_catalog_resource() if "client" is specified 
+  in command line
+
+07Jul15
+ - Fix #1131 about Job::Next Pool resource precedence over the Pool::Next pool 
+  directive
+
+11Feb15
+ - Fix #898 truncate volumes larger than 200 bytes
+
+Bugs fixed/closed since last release:
+1131 1360 1362 1368 1382 1412 1414 1449 1470 1524 1545 1548 1882 2083 2090
+2103 2115 2117 2151 2153 2156 2165 2180 2182 2183 2192 804 898
+
+==========================================================
 
 Release Version 7.2.0
 

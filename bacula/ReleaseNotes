@@ -1,6 +1,139 @@
 
-               Release Notes for Bacula 7.2.0
+               Release Notes for Bacula 7.4.0
 
+Release version 7.4.0
+
+The diff between Bacula 7.0.6 and Bacula 7.2.0 is 254,442
+which represents very large change, for the most part 
+contributed to the Bacula project by Bacula Systems SA.
+
+This is a new release with a new version number. It has been
+very thourouly tested, but as always, the new features may not
+always work as expected.
+
+The Catalog database format has not changed since version the
+prior release (7.2.0).
+
+Compatibility:
+--------------
+As always, both the Community Director and Storage daemon(s) must be upgraded
+at the same time.  Any File daemon running on the same machine as a Director
+or Storage daemon must be of the same version.
+
+Older File Daemons should be compatible with the 7.4.0 Director and Storage
+daemons.  There should be no need to upgrade older File Daemons.
+
+New Features:
+Please see the New Features chapter of the manual for documentation on
+the new features.  The new features are currently only in the New Features
+chapter and have not yet been integrated into the main chapters of the
+manual.
+
+More detailed changes:
+
+14Jan16
+ - Implement MaxVirtualFullInterval
+ - Update AUTHORS
+ - Ensure relabel has latest vol info may fix bug #1412
+ - Change license as per agreement with FSFE
+ - Apply Carsten's patch that fixes bug #2192 builds on kfreebsd
+ - baculum: Enable Portuguese language on web interface
+ - baculum: Implement Portuguese language support
+ - baculum: Assign Baculum copyright to Kern Sibbald
+ - baculum: Fix sorting in restore by group most recent backups
+ - baculum: Fix restore group most recent backups for MySQL
+ - Fix FD DisableCommands
+ - baculum: Fix to change user password
+ - Add ExpiresIn field in list and llist media output
+ - Fix #1548 about Solaris SIGBUS with accurate mode backup
+ - Backport more Enterprise code to sql_list.c
+ - Add info message of #jobs consolidated in Virtual Full
+ - baculum: Unify user validation
+ - Add HasBase+Comment to llist Jobs
+ - Fix seg fault in btape fixes bug #2180
+ - Fix slight error in autoprune -- should fix bug #2151
+ - baculum: Add first unit tests
+ - Fix #1545 about fix in manual_prune.pl script with large number of volumes
+ - Fix false status output. Fixes bug #2103
+ - Integrate patch into latest version, which fixes bug #1882
+ - Fix bug #2090 correct detection of GCC
+ - Fix CLANG warning messages -- fixes bug #2090
+ - Add new chio-changer-freebase from bug #2115
+ - Applied modified patch from bug#2117 to fix bpipe end of stream
+ - Apply patch from bug #2165 to fix the update sqlite3 script
+ - Fix update MD5 failure bug reported by Peter Keller
+ - baculum: Add dashboard panel
+ - Patch to add MySQL ssl access
+ - Manually apply patch in bug #2156 to allow building on KFreeBSD
+ - Fix bug #2153 with patch submitted by Ana Arruda
+ - baculum: Switch to started job status just after job start
+ - baculum: Add possibility to open configuration windows from URL
+ - Fix restore when storage specified on command line
+ - Fix restore of Windows streams to non-Windows machines
+ - Implement level=Data to the Verify job
+ - Fix #1524 about bextract trace file location
+ - Fix truncate bug free_volume problem
+ - baculum: Remember sort order for data grids
+ - baculum: Improve size formatter precision
+ - baculum: Fix jobs count in job list
+ - baculum: Add jobbytes and jobfiles columns in job list
+ - baculum: Get system timezone for PHP if possible
+ - baculum: Fix restore when a lot of jobids given
+ - baculum: Set default job attributes (level, client, fileset, pool, storage, 
+  priority) in Run job panel
+ - Fix truncate race bug #1382
+ - baculum: Fix update pool action when no volumes in pool
+ - baculum: Split configuration windows into two tabs: actions and console
+ - baculum: Change default elements limit to 500 elements
+ - baculum: Add drive parameter to bconsole release command execution
+ - Fix #1470 Fix setdebug command when all components are selected
+ - baculum: Fix expectation failed error during restore
+ - Add new JOB_DBR field
+ - #ifdef out bpluginfo since it does not compile
+ - Fix #1449 about a FileDaemon segfault with the fstype option
+ - Remove vestiges of rechdr_queue hopefully fixes bug #2180
+ - Apply bconsole manpage patch from bug #2182
+ - Apply ppc64el configure detection patch from bug #2183
+ - Fix #1414 When the FD is down, status dir now prints "is waiting for Client 
+  xx-fd"
+ - Implement new options in list command
+ - Add @tall command to log both input/output in a log file
+ - Fix #1360 about bextract -t not documented in the man page
+ - Update spec file for latest OSX versions
+ - Fix compilation on MacOS
+ - Improve Jmsg in response(), display SIGNAL number when appropriate
+ - Avoid segfault in dump_block() when the block_len is invalid
+ - Fix #1368 about xattr error not displayed correctly at restore time
+ - Fix bug 2173 QT tray monitor can not be built due to missing files in configure
+ - Move plugin_free() in free_jcr()
+ - Fix bug #2083 -- Fix sockaddr_to_ascii for FreeBSD
+ - Fix fadvise bug found by Robert Heinzmann
+ - Fix compilation without zlib and lzo
+ - Fix compilation error with new fstype_cmp() function
+ - Fix compilation problem with AFS
+ - Fix compilation on Solaris/FreeBSD
+ - Fix segfault in open_bpipe() when the program is empty
+ - Modify find_next_volume_for_append() to not send the same volume twice
+ - Avoid <NULL> string displayed in restore menu
+ - Do not update state file after a bacula-xxx -t
+ - Fix #804 about misleading message with the purge command
+ - Fix automount feature after a label command
+ - Reinsert tabs in systemd Makefile.in
+ - baculum: Provide LICENSE-FOSS file content in Baculum deb packages (copyright 
+  file)
+ - Use Client Catalog resource in get_catalog_resource() if "client" is specified 
+  in command line
+ - Fix #1131 about Job::Next Pool resource precedence over the Pool::Next pool 
+  directive
+ - Fix #898 truncate volumes larger than 200 bytes
+
+Bugs fixed/closed since last release:
+1131 1360 1362 1368 1382 1412 1414 1449 1470 1524 1545 1548 1882 2083 2090
+2103 2115 2117 2151 2153 2156 2165 2180 2182 2183 2192 804 898
+
+
+
+================================================================
 Release version 7.2.0
 
 Bacula code: Total files = 733 Total lines = 303,426
@@ -674,4 +807,3 @@ Detailed changes:
  - Improve SQL failure reporting
  - First cut backport BEE to community
  - Add copyright to mtx-changer.in
-
