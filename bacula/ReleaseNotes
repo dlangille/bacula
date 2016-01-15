@@ -23,11 +23,44 @@ or Storage daemon must be of the same version.
 Older File Daemons should be compatible with the 7.4.0 Director and Storage
 daemons.  There should be no need to upgrade older File Daemons.
 
-New Features:
+New features and changes:
 Please see the New Features chapter of the manual for documentation on
 the new features.  The new features are currently only in the New Features
 chapter and have not yet been integrated into the main chapters of the
 manual.
+
+New Features and changes summary:
+- Support for KFREEBSD OS
+- Improved support for Clang
+- Configure SSL connection to MySQL
+- New chio-changer-freebase in examples/autochangers
+  New directives in bacula-dir.conf in Catalog{} resource
+   dbsslkey
+   dbsslcert
+   dbsslca
+   dbsslcapath
+   dbsslcipher
+- examples/autochangers/rc-chio-changer removed
+- examples/devices/DVD.conf removed
+- updated copyrights
+- Add "Expires in" to list and llist volumes
+- Implement a more efficient Volume selection algorithm between DIR and SD
+- Implement new list/llist command keywords:
+   order=asc|ascending
+   order=desc|decending
+   limit=nn
+   jobstatus=
+   Client=
+   JobErrors
+- Implement new bconsole @tall command that outputs input and
+  output to console and terminal.  Note, this also outputs 
+  bconsole input commands.
+- Implement MaxVirtualFullInterval
+- Implement VirtualFullPool override
+- Pool overrides work better
+- Automatic selection of catalog from client where possible.
+- Implement VerifyData level type for Verify jobs.
+
 
 More detailed changes:
 
