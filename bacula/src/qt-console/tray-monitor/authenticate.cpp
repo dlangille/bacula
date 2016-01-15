@@ -55,7 +55,7 @@ static char FDOKhello[] = "2000 OK Hello";
 /*
  * Authenticate Director
  */
-int authenticate_director(JCR *jcr, MONITOR *mon, DIRRES *director)
+int authenticate_director(JCR *jcr, MONITOR *mon, DIRRES */*director*/)
 {
    BSOCK *dir = jcr->dir_bsock;
    int tls_local_need = BNET_TLS_NONE;
