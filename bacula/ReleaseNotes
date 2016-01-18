@@ -3,12 +3,11 @@
 
 Release version 7.4.0
 
-The diff between Bacula 7.0.6 and Bacula 7.2.0 is 254,442
-which represents very large change, for the most part 
-contributed to the Bacula project by Bacula Systems SA.
+For the most part the changes were contributed to the Bacula 
+project by Bacula Systems SA.
 
 This is a new release with a new version number. It has been
-very thourouly tested, but as always, the new features may not
+very thoroughly tested, but as always, the new features may not
 always work as expected.
 
 The Catalog database format has not changed since version the
@@ -49,7 +48,7 @@ New Features and changes summary:
 - Implement a more efficient Volume selection algorithm between DIR and SD
 - Implement new list/llist command keywords:
    order=asc|ascending
-   order=desc|decending
+   order=desc|descending
    limit=nn
    jobstatus=
    Client=
