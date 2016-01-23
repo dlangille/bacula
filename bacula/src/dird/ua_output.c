@@ -142,7 +142,7 @@ int show_cmd(UAContext *ua, const char *cmd)
    int i, j, type, len;
    int recurse;
    char *res_name;
-   RES *res = NULL;
+   RES *res;
 
    Dmsg1(20, "show: %s\n", ua->UA_sock->msg);
 
@@ -155,7 +155,7 @@ int show_cmd(UAContext *ua, const char *cmd)
       }
 
       type = 0;
-
+      res = NULL;
       res_name = ua->argk[i];
       if (!ua->argv[i]) {             /* was a name given? */
          /* No name, dump all resources of specified type */
@@ -172,7 +172,6 @@ int show_cmd(UAContext *ua, const char *cmd)
                break;
             }
          }
-
       } else {
          /* Dump a single resource with specified name */
          recurse = 0;
