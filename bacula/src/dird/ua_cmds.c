@@ -2544,10 +2544,10 @@ bool open_db(UAContext *ua)
                              ua->catalog->db_user,
                              ua->catalog->db_password, ua->catalog->db_address,
                              ua->catalog->db_port, ua->catalog->db_socket,
-                             ua->catalog->db_ssl_key, ua->catalog->db_ssl_cert,
-                             ua->catalog->db_ssl_ca, ua->catalog->db_ssl_capath,
-                             ua->catalog->db_ssl_cipher,
-                             mult_db_conn, ua->catalog->disable_batch_insert);
+                             ua->catalog->db_ssl_mode, ua->catalog->db_ssl_key,
+                             ua->catalog->db_ssl_cert, ua->catalog->db_ssl_ca,
+                             ua->catalog->db_ssl_capath, ua->catalog->db_ssl_cipher,
+                             mult_db_conn, ua->catalog->disable_batch_insert); 
    if (!ua->db || !db_open_database(ua->jcr, ua->db)) {
       ua->error_msg(_("Could not open catalog database \"%s\".\n"),
                  ua->catalog->db_name);

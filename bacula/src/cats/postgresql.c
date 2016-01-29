@@ -100,8 +100,8 @@ BDB_POSTGRESQL::~BDB_POSTGRESQL()
  */
 BDB *db_init_database(JCR *jcr, const char *db_driver, const char *db_name, const char *db_user, 
                        const char *db_password, const char *db_address, int db_port, const char *db_socket, 
-                       const char *db_ssl_key, const char *db_ssl_cert, const char *db_ssl_ca,
-                       const char *db_ssl_capath, const char *db_ssl_cipher,
+                       const char *db_ssl_mode, const char *db_ssl_key, const char *db_ssl_cert,
+                       const char *db_ssl_ca, const char *db_ssl_capath, const char *db_ssl_cipher,
                        bool mult_db_connections, bool disable_batch_insert) 
 {
    BDB_POSTGRESQL *mdb = NULL;
@@ -139,7 +139,21 @@ BDB *db_init_database(JCR *jcr, const char *db_driver, const char *db_name, cons
    }
    if (db_socket) {
       mdb->m_db_socket = bstrdup(db_socket);
-   } 
+   }
+   if (db_ssl_mode) {
+      mdb->m_db_ssl_mode = bstrdup(db_ssl_mode);
+   } else {
+      mdb->m_db_ssl_mode = bstrdup("prefer");
+   }
+   if (db_ssl_key) {
+      mdb->m_db_ssl_key = bstrdup(db_ssl_key);
+   }
+   if (db_ssl_cert) {
+      mdb->m_db_ssl_cert = bstrdup(db_ssl_cert);
+   }
+   if (db_ssl_ca) {
+      mdb->m_db_ssl_ca = bstrdup(db_ssl_ca);
+   }
    mdb->m_db_port = db_port;
 
    if (disable_batch_insert) { 
@@ -242,17 +256,29 @@ bool BDB_POSTGRESQL::bdb_open_database(JCR *jcr)
       port = NULL;
    }
 
+   /* Tells libpq that the SSL library has already been initialized */
+   PQinitSSL(0);
+
    /* If connection fails, try at 5 sec intervals for 30 seconds. */
    for (int retry=0; retry < 6; retry++) {
       /* connect to the database */
-      mdb->m_db_handle = PQsetdbLogin(
-           mdb->m_db_address,         /* default = localhost */
-           port,                      /* default port */
-           NULL,                      /* pg options */
-           NULL,                      /* tty, ignored */
-           mdb->m_db_name,            /* database name */
-           mdb->m_db_user,            /* login name */
-           mdb->m_db_password);       /* password */
+      const char *keywords[10] = {"host", "port",
+                                  "dbname", "user",
+                                  "password", "sslmode",
+                                  "sslkey", "sslcert",
+                                  "sslrootcert", NULL };
+      const char *values[10] = {mdb->m_db_address, /* default localhost */
+                                port, /* default port */
+                                mdb->m_db_name,
+                                mdb->m_db_user,
+                                mdb->m_db_password,
+                                mdb->m_db_ssl_mode,
+                                mdb->m_db_ssl_key,
+                                mdb->m_db_ssl_cert,
+                                mdb->m_db_ssl_ca,
+                                NULL };
+      mdb->m_db_handle = PQconnectdbParams(keywords,
+                                           values, 0);
 
       /* If no connect, try once more in case it is a timing problem */
       if (PQstatus(mdb->m_db_handle) == CONNECTION_OK) {
@@ -264,6 +290,18 @@ bool BDB_POSTGRESQL::bdb_open_database(JCR *jcr)
    Dmsg0(dbglvl_info, "pg_real_connect done\n");
    Dmsg3(dbglvl_info, "db_user=%s db_name=%s db_password=%s\n", mdb->m_db_user, mdb->m_db_name,
         mdb->m_db_password==NULL?"(NULL)":mdb->m_db_password);
+
+#ifdef HAVE_OPENSSL
+   #define USE_OPENSSL 1
+   SSL *ssl;
+   if (PQgetssl(mdb->m_db_handle) != NULL) {
+      Dmsg0(dbglvl_info, "SSL in use\n");
+      ssl = (SSL *)PQgetssl(mdb->m_db_handle);
+      Dmsg2(dbglvl_info, "Version:%s Cipher:%s\n", SSL_get_version(ssl), SSL_get_cipher(ssl)); 
+   } else {
+      Dmsg0(dbglvl_info, "SSL not in use\n");
+   }
+#endif
 
    if (PQstatus(mdb->m_db_handle) != CONNECTION_OK) {
       Mmsg2(&mdb->errmsg, _("Unable to connect to PostgreSQL server. Database=%s User=%s\n"
@@ -342,7 +380,19 @@ void BDB_POSTGRESQL::bdb_close_database(JCR *jcr)
       } 
       if (mdb->m_db_socket) {
          free(mdb->m_db_socket);
-      } 
+      }
+      if (mdb->m_db_ssl_mode) {
+         free(mdb->m_db_ssl_mode);
+      }
+      if (mdb->m_db_ssl_key) {
+         free(mdb->m_db_ssl_key);
+      }
+      if (mdb->m_db_ssl_cert) {
+         free(mdb->m_db_ssl_cert);
+      }
+      if (mdb->m_db_ssl_ca) {
+         free(mdb->m_db_ssl_ca);
+      }
       delete mdb;
       if (db_list->size() == 0) {
          delete db_list;

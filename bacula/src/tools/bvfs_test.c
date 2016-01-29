@@ -38,6 +38,7 @@ static const char *db_name = "regress";
 static const char *db_user = "regress";
 static const char *db_password = "";
 static const char *db_host = NULL;
+static const char *db_ssl_mode = NULL;
 static const char *db_ssl_key = NULL;
 static const char *db_ssl_cert = NULL;
 static const char *db_ssl_ca = NULL;
@@ -126,7 +127,7 @@ int main (int argc, char *argv[])
 
    OSDependentInit();
 
-   while ((ch = getopt(argc, argv, "h:k:e:a:c:l:d:n:P:Su:vf:w:?j:p:f:T")) != -1) {
+   while ((ch = getopt(argc, argv, "h:o:k:e:a:c:l:d:n:P:Su:vf:w:?j:p:f:T")) != -1) {
       switch (ch) {
       case 'd':                    /* debug level */
          if (*optarg == 't') {
@@ -148,6 +149,10 @@ int main (int argc, char *argv[])
 
       case 'h':
          db_host = optarg;
+         break;
+
+      case 'o':
+         db_ssl_mode = optarg;
          break;
 
       case 'k':
@@ -222,7 +227,8 @@ int main (int argc, char *argv[])
    
    if ((db = db_init_database(NULL, NULL, db_name, db_user, db_password, 
                               db_host, 0, NULL,
-                              db_ssl_key, db_ssl_cert, db_ssl_ca,
+                              db_ssl_mode, db_ssl_key,
+                              db_ssl_cert, db_ssl_ca,
                               db_ssl_capath, db_ssl_cipher,
                               false, false)) == NULL) {
       Emsg0(M_ERROR_TERM, 0, _("Could not init Bacula database\n"));

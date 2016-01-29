@@ -91,7 +91,8 @@ BDB_MYSQL::~BDB_MYSQL()
  */ 
 BDB *db_init_database(JCR *jcr, const char *db_driver, const char *db_name, const char *db_user, 
                        const char *db_password, const char *db_address, int db_port, const char *db_socket, 
-                       const char *db_ssl_key, const char *db_ssl_cert, const char *db_ssl_ca,
+                       const char *db_ssl_mode, const char *db_ssl_key, 
+                       const char *db_ssl_cert, const char *db_ssl_ca,
                        const char *db_ssl_capath, const char *db_ssl_cipher,
                        bool mult_db_connections, bool disable_batch_insert) 
 { 
@@ -133,6 +134,11 @@ BDB *db_init_database(JCR *jcr, const char *db_driver, const char *db_name, cons
    if (db_socket) {
       mdb->m_db_socket = bstrdup(db_socket); 
    } 
+   if (db_ssl_mode) {
+      mdb->m_db_ssl_mode = bstrdup(db_ssl_mode);
+   } else {
+      mdb->m_db_ssl_mode = bstrdup("preferred");
+   }
    if (db_ssl_key) {
       mdb->m_db_ssl_key = bstrdup(db_ssl_key);
    }
@@ -353,6 +359,9 @@ void BDB_MYSQL::bdb_close_database(JCR *jcr)
       } 
       if (mdb->m_db_socket) { 
          free(mdb->m_db_socket); 
+      }
+      if (mdb->m_db_ssl_mode) {
+         free(mdb->m_db_ssl_mode);
       }
       if (mdb->m_db_ssl_key) {
          free(mdb->m_db_ssl_key);

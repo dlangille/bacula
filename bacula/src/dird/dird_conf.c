@@ -496,6 +496,8 @@ static RES_ITEM cat_items[] = {
    {"User",     store_str,      ITEM(res_cat.db_user),     0, 0, 0},
    {"DbName",   store_str,      ITEM(res_cat.db_name),     0, ITEM_REQUIRED, 0},
    {"dbdriver", store_str,      ITEM(res_cat.db_driver),   0, 0, 0},
+   {"DbSocket", store_str,      ITEM(res_cat.db_socket),   0, 0, 0},
+   {"dbsslmode", store_str,     ITEM(res_cat.db_ssl_mode),  0, 0, 0},
    {"dbsslkey", store_str,      ITEM(res_cat.db_ssl_key),  0, 0, 0},
    {"dbsslcert", store_str,     ITEM(res_cat.db_ssl_cert),  0, 0, 0},
    {"dbsslca", store_str,       ITEM(res_cat.db_ssl_ca),  0, 0, 0},
@@ -1599,6 +1601,9 @@ void free_resource(RES *rres, int type)
       }
       if (res->res_cat.db_password) {
          free(res->res_cat.db_password);
+      }
+      if (res->res_cat.db_ssl_mode) {
+         free(res->res_cat.db_ssl_mode);
       }
       if (res->res_cat.db_ssl_key) {
          free(res->res_cat.db_ssl_key);

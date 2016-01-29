@@ -231,6 +231,7 @@ public:
    char *db_user;
    char *db_name;
    char *db_driver;                   /* Select appropriate driver */
+   char *db_ssl_mode;                 /* specifies the security state of the connection to the server */
    char *db_ssl_key;                  /* the path name to the key file */
    char *db_ssl_cert;                 /* the path name to the certificate file */
    char *db_ssl_ca;                   /* the path name to the certificate authority file */

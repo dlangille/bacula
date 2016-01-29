@@ -71,10 +71,10 @@ BDB *BDB::bdb_clone_database_connection(JCR *jcr, bool mult_db_connections)
    return db_init_database(jcr, mdb->m_db_driver, mdb->m_db_name, 
              mdb->m_db_user, mdb->m_db_password, mdb->m_db_address, 
              mdb->m_db_port, mdb->m_db_socket,
-             mdb->m_db_ssl_key, mdb->m_db_ssl_cert,
-             mdb->m_db_ssl_ca, mdb->m_db_ssl_capath,
-             mdb->m_db_ssl_cipher, true,
-             mdb->m_disabled_batch_insert); 
+             mdb->m_db_ssl_mode, mdb->m_db_ssl_key,
+             mdb->m_db_ssl_cert, mdb->m_db_ssl_ca,
+             mdb->m_db_ssl_capath, mdb->m_db_ssl_cipher,
+             true, mdb->m_disabled_batch_insert);
 } 
  
 const char *BDB::bdb_get_engine_name(void) 

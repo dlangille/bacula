@@ -95,7 +95,7 @@ static void usage()
    fprintf(stderr,
 PROG_COPYRIGHT
 "\n%sVersion: %s (%s)\n\n"
-"Usage: dbcheck [-c config ] [-B] [-C catalog name] [-d debug_level] <working-directory> <bacula-database> <user> <password> [<dbhost>] [<dbport>] [<dbport>] [<dbsslkey>] [<dbsslcert>] [<dbsslca>]\n"
+"Usage: dbcheck [-c config ] [-B] [-C catalog name] [-d debug_level] <working-directory> <bacula-database> <user> <password> [<dbhost>] [<dbport>] [<dbport>] [<dbsslmode>] [<dbsslkey>] [<dbsslcert>] [<dbsslca>]\n"
 "       -b              batch mode\n"
 "       -C              catalog name in the director conf file\n"
 "       -c              Director conf filename\n"
@@ -115,7 +115,7 @@ int main (int argc, char *argv[])
 {
    int ch;
    const char *user, *password, *db_name, *dbhost;
-   const char *dbsslkey = NULL, *dbsslcert = NULL, *dbsslca = NULL;
+   const char *dbsslmode = NULL, *dbsslkey = NULL, *dbsslcert = NULL, *dbsslca = NULL;
    const char *dbsslcapath = NULL, *dbsslcipher = NULL;
    int dbport = 0;
    bool print_catalog=false;
@@ -218,7 +218,9 @@ int main (int argc, char *argv[])
             db = db_init_database(NULL, catalog->db_driver, catalog->db_name, catalog->db_user,
                     catalog->db_password, catalog->db_address,
                     catalog->db_port, catalog->db_socket,
-                    catalog->db_ssl_key, catalog->db_ssl_cert, catalog->db_ssl_ca,
+                    catalog->db_ssl_mode,
+                    catalog->db_ssl_key, catalog->db_ssl_cert, 
+                    catalog->db_ssl_ca,
                     catalog->db_ssl_capath, catalog->db_ssl_cipher,
                     catalog->mult_db_connections,
                     catalog->disable_batch_insert);
@@ -239,6 +241,7 @@ int main (int argc, char *argv[])
             dbhost = NULL;
          }
          dbport = catalog->db_port;
+         dbsslmode = catalog->db_ssl_mode;
          dbsslkey = catalog->db_ssl_key;
          dbsslcert = catalog->db_ssl_cert;
          dbsslca = catalog->db_ssl_ca;
@@ -246,7 +249,7 @@ int main (int argc, char *argv[])
          dbsslcipher = catalog->db_ssl_cipher;
       }
    } else {
-      if (argc > 9) {
+      if (argc > 10) {
          Pmsg0(0, _("Wrong number of arguments.\n"));
          usage();
       }
@@ -283,11 +286,14 @@ int main (int argc, char *argv[])
                         exit(1);
                      }
                      if (argc >= 7) {
-                        dbsslkey = argv[6];
-                        dbsslcert = argv[7];
-                        if (argc == 9) {
-                           dbsslca = argv[8];
-                        } /* if (argc == 9) */
+                        dbsslmode = argv[6];
+                        if (argc >= 8) {
+                           dbsslkey = argv[7];
+                           dbsslcert = argv[8];
+                           if (argc == 10) {
+                              dbsslca = argv[9];
+                           } /* if (argc == 10) */
+                        } /* if (argc >= 8) */
                      } /* if (argc >= 7) */
                   } /* if (argc >= 6) */
                } /* if (argc >= 5) */
@@ -298,7 +304,9 @@ int main (int argc, char *argv[])
 
    /* Open database */
    db = db_init_database(NULL, NULL, db_name, user, password, dbhost,
-           dbport, NULL, dbsslkey, dbsslcert, dbsslca, dbsslcapath, dbsslcipher, false, false);
+          dbport, NULL, dbsslmode, dbsslkey, dbsslcert, dbsslca,
+           dbsslcapath, dbsslcipher, false, false);
+
    if (!db || !db_open_database(NULL, db)) {
       Emsg1(M_FATAL, 0, "%s", db_strerror(db));
           return 1;
@@ -333,6 +341,29 @@ int main (int argc, char *argv[])
    term_msg();
    lmgr_cleanup_main();
    return 0;
+}
+
+static void print_catalog_details(CAT *catalog, const char *working_dir)
+{
+   POOLMEM *catalog_details = get_pool_memory(PM_MESSAGE);
+
+   /*
+    * Instantiate a BDB class and see what db_type gets assigned to it.
+    */
+   db = db_init_database(NULL, catalog->db_driver, catalog->db_name, catalog->db_user,
+                         catalog->db_password, catalog->db_address,
+                         catalog->db_port, catalog->db_socket,
+                         catalog->db_ssl_mode, catalog->db_ssl_key, 
+                         catalog->db_ssl_cert, catalog->db_ssl_ca,
+                         catalog->db_ssl_capath, catalog->db_ssl_cipher,
+                         catalog->mult_db_connections,
+                         catalog->disable_batch_insert);
+   if (db) {
+      printf("%sdb_type=%s\nworking_dir=%s\n", catalog->display(catalog_details),
+             db_get_engine_name(db), working_directory);
+      db_close_database(NULL, db);
+   }
+   free_pool_memory(catalog_details);
 }
 
 static void do_interactive_mode()

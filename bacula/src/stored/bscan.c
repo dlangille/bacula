@@ -74,6 +74,7 @@ static const char *db_name = "bacula";
 static const char *db_user = "bacula";
 static const char *db_password = "";
 static const char *db_host = NULL;
+static const char *db_ssl_mode = NULL;
 static const char *db_ssl_key = NULL;
 static const char *db_ssl_cert = NULL;
 static const char *db_ssl_ca = NULL;
@@ -148,7 +149,7 @@ int main (int argc, char *argv[])
 
    OSDependentInit();
 
-   while ((ch = getopt(argc, argv, "b:c:d:D:h:p:mn:pP:rsSt:u:vV:w:?")) != -1) {
+   while ((ch = getopt(argc, argv, "b:c:d:D:h:o:k:e:a:p:mn:pP:rsSt:u:vV:w:?")) != -1) {
       switch (ch) {
       case 'S' :
          showProgress = true;
@@ -181,6 +182,22 @@ int main (int argc, char *argv[])
 
       case 'h':
          db_host = optarg;
+         break;
+
+      case 'o':
+         db_ssl_mode = optarg;
+         break;
+
+      case 'k':
+         db_ssl_key = optarg;
+         break;
+
+      case 'e':
+         db_ssl_cert = optarg;
+         break;
+
+      case 'a':
+         db_ssl_ca = optarg;
          break;
 
       case 't':
@@ -285,8 +302,9 @@ int main (int argc, char *argv[])
    }
 
    db = db_init_database(NULL, db_driver, db_name, db_user, db_password,
-                         db_host, db_port, NULL, 
-                         db_ssl_key, db_ssl_cert, db_ssl_ca,
+                         db_host, db_port, NULL,
+                         db_ssl_mode, db_ssl_key,
+                         db_ssl_cert, db_ssl_ca,
                          db_ssl_capath, db_ssl_cipher,
                          false, false);
    if (!db || !db_open_database(NULL, db)) {

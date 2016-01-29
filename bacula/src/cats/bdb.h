@@ -61,6 +61,7 @@ public:
    char *m_db_driverdir;              /* database driver dir */
    int m_ref_count;                   /* reference count */
    int m_db_port;                     /* port for host name address */
+   char *m_db_ssl_mode;               /* security mode of the connection to the server */
    char *m_db_ssl_key;                /* path name to the key file */
    char *m_db_ssl_cert;               /* path name to the certificate file */
    char *m_db_ssl_ca;                 /* path name to the certificate authority file */
