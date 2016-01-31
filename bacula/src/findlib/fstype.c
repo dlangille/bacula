@@ -67,9 +67,9 @@ static int compare_mtab_items(void *item1, void *item2)
    return 0;
 }
 
-void add_mtab_item(void *user_ctx, struct stat *st, const char *fstype,
-                      const char *mountpoint, const char *mntopts,
-                      const char *fsname)
+static void add_mtab_item(void *user_ctx, struct stat *st, const char *fstype,
+               const char *mountpoint, const char *mntopts,
+               const char *fsname)
 {
    rblist *mtab_list = (rblist *)user_ctx;
    mtab_item *item, *ritem;

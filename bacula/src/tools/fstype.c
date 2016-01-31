@@ -68,9 +68,9 @@ void print_mtab_item(void *user_ctx, struct stat *st, const char *fstype,
       ((void *)st->st_dev), fstype, mountpoint, mntopts);
 }
 
-void add_mtab_item(void *user_ctx, struct stat *st, const char *fstype,
-                      const char *mountpoint, const char *mntopts,
-                      const char *fsname)
+static void add_mtab_item(void *user_ctx, struct stat *st, const char *fstype,
+               const char *mountpoint, const char *mntopts,
+               const char *fsname)
 {
    rblist *mtab_list = (rblist *)user_ctx;
    mtab_item *item, *ritem;
