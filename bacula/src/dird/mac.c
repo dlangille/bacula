@@ -626,6 +626,7 @@ void mac_cleanup(JCR *jcr, int TermCode, int writeTermCode)
    MEDIA_DBR mr;
    double kbps;
    utime_t RunTime;
+   bool goterrors=false;
    JCR *wjcr = jcr->wjcr;
    POOL_MEM query(PM_MESSAGE);
    POOL_MEM vol_info;
@@ -658,13 +659,24 @@ void mac_cleanup(JCR *jcr, int TermCode, int writeTermCode)
          new_jobid);
       db_sql_query(wjcr->db, query.c_str(), NULL, NULL);
 
+      goterrors = jcr->SDErrors > 0 || jcr->JobErrors > 0 ||
+         jcr->SDJobStatus == JS_Canceled ||
+         jcr->SDJobStatus == JS_ErrorTerminated ||
+         jcr->SDJobStatus == JS_FatalError;
+
+      if (goterrors && jcr->getJobType() == JT_MIGRATE && jcr->JobStatus == JS_Terminated) {
+         Jmsg(jcr, M_WARNING, 0, _("Found errors during the migration process. "
+                                   "The original job %s will be kept in the catalog "
+                                   "and the Migration job will be marked in Error\n"), old_jobid);
+      }
+
       /*
        * If we terminated a migration normally:
        *   - mark the previous job as migrated
        *   - move any Log records to the new JobId
        *   - Purge the File records from the previous job
        */
-      if (jcr->getJobType() == JT_MIGRATE && jcr->JobStatus == JS_Terminated) {
+      if (!goterrors && jcr->getJobType() == JT_MIGRATE && jcr->JobStatus == JS_Terminated) {
          Mmsg(query, "UPDATE Job SET Type='%c' WHERE JobId=%s",
               (char)JT_MIGRATED_JOB, old_jobid);
          db_sql_query(wjcr->db, query.c_str(), NULL, NULL);
@@ -695,13 +707,14 @@ void mac_cleanup(JCR *jcr, int TermCode, int writeTermCode)
        *   - copy any Log records to the new JobId
        *   - set type="Job Copy" for the new job
        */
-      if (jcr->getJobType() == JT_COPY && jcr->JobStatus == JS_Terminated) {
+      if (goterrors || (jcr->getJobType() == JT_COPY && jcr->JobStatus == JS_Terminated)) {
          /* Copy JobLog to new JobId */
          Mmsg(query, "INSERT INTO Log (JobId, Time, LogText ) "
                       "SELECT %s, Time, LogText FROM Log WHERE JobId=%s",
               new_jobid, old_jobid);
          db_sql_query(wjcr->db, query.c_str(), NULL, NULL);
 
+         /* We are in a real copy job */
          Mmsg(query, "UPDATE Job SET Type='%c' WHERE JobId=%s",
               (char)JT_JOB_COPY, new_jobid);
          db_sql_query(wjcr->db, query.c_str(), NULL, NULL);
@@ -753,6 +766,16 @@ void mac_cleanup(JCR *jcr, int TermCode, int writeTermCode)
          }
       }
 
+      /* We keep all information in the catalog because most of the work is
+       * done, and users might restore things from what we have
+       */
+      if (goterrors) {
+         jcr->setJobStatus(JS_ErrorTerminated);
+         Mmsg(query, "UPDATE Job SET JobStatus='%c' WHERE JobId=%s",
+              JS_ErrorTerminated, new_jobid);
+         db_sql_query(wjcr->db, query.c_str(), NULL, NULL);
+      }
+
       switch (jcr->JobStatus) {
       case JS_Terminated:
          if (jcr->JobErrors || jcr->SDErrors) {
@@ -798,7 +821,7 @@ void mac_cleanup(JCR *jcr, int TermCode, int writeTermCode)
          break;
       }
    } else {
-      if (jcr->getJobType() == JT_MIGRATE && jcr->previous_jr.JobId != 0) {
+      if (!goterrors && jcr->getJobType() == JT_MIGRATE && jcr->previous_jr.JobId != 0) {
          /* Mark previous job as migrated */
          Mmsg(query, "UPDATE Job SET Type='%c' WHERE JobId=%s",
               (char)JT_MIGRATED_JOB, edit_uint64(jcr->previous_jr.JobId, ec1));
