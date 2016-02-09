@@ -23,6 +23,7 @@ DEBUG=@DEBUG@
 
 GETTEXT_LIBS = @LIBINTL@
 CAP_LIBS = @CAP_LIBS@
+ZLIBS=@ZLIBS@
 DB_LIBS=@DB_LIBS@
 
 EXTRA_SRCS = @EXTRA_DIRD_SRCS@
@@ -69,14 +70,14 @@ bacula-dir: Makefile $(SVROBJS) ../lib/libbac$(DEFAULT_ARCHIVE_TYPE) ../lib/libb
 	    ../cats/libbacsql$(DEFAULT_ARCHIVE_TYPE) \
 	    ../cats/libbaccats$(DEFAULT_ARCHIVE_TYPE) ../findlib/libbacfind$(DEFAULT_ARCHIVE_TYPE)
 	@echo "Linking $@ ..."
-	$(LIBTOOL_LINK) $(CXX) $(WLDFLAGS) $(LDFLAGS) -L../lib -L../cats -L../findlib -o $@ $(SVROBJS) \
+	$(LIBTOOL_LINK) $(CXX) $(WLDFLAGS) $(LDFLAGS) -L../lib -L../cats -L../findlib -o $@ $(SVROBJS) $(ZLIBS) \
 	      -lbacfind -lbacsql -lbaccats -lbaccfg -lbac -lm $(DLIB) $(DB_LIBS) $(LIBS) \
 	      $(WRAPLIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS) $(CAP_LIBS)
 
 static-bacula-dir:  Makefile $(SVROBJS) ../lib/libbac$(DEFAULT_ARCHIVE_TYPE) ../lib/libbaccfg$(DEFAULT_ARCHIVE_TYPE) \
 		   ../cats/libbacsql$(DEFAULT_ARCHIVE_TYPE) \
 		   ../cats/libbaccats$(DEFAULT_ARCHIVE_TYPE) ../findlib/libbacfind$(DEFAULT_ARCHIVE_TYPE)
-	$(LIBTOOL_LINK) $(CXX) $(WLDFLAGS) $(LDFLAGS) -static -L../lib -L../cats -L../findlib -o $@ $(SVROBJS) \
+	$(LIBTOOL_LINK) $(CXX) $(WLDFLAGS) $(LDFLAGS) -static -L../lib -L../cats -L../findlib -o $@ $(SVROBJS) $(ZLIBS) \
 	      -lbacfind -lbacsql -lbaccats -lbaccfg -lbac -lm $(DLIB) $(DB_LIBS) $(LIBS) \
 	      $(WRAPLIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS) $(CAP_LIBS)
 	strip $@
