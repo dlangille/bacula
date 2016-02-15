@@ -291,9 +291,8 @@ static void update_volslot(UAContext *ua, char *val, MEDIA_DBR *mr)
       return;
    }
    mr->Slot = atoi(val);
-   if (pr.MaxVols > 0 && mr->Slot > (int)pr.MaxVols) {
-      ua->error_msg(_("Invalid slot, it must be between 0 and MaxVols=%d\n"),
-         pr.MaxVols);
+   if (mr->Slot < 0) {
+      ua->error_msg(_("Invalid slot, it must be greater than zero\n"));
       return;
    }
    /*
