@@ -171,10 +171,12 @@ class Miscellaneous extends TModule {
 			$tmp .= "[$section]\n";
 				foreach($values as $key => $val){
 					if(is_array($val)){
-						foreach($val as $k =>$v){
+						foreach($val as $k => $v) {
+							$v = $this->escapeINIVal($v);
 							$tmp .= "{$key}[$k] = \"$v\"\n";
 						}
 					} else {
+						$val = $this->escapeINIVal($val);
 						$tmp .= "$key = \"$val\"\n";
 					}
 				}
@@ -185,6 +187,18 @@ class Miscellaneous extends TModule {
 		$result = file_put_contents($file, $tmp);
 		umask($old_umask);
 		return $result;
+	}
+
+	/**
+	 * Escape text written to INI-style file.
+	 *
+	 * @access private
+	 * @param string $value text to escape
+	 * @return string escaped text
+	 */
+	private function escapeINIVal($value) {
+		$esc_value = str_replace('"', '\"', $value);
+		return $esc_value;
 	}
 
 	/**
