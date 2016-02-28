@@ -1136,3 +1136,9 @@ msgstr "Please note that for each user (excluding administrator) there should ex
 msgid "Invalid login value. Login may contain a-z A-Z 0-9 characters."
 msgstr "Invalid login value. Login may contain a-z A-Z 0-9 characters."
 
+msgid "Jobs on Volume"
+msgstr "Jobs on Volume"
+
+msgid "No jobs on the volume."
+msgstr "No jobs on the volume."
+

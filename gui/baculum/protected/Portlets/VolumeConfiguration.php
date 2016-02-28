@@ -21,6 +21,7 @@
  */
 
 Prado::using('System.Web.UI.ActiveControls.TActiveDropDownList');
+Prado::using('System.Web.UI.ActiveControls.TActiveDataGrid');
 Prado::using('System.Web.UI.ActiveControls.TActiveLabel');
 Prado::using('System.Web.UI.ActiveControls.TActiveTextBox');
 Prado::using('System.Web.UI.ActiveControls.TActiveCheckBox');
@@ -65,6 +66,10 @@ class VolumeConfiguration extends Portlets {
 		$this->Pool->dataSource = $poolList;
 		$this->Pool->SelectedValue = $voldata->poolid;
 		$this->Pool->dataBind();
+
+		$jobs_on_volume = $this->Application->getModule('api')->get(array('volumes', 'jobs', $voldata->mediaid))->output;
+		$this->JobsOnVolume->DataSource = $this->Application->getModule('misc')->objectToArray($jobs_on_volume);
+		$this->JobsOnVolume->dataBind();
 	}
 
 	public function prune($sender, $param) {
@@ -94,6 +99,11 @@ class VolumeConfiguration extends Portlets {
 		$voldata['enabled'] = (integer)$this->Enabled->Checked;
 		$voldata['inchanger'] = (integer)$this->InChanger->Checked;
 		$this->Application->getModule('api')->set(array('volumes', $voldata['mediaid']), $voldata);
+	}
+
+	public function openJob($sender, $param) {
+		$jobid = $param->CallbackParameter;
+		$this->getPage()->JobConfiguration->configure($jobid);
 	}
 
 	public function getVolumeStates($forSetOnly = false) {

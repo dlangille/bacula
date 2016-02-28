@@ -113,5 +113,23 @@ class JobManager extends TModule {
 		$pdo = null;
 		return $jobtotals;
 	}
+
+	/**
+	 * Get jobs stored on given volume.
+	 *
+	 * @param string $mediaid volume identifier
+	 * @param array $allowed_jobs jobs allowed to show
+	 * @return array jobs stored on volume
+	 */
+	public function getJobsOnVolume($mediaid, $allowed_jobs = array()) {
+		$jobs_criteria = '';
+		if (count($allowed_jobs) > 0) {
+			$jobs_sql = implode("', '", $allowed_jobs);
+			$jobs_criteria = " AND Job.Name IN ('" . $jobs_sql . "')";
+		}
+		$sql = "SELECT DISTINCT Job.* FROM Job, JobMedia WHERE JobMedia.MediaId='$mediaid' AND JobMedia.JobId=Job.JobId $jobs_criteria";
+		return JobRecord::finder()->findAllBySql($sql);
+	}
+
 }
 ?>

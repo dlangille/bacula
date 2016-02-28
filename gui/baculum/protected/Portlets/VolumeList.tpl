@@ -72,6 +72,8 @@
 	<com:TCallback ID="DataElementCall" OnCallback="Page.VolumeWindow.configure">
 		<prop:ClientSide.OnComplete>
 			ConfigurationWindow.getObj('VolumeWindow').show();
+			Formatters.set_formatters();
+			bind_jobs_on_volume_action();
 			ConfigurationWindow.getObj('VolumeWindow').progress(false);
 		</prop:ClientSide.OnComplete>
 	</com:TCallback>

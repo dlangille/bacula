@@ -45,6 +45,7 @@
 			<url ServiceParameter="API.Volumes" pattern="volumes/limit/{limit}/" parameters.limit="\d+" />
 			<url ServiceParameter="API.VolumePrune" pattern="volumes/prune/{id}/" parameters.id="\d+" />
 			<url ServiceParameter="API.VolumePurge" pattern="volumes/purge/{id}/" parameters.id="\d+" />
+			<url ServiceParameter="API.JobsOnVolume" pattern="volumes/jobs/{id}/" parameters.id="\d+" />
 			<!-- END Volumes (media) -->
 			<!-- START Pools -->
 			<url ServiceParameter="API.Pools" pattern="pools/" />

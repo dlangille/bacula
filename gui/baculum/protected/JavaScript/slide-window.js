@@ -316,8 +316,8 @@ var SlideWindowClass = Class.create({
 		return is_open;
 	},
 
-	sortTable: function (col, reverse, set_cookie) {
-		var table = document.getElementById(this.gridEl);
+	sortTable: function (grid_id, col, reverse, set_cookie) {
+		var table = document.getElementById(grid_id);
 		var tb = table.tBodies[0], tr = Array.prototype.slice.call(tb.rows, 0), i;
 		reverse = -((+reverse) || -1);
 		tr = tr.sort(function (a, b) {
@@ -353,9 +353,18 @@ var SlideWindowClass = Class.create({
 		}
 	},
 
-	makeSortable: function () {
+	makeSortable: function (grid) {
 		var self = this;
-		var table = document.getElementById(this.gridEl);
+		var grid_id, set_cookie;
+		if (grid) {
+			grid_id = grid;
+			// for external grids (non-slide) do not remember sorting order
+			set_cookie = false;
+		} else {
+			grid_id = this.gridEl;
+			set_cookie = true;
+		}
+		var table = document.getElementById(grid_id);
 		table.tHead.style.cursor = 'pointer';
 		var th = table.tHead, i;
 		th && (th = th.rows[0]) && (th = th.cells);
@@ -372,7 +381,7 @@ var SlideWindowClass = Class.create({
 		while (--i >= downCounter) (function (i) {
 			var dir = 1;
 			th[i].addEventListener('click', function () {
-				self.sortTable(i, (dir = 1 - dir), true);
+				self.sortTable(grid_id, i, (dir = 1 - dir), set_cookie);
 			});
 		}(i));
 	},
@@ -383,7 +392,7 @@ var SlideWindowClass = Class.create({
 			var sort_param = sorting.split(':');
 			var col = parseInt(sort_param[0], 10);
 			var order = -(parseInt(sort_param[1], 10));
-			this.sortTable(col, order);
+			this.sortTable(this.gridEl, col, order);
 		}
 	},
 
