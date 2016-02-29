@@ -443,7 +443,7 @@ void MediaList::allVolumesFromPool()
 
 void MediaList::allVolumes()
 {
-   QString cmd = "update volume allfrompools";
+   QString cmd = "update volume fromallpools";
    consoleCommand(cmd);
    populateTree();
 }
