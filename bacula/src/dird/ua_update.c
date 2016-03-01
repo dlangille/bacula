@@ -520,22 +520,31 @@ static int update_volume(UAContext *ua)
       NT_("InChanger"),                /* 7 */
       NT_("Slot"),                     /* 8 */
       NT_("Pool"),                     /* 9 */
-      NT_("FromPool"),                 /* 10 */
+      NT_("FromPool"),                 /* 10 !!! see below !!! */
       NT_("AllFromPool"),              /* 11 !!! see below !!! */
       NT_("Enabled"),                  /* 12 */
       NT_("RecyclePool"),              /* 13 */
       NT_("ActionOnPurge"),            /* 14 */
+      NT_("FromAllPools"),             /* 15 !!! see bellow !!! */
       NULL };
 
-#define AllFromPool 11               /* keep this updated with above */
+#define FromPool     10              /* keep this updated */
+#define AllFromPool  11              /* keep this updated with above */
+#define FromAllPools 15              /* keep this updated */
 
    for (i=0; kw[i]; i++) {
       int j;
       POOL_DBR pr;
+      /* No argv with these parameters */
+      if (i == FromPool || i == FromAllPools) {
+         j = find_arg(ua, kw[i]);
 
-      if ((j=find_arg_with_value(ua, kw[i])) > 0) {
-         /* If all from pool don't select a media record */
-         if (i != AllFromPool && !select_media_dbr(ua, &mr)) {
+      } else {
+         j = find_arg_with_value(ua, kw[i]);
+      }
+      if (j > 0) {
+         /* If all from pool/from all pools don't select a media record */
+         if (i != AllFromPool && i != FromAllPools && !select_media_dbr(ua, &mr)) {
             return 0;
          }
          switch (i) {
@@ -590,15 +599,12 @@ static int update_volume(UAContext *ua)
          case 14:
             update_vol_actiononpurge(ua, ua->argv[j], &mr);
             break;
+         case 15:
+            update_all_vols(ua);
+            break;
          }
          done = true;
       }
-   }
-
-   /* Allow user to simply update all volumes */
-   if (find_arg(ua, NT_("fromallpools")) > 0) {
-      update_all_vols(ua);
-      return 1;
    }
 
    for ( ; !done; ) {
