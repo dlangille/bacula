@@ -396,40 +396,40 @@ alist *BDB::bdb_list_job_records(JCR *jcr, JOB_DBR *jr, DB_LIST_HANDLER *sendit,
    }
    if (jr->Name[0]) {
       bdb_escape_string(jcr, esc, jr->Name, strlen(jr->Name));
-      Mmsg(tmp, " Name='%s' ", esc);
+      Mmsg(tmp, " Job.Name='%s' ", esc);
       append_filter(where, tmp);
 
    } else if (jr->JobId != 0) {
-      Mmsg(tmp, " JobId=%s ", edit_int64(jr->JobId, ed1));
+      Mmsg(tmp, " Job.JobId=%s ", edit_int64(jr->JobId, ed1));
       append_filter(where, tmp);
 
    } else if (jr->Job[0] != 0) {
       bdb_escape_string(jcr, esc, jr->Job, strlen(jr->Job));
-      Mmsg(tmp, " Job='%s' ", esc);
+      Mmsg(tmp, " Job.Job='%s' ", esc);
       append_filter(where, tmp);
    }
 
    if (type == INCOMPLETE_JOBS && jr->JobStatus == JS_FatalError) {
-      Mmsg(tmp, " JobStatus IN ('E', 'f') ");
+      Mmsg(tmp, " Job.JobStatus IN ('E', 'f') ");
       append_filter(where, tmp);
 
    } else if (jr->JobStatus) {
-      Mmsg(tmp, " JobStatus='%c' ", jr->JobStatus);
+      Mmsg(tmp, " Job.JobStatus='%c' ", jr->JobStatus);
       append_filter(where, tmp);
    }
 
    if (jr->JobType) {
-      Mmsg(tmp, " Type='%c' ", jr->JobType);
+      Mmsg(tmp, " Job.Type='%c' ", jr->JobType);
       append_filter(where, tmp);
    }
 
    if (jr->JobErrors > 0) {
-      Mmsg(tmp, " JobErrors > 0 ");
+      Mmsg(tmp, " Job.JobErrors > 0 ");
       append_filter(where, tmp);
    }
 
    if (jr->ClientId > 0) {
-      Mmsg(tmp, " ClientId=%s ", edit_int64(jr->ClientId, ed1));
+      Mmsg(tmp, " Job.ClientId=%s ", edit_int64(jr->ClientId, ed1));
       append_filter(where, tmp);
    }
 
