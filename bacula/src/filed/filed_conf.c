@@ -97,7 +97,7 @@ static RES_ITEM cli_items[] = {
    {"Messages",      store_res, ITEM(res_client.messages), R_MSGS, 0, 0},
    {"SdConnectTimeout", store_time,ITEM(res_client.SDConnectTimeout), 0, ITEM_DEFAULT, 60 * 30},
    {"HeartbeatInterval", store_time, ITEM(res_client.heartbeat_interval), 0, ITEM_DEFAULT, 5 * 60},
-   {"MaximumNetWorkBufferSize", store_pint32, ITEM(res_client.max_network_buffer_size), 0, 0, 0},
+   {"MaximumNetworkBufferSize", store_pint32, ITEM(res_client.max_network_buffer_size), 0, 0, 0},
 #ifdef DATA_ENCRYPTION
    {"PkiSignatures",         store_bool,    ITEM(res_client.pki_sign), 0, ITEM_DEFAULT, 0},
    {"PkiEncryption",         store_bool,    ITEM(res_client.pki_encrypt), 0, ITEM_DEFAULT, 0},
