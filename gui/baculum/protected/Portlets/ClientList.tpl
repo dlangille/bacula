@@ -47,6 +47,8 @@
 	<com:TCallback ID="DataElementCall" OnCallback="Page.ClientWindow.configure">
 		<prop:ClientSide.OnComplete>
 			ConfigurationWindow.getObj('ClientWindow').show();
+			Formatters.set_formatters();
+			bind_jobs_for_client_action();
 			ConfigurationWindow.getObj('ClientWindow').progress(false);
 		</prop:ClientSide.OnComplete>
 	</com:TCallback>

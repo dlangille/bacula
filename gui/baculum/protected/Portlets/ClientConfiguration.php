@@ -21,6 +21,7 @@
  */
 
 Prado::using('System.Web.UI.ActiveControls.TActiveCustomValidator');
+Prado::using('System.Web.UI.ActiveControls.TActiveDataGrid');
 Prado::using('Application.Portlets.Portlets');
 
 class ClientConfiguration extends Portlets {
@@ -41,6 +42,10 @@ class ClientConfiguration extends Portlets {
 		$this->FileRetention->Text = intval($client->fileretention / 86400); // conversion to days
 		$this->JobRetention->Text = intval($client->jobretention / 86400); // conversion to days
 		$this->AutoPrune->Checked = $client->autoprune == 1;
+
+		$jobs_for_client = $this->Application->getModule('api')->get(array('clients', 'jobs', $client->clientid))->output;
+		$this->JobsForClient->DataSource = $this->Application->getModule('misc')->objectToArray($jobs_for_client);
+		$this->JobsForClient->dataBind();
 	}
 
 	public function status($sender, $param) {
@@ -68,6 +73,11 @@ class ClientConfiguration extends Portlets {
 	public function jobRetentionValidator($sender, $param) {
 		$isValid = preg_match('/^\d+$/', $this->JobRetention->Text) && $this->JobRetention->Text >= 0;
 		$param->setIsValid($isValid);
+	}
+
+	public function openJob($sender, $param) {
+		$jobid = $param->CallbackParameter;
+		$this->getPage()->JobConfiguration->configure($jobid);
 	}
 }
 ?>

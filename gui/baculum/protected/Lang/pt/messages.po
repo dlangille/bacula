@@ -1145,3 +1145,9 @@ msgstr "Jobs on Volume"
 msgid "No jobs on the volume."
 msgstr "No jobs on the volume."
 
+msgid "Jobs for Client"
+msgstr "Jobs for Client"
+
+msgid "No jobs for the client."
+msgstr "No jobs for the client."
+

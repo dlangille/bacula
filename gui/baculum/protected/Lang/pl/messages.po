@@ -1143,3 +1143,9 @@ msgstr "Zadania na volumenie"
 msgid "No jobs on the volume."
 msgstr "Na wolumenie nie ma żadnych zadań."
 
+msgid "Jobs for Client"
+msgstr "Zadania dla klienta"
+
+msgid "No jobs for the client."
+msgstr "Nie ma żadnych zadań dla klienta."
+

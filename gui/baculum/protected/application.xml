@@ -27,6 +27,7 @@
 			<url ServiceParameter="API.ClientsShow" pattern="clients/show/" />
 			<url ServiceParameter="API.ClientShow" pattern="clients/show/{id}/" parameters.id="\d+" />
 			<url ServiceParameter="API.ClientStatus" pattern="clients/status/{id}/" parameters.id="\d+" />
+			<url ServiceParameter="API.JobsForClient" pattern="clients/jobs/{id}/" parameters.id="\d+" />
 			<!-- END Clients (file daemons) -->
 			<!-- START Storages (storage daemons) -->
 			<url ServiceParameter="API.Storages" pattern="storages/" />

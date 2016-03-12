@@ -131,5 +131,21 @@ class JobManager extends TModule {
 		return JobRecord::finder()->findAllBySql($sql);
 	}
 
+	/**
+	 * Get jobs for given client.
+	 *
+	 * @param string $clientid client identifier
+	 * @param array $allowed_jobs jobs allowed to show
+	 * @return array jobs for specific client
+	 */
+	public function getJobsForClient($clientid, $allowed_jobs = array()) {
+		$jobs_criteria = '';
+		if (count($allowed_jobs) > 0) {
+			$jobs_sql = implode("', '", $allowed_jobs);
+			$jobs_criteria = " AND Job.Name IN ('" . $jobs_sql . "')";
+		}
+		$sql = "SELECT DISTINCT Job.* FROM Client, Job WHERE Client.ClientId='$clientid' AND Client.ClientId=Job.ClientId $jobs_criteria";
+		return JobRecord::finder()->findAllBySql($sql);
+	}
 }
 ?>
