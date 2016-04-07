@@ -62,6 +62,7 @@ clean:
 
 # Reset our userid after running as root
 reset:
+	mkdir -p tmp working || true
 	chown -R ${USER}:${USER} . tmp working
 	scripts/cleanup
 	rm -f tmp/* working/*
