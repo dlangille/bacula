@@ -266,7 +266,7 @@ static bacl_rtn_code aix_backup_acl_streams(JCR *jcr, FF_PKT *ff_pkt)
    acltxtsize = sizeof_pool_memory(jcr->acl_ctx->content);
    if (aclx_printStr(jcr->acl_ctx->content, &acltxtsize, aclbuf,
                      aclsize, type, jcr->last_fname, 0) < 0) {
-      if ((errno == ENOSPC) {
+      if (errno == ENOSPC) {
          /*
           * Our buffer is not big enough, acltxtsize should be updated with the value
           * the aclx_printStr really need. So we increase the buffer and try again.
