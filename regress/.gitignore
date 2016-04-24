@@ -18,6 +18,10 @@ weird-files2
 working
 dumps
 working2
+c
+diff
+1
+*.out
 scripts/bacula-dir.conf.accurate
 scripts/bacula-dir.conf.errors
 scripts/bacula-dir.conf.maxruntime

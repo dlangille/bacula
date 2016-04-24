@@ -12,6 +12,8 @@
 *.o
 *.lo
 *~
+*.patch
+*.bak
 1
 2
 autom4te.cache
@@ -24,6 +26,7 @@ config.status
 configure.lineno
 console.log
 console.sum
+count-lines
 diff
 fd
 update
@@ -235,6 +238,8 @@ src/python
 src/pyqt
 src/xqt-console
 src/TAGS
+src/bsd
+src/add-bsd
 
 # src/cats/
 src/cats/1
@@ -488,6 +493,9 @@ src/qt-console/testprogs/putz/Makefile
 src/qt-console/testprogs/putz/moc
 
 # src/qt-console/tray-monitor
+src/qt-console/tray-monitor/.libs/
+src/qt-console/tray-monitor/bacula-tray-monitor
+src/qt-console/tray-monitor/qrc_main.cpp
 src/qt-console/tray-monitor/Makefile.mingw32
 src/qt-console/tray-monitor/Makefile.mingw32.Debug
 src/qt-console/tray-monitor/Makefile.mingw32.Release
@@ -805,6 +813,9 @@ src/wx-console/bwx-console.conf
 src/wx-console/.libs
 
 # updatedb/
+updatedb/update_mysql_tables
+updatedb/update_postgresql_tables
+updatedb/update_sqlite3_tables
 updatedb/update_mysql_tables_12_to_14
 updatedb/update_postgresql_tables_12_to_14
 updatedb/update_sqlite3_tables_12_to_14
