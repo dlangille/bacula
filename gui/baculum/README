@@ -192,3 +192,10 @@ alghoritm used by "htpasswd" program. Plain text passwords for HTTP Basic auth
 are not longer supported by Baculum.
    From this reason good to check if used web server for Baculum is set to using
 MD5 type passwords in HTTP Basic authentication.
+
+c) Why time fields values contain invalid date/time values?
+  This case can mean that timezone is not set for PHP in php.ini file or the
+timezone value needs correction. To fix it please add (or update) "date.timezone"
+value in php.ini file. For example:
+
+date.timezone = "Europe/Warsaw"

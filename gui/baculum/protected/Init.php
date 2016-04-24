@@ -22,12 +22,6 @@
 
 $timezone = 'UTC';
 if (!ini_get('date.timezone')) {
-	if (strtoupper(substr(PHP_OS, 0, 3)) != 'WIN') {
-		exec('date +%Z', $tz, $retcode);
-		if ($retcode === 0 && count($tz) === 1) {
-			$timezone = $tz[0];
-		}
-	}
 	date_default_timezone_set($timezone);
 }
 
