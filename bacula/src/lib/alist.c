@@ -148,6 +148,9 @@ void alist::destroy()
       free(items);
       items = NULL;
    }
+   num_items = 0;
+   max_items = 0;
+   num_grow = 0;
 }
 
 #ifdef TEST_PROGRAM
