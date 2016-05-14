@@ -76,7 +76,7 @@ extern int sm_check_rtn(const char *fname, int lineno, bool bufdump);
 #define actuallymalloc(x)    malloc(x)
 #define actuallycalloc(x,y)  calloc(x,y)
 #define actuallyrealloc(x,y) realloc(x,y)
-#define sm_dump(x)
+inline void sm_dump(int x, int y=0) {} /* with default arguments, we can't use a #define */
 #define sm_static(x)
 #define sm_new_owner(a, b, c)
 #define sm_malloc(f, l, n)     malloc(n)
@@ -84,9 +84,12 @@ extern int sm_check_rtn(const char *fname, int lineno, bool bufdump);
 #define sm_check(f, l, fl)
 #define sm_check_rtn(f, l, fl) 1
 
-extern void *b_malloc();
+extern void *b_malloc(const char *file, int line, size_t size);
 #define malloc(x) b_malloc(__FILE__, __LINE__, (x))
 
+#define Dsm_check(lvl)
+#define sm_check(f, l, fl)
+#define sm_check_rtn(f, l, fl) 1
 
 #endif
 
@@ -166,5 +169,4 @@ class SMARTALLOC
       }
 };
 #endif  /* SMARTALLOC */
-
 #endif  /* !SMARTALLOC_H */

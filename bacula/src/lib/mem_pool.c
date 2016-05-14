@@ -93,9 +93,9 @@ struct abufhead {
 
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
-#ifdef SMARTALLOC
-
 #define HEAD_SIZE BALIGN(sizeof(struct abufhead))
+
+#ifdef SMARTALLOC
 
 POOLMEM *sm_get_pool_memory(const char *fname, int lineno, int pool)
 {
@@ -247,7 +247,7 @@ POOLMEM *get_pool_memory(int pool)
       return (POOLMEM *)((char *)buf+HEAD_SIZE);
    }
 
-   if ((buf=malloc(pool_ctl[pool].size+HEAD_SIZE)) == NULL) {
+   if ((buf=(struct abufhead*)malloc(pool_ctl[pool].size+HEAD_SIZE)) == NULL) {
       V(mutex);
       Emsg1(M_ABORT, 0, _("Out of memory requesting %d bytes\n"), pool_ctl[pool].size);
    }
@@ -268,7 +268,7 @@ POOLMEM *get_memory(int32_t size)
    struct abufhead *buf;
    int pool = 0;
 
-   if ((buf=malloc(size+HEAD_SIZE)) == NULL) {
+   if ((buf=(struct abufhead *)malloc(size+HEAD_SIZE)) == NULL) {
       Emsg1(M_ABORT, 0, _("Out of memory requesting %d bytes\n"), size);
    }
    buf->ablen = size;
