@@ -1,9 +1,66 @@
-              Changelog on version 7.4.0
+              Changelog on version 7.4.1
 
+
+Release version 7.4.1
+
+31May16
+ - Fix bug #1849 MySQL does not accept 0 for DATETIME default
+
+12May16
+ - Modify the alist object to be reused after a destroy()
+
+24Apr16
+ - baculum: Fix setting invalid timezone value for PHP
+
+18Apr16
+ - Fix compilation for AIX
+
+07Apr16
+ - Fix the restore termination string in the job report to take in account 
+  JobErrors and SDErrors
+
+12Mar16
+ - baculum: Show jobs for client
+
+04Mar16
+ - Fix bconsole "llist job=<xxxx>" output
+
+01Mar16
+ - Fix #146 about update volume command line usage
+
+29Feb16
+ - bat: Fix #1066 about bad update pool command
+ - Fix #1653 about make_catalog_backup default user name
+
+28Feb16
+ - baculum: Show jobs stored on volume
+
+15Feb16
+ - Fix update Volume=x Slot=nn when Slot > MaxVols
+ - Set exit code for create_postgresql_database.in
+
+09Feb16
+ - Fix bug #2197 -- build failure with --disable-libtool
+ - Fix bug #2204 -- superfluous END-OF-DATA in update_mysql_tables.in
+
+02Feb16
+ - Convert a Migration job with errors into a Copy job
+
+31Jan16
+ - Remove exporting add_mtab_item -- fixes bug #2198
+
+23Jan16
+ - Fix possible problem of show multiple resources
+
+18Jan16
+ - Comment out tools/smtp-orig.c as it is for reference only
+
+Bugs fixed/closed since last release:
+1066 146 1653 1849 2197 2198 2204
+
+=================
 
 Release Version 7.4.0
-
-
 
 14Jan16
  - Put back missing line in copyright

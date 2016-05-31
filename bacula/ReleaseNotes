@@ -1,6 +1,37 @@
 
-               Release Notes for Bacula 7.4.0
+               Release Notes for Bacula 7.4.1
 
+Release version 7.4.1
+
+This is a minor bug fix release to version 7.4.0.  Most of the
+fixes have been kindly contributed by Bacula Systems SA.
+
+31May16
+ - Fix bug #1849 MySQL does not accept 0 for DATETIME default
+ - Modify the alist object to be reused after a destroy()
+ - baculum: Fix setting invalid timezone value for PHP
+ - Fix compilation for AIX
+ - Fix the restore termination string in the job report to take in account 
+   JobErrors and SDErrors
+ - baculum: Show jobs for client
+ - Fix bconsole "llist job=<xxxx>" output
+ - Fix #146 about update volume command line usage
+ - bat: Fix #1066 about bad update pool command
+ - Fix #1653 about make_catalog_backup default user name
+ - baculum: Show jobs stored on volume
+ - Fix update Volume=x Slot=nn when Slot > MaxVols
+ - Set exit code for create_postgresql_database.in
+ - Fix bug #2197 -- build failure with --disable-libtool
+ - Fix bug #2204 -- superfluous END-OF-DATA in update_mysql_tables.in
+ - Convert a Migration job with errors into a Copy job
+ - Remove exporting add_mtab_item -- fixes bug #2198
+ - Fix possible problem of show multiple resources
+ - Comment out tools/smtp-orig.c as it is for reference only
+
+Bugs fixed/closed since last release:
+1066 146 1653 1849 2197 2198 2204
+
+=======================
 Release version 7.4.0
 
 For the most part the changes were contributed to the Bacula 
