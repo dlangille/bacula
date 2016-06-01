@@ -3,11 +3,11 @@
 # Copyright (C) 2000-2015 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
-# Shell script to update MySQL tables from Bacula Community version 
+# Shell script to update SQLite tables from Bacula Community version 
 #  5.0.x, 5.2.x, 7.0.x
 #
 echo " "
-echo "This script will update a Bacula MySQL database from version 12-14 to 15"
+echo "This script will update a Bacula SQLite database from version 12-14 to 15"
 echo " "
 echo "Depending on the current version of your catalog, you may have to run this script"
 echo "	multiple times"
@@ -76,19 +76,70 @@ fi
 
 if [ "$DBVERSION" = 14 ] ; then
     sqlite3 $* ${db_name}.db  <<END-OF-DATA
+BEGIN;
+
 INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
    ('I', 'Incomplete Job',25);
-ALTER TABLE Media ADD COLUMN VolABytes BIGINT UNSIGNED DEFAULT 0;
-ALTER TABLE Media ADD COLUMN VolAPadding BIGINT UNSIGNED DEFAULT 0;
-ALTER TABLE Media ADD COLUMN VolHoleBytes BIGINT UNSIGNED DEFAULT 0;
-ALTER TABLE Media ADD COLUMN VolHoles INTEGER UNSIGNED DEFAULT 0;
-ALTER TABLE Media CHANGE VolWrites VolWrites BIGINT UNSIGNED;
+
+CREATE TABLE new_Media (
+   MediaId INTEGER,
+   VolumeName VARCHAR(128) NOT NULL,
+   Slot INTEGER DEFAULT 0,
+   PoolId INTEGER UNSIGNED REFERENCES Pool DEFAULT 0,
+   MediaType VARCHAR(128) NOT NULL,
+   MediaTypeId INTEGER UNSIGNED REFERENCES MediaType DEFAULT 0,
+   LabelType TINYINT DEFAULT 0,
+   FirstWritten DATETIME DEFAULT 0,
+   LastWritten DATETIME DEFAULT 0,
+   LabelDate DATETIME DEFAULT 0,
+   VolJobs INTEGER UNSIGNED DEFAULT 0,
+   VolFiles INTEGER UNSIGNED DEFAULT 0,
+   VolBlocks INTEGER UNSIGNED DEFAULT 0,
+   VolMounts INTEGER UNSIGNED DEFAULT 0,
+   VolBytes BIGINT UNSIGNED DEFAULT 0,
+   VolParts INTEGER UNSIGNED DEFAULT 0,
+   VolErrors INTEGER UNSIGNED DEFAULT 0,
+   VolWrites BIGINT UNSIGNED DEFAULT 0,
+   VolCapacityBytes BIGINT UNSIGNED DEFAULT 0,
+   VolStatus VARCHAR(20) NOT NULL,
+   Enabled TINYINT DEFAULT 1,
+   Recycle TINYINT DEFAULT 0,
+   ActionOnPurge     TINYINT    DEFAULT 0,
+   VolRetention BIGINT UNSIGNED DEFAULT 0,
+   VolUseDuration BIGINT UNSIGNED DEFAULT 0,
+   MaxVolJobs INTEGER UNSIGNED DEFAULT 0,
+   MaxVolFiles INTEGER UNSIGNED DEFAULT 0,
+   MaxVolBytes BIGINT UNSIGNED DEFAULT 0,
+   InChanger TINYINT DEFAULT 0,
+   StorageId INTEGER UNSIGNED REFERENCES Storage DEFAULT 0,
+   DeviceId INTEGER UNSIGNED REFERENCES Device DEFAULT 0,
+   MediaAddressing TINYINT DEFAULT 0,
+   VolReadTime BIGINT UNSIGNED DEFAULT 0,
+   VolWriteTime BIGINT UNSIGNED DEFAULT 0,
+   EndFile INTEGER UNSIGNED DEFAULT 0,
+   EndBlock INTEGER UNSIGNED DEFAULT 0,
+   LocationId INTEGER UNSIGNED REFERENCES Location DEFAULT 0,
+   RecycleCount INTEGER UNSIGNED DEFAULT 0,
+   InitialWrite DATETIME DEFAULT 0,
+   ScratchPoolId INTEGER UNSIGNED REFERENCES Pool DEFAULT 0,
+   RecyclePoolId INTEGER UNSIGNED REFERENCES Pool DEFAULT 0,
+   Comment TEXT,
+   VolABytes BIGINT UNSIGNED DEFAULT 0,
+   VolAPadding BIGINT UNSIGNED DEFAULT 0,
+   VolHoleBytes BIGINT UNSIGNED DEFAULT 0,
+   VolHoles INTEGER UNSIGNED DEFAULT 0,
+   PRIMARY KEY(MediaId)
+   );
+INSERT INTO new_Media (MediaId, VolumeName, Slot, PoolId, MediaType, MediaTypeId, LabelType, FirstWritten, LastWritten, LabelDate, VolJobs, VolFiles, VolBlocks, VolMounts, VolBytes, VolParts, VolErrors, VolWrites, VolCapacityBytes, VolStatus, Enabled, Recycle, ActionOnPurge, VolRetention, VolUseDuration, MaxVolJobs, MaxVolFiles, MaxVolBytes, InChanger, StorageId, DeviceId, MediaAddressing, VolReadTime, VolWriteTime, EndFile, EndBlock, LocationId, RecycleCount, InitialWrite, ScratchPoolId, RecyclePoolId, Comment) SELECT MediaId, VolumeName, Slot, PoolId, MediaType, MediaTypeId, LabelType, FirstWritten, LastWritten, LabelDate, VolJobs, VolFiles, VolBlocks, VolMounts, VolBytes, VolParts, VolErrors, VolWrites, VolCapacityBytes, VolStatus, Enabled, Recycle, ActionOnPurge, VolRetention, VolUseDuration, MaxVolJobs, MaxVolFiles, MaxVolBytes, InChanger, StorageId, DeviceId, MediaAddressing, VolReadTime, VolWriteTime, EndFile, EndBlock, LocationId, RecycleCount, InitialWrite, ScratchPoolId, RecyclePoolId, Comment FROM Media;
+DROP TABLE Media;
+ALTER TABLE new_Media RENAME TO Media;
+CREATE INDEX inx8 ON Media (PoolId);
 
 CREATE TABLE Snapshot (
   SnapshotId	  INTEGER UNSIGNED AUTO_INCREMENT,
   Name		  TINYBLOB NOT NULL,
   JobId 	  INTEGER UNSIGNED DEFAULT 0,
-  FileSetId INTEGER UNSIGNED DEFAULT 0;
+  FileSetId INTEGER UNSIGNED DEFAULT 0,
   CreateTDate	  BIGINT   NOT NULL,
   CreateDate	  DATETIME NOT NULL,
   ClientId	  INTEGER DEFAULT 0,
@@ -100,13 +151,13 @@ CREATE TABLE Snapshot (
   primary key (SnapshotId)
 );
 
-CREATE UNIQUE INDEX snapshot_idx ON Snapshot (Device(255), Volume(255), Name(255));
+CREATE UNIQUE INDEX snapshot_idx ON Snapshot (Device, Volume, Name);
 
 CREATE INDEX jobtdate_idx on JobHisto (JobTDate);
 
 UPDATE Version SET VersionId=15;
+
+COMMIT;
 END-OF-DATA
 DBVERSION=15
 fi
-
-END-OF-DATA

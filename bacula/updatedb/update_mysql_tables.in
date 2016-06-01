@@ -143,7 +143,4 @@ END-OF-DATA
     fi
 fi
 
-
-END-OF-DATA
-
 exit 0
