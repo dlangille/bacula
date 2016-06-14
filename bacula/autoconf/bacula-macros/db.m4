@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2000-2015 Kern Sibbald
+# Copyright (C) 2000-2016 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
 AC_DEFUN([BA_CHECK_DBI_DB],
@@ -339,24 +339,27 @@ AC_MSG_CHECKING(for MySQL support)
 AC_ARG_WITH(mysql,
 AC_HELP_STRING([--with-mysql@<:@=DIR@:>@], [Include MySQL support. DIR is the MySQL base install directory, default is to search through a number of common places for the MySQL files.]),
 [
+  HAVE_LIBSR="no"
   if test "$withval" != "no"; then
-        if test "$withval" = "yes"; then
-#
-# This code is very broken on older systems
-#
-#           MYSQL_CONFIG=`which mysql_config 2>/dev/null`
-#           if test "x${MYSQL_CONFIG}" != x; then
-#              MYSQL_BINDIR="${MYSQL_CONFIG%/*}"
-#              ${MYSQL_CONFIG} --variable=pkglibdir > /dev/null 2>&1
-#              if test $? = 0 ; then
-#                 MYSQL_LIBDIR=`${MYSQL_CONFIG} --variable=pkglibdir`
-#                 MYSQL_INCDIR=`${MYSQL_CONFIG} --variable=pkgincludedir`
-#              else
-#                 MYSQL_LIBDIR=`${MYSQL_CONFIG} --libs_r | sed -e 's/.*-L//' -e 's/ .*//'`
-#                 MYSQL_INCDIR=`${MYSQL_CONFIG} --include | sed -e 's/-I//'`
-#              fi
-#           fi
-#           if [ "x${MYSQL_LIB}" = x -o "x${MYSQL_INCDIR}" = x ]; then
+     if test "$withval" = "yes"; then
+        MYSQL_CONFIG=`which mysql_config 2>/dev/null`
+        if test "x${MYSQL_CONFIG}" != x; then
+           MYSQL_BINDIR="${MYSQL_CONFIG%/*}"
+           ${MYSQL_CONFIG} --libs_r >/dev/null 2>&1
+           if test $? = 0; then
+              MYSQL_LIBDIR=`${MYSQL_CONFIG} --libs_r`
+              MYSQL_INCDIR=`${MYSQL_CONFIG} --include`
+              HAVE_LIBSR="yes"
+           else
+              ${MYSQL_CONFIG} --variable=pkglibdir > /dev/null 2>&1
+              if test $? = 0 ; then
+                 MYSQL_LIBDIR=`${MYSQL_CONFIG} --variable=pkglibdir`
+                 MYSQL_INCDIR=`${MYSQL_CONFIG} --variable=pkgincludedir`
+              fi
+           fi
+        fi
+        # if something wrong fall back to old method
+        if test "x${MYSQL_LIBDIR}" = x -o "x${MYSQL_INCDIR}" = x ; then
            if test -f /usr/local/mysql/include/mysql/mysql.h; then
               MYSQL_INCDIR=/usr/local/mysql/include/mysql
               if test -f /usr/local/mysql/lib64/mysql/libmysqlclient_r.a \
@@ -415,117 +418,133 @@ AC_HELP_STRING([--with-mysql@<:@=DIR@:>@], [Include MySQL support. DIR is the My
               AC_MSG_RESULT(no)
               AC_MSG_ERROR(Unable to find mysql.h in standard locations)
            fi
-        else
-           if test -f $withval/include/mysql/mysql.h; then
-              MYSQL_INCDIR=$withval/include/mysql
-              if test -f $withval/lib64/mysql/libmysqlclient_r.a \
-                   -o -f $withval/lib64/mysql/libmysqlclient_r.so; then
-                 MYSQL_LIBDIR=$withval/lib64/mysql
-              elif test -f $withval/lib64/libmysqlclient_r.a \
-                   -o -f $withval/lib64/libmysqlclient_r.so; then
-                 MYSQL_LIBDIR=$withval/lib64
-              elif test -f $withval/lib/libmysqlclient_r.a \
-                   -o -f $withval/lib/libmysqlclient_r.so; then
-                 MYSQL_LIBDIR=$withval/lib
-              else
-                 MYSQL_LIBDIR=$withval/lib/mysql
-              fi
-              MYSQL_BINDIR=$withval/bin
-           elif test -f $withval/include/mysql.h; then
-              MYSQL_INCDIR=$withval/include
-              if test -f $withval/lib64/libmysqlclient_r.a \
-                   -o -f $withval/lib64/libmysqlclient_r.so; then
-                 MYSQL_LIBDIR=$withval/lib64
-              else
-                 MYSQL_LIBDIR=$withval/lib
-              fi
-              MYSQL_BINDIR=$withval/bin
-           elif test -f $withval/mysql.h; then
-              dnl MacPorts on OSX has a special MySQL Layout. See #2079
-              MYSQL_INCDIR=$withval
-              AC_MSG_NOTICE(Got with-mysql variable $MYSQL_INCDIR checking MySQL version)
-              case $MYSQL_INCDIR in
-                 *mysql55*)
-                     AC_MSG_NOTICE(Assuming MacPorts MySQL 5.5 variant installed)
-                     dnl with-mysql given contains mysql55 - assuming OSX MacPorts MySQL55 variant
-                     if test -f $prefix/lib/mysql55/mysql/libmysqlclient_r.a \
-                          -o -f $prefix/lib/mysql55/mysql/libmysqlclient_r.so; then
-                        AC_MSG_NOTICE(Found MySQL 5.5 library in $prefix/lib/mysql55/mysql)
-                        MYSQL_LIBDIR=$prefix/lib/mysql55/mysql
-                     fi
-                     MYSQL_BINDIR=$prefix/lib/mysql55/bin
-                 ;;
-                 *mysql51*)
-                     AC_MSG_NOTICE(Assuming MacPorts MySQL 5.1 variant installed)
-                     dnl with-mysql contains mysql51 - assuming OSX MacPorts MySQL51 variant
-                     if test -f $prefix/lib/mysql51/mysql/libmysqlclient_r.a \
-                          -o -f $prefix/lib/mysql51/mysql/libmysqlclient_r.so; then
-                        AC_MSG_NOTICE(Found MySQL 5.1 library in $prefix/lib/mysql55/mysql)
-                        MYSQL_LIBDIR=$prefix/lib/mysql51/mysql
-                     fi
-                     MYSQL_BINDIR=$prefix/lib/mysql51/bin
-                 ;;
-              esac
-              if test -z "${MYSQL_LIBDIR}" ; then
-                 AC_MSG_RESULT(no)
-                 AC_MSG_ERROR(MySQL $withval - unable to find MySQL libraries)
-              fi
+        fi
+     else
+        if test -f $withval/include/mysql/mysql.h; then
+           MYSQL_INCDIR=$withval/include/mysql
+           if test -f $withval/lib64/mysql/libmysqlclient_r.a \
+                -o -f $withval/lib64/mysql/libmysqlclient_r.so; then
+              MYSQL_LIBDIR=$withval/lib64/mysql
+           elif test -f $withval/lib64/libmysqlclient_r.a \
+                -o -f $withval/lib64/libmysqlclient_r.so; then
+              MYSQL_LIBDIR=$withval/lib64
+           elif test -f $withval/lib/libmysqlclient_r.a \
+                -o -f $withval/lib/libmysqlclient_r.so; then
+              MYSQL_LIBDIR=$withval/lib
            else
-              AC_MSG_RESULT(no)
-              AC_MSG_ERROR(Invalid MySQL directory $withval - unable to find mysql.h under $withval)
+              MYSQL_LIBDIR=$withval/lib/mysql
            fi
-        fi
-     MYSQL_INCLUDE=-I$MYSQL_INCDIR
-     if test -f $MYSQL_LIBDIR/libmysqlclient_r.a \
-          -o -f $MYSQL_LIBDIR/libmysqlclient_r.so; then
-        if test x$use_libtool != xno; then
-           MYSQL_LIBS="-R $MYSQL_LIBDIR -L$MYSQL_LIBDIR -lmysqlclient_r -lz"
+           MYSQL_BINDIR=$withval/bin
+        elif test -f $withval/include/mysql.h; then
+           MYSQL_INCDIR=$withval/include
+           if test -f $withval/lib64/libmysqlclient_r.a \
+                -o -f $withval/lib64/libmysqlclient_r.so; then
+              MYSQL_LIBDIR=$withval/lib64
+           else
+              MYSQL_LIBDIR=$withval/lib
+           fi
+           MYSQL_BINDIR=$withval/bin
+        elif test -f $withval/mysql.h; then
+           dnl MacPorts on OSX has a special MySQL Layout. See #2079
+           MYSQL_INCDIR=$withval
+           AC_MSG_NOTICE(Got with-mysql variable $MYSQL_INCDIR checking MySQL version)
+           case $MYSQL_INCDIR in
+              *mysql55*)
+                  AC_MSG_NOTICE(Assuming MacPorts MySQL 5.5 variant installed)
+                  dnl with-mysql given contains mysql55 - assuming OSX MacPorts MySQL55 variant
+                  if test -f $prefix/lib/mysql55/mysql/libmysqlclient_r.a \
+                       -o -f $prefix/lib/mysql55/mysql/libmysqlclient_r.so; then
+                     AC_MSG_NOTICE(Found MySQL 5.5 library in $prefix/lib/mysql55/mysql)
+                     MYSQL_LIBDIR=$prefix/lib/mysql55/mysql
+                  fi
+                  MYSQL_BINDIR=$prefix/lib/mysql55/bin
+              ;;
+              *mysql51*)
+                  AC_MSG_NOTICE(Assuming MacPorts MySQL 5.1 variant installed)
+                  dnl with-mysql contains mysql51 - assuming OSX MacPorts MySQL51 variant
+                  if test -f $prefix/lib/mysql51/mysql/libmysqlclient_r.a \
+                       -o -f $prefix/lib/mysql51/mysql/libmysqlclient_r.so; then
+                     AC_MSG_NOTICE(Found MySQL 5.1 library in $prefix/lib/mysql55/mysql)
+                     MYSQL_LIBDIR=$prefix/lib/mysql51/mysql
+                  fi
+                  MYSQL_BINDIR=$prefix/lib/mysql51/bin
+              ;;
+           esac
+           if test -z "${MYSQL_LIBDIR}" ; then
+              AC_MSG_RESULT(no)
+              AC_MSG_ERROR(MySQL $withval - unable to find MySQL libraries)
+           fi
         else
-           MYSQL_LIBS="-L$MYSQL_LIBDIR -lmysqlclient_r -lz"
+           AC_MSG_RESULT(no)
+           AC_MSG_ERROR(Invalid MySQL directory $withval - unable to find mysql.h under $withval)
         fi
-        DB_LIBS="${DB_LIBS} ${MYSQL_LIBS}"
      fi
-     MYSQL_LIB=$MYSQL_LIBDIR/libmysqlclient_r.a
+     if test "x${MYSQL_LIBDIR}" != x; then
+        MYSQL_INCLUDE=-I$MYSQL_INCDIR
+        if test "x$HAVE_LIBSR" = "xyes"; then
+           DB_LIBS="${DB_LIBS} ${MYSQL_LIBS}"
+           MYSQL_LIBS="$MYSQL_LIBDIR"
+           MYSQL_INCLUDE="$MYSQL_INCDIR"
+           if test -z "${batch_insert_db_backends}"; then
+              batch_insert_db_backends="MySQL"
+           else
+              batch_insert_db_backends="${batch_insert_db_backends} MySQL"
+           fi
+        elif test -f $MYSQL_LIBDIR/libmysqlclient_r.a \
+               -o -f $MYSQL_LIBDIR/libmysqlclient_r.so; then
+           if test x$use_libtool != xno; then
+              MYSQL_LIBS="-R $MYSQL_LIBDIR -L$MYSQL_LIBDIR -lmysqlclient_r -lz"
+           else
+              MYSQL_LIBS="-L$MYSQL_LIBDIR -lmysqlclient_r -lz"
+           fi
+           DB_LIBS="${DB_LIBS} ${MYSQL_LIBS}"
+        fi
+        if test "x${MYSQL_LIBS}" = x; then
+           MYSQL_LIBS=$MYSQL_LIBDIR/libmysqlclient_r.a
+        fi
 
-     AC_DEFINE(HAVE_MYSQL, 1, [Set if you have an MySQL Database])
-     AC_MSG_RESULT(yes)
+        AC_DEFINE(HAVE_MYSQL, 1, [Set if you have an MySQL Database])
+        AC_MSG_RESULT(yes)
 
-     if test -z "${db_backends}" ; then
-         db_backends="MySQL"
+        if test -z "${db_backends}" ; then
+            db_backends="MySQL"
+        else
+            db_backends="${db_backends} MySQL"
+        fi
+        if test -z "${DB_BACKENDS}" ; then
+            DB_BACKENDS="mysql"
+        else
+            DB_BACKENDS="${DB_BACKENDS} mysql"
+        fi
+
+        dnl -------------------------------------------
+        dnl Check if mysql supports batch mode
+        dnl -------------------------------------------
+        if test "x$HAVE_LIBSR" = "xno"; then
+          if test "x$support_batch_insert" = "xyes"; then
+            dnl For mysql checking
+            saved_LDFLAGS="${LDFLAGS}"
+            LDFLAGS="${saved_LDFLAGS} -L$MYSQL_LIBDIR"
+            saved_LIBS="${LIBS}"
+            LIBS="${saved_LIBS} -lz"
+
+            AC_CHECK_LIB(mysqlclient_r, mysql_thread_safe, AC_DEFINE(HAVE_MYSQL_THREAD_SAFE, 1, [Set if have mysql_thread_safe]))
+            if test "x$ac_cv_lib_mysqlclient_r_mysql_thread_safe" = "xyes"; then
+                if test -z "${batch_insert_db_backends}"; then
+                    batch_insert_db_backends="MySQL"
+                else
+                    batch_insert_db_backends="${batch_insert_db_backends} MySQL"
+                fi
+            fi
+
+            dnl Revert after mysql checks
+            LDFLAGS="${saved_LDFLAGS}"
+            LIBS="${saved_LIBS}"
+          fi
+        fi
      else
-         db_backends="${db_backends} MySQL"
+        AC_MSG_RESULT(no)
      fi
-     if test -z "${DB_BACKENDS}" ; then
-         DB_BACKENDS="mysql"
-     else
-         DB_BACKENDS="${DB_BACKENDS} mysql"
-     fi
-
-     dnl -------------------------------------------
-     dnl Check if mysql supports batch mode
-     dnl -------------------------------------------
-     if test "x$support_batch_insert" = "xyes"; then
-         dnl For mysql checking
-         saved_LDFLAGS="${LDFLAGS}"
-         LDFLAGS="${saved_LDFLAGS} -L$MYSQL_LIBDIR"
-         saved_LIBS="${LIBS}"
-         LIBS="${saved_LIBS} -lz"
-
-         AC_CHECK_LIB(mysqlclient_r, mysql_thread_safe, AC_DEFINE(HAVE_MYSQL_THREAD_SAFE, 1, [Set if have mysql_thread_safe]))
-         if test "x$ac_cv_lib_mysqlclient_r_mysql_thread_safe" = "xyes"; then
-             if test -z "${batch_insert_db_backends}"; then
-                 batch_insert_db_backends="MySQL"
-             else
-                 batch_insert_db_backends="${batch_insert_db_backends} MySQL"
-             fi
-         fi
-
-         dnl Revert after mysql checks
-         LDFLAGS="${saved_LDFLAGS}"
-         LIBS="${saved_LIBS}"
-     fi
-  else
-     AC_MSG_RESULT(no)
   fi
 ],[
   AC_MSG_RESULT(no)
