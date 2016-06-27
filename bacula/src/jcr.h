@@ -192,6 +192,7 @@ public:
       pthread_mutex_destroy(&mutex_auth);
       pthread_mutex_destroy(&mutex);
    };
+   bool is_internal_job() {return (JobId == 0 || m_JobType == JT_SYSTEM || m_JobType == JT_CONSOLE); };
    bool is_job_canceled() {return job_canceled(this); };
    bool is_canceled() {return job_canceled(this); };
    bool is_incomplete() { return JobStatus == JS_Incomplete; };

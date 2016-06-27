@@ -1840,7 +1840,7 @@ int wait_cmd(UAContext *ua, const char *cmd)
       for (bool running=true; running; ) {
          running = false;
          foreach_jcr(jcr) {
-            if (jcr->JobId != 0) {
+            if (!jcr->is_internal_job()) {
                running = true;
                break;
             }
@@ -1900,7 +1900,7 @@ int wait_cmd(UAContext *ua, const char *cmd)
       } else if (strcasecmp(ua->argk[i], "mount") == 0) {
          for (bool waiting=false; !waiting; ) {
             foreach_jcr(jcr) {
-               if (jcr->JobId != 0 &&
+               if (!jcr->is_internal_job() &&
                    (jcr->JobStatus == JS_WaitMedia || jcr->JobStatus == JS_WaitMount)) {
                   waiting = true;
                   break;

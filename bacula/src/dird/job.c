@@ -648,6 +648,8 @@ static int cancel_inactive_job(UAContext *ua, JCR *jcr)
    cancel_sd_job(ua, "cancel", jcr);
 
 bail_out:
+   jcr->JobId = 0;
+   free_jcr(jcr);
    return 1;
 }
 

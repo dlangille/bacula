@@ -1293,7 +1293,7 @@ static int count_running_jobs(UAContext *ua)
    JCR *jcr;
    /* Count Jobs running */
    foreach_jcr(jcr) {
-      if (jcr->JobId == 0) {      /* this is us */
+      if (jcr->is_internal_job()) {      /* this is us */
          continue;
       }
       tjobs++;                    /* count of all jobs */
@@ -1363,7 +1363,7 @@ int select_running_jobs(UAContext *ua, alist *jcrs, const char *reason)
       /* TODO: might want to implement filters (client, status, etc...) */
       } else if (strcasecmp(ua->argk[i], NT_("all")) == 0) {
          foreach_jcr(jcr) {
-            if (jcr->JobId == 0) {      /* Do not cancel consoles */
+            if (jcr->is_internal_job()) { /* Do not cancel consoles */
                continue;
             }
             if (!acl_access_ok(ua, Job_ACL, jcr->job->name())) {
@@ -1454,7 +1454,7 @@ int select_running_jobs(UAContext *ua, alist *jcrs, const char *reason)
       start_prompt(ua, _("Select Job(s):\n"));
       foreach_jcr(jcr) {
          char ed1[50];
-         if (jcr->JobId == 0) {      /* this is us */
+         if (jcr->is_internal_job()) {      /* this is us */
             continue;
          }
          bsnprintf(buf, sizeof(buf), _("JobId=%s Job=%s"), edit_int64(jcr->JobId, ed1), jcr->Job);

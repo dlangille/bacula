@@ -68,7 +68,7 @@ bool dot_status_cmd(UAContext *ua, const char *cmd)
       if (strcasecmp(ua->argk[2], "current") == 0) {
          ua->send_msg(OKqstatus, ua->argk[2]);
          foreach_jcr(njcr) {
-            if (njcr->JobId != 0 && acl_access_ok(ua, Job_ACL, njcr->job->name())) {
+            if (!njcr->is_internal_job() && acl_access_ok(ua, Job_ACL, njcr->job->name())) {
                ua->send_msg(DotStatusJob, edit_int64(njcr->JobId, ed1),
                         njcr->JobStatus, njcr->JobErrors);
             }
