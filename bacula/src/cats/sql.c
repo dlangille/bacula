@@ -686,7 +686,8 @@ list_result(JCR *jcr, BDB *mdb, DB_LIST_HANDLER *send, void *ctx, e_list_type ty
          } else if (mdb->sql_field_is_numeric(field->type) && !jcr->gui && is_an_integer(row[i])) { 
             bsnprintf(buf, sizeof(buf), " %*s |", max_len, 
                       add_commas(row[i], ewc)); 
-         } else { 
+         } else {
+            strip_trailing_junk(row[i]);
             bsnprintf(buf, sizeof(buf), " %-*s |", max_len, row[i]); 
          } 
          send(ctx, buf); 
@@ -711,7 +712,8 @@ vertical_list:
          } else if (mdb->sql_field_is_numeric(field->type) && !jcr->gui && is_an_integer(row[i])) { 
             bsnprintf(buf, sizeof(buf), " %*s: %s\n", max_len, field->name, 
                 add_commas(row[i], ewc)); 
-         } else { 
+         } else {
+            strip_trailing_junk(row[i]);
             bsnprintf(buf, sizeof(buf), " %*s: %s\n", max_len, field->name, row[i]); 
          } 
          send(ctx, buf); 
