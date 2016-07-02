@@ -582,7 +582,7 @@ static bool do_label(JCR *jcr, int relabel)
             if (reserve_volume(dcr, newname) == NULL) {
                ok = false;
             }
-            Dmsg1(000, "Reserved volume \"%s\"\n", newname);
+            Dmsg1(400, "Reserved volume \"%s\"\n", newname);
          } else {
             ok = false;
          }
