@@ -24258,6 +24258,9 @@ $as_echo "no" >&6; }
            DB_LIBS="${DB_LIBS} ${MYSQL_LIBS}"
            MYSQL_LIBS="$MYSQL_LIBDIR"
            MYSQL_INCLUDE="$MYSQL_INCDIR"
+
+$as_echo "#define HAVE_MYSQL_THREAD_SAFE 1" >>confdefs.h
+
            if test -z "${batch_insert_db_backends}"; then
               batch_insert_db_backends="MySQL"
            else
