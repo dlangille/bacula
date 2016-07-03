@@ -485,6 +485,7 @@ AC_HELP_STRING([--with-mysql@<:@=DIR@:>@], [Include MySQL support. DIR is the My
            DB_LIBS="${DB_LIBS} ${MYSQL_LIBS}"
            MYSQL_LIBS="$MYSQL_LIBDIR"
            MYSQL_INCLUDE="$MYSQL_INCDIR"
+           AC_DEFINE(HAVE_MYSQL_THREAD_SAFE, 1, [Set if have mysql_thread_safe])
            if test -z "${batch_insert_db_backends}"; then
               batch_insert_db_backends="MySQL"
            else
