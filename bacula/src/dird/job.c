@@ -1011,7 +1011,9 @@ bool allow_duplicate_job(JCR *jcr)
       if (djcr->IgnoreDuplicateJobChecking) {
          continue; 
       } 
-      if (strcmp(job->name(), djcr->job->name()) == 0) {
+      if ((strcmp(job->name(), djcr->job->name()) == 0) &&
+          djcr->getJobType() == jcr->getJobType()) /* A duplicate is about the same name and the same type */
+      {
          bool cancel_dup = false;
          bool cancel_me = false;
          if (job->DuplicateJobProximity > 0) {
