@@ -1,5 +1,33 @@
-              Changelog on version 7.4.1
+              Changelog on version 7.4.2
 
+
+Release version 7.4.2
+
+06Jul16
+ - Fix #1926 about wrong duplicate job detection with Copy/Migration and Backup 
+  jobs
+
+03Jul16
+ - Recompile configure after db.m4 change
+ - Fix batch insert for MySQL 5.7
+
+02Jul16
+ - Fix zero level debug output -- now at 100
+
+29Jun16
+ - Fix #766 about Job logs displayed with unneeded linefeed
+
+27Jun16
+ - Fix #1902 about a segfault with the "cancel inactive" command
+
+14Jun16
+ - Fix bug where MySQL 5.7 is improperly linked on Ubuntu 16.04
+
+Bugs fixed/closed since last release:
+1902 1926 766
+
+
+==============================================
 
 Release version 7.4.1
 

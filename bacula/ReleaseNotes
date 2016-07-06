@@ -1,5 +1,27 @@
 
-               Release Notes for Bacula 7.4.1
+               Release Notes for Bacula 7.4.2
+
+Release version 7.4.2
+
+This is an important bug fix release to version 7.4.1 mainly
+fixes detection of MySQL 5.7 (as found in Ubuntu 16.04).  Certain bug
+fixes contributed by Bacula Systems.
+
+06Jul16
+ - Fix #1926 about wrong duplicate job detection with Copy/Migration and
+   Backup jobs
+ - Recompile configure after db.m4 change
+ - Fix batch insert for MySQL 5.7
+ - Fix zero level debug output -- now at 100
+ - Fix #766 about Job logs displayed with unneeded linefeed
+ - Fix #1902 about a segfault with the "cancel inactive" command
+ - Fix bug where MySQL 5.7 is improperly linked on Ubuntu 16.04
+
+Bugs fixed/closed since last release:
+1902 1926 766
+
+
+=================================================
 
 Release version 7.4.1
 
