@@ -646,7 +646,9 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
          prog_name_msg++;
       }
       break;
-
+   case STREAM_PLUGIN_NAME:
+      /* Just ignore the plugin name */
+      break;
    default:
       /* If extracting, weird stream (not 1 or 2), close output file anyway */
       if (extract) {
