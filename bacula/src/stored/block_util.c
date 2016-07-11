@@ -621,8 +621,8 @@ bool check_for_newvol_or_newfile(DCR *dcr)
          Dmsg0(100, "Canceled\n");
          return false;
       }
-      /* Create a jobmedia record for this job */
-      if (!dir_create_jobmedia_record(dcr)) {
+      /* If we wrote on Volume create a last jobmedia record for this job */
+      if (dcr->VolFirstIndex && !dir_create_jobmedia_record(dcr)) {
          dcr->dev->dev_errno = EIO;
          Jmsg2(jcr, M_FATAL, 0, _("Could not create JobMedia record for Volume=\"%s\" Job=%s\n"),
             dcr->getVolCatName(), jcr->Job);

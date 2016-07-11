@@ -520,17 +520,17 @@ bool dir_create_jobmedia_record(DCR *dcr, bool zero)
    JOBMEDIA_ITEM *item;
    bool ok = true;;
 
-   if (!dcr->WroteVol) {
+   if (!zero && !dcr->WroteVol) {
       return true;
    }
-   if (dcr->VolLastIndex == 0) {
+   if (!zero && dcr->VolLastIndex == 0) {
       Dmsg7(dbglvl, "JobMedia Vol=%s wrote=%d MediaId=%d FI=%d LI=%d StartBlock=%d EndBlock=%d Suppressed\n",
          dcr->VolumeName, dcr->WroteVol, dcr->VolMediaId,
          dcr->VolFirstIndex, dcr->VolLastIndex, dcr->StartBlock, dcr->EndBlock);
       return true;                    /* nothing written to the Volume */
    }
-   if (dcr->StartFile == dcr->EndFile && dcr->EndBlock < dcr->StartBlock) {
-      Dmsg7(0/*dbglvl*/, "PROBLEM Vol=%s wrote=%d MediaId=%d FI=%d LI=%d StartBlock=%d EndBlock=%d Suppressed\n",
+   if (!zero && dcr->StartFile == dcr->EndFile && dcr->EndBlock < dcr->StartBlock) {
+      Dmsg7(dbglvl, "JobMedia Vol=%s wrote=%d MediaId=%d FI=%d LI=%d StartBlock=%d EndBlock=%d Suppressed\n",
          dcr->VolumeName, dcr->WroteVol, dcr->VolMediaId,
          dcr->VolFirstIndex, dcr->VolLastIndex, dcr->StartBlock, dcr->EndBlock);
       return true;
