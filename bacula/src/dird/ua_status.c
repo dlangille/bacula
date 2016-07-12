@@ -522,8 +522,10 @@ static void prt_runtime(UAContext *ua, sched_pkt *sp)
    bstrftime_nc(dt, sizeof(dt), sp->runtime);
    switch (sp->job->JobType) {
    case JT_ADMIN:
+      level_ptr = "Admin";
+      break;
    case JT_RESTORE:
-      level_ptr = " ";
+      level_ptr = "Restore";
       break;
    default:
       level_ptr = level_to_str(sp->level);
@@ -680,8 +682,10 @@ static void llist_scheduled_jobs(UAContext *ua)
             }
             switch (job->JobType) {
             case JT_ADMIN:
+               level_ptr = "Admin";
+               break;
             case JT_RESTORE:
-               level_ptr = " ";
+               level_ptr = "Restore";
                break;
             default:
                level_ptr = level_to_str(level);
@@ -1032,8 +1036,10 @@ static void list_running_jobs(UAContext *ua)
       }
       switch (jcr->getJobType()) {
       case JT_ADMIN:
+         bstrncpy(level, "Admin", sizeof(level));
+         break;
       case JT_RESTORE:
-         bstrncpy(level, "      ", sizeof(level));
+         bstrncpy(level, "Restore", sizeof(level));
          break;
       default:
          bstrncpy(level, level_to_str(jcr->getJobLevel()), sizeof(level));
@@ -1107,8 +1113,10 @@ static void list_terminated_jobs(UAContext *ua)
       bstrftime_nc(dt, sizeof(dt), je->end_time);
       switch (je->JobType) {
       case JT_ADMIN:
+         bstrncpy(level, "Admin", sizeof(level));
+         break;
       case JT_RESTORE:
-         bstrncpy(level, "    ", sizeof(level));
+         bstrncpy(level, "Restore", sizeof(level));
          break;
       default:
          bstrncpy(level, level_to_str(je->JobLevel), sizeof(level));
