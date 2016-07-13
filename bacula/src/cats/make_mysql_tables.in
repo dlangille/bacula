@@ -2,12 +2,22 @@
 #
 # shell script to create Bacula MySQL tables
 #
-# Copyright (C) 2000-2015 Kern Sibbald
+# Copyright (C) 2000-2016 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
 # Important note: 
-#   You won't get any support for performance issue if you changed the default
-#   schema.
+#   We cannot provide support for performance issues 
+#    if you changed the default schema.  In partcular
+#    if you change any of the indexes.
+#
+# Useful commands:
+#   mysql -u root
+#   show databases;
+#   show tables from <database>;
+#   show columns from <table> from <database>;
+#
+#   use mysql;
+#   select user from user;
 #
 bindir=@MYSQL_BINDIR@
 PATH="$bindir:$PATH"
