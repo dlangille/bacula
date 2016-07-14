@@ -753,7 +753,7 @@ bool qstatus_cmd(JCR *jcr)
 static void list_plugins(STATUS_PKT *sp)
 {
    POOL_MEM msg(PM_MESSAGE);
-   if (b_plugin_list->size() > 0) {
+   if (b_plugin_list && b_plugin_list->size() > 0) {
       Plugin *plugin;
       int len;
       pm_strcpy(msg, " Plugin: ");

@@ -309,7 +309,7 @@ void list_dir_status_header(UAContext *ua)
       edit_uint64_with_commas(sm_max_buffers, b5));
 
    /* TODO: use this function once for all daemons */
-   if (b_plugin_list->size() > 0) {
+   if (b_plugin_list && b_plugin_list->size() > 0) {
       int len;
       Plugin *plugin;
       POOL_MEM msg(PM_FNAME);

@@ -69,9 +69,11 @@ void free_bregexp(BREGEXP *self)
  */
 void free_bregexps(alist *bregexps)
 {
-   Dmsg0(500, "bregexp: freeing all BREGEXP object\n");
-
    BREGEXP *elt;
+   Dmsg0(500, "bregexp: freeing all BREGEXP object\n");
+   if (!bregexps) {
+      return;
+   }
    foreach_alist(elt, bregexps) {
       free_bregexp(elt);
    }

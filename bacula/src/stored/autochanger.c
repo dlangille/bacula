@@ -436,7 +436,7 @@ static bool unload_other_drive(DCR *dcr, int slot)
    int loaded;
    int i;
 
-   if (!changer) {
+   if (!changer || !changer->device) {
       return false;
    }
    if (changer->device->size() == 1) {
@@ -625,7 +625,7 @@ bool autochanger_cmd(DCR *dcr, BSOCK *dir, const char *cmd)
    if (strcasecmp(cmd, "drives") == 0) {
       AUTOCHANGER *changer_res = dcr->device->changer_res;
       int drives = 1;
-      if (changer_res) {
+      if (changer_res && changer_res->device) {
          drives = changer_res->device->size();
       }
       dir->fsend("drives=%d\n", drives);

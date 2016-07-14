@@ -1621,7 +1621,7 @@ static bool defaultscmd(UAContext *ua, const char *cmd)
          ua->send_msg("sdport=%d", storage->SDport);
          device = (DEVICE *)storage->device->first();
          ua->send_msg("device=%s", device->name());
-         if (storage->device->size() > 1) {
+         if (storage->device && storage->device->size() > 1) {
             while ((device = (DEVICE *)storage->device->next())) {
                ua->send_msg(",%s", device->name());
             }

@@ -672,7 +672,9 @@ int send_runscripts_commands(JCR *jcr)
    int result;
 
    Dmsg0(120, "bdird: sending runscripts to fd\n");
-
+   if (!jcr->job->RunScripts) {
+      goto norunscript;
+   }
    foreach_alist(cmd, jcr->job->RunScripts) {
       if (cmd->can_run_at_level(jcr->getJobLevel()) && cmd->target) {
          ehost = edit_job_codes(jcr, ehost, cmd->target, "");
@@ -719,6 +721,7 @@ int send_runscripts_commands(JCR *jcr)
         goto bail_out;
       }
    }
+norunscript:
    free_pool_memory(msg);
    free_pool_memory(ehost);
    return 1;

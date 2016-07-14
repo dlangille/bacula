@@ -90,7 +90,7 @@ static void  list_status_header(STATUS_PKT *sp)
               edit_uint64(debug_level, b2), get_trace(), (int)DEVELOPER_MODE,
               edit_uint64_with_commas(me->max_bandwidth_per_job/1024, b1));
    sendit(msg.c_str(), len, sp);
-   if (b_plugin_list->size() > 0) {
+   if (b_plugin_list && b_plugin_list->size() > 0) {
       Plugin *plugin;
       int len;
       pm_strcpy(msg, " Plugin: ");
