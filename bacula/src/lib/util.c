@@ -199,6 +199,10 @@ char *asciidump(const char *data, int len, char *buf, int capacity)
 {
    char *b=buf;
    const unsigned char *p=(const unsigned char *)data;
+   if (!data) {
+      strncpy(buf, "<NULL>", capacity);
+      return buf;
+   }
    while (len>0 && capacity>1) {
       if (isprint(*p)) {
          *(b++)=*(p++);
@@ -223,6 +227,10 @@ char *smartdump(const char *data, int len, char *buf, int capacity, bool *is_asc
    int l=len;
    int c=capacity;
    const unsigned char *p=(const unsigned char *)data;
+   if (!data) {
+      strncpy(buf, "<NULL>", capacity);
+      return buf;
+   }
    if (is_ascii != NULL) {
       *is_ascii = false;
    }
