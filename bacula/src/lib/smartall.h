@@ -109,15 +109,13 @@ void *operator new(size_t s, const char *fname, int line)
 {
    size_t size =  s > sizeof(int) ? (unsigned int)s : sizeof(int);
    void *p = sm_malloc(fname, line, size);
-   memset(p, 0, size);
-   return p;
+   return memset(p, 0, size);   /* return memset() result to avoid GCC 6.1 issue */
 }
 void *operator new[](size_t s, const char *fname, int line)
 {
    size_t size =  s > sizeof(int) ? (unsigned int)s : sizeof(int);
    void *p = sm_malloc(fname, line, size);
-   memset(p, 0, size);
-   return p;
+   return memset(p, 0, size);  /* return memset() result to avoid GCC 6.1 issue */
 }
 
 void  operator delete(void *ptr)
