@@ -325,11 +325,13 @@ RES_ITEM job_items[] = {
    {"SpoolSize",   store_size64, ITEM(res_job.spool_size), 0, 0, 0},
    {"ReRunFailedLevels",   store_bool, ITEM(res_job.rerun_failed_levels), 0, ITEM_DEFAULT, false},
    {"PreferMountedVolumes", store_bool, ITEM(res_job.PreferMountedVolumes), 0, ITEM_DEFAULT, true},
-   {"runbeforejob", store_short_runscript,  ITEM(res_job.RunScripts),  0, 0, 0},
-   {"runafterjob",  store_short_runscript,  ITEM(res_job.RunScripts),  0, 0, 0},
-   {"runafterfailedjob",  store_short_runscript,  ITEM(res_job.RunScripts),  0, 0, 0},
-   {"clientrunbeforejob", store_short_runscript,  ITEM(res_job.RunScripts),  0, 0, 0},
-   {"clientrunafterjob",  store_short_runscript,  ITEM(res_job.RunScripts),  0, 0, 0},
+   {"RunBeforeJob", store_short_runscript,  ITEM(res_job.RunScripts),  0, 0, 0},
+   {"RunAfterJob",  store_short_runscript,  ITEM(res_job.RunScripts),  0, 0, 0},
+   {"RunAfterFailedJob",  store_short_runscript,  ITEM(res_job.RunScripts),  0, 0, 0},
+   {"ClientRunBeforeJob", store_short_runscript,  ITEM(res_job.RunScripts),  0, 0, 0},
+   {"ClientRunAfterJob",  store_short_runscript,  ITEM(res_job.RunScripts),  0, 0, 0},
+   {"ConsoleRunBeforeJob", store_short_runscript,  ITEM(res_job.RunScripts),  0, 0, 0},
+   {"ConsoleRunAfterJob",  store_short_runscript,  ITEM(res_job.RunScripts),  0, 0, 0},
    {"Runscript",          store_runscript, ITEM(res_job.RunScripts), 0, ITEM_NO_EQUALS, 0},
    {"MaximumConcurrentJobs", store_pint32, ITEM(res_job.MaxConcurrentJobs), 0, ITEM_DEFAULT, 1},
    {"MaximumSpawnedJobs", store_pint32, ITEM(res_job.MaxSpawnedJobs), 0, ITEM_DEFAULT, 600},
@@ -1984,6 +1986,12 @@ static void store_short_runscript(LEX *lc, RES_ITEM *item, int index, int pass)
          script->on_failure = false;
          script->set_target("");
 
+      } else if (strcasecmp(item->name, "clientrunbeforejob") == 0) {
+         script->old_proto = true;
+         script->when = SCRIPT_Before;
+         script->set_target("%c");
+         script->fail_on_error = true;
+
       } else if (strcasecmp(item->name, "clientrunafterjob") == 0) {
          script->old_proto = true;
          script->when = SCRIPT_After;
@@ -1991,11 +1999,18 @@ static void store_short_runscript(LEX *lc, RES_ITEM *item, int index, int pass)
          script->on_success = true;
          script->on_failure = false;
 
-      } else if (strcasecmp(item->name, "clientrunbeforejob") == 0) {
-         script->old_proto = true;
+      } else if (strcasecmp(item->name, "consolerunbeforejob") == 0) {
          script->when = SCRIPT_Before;
-         script->set_target("%c");
+         script->set_target("");
          script->fail_on_error = true;
+         script->set_command(NPRT(script->command), CONSOLE_CMD);
+
+      } else if (strcasecmp(item->name, "consolerunafterjob") == 0) {
+         script->when = SCRIPT_After;
+         script->set_target("");
+         script->on_success = true;
+         script->on_failure = false;
+         script->set_command(NPRT(script->command), CONSOLE_CMD);
 
       } else if (strcasecmp(item->name, "runafterfailedjob") == 0) {
          script->when = SCRIPT_After;
