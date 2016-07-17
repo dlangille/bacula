@@ -45,24 +45,23 @@ sufficient copyright rights in its Contribution, if any, to grant
 the copyright license set forth in the LICENSE file..
 
 Notices:
-The Bacula community version uses a certain number of files that have
-FOSS (Free or Open Software) licenses.  Many of these files come from and are
-identical to the Bacula community code.  Most 3rd party FOSS licenses require
-no notification so they are not included here. 
+The Bacula community version uses a certain number of files that have FOSS
+(Free or Open Software) licenses.  Most 3rd party FOSS licenses require no
+notification so they are not included here.
 
-However, the Bacula Community binary releases consist of 
-files, with few source files (mostly scripts), and some of the FOSS licenses
-such such as the BSD (Berkeley Software Development) require publication of
-the copyright notices if the code is released in binary format.  For example
+However, the Bacula Community binary releases consist of files, with few
+source files (mostly scripts), and some of the FOSS licenses such such as
+the BSD (Berkeley Software Development) require publication of the
+copyright notices if the code is released in binary format.  For example
 certain copyright notifications are simplifed such as:
 
-# Copyright (C) 2000-2015 Kern Sibbald
+# Copyright (C) 2000-2016 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 
 This license corresponds to the following:
 
 =====
-Copyright (C) 2000-2015 Kern Sibbald
+Copyright (C) 2000-2016 Kern Sibbald
 License: BSD 2-Clause; see file LICENSE-FOSS
 
 Redistribution and use in source and binary forms, with or without
@@ -109,15 +108,15 @@ Manpages:
 This man page document is released under the BSD 2-Clause license.
 
 Update datbase (updatedb):
-# Copyright (C) 2000-2015 Kern Sibbald
+# Copyright (C) 2000-2016 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 
 Scripts (scripts):
-# Copyright (C) 2000-2015 Kern Sibbald
+# Copyright (C) 2000-2016 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 
 Platforms (platforms):
-# Copyright (C) 2000-2015 Kern Sibbald
+# Copyright (C) 2000-2016 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 
 Libraries (src/lib):
