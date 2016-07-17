@@ -343,13 +343,15 @@ static bool strunit_to_uint64(char *str, int str_len, uint64_t *value,
    double val;
    char mod_str[20];
    char num_str[50];
-   const int64_t mult[] = {1,             /* byte */
-                           1024,          /* kilobyte */
-                           1000,          /* kb kilobyte */
-                           1048576,       /* megabyte */
-                           1000000,       /* mb megabyte */
-                           1073741824,    /* gigabyte */
-                           1000000000};   /* gb gigabyte */
+   const int64_t mult[] = {1,              /* byte */
+                           1024,           /* kilobyte */
+                           1000,           /* kb kilobyte */
+                           1048576,        /* megabyte */
+                           1000000,        /* mb megabyte */
+                           1073741824,     /* gigabyte */
+                           1000000000,     /* gb gigabyte */
+                           1099511627776,  /* terabyte */
+                           1000000000000}; /* tb terabyte */
 
    if (!get_modifier(str, num_str, sizeof(num_str), mod_str, sizeof(mod_str))) {
       return 0;
@@ -386,7 +388,8 @@ static bool strunit_to_uint64(char *str, int str_len, uint64_t *value,
 bool size_to_uint64(char *str, int str_len, uint64_t *value)
 {
    /* first item * not used */
-   static const char *mod[]  = {"*", "k", "kb", "m", "mb",  "g", "gb",  NULL};
+   static const char *mod[]  = {"*", "k", "kb", "m", "mb",
+                                     "g", "gb", "t", "tb", NULL};
    return strunit_to_uint64(str, str_len, value, mod);
 }
 
