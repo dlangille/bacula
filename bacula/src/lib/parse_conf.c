@@ -369,8 +369,8 @@ void store_name(LEX *lc, RES_ITEM *item, int index, int pass)
    free_pool_memory(msg);
    /* Store the name both pass 1 and pass 2 */
    if (*(item->value)) {
-      scan_err2(lc, _("Attempt to redefine name \"%s\" to \"%s\"."),
-         *(item->value), lc->str);
+      scan_err5(lc, _("Attempt to redefine \"%s\" from \"%s\" to \"%s\" referenced on line %d : %s\n"),
+         item->name, *(item->value), lc->str, lc->line_no, lc->line);
       return;
    }
    *(item->value) = bstrdup(lc->str);
@@ -388,6 +388,11 @@ void store_strname(LEX *lc, RES_ITEM *item, int index, int pass)
    lex_get_token(lc, T_NAME);
    /* Store the name */
    if (pass == 1) {
+      if (*(item->value)) {
+         scan_err5(lc, _("Attempt to redefine \"%s\" from \"%s\" to \"%s\" referenced on line %d : %s\n"),
+            item->name, *(item->value), lc->str, lc->line_no, lc->line);
+         return;
+      }
       *(item->value) = bstrdup(lc->str);
    }
    scan_to_eol(lc);
@@ -399,6 +404,11 @@ void store_str(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    lex_get_token(lc, T_STRING);
    if (pass == 1) {
+      if (*(item->value)) {
+         scan_err5(lc, _("Attempt to redefine \"%s\" from \"%s\" to \"%s\" referenced on line %d : %s\n"),
+            item->name, *(item->value), lc->str, lc->line_no, lc->line);
+         return;
+      }
       *(item->value) = bstrdup(lc->str);
    }
    scan_to_eol(lc);
@@ -416,6 +426,11 @@ void store_dir(LEX *lc, RES_ITEM *item, int index, int pass)
    if (pass == 1) {
       if (lc->str[0] != '|') {
          do_shell_expansion(lc->str, sizeof_pool_memory(lc->str));
+      }
+      if (*(item->value)) {
+         scan_err5(lc, _("Attempt to redefine \"%s\" from \"%s\" to \"%s\" referenced on line %d : %s\n"),
+            item->name, *(item->value), lc->str, lc->line_no, lc->line);
+         return;
       }
       *(item->value) = bstrdup(lc->str);
    }
@@ -441,6 +456,11 @@ void store_password(LEX *lc, RES_ITEM *item, int index, int pass)
       for (i = j = 0; i < sizeof(digest); i++) {
          sprintf(&sig[j], "%02x", digest[i]);
          j += 2;
+      }
+      if (*(item->value)) {
+         scan_err5(lc, _("Attempt to redefine \"%s\" from \"%s\" to \"%s\" referenced on line %d : %s\n"),
+            item->name, *(item->value), lc->str, lc->line_no, lc->line);
+         return;
       }
       *(item->value) = bstrdup(sig);
    }
