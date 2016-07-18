@@ -10,6 +10,7 @@ new GCC agressive optimization and it breaks a lot of programs
 including Bacula.  This problem showed up on ArchLinux and Fedora 24.
 
 17Jul16
+ - Add LICENSE and LICENSE-FOSS files to the documentation
  - Add shortcut to RunScript console commands. Submitted by Wanderlei Huttel. 
    Fixes bug #2224
  - Fail when multiple mailcommand and other strings are specified in .conf. Fixes 
