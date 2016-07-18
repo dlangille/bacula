@@ -119,10 +119,12 @@ struct RES_TABLE {
 
 #define MAX_RES_NAME_LENGTH MAX_NAME_LENGTH-1       /* maximum resource name length */
 
-#define ITEM_REQUIRED    0x1          /* item required */
-#define ITEM_DEFAULT     0x2          /* default supplied */
-#define ITEM_NO_EQUALS   0x4          /* Don't scan = after name */
-#define ITEM_LAST        0x8          /* Last item in list */
+/* Permitted bits in Flags field */
+#define ITEM_REQUIRED    (1<<0)       /* item required */
+#define ITEM_DEFAULT     (1<<1)       /* default supplied */
+#define ITEM_NO_EQUALS   (1<<2)       /* Don't scan = after name */
+#define ITEM_LAST        (1<<3)       /* Last item in list */
+#define ITEM_ALLOW_DUPS  (1<<4)       /* Allow duplicate directives */
 
 /* Message Resource */
 class MSGS {

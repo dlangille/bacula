@@ -91,8 +91,8 @@ static bool find_config_file(const char *config_file, char *full_path, int max_p
 RES_ITEM msgs_items[] = {
    {"Name",        store_name,    ITEM(res_msgs.hdr.name),  0, 0, 0},
    {"Description", store_str,     ITEM(res_msgs.hdr.desc),  0, 0, 0},
-   {"MailCommand", store_str,     ITEM(res_msgs.mail_cmd),  0, 0, 0},
-   {"OperatorCommand", store_str, ITEM(res_msgs.operator_cmd), 0, 0, 0},
+   {"MailCommand", store_str,     ITEM(res_msgs.mail_cmd),  0, ITEM_ALLOW_DUPS, 0},
+   {"OperatorCommand", store_str, ITEM(res_msgs.operator_cmd), 0, ITEM_ALLOW_DUPS, 0},
    {"Syslog",      store_msgs, ITEM(res_msgs), MD_SYSLOG,   0, 0},
    {"Mail",        store_msgs, ITEM(res_msgs), MD_MAIL,     0, 0},
    {"MailOnError", store_msgs, ITEM(res_msgs), MD_MAIL_ON_ERROR, 0, 0},
@@ -404,6 +404,10 @@ void store_str(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    lex_get_token(lc, T_STRING);
    if (pass == 1) {
+      if (*(item->value) && (item->flags & ITEM_ALLOW_DUPS)) {
+         free(*(item->value));
+         *(item->value) = NULL;
+      }
       if (*(item->value)) {
          scan_err5(lc, _("Attempt to redefine \"%s\" from \"%s\" to \"%s\" referenced on line %d : %s\n"),
             item->name, *(item->value), lc->str, lc->line_no, lc->line);
