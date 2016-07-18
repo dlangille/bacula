@@ -1,5 +1,38 @@
 
-               Release Notes for Bacula 7.4.2
+               Release Notes for Bacula 7.4.3
+
+Release version 7.4.3
+
+This is a bug fix release. Most importantly, it fixes the new
+GCC 6.0 aggressive compiler behavior that elides (deletes) code 
+written by the Bacula developers.  There is no benefit to the
+new GCC agressive optimization and it breaks a lot of programs
+including Bacula.  This problem showed up on ArchLinux and Fedora 24.
+
+17Jul16
+ - Add shortcut to RunScript console commands. Submitted by Wanderlei Huttel. 
+   Fixes bug #2224
+ - Fail when multiple mailcommand and other strings are specified in .conf. Fixes 
+   bug #2222
+ - Add support for terabytes in sizes. Submitted by Wanderlei Huttel. Fixes bug 
+   #2223
+ - Add error message for truncate command when actiononpurge not set. Fixes bug 
+   #2221
+ - Fix optimization error with GCC 6.1
+ - Fix compilation warnings with GCC 6.1
+ - Explicitly create MySQL user in grant_mysql_privileges.in
+
+Bugs fixed/closed since last release:
+2221 2222 2223 2224
+
+New feature:
+  - There are two new Director directives that simplify doing
+    console commands rather than using RunScripts.  They are
+      ConsoleRunBeforeJob = "console-command"
+      ConsoleRunAfterJob = "console-command"
+
+
+===========================================================
 
 Release version 7.4.2
 
