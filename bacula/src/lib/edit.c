@@ -350,8 +350,8 @@ static bool strunit_to_uint64(char *str, int str_len, uint64_t *value,
                            1000000,        /* mb megabyte */
                            1073741824,     /* gigabyte */
                            1000000000,     /* gb gigabyte */
-                           1099511627776,  /* terabyte */
-                           1000000000000}; /* tb terabyte */
+                           1099511627776LL,  /* terabyte */
+                           1000000000000LL}; /* tb terabyte */
 
    if (!get_modifier(str, num_str, sizeof(num_str), mod_str, sizeof(mod_str))) {
       return 0;
