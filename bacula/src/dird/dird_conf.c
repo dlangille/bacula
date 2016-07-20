@@ -713,6 +713,9 @@ void dump_resource(int type, RES *ares, void sendit(void *sock, const char *fmt,
       if (res->res_job.JobType == JT_MIGRATE || res->res_job.JobType == JT_COPY) {
          sendit(sock, _("     SelectionType=%d\n"), res->res_job.selection_type);
       }
+      if (res->res_job.JobType == JT_RESTORE) {
+         sendit(sock, _("     PrefixLinks=%d\n"), res->res_job.PrefixLinks);
+      }
       if (res->res_job.client) {
          sendit(sock, _("  --> "));
          dump_resource(-R_CLIENT, (RES *)res->res_job.client, sendit, sock);
