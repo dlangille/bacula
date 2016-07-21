@@ -479,8 +479,9 @@ bool get_scratch_volume(JCR *jcr, bool InChanger, MEDIA_DBR *mr,
             goto bail_out;
          }
 
-         Jmsg(jcr, M_INFO, 0, _("Using Volume \"%s\" from 'Scratch' pool.\n"),
-              mr->VolumeName);
+         Jmsg(jcr, M_INFO, 0, _("Using Volume \"%s\" from '%s' %spool.\n"),
+              mr->VolumeName, spr.Name,
+              ((strcmp(spr.Name, "Scratch") == 0) ? "" : "Scratch "));
 
          ok = true;
       }
