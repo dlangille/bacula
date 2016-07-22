@@ -529,6 +529,13 @@ int update_pool_references(JCR *jcr, BDB *db, POOL *pool)
 {
    POOL_DBR  pr;
 
+   if (pool->ScratchPool == pool) {
+      Jmsg(NULL, M_WARNING, 0,
+           _("The ScratchPool directive for Pool \"%s\" is incorrect. Using default Scratch pool instead.\n"),
+           pool->name());
+      pool->ScratchPool = NULL;
+   }
+
    if (!pool->RecyclePool && !pool->ScratchPool) {
       return 1;
    }
