@@ -3,7 +3,7 @@
 # usage: make DESTDIR=/some/runtime_dir
 
 NAME = baculum
-VERSION = 7.2.0
+VERSION = 7.4.3
 DEFTEMPLATE = rpm-template
 DEFHTTPDNAME = httpd
 DEFHTTPDSITECONF = conf.d

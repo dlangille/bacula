@@ -1,4 +1,4 @@
-baculum (7.2.0ppa1~wily1) wily; urgency=medium
+baculum (7.4.3ppa1~trusty1) trusty; urgency=medium
 
   [ Marcin Haba ]
   * rebuild upstream 7.2.0 for Ubuntu 15.10
