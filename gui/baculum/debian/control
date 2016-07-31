@@ -9,8 +9,8 @@ Package: baculum
 Section: web
 Architecture: all
 Depends: ${misc:Depends}, php5-cgi, php5-curl, php5-mysql, php5-pgsql, php5-sqlite, php5-json, libjs-excanvas, bacula-console
-Description: WebGUI tool for Bacula Community program
- Baculum is a web based tool to manage, administer and
+Description: Web GUI tool for Bacula
+ Baculum is a Web based tool to manage, administer and
  monitor Bacula services.
  Baculum is written in PHP and uses the PRADO Framework.
  With Baculum installed in a Web server, you can run

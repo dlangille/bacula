@@ -6,11 +6,11 @@
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
 # Short-Description: Start/stop Baculum
-# Description:       Start the Baculum WebGUI Bacula Community tool.
-#  This script uses Lighttpd web server for working Baculum WebGUI tool.
+# Description:       Start the Baculum Web GUI.
+#  This script uses Lighttpd web server for working Baculum Web GUI tool.
 ### END INIT INFO
 
-DESC="Baculum WebGUI Bacula Community tool"
+DESC="Baculum Web GUI"
 NAME=baculum
 SCRIPTNAME=/etc/init.d/$NAME
 DAEMON=/usr/sbin/lighttpd
