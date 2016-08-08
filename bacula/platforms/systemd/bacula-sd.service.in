@@ -27,6 +27,8 @@ Group=@sd_group@
 ExecStart=@sbindir@/bacula-sd -c @sysconfdir@/bacula-sd.conf
 PIDFile=@piddir@/bacula-sd.@sd_port@.pid
 StandardError=syslog
+#LimitMEMLOCK=infinity
+TimeoutStopSec=3min
 
 [Install]
 WantedBy=multi-user.target
