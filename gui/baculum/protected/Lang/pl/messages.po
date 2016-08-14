@@ -83,7 +83,7 @@ msgstr "Zapisz"
 msgid "Please select language."
 msgstr "Proszę wybrać język."
 
-msgid "I have read the license terms and agree to"
+msgid "I have read the license terms and accept them"
 msgstr "Przeczytałem licencję i akceptuję jej postanowienia"
 
 msgid "Database type:"

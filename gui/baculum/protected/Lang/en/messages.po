@@ -83,8 +83,8 @@ msgstr "Next &raquo;"
 msgid "Save"
 msgstr "Save"
 
-msgid "I have read the license terms and agree to"
-msgstr "I have read the license terms and agree to"
+msgid "I have read the license terms and accept them"
+msgstr "I have read the license terms and accept them"
 
 msgid "Database type:"
 msgstr "Database type:"
