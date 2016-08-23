@@ -69,7 +69,12 @@ public:
    /* Methods */
    run_ctx() { memset(this, 0, sizeof(run_ctx));
                store = new USTORE; };
-   ~run_ctx() { delete store; };
+   ~run_ctx() {
+      delete store;
+      if (JobIds) {
+         delete JobIds;
+      }
+   };
 };
 
 /* Forward referenced subroutines */
