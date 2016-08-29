@@ -58,7 +58,7 @@ int BDB::bdb_add_digest_to_file_record(JCR *jcr, FileId_t FileId, char *digest,
    bdb_escape_string(jcr, esc_name, digest, len);
    Mmsg(cmd, "UPDATE File SET MD5='%s' WHERE FileId=%s", esc_name,
         edit_int64(FileId, ed1));
-   ret = UpdateDB(jcr, cmd, false);
+   ret = UpdateDB(jcr, cmd, true);
    bdb_unlock();
    return ret;
 }
