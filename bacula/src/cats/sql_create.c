@@ -133,7 +133,7 @@ bool BDB::bdb_create_jobmedia_record(JCR *jcr, JOBMEDIA_DBR *jm)
       Mmsg(cmd,
            "UPDATE Media SET EndFile=%u, EndBlock=%u WHERE MediaId=%u",
            jm->EndFile, jm->EndBlock, jm->MediaId);
-      if (!UpdateDB(jcr, cmd)) {
+      if (!UpdateDB(jcr, cmd, false)) {
          Mmsg2(&errmsg, _("Update Media record %s failed: ERR=%s\n"), cmd,
               sql_strerror());
          ok = false;
@@ -443,7 +443,7 @@ int BDB::bdb_create_media_record(JCR *jcr, MEDIA_DBR *mr)
          strftime(dt, sizeof(dt), "%Y-%m-%d %H:%M:%S", &tm);
          Mmsg(cmd, "UPDATE Media SET LabelDate='%s' "
               "WHERE MediaId=%d", dt, mr->MediaId);
-         stat = UpdateDB(jcr, cmd);
+         stat = UpdateDB(jcr, cmd, false);
       }
       /*
        * Make sure that if InChanger is non-zero any other identical slot

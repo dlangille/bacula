@@ -102,7 +102,7 @@ public:
    void print_lock_info(FILE *fp);
 
    /* sql.c */
-   bool UpdateDB(JCR *jcr, char *cmd, const char *file=__FILE__, int line=__LINE__);
+   bool UpdateDB(JCR *jcr, char *cmd, bool can_be_empty, const char *file=__FILE__, int line=__LINE__);
    bool InsertDB(JCR *jcr, char *cmd, const char *file=__FILE__, int line=__LINE__);
    bool QueryDB(JCR *jcr, char *cmd, const char *file=__FILE__, int line=__LINE__);
    int  DeleteDB(JCR *jcr, char *cmd, const char *file=__FILE__, int line=__LINE__);

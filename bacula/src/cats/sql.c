@@ -280,8 +280,12 @@ bool BDB::InsertDB(JCR *jcr, char *cmd, const char *file, int line)
 /* Utility routine for updates. 
  *  Returns: false on failure 
  *           true  on success 
+ *
+ * Some UPDATE queries must update record(s), other queries might not update
+ * anything.
  */ 
-bool BDB::UpdateDB(JCR *jcr, char *cmd, const char *file, int line) 
+bool BDB::UpdateDB(JCR *jcr, char *cmd, bool can_be_empty,
+                   const char *file, int line) 
 { 
    if (!sql_query(cmd)) { 
       m_msg(file, line, &errmsg, _("update %s failed:\n%s\n"), cmd, sql_strerror()); 
@@ -292,7 +296,7 @@ bool BDB::UpdateDB(JCR *jcr, char *cmd, const char *file, int line)
       return false; 
    } 
    int num_rows = sql_affected_rows(); 
-   if (num_rows < 1) { 
+   if ((num_rows == 0 && !can_be_empty) || num_rows < 0) { 
       char ed1[30]; 
       m_msg(file, line, &errmsg, _("Update failed: affected_rows=%s for %s\n"), 
          edit_uint64(num_rows, ed1), cmd); 

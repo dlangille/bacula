@@ -513,7 +513,7 @@ static int update_path_hierarchy_cache(JCR *jcr,
    } while (ret && mdb->sql_affected_rows() > 0);
 
    Mmsg(mdb->cmd, "UPDATE Job SET HasCache=1 WHERE JobId=%s", jobid);
-   ret = mdb->UpdateDB(jcr, mdb->cmd);
+   ret = mdb->UpdateDB(jcr, mdb->cmd, false);
 
 bail_out:
    mdb->bdb_end_transaction(jcr);
@@ -694,7 +694,7 @@ void Bvfs::fv_update_size_and_count(int64_t pathid, int64_t size, int64_t count)
         " WHERE JobId = %s "
         " AND PathId = %lld ", count, size, jobids, pathid);
 
-   db->UpdateDB(jcr, db->cmd);
+   db->UpdateDB(jcr, db->cmd, false);
 }
 
 void bvfs_update_cache(JCR *jcr, BDB *mdb)
