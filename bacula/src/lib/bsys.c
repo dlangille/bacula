@@ -327,7 +327,14 @@ int cstrlen(const char *str)
    return len;
 }
 
-
+/* We need to disable the malloc() macro if SMARTALLOC is not used,
+ * else, it points to b_malloc() and causes problems.
+ */
+#ifndef SMARTALLOC
+ #ifdef malloc
+  #undef malloc
+ #endif
+#endif
 
 #ifndef bmalloc
 void *bmalloc(size_t size)
