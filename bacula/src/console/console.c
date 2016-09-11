@@ -1289,6 +1289,9 @@ static void terminate_console(int sig)
    if (!no_conio) {
       con_term();
    }
+#ifdef HAVE_READLINE
+   rl_restore_state(NULL);
+#endif
    (void)WSACleanup();               /* Cleanup Windows sockets */
    lmgr_cleanup_main();
 
