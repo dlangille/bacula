@@ -612,9 +612,13 @@ static void update_attribute(JCR *jcr, char *msg, int32_t msglen)
                  Stream);
          }
 
-         bin_to_base64(digestbuf, sizeof(digestbuf), fname, len, true);
-         Dmsg3(400, "DigestLen=%d Digest=%s type=%d\n", strlen(digestbuf),
-               digestbuf, Stream);
+         if (len != 0) {
+            bin_to_base64(digestbuf, sizeof(digestbuf), fname, len, true);
+            Dmsg3(400, "DigestLen=%d Digest=%s type=%d\n", strlen(digestbuf),
+                  digestbuf, Stream);
+         } else {
+            digestbuf[0] = 0;
+         }
          if (jcr->cached_attribute) {
             ar->Digest = digestbuf;
             ar->DigestType = type;

@@ -445,6 +445,7 @@ void BDB_POSTGRESQL::bdb_start_transaction(JCR *jcr)
    }
    if (!jcr->ar) { 
       jcr->ar = (ATTR_DBR *)malloc(sizeof(ATTR_DBR)); 
+      memset(jcr->ar, 0, sizeof(ATTR_DBR));
    }
 
    /* 
