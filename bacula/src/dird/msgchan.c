@@ -123,6 +123,10 @@ bool connect_to_storage_daemon(JCR *jcr, int retry_interval,
    sd->set_source_address(director->DIRsrc_addr);
    if (!sd->connect(jcr, retry_interval, max_retry_time, heart_beat, _("Storage daemon"),
          store->address, NULL, store->SDport, verbose)) {
+
+      if (!jcr->store_bsock) {  /* The bsock was locally created, so we free it here */
+         free_bsock(sd);
+      }
       sd = NULL;
    }
 

@@ -50,6 +50,11 @@ bool cram_md5_challenge(BSOCK *bs, const char *password, int tls_local_need, int
    char host[MAXSTRING];
    uint8_t hmac[20];
 
+   if (!bs) {
+      Dmsg0(dbglvl, "Invalid bsock\n");
+      return false;
+   }
+
    gettimeofday(&t1, &tz);
    for (i=0; i<4; i++) {
       gettimeofday(&t2, &tz);
@@ -109,6 +114,11 @@ bool cram_md5_respond(BSOCK *bs, const char *password, int *tls_remote_need, int
 {
    char chal[MAXSTRING];
    uint8_t hmac[20];
+
+   if (!bs) {
+      Dmsg0(dbglvl, "Invalid bsock\n");
+      return false;
+   }
 
    *compatible = false;
    if (bs->recv() <= 0) {

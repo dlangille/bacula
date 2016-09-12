@@ -67,6 +67,11 @@ bool authenticate_storage_daemon(JCR *jcr, STORE *store)
    int compatible = true;
    bool auth_success = false;
 
+   if (!sd) {
+      Dmsg0(dbglvl, "Invalid bsock\n");
+      return false;
+   }
+
    /*
     * Send my name to the Storage daemon then do authentication
     */
