@@ -216,6 +216,8 @@ mount_next_vol:
          break;                       /* created a new volume label */
       }
 
+      /* ***FIXME*** if autochanger, before giving up try unload and load */
+
       Jmsg4(jcr, M_WARNING, 0, _("Open of %s device %s Volume \"%s\" failed: ERR=%s\n"),
             dev->print_type(), dev->print_name(), dcr->VolumeName, dev->bstrerror());
 
