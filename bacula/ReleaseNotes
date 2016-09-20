@@ -1,5 +1,43 @@
 
-               Release Notes for Bacula 7.4.3
+               Release Notes for Bacula 7.4.4
+
+Release version 7.4.4
+
+This is a bug fix release.
+
+20Sep16
+ - Fix #2085 About director segfault in cram-md5 function
+ - Attempt to fix bug #2237
+ - Recompile configure.in
+ - Fix systemd installation
+ - If using readline reset terminal at bconsole exit
+ - Fix compilation without SMARTALLOC
+ - Fix #2060 about SQL false error message with "update volume fromallpools" 
+   command
+ - Fix spurious MD5 update errors when nothing changed should fix bug #2237 and 
+   others
+ - Fix small memory leak with the restart command
+ - baculum: Update language files
+ - Fix #335 Avoid backups going to the scratch pool
+ - systemd: Give 3mins to the bacula-sd service to stop and close the dde
+ - Minor modifications to Ubuntu packaging
+ - Check if the ScratchPool points to the current Pool and print a warning 
+   message in such case
+ - Fix #1968 print the ScratchPool name instead of just 'Scratch'
+ - Display PrefixLinks in "show job" output
+ - Add explicit LL to big integers to appease older compilers
+ - Enable the plugin directory for the FileDaemon by default
+ - Allow multiple mailcommand+operatorcommand in Messages. Fixes bug #2222
+ - Handle NULL pointers in smartdump() and asciidump()
+ - Modify status to include Admin and Restore in Level field -- clearer
+ - Ensure that zero JobMedias are written for labelling
+ - Fix error message about the stream 26 (PLUGIN_NAME) in bextract
+
+Bugs fixed/closed since last release:
+1968 2060 2085 2222 2237 335
+
+
+=====================================================
 
 Release version 7.4.3
 
