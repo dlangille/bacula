@@ -1090,7 +1090,7 @@ static void list_terminated_jobs(UAContext *ua)
    struct s_last_job *je;
    if (!ua->api) {
       ua->send_msg(_("\nTerminated Jobs:\n"));
-      ua->send_msg(_(" JobId  Level    Files      Bytes   Status   Finished        Name \n"));
+      ua->send_msg(_(" JobId  Level      Files    Bytes   Status   Finished        Name \n"));
       ua->send_msg(_("====================================================================\n"));
    }
    foreach_dlist(je, last_jobs) {
@@ -1159,7 +1159,7 @@ static void list_terminated_jobs(UAContext *ua)
             termstat,
             dt, JobName);
       } else {
-         ua->send_msg(_("%6d  %-6s %8s %10s  %-7s  %-8s %s\n"),
+         ua->send_msg(_("%6d  %-7s %8s %10s  %-7s  %-8s %s\n"),
             je->JobId,
             level,
             edit_uint64_with_commas(je->JobFiles, b1),

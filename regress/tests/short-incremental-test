@@ -82,6 +82,7 @@ setdebug level=10 storage=File
 restore where=${tmp}/bacula-restores storage=File file=<${tmp}/restore-list
 yes
 wait
+status dir
 status client
 status storage=File
 messages

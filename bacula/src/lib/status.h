@@ -81,7 +81,7 @@ static void list_terminated_jobs(STATUS_PKT *sp)
       return;
    }
    lock_last_jobs_list();
-   msg =  _(" JobId  Level    Files      Bytes   Status   Finished        Name \n");
+   msg =  _(" JobId  Level      Files    Bytes   Status   Finished        Name \n");
    if (!sp->api) sendit(msg, strlen(msg), sp);
    msg =  _("===================================================================\n");
    if (!sp->api) sendit(msg, strlen(msg), sp);
@@ -93,8 +93,9 @@ static void list_terminated_jobs(STATUS_PKT *sp)
       bstrftime_nc(dt, sizeof(dt), je->end_time);
       switch (je->JobType) {
       case JT_ADMIN:
+         bstrncpy(level, "Admin", sizeof(level));
       case JT_RESTORE:
-         bstrncpy(level, "    ", sizeof(level));
+         bstrncpy(level, "Restore", sizeof(level));
          break;
       default:
          bstrncpy(level, job_level_to_str(je->JobLevel), sizeof(level));
@@ -137,7 +138,7 @@ static void list_terminated_jobs(STATUS_PKT *sp)
          }
       }
       if (sp->api == 1) {
-         bsnprintf(buf, sizeof(buf), _("%6d\t%-6s\t%8s\t%10s\t%-7s\t%-8s\t%s\n"),
+         bsnprintf(buf, sizeof(buf), _("%6d\t%-7s\t%8s\t%10s\t%-7s\t%-8s\t%s\n"),
             je->JobId,
             level,
             edit_uint64_with_commas(je->JobFiles, b1),
@@ -145,7 +146,7 @@ static void list_terminated_jobs(STATUS_PKT *sp)
             termstat,
             dt, JobName);
       } else {
-         bsnprintf(buf, sizeof(buf), _("%6d  %-6s %8s %10s  %-7s  %-8s %s\n"),
+         bsnprintf(buf, sizeof(buf), _("%6d  %-7s %8s %10s  %-7s  %-8s %s\n"),
             je->JobId,
             level,
             edit_uint64_with_commas(je->JobFiles, b1),
