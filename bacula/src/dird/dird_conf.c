@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2015 Kern Sibbald
+   Copyright (C) 2000-2016 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -1464,13 +1464,13 @@ void save_resource(int type, RES_ITEM *items, int pass)
       for (i=0; items[i].name; i++) {
          if (items[i].flags & ITEM_REQUIRED) {
             if (!bit_is_set(i, res_all.res_dir.hdr.item_present)) {
-                Emsg2(M_ERROR_TERM, 0, _("%s item is required in %s resource, but not found.\n"),
-                    items[i].name, resources[rindex]);
+                Emsg2(M_ERROR_TERM, 0, _("\"%s\" directive is required in \"%s\" resource, but not found.\n"),
+                    items[i].name, resources[rindex].name);
             }
          }
          /* If this triggers, take a look at lib/parse_conf.h */
          if (i >= MAX_RES_ITEMS) {
-            Emsg1(M_ERROR_TERM, 0, _("Too many items in %s resource\n"), resources[rindex]);
+            Emsg1(M_ERROR_TERM, 0, _("Too many directive in \"%s\" resource\n"), resources[rindex].name);
          }
       }
    } else if (type == R_JOB) {
@@ -1479,8 +1479,8 @@ void save_resource(int type, RES_ITEM *items, int pass)
        */
       if (items[0].flags & ITEM_REQUIRED) {
          if (!bit_is_set(0, res_all.res_dir.hdr.item_present)) {
-             Emsg2(M_ERROR_TERM, 0, _("%s item is required in %s resource, but not found.\n"),
-                   items[0].name, resources[rindex]);
+             Emsg2(M_ERROR_TERM, 0, _("\"%s\" directive is required in \"%s\" resource, but not found.\n"),
+                   items[0].name, resources[rindex].name);
          }
       }
    }
@@ -1695,15 +1695,15 @@ void save_resource(int type, RES_ITEM *items, int pass)
       } else {
          RES *next, *last;
          if (res->res_dir.hdr.name == NULL) {
-            Emsg1(M_ERROR_TERM, 0, _("Name item is required in %s resource, but not found.\n"),
-                  resources[rindex]);
+            Emsg1(M_ERROR_TERM, 0, _("A Name directive is required in \"%s\" resource, but not found.\n"),
+                  resources[rindex].name);
          }
          /* Add new res to end of chain */
          for (last=next=res_head[rindex]; next; next=next->next) {
             last = next;
             if (strcmp(next->name, res->res_dir.hdr.name) == 0) {
                Emsg2(M_ERROR_TERM, 0,
-                  _("Attempt to define second %s resource named \"%s\" is not permitted.\n"),
+                  _("Attempt to define second \"%s\" resource named \"%s\" is not permitted.\n"),
                   resources[rindex].name, res->res_dir.hdr.name);
             }
          }

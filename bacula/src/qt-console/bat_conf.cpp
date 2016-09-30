@@ -258,8 +258,8 @@ void save_resource(int type, RES_ITEM *items, int pass)
    for (i=0; items[i].name; i++) {
       if (items[i].flags & ITEM_REQUIRED) {
             if (!bit_is_set(i, res_all.dir_res.hdr.item_present)) {
-               Emsg2(M_ABORT, 0, _("%s item is required in %s resource, but not found.\n"),
-                 items[i].name, resources[rindex]);
+               Emsg2(M_ABORT, 0, _("\"%s\" directive is required in \"%s\" resource, but not found.\n"),
+                 items[i].name, resources[rindex].name);
              }
       }
    }
@@ -327,7 +327,7 @@ void save_resource(int type, RES_ITEM *items, int pass)
             last = next;
             if (strcmp(next->name, res->dir_res.hdr.name) == 0) {
                Emsg2(M_ERROR_TERM, 0,
-                  _("Attempt to define second %s resource named \"%s\" is not permitted.\n"),
+                  _("Attempt to define second \"%s\" resource named \"%s\" is not permitted.\n"),
                   resources[rindex].name, res->dir_res.hdr.name);
             }
          }
