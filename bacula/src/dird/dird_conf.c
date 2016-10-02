@@ -2163,6 +2163,11 @@ extern "C" char *job_code_callback_director(JCR *jcr, const char* param)
 {
    static char yes[] = "yes";
    static char no[] = "no";
+   static char nothing[] = "";
+
+   if (jcr == NULL) {
+      return nothing;
+   }
    switch (param[0]) {
       case 'f':
          if (jcr->fileset) {
@@ -2191,7 +2196,7 @@ extern "C" char *job_code_callback_director(JCR *jcr, const char* param)
       case 'C':
          return jcr->cloned ? yes : no;
    }
-   return NULL;
+   return nothing;
 }
 
 bool parse_dir_config(CONFIG *config, const char *configfile, int exit_code)
