@@ -92,10 +92,10 @@ void BDB::bdb_list_pool_records(JCR *jcr, POOL_DBR *pdbr,
       }
    } else {
       if (pdbr->Name[0] != 0) {
-         Mmsg(cmd, "SELECT PoolId,Name,NumVols,MaxVols,PoolType,LabelFormat "
+         Mmsg(cmd, "SELECT PoolId,Name,NumVols,MaxVols,MaxVolBytes,VolRetention,Enabled,PoolType,LabelFormat "
            "FROM Pool WHERE Name='%s'", esc);
       } else {
-         Mmsg(cmd, "SELECT PoolId,Name,NumVols,MaxVols,PoolType,LabelFormat "
+         Mmsg(cmd, "SELECT PoolId,Name,NumVols,MaxVols,MaxVolBytes,VolRetention,Enabled,PoolType,LabelFormat "
            "FROM Pool ORDER BY PoolId");
       }
    }
