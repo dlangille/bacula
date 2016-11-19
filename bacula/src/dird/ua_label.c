@@ -707,15 +707,9 @@ static bool send_label_request(UAContext *ua, MEDIA_DBR *mr, MEDIA_DBR *omr,
 
    while (sd->recv() >= 0) {
       ua->send_msg("%s", sd->msg);
-      if (strstr((const POOLMEM *) sd->msg, "3000 OK label")) {
-         ok = false;
-         if (sscanf(sd->msg, "3000 OK label. VolBytes=%llu VolABytes=%lld VolType=%d ",
-                   &VolBytes, &VolABytes, &VolType) == 3) {
-            ok = true;
-         }
-      }
-      if (!ok) {
-         ua->error_msg("Volume label failed: Storage Daemon and Director are incompatible versions.");
+      if (sscanf(sd->msg, "3000 OK label. VolBytes=%llu VolABytes=%lld VolType=%d ",
+                 &VolBytes, &VolABytes, &VolType) == 3) {
+         ok = true;
       }
    }
    unbash_spaces(mr->VolumeName);
