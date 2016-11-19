@@ -150,65 +150,65 @@ const char *stream_to_ascii(int stream)
          return _("Plugin Data");
       case STREAM_RESTORE_OBJECT:
          return _("Restore Object");
-      case STREAM_ACL_AIX_TEXT:
+      case STREAM_XACL_AIX_TEXT:
          return _("AIX ACL attribs");
-      case STREAM_ACL_DARWIN_ACCESS:
+      case STREAM_XACL_DARWIN_ACCESS:
          return _("Darwin ACL attribs");
-      case STREAM_ACL_FREEBSD_DEFAULT:
+      case STREAM_XACL_FREEBSD_DEFAULT:
          return _("FreeBSD Default ACL attribs");
-      case STREAM_ACL_FREEBSD_ACCESS:
+      case STREAM_XACL_FREEBSD_ACCESS:
          return _("FreeBSD Access ACL attribs");
-      case STREAM_ACL_HPUX_ACL_ENTRY:
+      case STREAM_XACL_HPUX_ACL_ENTRY:
          return _("HPUX ACL attribs");
-      case STREAM_ACL_IRIX_DEFAULT:
+      case STREAM_XACL_IRIX_DEFAULT:
          return _("Irix Default ACL attribs");
-      case STREAM_ACL_IRIX_ACCESS:
+      case STREAM_XACL_IRIX_ACCESS:
          return _("Irix Access ACL attribs");
-      case STREAM_ACL_LINUX_DEFAULT:
+      case STREAM_XACL_LINUX_DEFAULT:
          return _("Linux Default ACL attribs");
-      case STREAM_ACL_LINUX_ACCESS:
+      case STREAM_XACL_LINUX_ACCESS:
          return _("Linux Access ACL attribs");
-      case STREAM_ACL_TRU64_DEFAULT:
+      case STREAM_XACL_TRU64_DEFAULT:
          return _("TRU64 Default ACL attribs");
-      case STREAM_ACL_TRU64_ACCESS:
+      case STREAM_XACL_TRU64_ACCESS:
          return _("TRU64 Access ACL attribs");
-      case STREAM_ACL_SOLARIS_POSIX:
+      case STREAM_XACL_SOLARIS_POSIX:
          return _("Solaris POSIX ACL attribs");
-      case STREAM_ACL_SOLARIS_NFS4:
+      case STREAM_XACL_SOLARIS_NFS4:
          return _("Solaris NFSv4/ZFS ACL attribs");
-      case STREAM_ACL_AFS_TEXT:
+      case STREAM_XACL_AFS_TEXT:
          return _("AFS ACL attribs");
-      case STREAM_ACL_AIX_AIXC:
+      case STREAM_XACL_AIX_AIXC:
          return _("AIX POSIX ACL attribs");
-      case STREAM_ACL_AIX_NFS4:
+      case STREAM_XACL_AIX_NFS4:
          return _("AIX NFSv4 ACL attribs");
-      case STREAM_ACL_FREEBSD_NFS4:
+      case STREAM_XACL_FREEBSD_NFS4:
          return _("FreeBSD NFSv4/ZFS ACL attribs");
-      case STREAM_ACL_HURD_DEFAULT:
+      case STREAM_XACL_HURD_DEFAULT:
          return _("GNU Hurd Default ACL attribs");
-      case STREAM_ACL_HURD_ACCESS:
+      case STREAM_XACL_HURD_ACCESS:
          return _("GNU Hurd Access ACL attribs");
-      case STREAM_XATTR_HURD:
+      case STREAM_XACL_HURD_XATTR:
          return _("GNU Hurd Extended attribs");
-      case STREAM_XATTR_IRIX:
+      case STREAM_XACL_IRIX_XATTR:
          return _("IRIX Extended attribs");
-      case STREAM_XATTR_TRU64:
+      case STREAM_XACL_TRU64_XATTR:
          return _("TRU64 Extended attribs");
-      case STREAM_XATTR_AIX:
+      case STREAM_XACL_AIX_XATTR:
          return _("AIX Extended attribs");
-      case STREAM_XATTR_OPENBSD:
+      case STREAM_XACL_OPENBSD_XATTR:
          return _("OpenBSD Extended attribs");
-      case STREAM_XATTR_SOLARIS_SYS:
+      case STREAM_XACL_SOLARIS_SYS_XATTR:
          return _("Solaris Extensible attribs or System Extended attribs");
-      case STREAM_XATTR_SOLARIS:
+      case STREAM_XACL_SOLARIS_XATTR:
          return _("Solaris Extended attribs");
-      case STREAM_XATTR_DARWIN:
+      case STREAM_XACL_DARWIN_XATTR:
          return _("Darwin Extended attribs");
-      case STREAM_XATTR_FREEBSD:
+      case STREAM_XACL_FREEBSD_XATTR:
          return _("FreeBSD Extended attribs");
-      case STREAM_XATTR_LINUX:
+      case STREAM_XACL_LINUX_XATTR:
          return _("Linux Extended attribs");
-      case STREAM_XATTR_NETBSD:
+      case STREAM_XACL_NETBSD_XATTR:
          return _("NetBSD Extended attribs");
       default:
          sprintf(buf, "%d", stream);

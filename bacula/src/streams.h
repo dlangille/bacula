@@ -111,40 +111,43 @@
  * from the stream dispatch function. Currently in this reserved space we allocate the
  * different acl streams from 1000 on and the different extended attributes streams from
  * 1999 down. So the two naming spaces grows towards each other.
+ *
+ * Rationalize names a bit to correspond to the new XACL classes
+ *
  */
-#define STREAM_ACL_AIX_TEXT          1000    /* AIX string of acl_get */
-#define STREAM_ACL_DARWIN_ACCESS     1001    /* Darwin (OSX) acl_t string of acl_to_text (POSIX acl) */
-#define STREAM_ACL_FREEBSD_DEFAULT   1002    /* FreeBSD acl_t string of acl_to_text (POSIX acl) for default acls */
-#define STREAM_ACL_FREEBSD_ACCESS    1003    /* FreeBSD acl_t string of acl_to_text (POSIX acl) for access acls */
-#define STREAM_ACL_HPUX_ACL_ENTRY    1004    /* HPUX acl_entry string of acltostr (POSIX acl) */
-#define STREAM_ACL_IRIX_DEFAULT      1005    /* IRIX acl_t string of acl_to_text (POSIX acl) for default acls */
-#define STREAM_ACL_IRIX_ACCESS       1006    /* IRIX acl_t string of acl_to_text (POSIX acl) for access acls */
-#define STREAM_ACL_LINUX_DEFAULT     1007    /* Linux acl_t string of acl_to_text (POSIX acl) for default acls */
-#define STREAM_ACL_LINUX_ACCESS      1008    /* Linux acl_t string of acl_to_text (POSIX acl) for access acls */
-#define STREAM_ACL_TRU64_DEFAULT     1009    /* Tru64 acl_t string of acl_to_text (POSIX acl) for default acls */
-#define STREAM_ACL_TRU64_DEFAULT_DIR 1010    /* Tru64 acl_t string of acl_to_text (POSIX acl) for default acls */
-#define STREAM_ACL_TRU64_ACCESS      1011    /* Tru64 acl_t string of acl_to_text (POSIX acl) for access acls */
-#define STREAM_ACL_SOLARIS_POSIX     1012    /* Solaris aclent_t string of acltotext or acl_totext (POSIX acl) */
-#define STREAM_ACL_SOLARIS_NFS4      1013    /* Solaris ace_t string of of acl_totext (NFSv4 or ZFS acl) */
-#define STREAM_ACL_AFS_TEXT          1014    /* AFS string of pioctl */
-#define STREAM_ACL_AIX_AIXC          1015    /* AIX string of aclx_printStr (POSIX acl) */
-#define STREAM_ACL_AIX_NFS4          1016    /* AIX string of aclx_printStr (NFSv4 acl) */
-#define STREAM_ACL_FREEBSD_NFS4      1017    /* FreeBSD acl_t string of acl_to_text (NFSv4 or ZFS acl) */
-#define STREAM_ACL_HURD_DEFAULT      1018    /* GNU HURD acl_t string of acl_to_text (POSIX acl) for default acls */
-#define STREAM_ACL_HURD_ACCESS       1019    /* GNU HURD acl_t string of acl_to_text (POSIX acl) for access acls */
-#define STREAM_XATTR_HURD            1989    /* GNU HURD extended attributes */
-#define STREAM_XATTR_IRIX            1990    /* IRIX extended attributes */
-#define STREAM_XATTR_TRU64           1991    /* TRU64 extended attributes */
-#define STREAM_XATTR_AIX             1992    /* AIX extended attributes */
-#define STREAM_XATTR_OPENBSD         1993    /* OpenBSD extended attributes */
-#define STREAM_XATTR_SOLARIS_SYS     1994    /* Solaris extensible attributes or
-                                              * otherwise named extended system attributes.
-                                              */
-#define STREAM_XATTR_SOLARIS         1995    /* Solaris extented attributes */
-#define STREAM_XATTR_DARWIN          1996    /* Darwin (OSX) extended attributes */
-#define STREAM_XATTR_FREEBSD         1997    /* FreeBSD extended attributes */
-#define STREAM_XATTR_LINUX           1998    /* Linux specific attributes */
-#define STREAM_XATTR_NETBSD          1999    /* NetBSD extended attributes */
+#define STREAM_XACL_AIX_TEXT          1000    /* AIX string of acl_get */
+#define STREAM_XACL_DARWIN_ACCESS     1001    /* Darwin (OSX) acl_t string of acl_to_text (POSIX acl) */
+#define STREAM_XACL_FREEBSD_DEFAULT   1002    /* FreeBSD acl_t string of acl_to_text (POSIX acl) for default acls */
+#define STREAM_XACL_FREEBSD_ACCESS    1003    /* FreeBSD acl_t string of acl_to_text (POSIX acl) for access acls */
+#define STREAM_XACL_HPUX_ACL_ENTRY    1004    /* HPUX acl_entry string of acltostr (POSIX acl) */
+#define STREAM_XACL_IRIX_DEFAULT      1005    /* IRIX acl_t string of acl_to_text (POSIX acl) for default acls */
+#define STREAM_XACL_IRIX_ACCESS       1006    /* IRIX acl_t string of acl_to_text (POSIX acl) for access acls */
+#define STREAM_XACL_LINUX_DEFAULT     1007    /* Linux acl_t string of acl_to_text (POSIX acl) for default acls */
+#define STREAM_XACL_LINUX_ACCESS      1008    /* Linux acl_t string of acl_to_text (POSIX acl) for access acls */
+#define STREAM_XACL_TRU64_DEFAULT     1009    /* Tru64 acl_t string of acl_to_text (POSIX acl) for default acls */
+#define STREAM_XACL_TRU64_DEFAULT_DIR 1010    /* Tru64 acl_t string of acl_to_text (POSIX acl) for default acls */
+#define STREAM_XACL_TRU64_ACCESS      1011    /* Tru64 acl_t string of acl_to_text (POSIX acl) for access acls */
+#define STREAM_XACL_SOLARIS_POSIX     1012    /* Solaris aclent_t string of acltotext or acl_totext (POSIX acl) */
+#define STREAM_XACL_SOLARIS_NFS4      1013    /* Solaris ace_t string of of acl_totext (NFSv4 or ZFS acl) */
+#define STREAM_XACL_AFS_TEXT          1014    /* AFS string of pioctl */
+#define STREAM_XACL_AIX_AIXC          1015    /* AIX string of aclx_printStr (POSIX acl) */
+#define STREAM_XACL_AIX_NFS4          1016    /* AIX string of aclx_printStr (NFSv4 acl) */
+#define STREAM_XACL_FREEBSD_NFS4      1017    /* FreeBSD acl_t string of acl_to_text (NFSv4 or ZFS acl) */
+#define STREAM_XACL_HURD_DEFAULT      1018    /* GNU HURD acl_t string of acl_to_text (POSIX acl) for default acls */
+#define STREAM_XACL_HURD_ACCESS       1019    /* GNU HURD acl_t string of acl_to_text (POSIX acl) for access acls */
+#define STREAM_XACL_HURD_XATTR        1989    /* GNU HURD extended attributes */
+#define STREAM_XACL_IRIX_XATTR        1990    /* IRIX extended attributes */
+#define STREAM_XACL_TRU64_XATTR       1991    /* TRU64 extended attributes */
+#define STREAM_XACL_AIX_XATTR         1992    /* AIX extended attributes */
+#define STREAM_XACL_OPENBSD_XATTR     1993    /* OpenBSD extended attributes */
+#define STREAM_XACL_SOLARIS_SYS_XATTR 1994    /* Solaris extensible attributes or
+                                               * otherwise named extended system attributes.
+                                               */
+#define STREAM_XACL_SOLARIS_XATTR     1995    /* Solaris extented attributes */
+#define STREAM_XACL_DARWIN_XATTR      1996    /* Darwin (OSX) extended attributes */
+#define STREAM_XACL_FREEBSD_XATTR     1997    /* FreeBSD extended attributes */
+#define STREAM_XACL_LINUX_XATTR       1998    /* Linux specific attributes */
+#define STREAM_XACL_NETBSD_XATTR      1999    /* NetBSD extended attributes */
 
 /* WARNING!!! do not define more than 2047 of these old types */
 

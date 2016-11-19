@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2015 Kern Sibbald
+   Copyright (C) 2000-2016 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -24,30 +24,16 @@
  */
 
 //#define TEST_WORKER
-#ifdef  TEST_WORKER
+#ifdef	TEST_WORKER
 #define ERROR_BUFFER_OVERFLOW 1
 #define ERROR_SUCCESS 0
 #endif
- 
+
 /* acl errors to report per job. */
 #define ACL_MAX_ERROR_PRINT_PER_JOB   25
- 
+
 /* xattr errors to report per job. */
 #define XATTR_MAX_ERROR_PRINT_PER_JOB 25
- 
-/* Return values from acl subroutines. */
-enum bacl_rtn_code {
-   bacl_rtn_fatal = -1,
-   bacl_rtn_error =  0,
-   bacl_rtn_ok    =  1
-};
- 
-/* Return values from xattr subroutines. */
-enum bxattr_rtn_code {
-   bxattr_rtn_fatal = -1,
-   bxattr_rtn_error =  0,
-   bxattr_rtn_ok    =  1
-};
 
 #define FILE_DAEMON 1
 #include  "lib/htable.h"
@@ -55,14 +41,13 @@ enum bxattr_rtn_code {
 #include  "fd_plugins.h"
 #include  "fd_snapshot.h"
 #include  "findlib/find.h"
-#include  "acl.h"
-#include  "xattr.h"
+#include  "xacl.h"
 #include  "jcr.h"
-#include  "protos.h"                   /* file daemon prototypes */
+#include  "protos.h"		       /* file daemon prototypes */
 #include  "lib/runscript.h"
 #include  "lib/breg.h"
 #ifdef HAVE_LIBZ
-#include <zlib.h>                     /* compression headers */
+#include <zlib.h>		      /* compression headers */
 #else
 #define uLongf uint32_t
 #endif
@@ -71,8 +56,8 @@ enum bxattr_rtn_code {
 #include <lzo/lzo1x.h>
 #endif
 
-extern CLIENT *me;                    /* "Global" Client resource */
-extern bool win32decomp;              /* Use decomposition of BackupRead data */
+extern CLIENT *me;		      /* "Global" Client resource */
+extern bool win32decomp;	      /* Use decomposition of BackupRead data */
 extern bool no_win32_write_errors;    /* Ignore certain errors */
 
 void terminate_filed(int sig);

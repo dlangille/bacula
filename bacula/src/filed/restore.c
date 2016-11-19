@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2015 Kern Sibbald
+   Copyright (C) 2000-2016 Kern Sibbald
    Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
    The original author of Bacula is Kern Sibbald, with contributions
@@ -12,7 +12,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -141,7 +141,7 @@ static bool restore_finderinfo(JCR *jcr, POOLMEM *buf, int32_t buflen)
 
 /*
  * Cleanup of delayed restore stack with streams for later processing.
- */ 
+ */
 static void drop_delayed_restore_streams(r_ctx &rctx, bool reuse)
 {
    RESTORE_DATA_STREAM *rds;
@@ -197,23 +197,22 @@ static inline void push_delayed_restore_stream(r_ctx &rctx, char *msg, int msgle
  * This can either be a delayed restore or direct restore.
  */
 static inline bool do_restore_acl(JCR *jcr, int stream, char *content,
-                                  uint32_t content_length) 
+                                  uint32_t content_length)
 {
-   switch (restore_acl_streams(jcr, stream, content, content_length)) {
-   case bacl_rtn_fatal:
-      return false;
-   case bacl_rtn_error:
-      /*
-       * Non-fatal errors, count them and when the number is under ACL_MAX_ERROR_PRINT_PER_JOB
-       * print the error message set by the lower level routine in jcr->errmsg.
-       */
-      if (jcr->acl_ctx->nr_errors < ACL_MAX_ERROR_PRINT_PER_JOB) {
-         Jmsg(jcr, M_WARNING, 0, "%s", jcr->errmsg);
-      }
-      jcr->acl_ctx->nr_errors++;
-      break;
-   case bacl_rtn_ok:
-      break;
+   switch (jcr->xacl->restore_acl(jcr, stream, content, content_length)) {
+      case bRC_XACL_fatal:
+         return false;
+      case bRC_XACL_error:
+         /*
+          * Non-fatal errors, count them and when the number is under ACL_MAX_ERROR_PRINT_PER_JOB
+          * print the error message set by the lower level routine in jcr->errmsg.
+          */
+         if (jcr->xacl->get_acl_nr_errors() < ACL_MAX_ERROR_PRINT_PER_JOB) {
+            Jmsg(jcr, M_WARNING, 0, "%s", jcr->errmsg);
+         }
+         break;
+      default:
+         break;
    }
    return true;
 }
@@ -223,23 +222,22 @@ static inline bool do_restore_acl(JCR *jcr, int stream, char *content,
  * This can either be a delayed restore or direct restore.
  */
 static inline bool do_restore_xattr(JCR *jcr, int stream, char *content,
-                                    uint32_t content_length) 
+                                    uint32_t content_length)
 {
-   switch (restore_xattr_streams(jcr, stream, content, content_length)) {
-   case bxattr_rtn_fatal:
-      return false;
-   case bxattr_rtn_error:
-      /*
-       * Non-fatal errors, count them and when the number is under XATTR_MAX_ERROR_PRINT_PER_JOB
-       * print the error message set by the lower level routine in jcr->errmsg.
-       */
-      if (jcr->xattr_ctx->nr_errors < XATTR_MAX_ERROR_PRINT_PER_JOB) {
-         Jmsg(jcr, M_WARNING, 0, "%s", jcr->errmsg);
-      }
-      jcr->xattr_ctx->nr_errors++;
-      break;
-   case bxattr_rtn_ok:
-      break;
+   switch (jcr->xacl->restore_xattr(jcr, stream, content, content_length)) {
+      case bRC_XACL_fatal:
+         return false;
+      case bRC_XACL_error:
+         /*
+          * Non-fatal errors, count them and when the number is under XATTR_MAX_ERROR_PRINT_PER_JOB
+          * print the error message set by the lower level routine in jcr->errmsg.
+          */
+         if (jcr->xacl->get_xattr_nr_errors() < XATTR_MAX_ERROR_PRINT_PER_JOB) {
+            Jmsg(jcr, M_WARNING, 0, "%s", jcr->errmsg);
+         }
+         break;
+      default:
+         break;
    }
    return true;
 }
@@ -279,40 +277,40 @@ static inline bool pop_delayed_data_streams(r_ctx &rctx)
       switch (rds->stream) {
       case STREAM_UNIX_ACCESS_ACL:
       case STREAM_UNIX_DEFAULT_ACL:
-      case STREAM_ACL_AIX_TEXT:
-      case STREAM_ACL_DARWIN_ACCESS:
-      case STREAM_ACL_FREEBSD_DEFAULT:
-      case STREAM_ACL_FREEBSD_ACCESS:
-      case STREAM_ACL_HPUX_ACL_ENTRY:
-      case STREAM_ACL_IRIX_DEFAULT:
-      case STREAM_ACL_IRIX_ACCESS:
-      case STREAM_ACL_LINUX_DEFAULT:
-      case STREAM_ACL_LINUX_ACCESS:
-      case STREAM_ACL_TRU64_DEFAULT:
-      case STREAM_ACL_TRU64_DEFAULT_DIR:
-      case STREAM_ACL_TRU64_ACCESS:
-      case STREAM_ACL_SOLARIS_POSIX:
-      case STREAM_ACL_SOLARIS_NFS4:
-      case STREAM_ACL_AFS_TEXT:
-      case STREAM_ACL_AIX_AIXC:
-      case STREAM_ACL_AIX_NFS4:
-      case STREAM_ACL_FREEBSD_NFS4:
-      case STREAM_ACL_HURD_DEFAULT:
-      case STREAM_ACL_HURD_ACCESS:
+      case STREAM_XACL_AIX_TEXT:
+      case STREAM_XACL_DARWIN_ACCESS:
+      case STREAM_XACL_FREEBSD_DEFAULT:
+      case STREAM_XACL_FREEBSD_ACCESS:
+      case STREAM_XACL_HPUX_ACL_ENTRY:
+      case STREAM_XACL_IRIX_DEFAULT:
+      case STREAM_XACL_IRIX_ACCESS:
+      case STREAM_XACL_LINUX_DEFAULT:
+      case STREAM_XACL_LINUX_ACCESS:
+      case STREAM_XACL_TRU64_DEFAULT:
+      case STREAM_XACL_TRU64_DEFAULT_DIR:
+      case STREAM_XACL_TRU64_ACCESS:
+      case STREAM_XACL_SOLARIS_POSIX:
+      case STREAM_XACL_SOLARIS_NFS4:
+      case STREAM_XACL_AFS_TEXT:
+      case STREAM_XACL_AIX_AIXC:
+      case STREAM_XACL_AIX_NFS4:
+      case STREAM_XACL_FREEBSD_NFS4:
+      case STREAM_XACL_HURD_DEFAULT:
+      case STREAM_XACL_HURD_ACCESS:
          if (!do_restore_acl(jcr, rds->stream, rds->content, rds->content_length)) {
             goto get_out;
          }
          break;
-      case STREAM_XATTR_HURD:
-      case STREAM_XATTR_IRIX:
-      case STREAM_XATTR_TRU64:
-      case STREAM_XATTR_AIX:
-      case STREAM_XATTR_OPENBSD:
-      case STREAM_XATTR_SOLARIS_SYS:
-      case STREAM_XATTR_DARWIN:
-      case STREAM_XATTR_FREEBSD:
-      case STREAM_XATTR_LINUX:
-      case STREAM_XATTR_NETBSD:
+      case STREAM_XACL_HURD_XATTR:
+      case STREAM_XACL_IRIX_XATTR:
+      case STREAM_XACL_TRU64_XATTR:
+      case STREAM_XACL_AIX_XATTR:
+      case STREAM_XACL_OPENBSD_XATTR:
+      case STREAM_XACL_SOLARIS_SYS_XATTR:
+      case STREAM_XACL_DARWIN_XATTR:
+      case STREAM_XACL_FREEBSD_XATTR:
+      case STREAM_XACL_LINUX_XATTR:
+      case STREAM_XACL_NETBSD_XATTR:
          if (!do_restore_xattr(jcr, rds->stream, rds->content, rds->content_length)) {
             goto get_out;
          }
@@ -327,7 +325,7 @@ static inline bool pop_delayed_data_streams(r_ctx &rctx)
          rds->content = NULL;
       }
    }
-   
+
    drop_delayed_restore_streams(rctx, true);
    return true;
 
@@ -444,14 +442,7 @@ void do_restore(JCR *jcr)
    binit(&rctx.bfd);
    binit(&rctx.forkbfd);
    attr = rctx.attr = new_attr(jcr);
-   if (have_acl) {
-      jcr->acl_ctx = (acl_ctx_t *)malloc(sizeof(acl_ctx_t));
-      memset(jcr->acl_ctx, 0, sizeof(acl_ctx_t));
-   }
-   if (have_xattr) {
-      jcr->xattr_ctx = (xattr_ctx_t *)malloc(sizeof(xattr_ctx_t));
-      memset(jcr->xattr_ctx, 0, sizeof(xattr_ctx_t));
-   }
+   jcr->xacl = (XACL*)new_xacl();
 
    Dsm_check(200);
    while (fdmsg->bget_msg(&bmsg) >= 0 && !job_canceled(jcr)) {
@@ -829,26 +820,26 @@ void do_restore(JCR *jcr)
 
       case STREAM_UNIX_ACCESS_ACL:
       case STREAM_UNIX_DEFAULT_ACL:
-      case STREAM_ACL_AIX_TEXT:
-      case STREAM_ACL_DARWIN_ACCESS:
-      case STREAM_ACL_FREEBSD_DEFAULT:
-      case STREAM_ACL_FREEBSD_ACCESS:
-      case STREAM_ACL_HPUX_ACL_ENTRY:
-      case STREAM_ACL_IRIX_DEFAULT:
-      case STREAM_ACL_IRIX_ACCESS:
-      case STREAM_ACL_LINUX_DEFAULT:
-      case STREAM_ACL_LINUX_ACCESS:
-      case STREAM_ACL_TRU64_DEFAULT:
-      case STREAM_ACL_TRU64_DEFAULT_DIR:
-      case STREAM_ACL_TRU64_ACCESS:
-      case STREAM_ACL_SOLARIS_POSIX:
-      case STREAM_ACL_SOLARIS_NFS4:
-      case STREAM_ACL_AFS_TEXT:
-      case STREAM_ACL_AIX_AIXC:
-      case STREAM_ACL_AIX_NFS4:
-      case STREAM_ACL_FREEBSD_NFS4:
-      case STREAM_ACL_HURD_DEFAULT:
-      case STREAM_ACL_HURD_ACCESS:
+      case STREAM_XACL_AIX_TEXT:
+      case STREAM_XACL_DARWIN_ACCESS:
+      case STREAM_XACL_FREEBSD_DEFAULT:
+      case STREAM_XACL_FREEBSD_ACCESS:
+      case STREAM_XACL_HPUX_ACL_ENTRY:
+      case STREAM_XACL_IRIX_DEFAULT:
+      case STREAM_XACL_IRIX_ACCESS:
+      case STREAM_XACL_LINUX_DEFAULT:
+      case STREAM_XACL_LINUX_ACCESS:
+      case STREAM_XACL_TRU64_DEFAULT:
+      case STREAM_XACL_TRU64_DEFAULT_DIR:
+      case STREAM_XACL_TRU64_ACCESS:
+      case STREAM_XACL_SOLARIS_POSIX:
+      case STREAM_XACL_SOLARIS_NFS4:
+      case STREAM_XACL_AFS_TEXT:
+      case STREAM_XACL_AIX_AIXC:
+      case STREAM_XACL_AIX_NFS4:
+      case STREAM_XACL_FREEBSD_NFS4:
+      case STREAM_XACL_HURD_DEFAULT:
+      case STREAM_XACL_HURD_ACCESS:
          /*
           * Do not restore ACLs when
           * a) The current file is not extracted
@@ -877,16 +868,16 @@ void do_restore(JCR *jcr)
          }
          break;
 
-      case STREAM_XATTR_HURD:
-      case STREAM_XATTR_IRIX:
-      case STREAM_XATTR_TRU64:
-      case STREAM_XATTR_AIX:
-      case STREAM_XATTR_OPENBSD:
-      case STREAM_XATTR_SOLARIS_SYS:
-      case STREAM_XATTR_DARWIN:
-      case STREAM_XATTR_FREEBSD:
-      case STREAM_XATTR_LINUX:
-      case STREAM_XATTR_NETBSD:
+      case STREAM_XACL_HURD_XATTR:
+      case STREAM_XACL_IRIX_XATTR:
+      case STREAM_XACL_TRU64_XATTR:
+      case STREAM_XACL_AIX_XATTR:
+      case STREAM_XACL_OPENBSD_XATTR:
+      case STREAM_XACL_SOLARIS_SYS_XATTR:
+      case STREAM_XACL_DARWIN_XATTR:
+      case STREAM_XACL_FREEBSD_XATTR:
+      case STREAM_XACL_LINUX_XATTR:
+      case STREAM_XACL_NETBSD_XATTR:
          /*
           * Do not restore Extended Attributes when
           * a) The current file is not extracted
@@ -915,7 +906,7 @@ void do_restore(JCR *jcr)
          }
          break;
 
-      case STREAM_XATTR_SOLARIS:
+      case STREAM_XACL_SOLARIS_XATTR:
          /*
           * Do not restore Extended Attributes when
           * a) The current file is not extracted
@@ -1014,34 +1005,34 @@ ok_out:
     */
    Dmsg2(10, "End Do Restore. Files=%d Bytes=%s\n", jcr->JobFiles,
       edit_uint64(jcr->JobBytes, ec1));
-   if (have_acl && jcr->acl_ctx->nr_errors > 0) {
-      Jmsg(jcr, M_WARNING, 0, _("Encountered %ld acl errors while doing restore\n"),
-           jcr->acl_ctx->nr_errors);
+
+   if (jcr->xacl->get_acl_nr_errors() > 0) {
+      Jmsg(jcr, M_WARNING, 0, _("Encountered %ld acl errors while doing restore\n"), jcr->xacl->get_acl_nr_errors());
    }
-   if (have_xattr && jcr->xattr_ctx->nr_errors > 0) {
-      Jmsg(jcr, M_WARNING, 0, _("Encountered %ld xattr errors while doing restore\n"),
-           jcr->xattr_ctx->nr_errors);
+   if (jcr->xacl->get_xattr_nr_errors() > 0) {
+      Jmsg(jcr, M_WARNING, 0, _("Encountered %ld xattr errors while doing restore\n"), jcr->xacl->get_xattr_nr_errors());
    }
+
    if (non_suppored_data > 1 || non_suppored_attr > 1) {
       Jmsg(jcr, M_WARNING, 0, _("%d non-supported data streams and %d non-supported attrib streams ignored.\n"),
          non_suppored_data, non_suppored_attr);
-   } 
+   }
    if (non_suppored_rsrc) {
       Jmsg(jcr, M_INFO, 0, _("%d non-supported resource fork streams ignored.\n"), non_suppored_rsrc);
-   } 
+   }
    if (non_suppored_finfo) {
       Jmsg(jcr, M_INFO, 0, _("%d non-supported Finder Info streams ignored.\n"), non_suppored_finfo);
-   } 
+   }
    if (non_suppored_acl) {
       Jmsg(jcr, M_INFO, 0, _("%d non-supported acl streams ignored.\n"), non_suppored_acl);
-   } 
+   }
    if (non_suppored_crypto) {
       Jmsg(jcr, M_INFO, 0, _("%d non-supported crypto streams ignored.\n"), non_suppored_acl);
-   } 
+   }
    if (non_suppored_xattr) {
       Jmsg(jcr, M_INFO, 0, _("%d non-supported xattr streams ignored.\n"), non_suppored_xattr);
-   } 
- 
+   }
+
    /* Free Signature & Crypto Data */
    free_signature(rctx);
    free_session(rctx);
@@ -1055,7 +1046,7 @@ ok_out:
       crypto_cipher_free(rctx.cipher_ctx.cipher);
       rctx.cipher_ctx.cipher = NULL;
    }
- 
+
    if (rctx.cipher_ctx.buf) {
       free_pool_memory(rctx.cipher_ctx.buf);
       rctx.cipher_ctx.buf = NULL;
@@ -1076,22 +1067,11 @@ ok_out:
       jcr->compress_buf = NULL;
       jcr->compress_buf_size = 0;
    }
- 
-   if (have_acl && jcr->acl_ctx) {
-      if (jcr->acl_ctx->content) {
-         free(jcr->acl_ctx->content);
-      }
-      free(jcr->acl_ctx);
-      jcr->acl_ctx = NULL;
-   } 
- 
-   if (have_xattr && jcr->xattr_ctx) {
-      if (jcr->xattr_ctx->content) {
-         free(jcr->xattr_ctx->content);
-      }
-      free(jcr->xattr_ctx);
-      jcr->xattr_ctx = NULL;
-   } 
+
+   if (jcr->xacl) {
+      delete(jcr->xacl);
+      jcr->xacl = NULL;
+   }
 
    /* Free the delayed stream stack list. */
    if (rctx.delayed_streams) {
@@ -1241,7 +1221,7 @@ bool decompress_data(JCR *jcr, int32_t stream, char **data, uint32_t *length)
        * NOTE! We only use uLong and Byte because they are
        *  needed by the zlib routines, they should not otherwise
        *  be used in Bacula.
-       */ 
+       */
       compress_len = jcr->compress_buf_size;
       Dmsg2(200, "Comp_len=%d msglen=%d\n", compress_len, *length);
       while ((stat=uncompress((Byte *)jcr->compress_buf, &compress_len,
@@ -1395,7 +1375,7 @@ int32_t extract_data(r_ctx &rctx, POOLMEM *buf, int32_t buflen)
        *  and then buffer any remaining data. This should be effecient
        *  as long as Bacula's block size is not significantly smaller than the
        *  encryption block size (extremely unlikely!)
-       */ 
+       */
       unser_crypto_packet_len(cipher_ctx);
       Dmsg1(500, "Crypto unser block size=%d\n", cipher_ctx->packet_len - CRYPTO_LEN_SIZE);
 
@@ -1438,7 +1418,7 @@ int32_t extract_data(r_ctx &rctx, POOLMEM *buf, int32_t buflen)
          memmove(cipher_ctx->buf, &cipher_ctx->buf[cipher_ctx->packet_len],
             cipher_ctx->buf_len);
       }
-      /* The packet was successfully written, reset the length so that 
+      /* The packet was successfully written, reset the length so that
        *  the next packet length may be re-read by unser_crypto_packet_len() */
       cipher_ctx->packet_len = 0;
    }
@@ -1480,7 +1460,7 @@ static bool close_previous_stream(r_ctx &rctx)
 
       /* Now perform the delayed restore of some specific data streams. */
       rtn = pop_delayed_data_streams(rctx);
- 
+
       /* Verify the cryptographic signature, if any */
       rctx.type = rctx.attr->type;
       verify_signature(rctx);
@@ -1497,7 +1477,7 @@ static bool close_previous_stream(r_ctx &rctx)
    }
 
    return rtn;
-} 
+}
 
 /*
  * In the context of jcr, flush any remaining data from the cipher context,
@@ -1672,7 +1652,7 @@ static bool verify_signature(r_ctx &rctx)
             }
          }
          if (jcr->crypto.digest) {
-            /* Use digest computed while writing the file to verify 
+            /* Use digest computed while writing the file to verify
              *  the signature */
             if ((err = crypto_sign_verify(sig, keypair, jcr->crypto.digest)) != CRYPTO_ERROR_NONE) {
                Dmsg1(50, "Bad signature on %s\n", jcr->last_fname);
@@ -1686,7 +1666,7 @@ static bool verify_signature(r_ctx &rctx)
             jcr->crypto.digest = digest;
 
             /* Checksum the entire file
-             * Make sure we don't modify JobBytes by saving and 
+             * Make sure we don't modify JobBytes by saving and
              *  restoring it */
             saved_bytes = jcr->JobBytes;
             if (find_one_file(jcr, jcr->ff, do_file_digest, jcr->last_fname, (dev_t)-1, 1) != 0) {

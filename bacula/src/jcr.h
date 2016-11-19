@@ -1,8 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2015 Kern Sibbald
-   Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
+   Copyright (C) 2000-2016 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -12,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -147,8 +146,7 @@ struct bpContext;
 
 #ifdef FILE_DAEMON
 class htable;
-struct acl_ctx_t;
-struct xattr_ctx_t;
+class XACL;
 class snapshot_manager;
 
 struct CRYPTO_CTX {
@@ -414,8 +412,7 @@ public:
    POOLMEM *last_fname;               /* last file saved/verified */
    POOLMEM *job_metadata;             /* VSS job metadata */
    pthread_cond_t job_start_wait;     /* Wait for SD to start Job */
-   acl_ctx_t *acl_ctx;                /* ACLs for backup/restore */
-   xattr_ctx_t *xattr_ctx;            /* Extended Attributes for backup/restore */
+   XACL *xacl;                        /* ACLs and Extended Attributes for backup/restore */
    int32_t last_type;                 /* type of last file saved/verified */
    int incremental;                   /* set if incremental for SINCE */
    time_t last_stat_time;             /* Last time stats sent to Dir */

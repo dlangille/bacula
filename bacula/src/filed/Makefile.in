@@ -1,7 +1,7 @@
 #
 # Bacula Makefile for the File daemon
 #
-# Copyright (C) 2000-2015 Kern Sibbald
+# Copyright (C) 2000-2016 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
 @MCOMMON@
@@ -30,11 +30,12 @@ first_rule: all
 dummy:
 
 #
-SVRSRCS = filed.c authenticate.c acl.c backup.c crypto.c \
+SVRSRCS = filed.c authenticate.c backup.c crypto.c \
 	  estimate.c \
 	  fd_plugins.c accurate.c \
 	  filed_conf.c heartbeat.c hello.c job.c fd_snapshot.c \
-	  restore.c status.c verify.c verify_vol.c xattr.c
+	  restore.c status.c verify.c verify_vol.c \
+	  xacl.c xacl_linux.c xacl_osx.c xacl_solaris.c xacl_freebsd.c
 SVROBJS = $(SVRSRCS:.c=.o)
 
 # these are the objects that are changed by the .configure process
@@ -59,7 +60,7 @@ all: Makefile bacula-fd @STATIC_FD@
 	@echo "==== Make of filed is good ===="
 	@echo " "
 
-acl.o: acl.c
+xacl.o: xacl.c
 	@echo "Compiling $<"
 	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) $(LZO_INC) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) $(AFS_CFLAGS) $<
 

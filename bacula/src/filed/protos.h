@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2015 Kern Sibbald
+   Copyright (C) 2000-2016 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -52,11 +52,6 @@ void stop_heartbeat_monitor(JCR *jcr);
 void start_dir_heartbeat(JCR *jcr);
 void stop_dir_heartbeat(JCR *jcr);
 
-/* From acl.c */
-bool backup_acl_streams(JCR *jcr, FF_PKT *ff_pkt);
-bacl_rtn_code restore_acl_streams(JCR *jcr, int stream, char *content, 
-   uint32_t content_length);
-
 /* from accurate.c */
 bool accurate_finish(JCR *jcr);
 bool accurate_check_file(JCR *jcr, FF_PKT *ff_pkt);
@@ -66,11 +61,6 @@ void accurate_free(JCR *jcr);
 /* from backup.c */
 void strip_path(FF_PKT *ff_pkt);
 void unstrip_path(FF_PKT *ff_pkt);
-
-/* from xattr.c */
-bool backup_xattr_streams(JCR *jcr, FF_PKT *ff_pkt);
-bxattr_rtn_code restore_xattr_streams(JCR *jcr, int stream, 
-   char *content, uint32_t content_length);
 
 /* from job.c */
 findINCEXE *new_exclude(JCR *jcr);
