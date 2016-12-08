@@ -26,6 +26,9 @@ msgstr "Polish"
 msgid "Portuguese"
 msgstr "Português"
 
+msgid "Japanese"
+msgstr "Japanese"
+
 msgid "&lt; Previous"
 msgstr "&lt; Voltar"
 

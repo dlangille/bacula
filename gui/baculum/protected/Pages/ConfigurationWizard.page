@@ -61,6 +61,7 @@
                                                 <com:TListItem Value="en" Text="<%[ English ]%>" />
                                                 <com:TListItem Value="pl" Text="<%[ Polish ]%>" />
                                                 <com:TListItem Value="pt" Text="<%[ Portuguese ]%>" />
+                                                <com:TListItem Value="ja" Text="<%[ Japanese ]%>" />
                                         </com:TActiveDropDownList>
                                         <com:TCompareValidator CssClass="validator-block" Display="Dynamic" ControlToValidate="Lang" DataType="String" ValueToCompare="none" Operator="NotEqual" Text="<%[ Please select language. ]%>" />
                                 </div>
