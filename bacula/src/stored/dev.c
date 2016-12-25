@@ -307,6 +307,12 @@ DEVICE *m_init_dev(JCR *jcr, DEVRES *device)
       Mmsg1(dev->errmsg, _("Unable to init acquire mutex: ERR=%s\n"), be.bstrerror(errstat));
       Jmsg0(jcr, M_ERROR_TERM, 0, dev->errmsg);
    }
+   if ((errstat = dev->init_freespace_mutex()) != 0) {
+      berrno be;
+      dev->dev_errno = errstat;
+      Mmsg1(dev->errmsg, _("Unable to init freespace mutex: ERR=%s\n"), be.bstrerror(errstat));
+      Jmsg0(jcr, M_ERROR_TERM, 0, dev->errmsg);
+   }
    if ((errstat = dev->init_read_acquire_mutex()) != 0) {
       berrno be;
       dev->dev_errno = errstat;
