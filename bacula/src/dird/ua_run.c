@@ -1071,11 +1071,6 @@ static bool set_run_context_in_jcr(UAContext *ua, JCR *jcr, run_ctx &rc)
       jcr->IgnoreDuplicateJobChecking = rc.ignoreduplicatecheck;
    }
 
-   /* Not a good idea to start a job with the Scratch pool */
-   if (rc.pool && strcmp(rc.pool->name(), NT_("Scratch")) == 0) {
-      ua->send_msg(_("Pool \"Scratch\" not valid.\n"));
-      return false;
-   }
    return true;
 }
 
