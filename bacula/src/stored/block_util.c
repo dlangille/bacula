@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -205,8 +205,6 @@ void empty_block(DEV_BLOCK *block)
    Dmsg3(200, "empty len=%d block=%p set binbuf=%d\n",
          block->buf_len, block, block->binbuf);
    block->bufp = block->buf + block->binbuf;
-   block->buf[0] = 0;        /* clear for debugging */
-   block->bufp[0] = 0;       /* clear for debugging */
    block->read_len = 0;
    block->write_failed = false;
    block->block_read = false;
