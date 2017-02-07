@@ -1,4 +1,38 @@
-              Changelog on version 7.4.4
+              Changelog on version 7.4.5
+
+Release version 7.4.5
+
+07Feb17
+ - Correct wrong word in message
+
+28Jan17
+ - Remove restriction on using the scratch pool that can cause restore failures
+ - Remove debug code that breaks btape fill
+
+25Dec16
+ - Initialize freespace_mutex fixes bug 2207
+
+11Dec16
+ - baculum: Update AUTHORS file
+
+08Dec16
+ - baculum: Enable Japanese language on web interface
+ - baculum: Implement Japanese language support
+
+19Nov16
+ - XACL - refactoring an ACL and XATTR codes.
+ - Revert "Warn of Storage Daemon version incompatibility if label fails. Bug 
+  #2193"
+
+02Oct16
+ - Make another attempt to resolve bug #2176
+ - Warn of Storage Daemon version incompatibility if label fails. Bug #2193
+ - Apply patch to list more pool info from bug #2202
+
+21Sep16
+ - Fix status alignment output reported by Wanderlei Huttel
+
+==========================================================================
 
 Release version 7.4.4 
 

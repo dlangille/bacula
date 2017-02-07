@@ -1,5 +1,28 @@
 
-               Release Notes for Bacula 7.4.4
+               Release Notes for Bacula 7.4.5
+
+This is a minor bug fix plus a significant total rewrite of the
+ACL and XATTR code by Radoslaw Korzeniewski.
+
+07Feb17
+ - Correct wrong word in message
+ - Remove restriction on using the scratch pool that can 
+   cause restore failures
+ - Remove debug code that breaks btape fill
+ - Initialize freespace_mutex fixes bug 2207
+ - baculum: Update AUTHORS file
+ - baculum: Enable Japanese language on web interface
+ - baculum: Implement Japanese language support
+ - XACL - refactoring an ACL and XATTR codes.
+ - Revert "Warn of Storage Daemon version incompatibility if 
+   label fails. Bug #2193"
+ - Make another attempt to resolve bug #2176
+ - Warn of Storage Daemon version incompatibility if label fails. Bug #2193
+ - Apply patch to list more pool info from bug #2202
+ - Fix status alignment output reported by Wanderlei Huttel
+
+
+=====================================================
 
 Release version 7.4.4
 
@@ -37,7 +60,6 @@ Bugs fixed/closed since last release:
 1968 2060 2085 2222 2237 335
 
 
-=====================================================
 
 Release version 7.4.3
 

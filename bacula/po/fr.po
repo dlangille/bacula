@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Bacula 1.38\n"
 "Report-Msgid-Bugs-To: bacula-devel@lists.sourceforge.net\n"
-"POT-Creation-Date: 2016-01-10 15:13+0100\n"
+"POT-Creation-Date: 2017-02-07 15:07+0100\n"
 "PO-Revision-Date: 2009-10-18 14:04+0000\n"
 "Last-Translator: Eric Bollengier <eric@eb.homelinux.org>\n"
 "Language-Team: French <bacula-devel-fr@lists.sourceforge.net>\n"
@@ -37,57 +37,58 @@ msgstr ""
 "Job terminés :\n"
 
 #: src/lib/status.h:84
-msgid " JobId  Level    Files      Bytes   Status   Finished        Name \n"
+#, fuzzy
+msgid " JobId  Level      Files    Bytes   Status   Finished        Name \n"
 msgstr " JobId  Type     Fichiers   Octets   Statut  Terminé         Nom\n"
 
 #: src/lib/status.h:86
 msgid "===================================================================\n"
 msgstr "===================================================================\n"
 
-#: src/lib/status.h:106
+#: src/lib/status.h:107
 msgid "Created"
 msgstr "Crée"
 
-#: src/lib/status.h:110
+#: src/lib/status.h:111
 msgid "Error"
 msgstr "Erreur"
 
-#: src/lib/status.h:113
+#: src/lib/status.h:114
 msgid "Diffs"
 msgstr ""
 
-#: src/lib/status.h:116
+#: src/lib/status.h:117
 msgid "Cancel"
 msgstr "Annulé"
 
-#: src/lib/status.h:119
+#: src/lib/status.h:120
 msgid "OK"
 msgstr "OK"
 
-#: src/lib/status.h:122
+#: src/lib/status.h:123
 msgid "OK -- with warnings"
 msgstr "OK -- avec des avertissements"
 
-#: src/lib/status.h:125
+#: src/lib/status.h:126
 msgid "Incomplete"
 msgstr ""
 
-#: src/lib/status.h:128
+#: src/lib/status.h:129
 msgid "Other"
 msgstr "Autre"
 
-#: src/lib/status.h:140
+#: src/lib/status.h:141
 #, fuzzy, c-format
-msgid "%6d\t%-6s\t%8s\t%10s\t%-7s\t%-8s\t%s\n"
+msgid "%6d\t%-7s\t%8s\t%10s\t%-7s\t%-8s\t%s\n"
 msgstr "%6d  %-6s %8s %10s %-7s  %-8s %s\n"
 
-#: src/lib/status.h:148
-#, c-format
-msgid "%6d  %-6s %8s %10s  %-7s  %-8s %s\n"
+#: src/lib/status.h:149
+#, fuzzy, c-format
+msgid "%6d  %-7s %8s %10s  %-7s  %-8s %s\n"
 msgstr "%6d  %-6s %8s %10s %-7s  %-8s %s\n"
 
-#: src/lib/status.h:177 src/lib/status.h:188 src/lib/status.h:202
-#: src/lib/status.h:206 src/lib/status.h:210
+#: src/lib/status.h:178 src/lib/status.h:189 src/lib/status.h:203
+#: src/lib/status.h:207 src/lib/status.h:211
 msgid "Bacula "
 msgstr "Bacula "
 
@@ -121,13 +122,14 @@ msgstr ""
 #: src/qt-console/bat_conf.cpp:261
 #: src/qt-console/tray-monitor/tray_conf.cpp:279
 #, c-format
-msgid "%s item is required in %s resource, but not found.\n"
+msgid "\"%s\" directive is required in \"%s\" resource, but not found.\n"
 msgstr ""
 
 #: src/qt-console/bat_conf.cpp:330
 #: src/qt-console/tray-monitor/tray_conf.cpp:363
 #, c-format
-msgid "Attempt to define second %s resource named \"%s\" is not permitted.\n"
+msgid ""
+"Attempt to define second \"%s\" resource named \"%s\" is not permitted.\n"
 msgstr ""
 
 #: src/qt-console/bcomm/dircomm.cpp:88
@@ -525,15 +527,18 @@ msgid "Unknown resource type %d in free_resource.\n"
 msgstr ""
 
 #: src/qt-console/tray-monitor/tray_conf.cpp:285
-#, c-format
-msgid "Too many items in %s resource\n"
-msgstr "Trop d'élément dans la ressource %s\n"
+#, fuzzy, c-format
+msgid "Too many directives in \"%s\" resource\n"
+msgstr "Trop d'éléments dans la ressource \"%s\"\n"
 
 #: src/qt-console/tray-monitor/tray_conf.cpp:305
 #: src/qt-console/tray-monitor/tray_conf.cpp:343
 #, c-format
 msgid "Unknown resource type %d in save_resource.\n"
 msgstr ""
+
+#~ msgid "Too many items in %s resource\n"
+#~ msgstr "Trop d'élément dans la ressource %s\n"
 
 #~ msgid "A user name for MySQL must be supplied.\n"
 #~ msgstr "Un nom d'utilisateur MySQL doit être fourni.\n"
@@ -8154,9 +8159,6 @@ msgstr ""
 
 #~ msgid "Could not mount device %s\n"
 #~ msgstr "Impossible de monter le device %s\n"
-
-#~ msgid "Too many items in \"%s\" resource\n"
-#~ msgstr "Trop d'éléments dans la ressource \"%s\"\n"
 
 #~ msgid "Cannot find AutoChanger resource %s\n"
 #~ msgstr "Impossible de trouver la ressource AutoChanger %s\n"

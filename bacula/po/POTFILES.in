@@ -2,6 +2,7 @@
 # To generate this file, type 'make gen-potfiles'
 autoconf/acconfig.h
 autoconf/confdefs.h
+examples/nagios/check_bacula/check_bacula.h
 src/baconfig.h
 src/bacula.h
 src/bc_types.h
@@ -24,7 +25,6 @@ src/dird/dird_conf.h
 src/dird/jobq.h
 src/dird/protos.h
 src/dird/ua.h
-src/filed/acl.h
 src/filed/backup.h
 src/filed/fd_plugins.h
 src/filed/fd_snapshot.h
@@ -32,7 +32,11 @@ src/filed/filed.h
 src/filed/filed_conf.h
 src/filed/protos.h
 src/filed/restore.h
-src/filed/xattr.h
+src/filed/xacl.h
+src/filed/xacl_freebsd.h
+src/filed/xacl_linux.h
+src/filed/xacl_osx.h
+src/filed/xacl_solaris.h
 src/fileopts.h
 src/filetypes.h
 src/findlib/bfile.h
