@@ -614,7 +614,7 @@ char *sockaddr_to_ascii(const struct sockaddr *sa, int socklen, char *buf, int b
   char clientservice[NI_MAXSERV];
   int status = 1;
   if (sa->sa_family == AF_INET) {
-     status = getnameinfo(sa, socklen, clienthost, sizeof(clienthost),
+     status = getnameinfo(sa, sizeof(sockaddr_in), clienthost, sizeof(clienthost),
                  clientservice, sizeof(clientservice),
                  NI_NUMERICHOST | NI_NUMERICSERV);
   }
