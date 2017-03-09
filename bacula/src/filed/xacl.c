@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -1311,7 +1311,9 @@ bRC_XACL XACL::afs_restore_acl (JCR *jcr, int stream){
 /*
  * Creating the corrent instance of the XACL for a supported OS
  */
-void *new_xacl(){
+void *new_xacl()
+{
+   XACL *xacl;
 #if   defined(HAVE_DARWIN_OS)
    return new XACL_OSX();
 #elif defined(HAVE_LINUX_OS)
@@ -1328,5 +1330,11 @@ void *new_xacl(){
    return new XACL_OSF1();
 #elif defined(HAVE_SUN_OS)
    return new XACL_Solaris();
+#else
+   /* No driver defined */
+   xacl = new XACL();
+   xacl->disable_acl();
+   xacl->disable_xattr();
+   return xacl;
 #endif
 };
