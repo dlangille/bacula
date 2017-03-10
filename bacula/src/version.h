@@ -5,7 +5,7 @@
 #define COMMUNITY 1      /* Define to create a Windows community binary */
 
 /* Note: there can be only *one* VERSION in this file */
-#define VERSION "7.4.5"
+#define VERSION "7.4.6"
 #define BDATE   "09 March 2017"
 #define LSMDATE "09Mar17"
 
