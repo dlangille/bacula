@@ -214,6 +214,16 @@ bool BSOCK::open(JCR *jcr, const char *name, char *host, char *service,
              */
             break;
 #endif
+#ifdef EPROTONOSUPPORT
+         /* See above comments */
+         case EPROTONOSUPPORT:
+            break;
+#endif
+#ifdef EPROTOTYPE
+         /* See above comments */
+         case EPROTOTYPE:
+            break;
+#endif
          default:
             *fatal = 1;
             Qmsg3(jcr, M_ERROR, 0,  _("Socket open error. proto=%d port=%d. ERR=%s\n"),
