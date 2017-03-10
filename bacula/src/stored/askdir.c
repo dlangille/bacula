@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -850,7 +850,6 @@ bool dir_ask_sysop_to_mount_volume(DCR *dcr, bool write_access)
    }
 
 get_out:
-   dev->poll = false;
    jcr->sendJobStatus(JS_Running);
    Dmsg0(100, "leave dir_ask_sysop_to_mount_volume\n");
    return true;

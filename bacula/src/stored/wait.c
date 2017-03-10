@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -146,7 +146,7 @@ int wait_for_sysop(DCR *dcr)
 
       if (!unmounted && dev->vol_poll_interval &&
           (total_waited >= dev->vol_poll_interval)) {
-         Dmsg1(dbglvl, "poll return in wait blocked=%s\n", dev->print_blocked());
+         Dmsg1(dbglvl, "Set poll=true return in wait blocked=%s\n", dev->print_blocked());
          dev->poll = true;            /* returning a poll event */
          stat = W_POLL;
          break;
@@ -196,7 +196,7 @@ int wait_for_sysop(DCR *dcr)
       dev->set_blocked(dev->dev_prev_blocked);    /* restore entry state */
       Dmsg1(dbglvl, "set %s\n", dev->print_blocked());
    }
-   Dmsg1(dbglvl, "Exit blocked=%s\n", dev->print_blocked());
+   Dmsg2(dbglvl, "Exit blocked=%s poll=%d\n", dev->print_blocked(), dev->poll);
    dev->Unlock();
    return stat;
 }
