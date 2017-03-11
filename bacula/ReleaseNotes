@@ -1,5 +1,26 @@
 
-               Release Notes for Bacula 7.4.5
+               Release Notes for Bacula 7.4.6
+
+Release Version 7.4.6
+
+This is a bug fix release, which hopefully corrects a seg fault on OpenBSD
+due to the nex ACL/XATTR code, and it also fixes the large number of tape
+mount messages that are repeated at 5 minute intervals due to a bug in the
+poll code. Various small fixes for FreeBSD.
+
+10Mar17
+ - Fix bug #2271 where poll interval causes tape mount message to repeat
+ - Attempt to fix IPV6 not configured
+ - Possible fix for acl seg fault on OpenBSD where no acl code defined
+ - Change release digest from SHA1 to SHA256
+ - Fix getnameinfo() for FreeBSD fixes bug #2083
+
+Bugs fixed/closed since last release:
+2083 2271
+
+=====================================================
+
+Release version 7.4.5
 
 This is a minor bug fix plus a significant total rewrite of the
 ACL and XATTR code by Radoslaw Korzeniewski.
@@ -22,7 +43,6 @@ ACL and XATTR code by Radoslaw Korzeniewski.
  - Fix status alignment output reported by Wanderlei Huttel
 
 
-=====================================================
 
 Release version 7.4.4
 

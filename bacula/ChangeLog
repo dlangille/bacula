@@ -1,4 +1,22 @@
-              Changelog on version 7.4.5
+              Changelog on version 7.4.6
+
+Release Version 7.4.6
+
+10Mar17
+ - Fix bug #2271 where poll interval causes tape mount message to repeat
+ - Attempt to fix IPV6 not configured
+
+09Mar17
+ - Possible fix for acl seg fault on OpenBSD where no acl code defined
+ - Change release digest from SHA1 to SHA256
+
+14Feb17
+ - Fix getnameinfo() for FreeBSD fixes bug #2083
+
+Bugs fixed/closed since last release:
+2083 2271
+
+==========================================================================
 
 Release version 7.4.5
 
