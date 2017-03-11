@@ -8,6 +8,10 @@ due to the nex ACL/XATTR code, and it also fixes the large number of tape
 mount messages that are repeated at 5 minute intervals due to a bug in the
 poll code. Various small fixes for FreeBSD.
 
+Please note, the signature hash files (.sig) for the source code was
+previously SHA1.  For this and future releases we have changed it to be
+SHA256.
+
 10Mar17
  - Fix bug #2271 where poll interval causes tape mount message to repeat
  - Attempt to fix IPV6 not configured
