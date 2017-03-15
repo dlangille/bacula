@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2015 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -291,6 +291,7 @@ bool fstype(FF_PKT *ff_pkt, char *fs, int fslen)
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/mtab.h>
 
 bool fstype(FF_PKT *ff_pkt, char *fs, int fslen)
 {

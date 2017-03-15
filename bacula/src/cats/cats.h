@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -65,7 +65,7 @@ typedef enum {
 typedef enum {
    SQL_DRIVER_TYPE_MYSQL      = 0,
    SQL_DRIVER_TYPE_POSTGRESQL = 1,
-   SQL_DRIVER_TYPE_SQLITE3    = 2,
+   SQL_DRIVER_TYPE_SQLITE3    = 2
 } SQL_DRIVER;
 
 

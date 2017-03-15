@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -154,25 +154,25 @@ void DEVICE::dunblock(bool locked)
 
 #ifdef DEV_DEBUG_LOCK
 
-void DEVICE::dbg_Lock(const char *file, int line)
+void DEVICE::dbg_Lock(const char *tfile, int line)
 {
-   Dmsg3(sd_dbglvl, "Lock from %s:%d precnt=%d\n", file, line, m_count);
-   bthread_mutex_lock_p(&m_mutex, file, line);
+   Dmsg3(sd_dbglvl, "Lock from %s:%d precnt=%d\n", tfile, line, m_count);
+   bthread_mutex_lock_p(&m_mutex, tfile, line);
    m_pid = pthread_self();
    m_count++;
 }
 
-void DEVICE::dbg_Unlock(const char *file, int line)
+void DEVICE::dbg_Unlock(const char *tfile, int line)
 {
    m_count--;
-   Dmsg3(sd_dbglvl, "Unlock from %s:%d postcnt=%d\n", file, line, m_count);
-   bthread_mutex_unlock_p(&m_mutex, file, line);
+   Dmsg3(sd_dbglvl, "Unlock from %s:%d postcnt=%d\n", tfile, line, m_count);
+   bthread_mutex_unlock_p(&m_mutex, tfile, line);
 }
 
-void DEVICE::dbg_rUnlock(const char *file, int line)
+void DEVICE::dbg_rUnlock(const char *tfile, int line)
 {
-   Dmsg2(sd_dbglvl, "rUnlock from %s:%d\n", file, line);
-   dbg_Unlock(file, line);
+   Dmsg2(sd_dbglvl, "rUnlock from %s:%d\n", tfile, line);
+   dbg_Unlock(tfile, line);
 }
 
 #else
@@ -208,14 +208,14 @@ void DEVICE::Unlock()
  * and preparing the label.
  */
 #ifdef DEV_DEBUG_LOCK
-void DEVICE::dbg_rLock(const char *file, int line, bool locked)
+void DEVICE::dbg_rLock(const char *tfile, int line, bool locked)
 {
    Dmsg3(sd_dbglvl, "rLock blked=%s from %s:%d\n", print_blocked(),
-         file, line);
+         tfile, line);
 
    if (!locked) {
       /* lockmgr version of P(m_mutex) */
-      bthread_mutex_lock_p(&m_mutex, file, line);
+      bthread_mutex_lock_p(&m_mutex, tfile, line);
       m_count++;
    }
 
@@ -228,9 +228,9 @@ void DEVICE::dbg_rLock(const char *file, int line, bool locked)
          Dmsg3(sd_dbglvl, "rLock blked=%s no_wait=%p me=%p\n", print_blocked(),
                no_wait_id, pthread_self());
 #endif
-         if ((stat = bthread_cond_wait_p(&this->wait, &m_mutex, file, line)) != 0) {
+         if ((stat = bthread_cond_wait_p(&this->wait, &m_mutex, tfile, line)) != 0) {
             berrno be;
-            this->dbg_Unlock(file, line);
+            this->dbg_Unlock(tfile, line);
             Emsg1(M_ABORT, 0, _("pthread_cond_wait failure. ERR=%s\n"),
                be.bstrerror(stat));
          }
@@ -272,38 +272,38 @@ void DEVICE::rLock(bool locked)
 
 #ifdef SD_DEBUG_LOCK
 
-void DEVICE::dbg_Lock_acquire(const char *file, int line)
+void DEVICE::dbg_Lock_acquire(const char *tfile, int line)
 {
-   Dmsg2(sd_dbglvl, "Lock_acquire from %s:%d\n", file, line);
-   bthread_mutex_lock_p(&acquire_mutex, file, line);
+   Dmsg2(sd_dbglvl, "Lock_acquire from %s:%d\n", tfile, line);
+   bthread_mutex_lock_p(&acquire_mutex, tfile, line);
 }
 
-void DEVICE::dbg_Unlock_acquire(const char *file, int line)
+void DEVICE::dbg_Unlock_acquire(const char *tfile, int line)
 {
-   Dmsg2(sd_dbglvl, "Unlock_acquire from %s:%d\n", file, line);
-   bthread_mutex_unlock_p(&acquire_mutex, file, line);
+   Dmsg2(sd_dbglvl, "Unlock_acquire from %s:%d\n", tfile, line);
+   bthread_mutex_unlock_p(&acquire_mutex, tfile, line);
 }
 
-void DEVICE::dbg_Lock_read_acquire(const char *file, int line)
+void DEVICE::dbg_Lock_read_acquire(const char *tfile, int line)
 {
-   Dmsg2(sd_dbglvl, "Lock_read_acquire from %s:%d\n", file, line);
-   bthread_mutex_lock_p(&read_acquire_mutex, file, line);
+   Dmsg2(sd_dbglvl, "Lock_read_acquire from %s:%d\n", tfile, line);
+   bthread_mutex_lock_p(&read_acquire_mutex, tfile, line);
 }
 
-void DEVICE::dbg_Unlock_read_acquire(const char *file, int line)
+void DEVICE::dbg_Unlock_read_acquire(const char *tfile, int line)
 {
-   Dmsg2(sd_dbglvl, "Unlock_read_acquire from %s:%d\n", file, line);
-   bthread_mutex_unlock_p(&read_acquire_mutex, file, line);
+   Dmsg2(sd_dbglvl, "Unlock_read_acquire from %s:%d\n", tfile, line);
+   bthread_mutex_unlock_p(&read_acquire_mutex, tfile, line);
 }
 
-void DEVICE::dbg_Lock_VolCatInfo(const char *file, int line)
+void DEVICE::dbg_Lock_VolCatInfo(const char *tfile, int line)
 {
-   bthread_mutex_lock_p(&volcat_mutex, file, line);
+   bthread_mutex_lock_p(&volcat_mutex, tfile, line);
 }
 
-void DEVICE::dbg_Unlock_VolCatInfo(const char *file, int line)
+void DEVICE::dbg_Unlock_VolCatInfo(const char *tfile, int line)
 {
-   bthread_mutex_unlock_p(&volcat_mutex, file, line);
+   bthread_mutex_unlock_p(&volcat_mutex, tfile, line);
 }
 
 #else
