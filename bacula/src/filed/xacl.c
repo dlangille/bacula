@@ -1313,7 +1313,6 @@ bRC_XACL XACL::afs_restore_acl (JCR *jcr, int stream){
  */
 void *new_xacl()
 {
-   XACL *xacl;
 #if   defined(HAVE_DARWIN_OS)
    return new XACL_OSX();
 #elif defined(HAVE_LINUX_OS)
@@ -1331,10 +1330,6 @@ void *new_xacl()
 #elif defined(HAVE_SUN_OS)
    return new XACL_Solaris();
 #else
-   /* No driver defined */
-   xacl = new XACL();
-   xacl->disable_acl();
-   xacl->disable_xattr();
-   return xacl;
+   return NULL;
 #endif
 };

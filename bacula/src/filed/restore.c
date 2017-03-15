@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
    Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
    The original author of Bacula is Kern Sibbald, with contributions
@@ -199,6 +199,9 @@ static inline void push_delayed_restore_stream(r_ctx &rctx, char *msg, int msgle
 static inline bool do_restore_acl(JCR *jcr, int stream, char *content,
                                   uint32_t content_length)
 {
+   if (!jcr->xacl) {
+      return true;
+   }
    switch (jcr->xacl->restore_acl(jcr, stream, content, content_length)) {
       case bRC_XACL_fatal:
          return false;
@@ -224,6 +227,9 @@ static inline bool do_restore_acl(JCR *jcr, int stream, char *content,
 static inline bool do_restore_xattr(JCR *jcr, int stream, char *content,
                                     uint32_t content_length)
 {
+   if (!jcr->xacl) {
+      return true;
+   }
    switch (jcr->xacl->restore_xattr(jcr, stream, content, content_length)) {
       case bRC_XACL_fatal:
          return false;
@@ -1006,13 +1012,14 @@ ok_out:
    Dmsg2(10, "End Do Restore. Files=%d Bytes=%s\n", jcr->JobFiles,
       edit_uint64(jcr->JobBytes, ec1));
 
-   if (jcr->xacl->get_acl_nr_errors() > 0) {
-      Jmsg(jcr, M_WARNING, 0, _("Encountered %ld acl errors while doing restore\n"), jcr->xacl->get_acl_nr_errors());
+   if (jcr->xacl) {
+      if (jcr->xacl->get_acl_nr_errors() > 0) {
+         Jmsg(jcr, M_WARNING, 0, _("Encountered %ld acl errors while doing restore\n"), jcr->xacl->get_acl_nr_errors());
+      }
+      if (jcr->xacl->get_xattr_nr_errors() > 0) {
+         Jmsg(jcr, M_WARNING, 0, _("Encountered %ld xattr errors while doing restore\n"), jcr->xacl->get_xattr_nr_errors());
+      }
    }
-   if (jcr->xacl->get_xattr_nr_errors() > 0) {
-      Jmsg(jcr, M_WARNING, 0, _("Encountered %ld xattr errors while doing restore\n"), jcr->xacl->get_xattr_nr_errors());
-   }
-
    if (non_suppored_data > 1 || non_suppored_attr > 1) {
       Jmsg(jcr, M_WARNING, 0, _("%d non-supported data streams and %d non-supported attrib streams ignored.\n"),
          non_suppored_data, non_suppored_attr);
