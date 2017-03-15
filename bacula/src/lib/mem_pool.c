@@ -375,7 +375,8 @@ void garbage_collect_memory_pool()
       return;
    }
    now = time(NULL);
-   if (now >= last_garbage_collection + garbage_interval) {
+   if (now >= last_garbage_collection + garbage_interval ||
+       sm_bytes > 500000) {
       last_garbage_collection = now;
       V(mutex);
       garbage_collect_memory();
