@@ -1,10 +1,23 @@
 
-               Release Notes for Bacula 7.4.6
+               Release Notes for Bacula 7.4.7
+
+Release Version 7.4.7
+
+This is a minor bug fix release, which hopefully corrects a seg fault
+on OpenBSD due to the new ACL/XATTR code, and it also fixes most build
+problems on Solaris 10 as well as EPROTO on OpenBSD.
+
+15Mar17
+ - Permit specifying query item number on bconsole query command line
+ - Fix Solaris 10 problems reported by Phil Stracchino
+ - Fix EPROTO on OpenBSD
+
+=====================================================
 
 Release Version 7.4.6
 
 This is a bug fix release, which hopefully corrects a seg fault on OpenBSD
-due to the nex ACL/XATTR code, and it also fixes the large number of tape
+due to the new ACL/XATTR code, and it also fixes the large number of tape
 mount messages that are repeated at 5 minute intervals due to a bug in the
 poll code. Various small fixes for FreeBSD.
 

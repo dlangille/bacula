@@ -1,4 +1,13 @@
-              Changelog on version 7.4.6
+              Changelog on version 7.4.7
+
+Release Version 7.4.7
+
+15Mar17
+ - Permit specifying query item number on bconsole query command line
+ - Fix Solaris 10 problems reported by Phil Stracchino
+ - Fix EPROTO on OpenBSD
+
+==========================================================================
 
 Release Version 7.4.6
 
