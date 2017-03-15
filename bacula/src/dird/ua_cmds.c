@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2015 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
    Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
    The original author of Bacula is Kern Sibbald, with contributions
@@ -12,7 +12,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -44,12 +44,12 @@ extern int messagescmd(UAContext *ua, const char *cmd);
 extern int prunecmd(UAContext *ua, const char *cmd);
 extern int purge_cmd(UAContext *ua, const char *cmd);
 extern int truncate_cmd(UAContext *ua, const char *cmd);  /* in ua_purge.c */
-extern int querycmd(UAContext *ua, const char *cmd);
+extern int query_cmd(UAContext *ua, const char *cmd);
 extern int relabel_cmd(UAContext *ua, const char *cmd);
 extern int restore_cmd(UAContext *ua, const char *cmd);
 extern int retentioncmd(UAContext *ua, const char *cmd);
 extern int show_cmd(UAContext *ua, const char *cmd);
-extern int sqlquerycmd(UAContext *ua, const char *cmd);
+extern int sqlquery_cmd(UAContext *ua, const char *cmd);
 extern int status_cmd(UAContext *ua, const char *cmd);
 extern int update_cmd(UAContext *ua, const char *cmd);
 
@@ -137,7 +137,7 @@ static struct cmdstruct commands[] = {                                      /* C
 
  { NT_("purge"),      purge_cmd,     _("Purge records from catalog"), NT_("files jobs volume=<vol> [mediatype=<type> pool=<pool> allpools storage=<st> drive=<num>]"),  true},
  { NT_("quit"),       quit_cmd,      _("Terminate Bconsole session"), NT_(""),              false},
- { NT_("query"),      querycmd,      _("Query catalog"),              NT_(""),              false},
+ { NT_("query"),      query_cmd,     _("Query catalog"), NT_("[<query-item-number>]"),      false},
  { NT_("restore"),    restore_cmd,   _("Restore files"),
    NT_("where=</path> client=<client> storage=<storage> bootstrap=<file> "
        "restorejob=<job>"
@@ -174,14 +174,14 @@ static struct cmdstruct commands[] = {                                      /* C
  { NT_("setbandwidth"),   setbwlimit_cmd,  _("Sets bandwidth"),
    NT_("limit=<nn-kbs> client=<client-name> jobid=<number> job=<job-name> ujobid=<unique-jobid>"), true},
 
- { NT_("snapshot"),   snapshot_cmd,  _("Handle snapshots"), 
+ { NT_("snapshot"),   snapshot_cmd,  _("Handle snapshots"),
    NT_("[client=<client-name> | job=<job-name> | jobid=<jobid>] [delete | list | listclient | prune | sync | update]"), true},
 
  { NT_("setip"),      setip_cmd,     _("Sets new client address -- if authorized"), NT_(""),   false},
  { NT_("show"),       show_cmd,      _("Show resource records"),
    NT_("job=<xxx> |  pool=<yyy> | fileset=<aaa> | schedule=<sss> | client=<zzz> | storage=<sss> | disabled | all"), true},
 
- { NT_("sqlquery"),   sqlquerycmd,   _("Use SQL to query catalog"), NT_(""),          false},
+ { NT_("sqlquery"),   sqlquery_cmd,  _("Use SQL to query catalog"), NT_(""),          false},
  { NT_("time"),       time_cmd,      _("Print current time"),       NT_(""),          true},
  { NT_("trace"),      trace_cmd,     _("Turn on/off trace to file"), NT_("on | off"), true},
  { NT_("truncate"),   truncate_cmd,  _("Truncate one or more Volumes"), NT_("volume=<vol> [mediatype=<type> pool=<pool> allpools storage=<st> drive=<num>]"),  true},
@@ -1364,8 +1364,8 @@ static int estimate_cmd(UAContext *ua, const char *cmd)
             }
             continue;
          } else {
-            ua->error_msg(_("Level value missing.\n")); 
-            return 1; 
+            ua->error_msg(_("Level value missing.\n"));
+            return 1;
          }
       }
       if (strcasecmp(ua->argk[i], NT_("accurate")) == 0) {
@@ -1378,7 +1378,7 @@ static int estimate_cmd(UAContext *ua, const char *cmd)
             continue;
          } else {
             ua->error_msg(_("Accurate value missing.\n"));
-            return 1; 
+            return 1;
          }
       }
    }
@@ -1590,14 +1590,14 @@ static void delete_job(UAContext *ua)
       if (!sl.set_string(ua->argv[i], true)) {
          ua->warning_msg("%s", sl.get_errmsg());
          return;
-      } 
- 
+      }
+
       if (sl.size() > 25 && (find_arg(ua, "yes") < 0)) {
          bsnprintf(buf, sizeof(buf),
                    _("Are you sure you want to delete %d JobIds ? (yes/no): "), sl.size());
          if (!get_yesno(ua, buf)) {
             return;
-         } 
+         }
       }
 
       foreach_sellist(JobId, &sl) {
@@ -2223,7 +2223,7 @@ bool open_db(UAContext *ua)
                              ua->catalog->db_ssl_key, ua->catalog->db_ssl_cert,
                              ua->catalog->db_ssl_ca, ua->catalog->db_ssl_capath,
                              ua->catalog->db_ssl_cipher,
-                             mult_db_conn, ua->catalog->disable_batch_insert); 
+                             mult_db_conn, ua->catalog->disable_batch_insert);
    if (!ua->db || !db_open_database(ua->jcr, ua->db)) {
       ua->error_msg(_("Could not open catalog database \"%s\".\n"),
                  ua->catalog->db_name);

@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2015 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -45,15 +45,18 @@ static POOLMEM *substitute_prompts(UAContext *ua,
  *   SQL statement possibly terminated by ;
  *   :next query prompt
  */
-int querycmd(UAContext *ua, const char *cmd)
+int query_cmd(UAContext *ua, const char *cmd)
 {
    FILE *fd = NULL;
    POOLMEM *query = get_pool_memory(PM_MESSAGE);
    char line[1000];
-   int i, item, len;
+   int i, len;
+   int item = 0;
+   long val;
    char *prompt[9];
    int nprompt = 0;;
    char *query_file = director->query_file;
+   bool must_prompt = true;
 
    if (!open_client_db(ua)) {
       goto bail_out;
@@ -72,7 +75,21 @@ int querycmd(UAContext *ua, const char *cmd)
          add_prompt(ua, line+1);
       }
    }
-   if ((item=do_prompt(ua, "", _("Choose a query"), NULL, 0)) < 0) {
+   if (ua->argc >= 2) {
+       errno = 0;
+       val = strtol(ua->argk[1], NULL, 10) - 1;
+       if (val < 0) {
+          errno = 1;
+       }
+       if (errno != 0) {
+          ua->error_msg(_("Invalid command line query item specified.\n"));
+          must_prompt = true;
+       } else {
+          item = val;
+          must_prompt = false;
+      }
+   }
+   if (must_prompt && (item=do_prompt(ua, "", _("Choose a query"), NULL, 0)) < 0) {
       goto bail_out;
    }
    rewind(fd);
@@ -241,7 +258,7 @@ static POOLMEM *substitute_prompts(UAContext *ua,
 /*
  * Get general SQL query for Catalog
  */
-int sqlquerycmd(UAContext *ua, const char *cmd)
+int sqlquery_cmd(UAContext *ua, const char *cmd)
 {
    POOL_MEM query(PM_MESSAGE);
    int len;
