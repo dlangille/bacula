@@ -629,12 +629,14 @@ int set_socket_errno(int sockstat)
       /* Handle errrors from prior connections as EAGAIN */
       switch (errno) {
          case ENETDOWN:
+#ifdef EPROTO
          case EPROTO:
-         case ENOPROTOOPT:
-         case EHOSTDOWN:
+#endif
 #ifdef ENONET
          case ENONET:
 #endif
+         case ENOPROTOOPT:
+         case EHOSTDOWN:
          case EHOSTUNREACH:
          case EOPNOTSUPP:
          case ENETUNREACH:
