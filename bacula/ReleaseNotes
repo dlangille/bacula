@@ -7,6 +7,9 @@ This is a minor bug fix release, which hopefully corrects a seg fault
 on OpenBSD due to the new ACL/XATTR code, and it also fixes most build
 problems on Solaris 10 as well as EPROTO on OpenBSD.
 
+There is one minor new feature that allows you to specify the query
+item number on the bconsole query command line.
+
 15Mar17
  - Permit specifying query item number on bconsole query command line
  - Fix Solaris 10 problems reported by Phil Stracchino
