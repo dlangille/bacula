@@ -291,7 +291,7 @@ bool fstype(FF_PKT *ff_pkt, char *fs, int fslen)
 
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/mtab.h>
+#include <sys/mnttab.h>
 
 bool fstype(FF_PKT *ff_pkt, char *fs, int fslen)
 {
