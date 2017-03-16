@@ -6,8 +6,8 @@
 
 /* Note: there can be only *one* VERSION in this file */
 #define VERSION "7.4.7"
-#define BDATE   "15 March 2017"
-#define LSMDATE "15Mar17"
+#define BDATE   "16 March 2017"
+#define LSMDATE "16Mar17"
 
 #define RELEASE 1   /* Use ONLY in rpms */
 
