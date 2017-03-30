@@ -181,6 +181,8 @@ Source2: Release_Notes-%{version}-%{release}.tar.gz
 %{?build_centos5:%define fc6 1}
 %define centos6 0
 %{?build_centos6:%define centos6 1}
+#define centos7 0
+%{?build_centos7:%define centos7 1}
 # SL build
 %define sl3 0
 %{?build_sl3:%define sl3 1}
@@ -253,7 +255,7 @@ Source2: Release_Notes-%{version}-%{release}.tar.gz
 %define suse 1
 %endif
 %define rhel 0
-%if %{rhel3} || %{rhel4} || %{rhel5} || %{rhel6} || %{rhel7} || %{centos3} || %{centos4} || %{centos5} || %{centos6}
+%if %{rhel3} || %{rhel4} || %{rhel5} || %{rhel6} || %{rhel7} || %{centos3} || %{centos4} || %{centos5} || %{centos6} || %{centos7}
 %define rhel 1
 %endif
 %define scil 0
@@ -311,7 +313,7 @@ exit 1
 %if %{fc16} || %{fc17} || %{fc18} || %{fc22}
 %define _dist %(grep Fedora /etc/redhat-release)
 %endif
-%if %{centos5} || %{centos4} || %{centos3}
+%if %{centos7} || %{centos6} || %{centos5} || %{centos4} || %{centos3}
 %define _dist %(grep CentOS /etc/redhat-release)
 %endif
 %if %{sl5} ||%{sl4} || %{sl3}
@@ -764,19 +766,19 @@ rm -f $RPM_BUILD_ROOT%{script_dir}/stopmysql
 cp -p platforms/suse/bacula-dir $RPM_BUILD_ROOT/etc/init.d/bacula-dir
 cp -p platforms/suse/bacula-fd $RPM_BUILD_ROOT/etc/init.d/bacula-fd
 cp -p platforms/suse/bacula-sd $RPM_BUILD_ROOT/etc/init.d/bacula-sd
-%endif				 # suse
+%endif                           # suse
 %if %{mdk}
 cp -p platforms/mandrake/bacula-dir $RPM_BUILD_ROOT/etc/init.d/bacula-dir
 cp -p platforms/mandrake/bacula-fd $RPM_BUILD_ROOT/etc/init.d/bacula-fd
 cp -p platforms/mandrake/bacula-sd $RPM_BUILD_ROOT/etc/init.d/bacula-sd
-%endif				 # mdk
+%endif                           # mdk
 %if ! %{suse} && ! %{mdk}
 cp -p platforms/redhat/bacula-dir $RPM_BUILD_ROOT/etc/init.d/bacula-dir
 cp -p platforms/redhat/bacula-fd $RPM_BUILD_ROOT/etc/init.d/bacula-fd
 cp -p platforms/redhat/bacula-sd $RPM_BUILD_ROOT/etc/init.d/bacula-sd
-%endif				 # !suse && !mdk
+%endif                           # !suse && !mdk
 chmod 0754 $RPM_BUILD_ROOT/etc/init.d/*
-%endif				 # ! usesystemd
+%endif                           # ! usesystemd
 
 %if %{client_only}
 rm -f $RPM_BUILD_ROOT/etc/init.d/bacula-dir
