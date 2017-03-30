@@ -181,7 +181,7 @@ Source2: Release_Notes-%{version}-%{release}.tar.gz
 %{?build_centos5:%define fc6 1}
 %define centos6 0
 %{?build_centos6:%define centos6 1}
-#define centos7 0
+%define centos7 0
 %{?build_centos7:%define centos7 1}
 # SL build
 %define sl3 0
