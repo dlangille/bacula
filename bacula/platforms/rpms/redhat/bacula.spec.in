@@ -314,15 +314,8 @@ exit 1
 %if %{mdk}
 %define _dist %(grep Mand /etc/mandrake-release)
 %endif
-%if %{rhat} || %{rhel}
-%define _dist %(grep Red /etc/redhat-release)
-%endif
-%{?DISTNAME:%define _dist %{DISTNAME}}
 
-# only set Disribution if not in opensuse build service, as it sets it itself
-%if ! 0%{?opensuse_bs}
-Distribution: %{_dist}
-%endif
+Distribution: %_dist
 
 %if 0%{?opensuse_bs} &&  %{mysql} && %{suse}
 # needed in opensuse_bs, as rpm is installed during build process
