@@ -33,7 +33,6 @@
 %{?single_dir_install:%define single_dir 1}
 
 # Installation Directory locations
-%if %{single_dir}
 %define _prefix        /opt/bacula
 %define _sbindir       /opt/bacula/bin
 %define _bindir        /opt/bacula/bin
@@ -49,22 +48,6 @@
 %define plugin_dir     /opt/bacula/plugins
 %define lib_dir        /opt/bacula/lib
 %define log_dir        /opt/bacula/log
-%else
-%define _prefix        /usr
-%define _sbindir       %_prefix/sbin
-%define _bindir        %_prefix/bin
-%define _subsysdir     /var/lock/subsys
-%define sqlite_bindir %_libdir/bacula/sqlite
-%define _mandir        %_prefix/share/man
-%define sysconf_dir    /etc/bacula
-%define script_dir     %_libdir/bacula
-%define working_dir    /var/lib/bacula
-%define pid_dir        /var/run
-%define plugin_dir     %_libdir/bacula/plugins
-%define lib_dir        %_libdir/bacula/lib
-%define log_dir        %_libdir/bacula/log
-%endif
-
 %define systemd_dir    /lib/systemd/system
 
 # Daemon user:group Don't change them unless you know what you are doing
@@ -313,7 +296,10 @@ exit 1
 %if %{fc16} || %{fc17} || %{fc18} || %{fc22}
 %define _dist %(grep Fedora /etc/redhat-release)
 %endif
-%if %{centos7} || %{centos6} || %{centos5} || %{centos4} || %{centos3}
+%if %{centos7} || %{centos6}
+%define _dist %(grep CentOS /etc/redhat-release)
+%endif
+%if %{centos5} || %{centos4} || %{centos3}
 %define _dist %(grep CentOS /etc/redhat-release)
 %endif
 %if %{sl5} ||%{sl4} || %{sl3}
