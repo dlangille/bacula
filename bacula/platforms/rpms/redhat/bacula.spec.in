@@ -1,3 +1,4 @@
+#
 # Bacula RPM spec file
 #
 
@@ -88,11 +89,7 @@ Prefix: %{_prefix}
 # what happens if the release is not 1? DSB
 Source0: http://www.prdownloads.sourceforge.net/bacula/depkgs-%{depkgs_version}.tar.gz
 Source1: http://www.prdownloads.sourceforge.net/bacula/%{product}-%{version}.tar.gz
-%if 0%{?opensuse_bs}
-Source2: Release_Notes-%{version}-1.tar.gz
-%else
 Source2: Release_Notes-%{version}-%{release}.tar.gz
-%endif
 
 # define the basic package description
 %define blurb Bacula - The Leading Open Source Backup Solution.
@@ -316,23 +313,6 @@ exit 1
 %endif
 
 Distribution: %_dist
-
-%if 0%{?opensuse_bs} &&  %{mysql} && %{suse}
-# needed in opensuse_bs, as rpm is installed during build process
-BuildRequires: libmysqlclient-devel
-BuildRequires: mysql-client
-BuildRequires: mysql
-%endif
-%if 0%{?opensuse_bs} &&  %{suse} && %{postgresql}
-BuildRequires: %{postgres_package}
-BuildRequires: %{postgres_server_package}
-%endif
-BuildRequires: openssl
-
-%if 0%{?opensuse_bs} && %{suse}
-BuildRequires: pwdutils
-BuildRequires: sysconfig
-%endif
 
 # should we turn on python support
 %define python 0
@@ -719,7 +699,7 @@ rm -f $RPM_BUILD_ROOT%{_mandir}/man1/bacula-bwxconsole.1.%{manpage_ext}
 rm -f $RPM_BUILD_ROOT%{_mandir}/man1/bacula-tray-monitor.1.%{manpage_ext}
 rm -f $RPM_BUILD_ROOT%{script_dir}/gconsole
 
-# Remove docs for programs only included in bee
+# Remove docs for programs we do not distribute
 rm -f $RPM_BUILD_ROOT%{_mandir}/man8/bpluginfo.8.%{manpage_ext}
 
 # Storage-ctl packaged in shstore rpm
@@ -838,11 +818,7 @@ rm -f $RPM_BUILD_ROOT%{_sbindir}/bacula
 
 %clean
 [ "$RPM_BUILD_ROOT" != "/" ] && rm -rf "$RPM_BUILD_ROOT"
-%if 0%{?opensuse_bs}
-rm -f $RPM_BUILD_DIR/Release_Notes-%{version}-1.txt
-%else
 rm -f $RPM_BUILD_DIR/Release_Notes-%{version}-%{release}.txt
-%endif
 
 
 %if %{mysql}
@@ -983,13 +959,7 @@ rm -f $RPM_BUILD_DIR/Release_Notes-%{version}-%{release}.txt
 
 %_prefix/share/doc/*
 
-# opensuse build service changes the release itself
-%if 0%{?opensuse_bs}
-%doc ../Release_Notes-%{version}-1.txt
-%else
 %doc ../Release_Notes-%{version}-%{release}.txt
-%endif
-%endif
 
 %if %{mysql}
 %pre mysql
