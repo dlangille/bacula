@@ -208,7 +208,7 @@ Source2: Release_Notes-%{version}-%{release}.tar.gz
 # if the platform is using systemd
 %define usesystemd 0
 
-%if %{rhel7} || %{fc22}
+%if %{rhel7} || %{fc22} || %{centos7}
 %define usesystemd 1
 %endif
 
@@ -387,6 +387,11 @@ BuildRequires: %{postgres_devel_package} >= %{postgres_version}
 %{blurb7}
 %{blurb8}
 
+#
+# ===========================================================
+# Generate mysql, sqlite, or postgresql rpm
+# ===========================================================
+#
 %if %{mysql}
 %package mysql
 %endif
@@ -460,6 +465,11 @@ This build includes python scripting support.
 This build includes tcp-wrappers support.
 %endif
 
+#
+# ===========================================================
+# Client -- bacula-fd rpm
+# ===========================================================
+#
 %package client
 Summary: Bacula - The Network Backup Solution
 Group: System Environment/Daemons
@@ -500,6 +510,11 @@ This build includes python scripting support.
 This build includes tcp-wrappers support.
 %endif
 
+#
+# ===========================================================
+# Generate updatedb rpm
+# ===========================================================
+#
 %if ! %{client_only}
 %package updatedb
 
@@ -521,6 +536,11 @@ This package installs scripts for updating older versions of the bacula
 database.
 %endif
 
+#
+# ===========================================================
+# Generate libs rpm
+# ===========================================================
+#
 %package libs
 
 Summary: Bacula - The Network Backup Solution
