@@ -103,7 +103,7 @@ devclean: realclean
 install: all
 	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bacula-dir $(DESTDIR)$(sbindir)/bacula-dir
 	@srcconf=bacula-dir.conf; \
-	   if  test -f ${DESTDIR}${sysconfdir}/$$srcconf; then \
+	   if test -f ${DESTDIR}${sysconfdir}/$$srcconf; then \
 	      destconf=$$srcconf.new; \
 	      echo "  ==> Found existing $$srcconf, installing new conf file as $$destconf"; \
 	   else \
@@ -111,10 +111,10 @@ install: all
 	   fi; \
 	   echo "${INSTALL_CONFIG} $$srcconf ${DESTDIR}${sysconfdir}/$$destconf"; \
 	   ${INSTALL_CONFIG} $$srcconf ${DESTDIR}${sysconfdir}/$$destconf
-	   @if test "x${dir_group}" != "x"; then \
+	   @if test "x${dir_group}" != "x" -a "x${DESTDIR}" = "x" ; then \
 	      chgrp -f ${dir_group} ${DESTDIR}${sysconfdir}/$$destconf ; \
 	   fi
-	@if  test -f ${DESTDIR}${scriptdir}/query.sql; then \
+	@if test -f ${DESTDIR}${scriptdir}/query.sql; then \
 	   echo "  ==> Saving existing query.sql to query.sql.old"; \
 	   $(MV) -f ${DESTDIR}${scriptdir}/query.sql ${DESTDIR}${scriptdir}/query.sql.old; \
 	fi
