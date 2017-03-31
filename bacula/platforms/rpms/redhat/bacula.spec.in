@@ -784,10 +784,6 @@ cp -p updatedb/* $RPM_BUILD_ROOT%{script_dir}/updatedb/
 
 # install specific scripts
 
-# install special upgrade script, except for sqlite3
-%if ! %{sqlite}
-%endif
-
 %if ! %{client_only}
 # install the sample-query.sql file
 cp -p examples/sample-query.sql $RPM_BUILD_ROOT%{script_dir}/sample-query.sql
@@ -976,10 +972,10 @@ rm -f $RPM_BUILD_DIR/Release_Notes-%{version}-%{release}.txt
 %{_mandir}/man8/bwild.8.%{manpage_ext}
 %{_mandir}/man1/bsmtp.1.%{manpage_ext}
 %{_mandir}/man1/bat.1.%{manpage_ext}
-
 %_prefix/share/doc/*
 
 %doc ../Release_Notes-%{version}-%{release}.txt
+%endif
 
 %if %{mysql}
 %pre mysql
