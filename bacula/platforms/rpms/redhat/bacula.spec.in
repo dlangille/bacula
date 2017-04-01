@@ -370,12 +370,13 @@ BuildRequires: %{postgres_devel_package} >= %{postgres_version}
 #
 %if %{mysql}
 %package mysql
-Provides: perl(Logwatch)
-Provides: libbaccats-%{version}.so
 Provides: libbaccats-%{version}.so()(64bit)
-%endif
-%if %{sqlite}
-%package sqlite
+#
+# The following provides is to work around an 
+#  auto generated requires from src/scripts/logwatch/applybaculadate
+#  this is a gross kludge to keep it from being a requirement
+#
+Provides: perl(Logwatch)
 %endif
 %if %{postgresql}
 %package postgresql
