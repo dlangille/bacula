@@ -126,13 +126,9 @@ Source2: Release_Notes-%{version}-%{release}.tar.gz
 %{?build_fc18:%define fc18 1}
 %define fc22 0
 %{?build_fc22:%define fc22 1}
-# Whitebox Enterprise build
-%define wb3 0
-%{?build_wb3:%define wb3 1}
 # RedHat Enterprise builds
 %define rhel3 0
 %{?build_rhel3:%define rhel3 1}
-%{?build_rhel3:%define wb3 1}
 %define rhel4 0
 %{?build_rhel4:%define rhel4 1}
 %{?build_rhel4:%define fc3 1}
@@ -152,7 +148,6 @@ Source2: Release_Notes-%{version}-%{release}.tar.gz
 # CentOS build
 %define centos3 0
 %{?build_centos3:%define centos3 1}
-%{?build_centos3:%define wb3 1}
 %define centos4 0
 %{?build_centos4:%define centos4 1}
 %{?build_centos4:%define fc3 1}
@@ -166,7 +161,6 @@ Source2: Release_Notes-%{version}-%{release}.tar.gz
 # SL build
 %define sl3 0
 %{?build_sl3:%define sl3 1}
-%{?build_sl3:%define wb3 1}
 %define sl4 0
 %{?build_sl4:%define sl4 1}
 %{?build_sl4:%define fc3 1}
@@ -245,13 +239,13 @@ Source2: Release_Notes-%{version}-%{release}.tar.gz
 
 
 # test for a platform definition
-%if !%{rhat} && !%{rhel} && !%{fed} && !%{wb3} && !%{suse} && !%{mdk} && !%{scil}
+%if !%{rhat} && !%{rhel} && !%{fed} && !%{suse} && !%{mdk} && !%{scil}
 %{error: You must specify a platform. Please examine the spec file.}
 exit 1
 %endif
 
 # distribution-specific directory for logwatch
-%if %{wb3} || %{rh7} || %{rh8} || %{rh9}
+%if %{rh7} || %{rh8} || %{rh9}
 %define logwatch_dir /etc/log.d
 %else
 %define logwatch_dir /etc/logwatch
@@ -302,21 +296,11 @@ exit 1
 %if %{sl5} ||%{sl4} || %{sl3}
 %define _dist %(grep 'Scientific Linux' /etc/redhat-release)
 %endif
-%if %{wb3} && ! %{rhel3} && ! %{centos3} && ! %{sl3}
-%define _dist %(grep White /etc/whitebox-release)
-%endif
 %if %{suse}
 %define _dist %(grep -i SuSE /etc/SuSE-release)
 %endif
-%if %{mdk}
-%define _dist %(grep Mand /etc/mandrake-release)
-%endif
 
 Distribution: %_dist
-
-# should we turn on python support
-%define python 0
-%{?build_python:%define python 0}
 
 # should we enable tcp wrappers support
 %define tcpwrappers 1
@@ -351,10 +335,6 @@ BuildRequires: bzip2-devel
 %if ! %{rh7}
 BuildRequires: libxml2-devel
 %endif
-%if %{python}
-BuildRequires: python, python-devel
-%{expand: %%define pyver %(python -c 'import sys;print(sys.version[0:3])')}
-%endif
 
 %if %{rh7}
 BuildRequires: libxml-devel
@@ -368,11 +348,7 @@ BuildRequires: glibc-static-devel
 BuildRequires: mysql-devel
 %endif
 
-%if %{postgresql} && %{wb3}
-BuildRequires: rh-postgresql-devel >= %{postgres_version}
-%endif
-
-%if %{postgresql} && ! %{wb3}
+%if %{postgresql}
 BuildRequires: %{postgres_devel_package} >= %{postgres_version}
 %endif
 
@@ -394,8 +370,9 @@ BuildRequires: %{postgres_devel_package} >= %{postgres_version}
 #
 %if %{mysql}
 %package mysql
-Provides: Perl
-Provides: libbaccats.so
+Provides: perl(Logwatch)
+Provides: libbaccats-%{version}.so
+Provides: libbaccats-%{version}.so()(64bit)
 %endif
 %if %{sqlite}
 %package sqlite
@@ -420,10 +397,7 @@ Conflicts: bacula
 Requires: mysql
 %endif
 
-%if %{postgresql} && %{wb3}
-Requires: rh-postgresql >= 7
-%endif
-%if %{postgresql} && ! %{wb3}
+%if %{postgresql}
 Requires: postgresql >= 7
 %endif
 
@@ -435,10 +409,6 @@ Requires: postgresql >= 7
 %endif
 %if %{postgresql}
 %description postgresql
-%endif
-
-%if %{python}
-Requires: python >= %{pyver}
 %endif
 
 %{blurb}
@@ -459,9 +429,6 @@ This build requires PostgreSQL to be installed separately as the catalog databas
 %endif
 %if %{sqlite}
 This build incorporates sqlite3 as the catalog database, statically compiled.
-%endif
-%if %{python}
-This build includes python scripting support.
 %endif
 %if %{tcpwrappers}
 This build includes tcp-wrappers support.
@@ -490,10 +457,6 @@ Provides: %{product}-libs
 Requires: libstdc++, zlib, openssl, bzip2-libs
 Requires: glibc, readline, %{name}-libs
 
-%if %{python}
-Requires: python >= %{pyver}
-%endif
-
 %description client
 %{blurb}
 
@@ -507,9 +470,6 @@ Requires: python >= %{pyver}
 
 This is the File daemon (Client) only package. It includes the command line
 console program.
-%if %{python}
-This build includes python scripting support.
-%endif
 %if %{tcpwrappers}
 This build includes tcp-wrappers support.
 %endif
@@ -627,9 +587,6 @@ export LDFLAGS="${LDFLAGS} -L/usr/lib64"
 %if %{mysql} && %{x86_64}
 export LDFLAGS="${LDFLAGS} -L/usr/lib64/mysql"
 %endif
-%if %{python} && %{x86_64}
-export LDFLAGS="${LDFLAGS} -L/usr/lib64/python%{pyver}"
-%endif
 
 export BACULA="Bacula"
 
@@ -655,9 +612,6 @@ export BACULA="Bacula"
         --with-postgresql \
 %endif
         --disable-bat \
-%if %{python}
-        --with-python \
-%endif
 %if %{client_only}
         --enable-client-only \
 %endif
@@ -723,7 +677,7 @@ rm -f $RPM_BUILD_ROOT%{script_dir}/gconsole
 # Remove docs for programs we do not distribute
 rm -f $RPM_BUILD_ROOT%{_mandir}/man8/bpluginfo.8.%{manpage_ext}
 
-# Storage-ctl packaged in shstore rpm
+# Remove storage-ctl packaged in shstore rpm
 rm -f $RPM_BUILD_ROOT%{script_dir}/storage-ctl
 rm -f $RPM_BUILD_ROOT%{script_dir}/storage-ctl.conf
 
@@ -739,6 +693,10 @@ rm -f $RPM_BUILD_ROOT%{script_dir}/grant_mysql_privileges
 rm -f $RPM_BUILD_ROOT%{script_dir}/startmysql
 rm -f $RPM_BUILD_ROOT%{script_dir}/stopmysql
 %endif
+
+# Remove symlinks
+rm -f $RPM_BUILD_ROOT%{_libdir}/libbaccats.so
+rm -f $RPM_BUILD_ROOT%{_libdir}/libbaccats-%{version}.so
 
 # install the init scripts
 %if !%{usesystemd}
