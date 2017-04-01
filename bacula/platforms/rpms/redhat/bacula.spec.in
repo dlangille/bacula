@@ -394,6 +394,8 @@ BuildRequires: %{postgres_devel_package} >= %{postgres_version}
 #
 %if %{mysql}
 %package mysql
+Provides: Perl
+Provides: libbaccats.so
 %endif
 %if %{sqlite}
 %package sqlite
@@ -464,6 +466,8 @@ This build includes python scripting support.
 %if %{tcpwrappers}
 This build includes tcp-wrappers support.
 %endif
+
+
 
 #
 # ===========================================================
@@ -646,9 +650,6 @@ export BACULA="Bacula"
         --enable-readline \
 %if %{mysql}
         --with-mysql \
-%endif
-%if %{sqlite}
-        --with-sqlite3=${cwd}/%{depkgs}/sqlite3 \
 %endif
 %if %{postgresql}
         --with-postgresql \
@@ -851,23 +852,6 @@ rm -f $RPM_BUILD_DIR/Release_Notes-%{version}-%{release}.txt
 %{_libdir}/libbacsql*
 %endif
 
-%if %{sqlite}
-%files sqlite
-%defattr(-,root,root)
-%attr(-, root, %{daemon_group}) %{script_dir}/create_sqlite3_database
-%attr(-, root, %{daemon_group}) %{script_dir}/drop_sqlite3_database
-%attr(-, root, %{daemon_group}) %{script_dir}/grant_sqlite3_privileges
-%attr(-, root, %{daemon_group}) %{script_dir}/make_sqlite3_tables
-%attr(-, root, %{daemon_group}) %{script_dir}/drop_sqlite3_tables
-%attr(-, root, %{daemon_group}) %{script_dir}/update_sqlite3_tables
-%{sqlite_bindir}/libsqlite3.a
-%{sqlite_bindir}/sqlite3.h
-%{sqlite_bindir}/sqlite3
-%{_libdir}/libbaccats*
-%{_libdir}/libbacsql*
-%endif
-
-
 
 %if %{postgresql}
 %files postgresql
@@ -887,7 +871,6 @@ rm -f $RPM_BUILD_DIR/Release_Notes-%{version}-%{release}.txt
 %if ! %{client_only}
 %attr(-, root, %{daemon_group}) %dir %{script_dir}
 %attr(-, root, %{daemon_group}) %dir %{sysconf_dir}
-#%attr(-, %{director_daemon_user}, %{daemon_group}) %dir %{log_dir}
 %attr(-, root, %{daemon_group}) %{script_dir}/bacula
 %attr(-, root, %{daemon_group}) %{script_dir}/bacula_config
 %attr(-, root, %{daemon_group}) %{script_dir}/bconsole
@@ -908,11 +891,8 @@ rm -f $RPM_BUILD_DIR/Release_Notes-%{version}-%{release}.txt
 %attr(-, root, %{daemon_group}) %{script_dir}/bacula-ctl-fd
 %attr(-, root, %{daemon_group}) %{script_dir}/bacula-ctl-sd
 %attr(-, root, %{daemon_group}) %{plugin_dir}/bpipe-fd.so
-#%attr(-, root, %{daemon_group}) /etc/init.d/bacula-dir
-#%attr(-, root, %{daemon_group}) /etc/init.d/bacula-fd
 %attr(-, root, %{daemon_group}) %{_sbindir}/dbcheck
 %attr(-, root, %{storage_daemon_group}) %{script_dir}/dvd-handler
-#%attr(-, root, %{storage_daemon_group}) /etc/init.d/bacula-sd
 %attr(-, root, %{storage_daemon_group}) %{script_dir}/mtx-changer
 %attr(-, root, %{storage_daemon_group}) %config(noreplace) %{script_dir}/mtx-changer.conf
 
@@ -936,6 +916,7 @@ rm -f $RPM_BUILD_DIR/Release_Notes-%{version}-%{release}.txt
 %attr(-, root, %{daemon_group}) %config(noreplace) %{logwatch_dir}/conf/logfiles/bacula.conf
 %attr(-, root, %{daemon_group}) %config(noreplace) %{logwatch_dir}/conf/services/bacula.conf
 %attr(-, root, %{daemon_group}) %{script_dir}/sample-query.sql
+%attr(-, root, %{daemon_group}) %{script_dir}/query.sql
 
 %attr(-, %{storage_daemon_user}, %{daemon_group}) %dir %{working_dir}
 
@@ -975,6 +956,7 @@ rm -f $RPM_BUILD_DIR/Release_Notes-%{version}-%{release}.txt
 %_prefix/share/doc/*
 
 %doc ../Release_Notes-%{version}-%{release}.txt
+
 %endif
 
 %if %{mysql}
@@ -1275,12 +1257,10 @@ fi
 %defattr(-,root,root)
 %attr(-, root, %{daemon_group}) %dir %{script_dir}
 %attr(-, root, %{daemon_group}) %dir %{plugin_dir}
-#%attr(-, root, %{daemon_group}) %dir %{log_dir}
 %attr(-, root, %{daemon_group}) %dir %{sysconf_dir}
 
 # SD/DIR might write here
 %attr(-, %{storage_daemon_user}, %{daemon_group}) %dir %{log_dir}
-#%attr(-, root, %{daemon_group}) %{script_dir}/bacula-ctl-fd
 
 %if %{usesystemd}
 %attr(-, root, %{daemon_group})  %{systemd_dir}/bacula-fd.service
@@ -1386,8 +1366,6 @@ exit 0
 %files updatedb
 %defattr(-,root,%{daemon_group})
 %{script_dir}/updatedb/*
-#oensuse_bs: directories not owned by any package
-#%{script_dir}/updatedb
 
 %pre updatedb
 # create the daemon group
