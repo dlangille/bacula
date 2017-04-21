@@ -388,7 +388,7 @@ int BDB::bdb_find_next_volume(JCR *jcr, int item, bool InChanger, MEDIA_DBR *mr)
          "Enabled,LocationId,RecycleCount,InitialWrite,"
          "ScratchPoolId,RecyclePoolId,VolReadTime,VolWriteTime,ActionOnPurge,CacheRetention "
          "FROM Media WHERE PoolId=%s AND MediaType='%s' "
-         " AND (VolStatus = 'Append' OR (VolStatus IN ('Recycle', 'Purged', 'Used', 'Full') AND Recycle=1)) "
+         " AND (VolStatus IN ('Full', 'Append', 'Used') OR (VolStatus IN ('Recycle', 'Purged', 'Used') AND Recycle=1)) "
          " AND Enabled=1 "
          "ORDER BY LastWritten LIMIT 1",
          edit_int64(mr->PoolId, ed1), esc_type);
