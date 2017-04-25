@@ -460,7 +460,7 @@ void purge_files_from_volume(UAContext *ua, MEDIA_DBR *mr )
 bool purge_jobs_from_volume(UAContext *ua, MEDIA_DBR *mr, bool force)
 {
    POOL_MEM query(PM_MESSAGE);
-   db_list_ctx lst;
+   db_list_ctx lst_all, lst;
    char *jobids=NULL;
    int i;
    bool purged = false;
@@ -483,25 +483,34 @@ bool purge_jobs_from_volume(UAContext *ua, MEDIA_DBR *mr, bool force)
    i = find_arg_with_value(ua, "jobid");
    if (i >= 0 && is_a_number_list(ua->argv[i])) {
       jobids = ua->argv[i];
+
    } else {
+      POOL_MEM query;
       /*
        * Purge ALL JobIds
        */
-      if (!db_get_volume_jobids(ua->jcr, ua->db, mr, &lst)) {
+      if (!db_get_volume_jobids(ua->jcr, ua->db, mr, &lst_all)) {
          ua->error_msg("%s", db_strerror(ua->db));
          Dmsg0(050, "Count failed\n");
          goto bail_out;
+      }
+
+      if (lst_all.count > 0) {
+         Mmsg(query, "SELECT JobId FROM Job WHERE JobId IN (%s) AND JobStatus NOT IN ('R', 'C')",
+              lst_all.list);
+         if (!db_sql_query(ua->db, query.c_str(), db_list_handler, &lst)) {
+            ua->error_msg("%s", db_strerror(ua->db));
+            goto bail_out;
+         }
       }
       jobids = lst.list;
    }
 
    if (*jobids) {
       purge_jobs_from_catalog(ua, jobids);
+      ua->info_msg(_("%d Job%s on Volume \"%s\" purged from catalog.\n"),
+                   lst.count, lst.count<=1?"":"s", mr->VolumeName);
    }
-
-   ua->info_msg(_("%d Job%s on Volume \"%s\" purged from catalog.\n"),
-                lst.count, lst.count<=1?"":"s", mr->VolumeName);
-
    purged = is_volume_purged(ua, mr, force);
 
 bail_out:

@@ -88,7 +88,7 @@ const char *client_backups =
 const char *sel_JobMedia = 
    "SELECT DISTINCT JobMedia.JobId FROM JobMedia,Job"
    " WHERE MediaId=%s AND Job.JobId=JobMedia.JobId "
-   " AND Job.JobTDate<%s";
+   " AND Job.JobTDate<%s AND Job.JobStatus NOT IN ('R', 'C') ";
 
 /* Delete temp tables and indexes  */
 const char *drop_deltabs[] = {
