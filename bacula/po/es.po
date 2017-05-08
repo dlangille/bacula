@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Bacula 3.0.2\n"
 "Report-Msgid-Bugs-To: bacula-devel@lists.sourceforge.net\n"
-"POT-Creation-Date: 2017-02-07 15:07+0100\n"
+"POT-Creation-Date: 2017-05-08 16:25+0200\n"
 "PO-Revision-Date: 2009-12-01 16:04-0300\n"
 "Last-Translator: Victor Hugo dos Santos <listas.vhs@gmail.com>\n"
 "Language-Team: Bacula Spanish Team <bacula-users-es@lists.sourceforge.net>\n"
@@ -19,17 +19,17 @@ msgstr ""
 "X-Poedit-Language: Spanish\n"
 "X-Poedit-SourceCharset: utf-8\n"
 
-#: src/baconfig.h:64 src/baconfig.h:65 src/baconfig.h:70 src/baconfig.h:71
-#: src/baconfig.h:82 src/baconfig.h:83
+#: src/baconfig.h:62 src/baconfig.h:63 src/baconfig.h:68 src/baconfig.h:69
+#: src/baconfig.h:80 src/baconfig.h:81
 #, c-format
 msgid "Failed ASSERT: %s\n"
 msgstr "Fallo ASSERT: %s\n"
 
-#: src/baconfig.h:91
+#: src/baconfig.h:89
 msgid "*None*"
 msgstr "*Ninguno*"
 
-#: src/lib/status.h:77
+#: src/lib/status.h:79
 msgid ""
 "\n"
 "Terminated Jobs:\n"
@@ -37,103 +37,93 @@ msgstr ""
 "\n"
 "Jobs No Terminados:\n"
 
-#: src/lib/status.h:84
+#: src/lib/status.h:86
 #, fuzzy
 msgid " JobId  Level      Files    Bytes   Status   Finished        Name \n"
 msgstr "JobId Nivel Archivos Bytes Estado Finalizado Nombre \n"
 
-#: src/lib/status.h:86
+#: src/lib/status.h:88
 msgid "===================================================================\n"
 msgstr "===================================================================\n"
 
-#: src/lib/status.h:107
+#: src/lib/status.h:114
 msgid "Created"
 msgstr "Creado"
 
-#: src/lib/status.h:111
+#: src/lib/status.h:118
 msgid "Error"
 msgstr "Error"
 
-#: src/lib/status.h:114
+#: src/lib/status.h:121
 msgid "Diffs"
 msgstr "Diferencias"
 
-#: src/lib/status.h:117
+#: src/lib/status.h:124
 msgid "Cancel"
 msgstr "Cancelar"
 
-#: src/lib/status.h:120
+#: src/lib/status.h:127
 msgid "OK"
 msgstr "OK"
 
-#: src/lib/status.h:123
+#: src/lib/status.h:130
 msgid "OK -- with warnings"
 msgstr "OK - con advertencias"
 
-#: src/lib/status.h:126
+#: src/lib/status.h:133
 msgid "Incomplete"
 msgstr ""
 
-#: src/lib/status.h:129
+#: src/lib/status.h:136
 msgid "Other"
 msgstr "Otros"
 
-#: src/lib/status.h:141
+#: src/lib/status.h:148
 #, fuzzy, c-format
 msgid "%6d\t%-7s\t%8s\t%10s\t%-7s\t%-8s\t%s\n"
 msgstr "%6d\t%-6s\t%8s\t%10s\t%-7s\t%-8s\t%s\n"
 
-#: src/lib/status.h:149
+#: src/lib/status.h:177
 #, fuzzy, c-format
 msgid "%6d  %-7s %8s %10s  %-7s  %-8s %s\n"
 msgstr "%6d %-6s %8s %10s %-7s %-8s %s\n"
 
-#: src/lib/status.h:178 src/lib/status.h:189 src/lib/status.h:203
-#: src/lib/status.h:207 src/lib/status.h:211
+#: src/lib/status.h:209 src/lib/status.h:220 src/lib/status.h:234
+#: src/lib/status.h:238 src/lib/status.h:242
 msgid "Bacula "
 msgstr "Bacula"
 
-#: src/qt-console/bat_conf.cpp:132
+#: src/qt-console/bat_conf.cpp:133
 #, c-format
 msgid "No record for %d %s\n"
 msgstr "Ningún registro para %d %s\n"
 
-#: src/qt-console/bat_conf.cpp:141
+#: src/qt-console/bat_conf.cpp:142
 #, c-format
 msgid "Director: name=%s address=%s DIRport=%d\n"
 msgstr "Director: nombre=%s dirección=%s DIRport=%d\n"
 
-#: src/qt-console/bat_conf.cpp:145
+#: src/qt-console/bat_conf.cpp:146
 #, c-format
 msgid "Console: name=%s\n"
 msgstr "Console: nombre=%s\n"
 
-#: src/qt-console/bat_conf.cpp:148
-#: src/qt-console/tray-monitor/tray_conf.cpp:186
+#: src/qt-console/bat_conf.cpp:149
 #, c-format
 msgid "ConsoleFont: name=%s font face=%s\n"
 msgstr "ConsoleFont: nombre=%s font face=%s\n"
 
-#: src/qt-console/bat_conf.cpp:152 src/qt-console/bat_conf.cpp:233
-#: src/qt-console/bat_conf.cpp:283 src/qt-console/bat_conf.cpp:313
+#: src/qt-console/bat_conf.cpp:153 src/qt-console/bat_conf.cpp:235
+#: src/qt-console/bat_conf.cpp:282 src/qt-console/bat_conf.cpp:312
 #, c-format
 msgid "Unknown resource type %d\n"
 msgstr "Tipo de recurso desconocido %d\n"
 
-#: src/qt-console/bat_conf.cpp:261
-#: src/qt-console/tray-monitor/tray_conf.cpp:279
+#: src/qt-console/bat_conf.cpp:259
+#: src/qt-console/tray-monitor/tray_conf.cpp:311
 #, fuzzy, c-format
 msgid "\"%s\" directive is required in \"%s\" resource, but not found.\n"
 msgstr "ítem \"%s\" es necesario en recurso \"%s\", pero no se encuentra.\n"
-
-#: src/qt-console/bat_conf.cpp:330
-#: src/qt-console/tray-monitor/tray_conf.cpp:363
-#, c-format
-msgid ""
-"Attempt to define second \"%s\" resource named \"%s\" is not permitted.\n"
-msgstr ""
-"Intento para definir secundo recurso \"%s\" denominado \"%s\" no está "
-"permitido.\n"
 
 #: src/qt-console/bcomm/dircomm.cpp:88
 #, c-format
@@ -141,7 +131,6 @@ msgid "Already connected\"%s\".\n"
 msgstr "Ya conectado\"%s\".\n"
 
 #: src/qt-console/bcomm/dircomm.cpp:99
-#: src/qt-console/tray-monitor/tray-monitor.cpp:352
 #, c-format
 msgid "Connecting to Director %s:%d"
 msgstr "Conectando con Director %s:%d"
@@ -166,7 +155,6 @@ msgid "Failed to initialize TLS context for Director \"%s\".\n"
 msgstr "Fallo al inicializar el contexto TLS para el Director \"%s\".\n"
 
 #: src/qt-console/bcomm/dircomm.cpp:198
-#: src/qt-console/tray-monitor/tray-monitor.cpp:357
 msgid "Director daemon"
 msgstr "Servicio Director"
 
@@ -239,12 +227,12 @@ msgstr ""
 "Mala respuesta al comando Hello: ERR=%s\n"
 "El director en \"%s:%d\" probablemente no esta corriendo.\n"
 
-#: src/qt-console/bcomm/dircomm_auth.cpp:157
+#: src/qt-console/bcomm/dircomm_auth.cpp:165
 #, c-format
 msgid "Director at \"%s:%d\" rejected Hello command\n"
 msgstr "Director en \"%s:%d\" rechazó comando Hello\n"
 
-#: src/qt-console/bcomm/dircomm_auth.cpp:172
+#: src/qt-console/bcomm/dircomm_auth.cpp:182
 #, fuzzy, c-format
 msgid ""
 "Authorization problem with Director at \"%s:%d\"\n"
@@ -327,10 +315,10 @@ msgstr ""
 "Ni \"Certificado TLS CA\" o \"Directorio de Certificado TLS CA\" están "
 "definidos para Console \"%s\" en %s.\n"
 
-#: src/qt-console/tray-monitor/authenticate.cpp:78
+#: src/qt-console/tray-monitor/authenticate.cpp:86
 #, fuzzy
 msgid ""
-"Director authorization problem.\n"
+"Authorization problem.\n"
 "Most likely the passwords do not agree.\n"
 "For help, please see "
 msgstr ""
@@ -339,68 +327,78 @@ msgstr ""
 "Por favor vea http://www.bacula.org/en/rel-manual/Bacula_Freque_Asked_Questi."
 "html#SECTION003760000000000000000 para ayuda.\n"
 
-#: src/qt-console/tray-monitor/authenticate.cpp:87
+#: src/qt-console/tray-monitor/authenticate.cpp:94
+msgid ""
+"Authorization problem: Remote server did not advertise required TLS "
+"support.\n"
+msgstr ""
+"Problema de Autorización: El servidor remoto no anuncio soporte TLS "
+"requerido.\n"
+
+#: src/qt-console/tray-monitor/authenticate.cpp:110
+msgid "TLS negotiation failed\n"
+msgstr "Negociación TLS fallida\n"
+
+#: src/qt-console/tray-monitor/authenticate.cpp:117
 #, c-format
 msgid "Bad response to Hello command: ERR=%s\n"
 msgstr "mala respuesta al comando Hello: ERR=%s\n"
 
-#: src/qt-console/tray-monitor/authenticate.cpp:94
-msgid "Director rejected Hello command\n"
-msgstr "Director rechazo comando Hello\n"
-
-#: src/qt-console/tray-monitor/authenticate.cpp:122
-#, c-format
-msgid "Error sending Hello to Storage daemon. ERR=%s\n"
-msgstr "Error enviando Hello al servicio de Almacenamiento. ERR=%s\n"
-
-#: src/qt-console/tray-monitor/authenticate.cpp:128
+#: src/qt-console/tray-monitor/authenticate.cpp:134
 #, fuzzy
-msgid ""
-"Director and Storage daemon passwords or names not the same.\n"
-"For help, please see "
-msgstr "Nombres o contraseñas en el Director o Storage no son las mismas.\n"
-
-#: src/qt-console/tray-monitor/authenticate.cpp:135
-#, c-format
-msgid "bdird<stored: bad response to Hello command: ERR=%s\n"
-msgstr "bdird<stored:mala respuesta al comando Hello: ERR=%s\n"
-
-#: src/qt-console/tray-monitor/authenticate.cpp:142
-msgid "Storage daemon rejected Hello command\n"
-msgstr "Storage servicio rechazo el comando Hello\n"
-
-#: src/qt-console/tray-monitor/authenticate.cpp:168
-#, c-format
-msgid "Error sending Hello to File daemon. ERR=%s\n"
-msgstr "Error al enviar Hello para el demonio File. ERR=%s\n"
-
-#: src/qt-console/tray-monitor/authenticate.cpp:174
-#, fuzzy
-msgid ""
-"Director and File daemon passwords or names not the same.\n"
-"For help, please see "
-msgstr "Contraseñas del demonio Director y File no son los mismos.\n"
-
-#: src/qt-console/tray-monitor/authenticate.cpp:181
-#, c-format
-msgid "Bad response from File daemon to Hello command: ERR=%s\n"
-msgstr "Mala respuesta desde el demonio File para el comando Hello: ERR=%s\n"
-
-#: src/qt-console/tray-monitor/authenticate.cpp:188
-msgid "File daemon rejected Hello command\n"
+msgid "Daemon rejected Hello command\n"
 msgstr "El demonio File rechazó el comando Hello\n"
 
-#: src/qt-console/tray-monitor/tray-monitor.cpp:58
+#: src/qt-console/tray-monitor/conf.cpp:89
+msgid "The Name of the Monitor should be set"
+msgstr ""
+
+#: src/qt-console/tray-monitor/conf.cpp:129
+msgid "The name of the Resource should be set"
+msgstr ""
+
+#: src/qt-console/tray-monitor/conf.cpp:138
+#, c-format
+msgid "The address of the Resource should be set for resource %s"
+msgstr ""
+
+#: src/qt-console/tray-monitor/conf.cpp:147
+#, c-format
+msgid "The Password of should be set for resource %s"
+msgstr ""
+
+#: src/qt-console/tray-monitor/conf.cpp:171
+#, fuzzy, c-format
+msgid "The TLS CA Certificate File should be a PEM file for resource %s"
+msgstr "\"Certificado TLS\" archivo no definido para director \"%s\" en %s.\n"
+
+#: src/qt-console/tray-monitor/conf.cpp:182
+#, c-format
+msgid "The TLS CA Certificate Directory should be a directory for resource %s"
+msgstr ""
+
+#: src/qt-console/tray-monitor/conf.cpp:193
+#, fuzzy, c-format
+msgid "The TLS Certificate File should be a file for resource %s"
+msgstr "\"Certificado TLS\" archivo no definido para director \"%s\" en %s.\n"
+
+#: src/qt-console/tray-monitor/conf.cpp:204
+#, c-format
+msgid "The TLS Key File should be a file for resource %s"
+msgstr ""
+
+#: src/qt-console/tray-monitor/tray-monitor.cpp:45
 #, fuzzy, c-format
 msgid ""
 "\n"
-"Version: %s (%s) %s %s %s\n"
+"%sVersion: %s (%s) %s %s %s\n"
 "\n"
 "Usage: tray-monitor [-c config_file] [-d debug_level]\n"
 "       -c <file>     set configuration file to file\n"
 "       -d <nn>       set debug level to <nn>\n"
 "       -dt           print timestamp in debug output\n"
 "       -t            test - read configuration and exit\n"
+"       -W 0/1        force the detection of the systray\n"
 "       -?            print this message.\n"
 "\n"
 msgstr ""
@@ -416,140 +414,171 @@ msgstr ""
 " -? imprimir este mensaje.\n"
 "\n"
 
-#: src/qt-console/tray-monitor/tray-monitor.cpp:209
-#, c-format
+#: src/qt-console/tray-monitor/tray-monitor.cpp:118
+msgid "TLS PassPhrase"
+msgstr ""
+
+#: src/qt-console/tray-monitor/tray-monitor.cpp:164
+#, fuzzy, c-format
 msgid ""
-"Error: %d Monitor resources defined in %s. You must define one and only one "
-"Monitor resource.\n"
+"Error: %d Monitor resources defined in %s. You must define one Monitor "
+"resource.\n"
 msgstr ""
 "Error: %d Monitor de recursos definidos en %s. Usted debe definir un único "
 "monitor de recursos.\n"
 
-#: src/qt-console/tray-monitor/tray-monitor.cpp:241
-#, c-format
-msgid ""
-"No Client, Storage or Director resource defined in %s\n"
-"Without that I don't how to get status from the File, Storage or Director "
-"Daemon :-(\n"
-msgstr ""
-"Ningún recurso Cliente, Storage o Director definido en %s\n"
-"Sin esto, Yo no se como obtener el estado de los demonios File, Storage o "
-"Director :-(\n"
+#: src/qt-console/tray-monitor/tray-ui.h:102
+#, fuzzy, c-format
+msgid "Failed to initialize TLS context for \"%s\".\n"
+msgstr "Fallo al inicializar el contexto TLS para la consola \"%s\".\n"
 
-#: src/qt-console/tray-monitor/tray-monitor.cpp:256
-#, c-format
-msgid ""
-"Invalid refresh interval defined in %s\n"
-"This value must be greater or equal to 1 second and less or equal to 10 "
-"minutes (read value: %d).\n"
-msgstr ""
-"Invalido intervalo de actualización definido en %s\n"
-"Este valor debe ser mayor o igual a 1 segundo y menor o igual a 10 minutos "
-"(leer el valor:% d).\n"
+#: src/qt-console/tray-monitor/tray-ui.h:296
+#, fuzzy
+msgid "Select a Director"
+msgstr "Seleccione recurso Job"
 
-#: src/qt-console/tray-monitor/tray-monitor.cpp:324
-#, c-format
-msgid "Error, currentitem is not a Client or a Storage..\n"
-msgstr "Error, CurrentItem no es un Cliente o un Storage ...\n"
-
-#: src/qt-console/tray-monitor/tray-monitor.cpp:362
-#, c-format
-msgid "Connecting to Client %s:%d"
-msgstr "Conectando con Cliente %s:%d"
-
-#: src/qt-console/tray-monitor/tray-monitor.cpp:367
-msgid "File daemon"
-msgstr "demonio File"
-
-#: src/qt-console/tray-monitor/tray-monitor.cpp:372
-#, c-format
-msgid "Connecting to Storage %s:%d"
-msgstr "Conectando con Storage %s:%d"
-
-#: src/qt-console/tray-monitor/tray-monitor.cpp:377
-msgid "Storage daemon"
-msgstr "Demonio Storage"
-
-#: src/qt-console/tray-monitor/tray-monitor.cpp:381
-#: src/qt-console/tray-monitor/tray-monitor.cpp:411
-#, c-format
-msgid "Error, currentitem is not a Client, a Storage or a Director..\n"
-msgstr "Error, currentitem no es un cliente, un Storage o un Director..\n"
-
-#: src/qt-console/tray-monitor/tray-monitor.cpp:386
-msgid "Cannot connect to daemon."
-msgstr "No se puede conectar al demonio"
-
-#: src/qt-console/tray-monitor/tray-monitor.cpp:395
-#, c-format
-msgid "Authentication error : %s"
-msgstr "Error de autenticación : %s"
-
-#: src/qt-console/tray-monitor/tray-monitor.cpp:402
-msgid "Opened connection with Director daemon."
-msgstr "Conexión abierta con demonio Director."
-
-#: src/qt-console/tray-monitor/tray-monitor.cpp:405
-msgid "Opened connection with File daemon."
-msgstr "Conexión abierta con demonio File."
-
-#: src/qt-console/tray-monitor/tray-monitor.cpp:408
-msgid "Opened connection with Storage daemon."
-msgstr "Conexión abierta con demonio Storage."
-
-#: src/qt-console/tray-monitor/tray-monitor.cpp:459
-msgid "Error : BNET_HARDEOF or BNET_ERROR"
-msgstr "Error: BNET_HARDEOF o BNET_ERROR"
-
-#: src/qt-console/tray-monitor/tray-monitor.cpp:468
-msgid "Error : Connection closed."
-msgstr "Error : Conexión cerrada."
-
-#: src/qt-console/tray-monitor/tray_conf.cpp:159
+#: src/qt-console/tray-monitor/tray_conf.cpp:172
 #, c-format
 msgid "No %s resource defined\n"
 msgstr "Recurso %s no definido\n"
 
-#: src/qt-console/tray-monitor/tray_conf.cpp:168
-#, c-format
-msgid "Monitor: name=%s FDtimeout=%s SDtimeout=%s\n"
-msgstr "Monitor: nombre=%s FDtimeout=%s SDtimeout=%s\n"
+#: src/qt-console/tray-monitor/tray_conf.cpp:181
+#, fuzzy, c-format
+msgid "Monitor: name=%s\n"
+msgstr "Console: nombre=%s\n"
 
-#: src/qt-console/tray-monitor/tray_conf.cpp:174
-#, c-format
-msgid "Director: name=%s address=%s FDport=%d\n"
+#: src/qt-console/tray-monitor/tray_conf.cpp:184
+#, fuzzy, c-format
+msgid "Director: name=%s address=%s port=%d\n"
 msgstr "Director: nombre=%s dirección=%s FDport=%d\n"
 
-#: src/qt-console/tray-monitor/tray_conf.cpp:178
-#, c-format
-msgid "Client: name=%s address=%s FDport=%d\n"
+#: src/qt-console/tray-monitor/tray_conf.cpp:188
+#, fuzzy, c-format
+msgid "Client: name=%s address=%s port=%d\n"
 msgstr "Cliente: nombre=%s dirección=%s FDport=%d\n"
 
-#: src/qt-console/tray-monitor/tray_conf.cpp:182
-#, c-format
-msgid "Storage: name=%s address=%s SDport=%d\n"
+#: src/qt-console/tray-monitor/tray_conf.cpp:192
+#, fuzzy, c-format
+msgid "Storage: name=%s address=%s port=%d\n"
 msgstr "Storage: nombre=%s dirección=%s SDport=%d\n"
 
-#: src/qt-console/tray-monitor/tray_conf.cpp:190
+#: src/qt-console/tray-monitor/tray_conf.cpp:196
 #, c-format
 msgid "Unknown resource type %d in dump_resource.\n"
 msgstr "Tipo de recurso desconocido %d en dump_resource.\n"
 
-#: src/qt-console/tray-monitor/tray_conf.cpp:248
+#: src/qt-console/tray-monitor/tray_conf.cpp:284
 #, c-format
 msgid "Unknown resource type %d in free_resource.\n"
 msgstr "Tipo de recurso desconocido %d en free_resource.\n"
 
-#: src/qt-console/tray-monitor/tray_conf.cpp:285
+#: src/qt-console/tray-monitor/tray_conf.cpp:318
 #, fuzzy, c-format
 msgid "Too many directives in \"%s\" resource\n"
 msgstr "Demasiados elementos en recursos \"%s\"\n"
 
-#: src/qt-console/tray-monitor/tray_conf.cpp:305
-#: src/qt-console/tray-monitor/tray_conf.cpp:343
+#: src/qt-console/tray-monitor/tray_conf.cpp:338
+#: src/qt-console/tray-monitor/tray_conf.cpp:372
 #, c-format
 msgid "Unknown resource type %d in save_resource.\n"
 msgstr "Tipo de recurso desconocido %d en  save_resource.\n"
+
+#~ msgid ""
+#~ "Attempt to define second \"%s\" resource named \"%s\" is not permitted.\n"
+#~ msgstr ""
+#~ "Intento para definir secundo recurso \"%s\" denominado \"%s\" no está "
+#~ "permitido.\n"
+
+#~ msgid "Director rejected Hello command\n"
+#~ msgstr "Director rechazo comando Hello\n"
+
+#~ msgid "Error sending Hello to Storage daemon. ERR=%s\n"
+#~ msgstr "Error enviando Hello al servicio de Almacenamiento. ERR=%s\n"
+
+#, fuzzy
+#~ msgid ""
+#~ "Director and Storage daemon passwords or names not the same.\n"
+#~ "For help, please see "
+#~ msgstr "Nombres o contraseñas en el Director o Storage no son las mismas.\n"
+
+#~ msgid "bdird<stored: bad response to Hello command: ERR=%s\n"
+#~ msgstr "bdird<stored:mala respuesta al comando Hello: ERR=%s\n"
+
+#~ msgid "Storage daemon rejected Hello command\n"
+#~ msgstr "Storage servicio rechazo el comando Hello\n"
+
+#~ msgid "Error sending Hello to File daemon. ERR=%s\n"
+#~ msgstr "Error al enviar Hello para el demonio File. ERR=%s\n"
+
+#, fuzzy
+#~ msgid ""
+#~ "Director and File daemon passwords or names not the same.\n"
+#~ "For help, please see "
+#~ msgstr "Contraseñas del demonio Director y File no son los mismos.\n"
+
+#~ msgid "Bad response from File daemon to Hello command: ERR=%s\n"
+#~ msgstr ""
+#~ "Mala respuesta desde el demonio File para el comando Hello: ERR=%s\n"
+
+#~ msgid ""
+#~ "No Client, Storage or Director resource defined in %s\n"
+#~ "Without that I don't how to get status from the File, Storage or Director "
+#~ "Daemon :-(\n"
+#~ msgstr ""
+#~ "Ningún recurso Cliente, Storage o Director definido en %s\n"
+#~ "Sin esto, Yo no se como obtener el estado de los demonios File, Storage o "
+#~ "Director :-(\n"
+
+#~ msgid ""
+#~ "Invalid refresh interval defined in %s\n"
+#~ "This value must be greater or equal to 1 second and less or equal to 10 "
+#~ "minutes (read value: %d).\n"
+#~ msgstr ""
+#~ "Invalido intervalo de actualización definido en %s\n"
+#~ "Este valor debe ser mayor o igual a 1 segundo y menor o igual a 10 "
+#~ "minutos (leer el valor:% d).\n"
+
+#~ msgid "Error, currentitem is not a Client or a Storage..\n"
+#~ msgstr "Error, CurrentItem no es un Cliente o un Storage ...\n"
+
+#~ msgid "Connecting to Client %s:%d"
+#~ msgstr "Conectando con Cliente %s:%d"
+
+#~ msgid "File daemon"
+#~ msgstr "demonio File"
+
+#~ msgid "Connecting to Storage %s:%d"
+#~ msgstr "Conectando con Storage %s:%d"
+
+#~ msgid "Storage daemon"
+#~ msgstr "Demonio Storage"
+
+#~ msgid "Error, currentitem is not a Client, a Storage or a Director..\n"
+#~ msgstr "Error, currentitem no es un cliente, un Storage o un Director..\n"
+
+#~ msgid "Cannot connect to daemon."
+#~ msgstr "No se puede conectar al demonio"
+
+#~ msgid "Authentication error : %s"
+#~ msgstr "Error de autenticación : %s"
+
+#~ msgid "Opened connection with Director daemon."
+#~ msgstr "Conexión abierta con demonio Director."
+
+#~ msgid "Opened connection with File daemon."
+#~ msgstr "Conexión abierta con demonio File."
+
+#~ msgid "Opened connection with Storage daemon."
+#~ msgstr "Conexión abierta con demonio Storage."
+
+#~ msgid "Error : BNET_HARDEOF or BNET_ERROR"
+#~ msgstr "Error: BNET_HARDEOF o BNET_ERROR"
+
+#~ msgid "Error : Connection closed."
+#~ msgstr "Error : Conexión cerrada."
+
+#~ msgid "Monitor: name=%s FDtimeout=%s SDtimeout=%s\n"
+#~ msgstr "Monitor: nombre=%s FDtimeout=%s SDtimeout=%s\n"
 
 #~ msgid "%s item is required in %s resource, but not found.\n"
 #~ msgstr "Ítem %s es necesario en recurso %s, pero no se encuentra.\n"
@@ -942,18 +971,8 @@ msgstr "Tipo de recurso desconocido %d en  save_resource.\n"
 #~ msgid "unknown"
 #~ msgstr "desconocido"
 
-#~ msgid ""
-#~ "Authorization problem: Remote server did not advertise required TLS "
-#~ "support.\n"
-#~ msgstr ""
-#~ "Problema de Autorización: El servidor remoto no anuncio soporte TLS "
-#~ "requerido.\n"
-
 #~ msgid "Authorization problem: Remote server requires TLS.\n"
 #~ msgstr "Problema de autorización. Servidor remoto requiere TLS.\n"
-
-#~ msgid "TLS negotiation failed\n"
-#~ msgstr "Negociación TLS fallida\n"
 
 #, fuzzy
 #~ msgid ""
@@ -1410,10 +1429,6 @@ msgstr "Tipo de recurso desconocido %d en  save_resource.\n"
 
 #~ msgid "Only one Director resource permitted in %s\n"
 #~ msgstr "Sólo un recurso Director permitido en %s\n"
-
-#~ msgid "\"TLS Certificate\" file not defined for Director \"%s\" in %s.\n"
-#~ msgstr ""
-#~ "\"Certificado TLS\" archivo no definido para director \"%s\" en %s.\n"
 
 #~ msgid "\"TLS Key\" file not defined for Director \"%s\" in %s.\n"
 #~ msgstr "\"Clave TLS\" archivo no definido para director \"%s\" en %s.\n"
@@ -4872,9 +4887,6 @@ msgstr "Tipo de recurso desconocido %d en  save_resource.\n"
 #, fuzzy
 #~ msgid "The enabled Job resources are:\n"
 #~ msgstr "Los recursos Job definidos son:\n"
-
-#~ msgid "Select Job resource"
-#~ msgstr "Seleccione recurso Job"
 
 #~ msgid "The defined Job resources are:\n"
 #~ msgstr "Los recursos Job definidos son:\n"
