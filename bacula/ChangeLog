@@ -1,4 +1,82 @@
-              Changelog on version 7.4.7
+              Changelog on version 9.0.0
+
+08May17
+ - Massive (70,000+ lines) backport of code from Bacula Enterprise 8.8.
+   See next line ...
+ - Adapt update_bacula_tables scripts for catalog version 15
+ - Allow to use Base directive in a JobDefs
+ - Add more debug to the bpipe plugin
+ - Enhance error message when packets are too big
+ - Add '.storage unique' bconsole command
+ - Allow to use ".jobs type=!B" to display specific job type
+ - Add lockdump storage daemon information
+
+ - Fix #2698 Display loaded driver list in status storage output
+ - Fix autochanger unload message that contains sometime an incorrect volume name
+ - Fix issue with open_bpipe() function that may flush stdio buffer if the 
+   command is incorrect
+ - Fix unload tape messages to print correct volume + improve output format
+ - Fix unload/re-load same volume
+ - Fix DIR get unexpected "Connection reset by peer" for FD
+ - Fix #2548 about SQL connection leak with RunScript::Console commands
+ - Fix #2588 about segfault in bdirjson with JobDefs/Base directive
+ - Fix #2593 about incomplete jobs incorrectly rescheduled
+ - Fix #2629 about pool argument not listed in the "help cloud" output
+ - Fix #2632 about VolType not set correctly for Cloud volumes after a label problem
+ - Fix #2640 about a reference to the source directory in query.sql file
+ - Fix bug #2271 where poll interval causes tape mount message to repeat
+ - Fix segfault in bdirjson with incorrect configuration files
+
+
+New Features:
+-------------
+
+ - The "list" command now filters the results using the current Console ACLs
+ - The WhereACL is now verified after the restore menu
+
+Core Features:
+ - Implement a drive usage counter to do round robin drive assignment
+ - Enhance functionality of TapeAlert
+ - Implement a "Perpetual Virtual Full" feature that creates a Virtual Full backup
+   that is updated every day
+ - Increase Director's default "Maximum Concurrent Jobs" setting from 1 to 20
+ - Add "PluginDirectory" by default in bacula-sd.conf and bacula-fd.conf
+ - Add support for terabytes in sizes. Submitted by Wanderlei Huttel.
+ - Restore mtime & atime for symlinks
+ - New "status network" command to test the connection and the bandwidth
+   between a Client and a Storage Daemon
+
+Bconsole Features:
+ - Add "ExpiresIn" field in list and llist media output
+ - Add command to change the priority of a running job (update jobid=xxx priority=yyy)
+ - Add level= and jobtype= parameters to the "list jobs" command
+ - Add option to bconsole to list and select a specific Console
+ - Add shortcut to RunScript console commands. Submitted by Wanderlei Huttel. 
+ - Display "IgnoreFileSetChanges" in show fileset command (#2107)
+ - Display PrefixLinks in "show job" output
+ - Display permission bits in .bvfs_decode
+ - Display the Comment field in "llist job" command
+ - Add "ActionOnPurge" field to "llist pool" command. Fix #2487
+ - Add "long" keyword to list command, ie "list long job". This is 
+   essentially an alias fo the "llist" command.
+ - Modify the "setbandwidth" limit parameter to accept speed input. ex: limit=10kb/s
+ - Modify the "setbandwidth" limit parameter so that the default 
+   is no longer kb/s but b/s. 
+ - Do not show disabled resources in selection list
+ - Fix bconsole readline and "dumb" terminal handling of CTRL-C
+ - Add the priority field to the .api 2 job listing output
+ 
+Misc Features:
+ - Change the default "MaximumFileIndex" from 50MB to 100MB by default
+ - Add -w option to btape to specify a working directory
+ - Enhance bls -D/-F help message
+
+Bugs fixed/closed since last release:
+2271 2548 2563 2567 2588 2593 2602 2624 2625 2627 2629 2632 2638 2640 2646
+2698 2520 2559 2561 2582
+
+
+==============================================================
 
 Release Version 7.4.7
 
