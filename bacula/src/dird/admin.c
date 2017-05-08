@@ -73,7 +73,7 @@ void admin_cleanup(JCR *jcr, int TermCode)
    int msg_type;
    MEDIA_DBR mr;
 
-   Dmsg0(100, "Enter backup_cleanup()\n");
+   Dmsg0(100, "Enter admin_cleanup()\n");
 
    update_job_end(jcr, TermCode);
 

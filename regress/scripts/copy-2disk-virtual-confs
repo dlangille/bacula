@@ -1,0 +1,14 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2017 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+cp -f scripts/bacula-dir-tape.conf ${conf}/bacula-dir.conf
+cp -f scripts/bacula-sd-2disk-virtual.conf ${conf}/bacula-sd.conf
+cp -f scripts/test-bacula-fd.conf ${conf}/bacula-fd.conf
+cp -f scripts/test-console.conf ${conf}/bconsole.conf
+cp -f scripts/test-console.conf ${conf}/bat.conf
+outf="tmp/sed_tmp2"
+echo "s%# Autochanger = yes%  Autochanger = yes%g" >${outf}
+cp ${conf}/bacula-dir.conf tmp/1
+sed -f ${outf} tmp/1 >${conf}/bacula-dir.conf

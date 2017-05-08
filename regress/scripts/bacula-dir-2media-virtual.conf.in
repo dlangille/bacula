@@ -1,0 +1,253 @@
+#
+# Default Bacula Director Configuration file
+#
+#  Virtual disk changer with two Media Types and two Archive
+#   devices.
+#
+
+Director {                            # define myself
+  Name = @hostname@-dir
+  DIRPort = @dirport@                # where we listen for UA connections
+  QueryFile = "@scriptdir@/query.sql"
+  WorkingDirectory = "@working_dir@"
+  PidDirectory = "@piddir@"
+  Maximum Concurrent Jobs = 100
+  Password = "pNvX1WiXnwv2C/F7E52LGvw6rKjbbPvu2kyuPa9pVaL3"
+  Messages = Daemon
+  FD Connect Timeout = 2min 
+}
+
+Job {
+  Name = "Virtual"
+  Type = Backup
+  Client=@hostname@-fd 
+  FileSet="Full Set"
+  Storage = Virtual
+  Messages = Standard
+  Pool = Default
+  Write Bootstrap = "@working_dir@/NightlySave.bsr"
+  Maximum Concurrent Jobs = 100
+  Max Run Time = 30min
+}
+
+Job {
+  Name = "copy-job"
+  Type = Copy
+  Client=@hostname@-fd 
+  FileSet="Full Set"
+  Storage = Virtual
+  Messages = Standard
+  Pool = Default
+  Write Bootstrap = "@working_dir@/NightlySave.bsr"
+  Maximum Concurrent Jobs = 100
+  Max Run Time = 30min
+  Selection Type = Job
+  Selection Pattern = "Virtual"
+}
+
+Job {
+  Name = "copy-job-next-pool"
+  Type = Copy
+  Client=@hostname@-fd 
+  FileSet="Full Set"
+  Storage = Virtual
+  Messages = Standard
+  Pool = Default
+  Next Pool = Special
+  Write Bootstrap = "@working_dir@/NightlySave.bsr"
+  Maximum Concurrent Jobs = 100
+  Max Run Time = 30min
+  Selection Type = Job
+  Selection Pattern = "Virtual"
+}
+
+# Standard Restore template, to be changed by Console program
+Job {
+  Name = "RestoreFiles"
+  Type = Restore
+  Client = @hostname@-fd 
+  FileSet = "Full Set"
+  Storage = Virtual
+  Messages = Standard
+  Pool = Default
+  Where = @tmpdir@/bacula-restores
+  Max Run Time = 30min
+}
+
+
+# List of files to be backed up
+FileSet {
+  Name = "Full Set"
+  Include { Options { signature=MD5 
+#     Deduplication = yes
+            }
+    File =  <@tmpdir@/file-list
+  }
+}
+
+FileSet {
+  Name = "Verify Set"
+  Include { 
+    Options { 
+       signature=MD5
+       verify=pins1
+    }
+    File =  <@tmpdir@/file-list
+  }
+}
+
+
+
+#
+# When to do the backups, full backup on first sunday of the month,
+#  differential (i.e. incremental since full) every other sunday,
+#  and incremental backups other days
+Schedule {
+  Name = "WeeklyCycle"
+  Run = Full 1st sun at 1:05
+  Run = Differential 2nd-5th sun at 1:05
+  Run = Incremental mon-sat at 1:05
+}
+
+# Client (File Services) to backup
+Client {
+  Name = @hostname@-fd
+  Address = @hostname@
+  FDPort = @fdport@
+  Catalog = MyCatalog
+  Password = "xevrjURYoCHhn26RaJoWbeWXEY/a3VqGKp/37tgWiuHc"          # password for FileDaemon
+  File Retention = 30d                # 30 days
+  Job Retention = 180d                # six months
+  AutoPrune = yes                     # Prune expired Jobs/Files
+  Maximum Concurrent Jobs = 100
+}
+
+Autochanger {
+  Name = Virtual2
+  Address = @hostname@                # N.B. Use a fully qualified name here
+  SDPort = @sdport@
+  Password = "ccV3lVTsQRsdIUGyab0N4sMDavui2hOBkmpBU0aQKOr9"          # password for Storage daemon
+  Device = Virtual2
+  Media Type = disk2
+  Maximum Concurrent Jobs = 100
+}
+
+# Definition of Virtual autochanger
+Autochanger {
+  Name = Virtual
+  Address = @hostname@                # N.B. Use a fully qualified name here
+  SDPort = @sdport@
+  Password = "ccV3lVTsQRsdIUGyab0N4sMDavui2hOBkmpBU0aQKOr9"          # password for Storage daemon
+  Device = Virtual
+  Media Type = disk
+  Maximum Concurrent Jobs = 100
+  Autochanger = Virtual
+}
+
+Storage {
+  Name = vDrive-1
+  Address = @hostname@                # N.B. Use a fully qualified name here
+  SDPort = @sdport@
+  Password = "ccV3lVTsQRsdIUGyab0N4sMDavui2hOBkmpBU0aQKOr9"          # password for Storage daemon
+  Device = Virtual
+  Media Type = disk
+  Maximum Concurrent Jobs = 100
+  Autochanger = Virtual
+}
+
+Storage {
+  Name = vDrive-3
+  Address = @hostname@                # N.B. Use a fully qualified name here
+  SDPort = @sdport@
+  Password = "ccV3lVTsQRsdIUGyab0N4sMDavui2hOBkmpBU0aQKOr9"          # password for Storage daemon
+  Device = Virtual
+  Media Type = disk1
+  Maximum Concurrent Jobs = 100
+  Autochanger = Virtual
+}
+
+# Generic catalog service
+Catalog {
+  Name = MyCatalog
+  dbname = @db_name@; user = @db_user@; password = "@db_password@"
+}
+
+# Reasonable message delivery -- send most everything to email address
+#  and to the console
+Messages {
+  Name = Standard
+  mailcommand = "@sbindir@/bsmtp -h localhost -f \"\(Bacula regression Job %j\) %r\" -s \"Regression: %t %e of %c %l\" %r"
+  operatorcommand = "@sbindir@/bsmtp -h localhost -f \"\(Bacula regression Job %j\) %r\" -s \"Regression: Intervention needed for %j\" %r"
+  console = all, !skipped, !terminate, !restored
+  append = "@working_dir@/log" = all, !skipped
+  catalog = all, !skipped
+}
+
+#
+# Message delivery for daemon messages (no job).
+Messages {
+  Name = Daemon
+  mailcommand = "@sbindir@/bsmtp -h @smtp_host@ -f \"\(Bacula regression\) %r\" -s \"Regression daemon message\" %r"
+# mail = @job_email@ = all, !skipped            
+  console = all, !skipped, !saved
+  append = "@working_dir@/log" = all, !skipped
+  catalog = all, !skipped
+}
+
+    
+# Default pool definition
+Pool {
+  Name = Default
+  Pool Type = Backup
+  Recycle = yes                       # Bacula can automatically recycle Volumes
+  AutoPrune = yes                     # Prune expired volumes
+  Volume Retention = 365d             # one year
+# RecyclePool=Scratch                 # test forward reference
+  Next Pool = FullCopy
+}
+
+Pool {
+  Name = Full
+  Pool Type = Backup
+  Recycle = yes                       # Bacula can automatically recycle Volumes
+  AutoPrune = yes                     # Prune expired volumes
+  Volume Retention = 365d             # one year
+  Next Pool = FullCopy
+}
+
+Pool {
+  Name = FullCopy
+  Pool Type = Backup
+  Recycle = yes                       # Bacula can automatically recycle Volumes
+  AutoPrune = yes                     # Prune expired volumes
+  Volume Retention = 365d             # one year
+  Storage = Virtual
+}
+
+Pool {
+  Name = Special
+  Pool Type = Backup
+  Recycle = yes                       # Bacula can automatically recycle Volumes
+  AutoPrune = yes                     # Prune expired volumes
+  Volume Retention = 365d             # one year
+  Storage = Virtual2
+}
+
+#Pool {
+#  Name = Scratch
+#  Pool Type = Backup
+#  Recycle = yes                       # Bacula can automatically recycle Volumes
+#  AutoPrune = yes                     # Prune expired volumes
+#  Volume Retention = 365d             # one year
+#  Recycle Pool = Scratch              # recycle back here
+#}
+
+
+#Pool {
+#  Name = SpecialScratch
+#  Pool Type = Backup
+#  Recycle = yes                       # Bacula can automatically recycle Volumes
+#  AutoPrune = yes                     # Prune expired volumes
+#  Volume Retention = 365d             # one year
+#  Recycle Pool = SpecialScratch       # recycle back here
+#}

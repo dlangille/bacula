@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2015 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,13 +11,12 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
- *
  *   Bacula Director -- backup.c -- responsible for doing backup jobs
  *
  *     Kern Sibbald, March MM
@@ -28,7 +27,6 @@
  *     Open connection with File daemon and pass him commands
  *       to do the backup.
  *     When the File daemon finishes the job, update the DB.
- *
  */
 
 #include "bacula.h"
@@ -42,6 +40,12 @@ static char storaddr[]  = "storage address=%s port=%d ssl=%d\n";
 /* Responses received from File daemon */
 static char OKbackup[]   = "2000 OK backup\n";
 static char OKstore[]    = "2000 OK storage\n";
+/* After 17 Aug 2013 */
+static char newEndJob[]  = "2800 End Job TermCode=%d JobFiles=%u "
+                           "ReadBytes=%llu JobBytes=%llu Errors=%u "
+                           "VSS=%d Encrypt=%d "
+                           "CommBytes=%lld CompressCommBytes=%lld\n";
+/* Pre 17 Aug 2013 */
 static char EndJob[]     = "2800 End Job TermCode=%d JobFiles=%u "
                            "ReadBytes=%llu JobBytes=%llu Errors=%u "
                            "VSS=%d Encrypt=%d\n";
@@ -64,19 +68,19 @@ bool do_backup_init(JCR *jcr)
    /* Make local copy */
    jcr->RescheduleIncompleteJobs = jcr->job->RescheduleIncompleteJobs;
 
+   if (jcr->is_JobLevel(L_VIRTUAL_FULL)) {
+      return do_vbackup_init(jcr);
+   }
+   free_rstorage(jcr);                   /* we don't read so release */
+
    if (!get_or_create_fileset_record(jcr)) {
-      Dmsg1(100, "JobId=%d no FileSet\n", (int)jcr->JobId);
       return false;
    }
 
    /*
     * Get definitive Job level and since time
-    * unless it's a virtual full.  In that case
-    * it is not needed.
     */
-   if (!jcr->is_JobLevel(L_VIRTUAL_FULL)) {
-      get_level_since_time(jcr, jcr->since, sizeof(jcr->since));
-   }
+   get_level_since_time(jcr, jcr->since, sizeof(jcr->since));
 
    apply_pool_overrides(jcr);
 
@@ -86,21 +90,8 @@ bool do_backup_init(JCR *jcr)
 
    jcr->jr.PoolId = get_or_create_pool_record(jcr, jcr->pool->name());
    if (jcr->jr.PoolId == 0) {
-      Dmsg1(100, "JobId=%d no PoolId\n", (int)jcr->JobId);
-      Jmsg(jcr, M_FATAL, 0, _("Could not get or create a Pool record.\n"));
       return false;
    }
-
-   /*
-    * If we are a virtual full job or got upgraded to one
-    * then we divert at this point and call the virtual full 
-    * backup init method
-    */ 
-   if (jcr->is_JobLevel(L_VIRTUAL_FULL)) {
-     return do_vbackup_init(jcr);
-   }
-
-   free_rstorage(jcr);                   /* we don't read so release */
 
    /* If pool storage specified, use it instead of job storage */
    copy_wstorage(jcr, jcr->pool->storage, _("Pool resource"));
@@ -267,10 +258,15 @@ bool send_accurate_current_files(JCR *jcr)
       /* On Full mode, if no previous base job, no accurate things */
       if (get_base_jobids(jcr, &jobids)) {
          jcr->HasBase = true;
-         Jmsg(jcr, M_INFO, 0, _("Using Base JobId(s): %s\n"), jobids.list);
+         Jmsg(jcr, M_INFO, 0, _("Using BaseJobId(s): %s\n"), jobids.list);
       } else if (!jcr->rerunning) {
          return true;
       }
+
+   } else if (jcr->is_JobLevel(L_VERIFY_DATA)) {
+      char ed1[50];
+      jobids.add(edit_uint64(jcr->previous_jr.JobId, ed1));
+
    } else {
       /* For Incr/Diff level, we search for older jobs */
       db_get_accurate_jobids(jcr, jcr->db, &jcr->jr, &jobids);
@@ -372,7 +368,7 @@ bool send_client_addr_to_sd(JCR *jcr)
    /*
     * Send Client address to the SD
     */
-   sd->fsend(clientaddr, jcr->client->address, jcr->client->FDport, tls_need);
+   sd->fsend(clientaddr, jcr->client->address(), jcr->client->FDport, tls_need);
    if (!response(jcr, sd, OKclient, "Client", DISPLAY_ERROR)) {
       return false;
    }
@@ -672,6 +668,8 @@ int wait_for_job_termination(JCR *jcr, int timeout)
    uint32_t JobWarnings = 0;
    uint64_t ReadBytes = 0;
    uint64_t JobBytes = 0;
+   uint64_t CommBytes = 0;
+   uint64_t CommCompressedBytes = 0;
    int VSS = 0;                 /* or Snapshot on Unix */
    int Encrypt = 0;
    btimer_t *tid=NULL;
@@ -682,10 +680,13 @@ int wait_for_job_termination(JCR *jcr, int timeout)
       }
       /* Wait for Client to terminate */
       while ((n = bget_dirmsg(fd)) >= 0) {
-         if (!fd_ok && 
-              (sscanf(fd->msg, EndJob, &jcr->FDJobStatus, &JobFiles,
+         if (!fd_ok &&
+             (sscanf(fd->msg, newEndJob, &jcr->FDJobStatus, &JobFiles,
+                     &ReadBytes, &JobBytes, &JobErrors, &VSS, &Encrypt,
+                     &CommBytes, &CommCompressedBytes) == 9 ||
+              sscanf(fd->msg, EndJob, &jcr->FDJobStatus, &JobFiles,
                      &ReadBytes, &JobBytes, &JobErrors, &VSS, &Encrypt) == 7 ||
-               sscanf(fd->msg, OldEndJob, &jcr->FDJobStatus, &JobFiles,
+              sscanf(fd->msg, OldEndJob, &jcr->FDJobStatus, &JobFiles,
                      &ReadBytes, &JobBytes, &JobErrors) == 5)) {
             fd_ok = true;
             jcr->setJobStatus(jcr->FDJobStatus);
@@ -735,6 +736,8 @@ int wait_for_job_termination(JCR *jcr, int timeout)
       jcr->ReadBytes = ReadBytes;
       jcr->JobBytes = JobBytes;
       jcr->JobWarnings = JobWarnings;
+      jcr->CommBytes = CommBytes;
+      jcr->CommCompressedBytes = CommCompressedBytes;
       jcr->Snapshot = VSS;
       jcr->Encrypt = Encrypt;
    } else if (jcr->getJobStatus() != JS_Canceled) {
@@ -766,9 +769,9 @@ void backup_cleanup(JCR *jcr, int TermCode)
    char sdt[50], edt[50], schedt[50];
    char ec1[30], ec2[30], ec3[30], ec4[30], ec5[30];
    char ec6[30], ec7[30], ec8[30], ec9[30], ec10[30], elapsed[50];
-   char data_compress[200];
-   char term_code[100], fd_term_msg[100], sd_term_msg[100];
-   const char *term_msg;
+   char data_compress[200], comm_compress[200];
+   char fd_term_msg[100], sd_term_msg[100];
+   POOL_MEM term_msg;
    int msg_type = M_INFO;
    MEDIA_DBR mr;
    CLIENT_DBR cr;
@@ -777,6 +780,8 @@ void backup_cleanup(JCR *jcr, int TermCode)
    POOL_MEM base_info;
    POOL_MEM vol_info;
 
+   remove_dummy_jobmedia_records(jcr);
+
    if (jcr->is_JobLevel(L_VIRTUAL_FULL)) {
       vbackup_cleanup(jcr, TermCode);
       return;
@@ -784,6 +789,18 @@ void backup_cleanup(JCR *jcr, int TermCode)
 
    Dmsg2(100, "Enter backup_cleanup %d %c\n", TermCode, TermCode);
    memset(&cr, 0, sizeof(cr));
+
+#ifdef xxxx
+   /* The current implementation of the JS_Warning status is not
+    * completed. SQL part looks to be ok, but the code is using
+    * JS_Terminated almost everywhere instead of (JS_Terminated || JS_Warning)
+    * as we do with is_canceled()
+    */
+   if (jcr->getJobStatus() == JS_Terminated &&
+        (jcr->JobErrors || jcr->SDErrors || jcr->JobWarnings)) {
+      TermCode = JS_Warnings;
+   }
+#endif
 
    update_job_end(jcr, TermCode);
 
@@ -811,20 +828,21 @@ void backup_cleanup(JCR *jcr, int TermCode)
    switch (jcr->JobStatus) {
       case JS_Terminated:
          if (jcr->JobErrors || jcr->SDErrors) {
-            term_msg = _("Backup OK -- with warnings");
+            Mmsg(term_msg, _("Backup OK -- %s"), jcr->StatusErrMsg[0] ? jcr->StatusErrMsg : _("with warnings"));
+
          } else {
-            term_msg = _("Backup OK");
+            Mmsg(term_msg, _("Backup OK"));
          }
          break;
       case JS_Incomplete:
-         term_msg = _("Backup failed -- incomplete");
+         Mmsg(term_msg, _("Backup failed -- incomplete"));
          break;
       case JS_Warnings:
-         term_msg = _("Backup OK -- with warnings");
+         Mmsg(term_msg, _("Backup OK -- %s"), jcr->StatusErrMsg[0] ? jcr->StatusErrMsg : _("with warnings"));
          break;
       case JS_FatalError:
       case JS_ErrorTerminated:
-         term_msg = _("*** Backup Error ***");
+         Mmsg(term_msg, _("*** Backup Error ***"));
          msg_type = M_ERROR;          /* Generate error message */
          if (jcr->store_bsock) {
             jcr->store_bsock->signal(BNET_TERMINATE);
@@ -834,7 +852,7 @@ void backup_cleanup(JCR *jcr, int TermCode)
          }
          break;
       case JS_Canceled:
-         term_msg = _("Backup Canceled");
+         Mmsg(term_msg, _("Backup Canceled"));
          if (jcr->store_bsock) {
             jcr->store_bsock->signal(BNET_TERMINATE);
             if (jcr->SD_msg_chan_started) {
@@ -843,8 +861,7 @@ void backup_cleanup(JCR *jcr, int TermCode)
          }
          break;
       default:
-         term_msg = term_code;
-         sprintf(term_code, _("Inappropriate term code: %c\n"), jcr->JobStatus);
+         Mmsg(term_msg, _("Inappropriate term code: %c\n"), jcr->JobStatus);
          break;
    }
    bstrftimes(schedt, sizeof(schedt), jcr->jr.SchedTime);
@@ -852,10 +869,9 @@ void backup_cleanup(JCR *jcr, int TermCode)
    bstrftimes(edt, sizeof(edt), jcr->jr.EndTime);
    RunTime = jcr->jr.EndTime - jcr->jr.StartTime;
    if (RunTime <= 0) {
-      kbps = 0;
-   } else {
-      kbps = ((double)jcr->jr.JobBytes) / (1000.0 * (double)RunTime);
+      RunTime = 1;
    }
+   kbps = ((double)jcr->jr.JobBytes) / (1000.0 * (double)RunTime);
    if (!db_get_job_volume_names(jcr, jcr->db, jcr->jr.JobId, &jcr->VolumeName)) {
       /*
        * Note, if the job has erred, most likely it did not write any
@@ -884,6 +900,20 @@ void backup_cleanup(JCR *jcr, int TermCode)
          bsnprintf(data_compress, sizeof(data_compress), "%.1f%% %.1f:1",
             compression, ratio);
       }
+   }
+   if (jcr->CommBytes == 0 || jcr->CommCompressedBytes == 0) {
+      bstrncpy(comm_compress, "None", sizeof(comm_compress));
+   } else {
+      compression = (double)100 - 100.0 * ((double)jcr->CommCompressedBytes / (double)jcr->CommBytes);
+      if (compression < 0.5) {
+         bstrncpy(comm_compress, "None", sizeof(comm_compress));
+      } else {
+         ratio = (double)jcr->CommBytes / (double)jcr->CommCompressedBytes;
+         bsnprintf(comm_compress, sizeof(comm_compress), "%.1f%% %.1f:1",
+            compression, ratio);
+      }
+      Dmsg2(200, "=== CommCompressed=%lld CommBytes=%lld\n",
+         jcr->CommCompressedBytes, jcr->CommBytes);
    }
    jobstatus_to_ascii(jcr->FDJobStatus, fd_term_msg, sizeof(fd_term_msg));
    jobstatus_to_ascii(jcr->SDJobStatus, sd_term_msg, sizeof(sd_term_msg));
@@ -930,6 +960,7 @@ void backup_cleanup(JCR *jcr, int TermCode)
 "  SD Bytes Written:       %s (%sB)\n"
 "  Rate:                   %.1f KB/s\n"
 "  Software Compression:   %s\n"
+"  Comm Line Compression:  %s\n"
 "%s"                                         /* Basefile info */
 "  Snapshot/VSS:           %s\n"
 "  Encryption:             %s\n"
@@ -966,6 +997,7 @@ void backup_cleanup(JCR *jcr, int TermCode)
         edit_uint64_with_suffix(jcr->SDJobBytes, ec6),
         kbps,
         data_compress,
+        comm_compress,
         base_info.c_str(),
         jcr->Snapshot?_("yes"):_("no"),
         jcr->Encrypt?_("yes"):_("no"),
@@ -978,7 +1010,7 @@ void backup_cleanup(JCR *jcr, int TermCode)
         jcr->SDErrors,
         fd_term_msg,
         sd_term_msg,
-        term_msg);
+        term_msg.c_str());
 
    Dmsg0(100, "Leave backup_cleanup()\n");
 }
@@ -1004,7 +1036,7 @@ void update_bootstrap_file(JCR *jcr)
          fd = bpipe ? bpipe->wfd : NULL;
       } else {
          /* ***FIXME*** handle BASE */
-         fd = fopen(fname, jcr->is_JobLevel(L_FULL)?"w+b":"a+b");
+         fd = bfopen(fname, jcr->is_JobLevel(L_FULL)?"w+b":"a+b");
       }
       if (fd) {
          VolCount = db_get_job_volume_parameters(jcr, jcr->db, jcr->JobId,

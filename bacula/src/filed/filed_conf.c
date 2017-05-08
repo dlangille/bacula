@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -36,7 +36,6 @@
  *      for the resource records.
  *
  *     Kern Sibbald, September MM
- *
  */
 
 #include "bacula.h"
@@ -48,8 +47,7 @@
  */
 int32_t r_first = R_FIRST;
 int32_t r_last  = R_LAST;
-static RES *sres_head[R_LAST - R_FIRST + 1];
-RES **res_head = sres_head;
+RES_HEAD **res_head;
 
 
 /* Forward referenced subroutines */
@@ -116,6 +114,7 @@ static RES_ITEM cli_items[] = {
    {"TlsKey",                store_dir,     ITEM(res_client.tls_keyfile), 0, 0, 0},
    {"VerId",                 store_str,     ITEM(res_client.verid), 0, 0, 0},
    {"MaximumBandwidthPerJob",store_speed,   ITEM(res_client.max_bandwidth_per_job), 0, 0, 0},
+   {"CommCompression",       store_bool,    ITEM(res_client.comm_compression), 0, ITEM_DEFAULT, true},
    {"DisableCommand",        store_alist_str, ITEM(res_client.disable_cmds), 0, 0, 0},
    {NULL, NULL, {0}, 0, 0, 0}
 };
@@ -127,6 +126,7 @@ static RES_ITEM dir_items[] = {
    {"Password",    store_password, ITEM(res_dir.password),  0, ITEM_REQUIRED, 0},
    {"Address",     store_str,      ITEM(res_dir.address),   0, 0, 0},
    {"Monitor",     store_bool,   ITEM(res_dir.monitor),   0, ITEM_DEFAULT, 0},
+   {"Remote",      store_bool,   ITEM(res_dir.remote),   0, ITEM_DEFAULT, 0},
    {"TlsAuthenticate",      store_bool,    ITEM(res_dir.tls_authenticate), 0, 0, 0},
    {"TlsEnable",            store_bool,    ITEM(res_dir.tls_enable), 0, 0, 0},
    {"TlsRequire",           store_bool,    ITEM(res_dir.tls_require), 0, 0, 0},
@@ -139,6 +139,27 @@ static RES_ITEM dir_items[] = {
    {"TlsAllowedCn",         store_alist_str, ITEM(res_dir.tls_allowed_cns), 0, 0, 0},
    {"MaximumBandwidthPerJob", store_speed,     ITEM(res_dir.max_bandwidth_per_job), 0, 0, 0},
    {"DisableCommand",        store_alist_str, ITEM(res_dir.disable_cmds), 0, 0, 0},
+   {"Console",              store_res, ITEM(res_dir.console),  R_CONSOLE, 0, 0},
+   {NULL, NULL, {0}, 0, 0, 0}
+};
+
+/* Consoles that we can use to connect a Director */
+static RES_ITEM cons_items[] = {
+   {"Name",        store_name,     ITEM(res_cons.hdr.name),  0, ITEM_REQUIRED, 0},
+   {"Description", store_str,      ITEM(res_cons.hdr.desc),  0, 0, 0},
+   {"Password",    store_password, ITEM(res_cons.password),  0, ITEM_REQUIRED, 0},
+   {"Address",     store_str,      ITEM(res_cons.address),   0, 0, 0},
+   {"DirPort",        store_pint32,    ITEM(res_cons.DIRport),  0, ITEM_DEFAULT, 9101},
+   {"TlsAuthenticate",      store_bool,    ITEM(res_cons.tls_authenticate), 0, 0, 0},
+   {"TlsEnable",            store_bool,    ITEM(res_cons.tls_enable), 0, 0, 0},
+   {"TlsRequire",           store_bool,    ITEM(res_cons.tls_require), 0, 0, 0},
+   {"TlsVerifyPeer",        store_bool,    ITEM(res_cons.tls_verify_peer), 0, ITEM_DEFAULT, 1},
+   {"TlsCaCertificateFile", store_dir,       ITEM(res_cons.tls_ca_certfile), 0, 0, 0},
+   {"TlsCaCertificateDir",  store_dir,       ITEM(res_cons.tls_ca_certdir), 0, 0, 0},
+   {"TlsCertificate",       store_dir,       ITEM(res_cons.tls_certfile), 0, 0, 0},
+   {"TlsKey",               store_dir,       ITEM(res_cons.tls_keyfile), 0, 0, 0},
+   {"TlsDhFile",            store_dir,       ITEM(res_cons.tls_dhfile), 0, 0, 0},
+   {"TlsAllowedCn",         store_alist_str, ITEM(res_cons.tls_allowed_cns), 0, 0, 0},
    {NULL, NULL, {0}, 0, 0, 0}
 };
 
@@ -153,6 +174,7 @@ RES_TABLE resources[] = {
    {"Director",      dir_items,   R_DIRECTOR},
    {"FileDaemon",    cli_items,   R_CLIENT},
    {"Messages",      msgs_items,  R_MSGS},
+   {"Console",       cons_items,  R_CONSOLE},
    {"Client",        cli_items,   R_CLIENT},     /* alias for filedaemon */
    {NULL,            NULL,        0}
 };
@@ -242,6 +264,10 @@ void dump_resource(int type, RES *ares, void sendit(void *sock, const char *fmt,
       recurse = 0;
    }
    switch (type) {
+   case R_CONSOLE:
+      sendit(sock, "Console: name=%s password=%s\n", ares->name,
+             res->res_cons.password);
+      break;
    case R_DIRECTOR:
       sendit(sock, "Director: name=%s password=%s\n", ares->name,
               res->res_dir.password);
@@ -261,8 +287,8 @@ void dump_resource(int type, RES *ares, void sendit(void *sock, const char *fmt,
       sendit(sock, "Unknown resource type %d\n", type);
    }
    ares = GetNextRes(type, ares);
-   if (recurse && res->res_dir.hdr.next) {
-      dump_resource(type, res->res_dir.hdr.next, sendit, sock);
+   if (recurse && ares) {
+      dump_resource(type, ares, sendit, sock);
    }
 }
 
@@ -276,7 +302,6 @@ void dump_resource(int type, RES *ares, void sendit(void *sock, const char *fmt,
  */
 void free_resource(RES *sres, int type)
 {
-   RES *nres;
    URES *res = (URES *)sres;
 
    if (res == NULL) {
@@ -284,7 +309,6 @@ void free_resource(RES *sres, int type)
    }
 
    /* common stuff -- free the resource name */
-   nres = (RES *)res->res_dir.hdr.next;
    if (res->res_dir.hdr.name) {
       free(res->res_dir.hdr.name);
    }
@@ -327,7 +351,36 @@ void free_resource(RES *sres, int type)
          free(res->res_dir.disabled_cmds_array);
       }
       break;
-   case R_CLIENT:
+   case R_CONSOLE:
+      if (res->res_cons.password) {
+         free(res->res_cons.password);
+      }
+      if (res->res_cons.address) {
+         free(res->res_cons.address);
+      }
+      if (res->res_cons.tls_ctx) {
+         free_tls_context(res->res_cons.tls_ctx);
+      }
+      if (res->res_cons.tls_ca_certfile) {
+         free(res->res_cons.tls_ca_certfile);
+      }
+      if (res->res_cons.tls_ca_certdir) {
+         free(res->res_cons.tls_ca_certdir);
+      }
+      if (res->res_cons.tls_certfile) {
+         free(res->res_cons.tls_certfile);
+      }
+      if (res->res_cons.tls_keyfile) {
+         free(res->res_cons.tls_keyfile);
+      }
+      if (res->res_cons.tls_dhfile) {
+         free(res->res_cons.tls_dhfile);
+      }
+      if (res->res_cons.tls_allowed_cns) {
+         delete res->res_cons.tls_allowed_cns;
+      }
+      break;
+    case R_CLIENT:
       if (res->res_client.working_directory) {
          free(res->res_client.working_directory);
       }
@@ -424,18 +477,16 @@ void free_resource(RES *sres, int type)
    if (res) {
       free(res);
    }
-   if (nres) {
-      free_resource(nres, type);
-   }
 }
 
 /* Save the new resource by chaining it into the head list for
  * the resource. If this is pass 2, we update any resource
  * pointers (currently only in the Job resource).
  */
-void save_resource(int type, RES_ITEM *items, int pass)
+bool save_resource(CONFIG *config, int type, RES_ITEM *items, int pass)
 {
    URES *res;
+   CONSRES *cons;
    int rindex = type - r_first;
    int i, size;
    int error = 0;
@@ -445,10 +496,11 @@ void save_resource(int type, RES_ITEM *items, int pass)
     */
    for (i=0; items[i].name; i++) {
       if (items[i].flags & ITEM_REQUIRED) {
-            if (!bit_is_set(i, res_all.res_dir.hdr.item_present)) {
-               Emsg2(M_ERROR_TERM, 0, _("\"%s\" directive is required in \"%s\" resource, but not found.\n"),
+         if (!bit_is_set(i, res_all.res_dir.hdr.item_present)) {
+            Mmsg(config->m_errmsg, _("\"%s\" directive is required in \"%s\" resource, but not found.\n"),
                  items[i].name, resources[rindex].name);
-             }
+            return false;
+         }
       }
    }
 
@@ -466,14 +518,27 @@ void save_resource(int type, RES_ITEM *items, int pass)
          /* Resources containing another resource */
          case R_DIRECTOR:
             if ((res = (URES *)GetResWithName(R_DIRECTOR, res_all.res_dir.hdr.name)) == NULL) {
-               Emsg1(M_ABORT, 0, _("Cannot find Director resource %s\n"), res_all.res_dir.hdr.name);
+               Mmsg(config->m_errmsg, _("Cannot find Director resource %s\n"), res_all.res_dir.hdr.name);
+               return false;
             }
             res->res_dir.tls_allowed_cns = res_all.res_dir.tls_allowed_cns;
             res->res_dir.disable_cmds = res_all.res_dir.disable_cmds;
+            res->res_dir.console = res_all.res_dir.console;
+            if (res_all.res_dir.remote && !res_all.res_dir.console) {
+               if ((cons = (CONSRES *)GetNextRes(R_CONSOLE, NULL)) == NULL) {
+                  Mmsg(config->m_errmsg, _("Cannot find any Console resource for remote access\n"));
+                  return false;
+               }
+               res->res_dir.console = cons;
+            }
+            break;
+         /* Resources containing another resource */
+         case R_CONSOLE:
             break;
          case R_CLIENT:
             if ((res = (URES *)GetResWithName(R_CLIENT, res_all.res_dir.hdr.name)) == NULL) {
-               Emsg1(M_ABORT, 0, _("Cannot find Client resource %s\n"), res_all.res_dir.hdr.name);
+               Mmsg(config->m_errmsg, _("Cannot find Client resource %s\n"), res_all.res_dir.hdr.name);
+               return false;
             }
             res->res_client.pki_signing_key_files = res_all.res_client.pki_signing_key_files;
             res->res_client.pki_master_key_files = res_all.res_client.pki_master_key_files;
@@ -500,13 +565,16 @@ void save_resource(int type, RES_ITEM *items, int pass)
          free(res_all.res_dir.hdr.desc);
          res_all.res_dir.hdr.desc = NULL;
       }
-      return;
+      return true;
    }
 
    /* The following code is only executed on pass 1 */
    switch (type) {
       case R_DIRECTOR:
          size = sizeof(DIRRES);
+         break;
+      case R_CONSOLE:
+         size = sizeof(CONSRES);
          break;
       case R_CLIENT:
          size = sizeof(CLIENT);
@@ -522,31 +590,16 @@ void save_resource(int type, RES_ITEM *items, int pass)
    }
    /* Common */
    if (!error) {
-      res = (URES *)malloc(size);
-      memcpy(res, &res_all, size);
-      if (!res_head[rindex]) {
-         res_head[rindex] = (RES *)res; /* store first entry */
-      } else {
-         RES *next, *last;
-         /* Add new res to end of chain */
-         for (last=next=res_head[rindex]; next; next=next->next) {
-            last = next;
-            if (strcmp(next->name, res->res_dir.hdr.name) == 0) {
-               Emsg2(M_ERROR_TERM, 0,
-                  _("Attempt to define second \"%s\" resource named \"%s\" is not permitted.\n"),
-                  resources[rindex].name, res->res_dir.hdr.name);
-            }
-         }
-         last->next = (RES *)res;
-         Dmsg2(90, "Inserting %s res: %s\n", res_to_str(type),
-               res->res_dir.hdr.name);
+      if (!config->insert_res(rindex, size)) {
+         return false;
       }
    }
+   return true;
 }
 
 bool parse_fd_config(CONFIG *config, const char *configfile, int exit_code)
 {
    config->init(configfile, NULL, exit_code, (void *)&res_all, res_all_size,
-      r_first, r_last, resources, res_head);
+      r_first, r_last, resources, &res_head);
    return config->parse_config();
 }

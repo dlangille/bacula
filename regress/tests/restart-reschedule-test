@@ -1,0 +1,130 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2017 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Test the RescheduleOnError function
+#
+TestName="restart-reschedule-test"
+JobName=backup
+. scripts/functions
+
+scripts/cleanup
+scripts/copy-migration-confs
+scripts/prepare-disk-changer
+
+echo "${cwd}/build" >${cwd}/tmp/file-list
+sed 's/migrate/copy/g' ${cwd}/bin/bacula-dir.conf > ${cwd}/tmp/1
+sed 's/Migrate/Copy/g' ${cwd}/tmp/1 > ${cwd}/bin/bacula-dir.conf
+
+#
+# Zap out any schedule in default conf file so that
+#  it doesn't start during our test
+#
+outf="$tmp/sed_tmp"
+echo "s%  Schedule =%# Schedule =%g" >${outf}
+cp $scripts/bacula-dir.conf $tmp/1
+sed -f ${outf} $tmp/1 >$scripts/bacula-dir.conf
+
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "RescheduleOnError", "yes", "Job")'
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "RescheduleInterval", "10", "Job")'
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "RescheduleTimes", "3", "Job")'
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "LabelFormat", "Vol", "Pool")'
+$bperl -e 'add_attribute("$conf/bacula-sd.conf", "LabelMedia", "Yes", "Device", "FileStorage")'
+
+change_jobname NightlySave $JobName
+start_test
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out /dev/null
+messages
+@$out $tmp/log1.out
+label volume=TestVolume001 pool=Scratch storage=DiskChanger slot=1 drive=0
+label volume=TestVolume002 pool=Scratch storage=DiskChanger slot=2 drive=0
+label volume=TestVolume003 pool=Scratch storage=DiskChanger slot=3 drive=0
+setdebug hangup=200 level=0 client
+run job=$JobName yes
+messages
+@# Wait for the incomplete job
+@sleep 5
+status dir
+messages
+@# Wait for the reschedule
+wait
+messages
+@# 
+@# now do a restore
+@#
+@$out $tmp/log2.out  
+restore where=$tmp/bacula-restores select all done
+yes
+wait
+messages
+@$out $tmp/log3.out 
+@#setdebug hangup=200 level=0 storage
+@# Test Reschedule with copy jobs
+run job=copy-job jobid=1 yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bacula
+
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "RescheduleIncompleteJobs", "no", "Job")'
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out $tmp/log3.out 
+reload
+@# Test stop/resume with incomplete
+setbandwidth limit=1000 client
+run job=$JobName jobid=1 level=full yes
+@sleep 5
+stop jobid=5
+wait
+setbandwidth limit=10000000 client
+@sleep 2
+wait
+messages
+@# 
+@# now do a restore
+@#
+@$out $tmp/log5.out  
+restore where=$tmp/bacula-restores4
+3
+4
+m *
+done
+yes
+wait
+messages
+@$out $tmp/log4.out 
+list jobs
+status dir
+quit
+END_OF_DATA
+
+run_bconsole
+check_for_zombie_jobs storage=File1
+stop_bacula
+
+check_two_logs
+$rscripts/diff.pl -s $cwd/build -d $tmp/bacula-restores/$cwd/build
+bstat=`expr $bstat + $?`
+$rscripts/diff.pl -s $cwd/build -d $tmp/bacula-restores4/$cwd/build
+bstat=`expr $bstat + $?`
+
+nb=`grep Incomplete $tmp/log4.out | wc -l`
+if [ "$nb" -ne 1 ]; then
+    print_debug "ERROR: Expected 1 incomplete job in status dir output $tmp/log4.out, got $nb"
+    estat=1
+fi
+
+nb=`grep ' 5.* I ' $tmp/log4.out | wc -l`
+if [ "$nb" -ne 1 ]; then
+    print_debug "ERROR: Expected 1 incomplete job in status dir output $tmp/log4.out, got $nb"
+    estat=1
+fi
+
+
+end_test

@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -20,7 +20,6 @@
  * Bacula Catalog Database Delete record interface routines
  *
  *    Written by Kern Sibbald, December 2000-2014
- *
  */
 
 #include  "bacula.h"
@@ -149,7 +148,7 @@ static int do_media_purge(BDB *mdb, MEDIA_DBR *mr)
    del.tot_ids = 0;
    del.num_del = 0;
    del.max_ids = 0;
-   Mmsg(mdb->cmd, "SELECT JobId from JobMedia WHERE MediaId=%d", mr->MediaId);
+   Mmsg(mdb->cmd, "SELECT JobId from JobMedia WHERE MediaId=%lu", mr->MediaId);
    del.max_ids = mr->VolJobs;
    if (del.max_ids < 100) {
       del.max_ids = 100;
@@ -189,7 +188,7 @@ int BDB::bdb_delete_media_record(JCR *jcr, MEDIA_DBR *mr)
       do_media_purge(this, mr);
    }
 
-   Mmsg(cmd, "DELETE FROM Media WHERE MediaId=%d", mr->MediaId);
+   Mmsg(cmd, "DELETE FROM Media WHERE MediaId=%lu", mr->MediaId);
    bdb_sql_query(cmd, NULL, (void *)NULL);
    bdb_unlock();
    return 1;

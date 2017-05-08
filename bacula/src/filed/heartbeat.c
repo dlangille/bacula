@@ -93,12 +93,8 @@ extern "C" void *sd_heartbeat_thread(void *arg)
       }
       Dmsg2(200, "wait_intr=%d stop=%d\n", n, sd->is_stop());
    }
-   /*
-    * Note, since sd and dir are local dupped sockets, this
-    *  is one place where we can call destroy().
-    */
-   sd->destroy();
-   dir->destroy();
+   sd->close();
+   dir->close();
    jcr->hb_bsock = NULL;
    jcr->hb_started = false;
    jcr->hb_dir_bsock = NULL;
@@ -192,7 +188,7 @@ extern "C" void *dir_heartbeat_thread(void *arg)
       }
       bmicrosleep(next, 0);
    }
-   dir->destroy();
+   dir->close();
    jcr->hb_bsock = NULL;
    jcr->hb_started = false;
    return NULL;

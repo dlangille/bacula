@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -37,7 +37,6 @@
  *     The purpose of this code is to develop a SIMPLE Storage
  *     daemon. More complicated coding (double buffering, writer
  *     thread, ...) is left for a later version.
- *
  */
 
 /*
@@ -75,6 +74,8 @@
 #define O_NONBLOCK 0
 #endif
 
+static const int dbglvl = 150;
+
 /* Imported functions */
 extern void set_os_device_parameters(DCR *dcr);
 extern bool dev_get_os_pos(DEVICE *dev, struct mtget *mt_stat);
@@ -82,291 +83,36 @@ extern uint32_t status_dev(DEVICE *dev);
 
 /* Forward referenced functions */
 const char *mode_to_str(int mode);
-DEVICE *m_init_dev(JCR *jcr, DEVRES *device);
-/*
- * Device types for printing
- */
-static const char *prt_dev_types[] = {
-   "*none*",
-   "file",
-   "tape",
-   "DVD",
-   "FIFO",
-   "Vtape",
-   "FTP",
-   "VTL"
-};
+DEVICE *m_init_dev(JCR *jcr, DEVRES *device, bool adata);
 
 /*
- * Allocate and initialize the DEVICE structure
- * Note, if dev is non-NULL, it is already allocated,
- * thus we neither allocate it nor free it. This allows
- * the caller to put the packet in shared memory.
- *
- *  Note, for a tape, the device->device_name is the device name
- *     (e.g. /dev/nst0), and for a file, the device name
- *     is the directory in which the file will be placed.
- *
+ * Device specific initialization.
  */
-DEVICE *init_dev(JCR *jcr, DEVRES *device)
+void DEVICE::device_specific_init(JCR *jcr, DEVRES *device)
 {
-   generate_global_plugin_event(bsdGlobalEventDeviceInit, device);
-   DEVICE *dev = m_init_dev(jcr, device);
-   return dev;
-}
-
-DEVICE *m_init_dev(JCR *jcr, DEVRES *device)
-{
-   struct stat statp;
-   int errstat;
-   DCR *dcr = NULL;
-   DEVICE *dev = NULL;
-   uint32_t max_bs;
-
-   /* If no device type specified, try to guess */
-   if (!device->dev_type) {
-      /* Check that device is available */
-      if (stat(device->device_name, &statp) < 0) {
-         berrno be;
-         Jmsg2(jcr, M_ERROR, 0, _("Unable to stat device %s: ERR=%s\n"),
-            device->device_name, be.bstrerror());
-         return NULL;
-      }
-      if (S_ISDIR(statp.st_mode)) {
-         device->dev_type = B_FILE_DEV;
-      } else if (S_ISCHR(statp.st_mode)) {
-         device->dev_type = B_TAPE_DEV;
-      } else if (S_ISFIFO(statp.st_mode)) {
-         device->dev_type = B_FIFO_DEV;
-#ifdef USE_VTAPE
-      /* must set DeviceType = Vtape
-       * in normal mode, autodetection is disabled
-       */
-      } else if (S_ISREG(statp.st_mode)) {
-         device->dev_type = B_VTAPE_DEV;
-#endif
-      } else if (!(device->cap_bits & CAP_REQMOUNT)) {
-         Jmsg2(jcr, M_ERROR, 0, _("%s is an unknown device type. Must be tape or directory\n"
-               " or have RequiresMount=yes for DVD. st_mode=%x\n"),
-            device->device_name, statp.st_mode);
-         return NULL;
-      } else {
-         device->dev_type = B_DVD_DEV;
-      }
-      if (strcmp(device->device_name, "/dev/null") == 0) {
-         device->dev_type = B_NULL_DEV;
-      }
-   }
-   switch (device->dev_type) {
-   case B_DVD_DEV:
-      Jmsg0(jcr, M_FATAL, 0, _("DVD support is now deprecated.\n"));
-      return NULL;
-   case B_VTAPE_DEV:
-      dev = New(vtape);
-      break;
-#ifdef USE_FTP
-   case B_FTP_DEV:
-      dev = New(ftp_device);
-      break;
-#endif
-   case B_TAPE_DEV:
-      dev = New(tape_dev);
-      break;
-   case B_FILE_DEV:
-   case B_FIFO_DEV:
-   case B_NULL_DEV:
-      dev = New(file_dev);
-      break;
-   default:
-      return NULL;
-   }
-   dev->clear_slot();         /* unknown */
-
-   /* Copy user supplied device parameters from Resource */
-   dev->dev_name = get_memory(strlen(device->device_name)+1);
-   pm_strcpy(dev->dev_name, device->device_name);
-   dev->prt_name = get_memory(strlen(device->device_name) + strlen(device->hdr.name) + 20);
-   /* We edit "Resource-name" (physical-name) */
-   Mmsg(dev->prt_name, "\"%s\" (%s)", device->hdr.name, device->device_name);
-   Dmsg1(400, "Allocate dev=%s\n", dev->print_name());
-   dev->capabilities = device->cap_bits;
-   dev->min_free_space = device->min_free_space;
-   dev->min_block_size = device->min_block_size;
-   dev->max_block_size = device->max_block_size;
-   dev->max_volume_size = device->max_volume_size;
-   dev->max_file_size = device->max_file_size;
-   dev->max_concurrent_jobs = device->max_concurrent_jobs;
-   dev->volume_capacity = device->volume_capacity;
-   dev->max_rewind_wait = device->max_rewind_wait;
-   dev->max_open_wait = device->max_open_wait;
-   dev->vol_poll_interval = device->vol_poll_interval;
-   dev->max_spool_size = device->max_spool_size;
-   dev->drive_index = device->drive_index;
-   dev->enabled = device->enabled;
-   dev->autoselect = device->autoselect;
-   dev->read_only = device->read_only;
-   dev->dev_type = device->dev_type;
-   dev->device = device;
-   if (dev->is_tape()) { /* No parts on tapes */
-      dev->max_part_size = 0;
-   } else {
-      dev->max_part_size = device->max_part_size;
-   }
-   /* Sanity check */
-   if (dev->vol_poll_interval && dev->vol_poll_interval < 60) {
-      dev->vol_poll_interval = 60;
-   }
-
-   if (!device->dev) {
-      /* The first time we create a DEVICE from the DEVRES, we keep a pointer
-       * to the DEVICE accessible from the DEVRES.
-       */
-      device->dev = dev;
-   }
-
-   if (dev->is_fifo()) {
-      dev->capabilities |= CAP_STREAM; /* set stream device */
-   }
-
-   /* If the device requires mount :
-    * - Check that the mount point is available
-    * - Check that (un)mount commands are defined
-    */
-   if (dev->is_file() && dev->requires_mount()) {
-      if (!device->mount_point || stat(device->mount_point, &statp) < 0) {
-         berrno be;
-         dev->dev_errno = errno;
-         Jmsg2(jcr, M_ERROR_TERM, 0, _("Unable to stat mount point %s: ERR=%s\n"),
-            device->mount_point, be.bstrerror());
-      }
-
-      if (!device->mount_command || !device->unmount_command) {
-         Jmsg0(jcr, M_ERROR_TERM, 0, _("Mount and unmount commands must defined for a device which requires mount.\n"));
-      }
-   } 
-
-   /* Keep the device ID in the DEVICE struct to identify the hardware */
-   if (dev->is_file() && stat(dev->archive_name(), &statp) == 0) {
-         dev->devno = statp.st_dev;
-   } 
-
-   /* Sanity check */
-   if (dev->max_block_size == 0) {
-      max_bs = DEFAULT_BLOCK_SIZE;
-   } else {
-      max_bs = dev->max_block_size;
-   }
-   if (dev->min_block_size > max_bs) {
-      Jmsg(jcr, M_ERROR_TERM, 0, _("Min block size > max on device %s\n"),
-           dev->print_name());
-   }
-   if (dev->max_block_size > 4096000) {
-      Jmsg3(jcr, M_ERROR, 0, _("Block size %u on device %s is too large, using default %u\n"),
-         dev->max_block_size, dev->print_name(), DEFAULT_BLOCK_SIZE);
-      dev->max_block_size = 0;
-   }
-   if (dev->max_block_size % TAPE_BSIZE != 0) {
-      Jmsg3(jcr, M_WARNING, 0, _("Max block size %u not multiple of device %s block size=%d.\n"),
-         dev->max_block_size, dev->print_name(), TAPE_BSIZE);
-   }
-   if (dev->max_volume_size != 0 && dev->max_volume_size < (dev->max_block_size << 4)) {
-      Jmsg(jcr, M_ERROR_TERM, 0, _("Max Vol Size < 8 * Max Block Size for device %s\n"),
-           dev->print_name());
-   }
-
-   dev->errmsg = get_pool_memory(PM_EMSG);
-   *dev->errmsg = 0;
-
-   if ((errstat = dev->init_mutex()) != 0) {
-      berrno be;
-      dev->dev_errno = errstat;
-      Mmsg1(dev->errmsg, _("Unable to init mutex: ERR=%s\n"), be.bstrerror(errstat));
-      Jmsg0(jcr, M_ERROR_TERM, 0, dev->errmsg);
-   }
-   if ((errstat = pthread_cond_init(&dev->wait, NULL)) != 0) {
-      berrno be;
-      dev->dev_errno = errstat;
-      Mmsg1(dev->errmsg, _("Unable to init cond variable: ERR=%s\n"), be.bstrerror(errstat));
-      Jmsg0(jcr, M_ERROR_TERM, 0, dev->errmsg);
-   }
-   if ((errstat = pthread_cond_init(&dev->wait_next_vol, NULL)) != 0) {
-      berrno be;
-      dev->dev_errno = errstat;
-      Mmsg1(dev->errmsg, _("Unable to init cond variable: ERR=%s\n"), be.bstrerror(errstat));
-      Jmsg0(jcr, M_ERROR_TERM, 0, dev->errmsg);
-   }
-   if ((errstat = pthread_mutex_init(&dev->spool_mutex, NULL)) != 0) {
-      berrno be;
-      dev->dev_errno = errstat;
-      Mmsg1(dev->errmsg, _("Unable to init spool mutex: ERR=%s\n"), be.bstrerror(errstat));
-      Jmsg0(jcr, M_ERROR_TERM, 0, dev->errmsg);
-   }
-   if ((errstat = dev->init_acquire_mutex()) != 0) {
-      berrno be;
-      dev->dev_errno = errstat;
-      Mmsg1(dev->errmsg, _("Unable to init acquire mutex: ERR=%s\n"), be.bstrerror(errstat));
-      Jmsg0(jcr, M_ERROR_TERM, 0, dev->errmsg);
-   }
-   if ((errstat = dev->init_freespace_mutex()) != 0) {
-      berrno be;
-      dev->dev_errno = errstat;
-      Mmsg1(dev->errmsg, _("Unable to init freespace mutex: ERR=%s\n"), be.bstrerror(errstat));
-      Jmsg0(jcr, M_ERROR_TERM, 0, dev->errmsg);
-   }
-   if ((errstat = dev->init_read_acquire_mutex()) != 0) {
-      berrno be;
-      dev->dev_errno = errstat;
-      Mmsg1(dev->errmsg, _("Unable to init read acquire mutex: ERR=%s\n"), be.bstrerror(errstat));
-      Jmsg0(jcr, M_ERROR_TERM, 0, dev->errmsg);
-   }
-   if ((errstat = dev->init_volcat_mutex()) != 0) {
-      berrno be;
-      dev->dev_errno = errstat;
-      Mmsg1(dev->errmsg, _("Unable to init volcat mutex: ERR=%s\n"), be.bstrerror(errstat));
-      Jmsg0(jcr, M_ERROR_TERM, 0, dev->errmsg);
-   }
-   if ((errstat = dev->init_dcrs_mutex()) != 0) {
-      berrno be;
-      dev->dev_errno = errstat;
-      Mmsg1(dev->errmsg, _("Unable to init dcrs mutex: ERR=%s\n"), be.bstrerror(errstat));
-      Jmsg0(jcr, M_ERROR_TERM, 0, dev->errmsg);
-   }
-
-   dev->set_mutex_priorities();
-
-#ifdef xxx
-   if ((errstat = rwl_init(&dev->lock)) != 0) {
-      berrno be;
-      dev->dev_errno = errstat;
-      Mmsg1(dev->errmsg, _("Unable to init mutex: ERR=%s\n"), be.bstrerror(errstat));
-      Jmsg0(jcr, M_ERROR_TERM, 0, dev->errmsg);
-   }
-#endif
-
-   dev->clear_opened();
-   dev->attached_dcrs = New(dlist(dcr, &dcr->dev_link));
-   Dmsg2(100, "init_dev: tape=%d dev_name=%s\n", dev->is_tape(), dev->dev_name);
-   dev->initiated = true;
-
-   return dev;
 }
 
 /*
- * Open the device with the operating system and
+ * Initialize the device with the operating system and
  * initialize buffer pointers.
  *
- * Returns:  true on success
- *           false on error
+ * Returns:  true  device already open
+ *           false device setup but not open
  *
  * Note, for a tape, the VolName is the name we give to the
  *    volume (not really used here), but for a file, the
  *    VolName represents the name of the file to be created/opened.
  *    In the case of a file, the full name is the device name
  *    (archive_name) with the VolName concatenated.
+ *
+ * This is generic common code. It should be called prior to any
+ *     device specific code.  Note! This does not open anything.
  */
-bool DEVICE::open(DCR *dcr, int omode)
+bool DEVICE::open_device(DCR *dcr, int omode)
 {
-   int preserve = 0;
+   Enter(dbglvl);
+   preserve = 0;
+   ASSERT2(!adata, "Attempt to open adata dev");
    if (is_open()) {
       if (openmode == omode) {
          return true;
@@ -377,6 +123,7 @@ bool DEVICE::open(DCR *dcr, int omode)
          preserve = state & (ST_LABEL|ST_APPEND|ST_READ);
       }
    }
+   openmode = omode;
    if (dcr) {
       dcr->setVolCatName(dcr->VolumeName);
       VolCatInfo = dcr->VolCatInfo;    /* structure assign */
@@ -385,20 +132,10 @@ bool DEVICE::open(DCR *dcr, int omode)
    state &= ~(ST_NOSPACE|ST_LABEL|ST_APPEND|ST_READ|ST_EOT|ST_WEOT|ST_EOF);
    label_type = B_BACULA_LABEL;
 
-   if (is_tape() || is_fifo()) {
-      open_tape_device(dcr, omode);
-   } else if (is_ftp()) {
-      open_device(dcr, omode);
-   } else {
-      Dmsg1(100, "call open_file_device mode=%s\n", mode_to_str(omode));
-      open_file_device(dcr, omode);
+   if (openmode == OPEN_READ_WRITE && has_cap(CAP_STREAM)) {
+      openmode = OPEN_WRITE_ONLY;
    }
-   state |= preserve;                 /* reset any important state info */
-   Dmsg2(100, "preserve=0x%x fd=%d\n", preserve, m_fd);
-
-   Dmsg7(100, "open dev: fd=%d dev=%p dcr=%p vol=%s type=%d dev_name=%s mode=%s\n",
-         m_fd, getVolCatName(), this, dcr, dev_type, print_name(), mode_to_str(omode));
-   return m_fd >= 0;
+   return false;
 }
 
 void DEVICE::set_mode(int new_mode)
@@ -417,16 +154,9 @@ void DEVICE::set_mode(int new_mode)
       mode = O_WRONLY | O_BINARY;
       break;
    default:
-      Emsg0(M_ABORT, 0, _("Illegal mode given to open dev.\n"));
+      Jmsg0(NULL, M_ABORT, 0, _("Illegal mode given to open dev.\n"));
    }
 }
-
-
-void DEVICE::open_device(DCR *dcr, int omode)
-{
-   /* do nothing waiting to split open_file/tape_device */
-}
-
 
 /*
  * Called to indicate that we have just read an
@@ -435,9 +165,6 @@ void DEVICE::open_device(DCR *dcr, int omode)
 void DEVICE::set_ateof()
 {
    set_eof();
-   if (is_tape()) {
-      file++;
-   }
    file_addr = 0;
    file_size = 0;
    block_num = 0;
@@ -457,7 +184,7 @@ void DEVICE::set_ateot()
 
 
 /*
- * Set the position of the device -- only for files and DVD
+ * Set the position of the device -- only for files
  *   For other devices, there is no generic way to do it.
  *  Returns: true  on succes
  *           false on error
@@ -506,11 +233,6 @@ void DEVICE::clear_slot()
    if (vol) vol->set_slot(-1);
 }
 
-const char *DEVICE::print_type() const
-{
-   return prt_dev_types[device->dev_type];
-}
-
 /*
  * Set to unload the current volume in the drive
  */
@@ -518,7 +240,6 @@ void DEVICE::set_unload()
 {
    if (!m_unload && VolHdr.VolumeName[0] != 0) {
        m_unload = true;
-       memcpy(UnloadVolName, VolHdr.VolumeName, sizeof(UnloadVolName));
        notify_newvol_in_attached_dcrs(NULL);
    }
 }
@@ -531,6 +252,473 @@ void DEVICE::clear_volhdr()
    Dmsg1(100, "Clear volhdr vol=%s\n", VolHdr.VolumeName);
    memset(&VolHdr, 0, sizeof(VolHdr));
    setVolCatInfo(false);
+}
+
+void DEVICE::set_volcatinfo_from_dcr(DCR *dcr)
+{
+   VolCatInfo = dcr->VolCatInfo;
+}
+
+/*
+ * Close the device
+ *   Can enter with dcr==NULL
+ */
+bool DEVICE::close(DCR *dcr)
+{
+   bool ok = true;
+
+   Dmsg5(40, "close_dev vol=%s fd=%d dev=%p adata=%d dev=%s\n",
+      VolHdr.VolumeName, m_fd, this, adata, print_name());
+   offline_or_rewind(dcr);
+
+   if (!is_open()) {
+      Dmsg2(200, "device %s already closed vol=%s\n", print_name(),
+         VolHdr.VolumeName);
+      return true;                    /* already closed */
+   }
+
+   switch (dev_type) {
+   case B_VTL_DEV:
+   case B_VTAPE_DEV:
+   case B_TAPE_DEV:
+      unlock_door();
+      /* Fall through wanted */
+   default:
+      if (d_close(m_fd) != 0) {
+         berrno be;
+         dev_errno = errno;
+         Mmsg2(errmsg, _("Error closing device %s. ERR=%s.\n"),
+               print_name(), be.bstrerror());
+         ok = false;
+      }
+      break;
+   }
+
+   unmount(1);                       /* do unmount if required */
+
+   /* Clean up device packet so it can be reused */
+   clear_opened();
+
+   state &= ~(ST_LABEL|ST_READ|ST_APPEND|ST_EOT|ST_WEOT|ST_EOF|
+              ST_NOSPACE|ST_MOUNTED|ST_MEDIA|ST_SHORT);
+   label_type = B_BACULA_LABEL;
+   file = block_num = 0;
+   file_size = 0;
+   file_addr = 0;
+   EndFile = EndBlock = 0;
+   openmode = 0;
+   clear_volhdr();
+   memset(&VolCatInfo, 0, sizeof(VolCatInfo));
+   if (tid) {
+      stop_thread_timer(tid);
+      tid = 0;
+   }
+   return ok;
+}
+
+/*
+ * If timeout, wait until the mount command returns 0.
+ * If !timeout, try to mount the device only once.
+ */
+bool DEVICE::mount(int timeout)
+{
+   Enter(dbglvl);
+   if (!is_mounted() && device->mount_command) {
+      return mount_file(1, timeout);
+   }
+   return true;
+}
+
+/*
+ * Unmount the device
+ * If timeout, wait until the unmount command returns 0.
+ * If !timeout, try to unmount the device only once.
+ */
+bool DEVICE::unmount(int timeout)
+{
+   Enter(dbglvl);
+   if (is_mounted() && requires_mount() && device->unmount_command) {
+      return mount_file(0, timeout);
+   }
+   return true;
+}
+
+
+/*
+ * Edit codes into (Un)MountCommand, Write(First)PartCommand
+ *  %% = %
+ *  %a = archive device name
+ *  %e = erase (set if cannot mount and first part)
+ *  %n = part number
+ *  %m = mount point
+ *  %v = last part name
+ *
+ *  omsg = edited output message
+ *  imsg = input string containing edit codes (%x)
+ *
+ */
+void DEVICE::edit_mount_codes(POOL_MEM &omsg, const char *imsg)
+{
+   const char *p;
+   const char *str;
+   char add[20];
+
+   POOL_MEM archive_name(PM_FNAME);
+
+   omsg.c_str()[0] = 0;
+   Dmsg1(800, "edit_mount_codes: %s\n", imsg);
+   for (p=imsg; *p; p++) {
+      if (*p == '%') {
+         switch (*++p) {
+         case '%':
+            str = "%";
+            break;
+         case 'a':
+            str = dev_name;
+            break;
+         case 'e':
+            str = "0";
+            /* ***FIXME*** this may be useful for Cloud */
+#ifdef xxx
+            if (num_dvd_parts == 0) {
+               if (truncating || blank_dvd) {
+                  str = "2";
+               } else {
+                  str = "1";
+               }
+            } else {
+               str = "0";
+            }
+#endif
+            break;
+         case 'n':
+            bsnprintf(add, sizeof(add), "%d", part);
+            str = add;
+            break;
+         case 'm':
+            str = device->mount_point;
+            break;
+         default:
+            add[0] = '%';
+            add[1] = *p;
+            add[2] = 0;
+            str = add;
+            break;
+         }
+      } else {
+         add[0] = *p;
+         add[1] = 0;
+         str = add;
+      }
+      Dmsg1(1900, "add_str %s\n", str);
+      pm_strcat(omsg, (char *)str);
+      Dmsg1(1800, "omsg=%s\n", omsg.c_str());
+   }
+}
+
+/* return the last timer interval (ms)
+ * or 0 if something goes wrong
+ */
+btime_t DEVICE::get_timer_count()
+{
+   btime_t temp = last_timer;
+   last_timer = get_current_btime();
+   temp = last_timer - temp;   /* get elapsed time */
+   return (temp>0)?temp:0;     /* take care of skewed clock */
+}
+
+/* read from fd */
+ssize_t DEVICE::read(void *buf, size_t len)
+{
+   ssize_t read_len ;
+
+   get_timer_count();
+
+   read_len = d_read(m_fd, buf, len);
+
+   last_tick = get_timer_count();
+
+   DevReadTime += last_tick;
+   VolCatInfo.VolReadTime += last_tick;
+
+   if (read_len > 0) {          /* skip error */
+      DevReadBytes += read_len;
+   }
+
+   return read_len;
+}
+
+/* write to fd */
+ssize_t DEVICE::write(const void *buf, size_t len)
+{
+   ssize_t write_len;
+
+   get_timer_count();
+
+   write_len = d_write(m_fd, buf, len);
+
+   last_tick = get_timer_count();
+
+   DevWriteTime += last_tick;
+   VolCatInfo.VolWriteTime += last_tick;
+
+   if (write_len > 0) {         /* skip error */
+      DevWriteBytes += write_len;
+   }
+
+   return write_len;
+}
+
+/* Return the resource name for the device */
+const char *DEVICE::name() const
+{
+   return device->hdr.name;
+}
+
+uint32_t DEVICE::get_file()
+{
+   if (is_tape()) {
+      return file;
+   } else {
+      uint64_t bytes = VolCatInfo.VolCatAdataBytes + VolCatInfo.VolCatAmetaBytes;
+      return (uint32_t)(bytes >> 32);
+   }
+}
+
+uint32_t DEVICE::get_block_num()
+{
+   if (is_tape()) {
+      return block_num;
+   } else {
+      return  VolCatInfo.VolCatAdataBlocks + VolCatInfo.VolCatAmetaBlocks;
+   }
+}
+
+/*
+ * Walk through all attached jcrs indicating the volume has changed
+ *   Note: If you have the new VolumeName, it is passed here,
+ *     otherwise pass a NULL.
+ */
+void
+DEVICE::notify_newvol_in_attached_dcrs(const char *newVolumeName)
+{
+   Dmsg2(140, "Notify dcrs of vol change. oldVolume=%s NewVolume=%s\n",
+      getVolCatName(), newVolumeName?newVolumeName:"*None*");
+   Lock_dcrs();
+   DCR *mdcr;
+   foreach_dlist(mdcr, attached_dcrs) {
+      if (mdcr->jcr->JobId == 0) {
+         continue;                 /* ignore console */
+      }
+      mdcr->NewVol = true;
+      mdcr->NewFile = true;
+      if (newVolumeName && mdcr->VolumeName != newVolumeName) {
+         bstrncpy(mdcr->VolumeName, newVolumeName, sizeof(mdcr->VolumeName));
+         Dmsg2(140, "Set NewVol=%s in JobId=%d\n", mdcr->VolumeName, mdcr->jcr->JobId);
+      }
+   }
+   Unlock_dcrs();
+}
+
+/*
+ * Walk through all attached jcrs indicating the File has changed
+ */
+void
+DEVICE::notify_newfile_in_attached_dcrs()
+{
+   Dmsg1(140, "Notify dcrs of file change. Volume=%s\n", getVolCatName());
+   Lock_dcrs();
+   DCR *mdcr;
+   foreach_dlist(mdcr, attached_dcrs) {
+      if (mdcr->jcr->JobId == 0) {
+         continue;                 /* ignore console */
+      }
+      Dmsg1(140, "Notify JobI=%d\n", mdcr->jcr->JobId);
+      mdcr->NewFile = true;
+   }
+   Unlock_dcrs();
+}
+
+
+
+/*
+ * Free memory allocated for the device
+ *  Can enter with dcr==NULL
+ */
+void DEVICE::term(DCR *dcr)
+{
+   Dmsg1(900, "term dev: %s\n", print_name());
+   if (!dcr) {
+      d_close(m_fd);
+   } else {
+      close(dcr);
+   }
+   if (dev_name) {
+      free_memory(dev_name);
+      dev_name = NULL;
+   }
+   if (adev_name) {
+      free_memory(adev_name);
+      adev_name = NULL;
+   }
+   if (prt_name) {
+      free_memory(prt_name);
+      prt_name = NULL;
+   }
+   if (errmsg) {
+      free_pool_memory(errmsg);
+      errmsg = NULL;
+   }
+   pthread_mutex_destroy(&m_mutex);
+   pthread_cond_destroy(&wait);
+   pthread_cond_destroy(&wait_next_vol);
+   pthread_mutex_destroy(&spool_mutex);
+   pthread_mutex_destroy(&freespace_mutex);
+   if (attached_dcrs) {
+      delete attached_dcrs;
+      attached_dcrs = NULL;
+   }
+   /* We let the DEVRES pointer if not our device */
+   if (device && device->dev == this) {
+      device->dev = NULL;
+   }
+   delete this;
+}
+
+/* Get freespace values */
+void DEVICE::get_freespace(uint64_t *freeval, uint64_t *totalval)
+{
+   get_os_device_freespace();
+   P(freespace_mutex);
+   if (is_freespace_ok()) {
+      *freeval = free_space;
+      *totalval = total_space;
+   } else {
+      *freeval = *totalval = 0;
+   }
+   V(freespace_mutex);
+}
+
+/* Set freespace values */
+void DEVICE::set_freespace(uint64_t freeval, uint64_t totalval, int errnoval, bool valid)
+{
+   P(freespace_mutex);
+   free_space = freeval;
+   total_space = totalval;
+   free_space_errno = errnoval;
+   if (valid) {
+      set_freespace_ok();
+   } else {
+      clear_freespace_ok();
+   }
+   V(freespace_mutex);
+}
+
+/* Convenient function that return true only  if the device back-end is a
+ * filesystem that its nearly full. (the free space is below the given threshold)
+ */
+bool DEVICE::is_fs_nearly_full(uint64_t threshold)
+{
+   uint64_t freeval, totalval;
+   if (is_file()) {
+      get_freespace(&freeval, &totalval);
+      if (totalval > 0) {
+         if (freeval < threshold) {
+            return true;
+         }
+      }
+   }
+   return false;
+}
+
+static const char *modes[] = {
+   "CREATE_READ_WRITE",
+   "OPEN_READ_WRITE",
+   "OPEN_READ_ONLY",
+   "OPEN_WRITE_ONLY"
+};
+
+
+const char *mode_to_str(int mode)
+{
+   static char buf[100];
+   if (mode < 1 || mode > 4) {
+      bsnprintf(buf, sizeof(buf), "BAD mode=%d", mode);
+      return buf;
+    }
+   return modes[mode-1];
+}
+
+void DEVICE::setVolCatName(const char *name)
+{
+   bstrncpy(VolCatInfo.VolCatName, name, sizeof(VolCatInfo.VolCatName));
+   setVolCatInfo(false);
+}
+
+void DEVICE::setVolCatStatus(const char *status)
+{
+   bstrncpy(VolCatInfo.VolCatStatus, status, sizeof(VolCatInfo.VolCatStatus));
+   setVolCatInfo(false);
+}
+
+void DEVICE::updateVolCatBytes(uint64_t bytes)
+{
+   Lock_VolCatInfo();
+   VolCatInfo.VolCatAmetaBytes += bytes;
+   VolCatInfo.VolCatBytes += bytes;
+   setVolCatInfo(false);
+   Unlock_VolCatInfo();
+}
+
+void DEVICE::updateVolCatHoleBytes(uint64_t hole)
+{
+   return;
+}
+
+void DEVICE::updateVolCatPadding(uint64_t padding)
+{
+   Lock_VolCatInfo();
+   VolCatInfo.VolCatAmetaPadding += padding;
+   VolCatInfo.VolCatPadding += padding;
+   setVolCatInfo(false);
+   Unlock_VolCatInfo();
+}
+
+
+void DEVICE::updateVolCatBlocks(uint32_t blocks)
+{
+   Lock_VolCatInfo();
+   VolCatInfo.VolCatAmetaBlocks += blocks;
+   VolCatInfo.VolCatBlocks += blocks;
+   setVolCatInfo(false);
+   Unlock_VolCatInfo();
+}
+
+void DEVICE::updateVolCatWrites(uint32_t writes)
+{
+   Lock_VolCatInfo();
+   VolCatInfo.VolCatAmetaWrites += writes;
+   VolCatInfo.VolCatWrites += writes;
+   setVolCatInfo(false);
+   Unlock_VolCatInfo();
+}
+
+void DEVICE::updateVolCatReads(uint32_t reads)
+{
+   Lock_VolCatInfo();
+   VolCatInfo.VolCatAmetaReads += reads;
+   VolCatInfo.VolCatReads += reads;
+   setVolCatInfo(false);
+   Unlock_VolCatInfo();
+}
+
+void DEVICE::updateVolCatReadBytes(uint64_t bytes)
+{
+   Lock_VolCatInfo();
+   VolCatInfo.VolCatAmetaRBytes += bytes;
+   VolCatInfo.VolCatRBytes += bytes;
+   setVolCatInfo(false);
+   Unlock_VolCatInfo();
 }
 
 void DEVICE::set_nospace()
@@ -674,502 +862,189 @@ bool DEVICE::update_freespace()
    return ok;
 }
 
-void DEVICE::updateVolCatBytes(uint64_t bytes)
+bool DEVICE::weof(DCR */*dcr*/, int num)
 {
-   DEVICE *dev = this;
-   Lock_VolCatInfo();
-   dev->VolCatInfo.VolCatAmetaBytes += bytes;
-   Dmsg1(200, "updateVolBytes ameta=%lld\n",
-      dev->VolCatInfo.VolCatAmetaBytes);
-   dev->VolCatInfo.VolCatBytes += bytes;
-   setVolCatInfo(false);
-   Unlock_VolCatInfo();
-}
+   Dmsg1(129, "=== weof_dev=%s\n", print_name());
 
-void DEVICE::updateVolCatBlocks(uint32_t blocks)
-{
-   DEVICE *dev = this;
-   Lock_VolCatInfo();
-   dev->VolCatInfo.VolCatAmetaBlocks += blocks;
-   dev->VolCatInfo.VolCatBlocks += blocks;
-   setVolCatInfo(false);
-   Unlock_VolCatInfo();
-}
+   if (!is_open()) {
+      dev_errno = EBADF;
+      Mmsg0(errmsg, _("Bad call to weof_dev. Device not open\n"));
+      Emsg0(M_FATAL, 0, errmsg);
+      return false;
+   }
 
+   if (!can_append()) {
+      Mmsg0(errmsg, _("Attempt to WEOF on non-appendable Volume\n"));
+      Emsg0(M_FATAL, 0, errmsg);
+      return false;
+   }
 
-void DEVICE::updateVolCatWrites(uint32_t writes)
-{
-   DEVICE *dev = this;
-   Lock_VolCatInfo();
-   dev->VolCatInfo.VolCatAmetaWrites += writes;
-   dev->VolCatInfo.VolCatWrites += writes;
-   setVolCatInfo(false);
-   Unlock_VolCatInfo();
-}
-
-void DEVICE::updateVolCatReads(uint32_t reads)
-{
-   DEVICE *dev = this;
-   Lock_VolCatInfo();
-   dev->VolCatInfo.VolCatAmetaReads += reads;
-   dev->VolCatInfo.VolCatReads += reads;
-   setVolCatInfo(false);
-   Unlock_VolCatInfo();
-}
-
-void DEVICE::updateVolCatReadBytes(uint64_t bytes)
-{
-   DEVICE *dev = this;
-   Lock_VolCatInfo();
-   dev->VolCatInfo.VolCatAmetaRBytes += bytes;
-   dev->VolCatInfo.VolCatRBytes += bytes;
-   setVolCatInfo(false);
-   Unlock_VolCatInfo();
+   file_size = 0;
+   return true;
 }
 
 /*
- * Close the device
+ * Very basic functions -- no device specific code.
+ *  Returns: true  on succes
+ *           false on error
  */
-bool DEVICE::close()
+bool DEVICE::eod(DCR *dcr)
 {
    bool ok = true;
 
-   Dmsg4(40, "close_dev vol=%s fd=%d dev=%p dev=%s\n",
-      VolHdr.VolumeName, m_fd, this, print_name());
-   offline_or_rewind();
-
-   if (!is_open()) {
-      Dmsg2(200, "device %s already closed vol=%s\n", print_name(),
-         VolHdr.VolumeName);
-      return true;                    /* already closed */
+   Enter(dbglvl);
+   if (m_fd < 0) {
+      dev_errno = EBADF;
+      Mmsg1(errmsg, _("Bad call to eod. Device %s not open\n"), print_name());
+      Dmsg1(100, "%s", errmsg);
+      return false;
    }
 
-   switch (dev_type) {
-   case B_VTL_DEV:
-   case B_VTAPE_DEV:
-   case B_TAPE_DEV:
-      unlock_door();
-      /* Fall through wanted */
-   default:
-      if (d_close(m_fd) != 0) {
-         berrno be;
-         dev_errno = errno;
-         Mmsg2(errmsg, _("Error closing device %s. ERR=%s.\n"),
-               print_name(), be.bstrerror());
-         ok = false;
-      }
-      break; 
+   if (at_eot()) {
+      Leave(100);
+      return true;
    }
-
-   unmount(1);                       /* do unmount if required */
- 
-   /* Clean up device packet so it can be reused */
-   clear_opened();
-
-   /*
-    * Be careful not to clear items needed by the DVD driver
-    *    when it is closing a single part.
-    */
-   state &= ~(ST_LABEL|ST_READ|ST_APPEND|ST_EOT|ST_WEOT|ST_EOF|
-              ST_NOSPACE|ST_MOUNTED|ST_MEDIA|ST_SHORT);
-   label_type = B_BACULA_LABEL;
-   file = block_num = 0;
+   clear_eof();         /* remove EOF flag */
+   block_num = file = 0;
    file_size = 0;
    file_addr = 0;
-   EndFile = EndBlock = 0;
-   openmode = 0;
-   clear_volhdr();
-   memset(&VolCatInfo, 0, sizeof(VolCatInfo));
-   if (tid) {
-      stop_thread_timer(tid);
-      tid = 0;
-   }
+   Leave(100);
    return ok;
 }
 
-/*
- * This call closes the device, but it is used in DVD handling
- *  where we close one part and then open the next part. The
- *  difference between close_part() and close() is that close_part()
- *  saves the state information of the device (e.g. the Volume lable,
- *  the Volume Catalog record, ...  This permits opening and closing
- *  the Volume parts multiple times without losing track of what the
- *  main Volume parameters are.
- */
-void DEVICE::close_part(DCR * /*dcr*/)
+bool DEVICE::is_eod_valid(DCR *dcr)
 {
-   VOLUME_LABEL saveVolHdr;
-   VOLUME_CAT_INFO saveVolCatInfo;     /* Volume Catalog Information */
-
-
-   saveVolHdr = VolHdr;               /* structure assignment */
-   saveVolCatInfo = VolCatInfo;       /* structure assignment */
-   close();                           /* close current part */
-   VolHdr = saveVolHdr;               /* structure assignment */
-   VolCatInfo = saveVolCatInfo;       /* structure assignment */
-}
-
-/* 
- * If timeout, wait until the mount command returns 0.
- * If !timeout, try to mount the device only once.
- */
-bool DEVICE::mount(int timeout)
-{
-   Dmsg0(190, "Enter mount\n");
-   if (!is_mounted() && device->mount_command) {
-      return mount_file(1, timeout);
-   } 
    return true;
 }
 
-/* 
- * Unmount the device 
- * If timeout, wait until the unmount command returns 0.
- * If !timeout, try to unmount the device only once.
- */
-bool DEVICE::unmount(int timeout)
+bool DEVICE::open_next_part(DCR */*dcr*/)
 {
-   Dmsg0(100, "Enter unmount\n");
-   if (is_mounted() && requires_mount() && device->unmount_command) {
-      return mount_file(0, timeout);
-   } 
    return true;
 }
 
-
-/*
- * Edit codes into (Un)MountCommand, Write(First)PartCommand
- *  %% = %
- *  %a = archive device name
- *  %e = erase (set if cannot mount and first part)
- *  %n = part number
- *  %m = mount point
- *  %v = last part name
- *
- *  omsg = edited output message
- *  imsg = input string containing edit codes (%x)
- *
- */
-void DEVICE::edit_mount_codes(POOL_MEM &omsg, const char *imsg)
+bool DEVICE::close_part(DCR */*dcr*/)
 {
-   const char *p;
-   const char *str;
-   char add[20];
-
-   POOL_MEM archive_name(PM_FNAME);
-
-   omsg.c_str()[0] = 0;
-   Dmsg1(800, "edit_mount_codes: %s\n", imsg);
-   for (p=imsg; *p; p++) {
-      if (*p == '%') {
-         switch (*++p) {
-         case '%':
-            str = "%";
-            break;
-         case 'a':
-            str = dev_name;
-            break;
-         case 'e':
-            if (num_dvd_parts == 0) {
-               if (truncating || blank_dvd) {
-                  str = "2";
-               } else {
-                  str = "1";
-               }
-            } else {
-               str = "0";
-            }
-            break;
-         case 'n':
-            bsnprintf(add, sizeof(add), "%d", part);
-            str = add;
-            break;
-         case 'm':
-            str = device->mount_point;
-            break;
-         default:
-            add[0] = '%';
-            add[1] = *p;
-            add[2] = 0;
-            str = add;
-            break;
-         }
-      } else {
-         add[0] = *p;
-         add[1] = 0;
-         str = add;
-      }
-      Dmsg1(1900, "add_str %s\n", str);
-      pm_strcat(omsg, (char *)str);
-      Dmsg1(1800, "omsg=%s\n", omsg.c_str());
-   }
+   return true;
 }
 
-/* return the last timer interval (ms)
- * or 0 if something goes wrong
- */
-btime_t DEVICE::get_timer_count()
+DEVICE *DEVICE::get_dev(DCR */*dcr*/)
 {
-   btime_t temp = last_timer;
-   last_timer = get_current_btime();
-   temp = last_timer - temp;   /* get elapsed time */
-   return (temp>0)?temp:0;     /* take care of skewed clock */
+   return this;
 }
 
-/* read from fd */
-ssize_t DEVICE::read(void *buf, size_t len)
+uint32_t DEVICE::get_hi_addr()
 {
-   ssize_t read_len ;
-
-   get_timer_count();
-
-   read_len = d_read(m_fd, buf, len);
-
-   last_tick = get_timer_count();
-
-   DevReadTime += last_tick;
-   VolCatInfo.VolReadTime += last_tick;
-
-   if (read_len > 0) {          /* skip error */
-      DevReadBytes += read_len;
-   }
-
-   return read_len;
+   return (uint32_t)(file_addr >> 32);
 }
 
-/* write to fd */
-ssize_t DEVICE::write(const void *buf, size_t len)
+uint32_t DEVICE::get_hi_addr(boffset_t addr)
 {
-   ssize_t write_len ;
-
-   get_timer_count();
-
-   write_len = d_write(m_fd, buf, len);
-
-   last_tick = get_timer_count();
-
-   DevWriteTime += last_tick;
-   VolCatInfo.VolWriteTime += last_tick;
-
-   if (write_len > 0) {         /* skip error */
-      DevWriteBytes += write_len;
-   }
-
-   return write_len;
+   return (uint32_t)(addr >> 32);
 }
 
-/* Return the resource name for the device */
-const char *DEVICE::name() const
+uint32_t DEVICE::get_low_addr()
 {
-   return device->hdr.name;
+   return (uint32_t)(file_addr);
 }
 
-uint32_t DEVICE::get_file()
+uint32_t DEVICE::get_low_addr(boffset_t addr)
 {
-   if (is_dvd() || is_tape()) {
-      return file;
-   } else {
-      uint64_t bytes = VolCatInfo.VolCatAdataBytes + VolCatInfo.VolCatAmetaBytes;
-      return (uint32_t)(bytes >> 32);
-   }
-}
-
-uint32_t DEVICE::get_block_num()
-{
-   if (is_dvd() || is_tape()) {
-      return block_num;
-   } else {
-      return  VolCatInfo.VolCatAdataBlocks + VolCatInfo.VolCatAmetaBlocks;
-   }
-}
-
-/*
- * Walk through all attached jcrs indicating the volume has changed
- *   Note: If you have the new VolumeName, it is passed here,
- *     otherwise pass a NULL.
- */
-void
-DEVICE::notify_newvol_in_attached_dcrs(const char *newVolumeName)
-{
-   Dmsg2(140, "Notify dcrs of vol change. oldVolume=%s NewVolume=%s\n",
-      getVolCatName(), newVolumeName?"*None*":newVolumeName);
-   Lock_dcrs();
-   DCR *mdcr;
-   foreach_dlist(mdcr, attached_dcrs) {
-      if (mdcr->jcr->JobId == 0) {
-         continue;                 /* ignore console */
-      }
-      mdcr->NewVol = true;
-      mdcr->NewFile = true;
-      if (newVolumeName && mdcr->VolumeName != newVolumeName) {
-         bstrncpy(mdcr->VolumeName, newVolumeName, sizeof(mdcr->VolumeName));
-         Dmsg2(140, "Set NewVol=%s in JobId=%d\n", mdcr->VolumeName, mdcr->jcr->JobId);
-      }
-   }
-   Unlock_dcrs();
-}
-
-/*
- * Walk through all attached jcrs indicating the File has changed
- */
-void
-DEVICE::notify_newfile_in_attached_dcrs()
-{
-   Dmsg1(140, "Notify dcrs of file change. Volume=%s\n", getVolCatName());
-   Lock_dcrs();
-   DCR *mdcr;
-   foreach_dlist(mdcr, attached_dcrs) {
-      if (mdcr->jcr->JobId == 0) {
-         continue;                 /* ignore console */
-      }
-      Dmsg1(140, "Notify JobI=%d\n", mdcr->jcr->JobId);
-      mdcr->NewFile = true;
-   }
-   Unlock_dcrs();
+   return (uint32_t)(addr);
 }
 
 
-
-/*
- * Free memory allocated for the device
- */
-void DEVICE::term(void)
+uint64_t DEVICE::get_full_addr()
 {
-   DEVICE *dev = NULL;
-   Dmsg1(900, "term dev: %s\n", print_name());
-   close();
-   if (dev_name) {
-      free_memory(dev_name);
-      dev_name = NULL;
-   }
-   if (prt_name) {
-      free_memory(prt_name);
-      prt_name = NULL;
-   }
-   if (errmsg) {
-      free_pool_memory(errmsg);
-      errmsg = NULL;
-   }
-   pthread_mutex_destroy(&m_mutex);
-   pthread_cond_destroy(&wait);
-   pthread_cond_destroy(&wait_next_vol);
-   pthread_mutex_destroy(&spool_mutex);
-   pthread_mutex_destroy(&freespace_mutex);
-   if (attached_dcrs) {
-      delete attached_dcrs;
-      attached_dcrs = NULL;
-   }
-   /* We let the DEVRES pointer if not our device */
-   if (device && device->dev == this) {
-      device->dev = NULL;
-   }
-   delete this;
-   if (dev) {
-      dev->term();
-   }
+   return file_addr;
 }
 
-/* Get freespace values */
-void DEVICE::get_freespace(uint64_t *freeval, uint64_t *totalval)
+uint64_t DEVICE::get_full_addr(boffset_t addr)
 {
-   get_os_device_freespace();
-   P(freespace_mutex);
-   if (is_freespace_ok()) {
-      *freeval = free_space;
-      *totalval = total_space;
-   } else {
-      *freeval = *totalval = 0;
-   }
-   V(freespace_mutex);
+   return addr;
 }
 
-/* Set freespace values */
-void DEVICE::set_freespace(uint64_t freeval, uint64_t totalval, int errnoval, bool valid)
+
+uint64_t DEVICE::get_full_addr(uint32_t hi, uint32_t low)
 {
-   P(freespace_mutex);
-   free_space = freeval;
-   total_space = totalval;
-   free_space_errno = errnoval;
-   if (valid) {
-      set_freespace_ok();
-   } else {
-      clear_freespace_ok();
-   }
-   V(freespace_mutex);
+   return ((uint64_t)hi)<<32 | (uint64_t)low;
 }
 
-/*
- * This routine initializes the device wait timers
- */
-void init_device_wait_timers(DCR *dcr)
+/* Note: this subroutine is not in the class */
+uint64_t get_full_addr(uint32_t hi, uint32_t low)
 {
-   DEVICE *dev = dcr->dev;
+   return ((uint64_t)hi)<<32 | (uint64_t)low;
+}
+
+/* Print the file address */
+char *DEVICE::print_addr(char *buf, int32_t buf_len)
+{
+   buf[0] = 0;
+   bsnprintf(buf, buf_len, "%llu", get_full_addr());
+   return buf;
+}
+
+char *DEVICE::print_addr(char *buf, int32_t buf_len, boffset_t addr)
+{
+   buf[0] = 0;
+   bsnprintf(buf, buf_len, "%llu", addr);
+   return buf;
+}
+
+
+bool DEVICE::do_size_checks(DCR *dcr, DEV_BLOCK *block)
+{
    JCR *jcr = dcr->jcr;
 
-   /* ******FIXME******* put these on config variables */
-   dev->min_wait = 60 * 60;
-   dev->max_wait = 24 * 60 * 60;
-   dev->max_num_wait = 9;              /* 5 waits =~ 1 day, then 1 day at a time */
-   dev->wait_sec = dev->min_wait;
-   dev->rem_wait_sec = dev->wait_sec;
-   dev->num_wait = 0;
-   dev->poll = false;
-
-   jcr->min_wait = 60 * 60;
-   jcr->max_wait = 24 * 60 * 60;
-   jcr->max_num_wait = 9;              /* 5 waits =~ 1 day, then 1 day at a time */
-   jcr->wait_sec = jcr->min_wait;
-   jcr->rem_wait_sec = jcr->wait_sec;
-   jcr->num_wait = 0;
-
-}
-
-void init_jcr_device_wait_timers(JCR *jcr)
-{
-   /* ******FIXME******* put these on config variables */
-   jcr->min_wait = 60 * 60;
-   jcr->max_wait = 24 * 60 * 60;
-   jcr->max_num_wait = 9;              /* 5 waits =~ 1 day, then 1 day at a time */
-   jcr->wait_sec = jcr->min_wait;
-   jcr->rem_wait_sec = jcr->wait_sec;
-   jcr->num_wait = 0;
-}
-
-
-/*
- * The dev timers are used for waiting on a particular device
- *
- * Returns: true if time doubled
- *          false if max time expired
- */
-bool double_dev_wait_time(DEVICE *dev)
-{
-   dev->wait_sec *= 2;               /* double wait time */
-   if (dev->wait_sec > dev->max_wait) {   /* but not longer than maxtime */
-      dev->wait_sec = dev->max_wait;
-   }
-   dev->num_wait++;
-   dev->rem_wait_sec = dev->wait_sec;
-   if (dev->num_wait >= dev->max_num_wait) {
+   if (is_user_volume_size_reached(dcr, true)) {
+      Dmsg0(40, "Calling terminate_writing_volume\n");
+      terminate_writing_volume(dcr);
+      reread_last_block(dcr);   /* Only used on tapes */
+      dev_errno = ENOSPC;
       return false;
+   }
+
+   /*
+    * Limit maximum File size on volume to user specified value.
+    *  In practical terms, this means to put an EOF mark on
+    *  a tape after every X bytes. This effectively determines
+    *  how many index records we have (JobMedia). If you set
+    *  max_file_size too small, it will cause a lot of shoe-shine
+    *  on very fast modern tape (LTO-3 and above).
+    */
+   if ((max_file_size > 0) &&
+       (file_size+block->binbuf) >= max_file_size) {
+      file_size = 0;             /* reset file size */
+
+      if (!weof(dcr, 1)) {            /* write eof */
+         Dmsg0(50, "WEOF error in max file size.\n");
+         Jmsg(jcr, M_FATAL, 0, _("Unable to write EOF. ERR=%s\n"),
+            bstrerror());
+         Dmsg0(40, "Calling terminate_writing_volume\n");
+         terminate_writing_volume(dcr);
+         dev_errno = ENOSPC;
+         return false;
+      }
+
+      if (!do_new_file_bookkeeping(dcr)) {
+         /* Error message already sent */
+         return false;
+      }
    }
    return true;
 }
 
-static const char *modes[] = {
-   "CREATE_READ_WRITE",
-   "OPEN_READ_WRITE",
-   "OPEN_READ_ONLY",
-   "OPEN_WRITE_ONLY"
-};
-
-
-const char *mode_to_str(int mode)
+bool DEVICE::get_tape_alerts(DCR *dcr)
 {
-   static char buf[100];
-   if (mode < 1 || mode > 4) {
-      bsnprintf(buf, sizeof(buf), "BAD mode=%d", mode);
-      return buf;
-    }
-   return modes[mode-1];
+   return true;
+}
+
+void DEVICE::show_tape_alerts(DCR *dcr, alert_list_type type,
+       alert_list_which which, alert_cb alert_callback)
+{
+   return;
+}
+
+int DEVICE::delete_alerts()
+{
+   return 0;
 }

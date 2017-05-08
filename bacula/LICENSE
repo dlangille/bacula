@@ -1,12 +1,11 @@
 
-             Last major revision: 06 May 2014
-             Last minor revision: 16 July 2016
+             Last revision: 03 April 2017
 
 Bacula is licensed under the GNU Affero General Public License, version
 3.0 as published by the Free Software Foundation, Inc. ("AGPLv3").
 
-Additional Terms on the work licensed herein, pursuant to Section 7 of Affero
-General Public License are as follows:
+Additional Terms on the work licensed herein, pursuant to Section 7 of
+Affero General Public License are as follows:
 
   1. The name Bacula is a registered trademark of Kern Sibbald, and Kern
      Sibbald hereby declines to grant a trademark license to "Bacula"
@@ -27,7 +26,7 @@ General Public License are as follows:
 
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -37,8 +36,8 @@ General Public License are as follows:
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
-   conveyed and/or propagated.
+   This notice must be preserved when any source code is conveyed
+   and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
 
@@ -62,28 +61,29 @@ AGPLv3 are as follows:
 The copyright for certain source files may include in addition to what is
 listed above the following copyright:
 
-   Copyright (C) 2000-2016 Free Software Foundation Europe e.V.
+   Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
 The copyright on the Baculum code is:
 
-   Copyright (C) 2013-2016 Marcin Haba
+   Copyright (C) 2013-2017 Marcin Haba
 
-Copyrights of certain "script" files such as headers, shell script,
-Makefiles, etc ...  were previously not explicitly defined.  In almost all
-cases, they are now copyrighted with a BSD 2-Clause copyright to make them
+Copyrights of certain "script" files such as headers, shell script, Makefiles,
+etc ...  were previously never explicitly defined.  In almost all cases,
+they have been copyrighted with a BSD 2-Clause copyright to make them
 easier.  However, as is the case of all BSD type copyrights you must keep
-the copyright in place and on any binary only released, the copyright notice
-must also be released with the binaries.  An example of such a copyright is:
+the copyright in place and on any binary only released the copyright notice
+must also be released with the binaries.  An example of such a copyright
+is:
 
 #
-# Copyright (C) 2000-2016 Kern Sibbald
+# Copyright (C) 2000-2017 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
 
 It is equivalent to the full BSD copyright of:
 
 =====
-Copyright (C) 2000-2016 Kern Sibbald
+Copyright (C) 2000-2017 Kern Sibbald
 License: BSD 2-Clause; see file LICENSE-FOSS
 
 Redistribution and use in source and binary forms, with or without
@@ -108,9 +108,9 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ====
 
-Note: the exact form of the copyright (dates, name) might vary, but
-the intent is the same, namely that the full BSD 2-Clause copyright 
-applies.  The file LICENSE-FOSS has a few more details.
+Note: the exact form of the copyright (dates, name, and text formatting)
+might vary, but the intent is the same, namely that the full BSD 2-Clause
+coypright applies.  The file LICENSE-FOSS has a few more details.
 
 
 ######################################################################

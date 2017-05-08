@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -101,6 +101,7 @@ int pm_strcat(POOLMEM **pm, const char *str);
 int pm_strcat(POOLMEM *&pm, const char *str);
 int pm_strcat(POOL_MEM &pm, const char *str);
 int pm_strcat(POOLMEM *&pm, POOL_MEM &str);
+int pm_strcat(POOL_MEM &pm, POOL_MEM &str);
 
 int pm_strcpy(POOLMEM **pm, const char *str);
 int pm_strcpy(POOLMEM *&pm, const char *str);

@@ -2,7 +2,6 @@
    Bacula(R) - The Network Backup Solution
 
    Copyright (C) 2000-2017 Kern Sibbald
-   Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -12,15 +11,14 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
 */
-/**
+/*
  * General header file configurations that apply to
  * all daemons.  System dependent stuff goes here.
- *
  */
 
 
@@ -221,6 +219,28 @@ void InitWinAPIWrapper();
 #define B_BACULA_LABEL 0
 #define B_ANSI_LABEL   1
 #define B_IBM_LABEL    2
+
+/*
+ * Device types
+ * If you update this table, be sure to add an
+ *  entry in prt_dev_types[] in stored/dev.c
+ *  This number is stored in the Catalog as VolType or VolParts, do not change.
+ */
+enum {
+   B_FILE_DEV = 1,
+   B_TAPE_DEV = 2,
+   B_DVD_DEV  = 3,
+   B_FIFO_DEV = 4,
+   B_VTAPE_DEV= 5,                    /* change to B_TAPE_DEV after init */
+   B_FTP_DEV =  6,
+   B_VTL_DEV =  7,                    /* Virtual tape library device */
+   B_ADATA_DEV = 8,                   /* Aligned data Data file */
+   B_ALIGNED_DEV = 9,                 /* Aligned data Meta file */
+   B_NULL_DEV  = 11,                  /* /dev/null for testing */
+   B_VALIGNED_DEV = 12,               /* Virtual for Aligned device (not stored) */
+   B_VDEDUP_DEV = 13,                 /* Virtual for Dedup device (not stored) */
+   B_CLOUD_DEV  = 14                  /* New Cloud device type (available in 8.8) */
+};
 
 /**
  * Actions on purge (bit mask)
@@ -498,6 +518,21 @@ int  Mmsg(POOL_MEM &msgbuf, const char *fmt,...);
 #define MmsgD6(level, msgbuf, fmt, a1, a2, a3, a4, a5, a6) \
    { Mmsg(msgbuf, fmt, a1, a2, a3, a4, a5, a6); Dmsg1(level, "%s", msgbuf); }
 
+#define MmsgT0(level, msgbuf, fmt) \
+   { Mmsg(msgbuf, fmt); Tmsg1(level, "%s", msgbuf); }
+#define MmsgT1(level, msgbuf, fmt, a1) \
+   { Mmsg(msgbuf, fmt, a1); Tmsg1(level, "%s", msgbuf); }
+#define MmsgT2(level, msgbuf, fmt, a1, a2) \
+   { Mmsg(msgbuf, fmt, a1, a2); Tmsg1(level, "%s", msgbuf); }
+#define MmsgT3(level, msgbuf, fmt, a1, a2, a3) \
+   { Mmsg(msgbuf, fmt, a1, a2, a3); Tmsg1(level, "%s", msgbuf); }
+#define MmsgT4(level, msgbuf, fmt, a1, a2, a3, a4) \
+   { Mmsg(msgbuf, fmt, a1, a2, a3, a4); Tmsg1(level, "%s", msgbuf); }
+#define MmsgT5(level, msgbuf, fmt, a1, a2, a3, a4, a5) \
+   { Mmsg(msgbuf, fmt, a1, a2, a3, a4, a5); Tmsg1(level, "%s", msgbuf); }
+#define MmsgT6(level, msgbuf, fmt, a1, a2, a3, a4, a5, a6) \
+   { Mmsg(msgbuf, fmt, a1, a2, a3, a4, a5, a6); Tmsg1(level, "%s", msgbuf); }
+
 class JCR;
 void d_msg(const char *file, int line, int64_t level, const char *fmt,...);
 void p_msg(const char *file, int line, int level, const char *fmt,...);
@@ -506,6 +541,7 @@ void j_msg(const char *file, int line, JCR *jcr, int type, utime_t mtime, const 
 void q_msg(const char *file, int line, JCR *jcr, int type, utime_t mtime, const char *fmt,...);
 int  m_msg(const char *file, int line, POOLMEM **msgbuf, const char *fmt,...);
 int  m_msg(const char *file, int line, POOLMEM *&pool_buf, const char *fmt, ...);
+void t_msg(const char *file, int line, int64_t level, const char *fmt,...);
 
 
 /** Use our strdup with smartalloc */
@@ -541,6 +577,9 @@ int  m_msg(const char *file, int line, POOLMEM *&pool_buf, const char *fmt, ...)
 
 /** Macro to simplify free/reset pointers */
 #define bfree_and_null(a) do{if(a){free(a); (a)=NULL;}} while(0)
+
+/* Use bfopen instead of fopen */
+#define fopen(path, mode) bfopen(path, mode)
 
 /**
  * Replace codes needed in both file routines and non-file routines

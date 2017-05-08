@@ -2,7 +2,7 @@ dnl
 dnl
 dnl Process this file with autoconf to produce a configure script.
 dnl
-dnl Copyright (C) 2000-2016 Kern Sibbald
+dnl Copyright (C) 2000-2017 Kern Sibbald
 dnl License: BSD 2-Clause; see file LICENSE-FOSS
 dnl
 dnl require a recent autoconf
@@ -38,6 +38,10 @@ BDB_VERSION=`sed -n -e 's/^#define BDB_VERSION \(.*\)$/\1/p' ${srcdir}/src/cats/
 DEPKGS_VERSION=`sed -n -e 's/^#define DEPKGS_VERSION \(.*\)$/\1/p' ${srcdir}/src/cats/cats.h`
 DEPKGS_QT_VERSION=`sed -n -e 's/^#define DEPKGS_QT_VERSION.*"\(.*\)"$/\1/p' ${srcdir}/src/version.h`
 BQT_VERSION=`sed -n -e 's/^#define BQT_VERSION.*"\(.*\)"$/\1/p' ${srcdir}/src/version.h`
+VIX_VERSION=`sed -n -e 's/^#define VIX_VERSION.*"\(.*\)"$/\1/p' ${srcdir}/src/version.h`
+JAVA_VERSION=`sed -n -e 's/^#define JAVA_VERSION.*"\(.*\)"$/\1/p' ${srcdir}/src/version.h`
+NDMP_VERSION=`sed -n -e 's/^#define NDMP_VERSION.*"\(.*\)"$/\1/p' ${srcdir}/src/version.h`
+LIBRSYNC_VERSION=`sed -n -e 's/^#define LIBRSYNC_VERSION.*"\(.*\)"$/\1/p' ${srcdir}/src/version.h`
 AC_SUBST(VERSION)dnl
 AC_SUBST(DATE)dnl
 AC_SUBST(LSMDATE)dnl
@@ -47,6 +51,11 @@ AC_SUBST(BDB_VERSION)dnl
 AC_SUBST(DEPKGS_QT_VERSION)dnl
 AC_SUBST(DEPKGS_VERSION)dnl
 AC_SUBST(BQT4_VERSION)dnl
+AC_SUBST(VIX_VERSION)dnl
+AC_SUBST(JAVA_VERSION)dnl
+AC_SUBST(NDMP_VERSION)dnl
+AC_SUBST(LIBRSYNC_VERSION)dnl
+
 
 dnl src/lib
 dnl can be overwritten by specific values from version.h
@@ -78,7 +87,6 @@ LIBBACFIND_LT_RELEASE=`sed -n -e 's/^#.*LIBBACFIND_LT_RELEASE.*"\(.*\)"$/\1/p' $
 LIBBACFIND_LT_RELEASE=${LIBBACFIND_LT_RELEASE:-$VERSION}
 
 AC_SUBST(LIBBACFIND_LT_RELEASE)dnl
-
 
 dnl PFILES are platform or plugin specific files
 PFILES="platforms/Makefile"
@@ -848,7 +856,7 @@ AC_SUBST(MAKE_SHELL)
 AC_HEADER_STAT
 AC_HEADER_DIRENT
 AC_CHECK_FUNCS(strcasecmp select setenv putenv tcgetattr)
-AC_CHECK_FUNCS(lstat lchown lchmod futimes fchmod fchown)
+AC_CHECK_FUNCS(lstat lchown lchmod futimes fchmod fchown lutimes)
 AC_CHECK_FUNCS(nanosleep nl_langinfo)
 AC_CHECK_FUNCS(be64toh htobe64)
 AC_CHECK_HEADERS(varargs.h)
@@ -1886,6 +1894,93 @@ fi
 AC_MSG_RESULT($fstype)
 
 AC_CHECK_HEADER(sys/statvfs.h, [ AC_DEFINE(HAVE_SYS_STATVFS_H,1,[Defines if your system have the sys/statvfs.h header file])] , )
+
+AC_CHECK_DECLS([O_CLOEXEC],,[AC_DEFINE([O_CLOEXEC],[0], [Defined to 0 if not provided])],
+[[
+#ifdef HAVE_FCNTL_H
+# include <fcntl.h>
+#endif
+]])
+
+AC_CHECK_DECLS([FD_CLOEXEC],,[AC_DEFINE([FD_CLOEXEC],[0], [Defined to 0 if not provided])],
+[[
+#ifdef HAVE_FCNTL_H
+# include <fcntl.h>
+#endif
+]])
+
+AC_CHECK_DECLS([SOCK_CLOEXEC],,[AC_DEFINE([SOCK_CLOEXEC],[0],[Defined to 0 if not provided])],
+[[
+#ifdef HAVE_SYS_SOCKET_H
+# include <sys/socket.h>
+#endif
+]])
+
+AC_CACHE_CHECK(for close on exec modifier for fopen(), ac_cv_feature_stream_cloexec_flag,
+   [if test $ac_cv_have_decl_O_CLOEXEC = yes ; then
+	if test $ac_cv_have_decl_SOCK_CLOEXEC = yes ; then
+	    ac_cv_feature_stream_cloexec_flag="e"
+	fi
+    fi])
+
+if test "x$ac_cv_feature_stream_cloexec_flag" = "xe" ; then
+   AC_DEFINE(HAVE_STREAM_CLOEXEC,[0],[Defined to 0 if not provided])
+fi
+
+AC_DEFINE_UNQUOTED([STREAM_CLOEXEC], "$ac_cv_feature_stream_cloexec_flag", [fopen() modifier for setting close on exec flag])
+
+AC_CHECK_FUNC(accept4, [AC_DEFINE(HAVE_ACCEPT4, 1, [Define to 1 if you have the 'accept4' function.])])
+
+S3_INC=
+S3_LIBS=
+S3_LDFLAGS=
+have_libs3=no
+
+if test x$support_s3 = xyes; then
+   AC_ARG_WITH(s3,
+      AC_HELP_STRING([--with-s3@<:@=DIR@:>@], [specify s3 library directory]),
+      [
+	  case "$with_s3" in
+	  no)
+	     :
+	     ;;
+	  yes|*)
+	     if test -f ${with_s3}/include/libs3.h; then
+		S3_INC="-I${with_s3}/include"
+		S3_LDFLAGS="-L${with_s3}/lib"
+		with_s3="${with_s3}/include"
+	     else
+		with_s3="/usr/include"
+	     fi
+
+	     AC_CHECK_HEADER(${with_s3}/libs3.h,
+		[
+		    AC_DEFINE(HAVE_LIBS3, 1, [Define to 1 if you have libs3])
+		    S3_LIBS="${S3_LDFLAGS} -ls3"
+		    have_libs3="yes"	
+		], [
+		    echo " "
+		    echo "libs3.h not found. s3 turned off ..."
+		    echo " "
+		]
+	     )
+	     ;;
+	  esac
+      ],[
+	 AC_CHECK_HEADER(libs3.h,
+	 [
+	    AC_CHECK_LIB(s3, S3_initialize,
+	    [
+	      S3_LIBS="-ls3"
+	      AC_DEFINE(HAVE_LIBS3,1,[Define to 1 if you have libs3])
+	      have_libs3=yes
+	   ])
+	 ])
+      ])
+fi
+
+AC_SUBST(S3_INC)
+AC_SUBST(S3_LIBS)
 
 AC_LANG_PUSH(C++)
 AC_CHECK_FUNCS(backtrace)
@@ -3227,7 +3322,6 @@ AC_ARG_WITH(systemd,
 
 	   PFILES="${PFILES} \
 		   platforms/systemd/Makefile \
-		   platforms/systemd/bacula.conf \
 		   platforms/systemd/bacula-dir.service \
 		   platforms/systemd/bacula-fd.service \
 		   platforms/systemd/bacula-sd.service"

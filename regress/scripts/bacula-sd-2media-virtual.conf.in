@@ -1,0 +1,403 @@
+#
+# Storage daemon for testing a Virtual Autochanger
+#  with 2 Media Types and two different Archive Directories
+#
+
+Storage {                             # definition of myself
+  Name = @hostname@-sd
+  SDPort = @sdport@                  # Director's port      
+  WorkingDirectory = "@working_dir@"
+  Pid Directory = "@piddir@"
+  Subsys Directory = "@subsysdir@"
+  Maximum Concurrent Jobs = 100
+}
+
+#
+# List Directors who are permitted to contact Storage daemon
+#
+Director {
+  Name = @hostname@-dir
+  Password = "ccV3lVTsQRsdIUGyab0N4sMDavui2hOBkmpBU0aQKOr9"
+}
+
+Autochanger {
+  Name = Virtual
+  Changer Device = /dev/null
+  Changer Command =""
+  Device = vDrive-0,  vDrive-1, vDrive-2
+  Device = vDrive-3, vDrive-4, vDrive-5, vDrive-6, vDrive-7, vDrive-8, vDrive-9, vDrive-10, vDrive-11, vDrive-12, vDrive-13, vDrive-14, vDrive-15, vDrive-16, vDrive-17, vDrive-18, vDrive-19
+}
+
+Device {
+  Name = vDrive-0
+  Device Type = File
+  Media Type = disk
+  Archive Device = @tmpdir@/disk
+  AutomaticMount = yes;
+  Autochanger = yes
+  Drive Index = 0
+  AlwaysOpen = yes;
+  RemovableMedia = yes;
+  Maximum Concurrent Jobs = 3
+  Volume Poll Interval = 15
+# Maximum File Size = 1000000
+}
+
+Device {
+  Name = vDrive-1
+  Device Type = File
+  Media Type = disk
+  Archive Device = @tmpdir@/disk
+  AutomaticMount = yes;
+  Autochanger = yes
+  Drive Index = 0
+  AlwaysOpen = yes;
+  RemovableMedia = yes;
+  Maximum Concurrent Jobs = 3
+  Volume Poll Interval = 15
+# Maximum File Size = 1000000
+}
+
+Device {
+  Name = vDrive-2
+  Device Type = File
+  Media Type = disk
+  Archive Device = @tmpdir@/disk
+  AutomaticMount = yes;
+  Autochanger = yes
+  Drive Index = 1
+  AlwaysOpen = yes;
+  RemovableMedia = yes;
+  Maximum Concurrent Jobs = 3
+  Volume Poll Interval = 15
+# Maximum File Size = 1000000
+}
+
+Device {
+  Name = vDrive-3
+  Device Type = File
+  Media Type = disk1              # Different Media Type
+  Archive Device = @tmpdir@/disk1 # Different directory
+  AutomaticMount = yes;
+  Autochanger = yes
+  Drive Index = 2
+  AlwaysOpen = yes;
+  RemovableMedia = yes;
+  Maximum Concurrent Jobs = 3
+  Volume Poll Interval = 15
+# Maximum File Size = 1000000
+}
+
+Device {
+  Name = vDrive-4
+  Device Type = File
+  Media Type = disk
+  Archive Device = @tmpdir@/disk
+  AutomaticMount = yes;
+  Autochanger = yes
+  Drive Index = 0
+  AlwaysOpen = yes;
+  RemovableMedia = yes;
+  Maximum Concurrent Jobs = 3
+  Volume Poll Interval = 15
+# Maximum File Size = 1000000
+}
+
+Device {
+  Name = vDrive-5
+  Device Type = File
+  Media Type = disk
+  Archive Device = @tmpdir@/disk
+  AutomaticMount = yes;
+  Autochanger = yes
+  Drive Index = 0
+  AlwaysOpen = yes;
+  RemovableMedia = yes;
+  Maximum Concurrent Jobs = 3
+  Volume Poll Interval = 15
+# Maximum File Size = 1000000
+}
+
+Device {
+  Name = vDrive-6
+  Device Type = File
+  Media Type = disk
+  Archive Device = @tmpdir@/disk
+  AutomaticMount = yes;
+  Autochanger = yes
+  Drive Index = 0
+  AlwaysOpen = yes;
+  RemovableMedia = yes;
+  Maximum Concurrent Jobs = 3
+  Volume Poll Interval = 15
+# Maximum File Size = 1000000
+}
+
+Device {
+  Name = vDrive-7
+  Device Type = File
+  Media Type = disk
+  Archive Device = @tmpdir@/disk
+  AutomaticMount = yes;
+  Autochanger = yes
+  Drive Index = 0
+  AlwaysOpen = yes;
+  RemovableMedia = yes;
+  Maximum Concurrent Jobs = 3
+  Volume Poll Interval = 15
+# Maximum File Size = 1000000
+}
+Device {
+  Name = vDrive-8
+  Device Type = File
+  Media Type = disk
+  Archive Device = @tmpdir@/disk
+  AutomaticMount = yes;
+  Autochanger = yes
+  Drive Index = 0
+  AlwaysOpen = yes;
+  RemovableMedia = yes;
+  Maximum Concurrent Jobs = 3
+  Volume Poll Interval = 15
+# Maximum File Size = 1000000
+}
+
+Device {
+  Name = vDrive-9
+  Device Type = File
+  Media Type = disk
+  Archive Device = @tmpdir@/disk
+  AutomaticMount = yes;
+  Autochanger = yes
+  Drive Index = 0
+  AlwaysOpen = yes;
+  RemovableMedia = yes;
+  Maximum Concurrent Jobs = 3
+  Volume Poll Interval = 15
+# Maximum File Size = 1000000
+}
+
+Device {
+  Name = vDrive-10
+  Device Type = File
+  Media Type = disk
+  Archive Device = @tmpdir@/disk
+  AutomaticMount = yes;
+  Autochanger = yes
+  Drive Index = 0
+  AlwaysOpen = yes;
+  RemovableMedia = yes;
+  Maximum Concurrent Jobs = 3
+  Volume Poll Interval = 15
+# Maximum File Size = 1000000
+}
+
+Device {
+  Name = vDrive-11
+  Device Type = File
+  Media Type = disk
+  Archive Device = @tmpdir@/disk
+  AutomaticMount = yes;
+  Autochanger = yes
+  Drive Index = 0
+  AlwaysOpen = yes;
+  RemovableMedia = yes;
+  Maximum Concurrent Jobs = 3
+  Volume Poll Interval = 15
+# Maximum File Size = 1000000
+}
+
+Device {
+  Name = vDrive-12
+  Device Type = File
+  Media Type = disk
+  Archive Device = @tmpdir@/disk
+  AutomaticMount = yes;
+  Autochanger = yes
+  Drive Index = 0
+  AlwaysOpen = yes;
+  RemovableMedia = yes;
+  Maximum Concurrent Jobs = 3
+  Volume Poll Interval = 15
+# Maximum File Size = 1000000
+}
+
+Device {
+  Name = vDrive-13
+  Device Type = File
+  Media Type = disk
+  Archive Device = @tmpdir@/disk
+  AutomaticMount = yes;
+  Autochanger = yes
+  Drive Index = 0
+  AlwaysOpen = yes;
+  RemovableMedia = yes;
+  Maximum Concurrent Jobs = 3
+  Volume Poll Interval = 15
+# Maximum File Size = 1000000
+}
+
+Device {
+  Name = vDrive-14
+  Device Type = File
+  Media Type = disk
+  Archive Device = @tmpdir@/disk
+  AutomaticMount = yes;
+  Autochanger = yes
+  Drive Index = 0
+  AlwaysOpen = yes;
+  RemovableMedia = yes;
+  Maximum Concurrent Jobs = 3
+  Volume Poll Interval = 15
+# Maximum File Size = 1000000
+}
+
+Device {
+  Name = vDrive-15
+  Device Type = File
+  Media Type = disk
+  Archive Device = @tmpdir@/disk
+  AutomaticMount = yes;
+  Autochanger = yes
+  Drive Index = 0
+  AlwaysOpen = yes;
+  RemovableMedia = yes;
+  Maximum Concurrent Jobs = 3
+  Volume Poll Interval = 15
+# Maximum File Size = 1000000
+}
+
+Device {
+  Name = vDrive-16
+  Device Type = File
+  Media Type = disk
+  Archive Device = @tmpdir@/disk
+  AutomaticMount = yes;
+  Autochanger = yes
+  Drive Index = 0
+  AlwaysOpen = yes;
+  RemovableMedia = yes;
+  Maximum Concurrent Jobs = 3
+  Volume Poll Interval = 15
+# Maximum File Size = 1000000
+}
+
+Device {
+  Name = vDrive-17
+  Device Type = File
+  Media Type = disk
+  Archive Device = @tmpdir@/disk
+  AutomaticMount = yes;
+  Autochanger = yes
+  Drive Index = 0
+  AlwaysOpen = yes;
+  RemovableMedia = yes;
+  Maximum Concurrent Jobs = 3
+  Volume Poll Interval = 15
+# Maximum File Size = 1000000
+}
+
+Device {
+  Name = vDrive-18
+  Device Type = File
+  Media Type = disk
+  Archive Device = @tmpdir@/disk
+  AutomaticMount = yes;
+  Autochanger = yes
+  Drive Index = 0
+  AlwaysOpen = yes;
+  RemovableMedia = yes;
+  Maximum Concurrent Jobs = 3
+  Volume Poll Interval = 15
+# Maximum File Size = 1000000
+}
+
+Device {
+  Name = vDrive-19
+  Device Type = File
+  Media Type = disk
+  Archive Device = @tmpdir@/disk
+  AutomaticMount = yes;
+  Autochanger = yes
+  Drive Index = 0
+  AlwaysOpen = yes;
+  RemovableMedia = yes;
+  Maximum Concurrent Jobs = 3
+  Volume Poll Interval = 15
+# Maximum File Size = 1000000
+}
+
+
+Autochanger {
+  Name = Virtual2
+  Changer Device = /dev/null
+  Changer Command =""
+  Device = vDrive2-1, vDrive2-2, vDrive2-3
+}
+
+Device {
+  Name = vDrive2-1
+  Device Type = File
+  Media Type = disk2
+  Archive Device = @tmpdir@/disk
+  AutomaticMount = yes;
+  Autochanger = yes
+  Drive Index = 0
+  AlwaysOpen = yes;
+  RemovableMedia = yes;
+  Maximum Concurrent Jobs = 3
+  Volume Poll Interval = 15
+# Maximum File Size = 1000000
+}
+
+Device {
+  Name = vDrive2-2
+  Device Type = File
+  Media Type = disk2
+  Archive Device = @tmpdir@/disk
+  AutomaticMount = yes;
+  Autochanger = yes
+  Drive Index = 1
+  AlwaysOpen = yes;
+  RemovableMedia = yes;
+  Maximum Concurrent Jobs = 3
+  Volume Poll Interval = 15
+# Maximum File Size = 1000000
+}
+
+Device {
+  Name = vDrive2-3
+  Device Type = File
+  Media Type = disk2
+  Archive Device = @tmpdir@/disk
+  AutomaticMount = yes;
+  Autochanger = yes
+  Drive Index = 2
+  AlwaysOpen = yes;
+  RemovableMedia = yes;
+  Maximum Concurrent Jobs = 3
+  Volume Poll Interval = 15
+# Maximum File Size = 1000000
+}
+
+
+# 
+# Send all messages to the Director, 
+# mount messages also are sent to the email address
+#
+Messages {
+  Name = Standard
+  director = @hostname@-dir = all, !terminate
+}
+
+Cloud {
+  Name = DummyCloud
+  Driver = "File"
+  HostName = "@tmpdir@/cloud"
+  BucketName = "DummyBucket"
+  AccessKey = "DummyAccessKey"
+  SecretKey = "DummySecretKey"
+  Protocol = HTTPS
+  UriStyle = VirtualHost
+}
+

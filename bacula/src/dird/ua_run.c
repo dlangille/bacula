@@ -1,8 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2015 Kern Sibbald
-   Copyright (C) 2001-2014 Free Software Foundation Europe e.V.
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -12,17 +11,15 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
- *
  *   Bacula Director -- Run Command
  *
  *     Kern Sibbald, December MMI
- *
  */
 
 #include "bacula.h"
@@ -60,12 +57,14 @@ public:
    bool restart;
    bool done;
    bool alljobid;
+   bool fdcalled;
    int spool_data;
    bool spool_data_set;
    int accurate;
    bool accurate_set;
    int ignoreduplicatecheck;
    bool ignoreduplicatecheck_set;
+   alist *plugin_config;                           /* List of all plugin_item */
    /* Methods */
    run_ctx() { memset(this, 0, sizeof(run_ctx));
                store = new USTORE; };
@@ -116,11 +115,6 @@ int run_cmd(UAContext *ua, const char *cmd)
       goto bail_out;
    }
 
-   if (find_arg(ua, NT_("fdcalled")) > 0) {
-      jcr->file_bsock = dup_bsock(ua->UA_sock);
-      ua->quit = true;
-   }
-
    for ( ;; ) {
       /*
        * Create JCR to run job.  NOTE!!! after this point, free_jcr()
@@ -131,9 +125,15 @@ int run_cmd(UAContext *ua, const char *cmd)
          set_jcr_defaults(jcr, rc.job);
          jcr->unlink_bsr = ua->jcr->unlink_bsr;    /* copy unlink flag from caller */
          ua->jcr->unlink_bsr = false;
+         if (find_arg(ua, NT_("fdcalled")) > 0) {
+            rc.fdcalled = true;
+         }
       }
       /* Transfer JobIds to new restore Job */
       if (ua->jcr->JobIds) {
+         if (jcr->JobIds) {
+            free_pool_memory(jcr->JobIds);
+         }
          jcr->JobIds = ua->jcr->JobIds;
          ua->jcr->JobIds = NULL;
       }
@@ -143,6 +143,11 @@ int run_cmd(UAContext *ua, const char *cmd)
          ua->jcr->component_fname = NULL;
          jcr->component_fd = ua->jcr->component_fd;
          ua->jcr->component_fd = NULL;
+      }
+      /* Transfer Plugin Restore Configuration */
+      if (ua->jcr->plugin_config) {
+         jcr->plugin_config = ua->jcr->plugin_config;
+         ua->jcr->plugin_config = NULL;
       }
 
       if (!set_run_context_in_jcr(ua, jcr, rc)) {
@@ -222,7 +227,48 @@ bail_out:
 static JobId_t start_job(UAContext *ua, JCR *jcr, run_ctx &rc)
 {
    JobId_t JobId;
+   char ed1[50];
 
+   /* Do a final check for the client, the job can change in the previous menu */
+   if (jcr->client && jcr->job) {
+      if (!acl_access_client_ok(ua, jcr->client->name(), jcr->job->JobType)) {
+         ua->error_msg(_("Job failed. Client \"%s\" not authorized on this console\n"), jcr->client->name());
+         free_jcr(jcr);
+         return 0;
+      }
+   }
+
+   /* Do a final check for the where/regexwhere, the job can change in the previous menu */
+   if (jcr->getJobType() == JT_RESTORE) {
+      char *p = jcr->RegexWhere ? jcr->RegexWhere : jcr->job->RegexWhere;
+      if (p) {
+         if (!acl_access_ok(ua, Where_ACL, p)) {
+            ua->error_msg(_("\"RegexWhere\" specification not authorized.\n"));
+            free_jcr(jcr);
+            return 0;
+         }
+
+      } else {
+         p = jcr->where ? jcr->where : jcr->job->RestoreWhere;
+         if (p) {
+            if (!acl_access_ok(ua, Where_ACL, p)) {
+               ua->error_msg(_("\"where\" specification not authorized.\n"));
+               free_jcr(jcr);
+               return 0;
+            }
+         }
+      }
+   }
+
+   /* If we use the fdcalled feature, we keep use the UA socket
+    * as a FileDaemon socket. We do not use dup_bsock() because
+    * it doesn't work, when the UA will do a free_bsock() all
+    * socket childs will be closed as well.
+    */
+   if (rc.fdcalled) {
+      jcr->file_bsock = ua->UA_sock;
+      jcr->file_bsock->set_jcr(jcr);
+   }
    if (rc.jr.JobStatus == JS_Incomplete) {
       Dmsg1(100, "Ressuming JobId=%d\n", rc.jr.JobId);
       JobId = resume_job(jcr, &rc.jr);
@@ -234,10 +280,15 @@ static JobId_t start_job(UAContext *ua, JCR *jcr, run_ctx &rc)
          JobId, jcr->pool->name(), jcr->JobPriority);
    free_jcr(jcr);                  /* release jcr */
    if (JobId == 0) {
-      ua->error_msg(_("Job failed.\n"));
+      ua->error_msg(_("Job %s failed.\n"), edit_int64(rc.jr.JobId, ed1));
+
    } else {
-      char ed1[50];
       ua->send_msg(_("Job queued. JobId=%s\n"), edit_int64(JobId, ed1));
+   }
+   if (rc.fdcalled) {
+      ua->signal(BNET_FDCALLED); /* After this point, this is a new connection */
+      ua->UA_sock = new_bsock();
+      ua->quit = true;
    }
    return JobId;
 }
@@ -341,24 +392,19 @@ static bool get_next_pool(UAContext *ua, run_ctx &rc)
  */
 static bool get_client(UAContext *ua, run_ctx &rc)
 {
+   bool authorized=false;
    if (rc.client_name) {
       rc.client = GetClientResWithName(rc.client_name);
       if (!rc.client) {
          if (*rc.client_name != 0) {
             ua->warning_msg(_("Client \"%s\" not found.\n"), rc.client_name);
          }
-         rc.client = select_client_resource(ua);
+         rc.client = select_client_resource(ua, rc.job->JobType);
       }
    } else if (!rc.client) {
       rc.client = rc.job->client;           /* use default */
    }
-   if (!rc.client) {
-      return false;
-   } else if (!acl_access_ok(ua, Client_ACL, rc.client->name())) {
-      ua->error_msg(_("No authorization. Client \"%s\".\n"),
-               rc.client->name());
-      return false;
-   }
+
    Dmsg1(800, "Using client=%s\n", rc.client->name());
 
    if (rc.restore_client_name) {
@@ -367,14 +413,19 @@ static bool get_client(UAContext *ua, run_ctx &rc)
          if (*rc.restore_client_name != 0) {
             ua->warning_msg(_("Restore Client \"%s\" not found.\n"), rc.restore_client_name);
          }
-         rc.client = select_client_resource(ua);
+         rc.client = select_client_resource(ua, rc.job->JobType);
       }
    } else if (!rc.client) {
       rc.client = rc.job->client;           /* use default */
    }
+
    if (!rc.client) {
       return false;
-   } else if (!acl_access_ok(ua, Client_ACL, rc.client->name())) {
+
+   } else if (acl_access_client_ok(ua, rc.client->name(), rc.job->JobType)) {
+      authorized = true;
+   }
+   if (!authorized) {
       ua->error_msg(_("No authorization. Client \"%s\".\n"),
                rc.client->name());
       return false;
@@ -419,7 +470,7 @@ static bool get_storage(UAContext *ua, run_ctx &rc)
 {
    if (rc.store_name) {
       rc.store->store = GetStoreResWithName(rc.store_name);
-      pm_strcpy(rc.store->store_source, _("command line"));
+      pm_strcpy(rc.store->store_source, _("Command input"));
       if (!rc.store->store) {
          if (*rc.store_name != 0) {
             ua->warning_msg(_("Storage \"%s\" not found.\n"), rc.store_name);
@@ -476,7 +527,14 @@ static bool get_jobid_list(UAContext *ua, sellist &sl, run_ctx &rc)
          return false;
       }
    }
-   jr.limit = 100;  /* max 100 records */
+
+   if ((i=find_arg_with_value(ua, "limit")) >= 0) {
+      jr.limit = str_to_int64(ua->argv[i]);
+
+   } else {
+      jr.limit = 100;  /* max 100 records */
+   }
+
    if (rc.job_name) {
       bstrncpy(jr.Name, rc.job_name, sizeof(jr.Name));
    } else {
@@ -646,6 +704,362 @@ int restart_cmd(UAContext *ua, const char *cmd)
    return 0;                       /* do not run */
 }
 
+
+/*
+ * Plugin restore option part
+ */
+
+/* Free a plugin_config_item  */
+void free_plugin_config_item(plugin_config_item *elt)
+{
+   free(elt->plugin_name);
+   free_pool_memory(elt->content);
+   free(elt);
+}
+
+/* Free a list of plugins (do not free the list itself) */
+void free_plugin_config_items(alist *lst)
+{
+   plugin_config_item *elt;
+
+   if (!lst) {
+      return;
+   }
+
+   foreach_alist(elt, lst) {
+      free_plugin_config_item(elt);
+   }
+}
+
+/* Structure used in the sql query to get configuration restore objects */
+struct plugin_config_handler_t
+{
+   UAContext *ua;               /* UAContext for user input */
+   POOLMEM *tmp;                /* Used to store the config object */
+   alist *plugins;              /* Configuration plugin list */
+   alist *content;              /* Temp file used by each plugin */
+};
+
+/* DB handler to get all configuration restore objects for a given
+ * set of jobids
+ */
+static int plugin_config_handler(void *ctx, int num_fields, char **row)
+{
+   struct plugin_config_handler_t *pch = (struct plugin_config_handler_t *)ctx;
+   UAContext *ua = pch->ua;
+   JCR *jcr = ua->jcr;
+   int32_t len;
+
+   /* object */
+   db_unescape_object(jcr, ua->db,
+                      row[8],                /* Object  */
+                      str_to_uint64(row[1]), /* Object length */
+                      &pch->tmp, &len);
+
+   /* Is compressed ? */
+   if (str_to_int64(row[5]) > 0) {
+      int full_len = str_to_int64(row[2]);
+      int out_len = full_len + 100; /* full length */
+      char *obj = (char *)malloc(out_len);
+      Zinflate(pch->tmp, len, obj, out_len); /* out_len is updated */
+      if (out_len != full_len) {
+         ua->error_msg(_("Decompression failed. Len wanted=%d got=%d. Object=%s\n"),
+                       full_len, out_len, row[9]);
+      }
+      obj[out_len] = 0;
+      pch->content->append(obj);
+
+   } else {
+      pch->tmp[len]=0;
+      pch->content->append(bstrdup(pch->tmp));
+   }
+
+   pch->plugins->append(bstrdup(row[9]));
+   return 0;
+}
+
+/* Save a Plugin Config object (ConfigFile) inside the JCR
+ *  using a list of plugin_config_item
+ *
+ * We allow only one Plugin Config object per Plugin
+ */
+static void plugin_config_save_jcr(UAContext *ua, JCR *jcr,
+                                   char *pname, ConfigFile *ini)
+{
+   plugin_config_item *elt;
+   if (!jcr->plugin_config) {
+      jcr->plugin_config = New(alist(5, not_owned_by_alist));
+   }
+
+   /* Store only one Plugin Config object per plugin command */
+   for (int i = 0; i < jcr->plugin_config->size() ; i++) {
+      elt = (plugin_config_item *) jcr->plugin_config->get(i);
+      if (strcmp(elt->plugin_name, pname) == 0) {
+         jcr->plugin_config->remove(i);
+         free_plugin_config_item(elt);
+         break;
+      }
+   }
+
+   elt = (plugin_config_item *) malloc (sizeof(plugin_config_item));
+   elt->plugin_name = bstrdup(pname);
+   elt->content = get_pool_memory(PM_FNAME);
+   ini->dump_results(&elt->content);
+   jcr->plugin_config->append(elt);
+}
+
+/* TODO: Allow to have sub-menus Advanced.restore_mode can be
+ *       in a Advanced panel (sub menu)
+ */
+
+/* Take the ConfigIni struture and display user menu for a given plugin */
+static int plugin_display_options(UAContext *ua, JCR *jcr, ConfigFile *ini)
+{
+   int i, nb;
+   int jcr_pos = -1;
+   POOL_MEM prompt, tmp;
+   bool found;
+   INI_ITEM_HANDLER *h;
+
+   /* TODO: See how to work in API mode
+      if (ua->api) {
+         ua->signal(BNET_RUN_CMD);
+      }
+   */
+
+   /* Take a look in the plugin_config list to see if we have something to
+    * initialize
+    */
+   if (jcr->plugin_config) {
+      plugin_config_item *item=NULL;
+
+      for (jcr_pos = 0; jcr_pos < jcr->plugin_config->size() ; jcr_pos++) {
+         item = (plugin_config_item *)jcr->plugin_config->get(jcr_pos);
+
+         if (strcmp(item->plugin_name, ini->plugin_name) == 0) /* bpipe:xxx:yyyy */
+         {
+            if (!ini->dump_string(item->content, strlen(item->content)) ||
+                !ini->parse(ini->out_fname))
+            {
+               ua->error_msg(_("Unable to use current plugin configuration, "
+                               "discarding it."));
+            }
+            /* When we are here, we can type yes (it will add it back), or no
+             * to not use this plugin configuration. So, don't keep it in the
+             * list.
+             */
+            jcr->plugin_config->remove(jcr_pos);
+            free_plugin_config_item(item);
+            break;
+         }
+      }
+   }
+
+configure_again:
+   ua->send_msg(_("Plugin Restore Options\n"));
+
+   for (nb=0; ini->items[nb].name; nb++) {
+
+      if (ini->items[nb].found) {
+         /* When calling the handler, It will convert the value
+          * to a string representation in ini->edit
+          */
+         ini->items[nb].handler(NULL, ini, &ini->items[nb]);
+      } else {
+         if (ini->items[nb].required) {
+            pm_strcpy(ini->edit, _("*None, but required*"));
+
+         } else {
+            pm_strcpy(ini->edit, _("*None*"));
+         }
+      }
+
+      Mmsg(tmp, "%s:", ini->items[nb].name);
+
+      Mmsg(prompt, "%-20s %-20s ",
+           tmp.c_str(), ini->edit);
+
+      if (ini->items[nb].default_value) {
+         Mmsg(tmp, "(%s)", ini->items[nb].default_value);
+         pm_strcat(prompt, tmp.c_str());
+      }
+
+      ua->send_msg("%s\n", prompt.c_str());
+   }
+
+   if (!get_cmd(ua, _("Use above plugin configuration? (yes/mod/no): "))) {
+      ini->clear_items();
+      return 0;
+   }
+
+   /* '', 'y', 'ye', and 'yes' are valid */
+   if (strncasecmp(ua->cmd, _("yes"), strlen(ua->cmd)) == 0) {
+      return 1;
+   }
+
+   if (strncasecmp(ua->cmd, _("no"), strlen(ua->cmd)) == 0) {
+      ini->clear_items();
+      return 0;
+   }
+
+   /* When using "mod", we display the list of parameters with their
+    * comments, and we let the user choose one entry to modify
+    */
+   if (strncasecmp(ua->cmd, _("mod"), strlen(ua->cmd)) == 0) {
+      start_prompt(ua, _("You have the following choices:\n"));
+
+      for (nb=0; ini->items[nb].name; nb++) {
+
+         if (ini->items[nb].comment) {
+            Mmsg(tmp, " (%s)", ini->items[nb].comment);
+         } else {
+            pm_strcpy(tmp, "");
+         }
+
+         Mmsg(prompt, "%s%s ",
+              ini->items[nb].name, tmp.c_str());
+
+         add_prompt(ua, prompt.c_str());
+      }
+
+      i = do_prompt(ua, NULL, _("Select parameter to modify"), NULL, 0);
+
+      if (i < 0) {
+         ini->clear_items();
+         return 0;
+      }
+
+      Mmsg(prompt, _("Please enter a value for %s: "), ini->items[i].name);
+
+      /* Now use the handler to know how to ask the value to the user.
+       * For example, boolean will use get_yes_no(), pint32 will use get_pint()
+       */
+      h = ini->items[i].handler;
+      if (h == ini_store_int32 ||
+          h == ini_store_pint32) {
+         found = ini->items[i].found = get_pint(ua, prompt.c_str());
+         if (found) {
+            ini->items[i].val.int32val = ua->pint32_val;
+         }
+
+      } else if (h == ini_store_bool) {
+         found = ini->items[i].found = get_yesno(ua, prompt.c_str());
+         if (found) {
+            ini->items[i].val.boolval = ua->pint32_val;
+         }
+
+      } else if (h == ini_store_name) {
+         found = ini->items[i].found = get_cmd(ua, prompt.c_str());
+         if (found) {
+            strncpy(ini->items[i].val.nameval, ua->cmd, MAX_NAME_LENGTH -1);
+            ini->items[i].val.nameval[MAX_NAME_LENGTH - 1] = 0;
+         }
+
+      } else if (h == ini_store_str) {
+         found = ini->items[i].found = get_cmd(ua, prompt.c_str());
+         if (found) {
+            ini->items[i].val.strval = bstrdup(ua->cmd);
+         }
+
+      } else if (h == ini_store_int64 ||
+                 h == ini_store_pint64) {
+         found = ini->items[i].found = get_pint(ua, prompt.c_str());
+         if (found) {
+            ini->items[i].val.int64val = ua->int64_val;
+         }
+      }
+      goto configure_again;
+   }
+
+   return 1;                    /* never reached */
+}
+
+/* Display a menu with all plugins */
+static void plugin_config(UAContext *ua, JCR *jcr, run_ctx &rc)
+{
+   int i, nb;
+   char *elt, *tmp;
+   ConfigFile *ini = NULL;
+   POOLMEM *query=NULL;
+   struct plugin_config_handler_t pch;
+
+   /* No jobids for this restore, probably wrong */
+   if (!jcr->JobIds || !jcr->JobIds[0]) {
+      return;
+   }
+
+   if (!open_client_db(ua)) {
+      return;
+   }
+
+   pch.ua = ua;
+   query = get_pool_memory(PM_FNAME);
+   pch.tmp = get_pool_memory(PM_MESSAGE);
+   pch.plugins = New(alist(10, owned_by_alist));
+   pch.content = New(alist(10, owned_by_alist));
+
+   /* Get all RestoreObject PLUGIN_CONFIG for the given Job */
+   Mmsg(query, get_restore_objects, jcr->JobIds, FT_PLUGIN_CONFIG);
+   db_sql_query(ua->db, query, plugin_config_handler, &pch);
+
+   if (!pch.plugins || pch.plugins->size() == 0) {
+      ua->info_msg(_("No plugin to configure\n"));
+      goto bail_out;
+   }
+
+   /* TODO: Let see if we want to configure plugins that were given in command
+    * line.
+    */
+
+   start_prompt(ua, _("Plugins to configure:\n"));
+
+   nb=0;
+   foreach_alist(elt, pch.plugins) {
+      nb++;
+      pm_strcpy(query, elt);
+      add_prompt(ua, query);
+   }
+
+   i = do_prompt(ua, "", _("Select plugin to configure"), NULL, 0);
+
+   if (i < 0) {
+      goto bail_out;
+   }
+
+
+   elt = (char *)pch.plugins->get(i);
+   ini = new ConfigFile();
+   /* Try to read the plugin configuration, if error, loop to configure
+    * something else, or bail_out
+    */
+   tmp = (char *)pch.content->get(i);
+   if (!ini->dump_string(tmp, strlen(tmp)) || /* Send the string to a file */
+       !ini->unserialize(ini->out_fname)) {   /* Read the file to initialize the ConfigFile */
+
+      ua->error_msg(_("Can't configure %32s\n"), elt);
+      goto bail_out;
+   }
+
+   ini->set_plugin_name(elt);
+
+   if (plugin_display_options(ua, jcr, ini)) {
+      ini->dump_results(&query);
+      Dmsg1(50, "plugin: %s\n", query);
+
+      /* Save the plugin somewhere in the JCR */
+      plugin_config_save_jcr(ua, jcr, elt, ini);
+   }
+
+bail_out:
+   free_pool_memory(pch.tmp);
+   free_pool_memory(query);
+   if (ini) {
+      delete ini;
+   }
+   delete pch.plugins;
+   delete pch.content;
+}
+
 int modify_job_parameters(UAContext *ua, JCR *jcr, run_ctx &rc)
 {
    int i, opt;
@@ -724,26 +1138,35 @@ int modify_job_parameters(UAContext *ua, JCR *jcr, run_ctx &rc)
          break;
       case 4:
          /* Client */
-         rc.client = select_client_resource(ua);
+      {
+         int32_t jt = rc.job ? rc.job->JobType : JT_SYSTEM;
+         rc.client = select_client_resource(ua, jt);
          if (rc.client) {
             jcr->client = rc.client;
             goto try_again;
          }
+      }
          break;
       case 5:
          /* When */
-         if (!get_cmd(ua, _("Please enter desired start time as YYYY-MM-DD HH:MM:SS (return for now): "))) {
+         if (!get_cmd(ua, _("Please enter start time as a duration or YYYY-MM-DD HH:MM:SS or return for now: "))) {
             break;
          }
          if (ua->cmd[0] == 0) {
             jcr->sched_time = time(NULL);
          } else {
+            utime_t duration;
             jcr->sched_time = str_to_utime(ua->cmd);
             if (jcr->sched_time == 0) {
-               ua->send_msg(_("Invalid time, using current time.\n"));
-               jcr->sched_time = time(NULL);
+               if (duration_to_utime(ua->cmd, &duration)) {
+                  jcr->sched_time = time(NULL) + duration;
+               } else {
+                  ua->send_msg(_("Invalid time, using current time.\n"));
+                  jcr->sched_time = time(NULL);
+               }
             }
          }
+
          goto try_again;
       case 6:
          /* Priority */
@@ -781,7 +1204,7 @@ int modify_job_parameters(UAContext *ua, JCR *jcr, run_ctx &rc)
          }
          if (ua->cmd[0] != 0) {
             jcr->RestoreBootstrap = bstrdup(ua->cmd);
-            fd = fopen(jcr->RestoreBootstrap, "rb");
+            fd = bfopen(jcr->RestoreBootstrap, "rb");
             if (!fd) {
                berrno be;
                ua->send_msg(_("Warning cannot open %s: ERR=%s\n"),
@@ -855,16 +1278,23 @@ int modify_job_parameters(UAContext *ua, JCR *jcr, run_ctx &rc)
          }
          goto try_again;
       case 12:
-         /* Plugin Options */
-         //generate_plugin_event(jcr, bEventJobConfig, &rc);
-         if (!get_cmd(ua, _("Please Plugin Options string: "))) {
-            break;
+
+         if (jcr->getJobType() == JT_RESTORE) {
+            plugin_config(ua, jcr, rc);
+
+         } else {
+            //generate_plugin_event(jcr, bEventJobConfig, &rc);
+
+            /* Plugin Options */
+            if (!get_cmd(ua, _("Please Plugin Options string: "))) {
+               break;
+            }
+            if (jcr->plugin_options) {
+               free(jcr->plugin_options);
+               jcr->plugin_options = NULL;
+            }
+            jcr->plugin_options = bstrdup(ua->cmd);
          }
-         if (jcr->plugin_options) {
-            free(jcr->plugin_options);
-            jcr->plugin_options = NULL;
-         }
-         jcr->plugin_options = bstrdup(ua->cmd);
          goto try_again;
       case -1:                        /* error or cancel */
          goto bail_out;
@@ -879,6 +1309,30 @@ bail_out:
    return -1;
 try_again:
    return 0;
+}
+
+
+/* Not a good idea to start a job with the Scratch pool. It creates all kind
+ * of recycling issues while the job is running. See Mantis #303 
+ */
+bool check_pool(int32_t JobType, int32_t JobLevel, POOL *pool, POOL *next_pool,
+                const char **name)
+{
+   if (JobType == JT_BACKUP) {
+      if (pool && strcmp(pool->name(), NT_("Scratch")) == 0) {
+         *name = NT_("Pool");
+         return false;
+      }
+   }
+   /* The NextPool should also not be a Scratch pool */
+   if (JobType == JT_MIGRATE || JobType == JT_COPY ||
+       (JobType == JT_BACKUP && JobLevel == L_VIRTUAL_FULL)) {
+      if (next_pool && strcmp(next_pool->name(), NT_("Scratch")) == 0) {
+         *name = NT_("NextPool");
+         return false;
+      }
+   }
+   return true;
 }
 
 /*
@@ -950,10 +1404,15 @@ static bool set_run_context_in_jcr(UAContext *ua, JCR *jcr, run_ctx &rc)
    }
 
    if (rc.when) {
+      utime_t duration;
       jcr->sched_time = str_to_utime(rc.when);
       if (jcr->sched_time == 0) {
-         ua->send_msg(_("Invalid time, using current time.\n"));
-         jcr->sched_time = time(NULL);
+         if (duration_to_utime(rc.when, &duration)) {
+            jcr->sched_time = time(NULL) + duration;
+         } else {
+            ua->send_msg(_("Invalid time, using current time.\n"));
+            jcr->sched_time = time(NULL);
+         }
       }
       rc.when = NULL;
    }
@@ -972,6 +1431,15 @@ static bool set_run_context_in_jcr(UAContext *ua, JCR *jcr, run_ctx &rc)
       }
       jcr->plugin_options = bstrdup(rc.plugin_options);
       rc.plugin_options = NULL;
+   }
+
+   if (rc.plugin_config) {
+      if (jcr->plugin_config) {
+         free_plugin_config_items(jcr->plugin_config);
+         delete jcr->plugin_config;
+      }
+      jcr->plugin_config = rc.plugin_config;
+      rc.plugin_config = NULL;
    }
 
    if (rc.replace) {
@@ -1028,7 +1496,7 @@ static bool set_run_context_in_jcr(UAContext *ua, JCR *jcr, run_ctx &rc)
    }
    rc.replace = ReplaceOptions[0].name;
    for (i=0; ReplaceOptions[i].name; i++) {
-      if ((int)ReplaceOptions[i].token == jcr->replace) {
+      if (ReplaceOptions[i].token == (int)jcr->replace) {
          rc.replace = ReplaceOptions[i].name;
       }
    }
@@ -1069,6 +1537,15 @@ static bool set_run_context_in_jcr(UAContext *ua, JCR *jcr, run_ctx &rc)
     */
    if (rc.ignoreduplicatecheck_set) {
       jcr->IgnoreDuplicateJobChecking = rc.ignoreduplicatecheck;
+   }
+
+   /* Do not start a Backup job from the Scratch Pool */
+   const char *name;
+   if (!check_pool(jcr->getJobType(), jcr->getJobLevel(),
+                   rc.pool, rc.next_pool, &name)) { 
+      ua->send_msg(_("%s \"Scratch\" not valid in Job \"%s\".\n"),
+                   name, rc.job->name());
+      return false;
    }
 
    return true;
@@ -1494,8 +1971,8 @@ static bool display_job_parameters(UAContext *ua, JCR *jcr, JOB *job, const char
                  bstrutime(dt, sizeof(dt), jcr->sched_time),
                  jcr->catalog->name(),
                  jcr->JobPriority,
-                 NPRTB(jcr->plugin_options));
-
+                 (jcr->plugin_config && jcr->plugin_config->size() > 0) ?
+                            _("User specified") : _("*None*"));
             } else {
                ua->send_msg(_("Run Restore job\n"
                         "JobName:         %s\n"
@@ -1521,7 +1998,8 @@ static bool display_job_parameters(UAContext *ua, JCR *jcr, JOB *job, const char
                  bstrutime(dt, sizeof(dt), jcr->sched_time),
                  jcr->catalog->name(),
                  jcr->JobPriority,
-                 NPRTB(jcr->plugin_options));
+                 (jcr->plugin_config && jcr->plugin_config->size() > 0) ?
+                            _("User specified") : _("*None*"));
             }
          } else {
             if (ua->api) {
@@ -1551,8 +2029,8 @@ static bool display_job_parameters(UAContext *ua, JCR *jcr, JOB *job, const char
                  bstrutime(dt, sizeof(dt), jcr->sched_time),
                  jcr->catalog->name(),
                  jcr->JobPriority,
-                 NPRTB(jcr->plugin_options));
-
+                 (jcr->plugin_config && jcr->plugin_config->size() > 0) ?
+                            _("User specified") : _("*None*"));
             } else {
                ua->send_msg(_("Run Restore job\n"
                         "JobName:         %s\n"
@@ -1578,7 +2056,8 @@ static bool display_job_parameters(UAContext *ua, JCR *jcr, JOB *job, const char
                  bstrutime(dt, sizeof(dt), jcr->sched_time),
                  jcr->catalog->name(),
                  jcr->JobPriority,
-                 NPRTB(jcr->plugin_options));
+                 (jcr->plugin_config && jcr->plugin_config->size() > 0) ?
+                            _("User specified") : _("*None*"));
             }
          }
 
@@ -1615,7 +2094,8 @@ static bool display_job_parameters(UAContext *ua, JCR *jcr, JOB *job, const char
               bstrutime(dt, sizeof(dt), jcr->sched_time),
               jcr->catalog->name(),
               jcr->JobPriority,
-              NPRTB(jcr->plugin_options));
+              (jcr->plugin_config && jcr->plugin_config->size() > 0) ?
+                            _("User specified") : _("*None*"));
        }
       break;
    case JT_COPY:
@@ -1736,6 +2216,8 @@ static bool scan_run_command_line_arguments(UAContext *ua, run_ctx &rc)
       "job",                          /* 30 */
       "mediatype",                    /* 31 */
       "nextpool",                     /* 32 override next pool name */
+      "fdcalled",                     /* 33 */
+
       NULL};
 
 #define YES_POS 14
@@ -1755,7 +2237,7 @@ static bool scan_run_command_line_arguments(UAContext *ua, run_ctx &rc)
    rc.spool_data_set = false;
    rc.ignoreduplicatecheck = false;
    rc.comment = NULL;
-   rc.plugin_options = NULL;
+   free_plugin_config_items(rc.plugin_config);
 
    for (i=1; i<ua->argc; i++) {
       Dmsg2(800, "Doing arg %d = %s\n", i, ua->argk[i]);
@@ -2014,6 +2496,9 @@ static bool scan_run_command_line_arguments(UAContext *ua, run_ctx &rc)
                   return false;
                }
                rc.next_pool_name = ua->argv[i];
+               kw_ok = true;
+               break;
+            case 33:            /* fdcalled */
                kw_ok = true;
                break;
             default:

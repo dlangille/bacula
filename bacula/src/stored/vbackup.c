@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -63,8 +63,10 @@ bool do_vbackup(JCR *jcr)
       break;
    }
 
+   /* TODO: Remove when the new match_all is well tested */
+   jcr->use_new_match_all = use_new_match_all;
 
-   Dmsg0(20, "Start read data.\n");
+   Dmsg1(20, "Start read data. newbsr=%d\n", jcr->use_new_match_all);
 
    if (!jcr->read_dcr || !jcr->dcr) {
       Jmsg(jcr, M_FATAL, 0, _("Read and write devices not properly initialized.\n"));
@@ -88,6 +90,7 @@ bool do_vbackup(JCR *jcr)
       jcr->setJobStatus(JS_ErrorTerminated);
       goto bail_out;
    }
+   jcr->dcr->dev->start_of_job(jcr->dcr);
 
    Dmsg2(200, "===== After acquire pos %u:%u\n", jcr->dcr->dev->file, jcr->dcr->dev->block_num);
    jcr->sendJobStatus(JS_Running);
@@ -114,6 +117,13 @@ ok_out:
       dev = jcr->dcr->dev;
       Dmsg1(100, "ok=%d\n", ok);
       if (ok || dev->can_write()) {
+         if (!dev->flush_before_eos(jcr->dcr)) {
+            Jmsg2(jcr, M_FATAL, 0, _("Fatal append error on device %s: ERR=%s\n"),
+                  dev->print_name(), dev->bstrerror());
+            Dmsg0(100, _("Set ok=FALSE after write_block_to_device.\n"));
+            //possible_incomplete_job(jcr, last_file_index);
+            ok = false;
+         }
          /* Flush out final ameta partial block of this session */
          if (!jcr->dcr->write_final_block_to_device()) {
             Jmsg2(jcr, M_FATAL, 0, _("Fatal append error on device %s: ERR=%s\n"),
@@ -172,8 +182,8 @@ ok_out:
    generate_daemon_event(jcr, "JobEnd");
    generate_plugin_event(jcr, bsdEventJobEnd);
    dir->fsend(Job_end, jcr->Job, jcr->JobStatus, jcr->JobFiles,
-      edit_uint64(jcr->JobBytes, ec1), jcr->JobErrors);
-   Dmsg4(100, Job_end, jcr->Job, jcr->JobStatus, jcr->JobFiles, ec1);
+      edit_uint64(jcr->JobBytes, ec1), jcr->JobErrors, jcr->StatusErrMsg);
+   Dmsg6(100, Job_end, jcr->Job, jcr->JobStatus, jcr->JobFiles, ec1, jcr->JobErrors, jcr->StatusErrMsg);
 
    dir->signal(BNET_EOD);             /* send EOD to Director daemon */
    free_plugins(jcr);                 /* release instantiated plugins */
@@ -232,6 +242,10 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
       }
       rec->FileIndex = jcr->JobFiles;     /* set sequential output FileIndex */
    }
+
+   /* TODO: If user really wants to do rehydrate the data, we should propose
+    * this option.
+    */
 
    /*
     * Modify record SessionId and SessionTime to correspond to

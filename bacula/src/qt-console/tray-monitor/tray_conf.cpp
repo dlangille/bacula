@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -39,8 +39,11 @@
 *
 */
 
-#include "bacula.h"
+#include "common.h"
 #include "tray_conf.h"
+
+worker *worker_start();
+void worker_stop(worker *);
 
 /* Define the first and last resource ID record
 * types. Note, these should be unique for each
@@ -48,8 +51,7 @@
 */
 int32_t r_first = R_FIRST;
 int32_t r_last  = R_LAST;
-static RES *sres_head[R_LAST - R_FIRST + 1];
-RES **res_head = sres_head;
+RES_HEAD **res_head;
 
 /* We build the current resource here as we are
 * scanning the resource configuration definition,
@@ -70,24 +72,32 @@ int32_t res_all_size = sizeof(res_all);
 *   name           handler     value                 code flags    default_value
 */
 static RES_ITEM mon_items[] = {
-   {"name",        store_name,     ITEM(res_monitor.hdr.name), 0, ITEM_REQUIRED, 0},
-   {"description", store_str,      ITEM(res_monitor.hdr.desc), 0, 0, 0},
+   {"Name",        store_name,     ITEM(res_monitor.hdr.name), 0, ITEM_REQUIRED, 0},
+   {"Description", store_str,      ITEM(res_monitor.hdr.desc), 0, 0, 0},
    {"requiressl",  store_bool,     ITEM(res_monitor.require_ssl), 1, ITEM_DEFAULT, 0},
-   {"password",    store_password, ITEM(res_monitor.password), 0, ITEM_REQUIRED, 0},
-   {"refreshinterval",  store_time,ITEM(res_monitor.RefreshInterval),    0, ITEM_DEFAULT, 60},
-   {"fdconnecttimeout", store_time,ITEM(res_monitor.FDConnectTimeout),   0, ITEM_DEFAULT, 10},
-   {"sdconnecttimeout", store_time,ITEM(res_monitor.SDConnectTimeout),   0, ITEM_DEFAULT, 10},
-   {"dirconnecttimeout", store_time,ITEM(res_monitor.DIRConnectTimeout), 0, ITEM_DEFAULT, 10},
+   {"RefreshInterval",  store_time,ITEM(res_monitor.RefreshInterval),    0, ITEM_DEFAULT, 60},
+   {"CommCompression",  store_bool, ITEM(res_monitor.comm_compression), 0, ITEM_DEFAULT, true},
+   {"CommandDirectory", store_dir, ITEM(res_monitor.command_dir), 0, 0, 0},
+   {"DisplayAdvancedOptions", store_bool, ITEM(res_monitor.display_advanced_options), 0, 0, 0},
    {NULL, NULL, {0}, 0, 0, 0}
 };
 
 /*  Director's that we can contact */
 static RES_ITEM dir_items[] = {
-   {"name",        store_name,     ITEM(res_dir.hdr.name), 0, ITEM_REQUIRED, 0},
-   {"description", store_str,      ITEM(res_dir.hdr.desc), 0, 0, 0},
-   {"dirport",     store_pint32,   ITEM(res_dir.DIRport),  0, ITEM_DEFAULT, 9101},
-   {"address",     store_str,      ITEM(res_dir.address),  0, ITEM_REQUIRED, 0},
-   {"enablessl",   store_bool,     ITEM(res_dir.enable_ssl), 1, ITEM_DEFAULT, 0},
+   {"Name",        store_name,     ITEM(res_main.hdr.name), 0, ITEM_REQUIRED, 0},
+   {"Description", store_str,      ITEM(res_main.hdr.desc), 0, 0, 0},
+   {"Port",        store_pint32,   ITEM(res_main.port),     0, ITEM_DEFAULT, 9101},
+   {"Address",     store_str,      ITEM(res_main.address),  0, ITEM_REQUIRED, 0},
+   {"Password",    store_password, ITEM(res_main.password), 0, ITEM_REQUIRED, 0},
+   {"Monitor",  store_bool,       ITEM(res_main.use_monitor), 0, ITEM_DEFAULT, 0},
+   {"ConnectTimeout", store_time,ITEM(res_main.connect_timeout),   0, ITEM_DEFAULT, 10},
+   {"UseSetIp", store_bool,      ITEM(res_main.use_setip),  0, 0, 0},
+   {"TlsEnable",      store_bool,    ITEM(res_main.tls_enable), 0, 0, 0},
+   {"TlsCaCertificateFile", store_dir, ITEM(res_main.tls_ca_certfile), 0, 0, 0},
+   {"TlsCaCertificateDir", store_dir,  ITEM(res_main.tls_ca_certdir), 0, 0, 0},
+   {"TlsCertificate", store_dir,       ITEM(res_main.tls_certfile), 0, 0, 0},
+   {"TlsKey",         store_dir,       ITEM(res_main.tls_keyfile), 0, 0, 0},
+
    {NULL, NULL, {0}, 0, 0, 0}
 };
 
@@ -98,12 +108,19 @@ static RES_ITEM dir_items[] = {
 */
 
 static RES_ITEM cli_items[] = {
-   {"name",     store_name,       ITEM(res_client.hdr.name), 0, ITEM_REQUIRED, 0},
-   {"description", store_str,     ITEM(res_client.hdr.desc), 0, 0, 0},
-   {"address",  store_str,        ITEM(res_client.address),  0, ITEM_REQUIRED, 0},
-   {"fdport",   store_pint32,     ITEM(res_client.FDport),   0, ITEM_DEFAULT, 9102},
-   {"password", store_password,   ITEM(res_client.password), 0, ITEM_REQUIRED, 0},
-   {"enablessl", store_bool,      ITEM(res_client.enable_ssl), 1, ITEM_DEFAULT, 0},
+   {"Name",     store_name,       ITEM(res_main.hdr.name), 0, ITEM_REQUIRED, 0},
+   {"Description", store_str,     ITEM(res_main.hdr.desc), 0, 0, 0},
+   {"Address",  store_str,        ITEM(res_main.address),  0, ITEM_REQUIRED, 0},
+   {"Port",     store_pint32,     ITEM(res_main.port),   0, ITEM_DEFAULT, 9102},
+   {"Password", store_password,   ITEM(res_main.password), 0, ITEM_REQUIRED, 0},
+   {"ConnectTimeout", store_time,ITEM(res_main.connect_timeout),   0, ITEM_DEFAULT, 10},
+   {"Remote",   store_bool,       ITEM(res_main.use_remote), 0, ITEM_DEFAULT, 0},
+   {"Monitor",  store_bool,       ITEM(res_main.use_monitor), 0, ITEM_DEFAULT, 0},
+   {"TlsEnable",      store_bool,    ITEM(res_main.tls_enable), 0, 0, 0},
+   {"TlsCaCertificateFile", store_dir, ITEM(res_main.tls_ca_certfile), 0, 0, 0},
+   {"TlsCaCertificateDir", store_dir,  ITEM(res_main.tls_ca_certdir), 0, 0, 0},
+   {"TlsCertificate", store_dir,       ITEM(res_main.tls_certfile), 0, 0, 0},
+   {"TlsKey",         store_dir,       ITEM(res_main.tls_keyfile), 0, 0, 0},
    {NULL, NULL, {0}, 0, 0, 0}
 };
 
@@ -112,21 +129,18 @@ static RES_ITEM cli_items[] = {
 *   name           handler     value                 code flags    default_value
 */
 static RES_ITEM store_items[] = {
-   {"name",        store_name,     ITEM(res_store.hdr.name),   0, ITEM_REQUIRED, 0},
-   {"description", store_str,      ITEM(res_store.hdr.desc),   0, 0, 0},
-   {"sdport",      store_pint32,   ITEM(res_store.SDport),     0, ITEM_DEFAULT, 9103},
-   {"address",     store_str,      ITEM(res_store.address),    0, ITEM_REQUIRED, 0},
-   {"sdaddress",   store_str,      ITEM(res_store.address),    0, 0, 0},
-   {"password",    store_password, ITEM(res_store.password),   0, ITEM_REQUIRED, 0},
-   {"sdpassword",  store_password, ITEM(res_store.password),   0, 0, 0},
-   {"enablessl",   store_bool,     ITEM(res_store.enable_ssl),  1, ITEM_DEFAULT, 0},
-   {NULL, NULL, {0}, 0, 0, 0}
-};
-
-static RES_ITEM con_font_items[] = {
-   {"name",        store_name,     ITEM(con_font.hdr.name), 0, ITEM_REQUIRED, 0},
-   {"description", store_str,      ITEM(con_font.hdr.desc), 0, 0, 0},
-   {"font",        store_str,      ITEM(con_font.fontface), 0, 0, 0},
+   {"Name",        store_name,     ITEM(res_main.hdr.name),   0, ITEM_REQUIRED, 0},
+   {"Description", store_str,      ITEM(res_main.hdr.desc),   0, 0, 0},
+   {"Port",      store_pint32,   ITEM(res_main.port),     0, ITEM_DEFAULT, 9103},
+   {"Address",     store_str,      ITEM(res_main.address),    0, ITEM_REQUIRED, 0},
+   {"Password",    store_password, ITEM(res_main.password),   0, ITEM_REQUIRED, 0},
+   {"ConnectTimeout", store_time,ITEM(res_main.connect_timeout),   0, ITEM_DEFAULT, 10},
+   {"Monitor",  store_bool,       ITEM(res_main.use_monitor), 0, ITEM_DEFAULT, 0},
+   {"TlsEnable",      store_bool,    ITEM(res_main.tls_enable), 0, 0, 0},
+   {"TlsCaCertificateFile", store_dir, ITEM(res_main.tls_ca_certfile), 0, 0, 0},
+   {"TlsCaCertificateDir", store_dir,  ITEM(res_main.tls_ca_certdir), 0, 0, 0},
+   {"TlsCertificate", store_dir,       ITEM(res_main.tls_certfile), 0, 0, 0},
+   {"TlsKey",         store_dir,       ITEM(res_main.tls_keyfile), 0, 0, 0},
    {NULL, NULL, {0}, 0, 0, 0}
 };
 
@@ -144,16 +158,15 @@ RES_TABLE resources[] = {
    {"director",     dir_items,    R_DIRECTOR},
    {"client",       cli_items,    R_CLIENT},
    {"storage",      store_items,  R_STORAGE},
-   {"consolefont",   con_font_items, R_CONSOLE_FONT},
    {NULL,           NULL,         0}
 };
 
 /* Dump contents of resource */
-void dump_resource(int type, RES *reshdr, void sendit(void *sock, const char *fmt, ...), void *sock)
+void dump_resource(int type, RES *ares, void sendit(void *sock, const char *fmt, ...), void *sock)
 {
-   URES *res = (URES *)reshdr;
+   RES *next;
+   URES *res = (URES *)ares;
    bool recurse = true;
-   char ed1[100], ed2[100];
 
    if (res == NULL) {
       sendit(sock, _("No %s resource defined\n"), res_to_str(type));
@@ -165,36 +178,31 @@ void dump_resource(int type, RES *reshdr, void sendit(void *sock, const char *fm
    }
    switch (type) {
    case R_MONITOR:
-      sendit(sock, _("Monitor: name=%s FDtimeout=%s SDtimeout=%s\n"),
-             reshdr->name,
-             edit_uint64(res->res_monitor.FDConnectTimeout, ed1),
-             edit_uint64(res->res_monitor.SDConnectTimeout, ed2));
+      sendit(sock, _("Monitor: name=%s\n"), ares->name);
       break;
    case R_DIRECTOR:
-      sendit(sock, _("Director: name=%s address=%s FDport=%d\n"),
-             res->res_dir.hdr.name, res->res_dir.address, res->res_dir.DIRport);
+      sendit(sock, _("Director: name=%s address=%s port=%d\n"),
+             res->res_main.hdr.name, res->res_main.address, res->res_main.port);
       break;
    case R_CLIENT:
-      sendit(sock, _("Client: name=%s address=%s FDport=%d\n"),
-             res->res_client.hdr.name, res->res_client.address, res->res_client.FDport);
+      sendit(sock, _("Client: name=%s address=%s port=%d\n"),
+             res->res_main.hdr.name, res->res_main.address, res->res_main.port);
       break;
    case R_STORAGE:
-      sendit(sock, _("Storage: name=%s address=%s SDport=%d\n"),
-             res->res_store.hdr.name, res->res_store.address, res->res_store.SDport);
-      break;
-   case R_CONSOLE_FONT:
-      sendit(sock, _("ConsoleFont: name=%s font face=%s\n"),
-             reshdr->name, NPRT(res->con_font.fontface));
+      sendit(sock, _("Storage: name=%s address=%s port=%d\n"),
+             res->res_main.hdr.name, res->res_main.address, res->res_main.port);
       break;
    default:
       sendit(sock, _("Unknown resource type %d in dump_resource.\n"), type);
       break;
    }
-   if (recurse && res->res_monitor.hdr.next) {
-      dump_resource(type, res->res_monitor.hdr.next, sendit, sock);
+   if (recurse) {
+      next = GetNextRes(0, (RES *)res);
+      if (next) {
+         dump_resource(type, next, sendit, sock);
+      }
    }
 }
-
 
 /*
 * Free memory of resource -- called when daemon terminates.
@@ -205,14 +213,11 @@ void dump_resource(int type, RES *reshdr, void sendit(void *sock, const char *fm
 */
 void free_resource(RES *sres, int type)
 {
-   RES *nres;                         /* next resource if linked */
    URES *res = (URES *)sres;
 
    if (res == NULL)
       return;
-
    /* common stuff -- free the resource name and description */
-   nres = (RES *)res->res_monitor.hdr.next;
    if (res->res_monitor.hdr.name) {
       free(res->res_monitor.hdr.name);
    }
@@ -222,26 +227,57 @@ void free_resource(RES *sres, int type)
 
    switch (type) {
    case R_MONITOR:
+      if (res->res_monitor.password) {
+         free(res->res_monitor.password);
+      }
+      if (res->res_monitor.command_dir) {
+         free(res->res_monitor.command_dir);
+      }
       break;
+   case R_DIRECTOR:
    case R_CLIENT:
-      if (res->res_client.address) {
-         free(res->res_client.address);
-      }
-      if (res->res_client.password) {
-         free(res->res_client.password);
-      }
-      break;
    case R_STORAGE:
-      if (res->res_store.address) {
-         free(res->res_store.address);
+      delete res->res_main.mutex;
+      free_bsock(res->res_main.bs);
+      if (res->res_main.wrk) {
+         worker_stop(res->res_main.wrk);
+         res->res_main.wrk = NULL;
       }
-      if (res->res_store.password) {
-         free(res->res_store.password);
+      if (res->res_main.address) {
+         free(res->res_main.address);
       }
-      break;
-   case R_CONSOLE_FONT:
-      if (res->con_font.fontface) {
-         free(res->con_font.fontface);
+      if (res->res_main.tls_ctx) {
+         free_tls_context(res->res_main.tls_ctx);
+      }
+      if (res->res_main.tls_ca_certfile) {
+         free(res->res_main.tls_ca_certfile);
+      }
+      if (res->res_main.tls_ca_certdir) {
+         free(res->res_main.tls_ca_certdir);
+      }
+      if (res->res_main.tls_certfile) {
+         free(res->res_main.tls_certfile);
+      }
+      if (res->res_main.tls_keyfile) {
+         free(res->res_main.tls_keyfile);
+      }
+      if (res->res_main.jobs) {
+         delete res->res_main.jobs;
+      }
+      if (res->res_main.clients) {
+         delete res->res_main.clients;
+      }
+      if (res->res_main.filesets) {
+         delete res->res_main.filesets;
+      }
+      if (res->res_main.pools) {
+         delete res->res_main.pools;
+      }
+      if (res->res_main.storages) {
+         delete res->res_main.storages;
+      }
+      if (res->res_main.running_jobs) {
+         delete res->res_main.terminated_jobs;
       }
       break;
    default:
@@ -252,9 +288,6 @@ void free_resource(RES *sres, int type)
    if (res) {
       free(res);
    }
-   if (nres) {
-      free_resource(nres, type);
-   }
 }
 
 /*
@@ -263,9 +296,8 @@ void free_resource(RES *sres, int type)
 * pointers because they may not have been defined until
 * later in pass 1.
 */
-void save_resource(int type, RES_ITEM *items, int pass)
+bool save_resource(CONFIG *config, int type, RES_ITEM *items, int pass)
 {
-   URES *res;
    int rindex = type - r_first;
    int i, size;
    int error = 0;
@@ -276,13 +308,15 @@ void save_resource(int type, RES_ITEM *items, int pass)
    for (i=0; items[i].name; i++) {
       if (items[i].flags & ITEM_REQUIRED) {
          if (!bit_is_set(i, res_all.res_monitor.hdr.item_present)) {
-               Emsg2(M_ERROR_TERM, 0, _("\"%s\" directive is required in \"%s\" resource, but not found.\n"),
-                  items[i].name, resources[rindex].name);
+            Mmsg(config->m_errmsg, _("\"%s\" directive is required in \"%s\" resource, but not found.\n"),
+                 items[i].name, resources[rindex].name);
+            return false;
          }
       }
       /* If this triggers, take a look at lib/parse_conf.h */
       if (i >= MAX_RES_ITEMS) {
-         Emsg1(M_ERROR_TERM, 0, _("Too many directives in \"%s\" resource\n"), resources[rindex].name);
+         Mmsg(config->m_errmsg, _("Too many directives in \"%s\" resource\n"), resources[rindex].name);
+         return false;
       }
    }
 
@@ -295,11 +329,10 @@ void save_resource(int type, RES_ITEM *items, int pass)
    if (pass == 2) {
       switch (type) {
       /* Resources not containing a resource */
-      case R_MONITOR:
-      case R_CLIENT:
       case R_STORAGE:
       case R_DIRECTOR:
-      case R_CONSOLE_FONT:
+      case R_CLIENT:
+      case R_MONITOR:
          break;
       default:
          Emsg1(M_ERROR, 0, _("Unknown resource type %d in save_resource.\n"), type);
@@ -317,7 +350,7 @@ void save_resource(int type, RES_ITEM *items, int pass)
          free(res_all.res_monitor.hdr.desc);
          res_all.res_monitor.hdr.desc = NULL;
       }
-      return;
+      return true;
    }
 
    /*
@@ -327,17 +360,13 @@ void save_resource(int type, RES_ITEM *items, int pass)
    case R_MONITOR:
       size = sizeof(MONITOR);
       break;
-   case R_DIRECTOR:
-      size = sizeof(DIRRES);
-      break;
    case R_CLIENT:
-      size = sizeof(CLIENT);
-      break;
    case R_STORAGE:
-      size = sizeof(STORE);
-      break;
-   case R_CONSOLE_FONT:
-      size = sizeof(CONFONTRES);
+   case R_DIRECTOR:
+      // We need to initialize the mutex
+      res_all.res_main.mutex = new QMutex();
+      res_all.res_main.wrk = worker_start();
+      size = sizeof(RESMON);
       break;
    default:
       printf(_("Unknown resource type %d in save_resource.\n"), type);
@@ -347,33 +376,18 @@ void save_resource(int type, RES_ITEM *items, int pass)
    }
    /* Common */
    if (!error) {
-      res = (URES *)malloc(size);
-      memcpy(res, &res_all, size);
-      if (!res_head[rindex]) {
-        res_head[rindex] = (RES *)res; /* store first entry */
-         Dmsg3(900, "Inserting first %s res: %s index=%d\n", res_to_str(type),
-         res->res_monitor.hdr.name, rindex);
-      } else {
-         RES *next, *last;
-         /* Add new res to end of chain */
-         for (last=next=res_head[rindex]; next; next=next->next) {
-            last = next;
-            if (strcmp(next->name, res->res_monitor.hdr.name) == 0) {
-               Emsg2(M_ERROR_TERM, 0,
-                  _("Attempt to define second \"%s\" resource named \"%s\" is not permitted.\n"),
-               resources[rindex].name, res->res_monitor.hdr.name);
-            }
-         }
-         last->next = (RES *)res;
-         Dmsg4(900, "Inserting %s res: %s index=%d pass=%d\n", res_to_str(type),
-         res->res_monitor.hdr.name, rindex, pass);
+      res_all.res_main.type = type;
+      if (!config->insert_res(rindex, size)) {
+         return false;
       }
    }
+   return true;
 }
 
 bool parse_tmon_config(CONFIG *config, const char *configfile, int exit_code)
 {
-   config->init(configfile, NULL, exit_code, (void *)&res_all, res_all_size,
-      r_first, r_last, resources, res_head);
+   config->init(configfile, error_handler, exit_code,
+                (void *)&res_all, res_all_size,
+      r_first, r_last, resources, &res_head);
    return config->parse_config();
 }

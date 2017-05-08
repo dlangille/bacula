@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -129,7 +129,7 @@ static bool open_bootstrap_file(JCR *jcr, bootstrap_info &info)
    }
    strncpy(info.storage, jcr->rstore->name(), MAX_NAME_LENGTH);
 
-   bs = fopen(jcr->RestoreBootstrap, "rb");
+   bs = bfopen(jcr->RestoreBootstrap, "rb");
    if (!bs) {
       berrno be;
       Jmsg(jcr, M_FATAL, 0, _("Could not open bootstrap file %s: ERR=%s\n"),
@@ -582,6 +582,7 @@ void restore_cleanup(JCR *jcr, int TermCode)
    const char *term_msg;
    int msg_type = M_INFO;
    double kbps;
+   utime_t RunTime;
 
    Dmsg0(20, "In restore_cleanup\n");
    update_job_end(jcr, TermCode);
@@ -611,7 +612,7 @@ void restore_cleanup(JCR *jcr, int TermCode)
 
       } else if (jcr->JobErrors > 0 || jcr->SDErrors > 0) {
          term_msg = _("Restore OK -- with errors");
-         
+
       } else {
          term_msg = _("Restore OK");
       }
@@ -646,11 +647,12 @@ void restore_cleanup(JCR *jcr, int TermCode)
    }
    bstrftimes(sdt, sizeof(sdt), jcr->jr.StartTime);
    bstrftimes(edt, sizeof(edt), jcr->jr.EndTime);
-   if (jcr->jr.EndTime - jcr->jr.StartTime > 0) {
-      kbps = (double)jcr->jr.JobBytes / (1000 * (jcr->jr.EndTime - jcr->jr.StartTime));
-   } else {
-      kbps = 0;
+
+   RunTime = jcr->jr.EndTime - jcr->jr.StartTime;
+   if (RunTime <= 0) {
+      RunTime = 1;
    }
+   kbps = (double)jcr->jr.JobBytes / (1000.0 * (double)RunTime);
    if (kbps < 0.05) {
       kbps = 0;
    }

@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -22,6 +22,11 @@
 #if HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL
 #include "lib/htable.h"
 #include "bvfs.h"
+
+#define can_access(x) (true)
+
+/* from libbacfind */
+extern int decode_stat(char *buf, struct stat *statp, int stat_size, int32_t *LinkFI);
 
 #define dbglevel      DT_BVFS|10
 #define dbglevel_sql  DT_SQL|15
@@ -44,7 +49,8 @@ static int result_handler(void *ctx, int fields, char **row)
    return 0;
 }
 
-Bvfs::Bvfs(JCR *j, BDB *mdb) {
+Bvfs::Bvfs(JCR *j, BDB *mdb)
+{
    jcr = j;
    jcr->inc_use_count();
    db = mdb;                 /* need to inc ref count */
@@ -55,14 +61,18 @@ Bvfs::Bvfs(JCR *j, BDB *mdb) {
    tmp = get_pool_memory(PM_NAME);
    escaped_list = get_pool_memory(PM_NAME);
    *filename = *jobids = *prev_dir = *pattern = 0;
-   dir_filenameid = pwd_id = offset = 0;
+   pwd_id = offset = 0;
    see_copies = see_all_versions = false;
+   compute_delta = true;
    limit = 1000;
    attr = new_attr(jcr);
    list_entries = result_handler;
    user_data = this;
    username = NULL;
    job_acl = client_acl = pool_acl = fileset_acl = NULL;
+   last_dir_acl = NULL;
+   dir_acl = NULL;
+   use_acl = false;
 }
 
 Bvfs::~Bvfs() {
@@ -77,6 +87,9 @@ Bvfs::~Bvfs() {
    }
    free_attr(attr);
    jcr->dec_use_count();
+   if (dir_acl) {
+      delete dir_acl;
+   }
 }
 
 char *Bvfs::escape_list(alist *lst)
@@ -113,7 +126,8 @@ char *Bvfs::escape_list(alist *lst)
    return escaped_list;
 }
 
-void Bvfs::filter_jobid()
+/* Returns the number of jobids in the result */
+int Bvfs::filter_jobid()
 {
    POOL_MEM query;
    POOL_MEM sub_where;
@@ -122,7 +136,14 @@ void Bvfs::filter_jobid()
    /* No ACL, no username, no check */
    if (!job_acl && !fileset_acl && !client_acl && !pool_acl && !username) {
       Dmsg0(dbglevel_sql, "No ACL\n");
-      return;
+      /* Just count the number of items in the list */
+      int nb = (*jobids != 0) ? 1 : 0;
+      for (char *p=jobids; *p ; p++) {
+         if (*p == ',') {
+            nb++;
+         }
+      }
+      return nb;
    }
 
    if (job_acl) {
@@ -172,18 +193,21 @@ void Bvfs::filter_jobid()
    Dmsg1(dbglevel_sql, "q=%s\n", query.c_str());
    db->bdb_sql_query(query.c_str(), db_list_handler, &ctx);
    pm_strcpy(jobids, ctx.list);
+   return ctx.count;
 }
 
-void Bvfs::set_jobid(JobId_t id)
+/* Return the number of jobids after the filter */
+int Bvfs::set_jobid(JobId_t id)
 {
    Mmsg(jobids, "%lld", (uint64_t)id);
-   filter_jobid();
+   return filter_jobid();
 }
 
-void Bvfs::set_jobids(char *ids)
+/* Return the number of jobids after the filter */
+int Bvfs::set_jobids(char *ids)
 {
    pm_strcpy(jobids, ids);
-   filter_jobid();
+   return filter_jobid();
 }
 
 /*
@@ -218,7 +242,7 @@ public:
       nb_node = 0;
       table_node = New(alist(5, owned_by_alist));
       table_node->append(nodes);
-   }
+   };
 
    hlink *get_hlink() {
       if (++nb_node >= max_node) {
@@ -227,23 +251,23 @@ public:
          table_node->append(nodes);
       }
       return nodes + nb_node;
-   }
+   };
 
    bool lookup(char *pathid) {
       bool ret = cache_ppathid->lookup(pathid) != NULL;
       return ret;
-   }
+   };
 
    void insert(char *pathid) {
       hlink *h = get_hlink();
       cache_ppathid->insert(pathid, h);
-   }
+   };
 
    ~pathid_cache() {
       cache_ppathid->destroy();
       free(cache_ppathid);
       delete table_node;
-   }
+   };
 private:
    pathid_cache(const pathid_cache &); /* prohibit pass by value */
    pathid_cache &operator= (const pathid_cache &);/* prohibit class assignment*/
@@ -471,7 +495,6 @@ static int update_path_hierarchy_cache(JCR *jcr,
       free(result);
    }
 
-   
    if (mdb->bdb_get_type_index() == SQL_TYPE_SQLITE3) {
       Mmsg(mdb->cmd,
  "INSERT INTO PathVisibility (PathId, JobId) "
@@ -530,21 +553,6 @@ bail_out:
    return ret;
 }
 
-/* 
- * Find an store the filename descriptor for empty directories Filename.Name=''
- */
-DBId_t Bvfs::get_dir_filenameid()
-{
-   uint32_t id;
-   if (dir_filenameid) {
-      return dir_filenameid;
-   }
-   Mmsg(db->cmd, "SELECT FilenameId FROM Filename WHERE Name = ''");
-   db_sql_query(db, db->cmd, db_int_handler, &id);
-   dir_filenameid = id;
-   return dir_filenameid;
-}
-
 /* Compute the cache for the bfileview compoment */
 void Bvfs::fv_update_cache()
 {
@@ -577,6 +585,21 @@ void Bvfs::fv_update_cache()
    db->bdb_unlock();
 }
 
+/* 
+ * Find an store the filename descriptor for empty directories Filename.Name=''
+ */
+DBId_t Bvfs::get_dir_filenameid()
+{
+   uint32_t id;
+   if (dir_filenameid) {
+      return dir_filenameid;
+   }
+   Mmsg(db->cmd, "SELECT FilenameId FROM Filename WHERE Name = ''");
+   db_sql_query(db, db->cmd, db_int_handler, &id);
+   dir_filenameid = id;
+   return dir_filenameid;
+}
+
 /* Not yet working */
 void Bvfs::fv_get_big_files(int64_t pathid, int64_t min_size, int32_t limit)
 {
@@ -592,6 +615,7 @@ void Bvfs::fv_get_big_files(int64_t pathid, int64_t min_size, int32_t limit)
      "ORDER BY S.size DESC "
      "LIMIT %d ", pathid, jobids, min_size, limit);
 }
+
 
 /* Get the current path size and files count */
 void Bvfs::fv_get_current_size_and_count(int64_t pathid, int64_t *size, int64_t *count)
@@ -828,12 +852,22 @@ void Bvfs::update_cache()
    bvfs_update_path_hierarchy_cache(jcr, db, jobids);
 }
 
+
+bool Bvfs::ch_dir(DBId_t pathid)
+{
+   reset_offset();
+
+   pwd_id = pathid;
+   return pwd_id != 0;
+}
+
+
 /* Change the current directory, returns true if the path exists */
 bool Bvfs::ch_dir(const char *path)
 {
+   db->bdb_lock();
    pm_strcpy(db->path, path);
    db->pnl = strlen(db->path);
-   db->bdb_lock();
    ch_dir(db->bdb_get_path_record(jcr));
    db->bdb_unlock();
    return pwd_id != 0;
@@ -881,6 +915,108 @@ void Bvfs::get_all_file_versions(DBId_t pathid, FileId_t fnid, const char *clien
 }
 
 /*
+ * Get all file versions for a specified client
+ * TODO: Handle basejobs using different client
+ */
+bool Bvfs::get_delta(FileId_t fileid)
+{
+   Dmsg1(dbglevel, "get_delta(%lld)\n", (uint64_t)fileid);
+   char ed1[50];
+   int32_t num;
+   SQL_ROW row;
+   POOL_MEM q;
+   POOL_MEM query;
+   char *fn = NULL;
+   bool ret = false;
+   db->bdb_lock();
+
+   /* Check if some FileId have DeltaSeq > 0
+    * Foreach of them we need to get the accurate_job list, and compute
+    * what are dependencies
+    */
+   Mmsg(query,
+        "SELECT F.JobId, FN.Name, F.PathId, F.DeltaSeq "
+        "FROM File AS F, Filename AS FN WHERE FileId = %lld "
+        "AND FN.FilenameId = F.FilenameId AND DeltaSeq > 0", fileid);
+
+   if (!db->QueryDB(jcr, query.c_str())) {
+      Dmsg1(dbglevel_sql, "Can't execute query=%s\n", query.c_str());
+      goto bail_out;
+   }
+
+   /* TODO: Use an other DB connection can avoid to copy the result of the
+    * previous query into a temporary buffer
+    */
+   num = db->sql_num_rows();
+   Dmsg2(dbglevel, "Found %d Delta parts q=%s\n",
+         num, query.c_str());
+
+   if (num > 0 && (row = db->sql_fetch_row())) {
+      JOB_DBR jr, jr2;
+      db_list_ctx lst;
+      memset(&jr, 0, sizeof(jr));
+      memset(&jr2, 0, sizeof(jr2));
+
+      fn = bstrdup(row[1]);               /* Filename */
+      int64_t jid = str_to_int64(row[0]);     /* JobId */
+      int64_t pid = str_to_int64(row[2]);     /* PathId */
+
+      /* Need to limit the query to StartTime, Client/Fileset */
+      jr2.JobId = jid;
+      if (!db->bdb_get_job_record(jcr, &jr2)) {
+         Dmsg1(0, "Unable to get job record for jobid %d\n", jid);
+         goto bail_out;
+      }
+
+      jr.JobId = jid;
+      jr.ClientId = jr2.ClientId;
+      jr.FileSetId = jr2.FileSetId;
+      jr.JobLevel = L_INCREMENTAL;
+      jr.StartTime = jr2.StartTime;
+
+      /* Get accurate jobid list */
+      if (!db->bdb_get_accurate_jobids(jcr, &jr, &lst)) {
+         Dmsg1(0, "Unable to get Accurate list for jobid %d\n", jid);
+         goto bail_out;
+      }
+
+      /* Escape filename */
+      db->fnl = strlen(fn);
+      db->esc_name = check_pool_memory_size(db->esc_name, 2*db->fnl+2);
+      db->bdb_escape_string(jcr, db->esc_name, fn, db->fnl);
+
+      edit_int64(pid, ed1);     /* pathid */
+
+      int id=db->bdb_get_type_index();
+      Mmsg(query, bvfs_select_delta_version_with_basejob_and_delta[id],
+           lst.list, db->esc_name, ed1,
+           lst.list, db->esc_name, ed1,
+           lst.list, lst.list);
+
+      Mmsg(db->cmd,
+           //       0     1     2   3      4      5      6            7
+           "SELECT 'd', PathId, 0, JobId, LStat, FileId, DeltaSeq, JobTDate"
+           " FROM (%s) AS F1 "
+           "ORDER BY DeltaSeq ASC",
+           query.c_str());
+
+      Dmsg1(dbglevel_sql, "q=%s\n", db->cmd);
+
+      if (!db->bdb_sql_query(db->cmd, list_entries, user_data)) {
+         Dmsg1(dbglevel_sql, "Can't exec q=%s\n", db->cmd);
+         goto bail_out;
+      }
+   }
+   ret = true;
+bail_out:
+   if (fn) {
+      free(fn);
+   }
+   db->bdb_unlock();
+   return ret;
+}
+
+/*
  * Get all volumes for a specific file
  */
 void Bvfs::get_volumes(FileId_t fileid)
@@ -925,6 +1061,12 @@ int Bvfs::_handle_path(void *ctx, int fields, char **row)
       /* can have the same path 2 times */
       if (strcmp(row[BVFS_PathId], prev_dir)) {
          pm_strcpy(prev_dir, row[BVFS_PathId]);
+         if (strcmp(NPRTB(row[BVFS_FileIndex]), "0") == 0 &&
+             strcmp(NPRTB(row[BVFS_FileId]), "0") != 0)
+         {
+            /* The directory was probably deleted */
+            return 0;
+         }
          return list_entries(user_data, fields, row);
       }
    }
@@ -1210,9 +1352,10 @@ bool Bvfs::compute_restore_list(char *fileid, char *dirid, char *hardlink,
 
    if (*fileid) {               /* Select files with their direct id */
       init=true;
-      Mmsg(tmp,"SELECT Job.JobId, JobTDate, FileIndex, FilenameId, "
+      Mmsg(tmp,"SELECT Job.JobId, JobTDate, FileIndex, Filename.Name, "
                       "PathId, FileId "
-                 "FROM File JOIN Job USING (JobId) WHERE FileId IN (%s)",
+                 "FROM File,Job,Filename WHERE Job.JobId=File.Jobid "
+                 "AND File.FilenameId=Filename.FilenameId AND  FileId IN (%s)",
            fileid);
       pm_strcat(query, tmp.c_str());
    }
@@ -1388,7 +1531,7 @@ bail_out:
  
 void Bvfs::insert_missing_delta(char *output_table, int64_t *res)
 {
-   char ed1[50], ed2[50];
+   char ed1[50];
    db_list_ctx lst;
    POOL_MEM query;
    JOB_DBR jr, jr2;
@@ -1422,13 +1565,17 @@ void Bvfs::insert_missing_delta(char *output_table, int64_t *res)
 
    Dmsg1(dbglevel_sql, "JobId list after strip is %s\n", lst.list);
 
-   edit_int64(res[2], ed1);     /* fnid */
-   edit_int64(res[3], ed2);     /* pathid */
+   /* Escape filename */
+   db->fnl = strlen((char *)res[2]);
+   db->esc_name = check_pool_memory_size(db->esc_name, 2*db->fnl+2);
+   db->bdb_escape_string(jcr, db->esc_name, (char *)res[2], db->fnl);
+
+   edit_int64(res[3], ed1);     /* pathid */
 
    int id=db->bdb_get_type_index();
    Mmsg(query, bvfs_select_delta_version_with_basejob_and_delta[id],
-        lst.list, ed1, ed2, 
-        lst.list, ed1, ed2, 
+        lst.list, db->esc_name, ed1,
+        lst.list, db->esc_name, ed1,
         lst.list, lst.list);
 
    Mmsg(db->cmd, "INSERT INTO %s "
@@ -1439,5 +1586,5 @@ void Bvfs::insert_missing_delta(char *output_table, int64_t *res)
       Dmsg1(dbglevel_sql, "Can't exec q=%s\n", db->cmd);
    }
 }
- 
+
 #endif /* HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL */

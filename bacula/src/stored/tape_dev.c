@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -70,7 +70,7 @@ const char *mode_to_str(int mode);
 
 /*
  */
-void DEVICE::open_tape_device(DCR *dcr, int omode)
+bool tape_dev::open_device(DCR *dcr, int omode)
 {
    file_size = 0;
    int timeout = max_open_wait;
@@ -79,7 +79,12 @@ void DEVICE::open_tape_device(DCR *dcr, int omode)
    utime_t start_time = time(NULL);
 #endif
 
-   mount(1);                          /* do mount if required */
+   if (DEVICE::open_device(dcr, omode)) {
+      return true;              /* already open */
+   }
+   omode = openmode;            /* pickup possible new options */
+
+   mount(1);                    /* do mount if required */
 
    Dmsg0(100, "Open dev: device is tape\n");
 
@@ -97,6 +102,7 @@ void DEVICE::open_tape_device(DCR *dcr, int omode)
       tid = start_thread_timer(dcr->jcr, pthread_self(), timeout);
    }
    Dmsg2(100, "Try open %s mode=%s\n", print_name(), mode_to_str(omode));
+
 #if defined(HAVE_WIN32)
 
    /*   Windows Code */
@@ -174,6 +180,8 @@ void DEVICE::open_tape_device(DCR *dcr, int omode)
       tid = 0;
    }
    Dmsg1(100, "open dev: tape %d opened\n", m_fd);
+   state |= preserve;                 /* reset any important state info */
+   return m_fd >= 0;
 }
 
 
@@ -220,7 +228,7 @@ bool tape_dev::rewind(DCR *dcr)
                int open_mode = openmode;
                d_close(m_fd);
                clear_opened();
-               open(dcr, open_mode);
+               open_device(dcr, open_mode);
                if (m_fd < 0) {
                   return false;
                }
@@ -250,22 +258,56 @@ bool tape_dev::rewind(DCR *dcr)
 }
 
 /*
+ * Check if the current position on the volume corresponds to
+ *  what is in the catalog.
+ *
+ */
+bool tape_dev::is_eod_valid(DCR *dcr)
+{
+   JCR *jcr = dcr->jcr;
+   /*
+    * Check if we are positioned on the tape at the same place
+    * that the database says we should be.
+    */
+   if (VolCatInfo.VolCatFiles == get_file()) {
+      Jmsg(jcr, M_INFO, 0, _("Ready to append to end of Volume \"%s\" at file=%d.\n"),
+           dcr->VolumeName, get_file());
+   } else if (get_file() > VolCatInfo.VolCatFiles) {
+      Jmsg(jcr, M_WARNING, 0, _("For Volume \"%s\":\n"
+           "The number of files mismatch! Volume=%u Catalog=%u\n"
+           "Correcting Catalog\n"),
+           dcr->VolumeName, get_file(), VolCatInfo.VolCatFiles);
+      VolCatInfo.VolCatFiles = get_file();
+      VolCatInfo.VolCatBlocks = get_block_num();
+      if (!dir_update_volume_info(dcr, false, true)) {
+         Jmsg(jcr, M_WARNING, 0, _("Error updating Catalog\n"));
+         dcr->mark_volume_in_error();
+         return false;
+      }
+   } else {
+      Jmsg(jcr, M_ERROR, 0, _("Bacula cannot write on tape Volume \"%s\" because:\n"
+           "The number of files mismatch! Volume=%u Catalog=%u\n"),
+           dcr->VolumeName, get_file(), VolCatInfo.VolCatFiles);
+      dcr->mark_volume_in_error();
+      return false;
+   }
+   return true;
+}
+
+/*
  * Position device to end of medium (end of data)
  *  Returns: true  on succes
  *           false on error
  */
-bool DEVICE::eod(DCR *dcr)
+bool tape_dev::eod(DCR *dcr)
 {
    struct mtop mt_com;
    bool ok = true;
-   boffset_t pos;
    int32_t os_file;
 
    Enter(100);
-   if (m_fd < 0) {
-      dev_errno = EBADF;
-      Mmsg1(errmsg, _("Bad call to eod. Device %s not open\n"), print_name());
-      Dmsg1(100, "%s", errmsg);
+   ok = DEVICE::eod(dcr);
+   if (!ok) {
       return false;
    }
 
@@ -273,41 +315,12 @@ bool DEVICE::eod(DCR *dcr)
    return fsf(VolCatInfo.VolCatFiles);
 #endif
 
-   if (at_eot()) {
-      Leave(100);
-      return true;
-   }
-   clear_eof();         /* remove EOF flag */
-   block_num = file = 0;
-   file_size = 0;
-   file_addr = 0;
-   if (is_fifo()) {
-      Leave(100);
-      return true;
-   }
-   if (!is_tape()) {
-      pos = lseek(dcr, (boffset_t)0, SEEK_END);
-      Dmsg1(200, "====== Seek to %lld\n", pos);
-      if (pos >= 0) {
-         update_pos(dcr);
-         set_eot();
-         Leave(100);
-         return true;
-      }
-      dev_errno = errno;
-      berrno be;
-      Mmsg2(errmsg, _("lseek error on %s. ERR=%s.\n"),
-             print_name(), be.bstrerror());
-      Dmsg1(100, "%s", errmsg);
-      Leave(100);
-      return false;
-   }
 #ifdef MTEOM
    if (has_cap(CAP_FASTFSF) && !has_cap(CAP_EOM)) {
       Dmsg0(100,"Using FAST FSF for EOM\n");
       /* If unknown position, rewind */
       if (get_os_tape_file() < 0) {
-        if (!rewind(NULL)) {
+        if (!rewind(dcr)) {
           Dmsg0(100, "Rewind error\n");
           Leave(100);
           return false;
@@ -363,7 +376,7 @@ bool DEVICE::eod(DCR *dcr)
       /*
        * Rewind then use FSF until EOT reached
        */
-      if (!rewind(NULL)) {
+      if (!rewind(dcr)) {
          Dmsg0(100, "Rewind error.\n");
          Leave(100);
          return false;
@@ -468,7 +481,7 @@ bool load_dev(DEVICE *dev)
  *  Returns: true  on success
  *           false on failure
  */
-bool tape_dev::offline()
+bool tape_dev::offline(DCR *dcr)
 {
    struct mtop mt_com;
 
@@ -494,13 +507,13 @@ bool tape_dev::offline()
    return true;
 }
 
-bool DEVICE::offline_or_rewind()
+bool DEVICE::offline_or_rewind(DCR *dcr)
 {
    if (m_fd < 0) {
       return false;
    }
    if (has_cap(CAP_OFFLINEUNMOUNT)) {
-      return offline();
+      return offline(dcr);
    } else {
    /*
     * Note, this rewind probably should not be here (it wasn't
@@ -510,7 +523,7 @@ bool DEVICE::offline_or_rewind()
     *  done, all future references to the drive get and I/O error.
     */
       clrerror(MTREW);
-      return rewind(NULL);
+      return rewind(dcr);
    }
 }
 
@@ -849,8 +862,12 @@ void tape_dev::unlock_door()
  * Returns: false on failure
  *          true  on success
  */
-bool tape_dev::reposition(DCR *dcr, uint32_t rfile, uint32_t rblock)
+bool tape_dev::reposition(DCR *dcr, uint64_t raddr)
 {
+   uint32_t rfile, rblock;
+
+   rfile = (uint32_t)(raddr>>32);
+   rblock = (uint32_t)raddr;
    if (!is_open()) {
       dev_errno = EBADF;
       Mmsg0(errmsg, _("Bad call to reposition. Device not open\n"));
@@ -862,7 +879,7 @@ bool tape_dev::reposition(DCR *dcr, uint32_t rfile, uint32_t rblock)
    Dmsg4(100, "reposition from %u:%u to %u:%u\n", file, block_num, rfile, rblock);
    if (rfile < file) {
       Dmsg0(100, "Rewind\n");
-      if (!rewind(NULL)) {
+      if (!rewind(dcr)) {
          return false;
       }
    }
@@ -906,7 +923,7 @@ bool tape_dev::reposition(DCR *dcr, uint32_t rfile, uint32_t rblock)
  *   Returns: true on success
  *            false on failure
  */
-bool DEVICE::weof(int num)
+bool tape_dev::weof(DCR *dcr, int num)
 {
    struct mtop mt_com;
    int stat;
@@ -945,6 +962,12 @@ bool DEVICE::weof(int num)
          Mmsg2(errmsg, _("ioctl MTWEOF error on %s. ERR=%s.\n"),
             print_name(), be.bstrerror());
        }
+   }
+   /* DCR is null if called from within write_ansi_ibm_labels() */
+   if (dcr && stat == 0) {
+      if (!write_ansi_ibm_labels(dcr, ANSI_EOF_LABEL, VolHdr.VolumeName)) {
+         stat = -1;
+      }
    }
    return stat == 0;
 }
@@ -1032,4 +1055,64 @@ bool tape_dev::mount_tape(int mount, int dotimeout)
    free_pool_memory(results);
    Dmsg1(200, "============ mount=%d\n", mount);
    return true;
+}
+
+void tape_dev::set_ateof()
+{
+   DEVICE::set_ateof();
+   file++;
+}
+
+const char *tape_dev::print_type()
+{
+   return "Tape";
+}
+
+DEVICE *tape_dev::get_dev(DCR */*dcr*/)
+{
+   return this;
+}
+
+uint32_t tape_dev::get_hi_addr()
+{
+   return file;
+}
+
+uint32_t tape_dev::get_low_addr()
+{
+   return block_num;
+}
+
+uint64_t tape_dev::get_full_addr()
+{
+   return (((uint64_t)file) << 32) | (uint64_t)block_num;
+}
+
+bool tape_dev::end_of_volume(DCR *dcr)
+{
+   return write_ansi_ibm_labels(dcr, ANSI_EOV_LABEL, VolHdr.VolumeName);
+}
+
+/* Print the address */
+char *tape_dev::print_addr(char *buf, int32_t buf_len)
+{
+   buf[0] = 0;
+   bsnprintf(buf, buf_len, "%lu:%lu", get_hi_addr(), get_low_addr());
+   return buf;
+}
+
+char *tape_dev::print_addr(char *buf, int32_t buf_len, boffset_t addr)
+{
+   buf[0] = 0;
+   bsnprintf(buf, buf_len, "%lu:%lu", (uint32_t)(addr>>32), (uint32_t)addr);
+   return buf;
+}
+
+/*
+ * Clean up when terminating the device
+ */
+void tape_dev::term(DCR *dcr)
+{
+   delete_alerts();
+   DEVICE::term(dcr);
 }

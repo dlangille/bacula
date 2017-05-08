@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -48,7 +48,7 @@
  */
 
 /* Current database version number for all drivers */
-#define BDB_VERSION 15
+#define BDB_VERSION 16
 
 typedef void (DB_LIST_HANDLER)(void *, const char *);
 typedef int (DB_RESULT_HANDLER)(void *, int, char **);
@@ -158,10 +158,14 @@ struct JOB_DBR {
    char cEndTime[MAX_TIME_LENGTH];
    char cRealEndTime[MAX_TIME_LENGTH];
    /* Extra stuff not in DB */
-   int order;                         /* 0 ASC, 1 DESC */
-   int limit;                         /* limit records to display */
+   int     order;                     /* 0 ASC, 1 DESC */
+   int     limit;                     /* limit records to display */
    faddr_t rec_addr;
    uint32_t FileIndex;                /* added during Verify */
+
+   int     CorrNbJob;                 /* used by dbd_get_job_statistics() */
+   int     CorrJobBytes;              /* used by dbd_get_job_statistics() */
+   int     CorrJobFiles;              /* used by dbd_get_job_statistics() */
 };
 
 /* Job Media information used to create the media records
@@ -262,6 +266,7 @@ struct POOL_DBR {
    int32_t Recycle;                   /* default Vol recycle flag */
    uint32_t ActionOnPurge;            /* action on purge, e.g. truncate the disk volume */
    utime_t  VolRetention;             /* retention period in seconds */
+   utime_t  CacheRetention;           /* cache retention period in seconds */   
    utime_t  VolUseDuration;           /* time in secs volume can be used */
    uint32_t MaxVolJobs;               /* Max Jobs on Volume */
    uint32_t MaxVolFiles;              /* Max files on Volume */
@@ -315,7 +320,7 @@ public:
    MEDIA_DBR() { memset(this, 0, sizeof(MEDIA_DBR)); };
    ~MEDIA_DBR() {  };
    void clear() { memset(this, 0, sizeof(MEDIA_DBR)); };
-   void copy(MEDIA_DBR *omr) { memcpy(this, omr, sizeof(MEDIA_DBR)); };
+   void copy(MEDIA_DBR *omr) { memcpy(this, omr, sizeof(MEDIA_DBR)); sid_group = NULL; };
 
    DBId_t MediaId;                    /* Unique volume id */
    char VolumeName[MAX_NAME_LENGTH];  /* Volume name */
@@ -329,6 +334,8 @@ public:
    uint32_t VolJobs;                  /* number of jobs on this medium */
    uint32_t VolFiles;                 /* Number of files */
    uint32_t VolBlocks;                /* Number of blocks */
+   uint32_t VolParts;                 /* Number of cache parts */
+   uint32_t VolCloudParts;            /* Number of cloud parts */
    uint32_t VolMounts;                /* Number of times mounted */
    uint32_t VolErrors;                /* Number of read/write errors */
    uint64_t VolWrites;                /* Number of writes */
@@ -340,9 +347,11 @@ public:
    uint32_t VolType;                  /* Device type of where Volume labeled */
    uint64_t MaxVolBytes;              /* Max bytes to write to Volume */
    uint64_t VolCapacityBytes;         /* capacity estimate */
+   uint64_t LastPartBytes;            /* Bytes in last part */
    uint64_t VolReadTime;              /* time spent reading volume */
    uint64_t VolWriteTime;             /* time spent writing volume */
    utime_t  VolRetention;             /* Volume retention in seconds */
+   utime_t  CacheRetention;           /* Cache retention period in second */
    utime_t  VolUseDuration;           /* time in secs volume can be used */
    uint32_t ActionOnPurge;            /* action on purge, e.g. truncate the disk volume */
    uint32_t MaxVolJobs;               /* Max Jobs on Volume */
@@ -370,6 +379,8 @@ public:
    char    cLabelDate[MAX_TIME_LENGTH];    /* LabelData returned from DB */
    char    cInitialWrite[MAX_TIME_LENGTH]; /* InitialWrite returned from DB */
    char   *exclude_list;                   /* Optionnal exclude list for db_find_next_volume() */
+   char   *sid_group;                 /* Storageid group string */
+   char    sid[30];                   /* edited StorageId */
    bool    set_first_written;
    bool    set_label_date;
 };

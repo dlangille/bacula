@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -21,12 +21,12 @@
  *  Dumb program to do an "ls" of a Bacula 1.0 mortal file.
  *
  *  Kern Sibbald, MM
- *
  */
 
 #include "bacula.h"
 #include "stored.h"
 #include "findlib/find.h"
+#include "lib/cmd_parser.h"
 
 extern bool parse_sd_config(CONFIG *config, const char *configfile, int exit_code);
 
@@ -52,10 +52,6 @@ static CONFIG *config;
 void *start_heap;
 #define CONFIG_FILE "bacula-sd.conf"
 char *configfile = NULL;
-STORES *me = NULL;                    /* our Global resource */
-bool forge_on = false;
-pthread_mutex_t device_release_mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_cond_t wait_device_release = PTHREAD_COND_INITIALIZER;
 bool detect_errors = false;
 int  errors = 0;
 
@@ -69,21 +65,21 @@ static void usage()
 PROG_COPYRIGHT
 "\n%sVersion: %s (%s)\n\n"
 "Usage: bls [options] <device-name>\n"
-"       -b <file>       specify a bootstrap file\n"
-"       -c <file>       specify a Storage configuration file\n"
-"       -d <nn>         set debug level to <nn>\n"
-"       -dt             print timestamp in debug output\n"
-"       -e <file>       exclude list\n"
-"       -i <file>       include list\n"
-"       -j              list jobs\n"
-"       -k              list blocks\n"
-"    (no j or k option) list saved files\n"
-"       -L              dump label\n"
-"       -p              proceed inspite of errors\n"
-"       -v              be verbose\n"
-"       -V              specify Volume names (separated by |)\n"
-"       -E              Check records to detect errors\n"
-"       -?              print this message\n\n"), 2000, "", VERSION, BDATE);
+"     -b <file>          specify a bootstrap file\n"
+"     -c <file>          specify a Storage configuration file\n"
+"     -d <nn>            set debug level to <nn>\n"
+"     -dt                print timestamp in debug output\n"
+"     -e <file>          exclude list\n"
+"     -i <file>          include list\n"
+"     -j                 list jobs\n"
+"     -k                 list blocks\n"
+"  (no j or k option)    list saved files\n"
+"     -L                 dump label\n"
+"     -p                 proceed inspite of errors\n"
+"     -V                 specify Volume names (separated by |)\n"
+"     -E                 Check records to detect errors\n"
+"     -v                 be verbose\n"
+"     -?                 print this message\n\n"), 2000, "", VERSION, BDATE);
    exit(1);
 }
 
@@ -96,7 +92,9 @@ int main (int argc, char *argv[])
    char *VolumeName= NULL;
    char *bsrName = NULL;
    bool ignore_label_errors = false;
+   BtoolsAskDirHandler askdir_handler;
 
+   init_askdir_handler(&askdir_handler);
    setlocale(LC_ALL, "");
    bindtextdomain("bacula", LOCALEDIR);
    textdomain("bacula");
@@ -111,7 +109,7 @@ int main (int argc, char *argv[])
 
    ff = init_find_files();
 
-   while ((ch = getopt(argc, argv, "b:c:d:e:i:jkLpvV:?E")) != -1) {
+   while ((ch = getopt(argc, argv, "b:c:d:e:i:jkLpvV:?EDF:")) != -1) {
       switch (ch) {
       case 'b':
          bsrName = optarg;
@@ -132,9 +130,17 @@ int main (int argc, char *argv[])
          if (*optarg == 't') {
             dbg_timestamp = true;
          } else {
+            char *p;
+            /* We probably find a tag list -d 10,sql,bvfs */
+            if ((p = strchr(optarg, ',')) != NULL) {
+               *p = 0;
+            }
             debug_level = atoi(optarg);
             if (debug_level <= 0) {
                debug_level = 1;
+            }
+            if (p) {
+               debug_parse_tags(p+1, &debug_level_tags);
             }
          }
          break;
@@ -212,7 +218,7 @@ int main (int argc, char *argv[])
       configfile = bstrdup(CONFIG_FILE);
    }
 
-   config = new_config_parser();
+   config = New(CONFIG());
    parse_sd_config(config, configfile, M_ERROR_TERM);
    setup_me();
    load_sd_plugins(me->plugin_directory);
@@ -268,14 +274,13 @@ int main (int argc, char *argv[])
    return 0;
 }
 
-
 static void do_close(JCR *jcr)
 {
    release_device(jcr->dcr);
    free_attr(attr);
    free_record(rec);
    free_jcr(jcr);
-   dev->term();
+   dev->term(NULL);
 }
 
 
@@ -327,16 +332,19 @@ static void do_blocks(char *infname)
         block->VolSessionId, block->VolSessionTime);
       if (verbose == 1) {
          read_record_from_block(dcr, rec);
-         Pmsg9(-1, _("File:blk=%u:%u blk_num=%u blen=%u First rec FI=%s SessId=%u SessTim=%u Strm=%s rlen=%d\n"),
-              dev->file, dev->block_num,
+         Pmsg8(-1, "Addr=%llu blk_num=%u blen=%u First rec FI=%s SessId=%u SessTim=%u Strm=%s rlen=%d\n",
+              dev->get_full_addr(),
               block->BlockNumber, block->block_len,
               FI_to_ascii(buf1, rec->FileIndex), rec->VolSessionId, rec->VolSessionTime,
-              stream_to_ascii(buf2, rec->Stream, rec->FileIndex), rec->data_len);
+              stream_to_ascii_ex(buf2, rec->Stream, rec->FileIndex), rec->data_len);
          rec->remainder = 0;
-      } else if (verbose > 1) {
-         dump_block(block, "");
+      } else if (verbose > 1) {   /* detailed block dump */
+         Pmsg5(-1, "Blk=%u blen=%u bVer=%d SessId=%u SessTim=%u\n",
+           block->BlockNumber, block->block_len, block->BlockVer,
+           block->VolSessionId, block->VolSessionTime);
+         dump_block(dcr->dev, block, "", true);
       } else {
-         printf(_("Block: %d size=%d\n"), block->BlockNumber, block->block_len);
+         printf("Block: %d size=%d\n", block->BlockNumber, block->block_len);
       }
 
    }
@@ -367,7 +375,7 @@ static void do_jobs(char *infname)
 static void do_ls(char *infname)
 {
    if (dump_label) {
-      dump_volume_label(dev);
+      dev->dump_volume_label();
       return;
    }
    if (!read_records(dcr, record_cb, mount_next_read_volume)) {
@@ -375,6 +383,7 @@ static void do_ls(char *infname)
    }
    printf("%u files found.\n", num_files);
 }
+
 
 /*
  * Called here for each record from read_records()
@@ -384,13 +393,6 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
    if (verbose && rec->FileIndex < 0) {
       dump_label_record(dcr->dev, rec, verbose, false);
       return true;
-   }
-   if (verbose) {
-      char buf1[100], buf2[100];
-      Pmsg6(000, "Record: FI=%s SessId=%d Strm=%s len=%u remlen=%d data_len=%d\n",
-         FI_to_ascii(buf1, rec->FileIndex), rec->VolSessionId,
-         stream_to_ascii(buf2, rec->Stream, rec->FileIndex), rec->data_bytes, rec->remlen,
-         rec->data_len);
    }
 
    /* File Attributes stream */
@@ -417,13 +419,17 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
          print_ls_output(jcr, attr);
          num_files++;
       }
-   } else if (rec->Stream == STREAM_PLUGIN_NAME) {
+   } else if (rec->maskedStream == STREAM_PLUGIN_NAME) {
       char data[100];
       int len = MIN(rec->data_len+1, sizeof(data));
       bstrncpy(data, rec->data, len);
       Dmsg1(100, "Plugin data: %s\n", data);
-   } else if (rec->Stream == STREAM_RESTORE_OBJECT) {
+   } else if (rec->maskedStream == STREAM_RESTORE_OBJECT) {
       Dmsg0(100, "Restore Object record\n");
+   } else if (rec->maskedStream == STREAM_ADATA_BLOCK_HEADER) {
+      Dmsg0(000, "Adata block header\n");
+   } else if (rec->maskedStream == STREAM_ADATA_RECORD_HEADER) {
+      Dmsg0(000, "Adata record header\n");
    }
 
    return true;
@@ -475,34 +481,4 @@ static void get_session_record(DEVICE *dev, DEV_RECORD *rec, SESSION_LABEL *sess
       Pmsg5(-1, _("%s Record: VolSessionId=%d VolSessionTime=%d JobId=%d DataLen=%d\n"),
             rtype, rec->VolSessionId, rec->VolSessionTime, rec->Stream, rec->data_len);
    }
-}
-
-
-/* Dummies to replace askdir.c */
-bool    dir_find_next_appendable_volume(DCR *dcr) { return 1;}
-bool    dir_update_volume_info(DCR *dcr, bool relabel, bool update_LastWritten) { return 1; }
-bool    dir_create_jobmedia_record(DCR *dcr, bool zero) { return 1; }
-bool    flush_jobmedia_queue(JCR *jcr) { return true; }
-bool    dir_ask_sysop_to_create_appendable_volume(DCR *dcr) { return 1; }
-bool    dir_update_file_attributes(DCR *dcr, DEV_RECORD *rec) { return 1;}
-bool    dir_send_job_status(JCR *jcr) {return 1;}
-int     generate_job_event(JCR *jcr, const char *event) { return 1; }
-
-
-bool dir_ask_sysop_to_mount_volume(DCR *dcr, bool /*writing*/)
-{
-   DEVICE *dev = dcr->dev;
-   fprintf(stderr, _("Mount Volume \"%s\" on device %s and press return when ready: "),
-      dcr->VolumeName, dev->print_name());
-   dev->close();
-   getchar();
-   return true;
-}
-
-bool dir_get_volume_info(DCR *dcr, enum get_vol_info_rw  writing)
-{
-   Dmsg0(100, "Fake dir_get_volume_info\n");
-   dcr->setVolCatName(dcr->VolumeName);
-   Dmsg2(500, "Vol=%s VolType=%d\n", dcr->getVolCatName(), dcr->VolCatInfo.VolCatType);
-   return 1;
 }

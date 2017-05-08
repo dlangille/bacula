@@ -1,0 +1,129 @@
+#!/bin/sh
+#
+# Run a backup of the build directory but force it to have
+#   a comm error, and check that it restarts correctly.
+#
+TestName="restart2-job-test"
+JobName=RestartJob
+. scripts/functions
+
+scripts/cleanup
+scripts/copy-test-confs
+setup_shstore # simulate shared storage if enabled
+echo "${cwd}/build" >${cwd}/tmp/file-list
+
+change_jobname NightlySave $JobName
+$bperl -e 'add_attribute("$conf/bacula-fd.conf", "MaximumBandwidthPerJob", "100 kB/s", "FileDaemon")'
+
+start_test
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@output /dev/null
+messages
+@$out ${cwd}/tmp/log1.out
+@#setdebug level=0 trace=0 hangup=469 client
+@#setdebug level=20 dir
+label storage=File volume=TestVolume001
+run job=$JobName yes
+@sleep 15
+status client
+status storage=File
+END_OF_DATA
+
+run_bacula 2>/dev/null 
+
+# Note, the following stops and restarts the FD while it
+#  is running to simulate a crash, so it is normal if
+#  orphanned buffers are reported
+#sleep 9
+$scripts/bacula-ctl-fd stop >/dev/null 2>&1
+sleep 5
+$scripts/bacula-ctl-fd start 1>/dev/null 2>&1
+sleep 5
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@$out ${cwd}/tmp/log1.out
+@sleep 15
+messages
+quit
+END_OF_DATA
+
+run_bconsole 
+
+# Note, the following stops and restarts the FD while it
+#  is running to simulate a crash, so it is normal if
+#  orphanned buffers are reported
+#sleep 9
+$scripts/bacula-ctl-fd stop >/dev/null 2>&1
+sleep 5
+$scripts/bacula-ctl-fd start >/dev/null 2>&1
+sleep 5
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@$out ${cwd}/tmp/log1.out
+@sleep 15
+messages
+quit
+END_OF_DATA
+
+run_bconsole 
+
+#
+# This is the last backup, so make it run in a reasonable time
+#
+$bperl -e 'add_attribute("$conf/bacula-fd.conf", "MaximumBandwidthPerJob", "500000 kB/s", "FileDaemon")'
+
+#sleep 9
+$scripts/bacula-ctl-fd stop >/dev/null 2>&1
+sleep 5
+$scripts/bacula-ctl-fd start
+sleep 5
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@$out ${cwd}/tmp/log1.out
+wait
+messages
+sql
+select * from JobMedia where JobId=1;
+
+quit
+END_OF_DATA
+
+
+run_bconsole  
+
+scripts/check_for_zombie_jobs storage=File
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@output /dev/null
+messages
+@# 
+@# now do a restore
+@#
+@$out ${cwd}/tmp/log2.out
+@#setdebug level=50 storage=File
+restore where=$tmp/bacula-restores storage=File select all done
+yes
+wait
+messages
+status dir
+status client
+status storage=File
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+scripts/check_for_zombie_jobs storage=File
+stop_bacula
+
+check_two_logs
+check_restore_diff
+
+grep "Sending Accurate" $tmp/log1.out >/dev/null
+if [ $? != 0 ]; then
+    print_debug "ERROR: Second job should use Accurate"
+    estat=1
+fi
+
+end_test

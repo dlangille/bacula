@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2015 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -30,6 +30,22 @@ extern CLIENT *me;                 /* my resource */
 
 const int dbglvl = 50;
 
+/* Version at end of Hello
+ *   prior to 10Mar08 no version
+ *   1 10Mar08
+ *   2 13Mar09 - added the ability to restore from multiple storages
+ *   3 03Sep10 - added the restore object command for vss plugin 4.0
+ *   4 25Nov10 - added bandwidth command 5.1
+ *   5 24Nov11 - added new restore object command format (pluginname) 6.0
+ *   6 15Feb12 - added Component selection information list
+ *   7 19Feb12 - added Expected files to restore
+ *   8 22Mar13 - added restore options + version for SD
+ *   9 06Aug13 - added comm line compression
+ *  10 01Jan14 - added SD Calls Client and api version to status command
+ */
+#define FD_VERSION 10
+
+/* For compatibility with old Community SDs */
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /*
@@ -229,6 +245,13 @@ bool authenticate_storagedaemon(JCR *jcr)
       goto auth_fatal;
    }
    sscanf(sd->msg, "3000 OK Hello %d", &sd_version);
+   if (sd_version >= 1 && me->comm_compression) {
+      sd->set_compress();
+   } else {
+      sd->clear_compress();
+      Dmsg0(050, "*** No FD compression with SD\n");
+   }
+
    /* At this point, we have successfully connected */
 
 auth_fatal:

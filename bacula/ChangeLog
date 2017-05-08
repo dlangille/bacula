@@ -3035,7 +3035,6 @@ Version 5.2.0rc1
   mdb as its rather rudimentary and more a crash debugger then a source code
   debugger.
 - Fix for bug #1560 bcopy cannot find Volume
-- Add beef
 - Update autoconf scripts
 - Fix Windows build
 
@@ -4215,7 +4214,6 @@ Release Version 4.0.0-RC1
 
 24Apr10
 - Fix for bug #1560 bcopy cannot find Volume
-- Add BEEF in version.h
 
 23Apr10
 - Add compress/decompress of Object Record data

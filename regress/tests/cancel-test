@@ -1,9 +1,7 @@
 #!/bin/sh
 #
-# Copyright (C) 2000-2015 Kern Sibbald
+# Copyright (C) 2000-2017 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
-#
-
 #
 # Test different cancel cases
 # Can be quite long
@@ -25,7 +23,11 @@ echo "s%  Schedule =%# Schedule =%g" >$outf
 cp ${cwd}/bin/bacula-dir.conf ${cwd}/tmp/1
 sed -f ${outf} ${cwd}/tmp/1 >${cwd}/bin/bacula-dir.conf
 
-MAXVOLBYTES=1MB
+if [ "$FORCE_DEDUP" = yes ]; then
+    MAXVOLBYTES=5KB
+else
+    MAXVOLBYTES=1MB
+fi
 
 touch tmp/log1.out
 
@@ -85,7 +87,7 @@ when=`perl -MPOSIX -e "print strftime('%F %T', localtime(time+6000))"`
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
 @output /dev/null
 messages
-setbandwidth limit=500 client
+setbandwidth limit="500 kb/s" client
 @$out ${cwd}/tmp/logfile1.out
 @################################################################
 @# run a first test without volume

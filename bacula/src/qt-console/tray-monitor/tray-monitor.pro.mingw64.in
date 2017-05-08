@@ -26,6 +26,7 @@ confs.commands = ./install_conf_file
 
 TEMPLATE     = app
 TARGET       = bacula-tray-monitor
+QMAKE_EXTRA_TARGETS += depend
 DEPENDPATH  += .
 INCLUDEPATH += ../.. . 
 LIBTOOL_LINK = @QMAKE_LIBTOOL@ --silent --tag=CXX --mode=link
@@ -33,6 +34,9 @@ LIBTOOL_INSTALL = @QMAKE_LIBTOOL@ --silent --mode=install
 QMAKE_LINK   = $${LIBTOOL_LINK} $(CXX)
 QMAKE_INSTALL_PROGRAM = $${LIBTOOL_INSTALL} install -m @SBINPERM@ -p
 QMAKE_CLEAN += .libs/* bacula-tray-monitor release/bacula-tray-monitor
+QMAKE_CXXFLAGS += -DTRAY_MONITOR
+QMAKE_CFLAGS += -DTRAY_MONITOR
+
 
 RESOURCES               = ../main.qrc
 MOC_DIR                 = moc64
@@ -49,7 +53,9 @@ QMAKE_LIB               = x86_64-w64-mingw32-ar -ru
 QMAKE_RC                = x86_64-w64-mingw32-windres
 
 # Main directory
-HEADERS += tray_conf.h  tray-monitor.h  tray-ui.h 
-SOURCES += authenticate.cpp  tray_conf.cpp  tray-monitor.cpp 
+HEADERS += tray-monitor.h tray_conf.h tray-ui.h fdstatus.h task.h ../util/fmtwidgetitem.h dirstatus.h conf.h sdstatus.h runjob.h status.h
+SOURCES +=  tray-monitor.cpp tray_conf.cpp fdstatus.cpp task.cpp authenticate.cpp ../util/fmtwidgetitem.cpp dirstatus.cpp sdstatus.cpp conf.cpp runjob.cpp status.cpp common.h
 
-FORMS += ../run/run.ui
+FORMS += fd-monitor.ui dir-monitor.ui sd-monitor.ui main-conf.ui res-conf.ui run.ui
+
+TRANSLATIONS += ts/tm_fr.ts ts/tm_de.ts ts/tm_ja.ts

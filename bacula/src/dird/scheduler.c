@@ -177,11 +177,11 @@ again:
    jcr = new_jcr(sizeof(JCR), dird_free_jcr);
    run = next_job->run;               /* pick up needed values */
    job = next_job->job;
-   if (job->enabled && (!job->client || job->client->enabled)) {
+   if (job->is_enabled() && (!job->client || job->client->is_enabled())) {
       dump_job(next_job, _("Run job"));  /* no client and job enabled */
    }
    free(next_job);
-   if (!job->enabled || (job->client && !job->client->enabled)) {
+   if (!job->is_enabled() || (job->client && !job->client->is_enabled())) {
       free_jcr(jcr);
       goto again;                     /* ignore this job */
    }
@@ -307,8 +307,8 @@ static void find_runs()
    LockRes();
    foreach_res(job, R_JOB) {
       sched = job->schedule;
-      if (!sched || !job->enabled || (sched && !sched->enabled) ||
-         (job->client && !job->client->enabled)) {
+      if (!sched || !job->is_enabled() || (sched && !sched->is_enabled()) ||
+         (job->client && !job->client->is_enabled())) {
          continue;                    /* no, skip this job */
       }
       Dmsg1(dbglvl, "Got job: %s\n", job->hdr.name);

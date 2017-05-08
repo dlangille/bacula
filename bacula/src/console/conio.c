@@ -1,7 +1,6 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -88,11 +87,6 @@ static char *UP;
 extern char *BC;
 extern char *UP;
 #endif
-
-/* Forward referenced functions */
-extern "C" {
-static void sigintcatcher(int);
-}
 
 static void add_smap(char *str, int func);
 
@@ -257,9 +251,7 @@ static void asinsl();
 static void asdell();
 
 int input_line(char *string, int length);
-extern "C" {
 void con_term();
-}
 void trapctlc();
 int usrbrk();
 void clrbrk();
@@ -974,7 +966,7 @@ static void rawmode(FILE *input)
    /* Defaults, the main program can override these */
    signal(SIGQUIT, SIG_IGN);
    signal(SIGHUP, SIG_IGN);
-   signal(SIGINT, sigintcatcher);
+   trapctlc();
    signal(SIGWINCH, SIG_IGN);
 
    if (!termtype) {
@@ -1097,41 +1089,6 @@ t_char(char c)
 {
    (void)write(1, &c, 1);
 }
-
-
-static int brkflg = 0;              /* set on user break */
-
-/* Routine to return true if user types break */
-int usrbrk()
-{
-   return brkflg;
-}
-
-/* Clear break flag */
-void clrbrk()
-{
-   brkflg = 0;
-
-}
-
-/* Interrupt caught here */
-static void sigintcatcher(int sig)
-{
-   brkflg++;
-   if (brkflg > 3) {
-      normode();
-      exit(1);
-   }
-   signal(SIGINT, sigintcatcher);
-}
-
-
-/* Trap Ctl-C */
-void trapctlc()
-{
-   signal(SIGINT, sigintcatcher);
-}
-
 
 /* ASCLRL() -- Clear to end of line from current position */
 static void asclrl(int pos, int width)

@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -29,164 +29,117 @@
  *
  */
 
-//#include "winhdrs.h"
 #include "tray-monitor.h"
-
-void senditf(const char *fmt, ...);
-void sendit(const char *buf);
 
 /* Commands sent to Director */
 static char DIRhello[]    = "Hello %s calling\n";
 
+static char SDhello[] = "Hello SD: Bacula Director %s calling\n";
+
 /* Response from Director */
 static char DIROKhello[]   = "1000 OK:";
 
-/* Commands sent to Storage daemon and File daemon and received
+/* Commands sent to File daemon and received
  *  from the User Agent */
-static char SDFDhello[]    = "Hello Director %s calling\n";
+static char FDhello[]    = "Hello Director %s calling\n";
 
 /* Response from SD */
-static char SDOKhello[]   = "3000 OK Hello\n";
+static char SDOKhello[]   = "3000 OK Hello";
 /* Response from FD */
 static char FDOKhello[] = "2000 OK Hello";
 
 /* Forward referenced functions */
 
-/*
- * Authenticate Director
- */
-int authenticate_director(JCR *jcr, MONITOR *mon, DIRRES */*director*/)
+int authenticate_daemon(JCR *jcr, MONITOR *mon, RESMON *res)
 {
-   BSOCK *dir = jcr->dir_bsock;
+   BSOCK *bs = res->bs;
    int tls_local_need = BNET_TLS_NONE;
    int tls_remote_need = BNET_TLS_NONE;
    int compatible = true;
    char bashed_name[MAX_NAME_LENGTH];
-   char *password;
+   char *password, *p;
+   int ret = 0;
 
    bstrncpy(bashed_name, mon->hdr.name, sizeof(bashed_name));
    bash_spaces(bashed_name);
-   password = mon->password;
+   password = res->password;
+
+   /* TLS Requirement */
+   if (res->tls_enable) {
+      tls_local_need = BNET_TLS_REQUIRED;
+   }
 
    /* Timeout Hello after 5 mins */
-   btimer_t *tid = start_bsock_timer(dir, 60 * 5);
-   dir->fsend(DIRhello, bashed_name);
-
-   if (!cram_md5_respond(dir, password, &tls_remote_need, &compatible) ||
-       !cram_md5_challenge(dir, password, tls_local_need, compatible)) {
-      stop_bsock_timer(tid);
-      Jmsg0(jcr, M_FATAL, 0, _("Director authorization problem.\n"
-            "Most likely the passwords do not agree.\n"
-       "For help, please see " MANUAL_AUTH_URL "\n"));
-      return 0;
-   }
-
-   Dmsg1(6, ">dird: %s", dir->msg);
-   if (dir->recv() <= 0) {
-      stop_bsock_timer(tid);
-      Jmsg1(jcr, M_FATAL, 0, _("Bad response to Hello command: ERR=%s\n"),
-         dir->bstrerror());
-      return 0;
-   }
-   Dmsg1(10, "<dird: %s", dir->msg);
-   stop_bsock_timer(tid);
-   if (strncmp(dir->msg, DIROKhello, sizeof(DIROKhello)-1) != 0) {
-      Jmsg0(jcr, M_FATAL, 0, _("Director rejected Hello command\n"));
-      return 0;
+   btimer_t *tid = start_bsock_timer(bs, 60 * 5);
+   if (res->type == R_DIRECTOR) {
+      p = DIRhello;
+   } else if (res->type == R_STORAGE) {
+      p = SDhello;
    } else {
-      Jmsg0(jcr, M_INFO, 0, dir->msg);
+      p = FDhello;
    }
-   return 1;
-}
 
-/*
- * Authenticate Storage daemon connection
- */
-int authenticate_storage_daemon(JCR *jcr, MONITOR *monitor, STORE* store)
-{
-   BSOCK *sd = jcr->store_bsock;
-   char dirname[MAX_NAME_LENGTH];
-   int tls_local_need = BNET_TLS_NONE;
-   int tls_remote_need = BNET_TLS_NONE;
-   int compatible = true;
+   bs->fsend(p, bashed_name);
 
-   /*
-    * Send my name to the Storage daemon then do authentication
-    */
-   bstrncpy(dirname, monitor->hdr.name, sizeof(dirname));
-   bash_spaces(dirname);
-   /* Timeout Hello after 5 mins */
-   btimer_t *tid = start_bsock_timer(sd, 60 * 5);
-   if (!sd->fsend(SDFDhello, dirname)) {
-      stop_bsock_timer(tid);
-      Jmsg(jcr, M_FATAL, 0, _("Error sending Hello to Storage daemon. ERR=%s\n"), sd->bstrerror());
-      return 0;
+   if (!cram_md5_respond(bs, password, &tls_remote_need, &compatible) ||
+       !cram_md5_challenge(bs, password, tls_local_need, compatible)) {
+      Jmsg(jcr, M_FATAL, 0, _("Authorization problem.\n"
+                              "Most likely the passwords do not agree.\n"
+                              "For help, please see " MANUAL_AUTH_URL "\n"));
+      goto bail_out;
    }
-   if (!cram_md5_respond(sd, store->password, &tls_remote_need, &compatible) ||
-       !cram_md5_challenge(sd, store->password, tls_local_need, compatible)) {
-      stop_bsock_timer(tid);
-      Jmsg0(jcr, M_FATAL, 0, _("Director and Storage daemon passwords or names not the same.\n"
-       "For help, please see " MANUAL_AUTH_URL "\n"));
-      return 0;
-   }
-   Dmsg1(116, ">stored: %s", sd->msg);
-   if (sd->recv() <= 0) {
-      stop_bsock_timer(tid);
-      Jmsg1(jcr, M_FATAL, 0, _("bdird<stored: bad response to Hello command: ERR=%s\n"),
-         sd->bstrerror());
-      return 0;
-   }
-   Dmsg1(110, "<stored: %s", sd->msg);
-   stop_bsock_timer(tid);
-   if (strncmp(sd->msg, SDOKhello, sizeof(SDOKhello)) != 0) {
-      Jmsg0(jcr, M_FATAL, 0, _("Storage daemon rejected Hello command\n"));
-      return 0;
-   }
-   return 1;
-}
 
-/*
- * Authenticate File daemon connection
- */
-int authenticate_file_daemon(JCR *jcr, MONITOR *monitor, CLIENT* client)
-{
-   BSOCK *fd = jcr->file_bsock;
-   char dirname[MAX_NAME_LENGTH];
-   int tls_local_need = BNET_TLS_NONE;
-   int tls_remote_need = BNET_TLS_NONE;
-   int compatible = true;
+   /* Verify that the remote host is willing to meet our TLS requirements */
+   if (tls_remote_need < tls_local_need && tls_local_need != BNET_TLS_OK && tls_remote_need != BNET_TLS_OK) {
+      Jmsg(jcr, M_FATAL, 0, _("Authorization problem:"
+                            " Remote server did not advertise required TLS support.\n"));
+      goto bail_out;
+   }
 
-   /*
-    * Send my name to the File daemon then do authentication
-    */
-   bstrncpy(dirname, monitor->hdr.name, sizeof(dirname));
-   bash_spaces(dirname);
-   /* Timeout Hello after 5 mins */
-   btimer_t *tid = start_bsock_timer(fd, 60 * 5);
-   if (!fd->fsend(SDFDhello, dirname)) {
+   /* Verify that we are willing to meet the remote host's requirements */
+   if (tls_remote_need > tls_local_need && tls_local_need != BNET_TLS_OK && tls_remote_need != BNET_TLS_OK) {
+      Jmsg(jcr, M_FATAL, 0, ("Authorization problem:"
+                             " Remote server requires TLS.\n"));
+      goto bail_out;
+   }
+
+   /* Is TLS Enabled? */
+   if (tls_local_need >= BNET_TLS_OK && tls_remote_need >= BNET_TLS_OK) {
+      /* Engage TLS! Full Speed Ahead! */
+      if (!bnet_tls_client(res->tls_ctx, bs, NULL)) {
+         Jmsg(jcr, M_FATAL, 0, _("TLS negotiation failed\n"));
+         goto bail_out;
+      }
+   }
+
+   Dmsg1(6, "> %s", bs->msg);
+   if (bs->recv() <= 0) {
+      Jmsg1(jcr, M_FATAL, 0, _("Bad response to Hello command: ERR=%s\n"),
+         bs->bstrerror());
+      goto bail_out;
+   }
+   Dmsg1(10, "< %s", bs->msg);
+   switch(res->type) {
+   case R_DIRECTOR:
+      p = DIROKhello;
+      break;
+   case R_CLIENT:
+      p = FDOKhello;
+      break;
+   case R_STORAGE:
+      p = SDOKhello;
+      break;
+   }
+   if (strncmp(bs->msg, p, strlen(p)) != 0) {
+      Jmsg(jcr, M_FATAL, 0, _("Daemon rejected Hello command\n"));
+      goto bail_out;
+   } else {
+      //Jmsg0(jcr, M_INFO, 0, dir->msg);
+   }
+   ret = 1;
+bail_out:
+   if (tid) {
       stop_bsock_timer(tid);
-      Jmsg(jcr, M_FATAL, 0, _("Error sending Hello to File daemon. ERR=%s\n"), fd->bstrerror());
-      return 0;
    }
-   if (!cram_md5_respond(fd, client->password, &tls_remote_need, &compatible) ||
-       !cram_md5_challenge(fd, client->password, tls_local_need, compatible)) {
-      stop_bsock_timer(tid);
-      Jmsg(jcr, M_FATAL, 0, _("Director and File daemon passwords or names not the same.\n"
-       "For help, please see " MANUAL_AUTH_URL "\n"));
-      return 0;
-   }
-   Dmsg1(116, ">filed: %s", fd->msg);
-   if (fd->recv() <= 0) {
-      stop_bsock_timer(tid);
-      Jmsg(jcr, M_FATAL, 0, _("Bad response from File daemon to Hello command: ERR=%s\n"),
-         fd->bstrerror());
-      return 0;
-   }
-   Dmsg1(110, "<stored: %s", fd->msg);
-   stop_bsock_timer(tid);
-   if (strncmp(fd->msg, FDOKhello, sizeof(FDOKhello)-1) != 0) {
-      Jmsg(jcr, M_FATAL, 0, _("File daemon rejected Hello command\n"));
-      return 0;
-   }
-   return 1;
+   return ret;
 }

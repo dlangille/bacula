@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -533,8 +533,8 @@ void b_memset(const char *file, int line, void *mem, int val, size_t num)
 
 #if !defined(HAVE_WIN32)
 static int del_pid_file_ok = FALSE;
-static int pid_fd = -1;
 #endif
+static int pid_fd = -1;
 
 #ifdef HAVE_FCNTL_LOCK
 /* a convenient function [un]lock file using fnctl()
@@ -558,7 +558,7 @@ int fcntl_lock(int fd, int code)
  *    2: Successs, but a previous file was found
  */
 #if !defined(HAVE_FCNTL_LOCK) || defined(HAVE_WIN32)
-int create_lock_file(char *fname, const char *progname, const char *filetype, POOLMEM **errmsg)
+int create_lock_file(char *fname, const char *progname, const char *filetype, POOLMEM **errmsg, int *fd)
 {
    int ret = 1;
 #if !defined(HAVE_WIN32)
@@ -614,31 +614,31 @@ int create_lock_file(char *fname, const char *progname, const char *filetype, PO
    return ret;
 }
 #else /* defined(HAVE_FCNTL_LOCK) */
-int create_lock_file(char *fname, const char *progname, const char *filetype, POOLMEM **errmsg)
+int create_lock_file(char *fname, const char *progname, const char *filetype, POOLMEM **errmsg, int *fd)
 {
    int len;
    int oldpid;
    char pidbuf[20];
 
    /* Open the pidfile for writing */
-   if ((pid_fd = open(fname, O_CREAT|O_RDWR, 0640)) >= 0) {
-      if (fcntl_lock(pid_fd, F_WRLCK) == -1) {
+   if ((*fd = open(fname, O_CREAT|O_RDWR, 0640)) >= 0) {
+      if (fcntl_lock(*fd, F_WRLCK) == -1) {
          berrno be;
          /* already locked by someone else, try to read the pid */
-         if (read(pid_fd, &pidbuf, sizeof(pidbuf)) > 0 &&
+         if (read(*fd, &pidbuf, sizeof(pidbuf)) > 0 &&
              sscanf(pidbuf, "%d", &oldpid) == 1) {
-            Mmsg(errmsg, _("%s is already running. pid=%d\nCheck file %s\n"),
+            Mmsg(errmsg, _("%s is already running. pid=%d, check file %s\n"),
                  progname, oldpid, fname);
          } else {
             Mmsg(errmsg, _("Cannot lock %s file. %s ERR=%s\n"), filetype, fname, be.bstrerror());
          }
-         close(pid_fd);
-         pid_fd=-1;
+         close(*fd);
+         *fd=-1;
          return 0;
       }
       /* write the pid */
       len = sprintf(pidbuf, "%d\n", (int)getpid());
-      write(pid_fd, pidbuf, len);
+      write(*fd, pidbuf, len);
       /* KEEP THE FILE OPEN TO KEEP THE LOCK !!! */
       return 1;
    } else {
@@ -658,7 +658,7 @@ void create_pid_file(char *dir, const char *progname, int port)
    POOLMEM *fname = get_pool_memory(PM_FNAME);
 
    Mmsg(fname, "%s/%s.%d.pid", dir, progname, port);
-   if (create_lock_file(fname, progname, "pid", &errmsg) == 0) {
+   if (create_lock_file(fname, progname, "pid", &errmsg, &pid_fd) == 0) {
       Emsg1(M_ERROR_TERM, 0, "%s", errmsg);
       /* never return */
    }
@@ -958,6 +958,12 @@ void allow_os_suspensions()
 
 
 #if HAVE_BACKTRACE && HAVE_GCC
+/* if some names are not resolved you can try using : addr2line, like this
+ * $ addr2line -e bin/bacula-sd -a 0x43cd11
+ * OR
+ * use the the -rdynamic option in the linker, like this
+ * $ LDFLAGS="-rdynamic" make setup
+ */
 #include <cxxabi.h>
 #include <execinfo.h>
 void stack_trace()
@@ -1036,21 +1042,22 @@ int fs_get_free_space(const char *path, int64_t *freeval, int64_t *totalval)
    return -1;
 }
 
+/* This function is used after a fork, the memory manager is not be initialized
+ * properly, so we must stay simple.
+ */
 void setup_env(char *envp[])
 {
    if (envp) {
 #if defined(HAVE_SETENV)
       char *p;
-      POOLMEM *tmp = get_pool_memory(PM_FNAME);
       for (int i=0; envp[i] ; i++) {
-         pm_strcpy(tmp, envp[i]);
-         p = strchr(tmp, '='); /* HOME=/tmp */
+         p = strchr(envp[i], '='); /* HOME=/tmp */
          if (p) {
             *p=0;                       /* HOME\0tmp\0 */
-            setenv(tmp, p+1, true);
+            setenv(envp[i], p+1, true);
+            *p='=';
          }
       }
-      free_pool_memory(tmp);
 #elif defined(HAVE_PUTENV)
       for (int i=0; envp[i] ; i++) {
          putenv(envp[i]);
@@ -1110,3 +1117,322 @@ bail_out:
     close(fd_dst);
     return -1;
 }
+
+/* The poll() code is currently disabled */
+#ifdef HAVE_POLL
+
+#include <poll.h>
+#define NB_EVENT 1
+
+int fd_wait_data(int fd, fd_wait_mode mode, int sec, int msec)
+{
+   int ret;
+   struct pollfd fds[NB_EVENT]; /* The structure for one event */
+
+   fds[0].fd = fd;
+   fds[0].events = (mode == WAIT_READ) ? POLLIN : POLLOUT;
+
+   ret = poll(fds, NB_EVENT, sec * 1000 + msec);
+
+   /* Check if poll actually succeed */
+   switch(ret) {
+   case 0:                      /* timeout; no event detected */
+      return 0;
+
+   case -1:                     /* report error and abort */
+      return -1;
+
+   default:
+      if (fds[0].revents & POLLIN || fds[0].revents & POLLOUT) {
+         return 1;
+
+      } else {
+         return -1;             /* unexpected... */
+      }
+   }
+   return -1;                   /* unexpected... */
+}
+#else
+
+/* The select() code with a bigger fd_set was tested on Linux, FreeBSD and SunOS */
+#if defined(HAVE_LINUX_OS) || defined(HAVE_FREEBSD_OS) || defined(HAVE_SUN_OS) || defined(HAVE_WIN32)
+ #define SELECT_MAX_FD 7990
+#else
+ #define SELECT_MAX_FD 1023     /* For others, we keep it low */
+#endif
+
+int fd_wait_data(int fd, fd_wait_mode mode, int sec, int msec)
+{
+
+   /* TODO: Allocate the fd_set when fd > SELECT_MAX_FD */
+   union {
+      fd_set fdset;
+      char bfd_buf[1000];
+   };
+   struct timeval tv;
+   int ret;
+
+   if (fd > SELECT_MAX_FD) {
+      Pmsg1(0, "Too many open files for the current system fd=%d\n", fd);
+      return -1;
+   }
+
+   memset(&bfd_buf, 0, sizeof(bfd_buf)); /* FD_ZERO(&fdset) */
+   FD_SET((unsigned)fd, &fdset);
+
+   tv.tv_sec = sec;
+   tv.tv_usec = msec * 1000;
+
+   if (mode == WAIT_READ) {
+      ret = select(fd + 1, &fdset, NULL, NULL, &tv);
+
+   } else { /* WAIT_WRITE */
+      ret = select(fd + 1, NULL, &fdset, NULL, &tv);
+   }
+
+   switch (ret) {
+   case 0:                      /* timeout */
+      return 0;
+   case -1:
+      return -1;                /* error return */
+   default:
+      break;
+   }
+   return 1;
+}
+#endif
+
+/* Use SOCK_CLOEXEC option when calling accept(). If not available,
+ * do it ourself (but with a race condition...)
+ */
+int baccept(int sockfd, struct sockaddr *addr, socklen_t *addrlen)
+{
+   int fd;
+#ifdef HAVE_ACCEPT4
+   fd = accept4(sockfd, addr, addrlen, SOCK_CLOEXEC);
+#else
+   fd = accept(sockfd, addr, addrlen);
+
+# ifdef HAVE_DECL_FD_CLOEXEC
+   if (fd >= 0) {
+      int tmp_errno = errno
+      if (fcntl(fd, F_SETFD, fcntl(fd, F_GETFD) | FD_CLOEXEC) < 0) {
+         berrno be;
+         Dmsg2(0, "Unable to set the CLOEXEC flag on fd=%d ERR=%s\n", fd, be.bstrerror());
+      }
+      errno = tmp_errno;
+   }
+
+# endif  /* HAVE_DECL_FD_CLOEXEC */
+#endif   /* HAVE_ACCEPT4 */
+   return fd;
+}
+
+#undef fopen
+FILE *bfopen(const char *path, const char *mode)
+{
+   char options[50];
+   FILE *fp;
+
+   bstrncpy(options, mode, sizeof(options));
+
+#if defined(HAVE_STREAM_CLOEXEC)
+   bstrncat(options, STREAM_CLOEXEC, sizeof(options));
+#endif
+
+   fp = fopen(path, options);
+
+#if !defined(HAVE_STREAM_CLOEXEC) && defined(HAVE_DECL_FD_CLOEXEC)
+   if (fp) {
+      int fd = fileno(fp);
+      if (fd >= 0) {
+         int tmp_errno = errno;
+         if (fcntl(fd, F_SETFD, fcntl(fd, F_GETFD) | FD_CLOEXEC) < 0) {
+            berrno be;
+            Dmsg2(0, "Unable to set the CLOEXEC flag on fd=%d ERR=%s\n", fd, be.bstrerror());
+         }
+         errno = tmp_errno;
+      }
+   }
+#endif
+   return fp;
+}
+
+
+#ifdef TEST_PROGRAM
+/* The main idea of the test is pretty simple, we have a writer and a reader, and
+ * they wait a little bit to read or send data over the fifo.
+ * So, for the first packets, the writer will wait, then the reader will wait
+ * read/write requests should always be fast. Only the time of the fd_wait_data()
+ * should be long.
+ */
+#include "findlib/namedpipe.h"
+#define PIPENAME "/tmp/wait.pipe.%d"
+
+#define NBPACKETS 10
+#define BUFSIZE   128*512       /* The pipe size looks to be 65K */
+
+typedef struct {
+   int       nb;
+   pthread_t writer;
+   pthread_t reader;
+} job;
+
+pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
+pthread_mutex_t cond_mutex = PTHREAD_MUTEX_INITIALIZER;
+int nb_ready=0;
+
+void *th1(void *a)
+{
+   NamedPipe p;
+   int fd, r;
+   btime_t s, e;
+   ssize_t nb;
+   char buf[BUFSIZE];
+   job *j = (job *)a;
+
+   namedpipe_init(&p);
+   bsnprintf(buf, sizeof(buf), PIPENAME, j->nb);
+   if (namedpipe_create(&p, buf, 0600) < 0) {
+      berrno be;
+      Dmsg2(0, "R: Unable to create the fifo %s. ERR=%s\n", buf, be.bstrerror());
+      namedpipe_free(&p);
+      exit(2);
+   }
+   fd = namedpipe_open(&p, buf, O_RDONLY);
+   if (fd < 0) {
+      berrno be;
+      Dmsg2(0, "R: Unable to open the fifo %s. ERR=%s\n", buf, be.bstrerror());
+      return NULL;
+   }
+   P(cond_mutex);
+   nb_ready++;
+   pthread_cond_wait(&cond, &cond_mutex);
+   V(cond_mutex);
+   for (int i = 0; i < NBPACKETS; i++) {
+      if (i < (NBPACKETS/2)) {
+         bmicrosleep(5, 0);
+      }
+      s = get_current_btime();
+      r = fd_wait_data(fd, WAIT_READ, 10, 0);
+      if (r > 0) {
+         e = get_current_btime();
+         Dmsg2(0, "Wait to read pkt %d %lldms\n",i, (int64_t) (e - s));
+
+         if (i <= NBPACKETS/2) {
+            ASSERT2((e-s) < 10000, "In the 1st phase, we are blocking the process");
+         } else {
+            ASSERT2((e-s) > 10000, "In the 2nd phase, the writer is slowing down things");
+         }
+
+         s = get_current_btime();
+         nb = read(fd, buf, sizeof(buf));
+         e = get_current_btime();
+         Dmsg3(0, "Read pkt %d %d bytes in %lldms\n",i, (int)nb, (int64_t) (e - s));
+         ASSERT2((e-s) < 10000, "The read operation should be FAST");
+      }
+   }
+   namedpipe_free(&p);
+   return NULL;
+}
+
+void *th2(void *a)
+{
+   NamedPipe p;
+   btime_t s, e;
+   job *j = (job *)a;
+   char buf[BUFSIZE];
+   int fd;
+   ssize_t nb;
+
+   bsnprintf(buf, sizeof(buf), PIPENAME, j->nb);
+   namedpipe_init(&p);
+   if (namedpipe_create(&p, buf, 0600) < 0) {
+      berrno be;
+      Dmsg2(0, "W: Unable to create the fifo %s. ERR=%s\n", buf, be.bstrerror());
+      namedpipe_free(&p);
+      exit(2);
+   }
+
+   fd = namedpipe_open(&p, buf, O_WRONLY);
+   if (fd < 0) {
+      berrno be;
+      Dmsg2(0, "W: Unable to open the fifo %s. ERR=%s\n", buf, be.bstrerror());
+      namedpipe_free(&p);
+      exit(2);
+   }
+
+   P(cond_mutex);
+   nb_ready++;
+   pthread_cond_wait(&cond, &cond_mutex);
+   V(cond_mutex);
+
+   unlink(buf);
+
+   for (int i=0; i < NBPACKETS; i++) {
+      if (i > (NBPACKETS/2)) {
+         bmicrosleep(5, 0);
+      }
+      s = get_current_btime();
+      if (fd_wait_data(fd, WAIT_WRITE, 10, 0) > 0) {
+         e = get_current_btime();
+         Dmsg2(0, "Wait to write pkt %d %lldms\n",i, (int64_t) (e - s));
+
+         if (i == 0 || i > NBPACKETS/2) { /* The first packet doesn't count */
+            ASSERT2((e-s) < 100000, "In the 2nd phase, it's fast to send, we are the blocker");
+         } else {
+            ASSERT2((e-s) > 100000, "In the 1st phase, we wait for the reader");
+         }
+
+         s = get_current_btime();
+         nb = write(fd, buf, sizeof(buf));
+         e = get_current_btime();
+         Dmsg3(0, "Wrote pkt %d %d bytes in %lldms\n", i, (int)nb, (int64_t) (e - s));
+         ASSERT2((e-s) < 100000, "The write operation should never block");
+      }
+   }
+   namedpipe_free(&p);
+   return NULL;
+}
+
+int main(int argc, char **argv)
+{
+   job pthread_list[10000];
+   int j = (argc >= 2) ? atoi(argv[1]) : 1;
+   int maxfd = (argc == 3) ? atoi(argv[2]) : 0;
+
+   j = MIN(10000, j);
+   
+   lmgr_init_thread();
+   set_debug_flags((char *)"h");
+
+   for (int i=3; i < maxfd; i++) {
+      open("/dev/null", O_RDONLY);
+   }
+
+   for (int i=0; i < j; i++) {
+      pthread_list[i].nb=i;
+      pthread_create(&pthread_list[i].writer, NULL, th2, &pthread_list[i]);
+      pthread_create(&pthread_list[i].reader, NULL, th1, &pthread_list[i]);
+   }
+
+   while (nb_ready < j*2) {
+      bmicrosleep(1, 0);
+   }
+
+   Dmsg0(0, "All threads are started\n");
+   P(cond_mutex);
+   pthread_cond_broadcast(&cond);
+   V(cond_mutex);
+
+   for (int i=0; i < j; i++) {
+      pthread_join(pthread_list[i].writer, NULL);
+      pthread_join(pthread_list[i].reader, NULL);
+   }
+
+   for (int i=3; i < maxfd; i++) {
+      close(i);
+   }
+   return 0;
+}
+#endif

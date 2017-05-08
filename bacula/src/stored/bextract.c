@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -21,7 +21,6 @@
  *  Dumb program to extract files from a Bacula backup.
  *
  *   Kern E. Sibbald, MM
- *
  */
 
 #include "bacula.h"
@@ -69,11 +68,7 @@ static CONFIG *config;
 
 void *start_heap;
 char *configfile = NULL;
-STORES *me = NULL;                    /* our Global resource */
-bool forge_on = false;
 bool skip_extract = false;
-pthread_mutex_t device_release_mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_cond_t wait_device_release = PTHREAD_COND_INITIALIZER;
 
 static void usage()
 {
@@ -103,7 +98,9 @@ int main (int argc, char *argv[])
    FILE *fd;
    char line[1000];
    bool got_inc = false;
+   BtoolsAskDirHandler askdir_handler;
 
+   init_askdir_handler(&askdir_handler);
    setlocale(LC_ALL, "");
    bindtextdomain("bacula", LOCALEDIR);
    textdomain("bacula");
@@ -127,7 +124,6 @@ int main (int argc, char *argv[])
 
       case 'b':                    /* bootstrap file */
          bsr = parse_bsr(NULL, optarg);
-//       dump_bsr(bsr, true);
          break;
 
       case 'T':                 /* Send debug to trace file */
@@ -145,9 +141,17 @@ int main (int argc, char *argv[])
          if (*optarg == 't') {
             dbg_timestamp = true;
          } else {
+            char *p;
+            /* We probably find a tag list -d 10,sql,bvfs */
+            if ((p = strchr(optarg, ',')) != NULL) {
+               *p = 0;
+            }
             debug_level = atoi(optarg);
             if (debug_level <= 0) {
                debug_level = 1;
+            }
+            if (p) {
+               debug_parse_tags(p+1, &debug_level_tags);
             }
          }
          break;
@@ -161,9 +165,6 @@ int main (int argc, char *argv[])
          }
          while (fgets(line, sizeof(line), fd) != NULL) {
             strip_trailing_junk(line);
-            if (line[0] == 0) { /* skip blank lines */
-               continue;
-            }
             Dmsg1(900, "add_exclude %s\n", line);
             add_fname_to_exclude_list(ff, line);
          }
@@ -179,9 +180,6 @@ int main (int argc, char *argv[])
          }
          while (fgets(line, sizeof(line), fd) != NULL) {
             strip_trailing_junk(line);
-            if (line[0] == 0) { /* skip blank lines */
-               continue;
-            }
             Dmsg1(900, "add_include %s\n", line);
             add_fname_to_include_list(ff, 0, line);
          }
@@ -219,7 +217,7 @@ int main (int argc, char *argv[])
       configfile = bstrdup(CONFIG_FILE);
    }
 
-   config = new_config_parser();
+   config = New(CONFIG());
    parse_sd_config(config, configfile, M_ERROR_TERM);
    setup_me();
    load_sd_plugins(me->plugin_directory);
@@ -254,7 +252,7 @@ static void do_extract(char *devname)
 
    enable_backup_privileges(NULL, 1);
 
-   jcr = setup_jcr("bextract", devname, bsr, VolumeName, SD_READ, false/*read dedup data*/);
+   jcr = setup_jcr("bextract", devname, bsr, VolumeName, SD_READ, true/*read dedup data*/);
    if (!jcr) {
       exit(1);
    }
@@ -292,7 +290,7 @@ static void do_extract(char *devname)
    release_device(dcr);
    free_attr(attr);
    free_jcr(jcr);
-   dev->term();
+   dev->term(NULL);
    free_pool_memory(curr_fname);
 
    printf(_("%u files restored.\n"), num_files);
@@ -442,7 +440,6 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
    case STREAM_FILE_DATA:
    case STREAM_SPARSE_DATA:
    case STREAM_WIN32_DATA:
-
       if (extract) {
          if (rec->maskedStream == STREAM_SPARSE_DATA) {
             ser_declare;
@@ -451,12 +448,13 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
             wsize = rec->data_len - OFFSET_FADDR_SIZE;
             ser_begin(rec->data, OFFSET_FADDR_SIZE);
             unser_uint64(faddr);
-            if (fileAddr != faddr) {
+            /* We seek only for real SPARSE data, not for OFFSET option */
+            if ((rec->Stream & STREAM_BIT_OFFSETS) == 0 && fileAddr != faddr) {
                fileAddr = faddr;
                if (blseek(&bfd, (boffset_t)fileAddr, SEEK_SET) < 0) {
                   berrno be;
-                  Emsg2(M_ERROR_TERM, 0, _("Seek error on %s: %s\n"),
-                     attr->ofname, be.bstrerror());
+                  Emsg3(M_ERROR_TERM, 0, _("Seek error Addr=%llu on %s: %s\n"),
+                     fileAddr, attr->ofname, be.bstrerror());
                }
             }
          } else {
@@ -479,7 +477,7 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
          uLong compress_len = compress_buf_size;
          int stat = Z_BUF_ERROR;
 
-         if (rec->maskedStream == STREAM_SPARSE_GZIP_DATA) {
+         if (rec->maskedStream == STREAM_SPARSE_DATA) {
             ser_declare;
             uint64_t faddr;
             char ec1[50];
@@ -487,7 +485,7 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
             wsize = rec->data_len - OFFSET_FADDR_SIZE;
             ser_begin(rec->data, OFFSET_FADDR_SIZE);
             unser_uint64(faddr);
-            if (fileAddr != faddr) {
+            if ((rec->Stream & STREAM_BIT_OFFSETS) == 0 && fileAddr != faddr) {
                fileAddr = faddr;
                if (blseek(&bfd, (boffset_t)fileAddr, SEEK_SET) < 0) {
                   berrno be;
@@ -544,7 +542,7 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
          int r, real_compress_len;
 #endif
 
-         if (rec->maskedStream == STREAM_SPARSE_COMPRESSED_DATA) {
+         if (rec->maskedStream == STREAM_SPARSE_DATA) {
             ser_declare;
             uint64_t faddr;
             char ec1[50];
@@ -552,7 +550,7 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
             wsize = rec->data_len - OFFSET_FADDR_SIZE;
             ser_begin(rec->data, OFFSET_FADDR_SIZE);
             unser_uint64(faddr);
-            if (fileAddr != faddr) {
+            if ((rec->Stream & STREAM_BIT_OFFSETS) == 0 && fileAddr != faddr) {
                fileAddr = faddr;
                if (blseek(&bfd, (boffset_t)fileAddr, SEEK_SET) < 0) {
                   berrno be;
@@ -669,32 +667,4 @@ bail_out:
       rec->data_len = orgdata_len;
    }
    return ret;
-}
-
-/* Dummies to replace askdir.c */
-bool    dir_find_next_appendable_volume(DCR *dcr) { return 1;}
-bool    dir_update_volume_info(DCR *dcr, bool relabel, bool update_LastWritten) { return 1; }
-bool    dir_create_jobmedia_record(DCR *dcr, bool zero) { return 1; }
-bool    flush_jobmedia_queue(JCR *jcr) { return true; }
-bool    dir_ask_sysop_to_create_appendable_volume(DCR *dcr) { return 1; }
-bool    dir_update_file_attributes(DCR *dcr, DEV_RECORD *rec) { return 1;}
-bool    dir_send_job_status(JCR *jcr) {return 1;}
-
-
-bool dir_ask_sysop_to_mount_volume(DCR *dcr, bool /*writing*/)
-{
-   DEVICE *dev = dcr->dev;
-   fprintf(stderr, _("Mount Volume \"%s\" on device %s and press return when ready: "),
-      dcr->VolumeName, dev->print_name());
-   dev->close();
-   getchar();
-   return true;
-}
-
-bool dir_get_volume_info(DCR *dcr, enum get_vol_info_rw  writing)
-{
-   Dmsg0(100, "Fake dir_get_volume_info\n");
-   dcr->setVolCatName(dcr->VolumeName);
-   Dmsg2(500, "Vol=%s VolType=%d\n", dcr->getVolCatName(), dcr->VolCatInfo.VolCatType);
-   return 1;
 }

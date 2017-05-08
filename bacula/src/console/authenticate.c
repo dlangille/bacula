@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -35,6 +35,7 @@
 /*
  * Version at end of Hello
  *   prior to 06Aug13 no version
+ *   100  14Feb17 - added comm line compression
  */
 #define UA_VERSION 100
 
@@ -47,6 +48,7 @@ static char hello[]    = "Hello %s calling %d\n";
 /* Response from Director */
 static char oldOKhello[]   = "1000 OK:";
 static char newOKhello[]   = "1000 OK: %d";
+static char FDOKhello[]    = "2000 OK Hello %d";
 
 /* Forward referenced functions */
 
@@ -60,10 +62,11 @@ int authenticate_director(BSOCK *dir, DIRRES *director, CONRES *cons)
    bool tls_authenticate;
    int compatible = true;
    int dir_version = 0;
+   int fd_version = 0;
    char bashed_name[MAX_NAME_LENGTH];
    char *password;
    TLS_CONTEXT *tls_ctx = NULL;
-
+            
    /*
     * Send my name to the Director then do authentication
     */
@@ -151,14 +154,24 @@ int authenticate_director(BSOCK *dir, DIRRES *director, CONRES *cons)
    }
 
    Dmsg1(10, "<dird: %s", dir->msg);
-   if (strncmp(dir->msg, oldOKhello, sizeof(oldOKhello)-1) != 0) {
-      sendit(_("Director rejected Hello command\n"));
-      goto bail_out;
-   } else {
+   if (strncmp(dir->msg, oldOKhello, sizeof(oldOKhello)-1) == 0) {
       /* If Dir version exists, get it */
       sscanf(dir->msg, newOKhello, &dir_version);
       sendit(dir->msg);
+   /* Check for hello from FD */
+   } else if (sscanf(dir->msg, FDOKhello, &fd_version) == 1) {
+      sendit(dir->msg);
+   } else {
+      sendit(_("Director rejected Hello command\n"));
+      goto bail_out;
    }
+   /* Turn on compression for newer Directors */
+   if (dir_version >= 103 && (!cons || cons->comm_compression)) {
+      dir->set_compress();
+   } else {
+      dir->clear_compress();
+   }
+   /* ***FIXME*** should turn on compression for FD if possible */
    stop_bsock_timer(tid);
    return 1;
 

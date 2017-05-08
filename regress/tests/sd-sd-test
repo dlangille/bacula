@@ -1,0 +1,136 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2017 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Test SD to SD copy/migration
+#
+TestName="sd-sd-test"
+JobName=MigrationJobSave
+
+# the procedure to test volumes is not working with 2 SD
+REGRESS_CHECK_CORRUPTION=no
+. scripts/functions
+
+
+scripts/cleanup
+scripts/copy-migration-confs
+scripts/prepare-disk-changer
+echo "${cwd}/build" >${cwd}/tmp/file-list
+
+sed -e "s:$cwd/working:$cwd/working2:   " \
+    -e "s:$cwd/tmp:$cwd/tmp2:" $conf/bacula-sd.conf > $conf/bacula-sd2.conf
+
+$bperl -e "add_attribute('$conf/bacula-sd2.conf', 'Name', 'sd2', 'Storage')"
+$bperl -e "add_attribute('$conf/bacula-sd2.conf', 'SDPort', $BASEPORT + 10, 'Storage')"
+$bperl -e "add_attribute('$conf/bacula-sd2.conf', 'Media Type', 'DiskChangerMedia2', 'Device', 'Drive-0')"
+$bperl -e "add_attribute('$conf/bacula-sd2.conf', 'Media Type', 'File2', 'Device', 'FileStorage')"
+if [ x$FORCE_DEDUP = xyes ]; then
+   DEDUP_FS_OPTION=${DEDUP_FS_OPTION:-bothsides}
+   $bperl -e 'add_attribute("$conf/bacula-sd2.conf", "Plugin Directory", "$plugins", "Storage")'
+   $bperl -e 'add_attribute("$conf/bacula-sd2.conf", "Device Type", "Dedup", "Device")'
+   $bperl -e 'add_attribute("$conf/bacula-sd2.conf", "DedupDirectory", "${working}2", "Storage")'
+   $bperl -e 'add_attribute("$conf/bacula-sd2.conf", "MaximumContainerSize", "50MB", "Storage")'
+fi
+
+
+rm -rf $cwd/working2 $cwd/tmp2
+mkdir -p $cwd/working2 $cwd/tmp2
+cp -r $tmp/disk-changer $cwd/tmp2
+
+$bperl -e "add_attribute('$conf/bacula-dir.conf', 'SDPort', $BASEPORT + 10, 'Storage', 'File')"
+$bperl -e "add_attribute('$conf/bacula-dir.conf', 'Media Type', 'File2', 'Storage', 'File')"
+
+# Here, File is pointing to SD2 and DiskChanger is pointing to SD1
+
+$bin/bacula-sd -c $conf/bacula-sd2.conf
+sleep 1
+pid=`cat $cwd/working2/bacula-sd.*.pid`
+trap "kill $pid" INT
+
+
+change_jobname NightlySave $JobName
+start_test
+
+#
+# Note, we first backup into Pool Default, 
+#          then Migrate into Pool Full. 
+#              Pool Default uses Storage=File            (SD2)
+#              Pool Full    uses Storage=DiskChanger     (SD1)
+
+# Write out bconsole commands
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@output /dev/null
+messages
+@$out ${cwd}/tmp/log1.out
+label storage=File volume=FileVolume001 Pool=Default
+label storage=DiskChanger volume=ChangerVolume001 slot=1 Pool=Full drive=0
+label storage=DiskChanger volume=ChangerVolume002 slot=2 Pool=Full drive=0
+@# run two jobs (both will be migrated)
+run job=$JobName yes
+run job=$JobName yes
+wait
+list jobs
+list volumes
+@#setdebug level=100 dir
+@# should migrate two jobs
+@#setdebug level=51 storage=DiskChanger
+messages
+st storage=File
+st storage=DiskChanger
+@# setdebug level=200 dir
+@# setdebug level=200 storage=File
+@# setdebug level=200 storage=DiskChanger
+setdebug level=700 storage=File trace=1 flags=dedup,asx,dde
+setdebug level=700 storage=DiskChanger trace=1 flags=dedup,asx,dde
+run job=migrate-job yes
+@sleep 10
+messages
+wait
+messages
+@# purge volume=FileVolume001
+list jobs 
+list volumes
+list joblog jobid=6
+wait
+@#
+@# Now do another backup, but level Incremental
+@#
+run job=$JobName level=Incremental yes
+wait
+messages
+@#
+@# This final job that runs should be Incremental and
+@# not upgraded to full.
+list jobs
+@# 
+@# now do a restore
+@#
+@$out ${cwd}/tmp/log2.out
+list volumes 
+restore where=${cwd}/tmp/bacula-restores select storage=DiskChanger
+unmark *
+mark *
+done
+yes
+list volumes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bacula
+check_for_zombie_jobs storage=File
+stop_bacula
+
+check_two_logs
+check_restore_diff
+
+trap - INT
+
+PID=`cat $cwd/working2/bacula-sd.*.pid`
+if [ "$PID" != "" ]; then
+    kill $PID >/dev/null 2>/dev/null
+fi
+
+end_test

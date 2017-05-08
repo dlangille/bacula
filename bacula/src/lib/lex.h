@@ -86,6 +86,7 @@ enum lex_state {
 #define LOPT_NO_IDENT            0x1  /* No Identifiers -- use string */
 #define LOPT_STRING              0x2  /* Force scan for string */
 #define LOPT_NO_EXTERN           0x4  /* Don't follow @ command */
+#define LOPT_NO_MD5              0x8  /* Do not encode passwords with MD5 */
 
 class BPIPE;                          /* forward reference */
 
@@ -129,5 +130,6 @@ typedef void (LEX_ERROR_HANDLER)(const char *file, int line, LEX *lc, const char
 
 void scan_to_eol(LEX *lc);
 int scan_to_next_not_eol(LEX * lc);
+void lex_store_clear_passwords(LEX *lf);
 
 #endif /* _LEX_H */

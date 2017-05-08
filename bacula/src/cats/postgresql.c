@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -58,7 +58,7 @@ static dlist *db_list = NULL;
 
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER; 
 
-BDB_POSTGRESQL::BDB_POSTGRESQL()
+BDB_POSTGRESQL::BDB_POSTGRESQL(): BDB()
 {
    BDB_POSTGRESQL *mdb = this;
 

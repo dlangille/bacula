@@ -21,6 +21,8 @@ scripts/cleanup
 scripts/copy-2tape-confs
 scripts/prepare-two-tapes
 
+exit
+
 echo "${cwd}/tmp/build" >${cwd}/tmp/file-list
 if test ! -d ${cwd}/tmp/build ; then
    mkdir -p ${cwd}/tmp/build

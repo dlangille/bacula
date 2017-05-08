@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -20,7 +20,6 @@
  * Authenticate caller
  *
  *   Written by Kern Sibbald, October 2000
- *
  */
 
 
@@ -32,6 +31,14 @@ extern STORES *me;               /* our Global resource */
 const int dbglvl = 50;
 
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+
+/* Version at end of Hello
+ *   prior to 06Aug13 no version
+ *   1 06Aug13 - added comm line compression
+ *   2 13Dec13 - added api version to status command
+ */
+#define SD_VERSION 2
+
 
 /*
  * Authenticate the Director
@@ -316,6 +323,13 @@ bool authenticate_storagedaemon(JCR *jcr)
       goto auth_fatal;
    }
    sscanf(sd->msg, "3000 OK Hello %d", &sd_version);
+   if (sd_version >= 1 && me->comm_compression) {
+      sd->set_compress();
+   } else {
+      sd->clear_compress();
+      Dmsg0(050, "*** No FD compression with SD\n");
+   }
+
    /* At this point, we have successfully connected */
 
 auth_fatal:

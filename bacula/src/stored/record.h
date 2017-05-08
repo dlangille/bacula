@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -30,23 +30,29 @@
 
 /* Return codes from read_device_volume_label() */
 enum {
-   VOL_NOT_READ = 1,                      /* Volume label not read */
-   VOL_OK,                                /* volume name OK */
-   VOL_NO_LABEL,                          /* volume not labeled */
-   VOL_IO_ERROR,                          /* volume I/O error */
-   VOL_NAME_ERROR,                        /* Volume name mismatch */
-   VOL_CREATE_ERROR,                      /* Error creating label */
-   VOL_VERSION_ERROR,                     /* Bacula version error */
-   VOL_LABEL_ERROR,                       /* Bad label type */
-   VOL_NO_MEDIA,                          /* Hard error -- no media present */
-   VOL_TYPE_ERROR                         /* Volume type (aligned/non-aligned) error */
+   VOL_NOT_READ      = 1,                 /* Volume label not read */
+   VOL_OK            = 2,                 /* volume name OK */
+   VOL_NO_LABEL      = 3,                 /* volume not labeled */
+   VOL_IO_ERROR      = 4,                 /* volume I/O error */
+   VOL_NAME_ERROR    = 5,                 /* Volume name mismatch */
+   VOL_CREATE_ERROR  = 6,                 /* Error creating label */
+   VOL_VERSION_ERROR = 7,                 /* Bacula version error */
+   VOL_LABEL_ERROR   = 8,                 /* Bad label type */
+   VOL_NO_MEDIA      = 9,                 /* Hard error -- no media present */
+   VOL_TYPE_ERROR    = 10                 /* Volume type (aligned/non-aligned) error */
 };
 
 enum rec_state {
    st_none,                               /* No state */
    st_header,                             /* Write header */
    st_cont_header,                        /* Write continuation header */
-   st_data                                /* Write data record */
+   st_data,                               /* Write data record */
+   st_adata_blkhdr,                       /* Adata block header */
+   st_adata_rechdr,                       /* Adata record header */
+   st_cont_adata_rechdr,                  /* Adata continuation rechdr */
+   st_adata,                              /* Write aligned data */
+   st_cont_adata,                         /* Write more aligned data */
+   st_adata_label                         /* Writing adata vol label */
 };
 
 
@@ -76,9 +82,11 @@ enum rec_state {
 #define REC_NO_MATCH         (1<<3)   /* No match on continuation data */
 #define REC_CONTINUATION     (1<<4)   /* Continuation record found */
 #define REC_ISTAPE           (1<<5)   /* Set if device is tape */
+#define REC_ADATA_EMPTY      (1<<6)   /* Not endough adata in block */
+#define REC_NO_SPLIT         (1<<7)   /* Do not split this record */
 
 #define is_partial_record(r) ((r)->state_bits & REC_PARTIAL_RECORD)
-#define is_block_marked_empty(r) ((r)->state_bits & (REC_BLOCK_EMPTY))
+#define is_block_marked_empty(r) ((r)->state_bits & (REC_BLOCK_EMPTY|REC_ADATA_EMPTY))
 
 /*
  * DEV_RECORD for reading and writing records.
@@ -87,14 +95,16 @@ enum rec_state {
  *  This is the memory structure for the record header.
  */
 struct BSR;                           /* satisfy forward reference */
+struct VOL_LIST;
 struct DEV_RECORD {
    dlink link;                        /* link for chaining in read_record.c */
    /* File and Block are always returned during reading
     *  and writing records.
     */
    uint64_t StreamLen;                /* Expected data stream length */
-   uint32_t File;                     /* File number */
-   uint32_t Block;                    /* Block number */
+   uint64_t FileOffset;               /* Offset of this record inside the file */
+   uint64_t StartAddr;                /* Start address (when the record is partial) */
+   uint64_t Addr;                     /* Record address */
    uint32_t VolSessionId;             /* sequential id within this session */
    uint32_t VolSessionTime;           /* session start time */
    int32_t  FileIndex;                /* sequential file number */
@@ -108,10 +118,14 @@ struct DEV_RECORD {
    uint32_t remlen;                   /* temp remainder bytes */
    uint32_t data_bytes;               /* data_bytes */
    uint32_t state_bits;               /* state bits */
+   uint32_t RecNum;                   /* Record number in the block */
+   uint32_t BlockNumber;              /* Block number for this record (used in read_records()) */
+   bool     invalid;                  /* The record may be invalid if it was merged with a previous record */
    rec_state wstate;                  /* state of write_record_to_block */
    rec_state rstate;                  /* state of read_record_from_block */
    BSR *bsr;                          /* pointer to bsr that matched */
    POOLMEM *data;                     /* Record data. This MUST be a memory pool item */
+   const char *VolumeName;            /* From JCR::VolList::VolumeName, freed at the end */
    int32_t match_stat;                /* bsr match status */
    uint32_t last_VolSessionId;        /* used in sequencing FI for Vbackup */
    uint32_t last_VolSessionTime;
@@ -178,6 +192,17 @@ struct Volume_Label {
   char LabelProg[50];                 /* Label program name */
   char ProgVersion[50];               /* Program version */
   char ProgDate[50];                  /* Program build date/time */
+
+  /* Mostly for aligned volumes, BlockSize also used for dedup volumes */
+  char AlignedVolumeName[MAX_NAME_LENGTH+4]; /* Aligned block volume name */
+  uint64_t  FirstData;                /* Offset to first data address */
+  uint32_t  FileAlignment;            /* File alignment factor */
+  uint32_t  PaddingSize;              /* Block padding */
+  uint32_t  BlockSize;                /* Basic block size */
+
+  /* For Cloud */
+  uint64_t  ChunkSize;                /* Basic chunk size */
+
 };
 
 #define SER_LENGTH_Volume_Label 1024   /* max serialised length of volume label */

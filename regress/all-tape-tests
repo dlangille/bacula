@@ -1,9 +1,7 @@
 #!/bin/sh
 #
-# Copyright (C) 2000-2015 Kern Sibbald
+# Copyright (C) 2000-2017 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
-#
-
 #
 # ./run all tape tests
 #
@@ -13,12 +11,24 @@
 # If we have an autoloader, load the tape in slot1
 if test ! x$AUTOCHANGER = x/dev/null ; then
    a=`bin/mtx-changer $AUTOCHANGER loaded $SLOT1 $TAPE_DRIVE $DRIVE1`
-   if test $a = 0 ; then
+   if test $a -eq 0 ; then
       bin/mtx-changer $AUTOCHANGER load $SLOT1 $TAPE_DRIVE $DRIVE1
    fi
 fi
 echo " "
 echo " " >>test.out
+if test x$FORCE_DEDUP = xyes ; then
+   echo "All tape tests skipped for FORCE_DEDUP"
+   exit 0
+fi
+if test x$FORCE_ALIGNED = xyes ; then
+   echo "All tape tests skipped for FORCE_ALIGNED"
+   exit 0
+fi
+if test x$FORCE_CLOUD = xyes ; then
+   echo "All tape tests skipped for FORCE_CLOUD"
+   exit 0
+fi
 echo "Start all non-root tape tests"
 echo "Start all non-root tape tests" >>test.out
 rm -f dumps/*

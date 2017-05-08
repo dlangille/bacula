@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2015 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,13 +11,12 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
- *
  *   Bacula Director -- msgchan.c -- handles the message channel
  *    to the Storage daemon and the File daemon.
  *
@@ -30,7 +29,6 @@
  *      to authenticate ourself and to pass the JobId.
  *    Create a thread to interact with the Storage daemon
  *      who returns a job status and requests Catalog services, etc.
- *
  */
 
 #include "bacula.h"
@@ -56,7 +54,7 @@ static char OK_device[]  = "3000 OK use device device=%s\n";
 /* Storage Daemon requests */
 static char Job_start[]  = "3010 Job %127s start\n";
 static char Job_end[]    =
-   "3099 Job %127s end JobStatus=%d JobFiles=%d JobBytes=%lld JobErrors=%u\n";
+   "3099 Job %127s end JobStatus=%d JobFiles=%d JobBytes=%lld JobErrors=%u ErrMsg=%256s\n";
 
 /* Forward referenced functions */
 extern "C" void *msg_thread(void *arg);
@@ -422,8 +420,10 @@ extern "C" void *msg_thread(void *arg)
    int JobStatus;
    int n;
    char Job[MAX_NAME_LENGTH];
+   char ErrMsg[256];
    uint32_t JobFiles, JobErrors;
    uint64_t JobBytes;
+   ErrMsg[0] = 0;
 
    pthread_detach(pthread_self());
    set_jcr_in_tsd(jcr);
@@ -442,11 +442,13 @@ extern "C" void *msg_thread(void *arg)
          continue;
       }
       if (sscanf(sd->msg, Job_end, Job, &JobStatus, &JobFiles,
-                 &JobBytes, &JobErrors) == 5) {
+                 &JobBytes, &JobErrors, ErrMsg) == 6) {
          jcr->SDJobStatus = JobStatus; /* termination status */
          jcr->SDJobFiles = JobFiles;
          jcr->SDJobBytes = JobBytes;
          jcr->SDErrors = JobErrors;
+         unbash_spaces(ErrMsg); /* Error message if any */
+         pm_strcpy(jcr->StatusErrMsg, ErrMsg);
          break;
       }
       Dmsg1(400, "end loop use=%d\n", jcr->use_count());
@@ -514,7 +516,7 @@ bool send_bootstrap_file(JCR *jcr, BSOCK *sd)
    if (!jcr->RestoreBootstrap) {
       return true;
    }
-   bs = fopen(jcr->RestoreBootstrap, "rb");
+   bs = bfopen(jcr->RestoreBootstrap, "rb");
    if (!bs) {
       berrno be;
       Jmsg(jcr, M_FATAL, 0, _("Could not open bootstrap file %s: ERR=%s\n"),

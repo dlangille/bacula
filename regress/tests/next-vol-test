@@ -1,9 +1,7 @@
 #!/bin/sh
 #
-# Copyright (C) 2000-2015 Kern Sibbald
+# Copyright (C) 2000-2017 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
-#
-
 #
 # This script will test next vol algo with
 # vtape
@@ -19,6 +17,17 @@
 #  to know what caused the failure.
 #
 . scripts/functions
+
+# Dedup does not work with "tapes"
+if test x$FORCE_DEDUP = xyes ; then
+  echo "\n=== Test next-vol-test skipped not compatible with dedup  ==="
+  exit 0
+fi
+if test x$FORCE_CLOUD = xyes ; then
+  echo "\n=== Test next-vol-test skipped not compatible with Cloud  ==="
+  exit 0
+fi
+
 
 TestName="next-vol-test"
 JobName=backup

@@ -177,7 +177,7 @@ void bnet_thread_server(dlist *addrs, int max_clients,
             /* Got a connection, now accept it. */
             do {
                clilen = sizeof(clientaddr);
-               newsockfd = accept(fd_ptr->fd, (struct sockaddr *)&clientaddr, &clilen);
+               newsockfd = baccept(fd_ptr->fd, (struct sockaddr *)&clientaddr, &clilen);
                newsockfd = set_socket_errno(newsockfd);
             } while (newsockfd == SOCKET_ERROR && (errno == EINTR || errno == EAGAIN));
             if (newsockfd == SOCKET_ERROR) {

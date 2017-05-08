@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2015 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -20,7 +20,6 @@
  *  Bacula File Daemon Status routines
  *
  *    Kern Sibbald, August MMI
- *
  */
 
 #include "bacula.h"
@@ -43,8 +42,6 @@ static char qstatus2[] = ".status %127s api=%d api_opts=%127s";
 static char OKqstatus[]   = "2000 OK .status\n";
 static char DotStatusJob[] = "JobId=%d JobStatus=%c JobErrors=%d\n";
 
-#define VSS ""
-
 /*
  * General status generator
  */
@@ -62,15 +59,46 @@ static const bool have_lzo = false;
 #endif
 
 
+static void api_list_status_header(STATUS_PKT *sp)
+{
+   char *p;
+   char buf[300];
+   OutputWriter wt(sp->api_opts);
+   *buf = 0;
+
+   wt.start_group("header");
+   wt.get_output(
+      OT_STRING, "name",        my_name,
+      OT_STRING, "version",     VERSION " (" BDATE ")",
+      OT_STRING, "uname",       HOST_OS " " DISTNAME " " DISTVER,
+      OT_UTIME,  "started",     daemon_start_time,
+      OT_INT,    "jobs_run",    num_jobs_run,
+      OT_INT,    "jobs_running",job_count(),
+      OT_STRING, "winver",      buf,
+      OT_INT64,  "debug",       debug_level,
+      OT_INT,    "trace",       get_trace(),
+      OT_INT64,  "bwlimit",     me->max_bandwidth_per_job,
+      OT_PLUGINS, "plugins",    b_plugin_list,
+      OT_END);
+   p = wt.end_group();
+   sendit(p, strlen(p), sp);
+}
+
 static void  list_status_header(STATUS_PKT *sp)
 {
    POOL_MEM msg(PM_MESSAGE);
    char b1[32], b2[32], b3[32], b4[32], b5[35];
+   int64_t memused = (char *)sbrk(0)-(char *)start_heap;
    int len;
    char dt[MAX_TIME_LENGTH];
 
-   len = Mmsg(msg, _("%s %sVersion: %s (%s) %s %s %s %s\n"),
-              my_name, "", VERSION, BDATE, VSS, HOST_OS,
+   if (sp->api) {
+      api_list_status_header(sp);
+      return;
+   }
+
+   len = Mmsg(msg, _("%s %sVersion: %s (%s) %s %s %s\n"),
+              my_name, "", VERSION, BDATE, HOST_OS,
               DISTNAME, DISTVER);
    sendit(msg.c_str(), len, sp);
    bstrftime_nc(dt, sizeof(dt), daemon_start_time);
@@ -78,16 +106,16 @@ static void  list_status_header(STATUS_PKT *sp)
         dt, num_jobs_run, job_count());
    sendit(msg.c_str(), len, sp);
    len = Mmsg(msg, _(" Heap: heap=%s smbytes=%s max_bytes=%s bufs=%s max_bufs=%s\n"),
-         edit_uint64_with_commas((char *)sbrk(0)-(char *)start_heap, b1),
+         edit_uint64_with_commas(memused, b1),
          edit_uint64_with_commas(sm_bytes, b2),
          edit_uint64_with_commas(sm_max_bytes, b3),
          edit_uint64_with_commas(sm_buffers, b4),
          edit_uint64_with_commas(sm_max_buffers, b5));
    sendit(msg.c_str(), len, sp);
    len = Mmsg(msg, _(" Sizes: boffset_t=%d size_t=%d debug=%s trace=%d "
-                     "mode=%d bwlimit=%skB/s\n"),
+                     "mode=%d,%d bwlimit=%skB/s\n"),
               sizeof(boffset_t), sizeof(size_t),
-              edit_uint64(debug_level, b2), get_trace(), (int)DEVELOPER_MODE,
+              edit_uint64(debug_level, b2), get_trace(), (int)DEVELOPER_MODE, 0,
               edit_uint64_with_commas(me->max_bandwidth_per_job/1024, b1));
    sendit(msg.c_str(), len, sp);
    if (b_plugin_list && b_plugin_list->size() > 0) {
@@ -132,7 +160,6 @@ static void  list_running_jobs_plain(STATUS_PKT *sp)
    Dmsg0(1000, "Begin status jcr loop.\n");
    len = Mmsg(msg, _("\nRunning Jobs:\n"));
    sendit(msg.c_str(), len, sp);
-   const char *vss = "";
    foreach_jcr(njcr) {
       bstrftime_nc(dt, sizeof(dt), njcr->start_time);
       if (njcr->JobId == 0) {
@@ -143,8 +170,8 @@ static void  list_running_jobs_plain(STATUS_PKT *sp)
          len = Mmsg(msg, _("JobId %d Job %s is running.\n"),
                     njcr->JobId, njcr->Job);
          sendit(msg.c_str(), len, sp);
-         len = Mmsg(msg, _("    %s%s %s Job started: %s\n"),
-                    vss, job_level_to_str(njcr->getJobLevel()),
+         len = Mmsg(msg, _("    %s %s Job started: %s\n"),
+                    job_level_to_str(njcr->getJobLevel()),
                     job_type_to_str(njcr->getJobType()), dt);
       }
       sendit(msg.c_str(), len, sp);
@@ -225,9 +252,93 @@ static void  list_running_jobs_plain(STATUS_PKT *sp)
    sendit(_("====\n"), 5, sp);
 }
 
+/*
+ * List running jobs for Bat or Bweb in a format
+ *  simpler to parse. Be careful when changing this
+ *  subroutine.
+ */
+static void  list_running_jobs_api(STATUS_PKT *sp)
+{
+   OutputWriter ow(sp->api_opts);
+   int sec, bps;
+   char *p;
+   JCR *njcr;
+
+   /* API v1, edit with comma, space before the name, sometime ' ' as separator */
+
+   foreach_jcr(njcr) {
+      p = ow.get_output(OT_CLEAR, OT_START_OBJ, OT_END);
+
+      if (njcr->JobId == 0) {
+         ow.get_output(OT_UTIME, "DirectorConnected", njcr->start_time,
+                       OT_INT, "DirTLS", (njcr->dir_bsock && njcr->dir_bsock->tls)?1:0,
+                       OT_END);
+      } else {
+         ow.get_output(OT_INT32,   "JobId", njcr->JobId,
+                       OT_STRING,  "Job",   njcr->Job,
+                       OT_JOBLEVEL,"Level", njcr->getJobLevel(),
+                       OT_JOBTYPE, "Type",  njcr->getJobType(),
+                       OT_JOBSTATUS, "Status", njcr->getJobStatus(),
+                       OT_UTIME,   "StartTime", njcr->start_time,
+                       OT_END);
+
+      }
+      sendit(p, strlen(p), sp);
+      if (njcr->JobId == 0) {
+         continue;
+      }
+      sec = time(NULL) - njcr->start_time;
+      if (sec <= 0) {
+         sec = 1;
+      }
+      bps = (int)(njcr->JobBytes / sec);
+      ow.get_output(OT_CLEAR,
+                    OT_INT32,   "JobFiles",  njcr->JobFiles,
+                    OT_SIZE,    "JobBytes",  njcr->JobBytes,
+                    OT_INT,     "Bytes/sec", bps,
+                    OT_INT,     "Errors",    njcr->JobErrors,
+                    OT_INT64,   "Bwlimit",   njcr->max_bandwidth,
+                    OT_SIZE,    "ReadBytes", njcr->ReadBytes,
+                    OT_END);
+
+      ow.get_output(OT_INT32,  "Files Examined",  njcr->num_files_examined, OT_END);
+
+      if (njcr->is_JobType(JT_RESTORE) && njcr->ExpectedFiles > 0) {
+         ow.get_output(OT_INT32,  "Expected Files",  njcr->ExpectedFiles,
+                       OT_INT32,  "Percent Complete", 100*(njcr->num_files_examined/njcr->ExpectedFiles),
+                       OT_END);
+      }
+
+      sendit(p, strlen(p), sp);
+      ow.get_output(OT_CLEAR, OT_END);
+
+      if (njcr->JobFiles > 0) {
+         njcr->lock();
+         ow.get_output(OT_STRING,  "Processing file", njcr->last_fname, OT_END);
+         njcr->unlock();
+      }
+
+      if (njcr->store_bsock) {
+         ow.get_output(OT_INT64, "SDReadSeqNo", (int64_t)njcr->store_bsock->read_seqno,
+                       OT_INT,   "fd",          njcr->store_bsock->m_fd,
+                       OT_INT,   "SDtls",       (njcr->store_bsock->tls)?1:0,
+                       OT_END);
+      } else {
+         ow.get_output(OT_STRING, "SDSocket", "closed", OT_END);
+      }
+      ow.get_output(OT_END_OBJ, OT_END);
+      sendit(p, strlen(p), sp);
+   }
+   endeach_jcr(njcr);
+}
+
 static void  list_running_jobs(STATUS_PKT *sp)
 {
-   list_running_jobs_plain(sp);
+   if (sp->api) {
+      list_running_jobs_api(sp);
+   } else {
+      list_running_jobs_plain(sp);
+   }
 }
 
 /*

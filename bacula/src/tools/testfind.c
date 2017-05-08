@@ -127,7 +127,7 @@ main (int argc, char *const *argv)
    argc -= optind;
    argv += optind;
 
-   config = new_config_parser();
+   config = New(CONFIG());
    parse_dir_config(config, configfile, M_ERROR_TERM);
 
    MSGS *msg;
@@ -162,8 +162,7 @@ main (int argc, char *const *argv)
 
    free_jcr(jcr);
    if (config) {
-      config->free_resources();
-      free(config);
+      delete config;
       config = NULL;
    }
    

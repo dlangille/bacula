@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -245,9 +245,9 @@ extern char *getuser(uid_t uid, char *name, int len);
 extern char *getgroup(gid_t gid, char *name, int len);
 
 /*
- * Print an ls style message, also send M_RESTORED
+ * Print an ls style message, also send M_RESTORED/M_SAVED
  */
-void print_ls_output(JCR *jcr, ATTR *attr)
+void print_ls_output(JCR *jcr, ATTR *attr, int message_type /* M_RESTORED */)
 {
    char buf[5000];
    char ec1[30];
@@ -255,11 +255,16 @@ void print_ls_output(JCR *jcr, ATTR *attr)
    char *p, *f;
    guid_list *guid;
 
+   /* No need to compute everything if it's not required */
+   if (!chk_dbglvl(dbglvl) && !is_message_type_set(jcr, message_type)) {
+      return;
+   }
+
    if (attr->type == FT_DELETED) { /* TODO: change this to get last seen values */
       bsnprintf(buf, sizeof(buf),
                 "----------   - -        -                  - ---------- --------  %s\n", attr->ofname);
       Dmsg1(dbglvl, "%s", buf);
-      Jmsg(jcr, M_RESTORED, 1, "%s", buf);
+      Jmsg(jcr, message_type, 1, "%s", buf);
       return;
    }
 
@@ -292,5 +297,5 @@ void print_ls_output(JCR *jcr, ATTR *attr)
    *p++ = '\n';
    *p = 0;
    Dmsg1(dbglvl, "%s", buf);
-   Jmsg(jcr, M_RESTORED, 1, "%s", buf);
+   Jmsg(jcr, message_type, 1, "%s", buf);
 }

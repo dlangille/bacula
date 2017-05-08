@@ -1,0 +1,109 @@
+#!/bin/sh
+#
+# See if Pool/Media attributes are correctly handled
+#
+TestName="pool-attributes-test"
+JobName=backup
+. scripts/functions
+
+scripts/cleanup
+scripts/copy-confs
+
+#
+# Zap out any schedule in default conf file so that
+#  it doesn't start during our test
+#
+outf="$tmp/sed_tmp"
+echo "s%  Schedule =%# Schedule =%g" >${outf}
+cp $scripts/bacula-dir.conf $tmp/1
+sed -f ${outf} $tmp/1 >$scripts/bacula-dir.conf
+
+$bperl -e "add_attribute('$conf/bacula-dir.conf', 'CacheRetention', '10', 'Pool', 'File')"
+$bperl -e "add_attribute('$conf/bacula-dir.conf', 'CacheRetention', '20', 'Pool', 'Default')"
+
+change_jobname BackupClient1 $JobName
+start_test
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@output /dev/null
+messages
+@$out $tmp/log1.out
+setdebug level=4 storage=File1
+label volume=TestVolume001 storage=File1 pool=File slot=1 drive=0
+label volume=TestVolume002 storage=File1 pool=Default slot=1 drive=0
+@$out $tmp/01.log
+llist volume=TestVolume001
+@$out $tmp/02.log
+llist volume=TestVolume002
+quit
+END_OF_DATA
+
+run_bacula
+
+$bperl -e "add_attribute('$conf/bacula-dir.conf', 'CacheRetention', '30', 'Pool', 'File')"
+$bperl -e "add_attribute('$conf/bacula-dir.conf', 'CacheRetention', '40', 'Pool', 'Default')"
+$bperl -e "add_attribute('$conf/bacula-sd.conf', 'AutoLabel', 'yes', 'Device')"
+
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out $tmp/log1.out
+reload
+update pool=File
+update pool=Default
+update allfrompool=File volume
+update allfrompool=Default volume
+@$out $tmp/11.log
+llist volume=TestVolume001
+@$out $tmp/22.log
+llist volume=TestVolume002
+@$out $tmp/log1.out
+@# Check volumes from Scratch
+delete volume=TestVolume001 yes
+update volume=TestVolume002 pool=Scratch cacheretention=0
+run job=$JobName yes
+wait
+messages
+@$out $tmp/31.log
+llist volume=TestVolume001
+@$out $tmp/32.log
+llist volume=TestVolume002
+@# Delete all volumes and check autolabel
+@$out $tmp/log1.out
+delete volume=TestVolume002 yes
+run job=$JobName yes
+wait
+messages
+@$out $tmp/41.log
+llist volume
+@$out $tmp/42.log
+llist volume pool=File
+quit
+END_OF_DATA
+
+run_bconsole
+
+stop_bacula
+
+check_cacheretention()
+{
+    FILE=$1
+    VAL=$2
+    MSG=$3
+    HAVE=`cat $FILE | tr 'A-Z' 'a-z' | awk '/cacheretention/ { print $2 }'`
+    if [ "$VAL" -ne "$HAVE" ]; then
+        print_debug "ERROR: Expect CacheRetention $VAL in $FILE, got $HAVE. $MSG"
+        estat=1
+    fi
+}
+
+check_cacheretention $tmp/01.log 10 "Check cacheretention with label command"
+check_cacheretention $tmp/02.log 20 "Check cacheretention with label command"
+check_cacheretention $tmp/11.log 30 "Check cacheretention with update frompool command"
+check_cacheretention $tmp/22.log 40 "Check cacheretention with update frompool command"
+check_cacheretention $tmp/32.log 30 "Check cacheretention that when we pull a volume from the scratch"
+check_cacheretention $tmp/41.log 30 "Check cacheretention when we create a volume"
+check_cacheretention $tmp/42.log 30 "Check cacheretention with pool= parameter"
+
+
+
+end_test

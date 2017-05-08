@@ -1,9 +1,7 @@
 #!/bin/sh
 #
-# Copyright (C) 2000-2015 Kern Sibbald
+# Copyright (C) 2000-2017 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
-#
-
 #
 # Test the fill command in btape
 #
@@ -32,14 +30,14 @@ sed -e 's%64512%262144%' ${cwd}/tmp/1 >${cwd}/bin/bacula-sd.conf
 # sed -e 's%# MaximumVolumeSize = 400M%  MaximumVolumeSize = 400M%' ${cwd}/tmp/1 >${cwd}/bin/bacula-sd.conf
 
 if test "$debug" -eq 1 ; then
-   $bin/btape -c bin/bacula-sd.conf Drive-0 <<END_OF_DATA | tee ${cwd}/tmp/log1.out
+   $bin/btape -w $tmp -c bin/bacula-sd.conf Drive-0 <<END_OF_DATA | tee ${cwd}/tmp/log1.out
 fill
 m
 
 quit
 END_OF_DATA
 else
-   $bin/btape -c bin/bacula-sd.conf Drive-0 <<END_OF_DATA >${cwd}/tmp/log1.out 2>&1
+   $bin/btape -w $tmp -c bin/bacula-sd.conf Drive-0 <<END_OF_DATA >${cwd}/tmp/log1.out 2>&1
 fill
 m
 

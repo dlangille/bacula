@@ -33,8 +33,8 @@ Director {
 #
 Autochanger {
   Name = DiskChanger
-  Changer Device = @disk_drive@/conf
-  Changer Command ="@scriptdir@/disk-changer %c %o %S %a %d"
+  Changer Device = /dev/null
+  Changer Command =""
   Device = Drive-0
 }
 
@@ -42,7 +42,7 @@ Device {
   Name = Drive-0                   # 
   Device Type = File
   Media Type = DiskChangerMedia
-  Archive Device = @disk_drive@/drive0
+  Archive Device = @tmpdir@
   AutomaticMount = yes;               # when device opened, read it
   Autochanger = yes
   Drive Index = 0
@@ -70,3 +70,15 @@ Messages {
   Name = Standard
   director = @hostname@-dir = all, !terminate
 }
+
+Cloud {
+  Name = DummyCloud
+  Driver = "File"
+  HostName = "@tmpdir@/cloud"
+  BucketName = "DummyBucket"
+  AccessKey = "DummyAccessKey"
+  SecretKey = "DummySecretKey"
+  Protocol = HTTPS
+  UriStyle = VirtualHost
+}
+

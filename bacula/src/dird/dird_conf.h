@@ -1,8 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2015 Kern Sibbald
-   Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -12,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -21,7 +20,6 @@
  * Director specific configuration and defines
  *
  *     Kern Sibbald, Feb MM
- *
  */
 
 /* NOTE:  #includes at the end of this file */
@@ -44,6 +42,7 @@ enum {
    R_JOBDEFS,
    R_DEVICE,       /* This is the real last device class */
 
+   R_AUTOCHANGER,  /* Alias for R_STORAGE after R_LAST */
    R_FIRST = R_DIRECTOR,
    R_LAST  = R_DEVICE                 /* keep this updated */
 };
@@ -122,6 +121,7 @@ public:
    alist *tls_allowed_cns;            /* TLS Allowed Clients */
    TLS_CONTEXT *tls_ctx;              /* Shared TLS Context */
    utime_t stats_retention;           /* Stats retention period in seconds */
+   bool comm_compression;             /* Enable comm line compression */
    bool tls_authenticate;             /* Authenticated with TLS */
    bool tls_enable;                   /* Enable TLS */
    bool tls_require;                  /* Require TLS */
@@ -183,7 +183,10 @@ enum {
    Catalog_ACL,
    Where_ACL,
    PluginOptions_ACL,
-   Num_ACL                            /* keep last */
+   RestoreClient_ACL,
+   BackupClient_ACL,
+   Directory_ACL,               /* List of directories that can be accessed in the restore tree */
+   Num_ACL                      /* keep last */
 };
 
 /*
@@ -243,6 +246,14 @@ public:
 
 inline char *CAT::name() const { return hdr.name; }
 
+class CLIENT_GLOBALS {
+public:
+   dlink link;                        /* double link */
+   const char *name;                  /* resource name */
+   int32_t NumConcurrentJobs;         /* number of concurrent jobs running */
+   char *SetIPaddress;                /* address from SetIP command */
+   bool enabled;                      /* Enabled/disabled */
+};
 
 /*
  *   Client Resource
@@ -250,19 +261,18 @@ inline char *CAT::name() const { return hdr.name; }
  */
 class CLIENT {
 public:
-   RES   hdr;
-
+   RES hdr;
+   CLIENT_GLOBALS *globals;           /* global variables */
    uint32_t FDport;                   /* Where File daemon listens */
    utime_t FileRetention;             /* file retention period in seconds */
    utime_t JobRetention;              /* job retention period in seconds */
    utime_t SnapRetention;             /* Snapshot retention period in seconds */
    utime_t heartbeat_interval;        /* Interval to send heartbeats */
-   char *address;
+   char *client_address;              /* Client address from .conf file */
    char *fd_storage_address;          /* Storage address to use from FD side  */
    char *password;
    CAT *catalog;                      /* Catalog resource */
    int32_t MaxConcurrentJobs;         /* Maximum concurrent jobs */
-   int32_t NumConcurrentJobs;         /* number of concurrent jobs running */
    char *tls_ca_certfile;             /* TLS CA Certificate File */
    char *tls_ca_certdir;              /* TLS CA Certificate Directory */
    char *tls_certfile;                /* TLS Client Certificate File */
@@ -272,16 +282,33 @@ public:
    bool tls_authenticate;             /* Authenticated with TLS */
    bool tls_enable;                   /* Enable TLS */
    bool tls_require;                  /* Require TLS */
-   bool enabled;                      /* Set if client enabled */
+   bool Enabled;                      /* Set if client enabled */
    bool AutoPrune;                    /* Do automatic pruning? */
    bool sd_calls_client;              /* SD calls the client */
    int64_t max_bandwidth;             /* Limit speed on this client */
 
    /* Methods */
    char *name() const;
+   void create_client_globals();
+   int32_t getNumConcurrentJobs();
+   void setNumConcurrentJobs(int32_t num);
+   char *address();
+   void setAddress(char *addr);
+   bool is_enabled();
+   void setEnabled(bool val);
 };
 
 inline char *CLIENT::name() const { return hdr.name; }
+
+
+class STORE_GLOBALS {
+public:
+   dlink link;                        /* double link */
+   const char *name;                  /* resource name */
+   int32_t NumConcurrentJobs;         /* number of concurrent jobs running */
+   int32_t NumConcurrentReadJobs;     /* number of concurrent read jobs running */
+   bool enabled;                      /* Enabled/disabled */
+};
 
 
 /*
@@ -291,7 +318,7 @@ inline char *CLIENT::name() const { return hdr.name; }
 class STORE {
 public:
    RES   hdr;
-
+   STORE_GLOBALS *globals;            /* global variables */
    uint32_t SDport;                   /* port where Directors connect */
    uint32_t SDDport;                  /* data port for File daemon */
    char *address;
@@ -301,8 +328,6 @@ public:
    alist *device;                     /* Alternate devices for this Storage */
    int32_t MaxConcurrentJobs;         /* Maximum concurrent jobs */
    int32_t MaxConcurrentReadJobs;     /* Maximum concurrent jobs reading */
-   int32_t NumConcurrentJobs;         /* number of concurrent jobs running */
-   int32_t NumConcurrentReadJobs;     /* number of jobs reading */
    char *tls_ca_certfile;             /* TLS CA Certificate File */
    char *tls_ca_certdir;              /* TLS CA Certificate Directory */
    char *tls_certfile;                /* TLS Client Certificate File */
@@ -311,9 +336,12 @@ public:
    bool tls_authenticate;             /* Authenticated with TLS */
    bool tls_enable;                   /* Enable TLS */
    bool tls_require;                  /* Require TLS */
-   bool enabled;                      /* Set if device is enabled */
+   bool Enabled;                      /* Set if device is enabled */
    bool AllowCompress;                /* set if this Storage should allow jobs to enable compression */
    bool autochanger;                  /* set if we are part of an autochanger */
+   POOLMEM *ac_group;                 /* Autochanger StorageId group */
+   STORE *changer;                    /* points to autochanger */
+   STORE *shared_storage;             /* points to shared storage */
    int64_t StorageId;                 /* Set from Storage DB record */
    utime_t heartbeat_interval;        /* Interval to send heartbeats */
    uint32_t drives;                   /* number of drives in autochanger */
@@ -321,6 +349,13 @@ public:
    /* Methods */
    char *dev_name() const;
    char *name() const;
+   void create_store_globals();
+   int32_t getNumConcurrentJobs();
+   int32_t getNumConcurrentReadJobs();
+   void setNumConcurrentJobs(int32_t num);
+   void setNumConcurrentReadJobs(int32_t num);
+   bool is_enabled();
+   void setEnabled(bool val);
 };
 
 inline char *STORE::dev_name() const
@@ -366,6 +401,13 @@ inline void USTORE::set_source(const char *where)
    pm_strcpy(store_source, where);
 }
 
+class JOB_GLOBALS {
+public:
+   dlink link;                        /* double link */
+   const char *name;                  /* resource name */
+   int32_t NumConcurrentJobs;         /* number of concurrent jobs running */
+   bool enabled;                      /* Enabled/disabled */
+};
 
 /*
  *   Job Resource
@@ -373,7 +415,7 @@ inline void USTORE::set_source(const char *where)
 class JOB {
 public:
    RES   hdr;
-
+   JOB_GLOBALS *globals;              /* global variables */
    uint32_t JobType;                  /* job type (backup, verify, restore */
    uint32_t JobLevel;                 /* default backup/verify level */
    uint32_t RestoreJobId;             /* What -- JobId to restore */
@@ -409,8 +451,8 @@ public:
    utime_t SnapRetention;             /* Snapshot retention period in seconds */
    int64_t spool_size;                /* Size of spool file for this job */
    int32_t MaxConcurrentJobs;         /* Maximum concurrent jobs */
-   int32_t NumConcurrentJobs;         /* number of concurrent jobs running */
    uint32_t MaxSpawnedJobs;           /* Max Jobs that can be started by Migration/Copy */
+   uint32_t BackupsToKeep;            /* Number of backups to keep in Virtual Full */
    bool allow_mixed_priority;         /* Allow jobs with higher priority concurrently with this */
 
    MSGS      *messages;               /* How and where to send messages */
@@ -444,7 +486,7 @@ public:
    bool rerun_failed_levels;          /* Upgrade to rerun failed levels */
    bool PreferMountedVolumes;         /* Prefer vols mounted rather than new one */
    bool write_part_after_job;         /* Set to write part after job in SD */
-   bool enabled;                      /* Set if job enabled */
+   bool Enabled;                      /* Set if job enabled */
    bool accurate;                     /* Set if it is an accurate backup job */
    bool AllowDuplicateJobs;           /* Allow duplicate jobs */
    bool AllowHigherDuplicates;        /* Permit Higher Level */
@@ -452,13 +494,18 @@ public:
    bool CancelQueuedDuplicates;       /* Cancel queued jobs */
    bool CancelRunningDuplicates;      /* Cancel Running jobs */
    bool PurgeMigrateJob;              /* Purges source job on completion */
-   bool IgnoreDuplicateJobChecking;   /* Set to ignore Duplicate Job Checking */
+   bool DeleteConsolidatedJobs;       /* Delete or not consolidated Virtual Full jobs */
 
    alist *base;                       /* Base jobs */
    int64_t max_bandwidth;             /* Speed limit on this job */
 
    /* Methods */
    char *name() const;
+   void create_job_globals();
+   int32_t getNumConcurrentJobs();
+   void setNumConcurrentJobs(int32_t num);
+   bool is_enabled();
+   void setEnabled(bool val);
 };
 
 inline char *JOB::name() const { return hdr.name; }
@@ -491,6 +538,7 @@ enum {
    INC_KW_STRIPPATH,
    INC_KW_HONOR_NODUMP,
    INC_KW_XATTR,
+   INC_KW_DEDUP,
    INC_KW_MAX                   /* Keep this last */
 };
 
@@ -554,18 +602,28 @@ public:
 
 inline char *FILESET::name() const { return hdr.name; }
 
+class SCHED_GLOBALS {
+public:
+   dlink link;                        /* double link */
+   const char *name;                  /* resource name */
+   bool enabled;                      /* Enabled/disabled */
+};
+
 /*
  *   Schedule Resource
- *
  */
 class SCHED {
 public:
    RES   hdr;
-
+   SCHED_GLOBALS *globals;
    RUN *run;
-   bool enabled;                      /* set if enabled */
+   bool Enabled;                      /* set if enabled */
+
    /* Methods */
    char *name() const;
+   void create_sched_globals();
+   bool is_enabled();
+   void setEnabled(bool val);
 };
 
 inline char *SCHED::name() const { return hdr.name; }
@@ -583,6 +641,7 @@ public:
    COUNTER *WrapCounter;              /* Wrap counter name */
    CAT     *Catalog;                  /* Where to store */
    bool     created;                  /* Created in DB */
+
    /* Methods */
    char *name() const;
 };
@@ -603,6 +662,7 @@ public:
    int32_t LabelType;                 /* Bacula/ANSI/IBM label type */
    uint32_t max_volumes;              /* max number of volumes */
    utime_t VolRetention;              /* volume retention period in seconds */
+   utime_t CacheRetention;            /* cloud cache retention period in seconds */
    utime_t VolUseDuration;            /* duration volume can be used */
    uint32_t MaxVolJobs;               /* Maximum jobs on the Volume */
    uint32_t MaxVolFiles;              /* Maximum files on the Volume */
@@ -699,6 +759,7 @@ public:
 
 #define GetPoolResWithName(x) ((POOL *)GetResWithName(R_POOL, (x)))
 #define GetStoreResWithName(x) ((STORE *)GetResWithName(R_STORAGE, (x)))
+#define GetSchedResWithName(x) ((SCHED *)GetResWithName(R_SCHEDULE, (x)))
 #define GetClientResWithName(x) ((CLIENT *)GetResWithName(R_CLIENT, (x)))
 #define GetJobResWithName(x) ((JOB *)GetResWithName(R_JOB, (x)))
 #define GetFileSetResWithName(x) ((FILESET *)GetResWithName(R_FILESET, (x)))
@@ -711,6 +772,7 @@ void store_replace(LEX *lc, RES_ITEM *item, int index, int pass);
 void store_migtype(LEX *lc, RES_ITEM *item, int index, int pass);
 void store_acl(LEX *lc, RES_ITEM *item, int index, int pass);
 void store_ac_res(LEX *lc, RES_ITEM *item, int index, int pass);
+void store_device(LEX *lc, RES_ITEM *item, int index, int pass);
 void store_actiononpurge(LEX *lc, RES_ITEM *item, int index, int pass);
 void store_inc(LEX *lc, RES_ITEM *item, int index, int pass);
 void store_regex(LEX *lc, RES_ITEM *item, int index, int pass);

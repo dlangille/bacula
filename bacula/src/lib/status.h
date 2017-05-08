@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -69,10 +69,12 @@ static void sendit(const char *msg, int len, STATUS_PKT *sp)
 /* common to SD/FD */
 static void list_terminated_jobs(STATUS_PKT *sp)
 {
+   OutputWriter ow(sp->api_opts);
    char dt[MAX_TIME_LENGTH], b1[30], b2[30];
    char level[10];
    struct s_last_job *je;
    const char *msg;
+   char *p;
 
    msg =  _("\nTerminated Jobs:\n");
    if (!sp->api) sendit(msg, strlen(msg), sp);
@@ -85,6 +87,10 @@ static void list_terminated_jobs(STATUS_PKT *sp)
    if (!sp->api) sendit(msg, strlen(msg), sp);
    msg =  _("===================================================================\n");
    if (!sp->api) sendit(msg, strlen(msg), sp);
+   if (sp->api > 1) {
+      p = ow.start_group("terminated");
+      sendit(p, strlen(p), sp);
+   }
    foreach_dlist(je, last_jobs) {
       char JobName[MAX_NAME_LENGTH];
       const char *termstat;
@@ -93,9 +99,10 @@ static void list_terminated_jobs(STATUS_PKT *sp)
       bstrftime_nc(dt, sizeof(dt), je->end_time);
       switch (je->JobType) {
       case JT_ADMIN:
-         bstrncpy(level, "Admin", sizeof(level));
+         bstrncpy(level, "Admn", sizeof(level));
+         break;
       case JT_RESTORE:
-         bstrncpy(level, "Restore", sizeof(level));
+         bstrncpy(level, "Rest", sizeof(level));
          break;
       default:
          bstrncpy(level, job_level_to_str(je->JobLevel), sizeof(level));
@@ -145,6 +152,27 @@ static void list_terminated_jobs(STATUS_PKT *sp)
             edit_uint64_with_suffix(je->JobBytes, b2),
             termstat,
             dt, JobName);
+
+      } else if (sp->api > 1) {
+         p = ow.get_output(OT_CLEAR,
+                           OT_START_OBJ,
+                           OT_INT,     "jobid",     je->JobId,
+                           OT_JOBLEVEL,"level",     je->JobLevel,
+                           OT_JOBTYPE, "type",      je->JobType,
+                           OT_JOBSTATUS,"status",    je->JobStatus,
+                           OT_STRING,  "status_desc",termstat,
+                           OT_SIZE,    "jobbytes",  je->JobBytes,
+                           OT_INT32,   "jobfiles",  je->JobFiles,
+                           OT_STRING,  "job",       je->Job,
+                           OT_STRING,  "name",      JobName,
+                           OT_UTIME,   "starttime", je->start_time,
+                           OT_UTIME,   "endtime",   je->end_time,
+                           OT_INT,     "errors",    je->Errors,
+                           OT_END_OBJ,
+                           OT_END);
+         sendit(p, strlen(p), sp);
+
+
       } else {
          bsnprintf(buf, sizeof(buf), _("%6d  %-7s %8s %10s  %-7s  %-8s %s\n"),
             je->JobId,
@@ -159,6 +187,9 @@ static void list_terminated_jobs(STATUS_PKT *sp)
    unlock_last_jobs_list();
    if (!sp->api) {
       sendit("====\n", 5, sp);
+   } else if (sp->api > 1) {
+      p = ow.end_group(false);
+      sendit(p, strlen(p), sp);
    }
 }
 

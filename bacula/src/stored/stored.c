@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,13 +11,13 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
- * Second generation Storage daemon.
+ * Third generation Storage daemon.
  *
  *  Written by Kern Sibbald, MM
  *
@@ -37,8 +37,12 @@
  */
 #include "sd_plugins.h"
 
-/* Imported functions */
+/* Imported functions and variables */
 extern bool parse_sd_config(CONFIG *config, const char *configfile, int exit_code);
+
+extern dlist *daemon_msg_queue;
+extern pthread_mutex_t daemon_msg_queue_mutex;
+
 
 /* Forward referenced functions */
 void terminate_stored(int sig);
@@ -52,11 +56,6 @@ extern "C" void *device_initialization(void *arg);
 /* Global variables exported */
 char OK_msg[]   = "3000 OK\n";
 char TERM_msg[] = "3999 Terminate\n";
-STORES *me = NULL;                    /* our Global resource */
-
-bool forge_on = false;                /* proceed inspite of I/O errors */
-pthread_mutex_t device_release_mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_cond_t wait_device_release = PTHREAD_COND_INITIALIZER;
 void *start_heap;
 static bool test_config = false;
 
@@ -98,6 +97,24 @@ static void usage()
    exit(1);
 }
 
+/*
+ * !!! WARNING !!! Use this function only when bacula is stopped.
+ * ie, after a fatal signal and before exiting the program
+ * Print information about a JCR
+ */
+static void sd_debug_print(JCR *jcr, FILE *fp)
+{
+   if (jcr->dcr) {
+      DCR *dcr = jcr->dcr;
+      fprintf(fp, "\tdcr=%p volumename=%s dev=%p newvol=%d reserved=%d locked=%d\n",
+              dcr, dcr->VolumeName, dcr->dev, dcr->NewVol,
+              dcr->is_reserved(),
+              dcr->is_dev_locked());
+   } else {
+      fprintf(fp, "dcr=*None*\n");
+   }
+}
+
 /*********************************************************************
  *
  *  Main Bacula Unix Storage Daemon
@@ -114,6 +131,7 @@ int main (int argc, char *argv[])
    pthread_t thid;
    char *uid = NULL;
    char *gid = NULL;
+   MQUEUE_ITEM *item = NULL;
 
    start_heap = sbrk(0);
    setlocale(LC_ALL, "");
@@ -124,17 +142,19 @@ int main (int argc, char *argv[])
    my_name_is(argc, argv, "bacula-sd");
    init_msg(NULL, NULL);
    daemon_start_time = time(NULL);
+   /* Setup daemon message queue */
+   daemon_msg_queue = New(dlist(item, &item->link));
 
    /* Sanity checks */
    if (TAPE_BSIZE % B_DEV_BSIZE != 0 || TAPE_BSIZE / B_DEV_BSIZE == 0) {
-      Emsg2(M_ABORT, 0, _("Tape block size (%d) not multiple of system size (%d)\n"),
+      Jmsg2(NULL, M_ABORT, 0, _("Tape block size (%d) not multiple of system size (%d)\n"),
          TAPE_BSIZE, B_DEV_BSIZE);
    }
    if (TAPE_BSIZE != (1 << (ffs(TAPE_BSIZE)-1))) {
-      Emsg1(M_ABORT, 0, _("Tape block size (%d) is not a power of 2\n"), TAPE_BSIZE);
+      Jmsg1(NULL, M_ABORT, 0, _("Tape block size (%d) is not a power of 2\n"), TAPE_BSIZE);
    }
 
-   while ((ch = getopt(argc, argv, "c:d:fg:mpstu:v?T")) != -1) {
+   while ((ch = getopt(argc, argv, "c:d:fg:mpstu:v?Ti")) != -1) {
       switch (ch) {
       case 'c':                    /* configuration file */
          if (configfile != NULL) {
@@ -198,6 +218,11 @@ int main (int argc, char *argv[])
          verbose++;
          break;
 
+      /* Temp code to enable new match_bsr() code, not documented */
+      case 'i':
+         use_new_match_all = 1;
+         break;
+
       case '?':
       default:
          usage();
@@ -215,10 +240,11 @@ int main (int argc, char *argv[])
       argc--;
       argv++;
    }
-   if (argc)
+   if (argc) {
       usage();
+   }
 
-   if (!foreground) {
+   if (!foreground && !test_config) {
       daemon_start();                 /* become daemon */
       init_stack_dump();              /* pick up new pid */
    }
@@ -231,7 +257,7 @@ int main (int argc, char *argv[])
       configfile = bstrdup(CONFIG_FILE);
    }
 
-   config = new_config_parser();
+   config = New(CONFIG());
    parse_sd_config(config, configfile, M_ERROR_TERM);
 
    if (init_crypto() != 0) {
@@ -281,11 +307,12 @@ int main (int argc, char *argv[])
    create_volume_lists();             /* do before device_init */
    if (pthread_create(&thid, NULL, device_initialization, NULL) != 0) {
       berrno be;
-      Emsg1(M_ABORT, 0, _("Unable to create thread. ERR=%s\n"), be.bstrerror());
+      Jmsg1(NULL, M_ABORT, 0, _("Unable to create thread. ERR=%s\n"), be.bstrerror());
    }
 
    start_watchdog();                  /* start watchdog thread */
    init_jcr_subsystem();              /* start JCR watchdogs etc. */
+   dbg_jcr_add_hook(sd_debug_print); /* used to director variables */
 
    /* Single server used for Director and File daemon */
    server_tid = pthread_self();
@@ -312,6 +339,8 @@ static int check_resources()
 {
    bool OK = true;
    bool tls_needed;
+   AUTOCHANGER *changer;
+   DEVRES *device;
 
    me = (STORES *)GetNextRes(R_STORAGE, NULL);
    if (!me) {
@@ -453,8 +482,15 @@ static int check_resources()
       }
    }
 
-   OK = init_autochangers();
+   foreach_res(changer, R_AUTOCHANGER) {
+      foreach_alist(device, changer->device) {
+         device->cap_bits |= CAP_AUTOCHANGER;
+      }
+   }
 
+   if (OK) {
+      OK = init_autochangers();
+   }
 
    if (OK) {
       close_msg(NULL);                   /* close temp message handler */
@@ -554,6 +590,7 @@ void *device_initialization(void *arg)
    DCR *dcr;
    JCR *jcr;
    DEVICE *dev;
+   struct stat statp;
 
    LockRes();
 
@@ -569,17 +606,34 @@ void *device_initialization(void *arg)
    }
 
    foreach_res(device, R_DEVICE) {
-      Dmsg1(90, "calling init_dev %s\n", device->device_name);
+      Dmsg1(90, "calling init_dev %s\n", device->hdr.name);
       dev = init_dev(NULL, device);
-      Dmsg1(10, "SD init done %s\n", device->device_name);
+      Dmsg1(10, "SD init done %s\n", device->hdr.name);
       if (!dev) {
-         Jmsg1(NULL, M_ERROR, 0, _("Could not initialize %s\n"), device->device_name);
+         Jmsg1(NULL, M_ERROR, 0, _("Could not initialize SD device \"%s\"\n"), device->hdr.name);
          continue;
       }
 
       jcr->dcr = dcr = new_dcr(jcr, NULL, dev);
       generate_plugin_event(jcr, bsdEventDeviceInit, dcr);
 
+      if (device->control_name && stat(device->control_name, &statp) < 0) {
+         berrno be;
+         Jmsg2(jcr, M_ERROR_TERM, 0, _("Unable to stat ControlDevice %s: ERR=%s\n"),
+            device->control_name, be.bstrerror());
+      }
+
+      if ((device->lock_command && device->control_name) &&
+          !me->plugin_directory) {
+         Jmsg0(jcr, M_ERROR_TERM, 0, _("No plugin directory configured for SAN shared storage\n"));
+      }
+
+
+      /*
+       * Note: be careful setting the slot here. If the drive
+       *  is shared storage, the contents can change before
+       *  the drive is used.
+       */
       if (device->cap_bits & CAP_ALWAYSOPEN) {
          if (dev->is_autochanger()) {
             /* If autochanger set slot in dev sturcture */
@@ -604,7 +658,7 @@ void *device_initialization(void *arg)
          dev->clear_slot();
       }
       if (device->cap_bits & CAP_AUTOMOUNT && dev->is_open()) {
-         switch (read_dev_volume_label(dcr)) {
+         switch (dev->read_dev_volume_label(dcr)) {
          case VOL_OK:
             memcpy(&dev->VolCatInfo, &dcr->VolCatInfo, sizeof(dev->VolCatInfo));
             volume_unused(dcr);             /* mark volume "released" */
@@ -702,14 +756,19 @@ void terminate_stored(int sig)
    unload_plugins();
    free_volume_lists();
 
+   P(daemon_msg_queue_mutex);
+   daemon_msg_queue->destroy();
+   free(daemon_msg_queue);
+   V(daemon_msg_queue_mutex);
+
    foreach_res(device, R_DEVICE) {
-      Dmsg1(10, "Term device %s\n", device->device_name);
+      Dmsg2(10, "Term device %s %s\n", device->hdr.name, device->device_name);
       if (device->dev) {
          device->dev->clear_volhdr();
-         device->dev->term();
+         device->dev->term(NULL);
          device->dev = NULL;
       } else {
-         Dmsg1(10, "No dev structure %s\n", device->device_name);
+         Dmsg2(10, "No dev structure %s %s\n", device->hdr.name, device->device_name);
       }
    }
    if (server_tid_valid) {
@@ -721,8 +780,7 @@ void terminate_stored(int sig)
       configfile = NULL;
    }
    if (config) {
-      config->free_resources();
-      free(config);
+      delete config;
       config = NULL;
    }
 
@@ -732,6 +790,8 @@ void terminate_stored(int sig)
    term_msg();
    cleanup_crypto();
    term_reservations_lock();
+   free(res_head);
+   res_head = NULL;
    close_memory_pool();
    lmgr_cleanup_main();
 

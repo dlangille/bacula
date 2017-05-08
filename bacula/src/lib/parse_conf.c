@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -81,11 +81,16 @@ extern brwlock_t res_lock;            /* resource lock */
 /* Forward referenced subroutines */
 static void scan_types(LEX *lc, MSGS *msg, int dest, char *where, char *cmd);
 static const char *get_default_configdir();
-static bool find_config_file(const char *config_file, char *full_path, int max_path);
 
 /* Common Resource definitions */
 
-/* Message resource directives
+/*
+ * Message resource directives
+ * Note: keep all store_mesgs last in the list as they are all
+ *   output in json as a list.
+ *   Also, the list store_msgs item must have flags set to ITEM_LAST
+ *   so that the list editor (bjson.c) knows when to stop.
+ *
  *  name         handler      value       code   flags  default_value
  */
 RES_ITEM msgs_items[] = {
@@ -93,6 +98,7 @@ RES_ITEM msgs_items[] = {
    {"Description", store_str,     ITEM(res_msgs.hdr.desc),  0, 0, 0},
    {"MailCommand", store_str,     ITEM(res_msgs.mail_cmd),  0, ITEM_ALLOW_DUPS, 0},
    {"OperatorCommand", store_str, ITEM(res_msgs.operator_cmd), 0, ITEM_ALLOW_DUPS, 0},
+   /* See comments above */
    {"Syslog",      store_msgs, ITEM(res_msgs), MD_SYSLOG,   0, 0},
    {"Mail",        store_msgs, ITEM(res_msgs), MD_MAIL,     0, 0},
    {"MailOnError", store_msgs, ITEM(res_msgs), MD_MAIL_ON_ERROR, 0, 0},
@@ -108,19 +114,15 @@ RES_ITEM msgs_items[] = {
    {NULL,          NULL,       {0},       0, 0, 0}
 };
 
-struct s_mtypes {
-   const char *name;
-   int token;
-};
 /* Various message types */
-static struct s_mtypes msg_types[] = {
-   {"Debug",         M_DEBUG},
+s_kw msg_types[] = {
+   {"Debug",         M_DEBUG},  /* Keep 1st place */
+   {"Saved",         M_SAVED},  /* Keep 2nd place */
    {"Abort",         M_ABORT},
    {"Fatal",         M_FATAL},
    {"Error",         M_ERROR},
    {"Warning",       M_WARNING},
    {"Info",          M_INFO},
-   {"Saved",         M_SAVED},
    {"NotSaved",      M_NOTSAVED},
    {"Skipped",       M_SKIPPED},
    {"Mount",         M_MOUNT},
@@ -133,6 +135,7 @@ static struct s_mtypes msg_types[] = {
    {"All",           M_MAX+1},
    {NULL,            0}
 };
+
 
 /*
  * Tape Label types permitted in Pool records
@@ -166,6 +169,52 @@ const char *res_to_str(int rcode)
    }
 }
 
+/*
+ * Create a new res_head pointer to a list of res_heads
+ */
+void CONFIG::init_res_head(RES_HEAD ***rhead, int32_t rfirst, int32_t rlast)
+{
+   int num = rlast - rfirst + 1;
+   RES *res = NULL;
+   RES_HEAD **rh;
+   rh = *rhead = (RES_HEAD **)malloc(num * sizeof(RES_HEAD));
+   for (int i=0; i<num; i++) {
+      rh[i] = (RES_HEAD *)malloc(sizeof(RES_HEAD));
+      rh[i]->res_list = New(rblist(res, &res->link));
+      rh[i]->first = NULL;
+      rh[i]->last = NULL;
+   }
+}
+
+/*
+ * Insert the resource in res_all into the
+ *  resource list.
+ */
+bool CONFIG::insert_res(int rindex, int size)
+{
+   RES *res;
+   rblist *list = m_res_head[rindex]->res_list;
+   res = (RES *)malloc(size);
+   memcpy(res, m_res_all, size);
+   if (list->empty()) {
+      list->insert(res, res_compare);
+      m_res_head[rindex]->first = res;
+      m_res_head[rindex]->last = res;
+   } else {
+      RES *item, *prev;
+      prev = m_res_head[rindex]->last;
+      item = (RES *)list->insert(res, res_compare);
+      if (item != res) {
+         Mmsg(m_errmsg, _("Attempt to define second \"%s\" resource named \"%s\" is not permitted.\n"),
+              resources[rindex].name, ((URES *)res)->hdr.name);
+         return false;
+      }
+      prev->res_next = res;
+      m_res_head[rindex]->last = res;
+   }
+   Dmsg2(900, _("Inserted res: %s index=%d\n"), ((URES *)res)->hdr.name, rindex);
+   return true;
+}
 
 /*
  * Initialize the static structure to zeros, then
@@ -175,7 +224,7 @@ static void init_resource(CONFIG *config, int type, RES_ITEM *items, int pass)
 {
    int i;
    int rindex = type - r_first;
-
+   
    memset(config->m_res_all, 0, config->m_res_all_size);
    res_all.hdr.rcode = type;
    res_all.hdr.refcnt = 1;
@@ -210,6 +259,39 @@ static void init_resource(CONFIG *config, int type, RES_ITEM *items, int pass)
       if (i >= MAX_RES_ITEMS) {
          Emsg1(M_ERROR_TERM, 0, _("Too many directives in \"%s\" resource\n"), resources[rindex].name);
       }
+   }
+}
+
+/* Initialize a resouce with default values */
+bool init_resource(CONFIG *config, uint32_t type, void *res)
+{
+   RES_ITEM *items;
+   for (int i=0; resources[i].name; i++) {
+      if (resources[i].rcode == type) {
+         items = resources[i].items;
+         if (!items) {
+            return false;
+         }
+         init_resource(config, type, items, 1);
+         memcpy(res, config->m_res_all, config->m_res_all_size);
+         return true;
+      }
+   }
+   return false;
+}
+
+/*
+ * Dump each resource of type
+ */
+void dump_each_resource(int type, void sendit(void *sock, const char *fmt, ...), void *sock)
+{
+   RES *res = NULL;
+
+   if (type < 0) {                    /* no recursion */
+      type = -type;
+   }
+   foreach_res(res, type) {
+      dump_resource(-type, res, sendit, sock);
    }
 }
 
@@ -336,8 +418,8 @@ static void scan_types(LEX *lc, MSGS *msg, int dest_code, char *where, char *cmd
       }
 
       if (msg_type == M_MAX+1) {         /* all? */
-         for (i=1; i<=M_MAX; i++) {      /* yes set all types */
-            add_msg_dest(msg, dest_code, i, where, cmd);
+         for (i=2; i<=M_MAX; i++) {      /* yes set all types except Debug and Saved */
+            add_msg_dest(msg, dest_code, msg_types[i].token, where, cmd);
          }
       } else if (is_not) {
          rem_msg_dest(msg, dest_code, msg_type, where);
@@ -361,6 +443,7 @@ static void scan_types(LEX *lc, MSGS *msg, int dest_code, char *where, char *cmd
 void store_name(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    POOLMEM *msg = get_pool_memory(PM_EMSG);
+
    lex_get_token(lc, T_NAME);
    if (!is_name_valid(lc->str, &msg)) {
       scan_err1(lc, "%s\n", msg);
@@ -431,6 +514,14 @@ void store_dir(LEX *lc, RES_ITEM *item, int index, int pass)
       if (lc->str[0] != '|') {
          do_shell_expansion(lc->str, sizeof_pool_memory(lc->str));
       }
+#ifdef STANDARDIZED_DIRECTORY_USAGE
+      // TODO ASX we should store all directory without the ending slash to
+      // avoid the need of testing its presence
+      int len=strlen(lc->str);
+      if (len>0 && IsPathSeparator(lc->str[len-1])) {
+         lc->str[len-1]='\0';
+      }
+#endif
       if (*(item->value)) {
          scan_err5(lc, _("Attempt to redefine \"%s\" from \"%s\" to \"%s\" referenced on line %d : %s\n"),
             item->name, *(item->value), lc->str, lc->line_no, lc->line);
@@ -451,25 +542,29 @@ void store_password(LEX *lc, RES_ITEM *item, int index, int pass)
    unsigned char digest[CRYPTO_DIGEST_MD5_SIZE];
    char sig[100];
 
+   if (lc->options & LOPT_NO_MD5) {
+      store_str(lc, item, index, pass);
 
-   lex_get_token(lc, T_STRING);
-   if (pass == 1) {
-      MD5Init(&md5c);
-      MD5Update(&md5c, (unsigned char *) (lc->str), lc->str_len);
-      MD5Final(digest, &md5c);
-      for (i = j = 0; i < sizeof(digest); i++) {
-         sprintf(&sig[j], "%02x", digest[i]);
-         j += 2;
+   } else {
+      lex_get_token(lc, T_STRING);
+      if (pass == 1) {
+         MD5Init(&md5c);
+         MD5Update(&md5c, (unsigned char *) (lc->str), lc->str_len);
+         MD5Final(digest, &md5c);
+         for (i = j = 0; i < sizeof(digest); i++) {
+            sprintf(&sig[j], "%02x", digest[i]);
+            j += 2;
+         }
+         if (*(item->value)) {
+            scan_err5(lc, _("Attempt to redefine \"%s\" from \"%s\" to \"%s\" referenced on line %d : %s\n"),
+               item->name, *(item->value), lc->str, lc->line_no, lc->line);
+            return;
+         }
+         *(item->value) = bstrdup(sig);
       }
-      if (*(item->value)) {
-         scan_err5(lc, _("Attempt to redefine \"%s\" from \"%s\" to \"%s\" referenced on line %d : %s\n"),
-            item->name, *(item->value), lc->str, lc->line_no, lc->line);
-         return;
-      }
-      *(item->value) = bstrdup(sig);
+      scan_to_eol(lc);
+      set_bit(index, res_all.hdr.item_present);
    }
-   scan_to_eol(lc);
-   set_bit(index, res_all.hdr.item_present);
 }
 
 
@@ -485,7 +580,7 @@ void store_res(LEX *lc, RES_ITEM *item, int index, int pass)
    if (pass == 2) {
       res = GetResWithName(item->code, lc->str);
       if (res == NULL) {
-         scan_err3(lc, _("Could not find config Resource %s referenced on line %d : %s\n"),
+         scan_err3(lc, _("Could not find config Resource \"%s\" referenced on line %d : %s\n"),
             lc->str, lc->line_no, lc->line);
          return;
       }
@@ -538,7 +633,7 @@ void store_alist_res(LEX *lc, RES_ITEM *item, int index, int pass)
          res = GetResWithName(item->code, lc->str);
          if (res == NULL) {
             scan_err3(lc, _("Could not find config Resource \"%s\" referenced on line %d : %s\n"),
-               item->name, lc->line_no, lc->line);
+               lc->str, lc->line_no, lc->line);
             return;
          }
          Dmsg5(900, "Append %p to alist %p size=%d i=%d %s\n",
@@ -546,6 +641,11 @@ void store_alist_res(LEX *lc, RES_ITEM *item, int index, int pass)
          list->append(res);
          (item->value)[i] = (char *)list;
          if (lc->ch != ',') {         /* if no other item follows */
+            if (!lex_check_eol(lc)) {
+               /* found garbage at the end of the line */
+               scan_err3(lc, _("Found unexpected characters resource list in Directive \"%s\" at the end of line %d : %s\n"),
+                  item->name, lc->line_no, lc->line);
+            }
             break;                    /* get out */
          }
          lex_get_token(lc, T_ALL);    /* eat comma */
@@ -576,6 +676,11 @@ void store_alist_str(LEX *lc, RES_ITEM *item, int index, int pass)
             lc->str, list, list->size(), item->name);
          list->append(bstrdup(lc->str));
          if (lc->ch != ',') {         /* if no other item follows */
+            if (!lex_check_eol(lc)) {
+               /* found garbage at the end of the line */
+               scan_err3(lc, _("Found unexpected characters in resource list in Directive \"%s\" at the end of line %d : %s\n"),
+                  item->name, lc->line_no, lc->line);
+            }
             break;                    /* get out */
          }
          lex_get_token(lc, T_ALL);    /* eat comma */
@@ -648,7 +753,10 @@ enum store_unit_type {
    STORE_SPEED
 } ;
 
-/* Store a size in bytes */
+/*
+ * This routine stores either a 32 or a 64 bit value (size32)
+ *  and either a size (in bytes) or a speed (bytes per second).
+ */
 static void store_int_unit(LEX *lc, RES_ITEM *item, int index, int pass,
                            bool size32, enum store_unit_type type)
 {
@@ -829,14 +937,6 @@ enum parse_state {
    p_resource
 };
 
-CONFIG *new_config_parser()
-{
-   CONFIG *config;
-   config = (CONFIG *)malloc(sizeof(CONFIG));
-   memset(config, 0, sizeof(CONFIG));
-   return config;
-}
-
 void CONFIG::init(
    const char *cf,
    LEX_ERROR_HANDLER *scan_error,
@@ -846,7 +946,7 @@ void CONFIG::init(
    int32_t r_first,
    int32_t r_last,
    RES_TABLE *resources,
-   RES **res_head)
+   RES_HEAD ***res_head)
 {
    m_cf = cf;
    m_scan_error = scan_error;
@@ -856,7 +956,8 @@ void CONFIG::init(
    m_r_first = r_first;
    m_r_last = r_last;
    m_resources = resources;
-   m_res_head = res_head;
+   init_res_head(res_head, r_first, r_last);
+   m_res_head = *res_head;
 }
 
 /*********************************************************************
@@ -880,6 +981,7 @@ bool CONFIG::parse_config()
    const char *cf = m_cf;
    LEX_ERROR_HANDLER *scan_error = m_scan_error;
    int err_type = m_err_type;
+   //HPKT hpkt;
 
    if (first && (errstat=rwl_init(&res_lock)) != 0) {
       berrno be;
@@ -920,6 +1022,9 @@ bool CONFIG::parse_config()
          free_pool_memory(lc->str);
          free(lc);
          return 0;
+      }
+      if (!m_encode_pass) {
+         lex_store_clear_passwords(lc);
       }
       lex_set_error_handler_error_type(lc, err_type) ;
       while ((token=lex_get_token(lc, T_ALL)) != T_EOF) {
@@ -968,6 +1073,12 @@ bool CONFIG::parse_config()
                   goto bail_out;
                }
                for (i=0; items[i].name; i++) {
+                  //hpkt.pass = pass;
+                  //hpkt.ritem = &items[i];
+                  //hpkt.edbuf = NULL;
+                  //hpkt.index = i;
+                  //hpkt.lc = lc;
+                  //hpkt.hfunc = HF_STORE;
                   if (strcasecmp(items[i].name, lc->str) == 0) {
                      /* If the ITEM_NO_EQUALS flag is set we do NOT
                       *   scan for = after the keyword  */
@@ -1003,7 +1114,10 @@ bool CONFIG::parse_config()
                   scan_err0(lc, _("Name not specified for resource"));
                   goto bail_out;
                }
-               save_resource(res_type, items, pass);  /* save resource */
+               if (!save_resource(this, res_type, items, pass)) {  /* save resource */
+                  scan_err1(lc, "%s", m_errmsg);
+                  goto bail_out;
+               }
                break;
 
             case T_EOL:
@@ -1024,10 +1138,10 @@ bool CONFIG::parse_config()
          scan_err0(lc, _("End of conf file reached with unclosed resource."));
          goto bail_out;
       }
-      if (debug_level >= 900 && pass == 2) {
+      if (chk_dbglvl(900) && pass == 2) {
          int i;
          for (i=m_r_first; i<=m_r_last; i++) {
-            dump_resource(i, m_res_head[i-m_r_first], prtmsg, NULL);
+            dump_each_resource(i, prtmsg, NULL);
          }
       }
       lc = lex_close_file(lc);
@@ -1046,11 +1160,30 @@ const char *get_default_configdir()
    return SYSCONFDIR;
 }
 
+#ifdef xxx_not_used
+   HRESULT hr;
+   static char szConfigDir[MAX_PATH + 1] = { 0 };
+   if (!p_SHGetFolderPath) {
+      bstrncpy(szConfigDir, DEFAULT_CONFIGDIR, sizeof(szConfigDir));
+      return szConfigDir;
+   }
+   if (szConfigDir[0] == '\0') {
+      hr = p_SHGetFolderPath(NULL, CSIDL_COMMON_APPDATA, NULL, 0, szConfigDir);
+      if (SUCCEEDED(hr)) {
+         bstrncat(szConfigDir, "\\Bacula", sizeof(szConfigDir));
+      } else {
+         bstrncpy(szConfigDir, DEFAULT_CONFIGDIR, sizeof(szConfigDir));
+      }
+   }
+   return szConfigDir;
+#endif
+
+
 /*
  * Returns false on error
  *         true  on OK, with full_path set to where config file should be
  */
-static bool
+bool
 find_config_file(const char *config_file, char *full_path, int max_path)
 {
    int file_length = strlen(config_file) + 1;
@@ -1088,59 +1221,52 @@ find_config_file(const char *config_file, char *full_path, int max_path)
  *      Free configuration resources
  *
  */
-void CONFIG::free_resources()
+void CONFIG::free_all_resources()
 {
+   RES *next, *res;
+   if (m_res_head == NULL) {
+      return;
+   }
+   /* Walk down chain of res_heads */
    for (int i=m_r_first; i<=m_r_last; i++) {
-      free_resource(m_res_head[i-m_r_first], i);
-      m_res_head[i-m_r_first] = NULL;
+      if (m_res_head[i-m_r_first]) {
+         next = m_res_head[i-m_r_first]->first;
+         Dmsg2(500, "i=%d, next=%p\n", i, next);
+         /* Walk down resource chain freeing them */
+         for ( ; next; ) {
+            res = next;
+            next = res->res_next;
+            free_resource(res, i);
+         }
+        free(m_res_head[i-m_r_first]->res_list);
+        free(m_res_head[i-m_r_first]);
+        m_res_head[i-m_r_first] = NULL;
+      }
    }
 }
 
-RES **CONFIG::save_resources()
+CONFIG::CONFIG()
+:  m_cf(NULL),
+   m_scan_error(NULL),
+   m_err_type(0),
+   m_res_all(NULL),
+   m_res_all_size(0),
+   m_encode_pass(true),
+   m_r_first(0),
+   m_r_last(0),
+   m_resources(NULL),
+   m_res_head(NULL)
 {
-   int num = m_r_last - m_r_first + 1;
-   RES **res = (RES **)malloc(num*sizeof(RES *));
-   for (int i=0; i<num; i++) {
-      res[i] = m_res_head[i];
-      m_res_head[i] = NULL;
-   }
-   return res;
+   m_errmsg = get_pool_memory(PM_EMSG);
+   *m_errmsg = 0;
 }
 
-RES **CONFIG::new_res_head()
-{
-   int size = (m_r_last - m_r_first + 1) * sizeof(RES *);
-   RES **res = (RES **)malloc(size);
-   memset(res, 0, size);
-   return res;
+CONFIG::~CONFIG() {
+   free_all_resources();
+   free_pool_memory(m_errmsg);
 }
 
-
-#ifdef xxx
-void free_config_resources()
+void CONFIG::encode_password(bool a)
 {
-   for (int i=r_first; i<=r_last; i++) {
-      free_resource(res_head[i-r_first], i);
-      res_head[i-r_first] = NULL;
-   }
+   m_encode_pass = a;
 }
-
-RES **save_config_resources()
-{
-   int num = r_last - r_first + 1;
-   RES **res = (RES **)malloc(num*sizeof(RES *));
-   for (int i=0; i<num; i++) {
-      res[i] = res_head[i];
-      res_head[i] = NULL;
-   }
-   return res;
-}
-
-RES **new_res_head()
-{
-   int size = (r_last - r_first + 1) * sizeof(RES *);
-   RES **res = (RES **)malloc(size);
-   memset(res, 0, size);
-   return res;
-}
-#endif

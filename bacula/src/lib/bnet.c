@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -47,9 +47,9 @@
 #define socketClose(fd)           close(fd)
 #endif
 
-#ifndef HAVE_GETADDRINFO 
+#ifndef HAVE_GETADDRINFO
 static pthread_mutex_t ip_mutex = PTHREAD_MUTEX_INITIALIZER;
-#endif 
+#endif
 
 /*
  * Read a nbytes from the network.
@@ -175,18 +175,11 @@ int32_t write_nbytes(BSOCK * bsock, char *ptr, int32_t nbytes)
       } while (nwritten == -1 && errno == EINTR);
       /*
        * If connection is non-blocking, we will get EAGAIN, so
-       * use select() to keep from consuming all the CPU
+       * use select()/poll to keep from consuming all the CPU
        * and try again.
        */
       if (nwritten == -1 && errno == EAGAIN) {
-         fd_set fdset;
-         struct timeval tv;
-
-         FD_ZERO(&fdset);
-         FD_SET((unsigned)bsock->m_fd, &fdset);
-         tv.tv_sec = 1;
-         tv.tv_usec = 0;
-         select(bsock->m_fd + 1, NULL, &fdset, NULL, &tv);
+         fd_wait_data(bsock->m_fd, WAIT_WRITE, 1, 0);
          continue;
       }
       if (nwritten <= 0) {
@@ -327,14 +320,6 @@ bool bnet_tls_client(TLS_CONTEXT *ctx, BSOCK * bsock, alist *verify_list)
 #define NO_DATA         4          /* Valid name, no data record of requested type. */
 #endif
 
-static IPADDR *add_any(int family)
-{
-   IPADDR *addr = New(IPADDR(family));
-   addr->set_type(IPADDR::R_MULTIPLE);
-   addr->set_addr_any();
-   return addr;
-}
-
 #if defined(HAVE_GETADDRINFO)
 /* 
  * getaddrinfo.c - Simple example of using getaddrinfo(3) function.
@@ -453,7 +438,7 @@ static const char *resolv_host(int family, const char *host, dlist * addr_list)
 #ifdef HAVE_IPV6
          else {
              addr->set_addr6((struct in6_addr*)*p);
-         } 
+         }
 #endif
          addr_list->append(addr);
       }
@@ -461,8 +446,16 @@ static const char *resolv_host(int family, const char *host, dlist * addr_list)
    }
    return NULL;
 }
-#endif 
- 
+#endif
+
+static IPADDR *add_any(int family)
+{
+   IPADDR *addr = New(IPADDR(family));
+   addr->set_type(IPADDR::R_MULTIPLE);
+   addr->set_addr_any();
+   return addr;
+}
+
 /*
  * i host = 0 means INADDR_ANY only for IPv4
  */
@@ -551,6 +544,16 @@ const char *bnet_sig_to_ascii(int32_t msglen)
       return "BNET_SUB_PROMPT";
    case BNET_TEXT_INPUT:
       return "BNET_TEXT_INPUT";
+   case BNET_FDCALLED:
+      return "BNET_FDCALLED";
+   case BNET_CMD_OK:
+      return "BNET_CMD_OK";
+   case BNET_CMD_BEGIN:
+      return "BNET_CMD_BEGIN";
+   case BNET_MAIN_PROMPT:
+      return "BNET_MAIN_PROMPT";
+   case BNET_ERROR_MSG:
+      return "BNET_ERROR_MSG";
    default:
       bsnprintf(buf, sizeof(buf), _("Unknown sig %d"), (int)msglen);
       return buf;
@@ -558,25 +561,28 @@ const char *bnet_sig_to_ascii(int32_t msglen)
 }
 
 /* Initialize internal socket structure.
- *  This probably should be done in net_open
+ *  This probably should be done in bsock.c
  */
-BSOCK *init_bsock(JCR * jcr, int sockfd, const char *who, const char *host, int port,
-                  struct sockaddr *client_addr)
+BSOCK *init_bsock(JCR *jcr, int sockfd, const char *who,
+                   const char *host, int port, struct sockaddr *client_addr)
 {
-   Dmsg3(100, "who=%s host=%s port=%d\n", who, host, port);
+   Dmsg4(100, "socket=%d who=%s host=%s port=%d\n", sockfd, who, host, port);
    BSOCK *bsock = (BSOCK *)malloc(sizeof(BSOCK));
-   memset(bsock, 0, sizeof(BSOCK));
+   bmemzero(bsock, sizeof(BSOCK));
+   bsock->m_master=bsock; /* don't use set_master() here */
    bsock->m_fd = sockfd;
    bsock->tls = NULL;
    bsock->errors = 0;
    bsock->m_blocking = 1;
    bsock->pout_msg_no = &bsock->out_msg_no;
+   bsock->uninstall_send_hook_cb();
    bsock->msg = get_pool_memory(PM_BSOCK);
+   bsock->cmsg = get_pool_memory(PM_BSOCK);
    bsock->errmsg = get_pool_memory(PM_MESSAGE);
    bsock->set_who(bstrdup(who));
    bsock->set_host(bstrdup(host));
    bsock->set_port(port);
-   memset(&bsock->peer_addr, 0, sizeof(bsock->peer_addr));
+   bmemzero(&bsock->peer_addr, sizeof(bsock->peer_addr));
    memcpy(&bsock->client_addr, client_addr, sizeof(bsock->client_addr));
    bsock->timeout = BSOCK_TIMEOUT;
    bsock->set_jcr(jcr);
@@ -589,6 +595,7 @@ BSOCK *dup_bsock(BSOCK *osock)
    osock->set_locking();
    memcpy(bsock, osock, sizeof(BSOCK));
    bsock->msg = get_pool_memory(PM_BSOCK);
+   bsock->cmsg = get_pool_memory(PM_BSOCK);
    bsock->errmsg = get_pool_memory(PM_MESSAGE);
    if (osock->who()) {
       bsock->set_who(bstrdup(osock->who()));
@@ -600,6 +607,7 @@ BSOCK *dup_bsock(BSOCK *osock)
       bsock->src_addr = New( IPADDR( *(osock->src_addr)) );
    }
    bsock->set_duped();
+   bsock->set_master(osock);
    return bsock;
 }
 

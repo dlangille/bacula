@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -20,7 +20,6 @@
  * Bacula Catalog Database Update record interface routines
  *
  *    Written by Kern Sibbald, March 2000
- *
  */
 
 #include  "bacula.h"
@@ -58,7 +57,7 @@ int BDB::bdb_add_digest_to_file_record(JCR *jcr, FileId_t FileId, char *digest,
    bdb_escape_string(jcr, esc_name, digest, len);
    Mmsg(cmd, "UPDATE File SET MD5='%s' WHERE FileId=%s", esc_name,
         edit_int64(FileId, ed1));
-   ret = UpdateDB(jcr, cmd, true);
+   ret = UpdateDB(jcr, cmd, false);
    bdb_unlock();
    return ret;
 }
@@ -254,7 +253,7 @@ int BDB::bdb_update_counter_record(JCR *jcr, COUNTER_DBR *cr)
 int BDB::bdb_update_pool_record(JCR *jcr, POOL_DBR *pr)
 {
    int stat;
-   char ed1[50], ed2[50], ed3[50], ed4[50], ed5[50], ed6[50];
+   char ed1[50], ed2[50], ed3[50], ed4[50], ed5[50], ed6[50], ed7[50];
    char esc[MAX_ESCAPE_NAME_LENGTH];
 
    bdb_lock();
@@ -270,7 +269,7 @@ int BDB::bdb_update_pool_record(JCR *jcr, POOL_DBR *pr)
 "AcceptAnyVolume=%d,VolRetention='%s',VolUseDuration='%s',"
 "MaxVolJobs=%u,MaxVolFiles=%u,MaxVolBytes=%s,Recycle=%d,"
 "AutoPrune=%d,LabelType=%d,LabelFormat='%s',RecyclePoolId=%s,"
-"ScratchPoolId=%s,ActionOnPurge=%d WHERE PoolId=%s",
+"ScratchPoolId=%s,ActionOnPurge=%d,CacheRetention='%s' WHERE PoolId=%s",
       pr->NumVols, pr->MaxVols, pr->UseOnce, pr->UseCatalog,
       pr->AcceptAnyVolume, edit_uint64(pr->VolRetention, ed1),
       edit_uint64(pr->VolUseDuration, ed2),
@@ -280,6 +279,7 @@ int BDB::bdb_update_pool_record(JCR *jcr, POOL_DBR *pr)
       esc, edit_int64(pr->RecyclePoolId,ed5),
       edit_int64(pr->ScratchPoolId,ed6),
       pr->ActionOnPurge,
+      edit_uint64(pr->CacheRetention, ed7),
       ed4);
    stat = UpdateDB(jcr, cmd, false);
    bdb_unlock();
@@ -316,7 +316,7 @@ int BDB::bdb_update_media_record(JCR *jcr, MEDIA_DBR *mr)
    char ed1[50], ed2[50],  ed3[50],  ed4[50];
    char ed5[50], ed6[50],  ed7[50],  ed8[50];
    char ed9[50], ed10[50], ed11[50], ed12[50];
-   char ed13[50], ed14[50];
+   char ed13[50], ed14[50], ed15[50], ed16[50];
    char esc_name[MAX_ESCAPE_NAME_LENGTH];
    char esc_status[MAX_ESCAPE_NAME_LENGTH];
 
@@ -370,11 +370,12 @@ int BDB::bdb_update_media_record(JCR *jcr, MEDIA_DBR *mr)
         "VolFiles=%u,VolBlocks=%u,VolBytes=%s,VolABytes=%s,"
         "VolHoleBytes=%s,VolHoles=%u,VolMounts=%u,VolErrors=%u,"
         "VolWrites=%s,MaxVolBytes=%s,VolStatus='%s',"
-        "Slot=%d,InChanger=%d,VolReadTime=%s,VolWriteTime=%s,VolParts=%d,"
+        "Slot=%d,InChanger=%d,VolReadTime=%s,VolWriteTime=%s,VolType=%d,"
+        "VolParts=%d,VolCloudParts=%d,LastPartBytes=%s,"
         "LabelType=%d,StorageId=%s,PoolId=%s,VolRetention=%s,VolUseDuration=%s,"
         "MaxVolJobs=%d,MaxVolFiles=%d,Enabled=%d,LocationId=%s,"
         "ScratchPoolId=%s,RecyclePoolId=%s,RecycleCount=%d,Recycle=%d,"
-        "ActionOnPurge=%d"
+        "ActionOnPurge=%d,CacheRetention=%s"
         " WHERE VolumeName='%s'",
         mr->VolJobs, mr->VolFiles, mr->VolBlocks,
         edit_uint64(mr->VolBytes, ed1),
@@ -386,17 +387,21 @@ int BDB::bdb_update_media_record(JCR *jcr, MEDIA_DBR *mr)
         esc_status, mr->Slot, mr->InChanger,
         edit_int64(mr->VolReadTime, ed6),
         edit_int64(mr->VolWriteTime, ed7),
-        mr->VolType,  /* formerly VolParts */
+        mr->VolType,
+        mr->VolParts,
+        mr->VolCloudParts,
+        edit_uint64(mr->LastPartBytes, ed8),
         mr->LabelType,
-        edit_int64(mr->StorageId, ed8),
-        edit_int64(mr->PoolId, ed9),
-        edit_uint64(mr->VolRetention, ed10),
-        edit_uint64(mr->VolUseDuration, ed11),
+        edit_int64(mr->StorageId, ed9),
+        edit_int64(mr->PoolId, ed10),
+        edit_uint64(mr->VolRetention, ed11),
+        edit_uint64(mr->VolUseDuration, ed12),
         mr->MaxVolJobs, mr->MaxVolFiles,
-        mr->Enabled, edit_uint64(mr->LocationId, ed12),
-        edit_uint64(mr->ScratchPoolId, ed13),
-        edit_uint64(mr->RecyclePoolId, ed14),
+        mr->Enabled, edit_uint64(mr->LocationId, ed13),
+        edit_uint64(mr->ScratchPoolId, ed14),
+        edit_uint64(mr->RecyclePoolId, ed15),
         mr->RecycleCount,mr->Recycle, mr->ActionOnPurge,
+        edit_uint64(mr->CacheRetention, ed16),
         esc_name);
 
    Dmsg1(dbglevel1, "%s\n", cmd);
@@ -419,7 +424,7 @@ int BDB::bdb_update_media_record(JCR *jcr, MEDIA_DBR *mr)
 int BDB::bdb_update_media_defaults(JCR *jcr, MEDIA_DBR *mr)
 {
    int stat;
-   char ed1[50], ed2[50], ed3[50], ed4[50], ed5[50];
+   char ed1[50], ed2[50], ed3[50], ed4[50], ed5[50], ed6[50];
    char esc[MAX_ESCAPE_NAME_LENGTH];
    bool can_be_empty;
 
@@ -428,27 +433,29 @@ int BDB::bdb_update_media_defaults(JCR *jcr, MEDIA_DBR *mr)
       bdb_escape_string(jcr, esc, mr->VolumeName, strlen(mr->VolumeName));
       Mmsg(cmd, "UPDATE Media SET "
            "ActionOnPurge=%d, Recycle=%d,VolRetention=%s,VolUseDuration=%s,"
-           "MaxVolJobs=%u,MaxVolFiles=%u,MaxVolBytes=%s,RecyclePoolId=%s"
+           "MaxVolJobs=%u,MaxVolFiles=%u,MaxVolBytes=%s,RecyclePoolId=%s,CacheRetention=%s"
            " WHERE VolumeName='%s'",
            mr->ActionOnPurge, mr->Recycle,edit_uint64(mr->VolRetention, ed1),
            edit_uint64(mr->VolUseDuration, ed2),
            mr->MaxVolJobs, mr->MaxVolFiles,
            edit_uint64(mr->MaxVolBytes, ed3),
            edit_uint64(mr->RecyclePoolId, ed4),
+           edit_uint64(mr->CacheRetention, ed5),
            esc);
       can_be_empty = false;
 
    } else {
       Mmsg(cmd, "UPDATE Media SET "
            "ActionOnPurge=%d, Recycle=%d,VolRetention=%s,VolUseDuration=%s,"
-           "MaxVolJobs=%u,MaxVolFiles=%u,MaxVolBytes=%s,RecyclePoolId=%s"
+           "MaxVolJobs=%u,MaxVolFiles=%u,MaxVolBytes=%s,RecyclePoolId=%s,CacheRetention=%s"
            " WHERE PoolId=%s",
            mr->ActionOnPurge, mr->Recycle,edit_uint64(mr->VolRetention, ed1),
            edit_uint64(mr->VolUseDuration, ed2),
            mr->MaxVolJobs, mr->MaxVolFiles,
            edit_uint64(mr->MaxVolBytes, ed3),
            edit_int64(mr->RecyclePoolId, ed4),
-           edit_int64(mr->PoolId, ed5));
+           edit_uint64(mr->CacheRetention, ed5),
+           edit_int64(mr->PoolId, ed6));
       can_be_empty = true;
    }
 
@@ -469,28 +476,29 @@ int BDB::bdb_update_media_defaults(JCR *jcr, MEDIA_DBR *mr)
  */
 void BDB::bdb_make_inchanger_unique(JCR *jcr, MEDIA_DBR *mr)
 {
-   char ed1[50], ed2[50];
+   char ed1[50];
    char esc[MAX_ESCAPE_NAME_LENGTH];
 
    if (mr->InChanger != 0 && mr->Slot != 0 && mr->StorageId != 0) {
+       if (!mr->sid_group) {
+          mr->sid_group = edit_int64(mr->StorageId, mr->sid);
+       }
        if (mr->MediaId != 0) {
           Mmsg(cmd, "UPDATE Media SET InChanger=0, Slot=0 WHERE "
-               "Slot=%d AND StorageId=%s AND MediaId!=%s",
+               "Slot=%d AND StorageId IN (%s) AND MediaId!=%s",
                mr->Slot,
-               edit_int64(mr->StorageId, ed1), edit_int64(mr->MediaId, ed2));
+               mr->sid_group, edit_int64(mr->MediaId, ed1));
 
        } else if (*mr->VolumeName) {
           bdb_escape_string(jcr, esc,mr->VolumeName,strlen(mr->VolumeName));
           Mmsg(cmd, "UPDATE Media SET InChanger=0, Slot=0 WHERE "
-               "Slot=%d AND StorageId=%s AND VolumeName!='%s'",
-               mr->Slot,
-               edit_int64(mr->StorageId, ed1), esc);
+               "Slot=%d AND StorageId IN (%s) AND VolumeName!='%s'",
+               mr->Slot, mr->sid_group, esc);
 
        } else {  /* used by ua_label to reset all volume with this slot */
           Mmsg(cmd, "UPDATE Media SET InChanger=0, Slot=0 WHERE "
-               "Slot=%d AND StorageId=%s",
-               mr->Slot,
-               edit_int64(mr->StorageId, ed1), mr->VolumeName);
+               "Slot=%d AND StorageId IN (%s)",
+               mr->Slot, mr->sid_group, mr->VolumeName);
        }
        Dmsg1(dbglevel1, "%s\n", cmd);
        UpdateDB(jcr, cmd, true);

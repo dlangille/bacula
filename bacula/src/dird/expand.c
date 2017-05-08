@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2015 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -22,7 +22,6 @@
  *    in particular for the LabelFormat specification.
  *
  *     Kern Sibbald, June MMIII
- *
  */
 
 #include "bacula.h"

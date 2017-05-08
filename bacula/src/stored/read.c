@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -67,10 +67,10 @@ bool do_read_data(JCR *jcr)
       fd->fsend(FD_error);
       return false;
    }
+   dcr->dev->start_of_job(dcr);
 
    /* Tell File daemon we will send data */
    if (!jcr->is_ok_data_sent) {
-      /* OK_DATA can have been already sent for copy/migrate by run_job() to avoid dead lock*/
       fd->fsend(OK_data);
       jcr->is_ok_data_sent = true;
    }
@@ -130,6 +130,7 @@ static bool read_record_cb(DCR *dcr, DEV_RECORD *rec)
       stream_to_ascii(ec2, rec->Stream, rec->FileIndex),
       wsize);
 
+   Dmsg2(640, ">filed: send header stream=0x%lx len=%ld\n", rec->Stream, wsize);
    /* Send record header to File daemon */
    if (!fd->fsend(rec_header, rec->VolSessionId, rec->VolSessionTime,
           rec->FileIndex, rec->Stream, wsize)) {
@@ -158,17 +159,8 @@ static bool read_record_cb(DCR *dcr, DEV_RECORD *rec)
       }
    }
 
-   /* Debug code: check if we must hangup */
-   if (get_hangup() > 0 && (jcr->JobFiles > (uint32_t)get_hangup())) {
-      jcr->setJobStatus(JS_Incomplete);
-      Jmsg1(jcr, M_FATAL, 0, "Debug hangup requested after %d files.\n",
-         get_hangup());
-      set_hangup(0);
-      return false;
-   }
-   if (get_blowup() > 0 && (jcr->JobFiles > (uint32_t)get_blowup())) {
-      Jmsg1(jcr, M_ABORT, 0, "Debug blowup() requested after %d files.\n",
-         get_blowup());
+   /* Debug code: check if we must hangup or blowup */
+   if (handle_hangup_blowup(jcr, jcr->JobFiles, jcr->JobBytes)) {
       return false;
    }
 
@@ -177,6 +169,7 @@ static bool read_record_cb(DCR *dcr, DEV_RECORD *rec)
    fd->msglen = wsize;
    /* Send data record to File daemon */
    jcr->JobBytes += wsize;   /* increment bytes this job */
+   Dmsg1(640, ">filed: send %d bytes data.\n", fd->msglen);
    if (!fd->send()) {
       Pmsg1(000, _("Error sending to FD. ERR=%s\n"), fd->bstrerror());
       Jmsg1(jcr, M_FATAL, 0, _("Error sending data to Client. ERR=%s\n"),

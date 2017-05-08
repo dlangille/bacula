@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -100,14 +100,14 @@ int generate_plugin_event(JCR *jcr, bsdEventType eventType, void *value)
 
    if (!b_plugin_list) {
       Dmsg0(dbglvl, "No b_plugin_list: generate_plugin_event ignored.\n");
-      return bRC_OK; 
-   } 
-   if (!jcr) { 
-      Dmsg0(dbglvl, "jcr==NULL: generate_plugin_event ignored.\n"); 
-      return bRC_OK; 
-   } 
-   if (!jcr->plugin_ctx_list) { 
-       Dmsg0(dbglvl, "No plugin_ctx_list: generate_plugin_event ignored.\n"); 
+      return bRC_OK;
+   }
+   if (!jcr) {
+      Dmsg0(dbglvl, "No jcr: generate_plugin_event ignored.\n");
+      return bRC_OK;
+   }
+   if (!jcr->plugin_ctx_list) {
+       Dmsg0(dbglvl, "No plugin_ctx_list: generate_plugin_event ignored.\n");
        return bRC_OK;                  /* Return if no plugins loaded */
    }
 
@@ -288,9 +288,12 @@ void new_plugins(JCR *jcr)
    if (jcr->is_job_canceled()) {
       return;
    }
-
-   /* If plugins already loaded, just return */
-   if (jcr->plugin_ctx_list) return;
+   /*
+    * If plugins already loaded, just return
+    */
+   if (jcr->plugin_ctx_list) {
+      return;
+   }
 
    int num = b_plugin_list->size();
 
@@ -347,7 +350,6 @@ void free_plugins(JCR *jcr)
  * ==============================================================
  */
 
-
 static bRC baculaGetValue(bpContext *ctx, bsdrVariable var, void *value)
 {
    JCR *jcr;
@@ -370,6 +372,10 @@ static bRC baculaGetValue(bpContext *ctx, bsdrVariable var, void *value)
       *((char **)value) = jcr->Job;
       Dmsg1(dbglvl, "Bacula: return Job name=%s\n", jcr->Job);
       break;
+#if 0
+   case bsdVarDevTypes:
+      *((s_kw **)value) = dev_types;
+#endif
    default:
       break;
    }

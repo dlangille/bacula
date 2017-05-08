@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -21,7 +21,6 @@
  *  Program to copy a Bacula from one volume to another.
  *
  *   Kern E. Sibbald, October 2002
- *
  */
 
 #include "bacula.h"
@@ -52,10 +51,6 @@ static CONFIG *config;
 
 void *start_heap;
 char *configfile = NULL;
-STORES *me = NULL;                    /* our Global resource */
-bool forge_on = false;                /* proceed inspite of I/O errors */
-pthread_mutex_t device_release_mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_cond_t wait_device_release = PTHREAD_COND_INITIALIZER;
 
 static void usage()
 {
@@ -83,7 +78,9 @@ int main (int argc, char *argv[])
    char *oVolumeName = NULL;
    bool ignore_label_errors = false;
    bool ok;
+   BtoolsAskDirHandler askdir_handler;
 
+   init_askdir_handler(&askdir_handler);
    setlocale(LC_ALL, "");
    bindtextdomain("bacula", LOCALEDIR);
    textdomain("bacula");
@@ -160,7 +157,7 @@ int main (int argc, char *argv[])
       configfile = bstrdup(CONFIG_FILE);
    }
 
-   config = new_config_parser();
+   config = New(CONFIG());
    parse_sd_config(config, configfile, M_ERROR_TERM);
    setup_me();
    load_sd_plugins(me->plugin_directory);
@@ -190,7 +187,7 @@ int main (int argc, char *argv[])
    Dmsg0(100, "About to acquire device for writing\n");
    /* For we must now acquire the device for writing */
    out_dev->rLock(false);
-   if (!out_dev->open(out_jcr->dcr, OPEN_READ_WRITE)) {
+   if (!out_dev->open_device(out_jcr->dcr, OPEN_READ_WRITE)) {
       Emsg1(M_FATAL, 0, _("dev open failed: %s\n"), out_dev->errmsg);
       out_dev->Unlock();
       exit(1);
@@ -215,8 +212,9 @@ int main (int argc, char *argv[])
    free_jcr(in_jcr);
    free_jcr(out_jcr);
 
-   in_dev->term();
-   out_dev->term();
+   in_dev->term(NULL);
+   out_dev->term(NULL);
+
    return 0;
 }
 
@@ -347,33 +345,4 @@ static void get_session_record(DEVICE *dev, DEV_RECORD *rec, SESSION_LABEL *sess
       Pmsg5(-1, _("%s Record: VolSessionId=%d VolSessionTime=%d JobId=%d DataLen=%d\n"),
             rtype, rec->VolSessionId, rec->VolSessionTime, rec->Stream, rec->data_len);
    }
-}
-
-
-/* Dummies to replace askdir.c */
-bool    dir_find_next_appendable_volume(DCR *dcr) { return 1;}
-bool    dir_update_volume_info(DCR *dcr, bool relabel, bool update_LastWritten) { return 1; }
-bool    dir_create_jobmedia_record(DCR *dcr, bool zero) { return 1; }
-bool    flush_jobmedia_queue(JCR *jcr) { return true; }
-bool    dir_ask_sysop_to_create_appendable_volume(DCR *dcr) { return 1; }
-bool    dir_update_file_attributes(DCR *dcr, DEV_RECORD *rec) { return 1;}
-bool    dir_send_job_status(JCR *jcr) {return 1;}
-
-
-bool dir_ask_sysop_to_mount_volume(DCR *dcr, bool /*writing*/)
-{
-   DEVICE *dev = dcr->dev;
-   fprintf(stderr, _("Mount Volume \"%s\" on device %s and press return when ready: "),
-      dcr->VolumeName, dev->print_name());
-   dev->close();
-   getchar();
-   return true;
-}
-
-bool dir_get_volume_info(DCR *dcr, enum get_vol_info_rw  writing)
-{
-   Dmsg0(100, "Fake dir_get_volume_info\n");
-   dcr->setVolCatName(dcr->VolumeName);
-   Dmsg2(500, "Vol=%s VolType=%d\n", dcr->getVolCatName(), dcr->VolCatInfo.VolCatType);
-   return 1;
 }

@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -29,7 +29,9 @@
 #include "lockmgr.h"
 #include "alist.h"
 #include "dlist.h"
+#include "flist.h"
 #include "rblist.h"
+#include "worker.h"
 #include "base64.h"
 #include "bits.h"
 #include "btime.h"
@@ -42,6 +44,7 @@
 #include "openssl.h"
 #include "lex.h"
 #include "parse_conf.h"
+#include "bjson.h"
 #include "tls.h"
 #include "address_conf.h"
 #include "bsock.h"
@@ -61,5 +64,6 @@
 #include "guid_to_name.h"
 #include "htable.h"
 #include "sellist.h"
+#include "output.h"
 #include "protos.h"
 #include "bget_msg.h"

@@ -1,0 +1,108 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2017 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+#
+# Test the test command in btape
+#
+TestName="btape-test"
+JobName=btapetest
+. scripts/functions
+
+require_vtape
+
+scripts/cleanup
+scripts/copy-tape-confs
+cp $rscripts/bacula-dir-vtape.conf $conf/bacula-dir.conf
+cp $rscripts/bacula-sd-vtape.conf $conf/bacula-sd.conf
+scripts/prepare-fake-autochanger
+
+# we need at least 2 or 3G for this test
+$bperl -e "add_attribute('$conf/bacula-sd.conf', 'MaximumVolumeSize', '3G', 'Device')"
+
+change_jobname $JobName
+start_test
+
+$bin/disk-changer $working/ach load 1 $working/ach/drive0 0
+
+if test "$debug" -eq 1 ; then
+  $bin/btape -w $tmp -c $conf/bacula-sd.conf LTO3_0 <<END_OF_DATA | tee $tmp/log1.out
+test
+y
+quit
+END_OF_DATA
+else
+  $bin/btape -w $tmp -c $conf/bacula-sd.conf LTO3_0 <<END_OF_DATA >$tmp/log1.out 2>&1
+test
+y
+quit
+END_OF_DATA
+fi
+
+
+if [ $? != 0 ] ; then
+   echo " "
+   echo " "
+   echo "  !!!!! btape test failed!!! !!!!! "
+   echo "  !!!!! btape test failed!!! !!!!! " >>test.out
+   echo " "
+   exit 1
+fi
+
+grep "The test autochanger worked" $tmp/log1.out > /dev/null
+if [ $? != 0 ] ; then
+   print_debug "btape autochanger test failed"
+   estat=1
+fi
+
+grep "End Forward space files test" $tmp/log1.out > /dev/null
+if [ $? != 0 ] ; then
+   print_debug "btape test failed"
+   estat=1
+fi
+
+# now try to use the fill command
+$bperl -e "add_attribute('$conf/bacula-sd.conf', 'MaximumVolumeSize', '400M', 'Device')"
+
+$bin/disk-changer $working/ach load 1 $working/ach/drive0 0
+
+if test "$debug" -eq 1 ; then
+  $bin/btape -w $tmp -c $conf/bacula-sd.conf LTO3_0 <<END_OF_DATA | tee $tmp/log2.out
+fill
+m
+quit
+END_OF_DATA
+else
+  $bin/btape -w $tmp -c $conf/bacula-sd.conf LTO3_0 <<END_OF_DATA >$tmp/log2.out 2>&1
+fill
+m
+quit
+END_OF_DATA
+fi
+
+
+if [ $? != 0 ] ; then
+   echo " "
+   echo " "
+   echo "  !!!!! btape test failed!!! !!!!! "
+   echo "  !!!!! btape test failed!!! !!!!! " >>test.out
+   echo " "
+   exit 1
+fi
+
+grep "The last block of the first tape matches." $tmp/log2.out > /dev/null
+if [ $? != 0 ] ; then
+   print_debug "Could not find: The last block of the first tape matches."
+   print_debug "btape fill test failed"
+   estat=1
+fi
+
+grep "The first block on the second tape matches." $tmp/log2.out > /dev/null
+if [ $? != 0 ] ; then
+   print_debug "Could not find: The first block on the second tape matches."
+   print_debug "btape fill test failed"
+   estat=1
+fi
+
+end_test

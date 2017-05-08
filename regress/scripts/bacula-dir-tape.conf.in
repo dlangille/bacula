@@ -62,9 +62,26 @@ Job {
 Job {
   Name = "NightlySave2"
   Type = Backup
-  Client=@hostname@-fd 
-  FileSet="Full Set"
+  Client = @hostname@-fd 
+  FileSet = "Full Set"
   Storage = tape
+  Messages = Standard
+  Pool = Default
+  Write Bootstrap = "@working_dir@/NightlySave.bsr"
+  Maximum Concurrent Jobs = 100
+  SpoolData = yes
+# Prefer Mounted Volumes = no
+  Max Run Time = 30min
+}
+
+# Backs up to tape2 which is a remote SD on
+#   another machine
+Job {
+  Name = "NightlySave3"
+  Type = Backup
+  Client = @hostname@-fd 
+  FileSet = "Full Set"
+  Storage = tape2
   Messages = Standard
   Pool = Default
   Write Bootstrap = "@working_dir@/NightlySave.bsr"
@@ -222,6 +239,21 @@ Storage {
 # Autochanger = yes
 }
 
+# Definition tape storage device that is on a 
+#   remote machine
+Storage {
+  Name = tape2
+  Address = @hostname@        # For same machine shstore simulation
+# Address = @remotehostaddr@  # For real two machine setup
+  SDPort = @sdport@
+  Password = "ccV3lVTsQRsdIUGyab0N4sMDavui2hOBkmpBU0aQKOr9"          # password for Storage daemon
+  Device = tape2                     # must be same as Device in Storage daemon
+  Media Type = tape                  # must be same as MediaType in Storage daemon
+  Maximum Concurrent Jobs = 100
+# Autochanger = yes
+}
+
+
 # Definition of Virtual storage device
 Storage {
   Name = Virtual
@@ -234,8 +266,63 @@ Storage {
   Autochanger = yes
 }
 
+Storage {
+  Name = vDrive-1
+  Address = @hostname@                # N.B. Use a fully qualified name here
+  SDPort = @sdport@
+  Password = "ccV3lVTsQRsdIUGyab0N4sMDavui2hOBkmpBU0aQKOr9"          # password for Storage daemon
+  Device = vDrive-1                    # must be same as Device in Storage daemon
+  Media Type = Disk                   # must be same as MediaType in Storage daemon
+  Maximum Concurrent Jobs = 100
+  Autochanger = Virtual
+}
+
+Storage {
+  Name = vDrive-2
+  Address = @hostname@                # N.B. Use a fully qualified name here
+  SDPort = @sdport@
+  Password = "ccV3lVTsQRsdIUGyab0N4sMDavui2hOBkmpBU0aQKOr9"          # password for Storage daemon
+  Device = vDrive-2                    # must be same as Device in Storage daemon
+  Media Type = Disk                   # must be same as MediaType in Storage daemon
+  Maximum Concurrent Jobs = 100
+  Autochanger = Virtual
+}
+
+Storage {
+  Name = vDrive-3
+  Address = @hostname@                # N.B. Use a fully qualified name here
+  SDPort = @sdport@
+  Password = "ccV3lVTsQRsdIUGyab0N4sMDavui2hOBkmpBU0aQKOr9"          # password for Storage daemon
+  Device = vDrive-3                    # must be same as Device in Storage daemon
+  Media Type = Disk                   # must be same as MediaType in Storage daemon
+  Maximum Concurrent Jobs = 100
+  Autochanger = Virtual
+}
 
 
+# Definition of Virtual storage device
+Storage {
+  Name = VirtualRestore
+  Address = @hostname@                # N.B. Use a fully qualified name here
+  SDPort = @sdport@
+  Password = "ccV3lVTsQRsdIUGyab0N4sMDavui2hOBkmpBU0aQKOr9"          # password for Storage daemon
+  Device = VirtualRestore                    # must be same as Device in Storage daemon
+  Media Type = Disk                   # must be same as MediaType in Storage daemon
+  Maximum Concurrent Jobs = 100
+  Autochanger = yes
+}
+
+# Definition of Virtual storage device
+Storage {
+  Name = Virtual2
+  Address = @hostname@                # N.B. Use a fully qualified name here
+  SDPort = @sdport@
+  Password = "ccV3lVTsQRsdIUGyab0N4sMDavui2hOBkmpBU0aQKOr9"          # password for Storage daemon
+  Device = Virtual2                    # must be same as Device in Storage daemon
+  Media Type = Disk2                   # must be same as MediaType in Storage daemon
+  Maximum Concurrent Jobs = 100
+  Autochanger = yes
+}
 
 # Generic catalog service
 Catalog {
@@ -307,6 +394,66 @@ Pool {
   AutoPrune = yes                     # Prune expired volumes
   Volume Retention = 365d             # one year
   Recycle Pool = Scratch              # recycle back here
+}
+
+Pool {
+  Name = PoolA-MCJ1
+  Pool Type = Backup
+  Recycle = yes                       # Bacula can automatically recycle Volumes
+  AutoPrune = yes                     # Prune expired volumes
+  ActionOnPurge = Truncate
+  Volume Retention = 3d
+  Maximum Volume Bytes = 20M
+  Maximum Volume Jobs = 1
+  LabelFormat = "PoolA-MCJ1"
+}
+
+Pool {
+  Name = PoolB-MCJ1
+  Pool Type = Backup
+  Recycle = yes                       # Bacula can automatically recycle Volumes
+  AutoPrune = yes                     # Prune expired volumes
+  ActionOnPurge = Truncate
+  Volume Retention = 3d
+  Maximum Volume Bytes = 20M
+  Maximum Volume Jobs = 1
+  LabelFormat = "PoolB-MCJ1"
+}
+
+Pool {
+  Name = PoolC-MCJ1
+  Pool Type = Backup
+  Recycle = yes                       # Bacula can automatically recycle Volumes
+  AutoPrune = yes                     # Prune expired volumes
+  ActionOnPurge = Truncate
+  Volume Retention = 3d
+  Maximum Volume Bytes = 20M
+  Maximum Volume Jobs = 1
+  LabelFormat = "PoolC-MCJ1"
+}
+
+Pool {
+  Name = PoolD-MCJ1
+  Pool Type = Backup
+  Recycle = yes                       # Bacula can automatically recycle Volumes
+  AutoPrune = yes                     # Prune expired volumes
+  ActionOnPurge = Truncate
+  Volume Retention = 3d
+  Maximum Volume Bytes = 20M
+  Maximum Volume Jobs = 1
+  LabelFormat = "PoolD-MCJ1"
+}
+
+Pool {
+  Name = PoolE-MCJ1
+  Pool Type = Backup
+  Recycle = yes                       # Bacula can automatically recycle Volumes
+  AutoPrune = yes                     # Prune expired volumes
+  ActionOnPurge = Truncate
+  Volume Retention = 3d
+  Maximum Volume Bytes = 20M
+  Maximum Volume Jobs = 1
+  LabelFormat = "PoolE-MCJ1"
 }
 
 Pool {

@@ -223,6 +223,12 @@
    language is requested. */
 #undef ENABLE_NLS
 
+/* Defined to 0 if not provided */
+#undef FD_CLOEXEC
+
+/* Define to 1 if you have the 'accept4' function. */
+#undef HAVE_ACCEPT4
+
 /* Normal acl support */
 #undef HAVE_ACL
 
@@ -315,6 +321,10 @@
    you don't. */
 #undef HAVE_DECL_CYGWIN_CONV_PATH
 
+/* Define to 1 if you have the declaration of `FD_CLOEXEC', and to 0 if you
+   don't. */
+#undef HAVE_DECL_FD_CLOEXEC
+
 /* Define to 1 if you have the declaration of `feof_unlocked', and to 0 if you
    don't. */
 #undef HAVE_DECL_FEOF_UNLOCKED
@@ -326,6 +336,14 @@
 /* Define to 1 if you have the declaration of `getc_unlocked', and to 0 if you
    don't. */
 #undef HAVE_DECL_GETC_UNLOCKED
+
+/* Define to 1 if you have the declaration of `O_CLOEXEC', and to 0 if you
+   don't. */
+#undef HAVE_DECL_O_CLOEXEC
+
+/* Define to 1 if you have the declaration of `SOCK_CLOEXEC', and to 0 if you
+   don't. */
+#undef HAVE_DECL_SOCK_CLOEXEC
 
 /* Define to 1 if you have the declaration of `tzname', and to 0 if you don't.
    */
@@ -569,6 +587,9 @@
 /* Define to 1 if you have the `resolv' library (-lresolv). */
 #undef HAVE_LIBRESOLV
 
+/* Define to 1 if you have libs3 */
+#undef HAVE_LIBS3
+
 /* Define to 1 if you have the `socket' library (-lsocket). */
 #undef HAVE_LIBSOCKET
 
@@ -622,6 +643,9 @@
 
 /* Define to 1 if you have the `lstat' function. */
 #undef HAVE_LSTAT
+
+/* Define to 1 if you have the `lutimes' function. */
+#undef HAVE_LUTIMES
 
 /* Define to 1 if you have LZO compression */
 #undef HAVE_LZO
@@ -800,6 +824,9 @@
 
 /* Define to 1 if you have the `strdup' function. */
 #undef HAVE_STRDUP
+
+/* Defined to 0 if not provided */
+#undef HAVE_STREAM_CLOEXEC
 
 /* Define to 1 if you have the `strerror' function. */
 #undef HAVE_STRERROR
@@ -1045,6 +1072,9 @@
 /* Define to 1 if your C compiler doesn't accept -c and -o together. */
 #undef NO_MINUS_C_MINUS_O
 
+/* Defined to 0 if not provided */
+#undef O_CLOEXEC
+
 /* Define to the address where bug reports for this package should be sent. */
 #undef PACKAGE_BUGREPORT
 
@@ -1097,6 +1127,9 @@
 /* Set if you want Smartalloc enabled */
 #undef SMARTALLOC
 
+/* Defined to 0 if not provided */
+#undef SOCK_CLOEXEC
+
 /* If using the C implementation of alloca, define if you know the
    direction of stack growth for your system; otherwise it will be
    automatically deduced at runtime.
@@ -1110,6 +1143,9 @@
 
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
+
+/* fopen() modifier for setting close on exec flag */
+#undef STREAM_CLOEXEC
 
 /* Define to 1 if you can safely include both <sys/time.h> and <time.h>. */
 #undef TIME_WITH_SYS_TIME

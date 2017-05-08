@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2015 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -17,14 +17,12 @@
    Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
- *
  *   Bacula Director -- Bootstrap Record routines.
  *
  *      BSR (bootstrap record) handling routines split from
  *        ua_restore.c July MMIII
  *
  *     Kern Sibbald, July MMII
- *
  */
 
 #include "bacula.h"
@@ -43,17 +41,7 @@ RBSR_FINDEX *new_findex()
    return fi;
 }
 
-/* Free all BSR FileIndex entries */
-static void free_findex(RBSR_FINDEX *fi)
-{
-   RBSR_FINDEX *next;
-   for ( ; fi; fi=next) {
-      next = fi->next;
-      free(fi);
-   }
-}
-
-/* 
+/*
  * Get storage device name from Storage resource
  */
 static bool get_storage_device(char *device, char *storage)
@@ -62,7 +50,7 @@ static bool get_storage_device(char *device, char *storage)
    if (storage[0] == 0) {
       return false;
    }
-   store = (STORE *)GetResWithName(R_STORAGE, storage);    
+   store = (STORE *)GetResWithName(R_STORAGE, storage);
    if (!store) {
       return false;
    }
@@ -84,17 +72,48 @@ static bool get_storage_device(char *device, char *storage)
  * We are called here once for each JobMedia record
  *  for each Volume.
  */
-static uint32_t write_findex(RBSR_FINDEX *fi,
+static uint32_t write_findex(rblist *fi_list,
               int32_t FirstIndex, int32_t LastIndex, FILE *fd)
 {
+   RBSR_FINDEX *fi;
    uint32_t count = 0;
-   for ( ; fi; fi=fi->next) {
+
+   fi = (RBSR_FINDEX *) fi_list->first();
+   while (fi) {
       int32_t findex, findex2;
-      if ((fi->findex >= FirstIndex && fi->findex <= LastIndex) ||
-          (fi->findex2 >= FirstIndex && fi->findex2 <= LastIndex) ||
-          (fi->findex < FirstIndex && fi->findex2 > LastIndex)) {
-         findex = fi->findex < FirstIndex ? FirstIndex : fi->findex;
-         findex2 = fi->findex2 > LastIndex ? LastIndex : fi->findex2;
+
+      /* fi points to the first item of the list, or the next item that is not
+       * contigous to the previous group
+       */
+      findex = fi->findex;
+      findex2 = fi->findex2;
+
+      /* Sometime (with the restore command for example), the fi_list can
+       * contain false gaps (1-10, 11-11, 12-20 instead of 1-20). The for loop
+       * is here to merge blocks and reduce the bsr output. The next while(fi)
+       * iteration will use the next_fi that points to the last merged element.
+       */
+      RBSR_FINDEX *next_fi;
+      for (next_fi = (RBSR_FINDEX*) fi_list->next(fi);
+           next_fi && next_fi->findex == (findex2+1);
+           next_fi = (RBSR_FINDEX *) fi_list->next(next_fi))
+      {
+         findex2 = next_fi->findex2;
+      }
+
+      /* next_fi points after the current block (or to the end of the list), so
+       * the next while() iteration will use the next value
+       */
+      fi = next_fi;
+
+      /* We look if the current FI block match the volume information */
+      if ((findex >= FirstIndex && findex <= LastIndex) ||
+          (findex2 >= FirstIndex && findex2 <= LastIndex) ||
+          (findex < FirstIndex && findex2 > LastIndex)) {
+
+         findex = findex < FirstIndex ? FirstIndex : findex;
+         findex2 = findex2 > LastIndex ? LastIndex : findex2;
+
          if (findex == findex2) {
             fprintf(fd, "FileIndex=%d\n", findex);
             count++;
@@ -104,6 +123,7 @@ static uint32_t write_findex(RBSR_FINDEX *fi,
          }
       }
    }
+
    return count;
 }
 
@@ -111,10 +131,11 @@ static uint32_t write_findex(RBSR_FINDEX *fi,
  * Find out if Volume defined with FirstIndex and LastIndex
  *   falls within the range of selected files in the bsr.
  */
-static bool is_volume_selected(RBSR_FINDEX *fi,
+static bool is_volume_selected(rblist *fi_list,
               int32_t FirstIndex, int32_t LastIndex)
 {
-   for ( ; fi; fi=fi->next) {
+   RBSR_FINDEX *fi;
+   foreach_rblist(fi, fi_list) {
       if ((fi->findex >= FirstIndex && fi->findex <= LastIndex) ||
           (fi->findex2 >= FirstIndex && fi->findex2 <= LastIndex) ||
           (fi->findex < FirstIndex && fi->findex2 > LastIndex)) {
@@ -128,35 +149,40 @@ static bool is_volume_selected(RBSR_FINDEX *fi,
 /* Create a new bootstrap record */
 RBSR *new_bsr()
 {
+   RBSR_FINDEX *fi=NULL;
    RBSR *bsr = (RBSR *)bmalloc(sizeof(RBSR));
    memset(bsr, 0, sizeof(RBSR));
+   bsr->fi_list = New(rblist(fi, &fi->link));
    return bsr;
 }
 
 /* Free the entire BSR */
-void free_bsr(RBSR *bsr)
+void free_bsr(rblist *bsr_list)
 {
-   RBSR *next;
-   for ( ; bsr; bsr=next) {
-      free_findex(bsr->fi);
+   RBSR *bsr;
+   foreach_rblist(bsr, bsr_list) {
+      delete bsr->fi_list;
       if (bsr->VolParams) {
          free(bsr->VolParams);
       }
       if (bsr->fileregex) {
          free(bsr->fileregex);
       }
-      next = bsr->next;
-      free(bsr);
+      if (bsr->m_fi) {
+         free(bsr->m_fi);
+      }
    }
+   delete bsr_list;
 }
 
 /*
  * Complete the BSR by filling in the VolumeName and
  *  VolSessionId and VolSessionTime using the JobId
  */
-bool complete_bsr(UAContext *ua, RBSR *bsr)
+bool complete_bsr(UAContext *ua, rblist *bsr_list)
 {
-   for ( ; bsr; bsr=bsr->next) {
+   RBSR *bsr;
+   foreach_rblist(bsr, bsr_list) {
       JOB_DBR jr;
       memset(&jr, 0, sizeof(jr));
       jr.JobId = bsr->JobId;
@@ -191,7 +217,7 @@ static void make_unique_restore_filename(UAContext *ua, POOL_MEM &fname)
    JCR *jcr = ua->jcr;
    int i = find_arg_with_value(ua, "bootstrap");
    if (i >= 0) {
-      Mmsg(fname, "%s", ua->argv[i]);              
+      Mmsg(fname, "%s", ua->argv[i]);
       jcr->unlink_bsr = false;
    } else {
       P(mutex);
@@ -217,7 +243,7 @@ uint32_t write_bsr_file(UAContext *ua, RESTORE_CTX &rx)
    bool err;
 
    make_unique_restore_filename(ua, fname);
-   fd = fopen(fname.c_str(), "w+b");
+   fd = bfopen(fname.c_str(), "w+b");
    if (!fd) {
       berrno be;
       ua->error_msg(_("Unable to create bootstrap file %s. ERR=%s\n"),
@@ -238,9 +264,7 @@ uint32_t write_bsr_file(UAContext *ua, RESTORE_CTX &rx)
       goto bail_out;
    }
 
-   ua->send_msg(_("Bootstrap records written to %s\n"), fname.c_str());
-
-   if (debug_level >= 10) {
+   if (chk_dbglvl(10)) {
       print_bsr(ua, rx);
    }
 
@@ -255,7 +279,7 @@ static void display_vol_info(UAContext *ua, RESTORE_CTX &rx, JobId_t JobId)
    char online;
    RBSR *bsr;
 
-   for (bsr=rx.bsr; bsr; bsr=bsr->next) {
+   foreach_rblist(bsr, rx.bsr_list) {
       if (JobId && JobId != bsr->JobId) {
          continue;
       }
@@ -270,7 +294,7 @@ static void display_vol_info(UAContext *ua, RESTORE_CTX &rx, JobId_t JobId)
             } else {
                online = ' ';
             }
-            Mmsg(volmsg, "%c%-25s %-25s %-25s", 
+            Mmsg(volmsg, "%c%-25s %-25s %-25s",
                  online, bsr->VolParams[i].VolumeName,
                  bsr->VolParams[i].Storage, Device);
             add_prompt(ua, volmsg.c_str());
@@ -319,7 +343,7 @@ void display_bsr_info(UAContext *ua, RESTORE_CTX &rx)
 /*
  * Write bsr data for a single bsr record
  */
-static uint32_t write_bsr_item(RBSR *bsr, UAContext *ua, 
+static uint32_t write_bsr_item(RBSR *bsr, UAContext *ua,
                    RESTORE_CTX &rx, FILE *fd, bool &first, uint32_t &LastIndex)
 {
    char ed1[50], ed2[50];
@@ -332,7 +356,7 @@ static uint32_t write_bsr_item(RBSR *bsr, UAContext *ua,
     *   VolCount is the number of JobMedia records.
     */
    for (int i=0; i < bsr->VolCount; i++) {
-      if (!is_volume_selected(bsr->fi, bsr->VolParams[i].FirstIndex,
+      if (!is_volume_selected(bsr->fi_list, bsr->VolParams[i].FirstIndex,
            bsr->VolParams[i].LastIndex)) {
          bsr->VolParams[i].VolumeName[0] = 0;  /* zap VolumeName */
          continue;
@@ -357,10 +381,10 @@ static uint32_t write_bsr_item(RBSR *bsr, UAContext *ua,
       fprintf(fd, "VolSessionTime=%u\n", bsr->VolSessionTime);
       fprintf(fd, "VolAddr=%s-%s\n", edit_uint64(bsr->VolParams[i].StartAddr, ed1),
               edit_uint64(bsr->VolParams[i].EndAddr, ed2));
-//    Dmsg2(100, "bsr VolParam FI=%u LI=%u\n",
-//      bsr->VolParams[i].FirstIndex, bsr->VolParams[i].LastIndex);
+      Dmsg2(100, "bsr VolParam FI=%u LI=%u\n",
+            bsr->VolParams[i].FirstIndex, bsr->VolParams[i].LastIndex);
 
-      count = write_findex(bsr->fi, bsr->VolParams[i].FirstIndex,
+      count = write_findex(bsr->fi_list, bsr->VolParams[i].FirstIndex,
                            bsr->VolParams[i].LastIndex, fd);
       if (count) {
          fprintf(fd, "Count=%u\n", count);
@@ -384,7 +408,7 @@ static uint32_t write_bsr_item(RBSR *bsr, UAContext *ua,
  * Here we actually write out the details of the bsr file.
  *  Note, there is one bsr for each JobId, but the bsr may
  *  have multiple volumes, which have been entered in the
- *  order they were written.  
+ *  order they were written.
  * The bsrs must be written out in the order the JobIds
  *  are found in the jobid list.
  */
@@ -397,13 +421,13 @@ static uint32_t write_bsr(UAContext *ua, RESTORE_CTX &rx, FILE *fd)
    JobId_t JobId;
    RBSR *bsr;
    if (*rx.JobIds == 0) {
-      for (bsr=rx.bsr; bsr; bsr=bsr->next) {
+      foreach_rblist(bsr, rx.bsr_list) {
          total_count += write_bsr_item(bsr, ua, rx, fd, first, LastIndex);
       }
       return total_count;
    }
    for (p=rx.JobIds; get_next_jobid_from_list(&p, &JobId) > 0; ) {
-      for (bsr=rx.bsr; bsr; bsr=bsr->next) {
+      foreach_rblist(bsr, rx.bsr_list) {
          if (JobId == bsr->JobId) {
             total_count += write_bsr_item(bsr, ua, rx, fd, first, LastIndex);
          }
@@ -417,105 +441,123 @@ void print_bsr(UAContext *ua, RESTORE_CTX &rx)
    write_bsr(ua, rx, stdout);
 }
 
+static int search_rbsr(void *elt1, void *elt2)
+{
+   RBSR *bsr1 = (RBSR *)elt1;
+   RBSR *bsr = (RBSR *)elt2;
 
+   /* We might replace by a simple JobId - JobId */
+   if (bsr->JobId == bsr1->JobId) {
+      return 0;
 
+   } else if (bsr->JobId < bsr1->JobId) {
+      return 1;
+   }
+
+   return -1;
+}
+
+static int search_fi(void *elt1, void *elt2)
+{
+   RBSR_FINDEX *f1 = (RBSR_FINDEX *) elt1;
+   RBSR_FINDEX *f2 = (RBSR_FINDEX *) elt2;
+
+   if (f1->findex == (f2->findex - 1)) {
+      return 0;
+
+   } else if (f1->findex2 == (f2->findex2 + 1)) {
+      return 0;
+
+   } else if (f1->findex >= f2->findex && f1->findex2 <= f2->findex2) {
+      return 0;
+   }
+
+   return (f1->findex > f2->findex) ? 1 : -1;
+}
+
+rblist *create_bsr_list(uint32_t JobId, int findex, int findex2)
+{
+   RBSR *bsr = NULL;
+   RBSR_FINDEX *fi = NULL;
+   rblist *bsr_list = New(rblist(bsr, &bsr->link));
+
+   bsr = new_bsr();
+   bsr->JobId = JobId;
+
+   bsr_list->insert(bsr, search_rbsr);
+
+   fi = new_findex();
+   fi->findex = findex;
+   fi->findex2 = findex2;
+
+   bsr->fi_list->insert(fi, search_fi);
+
+   return bsr_list;
+}
 
 /*
  * Add a FileIndex to the list of BootStrap records.
  *  Here we are only dealing with JobId's and the FileIndexes
  *  associated with those JobIds.
  * We expect that JobId, FileIndex are sorted ascending.
+ *
+ * When doing restore from tree, FileIndex are not sorted, so it can
+ * create gaps.
  */
-void add_findex(RBSR *bsr, uint32_t JobId, int32_t findex)
+void add_findex(rblist *bsr_list, uint32_t JobId, int32_t findex)
 {
-   RBSR *nbsr;
-   RBSR_FINDEX *fi, *lfi;
+   RBSR *bsr, bsr2;
+   RBSR_FINDEX *fi, *nfi;
 
    if (findex == 0) {
       return;                         /* probably a dummy directory */
    }
 
-   if (bsr->fi == NULL) {             /* if no FI add one */
-      /* This is the first FileIndex item in the chain */
-      bsr->fi = new_findex();
-      bsr->JobId = JobId;
-      bsr->fi->findex = findex;
-      bsr->fi->findex2 = findex;
-      return;
-   }
+   bsr2.JobId = JobId;
    /* Walk down list of bsrs until we find the JobId */
-   if (bsr->JobId != JobId) {
-      for (nbsr=bsr->next; nbsr; nbsr=nbsr->next) {
-         if (nbsr->JobId == JobId) {
-            bsr = nbsr;
-            break;
-         }
-      }
+   bsr = (RBSR *)bsr_list->search(&bsr2, search_rbsr);
 
-      if (!nbsr) {                    /* Must add new JobId */
-         /* Add new JobId at end of chain */
-         for (nbsr=bsr; nbsr->next; nbsr=nbsr->next)
-            {  }
-         nbsr->next = new_bsr();
-         nbsr->next->JobId = JobId;
-         nbsr->next->fi = new_findex();
-         nbsr->next->fi->findex = findex;
-         nbsr->next->fi->findex2 = findex;
-         return;
-      }
-   }
-
-   /*
-    * At this point, bsr points to bsr containing this JobId,
-    *  and we are sure that there is at least one fi record.
+   /* The list is empty, or the JobId is not already in,
+    * Must add new JobId
     */
-   lfi = fi = bsr->fi;
-   /* Check if this findex is smaller than first item */
-   if (findex < fi->findex) {
-      if ((findex+1) == fi->findex) {
-         fi->findex = findex;         /* extend down */
-         return;
-      }
-      fi = new_findex();              /* yes, insert before first item */
-      fi->findex = findex;
-      fi->findex2 = findex;
-      fi->next = lfi;
-      bsr->fi = fi;
-      return;
+   if (!bsr) {
+      bsr = new_bsr();
+      bsr->JobId = JobId;
+      bsr_list->insert(bsr, search_rbsr);
    }
-   /* Walk down fi chain and find where to insert insert new FileIndex */
-   for ( ; fi; fi=fi->next) {
-      if (findex == (fi->findex2 + 1)) {  /* extend up */
-         RBSR_FINDEX *nfi;
-         fi->findex2 = findex;
-         /*
-          * If the following record contains one higher, merge its
-          *   file index by extending it up.
-          */
-         if (fi->next && ((findex+1) == fi->next->findex)) {
-            nfi = fi->next;
-            fi->findex2 = nfi->findex2;
-            fi->next = nfi->next;
-            free(nfi);
-         }
-         return;
-      }
-      if (findex < fi->findex) {      /* add before */
-         if ((findex+1) == fi->findex) {
-            fi->findex = findex;
-            return;
-         }
-         break;
-      }
-      lfi = fi;
+
+   if (bsr->m_fi) {
+      fi = bsr->m_fi;
+
+   } else {
+      fi = bsr->m_fi = new_findex();
    }
-   /* Add to last place found */
-   fi = new_findex();
-   fi->findex = findex;
+
+   fi->findex  = findex;
    fi->findex2 = findex;
-   fi->next = lfi->next;
-   lfi->next = fi;
-   return;
+
+   Dmsg1(1000, "Trying to insert %ld\n", findex);
+   /* try to insert our fi */
+   nfi = (RBSR_FINDEX*) bsr->fi_list->insert((void *)fi, search_fi);
+
+   /* We found an existing one, extend it */
+   if (nfi != fi) {
+      if (findex == (nfi->findex2 + 1)) {
+         Dmsg2(1000, "Extend %ld-%ld\n", nfi->findex, findex);
+         nfi->findex2 = findex;
+
+      } else if (findex == (nfi->findex - 1)) {
+         Dmsg2(1000, "Extend %ld-%ld\n", findex, nfi->findex2);
+         nfi->findex = findex;
+
+      } else {
+         Dmsg2(1000, "Found the same values? %ld-%ld\n", nfi->findex, nfi->findex2);
+      }
+
+   } else {
+      Dmsg2(1000, "Inserted %ld-%ld\n", fi->findex, fi->findex2);
+      bsr->m_fi = NULL;         /* comsumed */
+   }
 }
 
 /*
@@ -523,54 +565,38 @@ void add_findex(RBSR *bsr, uint32_t JobId, int32_t findex)
  *  Here we are only dealing with JobId's and the FileIndexes
  *  associated with those JobIds.
  */
-void add_findex_all(RBSR *bsr, uint32_t JobId)
+void add_findex_all(rblist *bsr_list, uint32_t JobId, const char *fileregex)
 {
-   RBSR *nbsr;
+   RBSR *bsr, bsr2;
    RBSR_FINDEX *fi;
 
-   if (bsr->fi == NULL) {             /* if no FI add one */
-      /* This is the first FileIndex item in the chain */
-      bsr->fi = new_findex();
-      bsr->JobId = JobId;
-      bsr->fi->findex = 1;
-      bsr->fi->findex2 = INT32_MAX;
-      return;
-   }
+   bsr2.JobId = JobId;
    /* Walk down list of bsrs until we find the JobId */
-   if (bsr->JobId != JobId) {
-      for (nbsr=bsr->next; nbsr; nbsr=nbsr->next) {
-         if (nbsr->JobId == JobId) {
-            bsr = nbsr;
-            break;
-         }
-      }
+   bsr = (RBSR *)bsr_list->search(&bsr2, search_rbsr);
 
-      if (!nbsr) {                    /* Must add new JobId */
-         /* Add new JobId at end of chain */
-         for (nbsr=bsr; nbsr->next; nbsr=nbsr->next)
-            {  }
+   if (!bsr) {                    /* Must add new JobId */
+      fi = new_findex();
+      fi->findex = 1;
+      fi->findex2 = INT32_MAX;
 
-         nbsr->next = new_bsr();
-         nbsr->next->JobId = JobId;
+      bsr = new_bsr();
+      bsr->JobId = JobId;
+      bsr->fi_list->insert(fi, search_fi);
+      bsr_list->insert(bsr, search_rbsr);
 
+      if (fileregex) {
          /* If we use regexp to restore, set it for each jobid */
-         if (bsr->fileregex) { 
-            nbsr->next->fileregex = bstrdup(bsr->fileregex);
-         }
-
-         nbsr->next->fi = new_findex();
-         nbsr->next->fi->findex = 1;
-         nbsr->next->fi->findex2 = INT32_MAX;
-         return;
+         bsr->fileregex = bstrdup(fileregex);
       }
+      return;
    }
 
    /*
     * At this point, bsr points to bsr containing this JobId,
-    *  and we are sure that there is at least one fi record.
     */
-   fi = bsr->fi;
+   fi = new_findex();
    fi->findex = 1;
    fi->findex2 = INT32_MAX;
+   bsr->fi_list->insert(fi, search_fi);
    return;
 }

@@ -46,6 +46,23 @@ Job {
   Reschedule Times = 5
 }
 
+
+#
+# Define the main nightly save backup job
+#   By default, this job will back up to disk in @tmpdir@
+Job {
+  Name = "FSType"
+  Type = Backup
+  Client=@hostname@-fd 
+  FileSet="FSTypeFS"
+  Storage = File
+  Messages = Standard
+  Pool = Default
+  Write Bootstrap = "@working_dir@/NightlySave.bsr"
+  Maximum Concurrent Jobs = 10
+  SpoolData=yes
+}
+
 Job {
   Name = "Simple"
   Type = Backup
@@ -157,6 +174,20 @@ Job {
   Write Bootstrap = "@working_dir@/NightlySave.bsr"
   Max Run Time = 30min
   SpoolData=yes
+}
+
+Job {
+  Name = "HardlinkTest"
+  Type = Backup
+  Client=@hostname@-fd 
+  FileSet="HardlinkSet"
+  Storage = File
+  Messages = Standard
+  Pool = Default
+  Maximum Concurrent Jobs = 10
+  Write Bootstrap = "@working_dir@/NightlySave.bsr"
+  Max Run Time = 30min
+  Accurate = yes
 }
 
 Job {
@@ -299,6 +330,31 @@ FileSet {
   }
 }
 
+# List of files to be backed up
+FileSet {
+  Name = "FSTypeFS"
+  Include {  
+     Options {
+        signature=MD5
+        fstype = ext4
+     }
+     File =  <@tmpdir@/file-list
+  }
+}
+
+
+# List of files to be backed up
+FileSet {
+  Name = "FSTypeFSEmpty"
+  Include {  
+     Options {
+        signature=MD5
+        fstype = debugfs
+     }
+     File =  <@tmpdir@/file-list
+  }
+}
+
 FileSet {
   Name = "FSno5"
   Include  { Options { verify=s5 }
@@ -437,6 +493,17 @@ FileSet {
       signature=MD5 
       compression=GZIP
       onefs=no
+    }
+    File = <@tmpdir@/file-list
+  }
+}
+
+FileSet {
+  Name = "HardlinkSet"
+  Include {
+    Options {
+      signature=MD5 
+      hardlinks=yes
     }
     File = <@tmpdir@/file-list
   }

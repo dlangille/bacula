@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2015 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -17,7 +17,6 @@
    Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
- *
  *   Bacula Director -- verify.c -- responsible for running file verification
  *
  *     Kern Sibbald, October MM
@@ -28,7 +27,6 @@
  *       to do the verify.
  *     When the File daemon sends the attributes, compare them to
  *       what is in the DB.
- *
  */
 
 
@@ -310,6 +308,8 @@ bool do_verify(JCR *jcr)
       level = "catalog";
       break;
    case L_VERIFY_DATA:
+      send_accurate_current_files(jcr);
+      /* Fall-through wanted */
    case L_VERIFY_VOLUME_TO_CATALOG:
       if (jcr->sd_calls_client) {
          if (jcr->FDVersion < 10) {
@@ -500,6 +500,10 @@ void verify_cleanup(JCR *jcr, int TermCode)
 
    jobstatus_to_ascii(jcr->FDJobStatus, fd_term_msg, sizeof(fd_term_msg));
    if (jcr->getJobLevel() == L_VERIFY_VOLUME_TO_CATALOG || jcr->getJobLevel() == L_VERIFY_DATA) {
+      const char *accurate = "yes";
+      if (jcr->is_JobLevel(L_VERIFY_DATA)) {
+         accurate = jcr->accurate ? "yes": "no";
+      }
       jobstatus_to_ascii(jcr->SDJobStatus, sd_term_msg, sizeof(sd_term_msg));
       Jmsg(jcr, msg_type, 0, _("%s %s %s (%s):\n"
 "  Build OS:               %s %s %s\n"
@@ -512,6 +516,7 @@ void verify_cleanup(JCR *jcr, int TermCode)
 "  Verify Job:             %s\n"
 "  Start time:             %s\n"
 "  End time:               %s\n"
+"  Accurate:               %s\n"
 "  Files Expected:         %s\n"
 "  Files Examined:         %s\n"
 "  Non-fatal FD errors:    %d\n"
@@ -530,6 +535,7 @@ void verify_cleanup(JCR *jcr, int TermCode)
            Name,
            sdt,
            edt,
+           accurate,
            edit_uint64_with_commas(jcr->ExpectedFiles, ec1),
            edit_uint64_with_commas(jcr->JobFiles, ec2),
            jcr->JobErrors,
@@ -823,11 +829,11 @@ void get_attributes_and_compare_to_catalog(JCR *jcr, JobId_t JobId)
     */
    jcr->fn_printed = false;
    bsnprintf(buf, sizeof(buf),
-      "SELECT Path.Path,Filename.Name FROM File,Path,Filename "
-      "WHERE File.JobId=%d AND File.FileIndex > 0 "
-      "AND File.MarkId!=%d AND File.PathId=Path.PathId "
-      "AND File.FilenameId=Filename.FilenameId",
-         JobId, jcr->JobId);
+    "SELECT Path.Path,Filename.Name FROM File,Path,Filename "
+    "WHERE File.JobId=%d AND File.FileIndex > 0 "
+    "AND File.MarkId!=%d AND File.PathId=Path.PathId "
+    "AND File.FilenameId=Filename.FilenameId",
+       JobId, jcr->JobId);
    /* missing_handler is called for each file found */
    db_sql_query(jcr->db, buf, missing_handler, (void *)jcr);
    if (jcr->fn_printed) {

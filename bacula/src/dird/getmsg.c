@@ -44,9 +44,9 @@
 /* Forward referenced functions */
 static char *find_msg_start(char *msg);
 
-static char Job_status[] = "Status Job=%127s JobStatus=%d\n";
+static char Job_status[] = "Status JobId=%ld JobStatus=%d\n";
 #ifdef needed
-static char Device_update[]   = "DevUpd Job=%127s "
+static char Device_update[]   = "DevUpd JobId=%127s "
    "device=%127s "
    "append=%d read=%d num_writers=%d "
    "open=%d labeled=%d offline=%d "
@@ -92,6 +92,23 @@ static void set_jcr_sd_job_status(JCR *jcr, int SDJobStatus)
 }
 
 /*
+ * See if we are pointing to a message id
+ *   Look for: [XYnnnn]
+ */
+static bool is_msgid(char *msg)
+{
+   if (!msg) return false;
+   char *end = strchr(msg, ']');
+   if (!end) return false;
+   if ((end - msg) != 7) return false;
+   if (!B_ISUPPER(msg[1]) || !B_ISUPPER(msg[2])) return false;
+   for (int i=3; i<7; i++) {
+      if (!B_ISDIGIT(msg[i])) return false;
+   }
+   return true;
+}
+
+/*
  * Get a message
  *  Call appropriate processing routine
  *  If it is not a Jmsg or a ReqCat message,
@@ -108,7 +125,8 @@ static void set_jcr_sd_job_status(JCR *jcr, int SDJobStatus)
  *  All other messages are expected begin with some identifier
  *    -- for the moment only the first character is checked, but
  *    at a later time, the whole identifier (e.g. Jmsg, CatReq, ...)
- *    could be checked. This is followed by Job=Jobname <user-defined>
+ *    could be checked. 
+ *    This is followed by JobId=nnn <user-defined>
  *    info. The identifier is used to dispatch the message to the right
  *    place (Job message, catalog request, ...). The Job is used to lookup
  *    the JCR so that the action is performed on the correct jcr, and
@@ -120,7 +138,7 @@ static void set_jcr_sd_job_status(JCR *jcr, int SDJobStatus)
 int bget_dirmsg(BSOCK *bs)
 {
    int32_t n = BNET_TERMINATE;
-   char Job[MAX_NAME_LENGTH];
+   JobId_t JobId = 0;
    char MsgType[20];
    int type;
    utime_t mtime;                     /* message time */
@@ -181,12 +199,15 @@ int bget_dirmsg(BSOCK *bs)
        *  a message to dispatch, or a catalog request.
        *  Try to fulfill it.
        */
-      if (sscanf(bs->msg, "%020s Job=%127s ", MsgType, Job) != 2) {
+      if (sscanf(bs->msg, "%020s JobId=%ld ", MsgType, &JobId) != 2) {
+         if (is_msgid(strchr(bs->msg, '['))) {
+            return n;
+         }
          Jmsg1(jcr, M_ERROR, 0, _("Malformed message: %s\n"), bs->msg);
          continue;
       }
 
-      /* Skip past "Jmsg Job=nnn" */
+      /* Skip past "Jmsg JobId=nnn" */
       if (!(msg=find_msg_start(bs->msg))) {
          Jmsg1(jcr, M_ERROR, 0, _("Malformed message: %s\n"), bs->msg);
          continue;
@@ -194,13 +215,13 @@ int bget_dirmsg(BSOCK *bs)
 
       /*
        * Here we are expecting a message of the following format:
-       *   Jmsg Job=nnn type=nnn level=nnn Message-string
+       *   Jmsg JobId=nnn type=nnn level=nnn Message-string
        * Note, level should really be mtime, but that changes
        *   the protocol.
        */
       if (bs->msg[0] == 'J') {           /* Job message */
-         if (sscanf(bs->msg, "Jmsg Job=%127s type=%d level=%lld",
-                    Job, &type, &mtime) != 3) {
+         if (sscanf(bs->msg, "Jmsg JobId=%ld type=%d level=%lld",
+                    &JobId, &type, &mtime) != 3) {
             Jmsg1(jcr, M_ERROR, 0, _("Malformed message: %s\n"), bs->msg);
             continue;
          }
@@ -218,7 +239,7 @@ int bget_dirmsg(BSOCK *bs)
       }
       /*
        * Here we expact a CatReq message
-       *   CatReq Job=nn Catalog-Request-Message
+       *   CatReq JobId=nn Catalog-Request-Message
        */
       if (bs->msg[0] == 'C') {        /* Catalog request */
          Dmsg2(900, "Catalog req jcr=%p: %s", jcr, bs->msg);
@@ -233,8 +254,8 @@ int bget_dirmsg(BSOCK *bs)
       if (bs->msg[0] == 'B') {        /* SD sending file spool attributes */
          Dmsg2(100, "Blast attributes jcr=%p: %s", jcr, bs->msg);
          char filename[256];
-         if (sscanf(bs->msg, "BlastAttr Job=%127s File=%255s",
-                    Job, filename) != 2) {
+         if (sscanf(bs->msg, "BlastAttr JobId=%ld File=%255s",
+                    &JobId, filename) != 2) {
             Jmsg1(jcr, M_ERROR, 0, _("Malformed message: %s\n"), bs->msg);
             continue;
          }
@@ -267,8 +288,7 @@ int bget_dirmsg(BSOCK *bs)
       }
       if (bs->msg[0] == 'S') {       /* Status change */
          int JobStatus;
-         char Job[MAX_NAME_LENGTH];
-         if (sscanf(bs->msg, Job_status, &Job, &JobStatus) == 2) {
+         if (sscanf(bs->msg, Job_status, &JobId, &JobStatus) == 2) {
             set_jcr_sd_job_status(jcr, JobStatus); /* current status */
          } else {
             Jmsg1(jcr, M_ERROR, 0, _("Malformed message: %s\n"), bs->msg);

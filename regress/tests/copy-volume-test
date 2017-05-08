@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (C) 2000-2015 Kern Sibbald
+# Copyright (C) 2000-2017 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
 
@@ -41,6 +41,7 @@ cat <<END_OF_DATA >${cwd}/tmp/bconcmds
 messages
 @$out ${cwd}/tmp/log1.out
 setdebug level=50 storage=DiskChanger
+@#setdebug level=100 Dir
 label storage=File volume=FileVolume001 Pool=Default
 label storage=File volume=FileVolume002 Pool=Scratch
 update Volume=FileVolume001 MaxVolBytes=3000000 pool=Default

@@ -1,0 +1,117 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2017 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# By setting VolUse duration small and switching Volume
+#  we create bad JobMedia records.  EndBlock < StartBlock.
+#
+#
+TestName="jobmedia-bug-test"
+JobName=jobmedia-bug
+. scripts/functions
+
+${rscripts}/cleanup
+${rscripts}/copy-test-confs
+echo $tmp/big >${tmp}/file-list
+echo $cwd/build/po >>${tmp}/file-list
+
+dd if=/dev/zero of=$tmp/big seek=1000000 count=1 >/dev/null 2>&1
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "SpoolData", "No", "Job")'
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "ClientRunBeforeJob", "\"sleep 30\"", "Job", "NightlySave")'
+$bperl -e 'add_attribute("$conf/bacula-sd.conf", "MaximumConcurrentJobs", "10", "Device")'
+sed -i 's/sparse=yes;//' $conf/bacula-dir.conf
+
+change_jobname NightlySave $JobName
+start_test
+
+cat <<END_OF_DATA >${tmp}/bconcmds
+@output /dev/null
+messages
+@$out ${tmp}/log1.out
+label storage=File volume=TestVolume000
+label storage=File volume=TestVolume001
+label storage=File volume=TestVolume002
+@#setdebug level=150 storage
+@# With VolUse=15s nothing restored for JobId 2
+@#update volume=TestVolume000 VolUse=15s
+@# With VolUse=20s both JobId 2 and 3 restore wrong size
+update volume=TestVolume000 VolUse=20s
+update volume=TestVolume001 maxvolbytes=100MB
+sql
+select VolumeName, MediaId FROM Media;
+
+run job=$JobName level=full yes
+@sleep 15
+setbandwidth limit="5000 kb/s" client=$CLIENT
+run job=$JobName level=full yes
+run job=$JobName level=full yes
+@sleep 20
+run job=$JobName level=full yes
+@sleep 10
+@#status client
+@#status dir
+@#status storage
+@sleep 10
+setbandwidth limit=0 client=$CLIENT
+wait
+messages
+sql
+select jobid, mediaid, firstindex,lastindex,volindex from JobMedia order by jobid,volindex;
+select * from JobMedia order by jobid,volindex;
+
+@$out $tmp/jobmedia2
+list jobmedia jobid=2
+@$out $tmp/jobmedia3
+list jobmedia jobid=3
+quit
+END_OF_DATA
+
+run_bacula
+check_for_zombie_jobs storage=File
+
+cat <<END_OF_DATA >${tmp}/bconcmds
+@# 
+@# now do a restore that will fail (JobId 2)
+@#
+@$out ${tmp}/log2.out
+@#setdebug level=10 storage=File
+@# Select by JobId to restore JobId 1
+restore where=${tmp}/bacula-restores storage=File
+3
+1
+cd $tmp
+m big
+done
+yes
+wait
+@# Select by JobId to restore JobId 2
+restore where=${tmp}/bacula-restores storage=File
+3
+2
+cd $tmp
+m big
+done
+yes
+wait
+@# Select by JobId to restore JobId 3
+restore where=${tmp}/bacula-restores2 storage=File
+3
+3
+cd $tmp
+m big
+done
+yes
+wait
+@#status client
+@#status storage=File
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+check_for_zombie_jobs storage=File
+stop_bacula
+
+check_two_logs
+end_test

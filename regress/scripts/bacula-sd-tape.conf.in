@@ -41,6 +41,8 @@ Device {
   AlwaysOpen = yes;
   RemovableMedia = yes;
   @@sbindir@/tape_options
+  Control Device = /dev/sg1
+  Alert Command = "@scriptdir@/tapealert %l"
 # Maximum File Size = 1000000
 # MaximumVolumeSize = 400M
 }
@@ -53,4 +55,15 @@ Messages {
   Name = Standard
   director = @hostname@-dir = all, !terminate
   append = "@working_dir@/log1.sd" = all
+}
+
+Cloud {
+  Name = DummyCloud
+  Driver = "File"
+  HostName = "@tmpdir@/cloud"
+  BucketName = "DummyBucket"
+  AccessKey = "DummyAccessKey"
+  SecretKey = "DummySecretKey"
+  Protocol = HTTPS
+  UriStyle = VirtualHost
 }

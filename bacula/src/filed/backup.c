@@ -245,7 +245,7 @@ int save_file(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
       jcr->last_stat_time = now;
       jcr->stat_interval = 30;  /* Default 30 seconds */
    } else if (now >= jcr->last_stat_time + jcr->stat_interval) {
-      jcr->dir_bsock->fsend("Progress Job=x files=%ld bytes=%lld bps=%ld\n",
+      jcr->dir_bsock->fsend("Progress JobId=x files=%ld bytes=%lld bps=%ld\n",
          jcr->JobFiles, jcr->JobBytes, jcr->LastRate);
       jcr->last_stat_time = now;
    }
@@ -878,6 +878,16 @@ bool encode_and_send_attributes(bctx_t &bctx)
    ff_pkt->FileIndex = jcr->JobFiles;  /* return FileIndex */
    pm_strcpy(jcr->last_fname, ff_pkt->fname);
    jcr->unlock();
+
+   /* Display the information about the current file if requested */
+   if (is_message_type_set(jcr, M_SAVED)) {
+      ATTR attr;
+      memcpy(&attr.statp, &ff_pkt->statp, sizeof(struct stat));
+      attr.type = ff_pkt->type;
+      attr.ofname = (POOLMEM *)ff_pkt->fname;
+      attr.olname = (POOLMEM *)ff_pkt->link;
+      print_ls_output(jcr, &attr, M_SAVED);
+   }
 
    /* Debug code: check if we must hangup */
    if (hangup > 0 && (jcr->JobFiles > (uint32_t)hangup)) {

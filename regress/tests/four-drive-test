@@ -1,0 +1,88 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2017 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# This script is used to test multiple devices grouped in
+# the director configuration
+#
+#
+TestName="four-drive-test"
+JobName=backup
+. scripts/functions
+
+scripts/cleanup
+scripts/copy-4disk-confs
+scripts/prepare-disk-changer
+
+echo "s/signature=MD5/signature=MD5; readfifo=yes/" > $tmp/1
+echo "s/FileStorage/FileStorage; Device=FileStorage2; Device=FileStorage3; Device=FileStorage4/" >> $tmp/1
+sed -f $tmp/1 $conf/bacula-dir.conf > $tmp/2 
+# Allow auto label 
+$bperl -e 'add_attribute("$tmp/2", "Label Format", "Vol", "Pool", "Default")'
+$bperl -e 'add_attribute("$tmp/2", "Label Format", "Vol", "Pool", "Inc")'
+$bperl -e 'add_attribute("$conf/bacula-sd.conf", "Label Media", "yes", "Device")'
+
+# set this to do round robin
+$bperl -e 'set_maximum_concurrent_jobs("$conf/bacula-sd.conf", 8, "Device")'
+
+# Disable spooling for each job
+$bperl -e 'add_attribute("$tmp/2", "SpoolData",    "no",  "Job")'
+cp $tmp/2 $conf/bacula-dir.conf
+
+$bperl -e 'extract_resource("$conf/bacula-sd.conf", "Device", "FileStorage")' > $tmp/2
+for i in 2 3 4; do
+    sed "s/FileStorage/FileStorage$i/" $tmp/2 >> $conf/bacula-sd.conf
+done
+
+disable_plugins
+
+echo "$cwd/build/src/dird/" >${cwd}/tmp/file-list
+
+change_jobname $JobName
+start_test
+
+# test with autolabel
+#
+#
+# Write out bconsole commands
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@out /dev/null
+messages
+@#setdebug level=150 storage=Virtual
+@$out ${cwd}/tmp/log1.out
+run level=full job=backup storage=Virtual pool=Default yes
+run level=full job=backup storage=Virtual pool=Default yes
+run level=full job=backup storage=Virtual pool=Default yes
+run level=full job=backup storage=Virtual pool=Default yes
+run level=full job=backup storage=Virtual pool=Inc yes
+@#run level=full job=backup storage=Virtual pool=Default yes
+@#run level=full job=backup storage=Virtual pool=Default yes
+@#run level=full job=backup storage=Virtual pool=Default yes
+@#run level=full job=backup storage=Virtual pool=Default yes
+@#run level=full job=backup storage=Virtual pool=Default yes
+@#run level=full job=backup storage=Virtual pool=Default yes
+@#run level=full job=backup storage=Virtual pool=Default yes
+@#run level=full job=backup storage=Virtual pool=Default yes
+@#run level=full job=backup storage=Virtual pool=Inc yes
+@#run level=full job=backup storage=Virtual pool=Inc yes
+@sleep 3
+status dir
+messages
+wait
+messages
+status storage=Virtual
+quit
+END_OF_DATA
+
+run_bacula
+
+check_for_zombie_jobs storage=File
+check_for_zombie_jobs storage=tape
+stop_bacula
+
+touch $tmp/log2.out
+check_two_logs
+#check_restore_diff
+
+end_test

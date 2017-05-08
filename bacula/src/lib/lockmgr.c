@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -16,7 +16,6 @@
 
    Bacula(R) is a registered trademark of Kern Sibbald.
 */
-
 /*
   How to use mutex with bad order usage detection
  ------------------------------------------------
@@ -598,6 +597,14 @@ void lmgr_unregister_thread(lmgr_thread_t *item)
    lmgr_p(&lmgr_global_mutex);
    {
       global_mgr->remove(item);
+#ifdef DEVELOPER
+      for(int i=0; i<=item->current; i++) {
+         lmgr_lock_t *lock = &item->lock_list[i];
+         if (lock->state == LMGR_LOCK_GRANTED) {
+            ASSERT2(0, "Thread exits with granted locks");
+         }
+      }
+#endif
    }
    lmgr_v(&lmgr_global_mutex);
 }
@@ -762,6 +769,15 @@ inline lmgr_thread_t *lmgr_get_thread_info()
    }
 }
 
+/*
+ * Know if the current thread is registred (used when we
+ * do not control thread creation)
+ */
+bool lmgr_thread_is_initialized()
+{
+   return pthread_getspecific(lmgr_key) != NULL;
+}
+
 /* On windows, the thread id is a struct, and sometime (for debug or openssl),
  * we need a int
  */
@@ -899,18 +915,24 @@ int bthread_kill(pthread_t thread, int sig,
                  const char *file, int line)
 {
    bool thread_found_in_process=false;
-
-   /* We doesn't allow to send signal to ourself */
-   ASSERT(!pthread_equal(thread, pthread_self()));
+   int ret=-1;
+   /* We dont allow to send signal to ourself */
+   if (pthread_equal(thread, pthread_self())) {
+      ASSERTD(!pthread_equal(thread, pthread_self()), "Wanted to pthread_kill ourself");
+      Dmsg3(10, "%s:%d send kill to self thread %p\n", file, line, thread);
+      errno = EINVAL;
+      return -1;
+   }
 
    /* This loop isn't very efficient with dozens of threads but we don't use
-    * signal very much, and this feature is for testing only
+    * signal very much
     */
    lmgr_p(&lmgr_global_mutex);
    {
       lmgr_thread_t *item;
       foreach_dlist(item, global_mgr) {
          if (pthread_equal(thread, item->thread_id)) {
+            ret = pthread_kill(thread, sig);
             thread_found_in_process=true;
             break;
          }
@@ -918,13 +940,13 @@ int bthread_kill(pthread_t thread, int sig,
    }
    lmgr_v(&lmgr_global_mutex);
 
-   /* Sending a signal to non existing thread can create problem
-    * so, we can stop here.
-    */
-   ASSERT2(thread_found_in_process, "Wanted to pthread_kill non-existant thread");
-
-   Dmsg3(100, "%s:%d send kill to existing thread %p\n", file, line, thread);
-   return pthread_kill(thread, sig);
+   /* Sending a signal to non existing thread can create problem */
+   if (!thread_found_in_process) {
+      ASSERTD(thread_found_in_process, "Wanted to pthread_kill non-existant thread");
+      Dmsg3(10, "%s:%d send kill to non-existant thread %p\n", file, line, thread);
+      errno=ECHILD;
+   }
+   return ret;
 }
 
 /*
@@ -1159,6 +1181,41 @@ void dbg_print_lock(FILE *fp)
 
 #endif  /* USE_LOCKMGR */
 
+#ifdef HAVE_LINUX_OS
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+#include <sys/syscall.h>
+#endif
+
+/*
+ * Set the Thread Id of the current thread to limit I/O operations
+ */
+int bthread_change_uid(uid_t uid, gid_t gid)
+{
+#if defined(HAVE_WIN32) || defined(HAVE_WIN64)
+   /* TODO: Check the cygwin code for the implementation of setuid() */
+   errno = ENOSYS;
+   return -1;
+
+#elif defined(HAVE_LINUX_OS)
+   /* It can be also implemented with setfsuid() and setfsgid() */
+   int ret=0;
+   ret = syscall(SYS_setregid, getgid(), gid);
+   if (ret == -1) {
+      return -1;
+   }
+   return syscall(SYS_setreuid, getuid(), uid);
+
+#elif defined(HAVE_FREEBSD_OS) || defined(HAVE_DARWIN_OS)
+   return pthread_setugid_np(uid, gid);
+
+#endif
+   errno = ENOSYS;
+   return -1;
+}
+
+
 #ifdef _TEST_IT
 
 #include "lockmgr.h"
@@ -1225,6 +1282,35 @@ void *mix_rwl_mutex(void *temp)
    return NULL;
 }
 
+
+void *thuid(void *temp)
+{
+   char buf[512];
+//   if (restrict_job_permissions("eric", "users", buf, sizeof(buf)) < 0) {
+   if (bthread_change_uid(2, 100) == -1) {
+      berrno be;
+      fprintf(stderr, "Unable to change the uid err=%s\n", be.bstrerror());
+   } else {
+      fprintf(stderr, "UID set! %d:%d\n", (int)getuid(), (int)getgid());
+      mkdir("/tmp/adirectory", 0755);
+      system("touch /tmp/afile");
+      system("id");
+      fclose(fopen("/tmp/aaa", "a"));
+   }
+   if (bthread_change_uid(0, 0) == -1) {
+      berrno be;
+      fprintf(stderr, "Unable to change the uid err=%s\n", be.bstrerror());
+   } else {
+      fprintf(stderr, "UID set! %d:%d\n", (int)getuid(), (int)getgid());
+      sleep(5);
+      mkdir("/tmp/adirectory2", 0755);
+      system("touch /tmp/afile2");
+      system("id");
+      fclose(fopen("/tmp/aaa2", "a"));
+   }
+
+   return NULL;
+}
 
 void *th2(void *temp)
 {
@@ -1350,6 +1436,10 @@ int report()
    return err>0;
 }
 
+void terminate(int sig)
+{
+}
+
 /*
  * TODO:
  *  - Must detect multiple lock
@@ -1365,7 +1455,7 @@ int main(int argc, char **argv)
    pthread_mutex_t pmutex2;
    debug_level = 10;
    my_prog = argv[0];
-
+   init_signals(terminate);
    use_undertaker = false;
    lmgr_init_thread();
    self = lmgr_get_thread_info();
@@ -1378,6 +1468,10 @@ int main(int argc, char **argv)
       return 0;
    }
 
+   pthread_create(&id5, NULL, thuid, NULL);
+   pthread_join(id5, NULL);
+   fprintf(stderr, "UID %d:%d\n", (int)getuid(), (int)getgid());
+   exit(0);
    pthread_mutex_init(&bmutex1, NULL);
    bthread_mutex_set_priority(&bmutex1, 10);
 
@@ -1396,6 +1490,12 @@ int main(int argc, char **argv)
    lmgr_v(&mutex1.mutex);                /* a bit dirty */
    pthread_join(id1, NULL);
 
+   pthread_create(&id1, NULL, nolock, NULL);
+   sleep(2);
+   ok(bthread_kill(id1, SIGUSR2) == 0, "Kill existing thread");
+   pthread_join(id1, NULL);
+   ok(bthread_kill(id1, SIGUSR2) == -1, "Kill non-existing thread");
+   ok(bthread_kill(pthread_self(), SIGUSR2) == -1, "Kill self");
 
    pthread_create(&id1, NULL, nolock, NULL);
    sleep(2);
@@ -1530,7 +1630,6 @@ int main(int argc, char **argv)
 
    pthread_join(id4, NULL);
    pthread_join(id5, NULL);
-
 //
 //   pthread_create(&id3, NULL, th3, NULL);
 //

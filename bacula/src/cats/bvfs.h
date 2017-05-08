@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,12 +11,11 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
 */
-
 
 #ifndef __BVFS_H_
 #define __BVFS_H_ 1
@@ -38,24 +37,32 @@ typedef enum {
    BVFS_FILE_RECORD  = 'F',
    BVFS_DIR_RECORD   = 'D',
    BVFS_FILE_VERSION = 'V',
-   BVFS_VOLUME_LIST  = 'L'
+   BVFS_VOLUME_LIST  = 'L',
+   BVFS_DELTA_RECORD = 'd',
 } bvfs_handler_type;
 
 typedef enum {
    BVFS_Type    = 0,            /* Could be D, F, V, L */
-   BVFS_PathId  = 1, 
-   BVFS_FilenameId = 2,
+   BVFS_PathId  = 1,
+   BVFS_FilenameId = 5,         /* No longer in use, use fileid instead */
 
-   BVFS_Name    = 3,
-   BVFS_JobId   = 4,
+   BVFS_Name    = 2,
+   BVFS_JobId   = 3,
 
-   BVFS_LStat   = 5,            /* Can be empty for missing directories */
-   BVFS_FileId  = 6,            /* Can be empty for missing directories */
+   BVFS_LStat   = 4,            /* Can be empty for missing directories */
+   BVFS_FileId  = 5,            /* Can be empty for missing directories */
+
+   /* Only if Path record */
+   BVFS_FileIndex = 6,
 
    /* Only if File Version record */
-   BVFS_Md5     = 3,
+   BVFS_Md5     = 6,
    BVFS_VolName = 7,
-   BVFS_VolInchanger = 8
+   BVFS_VolInchanger = 8,
+
+   /* Only if Delta record */
+   BVFS_DeltaSeq = 6,
+   BVFS_JobTDate = 7
 } bvfs_row_index;
 
 class Bvfs {
@@ -64,8 +71,13 @@ public:
    Bvfs(JCR *j, BDB *mdb);
    virtual ~Bvfs();
 
-   void set_jobid(JobId_t id);
-   void set_jobids(char *ids);
+   void set_compute_delta(bool val) {
+      compute_delta = val;
+   };
+
+   /* Return the number of jobids after the filter */
+   int set_jobid(JobId_t id);
+   int set_jobids(char *ids);
 
    char *get_jobids() {
       return jobids;
@@ -97,10 +109,7 @@ public:
    /* It's much better to access Path though their PathId, it
     * avoids mistakes with string encoding
     */
-   void ch_dir(DBId_t pathid) {
-      reset_offset();
-      pwd_id = pathid;
-   }
+   bool ch_dir(DBId_t pathid);
 
    /*
     * Returns true if the directory exists
@@ -125,13 +134,15 @@ public:
       see_copies = val;
    }
 
-   void filter_jobid();         /* Call after set_username */
+   DBId_t get_dir_filenameid();
+
+   int filter_jobid();         /* Call after set_username, returns the number of jobids */
 
    void set_username(char *user) {
       if (user) {
          username = bstrdup(user);
       }
-   }
+   };
 
    char *escape_list(alist *list);
 
@@ -143,30 +154,33 @@ public:
          return false;
       }
       return true;
-   }
+   };
 
    /* Keep a pointer to various ACLs */
    void set_job_acl(alist *lst) {
       job_acl = copy_acl(lst)?lst:NULL;
-   }
+      use_acl = true;
+   };
    void set_fileset_acl(alist *lst) {
       fileset_acl = copy_acl(lst)?lst:NULL;
-   }
+      use_acl = true;
+   };
    void set_client_acl(alist *lst) {
       client_acl = copy_acl(lst)?lst:NULL;
-   }
+      use_acl = true;
+   };
    void set_pool_acl(alist *lst) {
       pool_acl = copy_acl(lst)?lst:NULL;
-   }
-
+      use_acl = true;
+   };
    void set_handler(DB_RESULT_HANDLER *h, void *ctx) {
       list_entries = h;
       user_data = ctx;
-   }
+   };
 
    DBId_t get_pwd() {
       return pwd_id;
-   }
+   };
 
    ATTR *get_attr() {
       return attr;
@@ -203,6 +217,21 @@ public:
    /* Get a list of volumes */
    void get_volumes(FileId_t fileid);
 
+   /* Get Delta parts of a file */
+   bool get_delta(FileId_t fileid);
+
+   /* Check if the parent directories are accessible */
+   bool check_path_access(DBId_t pathid);
+
+   /* Check if the full path is authorized by the current set of ACLs */
+   bool check_full_path_access(int nb, sellist *sel, db_list_ctx *toexcl);
+
+   alist *dir_acl;
+
+   int  check_dirs;             /* When it's 1, we check the against directory_acl */
+   bool can_access(struct stat *st);
+   bool can_access_dir(const char *path);
+
 private:
    Bvfs(const Bvfs &);               /* prohibit pass by value */
    Bvfs & operator = (const Bvfs &); /* prohibit class assignment */
@@ -224,6 +253,7 @@ private:
    alist *client_acl;
    alist *fileset_acl;
    alist *pool_acl;
+   char  *last_dir_acl;
 
    ATTR *attr;        /* Can be use by handler to call decode_stat() */
 
@@ -235,8 +265,11 @@ private:
 
    bool see_all_versions;
    bool see_copies;
+   bool compute_delta;
 
-   DBId_t get_dir_filenameid();
+   db_list_ctx fileid_to_delete; /* used also by check_path_access */
+   bool need_to_check_permissions();
+   bool use_acl;
 
    /* bfileview */
    void fv_get_big_files(int64_t pathid, int64_t min_size, int32_t limit);
@@ -253,6 +286,7 @@ private:
 #define bvfs_is_file(row) ((row)[BVFS_Type][0] == BVFS_FILE_RECORD)
 #define bvfs_is_version(row) ((row)[BVFS_Type][0] == BVFS_FILE_VERSION)
 #define bvfs_is_volume_list(row) ((row)[BVFS_Type][0] == BVFS_VOLUME_LIST)
+#define bvfs_is_delta_list(row) ((row)[BVFS_Type][0] == BVFS_DELTA_RECORD)
 
 void bvfs_update_fv_cache(JCR *jcr, BDB *mdb, char *jobids);
 int bvfs_update_path_hierarchy_cache(JCR *jcr, BDB *mdb, char *jobids);
@@ -264,6 +298,5 @@ char *bvfs_parent_dir(char *path);
  * this function already
  */
 char *bvfs_basename_dir(char *path);
-
 
 #endif /* __BVFS_H_ */

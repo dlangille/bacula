@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2015 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,17 +11,15 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
- *
  *   Bacula Director -- Tape labeling commands
  *
  *     Kern Sibbald, April MMIII
- *
  */
 
 #include "bacula.h"
@@ -177,7 +175,7 @@ void update_slots(UAContext *ua)
    if (!store.store) {
       return;
    }
-   pm_strcpy(store.store_source, _("command line"));
+   pm_strcpy(store.store_source, _("Command input"));
    set_wstorage(ua->jcr, &store);
    drive = get_storage_drive(ua, store.store);
 
@@ -355,7 +353,7 @@ static int do_label(UAContext *ua, const char *cmd, int relabel)
    if (!store.store) {
       return 1;
    }
-   pm_strcpy(store.store_source, _("command line"));
+   pm_strcpy(store.store_source, _("Command input"));
    set_wstorage(ua->jcr, &store);
    drive = get_storage_drive(ua, store.store);
 
@@ -477,7 +475,7 @@ checkName:
          bash_spaces(dev_name);
          sd->fsend("mount %s drive=%d slot=%d", dev_name, drive, mr.Slot);
          unbash_spaces(dev_name);
-         while (sd->recv() >= 0) {
+         while (bget_dirmsg(sd) >= 0) {
             ua->send_msg("%s", sd->msg);
             /* Here we can get
              *  3001 OK mount. Device=xxx      or
@@ -705,51 +703,45 @@ static bool send_label_request(UAContext *ua, MEDIA_DBR *mr, MEDIA_DBR *omr,
          dev_name, mr->VolumeName, pr->Name, mr->MediaType, mr->Slot, drive);
    }
 
-   while (sd->recv() >= 0) {
+   while (bget_dirmsg(sd) >= 0) {
       ua->send_msg("%s", sd->msg);
       if (sscanf(sd->msg, "3000 OK label. VolBytes=%llu VolABytes=%lld VolType=%d ",
                  &VolBytes, &VolABytes, &VolType) == 3) {
          ok = true;
+         if (media_record_exists) {      /* we update it */
+            mr->VolBytes = VolBytes;
+            mr->VolABytes = VolABytes;
+            mr->VolType = VolType;
+            mr->InChanger = mr->Slot > 0;  /* if slot give assume in changer */
+            set_storageid_in_mr(ua->jcr->wstore, mr);
+            if (!db_update_media_record(ua->jcr, ua->db, mr)) {
+               ua->error_msg("%s", db_strerror(ua->db));
+               ok = false;
+            }
+         } else {                        /* create the media record */
+            set_pool_dbr_defaults_in_media_dbr(mr, pr);
+            mr->VolBytes = VolBytes;
+            mr->VolABytes = VolABytes;
+            mr->VolType = VolType;
+            mr->InChanger = mr->Slot > 0;  /* if slot give assume in changer */
+            mr->Enabled = 1;
+            set_storageid_in_mr(ua->jcr->wstore, mr);
+            if (db_create_media_record(ua->jcr, ua->db, mr)) {
+               ua->info_msg(_("Catalog record for Volume \"%s\", Slot %d  successfully created.\n"),
+                            mr->VolumeName, mr->Slot);
+               /* Update number of volumes in pool */
+               pr->NumVols++;
+               if (!db_update_pool_record(ua->jcr, ua->db, pr)) {
+                  ua->error_msg("%s", db_strerror(ua->db));
+               }
+            } else {
+               ua->error_msg("%s", db_strerror(ua->db));
+               ok = false;
+            }
+         }
       }
    }
-   unbash_spaces(mr->VolumeName);
-   unbash_spaces(mr->MediaType);
-   unbash_spaces(pr->Name);
-   mr->LabelDate = time(NULL);
-   mr->set_label_date = true;
-   if (ok) {
-      if (media_record_exists) {      /* we update it */
-         mr->VolBytes = VolBytes;
-         mr->VolABytes = VolABytes;
-         mr->VolType = VolType;
-         mr->InChanger = mr->Slot > 0;  /* if slot give assume in changer */
-         set_storageid_in_mr(ua->jcr->wstore, mr);
-         if (!db_update_media_record(ua->jcr, ua->db, mr)) {
-             ua->error_msg("%s", db_strerror(ua->db));
-             ok = false;
-         }
-      } else {                        /* create the media record */
-         set_pool_dbr_defaults_in_media_dbr(mr, pr);
-         mr->VolBytes = VolBytes;
-         mr->VolABytes = VolABytes;
-         mr->VolType = VolType;
-         mr->InChanger = mr->Slot > 0;  /* if slot give assume in changer */
-         mr->Enabled = 1;
-         set_storageid_in_mr(ua->jcr->wstore, mr);
-         if (db_create_media_record(ua->jcr, ua->db, mr)) {
-            ua->info_msg(_("Catalog record for Volume \"%s\", Slot %d  successfully created.\n"),
-            mr->VolumeName, mr->Slot);
-            /* Update number of volumes in pool */
-            pr->NumVols++;
-            if (!db_update_pool_record(ua->jcr, ua->db, pr)) {
-               ua->error_msg("%s", db_strerror(ua->db));
-            }
-         } else {
-            ua->error_msg("%s", db_strerror(ua->db));
-            ok = false;
-         }
-      }
-   } else {
+   if (!ok) {
       ua->error_msg(_("Label command failed for Volume %s.\n"), mr->VolumeName);
    }
    return ok;
@@ -1190,7 +1182,7 @@ void status_slots(UAContext *ua, STORE *store_r)
    }
    store.store = store_r;
 
-   pm_strcpy(store.store_source, _("command line"));
+   pm_strcpy(store.store_source, _("Command input"));
    set_wstorage(ua->jcr, &store);
    get_storage_drive(ua, store.store);
 

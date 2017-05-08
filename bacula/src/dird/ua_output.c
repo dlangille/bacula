@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2015 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,13 +11,12 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
- *
  *   Bacula Director -- User Agent Output Commands
  *     I.e. messages, listing database, showing resources, ...
  *
@@ -96,7 +95,7 @@ static void show_disabled_jobs(UAContext *ua)
       if (!acl_access_ok(ua, Job_ACL, job->name())) {
          continue;
       }
-      if (!job->enabled) {
+      if (!job->is_enabled()) {
          if (first) {
             first = false;
             ua->send_msg(_("Disabled Jobs:\n"));
@@ -122,6 +121,9 @@ static struct showstruct reses[] = {
    {NT_("filesets"),   R_FILESET},
    {NT_("pools"),      R_POOL},
    {NT_("messages"),   R_MSGS},
+// {NT_("consoles"),   R_CONSOLE},
+// {NT_("jobdefs"),    R_JOBDEFS},
+// {NT_{"autochangers"), R_AUTOCHANGER},
    {NT_("all"),        -1},
    {NT_("help"),       -2},
    {NULL,           0}
@@ -142,7 +144,8 @@ int show_cmd(UAContext *ua, const char *cmd)
    int i, j, type, len;
    int recurse;
    char *res_name;
-   RES *res;
+   RES_HEAD *reshead = NULL;
+   RES *res = NULL;
 
    Dmsg1(20, "show: %s\n", ua->UA_sock->msg);
 
@@ -154,8 +157,10 @@ int show_cmd(UAContext *ua, const char *cmd)
          goto bail_out;
       }
 
-      type = 0;
       res = NULL;
+      reshead = NULL;
+      type = 0;
+
       res_name = ua->argk[i];
       if (!ua->argv[i]) {             /* was a name given? */
          /* No name, dump all resources of specified type */
@@ -165,13 +170,14 @@ int show_cmd(UAContext *ua, const char *cmd)
             if (strncasecmp(res_name, reses[j].res_name, len) == 0) {
                type = reses[j].type;
                if (type > 0) {
-                  res = res_head[type-r_first];
+                  reshead = res_head[type-r_first];
                } else {
-                  res = NULL;
+                  reshead = NULL;
                }
                break;
             }
          }
+
       } else {
          /* Dump a single resource with specified name */
          recurse = 0;
@@ -194,7 +200,7 @@ int show_cmd(UAContext *ua, const char *cmd)
          for (j=r_first; j<=r_last; j++) {
             /* Skip R_DEVICE since it is really not used or updated */
             if (j != R_DEVICE) {
-               dump_resource(j, res_head[j-r_first], bsendmsg, ua);
+               dump_each_resource(j, bsendmsg, ua);
             }
          }
          break;
@@ -215,7 +221,12 @@ int show_cmd(UAContext *ua, const char *cmd)
          goto bail_out;
       /* Dump a specific type */
       default:
-         dump_resource(recurse?type:-type, res, bsendmsg, ua);
+         if (res) {             /* keyword and argument, ie: show job=name */
+            dump_resource(recurse?type:-type, res, bsendmsg, ua);
+
+         } else if (reshead) {  /* keyword only, ie: show job */
+            dump_each_resource(-type, bsendmsg, ua);
+         }
          break;
       }
    }
@@ -303,8 +314,8 @@ bail_out:
  *  list jobmedia job=name
  *  list joblog jobid=<nn>
  *  list joblog job=name
- *  list files jobid=<nn> - list files saved for job nn
- *  list files job=name
+ *  list files [type=<deleted|all>] jobid=<nn> - list files saved for job nn
+ *  list files [type=<deleted|all>] job=name
  *  list pools          - list pool records
  *  list jobtotals      - list totals for all jobs
  *  list media          - list media for given pool (deprecated)
@@ -313,7 +324,10 @@ bail_out:
  *  list nextvol job=xx  - list the next vol to be used by job
  *  list nextvolume job=xx - same as above.
  *  list copies jobid=x,y,z
+ *  list pluginrestoreconf jobid=x,y,z [id=k]
  *
+ *  Note: keyword "long" is before the first command on the command 
+ *    line results in doing a llist (long listing).
  */
 
 /* Do long or full listing */
@@ -325,13 +339,17 @@ int llist_cmd(UAContext *ua, const char *cmd)
 /* Do short or summary listing */
 int list_cmd(UAContext *ua, const char *cmd)
 {
-   return do_list_cmd(ua, cmd, HORZ_LIST);
+   if (find_arg(ua, "long") > 0) {
+      return do_list_cmd(ua, cmd, VERT_LIST);  /* do a long list */
+   } else {
+      return do_list_cmd(ua, cmd, HORZ_LIST);  /* do a short list */
+   }
 }
 
 static int do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
 {
    POOLMEM *VolumeName;
-   int jobid, n;
+   int jobid=0, n;
    int i, j;
    JOB_DBR jr;
    POOL_DBR pr;
@@ -355,11 +373,11 @@ static int do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
       } else if (!ua->argv[j]) {
          /* skip */
       } else if (strcasecmp(ua->argk[j], NT_("order")) == 0) {
-         if (strcasecmp(ua->argv[j], NT_("desc")) == 0 ||
-             strcasecmp(ua->argv[j], NT_("descending")) == 0) {
+         if ((strcasecmp(ua->argv[j], NT_("desc")) == 0) ||
+            strcasecmp(ua->argv[j], NT_("descending")) == 0) {
             jr.order = 1;
-         } else if (strcasecmp(ua->argv[j], NT_("asc")) == 0 ||
-                    strcasecmp(ua->argv[j], NT_("ascending")) == 0) {
+         } else if ((strcasecmp(ua->argv[j], NT_("asc")) == 0) ||
+            strcasecmp(ua->argv[j], NT_("ascending")) == 0) {
             jr.order = 0;
          } else {
             ua->error_msg(_("Unknown order type %s\n"), ua->argv[j]);
@@ -370,13 +388,28 @@ static int do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
 
       } else if (strcasecmp(ua->argk[j], NT_("jobstatus")) == 0) {
          if (B_ISALPHA(ua->argv[j][0])) {
-            jr.JobStatus = ua->argv[j][0];
+            jr.JobStatus = ua->argv[j][0]; /* TODO: Check if the code is correct */
          }
+      } else if (strcasecmp(ua->argk[j], NT_("jobtype")) == 0) {
+         if (B_ISALPHA(ua->argv[j][0])) {
+            jr.JobType = ua->argv[j][0]; /* TODO: Check if the code is correct */
+         }
+      } else if (strcasecmp(ua->argk[j], NT_("level")) == 0) {
+         if (strlen(ua->argv[j]) > 1) {
+            jr.JobLevel = get_level_code_from_name(ua->argv[j]);
+
+         } else if (B_ISALPHA(ua->argv[j][0])) {
+            jr.JobLevel = ua->argv[j][0]; /* TODO: Check if the code is correct */
+         }
+      } else if (strcasecmp(ua->argk[j], NT_("level")) == 0) {
+
+
       } else if (strcasecmp(ua->argk[j], NT_("client")) == 0) {
          if (is_name_valid(ua->argv[j], NULL)) {
             CLIENT_DBR cr;
             memset(&cr, 0, sizeof(cr));
-            if(get_client_dbr(ua, &cr)) {
+            /* Both Backup & Restore wants to list jobs for this client */
+            if(get_client_dbr(ua, &cr, JT_BACKUP_RESTORE)) {
                jr.ClientId = cr.ClientId;
             }
          }
@@ -437,20 +470,29 @@ static int do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
 
       /* List FILES */
       } else if (strcasecmp(ua->argk[i], NT_("files")) == 0) {
-
+         int deleted = 0;       /* see only backed up files */
          for (j=i+1; j<ua->argc; j++) {
             if (strcasecmp(ua->argk[j], NT_("ujobid")) == 0 && ua->argv[j]) {
                bstrncpy(jr.Job, ua->argv[j], MAX_NAME_LENGTH);
                jr.JobId = 0;
                db_get_job_record(ua->jcr, ua->db, &jr);
                jobid = jr.JobId;
+
             } else if (strcasecmp(ua->argk[j], NT_("jobid")) == 0 && ua->argv[j]) {
                jobid = str_to_int64(ua->argv[j]);
+
+            } else if (strcasecmp(ua->argk[j], NT_("type")) == 0 && ua->argv[j]) {
+               if (strcasecmp(ua->argv[j], NT_("deleted")) == 0) {
+                  deleted = 1;
+               } else if (strcasecmp(ua->argv[j], NT_("all")) == 0) {
+                  deleted = -1;
+               }
+               continue;        /* Type should be before the jobid... */
             } else {
                continue;
             }
             if (jobid > 0) {
-               db_list_files_for_job(ua->jcr, ua->db, jobid, prtit, ua);
+               db_list_files_for_job(ua->jcr, ua->db, jobid, deleted, prtit, ua);
             }
          }
 
@@ -511,6 +553,84 @@ static int do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
 
       } else if (strcasecmp(ua->argk[i], NT_("clients")) == 0) {
          db_list_client_records(ua->jcr, ua->db, prtit, ua, llist);
+
+      } else if (strcasecmp(ua->argk[i], NT_("pluginrestoreconf")) == 0) {
+         ROBJECT_DBR rr;
+         memset(&rr, 0, sizeof(rr));
+         rr.FileType = FT_PLUGIN_CONFIG;
+
+         for (j=i+1; j<ua->argc; j++) {
+            if (strcasecmp(ua->argk[j], NT_("ujobid")) == 0 && ua->argv[j]) {
+               bstrncpy(jr.Job, ua->argv[j], MAX_NAME_LENGTH);
+               jr.JobId = 0;
+
+            } else if (strcasecmp(ua->argk[j], NT_("jobid")) == 0 && ua->argv[j]) {
+
+               if (acl_access_jobid_ok(ua, ua->argv[j])) {
+
+                  if (is_a_number(ua->argv[j])) {
+                     rr.JobId = str_to_uint64(ua->argv[j]);
+
+                  } else if (is_a_number_list(ua->argv[j])) {
+                     /* In this case, loop directly to find if all jobids are
+                      * accessible */
+                     rr.JobIds = ua->argv[j];
+                  }
+
+               } else {
+                  ua->error_msg(_("Invalid jobid argument\n"));
+                  return 1;
+               }
+
+            } else if (((strcasecmp(ua->argk[j], NT_("id")) == 0) ||
+                        (strcasecmp(ua->argk[j], NT_("restoreobjectid")) == 0))
+                       && ua->argv[j])
+            {
+               rr.RestoreObjectId = str_to_uint64(ua->argv[j]);
+
+            } else if (strcasecmp(ua->argk[j], NT_("objecttype")) == 0 && ua->argv[j]) {
+               if (strcasecmp(ua->argv[j], NT_("PLUGIN_CONFIG")) == 0) {
+                  rr.FileType = FT_PLUGIN_CONFIG;
+
+               } else if (strcasecmp(ua->argv[j], NT_("PLUGIN_CONFIG_FILLED")) == 0) {
+                  rr.FileType = FT_PLUGIN_CONFIG_FILLED;
+
+               } else if (strcasecmp(ua->argv[j], NT_("RESTORE_FIRST")) == 0) {
+                  rr.FileType = FT_RESTORE_FIRST;
+
+               } else if (strcasecmp(ua->argv[j], NT_("ALL")) == 0) {
+                  rr.FileType = 0;
+
+               } else {
+                  ua->error_msg(_("Unknown ObjectType %s\n"), ua->argv[j]);
+                  return 1;
+               }
+
+            } else {
+               continue;
+            }
+         }
+
+         if (!rr.JobId && !rr.JobIds) {
+            ua->error_msg(_("list pluginrestoreconf requires jobid argument\n"));
+            return 1;
+         }
+
+          /* Display the content of the restore object */
+         if (rr.RestoreObjectId > 0) {
+            /* Here, the JobId and the RestoreObjectId are set */
+            if (db_get_restoreobject_record(ua->jcr, ua->db, &rr)) {
+               ua->send_msg("%s\n", NPRTB(rr.object));
+            } else {
+               Dmsg0(200, "Object not found\n");
+            }
+
+         } else {
+            db_list_restore_objects(ua->jcr, ua->db, &rr, prtit, ua, llist);
+         }
+
+         db_free_restoreobject_record(ua->jcr, &rr);
+         return 1;
 
       /* List MEDIA or VOLUMES */
       } else if (strcasecmp(ua->argk[i], NT_("media")) == 0 ||
@@ -610,6 +730,10 @@ static int do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
                  || strcasecmp(ua->argk[i], NT_("order")) == 0
                  || strcasecmp(ua->argk[i], NT_("jobstatus")) == 0
                  || strcasecmp(ua->argk[i], NT_("client")) == 0
+                 || strcasecmp(ua->argk[i], NT_("type")) == 0
+                 || strcasecmp(ua->argk[i], NT_("level")) == 0
+                 || strcasecmp(ua->argk[i], NT_("jobtype")) == 0
+                 || strcasecmp(ua->argk[i], NT_("long")) == 0
          ) {
          /* Ignore it */
       } else if (strcasecmp(ua->argk[i], NT_("snapshot")) == 0 ||
@@ -709,8 +833,8 @@ RUN *find_next_run(RUN *run, JOB *job, utime_t &runtime, int ndays)
    bool is_scheduled;
 
    sched = job->schedule;
-   if (!sched || !job->enabled || (sched && !sched->enabled) ||
-       (job->client && !job->client->enabled)) {
+   if (!sched || !job->is_enabled() || (sched && !sched->is_enabled()) ||
+       (job->client && !job->client->is_enabled())) {
       return NULL;                 /* no nothing to report */
    }
 

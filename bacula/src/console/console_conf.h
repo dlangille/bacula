@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -20,12 +20,19 @@
  * Bacula User Agent specific configuration and defines
  *
  *     Kern Sibbald, Sep MM
+ */
+/*
+ * Bacula User Agent specific configuration and defines
+ *
+ *     Kern Sibbald, Sep MM
  *
  */
 
 /*
  * Resource codes -- they must be sequential for indexing
  */
+
+bool parse_cons_config(CONFIG *config, const char *configfile, int exit_code);
 
 enum {
    R_CONSOLE   = 1001,
@@ -54,6 +61,7 @@ struct CONRES {
    char *rc_file;                     /* startup file */
    char *hist_file;                   /* command history file */
    char *password;                    /* UA server password */
+   bool comm_compression;             /* Enable comm line compression */
    bool tls_authenticate;             /* Authenticate with TLS */
    bool tls_enable;                   /* Enable TLS on all connections */
    bool tls_require;                  /* Require TLS on all connections */

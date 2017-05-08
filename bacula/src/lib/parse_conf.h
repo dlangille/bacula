@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -25,16 +25,18 @@
 /* Used for certain keyword tables */
 struct s_kw {
    const char *name;
-   uint32_t token;
+   int token;
 };
 
 struct RES_ITEM;                   /* Declare forward referenced structure */
+struct RES_ITEM1;
 struct RES_ITEM2;                  /* Declare forward referenced structure */
-class RES;                         /* Declare forware referenced structure */
+class RES;                         /* Declare forward referenced structure */
+struct HPKT;                       /* Declare forward referenced structure */
+typedef void (RES_HANDLER)(HPKT &hpkt);
 typedef void (MSG_RES_HANDLER)(LEX *lc, RES_ITEM *item, int index, int pass);
+/* The INC_RES handler has an extra argument */
 typedef void (INC_RES_HANDLER)(LEX *lc, RES_ITEM2 *item, int index, int pass, bool exclude);
-
-
 
 /* This is the structure that defines
  * the record types (items) permitted within each
@@ -61,6 +63,30 @@ struct RES_ITEM {
    int32_t  default_value;            /* default value */
 };
 
+/*
+ * This handler takes only the RPKT as an argument
+ */
+struct RES_ITEM1 {
+   const char *name;                  /* Resource name i.e. Director, ... */
+   RES_HANDLER *handler;              /* Routine storing/displaying the resource */
+   union {
+      char **value;                   /* Where to store the item */
+      char **charvalue;
+      uint32_t ui32value;
+      int32_t i32value;
+      uint64_t ui64value;
+      int64_t i64value;
+      bool boolvalue;
+      utime_t utimevalue;
+      RES *resvalue;
+      RES **presvalue;
+   };
+   int32_t  code;                     /* item code/additional info */
+   uint32_t  flags;                   /* flags: default, required, ... */
+   int32_t  default_value;            /* default value */
+};
+
+/* INC_RES_HANDLER has exclude argument */
 struct RES_ITEM2 {
    const char *name;                  /* Resource name i.e. Director, ... */
    INC_RES_HANDLER *handler;          /* Routine storing the resource item */
@@ -85,15 +111,24 @@ struct RES_ITEM2 {
 /* For storing name_addr items in res_items table */
 #define ITEM(x) {(char **)&res_all.x}
 
-#define MAX_RES_ITEMS 80              /* maximum resource items per RES */
+#define MAX_RES_ITEMS 100             /* maximum resource items per RES */
 
-/* This is the universal header that is
+class RES_HEAD {
+public:
+   rblist *res_list;                  /* Resource list */
+   RES *first;                        /* First RES item in list */
+   RES *last;                         /* Last RES item inserted */
+};
+
+/*
+ * This is the universal header that is
  * at the beginning of every resource
  * record.
  */
 class RES {
 public:
-   RES *next;                         /* pointer to next resource of this type */
+   rblink link;                       /* red-black link */
+   RES *res_next;                     /* pointer to next resource of this type */
    char *name;                        /* resource name */
    char *desc;                        /* resource description */
    uint32_t rcode;                    /* resource id or type */
@@ -112,8 +147,6 @@ struct RES_TABLE {
    RES_ITEM *items;                   /* list of resource keywords */
    uint32_t rcode;                    /* code if needed */
 };
-
-
 
 /* Common Resource definitions */
 
@@ -157,31 +190,25 @@ public:
 inline char *MSGS::name() const { return hdr.name; }
 
 /*
- * Old C style configuration routines -- deprecated do not use.
- */
-//int   parse_config(const char *cf, LEX_ERROR_HANDLER *scan_error = NULL, int err_type=M_ERROR_TERM);
-void    free_config_resources(void);
-RES   **save_config_resources(void);
-RES   **new_res_head();
-
-/*
  * New C++ configuration routines
  */
 
-class CONFIG {
+class CONFIG: public SMARTALLOC {
 public:
    const char *m_cf;                   /* config file */
    LEX_ERROR_HANDLER *m_scan_error;    /* error handler if non-null */
    int32_t m_err_type;                 /* the way to terminate on failure */
    void *m_res_all;                    /* pointer to res_all buffer */
    int32_t m_res_all_size;             /* length of buffer */
+   bool  m_encode_pass;                /* Encode passwords with MD5 or not */
 
    /* The below are not yet implemented */
    int32_t m_r_first;                  /* first daemon resource type */
    int32_t m_r_last;                   /* last daemon resource type */
    RES_TABLE *m_resources;             /* pointer to table of permitted resources */
-   RES **m_res_head;                   /* pointer to defined resources */
+   RES_HEAD **m_res_head;              /* pointer to list of resources this type */
    brwlock_t m_res_lock;               /* resource lock */
+   POOLMEM *m_errmsg;
 
    /* functions */
    void init(
@@ -193,27 +220,35 @@ public:
       int32_t r_first,
       int32_t r_last,
       RES_TABLE *resources,
-      RES **res_head);
+      RES_HEAD ***res_head);
 
+   CONFIG();
+   ~CONFIG();
+   void encode_password(bool encode);
    bool parse_config();
-   void free_resources();
-   RES **save_resources();
-   RES **new_res_head();
+   void free_all_resources();
+   bool insert_res(int rindex, int size);
+   RES_HEAD **save_resources();
+   RES_HEAD **new_res_head();
+   void init_res_head(RES_HEAD ***rhead, int32_t first, int32_t last);
 };
 
-CONFIG *new_config_parser();
-
-
 /* Resource routines */
+int res_compare(void *item1, void *item2);
 RES *GetResWithName(int rcode, const char *name);
 RES *GetNextRes(int rcode, RES *res);
+RES *GetNextRes(RES_HEAD **rhead, int rcode, RES *res);
 void b_LockRes(const char *file, int line);
 void b_UnlockRes(const char *file, int line);
 void dump_resource(int type, RES *res, void sendmsg(void *sock, const char *fmt, ...), void *sock);
+void dump_each_resource(int type, void sendmsg(void *sock, const char *fmt, ...), void *sock);
 void free_resource(RES *res, int type);
-void init_resource(int type, RES_ITEM *item);
-void save_resource(int type, RES_ITEM *item, int pass);
+bool init_resource(CONFIG *config, uint32_t type, void *res);
+bool save_resource(CONFIG *config, int type, RES_ITEM *item, int pass);
+void unstrip_password(RES_TABLE *resources); /* Used for json stuff */
+void strip_password(RES_TABLE *resources);   /* Used for tray monitor */
 const char *res_to_str(int rcode);
+bool find_config_file(const char *config_file, char *full_path, int max_path);
 
 /* Loop through each resource of type, returning in var */
 #ifdef HAVE_TYPEOF
@@ -230,6 +265,7 @@ const char *res_to_str(int rcode);
  */
 void store_str(LEX *lc, RES_ITEM *item, int index, int pass);
 void store_dir(LEX *lc, RES_ITEM *item, int index, int pass);
+void store_clear_password(LEX *lc, RES_ITEM *item, int index, int pass);
 void store_password(LEX *lc, RES_ITEM *item, int index, int pass);
 void store_name(LEX *lc, RES_ITEM *item, int index, int pass);
 void store_strname(LEX *lc, RES_ITEM *item, int index, int pass);
@@ -253,5 +289,5 @@ void store_label(LEX *lc, RES_ITEM *item, int index, int pass);
 extern int32_t r_first;
 extern int32_t r_last;
 extern RES_TABLE resources[];
-extern RES **res_head;
+extern RES_HEAD **res_head;
 extern int32_t res_all_size;

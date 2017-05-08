@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2015 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -175,6 +175,24 @@ static void update_volretention(UAContext *ua, char *val, MEDIA_DBR *mr)
    }
 }
 
+static void update_vol_cacheretention(UAContext *ua, char *val, MEDIA_DBR *mr)
+{
+   char ed1[150], ed2[50];
+   POOL_MEM query(PM_MESSAGE);
+   if (!duration_to_utime(val, &mr->CacheRetention)) {
+      ua->error_msg(_("Invalid cache retention period specified: %s\n"), val);
+      return;
+   }
+   Mmsg(query, "UPDATE Media SET CacheRetention=%s WHERE MediaId=%s",
+      edit_uint64(mr->CacheRetention, ed1), edit_int64(mr->MediaId,ed2));
+   if (!db_sql_query(ua->db, query.c_str(), NULL, NULL)) {
+      ua->error_msg("%s", db_strerror(ua->db));
+   } else {
+      ua->info_msg(_("New Cache Retention period is: %s\n"),
+         edit_utime(mr->CacheRetention, ed1, sizeof(ed1)));
+   }
+}
+
 static void update_voluseduration(UAContext *ua, char *val, MEDIA_DBR *mr)
 {
    char ed1[150], ed2[50];
@@ -291,8 +309,9 @@ static void update_volslot(UAContext *ua, char *val, MEDIA_DBR *mr)
       return;
    }
    mr->Slot = atoi(val);
-   if (mr->Slot < 0) {
-      ua->error_msg(_("Invalid slot, it must be greater than zero\n"));
+   if (pr.MaxVols > 0 && mr->Slot > (int)pr.MaxVols) {
+      ua->error_msg(_("Invalid slot, it must be between 0 and MaxVols=%d\n"),
+         pr.MaxVols);
       return;
    }
    /*
@@ -526,6 +545,7 @@ static int update_volume(UAContext *ua)
       NT_("RecyclePool"),              /* 13 */
       NT_("ActionOnPurge"),            /* 14 */
       NT_("FromAllPools"),             /* 15 !!! see bellow !!! */
+      NT_("CacheRetention"),           /* 16 */
       NULL };
 
 #define FromPool     10              /* keep this updated */
@@ -602,6 +622,9 @@ static int update_volume(UAContext *ua)
          case 15:
             update_all_vols(ua);
             break;
+         case 16:
+            update_vol_cacheretention(ua, ua->argv[j], &mr);
+            break;
          }
          done = true;
       }
@@ -626,12 +649,13 @@ static int update_volume(UAContext *ua)
       add_prompt(ua, _("Enabled")),                    /* 14 */
       add_prompt(ua, _("RecyclePool")),                /* 15 */
       add_prompt(ua, _("Action On Purge")),            /* 16 */
-      add_prompt(ua, _("Done"));                       /* 17 */
+      add_prompt(ua, _("Cache Retention")),            /* 17 */
+      add_prompt(ua, _("Done"));                       /* 18 */
       i = do_prompt(ua, "", _("Select parameter to modify"), NULL, 0);
 
       /* For All Volumes, All Volumes from Pool, and Done, we don't need
            * a Volume record */
-      if ( i != 12 && i != 13 && i != 17) {
+      if ( i != 12 && i != 13 && i != 18) {
          if (!select_media_dbr(ua, &mr)) {  /* Get Volume record */
             return 0;
          }
@@ -825,6 +849,16 @@ static int update_volume(UAContext *ua)
          update_vol_actiononpurge(ua, ua->cmd, &mr);
          break;
 
+      case 17:
+         pm_strcpy(ret, "");
+         ua->info_msg(_("Current Cache Retention period is: %s\n"),
+                      edit_utime(mr.CacheRetention, ed1, sizeof(ed1)));
+         if (!get_cmd(ua, _("Enter Cache Retention period: "))) {
+            return 0;
+         }
+         update_vol_cacheretention(ua, ua->cmd, &mr);
+         break;
+
       default:                        /* Done or error */
          ua->info_msg(_("Selection terminated.\n"));
          return 1;
@@ -896,17 +930,19 @@ static bool update_pool(UAContext *ua)
  */
 static bool update_job(UAContext *ua)
 {
-   int i;
-   char ed1[50], ed2[50];
+   int i, priority=0;
+   char ed1[50], ed2[50], ed3[50];
    POOL_MEM cmd(PM_MESSAGE);
    JOB_DBR jr;
    CLIENT_DBR cr;
+   JCR *jcr;
    utime_t StartTime;
    char *client_name = NULL;
    char *start_time = NULL;
    const char *kw[] = {
       NT_("starttime"),                   /* 0 */
       NT_("client"),                      /* 1 */
+      NT_("priority"),                    /* 2 */
       NULL };
 
    Dmsg1(200, "cmd=%s\n", ua->cmd);
@@ -918,11 +954,18 @@ static bool update_job(UAContext *ua)
    memset(&jr, 0, sizeof(jr));
    memset(&cr, 0, sizeof(cr));
    jr.JobId = str_to_int64(ua->argv[i]);
+   if (jr.JobId == 0) {
+      ua->error_msg("Bad jobid\n");
+      return false;
+   }
    if (!db_get_job_record(ua->jcr, ua->db, &jr)) {
       ua->error_msg("%s", db_strerror(ua->db));
       return false;
    }
-
+   if (!acl_access_ok(ua, Job_ACL, jr.Name)) {
+      ua->error_msg(_("Update failed. Job not authorized on this console\n"));
+      return false;
+   }
    for (i=0; kw[i]; i++) {
       int j;
       if ((j=find_arg_with_value(ua, kw[i])) >= 0) {
@@ -933,15 +976,32 @@ static bool update_job(UAContext *ua)
          case 1:                         /* Client name */
             client_name = ua->argv[j];
             break;
+         case 2:
+            priority = str_to_int64(ua->argv[j]);
+            break;
          }
       }
    }
-   if (!client_name && !start_time) {
-      ua->error_msg(_("Neither Client nor StartTime specified.\n"));
+   if (!client_name && !start_time && !priority) {
+      ua->error_msg(_("Neither Client, StartTime or Priority specified.\n"));
       return 0;
    }
+   if (priority > 0) {
+      foreach_jcr(jcr) {
+         if (jcr->JobId == jr.JobId) {
+            int old = jcr->JobPriority;
+            jcr->JobPriority = priority;
+            free_jcr(jcr);
+            ua->send_msg(_("Priority updated for running job \"%s\" from %d to %d\n"), jr.Job, old, priority);
+            return true;
+         }
+      }
+      endeach_jcr(jcr);
+      ua->error_msg(_("Job not found.\n"));
+      return true;
+   }
    if (client_name) {
-      if (!get_client_dbr(ua, &cr)) {
+      if (!get_client_dbr(ua, &cr, JT_BACKUP_RESTORE)) {
          return false;
       }
       jr.ClientId = cr.ClientId;
@@ -972,8 +1032,8 @@ static bool update_job(UAContext *ua)
              jr.cStartTime,
              jr.cSchedTime,
              jr.cEndTime,
-             edit_uint64(jr.JobTDate, ed1),
-             edit_int64(jr.JobId, ed2));
+             edit_uint64(jr.JobTDate, ed2),
+             edit_int64(jr.JobId, ed3));
    if (!db_sql_query(ua->db, cmd.c_str(), NULL, NULL)) {
       ua->error_msg("%s", db_strerror(ua->db));
       return false;

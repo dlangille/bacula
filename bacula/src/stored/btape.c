@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -27,7 +27,6 @@
  *
  *   Note, this program reads stored.conf, and will only
  *     talk to devices that are configured.
- *
  */
 
 #include "bacula.h"
@@ -48,10 +47,6 @@ int quit = 0;
 char buf[100000];
 int bsize = TAPE_BSIZE;
 char VolName[MAX_NAME_LENGTH];
-STORES *me = NULL;                    /* our Global resource */
-bool forge_on = false;                /* proceed inspite of I/O errors */
-pthread_mutex_t device_release_mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_cond_t wait_device_release = PTHREAD_COND_INITIALIZER;
 
 /*
  * If you change the format of the state file,
@@ -143,6 +138,17 @@ static void usage();
 static void terminate_btape(int sig);
 int get_cmd(const char *prompt);
 
+class BtapeAskDirHandler: public BtoolsAskDirHandler
+{
+public:
+   BtapeAskDirHandler() {}
+   ~BtapeAskDirHandler() {}
+   bool dir_find_next_appendable_volume(DCR *dcr);
+   bool dir_ask_sysop_to_mount_volume(DCR *dcr, bool /* writing */);
+   bool dir_ask_sysop_to_create_appendable_volume(DCR *dcr);
+   bool dir_create_jobmedia_record(DCR *dcr, bool zero);
+};
+
 
 /*********************************************************************
  *
@@ -155,7 +161,9 @@ int main(int margc, char *margv[])
    uint32_t x32, y32;
    uint64_t x64, y64;
    char buf[1000];
+   BtapeAskDirHandler askdir_handler;
 
+   init_askdir_handler(&askdir_handler);
    setlocale(LC_ALL, "");
    bindtextdomain("bacula", LOCALEDIR);
    textdomain("bacula");
@@ -200,11 +208,14 @@ int main(int margc, char *margv[])
 
    OSDependentInit();
 
-   while ((ch = getopt(margc, margv, "b:c:d:psv?")) != -1) {
+   while ((ch = getopt(margc, margv, "b:w:c:d:psv?")) != -1) {
       switch (ch) {
       case 'b':                    /* bootstrap file */
          bsr = parse_bsr(NULL, optarg);
-//       dump_bsr(bsr, true);
+         break;
+
+      case 'w':
+         working_directory = optarg;
          break;
 
       case 'c':                    /* specify config file */
@@ -260,7 +271,7 @@ int main(int margc, char *margv[])
 
    daemon_start_time = time(NULL);
 
-   config = new_config_parser();
+   config = New(CONFIG());
    parse_sd_config(config, configfile, M_ERROR_TERM);
    setup_me();
    load_sd_plugins(me->plugin_directory);
@@ -284,11 +295,6 @@ int main(int margc, char *margv[])
    if (!dev) {
       exit(1);
    }
-   if (dev->is_dvd()) {
-      Pmsg0(000, _("btape does not work with DVD storage.\n"));
-      usage();
-      exit(1);
-   }
    if (!dev->is_tape()) {
       Pmsg0(000, _("btape only works with tape storage.\n"));
       usage();
@@ -309,8 +315,6 @@ static void terminate_btape(int stat)
 {
 
    Dsm_check(200);
-   free_jcr(jcr);
-   jcr = NULL;
 
    if (args) {
       free_pool_memory(args);
@@ -325,11 +329,13 @@ static void terminate_btape(int stat)
       free_bsr(bsr);
    }
 
+   free_jcr(jcr);
+   jcr = NULL;
 
    free_volume_lists();
 
    if (dev) {
-      dev->term();
+      dev->term(dcr);
    }
 
    if (configfile) {
@@ -337,22 +343,22 @@ static void terminate_btape(int stat)
    }
 
    if (config) {
-      config->free_resources();
-      free(config);
+      delete config;
       config = NULL;
    }
 
    if (chk_dbglvl(10))
       print_memory_pool_stats();
 
-   if (this_block) {
-      free_block(this_block);
-      this_block = NULL;
-   }
+   Dmsg1(900, "=== free_block %p\n", this_block);
+   free_block(this_block);
+   this_block = NULL;
 
    stop_watchdog();
    term_msg();
    term_last_jobs_list();
+   free(res_head);
+   res_head = NULL;
    close_memory_pool();               /* free memory in pool */
    lmgr_cleanup_main();
 
@@ -457,13 +463,14 @@ static void mix_buffer(fill_mode_t mode, char *data, uint32_t len)
 
 static bool open_the_device()
 {
-   DEV_BLOCK *block;
    bool ok = true;
 
-   block = new_block(dev);
+   if (!dcr->block) {
+      dev->new_dcr_blocks(dcr);
+   }
    dev->rLock(false);
    Dmsg1(200, "Opening device %s\n", dcr->VolumeName);
-   if (!dev->open(dcr, OPEN_READ_WRITE)) {
+   if (!dev->open_device(dcr, OPEN_READ_WRITE)) {
       Emsg1(M_FATAL, 0, _("dev open failed: %s\n"), dev->print_errmsg());
       ok = false;
       goto bail_out;
@@ -473,7 +480,6 @@ static bool open_the_device()
 
 bail_out:
    dev->Unlock();
-   free_block(block);
    return ok;
 }
 
@@ -502,7 +508,7 @@ static void labelcmd()
       }
    }
    dev->rewind(dcr);
-   write_new_volume_label_to_dev(dcr, cmd, "Default", false,/*no relabel*/ true /* label dvd now */);
+   dev->write_volume_label(dcr, cmd, "Default", false,/*no relabel*/ true/* label now */);
    Pmsg1(-1, _("Wrote Volume label for volume \"%s\".\n"), cmd);
 }
 
@@ -514,7 +520,7 @@ static void readlabelcmd()
    int64_t save_debug_level = debug_level;
    int stat;
 
-   stat = read_dev_volume_label(dcr);
+   stat = dev->read_dev_volume_label(dcr);
    switch (stat) {
    case VOL_NO_LABEL:
       Pmsg0(0, _("Volume has no label.\n"));
@@ -546,7 +552,7 @@ static void readlabelcmd()
    }
 
    debug_level = 20;
-   dump_volume_label(dev);
+   dev->dump_volume_label();
    debug_level = save_debug_level;
 }
 
@@ -598,7 +604,7 @@ static void weofcmd()
       num = 1;
    }
 
-   if (!dev->weof(num)) {
+   if (!dev->weof(NULL, num)) {
       Pmsg1(0, _("Bad status from weof. ERR=%s\n"), dev->bstrerror());
       return;
    } else {
@@ -748,7 +754,7 @@ static void rectestcmd()
 
    Dsm_check(200);
    save_block = dcr->block;
-   dcr->block = new_block(dev);
+   dcr->block = dev->new_block(dcr);
    rec = new_record();
 
    for (i=1; i<500000; i++) {
@@ -766,7 +772,8 @@ static void rectestcmd()
       Dsm_check(200);
    }
    free_record(rec);
-   free_block(dcr->block);
+   Dmsg0(900, "=== free_blocks\n");
+   dcr->dev->free_dcr_blocks(dcr);
    dcr->block = save_block;     /* restore block to dcr */
    Dsm_check(200);
 }
@@ -1277,7 +1284,6 @@ static bool position_test()
    bool got_eof = false;
 
    Pmsg0(0, _("Block position test\n"));
-   block = dcr->block;
    empty_block(block);
    rec = new_record();
    rec->data = check_pool_memory_size(rec->data, block->buf_len);
@@ -1332,7 +1338,9 @@ static bool position_test()
          continue;
       }
       Pmsg2(-1, _("Reposition to file:block %d:%d\n"), file, blk);
-      if (!dev->reposition(dcr, file, blk)) {
+      uint64_t addr = file;
+      addr = (addr<<32) + blk;
+      if (!dev->reposition(dcr, addr)) {
          Pmsg0(0, _("Reposition error.\n"));
          goto bail_out;
       }
@@ -1414,7 +1422,7 @@ static int append_test()
    if (dev->has_cap(CAP_TWOEOF)) {
       weofcmd();
    }
-   dev->close();              /* release device */
+   dev->close(dcr);              /* release device */
    if (!open_the_device()) {
       return -1;
    }
@@ -1509,7 +1517,7 @@ try_again:
    if (loaded) {
       dcr->VolCatInfo.Slot = loaded;
       /* We are going to load a new tape, so close the device */
-      dev->close();
+      dev->close(dcr);
       Pmsg2(-1, _("3302 Issuing autochanger \"unload %d %d\" command.\n"),
          loaded, dev->drive_index);
       changer = edit_device_codes(dcr, changer,
@@ -1534,7 +1542,7 @@ try_again:
    changer = edit_device_codes(dcr, changer,
                 dcr->device->changer_command, "load");
    Dmsg1(100, "Changer=%s\n", changer);
-   dev->close();
+   dev->close(dcr);
    status = run_program(changer, timeout, results);
    if (status == 0) {
       Pmsg2(-1,  _("3303 Autochanger \"load %d %d\" status is OK.\n"),
@@ -1554,7 +1562,7 @@ try_again:
     * a failure.
     */
    bmicrosleep(sleep_time, 0);
-   if (!dev->rewind(dcr) || !dev->weof(1)) {
+   if (!dev->rewind(dcr) || !dev->weof(dcr, 1)) {
       Pmsg1(0, _("Bad status from rewind. ERR=%s\n"), dev->bstrerror());
       dev->clrerror(-1);
       Pmsg0(-1, _("\nThe test failed, probably because you need to put\n"
@@ -1566,7 +1574,7 @@ try_again:
       Pmsg1(0, _("Rewound %s\n"), dev->print_name());
    }
 
-   if (!dev->weof(1)) {
+   if (!dev->weof(dcr, 1)) {
       Pmsg1(0, _("Bad status from weof. ERR=%s\n"), dev->bstrerror());
       goto bail_out;
    } else {
@@ -1870,7 +1878,7 @@ static void fsrcmd()
  */
 static void rbcmd()
 {
-   dev->open(dcr, OPEN_READ_ONLY);
+   dev->open_device(dcr, OPEN_READ_ONLY);
    dcr->read_block_from_dev(NO_BLOCK_NUMBER_CHECK);
 }
 
@@ -1889,7 +1897,7 @@ static void wrcmd()
    Dsm_check(200);
    empty_block(block);
    if (verbose > 1) {
-      dump_block(block, "test");
+      dump_block(dcr->dev, block, "test");
    }
 
    i = block->buf_len - 100;
@@ -2118,7 +2126,7 @@ static void scan_blocks()
          rec->remainder = 0;
          free_record(rec);
       } else if (verbose > 1) {
-         dump_block(block, "");
+         dump_block(dcr->dev, block, "");
       }
 
    }
@@ -2214,7 +2222,9 @@ static void fillcmd()
     *   subroutine.
     */
    Dmsg0(100, "just before acquire_device\n");
+   dcr->setVolCatName(dcr->VolumeName);
    if (!acquire_device_for_append(dcr)) {
+      Pmsg0(000, "Could not acquire_device_for_append()\n");
       jcr->setJobStatus(JS_ErrorTerminated);
       exit_code = 1;
       return;
@@ -2306,7 +2316,7 @@ static void fillcmd()
             Pmsg1(-1, _("%s Flush block, write EOF\n"), buf1);
             flush_block(block, 0);
 #ifdef needed_xxx
-            dev->weof(1);
+            dev->weof(dcr, 1);
 #endif
          }
 
@@ -2361,9 +2371,8 @@ static void fillcmd()
       /* Save last block info for second tape */
       last_block_num2 = last_block_num;
       last_file2 = last_file;
-      if (last_block2) {
-         free_block(last_block2);
-      }
+      Dmsg1(000, "=== free_block %p\n", last_block2);
+      free_block(last_block2);
       last_block2 = dup_block(last_block);
    }
 
@@ -2426,9 +2435,9 @@ static void unfillcmd()
    int fd;
 
    exit_code = 0;
-   last_block1 = new_block(dev);
-   last_block2 = new_block(dev);
-   first_block = new_block(dev);
+   last_block1 = dev->new_block(dcr);
+   last_block2 = dev->new_block(dcr);
+   first_block = dev->new_block(dcr);
    sprintf(buf, "%s/btape.state", working_directory);
    fd = open(buf, O_RDONLY);
    if (fd >= 0) {
@@ -2472,6 +2481,7 @@ static bool do_unfill()
    DEV_BLOCK *block = dcr->block;
    int autochanger;
    bool rc = false;
+   uint64_t addr;
 
    dumped = 0;
    VolBytes = 0;
@@ -2486,10 +2496,9 @@ static bool do_unfill()
    time(&jcr->run_time);              /* start counting time for rates */
    stop = 0;
    file_index = 0;
-   if (last_block) {
-      free_block(last_block);
-      last_block = NULL;
-   }
+   Dmsg1(900, "=== free_block %p\n", last_block);
+   free_block(last_block);
+   last_block = NULL;
    last_block_num = last_block_num1;
    last_file = last_file1;
    last_block = last_block1;
@@ -2497,7 +2506,7 @@ static bool do_unfill()
    free_restore_volume_list(jcr);
    jcr->bsr = NULL;
    bstrncpy(dcr->VolumeName, "TestVolume1|TestVolume2", sizeof(dcr->VolumeName));
-   create_restore_volume_list(jcr);
+   create_restore_volume_list(jcr, true);
    if (jcr->VolList != NULL) {
       jcr->VolList->Slot = 1;
       if (jcr->VolList->next != NULL) {
@@ -2511,18 +2520,18 @@ static bool do_unfill()
       /* Multiple Volume tape */
       /* Close device so user can use autochanger if desired */
       if (dev->has_cap(CAP_OFFLINEUNMOUNT)) {
-         dev->offline();
+         dev->offline(dcr);
       }
       autochanger = autoload_device(dcr, 1, NULL);
       if (autochanger != 1) {
          Pmsg1(100, "Autochanger returned: %d\n", autochanger);
-         dev->close();
+         dev->close(dcr);
          get_cmd(_("Mount first tape. Press enter when ready: "));
          Pmsg0(000, "\n");
       }
    }
 
-   dev->close();
+   dev->close(dcr);
    dev->num_writers = 0;
    dcr->clear_writing();
    if (!acquire_device_for_read(dcr)) {
@@ -2545,7 +2554,9 @@ static bool do_unfill()
    read_records(dcr, quickie_cb, my_mount_next_read_volume);
    Pmsg4(-1, _("Reposition from %u:%u to %u:%u\n"), dev->file, dev->block_num,
          last_file, last_block_num);
-   if (!dev->reposition(dcr, last_file, last_block_num)) {
+   addr = last_file;
+   addr = (addr << 32) + last_block_num;
+   if (!dev->reposition(dcr, addr)) {
       Pmsg1(-1, _("Reposition error. ERR=%s\n"), dev->bstrerror());
       goto bail_out;
    }
@@ -2574,7 +2585,7 @@ static bool do_unfill()
    /* Multiple Volume tape */
    /* Close device so user can use autochanger if desired */
    if (dev->has_cap(CAP_OFFLINEUNMOUNT)) {
-      dev->offline();
+      dev->offline(dcr);
    }
 
    set_volume_name("TestVolume2", 2);
@@ -2582,7 +2593,7 @@ static bool do_unfill()
    autochanger = autoload_device(dcr, 1, NULL);
    if (autochanger != 1) {
       Pmsg1(100, "Autochanger returned: %d\n", autochanger);
-      dev->close();
+      dev->close(dcr);
       get_cmd(_("Mount second tape. Press enter when ready: "));
       Pmsg0(000, "\n");
    }
@@ -2598,7 +2609,8 @@ static bool do_unfill()
     * on the previous tape.
     */
    Pmsg2(-1, _("Reposition from %u:%u to 0:1\n"), dev->file, dev->block_num);
-   if (!dev->reposition(dcr, 0, 1)) {
+   addr = 1;
+   if (!dev->reposition(dcr, addr)) {
       Pmsg1(-1, _("Reposition error. ERR=%s\n"), dev->bstrerror());
       goto bail_out;
    }
@@ -2614,7 +2626,9 @@ static bool do_unfill()
    /* Now find and compare the last block */
    Pmsg4(-1, _("Reposition from %u:%u to %u:%u\n"), dev->file, dev->block_num,
          last_file, last_block_num);
-   if (!dev->reposition(dcr, last_file, last_block_num)) {
+   addr = last_file;
+   addr = (addr<<32) + last_block_num;
+   if (!dev->reposition(dcr, addr)) {
       Pmsg1(-1, _("Reposition error. ERR=%s\n"), dev->bstrerror());
       goto bail_out;
    }
@@ -2668,9 +2682,9 @@ static bool compare_blocks(DEV_BLOCK *last_block, DEV_BLOCK *block)
          continue;
       }
       Pmsg0(-1, "\n");
-      dump_block(last_block, _("Last block written"));
+      dump_block(NULL, last_block, _("Last block written"));
       Pmsg0(-1, "\n");
-      dump_block(block, _("Block read back"));
+      dump_block(NULL, block, _("Block read back"));
       Pmsg1(-1, _("\n\nThe blocks differ at byte %u\n"), p - last_block->buf);
       Pmsg0(-1, _("\n\n!!!! The last block written and the block\n"
                 "that was read back differ. The test FAILED !!!!\n"
@@ -2679,8 +2693,8 @@ static bool compare_blocks(DEV_BLOCK *last_block, DEV_BLOCK *block)
       return false;
    }
    if (verbose) {
-      dump_block(last_block, _("Last block written"));
-      dump_block(block, _("Block read back"));
+      dump_block(NULL, last_block, _("Last block written"));
+      dump_block(NULL, block, _("Block read back"));
    }
    return true;
 }
@@ -2699,10 +2713,10 @@ static int flush_block(DEV_BLOCK *block, int dump)
 
    dev->rLock(false);
    if (!this_block) {
-      this_block = new_block(dev);
+      this_block = dev->new_block(dcr);
    }
    if (!last_block) {
-      last_block = new_block(dev);
+      last_block = dev->new_block(dcr);
    }
    /* Copy block */
    this_file = dev->file;
@@ -2724,9 +2738,9 @@ static int flush_block(DEV_BLOCK *block, int dump)
       if (verbose) {
          Pmsg3(000, _("Block not written: FileIndex=%u blk_block=%u Size=%u\n"),
             (unsigned)file_index, block->BlockNumber, block->block_len);
-         dump_block(last_block, _("Last block written"));
+         dump_block(dev, last_block, _("Last block written"));
          Pmsg0(-1, "\n");
-         dump_block(block, _("Block not written"));
+         dump_block(dev, block, _("Block not written"));
       }
       if (stop == 0) {
          eot_block = block->BlockNumber;
@@ -2962,6 +2976,7 @@ PROG_COPYRIGHT
 "       -dt         print timestamp in debug output\n"
 "       -p          proceed inspite of I/O errors\n"
 "       -s          turn off signals\n"
+"       -w <dir>    set working directory to dir\n"
 "       -v          be verbose\n"
 "       -?          print this message.\n"
 "\n"), 2000, "", VERSION, BDATE);
@@ -3003,38 +3018,19 @@ get_cmd(const char *prompt)
    return 0;
 }
 
-/* Dummies to replace askdir.c */
-bool    dir_update_file_attributes(DCR *dcr, DEV_RECORD *rec) { return 1;}
-bool    dir_send_job_status(JCR *jcr) {return 1;}
-bool    flush_jobmedia_queue(JCR *jcr) { return true; }
-
-bool dir_update_volume_info(DCR *dcr, bool relabel, bool update_LastWritten)
-{
-   return 1;
-}
-
-
-bool dir_get_volume_info(DCR *dcr, enum get_vol_info_rw  writing)
-{
-   Dmsg0(20, "Enter dir_get_volume_info\n");
-   dcr->setVolCatName(dcr->VolumeName);
-   return 1;
-}
-
-bool dir_create_jobmedia_record(DCR *dcr, bool zero)
+bool BtapeAskDirHandler::dir_create_jobmedia_record(DCR *dcr, bool zero)
 {
    dcr->WroteVol = false;
    return 1;
 }
 
-
-bool dir_find_next_appendable_volume(DCR *dcr)
+bool BtapeAskDirHandler::dir_find_next_appendable_volume(DCR *dcr)
 {
    Dmsg1(20, "Enter dir_find_next_appendable_volume. stop=%d\n", stop);
    return dcr->VolumeName[0] != 0;
 }
 
-bool dir_ask_sysop_to_mount_volume(DCR *dcr, bool /* writing */)
+bool BtapeAskDirHandler::dir_ask_sysop_to_mount_volume(DCR *dcr, bool /* writing */)
 {
    DEVICE *dev = dcr->dev;
    Dmsg0(20, "Enter dir_ask_sysop_to_mount_volume\n");
@@ -3049,12 +3045,12 @@ bool dir_ask_sysop_to_mount_volume(DCR *dcr, bool /* writing */)
       fprintf(stderr, _("Mount Volume \"%s\" on device %s and press return when ready: "),
          dcr->VolumeName, dev->print_name());
    }
-   dev->close();
+   dev->close(dcr);
    getchar();
    return true;
 }
 
-bool dir_ask_sysop_to_create_appendable_volume(DCR *dcr)
+bool BtapeAskDirHandler::dir_ask_sysop_to_create_appendable_volume(DCR *dcr)
 {
    int autochanger;
    DEVICE *dev = dcr->dev;
@@ -3066,14 +3062,14 @@ bool dir_ask_sysop_to_create_appendable_volume(DCR *dcr)
    }
    /* Close device so user can use autochanger if desired */
    if (dev->has_cap(CAP_OFFLINEUNMOUNT)) {
-      dev->offline();
+      dev->offline(dcr);
    }
    autochanger = autoload_device(dcr, 1, NULL);
    if (autochanger != 1) {
       Pmsg1(100, "Autochanger returned: %d\n", autochanger);
       fprintf(stderr, _("Mount blank Volume on device %s and press return when ready: "),
          dev->print_name());
-      dev->close();
+      dev->close(dcr);
       getchar();
       Pmsg0(000, "\n");
    }
@@ -3116,7 +3112,7 @@ static bool my_mount_next_read_volume(DCR *dcr)
 
    set_volume_name("TestVolume2", 2);
 
-   dev->close();
+   dev->close(dcr);
    if (!acquire_device_for_read(dcr)) {
       Pmsg2(0, _("Cannot open Dev=%s, Vol=%s\n"), dev->print_name(), dcr->VolumeName);
       return false;

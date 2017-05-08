@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -64,16 +64,16 @@ daemon_start()
    if (debug_level > 0) {
       next_fd = 3;                    /* don't close debug output */
    }
- 
-#if HAVE_FCNTL_F_CLOSEM
+
+#if defined(HAVE_FCNTL_F_CLOSEM)
    fcntl(next_fd, F_CLOSEM);
-#elif HAVE_CLOSEFROM
+#elif defined(HAVE_CLOSEFROM)
    closefrom(next_fd);
-#else 
+#else
    for (i=sysconf(_SC_OPEN_MAX); i >= next_fd; i--) {
       close(i);
    }
-#endif 
+#endif
 
    /* Move to root directory. For debug we stay
     * in current directory so dumps go there.

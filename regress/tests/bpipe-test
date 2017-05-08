@@ -1,0 +1,160 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2017 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+#
+# Attempt to backup and restore a file with the bpipe plugin
+#
+TestName="bpipe-test"
+JobName=pluginTest
+. scripts/functions
+
+scripts/cleanup
+scripts/copy-plugin-confs
+
+file=encrypt-bug.jpg
+rm -rf ${cwd}/tmp/*
+echo "${cwd}/README" >${cwd}/tmp/file-list
+
+start_test
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@output /dev/null
+messages
+@$out ${cwd}/tmp/log1.out
+label storage=File1 volume=TestVolume001
+estimate job=$JobName level=Full
+@#setdebug level=50 traclient=$CLIENT
+run job=$JobName storage=File1 yes
+wait
+@#setdebug level=50 client=$CLIENT
+run job=$JobName storage=File1 yes
+wait
+status client=$CLIENT
+messages
+quit
+END_OF_DATA
+
+
+run_bacula
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@$out $tmp/files
+list files jobid=1
+list files jobid=2
+@$out $tmp/list
+llist pluginrestoreconf jobid=1
+llist pluginrestoreconf jobid=2
+@$out $tmp/conf
+llist pluginrestoreconf jobid=1 id=1
+llist pluginrestoreconf jobid=1 id=2
+END_OF_DATA
+
+run_bconsole
+
+nb=`grep Makefile $tmp/files | wc -l`
+if [ $nb -ne 2 ]; then
+    print_debug "ERROR: Should have two times Makefile in job files $tmp/files"
+    bstat=1
+fi
+
+nb=`grep $file $tmp/files | wc -l`
+if [ $nb -ne 2 ]; then
+    print_debug "ERROR: Should have two times $file in job files $tmp/files"
+    bstat=1
+fi
+
+nb=`grep README $tmp/files | wc -l`
+if [ $nb -ne 1 ]; then
+    print_debug "ERROR: Should have one time README in job files $tmp/files"
+    bstat=1
+fi
+
+nb=`grep $file $tmp/list | wc -l`
+if [ $nb -ne 1 ]; then
+    print_debug "ERROR: Should find the RestoreObject for $file in $tmp/list"
+    bstat=1
+fi
+
+nb=`grep Makefile $tmp/list | wc -l`
+if [ $nb -ne 1 ]; then
+    print_debug "ERROR: Should find the RestoreObject for Makefile in $tmp/list"
+    bstat=1
+fi
+
+nb=`grep restore_command $tmp/conf | wc -l`
+if [ $nb -ne 2 ]; then
+    print_debug "ERROR: Should find the RestoreObject for Makefile and $file in $tmp/conf"
+    bstat=1
+fi
+
+cat <<EOF >$tmp/obj
+restore_command="cat >$tmp/Makefile.bak"
+EOF
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+messages
+@# 
+@# now do a restore
+@#
+@$out ${cwd}/tmp/log3.out
+setdebug level=50 client=$CLIENT trace=1
+@putfile obj1 $tmp/obj
+restore pluginrestoreconf="2:obj1" where=${cwd}/tmp  select all storage=File1 done
+yes
+wait
+setdebug level=0 client=$CLIENT trace=0
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+
+#
+# Remove plugin so we can try the restore without the plugin
+#
+mv -f ${cwd}/bin/plugins/bpipe-fd.so ${cwd}/bin/plugins/bpipe-fd.sox
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@$out ${cwd}/tmp/log2.out
+@# 
+@# now do a restore without the plugin
+@#
+@$out ${cwd}/tmp/log2.out
+@#setdebug level=50 client=$CLIENT
+restore where=${cwd}/tmp  select all storage=File1 done
+yes
+wait
+messages
+quit
+END_OF_DATA
+
+stop_bacula
+run_bacula -d50
+run_bconsole
+
+check_for_zombie_jobs storage=File1
+stop_bacula
+#
+# Restore plugin
+#
+mv -f ${cwd}/bin/plugins/bpipe-fd.sox ${cwd}/bin/plugins/bpipe-fd.so
+
+check_two_logs
+#
+# ****FIXME**** test that all three files are restored correctly
+#
+diff ${cwd}/Makefile ${cwd}/tmp/Makefile.bak
+dstat=$?
+
+diff ${cwd}/${file} ${cwd}/tmp/${file}
+dstat=$(($dstat + $?))
+
+diff ${cwd}/tmp/@bpipe@/${file} ${cwd}/${file}
+dstat=$(($dstat + $?))
+
+diff ${cwd}/tmp/@bpipe@/Makefile ${cwd}/Makefile
+dstat=$(($dstat + $?))
+
+end_test

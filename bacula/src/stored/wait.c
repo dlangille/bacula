@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -23,7 +23,6 @@
  *  Code for wait_for_sysop() pulled from askdir.c
  *
  *   Kern Sibbald, March 2005
- *
  */
 
 
@@ -293,23 +292,60 @@ bool wait_for_device(DCR *dcr, int &retries)
 }
 
 
-#ifdef xxx
 /*
- * The jcr timers are used for waiting on any device *
+ * This routine initializes the device wait timers
+ */
+void init_device_wait_timers(DCR *dcr)
+{
+   DEVICE *dev = dcr->dev;
+   JCR *jcr = dcr->jcr;
+
+   /* ******FIXME******* put these on config variables */
+   dev->min_wait = 60 * 60;
+   dev->max_wait = 24 * 60 * 60;
+   dev->max_num_wait = 9;              /* 5 waits =~ 1 day, then 1 day at a time */
+   dev->wait_sec = dev->min_wait;
+   dev->rem_wait_sec = dev->wait_sec;
+   dev->num_wait = 0;
+   dev->poll = false;
+
+   jcr->min_wait = 60 * 60;
+   jcr->max_wait = 24 * 60 * 60;
+   jcr->max_num_wait = 9;              /* 5 waits =~ 1 day, then 1 day at a time */
+   jcr->wait_sec = jcr->min_wait;
+   jcr->rem_wait_sec = jcr->wait_sec;
+   jcr->num_wait = 0;
+
+}
+
+void init_jcr_device_wait_timers(JCR *jcr)
+{
+   /* ******FIXME******* put these on config variables */
+   jcr->min_wait = 60 * 60;
+   jcr->max_wait = 24 * 60 * 60;
+   jcr->max_num_wait = 9;              /* 5 waits =~ 1 day, then 1 day at a time */
+   jcr->wait_sec = jcr->min_wait;
+   jcr->rem_wait_sec = jcr->wait_sec;
+   jcr->num_wait = 0;
+}
+
+
+/*
+ * The dev timers are used for waiting on a particular device
+ *
  * Returns: true if time doubled
  *          false if max time expired
  */
-static bool double_jcr_wait_time(JCR *jcr)
+bool double_dev_wait_time(DEVICE *dev)
 {
-   jcr->wait_sec *= 2;               /* double wait time */
-   if (jcr->wait_sec > jcr->max_wait) {   /* but not longer than maxtime */
-      jcr->wait_sec = jcr->max_wait;
+   dev->wait_sec *= 2;               /* double wait time */
+   if (dev->wait_sec > dev->max_wait) {   /* but not longer than maxtime */
+      dev->wait_sec = dev->max_wait;
    }
-   jcr->num_wait++;
-   jcr->rem_wait_sec = jcr->wait_sec;
-   if (jcr->num_wait >= jcr->max_num_wait) {
+   dev->num_wait++;
+   dev->rem_wait_sec = dev->wait_sec;
+   if (dev->num_wait >= dev->max_num_wait) {
       return false;
    }
    return true;
 }
-#endif

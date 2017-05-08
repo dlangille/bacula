@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -47,8 +47,7 @@
  */
 int32_t r_first = R_FIRST;
 int32_t r_last  = R_LAST;
-static RES *sres_head[R_LAST - R_FIRST + 1];
-RES **res_head = sres_head;
+RES_HEAD **res_head;
 
 /* Forward referenced subroutines */
 
@@ -88,6 +87,7 @@ static RES_ITEM cons_items[] = {
    {"TlsKey",         store_dir,       ITEM(res_cons.tls_keyfile), 0, 0, 0},
    {"Director",       store_str,       ITEM(res_cons.director), 0, 0, 0},
    {"HeartbeatInterval", store_time, ITEM(res_cons.heartbeat_interval), 0, ITEM_DEFAULT, 5 * 60},
+   {"CommCompression",   store_bool, ITEM(res_cons.comm_compression), 0, ITEM_DEFAULT, true},
    {NULL, NULL, {0}, 0, 0, 0}
 };
 
@@ -123,9 +123,9 @@ RES_TABLE resources[] = {
 };
 
 /* Dump contents of resource */
-void dump_resource(int type, RES *reshdr, void sendit(void *sock, const char *fmt, ...), void *sock)
+void dump_resource(int type, RES *rres, void sendit(void *sock, const char *fmt, ...), void *sock)
 {
-   URES *res = (URES *)reshdr;
+   URES *res = (URES *)rres;
    bool recurse = true;
 
    if (res == NULL) {
@@ -138,18 +138,20 @@ void dump_resource(int type, RES *reshdr, void sendit(void *sock, const char *fm
    }
    switch (type) {
    case R_CONSOLE:
-      printf(_("Console: name=%s rcfile=%s histfile=%s\n"), reshdr->name,
+      printf(_("Console: name=%s rcfile=%s histfile=%s\n"), rres->name,
              res->res_cons.rc_file, res->res_cons.hist_file);
       break;
    case R_DIRECTOR:
-      printf(_("Director: name=%s address=%s DIRport=%d\n"), reshdr->name,
+      printf(_("Director: name=%s address=%s DIRport=%d\n"), rres->name,
               res->res_dir.address, res->res_dir.DIRport);
       break;
    default:
       printf(_("Unknown resource type %d\n"), type);
    }
-   if (recurse && res->res_dir.hdr.next) {
-      dump_resource(type, res->res_dir.hdr.next, sendit, sock);
+
+   rres = GetNextRes(type, rres);
+   if (recurse && rres) {
+      dump_resource(type, rres, sendit, sock);
    }
 }
 
@@ -160,17 +162,15 @@ void dump_resource(int type, RES *reshdr, void sendit(void *sock, const char *fm
  * resource chain is traversed.  Mainly we worry about freeing
  * allocated strings (names).
  */
-void free_resource(RES *sres, int type)
+void free_resource(RES *rres, int type)
 {
-   RES *nres;
-   URES *res = (URES *)sres;
+   URES *res = (URES *)rres;
 
    if (res == NULL) {
       return;
    }
 
    /* common stuff -- free the resource name */
-   nres = (RES *)res->res_dir.hdr.next;
    if (res->res_dir.hdr.name) {
       free(res->res_dir.hdr.name);
    }
@@ -204,6 +204,9 @@ void free_resource(RES *sres, int type)
       if (res->res_cons.director) {
          free(res->res_cons.director);
       }
+      if (res->res_cons.password) {
+         free(res->res_cons.password);
+      }
       break;
    case R_DIRECTOR:
       if (res->res_dir.address) {
@@ -224,24 +227,23 @@ void free_resource(RES *sres, int type)
       if (res->res_dir.tls_keyfile) {
          free(res->res_dir.tls_keyfile);
       }
+      if (res->res_dir.password) {
+         free(res->res_dir.password);
+      }
       break;
    default:
       printf(_("Unknown resource type %d\n"), type);
    }
    /* Common stuff again -- free the resource, recurse to next one */
    free(res);
-   if (nres) {
-      free_resource(nres, type);
-   }
 }
 
 /* Save the new resource by chaining it into the head list for
  * the resource. If this is pass 2, we update any resource
  * pointers (currently only in the Job resource).
  */
-void save_resource(int type, RES_ITEM *items, int pass)
+bool save_resource(CONFIG *config, int type, RES_ITEM *items, int pass)
 {
-   URES *res;
    int rindex = type - r_first;
    int i, size;
    int error = 0;
@@ -251,10 +253,11 @@ void save_resource(int type, RES_ITEM *items, int pass)
     */
    for (i=0; items[i].name; i++) {
       if (items[i].flags & ITEM_REQUIRED) {
-            if (!bit_is_set(i, res_all.res_dir.hdr.item_present)) {
-               Emsg2(M_ERROR_TERM, 0, _("\"%s\" directive is required in \"%s\" resource, but not found.\n"),
+         if (!bit_is_set(i, res_all.res_dir.hdr.item_present)) {
+            Mmsg(config->m_errmsg, _("\"%s\" directive is required in \"%s\" resource, but not found.\n"),
                  items[i].name, resources[rindex].name);
-             }
+            return false;
+         }
       }
    }
 
@@ -286,7 +289,7 @@ void save_resource(int type, RES_ITEM *items, int pass)
          free(res_all.res_dir.hdr.desc);
          res_all.res_dir.hdr.desc = NULL;
       }
-      return;
+      return true;
    }
 
    /* The following code is only executed during pass 1 */
@@ -305,30 +308,16 @@ void save_resource(int type, RES_ITEM *items, int pass)
    }
    /* Common */
    if (!error) {
-      res = (URES *)malloc(size);
-      memcpy(res, &res_all, size);
-      if (!res_head[rindex]) {
-         res_head[rindex] = (RES *)res; /* store first entry */
-      } else {
-         RES *next, *last;
-         for (last=next=res_head[rindex]; next; next=next->next) {
-            last = next;
-            if (strcmp(next->name, res->res_dir.hdr.name) == 0) {
-               Emsg2(M_ERROR_TERM, 0,
-                  _("Attempt to define second \"\"%s\" resource named \"%s\" is not permitted.\n"),
-                  resources[rindex].name, res->res_dir.hdr.name);
-            }
-         }
-         last->next = (RES *)res;
-         Dmsg2(90, "Inserting %s res: %s\n", res_to_str(type),
-               res->res_dir.hdr.name);
+      if (!config->insert_res(rindex, size)) {
+         return false;
       }
    }
+   return true;
 }
 
 bool parse_cons_config(CONFIG *config, const char *configfile, int exit_code)
 {
    config->init(configfile, NULL, exit_code, (void *)&res_all, res_all_size,
-      r_first, r_last, resources, res_head);
+      r_first, r_last, resources, &res_head);
    return config->parse_config();
 }

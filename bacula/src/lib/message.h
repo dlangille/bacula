@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -69,6 +69,8 @@
  *  M_ALERT       For Tape Alert messages.
  *
  *  M_VOLMGMT     Volume Management message
+ *
+ * M_DEBUG and M_SAVED are excluded from M_ALL by default
  */
 
 enum {
@@ -156,6 +158,8 @@ struct MQUEUE_ITEM {
 #define    DT_MEMORY     (1<<24)                /* memory  */
 #define    DT_SCHEDULER  (1<<23)                /* scheduler */
 #define    DT_PROTOCOL   (1<<22)                /* protocol */
+#define    DT_xxxxx      (1<<21)                /* reserved BEE */
+#define    DT_xxx        (1<<20)                /* reserved BEE */
 #define    DT_SNAPSHOT   (1<<19)                /* Snapshot */
 #define    DT_ASX        (1<<16)                /* used by Alain for personal debugging */
 #define    DT_ALL        (0x7FFF0000)           /* all (up to debug_level 65635, 15 flags available) */
@@ -172,6 +176,7 @@ void Qmsg(JCR *jcr, int type, utime_t mtime, const char *fmt,...) CHECK_FORMAT(p
 bool get_trace(void);
 void set_debug_flags(char *options);
 const char *get_basename(const char *pathname);
+bool is_message_type_set(JCR *jcr, int type);
 
 class BDB;                                              /* define forward reference */
 typedef bool (*sql_query_call)(JCR *jcr, const char *cmd);

@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -53,6 +53,9 @@ int bget_msg(BSOCK *sock)
          return n;
       }
       if (sock->is_stop()) {         /* error return */
+         return n;
+      }
+      if (n == BNET_COMMAND) {
          return n;
       }
 
@@ -160,5 +163,6 @@ int GetMsg::bget_msg(bmessage **pbmsg)
 
    msglen = bmsg->msglen;
    msg = bmsg->msg;
+   m_is_stop = bsock->is_stop() || bsock->is_error();
    return bmsg->ret;
 }

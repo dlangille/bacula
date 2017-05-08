@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2015 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -20,7 +20,6 @@
  * Application Programming Interface (API) definition for Bacula Plugins
  *
  * Kern Sibbald, October 2007
- *
  */
 
 #ifndef __FD_PLUGINS_H
@@ -91,7 +90,7 @@ struct save_pkt {
    char *link;                        /* Link name if any */
    struct stat statp;                 /* System stat() packet for file */
    int32_t type;                      /* FT_xx for this file */
-   uint32_t flags;                    /* Bacula internal flags */
+   uint64_t flags;                     /* Bacula internal flags */
    bool no_read;                      /* During the save, the file should not be saved */
    bool portable;                     /* set if data format is portable */
    bool accurate_found;               /* Found in accurate list (valid after check_changes()) */
@@ -147,7 +146,7 @@ struct io_pkt {
    int32_t io_errno;                  /* errno code */
    int32_t lerror;                    /* Win32 error code */
    int32_t whence;                    /* lseek argument */
-   boffset_t offset;                  /* lseek argument */
+   boffset_t offset;                  /* lseek argument or in bread current offset*/
    bool win32;                        /* Win32 GetLastError returned */
    int32_t pkt_end;                   /* end packet sentinel */
 };

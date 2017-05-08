@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2015 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -110,7 +110,8 @@ int purge_cmd(UAContext *ua, const char *cmd)
          }
          return 1;
       case 2:                         /* client */
-         client = get_client_resource(ua);
+         /* We restrict the client list to ClientAcl, maybe something to change later */
+         client = get_client_resource(ua, JT_SYSTEM);
          if (client) {
             purge_files_from_client(ua, client);
          }
@@ -125,7 +126,8 @@ int purge_cmd(UAContext *ua, const char *cmd)
    case 1:
       switch(find_arg_keyword(ua, jobs_keywords)) {
       case 0:                         /* client */
-         client = get_client_resource(ua);
+         /* We restrict the client list to ClientAcl, maybe something to change later */
+         client = get_client_resource(ua, JT_SYSTEM);
          if (client) {
             purge_jobs_from_client(ua, client);
          }
@@ -156,13 +158,15 @@ int purge_cmd(UAContext *ua, const char *cmd)
    }
    switch (do_keyword_prompt(ua, _("Choose item to purge"), keywords)) {
    case 0:                            /* files */
-      client = get_client_resource(ua);
+      /* We restrict the client list to ClientAcl, maybe something to change later */
+      client = get_client_resource(ua, JT_SYSTEM);
       if (client) {
          purge_files_from_client(ua, client);
       }
       break;
    case 1:                            /* jobs */
-      client = get_client_resource(ua);
+      /* We restrict the client list to ClientAcl, maybe something to change later */
+      client = get_client_resource(ua, JT_SYSTEM);
       if (client) {
          purge_jobs_from_client(ua, client);
       }
@@ -392,7 +396,7 @@ void upgrade_copies(UAContext *ua, char *jobs)
    int dbtype = ua->db->bdb_get_type_index();
 
    db_lock(ua->db);
-   
+
    Mmsg(query, uap_upgrade_copies_oldest_job[dbtype], JT_JOB_COPY, jobs, jobs);
    db_sql_query(ua->db, query.c_str(), NULL, (void *)NULL);
    Dmsg1(050, "Upgrade copies Log sql=%s\n", query.c_str());
@@ -431,8 +435,8 @@ void purge_jobs_from_catalog(UAContext *ua, char *jobs)
    db_sql_query(ua->db, query.c_str(), NULL, (void *)NULL);
    Dmsg1(050, "Delete RestoreObject sql=%s\n", query.c_str());
 
-   /* The JobId of the Snapshot record is no longer usable 
-    * TODO: Migth want to use a copy for the jobid? 
+   /* The JobId of the Snapshot record is no longer usable
+    * TODO: Migth want to use a copy for the jobid?
     */
    Mmsg(query, "UPDATE Snapshot SET JobId=0 WHERE JobId IN (%s)", jobs);
    db_sql_query(ua->db, query.c_str(), NULL, (void *)NULL);
@@ -495,7 +499,7 @@ bool purge_jobs_from_volume(UAContext *ua, MEDIA_DBR *mr, bool force)
       purge_jobs_from_catalog(ua, jobids);
    }
 
-   ua->info_msg(_("%d File%s on Volume \"%s\" purged from catalog.\n"),
+   ua->info_msg(_("%d Job%s on Volume \"%s\" purged from catalog.\n"),
                 lst.count, lst.count<=1?"":"s", mr->VolumeName);
 
    purged = is_volume_purged(ua, mr, force);
@@ -561,16 +565,15 @@ bail_out:
  * Called here to send the appropriate commands to the SD
  *  to do truncate on purge.
  */
-static void do_truncate_on_purge(UAContext *ua, MEDIA_DBR *mr,
-                                 char *pool, char *storage,
-                                 int drive, BSOCK *sd)
+static void truncate_volume(UAContext *ua, MEDIA_DBR *mr,
+                            char *pool, char *storage,
+                            int drive, BSOCK *sd)
 {
    bool ok = false;
    uint64_t VolBytes = 0;
    uint64_t VolABytes = 0;
    uint32_t VolType = 0;
 
-   /* TODO: Return if not mr->Recyle ? */
    if (!mr->Recycle) {
       return;
    }
@@ -578,9 +581,10 @@ static void do_truncate_on_purge(UAContext *ua, MEDIA_DBR *mr,
    /* Do it only if action on purge = truncate is set */
    if (!(mr->ActionOnPurge & ON_PURGE_TRUNCATE)) {
       ua->error_msg(_("\nThe option \"Action On Purge = Truncate\" was not defined in the Pool resource.\n"
-         "Unable to truncate volume \"%s\"\n"), mr->VolumeName);
+                      "Unable to truncate volume \"%s\"\n"), mr->VolumeName);
       return;
    }
+
    /*
     * Send the command to truncate the volume after purge. If this feature
     * is disabled for the specific device, this will be a no-op.
@@ -595,35 +599,40 @@ static void do_truncate_on_purge(UAContext *ua, MEDIA_DBR *mr,
    /* Do it by relabeling the Volume, which truncates it */
    sd->fsend("relabel %s OldName=%s NewName=%s PoolName=%s "
              "MediaType=%s Slot=%d drive=%d\n",
-                storage,
-                mr->VolumeName, mr->VolumeName,
-                pool, mr->MediaType, mr->Slot, drive);
+             storage,
+             mr->VolumeName, mr->VolumeName,
+             pool, mr->MediaType, mr->Slot, drive);
 
    unbash_spaces(mr->VolumeName);
    unbash_spaces(mr->MediaType);
    unbash_spaces(pool);
    unbash_spaces(storage);
 
-   /* Send relabel command, and check for valid response */
-   while (sd->recv() >= 0) {
+   /* Check for valid response. With cloud volumes, the upload of the part.1 can
+    * generate a dir_update_volume_info() message that is handled by bget_dirmsg()
+    */
+   while (bget_dirmsg(sd) >= 0) {
       ua->send_msg("%s", sd->msg);
       if (sscanf(sd->msg, "3000 OK label. VolBytes=%llu VolABytes=%lld VolType=%d ",
-         &VolBytes, &VolABytes, &VolType) == 3) {
-         ok = true;
+                 &VolBytes, &VolABytes, &VolType) == 3) {
+
+         ok=true;
+         mr->VolBytes = VolBytes;
+         mr->VolABytes = VolABytes;
+         mr->VolType = VolType;
+         mr->VolFiles = 0;
+         mr->VolParts = 1;
+         mr->VolCloudParts = 0;
+         mr->LastPartBytes = VolBytes;
+
+         set_storageid_in_mr(NULL, mr);
+         if (!db_update_media_record(ua->jcr, ua->db, mr)) {
+            ua->error_msg(_("Can't update volume size in the catalog\n"));
+         }
+         ua->send_msg(_("The volume \"%s\" has been truncated\n"), mr->VolumeName);
       }
    }
-
-   if (ok) {
-      mr->VolBytes = VolBytes;
-      mr->VolABytes = VolABytes;
-      mr->VolType = VolType;
-      mr->VolFiles = 0;
-      set_storageid_in_mr(NULL, mr);
-      if (!db_update_media_record(ua->jcr, ua->db, mr)) {
-         ua->error_msg(_("Can't update volume size in the catalog\n"));
-      }
-      ua->send_msg(_("The volume \"%s\" has been truncated\n"), mr->VolumeName);
-   } else {
+   if (!ok) {
       ua->warning_msg(_("Unable to truncate volume \"%s\"\n"), mr->VolumeName);
    }
 }
@@ -632,7 +641,12 @@ static void do_truncate_on_purge(UAContext *ua, MEDIA_DBR *mr,
  * Implement Bacula bconsole command  purge action
  *     purge action=truncate pool= volume= storage= mediatype=
  * or
- *     truncate pool= volume= storage= mediatype=
+ *     truncate [cache] pool= volume= storage= mediatype=
+ *
+ * If the keyword "cache:  is present, then we use the truncate
+ *   command rather than relabel so that the driver can decide
+ *   whether or not it wants to truncate.  Note: only the
+ *   Cloud driver permits truncating the cache.
  *
  * Note, later we might want to rename this action_on_purge_cmd() as
  *  was the original, but only if we add additional actions such as
@@ -641,66 +655,20 @@ static void do_truncate_on_purge(UAContext *ua, MEDIA_DBR *mr,
  */
 int truncate_cmd(UAContext *ua, const char *cmd)
 {
-   bool allpools = false;
    int drive = -1;
    int nb = 0;
    uint32_t *results = NULL;
    const char *action = "truncate";
-   STORE *store = NULL;
-   POOL *pool = NULL;
    MEDIA_DBR mr;
    POOL_DBR pr;
-   BSOCK *sd = NULL;
+   BSOCK *sd;
+   char storage[MAX_NAME_LENGTH];
 
+   if (find_arg(ua, "cache") > 0) {
+      return cloud_volumes_cmd(ua, cmd, "truncate cache");
+   }
+   
    memset(&pr, 0, sizeof(pr));
-
-   /* Look at arguments */
-   for (int i=1; i<ua->argc; i++) {
-      if (strcasecmp(ua->argk[i], NT_("allpools")) == 0) {
-         allpools = true;
-
-      } else if (strcasecmp(ua->argk[i], NT_("volume")) == 0
-                 && is_name_valid(ua->argv[i], NULL)) {
-         bstrncpy(mr.VolumeName, ua->argv[i], sizeof(mr.VolumeName));
-
-      } else if (strcasecmp(ua->argk[i], NT_("mediatype")) == 0
-                 && ua->argv[i]) {
-         bstrncpy(mr.MediaType, ua->argv[i], sizeof(mr.MediaType));
-
-      } else if (strcasecmp(ua->argk[i], NT_("drive")) == 0 && ua->argv[i]) {
-         drive = atoi(ua->argv[i]);
-
-      } else if (strcasecmp(ua->argk[i], NT_("action")) == 0
-                 && is_name_valid(ua->argv[i], NULL)) {
-         action = ua->argv[i];
-      }
-   }
-
-   /* Choose storage */
-   ua->jcr->wstore = store =  get_storage_resource(ua, false);
-   if (!store) {
-      goto bail_out;
-   }
-
-   if (!open_db(ua)) {
-      Dmsg0(100, "Can't open db\n");
-      goto bail_out;
-   }
-
-   if (!allpools) {
-      /* force pool selection */
-      pool = get_pool_resource(ua);
-      if (!pool) {
-         Dmsg0(100, "Can't get pool resource\n");
-         goto bail_out;
-      }
-      bstrncpy(pr.Name, pool->name(), sizeof(pr.Name));
-      if (!db_get_pool_record(ua->jcr, ua->db, &pr)) {
-         Dmsg0(100, "Can't get pool record\n");
-         goto bail_out;
-      }
-      mr.PoolId = pr.PoolId;
-   }
 
    /*
     * Look for all Purged volumes that can be recycled, are enabled and
@@ -709,15 +677,10 @@ int truncate_cmd(UAContext *ua, const char *cmd)
    mr.Recycle = 1;
    mr.Enabled = 1;
    mr.VolBytes = 200;
-   set_storageid_in_mr(store, &mr);
    bstrncpy(mr.VolStatus, "Purged", sizeof(mr.VolStatus));
-   if (!db_get_media_ids(ua->jcr, ua->db, &mr, &nb, &results)) {
-      Dmsg0(100, "No results from db_get_media_ids\n");
-      goto bail_out;
-   }
 
-   if (!nb) {
-      ua->send_msg(_("No Volumes found to perform \"truncate\" command.\n"));
+   if (!scan_storage_cmd(ua, cmd, true, /* allfrompool */
+                         &drive, &mr, &pr, &action, storage, &nb, &results)) {
       goto bail_out;
    }
 
@@ -733,12 +696,24 @@ int truncate_cmd(UAContext *ua, const char *cmd)
       mr.clear();
       mr.MediaId = results[i];
       if (db_get_media_record(ua->jcr, ua->db, &mr)) {
-         /* TODO: ask for drive and change Pool */
+         if (drive < 0) {
+            STORE *store = (STORE*)GetResWithName(R_STORAGE, storage);
+            drive = get_storage_drive(ua, store);
+         }
+
+         /* Must select Pool if not already done */
+         if (pr.PoolId == 0) {
+            pr.PoolId = mr.PoolId;
+            if (!db_get_pool_record(ua->jcr, ua->db, &pr)) {
+               return 1;
+            }
+         }
          if (strcasecmp("truncate", action) == 0) {
-            do_truncate_on_purge(ua, &mr, pr.Name, store->dev_name(), drive, sd);
+            truncate_volume(ua, &mr, pr.Name, storage,
+                            drive, sd);
          }
       } else {
-         Dmsg1(0, "Can't find MediaId=%lld\n", (uint64_t)mr.MediaId);
+         Dmsg1(0, "Can't find MediaId=%lu\n", mr.MediaId);
       }
    }
 

@@ -60,14 +60,20 @@ case "$1" in
        daemon $DAEMON_OPTIONS @sbindir@/bacula-dir $2 ${DIR_OPTIONS} -c @sysconfdir@/bacula-dir.conf
        RETVAL=$?
        echo
-       [ $RETVAL -eq 0 ] && touch @subsysdir@/bacula-dir
+       if [ $RETVAL -eq 0 ]; then
+          touch @subsysdir@/bacula-dir
+          logger -p daemon.info "bacula-dir started" >/dev/null 2>/dev/null
+       fi
        ;;
     stop)
        echo -n "Stopping Bacula Director services: "
        killproc @sbindir@/bacula-dir
        RETVAL=$?
        echo
-       [ $RETVAL -eq 0 ] && rm -f @subsysdir@/bacula-dir
+       if [ $RETVAL -eq 0 ]; then
+          rm -f @subsysdir@/bacula-dir
+          logger -p daemon.info "bacula-dir stopped" >/dev/null 2>/dev/null
+       fi
        ;;
     restart)
        $0 stop

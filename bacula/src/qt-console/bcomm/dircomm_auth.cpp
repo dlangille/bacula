@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,12 +11,11 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
 */
-
 /*
  *
  *   Bacula UA authentication. Provides authentication with
@@ -43,6 +42,7 @@ static char hello[]    = "Hello %s calling %d\n";
 /* Response from Director */
 static char oldOKhello[]   = "1000 OK:";
 static char newOKhello[]   = "1000 OK: %d";
+static char FDOKhello[]   = "2000 OK Hello %d";
 
 /* Forward referenced functions */
 
@@ -153,13 +153,23 @@ bool DirComm::authenticate_director(JCR *jcr, DIRRES *director, CONRES *cons,
 
    dir->stop_timer();
    Dmsg1(10, "<dird: %s", dir->msg);
-   if (strncmp(dir->msg, oldOKhello, sizeof(oldOKhello)-1) != 0) {
-      bsnprintf(errmsg, errmsg_len, _("Director at \"%s:%d\" rejected Hello command\n"),
-         dir->host(), dir->port());
-      return false;
-   } else {
+   if (strncmp(dir->msg, oldOKhello, sizeof(oldOKhello)-1) == 0) {
       /* If Dir version exists, get it */
-      sscanf(dir->msg, newOKhello, &dir_version); 
+      sscanf(dir->msg, newOKhello, &dir_version);
+
+      /* We do not check the last %d */
+   } else if (strncmp(dir->msg, FDOKhello, sizeof(FDOKhello)-3) == 0) {
+      sscanf(dir->msg, FDOKhello, &dir_version);
+      // TODO: Keep somewhere that we need a proxy command, or run it directly?
+   } else {
+      bsnprintf(errmsg, errmsg_len, _("Director at \"%s:%d\" rejected Hello command\n"),
+                dir->host(), dir->port());
+      return false;
+   }
+   
+   /* Turn on compression for newer Directors */
+   if (dir_version >= 1 && (!cons || cons->comm_compression)) {
+      dir->set_compress();
    }
 
    if (m_conn == 0) { 

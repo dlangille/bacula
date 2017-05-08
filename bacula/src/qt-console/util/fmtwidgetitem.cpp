@@ -25,7 +25,7 @@
  *
  */ 
 
-#include "bat.h"
+#include "../bat.h"
 #include <QTreeWidgetItem>
 #include <QTableWidget>
 #include <QTableWidgetItem>

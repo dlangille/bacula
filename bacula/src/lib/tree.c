@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -328,6 +328,7 @@ static TREE_NODE *search_and_insert_tree_node(char *fname, int type,
    strcpy(node->fname, fname);
    node->parent = parent;
    node->type = type;
+   node->can_access = true;
 
    /* Maintain a linear chain of nodes */
    if (!root->first) {
@@ -433,6 +434,9 @@ TREE_NODE *tree_relcwd(char *path, TREE_ROOT *root, TREE_NODE *node)
    }
    if (!cd || (cd->type == TN_FILE && !tree_node_has_child(cd))) {
       return NULL;
+   }
+   if (!cd->can_access) {       /* Will display permission denied */
+      return cd;
    }
    if (!p) {
       Dmsg0(100, "tree_relcwd: no more to lookup. found.\n");

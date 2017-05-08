@@ -1,8 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2015 Kern Sibbald
-   Copyright (C) 2002-2014 Free Software Foundation Europe e.V.
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -12,13 +11,12 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
- *
  *   Bacula Director -- User Agent Database restore Command
  *      Creates a bootstrap file for restoring files and
  *      starts the restore job.
@@ -61,6 +59,7 @@ static void get_and_display_basejobs(UAContext *ua, RESTORE_CTX *rx);
 
 void new_rx(RESTORE_CTX *rx)
 {
+   RBSR *bsr = NULL;
    memset(rx, 0, sizeof(*rx));
    rx->path = get_pool_memory(PM_FNAME);
    rx->path[0] = 0;
@@ -80,9 +79,10 @@ void new_rx(RESTORE_CTX *rx)
    rx->query = get_pool_memory(PM_FNAME);
    rx->query[0] = 0;
 
-   rx->bsr = new_bsr();
+   rx->bsr_list = New(rblist(bsr, &bsr->link));
    rx->hardlinks_in_mem = true;
 }
+
 
 /*
  *   Restore files
@@ -107,6 +107,10 @@ int restore_cmd(UAContext *ua, const char *cmd)
    }
 
    for (i = 0; i < ua->argc ; i++) {
+      if (strcasecmp(ua->argk[i], "fdcalled") == 0) {
+         rx.fdcalled = true;
+      }
+
       if (!ua->argv[i]) {
          continue;           /* skip if no value given */
       }
@@ -118,6 +122,9 @@ int restore_cmd(UAContext *ua, const char *cmd)
 
       } else if (strcasecmp(ua->argk[i], "where") == 0) {
          rx.where = ua->argv[i];
+
+      } else if (strcasecmp(ua->argk[i], "when") == 0) {
+         rx.when = ua->argv[i];
 
       } else if (strcasecmp(ua->argk[i], "replace") == 0) {
          rx.replace = ua->argv[i];
@@ -139,7 +146,7 @@ int restore_cmd(UAContext *ua, const char *cmd)
              strcasecmp(ua->argv[i], "false")) {
             rx.hardlinks_in_mem = false;
          }
-      }
+     }
    }
 
    if (strip_prefix || add_suffix || add_prefix) {
@@ -204,9 +211,9 @@ int restore_cmd(UAContext *ua, const char *cmd)
       break;
    }
 
-   if (rx.bsr->JobId) {
+   if (rx.bsr_list->size() > 0) {
       char ed1[50];
-      if (!complete_bsr(ua, rx.bsr)) {   /* find Vol, SessId, SessTime from JobIds */
+      if (!complete_bsr(ua, rx.bsr_list)) {   /* find Vol, SessId, SessTime from JobIds */
          ua->error_msg(_("Unable to construct a valid BSR. Cannot continue.\n"));
          goto bail_out;
       }
@@ -279,6 +286,15 @@ int restore_cmd(UAContext *ua, const char *cmd)
       pm_strcat(ua->cmd, buf);
    }
 
+   if (rx.fdcalled) {
+      pm_strcat(ua->cmd, " fdcalled=yes");
+   }
+
+   if (rx.when) {
+      Mmsg(buf, " when=\"%s\"", rx.when);
+      pm_strcat(ua->cmd, buf);
+   }
+
    if (rx.comment) {
       Mmsg(buf, " comment=\"%s\"", rx.comment);
       pm_strcat(ua->cmd, buf);
@@ -307,6 +323,9 @@ int restore_cmd(UAContext *ua, const char *cmd)
     *  line.
     */
    /* ***FIXME*** pass jobids on command line */
+   if (jcr->JobIds) {
+      free_pool_memory(jcr->JobIds);
+   }
    jcr->JobIds = rx.JobIds;
    rx.JobIds = NULL;
    jcr->component_fname = rx.component_fname;
@@ -331,6 +350,12 @@ bail_out:
    if (regexp) {
       bfree(regexp);
    }
+
+   /* Free the plugin config if needed, we don't want to re-use
+    * this part of the next try
+    */
+   free_plugin_config_items(jcr->plugin_config);
+   jcr->plugin_config = NULL;
 
    free_rx(&rx);
    garbage_collect_memory();       /* release unused memory */
@@ -360,13 +385,17 @@ static void get_and_display_basejobs(UAContext *ua, RESTORE_CTX *rx)
 
 void free_rx(RESTORE_CTX *rx)
 {
-   free_bsr(rx->bsr);
-   rx->bsr = NULL;
+   free_bsr(rx->bsr_list);
+   rx->bsr_list = NULL;
    free_and_null_pool_memory(rx->JobIds);
    free_and_null_pool_memory(rx->BaseJobIds);
    free_and_null_pool_memory(rx->fname);
    free_and_null_pool_memory(rx->path);
    free_and_null_pool_memory(rx->query);
+   if (rx->fileregex) {
+      free(rx->fileregex);
+      rx->fileregex = NULL;
+   }
    if (rx->component_fd) {
       fclose(rx->component_fd);
       rx->component_fd = NULL;
@@ -409,7 +438,8 @@ static int get_client_name(UAContext *ua, RESTORE_CTX *rx)
          return 1;
       }
       memset(&cr, 0, sizeof(cr));
-      if (!get_client_dbr(ua, &cr)) {
+      /* We want the name of the client where the backup was made */
+      if (!get_client_dbr(ua, &cr, JT_BACKUP_RESTORE)) {
          return 0;
       }
       bstrncpy(rx->ClientName, cr.Name, sizeof(rx->ClientName));
@@ -504,6 +534,10 @@ static int user_select_jobids_or_files(UAContext *ua, RESTORE_CTX *rx)
       "comment",       /* 21 */
       "restorejob",    /* 22 */
       "replace",       /* 23 */
+      "xxxxxxxxx",     /* 24 */
+      "fdcalled",      /* 25 */
+      "when",          /* 26 */
+
       NULL
    };
 
@@ -867,8 +901,8 @@ static int user_select_jobids_or_files(UAContext *ua, RESTORE_CTX *rx)
       pm_strcat(JobIds, edit_int64(JobId, ed1));
       rx->TotalFiles += jr.JobFiles;
    }
-   free_pool_memory(rx->JobIds);
-   rx->JobIds = JobIds;               /* Set ACL filtered list */
+   pm_strcpy(rx->JobIds, JobIds);     /* Set ACL filtered list */
+   free_pool_memory(JobIds);
    if (*rx->JobIds == 0) {
       ua->warning_msg(_("No Jobs selected.\n"));
       return 0;
@@ -915,7 +949,7 @@ static void insert_one_file_or_dir(UAContext *ua, RESTORE_CTX *rx, char *date, b
    switch (*p) {
    case '<':
       p++;
-      if ((ffd = fopen(p, "rb")) == NULL) {
+      if ((ffd = bfopen(p, "rb")) == NULL) {
          berrno be;
          ua->error_msg(_("Cannot open file %s: ERR=%s\n"),
             p, be.bstrerror());
@@ -1075,14 +1109,41 @@ static void split_path_and_filename(UAContext *ua, RESTORE_CTX *rx, char *name)
    Dmsg2(100, "split path=%s file=%s\n", rx->path, rx->fname);
 }
 
+static bool can_restore_all_files(UAContext *ua)
+{
+   alist *lst;
+   if (ua->cons) {
+      lst = ua->cons->ACL_lists[Directory_ACL];
+      /* ACL not defined, or the first entry is not *all* */
+      /* TODO: See if we search for *all* in all the list */
+      if (!lst || strcasecmp((char*)lst->get(0), "*all*") != 0) {
+         return false;
+      }
+      if (!lst || strcasecmp((char *)lst->get(0), "*all*") != 0) {
+         return false;
+      }
+   }
+   return true;
+}
+
 static bool ask_for_fileregex(UAContext *ua, RESTORE_CTX *rx)
 {
-   if (find_arg(ua, NT_("all")) >= 0) {  /* if user enters all on command line */
+   bool can_restore=can_restore_all_files(ua);
+
+   if (can_restore && find_arg(ua, NT_("all")) >= 0) {  /* if user enters all on command line */
       return true;                       /* select everything */
    }
+
    ua->send_msg(_("\n\nFor one or more of the JobIds selected, no files were found,\n"
                  "so file selection is not possible.\n"
                  "Most likely your retention policy pruned the files.\n"));
+
+   if (!can_restore) {
+      ua->error_msg(_("\nThe current Console has UserId or Directory restrictions. "
+                      "The full restore is not allowed.\n"));
+      return false;
+   }
+
    if (get_yesno(ua, _("\nDo you want to restore all the files? (yes|no): "))) {
       if (ua->pint32_val == 1)
          return true;
@@ -1104,7 +1165,7 @@ static bool ask_for_fileregex(UAContext *ua, RESTORE_CTX *rx)
             if (*errmsg) {
                ua->send_msg(_("Regex compile error: %s\n"), errmsg);
             } else {
-               rx->bsr->fileregex = bstrdup(ua->cmd);
+               rx->fileregex = bstrdup(ua->cmd);
                return true;
             }
          }
@@ -1127,7 +1188,7 @@ static void add_delta_list_findex(RESTORE_CTX *rx, struct delta_list *lst)
    if (lst->next) {
       add_delta_list_findex(rx, lst->next);
    }
-   add_findex(rx->bsr, lst->JobId, lst->FileIndex);
+   add_findex(rx->bsr_list, lst->JobId, lst->FileIndex);
 }
 
 /*
@@ -1185,6 +1246,7 @@ static bool build_directory_tree(UAContext *ua, RESTORE_CTX *rx)
    tree.all = rx->all;
    tree.hardlinks_in_mem = rx->hardlinks_in_mem;
    last_JobId = 0;
+   tree.last_dir_acl = NULL;
    /*
     * For display purposes, the same JobId, with different volumes may
     * appear more than once, however, we only insert it once.
@@ -1268,7 +1330,7 @@ static bool build_directory_tree(UAContext *ua, RESTORE_CTX *rx)
              if (JobId == last_JobId) {
                 continue;                    /* eliminate duplicate JobIds */
              }
-             add_findex_all(rx->bsr, JobId);
+             add_findex_all(rx->bsr_list, JobId, rx->fileregex);
          }
       }
    } else {
@@ -1298,7 +1360,7 @@ static bool build_directory_tree(UAContext *ua, RESTORE_CTX *rx)
                Dmsg3(400, "JobId=%lld type=%d FI=%d\n", (uint64_t)node->JobId, node->type, node->FileIndex);
                /* TODO: optimize bsr insertion when jobid are non sorted */
                add_delta_list_findex(rx, node->delta_list);
-               add_findex(rx->bsr, node->JobId, node->FileIndex);
+               add_findex(rx->bsr_list, node->JobId, node->FileIndex);
                /*
                 * Special VSS plugin code to return selected
                 *   components. For the moment, it is hard coded
@@ -1318,7 +1380,11 @@ static bool build_directory_tree(UAContext *ua, RESTORE_CTX *rx)
          }
       }
    }
-
+   if (tree.uid_acl) {
+      delete tree.uid_acl;
+      delete tree.gid_acl;
+      delete tree.dir_acl;
+   }
    free_tree(tree.root);              /* free the directory tree */
    return OK;
 }
@@ -1351,7 +1417,7 @@ static bool select_backups_before_date(UAContext *ua, RESTORE_CTX *rx, char *dat
     * Select Client from the Catalog
     */
    memset(&cr, 0, sizeof(cr));
-   if (!get_client_dbr(ua, &cr)) {
+   if (!get_client_dbr(ua, &cr, JT_BACKUP_RESTORE)) {
       goto bail_out;
    }
    bstrncpy(rx->ClientName, cr.Name, sizeof(rx->ClientName));
@@ -1517,7 +1583,7 @@ static int jobid_fileindex_handler(void *ctx, int num_fields, char **row)
       rx->JobId = JobId;
    }
 
-   add_findex(rx->bsr, rx->JobId, str_to_int64(row[1]));
+   add_findex(rx->bsr_list, rx->JobId, str_to_int64(row[1]));
    rx->found = true;
    rx->selected_files++;
    return 0;
@@ -1614,13 +1680,12 @@ void find_storage_resource(UAContext *ua, RESTORE_CTX &rx, char *Storage, char *
          ua->info_msg(_("\nWarning Storage is overridden by \"%s\" on the command line.\n"),
             store->name());
          rx.store = store;
-         bstrncpy(Storage, store->name(), MAX_NAME_LENGTH); /* Return overridden Storage */
+         bstrncpy(rx.RestoreMediaType, MediaType, sizeof(rx.RestoreMediaType));
          if (strcmp(MediaType, store->media_type) != 0) {
-            ua->info_msg(_("Warning MediaType overridden by Storage Media Type:\n"
-               "  New Storage MediaType=\"%s\"\n"
-               "  Old Volume  MediaType=\"%s\".\n\n"),
+            ua->info_msg(_("This may not work because of two different MediaTypes:\n"
+               "  Storage MediaType=\"%s\"\n"
+               "  Volume  MediaType=\"%s\".\n\n"),
                store->media_type, MediaType);
-            bstrncpy(MediaType, store->media_type, MAX_NAME_LENGTH); /* Return overridden MediaType */
          }
          Dmsg2(200, "Set store=%s MediaType=%s\n", rx.store->name(), rx.RestoreMediaType);
       }

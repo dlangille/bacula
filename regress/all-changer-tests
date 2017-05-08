@@ -1,12 +1,16 @@
 #!/bin/sh
 #
-# Copyright (C) 2000-2015 Kern Sibbald
+# Copyright (C) 2000-2017 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
+# ./run all changer tests
+#
 
-#
-# ./run all tape tests
-#
+if test x$FORCE_CLOUD = xyes ; then
+   echo "All changer tests skipped for FORCE_CLOUD"
+   exit 0
+fi
+
 echo "Start autochanger tests"
 echo "Start autochanger tests" >>test.out
 rm -f dumps/*

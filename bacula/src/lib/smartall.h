@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -61,8 +61,8 @@ extern int sm_check_rtn(const char *fname, int lineno, bool bufdump);
 /* Redefine standard memory allocator calls to use our routines
    instead. */
 
-#define free(x)        sm_free(__FILE__, __LINE__, (x))
-#define cfree(x)       sm_free(__FILE__, __LINE__, (x))
+#define free(x)        sm_free(__FILE__, __LINE__, (void *)(x))
+#define cfree(x)       sm_free(__FILE__, __LINE__, (void *)(x))
 #define malloc(x)      sm_malloc(__FILE__, __LINE__, (x))
 #define calloc(n,e)    sm_calloc(__FILE__, __LINE__, (n), (e))
 #define realloc(p,x)   sm_realloc(__FILE__, __LINE__, (p), (x))

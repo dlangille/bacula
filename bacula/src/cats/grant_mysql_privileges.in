@@ -2,7 +2,7 @@
 #
 # shell script to grant privileges to the bacula database
 #
-# Copyright (C) 2000-2016 Kern Sibbald
+# Copyright (C) 2000-2017 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
 db_user=${db_user:-@db_user@}
@@ -17,7 +17,7 @@ if [ "$db_ssl_options" != "" ]; then
    ssl_options="require $db_ssl_options"
 fi
  
-if $bindir/mysql $* -u root -f 2>/dev/null 1>/dev/null	<<EOD
+if $bindir/mysql $* -u root -f 2>/dev/null 1>/dev/null  <<EOD
 use mysql;
 create user ${db_user} ${pass};
 EOD

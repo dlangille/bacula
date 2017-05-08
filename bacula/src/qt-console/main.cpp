@@ -151,7 +151,7 @@ int main(int argc, char *argv[])
       configfile = bstrdup(CONFIG_FILE);
    }
 
-   config = new_config_parser();
+   config = New(CONFIG());
    parse_bat_config(config, configfile, M_ERROR_TERM);
 
    if (init_crypto() != 0) {

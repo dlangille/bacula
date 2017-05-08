@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -326,6 +326,7 @@ void stored_free_jcr(JCR *jcr)
       delete jcr->jobmedia_queue;
       jcr->jobmedia_queue = NULL;
    }
+
    if (jcr->dir_bsock) {
       Dmsg2(800, "Send terminate jid=%d %p\n", jcr->JobId, jcr);
       jcr->dir_bsock->signal(BNET_EOD);

@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -23,7 +23,6 @@
  *    with the tape.
  *
  *   Kern E. Sibbald, December 2001
- *
  */
 
 #include "bacula.h"
@@ -100,10 +99,6 @@ static CONFIG *config;
 
 void *start_heap;
 char *configfile = NULL;
-STORES *me = NULL;                    /* our Global resource */
-bool forge_on = false;                /* proceed inspite of I/O errors */
-pthread_mutex_t device_release_mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_cond_t wait_device_release = PTHREAD_COND_INITIALIZER;
 
 static void usage()
 {
@@ -121,9 +116,6 @@ PROG_COPYRIGHT
 "       -u <user>         specify database user name (default bacula)\n"
 "       -P <password>     specify database password (default none)\n"
 "       -h <host>         specify database host (default NULL)\n"
-"       -k <sslkey>       path name to the key file (default NULL)\n"
-"       -e <sslcert>      path name to the certificate file (default NULL)\n"
-"       -a <sslca>        path name to the CA certificate file (default NULL)\n"
 "       -t <port>         specify database port (default 0)\n"
 "       -p                proceed inspite of I/O errors\n"
 "       -r                list records\n"
@@ -142,7 +134,9 @@ int main (int argc, char *argv[])
    int ch;
    struct stat stat_buf;
    char *VolumeName = NULL;
+   BtoolsAskDirHandler askdir_handler;
 
+   init_askdir_handler(&askdir_handler);
    setlocale(LC_ALL, "");
    bindtextdomain("bacula", LOCALEDIR);
    textdomain("bacula");
@@ -154,7 +148,7 @@ int main (int argc, char *argv[])
 
    OSDependentInit();
 
-   while ((ch = getopt(argc, argv, "b:c:d:D:h:k:e:a:p:mn:pP:rsSt:u:vV:w:?")) != -1) {
+   while ((ch = getopt(argc, argv, "b:c:d:D:h:p:mn:pP:rsSt:u:vV:w:?")) != -1) {
       switch (ch) {
       case 'S' :
          showProgress = true;
@@ -187,18 +181,6 @@ int main (int argc, char *argv[])
 
       case 'h':
          db_host = optarg;
-         break;
-
-      case 'k':
-         db_ssl_key = optarg;
-         break;
-
-      case 'e':
-         db_ssl_cert = optarg;
-         break;
-
-      case 'a':
-         db_ssl_ca = optarg;
          break;
 
       case 't':
@@ -263,7 +245,7 @@ int main (int argc, char *argv[])
       configfile = bstrdup(CONFIG_FILE);
    }
 
-   config = new_config_parser();
+   config = New(CONFIG());
    parse_sd_config(config, configfile, M_ERROR_TERM);
    setup_me();
    load_sd_plugins(me->plugin_directory);
@@ -333,13 +315,13 @@ int main (int argc, char *argv[])
    }
 
    free_jcr(bjcr);
-   dev->term();
+   dev->term(NULL);
    return 0;
 }
 
 /*
- * We are at the end of reading a tape. Now, we simulate handling
- *   the end of writing a tape by wiffling through the attached
+ * We are at the end of reading a Volume. Now, we simulate handling
+ *   the end of writing a Volume by wiffling through the attached
  *   jcrs creating jobmedia records.
  */
 static bool bscan_mount_next_read_volume(DCR *dcr)
@@ -356,10 +338,8 @@ static bool bscan_mount_next_read_volume(DCR *dcr)
       if (verbose) {
          Pmsg1(000, _("Create JobMedia for Job %s\n"), mjcr->Job);
       }
-      mdcr->StartBlock = dcr->StartBlock;
-      mdcr->StartFile = dcr->StartFile;
-      mdcr->EndBlock = dcr->EndBlock;
-      mdcr->EndFile = dcr->EndFile;
+      mdcr->StartAddr = dcr->StartAddr;
+      mdcr->EndAddr = dcr->EndAddr;
       mdcr->VolMediaId = dcr->VolMediaId;
       mjcr->read_dcr->VolLastIndex = dcr->VolLastIndex;
       if( mjcr->bscan_insert_jobmedia_records ) {
@@ -514,8 +494,7 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
          /* Reset some DCR variables */
          foreach_dlist(dcr, dev->attached_dcrs) {
             dcr->VolFirstIndex = dcr->FileIndex = 0;
-            dcr->StartBlock = dcr->EndBlock = 0;
-            dcr->StartFile = dcr->EndFile = 0;
+            dcr->StartAddr = dcr->EndAddr = 0;
             dcr->VolMediaId = 0;
          }
 
@@ -664,8 +643,8 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
                free_jcr(mjcr);
             }
          }
-         mr.VolFiles = rec->File;
-         mr.VolBlocks = rec->Block;
+         mr.VolFiles = (uint32_t)(rec->Addr >> 32);
+         mr.VolBlocks = (uint32_t)rec->Addr;
          mr.VolBytes += mr.VolBlocks * WRITE_BLKHDR_LENGTH; /* approx. */
          mr.VolMounts++;
          update_media_record(db, &mr);
@@ -711,12 +690,11 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
       fr.FileId = 0;
       num_files++;
       if (verbose && (num_files & 0x7FFF) == 0) {
-         char ed1[30], ed2[30], ed3[30], ed4[30];
-         Pmsg4(000, _("%s file records. At file:blk=%s:%s bytes=%s\n"),
+         char ed1[30], ed2[30], ed3[30];
+         Pmsg3(000, _("%s file records. At addr=%s bytes=%s\n"),
                      edit_uint64_with_commas(num_files, ed1),
-                     edit_uint64_with_commas(rec->File, ed2),
-                     edit_uint64_with_commas(rec->Block, ed3),
-                     edit_uint64_with_commas(mr.VolBytes, ed4));
+                     edit_uint64_with_commas(rec->Addr, ed2),
+                     edit_uint64_with_commas(mr.VolBytes, ed3));
       }
       create_file_attributes_record(db, mjcr, attr->fname, attr->lname,
             attr->type, attr->attr, rec);
@@ -1182,8 +1160,15 @@ static int update_job_record(BDB *db, JOB_DBR *jr, SESSION_LABEL *elabel,
    mjcr->end_time = jr->EndTime;
 
    jr->JobId = mjcr->JobId;
-   jr->JobStatus = elabel->JobStatus;
-   mjcr->JobStatus = elabel->JobStatus;
+
+   /* The JobStatus can't be 0 */
+   if (elabel->JobStatus == 0) {
+      Pmsg2(000, _("Could not find JobStatus for SessId=%d SessTime=%d in EOS record.\n"),
+                   rec->VolSessionId, rec->VolSessionTime);
+   }
+   mjcr->JobStatus = jr->JobStatus =
+      elabel->JobStatus ? elabel->JobStatus : JS_ErrorTerminated;
+
    jr->JobFiles = elabel->JobFiles;
    if (jr->JobFiles > 0) {  /* If we found files, force PurgedFiles */
       jr->PurgedFiles = 0;
@@ -1273,8 +1258,7 @@ static int create_jobmedia_record(BDB *db, JCR *mjcr)
    JOBMEDIA_DBR jmr;
    DCR *dcr = mjcr->read_dcr;
 
-   dcr->EndBlock = dev->EndBlock;
-   dcr->EndFile  = dev->EndFile;
+   dcr->EndAddr = dev->EndAddr;
    dcr->VolMediaId = dev->VolCatInfo.VolMediaId;
 
    memset(&jmr, 0, sizeof(jmr));
@@ -1282,12 +1266,10 @@ static int create_jobmedia_record(BDB *db, JCR *mjcr)
    jmr.MediaId = mr.MediaId;
    jmr.FirstIndex = dcr->VolFirstIndex;
    jmr.LastIndex = dcr->VolLastIndex;
-   jmr.StartFile = dcr->StartFile;
-   jmr.EndFile = dcr->EndFile;
-   jmr.StartBlock = dcr->StartBlock;
-   jmr.EndBlock = dcr->EndBlock;
-
-
+   jmr.StartBlock = (uint32_t)dcr->StartAddr;
+   jmr.StartFile = (uint32_t)(dcr->StartAddr >> 32);
+   jmr.EndBlock = (uint32_t)dcr->EndAddr;
+   jmr.EndFile = (uint32_t)(dcr->EndAddr >> 32);
    if (!update_db) {
       return 1;
    }
@@ -1363,34 +1345,4 @@ static JCR *create_jcr(JOB_DBR *jr, DEV_RECORD *rec, uint32_t JobId)
    jobjcr->dcr = jobjcr->read_dcr = new_dcr(jobjcr, NULL, dev, SD_READ);
 
    return jobjcr;
-}
-
-/* Dummies to replace askdir.c */
-bool    dir_find_next_appendable_volume(DCR *dcr) { return 1;}
-bool    dir_update_volume_info(DCR *dcr, bool relabel, bool update_LastWritten) { return 1; }
-bool    dir_create_jobmedia_record(DCR *dcr, bool zero) { return 1; }
-bool    flush_jobmedia_queue(JCR *jcr) { return true; }
-bool    dir_ask_sysop_to_create_appendable_volume(DCR *dcr) { return 1; }
-bool    dir_update_file_attributes(DCR *dcr, DEV_RECORD *rec) { return 1;}
-bool    dir_send_job_status(JCR *jcr) {return 1;}
-int     generate_job_event(JCR *jcr, const char *event) { return 1; }
-
-bool dir_ask_sysop_to_mount_volume(DCR *dcr, bool /*writing*/)
-{
-   DEVICE *dev = dcr->dev;
-   Dmsg0(20, "Enter dir_ask_sysop_to_mount_volume\n");
-   /* Close device so user can use autochanger if desired */
-   fprintf(stderr, _("Mount Volume \"%s\" on device %s and press return when ready: "),
-         dcr->VolumeName, dev->print_name());
-   dev->close();
-   getchar();
-   return true;
-}
-
-bool dir_get_volume_info(DCR *dcr, enum get_vol_info_rw writing)
-{
-   Dmsg0(100, "Fake dir_get_volume_info\n");
-   dcr->setVolCatName(dcr->VolumeName);
-   Dmsg2(500, "Vol=%s VolType=%d\n", dcr->getVolCatName(), dcr->VolCatInfo.VolCatType);
-   return 1;
 }

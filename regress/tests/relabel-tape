@@ -61,7 +61,6 @@ run_bacula
 check_for_zombie_jobs storage=tape
 
 
-echo "Backup done"
 # 
 # now do several restores to ensure we cleanup between jobs
 #

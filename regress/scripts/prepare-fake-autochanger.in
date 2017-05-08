@@ -1,9 +1,7 @@
 #!/bin/sh
 #
-# Copyright (C) 2000-2015 Kern Sibbald
+# Copyright (C) 2000-2017 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
-#
-
 #
 # This script will prepare a big dummy autochanger 
 #
@@ -36,6 +34,15 @@ EOF
 
 # turn on ach debug
 touch $adir/log
+
+# the standard script is looking for a real sg device
+sed -i 's/test -c /test -f/g' $bin/storage-ctl	2> /dev/null
+sed -i 's/test -c /test -f/g' $bin/storage2-ctl 2> /dev/null
+
+# create generic device for bsg_persist
+for i in `seq 0 8`; do
+    touch $adir/sg$i c
+done
 
 nb_vol=`expr $nb_slot - 5`
 # create $nb_vol volumes

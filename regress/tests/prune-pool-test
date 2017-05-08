@@ -1,0 +1,151 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2017 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# This script will test prune algo 
+#
+. scripts/functions
+
+TestName="prune-pool-test"
+JobName=NightlySave
+
+scripts/cleanup
+scripts/copy-test-confs
+
+start_test
+
+echo $PWD/build/po > tmp/file-list
+
+dircfg=$conf/bacula-dir.conf
+
+# copy the Default pool to Special pool
+cat >> $dircfg <<EOF
+Pool {
+  Name = Special
+  Pool Type = Backup
+  Recycle = yes                       # Bacula can automatically recycle Volumes
+  AutoPrune = yes                     # Prune expired volumes
+  Volume Retention = 365d             # one year
+  Job Retention = 10m
+  File Retention = 10m
+}
+EOF
+
+$bperl -e "add_attribute('$dircfg', 'AutoPrune', 'No', 'Client')"
+$bperl -e "add_attribute('$dircfg', 'Job Retention', '1s', 'Client')"
+$bperl -e "add_attribute('$dircfg', 'File Retention', '1s', 'Client')"
+
+cat <<EOF > ${cwd}/tmp/bconcmds
+@output /dev/null
+messages
+@$out $tmp/log1.out
+label storage=File pool=Default volume=TestVolume001
+label storage=File pool=Special volume=TestVolume002
+run job=$JobName pool=Default level=full yes
+wait
+messages
+@exec "touch $cwd/build/po/fr.po"
+run job=$JobName pool=Special level=incremental yes
+wait
+messages
+@exec "touch $cwd/build/po/de.po"
+run job=$JobName pool=Special level=incremental yes
+wait
+messages
+@exec "touch $cwd/build/po/es.po"
+run job=$JobName level=incremental yes
+wait
+messages
+run job=$JobName pool=Default level=Differential yes
+wait
+messages
+@sleep 2
+@$out $tmp/log3.out
+@################################################################
+@# Should not prune anything
+@#setdebug level=50 director
+prune files pool=Special yes
+list files jobid=2
+list files jobid=4
+list jobs
+prune jobs pool=Special yes
+list jobs
+@################################################################
+@$out $tmp/log5.out
+prune files pool=Default yes
+list files jobid=4
+list jobs
+prune jobs pool=Default yes
+list jobs
+@################################################################
+@$out $tmp/log4.out
+@# Should prune incrementals
+prune files yes
+list files jobid=2
+list jobs
+prune jobs yes
+list jobs
+@#setdebug level=0 director
+@################################################################
+@$out $tmp/log2.out
+restore where=${cwd}/tmp/bacula-restores select all storage=File done
+yes
+wait
+messages
+quit
+EOF
+
+run_bacula
+
+check_for_zombie_jobs storage=File
+stop_bacula
+
+check_two_logs
+
+estat=0
+
+###############################################################################
+# Now we will verify that the pruning code is working as expected.  Each time,
+# we run 'list jobs', 'prune', 'list jobs'. check_prune_list ensures that jobids
+# in argument are present in the first 'list jobs', the 'prune' command deletes
+# them (same number), and checks that the last 'list jobs' doesn't contain them
+# anymore. See scripts/functions.pm for details.
+
+# nothing should be pruned
+$bperl -e "check_prune_list('$tmp/log3.out')"
+estat=$(($estat + $?))
+
+# should prune only Default incremental
+# F I I I D -> F I I D
+$bperl -e "check_prune_list('$tmp/log5.out', 4)"
+estat=$(($estat + $?))
+
+# we should find fr.po in list files of jobid 2
+grep po/fr.po $tmp/log3.out > /dev/null
+estat=$(($estat + $?))
+
+# we should find es.po in list files of jobid 4
+grep po/es.po $tmp/log3.out > /dev/null
+estat=$(($estat + $?))
+
+# jobids 2 and 3 should be pruned
+# (F I I I D) -> (F D)
+$bperl -e "check_prune_list('$tmp/log4.out',2,3)"
+estat=$(($estat + $?))
+
+# we should not find fr.po in list files of jobid 2
+grep po/fr.po $tmp/log4.out > /dev/null
+if [ $? = 0 ]; then
+    print_debug "ERROR: found fr.po in $tmp/log4.out after the prune file"
+    estat=$(($estat + 1))
+fi
+
+# we should not find es.po in list files of jobid 3
+grep po/es.po $tmp/log5.out > /dev/null
+if [ $? = 0 ]; then
+    print_debug "ERROR: found es.po in $tmp/log5.out after the prune file"
+    estat=$(($estat + 1))
+fi
+
+end_test

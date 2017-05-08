@@ -1,0 +1,97 @@
+#!/bin/sh
+#
+# Run backups with dummy tape driver
+# This test setups an Autochanger with 80 slots
+# and 5 drives (3 LTO3 and 2 LTO1)
+#
+# TAPE_DRIVE="$cwd/working/ach/drive0"
+# TAPE_DRIVE1="$cwd/working/ach/drive0"
+# AUTOCHANGER="$cwd/working/ach/conf"
+# USE_VTAPE=yes
+# AUTOCHANGER_SCRIPT=disk-changer
+# 
+
+TestName="vtape-round-robin-changer"
+JobName=backup
+. scripts/functions
+
+require_vtape
+
+scripts/cleanup
+scripts/copy-tape-confs
+cp $rscripts/bacula-dir-vtape.conf $conf/bacula-dir.conf
+cp $rscripts/bacula-sd-vtape.conf $conf/bacula-sd.conf
+scripts/prepare-fake-autochanger
+
+echo "${cwd}/build" >${cwd}/tmp/file-list
+
+start_test
+
+clientname=`awk '/Name = .*-fd/ { if (!ok) { print $3 ; ok=1 } }' bin/bacula-dir.conf`
+
+# Catalog record for cleaning tape "CLN01" successfully created.
+# CLN01      | Cleaning
+
+# Write out bconsole commands
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@$out /dev/null
+messages
+@$out ${cwd}/tmp/log6.out
+@#setdebug level=200 storage=LTO1
+label barcodes pool=Scratch slots=1-40 storage=LTO3 drive=0
+yes
+messages
+list volumes
+END_OF_DATA
+
+run_bacula
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@$out $tmp/log1.out
+run storage=LTO3 job=NightlySave spooldata=no pool=Inc  yes
+wait
+messages
+@sleep 3
+@$out $tmp/log3.out
+@#setdebug level=150 Storage=LTO3
+run storage=LTO3 job=NightlySave spooldata=no level=full pool=Inc  yes
+wait
+setdebug level=0 Storage=LTO3
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@$out $tmp/log2.out  
+@# 
+@# now do a restore
+@#
+restore client=$clientname fileset="Full Set" pool=Inc where=${cwd}/tmp/bacula-restores select all done
+yes
+wait
+messages
+wait
+messages
+END_OF_DATA
+
+run_bconsole
+
+stop_bacula
+
+check_two_logs
+check_restore_diff
+
+# Get the first slot used
+s=`awk '/Issuing autochanger/ { print $13;exit }' $tmp/log3.out`
+
+# count how many times we unload this volume
+# Note the second job output is in log3.out
+nb=`grep "unload .* Slot $s" $tmp/log3.out | wc -l`
+if [ $nb -gt 1 ]; then
+    estat=1
+    print_debug "ERROR: Found $nb 'unload slot $s' instead of 1 for the second job in $tmp/log3.out"
+fi
+
+end_test

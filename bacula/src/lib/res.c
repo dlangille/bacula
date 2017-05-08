@@ -33,7 +33,7 @@
 extern int32_t r_first;
 extern int32_t r_last;
 extern RES_TABLE resources[];
-extern RES **res_head;
+extern RES_HEAD **res_head;
 
 brwlock_t res_lock;                   /* resource lock */
 static int res_locked = 0;            /* resource chain lock count -- for debug */
@@ -74,22 +74,29 @@ void b_UnlockRes(const char *file, int line)
 }
 
 /*
+ * Compare two resource names
+ */
+int res_compare(void *item1, void *item2)
+{
+   RES *res1 = (RES *)item1;
+   RES *res2 = (RES *)item2;
+   return strcmp(res1->name, res2->name);
+}
+
+/*
  * Return resource of type rcode that matches name
  */
 RES *
 GetResWithName(int rcode, const char *name)
 {
-   RES *res;
+   RES_HEAD *reshead;
    int rindex = rcode - r_first;
+   RES item, *res;
 
    LockRes();
-   res = res_head[rindex];
-   while (res) {
-      if (strcmp(res->name, name) == 0) {
-         break;
-      }
-      res = res->next;
-   }
+   reshead = res_head[rindex];
+   item.name = (char *)name;
+   res = (RES *)reshead->res_list->search(&item, res_compare);
    UnlockRes();
    return res;
 
@@ -107,9 +114,28 @@ GetNextRes(int rcode, RES *res)
    int rindex = rcode - r_first;
 
    if (res == NULL) {
-      nres = res_head[rindex];
+      nres = (RES *)res_head[rindex]->first;
    } else {
-      nres = res->next;
+      nres = res->res_next;
+   }
+   return nres;
+}
+
+/*
+ * Return next resource of type rcode. On first
+ * call second arg (res) is NULL, on subsequent
+ * calls, it is called with previous value.
+ */
+RES *
+GetNextRes(RES_HEAD **rhead, int rcode, RES *res)
+{
+   RES *nres;
+   int rindex = rcode - r_first;
+
+   if (res == NULL) {
+      nres = (RES *)rhead[rindex]->first;
+   } else {
+      nres = res->res_next;
    }
    return nres;
 }

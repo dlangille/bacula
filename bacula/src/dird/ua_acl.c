@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2015 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,17 +11,15 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
- *
  *   Bacula Director -- User Agent Access Control List (ACL) handling
  *
  *     Kern Sibbald, January MMIV
- *
  */
 
 #include "bacula.h"
@@ -34,6 +32,28 @@ bool acl_access_ok(UAContext *ua, int acl, const char *item)
 {
    return acl_access_ok(ua, acl, item, strlen(item));
 }
+
+bool acl_access_client_ok(UAContext *ua, const char *name, int32_t jobtype)
+{
+   if (acl_access_ok(ua, Client_ACL, name)) {
+      return true;
+   }
+   if (jobtype == JT_BACKUP && acl_access_ok(ua, BackupClient_ACL, name)) {
+      return true;
+   }
+   if (jobtype == JT_RESTORE && acl_access_ok(ua, RestoreClient_ACL, name)) {
+      return true;
+   }
+   /* Some commands such as "status client" are for both Backup and Restore */
+   if (jobtype == JT_BACKUP_RESTORE &&
+       (acl_access_ok(ua, RestoreClient_ACL, name) ||
+        acl_access_ok(ua, BackupClient_ACL, name)))
+   {
+      return true;
+   }
+   return false;
+}
+
 
 
 /* This version expects the length of the item which we must check. */

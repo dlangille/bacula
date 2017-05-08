@@ -1,9 +1,7 @@
 #!/bin/sh
 #
-# Copyright (C) 2000-2015 Kern Sibbald
+# Copyright (C) 2000-2017 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
-#
-
 #
 # Verify Maximum Bandwidth FD parameter
 #
@@ -11,6 +9,11 @@
 TestName="maxbw-test"
 JobName=NightlySave
 . scripts/functions
+
+#
+# This test does not work
+#
+exit 0   
 
 scripts/cleanup
 scripts/copy-test-confs

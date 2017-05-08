@@ -26,7 +26,7 @@ print;
 mkdir -p ${working}2
 
 perl -ne '
-if (/^Storage {/) { $in=1; $nb++; }
+if (/^Storage \{/) { $in=1; $nb++; }
 if (/^}/) { $in=0 }
 if (/SDPort = (\d+)/ && $in) {if ($nb == 2) { $_ = "  SDPort = 1$1\n"; }}
 print;

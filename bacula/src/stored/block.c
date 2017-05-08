@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -22,7 +22,6 @@
  *
  *              Kern Sibbald, March MMI
  *                 added BB02 format October MMII
- *
  */
 
 
@@ -35,6 +34,8 @@ static const bool debug_block_checksum = true;
 static const bool debug_block_checksum = false;
 #endif
 
+static int debug_io_error = 0;    /* # blocks to write before creating I/O error */
+
 #ifdef NO_TAPE_WRITE_TEST
 static const bool no_tape_write_test = true;
 #else
@@ -42,12 +43,9 @@ static const bool no_tape_write_test = false;
 #endif
 
 
-bool do_new_file_bookkeeping(DCR *dcr);
-//bool do_dvd_size_checks(DCR *dcr);
-void reread_last_block(DCR *dcr);
 uint32_t get_len_and_clear_block(DEV_BLOCK *block, DEVICE *dev, uint32_t &pad);
 uint32_t ser_block_header(DEV_BLOCK *block, bool do_checksum);
-bool unser_block_header(JCR *jcr, DEVICE *dev, DEV_BLOCK *block);
+bool unser_block_header(DCR *dcr, DEVICE *dev, DEV_BLOCK *block);
 
 /*
  * Write a block to the device, with locking and unlocking
@@ -62,7 +60,7 @@ bool DCR::write_block_to_device(bool final)
    DCR *dcr = this;
 
    if (dcr->spooling) {
-      Dmsg0(200, "Write to spool\n");
+      Dmsg0(250, "Write to spool\n");
       ok = write_block_to_spool_file(dcr);
       return ok;
    }
@@ -79,13 +77,28 @@ bool DCR::write_block_to_device(bool final)
 
    Dmsg1(500, "Write block to dev=%p\n", dcr->dev);
    if (!write_block_to_dev()) {
-      Dmsg1(40, "*** Failed write_block_to_dev block=%p\n", block);
+      Dmsg2(40, "*** Failed write_block_to_dev adata=%d block=%p\n",
+         block->adata, block);
       if (job_canceled(jcr) || jcr->getJobType() == JT_SYSTEM) {
          ok = false;
          Dmsg2(40, "cancel=%d or SYSTEM=%d\n", job_canceled(jcr),
             jcr->getJobType() == JT_SYSTEM);
       } else {
-         ok = fixup_device_block_write_error(dcr);
+         bool was_adata = false;
+         if (was_adata) {
+            dcr->set_ameta();
+            was_adata = true;
+         }
+         /* Flush any existing JobMedia info */
+         if (!(ok = dir_create_jobmedia_record(dcr))) {
+            Jmsg(jcr, M_FATAL, 0, _("Error writing JobMedia record to catalog.\n"));
+         } else {
+            Dmsg1(40, "Calling fixup_device was_adata=%d...\n", was_adata);
+            ok = fixup_device_block_write_error(dcr);
+         }
+         if (was_adata) {
+            dcr->set_adata();
+         }
       }
    }
    if (ok && final && !dir_create_jobmedia_record(dcr)) {
@@ -114,6 +127,8 @@ bool DCR::write_block_to_dev()
    DCR *dcr = this;
    uint32_t checksum;
    uint32_t pad;                      /* padding or zeros written */
+   boffset_t pos;
+   char ed1[50];
 
    if (no_tape_write_test) {
       empty_block(block);
@@ -122,19 +137,23 @@ bool DCR::write_block_to_dev()
    if (job_canceled(jcr)) {
       return false;
    }
+   if (!dev->enabled) {
+      Jmsg1(jcr, M_FATAL, 0,  _("Cannot write block. Device is disabled. dev=%s\n"), dev->print_name());
+      return false;
+   }
 
-   Dmsg3(200, "fd=%d bufp-buf=%d binbuf=%d\n", dev->fd(),
+   ASSERT2(block->adata == dev->adata, "Block and dev adata not same");
+   Dmsg4(200, "fd=%d adata=%d bufp-buf=%d binbuf=%d\n", dev->fd(), block->adata,
       block->bufp-block->buf, block->binbuf);
    ASSERT2(block->binbuf == ((uint32_t)(block->bufp - block->buf)), "binbuf badly set");
 
    if (is_block_empty(block)) {  /* Does block have data in it? */
-      Dmsg0(150, "return write_block_to_dev no data to write\n");
+      Dmsg1(50, "return write_block_to_dev no adata=%d data to write\n", block->adata);
       return true;
    }
 
-   dump_block(block, "before write");
    if (dev->at_weot()) {
-      Dmsg0(50, "==== FATAL: At EOM with ST_WEOT.\n");
+      Dmsg1(50, "==== FATAL: At EOM with ST_WEOT. adata=%d.\n", dev->adata);
       dev->dev_errno = ENOSPC;
       Jmsg1(jcr, M_FATAL, 0,  _("Cannot write block. Device at EOM. dev=%s\n"), dev->print_name());
       return false;
@@ -154,49 +173,18 @@ bool DCR::write_block_to_dev()
 
    wlen = get_len_and_clear_block(block, dev, pad);
    block->block_len = wlen;
+   dev->updateVolCatPadding(pad);
 
    checksum = ser_block_header(block, dev->do_checksum());
 
-   if (user_volume_size_reached(dcr, true)) {
-      Dmsg0(40, "Calling terminate_writing_volume\n");
-      terminate_writing_volume(dcr);
-      reread_last_block(dcr);   /* Only used on tapes */
-      dev->dev_errno = ENOSPC;
+   if (!dev->do_size_checks(dcr, block)) {
+      Dmsg0(50, "Size check triggered.  Cannot write block.\n");
       return false;
    }
 
-   /*
-    * Limit maximum File size on volume to user specified value.
-    *  In practical terms, this means to put an EOF mark on
-    *  a tape after every X bytes. This effectively determines
-    *  how many index records we have (JobMedia). If you set
-    *  max_file_size too small, it will cause a lot of shoe-shine
-    *  on very fast modern tape (LTO-3 and above).
-    */
-   if ((dev->max_file_size > 0) &&
-       (dev->file_size+block->binbuf) >= dev->max_file_size) {
-      dev->file_size = 0;             /* reset file size */
-
-      if (!dev->weof(1)) {            /* write eof */
-         Dmsg0(50, "WEOF error in max file size.\n");
-         Jmsg(jcr, M_FATAL, 0, _("Unable to write EOF. ERR=%s\n"),
-            dev->bstrerror());
-         Dmsg0(40, "Calling terminate_writing_volume\n");
-         terminate_writing_volume(dcr);
-         dev->dev_errno = ENOSPC;
-         return false;
-      }
-      if (!write_ansi_ibm_labels(dcr, ANSI_EOF_LABEL, dev->VolHdr.VolumeName)) {
-         return false;
-      }
-
-      if (!do_new_file_bookkeeping(dcr)) {
-         /* Error message already sent */
-         return false;
-      }
-   }
-
    dev->updateVolCatWrites(1);
+
+   dump_block(dev, block, "before write");
 
 #ifdef DEBUG_BLOCK_ZEROING
    uint32_t *bp = (uint32_t *)block->buf;
@@ -206,12 +194,38 @@ bool DCR::write_block_to_dev()
 #endif
 
    /*
+    * If Adata block, we must seek to the correct address
+    */
+   if (block->adata) {
+      ASSERT(dcr->dev->adata);
+      uint64_t cur = dev->lseek(dcr, 0, SEEK_CUR);
+      /* If we are going to create a hole, record it */
+      if (block->BlockAddr != cur) {
+         dev->lseek(dcr, block->BlockAddr, SEEK_SET);
+         Dmsg4(100, "Adata seek BlockAddr from %lld to %lld = %lld bytes adata_addr=%lld\n",
+            cur, block->BlockAddr, block->BlockAddr - cur, dev->adata_addr);
+         /* Insanity check */
+         if (block->BlockAddr > cur) {
+            dev->updateVolCatHoleBytes(block->BlockAddr - cur);
+         } else if (block->BlockAddr < cur) {
+           Pmsg5(000, "Vol=%s cur=%lld BlockAddr=%lld adata=%d block=%p\n",
+              dev->getVolCatName(), cur, block->BlockAddr, block->adata, block);
+           Jmsg3(jcr, M_FATAL, 0, "Bad seek on adata Vol=%s BlockAddr=%lld DiskAddr=%lld. Multiple simultaneous Jobs?\n",
+              dev->getVolCatName(), block->BlockAddr, cur);
+           //Pmsg2(000, "HoleBytes would go negative cur=%lld blkaddr=%lld\n", cur, block->BlockAddr);
+         }
+      }
+   }
+
+   /*
     * Do write here, make a somewhat feeble attempt to recover from
     *  I/O errors, or from the OS telling us it is busy.
     */
    int retry = 0;
    errno = 0;
    stat = 0;
+   /* ***FIXME**** remove next line debug */
+   pos =  dev->lseek(dcr, 0, SEEK_CUR);
    do {
       if (retry > 0 && stat == -1 && errno == EBUSY) {
          berrno be;
@@ -221,17 +235,21 @@ bool DCR::write_block_to_dev()
          dev->clrerror(-1);
       }
       stat = dev->write(block->buf, (size_t)wlen);
-      Dmsg4(110, "Write() BlockAddr=%lld NextAddr=%lld Vol=%s wlen=%d\n",
-         block->BlockAddr, dev->lseek(dcr, 0, SEEK_CUR),
-         dev->VolHdr.VolumeName, wlen);
+      Dmsg4(100, "%s write() BlockAddr=%lld wlen=%d Vol=%s wlen=%d\n",
+         block->adata?"Adata":"Ameta", block->BlockAddr, wlen,
+         dev->VolHdr.VolumeName);
    } while (stat == -1 && (errno == EBUSY || errno == EIO) && retry++ < 3);
+
+   /* ***FIXME*** remove 2 lines debug */
+   Dmsg2(100, "Wrote %d bytes at %s\n", wlen, dev->print_addr(ed1, sizeof(ed1), pos));
+   dump_block(dev, block, "After write");
 
    if (debug_block_checksum) {
       uint32_t achecksum = ser_block_header(block, dev->do_checksum());
       if (checksum != achecksum) {
          Jmsg2(jcr, M_ERROR, 0, _("Block checksum changed during write: before=%u after=%u\n"),
             checksum, achecksum);
-         dump_block(block, "with checksum error");
+         dump_block(dev, block, "with checksum error");
       }
    }
 
@@ -240,6 +258,16 @@ bool DCR::write_block_to_dev()
       Jmsg0(jcr, M_ABORT, 0, _("Write block header zeroed.\n"));
    }
 #endif
+
+   if (debug_io_error) {
+      debug_io_error--;
+      if (debug_io_error == 1) {  /* trigger error */
+         stat = -1;
+         dev->dev_errno = EIO;
+         errno = EIO;
+         debug_io_error = 0;      /* turn off trigger */
+      }
+   }
 
    if (stat != (ssize_t)wlen) {
       /* Some devices simply report EIO when the volume is full.
@@ -255,9 +283,17 @@ bool DCR::write_block_to_dev()
             dev->dev_errno = ENOSPC;        /* out of space */
          }
          if (dev->dev_errno != ENOSPC) {
+            int etype = M_ERROR;
+            if (block->adata) {
+               etype = M_FATAL;
+            }
             dev->VolCatInfo.VolCatErrors++;
-            Jmsg4(jcr, M_ERROR, 0, _("Write error at %u:%u on device %s. ERR=%s.\n"),
-               dev->file, dev->block_num, dev->print_name(), be.bstrerror());
+            Jmsg4(jcr, etype, 0, _("Write error at %s on device %s Vol=%s. ERR=%s.\n"),
+               dev->print_addr(ed1, sizeof(ed1)), dev->print_name(),
+               dev->getVolCatName(), be.bstrerror());
+            if (dev->get_tape_alerts(this)) {
+               dev->show_tape_alerts(this, list_long, list_last, alert_callback);
+            }
          }
       } else {
         dev->dev_errno = ENOSPC;            /* out of space */
@@ -266,14 +302,14 @@ bool DCR::write_block_to_dev()
          dev->update_freespace();
          if (dev->is_freespace_ok() && dev->free_space < dev->min_free_space) {
             dev->set_nospace();
-            Jmsg(jcr, M_WARNING, 0, _("Out of freespace caused End of Volume \"%s\" at %u:%u on device %s. Write of %u bytes got %d.\n"),
+            Jmsg(jcr, M_WARNING, 0, _("Out of freespace caused End of Volume \"%s\" at %s on device %s. Write of %u bytes got %d.\n"),
                dev->getVolCatName(),
-               dev->file, dev->block_num, dev->print_name(), wlen, stat);
+               dev->print_addr(ed1, sizeof(ed1)), dev->print_name(), wlen, stat);
          } else {
             dev->clear_nospace();
-            Jmsg(jcr, M_INFO, 0, _("End of Volume \"%s\" at %u:%u on device %s. Write of %u bytes got %d.\n"),
+            Jmsg(jcr, M_INFO, 0, _("End of Volume \"%s\" at %s on device %s. Write of %u bytes got %d.\n"),
                dev->getVolCatName(),
-               dev->file, dev->block_num, dev->print_name(), wlen, stat);
+               dev->print_addr(ed1, sizeof(ed1)), dev->print_name(), wlen, stat);
          }
       }
       if (chk_dbglvl(100)) {
@@ -294,50 +330,68 @@ bool DCR::write_block_to_dev()
    /* We successfully wrote the block, now do housekeeping */
    Dmsg2(1300, "VolCatBytes=%lld newVolCatBytes=%lld\n", dev->VolCatInfo.VolCatBytes,
       (dev->VolCatInfo.VolCatBytes+wlen));
-   dev->updateVolCatBytes(wlen);
+   if (!dev->setVolCatAdataBytes(block->BlockAddr + wlen)) {
+      dev->updateVolCatBytes(wlen);
+      Dmsg3(200, "AmetaBytes=%lld AdataBytes=%lld Bytes=%lld\n",
+         dev->VolCatInfo.VolCatAmetaBytes, dev->VolCatInfo.VolCatAdataBytes, dev->VolCatInfo.VolCatBytes);
+   }
    dev->updateVolCatBlocks(1);
-   dev->EndBlock = dev->block_num;
-   dev->EndFile  = dev->file;
    dev->LastBlock = block->BlockNumber;
    block->BlockNumber++;
 
    /* Update dcr values */
    if (dev->is_tape()) {
-      if (dcr->EndFile != dev->EndFile || dev->EndBlock > dcr->EndBlock) {
-         dcr->EndBlock = dev->EndBlock;
-         dcr->EndFile  = dev->EndFile;
+      dev->EndAddr = dev->get_full_addr();
+      if (dcr->EndAddr < dev->EndAddr) {
+         dcr->EndAddr = dev->EndAddr;
       }
       dev->block_num++;
    } else {
-      /* Save address of block just written */
+      /* Save address of byte just written */
       uint64_t addr = dev->file_addr + wlen - 1;
-      if (dcr->EndFile == (uint32_t)(addr >> 32) &&
-          (uint32_t)addr < dcr->EndBlock) {
-         Pmsg4(000, "Possible incorrect EndBlock oldEndBlock=%u newEndBlock=%u oldEndFile=%u newEndFile=%u\n",
-            dcr->EndBlock, (uint32_t)addr, dcr->EndFile, (uint32_t)(addr >> 32));
-      } else {
-         dcr->EndBlock = (uint32_t)addr;
-         dcr->EndFile = (uint32_t)(addr >> 32);
+      if (dev->is_indexed()) {
+         uint64_t full_addr = dev->get_full_addr(addr);
+         if (full_addr < dcr->EndAddr) {
+            Pmsg2(000, "Possible incorrect EndAddr oldEndAddr=%llu newEndAddr=%llu\n",
+               dcr->EndAddr, full_addr);
+         }
+         dcr->EndAddr = full_addr;
       }
-      dev->block_num = (uint32_t)addr;
-      dev->file = (uint32_t)(addr >> 32);
-      block->BlockAddr = dev->file_addr + wlen;
-      Dmsg3(150, "Set block->BlockAddr=%lld wlen=%d block=%x\n",
-         block->BlockAddr, wlen, block);
+
+      if (dev->adata) {
+         /* We really should use file_addr, but I am not sure it is correctly set */
+         Dmsg3(100, "Set BlockAddr from %lld to %lld adata_addr=%lld\n",
+            block->BlockAddr, block->BlockAddr + wlen, dev->adata_addr);
+         block->BlockAddr += wlen;
+         dev->adata_addr = block->BlockAddr;
+      } else {
+         block->BlockAddr = dev->get_full_addr() + wlen;
+      }
    }
-   dcr->VolMediaId = dev->VolCatInfo.VolMediaId;
-   Dmsg3(150, "VolFirstIndex=%d blockFirstIndex=%d Vol=%s\n",
-      dcr->VolFirstIndex, block->FirstIndex, dcr->VolumeName);
-   if (dcr->VolFirstIndex == 0 && block->FirstIndex > 0) {
-      dcr->VolFirstIndex = block->FirstIndex;
+   if (dev->is_indexed()) {
+      if (dcr->VolMediaId != dev->VolCatInfo.VolMediaId) {
+         Dmsg7(100, "JobMedia Vol=%s wrote=%d MediaId=%lld FI=%lu LI=%lu StartAddr=%lld EndAddr=%lld Wrote\n",
+            dcr->VolumeName, dcr->WroteVol, dcr->VolMediaId,
+            dcr->VolFirstIndex, dcr->VolLastIndex, dcr->StartAddr, dcr->EndAddr);
+      }
+      dcr->VolMediaId = dev->VolCatInfo.VolMediaId;
+      Dmsg3(150, "VolFirstIndex=%d blockFirstIndex=%d Vol=%s\n",
+         dcr->VolFirstIndex, block->FirstIndex, dcr->VolumeName);
+      if (dcr->VolFirstIndex == 0 && block->FirstIndex > 0) {
+         dcr->VolFirstIndex = block->FirstIndex;
+      }
+      if (block->LastIndex > (int32_t)dcr->VolLastIndex) {
+         dcr->VolLastIndex = block->LastIndex;
+      }
+      dcr->WroteVol = true;
    }
-   if (block->LastIndex > (int32_t)dcr->VolLastIndex) {
-      dcr->VolLastIndex = block->LastIndex;
-   }
-   dcr->WroteVol = true;
+
    dev->file_addr += wlen;            /* update file address */
    dev->file_size += wlen;
-   dev->part_size += wlen;
+   dev->usage += wlen;                /* update usage counter */
+   if (dev->part > 0) {
+      dev->part_size += wlen;
+   }
    dev->setVolCatInfo(false);         /* Needs update */
 
    Dmsg2(1300, "write_block: wrote block %d bytes=%d\n", dev->block_num, wlen);
@@ -358,18 +412,22 @@ bool DCR::read_block_from_device(bool check_block_numbers)
    dev->rLock(false);
    ok = read_block_from_dev(check_block_numbers);
    dev->rUnlock();
-   Dmsg0(250, "Leave read_block_from_device\n");
+   Dmsg1(250, "Leave read_block_from_device. ok=%d\n", ok);
    return ok;
 }
 
 static void set_block_position(DCR *dcr, DEVICE *dev, DEV_BLOCK *block)
 {
+   /* Used also by the Single Item Restore code to locate a particular block */
    if (dev->is_tape()) {
-      block->Block = dev->block_num;
-      block->File = dev->file;
-   } else {
-      block->Block = (uint32_t)dev->file_addr;
-      block->File  = (uint32_t)(dev->file_addr >> 32);
+      block->BlockAddr = dev->get_full_addr();
+
+   } else if (!dev->adata) {    /* TODO: See if we just use !dev->adata for tapes */
+      /* Note: we only update the DCR values for ameta blocks
+       * because all the indexing (JobMedia) is done with
+       * ameta blocks/records, which may point to adata.
+       */
+      block->BlockAddr = dev->get_full_addr();
    }
    block->RecNum = 0;
 }
@@ -378,6 +436,8 @@ static void set_block_position(DCR *dcr, DEVICE *dev, DEV_BLOCK *block)
  * Read the next block into the block structure and unserialize
  *  the block header.  For a file, the block may be partially
  *  or completely in the current buffer.
+ * Note: in order for bscan to generate correct JobMedia records
+ *  we must be careful to update the EndAddr of the last byte read.
  */
 bool DCR::read_block_from_dev(bool check_block_numbers)
 {
@@ -385,25 +445,35 @@ bool DCR::read_block_from_dev(bool check_block_numbers)
    int looping;
    int retry;
    DCR *dcr = this;
+   boffset_t pos;
+   char ed1[50];
 
    if (job_canceled(jcr)) {
       Mmsg(dev->errmsg, _("Job failed or canceled.\n"));
+      Dmsg1(000, "%s", dev->errmsg);
       block->read_len = 0;
+      return false;
+   }
+   if (!dev->enabled) {
+      Mmsg(dev->errmsg, _("Cannot write block. Device is disabled. dev=%s\n"), dev->print_name());
+      Jmsg1(jcr, M_FATAL, 0, "%s", dev->errmsg);
       return false;
    }
 
    if (dev->at_eot()) {
-      Mmsg(dev->errmsg, _("Attempt to read past end of tape or file.\n"));
+      Mmsg(dev->errmsg, _("At EOT: attempt to read past end of Volume.\n"));
+      Dmsg1(000, "%s", dev->errmsg);
       block->read_len = 0;
       return false;
    }
    looping = 0;
-   Dmsg1(250, "Full read in read_block_from_device() len=%d\n", block->buf_len);
 
    if (!dev->is_open()) {
       Mmsg4(dev->errmsg, _("Attempt to read closed device: fd=%d at file:blk %u:%u on device %s\n"),
          dev->fd(), dev->file, dev->block_num, dev->print_name());
       Jmsg(dcr->jcr, M_FATAL, 0, "%s", dev->errmsg);
+      Pmsg4(000, "Fatal: dev=%p dcr=%p adata=%d bytes=%lld\n", dev, dcr, dev->adata,
+         VolCatInfo.VolCatAdataRBytes);
       Pmsg1(000, "%s", dev->errmsg);
       block->read_len = 0;
       return false;
@@ -416,33 +486,32 @@ reread:
       dev->dev_errno = EIO;
       Mmsg1(dev->errmsg, _("Block buffer size looping problem on device %s\n"),
          dev->print_name());
+      Dmsg1(000, "%s", dev->errmsg);
       Jmsg(jcr, M_ERROR, 0, "%s", dev->errmsg);
       block->read_len = 0;
       return false;
    }
 
-   dump_block(block, "before read");
-
-#ifdef xxxBUILD_DVD
-   /* Check for DVD part file end */
-   if (dev->at_eof() && dev->is_dvd() && dev->num_dvd_parts > 0 &&
-        dev->part <= dev->num_dvd_parts) {
-      Dmsg0(400, "Call dvd_open_next_part\n");
-      if (dvd_open_next_part(dcr) < 0) {
-         Mmsg3(dev->errmsg, _("Unable to open device part=%d %s: ERR=%s\n"),
-               dev->part, dev->print_name(), dev->bstrerror());
-         Jmsg(dcr->jcr, M_FATAL, 0, "%s", dev->errmsg);
-         dev->dev_errno = EIO;
-         return false;
+   /* See if we must open another part */
+   if (dev->at_eof() && !dev->open_next_part(dcr)) {
+      if (dev->at_eof()) {        /* EOF just seen? */
+         dev->set_eot();          /* yes, error => EOT */
       }
+      return false;
    }
-#endif /* xxxBUILD_DVD */
 
    retry = 0;
    errno = 0;
    stat = 0;
 
-   boffset_t pos = dev->lseek(dcr, (boffset_t)0, SEEK_CUR); /* get curr pos */
+   if (dev->adata) {
+      dev->lseek(dcr, dcr->block->BlockAddr, SEEK_SET);
+   }
+   {  /* debug block */
+      pos = dev->lseek(dcr, (boffset_t)0, SEEK_CUR); /* get curr pos */
+      Dmsg2(200, "Pos for read=%s %lld\n",
+         dev->print_addr(ed1, sizeof(ed1), pos), pos);
+   }
    do {
       if ((retry > 0 && stat == -1 && errno == EBUSY)) {
          berrno be;
@@ -454,77 +523,93 @@ reread:
       stat = dev->read(block->buf, (size_t)block->buf_len);
 
    } while (stat == -1 && (errno == EBUSY || errno == EINTR || errno == EIO) && retry++ < 3);
-   Dmsg3(110, "Read() vol=%s nbytes=%d addr=%lld\n",
-      dev->VolHdr.VolumeName, stat, pos);
+   Dmsg4(110, "Read() adata=%d vol=%s nbytes=%d pos=%lld\n",
+      block->adata, dev->VolHdr.VolumeName, stat, pos);
    if (stat < 0) {
       berrno be;
       dev->clrerror(-1);
       Dmsg2(90, "Read device fd=%d got: ERR=%s\n", dev->fd(), be.bstrerror());
       block->read_len = 0;
-      if (dev->file == 0 && dev->block_num == 0) { /* Attempt to read label */
-         Mmsg(dev->errmsg, _("The Volume=%s on device=%s appears to be unlabeled.\n"),
-            "", dev->VolCatInfo.VolCatName, dev->print_name());
+      if (reading_label) {      /* Trying to read Volume label */
+         Mmsg(dev->errmsg, _("The %sVolume=%s on device=%s appears to be unlabeled.%s\n"),
+            dev->adata?"adata ":"", VolumeName, dev->print_name(),
+            dev->is_fs_nearly_full(1048576)?" Notice that the filesystem is nearly full.":"");
       } else {
-         Mmsg5(dev->errmsg, _("Read error on fd=%d at file:blk %u:%u on device %s. ERR=%s.\n"),
-            dev->fd(), dev->file, dev->block_num, dev->print_name(), be.bstrerror());
+         Mmsg4(dev->errmsg, _("Read error on fd=%d at addr=%s on device %s. ERR=%s.\n"),
+            dev->fd(), dev->print_addr(ed1, sizeof(ed1)), dev->print_name(), be.bstrerror());
       }
       Jmsg(jcr, M_ERROR, 0, "%s", dev->errmsg);
+      if (dev->get_tape_alerts(this)) {
+         dev->show_tape_alerts(this, list_long, list_last, alert_callback);
+      }
       if (dev->at_eof()) {        /* EOF just seen? */
          dev->set_eot();          /* yes, error => EOT */
       }
       return false;
    }
    if (stat == 0) {             /* Got EOF ! */
-      if (dev->file == 0 && dev->block_num == 0) { /* Attempt to read label */
-         Mmsg3(dev->errmsg, _("The %sVolume=%s on device=%s appears to be unlabeled.\n"),
-            "", dev->VolCatInfo.VolCatName, dev->print_name());
+      pos = dev->lseek(dcr, (boffset_t)0, SEEK_CUR); /* get curr pos */
+      pos = dev->get_full_addr(pos);
+      if (reading_label) {      /* Trying to read Volume label */
+         Mmsg4(dev->errmsg, _("The %sVolume=%s on device=%s appears to be unlabeled.%s\n"),
+            dev->adata?"adata ":"", VolumeName, dev->print_name(),
+            dev->is_fs_nearly_full(1048576)?" Notice tha the filesystem is nearly full.":"");
       } else {
-         Mmsg4(dev->errmsg, _("Read zero %sbytes Vol=%s at %lld on device %s.\n"),
-               "", dev->VolCatInfo.VolCatName, pos, dev->print_name());
+         Mmsg4(dev->errmsg, _("Read zero %sbytes Vol=%s at %s on device %s.\n"),
+               dev->adata?"adata ":"", dev->VolCatInfo.VolCatName,
+               dev->print_addr(ed1, sizeof(ed1), pos), dev->print_name());
       }
-      dev->block_num = 0;
       block->read_len = 0;
       Dmsg1(100, "%s", dev->errmsg);
-      if (dev->at_eof()) {       /* EOF already read? */
-         dev->set_eot();         /* yes, 2 EOFs => EOT */
-         return false;
+      if (dev->at_eof()) {        /* EOF just seen? */
+         dev->set_eot();          /* yes, error => EOT */
       }
       dev->set_ateof();
-      Dmsg2(150, "==== Read zero bytes. vol=%s at %lld\n", dev->VolCatInfo.VolCatName, pos);
+      dev->file_addr = 0;
+      dev->EndAddr = pos;
+      if (dcr->EndAddr < dev->EndAddr) {
+         dcr->EndAddr = dev->EndAddr;
+      }
+      Dmsg3(150, "==== Read zero bytes. adata=%d vol=%s at %s\n", dev->adata,
+         dev->VolCatInfo.VolCatName, dev->print_addr(ed1, sizeof(ed1), pos));
       return false;             /* return eof */
    }
 
    /* Continue here for successful read */
 
    block->read_len = stat;      /* save length read */
-   if (block->read_len == 80 &&
-        (dcr->VolCatInfo.LabelType != B_BACULA_LABEL ||
-         dcr->device->label_type != B_BACULA_LABEL)) {
-      /* ***FIXME*** should check label */
-      Dmsg2(100, "Ignore 80 byte ANSI label at %u:%u\n", dev->file, dev->block_num);
-      dev->clear_eof();
-      goto reread;             /* skip ANSI/IBM label */
-   }
-
-   if (block->read_len < BLKHDR2_LENGTH) {
-      dev->dev_errno = EIO;
-      Mmsg4(dev->errmsg, _("Volume data error at %u:%u! Very short block of %d bytes on device %s discarded.\n"),
-         dev->file, dev->block_num, block->read_len, dev->print_name());
-      Jmsg(jcr, M_ERROR, 0, "%s", dev->errmsg);
-      dev->set_short_block();
-      block->read_len = block->binbuf = 0;
-      Dmsg2(50, "set block=%p binbuf=%d\n", block, block->binbuf);
-      return false;             /* return error */
-   }
-
-   //BlockNumber = block->BlockNumber + 1;
-   if (!unser_block_header(jcr, dev, block)) {
-      if (forge_on) {
-         dev->file_addr += block->read_len;
-         dev->file_size += block->read_len;
-         goto reread;
+   if (block->adata) {
+      block->binbuf = block->read_len;
+      block->block_len = block->read_len;
+   } else {
+      if (block->read_len == 80 &&
+           (dcr->VolCatInfo.LabelType != B_BACULA_LABEL ||
+            dcr->device->label_type != B_BACULA_LABEL)) {
+         /* ***FIXME*** should check label */
+         Dmsg2(100, "Ignore 80 byte ANSI label at %u:%u\n", dev->file, dev->block_num);
+         dev->clear_eof();
+         goto reread;             /* skip ANSI/IBM label */
       }
-      return false;
+
+      if (block->read_len < BLKHDR2_LENGTH) {
+         dev->dev_errno = EIO;
+         Mmsg3(dev->errmsg, _("Volume data error at %s! Very short block of %d bytes on device %s discarded.\n"),
+            dev->print_addr(ed1, sizeof(ed1)), block->read_len, dev->print_name());
+         Jmsg(jcr, M_ERROR, 0, "%s", dev->errmsg);
+         dev->set_short_block();
+         block->read_len = block->binbuf = 0;
+         Dmsg2(50, "set block=%p binbuf=%d\n", block, block->binbuf);
+         return false;             /* return error */
+      }
+
+      if (!unser_block_header(this, dev, block)) {
+         if (forge_on) {
+            dev->file_addr += block->read_len;
+            dev->file_size += block->read_len;
+            goto reread;
+         }
+         return false;
+      }
    }
 
    /*
@@ -532,7 +617,7 @@ reread:
     *  re-reading the block, allocate a buffer of the correct size,
     *  and go re-read.
     */
-   Dmsg2(150, "block_len=%d buf_len=%d\n", block->block_len, block->buf_len);
+   Dmsg3(150, "adata=%d block_len=%d buf_len=%d\n", block->adata, block->block_len, block->buf_len);
    if (block->block_len > block->buf_len) {
       dev->dev_errno = EIO;
       Mmsg2(dev->errmsg,  _("Block length %u is greater than buffer %u. Attempting recovery.\n"),
@@ -544,7 +629,9 @@ reread:
          Dmsg0(250, "BSR for reread; block too big for buffer.\n");
          if (!dev->bsr(1)) {
             Mmsg(dev->errmsg, "%s", dev->bstrerror());
-            Jmsg(jcr, M_ERROR, 0, "%s", dev->errmsg);
+            if (dev->errmsg[0]) {
+               Jmsg(jcr, M_ERROR, 0, "%s", dev->errmsg);
+            }
             block->read_len = 0;
             return false;
          }
@@ -583,32 +670,32 @@ reread:
    dev->updateVolCatReads(1);
    dev->updateVolCatReadBytes(block->read_len);
 
-   dev->EndBlock = dev->block_num;
-   dev->EndFile  = dev->file;
-   dev->block_num++;
-
    /* Update dcr values */
    if (dev->is_tape()) {
-      if (dcr->EndFile != dev->EndFile || dev->EndBlock > dcr->EndBlock) {
-         dcr->EndBlock = dev->EndBlock;
-         dcr->EndFile  = dev->EndFile;
+      dev->EndAddr = dev->get_full_addr();
+      if (dcr->EndAddr <  dev->EndAddr) {
+         dcr->EndAddr = dev->EndAddr;
       }
+      dev->block_num++;
    } else {
       /* We need to take care about a short block in EndBlock/File
        * computation
        */
       uint32_t len = MIN(block->read_len, block->block_len);
-      uint64_t addr = dev->file_addr + len - 1;
-      if ((uint32_t)(addr >> 32) != dcr->EndFile || (uint32_t)addr > dcr->EndBlock) {
-         dcr->EndBlock = (uint32_t)addr;
-         dcr->EndFile = (uint32_t)(addr >> 32);
+      uint64_t addr = dev->get_full_addr() + len - 1;
+      if (dev->is_indexed()) {
+         if (addr > dcr->EndAddr) {
+            dcr->EndAddr = addr;
+         }
       }
-      dev->block_num = dev->EndBlock = (uint32_t)addr;
-      dev->file = dev->EndFile = (uint32_t)(addr >> 32);
+      dev->EndAddr = addr;
    }
-   dcr->VolMediaId = dev->VolCatInfo.VolMediaId;
+   if (dev->is_indexed()) {
+      dcr->VolMediaId = dev->VolCatInfo.VolMediaId;
+   }
    dev->file_addr += block->read_len;
    dev->file_size += block->read_len;
+   dev->usage     += block->read_len;      /* update usage counter */
 
    /*
     * If we read a short block on disk,

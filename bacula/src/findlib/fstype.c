@@ -404,7 +404,7 @@ bool read_mtab(mtab_handler_t *mtab_handler, void *user_ctx)
    struct mnttab mnt;
 
    P(mutex);
-   if ((mntfp = fopen(MNTTAB, "r")) == NULL) {
+   if ((mntfp = bfopen(MNTTAB, "r")) == NULL) {
       V(mutex);
       return false;
    }

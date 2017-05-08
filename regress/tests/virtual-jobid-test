@@ -1,0 +1,215 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2017 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Run a simple backup of the Bacula build directory then do a 
+#   Virtual Full backup to another device.
+#
+# This script uses the disk autochanger
+#
+TestName="virtual-jobid-test"
+JobName=Vbackup
+. scripts/functions
+
+
+scripts/cleanup
+scripts/copy-migration-confs
+echo "${cwd}/build" >${cwd}/tmp/file-list
+
+rm -f $cwd/build/inc1 $cwd/build/inc2 $cwd/build/diff1
+
+change_jobname NightlySave $JobName
+start_test
+
+#
+# Note, we first backup into Pool Default, 
+#          then Migrate into Pool Full. 
+#              Pool Default uses Storage=File
+#              Pool Full    uses Storage=DiskChanger
+
+# +-------+---------+-------+----------+----------+-----------+
+# | JobId | Name    | Level | JobFiles | JobBytes | JobStatus |
+# +-------+---------+-------+----------+----------+-----------+
+# | 1     | Vbackup | F     | 1754     | 50118554 | T         |
+# | 2     | Vbackup | I     | 1        | 0        | T         |
+# | 3     | Vbackup | D     | 2        | 0        | T         |
+# | 4     | Vbackup | I     | 1        | 0        | T         |
+# | 5     | Save    | F     | 1754     | 50118554 | T         |
+# +-------+---------+-------+----------+----------+-----------+
+
+# Write out bconsole commands
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@output /dev/null
+messages
+@$out ${cwd}/tmp/log1.out
+@#setdebug level=100 storage=File
+label storage=File volume=FileVolume001 Pool=Default
+label storage=DiskChanger volume=ChangerVolume001 slot=1 Pool=Full drive=0
+label storage=DiskChanger volume=ChangerVolume002 slot=2 Pool=Full drive=0
+@# run several jobs
+@exec "sh -c 'date > ${cwd}/build/date'"
+run job=$JobName level=Full yes
+wait
+messages
+list jobs
+@exec "sh -c 'touch ${cwd}/build/inc1'"
+run job=$JobName level=Incremental yes
+wait
+messages
+list jobs
+@exec "sh -c 'touch ${cwd}/build/diff1'"
+run job=$JobName level=Differential yes
+wait
+messages
+list jobs
+@exec "sh -c 'touch ${cwd}/build/inc2'"
+run job=$JobName level=Incremental yes
+wait
+messages
+list jobs
+run job=Save level=Full yes
+wait
+messages
+list jobs
+@# should Consolidate Full, Incremental
+@$out $tmp/log5.out
+setdebug level=100 dir trace=1
+run job=$JobName jobid=4 level=VirtualFull yes
+wait
+messages
+list jobs
+@$out $tmp/log6.out
+run job=$JobName jobid=3 level=VirtualFull yes
+wait
+messages
+list jobs
+@$out $tmp/log7.out
+run job=$JobName jobid=2 level=VirtualFull yes
+wait
+messages
+list jobs
+@$out $tmp/log8.out
+run job=$JobName jobid=1,2 level=VirtualFull yes
+wait
+messages
+list jobs
+@$out $tmp/log9.out
+run job=$JobName jobid=1,3 level=VirtualFull yes
+wait
+messages
+list jobs
+@$out $tmp/log10.out
+run job=$JobName jobid=1,3,4 level=VirtualFull yes
+wait
+messages
+list jobs
+@$out $tmp/log11.out
+run job=$JobName jobid=1-5 level=VirtualFull yes
+wait
+messages
+list jobs
+@$out $tmp/log12.out
+run job=$JobName jobid=2-5 level=VirtualFull yes
+wait
+messages
+list jobs
+@$out $tmp/log13.out
+run job=$JobName jobid=2,4 level=VirtualFull yes
+wait
+messages
+list jobs
+@$out $tmp/log14.out
+run job=$JobName alljobid=1-5 level=VirtualFull yes
+wait
+messages
+list jobs
+@# 
+@# now do a restore of the consolidated Full
+@#
+@$out $tmp/log2.out
+restore jobid=8 where=${cwd}/tmp/restore1
+m *
+done
+yes
+wait
+messages
+restore jobid=7 where=${cwd}/tmp/restore2
+m *
+done
+yes
+wait
+messages
+restore jobid=6 where=${cwd}/tmp/bacula-restores
+m *
+done
+yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bacula
+check_for_zombie_jobs storage=File
+stop_bacula
+
+#
+# We only used one log so copy it to the second log
+#  so that any restore errors will be picked up
+#
+check_two_logs
+check_restore_diff
+
+grep  'JobIds=1,2,3,4$' $tmp/log11.out > /dev/null
+if [ $? -ne 0 ]; then
+    print_debug "ERROR: jobid list is not right in $tmp/log11.out"
+    estat=1
+fi
+
+grep  'JobIds=2,3,4$' $tmp/log12.out > /dev/null
+if [ $? -ne 0 ]; then
+    print_debug "ERROR: jobid list is not right in $tmp/log12.out"
+    estat=1
+fi
+
+grep  'using Differential level' $tmp/log12.out > /dev/null
+if [ $? -ne 0 ]; then
+    print_debug "ERROR: Final level should be differential in $tmp/log12.out"
+    estat=1
+fi
+
+grep  'JobIds=2,4$' $tmp/log13.out > /dev/null
+if [ $? -ne 0 ]; then
+    print_debug "ERROR: jobid list is not right in $tmp/log13.out"
+    estat=1
+fi
+
+grep  'using Incremental level' $tmp/log13.out > /dev/null
+if [ $? -ne 0 ]; then
+    print_debug "ERROR: Final level should be incremental in $tmp/log13.out"
+    estat=1
+fi
+
+grep  'JobIds=1,2,3,4,5$' $tmp/log14.out > /dev/null
+if [ $? -ne 0 ]; then
+    print_debug "ERROR: jobid list is not right in $tmp/log14.out"
+    estat=1
+fi
+
+
+if [ ! -f $tmp/restore1/$cwd/build/inc1 -o -f $tmp/restore1/$cwd/build/diff1 -o -f $tmp/restore1/$cwd/build/inc2 ]; then
+    print_debug "ERROR: should find only inc1 in restore1"
+    estat=1
+fi
+
+if [ ! -f $tmp/restore2/$cwd/build/inc1 -o ! -f $tmp/restore2/$cwd/build/diff1 -o -f $tmp/restore2/$cwd/build/inc2 ]; then
+    print_debug "ERROR: should find only inc1 and diff1 in restore2"
+    estat=2
+fi
+
+if [ ! -f $tmp/bacula-restores/$cwd/build/inc1 -o ! -f $tmp/bacula-restores/$cwd/build/diff1 -o ! -f $tmp/bacula-restores/$cwd/build/inc2 ]; then
+    print_debug "ERROR: should find inc1, diff1 and inc2 in bacula-restores"
+    estat=2
+fi
+
+end_test

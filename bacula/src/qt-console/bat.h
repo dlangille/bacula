@@ -44,6 +44,8 @@
 #include <QtGui>
 #include <QtCore>
 #include "bacula.h"
+
+#ifndef TRAY_MONITOR
 #include "mainwin.h"
 #include "bat_conf.h"
 #include "jcr.h"
@@ -51,6 +53,7 @@
 
 extern MainWin *mainWin;
 extern QApplication *app;
+#endif
 
 bool isWin32Path(QString &fullPath);
 

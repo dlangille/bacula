@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -34,7 +34,7 @@ ATTR     *new_attr(JCR *jcr);
 void      free_attr(ATTR *attr);
 int       unpack_attributes_record(JCR *jcr, int32_t stream, char *rec, int32_t reclen, ATTR *attr);
 void      build_attr_output_fnames(JCR *jcr, ATTR *attr);
-void      print_ls_output(JCR *jcr, ATTR *attr);
+void      print_ls_output(JCR *jcr, ATTR *attr, int message_type=M_RESTORED);
 
 /* base64.c */
 void      base64_init            (void);
@@ -44,7 +44,35 @@ int       bin_to_base64          (char *buf, int buflen, char *bin, int binlen,
                                   int compatible);
 int       base64_to_bin(char *dest, int destlen, char *src, int srclen);
 
+/* bjson.c */
+void strip_long_opts(char *out, const char *in);
+void edit_alist(HPKT &hpkt);
+void edit_msg_types(HPKT &hpkt, DEST *dest);
+void display_msgs(HPKT &hpkt);
+void display_alist(HPKT &hpkt);
+bool display_alist_str(HPKT &hpkt);
+bool display_alist_res(HPKT &hpkt);
+void display_res(HPKT &hpkt);
+void display_string_pair(HPKT &hpkt);
+void display_int32_pair(HPKT &hpkt);
+void display_int64_pair(HPKT &hpkt);
+void display_bool_pair(HPKT &hpkt);
+void display_bit_pair(HPKT &hpkt);
+bool byte_is_set(char *byte, int num);
+void display_bit_array(char *array, int num);
+void display_last(HPKT &hpkt);
+void init_hpkt(HPKT &hpkt);
+void term_hpkt(HPKT &hpkt);
+bool display_global_item(HPKT &hpkt);
+
 /* bsys.c */
+typedef enum {
+   WAIT_READ  = 1,
+   WAIT_WRITE = 2
+} fd_wait_mode;
+int fd_wait_data(int fd, fd_wait_mode mode, int sec, int msec);
+FILE *bfopen(const char *path, const char *mode);
+int baccept(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
 int copyfile(const char *src, const char *dst);
 void setup_env(char *envp[]);
 POOLMEM  *quote_string           (POOLMEM *snew, const char *old);
@@ -66,10 +94,13 @@ void     *bcalloc                (size_t size1, size_t size2);
 int       bsnprintf              (char *str, int32_t size, const char *format, ...);
 int       bvsnprintf             (char *str, int32_t size, const char *format, va_list ap);
 int       pool_sprintf           (char *pool_buf, const char *fmt, ...);
-int       create_lock_file       (char *fname, const char *progname, const char *filetype, POOLMEM **errmsg);
+int       create_lock_file       (char *fname, const char *progname, const char *filetype, POOLMEM **errmsg, int *fd);
 void      create_pid_file        (char *dir, const char *progname, int port);
 int       delete_pid_file        (char *dir, const char *progname, int port);
 void      drop                   (char *uid, char *gid, bool keep_readall_caps);
+int reset_job_user();
+int change_job_user(char *uname, char *gname, char *errmsg, int errlen);
+
 int       bmicrosleep            (int32_t sec, int32_t usec);
 char     *bfgets                 (char *s, int size, FILE *fd);
 char     *bfgets                 (POOLMEM *&s, FILE *fd);
@@ -123,6 +154,8 @@ void hmac_md5(uint8_t* text, int text_len, uint8_t* key, int key_len, uint8_t *h
 /* crc32.c */
 
 uint32_t bcrc32(unsigned char *buf, int len);
+uint32_t bcrc32_bad(unsigned char *buf, int len);
+
 
 /* crypto.c */
 int                init_crypto                 (void);
@@ -213,10 +246,11 @@ const char *  lex_tok_to_str     (int token);
 int       lex_get_token          (LEX *lf, int expect);
 void      lex_set_default_error_handler (LEX *lf);
 int       lex_set_error_handler_error_type (LEX *lf, int err_type);
+bool      lex_check_eol          (LEX *lf);
 
 /* Required typedef, not in a C file */
 extern "C" {
-typedef char *(*job_code_callback_t)(JCR *, const char *);
+   typedef char *(*job_code_callback_t)(JCR *, const char *, char *, int);
 }
 
 /* message.c */
@@ -238,11 +272,12 @@ void       set_hangup            (int hangup_value);
 void       set_blowup            (int blowup_value);
 int        get_hangup            (void);
 int        get_blowup            (void);
+bool       handle_hangup_blowup  (JCR *jcr, uint32_t file_count, uint64_t byte_count);
 void       set_assert_msg        (const char *file, int line, const char *msg);
 void       register_message_callback(void msg_callback(int type, char *msg));
 
 /* bnet_server.c */
-void       bnet_thread_server(dlist *addr_list, int max_clients, 
+void       bnet_thread_server(dlist *addr_list, int max_clients,
               workq_t *client_wq, void *handle_client_request(void *bsock));
 void       bnet_stop_thread_server(pthread_t tid);
 void             bnet_server             (int port, void handle_client_request(BSOCK *bsock));
@@ -258,12 +293,15 @@ int generate_daemon_event(JCR *jcr, const char *event);
 void             init_signals             (void terminate(int sig));
 void             init_stack_dump          (void);
 
+/* Used to display specific job information after a fatal signal */
+typedef void (dbg_hook_t)(FILE *fp);
+void dbg_add_hook(dbg_hook_t *fct);
+
 /* scan.c */
 void             strip_leading_space     (char *str);
-void             strip_trailing_junk     (char *str);
-void             strip_trailing_newline  (char *str);
-
-void             strip_trailing_slashes  (char *dir);
+char            *strip_trailing_junk     (char *str);
+char            *strip_trailing_newline  (char *str);
+char            *strip_trailing_slashes  (char *dir);
 bool             skip_spaces             (char **msg);
 bool             skip_nonspaces          (char **msg);
 int              fstrsch                 (const char *a, const char *b);
@@ -306,6 +344,8 @@ bool             get_tls_enable          (TLS_CONTEXT *ctx);
 
 
 /* util.c */
+void             bmemzero                (void *buf, size_t size);
+bool             is_null                 (const void *ptr);
 bool             is_buf_zero             (const char *buf, int len);
 void             lcase                   (char *str);
 void             bash_spaces             (char *str);
@@ -314,9 +354,10 @@ void             unbash_spaces           (char *str);
 void             unbash_spaces           (POOL_MEM &pm);
 char *           encode_time             (utime_t time, char *buf);
 char *           encode_mode             (mode_t mode, char *buf);
-char *           hexdump(const char *data, int len, char *buf, int capacity);
+char *           hexdump(const char *data, int len, char *buf, int capacity, bool add_spaces=true);
 char *           asciidump(const char *data, int len, char *buf, int capacity);
 char *           smartdump(const char *data, int len, char *buf, int capacity, bool *is_ascii=NULL);
+int              is_power_of_two         (uint64_t x);
 int              do_shell_expansion      (char *name, int name_len);
 void             jobstatus_to_ascii      (int JobStatus, char *msg, int maxlen);
 void             jobstatus_to_ascii_gui  (int JobStatus, char *msg, int maxlen);

@@ -1,0 +1,90 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2017 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+#
+#  Try to stress test autolabel by creating lots of new
+#    volumes. This is to try to show up a bug 8103 where
+#    at some point a volume is created in the catalog but
+#    not labeled, and then produces errors.
+#
+
+TestName="auto-label-many-test"
+JobName=AutoLabel
+. scripts/functions
+
+copy_test_confs
+
+echo "${cwd}/build" >${cwd}/tmp/file-list
+
+cp ${cwd}/bin/bacula-dir.conf ${cwd}/tmp/1
+sed "s%# Simple Label Format%  Label Format%" ${cwd}/tmp/1 >${cwd}/bin/bacula-dir.conf
+cp ${cwd}/bin/bacula-dir.conf ${cwd}/tmp/1
+sed "s%# Maximum Volume%  Maximum Volume%g" ${cwd}/tmp/1 >${cwd}/bin/bacula-dir.conf
+
+change_jobname CompressedTest $JobName
+start_test
+
+#$bperl -e 'add_attribute("$conf/bacula-dir.conf", "SpoolData", "no", "Job")'
+#$bperl -e 'add_attribute("$conf/bacula-sd.conf", "Upload", "no", "Cloud")'
+
+cat <<END_OF_SCRIPT >${cwd}/tmp/bconcmds
+@output /dev/null
+messages
+@$out ${cwd}/tmp/log1.out
+messages
+setdebug level=200 trace=1 options=hT storage=File
+@#setdebug level=50 dir
+run job=$JobName level=Full storage=File yes
+run job=$JobName storage=File yes
+run job=$JobName level=Full storage=File yes
+run job=$JobName storage=File yes
+@#run job=$JobName storage=File yes
+@#run job=$JobName storage=File yes
+@#run job=$JobName storage=File yes
+status dir
+wait
+list volumes
+messages
+@# 
+@# now do a restore
+@#
+@$out ${cwd}/tmp/log2.out
+setdebug level=0 storage=File
+setdebug level=0 dir
+restore where=${cwd}/tmp/bacula-restores select storage=File
+unmark *
+mark *
+done
+yes
+wait
+messages
+@# Now restore JobId=1
+restore where=${cwd}/tmp/bacula-restores storage=File
+3
+1
+mark *
+done
+yes
+wait
+messages
+@# Now restore JobId=3
+restore where=${cwd}/tmp/bacula-restores storage=File
+3
+3
+mark *
+done
+yes
+wait
+messages
+quit
+END_OF_SCRIPT
+
+run_bacula
+check_for_zombie_jobs storage=File
+stop_bacula
+
+check_two_logs
+check_restore_diff
+end_test

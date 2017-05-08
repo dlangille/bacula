@@ -1,8 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2015 Kern Sibbald
-   Copyright (C) 2001-2014 Free Software Foundation Europe e.V.
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -12,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -21,7 +20,6 @@
  * Includes specific to the Director User Agent Server
  *
  *     Kern Sibbald, August MMI
- *
  */
 
 #ifndef __UA_H_
@@ -63,6 +61,8 @@ public:
    int32_t  int32_val;                /* positive/negative */
    int64_t  int64_val;                /* big int */
 
+   void *bvfs;                        /* used in some bvfs queries */
+
    void signal(int sig) { UA_sock->signal(sig); };
 
    /* The below are in ua_output.c */
@@ -85,6 +85,10 @@ struct TREE_CTX {
    uint32_t FileCount;                /* current count of files */
    uint32_t LastCount;                /* last count of files */
    uint32_t DeltaCount;               /* trigger for printing */
+   alist *uid_acl;                    /* UID allowed in the tree */
+   alist *gid_acl;                    /* GID allowed in the tree */
+   alist *dir_acl;                    /* Directories that can be displayed */
+   char  *last_dir_acl;               /* Last directory from the DirectoryACL list */
 };
 
 struct NAME_LIST {
@@ -116,7 +120,10 @@ struct RESTORE_CTX {
    char *where;
    char *RegexWhere;
    char *replace;
-   RBSR *bsr;
+   char *fileregex;
+
+   char *when;
+   rblist *bsr_list;
    POOLMEM *fname;                    /* filename only */
    POOLMEM *path;                     /* path only */
    POOLMEM *query;
@@ -125,6 +132,7 @@ struct RESTORE_CTX {
    bool found;
    bool all;                          /* mark all as default */
    bool hardlinks_in_mem;             /* keep hard links in memory */
+   bool fdcalled;                     /* True if we should reuse the FD socket */
    NAME_LIST name_list;
    POOLMEM *component_fname;
    FILE *component_fd;

@@ -1,13 +1,14 @@
 #!/bin/sh
 #
-# Copyright (C) 2000-2015 Kern Sibbald
+# Copyright (C) 2000-2016 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
-#
 #
 # Cleanup left over files -- both before and after test run
 #
 . scripts/functions
+
 cwd=`pwd`
+chmod -R u+rwx ${tmp}
 rm -rf ${tmp}/FileVolume*
 rm -rf ${tmp}/TestVolume001 ${tmp}bacula-restores ${tmp}/Small*
 rm -rf ${tmp}/sed_tmp ${tmp}/file-list
@@ -15,10 +16,12 @@ rm -rf ${tmp}/*
 rm -rf ${working}/log ${tmp}/TEST-*
 rm -rf ${working}/log ${tmp}/Backup-*
 rm -rf ${working}/*.bsr ${working}/log*.sd
-rm -rf ${working}/*.trace ${working}/*.traceback ${working}/*.lockdump 
+rm -rf ${working}/*.trace ${working}/*.traceback ${working}/*.state
 rm -rf ${working}/@*
+rm -rf ${working}/*
 rm -rf ${tmp}disk-changer
 rm -f ${cwd}/bin/plugins/test-plugin-fd.so
+rm -rf ${cwd}/mnt
 find . -name "gigaslam.gif" -exec rm -f {} \;
 
 
@@ -27,13 +30,40 @@ if [ -d ${bin} ] ; then
   if [ -f ${bin}/bacula ] ; then
      ${bin}/bacula stop -KILL 2>&1 >/dev/null
   fi
-  cd ${scripts}
-  ./drop_bacula_tables      >/dev/null 2>&1
-  ./make_bacula_tables      >/dev/null 2>&1
-  ./grant_bacula_privileges >/dev/null 2>&1
-  cd ${cwd}
 fi
+
+cd ${scripts}
+./drop_bacula_tables      >/dev/null 2>&1
+./make_bacula_tables      >/dev/null 2>&1
+./grant_bacula_privileges >/dev/null 2>&1
+cd ${cwd}
 
 if [ x$USE_VTAPE = xyes ]; then
    rm -rf ${working}/ach
+fi
+
+if [ x$FORCE_DEDUP = xyes ]; then
+   rm -rf ${working}/dde
+   rm -rf ${working}/ddefd
+fi
+
+# Remove cloud test volumes
+if [ x$FORCE_CLOUD = xyes ]; then
+   drv=`echo $CLOUD_DRIVER | tr 'A-Z' 'a-z'`
+   if [ "${drv}" = s3 -o "${drv}" = fakes3 ]; then
+      if [ x${CLOUD_HOSTNAME} != x ]; then
+         if [ x${CLOUD_PROTOCOL} = xHTTPS ]; then
+            endpoint=""
+         else
+            endpoint="--endpoint-url=http://${CLOUD_HOSTNAME}"
+         fi
+      fi
+      if [ x${CLOUD_REGION} != x ]; then
+         region="--region ${CLOUD_REGION}"
+      else
+         region=""
+      fi
+      aws configure set default.s3.signature_version s3v4
+      aws s3 rm s3://${CLOUD_BUCKETNAME} $endpoint --recursive --include 'TestVol*' --include 'Vol*' $region 2>/dev/null >/dev/null
+   fi
 fi

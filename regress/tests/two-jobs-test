@@ -51,7 +51,7 @@ END_OF_DATA
 run_bacula
 check_for_zombie_jobs storage=File 
 
-echo "Backup 1 done"
+#echo "Backup 1 done"
 #$bin/bls -d 4 -v -c $conf/bacula-sd.conf -V 'TestVolume001' FileStorage
 touch ${cwd}/build/src/dird/dird_conf.c
 #

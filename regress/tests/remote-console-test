@@ -1,0 +1,108 @@
+#!/bin/bash
+#
+# Copyright (C) 2000-2017 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Test and setup the Client Initiated Backup
+#
+TestName="remote-console-test"
+JobName=backup
+. scripts/functions
+
+scripts/cleanup
+scripts/copy-confs
+
+change_jobname BackupClient1 $JobName
+start_test
+
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "Address", "0.0.0.0", "Client")'
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "MaximumBandwidthPerJob", "1mb/s", "Client")'
+$bperl -e 'extract_resource("$conf/bconsole.conf", "Director")' | sed 's/Director/Console/' > $tmp/1
+cat $tmp/1 >> $conf/bacula-fd.conf
+pass=`grep -i password $tmp/1`
+name=`grep -i name $tmp/1`
+
+cat <<EOF >> $conf/bacula-dir.conf
+Console {
+ $name
+ $pass
+ CommandAcl = run, .api, restore, wait, status, .status, .jobs, .clients, .storages, .pools, .filesets, .defaults
+ jobacl = *all*
+ poolacl = *all*
+ clientacl = *all*
+ storageacl = *all*
+ catalogacl = *all*
+ filesetacl = *all*
+ directoryacl = *all*
+ useridacl = *all*
+ whereacl = *all*
+}
+EOF
+
+cat <<EOF >> $conf/bacula-fd.conf
+Director {
+  Name = remote-cons
+  Password = "oi3deith3peeGho4"
+  Remote = yes
+}
+EOF
+
+FDPORT=`expr $BASEPORT + 1`
+
+cat <<EOF > $tmp/bconsole-remote.conf
+Director {
+  Name = remote-cons
+  DIRport = $FDPORT
+  address = localhost
+  Password = "noused"
+}
+
+Console {
+  Name = remote-cons
+  Director = remote-cons
+  Password = "oi3deith3peeGho4"
+}
+EOF
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out /dev/null
+messages
+@$out $tmp/log1.out
+label volume=TestVolume001 storage=File1 pool=File slot=1 drive=0
+quit
+END_OF_DATA
+
+run_bacula
+
+echo -e "proxy\n.status dir header api=2 api_opts=" | $bin/bconsole -c $tmp/bconsole-remote.conf
+echo -e ".status header api=2 api_opts=" | $bin/bconsole -c $tmp/bconsole-remote.conf
+echo -e "proxy\nrun job=backup level=full yes" | $bin/bconsole -c $tmp/bconsole-remote.conf
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out $tmp/log1.out
+@sleep 10
+status dir
+@sleep 10
+status dir
+wait
+messages
+END_OF_DATA
+
+run_bconsole
+
+if test "$debug" -eq 1 ; then
+  echo -e "proxy\nrestore select all done yes" | $bin/bconsole -c $tmp/bconsole-remote.conf
+else
+  echo -e "proxy\nrestore select all done yes" | $bin/bconsole -c $tmp/bconsole-remote.conf >/dev/null 2>&1
+fi
+
+sed -i 's/log1.out/log2.out/' $tmp/bconcmds
+
+run_bconsole
+check_for_zombie_jobs storage=File1
+
+stop_bacula
+
+check_two_logs
+check_restore_diff
+end_test

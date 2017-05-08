@@ -39,7 +39,6 @@ END_OF_DATA
 
 run_bacula
 
-echo "Backup 1 done"
 # make some files for the incremental to pick up
 touch ${cwd}/build/src/dird/*.c ${cwd}/build/src/dird/*.o
 touch ${cwd}/build/src/lib/*.c ${cwd}/build/src/lib/*.o

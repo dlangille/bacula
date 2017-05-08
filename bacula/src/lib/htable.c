@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -150,7 +150,7 @@ void htable::init(void *item, void *link, int tsize)
 {
    int pwr;
 
-   memset(this, 0, sizeof(htable));
+   bmemzero(this, sizeof(htable));
    if (tsize < 31) {
       tsize = 31;
    }
@@ -164,7 +164,7 @@ void htable::init(void *item, void *link, int tsize)
    buckets = 1<<pwr;                  /* hash table size -- power of two */
    max_items = buckets * 4;           /* allow average 4 entries per chain */
    table = (hlink **)malloc(buckets * sizeof(hlink *));
-   memset(table, 0, buckets * sizeof(hlink *));
+   bmemzero(table, buckets * sizeof(hlink *));
 #ifdef BIG_MALLOC
    malloc_big_buf(1000000);   /* ***FIXME*** need variable or some estimate */
 #endif /* BIG_MALLOC */
@@ -234,7 +234,7 @@ void htable::grow_table()
    big->max_items = big->buckets * 4;
    /* Create a bigger hash table */
    big->table = (hlink **)malloc(big->buckets * sizeof(hlink *));
-   memset(big->table, 0, big->buckets * sizeof(hlink *));
+   bmemzero(big->table, big->buckets * sizeof(hlink *));
    big->walkptr = NULL;
    big->walk_index = 0;
    /* Insert all the items in the new hash table */

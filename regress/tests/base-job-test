@@ -1,9 +1,7 @@
 #!/bin/sh
 #
-# Copyright (C) 2000-2015 Kern Sibbald
+# Copyright (C) 2000-2017 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
-#
-
 #
 # Run a basejob backup of the Bacula build directory
 #   then restore it.
@@ -112,7 +110,7 @@ if [ $? -ne 0 ]; then
     bstat=2
 fi
 
-grep -e 'Using Base JobId(s): 1$'  ${cwd}/tmp/log4.out > /dev/null
+grep -e 'Using BaseJobId(s): 1$'  ${cwd}/tmp/log4.out > /dev/null
 if [ $? -ne 0 ]; then
     print_debug "ERROR: The first full job should use only jobid=1 as basejob"
     bstat=2

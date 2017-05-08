@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2015 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -22,6 +22,7 @@
  *
  *    Kern Sibbald, July MMII
  *
+ *  Data verification added by Eric Bollengier
  */
 
 #include "bacula.h"
@@ -81,6 +82,9 @@ public:
 
    /* Scan the fileset to know if we want to check checksums or st_size */
    void scan_fileset();
+
+   /* Check the catalog to locate the file */
+   void check_accurate();
 
    /* In cleanup, we reset the current file size to -1 */
    void reset_size() {
@@ -184,6 +188,14 @@ void v_ctx::skip_sparse_header(char **data, uint32_t *length)
    *length -= OFFSET_FADDR_SIZE;
 }
 
+void v_ctx::check_accurate()
+{
+   attr->fname = jcr->last_fname; /* struct stat is still valid, but not the fname */
+   if (accurate_check_file(jcr, attr, digest)) {
+      jcr->setJobStatus(JS_Differences);
+   }
+}
+
 /*
  * If extracting, close any previous stream
  */
@@ -199,7 +211,7 @@ bool v_ctx::close_previous_stream()
 
    /* Check the size if possible */
    if (check_size && size >= 0) {
-      if (attr->type == FT_REG && size != attr->statp.st_size) {
+      if (attr->type == FT_REG && size != (int64_t)attr->statp.st_size) {
          Dmsg1(50, "Size comparison failed for %s\n", jcr->last_fname);
          Jmsg(jcr, M_INFO, 0,
               _("   st_size  differs on \"%s\". Vol: %s File: %s\n"),
@@ -238,11 +250,11 @@ void do_verify_volume(JCR *jcr)
    uint32_t VolSessionId, VolSessionTime, file_index;
    char digest[BASE64_SIZE(CRYPTO_DIGEST_MAX_SIZE)];
    int stat;
+   int bget_ret = 0;
    char *wbuf;                        /* write buffer */
    uint32_t wsize;                    /* write size */
    uint32_t rsize;                    /* read size */
-   bool msg_encrypt = false;
-   bool do_chksum;
+   bool msg_encrypt = false, do_check_accurate=false;
    v_ctx vctx(jcr);
    ATTR *attr = vctx.attr;
 
@@ -277,14 +289,16 @@ void do_verify_volume(JCR *jcr)
       jcr->compress_buf_size = compress_buf_size;
    }
 
-   GetMsg *fdmsg = New(GetMsg(jcr, sd, rec_header, GETMSG_MAX_MSG_SIZE));
+   GetMsg *fdmsg;
+   fdmsg = New(GetMsg(jcr, sd, rec_header, GETMSG_MAX_MSG_SIZE));
+
    fdmsg->start_read_sock();
-   bmessage *bmsg = New(bmessage(GETMSG_MAX_MSG_SIZE));
+   bmessage *bmsg = fdmsg->new_msg(); /* get a message, to exchange with fdmsg */
 
    /*
     * Get a record from the Storage daemon
     */
-   while (fdmsg->bget_msg(&bmsg) >= 0 && !job_canceled(jcr)) {
+   while ((bget_ret = fdmsg->bget_msg(&bmsg)) >= 0 && !job_canceled(jcr)) {
       /* Remember previous stream type */
       vctx.prev_stream = vctx.stream;
 
@@ -303,8 +317,12 @@ void do_verify_volume(JCR *jcr)
       /*
        * Now we expect the Stream Data
        */
-      if (fdmsg->bget_msg(&bmsg) < 0) {
-         Jmsg1(jcr, M_FATAL, 0, _("Data record error. ERR=%s\n"), sd->bstrerror());
+      if ((bget_ret = fdmsg->bget_msg(&bmsg)) < 0) {
+         if (bget_ret != BNET_EXT_TERMINATE) {
+            Jmsg1(jcr, M_FATAL, 0, _("Data record error. ERR=%s\n"), sd->bstrerror());
+         } else {
+            /* The error has been handled somewhere else, just quit */
+         }
          goto bail_out;
       }
       if (size != ((uint32_t)bmsg->origlen)) {
@@ -321,6 +339,12 @@ void do_verify_volume(JCR *jcr)
          if (!vctx.close_previous_stream()) {
             goto bail_out;
          }
+         if (do_check_accurate) {
+            vctx.check_accurate();
+         }
+         /* Next loop, we want to check the file (or we do it with the md5) */
+         do_check_accurate = true;
+
          /*
           * Unpack attributes and do sanity check them
           */
@@ -421,7 +445,6 @@ void do_verify_volume(JCR *jcr)
                     digest, digest_code, jcr->JobFiles);
 
       } else if (jcr->getJobLevel() == L_VERIFY_DATA) {
-
          /* Compare digest */
          if (vctx.check_chksum && *digest) {
             /* probably an empty file, we can create an empty crypto session */
@@ -439,6 +462,10 @@ void do_verify_volume(JCR *jcr)
                jcr->setJobStatus(JS_Differences);
                Dmsg3(50, "Signature verification failed for %s %s != %s\n",
                      jcr->last_fname, digest, vctx.digest);
+            }
+            if (do_check_accurate) {
+               vctx.check_accurate();
+               do_check_accurate = false; /* Don't do it in the next loop */
             }
          }
 
@@ -467,8 +494,7 @@ void do_verify_volume(JCR *jcr)
          case STREAM_COMPRESSED_DATA:
          case STREAM_SPARSE_COMPRESSED_DATA:
          case STREAM_WIN32_COMPRESSED_DATA:
-            do_chksum=true;
-            if (!(attr->type ==  FT_RAW || attr->type == FT_FIFO || attr->type == FT_REG)) {
+            if (!(attr->type ==  FT_RAW || attr->type == FT_FIFO || attr->type == FT_REG || attr->type == FT_REGE)) {
                break;
             }
 
@@ -481,19 +507,6 @@ void do_verify_volume(JCR *jcr)
                 || vctx.stream == STREAM_SPARSE_COMPRESSED_DATA
                 || vctx.stream == STREAM_SPARSE_GZIP_DATA) {
                vctx.skip_sparse_header(&wbuf, &wsize);
-            }
-
-            /* On Windows, the checksum is computed after the compression
-             * On Unix, the checksum is computed before the compression
-             */
-            if (vctx.stream == STREAM_WIN32_GZIP_DATA
-                || vctx.stream == STREAM_WIN32_DATA
-                || vctx.stream == STREAM_WIN32_COMPRESSED_DATA
-                || vctx.stream == STREAM_ENCRYPTED_WIN32_COMPRESSED_DATA
-                || vctx.stream == STREAM_ENCRYPTED_WIN32_GZIP_DATA)
-            {
-               do_chksum = false;
-               vctx.update_checksum(wbuf, wsize);
             }
 
             if (vctx.stream == STREAM_GZIP_DATA
@@ -513,10 +526,7 @@ void do_verify_volume(JCR *jcr)
                }
             }
 
-            /* Unix way to deal with checksums */
-            if (do_chksum) {
-               vctx.update_checksum(wbuf, wsize);
-            }
+            vctx.update_checksum(wbuf, wsize);
 
             if (vctx.stream == STREAM_WIN32_GZIP_DATA
                 || vctx.stream == STREAM_WIN32_DATA
@@ -541,7 +551,17 @@ void do_verify_volume(JCR *jcr)
          }
       } /* end switch */
    } /* end while bnet_get */
+   if (bget_ret == BNET_EXT_TERMINATE) {
+      goto bail_out;
+   }
    if (!vctx.close_previous_stream()) {
+      goto bail_out;
+   }
+   /* Check the last file */
+   if (do_check_accurate) {
+      vctx.check_accurate();
+   }
+   if (!accurate_finish(jcr)) {
       goto bail_out;
    }
    jcr->setJobStatus(JS_Terminated);
@@ -551,8 +571,7 @@ bail_out:
    jcr->setJobStatus(JS_ErrorTerminated);
 
 ok_out:
-   Dmsg0(215, "wait BufferedMsg\n");
-   fdmsg->wait_read_sock();
+   fdmsg->wait_read_sock(jcr->is_job_canceled());
    delete bmsg;
    free_GetMsg(fdmsg);
    if (jcr->compress_buf) {

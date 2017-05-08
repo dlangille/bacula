@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -69,6 +69,16 @@ extern void dbg_print_plugin(FILE *fp);
 /* defined in lockmgr.c */
 extern void dbg_print_lock(FILE *fp);
 
+#define MAX_DBG_HOOK 10
+static dbg_hook_t *dbg_hooks[MAX_DBG_HOOK];
+static int dbg_handler_count=0;
+
+void dbg_add_hook(dbg_hook_t *hook)
+{
+   ASSERT(dbg_handler_count < MAX_DBG_HOOK);
+   dbg_hooks[dbg_handler_count++] = hook;
+}
+
 /*
  * !!! WARNING !!!
  *
@@ -79,14 +89,13 @@ static void dbg_print_bacula()
 {
    char buf[512];
 
-   snprintf(buf, sizeof(buf), "%s/%s.%d.lockdump",
-            working_directory, my_name, (int)getpid());
+   snprintf(buf, sizeof(buf), "%s/bacula.%d.traceback", working_directory, main_pid);
    FILE *fp = fopen(buf, "a+") ;
    if (!fp) {
       fp = stderr;
    }
 
-   fprintf(stderr, "Dumping: %s\n", buf);
+   fprintf(stderr, "LockDump: %s\n", buf);
 
    /* Print also BDB and RWLOCK structure
     * Can add more info about JCR with dbg_jcr_add_hook()
@@ -95,26 +104,11 @@ static void dbg_print_bacula()
    dbg_print_jcr(fp);
    dbg_print_plugin(fp);
 
+   for(int i=0; i < dbg_handler_count ; i++) {
+      dbg_hooks[i](fp);
+   }
+
    if (fp != stderr) {
-#define direct_print
-#ifdef direct_print
-      if (prt_kaboom) {
-         rewind(fp);
-         printf("\n\n ==== lockdump output ====\n\n");
-         while (fgets(buf, (int)sizeof(buf), fp) != NULL) {
-            printf("%s", buf);
-         }
-         printf(" ==== End baktrace output ====\n\n");
-      }
-#else
-      if (prt_kaboom) {
-         char buf1[512];
-         printf("\n\n ==== lockdump output ====\n\n");
-         snprintf(buf1, sizeof(buf1), "/bin/cat %s", buf);
-         system(buf1);
-         printf(" ==== End baktrace output ====\n\n");
-      }
-#endif
       fclose(fp);
    }
 }
@@ -128,10 +122,6 @@ extern "C" void signal_handler(int sig)
    int chld_status=-1;
    utime_t now;
 
-   /* If we come back more than once, get out fast! */
-   if (already_dead) {
-      exit(1);
-   }
    Dmsg2(900, "sig=%d %s\n", sig, sig_names[sig]);
    /* Ignore certain signals -- SIGUSR2 used to interrupt threads */
    if (sig == SIGCHLD || sig == SIGUSR2) {
@@ -140,6 +130,10 @@ extern "C" void signal_handler(int sig)
    /* FreeBSD seems to generate a signal of 0, which is of course undefined */
    if (sig == 0) {
       return;
+   }
+   /* If we come back more than once, get out fast! */
+   if (already_dead) {
+      exit(1);
    }
    already_dead++;
    /* Don't use Emsg here as it may lock and thus block us */
@@ -195,13 +189,15 @@ extern "C" void signal_handler(int sig)
       }
       unlink("./core");               /* get rid of any old core file */
 
+      sprintf(pid_buf, "%d", (int)main_pid);
+      snprintf(buf, sizeof(buf), "%s/bacula.%s.traceback", working_directory, pid_buf);
+      unlink(buf);              /* Remove the previous backtrace file if exist */
+
 #ifdef DEVELOPER /* When DEVELOPER not set, this is done below */
-      /* print information about the current state into working/<file>.lockdump */
+      /* print information about the current state into working/<file>.traceback */
       dbg_print_bacula();
 #endif
 
-
-      sprintf(pid_buf, "%d", (int)main_pid);
       Dmsg1(300, "Working=%s\n", working_directory);
       Dmsg1(300, "btpath=%s\n", btpath);
       Dmsg1(300, "exepath=%s\n", exepath);
@@ -246,11 +242,17 @@ extern "C" void signal_handler(int sig)
          fprintf(stderr, _("The btraceback call returned %d\n"),
                            WEXITSTATUS(chld_status));
       }
+
+#ifndef DEVELOPER /* When DEVELOPER set, this is done above */
+      /* print information about the current state into working/<file>.traceback */
+      dbg_print_bacula();
+#endif
+
       /* If we want it printed, do so */
 #ifdef direct_print
       if (prt_kaboom) {
          FILE *fd;
-         snprintf(buf, sizeof(buf), "%s/%s.%s.traceback", working_directory, my_name, pid_buf);
+         snprintf(buf, sizeof(buf), "%s/bacula.%s.traceback", working_directory, pid_buf);
          fd = fopen(buf, "r");
          if (fd != NULL) {
             printf("\n\n ==== Traceback output ====\n\n");
@@ -263,16 +265,11 @@ extern "C" void signal_handler(int sig)
       }
 #else
       if (prt_kaboom) {
-         snprintf(buf, sizeof(buf), "/bin/cat %s/%s.%s.traceback", working_directory, my_name, pid_buf);
+         snprintf(buf, sizeof(buf), "/bin/cat %s/bacula.%s.traceback", working_directory, pid_buf);
          fprintf(stderr, "\n\n ==== Traceback output ====\n\n");
          system(buf);
          fprintf(stderr, " ==== End traceback output ====\n\n");
       }
-#endif
-
-#ifndef DEVELOPER /* When DEVELOPER set, this is done above */
-      /* print information about the current state into working/<file>.lockdump */
-      dbg_print_bacula();
 #endif
 
    }

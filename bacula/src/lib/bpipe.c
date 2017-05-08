@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -26,6 +26,7 @@
 
 #include "bacula.h"
 #include "jcr.h"
+#include <sys/resource.h>
 
 int execvp_errors[] = {
         EACCES,
@@ -72,6 +73,8 @@ BPIPE *open_bpipe(char *prog, int wait, const char *mode, char *envp[])
    int mode_read, mode_write, mode_shell;
    BPIPE *bpipe;
    int save_errno;
+   struct rlimit rl;
+   int64_t rlimitResult=0;
 
    if (!prog || !*prog) {
       /* execve(3) A component of the file does not name an existing file or file is an empty string. */
@@ -94,6 +97,16 @@ BPIPE *open_bpipe(char *prog, int wait, const char *mode, char *envp[])
    } else {
       build_argc_argv(tprog, &bargc, bargv, MAX_ARGV);
    }
+
+   /* Unable to parse the command, avoid segfault after the fork() */
+   if (bargc == 0 || bargv[0] == NULL) {
+      free_pool_memory(tprog);
+      free(bpipe);
+      /* execve(3) A component of the file does not name an existing file or file is an empty string. */
+      errno = ENOENT;
+      return NULL;
+   }
+
 #ifdef  xxxxxx
    printf("argc=%d\n", bargc);
    for (i=0; i<bargc; i++) {
@@ -120,6 +133,18 @@ BPIPE *open_bpipe(char *prog, int wait, const char *mode, char *envp[])
       errno = save_errno;
       return NULL;
    }
+
+   /* Many systems doesn't have the correct system call
+    * to determine the FD list to close.
+    */
+#if !defined(HAVE_FCNTL_F_CLOSEM) && !defined(HAVE_CLOSEFROM)
+   if (getrlimit(RLIMIT_NOFILE, &rl) == -1) {
+      rlimitResult = sysconf(_SC_OPEN_MAX);
+   } else {
+      rlimitResult = rl.rlim_max;
+   }
+#endif
+
    /* Start worker process */
    switch (bpipe->worker_pid = fork()) {
    case -1:                           /* error */
@@ -147,11 +172,16 @@ BPIPE *open_bpipe(char *prog, int wait, const char *mode, char *envp[])
          dup2(readp[1], 1);           /* dup our read to his stdout */
          dup2(readp[1], 2);           /*   and his stderr */
       }
-/* Note, the close log cause problems, see bug #1536 */
-/*    closelog();                        close syslog if open */
-      for (i=3; i<=32; i++) {         /* close any open file descriptors */
+
+#if HAVE_FCNTL_F_CLOSEM
+      fcntl(3, F_CLOSEM);
+#elif HAVE_CLOSEFROM
+      closefrom(3);
+#else
+      for (i=rlimitResult; i >= 3; i--) {
          close(i);
       }
+#endif
 
       /* Setup the environment if requested, we do not use execvpe()
        * because it's not wildly available
@@ -163,10 +193,11 @@ BPIPE *open_bpipe(char *prog, int wait, const char *mode, char *envp[])
       /* Convert errno into an exit code for later analysis */
       for (i=0; i< num_execvp_errors; i++) {
          if (execvp_errors[i] == errno) {
-            exit(200 + i);            /* exit code => errno */
+            _exit(200 + i);            /* exit code => errno */
          }
       }
-      exit(255);                      /* unknown errno */
+      /* Do not flush stdio */
+      _exit(255);                      /* unknown errno */
 
    default:                           /* parent */
       break;
@@ -237,18 +268,18 @@ int close_bpipe(BPIPE *bpipe)
 
    /* wait for worker child to exit */
    for ( ;; ) {
-      Dmsg2(800, "Wait for %d opt=%d\n", bpipe->worker_pid, wait_option);
+      Dmsg2(100, "Wait for %d opt=%d\n", bpipe->worker_pid, wait_option);
       do {
          wpid = waitpid(bpipe->worker_pid, &chldstatus, wait_option);
       } while (wpid == -1 && (errno == EINTR || errno == EAGAIN));
       if (wpid == bpipe->worker_pid || wpid == -1) {
          berrno be;
          stat = errno;
-         Dmsg3(800, "Got break wpid=%d status=%d ERR=%s\n", wpid, chldstatus,
+         Dmsg3(100, "Got break wpid=%d status=%d ERR=%s\n", wpid, chldstatus,
             wpid==-1?be.bstrerror():"none");
          break;
       }
-      Dmsg3(800, "Got wpid=%d status=%d ERR=%s\n", wpid, chldstatus,
+      Dmsg3(100, "Got wpid=%d status=%d ERR=%s\n", wpid, chldstatus,
             wpid==-1?strerror(errno):"none");
       if (remaining_wait > 0) {
          bmicrosleep(1, 0);           /* wait one second */
@@ -263,17 +294,17 @@ int close_bpipe(BPIPE *bpipe)
       if (WIFEXITED(chldstatus)) {    /* process exit()ed */
          stat = WEXITSTATUS(chldstatus);
          if (stat != 0) {
-            Dmsg1(800, "Non-zero status %d returned from child.\n", stat);
+            Dmsg1(100, "Non-zero status %d returned from child.\n", stat);
             stat |= b_errno_exit;        /* exit status returned */
          }
-         Dmsg1(800, "child status=%d\n", stat & ~b_errno_exit);
+         Dmsg1(100, "child status=%d\n", stat & ~b_errno_exit);
       } else if (WIFSIGNALED(chldstatus)) {  /* process died */
 #ifndef HAVE_WIN32
          stat = WTERMSIG(chldstatus);
 #else
          stat = 1;                    /* fake child status */
 #endif
-         Dmsg1(800, "Child died from signal %d\n", stat);
+         Dmsg1(100, "Child died from signal %d\n", stat);
          stat |= b_errno_signal;      /* exit signal returned */
       }
    }
@@ -281,7 +312,7 @@ int close_bpipe(BPIPE *bpipe)
       stop_child_timer(bpipe->timer_id);
    }
    free(bpipe);
-   Dmsg2(800, "returning stat=%d,%d\n", stat & ~(b_errno_exit|b_errno_signal), stat);
+   Dmsg2(100, "returning stat=%d,%d\n", stat & ~(b_errno_exit|b_errno_signal), stat);
    return stat;
 }
 
@@ -368,11 +399,11 @@ int run_program(char *prog, int wait, POOLMEM *&results)
    }
    if (stat1 < 0) {
       berrno be;
-      Dmsg2(150, "Run program fgets stat=%d ERR=%s\n", stat1, be.bstrerror(errno));
+      Dmsg2(100, "Run program fgets stat=%d ERR=%s\n", stat1, be.bstrerror(errno));
    } else if (stat1 != 0) {
-      Dmsg1(150, "Run program fgets stat=%d\n", stat1);
+      Dmsg1(100, "Run program fgets stat=%d\n", stat1);
       if (bpipe->timer_id) {
-         Dmsg1(150, "Run program fgets killed=%d\n", bpipe->timer_id->killed);
+         Dmsg1(100, "Run program fgets killed=%d\n", bpipe->timer_id->killed);
          /* NB: I'm not sure it is really useful for run_program. Without the
           * following lines run_program would not detect if the program was killed
           * by the watchdog. */
@@ -384,7 +415,7 @@ int run_program(char *prog, int wait, POOLMEM *&results)
    }
    stat2 = close_bpipe(bpipe);
    stat1 = stat2 != 0 ? stat2 : stat1;
-   Dmsg1(150, "Run program returning %d\n", stat1);
+   Dmsg1(100, "Run program returning %d\n", stat1);
    return stat1;
 }
 
@@ -436,19 +467,19 @@ int run_program_full_output(char *prog, int wait, POOLMEM *&results, char *env[]
       pm_strcat(tmp, buf);
       if (feof(bpipe->rfd)) {
          stat1 = 0;
-         Dmsg1(900, "Run program fgets stat=%d\n", stat1);
+         Dmsg1(100, "Run program fgets stat=%d\n", stat1);
          break;
       } else {
          stat1 = ferror(bpipe->rfd);
       }
       if (stat1 < 0) {
          berrno be;
-         Dmsg2(200, "Run program fgets stat=%d ERR=%s\n", stat1, be.bstrerror());
+         Dmsg2(100, "Run program fgets stat=%d ERR=%s\n", stat1, be.bstrerror());
          break;
       } else if (stat1 != 0) {
-         Dmsg1(900, "Run program fgets stat=%d\n", stat1);
+         Dmsg1(200, "Run program fgets stat=%d\n", stat1);
          if (bpipe->timer_id && bpipe->timer_id->killed) {
-            Dmsg1(250, "Run program saw fgets killed=%d\n", bpipe->timer_id->killed);
+            Dmsg1(100, "Run program saw fgets killed=%d\n", bpipe->timer_id->killed);
             break;
          }
       }
@@ -460,16 +491,16 @@ int run_program_full_output(char *prog, int wait, POOLMEM *&results, char *env[]
     * just as the timer kills it.
     */
    if (bpipe->timer_id && bpipe->timer_id->killed) {
-      Dmsg1(150, "Run program fgets killed=%d\n", bpipe->timer_id->killed);
+      Dmsg1(100, "Run program fgets killed=%d\n", bpipe->timer_id->killed);
       pm_strcpy(tmp, _("Program killed by Bacula (timeout)\n"));
       stat1 = ETIME;
    }
    pm_strcpy(results, tmp);
-   Dmsg3(1900, "resadr=0x%x reslen=%d res=%s\n", results, strlen(results), results);
+   Dmsg3(200, "resadr=0x%x reslen=%d res=%s\n", results, strlen(results), results);
    stat2 = close_bpipe(bpipe);
    stat1 = stat2 != 0 ? stat2 : stat1;
 
-   Dmsg1(900, "Run program returning %d\n", stat1);
+   Dmsg1(100, "Run program returning %d\n", stat1);
 bail_out:
    free_pool_memory(tmp);
    free(buf);

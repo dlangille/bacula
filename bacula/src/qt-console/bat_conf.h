@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,13 +11,13 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
- * Bacula Adminstration Tool (bat)
+ * Bacula Adminstration Tool (bat) 
  *
  *     Kern Sibbald, March 2002
  */
@@ -83,6 +83,7 @@ class CONRES {
 public:
    RES   hdr;
    char *password;                    /* UA server password */
+   bool comm_compression;             /* Enable comm line compression */
    bool tls_authenticate;             /* Authenticate with tls */
    bool tls_enable;                   /* Enable TLS on all connections */
    bool tls_require;                  /* Require TLS on all connections */

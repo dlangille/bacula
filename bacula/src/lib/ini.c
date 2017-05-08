@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -181,7 +181,7 @@ bool ConfigFile::dump_string(const char *buf, int32_t len)
       make_unique_filename(&out_fname, (int)(intptr_t)this, (char*)"configfile");
    }
 
-   fp = fopen(out_fname, "wb");
+   fp = bfopen(out_fname, "wb");
    if (!fp) {
       return ret;
    }
@@ -206,7 +206,7 @@ bool ConfigFile::serialize(const char *fname)
       return ret;
    }
 
-   fp = fopen(fname, "w");
+   fp = bfopen(fname, "w");
    if (!fp) {
       return ret;
    }
@@ -279,8 +279,15 @@ int ConfigFile::dump_results(POOLMEM **buf)
    tmp2 = get_pool_memory(PM_MESSAGE);
 
    for (int i=0; items[i].name ; i++) {
+      bool process= items[i].found;
       if (items[i].found) {
          items[i].handler(NULL, this, &items[i]);
+      }
+      if (!items[i].found && items[i].required && items[i].default_value) {
+         pm_strcpy(this->edit, items[i].default_value);
+         process = true;
+      }
+      if (process) {
          if (items[i].comment && *items[i].comment) {
             Mmsg(tmp, "# %s\n", items[i].comment);
             pm_strcat(buf, tmp);
@@ -731,7 +738,7 @@ struct ini_items test_items[] = {
 int32_t r_last;
 int32_t r_first;
 RES_HEAD **res_head;
-void save_resource(int type, RES_ITEM *items, int pass){}
+bool save_resource(RES_HEAD **rhead, int type, RES_ITEM *items, int pass){}
 void dump_resource(int type, RES *ares, void sendit(void *sock, const char *fmt, ...), void *sock){}
 void free_resource(RES *rres, int type){}
 union URES {

@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -70,6 +70,7 @@ struct s_tree_node {
    unsigned int soft_link: 1;         /* set if is soft link */
    unsigned int inserted: 1;          /* set when node newly inserted */
    unsigned int loaded: 1;            /* set when the dir is in the tree */
+   unsigned int can_access: 1;        /* Can access to this node */
    struct s_tree_node *parent;
    struct s_tree_node *next;          /* next hash of FileIndex */
    struct delta_list *delta_list;     /* delta parts for this node */

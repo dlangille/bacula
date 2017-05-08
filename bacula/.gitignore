@@ -13,12 +13,9 @@
 *.lo
 *~
 *.patch
+*.bak
 1
 2
-*.py
-*.c
-*.sql
-clientproductionconfig
 autom4te.cache
 bacula
 btraceback
@@ -232,8 +229,6 @@ scripts/logwatch/logfile.bacula.conf
 src/1
 src/2
 src/3
-src/add-bsd
-src/bsd
 src/Makefile
 src/config.h
 src/testprogs
@@ -243,6 +238,8 @@ src/python
 src/pyqt
 src/xqt-console
 src/TAGS
+src/bsd
+src/add-bsd
 
 # src/cats/
 src/cats/1
@@ -358,6 +355,21 @@ src/findlib/libfind.a
 src/findlib/.libs
 src/findlib/libbacfind.a
 
+# src/gnome2-console/
+src/gnome2-console/test-gnome-console.conf
+src/gnome2-console/Makefile
+src/gnome2-console/gnome-console
+src/gnome2-console/gnome-console.conf
+src/gnome2-console/1
+src/gnome2-console/2
+src/gnome2-console/3
+src/gnome2-console/main.c
+src/gnome2-console/static-gnome-console
+src/gnome2-console/bgnome-console
+src/gnome2-console/bgnome-console.conf
+src/gnome2-console/support.c.orig
+src/gnome2-console/.libs
+
 # src/lib/
 src/lib/bsnprintf
 src/lib/save
@@ -396,15 +408,6 @@ src/plugins/sd/main
 src/plugins/sd/Makefile
 
 # src/qt-console/
-src/qt-console/tray-monitor/.libs/
-src/qt-console/tray-monitor/install_conf_file
-src/qt-console/tray-monitor/object_script.bacula-tray-monitor.Debug
-src/qt-console/tray-monitor/object_script.bacula-tray-monitor.Release
-src/qt-console/tray-monitor/bacula-tray-monitor
-src/qt-console/tray-monitor/bacula-tray-monitor.conf
-src/qt-console/tray-monitor/bacula-tray-monitor.Debug
-src/qt-console/tray-monitor/bacula-tray-monitor.Release
-src/qt-console/tray-monitor/qrc_main.cpp
 src/qt-console/ui_*.h
 src/qt-console/bat
 src/qt-console/about-func
@@ -490,6 +493,9 @@ src/qt-console/testprogs/putz/Makefile
 src/qt-console/testprogs/putz/moc
 
 # src/qt-console/tray-monitor
+src/qt-console/tray-monitor/.libs/
+src/qt-console/tray-monitor/bacula-tray-monitor
+src/qt-console/tray-monitor/qrc_main.cpp
 src/qt-console/tray-monitor/Makefile.mingw32
 src/qt-console/tray-monitor/Makefile.mingw32.Debug
 src/qt-console/tray-monitor/Makefile.mingw32.Release
@@ -508,6 +514,11 @@ src/qt-console/tray-monitor/moc32/
 src/qt-console/tray-monitor/moc64/
 src/qt-console/tray-monitor/tray-monitor.pro.mingw32
 src/qt-console/tray-monitor/tray-monitor.pro.mingw64
+src/qt-console/tray-monitor/bacula-tray-monitor.conf
+src/qt-console/tray-monitor/install_conf_file
+src/qt-console/tray-monitor/object_script.bacula-tray-monitor.Debug
+src/qt-console/tray-monitor/object_script.bacula-tray-monitor.Release
+
 
 # src/qt-console/ts/
 src/qt-console/ts/bat_fr.qm
@@ -580,7 +591,6 @@ src/tray-monitor/*~
 src/tray-monitor/.libs
 
 # src/win32/
-src/win32/*.log
 src/win32/Makefile.inc
 src/win32/release
 src/win32/pthreadGCE.dll
@@ -808,8 +818,6 @@ src/wx-console/bwx-console.conf
 src/wx-console/.libs
 
 # updatedb/
-updatedb/update_mysql_tables_1018_to_1019
-updatedb/update_postgresql_tables_1018_to_1019
 updatedb/update_mysql_tables
 updatedb/update_postgresql_tables
 updatedb/update_sqlite3_tables
@@ -833,15 +841,17 @@ updatedb/update_mysql_tables_13_to_14
 updatedb/update_mysql_tables_14_to_1014
 updatedb/update_mysql_tables_1015_to_1016
 updatedb/update_mysql_tables_1016_to_1017
-updatedb/update_mysql_tables_1017_to_1018
 updatedb/update_postgresql_tables_1014_to_1015
 updatedb/update_postgresql_tables_12_to_13
 updatedb/update_postgresql_tables_13_to_14
 updatedb/update_postgresql_tables_14_to_1014
 updatedb/update_postgresql_tables_1015_to_1016
 updatedb/update_postgresql_tables_1016_to_1017
-updatedb/update_postgresql_tables_1017_to_1018
 updatedb/update_sqlite3_tables_1015_to_1016
+updatedb/update_mysql_tables_1017_to_1018
+updatedb/update_mysql_tables_1018_to_1019
+updatedb/update_postgresql_tables_1017_to_1018
+updatedb/update_postgresql_tables_1018_to_1019
 
 
 # /docs/
@@ -1184,12 +1194,6 @@ updatedb/update_sqlite3_tables_1015_to_1016
 /gui/bimagemgr/bacula-bimagemgr.spec
 
 # /regress/
-../regress/backup-mysql-7.0.sql
-../regress/backup-postgres-5.2.sql
-../regress/bacula-postgres-7.0.sql
-../regress/bin-5.2.0/
-../regress/bin-7.0/
-/regress/do_database_ugrade
 /regress/testtime.out
 /regress/kerns.config
 /regress/1

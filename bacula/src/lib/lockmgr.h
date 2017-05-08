@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -33,6 +33,11 @@ void lmgr_v(pthread_mutex_t *m);
  * Get integer thread id
  */
 intptr_t bthread_get_thread_id();
+
+/* 
+ * Set the Thread Id of the current thread to limit I/O operations
+ */
+int bthread_change_uid(uid_t uid, gid_t gid);
 
 #ifdef USE_LOCKMGR
 
@@ -117,6 +122,12 @@ void bthread_mutex_set_priority(bthread_mutex_t *m, int prio);
  * in the stack and be able to call mutex_lock/unlock
  */
 void lmgr_init_thread();
+
+/*
+ * Know if the current thread is registred (used when we
+ * do not control thread creation)
+ */
+bool lmgr_thread_is_initialized();
 
 /*
  * Call this function at the end of the thread
@@ -221,6 +232,7 @@ int bthread_kill(pthread_t thread, int sig,
 # define lmgr_add_event_p(c, u, f, l)
 # define lmgr_add_event(c, u)
 # define lmgr_dump()
+# define lmgr_thread_is_initialized() (1)
 # define lmgr_init_thread()
 # define lmgr_cleanup_thread()
 # define lmgr_pre_lock(m, prio, f, l)
@@ -246,5 +258,41 @@ int bthread_kill(pthread_t thread, int sig,
 # define lmgr_mutex_is_locked(m)        (1)
 # define bthread_cond_wait_p(w, x, y, z) pthread_cond_wait(w,x)
 #endif  /* USE_LOCKMGR */
+
+/* a very basic lock_guard implementation :
+ * Lock_guard is mostly usefull to garanty mutex unlocking. Also, it's exception safe. 
+ * usage example:
+ * void foobar()
+ * {
+ *    lock_guard protector(m_mutex); // m_mutex is locked
+ *    // the following section is protected until the function exits and/or returns
+ *
+ *    if (case == TRUE)
+ *    { 
+ *       return; // when returning, m_mutex is unlocked
+ *    }
+ *    .
+ *    .  
+ *    .
+ *
+ *    // when the method exits, m_mutex is unlocked.
+ * }
+ */
+class lock_guard
+{
+public:
+   
+   pthread_mutex_t &m_mutex; /* the class keeps a reference on the mutex*/
+
+   explicit lock_guard(pthread_mutex_t &mutex) : m_mutex(mutex)
+   {
+      P(m_mutex); /* constructor locks the mutex*/
+   }
+   
+   ~lock_guard()
+   {
+      V(m_mutex); /* destructor unlocks the mutex*/
+   }
+};
 
 #endif  /* LOCKMGR_H */

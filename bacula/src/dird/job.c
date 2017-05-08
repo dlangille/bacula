@@ -11,17 +11,15 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
- *
  *   Bacula Director Job processing routines
  *
  *     Kern Sibbald, October MM
- *
  */
 
 #include "bacula.h"
@@ -588,50 +586,63 @@ static bool cancel_sd_job(UAContext *ua, const char *cmd, JCR *jcr)
 /* The FD is not connected, so we try to complete JCR fields and send
  * the cancel command.
  */
-static int cancel_inactive_job(UAContext *ua, JCR *jcr)
+int cancel_inactive_job(UAContext *ua)
 {
    CLIENT_DBR cr;
    JOB_DBR    jr;
    int        i;
    USTORE     store;
-   CLIENT     *client;
+   CLIENT    *client;
+   JCR       *jcr = new_jcr(sizeof(JCR), dird_free_jcr);
 
-   Dmsg2(10, "cancel_inactive_job ua.jcr=%p jcr=%p\n", ua->jcr, jcr);
+   memset(&jr, 0, sizeof(jr));
+   memset(&cr, 0, sizeof(cr));
 
-   if (!jcr->client) {
-      memset(&cr, 0, sizeof(cr));
+   if ((i = find_arg_with_value(ua, "jobid")) > 0) {
+      jr.JobId = str_to_int64(ua->argv[i]);
 
-      /* User is kind enough to provide the client name */
-      if ((i = find_arg_with_value(ua, "client")) > 0) {
-         bstrncpy(cr.Name, ua->argv[i], sizeof(cr.Name));
+   } else if ((i = find_arg_with_value(ua, "ujobid")) > 0) {
+      bstrncpy(jr.Job, ua->argv[i], sizeof(jr.Job));
+
+   } else {
+      ua->error_msg(_("jobid/ujobid argument not found.\n"));
+      goto bail_out;
+   }
+
+   if (!open_client_db(ua)) {
+      goto bail_out;
+   }
+
+   if (!db_get_job_record(ua->jcr, ua->db, &jr)) {
+      ua->error_msg(_("Job %ld/%s not found in database.\n"), jr.JobId, jr.Job);
+      goto bail_out;
+   }
+
+   if (!acl_access_ok(ua, Job_ACL, jr.Name)) {
+      ua->error_msg(_("Job %s is not accessible from this console\n"), jr.Name);
+      goto bail_out;
+   }
+
+   cr.ClientId = jr.ClientId;
+   if (!cr.ClientId || !db_get_client_record(ua->jcr, ua->db, &cr)) {
+      ua->error_msg(_("Client %ld not found in database.\n"), jr.ClientId);
+      goto bail_out;
+   }
+
+   if (acl_access_client_ok(ua, cr.Name, jr.JobType)) {
+      client = (CLIENT *)GetResWithName(R_CLIENT, cr.Name);
+      if (client) {
+         jcr->client = client;
       } else {
-         memset(&jr, 0, sizeof(jr));
-         bstrncpy(jr.Job, jcr->Job, sizeof(jr.Job));
-
-         if (!open_client_db(ua)) {
-            goto bail_out;
-         }
-         if (!db_get_job_record(ua->jcr, ua->db, &jr)) {
-            goto bail_out;
-         }
-         cr.ClientId = jr.ClientId;
-         if (!cr.ClientId || !db_get_client_record(ua->jcr, ua->db, &cr)) {
-            goto bail_out;
-         }
-      }
-
-      if (acl_access_ok(ua, Client_ACL, cr.Name)) {
-         client = (CLIENT *)GetResWithName(R_CLIENT, cr.Name);
-         if (client) {
-            jcr->client = client;
-         } else {
-            Jmsg1(jcr, M_FATAL, 0, _("Client resource \"%s\" does not exist.\n"), cr.Name);
-            goto bail_out;
-         }
-      } else {
+         Jmsg1(jcr, M_FATAL, 0, _("Client resource \"%s\" does not exist.\n"), cr.Name);
          goto bail_out;
       }
+   } else {
+      goto bail_out;
    }
+
+   jcr->JobId = jr.JobId;
+   bstrncpy(jcr->Job, jr.Job, sizeof(jcr->Job));
 
    cancel_file_daemon_job(ua, "cancel", jcr);
 
@@ -643,8 +654,7 @@ static int cancel_inactive_job(UAContext *ua, JCR *jcr)
       goto bail_out;
    }
 
-   set_wstorage(ua->jcr, &store);
-
+   set_wstorage(jcr, &store);
    cancel_sd_job(ua, "cancel", jcr);
 
 bail_out:
@@ -661,22 +671,14 @@ bail_out:
  *           false on failure. Message sent to ua->jcr.
  */
 bool
-cancel_job(UAContext *ua, JCR *jcr, bool cancel)
+cancel_job(UAContext *ua, JCR *jcr, int wait,  bool cancel)
 {
    char ed1[50];
    int32_t old_status = jcr->JobStatus;
    int status;
    const char *reason, *cmd;
-   bool force = find_arg(ua, "inactive") > 0;
 
    Dmsg3(10, "cancel_job jcr=%p jobid=%d use_count\n", jcr, jcr->JobId, jcr->use_count());
-
-   /* If the user explicitely ask, we can send the cancel command to
-    * the FD.
-    */
-   if (cancel && force) {
-      return cancel_inactive_job(ua, jcr);
-   }
 
    if (cancel) {
       status = JS_Canceled;
@@ -710,8 +712,11 @@ cancel_job(UAContext *ua, JCR *jcr, bool cancel)
 
       /* Cancel File daemon */
       if (jcr->file_bsock) {
+         btimer_t *tid;
          /* do not return now, we want to try to cancel the sd */
+         tid = start_bsock_timer(jcr->file_bsock, 120);
          cancel_file_daemon_job(ua, cmd, jcr);
+         stop_bsock_timer(tid);
       }
 
       /* We test file_bsock because the previous operation can take
@@ -724,8 +729,11 @@ cancel_job(UAContext *ua, JCR *jcr, bool cancel)
 
       /* Cancel Storage daemon */
       if (jcr->store_bsock) {
+         btimer_t *tid;
          /* do not return now, we want to try to cancel the sd socket */
+         tid = start_bsock_timer(jcr->store_bsock, 120);
          cancel_sd_job(ua, cmd, jcr);
+         stop_bsock_timer(tid);
       }
 
       /* We test file_bsock because the previous operation can take
@@ -744,10 +752,13 @@ cancel_job(UAContext *ua, JCR *jcr, bool cancel)
          JCR *wjcr = jcr->wjcr;
 
          if (wjcr->store_bsock) {
+             btimer_t *tid;
             /* do not return now, we want to try to cancel the sd socket */
+            tid = start_bsock_timer(wjcr->store_bsock, 120);
             cancel_sd_job(ua, cmd, wjcr);
+            stop_bsock_timer(tid);
          }
-         /* We test file_bsock because the previous operation can take
+         /* We test store_bsock because the previous operation can take
           * several minutes
           */
          if (wjcr->store_bsock && cancel) {
@@ -819,14 +830,33 @@ static void job_monitor_destructor(watchdog_t *self)
    free_jcr(control_jcr);
 }
 
-static void job_monitor_watchdog(watchdog_t *self)
+extern "C" void *cancel_thread(void *arg)
 {
-   JCR *control_jcr, *jcr;
+   JCR *jcr = (JCR *)arg;
+   UAContext *ua;
+   JCR *control_jcr;
 
-   control_jcr = (JCR *)self->data;
+   pthread_detach(pthread_self());
+   ua = new_ua_context(jcr);
+   control_jcr = new_control_jcr("*CancelThread*", JT_SYSTEM);
+   ua->jcr = control_jcr;
+
+   Dmsg3(400, "Cancelling JCR %p JobId=%d (%s)\n", jcr, jcr->JobId, jcr->Job);
+   cancel_job(ua, jcr, 120);
+   Dmsg2(400, "Have cancelled JCR %p JobId=%d\n", jcr, jcr->JobId);
+
+   free_ua_context(ua);
+   free_jcr(control_jcr);
+   free_jcr(jcr);
+   return NULL;
+}
+
+static void job_monitor_watchdog(watchdog_t *wd)
+{
+   JCR *jcr;
 
    Dsm_check(100);
-   Dmsg1(800, "job_monitor_watchdog %p called\n", self);
+   Dmsg1(800, "job_monitor_watchdog %p called\n", wd);
 
    foreach_jcr(jcr) {
       bool cancel = false;
@@ -854,14 +884,15 @@ static void job_monitor_watchdog(watchdog_t *self)
       }
 
       if (cancel) {
-         Dmsg3(800, "Cancelling JCR %p jobid %d (%s)\n", jcr, jcr->JobId, jcr->Job);
-         UAContext *ua = new_ua_context(jcr);
-         ua->jcr = control_jcr;
-         cancel_job(ua, jcr);
-         free_ua_context(ua);
-         Dmsg2(800, "Have cancelled JCR %p Job=%d\n", jcr, jcr->JobId);
+         pthread_t thid;
+         int status;
+         jcr->inc_use_count();
+         if ((status=pthread_create(&thid, NULL, cancel_thread, (void *)jcr)) != 0) {
+            berrno be;
+            Jmsg1(jcr, M_WARNING, 0, _("Cannot create cancel thread: ERR=%s\n"), be.bstrerror(status));
+            free_jcr(jcr);
+         }
       }
-
    }
    /* Keep reference counts correct */
    endeach_jcr(jcr);
@@ -991,7 +1022,7 @@ bool allow_duplicate_job(JCR *jcr)
    JOB *job = jcr->job;
    JCR *djcr;                /* possible duplicate job */
 
-   /* Is AllowDuplicateJobs is set or is duplicate checking 
+   /* Is AllowDuplicateJobs is set or is duplicate checking
     *  disabled for this job? */
    if (job->AllowDuplicateJobs || jcr->IgnoreDuplicateJobChecking) {
       return true;
@@ -1003,14 +1034,14 @@ bool allow_duplicate_job(JCR *jcr)
     */
 
    foreach_jcr(djcr) {
-      if (jcr == djcr || djcr->JobId == 0) {
+      if (jcr == djcr || djcr->is_internal_job() || !djcr->job) {
          continue;                   /* do not cancel this job or consoles */
       }
       /* Does Job has the IgnoreDuplicateJobChecking flag set,
        * if so do not check it against other jobs */
       if (djcr->IgnoreDuplicateJobChecking) {
-         continue; 
-      } 
+         continue;
+      }
       if ((strcmp(job->name(), djcr->job->name()) == 0) &&
           djcr->getJobType() == jcr->getJobType()) /* A duplicate is about the same name and the same type */
       {
@@ -1055,7 +1086,7 @@ bool allow_duplicate_job(JCR *jcr)
                  djcr->JobId);
               break;     /* get out of foreach_jcr */
             }
-         } 
+         }
          /* Cancel one of the two jobs (me or dup) */
          /* If CancelQueuedDuplicates is set do so only if job is queued */
          if (job->CancelQueuedDuplicates) {
@@ -1078,10 +1109,10 @@ bool allow_duplicate_job(JCR *jcr)
             /* Zap the duplicated job djcr */
             UAContext *ua = new_ua_context(jcr);
             Jmsg(jcr, M_INFO, 0, _("Cancelling duplicate JobId=%d.\n"), djcr->JobId);
-            cancel_job(ua, djcr);
+            cancel_job(ua, djcr, 60);
             bmicrosleep(0, 500000);
             djcr->setJobStatus(JS_Canceled);
-            cancel_job(ua, djcr);
+            cancel_job(ua, djcr, 60);
             free_ua_context(ua);
             Dmsg2(800, "Cancel dup %p JobId=%d\n", djcr, djcr->JobId);
          } else {
@@ -1176,17 +1207,6 @@ void apply_pool_overrides(JCR *jcr)
             pm_strcpy(jcr->pool_source, _("Run FullPool override"));
          } else {
             pm_strcpy(jcr->pool_source, _("Job FullPool override"));
-         }
-      }
-      break;
-   case L_VIRTUAL_FULL:
-      if (jcr->vfull_pool) {
-         jcr->pool = jcr->vfull_pool;
-         pool_override = true;
-         if (jcr->run_vfull_pool_override) {
-            pm_strcpy(jcr->pool_source, _("Run VFullPool override"));
-         } else {
-            pm_strcpy(jcr->pool_source, _("Job VFullPool override"));
          }
       }
       break;
@@ -1323,7 +1343,7 @@ void update_job_end_record(JCR *jcr)
    jcr->jr.ReadBytes = jcr->ReadBytes;
    jcr->jr.VolSessionId = jcr->VolSessionId;
    jcr->jr.VolSessionTime = jcr->VolSessionTime;
-   jcr->jr.JobErrors = jcr->JobErrors;
+   jcr->jr.JobErrors = jcr->JobErrors + jcr->SDErrors;
    jcr->jr.HasBase = jcr->HasBase;
    if (!db_update_job_end_record(jcr, jcr->db, &jcr->jr)) {
       Jmsg(jcr, M_WARNING, 0, _("Error updating job record. %s"),
@@ -1455,16 +1475,21 @@ void dird_free_jcr(JCR *jcr)
    free_and_null_pool_memory(jcr->wstore_source);
    free_and_null_pool_memory(jcr->rstore_source);
    free_and_null_pool_memory(jcr->next_vol_list);
+   free_and_null_pool_memory(jcr->component_fname);
 
    /* Delete lists setup to hold storage pointers */
    free_rwstorage(jcr);
 
    jcr->job_end_push.destroy();
 
-   if (jcr->JobId != 0) {
+   if (jcr->JobId != 0)
       write_state_file(director->working_directory, "bacula-dir", get_first_port_host_order(director->DIRaddrs));
-   }
 
+   if (jcr->plugin_config) {
+      free_plugin_config_items(jcr->plugin_config);
+      delete jcr->plugin_config;
+      jcr->plugin_config = NULL;
+   }
    free_plugins(jcr);                 /* release instantiated plugins */
 
    garbage_collect_memory_pool();
@@ -1560,7 +1585,6 @@ void set_jcr_defaults(JCR *jcr, JOB *job)
       pm_strcpy(jcr->next_pool_source, _("Job Pool's NextPool resource"));
    }
    jcr->full_pool = job->full_pool;
-   jcr->vfull_pool = job->vfull_pool;
    jcr->inc_pool = job->inc_pool;
    jcr->diff_pool = job->diff_pool;
    if (job->pool->catalog) {
@@ -1576,7 +1600,6 @@ void set_jcr_defaults(JCR *jcr, JOB *job)
    jcr->spool_data = job->spool_data;
    jcr->spool_size = job->spool_size;
    jcr->write_part_after_job = job->write_part_after_job;
-   jcr->IgnoreDuplicateJobChecking = job->IgnoreDuplicateJobChecking;
    jcr->MaxRunSchedTime = job->MaxRunSchedTime;
    if (jcr->RestoreBootstrap) {
       free(jcr->RestoreBootstrap);
@@ -1797,6 +1820,45 @@ void create_clones(JCR *jcr)
 }
 
 /*
+ * Given: a JobId  and FileIndex
+ *  this subroutine writes a bsr file to restore that job.
+ * Returns: -1 on error
+ *           number of files if OK
+ */
+int create_restore_bootstrap_file(JCR *jcr, JobId_t jobid, int findex1, int findex2)
+{
+   RESTORE_CTX rx;
+   UAContext *ua;
+   int files;
+
+   memset(&rx, 0, sizeof(rx));
+   rx.JobIds = (char *)"";
+
+   rx.bsr_list = create_bsr_list(jobid, findex1, findex2);
+
+   ua = new_ua_context(jcr);
+   if (!complete_bsr(ua, rx.bsr_list)) {
+      files = -1;
+      goto bail_out;
+   }
+
+   jcr->ExpectedFiles = write_bsr_file(ua, rx);
+   if (jcr->ExpectedFiles == 0) {
+      files = 0;
+      goto bail_out;
+   }
+   free_ua_context(ua);
+   free_bsr(rx.bsr_list);
+   jcr->needs_sd = true;
+   return jcr->ExpectedFiles;
+
+bail_out:
+   free_ua_context(ua);
+   free_bsr(rx.bsr_list);
+   return files;
+}
+
+/*
  * Given: a JobId in jcr->previous_jr.JobId,
  *  this subroutine writes a bsr file to restore that job.
  * Returns: -1 on error
@@ -1804,36 +1866,7 @@ void create_clones(JCR *jcr)
  */
 int create_restore_bootstrap_file(JCR *jcr)
 {
-   RESTORE_CTX rx;
-   UAContext *ua;
-   int files;
-
-   memset(&rx, 0, sizeof(rx));
-   rx.bsr = new_bsr();
-   rx.JobIds = (char *)"";
-   rx.bsr->JobId = jcr->previous_jr.JobId;
-   ua = new_ua_context(jcr);
-   if (!complete_bsr(ua, rx.bsr)) {
-      files = -1;
-      goto bail_out;
-   }
-   rx.bsr->fi = new_findex();
-   rx.bsr->fi->findex = 1;
-   rx.bsr->fi->findex2 = jcr->previous_jr.JobFiles;
-   jcr->ExpectedFiles = write_bsr_file(ua, rx);
-   if (jcr->ExpectedFiles == 0) {
-      files = 0;
-      goto bail_out;
-   }
-   free_ua_context(ua);
-   free_bsr(rx.bsr);
-   jcr->needs_sd = true;
-   return jcr->ExpectedFiles;
-
-bail_out:
-   free_ua_context(ua);
-   free_bsr(rx.bsr);
-   return files;
+   return create_restore_bootstrap_file(jcr, jcr->previous_jr.JobId, 1, jcr->previous_jr.JobFiles);
 }
 
 /* TODO: redirect command ouput to job log */
@@ -1853,6 +1886,7 @@ bool run_console_command(JCR *jcr, const char *cmd)
    } else {
      ok = do_a_command(ua);
    }
+   close_db(ua);
    free_ua_context(ua);
    free_jcr(ljcr);
    return ok;

@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -28,7 +28,7 @@
 #include "stored.h"
 
 static void s_err(const char *file, int line, LEX *lc, const char *msg, ...);
-static bool add_restore_volume(JCR *jcr, VOL_LIST *vol);
+static bool add_restore_volume(JCR *jcr, VOL_LIST *vol, bool add_to_read_list);
 
 typedef BSR * (ITEM_HANDLER)(LEX *lc, BSR *bsr);
 
@@ -92,7 +92,7 @@ struct kw_items items[] = {
 /*
  * Create a BSR record
  */
-static BSR *new_bsr()
+BSR *new_bsr()
 {
    BSR *bsr = (BSR *)malloc(sizeof(BSR));
    memset(bsr, 0, sizeof(BSR));
@@ -720,11 +720,18 @@ void dump_volblock(BSR_VOLBLOCK *volblock)
    }
 }
 
-void dump_voladdr(BSR_VOLADDR *voladdr)
+void dump_voladdr(DEVICE *dev, BSR_VOLADDR *voladdr)
 {
    if (voladdr) {
-      Pmsg2(-1, _("VolAddr    : %llu-%llu\n"), voladdr->saddr, voladdr->eaddr);
-      dump_voladdr(voladdr->next);
+      if (dev) {
+         char ed1[50], ed2[50];
+         Pmsg2(-1, _("VolAddr    : %s-%llu\n"),
+            dev->print_addr(ed1, sizeof(ed1), voladdr->saddr),
+            dev->print_addr(ed2, sizeof(ed2), voladdr->eaddr));
+      } else {
+         Pmsg2(-1, _("VolAddr    : %llu-%llu\n"), voladdr->saddr, voladdr->eaddr);
+      }
+      dump_voladdr(dev, voladdr->next);
    }
 }
 
@@ -801,7 +808,7 @@ void dump_sesstime(BSR_SESSTIME *sesstime)
 }
 
 
-void dump_bsr(BSR *bsr, bool recurse)
+void dump_bsr(DEVICE *dev, BSR *bsr, bool recurse)
 {
    int64_t save_debug = debug_level;
    debug_level = 1;
@@ -817,7 +824,7 @@ void dump_bsr(BSR *bsr, bool recurse)
    dump_sesstime(bsr->sesstime);
    dump_volfile(bsr->volfile);
    dump_volblock(bsr->volblock);
-   dump_voladdr(bsr->voladdr);
+   dump_voladdr(dev, bsr->voladdr);
    dump_client(bsr->client);
    dump_jobid(bsr->JobId);
    dump_job(bsr->job);
@@ -832,12 +839,10 @@ void dump_bsr(BSR *bsr, bool recurse)
    Pmsg1(-1,    _("fast_reject : %d\n"), bsr->use_fast_rejection);
    if (recurse && bsr->next) {
       Pmsg0(-1, "\n");
-      dump_bsr(bsr->next, true);
+      dump_bsr(dev, bsr->next, true);
    }
    debug_level = save_debug;
 }
-
-
 
 /*********************************************************************
  *
@@ -920,7 +925,7 @@ static VOL_LIST *new_restore_volume()
  * Create a list of Volumes (and Slots and Start positions) to be
  *  used in the current restore job.
  */
-void create_restore_volume_list(JCR *jcr)
+void create_restore_volume_list(JCR *jcr, bool add_to_read_list)
 {
    char *p, *n;
    VOL_LIST *vol;
@@ -954,7 +959,7 @@ void create_restore_volume_list(JCR *jcr)
             bstrncpy(vol->device, bsrvol->device, sizeof(vol->device));
             vol->Slot = bsrvol->Slot;
             vol->start_file = sfile;
-            if (add_restore_volume(jcr, vol)) {
+            if (add_restore_volume(jcr, vol, add_to_read_list)) {
                jcr->NumReadVolumes++;
                Dmsg2(400, "Added volume=%s mediatype=%s\n", vol->VolumeName,
                   vol->MediaType);
@@ -975,7 +980,7 @@ void create_restore_volume_list(JCR *jcr)
          vol = new_restore_volume();
          bstrncpy(vol->VolumeName, p, sizeof(vol->VolumeName));
          bstrncpy(vol->MediaType, jcr->dcr->media_type, sizeof(vol->MediaType));
-         if (add_restore_volume(jcr, vol)) {
+         if (add_restore_volume(jcr, vol, add_to_read_list)) {
             jcr->NumReadVolumes++;
          } else {
             free((char *)vol);
@@ -992,12 +997,14 @@ void create_restore_volume_list(JCR *jcr)
  *   returns: 1 if volume added
  *            0 if volume already in list
  */
-static bool add_restore_volume(JCR *jcr, VOL_LIST *vol)
+static bool add_restore_volume(JCR *jcr, VOL_LIST *vol, bool add_to_read_list)
 {
    VOL_LIST *next = jcr->VolList;
 
-   /* Add volume to volume manager's read list */
-   add_read_volume(jcr, vol->VolumeName);
+   if (add_to_read_list) {
+      /* Add volume to volume manager's read list */
+      add_read_volume(jcr, vol->VolumeName);
+   }
 
    if (!next) {                       /* list empty ? */
       jcr->VolList = vol;             /* yes, add volume */

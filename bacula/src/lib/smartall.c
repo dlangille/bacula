@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -109,7 +109,10 @@ static void *smalloc(const char *fname, int lineno, unsigned int nbytes)
       is desired than to miss all the erroneous occurrences where
       buffer length calculation code results in a zero.  */
 
-   ASSERT(nbytes > 0);
+   if (nbytes == 0) {
+      Tmsg3(0, "Invalid memory allocation. %u bytes %s:%d\n", nbytes, fname, lineno);
+      ASSERT(nbytes > 0);
+   }
 
    nbytes += HEAD_SIZE + 1;
    if ((buf = (char *)malloc(nbytes)) != NULL) {

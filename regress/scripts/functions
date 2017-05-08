@@ -1,7 +1,11 @@
 #
+# Copyright (C) 2000-2017 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
 # A set of useful functions to be sourced in each test
 #
 
+. ./config
 
 check_encoding()
 {
@@ -16,24 +20,90 @@ start_test()
    check_encoding
    rm -rf ${working}/@*
    variant_name=""
-
+   devicetype=0
    # If no or dummy smtp_host, use dummy email handler
    if [ x${SMTP_HOST} = x -o x${SMTP_HOST} = xdummy ]; then
       cp scripts/dummy_bsmtp bin/bsmtp
       chmod 755 bin/bsmtp
    else
       # Deactivate all email
-      outf="${tmp}/sed_tmp"
+      outf="tmp/sed_tmp2"
       echo "s%  mail =%# mail = %g" >${outf}
       echo "s%  operator =%# operator =%g" >>${outf}
       cp ${conf}/bacula-dir.conf ${tmp}/1
       sed -f ${outf} ${tmp}/1 > ${conf}/bacula-dir.conf
    fi
+   echo $TestName | grep aligned > /dev/null
+   if [ $? -eq 0 -o x$FORCE_ALIGNED = xyes ]; then
+      make -C build/src/stored install-aligned > /dev/null 2>&1
+      $bperl -e 'add_attribute("$conf/bacula-sd.conf", "Device Type", "Aligned", "Device")'
+      $bperl -e 'add_attribute("$conf/bacula-sd.conf", "Plugin Directory", "$plugins", "Storage")'
+      variant_name="Aligned"
+      devicetype=`expr $devicetype + 1`
+   fi
+   if [ x$FORCE_CLOUD = xyes ]; then
+      make -C build/src/stored install-cloud > /dev/null 2>&1
+      grep DummyCloud $conf/bacula-sd.conf > /dev/null
+      if [ $? != 0 ]; then
+         $bperl -e 'extract_resource("$rscripts/test-bacula-sd.conf", "Cloud", "DummyCloud")' >> $conf/bacula-sd.conf
+      fi
+      $bperl -e 'add_attribute("$conf/bacula-sd.conf", "Device Type", "Cloud", "Device")'
+      $bperl -e 'add_attribute("$conf/bacula-sd.conf", "Cloud", "DummyCloud", "Device")'
+      $bperl -e 'add_attribute("$conf/bacula-sd.conf", "Plugin Directory", "$plugins", "Storage")'
+      mkdir -p $tmp/cloud
+      if [ "$CLOUD_HOSTNAME" ]; then
+          $bperl -e "add_attribute('$conf/bacula-sd.conf', 'HostName', '\"$CLOUD_HOSTNAME\"', 'Cloud')"
+      fi
+      if [ "$CLOUD_BUCKETNAME" ]; then
+          $bperl -e "add_attribute('$conf/bacula-sd.conf', 'BucketName', '\"$CLOUD_BUCKETNAME\"', 'Cloud')"
+      fi
+      if [ "$CLOUD_ACCESSKEY" ]; then
+          $bperl -e "add_attribute('$conf/bacula-sd.conf', 'AccessKey', '\"$CLOUD_ACCESSKEY\"', 'Cloud')"
+      fi
+      if [ "$CLOUD_SECRETKEY" ]; then
+          $bperl -e "add_attribute('$conf/bacula-sd.conf', 'SecretKey', '\"$CLOUD_SECRETKEY\"', 'Cloud')"
+      fi
+      if [ "$CLOUD_REGION" ]; then
+          $bperl -e "add_attribute('$conf/bacula-sd.conf', 'Region', '\"$CLOUD_REGION\"', 'Cloud')"
+      fi
+      if [ "$CLOUD_PROTOCOL" ]; then
+          $bperl -e "add_attribute('$conf/bacula-sd.conf', 'Protocol', '$CLOUD_PROTOCOL', 'Cloud')"
+      fi
+      if [ "$CLOUD_URISTYLE" ]; then
+          $bperl -e "add_attribute('$conf/bacula-sd.conf', 'UriStyle', '$CLOUD_URISTYLE', 'Cloud')"
+      fi
+      if [ "$CLOUD_DRIVER" ]; then
+          driver=`echo $CLOUD_DRIVER | tr 'A-Z' 'a-z'`
+          # FakeS3 is useful but keeps big parts in memory. So we must limit parts.
+          if [ "$driver" = "fakes3" ]; then
+             if [ "$CLOUD_MAXIMUM_PART_SIZE" = "" ]; then
+                CLOUD_MAXIMUM_PART_SIZE=50MB
+             fi
+             CLOUD_DRIVER=S3
+          fi
+          $bperl -e "add_attribute('$conf/bacula-sd.conf', 'Driver', '\"$CLOUD_DRIVER\"', 'Cloud')"
+      fi
+      if [ "$CLOUD_MAXIMUM_PART_SIZE" ]; then
+          $bperl -e "add_attribute('$conf/bacula-sd.conf', 'MaximumPartSize', '$CLOUD_MAXIMUM_PART_SIZE', 'Device')"
+      fi
+
+      variant_name="Cloud"
+      devicetype=`expr $devicetype + 1`
+   fi
+   if [ x$FORCE_SDCALLS = xyes ]; then
+      $bperl -e 'add_attribute("$conf/bacula-dir.conf", "SD Calls Client", "yes", "Client")'
+      variant_name="${variant_name} SDcall"
+   fi
+   if [ $devicetype -gt 1 ]; then
+       echo "ERROR: Found multiple FORCE_XXX switches"
+       set | awk '/^FORCE_/ { print $0 }'
+       exit 1
+   fi
    ./test_starttime
    echo " "
    echo " "
-   echo " === Starting $TestName ${variant_name} at `date +%R:%S` ==="
-   echo " === Starting $TestName ${variant_name} at `date +%R:%S` ===" >> ${working}/log
+   echo " === Start $TestName ${variant_name} at `date +%R:%S` ==="
+   echo " === Start $TestName ${variant_name} at `date +%R:%S` ===" >> ${working}/log
    echo " "
    export TestName
    export zstat
@@ -42,7 +112,30 @@ start_test()
    zstat=0
    bstat=0
    rstat=0
+   vstat=0
    dstat=0
+}
+
+# Change setup so that we run with shared storage plugin
+setup_shstore()
+{
+if test x${USE_SHSTORE} = xyes ; then
+   require_tape_drive
+   /bin/cp -f ${rscripts}/bacula-sd-lock-changer.conf ${scripts}/bacula-sd.conf
+   scripts/cleanup-tape
+
+   # install the shstore plugin
+   rm -f bin/plugins/shstore-sd.so
+   make -C build/src/plugins/sd install-shstore-plugin >/dev/null
+fi
+}
+
+require_cloud()
+{
+    if [ "$FORCE_CLOUD" != yes ]; then
+       echo "$TestName can run only with FORCE_CLOUD"
+       exit 0
+    fi
 }
 
 require_root()
@@ -60,6 +153,16 @@ fi
 
 require_tape_drive() 
 {
+#  tape not comptible with aligned
+if test x$FORCE_ALIGNED = xyes; then
+   echo "$TestName test not compatible with FORCE_ALIGNED."
+   exit 0
+fi
+#  tape not comptible with cloud
+if test x$FORCE_CLOUD = xyes; then
+   echo "$TestName test not compatible with FORCE_CLOUD."
+   exit 0
+fi
 if test x${TAPE_DRIVE} = x/dev/null ; then
    echo "$TestName test needs a tape drive, but has none."
    exit 1
@@ -84,8 +187,45 @@ fi
 
 require_vtape() 
 {
+#  vtape not comptible with aligned
+if test x$FORCE_ALIGNED = xyes; then
+   echo "$TestName test not compatible with FORCE_ALIGNED."
+   exit 0
+fi
+#  vtape not comptible with cloud
+if test x$FORCE_CLOUD = xyes; then
+   echo "$TestName test not compatible with FORCE_CLOUD."
+   exit 0
+fi
 if test x${USE_VTAPE} = x ; then
    echo "$TestName test needs the vtape driver."
+   exit 0
+fi
+}
+
+require_disk() 
+{
+#  vtape not comptible with aligned
+if test x$FORCE_ALIGNED = xyes; then
+   echo "$TestName test not compatible with FORCE_ALIGNED."
+   exit 0
+fi
+#  vtape not comptible with cloud
+if test x$FORCE_CLOUD = xyes; then
+   echo "$TestName test not compatible with FORCE_CLOUD."
+   exit 0
+fi
+if test x${USE_VTAPE} = xyes ; then
+   echo "$TestName test not compatible with FORCE_VTAPE."
+   exit 0
+fi
+}
+
+require_changer() 
+{
+#  disk changer not comptible with cloud
+if test x$FORCE_CLOUD = xyes; then
+   echo "$TestName test not compatible with FORCE_CLOUD."
    exit 0
 fi
 }
@@ -94,7 +234,7 @@ require_linux()
 {
 os=`uname`
 if [ $os != 'Linux' ]; then
-   echo "This test $TestName runs only on Linux"
+   echo "$TestName test runs only on Linux"
    exit 0
 fi
 }
@@ -175,6 +315,7 @@ run_bacula()
    zstat=0
    estat=0
    if test "$debug" -eq 1 ; then
+
      ${scripts}/bacula-ctl-sd start -m
      ${scripts}/bacula-ctl-fd start -m $1
      ${scripts}/bacula-ctl-dir start -m
@@ -233,10 +374,43 @@ bscan_libdbi()
 
 stop_bacula()
 {
+   if [ "$CHECK_JOBMEDIA" != 0 ]; then
+      $bperl -e 'check_jobmedia()'
+      if [ $? -ne 0 ]; then
+         echo " "
+         echo "  !!!!! $TestName ${variant_name} failed!!! `date +%R:%S` !!!!! "
+         echo "     JobMedia is corrupted"
+         echo " " >>test.out
+         echo " " >>test.out
+         echo "  !!!!! $TestName ${variant_name} failed!!! `date +%R:%S` !!!!! " >>test.out
+         echo "     JobMedia is corrupted" >>test.out
+         echo " "
+         exit 1
+      fi
+   fi
+   if [ "$FORCE_CLOUD" = yes ]; then
+      $bperl -e 'check_parts()'
+      if [ $? -ne 0 ]; then
+         estat=1
+      fi
+   fi
    if test "$debug" -eq 1 ; then
       ${scripts}/bacula stop
    else
       ${scripts}/bacula stop 2>&1 >/dev/null
+   fi
+   # Any File/Dir with @ as the first character is a lock file
+   ls ${working}/@* 2>/dev/null 1>/dev/null
+   if test $? -eq 0 ; then
+      echo " "
+      echo "  !!!!! $TestName ${variant_name} failed!!! `date +%R:%S` !!!!! "
+      echo "     SCSI lock still set"
+      echo " " >>test.out
+      echo " " >>test.out
+      echo "  !!!!! $TestName ${variant_name} failed!!! `date +%R:%S` !!!!! " >>test.out
+      echo "     SCSI lock still set" >>test.out
+      echo " "
+      exit 1
    fi
 }
 
@@ -263,8 +437,11 @@ change_jobname()
 
 check_two_logs()
 {
+   bstat=${bstat:-99}   # We must find at least one job in log1.out
    grep "^  Termination: *Backup OK" ${tmp}/log1.out 2>&1 >/dev/null
-   bstat=${bstat:-$?}
+   if test $? -ne 0; then
+      bstat=2
+   fi
    grep "^  Termination: .*Backup Error" ${tmp}/log1.out 2>&1 >/dev/null
    if test $? -eq 0; then
       bstat=2
@@ -289,7 +466,7 @@ check_two_logs()
    fi
    grep "^  Termination: .*Verify Differences" ${tmp}/log2.out 2>&1 >/dev/null
    if test $? -eq 0; then
-      rstat=4
+      vstat=4
    fi
    grep "Encoding error for database" ${tmp}/log1.out > /dev/null
    if test $? -eq 0; then
@@ -301,6 +478,28 @@ check_two_logs()
       print_debug "Found orphaned buffers"
       estat=1
    fi
+   if [ x$REGRESS_CHECK_CORRUPTION = xyes ]; then
+       perl -Mscripts::functions -e "check_volumes('$tmp/log1.out', '$tmp/log2.out')" 2>&1 >/dev/null
+       if test $? -ne 0; then
+           print_debug "Found volume corruption"
+           estat=1
+       fi
+   fi
+}
+
+die_test()
+{
+   code=$1
+   msg=$2
+
+   print_debug $msg
+   stop_bacula
+
+   if test "$code" -gt "$estat" ; then
+      estat=$code
+   fi
+   end_test
+   exit 1
 }
 
 dtitle()
@@ -405,14 +604,13 @@ check_restore_tmp_build_diff()
 # estat is special error status (shown by print_debug message)
 # rstat is restore status
 # zstat is zombie job(s)
+# vstat is verify status
 #
 end_test()
 {
    if [ x$notracedump != xyes ]; then 
       cat ${working}/bacula.*.traceback 2>/dev/null
       cp -f  ${working}/bacula.*.traceback ${dumps} 2>/dev/null
-      cat ${working}/*.lockdump 2>/dev/null
-      cp -f ${working}/*.lockdump ${dumps} 2>/dev/null
    fi
    if [ -f $tmp/err.log ]; then
       cat $tmp/err.log
@@ -421,48 +619,49 @@ end_test()
    t=`date +%R:%S`
    if [ $estat != 0 ] ; then
       echo " "
-      echo "  !!!!! $TestName failed!!! $t $d !!!!! "
-      echo "     Status: estat=$estat zombie=$zstat backup=$bstat restore=$rstat diff=$dstat"
+      echo "  !!!!! $TestName ${variant_name} failed!!! $t $d !!!!! "
+      echo "     Status: estat=$estat zombie=$zstat backup=$bstat restore=$rstat diff=$dstat verify=$vstat"
       echo " " >>test.out
-      echo "  !!!!! $TestName failed!!! $t $d !!!!! " >>test.out
-      echo "     Status: estat=$estat zombie=$zstat backup=$bstat restore=$rstat diff=$dstat" >>test.out
+      echo "  !!!!! $TestName ${variant_name} failed!!! $t $d !!!!! " >>test.out
+      echo "     Status: estat=$estat zombie=$zstat backup=$bstat restore=$rstat diff=$dstat verify=$vstat" >>test.out
       echo " "
       exit 1
    fi
    if [ $zstat != 0 ] ; then
       echo " "
-      echo "  !!!!! $TestName failed!!! $t $d !!!!! "
-      echo "     Status: zombie=$zstat backup=$bstat restore=$rstat diff=$dstat"
+      echo "  !!!!! $TestName ${variant_name} failed!!! $t $d !!!!! "
+      echo "     Status: zombie=$zstat backup=$bstat restore=$rstat diff=$dstat verify=$vstat"
       echo " " >>test.out
-      echo "  !!!!! $TestName failed!!! $t $d !!!!! " >>test.out
-      echo "     Status: zombie=$zstat backup=$bstat restore=$rstat diff=$dstat" >>test.out
+      echo "  !!!!! $TestName ${variant_name} failed!!! $t $d !!!!! " >>test.out
+      echo "     Status: zombie=$zstat backup=$bstat restore=$rstat diff=$dstat verify=$vstat" >>test.out
       echo " "
       exit 1
    fi
-   if [ $dstat != 0 -o $bstat != 0 -o $rstat != 0 ] ; then
+   if [ $dstat != 0 -o $bstat != 0 -o $rstat != 0 -o $vstat != 0 ] ; then
       echo " "
-      echo "  !!!!! $TestName failed!!! $t $d !!!!! "
-      echo "     Status: zombie=$zstat backup=$bstat restore=$rstat diff=$dstat"
+      echo "  !!!!! $TestName ${variant_name} failed!!! $t $d !!!!! "
+      echo "     Status: zombie=$zstat backup=$bstat restore=$rstat diff=$dstat verify=$vstat"
       echo " " >>test.out
-      echo "  !!!!! $TestName failed!!! $t $d !!!!! " >>test.out
-      echo "     Status: zombie=$zstat backup=$bstat restore=$rstat diff=$dstat" >>test.out
-      if [ $bstat != 0 -o $rstat != 0 ] ; then
+      echo "  !!!!! $TestName ${variant_name} failed!!! $t $d !!!!! " >>test.out
+      echo "     Status: zombie=$zstat backup=$bstat restore=$rstat diff=$dstat verify=$vstat" >>test.out
+      if [ $bstat != 0 -o $rstat != 0 -o $vstat != 0 ] ; then
          echo "     !!! Bad termination status       !!! "
          echo "     !!! Bad termination status       !!! " >>test.out
       else
          echo "     !!! Restored files differ        !!! "
          echo "     !!! Restored files differ        !!! " >>test.out
       fi
-      echo "     Status: backup=$bstat restore=$rstat diff=$dstat"
-      echo "     Status: backup=$bstat restore=$rstat diff=$dstat" >>test.out
+      echo "     Status: backup=$bstat restore=$rstat diff=$dstat verify=$vstat"
+      echo "     Status: backup=$bstat restore=$rstat diff=$dstat verify=$vstat" >>test.out
       echo "     Test owner of $SITE_NAME is $EMAIL"
       echo "     Test owner of $SITE_NAME is $EMAIL" >>test.out
       echo " " >>test.out
       echo " "
       exit 1
    else
-      echo "  ===== $TestName OK $t $d ===== "
-      echo "  ===== $TestName OK $t $d ===== " >>test.out
+      # KES -- remove variant to make line fit in 80 chars
+      echo "  ===== End $TestName OK $t $d ===== "
+      echo "  ===== End $TestName OK $t $d ===== " >>test.out
       if test "$debug" -eq 0 ; then
          ${rscripts}/cleanup
       fi
@@ -487,6 +686,21 @@ disable_plugins()
       sed 's/Plugin/#Plugin/' $i > $tmp/1
       cp -f $tmp/1 $i
    done
+}
+
+update_win32()
+{
+   if [ -d $cwd/build/src/win32/release32   \
+     -o -d $cwd/build/src/win32/release64 ] \
+   || [ -d $cwd/release32 -o -d $cwd/release64 ] \
+   || [ -d $cwd/../bacula/src/win32/release32 \
+     -o -d $cwd/../bacula/src/win32/release64 ]
+   then
+       echo "Try to upgrade the FileDaemon:\t"
+       wget -qO - "$WIN32_ADDR:8091/install"
+   else 
+       echo "Windows binaries not found, skiping upgrade"
+   fi
 }
 
 debug_wait()

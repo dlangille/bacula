@@ -1,0 +1,253 @@
+#
+# Default Bacula Storage Daemon Configuration file
+#
+# You may need to change the name of your tape drive
+#   on the "Archive Device" directive in the Device
+#   resource.  If you change the Name and/or the 
+#   "Media Type" in the Device resource, please ensure
+#   that dird.conf has corresponding changes.
+#
+
+Storage {                             # definition of myself
+  Name = @hostname@-sd
+  SDPort = @sdport@                  # Director's port      
+  WorkingDirectory = "@working_dir@"
+  Pid Directory = "@piddir@"
+  Subsys Directory = "@subsysdir@"
+  Maximum Concurrent Jobs = 100
+}
+
+#
+# List Directors who are permitted to contact Storage daemon
+#
+Director {
+  Name = @hostname@-dir
+  Password = "ccV3lVTsQRsdIUGyab0N4sMDavui2hOBkmpBU0aQKOr9"
+}
+
+
+Autochanger {
+  Name = Virtual
+  Changer Device = /dev/null
+  Changer Command = /dev/null
+  Device = vDrive-1
+  Device = vDrive-2
+  Device = vDrive-3
+  Device = vDrive-4
+  Device = vDrive-5
+  Device = vDrive-6
+  Device = vDrive-7
+  Device = vDrive-8
+  Device = vDrive-R
+}
+
+Device {
+  Name = vDrive-1
+#A  Device Type = Aligned
+#A  Maximum Block Size = 128K
+#A  Minimum Block Size = 0
+#A  File Alignment = 128K
+#A  Padding Size = 512
+  Media Type = Disk
+  Archive Device = @tmpdir@
+  AutomaticMount = yes;               # when device opened, read it
+  Autochanger = yes
+  Drive Index = 0
+  AlwaysOpen = yes;
+  RemovableMedia = yes;
+  Maximum Concurrent Jobs = 1
+  Volume Poll Interval = 15
+  Label Media = yes
+  Maximum Volume Size = 50M
+# Maximum File Size = 1000000
+}
+
+Device {
+  Name = vDrive-2
+#A  Device Type = Aligned
+#A  Maximum Block Size = 128K
+#A  Minimum Block Size = 0
+#A  File Alignment = 128K
+#A  Padding Size = 512
+  Media Type = Disk
+  Archive Device = @tmpdir@
+  AutomaticMount = yes;               # when device opened, read it
+  Autochanger = yes
+  Drive Index = 2
+  AlwaysOpen = yes;
+  RemovableMedia = yes;
+  Maximum Concurrent Jobs = 1
+  Volume Poll Interval = 15
+  Label Media = yes
+  Maximum Volume Size = 50M
+# Maximum File Size = 1000000
+}
+
+Device {
+  Name = vDrive-3
+#A  Device Type = Aligned
+#A  Maximum Block Size = 128K
+#A  Minimum Block Size = 0
+#A  File Alignment = 128K
+#A  Padding Size = 512
+  Media Type = Disk
+  Archive Device = @tmpdir@
+  AutomaticMount = yes;               # when device opened, read it
+  Autochanger = yes
+  Drive Index = 3
+  AlwaysOpen = yes;
+  RemovableMedia = yes;
+  Maximum Concurrent Jobs = 1
+  Volume Poll Interval = 15
+  Label Media = yes
+  Maximum Volume Size = 50M
+# Maximum File Size = 1000000
+}
+
+Device {
+  Name = vDrive-4
+  Media Type = Disk
+#A  Device Type = Aligned
+#A  Maximum Block Size = 128K
+#A  Minimum Block Size = 0
+#A  File Alignment = 128K
+#A  Padding Size = 512
+  Archive Device = @tmpdir@
+  AutomaticMount = yes;               # when device opened, read it
+  Autochanger = yes
+  Drive Index = 4
+  AlwaysOpen = yes;
+  RemovableMedia = yes;
+  Maximum Concurrent Jobs = 1
+  Volume Poll Interval = 15
+  Label Media = yes
+  Maximum Volume Size = 50M
+# Maximum File Size = 1000000
+}
+
+Device {
+  Name = vDrive-5
+  Media Type = Disk
+#A  Device Type = Aligned
+#A  Maximum Block Size = 128K
+#A  Minimum Block Size = 0
+#A  File Alignment = 128K
+#A  Padding Size = 512
+  Archive Device = @tmpdir@
+  AutomaticMount = yes;               # when device opened, read it
+  Autochanger = yes
+  Drive Index = 5
+  AlwaysOpen = yes;
+  RemovableMedia = yes;
+  Maximum Concurrent Jobs = 1
+  Volume Poll Interval = 15
+  Label Media = yes
+  Maximum Volume Size = 50M
+# Maximum File Size = 1000000
+}
+
+Device {
+  Name = vDrive-6
+  Media Type = Disk
+#A  Device Type = Aligned
+#A  Maximum Block Size = 128K
+#A  Minimum Block Size = 0
+#A  File Alignment = 128K
+#A  Padding Size = 512
+  Archive Device = @tmpdir@
+  AutomaticMount = yes;               # when device opened, read it
+  Autochanger = yes
+  Drive Index = 6
+  AlwaysOpen = yes;
+  RemovableMedia = yes;
+  Maximum Concurrent Jobs = 1
+  Volume Poll Interval = 15
+  Label Media = yes
+  Maximum Volume Size = 50M
+# Maximum File Size = 1000000
+}
+
+Device {
+  Name = vDrive-7
+  Media Type = Disk
+#A  Device Type = Aligned
+#A  Maximum Block Size = 128K
+#A  Minimum Block Size = 0
+#A  File Alignment = 128K
+#A  Padding Size = 512
+  Archive Device = @tmpdir@
+  AutomaticMount = yes;               # when device opened, read it
+  Autochanger = yes
+  Drive Index = 7
+  AlwaysOpen = yes;
+  RemovableMedia = yes;
+  Maximum Concurrent Jobs = 1
+  Volume Poll Interval = 15
+  Label Media = yes
+  Maximum Volume Size = 50M
+# Maximum File Size = 1000000
+}
+
+Device {
+  Name = vDrive-8
+  Media Type = Disk
+#A  Device Type = Aligned
+#A  Maximum Block Size = 128K
+#A  Minimum Block Size = 0
+#A  File Alignment = 128K
+#A  Padding Size = 512
+  Archive Device = @tmpdir@
+  AutomaticMount = yes;               # when device opened, read it
+  Autochanger = yes
+  Drive Index = 7
+  AlwaysOpen = yes;
+  RemovableMedia = yes;
+  Maximum Concurrent Jobs = 1
+  Volume Poll Interval = 15
+  Label Media = yes
+  Maximum Volume Size = 50M
+# Maximum File Size = 1000000
+}
+
+Device {
+  Name = vDrive-R
+  Media Type = File
+#A  Device Type = Aligned
+#A  Maximum Block Size = 128K
+#A  Minimum Block Size = 0
+#A  File Alignment = 128K
+#A  Padding Size = 512
+  Archive Device = @tmpdir@
+  AutomaticMount = yes;               # when device opened, read it
+  Autochanger = yes
+  Drive Index = 9
+  AlwaysOpen = yes;
+  RemovableMedia = yes;
+  Maximum Concurrent Jobs = 1
+  Volume Poll Interval = 15
+  ReadOnly = yes
+  Label Media = yes
+  Maximum Volume Size = 50M
+# Maximum File Size = 1000000
+}
+
+# 
+# Send all messages to the Director, 
+# mount messages also are sent to the email address
+#
+Messages {
+  Name = Standard
+  director = @hostname@-dir = all, !terminate
+}
+
+Cloud {
+  Name = DummyCloud
+  Driver = "File"
+  HostName = "@tmpdir@/cloud"
+  BucketName = "DummyBucket"
+  AccessKey = "DummyAccessKey"
+  SecretKey = "DummySecretKey"
+  Protocol = HTTPS
+  UriStyle = VirtualHost
+}
+

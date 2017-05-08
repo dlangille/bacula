@@ -1,9 +1,7 @@
 #!/bin/sh
 #
-# Copyright (C) 2000-2015 Kern Sibbald
+# Copyright (C) 2000-2017 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
-#
-
 #
 # Run a simple backup of the Bacula build directory 
 #   to /dev/null Of course, it's not possible to restore ;-)
@@ -13,6 +11,11 @@ JobName=backuptonull
 
 
 . scripts/functions
+
+# Not compatible with a backup to /dev/null
+unset FORCE_DEDUP
+unset FORCE_ALIGNED
+unset FORCE_CLOUD
 
 scripts/cleanup
 scripts/copy-fifo-confs

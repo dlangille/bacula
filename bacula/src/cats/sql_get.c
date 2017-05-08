@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -23,7 +23,6 @@
  *        should be in find.c
  *
  *    Written by Kern Sibbald, March 2000
- *
  */
 
 #include  "bacula.h"
@@ -517,7 +516,7 @@ int BDB::bdb_get_pool_ids(JCR *jcr, int *num_ids, uint32_t *ids[])
 
    bdb_lock();
    *ids = NULL;
-   Mmsg(cmd, "SELECT PoolId FROM Pool");
+   Mmsg(cmd, "SELECT PoolId FROM Pool ORDER By Name");
    if (QueryDB(jcr, cmd)) {
       *num_ids = sql_num_rows();
       if (*num_ids > 0) {
@@ -593,7 +592,7 @@ bool BDB::bdb_get_pool_record(JCR *jcr, POOL_DBR *pdbr)
 "SELECT PoolId,Name,NumVols,MaxVols,UseOnce,UseCatalog,AcceptAnyVolume,"
 "AutoPrune,Recycle,VolRetention,VolUseDuration,MaxVolJobs,MaxVolFiles,"
 "MaxVolBytes,PoolType,LabelType,LabelFormat,RecyclePoolId,ScratchPoolId,"
-"ActionOnPurge FROM Pool WHERE Pool.PoolId=%s",
+"ActionOnPurge,CacheRetention FROM Pool WHERE Pool.PoolId=%s",
          edit_int64(pdbr->PoolId, ed1));
    } else {                           /* find by name */
       bdb_escape_string(jcr, esc, pdbr->Name, strlen(pdbr->Name));
@@ -601,7 +600,7 @@ bool BDB::bdb_get_pool_record(JCR *jcr, POOL_DBR *pdbr)
 "SELECT PoolId,Name,NumVols,MaxVols,UseOnce,UseCatalog,AcceptAnyVolume,"
 "AutoPrune,Recycle,VolRetention,VolUseDuration,MaxVolJobs,MaxVolFiles,"
 "MaxVolBytes,PoolType,LabelType,LabelFormat,RecyclePoolId,ScratchPoolId,"
-"ActionOnPurge FROM Pool WHERE Pool.Name='%s'", esc);
+"ActionOnPurge,CacheRetention FROM Pool WHERE Pool.Name='%s'", esc);
    }
    if (QueryDB(jcr, cmd)) {
       if (sql_num_rows() > 1) {
@@ -634,6 +633,7 @@ bool BDB::bdb_get_pool_record(JCR *jcr, POOL_DBR *pdbr)
             pdbr->RecyclePoolId = str_to_int64(row[17]);
             pdbr->ScratchPoolId = str_to_int64(row[18]);
             pdbr->ActionOnPurge = str_to_int32(row[19]);
+            pdbr->CacheRetention = str_to_int64(row[20]);
             ok = true;
          }
       }
@@ -986,8 +986,13 @@ bool BDB::bdb_get_media_ids(JCR *jcr, MEDIA_DBR *mr, int *num_ids, uint32_t *ids
    bdb_lock();
    *ids = NULL;
 
-   Mmsg(cmd, "SELECT DISTINCT MediaId FROM Media WHERE Recycle=%d AND Enabled=%d ",
-        mr->Recycle, mr->Enabled);
+   Mmsg(cmd, "SELECT DISTINCT MediaId FROM Media WHERE Enabled=%d ",
+        mr->Enabled);
+
+   if (mr->Recycle >= 0) {
+      bsnprintf(buf, sizeof(buf), "AND Recycle=%d ", mr->Recycle);
+      pm_strcat(cmd, buf);
+   }
 
    if (*mr->MediaType) {
       bdb_escape_string(jcr, esc, mr->MediaType, strlen(mr->MediaType));
@@ -995,7 +1000,10 @@ bool BDB::bdb_get_media_ids(JCR *jcr, MEDIA_DBR *mr, int *num_ids, uint32_t *ids
       pm_strcat(cmd, buf);
    }
 
-   if (mr->StorageId) {
+   if (mr->sid_group) {
+      bsnprintf(buf, sizeof(buf), "AND StorageId IN (%s) ", mr->sid_group);
+      pm_strcat(cmd, buf);
+   } else if (mr->StorageId) {
       bsnprintf(buf, sizeof(buf), "AND StorageId=%s ", edit_uint64(mr->StorageId, ed1));
       pm_strcat(cmd, buf);
    }
@@ -1022,6 +1030,12 @@ bool BDB::bdb_get_media_ids(JCR *jcr, MEDIA_DBR *mr, int *num_ids, uint32_t *ids
       pm_strcat(cmd, buf);
    }
 
+   /* Filter the volumes with the CacheRetention */
+   if (mr->CacheRetention) {
+      bsnprintf(buf, sizeof(buf), "AND %s ", prune_cache[bdb_get_type_index()]);
+      pm_strcat(cmd, buf);
+   }
+
    Dmsg1(100, "q=%s\n", cmd);
 
    if (QueryDB(jcr, cmd)) {
@@ -1043,7 +1057,6 @@ bool BDB::bdb_get_media_ids(JCR *jcr, MEDIA_DBR *mr, int *num_ids, uint32_t *ids
    bdb_unlock();
    return ok;
 }
-
 
 /**
  * This function returns a list of all the DBIds that are returned
@@ -1108,9 +1121,10 @@ bool BDB::bdb_get_media_record(JCR *jcr, MEDIA_DBR *mr)
          "VolErrors,VolWrites,MaxVolBytes,VolCapacityBytes,"
          "MediaType,VolStatus,PoolId,VolRetention,VolUseDuration,MaxVolJobs,"
          "MaxVolFiles,Recycle,Slot,FirstWritten,LastWritten,InChanger,"
-         "EndFile,EndBlock,VolParts,LabelType,LabelDate,StorageId,"
+         "EndFile,EndBlock,VolType,VolParts,VolCloudParts,LastPartBytes,"
+         "LabelType,LabelDate,StorageId,"
          "Enabled,LocationId,RecycleCount,InitialWrite,"
-         "ScratchPoolId,RecyclePoolId,VolReadTime,VolWriteTime,ActionOnPurge "
+         "ScratchPoolId,RecyclePoolId,VolReadTime,VolWriteTime,ActionOnPurge,CacheRetention "
          "FROM Media WHERE MediaId=%s",
          edit_int64(mr->MediaId, ed1));
    } else {                           /* find by name */
@@ -1120,9 +1134,10 @@ bool BDB::bdb_get_media_record(JCR *jcr, MEDIA_DBR *mr)
          "VolErrors,VolWrites,MaxVolBytes,VolCapacityBytes,"
          "MediaType,VolStatus,PoolId,VolRetention,VolUseDuration,MaxVolJobs,"
          "MaxVolFiles,Recycle,Slot,FirstWritten,LastWritten,InChanger,"
-         "EndFile,EndBlock,VolParts,LabelType,LabelDate,StorageId,"
+         "EndFile,EndBlock,VolType,VolParts,VolCloudParts,LastPartBytes,"
+         "LabelType,LabelDate,StorageId,"
          "Enabled,LocationId,RecycleCount,InitialWrite,"
-         "ScratchPoolId,RecyclePoolId,VolReadTime,VolWriteTime,ActionOnPurge "
+         "ScratchPoolId,RecyclePoolId,VolReadTime,VolWriteTime,ActionOnPurge,CacheRetention "
          "FROM Media WHERE VolumeName='%s'", esc);
    }
 
@@ -1137,7 +1152,6 @@ bool BDB::bdb_get_media_record(JCR *jcr, MEDIA_DBR *mr)
             Mmsg1(errmsg, _("error fetching row: %s\n"), sql_strerror());
             Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
          } else {
-            /* return values */
             mr->MediaId = str_to_int64(row[0]);
             bstrncpy(mr->VolumeName, row[1]!=NULL?row[1]:"", sizeof(mr->VolumeName));
             mr->VolJobs = str_to_int64(row[2]);
@@ -1168,21 +1182,25 @@ bool BDB::bdb_get_media_record(JCR *jcr, MEDIA_DBR *mr)
             mr->InChanger = str_to_uint64(row[25]);
             mr->EndFile = str_to_uint64(row[26]);
             mr->EndBlock = str_to_uint64(row[27]);
-            mr->VolType = str_to_int64(row[28]);   /* formerly VolParts */
-            mr->LabelType = str_to_int64(row[29]);
-            bstrncpy(mr->cLabelDate, row[30]!=NULL?row[30]:"", sizeof(mr->cLabelDate));
+            mr->VolType = str_to_int64(row[28]);
+            mr->VolParts = str_to_int64(row[29]);
+            mr->VolCloudParts = str_to_int64(row[30]);
+            mr->LastPartBytes = str_to_uint64(row[31]);
+            mr->LabelType = str_to_int64(row[32]);
+            bstrncpy(mr->cLabelDate, row[33]!=NULL?row[33]:"", sizeof(mr->cLabelDate));
             mr->LabelDate = (time_t)str_to_utime(mr->cLabelDate);
-            mr->StorageId = str_to_int64(row[31]);
-            mr->Enabled = str_to_int64(row[32]);
-            mr->LocationId = str_to_int64(row[33]);
-            mr->RecycleCount = str_to_int64(row[34]);
-            bstrncpy(mr->cInitialWrite, row[35]!=NULL?row[35]:"", sizeof(mr->cInitialWrite));
+            mr->StorageId = str_to_int64(row[34]);
+            mr->Enabled = str_to_int64(row[35]);
+            mr->LocationId = str_to_int64(row[36]);
+            mr->RecycleCount = str_to_int64(row[37]);
+            bstrncpy(mr->cInitialWrite, row[38]!=NULL?row[38]:"", sizeof(mr->cInitialWrite));
             mr->InitialWrite = (time_t)str_to_utime(mr->cInitialWrite);
-            mr->ScratchPoolId = str_to_int64(row[36]);
-            mr->RecyclePoolId = str_to_int64(row[37]);
-            mr->VolReadTime = str_to_int64(row[38]);
-            mr->VolWriteTime = str_to_int64(row[39]);
-            mr->ActionOnPurge = str_to_int32(row[40]);
+            mr->ScratchPoolId = str_to_int64(row[39]);
+            mr->RecyclePoolId = str_to_int64(row[40]);
+            mr->VolReadTime = str_to_int64(row[41]);
+            mr->VolWriteTime = str_to_int64(row[42]);
+            mr->ActionOnPurge = str_to_int32(row[43]);
+            mr->CacheRetention = str_to_int64(row[44]);
 
             ok = true;
          }
@@ -1288,6 +1306,10 @@ bool BDB::bdb_get_used_base_jobids(JCR *jcr,
    return bdb_sql_query(buf.c_str(), db_list_handler, result);
 }
 
+/* Mutex used to have global counter on btemp table */
+static pthread_mutex_t btemp_mutex = PTHREAD_MUTEX_INITIALIZER;
+static uint32_t btemp_cur = 1;
+
 /**
  * The decision do change an incr/diff was done before
  * Full : do nothing
@@ -1313,9 +1335,20 @@ bool BDB::bdb_get_accurate_jobids(JCR *jcr,
    bstrutime(date, sizeof(date),  StartTime + 1);
    jobids->reset();
 
+   /* If we are comming from bconsole, we must ensure that we
+    * have a unique name.
+    */
+   if (jcr->JobId == 0) {
+      P(btemp_mutex);
+      bsnprintf(jobid, sizeof(jobid), "0%u", btemp_cur++);
+      V(btemp_mutex);
+   } else {
+      edit_uint64(jcr->JobId, jobid);
+   }
+
    /* First, find the last good Full backup for this job/client/fileset */
    Mmsg(query, create_temp_accurate_jobids[bdb_get_type_index()],
-        edit_uint64(jcr->JobId, jobid),
+        jobid,
         edit_uint64(jr->ClientId, clientid),
         date,
         edit_uint64(jr->FileSetId, filesetid));
@@ -1548,6 +1581,137 @@ bool BDB::bdb_get_snapshot_record(JCR *jcr, SNAPSHOT_DBR *sr)
                   sr->Name);
       }
    }
+   bdb_unlock();
+   return ok;
+}
+
+/* Job, Level */
+static void build_estimate_query(BDB *db, POOL_MEM &query, const char *mode,
+                                 char *job_esc, char level)
+{
+   POOL_MEM filter, tmp;
+   char ed1[50];
+
+
+   if (level == 0) {
+      level = 'F';
+   }
+   /* MySQL doesn't have statistic functions */
+   if (db->bdb_get_type_index() == SQL_TYPE_POSTGRESQL) {
+      /* postgresql have functions that permit to handle lineal regression
+       * in y=ax + b
+       * REGR_SLOPE(Y,X) = get x
+       * REGR_INTERCEPT(Y,X) = get b
+       * and we need y when x=now()
+       * CORR gives the correlation
+       * (TODO: display progress bar only if CORR > 0.8)
+       */
+      btime_t now = time(NULL);
+      Mmsg(query,
+           "SELECT temp.jobname AS jobname, "
+           "COALESCE(CORR(value,JobTDate),0) AS corr, "
+           "(%s*REGR_SLOPE(value,JobTDate) "
+           " + REGR_INTERCEPT(value,JobTDate)) AS value, "
+           "AVG(value) AS avg_value, "
+           " COUNT(1) AS nb ", edit_int64(now, ed1));
+   } else {
+      Mmsg(query,
+           "SELECT jobname AS jobname, "
+           "0.1 AS corr, AVG(value) AS value, AVG(value) AS avg_value, "
+           "COUNT(1) AS nb ");
+    }
+
+    /* if it's a differential, we need to compare since the last full
+     * 
+     *   F D D D F D D D      F I I I I D I I I
+     * | #     # #     #    | #         #
+     * | #   # # #   # #    | #         #
+     * | # # # # # # # #    | # # # # # # # # #
+     * +-----------------   +-------------------
+     */
+   if (level == L_DIFFERENTIAL) {
+      Mmsg(filter,
+           " AND Job.StartTime > ( "
+             " SELECT StartTime "
+              " FROM Job "
+             " WHERE Job.Name = '%s' " 
+             " AND Job.Level = 'F' "
+             " AND Job.JobStatus IN ('T', 'W') "
+           " ORDER BY Job.StartTime DESC LIMIT 1) ",
+           job_esc);
+   }
+   Mmsg(tmp,
+        " FROM ( "
+         " SELECT Job.Name AS jobname, "
+         " %s AS value, "
+         " JobTDate AS jobtdate "
+          " FROM Job INNER JOIN Client USING (ClientId) "
+         " WHERE Job.Name = '%s' "
+          " AND Job.Level = '%c' "
+          " AND Job.JobStatus IN ('T', 'W') "
+        "%s "
+        "ORDER BY StartTime DESC "
+        "LIMIT 4"
+        ") AS temp GROUP BY temp.jobname",
+        mode, job_esc, level, filter.c_str()
+      );
+   pm_strcat(query, tmp.c_str());
+}
+
+bool BDB::bdb_get_job_statistics(JCR *jcr, JOB_DBR *jr)
+{
+   SQL_ROW row;
+   POOL_MEM queryB, queryF, query;
+   char job_esc[MAX_ESCAPE_NAME_LENGTH];
+   bool ok = false;
+
+   bdb_lock();
+   bdb_escape_string(jcr, job_esc, jr->Name, strlen(jr->Name));
+   build_estimate_query(this, queryB, "JobBytes", job_esc, jr->JobLevel);
+   build_estimate_query(this, queryF, "JobFiles", job_esc, jr->JobLevel);
+   Mmsg(query,
+        "SELECT  bytes.corr * 100 AS corr_jobbytes, " /* 0 */
+                "bytes.value AS jobbytes, "           /* 1 */
+                "bytes.avg_value AS avg_jobbytes, "   /* 2 */
+                "bytes.nb AS nb_jobbytes, "           /* 3 */
+                "files.corr * 100 AS corr_jobfiles, " /* 4 */
+                "files.value AS jobfiles, "           /* 5 */
+                "files.avg_value AS avg_jobfiles, "   /* 6 */
+                "files.nb AS nb_jobfiles "            /* 7 */
+        "FROM (%s) AS bytes LEFT JOIN (%s) AS files USING (jobname)",
+        queryB.c_str(), queryF.c_str());
+   Dmsg1(100, "query=%s\n", query.c_str());
+
+   if (QueryDB(jcr, query.c_str())) {
+      char ed1[50];
+      if (sql_num_rows() > 1) {
+         Mmsg1(errmsg, _("More than one Result!: %s\n"),
+            edit_uint64(sql_num_rows(), ed1));
+         goto bail_out;
+      }
+      ok = true;
+
+      if ((row = sql_fetch_row()) == NULL) {
+         Mmsg1(errmsg, _("error fetching row: %s\n"), sql_strerror());
+      } else {
+         jr->CorrJobBytes = str_to_int64(row[0]);
+         jr->JobBytes = str_to_int64(row[1]);
+
+         /* lineal expression with only one job doesn't return a correct value */
+         if (str_to_int64(row[3]) == 1) {
+            jr->JobBytes = str_to_int64(row[2]); /* Take the AVG value */
+         }
+         jr->CorrNbJob = str_to_int64(row[3]); /* Number of jobs used in this sample */
+         jr->CorrJobFiles = str_to_int64(row[4]);
+         jr->JobFiles = str_to_int64(row[5]);
+
+         if (str_to_int64(row[7]) == 1) {
+            jr->JobFiles = str_to_int64(row[6]); /* Take the AVG value */
+         }
+      }
+      sql_free_result();
+   }
+bail_out:
    bdb_unlock();
    return ok;
 }

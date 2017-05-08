@@ -2,13 +2,12 @@
 #
 # shell script to create Bacula MySQL tables
 #
-# Copyright (C) 2000-2016 Kern Sibbald
+# Copyright (C) 2000-2017 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
-# Important note: 
-#   We cannot provide support for performance issues 
-#    if you changed the default schema.  In partcular
-#    if you change any of the indexes.
+# Important note:
+# You won't get any support for performance issue if you changed the
+#   default # schema.
 #
 # Useful commands:
 #   mysql -u root
@@ -54,7 +53,7 @@ CREATE TABLE Path (
 -- configuration parameters concerning sorting, joining and global
 -- memory.  By default, sort and join parameters are very small
 -- (sometimes 8Kb), and having sufficient memory specified by those
--- parameters is extremely important to run fast.  
+-- parameters is extremely important to run fast.
 
 -- In File table
 -- FileIndex can be 0 for FT_DELETED files
@@ -164,10 +163,12 @@ CREATE TABLE Job (
    Comment BLOB,
    FileTable CHAR(20) DEFAULT 'File',
    PRIMARY KEY(JobId),
-   INDEX (Name(128))
+   INDEX (Name(128)),
+   INDEX (JobTDate)
    );
 
--- Create a table like Job for long term statistics 
+
+-- Create a table like Job for long term statistics
 CREATE TABLE JobHisto (
    JobId INTEGER UNSIGNED NOT NULL,
    Job TINYBLOB NOT NULL,
@@ -223,7 +224,7 @@ CREATE TABLE LocationLog (
 );
 
 
-# 
+#
 CREATE TABLE FileSet (
    FileSetId INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
    FileSet TINYBLOB NOT NULL,
@@ -262,13 +263,16 @@ CREATE TABLE Media (
    VolJobs INTEGER UNSIGNED DEFAULT 0,
    VolFiles INTEGER UNSIGNED DEFAULT 0,
    VolBlocks INTEGER UNSIGNED DEFAULT 0,
+   VolParts INTEGER UNSIGNED DEFAULT 0,
+   VolCloudParts INTEGER UNSIGNED DEFAULT 0,
    VolMounts INTEGER UNSIGNED DEFAULT 0,
    VolBytes BIGINT UNSIGNED DEFAULT 0,
    VolABytes BIGINT UNSIGNED DEFAULT 0,
    VolAPadding BIGINT UNSIGNED DEFAULT 0,
    VolHoleBytes BIGINT UNSIGNED DEFAULT 0,
    VolHoles INTEGER UNSIGNED DEFAULT 0,
-   VolParts INTEGER UNSIGNED DEFAULT 0,   /* Now used for VolType */
+   LastPartBytes BIGINT UNSIGNED DEFAULT 0,
+   VolType INTEGER UNSIGNED DEFAULT 0,
    VolErrors INTEGER UNSIGNED DEFAULT 0,
    VolWrites BIGINT UNSIGNED DEFAULT 0,
    VolCapacityBytes BIGINT UNSIGNED DEFAULT 0,
@@ -277,6 +281,7 @@ CREATE TABLE Media (
    Enabled TINYINT DEFAULT 1,
    Recycle TINYINT DEFAULT 0,
    ActionOnPurge     TINYINT	DEFAULT 0,
+   CacheRetention BIGINT UNSIGNED DEFAULT 0,
    VolRetention BIGINT UNSIGNED DEFAULT 0,
    VolUseDuration BIGINT UNSIGNED DEFAULT 0,
    MaxVolJobs INTEGER UNSIGNED DEFAULT 0,
@@ -310,6 +315,7 @@ CREATE TABLE Pool (
    UseOnce TINYINT DEFAULT 0,
    UseCatalog TINYINT DEFAULT 0,
    AcceptAnyVolume TINYINT DEFAULT 0,
+   CacheRetention BIGINT UNSIGNED DEFAULT 0,
    VolRetention BIGINT UNSIGNED DEFAULT 0,
    VolUseDuration BIGINT UNSIGNED DEFAULT 0,
    MaxVolJobs INTEGER UNSIGNED DEFAULT 0,
@@ -355,7 +361,7 @@ CREATE TABLE Log (
 
 
 CREATE TABLE BaseFiles (
-   BaseId INTEGER UNSIGNED AUTO_INCREMENT,
+   BaseId BIGINT UNSIGNED AUTO_INCREMENT,
    BaseJobId INTEGER UNSIGNED NOT NULL REFERENCES Job,
    JobId INTEGER UNSIGNED NOT NULL REFERENCES Job,
    FileId BIGINT UNSIGNED NOT NULL REFERENCES File,
@@ -428,7 +434,7 @@ CREATE TABLE PathHierarchy
      CONSTRAINT pathhierarchy_pkey PRIMARY KEY (PathId)
 );
 
-CREATE INDEX pathhierarchy_ppathid 
+CREATE INDEX pathhierarchy_ppathid
 	  ON PathHierarchy (PPathId);
 
 CREATE TABLE PathVisibility
@@ -459,18 +465,18 @@ CREATE TABLE Snapshot (
   primary key (SnapshotId)
 );
 
-CREATE UNIQUE INDEX snapshot_idx ON Snapshot (Device(255), 
+CREATE UNIQUE INDEX snapshot_idx ON Snapshot (Device(255),
 					      Volume(255),
 					      Name(255));
 
 
 
 CREATE TABLE Version (
-   VersionId INTEGER UNSIGNED NOT NULL 
+   VersionId INTEGER UNSIGNED NOT NULL
    );
 
--- Initialize Version		 
-INSERT INTO Version (VersionId) VALUES (15);
+-- Initialize Version
+INSERT INTO Version (VersionId) VALUES (16);
 
 END-OF-DATA
 then

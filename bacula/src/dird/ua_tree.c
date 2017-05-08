@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2015 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,19 +11,17 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
- *
  *   Bacula Director -- User Agent Database File tree for Restore
  *      command. This file interacts with the user implementing the
  *      UA tree commands.
  *
  *     Kern Sibbald, July MMII
- *
  */
 
 #include "bacula.h"
@@ -198,6 +196,7 @@ int insert_tree_handler(void *ctx, int num_fields, char **row)
       type = TN_FILE;
    }
    decode_stat(row[4], &statp, sizeof(statp), &LinkFI);
+
    hard_link = (LinkFI != 0);
    node = insert_tree_node(row[0], row[1], type, tree->root, NULL);
    JobId = str_to_int64(row[3]);
@@ -251,7 +250,7 @@ int insert_tree_handler(void *ctx, int num_fields, char **row)
       node->type = type;
       node->soft_link = S_ISLNK(statp.st_mode) != 0;
       node->delta_seq = delta_seq;
-
+      node->can_access = true;
       if (tree->all) {
          node->extract = true;          /* extract all by default */
          if (type == TN_DIR || type == TN_DIR_NLS) {
@@ -831,11 +830,14 @@ static int cdcmd(UAContext *ua, TREE_CTX *tree)
       }
       if (!node) {
          ua->warning_msg(_("Invalid path given.\n"));
-      } else {
-         tree->node = node;
       }
-   } else {
-      tree->node = node;
+   }
+   if (node) {
+      if (node->can_access) {
+         tree->node = node;
+      } else {
+         ua->warning_msg(_("Invalid path given. Permission denied.\n"));
+      }
    }
    return pwdcmd(ua, tree);
 }

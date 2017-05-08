@@ -57,6 +57,18 @@ Device {
   AlwaysOpen = no;
 }
 
+Device {
+  Name = Dummy
+  Media Type = Dummy
+  Device Type = Fifo
+  Archive Device = /dev/null
+  LabelMedia = yes
+  Random Access = no
+  AutomaticMount = no
+  RemovableMedia = no
+  MaximumOpenWait = 60
+  AlwaysOpen = no
+}
 
 #Device {
 #  Name = "HP DLT 80"
@@ -106,4 +118,15 @@ Device {
 Messages {
   Name = Standard
   director = @hostname@-dir = all, !terminate
+}
+
+Cloud {
+  Name = DummyCloud
+  Driver = "File"
+  HostName = "@tmpdir@/cloud"
+  BucketName = "DummyBucket"
+  AccessKey = "DummyAccessKey"
+  SecretKey = "DummySecretKey"
+  Protocol = HTTPS
+  UriStyle = VirtualHost
 }

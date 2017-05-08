@@ -5,9 +5,9 @@
 #define COMMUNITY 1      /* Define to create a Windows community binary */
 
 /* Note: there can be only *one* VERSION in this file */
-#define VERSION "7.4.8"
-#define BDATE   "10 April 2017"
-#define LSMDATE "10Apr17"
+#define VERSION "7.9.0"
+#define BDATE   "08 May 2017"
+#define LSMDATE "08May17"
 
 #define RELEASE 1   /* Use ONLY in rpms */
 
@@ -65,8 +65,6 @@
 #ifdef DEVELOPER
 # define SMCHECK
 #endif
-
-#define BEEF 0
 
 /*
  * _USE_LOCKMGR does lock/unlock mutex tracking (dead lock)

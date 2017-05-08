@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -17,21 +17,18 @@
    Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
- *
  *   Bacula Director -- vbackup.c -- responsible for doing virtual
  *     backup jobs or in other words, consolidation or synthetic
- *     backups.
+ *     backups.  No connection to the Client is made.
  *
  *     Kern Sibbald, July MMVIII
  *
  *  Basic tasks done here:
- *     Open DB and create records for this job.
- *     Figure out what Jobs to copy.
- *     Open Message Channel with Storage daemon to tell him a job will be starting.
- *     Open connection with File daemon and pass him commands
- *       to do the backup.
- *     When the File daemon finishes the job, update the DB.
- *
+ *    Open DB and create records for this job.
+ *    Figure out what Jobs to copy.
+ *    Open Message Channel with Storage daemon to tell him a 
+ *      job will be starting.
+ *    Connect to the storage daemon and run the job.
  */
 
 #include "bacula.h"
@@ -49,14 +46,30 @@ void vbackup_cleanup(JCR *jcr, int TermCode);
  */
 bool do_vbackup_init(JCR *jcr)
 {
+   if (!get_or_create_fileset_record(jcr)) {
+      Dmsg1(dbglevel, "JobId=%d no FileSet\n", (int)jcr->JobId);
+      return false;
+   }
 
-  /* 
-   * if the read pool has not been allocated yet due to the job 
-   * being upgraded to a virtual full then allocate it now 
-   */
-  if (!jcr->rpool_source)
-    jcr->rpool_source = get_pool_memory(PM_MESSAGE);
+   apply_pool_overrides(jcr);
 
+   if (!allow_duplicate_job(jcr)) {
+      return false;
+   }
+
+   /*
+    * If the read pool has not been allocated yet due to the job
+    *  being upgraded to a virtual full then allocate it now
+    */
+   if (!jcr->rpool_source) {
+     jcr->rpool_source = get_pool_memory(PM_MESSAGE);
+   }
+   jcr->jr.PoolId = get_or_create_pool_record(jcr, jcr->pool->name());
+   if (jcr->jr.PoolId == 0) {
+      Dmsg1(dbglevel, "JobId=%d no PoolId\n", (int)jcr->JobId);
+      Jmsg(jcr, M_FATAL, 0, _("Could not get or create a Pool record.\n"));
+      return false;
+   }
    /*
     * Note, at this point, pool is the pool for this job.  We
     *  transfer it to rpool (read pool), and a bit later,
@@ -102,6 +115,7 @@ bool do_vbackup(JCR *jcr)
    char       *p;
    sellist     sel;
    db_list_ctx jobids;
+   UAContext *ua;
 
    Dmsg2(100, "rstorage=%p wstorage=%p\n", jcr->rstorage, jcr->wstorage);
    Dmsg2(100, "Read store=%s, write store=%s\n",
@@ -205,9 +219,30 @@ _("This Job is not an Accurate backup so is not equivalent to a Full backup.\n")
       Jmsg(jcr, M_FATAL, 0, _("No previous Jobs found.\n"));
       return false;
    }
+   jobids.count -= jcr->job->BackupsToKeep;
+   if (jobids.count <= 0) {
+      Jmsg(jcr, M_WARNING, 0, _("Insufficient Backups to Keep.\n"));
+      return false;
+   }
+   if (jobids.count == 1) {
+      Jmsg(jcr, M_WARNING, 0, _("Only one Job found. Consolidation not needed.\n"));
+      return false;
+   }
+
+   /* Remove number of JobIds we want to keep */
+   for (int i=0; i < (int)jcr->job->BackupsToKeep; i++) {
+      p = strrchr(jobids.list, ',');    /* find last jobid */
+      if (p == NULL) {
+         break;
+      } else {
+         *p = 0;
+      }
+   }
 
    /* Full by default, or might be Incr/Diff when jobid= is used */
    jcr->jr.JobLevel = level_computed;
+
+   Jmsg(jcr, M_INFO, 0, "Consolidating JobIds=%s\n", jobids.list);
 
    /*
     * Now we find the last job that ran and store it's info in
@@ -274,10 +309,6 @@ _("This Job is not an Accurate backup so is not equivalent to a Full backup.\n")
    jcr->jr.JobTDate = jcr->start_time;
    jcr->setJobStatus(JS_Running);
 
-   /* Add the following when support for base jobs is added to virtual full */
-   //jcr->HasBase = jcr->job->base != NULL;
-   //jcr->jr.HasBase = jcr->HasBase;
-
    /* Update job start record */
    if (!db_update_job_start_record(jcr, jcr->db, &jcr->jr)) {
       Jmsg(jcr, M_FATAL, 0, "%s", db_strerror(jcr->db));
@@ -313,6 +344,12 @@ _("This Job is not an Accurate backup so is not equivalent to a Full backup.\n")
    if (jcr->JobStatus != JS_Terminated) {
       return false;
    }
+   if (jcr->job->DeleteConsolidatedJobs) {
+      ua = new_ua_context(jcr);
+      purge_jobs_from_catalog(ua, jobids.list);
+      free_ua_context(ua);
+      Jmsg(jcr, M_INFO, 0, _("Deleted consolidated JobIds=%s\n"), jobids.list);
+   }
 
    vbackup_cleanup(jcr, jcr->JobStatus);
    return true;
@@ -336,7 +373,7 @@ void vbackup_cleanup(JCR *jcr, int TermCode)
    utime_t RunTime;
    POOL_MEM query(PM_MESSAGE);
 
-   Dmsg2(100, "Enter backup_cleanup %d %c\n", TermCode, TermCode);
+   Dmsg2(100, "Enter vbackup_cleanup %d %c\n", TermCode, TermCode);
    memset(&cr, 0, sizeof(cr));
 
    jcr->setJobLevel(L_FULL);         /* we want this to appear as a Full backup */
@@ -413,10 +450,9 @@ void vbackup_cleanup(JCR *jcr, int TermCode)
    bstrftimes(edt, sizeof(edt), jcr->jr.EndTime);
    RunTime = jcr->jr.EndTime - jcr->jr.StartTime;
    if (RunTime <= 0) {
-      kbps = 0;
-   } else {
-      kbps = ((double)jcr->jr.JobBytes) / (1000.0 * (double)RunTime);
+      RunTime = 1;
    }
+   kbps = ((double)jcr->jr.JobBytes) / (1000.0 * (double)RunTime);
    if (!db_get_job_volume_names(jcr, jcr->db, jcr->jr.JobId, &jcr->VolumeName)) {
       /*
        * Note, if the job has erred, most likely it did not write any
@@ -512,11 +548,11 @@ int insert_bootstrap_handler(void *ctx, int num_fields, char **row)
 {
    JobId_t JobId;
    int FileIndex;
-   RBSR *bsr = (RBSR *)ctx;
+   rblist *bsr_list = (rblist *)ctx;
 
    JobId = str_to_int64(row[3]);
    FileIndex = str_to_int64(row[2]);
-   add_findex(bsr, JobId, FileIndex);
+   add_findex(bsr_list, JobId, FileIndex);
    return 0;
 }
 
@@ -525,9 +561,10 @@ static bool create_bootstrap_file(JCR *jcr, char *jobids)
 {
    RESTORE_CTX rx;
    UAContext *ua;
+   RBSR *bsr = NULL;
 
    memset(&rx, 0, sizeof(rx));
-   rx.bsr = new_bsr();
+   rx.bsr_list = New(rblist(bsr, &bsr->link));
    ua = new_ua_context(jcr);
    rx.JobIds = jobids;
 
@@ -540,7 +577,7 @@ static bool create_bootstrap_file(JCR *jcr, char *jobids)
 
    if (!db_get_file_list(jcr, jcr->db_batch, jobids, false /* don't use md5 */,
                          true /* use delta */,
-                         insert_bootstrap_handler, (void *)rx.bsr))
+                         insert_bootstrap_handler, (void *)rx.bsr_list))
    {
       Jmsg(jcr, M_ERROR, 0, "%s", db_strerror(jcr->db_batch));
    }
@@ -560,7 +597,7 @@ static bool create_bootstrap_file(JCR *jcr, char *jobids)
        */
       Mmsg(rx.query, uar_sel_files, edit_int64(JobId, ed1));
       Dmsg1(100, "uar_sel_files=%s\n", rx.query);
-      if (!db_sql_query(ua->db, rx.query, insert_bootstrap_handler, (void *)rx.bsr)) {
+      if (!db_sql_query(ua->db, rx.query, insert_bootstrap_handler, (void *)rx.bsr_list)) {
          Jmsg(jcr, M_ERROR, 0, "%s", db_strerror(ua->db));
       }
       free_pool_memory(rx.query);
@@ -568,11 +605,14 @@ static bool create_bootstrap_file(JCR *jcr, char *jobids)
    }
 #endif
 
-   complete_bsr(ua, rx.bsr);
+   complete_bsr(ua, rx.bsr_list);
    jcr->ExpectedFiles = write_bsr_file(ua, rx);
+   if (chk_dbglvl(10)) {
+      Pmsg1(000,  "Found %d files to consolidate.\n", jcr->ExpectedFiles);
+   }
    Jmsg(jcr, M_INFO, 0, _("Found %d files to consolidate into Virtual Full.\n"),
-        jcr->ExpectedFiles);
+      jcr->ExpectedFiles);
    free_ua_context(ua);
-   free_bsr(rx.bsr);
+   free_bsr(rx.bsr_list);
    return jcr->ExpectedFiles==0?false:true;
 }

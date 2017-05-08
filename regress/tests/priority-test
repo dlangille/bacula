@@ -1,0 +1,347 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2017 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Run a couple of jobs to test the priority feature
+#
+TestName="priority-test"
+JobName=backup
+. scripts/functions
+
+# Deactivate this test because:.
+#  1. It runs too long -- more than 5 minutes
+#  2. It detects errors, but that is not reported in
+#     the status.
+#
+# Please do not re-activate it until it is fixed:  KES 03Feb17
+#exit 1
+
+if [ x$FORCE_DEDUP = xyes ]; then
+    exit 0
+fi
+
+scripts/cleanup
+scripts/copy-confs
+
+#
+# Zap out any schedule in default conf file so that
+#  it doesn't start during our test
+#
+outf="$tmp/sed_tmp"
+echo "s%  Schedule =%# Schedule =%g" >${outf}
+cp $scripts/bacula-dir.conf $tmp/1
+sed -f ${outf} $tmp/1 >$scripts/bacula-dir.conf
+
+change_jobname BackupClient1 $JobName
+start_test
+
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "MaximumConcurrentJobs", 1, "Client")'
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "MaximumConcurrentJobs", 1000, "Director")'
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "AllowMixedPriority", "yes", "Job")'
+cat <<EOF >> $conf/bacula-dir.conf
+FileSet {
+  Name = Small
+  Include {
+   File = $cwd/build/po/fr.po
+  }
+}
+EOF
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out /dev/null
+messages
+@$out $tmp/log1.out
+setdebug level=4 storage=File1
+label volume=TestVolume001 storage=File1 pool=File slot=1 drive=0
+setbandwidth limit="10000 kb/s" client
+run job=$JobName level=Full yes comment="1"  priority=10
+run job=$JobName level=Full yes comment="X"  priority=10
+run job=$JobName level=Full yes comment="2"  priority=1
+run job=$JobName level=Full yes comment="X"  priority=10
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+run job=$JobName yes priority=10 fileset=Small
+@sleep 5
+status dir
+wait jobid=1
+@# The second job should be running now
+run job=$JobName yes priority=2 comment="3"
+setbandwidth limit="1000000 kb/s" client
+wait
+messages
+@$out $tmp/log2.out
+llist jobs limit=5 order=asc
+quit
+END_OF_DATA
+
+run_bacula
+stop_bacula
+
+# Now, we check the job order, we should find the first job then
+# the two jobs with the right priorities.
+awk '/[Cc]omment:/ { print $2 }' $tmp/log2.out > $tmp/log3.out
+
+cat <<EOF >> $tmp/log4.out
+1
+2
+3
+X
+X
+EOF
+
+diff -Naur $tmp/log3.out $tmp/log4.out
+if [ $? -ne 0 ]; then
+    print_debug "ERROR: The job order does not respect the priority that was set"
+fi
+
+end_test

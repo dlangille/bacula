@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -48,8 +48,7 @@
  */
 int32_t r_first = R_FIRST;
 int32_t r_last  = R_LAST;
-static RES *sres_head[R_LAST - R_FIRST + 1];
-RES **res_head = sres_head;
+RES_HEAD **res_head;
 
 /* Forward referenced subroutines */
 
@@ -99,6 +98,7 @@ static RES_ITEM con_items[] = {
    {"tlskey",         store_dir,       ITEM(con_res.tls_keyfile), 0, 0, 0},
    {"heartbeatinterval", store_time, ITEM(con_res.heartbeat_interval), 0, ITEM_DEFAULT, 5 * 60},
    {"director",       store_str,       ITEM(con_res.director), 0, 0, 0},
+   {"CommCompression",   store_bool, ITEM(con_res.comm_compression), 0, ITEM_DEFAULT, true},
    {NULL, NULL, {0}, 0, 0, 0}
 };
 
@@ -125,6 +125,7 @@ RES_TABLE resources[] = {
 /* Dump contents of resource */
 void dump_resource(int type, RES *ares, void sendit(void *sock, const char *fmt, ...), void *sock)
 {
+   RES *next;
    URES *res = (URES *)ares;
    bool recurse = true;
 
@@ -151,8 +152,11 @@ void dump_resource(int type, RES *ares, void sendit(void *sock, const char *fmt,
    default:
       printf(_("Unknown resource type %d\n"), type);
    }
-   if (recurse && res->dir_res.hdr.next) {
-      dump_resource(type, res->dir_res.hdr.next, sendit, sock);
+   if (recurse) {
+      next = GetNextRes(0, (RES *)res);
+      if (next) {
+         dump_resource(type, next, sendit, sock);
+      }
    }
 }
 
@@ -165,14 +169,12 @@ void dump_resource(int type, RES *ares, void sendit(void *sock, const char *fmt,
  */
 void free_resource(RES *sres, int type)
 {
-   RES *nres;
    URES *res = (URES *)sres;
 
    if (res == NULL)
       return;
 
    /* common stuff -- free the resource name */
-   nres = (RES *)res->dir_res.hdr.next;
    if (res->dir_res.hdr.name) {
       free(res->dir_res.hdr.name);
    }
@@ -236,18 +238,14 @@ void free_resource(RES *sres, int type)
    if (res) {
       free(res);
    }
-   if (nres) {
-      free_resource(nres, type);
-   }
 }
 
 /* Save the new resource by chaining it into the head list for
  * the resource. If this is pass 2, we update any resource
  * pointers (currently only in the Job resource).
  */
-void save_resource(int type, RES_ITEM *items, int pass)
+bool save_resource(CONFIG *config, int type, RES_ITEM *items, int pass)
 {
-   URES *res;
    int rindex = type - r_first;
    int i, size = 0;
    int error = 0;
@@ -257,10 +255,11 @@ void save_resource(int type, RES_ITEM *items, int pass)
     */
    for (i=0; items[i].name; i++) {
       if (items[i].flags & ITEM_REQUIRED) {
-            if (!bit_is_set(i, res_all.dir_res.hdr.item_present)) {
-               Emsg2(M_ABORT, 0, _("\"%s\" directive is required in \"%s\" resource, but not found.\n"),
+         if (!bit_is_set(i, res_all.dir_res.hdr.item_present)) {
+            Mmsg(config->m_errmsg, _("\"%s\" directive is required in \"%s\" resource, but not found.\n"),
                  items[i].name, resources[rindex].name);
-             }
+            return false;
+         }
       }
    }
 
@@ -295,7 +294,7 @@ void save_resource(int type, RES_ITEM *items, int pass)
          free(res_all.dir_res.hdr.desc);
          res_all.dir_res.hdr.desc = NULL;
       }
-      return;
+      return true;
    }
 
    /* The following code is only executed during pass 1 */
@@ -316,31 +315,16 @@ void save_resource(int type, RES_ITEM *items, int pass)
    }
    /* Common */
    if (!error) {
-      res = (URES *)malloc(size);
-      memcpy(res, &res_all, size);
-      if (!res_head[rindex]) {
-         res_head[rindex] = (RES *)res; /* store first entry */
-      } else {
-         RES *next, *last;
-         /* Add new res to end of chain */
-         for (last=next=res_head[rindex]; next; next=next->next) {
-            last = next;
-            if (strcmp(next->name, res->dir_res.hdr.name) == 0) {
-               Emsg2(M_ERROR_TERM, 0,
-                  _("Attempt to define second \"%s\" resource named \"%s\" is not permitted.\n"),
-                  resources[rindex].name, res->dir_res.hdr.name);
-            }
-         }
-         last->next = (RES *)res;
-         Dmsg2(90, "Inserting %s res: %s\n", res_to_str(type),
-               res->dir_res.hdr.name);
+      if (!config->insert_res(rindex, size)) {
+         return false;
       }
    }
+   return true;
 }
 
 bool parse_bat_config(CONFIG *config, const char *configfile, int exit_code)
 {
    config->init(configfile, NULL, exit_code, (void *)&res_all, res_all_size,
-      r_first, r_last, resources, res_head);
+      r_first, r_last, resources, &res_head);
    return config->parse_config();
 }

@@ -10,7 +10,7 @@
 #   that dird.conf has corresponding changes.
 #
 #
-# Copyright (C) 2000-2015 Kern Sibbald
+# Copyright (C) 2000-2017 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
 
@@ -19,6 +19,7 @@ Storage {                             # definition of myself
   SDPort = @sd_port@                  # Director's port
   WorkingDirectory = "@working_dir@"
   Pid Directory = "@piddir@"
+  Plugin Directory = "@plugindir@"
   Maximum Concurrent Jobs = 20
 }
 
@@ -44,7 +45,7 @@ Director {
 # Note, for a list of additional Device templates please
 #  see the directory <bacula-source>/examples/devices
 # Or follow the following link:
-#  http://bacula.svn.sourceforge.net/viewvc/bacula/trunk/bacula/examples/devices/
+#  http://www.bacula.org/git/cgit.cgi/bacula/tree/bacula/examples/devices?h=Branch-7.4
 #
 
 #
@@ -145,6 +146,15 @@ Device {
 #  RandomAccess = no;
 #  AutoChanger = yes
 #  #
+#  # New alert command in Bacula 9.0.0
+#  #  Note: you must have the sg3_utils (rpms) or the
+#  #        sg3-utils (deb) installed on your system.
+#  #        and you must set the correct control device that
+#  #        corresponds to the Archive Device
+#  Control Device = /dev/sg?? # must be SCSI ctl for /dev/nst0
+#  Alert Command = "@scriptdir@/tapealert %l"
+#
+#  #
 #  # Enable the Alert command only if you have the mtx package loaded
 #  # Note, apparently on some systems, tapeinfo resets the SCSI controller
 #  #  thus if you turn this on, make sure it does not reset your SCSI
@@ -205,9 +215,18 @@ Device {
 #  RemovableMedia = yes;
 #  RandomAccess = no;
 #  Maximum File Size = 4GB
-## Changer Command = "@scriptdir@/mtx-changer %c %o %S %a %d"
-## Changer Device = /dev/sg0
-## AutoChanger = yes
+# Changer Command = "@scriptdir@/mtx-changer %c %o %S %a %d"
+# Changer Device = /dev/sg0
+# AutoChanger = yes
+#  #
+#  # New alert command in Bacula 9.0.0
+#  #  Note: you must have the sg3_utils (rpms) or the
+#  #        sg3-utils (deb) installed on your system.
+#  #        and you must set the correct control device that
+#  #        corresponds to the Archive Device
+#  Control Device = /dev/sg??  # must be SCSI ctl for @TAPEDRIVE@
+#  Alert Command = "@scriptdir@/tapealert %l"
+#
 #  # Enable the Alert command only if you have the mtx package loaded
 ## Alert Command = "sh -c 'tapeinfo -f %c |grep TapeAlert|cat'"
 ## If you have smartctl, enable this, it has more info than tapeinfo
@@ -226,9 +245,18 @@ Device {
 #  RemovableMedia = yes;
 #  RandomAccess = no;
 #  Maximum File Size = 5GB
-## Changer Command = "@scriptdir@/mtx-changer %c %o %S %a %d"
-## Changer Device = /dev/sg0
-## AutoChanger = yes
+# Changer Command = "@scriptdir@/mtx-changer %c %o %S %a %d"
+# Changer Device = /dev/sg0
+# AutoChanger = yes
+#  #
+#  # New alert command in Bacula 9.0.0
+#  #  Note: you must have the sg3_utils (rpms) or the
+#  #        sg3-utils (deb) installed on your system.
+#  #        and you must set the correct control device that
+#  #        corresponds to the Archive Device
+#  Control Device = /dev/sg??  # must be SCSI ctl for @TAPEDRIVE@
+#  Alert Command = "@scriptdir@/tapealert %l"
+#
 #  # Enable the Alert command only if you have the mtx package loaded
 ## Alert Command = "sh -c 'tapeinfo -f %c |grep TapeAlert|cat'"
 ## If you have smartctl, enable this, it has more info than tapeinfo
@@ -252,6 +280,15 @@ Device {
 #  Hardware End of Medium = no
 #  Fast Forward Space File = no
 #  #
+#  # New alert command in Bacula 9.0.0
+#  #  Note: you must have the sg3_utils (rpms) or the
+#  #        sg3-utils (deb) installed on your system.
+#  #        and you must set the correct control device that
+#  #        corresponds to the Archive Device
+#  Control Device = /dev/sg??  # must be SCSI ctl for /dev/rmt/1mnb
+#  Alert Command = "@scriptdir@/tapealert %l"
+#
+#  #
 #  # Enable the Alert command only if you have the mtx package loaded
 #  Alert Command = "sh -c 'tapeinfo -f %c |grep TapeAlert|cat'"
 #  If you have smartctl, enable this, it has more info than tapeinfo
@@ -274,6 +311,15 @@ Device {
 #  Backward Space Record = no
 #  Fast Forward Space File = no
 #  TWO EOF = yes
+#  #
+#  # New alert command in Bacula 9.0.0
+#  #  Note: you must have the sg3_utils (rpms) or the
+#  #        sg3-utils (deb) installed on your system.
+#  #        and you must set the correct control device that
+#  #        corresponds to the Archive Device
+#  Control Device = /dev/sg??  # must be SCSI ctl for /dev/nsa1
+#  Alert Command = "@scriptdir@/tapealert %l"
+#
 #  If you have smartctl, enable this, it has more info than tapeinfo
 #  Alert Command = "sh -c 'smartctl -H -l error %c'"
 #}

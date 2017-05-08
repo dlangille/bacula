@@ -37,6 +37,28 @@ JobDefs {
   Maximum Concurrent Jobs = 16
 }
 
+JobDefs {
+  Name = "DefaultJobWithRunscript"
+  Type = Backup
+  Level = Incremental
+  Client = @hostname@-fd 
+  FileSet = FS_TESTJOB
+  Storage = File
+  Messages = Standard
+  Pool = Default
+  Priority = 10
+  RunAfterJob = "echo FromJobDefs"
+  Maximum Concurrent Jobs = 16
+}
+
+Job {
+  Name = "RUN_JOBDEFS"
+  JobDefs = DefaultJobWithRunscript
+  FileSet = FS_TESTJOB
+  RunBeforeJob = "/bin/echo RunBeforeJob"
+  Run After Job = "/bin/echo RunAfterJob"
+}
+
 FileSet {
  Name = FS_TESTJOB
  Include {

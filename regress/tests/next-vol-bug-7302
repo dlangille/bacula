@@ -1,0 +1,119 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2017 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# This should expose bug #7302
+#
+# This script uses the virtual disk autochanger and 30 drives
+#
+TestName="next-vol-bug-7302"
+JobName="backup"
+. scripts/functions
+
+scripts/cleanup
+scripts/copy-2disk-tape-confs
+CLIENT=2drive2disk
+
+echo "${cwd}/build" >${cwd}/tmp/file-list
+change_jobname NightlySave $JobName
+start_test
+
+# Turn on automatic label
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "LabelFormat", "vol", "Pool")'
+$bperl -e 'add_attribute("$conf/bacula-sd.conf", "LabelMedia", "yes", "Device")'
+
+# Allow only one job per volume
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "MaximumVolumeJobs", "1", "Pool")'
+$bperl -e 'add_attribute("$conf/bacula-sd.conf", "MaximumConcurrentJobs", "1", "Device")'
+
+# turn off spooling
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "SpoolData", "no", "Job")'
+
+# Create 30 drives for autochanger tape
+for i in `seq 2 40`; do
+    $bperl -e 'extract_resource("$conf/bacula-sd.conf", "Device", "Drive-0")' | \
+        sed "s/Drive-0/Drive-$i/" >> $conf/bacula-sd.conf
+done
+
+$bperl -e 'add_attribute("$conf/bacula-sd.conf", "Device", join(",", map { "Drive-$_" } 0..30), "Autochanger", "tape")' 
+
+# Write out bconsole commands
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@out /dev/null
+messages
+@$out ${cwd}/tmp/log1.out
+@#setdebug level=100 client=$CLIENT
+setbandwidth client limit="2000 kb/s"
+run job=$JobName level=Full Pool=Default yes
+run job=$JobName level=Full Pool=Default yes
+run job=$JobName level=Full Pool=Default yes
+run job=$JobName level=Full Pool=Default yes
+run job=$JobName level=Full Pool=Default yes
+run job=$JobName level=Full Pool=Default yes
+run job=$JobName level=Full Pool=Default yes
+run job=$JobName level=Full Pool=Default yes
+run job=$JobName level=Full Pool=Default yes
+run job=$JobName level=Full Pool=Default yes
+run job=$JobName level=Full Pool=Default yes
+run job=$JobName level=Full Pool=Default yes
+run job=$JobName level=Full Pool=Default yes
+run job=$JobName level=Full Pool=Default yes
+run job=$JobName level=Full Pool=Default yes
+run job=$JobName level=Full Pool=Default yes
+run job=$JobName level=Full Pool=Default yes
+run job=$JobName level=Full Pool=Default yes
+run job=$JobName level=Full Pool=Default yes
+run job=$JobName level=Full Pool=Default yes
+run job=$JobName level=Full Pool=Default yes
+run job=$JobName level=Full Pool=Default yes
+run job=$JobName level=Full Pool=Default yes
+run job=$JobName level=Full Pool=Default yes
+run job=$JobName level=Full Pool=Default yes
+run job=$JobName level=Full Pool=Default yes
+run job=$JobName level=Full Pool=Default yes
+run job=$JobName level=Full Pool=Default yes
+run job=$JobName level=Full Pool=Default yes
+run job=$JobName level=Full Pool=Default yes
+run job=$JobName level=Full Pool=Default yes
+run job=$JobName level=Full Pool=Default yes
+run job=$JobName level=Full Pool=Default yes
+run job=$JobName level=Full Pool=Default yes
+run job=$JobName level=Full Pool=Default yes
+run job=$JobName level=Full Pool=Default yes
+run job=$JobName level=Full Pool=Default yes
+run job=$JobName level=Full Pool=Default yes
+run job=$JobName level=Full Pool=Default yes
+run job=$JobName level=Full Pool=Default yes
+run job=$JobName level=Full Pool=Default yes
+run job=$JobName level=Full Pool=Default yes
+run job=$JobName level=Full Pool=Default yes
+run job=$JobName level=Full Pool=Default yes
+@sleep 2
+list volumes
+messages
+@sleep 20
+messages
+@sleep 20
+messages
+status storage=tape
+status dir
+list volumes
+setbandwidth client limit="100000000 kb/s"
+wait
+messages
+list volumes
+quit
+END_OF_DATA
+
+# exit
+
+run_bacula
+
+check_for_zombie_jobs storage=tape
+stop_bacula
+
+touch $tmp/log2.out
+check_two_logs
+
+end_test

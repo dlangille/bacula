@@ -1,18 +1,7 @@
 /*
- * Bacula job queue routines.
- *
- *  Kern Sibbald, July MMIII
- *
- *  This code adapted from Bacula work queue code, which was
- *    adapted from "Programming with POSIX Threads", by
- *    David R. Butenhof
- *
- */
-/*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2015 Kern Sibbald
-   Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -27,6 +16,15 @@
 
    Bacula(R) is a registered trademark of Kern Sibbald.
 */
+/*
+ * Bacula job queue routines.
+ *
+ *  Kern Sibbald, July MMIII
+ *
+ *  This code adapted from Bacula work queue code, which was
+ *    adapted from "Programming with POSIX Threads", by
+ *    David R. Butenhof
+ */
 
 #ifndef __JOBQ_H
 #define __JOBQ_H 1

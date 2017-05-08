@@ -38,6 +38,8 @@ SVRSRCS = filed.c authenticate.c backup.c crypto.c \
 	  xacl.c xacl_linux.c xacl_osx.c xacl_solaris.c xacl_freebsd.c
 SVROBJS = $(SVRSRCS:.c=.o)
 
+JSONOBJS = bfdjson.o filed_conf.o
+
 # these are the objects that are changed by the .configure process
 EXTRAOBJS = @OBJLIST@
 
@@ -56,7 +58,7 @@ LZO_INC= @LZO_INC@
 	@echo "Compiling $<"
 	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) $(LZO_INC) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) $<
 #-------------------------------------------------------------------------
-all: Makefile bacula-fd @STATIC_FD@
+all: Makefile bacula-fd @STATIC_FD@ bfdjson
 	@echo "==== Make of filed is good ===="
 	@echo " "
 
@@ -68,6 +70,12 @@ bacula-fd:  Makefile $(SVROBJS) ../findlib/libbacfind$(DEFAULT_ARCHIVE_TYPE) ../
 	@echo "Linking $@ ..."
 	$(LIBTOOL_LINK) $(CXX) $(WLDFLAGS) $(LDFLAGS) -L../lib -L../findlib -o $@ $(SVROBJS) \
 	  $(FDLIBS) $(ZLIBS) -lbacfind -lbaccfg -lbac -lm $(LIBS) \
+	  $(DLIB) $(WRAPLIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS) $(CAP_LIBS) $(AFS_LIBS) $(LZO_LIBS)
+
+bfdjson:  Makefile $(JSONOBJS) ../findlib/libbacfind$(DEFAULT_ARCHIVE_TYPE) ../lib/libbaccfg$(DEFAULT_ARCHIVE_TYPE) ../lib/libbac$(DEFAULT_ARCHIVE_TYPE) @WIN32@
+	@echo "Linking $@ ..."
+	$(LIBTOOL_LINK) $(CXX) $(WLDFLAGS) $(LDFLAGS) -L../lib -L../findlib -o $@ $(JSONOBJS) \
+	  $(WIN32LIBS) $(FDLIBS) $(ZLIBS) -lbacfind -lbaccfg -lbac -lm $(LIBS) \
 	  $(DLIB) $(WRAPLIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS) $(CAP_LIBS) $(AFS_LIBS) $(LZO_LIBS)
 
 static-bacula-fd: Makefile $(SVROBJS) ../findlib/libbacfind.a ../lib/libbaccfg$(DEFAULT_ARCHIVE_TYPE) ../lib/libbac$(DEFAULT_ARCHIVE_TYPE)
@@ -100,6 +108,7 @@ devclean: realclean
 
 install: all
 	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bacula-fd $(DESTDIR)$(sbindir)/bacula-fd
+	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bfdjson $(DESTDIR)$(sbindir)/bfdjson
 	@srcconf=bacula-fd.conf; \
 	if  test -f ${DESTDIR}${sysconfdir}/$$srcconf; then \
 	   destconf=$$srcconf.new; \
@@ -117,7 +126,7 @@ install: all
 	fi
 
 uninstall:
-	(cd $(DESTDIR)$(sysconfdir); $(RMF) bacula-fd.conf)
+	(cd $(DESTDIR)$(sysconfdir); $(RMF) bacula-fd.conf bfdjson)
 	(cd $(DESTDIR)$(sysconfdir); $(RMF) bacula-fd.conf.new)
 
 # Semi-automatic generation of dependencies:

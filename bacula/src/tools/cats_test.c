@@ -59,7 +59,7 @@ PROG_COPYRIGHT
 "       -l <limit>        maximum tuple to fetch\n"
 "       -q                print only errors\n"
 "       -v                verbose\n"
-"       -?                print this message\n\n"), 2011, BDEMO, VERSION, BDATE);
+"       -?                print this message\n\n"), 2011, "", VERSION, BDATE);
    exit(1);
 }
 

@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2015 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,13 +11,12 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
- *
  *   Bacula Director -- mac.c -- responsible for doing
  *     migration and copy jobs.
  *
@@ -31,7 +30,6 @@
  *     Open connection with Storage daemon and pass him commands
  *       to do the backup.
  *     When the Storage daemon finishes the job, update the DB.
- *
  */
 
 #include "bacula.h"
@@ -189,6 +187,12 @@ bool do_mac_init(JCR *jcr)
    if (wjcr->getJobLevel() == L_VIRTUAL_FULL) {
       wjcr->setJobLevel(L_INCREMENTAL);
    }
+
+   /* Don't check for duplicates on this jobs. We do it before setup_job(),
+    * because we check allow_duplicate_job() here.
+    */
+   wjcr->IgnoreDuplicateJobChecking = true;
+
    if (!setup_job(wjcr)) {
       Jmsg(jcr, M_FATAL, 0, _("setup job failed.\n"));
       return false;
@@ -207,8 +211,6 @@ bool do_mac_init(JCR *jcr)
 
    /* Don't let WatchDog checks Max*Time value on this Job */
    wjcr->no_maxtime = true;
-   /* Don't check for duplicates on this jobs */
-   wjcr->job->IgnoreDuplicateJobChecking = true;
    Dmsg4(dbglevel, "wjcr: Name=%s JobId=%d Type=%c Level=%c\n",
       wjcr->jr.Name, (int)wjcr->jr.JobId,
       wjcr->jr.JobType, wjcr->jr.JobLevel);
@@ -620,8 +622,9 @@ void mac_cleanup(JCR *jcr, int TermCode, int writeTermCode)
    char sdt[MAX_TIME_LENGTH], edt[MAX_TIME_LENGTH];
    char ec1[30], ec2[30], ec3[30], ec4[30], ec5[30], elapsed[50];
    char ec6[50], ec7[50], ec8[50], ec9[30], ec10[30];
-   char term_code[100], sd_term_msg[100];
-   const char *term_msg;
+   char sd_term_msg[100];
+   POOL_MEM term_code;
+   POOL_MEM term_msg;
    int msg_type = M_INFO;
    MEDIA_DBR mr;
    double kbps;
@@ -630,6 +633,8 @@ void mac_cleanup(JCR *jcr, int TermCode, int writeTermCode)
    JCR *wjcr = jcr->wjcr;
    POOL_MEM query(PM_MESSAGE);
    POOL_MEM vol_info;
+
+   remove_dummy_jobmedia_records(jcr);
 
    Dmsg2(100, "Enter mac_cleanup %d %c\n", TermCode, TermCode);
    update_job_end(jcr, TermCode);
@@ -648,7 +653,7 @@ void mac_cleanup(JCR *jcr, int TermCode, int writeTermCode)
       wjcr->JobBytes = jcr->JobBytes = wjcr->SDJobBytes;
       wjcr->jr.RealEndTime = 0;
       wjcr->jr.PriorJobId = jcr->previous_jr.JobId;
-
+      wjcr->JobErrors += wjcr->SDErrors;
       update_job_end(wjcr, TermCode);
 
       /* Update final items to set them to the previous job's values */
@@ -779,14 +784,14 @@ void mac_cleanup(JCR *jcr, int TermCode, int writeTermCode)
       switch (jcr->JobStatus) {
       case JS_Terminated:
          if (jcr->JobErrors || jcr->SDErrors) {
-            term_msg = _("%s OK -- with warnings");
+            Mmsg(term_msg, _("%%s OK -- %s"), jcr->StatusErrMsg[0] ? jcr->StatusErrMsg : _("with warnings"));
          } else {
-            term_msg = _("%s OK");
+            Mmsg(term_msg, _("%%s OK"));
          }
          break;
       case JS_FatalError:
       case JS_ErrorTerminated:
-         term_msg = _("*** %s Error ***");
+         Mmsg(term_msg, _("*** %%s Error ***"));
          msg_type = M_ERROR;          /* Generate error message */
          if (jcr->store_bsock) {
             jcr->store_bsock->signal(BNET_TERMINATE);
@@ -802,7 +807,7 @@ void mac_cleanup(JCR *jcr, int TermCode, int writeTermCode)
          }
          break;
       case JS_Canceled:
-         term_msg = _("%s Canceled");
+         Mmsg(term_msg, _("%%s Canceled"));
          if (jcr->store_bsock) {
             jcr->store_bsock->signal(BNET_TERMINATE);
             if (jcr->SD_msg_chan_started) {
@@ -817,7 +822,7 @@ void mac_cleanup(JCR *jcr, int TermCode, int writeTermCode)
          }
          break;
       default:
-         term_msg = _("Inappropriate %s term code");
+         Mmsg(term_msg, _("Inappropriate %s term code"));
          break;
       }
    } else {
@@ -827,18 +832,17 @@ void mac_cleanup(JCR *jcr, int TermCode, int writeTermCode)
               (char)JT_MIGRATED_JOB, edit_uint64(jcr->previous_jr.JobId, ec1));
          db_sql_query(jcr->db, query.c_str(), NULL, NULL);
       }
-      term_msg = _("%s -- no files to %s");
+      Mmsg(term_msg, _("%%s -- no files to %%s"));
    }
 
-   bsnprintf(term_code, sizeof(term_code), term_msg, jcr->get_OperationName(), jcr->get_ActionName(0));
+   Mmsg(term_code, term_msg.c_str(), jcr->get_OperationName(), jcr->get_ActionName(0));
    bstrftimes(sdt, sizeof(sdt), jcr->jr.StartTime);
    bstrftimes(edt, sizeof(edt), jcr->jr.EndTime);
    RunTime = jcr->jr.EndTime - jcr->jr.StartTime;
    if (RunTime <= 0) {
-      kbps = 0;
-   } else {
-      kbps = (double)jcr->SDJobBytes / (1000 * RunTime);
+      RunTime = 1;
    }
+   kbps = (double)jcr->SDJobBytes / (1000.0 * (double)RunTime);
 
    jobstatus_to_ascii(jcr->SDJobStatus, sd_term_msg, sizeof(sd_term_msg));
 
@@ -915,7 +919,7 @@ void mac_cleanup(JCR *jcr, int TermCode, int writeTermCode)
         vol_info.c_str(),
         jcr->SDErrors,
         sd_term_msg,
-        term_code);
+        term_code.c_str());
 
    Dmsg0(100, "Leave migrate_cleanup()\n");
 }

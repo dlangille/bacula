@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2015 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -164,6 +164,37 @@ static bool accurate_send_deleted_list(JCR *jcr)
    return true;
 }
 
+
+/* This function is called at the end of verify job
+ * We walk over all hash disk element, and we check
+ * for elt.seen.
+ */
+static bool accurate_check_deleted_list(JCR *jcr)
+{
+   bool ret=true;
+   CurFile *elt;
+
+   if (!jcr->accurate) {
+      return true;
+   }
+
+   if (jcr->file_list == NULL) {
+      return true;
+   }
+
+   foreach_htable(elt, jcr->file_list) {
+      if (elt->seen) {
+         continue;
+      }
+      if (ret) {
+         Jmsg(jcr, M_INFO, 0, _("The following files were in the Catalog, but not in the Job data:\n"), elt->fname);
+      }
+      ret = false;
+      Jmsg(jcr, M_INFO, 0, _("    %s\n"), elt->fname);
+   }
+   return ret;
+}
+
 void accurate_free(JCR *jcr)
 {
    if (jcr->file_list) {
@@ -187,6 +218,9 @@ bool accurate_finish(JCR *jcr)
          if (!jcr->rerunning) {
             ret = accurate_send_base_file_list(jcr);
          }
+      } else if (jcr->is_JobLevel(L_VERIFY_DATA)) {
+         ret = accurate_check_deleted_list(jcr);
+
       } else {
          ret = accurate_send_deleted_list(jcr);
       }
@@ -229,6 +263,60 @@ static bool accurate_add_file(JCR *jcr, uint32_t len,
    Dmsg4(dbglvl, "add fname=<%s> lstat=%s  delta_seq=%i chksum=%s\n",
          fname, lstat, delta, chksum);
    return ret;
+}
+
+bool accurate_check_file(JCR *jcr, ATTR *attr, char *digest)
+{
+   struct stat statc;
+   int32_t LinkFIc;
+   bool stat = false;
+   char ed1[50], ed2[50];
+   CurFile elt;
+
+   if (!jcr->accurate) {
+      goto bail_out;
+   }
+
+   if (!jcr->file_list) {
+      goto bail_out;             /* Not initialized properly */
+   }
+
+   if (!accurate_lookup(jcr, attr->fname, &elt)) {
+      Dmsg1(dbglvl, "accurate %s (not found)\n", attr->fname);
+      stat = true;
+      goto bail_out;
+   }
+   decode_stat(elt.lstat, &statc, sizeof(statc), &LinkFIc); /* decode catalog stat */
+
+   /*
+    * Loop over options supplied by user and verify the
+    * fields he requests.
+    */
+   if (statc.st_size != attr->statp.st_size) {
+      Dmsg3(50, "%s      st_size  differs. Cat: %s File: %s\n",
+            attr->fname,
+            edit_uint64((uint64_t)statc.st_size, ed1),
+            edit_uint64((uint64_t)attr->statp.st_size, ed2));
+      Jmsg(jcr, M_INFO, 0, "Cat st_size differs: %s\n", attr->fname);
+      stat = true;
+   }
+
+   if (*elt.chksum && digest && *digest) {
+      if (strcmp(digest, elt.chksum)) {
+         Dmsg3(50, "%s      chksum  differs. Cat: %s File: %s\n",
+               attr->fname,
+               elt.chksum,
+               digest);
+         Jmsg(jcr, M_INFO, 0, "Cat checksum differs: %s\n", attr->fname);
+         stat = true;
+      }
+   }
+
+   accurate_mark_file_as_seen(jcr, &elt);
+
+bail_out:
+   return stat;
+
 }
 
 /*

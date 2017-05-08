@@ -2,7 +2,7 @@
 #
 # shell script to create Bacula SQLite tables
 #
-# Copyright (C) 2000-2015 Kern Sibbald
+# Copyright (C) 2000-2017 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
 
@@ -102,6 +102,7 @@ CREATE TABLE Job (
    PRIMARY KEY(JobId) 
    );
 CREATE INDEX inx6 ON Job (Name);
+CREATE INDEX job_jobtdate_inx ON Job (JobTDate);
 
 -- Create a table like Job for long term statistics 
 CREATE TABLE JobHisto (
@@ -205,13 +206,16 @@ CREATE TABLE Media (
    VolJobs INTEGER UNSIGNED DEFAULT 0,
    VolFiles INTEGER UNSIGNED DEFAULT 0,
    VolBlocks INTEGER UNSIGNED DEFAULT 0,
+   LastPartBytes BIGINT UNSIGNED DEFAULT 0,
    VolMounts INTEGER UNSIGNED DEFAULT 0,
    VolBytes BIGINT UNSIGNED DEFAULT 0,
    VolABytes BIGINT UNSIGNED DEFAULT 0,
    VolAPadding BIGINT UNSIGNED DEFAULT 0,
    VolHoleBytes BIGINT UNSIGNED DEFAULT 0,
    VolHoles INTEGER UNSIGNED DEFAULT 0,
-   VolParts INTEGER UNSIGNED DEFAULT 0,    /* Now used for VolType */
+   VolType INTEGER UNSIGNED DEFAULT 0,
+   VolParts INTERGER UNSIGNED DEFAULT 0,
+   VolCloudParts INTERGER UNSIGNED DEFAULT 0,
    VolErrors INTEGER UNSIGNED DEFAULT 0,
    VolWrites BIGINT UNSIGNED DEFAULT 0,
    VolCapacityBytes BIGINT UNSIGNED DEFAULT 0,
@@ -219,6 +223,7 @@ CREATE TABLE Media (
    Enabled TINYINT DEFAULT 1,
    Recycle TINYINT DEFAULT 0,
    ActionOnPurge     TINYINT	DEFAULT 0,
+   CacheRetention BIGINT UNSIGNED DEFAULT 0,
    VolRetention BIGINT UNSIGNED DEFAULT 0,
    VolUseDuration BIGINT UNSIGNED DEFAULT 0,
    MaxVolJobs INTEGER UNSIGNED DEFAULT 0,
@@ -287,6 +292,7 @@ CREATE TABLE Pool (
    UseOnce TINYINT DEFAULT 0,
    UseCatalog TINYINT DEFAULT 1,
    AcceptAnyVolume TINYINT DEFAULT 0,
+   CacheRetention BIGINT UNSIGNED DEFAULT 0,
    VolRetention BIGINT UNSIGNED DEFAULT 0,
    VolUseDuration BIGINT UNSIGNED DEFAULT 0,
    MaxVolJobs INTEGER UNSIGNED DEFAULT 0,
@@ -322,7 +328,7 @@ CREATE TABLE Client (
    );
 
 CREATE TABLE BaseFiles (
-   BaseId INTEGER,
+   BaseId BIGINT,
    BaseJobId INTEGER UNSIGNED REFERENCES Job NOT NULL,
    JobId INTEGER UNSIGNED REFERENCES Job NOT NULL,
    FileId INTEGER UNSIGNED REFERENCES File NOT NULL,

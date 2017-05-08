@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (C) 2000-2015 Kern Sibbald
+# Copyright (C) 2000-2017 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
 
@@ -9,10 +9,20 @@ if [ ! -f bin/tape_options ] ; then
   touch bin/tape_options
 fi
 echo " " >test.out
-git status >>test.out 2>&1
-cat build/config.out >>test.out
+if [ x$PREBUILT != xyes ]; then
+  git status >>test.out 2>&1
+  cat build/config.out >>test.out
+fi
 echo " " >>test.out
-echo "Test results" >>test.out
+if [ x$FORCE_DEDUP = xyes ]; then
+  echo "Test results with dedup" >>test.out
+elif [ x$FORCE_ALIGNED = xyes ]; then
+  echo "Test results with aligned" >>test.out
+elif [ x$FORCE_CLOUD = xyes ]; then
+  echo "Test results with cloud" >>test.out
+else
+  echo "Test results" >>test.out
+fi
 echo " " >>test.out
 ./starttime
 ./all-disk-tests

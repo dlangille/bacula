@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2015 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -354,7 +354,6 @@ void encode_stat(char *buf, struct stat *statp, int stat_size, int32_t LinkFI, i
    return;
 }
 
-
 /* Do casting according to unknown type to keep compiler happy */
 #ifdef HAVE_TYPEOF
   #define plug(st, val) st = (typeof st)val
@@ -542,7 +541,7 @@ bool set_attributes(JCR *jcr, ATTR *attr, BFILE *ofd)
    bool ok = true;
    boffset_t fsize;
 
-   if (uid_set) {
+   if (!uid_set) {
       my_uid = getuid();
       my_gid = getgid();
       uid_set = true;
@@ -574,6 +573,7 @@ bool set_attributes(JCR *jcr, ATTR *attr, BFILE *ofd)
     *   try to do a chmod as that will update the file behind it.
     */
    if (attr->type == FT_LNK) {
+#ifdef HAVE_LCHOWN
       /* Change owner of link, not of real file */
       if (lchown(attr->ofname, attr->statp.st_uid, attr->statp.st_gid) < 0 && print_error) {
          berrno be;
@@ -581,6 +581,20 @@ bool set_attributes(JCR *jcr, ATTR *attr, BFILE *ofd)
             attr->ofname, be.bstrerror());
          ok = false;
       }
+#endif
+#ifdef HAVE_LUTIMES
+      struct timeval times[2];
+      times[0].tv_sec = attr->statp.st_atime;
+      times[0].tv_usec = 0;
+      times[1].tv_sec = attr->statp.st_mtime;
+      times[1].tv_usec = 0;
+      if (lutimes(attr->ofname, times) < 0 && print_error) {
+         berrno be;
+         Jmsg2(jcr, M_ERROR, 0, _("Unable to set file times %s: ERR=%s\n"),
+            attr->ofname, be.bstrerror());
+         ok = false;
+      }
+#endif
    } else {
       /*
        * At this point, we have a file that is not a LINK

@@ -1,0 +1,200 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2017 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Test various nextpool options for copy/migration
+#
+TestName="next-pool-test"
+JobName=Virtual
+
+. scripts/functions
+${rscripts}/cleanup
+cp -f ${rscripts}/bacula-dir-2media-virtual.conf ${conf}/bacula-dir.conf
+cp -f ${rscripts}/bacula-sd-2media-virtual.conf ${conf}/bacula-sd.conf
+cp -f ${rscripts}/test-bacula-fd.conf ${conf}/bacula-fd.conf
+cp -f ${rscripts}/test-console.conf ${conf}/bconsole.conf
+
+echo "$cwd/build/src/dird" >${cwd}/tmp/file-list
+
+$bperl -e 'add_attribute("$conf/bacula-sd.conf", "Label Media", "Yes", "Device")'
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "Label Format", "Vol-", "Pool")'
+
+# create where the SD is putting volumes
+mkdir -p $tmp/disk
+
+# The 3rd drive doesn't have the right type
+sed  's/disk1/disk/' $conf/bacula-sd.conf > 1
+cp -f 1 $conf/bacula-sd.conf
+
+start_test
+
+cat <<END_OF_DATA >${tmp}/bconcmds
+@output /dev/null
+messages
+@$out $tmp/log1.out
+run job=Virtual yes
+wait
+messages
+@$out $tmp/log3.out
+@# Looking for: FullCopy
+run job=copy-job jobid=1
+yes
+wait
+messages
+@$out $tmp/log4.out
+@# Looking for: Special
+run job=copy-job jobid=1
+mod
+9
+4
+yes
+wait
+messages
+@$out $tmp/log5.out
+@# Looking for: Special
+run job=copy-job jobid=1 nextpool=Special
+yes
+wait
+messages
+@$out $tmp/log6.out
+run job=copy-job-next-pool jobid=1
+yes
+wait
+messages
+@$out $tmp/log7.out
+run job=copy-job-next-pool nextpool=FullCopy jobid=1
+yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bacula
+check_for_zombie_jobs storage=Virtual
+stop_bacula
+
+# menu
+# Pool:          Default (From Job resource)
+# NextPool:      FullCopy (From Job Pool's NextPool resource)
+# Read Storage:  Virtual (From Job resource)
+# Write Storage: Virtual (From Job Pool's NextPool resource)
+
+# output
+# Read Pool:              "Default" (From Job resource)
+# Read Storage:           "Virtual" (From Job resource)
+# Write Pool:             "FullCopy" (From Job Pool's NextPool resource)
+# Write Storage:          "Virtual" (From Job Pool's NextPool resource)
+
+grep "NextPool:      FullCopy (From Job Pool's NextPool resource)" $tmp/log3.out > /dev/null
+if [ $? != 0 ]; then
+    print_debug "ERROR: Bad NextPool in $tmp/log3.out, should be FullCopy"
+    estat=1
+fi
+
+grep "Write Storage: Virtual (From Job Pool" $tmp/log3.out > /dev/null
+if [ $? != 0 ]; then
+    print_debug "ERROR: Bad Write Storage in $tmp/log3.out, should be Virtual"
+    estat=1
+fi
+
+grep 'Write Pool:             "FullCopy"' $tmp/log3.out > /dev/null
+if [ $? != 0 ]; then
+    print_debug "ERROR: Bad Write Pool in $tmp/log3.out, should be FullCopy"
+    estat=1
+fi
+
+# log4.out
+# Pool:          Default (From Job resource)
+# NextPool:      Special (From User input)
+# Read Storage:  Virtual (From Job resource)
+# Write Storage: Virtual (From User input)
+
+#  Read Pool:              "Default" (From Job resource)
+#  Read Storage:           "Virtual" (From Job resource)
+#  Write Pool:             "Special" (From User input)
+#  Write Storage:          "Virtual" (From User input)
+
+grep "NextPool:      Special (From User input)" $tmp/log4.out > /dev/null
+if [ $? != 0 ]; then
+    print_debug "ERROR: Bad NextPool in $tmp/log4.out, should find Special"
+    estat=1
+fi
+
+grep "Write Storage: Virtual2 (From User input)" $tmp/log4.out > /dev/null
+if [ $? != 0 ]; then
+    print_debug "ERROR: Bad Write Storage in $tmp/log4.out, should be Virtual"
+    estat=1
+fi
+
+grep 'Write Pool:             "Special"' $tmp/log4.out > /dev/null
+if [ $? != 0 ]; then
+    print_debug "ERROR: Bad Write Pool in $tmp/log4.out, should be Special"
+    estat=1
+fi
+
+# log5.out
+# Pool:          Default (From Job resource)
+# NextPool:      Special (From Command input)
+# Read Storage:  Virtual (From Job resource)
+# Write Storage: Virtual2 (From Command input)
+
+# Read Pool:              "Default" (From Job resource)
+# Read Storage:           "Virtual" (From Job resource)
+# Write Pool:             "Special" (From Command input)
+# Write Storage:          "Virtual2" (From Command input)
+
+grep "NextPool:      Special (From Command input)" $tmp/log5.out > /dev/null
+if [ $? != 0 ]; then
+    print_debug "ERROR: Bad NextPool in $tmp/log5.out, should find Special"
+    estat=1
+fi
+
+grep "Write Storage: Virtual2 (From Command input)" $tmp/log5.out > /dev/null
+if [ $? != 0 ]; then
+    print_debug "ERROR: Bad Write Storage in $tmp/log5.out, should be Virtual"
+    estat=1
+fi
+
+grep 'Write Pool:             "Special"' $tmp/log5.out > /dev/null
+if [ $? != 0 ]; then
+    print_debug "ERROR: Bad Write Pool in $tmp/log5.out, should be Special"
+    estat=1
+fi
+
+
+# log6.out
+# Pool:          Default (From Job resource)
+# NextPool:      Special (From Job resource)
+# Write Pool:             "Special" (From Job resource)
+
+grep "NextPool:      Special (From Job resource)" $tmp/log6.out > /dev/null
+if [ $? != 0 ]; then
+    print_debug "ERROR: Bad NextPool in $tmp/log6.out, should find Special"
+    estat=1
+fi
+
+grep 'Write Pool:             "Special" (From Job resource)' $tmp/log6.out > /dev/null
+if [ $? != 0 ]; then
+    print_debug "ERROR: Bad NextPool in $tmp/log6.out, should find Special"
+    estat=1
+fi
+
+# log7.out
+# NextPool:      FullCopy (From command line)
+# Write Pool:             "FullCopy" (From command line)
+
+grep "NextPool:      FullCopy (From Command input)" $tmp/log7.out > /dev/null
+if [ $? != 0 ]; then
+    print_debug "ERROR: Bad NextPool in $tmp/log7.out, should find Special"
+    estat=1
+fi
+
+grep 'Write Pool:             "FullCopy" (From Command input)' $tmp/log7.out > /dev/null
+if [ $? != 0 ]; then
+    print_debug "ERROR: Bad NextPool in $tmp/log7.out, should find Special"
+    estat=1
+fi
+
+
+end_test

@@ -1,10 +1,5 @@
 #!/bin/sh
 #
-# Copyright (C) 2000-2015 Kern Sibbald
-# License: BSD 2-Clause; see file LICENSE-FOSS
-#
-
-#
 # Run four jobs at the same time, with four Volumes, but set
 #   Maximum Job Volumes = 1 on each of the Volumes.  Note,
 #   Volume 2 will probably have two jobs on it.  Something to
@@ -31,7 +26,7 @@ update Volume=TestVolume001
 20
 1
 3
-18
+19
 llist volume=TestVolume001
 @#setdebug level=100 Storage=File1
 run job=$JobName level=Full Storage=File1 yes
@@ -39,7 +34,7 @@ run job=$JobName level=Full Storage=File1 yes
 update Volume=TestVolume001
 1
 1
-18
+19
 mount storage=File1
 wait
 llist volume=TestVolume001

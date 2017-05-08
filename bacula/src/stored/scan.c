@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -105,9 +105,9 @@ bool DEVICE::scan_dir_for_volume(DCR *dcr)
        *  this volume is really OK. If not, put back the desired
        *  volume name, mark it not in changer and continue.
        */
-      /* Check if this is a valid Volume in the pool */
       bstrncpy(dcr->VolumeName, result->d_name, sizeof(dcr->VolumeName));
-      if (!dir_get_volume_info(dcr, GET_VOL_INFO_FOR_WRITE)) {
+      /* Check if this is a valid Volume in the pool */
+      if (!dir_get_volume_info(dcr, dcr->VolumeName, GET_VOL_INFO_FOR_WRITE)) {
          continue;
       }
       /* This was not the volume we expected, but it is OK with

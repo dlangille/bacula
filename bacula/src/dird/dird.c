@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2015 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,17 +11,15 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
- *
  *   Bacula Director daemon -- this is the main program
  *
  *     Kern Sibbald, March MM
- *
  */
 
 #include "bacula.h"
@@ -43,6 +41,7 @@ int readdir_r(DIR *dirp, struct dirent *entry, struct dirent **result);
 void terminate_dird(int sig);
 static bool check_resources();
 static void cleanup_old_files();
+static void resize_reload(int nb);
 
 /* Exported subroutines */
 extern "C" void reload_config(int sig);
@@ -64,7 +63,7 @@ void init_device_resources();
 
 
 static char *runjob = NULL;
-static bool background = true;
+static bool foreground = false;
 static void init_reload(void);
 static CONFIG *config;
 static bool test_config = false;
@@ -77,7 +76,14 @@ char *configfile = NULL;
 void *start_heap;
 utime_t last_reload_time = 0;
 
+
 /* Globals Imported */
+extern dlist client_globals;
+extern dlist store_globals;
+extern dlist job_globals;
+extern dlist sched_globals;
+extern dlist *daemon_msg_queue;
+extern pthread_mutex_t daemon_msg_queue_mutex;
 extern RES_ITEM job_items[];
 #if defined(_MSC_VER)
 extern "C" { // work around visual compiler mangling variables
@@ -117,7 +123,7 @@ static void usage()
 {
    fprintf(stderr, _(
       PROG_COPYRIGHT
-      "\nVersion: %s (%s)\n\n"
+      "\n%sVersion: %s (%s)\n\n"
       "Usage: bacula-dir [-f -s] [-c config_file] [-d debug_level] [config_file]\n"
       "     -c <file>        set configuration file to file\n"
       "     -d <nn>[,<tags>] set debug level to <nn>, debug tags to <tags>\n"
@@ -132,7 +138,7 @@ static void usage()
       "     -u               userid\n"
       "     -v               verbose user messages\n"
       "     -?               print this message.\n"
-      "\n"), 2000, VERSION, BDATE);
+      "\n"), 2000, "", VERSION, BDATE);
 
    exit(1);
 }
@@ -158,6 +164,10 @@ static void dir_debug_print(JCR *jcr, FILE *fp)
 #define main BaculaMain
 #endif
 
+/* DELETE ME when bugs in MA1512, MA1632 MA1639 are fixed */
+extern void (*MA1512_reload_job_end_cb)(JCR *,void *);
+static void reload_job_end_cb(JCR *jcr, void *ctx);
+
 int main (int argc, char *argv[])
 {
    int ch;
@@ -165,6 +175,10 @@ int main (int argc, char *argv[])
    bool no_signals = false;
    char *uid = NULL;
    char *gid = NULL;
+   MQUEUE_ITEM *item = NULL;
+
+   /* DELETE ME when bugs in MA1512, MA1632 MA1639 are fixed */
+   MA1512_reload_job_end_cb = reload_job_end_cb;
 
    start_heap = sbrk(0);
    setlocale(LC_ALL, "");
@@ -176,7 +190,8 @@ int main (int argc, char *argv[])
    init_msg(NULL, NULL);              /* initialize message handler */
    init_reload();
    daemon_start_time = time(NULL);
-
+   /* Setup daemon message queue */
+   daemon_msg_queue = New(dlist(item, &item->link));
    console_command = run_console_command;
 
    while ((ch = getopt(argc, argv, "c:d:fg:mr:stu:v?T")) != -1) {
@@ -213,7 +228,7 @@ int main (int argc, char *argv[])
          break;
 
       case 'f':                    /* run in foreground */
-         background = false;
+         foreground = true;
          break;
 
       case 'g':                    /* set group id */
@@ -258,10 +273,6 @@ int main (int argc, char *argv[])
    argc -= optind;
    argv += optind;
 
-   if (!no_signals) {
-      init_signals(terminate_dird);
-   }
-
    if (argc) {
       if (configfile != NULL) {
          free(configfile);
@@ -274,19 +285,20 @@ int main (int argc, char *argv[])
       usage();
    }
 
-   if (!test_config) {                /* we don't need to do this block in test mode */
-      if (background) {
-         daemon_start();
-         init_stack_dump();              /* grab new pid */
-      }
+   if (!foreground && !test_config) {
+      daemon_start();
+      init_stack_dump();              /* grab new pid */
+   }
+
+   if (!no_signals) {
+      init_signals(terminate_dird);
    }
 
    if (configfile == NULL) {
       configfile = bstrdup(CONFIG_FILE);
    }
 
-   config = new_config_parser();
-
+   config = New(CONFIG());
    parse_dir_config(config, configfile, M_ERROR_TERM);
 
    if (init_crypto() != 0) {
@@ -336,6 +348,8 @@ int main (int argc, char *argv[])
    FDConnectTimeout = (int)director->FDConnectTimeout;
    SDConnectTimeout = (int)director->SDConnectTimeout;
 
+   resize_reload(director->MaxReload);
+
 #if !defined(HAVE_WIN32)
    signal(SIGHUP, reload_config);
 #endif
@@ -374,17 +388,32 @@ int main (int argc, char *argv[])
 
 struct RELOAD_TABLE {
    int job_count;
-   RES **res_table;
+   RES_HEAD **res_head;
 };
 
-static const int max_reloads = 50;
-static RELOAD_TABLE reload_table[max_reloads];
+static int max_reloads = 32;
+static RELOAD_TABLE *reload_table=NULL;
+
+static void resize_reload(int nb)
+{
+   if (nb <= max_reloads) {
+      return;
+   }
+
+   reload_table = (RELOAD_TABLE*)realloc(reload_table, nb * sizeof(RELOAD_TABLE));
+   for (int i=max_reloads; i < nb ; i++) {
+      reload_table[i].job_count = 0;
+      reload_table[i].res_head = NULL;
+   }
+   max_reloads = nb;
+}
 
 static void init_reload(void)
 {
+   reload_table = (RELOAD_TABLE*)malloc(max_reloads * sizeof(RELOAD_TABLE));
    for (int i=0; i < max_reloads; i++) {
       reload_table[i].job_count = 0;
-      reload_table[i].res_table = NULL;
+      reload_table[i].res_head = NULL;
    }
 }
 
@@ -394,19 +423,31 @@ static void init_reload(void)
  */
 static void free_saved_resources(int table)
 {
+   RES *next, *res;
    int num = r_last - r_first + 1;
-   RES **res_tab = reload_table[table].res_table;
-   if (!res_tab) {
+   RES_HEAD **res_tab = reload_table[table].res_head;
+
+   if (res_tab == NULL) {
       Dmsg1(100, "res_tab for table %d already released.\n", table);
       return;
    }
    Dmsg1(100, "Freeing resources for table %d\n", table);
    for (int j=0; j<num; j++) {
-      free_resource(res_tab[j], r_first + j);
+      if (res_tab[j]) {
+         next = res_tab[j]->first;
+         for ( ; next; ) {
+            res = next;
+            next = res->res_next;
+            free_resource(res, r_first + j);
+         }
+         free(res_tab[j]->res_list);
+         free(res_tab[j]);
+         res_tab[j] = NULL;
+      }
    }
    free(res_tab);
    reload_table[table].job_count = 0;
-   reload_table[table].res_table = NULL;
+   reload_table[table].res_head = NULL;
 }
 
 /*
@@ -433,13 +474,15 @@ static int find_free_reload_table_entry()
 {
    int table = -1;
    for (int i=0; i < max_reloads; i++) {
-      if (reload_table[i].res_table == NULL) {
+      if (reload_table[i].res_head == NULL) {
          table = i;
          break;
       }
    }
    return table;
 }
+
+static pthread_mutex_t reload_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /*
  * If we get here, we have received a SIGHUP, which means to
@@ -470,12 +513,27 @@ void reload_config(int sig)
    JCR *jcr;
    int njobs = 0;                     /* number of running jobs */
    int table, rtable;
-   bool ok;
+   bool ok=false;
+   int tries=0;
 
-   if (already_here) {
-      abort();                        /* Oops, recursion -> die */
-   }
-   already_here = true;
+   /* Wait to do the reload */
+   do {
+      P(reload_mutex);
+      if (already_here) {
+         V(reload_mutex);
+         if (tries++ > 10) {
+            Jmsg(NULL, M_INFO, 0, _("Already doing a reload request, "
+                                    "request ignored.\n"));
+            return;
+         }
+         Dmsg0(10, "Already doing a reload request, waiting a bit\n");
+         bmicrosleep(1, 0);
+      } else {
+         already_here = true;
+         V(reload_mutex);
+         ok = true;
+      }
+   } while (!ok);
 
 #if !defined(HAVE_WIN32)
    sigemptyset(&set);
@@ -488,18 +546,25 @@ void reload_config(int sig)
 
    table = find_free_reload_table_entry();
    if (table < 0) {
-      Jmsg(NULL, M_ERROR, 0, _("Too many open reload requests. Request ignored.\n"));
+      Jmsg(NULL, M_ERROR, 0, _("Too many open reload requests. "
+                               "Request ignored.\n"));
       goto bail_out;
    }
 
    Dmsg1(100, "Reload_config njobs=%d\n", njobs);
-   reload_table[table].res_table = config->save_resources();
+   /* Save current res_head */
+   reload_table[table].res_head = res_head;
    Dmsg1(100, "Saved old config in table %d\n", table);
 
+   /* Create a new res_head and parse into it */
    ok = parse_dir_config(config, configfile, M_ERROR);
 
    Dmsg0(100, "Reloaded config file\n");
    if (!ok || !check_resources() || !check_catalog(UPDATE_CATALOG)) {
+      /*
+       * We got an error, save broken point, restore old one,
+       *  then release everything from broken pointer.
+       */
       rtable = find_free_reload_table_entry();    /* save new, bad table */
       if (rtable < 0) {
          Jmsg(NULL, M_ERROR, 0, _("Please correct configuration file: %s\n"), configfile);
@@ -508,14 +573,12 @@ void reload_config(int sig)
          Jmsg(NULL, M_ERROR, 0, _("Please correct configuration file: %s\n"), configfile);
          Jmsg(NULL, M_ERROR, 0, _("Resetting previous configuration.\n"));
       }
-      reload_table[rtable].res_table = config->save_resources();
-      /* Now restore old resource values */
-      int num = r_last - r_first + 1;
-      RES **res_tab = reload_table[table].res_table;
-      for (int i=0; i<num; i++) {
-         res_head[i] = res_tab[i];
-      }
-      table = rtable;                 /* release new, bad, saved table below */
+      /* Save broken res_head pointer */
+      reload_table[rtable].res_head = res_head;
+
+      /* Now restore old resource pointer */
+      res_head = reload_table[table].res_head;
+      table = rtable;           /* release new, bad, saved table below */
    } else {
       invalidate_schedules();
       /*
@@ -529,9 +592,55 @@ void reload_config(int sig)
          }
       }
       endeach_jcr(jcr);
+      /*
+       * Now walk through globals tables and plug them into the
+       * new resources.
+       */
+      CLIENT_GLOBALS *cg;
+      foreach_dlist(cg, &client_globals) {
+         CLIENT *client;
+         client = GetClientResWithName(cg->name);
+         if (!client) {
+            Jmsg(NULL, M_INFO, 0, _("Client=%s not found. Assuming it was removed!!!\n"), cg->name);
+         } else {
+            client->globals = cg;      /* Set globals pointer */
+         }
+      }
+      STORE_GLOBALS *sg;
+      foreach_dlist(sg, &store_globals) {
+         STORE *store;
+         store = GetStoreResWithName(sg->name);
+         if (!store) {
+            Jmsg(NULL, M_INFO, 0, _("Storage=%s not found. Assuming it was removed!!!\n"), sg->name);
+         } else {
+            store->globals = sg;       /* set globals pointer */
+            Dmsg2(200, "Reload found numConcurrent=%ld for Store %s\n",
+               sg->NumConcurrentJobs, sg->name);
+         }
+      }
+      JOB_GLOBALS *jg;
+      foreach_dlist(jg, &job_globals) {
+         JOB *job;
+         job = GetJobResWithName(jg->name);
+         if (!job) {
+            Jmsg(NULL, M_INFO, 0, _("Job=%s not found. Assuming it was removed!!!\n"), jg->name);
+         } else {
+            job->globals = jg;         /* Set globals pointer */
+         }
+      }
+      SCHED_GLOBALS *schg;
+      foreach_dlist(schg, &sched_globals) {
+         SCHED *sched;
+         sched = GetSchedResWithName(schg->name);
+         if (!sched) {
+            Jmsg(NULL, M_INFO, 0, _("Schedule=%s not found. Assuming it was removed!!!\n"), schg->name);
+         } else {
+            sched->globals = schg;     /* Set globals pointer */
+         }
+      }
    }
 
-   /* Reset globals */
+   /* Reset other globals */
    set_working_directory(director->working_directory);
    FDConnectTimeout = director->FDConnectTimeout;
    SDConnectTimeout = director->SDConnectTimeout;
@@ -582,13 +691,44 @@ void terminate_dird(int sig)
       print_memory_pool_stats();
    }
    if (config) {
-      config->free_resources();
-      free(config);
+      delete config;
       config = NULL;
    }
    term_ua_server();
    term_msg();                        /* terminate message handler */
    cleanup_crypto();
+
+   P(daemon_msg_queue_mutex);
+   daemon_msg_queue->destroy();
+   free(daemon_msg_queue);
+   V(daemon_msg_queue_mutex);
+
+   if (reload_table) {
+      free(reload_table);
+   }
+   free(res_head);
+   res_head = NULL;
+   /*
+    * Now walk through resource globals tables and release them
+    */
+   CLIENT_GLOBALS *cg;
+   foreach_dlist(cg, &client_globals) {
+      free(cg->name);
+      if (cg->SetIPaddress) {
+         free(cg->SetIPaddress);
+      }
+      free(cg);
+   }
+   STORE_GLOBALS *sg;
+   foreach_dlist(sg, &store_globals) {
+      free(sg->name);
+      free(sg);
+   }
+   JOB_GLOBALS *jg;
+   foreach_dlist(jg, &job_globals) {
+      free(jg->name);
+      free(jg);
+   }
    close_memory_pool();               /* release free memory in pool */
    lmgr_cleanup_main();
    sm_dump(false);
@@ -690,15 +830,7 @@ static bool check_resources()
       int i;
 
       if (job->jobdefs) {
-         /* Handle Storage alists specifically */
          JOB *jobdefs = job->jobdefs;
-         if (jobdefs->storage && !job->storage) {
-            STORE *st;
-            job->storage = New(alist(10, not_owned_by_alist));
-            foreach_alist(st, jobdefs->storage) {
-               job->storage->append(st);
-            }
-         }
          /* Handle RunScripts alists specifically */
          if (jobdefs->RunScripts) {
             RUNSCRIPT *rs, *elt;
@@ -719,6 +851,7 @@ static bool check_resources()
             uint32_t *def_ivalue, *ivalue;     /* integer value */
             bool *def_bvalue, *bvalue;    /* bool value */
             int64_t *def_lvalue, *lvalue; /* 64 bit values */
+            alist **def_avalue, **avalue; /* alist values */
             uint32_t offset;
 
             Dmsg4(1400, "Job \"%s\", field \"%s\" bit=%d def=%d\n",
@@ -762,9 +895,17 @@ static bool check_resources()
                 * Handle alist resources
                 */
                } else if (job_items[i].handler == store_alist_res) {
-                  if (bit_is_set(i, job->jobdefs->hdr.item_present)) {
-                     set_bit(i, job->hdr.item_present);
+                  void *elt;
+
+                  def_avalue = (alist **)((char *)(job->jobdefs) + offset);
+                  avalue = (alist **)((char *)job + offset);
+
+                  *avalue = New(alist(10, not_owned_by_alist));
+
+                  foreach_alist(elt, (*def_avalue)) {
+                     (*avalue)->append(elt);
                   }
+                  set_bit(i, job->hdr.item_present);
                /*
                 * Handle integer fields
                 *    Note, our store_bit does not handle bitmaped fields
@@ -829,6 +970,16 @@ static bool check_resources()
       if (!job->storage && !job->pool->storage) {
          Jmsg(NULL, M_FATAL, 0, _("No storage specified in Job \"%s\" nor in Pool.\n"),
             job->name());
+         OK = false;
+      }
+
+      /* Make sure the job doesn't use the Scratch Pool to start with */
+      const char *name;
+      if (!check_pool(job->JobType, job->JobLevel,
+                      job->pool, job->next_pool, &name)) { 
+         Jmsg(NULL, M_FATAL, 0,
+              _("%s \"Scratch\" not valid in Job \"%s\".\n"),
+              name, job->name());
          OK = false;
       }
    } /* End loop over Job res */
@@ -928,6 +1079,34 @@ static bool check_resources()
       }
    }
 
+   /* Loop over all pools, check PoolType */
+   POOL *pool;
+   foreach_res(pool, R_POOL) {
+      if (!pool->pool_type) {
+         /* This case is checked by the parse engine, we should not */
+         Jmsg(NULL, M_FATAL, 0, _("PoolType required in Pool resource \"%s\".\n"), pool->hdr.name);
+         OK = false;
+         continue;
+      }
+      if ((strcasecmp(pool->pool_type, NT_("backup"))  != 0) &&
+          (strcasecmp(pool->pool_type, NT_("copy"))    != 0) &&
+          (strcasecmp(pool->pool_type, NT_("cloned"))  != 0) &&
+          (strcasecmp(pool->pool_type, NT_("archive")) != 0) &&
+          (strcasecmp(pool->pool_type, NT_("migration")) != 0) &&
+          (strcasecmp(pool->pool_type, NT_("scratch")) != 0))
+      {
+         Jmsg(NULL, M_FATAL, 0, _("Invalid PoolType \"%s\" in Pool resource \"%s\".\n"), pool->pool_type, pool->hdr.name);
+         OK = false;
+      }
+
+      if (pool->NextPool && strcmp(pool->NextPool->name(), "Scratch") == 0) {
+         Jmsg(NULL, M_FATAL, 0,
+              _("NextPool \"Scratch\" not valid in Pool \"%s\".\n"),
+              pool->name());
+         OK = false;
+      }
+   }
+
    UnlockRes();
    if (OK) {
       close_msg(NULL);                /* close temp message handler */
@@ -942,11 +1121,14 @@ static bool check_resources()
  *  - we can check the connection (mode=CHECK_CONNECTION)
  *  - we can synchronize the catalog with the configuration (mode=UPDATE_CATALOG)
  *  - we can synchronize, and fix old job records (mode=UPDATE_AND_FIX)
+ *  - we hook up the Autochange children with the parent, and
+ *    we hook the shared autochangers together.
  */
 static bool check_catalog(cat_op mode)
 {
    bool OK = true;
    bool need_tls;
+   STORE *store, *ac_child;
 
    /* Loop over databases */
    CAT *catalog;
@@ -1034,7 +1216,6 @@ static bool check_catalog(cat_op mode)
       }
 
       /* Ensure basic storage record is in DB */
-      STORE *store;
       foreach_res(store, R_STORAGE) {
          STORAGE_DBR sr;
          MEDIATYPE_DBR mtr;
@@ -1096,6 +1277,38 @@ static bool check_catalog(cat_op mode)
                Jmsg(NULL, M_FATAL, 0, _("Failed to initialize TLS context for Storage \"%s\" in %s.\n"),
                     store->name(), configfile);
                OK = false;
+            }
+         }
+      }
+
+      /* Link up all the children for each changer */
+      foreach_res(store, R_STORAGE) {
+         char sid[50];
+         if (store->changer == store) {  /* we are a real Autochanger */
+            store->ac_group = get_pool_memory(PM_FNAME);
+            store->ac_group[0] = 0;
+            pm_strcat(store->ac_group, edit_int64(store->StorageId, sid));
+            /* Now look for children who point to this storage */
+            foreach_res(ac_child, R_STORAGE) {
+               if (ac_child != store && ac_child->changer == store) {
+                  /* Found a child -- add StorageId */
+                  pm_strcat(store->ac_group, ",");
+                  pm_strcat(store->ac_group, edit_int64(ac_child->StorageId, sid));
+               }
+            }
+         }
+      }
+
+      /* Link up all the shared storage devices */
+      foreach_res(store, R_STORAGE) {
+         if (store->ac_group) {  /* we are a real Autochanger */
+            /* Now look for Shared Storage who point to this storage */
+            foreach_res(ac_child, R_STORAGE) {
+               if (ac_child->shared_storage == store && ac_child->ac_group &&
+                   ac_child->shared_storage != ac_child) {
+                  pm_strcat(store->ac_group, ",");
+                  pm_strcat(store->ac_group, ac_child->ac_group);
+               }
             }
          }
       }

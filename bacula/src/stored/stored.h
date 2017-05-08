@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -41,6 +41,8 @@ const int sd_dbglvl = 300;
 const int sd_dbglvl = 300;
 #endif
 
+#undef SD_DEDUP_SUPPORT
+
 #ifdef HAVE_MTIO_H
 #include <mtio.h>
 #else
@@ -59,8 +61,6 @@ const int sd_dbglvl = 300;
 #include "block.h"
 #include "record.h"
 #include "dev.h"
-#include "file_dev.h"
-#include "tape_dev.h"
 #include "stored_conf.h"
 #include "bsr.h"
 #include "jcr.h"
@@ -87,7 +87,11 @@ int readdir_r(DIR *dirp, struct dirent *entry, struct dirent **result);
 
 #include "file_dev.h"
 #include "tape_dev.h"
+#include "fifo_dev.h"
+#include "null_dev.h"
 #include "vtape_dev.h"
+#include "cloud_dev.h"
+#include "aligned_dev.h"
 #include "sd_plugins.h"
 
 /* Daemon globals from stored.c */

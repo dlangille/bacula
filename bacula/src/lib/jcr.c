@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -78,7 +78,7 @@ static pthread_key_t jcr_key;         /* Pointer to jcr for each thread */
 
 pthread_once_t key_once = PTHREAD_ONCE_INIT;
 
-static char Job_status[]     = "Status Job=%s JobStatus=%d\n";
+static char Job_status[] = "Status JobId=%ld JobStatus=%d\n";
 
 
 void lock_jobs()
@@ -289,6 +289,9 @@ void job_end_push(JCR *jcr, void job_end_cb(JCR *jcr,void *), void *ctx)
    jcr->job_end_push.append(ctx);
 }
 
+/* DELETE ME when bugs in MA1512, MA1632 MA1639 are fixed */
+void (*MA1512_reload_job_end_cb)(JCR *,void *) = NULL;
+
 /* Pop each job_end subroutine and call it */
 static void job_end_pop(JCR *jcr)
 {
@@ -297,7 +300,20 @@ static void job_end_pop(JCR *jcr)
    for (int i=jcr->job_end_push.size()-1; i > 0; ) {
       ctx = jcr->job_end_push.get(i--);
       job_end_cb = (void (*)(JCR *,void *))jcr->job_end_push.get(i--);
-      job_end_cb(jcr, ctx);
+      /* check for bug MA1512, MA1632 MA1639,
+       * today, job_end_cb can only be reload_job_end_cb() from DIR */
+      if (job_end_cb != MA1512_reload_job_end_cb && MA1512_reload_job_end_cb != NULL) {
+         Tmsg2(0, "Bug 'job_end_pop' detected, skip ! job_end_cb=0x%p ctx=0x%p\n", job_end_cb, ctx);
+         Tmsg0(0, "Display job_end_push list\n");
+         for (int j=jcr->job_end_push.size()-1; j > 0; ) {
+            void *ctx2 = jcr->job_end_push.get(j--);
+            void *job_end_cb2 = jcr->job_end_push.get(j--);
+            Tmsg3(0, "Bug 'job_end_pop' entry[%d] job_end_cb=0x%p ctx=0x%p\n", j+1, job_end_cb2, ctx2);
+         }
+      } else
+      {
+         job_end_cb(jcr, ctx);
+      }
    }
 }
 
@@ -333,7 +349,7 @@ JCR *new_jcr(int size, JCR_free_HANDLER *daemon_free_jcr)
       Jmsg1(NULL, M_ABORT, 0, _("pthread_once failed. ERR=%s\n"), be.bstrerror(status));
    }
    jcr = (JCR *)malloc(size);
-   memset(jcr, 0, size);
+   bmemzero(jcr, size);
    /* Note for the director, this value is changed in jobq.c */
    jcr->my_thread_id = pthread_self();
    jcr->msg_queue = New(dlist(item, &item->link));
@@ -354,6 +370,9 @@ JCR *new_jcr(int size, JCR_free_HANDLER *daemon_free_jcr)
    jcr->errmsg[0] = 0;
    jcr->comment = get_pool_memory(PM_FNAME);
    jcr->comment[0] = 0;
+   jcr->StatusErrMsg = get_pool_memory(PM_FNAME);
+   jcr->StatusErrMsg[0] = 0;
+   jcr->job_uid = -1;
    /* Setup some dummy values */
    bstrncpy(jcr->Job, "*System*", sizeof(jcr->Job));
    jcr->JobId = 0;
@@ -421,31 +440,20 @@ static void free_common_jcr(JCR *jcr)
    }
 
    /* do this after closing messages */
-   if (jcr->client_name) {
-      free_pool_memory(jcr->client_name);
-      jcr->client_name = NULL;
-   }
-
-   if (jcr->attr) {
-      free_pool_memory(jcr->attr);
-      jcr->attr = NULL;
-   }
+   free_and_null_pool_memory(jcr->JobIds);
+   free_and_null_pool_memory(jcr->client_name);
+   free_and_null_pool_memory(jcr->attr);
+   free_and_null_pool_memory(jcr->VolumeName);
+   free_and_null_pool_memory(jcr->errmsg);
+   free_and_null_pool_memory(jcr->StatusErrMsg);
 
    if (jcr->sd_auth_key) {
       free(jcr->sd_auth_key);
       jcr->sd_auth_key = NULL;
    }
-   if (jcr->VolumeName) {
-      free_pool_memory(jcr->VolumeName);
-      jcr->VolumeName = NULL;
-   }
 
    free_bsock(jcr->dir_bsock);
 
-   if (jcr->errmsg) {
-      free_pool_memory(jcr->errmsg);
-      jcr->errmsg = NULL;
-   }
    if (jcr->where) {
       free(jcr->where);
       jcr->where = NULL;
@@ -625,7 +633,7 @@ void JCR::my_thread_send_signal(int sig)
       this->exiting = true;
 
    } else if (!this->is_killable()) {
-      Dmsg1(10, "Warning, can't send kill to jid=%d\n", this->JobId);
+      Dmsg1(10, "Warning, cannot send kill to jid=%d marked not killable.\n", this->JobId);
    }
 get_out:
    this->unlock();
@@ -867,7 +875,7 @@ static int get_status_priority(int JobStatus)
 bool JCR::sendJobStatus()
 {
    if (dir_bsock) {
-      return dir_bsock->fsend(Job_status, Job, JobStatus);
+      return dir_bsock->fsend(Job_status, JobId, JobStatus);
    }
    return true;
 }
@@ -880,7 +888,7 @@ bool JCR::sendJobStatus(int aJobStatus)
    if (!is_JobStatus(aJobStatus)) {
       setJobStatus(aJobStatus);
       if (dir_bsock) {
-         return dir_bsock->fsend(Job_status, Job, JobStatus);
+         return dir_bsock->fsend(Job_status, JobId, JobStatus);
       }
    }
    return true;
@@ -892,14 +900,18 @@ void JCR::setJobStarted()
    job_started_time = time(NULL);
 }
 
+static pthread_mutex_t status_lock = PTHREAD_MUTEX_INITIALIZER;
+
 void JCR::setJobStatus(int newJobStatus)
 {
    int priority, old_priority;
    int oldJobStatus = JobStatus;
+
+   P(status_lock);
    priority = get_status_priority(newJobStatus);
    old_priority = get_status_priority(oldJobStatus);
 
-   Dmsg2(800, "set_jcr_job_status(%s, %c)\n", Job, newJobStatus);
+   Dmsg2(800, "set_jcr_job_status(%ld, %c)\n", JobId, newJobStatus);
 
    /* Update wait_time depending on newJobStatus and oldJobStatus */
    update_wait_time(this, newJobStatus);
@@ -908,7 +920,7 @@ void JCR::setJobStatus(int newJobStatus)
     * For a set of errors, ... keep the current status
     *   so it isn't lost. For all others, set it.
     */
-   Dmsg2(800, "OnEntry JobStatus=%c newJobstatus=%c\n", oldJobStatus, newJobStatus);
+   Dmsg2(800, "OnEntry JobStatus=%c newJobstatus=%c\n", (oldJobStatus==0)?'0':oldJobStatus, newJobStatus);
    /*
     * If status priority is > than proposed new status, change it.
     * If status priority == new priority and both are zero, take
@@ -919,14 +931,15 @@ void JCR::setJobStatus(int newJobStatus)
    if (priority > old_priority || (
        priority == 0 && old_priority == 0)) {
       Dmsg4(800, "Set new stat. old: %c,%d new: %c,%d\n",
-         JobStatus, old_priority, newJobStatus, priority);
+            (oldJobStatus==0)?'0':oldJobStatus, old_priority, newJobStatus, priority);
       JobStatus = newJobStatus;     /* replace with new status */
    }
 
    if (oldJobStatus != JobStatus) {
-      Dmsg2(800, "leave setJobStatus old=%c new=%c\n", oldJobStatus, newJobStatus);
+      Dmsg2(800, "leave setJobStatus old=%c new=%c\n", (oldJobStatus==0)?'0':oldJobStatus, newJobStatus);
 //    generate_plugin_event(this, bEventStatusChange, NULL);
    }
+   V(status_lock);
 }
 
 #ifdef TRACE_JCR_CHAIN
@@ -1175,7 +1188,7 @@ extern "C" void timeout_handler(int sig)
  */
 #define MAX_DBG_HOOK 10
 static dbg_jcr_hook_t *dbg_jcr_hooks[MAX_DBG_HOOK];
-static int dbg_jcr_handler_count;
+static int dbg_jcr_handler_count=0;
 
 void dbg_jcr_add_hook(dbg_jcr_hook_t *hook)
 {

@@ -1,0 +1,187 @@
+#
+# Copyright (C) 2000-2017 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+#  For testing migration
+#
+Storage {                             # definition of myself
+  Name = @hostname@-sd
+  SDPort = @sdport@                  # Director's port      
+  WorkingDirectory = "@working_dir@"
+  Pid Directory = "@piddir@"
+  Plugin Directory = "@sbindir@/plugins"
+  Maximum Concurrent Jobs = 100
+}
+
+Director {
+  Name = @hostname@-dir
+  Password = "ccV3lVTsQRsdIUGyab0N4sMDavui2hOBkmpBU0aQKOr9"
+}
+
+Autochanger {
+  Name = VirtCh
+  Device = Virt0, Virt1, Virt2, Virt3, Virt4, Virt5, Virt6, Virt7, Virt8
+  Changer Command = ""
+  Changer Device = /dev/null
+}
+
+Device {
+  Name = Virt0
+  Device Type = File
+  Media Type = VirtMedia0
+  Archive Device = @tmpdir@
+  Automatic Mount = Yes
+  Always Open = Yes
+  Removable Media = Yes
+  Autochanger = Yes
+  Drive Index = 0
+  Maximum Concurrent Jobs = 3
+  Label Media = Yes
+  Maximum File Size = 128k
+  Maximum Volume Size = 512m
+}
+
+Device {
+  Name = Virt1
+  Device Type = File
+  Media Type = VirtMedia1
+  Archive Device = @tmpdir@
+  Automatic Mount = Yes
+  Always Open = Yes
+  Removable Media = Yes
+  Autochanger = Yes
+  Drive Index = 1
+  Maximum Concurrent Jobs = 1
+  Label Media = Yes
+  Maximum File Size = 128k
+  Maximum Volume Size = 512m
+}
+
+Device {
+  Name = Virt2
+  Device Type = File
+  Media Type = VirtMedia1
+  Archive Device = @tmpdir@
+  Automatic Mount = Yes
+  Always Open = Yes
+  Removable Media = Yes
+  Autochanger = Yes
+  Drive Index = 2
+  Maximum Concurrent Jobs = 1
+  Label Media = Yes
+  Maximum File Size = 128k
+  Maximum Volume Size = 512m
+}
+
+Device {
+  Name = Virt3
+  Device Type = File
+  Media Type = VirtMedia1
+  Archive Device = @tmpdir@
+  Automatic Mount = Yes
+  Always Open = Yes
+  Removable Media = Yes
+  Autochanger = Yes
+  Drive Index = 3
+  Maximum Concurrent Jobs = 1
+  Label Media = Yes
+  Maximum File Size = 128k
+  Maximum Volume Size = 512m
+}
+
+Device {
+  Name = Virt4
+  Device Type = File
+  Media Type = VirtMedia1
+  Archive Device = @tmpdir@
+  Automatic Mount = Yes
+  Always Open = Yes
+  Removable Media = Yes
+  Autochanger = Yes
+  Drive Index = 4
+  Maximum Concurrent Jobs = 1
+  Label Media = Yes
+  Maximum File Size = 128k
+  Maximum Volume Size = 512m
+}
+
+Device {
+  Name = Virt5
+  Device Type = File
+  Media Type = VirtMedia1
+  Archive Device = @tmpdir@
+  Automatic Mount = Yes
+  Always Open = Yes
+  Removable Media = Yes
+  Autochanger = Yes
+  Drive Index = 5
+  Maximum Concurrent Jobs = 1
+  Label Media = Yes
+  Maximum File Size = 128k
+  Maximum Volume Size = 512m
+}
+
+Device {
+  Name = Virt6
+  Device Type = File
+  Media Type = VirtMedia1
+  Archive Device = @tmpdir@
+  Automatic Mount = Yes
+  Always Open = Yes
+  Removable Media = Yes
+  Autochanger = Yes
+  Drive Index = 6
+  Maximum Concurrent Jobs = 1
+  Label Media = Yes
+  Maximum File Size = 128k
+  Maximum Volume Size = 512m
+}
+
+Device {
+  Name = Virt7
+  Device Type = File
+  Media Type = VirtMedia1
+  Archive Device = @tmpdir@
+  Automatic Mount = Yes
+  Always Open = Yes
+  Removable Media = Yes
+  Autochanger = Yes
+  Drive Index = 7
+  Maximum Concurrent Jobs = 1
+  Label Media = Yes
+  Maximum File Size = 128k
+  Maximum Volume Size = 512m
+}
+
+Device {
+  Name = Virt8
+  Device Type = File
+  Media Type = VirtMedia1
+  Archive Device = @tmpdir@
+  Automatic Mount = Yes
+  Always Open = Yes
+  Removable Media = Yes
+  Autochanger = Yes
+  Drive Index = 8
+  Maximum Concurrent Jobs = 1
+  Label Media = Yes
+  Maximum File Size = 128k
+  Maximum Volume Size = 512m
+}
+
+#
+Messages {
+  Name = Standard
+  director = @hostname@-dir = all, !terminate
+}
+
+Cloud {
+  Name = DummyCloud
+  Driver = "File"
+  HostName = "@tmpdir@/cloud"
+  BucketName = "DummyBucket"
+  AccessKey = "DummyAccessKey"
+  SecretKey = "DummySecretKey"
+  Protocol = HTTPS
+  UriStyle = VirtualHost
+}

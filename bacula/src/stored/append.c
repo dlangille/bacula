@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -19,7 +19,6 @@
 /*
  * Append code for Storage daemon
  *  Kern Sibbald, May MM
- *
  */
 
 #include "bacula.h"
@@ -52,6 +51,7 @@ void possible_incomplete_job(JCR *jcr, int32_t last_file_index)
       jcr->setJobStatus(JS_Incomplete);
    }
 }
+
 /*
  *  Append Data sent from Client (FD/SD)
  *
@@ -99,6 +99,7 @@ bool do_append_data(JCR *jcr)
       return false;
    }
 
+   dev->start_of_job(dcr);
    jcr->sendJobStatus(JS_Running);
 
    //ASSERT(dev->VolCatInfo.VolCatName[0]);
@@ -238,6 +239,10 @@ fi_checked:
          rec.data_len = qfd->msglen;
          rec.data = qfd->msg;            /* use message buffer */
 
+         /* Debug code: check if we must hangup or blowup */
+         if (handle_hangup_blowup(jcr, jcr->JobFiles, jcr->JobBytes)) {
+            return false;
+         }
          Dmsg4(850, "before writ_rec FI=%d SessId=%d Strm=%s len=%d\n",
             rec.FileIndex, rec.VolSessionId,
             stream_to_ascii(buf1, rec.Stream,rec.FileIndex),
@@ -271,7 +276,7 @@ fi_checked:
       }
    }
 
-   qfd->wait_read_sock();
+   qfd->wait_read_sock((ok == false) || jcr->is_job_canceled());
    free_GetMsg(qfd);
 
    if (eblock != NULL) {
@@ -295,7 +300,19 @@ fi_checked:
     * Check if we can still write. This may not be the case
     *  if we are at the end of the tape or we got a fatal I/O error.
     */
+   dcr->set_ameta();
    if (ok || dev->can_write()) {
+      if (!dev->flush_before_eos(dcr)) {
+         /* Print only if ok and not cancelled to avoid spurious messages */
+         if (!jcr->is_job_canceled()) {
+            Jmsg2(jcr, M_FATAL, 0, _("Fatal append error on device %s: ERR=%s\n"),
+                  dev->print_name(), dev->bstrerror());
+            Dmsg0(100, _("Set ok=FALSE after write_block_to_device.\n"));
+            possible_incomplete_job(jcr, last_file_index);
+         }
+         jcr->setJobStatus(JS_ErrorTerminated);
+         ok = false;
+      }
       if (!write_session_label(dcr, EOS_LABEL)) {
          /* Print only if ok and not cancelled to avoid spurious messages */
          if (ok && !jcr->is_job_canceled()) {
@@ -307,6 +324,8 @@ fi_checked:
          ok = false;
       }
       /* Flush out final partial block of this session */
+      Dmsg1(200, "=== Flush adata=%d last block.\n", dcr->block->adata);
+      ASSERT(!dcr->block->adata);
       if (!dcr->write_final_block_to_device()) {
          /* Print only if ok and not cancelled to avoid spurious messages */
          if (ok && !jcr->is_job_canceled()) {

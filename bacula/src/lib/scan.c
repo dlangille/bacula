@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -35,14 +35,15 @@ void strip_leading_space(char *str)
    while (B_ISSPACE(*p)) {
       p++;
    }
-   if (p != str) {
-      strcpy(str, p);
+   if (str != p) {
+      do {
+         *str++ = *p;
+      } while (*p++ != 0);
    }
 }
 
-
 /* Strip any trailing junk from the command */
-void strip_trailing_junk(char *cmd)
+char *strip_trailing_junk(char *cmd)
 {
    char *p;
 
@@ -51,24 +52,27 @@ void strip_trailing_junk(char *cmd)
    while ((p >= cmd) && (B_ISSPACE(*p) || *p == '\n' || *p == '\r')) {
       *p-- = 0;
    } 
+   return cmd;
 }
 
 /* Strip any trailing newline characters from the string */
-void strip_trailing_newline(char *cmd)
+char *strip_trailing_newline(char *cmd)
 {
    char *p;
    p = cmd - 1 + strlen(cmd);
    while ((p >= cmd) && (*p == '\n' || *p == '\r')) *p-- = 0;
+   return cmd;
 }
 
 /* Strip any trailing slashes from a directory path */
-void strip_trailing_slashes(char *dir)
+char *strip_trailing_slashes(char *dir)
 {
    char *p;
 
    /* strip trailing slashes */
    p = dir -1 + strlen(dir);
    while (p >= dir && IsPathSeparator(*p)) *p-- = 0;
+   return dir;
 }
 
 /*

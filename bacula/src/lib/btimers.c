@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -74,7 +74,6 @@ btimer_t *start_child_timer(JCR *jcr, pid_t pid, uint32_t wait)
 void stop_child_timer(btimer_t *wid)
 {
    if (wid == NULL) {
-      Dmsg0(dbglvl, "stop_child_timer called with NULL btimer_id\n");
       return;
    }
    Dmsg2(dbglvl, "Stop child timer %p pid %d\n", wid, wid->pid);
@@ -106,7 +105,7 @@ static void callback_child_timer(watchdog_t *self)
        * be less than 5 seconds)
        */
       kill(wid->pid, SIGTERM);
-      self->interval = 5;
+      self->interval = 10;
    } else {
       /* This is the second call - terminate with prejudice. */
       Dmsg2(dbglvl, "watchdog %p kill PID %d\n", self, wid->pid);
@@ -186,7 +185,6 @@ btimer_t *start_bsock_timer(BSOCK *bsock, uint32_t wait)
 void stop_bsock_timer(btimer_t *wid)
 {
    if (wid == NULL) {
-      Dmsg0(900, "stop_bsock_timer called with NULL btimer_id\n");
       return;
    }
    Dmsg3(dbglvl, "Stop bsock timer %p tid=%p at %d.\n", wid, wid->tid, time(NULL));
@@ -200,7 +198,6 @@ void stop_bsock_timer(btimer_t *wid)
 void stop_thread_timer(btimer_t *wid)
 {
    if (wid == NULL) {
-      Dmsg0(dbglvl, "stop_thread_timer called with NULL btimer_id\n");
       return;
    }
    Dmsg2(dbglvl, "Stop thread timer %p tid=%p.\n", wid, wid->tid);
@@ -242,7 +239,7 @@ static btimer_t *btimer_start_common(uint32_t wait)
       return NULL;
    }
    wid->wd->data = wid;
-   wid->killed = FALSE;
+   wid->killed = false;
 
    return wid;
 }

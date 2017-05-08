@@ -1,13 +1,13 @@
 #!/bin/sh
 #
-# Copyright (C) 2000-2015 Kern Sibbald
+# Copyright (C) 2000-2017 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
 # Shell script to update SQLite tables from Bacula Community version 
-#  5.0.x, 5.2.x, 7.0.x
+#  5.0.x, 5.2.x, 7.0.x, 7.2.x, 7.4.x
 #
 echo " "
-echo "This script will update a Bacula SQLite database from version 12-14 to 15"
+echo "This script will update a Bacula SQLite database from version 12-15 to 16"
 echo " "
 echo "Depending on the current version of your catalog, you may have to run this script"
 echo "	multiple times"
@@ -104,7 +104,7 @@ CREATE TABLE new_Media (
    VolStatus VARCHAR(20) NOT NULL,
    Enabled TINYINT DEFAULT 1,
    Recycle TINYINT DEFAULT 0,
-   ActionOnPurge     TINYINT    DEFAULT 0,
+   ActionOnPurge     TINYINT	DEFAULT 0,
    VolRetention BIGINT UNSIGNED DEFAULT 0,
    VolUseDuration BIGINT UNSIGNED DEFAULT 0,
    MaxVolJobs INTEGER UNSIGNED DEFAULT 0,
@@ -157,7 +157,47 @@ CREATE INDEX jobtdate_idx on JobHisto (JobTDate);
 
 UPDATE Version SET VersionId=15;
 
+
+if [ "$DBVERSION" -eq 15 ] ; then
+    if psql -f - -d ${db_name} $* <<END-OF-DATA
+begin;
+CREATE TABLE basefiles_temp (
+   BaseId BIGINT,
+   BaseJobId INTEGER UNSIGNED REFERENCES Job NOT NULL,
+   JobId INTEGER UNSIGNED REFERENCES Job NOT NULL,
+   FileId INTEGER UNSIGNED REFERENCES File NOT NULL,
+   FileIndex INTEGER UNSIGNED,
+   PRIMARY KEY(BaseId)
+   );
+
+INSERT INTO basefiles_temp (BaseId, BaseJobId, JobId,
+	FileId, FileIndex) 
+   SELECT BaseId, BaseJobId, JobId, FileId, FileIndex
+    FROM BaseFiles;
+
+DROP TABLE BaseFiles;
+ALTER TABLE basefiles_temp RENAME TO BaseFiles;
+
+ALTER TABLE Media RENAME COLUMN VolParts TO VolType;
+ALTER TABLE Media ADD COLUMN VolParts INTEGER DEFAULT 0;
+ALTER TABLE Media ADD COLUMN LastPartBytes BIGINT DEFAULT 0;
+ALTER TABLE Media ADD COLUMN CacheRetention BIGINT DEFAULT 0;
+ALTER TABLE Pool ADD COLUMN CacheRetention BIGINT DEFAULT 0;
+CREATE INDEX job_jobtdate_inx ON job (JobTDate);
+
+UPDATE Version SET VersionId=16;
+commit;
+END-OF-DATA
+    then
+	echo "Update of Bacula SQLite3 tables 15 to 16 succeeded."
+	getVersion
+    else
+	echo "Update of Bacula SQLite3 tables 15 to 16 failed."
+	exit 1
+    fi
+fi
+
 COMMIT;
 END-OF-DATA
-DBVERSION=15
+DBVERSION=16
 fi

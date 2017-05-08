@@ -81,13 +81,13 @@ void BDB::bdb_list_pool_records(JCR *jcr, POOL_DBR *pdbr,
          Mmsg(cmd, "SELECT PoolId,Name,NumVols,MaxVols,UseOnce,UseCatalog,"
             "AcceptAnyVolume,VolRetention,VolUseDuration,MaxVolJobs,MaxVolBytes,"
             "AutoPrune,Recycle,PoolType,LabelFormat,Enabled,ScratchPoolId,"
-            "RecyclePoolId,LabelType "
+            "RecyclePoolId,LabelType,ActionOnPurge,CacheRetention "
             " FROM Pool WHERE Name='%s'", esc);
       } else {
          Mmsg(cmd, "SELECT PoolId,Name,NumVols,MaxVols,UseOnce,UseCatalog,"
             "AcceptAnyVolume,VolRetention,VolUseDuration,MaxVolJobs,MaxVolBytes,"
             "AutoPrune,Recycle,PoolType,LabelFormat,Enabled,ScratchPoolId,"
-            "RecyclePoolId,LabelType "
+            "RecyclePoolId,LabelType,ActionOnPurge,CacheRetention "
             " FROM Pool ORDER BY PoolId");
       }
    } else {
@@ -199,47 +199,71 @@ void BDB::bdb_list_media_records(JCR *jcr, MEDIA_DBR *mdbr,
 
    bdb_lock();
    bdb_escape_string(jcr, esc, mdbr->VolumeName, strlen(mdbr->VolumeName));
+   const char *join = "";
+   const char *where = "";
 
    if (type == VERT_LIST) {
       if (mdbr->VolumeName[0] != 0) {
          Mmsg(cmd, "SELECT MediaId,VolumeName,Slot,PoolId,"
             "MediaType,MediaTypeId,FirstWritten,LastWritten,LabelDate,VolJobs,"
-            "VolFiles,VolBlocks,VolMounts,VolBytes,VolABytes,VolAPadding,"
-            "VolHoleBytes,VolHoles,VolErrors,VolWrites,"
-            "VolCapacityBytes,VolStatus,Enabled,Recycle,VolRetention,"
-            "VolUseDuration,MaxVolJobs,MaxVolFiles,MaxVolBytes,InChanger,"
-            "EndFile,EndBlock,VolParts,LabelType,StorageId,DeviceId,"
+            "VolFiles,VolBlocks,VolParts,VolCloudParts,Media.CacheRetention,VolMounts,VolBytes,"
+            "VolABytes,VolAPadding,"
+            "VolHoleBytes,VolHoles,LastPartBytes,VolErrors,VolWrites,"
+            "VolCapacityBytes,VolStatus,Media.Enabled,Media.Recycle,Media.VolRetention,"
+            "Media.VolUseDuration,Media.MaxVolJobs,Media.MaxVolFiles,Media.MaxVolBytes,InChanger,"
+            "EndFile,EndBlock,VolType,Media.LabelType,StorageId,DeviceId,"
             "MediaAddressing,VolReadTime,VolWriteTime,"
-            "LocationId,RecycleCount,InitialWrite,ScratchPoolId,RecyclePoolId, "
-            "ActionOnPurge,%s AS ExpiresIn, Comment"
-            " FROM Media WHERE Media.VolumeName='%s'", expiresin, esc);
+            "LocationId,RecycleCount,InitialWrite,Media.ScratchPoolId,Media.RecyclePoolId, "
+            "Media.ActionOnPurge,%s AS ExpiresIn, Comment"
+           " FROM Media %s WHERE Media.VolumeName='%s' %s",
+              expiresin,
+              join,
+              esc,
+              where
+            );
       } else {
          Mmsg(cmd, "SELECT MediaId,VolumeName,Slot,PoolId,"
             "MediaType,MediaTypeId,FirstWritten,LastWritten,LabelDate,VolJobs,"
-            "VolFiles,VolBlocks,VolMounts,VolBytes,VolABytes,VolAPadding,"
-            "VolHoleBytes,VolHoles,VolErrors,VolWrites,"
-            "VolCapacityBytes,VolStatus,Enabled,Recycle,VolRetention,"
-            "VolUseDuration,MaxVolJobs,MaxVolFiles,MaxVolBytes,InChanger,"
-            "EndFile,EndBlock,VolParts,LabelType,StorageId,DeviceId,"
+            "VolFiles,VolBlocks,VolParts,VolCloudParts,Media.CacheRetention,VolMounts,VolBytes,"
+            "VolABytes,VolAPadding,"
+            "VolHoleBytes,VolHoles,LastPartBytes,VolErrors,VolWrites,"
+            "VolCapacityBytes,VolStatus,Media.Enabled,Media.Recycle,Media.VolRetention,"
+            "Media.VolUseDuration,Media.MaxVolJobs,Media.MaxVolFiles,Media.MaxVolBytes,InChanger,"
+            "EndFile,EndBlock,VolType,Media.LabelType,StorageId,DeviceId,"
             "MediaAddressing,VolReadTime,VolWriteTime,"
-            "LocationId,RecycleCount,InitialWrite,ScratchPoolId,RecyclePoolId, "
-            "ActionOnPurge,%s AS ExpiresIn, Comment"
-            " FROM Media WHERE Media.PoolId=%s ORDER BY MediaId",
-              expiresin, edit_int64(mdbr->PoolId, ed1));
+            "LocationId,RecycleCount,InitialWrite,Media.ScratchPoolId,Media.RecyclePoolId, "
+            "Media.ActionOnPurge,%s AS ExpiresIn, Comment"
+            " FROM Media %s WHERE Media.PoolId=%s %s ORDER BY MediaId",
+              expiresin,
+              join,
+              edit_int64(mdbr->PoolId, ed1),
+              where
+            );
       }
    } else {
       if (mdbr->VolumeName[0] != 0) {
-         Mmsg(cmd, "SELECT MediaId,VolumeName,VolStatus,Enabled,"
-            "VolBytes,VolFiles,VolRetention,Recycle,Slot,InChanger,MediaType,LastWritten,%s AS ExpiresIn "
-              "FROM Media WHERE Media.VolumeName='%s'", expiresin, esc);
+         Mmsg(cmd, "SELECT MediaId,VolumeName,VolStatus,Media.Enabled,"
+            "VolBytes,VolFiles,Media.VolRetention,Media.Recycle,Slot,InChanger,MediaType,VolType,"
+              "VolParts,%s AS ExpiresIn "
+              "FROM Media %s WHERE Media.VolumeName='%s' %s",
+              expiresin,
+              join,
+              esc,
+              where
+            );
       } else {
-         Mmsg(cmd, "SELECT MediaId,VolumeName,VolStatus,Enabled,"
-            "VolBytes,VolFiles,VolRetention,Recycle,Slot,InChanger,MediaType,LastWritten,%s AS ExpiresIn "
-            "FROM Media WHERE Media.PoolId=%s ORDER BY MediaId",
-              expiresin, edit_int64(mdbr->PoolId, ed1));
+         Mmsg(cmd, "SELECT MediaId,VolumeName,VolStatus,Media.Enabled,"
+            "VolBytes,VolFiles,Media.VolRetention,Media.Recycle,Slot,InChanger,MediaType,VolType,"
+            "VolParts,LastWritten,%s AS ExpiresIn "
+            "FROM Media %s WHERE Media.PoolId=%s %s ORDER BY MediaId",
+              expiresin,
+              join,
+              edit_int64(mdbr->PoolId, ed1),
+              where
+            );
       }
    }
-
+   Dmsg1(DT_SQL|50, "q=%s\n", cmd);
    if (!QueryDB(jcr, cmd)) {
       bdb_unlock();
       return;
@@ -257,30 +281,45 @@ void BDB::bdb_list_jobmedia_records(JCR *jcr, uint32_t JobId,
    char ed1[50];
 
    bdb_lock();
+   const char *join = "";
+   const char *where = "";
+
    if (type == VERT_LIST) {
       if (JobId > 0) {                   /* do by JobId */
          Mmsg(cmd, "SELECT JobMediaId,JobId,Media.MediaId,Media.VolumeName,"
             "FirstIndex,LastIndex,StartFile,JobMedia.EndFile,StartBlock,"
             "JobMedia.EndBlock "
-            "FROM JobMedia,Media WHERE Media.MediaId=JobMedia.MediaId "
-            "AND JobMedia.JobId=%s", edit_int64(JobId, ed1));
+            "FROM JobMedia JOIN Media USING (MediaId) %s "
+            "WHERE JobMedia.JobId=%s %s",
+              join,
+              edit_int64(JobId, ed1),
+              where);
       } else {
          Mmsg(cmd, "SELECT JobMediaId,JobId,Media.MediaId,Media.VolumeName,"
             "FirstIndex,LastIndex,StartFile,JobMedia.EndFile,StartBlock,"
             "JobMedia.EndBlock "
-            "FROM JobMedia,Media WHERE Media.MediaId=JobMedia.MediaId");
+            "FROM JobMedia JOIN Media USING (MediaId) %s %s",
+              join,
+              where);
       }
 
    } else {
       if (JobId > 0) {                   /* do by JobId */
          Mmsg(cmd, "SELECT JobId,Media.VolumeName,FirstIndex,LastIndex "
-            "FROM JobMedia,Media WHERE Media.MediaId=JobMedia.MediaId "
-            "AND JobMedia.JobId=%s", edit_int64(JobId, ed1));
+            "FROM JobMedia JOIN Media USING (MediaId) %s WHERE "
+            "JobMedia.JobId=%s %s",
+              join,
+              edit_int64(JobId, ed1),
+              where);
       } else {
          Mmsg(cmd, "SELECT JobId,Media.VolumeName,FirstIndex,LastIndex "
-            "FROM JobMedia,Media WHERE Media.MediaId=JobMedia.MediaId");
+              "FROM JobMedia JOIN Media USING (MediaId) %s %s",
+              join,
+              where);
       }
    }
+   Dmsg1(DT_SQL|50, "q=%s\n", cmd);
+
    if (!QueryDB(jcr, cmd)) {
       bdb_unlock();
       return;
@@ -440,7 +479,7 @@ alist *BDB::bdb_list_job_records(JCR *jcr, JOB_DBR *jr, DB_LIST_HANDLER *sendit,
            "Job.ClientId,Client.Name as ClientName,JobStatus,SchedTime,"
            "StartTime,EndTime,RealEndTime,JobTDate,"
            "VolSessionId,VolSessionTime,JobFiles,JobBytes,ReadBytes,JobErrors,"
-           "JobMissingFiles,Job.PoolId,Pool.Name as PooLname,PriorJobId,"
+           "JobMissingFiles,Job.PoolId,Pool.Name as PoolName,PriorJobId,"
            "Job.FileSetId,FileSet.FileSet,Job.HasBase,Job.HasCache,Job.Comment "
            "FROM Job JOIN Client USING (ClientId) LEFT JOIN Pool USING (PoolId) "
            "LEFT JOIN FileSet USING (FileSetId) %s "
@@ -521,10 +560,26 @@ void BDB::bdb_list_job_totals(JCR *jcr, JOB_DBR *jr, DB_LIST_HANDLER *sendit, vo
    bdb_unlock();
 }
 
-void BDB::bdb_list_files_for_job(JCR *jcr, JobId_t jobid, DB_LIST_HANDLER *sendit, void *ctx)
+/* List all file records from a job
+ * "deleted" values are described just below
+ */
+void BDB::bdb_list_files_for_job(JCR *jcr, JobId_t jobid, int deleted, DB_LIST_HANDLER *sendit, void *ctx)
 {
    char ed1[50];
+   const char *opt;
    LIST_CTX lctx(jcr, this, sendit, ctx, HORZ_LIST);
+
+   switch (deleted) {
+   case 0:                      /* Show only actual files */
+      opt = " AND FileIndex <> 0 ";
+      break;
+   case 1:                      /* Show only deleted files */
+      opt = " AND FileIndex = 0 ";
+      break;
+   default:                     /* Show everything */
+      opt = "";
+      break;
+   }
 
    bdb_lock();
 
@@ -533,7 +588,7 @@ void BDB::bdb_list_files_for_job(JCR *jcr, JobId_t jobid, DB_LIST_HANDLER *sendi
     */
    if (bdb_get_type_index() == SQL_TYPE_MYSQL) {
       Mmsg(cmd, "SELECT CONCAT(Path.Path,Filename.Name) AS Filename "
-           "FROM (SELECT PathId, FilenameId FROM File WHERE JobId=%s "
+           "FROM (SELECT PathId, FilenameId FROM File WHERE JobId=%s %s "
                   "UNION ALL "
                  "SELECT PathId, FilenameId "
                    "FROM BaseFiles JOIN File "
@@ -542,10 +597,10 @@ void BDB::bdb_list_files_for_job(JCR *jcr, JobId_t jobid, DB_LIST_HANDLER *sendi
            ") AS F, Filename,Path "
            "WHERE Filename.FilenameId=F.FilenameId "
            "AND Path.PathId=F.PathId",
-           edit_int64(jobid, ed1), ed1);
+           edit_int64(jobid, ed1), opt, ed1);
    } else {
       Mmsg(cmd, "SELECT Path.Path||Filename.Name AS Filename "
-           "FROM (SELECT PathId, FilenameId FROM File WHERE JobId=%s "
+           "FROM (SELECT PathId, FilenameId FROM File WHERE JobId=%s %s "
                   "UNION ALL "
                  "SELECT PathId, FilenameId "
                    "FROM BaseFiles JOIN File "
@@ -554,9 +609,9 @@ void BDB::bdb_list_files_for_job(JCR *jcr, JobId_t jobid, DB_LIST_HANDLER *sendi
            ") AS F, Filename,Path "
            "WHERE Filename.FilenameId=F.FilenameId "
            "AND Path.PathId=F.PathId",
-           edit_int64(jobid, ed1), ed1);
+           edit_int64(jobid, ed1), opt, ed1);
    }
-
+   Dmsg1(100, "q=%s\n", cmd);
    if (!bdb_big_sql_query(cmd, list_result, &lctx)) {
        bdb_unlock();
        return;

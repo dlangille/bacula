@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -706,7 +706,7 @@ bool volume_unused(DCR *dcr)
     *  where the tapes are or last were.
     */
    Dmsg5(dbglvl, "set not reserved vol=%s slot=%d writers=%d reserves=%d dev=%s\n",
-      dev->vol->vol_name, dev->vol->get_slot(), dev->num_writers, 
+      dev->vol->vol_name, dev->vol->get_slot(), dev->num_writers,
       dev->num_reserved(), dev->print_name());
    if (dev->is_tape() || dev->is_autochanger()) {
       return true;
@@ -742,7 +742,7 @@ bool free_volume(DEVICE *dev)
       if (vol->is_writing()) {
          vol_list->remove(vol);
       }
-      Dmsg3(dbglvl, "Remove volume %s slot=%d dev=%s\n", vol->vol_name, 
+      Dmsg3(dbglvl, "Remove volume %s slot=%d dev=%s\n", vol->vol_name,
          vol->get_slot(), dev->print_name());
       free_vol_item(vol);
       debug_list_volumes("free_volume");
@@ -901,6 +901,8 @@ dlist *dup_vol_list(JCR *jcr)
       memset(tvol, 0, sizeof(VOLRES));
       tvol->vol_name = bstrdup(vol->vol_name);
       tvol->dev = vol->dev;
+      tvol->init_mutex();
+      tvol->inc_use_count();
       nvol = (VOLRES *)temp_vol_list->binary_insert(tvol, name_compare);
       if (tvol != nvol) {
          tvol->dev = NULL;                   /* don't zap dev entry */

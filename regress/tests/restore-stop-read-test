@@ -1,0 +1,145 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2017 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Run a simple backup of the Bacula build directory
+#   then restore one file and see if we read too much
+#   data
+#
+# With AWK, we get the 1st executable file from the volume we get the also a
+# "position" of the file in the volume with NR (line number).
+#
+# With grep "FI=nn SessId=", we search in the trace file up to which FI we read the data.
+#
+# For example, if we find build/libtool NR=6, the trace file should have all
+# FileIndex<6 (probably between 3 and 5) If we find a FI=6 in the trace file,
+# it means that we read too much data
+
+TestName="restore-stop-read-test"
+JobName=backup
+. scripts/functions
+
+scripts/cleanup
+scripts/copy-confs
+
+#
+# Zap out any schedule in default conf file so that
+#  it doesn't start during our test
+#
+outf="$tmp/sed_tmp"
+echo "s%  Schedule =%# Schedule =%g" >${outf}
+cp $scripts/bacula-dir.conf $tmp/1
+sed -f ${outf} $tmp/1 >$scripts/bacula-dir.conf
+
+$bperl -e "add_attribute('$conf/bacula-sd.conf', 'MaximumFileSize', '10MB', 'Device')"
+director=`$bperl -e "get_dirname()"`
+
+change_jobname BackupClient1 $JobName
+start_test
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out /dev/null
+messages
+@$out $tmp/log1.out
+label volume=TestVolume001 storage=File1 pool=File slot=1 drive=0
+run job=$JobName yes
+wait
+messages
+END_OF_DATA
+
+run_bacula
+stop_bacula
+
+$bin/bls -V TestVolume001 FileChgr1-Dev1 > $tmp/list
+
+f=`awk '/-rwxr-xr-x/ { print $11; exit }' $tmp/list`
+
+# The "line" in the bls is between 3-n, the fileindex (one by line)
+# is between 1-n. So we search for FI=line, like FI=fileindex+3
+line=`awk '/-rwxr-xr-x/ { print NR; exit }' $tmp/list`
+
+if [ "x$f" = x ]; then
+    print_debug "ERROR: Unable to find a file in the backup list"
+    exit 1
+fi
+
+p=`dirname $f`
+f=`basename $f`
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out $tmp/log2.out  
+@# 
+@# now do a restore
+@#
+setdebug level=500 trace=1 storage=File1
+restore where=$tmp/bacula-restores
+5
+cd "$p"
+mark "$f"
+done
+@sleep 2
+@exec "cp $working/$director.restore.1.bsr $working/restore1.bsr"
+yes
+wait
+messages
+setdebug level=0 trace=0 storage=File1
+quit
+END_OF_DATA
+
+run_bacula
+
+print_debug "Looking for FI=$line in the SD working/*trace file"
+# We have more or less one FI per line
+grep "FI=$line SessId=" working/*trace > /dev/null
+if [ $? -eq 0 ]; then
+    print_debug "ERROR: Should not find references to FileIndex $line in trace, should stop before"
+    estat=1
+fi
+
+# The "line" in the bls is between 3-n, the fileindex (one by line)
+# is between 1-n. So we search for FI=line, like FI=fileindex+3
+f=`awk '/-rwxr-xr-x/ { if (count++ == 10) { print $11; exit} }' $tmp/list`
+line=`awk '/-rwxr-xr-x/ { if(count++ == 10) {print NR; exit}}' $tmp/list`
+
+if [ "x$f" = x ]; then
+    print_debug "ERROR: Unable to find a file=$file in the backup list"
+    exit 1
+fi
+
+p=`dirname $f`
+f=`basename $f`
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out $tmp/log2.out  
+@# 
+@# now do a restore
+@#
+setdebug level=500 trace=1 storage=File1
+restore where=$tmp/bacula-restores
+5
+cd "$p"
+mark "$f"
+done
+yes
+wait
+messages
+setdebug level=0 trace=0 storage=File1
+quit
+END_OF_DATA
+
+run_bconsole
+
+# We have more or less one FI per line
+print_debug "Looking for file=$f FI=$line in the SD trace file"
+grep "FI=$line SessId=" working/*trace > /dev/null
+if [ $? -eq 0 ]; then
+    print_debug "ERROR: Should not find references to FileIndex $line in trace, should stop before"
+    estat=1
+fi
+
+check_for_zombie_jobs storage=File1
+stop_bacula
+
+check_two_logs
+end_test

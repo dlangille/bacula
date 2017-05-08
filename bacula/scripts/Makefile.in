@@ -39,6 +39,7 @@ install: installdirs
 	$(INSTALL_SCRIPT) bacula $(DESTDIR)$(scriptdir)/bacula
 	$(INSTALL_SCRIPT) bacula_config $(DESTDIR)$(scriptdir)/bacula_config
 	$(INSTALL_SCRIPT) bacula $(DESTDIR)$(sbindir)/bacula
+	$(INSTALL_SCRIPT) tapealert $(DESTDIR)$(scriptdir)/tapealert
 	$(INSTALL_SCRIPT) bacula-ctl-dir $(DESTDIR)$(scriptdir)/bacula-ctl-dir
 	$(INSTALL_SCRIPT) bacula-ctl-fd $(DESTDIR)$(scriptdir)/bacula-ctl-fd
 	$(INSTALL_SCRIPT) bacula-ctl-sd $(DESTDIR)$(scriptdir)/bacula-ctl-sd
@@ -58,11 +59,6 @@ install: installdirs
 	   $(MV) -f ${DESTDIR}${scriptdir}/disk-changer ${DESTDIR}${scriptdir}/disk-changer.old; \
 	fi
 	$(INSTALL_SCRIPT) disk-changer $(DESTDIR)$(scriptdir)/disk-changer
-	@if  test -f ${DESTDIR}${scriptdir}/dvd-handler; then \
-	   echo "  ==> Saving existing dvd-handler to dvd-handler.old"; \
-	   $(MV) -f ${DESTDIR}${scriptdir}/dvd-handler ${DESTDIR}${scriptdir}/dvd-handler.old; \
-	fi
-	$(INSTALL_SCRIPT) dvd-handler $(DESTDIR)$(scriptdir)/dvd-handler
 	$(INSTALL_DATA)   btraceback.gdb $(DESTDIR)$(scriptdir)/btraceback.gdb
 	$(INSTALL_DATA)   btraceback.dbx $(DESTDIR)$(scriptdir)/btraceback.dbx
 	$(INSTALL_DATA)   btraceback.mdb $(DESTDIR)$(scriptdir)/btraceback.mdb
@@ -77,6 +73,7 @@ uninstall:
 	(cd $(DESTDIR)$(scriptdir); $(RMF) bacula)
 	(cd $(DESTDIR)$(scriptdir); $(RMF) bacula_config)
 	(cd $(DESTDIR)$(sbindir);   $(RMF) bacula)
+	(cd $(DESTDIR)$(sbindir);   $(RMF) tapealert)
 	(cd $(DESTDIR)$(scriptdir); $(RMF) bacula-ctl-dir)
 	(cd $(DESTDIR)$(scriptdir); $(RMF) bacula-ctl-fd)
 	(cd $(DESTDIR)$(scriptdir); $(RMF) bacula-ctl-sd)
@@ -95,13 +92,13 @@ Makefile: Makefile.in
 	    && CONFIG_FILES=$(thisdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
 	chmod 755 bacula btraceback
 	chmod 755 bacula-ctl-dir bacula-ctl-fd bacula-ctl-sd bacula_config
-	chmod 755 disk-changer mtx-changer dvd-handler bconsole
+	chmod 755 disk-changer mtx-changer bconsole tapealert
 
 Makefiles:
 	$(SHELL) config.status
 	chmod 755 bacula btraceback
 	chmod 755 bacula-ctl-dir bacula-ctl-fd bacula-ctl-sd
-	chmod 755 mtx-changer dvd-handler bconsole
+	chmod 755 mtx-changer bconsole tapealert
 
 clean:
 	@$(RMF) *~ 1 2 3

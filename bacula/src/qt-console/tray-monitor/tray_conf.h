@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -24,6 +24,11 @@
  *     Nicolas Boichat, August MMIV
  *
  */
+
+#ifndef TRAY_CONF
+#define TRAY_CONF
+
+#include "common.h"
 
 /* NOTE:  #includes at the end of this file */
 
@@ -52,12 +57,101 @@ enum {
    R_BACKUP
 };
 
-/* Director */
-struct DIRRES {
-   RES   hdr;
-   uint32_t DIRport;                  /* UA server port */
-   char *address;                     /* UA server address */
-   bool enable_ssl;                   /* Use SSL */
+struct s_running_job
+{
+   int32_t Errors;                    /* FD/SD errors */
+   int32_t JobType;
+   int32_t JobStatus;
+   int32_t JobLevel;
+   uint32_t JobId;
+   uint32_t VolSessionId;
+   uint32_t VolSessionTime;
+   uint32_t JobFiles;
+   uint64_t JobBytes;
+   uint64_t ReadBytes;
+   utime_t start_time;
+   int64_t bytespersec;
+   int  SDtls;
+   char Client[MAX_NAME_LENGTH];
+   char FileSet[MAX_NAME_LENGTH];
+   char Storage[MAX_NAME_LENGTH];
+   char RStorage[MAX_NAME_LENGTH];
+   char sched_time;
+   char Job[MAX_NAME_LENGTH];
+   char CurrentFile[4096];
+};
+
+/* forward definition */
+class worker;
+
+/* Director/Client/Storage */
+struct RESMON {
+   RES      hdr;                   /* Keep First */
+   uint32_t type;                  /* Keep 2nd R_CLIENT, R_DIRECTOR, R_STORAGE */
+
+   uint32_t port;                  /* UA server port */
+   char    *address;               /* UA server address */
+   utime_t  connect_timeout;       /* timeout for connect in seconds */
+   char    *password;
+   
+   bool  use_remote;                /* Use Client Initiated backup feature */
+   bool  use_monitor;               /* update the status icon with this resource */
+   bool  use_setip;                 /* Send setip command before a job */
+
+   bool  tls_enable;               /* Enable TLS on all connections */
+   char *tls_ca_certfile;          /* TLS CA Certificate File */
+   char *tls_ca_certdir;           /* TLS CA Certificate Directory */
+   char *tls_certfile;             /* TLS Client Certificate File */
+   char *tls_keyfile;              /* TLS Client Key File */
+
+   /* ------------------------------------------------------------ */
+   TLS_CONTEXT *tls_ctx;           /* Shared TLS Context */
+   worker *wrk;                    /* worker that will handle async op */
+
+   QMutex *mutex;
+   BSOCK *bs;
+   char name[MAX_NAME_LENGTH];
+   char version[MAX_NAME_LENGTH];
+   char plugins[MAX_NAME_LENGTH];
+   char started[32];            /* ISO date */
+   char reloaded[32];           /* ISO date */
+   int  bwlimit;
+   alist *running_jobs;
+   dlist *terminated_jobs;
+   btime_t last_update;
+   bool new_resource;
+   bool proxy_sent;
+
+   /* List of resources available */
+   alist *jobs;
+   alist *clients;
+   alist *filesets;
+   alist *pools;
+   alist *storages;
+   alist *catalogs;
+
+   /* Default value */
+   struct {
+      char *job;
+      char *client;
+      char *pool;
+      char *storage;
+      char *level;
+      char *type;
+      char *fileset;
+      char *catalog;
+      int   priority;
+   } defaults;
+
+   /* Information about the job */
+   struct {
+      uint64_t JobBytes;
+      uint32_t JobFiles;
+      int CorrJobBytes;
+      int CorrJobFiles;
+      int CorrNbJob;
+      char JobLevel;
+   } infos;
 };
 
 /*
@@ -65,56 +159,28 @@ struct DIRRES {
  *
  */
 struct MONITOR {
-   RES   hdr;
+   RES   hdr;                         /* Keep first */
+   int32_t type;                      /* Keep second */
+
+   bool comm_compression;             /* Enable comm line compression */
    bool require_ssl;                  /* Require SSL for all connections */
+   bool display_advanced_options;     /* Display advanced options (run options for example) */
    MSGS *messages;                    /* Daemon message handler */
    char *password;                    /* UA server password */
+   char *command_dir;                 /* Where to find Commands */
    utime_t RefreshInterval;           /* Status refresh interval */
-   utime_t FDConnectTimeout;          /* timeout for connect in seconds */
-   utime_t SDConnectTimeout;          /* timeout in seconds */
-   utime_t DIRConnectTimeout;         /* timeout in seconds */
 };
 
-
-/*
- *   Client Resource
- *
- */
-struct CLIENT {
-   RES   hdr;
-
-   uint32_t FDport;                   /* Where File daemon listens */
-   char *address;
-   char *password;
-   bool enable_ssl;                   /* Use SSL */
-};
-
-/*
- *   Store Resource
- *
- */
-struct STORE {
-   RES   hdr;
-
-   uint32_t SDport;                   /* port where Directors connect */
-   char *address;
-   char *password;
-   bool enable_ssl;                   /* Use SSL */
-};
-
-struct CONFONTRES {
-   RES   hdr;
-   char *fontface;                    /* Console Font specification */
-};
 
 /* Define the Union of all the above
  * resource structure definitions.
  */
 union URES {
    MONITOR    res_monitor;
-   DIRRES     res_dir;
-   CLIENT     res_client;
-   STORE      res_store;
-   CONFONTRES con_font;
+   RESMON     res_main;
    RES        hdr;
 };
+
+void error_handler(const char *file, int line, LEX *lc, const char *msg, ...);
+
+#endif

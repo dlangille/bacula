@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -166,7 +166,7 @@ int vtape::tape_op(struct mtop *mt_com)
       break;
 
    case MTOFFL:                 /* put tape offline */
-      result = offline() ? 0 : -1;
+      result = offline(NULL) ? 0 : -1;
       break;
 
    case MTRETEN:                /* Re-tension tape. */
@@ -754,9 +754,9 @@ int vtape::bsf()
  *
  * Put vtape in offline mode
  */
-bool vtape::offline()
+bool vtape::offline(DCR *dcr)
 {
-   close();
+   close(dcr);
 
    atEOF = false;               /* End of file */
    atEOT = false;               /* End of tape */
@@ -887,6 +887,8 @@ int vtape::d_open(const char *pathname, int uflags)
    struct flock lock;
    struct stat statp;
 
+   ASSERT(!m_shstore || (m_shstore_lock && m_shstore_register));
+
    if (stat(pathname, &statp) != 0) {
       fd = -1;
       Dmsg1(dbglevel, "Can't stat on %s\n", pathname);
@@ -895,7 +897,7 @@ int vtape::d_open(const char *pathname, int uflags)
          fd = ::open("/dev/null", O_RDWR | O_LARGEFILE, 0600);
       }
    } else {
-      fd = ::open(pathname, O_RDWR | O_LARGEFILE, 0600);
+      fd = ::open(pathname, O_RDWR | O_LARGEFILE | O_CLOEXEC, 0600);
    }
 
    if (fd < 0) {
@@ -909,7 +911,7 @@ int vtape::d_open(const char *pathname, int uflags)
    strcpy(lockfile, pathname);
    strcat(lockfile, ".l");
 
-   lockfd = ::open(lockfile, O_CREAT | O_RDWR | O_LARGEFILE, 0600);
+   lockfd = ::open(lockfile, O_CREAT | O_RDWR | O_LARGEFILE | O_CLOEXEC, 0600);
    if (lockfd < 0) {
       berrno be;
       Dmsg2(0, "Unable to open vtape device lock %s ERR=%s\n", lockfile, be.bstrerror());
@@ -969,6 +971,28 @@ void vtape::dump()
    Dmsg1(dbglevel+1, "file_block=%i\n", file_block);
    Dmsg4(dbglevel+1, "EOF=%i EOT=%i EOD=%i BOT=%i\n",
          atEOF, atEOT, atEOD, atBOT);
+}
+
+const char *vtape::print_type()
+{
+   return "Vtape";
+}
+
+#else  /*!USE_VTAPE */
+
+/* faked constructor and destructor to avoid undefined reference to vtable */
+vtape::vtape()
+{
+}
+
+vtape::~vtape()
+{
+}
+
+/* dummy implementation */
+const char *vtape::print_type()
+{
+   return "Vtape";
 }
 
 #endif  /* ! USE_VTAPE */

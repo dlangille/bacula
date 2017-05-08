@@ -1,7 +1,7 @@
-/* 
+/*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,11 +11,11 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
-*/ 
+*/
 /* 
  * Bacula Catalog Database interface routines 
  * 
@@ -166,7 +166,191 @@ static int db_max_connections_handler(void *ctx, int num_fields, char **row)
    } 
    return 0; 
 } 
- 
+
+BDB::BDB()
+{
+   init_acl();
+   acl_join = get_pool_memory(PM_MESSAGE);
+   acl_where = get_pool_memory(PM_MESSAGE);
+}
+
+BDB::~BDB()
+{
+   free_acl();
+   free_pool_memory(acl_join);
+   free_pool_memory(acl_where);
+}
+
+/* Get the WHERE section of a query that permits to respect
+ * the console ACLs.
+ *
+ *  get_acls(DB_ACL_BIT(DB_ACL_JOB) | DB_ACL_BIT(DB_ACL_CLIENT), true)
+ *     -> WHERE Job.Name IN ('a', 'b', 'c') AND Client.Name IN ('d', 'e')
+ *
+ *  get_acls(DB_ACL_BIT(DB_ACL_JOB) | DB_ACL_BIT(DB_ACL_CLIENT), false)
+ *     -> AND Job.Name IN ('a', 'b', 'c') AND Client.Name IN ('d', 'e')
+ */
+char *BDB::get_acls(int tables, bool where /* use WHERE or AND */)
+{
+   POOL_MEM tmp;
+   pm_strcpy(acl_where, "");
+
+   for (int i=0 ;  i < DB_ACL_LAST; i++) {
+      if (tables & DB_ACL_BIT(i)) {
+         pm_strcat(acl_where, get_acl((DB_ACL_t)i, where));
+         where = acl_where[0] == 0 && where;
+      }
+   }
+   return acl_where;
+}
+
+/* Create the JOIN string that will help to filter queries results */
+char *BDB::get_acl_join_filter(int tables)
+{
+   POOL_MEM tmp;
+   pm_strcpy(acl_join, "");
+
+   if (tables & DB_ACL_BIT(DB_ACL_JOB)) {
+      Mmsg(tmp, " JOIN Job USING (JobId) ");
+      pm_strcat(acl_join, tmp);
+   }
+   if (tables & (DB_ACL_BIT(DB_ACL_CLIENT) | DB_ACL_BIT(DB_ACL_RCLIENT) | DB_ACL_BIT(DB_ACL_BCLIENT))) {
+      Mmsg(tmp, " JOIN Client USING (ClientId) ");
+      pm_strcat(acl_join, tmp);
+   }
+   if (tables & DB_ACL_BIT(DB_ACL_POOL)) {
+      Mmsg(tmp, " JOIN Pool USING (PoolId) ");
+      pm_strcat(acl_join, tmp);
+   }
+   if (tables & DB_ACL_BIT(DB_ACL_PATH)) {
+      Mmsg(tmp, " JOIN Path USING (PathId) ");
+      pm_strcat(acl_join, tmp);
+   }
+   if (tables & DB_ACL_BIT(DB_ACL_LOG)) {
+      Mmsg(tmp, " JOIN Log USING (JobId) ");
+      pm_strcat(acl_join, tmp);
+   }
+   if (tables & DB_ACL_BIT(DB_ACL_FILESET)) {
+      Mmsg(tmp, " LEFT JOIN FileSet USING (FileSetId) ");
+      pm_strcat(acl_join, tmp);
+   }
+   return acl_join;
+}
+
+/* Intialize the ACL list */
+void BDB::init_acl()
+{
+   for(int i=0; i < DB_ACL_LAST; i++) {
+      acls[i] = NULL;
+   }
+}
+
+/* Free ACL list */
+void BDB::free_acl()
+{
+   for(int i=0; i < DB_ACL_LAST; i++) {
+      free_and_null_pool_memory(acls[i]);
+   }
+}
+
+/* Get ACL for a given type */
+const char *BDB::get_acl(DB_ACL_t type, bool where /* display WHERE or AND */)
+{
+   if (!acls[type]) {
+      return "";
+   }
+   strcpy(acls[type], where?" WHERE ":"   AND ");
+   acls[type][7] = ' ' ;        /* replace \0 by ' ' */
+   return acls[type];
+}
+
+/* Keep UAContext ACLs in our structure for further SQL queries */
+void BDB::set_acl(JCR *jcr, DB_ACL_t type, alist *list, alist *list2)
+{
+   /* If the list is present, but we authorize everything */
+   if (list && list->size() == 1 && strcasecmp((char*)list->get(0), "*all*") == 0) {
+      return;
+   }
+
+   /* If the list is present, but we authorize everything */
+   if (list2 && list2->size() == 1 && strcasecmp((char*)list2->get(0), "*all*") == 0) {
+      return;
+   }
+
+   POOLMEM *tmp = get_pool_memory(PM_FNAME);
+   POOLMEM *where = get_pool_memory(PM_FNAME);
+
+   *where = 0;
+   *tmp = 0;
+
+   /* For clients, we can have up to 2 lists */
+   escape_acl_list(jcr, &tmp, list);
+   escape_acl_list(jcr, &tmp, list2);
+
+   switch(type) {
+   case DB_ACL_JOB:
+      Mmsg(where, "   AND  Job.Name IN (%s) ", tmp);
+      break;
+   case DB_ACL_CLIENT:
+      Mmsg(where, "   AND  Client.Name IN (%s) ", tmp);
+      break;
+   case DB_ACL_BCLIENT:
+      Mmsg(where, "   AND  Client.Name IN (%s) ", tmp);
+      break;
+   case DB_ACL_RCLIENT:
+      Mmsg(where, "   AND  Client.Name IN (%s) ", tmp);
+      break;
+   case  DB_ACL_FILESET:
+      Mmsg(where, "   AND  (FileSetId = 0 OR FileSet.FileSet IN (%s)) ", tmp);
+      break;
+   case DB_ACL_POOL:
+      Mmsg(where, "   AND  (PoolId = 0 OR Pool.Name IN (%s)) ", tmp);
+      break;
+   default:
+      break;
+   }
+   acls[type] = where;
+   free_pool_memory(tmp);
+}
+
+/* Convert a ACL list to a SQL IN() list */
+char *BDB::escape_acl_list(JCR *jcr, POOLMEM **escaped_list, alist *lst)
+{
+   char *elt;
+   int len;
+   POOL_MEM tmp;
+
+   if (!lst) {
+      return *escaped_list;     /* TODO: check how we handle the empty list */
+
+   /* List is empty, reject everything */
+   } else if (lst->size() == 0) {
+      Mmsg(escaped_list, "''");
+      return *escaped_list;
+   }
+
+   foreach_alist(elt, lst) {
+      if (elt && *elt) {
+         len = strlen(elt);
+         /* Escape + ' ' */
+         tmp.check_size(2 * len + 2 + 2);
+
+         pm_strcpy(tmp, "'");
+         bdb_lock();
+         bdb_escape_string(jcr, tmp.c_str() + 1 , elt, len);
+         bdb_unlock();
+         pm_strcat(tmp, "'");
+
+         if (*escaped_list[0]) {
+            pm_strcat(escaped_list, ",");
+         }
+
+         pm_strcat(escaped_list, tmp.c_str());
+      }
+   }
+   return *escaped_list;
+}
+
 /* 
  * Check catalog max_connections setting 
  */ 
@@ -793,6 +977,11 @@ void bdb_debug_print(JCR *jcr, FILE *fp)
            mdb, NPRTB(mdb->get_db_name()), NPRTB(mdb->get_db_user()), mdb->is_connected() ? "true" : "false"); 
    fprintf(fp, "\tcmd=\"%s\" changes=%i\n", NPRTB(mdb->cmd), mdb->changes); 
    mdb->print_lock_info(fp); 
+} 
+ 
+bool BDB::bdb_check_settings(JCR *jcr, int64_t *starttime, int val, int64_t val2) 
+{ 
+   return true; 
 } 
  
 #endif /* HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL */ 

@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (C) 2000-2015 Kern Sibbald
+# Copyright (C) 2000-2017 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
 # This is the configuration script for regression testing
@@ -45,6 +45,7 @@ fi
     ${OPENSSL} \
     ${TCPWRAPPERS} \
     ${WHICHDB} \
+    ${CONFIGURE_EXTRA} \
     --with-baseport=${BASEPORT}
 
 LD_LIBRARY_PATH=${1}/bin:${LD_LIBRARY_PATH}

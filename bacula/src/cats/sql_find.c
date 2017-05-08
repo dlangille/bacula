@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -24,7 +24,6 @@
  *        request are in get.c
  *
  *    Written by Kern Sibbald, December 2000
- *
  */
 
 #include  "bacula.h"
@@ -384,11 +383,13 @@ int BDB::bdb_find_next_volume(JCR *jcr, int item, bool InChanger, MEDIA_DBR *mr)
          "VolBytes,VolMounts,VolErrors,VolWrites,MaxVolBytes,VolCapacityBytes,"
          "MediaType,VolStatus,PoolId,VolRetention,VolUseDuration,MaxVolJobs,"
          "MaxVolFiles,Recycle,Slot,FirstWritten,LastWritten,InChanger,"
-         "EndFile,EndBlock,VolParts,LabelType,LabelDate,StorageId,"
+         "EndFile,EndBlock,VolType,VolParts,VolCloudParts,LastPartBytes,"
+         "LabelType,LabelDate,StorageId,"
          "Enabled,LocationId,RecycleCount,InitialWrite,"
-         "ScratchPoolId,RecyclePoolId,VolReadTime,VolWriteTime,ActionOnPurge "
-         "FROM Media WHERE PoolId=%s AND MediaType='%s' AND VolStatus IN ('Full',"
-         "'Recycle','Purged','Used','Append') AND Enabled=1 "
+         "ScratchPoolId,RecyclePoolId,VolReadTime,VolWriteTime,ActionOnPurge,CacheRetention "
+         "FROM Media WHERE PoolId=%s AND MediaType='%s' "
+         " AND (VolStatus = 'Append' OR (VolStatus IN ('Recycle', 'Purged', 'Used', 'Full') AND Recycle=1)) "
+         " AND Enabled=1 "
          "ORDER BY LastWritten LIMIT 1",
          edit_int64(mr->PoolId, ed1), esc_type);
      item = 1;
@@ -397,9 +398,21 @@ int BDB::bdb_find_next_volume(JCR *jcr, int item, bool InChanger, MEDIA_DBR *mr)
       POOL_MEM voltype(PM_FNAME);
       POOL_MEM exclude(PM_FNAME);
       /* Find next available volume */
+      /* ***FIXME***
+       * replace switch with
+       *  if (StorageId == 0)
+       *    break;
+       * else use mr->sid_group;  but it must be set!!!
+       */
       if (InChanger) {
-         Mmsg(changer, " AND InChanger=1 AND StorageId=%s ",
+         ASSERT(mr->sid_group);
+         if (mr->sid_group) {
+            Mmsg(changer, " AND InChanger=1 AND StorageId IN (%s) ",
+                 mr->sid_group);
+         } else {
+            Mmsg(changer, " AND InChanger=1 AND StorageId=%s ",
                  edit_int64(mr->StorageId, ed1));
+         }
       }
       /* Volumes will be automatically excluded from the query, we just take the
        * first one of the list 
@@ -414,13 +427,19 @@ int BDB::bdb_find_next_volume(JCR *jcr, int item, bool InChanger, MEDIA_DBR *mr)
       } else {
          order = sql_media_order_most_recently_written[bdb_get_type_index()];    /* take most recently written */
       }
+      if (mr->VolType == 0) {
+         Mmsg(voltype, "");
+      } else {
+         Mmsg(voltype, "AND VolType IN (0,%d)", mr->VolType);
+      }
       Mmsg(cmd, "SELECT MediaId,VolumeName,VolJobs,VolFiles,VolBlocks,"
          "VolBytes,VolMounts,VolErrors,VolWrites,MaxVolBytes,VolCapacityBytes,"
          "MediaType,VolStatus,PoolId,VolRetention,VolUseDuration,MaxVolJobs,"
          "MaxVolFiles,Recycle,Slot,FirstWritten,LastWritten,InChanger,"
-         "EndFile,EndBlock,VolParts,LabelType,LabelDate,StorageId,"
+         "EndFile,EndBlock,VolType,VolParts,VolCloudParts,LastPartBytes,"
+         "LabelType,LabelDate,StorageId,"
          "Enabled,LocationId,RecycleCount,InitialWrite,"
-         "ScratchPoolId,RecyclePoolId,VolReadTime,VolWriteTime,ActionOnPurge "
+         "ScratchPoolId,RecyclePoolId,VolReadTime,VolWriteTime,ActionOnPurge,CacheRetention "
          "FROM Media WHERE PoolId=%s AND MediaType='%s' AND Enabled=1 "
          "AND VolStatus='%s' "
          "%s "
@@ -491,21 +510,25 @@ int BDB::bdb_find_next_volume(JCR *jcr, int item, bool InChanger, MEDIA_DBR *mr)
    mr->InChanger = str_to_uint64(row[22]);
    mr->EndFile = str_to_uint64(row[23]);
    mr->EndBlock = str_to_uint64(row[24]);
-   mr->VolType = str_to_int64(row[25]);   /* formerly VolParts */
-   mr->LabelType = str_to_int64(row[26]);
-   bstrncpy(mr->cLabelDate, row[27]!=NULL?row[27]:"", sizeof(mr->cLabelDate));
+   mr->VolType = str_to_int64(row[25]);
+   mr->VolParts = str_to_int64(row[26]);
+   mr->VolCloudParts = str_to_int64(row[27]);
+   mr->LastPartBytes = str_to_int64(row[28]);
+   mr->LabelType = str_to_int64(row[29]);
+   bstrncpy(mr->cLabelDate, row[30]!=NULL?row[30]:"", sizeof(mr->cLabelDate));
    mr->LabelDate = (time_t)str_to_utime(mr->cLabelDate);
-   mr->StorageId = str_to_int64(row[28]);
-   mr->Enabled = str_to_int64(row[29]);
-   mr->LocationId = str_to_int64(row[30]);
-   mr->RecycleCount = str_to_int64(row[31]);
-   bstrncpy(mr->cInitialWrite, row[32]!=NULL?row[32]:"", sizeof(mr->cInitialWrite));
+   mr->StorageId = str_to_int64(row[31]);
+   mr->Enabled = str_to_int64(row[32]);
+   mr->LocationId = str_to_int64(row[33]);
+   mr->RecycleCount = str_to_int64(row[34]);
+   bstrncpy(mr->cInitialWrite, row[35]!=NULL?row[35]:"", sizeof(mr->cInitialWrite));
    mr->InitialWrite = (time_t)str_to_utime(mr->cInitialWrite);
-   mr->ScratchPoolId = str_to_int64(row[33]);
-   mr->RecyclePoolId = str_to_int64(row[34]);
-   mr->VolReadTime = str_to_int64(row[35]);
-   mr->VolWriteTime = str_to_int64(row[36]);
-   mr->ActionOnPurge = str_to_int64(row[37]);
+   mr->ScratchPoolId = str_to_int64(row[36]);
+   mr->RecyclePoolId = str_to_int64(row[37]);
+   mr->VolReadTime = str_to_int64(row[38]);
+   mr->VolWriteTime = str_to_int64(row[39]);
+   mr->ActionOnPurge = str_to_int64(row[40]);
+   mr->CacheRetention = str_to_int64(row[41]);
 
    sql_free_result();
 

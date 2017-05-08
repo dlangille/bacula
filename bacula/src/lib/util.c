@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -31,6 +31,11 @@
  *
  */
 
+bool is_null(const void *ptr)
+{
+   return ptr == NULL;
+}
+
 /* Return true of buffer has all zero bytes */
 bool is_buf_zero(const char *buf, int len)
 {
@@ -58,6 +63,15 @@ bool is_buf_zero(const char *buf, int len)
       }
    }
    return true;
+}
+
+/*
+ * Subroutine that cannot be suppressed by GCC 6.0
+ */
+void bmemzero(void *buf, size_t size)
+{
+   memset(buf, 0, size);
+   return;
 }
 
 
@@ -167,12 +181,12 @@ static char hexatable[]="0123456789abcdef";
  * ==>
  *    msglen=36 msg=12345678 12345678
  */
-char *hexdump(const char *data, int len, char *buf, int capacity)
+char *hexdump(const char *data, int len, char *buf, int capacity, bool add_spaces)
 {
    char *b=buf;
    int i=0;
    while (i<len && capacity>2) {
-      if (i>0 && i%4==0) {
+      if (add_spaces && i>0 && i%4==0 ) {
          *(b++)=' ';
          capacity--;
       }
@@ -251,6 +265,17 @@ char *smartdump(const char *data, int len, char *buf, int capacity, bool *is_asc
       *is_ascii = true;
    }
    return buf;
+}
+
+/*
+ * check if x is a power  two
+ */
+int is_power_of_two(uint64_t x)
+{
+   while ( x%2 == 0 && x > 1) {
+      x /= 2;
+   }
+   return (x == 1);
 }
 
 /*
@@ -427,6 +452,12 @@ const char *job_status_to_str(int status, int errors)
       break;
    case JS_Differences:
       str = _("Differences");
+      break;
+   case JS_Created:
+      str = _("Created");
+      break;
+   case JS_Incomplete:
+      str = _("Incomplete");
       break;
    default:
       str = _("Unknown term code");
@@ -805,6 +836,15 @@ void decode_session_key(char *decode, char *session, char *key, int maxlen)
  *  %j = Unique Job id
  *  %l = job level
  *  %n = Unadorned Job name
+ *  %p = Pool name (Director)
+ *  %P = Process PID
+ *  %w = Write Store (Director)
+ *  %x = Spool Data (Director)
+ *  %D = Director name (Director/FileDaemon)
+ *  %C = Cloned (Director)
+ *  %I = wjcr->JobId (Director)
+ *  %f = FileSet (Director)
+ *  %h = Client Address (Director)
  *  %s = Since time
  *  %t = Job type (Backup, ...)
  *  %r = Recipients
@@ -813,6 +853,7 @@ void decode_session_key(char *decode, char *session, char *key, int maxlen)
  *  %F = Job Files
  *  %E = Job Errors
  *  %R = Job ReadBytes
+ *  %S = Previous Job name (FileDaemon) for Incremental/Differential
  *
  *  omsg = edited output message
  *  imsg = input string containing edit codes (%x)
@@ -935,7 +976,7 @@ POOLMEM *edit_job_codes(JCR *jcr, char *omsg, char *imsg, const char *to, job_co
          default:
             str = NULL;
             if (callback != NULL) {
-                str = callback(jcr, p);
+               str = callback(jcr, p, add, sizeof(add));
             }
 
             if (!str) {

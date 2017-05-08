@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -84,7 +84,7 @@ public:
    virtual int bget_msg(bmessage **pbmsg=NULL);
    inline virtual void *do_read_sock_thread(void) { return NULL; };
    inline virtual int start_read_sock() { return 0; };
-   inline virtual void *wait_read_sock() { return NULL;};
+   inline virtual void *wait_read_sock(int /*emergency_quit*/) { return NULL;};
 
    virtual bool is_stop() { return (m_is_stop!=false); };
    virtual bool is_done() { return (m_is_done!=false); };

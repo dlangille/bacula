@@ -38,7 +38,7 @@ License:
 To the best of our knowledge, all code used in Bacula, which is
 copyrighted by a third party, has licenses that are compatible
 with the OpenSSL license, and so given the exceptions that we have
-made to the AGPLv3 above, Bacula can be freely linked and distributed
+made to the AGPLv3 (in LICENSE), Bacula can be freely linked and distributed
 with the OpenSSL libraries, and in binary form with the Microsoft
 VSS libraries.
 
@@ -62,7 +62,8 @@ Each Contributor to Bacula represents that to its knowledge it has
 sufficient copyright rights in its Contribution, if any, to grant
 the copyright license set forth in this Agreement.
 
-Other Licenses used in some source files:
+Other Licenses used in some source files. Note, this list changes from
+time to time, so is not exhaustive:
 
 GPLv2 or later license:
  src/tools/bsmtp.c

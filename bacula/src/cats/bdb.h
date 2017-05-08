@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -20,11 +20,31 @@
  *  Catalog DB Interface class
  *
  *  Written by Kern E. Sibbald
- *
  */
 
 #ifndef __BDB_H_
 #define __BDB_H_ 1
+
+/*
+ * These enums can be used to build queries that respects
+ * Bacula Restricted Consoles.
+ */
+typedef enum
+{
+   DB_ACL_JOB      = 1,
+   DB_ACL_CLIENT,
+   DB_ACL_STORAGE,
+   DB_ACL_POOL,
+   DB_ACL_FILESET,
+   DB_ACL_RCLIENT,
+   DB_ACL_BCLIENT,
+   DB_ACL_PATH,
+   DB_ACL_LOG,
+   DB_ACL_LAST                  /* Keep last */
+} DB_ACL_t;
+
+/* Turn the num to a bit field */
+#define DB_ACL_BIT(x) (1<<x)
 
 class BDB: public SMARTALLOC {
 public:
@@ -73,15 +93,19 @@ public:
    POOLMEM *esc_path;                 /* Escaped path name */
    POOLMEM *fname;                    /* Filename only */
    POOLMEM *path;                     /* Path only */
+   POOLMEM *acl_where;                /* Buffer for the ACL where part */
+   POOLMEM *acl_join;                 /* Buffer for the ACL join part */
    uint32_t cached_path_id;           /* cached path id */
    int cached_path_len;               /* length of cached path */
    int changes;                       /* changes during transaction */
    int fnl;                           /* file name length */
    int pnl;                           /* path name length */
 
+   POOLMEM *acls[DB_ACL_LAST];        /* ACLs */
+
    /* methods */
-   BDB() {};
-   virtual ~BDB() {};
+   BDB();
+   virtual ~BDB();
    const char *get_db_name(void) { return m_db_name; };
    const char *get_db_user(void) { return m_db_user; };
    const bool is_connected(void) { return m_connected; };
@@ -108,8 +132,31 @@ public:
    int  DeleteDB(JCR *jcr, char *cmd, const char *file=__FILE__, int line=__LINE__);
    char *bdb_strerror() { return errmsg; };
    bool bdb_check_version(JCR *jcr);
+   bool bdb_check_settings(JCR *jcr, int64_t *starttime, int val1, int64_t val2);
    bool bdb_open_batch_connexion(JCR *jcr);
    bool bdb_check_max_connections(JCR *jcr, uint32_t max_concurrent_jobs);
+
+   /* Acl parts for various SQL commands */
+   void  free_acl();             /* Used internally, free acls tab */
+   void  init_acl();             /* Used internally, initialize acls tab */
+   /* Take a alist of strings and turn it to an escaped sql IN () list  */
+   char *escape_acl_list(JCR *jcr, POOLMEM **escape_list, alist *lst);
+
+   /* Used during the initialization, the UA code can call this function
+    * foreach kind of ACL
+    */
+   void  set_acl(JCR *jcr, DB_ACL_t type, alist *lst, alist *lst2=NULL); 
+
+   /* Get the SQL string that corresponds to the Console ACL for Pool, Job,
+    * Client, ... 
+    */
+   const char *get_acl(DB_ACL_t type, bool where);
+
+   /* Get the SQL string that corresponds to multiple ACLs (with DB_ACL_BIT) */
+   char *get_acls(int type, bool where);
+
+   /* Get the JOIN SQL string for various tables (with DB_ACL_BIT) */
+   char *get_acl_join_filter(int tables);
 
    /* sql_delete.c */
    int bdb_delete_pool_record(JCR *jcr, POOL_DBR *pool_dbr);
@@ -180,12 +227,13 @@ public:
    bool bdb_get_accurate_jobids(JCR *jcr, JOB_DBR *jr, db_list_ctx *jobids);
    bool bdb_get_used_base_jobids(JCR *jcr, POOLMEM *jobids, db_list_ctx *result);
    bool bdb_get_restoreobject_record(JCR *jcr, ROBJECT_DBR *rr);
+   bool bdb_get_job_statistics(JCR *jcr, JOB_DBR *jr);
 
 /* sql_list.c */
    void bdb_list_pool_records(JCR *jcr, POOL_DBR *pr, DB_LIST_HANDLER sendit, void *ctx, e_list_type type);
    alist *bdb_list_job_records(JCR *jcr, JOB_DBR *jr, DB_LIST_HANDLER sendit, void *ctx, e_list_type type);
    void bdb_list_job_totals(JCR *jcr, JOB_DBR *jr, DB_LIST_HANDLER sendit, void *ctx);
-   void bdb_list_files_for_job(JCR *jcr, uint32_t jobid, DB_LIST_HANDLER sendit, void *ctx);
+   void bdb_list_files_for_job(JCR *jcr, uint32_t jobid, int deleted, DB_LIST_HANDLER sendit, void *ctx);
    void bdb_list_media_records(JCR *jcr, MEDIA_DBR *mdbr, DB_LIST_HANDLER *sendit, void *ctx, e_list_type type);
    void bdb_list_jobmedia_records(JCR *jcr, JobId_t JobId, DB_LIST_HANDLER *sendit, void *ctx, e_list_type type);
    void bdb_list_joblog_records(JCR *jcr, JobId_t JobId, DB_LIST_HANDLER *sendit, void *ctx, e_list_type type);

@@ -180,7 +180,7 @@ int main (int argc, char *argv[])
       if (argc > 0) {
          Pmsg0(0, _("Warning skipping the additional parameters for working directory/dbname/user/password/host.\n"));
       }
-      config = new_config_parser();
+      config = New(CONFIG());
       parse_dir_config(config, configfile, M_ERROR_TERM);
       LockRes();
       foreach_res(catalog, R_CATALOG) {

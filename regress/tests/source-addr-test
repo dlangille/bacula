@@ -1,9 +1,7 @@
 #!/bin/sh
 #
-# Copyright (C) 2000-2015 Kern Sibbald
+# Copyright (C) 2000-2017 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
-#
-
 #
 # Run a simple backup of the Bacula build directory
 #   then restore it.
@@ -69,7 +67,7 @@ messages
 @$out ${cwd}/tmp/log1.out
 @#label volume=TestVolume001 storage=File1 pool=File slot=1 drive=0
 @#setdebug level=100 storage=File1
-setbandwidth client limit=1000
+setbandwidth client limit="1000 kb/s"
 run job=$JobName yes
 @sleep 3
 messages
@@ -102,8 +100,8 @@ if [ "$debug" = 1 ] ; then
 fi
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
-@output /dev/null
-setbandwidth client limit=1000000
+@$out $tmp/log1.out
+setbandwidth client limit="1000000 kb/s"
 wait
 messages
 @# 

@@ -1,10 +1,5 @@
 #!/bin/sh
 #
-# Copyright (C) 2000-2015 Kern Sibbald
-# License: BSD 2-Clause; see file LICENSE-FOSS
-#
-
-#
 # Set prefer mounted volumes to no to try to force use of
 #   the drive swap code.
 #
@@ -18,7 +13,7 @@ JobName="2driveoffline"
 . scripts/functions
 
 scripts/cleanup
-scripts/copy-2disk-drive-confs
+scripts/copy-2client-confs
 scripts/prepare-disk-changer
 CLIENT=2drive2disk
 
@@ -35,6 +30,9 @@ cp ${cwd}/bin/bacula-dir.conf ${cwd}/tmp/1
 #  otherwise, it writes the two jobs to different drives
 sed -f ${outf} ${cwd}/tmp/1 >${cwd}/bin/bacula-dir.conf
 
+# One FD is not reachable, try to speed up the test
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "FdConnectTimeout", "10", "Director")'
+
 # Write out bconsole commands
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
 @$out /dev/null
@@ -43,16 +41,18 @@ messages
 label storage=tape volume=TestVolume001 slot=2 Pool=Default drive=0
 label storage=tape volume=TestVolume002 slot=1 Pool=Default drive=1
 status storage=tape
-setdebug level=120 storage=tape
-run job=Offline level=Full yes
+@#setdebug level=120 storage=tape
+run job=Offline comment="This job will fail, the client is not here" level=Full yes
 @sleep 2
-run job=$JobName level=Full yes
+run job=$JobName spooldata=no level=Full yes
 status storage=tape
 wait
 list volumes
 list jobs
-status storage=tape
 messages
+@$out ${cwd}/tmp/log3.out
+@# TODO: We see that one volume is still reserved while the job is not here
+status storage=tape
 quit
 END_OF_DATA
 
@@ -68,7 +68,7 @@ messages
 @#unmount storage=tape drive=1
 @#mount storage=tape slot=1 drive=0
 @#mount storage=tape slot=2 drive=1
-restore where=${cwd}/tmp/bacula-restores select all storage=tape done
+restore where=${cwd}/tmp/bacula-restores client=$HOST-fd select all storage=tape done
 yes
 wait
 messages
@@ -76,10 +76,30 @@ quit
 END_OF_DATA
 
 run_bconsole
-check_for_zombie_jobs storage=tape
+check_for_zombie_jobs storage=tape client=$HOST-fd
 stop_bacula
 
-check_two_logs
+grep 'Reserved volume: TestVolume002 on File device "Drive-0"' $tmp/log1.out
+if [ $? -eq 0 ]; then
+    print_debug "ERROR: TestVolume001 should be used on Drive-0, not TestVolume002"
+    estat=1
+fi
+
+grep 'Reserved volume: TestVolume001 on File device "Drive-1"' $tmp/log1.out
+if [ $? -eq 0 ]; then
+    print_debug "ERROR: TestVolume002 should be used on Drive-1, not TestVolume001"
+    estat=1
+fi
+
+grep 'No Jobs running.' $tmp/log3.out > /dev/null
+if [ $? -eq 0 ]; then
+    grep 'Reserved volume: TestVolume001 on File device "Drive-0"' $tmp/log3.out
+    if [ $? -eq 0 ]; then
+        print_debug "WARNING: TestVolume001 is still reserved on Drive-0 in $tmp/log3.out"
+        #estat=1
+    fi
+fi
+
 check_restore_diff
 
 end_test

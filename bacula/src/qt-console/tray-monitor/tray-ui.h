@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -20,13 +20,8 @@
 #ifndef TRAYUI_H
 #define TRAYUI_H
 
-#ifdef HAVE_WIN32
-# ifndef _STAT_DEFINED
-#  define _STAT_DEFINED 1 /* don't pull in MinGW struct stat from wchar.h */
-# endif
-#endif
 
-//#include "winhdrs.h"
+#include "common.h"
 #include <QAction>
 #include <QApplication>
 #include <QButtonGroup>
@@ -47,134 +42,17 @@
 #include <QDebug>
 #include <QMessageBox>
 #include <QFont>
+#include <QInputDialog>
 
-#include "version.h"
-#include "ui_run.h"
-#include "tray-monitor.h"
+#include "fdstatus.h"
+#include "sdstatus.h"
+#include "dirstatus.h"
+#include "conf.h"
+#include "runjob.h"
 
-class RunDlg: public QDialog, public Ui::runForm
-{
-   Q_OBJECT
+void display_error(const char *fmt, ...);
 
-public:
-   monitoritem *item;
-
-   void fill(QComboBox *cb, QStringList &lst) {
-      if (lst.length()) {
-         cb->addItems(lst);
-      } else {
-         cb->setEnabled(false);
-      }
-   }
-   RunDlg(monitoritem *i) {
-      struct resources res;
-      struct job_defaults jdefault;
-      QDateTime dt;
-      item = i;
-
-      qDebug() << "start getting elements";
-      get_list(item, ".jobs type=B", res.job_list);
-      
-      if (res.job_list.length() == 0) {
-         QMessageBox msgBox;
-         msgBox.setText("This restricted console doesn't have access to Backup jobs");
-         msgBox.setIcon(QMessageBox::Warning);
-         msgBox.exec();
-         this->deleteLater();
-         return;
-      }
-
-      get_list(item, ".pools", res.pool_list);
-      get_list(item, ".clients", res.client_list);
-      get_list(item, ".storage", res.storage_list);
-      res.levels << "Full" << "Incremental" << "Differential";
-      get_list(item, ".filesets", res.fileset_list);
-      get_list(item, ".messages", res.messages_list);
-
-      setupUi(this);
-
-      qDebug() << "  -> done";
-      label_5->setVisible(false);
-      bootstrap->setVisible(false);
-      jobCombo->addItems(res.job_list);
-      fill(filesetCombo, res.fileset_list);
-      fill(levelCombo, res.levels);
-      fill(clientCombo, res.client_list);
-      fill(poolCombo, res.pool_list);
-      fill(storageCombo, res.storage_list);
-      dateTimeEdit->setDisplayFormat("yyyy-MM-dd hh:mm:ss");
-      dateTimeEdit->setDateTime(dt.currentDateTime());
-      fill(messagesCombo, res.messages_list);
-      messagesCombo->setEnabled(false);
-      job_name_change(0);
-      connect(jobCombo, SIGNAL(currentIndexChanged(int)), this, SLOT(job_name_change(int)));
-      connect(cancelButton, SIGNAL(pressed()), this, SLOT(deleteLater()));
-      connect(okButton, SIGNAL(pressed()), this, SLOT(okButtonPushed()));
-      show();
-   }
-
-private slots:
-
-   void okButtonPushed()
-   {
-      QString cmd;
-      cmd = "run";
-      if (jobCombo->isEnabled()) {
-         cmd += " job=\"" + jobCombo->currentText() + "\"" ;
-      }
-      if (filesetCombo->isEnabled()) {
-         cmd += " fileset=\"" + filesetCombo->currentText() + "\"";
-      }
-      cmd += " level=\"" + levelCombo->currentText() + "\"";
-      if (clientCombo->isEnabled()) {
-         cmd += " client=\"" + clientCombo->currentText() + "\"" ;
-      }
-      if (poolCombo->isEnabled()) {
-         cmd += " pool=\"" + poolCombo->currentText() + "\"";
-      }
-      if (storageCombo->isEnabled()) {
-         cmd += " storage=\"" + storageCombo->currentText() + "\"";
-      }
-      cmd += " priority=\"" + QString().setNum(prioritySpin->value()) + "\"";
-      cmd += " when=\"" + dateTimeEdit->dateTime().toString("yyyy-MM-dd hh:mm:ss") + "\"";
-#ifdef xxx
-      " messages=\"" << messagesCombo->currentText() << "\"";
-     /* FIXME when there is an option to modify the messages resoruce associated
-      * with a  job */
-#endif
-      cmd += " yes";
-      qDebug() << cmd;
-      item->D_sock->fsend("%s", cmd.toUtf8().data());
-      QString output;
-      while(item->D_sock->recv() >= 0) {output += item->D_sock->msg;}
-      QMessageBox msgBox;
-      msgBox.setText(output);
-      msgBox.exec();
-      deleteLater();
-   }
-
-   void job_name_change(int)
-   {
-      job_defaults job_defs;
-      job_defs.job_name = jobCombo->currentText();
-
-      if (item->get_job_defaults(job_defs)) {
-         typeLabel->setText("<H3>"+job_defs.type+"</H3>");
-         filesetCombo->setCurrentIndex(filesetCombo->findText(job_defs.fileset_name, Qt::MatchExactly));
-         levelCombo->setCurrentIndex(levelCombo->findText(job_defs.level, Qt::MatchExactly));
-         clientCombo->setCurrentIndex(clientCombo->findText(job_defs.client_name, Qt::MatchExactly));
-         poolCombo->setCurrentIndex(poolCombo->findText(job_defs.pool_name, Qt::MatchExactly));
-         storageCombo->setCurrentIndex(storageCombo->findText(job_defs.store_name, Qt::MatchExactly));
-         messagesCombo->setCurrentIndex(messagesCombo->findText(job_defs.messages_name, Qt::MatchExactly));
-
-      } else {
-
-      }
-   }
-};
-
-void refresh_item();
-void dotest();
+int tls_pem_callback(char *buf, int size, const void *userdata);
 
 class TrayUI: public QMainWindow
 {
@@ -184,55 +62,74 @@ public:
     QWidget *centralwidget;
     QTabWidget *tabWidget;
     QStatusBar *statusbar;
-    QHash<QString, QPlainTextEdit*> hash;
-    monitoritem* director;
 
     QSystemTrayIcon *tray;
     QSpinBox *spinRefresh;
     QTimer *timer;
+    bool    have_systray;
+    
+    TrayUI():
+    QMainWindow(),
+       tabWidget(NULL),
+       statusbar(NULL),
+       tray(NULL),
+       spinRefresh(NULL),
+       timer(NULL),
+       have_systray(QSystemTrayIcon::isSystemTrayAvailable())
+       {
+       };
 
-    QPlainTextEdit *getTextEdit(char *title)
+    ~TrayUI() {
+    };
+    void addTab(RESMON *r)
     {
-       return hash.value(QString(title));
-    }
+       QWidget *tab;
+       QString t = QString(r->hdr.name);
+       if (r->tls_enable) {
+          char buf[512];
+          /* Generate passphrase prompt */
+          bsnprintf(buf, sizeof(buf), "Passphrase for \"%s\" TLS private key: ", r->hdr.name);
 
-    void clearText(char *title) 
-    {
-       QPlainTextEdit *w = getTextEdit(title);
-       if (!w) {
+          /* Initialize TLS context:
+           * Args: CA certfile, CA certdir, Certfile, Keyfile,
+           * Keyfile PEM Callback, Keyfile CB Userdata, DHfile, Verify Peer
+           */
+          r->tls_ctx = new_tls_context(r->tls_ca_certfile,
+                                       r->tls_ca_certdir, r->tls_certfile,
+                                       r->tls_keyfile, tls_pem_callback, &buf, NULL, true);
+
+          if (!r->tls_ctx) {
+             display_error(_("Failed to initialize TLS context for \"%s\".\n"), r->hdr.name);
+          }
+       }
+       switch(r->type) {
+       case R_CLIENT:
+          tab = new FDStatus(r);
+          break;
+       case R_STORAGE:
+          tab = new SDStatus(r);
+          break;
+       case R_DIRECTOR:
+          tab = new DIRStatus(r);
+          break;
+       default:
           return;
        }
-       w->clear();
-    }
-
-    void appendText(char *title, char *line) 
-    {
-       QPlainTextEdit *w = getTextEdit(title);
-       if (!w) {
-          return;
-       }
-       w->appendPlainText(QString(line));
-    }
-
-    void addDirector(monitoritem *item)
-    {
-       director = item;
-    }
-
-    void addTab(char *title)
-    {
-       QString t = QString(title);
-       QWidget *tab = new QWidget();
-       QVBoxLayout *vLayout = new QVBoxLayout(tab);
-       QPlainTextEdit *plainTextEdit = new QPlainTextEdit(tab);
-       plainTextEdit->setObjectName(t);
-       plainTextEdit->setReadOnly(true);
-       plainTextEdit->setFont(QFont("courier"));
-       vLayout->addWidget(plainTextEdit);
-       hash.insert(t, plainTextEdit);
+       tabWidget->setUpdatesEnabled(false);
        tabWidget->addTab(tab, t);
+       tabWidget->setUpdatesEnabled(true);
     }
-
+    void clearTabs()
+    {
+       tabWidget->setUpdatesEnabled(false);
+       for(int i = tabWidget->count() - 1; i >= 0; i--) {
+          QWidget *w = tabWidget->widget(i);
+          tabWidget->removeTab(i);
+          delete w;
+       }
+       tabWidget->setUpdatesEnabled(true);
+       tabWidget->update();
+    }
     void startTimer()
     {
        if (!timer) {
@@ -241,11 +138,10 @@ public:
        }
        timer->start(spinRefresh->value()*1000);
     }
-
-    void setupUi(QMainWindow *TrayMonitor)
+    void setupUi(QMainWindow *TrayMonitor, MONITOR *mon)
     {
+        QPushButton *menubp = NULL;
         timer = NULL;
-        director = NULL;
         if (TrayMonitor->objectName().isEmpty())
             TrayMonitor->setObjectName(QString::fromUtf8("TrayMonitor"));
         TrayMonitor->setWindowIcon(QIcon(":/images/cartridge1.png")); 
@@ -263,9 +159,14 @@ public:
 
         QDialogButtonBox *buttonBox = new QDialogButtonBox(centralwidget);
         buttonBox->setObjectName(QString::fromUtf8("buttonBox"));
-        buttonBox->setStandardButtons(QDialogButtonBox::Close);
-        connect(buttonBox, SIGNAL(rejected()), this, SLOT(cb_show()));
-
+        if (have_systray) {
+           buttonBox->setStandardButtons(QDialogButtonBox::Close);
+           connect(buttonBox, SIGNAL(rejected()), this, SLOT(cb_show()));
+        } else {
+           /* Here we can display something else, now it's just a simple menu */
+           menubp = new QPushButton(tr("&Options"));
+           buttonBox->addButton(menubp, QDialogButtonBox::ActionRole);
+        }
         TrayMonitor->setCentralWidget(centralwidget);
         statusbar = new QStatusBar(TrayMonitor);
         statusbar->setObjectName(QString::fromUtf8("statusbar"));
@@ -284,12 +185,12 @@ public:
         spinRefresh->setMinimum(1);
         spinRefresh->setMaximum(600);
         spinRefresh->setSingleStep(10);
-        spinRefresh->setValue(60);
+        spinRefresh->setValue(mon?mon->RefreshInterval:60);
         hLayout->addWidget(spinRefresh);
         hLayout->addWidget(buttonBox);
 
         verticalLayout->addLayout(hLayout);
-
+        //QSystemTrayIcon::isSystemTrayAvailable
         tray = new QSystemTrayIcon(TrayMonitor);
         QMenu* stmenu = new QMenu(TrayMonitor);
 
@@ -305,28 +206,49 @@ public:
         QAction* actRun = new QAction(QApplication::translate("TrayMonitor",
                                "Run...",
                                 0, QApplication::UnicodeUTF8),TrayMonitor);
+/* Not yet ready
+ *      QAction* actRes = new QAction(QApplication::translate("TrayMonitor",
+ *                             "Restore...",
+ *                              0, QApplication::UnicodeUTF8),TrayMonitor);
+ */
+        QAction* actConf = new QAction(QApplication::translate("TrayMonitor",
+                               "Configure...",
+                                0, QApplication::UnicodeUTF8),TrayMonitor);
         stmenu->addAction(actShow);
         stmenu->addAction(actRun);
+        //stmenu->addAction(actRes);
+        stmenu->addSeparator();
+        stmenu->addAction(actConf);
+        stmenu->addSeparator();
         stmenu->addAction(actAbout);
         stmenu->addSeparator();
         stmenu->addAction(actQuit);
         
         connect(actRun, SIGNAL(triggered()), this, SLOT(cb_run()));
         connect(actShow, SIGNAL(triggered()), this, SLOT(cb_show()));
+        connect(actConf, SIGNAL(triggered()), this, SLOT(cb_conf()));
+        //connect(actRes, SIGNAL(triggered()), this, SLOT(cb_restore()));
         connect(actQuit, SIGNAL(triggered()), this, SLOT(cb_quit()));
         connect(actAbout, SIGNAL(triggered()), this, SLOT(cb_about()));
         connect(spinRefresh, SIGNAL(valueChanged(int)), this, SLOT(cb_refresh(int)));
         connect(tray, SIGNAL(activated(QSystemTrayIcon::ActivationReason)),
                 this, SLOT(cb_trayIconActivated(QSystemTrayIcon::ActivationReason)));
-
         tray->setContextMenu(stmenu);
+
         QIcon icon(":/images/cartridge1.png");
         tray->setIcon(icon);
         tray->setToolTip(QString("Bacula Tray Monitor"));
         tray->show();
-
         retranslateUi(TrayMonitor);
         QMetaObject::connectSlotsByName(TrayMonitor);
+        startTimer();
+
+        /* When we don't have the systemtray, we keep the menu, but disabled */
+        if (!have_systray) {
+           actShow->setEnabled(false);
+           menubp->setMenu(stmenu);
+           TrayMonitor->show();
+        }
     } // setupUi
 
     void retranslateUi(QMainWindow *TrayMonitor)
@@ -347,18 +269,105 @@ private slots:
 
     void cb_about() {
        QMessageBox::about(this, "Bacula Tray Monitor", "Bacula Tray Monitor\n"
-                          "For more information, see: www.baculasystems.com\n"
-                          "Copyright (C) 1999-2015, Kern Sibbald.\n"
-                          "License AGPLv3 see LICENSE.");
+                          "For more information, see: www.bacula.org\n"
+                          "Copyright (C) 1999-2017, Kern Sibbald.\n"
+                          "All rights reserved.");
     }
-
+    RESMON *get_director() {
+       QStringList dirs;
+       RESMON *d, *director=NULL;
+       bool ok;
+       foreach_res(d, R_DIRECTOR) {
+          if (!director) {
+             director = d;
+          }
+          dirs << QString(d->hdr.name);
+       }
+       foreach_res(d, R_CLIENT) {
+          if (d->use_remote) {
+             if (!director) {
+                director = d;
+             }
+             dirs << QString(d->hdr.name);
+          }
+       }
+       if (dirs.count() > 1) {
+          /* TODO: Set Modal attribute */
+          QString dir = QInputDialog::getItem(this, _("Select a Director"), "Director:", dirs, 0, false, &ok, 0);
+          if (!ok) {
+             return NULL;
+          }
+          if (ok && !dir.isEmpty()) {
+             char *p = dir.toUtf8().data();
+             foreach_res(d, R_DIRECTOR) {
+                if (strcmp(p, d->hdr.name) == 0) {
+                   director = d;
+                   break;
+                }
+             }
+             foreach_res(d, R_CLIENT) {
+                if (strcmp(p, d->hdr.name) == 0) {
+                   director = d;
+                   break;
+                }
+             }
+          }
+       }
+       if (dirs.count() == 0 || director == NULL) {
+          /* We need the proxy feature */
+          display_error("No Director defined");
+          return NULL;
+       }
+       return director;
+    }
     void cb_run() {
-       if (director) {
-          RunDlg *runbox = new RunDlg(director);
-          runbox->show();
+       RESMON *dir = get_director();
+       if (!dir) {
+          return;
+       }
+       task *t = new task();
+       connect(t, SIGNAL(done(task *)), this, SLOT(run_job(task *)), Qt::QueuedConnection);
+       t->init(dir, TASK_RESOURCES);
+       dir->wrk->queue(t);
+    }
+    void refresh_item() {
+       /* Probably do only the first one */
+       int oldnbjobs = 0;
+
+       for (int i=tabWidget->count() - 1; i >= 0; i--) {
+          ResStatus *s = (ResStatus *) tabWidget->widget(i);
+          if (s->res->use_monitor) {
+             s->res->mutex->lock();
+             if (s->res->running_jobs) {
+                oldnbjobs += s->res->running_jobs->size();
+             }
+             s->res->mutex->unlock();
+          }
+          if (isVisible() || s->res->use_monitor) {
+             s->doUpdate();
+          }
+       }
+       /* We need to find an other way to compute running jobs */
+       if (oldnbjobs) {
+          QString q;
+          tray->setIcon(QIcon(":/images/R.png"));
+          tray->setToolTip(q.sprintf("Bacula Tray Monitor - %d job%s running", oldnbjobs, oldnbjobs>1?"s":""));
+          //tray->showMessage();   Can use this function to display a popup
+
+       } else {
+          tray->setIcon(QIcon(":/images/cartridge1.png"));
+          tray->setToolTip("Bacula Tray Monitor");
        }
     }
-
+    void cb_conf() {
+       new Conf();
+    }
+    void cb_restore() {
+       RESMON *dir = get_director();
+       if (!dir) {
+          return;
+       }
+    }
     void cb_trayIconActivated(QSystemTrayIcon::ActivationReason r) {
        if (r == QSystemTrayIcon::Trigger) {
           cb_show();
@@ -366,11 +375,7 @@ private slots:
     }
 
     void refresh_screen() {
-//       qDebug() << "refresh_screen()";
-       if (isVisible()) {
-          refresh_item();
-//          qDebug() << "  -> OK";
-       }
+       refresh_item();
     }
 
     void cb_show() {
@@ -381,6 +386,17 @@ private slots:
           show();
        }
     }
+public slots:
+    void task_done(task *t) {
+       Dmsg0(0, "Task done!\n");
+       t->deleteLater();
+    };
+    void run_job(task *t) {
+       Dmsg0(0, "Task done!\n");
+       RESMON *dir = t->res;
+       t->deleteLater();
+       new RunJob(dir);
+    };
 };
 
 

@@ -2,7 +2,6 @@
    Bacula(R) - The Network Backup Solution
 
    Copyright (C) 2000-2017 Kern Sibbald
-   Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -18,11 +17,9 @@
    Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
- *
  *   Bacula Director -- User Agent Commands
  *
  *     Kern Sibbald, September MM
- *
  */
 
 #include "bacula.h"
@@ -74,6 +71,7 @@ static int time_cmd(UAContext *ua, const char *cmd);
 static int trace_cmd(UAContext *ua, const char *cmd);
 static int unmount_cmd(UAContext *ua, const char *cmd);
 static int use_cmd(UAContext *ua, const char *cmd);
+static int cloud_cmd(UAContext *ua, const char *cmd);
 static int var_cmd(UAContext *ua, const char *cmd);
 static int version_cmd(UAContext *ua, const char *cmd);
 static int wait_cmd(UAContext *ua, const char *cmd);
@@ -101,10 +99,13 @@ static struct cmdstruct commands[] = {                                      /* C
  { NT_("autodisplay"), autodisplay_cmd,_("Autodisplay console messages"), NT_("on | off"),    false},
  { NT_("automount"),   automount_cmd,  _("Automount after label"),        NT_("on | off"),    false},
  { NT_("cancel"),     cancel_cmd,    _("Cancel a job"), NT_("jobid=<number-list> | job=<job-name> | ujobid=<unique-jobid> | inactive client=<client-name> storage=<storage-name> | all"), false},
+ { NT_("cloud"),      cloud_cmd,     _("Specific Cloud commands"),
+   NT_("[storage=<storage-name>] [volume=<vol>] [pool=<pool>] [allpools] [allfrompool] [mediatype=<type>] [drive=<number>] [slots=<number] \n"
+       "\tstatus  | prune | list | upload | truncate"), true},
  { NT_("create"),     create_cmd,    _("Create DB Pool from resource"), NT_("pool=<pool-name>"),                    false},
  { NT_("delete"),     delete_cmd,    _("Delete volume, pool or job"), NT_("volume=<vol-name> | pool=<pool-name> | jobid=<id> | snapshot"), true},
- { NT_("disable"),    disable_cmd,   _("Disable a job, attributes batch process"), NT_("job=<name> | batch"),  true},
- { NT_("enable"),     enable_cmd,    _("Enable a job, attributes batch process"), NT_("job=<name> | batch"),   true},
+ { NT_("disable"),    disable_cmd,   _("Disable a job, attributes batch process"), NT_("job=<name> | client=<name> | schedule=<name> | storage=<name> | batch"),  true},
+ { NT_("enable"),     enable_cmd,    _("Enable a job, attributes batch process"), NT_("job=<name> | client=<name> | schedule=<name> | storage=<name> | batch"),   true},
  { NT_("estimate"),   estimate_cmd,  _("Performs FileSet estimate, listing gives full listing"),
    NT_("fileset=<fs> client=<cli> level=<level> accurate=<yes/no> job=<job> listing"), true},
 
@@ -116,16 +117,18 @@ static struct cmdstruct commands[] = {                                      /* C
        "\n\tsetbandwidth setdebug setip show sqlquery time trace unmount\n\tumount update use var version wait"
        "\n\tsnapshot"),         false},
 
- { NT_("label"),      label_cmd,     _("Label a tape"), NT_("storage=<storage> volume=<vol> pool=<pool> slot=<slot> barcodes"), false},
+ { NT_("label"),      label_cmd,     _("Label a tape"), NT_("storage=<storage> volume=<vol> pool=<pool> slot=<slot> drive=<nb> barcodes"), false},
  { NT_("list"),       list_cmd,      _("List objects from catalog"),
-   NT_("jobs [client=<cli>] [jobid=<nn>] [ujobid=<name>] [job=<name>] [joberrors] [jobstatus=<s>] [limit=<n>]|\n"
-       "\tjobtotals | pools | volume | media <pool=pool-name> | files jobid=<nn> | copies jobid=<nn> |\n"
-       "\tjoblog jobid=<nn> | pluginrestoreconf jobid=<nn> restoreobjectid=<nn> | snapshot"), false},
+   NT_("jobs [client=<cli>] [jobid=<nn>] [ujobid=<name>] [job=<name>] [joberrors] [jobstatus=<s>] [level=<l>] [jobtype=<t>] [limit=<n>]|\n"
+       "\tjobtotals | pools | volume | media <pool=pool-name> | files [type=<deleted|all>] jobid=<nn> | copies jobid=<nn> |\n"
+       "\tjoblog jobid=<nn> | pluginrestoreconf jobid=<nn> restoreobjectid=<nn> | snapshot\n"
+      ), false},
 
  { NT_("llist"),      llist_cmd,     _("Full or long list like list command"),
-   NT_("jobs [client=<cli>] [jobid=<nn>] [ujobid=<name>] [job=<name>] [joberrors] [jobstatus=<s>] [limit=<n>]|\n"
+   NT_("jobs [client=<cli>] [jobid=<nn>] [ujobid=<name>] [job=<name>] [joberrors] [jobstatus=<s>] [level=<l>] [jobtype=<t>] [order=<asc/desc>] [limit=<n>]|\n"
        "\tjobtotals | pools | volume | media <pool=pool-name> | files jobid=<nn> | copies jobid=<nn> |\n"
-       "\tjoblog jobid=<nn> | pluginrestoreconf jobid=<nn> restoreobjectid=<nn> | snapshot"), false},
+       "\tjoblog jobid=<nn> | pluginrestoreconf jobid=<nn> restoreobjectid=<nn> | snapshot |\n"
+       "\tfileindex=<mm>\n"), false},
 
  { NT_("messages"),   messagescmd,   _("Display pending messages"),   NT_(""),    false},
  { NT_("memory"),     memory_cmd,    _("Print current memory usage"), NT_(""),    true},
@@ -140,8 +143,8 @@ static struct cmdstruct commands[] = {                                      /* C
  { NT_("query"),      query_cmd,     _("Query catalog"), NT_("[<query-item-number>]"),      false},
  { NT_("restore"),    restore_cmd,   _("Restore files"),
    NT_("where=</path> client=<client> storage=<storage> bootstrap=<file> "
-       "restorejob=<job>"
-       "\n\tcomment=<text> jobid=<jobid> copies done select all"), false},
+       "restorejob=<job> restoreclient=<cli>"
+       "\n\tcomment=<text> jobid=<jobid> jobuser=<user> jobgroup=<grp> copies done select all"), false},
 
  { NT_("relabel"),    relabel_cmd,   _("Relabel a tape"),
    NT_("storage=<storage-name> oldvolume=<old-volume-name>\n\tvolume=<newvolume-name> pool=<pool>"), false},
@@ -162,7 +165,7 @@ static struct cmdstruct commands[] = {                                      /* C
        "when=<universal-time-specification>\n\tcomment=<text> spooldata=<bool> jobid=<jobid>"), false},
 
  { NT_("status"),     status_cmd,    _("Report status"),
-   NT_("all | dir=<dir-name> | director | client=<client-name> |\n"
+   NT_("all | network [bytes=<nn-b>] | dir=<dir-name> | director | client=<client-name> |\n"
        "\tstorage=<storage-name> slots |\n"
        "\tschedule [job=<job-name>] [days=<nn>] [limit=<nn>]\n"
        "\t\t[time=<universal-time-specification>]"), true},
@@ -172,7 +175,7 @@ static struct cmdstruct commands[] = {                                      /* C
    NT_("level=<nn> tags=<tags> trace=0/1 options=<0tTc> tags=<tags> | client=<client-name> | dir | storage=<storage-name> | all"), true},
 
  { NT_("setbandwidth"),   setbwlimit_cmd,  _("Sets bandwidth"),
-   NT_("limit=<nn-kbs> client=<client-name> jobid=<number> job=<job-name> ujobid=<unique-jobid>"), true},
+   NT_("limit=<speed> client=<client-name> jobid=<number> job=<job-name> ujobid=<unique-jobid>"), true},
 
  { NT_("snapshot"),   snapshot_cmd,  _("Handle snapshots"),
    NT_("[client=<client-name> | job=<job-name> | jobid=<jobid>] [delete | list | listclient | prune | sync | update]"), true},
@@ -193,7 +196,7 @@ static struct cmdstruct commands[] = {                                      /* C
 
  { NT_("update"),     update_cmd,    _("Update volume, pool or stats"),
    NT_("stats\n\tsnapshot\n\tpool=<poolname>\n\tslots storage=<storage> scan"
-       "\n\tvolume=<volname> volstatus=<status> volretention=<time-def>"
+       "\n\tvolume=<volname> volstatus=<status> volretention=<time-def> cacheretention=<time-def>"
        "\n\t pool=<pool> recycle=<yes/no> slot=<number>\n\t inchanger=<yes/no>"
        "\n\t maxvolbytes=<size> maxvolfiles=<nb> maxvoljobs=<nb>"
        "\n\t enabled=<yes/no> recyclepool=<pool> actiononpurge=<action>"
@@ -220,8 +223,6 @@ bool do_a_command(UAContext *ua)
    int len;
    bool ok = false;
    bool found = false;
-   BSOCK *user = ua->UA_sock;
-
 
    Dmsg1(900, "Command: %s\n", ua->argk[0]);
    if (ua->argc == 0) {
@@ -248,10 +249,10 @@ bool do_a_command(UAContext *ua)
             ua->error_msg(_("Can't use %s command in a runscript"), ua->argk[0]);
             break;
          }
-         if (ua->api) user->signal(BNET_CMD_BEGIN);
+         if (ua->api) ua->signal(BNET_CMD_BEGIN);
          ok = (*commands[i].func)(ua, ua->cmd);   /* go execute command */
-         if (ua->api) user->signal(ok?BNET_CMD_OK:BNET_CMD_FAILED);
-         found = (user && user->is_stop()) ? false : true;
+         if (ua->api) ua->signal(ok?BNET_CMD_OK:BNET_CMD_FAILED);
+         found = ua->UA_sock && ua->UA_sock->is_stop() ? false : true;
          break;
       }
    }
@@ -273,6 +274,7 @@ void set_pool_dbr_defaults_in_media_dbr(MEDIA_DBR *mr, POOL_DBR *pr)
    bstrncpy(mr->VolStatus, NT_("Append"), sizeof(mr->VolStatus));
    mr->Recycle = pr->Recycle;
    mr->VolRetention = pr->VolRetention;
+   mr->CacheRetention = pr->CacheRetention;
    mr->VolUseDuration = pr->VolUseDuration;
    mr->ActionOnPurge = pr->ActionOnPurge;
    mr->RecyclePoolId = pr->RecyclePoolId;
@@ -466,16 +468,25 @@ static int cancel_cmd(UAContext *ua, const char *cmd)
    bool    cancel = strcasecmp(commands[ua->cmd_index].key, "cancel") == 0;
    alist  *jcrs = New(alist(5, not_owned_by_alist));
 
+   /* If the user explicitely ask, we can send the cancel command to
+    * the FD.
+    */
+   if (find_arg(ua, "inactive") > 0) {
+      ret = cancel_inactive_job(ua);
+      goto bail_out;
+   }
+
    nb = select_running_jobs(ua, jcrs, commands[ua->cmd_index].key);
 
    foreach_alist(jcr, jcrs) {
       /* Execute the cancel command only if we don't have an error */
       if (nb != -1) {
-         ret &= cancel_job(ua, jcr, cancel);
+         ret &= cancel_job(ua, jcr, 60, cancel);
       }
       free_jcr(jcr);
    }
 
+bail_out:
    delete jcrs;
    return ret;
 }
@@ -510,6 +521,7 @@ void set_pooldbr_from_poolres(POOL_DBR *pr, POOL *pool, e_pool_op op)
    pr->UseCatalog = pool->use_catalog;
    pr->Recycle = pool->Recycle;
    pr->VolRetention = pool->VolRetention;
+   pr->CacheRetention = pool->CacheRetention;
    pr->VolUseDuration = pool->VolUseDuration;
    pr->MaxVolJobs = pool->MaxVolJobs;
    pr->MaxVolFiles = pool->MaxVolFiles;
@@ -684,7 +696,7 @@ extern char *configfile;
 static int setbwlimit_client(UAContext *ua, CLIENT *client, char *Job, int64_t limit)
 {
    CLIENT *old_client;
-
+   char ed1[50];
    if (!client) {
       return 1;
    }
@@ -696,7 +708,7 @@ static int setbwlimit_client(UAContext *ua, CLIENT *client, char *Job, int64_t l
 
    /* Try to connect for 15 seconds */
    ua->send_msg(_("Connecting to Client %s at %s:%d\n"),
-      client->name(), client->address, client->FDport);
+      client->name(), client->address(), client->FDport);
    if (!connect_to_file_daemon(ua->jcr, 1, 15, 0)) {
       ua->error_msg(_("Failed to connect to Client.\n"));
       goto bail_out;
@@ -708,8 +720,8 @@ static int setbwlimit_client(UAContext *ua, CLIENT *client, char *Job, int64_t l
 
    } else {
       /* Note, we add 2000 OK that was sent by FD to us to message */
-      ua->info_msg(_("2000 OK Limiting bandwidth to %lldkb/s %s\n"),
-                   limit/1024, *Job?Job:_("on running and future jobs"));
+      ua->info_msg(_("2000 OK Limiting bandwidth to %sB/s %s\n"),
+                   edit_uint64_with_suffix(limit, ed1), *Job?Job:_("on running and future jobs"));
    }
 
    ua->jcr->file_bsock->signal(BNET_TERMINATE);
@@ -727,7 +739,7 @@ static int setbwlimit_cmd(UAContext *ua, const char *cmd)
    CLIENT *client = NULL;
    char Job[MAX_NAME_LENGTH];
    *Job=0;
-   int64_t limit = -1;
+   uint64_t limit = 0;
    JCR *jcr = NULL;
    int i;
 
@@ -745,13 +757,18 @@ static int setbwlimit_cmd(UAContext *ua, const char *cmd)
 
    i = find_arg_with_value(ua, "limit");
    if (i >= 0) {
-      limit = atoi(ua->argv[i]) * 1024LL;
-   }
-   if (limit < 0) {
-      if (!get_pint(ua, _("Enter new bandwidth limit kb/s: "))) {
+      if (!speed_to_uint64(ua->argv[i], strlen(ua->argv[i]), &limit)) {
+         ua->error_msg(_("Invalid value for limit parameter. Expecting speed.\n"));
          return 1;
       }
-      limit = ua->pint32_val * 1024LL; /* kb/s */
+   } else {
+      if (!get_cmd(ua, _("Enter new bandwidth limit: "))) {
+         return 1;
+      }
+      if (!speed_to_uint64(ua->cmd, strlen(ua->cmd), &limit)) {
+         ua->error_msg(_("Invalid value for limit parameter. Expecting speed.\n"));
+         return 1;
+      }
    }
 
    const char *lst[] = { "job", "jobid", "jobname", NULL };
@@ -767,7 +784,7 @@ static int setbwlimit_cmd(UAContext *ua, const char *cmd)
       }
 
    } else {
-      client = get_client_resource(ua);
+      client = get_client_resource(ua, JT_BACKUP_RESTORE);
       if (client) {
          setbwlimit_client(ua, client, Job, limit);
       }
@@ -783,8 +800,8 @@ static int setbwlimit_cmd(UAContext *ua, const char *cmd)
 static int setip_cmd(UAContext *ua, const char *cmd)
 {
    CLIENT *client;
-   char buf[1024];
-   if (!ua->cons || !acl_access_ok(ua, Client_ACL, ua->cons->name())) {
+   char addr[1024];
+   if (!ua->cons || !acl_access_client_ok(ua, ua->cons->name(), JT_BACKUP_RESTORE)) {
       ua->error_msg(_("Unauthorized command from this console.\n"));
       return 1;
    }
@@ -795,15 +812,12 @@ static int setip_cmd(UAContext *ua, const char *cmd)
       ua->error_msg(_("Client \"%s\" not found.\n"), ua->cons->name());
       goto get_out;
    }
-   if (client->address) {
-      free(client->address);
-   }
    /* MA Bug 6 remove ifdef */
    sockaddr_to_ascii(&(ua->UA_sock->client_addr),
-         sizeof(ua->UA_sock->client_addr), buf, sizeof(buf));
-   client->address = bstrdup(buf);
+         sizeof(ua->UA_sock->client_addr), addr, sizeof(addr));
+   client->setAddress(bstrdup(addr));
    ua->send_msg(_("Client \"%s\" address set to %s\n"),
-            client->name(), client->address);
+            client->name(), addr);
 get_out:
    UnlockRes();
    return 1;
@@ -851,7 +865,7 @@ static void do_enable_disable_cmd(UAContext *ua, bool setting)
          ua->error_msg(_("Unauthorized command from this console.\n"));
          return;
       }
-      job->enabled = setting;
+      job->setEnabled(setting);
       ua->send_msg(_("Job \"%s\" %sabled\n"), job->name(), setting?"en":"dis");
    }
 
@@ -869,11 +883,11 @@ static void do_enable_disable_cmd(UAContext *ua, bool setting)
       }
    }
    if (client) {
-      if (!acl_access_ok(ua, Client_ACL, client->name())) {
+      if (!acl_access_client_ok(ua, client->name(), JT_BACKUP_RESTORE)) {
          ua->error_msg(_("Unauthorized command from this console.\n"));
          return;
       }
-      client->enabled = setting;
+      client->setEnabled(setting);
       ua->send_msg(_("Client \"%s\" %sabled\n"), client->name(), setting?"en":"dis");
    }
 
@@ -895,7 +909,7 @@ static void do_enable_disable_cmd(UAContext *ua, bool setting)
          ua->error_msg(_("Unauthorized command from this console.\n"));
          return;
       }
-      sched->enabled = setting;
+      sched->setEnabled(setting);
       ua->send_msg(_("Schedule \"%s\" %sabled\n"), sched->name(), setting?"en":"dis");
    }
 
@@ -983,7 +997,7 @@ static void do_client_setdebug(UAContext *ua, CLIENT *client,
    ua->jcr->client = client;
    /* Try to connect for 15 seconds */
    ua->send_msg(_("Connecting to Client %s at %s:%d\n"),
-      client->name(), client->address, client->FDport);
+      client->name(), client->address(), client->FDport);
    if (!connect_to_file_daemon(ua->jcr, 1, 15, 0)) {
       ua->error_msg(_("Failed to connect to Client.\n"));
       ua->jcr->client = old_client;
@@ -1072,7 +1086,7 @@ static void do_all_setdebug(UAContext *ua, int64_t level,
    while ((client = (CLIENT *)GetNextRes(R_CLIENT, (RES *)client))) {
       found = 0;
       for (j=0; j<i; j++) {
-         if (strcmp(unique_client[j]->address, client->address) == 0 &&
+         if (strcmp(unique_client[j]->address(), client->address()) == 0 &&
              unique_client[j]->FDport == client->FDport) {
             found = 1;
             break;
@@ -1080,7 +1094,7 @@ static void do_all_setdebug(UAContext *ua, int64_t level,
       }
       if (!found) {
          unique_client[i++] = client;
-         Dmsg2(140, "Stuffing: %s:%d\n", client->address, client->FDport);
+         Dmsg2(140, "Stuffing: %s:%d\n", client->address(), client->FDport);
       }
    }
    UnlockRes();
@@ -1182,7 +1196,7 @@ static int setdebug_cmd(UAContext *ua, const char *cmd)
                return 1;
             }
          }
-         client = select_client_resource(ua);
+         client = select_client_resource(ua, JT_BACKUP_RESTORE);
          if (client) {
             do_client_setdebug(ua, client, level, trace_flag,
                hangup, blowup, options, tags_str);
@@ -1231,7 +1245,7 @@ static int setdebug_cmd(UAContext *ua, const char *cmd)
       }
       break;
    case 2:
-      client = select_client_resource(ua);
+      client = select_client_resource(ua, JT_BACKUP_RESTORE);
       if (client) {
          do_client_setdebug(ua, client, level, trace_flag, hangup, blowup,
             options, tags_str);
@@ -1297,7 +1311,10 @@ static int estimate_cmd(UAContext *ua, const char *cmd)
    JCR *jcr = ua->jcr;
    int accurate=-1;
 
+   jcr->setJobType(JT_BACKUP);
+   jcr->start_time = time(NULL);
    jcr->setJobLevel(L_FULL);
+
    for (int i=1; i<ua->argc; i++) {
       if (strcasecmp(ua->argk[i], NT_("client")) == 0 ||
           strcasecmp(ua->argk[i], NT_("fd")) == 0) {
@@ -1307,7 +1324,7 @@ static int estimate_cmd(UAContext *ua, const char *cmd)
                ua->error_msg(_("Client \"%s\" not found.\n"), ua->argv[i]);
                return 1;
             }
-            if (!acl_access_ok(ua, Client_ACL, client->name())) {
+            if (!acl_access_client_ok(ua, client->name(), JT_BACKUP)) {
                ua->error_msg(_("No authorization for Client \"%s\"\n"), client->name());
                return 1;
             }
@@ -1398,6 +1415,7 @@ static int estimate_cmd(UAContext *ua, const char *cmd)
          return 1;
       }
    }
+   jcr->job = job;
    if (!client) {
       client = job->client;
    }
@@ -1417,9 +1435,6 @@ static int estimate_cmd(UAContext *ua, const char *cmd)
       return 1;
    }
 
-   jcr->job = job;
-   jcr->setJobType(JT_BACKUP);
-   jcr->start_time = time(NULL);
    init_jcr_job_record(jcr);
 
    if (!get_or_create_client_record(jcr)) {
@@ -1432,7 +1447,7 @@ static int estimate_cmd(UAContext *ua, const char *cmd)
    get_level_since_time(ua->jcr, since, sizeof(since));
 
    ua->send_msg(_("Connecting to Client %s at %s:%d\n"),
-      jcr->client->name(), jcr->client->address, jcr->client->FDport);
+      jcr->client->name(), jcr->client->address(), jcr->client->FDport);
    if (!connect_to_file_daemon(jcr, 1, 15, 0)) {
       ua->error_msg(_("Failed to connect to Client.\n"));
       return 1;
@@ -1722,8 +1737,15 @@ static void do_storage_cmd(UAContext *ua, const char *command)
    pm_strcpy(store.store_source, _("unknown source"));
    set_wstorage(jcr, &store);
    drive = get_storage_drive(ua, store.store);
-   slot = get_storage_slot(ua, store.store);
-
+   /* For the disable/enable command, the slot is not mandatory */
+   if (strcasecmp(command, "disable") == 0 || strcasecmp(command, "enable") == 0) {
+      slot = 0;
+   } else {
+      slot = get_storage_slot(ua, store.store);
+   }
+   if (slot < 0) {
+      return;
+   }
    /* Users may set a device name directly on the command line */
    if ((i = find_arg_with_value(ua, "device")) > 0) {
       POOLMEM *errmsg = get_pool_memory(PM_NAME);
@@ -1749,7 +1771,7 @@ static void do_storage_cmd(UAContext *ua, const char *command)
    }
    sd = jcr->store_bsock;
    bash_spaces(dev_name);
-   sd->fsend("%s %s drive=%d slot=%d", command, dev_name, drive, slot);
+   sd->fsend("%s %s drive=%d slot=%d\n", command, dev_name, drive, slot);
    while (sd->recv() >= 0) {
       ua->send_msg("%s", sd->msg);
    }
@@ -1786,6 +1808,301 @@ static int release_cmd(UAContext *ua, const char *cmd)
    return 1;
 }
 
+/*
+ * cloud functions, like to upload cached parts to cloud.
+ */
+int cloud_volumes_cmd(UAContext *ua, const char *cmd, const char *mode)
+{
+   int drive = -1;
+   int nb = 0;
+   uint32_t *results = NULL;
+   MEDIA_DBR mr;
+   POOL_DBR pr;
+   BSOCK *sd = NULL;
+   char storage[MAX_NAME_LENGTH];
+   const char *action = mode;
+   memset(&pr, 0, sizeof(pr));
+
+   /*
+    * Look for all volumes that are enabled and
+    *  have more the 200 bytes.
+    */
+   mr.Enabled = 1;
+   mr.Recycle = -1;             /* All Recycle status */
+   if (strcmp("prunecache", mode) == 0) {
+      mr.CacheRetention = 1;
+      action = "truncate cache";
+   }
+
+   if (!scan_storage_cmd(ua, cmd, false, /* fromallpool*/
+                         &drive, &mr, &pr, NULL, storage,
+                         &nb, &results))
+   {
+      goto bail_out;
+   }
+
+   if ((sd=open_sd_bsock(ua)) == NULL) {
+      Dmsg0(100, "Can't open connection to sd\n");
+      goto bail_out;
+   }
+
+   /*
+    * Loop over the candidate Volumes and upload parts
+    */
+   for (int i=0; i < nb; i++) {
+      bool ok=false;
+      mr.clear();
+      mr.MediaId = results[i];
+      if (!db_get_media_record(ua->jcr, ua->db, &mr)) {
+         goto bail_out;
+      }
+
+      /* Protect us from spaces */
+      bash_spaces(mr.VolumeName);
+      bash_spaces(mr.MediaType);
+      bash_spaces(pr.Name);
+      bash_spaces(storage);
+
+      sd->fsend("%s Storage=%s Volume=%s PoolName=%s MediaType=%s "
+                "Slot=%d drive=%d CacheRetention=%lld\n",
+                action, storage, mr.VolumeName, pr.Name, mr.MediaType,
+                mr.Slot, drive, mr.CacheRetention);
+
+      unbash_spaces(mr.VolumeName);
+      unbash_spaces(mr.MediaType);
+      unbash_spaces(pr.Name);
+      unbash_spaces(storage);
+
+      /* Check for valid response */
+      while (bget_dirmsg(sd) >= 0) {
+         if (strncmp(sd->msg, "3000 OK truncate cache", 22) == 0) {
+            ua->send_msg("%s", sd->msg);
+            ok = true;
+
+         } else if (strncmp(sd->msg, "3000 OK", 7) == 0) {
+            ua->send_msg(_("The volume \"%s\" has been uploaded\n"), mr.VolumeName);
+            ok = true;
+
+
+         } else if (strncmp(sd->msg, "39", 2) == 0) {
+            ua->warning_msg("%s", sd->msg);
+
+         } else {
+            ua->send_msg("%s", sd->msg);
+         }
+      }
+      if (!ok) {
+         ua->warning_msg(_("Unable to %s for volume \"%s\"\n"), action, mr.VolumeName);
+      }  
+   }
+
+bail_out:
+   close_db(ua);
+   close_sd_bsock(ua);
+   ua->jcr->wstore = NULL;
+   if (results) {
+      free(results);
+   }
+
+   return 1;
+}
+
+/* List volumes in the cloud */
+/* TODO: Update the code for .api 2 and llist */
+static int cloud_list_cmd(UAContext *ua, const char *cmd)
+{
+   int drive = -1;
+   int64_t size, mtime;
+   STORE *store = NULL;
+   MEDIA_DBR mr;
+   POOL_DBR pr;
+   BSOCK *sd = NULL;
+   char storage[MAX_NAME_LENGTH];
+   char ed1[50], ed2[50];
+   bool first=true;
+   uint32_t maxpart=0, part;
+   uint64_t maxpart_size=0;
+   memset(&pr, 0, sizeof(pr));
+   memset(&mr, 0, sizeof(mr));
+
+   /* Look at arguments */
+   for (int i=1; i<ua->argc; i++) {
+      if (strcasecmp(ua->argk[i], NT_("volume")) == 0
+          && is_name_valid(ua->argv[i], NULL)) {
+         bstrncpy(mr.VolumeName, ua->argv[i], sizeof(mr.VolumeName));
+
+      } else if (strcasecmp(ua->argk[i], NT_("drive")) == 0 && ua->argv[i]) {
+         drive = atoi(ua->argv[i]);
+      }
+   }
+
+   if (!open_client_db(ua)) {
+      goto bail_out;
+   }
+
+   /* Choose storage */
+   ua->jcr->wstore = store = get_storage_resource(ua, false);
+   if (!store) {
+      goto bail_out;
+   }
+   bstrncpy(storage, store->dev_name(), sizeof(storage));
+   bstrncpy(mr.MediaType, store->media_type, sizeof(mr.MediaType));
+
+   if ((sd=open_sd_bsock(ua)) == NULL) {
+      Dmsg0(100, "Can't open connection to SD\n");
+      goto bail_out;
+   }
+
+   /* Protect us from spaces */
+   bash_spaces(mr.MediaType);
+   bash_spaces(storage);
+   bash_spaces(mr.VolumeName);
+
+   sd->fsend("cloudlist Storage=%s Volume=%s MediaType=%s Slot=%d drive=%d\n",
+             storage, mr.VolumeName,  mr.MediaType, mr.Slot, drive);
+
+   if (mr.VolumeName[0]) {      /* Want to list parts */
+      const char *output_hformat="| %8d | %12sB | %20s |\n";
+      uint64_t volsize=0;
+      /* Check for valid response */
+      while (sd->recv() >= 0) {
+         if (sscanf(sd->msg, "part=%d size=%lld mtime=%lld", &part, &size, &mtime) != 3) {
+            if (sd->msg[0] == '3') {
+               ua->send_msg("%s", sd->msg);
+            }
+            continue;
+         }
+         /* Print information */
+         if (first) {
+            ua->send_msg(_("+----------+---------------+----------------------+\n"));
+            ua->send_msg(_("|   Part   |     Size      |   MTime              |\n"));
+            ua->send_msg(_("+----------+---------------+----------------------+\n"));
+            first=false;
+         }
+         if (part > maxpart) {
+            maxpart = part;
+            maxpart_size = size;
+         }
+         volsize += size;
+         ua->send_msg(output_hformat, part, edit_uint64_with_suffix(size, ed1), bstrftimes(ed2, sizeof(ed2), mtime));
+      }
+      if (!first) {
+         ua->send_msg(_("+----------+---------------+----------------------+\n"));
+      }
+      /* TODO: See if we fix the catalog record directly */
+      if (db_get_media_record(ua->jcr, ua->db, &mr)) {
+         POOL_MEM errmsg, tmpmsg;
+         if (mr.LastPartBytes != maxpart_size) {
+            Mmsg(tmpmsg, "Error on volume \"%s\". Catalog LastPartBytes mismatch %lld != %lld\n",
+                 mr.VolumeName, mr.LastPartBytes, maxpart_size);
+            pm_strcpy(errmsg, tmpmsg.c_str());
+         }
+         if (mr.VolCloudParts != maxpart) {
+            Mmsg(tmpmsg, "Error on volume \"%s\". Catalog VolCloudParts mismatch %ld != %ld\n",
+                 mr.VolumeName, mr.VolCloudParts, maxpart);
+            pm_strcpy(errmsg, tmpmsg.c_str());
+         }
+         if (strlen(errmsg.c_str()) > 0) {
+            ua->error_msg("\n%s", errmsg.c_str());
+         }
+      }
+   } else {                     /* TODO: Get the last part if possible? */
+      const char *output_hformat="| %18s | %9s | %20s | %20s | %12sB |\n";
+
+      /* Check for valid response */
+      while (sd->recv() >= 0) {
+         if (sscanf(sd->msg, "volume=%127s", mr.VolumeName) != 1) {
+            if (sd->msg[0] == '3') {
+               ua->send_msg("%s", sd->msg);
+            }
+            continue;
+         }
+         unbash_spaces(mr.VolumeName);
+
+         mr.MediaId = 0;
+
+         if (mr.VolumeName[0] && db_get_media_record(ua->jcr, ua->db, &mr)) {
+            memset(&pr, 0, sizeof(POOL_DBR));
+            pr.PoolId = mr.PoolId;
+            if (!db_get_pool_record(ua->jcr, ua->db, &pr)) {
+               strcpy(pr.Name, "?");
+            }
+
+            if (first) {
+               ua->send_msg(_("+--------------------+-----------+----------------------+----------------------+---------------+\n"));
+               ua->send_msg(_("|    Volume Name     |   Status  |     Media Type       |       Pool           |    VolBytes   |\n"));
+               ua->send_msg(_("+--------------------+-----------+----------------------+----------------------+---------------+\n"));
+               first=false;
+            }
+            /* Print information */
+            ua->send_msg(output_hformat, mr.VolumeName, mr.VolStatus, mr.MediaType, pr.Name,
+                         edit_uint64_with_suffix(mr.VolBytes, ed1));
+         }
+      }
+      if (!first) {
+         ua->send_msg(_("+--------------------+-----------+----------------------+----------------------+---------------+\n"));
+      }
+   }
+
+bail_out:
+   close_db(ua);
+   close_sd_bsock(ua);
+   ua->jcr->wstore = NULL;
+   return 1;
+}
+
+/* Ask client to create/prune/delete a snapshot via the command line */
+static int cloud_cmd(UAContext *ua, const char *cmd)
+{
+   for (int i=0; i<ua->argc; i++) {
+      if (strcasecmp(ua->argk[i], NT_("upload")) == 0) {
+         return cloud_volumes_cmd(ua, cmd, "upload");
+
+      } else if (strcasecmp(ua->argk[i], NT_("list")) == 0) {
+         return cloud_list_cmd(ua, cmd);
+
+      } else if (strcasecmp(ua->argk[i], NT_("truncate")) == 0) {
+         return cloud_volumes_cmd(ua, cmd, "truncate cache");
+
+      } else if (strcasecmp(ua->argk[i], NT_("status")) == 0) {
+
+      } else if (strcasecmp(ua->argk[i], NT_("prune")) == 0) {
+         return cloud_volumes_cmd(ua, cmd, "prunecache");
+
+      } else {
+         continue;
+      }
+   }
+
+   for ( ;; ) {
+
+      start_prompt(ua, _("Cloud choice: \n"));
+      add_prompt(ua, _("List Cloud Volumes in the Cloud"));
+      add_prompt(ua, _("Upload a Volume to the Cloud"));
+      add_prompt(ua, _("Prune the Cloud Cache"));
+      add_prompt(ua, _("Truncate a Volume Cache"));
+      add_prompt(ua, _("Done"));
+
+      switch(do_prompt(ua, "", _("Select action to perform on Cloud"), NULL, 0)) {
+      case 0:                   /* list cloud */
+         cloud_list_cmd(ua, cmd);
+         break;
+      case 1:                   /* upload */
+         cloud_volumes_cmd(ua, cmd, "upload");
+         break;
+      case 2:                   /* Prune cache */
+         cloud_volumes_cmd(ua, cmd, "prunecache");
+         break;
+      case 3:                   /* Truncate cache */
+         cloud_volumes_cmd(ua, cmd, "truncate cache");
+         break;
+      default:
+         ua->info_msg(_("Selection terminated.\n"));
+         return 1;
+      }
+   }
+   return 1;
+}
 
 /*
  * Switch databases
@@ -1910,7 +2227,9 @@ int wait_cmd(UAContext *ua, const char *cmd)
          for (bool waiting=false; !waiting; ) {
             foreach_jcr(jcr) {
                if (!jcr->is_internal_job() &&
-                   (jcr->JobStatus == JS_WaitMedia || jcr->JobStatus == JS_WaitMount)) {
+                   (jcr->JobStatus == JS_WaitMedia || jcr->JobStatus == JS_WaitMount ||
+                    jcr->SDJobStatus == JS_WaitMedia || jcr->SDJobStatus == JS_WaitMount))
+               {
                   waiting = true;
                   break;
                }
@@ -2132,7 +2451,7 @@ bool open_client_db(UAContext *ua)
    /* Try for client keyword */
    i = find_arg_with_value(ua, NT_("client"));
    if (i >= 0) {
-      if (!acl_access_ok(ua, Client_ACL, ua->argv[i])) {
+      if (!acl_access_client_ok(ua, ua->argv[i], JT_BACKUP_RESTORE)) {
          ua->error_msg(_("No authorization for Client \"%s\"\n"), ua->argv[i]);
          return false;
       }
@@ -2183,6 +2502,11 @@ bool open_client_db(UAContext *ua)
 bool open_db(UAContext *ua)
 {
    bool mult_db_conn;
+
+   /* With a restricted console, we can't share a SQL connection */
+   if (ua->cons) {
+      ua->force_mult_db_connections = true;
+   }
 
    /* The force_mult_db_connections is telling us if we modify the
     * private or the shared link
@@ -2242,7 +2566,24 @@ bool open_db(UAContext *ua)
    } else {
       ua->shared_db = ua->db;
    }
+   /* With a restricted console, the DB backend should know restrictions about
+    * Pool, Job, etc...
+    */
+   if (ua->cons) {
+      ua->db->set_acl(ua->jcr, DB_ACL_JOB, ua->cons->ACL_lists[Job_ACL]);
+      ua->db->set_acl(ua->jcr, DB_ACL_CLIENT, ua->cons->ACL_lists[Client_ACL]);
+      ua->db->set_acl(ua->jcr, DB_ACL_POOL, ua->cons->ACL_lists[Pool_ACL]);
+      ua->db->set_acl(ua->jcr, DB_ACL_FILESET, ua->cons->ACL_lists[FileSet_ACL]);
 
+      /* For RestoreClient and BackupClient, we take also in account the Client list */
+      ua->db->set_acl(ua->jcr, DB_ACL_RCLIENT,
+                      ua->cons->ACL_lists[Client_ACL],
+                      ua->cons->ACL_lists[RestoreClient_ACL]);
+
+      ua->db->set_acl(ua->jcr, DB_ACL_BCLIENT,
+                      ua->cons->ACL_lists[Client_ACL],
+                      ua->cons->ACL_lists[BackupClient_ACL]);
+   }
    if (!ua->api) {
       ua->send_msg(_("Using Catalog \"%s\"\n"), ua->catalog->name());
    }

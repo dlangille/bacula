@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -29,17 +29,19 @@
 #include "jcr.h"
 
 
-#ifdef HAVE_CONIO
+#if defined(HAVE_CONIO)
 #include "conio.h"
 //#define CONIO_FIX 1
-#else
+#else /* defined(HAVE_READLINE) || "DUMB" */
 #define con_init(x)
 #define con_term()
 #define con_set_zed_keys();
-#define trapctlc()
-#define clrbrk()
-#define usrbrk() 0
 #endif
+
+void trapctlc();
+void clrbrk();
+int usrbrk();
+static int brkflg = 0;              /* set on user break */
 
 #if defined(HAVE_WIN32)
 #define isatty(fd) (fd==0)
@@ -51,7 +53,6 @@
 
 /* Imported functions */
 int authenticate_director(BSOCK *dir, DIRRES *director, CONRES *cons);
-extern bool parse_cons_config(CONFIG *config, const char *configfile, int exit_code);
 
 /* Forward referenced functions */
 static void terminate_console(int sig);
@@ -98,6 +99,7 @@ static int echocmd(FILE *input, BSOCK *UA_sock);
 static int timecmd(FILE *input, BSOCK *UA_sock);
 static int sleepcmd(FILE *input, BSOCK *UA_sock);
 static int execcmd(FILE *input, BSOCK *UA_sock);
+static int putfilecmd(FILE *input, BSOCK *UA_sock);
 
 #ifdef HAVE_READLINE
 static int eolcmd(FILE *input, BSOCK *UA_sock);
@@ -121,6 +123,8 @@ PROG_COPYRIGHT
 "Usage: bconsole [-s] [-c config_file] [-d debug_level]\n"
 "       -D <dir>    select a Director\n"
 "       -l          list Directors defined\n"
+"       -L          list Consoles defined\n"
+"       -C <cons>   select a console\n"
 "       -c <file>   set configuration file to file\n"
 "       -d <nn>     set debug level to <nn>\n"
 "       -dt         print timestamp in debug output\n"
@@ -180,6 +184,7 @@ static struct cmdstruct commands[] = {
  { N_("echo"),       echocmd,      _("echo command string")},
  { N_("exec"),       execcmd,      _("execute an external command")},
  { N_("exit"),       quitcmd,      _("exit = quit")},
+ { N_("putfile"),    putfilecmd,   _("send a file to the director")},
  { N_("zed_keys"),   zed_keyscmd,  _("zed_keys = use zed keys instead of bash keys")},
  { N_("help"),       helpcmd,      _("help listing")},
 #ifdef HAVE_READLINE
@@ -224,6 +229,39 @@ static int do_a_command(FILE *input, BSOCK *UA_sock)
    return stat;
 }
 
+/* When getting .api command, we can ignore some signals, so we set
+ * api_mode=true
+ */
+static bool api_mode=false;
+
+static bool ignore_signal(int stat, BSOCK *s)
+{
+   /* Not in API mode */
+   if (!api_mode) {
+      return false;
+   }
+
+   /* not a signal */
+   if (stat != -1) {
+      return false;
+   }
+
+   /* List signal that should not stop the read loop */
+   Dmsg1(100, "Got signal %s\n", bnet_sig_to_ascii(s->msglen));
+   switch(s->msglen) {
+   case BNET_CMD_BEGIN:
+   case BNET_CMD_FAILED:        /* might want to print **ERROR** */
+   case BNET_CMD_OK:            /* might want to print **OK** */
+   case BNET_MSGS_PENDING:
+      return true;
+   default:
+      break;
+   }
+
+   /* The signal should break the read loop */
+   return false;
+}
+
 static void read_and_process_input(FILE *input, BSOCK *UA_sock)
 {
    const char *prompt = "*";
@@ -241,7 +279,7 @@ static void read_and_process_input(FILE *input, BSOCK *UA_sock)
       }
       if (tty_input) {
          stat = get_cmd(input, prompt, UA_sock, 30);
-         if (usrbrk() == 1) {
+         if (usrbrk() >= 1) {
             clrbrk();
          }
          if (usrbrk()) {
@@ -288,12 +326,18 @@ static void read_and_process_input(FILE *input, BSOCK *UA_sock)
          }
          stop_bsock_timer(tid);
       }
+      if (strncasecmp(UA_sock->msg, ".api", 4) == 0) {
+         api_mode = true;
+      }
       if (strcasecmp(UA_sock->msg, ".quit") == 0 || strcasecmp(UA_sock->msg, ".exit") == 0) {
          break;
       }
       tid = start_bsock_timer(UA_sock, timeout);
       while (1) {
          stat = UA_sock->recv();
+         if (ignore_signal(stat, UA_sock)) {
+            continue;
+         }
 
          if (stat < 0) {
             break;
@@ -775,15 +819,8 @@ wait_for_data(int fd, int sec)
 #if defined(HAVE_WIN32)
    return 1;
 #else
-   fd_set fdset;
-   struct timeval tv;
-
-   tv.tv_sec = sec;
-   tv.tv_usec = 0;
    for ( ;; ) {
-      FD_ZERO(&fdset);
-      FD_SET((unsigned)fd, &fdset);
-      switch(select(fd + 1, &fdset, NULL, NULL, &tv)) {
+      switch(fd_wait_data(fd, WAIT_READ, sec, 0)) {
       case 0:                         /* timeout */
          return 0;
       case -1:
@@ -863,6 +900,33 @@ again:
 
 #endif /* ! HAVE_READLINE */
 
+/* Routine to return true if user types break */
+int usrbrk()
+{
+   return brkflg;
+}
+
+/* Clear break flag */
+void clrbrk()
+{
+   brkflg = 0;
+}
+
+/* Interrupt caught here */
+static void sigintcatcher(int sig)
+{
+   brkflg++;
+   if (brkflg > 3) {
+      terminate_console(sig);
+   }
+   signal(SIGINT, sigintcatcher);
+}
+
+/* Trap Ctl-C */
+void trapctlc()
+{
+   signal(SIGINT, sigintcatcher);
+}
 
 static int console_update_history(const char *histfile)
 {
@@ -902,7 +966,8 @@ static int console_init_history(const char *histfile)
    return ret;
 }
 
-static bool select_director(const char *director, DIRRES **ret_dir, CONRES **ret_cons)
+static bool select_director(const char *director, const char *console,
+                            DIRRES **ret_dir, CONRES **ret_cons)
 {
    int numcon=0, numdir=0;
    int i=0, item=0;
@@ -981,12 +1046,22 @@ try_again:
    /* Look for a console linked to this director */
    for (i=0; i<numcon; i++) {
       cons = (CONRES *)GetNextRes(R_CONSOLE, (RES *)cons);
-      if (cons->director && strcasecmp(cons->director, dir->hdr.name) == 0) {
+      if (console) {
+         if (strcmp(cons->hdr.name, console) == 0) {
+            break;
+         }
+      } else if (cons->director && strcasecmp(cons->director, dir->hdr.name) == 0) {
          break;
       }
       if (i == (numcon - 1)) {
          cons = NULL;
       }
+   }
+
+   if (cons == NULL && console != NULL) {
+      UnlockRes();
+      senditf(_("Can't find %s in Console list\n"), console);
+      return 0;
    }
 
    /* Look for the first non-linked console */
@@ -1023,7 +1098,8 @@ int main(int argc, char *argv[])
 {
    int ch;
    char *director = NULL;
-   bool list_directors=false;
+   char *console = NULL;
+   bool list_directors=false, list_consoles=false;
    bool no_signals = false;
    bool test_config = false;
    JCR jcr;
@@ -1040,13 +1116,25 @@ int main(int argc, char *argv[])
    working_directory = "/tmp";
    args = get_pool_memory(PM_FNAME);
 
-   while ((ch = getopt(argc, argv, "D:lc:d:nstu:?")) != -1) {
+   while ((ch = getopt(argc, argv, "D:lc:d:nstu:?C:L")) != -1) {
       switch (ch) {
       case 'D':                    /* Director */
          if (director) {
             free(director);
          }
          director = bstrdup(optarg);
+         break;
+
+      case 'C':                    /* Console */
+         if (console) {
+            free(console);
+         }
+         console = bstrdup(optarg);
+         break;
+
+      case 'L':                    /* Console */
+         list_consoles = true;
+         test_config = true;
          break;
 
       case 'l':
@@ -1123,7 +1211,7 @@ int main(int argc, char *argv[])
       configfile = bstrdup(CONFIG_FILE);
    }
 
-   config = new_config_parser();
+   config = New(CONFIG());
    parse_cons_config(config, configfile, M_ERROR_TERM);
 
    if (init_crypto() != 0) {
@@ -1146,6 +1234,14 @@ int main(int argc, char *argv[])
       UnlockRes();
    }
 
+   if (list_consoles) {
+      LockRes();
+      foreach_res(cons, R_CONSOLE) {
+         senditf("%s\n", cons->hdr.name);
+      }
+      UnlockRes();
+   }
+
    if (test_config) {
       terminate_console(0);
       exit(0);
@@ -1157,7 +1253,7 @@ int main(int argc, char *argv[])
 
    start_watchdog();                        /* Start socket watchdog */
 
-   if (!select_director(director, &dir, &cons)) {
+   if (!select_director(director, console, &dir, &cons)) {
       terminate_console(0);
       return 1;
    }
@@ -1281,16 +1377,19 @@ static void terminate_console(int sig)
    }
    already_here = true;
    stop_watchdog();
-   config->free_resources();
-   free(config);
+   delete(config);
    config = NULL;
    cleanup_crypto();
+   free(res_head);
+   res_head = NULL;
    free_pool_memory(args);
+#if defined(HAVE_CONIO)
    if (!no_conio) {
       con_term();
    }
-#ifdef HAVE_READLINE
-   rl_restore_state(NULL);
+#elif defined(HAVE_READLINE)
+   rl_cleanup_after_signal();
+#else /* !HAVE_CONIO && !HAVE_READLINE */
 #endif
    (void)WSACleanup();               /* Cleanup Windows sockets */
    lmgr_cleanup_main();
@@ -1473,15 +1572,30 @@ static int execcmd(FILE *input, BSOCK *UA_sock)
    char line[5000];
    int stat;
    int wait = 0;
+   char *cmd;
 
    if (argc > 3) {
       sendit(_("Too many arguments. Enclose command in double quotes.\n"));
       return 1;
    }
+
+   /* old syntax */
    if (argc == 3) {
       wait = atoi(argk[2]);
    }
-   bpipe = open_bpipe(argk[1], wait, "r");
+   cmd = argk[1];
+
+   /* handle cmd=XXXX and wait=XXXX */
+   for (int i=1; i<argc; i++) {
+      if (strcmp(argk[i], "cmd") == 0) {
+         cmd = argv[i];
+      }
+      if (strcmp(argk[i], "wait") == 0) {
+         wait = atoi(argv[i]);
+      }
+   }
+
+   bpipe = open_bpipe(cmd, wait, "r");
    if (!bpipe) {
       berrno be;
       senditf(_("Cannot popen(\"%s\", \"r\"): ERR=%s\n"),
@@ -1533,6 +1647,59 @@ static int sleepcmd(FILE *input, BSOCK *UA_sock)
 {
    if (argc > 1) {
       sleep(atoi(argk[1]));
+   }
+   return 1;
+}
+
+/* @putfile key /path/to/file
+ *
+ * The Key parameter is needed to use the file on the director side.
+ */
+static int putfilecmd(FILE *input, BSOCK *UA_sock)
+{
+   int i = 0;
+   const char *key = "putfile";
+   const char *fname;
+   FILE *fp;
+
+   if (argc != 3) {
+      sendit("Usage: @putfile key file\n");
+      return 1;
+   }
+
+   key = argk[1];
+   fname = argk[2];
+
+   if (!key || !fname) {
+      senditf("Syntax error in @putfile command\n");
+      return 1;
+   }
+
+   fp = fopen(fname, "r");
+   if (!fp) {
+      berrno be;
+      senditf("Unable to open %s. ERR=%s\n", fname, be.bstrerror(errno));
+      return 1;
+   }
+
+   UA_sock->fsend(".putfile key=\"%s\"", key);
+
+   /* Just read the file and send it to the director */
+   while (!feof(fp)) {
+      i = fread(UA_sock->msg, 1, sizeof_pool_memory(UA_sock->msg) - 1, fp);
+      if (i > 0) {
+         UA_sock->msg[i] = 0;
+         UA_sock->msglen = i;
+         UA_sock->send();
+      }
+   }
+
+   UA_sock->signal(BNET_EOD);
+   fclose(fp);
+
+   /* Get the file name associated */
+   while (UA_sock->recv() > 0) {
+      senditf("%s", UA_sock->msg);
    }
    return 1;
 }

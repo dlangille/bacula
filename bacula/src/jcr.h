@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -58,6 +58,9 @@
 #define JT_MIGRATE               'g'  /* Migration Job */
 #define JT_SCAN                  'S'  /* Scan Job */
 
+/* Used to handle ClientAcl in various commands, not stored in the DB */
+#define JT_BACKUP_RESTORE        '*'  /* Backup or Restore Job */
+
 /* Job Status. Some of these are stored in the DB */
 #define JS_Canceled              'A'  /* canceled by user */
 #define JS_Blocked               'B'  /* blocked */
@@ -86,9 +89,10 @@
 #define JS_WaitDevice            'q'  /* Queued waiting for device */
 #define JS_WaitStoreRes          's'  /* Waiting for storage resource */
 #define JS_WaitStartTime         't'  /* Waiting for start time */
+#define JS_CloudUpload           'u'  /* Cloud upload */
+#define JS_CloudDownload         'w'  /* Cloud download */
 
-
-/* Migration selection types */
+/* Migration selection types. Do not change the order. */
 enum {
    MT_SMALLEST_VOL = 1,
    MT_OLDEST_VOL,
@@ -109,18 +113,20 @@ enum {
 
 #define job_waiting(jcr) \
  (jcr->job_started &&    \
-  (jcr->JobStatus == JS_WaitFD       || \
-   jcr->JobStatus == JS_WaitSD       || \
-   jcr->JobStatus == JS_WaitMedia    || \
-   jcr->JobStatus == JS_WaitMount    || \
-   jcr->JobStatus == JS_WaitStoreRes || \
-   jcr->JobStatus == JS_WaitJobRes   || \
-   jcr->JobStatus == JS_WaitClientRes|| \
-   jcr->JobStatus == JS_WaitMaxJobs  || \
-   jcr->JobStatus == JS_WaitPriority || \
-   jcr->SDJobStatus == JS_WaitMedia  || \
-   jcr->SDJobStatus == JS_WaitMount  || \
-   jcr->SDJobStatus == JS_WaitDevice || \
+  (jcr->JobStatus == JS_WaitFD          || \
+   jcr->JobStatus == JS_WaitSD          || \
+   jcr->JobStatus == JS_WaitMedia       || \
+   jcr->JobStatus == JS_WaitMount       || \
+   jcr->JobStatus == JS_WaitStoreRes    || \
+   jcr->JobStatus == JS_WaitJobRes      || \
+   jcr->JobStatus == JS_WaitClientRes   || \
+   jcr->JobStatus == JS_WaitMaxJobs     || \
+   jcr->JobStatus == JS_WaitPriority    || \
+   jcr->SDJobStatus == JS_WaitMedia     || \
+   jcr->SDJobStatus == JS_WaitMount     || \
+   jcr->SDJobStatus == JS_WaitDevice    || \
+   jcr->SDJobStatus == JS_CloudUpload   || \
+   jcr->SDJobStatus == JS_CloudDownload || \
    jcr->SDJobStatus == JS_WaitMaxJobs))
 
 
@@ -145,6 +151,7 @@ struct bpContext;
 
 
 #ifdef FILE_DAEMON
+class VSSClient;
 class htable;
 class XACL;
 class snapshot_manager;
@@ -305,7 +312,10 @@ public:
    POOLMEM *comment;                  /* Comment for this Job */
    int64_t max_bandwidth;             /* Bandwidth limit for this Job */
    htable *path_list;                 /* Directory list (used by findlib) */
-
+   int     job_uid;                   /* UID used during job session */
+   char   *job_user;                  /* Specific permission for a job */
+   char   *job_group;                 /* Specific permission for a job */
+   POOLMEM *StatusErrMsg;             /* Error message displayed in the job report */
    uint32_t getErrors() { return JobErrors + SDErrors; }; /* Get error count */
 
    /* Daemon specific part of JCR */
@@ -402,6 +412,7 @@ public:
    bool RescheduleIncompleteJobs;     /* set if incomplete can be rescheduled */
    bool use_all_JobIds;               /* Use all jobids present in command line */
    bool sd_client;                    /* This job runs as SD client */
+   bool dummy_jobmedia;               /* Dummy JobMedia written */
 #endif /* DIRECTOR_DAEMON */
 
 
@@ -450,6 +461,7 @@ public:
    uint64_t base_size;                /* compute space saved with base job */
    utime_t snapshot_retention;        /* Snapshot retention (from director) */
    snapshot_manager *snap_mgr;        /* Snapshot manager */
+   VSSClient *pVSSClient;             /* VSS handler */
 #endif /* FILE_DAEMON */
 
 
@@ -496,6 +508,7 @@ public:
    bool Resched;                      /* Job may be rescheduled */
    bool bscan_insert_jobmedia_records; /*Bscan: needs to insert job media records */
    bool sd_client;                    /* Set if acting as client */
+   bool use_new_match_all;            /* TODO: Remove when the match_bsr() will be well tested */
 
    /* Parmaters for Open Read Session */
    BSR *bsr;                          /* Bootstrap record -- has everything */

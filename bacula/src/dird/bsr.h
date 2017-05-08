@@ -1,8 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2015 Kern Sibbald
-   Copyright (C) 2002-2014 Free Software Foundation Europe e.V.
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -18,21 +17,19 @@
    Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
- *
  *   Bootstrap Record header file
  *
  *      BSR (bootstrap record) handling routines split from
  *        ua_restore.c July MMIII
  *
  *     Kern Sibbald, July MMII
- *
  */
 
 
 
 /* FileIndex entry in restore bootstrap record */
 struct RBSR_FINDEX {
-   RBSR_FINDEX *next;
+   rblink  link;
    int32_t findex;
    int32_t findex2;
 };
@@ -46,12 +43,15 @@ struct RBSR_FINDEX {
  *    on which the Job is stored to the BSR.
  */
 struct RBSR {
-   RBSR *next;                        /* next JobId */
+   rblink link;
    JobId_t JobId;                     /* JobId this bsr */
    uint32_t VolSessionId;
    uint32_t VolSessionTime;
    int      VolCount;                 /* Volume parameter count */
    VOL_PARAMS *VolParams;             /* Volume, start/end file/blocks */
-   RBSR_FINDEX *fi;                   /* File indexes this JobId */
-   char *fileregex;                   /* Only restore files matching regex */
+   rblist *fi_list;                   /* File indexes this JobId */
+   char   *fileregex;                 /* Only restore files matching regex */
+
+   /* If we extend an existing fi, keep the memory for the next insert */
+   RBSR_FINDEX *m_fi;
 };

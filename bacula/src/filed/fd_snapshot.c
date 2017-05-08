@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2015 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -271,16 +271,6 @@ void close_snapshot_backup_session(JCR *jcr)
       jcr->snap_mgr = NULL;
    }
 }
-
-/* Special cmd_parser subclass to not look after plugin
- * names when decoding the line
- */
-class arg_parser: public cmd_parser
-{
-public:
-   arg_parser(): cmd_parser() { use_name = false; };
-   virtual ~arg_parser() {};
-};
 
 class snapshot;
 

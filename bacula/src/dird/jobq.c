@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2015 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -153,7 +153,7 @@ struct wait_pkt {
  *  this routine is only used for jobs started from the console
  *  for which the user explicitly specified a start time. Otherwise
  *  most jobs are put into the job queue only when their
- *  scheduled time arives.
+ *  scheduled time arrives.
  */
 extern "C"
 void *sched_wait(void *arg)
@@ -191,9 +191,10 @@ void *sched_wait(void *arg)
    return NULL;
 }
 
-/* Procedure to update the Client->NumConcurrentJobs */
+/* Procedure to update the client->NumConcurrentJobs */
 static void update_client_numconcurrentjobs(JCR *jcr, int val)
 {
+   int num;
    if (!jcr->client) {
       return;
    }
@@ -205,12 +206,13 @@ static void update_client_numconcurrentjobs(JCR *jcr, int val)
    case JT_ADMIN:
       break;
    case JT_BACKUP:
-      if (jcr->no_client_used()) {
+   /* Fall through wanted */
+   default:
+      if (jcr->no_client_used() || jcr->wasVirtualFull) {
          break;
       }
-   /* Failback wanted */
-   default:
-      jcr->client->NumConcurrentJobs += val;
+      num = jcr->client->getNumConcurrentJobs();
+      jcr->client->setNumConcurrentJobs(num + val);
       break;
    }
 }
@@ -482,10 +484,12 @@ void *jobq_server(void *arg)
           *  put into the ready queue.
           */
          if (jcr->acquired_resource_locks) {
+            int num;
             dec_read_store(jcr);
             dec_write_store(jcr);
             update_client_numconcurrentjobs(jcr, -1);
-            jcr->job->NumConcurrentJobs--;
+            num = jcr->job->getNumConcurrentJobs() - 1;
+            jcr->job->setNumConcurrentJobs(num);
             jcr->acquired_resource_locks = false;
          }
 
@@ -635,16 +639,18 @@ static bool reschedule_job(JCR *jcr, jobq_t *jq, jobq_item_t *je)
    /* Basic condition is that more reschedule times remain */
    if (jcr->job->RescheduleTimes == 0 ||
        jcr->reschedule_count < jcr->job->RescheduleTimes) {
-      resched =
-         /* Check for incomplete jobs */
-         (jcr->RescheduleIncompleteJobs &&
-          jcr->is_incomplete() && jcr->is_JobType(JT_BACKUP) &&
-          !(jcr->HasBase||jcr->is_JobLevel(L_BASE))) ||
+
+      /* Check for incomplete jobs */
+      if (jcr->is_incomplete()) {
+         resched = (jcr->RescheduleIncompleteJobs && jcr->is_JobType(JT_BACKUP) &&
+                    !(jcr->HasBase||jcr->is_JobLevel(L_BASE)));
+      } else {
          /* Check for failed jobs */
-         (jcr->job->RescheduleOnError &&
-          !jcr->is_JobStatus(JS_Terminated) &&
-          !jcr->is_JobStatus(JS_Canceled) &&
-          jcr->is_JobType(JT_BACKUP));
+         resched = (jcr->job->RescheduleOnError &&
+                    !jcr->is_JobStatus(JS_Terminated) &&
+                    !jcr->is_JobStatus(JS_Canceled) &&
+                    jcr->is_JobType(JT_BACKUP));
+      }
    }
    if (resched) {
        char dt[50], dt2[50];
@@ -794,7 +800,7 @@ static bool acquire_resources(JCR *jcr)
    if (jcr->rstore) {
       Dmsg1(200, "Rstore=%s\n", jcr->rstore->name());
       if (!inc_read_store(jcr)) {
-         Dmsg1(200, "Fail rncj=%d\n", jcr->rstore->NumConcurrentJobs);
+         Dmsg1(200, "Fail rncj=%d\n", jcr->rstore->getNumConcurrentJobs());
          jcr->setJobStatus(JS_WaitStoreRes);
          return false;
       }
@@ -802,14 +808,15 @@ static bool acquire_resources(JCR *jcr)
 
    if (jcr->wstore) {
       Dmsg1(200, "Wstore=%s\n", jcr->wstore->name());
-      if (jcr->wstore->NumConcurrentJobs < jcr->wstore->MaxConcurrentJobs) {
-         jcr->wstore->NumConcurrentJobs++;
-         Dmsg1(200, "Inc wncj=%d\n", jcr->wstore->NumConcurrentJobs);
+      int num = jcr->wstore->getNumConcurrentJobs();
+      if (num < jcr->wstore->MaxConcurrentJobs) {
+         Dmsg1(200, "Inc wncj=%d\n", num + 1);
+         jcr->wstore->setNumConcurrentJobs(num + 1);
       } else if (jcr->rstore) {
          dec_read_store(jcr);
          skip_this_jcr = true;
       } else {
-         Dmsg1(200, "Fail wncj=%d\n", jcr->wstore->NumConcurrentJobs);
+         Dmsg1(200, "Fail wncj=%d\n", num);
          skip_this_jcr = true;
       }
    }
@@ -819,7 +826,7 @@ static bool acquire_resources(JCR *jcr)
    }
 
    if (jcr->client) {
-      if (jcr->client->NumConcurrentJobs < jcr->client->MaxConcurrentJobs) {
+      if (jcr->client->getNumConcurrentJobs() < jcr->client->MaxConcurrentJobs) {
          update_client_numconcurrentjobs(jcr, 1);
       } else {
          /* Back out previous locks */
@@ -829,8 +836,10 @@ static bool acquire_resources(JCR *jcr)
          return false;
       }
    }
-   if (jcr->job->NumConcurrentJobs < jcr->job->MaxConcurrentJobs) {
-      jcr->job->NumConcurrentJobs++;
+   if (jcr->job->getNumConcurrentJobs() < jcr->job->MaxConcurrentJobs) {
+      int num;
+      num = jcr->job->getNumConcurrentJobs() + 1;
+      jcr->job->setNumConcurrentJobs(num);
    } else {
       /* Back out previous locks */
       dec_write_store(jcr);
@@ -853,13 +862,17 @@ static pthread_mutex_t rstore_mutex = PTHREAD_MUTEX_INITIALIZER;
 bool inc_read_store(JCR *jcr)
 {
    P(rstore_mutex);
-   if (jcr->rstore->NumConcurrentJobs < jcr->rstore->MaxConcurrentJobs &&
+   int num = jcr->rstore->getNumConcurrentJobs();
+   int numread = jcr->rstore->getNumConcurrentReadJobs();
+   if (num < jcr->rstore->MaxConcurrentJobs &&
        (jcr->getJobType() == JT_RESTORE ||
-        jcr->rstore->MaxConcurrentReadJobs == 0 ||
-        jcr->rstore->NumConcurrentReadJobs < jcr->rstore->MaxConcurrentReadJobs)) {
-      jcr->rstore->NumConcurrentReadJobs++;
-      jcr->rstore->NumConcurrentJobs++;
-      Dmsg1(200, "Inc rncj=%d\n", jcr->rstore->NumConcurrentJobs);
+        numread == 0 ||
+        numread < jcr->rstore->MaxConcurrentReadJobs)) {
+      num++;
+      numread++;
+      jcr->rstore->setNumConcurrentReadJobs(numread);
+      jcr->rstore->setNumConcurrentJobs(num);
+      Dmsg1(200, "Inc rncj=%d\n", num);
       V(rstore_mutex);
       return true;
    }
@@ -871,20 +884,20 @@ void dec_read_store(JCR *jcr)
 {
    if (jcr->rstore) {
       P(rstore_mutex);
-      jcr->rstore->NumConcurrentReadJobs--;    /* back out rstore */
-      jcr->rstore->NumConcurrentJobs--;        /* back out rstore */
-      Dmsg1(200, "Dec rncj=%d\n", jcr->rstore->NumConcurrentJobs);
+      int numread = jcr->rstore->getNumConcurrentReadJobs() - 1;
+      int num = jcr->rstore->getNumConcurrentJobs() - 1;
+      jcr->rstore->setNumConcurrentReadJobs(numread);
+      jcr->rstore->setNumConcurrentJobs(num);
+      Dmsg1(200, "Dec rncj=%d\n", num);
       V(rstore_mutex);
-      ASSERT(jcr->rstore->NumConcurrentReadJobs >= 0);
-      ASSERT(jcr->rstore->NumConcurrentJobs >= 0);
    }
 }
 
 static void dec_write_store(JCR *jcr)
 {
    if (jcr->wstore) {
-      jcr->wstore->NumConcurrentJobs--;
-      Dmsg1(200, "Dec wncj=%d\n", jcr->wstore->NumConcurrentJobs);
-      ASSERT(jcr->wstore->NumConcurrentJobs >= 0);
+      int num = jcr->wstore->getNumConcurrentJobs() - 1;
+      Dmsg1(200, "Dec wncj=%d\n", num);
+      jcr->wstore->setNumConcurrentJobs(num);
    }
 }

@@ -1,8 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2015 Kern Sibbald
-   Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -12,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -169,12 +168,30 @@ extern "C" {
 #include "baconfig.h"
 #include "lib/lib.h"
 
-#if defined(HAVE_WIN32)
-#include "winapi.h"
-#include "winhost.h"
-#else
-#include "host.h"
+/* manually enable feature that you want to test in DEVELOPER mode*/
+#ifdef DEVELOPER
 #endif
+
+#ifdef DDE_EXTRA_CHECKS
+const bool have_dde_extra_check = true;
+#else
+const bool have_dde_extra_check = false;
+#endif
+/*
+ * For wx-console compiles, we undo some Bacula defines.
+ *  This prevents conflicts between wx-Widgets and Bacula.
+ *  In wx-console files that malloc or free() Bacula structures
+ *  config/resources and interface to the Bacula libraries,
+ *  you must use bmalloc() and bfree().
+ */
+#ifdef HAVE_WXCONSOLE
+#undef New
+#undef _
+#undef free
+#undef malloc
+#endif
+
+#include "host.h"
 
 #ifndef HAVE_ZLIB_H
 #undef HAVE_LIBZ                      /* no good without headers */

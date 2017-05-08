@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -21,7 +21,6 @@
  *   Reqests/commands from the Director are handled in dircmd.c
  *
  *   Kern Sibbald, December 2000
- *
  */
 
 #include "bacula.h"                   /* pull in global headers */
@@ -30,16 +29,17 @@
 static const int dbglvl = 200;
 
 /* Requests sent to the Director */
-static char Find_media[]   = "CatReq Job=%s FindMedia=%d pool_name=%s media_type=%s vol_type=%d\n";
-static char Get_Vol_Info[] = "CatReq Job=%s GetVolInfo VolName=%s write=%d\n";
-static char Update_media[] = "CatReq Job=%s UpdateMedia VolName=%s"
+static char Find_media[]   = "CatReq JobId=%ld FindMedia=%d pool_name=%s media_type=%s vol_type=%d\n";
+static char Get_Vol_Info[] = "CatReq JobId=%ld GetVolInfo VolName=%s write=%d\n";
+static char Update_media[] = "CatReq JobId=%ld UpdateMedia VolName=%s"
    " VolJobs=%u VolFiles=%u VolBlocks=%u VolBytes=%s VolABytes=%s"
    " VolHoleBytes=%s VolHoles=%u VolMounts=%u"
    " VolErrors=%u VolWrites=%u MaxVolBytes=%s EndTime=%s VolStatus=%s"
    " Slot=%d relabel=%d InChanger=%d VolReadTime=%s VolWriteTime=%s"
-   " VolFirstWritten=%s VolType=%u\n";
-static char Create_jobmedia[] = "CatReq Job=%s CreateJobMedia\n";
-static char FileAttributes[] = "UpdCat Job=%s FileAttributes ";
+   " VolFirstWritten=%s VolType=%u VolParts=%d VolCloudParts=%d"
+   " LastPartBytes=%lld Enabled=%d\n";
+static char Create_jobmedia[] = "CatReq JobId=%ld CreateJobMedia\n";
+static char FileAttributes[] = "UpdCat JobId=%ld FileAttributes ";
 
 /* Responses received from the Director */
 static char OK_media[] = "1000 OK VolName=%127s VolJobs=%u VolFiles=%lu"
@@ -49,7 +49,8 @@ static char OK_media[] = "1000 OK VolName=%127s VolJobs=%u VolFiles=%lu"
    " MaxVolBytes=%lld VolCapacityBytes=%lld VolStatus=%20s"
    " Slot=%ld MaxVolJobs=%lu MaxVolFiles=%lu InChanger=%ld"
    " VolReadTime=%lld VolWriteTime=%lld EndFile=%lu EndBlock=%lu"
-   " VolType=%lu LabelType=%ld MediaId=%lld ScratchPoolId=%lld\n";
+   " VolType=%lu LabelType=%ld MediaId=%lld ScratchPoolId=%lld"
+   " VolParts=%d VolCloudParts=%d LastPartBytes=%lld Enabled=%d\n";
 
 
 static char OK_create[] = "1000 OK CreateJobMedia\n";
@@ -58,7 +59,7 @@ static bthread_mutex_t vol_info_mutex = BTHREAD_MUTEX_PRIORITY(PRIO_SD_VOL_INFO)
 
 #ifdef needed
 
-static char Device_update[] = "DevUpd Job=%s device=%s "
+static char Device_update[] = "DevUpd JobId=%ld device=%s "
    "append=%d read=%d num_writers=%d "
    "open=%d labeled=%d offline=%d "
    "reserved=%d max_writers=%d "
@@ -92,7 +93,7 @@ bool dir_update_device(JCR *jcr, DEVICE *dev)
       pm_strcpy(ChangerName, "*");
    }
    ok = dir->fsend(Device_update,
-      jcr->Job,
+      jcr->JobId,
       dev_name.c_str(),
       dev->can_append()!=0,
       dev->can_read()!=0, dev->num_writers,
@@ -120,7 +121,7 @@ bool dir_update_changer(JCR *jcr, AUTOCHANGER *changer)
    bash_spaces(MediaType);
    /* This is mostly to indicate that we are here */
    ok = dir->fsend(Device_update,
-      jcr->Job,
+      jcr->JobId,
       dev_name.c_str(),         /* Changer name */
       0, 0, 0,                  /* append, read, num_writers */
       0, 0, 0,                  /* is_open, is_labeled, offline */
@@ -138,11 +139,48 @@ bool dir_update_changer(JCR *jcr, AUTOCHANGER *changer)
 #endif
 
 
+static AskDirHandler *askdir_handler = NULL; /* must be true when inside a "btools" */
+
+/*
+ * btools must call this function, to modify behavior of some functions here
+ */
+AskDirHandler *init_askdir_handler(AskDirHandler *new_askdir_handler)
+{
+   AskDirHandler *old = askdir_handler;
+   askdir_handler = new_askdir_handler;
+   return old;
+}
+
+/*
+ * Alternate function used by btools
+ */
+bool AskDirHandler::dir_ask_sysop_to_mount_volume(DCR *dcr, bool /*writing*/)
+{
+   DEVICE *dev = dcr->dev;
+   fprintf(stderr, _("Mount Volume \"%s\" on device %s and press return when ready: "),
+      dcr->VolumeName, dev->print_name());
+   dev->close(dcr);
+   getchar();
+   return true;
+}
+
+bool AskDirHandler::dir_get_volume_info(DCR *dcr, const char *VolumeName, enum get_vol_info_rw  writing)
+{
+   Dmsg0(100, "Fake dir_get_volume_info\n");
+   dcr->setVolCatName(VolumeName);
+   Dmsg2(500, "Vol=%s VolType=%d\n", dcr->getVolCatName(), dcr->VolCatInfo.VolCatType);
+   return 1;
+}
+
 /**
  * Send current JobStatus to Director
  */
 bool dir_send_job_status(JCR *jcr)
 {
+   if (askdir_handler) {
+      return askdir_handler->dir_send_job_status(jcr);
+   }
+
    return jcr->sendJobStatus();
 }
 
@@ -166,6 +204,7 @@ static bool do_get_volume_info(DCR *dcr)
     BSOCK *dir = jcr->dir_bsock;
     VOLUME_CAT_INFO vol;
     int n;
+    int32_t Enabled;
     int32_t InChanger;
 
     dcr->setVolCatInfo(false);
@@ -175,7 +214,6 @@ static bool do_get_volume_info(DCR *dcr)
        return false;
     }
     memset(&vol, 0, sizeof(vol));
-    Dmsg1(dbglvl, "<dird %s", dir->msg);
     n = sscanf(dir->msg, OK_media, vol.VolCatName,
                &vol.VolCatJobs, &vol.VolCatFiles,
                &vol.VolCatBlocks, &vol.VolCatAmetaBytes,
@@ -186,8 +224,11 @@ static bool do_get_volume_info(DCR *dcr)
                &vol.Slot, &vol.VolCatMaxJobs, &vol.VolCatMaxFiles,
                &InChanger, &vol.VolReadTime, &vol.VolWriteTime,
                &vol.EndFile, &vol.EndBlock, &vol.VolCatType,
-               &vol.LabelType, &vol.VolMediaId, &vol.VolScratchPoolId);
-    if (n != 26) {
+               &vol.LabelType, &vol.VolMediaId, &vol.VolScratchPoolId,
+               &vol.VolCatParts, &vol.VolCatCloudParts,
+               &vol.VolLastPartBytes, &Enabled);
+    Dmsg2(dbglvl, "<dird n=%d %s", n, dir->msg);
+    if (n != 30) {
        Dmsg1(dbglvl, "get_volume_info failed: ERR=%s", dir->msg);
        /*
         * Note, we can get an error here either because there is
@@ -199,17 +240,19 @@ static bool do_get_volume_info(DCR *dcr)
        return false;
     }
     vol.InChanger = InChanger;        /* bool in structure */
+    vol.VolEnabled = Enabled;         /* bool in structure */
     vol.is_valid = true;
-    vol.VolCatBytes = vol.VolCatAmetaBytes;
+    vol.VolCatBytes = vol.VolCatAmetaBytes + vol.VolCatAdataBytes;
     unbash_spaces(vol.VolCatName);
     bstrncpy(dcr->VolumeName, vol.VolCatName, sizeof(dcr->VolumeName));
     dcr->VolCatInfo = vol;            /* structure assignment */
 
-    Dmsg2(dbglvl, "do_reqest_vol_info return true slot=%d Volume=%s\n",
-          vol.Slot, vol.VolCatName);
-    Dmsg3(dbglvl, "Dir returned VolCatAmetaBytes=%lld Status=%s Vol=%s\n",
-       vol.VolCatAmetaBytes,
-       vol.VolCatStatus, vol.VolCatName);
+    Dmsg3(dbglvl, "do_reqest_vol_info return true slot=%d Volume=%s MediaId=%lld\n",
+          dcr->VolCatInfo.Slot, dcr->VolCatInfo.VolCatName, dcr->VolCatInfo.VolMediaId);
+    Dmsg5(dbglvl, "Dir returned VolCatAmetaBytes=%lld VolCatAdataBytes=%lld Status=%s Vol=%s MediaId=%lld\n",
+       dcr->VolCatInfo.VolCatAmetaBytes, dcr->VolCatInfo.VolCatAdataBytes,
+       dcr->VolCatInfo.VolCatStatus, dcr->VolCatInfo.VolCatName,
+       dcr->VolCatInfo.VolMediaId);
     return true;
 }
 
@@ -224,15 +267,21 @@ static bool do_get_volume_info(DCR *dcr)
  *
  *          Volume information returned in dcr->VolCatInfo
  */
-bool dir_get_volume_info(DCR *dcr, enum get_vol_info_rw writing)
+bool dir_get_volume_info(DCR *dcr,
+                         const char *VolumeName,
+                         enum get_vol_info_rw writing)
 {
+   if (askdir_handler) {
+      return askdir_handler->dir_get_volume_info(dcr, VolumeName, writing);
+   }
+
    JCR *jcr = dcr->jcr;
    BSOCK *dir = jcr->dir_bsock;
 
    P(vol_info_mutex);
-   dcr->setVolCatName(dcr->VolumeName);
+   dcr->setVolCatName(VolumeName);
    bash_spaces(dcr->getVolCatName());
-   dir->fsend(Get_Vol_Info, jcr->Job, dcr->getVolCatName(),
+   dir->fsend(Get_Vol_Info, jcr->JobId, dcr->getVolCatName(),
       writing==GET_VOL_INFO_FOR_WRITE?1:0);
    Dmsg1(dbglvl, ">dird %s", dir->msg);
    unbash_spaces(dcr->getVolCatName());
@@ -257,6 +306,11 @@ bool dir_get_volume_info(DCR *dcr, enum get_vol_info_rw writing)
  */
 bool dir_find_next_appendable_volume(DCR *dcr)
 {
+    /* SD tools setup a handler because they have no connection to Dir */
+    if (askdir_handler) {
+       return askdir_handler->dir_find_next_appendable_volume(dcr);
+    }
+
     JCR *jcr = dcr->jcr;
     BSOCK *dir = jcr->dir_bsock;
     bool rtn;
@@ -278,7 +332,7 @@ bool dir_find_next_appendable_volume(DCR *dcr)
     for (int vol_index=1;  vol_index < 30; vol_index++) {
        bash_spaces(dcr->media_type);
        bash_spaces(dcr->pool_name);
-       dir->fsend(Find_media, jcr->Job, vol_index, dcr->pool_name, dcr->media_type,
+       dir->fsend(Find_media, jcr->JobId, vol_index, dcr->pool_name, dcr->media_type,
                   dcr->dev->dev_type);
        unbash_spaces(dcr->media_type);
        unbash_spaces(dcr->pool_name);
@@ -291,11 +345,17 @@ bool dir_find_next_appendable_volume(DCR *dcr)
              Dmsg1(dbglvl, "Got same vol = %s\n", lastVolume);
              break;
           }
+          /* If VolCatAdataBytes, we have ALIGNED_DEV */
+          if (dcr->VolCatInfo.VolCatType == 0 && dcr->VolCatInfo.VolCatAdataBytes != 0) {
+             dcr->VolCatInfo.VolCatType = B_ALIGNED_DEV;
+          }
           /*
-           * If we have VolType and we are disk or ameta, the VolType must match
+           * If we have VolType and we are disk or aligned, the VolType must match
            */
+          /* ***FIXME*** find better way to handle voltype */
           if (dcr->VolCatInfo.VolCatType != 0 &&
-              (dcr->dev->dev_type == B_FILE_DEV) &&
+              (dcr->dev->dev_type == B_FILE_DEV || dcr->dev->dev_type == B_ALIGNED_DEV || 
+               dcr->dev->dev_type == B_CLOUD_DEV) &&
                dcr->dev->dev_type != (int)dcr->VolCatInfo.VolCatType) {
              Dmsg2(000, "Skip vol. Wanted VolType=%d Got=%d\n", dcr->dev->dev_type, dcr->VolCatInfo.VolCatType);
              continue;
@@ -352,64 +412,82 @@ get_out:
  * back to the director. The information comes from the
  * dev record.
  */
-bool dir_update_volume_info(DCR *dcr, bool label, bool update_LastWritten)
+bool dir_update_volume_info(DCR *dcr, bool label, bool update_LastWritten,
+                            bool use_dcr)
 {
+   if (askdir_handler) {
+      return askdir_handler->dir_update_volume_info(dcr, label, update_LastWritten, use_dcr);
+   }
+
    JCR *jcr = dcr->jcr;
    BSOCK *dir = jcr->dir_bsock;
    DEVICE *dev = dcr->ameta_dev;
-   VOLUME_CAT_INFO *vol;
+   VOLUME_CAT_INFO vol;
    char ed1[50], ed2[50], ed3[50], ed4[50], ed5[50], ed6[50], ed7[50], ed8[50];
    int InChanger;
    bool ok = false;
    POOL_MEM VolumeName;
 
-   /* If system job, do not update catalog */
-   if (jcr->getJobType() == JT_SYSTEM) {
+   /* If system job, do not update catalog, except if we explicitly force it. */
+   if (jcr->getJobType() == JT_SYSTEM && 
+       !dcr->force_update_volume_info) {
       return true;
-   }
-
-   vol = &dev->VolCatInfo;
-   if (vol->VolCatName[0] == 0) {
-      Jmsg0(jcr, M_FATAL, 0, _("NULL Volume name. This shouldn't happen!!!\n"));
-      Pmsg0(000, _("NULL Volume name. This shouldn't happen!!!\n"));
-      return false;
    }
 
    /* Lock during Volume update */
    P(vol_info_mutex);
    dev->Lock_VolCatInfo();
-   Dmsg3(100, "Update cat VolBytes=%lld Status=%s Vol=%s\n",
-      vol->VolCatAmetaBytes, vol->VolCatStatus, vol->VolCatName);
+
+   if (use_dcr) {
+      vol = dcr->VolCatInfo;        /* structure assignment */
+   } else {
+      vol = dev->VolCatInfo;        /* structure assignment */
+   }
+
+   /* This happens when nothing to update after fixup_device ... */
+   if (vol.VolCatName[0] == 0) {
+      goto bail_out;
+   }
+   Dmsg4(100, "Update cat VolBytes=%lld VolABytes=%lld Status=%s Vol=%s\n",
+      vol.VolCatAmetaBytes, vol.VolCatAdataBytes, vol.VolCatStatus, vol.VolCatName);
    /* Just labeled or relabeled the tape */
    if (label) {
       dev->setVolCatStatus("Append");
    }
 // if (update_LastWritten) {
-      vol->VolLastWritten = time(NULL);
+      vol.VolLastWritten = time(NULL);
 // }
-   pm_strcpy(VolumeName, vol->VolCatName);
+   pm_strcpy(VolumeName, vol.VolCatName);
    bash_spaces(VolumeName);
-   InChanger = vol->InChanger;
-   vol->VolCatHoleBytes = 0;
-
-   /* Set device type where this Volume used */
-   if (vol->VolCatType == 0) {
-      vol->VolCatType = dev->dev_type;
+   InChanger = vol.InChanger;
+   /* Insanity test */
+   if (vol.VolCatHoleBytes > (((uint64_t)2)<<60)) {
+      Pmsg1(010, "VolCatHoleBytes too big: %lld. Reset to zero.\n",
+         vol.VolCatHoleBytes);
+      vol.VolCatHoleBytes = 0;
    }
-   dir->fsend(Update_media, jcr->Job,
-      VolumeName.c_str(), vol->VolCatJobs, vol->VolCatFiles,
-      vol->VolCatBlocks, edit_uint64(vol->VolCatAmetaBytes, ed1),
-      edit_uint64(vol->VolCatAdataBytes, ed2),
-      edit_uint64(vol->VolCatHoleBytes, ed3),
-      vol->VolCatHoles, vol->VolCatMounts, vol->VolCatErrors,
-      vol->VolCatWrites, edit_uint64(vol->VolCatMaxBytes, ed4),
-      edit_uint64(vol->VolLastWritten, ed5),
-      vol->VolCatStatus, vol->Slot, label,
+   /* Set device type where this Volume used */
+   if (vol.VolCatType == 0) {
+      vol.VolCatType = dev->dev_type;
+   }
+   dir->fsend(Update_media, jcr->JobId,
+      VolumeName.c_str(), vol.VolCatJobs, vol.VolCatFiles,
+      vol.VolCatBlocks, edit_uint64(vol.VolCatAmetaBytes, ed1),
+      edit_uint64(vol.VolCatAdataBytes, ed2),
+      edit_uint64(vol.VolCatHoleBytes, ed3),
+      vol.VolCatHoles, vol.VolCatMounts, vol.VolCatErrors,
+      vol.VolCatWrites, edit_uint64(vol.VolCatMaxBytes, ed4),
+      edit_uint64(vol.VolLastWritten, ed5),
+      vol.VolCatStatus, vol.Slot, label,
       InChanger,                      /* bool in structure */
-      edit_int64(vol->VolReadTime, ed6),
-      edit_int64(vol->VolWriteTime, ed7),
-      edit_uint64(vol->VolFirstWritten, ed8),
-      vol->VolCatType);
+      edit_int64(vol.VolReadTime, ed6),
+      edit_int64(vol.VolWriteTime, ed7),
+      edit_uint64(vol.VolFirstWritten, ed8),
+      vol.VolCatType,
+      vol.VolCatParts,
+      vol.VolCatCloudParts,
+      vol.VolLastPartBytes,
+      vol.VolEnabled);
     Dmsg1(100, ">dird %s", dir->msg);
 
    /* Do not lock device here because it may be locked from label */
@@ -422,29 +500,31 @@ bool dir_update_volume_info(DCR *dcr, bool label, bool update_LastWritten)
       if (!do_get_volume_info(dcr)) {
          Jmsg(jcr, M_FATAL, 0, "%s", jcr->errmsg);
          Dmsg2(dbglvl, _("Didn't get vol info vol=%s: ERR=%s"),
-            vol->VolCatName, jcr->errmsg);
+            vol.VolCatName, jcr->errmsg);
          goto bail_out;
       }
       Dmsg1(100, "get_volume_info() %s", dir->msg);
-      /* Update dev Volume info in case something changed (e.g. expired) */
-      vol->Slot = dev->VolCatInfo.Slot;
-      bstrncpy(vol->VolCatStatus, dcr->VolCatInfo.VolCatStatus, sizeof(vol->VolCatStatus));
 
-      dcr->VolCatInfo.VolCatAdataBytes = dev->VolCatInfo.VolCatAdataBytes;
-      dcr->VolCatInfo.VolCatAmetaBytes = dev->VolCatInfo.VolCatAmetaBytes;
-      dcr->VolCatInfo.VolCatHoleBytes = dev->VolCatInfo.VolCatHoleBytes;
-      dcr->VolCatInfo.VolCatHoles = dev->VolCatInfo.VolCatHoles;
-      dcr->VolCatInfo.VolCatPadding = dev->VolCatInfo.VolCatPadding;
-      dcr->VolCatInfo.VolCatAmetaPadding = dev->VolCatInfo.VolCatAmetaPadding;
-      dcr->VolCatInfo.VolCatAdataPadding = dev->VolCatInfo.VolCatAdataPadding;
-      dcr->VolCatInfo.VolCatFiles = dev->VolCatInfo.VolCatFiles;
-      dcr->VolCatInfo.VolCatBytes = dev->VolCatInfo.VolCatBytes;
-      dcr->VolCatInfo.VolCatMounts = dev->VolCatInfo.VolCatMounts;
-      dcr->VolCatInfo.VolCatJobs = dev->VolCatInfo.VolCatJobs;
-      dcr->VolCatInfo.VolCatFiles = dev->VolCatInfo.VolCatFiles;
-      dcr->VolCatInfo.VolCatRecycles = dev->VolCatInfo.VolCatRecycles;
-      dcr->VolCatInfo.VolCatWrites = dev->VolCatInfo.VolCatWrites;
-      dcr->VolCatInfo.VolCatReads = dev->VolCatInfo.VolCatReads;
+      /* Update dev Volume info in case something changed (e.g. expired) */
+      if (!use_dcr) {
+         dcr->VolCatInfo.Slot = dev->VolCatInfo.Slot;
+         bstrncpy(dcr->VolCatInfo.VolCatStatus, dev->VolCatInfo.VolCatStatus, sizeof(vol.VolCatStatus));
+         dcr->VolCatInfo.VolCatAdataBytes = dev->VolCatInfo.VolCatAdataBytes;
+         dcr->VolCatInfo.VolCatAmetaBytes = dev->VolCatInfo.VolCatAmetaBytes;
+         dcr->VolCatInfo.VolCatHoleBytes = dev->VolCatInfo.VolCatHoleBytes;
+         dcr->VolCatInfo.VolCatHoles = dev->VolCatInfo.VolCatHoles;
+         dcr->VolCatInfo.VolCatPadding = dev->VolCatInfo.VolCatPadding;
+         dcr->VolCatInfo.VolCatAmetaPadding = dev->VolCatInfo.VolCatAmetaPadding;
+         dcr->VolCatInfo.VolCatAdataPadding = dev->VolCatInfo.VolCatAdataPadding;
+         dcr->VolCatInfo.VolCatFiles = dev->VolCatInfo.VolCatFiles;
+         dcr->VolCatInfo.VolCatBytes = dev->VolCatInfo.VolCatBytes;
+         dcr->VolCatInfo.VolCatMounts = dev->VolCatInfo.VolCatMounts;
+         dcr->VolCatInfo.VolCatJobs = dev->VolCatInfo.VolCatJobs;
+         dcr->VolCatInfo.VolCatFiles = dev->VolCatInfo.VolCatFiles;
+         dcr->VolCatInfo.VolCatRecycles = dev->VolCatInfo.VolCatRecycles;
+         dcr->VolCatInfo.VolCatWrites = dev->VolCatInfo.VolCatWrites;
+         dcr->VolCatInfo.VolCatReads = dev->VolCatInfo.VolCatReads;
+      }
       ok = true;
    }
 
@@ -456,13 +536,15 @@ bail_out:
 
 struct JOBMEDIA_ITEM {
    dlink link;
+   int64_t  VolMediaId;
+   uint64_t StartAddr;
+   uint64_t EndAddr;
    uint32_t VolFirstIndex;
    uint32_t VolLastIndex;
    uint32_t StartFile;
    uint32_t EndFile;
    uint32_t StartBlock;
    uint32_t EndBlock;
-   int64_t  VolMediaId;
 };
 
 void create_jobmedia_queue(JCR *jcr)
@@ -473,17 +555,20 @@ void create_jobmedia_queue(JCR *jcr)
 
 bool flush_jobmedia_queue(JCR *jcr)
 {
+   if (askdir_handler) {
+      return askdir_handler->flush_jobmedia_queue(jcr);
+   }
+
    JOBMEDIA_ITEM *item;
    BSOCK *dir = jcr->dir_bsock;
    bool ok;
 
    if (!jcr->jobmedia_queue || jcr->jobmedia_queue->size() == 0) {
-      //Dmsg0(000, "No jobmedia_queue\n");
       return true;     /* should never happen */
    }
    Dmsg1(400, "=== Flush jobmedia queue = %d\n", jcr->jobmedia_queue->size());
 
-   dir->fsend(Create_jobmedia, jcr->Job);
+   dir->fsend(Create_jobmedia, jcr->JobId);
    foreach_dlist(item, jcr->jobmedia_queue) {
       ok = dir->fsend("%u %u %u %u %u %u %lld\n",
          item->VolFirstIndex, item->VolLastIndex,
@@ -510,11 +595,16 @@ bool flush_jobmedia_queue(JCR *jcr)
    return true;
 }
 
+
 /*
  * After writing a Volume, create the JobMedia record.
  */
 bool dir_create_jobmedia_record(DCR *dcr, bool zero)
 {
+   if (askdir_handler) {
+      return askdir_handler->dir_create_jobmedia_record(dcr, zero);
+   }
+
    JCR *jcr = dcr->jcr;
    BSOCK *dir = jcr->dir_bsock;
    JOBMEDIA_ITEM *item;
@@ -524,15 +614,16 @@ bool dir_create_jobmedia_record(DCR *dcr, bool zero)
       return true;
    }
    if (!zero && dcr->VolLastIndex == 0) {
-      Dmsg7(dbglvl, "JobMedia Vol=%s wrote=%d MediaId=%d FI=%d LI=%d StartBlock=%d EndBlock=%d Suppressed\n",
+      Pmsg7(0/*dbglvl*/, "Discard: JobMedia Vol=%s wrote=%d MediaId=%lld FI=%lu LI=%lu StartAddr=%lld EndAddr=%lld\n",
          dcr->VolumeName, dcr->WroteVol, dcr->VolMediaId,
-         dcr->VolFirstIndex, dcr->VolLastIndex, dcr->StartBlock, dcr->EndBlock);
+         dcr->VolFirstIndex, dcr->VolLastIndex, dcr->StartAddr, dcr->EndAddr);
       return true;                    /* nothing written to the Volume */
    }
-   if (!zero && dcr->StartFile == dcr->EndFile && dcr->EndBlock < dcr->StartBlock) {
-      Dmsg7(dbglvl, "JobMedia Vol=%s wrote=%d MediaId=%d FI=%d LI=%d StartBlock=%d EndBlock=%d Suppressed\n",
+   /* Throw out records where the start address is bigger than the end */
+   if (!zero && dcr->StartAddr > dcr->EndAddr) {
+      Pmsg7(0/*dbglvl*/, "Discard: JobMedia Vol=%s wrote=%d MediaId=%lld FI=%lu LI=%lu StartAddr=%lld EndAddr=%lld\n",
          dcr->VolumeName, dcr->WroteVol, dcr->VolMediaId,
-         dcr->VolFirstIndex, dcr->VolLastIndex, dcr->StartBlock, dcr->EndBlock);
+         dcr->VolFirstIndex, dcr->VolLastIndex, dcr->StartAddr, dcr->EndAddr);
       return true;
    }
 
@@ -543,10 +634,10 @@ bool dir_create_jobmedia_record(DCR *dcr, bool zero)
 
    /* Throw out records where FI is zero -- i.e. nothing done */
    if (!zero && dcr->VolFirstIndex == 0 &&
-        (dcr->StartBlock != 0 || dcr->EndBlock != 0)) {
-      Dmsg7(dbglvl, "Discard: JobMedia Vol=%s wrote=%d MediaId=%d FI=%d LI=%d StartBlock=%d EndBlock=%d Suppressed\n",
+        (dcr->StartAddr != 0 || dcr->EndAddr != 0)) {
+      Pmsg7(0/*dbglvl*/, "Discard: JobMedia Vol=%s wrote=%d MediaId=%lld FI=%lu LI=%lu StartAddr=%lld EndAddr=%lld\n",
          dcr->VolumeName, dcr->WroteVol, dcr->VolMediaId,
-         dcr->VolFirstIndex, dcr->VolLastIndex, dcr->StartBlock, dcr->EndBlock);
+         dcr->VolFirstIndex, dcr->VolLastIndex, dcr->StartAddr, dcr->EndAddr);
       return true;
    }
 
@@ -565,23 +656,25 @@ bool dir_create_jobmedia_record(DCR *dcr, bool zero)
       Dmsg1(100, "======= Set FI=%ld\n", dcr->VolLastIndex);
    }
 
-   Dmsg7(100, "JobMedia Vol=%s wrote=%d MediaId=%d FI=%d LI=%d StartBlock=%d EndBlock=%d Wrote\n",
+   Dmsg7(100, "Queue JobMedia Vol=%s wrote=%d MediaId=%lld FI=%lu LI=%lu StartAddr=%lld EndAddr=%lld\n",
       dcr->VolumeName, dcr->WroteVol, dcr->VolMediaId,
-      dcr->VolFirstIndex, dcr->VolLastIndex, dcr->StartBlock, dcr->EndBlock);
-   dcr->WroteVol = false;
+      dcr->VolFirstIndex, dcr->VolLastIndex, dcr->StartAddr, dcr->EndAddr);
    item = (JOBMEDIA_ITEM *)malloc(sizeof(JOBMEDIA_ITEM));
    if (zero) {
       item->VolFirstIndex = item->VolLastIndex = 0;
       item->StartFile = item->EndFile = 0;
       item->StartBlock = item->EndBlock = 0;
+      item->StartAddr = item->EndAddr = 0;
       item->VolMediaId = dcr->VolMediaId;
    } else {
       item->VolFirstIndex = dcr->VolFirstIndex;
       item->VolLastIndex = dcr->VolLastIndex;
-      item->StartFile = dcr->StartFile;
-      item->EndFile = dcr->EndFile;
-      item->StartBlock = dcr->StartBlock;
-      item->EndBlock = dcr->EndBlock;
+      item->StartFile = (uint32_t)(dcr->StartAddr >> 32);
+      item->EndFile = (uint32_t)(dcr->EndAddr >> 32);
+      item->StartBlock = (uint32_t)dcr->StartAddr;
+      item->EndBlock = (uint32_t)dcr->EndAddr;
+      item->StartAddr = dcr->StartAddr;
+      item->EndAddr = dcr->EndAddr;
       item->VolMediaId = dcr->VolMediaId;
    }
    jcr->jobmedia_queue->append(item);
@@ -591,13 +684,13 @@ bool dir_create_jobmedia_record(DCR *dcr, bool zero)
    }
 
    dcr->VolFirstIndex = dcr->VolLastIndex = 0;
-   dcr->StartFile = dcr->EndFile = 0;
-   dcr->StartBlock = dcr->EndBlock = 0;
+   dcr->StartAddr = dcr->EndAddr = 0;
+   dcr->VolMediaId = 0;
+   dcr->WroteVol = false;
    return ok;
 }
 
-
-/**
+/*
  * Update File Attribute data
  * We do the following:
  *  1. expand the bsock buffer to be large enough
@@ -615,6 +708,10 @@ bool dir_create_jobmedia_record(DCR *dcr, bool zero)
  */
 bool dir_update_file_attributes(DCR *dcr, DEV_RECORD *rec)
 {
+   if (askdir_handler) {
+      return askdir_handler->dir_update_file_attributes(dcr, rec);
+   }
+
    JCR *jcr = dcr->jcr;
    BSOCK *dir = jcr->dir_bsock;
    ser_declare;
@@ -626,7 +723,7 @@ bool dir_update_file_attributes(DCR *dcr, DEV_RECORD *rec)
    dir->msg = check_pool_memory_size(dir->msg, sizeof(FileAttributes) +
                 MAX_NAME_LENGTH + sizeof(DEV_RECORD) + rec->data_len + 1);
    dir->msglen = bsnprintf(dir->msg, sizeof(FileAttributes) +
-                MAX_NAME_LENGTH + 1, FileAttributes, jcr->Job);
+                MAX_NAME_LENGTH + 1, FileAttributes, jcr->JobId);
    ser_begin(dir->msg + dir->msglen, 0);
    ser_uint32(rec->VolSessionId);
    ser_uint32(rec->VolSessionTime);
@@ -665,6 +762,10 @@ bool dir_update_file_attributes(DCR *dcr, DEV_RECORD *rec)
  */
 bool dir_ask_sysop_to_create_appendable_volume(DCR *dcr)
 {
+   if (askdir_handler) {
+      return askdir_handler->dir_ask_sysop_to_create_appendable_volume(dcr);
+   }
+
    int stat = W_TIMEOUT;
    DEVICE *dev = dcr->dev;
    JCR *jcr = dcr->jcr;
@@ -737,13 +838,12 @@ bool dir_ask_sysop_to_create_appendable_volume(DCR *dcr)
    }
 
 get_out:
-   dev->poll = false;
    jcr->sendJobStatus(JS_Running);
    Dmsg0(dbglvl, "leave dir_ask_sysop_to_create_appendable_volume\n");
    return true;
 }
 
-/**
+/*
  *   Request to mount specific Volume
  *
  *   Entered with device blocked and dcr->VolumeName is desired
@@ -757,6 +857,10 @@ get_out:
  */
 bool dir_ask_sysop_to_mount_volume(DCR *dcr, bool write_access)
 {
+   if (askdir_handler) {
+      return askdir_handler->dir_ask_sysop_to_mount_volume(dcr, write_access);
+   }
+
    int stat = W_TIMEOUT;
    DEVICE *dev = dcr->dev;
    JCR *jcr = dcr->jcr;
@@ -774,18 +878,7 @@ bool dir_ask_sysop_to_mount_volume(DCR *dcr, bool write_access)
       return false;
    }
 
-   for ( ;; ) {
-      if (job_canceled(jcr)) {
-         Mmsg(dev->errmsg, _("Job %s canceled while waiting for mount on Storage Device %s.\n"),
-              jcr->Job, dev->print_name());
-         dev->poll = false;
-         return false;
-      }
-
-      if (dev->is_dvd()) {
-         dev->unmount(0);
-      }
-
+   for ( ; job_canceled(jcr); ) {
       /*
        * If we are not polling, and the wait timeout or the
        *   user explicitly did a mount, send him the message.
@@ -850,6 +943,13 @@ bool dir_ask_sysop_to_mount_volume(DCR *dcr, bool write_access)
    }
 
 get_out:
+   if (job_canceled(jcr)) {
+      Mmsg(dev->errmsg, _("Job %s canceled while waiting for mount on Storage Device %s.\n"),
+           jcr->Job, dev->print_name());
+      dev->poll = false;
+      return false;
+   }
+
    jcr->sendJobStatus(JS_Running);
    Dmsg0(100, "leave dir_ask_sysop_to_mount_volume\n");
    return true;

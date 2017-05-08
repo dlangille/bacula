@@ -61,7 +61,7 @@ int query_cmd(UAContext *ua, const char *cmd)
    if (!open_client_db(ua)) {
       goto bail_out;
    }
-   if ((fd=fopen(query_file, "rb")) == NULL) {
+   if ((fd=bfopen(query_file, "rb")) == NULL) {
       berrno be;
       ua->error_msg(_("Could not open %s: ERR=%s\n"), query_file,
          be.bstrerror());

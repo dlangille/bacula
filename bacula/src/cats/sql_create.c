@@ -1,8 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2015 Kern Sibbald
-   Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -21,12 +20,11 @@
  * Bacula Catalog Database Create record interface routines
  *
  *    Written by Kern Sibbald, March 2000
- *
  */
 
 #include  "bacula.h"
 
-static const int dbglevel = 100;
+static const int dbglevel = 160;
 
 #if HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL
  
@@ -131,7 +129,7 @@ bool BDB::bdb_create_jobmedia_record(JCR *jcr, JOBMEDIA_DBR *jm)
    } else {
       /* Worked, now update the Media record with the EndFile and EndBlock */
       Mmsg(cmd,
-           "UPDATE Media SET EndFile=%u, EndBlock=%u WHERE MediaId=%u",
+           "UPDATE Media SET EndFile=%lu, EndBlock=%lu WHERE MediaId=%lu",
            jm->EndFile, jm->EndBlock, jm->MediaId);
       if (!UpdateDB(jcr, cmd, false)) {
          Mmsg2(&errmsg, _("Update Media record %s failed: ERR=%s\n"), cmd,
@@ -151,7 +149,7 @@ bool BDB::bdb_create_jobmedia_record(JCR *jcr, JOBMEDIA_DBR *jm)
 bool BDB::bdb_create_pool_record(JCR *jcr, POOL_DBR *pr)
 {
    bool stat;
-   char ed1[30], ed2[30], ed3[50], ed4[50], ed5[50];
+   char ed1[30], ed2[30], ed3[50], ed4[50], ed5[50], ed6[50];
    char esc_name[MAX_ESCAPE_NAME_LENGTH];
    char esc_lf[MAX_ESCAPE_NAME_LENGTH];
 
@@ -178,8 +176,8 @@ bool BDB::bdb_create_pool_record(JCR *jcr, POOL_DBR *pr)
 "INSERT INTO Pool (Name,NumVols,MaxVols,UseOnce,UseCatalog,"
 "AcceptAnyVolume,AutoPrune,Recycle,VolRetention,VolUseDuration,"
 "MaxVolJobs,MaxVolFiles,MaxVolBytes,PoolType,LabelType,LabelFormat,"
-"RecyclePoolId,ScratchPoolId,ActionOnPurge) "
-"VALUES ('%s',%u,%u,%d,%d,%d,%d,%d,%s,%s,%u,%u,%s,'%s',%d,'%s',%s,%s,%d)",
+"RecyclePoolId,ScratchPoolId,ActionOnPurge,CacheRetention) "
+"VALUES ('%s',%u,%u,%d,%d,%d,%d,%d,%s,%s,%u,%u,%s,'%s',%d,'%s',%s,%s,%d,%s)",
                   esc_name,
                   pr->NumVols, pr->MaxVols,
                   pr->UseOnce, pr->UseCatalog,
@@ -192,7 +190,8 @@ bool BDB::bdb_create_pool_record(JCR *jcr, POOL_DBR *pr)
                   pr->PoolType, pr->LabelType, esc_lf,
                   edit_int64(pr->RecyclePoolId,ed4),
                   edit_int64(pr->ScratchPoolId,ed5),
-                  pr->ActionOnPurge
+                  pr->ActionOnPurge,
+                  edit_uint64(pr->CacheRetention, ed6)
       );
    Dmsg1(200, "Create Pool: %s\n", cmd);
    if ((pr->PoolId = sql_insert_autokey_record(cmd, NT_("Pool"))) == 0) {
@@ -367,7 +366,7 @@ int BDB::bdb_create_media_record(JCR *jcr, MEDIA_DBR *mr)
 {
    int stat;
    char ed1[50], ed2[50], ed3[50], ed4[50], ed5[50], ed6[50], ed7[50], ed8[50];
-   char ed9[50], ed10[50], ed11[50], ed12[50];
+   char ed9[50], ed10[50], ed11[50], ed12[50], ed13[50], ed14[50];
    struct tm tm;
    char esc_name[MAX_ESCAPE_NAME_LENGTH];
    char esc_mtype[MAX_ESCAPE_NAME_LENGTH];
@@ -396,11 +395,12 @@ int BDB::bdb_create_media_record(JCR *jcr, MEDIA_DBR *mr)
    Mmsg(cmd,
 "INSERT INTO Media (VolumeName,MediaType,MediaTypeId,PoolId,MaxVolBytes,"
 "VolCapacityBytes,Recycle,VolRetention,VolUseDuration,MaxVolJobs,MaxVolFiles,"
-"VolStatus,Slot,VolBytes,InChanger,VolReadTime,VolWriteTime,VolParts,"
+"VolStatus,Slot,VolBytes,InChanger,VolReadTime,VolWriteTime,VolType,"
+"VolParts,VolCloudParts,LastPartBytes,"
 "EndFile,EndBlock,LabelType,StorageId,DeviceId,LocationId,"
-"ScratchPoolId,RecyclePoolId,Enabled,ActionOnPurge)"
-"VALUES ('%s','%s',0,%u,%s,%s,%d,%s,%s,%u,%u,'%s',%d,%s,%d,%s,%s,%d,0,0,%d,%s,"
-"%s,%s,%s,%s,%d,%d)",
+"ScratchPoolId,RecyclePoolId,Enabled,ActionOnPurge,CacheRetention)"
+"VALUES ('%s','%s',0,%u,%s,%s,%d,%s,%s,%u,%u,'%s',%d,%s,%d,%s,%s,%d,"
+        "%d,%d,'%s',%d,%d,%d,%s,%s,%s,%s,%s,%d,%d,%s)",
           esc_name,
           esc_mtype, mr->PoolId,
           edit_uint64(mr->MaxVolBytes,ed1),
@@ -416,16 +416,22 @@ int BDB::bdb_create_media_record(JCR *jcr, MEDIA_DBR *mr)
           mr->InChanger,
           edit_int64(mr->VolReadTime, ed6),
           edit_int64(mr->VolWriteTime, ed7),
-          mr->VolType,   /* formerly VolParts */
+          mr->VolType,
+          mr->VolParts,
+          mr->VolCloudParts,
+          edit_uint64(mr->LastPartBytes, ed8),
+          mr->EndFile,
+          mr->EndBlock,
           mr->LabelType,
-          edit_int64(mr->StorageId, ed8),
-          edit_int64(mr->DeviceId, ed9),
-          edit_int64(mr->LocationId, ed10),
-          edit_int64(mr->ScratchPoolId, ed11),
-          edit_int64(mr->RecyclePoolId, ed12),
-          mr->Enabled, mr->ActionOnPurge
+          edit_int64(mr->StorageId, ed9),
+          edit_int64(mr->DeviceId, ed10),
+          edit_int64(mr->LocationId, ed11),
+          edit_int64(mr->ScratchPoolId, ed12),
+          edit_int64(mr->RecyclePoolId, ed13),
+          mr->Enabled, 
+          mr->ActionOnPurge,
+          edit_uint64(mr->CacheRetention, ed14)
           );
-
 
    Dmsg1(500, "Create Volume: %s\n", cmd);
    if ((mr->MediaId = sql_insert_autokey_record(cmd, NT_("Media"))) == 0) {
@@ -442,7 +448,7 @@ int BDB::bdb_create_media_record(JCR *jcr, MEDIA_DBR *mr)
          (void)localtime_r(&mr->LabelDate, &tm);
          strftime(dt, sizeof(dt), "%Y-%m-%d %H:%M:%S", &tm);
          Mmsg(cmd, "UPDATE Media SET LabelDate='%s' "
-              "WHERE MediaId=%d", dt, mr->MediaId);
+              "WHERE MediaId=%lu", dt, mr->MediaId);
          stat = UpdateDB(jcr, cmd, false);
       }
       /*
@@ -614,7 +620,7 @@ int BDB::bdb_create_counter_record(JCR *jcr, COUNTER_DBR *cr)
       return 1;
    }
    bdb_escape_string(jcr, esc, cr->Counter, strlen(cr->Counter));
-
+ 
    /* Must create it */
    Mmsg(cmd, insert_counter_values[bdb_get_type_index()],
         esc, cr->MinValue, cr->MaxValue, cr->CurrentValue,
@@ -802,23 +808,21 @@ bool bdb_write_batch_file_records(JCR *jcr)
       goto bail_out; 
    }
 
-   /*
-    * We have to lock tables
-    */
-   if (!db_sql_query(jcr->db_batch, batch_lock_filename_query[db_get_type_index(jcr->db_batch)], NULL, NULL)) {
+   /* We have to lock tables */
+   if (!db_sql_query(jcr->db_batch, batch_lock_filename_query[db_get_type_index(jcr->db_batch)], NULL, NULL)) { 
       Jmsg1(jcr, M_FATAL, 0, "Lock Filename table %s\n", jcr->db_batch->errmsg);
-      goto bail_out;
+      goto bail_out; 
    }
    
-   if (!db_sql_query(jcr->db_batch, batch_fill_filename_query[db_get_type_index(jcr->db_batch)], NULL, NULL)) {
+   if (!db_sql_query(jcr->db_batch, batch_fill_filename_query[db_get_type_index(jcr->db_batch)], NULL, NULL)) { 
       Jmsg1(jcr,M_FATAL,0,"Fill Filename table %s\n",jcr->db_batch->errmsg);
-      db_sql_query(jcr->db_batch, batch_unlock_tables_query[db_get_type_index(jcr->db_batch)], NULL, NULL);
-      goto bail_out;
+      db_sql_query(jcr->db_batch, batch_unlock_tables_query[db_get_type_index(jcr->db_batch)], NULL, NULL); 
+      goto bail_out; 
    }
 
-   if (!db_sql_query(jcr->db_batch, batch_unlock_tables_query[db_get_type_index(jcr->db_batch)], NULL, NULL)) {
+   if (!db_sql_query(jcr->db_batch, batch_unlock_tables_query[db_get_type_index(jcr->db_batch)], NULL, NULL)) { 
       Jmsg1(jcr, M_FATAL, 0, "Unlock Filename table %s\n", jcr->db_batch->errmsg);
-      goto bail_out;
+      goto bail_out; 
    }
    
    if (!db_sql_query(jcr->db_batch, 
@@ -828,7 +832,7 @@ bool bdb_write_batch_file_records(JCR *jcr)
       "FROM batch "
       "JOIN Path ON (batch.Path = Path.Path) "
       "JOIN Filename ON (batch.Name = Filename.Name)",
-                     NULL, NULL))
+         NULL, NULL))
    {
       Jmsg1(jcr, M_FATAL, 0, "Fill File table %s\n", jcr->db_batch->errmsg);
       goto bail_out; 
@@ -844,7 +848,7 @@ bail_out:
    return retval; 
 }
 
-/**
+/*
  * Create File record in BDB
  *
  *  In order to reduce database size, we store the File attributes,
@@ -874,8 +878,8 @@ bool BDB::bdb_create_batch_file_attributes_record(JCR *jcr, ATTR_DBR *ar)
          return false;     /* error already printed */
       }
       if (!jcr->db_batch->sql_batch_start(jcr)) {
-         Mmsg1(&errmsg, 
-              "Can't start batch mode: ERR=%s", db_strerror(jcr->db_batch));
+         Mmsg1(&errmsg,
+              "Can't start batch mode: ERR=%s", jcr->db_batch->bdb_strerror());
          Jmsg(jcr, M_FATAL, 0, "%s", errmsg);
          return false;
       }
@@ -1003,7 +1007,7 @@ int BDB::bdb_create_filename_record(JCR *jcr, ATTR_DBR *ar)
    Mmsg(cmd, "INSERT INTO Filename (Name) VALUES ('%s')", esc_name);
 
    ar->FilenameId = sql_insert_autokey_record(cmd, NT_("Filename"));
-   if (ar->FilenameId == 0) {
+   if (ar->FilenameId == 0) { 
       Mmsg2(&errmsg, _("Create db Filename record %s failed. ERR=%s\n"),
             cmd, sql_strerror());
       Jmsg(jcr, M_FATAL, 0, "%s", errmsg);

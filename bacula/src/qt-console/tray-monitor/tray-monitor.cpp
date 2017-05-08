@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,114 +11,175 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
 */
 
-#include "tray-ui.h"
-
-int doconnect(monitoritem* item);
-int docmd(monitoritem* item, const char* command);
-static int authenticate_daemon(monitoritem* item, JCR *jcr);
-/* Imported functions */
-int authenticate_director(JCR *jcr, MONITOR *monitor, DIRRES *director);
-int authenticate_file_daemon(JCR *jcr, MONITOR *monitor, CLIENT* client);
-int authenticate_storage_daemon(JCR *jcr, MONITOR *monitor, STORE* store);
-extern bool parse_tmon_config(CONFIG *config, const char *configfile, int exit_code);
-void get_list(monitoritem* item, const char *cmd, QStringList &lst);
-
-/* Dummy functions */
-int generate_daemon_event(JCR *, const char *) { return 1; }
+#include "tray-monitor.h"
+#include <QInputDialog>
+#include <QDir>
 
 /* Static variables */
-static char *configfile = NULL;
-static MONITOR *monitor;
-static JCR jcr;
-static int nitems = 0;
-static monitoritem items[32];
-static CONFIG *config;
-static TrayUI *tray;
+char *configfile = NULL;
+static MONITOR *monitor = NULL;
+static CONFIG *config = NULL;
+static TrayUI *mainwidget = NULL;
+static TSched *scheduler = NULL;
 
-/* Data received from DIR/FD/SD */
-//static char OKqstatus[]   = "%c000 OK .status\n";
-//static char DotStatusJob[] = "JobId=%d JobStatus=%c JobErrors=%d\n";
+#define CONFIG_FILE "./bacula-tray-monitor.conf"     /* default configuration file */
 
-
-void updateStatusIcon(monitoritem* item);
-void changeStatusMessage(monitoritem* item, const char *fmt,...);
-
-#define CONFIG_FILE "./tray-monitor.conf"   /* default configuration file */
+#ifdef HAVE_WIN32
+#define HOME_VAR "APPDATA"
+#define CONFIG_FILE_HOME "bacula-tray-monitor.conf" /* In $HOME */
+#else
+#define HOME_VAR "HOME"
+#define CONFIG_FILE_HOME ".bacula-tray-monitor.conf" /* In $HOME */
+#endif
 
 static void usage()
 {
    fprintf(stderr, _(
 PROG_COPYRIGHT
-"\nVersion: %s (%s) %s %s %s\n\n"
+"\n%sVersion: %s (%s) %s %s %s\n\n"
 "Usage: tray-monitor [-c config_file] [-d debug_level]\n"
 "       -c <file>     set configuration file to file\n"
 "       -d <nn>       set debug level to <nn>\n"
 "       -dt           print timestamp in debug output\n"
 "       -t            test - read configuration and exit\n"
+"       -W 0/1        force the detection of the systray\n"
 "       -?            print this message.\n"
-"\n"), 2004, VERSION, BDATE, HOST_OS, DISTNAME, DISTVER);
+"\n"), 2004, "", VERSION, BDATE, HOST_OS, DISTNAME, DISTVER);
 }
 
-int sm_line = 0;
-
-void dotest()
+void refresh_tray(TrayUI *t)
 {
-   for (int i = 0; i < nitems; i++) {
-      const char *cmd;
+   RESMON *r;
+   MONITOR *mon;
 
-      switch (items[i].type) {
-      case R_DIRECTOR:
-         cmd = ".jobs type=B";
-         tray->clearText(items[i].get_name());
-         docmd(&items[i], cmd);
-         break;
-      default:
-         break;
-      }
+   if (!t) {
+      return;
+   }
+
+   t->clearTabs();
+   if (!config) {
+      return;
+   }
+
+   mon = (MONITOR *) GetNextRes(R_MONITOR, NULL);
+   t->spinRefresh->setValue(mon?mon->RefreshInterval:60);
+
+   foreach_res(r, R_CLIENT) {
+      t->addTab(r);
+   }
+   foreach_res(r, R_DIRECTOR) {
+      t->addTab(r);
+   }
+   foreach_res(r, R_STORAGE) {
+      t->addTab(r);
    }
 }
 
-void get_list(monitoritem *item, const char *cmd, QStringList &lst)
+void display_error(const char *fmt, ...)
 {
-   int stat;
-   
-   doconnect(item);
-   item->writecmd(cmd);
-   while((stat = item->D_sock->recv()) >= 0) {
-      strip_trailing_junk(item->D_sock->msg);
-      if (*(item->D_sock->msg)) {
-         lst << QString(item->D_sock->msg);
-      }
+   va_list  arg_ptr;
+   POOL_MEM tmp(PM_MESSAGE);
+   QMessageBox msgBox;
+   int maxlen;
+
+   if (!fmt || !*fmt) {
+      return;
+   }
+
+   maxlen = tmp.size() - 1;
+   va_start(arg_ptr, fmt);
+   bvsnprintf(tmp.c_str(), maxlen, fmt, arg_ptr);
+   va_end(arg_ptr);
+
+   msgBox.setIcon(QMessageBox::Critical);
+   msgBox.setText(tmp.c_str());
+   msgBox.exec();
+}
+
+void error_handler(const char *file, int line, LEX */* lc */, const char *msg, ...)
+{
+   POOL_MEM tmp;
+   va_list arg_ptr;
+   va_start(arg_ptr, msg);
+   vsnprintf(tmp.c_str(), tmp.size(), msg, arg_ptr);
+   va_end(arg_ptr);
+   display_error("Error %s:%d %s\n", file, line, tmp.c_str());
+}
+
+int tls_pem_callback(char *buf, int size, const void * /*userdata*/)
+{
+   bool ok;
+   QString text = QInputDialog::getText(mainwidget, _("TLS PassPhrase"),
+                                        buf, QLineEdit::Normal,
+                                        QDir::home().dirName(), &ok);
+   if (ok) {
+      bstrncpy(buf, text.toUtf8().data(), size);
+      return 1;
+   } else {
+      return 0;
    }
 }
 
-void refresh_item()
+bool reload()
 {
-   for (int i = 0; i < nitems; i++) {
-      const char *cmd;
-      tray->clearText(items[i].get_name());
-      switch (items[i].type) {
-      case R_DIRECTOR:
-         cmd = "status dir";
-         break;
-      case R_CLIENT:
-         cmd = "status";
-         break;
-      case R_STORAGE:
-         cmd = "status";
-         break;          
-      default:
-         exit(1);
-         break;
-      }
-      docmd(&items[i], cmd);
+   bool displaycfg=false;
+   int  nitems = 0;
+   struct stat sp;
+
+   Dmsg0(50, "reload the configuration!\n");
+   scheduler->stop();
+   if (config) {
+      delete config;
    }
+   config = NULL;
+   monitor = NULL;
+
+   if (stat(configfile, &sp) != 0) {
+      berrno be;
+      Dmsg2(50, "Unable to find %s. ERR=%s\n", configfile, be.bstrerror());
+      displaycfg = true;
+      goto bail_out;
+   }
+
+   config = New(CONFIG());
+   if (!parse_tmon_config(config, configfile, M_ERROR)) {
+      Dmsg1(50, "Error while parsing %s\n", configfile);
+      // TODO: Display a warning message an open the configuration
+      //       window
+      displaycfg = true;
+   }
+
+   LockRes();
+   foreach_res(monitor, R_MONITOR) {
+      nitems++;
+   }
+   if (!displaycfg && nitems != 1) {
+      Mmsg(config->m_errmsg,
+           _("Error: %d Monitor resources defined in %s. "
+             "You must define one Monitor resource.\n"),
+           nitems, configfile);
+      displaycfg = true;
+   }
+   monitor = (MONITOR*)GetNextRes(R_MONITOR, (RES *)NULL);
+   UnlockRes();
+   if (displaycfg) {
+      display_error(config->m_errmsg);
+   }
+   refresh_tray(mainwidget);
+   if (monitor && monitor->command_dir) {
+      scheduler->init(monitor->command_dir);
+      scheduler->start();
+   } else {
+      Dmsg0(50, "Do not start the scheduler\n");
+   }
+bail_out:
+   return displaycfg;
 }
 
 /*********************************************************************
@@ -128,12 +189,12 @@ void refresh_item()
  */
 int main(int argc, char *argv[])
 {   
-   int ch, i, dir_index=-1;
-   bool test_config = false;
-   DIRRES* dird;
-   CLIENT* filed;
-   STORE* stored;
-
+   QApplication    app(argc, argv);
+   int ch;
+   bool test_config = false, display_cfg = false;
+   TrayUI tray;
+   TSched sched;
+   
    setlocale(LC_ALL, "");
    bindtextdomain("bacula", LOCALEDIR);
    textdomain("bacula");
@@ -142,7 +203,13 @@ int main(int argc, char *argv[])
    my_name_is(argc, argv, "tray-monitor");
    lmgr_init_thread();
    init_msg(NULL, NULL, NULL);
-   working_directory = "/tmp";
+#ifdef HAVE_WIN32
+   working_directory = getenv("TMP");
+#endif
+   if (working_directory == NULL) {
+      working_directory = "/tmp";
+   }
+   start_watchdog();
 
 #ifndef HAVE_WIN32
    struct sigaction sigignore;
@@ -152,13 +219,21 @@ int main(int argc, char *argv[])
    sigaction(SIGPIPE, &sigignore, NULL);
 #endif
 
-   while ((ch = getopt(argc, argv, "bc:d:th?f:s:")) != -1) {
+   while ((ch = getopt(argc, argv, "c:d:th?TW:")) != -1) {
       switch (ch) {
       case 'c':                    /* configuration file */
          if (configfile != NULL) {
             free(configfile);
          }
          configfile = bstrdup(optarg);
+         break;
+
+      case 'W':
+         tray.have_systray = (atoi(optarg) != 0);
+         break;
+
+      case 'T':
+         set_trace(true);
          break;
 
       case 'd':
@@ -191,283 +266,55 @@ int main(int argc, char *argv[])
       exit(1);
    }
 
+   /* Keep generated files for ourself */
+   umask(0077);
+
    if (configfile == NULL) {
-      configfile = bstrdup(CONFIG_FILE);
-   }
+      if (getenv(HOME_VAR) != NULL) {
+         int len = strlen(getenv(HOME_VAR)) + strlen(CONFIG_FILE_HOME) + 5;
+         configfile = (char *) malloc(len);
+         bsnprintf(configfile, len, "%s/%s", getenv(HOME_VAR), CONFIG_FILE_HOME);
 
-   config = new_config_parser();
-   parse_tmon_config(config, configfile, M_ERROR_TERM);
+      } else {
+         configfile = bstrdup(CONFIG_FILE);
+      }
+   }
+   Dmsg1(50, "configfile=%s\n", configfile);
 
-   LockRes();
-   nitems = 0;
-   foreach_res(monitor, R_MONITOR) {
-      nitems++;
-   }
+   // We need to initialize the scheduler before the reload() command
+   scheduler = &sched;
 
-   if (nitems != 1) {
-      Emsg2(M_ERROR_TERM, 0,
-         _("Error: %d Monitor resources defined in %s. You must define one and only one Monitor resource.\n"), nitems, configfile);
-   }
+   OSDependentInit();               /* Initialize Windows path handling */ 
+   (void)WSA_Init();                /* Initialize Windows sockets */
 
-   nitems = 0;
-   foreach_res(dird, R_DIRECTOR) {
-      dir_index=nitems;
-      items[nitems].type = R_DIRECTOR;
-      items[nitems].resource = dird;
-      items[nitems].D_sock = NULL;
-      items[nitems].state = warn;
-      items[nitems].oldstate = warn;
-      nitems++;
-   }
-   foreach_res(filed, R_CLIENT) {
-      items[nitems].type = R_CLIENT;
-      items[nitems].resource = filed;
-      items[nitems].D_sock = NULL;
-      items[nitems].state = warn;
-      items[nitems].oldstate = warn;
-      nitems++;
-   }
-   foreach_res(stored, R_STORAGE) {
-      items[nitems].type = R_STORAGE;
-      items[nitems].resource = stored;
-      items[nitems].D_sock = NULL;
-      items[nitems].state = warn;
-      items[nitems].oldstate = warn;
-      nitems++;
-   }
-   UnlockRes();
-
-   if (nitems == 0) {
-      Emsg1(M_ERROR_TERM, 0, _("No Client, Storage or Director resource defined in %s\n"
-"Without that I don't how to get status from the File, Storage or Director Daemon :-(\n"), configfile);
-   }
+   display_cfg = reload();
 
    if (test_config) {
       exit(0);
    }
+   /* If we have a systray, we always keep the application*/
+   if (tray.have_systray) {
+      app.setQuitOnLastWindowClosed(false);
 
-   (void)WSA_Init();                /* Initialize Windows sockets */
-
-   LockRes();
-   monitor = (MONITOR*)GetNextRes(R_MONITOR, (RES *)NULL);
-   UnlockRes();
-
-   if ((monitor->RefreshInterval < 1) || (monitor->RefreshInterval > 600)) {
-      Emsg2(M_ERROR_TERM, 0, _("Invalid refresh interval defined in %s\n"
-"This value must be greater or equal to 1 second and less or equal to 10 minutes (read value: %d).\n"), configfile, monitor->RefreshInterval);
+   } else {  /* Without a systray, we quit when we close */
+      app.setQuitOnLastWindowClosed(true);
    }
-
-   sm_line = 0;
-   QApplication    app(argc, argv);
-   app.setQuitOnLastWindowClosed(false);
-   tray = new TrayUI();
-   tray->setupUi(tray);
-   tray->spinRefresh->setValue(monitor->RefreshInterval);
-   if (dir_index >= 0) {
-      tray->addDirector(&items[dir_index]);
+   tray.setupUi(&tray, monitor);
+   refresh_tray(&tray);
+   mainwidget = &tray;
+   if (display_cfg) {
+      new Conf();
    }
-
-   for (i = 0; i < nitems; i++) {
-      const char *cmd;
-      tray->addTab(items[i].get_name());
-      switch (items[i].type) {
-      case R_DIRECTOR:
-         tray->addDirector(&items[i]);
-         cmd = "status dir";
-         break;
-      case R_CLIENT:
-         cmd = "status";
-         break;
-      case R_STORAGE:
-         cmd = "status";
-         break;          
-      default:
-         exit(1);
-         break;
-      }
-      docmd(&items[i], cmd);
-   }
-
-   tray->startTimer();
-
    app.exec();
-
-   for (i = 0; i < nitems; i++) {
-      if (items[i].D_sock) {
-         items[i].writecmd("quit");
-         if (items[i].D_sock) {
-            items[i].D_sock->signal(BNET_TERMINATE); /* send EOF */
-            free_bsock(items[i].D_sock);
-         }
-      }
-   }
-
-
+   sched.stop();
+   stop_watchdog();
    (void)WSACleanup();               /* Cleanup Windows sockets */
-   
-   config->free_resources();
-   free(config);
+
+   if (config) {
+      delete config;
+   }
    config = NULL;
+   bfree_and_null(configfile);
    term_msg();
    return 0;
-}
-
-static int authenticate_daemon(monitoritem* item, JCR *jcr) {
-   switch (item->type) {
-   case R_DIRECTOR:
-      return authenticate_director(jcr, monitor, (DIRRES*)item->resource);
-   case R_CLIENT:
-      return authenticate_file_daemon(jcr, monitor, (CLIENT*)item->resource);
-   case R_STORAGE:
-      return authenticate_storage_daemon(jcr, monitor, (STORE*)item->resource);
-   default:
-      printf(_("Error, currentitem is not a Client or a Storage..\n"));
-      return FALSE;
-   }
-   return false;
-}
-
-void changeStatusMessage(monitoritem*, const char *fmt,...) {
-   char buf[512];
-   va_list arg_ptr;
-
-   va_start(arg_ptr, fmt);
-   bvsnprintf(buf, sizeof(buf), (char *)fmt, arg_ptr);
-   va_end(arg_ptr);
-   tray->statusbar->showMessage(QString(buf));
-}
-
-int doconnect(monitoritem* item) 
-{
-   if (!is_bsock_open(item->D_sock)) {
-      memset(&jcr, 0, sizeof(jcr));
-
-      DIRRES* dird;
-      CLIENT* filed;
-      STORE* stored;
-
-      switch (item->type) {
-      case R_DIRECTOR:
-         dird = (DIRRES*)item->resource;
-         changeStatusMessage(item, _("Connecting to Director %s:%d"), dird->address, dird->DIRport);
-         if (!item->D_sock) {
-            item->D_sock = new_bsock();
-         }
-         item->D_sock->connect(NULL, monitor->DIRConnectTimeout, 
-                                     0, 0, _("Director daemon"), dird->address, NULL, dird->DIRport, 0);
-         jcr.dir_bsock = item->D_sock;
-         break;
-      case R_CLIENT:
-         filed = (CLIENT*)item->resource;
-         changeStatusMessage(item, _("Connecting to Client %s:%d"), filed->address, filed->FDport);
-         if (!item->D_sock) {
-            item->D_sock = new_bsock();
-         }
-         item->D_sock->connect(NULL, monitor->FDConnectTimeout, 
-                                     0, 0, _("File daemon"), filed->address, NULL, filed->FDport, 0);
-         jcr.file_bsock = item->D_sock;
-         break;
-      case R_STORAGE:
-         stored = (STORE*)item->resource;
-         changeStatusMessage(item, _("Connecting to Storage %s:%d"), stored->address, stored->SDport);
-         if (!item->D_sock) {
-            item->D_sock = new_bsock();
-         }
-         item->D_sock->connect(NULL, monitor->SDConnectTimeout, 
-                                     0, 0, _("Storage daemon"), stored->address, NULL, stored->SDport, 0);
-         jcr.store_bsock = item->D_sock;
-         break;
-      default:
-         printf(_("Error, currentitem is not a Client, a Storage or a Director..\n"));
-         return 0;
-      }
-
-      if (item->D_sock == NULL) {
-         changeStatusMessage(item, _("Cannot connect to daemon."));
-         item->state = error;
-         item->oldstate = error;
-         return 0;
-      }
-
-      if (!authenticate_daemon(item, &jcr)) {
-         item->state = error;
-         item->oldstate = error;
-         changeStatusMessage(item, _("Authentication error : %s"), item->D_sock->msg);
-         item->D_sock = NULL;
-         return 0;
-      }
-
-      switch (item->type) {
-      case R_DIRECTOR:
-         changeStatusMessage(item, _("Opened connection with Director daemon."));
-         break;
-      case R_CLIENT:
-         changeStatusMessage(item, _("Opened connection with File daemon."));
-         break;
-      case R_STORAGE:
-         changeStatusMessage(item, _("Opened connection with Storage daemon."));
-         break;
-      default:
-         printf(_("Error, currentitem is not a Client, a Storage or a Director..\n"));
-         return 0;
-         break;
-      }
-
-      if (item->type == R_DIRECTOR) { /* Read connection messages... */
-         docmd(item, ""); /* Usually invalid, but no matter */
-      }
-   }
-   return 1;
-}
-
-int docmd(monitoritem* item, const char* command) 
-{
-   int stat;
-   //qDebug() << "docmd(" << item->get_name() << "," << command << ")";
-   if (!doconnect(item)) {
-      return 0;
-   }
-
-   if (command[0] != 0)
-      item->writecmd(command);
-
-   while(1) {
-      if ((stat = item->D_sock->recv()) >= 0) {
-         strip_trailing_newline(item->D_sock->msg);
-         tray->appendText(item->get_name(), item->D_sock->msg);
-      }
-      else if (stat == BNET_SIGNAL) {
-         if (item->D_sock->msglen == BNET_EOD) {
-            // qDebug() << "<< EOD >>";
-            return 1;
-         }
-         else if (item->D_sock->msglen == BNET_SUB_PROMPT) {
-            // qDebug() << "<< PROMPT >>";
-            return 0;
-         }
-         else if (item->D_sock->msglen == BNET_HEARTBEAT) {
-            item->D_sock->signal(BNET_HB_RESPONSE);
-         }
-         else {
-            qDebug() << bnet_sig_to_ascii(item->D_sock->msglen);
-         }
-      }
-      else { /* BNET_HARDEOF || BNET_ERROR */
-         item->D_sock = NULL;
-         item->state = error;
-         item->oldstate = error;
-         changeStatusMessage(item, _("Error : BNET_HARDEOF or BNET_ERROR"));
-         //fprintf(stderr, _("<< ERROR >>\n"));
-         return 0;
-      }
-
-      if (item->D_sock->is_stop()) {
-         item->D_sock = NULL;
-         item->state = error;
-         item->oldstate = error;
-         changeStatusMessage(item, _("Error : Connection closed."));
-         //fprintf(stderr, "<< STOP >>\n");
-         return 0;            /* error or term */
-      }
-   }
 }

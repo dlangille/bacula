@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2015 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,18 +11,16 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
- *
  *   Bacula Director -- User Agent Database prune Command
  *      Applies retention periods
  *
  *     Kern Sibbald, February MMII
- *
  */
 
 #include "bacula.h"
@@ -122,7 +120,8 @@ int prunecmd(UAContext *ua, const char *cmd)
 
    switch (kw) {
    case 0:  /* prune files */
-      if (!(client = get_client_resource(ua))) {
+      /* We restrict the client list to ClientAcl, maybe something to change later */
+      if (!(client = get_client_resource(ua, JT_SYSTEM))) {
          return false;
       }
       if (find_arg_with_value(ua, "pool") >= 0) {
@@ -142,7 +141,8 @@ int prunecmd(UAContext *ua, const char *cmd)
       return true;
 
    case 1:  /* prune jobs */
-      if (!(client = get_client_resource(ua))) {
+      /* We restrict the client list to ClientAcl, maybe something to change later */
+      if (!(client = get_client_resource(ua, JT_SYSTEM))) {
          return false;
       }
       if (find_arg_with_value(ua, "pool") >= 0) {
@@ -632,7 +632,7 @@ static bool prune_expired_volumes(UAContext *ua)
    POOL_MEM query(PM_MESSAGE);
    POOL_MEM filter(PM_MESSAGE);
    alist *lst=NULL;
-   int i=0;
+   int nb=0, i=0;
    char *val;
    MEDIA_DBR mr;
 
@@ -678,17 +678,17 @@ static bool prune_expired_volumes(UAContext *ua)
    db_sql_query(ua->db, query.c_str(), db_string_list_handler, &lst);
 
    foreach_alist(val, lst) {
+      nb++;
       memset(&mr, 0, sizeof(mr));
       bstrncpy(mr.VolumeName, val, sizeof(mr.VolumeName));
       db_get_media_record(ua->jcr, ua->db, &mr);
       Mmsg(query, _("Volume \"%s\""), val);
-      Dmsg1(100, "Do prune %s\n", query.c_str());
       if (confirm_retention(ua, &mr.VolRetention, query.c_str())) {
-         Dmsg1(100, "Call Prune %s\n", query.c_str());
          prune_volume(ua, &mr);
       }
    }
-
+   ua->send_msg(_("%d expired volume%s found\n"),
+                nb, nb>1?"s":"");
    ok = true;
 
 bail_out:
@@ -722,7 +722,7 @@ bool prune_volume(UAContext *ua, MEDIA_DBR *mr)
    /* Prune only Volumes with status "Full", or "Used" */
    if (strcmp(mr->VolStatus, "Full")   == 0 ||
        strcmp(mr->VolStatus, "Used")   == 0) {
-      Dmsg2(100, "get prune list MediaId=%d Volume %s\n", (int)mr->MediaId, mr->VolumeName);
+      Dmsg2(100, "get prune list MediaId=%lu Volume %s\n", mr->MediaId, mr->VolumeName);
       count = get_prune_list_for_volume(ua, mr, &del);
       Dmsg1(100, "Num pruned = %d\n", count);
       if (count != 0) {
@@ -734,7 +734,7 @@ bool prune_volume(UAContext *ua, MEDIA_DBR *mr)
          ua->info_msg(_("Found no Job associated with the Volume \"%s\" to prune\n"),
                       mr->VolumeName);
       }
-      ok = is_volume_purged(ua, mr, false);
+      ok = is_volume_purged(ua, mr);
    }
 
    db_unlock(ua->db);
@@ -766,7 +766,7 @@ int get_prune_list_for_volume(UAContext *ua, MEDIA_DBR *mr, del_ctx *del)
    now = (utime_t)time(NULL);
    edit_int64(now-period, ed2);
    Mmsg(query, sel_JobMedia, ed1, ed2);
-   Dmsg3(200, "Now=%d period=%d now-period=%s\n", (int)now, (int)period,
+   Dmsg3(250, "Now=%d period=%d now-period=%s\n", (int)now, (int)period,
       ed2);
 
    Dmsg1(100, "Query=%s\n", query.c_str());

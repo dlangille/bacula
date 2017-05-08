@@ -1,10 +1,5 @@
 #!/bin/sh
 #
-# Copyright (C) 2000-2015 Kern Sibbald
-# License: BSD 2-Clause; see file LICENSE-FOSS
-#
-
-#
 # Run a simple backup of the Bacula build directory then copy it
 #   to another device.
 #
@@ -17,7 +12,6 @@ JobName=CopyJobSave
 
 scripts/cleanup
 scripts/copy-migration-confs
-scripts/prepare-disk-changer
 echo "${cwd}/build" >${cwd}/tmp/file-list
 sed 's/migrate/copy/g' ${cwd}/bin/bacula-dir.conf > ${cwd}/tmp/1
 sed 's/Migrate/Copy/g' ${cwd}/tmp/1 > ${cwd}/bin/bacula-dir.conf

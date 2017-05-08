@@ -1,0 +1,131 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2017 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Test of aligned volumes. It does not require running on
+#   a ZFS filesystem, but attempts to reproduce a condition
+#   where the volume and catalog sizes do not agree, and
+#   when Bacula fixes it another number of Files error occurs
+#   causing the second job to fail.
+#
+TestName="aligned-bug-8013-test"
+JobName=NightlySave
+. scripts/functions
+
+if test x$FORCE_CLOUD = xyes ; then
+   echo "\n=== Test $TestName skipped not compatible with Cloud  ==="
+   exit 0
+fi
+
+scripts/cleanup
+scripts/copy-test-confs
+cp scripts/aligned-bacula-sd.conf bin/bacula-sd.conf
+
+# install the aligned volume plugin
+#make -C build/src/plugins/sd install-aligned-plugin >/dev/null
+
+echo "${cwd}/build" >${cwd}/tmp/file-list
+
+start_test
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@output /dev/null
+messages
+@$out ${cwd}/tmp/log1.out
+label storage=File volume=Vol1
+label storage=File volume=Vol2
+label storage=File volume=Vol3
+label storage=File volume=Vol4
+label storage=File volume=Vol5
+update volume=Vol1 maxvolbytes=60M
+update volume=Vol2 maxvolbytes=60M
+update volume=Vol3 maxvolbytes=60M
+update volume=Vol4 maxvolbytes=60M
+@# Leave Vol5 with no size limit
+END_OF_DATA
+
+# do label
+run_bacula
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@output /dev/null
+messages
+@$out ${cwd}/tmp/log1.out
+setdebug level=0 hangup=100 client
+run job=$JobName level=Full yes
+setdebug level=0 hangup=0 client
+wait
+list volumes
+update volume=Vol1 volstatus="Append"
+sql
+update Media SET VolFiles=2,VolBytes=100,VolABytes=100 WHERE VolumeName='Vol1';
+
+setdebug level=15 storage=File
+list volumes
+messages
+END_OF_DATA
+
+for i in 1 2 3 4 5 ; do
+  if test "$debug" -eq 1 ; then
+     echo "Running job $i"
+  fi
+  run_bconsole
+  if test "$debug" -eq 1 ; then
+     ls -l tmp/Vol*
+     du -h tmp/Vol1.add
+  fi
+done
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@output /dev/null
+messages
+@$out ${cwd}/tmp/log1.out
+setdebug level=0 hangup=0 client
+run job=$JobName level=Full yes
+wait
+list volumes
+messages
+END_OF_DATA
+
+for i in 6 7 8 9 10; do
+  if test "$debug" -eq 1 ; then
+     echo "Running job $i"
+  fi
+  run_bconsole
+  if test "$debug" -eq 1 ; then
+     ls -l tmp/Vol*
+     du -h tmp/Vol1.add
+  fi
+done
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@# 
+@# now do a restore
+@#
+@$out ${cwd}/tmp/log2.out
+@# setdebug level=0 fd
+restore where=${cwd}/tmp/bacula-restores storage=File
+5
+mark *
+done
+yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+
+if test "$debug" -eq 1 ; then
+   ls -l tmp/Vol*
+   du -h tmp/Vol1.add
+fi
+
+sleep 2
+check_for_zombie_jobs storage=File 
+stop_bacula
+
+check_two_logs
+check_restore_diff
+end_test

@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -149,6 +149,10 @@ const char *stream_to_ascii(char *buf, int stream, int fi)
          return "contENCRYPTED-MACOS-RSRC";
       case STREAM_PLUGIN_NAME:
          return "contPLUGIN-NAME";
+      case STREAM_ADATA_BLOCK_HEADER:
+         return "contADATA-BLOCK-HEADER";
+      case STREAM_ADATA_RECORD_HEADER:
+         return "contADATA-RECORD-HEADER";
 
       default:
          sprintf(buf, "%d", -stream);
@@ -217,13 +221,24 @@ const char *stream_to_ascii(char *buf, int stream, int fi)
       return "ENCRYPTED-WIN32-COMPRESSED";
    case STREAM_ENCRYPTED_MACOS_FORK_DATA:
       return "ENCRYPTED-MACOS-RSRC";
-
+   case STREAM_ADATA_BLOCK_HEADER:
+      return "ADATA-BLOCK-HEADER";
+   case STREAM_ADATA_RECORD_HEADER:
+      return "ADATA-RECORD-HEADER";
    default:
       sprintf(buf, "%d", stream);
       return buf;
    }
 }
 
+const char *stream_to_ascii_ex(char *buf, int stream, int fi)
+{
+   if (fi < 0) {
+      return stream_to_ascii(buf, stream, fi);
+   }
+   const char *p = stream_to_ascii(buf, stream, fi);
+   return p;
+}
 /*
  * Return a new record entity
  */
@@ -241,13 +256,16 @@ DEV_RECORD *new_record(void)
 
 void empty_record(DEV_RECORD *rec)
 {
-   rec->File = rec->Block = 0;
+   rec->RecNum = 0;
+   rec->StartAddr = rec->Addr = 0;
    rec->VolSessionId = rec->VolSessionTime = 0;
    rec->FileIndex = rec->Stream = 0;
    rec->data_len = rec->remainder = 0;
-   rec->state_bits &= ~(REC_PARTIAL_RECORD|REC_BLOCK_EMPTY|REC_NO_MATCH|REC_CONTINUATION);
+   rec->state_bits &= ~(REC_PARTIAL_RECORD|REC_ADATA_EMPTY|REC_BLOCK_EMPTY|REC_NO_MATCH|REC_CONTINUATION);
+   rec->FileOffset = 0;
    rec->wstate = st_none;
    rec->rstate = st_none;
+   rec->VolumeName = NULL;
 }
 
 /*
@@ -263,6 +281,20 @@ void free_record(DEV_RECORD *rec)
    Dmsg0(950, "Data buf is freed.\n");
    free_pool_memory((POOLMEM *)rec);
    Dmsg0(950, "Leave free_record.\n");
+}
+
+void dump_record(DEV_RECORD *rec)
+{
+   char buf[32];
+   Dmsg11(100|DT_VOLUME, "Dump record %s 0x%p:\n\tStart=%lld addr=%lld #%d\n"
+         "\tVolSess: %ld:%ld\n"
+         "\tFileIndex: %ld\n"
+         "\tStream: 0x%lx\n\tLen: %ld\n\tData: %s\n",
+         rec, NPRT(rec->VolumeName),
+         rec->StartAddr, rec->Addr, rec->RecNum,
+         rec->VolSessionId, rec->VolSessionTime, rec->FileIndex,
+         rec->Stream, rec->data_len,
+         asciidump(rec->data, rec->data_len, buf, sizeof(buf)));
 }
 
 /*
@@ -294,5 +326,10 @@ bool can_write_record_to_block(DEV_BLOCK *block, DEV_RECORD *rec)
 
 uint64_t get_record_address(DEV_RECORD *rec)
 {
-   return ((uint64_t)rec->File)<<32 | rec->Block;
+     return rec->Addr;
+}
+
+uint64_t get_record_start_address(DEV_RECORD *rec)
+{
+     return rec->StartAddr;
 }

@@ -2,7 +2,7 @@
 #
 # shell script to create Bacula PostgreSQL tables
 #
-# Copyright (C) 2000-2015 Kern Sibbald
+# Copyright (C) 2000-2017 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
 # Important note: 
@@ -111,7 +111,7 @@ CREATE TABLE Job
     RealEndTime       timestamp   without time zone,
     JobTDate	      bigint	  default 0,
     VolSessionId      integer	  default 0,
-    volSessionTime    integer	  default 0,
+    VolSessionTime    integer	  default 0,
     JobFiles	      integer	  default 0,
     JobBytes	      bigint	  default 0,
     ReadBytes	      bigint	  default 0,
@@ -130,6 +130,7 @@ CREATE TABLE Job
 );
 
 CREATE INDEX job_name_idx on job (name text_pattern_ops);
+CREATE INDEX job_jobtdate_idx on job (jobtdate);
 
 -- Create a table like Job for long term statistics 
 CREATE TABLE JobHisto (LIKE Job);
@@ -188,16 +189,19 @@ CREATE TABLE media
     voljobs	      integer	  default 0,
     volfiles	      integer	  default 0,
     volblocks	      integer	  default 0,
+    volparts	      integer	  default 0,
+    volcloudparts     integer	  default 0,
     volmounts	      integer	  default 0,
     volbytes	      bigint	  default 0,
     volabytes	      bigint	  default 0,
     volapadding       bigint	  default 0,
     volholebytes      bigint	  default 0,
     volholes	      integer	  default 0,
-    volparts	      integer	  default 0,   /* Now used for VolType */
+    voltype	      integer	  default 0,
     volerrors	      integer	  default 0,
     volwrites	      bigint	  default 0,
     volcapacitybytes  bigint	  default 0,
+    lastpartbytes     bigint	  default 0,
     volstatus	      text	  not null
 	check (volstatus in ('Full','Archive','Append',
 	      'Recycle','Purged','Read-Only','Disabled',
@@ -205,6 +209,7 @@ CREATE TABLE media
     enabled	      smallint	  default 1,
     recycle	      smallint	  default 0,
     ActionOnPurge     smallint	  default 0,
+    cacheretention    bigint	  default 0,
     volretention      bigint	  default 0,
     voluseduration    bigint	  default 0,
     maxvoljobs	      integer	  default 0,
@@ -274,6 +279,7 @@ CREATE TABLE pool
     useonce	      smallint	  default 0,
     usecatalog	      smallint	  default 0,
     acceptanyvolume   smallint	  default 0,
+    cacheretention    bigint	  default 0,
     volretention      bigint	  default 0,
     voluseduration    bigint	  default 0,
     maxvoljobs	      integer	  default 0,
@@ -351,7 +357,7 @@ CREATE TABLE counters
 
 CREATE TABLE basefiles
 (
-    baseid	      serial		    not null,
+    baseid	      bigserial 	    not null,
     jobid	      integer		    not null,
     fileid	      bigint		    not null,
     fileindex	      integer			    ,
@@ -476,7 +482,7 @@ CREATE UNIQUE INDEX snapshot_idx ON Snapshot (Device text_pattern_ops,
 					      Volume text_pattern_ops,
 					      Name text_pattern_ops);
 
-INSERT INTO Version (VersionId) VALUES (15);
+INSERT INTO Version (VersionId) VALUES (16);
 
 -- Make sure we have appropriate permissions
 

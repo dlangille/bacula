@@ -61,14 +61,20 @@ case "$1" in
        daemon $DAEMON_OPTIONS @sbindir@/bacula-sd $2 ${SD_OPTIONS} -c @sysconfdir@/bacula-sd.conf
        RETVAL=$?
        echo
-       [ $RETVAL -eq 0 ] && touch @subsysdir@/bacula-sd
+       if [ $RETVAL -eq 0 ]; then
+          touch @subsysdir@/bacula-sd
+          logger -p daemon.info "bacula-sd started" >/dev/null 2>/dev/null
+       fi
        ;;
     stop)
        echo -n "Stopping Bacula Storage services: "
        killproc @sbindir@/bacula-sd
        RETVAL=$?
        echo
-       [ $RETVAL -eq 0 ] && rm -f @subsysdir@/bacula-sd
+       if [ $RETVAL -eq 0 ]; then
+          rm -f @subsysdir@/bacula-sd
+          logger -p daemon.info "bacula-sd stopped" >/dev/null 2>/dev/null
+       fi
        ;;
     restart)
        $0 stop

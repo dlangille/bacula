@@ -29,6 +29,19 @@
 /* Debug level for this source file */
 static const int dbglvl = 5000;
 
+/* 
+ * Return false if the end of the line contains anything other
+ *   than spaces, or a semicolon or a comment.
+ */
+bool lex_check_eol(LEX *lf)
+{
+   char *ch = lf->line+lf->col_no;
+   while (*ch != '\0' && *ch != '#' && B_ISSPACE(*ch) && *ch != ';') {
+      ch++;
+   }
+   return *ch == '\0' || *ch == '#' || *ch == ';';
+}
+
 /*
  * Scan to "logical" end of line. I.e. end of line,
  *   or semicolon, but stop on T_EOB (same as end of
@@ -107,6 +120,12 @@ int lex_set_error_handler_error_type(LEX *lf, int err_type)
    int old = lf->err_type;
    lf->err_type = err_type;
    return old;
+}
+
+/* Store passwords in clear text or with MD5 encoding */
+void lex_store_clear_passwords(LEX *lf)
+{
+   lf->options |= LOPT_NO_MD5;
 }
 
 /*
@@ -442,7 +461,7 @@ static uint64_t scan_pint64(LEX *lf, char *str)
 int
 lex_get_token(LEX *lf, int expect)
 {
-   int ch;
+   int ch, nch;
    int token = T_NONE;
    bool esc_next = false;
    /* Unicode files, especially on Win32, may begin with a "Byte Order Mark"
@@ -484,6 +503,12 @@ lex_get_token(LEX *lf, int expect)
          case L_EOF:
             token = T_EOF;
             Dmsg0(dbglvl, "got L_EOF set token=T_EOF\n");
+            break;
+         case '\\':
+            nch = lex_get_char(lf);
+            if (nch == ' ' || nch == '\n' || nch == '\r' || nch == L_EOL) {
+               lf->ch = L_EOL;        /* force end of line */
+            }
             break;
          case '#':
             lf->state = lex_comment;

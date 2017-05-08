@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -41,7 +41,10 @@
 #include "lib/fnmatch.h"
 #endif
 
-const int dbglevel = 500;
+/* Temp code to test the new match_all code */
+int use_new_match_all = 0;
+
+const int dbglevel = 200;
 
 /* Forward references */
 static int match_volume(BSR *bsr, BSR_VOLUME *volume, VOLUME_LABEL *volrec, bool done);
@@ -52,8 +55,7 @@ static int match_job(BSR *bsr, BSR_JOB *job, SESSION_LABEL *sessrec, bool done);
 static int match_job_type(BSR *bsr, BSR_JOBTYPE *job_type, SESSION_LABEL *sessrec, bool done);
 static int match_job_level(BSR *bsr, BSR_JOBLEVEL *job_level, SESSION_LABEL *sessrec, bool done);
 static int match_jobid(BSR *bsr, BSR_JOBID *jobid, SESSION_LABEL *sessrec, bool done);
-static int match_findex(BSR *bsr, BSR_FINDEX *findex, DEV_RECORD *rec, bool done);
-static int match_volfile(BSR *bsr, BSR_VOLFILE *volfile, DEV_RECORD *rec, bool done);
+static int match_findex(BSR *bsr, DEV_RECORD *rec, bool done);
 static int match_voladdr(BSR *bsr, BSR_VOLADDR *voladdr, DEV_RECORD *rec, bool done);
 static int match_stream(BSR *bsr, BSR_STREAM *stream, DEV_RECORD *rec, bool done);
 static int match_all(BSR *bsr, DEV_RECORD *rec, VOLUME_LABEL *volrec, SESSION_LABEL *sessrec, bool done, JCR *jcr);
@@ -61,6 +63,9 @@ static int match_block_sesstime(BSR *bsr, BSR_SESSTIME *sesstime, DEV_BLOCK *blo
 static int match_block_sessid(BSR *bsr, BSR_SESSID *sessid, DEV_BLOCK *block);
 static BSR *find_smallest_volfile(BSR *fbsr, BSR *bsr);
 
+/* Temp function to test the new code */
+static int new_match_all(BSR *bsr, DEV_RECORD *rec, VOLUME_LABEL *volrec,
+                         SESSION_LABEL *sessrec, bool done, JCR *jcr);
 
 /*********************************************************************
  *
@@ -177,9 +182,19 @@ int match_bsr(BSR *bsr, DEV_RECORD *rec, VOLUME_LABEL *volrec, SESSION_LABEL *se
     *   In this case, we can probably reposition the
     *   tape to the next available bsr position.
     */
+   if (jcr->use_new_match_all) { /* TODO: Remove the if when the new code is tested */
+      if (bsr->cur_bsr) {
+         bsr = bsr->cur_bsr;
+      }
+   }
    if (bsr) {
       bsr->reposition = false;
-      stat = match_all(bsr, rec, volrec, sessrec, true, jcr);
+      /* Temp code to test the new match_all */
+      if (jcr->use_new_match_all) {
+         stat = new_match_all(bsr, rec, volrec, sessrec, true, jcr);
+      } else {
+         stat = match_all(bsr, rec, volrec, sessrec, true, jcr);
+      }
       /*
        * Note, bsr->reposition is set by match_all when
        *  a bsr is done. We turn it off if a match was
@@ -274,10 +289,6 @@ static bool get_smallest_voladdr(BSR_VOLADDR *va, uint64_t *ret)
 static BSR *find_smallest_volfile(BSR *found_bsr, BSR *bsr)
 {
    BSR *return_bsr = found_bsr;
-   BSR_VOLFILE *vf;
-   BSR_VOLBLOCK *vb;
-   uint32_t found_bsr_sfile, bsr_sfile;
-   uint32_t found_bsr_sblock, bsr_sblock;
    uint64_t found_bsr_saddr, bsr_saddr;
 
    /* if we have VolAddr, use it, else try with File and Block */
@@ -291,50 +302,6 @@ static BSR *find_smallest_volfile(BSR *found_bsr, BSR *bsr)
       }
    }
 
-   /* Find the smallest file in the found_bsr */
-   vf = found_bsr->volfile;
-   found_bsr_sfile = vf->sfile;
-   while ( (vf=vf->next) ) {
-      if (vf->sfile < found_bsr_sfile) {
-         found_bsr_sfile = vf->sfile;
-      }
-   }
-
-   /* Find the smallest file in the bsr */
-   vf = bsr->volfile;
-   bsr_sfile = vf->sfile;
-   while ( (vf=vf->next) ) {
-      if (vf->sfile < bsr_sfile) {
-         bsr_sfile = vf->sfile;
-      }
-   }
-
-   /* if the bsr file is less than the found_bsr file, return bsr */
-   if (found_bsr_sfile > bsr_sfile) {
-      return_bsr = bsr;
-   } else if (found_bsr_sfile == bsr_sfile) {
-      /* Files are equal */
-      /* find smallest block in found_bsr */
-      vb = found_bsr->volblock;
-      found_bsr_sblock = vb->sblock;
-      while ( (vb=vb->next) ) {
-         if (vb->sblock < found_bsr_sblock) {
-            found_bsr_sblock = vb->sblock;
-         }
-      }
-      /* Find smallest block in bsr */
-      vb = bsr->volblock;
-      bsr_sblock = vb->sblock;
-      while ( (vb=vb->next) ) {
-         if (vb->sblock < bsr_sblock) {
-            bsr_sblock = vb->sblock;
-         }
-      }
-      /* Compare and return the smallest */
-      if (found_bsr_sblock > bsr_sblock) {
-         return_bsr = bsr;
-      }
-   }
    return return_bsr;
 }
 
@@ -348,7 +315,7 @@ static BSR *find_smallest_volfile(BSR *found_bsr, BSR *bsr)
  * Returns: true if we should reposition
  *        : false otherwise.
  */
-bool is_this_bsr_done(BSR *bsr, DEV_RECORD *rec)
+bool is_this_bsr_done(JCR *jcr, BSR *bsr, DEV_RECORD *rec)
 {
    BSR *rbsr = rec->bsr;
    Dmsg1(dbglevel, "match_set %d\n", rbsr != NULL);
@@ -356,17 +323,167 @@ bool is_this_bsr_done(BSR *bsr, DEV_RECORD *rec)
       return false;
    }
    rec->bsr = NULL;
-   rbsr->found++;
-   if (rbsr->count && rbsr->found >= rbsr->count) {
-      rbsr->done = true;
-      rbsr->root->reposition = true;
-      Dmsg2(dbglevel, "is_end_this_bsr set reposition=1 count=%d found=%d\n",
-         rbsr->count, rbsr->found);
-      return true;
+
+   /* TODO: When the new code is stable, drop the else part */
+   if (jcr->use_new_match_all) {
+      if (!rbsr->next) {
+         rbsr->found++;
+      }
+      /* Normally the loop must stop only *after* the last record has been read,
+       * and we are about to read the next record.
+       */
+      if (rbsr->count && rbsr->found > rbsr->count) {
+         rbsr->done = true;
+         rbsr->root->reposition = true;
+         Dmsg2(dbglevel, "is_end_this_bsr set reposition=1 count=%d found=%d\n",
+               rbsr->count, rbsr->found);
+         return true;
+      }
+
+   } else {
+      /* Old code that is stable */
+      rbsr->found++;
+
+      if (rbsr->count && rbsr->found >= rbsr->count) {
+         rbsr->done = true;
+         rbsr->root->reposition = true;
+         Dmsg2(dbglevel, "is_end_this_bsr set reposition=1 count=%d found=%d\n",
+               rbsr->count, rbsr->found);
+         return true;
+      }
    }
    Dmsg2(dbglevel, "is_end_this_bsr not done count=%d found=%d\n",
         rbsr->count, rbsr->found);
    return false;
+}
+
+
+static int new_match_all(BSR *bsr, DEV_RECORD *rec, VOLUME_LABEL *volrec,
+                         SESSION_LABEL *sessrec, bool done, JCR *jcr)
+{
+   Dmsg0(dbglevel, "Enter match_all\n");
+   for ( ; bsr; ) {
+      if (bsr->done) {
+         goto no_match;
+      }
+      if (!match_volume(bsr, bsr->volume, volrec, 1)) {
+         Dmsg2(dbglevel, "bsr fail bsr_vol=%s != rec read_vol=%s\n", bsr->volume->VolumeName,
+               volrec->VolumeName);
+         goto no_match;
+      }
+
+      if (!match_voladdr(bsr, bsr->voladdr, rec, 1)) {
+         if (bsr->voladdr) {
+            Dmsg3(dbglevel, "Fail on Addr=%llu. bsr=%llu,%llu\n",
+                  get_record_address(rec), bsr->voladdr->saddr, bsr->voladdr->eaddr);
+         }
+         goto no_match;
+      }
+
+      if (!match_sesstime(bsr, bsr->sesstime, rec, 1)) {
+         Dmsg2(dbglevel, "Fail on sesstime. bsr=%u rec=%u\n",
+            bsr->sesstime->sesstime, rec->VolSessionTime);
+         goto no_match;
+      }
+
+      /* NOTE!! This test MUST come after the sesstime test */
+      if (!match_sessid(bsr, bsr->sessid, rec)) {
+         Dmsg2(dbglevel, "Fail on sessid. bsr=%u rec=%u\n",
+            bsr->sessid->sessid, rec->VolSessionId);
+         goto no_match;
+      }
+
+      /* NOTE!! This test MUST come after sesstime and sessid tests */
+      if (!match_findex(bsr, rec, 1)) {
+         Dmsg3(dbglevel, "Fail on recFI=%d. bsrFI=%d,%d\n",
+            rec->FileIndex, bsr->FileIndex->findex, bsr->FileIndex->findex2);
+         goto no_match;
+      }
+      if (bsr->FileIndex) {
+         Dmsg3(dbglevel, "match on findex=%d. bsrFI=%d,%d\n",
+               rec->FileIndex, bsr->FileIndex->findex, bsr->FileIndex->findex2);
+      }
+
+      if (!match_fileregex(bsr, rec, jcr)) {
+        Dmsg1(dbglevel, "Fail on fileregex='%s'\n", NPRT(bsr->fileregex));
+        goto no_match;
+      }
+
+      /* This flag is set by match_fileregex (and perhaps other tests) */
+      if (bsr->skip_file) {
+         Dmsg1(dbglevel, "Skipping findex=%d\n", rec->FileIndex);
+         goto no_match;
+      }
+
+      /*
+       * If a count was specified and we have a FileIndex, assume
+       *   it is a Bacula created bsr (or the equivalent). We
+       *   then save the bsr where the match occurred so that
+       *   after processing the record or records, we can update
+       *   the found count. I.e. rec->bsr points to the bsr that
+       *   satisfied the match.
+       */
+      if (bsr->count && bsr->FileIndex) {
+         rec->bsr = bsr;
+         if (bsr->next && rec->FileIndex != bsr->LastFI) {
+            bsr->LastFI = rec->FileIndex;
+         }
+         Dmsg1(dbglevel, "Leave match_all 1 found=%d\n", bsr->found);
+         return 1;                       /* this is a complete match */
+      }
+
+      /*
+       * The selections below are not used by Bacula's
+       *   restore command, and don't work because of
+       *   the rec->bsr = bsr optimization above.
+       */
+      if (sessrec) {
+         if (!match_jobid(bsr, bsr->JobId, sessrec, 1)) {
+            Dmsg0(dbglevel, "fail on JobId\n");
+            goto no_match;
+         }
+         if (!match_job(bsr, bsr->job, sessrec, 1)) {
+            Dmsg0(dbglevel, "fail on Job\n");
+            goto no_match;
+         }
+         if (!match_client(bsr, bsr->client, sessrec, 1)) {
+            Dmsg0(dbglevel, "fail on Client\n");
+            goto no_match;
+         }
+         if (!match_job_type(bsr, bsr->JobType, sessrec, 1)) {
+            Dmsg0(dbglevel, "fail on Job type\n");
+            goto no_match;
+         }
+         if (!match_job_level(bsr, bsr->JobLevel, sessrec, 1)) {
+            Dmsg0(dbglevel, "fail on Job level\n");
+            goto no_match;
+         }
+         if (!match_stream(bsr, bsr->stream, rec, 1)) {
+            Dmsg0(dbglevel, "fail on stream\n");
+            goto no_match;
+         }
+      }
+      return 1;
+
+no_match:
+      if (bsr->count && bsr->found >= bsr->count) {
+         bsr->done = true;
+         if (bsr->next) bsr->root->cur_bsr = bsr->next;
+         Dmsg1(dbglevel, "bsr done: Volume=%s\n", bsr->volume->VolumeName);
+      }
+      if (bsr->next) {
+         done = bsr->done && done;
+         bsr = bsr->next;
+         continue;
+      }
+      if (bsr->done && done) {
+         Dmsg0(dbglevel, "Leave match all -1\n");
+         return -1;
+      }
+      Dmsg1(dbglevel, "Leave match all 0, repos=%d\n", bsr->reposition);
+      return 0;
+   }
+   return 0;
 }
 
 /*
@@ -380,7 +497,6 @@ static int match_all(BSR *bsr, DEV_RECORD *rec, VOLUME_LABEL *volrec,
 {
    Dmsg0(dbglevel, "Enter match_all\n");
    if (bsr->done) {
-//    Dmsg0(dbglevel, "bsr->done set\n");
       goto no_match;
    }
    if (!match_volume(bsr, bsr->volume, volrec, 1)) {
@@ -391,18 +507,11 @@ static int match_all(BSR *bsr, DEV_RECORD *rec, VOLUME_LABEL *volrec,
    Dmsg2(dbglevel, "OK bsr match bsr_vol=%s read_vol=%s\n", bsr->volume->VolumeName,
             volrec->VolumeName);
 
-   if (!match_volfile(bsr, bsr->volfile, rec, 1)) {
-      if (bsr->volfile) {
-         Dmsg3(dbglevel, "Fail on file=%u. bsr=%u,%u\n",
-               rec->File, bsr->volfile->sfile, bsr->volfile->efile);
-      }
-      goto no_match;
-   }
-
    if (!match_voladdr(bsr, bsr->voladdr, rec, 1)) {
       if (bsr->voladdr) {
          Dmsg3(dbglevel, "Fail on Addr=%llu. bsr=%llu,%llu\n",
                get_record_address(rec), bsr->voladdr->saddr, bsr->voladdr->eaddr);
+         dump_record(rec);
       }
       goto no_match;
    }
@@ -421,7 +530,7 @@ static int match_all(BSR *bsr, DEV_RECORD *rec, VOLUME_LABEL *volrec,
    }
 
    /* NOTE!! This test MUST come after sesstime and sessid tests */
-   if (!match_findex(bsr, bsr->FileIndex, rec, 1)) {
+   if (!match_findex(bsr, rec, 1)) {
       Dmsg3(dbglevel, "Fail on findex=%d. bsr=%d,%d\n",
          rec->FileIndex, bsr->FileIndex->findex, bsr->FileIndex->findex2);
       goto no_match;
@@ -506,7 +615,7 @@ static int match_volume(BSR *bsr, BSR_VOLUME *volume, VOLUME_LABEL *volrec, bool
       return 0;                       /* Volume must match */
    }
    if (strcmp(volume->VolumeName, volrec->VolumeName) == 0) {
-      Dmsg1(dbglevel, "match_volume=%s\n", volrec->VolumeName);
+      Dmsg1(dbglevel, "OK match_volume=%s\n", volrec->VolumeName);
       return 1;
    }
    if (volume->next) {
@@ -585,74 +694,27 @@ static int match_jobid(BSR *bsr, BSR_JOBID *jobid, SESSION_LABEL *sessrec, bool 
    return 0;
 }
 
-static int match_volfile(BSR *bsr, BSR_VOLFILE *volfile, DEV_RECORD *rec, bool done)
-{
-   if (!volfile) {
-      return 1;                       /* no specification matches all */
-   }
-/*
- * The following code is turned off because this should now work
- *   with disk files too, though since a "volfile" is 4GB, it does
- *   not improve performance much.
- */
-#ifdef xxx
-   /* For the moment, these tests work only with tapes. */
-   if (!(rec->state & REC_ISTAPE)) {
-      return 1;                       /* All File records OK for this match */
-   }
-   Dmsg3(dbglevel, "match_volfile: sfile=%u efile=%u recfile=%u\n",
-             volfile->sfile, volfile->efile, rec->File);
-#endif
-   if (volfile->sfile <= rec->File && volfile->efile >= rec->File) {
-      return 1;
-   }
-   /* Once we get past last efile, we are done */
-   if (rec->File > volfile->efile) {
-      volfile->done = true;              /* set local done */
-   }
-   if (volfile->next) {
-      return match_volfile(bsr, volfile->next, rec, volfile->done && done);
-   }
-
-   /* If we are done and all prior matches are done, this bsr is finished */
-   if (volfile->done && done) {
-      bsr->done = true;
-      bsr->root->reposition = true;
-      Dmsg2(dbglevel, "bsr done from volfile rec=%u volefile=%u\n",
-         rec->File, volfile->efile);
-   }
-   return 0;
-}
-
 static int match_voladdr(BSR *bsr, BSR_VOLADDR *voladdr, DEV_RECORD *rec, bool done)
 {
    if (!voladdr) {
       return 1;                       /* no specification matches all */
    }
 
-#ifdef xxx
-
-   /* For the moment, these tests work only with disk. */
-   if (rec->state & REC_ISTAPE) {
-      uint32_t sFile = (voladdr->saddr)>>32;
-      uint32_t eFile = (voladdr->eaddr)>>32;
-      if (sFile <= rec->File && eFile >= rec->File) {
-         return 1;
-      }
-   }
-
-#endif
-
    uint64_t addr = get_record_address(rec);
    Dmsg6(dbglevel, "match_voladdr: saddr=%llu eaddr=%llu recaddr=%llu sfile=%u efile=%u recfile=%u\n",
-         voladdr->saddr, voladdr->eaddr, addr, voladdr->saddr>>32, voladdr->eaddr>>32, addr>>32);
+         voladdr->saddr, voladdr->eaddr, addr, (uint32_t)(voladdr->saddr>>32),
+         (uint32_t)(voladdr->eaddr>>32), (uint32_t)(addr>>32));
 
    if (voladdr->saddr <= addr && voladdr->eaddr >= addr) {
+      Dmsg1(dbglevel, "OK match voladdr=%lld\n", addr);
       return 1;
    }
    /* Once we get past last eblock, we are done */
    if (addr > voladdr->eaddr) {
       voladdr->done = true;              /* set local done */
+      if (!voladdr->next) {              /* done with everything? */
+         bsr->done = true;               /*  yes  */
+      }
    }
    if (voladdr->next) {
       return match_voladdr(bsr, voladdr->next, rec, voladdr->done && done);
@@ -728,56 +790,50 @@ static int match_sessid(BSR *bsr, BSR_SESSID *sessid, DEV_RECORD *rec)
  * When reading the Volume, the Volume Findex (rec->FileIndex) always
  *   are found in sequential order. Thus we can make optimizations.
  *
- *  ***FIXME*** optimizations
- * We could optimize by removing the recursion.
  */
-static int match_findex(BSR *bsr, BSR_FINDEX *findex, DEV_RECORD *rec, bool done)
+static int match_findex(BSR *bsr, DEV_RECORD *rec, bool done)
 {
+   BSR_FINDEX *findex = bsr->FileIndex;
+   BSR_FINDEX *next;
+
    if (!findex) {
       return 1;                       /* no specification matches all */
    }
-   if (!findex->done) {
+
+   for ( ;; ) {
       if (findex->findex <= rec->FileIndex && findex->findex2 >= rec->FileIndex) {
-         Dmsg3(dbglevel, "Match on findex=%d. bsrFIs=%d,%d\n",
+         Dmsg3(dbglevel, "Match on recFindex=%d. bsrFIs=%d,%d\n",
                rec->FileIndex, findex->findex, findex->findex2);
          return 1;
       }
       if (rec->FileIndex > findex->findex2) {
-         findex->done = true;
+         /* TODO: See if we really want to modify the findex when we will try
+          * to seek backward */
+         if (findex->next) {
+            next = findex->next;
+            Dmsg3(dbglevel, "No match recFindex=%d. bsrFIs=%d,%d\n",
+               rec->FileIndex, findex->findex, findex->findex2);
+            free(findex);
+            findex = next;
+            bsr->FileIndex = findex;
+            continue;
+         } else {
+            bsr->done = true;
+            bsr->root->reposition = true;
+         }
       }
+      return 0;
    }
-   if (findex->next) {
-      return match_findex(bsr, findex->next, rec, findex->done && done);
-   }
-   if (findex->done && done) {
-      bsr->done = true;
-      bsr->root->reposition = true;
-      Dmsg1(dbglevel, "bsr done from findex %d\n", rec->FileIndex);
-   }
-   return 0;
 }
 
-uint64_t get_bsr_start_addr(BSR *bsr, uint32_t *file, uint32_t *block)
+uint64_t get_bsr_start_addr(BSR *bsr)
 {
    uint64_t bsr_addr = 0;
-   uint32_t sfile = 0, sblock = 0;
 
    if (bsr) {
       if (bsr->voladdr) {
          bsr_addr = bsr->voladdr->saddr;
-         sfile = bsr_addr>>32;
-         sblock = (uint32_t)bsr_addr;
-
-      } else if (bsr->volfile && bsr->volblock) {
-         bsr_addr = (((uint64_t)bsr->volfile->sfile)<<32)|bsr->volblock->sblock;
-         sfile = bsr->volfile->sfile;
-         sblock = bsr->volblock->sblock;
       }
-   }
-
-   if (file && block) {
-      *file = sfile;
-      *block = sblock;
    }
 
    return bsr_addr;

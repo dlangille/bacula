@@ -2,7 +2,6 @@
    Bacula(R) - The Network Backup Solution
 
    Copyright (C) 2000-2017 Kern Sibbald
-   Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -21,7 +20,6 @@
  *  Bacula File Daemon  restore.c Restorefiles.
  *
  *    Kern Sibbald, November MM
- *
  */
 
 #include "bacula.h"
@@ -355,6 +353,7 @@ void do_restore(JCR *jcr)
    int64_t rsrc_len = 0;               /* Original length of resource fork */
    r_ctx rctx;
    ATTR *attr;
+   int bget_ret = 0;
    /* ***FIXME*** make configurable */
    crypto_digest_t signing_algorithm = have_sha2 ?
                                        CRYPTO_DIGEST_SHA256 : CRYPTO_DIGEST_SHA1;
@@ -394,7 +393,6 @@ void do_restore(JCR *jcr)
       jcr->compress_buf = get_memory(compress_buf_size);
       jcr->compress_buf_size = compress_buf_size;
    }
-
 
    GetMsg *fdmsg;
    fdmsg = New(GetMsg(jcr, sd, rec_header, GETMSG_MAX_MSG_SIZE));
@@ -451,7 +449,17 @@ void do_restore(JCR *jcr)
    jcr->xacl = (XACL*)new_xacl();
 
    Dsm_check(200);
-   while (fdmsg->bget_msg(&bmsg) >= 0 && !job_canceled(jcr)) {
+   while ((bget_ret = fdmsg->bget_msg(&bmsg)) >= 0 && !job_canceled(jcr)) {
+      time_t now = time(NULL);
+      if (jcr->last_stat_time == 0) {
+         jcr->last_stat_time = now;
+         jcr->stat_interval = 30;  /* Default 30 seconds */
+      } else if (now >= jcr->last_stat_time + jcr->stat_interval) {
+         jcr->dir_bsock->fsend("Progress JobId=x files=%ld bytes=%lld bps=%ld\n",
+            jcr->JobFiles, jcr->JobBytes, jcr->LastRate);
+         jcr->last_stat_time = now;
+      }
+
       /* Remember previous stream type */
       rctx.prev_stream = rctx.stream;
 
@@ -466,8 +474,12 @@ void do_restore(JCR *jcr)
       rctx.stream = rctx.full_stream & STREAMMASK_TYPE;
 
       /* Now we expect the Stream Data */
-      if (fdmsg->bget_msg(&bmsg) < 0) {
-         Jmsg1(jcr, M_FATAL, 0, _("Data record error. ERR=%s\n"), sd->bstrerror());
+      if ((bget_ret = fdmsg->bget_msg(&bmsg)) < 0) {
+         if (bget_ret != BNET_EXT_TERMINATE) {
+            Jmsg1(jcr, M_FATAL, 0, _("Data record error. ERR=%s\n"), sd->bstrerror());
+         } else {
+            /* The error has been handled somewhere else, just quit */
+         }
          goto get_out;
       }
       if (rctx.size != (uint32_t)bmsg->origlen) {
@@ -477,8 +489,6 @@ void do_restore(JCR *jcr)
                bmsg->origlen, rctx.size);
          goto get_out;
       }
-      Dmsg3(620, "Got stream: %s len=%d extract=%d\n", stream_to_ascii(rctx.stream),
-            bmsg->msglen, rctx.extract);
 
       /* If we change streams, close and reset alternate data streams */
       if (rctx.prev_stream != rctx.stream) {
@@ -601,6 +611,7 @@ void do_restore(JCR *jcr)
             }
             break;
          }
+
          break;
 
       /* Data stream */
@@ -700,7 +711,8 @@ void do_restore(JCR *jcr)
 
             if (rctx.stream == STREAM_SPARSE_DATA
                   || rctx.stream == STREAM_SPARSE_COMPRESSED_DATA
-                  || rctx.stream == STREAM_SPARSE_GZIP_DATA) {
+                  || rctx.stream == STREAM_SPARSE_GZIP_DATA)
+            {
                rctx.flags |= FO_SPARSE;
             }
 
@@ -980,9 +992,18 @@ void do_restore(JCR *jcr)
          Dmsg2(0, "Unknown stream=%d data=%s\n", rctx.stream, bmsg->rbuf);
          break;
       } /* end switch(stream) */
-      Dsm_check(200);
-   } /* end while get_msg() */
 
+      /* Debug code: check if we must hangup or blowup */
+      if (handle_hangup_blowup(jcr, jcr->JobFiles, jcr->JobBytes)) {
+         goto get_out;
+      }
+
+      Dsm_check(200);
+   } /* end while bufmsg->bget_msg(&bmsg)) */
+
+   if (bget_ret == BNET_EXT_TERMINATE) {
+      goto get_out;
+   }
    /*
     * If output file is still open, it was the last one in the
     * archive since we just hit an end of file, so close the file.
@@ -1002,7 +1023,7 @@ get_out:
 
 ok_out:
    Dsm_check(200);
-   fdmsg->wait_read_sock();
+   fdmsg->wait_read_sock(jcr->is_job_canceled());
    delete bmsg;
    free_GetMsg(fdmsg);
    Dsm_check(200);
@@ -1126,14 +1147,15 @@ static int do_file_digest(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
    return (digest_file(jcr, ff_pkt, jcr->crypto.digest));
 }
 
-bool sparse_data(JCR *jcr, BFILE *bfd, uint64_t *addr, char **data, uint32_t *length)
+bool sparse_data(JCR *jcr, BFILE *bfd, uint64_t *addr, char **data, uint32_t *length, int flags)
 {
    unser_declare;
    uint64_t faddr;
    char ec1[50];
    unser_begin(*data, OFFSET_FADDR_SIZE);
    unser_uint64(faddr);
-   if (*addr != faddr) {
+   /* We seek only if we have a SPARSE stream, not for OFFSET */
+   if ((flags & FO_SPARSE) && *addr != faddr) {
       *addr = faddr;
       if (blseek(bfd, (boffset_t)*addr, SEEK_SET) < 0) {
          berrno be;
@@ -1399,7 +1421,7 @@ int32_t extract_data(r_ctx &rctx, POOLMEM *buf, int32_t buflen)
    }
 
    if ((flags & FO_SPARSE) || (flags & FO_OFFSETS)) {
-      if (!sparse_data(jcr, bfd, &rctx.fileAddr, &wbuf, &wsize)) {
+      if (!sparse_data(jcr, bfd, &rctx.fileAddr, &wbuf, &wsize, flags)) {
          goto get_out;
       }
    }
@@ -1530,7 +1552,7 @@ again:
    Dmsg2(130, "Encryption writing full block, %u bytes, remaining %u bytes in buffer\n", wsize, cipher_ctx->buf_len);
 
    if ((flags & FO_SPARSE) || (flags & FO_OFFSETS)) {
-      if (!sparse_data(jcr, bfd, addr, &wbuf, &wsize)) {
+      if (!sparse_data(jcr, bfd, addr, &wbuf, &wsize, flags)) {
          return false;
       }
    }

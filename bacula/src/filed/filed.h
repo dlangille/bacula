@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -20,11 +20,10 @@
  * Bacula File Daemon specific configuration and defines
  *
  *     Kern Sibbald, Jan MMI
- *
  */
 
 //#define TEST_WORKER
-#ifdef	TEST_WORKER
+#ifdef  TEST_WORKER
 #define ERROR_BUFFER_OVERFLOW 1
 #define ERROR_SUCCESS 0
 #endif
@@ -43,11 +42,11 @@
 #include  "findlib/find.h"
 #include  "xacl.h"
 #include  "jcr.h"
-#include  "protos.h"		       /* file daemon prototypes */
+#include  "protos.h"                   /* file daemon prototypes */
 #include  "lib/runscript.h"
 #include  "lib/breg.h"
 #ifdef HAVE_LIBZ
-#include <zlib.h>		      /* compression headers */
+#include <zlib.h>                     /* compression headers */
 #else
 #define uLongf uint32_t
 #endif
@@ -56,8 +55,8 @@
 #include <lzo/lzo1x.h>
 #endif
 
-extern CLIENT *me;		      /* "Global" Client resource */
-extern bool win32decomp;	      /* Use decomposition of BackupRead data */
+extern CLIENT *me;                    /* "Global" Client resource */
+extern bool win32decomp;              /* Use decomposition of BackupRead data */
 extern bool no_win32_write_errors;    /* Ignore certain errors */
 
 void terminate_filed(int sig);
@@ -65,7 +64,7 @@ void terminate_filed(int sig);
 struct s_cmds {
    const char *cmd;
    int (*func)(JCR *);
-   int monitoraccess; /* specify if monitors have access to this function */
+   int access; /* specify if monitors/restricted have access to this function */
 };
 
 void allow_os_suspensions();

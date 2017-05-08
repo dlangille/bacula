@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -107,7 +107,7 @@ void MediaView::purgePushed()
 bool MediaView::getSelection(QStringList &list)
 {
    QTableWidgetItem *it;
-   QList<QTableWidgetItem*> items = m_tableMedia->selectedItems(); 
+   QList<QTableWidgetItem*> items = m_tableMedia->selectedItems();
    int row;
    int nrows;                      /* number of rows */
    bool *tab;
@@ -121,7 +121,7 @@ bool MediaView::getSelection(QStringList &list)
    for (int i = 0; i < nb; ++i) {
       row = items[i]->row();
       if (!tab[row]) {
-         tab[row] = true; 
+         tab[row] = true;
          it = m_tableMedia->item(row, 0);
          list.append(it->text());
       }

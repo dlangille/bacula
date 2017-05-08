@@ -1,8 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2015 Kern Sibbald
-   Copyright (C) 2001-2014 Free Software Foundation Europe e.V.
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -12,19 +11,17 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
- *
  *   Bacula Director -- next_vol -- handles finding the next
  *    volume for append.  Split out of catreq.c August MMIII
  *    catalog request from the Storage daemon.
-
- *     Kern Sibbald, March MMI
  *
+ *     Kern Sibbald, March MMI
  */
 
 #include "bacula.h"
@@ -33,18 +30,38 @@
 static int const dbglvl = 50;   /* debug level */
 
 /*
- * We setup the StorageId if it is
+ * We setup the StorageId or StorageId group if it is
  *  an autochanger from the Storage and put it in
  *  the media record.
  * store == NULL => use existing StorageId
  */
 void set_storageid_in_mr(STORE *store, MEDIA_DBR *mr)
 {
-   if (!store) {
+   if (store == NULL) {
+      /* Just use the plain (single) StorageId */
+      mr->sid_group = edit_int64(mr->StorageId, mr->sid);
       return;
    }
+
    /* At this point we know store != NULL */
    mr->StorageId = store->StorageId;
+   /* Get to the parent of the autochanger (if any) */
+   if (store->changer) {
+      store = store->changer;
+      mr->StorageId = store->StorageId;
+   }
+   /* Go to the master shared storage head (if any) */
+   if (store->shared_storage && store->shared_storage->ac_group) {
+      store = store->shared_storage;
+   }
+   /* If it is an autochanger we should have an ac_group */
+   if (store->autochanger && store->ac_group) {
+      /* Note we keep the StorageId of the local autochanger */
+      mr->sid_group = store->ac_group;
+   } else {
+      /* Otherwise, we just use the plain (single) StorageId */
+      mr->sid_group = edit_int64(mr->StorageId, mr->sid);
+   }
 }
 
 static void add_volume_to_exclude_list(JCR *jcr, int index, MEDIA_DBR *mr)

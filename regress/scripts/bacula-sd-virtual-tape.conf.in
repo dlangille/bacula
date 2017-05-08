@@ -1,0 +1,80 @@
+#
+# Default Bacula Storage Daemon Configuration file
+#
+# You may need to change the name of your tape drive
+#   on the "Archive Device" directive in the Device
+#   resource.  If you change the Name and/or the 
+#   "Media Type" in the Device resource, please ensure
+#   that dird.conf has corresponding changes.
+#
+
+Storage {                             # definition of myself
+  Name = @hostname@-sd
+  SDPort = @sdport@                  # Director's port      
+  WorkingDirectory = "@working_dir@"
+  Pid Directory = "@piddir@"
+  Subsys Directory = "@subsysdir@"
+  Maximum Concurrent Jobs = 100
+}
+
+#
+# List Directors who are permitted to contact Storage daemon
+#
+Director {
+  Name = @hostname@-dir
+  Password = "ccV3lVTsQRsdIUGyab0N4sMDavui2hOBkmpBU0aQKOr9"
+}
+
+Autochanger {
+  Name = tape
+  Changer Device = /dev/null
+  Changer Command = ""
+  Device = Drive-0, Drive-1
+}
+
+Device {
+  Name = Drive-0
+  Device Type = File
+  Media Type = tape
+  Archive Device = @tmpdir@
+  AutomaticMount = yes;               # when device opened, read it
+  Autochanger = yes
+  Drive Index = 0
+  AlwaysOpen = yes;
+  RemovableMedia = yes;
+# Maximum File Size = 1000000
+}
+
+Device {
+  Name = Drive-1
+  Device Type = File
+  Media Type = tape
+  Archive Device = @tmpdir@
+  AutomaticMount = yes;               # when device opened, read it
+  Autochanger = yes
+  Drive Index = 1
+  AlwaysOpen = yes;
+  RemovableMedia = yes;
+# Maximum File Size = 1000000
+}
+
+# 
+# Send all messages to the Director, 
+# mount messages also are sent to the email address
+#
+Messages {
+  Name = Standard
+  director = @hostname@-dir = all, !terminate
+}
+
+Cloud {
+  Name = DummyCloud
+  Driver = "File"
+  HostName = "@tmpdir@/cloud"
+  BucketName = "DummyBucket"
+  AccessKey = "DummyAccessKey"
+  SecretKey = "DummySecretKey"
+  Protocol = HTTPS
+  UriStyle = VirtualHost
+}
+

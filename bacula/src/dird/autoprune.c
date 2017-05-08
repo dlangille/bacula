@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2015 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -17,13 +17,10 @@
    Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
- *
  *   Bacula Director -- Automatic Pruning
  *      Applies retention periods
  *
  *     Kern Sibbald, May MMII
- *
- *   Version $Id$
  */
 
 #include "bacula.h"
@@ -139,7 +136,7 @@ void prune_volumes(JCR *jcr, bool InChanger, MEDIA_DBR *mr,
 
    set_storageid_in_mr(store, mr);
    if (InChanger) {
-      Mmsg(changer, "AND InChanger=1 AND StorageId=%s ", edit_int64(mr->StorageId, ed3));
+      Mmsg(changer, "AND InChanger=1 AND StorageId IN (%s) ", mr->sid_group);
    }
 
    Mmsg(query, select, ed1, ed2, mr->MediaType, changer.c_str());
@@ -156,7 +153,7 @@ void prune_volumes(JCR *jcr, bool InChanger, MEDIA_DBR *mr,
    for (i=0; i<ids.num_ids; i++) {
       MEDIA_DBR lmr;
       lmr.MediaId = ids.DBId[i];
-      Dmsg1(100, "Get record MediaId=%d\n", (int)lmr.MediaId);
+      Dmsg1(100, "Get record MediaId=%lu\n", lmr.MediaId);
       if (!db_get_media_record(jcr, jcr->db, &lmr)) {
          Jmsg(jcr, M_ERROR, 0, "%s", db_strerror(jcr->db));
          continue;
@@ -170,14 +167,14 @@ void prune_volumes(JCR *jcr, bool InChanger, MEDIA_DBR *mr,
       /* Prune only Volumes with status "Full", or "Used" */
       if (strcmp(lmr.VolStatus, "Full")   == 0 ||
           strcmp(lmr.VolStatus, "Used")   == 0) {
-         Dmsg2(100, "Add prune list MediaId=%d Volume %s\n", (int)lmr.MediaId, lmr.VolumeName);
+         Dmsg2(100, "Add prune list MediaId=%lu Volume %s\n", lmr.MediaId, lmr.VolumeName);
          count = get_prune_list_for_volume(ua, &lmr, &prune_list);
          Dmsg1(100, "Num pruned = %d\n", count);
          if (count != 0) {
             purge_job_list_from_catalog(ua, prune_list);
             prune_list.num_ids = 0;             /* reset count */
          }
-         if (!is_volume_purged(ua, &lmr, false)) {
+         if (!is_volume_purged(ua, &lmr)) {
             Dmsg1(100, "Vol=%s not pruned\n", lmr.VolumeName);
             continue;
          }
@@ -189,6 +186,7 @@ void prune_volumes(JCR *jcr, bool InChanger, MEDIA_DBR *mr,
           * If not, just skip this volume and try the next one
           */
          if (InChanger) {
+            /* ***FIXME*** should be any StorageId in sid_group */
             if (!lmr.InChanger || (lmr.StorageId != mr->StorageId)) {
                Dmsg1(100, "Vol=%s not inchanger\n", lmr.VolumeName);
                continue;                  /* skip this volume, ie not loadable */
@@ -200,12 +198,17 @@ void prune_volumes(JCR *jcr, bool InChanger, MEDIA_DBR *mr,
             continue;
          }
 
+         if (has_volume_expired(jcr, &lmr)) {
+            Dmsg1(100, "Vol=%s has expired\n", lmr.VolumeName);
+            continue;                     /* Volume not usable */
+         }
+
          /*
           * If purged and not moved to another Pool,
           *   then we stop pruning and take this volume.
           */
          if (lmr.PoolId == mr->PoolId) {
-            Dmsg2(100, "Got Vol=%s MediaId=%d purged.\n", lmr.VolumeName, (int)lmr.MediaId);
+            Dmsg2(100, "Got Vol=%s MediaId=%lu purged.\n", lmr.VolumeName, lmr.MediaId);
             mr->copy(&lmr);
             set_storageid_in_mr(store, mr);
             break;                        /* got a volume */

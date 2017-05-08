@@ -1,0 +1,83 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2017 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Run two simple backups of the Bacula build directory
+#   then restore the first one and see if we read too much
+#   data
+# 1) run a full backup
+# 2) run a 2nd full backup on the same volume
+# 3) delete the 2nd job from the catalog
+# 4) restore the first full backup
+# 5) see in traces if we stopped at the end of the first backup
+#
+TestName="restore-stop-read2-test"
+JobName=backup
+. scripts/functions
+
+scripts/cleanup
+scripts/copy-confs
+
+#
+# Zap out any schedule in default conf file so that
+#  it doesn't start during our test
+#
+outf="$tmp/sed_tmp"
+echo "s%  Schedule =%# Schedule =%g" >${outf}
+cp $scripts/bacula-dir.conf $tmp/1
+sed -f ${outf} $tmp/1 >$scripts/bacula-dir.conf
+
+$bperl -e "add_attribute('$conf/bacula-sd.conf', 'MaximumFileSize', '10MB', 'Device')"
+
+change_jobname BackupClient1 $JobName
+start_test
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out /dev/null
+messages
+@$out $tmp/log1.out
+label volume=TestVolume001 storage=File1 pool=File slot=1 drive=0
+run job=$JobName level=full yes
+wait
+run job=$JobName level=full yes
+wait
+messages
+END_OF_DATA
+
+run_bacula
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out $tmp/log2.out  
+@# 
+@# now do a restore
+@#
+setdebug level=500 trace=1 storage=File1
+delete jobid=2 yes
+restore where=$tmp/bacula-restores select all done yes
+wait
+messages
+setdebug level=0 trace=0 storage=File1
+quit
+END_OF_DATA
+
+run_bconsole
+
+check_for_zombie_jobs storage=File1
+stop_bacula
+
+# looking for zog8-sd: dircmd.c:1243-3 VolAddr=99993804-100365372
+eaddr=`awk -F '-' '/VolAddr=/ { ret=$4 } END { print ret }' $working/*trace`
+
+# zog8-sd: match_bsr.c:674-3 match_voladdr: saddr=99993804 eaddr=100365372 recaddr=200358958 sfile=0 efile=0 recfile=0
+eaddrseen=`awk '/match_voladdr: saddr=/ { gsub(/recaddr=/, "", $6); ret=$6 } END { print ret}' $working/*trace` 
+
+eaddrmax=$(($eaddr + $eaddr/2))
+
+if [ "$eaddrseen" -gt "$eaddrmax" ]; then
+    print_debug "ERROR: The restore process read too much data should stop at eaddr=$eaddr, read eaddrseen=$eaddrseen"
+    estat=1
+fi
+
+check_two_logs
+end_test

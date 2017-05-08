@@ -1,0 +1,54 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2017 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Run a simple backup of the Bacula build directory then bls
+#   the resulting Volume
+#
+TestName="bls-test"
+JobName=Simple
+. scripts/functions
+
+${rscripts}/cleanup
+${rscripts}/copy-test-confs
+echo "${tmpsrc}" >${tmp}/file-list
+mkdir -p ${tmpsrc}
+cp -p ${src}/src/dird/*.c ${tmpsrc}
+cd ${tmp}
+echo "${tmpsrc}/ficheriro1.txt" >restore-list
+echo "${tmpsrc}/ficheriro2.txt" >>restore-list
+cd ${cwd}
+
+start_test
+
+cat <<END_OF_DATA >${tmp}/bconcmds
+@$out /dev/null
+messages
+@$out ${tmp}/log1.out
+@#setdebug level=200 storage=File
+@#setdebug level=200 client
+@#setdebug level=100 director
+label storage=File volume=TestVolume001
+label storage=File volume=TestVolume002
+run job=$JobName yes
+status client
+wait
+messages
+quit
+END_OF_DATA
+
+run_bacula
+check_for_zombie_jobs storage=File
+stop_bacula
+
+$bin/bls -d 50 -v -c $conf/bacula-sd.conf -V 'TestVolume001' FileStorage > $tmp/bls.out
+if [ $? != 0 ] ; then
+   zstat=2
+fi
+if test "$debug" -eq 1 ; then
+   cat $tmp/bls.out
+fi
+
+#check_restore_tmp_build_diff
+#end_test

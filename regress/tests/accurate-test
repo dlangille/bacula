@@ -415,7 +415,7 @@ jobid=`awk '/ Incr.+backup/ { jobid=$1 } END { print jobid }' ${cwd}/tmp/log3.ou
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
 @$out ${cwd}/tmp/log3.out
-list files jobid=$jobid
+list files type=all jobid=$jobid
 quit
 END_OF_DATA
 

@@ -1001,6 +1001,15 @@ static const char *expired_volumes_defaults =
      " AND ( Media.LastWritten +  Media.VolRetention ) < NOW()"
      " %s ";
 
+const char *prune_cache[] = {
+   /* MySQL */
+   " (Media.LastWritten + Media.CacheRetention) < NOW() ",
+   /* PostgreSQL */
+   " (Media.LastWritten + (interval '1 second' * Media.CacheRetention)) < NOW() ",
+   /* SQLite */
+   " ( strftime('%s', Media.LastWritten) + Media.CacheRetention < strftime('%s', datetime('now', 'localtime'))) "
+};
+
 const char *expired_volumes[] = {
    /* MySQL */
    expired_volumes_defaults,
@@ -1016,9 +1025,18 @@ const char *expired_volumes[] = {
 
 const char *expires_in[] = {
    /* MySQL */
-   "(GREATEST(0, CAST(UNIX_TIMESTAMP(LastWritten) + VolRetention AS SIGNED) - UNIX_TIMESTAMP(NOW())))",
+   "(GREATEST(0, CAST(UNIX_TIMESTAMP(LastWritten) + Media.VolRetention AS SIGNED) - UNIX_TIMESTAMP(NOW())))",
    /* PostgreSQL */
-   "GREATEST(0, (extract('epoch' from LastWritten + VolRetention * interval '1second' - NOW())::bigint))",
+   "GREATEST(0, (extract('epoch' from LastWritten + Media.VolRetention * interval '1second' - NOW())::bigint))",
    /* SQLite */
-   "MAX(0, (strftime('%s', LastWritten) + VolRetention - strftime('%s', datetime('now', 'localtime'))))"
+   "MAX(0, (strftime('%s', LastWritten) + Media.VolRetention - strftime('%s', datetime('now', 'localtime'))))"
+};
+
+const char *strip_restore[] = {
+   /* MySQL */
+   "DELETE FROM %s WHERE FileId IN (SELECT * FROM (SELECT FileId FROM %s as B JOIN File USING (FileId) WHERE PathId IN (%s)) AS C)",
+   /* PostgreSQL */
+   "DELETE FROM %s WHERE FileId IN (SELECT FileId FROM %s JOIN File USING (FileId) WHERE PathId IN (%s))",
+   /* SQLite */
+   "DELETE FROM %s WHERE FileId IN (SELECT FileId FROM %s JOIN File USING (FileId) WHERE PathId IN (%s))"
 };

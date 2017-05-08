@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -22,7 +22,6 @@
  *   tape labels.
  *
  *   Kern Sibbald, MMV
- *
  */
 
 #include "bacula.h"                   /* pull in global headers */
@@ -389,14 +388,14 @@ bool write_ansi_ibm_labels(DCR *dcr, int type, const char *VolName)
                be.bstrerror());
                return false;
             }
-            dev->weof(1);
+            dev->weof(NULL, 1);
             return true;
          } else {
             Jmsg(jcr, M_FATAL, 0, _("Could not write ANSI HDR1 label.\n"));
             return false;
          }
       }
-      if (!dev->weof(1)) {
+      if (!dev->weof(NULL, 1)) {
          Jmsg(jcr, M_FATAL, 0, _("Error writing EOF to tape. ERR=%s"), dev->errmsg);
          return false;
       }

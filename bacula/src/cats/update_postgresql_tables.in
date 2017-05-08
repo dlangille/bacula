@@ -1,13 +1,13 @@
 #!/bin/sh
 #
-# Copyright (C) 2000-2015 Kern Sibbald
+# Copyright (C) 2000-2017 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
 # Shell script to update PostgreSQL tables from Bacula Community version 
-#  5.0.x, 5.2.x, 7.0.x
+#  5.0.x, 5.2.x, 7.0.x, 7.2.x, 7.4.x
 #
 echo " "
-echo "This script will update a Bacula PostgreSQL database from version 12-14 to 15"
+echo "This script will update a Bacula PostgreSQL database from version 12-15 to 16"
 echo " "
 echo "Depending on the current version of your catalog,"
 echo "you may have to run this script multiple times."
@@ -140,6 +140,31 @@ END-OF-DATA
 	exit 1
     fi
 fi
+
+if [ "$DBVERSION" -eq 15 ] ; then
+    if psql -f - -d ${db_name} $* <<END-OF-DATA
+begin;
+ALTER TABLE basefiles ALTER COLUMN baseid SET DATA TYPE bigint;
+ALTER TABLE media RENAME COLUMN volparts TO voltype;
+ALTER TABLE media ADD COLUMN volparts INTEGER DEFAULT 0;
+ALTER TABLE media ADD COLUMN volcloudparts INTEGER DEFAULT 0;
+ALTER TABLE media ADD COLUMN lastpartbytes BIGINT DEFAULT 0;
+ALTER TABLE media ADD COLUMN cacheretention BIGINT DEFAULT 0;
+ALTER TABLE pool ADD COLUMN cacheretention BIGINT DEFAULT 0;
+CREATE INDEX job_jobtdate_idx ON job (jobtdate);
+
+UPDATE Version SET VersionId=16;
+commit;
+END-OF-DATA
+    then
+	echo "Update of Bacula PostgreSQL tables 15 to 16 succeeded."
+	getVersion
+    else
+	echo "Update of Bacula PostgreSQL tables 15 to 116 failed."
+	exit 1
+    fi
+fi
+
 
 # For all versions, we need to create the Index on Media(PoolId/StorageId)
 # It may fail, but it's not a big problem

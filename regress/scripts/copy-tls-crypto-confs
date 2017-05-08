@@ -1,0 +1,14 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2017 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+cp -f scripts/tls-bacula-dir.conf ${conf}/bacula-dir.conf
+cp -f scripts/tls-bacula-sd.conf ${conf}/bacula-sd.conf
+cp -f scripts/tls-crypto-bacula-fd.conf ${conf}/bacula-fd.conf
+cp -f scripts/test-console.conf ${conf}/bconsole.conf
+cp -f scripts/test-console.conf ${conf}/bat.conf
+cp -f scripts/tls-CA.pem ${conf}/tls-CA.pem
+cp -f scripts/tls-cert.pem ${conf}/tls-cert.pem
+cp -f scripts/cryptokeypair.pem ${conf}/cryptokeypair.pem
+cp -f scripts/master2048.cert ${conf}/master2048.cert

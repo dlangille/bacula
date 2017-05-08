@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -32,14 +32,14 @@ enum {
 #define TIMEOUT_SIGNAL SIGUSR2
 
 struct s_watchdog_t {
-        bool one_shot;
-        utime_t interval;
-        void (*callback)(struct s_watchdog_t *wd);
-        void (*destructor)(struct s_watchdog_t *wd);
-        void *data;
-        /* Private data below - don't touch outside of watchdog.c */
-        dlink link;
-        utime_t next_fire;
+   bool one_shot;
+   utime_t interval;
+   void (*callback)(struct s_watchdog_t *wd);
+   void (*destructor)(struct s_watchdog_t *wd);
+   void *data;
+   /* Private data below - don't touch outside of watchdog.c */
+   dlink link;
+   utime_t next_fire;
 };
 typedef struct s_watchdog_t watchdog_t;
 

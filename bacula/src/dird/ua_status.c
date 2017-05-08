@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2015 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -17,11 +17,9 @@
    Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
- *
  *   Bacula Director -- User Agent Status Command
  *
  *     Kern Sibbald, August MMI
- *
  */
 
 
@@ -96,7 +94,7 @@ bool dot_status_cmd(UAContext *ua, const char *cmd)
          return false;
       }
    } else if (strcasecmp(ua->argk[1], "client") == 0) {
-      client = get_client_resource(ua);
+      client = get_client_resource(ua, JT_BACKUP_RESTORE);
       if (client) {
          Dmsg2(200, "Client=%s arg=%s\n", client->name(), NPRT(ua->argk[2]));
          do_client_status(ua, client, ua->argk[2]);
@@ -114,6 +112,132 @@ bool dot_status_cmd(UAContext *ua, const char *cmd)
    }
 
    return true;
+}
+
+/* Test the network between FD and SD */
+static int do_network_status(UAContext *ua)
+{
+   CLIENT *client = NULL;
+   USTORE  store;
+   JCR *jcr = ua->jcr;
+   char *store_address, ed1[50];
+   uint32_t store_port;
+   uint64_t nb = 50 * 1024 * 1024;
+
+   int i = find_arg_with_value(ua, "bytes");
+   if (i > 0) {
+      if (!size_to_uint64(ua->argv[i], strlen(ua->argv[i]), &nb)) {
+         return 1;
+      }
+   }
+   
+   client = get_client_resource(ua, JT_BACKUP_RESTORE);
+   if (!client) {
+      return 1;
+   }
+
+   store.store = get_storage_resource(ua, false, true);
+   if (!store.store) {
+      return 1;
+   }
+
+   jcr->client = client;
+   set_wstorage(jcr, &store);
+
+   if (!ua->api) {
+      ua->send_msg(_("Connecting to Storage %s at %s:%d\n"),
+                   store.store->name(), store.store->address, store.store->SDport);
+   }
+
+   if (!connect_to_storage_daemon(jcr, 10, SDConnectTimeout, 1)) {
+      ua->error_msg(_("Failed to connect to Storage.\n"));
+      goto bail_out;
+   }
+
+   if (!start_storage_daemon_job(jcr, NULL, NULL)) {
+      goto bail_out;
+   }
+
+   /*
+    * Note startup sequence of SD/FD is different depending on
+    *  whether the SD listens (normal) or the SD calls the FD.
+    */
+   if (!client->sd_calls_client) {
+      if (!run_storage_and_start_message_thread(jcr, jcr->store_bsock)) {
+         goto bail_out;
+      }
+   } /* Else it's done in init_storage_job() */
+
+   if (!ua->api) {
+      ua->send_msg(_("Connecting to Client %s at %s:%d\n"),
+                   client->name(), client->address(), client->FDport);
+   }
+
+   if (!connect_to_file_daemon(jcr, 1, 15, 0)) {
+      ua->error_msg(_("Failed to connect to Client.\n"));
+      goto bail_out;
+   }
+
+   if (jcr->sd_calls_client) {
+      /*
+       * SD must call "client" i.e. FD
+       */
+      if (jcr->FDVersion < 10) {
+         Jmsg(jcr, M_FATAL, 0, _("The File daemon does not support SDCallsClient.\n"));
+         goto bail_out;
+      }
+      if (!send_client_addr_to_sd(jcr)) {
+         goto bail_out;
+      }
+      if (!run_storage_and_start_message_thread(jcr, jcr->store_bsock)) {
+         goto bail_out;
+      }
+
+      store_address = store.store->address;  /* dummy */
+      store_port = 0;                        /* flag that SD calls FD */
+
+   } else {
+      /*
+       * send Storage daemon address to the File daemon,
+       *   then wait for File daemon to make connection
+       *   with Storage daemon.
+       */
+      if (store.store->SDDport == 0) {
+         store.store->SDDport = store.store->SDport;
+      }
+
+      store_address = get_storage_address(jcr->client, store.store);
+      store_port = store.store->SDDport;
+   }
+
+   if (!send_store_addr_to_fd(jcr, store.store, store_address, store_port)) {
+      goto bail_out;
+   }
+
+   if (!ua->api) {
+      ua->info_msg(_("Running network test between Client=%s and Storage=%s with %sB ...\n"),
+                   client->name(), store.store->name(), edit_uint64_with_suffix(nb, ed1));
+   }
+
+   if (!jcr->file_bsock->fsend("testnetwork bytes=%lld\n", nb)) {
+      goto bail_out;
+   }
+
+   while (jcr->file_bsock->recv() > 0) {
+      ua->info_msg(jcr->file_bsock->msg);
+   }
+   
+bail_out:
+   jcr->file_bsock->signal(BNET_TERMINATE);
+   jcr->store_bsock->signal(BNET_TERMINATE);
+   wait_for_storage_daemon_termination(jcr);
+
+   free_bsock(jcr->file_bsock);
+   free_bsock(jcr->store_bsock);
+
+   jcr->client = NULL;
+   free_wstorage(jcr);
+   return 1;
 }
 
 /* This is the *old* command handler, so we must return
@@ -137,7 +261,10 @@ int status_cmd(UAContext *ua, const char *cmd)
    Dmsg1(20, "status:%s:\n", cmd);
 
    for (i=1; i<ua->argc; i++) {
-      if (strcasecmp(ua->argk[i], NT_("schedule")) == 0 ||
+      if (strcasecmp(ua->argk[i], NT_("network")) == 0) {
+         do_network_status(ua);
+         return 1;
+      } else if (strcasecmp(ua->argk[i], NT_("schedule")) == 0 ||
           strcasecmp(ua->argk[i], NT_("scheduled")) == 0) {
          llist_scheduled_jobs(ua);
          return 1;
@@ -149,7 +276,7 @@ int status_cmd(UAContext *ua, const char *cmd)
          do_director_status(ua);
          return 1;
       } else if (strcasecmp(ua->argk[i], NT_("client")) == 0) {
-         client = get_client_resource(ua);
+         client = get_client_resource(ua, JT_BACKUP_RESTORE);
          if (client) {
             do_client_status(ua, client, NULL);
          }
@@ -175,6 +302,7 @@ int status_cmd(UAContext *ua, const char *cmd)
       add_prompt(ua, NT_("Storage"));
       add_prompt(ua, NT_("Client"));
       add_prompt(ua, NT_("Scheduled"));
+      add_prompt(ua, NT_("Network"));
       add_prompt(ua, NT_("All"));
       Dmsg0(20, "do_prompt: select daemon\n");
       if ((item=do_prompt(ua, "",  _("Select daemon type for status"), prmt, sizeof(prmt))) < 0) {
@@ -192,7 +320,7 @@ int status_cmd(UAContext *ua, const char *cmd)
          }
          break;
       case 2:
-         client = select_client_resource(ua);
+         client = select_client_resource(ua, JT_BACKUP_RESTORE);
          if (client) {
             do_client_status(ua, client, NULL);
          }
@@ -201,6 +329,9 @@ int status_cmd(UAContext *ua, const char *cmd)
          llist_scheduled_jobs(ua);
          break;
       case 4:
+         do_network_status(ua);
+         break;
+      case 5:
          do_all_status(ua);
          break;
       default:
@@ -264,11 +395,11 @@ static void do_all_status(UAContext *ua)
    i = 0;
    foreach_res(client, R_CLIENT) {
       found = false;
-      if (!acl_access_ok(ua, Client_ACL, client->name())) {
+      if (!acl_access_client_ok(ua, client->name(), JT_BACKUP_RESTORE)) {
          continue;
       }
       for (j=0; j<i; j++) {
-         if (strcmp(unique_client[j]->address, client->address) == 0 &&
+         if (strcmp(unique_client[j]->address(), client->address()) == 0 &&
              unique_client[j]->FDport == client->FDport) {
             found = true;
             break;
@@ -276,7 +407,7 @@ static void do_all_status(UAContext *ua)
       }
       if (!found) {
          unique_client[i++] = client;
-         Dmsg2(40, "Stuffing: %s:%d\n", client->address, client->FDport);
+         Dmsg2(40, "Stuffing: %s:%d\n", client->address(), client->FDport);
       }
    }
    UnlockRes();
@@ -289,24 +420,63 @@ static void do_all_status(UAContext *ua)
 
 }
 
+static void api_list_dir_status_header(UAContext *ua)
+{
+   OutputWriter wt(ua->api_opts);
+   wt.start_group("header");
+   wt.get_output(
+      OT_STRING, "name",        my_name,
+      OT_STRING, "version",     VERSION " (" BDATE ")",
+      OT_STRING, "uname",       HOST_OS " " DISTNAME " " DISTVER,
+      OT_UTIME,  "started",     daemon_start_time,
+      OT_UTIME,  "reloaded",    last_reload_time,
+      OT_INT,    "jobs_run",    num_jobs_run,
+      OT_INT,    "jobs_running",job_count(),
+      OT_INT,    "nclients",    ((rblist *)res_head[R_CLIENT-r_first]->res_list)->size(),
+      OT_INT,    "nstores",     ((rblist *)res_head[R_STORAGE-r_first]->res_list)->size(),
+      OT_INT,    "npools",      ((rblist *)res_head[R_POOL-r_first]->res_list)->size(),
+      OT_INT,    "ncats",       ((rblist *)res_head[R_CATALOG-r_first]->res_list)->size(),
+      OT_INT,    "nfset",       ((rblist *)res_head[R_FILESET-r_first]->res_list)->size(),
+      OT_INT,    "nscheds",     ((rblist *)res_head[R_SCHEDULE-r_first]->res_list)->size(),
+      OT_PLUGINS,"plugins",     b_plugin_list,
+      OT_END);
+
+   ua->send_msg("%s", wt.end_group());
+}
+
 void list_dir_status_header(UAContext *ua)
 {
    char dt[MAX_TIME_LENGTH], dt1[MAX_TIME_LENGTH];
    char b1[35], b2[35], b3[35], b4[35], b5[35];
+
+   if (ua->api > 1) {
+      api_list_dir_status_header(ua);
+      return;
+   }
 
    ua->send_msg(_("%s %sVersion: %s (%s) %s %s %s\n"), my_name,
             "", VERSION, BDATE, HOST_OS, DISTNAME, DISTVER);
    bstrftime_nc(dt, sizeof(dt), daemon_start_time);
    bstrftimes(dt1, sizeof(dt1), last_reload_time);
    ua->send_msg(_("Daemon started %s, conf reloaded %s\n"), dt, dt1);
-   ua->send_msg(_(" Jobs: run=%d, running=%d mode=%d\n"),
-      num_jobs_run, job_count(), (int)DEVELOPER_MODE);
+   ua->send_msg(_(" Jobs: run=%d, running=%d mode=%d,%d\n"),
+      num_jobs_run, job_count(), (int)DEVELOPER_MODE, 0);
    ua->send_msg(_(" Heap: heap=%s smbytes=%s max_bytes=%s bufs=%s max_bufs=%s\n"),
       edit_uint64_with_commas((char *)sbrk(0)-(char *)start_heap, b1),
       edit_uint64_with_commas(sm_bytes, b2),
       edit_uint64_with_commas(sm_max_bytes, b3),
       edit_uint64_with_commas(sm_buffers, b4),
       edit_uint64_with_commas(sm_max_buffers, b5));
+   ua->send_msg(_(" Res: njobs=%d nclients=%d nstores=%d npools=%d ncats=%d"
+                  " nfsets=%d nscheds=%d\n"),
+      ((rblist *)res_head[R_JOB-r_first]->res_list)->size(),
+      ((rblist *)res_head[R_CLIENT-r_first]->res_list)->size(),
+      ((rblist *)res_head[R_STORAGE-r_first]->res_list)->size(),
+      ((rblist *)res_head[R_POOL-r_first]->res_list)->size(),
+      ((rblist *)res_head[R_CATALOG-r_first]->res_list)->size(),
+      ((rblist *)res_head[R_FILESET-r_first]->res_list)->size(),
+      ((rblist *)res_head[R_SCHEDULE-r_first]->res_list)->size());
+
 
    /* TODO: use this function once for all daemons */
    if (b_plugin_list && b_plugin_list->size() > 0) {
@@ -421,7 +591,7 @@ static void do_client_status(UAContext *ua, CLIENT *client, char *cmd)
 {
    BSOCK *fd;
 
-   if (!acl_access_ok(ua, Client_ACL, client->name())) {
+   if (!acl_access_client_ok(ua, client->name(), JT_BACKUP_RESTORE)) {
       ua->error_msg(_("No authorization for Client \"%s\"\n"), client->name());
       return;
    }
@@ -436,7 +606,7 @@ static void do_client_status(UAContext *ua, CLIENT *client, char *cmd)
 
    /* Try to connect for 15 seconds */
    if (!ua->api) ua->send_msg(_("Connecting to Client %s at %s:%d\n"),
-      client->name(), client->address, client->FDport);
+      client->name(), client->address(), client->FDport);
    if (!connect_to_file_daemon(ua->jcr, 1, 15, 0)) {
       ua->send_msg(_("Failed to connect to Client %s.\n====\n"),
          client->name());
@@ -489,7 +659,7 @@ struct sched_pkt {
    STORE *store;
 };
 
-static void prt_runtime(UAContext *ua, sched_pkt *sp)
+static void prt_runtime(UAContext *ua, sched_pkt *sp, OutputWriter *ow)
 {
    char dt[MAX_TIME_LENGTH];
    const char *level_ptr;
@@ -535,6 +705,23 @@ static void prt_runtime(UAContext *ua, sched_pkt *sp)
       ua->send_msg(_("%-14s\t%-8s\t%3d\t%-18s\t%-18s\t%s\n"),
          level_ptr, job_type_to_str(sp->job->JobType), sp->priority, dt,
          sp->job->name(), mr.VolumeName);
+
+   } else if (ua->api > 1) {
+      ua->send_msg("%s",
+                   ow->get_output(OT_CLEAR,
+                      OT_START_OBJ,
+                      OT_STRING,    "name",     sp->job->name(),
+                      OT_JOBLEVEL,  "level",   sp->level,
+                      OT_JOBTYPE,   "type",    sp->job->JobType,
+                      OT_INT,       "priority",sp->priority,
+                      OT_UTIME,     "schedtime", sp->runtime,
+                      OT_STRING,    "volume",  mr.VolumeName,
+                      OT_STRING,    "pool",    jcr->pool?jcr->pool->name():"",
+                      OT_STRING,    "storage", jcr->wstore?jcr->wstore->name():"",
+                      OT_END_OBJ,
+                      OT_END));
+
+
    } else {
       ua->send_msg(_("%-14s %-8s %3d  %-18s %-18s %s\n"),
          level_ptr, job_type_to_str(sp->job->JobType), sp->priority, dt,
@@ -617,8 +804,8 @@ static void llist_scheduled_jobs(UAContext *ua)
    LockRes();
    foreach_res(job, R_JOB) {
       sched = job->schedule;
-      if (!sched || !job->enabled || (sched && !sched->enabled) ||
-         (job->client && !job->client->enabled)) {
+      if (!sched || !job->is_enabled() || (sched && !sched->is_enabled()) ||
+         (job->client && !job->client->is_enabled())) {
          continue;                    /* no, skip this job */
       }
       if (job_name[0] && strcmp(job_name, job->name()) != 0) {
@@ -752,6 +939,7 @@ static int my_compare(void *item1, void *item2)
  */
 static void list_scheduled_jobs(UAContext *ua)
 {
+   OutputWriter ow(ua->api_opts);
    utime_t runtime;
    RUN *run;
    JOB *job;
@@ -784,7 +972,7 @@ static void list_scheduled_jobs(UAContext *ua)
    /* Loop through all jobs */
    LockRes();
    foreach_res(job, R_JOB) {
-      if (!acl_access_ok(ua, Job_ACL, job->name()) || !job->enabled) {
+      if (!acl_access_ok(ua, Job_ACL, job->name()) || !job->is_enabled()) {
          continue;
       }
       if (sched_name[0] && job->schedule &&
@@ -820,7 +1008,7 @@ static void list_scheduled_jobs(UAContext *ua)
    } /* end for loop over resources */
    UnlockRes();
    foreach_dlist(sp, &sched) {
-      prt_runtime(ua, sp);
+      prt_runtime(ua, sp, &ow);
    }
    if (num_jobs == 0 && !ua->api) {
       ua->send_msg(_("No Scheduled Jobs.\n"));
@@ -834,11 +1022,13 @@ static void list_running_jobs(UAContext *ua)
    JCR *jcr;
    int njobs = 0;
    int i;
-   const char *msg;
+   int32_t status;
+   const char *msg, *msgdir;
    char *emsg;                        /* edited message */
    char dt[MAX_TIME_LENGTH];
    char level[10];
    bool pool_mem = false;
+   OutputWriter ow(ua->api_opts);
    JobId_t jid = 0;
 
    if ((i = find_arg_with_value(ua, "jobid")) >= 0) {
@@ -862,30 +1052,32 @@ static void list_running_jobs(UAContext *ua)
             }
             continue;
          }
-         njobs++;
       }
       endeach_jcr(jcr);
-      if (njobs == 0) {
-         /* Note the following message is used in regress -- don't change */
-         ua->send_msg(_("No Jobs running.\n====\n"));
-         Dmsg0(200, "leave list_run_jobs()\n");
-         return;
-      }
    }
 
-   if (!ua->api) {
-      ua->send_msg(_(" JobId  Type Level     Files     Bytes  Name              Status\n"));
-      ua->send_msg(_("======================================================================\n"));
-   }
+   njobs = 0; /* count the number of job really displayed */
    foreach_jcr(jcr) {
-      if (jcr->JobId == 0 || !acl_access_ok(ua, Job_ACL, jcr->job->name())) {
+      if (jcr->JobId == 0 || !jcr->job || !acl_access_ok(ua, Job_ACL, jcr->job->name())) {
          continue;
       }
       /* JobId keyword found in command line */
       if (jid > 0 && jcr->JobId != jid) {
          continue;
       }
-      switch (jcr->JobStatus) {
+
+      if (++njobs == 1) {
+         /* display the header for the first job */
+         if (!ua->api) {
+            ua->send_msg(_(" JobId  Type Level     Files     Bytes  Name              Status\n"));
+            ua->send_msg(_("======================================================================\n"));
+
+         } else if (ua->api > 1) {
+            ua->send_msg(ow.start_group("running", false));
+         }
+      }
+      status = jcr->JobStatus;
+      switch (status) {
       case JS_Created:
          msg = _("is waiting execution");
          break;
@@ -986,6 +1178,7 @@ static void list_running_jobs(UAContext *ua)
          msg = emsg;
          break;
       }
+      msgdir = msg;             /* Keep it to know if we update the status variable */
       /*
        * Now report Storage daemon status code
        */
@@ -1034,6 +1227,9 @@ static void list_running_jobs(UAContext *ua)
          msg = _("Dir inserting Attributes");
          break;
       }
+      if (msg != msgdir) {
+         status = jcr->SDJobStatus;
+      }
       switch (jcr->getJobType()) {
       case JT_ADMIN:
          bstrncpy(level, "Admin", sizeof(level));
@@ -1053,6 +1249,30 @@ static void list_running_jobs(UAContext *ua)
                       jcr->JobId, level, jcr->Job, msg, jcr->comment);
          unbash_spaces(jcr->comment);
 
+      } else if (ua->api > 1) {
+         ua->send_msg("%s", ow.get_output(OT_CLEAR,
+                         OT_START_OBJ,
+                         OT_INT32,   "jobid",     jcr->JobId,
+                         OT_JOBLEVEL,"level",     jcr->getJobLevel(),
+                         OT_JOBTYPE, "type",      jcr->getJobType(),
+                         OT_JOBSTATUS,"status",   status,
+                         OT_STRING,  "status_desc",msg,
+                         OT_STRING,  "comment",   jcr->comment,
+                         OT_SIZE,    "jobbytes",  jcr->JobBytes,
+                         OT_INT32,   "jobfiles",  jcr->JobFiles,
+                         OT_STRING,  "job",       jcr->Job,
+                         OT_STRING,  "name",      jcr->job->name(),
+                         OT_STRING,  "clientname",jcr->client?jcr->client->name():"",
+                         OT_STRING,  "fileset",   jcr->fileset?jcr->fileset->name():"",
+                         OT_STRING,  "storage",   jcr->wstore?jcr->wstore->name():"",
+                         OT_STRING,  "rstorage",  jcr->rstore?jcr->rstore->name():"",
+                         OT_UTIME,   "schedtime", jcr->sched_time,
+                         OT_UTIME,   "starttime", jcr->start_time,
+                         OT_INT32,   "priority",  jcr->JobPriority,
+                         OT_INT32,   "errors",    jcr->JobErrors,
+                         OT_END_OBJ,
+                         OT_END));
+
       } else {
          char b1[50], b2[50], b3[50];
          level[4] = 0;
@@ -1071,8 +1291,19 @@ static void list_running_jobs(UAContext *ua)
       }
    }
    endeach_jcr(jcr);
-   if (!ua->api) {
-      ua->send_msg("====\n");
+
+   if (njobs == 0) {
+      /* Note the following message is used in regress -- don't change */
+      ua->send_msg(_("No Jobs running.\n====\n"));
+      Dmsg0(200, "leave list_run_jobs()\n");
+      return;
+   } else {
+      /* display a closing header */
+      if (!ua->api) {
+         ua->send_msg("====\n");
+      } else if (ua->api > 1) {
+         ua->send_msg(ow.end_group(false));
+      }
    }
    Dmsg0(200, "leave list_run_jobs()\n");
 }
@@ -1081,6 +1312,7 @@ static void list_terminated_jobs(UAContext *ua)
 {
    char dt[MAX_TIME_LENGTH], b1[30], b2[30];
    char level[10];
+   OutputWriter ow(ua->api_opts);
 
    if (last_jobs->empty()) {
       if (!ua->api) ua->send_msg(_("No Terminated Jobs.\n"));
@@ -1092,6 +1324,8 @@ static void list_terminated_jobs(UAContext *ua)
       ua->send_msg(_("\nTerminated Jobs:\n"));
       ua->send_msg(_(" JobId  Level      Files    Bytes   Status   Finished        Name \n"));
       ua->send_msg(_("====================================================================\n"));
+   } else if (ua->api > 1) {
+      ua->send_msg(ow.start_group("terminated"));
    }
    foreach_dlist(je, last_jobs) {
       char JobName[MAX_NAME_LENGTH];
@@ -1151,13 +1385,31 @@ static void list_terminated_jobs(UAContext *ua)
          break;
       }
       if (ua->api == 1) {
-         ua->send_msg(_("%6d\t%-6s\t%8s\t%10s\t%-7s\t%-8s\t%s\n"),
+         ua->send_msg(_("%7d\t%-6s\t%8s\t%10s\t%-7s\t%-8s\t%s\n"),
             je->JobId,
             level,
             edit_uint64_with_commas(je->JobFiles, b1),
             edit_uint64_with_suffix(je->JobBytes, b2),
             termstat,
             dt, JobName);
+      } else if (ua->api > 1) {
+         ua->send_msg("%s",
+                      ow.get_output(OT_CLEAR,
+                                    OT_START_OBJ,
+                                    OT_INT32,   "jobid",     je->JobId,
+                                    OT_JOBLEVEL,"level",     je->JobLevel,
+                                    OT_JOBTYPE, "type",      je->JobType,
+                                    OT_JOBSTATUS,"status",   je->JobStatus,
+                                    OT_STRING,  "status_desc",termstat,
+                                    OT_SIZE,    "jobbytes",  je->JobBytes,
+                                    OT_INT32,   "jobfiles",  je->JobFiles,
+                                    OT_STRING,  "job",       je->Job,
+                                    OT_UTIME,   "starttime", je->start_time,
+                                    OT_UTIME,   "endtime",   je->end_time,
+                                    OT_INT32,   "errors",    je->Errors,
+                                    OT_END_OBJ,
+                                    OT_END));
+
       } else {
          ua->send_msg(_("%6d  %-7s %8s %10s  %-7s  %-8s %s\n"),
             je->JobId,
@@ -1170,6 +1422,8 @@ static void list_terminated_jobs(UAContext *ua)
    }
    if (!ua->api) {
       ua->send_msg(_("\n"));
+   } else if (ua->api > 1) {
+      ua->send_msg(ow.end_group(false));
    }
    unlock_last_jobs_list();
 }

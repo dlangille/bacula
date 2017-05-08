@@ -46,8 +46,10 @@ mark *
 done
 yes
 wait
+reload
 @#reload
-@#reload
+status client
+cancel inactive jobid=1,2
 messages
 quit
 END_OF_DATA

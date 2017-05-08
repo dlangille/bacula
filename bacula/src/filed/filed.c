@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2015 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -20,7 +20,6 @@
  *  Bacula File Daemon
  *
  *    Kern Sibbald, March MM
- *
  */
 
 #include "bacula.h"
@@ -38,6 +37,9 @@ CLIENT *me;                           /* my resource */
 bool no_signals = false;
 void *start_heap;
 extern struct s_cmds cmds[];
+extern dlist *daemon_msg_queue;
+extern pthread_mutex_t daemon_msg_queue_mutex;
+
 
 #ifndef CONFIG_FILE                   /* Might be overwritten */
  #define CONFIG_FILE "bacula-fd.conf" /* default config file */
@@ -88,6 +90,7 @@ int main (int argc, char *argv[])
    bool keep_readall_caps = false;
    char *uid = NULL;
    char *gid = NULL;
+   MQUEUE_ITEM *item = NULL;
 
    start_heap = sbrk(0);
    setlocale(LC_ALL, "");
@@ -98,6 +101,8 @@ int main (int argc, char *argv[])
    my_name_is(argc, argv, PROG_NAME);
    init_msg(NULL, NULL);
    daemon_start_time = time(NULL);
+   /* Setup daemon message queue */
+   daemon_msg_queue = New(dlist(item, &item->link));
 
    while ((ch = getopt(argc, argv, "c:d:fg:kmstTu:v?D:")) != -1) {
       switch (ch) {
@@ -188,6 +193,16 @@ int main (int argc, char *argv[])
    }
 
    server_tid = pthread_self();
+
+   if (configfile == NULL) {
+      configfile = bstrdup(CONFIG_FILE);
+   }
+
+   if (!foreground && !test_config) {
+      daemon_start();
+      init_stack_dump();              /* set new pid */
+   }
+
    if (!no_signals) {
       init_signals(terminate_filed);
    } else {
@@ -195,16 +210,7 @@ int main (int argc, char *argv[])
       watchdog_sleep_time = 120;      /* long timeout for debugging */
    }
 
-   if (configfile == NULL) {
-      configfile = bstrdup(CONFIG_FILE);
-   }
-
-   if (!foreground) {
-      daemon_start();
-      init_stack_dump();              /* set new pid */
-   }
-
-   config = new_config_parser();
+   config = New(CONFIG());
    parse_fd_config(config, configfile, M_ERROR_TERM);
 
    if (init_crypto() != 0) {
@@ -279,6 +285,11 @@ void terminate_filed(int sig)
    generate_daemon_event(NULL, "Exit");
    unload_plugins();
 
+   P(daemon_msg_queue_mutex);
+   daemon_msg_queue->destroy();
+   free(daemon_msg_queue);
+   V(daemon_msg_queue_mutex);
+
    if (!test_config) {
       write_state_file(me->working_directory,
                        "bacula-fd", get_first_port_host_order(me->FDaddrs));
@@ -295,12 +306,13 @@ void terminate_filed(int sig)
    }
 
    if (config) {
-      config->free_resources();
-      free(config);
+      delete config;
       config = NULL;
    }
    term_msg();
    cleanup_crypto();
+   free(res_head);
+   res_head = NULL;
    close_memory_pool();               /* release free memory in pool */
    lmgr_cleanup_main();
    sm_dump(false);                    /* dump orphaned buffers */
@@ -623,6 +635,60 @@ static bool check_resources()
       }
    }
 
+   CONSRES *console;
+   foreach_res(console, R_CONSOLE) {
+      /* tls_require implies tls_enable */
+      if (console->tls_require) {
+#ifndef HAVE_TLS
+         Jmsg(NULL, M_FATAL, 0, _("TLS required but not configured in Bacula.\n"));
+         OK = false;
+         continue;
+#else
+         console->tls_enable = true;
+#endif
+      }
+      need_tls = console->tls_enable || console->tls_authenticate;
+
+      if (!console->tls_certfile && need_tls) {
+         Emsg2(M_FATAL, 0, _("\"TLS Certificate\" file not defined for Console \"%s\" in %s.\n"),
+               console->hdr.name, configfile);
+         OK = false;
+      }
+
+      if (!console->tls_keyfile && need_tls) {
+         Emsg2(M_FATAL, 0, _("\"TLS Key\" file not defined for Console \"%s\" in %s.\n"),
+               console->hdr.name, configfile);
+         OK = false;
+      }
+
+      if ((!console->tls_ca_certfile && !console->tls_ca_certdir) && need_tls && console->tls_verify_peer) {
+         Emsg2(M_FATAL, 0, _("Neither \"TLS CA Certificate\""
+                             " or \"TLS CA Certificate Dir\" are defined for Console \"%s\" in %s."
+                             " At least one CA certificate store is required"
+                             " when using \"TLS Verify Peer\".\n"),
+                             console->hdr.name, configfile);
+         OK = false;
+      }
+
+      /* If everything is well, attempt to initialize our per-resource TLS context */
+      if (OK && (need_tls || console->tls_require)) {
+         /* Initialize TLS context:
+          * Args: CA certfile, CA certdir, Certfile, Keyfile,
+          * Keyfile PEM Callback, Keyfile CB Userdata, DHfile, Verify Peer */
+         console->tls_ctx = new_tls_context(console->tls_ca_certfile,
+            console->tls_ca_certdir, console->tls_certfile,
+            console->tls_keyfile, NULL, NULL, console->tls_dhfile,
+            console->tls_verify_peer);
+
+         if (!console->tls_ctx) {
+            Emsg2(M_FATAL, 0, _("Failed to initialize TLS context for Console \"%s\" in %s.\n"),
+                                console->hdr.name, configfile);
+            OK = false;
+         }
+      }
+ 
+   }
+   
    UnlockRes();
 
    if (OK) {

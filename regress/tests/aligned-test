@@ -1,0 +1,147 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2017 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Test aligned data volumes with ZFS deduplication
+# This test expects that you have created a ZFS pool named
+#  tank, and that you have also created tank/volumes
+#
+TestName="aligned-test"
+JobName=NightlySave
+. scripts/functions
+
+if test x$FORCE_CLOUD = xyes ; then
+  echo "\n=== Test $TestName skipped not compatible with Cloud  ==="
+  exit 0
+fi
+
+scripts/cleanup
+scripts/copy-test-confs
+cp scripts/aligned-bacula-sd.conf bin/bacula-sd.conf
+
+# install the aligned volume plugin
+#make -C build/src/plugins/sd install-aligned-plugin >/dev/null
+
+echo "${cwd}/build" >${cwd}/tmp/file-list
+
+which zfs >/dev/null 2>&1
+if [ $? -eq 0 ] ; then
+  zfs=1
+else
+  zfs=0
+fi
+
+# If we are running with zfs, setup a pool,
+#  otherwise just use defaults
+if [ $zfs -eq 1 ]; then
+  cp bin/bacula-sd.conf tmp/1
+  sed "s%Archive Device = .*$%Archive Device = /tank/volumes%g" tmp/1 >bin/bacula-sd.conf
+
+  # Delete any previous zfs pool
+  sudo zfs destroy -fR tank/volumes
+  sudo zfs destroy -fR tank
+  sudo zfs destroy -r tank
+  sudo zpool destroy -f tank
+  sudo rm -rf /tank/volumes
+  sudo rm -rf /tank
+  #
+  # Create zfs pool
+  sudo zpool create tank sdb sdc
+  sudo zfs create tank/volumes
+  #sudo zfs recordsize=64k tank # default is 128K
+  sudo zfs set atime=off tank
+  sudo zfs set compress=on tank
+  sudo zfs set dedup=on tank
+  sudo zdb -dd tank
+  sudo chown -R kern:kern /tank
+fi
+
+start_test
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@output /dev/null
+messages
+@$out ${cwd}/tmp/log1.out
+label storage=File volume=Vol1
+label storage=File volume=Vol2
+label storage=File volume=Vol3
+END_OF_DATA
+
+# do label
+run_bacula
+
+if [ $zfs -eq 1 ] ; then
+  sudo zdb -DD tank
+  sudo zdb -b tank
+  sudo zpool list tank
+fi
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@output /dev/null
+messages
+@$out ${cwd}/tmp/log1.out
+setdebug level=200 storage
+run job=$JobName level=Full yes
+wait
+list volumes
+messages
+END_OF_DATA
+
+for i in 1 2 3 4 5 6 7 8 9 10; do
+  #echo "Running job $i"
+  run_bconsole
+  if [ $zfs -eq 1 ] ; then
+    sudo zdb -DD tank
+    sudo zdb -b tank
+    sudo zpool list tank
+    ls -l /tank/volumes/Vol*  >${cwd}/tmp/log5.out
+    du -h /tank/volumes/Vol1.add >>${cwd}/tmp/log5.out
+  else
+    ls -l tmp/Vol* >${cwd}/tmp/log5.out
+    du -h tmp/Vol1.add >>${cwd}/tmp/log5.out
+  fi
+done
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds-form
+@# 
+@# now do a restore
+@#
+@$out ${cwd}/tmp/log2.out
+@# setdebug level=0 fd
+restore where=${cwd}/tmp/bacula-restores storage=File jobid=@jobid@
+mark *
+done
+yes
+wait
+messages
+quit
+END_OF_DATA
+
+# Restore and check each job
+for i in 1 2 3 4 5 6 7 8 9 10; do
+   rm -rf ${cwd}/tmp/bacula-restores
+   echo "s%@jobid@%$i%" >${cwd}/tmp/in
+   sed -f ${cwd}/tmp/in ${cwd}/tmp/bconcmds-form >${cwd}/tmp/bconcmds
+   run_bconsole
+   check_restore_diff
+done
+
+if [ $zfs -eq 1 ] ; then
+  sudo zdb -DD tank
+  sudo zdb -b tank
+  sudo zpool list tank
+  ls -l /tank/volumes/Vol*  >>${cwd}/tmp/log5.out
+  du -h /tank/volumes/Vol1.add >>${cwd}/tmp/log5.out
+else
+  ls -l tmp/Vol* >>${cwd}/tmp/log5.out
+  du -h tmp/Vol1.add >>${cwd}/tmp/log5.out
+fi
+
+sleep 2
+check_for_zombie_jobs storage=File 
+stop_bacula
+
+check_two_logs
+check_restore_diff
+end_test

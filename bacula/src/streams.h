@@ -1,8 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2015 Kern Sibbald
-   Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -12,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -21,7 +20,6 @@
  * Stream definitions.  Split from baconfig.h Nov 2010
  *
  *  Kern Sibbald, MM
- *
  */
 
 #ifndef __BSTREAMS_H
@@ -100,6 +98,9 @@
 #define STREAM_WIN32_COMPRESSED_DATA           31    /* Compressed Win32 BackupRead data */
 #define STREAM_ENCRYPTED_FILE_COMPRESSED_DATA  32    /* Encrypted, compressed data */
 #define STREAM_ENCRYPTED_WIN32_COMPRESSED_DATA 33    /* Encrypted, compressed Win32 BackupRead data */
+
+#define STREAM_ADATA_BLOCK_HEADER             200    /* Adata block header */
+#define STREAM_ADATA_RECORD_HEADER            201    /* Adata record header */
 
 /*
  * Additional Stream definitions. Once defined these must NEVER

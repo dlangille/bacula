@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -41,9 +41,10 @@ enum get_vol_info_rw {
    GET_VOL_INFO_FOR_WRITE,
    GET_VOL_INFO_FOR_READ
 };
-bool    dir_get_volume_info(DCR *dcr, enum get_vol_info_rw);
+bool    dir_get_volume_info(DCR *dcr, const char *VolumeName, enum get_vol_info_rw);
 bool    dir_find_next_appendable_volume(DCR *dcr);
-bool    dir_update_volume_info(DCR *dcr, bool label, bool update_LastWritten);
+bool    dir_update_volume_info(DCR *dcr, bool label, bool update_LastWritten,
+           bool use_dcr=false);
 bool    dir_ask_sysop_to_create_appendable_volume(DCR *dcr);
 bool    dir_ask_sysop_to_mount_volume(DCR *dcr, bool read_access);
 bool    dir_update_file_attributes(DCR *dcr, DEV_RECORD *rec);
@@ -53,6 +54,37 @@ void    create_jobmedia_queue(JCR *jcr);
 bool    flush_jobmedia_queue(JCR *jcr);
 bool    dir_update_device(JCR *jcr, DEVICE *dev);
 bool    dir_update_changer(JCR *jcr, AUTOCHANGER *changer);
+
+/* class AskDirHandler allows btool's utilities to overwrite the functions above
+ * and even to overwrite the functions in their own sub-class like in btape
+ */
+class AskDirHandler
+{
+   /* this class should be an abstract class */
+public:
+   AskDirHandler() {}
+   virtual ~AskDirHandler() {}
+   virtual bool dir_find_next_appendable_volume(DCR *dcr) { return 1;}
+   virtual bool dir_update_volume_info(DCR *dcr, bool relabel, bool update_LastWritten, bool use_dcr) { return 1; }
+   virtual bool dir_create_jobmedia_record(DCR *dcr, bool zero) { return 1; }
+   virtual bool flush_jobmedia_queue(JCR *jcr) { return true; }
+   virtual bool dir_ask_sysop_to_create_appendable_volume(DCR *dcr) { return 1; }
+   virtual bool dir_update_file_attributes(DCR *dcr, DEV_RECORD *rec) { return 1;}
+   virtual bool dir_send_job_status(JCR *jcr) {return 1;}
+   virtual bool dir_ask_sysop_to_mount_volume(DCR *dcr, bool writing);
+   virtual bool dir_get_volume_info(DCR *dcr, const char *VolumeName, enum get_vol_info_rw writing);
+};
+
+class BtoolsAskDirHandler: public AskDirHandler
+{
+   /* if AskDirHandler was an abstract class, implement the method here */
+public:
+   BtoolsAskDirHandler() {}
+   virtual ~BtoolsAskDirHandler() {}
+};
+
+/* activate the functions provided by the btool's handler */
+AskDirHandler *init_askdir_handler(AskDirHandler *new_askdir_handler);
 
 /* authenticate.c */
 bool    authenticate_director(JCR *jcr);
@@ -69,8 +101,7 @@ char    *edit_device_codes(DCR *dcr, char *omsg, const char *imsg, const char *c
 int      get_autochanger_loaded_slot(DCR *dcr);
 
 /* From block.c */
-void    dump_block(DEV_BLOCK *b, const char *msg);
-DEV_BLOCK *new_block(DEVICE *dev);
+void    dump_block(DEVICE *dev, DEV_BLOCK *b, const char *msg, bool force=false);
 DEV_BLOCK *dup_block(DEV_BLOCK *eblock);
 void    init_block_write(DEV_BLOCK *block);
 void    empty_block(DEV_BLOCK *block);
@@ -82,8 +113,11 @@ bool    terminate_writing_volume(DCR *dcr);
 
 /* From block_util.c */
 bool    terminate_writing_volume(DCR *dcr);
-bool    user_volume_size_reached(DCR *dcr, bool quiet);
+bool    is_user_volume_size_reached(DCR *dcr, bool quiet);
 bool    check_for_newvol_or_newfile(DCR *dcr);
+bool    do_new_file_bookkeeping(DCR *dcr);
+void    reread_last_block(DCR *dcr);
+
 
 /* From butil.c -- utilities for SD tool programs */
 void    setup_me();
@@ -94,7 +128,8 @@ void    display_tape_error_status(JCR *jcr, DEVICE *dev);
 
 
 /* From dev.c */
-DEVICE  *init_dev(JCR *jcr, DEVRES *device);
+void     sd_list_loaded_drivers(alist *list);
+DEVICE  *init_dev(JCR *jcr, DEVRES *device, bool adata=false);
 bool     can_open_mounted_dev(DEVICE *dev);
 bool     load_dev(DEVICE *dev);
 int      write_block(DEVICE *dev);
@@ -106,20 +141,7 @@ void     init_device_wait_timers(DCR *dcr);
 void     init_jcr_device_wait_timers(JCR *jcr);
 bool     double_dev_wait_time(DEVICE *dev);
 
-/* From dvd.c */
-int     dvd_open_next_part(DCR *dcr);
-bool    dvd_write_part(DCR *dcr);
-bool    dvd_close_job(DCR *dcr);
-void    make_mounted_dvd_filename(DEVICE *dev, POOL_MEM &archive_name);
-void    make_spooled_dvd_filename(DEVICE *dev, POOL_MEM &archive_name);
-bool    truncate_dvd(DCR *dcr);
-bool    check_can_write_on_non_blank_dvd(DCR *dcr);
-int     find_num_dvd_parts(DCR *dcr);
-boffset_t   lseek_dvd(DCR *dcr, boffset_t offset, int whence);
-void    dvd_remove_empty_part(DCR *dcr);
-
 /* From device.c */
-bool     open_device(DCR *dcr);
 bool     first_open_device(DCR *dcr);
 bool     fixup_device_block_write_error(DCR *dcr, int retries=4);
 void     set_start_vol_position(DCR *dcr);
@@ -128,7 +150,7 @@ void     set_new_file_parameters(DCR *dcr);
 
 /* From dircmd.c */
 void     *handle_connection_request(void *arg);
-
+extern   int use_new_match_all; /* Temp variable, to be removed when the new code is tested */
 
 /* From fd_cmds.c */
 void     run_job(JCR *jcr);
@@ -150,22 +172,17 @@ bool     is_client_connection(BSOCK *bs);
 void     handle_client_connection(BSOCK *fd);
 
 /* From label.c */
-int      read_dev_volume_label(DCR *dcr);
-int      read_dvd_volume_label(DCR *dcr, bool write);
 void     create_session_label(DCR *dcr, DEV_RECORD *rec, int label);
-void     create_volume_header(DEVICE *dev, const char *VolName, const char *PoolName, bool dvdnow);
+void     create_volume_header(DEVICE *dev, const char *VolName, const char *PoolName, bool no_prelabel);
 #define ANSI_VOL_LABEL 0
 #define ANSI_EOF_LABEL 1
 #define ANSI_EOV_LABEL 2
 bool     write_ansi_ibm_labels(DCR *dcr, int type, const char *VolName);
 int      read_ansi_ibm_label(DCR *dcr);
 bool     write_session_label(DCR *dcr, int label);
-void     dump_volume_label(DEVICE *dev);
 int      dump_label_record(DEVICE *dev, DEV_RECORD *rec, int verbose, bool check_err);
 bool     unser_volume_label(DEVICE *dev, DEV_RECORD *rec);
 bool     unser_session_label(SESSION_LABEL *label, DEV_RECORD *rec);
-bool     write_new_volume_label_to_dev(DCR *dcr, const char *VolName,
-            const char *PoolName, bool relabel, bool dvdnow);
 
 /* From locks.c */
 void     _lock_device(const char *file, int line, DEVICE *dev);
@@ -182,25 +199,24 @@ int      match_bsr(BSR *bsr, DEV_RECORD *rec, VOLUME_LABEL *volrec,
 int      match_bsr_block(BSR *bsr, DEV_BLOCK *block);
 void     position_bsr_block(BSR *bsr, DEV_BLOCK *block);
 BSR     *find_next_bsr(BSR *root_bsr, DEVICE *dev);
-bool     is_this_bsr_done(BSR *bsr, DEV_RECORD *rec);
-uint64_t get_bsr_start_addr(BSR *bsr,
-                            uint32_t *file=NULL,
-                            uint32_t *block=NULL);
-
+bool     is_this_bsr_done(JCR *jcr, BSR *bsr, DEV_RECORD *rec);
+uint64_t get_bsr_start_addr(BSR *bsr);
 
 /* From mount.c */
 bool     mount_next_read_volume(DCR *dcr);
 
 /* From parse_bsr.c */
+BSR *new_bsr();
 BSR     *parse_bsr(JCR *jcr, char *lf);
-void     dump_bsr(BSR *bsr, bool recurse);
+void     dump_bsr(DEVICE *dev, BSR *bsr, bool recurse);
 void     free_bsr(BSR *bsr);
 void     free_restore_volume_list(JCR *jcr);
-void     create_restore_volume_list(JCR *jcr);
+void     create_restore_volume_list(JCR *jcr, bool add_to_read_list);
 
 /* From record.c */
 const char *FI_to_ascii(char *buf, int fi);
 const char *stream_to_ascii(char *buf, int stream, int fi);
+const char *stream_to_ascii_ex(char *buf, int stream, int fi);
 bool        write_record_to_block(DCR *dcr, DEV_RECORD *rec);
 bool        can_write_record_to_block(DEV_BLOCK *block, DEV_RECORD *rec);
 bool        read_record_from_block(DCR *dcr, DEV_RECORD *rec);
@@ -208,7 +224,11 @@ DEV_RECORD *new_record();
 void        free_record(DEV_RECORD *rec);
 void        empty_record(DEV_RECORD *rec);
 uint64_t    get_record_address(DEV_RECORD *rec);
+uint64_t    get_record_start_address(DEV_RECORD *rec);
 bool        flush_adata_to_device(DCR *dcr);
+
+/* From record_util.c */
+void dump_record(DEV_RECORD *rec);
 
 /* From read_record.c */
 bool read_records(DCR *dcr,
@@ -259,11 +279,21 @@ bool    commit_attribute_spool    (JCR *jcr);
 bool    write_block_to_spool_file (DCR *dcr);
 void    list_spool_stats          (void sendit(const char *msg, int len, void *sarg), void *arg);
 
+/* From tape_alert.c */
+extern void alert_callback(void *ctx, const char *short_msg,
+   const char *long_msg, char *Volume,
+   int severity, int flags, int alertno, utime_t alert_time);
+
 /* From wait.c */
 int wait_for_sysop(DCR *dcr);
 bool wait_for_any_device(JCR *jcr, int &retries);
 bool wait_for_device(DCR *dcr, int &retries);
 
 /* stored_conf.c */
+void store_protocol(LEX *lc, RES_ITEM *item, int index, int pass);
+void store_uri_style(LEX *lc, RES_ITEM *item, int index, int pass);
+void store_truncate(LEX *lc, RES_ITEM *item, int index, int pass);
+void store_upload(LEX *lc, RES_ITEM *item, int index, int pass);
 void store_devtype(LEX *lc, RES_ITEM *item, int index, int pass);
+void store_cloud_driver(LEX *lc, RES_ITEM *item, int index, int pass);
 void store_maxblocksize(LEX *lc, RES_ITEM *item, int index, int pass);

@@ -1,9 +1,7 @@
 #!/bin/sh
 #
-# Copyright (C) 2000-2015 Kern Sibbald
+# Copyright (C) 2000-2017 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
-#
-
 #
 # Test the test command in btape
 #
@@ -22,7 +20,7 @@ change_jobname $JobName
 start_test
 
 if test "$debug" -eq 1 ; then
-  $bin/btape -c bin/bacula-sd.conf Drive-0 <<END_OF_DATA | tee ${cwd}/tmp/log1.out
+  $bin/btape -w $tmp -c bin/bacula-sd.conf Drive-0 <<END_OF_DATA | tee ${cwd}/tmp/log1.out
 capcmd
 speed
 test
@@ -30,7 +28,7 @@ yes
 quit
 END_OF_DATA
 else
-  $bin/btape -c bin/bacula-sd.conf Drive-0 <<END_OF_DATA | tee ${cwd}/tmp/log1.out
+  $bin/btape -w $tmp -c bin/bacula-sd.conf Drive-0 <<END_OF_DATA | tee ${cwd}/tmp/log1.out
 capcmd
 speed
 test
@@ -55,13 +53,13 @@ cp ${cwd}/bin/bacula-sd.conf ${cwd}/tmp/1
 sed -e 's%64512%262144%' ${cwd}/tmp/1 >${cwd}/bin/bacula-sd.conf
 
 if test "$debug" -eq 1 ; then
-  $bin/btape -c bin/bacula-sd.conf Drive-0 <<END_OF_DATA | tee ${cwd}/tmp/log2.out
+  $bin/btape -w $tmp -c bin/bacula-sd.conf Drive-0 <<END_OF_DATA | tee ${cwd}/tmp/log2.out
 test
 yes
 quit
 END_OF_DATA
 else
-  $bin/btape -c bin/bacula-sd.conf Drive-0 <<END_OF_DATA >${cwd}/tmp/log2.out 2>&1
+  $bin/btape -w $tmp -c bin/bacula-sd.conf Drive-0 <<END_OF_DATA >${cwd}/tmp/log2.out 2>&1
 test
 yes
 quit

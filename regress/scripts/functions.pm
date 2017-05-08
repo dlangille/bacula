@@ -3,19 +3,22 @@ use strict;
 
 =head1 LICENSE
 
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2008-2014 Bacula Systems SA
+   Copyright (C) 2000-2017 Kern Sibbald
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
-   Licensees holding a valid Bacula Systems SA license may use this file
-   and others of this release in accordance with the proprietary license
-   agreement provided in the LICENSE file.  Redistribution of any part of
-   this release is not permitted.
+   You may use this file and others of this release according to the
+   license defined in the LICENSE file, which includes the Affero General
+   Public License, v3.0 ("AGPLv3") and some additional permissions and
+   terms pursuant to its AGPLv3 Section 7.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   This notice must be preserved when any source code is
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
 
 =cut
 
@@ -30,23 +33,25 @@ our @EXPORT = qw(update_some_files create_many_files check_multiple_copies
                   update_client $HOST $BASEPORT add_to_backup_list
                   run_bconsole run_bacula start_test end_test create_bconcmds
                   create_many_dirs cleanup start_bacula
-                  get_dirname
+                  get_dirname check_jobmedia_content
                   stop_bacula get_resource set_maximum_concurrent_jobs get_time
                   add_attribute check_prune_list check_min_volume_size
                   init_delta update_delta check_max_backup_size comment_out
-                  create_many_files_size $plugins debug p
+                  create_many_files_size check_jobmedia  $plugins debug p
                   check_max_volume_size $estat $bstat $rstat $zstat $cwd $bin
                   $scripts $conf $rscripts $tmp $working $dstat extract_resource
                   $db_name $db_user $db_password $src $tmpsrc $out $CLIENT docmd
                   set_global_maximum_concurrent_jobs check_volumes update_some_files_rep
                   remote_init remote_config remote_stop remote_diff remote_check
-                  get_field_size get_field_ratio create_binfile );
+                  get_field_size get_field_ratio create_binfile get_bytes get_mbytes
+                  check_parts);
 
 
 use File::Copy qw/copy/;
 
 our ($cwd, $bin, $scripts, $conf, $rscripts, $tmp, $working, $estat, $dstat,
-     $plugins, $bstat, $zstat, $rstat, $debug, $out, $TestName,
+     $plugins, $bstat, $zstat, $rstat, $debug, $out, $TestName, $FORCE_ALIGNED,
+     $PREBUILT, $FORCE_CLOUD,
      $REMOTE_CLIENT, $REMOTE_ADDR, $REMOTE_FILE, $REMOTE_PORT, $REMOTE_PASSWORD,
      $REMOTE_STORE_ADDR, $REGRESS_DEBUG, $REMOTE_USER, $start_time, $end_time,
      $db_name, $db_user, $db_password, $src, $tmpsrc, $HOST, $BASEPORT, $CLIENT);
@@ -101,6 +106,9 @@ BEGIN {
     $ENV{REMOTE_PASSWORD} = $REMOTE_PASSWORD = $ENV{REMOTE_PASSWORD} || "xxx";
     $ENV{REMOTE_STORE_ADDR}=$REMOTE_STORE_ADDR=$ENV{REMOTE_STORE_ADDR} || undef;
     $ENV{REMOTE_USER}   = $REMOTE_USER   = $ENV{REMOTE_USER}   || undef;
+    $ENV{FORCE_ALIGNED} = $FORCE_ALIGNED = $ENV{FORCE_ALIGNED} || 'no';
+    $ENV{FORCE_CLOUD}   = $FORCE_CLOUD = $ENV{FORCE_CLOUD} || 'no';
+    $ENV{PREBUILT}      = $PREBUILT = $ENV{PREBUILT} || 'no';
     $ENV{CLIENT}        = $CLIENT        = $ENV{CLIENT}        || "$HOST-fd";
     $ENV{LANG} = 'C';
     $out = ($debug) ? '@tee' : '@out';
@@ -140,6 +148,17 @@ sub cleanup
 
 sub start_test
 {
+    if ($FORCE_ALIGNED eq "yes") {
+        if ($PREBUILT ne "yes") {
+           system("make -C $cwd/build/src/plugins/sd install-aligned-plugin > /dev/null");
+        }
+        add_attribute("$conf/bacula-sd.conf", "Device Type", "Aligned", "Device");
+        add_attribute("$conf/bacula-sd.conf", "Plugin Directory", "$plugins", "Storage");
+    }
+    if ($FORCE_CLOUD eq "yes") {
+        add_attribute("$conf/bacula-sd.conf", "Device Type", "Cloud", "Device");
+    }
+
     $start_time = time();
     my $d = strftime('%R:%S', localtime($start_time));
     print "\n\n === Starting $TestName at $d ===\n";
@@ -344,18 +363,24 @@ sub check_volumes
     my @files = @_;
     my %done;
     unlink("$tmp/check_volumes.out");
+    unlink("$tmp/check_volumes_data.out");
 
     foreach my $f (@files) {
         open(FP, $f) or next;
         while (my $f = <FP>)
         {
-            if ($f =~ /Wrote label to prelabeled Volume "(.+?)" on file device "(.+?)" \((.+?)\)/) {
+            if ($f =~ /Wrote label to prelabeled Volume "(.+?)" on (?:dedup data|file) device "(.+?)" \((.+?)\)/) {
                 if (!$done{$1}) {
                     $done{$1} = 1;
                     if (-f "$3/$1") {
                         system("$bin/bls -c $conf/bacula-sd.conf -j -E -V \"$1\" \"$2\" &>> $tmp/check_volumes.out");
                         if ($? != 0) {
                             debug("Found problems for $1, traces are in $tmp/check_volumes.out");
+                            $estat = 1;
+                        }
+                        system("$bin/bextract -t -c $conf/bacula-sd.conf -V \"$1\" \"$2\" /tmp &>> $tmp/check_volumes_data.out");
+                        if ($? != 0) {
+                            debug("Found problems for $1, traces are in $tmp/check_volumes_data.out");
                             $estat = 1;
                         }
                     }
@@ -365,6 +390,122 @@ sub check_volumes
         close(FP);
     }
     return $estat;
+}
+
+# Here we want to list all cloud parts and check what we have in the catalog
+sub check_parts
+{
+    my $tempfile = "$tmp/check_parts.$$";
+    open(FP, "|$bin/bconsole -c $conf/bconsole.conf >$tempfile");
+    print FP "\@echo File generated by scripts::function::check_part()\n";
+    print FP "sql\n";
+    print FP "SELECT 'Name', VolumeName, Storage.Name FROM Media JOIN Storage USING (StorageId) WHERE VolType = 14;\n";
+    close(FP);
+
+    unlink("$tmp/check_parts.out");
+    open(CMD, ">$tmp/bconsole.cmd");
+    print CMD "\@output $tmp/check_parts.out\n";
+    open(FP, $tempfile);
+    while (my $l = <FP>) {
+        $l =~ s/,//g;           # Default bacula output is putting , every 1000
+        $l =~ s/\|/!/g;         # | is a special char in regexp
+        if ($l =~ /!\s*Name\s*!\s*([\w\d-]+)\s*!\s*([\w\d-]+)\s*/) {
+            print CMD "cloud list volume=$1 storage=$2\n";
+        }
+    }
+    close(FP);
+    close(CMD);
+    run_bconsole("$tmp/bconsole.cmd");
+    open(OUT, "$tmp/check_parts.out");
+    while (my $l = <OUT>) {
+        if ($l =~ /Error/) {
+            print $l;
+            $estat=1;
+        }
+    }
+    close(OUT);
+}
+
+# This test is supposed to detect JobMedia corruption for all jobs
+# stored in the catalog.
+sub check_jobmedia
+{
+    use bigint;
+
+    my %jobids;
+    my $ret=0;
+    my %jobs;
+    #  SELECT JobId, Min(FirstIndex) AS A FROM JobMedia GROUP BY JobId HAVING Min(FirstIndex) > 1;
+    open(FP, "|$bin/bconsole -c $conf/bconsole.conf >$tmp/check_jobmedia.$$");
+    print FP "\@echo File generated by scripts::function::check_jobmedia()\n";
+    print FP "sql\n";
+    print FP "SELECT 'ERROR with FirstIndex not starting at 1 (JobId|FirstIndex)', JobId, Min(FirstIndex) AS A FROM JobMedia GROUP BY JobId HAVING Min(FirstIndex) > 1;\n";
+    print FP "SELECT 'ERROR with LastIndex != JobFiles (JobId|LastIndex|JobFiles)', JobId, Max(LastIndex), JobFiles FROM Job JOIN JobMedia USING (JobId) WHERE JobStatus = 'T' AND Type = 'B' GROUP BY JobId,JobFiles HAVING Max(LastIndex) != JobFiles;\n";
+    print FP "SELECT 'Index', JobId, FirstIndex, LastIndex, JobMediaId FROM JobMedia ORDER BY JobId, JobMediaId;\n";
+    print FP "SELECT 'Block', JobId, MediaId, StartFile, EndFile, StartBlock, EndBlock, JobMediaId FROM JobMedia ORDER BY JobId, JobMediaId;\n";
+    print FP "SELECT 'ERROR StartAddress > EndAddress (JobMediaId)', JobMediaId  from JobMedia where ((CAST(StartFile AS bigint)<<32) + StartBlock) > ((CAST (EndFile AS bigint) <<32) + EndBlock);\n";
+    close(FP);
+
+    my $tempfile = "$tmp/check_jobmedia.$$";
+    open(FP, $tempfile);
+    while (my $l = <FP>) {
+        $l =~ s/,//g;           # Default bacula output is putting , every 1000
+        $l =~ s/\|/!/g;         # | is a special char in regexp
+
+        if ($l =~ /ERROR with LastIndex [\D]+(\d+)/) {
+            print $l;
+            print "HINT: Some FileIndex are not covered by a JobMedia. It usually means that you ",
+                    "can't restore jobs impacted (jobid $1)\n\n";
+            $jobids{$1}=1;
+            $ret++;
+
+        } elsif ($l =~ / ERROR /) {
+            print $l;
+            $ret++;
+                     #              JobId     FirstIndex   LastIndex
+                     #   Index  !     1     !         1 !      2277 !
+        } elsif ($l =~ /Index\s*!\s*(\d+)\s*!\s*(\d+)\s*!\s*(\d+)\s*!/) {
+            my ($jobid, $first, $last) = ($1, $2, $3);
+
+            next if ($first == 0 && $last == 0);
+
+            if ($jobs{$jobid} && !($jobs{$jobid} == $first || $jobs{$jobid} == ($first - 1))) {
+                print "ERROR: found a gap in JobMedia, the FirstIndex is not equal to the previous LastIndex for jobid $jobid FirstIndex $first LastIndex $last PreviousLast $jobs{$jobid}\n";
+                $ret++;
+            }
+            $jobs{$jobid} = $last;
+
+                      #              JobId    MediaId     StartFile    EndFile   StartBlock  EndBlock     JobMediaId
+                      # Block   !     2     !         3 !   1       !    1     !    129223 ! 999807168 !          4 !
+        } elsif ($l =~ /Block\s*!\s*(\d+)\s*!\s*(\d+)\s*!\s*(\d+)\s*!\s*(\d+)\s*!\s*(\d+)\s*!\s*(\d+)\s*!/) {
+            my ($jobid, $mediaid, $firstfile, $lastfile, $firstblk, $lastblk) = ($1, $2, $3, $4, $5, $6);
+
+            my $first = ($firstfile << 32) + $firstblk;
+            my $last = ($lastfile << 32) + $lastblk;
+
+            if ($jobs{"$jobid:$mediaid"} && $jobs{"$jobid:$mediaid"} > $first) {
+                print "ERROR: in JobMedia, previous Block is before the current Block for jobid=$jobid mediaid=$mediaid (";
+                print $jobs{"$jobid:$mediaid"},  " > $first)\n";
+                $ret++;
+            }
+            if ($last < $first) {
+                print "ERROR: in JobMedia, the EndAddress is lower than the FirstAddress for JobId=$jobid MediaId=$mediaid ($last < $first)\n";
+                $ret++;
+            }
+            $jobs{"$jobid:$mediaid"} = $last;
+        }
+    }
+    close(FP);
+    if ($ret) {
+        print "ERROR: Found errors while checking JobMedia records, look the file $tempfile\n";
+        if (scalar(%jobids)) {
+            print "       The JobId list to check is dumped to $tmp/bad-jobid.out\n";
+            open(FP, ">$tmp/bad-jobid.out");
+            print FP join("\n", keys %jobids), "\n";
+            close(FP);
+        }
+    }
+    exit $ret;
 }
 
 # check if a volume is too big
@@ -539,8 +680,13 @@ sub create_many_files
     for(my $i=0; $i<=$nb; $i++) {
         $base = chr($i % 26 + 65);
         open(FP, ">$dest/$base/a${base}a${i}aaa$base") or die "$dest/$base $!";
+        print FP "$i\n";
         if ($sparse_size) {
-            seek(FP, $sparse_size + $i, 0);
+            seek(FP, ($sparse_size + $i)/2, 1);
+        }
+        print FP "$i\n";
+        if ($sparse_size) {
+            seek(FP, ($sparse_size + $i)/2, 1);
         }
         print FP "$i\n";
         close(FP);
@@ -1071,6 +1217,49 @@ sub remote_init
     system("ssh $REMOTE_USER$REMOTE_ADDR 'cd $REMOTE_FILE && perl -Mscripts::functions -e remote_check'");
 }
 
+sub get_mbytes
+{
+    my ($source, $cmd, $binonly) = @_;
+    my $buf;
+    if (!open(FP1, $cmd)) {
+        print "ERR\nCan't open $cmd $@\n";
+        exit 1;
+    }
+    if (!open(FP, $source)) {
+        print "ERR\nCan't open $source $@\n";
+        exit 1;
+    }
+    while (my $l = <FP1>) {
+        if ($l =~ /^(\d+):(\d+)/) {
+            if (!$binonly) {
+                print "New chunk is $1:$2\n";
+            }
+            seek(FP, $1, 0);
+            sysread(FP, $buf, $2);
+            print $buf;
+            if (!$binonly) {
+                print "\n";
+            }
+        }
+    }
+    close(FP);
+    close(FP1);
+}
+
+sub get_bytes
+{
+    my ($file, $offset, $len) = @_;
+    my $buf;
+    if (!open(FP, $file)) {
+        print "ERR\nCan't open $file $@\n";
+        exit 1;
+    }
+    seek(FP, $offset, 0);
+    sysread(FP, $buf, $len);
+    print $buf, "\n";
+    close(FP);
+}
+
 sub create_binfile
 {
     my ($file, $nb) = @_;
@@ -1150,6 +1339,76 @@ sub update_delta
     close(FP);
 
     return "OK\n";
+}
+
+sub check_jobmedia_content
+{
+    use bigint;
+    my ($jobmedia, $bls) = @_;
+    my @lst;
+    my $jm;
+
+    open(FP, $jobmedia);
+
+#  jobmediaid: 110
+#       jobid: 10
+#     mediaid: 2
+#  volumename: Vol-0002
+#  firstindex: 1
+#   lastindex: 1
+#   startfile: 0
+#     endfile: 0
+#  startblock: 903,387
+#    endblock: 5,096,666
+
+    while (my $line = <FP>) {
+        if ($line =~ /(\w+): (.+)/) {
+            my ($k, $t) = (lc($1), $2);
+            $t =~ s/,//g;
+            $jm->{$k} = $t;
+
+            if ($k eq 'endblock') {
+                $jm->{startaddress} = ($jm->{startfile} << 32) + $jm->{startblock};
+                $jm->{endaddress} = ($jm->{endfile} << 32) + $jm->{endblock};
+                push @lst, $jm;
+                $jm = {};
+            }
+        }
+    }
+    close(FP);
+
+    open(FP, $bls);
+    #File:blk=0:11160794 blk_num=0 blen=64512 First rec FI=SOS_LABEL SessId=10 SessTim=1424160078 Strm=10 rlen=152
+    my $volume;
+    while (my $line = <FP>) {
+        chomp($line);
+        if ($line =~ /Ready to read from volume "(.+?)"/) {
+            $volume = $1;
+        }
+        if ($line =~ /File:blk=(\d+):(\d+) blk_num=\d+ blen=(\d+)/) {
+            my $found = 0;
+            my ($address, $len) = (($1<<32) + $2, $3);
+            foreach $jm (@lst) {
+                if ($volume eq $jm->{volumename} && $address >= $jm->{startaddress} && $address <= $jm->{endaddress})
+                {
+                    $found = 1;
+                    last;
+                }
+            }
+            if (!$found) {
+                print "ERROR: Address=$address len=$len volume=$volume not in BSR!!\n";
+                print "$line\nJobMedia:\n";
+                foreach $jm (@lst) {
+                    if ($volume eq $jm->{volumename})
+                    {
+                        print "JobMediaId=$jm->{jobmediaid}\tStartAddress=$jm->{startaddress}\tEndAddress=$jm->{endaddress}\n";
+                    }
+                }
+            }
+        }
+    }
+
+    close(FP);
 }
 
 1;

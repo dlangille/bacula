@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2015 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -37,8 +37,9 @@ extern DIRRES *director;
 /* Version at end of Hello
  *   prior to 06Aug13 no version
  *      102 04Jun15 - added jobmedia change
+ *      103 14Feb17 - added comm line compression
  */
-#define DIR_VERSION 102
+#define DIR_VERSION 103
 
 
 /* Command sent to SD */
@@ -168,7 +169,14 @@ bool authenticate_storage_daemon(JCR *jcr, STORE *store)
          sd->host(), sd->port());
       return 0;
    }
-   if (jcr->SDVersion < 305) {
+   /* For newer SD turn on comm line compression */
+   if (jcr->SDVersion >= 1 && director->comm_compression) {
+      sd->set_compress();
+   } else {
+      sd->clear_compress();
+      Dmsg0(050, "*** No Dir compression to SD\n");
+   }
+   if (jcr->SDVersion < 2) {
       Jmsg2(jcr, M_FATAL, 0, _("Older Storage daemon at \"%s:%d\" incompatible with this Director.\n"),
          sd->host(), sd->port());
       return 0;
@@ -290,6 +298,13 @@ int authenticate_file_daemon(JCR *jcr)
            fd->host(), fd->port());
       return 0;
    }
+   /* For newer FD turn on comm line compression */
+   if (jcr->FDVersion >= 9 && director->comm_compression) {
+      fd->set_compress();
+   } else {
+      fd->clear_compress();
+      Dmsg0(050, "*** No Dir compression to FD\n");
+   }
    return 1;
 }
 
@@ -322,6 +337,13 @@ int authenticate_user_agent(UAContext *uac)
       Emsg4(M_ERROR, 0, _("UA Hello from %s:%s:%d is invalid. Got: %s\n"), ua->who(),
             ua->host(), ua->port(), ua->msg);
       return 0;
+   }
+
+   /* Turn on compression for newer consoles */
+   if (ua_version >= 1  && director->comm_compression) {
+      ua->set_compress();
+   } else {
+      Dmsg0(050, "*** No Dir compression to UA\n");
    }
 
    name[sizeof(name)-1] = 0;             /* terminate name */

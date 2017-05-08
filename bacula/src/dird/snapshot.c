@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2015 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,12 +11,10 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
-
-   Written by Eric Bollengier, 2015
 */
 
 #include "bacula.h"
@@ -102,7 +100,7 @@ static int get_snapshot_record(UAContext *ua, SNAPSHOT_DBR *snapdbr)
       return 0;
    }
    /* Need to check if the client is authorized */
-   if (!acl_access_ok(ua, Client_ACL, snapdbr->Client)) {
+   if (!acl_access_client_ok(ua, snapdbr->Client, JT_BACKUP_RESTORE)) {
       Dmsg0(10, "Client access denied\n");
       return 0;
    }
@@ -180,7 +178,7 @@ int delete_snapshot(UAContext *ua)
 
    /* Try to connect for 15 seconds */
    ua->send_msg(_("Connecting to Client %s at %s:%d\n"),
-      client->name(), client->address, client->FDport);
+      client->name(), client->address(), client->FDport);
    if (!connect_to_file_daemon(ua->jcr, 1, 15, 0)) {
       ua->error_msg(_("Failed to connect to Client.\n"));
       ua->jcr->client = NULL;
@@ -217,7 +215,7 @@ int list_snapshot(UAContext *ua, alist *snap_list)
    CLIENT      *client;
    BSOCK       *fd;
 
-   client = select_client_resource(ua);
+   client = select_client_resource(ua, JT_BACKUP_RESTORE);
    if (!client) {
       return 0;
    }
@@ -227,7 +225,7 @@ int list_snapshot(UAContext *ua, alist *snap_list)
 
    /* Try to connect for 15 seconds */
    ua->send_msg(_("Connecting to Client %s at %s:%d\n"),
-      client->name(), client->address, client->FDport);
+      client->name(), client->address(), client->FDport);
    if (!connect_to_file_daemon(ua->jcr, 1, 15, 0)) {
       ua->error_msg(_("Failed to connect to Client.\n"));
       return 0;
@@ -320,7 +318,7 @@ int prune_snapshot(UAContext *ua)
 
             /* Try to connect for 15 seconds */
             ua->send_msg(_("Connecting to Client %s at %s:%d\n"),
-                         client->name(), client->address, client->FDport);
+                         client->name(), client->address(), client->FDport);
             if (!connect_to_file_daemon(ua->jcr, 1, 15, 0)) {
                ua->error_msg(_("Failed to connect to Client.\n"));
                free_bsock(ua->jcr->file_bsock);
@@ -608,7 +606,7 @@ int select_snapshot_dbr(UAContext *ua, SNAPSHOT_DBR *sr)
       CLIENT_DBR cr;
       memset(&cr, 0, sizeof(cr));
       /* Get the pool from client=<client-name> */
-      if (!get_client_dbr(ua, &cr)) {
+      if (!get_client_dbr(ua, &cr, JT_BACKUP_RESTORE)) {
          goto bail_out;
       }
       sr->ClientId = cr.ClientId;

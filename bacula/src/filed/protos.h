@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -18,7 +18,6 @@
 */
 /*
  * Written by Kern Sibbald, MM
- *
  */
 
 extern bool blast_data_to_storage_daemon(JCR *jcr, char *addr);
@@ -39,8 +38,7 @@ bool send_hello_ok(BSOCK *bs);
 bool send_sorry(BSOCK *bs);
 bool send_hello_sd(JCR *jcr, char *Job);
 void *handle_storage_connection(BSOCK *sd);
-bool send_fdcaps(JCR *jcr);
-bool recv_sdcaps(JCR *jcr);
+BSOCK *connect_director(JCR *jcr, CONSRES *dir);
 
 /* From verify.c */
 int digest_file(JCR *jcr, FF_PKT *ff_pkt, DIGEST *digest);
@@ -57,6 +55,7 @@ bool accurate_finish(JCR *jcr);
 bool accurate_check_file(JCR *jcr, FF_PKT *ff_pkt);
 bool accurate_mark_file_as_seen(JCR *jcr, char *fname);
 void accurate_free(JCR *jcr);
+bool accurate_check_file(JCR *jcr, ATTR *attr, char *digest);
 
 /* from backup.c */
 void strip_path(FF_PKT *ff_pkt);

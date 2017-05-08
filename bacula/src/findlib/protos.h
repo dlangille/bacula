@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2015 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -22,6 +22,8 @@
  */
 
 /* from attribs.c */
+bool check_directory_acl(char **last_dir, alist *dir_acl, const char *path);
+
 void    encode_stat       (char *buf, struct stat *statp, int stat_size, int32_t LinkFI, int data_stream);
 int     decode_stat       (char *buf, struct stat *statp, int stat_size, int32_t *LinkFI);
 int32_t decode_LinkFI     (char *buf, struct stat *statp, int stat_size);

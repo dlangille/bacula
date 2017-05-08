@@ -75,11 +75,11 @@ BDB *db_init_database(JCR *jcr, const char *db_driver, const char *db_name,
 #define db_start_transaction(jcr, mdb) \
            mdb->bdb_start_transaction(jcr)
 #define db_end_transaction(jcr, mdb) \
-           mdb->bdb_end_transaction(jcr)
+           if (mdb) mdb->bdb_end_transaction(jcr)
 #define db_sql_query(mdb, query, result_handler, ctx) \
            mdb->bdb_sql_query(query, result_handler, ctx)
 #define db_thread_cleanup(mdb) \
-           mdb->bdb_thread_cleanup()
+           if (mdb) mdb->bdb_thread_cleanup()
 
 /* sql.c */
 int db_int64_handler(void *ctx, int num_fields, char **row);
@@ -148,7 +148,8 @@ void bdb_free_restoreobject_record(JCR *jcr, ROBJECT_DBR *rr);
            bdb_disable_batch_insert(disable)
 #define db_create_snapshot_record(jcr, mdb, sr) \
            mdb->bdb_create_snapshot_record(jcr, sr)
-
+#define db_get_job_statistics(jcr, mdb, jr)      \
+           mdb->bdb_get_job_statistics(jcr, jr)
 
 /* sql_delete.c */
 #define db_delete_pool_record(jcr, mdb, pool_dbr) \
@@ -238,8 +239,8 @@ void bdb_free_restoreobject_record(JCR *jcr, ROBJECT_DBR *rr);
            mdb->bdb_list_job_records(jcr, jr, sendit, ctx, type)
 #define db_list_job_totals(jcr, mdb, jr, sendit, ctx) \
            mdb->bdb_list_job_totals(jcr, jr, sendit, ctx)
-#define db_list_files_for_job(jcr, mdb, jobid, sendit, ctx) \
-           mdb->bdb_list_files_for_job(jcr, jobid, sendit, ctx)
+#define db_list_files_for_job(jcr, mdb, jobid, deleted, sendit, ctx)     \
+           mdb->bdb_list_files_for_job(jcr, jobid, deleted, sendit, ctx)
 #define db_list_media_records(jcr, mdb, mdbr, sendit, ctx, type) \
            mdb->bdb_list_media_records(jcr, mdbr, sendit, ctx, type)
 #define db_list_jobmedia_records(jcr, mdb, JobId, sendit, ctx, type) \

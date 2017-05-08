@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -36,21 +36,25 @@ const int dbglvl = 50;
 
 /*
  * SD_VERSION history
+ * Note: Enterprise versions now numbered in 30000
+ *       and community is at SD version 3
  *     None prior to 06Aug13
  *      1         - Skipped
- *      2         - Skipped
+ *      2          - Skipped
  *      3 22Feb14 - Added SD->SD with SD_Calls_Client
- *      4         - Skipped
+ *      4 22Jun14 - Skipped
  *    305 04Jun15 - Added JobMedia queueing
+ *    306 20Mar15 - Added comm line compression
  */
 
-#define SD_VERSION 305     /* Community SD version */
-#define FD_VERSION 305     /* Community FD version */
+#define SD_VERSION 306     /* Community SD version */
+#define FD_VERSION 214     /* Community FD version */
 
 static char hello_sd[]  = "Hello Bacula SD: Start Job %s %d %d\n";
 
 static char Sorry[]     = "3999 No go\n";
 static char OK_hello[]  = "3000 OK Hello %d\n";
+
 
 /*********************************************************************
  *
@@ -89,6 +93,12 @@ bool validate_dir_hello(JCR* jcr)
       return false;
    }
 
+   if (dir_version >= 1 && me->comm_compression) {
+      dir->set_compress();
+   } else {
+      dir->clear_compress();
+      Dmsg0(050, "**** No SD compression to Dir\n");
+   }
    director = NULL;
    unbash_spaces(dirname);
    foreach_res(director, R_DIRECTOR) {
@@ -163,6 +173,14 @@ void handle_client_connection(BSOCK *fd)
 
    fd->set_jcr(jcr);
    Dmsg2(050, "fd_version=%d sd_version=%d\n", fd_version, sd_version);
+
+   /* Turn on compression for newer FDs */
+   if (fd_version >= 214 || sd_version >= 306) {
+      fd->set_compress();             /* set compression allowed */
+   } else {
+      fd->clear_compress();
+      Dmsg0(050, "*** No SD compression to FD\n");
+   }
 
    /*
     * Authenticate the Client (FD or SD)
@@ -263,6 +281,13 @@ bool read_client_hello(JCR *jcr)
    jcr->FDVersion = fd_version;
    jcr->SDVersion = sd_version;
    Dmsg1(050, "FDVersion=%d\n", fd_version);
+   /* Turn on compression for newer FDs, except for Community version */
+   if (jcr->FDVersion >= 9 && jcr->FDVersion != 213 && me->comm_compression) {
+      cl->set_compress();             /* set compression allowed */
+   } else {
+      cl->clear_compress();
+      Dmsg0(050, "*** No SD compression to FD\n");
+   }
 
    return true;
 }
@@ -295,7 +320,6 @@ bool send_hello_sd(JCR *jcr, char *Job)
    if (!rtn) {
       return false;
    }
-
    return true;
 }
 

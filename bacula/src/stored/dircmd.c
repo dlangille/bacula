@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -69,6 +69,8 @@ static bool storage_cmd(JCR *jcr);
 static bool label_cmd(JCR *jcr);
 static bool die_cmd(JCR *jcr);
 static bool relabel_cmd(JCR *jcr);
+static bool truncate_cache_cmd(JCR *jcr);
+static bool upload_cmd(JCR *jcr);
 static bool readlabel_cmd(JCR *jcr);
 static bool release_cmd(JCR *jcr);
 static bool setdebug_cmd(JCR *jcr);
@@ -79,9 +81,13 @@ static bool enable_cmd(JCR *jcr);
 static bool disable_cmd(JCR *jcr);
 //static bool action_on_purge_cmd(JCR *jcr);
 static bool bootstrap_cmd(JCR *jcr);
+static bool cloud_list_cmd(JCR *jcr);
+static bool cloud_prunecache_cmd(JCR *jcr);
 static bool changer_cmd(JCR *sjcr);
 static bool do_label(JCR *jcr, int relabel);
 static DCR *find_device(JCR *jcr, POOL_MEM &dev_name,
+                        POOLMEM *media_type, int drive);
+static DCR *find_any_device(JCR *jcr, POOL_MEM &dev_name,
                         POOLMEM *media_type, int drive);
 static void read_volume_label(JCR *jcr, DCR *dcr, DEVICE *dev, int Slot);
 static void label_volume_if_ok(DCR *dcr, char *oldname,
@@ -115,8 +121,8 @@ static struct s_cmds cmds[] = {
    {".die",        die_cmd,         0},
    {"label",       label_cmd,       0},     /* label a tape */
    {"mount",       mount_cmd,       0},
-   {"enable",      enable_cmd,       0},
-   {"disable",     disable_cmd,       0},
+   {"enable",      enable_cmd,      0},
+   {"disable",     disable_cmd,     0},
    {"readlabel",   readlabel_cmd,   0},
    {"release",     release_cmd,     0},
    {"relabel",     relabel_cmd,     0},     /* relabel a tape */
@@ -125,6 +131,10 @@ static struct s_cmds cmds[] = {
    {".status",     qstatus_cmd,     1},
    {"stop",        cancel_cmd,      0},
    {"storage",     storage_cmd,     0},     /* get SD addr from Dir */
+   {"truncate",    truncate_cache_cmd, 0},
+   {"upload",      upload_cmd,      0},
+   {"prunecache",  cloud_prunecache_cmd, 0},
+   {"cloudlist",   cloud_list_cmd,  0},     /* List volumes/parts in the cloud */
    {"unmount",     unmount_cmd,     0},
    {"use storage=", use_cmd,        0},
    {"run",         run_cmd,         0},
@@ -198,17 +208,19 @@ void *handle_connection_request(void *arg)
       goto bail_out;
    }
    if (!authenticate_director(jcr)) {
-      Jmsg(jcr, M_FATAL, 0, _("Unable to authenticate Director\n"));
+      Jmsg(jcr, M_FATAL, 0, _("[SF0100] Unable to authenticate Director\n"));
       goto bail_out;
    }
    Dmsg0(90, "Message channel init completed.\n");
+
+   dequeue_messages(jcr);     /* dequeue any daemon messages */
 
    for (quit=false; !quit;) {
       /* Read command */
       if ((bnet_stat = bs->recv()) <= 0) {
          break;               /* connection terminated */
       }
-      Dmsg1(199, "<dird: %s\n", bs->msg);
+      Dmsg1(199, "<dird: %s", bs->msg);
       /* Ensure that device initialization is complete */
       while (!init_done) {
          bmicrosleep(1, 0);
@@ -293,7 +305,7 @@ static bool client_cmd(JCR *jcr)
    if (sscanf(dir->msg, "client address=%s port=%d ssl=%d", &jcr->client_addr, &client_port,
               &enable_ssl) != 3) {
       pm_strcpy(jcr->errmsg, dir->msg);
-      Jmsg(jcr, M_FATAL, 0, _("Bad client command: %s"), jcr->errmsg);
+      Jmsg(jcr, M_FATAL, 0, _("[SF0101] Bad client command: %s"), jcr->errmsg);
       Dmsg1(050, "Bad client command: %s", jcr->errmsg);
       goto bail_out;
    }
@@ -306,7 +318,7 @@ static bool client_cmd(JCR *jcr)
                 _("Client daemon"), jcr->client_addr, NULL, client_port, 1)) {
       /* destroy() OK because cl is local */
       cl->destroy();
-      Jmsg(jcr, M_FATAL, 0, _("Failed to connect to Client daemon: %s:%d\n"),
+      Jmsg(jcr, M_FATAL, 0, _("[SF0102] Failed to connect to Client daemon: %s:%d\n"),
           jcr->client_addr, client_port);
       Dmsg2(100, "Failed to connect to Client daemon: %s:%d\n",
           jcr->client_addr, client_port);
@@ -345,7 +357,7 @@ static bool storage_cmd(JCR *jcr)
    if (sscanf(dir->msg, storaddr, &jcr->stored_addr, &stored_port,
               &enable_ssl, Job, sd_auth_key) != 5) {
       pm_strcpy(jcr->errmsg, dir->msg);
-      Jmsg(jcr, M_FATAL, 0, _("Bad storage command: %s"), jcr->errmsg);
+      Jmsg(jcr, M_FATAL, 0, _("[SF0103] Bad storage command: %s"), jcr->errmsg);
       Pmsg1(010, "Bad storage command: %s", jcr->errmsg);
       goto bail_out;
    }
@@ -367,7 +379,7 @@ static bool storage_cmd(JCR *jcr)
                 _("Storage daemon"), jcr->stored_addr, NULL, stored_port, 1)) {
          /* destroy() OK because sd is local */
          sd->destroy();
-         Jmsg(jcr, M_FATAL, 0, _("Failed to connect to Storage daemon: %s:%d\n"),
+         Jmsg(jcr, M_FATAL, 0, _("[SF0104] Failed to connect to Storage daemon: %s:%d\n"),
              jcr->stored_addr, stored_port);
          Dmsg2(010, "Failed to connect to Storage daemon: %s:%d\n",
              jcr->stored_addr, stored_port);
@@ -384,7 +396,7 @@ static bool storage_cmd(JCR *jcr)
          jcr->store_bsock = jcr->file_bsock;
       }
       if (jcr->store_bsock == NULL) {
-         Jmsg0(jcr, M_FATAL, 0, _("In storage_cmd port==0, no prior Storage connection.\n"));
+         Jmsg0(jcr, M_FATAL, 0, _("[SF0105] In storage_cmd port==0, no prior Storage connection.\n"));
          Pmsg0(010, "In storage_cmd port==0, no prior Storage connection.\n");
          goto bail_out;
       }
@@ -452,6 +464,19 @@ static bool setdebug_cmd(JCR *jcr)
       debug_level = level;
    }
    debug_level_tags = level_tags;
+
+   /* TODO: Temp code to activate the new BSR optimisation code */
+   for (char *p = options; *p ; p++) {
+      switch(*p) {
+      case 'i':                 /* Use new match_bsr() code */
+         use_new_match_all = 1;
+         break;
+      case '0':
+         use_new_match_all = 0;
+         break;
+      }
+   }
+   /* **** */
 
    return dir->fsend(OKsetdebug, lvl, trace_flag, options, tags);
 }
@@ -587,16 +612,20 @@ static bool do_label(JCR *jcr, int relabel)
             ok = false;
          }
          if (!ok) {
-            Dmsg2(000, "Reserve error on volume \"%s\": ERR=%s\n", newname, jcr->errmsg);
             dir->fsend(_("3908 Error reserving volume: %s\n"), jcr->errmsg);
             dev->max_concurrent_jobs = max_jobs;
             dev->Unlock();
             goto bail_out;
          }
+
+         /* some command use recv and don't accept catalog update.
+          * it's not the case here, so we force dir_update_volume_info catalog update */ 
+         dcr->force_update_volume_info = true;
+
          if (!dev->is_open() && !dev->is_busy()) {
             Dmsg1(400, "Can %slabel. Device is not open\n", relabel?"re":"");
             label_volume_if_ok(dcr, oldname, newname, poolname, slot, relabel);
-            dev->close();
+            dev->close(dcr);
          /* Under certain "safe" conditions, we can steal the lock */
          } else if (dev->can_steal_lock()) {
             Dmsg0(400, "Can relabel. can_steal_lock\n");
@@ -610,6 +639,13 @@ static bool do_label(JCR *jcr, int relabel)
          dev->max_concurrent_jobs = max_jobs;
          volume_unused(dcr);
          dev->Unlock();
+#ifdef DEVELOPER
+         if (chk_dbglvl(DT_VOLUME)) {
+            Dmsg0(0, "Waiting few seconds to force a bug...\n");
+            bmicrosleep(30, 0);
+            Dmsg0(0, "Doing free_volume()\n");
+         }
+#endif
       } else {
          dir->fsend(_("3999 Device \"%s\" not found or could not be opened.\n"), dev_name.c_str());
       }
@@ -631,6 +667,233 @@ bail_out:
 }
 
 /*
+ * Handles truncate cache commands
+ */
+static bool truncate_cache_cmd(JCR *jcr)
+{
+   POOLMEM *volname, *poolname, *mtype;
+   POOL_MEM dev_name;
+   BSOCK *dir = jcr->dir_bsock;
+   DCR *dcr = NULL;;
+   DEVICE *dev;
+   bool ok = false;
+   int32_t slot, drive;
+   int nbpart = 0;
+   int64_t size = 0;
+   char ed1[50];
+
+   volname = get_memory(dir->msglen+1);
+   poolname = get_memory(dir->msglen+1);
+   mtype = get_memory(dir->msglen+1);
+   if (sscanf(dir->msg, "truncate cache Storage=%127s Volume=%127s PoolName=%127s "
+              "MediaType=%127s Slot=%d drive=%d",
+               dev_name.c_str(), volname, poolname, mtype,
+               &slot, &drive) == 6) {
+      ok = true;
+   }
+   if (ok) {
+      unbash_spaces(volname);
+      unbash_spaces(poolname);
+      unbash_spaces(mtype);
+      dcr = find_device(jcr, dev_name, mtype, drive);
+      if (dcr) {
+         uint32_t max_jobs;
+         dev = dcr->dev;
+         ok = true;
+         dev->Lock();                 /* Use P to avoid indefinite block */
+         max_jobs = dev->max_concurrent_jobs;
+         dev->max_concurrent_jobs = 1;
+         bstrncpy(dcr->VolumeName, volname, sizeof(dcr->VolumeName));
+         if (dcr->can_i_write_volume()) {
+            if (reserve_volume(dcr, volname) == NULL) {
+               ok = false;
+            }
+            Dmsg1(400, "Reserved volume \"%s\"\n", volname);
+         } else {
+            ok = false;
+         }
+         if (!ok) {
+            dir->fsend(_("3908 Error reserving volume \"%s\": %s\n"), volname, jcr->errmsg);
+            dev->max_concurrent_jobs = max_jobs;
+            dev->Unlock();
+            goto bail_out;
+         }
+         if ((!dev->is_open() && !dev->is_busy()) || dev->can_steal_lock()) {
+            Dmsg0(400, "Call truncate_cache\n");
+            nbpart = dev->truncate_cache(dcr, volname, &size);
+            if (nbpart >= 0) {
+               dir->fsend(_("3000 OK truncate cache for volume \"%s\" %d part(s) %sB\n"),
+                          volname, nbpart, edit_uint64_with_suffix(size, ed1));
+            } else {
+               dir->fsend(_("3900 Truncate cache for volume \"%s\" failed. ERR=%s\n"), volname, dev->errmsg);
+            }
+         } else if (dev->is_busy() || dev->is_blocked()) {
+            send_dir_busy_message(dir, dev);
+         } else {                     /* device not being used */
+            Dmsg0(400, "Call truncate_cache\n");
+            nbpart = dev->truncate_cache(dcr, volname, &size);
+            if (nbpart >= 0) {
+               dir->fsend(_("3000 OK truncate cache for volume \"%s\" %d part(s) %sB\n"), volname,
+                          nbpart, edit_uint64_with_suffix(size, ed1));
+            } else {
+               dir->fsend(_("3900 Truncate cache for volume \"%s\" failed. ERR=%s\n"), volname, dev->errmsg);
+            }
+         }
+         dev->max_concurrent_jobs = max_jobs;
+         volume_unused(dcr);
+         dev->Unlock();
+#ifdef DEVELOPER
+         if (chk_dbglvl(DT_VOLUME)) {
+            Dmsg0(0, "Waiting few seconds to force a bug...\n");
+            bmicrosleep(30, 0);
+            Dmsg0(0, "Doing free_volume()\n");
+         }
+#endif
+      } else {
+         dir->fsend(_("3999 Device \"%s\" not found or could not be opened.\n"), dev_name.c_str());
+      }
+   } else {
+      /* NB dir->msg gets clobbered in bnet_fsend, so save command */
+      pm_strcpy(jcr->errmsg, dir->msg);
+      dir->fsend(_("3911 Error scanning truncate command: %s\n"), jcr->errmsg);
+   }
+bail_out:
+   if (dcr) {
+      free_dcr(dcr);
+   }
+   free_memory(volname);
+   free_memory(poolname);
+   free_memory(mtype);
+   dir->signal(BNET_EOD);
+   return true;
+}
+
+static bool cloud_prunecache_cmd(JCR *jcr)
+{
+   /* TODO: Implement a function to prune the cache of a cloud device */
+   jcr->dir_bsock->fsend(_("3900 Not yet implemented\n"));
+   return true;
+}
+
+/* List volumes in the cloud */
+static bool cloud_list_cmd(JCR *jcr)
+{
+   jcr->dir_bsock->fsend(_("3900 Not yet implemented\n"));
+   return true;
+}
+
+/*
+ * Handles upload cache to Cloud command
+ */
+static bool upload_cmd(JCR *jcr)
+{
+   POOLMEM *volname, *poolname, *mtype, *err;
+   POOL_MEM dev_name;
+   BSOCK *dir = jcr->dir_bsock;
+   DCR *dcr = NULL;
+   DEVICE *dev;
+   bool ok = false;
+   int32_t slot, drive;
+
+   volname = get_memory(dir->msglen+1);
+   poolname = get_memory(dir->msglen+1);
+   mtype = get_memory(dir->msglen+1);
+   err = get_pool_memory(PM_MESSAGE);
+   *volname = *poolname = *mtype = *err = 0;
+
+   if (sscanf(dir->msg, "upload Storage=%127s Volume=%127s PoolName=%127s "
+              "MediaType=%127s Slot=%d drive=%d",
+               dev_name.c_str(), volname, poolname, mtype,
+               &slot, &drive) == 6) {
+      ok = true;
+   }
+   if (ok) {
+      unbash_spaces(volname);
+      unbash_spaces(poolname);
+      unbash_spaces(mtype);
+      dcr = find_device(jcr, dev_name, mtype, drive);
+      if (dcr) {
+         uint32_t max_jobs;
+         dev = dcr->dev;
+         ok = true;
+         dev->Lock();                 /* Use P to avoid indefinite block */
+         max_jobs = dev->max_concurrent_jobs;
+         dev->max_concurrent_jobs = 1;
+         bstrncpy(dcr->VolumeName, volname, sizeof(dcr->VolumeName));
+         if (dcr->can_i_write_volume()) {
+            if (reserve_volume(dcr, volname) == NULL) {
+               ok = false;
+            }
+            Dmsg1(400, "Reserved volume \"%s\"\n", volname);
+         } else {
+            ok = false;
+         }
+         if (!ok) {
+            dir->fsend(_("3908 Error reserving volume \"%s\": %s\n"), volname, jcr->errmsg);
+            dev->max_concurrent_jobs = max_jobs;
+            dev->Unlock();
+            goto bail_out;
+         }
+         if ((!dev->is_open() && !dev->is_busy()) || dev->can_steal_lock()) {
+            Dmsg0(400, "Can upload, because device is not open.\n");
+            dev->setVolCatName(volname);
+            dev->part = 0;
+            if (dev->open_device(dcr, OPEN_READ_WRITE)) {
+               ok = dev->upload_cache(dcr, volname, err);
+               dev->part = 0;
+               dev->close(dcr);
+               dev->end_of_job(dcr);
+            }
+         } else if (dev->is_busy() || dev->is_blocked()) {
+            send_dir_busy_message(dir, dev);
+         } else {                     /* device not being used */
+            Dmsg0(400, "Can upload, because device not used\n");
+            dev->setVolCatName(volname);
+            dev->part = 0;
+            if (dev->open_device(dcr, OPEN_READ_WRITE)) {
+               ok = dev->upload_cache(dcr, volname, err);
+               dev->part = 0;
+               dev->close(dcr);
+               dev->end_of_job(dcr);
+            }
+         }
+         dev->max_concurrent_jobs = max_jobs;
+         volume_unused(dcr);
+         dev->Unlock();
+#ifdef DEVELOPER
+         if (chk_dbglvl(DT_VOLUME)) {
+            Dmsg0(0, "Waiting few seconds to force a bug...\n");
+            bmicrosleep(30, 0);
+            Dmsg0(0, "Doing free_volume()\n");
+         }
+#endif
+      } else {
+         dir->fsend(_("3999 Device \"%s\" not found or could not be opened.\n"), dev_name.c_str());
+      }
+   } else {
+      /* NB dir->msg gets clobbered in bnet_fsend, so save command */
+      pm_strcpy(jcr->errmsg, dir->msg);
+      dir->fsend(_("3912 Error scanning upload command: ERR=%s\n"), jcr->errmsg);
+   }
+bail_out:
+   if (ok) {
+      dir->fsend(_("3000 OK upload.\n"));
+   } else {
+      dir->fsend(_("3999 Error with the upload: ERR=%s\n"), err);
+   }
+   if (dcr) {
+      free_dcr(dcr);
+   }
+   free_pool_memory(err);
+   free_memory(volname);
+   free_memory(poolname);
+   free_memory(mtype);
+   dir->signal(BNET_EOD);
+   return true;
+}
+
+
+/*
  * Read the tape label and determine if we can safely
  * label the tape (not a Bacula volume), then label it.
  *
@@ -646,6 +909,7 @@ static void label_volume_if_ok(DCR *dcr, char *oldname,
    int label_status;
    int mode;
    const char *volname = (relabel == 1) ? oldname : newname;
+   uint64_t volCatBytes;
 
    steal_device_lock(dev, &hold, BST_WRITING_LABEL);
    Dmsg1(100, "Stole device %s lock, writing label.\n", dev->print_name());
@@ -655,26 +919,27 @@ static void label_volume_if_ok(DCR *dcr, char *oldname,
       goto bail_out;                  /* error */
    }
 
+
+   if (relabel) {
+      dev->truncating = true;         /* let open_device() know we will truncate it */
+   }
+   /* Set old volume name for open if relabeling */
+   dcr->setVolCatName(volname);
+
    /* Ensure that the device is open -- autoload_device() closes it */
    if (dev->is_tape()) {
       mode = OPEN_READ_WRITE;
    } else {
       mode = CREATE_READ_WRITE;
    }
-
-   if (relabel) {
-      dev->truncating = true;         /* let open() know we will truncate it */
-   }
-   /* Set old volume name for open if relabeling */
-   dcr->setVolCatName(volname);
-   if (!dev->open(dcr, mode)) {
-      dir->fsend(_("3910 Unable to open device \"%s\": ERR=%s\n"),
+   if (!dev->open_device(dcr, mode)) {
+      dir->fsend(_("3929 Unable to open device \"%s\": ERR=%s\n"),
          dev->print_name(), dev->bstrerror());
       goto bail_out;
    }
 
    /* See what we have for a Volume */
-   label_status = read_dev_volume_label(dcr);
+   label_status = dev->read_dev_volume_label(dcr);
 
    /* Set new volume name */
    dcr->setVolCatName(newname);
@@ -702,39 +967,55 @@ static void label_volume_if_ok(DCR *dcr, char *oldname,
       /* Fall through wanted! */
    case VOL_IO_ERROR:
    case VOL_NO_LABEL:
-      if (!write_new_volume_label_to_dev(dcr, newname, poolname,
-              relabel, true /* write dvd now */)) {
+      if (!dev->write_volume_label(dcr, newname, poolname,
+              relabel, true /* write label now */)) {
          dir->fsend(_("3912 Failed to label Volume: ERR=%s\n"), dcr->jcr->errmsg);
          break;
+      }
+      volCatBytes = dev->VolCatInfo.VolCatBytes;
+      /*
+      * After writing label, create a new part
+      */
+      if (dev->is_cloud()) {
+         dev->set_append();
+         if (!dev->open_next_part(dcr)) {
+            dir->fsend(_("3913 Failed to open next part: ERR=%s\n"), dcr->jcr->errmsg);
+            break;
+         }
       }
       bstrncpy(dcr->VolumeName, newname, sizeof(dcr->VolumeName));
       /* The following 3000 OK label. string is scanned in ua_label.c */
       int type;
-      if (dev->dev_type == B_FILE_DEV) {
+      if (dev->dev_type == B_FILE_DEV || dev->dev_type == B_ALIGNED_DEV ||
+          dev->dev_type == B_CLOUD_DEV)
+      {
          type = dev->dev_type;
       } else {
          type = 0;
       }
       dir->fsend("3000 OK label. VolBytes=%lld VolABytes=%lld VolType=%d Volume=\"%s\" Device=%s\n",
-                 dev->VolCatInfo.VolCatBytes, dev->VolCatInfo.VolCatAdataBytes,
+                 volCatBytes, dev->VolCatInfo.VolCatAdataBytes,
                  type, newname, dev->print_name());
       break;
    case VOL_TYPE_ERROR:
-      dir->fsend(_("3912 Failed to label Volume: ERR=%s\n"), dcr->jcr->errmsg);
+      dir->fsend(_("3917 Failed to label Volume: ERR=%s\n"), dcr->jcr->errmsg);
       break;
    case VOL_NO_MEDIA:
-      dir->fsend(_("3914 Failed to label Volume (no media): ERR=%s\n"), dcr->jcr->errmsg);
+      dir->fsend(_("3918 Failed to label Volume (no media): ERR=%s\n"), dcr->jcr->errmsg);
       break;
    default:
-      dir->fsend(_("3913 Cannot label Volume. "
+      dir->fsend(_("3919 Cannot label Volume. "
                    "Unknown status %d from read_volume_label()\n"), label_status);
       break;
    }
 
 bail_out:
    if (dev->is_open() && !dev->has_cap(CAP_ALWAYSOPEN)) {
-      dev->close();
+      dev->close(dcr);
    }
+   
+   dev->end_of_job(dcr);
+   
    if (!dev->is_open()) {
       dev->clear_volhdr();
    }
@@ -761,7 +1042,7 @@ static bool read_label(DCR *dcr)
 
    dcr->VolumeName[0] = 0;
    dev->clear_labeled();              /* force read of label */
-   switch (read_dev_volume_label(dcr)) {
+   switch (dev->read_dev_volume_label(dcr)) {
    case VOL_OK:
       dir->fsend(_("3001 Mounted Volume: %s\n"), dev->VolHdr.VolumeName);
       ok = true;
@@ -799,7 +1080,7 @@ static DCR *find_device(JCR *jcr, POOL_MEM &devname,
          }
          if (!device->dev) {
             Jmsg(jcr, M_WARNING, 0, _("\n"
-               "     Device \"%s\" requested by DIR could not be opened or does not exist.\n"),
+               "[SW0106] Device \"%s\" requested by DIR could not be opened or does not exist.\n"),
                  devname.c_str());
             continue;
          }
@@ -821,7 +1102,7 @@ static DCR *find_device(JCR *jcr, POOL_MEM &devname,
                if (!device->dev) {
                   Dmsg1(100, "Device %s could not be opened. Skipped\n", devname.c_str());
                   Jmsg(jcr, M_WARNING, 0, _("\n"
-                     "     Device \"%s\" in changer \"%s\" requested by DIR could not be opened or does not exist.\n"),
+                     "[SW0107] Device \"%s\" in changer \"%s\" requested by DIR could not be opened or does not exist.\n"),
                        device->hdr.name, devname.c_str());
                   continue;
                }
@@ -855,6 +1136,78 @@ static DCR *find_device(JCR *jcr, POOL_MEM &devname,
 }
 
 /*
+ * Find even disabled devices so that we can enable them
+ *   ***FIXME*** This could probably be merged with find_device with another
+ *   argument, but this is easier for the moment.
+ */
+static DCR *find_any_device(JCR *jcr, POOL_MEM &devname,
+                        POOLMEM *media_type, int drive)
+{
+   DEVRES *device;
+   AUTOCHANGER *changer;
+   bool found = false;
+   DCR *dcr = NULL;
+
+   unbash_spaces(devname);
+   foreach_res(device, R_DEVICE) {
+      /* Find resource, and make sure we were able to open it */
+      if (strcmp(device->hdr.name, devname.c_str()) == 0 &&
+          (!media_type || strcmp(device->media_type, media_type) ==0)) {
+         if (!device->dev) {
+            device->dev = init_dev(jcr, device);
+         }
+         if (!device->dev) {
+            Jmsg(jcr, M_WARNING, 0, _("\n"
+               "[SW0108] Device \"%s\" requested by DIR could not be opened or does not exist.\n"),
+                 devname.c_str());
+            continue;
+         }
+         Dmsg1(20, "Found device %s\n", device->hdr.name);
+         found = true;
+         break;
+      }
+   }
+   if (!found) {
+      foreach_res(changer, R_AUTOCHANGER) {
+         /* Find resource, and make sure we were able to open it */
+         if (strcmp(devname.c_str(), changer->hdr.name) == 0) {
+            /* Try each device in this AutoChanger */
+            foreach_alist(device, changer->device) {
+               Dmsg1(100, "Try changer device %s\n", device->hdr.name);
+               if (!device->dev) {
+                  device->dev = init_dev(jcr, device);
+               }
+               if (!device->dev) {
+                  Dmsg1(100, "Device %s could not be opened. Skipped\n", devname.c_str());
+                  Jmsg(jcr, M_WARNING, 0, _("\n"
+                     "[SW0109] Device \"%s\" in changer \"%s\" requested by DIR could not be opened or does not exist.\n"),
+                       device->hdr.name, devname.c_str());
+                  continue;
+               }
+               if ((drive < 0 || drive == (int)device->dev->drive_index) &&
+                   (!media_type || strcmp(device->media_type, media_type) ==0)) {
+                  Dmsg1(20, "Found changer device %s\n", device->hdr.name);
+                  found = true;
+                  break;
+               }
+               Dmsg3(100, "Device %s drive wrong: want=%d got=%d skipping\n",
+                  devname.c_str(), drive, (int)device->dev->drive_index);
+            }
+            break;                    /* we found it but could not open a device */
+         }
+      }
+   }
+
+   if (found) {
+      Dmsg1(100, "Found device %s\n", device->hdr.name);
+      dcr = new_dcr(jcr, NULL, device->dev);
+      dcr->device = device;
+   }
+   return dcr;
+}
+
+
+/*
  * Mount command from Director
  */
 static bool mount_cmd(JCR *jcr)
@@ -870,10 +1223,6 @@ static bool mount_cmd(JCR *jcr)
    Dmsg1(100, "%s\n", dir->msg);
    ok = sscanf(dir->msg, "mount %127s drive=%d slot=%d", devname.c_str(),
                &drive, &slot) == 3;
-   if (!ok) {
-      slot = 0;
-      ok = sscanf(dir->msg, "mount %127s drive=%d", devname.c_str(), &drive) == 2;
-   }
    Dmsg3(100, "ok=%d device_index=%d slot=%d\n", ok, drive, slot);
    if (ok) {
       dcr = find_device(jcr, devname, NULL, drive);
@@ -904,7 +1253,7 @@ static bool mount_cmd(JCR *jcr)
                try_autoload_device(jcr, dcr, slot, "");
             }
             /* We freed the device, so reopen it and wake any waiting threads */
-            if (!dev->open(dcr, OPEN_READ_ONLY)) {
+            if (!dev->open_device(dcr, OPEN_READ_ONLY)) {
                dir->fsend(_("3901 Unable to open device \"%s\": ERR=%s\n"),
                   dev->print_name(), dev->bstrerror());
                if (dev->blocked() == BST_UNMOUNTED) {
@@ -914,7 +1263,7 @@ static bool mount_cmd(JCR *jcr)
                }
                break;
             }
-            read_dev_volume_label(dcr);
+            dev->read_dev_volume_label(dcr);
             if (dev->blocked() == BST_UNMOUNTED) {
                /* We blocked the device, so unblock it */
                Dmsg0(100, "Unmounted. Unblocking device\n");
@@ -962,7 +1311,7 @@ static bool mount_cmd(JCR *jcr)
                              dev->print_name());
                }
             } else if (dev->is_tape()) {
-               if (!dev->open(dcr, OPEN_READ_ONLY)) {
+               if (!dev->open_device(dcr, OPEN_READ_ONLY)) {
                   dir->fsend(_("3901 Unable to open device \"%s\": ERR=%s\n"),
                      dev->print_name(), dev->bstrerror());
                   break;
@@ -977,7 +1326,7 @@ static bool mount_cmd(JCR *jcr)
                              dev->print_name());
                }
                if (dev->is_open() && !dev->has_cap(CAP_ALWAYSOPEN)) {
-                  dev->close();
+                  dev->close(dcr);
                }
             } else if (dev->is_unmountable()) {
                if (dev->mount(1)) {
@@ -1024,17 +1373,27 @@ static bool enable_cmd(JCR *jcr)
    DCR *dcr;
    int32_t drive;
    bool ok;
+   int deleted;
 
    ok = sscanf(dir->msg, "enable %127s drive=%d", devname.c_str(),
                &drive) == 2;
    Dmsg3(100, "ok=%d device=%s device_index=%d\n", ok, devname.c_str(), drive);
    if (ok) {
-      dcr = find_device(jcr, devname, NULL, drive);
+      dcr = find_any_device(jcr, devname, NULL, drive);
       if (dcr) {
          dev = dcr->dev;
          dev->Lock();                 /* Use P to avoid indefinite block */
-         dev->enabled = true;
-         dir->fsend(_("3002 Device \"%s\" enabled.\n"), dev->print_name());
+         if (dev->enabled) {
+            dir->fsend(_("3003 Device \"%s\" already enabled.\n"), dev->print_name());
+         } else {
+            dev->enabled = true;
+            dir->fsend(_("3002 Device \"%s\" enabled.\n"), dev->print_name());
+         }
+         deleted = dev->delete_alerts();
+         if (deleted > 0) {
+            dir->fsend(_("3004 Device \"%s\" deleted %d alert%s.\n"),
+                dev->print_name(), deleted, deleted>1?"s":"");
+         }
          dev->Unlock();
          free_dcr(dcr);
       }
@@ -1120,7 +1479,7 @@ static bool unmount_cmd(JCR *jcr)
                 * ***FIXME**** what is this ???? -- probably we had
                 *   the wrong volume so we must free it and try again. KES
                 */
-               dev->close();
+               dev->close(dcr);
                free_volume(dev);
             }
             if (dev->is_unmountable() && !dev->unmount(0)) {
@@ -1152,7 +1511,7 @@ static bool unmount_cmd(JCR *jcr)
             dev->set_blocked(BST_UNMOUNTED);
             clear_thread_id(dev->no_wait_id);
             if (!unload_autochanger(dcr, -1)) {
-               dev->close();
+               dev->close(dcr);
                free_volume(dev);
             }
             if (dev->is_unmountable() && !dev->unmount(0)) {
@@ -1307,10 +1666,10 @@ static bool get_bootstrap_file(JCR *jcr, BSOCK *sock)
    V(bsr_mutex);
    Dmsg1(400, "bootstrap=%s\n", fname);
    jcr->RestoreBootstrap = fname;
-   bs = fopen(fname, "a+b");           /* create file */
+   bs = bfopen(fname, "a+b");           /* create file */
    if (!bs) {
       berrno be;
-      Jmsg(jcr, M_FATAL, 0, _("Could not create bootstrap file %s: ERR=%s\n"),
+      Jmsg(jcr, M_FATAL, 0, _("[SF0110] Could not create bootstrap file %s: ERR=%s\n"),
          jcr->RestoreBootstrap, be.bstrerror());
       goto bail_out;
    }
@@ -1323,14 +1682,15 @@ static bool get_bootstrap_file(JCR *jcr, BSOCK *sock)
    Dmsg0(150, "=== end bootstrap file ===\n");
    jcr->bsr = parse_bsr(jcr, jcr->RestoreBootstrap);
    if (!jcr->bsr) {
-      Jmsg(jcr, M_FATAL, 0, _("Error parsing bootstrap file.\n"));
+      Jmsg(jcr, M_FATAL, 0, _("[SF0111] Error parsing bootstrap file.\n"));
       goto bail_out;
    }
    if (chk_dbglvl(150)) {
-      dump_bsr(jcr->bsr, true);
+      dump_bsr(NULL, jcr->bsr, true);
    }
+
    /* If we got a bootstrap, we are reading, so create read volume list */
-   create_restore_volume_list(jcr);
+   create_restore_volume_list(jcr, true /* store the volumes in the global vol_read list */);
    ok = true;
 
 bail_out:
@@ -1428,7 +1788,7 @@ static bool readlabel_cmd(JCR *jcr)
          dev->Lock();                 /* Use P to avoid indefinite block */
          if (!dev->is_open()) {
             read_volume_label(jcr, dcr, dev, Slot);
-            dev->close();
+            dev->close(dcr);
          /* Under certain "safe" conditions, we can steal the lock */
          } else if (dev->can_steal_lock()) {
             read_volume_label(jcr, dcr, dev, Slot);
@@ -1469,7 +1829,7 @@ static void read_volume_label(JCR *jcr, DCR *dcr, DEVICE *dev, int Slot)
    }
 
    dev->clear_labeled();              /* force read of label */
-   switch (read_dev_volume_label(dcr)) {
+   switch (dev->read_dev_volume_label(dcr)) {
    case VOL_OK:
       /* DO NOT add quotes around the Volume name. It is scanned in the DIR */
       dir->fsend(_("3001 Volume=%s Slot=%d\n"), dev->VolHdr.VolumeName, Slot);

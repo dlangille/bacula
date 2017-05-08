@@ -1,0 +1,27 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2017 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+
+. scripts/functions
+
+sed "s:SCRIPTDIR=/opt/bacula/scripts:SCRIPTDIR=$cwd/bin:" $cwd/bin/bacula > tmp/1
+mv tmp/1 $cwd/bin/bacula
+SCR=$cwd/bin/bacula-ctl
+sed "s:BACDIRCFG=/opt/bacula/etc:BACDIRCFG=$cwd/bin:" $SCR-dir > tmp/2
+sed "s:PIDDIR=/opt/bacula/working:PIDDIR=$working:" tmp/2 > tmp/1
+mv tmp/1 $SCR-dir
+sed "s:BACSDCFG=/opt/bacula/etc:BACSDCFG=$cwd/bin:" $SCR-sd > tmp/2
+sed "s:PIDDIR=/opt/bacula/working:PIDDIR=$working:" tmp/2 > tmp/1
+mv tmp/1 $SCR-sd
+sed "s:BACFDCFG=/opt/bacula/etc:BACFDCFG=$cwd/bin:" $SCR-fd > tmp/2
+sed "s:PIDDIR=/opt/bacula/working:PIDDIR=$working:" tmp/2 > tmp/1
+mv tmp/1 $SCR-fd
+rm -f tmp/2
+chmod -x $cwd/bin/bacula-fd $cwd/bin/bacula-sd $cwd/bin/bacula-dir $cwd/bin/bconsole
+chmod +x $SCR-* $cwd/bin/bacula
+if [ x$plugins != x ]; then
+    mv $cwd/bin/plugins $cwd/bin/plugins.org
+    ln -s $plugins $cwd/bin/plugins
+fi

@@ -39,6 +39,7 @@ Job {
   Maximum Concurrent Jobs = 4
   SpoolData = yes
 # Prefer Mounted Volumes = no
+  Max Wait Time = 1mins
 }
 
 #
@@ -56,6 +57,7 @@ Job {
   Write Bootstrap = "@working_dir@/NightlySave.bsr"
   Maximum Concurrent Jobs = 4
   SpoolData = yes
+  Max Wait Time = 1mins
 # Prefer Mounted Volumes = no
 }
 
@@ -73,6 +75,7 @@ Job {
   SpoolData = yes
 # Prefer Mounted Volumes = no
   Client Run Before Job = "sleep 5"
+  Max Wait Time = 1mins
 }
 
 Job {
@@ -87,6 +90,7 @@ Job {
   Maximum Concurrent Jobs = 4
   SpoolData = yes
 # Prefer Mounted Volumes = no
+  Max Wait Time = 1mins
 }
 
 Job {

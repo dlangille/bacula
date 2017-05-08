@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2015 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -170,6 +170,7 @@ int do_keyword_prompt(UAContext *ua, const char *msg, const char **list)
  */
 STORE *select_storage_resource(UAContext *ua, bool unique)
 {
+   POOL_MEM tmp;
    char name[MAX_NAME_LENGTH];
    STORE *store;
 
@@ -180,9 +181,10 @@ STORE *select_storage_resource(UAContext *ua, bool unique)
    start_prompt(ua, _("The defined Storage resources are:\n"));
    LockRes();
    foreach_res(store, R_STORAGE) {
-      if (acl_access_ok(ua, Storage_ACL, store->name())) {
+      if (store->is_enabled() && acl_access_ok(ua, Storage_ACL, store->name())) {
          if (unique) {
-            add_prompt(ua, store->name(), store->address);
+            Mmsg(tmp, "%s:%d", store->address, store->SDport);
+            add_prompt(ua, store->name(), tmp.c_str());
          } else {
             add_prompt(ua, store->name());
          }
@@ -238,7 +240,7 @@ CAT *get_catalog_resource(UAContext *ua)
          }
       }
       if (strcasecmp(ua->argk[i], NT_("client")) == 0 && ua->argv[i]) {
-         if (acl_access_ok(ua, Client_ACL, ua->argv[i])) {
+         if (acl_access_client_ok(ua, ua->argv[i], JT_BACKUP_RESTORE)) {
             client = (CLIENT *)GetResWithName(R_CLIENT, ua->argv[i]);
             break;
          }
@@ -296,7 +298,7 @@ JOB *select_enable_disable_job_resource(UAContext *ua, bool enable)
       if (!acl_access_ok(ua, Job_ACL, job->name())) {
          continue;
       }
-      if (job->enabled == enable) {   /* Already enabled/disabled? */
+      if (job->is_enabled() == enable) {   /* Already enabled/disabled? */
          continue;                    /* yes, skip */
       }
       add_prompt(ua, job->name());
@@ -320,7 +322,7 @@ JOB *select_job_resource(UAContext *ua)
    start_prompt(ua, _("The defined Job resources are:\n"));
    LockRes();
    foreach_res(job, R_JOB) {
-      if (acl_access_ok(ua, Job_ACL, job->name())) {
+      if (job->is_enabled() && acl_access_ok(ua, Job_ACL, job->name())) {
          add_prompt(ua, job->name());
       }
    }
@@ -361,7 +363,8 @@ JOB *select_restore_job_resource(UAContext *ua)
    start_prompt(ua, _("The defined Restore Job resources are:\n"));
    LockRes();
    foreach_res(job, R_JOB) {
-      if (job->JobType == JT_RESTORE && acl_access_ok(ua, Job_ACL, job->name())) {
+      if (job->JobType == JT_RESTORE && job->is_enabled() &&
+          acl_access_ok(ua, Job_ACL, job->name())) {
          add_prompt(ua, job->name());
       }
    }
@@ -384,10 +387,10 @@ CLIENT *select_enable_disable_client_resource(UAContext *ua, bool enable)
    LockRes();
    start_prompt(ua, _("The defined Client resources are:\n"));
    foreach_res(client, R_CLIENT) {
-      if (!acl_access_ok(ua, Client_ACL, client->name())) {
+      if (!acl_access_client_ok(ua, client->name(), JT_BACKUP_RESTORE)) {
          continue;
       }
-      if (client->enabled == enable) {   /* Already enabled/disabled? */
+      if (client->is_enabled() == enable) {   /* Already enabled/disabled? */
          continue;                       /* yes, skip */
       }
       add_prompt(ua, client->name());
@@ -404,7 +407,7 @@ CLIENT *select_enable_disable_client_resource(UAContext *ua, bool enable)
 /*
  * Select a client resource from prompt list
  */
-CLIENT *select_client_resource(UAContext *ua)
+CLIENT *select_client_resource(UAContext *ua, int32_t jobtype)
 {
    char name[MAX_NAME_LENGTH];
    CLIENT *client;
@@ -412,7 +415,7 @@ CLIENT *select_client_resource(UAContext *ua)
    start_prompt(ua, _("The defined Client resources are:\n"));
    LockRes();
    foreach_res(client, R_CLIENT) {
-      if (acl_access_ok(ua, Client_ACL, client->name())) {
+      if (client->is_enabled() && acl_access_client_ok(ua, client->name(), jobtype)) {
          add_prompt(ua, client->name());
       }
    }
@@ -429,7 +432,7 @@ CLIENT *select_client_resource(UAContext *ua)
  *   client=<client-name>
  *  if we don't find the keyword, we prompt the user.
  */
-CLIENT *get_client_resource(UAContext *ua)
+CLIENT *get_client_resource(UAContext *ua, int32_t jobtype)
 {
    CLIENT *client = NULL;
    int i;
@@ -437,7 +440,7 @@ CLIENT *get_client_resource(UAContext *ua)
    for (i=1; i<ua->argc; i++) {
       if ((strcasecmp(ua->argk[i], NT_("client")) == 0 ||
            strcasecmp(ua->argk[i], NT_("fd")) == 0) && ua->argv[i]) {
-         if (!acl_access_ok(ua, Client_ACL, ua->argv[i])) {
+         if (!acl_access_client_ok(ua, ua->argv[i], jobtype)) {
             break;
          }
          client = (CLIENT *)GetResWithName(R_CLIENT, ua->argv[i]);
@@ -448,7 +451,7 @@ CLIENT *get_client_resource(UAContext *ua)
          break;
       }
    }
-   return select_client_resource(ua);
+   return select_client_resource(ua, jobtype);
 }
 
 /*
@@ -465,7 +468,7 @@ SCHED *select_enable_disable_schedule_resource(UAContext *ua, bool enable)
       if (!acl_access_ok(ua, Schedule_ACL, sched->name())) {
          continue;
       }
-      if (sched->enabled == enable) {   /* Already enabled/disabled? */
+      if (sched->is_enabled() == enable) {   /* Already enabled/disabled? */
          continue;                      /* yes, skip */
       }
       add_prompt(ua, sched->name());
@@ -489,7 +492,7 @@ SCHED *select_enable_disable_schedule_resource(UAContext *ua, bool enable)
  *   returns: 0 on error
  *            1 on success and fills in CLIENT_DBR
  */
-bool get_client_dbr(UAContext *ua, CLIENT_DBR *cr)
+bool get_client_dbr(UAContext *ua, CLIENT_DBR *cr, int32_t jobtype)
 {
    int i;
 
@@ -502,7 +505,7 @@ bool get_client_dbr(UAContext *ua, CLIENT_DBR *cr)
    for (i=1; i<ua->argc; i++) {
       if ((strcasecmp(ua->argk[i], NT_("client")) == 0 ||
            strcasecmp(ua->argk[i], NT_("fd")) == 0) && ua->argv[i]) {
-         if (!acl_access_ok(ua, Client_ACL, ua->argv[i])) {
+         if (!acl_access_client_ok(ua, ua->argv[i], jobtype)) {
             break;
          }
          bstrncpy(cr->Name, ua->argv[i], sizeof(cr->Name));
@@ -515,7 +518,7 @@ bool get_client_dbr(UAContext *ua, CLIENT_DBR *cr)
          return 1;
       }
    }
-   if (!select_client_dbr(ua, cr)) {  /* try once more by proposing a list */
+   if (!select_client_dbr(ua, cr, jobtype)) {  /* try once more by proposing a list */
       return 0;
    }
    return 1;
@@ -526,7 +529,7 @@ bool get_client_dbr(UAContext *ua, CLIENT_DBR *cr)
  *  Returns 1 on success
  *          0 on failure
  */
-bool select_client_dbr(UAContext *ua, CLIENT_DBR *cr)
+bool select_client_dbr(UAContext *ua, CLIENT_DBR *cr, int32_t jobtype)
 {
    CLIENT_DBR ocr;
    char name[MAX_NAME_LENGTH];
@@ -548,7 +551,7 @@ bool select_client_dbr(UAContext *ua, CLIENT_DBR *cr)
    for (i=0; i < num_clients; i++) {
       ocr.ClientId = ids[i];
       if (!db_get_client_record(ua->jcr, ua->db, &ocr) ||
-          !acl_access_ok(ua, Client_ACL, ocr.Name)) {
+          !acl_access_client_ok(ua, ocr.Name, jobtype)) {
          continue;
       }
       add_prompt(ua, ocr.Name);
@@ -1097,12 +1100,13 @@ done:
  */
 STORE *get_storage_resource(UAContext *ua, bool use_default, bool unique)
 {
-   char *store_name = NULL;
+   char store_name[MAX_NAME_LENGTH];
    STORE *store = NULL;
    int jobid;
    JCR *jcr;
    int i;
    char ed1[50];
+   *store_name = 0;
 
    for (i=1; i<ua->argc; i++) {
       if (use_default && !ua->argv[i]) {
@@ -1113,21 +1117,20 @@ STORE *get_storage_resource(UAContext *ua, bool use_default, bool unique)
              strcasecmp("slots", ua->argk[i]) == 0) {
             continue;
          }
-         /* Default argument is storage */
-         if (store_name) {
+         /* Default argument is storage (except in enable/disable command) */
+         if (store_name[0]) {
             ua->error_msg(_("Storage name given twice.\n"));
             return NULL;
          }
-         store_name = ua->argk[i];
-         if (*store_name == '?') {
+         bstrncpy(store_name, ua->argk[i], sizeof(store_name));
+         if (store_name[0] == '?') {
             *store_name = 0;
             break;
          }
       } else {
          if (strcasecmp(ua->argk[i], NT_("storage")) == 0 ||
              strcasecmp(ua->argk[i], NT_("sd")) == 0) {
-            store_name = ua->argv[i];
-            break;
+            bstrncpy(store_name, NPRTB(ua->argv[i]), sizeof(store_name));
 
          } else if (strcasecmp(ua->argk[i], NT_("jobid")) == 0) {
             jobid = str_to_int64(ua->argv[i]);
@@ -1139,9 +1142,10 @@ STORE *get_storage_resource(UAContext *ua, bool use_default, bool unique)
                ua->error_msg(_("JobId %s is not running.\n"), edit_int64(jobid, ed1));
                return NULL;
             }
-            store = jcr->wstore;
+            if (jcr->wstore) {
+               bstrncpy(store_name, jcr->wstore->name(), sizeof(store_name));
+            }
             free_jcr(jcr);
-            break;
 
          } else if (strcasecmp(ua->argk[i], NT_("job")) == 0 ||
                     strcasecmp(ua->argk[i], NT_("jobname")) == 0) {
@@ -1153,32 +1157,35 @@ STORE *get_storage_resource(UAContext *ua, bool use_default, bool unique)
                ua->error_msg(_("Job \"%s\" is not running.\n"), ua->argv[i]);
                return NULL;
             }
-            store = jcr->wstore;
+            if (jcr->wstore) {
+               bstrncpy(store_name, jcr->wstore->name(), sizeof(store_name));
+            }
             free_jcr(jcr);
-            break;
+
          } else if (strcasecmp(ua->argk[i], NT_("ujobid")) == 0) {
             if (!ua->argv[i]) {
                ua->error_msg(_("Expecting ujobid=xxx, got: %s.\n"), ua->argk[i]);
                return NULL;
             }
             if ((jcr=get_jcr_by_full_name(ua->argv[i]))) {
-               store = jcr->wstore;
-               free_jcr(jcr);
-               /* The job might not be running, so we try to see other keywords */
-               if (store) {
-                  break;
+               if (jcr->wstore) {
+                  bstrncpy(store_name, jcr->wstore->name(), sizeof(store_name));
                }
+               free_jcr(jcr);
             }
+         }
+         if (store_name[0]) {
+            break;              /* We can stop the loop if we have something */
          }
       }
    }
-   if (store && !acl_access_ok(ua, Storage_ACL, store->name())) {
-      store = NULL;
-   }
 
-   if (!store && store_name && store_name[0] != 0) {
+   if (store_name[0] != 0) {
       store = (STORE *)GetResWithName(R_STORAGE, store_name);
-      if (!store) {
+      if (!store && strcmp(store_name, "storage") != 0) {
+         /* Looks that the first keyword of the line was not a storage name, make
+          * sure that it's not "storage=" before we print the following message
+          */
          ua->error_msg(_("Storage resource \"%s\": not found\n"), store_name);
       }
    }
@@ -1265,25 +1272,37 @@ int get_media_type(UAContext *ua, char *MediaType, int max_media)
    start_prompt(ua, _("Media Types defined in conf file:\n"));
    LockRes();
    foreach_res(store, R_STORAGE) {
-      add_prompt(ua, store->media_type);
+      if (store->is_enabled()) {
+         add_prompt(ua, store->media_type);
+      }
    }
    UnlockRes();
    return (do_prompt(ua, _("Media Type"), _("Select the Media Type"), MediaType, max_media) < 0) ? 0 : 1;
 }
 
-
-bool get_level_from_name(JCR *jcr, const char *level_name)
+int get_level_code_from_name(const char *level_name)
 {
-   /* Look up level name and pull code */
-   bool found = false;
+   int ret = 0;
+   if (!level_name) {
+      return ret;
+   }
    for (int i=0; joblevels[i].level_name; i++) {
       if (strcasecmp(level_name, joblevels[i].level_name) == 0) {
-         jcr->setJobLevel(joblevels[i].level);
-         found = true;
+         ret = joblevels[i].level;
          break;
       }
    }
-   return found;
+   return ret;
+}
+
+bool get_level_from_name(JCR *jcr, const char *level_name)
+{
+   int level = get_level_code_from_name(level_name);
+   if (level > 0) {
+      jcr->setJobLevel(level);
+      return true;
+   }
+   return false;
 }
 
 static int count_running_jobs(UAContext *ua)
@@ -1495,4 +1514,135 @@ int select_running_jobs(UAContext *ua, alist *jcrs, const char *reason)
 bail_out:
    if (selected) delete selected;
    return jcrs->size();
+}
+
+/* Small helper to scan storage daemon commands and search for volumes */
+int scan_storage_cmd(UAContext *ua, const char *cmd,
+                     bool allfrompool,    /* Choose to select a specific volume or not */
+                     int *drive,          /* Drive number */
+                     MEDIA_DBR *mr,       /* Media Record, can have options already filled */
+                     POOL_DBR  *pr,       /* Pool Record */
+                     const char **action, /* action= argument, can be NULL if not relevant */
+                     char *storage,       /* Storage name, must be MAX_NAME_LENGTH long */
+                     int  *nb,            /* Number of media found */
+                     uint32_t **results)  /* List of MediaId */
+{
+   bool allpools=false, has_vol = false;;
+   STORE *store;
+
+   *nb      = 0;
+   *drive   = 0;
+   *results = NULL;
+   *storage = 0;
+
+   /* Look at arguments */
+   for (int i=1; i<ua->argc; i++) {
+      if (strcasecmp(ua->argk[i], NT_("allpools")) == 0) {
+         allpools = true;
+
+      } else if (strcasecmp(ua->argk[i], NT_("allfrompool")) == 0) {
+         allfrompool = true;
+
+      } else if (strcasecmp(ua->argk[i], NT_("volume")) == 0
+                 && is_name_valid(ua->argv[i], NULL)) {
+         bstrncpy(mr->VolumeName, ua->argv[i], sizeof(mr->VolumeName));
+         has_vol = true;
+
+      } else if (strcasecmp(ua->argk[i], NT_("mediatype")) == 0
+                 && ua->argv[i]) {
+         bstrncpy(mr->MediaType, ua->argv[i], sizeof(mr->MediaType));
+
+      } else if (strcasecmp(ua->argk[i], NT_("drive")) == 0 && ua->argv[i]) {
+         *drive = atoi(ua->argv[i]);
+
+      } else if (strcasecmp(ua->argk[i], NT_("action")) == 0
+                 && is_name_valid(ua->argv[i], NULL)) {
+
+         if (action) {
+            *action = ua->argv[i];
+         } else {
+            ua->warning_msg(_("Invalid argument \"action\".\n"));
+         }
+      }
+   }
+
+   /* Choose storage */
+   ua->jcr->wstore = store =  get_storage_resource(ua, false);
+   if (!store) {
+      goto bail_out;
+   }
+   bstrncpy(storage, store->dev_name(), MAX_NAME_LENGTH);
+
+   if (!open_db(ua)) {
+      Dmsg0(100, "Can't open db\n");
+      goto bail_out;
+   }
+
+   /*
+    * Look for all volumes that are enabled 
+    */
+   mr->Enabled = 1;
+   set_storageid_in_mr(store, mr);
+
+   if (allfrompool && !has_vol) { /* We need a list of volumes */
+
+      /* We don't take all pools and we don't have a volume in argument,
+       * so we need to choose a pool 
+       */
+      if (!allpools) {
+         /* force pool selection */
+         POOL *pool = get_pool_resource(ua);
+
+         if (!pool) {
+            Dmsg0(100, "Can't get pool resource\n");
+            goto bail_out;
+         }
+         bstrncpy(pr->Name, pool->name(), sizeof(pr->Name));
+         if (!db_get_pool_record(ua->jcr, ua->db, pr)) {
+            Dmsg0(100, "Can't get pool record\n");
+            goto bail_out;
+         }
+         mr->PoolId = pr->PoolId;
+      }
+
+      if (!db_get_media_ids(ua->jcr, ua->db, mr, nb, results)) {
+         Dmsg0(100, "No results from db_get_media_ids\n");
+         goto bail_out;
+      }
+
+   } else {                     /* We want a single volume */
+      MEDIA_DBR mr2;
+      if (!select_media_dbr(ua, &mr2)) {
+         goto bail_out;
+      }
+      /* The select_media_dbr() doesn't filter on the CacheRetention */
+      if (mr->CacheRetention) {
+         if ((mr2.CacheRetention + mr2.LastWritten) > time(NULL)) {
+            /* The volume cache retention is not exipred */
+            goto bail_out;
+         }
+      }
+      *nb = 1;
+      *results = (uint32_t *) malloc(1 * sizeof(uint32_t));
+      *results[0] = mr2.MediaId;
+   }
+
+   if (*nb == 0) {
+      goto bail_out;
+   }
+   return 1;
+
+bail_out:
+   if (!*nb) {
+      ua->send_msg(_("No Volumes found to perform the command.\n"));
+   }
+
+   close_db(ua);
+   ua->jcr->wstore = NULL;
+   if (*results) {
+      free(*results);
+      *results = NULL;
+   }
+   *nb = 0;
+   return 0;
 }

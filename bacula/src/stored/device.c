@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -75,9 +75,9 @@
 bool fixup_device_block_write_error(DCR *dcr, int retries)
 {
    char PrevVolName[MAX_NAME_LENGTH];
-   DEV_BLOCK *label_blk;
-   DEV_BLOCK *block;
+   DEV_BLOCK *block = dcr->block;
    DEV_BLOCK *ameta_block = dcr->ameta_block;
+   DEV_BLOCK *adata_block = dcr->adata_block;
    char b1[30], b2[30];
    time_t wait_time;
    char dt[MAX_TIME_LENGTH];
@@ -85,14 +85,16 @@ bool fixup_device_block_write_error(DCR *dcr, int retries)
    DEVICE *dev;
    int blocked;              /* save any previous blocked status */
    bool ok = false;
+   bool save_adata = dcr->dev->adata;
 
+   Enter(100);
+   if (save_adata) {
+      dcr->set_ameta();      /* switch to working with ameta */
+   }
    dev = dcr->dev;
    blocked = dev->blocked();
-   block = dcr->block;
 
    wait_time = time(NULL);
-
-   Dmsg0(100, "=== Enter fixup_device_block_write_error\n");
 
    /*
     * If we are blocked at entry, unblock it, and set our own block status
@@ -108,8 +110,7 @@ bool fixup_device_block_write_error(DCR *dcr, int retries)
    bstrncpy(PrevVolName, dev->getVolCatName(), sizeof(PrevVolName));
    bstrncpy(dev->VolHdr.PrevVolumeName, PrevVolName, sizeof(dev->VolHdr.PrevVolumeName));
 
-   label_blk = new_block(dev);
-   dcr->ameta_block = dcr->block = label_blk;
+   dev->new_dcr_blocks(dcr);
 
    /* Inform User about end of medium */
    Jmsg(jcr, M_INFO, 0, _("End of medium on Volume \"%s\" Bytes=%s Blocks=%s at %s.\n"),
@@ -121,13 +122,16 @@ bool fixup_device_block_write_error(DCR *dcr, int retries)
    dev->set_unload();
 
    /* Clear DCR Start/End Block/File positions */
-   dcr->StartBlock = dcr->EndBlock = 0;
-   dcr->StartFile  = dcr->EndFile = 0;
+   dcr->VolFirstIndex = dcr->VolLastIndex = 0;
+   dcr->StartAddr = dcr->EndAddr = 0;
+   dcr->VolMediaId = 0;
+   dcr->WroteVol = false;
 
    if (!dcr->mount_next_write_volume()) {
-      free_block(label_blk);
+      dev->free_dcr_blocks(dcr);
       dcr->block = block;
       dcr->ameta_block = ameta_block;
+      dcr->adata_block = adata_block;
       dev->Lock();
       goto bail_out;
    }
@@ -155,14 +159,16 @@ bool fixup_device_block_write_error(DCR *dcr, int retries)
       berrno be;
       Pmsg1(0, _("write_block_to_device Volume label failed. ERR=%s"),
         be.bstrerror(dev->dev_errno));
-      free_block(label_blk);
+      dev->free_dcr_blocks(dcr);
       dcr->block = block;
       dcr->ameta_block = ameta_block;
+      dcr->adata_block = adata_block;
       goto bail_out;
    }
-   free_block(label_blk);
+   dev->free_dcr_blocks(dcr);
    dcr->block = block;
    dcr->ameta_block = ameta_block;
+   dcr->adata_block = adata_block;
 
    /* Clear NewVol now because dir_get_volume_info() already done */
    jcr->dcr->NewVol = false;
@@ -172,6 +178,9 @@ bool fixup_device_block_write_error(DCR *dcr, int retries)
 
    /* Write overflow block to device */
    Dmsg0(190, "Write overflow block to dev\n");
+   if (save_adata) {
+      dcr->set_adata();      /* try to write block we entered with */
+   }
    if (!dcr->write_block_to_dev()) {
       berrno be;
       Dmsg1(0, _("write_block_to_device overflow block failed. ERR=%s"),
@@ -187,6 +196,9 @@ bool fixup_device_block_write_error(DCR *dcr, int retries)
    ok = true;
 
 bail_out:
+   if (save_adata) {
+      dcr->set_ameta();   /* Do unblock ... on ameta */
+   }
    /*
     * At this point, the device is locked and blocked.
     * Unblock the device, restore any entry blocked condition, then
@@ -196,6 +208,9 @@ bail_out:
    if (blocked != BST_NOT_BLOCKED) {
       block_device(dev, blocked);
    }
+   if (save_adata) {
+      dcr->set_adata();      /* switch back to what we entered with */
+   }
    return ok;                               /* device locked */
 }
 
@@ -204,11 +219,17 @@ void set_start_vol_position(DCR *dcr)
    DEVICE *dev = dcr->dev;
    /* Set new start position */
    if (dev->is_tape()) {
-      dcr->StartBlock = dcr->EndBlock = dev->block_num;
-      dcr->StartFile = dcr->EndFile = dev->file;
+      dcr->StartAddr = dcr->EndAddr = dev->get_full_addr();
    } else {
-      dcr->StartBlock = dcr->EndBlock = (uint32_t)dev->file_addr;
-      dcr->StartFile  = dcr->EndFile = (uint32_t)(dev->file_addr >> 32);
+      if (dev->adata) {
+         dev = dcr->ameta_dev;
+      }
+      /*
+       * Note: we only update the DCR values for ameta blocks
+       *  because all the indexing (JobMedia) is done with
+       *  ameta blocks/records, which may point to adata.
+       */
+      dcr->StartAddr = dcr->EndAddr = dev->get_full_addr();
    }
 }
 
@@ -226,7 +247,7 @@ void set_new_volume_parameters(DCR *dcr)
          int retries = 5;
          wait_for_device(dcr, retries);
       }
-      if (dir_get_volume_info(dcr, GET_VOL_INFO_FOR_WRITE)) {
+      if (dir_get_volume_info(dcr, dcr->VolumeName, GET_VOL_INFO_FOR_WRITE)) {
          dcr->dev->clear_wait();
       } else {
          Dmsg1(40, "getvolinfo failed. No new Vol: %s", jcr->errmsg);
@@ -289,15 +310,9 @@ bool first_open_device(DCR *dcr)
       goto bail_out;
    }
 
-    int mode;
-    if (dev->has_cap(CAP_STREAM)) {
-       mode = OPEN_WRITE_ONLY;
-    } else {
-       mode = OPEN_READ_ONLY;
-    }
    Dmsg0(129, "Opening device.\n");
-   if (!dev->open(dcr, mode)) {
-      Emsg1(M_FATAL, 0, _("dev open failed: %s\n"), dev->errmsg);
+   if (!dev->open_device(dcr, OPEN_READ_ONLY)) {
+      Jmsg1(NULL, M_FATAL, 0, _("dev open failed: %s\n"), dev->errmsg);
       ok = false;
       goto bail_out;
    }
@@ -306,32 +321,4 @@ bool first_open_device(DCR *dcr)
 bail_out:
    dev->rUnlock();
    return ok;
-}
-
-/*
- * Make sure device is open, if not do so
- */
-bool open_device(DCR *dcr)
-{
-   DEVICE *dev = dcr->dev;
-   /* Open device */
-   int mode;
-   if (dev->has_cap(CAP_STREAM)) {
-      mode = OPEN_WRITE_ONLY;
-   } else {
-      mode = OPEN_READ_WRITE;
-   }
-   if (!dev->open(dcr, mode)) {
-      /* If polling, ignore the error */
-      /* If DVD, also ignore the error, very often you cannot open the device
-       * (when there is no DVD, or when the one inserted is a wrong one) */
-      if (!dev->poll && !dev->is_dvd() && !dev->is_removable()) {
-         Jmsg2(dcr->jcr, M_FATAL, 0, _("Unable to open device %s: ERR=%s\n"),
-            dev->print_name(), dev->bstrerror());
-         Pmsg2(000, _("Unable to open archive %s: ERR=%s\n"),
-            dev->print_name(), dev->bstrerror());
-      }
-      return false;
-   }
-   return true;
 }

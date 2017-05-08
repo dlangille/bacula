@@ -1,0 +1,79 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2017 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+
+#
+# Check if polling interval interferes triggers exta mail
+#  commands.
+#
+#  Note we use the viritual disk autochanger
+#
+TestName="poll-interval-test"
+JobName=TwoVolume
+. scripts/functions
+
+cwd=`pwd`
+scripts/cleanup
+scripts/copy-2disk-confs
+scripts/prepare-disk-changer
+ 
+echo "${cwd}/build" >${cwd}/tmp/file-list
+
+outf="tmp/sed_tmp"
+echo "s%# Maximum File Size%  Maximum File Size%g" >${outf}
+cp ${cwd}/bin/bacula-sd.conf ${cwd}/tmp/1
+sed -f ${outf} ${cwd}/tmp/1 >${cwd}/bin/bacula-sd.conf
+
+$bperl -e 'add_attribute("$conf/bacula-sd.conf", "VolumePollInterval", 15, "Device")'
+
+change_jobname NightlySave $JobName
+start_test
+
+# Write out bconsole commands
+cat <<END_OF_DATA >tmp/bconcmds
+@output /dev/null
+messages
+@$out tmp/log1.out
+label storage=tape volume=TestVolume001 slot=1 pool=Default drive=0
+label storage=tape volume=TestVolume002 slot=2 pool=Default drive=0
+update Volume=TestVolume001 MaxVolBytes=3000000 pool=Default drive=0
+sql                               
+select * from Storage;
+select VolumeName,InChanger,slot,StorageId from Media;
+
+update volume=TestVolume002 slot=0
+setdebug level=50 storage=tape
+list volumes
+run job=$JobName yes
+wait
+messages
+sql                               
+select VolumeName,InChanger,slot,StorageId from Media;
+
+update slots scan storage=tape
+messages
+sql                               
+select * from Storage;
+select VolumeName,InChanger,slot,StorageId from Media;
+select jobid,mediaid,startblock,endblock from JobMedia;
+
+@# 
+@# now do a restore
+@#
+@$out tmp/log2.out
+restore where=${cwd}/tmp/bacula-restores select all storage=tape done
+yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bacula
+check_for_zombie_jobs storage=tape
+stop_bacula
+
+check_two_logs
+check_restore_diff
+end_test

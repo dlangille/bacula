@@ -1,9 +1,7 @@
 #!/bin/sh
 #
-# Copyright (C) 2000-2015 Kern Sibbald
+# Copyright (C) 2000-2017 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
-#
-
 #
 # Run a backup of the Bacula build directory on two Volumes
 #   then copy it to another device.             
@@ -17,7 +15,6 @@ JobName=MigVolBackup
 
 scripts/cleanup
 scripts/copy-migration-confs
-scripts/prepare-disk-changer
 echo "${cwd}/build" >${cwd}/tmp/file-list
 #cp ${cwd}/bin/bacula-sd.conf ${cwd}/tmp/1
 #sed "s%# Maximum File Size%  Maximum File Size%" ${cwd}/tmp/1 >${cwd}/bin/bacula-sd.conf

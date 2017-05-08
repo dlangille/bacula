@@ -1,9 +1,7 @@
 #!/bin/sh
 #
-# Copyright (C) 2000-2015 Kern Sibbald
+# Copyright (C) 2000-2017 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
-#
-
 #
 # Test of ANSI labeled tapes
 #
@@ -33,7 +31,7 @@ cat <<END_OF_DATA >${cwd}/tmp/bconcmds
 @$out /dev/null
 messages
 @$out ${cwd}/tmp/log1.out
-setdebug level=200 storage=tape
+@#setdebug level=200 storage=tape
 label storage=tape volume=Vol001 slot=0 pool=Default
 purge volume=Vol001
 relabel pool=Default storage=tape oldVolume=Vol001 volume=Vol002 slot=0

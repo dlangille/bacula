@@ -1,10 +1,11 @@
 #!/bin/sh
 #
-# Copyright (C) 2000-2015 Kern Sibbald
-# License: BSD 2-Clause; see file LICENSE-FOSS
-#
 # Script to setup running Bacula regression tests
 #
+# Copyright (C) 2000-2016 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+
 check_exit_code()
 {
    if [ $? != 0 ] ; then
@@ -16,6 +17,8 @@ check_exit_code()
 . ./config
 
 cwd=`pwd`
+tmp=${tmp:-"$cwd/tmp"}
+mkdir -p $tmp
 if [ ! -d ${BACULA_SOURCE} ] ; then
    echo "The BACULA_SOURCE environment variable must be a Bacula release directory, but is not."
    echo " "
@@ -31,11 +34,13 @@ rm -rf build bin
 echo "Copying source from ${BACULA_SOURCE}"
 cp -rp ${BACULA_SOURCE} build
 check_exit_code
-which git >/dev/null 2>/dev/null
-if [ $? = 0 ] ; then
-  git show HEAD | grep -m 1 commit | awk '{print $2}' > build/git-version
-else
-  echo "Git not found." >build/git-version
+if [ x$PREBUILT != xyes ]; then
+  which git >/dev/null 2>/dev/null
+  if [ $? = 0 ] ; then
+    git show HEAD | grep -m 1 commit | awk '{print $2}' > build/git-version
+  else
+    echo "Git not found." >build/git-version
+  fi
 fi
 scripts/create_sed
 # In default bacula-dir.conf.in, change default file 
@@ -57,14 +62,17 @@ chmod 755 scripts/regress-config
 cp scripts/regress-config build
 cd build
 rm -f Makefile config.*
-# Run Bacula configuration, make, install
+# Run Bacula  configure
 ./regress-config ${cwd}
-check_exit_code
-# Cleanup any build in source
-make clean
-make ${MAKEOPT}
-check_exit_code
-make install
+if [ x$PREBUILT != xyes ]; then
+  # Run Bacula  make, install
+  check_exit_code
+  # Cleanup any build in source
+  make clean
+  make ${MAKEOPT}
+  check_exit_code
+  make install
+fi
 if [ a${KEEP_SOURCE} = a ]; then
    rm -rf examples patches
    check_exit_code
@@ -73,9 +81,42 @@ if [ a${KEEP_SOURCE} = a ]; then
    rm -rf src/win32 examples patches
 fi
 # get all tools -- especially testls
-cd src/tools
-make installall
-check_exit_code
+if [ x$PREBUILT = xyes ]; then
+  # populate our bin with start/stop scripts
+  #  and catalog manipulation scripts
+  cd ${cwd}
+  mkdir bin
+  cp ${bin}/../scripts/bacula ${cwd}/bin
+  cp ${bin}/../scripts/bacula-ctl-* ${cwd}/bin
+  cp ${bin}/../scripts/create_*_database ${cwd}/bin
+  cp ${bin}/../scripts/drop_*_database ${cwd}/bin
+  cp ${bin}/../scripts/drop_*_tables ${cwd}/bin
+  cp ${bin}/../scripts/make_*_tables ${cwd}/bin
+  cp ${bin}/../scripts/grant_*_privileges ${cwd}/bin
+  cp ${bin}/../scripts/storage*-ctl ${cwd}/bin
+  cp ${bin}/../scripts/storage*-ctl.conf ${cwd}/bin
+  cp ${bin}/../scripts/mtx-changer ${cwd}/bin
+  cp ${bin}/../scripts/mtx-changer.conf ${cwd}/bin
+  cp ${bin}/bconsole ${cwd}/bin
+  cd ${cwd}/bin
+  for i in create_*_database drop_*_database drop_*_tables make_*_tables grant_*_privileges; do
+    echo "Doing $i"
+    sed "s/db_name:-bacula/db_name:-regress/" $i >1
+    sed "s/db_name=bacula/db_name=regress/" 1 >2
+    sed "s/db_user:-bacula/db_user:-regress/" 2 >3
+    sed "s%/opt/bacula/scripts%${cwd}/bin%" 3 >4
+    mv 4 $i
+    chmod +x $i
+    rm -f 1 2 3
+  done
+  cd ${cwd}
+  scripts/prepare-other-loc2
+else
+  cd src/tools
+  make installall
+  check_exit_code
+fi
+
 
 cd ${cwd}
 bin/bacula stop -KILL
@@ -92,7 +133,15 @@ cd ${cwd}
 bin/bacula start
 bin/bacula stop
 #
-# Save Bacula default conf files for later use
+# Save Bacula default conf files into scripts for later use
 #
-cp -f bin/*.conf scripts
-check_exit_code
+if [ x$PREBUILT = xyes ]; then
+  cp build/src/console/*.conf scripts
+  cp build/src/dird/*.conf scripts
+  cp build/src/filed/*.conf scripts
+  cp build/src/stored/*.conf scripts
+else
+  # these were installed so take them from bin
+  cp -f bin/*.conf scripts
+  check_exit_code
+fi

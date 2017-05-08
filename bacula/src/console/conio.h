@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -22,15 +22,9 @@
 extern int  input_line(char *line, int len);
 extern void con_init(FILE *input);
 
-extern "C" {
 extern void con_term();
-}
-
 extern void con_set_zed_keys();
 extern void t_sendl(char *buf, int len);
 extern void t_send(char *buf);
 extern void t_char(char c);
-extern int  usrbrk(void);
-extern void clrbrk(void);
-extern void trapctlc(void);
 #endif

@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -30,9 +30,8 @@
 #include "stored.h"
 
 /* Imported subroutines */
-
-static const int read_dbglvl = 200;
-static const int dbgep = 200;         /* debug execution path */
+static const int read_dbglvl = 200|DT_VOLUME;
+static const int dbgep = 200|DT_VOLUME;         /* debug execution path */
 
 /*
  * Read the header record
@@ -48,20 +47,20 @@ static bool read_header(DCR *dcr, DEV_BLOCK *block, DEV_RECORD *rec)
    char buf1[100], buf2[100];
 
    Dmsg0(dbgep, "=== rpath 1 read_header\n");
+   ASSERT2(!block->adata, "Block is adata. Wrong!");
    /* Clear state flags */
    rec->state_bits = 0;
    if (block->dev->is_tape()) {
       rec->state_bits |= REC_ISTAPE;
    }
-   rec->Block = ((DEVICE *)block->dev)->EndBlock;
-   rec->File = ((DEVICE *)block->dev)->EndFile;
+   rec->Addr = ((DEVICE *)block->dev)->EndAddr;
 
    /*
     * Get the header. There is always a full header,
     * otherwise we find it in the next block.
     */
-   Dmsg3(read_dbglvl, "Block=%d Ver=%d block_len=%u\n",
-         block->BlockNumber, block->BlockVer, block->block_len);
+   Dmsg4(read_dbglvl, "adata=%d Block=%d Ver=%d block_len=%u\n",
+         block->adata, block->BlockNumber, block->BlockVer, block->block_len);
    if (block->BlockVer == 1) {
       rhl = RECHDR1_LENGTH;
    } else {
@@ -83,6 +82,10 @@ static bool read_header(DCR *dcr, DEV_BLOCK *block, DEV_RECORD *rec)
       unser_int32(FileIndex);
       unser_int32(Stream);
       unser_uint32(rec->data_bytes);
+
+      if (dcr->dev->have_adata_header(dcr, rec, FileIndex, Stream, VolSessionId)) {
+         return true;
+      }
 
       block->bufp += rhl;
       block->binbuf -= rhl;
@@ -185,6 +188,7 @@ static void read_data(DEV_BLOCK *block, DEV_RECORD *rec)
    char buf1[100], buf2[100];
 
    Dmsg0(dbgep, "=== rpath 22 read_data\n");
+   ASSERT2(!block->adata, "Block is adata. Wrong!");
    /*
     * At this point, we have read the header, now we
     * must transfer as much of the data record as
@@ -201,8 +205,8 @@ static void read_data(DEV_BLOCK *block, DEV_RECORD *rec)
       block->binbuf -= rec->data_bytes;
       rec->data_len += rec->data_bytes;
       rec->remainder = 0;
-      Dmsg5(190, "Rdata full FI=%s SessId=%d Strm=%s len=%d block=%p\n",
-         FI_to_ascii(buf1, rec->FileIndex), rec->VolSessionId,
+      Dmsg6(190, "Rdata full adata=%d FI=%s SessId=%d Strm=%s len=%d block=%p\n",
+         block->adata, FI_to_ascii(buf1, rec->FileIndex), rec->VolSessionId,
          stream_to_ascii(buf2, rec->Stream, rec->FileIndex), rec->data_len,
          block);
    } else {
@@ -229,13 +233,25 @@ static void read_data(DEV_BLOCK *block, DEV_RECORD *rec)
  */
 bool read_record_from_block(DCR *dcr,  DEV_RECORD *rec)
 {
+   bool save_adata = dcr->dev->adata;
    bool rtn;
 
    Dmsg0(dbgep, "=== rpath 1 Enter read_record_from block\n");
+
+   /* Update the Record number only if we have a new record */
+   if (rec->remainder == 0) {
+      rec->RecNum = dcr->block->RecNum;
+      rec->VolumeName = dcr->CurrentVol->VolumeName; /* From JCR::VolList, freed at the end */
+      rec->Addr = rec->StartAddr = dcr->block->BlockAddr;
+   }
+
+   /* We read the next record */
+   dcr->block->RecNum++;
+
    for ( ;; ) {
       switch (rec->rstate) {
       case st_none:
-         dump_block(dcr->ameta_block, "st_none");
+         dump_block(dcr->dev, dcr->ameta_block, "st_none");
       case st_header:
          Dmsg0(dbgep, "=== rpath 33 st_header\n");
          dcr->set_ameta();
@@ -254,6 +270,31 @@ bool read_record_from_block(DCR *dcr,  DEV_RECORD *rec)
          rec->rstate = st_header;         /* next pass look for a header */
          goto get_out;
 
+      case st_adata_blkhdr:
+         dcr->set_adata();
+         dcr->dev->read_adata_block_header(dcr);
+         rec->rstate = st_header;
+         continue;
+
+      case st_adata_rechdr:
+         Dmsg0(dbgep, "=== rpath 35 st_adata_rechdr\n");
+         if (!dcr->dev->read_adata_record_header(dcr, dcr->block, rec)) {  /* sets state */
+            Dmsg0(dbgep, "=== rpath 36 failed read_adata rechdr\n");
+            Dmsg0(100, "read_link returned EOF.\n");
+            goto fail_out;
+         }
+         continue;
+
+      case st_adata:
+         switch (dcr->dev->read_adata(dcr, rec)) {
+         case -1:
+            goto fail_out;
+         case 0:
+            continue;
+         case 1:
+            goto get_out;
+         }
+
       default:
          Dmsg0(dbgep, "=== rpath 50 default\n");
          Dmsg0(0, "======= In default !!!!!\n");
@@ -263,15 +304,20 @@ bool read_record_from_block(DCR *dcr,  DEV_RECORD *rec)
    }
 get_out:
    char buf1[100], buf2[100];
-   Dmsg5(read_dbglvl, "read_rec return: FI=%s Strm=%s len=%d rem=%d remainder=%d\n",
+   Dmsg6(read_dbglvl, "read_rec return: FI=%s Strm=%s len=%d rem=%d remainder=%d Num=%d\n",
          FI_to_ascii(buf1, rec->FileIndex),
          stream_to_ascii(buf2, rec->Stream, rec->FileIndex), rec->data_len,
-         rec->remlen, rec->remainder);
+         rec->remlen, rec->remainder, rec->RecNum);
    rtn = true;
    goto out;
 fail_out:
    rec->rstate = st_none;
    rtn = false;
 out:
+   if (save_adata) {
+      dcr->set_adata();
+   } else {
+      dcr->set_ameta();
+   }
    return rtn;
 }

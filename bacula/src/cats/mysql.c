@@ -1,7 +1,7 @@
 /* 
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -28,7 +28,6 @@
  *  change for a C++ programmer, nothing substantial was done, yet all the  
  *  code was recommitted under this programmer's name.  Consequently, we  
  *  undo those changes here.  
- * 
  */ 
  
 #include "bacula.h" 
@@ -37,7 +36,7 @@
  
 #include "cats.h" 
 #include <mysql.h> 
-#define  BDB_MYSQL_H_ 1 
+#define  __BDB_MYSQL_H_ 1 
 #include "bdb_mysql.h" 
  
 /* ----------------------------------------------------------------------- 
@@ -52,7 +51,7 @@ static dlist *db_list = NULL;
  
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER; 
  
-BDB_MYSQL::BDB_MYSQL() 
+BDB_MYSQL::BDB_MYSQL(): BDB()
 { 
    BDB_MYSQL *mdb = this; 
  
@@ -82,7 +81,7 @@ BDB_MYSQL::BDB_MYSQL()
    db_list->append(this); 
 } 
  
-BDB_MYSQL::~BDB_MYSQL() 
+BDB_MYSQL::~BDB_MYSQL()
 { 
 } 
  

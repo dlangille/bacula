@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -496,14 +496,8 @@ static inline bool openssl_bsock_session_start(BSOCK *bsock, bool server)
 {
    TLS_CONNECTION *tls = bsock->tls;
    int err;
-   int fdmax, flags;
+   int flags;
    int stat = true;
-   fd_set fdset;
-   struct timeval tv;
-
-   /* Zero the fdset, we'll set our fd prior to each invocation of select() */
-   FD_ZERO(&fdset);
-   fdmax = bsock->m_fd + 1;
 
    /* Ensure that socket is non-blocking */
    flags = bsock->set_nonblocking();
@@ -531,22 +525,12 @@ static inline bool openssl_bsock_session_start(BSOCK *bsock, bool server)
          stat = false;
          goto cleanup;
       case SSL_ERROR_WANT_READ:
-         /* If we timeout of a select, this will be unset */
-         FD_SET((unsigned) bsock->m_fd, &fdset);
-         /* Set our timeout */
-         tv.tv_sec = 10;
-         tv.tv_usec = 0;
          /* Block until we can read */
-         select(fdmax, &fdset, NULL, NULL, &tv);
+         fd_wait_data(bsock->m_fd, WAIT_READ, 10, 0);
          break;
       case SSL_ERROR_WANT_WRITE:
-         /* If we timeout of a select, this will be unset */
-         FD_SET((unsigned) bsock->m_fd, &fdset);
-         /* Set our timeout */
-         tv.tv_sec = 10;
-         tv.tv_usec = 0;
          /* Block until we can write */
-         select(fdmax, NULL, &fdset, NULL, &tv);
+         fd_wait_data(bsock->m_fd, WAIT_WRITE, 10, 0);
          break;
       default:
          /* Socket Error Occurred */
@@ -643,15 +627,9 @@ void tls_bsock_shutdown(BSOCK *bsock)
 static inline int openssl_bsock_readwrite(BSOCK *bsock, char *ptr, int nbytes, bool write)
 {
    TLS_CONNECTION *tls = bsock->tls;
-   int fdmax, flags;
-   fd_set fdset;
-   struct timeval tv;
+   int flags;
    int nleft = 0;
    int nwritten = 0;
-
-   /* Zero the fdset, we'll set our fd prior to each invocation of select() */
-   FD_ZERO(&fdset);
-   fdmax = bsock->m_fd + 1;
 
    /* Ensure that socket is non-blocking */
    flags = bsock->set_nonblocking();
@@ -699,21 +677,13 @@ static inline int openssl_bsock_readwrite(BSOCK *bsock, char *ptr, int nbytes, b
          goto cleanup;
 
       case SSL_ERROR_WANT_READ:
-         /* If we timeout on a select, this will be unset */
-         FD_SET((unsigned)bsock->m_fd, &fdset);
-         tv.tv_sec = 10;
-         tv.tv_usec = 0;
          /* Block until we can read */
-         select(fdmax, &fdset, NULL, NULL, &tv);
+         fd_wait_data(bsock->m_fd, WAIT_READ, 10, 0);
          break;
 
       case SSL_ERROR_WANT_WRITE:
-         /* If we timeout on a select, this will be unset */
-         FD_SET((unsigned)bsock->m_fd, &fdset);
-         tv.tv_sec = 10;
-         tv.tv_usec = 0;
-         /* Block until we can write */
-         select(fdmax, NULL, &fdset, NULL, &tv);
+         /* Block until we can read */
+         fd_wait_data(bsock->m_fd, WAIT_WRITE, 10, 0);
          break;
 
       case SSL_ERROR_ZERO_RETURN:

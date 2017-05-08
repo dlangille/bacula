@@ -1,8 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2015 Kern Sibbald
-   Copyright (C) 2000-2014 Free Software Foundation Europe e.V.
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -12,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -66,12 +65,13 @@ extern void vbackup_cleanup(JCR *jcr, int TermCode);
 
 /* bsr.c */
 RBSR *new_bsr();
-void free_bsr(RBSR *bsr);
-bool complete_bsr(UAContext *ua, RBSR *bsr);
+rblist *create_bsr_list(uint32_t JobId, int findex, int findex2);
+void free_bsr(rblist *bsr_list);
+bool complete_bsr(UAContext *ua, rblist *bsr_list);
 uint32_t write_bsr_file(UAContext *ua, RESTORE_CTX &rx);
 void display_bsr_info(UAContext *ua, RESTORE_CTX &rx);
-void add_findex(RBSR *bsr, uint32_t JobId, int32_t findex);
-void add_findex_all(RBSR *bsr, uint32_t JobId);
+void add_findex(rblist *bsr_list, uint32_t JobId, int32_t findex);
+void add_findex_all(rblist *bsr_list, uint32_t JobId, const char *fileregex);
 RBSR_FINDEX *new_findex();
 void make_unique_restore_filename(UAContext *ua, POOLMEM **fname);
 void print_bsr(UAContext *ua, RESTORE_CTX &rx);
@@ -81,10 +81,11 @@ void print_bsr(UAContext *ua, RESTORE_CTX &rx);
 extern void catalog_request(JCR *jcr, BSOCK *bs);
 extern void catalog_update(JCR *jcr, BSOCK *bs);
 extern bool despool_attributes_from_file(JCR *jcr, const char *file);
+extern void remove_dummy_jobmedia_records(JCR *jcr);
 
 /* dird_conf.c */
 extern const char *level_to_str(int level);
-extern "C" char *job_code_callback_director(JCR *jcr, const char*);
+extern "C" char *job_code_callback_director(JCR *jcr, const char*, char *, int);
 
 /* expand.c */
 int variable_expansion(JCR *jcr, char *inp, POOLMEM **exp);
@@ -126,7 +127,8 @@ extern void apply_pool_overrides(JCR *jcr);
 extern bool apply_wstorage_overrides(JCR *jcr, POOL *original_pool);
 extern JobId_t run_job(JCR *jcr);
 extern JobId_t resume_job(JCR *jcr, JOB_DBR *jr);
-extern bool cancel_job(UAContext *ua, JCR *jcr, bool cancel=true);
+extern bool cancel_job(UAContext *ua, JCR *jcr, int wait, bool cancel=true);
+extern int cancel_inactive_job(UAContext *ua);
 extern void get_job_storage(USTORE *store, JOB *job, RUN *run);
 extern void init_jcr_job_record(JCR *jcr);
 extern void update_job_end(JCR *jcr, int TermCode);
@@ -142,6 +144,7 @@ extern void free_rstorage(JCR *jcr);
 extern bool setup_job(JCR *jcr);
 extern void create_clones(JCR *jcr);
 extern int create_restore_bootstrap_file(JCR *jcr);
+extern int create_restore_bootstrap_file(JCR *jcr, JobId_t jobid, int findex1, int findex2);
 extern void dird_free_jcr(JCR *jcr);
 extern void dird_free_jcr_pointers(JCR *jcr);
 extern void cancel_storage_daemon_job(JCR *jcr);
@@ -197,8 +200,10 @@ extern void restore_cleanup(JCR *jcr, int TermCode);
 bool acl_access_ok(UAContext *ua, int acl, const char *item);
 bool acl_access_ok(UAContext *ua, int acl, const char *item, int len);
 bool have_restricted_acl(UAContext *ua, int acl);
+bool acl_access_client_ok(UAContext *ua, const char *name, int32_t jobtype);
 
 /* ua_cmds.c */
+bool get_uid_gid_from_acl(UAContext *ua, alist **uid, alist **gid, alist **dir);
 bool do_a_command(UAContext *ua);
 bool do_a_dot_command(UAContext *ua);
 int qmessagescmd(UAContext *ua, const char *cmd);
@@ -206,6 +211,7 @@ bool open_new_client_db(UAContext *ua);
 bool open_client_db(UAContext *ua);
 bool open_db(UAContext *ua);
 void close_db(UAContext *ua);
+int cloud_volumes_cmd(UAContext *ua, const char *cmd, const char *mode);
 enum e_pool_op {
    POOL_OP_UPDATE,
    POOL_OP_CREATE
@@ -261,13 +267,13 @@ JOB     *select_job_resource(UAContext *ua);
 JOB     *select_enable_disable_job_resource(UAContext *ua, bool enable);
 JOB     *select_restore_job_resource(UAContext *ua);
 CLIENT  *select_enable_disable_client_resource(UAContext *ua, bool enable);
-CLIENT  *select_client_resource(UAContext *ua);
+CLIENT  *select_client_resource(UAContext *ua, int32_t jobtype);
 FILESET *select_fileset_resource(UAContext *ua);
 SCHED   *select_enable_disable_schedule_resource(UAContext *ua, bool enable);
 int     select_pool_and_media_dbr(UAContext *ua, POOL_DBR *pr, MEDIA_DBR *mr);
 int     select_media_dbr(UAContext *ua, MEDIA_DBR *mr);
 bool    select_pool_dbr(UAContext *ua, POOL_DBR *pr, const char *argk="pool");
-bool    select_client_dbr(UAContext *ua, CLIENT_DBR *cr);
+bool    select_client_dbr(UAContext *ua, CLIENT_DBR *cr, int32_t jobtype);
 
 void    start_prompt(UAContext *ua, const char *msg);
 void    add_prompt(UAContext *ua, const char *prompt, char *unique=NULL);
@@ -280,12 +286,12 @@ int     get_storage_drive(UAContext *ua, STORE *store);
 int     get_storage_slot(UAContext *ua, STORE *store);
 int     get_media_type(UAContext *ua, char *MediaType, int max_media);
 bool    get_pool_dbr(UAContext *ua, POOL_DBR *pr, const char *argk="pool");
-bool    get_client_dbr(UAContext *ua, CLIENT_DBR *cr);
+bool    get_client_dbr(UAContext *ua, CLIENT_DBR *cr, int32_t jobtype);
 POOL   *get_pool_resource(UAContext *ua);
 JOB    *get_restore_job(UAContext *ua);
 POOL   *select_pool_resource(UAContext *ua);
 int  select_running_jobs(UAContext *ua, alist *jcrs, const char *reason);
-CLIENT *get_client_resource(UAContext *ua);
+CLIENT *get_client_resource(UAContext *ua, int32_t jobtype);
 int     get_job_dbr(UAContext *ua, JOB_DBR *jr);
 
 int find_arg_keyword(UAContext *ua, const char **list);
@@ -295,6 +301,12 @@ int do_keyword_prompt(UAContext *ua, const char *msg, const char **list);
 int confirm_retention(UAContext *ua, utime_t *ret, const char *msg);
 int confirm_retention_yesno(UAContext *ua, utime_t ret, const char *msg);
 bool get_level_from_name(JCR *jcr, const char *level_name);
+int get_level_code_from_name(const char *level_name);
+int scan_storage_cmd(UAContext *ua, const char *cmd,
+                     bool allfrompool,
+                     int *drive, MEDIA_DBR *mr, POOL_DBR *pr,
+                     const char **action, char *storage, int *nb, uint32_t **results);
+
 
 /* ua_status.c */
 void list_dir_status_header(UAContext *ua);
@@ -302,6 +314,7 @@ void list_dir_status_header(UAContext *ua);
 /* ua_tree.c */
 bool user_select_files_from_tree(TREE_CTX *tree);
 int insert_tree_handler(void *ctx, int num_fields, char **row);
+bool check_directory_acl(char **last_dir, alist *dir_acl, const char *path);
 
 /* ua_prune.c */
 int prune_files(UAContext *ua, CLIENT *client, POOL *pool);
@@ -328,6 +341,7 @@ void purge_files_from_job_list(UAContext *ua, del_ctx &del);
 /* ua_run.c */
 extern int run_cmd(UAContext *ua, const char *cmd);
 extern int restart_cmd(UAContext *ua, const char *cmd);
+extern bool check_pool(int32_t JobType, int32_t JobLevel, POOL *pool, POOL *nextpool, const char **name);
 
 /* verify.c */
 extern bool do_verify(JCR *jcr);

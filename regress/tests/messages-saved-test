@@ -1,0 +1,59 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2017 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Run a simple backup of the Bacula build directory
+# See if we have the list of files backed up in a log
+#
+#
+TestName="messages-saved-test"
+JobName=backup
+. scripts/functions
+
+scripts/cleanup
+scripts/copy-confs
+change_jobname BackupClient1 $JobName
+start_test
+
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "ClientRunBeforeJob", "echo this is a test", "Job", "backup")'
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "ClientRunAfterJob", "echo this is a test", "Job", "backup")'
+$bperl -e 'add_attribute("$conf/bacula-fd.conf", "Append", "$tmp/fd.log = All, Saved", "Messages", "Standard")'
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@output /dev/null
+messages
+@$out $tmp/log1.out
+@#setdebug level=100 storage=File
+label volume=TestVolume001 storage=File1 pool=File drive=0 slot=0
+run job=$JobName yes
+@sleep 1
+status storage=File1
+wait
+messages
+quit
+END_OF_DATA
+
+run_bacula
+check_for_zombie_jobs storage=File
+stop_bacula
+
+nb=`cat $tmp/fd.log | wc -l`
+if [ $nb -lt 1000 ]; then
+    print_debug "ERROR: Not enough line in $tmp/fd.log"
+    estat=1
+fi
+
+grep po/fr.po $tmp/fd.log > /dev/null
+if [ $? -ne 0 ]; then
+    print_debug "ERROR: Should find po/fr.po in $tmp/fd.log"
+    estat=1
+fi
+
+grep "ClientRunBeforeJob: this is a test" $tmp/fd.log > /dev/null
+if [ $? -ne 0 ]; then
+    print_debug "ERROR: Should runscript output in $tmp/fd.log"
+    estat=1
+fi
+
+end_test

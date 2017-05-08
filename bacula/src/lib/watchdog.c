@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -43,7 +43,7 @@ static void wd_lock();
 static void wd_unlock();
 
 /* Static globals */
-static bool quit = false;;
+static bool quit = false;
 static bool wd_is_init = false;
 static brwlock_t lock;                /* watchdog lock */
 
@@ -256,19 +256,6 @@ extern "C" void *watchdog_thread(void *arg)
    while (!quit) {
       watchdog_t *p;
 
-      /*
-       *
-       *  NOTE. lock_jcr_chain removed, but the message below
-       *   was left until we are sure there are no deadlocks.
-       *
-       * We lock the jcr chain here because a good number of the
-       *   callback routines lock the jcr chain. We need to lock
-       *   it here *before* the watchdog lock because the SD message
-       *   thread first locks the jcr chain, then when closing the
-       *   job locks the watchdog chain. If the two threads do not
-       *   lock in the same order, we get a deadlock -- each holds
-       *   the other's needed lock.
-       */
       wd_lock();
 
 walk_list:

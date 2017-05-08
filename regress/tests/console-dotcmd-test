@@ -1,0 +1,113 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2017 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Run a couple of tests with bconsole and dotcommands
+#
+TestName="console-dotcmd-test"
+JobName=backup
+. scripts/functions
+
+scripts/cleanup
+scripts/copy-test-confs
+
+#
+# Zap out any schedule in default conf file so that
+#  it doesn't start during our test
+#
+outf="$tmp/sed_tmp"
+echo "s%  Schedule =%# Schedule =%g" >${outf}
+cp $scripts/bacula-dir.conf $tmp/1
+sed -f ${outf} $tmp/1 >$scripts/bacula-dir.conf
+
+echo "$cwd/build/po" > $tmp/file-list
+
+change_jobname NightlySave $JobName
+
+perl -Mscripts::functions \
+    -e "extract_resource('$conf/bacula-dir.conf', 'Client', '$HOST-fd')" \
+    > $tmp/1
+
+OUT=$conf/bacula-dir.conf
+for i in `seq 0 254`
+do
+
+  sed "s/$HOST-fd/test$i-1-fd/" $tmp/1   | sed "s/Address.*/Address = 127.0.0.$i/" >> $OUT
+  sed "s/$HOST-fd/test$i-2-fd/" $tmp/1   | sed "s/Address.*/Address = 127.0.2.$i/" >> $OUT
+  sed "s/$HOST-fd/test$i-rst-fd/" $tmp/1 | sed "s/Address.*/Address = 127.0.3.$i/" >> $OUT
+  sed "s/$HOST-fd/test$i-err-fd/" $tmp/1 | sed "s/Address.*/Address = something.lan.xx.baculasystems.com/" >> $tmp/bad-fd
+done
+
+start_test
+
+# We create hundred of clients in this test, the director startup can be long
+# specially on MySQL and Ubuntu
+touch $tmp/bconcmds
+run_bacula
+
+ok=1
+retry=0
+
+while [ $ok -ne 0 -a $retry -lt 5 ]; do
+    echo quit | $bin/bconsole -c $conf/bconsole.conf | grep quit
+    ok=$?
+    retry=`expr $retry + 1`
+done
+    
+cat <<EOF > $tmp/bconcmds
+@out /dev/null
+reload
+messages
+@$out $tmp/log1.out
+.client
+@$out $tmp/log2.out
+time
+.client address=127.0.0.50
+time
+@$out $tmp/log3.out
+time
+.client address=x.x.x.x
+time
+@echo done
+@exec "touch $tmp/log.done"
+EOF
+
+run_bconsole
+
+# Put some bad FDs in the list
+cat $tmp/bad-fd >> $conf/bacula-dir.conf
+sed s/log/logerr/ $tmp/bconcmds > $tmp/bconcmds.err
+
+# With DNS errors, it will take more times
+(run_bconsole $tmp/bconcmds.err)&
+
+sleep 2
+
+cat <<EOF > $tmp/bconcmds.sametime
+@out /dev/null
+reload
+messages
+@$out $tmp/log1.out
+.client
+@exec "touch $tmp/logsametime.done"
+EOF
+
+run_bconsole $tmp/bconcmds.sametime
+
+wait
+
+$bperl -e '(-M "$tmp/logsametime.done" < -M "$tmp/logerr.done") && exit 1'
+if [ $? -ne 0 ]; then
+    print_debug "ERROR: The timestamp of $tmp/logsametime.done should be smaller than $tmp/logerr.done"
+    estat=1
+fi
+
+nb=`grep test50-1-fd $tmp/log2.out $tmp/logerr2.out | wc -l`
+if [ $nb != 2 ]; then
+    print_debug "ERROR: Should find the client test50-1-fd in the $tmp/log2.out and $tmp/logerr2.out files"
+    estat=1
+fi
+
+stop_bacula
+end_test

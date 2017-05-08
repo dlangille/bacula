@@ -11,10 +11,10 @@
 #   from root to your address.  See the "mail" and "operator"
 #   directives in the Messages resource.
 #
-# Copyright (C) 2000-2015 Kern Sibbald
+# Copyright (C) 2000-2017 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
- 
+
 Director {                            # define myself
   Name = @basename@-dir
   DIRport = @dir_port@                # where we listen for UA connections
@@ -197,7 +197,7 @@ Client {
 
 
 # Definition of file Virtual Autochanger device
-Storage {
+Autochanger {
   Name = File1
 # Do not use "localhost" here
   Address = @hostname@                # N.B. Use a fully qualified name here
@@ -206,11 +206,12 @@ Storage {
   Device = FileChgr1
   Media Type = File1
   Maximum Concurrent Jobs = 10        # run up to 10 jobs a the same time
+  Autochanger = File1                 # point to ourself
 }
 
 # Definition of a second file Virtual Autochanger device
 #   Possibly pointing to a different disk drive
-Storage {
+Autochanger {
   Name = File2
 # Do not use "localhost" here
   Address = @hostname@                # N.B. Use a fully qualified name here
@@ -218,11 +219,12 @@ Storage {
   Password = "@sd_password@"
   Device = FileChgr2
   Media Type = File2
+  Autochanger = File2                 # point to ourself
   Maximum Concurrent Jobs = 10        # run up to 10 jobs a the same time
 }
 
 # Definition of LTO-4 tape Autochanger device
-#Storage {
+#Autochanger {
 #  Name = LTO-4
 #  Do not use "localhost" here
 #  Address = @hostname@               # N.B. Use a fully qualified name here
@@ -230,6 +232,7 @@ Storage {
 #  Password = "@sd_password@"         # password for Storage daemon
 #  Device = LTO-4                     # must be same as Device in Storage daemon
 #  Media Type = LTO-4                 # must be same as MediaType in Storage daemon
+#  Autochanger = LTO-4                # enable for autochanger device
 #  Maximum Concurrent Jobs = 10
 #}
 
