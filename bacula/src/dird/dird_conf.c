@@ -1066,9 +1066,8 @@ void dump_resource(int type, RES *ares, void sendit(void *sock, const char *fmt,
          sendit(sock, _("  --> Next")); /* Pool will be added by dump_resource */
          dump_resource(-R_POOL, (RES *)res->res_job.next_pool, sendit, sock);
       }
-      if (res->res_job.verify_job) {
-         sendit(sock, _("  --> "));
-         dump_resource(-type, (RES *)res->res_job.verify_job, sendit, sock);
+      if (res->res_job.JobType == JT_VERIFY && res->res_job.verify_job) {
+         sendit(sock, _("  --> JobToVerify %s"), (RES *)res->res_job.verify_job->name());
       }
       if (res->res_job.run_cmds) {
          char *runcmd;
