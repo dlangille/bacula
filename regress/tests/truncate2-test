@@ -103,10 +103,10 @@ fi
 
 print_debug "Check all media"
 for i in 1 2 3 4 5 ; do
-  size=`du -b TestVolume00$i|cut -f1`
-  if test $size -lt 5000 ; then
+  size=`du -b ${tmp}/TestVolume00$i|cut -f1`
+  if test "$size" -lt 5000 ; then
      print_debug "ERROR 2: Volume TestVolum00$i is too small $size"
-     ls -l TestVolume00$i
+     ls -l ${tmp}/TestVolume00$i
      estat=2
   fi
 done
@@ -128,18 +128,18 @@ if test "$debug" -eq 1 ; then
 fi
 
 for i in  2 3 4 5 ; do
-  size=`du -b TestVolume00$i|cut -f1`
-  if test $size -lt 5000 ; then
+  size=`du -b ${tmp}/TestVolume00$i|cut -f1`
+  if test "$size" -lt 5000 ; then
      print_debug "ERROR 3: Volume TestVolum00$i is too small $size"
-     ls -l TestVolume00$i
+     ls -l ${tmp}/TestVolume00$i
      estat=3
   fi
 done
 for i in 1 ; do
-  size=`du -b TestVolume00$i|cut -f1`
-  if test $size -gt 5000 ; then
+  size=`du -b ${tmp}/TestVolume00$i|cut -f1`
+  if test "$size" -gt 5000 ; then
      print_debug "ERROR 4: Volume TestVolum00$i is not truncated (too big) $size"
-     ls -l TestVolume00$i
+     ls -l ${tmp}/TestVolume00$i
      estat=4
   fi
 done
@@ -150,23 +150,23 @@ run_bconsole
 if test "$debug" -eq 1 ; then
   echo "Volumes 001, 003, and 004 should be truncated ..."
   cd ${tmp}
-  ls -l TestVolume*
+  ls -l ${tmp}/TestVolume*
   cd ${cwd}
 fi
 
 for i in 2 5 ; do
-  size=`du -b TestVolume00$i|cut -f1`
+  size=`du -b ${tmp}/TestVolume00$i|cut -f1`
   if test $size -lt 5000 ; then
      print_debug "ERROR 5: Volume TestVolum00$i is too small $size"
-     ls -l TestVolume00$i
+     ls -l ${tmp}/TestVolume00$i
      estat=5
   fi
 done
 for i in 1 3 4 ; do
-  size=`du -b TestVolume00$i|cut -f1`
+  size=`du -b ${tmp}/TestVolume00$i|cut -f1`
   if test $size -gt 5000 ; then
      print_debug "ERROR 6: Volume TestVolum00$i is not truncated (too big) $size"
-     ls -l TestVolume00$i
+     ls -l ${tmp}/TestVolume00$i
      estat=6
   fi
 done
