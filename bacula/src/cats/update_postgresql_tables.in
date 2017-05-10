@@ -160,7 +160,7 @@ END-OF-DATA
 	echo "Update of Bacula PostgreSQL tables 15 to 16 succeeded."
 	getVersion
     else
-	echo "Update of Bacula PostgreSQL tables 15 to 116 failed."
+	echo "Update of Bacula PostgreSQL tables 15 to 16 failed."
 	exit 1
     fi
 fi
