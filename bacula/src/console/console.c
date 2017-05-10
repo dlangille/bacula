@@ -845,7 +845,6 @@ wait_for_data(int fd, int sec)
 int
 get_cmd(FILE *input, const char *prompt, BSOCK *sock, int sec)
 {
-   int len;
    if (!stop) {
       if (output == stdout || teeout) {
          sendit(prompt);
@@ -858,20 +857,19 @@ again:
    case -1:
       return -1;                   /* error */
    default:
-      len = sizeof_pool_memory(sock->msg) - 1;
       if (stop) {
          sleep(1);
          goto again;
       }
 #ifdef HAVE_CONIO
       if (bisatty(fileno(input))) {
-         input_line(sock->msg, len);
+         input_line(sock->msg, sizeof_pool_memory(sock->msg)-1);
          break;
       }
 #endif
 #ifdef HAVE_WIN32 /* use special console for input on win32 */
       if (input == stdin) {
-         if (win32_cgets(sock->msg, len) == NULL) {
+         if (win32_cgets(sock->msg, sizeof_pool_memory(sock->msg)-1) == NULL) {
             return -1;
          }
       }
