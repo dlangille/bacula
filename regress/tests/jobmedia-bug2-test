@@ -1,0 +1,123 @@
+#!/bin/sh
+#
+# The script is writing simultaneously (20 jobs) on the same device
+# Normally each job will have to generate many JobMedia. Let see if
+# all JobMedia records are fine.
+#
+#
+TestName=`basename $0`
+JobName=Virtual
+
+. scripts/functions
+${rscripts}/cleanup
+cp -f ${rscripts}/bacula-dir-2media-virtual.conf ${conf}/bacula-dir.conf
+cp -f ${rscripts}/bacula-sd-2media-virtual.conf ${conf}/bacula-sd.conf
+cp -f ${rscripts}/test-bacula-fd.conf ${conf}/bacula-fd.conf
+cp -f ${rscripts}/test-console.conf ${conf}/bconsole.conf
+
+echo "$cwd/build/src/dird" >${cwd}/tmp/file-list
+
+# To reproduce this issue, we need only one job per device and per volume
+$bperl -e 'add_attribute("$conf/bacula-sd.conf", "Maximum Concurrent Jobs", "20", "Device")'
+$bperl -e 'add_attribute("$conf/bacula-sd.conf", "Label Media", "Yes", "Device")'
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "Label Format", "Vol-", "Pool")'
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "Maximum Concurrent Jobs", "20", "Director")'
+$bperl -e 'add_attribute("$conf/bacula-sd.conf", "Maximum File Size", "5M", "Device")'
+$bperl -e 'add_attribute("$conf/bacula-sd.conf", "Maximum Volume Size", "32M", "Device")'
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "Autoprune", "no", "Client")'
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "Autoprune", "no", "Pool")'
+
+start_test
+
+mkdir $tmp/disk
+
+cat <<END_OF_DATA >${tmp}/bconcmds
+@output /dev/null
+messages
+@$out ${cwd}/tmp/log1.out
+run job=$JobName level=Full storage=vDrive-1 yes
+run job=$JobName level=Full storage=vDrive-1 yes
+run job=$JobName level=Full storage=vDrive-1 yes
+run job=$JobName level=Full storage=vDrive-1 yes
+run job=$JobName level=Full storage=vDrive-1 yes
+run job=$JobName level=Full storage=vDrive-1 yes
+run job=$JobName level=Full storage=vDrive-1 yes
+run job=$JobName level=Full storage=vDrive-1 yes
+run job=$JobName level=Full storage=vDrive-1 yes
+run job=$JobName level=Full storage=vDrive-1 yes
+run job=$JobName level=Full storage=vDrive-1 yes
+run job=$JobName level=Full storage=vDrive-1 yes
+run job=$JobName level=Full storage=vDrive-1 yes
+run job=$JobName level=Full storage=vDrive-1 yes
+run job=$JobName level=Full storage=vDrive-1 yes
+run job=$JobName level=Full storage=vDrive-1 yes
+run job=$JobName level=Full storage=vDrive-1 yes
+run job=$JobName level=Full storage=vDrive-1 yes
+run job=$JobName level=Full storage=vDrive-1 yes
+run job=$JobName level=Full storage=vDrive-1 yes
+run job=$JobName level=Full storage=vDrive-1 yes
+run job=$JobName level=Full storage=vDrive-1 yes
+run job=$JobName level=Full storage=vDrive-1 yes
+run job=$JobName level=Full storage=vDrive-1 yes
+run job=$JobName level=Full storage=vDrive-1 yes
+run job=$JobName level=Full storage=vDrive-1 yes
+run job=$JobName level=Full storage=vDrive-1 yes
+run job=$JobName level=Full storage=vDrive-1 yes
+run job=$JobName level=Full storage=vDrive-1 yes
+run job=$JobName level=Full storage=vDrive-1 yes
+run job=$JobName level=Full storage=vDrive-1 yes
+run job=$JobName level=Full storage=vDrive-1 yes
+run job=$JobName level=Full storage=vDrive-1 yes
+run job=$JobName level=Full storage=vDrive-1 yes
+run job=$JobName level=Full storage=vDrive-1 yes
+run job=$JobName level=Full storage=vDrive-1 yes
+run job=$JobName level=Full storage=vDrive-1 yes
+run job=$JobName level=Full storage=vDrive-1 yes
+run job=$JobName level=Full storage=vDrive-1 yes
+run job=$JobName level=Full storage=vDrive-1 yes
+run job=$JobName level=Full storage=vDrive-1 yes
+run job=$JobName level=Full storage=vDrive-1 yes
+run job=$JobName level=Full storage=vDrive-1 yes
+run job=$JobName level=Full storage=vDrive-1 yes
+run job=$JobName level=Full storage=vDrive-1 yes
+run job=$JobName level=Full storage=vDrive-1 yes
+run job=$JobName level=Full storage=vDrive-1 yes
+run job=$JobName level=Full storage=vDrive-1 yes
+run job=$JobName level=Full storage=vDrive-1 yes
+run job=$JobName level=Full storage=vDrive-1 yes
+run job=$JobName level=Full storage=vDrive-1 yes
+run job=$JobName level=Full storage=vDrive-1 yes
+run job=$JobName level=Full storage=vDrive-1 yes
+run job=$JobName level=Full storage=vDrive-1 yes
+run job=$JobName level=Full storage=vDrive-1 yes
+run job=$JobName level=Full storage=vDrive-1 yes
+run job=$JobName level=Full storage=vDrive-1 yes
+run job=$JobName level=Full storage=vDrive-1 yes
+run job=$JobName level=Full storage=vDrive-1 yes
+run job=$JobName level=Full storage=vDrive-1 yes
+@sleep 30
+.status dir running
+@sleep 30
+.status dir running
+@sleep 30
+.status dir running
+@sleep 30
+.status dir running
+@sleep 30
+.status dir running
+@sleep 30
+.status dir running
+@sleep 30
+.status dir running
+wait
+messages
+@$out $tmp/log2.out
+.status dir running
+quit
+END_OF_DATA
+
+run_bacula
+check_for_zombie_jobs storage=vDrive-1
+stop_bacula
+
+end_test
