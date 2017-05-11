@@ -6,8 +6,8 @@
 
 /* Note: there can be only *one* VERSION in this file */
 #define VERSION "7.9.0"
-#define BDATE   "08 May 2017"
-#define LSMDATE "08May17"
+#define BDATE   "10 May 2017"
+#define LSMDATE "10May17"
 
 #define RELEASE 1   /* Use ONLY in rpms */
 
@@ -45,7 +45,6 @@
 #define TRACEBACK 1
 #define TRACE_FILE 1
 #define ENTER_LEAVE 1
-//#define FORCE_ALIGNED 1
 
 /* If this is set stdout will not be closed on startup */
 /* #define DEVELOPER 1 */
