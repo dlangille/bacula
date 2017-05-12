@@ -52,7 +52,7 @@ no notification so they are not included here.
 
 However, the Bacula Community binary releases consist of 
 files, with few source files (mostly scripts), and some of the FOSS licenses
-such such as the BSD (Berkeley Software Development) require publication of
+such as the BSD (Berkeley Software Development) require publication of
 the copyright notices if the code is released in binary format.  For example
 certain copyright notifications are simplifed such as:
 

@@ -386,7 +386,7 @@ static bool try_repositioning(JCR *jcr, DEV_RECORD *rec, DCR *dcr)
    Dmsg2(dbglvl, "nextbsr=%p mount_next_volume=%d\n", bsr, jcr->bsr->mount_next_volume);
    if (bsr == NULL && jcr->bsr->mount_next_volume) {
       Dmsg0(dbglvl, "Would mount next volume here\n");
-      Dmsg1(dbglvl, "Current postion Addr=%s\n",
+      Dmsg1(dbglvl, "Current position Addr=%s\n",
          dev->print_addr(ed1, sizeof(ed1)));
       jcr->bsr->mount_next_volume = false;
       if (!dev->at_eot()) {

@@ -3,7 +3,7 @@
 
 Note: This file is not the Bacula Community (bacula.org) license,
 which you will find in the LICENSE file. This is a FAQ about the
-the Bacula AGPLv3 and the other third-party licenses used in certain
+Bacula AGPLv3 and the other third-party licenses used in certain
 source code files of the Bacula software.
 
 
@@ -112,7 +112,7 @@ Permissive licenses:
 
 Bacula can be enabled with data encryption and/or communications
 encryption. If this is the case, you will be including OpenSSL code that
-that contains cryptographic software written by Eric Young
+contains cryptographic software written by Eric Young
 (eay@cryptsoft.com) and also software written by Tim Hudson
 (tjh@cryptsoft.com).
 

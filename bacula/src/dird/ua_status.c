@@ -559,7 +559,7 @@ static void do_storage_status(UAContext *ua, STORE *store, char *cmd)
        */
       if (strcasecmp(cmd, "shstore") == 0) {
          if (!ua->argk[3]) {
-            ua->send_msg(_("Must have three aguments\n"));
+            ua->send_msg(_("Must have three arguments\n"));
             return;
          }
          pm_strcpy(devname, store->dev_name());

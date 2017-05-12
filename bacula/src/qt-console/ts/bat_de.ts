@@ -57,42 +57,42 @@
 <context>
     <name>ClientStat</name>
     <message>
-        <location filename="../status/clientstat.cpp" line="37"/>
+        <location filename="../status/clientstat.cpp" line="39"/>
         <source>Client Status %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../status/clientstat.cpp" line="143"/>
+        <location filename="../status/clientstat.cpp" line="145"/>
         <source>Job Id</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../status/clientstat.cpp" line="143"/>
+        <location filename="../status/clientstat.cpp" line="145"/>
         <source>Job Level</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../status/clientstat.cpp" line="143"/>
+        <location filename="../status/clientstat.cpp" line="145"/>
         <source>Job Files</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../status/clientstat.cpp" line="144"/>
+        <location filename="../status/clientstat.cpp" line="146"/>
         <source>Job Bytes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../status/clientstat.cpp" line="144"/>
+        <location filename="../status/clientstat.cpp" line="146"/>
         <source>Job Status</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../status/clientstat.cpp" line="144"/>
+        <location filename="../status/clientstat.cpp" line="146"/>
         <source>Job Time</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../status/clientstat.cpp" line="145"/>
+        <location filename="../status/clientstat.cpp" line="147"/>
         <source>Job Name</source>
         <translation type="unfinished"></translation>
     </message>
@@ -182,7 +182,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../clients/clients.cpp" line="283"/>
+        <location filename="../clients/clients.cpp" line="291"/>
         <source>Are you sure you want to purge all jobs of client &quot;%1&quot; ?
 The Purge command will delete associated Catalog database records from Jobs and Volumes without considering the retention period. Purge  works only on the Catalog database and does not affect data written to Volumes. This command can be dangerous because you can delete catalog records associated with current backups of files, and we recommend that you do not use it unless you know what you are doing.
 
@@ -192,7 +192,7 @@ Press OK to proceed with the purge operation?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../clients/clients.cpp" line="319"/>
+        <location filename="../clients/clients.cpp" line="327"/>
         <source>Client Status %1</source>
         <translation type="unfinished"></translation>
     </message>
@@ -200,22 +200,22 @@ Press OK to proceed with the purge operation?</source>
 <context>
     <name>Console</name>
     <message>
-        <location filename="../console/console.cpp" line="33"/>
+        <location filename="../console/console.cpp" line="35"/>
         <source>Console</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../console/console.cpp" line="119"/>
+        <location filename="../console/console.cpp" line="121"/>
         <source>No Director found.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../console/console.cpp" line="375"/>
+        <location filename="../console/console.cpp" line="377"/>
         <source> Director not connected. Click on connect button.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../console/console.cpp" line="806"/>
+        <location filename="../console/console.cpp" line="808"/>
         <source>Director is currently disconnected
 Please reconnect!</source>
         <translation type="unfinished"></translation>
@@ -252,7 +252,7 @@ Please reconnect!</source>
 <context>
     <name>Content</name>
     <message>
-        <location filename="../storage/content.cpp" line="152"/>
+        <location filename="../storage/content.cpp" line="158"/>
         <source>Storage Status %1</source>
         <translation type="unfinished"></translation>
     </message>
@@ -384,7 +384,7 @@ Please reconnect!</source>
 <context>
     <name>DirComm</name>
     <message>
-        <location filename="../bcomm/dircomm.cpp" line="85"/>
+        <location filename="../bcomm/dircomm.cpp" line="87"/>
         <source>Already connected.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -392,72 +392,72 @@ Please reconnect!</source>
 <context>
     <name>DirStat</name>
     <message>
-        <location filename="../status/dirstat.cpp" line="134"/>
-        <location filename="../status/dirstat.cpp" line="239"/>
+        <location filename="../status/dirstat.cpp" line="136"/>
+        <location filename="../status/dirstat.cpp" line="241"/>
         <source>Job Id</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../status/dirstat.cpp" line="134"/>
-        <location filename="../status/dirstat.cpp" line="191"/>
-        <location filename="../status/dirstat.cpp" line="239"/>
+        <location filename="../status/dirstat.cpp" line="136"/>
+        <location filename="../status/dirstat.cpp" line="193"/>
+        <location filename="../status/dirstat.cpp" line="241"/>
         <source>Job Level</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../status/dirstat.cpp" line="134"/>
+        <location filename="../status/dirstat.cpp" line="136"/>
         <source>Job Files</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../status/dirstat.cpp" line="135"/>
+        <location filename="../status/dirstat.cpp" line="137"/>
         <source>Job Bytes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../status/dirstat.cpp" line="135"/>
+        <location filename="../status/dirstat.cpp" line="137"/>
         <source>Job Status</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../status/dirstat.cpp" line="135"/>
-        <location filename="../status/dirstat.cpp" line="191"/>
+        <location filename="../status/dirstat.cpp" line="137"/>
+        <location filename="../status/dirstat.cpp" line="193"/>
         <source>Job Time</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../status/dirstat.cpp" line="136"/>
-        <location filename="../status/dirstat.cpp" line="192"/>
+        <location filename="../status/dirstat.cpp" line="138"/>
+        <location filename="../status/dirstat.cpp" line="194"/>
         <source>Job Name</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../status/dirstat.cpp" line="191"/>
+        <location filename="../status/dirstat.cpp" line="193"/>
         <source>Job Type</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../status/dirstat.cpp" line="191"/>
+        <location filename="../status/dirstat.cpp" line="193"/>
         <source>Priority</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../status/dirstat.cpp" line="192"/>
+        <location filename="../status/dirstat.cpp" line="194"/>
         <source>Volume</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../status/dirstat.cpp" line="239"/>
+        <location filename="../status/dirstat.cpp" line="241"/>
         <source>Job Data</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../status/dirstat.cpp" line="239"/>
+        <location filename="../status/dirstat.cpp" line="241"/>
         <source>Job Info</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../status/dirstat.cpp" line="35"/>
+        <location filename="../status/dirstat.cpp" line="37"/>
         <source>Director Status</source>
         <translation type="unfinished"></translation>
     </message>
@@ -533,7 +533,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../fileset/fileset.cpp" line="69"/>
-        <location filename="../fileset/fileset.cpp" line="144"/>
+        <location filename="../fileset/fileset.cpp" line="148"/>
         <source>FileSet Name</source>
         <translation type="unfinished"></translation>
     </message>
@@ -574,7 +574,7 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>Help</name>
     <message>
-        <location filename="../help/help.cpp" line="53"/>
+        <location filename="../help/help.cpp" line="55"/>
         <source>Help: %1</source>
         <translation type="unfinished"></translation>
     </message>
@@ -582,35 +582,35 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>Job</name>
     <message>
-        <location filename="../job/job.cpp" line="27"/>
+        <location filename="../job/job.cpp" line="29"/>
         <source>Job</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../job/job.cpp" line="71"/>
+        <location filename="../job/job.cpp" line="73"/>
         <source>Are you sure you want to delete??  !!!.
 This delete command is used to delete a Job record and all associated catalog records that were created. This command operates only on the Catalog database and has no effect on the actual data written to a Volume. This command can be dangerous and we strongly recommend that you do not use it unless you know what you are doing.  The Job and all its associated records (File and JobMedia) will be deleted from the catalog.Press OK to proceed with delete operation.?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../job/job.cpp" line="91"/>
+        <location filename="../job/job.cpp" line="93"/>
         <source>Are you sure you want to cancel this job?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../job/job.cpp" line="142"/>
+        <location filename="../job/job.cpp" line="144"/>
         <source>Bat</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../job/job.cpp" line="143"/>
+        <location filename="../job/job.cpp" line="145"/>
         <source>There were no results!
 It is possible you may need to add &quot;catalog = all&quot; to the Messages resource for this job.
 </source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../job/job.cpp" line="186"/>
+        <location filename="../job/job.cpp" line="188"/>
         <source>Error:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1510,64 +1510,64 @@ Press OK to continue?</source>
 <context>
     <name>Jobs</name>
     <message>
-        <location filename="../jobs/jobs.cpp" line="32"/>
+        <location filename="../jobs/jobs.cpp" line="34"/>
         <source>Jobs</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../jobs/jobs.cpp" line="69"/>
-        <location filename="../jobs/jobs.cpp" line="108"/>
+        <location filename="../jobs/jobs.cpp" line="71"/>
+        <location filename="../jobs/jobs.cpp" line="110"/>
         <source>Job Name</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../jobs/jobs.cpp" line="70"/>
+        <location filename="../jobs/jobs.cpp" line="72"/>
         <source>Pool</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../jobs/jobs.cpp" line="70"/>
+        <location filename="../jobs/jobs.cpp" line="72"/>
         <source>Messages</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../jobs/jobs.cpp" line="70"/>
+        <location filename="../jobs/jobs.cpp" line="72"/>
         <source>Client</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../jobs/jobs.cpp" line="71"/>
+        <location filename="../jobs/jobs.cpp" line="73"/>
         <source>Storage</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../jobs/jobs.cpp" line="73"/>
+        <location filename="../jobs/jobs.cpp" line="75"/>
         <source>Where</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../jobs/jobs.cpp" line="71"/>
+        <location filename="../jobs/jobs.cpp" line="73"/>
         <source>Level</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../jobs/jobs.cpp" line="71"/>
-        <location filename="../jobs/jobs.cpp" line="75"/>
+        <location filename="../jobs/jobs.cpp" line="73"/>
+        <location filename="../jobs/jobs.cpp" line="77"/>
         <source>Type</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../jobs/jobs.cpp" line="72"/>
+        <location filename="../jobs/jobs.cpp" line="74"/>
         <source>FileSet</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../jobs/jobs.cpp" line="72"/>
+        <location filename="../jobs/jobs.cpp" line="74"/>
         <source>Catalog</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../jobs/jobs.cpp" line="72"/>
+        <location filename="../jobs/jobs.cpp" line="74"/>
         <source>Enabled</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1891,37 +1891,37 @@ Press OK to continue?</source>
 <context>
     <name>MainWin</name>
     <message>
-        <location filename="../mainwin.cpp" line="70"/>
+        <location filename="../mainwin.cpp" line="72"/>
         <source>Select Page</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mainwin.cpp" line="146"/>
+        <location filename="../mainwin.cpp" line="148"/>
         <source>Console</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mainwin.cpp" line="574"/>
+        <location filename="../mainwin.cpp" line="576"/>
         <source>Director Status</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mainwin.cpp" line="616"/>
+        <location filename="../mainwin.cpp" line="618"/>
         <source>Director not connected. Click on connect button.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mainwin.cpp" line="627"/>
+        <location filename="../mainwin.cpp" line="629"/>
         <source>About bat</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mainwin.cpp" line="628"/>
+        <location filename="../mainwin.cpp" line="630"/>
         <source>&lt;br&gt;&lt;h2&gt;Bacula Bat %1 (%2)&lt;/h2&gt;&lt;p&gt;Copyright &amp;copy; 2007-%3 Kern Sibbald&lt;p&gt;The &lt;b&gt;bat&lt;/b&gt; is an administrative console interface to the Director.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mainwin.cpp" line="651"/>
+        <location filename="../mainwin.cpp" line="653"/>
         <source> Ready</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1947,19 +1947,19 @@ Press OK to continue?</source>
 <context>
     <name>MediaInfo</name>
     <message>
-        <location filename="../mediainfo/mediainfo.cpp" line="36"/>
+        <location filename="../mediainfo/mediainfo.cpp" line="38"/>
         <source>Media Info</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mediainfo/mediainfo.cpp" line="73"/>
+        <location filename="../mediainfo/mediainfo.cpp" line="75"/>
         <source>Are you sure you want to purge ??  !!!.
 The Purge command will delete associated Catalog database records from Jobs and Volumes without considering the retention period. Purge  works only on the Catalog database and does not affect data written to Volumes. This command can be dangerous because you can delete catalog records associated with current backups of files, and we recommend that you do not use it unless you know what you are doing.
 Press OK to proceed with the purge operation?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mediainfo/mediainfo.cpp" line="92"/>
+        <location filename="../mediainfo/mediainfo.cpp" line="94"/>
         <source>Are you sure you want to delete??  !!!.
 This delete command is used to delete a Volume record and all associated catalog records that were created. This command operates only on the Catalog database and has no effect on the actual data written to a Volume. This command can be dangerous and we strongly recommend that you do not use it unless you know what you are doing.  All Jobs and all associated records (File and JobMedia) will be deleted from the catalog.Press OK to proceed with delete operation.?</source>
         <translation type="unfinished"></translation>
@@ -1968,124 +1968,124 @@ This delete command is used to delete a Volume record and all associated catalog
 <context>
     <name>MediaList</name>
     <message>
-        <location filename="../medialist/medialist.cpp" line="76"/>
+        <location filename="../medialist/medialist.cpp" line="78"/>
         <source>Volume Name</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../medialist/medialist.cpp" line="76"/>
+        <location filename="../medialist/medialist.cpp" line="78"/>
         <source>Id</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../medialist/medialist.cpp" line="76"/>
+        <location filename="../medialist/medialist.cpp" line="78"/>
         <source>Status</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../medialist/medialist.cpp" line="76"/>
+        <location filename="../medialist/medialist.cpp" line="78"/>
         <source>Enabled</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../medialist/medialist.cpp" line="76"/>
+        <location filename="../medialist/medialist.cpp" line="78"/>
         <source>Bytes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../medialist/medialist.cpp" line="76"/>
+        <location filename="../medialist/medialist.cpp" line="78"/>
         <source>Files</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../medialist/medialist.cpp" line="77"/>
+        <location filename="../medialist/medialist.cpp" line="79"/>
         <source>Jobs</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../medialist/medialist.cpp" line="77"/>
+        <location filename="../medialist/medialist.cpp" line="79"/>
         <source>Retention</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../medialist/medialist.cpp" line="77"/>
+        <location filename="../medialist/medialist.cpp" line="79"/>
         <source>Media Type</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../medialist/medialist.cpp" line="77"/>
+        <location filename="../medialist/medialist.cpp" line="79"/>
         <source>Slot</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../medialist/medialist.cpp" line="77"/>
+        <location filename="../medialist/medialist.cpp" line="79"/>
         <source>Use Duration</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../medialist/medialist.cpp" line="78"/>
+        <location filename="../medialist/medialist.cpp" line="80"/>
         <source>Max Jobs</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../medialist/medialist.cpp" line="78"/>
+        <location filename="../medialist/medialist.cpp" line="80"/>
         <source>Max Files</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../medialist/medialist.cpp" line="78"/>
+        <location filename="../medialist/medialist.cpp" line="80"/>
         <source>Max Bytes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../medialist/medialist.cpp" line="78"/>
+        <location filename="../medialist/medialist.cpp" line="80"/>
         <source>Recycle</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../medialist/medialist.cpp" line="79"/>
+        <location filename="../medialist/medialist.cpp" line="81"/>
         <source>Last Written</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../medialist/medialist.cpp" line="40"/>
-        <location filename="../medialist/medialist.cpp" line="87"/>
+        <location filename="../medialist/medialist.cpp" line="42"/>
+        <location filename="../medialist/medialist.cpp" line="89"/>
         <source>Pools</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../medialist/medialist.cpp" line="79"/>
+        <location filename="../medialist/medialist.cpp" line="81"/>
         <source>First Written</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../medialist/medialist.cpp" line="79"/>
+        <location filename="../medialist/medialist.cpp" line="81"/>
         <source>Read Time</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../medialist/medialist.cpp" line="80"/>
+        <location filename="../medialist/medialist.cpp" line="82"/>
         <source>Write Time</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../medialist/medialist.cpp" line="80"/>
+        <location filename="../medialist/medialist.cpp" line="82"/>
         <source>Recycle Count</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../medialist/medialist.cpp" line="80"/>
+        <location filename="../medialist/medialist.cpp" line="82"/>
         <source>Recycle Pool</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../medialist/medialist.cpp" line="370"/>
+        <location filename="../medialist/medialist.cpp" line="378"/>
         <source>Are you sure you want to delete??  !!!.
 This delete command is used to delete a Volume record and all associated catalog records that were created. This command operates only on the Catalog database and has no effect on the actual data written to a Volume. This command can be dangerous and we strongly recommend that you do not use it unless you know what you are doing.  All Jobs and all associated records (File and JobMedia) will be deleted from the catalog.Press OK to proceed with delete operation.?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../medialist/medialist.cpp" line="392"/>
+        <location filename="../medialist/medialist.cpp" line="400"/>
         <source>Are you sure you want to purge ??  !!!.
 The Purge command will delete associated Catalog database records from Jobs and Volumes without considering the retention period. Purge  works only on the Catalog database and does not affect data written to Volumes. This command can be dangerous because you can delete catalog records associated with current backups of files, and we recommend that you do not use it unless you know what you are doing.
 Press OK to proceed with the purge operation?</source>
@@ -2164,19 +2164,19 @@ Press OK to proceed with the purge operation?</source>
 <context>
     <name>MediaView</name>
     <message>
-        <location filename="../medialist/mediaview.cpp" line="33"/>
+        <location filename="../medialist/mediaview.cpp" line="35"/>
         <source>Media</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../medialist/mediaview.cpp" line="84"/>
+        <location filename="../medialist/mediaview.cpp" line="86"/>
         <source>Are you sure you want to purge ??  !!!.
 The Purge command will delete associated Catalog database records from Jobs and Volumes without considering the retention period. Purge  works only on the Catalog database and does not affect data written to Volumes. This command can be dangerous because you can delete catalog records associated with current backups of files, and we recommend that you do not use it unless you know what you are doing.
 Press OK to proceed with the purge operation?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../medialist/mediaview.cpp" line="157"/>
+        <location filename="../medialist/mediaview.cpp" line="149"/>
         <source>Are you sure you want to delete??  !!!.
 This delete command is used to delete a Volume record and all associated catalog records that were created. This command operates only on the Catalog database and has no effect on the actual data written to a Volume. This command can be dangerous and we strongly recommend that you do not use it unless you know what you are doing.  All Jobs and all associated records (File and JobMedia) will be deleted from the catalog.Press OK to proceed with delete operation.?</source>
         <translation type="unfinished"></translation>
@@ -2437,6 +2437,11 @@ This delete command is used to delete a Volume record and all associated catalog
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../prefs.ui" line="453"/>
+        <source>Debug Miscellaneous Items</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <location filename="../prefs.ui" line="439"/>
         <source>Debug Sql queries</source>
         <translation type="unfinished"></translation>
@@ -2464,11 +2469,6 @@ This delete command is used to delete a Volume record and all associated catalog
     <message>
         <location filename="../prefs.ui" line="425"/>
         <source>Debug multiple connection</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../prefs.ui" line="453"/>
-        <source>Debug Miscelaneous Items</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2551,20 +2551,20 @@ This delete command is used to delete a Volume record and all associated catalog
     </message>
     <message>
         <location filename="../util/comboutil.cpp" line="61"/>
-        <location filename="../util/fmtwidgetitem.cpp" line="261"/>
-        <location filename="../util/fmtwidgetitem.cpp" line="269"/>
+        <location filename="../util/fmtwidgetitem.cpp" line="264"/>
+        <location filename="../util/fmtwidgetitem.cpp" line="272"/>
         <source>No</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../util/comboutil.cpp" line="62"/>
-        <location filename="../util/fmtwidgetitem.cpp" line="259"/>
-        <location filename="../util/fmtwidgetitem.cpp" line="267"/>
+        <location filename="../util/fmtwidgetitem.cpp" line="262"/>
+        <location filename="../util/fmtwidgetitem.cpp" line="270"/>
         <source>Yes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../util/fmtwidgetitem.cpp" line="46"/>
+        <location filename="../util/fmtwidgetitem.cpp" line="48"/>
         <source>Invalid job status %1</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2572,42 +2572,42 @@ This delete command is used to delete a Volume record and all associated catalog
 <context>
     <name>StorStat</name>
     <message>
-        <location filename="../status/storstat.cpp" line="53"/>
+        <location filename="../status/storstat.cpp" line="55"/>
         <source>Storage Status %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../status/storstat.cpp" line="231"/>
+        <location filename="../status/storstat.cpp" line="233"/>
         <source>Job Id</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../status/storstat.cpp" line="231"/>
+        <location filename="../status/storstat.cpp" line="233"/>
         <source>Job Level</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../status/storstat.cpp" line="231"/>
+        <location filename="../status/storstat.cpp" line="233"/>
         <source>Job Files</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../status/storstat.cpp" line="232"/>
+        <location filename="../status/storstat.cpp" line="234"/>
         <source>Job Bytes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../status/storstat.cpp" line="232"/>
+        <location filename="../status/storstat.cpp" line="234"/>
         <source>Job Status</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../status/storstat.cpp" line="232"/>
+        <location filename="../status/storstat.cpp" line="234"/>
         <source>Job Time</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../status/storstat.cpp" line="233"/>
+        <location filename="../status/storstat.cpp" line="235"/>
         <source>Job Name</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2711,98 +2711,98 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>Storage</name>
     <message>
-        <location filename="../storage/storage.cpp" line="39"/>
-        <location filename="../storage/storage.cpp" line="81"/>
+        <location filename="../storage/storage.cpp" line="41"/>
+        <location filename="../storage/storage.cpp" line="83"/>
         <source>Storage</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../storage/storage.cpp" line="76"/>
+        <location filename="../storage/storage.cpp" line="78"/>
         <source>Name</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../storage/storage.cpp" line="76"/>
+        <location filename="../storage/storage.cpp" line="78"/>
         <source>Id</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../storage/storage.cpp" line="77"/>
+        <location filename="../storage/storage.cpp" line="79"/>
         <source>Changer</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../storage/storage.cpp" line="77"/>
+        <location filename="../storage/storage.cpp" line="79"/>
         <source>Slot</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../storage/storage.cpp" line="77"/>
+        <location filename="../storage/storage.cpp" line="79"/>
         <source>Status</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../storage/storage.cpp" line="77"/>
+        <location filename="../storage/storage.cpp" line="79"/>
         <source>Enabled</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../storage/storage.cpp" line="77"/>
+        <location filename="../storage/storage.cpp" line="79"/>
         <source>Pool</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../storage/storage.cpp" line="78"/>
+        <location filename="../storage/storage.cpp" line="80"/>
         <source>Media Type</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../storage/storage.cpp" line="258"/>
+        <location filename="../storage/storage.cpp" line="264"/>
         <source>Yes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../storage/storage.cpp" line="266"/>
+        <location filename="../storage/storage.cpp" line="272"/>
         <source>Status Storage &quot;%1&quot;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../storage/storage.cpp" line="268"/>
+        <location filename="../storage/storage.cpp" line="274"/>
         <source>Status Storage &quot;%1&quot; in Window</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../storage/storage.cpp" line="270"/>
+        <location filename="../storage/storage.cpp" line="276"/>
         <source>Label media in Storage &quot;%1&quot;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../storage/storage.cpp" line="272"/>
+        <location filename="../storage/storage.cpp" line="278"/>
         <source>Mount media in Storage &quot;%1&quot;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../storage/storage.cpp" line="274"/>
+        <location filename="../storage/storage.cpp" line="280"/>
         <source>&quot;UN&quot; Mount media in Storage &quot;%1&quot;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../storage/storage.cpp" line="275"/>
+        <location filename="../storage/storage.cpp" line="281"/>
         <source>Release media in Storage &quot;%1&quot;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../storage/storage.cpp" line="280"/>
+        <location filename="../storage/storage.cpp" line="286"/>
         <source>Barcode Scan media in Storage &quot;%1&quot;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../storage/storage.cpp" line="282"/>
+        <location filename="../storage/storage.cpp" line="288"/>
         <source>Read scan media in Storage &quot;%1&quot;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../storage/storage.cpp" line="418"/>
+        <location filename="../storage/storage.cpp" line="424"/>
         <source>Storage Status %1</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2879,7 +2879,7 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>bRestore</name>
     <message>
-        <location filename="../restore/brestore.cpp" line="32"/>
+        <location filename="../restore/brestore.cpp" line="34"/>
         <source>bRestore</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3208,7 +3208,7 @@ regexp:</source>
 <context>
     <name>estimatePage</name>
     <message>
-        <location filename="../run/estimate.cpp" line="36"/>
+        <location filename="../run/estimate.cpp" line="38"/>
         <source>Estimate</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3810,29 +3810,29 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>mountDialog</name>
     <message>
-        <location filename="../mount/mount.cpp" line="40"/>
+        <location filename="../mount/mount.cpp" line="42"/>
         <source>Storage : %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mount/mount.cpp" line="48"/>
+        <location filename="../mount/mount.cpp" line="50"/>
         <source>No Storage name</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mount/mount.cpp" line="48"/>
+        <location filename="../mount/mount.cpp" line="50"/>
         <source>No Storage name given</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mount/mount.cpp" line="60"/>
+        <location filename="../mount/mount.cpp" line="62"/>
         <source>Context sensitive command :
 
 </source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../mount/mount.cpp" line="63"/>
+        <location filename="../mount/mount.cpp" line="65"/>
         <source>Director Response :
 
 </source>
@@ -3868,7 +3868,7 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>prefsDialog</name>
     <message>
-        <location filename="../mainwin.cpp" line="942"/>
+        <location filename="../mainwin.cpp" line="944"/>
         <source>Canceled</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3954,53 +3954,53 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>prerestorePage</name>
     <message>
-        <location filename="../restore/prerestore.cpp" line="49"/>
+        <location filename="../restore/prerestore.cpp" line="51"/>
         <source>Restore</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../restore/prerestore.cpp" line="59"/>
-        <location filename="../restore/prerestore.cpp" line="135"/>
-        <location filename="../restore/prerestore.cpp" line="206"/>
+        <location filename="../restore/prerestore.cpp" line="61"/>
+        <location filename="../restore/prerestore.cpp" line="137"/>
+        <location filename="../restore/prerestore.cpp" line="208"/>
         <source>Any</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../restore/prerestore.cpp" line="71"/>
-        <location filename="../restore/prerestore.cpp" line="87"/>
-        <source>Comma separted list of Job Ids</source>
+        <location filename="../restore/prerestore.cpp" line="73"/>
+        <location filename="../restore/prerestore.cpp" line="89"/>
+        <source>Comma separated list of JobIds</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../restore/prerestore.cpp" line="187"/>
+        <location filename="../restore/prerestore.cpp" line="189"/>
         <source>Canceled</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../restore/prerestore.cpp" line="268"/>
+        <location filename="../restore/prerestore.cpp" line="270"/>
         <source>There can be no spaces in the text for the joblist.
 Press OK to continue?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../restore/prerestore.cpp" line="300"/>
+        <location filename="../restore/prerestore.cpp" line="302"/>
         <source>The string is not a comma separated list of integers.
 Press OK to continue?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../restore/prerestore.cpp" line="305"/>
+        <location filename="../restore/prerestore.cpp" line="307"/>
         <source>Bat</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../restore/prerestore.cpp" line="306"/>
+        <location filename="../restore/prerestore.cpp" line="308"/>
         <source>At least one of the jobs is not a valid job of type &quot;Backup&quot;.
 Press OK to continue?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../restore/prerestore.cpp" line="312"/>
+        <location filename="../restore/prerestore.cpp" line="314"/>
         <source>All jobs in the list must be of the same jobName and same client.
 Press OK to continue?</source>
         <translation type="unfinished"></translation>
@@ -4057,22 +4057,22 @@ Press OK to continue?</source>
 <context>
     <name>prunePage</name>
     <message>
-        <location filename="../run/prune.cpp" line="36"/>
+        <location filename="../run/prune.cpp" line="38"/>
         <source>Prune</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../run/prune.cpp" line="56"/>
         <location filename="../run/prune.cpp" line="58"/>
-        <location filename="../run/prune.cpp" line="92"/>
-        <location filename="../run/prune.cpp" line="95"/>
-        <location filename="../run/prune.cpp" line="122"/>
-        <location filename="../run/prune.cpp" line="129"/>
+        <location filename="../run/prune.cpp" line="60"/>
+        <location filename="../run/prune.cpp" line="94"/>
+        <location filename="../run/prune.cpp" line="97"/>
+        <location filename="../run/prune.cpp" line="124"/>
+        <location filename="../run/prune.cpp" line="131"/>
         <source>Any</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../run/prune.cpp" line="113"/>
+        <location filename="../run/prune.cpp" line="115"/>
         <source> Canceled</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4080,23 +4080,23 @@ Press OK to continue?</source>
 <context>
     <name>relabelDialog</name>
     <message>
-        <location filename="../relabel/relabel.cpp" line="42"/>
+        <location filename="../relabel/relabel.cpp" line="44"/>
         <source>From Volume : </source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../relabel/relabel.cpp" line="80"/>
+        <location filename="../relabel/relabel.cpp" line="82"/>
         <source>No Volume name</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../relabel/relabel.cpp" line="80"/>
+        <location filename="../relabel/relabel.cpp" line="82"/>
         <source>No Volume name given</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../relabel/relabel.cpp" line="85"/>
-        <location filename="../relabel/relabel.cpp" line="86"/>
+        <location filename="../relabel/relabel.cpp" line="87"/>
+        <location filename="../relabel/relabel.cpp" line="88"/>
         <source>New name must be different</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4245,75 +4245,75 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>restorePage</name>
     <message>
-        <location filename="../restore/restore.cpp" line="37"/>
+        <location filename="../restore/restore.cpp" line="39"/>
         <source>Restore Select</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../restore/restore.cpp" line="64"/>
+        <location filename="../restore/restore.cpp" line="66"/>
         <source>Mark</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../restore/restore.cpp" line="64"/>
+        <location filename="../restore/restore.cpp" line="66"/>
         <source>File</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../restore/restore.cpp" line="64"/>
+        <location filename="../restore/restore.cpp" line="66"/>
         <source>Mode</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../restore/restore.cpp" line="64"/>
+        <location filename="../restore/restore.cpp" line="66"/>
         <source>User</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../restore/restore.cpp" line="65"/>
+        <location filename="../restore/restore.cpp" line="67"/>
         <source>Group</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../restore/restore.cpp" line="65"/>
+        <location filename="../restore/restore.cpp" line="67"/>
         <source>Size</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../restore/restore.cpp" line="65"/>
+        <location filename="../restore/restore.cpp" line="67"/>
         <source>Date</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../restore/restore.cpp" line="188"/>
+        <location filename="../restore/restore.cpp" line="190"/>
         <source>In addDirectory cwd &quot;%1&quot; newdir &quot;%2&quot; fullpath &quot;%3&quot;
 </source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../restore/restore.cpp" line="419"/>
-        <location filename="../restore/restore.cpp" line="420"/>
+        <location filename="../restore/restore.cpp" line="421"/>
+        <location filename="../restore/restore.cpp" line="422"/>
         <source>Nothing selected, nothing done</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../restore/restore.cpp" line="445"/>
+        <location filename="../restore/restore.cpp" line="447"/>
         <source>cd command failed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../restore/restore.cpp" line="466"/>
+        <location filename="../restore/restore.cpp" line="468"/>
         <source>.pwd command failed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../restore/restore.cpp" line="251"/>
+        <location filename="../restore/restore.cpp" line="253"/>
         <source>In else of if parent cwd &quot;%1&quot; newdir &quot;%2&quot;
 </source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../restore/restore.cpp" line="300"/>
+        <location filename="../restore/restore.cpp" line="302"/>
         <source>Canceled</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4321,182 +4321,182 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>restoreTree</name>
     <message>
-        <location filename="../restore/restoretree.cpp" line="33"/>
+        <location filename="../restore/restoretree.cpp" line="35"/>
         <source>Version Browser</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../restore/restoretree.cpp" line="106"/>
+        <location filename="../restore/restoretree.cpp" line="109"/>
         <source>Directories</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../restore/restoretree.cpp" line="109"/>
-        <location filename="../restore/restoretree.cpp" line="111"/>
-        <location filename="../restore/restoretree.cpp" line="357"/>
-        <location filename="../restore/restoretree.cpp" line="358"/>
-        <location filename="../restore/restoretree.cpp" line="639"/>
-        <location filename="../restore/restoretree.cpp" line="642"/>
+        <location filename="../restore/restoretree.cpp" line="112"/>
+        <location filename="../restore/restoretree.cpp" line="114"/>
+        <location filename="../restore/restoretree.cpp" line="382"/>
+        <location filename="../restore/restoretree.cpp" line="383"/>
+        <location filename="../restore/restoretree.cpp" line="665"/>
+        <location filename="../restore/restoretree.cpp" line="668"/>
         <source>Any</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../restore/restoretree.cpp" line="130"/>
+        <location filename="../restore/restoretree.cpp" line="133"/>
         <source>Refresh From Re-Select</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../restore/restoretree.cpp" line="133"/>
+        <location filename="../restore/restoretree.cpp" line="136"/>
         <source>Refresh From JobChecks</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../restore/restoretree.cpp" line="171"/>
+        <location filename="../restore/restoretree.cpp" line="174"/>
         <source>Querying Database</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../restore/restoretree.cpp" line="188"/>
+        <location filename="../restore/restoretree.cpp" line="191"/>
         <source>Querying Jobs</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../restore/restoretree.cpp" line="208"/>
+        <location filename="../restore/restoretree.cpp" line="233"/>
         <source>Querying for Directories</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../restore/restoretree.cpp" line="216"/>
+        <location filename="../restore/restoretree.cpp" line="241"/>
         <source>Processing Directories</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../restore/restoretree.cpp" line="386"/>
+        <location filename="../restore/restoretree.cpp" line="411"/>
         <source>File Name</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../restore/restoretree.cpp" line="386"/>
+        <location filename="../restore/restoretree.cpp" line="411"/>
         <source>Filename Id</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../restore/restoretree.cpp" line="167"/>
-        <location filename="../restore/restoretree.cpp" line="185"/>
-        <location filename="../restore/restoretree.cpp" line="205"/>
+        <location filename="../restore/restoretree.cpp" line="170"/>
+        <location filename="../restore/restoretree.cpp" line="188"/>
+        <location filename="../restore/restoretree.cpp" line="230"/>
         <source>Task %1 of %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../restore/restoretree.cpp" line="248"/>
+        <location filename="../restore/restoretree.cpp" line="273"/>
         <source>No jobs were selected in the job query !!!.
 Press OK to continue</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../restore/restoretree.cpp" line="396"/>
+        <location filename="../restore/restoretree.cpp" line="421"/>
         <source>Present Working Directory: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../restore/restoretree.cpp" line="490"/>
-        <location filename="../restore/restoretree.cpp" line="619"/>
+        <location filename="../restore/restoretree.cpp" line="515"/>
+        <location filename="../restore/restoretree.cpp" line="645"/>
         <source>Job Id</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../restore/restoretree.cpp" line="490"/>
-        <location filename="../restore/restoretree.cpp" line="619"/>
-        <location filename="../restore/restoretree.cpp" line="624"/>
+        <location filename="../restore/restoretree.cpp" line="515"/>
+        <location filename="../restore/restoretree.cpp" line="645"/>
+        <location filename="../restore/restoretree.cpp" line="650"/>
         <source>Type</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../restore/restoretree.cpp" line="490"/>
-        <location filename="../restore/restoretree.cpp" line="619"/>
+        <location filename="../restore/restoretree.cpp" line="515"/>
+        <location filename="../restore/restoretree.cpp" line="645"/>
         <source>End Time</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../restore/restoretree.cpp" line="490"/>
+        <location filename="../restore/restoretree.cpp" line="515"/>
         <source>Hash</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../restore/restoretree.cpp" line="490"/>
+        <location filename="../restore/restoretree.cpp" line="515"/>
         <source>FileId</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../restore/restoretree.cpp" line="490"/>
+        <location filename="../restore/restoretree.cpp" line="515"/>
         <source>Job Type</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../restore/restoretree.cpp" line="490"/>
+        <location filename="../restore/restoretree.cpp" line="515"/>
         <source>First Volume</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../restore/restoretree.cpp" line="584"/>
+        <location filename="../restore/restoretree.cpp" line="610"/>
         <source>RestoreTreePage</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../restore/restoretree.cpp" line="619"/>
+        <location filename="../restore/restoretree.cpp" line="645"/>
         <source>Level</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../restore/restoretree.cpp" line="620"/>
+        <location filename="../restore/restoretree.cpp" line="646"/>
         <source>Name</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../restore/restoretree.cpp" line="620"/>
-        <location filename="../restore/restoretree.cpp" line="623"/>
+        <location filename="../restore/restoretree.cpp" line="646"/>
+        <location filename="../restore/restoretree.cpp" line="649"/>
         <source>Purged</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../restore/restoretree.cpp" line="620"/>
-        <location filename="../restore/restoretree.cpp" line="621"/>
+        <location filename="../restore/restoretree.cpp" line="646"/>
+        <location filename="../restore/restoretree.cpp" line="647"/>
         <source>TU</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../restore/restoretree.cpp" line="620"/>
-        <location filename="../restore/restoretree.cpp" line="622"/>
+        <location filename="../restore/restoretree.cpp" line="646"/>
+        <location filename="../restore/restoretree.cpp" line="648"/>
         <source>TD</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../restore/restoretree.cpp" line="1407"/>
+        <location filename="../restore/restoretree.cpp" line="1433"/>
         <source>Task 1 of 3</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../restore/restoretree.cpp" line="1409"/>
+        <location filename="../restore/restoretree.cpp" line="1435"/>
         <source>Processing Checked directories</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../restore/restoretree.cpp" line="1511"/>
+        <location filename="../restore/restoretree.cpp" line="1539"/>
         <source>Task 2 of 3</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../restore/restoretree.cpp" line="1512"/>
+        <location filename="../restore/restoretree.cpp" line="1540"/>
         <source>Processing Exceptions</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../restore/restoretree.cpp" line="1549"/>
+        <location filename="../restore/restoretree.cpp" line="1577"/>
         <source>Task 3 of 3</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../restore/restoretree.cpp" line="1550"/>
+        <location filename="../restore/restoretree.cpp" line="1578"/>
         <source>Filling Database Table</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4685,33 +4685,33 @@ Press OK to continue</source>
 <context>
     <name>runCmdPage</name>
     <message>
-        <location filename="../run/runcmd.cpp" line="39"/>
+        <location filename="../run/runcmd.cpp" line="41"/>
         <source>Restore Run</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../run/runcmd.cpp" line="66"/>
-        <location filename="../run/runcmd.cpp" line="68"/>
+        <location filename="../run/runcmd.cpp" line="67"/>
+        <location filename="../run/runcmd.cpp" line="69"/>
         <source>never</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../run/runcmd.cpp" line="66"/>
+        <location filename="../run/runcmd.cpp" line="67"/>
         <source>always</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../run/runcmd.cpp" line="66"/>
+        <location filename="../run/runcmd.cpp" line="67"/>
         <source>ifnewer</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../run/runcmd.cpp" line="67"/>
+        <location filename="../run/runcmd.cpp" line="68"/>
         <source>ifolder</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../run/runcmd.cpp" line="166"/>
+        <location filename="../run/runcmd.cpp" line="168"/>
         <source> Canceled</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4812,12 +4812,12 @@ Press OK to continue</source>
 <context>
     <name>runPage</name>
     <message>
-        <location filename="../run/run.cpp" line="77"/>
+        <location filename="../run/run.cpp" line="79"/>
         <source>Run</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../run/run.cpp" line="150"/>
+        <location filename="../run/run.cpp" line="152"/>
         <source> Canceled</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4825,7 +4825,7 @@ Press OK to continue</source>
 <context>
     <name>selectDialog</name>
     <message>
-        <location filename="../select/select.cpp" line="73"/>
+        <location filename="../select/select.cpp" line="75"/>
         <source> Canceled</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4841,7 +4841,7 @@ Press OK to continue</source>
 <context>
     <name>textInputDialog</name>
     <message>
-        <location filename="../select/textinput.cpp" line="59"/>
+        <location filename="../select/textinput.cpp" line="61"/>
         <source> Canceled</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4862,7 +4862,7 @@ Press OK to continue</source>
 <context>
     <name>yesnoPopUp</name>
     <message>
-        <location filename="../select/select.cpp" line="102"/>
+        <location filename="../select/select.cpp" line="104"/>
         <source>Bat Question</source>
         <translation type="unfinished"></translation>
     </message>

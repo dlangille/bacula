@@ -519,7 +519,7 @@ void store_addresses(LEX * lc, RES_ITEM * item, int index, int pass)
             bstrncpy(hostname_str, lc->str, sizeof(hostname_str));
             break;
          case EMPTYLINE:
-            scan_err0(lc, _("State machine missmatch"));
+            scan_err0(lc, _("State machine mismatch"));
             break;
          }
          token = lex_get_token(lc, T_SKIP_EOL);

@@ -82,7 +82,7 @@ int purge_cmd(UAContext *ua, const char *cmd)
 
    /* Special case for the "Action On Purge", this option is working only on
     * Purged volume, so no jobs or files will be purged.
-    * We are skiping this message if "purge volume action=xxx"
+    * We are skipping this message if "purge volume action=xxx"
     */
    if (!(find_arg(ua, "volume") >= 0 && find_arg(ua, "action") >= 0)) {
       ua->warning_msg(_(

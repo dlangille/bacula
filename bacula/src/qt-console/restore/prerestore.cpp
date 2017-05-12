@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2017 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -27,7 +27,7 @@
 #include "bat.h"
 #include "restore.h"
 
-/* Constructor to have job id list default in */
+/* Constructor to have jobid list default in */
 prerestorePage::prerestorePage(QString &data, unsigned int datatype) : Pages()
 {
    m_dataIn = data;
@@ -70,7 +70,7 @@ void prerestorePage::buildPage()
    if (m_dataInType == R_NONE) {
       selectJobRadio->setChecked(true);
       selectJobIdsRadio->setChecked(false);
-      jobIdEdit->setText(tr("Comma separted list of Job Ids"));
+      jobIdEdit->setText(tr("Comma separated list of JobIds"));
       jobIdEdit->setEnabled(false);
    } else if (m_dataInType == R_JOBIDLIST) {
       selectJobIdsRadio->setChecked(true);
@@ -86,7 +86,7 @@ void prerestorePage::buildPage()
    } else if (m_dataInType == R_JOBDATETIME) {
       selectJobRadio->setChecked(true);
       selectJobIdsRadio->setChecked(false);
-      jobIdEdit->setText(tr("Comma separted list of Job Ids"));
+      jobIdEdit->setText(tr("Comma separated list of JobIds"));
       jobIdEdit->setEnabled(false);
       recentCheckBox->setCheckState(Qt::Unchecked);
       jobRadioClicked(true);
