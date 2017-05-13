@@ -11,7 +11,7 @@ echo "Start non-root disk tests"
 echo "Start non-root disk tests" >>test.out
 rm -f dumps/*
 ./run tests/acl-xattr-test
-./run tests/aligned-bug-8013-test
+#./run tests/aligned-bug-8013-test
 ./run tests/allowcompress-test
 ./run tests/auto-label-many-test
 ./run tests/auto-label-test
@@ -45,7 +45,7 @@ rm -f dumps/*
 ./run tests/copy-volume-test
 #./run tests/crazy-smaller-vol-test
 ./run tests/data-encrypt-test
-./run tests/aligned-test
+#./run tests/aligned-test
 ./run tests/delete-test
 ./run tests/differential-test
 ./run tests/encrypt-bug-test
