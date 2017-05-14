@@ -343,7 +343,7 @@ int main (int argc, char *argv[])
    return 0;
 }
 
-static void print_catalog_details(CAT *catalog, const char *working_dir)
+void print_catalog_details(CAT *catalog, const char *working_dir)
 {
    POOLMEM *catalog_details = get_pool_memory(PM_MESSAGE);
 

@@ -524,6 +524,7 @@ RES_ITEM job_items[] = {
    {"Pool",      store_res,     ITEM(res_job.pool),      R_POOL, ITEM_REQUIRED, 0},
    {"NextPool",  store_res,     ITEM(res_job.next_pool), R_POOL, 0, 0},
    {"FullBackupPool",  store_res, ITEM(res_job.full_pool),   R_POOL, 0, 0},
+   {"VirtualFullBackupPool", store_res, ITEM(res_job.vfull_pool), R_POOL, 0, 0},
    {"IncrementalBackupPool",  store_res, ITEM(res_job.inc_pool), R_POOL, 0, 0},
    {"DifferentialBackupPool", store_res, ITEM(res_job.diff_pool), R_POOL, 0, 0},
    {"Client",    store_res,     ITEM(res_job.client),   R_CLIENT, ITEM_REQUIRED, 0},
@@ -558,6 +559,7 @@ RES_ITEM job_items[] = {
    {"MaxWaitTime",  store_time, ITEM(res_job.MaxWaitTime), 0, 0, 0},
    {"MaxStartDelay",store_time, ITEM(res_job.MaxStartDelay), 0, 0, 0},
    {"MaxFullInterval",  store_time, ITEM(res_job.MaxFullInterval), 0, 0, 0},
+   {"MaxVirtualFullInterval",  store_time, ITEM(res_job.MaxVirtualFullInterval), 0, 0, 0},
    {"MaxDiffInterval",  store_time, ITEM(res_job.MaxDiffInterval), 0, 0, 0},
    {"PrefixLinks", store_bool, ITEM(res_job.PrefixLinks), 0, ITEM_DEFAULT, false},
    {"PruneJobs",   store_bool, ITEM(res_job.PruneJobs), 0, ITEM_DEFAULT, false},
@@ -1051,6 +1053,10 @@ void dump_resource(int type, RES *ares, void sendit(void *sock, const char *fmt,
       if (res->res_job.pool) {
          sendit(sock, _("  --> "));
          dump_resource(-R_POOL, (RES *)res->res_job.pool, sendit, sock);
+      }
+      if (res->res_job.vfull_pool) {
+         sendit(sock, _("  --> VFullBackup"));
+         dump_resource(-R_POOL, (RES *)res->res_job.vfull_pool, sendit, sock);
       }
       if (res->res_job.full_pool) {
          sendit(sock, _("  --> FullBackup"));
@@ -1853,6 +1859,7 @@ bool save_resource(CONFIG *config, int type, RES_ITEM *items, int pass)
          res->res_job.pool       = res_all.res_job.pool;
          res->res_job.next_pool  = res_all.res_job.next_pool;
          res->res_job.full_pool  = res_all.res_job.full_pool;
+         res->res_job.vfull_pool = res_all.res_job.vfull_pool;
          res->res_job.inc_pool   = res_all.res_job.inc_pool;
          res->res_job.diff_pool  = res_all.res_job.diff_pool;
          res->res_job.verify_job = res_all.res_job.verify_job;
