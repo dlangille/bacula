@@ -199,7 +199,8 @@ int bget_dirmsg(BSOCK *bs)
        *  a message to dispatch, or a catalog request.
        *  Try to fulfill it.
        */
-      if (sscanf(bs->msg, "%020s JobId=%ld ", MsgType, &JobId) != 2) {
+      if ((sscanf(bs->msg, "%020s JobId=%ld ", MsgType, &JobId) != 2) &&
+          (sscanf(bs->msg, "%020s Job=x", MsgType) != 1)) {
          if (is_msgid(strchr(bs->msg, '['))) {
             return n;
          }
@@ -207,7 +208,7 @@ int bget_dirmsg(BSOCK *bs)
          continue;
       }
 
-      /* Skip past "Jmsg JobId=nnn" */
+      /* Skip past first two fields: "Jmsg JobId=nnn" */
       if (!(msg=find_msg_start(bs->msg))) {
          Jmsg1(jcr, M_ERROR, 0, _("Malformed message: %s\n"), bs->msg);
          continue;
@@ -276,13 +277,17 @@ int bget_dirmsg(BSOCK *bs)
       if (bs->msg[0] == 'P') {       /* Progress report */
          uint32_t files, bps;
          uint64_t bytes;
-         if (sscanf(bs->msg, "Progress Job=x files=%ld bytes=%lld bps=%ld\n",
-             &files, &bytes, &bps) == 3) {
-           Dmsg2(900, "JobId=%d %s", jcr->JobId, bs->msg);
-           /* Save progress data */
-           jcr->JobFiles = files;
-           jcr->JobBytes = bytes;
-           jcr->LastRate = bps;
+         if ((sscanf(bs->msg, "Progress JobId=%ld files=%ld bytes=%lld bps=%ld\n",
+                &JobId,  &files, &bytes, &bps) == 4) ||
+             (sscanf(bs->msg, "Progress Job=x files=%ld bytes=%lld bps=%ld\n",
+                &files, &bytes, &bps) == 3)) {
+            Dmsg2(900, "JobId=%d %s", jcr->JobId, bs->msg);
+            /* Save progress data */
+            jcr->JobFiles = files;
+            jcr->JobBytes = bytes;
+            jcr->LastRate = bps;
+         } else {
+            Jmsg1(jcr, M_ERROR, 0, _("Malformed message: %s\n"), bs->msg);
          }
          continue;
       }
