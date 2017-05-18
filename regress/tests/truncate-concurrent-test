@@ -1,0 +1,68 @@
+#!/bin/sh
+#
+# Test truncate command in //
+#
+#
+TestName="truncate-concurrent-test"
+JobName=FIFOTest
+. scripts/functions
+
+cwd=`pwd`
+scripts/cleanup
+scripts/copy-test-confs
+
+echo $src > $tmp/file-list
+
+$bperl -e "add_attribute('$conf/bacula-dir.conf', 'MaximumVolumeBytes', '2MB', 'Pool')"
+$bperl -e "add_attribute('$conf/bacula-dir.conf', 'ActionOnPurge', 'Truncate', 'Pool')"
+$bperl -e "add_attribute('$conf/bacula-dir.conf', 'MaximumConsoleConnections', 100, 'Director')"
+$bperl -e "set_global_maximum_concurrent_jobs(100)"
+
+start_test
+
+cat >tmp/bconcmds <<END_OF_DATA
+@$out /dev/null
+messages
+@$out $tmp/log1.out
+add storage=File pool=Default
+100
+Vol
+1
+
+@########################################################
+@# Run a first job on TestVolume001
+@########################################################
+run level=full job=$JobName yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bacula
+check_for_zombie_jobs storage=File
+touch $tmp/log2.out
+
+for i in `seq 0 5`
+do
+    for j in `seq 0 9`
+    do
+        echo "purge volume=Vol00$i$j pool=Default storage=File" >> $tmp/purgecmd
+        echo "truncate volume=Vol00$i$j pool=Default storage=File" > $tmp/bconcmds-$i$j
+    done
+done
+
+run_bconsole $tmp/purgecmd
+
+for i in $tmp/bconcmds-*
+do
+    run_bconsole $i >> $tmp/truncate.log &
+done
+wait
+
+grep "Cannot free Volume" $tmp/truncate.log > /dev/null
+if [ $? -eq 0 ]; then
+    print_debug "ERROR: Should not find problems with 'Cannot free volume' in $tmp/truncate.log"
+    estat=1
+fi
+
+end_test
