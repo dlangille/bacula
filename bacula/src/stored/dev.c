@@ -868,13 +868,13 @@ bool DEVICE::weof(DCR */*dcr*/, int num)
 
    if (!is_open()) {
       dev_errno = EBADF;
-      Mmsg0(errmsg, _("Bad call to weof_dev. Device not open\n"));
+      Mmsg1(errmsg, _("Bad call to weof_dev. Device %s not open\n"), print_name());
       Emsg0(M_FATAL, 0, errmsg);
       return false;
    }
 
    if (!can_append()) {
-      Mmsg0(errmsg, _("Attempt to WEOF on non-appendable Volume\n"));
+      Mmsg1(errmsg, _("Attempt to WEOF on non-appendable Volume %s\n"), VolHdr.VolumeName);
       Emsg0(M_FATAL, 0, errmsg);
       return false;
    }

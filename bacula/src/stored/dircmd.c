@@ -969,7 +969,8 @@ static void label_volume_if_ok(DCR *dcr, char *oldname,
    case VOL_NO_LABEL:
       if (!dev->write_volume_label(dcr, newname, poolname,
               relabel, true /* write label now */)) {
-         dir->fsend(_("3912 Failed to label Volume: ERR=%s\n"), dcr->jcr->errmsg);
+         dir->fsend(_("3912 Failed to label Volume %s: ERR=%s\n"),
+            newname, dcr->jcr->errmsg);
          break;
       }
       volCatBytes = dev->VolCatInfo.VolCatBytes;
