@@ -1207,7 +1207,7 @@ int bthread_change_uid(uid_t uid, gid_t gid)
    }
    return syscall(SYS_setreuid, getuid(), uid);
 
-#elif defined(HAVE_FREEBSD_OS) || defined(HAVE_DARWIN_OS)
+#elif defined(HAVE_PTHREAD_SETUGID_NP)
    return pthread_setugid_np(uid, gid);
 
 #endif
