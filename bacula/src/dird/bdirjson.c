@@ -874,7 +874,7 @@ static void display_run(HPKT &hpkt)
       if (byte_is_set(run->wom, sizeof(run->wom))) {
          if (!first) sendit(NULL, ",\n");
          sendit(NULL, "      \"WeekOfMonth\":");
-         display_bit_array(run->wom, 5);
+         display_bit_array(run->wom, 6);
          first = false;
       }
       if (byte_is_set(run->woy, sizeof(run->woy))) {
