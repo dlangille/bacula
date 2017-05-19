@@ -1,19 +1,24 @@
 
                Release Notes for Bacula 7.9.0
 
-Release Version 7.9.0
+Release Version 7.9.0 pre-release beta
+
+This is either the biggest Bacula release ever made or one of the
+biggest ones. Even without the new Aligned Volumes source code, which
+is substantial, there are over 78,700 lines of diff output between
+Release 7.4.7 and this release of 9.0.0
+
+This is a major new release with a new version number. It has been
+very thoroughly tested, but as always, the new features may not
+always work as expected.  
 
 For the most part the changes were contributed to the Bacula 
 project by Bacula Systems SA.
 
-This is a new release with a new version number. It has been
-very thoroughly tested, but as always, the new features may not
-always work as expected.
-
 Database Update
 ---------------
-This version of Bacula requires a database update.
-
+This version of Bacula requires a database update.  So either you or the
+installation process must apply the update_bacula_tables script.
 
 Compatibility:
 --------------
@@ -31,7 +36,7 @@ chapter and have not yet been integrated into the main chapters of the
 manual.
 
 08May17
- - Massive (70,000+ lines) backport of code from Bacula Enterprise 8.8.
+ - Massive (78,748+ lines) backport of code from Bacula Enterprise 8.8.
    See next line ...
  - Adapt update_bacula_tables scripts for catalog version 15
  - Allow to use Base directive in a JobDefs
