@@ -414,9 +414,10 @@ VOLRES *reserve_volume(DCR *dcr, const char *VolumeName)
       } else {
          /* Don't release a volume if it was reserved by someone other than us */
          if (vol->is_in_use() && !dcr->reserved_volume) {
-            Dmsg2(dbglvl, "Set wait(). Cannot free vol=%s for %s. It is reserved.\n", vol->vol_name, VolumeName);
-            Mmsg1(dcr->jcr->errmsg, _("Cannot free Volume \"%s\", because it is reserved by someone else.\n"),
-               vol->vol_name);
+            Dmsg5(dbglvl, "Set wait(). Cannot free vol=%s for %s (JobId=%ld). volinuse=%d on %s\n",
+               vol->vol_name, VolumeName, vol->get_jobid(), vol->is_in_use(), dev->print_name());
+            Mmsg3(dcr->jcr->errmsg, _("Cannot reserve Volume=%s because drive is busy with Volume=%s (JobId=%ld).\n"),
+               VolumeName, vol->vol_name, vol->get_jobid());
             dev->set_wait();
             vol = NULL;                  /* vol in use */
             goto get_out;
