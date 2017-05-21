@@ -607,12 +607,12 @@ static bool do_label(JCR *jcr, int relabel)
             if (reserve_volume(dcr, newname) == NULL) {
                ok = false;
             }
-            Dmsg1(400, "Reserved Volume=%s for relabel/truncate.\n", newname);
+            Dmsg1(400, "Reserved Volume=\"%s\" for relabel/truncate.\n", newname);
          } else {
             ok = false;
          }
          if (!ok) {
-            dir->fsend(_("3908 Error reserving volume: %s\n"), jcr->errmsg);
+            dir->fsend(_("3908 Error reserving Volume=\"%s\": %s"), newname, jcr->errmsg);
             dev->max_concurrent_jobs = max_jobs;
             dev->Unlock();
             goto bail_out;
@@ -713,7 +713,7 @@ static bool truncate_cache_cmd(JCR *jcr)
             ok = false;
          }
          if (!ok) {
-            dir->fsend(_("3908 Error reserving volume \"%s\": %s\n"), volname, jcr->errmsg);
+            dir->fsend(_("3908 Error reserving Volume=\"%s\": %s"), volname, jcr->errmsg);
             dev->max_concurrent_jobs = max_jobs;
             dev->Unlock();
             goto bail_out;
@@ -829,7 +829,7 @@ static bool upload_cmd(JCR *jcr)
             ok = false;
          }
          if (!ok) {
-            dir->fsend(_("3908 Error reserving volume \"%s\": %s\n"), volname, jcr->errmsg);
+            dir->fsend(_("3908 Error reserving Volume=\"%s\": %s"), volname, jcr->errmsg);
             dev->max_concurrent_jobs = max_jobs;
             dev->Unlock();
             goto bail_out;
