@@ -607,7 +607,7 @@ static bool do_label(JCR *jcr, int relabel)
             if (reserve_volume(dcr, newname) == NULL) {
                ok = false;
             }
-            Dmsg1(400, "Reserved volume \"%s\"\n", newname);
+            Dmsg1(400, "Reserved Volume=%s for relabel/truncate.\n", newname);
          } else {
             ok = false;
          }
@@ -619,7 +619,7 @@ static bool do_label(JCR *jcr, int relabel)
          }
 
          /* some command use recv and don't accept catalog update.
-          * it's not the case here, so we force dir_update_volume_info catalog update */ 
+          * it's not the case here, so we force dir_update_volume_info catalog update */
          dcr->force_update_volume_info = true;
 
          if (!dev->is_open() && !dev->is_busy()) {
@@ -627,8 +627,8 @@ static bool do_label(JCR *jcr, int relabel)
             label_volume_if_ok(dcr, oldname, newname, poolname, slot, relabel);
             dev->close(dcr);
          /* Under certain "safe" conditions, we can steal the lock */
-         } else if (dev->can_steal_lock()) {
-            Dmsg0(400, "Can relabel. can_steal_lock\n");
+         } else if (dev->can_obtain_block()) {
+            Dmsg0(400, "Can relabel. can_obtain_block\n");
             label_volume_if_ok(dcr, oldname, newname, poolname, slot, relabel);
          } else if (dev->is_busy() || dev->is_blocked()) {
             send_dir_busy_message(dir, dev);
@@ -718,7 +718,7 @@ static bool truncate_cache_cmd(JCR *jcr)
             dev->Unlock();
             goto bail_out;
          }
-         if ((!dev->is_open() && !dev->is_busy()) || dev->can_steal_lock()) {
+         if ((!dev->is_open() && !dev->is_busy()) || dev->can_obtain_block()) {
             Dmsg0(400, "Call truncate_cache\n");
             nbpart = dev->truncate_cache(dcr, volname, &size);
             if (nbpart >= 0) {
@@ -834,7 +834,7 @@ static bool upload_cmd(JCR *jcr)
             dev->Unlock();
             goto bail_out;
          }
-         if ((!dev->is_open() && !dev->is_busy()) || dev->can_steal_lock()) {
+         if ((!dev->is_open() && !dev->is_busy()) || dev->can_obtain_block()) {
             Dmsg0(400, "Can upload, because device is not open.\n");
             dev->setVolCatName(volname);
             dev->part = 0;
@@ -911,7 +911,10 @@ static void label_volume_if_ok(DCR *dcr, char *oldname,
    const char *volname = (relabel == 1) ? oldname : newname;
    uint64_t volCatBytes;
 
-   steal_device_lock(dev, &hold, BST_WRITING_LABEL);
+   if (!obtain_device_block(dev, &hold, BST_WRITING_LABEL)) {
+      send_dir_busy_message(dir, dev);
+      return;
+   }
    Dmsg1(100, "Stole device %s lock, writing label.\n", dev->print_name());
 
    Dmsg0(90, "try_autoload_device - looking for volume_info\n");
@@ -1014,14 +1017,14 @@ bail_out:
    if (dev->is_open() && !dev->has_cap(CAP_ALWAYSOPEN)) {
       dev->close(dcr);
    }
-   
+
    dev->end_of_job(dcr);
-   
+
    if (!dev->is_open()) {
       dev->clear_volhdr();
    }
    volume_unused(dcr);                   /* no longer using volume */
-   give_back_device_lock(dev, &hold);
+   give_back_device_block(dev, &hold);
    return;
 }
 
@@ -1039,7 +1042,10 @@ static bool read_label(DCR *dcr)
    bsteal_lock_t hold;
    DEVICE *dev = dcr->dev;
 
-   steal_device_lock(dev, &hold, BST_DOING_ACQUIRE);
+   if (!obtain_device_block(dev, &hold, BST_DOING_ACQUIRE)) {
+      send_dir_busy_message(dir, dev);
+      return false;
+   }
 
    dcr->VolumeName[0] = 0;
    dev->clear_labeled();              /* force read of label */
@@ -1055,7 +1061,7 @@ static bool read_label(DCR *dcr)
       break;
    }
    volume_unused(dcr);
-   give_back_device_lock(dev, &hold);
+   give_back_device_block(dev, &hold);
    return ok;
 }
 
@@ -1749,7 +1755,7 @@ static bool changer_cmd(JCR *jcr)
             dir->fsend(_("3998 Device \"%s\" is not an autochanger.\n"),
                dev->print_name());
          /* Under certain "safe" conditions, we can steal the lock */
-         } else if (safe_cmd || !dev->is_open() || dev->can_steal_lock()) {
+         } else if (safe_cmd || !dev->is_open() || dev->can_obtain_block()) {
             autochanger_cmd(dcr, dir, cmd);
          } else if (dev->is_busy() || dev->is_blocked()) {
             send_dir_busy_message(dir, dev);
@@ -1791,7 +1797,7 @@ static bool readlabel_cmd(JCR *jcr)
             read_volume_label(jcr, dcr, dev, Slot);
             dev->close(dcr);
          /* Under certain "safe" conditions, we can steal the lock */
-         } else if (dev->can_steal_lock()) {
+         } else if (dev->can_obtain_block()) {
             read_volume_label(jcr, dcr, dev, Slot);
          } else if (dev->is_busy() || dev->is_blocked()) {
             send_dir_busy_message(dir, dev);
@@ -1823,7 +1829,10 @@ static void read_volume_label(JCR *jcr, DCR *dcr, DEVICE *dev, int Slot)
    bsteal_lock_t hold;
 
    dcr->set_dev(dev);
-   steal_device_lock(dev, &hold, BST_WRITING_LABEL);
+   if (!obtain_device_block(dev, &hold, BST_WRITING_LABEL)) {
+      send_dir_busy_message(dir, dev);
+      return;
+   }
 
    if (!try_autoload_device(jcr, dcr, Slot, "")) {
       goto bail_out;                  /* error */
@@ -1843,7 +1852,7 @@ static void read_volume_label(JCR *jcr, DCR *dcr, DEVICE *dev, int Slot)
    }
 
 bail_out:
-   give_back_device_lock(dev, &hold);
+   give_back_device_block(dev, &hold);
    return;
 }
 

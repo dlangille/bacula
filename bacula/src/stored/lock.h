@@ -88,8 +88,8 @@ void    _unlock_volumes();
 
 #define block_device(d, s)          _block_device(__FILE__, __LINE__, (d), s)
 #define unblock_device(d)           _unblock_device(__FILE__, __LINE__, (d))
-#define steal_device_lock(d, p, s)  _steal_device_lock(__FILE__, __LINE__, (d), (p), s)
-#define give_back_device_lock(d, p) _give_back_device_lock(__FILE__, __LINE__, (d), (p))
+#define obtain_device_block(d, p, s)  _obtain_device_block(__FILE__, __LINE__, (d), (p), s)
+#define give_back_device_block(d, p) _give_back_device_block(__FILE__, __LINE__, (d), (p))
 
 /* m_blocked states (mutually exclusive) */
 enum {

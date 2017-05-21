@@ -389,8 +389,9 @@ public:
    int can_write() const { return is_open() && can_append() &&
                             is_labeled() && !at_weot(); }
    bool can_read() const   { return (state & ST_READ) != 0; }
-   bool can_steal_lock() const { return m_blocked &&
-                    (m_blocked == BST_UNMOUNTED ||
+   bool can_obtain_block() const { return
+                    (m_blocked == BST_NOT_BLOCKED ||
+                     m_blocked == BST_UNMOUNTED ||
                      m_blocked == BST_WAITING_FOR_SYSOP ||
                      m_blocked == BST_UNMOUNTED_WAITING_FOR_SYSOP); };
    bool waiting_for_mount() const { return
@@ -580,7 +581,7 @@ public:
    virtual void write_adata(DCR *dcr, DEV_RECORD *rec) { return; };
    virtual void write_cont_adata(DCR *dcr, DEV_RECORD *rec) { return; };
    virtual int  write_adata_rechdr(DCR *dcr, DEV_RECORD *rec) { return -1; };
-   virtual bool have_adata_header(DCR *dcr, DEV_RECORD *rec, 
+   virtual bool have_adata_header(DCR *dcr, DEV_RECORD *rec,
              int32_t  FileIndex, int32_t  Stream, uint32_t VolSessionId)
              { return false; };
    virtual bool read_adata_record_header(DCR *dcr, DEV_BLOCK *block,
