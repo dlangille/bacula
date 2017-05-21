@@ -3,9 +3,9 @@
  * TFileUpload class file
  *
  * @author Marcus Nyeholt <tanus@users.sourceforge.net>, Qiang Xue <qiang.xue@gmail.com>
- * @link http://www.pradosoft.com/
- * @copyright Copyright &copy; 2005-2014 PradoSoft
- * @license http://www.pradosoft.com/license/
+ * @link https://github.com/pradosoft/prado
+ * @copyright Copyright &copy; 2005-2016 The PRADO Group
+ * @license https://github.com/pradosoft/prado/blob/master/COPYRIGHT
  * @package System.Web.UI.WebControls
  */
 
@@ -47,7 +47,7 @@ class TFileUpload extends TWebControl implements IPostBackDataHandler, IValidata
 	/**
 	 * @var string the name of the temporary file storing the uploaded file
 	 */
-	private $_localName='';
+	protected $_localName='';
 	/**
 	 * @var string the uploaded file mime type
 	 */

@@ -3,9 +3,9 @@
  * TFont class file.
  *
  * @author Qiang Xue <qiang.xue@gmail.com>
- * @link http://www.pradosoft.com/
- * @copyright Copyright &copy; 2005-2014 PradoSoft
- * @license http://www.pradosoft.com/license/
+ * @link https://github.com/pradosoft/prado
+ * @copyright Copyright &copy; 2005-2016 The PRADO Group
+ * @license https://github.com/pradosoft/prado/blob/master/COPYRIGHT
  * @package System.Web.UI.WebControls
  */
 
@@ -52,6 +52,23 @@ class TFont extends TComponent
 	 * @var string font size
 	 */
 	private $_size='';
+
+	/**
+	 * Returns an array with the names of all variables of this object that should NOT be serialized
+	 * because their value is the default one or useless to be cached for the next page loads.
+	 * Reimplement in derived classes to add new variables, but remember to  also to call the parent
+	 * implementation first.
+	 */
+	protected function _getZappableSleepProps(&$exprops)
+	{
+		parent::_getZappableSleepProps($exprops);
+		if ($this->_flags===0)
+			$exprops[] = "\0TFont\0_flags";
+		if ($this->_name==='')
+			$exprops[] = "\0TFont\0_name";
+		if ($this->_size==='')
+			$exprops[] = "\0TFont\0_size";
+	}
 
 	/**
 	 * @return boolean whether the font is in bold face. Defaults to false.

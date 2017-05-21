@@ -3,9 +3,9 @@
  * TActiveHiddenField class file.
  *
  * @author Carl G. Mathisen <carlgmathisen@gmail.com>
- * @link http://www.pradosoft.com/
- * @copyright Copyright &copy; 2005-2014 PradoSoft
- * @license http://www.pradosoft.com/license/
+ * @link https://github.com/pradosoft/prado
+ * @copyright Copyright &copy; 2005-2016 The PRADO Group
+ * @license https://github.com/pradosoft/prado/blob/master/COPYRIGHT
  * @version $Id$
  * @package System.Web.UI.ActiveControls
  */
@@ -55,6 +55,9 @@ class TActiveHiddenField extends THiddenField implements ICallbackEventHandler, 
 	 */
 	public function setValue($value)
 	{
+		if(parent::getValue() === $value)
+			return;
+
 		parent::setValue($value);
 		if($this->getActiveControl()->canUpdateClientSide() && $this->getHasLoadedPostData())
 			$this->getPage()->getCallbackClient()->setValue($this, $value);

@@ -1,0 +1,13 @@
+build/usr/share/baculum/htdocs/protected/Web/Class            /usr/share/baculum/htdocs/protected/Web/
+build/usr/share/baculum/htdocs/protected/Web/Data             /usr/share/baculum/htdocs/protected/Web/
+build/usr/share/baculum/htdocs/protected/Web/JavaScript       /usr/share/baculum/htdocs/protected/Web/
+build/usr/share/baculum/htdocs/protected/Web/Lang             /usr/share/baculum/htdocs/protected/Web/
+build/usr/share/baculum/htdocs/protected/Web/Layouts          /usr/share/baculum/htdocs/protected/Web/
+build/usr/share/baculum/htdocs/protected/Web/Logs             /usr/share/baculum/htdocs/protected/Web/
+build/usr/share/baculum/htdocs/protected/Web/Pages            /usr/share/baculum/htdocs/protected/Web/
+build/usr/share/baculum/htdocs/protected/Web/Portlets         /usr/share/baculum/htdocs/protected/Web/
+build/usr/share/baculum/htdocs/protected/Web/Init.php         /usr/share/baculum/htdocs/protected/Web/
+build/usr/share/baculum/htdocs/protected/Web/endpoints.xml    /usr/share/baculum/htdocs/protected/Web/
+build/usr/share/locale/en/LC_MESSAGES/baculum-web.mo          /usr/share/locale/en/LC_MESSAGES/
+build/usr/share/locale/pl/LC_MESSAGES/baculum-web.mo          /usr/share/locale/pl/LC_MESSAGES/
+build/usr/share/locale/pt/LC_MESSAGES/baculum-web.mo          /usr/share/locale/pt/LC_MESSAGES/

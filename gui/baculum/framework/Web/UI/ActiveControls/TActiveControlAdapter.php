@@ -3,9 +3,9 @@
  * TActiveControlAdapter and TCallbackPageStateTracker class file.
  *
  * @author Wei Zhuo <weizhuo[at]gamil[dot]com>
- * @link http://www.pradosoft.com/
- * @copyright Copyright &copy; 2005-2014 PradoSoft
- * @license http://www.pradosoft.com/license/
+ * @link https://github.com/pradosoft/prado
+ * @copyright Copyright &copy; 2005-2016 The PRADO Group
+ * @license https://github.com/pradosoft/prado/blob/master/COPYRIGHT
  * @package System.Web.UI.ActiveControls
  */
 
@@ -45,6 +45,10 @@ class TActiveControlAdapter extends TControlAdapter
 	 * @var TCallbackPageStateTracker view state tracker.
 	 */
 	private $_stateTracker;
+	/**
+	 * @var string view state tracker class.
+	 */
+	private $_stateTrackerClass='TCallbackPageStateTracker';
 
 	/**
 	 * Constructor.
@@ -87,31 +91,11 @@ class TActiveControlAdapter extends TControlAdapter
 	public function render($writer)
 	{
 		$this->getPage()->getClientScript()->registerPradoScript('ajax');
-		$this->renderCallbackClientScripts();
 		if($this->_control->getVisible(false))
 		{
 			parent::render($writer);
 		} else {
 			$writer->write("<span id=\"".$this->_control->getClientID()."\" style=\"display:none\"></span>");
-		}
-	}
-
-	/**
-	 * Register the callback clientscripts and sets the post loader IDs.
-	 */
-	protected function renderCallbackClientScripts()
-	{
-		$cs = $this->getPage()->getClientScript();
-		$key = 'Prado.CallbackRequest.addPostLoaders';
-		if(!$cs->isEndScriptRegistered($key))
-		{
-			$data = $this->getPage()->getPostDataLoaders();
-			if(count($data) > 0)
-			{
-				$options = TJavaScript::encode($data,false);
-				$script = "Prado.CallbackRequest.addPostLoaders({$options});";
-				$cs->registerEndScript($key, $script);
-			}
 		}
 	}
 
@@ -160,7 +144,8 @@ class TActiveControlAdapter extends TControlAdapter
 	{
 		if($this->getIsTrackingPageState())
 		{
-			$this->_stateTracker = new TCallbackPageStateTracker($this->getControl());
+		  $stateTrackerClass = $this->_stateTrackerClass;
+			$this->_stateTracker = new $stateTrackerClass($this->getControl());
 			$this->_stateTracker->trackChanges();
 		}
 		parent::onLoad($param);
@@ -187,6 +172,14 @@ class TActiveControlAdapter extends TControlAdapter
 	{
 		return $this->_stateTracker;
 	}
+
+	/**
+	 * @param string state tracker class.
+	 */
+	public function setStateTracker($value)
+	{
+		$this->_stateTrackerClass = TPropertyValue::ensureString($value);
+	}
 }
 
 /**
@@ -211,7 +204,7 @@ class TCallbackPageStateTracker
 	/**
 	 * @var TControl the control tracked
 	 */
-	private $_control;
+	protected $_control;
 	/**
 	 * @var object null object.
 	 */

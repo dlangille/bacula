@@ -4,9 +4,9 @@
  *
  * @author Wei Zhuo <weizhuo[at]gamil[dot]com>
  * @author Gabor Berczi <gabor.berczi@devworx.hu> (lazyload additions & progressive rendering)
- * @link http://www.pradosoft.com/
- * @copyright Copyright &copy; 2005-2014 PradoSoft
- * @license http://www.pradosoft.com/license/
+ * @link https://github.com/pradosoft/prado
+ * @copyright Copyright &copy; 2005-2016 The PRADO Group
+ * @license https://github.com/pradosoft/prado/blob/master/COPYRIGHT
  * @package System.Web.UI.ActiveControls
  */
 
@@ -193,7 +193,7 @@ class TActivePageAdapter extends TControlAdapter
 		if($this->getPage()->getClientScript()->hasEndScripts())
 		{
 			$writer = $response->createHtmlWriter();
-			$this->getPage()->getClientScript()->renderEndScripts($writer);
+			$this->getPage()->getClientScript()->renderEndScriptsCallback($writer);
 			$this->getPage()->getCallbackClient()->evaluateScript($writer);
 		}
 

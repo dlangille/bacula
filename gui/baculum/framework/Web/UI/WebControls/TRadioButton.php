@@ -3,9 +3,9 @@
  * TRadioButton class file
  *
  * @author Qiang Xue <qiang.xue@gmail.com>
- * @link http://www.pradosoft.com/
- * @copyright Copyright &copy; 2005-2014 PradoSoft
- * @license http://www.pradosoft.com/license/
+ * @link https://github.com/pradosoft/prado
+ * @copyright Copyright &copy; 2005-2016 The PRADO Group
+ * @license https://github.com/pradosoft/prado/blob/master/COPYRIGHT
  * @package System.Web.UI.WebControls
  */
 
@@ -149,16 +149,6 @@ class TRadioButton extends TCheckBox
 		$this->_uniqueGroupName=null;
 	}
 
-	/**
-	 * Add the group name as post data loader if group name is set.
-	 */
-	protected function addToPostDataLoader()
-	{
-		parent::addToPostDataLoader();
-		$group = $this->getGroupName();
-		if(!empty($group) || $this->getViewState('UniqueGroupName','') !== '')
-			$this->getPage()->registerPostDataLoader($this->getUniqueGroupName());
-	}
 	/**
 	 * @return string the name used to fetch radiobutton post data
 	 */

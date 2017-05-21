@@ -1,0 +1,13 @@
+#!/bin/sh
+
+set -e
+
+case "$1" in
+    configure)
+	chown -R www-data:www-data /etc/baculum/Config-api-lighttpd
+	chown www-data:www-data /etc/baculum/baculum-api-lighttpd.conf
+	chmod 750 /etc/baculum/Config-api-lighttpd
+    ;;
+esac
+
+#DEBHELPER#

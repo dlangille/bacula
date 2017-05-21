@@ -3,9 +3,9 @@
  * TUrlMapping, TUrlMappingPattern and TUrlMappingPatternSecureConnection class file.
  *
  * @author Wei Zhuo <weizhuo[at]gamil[dot]com>
- * @link http://www.pradosoft.com/
- * @copyright Copyright &copy; 2005-2014 PradoSoft
- * @license http://www.pradosoft.com/license/
+ * @link https://github.com/pradosoft/prado
+ * @copyright Copyright &copy; 2005-2016 The PRADO Group
+ * @license https://github.com/pradosoft/prado/blob/master/COPYRIGHT
  * @package System.Web
  */
 
@@ -241,9 +241,7 @@ class TUrlMapping extends TUrlManager
 			{
 				foreach($config['urls'] as $url)
 				{
-					$class=null;
-					if(!isset($url['class']))
-						$class=$defaultClass;
+					$class=isset($url['class'])?$url['class']:$defaultClass;
 					$properties = isset($url['properties'])?$url['properties']:array();
 					$this->buildUrlMapping($class,$properties,$url);
 				}

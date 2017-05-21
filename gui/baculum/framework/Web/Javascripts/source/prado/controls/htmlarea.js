@@ -1,6 +1,6 @@
 
 /*
- * 
+ *
  * HtmlArea (tinyMCE) wrapper
  *
  * @author Gabor Berczi <gabor.berczi@devworx.hu>
@@ -8,7 +8,7 @@
 */
 
 
-Prado.WebUI.THtmlArea = Class.create(Prado.WebUI.Control,
+Prado.WebUI.THtmlArea = jQuery.klass(Prado.WebUI.Control,
 {
 	initialize: function($super, options)
 	{
@@ -20,19 +20,13 @@ Prado.WebUI.THtmlArea = Class.create(Prado.WebUI.Control,
 	{
 		this.options = options;
 
-		var obj = this;
-		this.ajaxresponder = {
-			onComplete : function(request) 
-			{
-				if(request && (request instanceof Prado.AjaxRequest))
-					obj.checkInstance();
-			}
-		};
 		this.registerAjaxHook();
 
 		this.registerInstance();
 	},
-	
+
+
+
 	registerInstance: function()
 	{
 		if (typeof tinyMCE_GZ == 'undefined')
@@ -44,7 +38,7 @@ Prado.WebUI.THtmlArea = Class.create(Prado.WebUI.Control,
 							{
 								// we're in a callback
 								// try it again in some time, as tinyMCE is most likely still loading
-								this.setTimeout(this.registerInstance.bind(this), 50); 
+								this.setTimeout(this.registerInstance.bind(this), 50);
 								return;
 							}
 						throw "TinyMCE libraries must be loaded first";
@@ -68,13 +62,13 @@ Prado.WebUI.THtmlArea = Class.create(Prado.WebUI.Control,
 					}
 				}
 	},
-	
+
 	compressedScriptsLoaded: function()
 	{
 		Prado.WebUI.THtmlArea.tinyMCELoadState = 255;
 		var wrapper;
 		while(Prado.WebUI.THtmlArea.pendingRegistrations.length>0)
-			if (wrapper = Prado.Registry.get(Prado.WebUI.THtmlArea.pendingRegistrations.pop()))
+			if (wrapper = Prado.Registry[Prado.WebUI.THtmlArea.pendingRegistrations.pop()])
 				wrapper.initInstance();
 	},
 
@@ -103,17 +97,19 @@ Prado.WebUI.THtmlArea = Class.create(Prado.WebUI.Control,
 
 	registerAjaxHook: function()
 	{
-		if (typeof(Ajax)!="undefined")
-			if (typeof(Ajax.Responders)!="undefined")
-				Ajax.Responders.register(this.ajaxresponder);
+		jQuery(document).on('ajaxComplete', this.ajaxresponder.bind(this));
 	},
 
 
 	deRegisterAjaxHook: function()
 	{
-		if (typeof(Ajax)!="undefined")
-			if (typeof(Ajax.Responders)!="undefined")
-				Ajax.Responders.unregister(this.ajaxresponder);
+		jQuery(document).off('ajaxComplete', this.ajaxresponder.bind(this));
+	},
+
+	ajaxresponder: function(request)
+	{
+		if(request && (request instanceof Prado.CallbackRequest))
+			this.checkInstance();
 	},
 
 	onDone: function()
@@ -123,14 +119,14 @@ Prado.WebUI.THtmlArea = Class.create(Prado.WebUI.Control,
 		if (prev)
 		try
 		{
-			tinyMCE.execCommand('mceFocus', false, this.ID); 
+			tinyMCE.execCommand('mceFocus', false, this.ID);
 			// when removed, tinyMCE restores its content to the textarea. If the textarea content has been
 			// updated in this same callback, it will be overwritten with the old content. Workaround this.
-			var curtext = $(this.ID).value;
+			var curtext = jQuery('#'+this.ID).get(0).value;
 			tinyMCE.execCommand('mceRemoveControl', false, this.ID);
-			$(this.ID).value = curtext;
+			jQuery('#'+this.ID).get(0).value = curtext;
 		}
-		catch (e) 
+		catch (e)
 		{
 			// suppress error here in case editor can't be properly removed
 			// (happens when <textarea> has been removed from DOM tree without deinitialzing the tinyMCE editor first)
@@ -143,7 +139,7 @@ Prado.WebUI.THtmlArea = Class.create(Prado.WebUI.Control,
 	}
 });
 
-Object.extend(Prado.WebUI.THtmlArea, 
+jQuery.extend(Prado.WebUI.THtmlArea,
 {
 	pendingRegistrations : [],
 	tinyMCELoadState : 0

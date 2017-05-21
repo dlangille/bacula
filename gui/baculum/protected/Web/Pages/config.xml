@@ -1,0 +1,30 @@
+<configuration>
+	<paths>
+		<using namespace="System.I18N.*" />
+	</paths>
+	<modules>
+		<!-- web auth modules -->
+		<module id="web_users" class="Application.Common.Class.BaculumUsersManager" />
+		<module id="web_auth" class="System.Security.TAuthManager" UserManager="web_users" AllowAutoLogin="true" AuthExpire="864000" />
+		<!-- config modules -->
+		<module id="web_config" class="Application.Web.Class.WebConfig" />
+		<module id="host_config" class="Application.Web.Class.HostConfig" />
+		<!-- data modules -->
+		<module id="api" class="Application.Web.Class.BaculumAPIClient" />
+		<module id="data_desc" class="Application.Web.Class.DataDescription" />
+		<module id="globalization" class="TGlobalization">
+			<translation type="gettext" source="Application.Web.Lang" marker="@@" autosave="false" cache="false" DefaultCulture="en" />
+		</module>
+		<module id="log" class="System.Util.TLogRouter">
+			<route class="TFileLogRoute"  Categories="Execute, External, Application, General, Security" LogPath="Application.Web.Logs" LogFile="baculum-web.log" MaxFileSize="1000" MaxLogFiles="5" />
+		</module>
+		<!-- auth modules -->
+		<module id="basic_webuser" class="Application.Web.Class.BasicWebUserConfig" />
+	</modules>
+	<authorization>
+		<allow pages="BaculumError,Requirements,OAuth2Redirect" users="*" />
+		<allow pages="WebHome,RestoreWizard,Monitor" roles="admin,user" />
+		<allow pages="WebConfigWizard" roles="admin" />
+		<deny users="*" />
+	</authorization>
+</configuration>

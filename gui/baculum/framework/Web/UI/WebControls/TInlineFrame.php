@@ -4,9 +4,9 @@
  *
  * @author Jason Ragsdale <jrags@jasrags.net>
  * @author Harry Pottash <hpottash@gmail.com>
- * @link http://www.pradosoft.com/
- * @copyright Copyright &copy; 2005-2014 PradoSoft
- * @license http://www.pradosoft.com/license/
+ * @link https://github.com/pradosoft/prado
+ * @copyright Copyright &copy; 2005-2016 The PRADO Group
+ * @license https://github.com/pradosoft/prado/blob/master/COPYRIGHT
  * @package System.Web.UI.WebControls
  */
 
@@ -146,6 +146,42 @@ class TInlineFrame extends TWebControl implements IDataRenderer
 	}
 
 	/**
+	 * @return integer the width of the control
+	 */
+	public function getWidth()
+	{
+	  return $this->getViewState('Width',-1);
+	}
+	
+	/**
+	 * @param integer the width of the control
+	 */
+	public function setWidth($value)
+	{
+	  if(($value=TPropertyValue::ensureInteger($value))<0)
+	    $value=-1;
+	  $this->setViewState('Width',$value,-1);
+	}
+	
+	/**
+	 * @return integer the height of the control
+	 */
+	public function getHeight()
+	{
+	  return $this->getViewState('Height',-1);
+	}
+	
+	/**
+	 * @param integer the height of the control
+	 */
+	public function setHeight($value)
+	{
+	  if(($value=TPropertyValue::ensureInteger($value))<0)
+	    $value=-1;
+	  $this->setViewState('Height',$value,-1);
+	}
+	
+	/**
 	 * @return integer the amount of space, in pixels, that should be left between
 	 * the frame's contents and the left and right margins. Defaults to -1, meaning not set.
 	 */
@@ -212,6 +248,12 @@ class TInlineFrame extends TWebControl implements IDataRenderer
 
 		if(($longdesc=$this->getDescriptionUrl())!=='')
 			$writer->addAttribute('longdesc',$longdesc);
+		
+		if (($width=$this->getWidth())!==-1)
+		  $writer->addAttribute('width',$width);
+		
+		if (($height=$this->getHeight())!==-1)
+		  $writer->addAttribute('height',$height);
 
 		if(($marginheight=$this->getMarginHeight())!==-1)
 			$writer->addAttribute('marginheight',$marginheight);

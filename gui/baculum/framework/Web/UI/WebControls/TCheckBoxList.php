@@ -3,9 +3,9 @@
  * TCheckBoxList class file
  *
  * @author Qiang Xue <qiang.xue@gmail.com>
- * @link http://www.pradosoft.com/
- * @copyright Copyright &copy; 2005-2014 PradoSoft
- * @license http://www.pradosoft.com/license/
+ * @link https://github.com/pradosoft/prado
+ * @copyright Copyright &copy; 2005-2016 The PRADO Group
+ * @license https://github.com/pradosoft/prado/blob/master/COPYRIGHT
  * @package System.Web.UI.WebControls
  */
 
@@ -72,7 +72,7 @@ class TCheckBoxList extends TListControl implements IRepeatInfoUser, INamingCont
 	 */
 	protected function createRepeatedControl()
 	{
-		return new TCheckBox;
+		return new TCheckBoxItem;
 	}
 
 	/**
@@ -402,13 +402,13 @@ class TCheckBoxList extends TListControl implements IRepeatInfoUser, INamingCont
 	 */
 	public function render($writer)
 	{
+	  if ($needSpan=$this->getSpanNeeded())
+	  {
+	    $writer->addAttribute('id', $this->getClientId());
+	    $writer->renderBeginTag('span');
+	  }
 		if($this->getItemCount()>0)
 		{
-			if ($needSpan=$this->getSpanNeeded())
-			{
-				$writer->addAttribute('id', $this->getClientId());
-				$writer->renderBeginTag('span');
-			}
 			$this->_isEnabled=$this->getEnabled(true);
 			$repeatInfo=$this->getRepeatInfo();
 			$accessKey=$this->getAccessKey();
@@ -422,9 +422,9 @@ class TCheckBoxList extends TListControl implements IRepeatInfoUser, INamingCont
 			$repeatInfo->renderRepeater($writer,$this);
 			$this->setAccessKey($accessKey);
 			$this->setTabIndex($tabIndex);
-			if ($needSpan)
-				$writer->renderEndTag();
 		}
+		if ($needSpan)
+		  $writer->renderEndTag();
 
 		//checkbox skipped the client control script in addAttributesToRender
 		if($this->getEnabled(true)
@@ -489,7 +489,7 @@ class TCheckBoxList extends TListControl implements IRepeatInfoUser, INamingCont
 	 */
 	protected function getPostBackOptions()
 	{
-		$options['ListID'] = $this->getClientID();
+		$options['ID'] = $this->getClientID();
 		$options['ValidationGroup'] = $this->getValidationGroup();
 		$options['CausesValidation'] = $this->getCausesValidation();
 		$options['ListName'] = $this->getUniqueID();
@@ -499,3 +499,11 @@ class TCheckBoxList extends TListControl implements IRepeatInfoUser, INamingCont
 
 }
 
+class TCheckBoxItem extends TCheckBox {
+	/**
+	 * Override client implementation to avoid emitting the javascript
+	 */
+	protected function renderClientControlScript($writer)
+	{
+	}
+}

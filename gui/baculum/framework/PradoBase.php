@@ -6,9 +6,9 @@
  * and error handling mechanism.
  *
  * @author Qiang Xue <qiang.xue@gmail.com>
- * @link http://www.pradosoft.com/
- * @copyright Copyright &copy; 2005-2014 PradoSoft
- * @license http://www.pradosoft.com/license/
+ * @link https://github.com/pradosoft/prado
+ * @copyright Copyright &copy; 2005-2016 The PRADO Group
+ * @license https://github.com/pradosoft/prado/blob/master/COPYRIGHT
  * @package System
  */
 
@@ -69,7 +69,7 @@ class PradoBase
 	 */
 	public static function getVersion()
 	{
-		return '3.2.4';
+		return '3.3.2';
 	}
 
 	/**
@@ -84,9 +84,17 @@ class PradoBase
 		 */
 		set_error_handler(array('PradoBase','phpErrorHandler'));
 		/**
+		 * Sets shutdown function to be Prado::phpFatalErrorHandler
+		 */
+		register_shutdown_function(array('PradoBase','phpFatalErrorHandler'));
+		/**
 		 * Sets exception handler to be Prado::exceptionHandler
 		 */
 		set_exception_handler(array('PradoBase','exceptionHandler'));
+		/**
+		 * Disable php's builtin error reporting to avoid duplicated reports
+		 */
+		ini_set('display_errors', 0);
 	}
 
 	/**
@@ -96,9 +104,7 @@ class PradoBase
 	 */
 	public static function autoload($className)
 	{
-		include_once($className.self::CLASS_FILE_EXT);
-		if(!class_exists($className,false) && !interface_exists($className,false))
-			self::fatalError("Class file for '$className' cannot be found.");
+		@include_once($className.self::CLASS_FILE_EXT);
 	}
 
 	/**
@@ -114,8 +120,8 @@ class PradoBase
 			$url=$am->publishFilePath(self::getPathOfNamespace('System.'.$logoName,'.gif'));
 		}
 		else
-			$url='http://www.pradosoft.com/images/'.$logoName.'.gif';
-		return '<a title="Powered by PRADO" href="http://www.pradosoft.com/" target="_blank"><img src="'.$url.'" style="border-width:0px;" alt="Powered by PRADO" /></a>';
+			$url='http://pradosoft.github.io/docs/'.$logoName.'.gif';
+		return '<a title="Powered by PRADO" href="https://github.com/pradosoft/prado" target="_blank"><img src="'.$url.'" style="border-width:0px;" alt="Powered by PRADO" /></a>';
 	}
 
 	/**
@@ -132,6 +138,23 @@ class PradoBase
 	{
 		if(error_reporting() & $errno)
 			throw new TPhpErrorException($errno,$errstr,$errfile,$errline);
+	}
+
+	/**
+	 * PHP shutdown function used to catch fatal errors.
+	 * This method should be registered as PHP error handler using
+	 * {@link register_shutdown_function}. The method throws an exception that
+	 * contains the error information.
+	 */
+	public static function phpFatalErrorHandler()
+	{
+		$error = error_get_last();
+		if($error && 
+			TPhpErrorException::isFatalError($error) &&
+			error_reporting() & $error['type'])
+		{
+			self::exceptionHandler(new TPhpErrorException($error['type'],$error['message'],$error['file'],$error['line']));
+		}
 	}
 
 	/**
@@ -186,30 +209,6 @@ class PradoBase
 	public static function getFrameworkPath()
 	{
 		return PRADO_DIR;
-	}
-
-	/**
-	 * Serializes a data.
-	 * The original PHP serialize function has a bug that may not serialize
-	 * properly an object.
-	 * @param mixed data to be serialized
-	 * @return string the serialized data
-	 */
-	public static function serialize($data)
-	{
-		return serialize($data);
-	}
-
-	/**
-	 * Unserializes a data.
-	 * The original PHP unserialize function has a bug that may not unserialize
-	 * properly an object.
-	 * @param string data to be unserialized
-	 * @return mixed unserialized data, null if unserialize failed
-	 */
-	public static function unserialize($str)
-	{
-		return unserialize($str);
 	}
 
 	/**

@@ -3,9 +3,9 @@
  * TAutoComplete class file.
  *
  * @author Wei Zhuo <weizhuo[at]gamil[dot]com>
- * @link http://www.pradosoft.com/
- * @copyright Copyright &copy; 2005-2014 PradoSoft
- * @license http://www.pradosoft.com/license/
+ * @link https://github.com/pradosoft/prado
+ * @copyright Copyright &copy; 2005-2016 The PRADO Group
+ * @license https://github.com/pradosoft/prado/blob/master/COPYRIGHT
  * @package System.Web.UI.ActiveControls
  */
 
@@ -17,6 +17,9 @@ Prado::using('System.Web.UI.ActiveControls.TCallbackEventParameter');
 
 /**
  * TAutoComplete class.
+ *
+ * Warning: this class is deprecatd and will be removed in a future release.
+ * We suggest you to investigate using {@link TJuiAutoComplete} instead.
  *
  * TAutoComplete is a textbox that provides a list of suggestion on
  * the current partial word typed in the textbox. The suggestions are
@@ -78,6 +81,7 @@ Prado::using('System.Web.UI.ActiveControls.TCallbackEventParameter');
  * @author Wei Zhuo <weizhuo[at]gmail[dot]com>
  * @package System.Web.UI.ActiveControls
  * @since 3.1
+ * @deprecated Use TJuiAutoComplete instead
  */
 class TAutoComplete extends TActiveTextBox implements INamingContainer
 {
@@ -274,11 +278,12 @@ class TAutoComplete extends TActiveTextBox implements INamingContainer
 	}
 
 	/**
-	 * Renders the end tag and registers javascript effects library.
+	 * Renders the end tag and registers the needed javascript library.
 	 */
 	public function renderEndTag($writer)
 	{
-		$this->getPage()->getClientScript()->registerPradoScript('effects');
+		$cs=$this->getPage()->getClientScript();
+		$cs->registerPradoScript('autocomplete');
 		parent::renderEndTag($writer);
 		$this->renderResultPanel($writer);
 	}

@@ -1,0 +1,11 @@
+#!/bin/sh
+
+set -e
+
+case "$1" in
+    configure)
+	chown -R www-data:www-data /usr/share/baculum/htdocs/protected/API
+    ;;
+esac
+
+#DEBHELPER#

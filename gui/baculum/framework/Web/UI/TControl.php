@@ -3,9 +3,9 @@
  * TControl, TControlCollection, TEventParameter and INamingContainer class file
  *
  * @author Qiang Xue <qiang.xue@gmail.com>
- * @link http://www.pradosoft.com/
- * @copyright Copyright &copy; 2005-2014 PradoSoft
- * @license http://www.pradosoft.com/license/
+ * @link https://github.com/pradosoft/prado
+ * @copyright Copyright &copy; 2005-2016 The PRADO Group
+ * @license https://github.com/pradosoft/prado/blob/master/COPYRIGHT
  * @package System.Web.UI
  */
 
@@ -172,13 +172,6 @@ class TControl extends TApplicationComponent implements IRenderable, IBindable
 	private $_rf=array();
 
 	/**
-	 * Constructor.
-	 */
-	public function __construct()
-	{
-	}
-
-	/**
 	 * Returns a property value by name or a control by ID.
 	 * This overrides the parent implementation by allowing accessing
 	 * a control via its ID using the following syntax,
@@ -200,6 +193,31 @@ class TControl extends TApplicationComponent implements IRenderable, IBindable
 			return $this->_rf[self::RF_NAMED_OBJECTS][$name];
 		else
 			return parent::__get($name);
+	}
+
+	/**
+	 * Checks for the existance of a property value by name or a control by ID.
+	 * This overrides the parent implementation by allowing checking for the
+	 * existance of a control via its ID using the following syntax,
+	 * <code>
+	 * $menuBarExists = isset($this->menuBar);
+	 * </code>
+	 * Do not call this method. This is a PHP magic method that we override
+	 * to allow using isset() to detect if a component property is set or not.
+	 * Note, the control must be configured in the template
+	 * with explicit ID. If the name matches both a property and a control ID,
+	 * the control ID will take the precedence.
+	 *
+	 * @param string the property name or control ID
+	 * @return bool wether the control or property exists
+	 * @see __get
+	 */
+	public function __isset($name) {
+		if(isset($this->_rf[self::RF_NAMED_OBJECTS][$name])) {
+			return true;
+		} else {
+			return parent::__isset($name);
+		}
 	}
 
 	/**
@@ -776,13 +794,16 @@ class TControl extends TApplicationComponent implements IRenderable, IBindable
 	{
 		if($this->_trackViewState)
 		{
-			$this->_viewState[$key]=$value;
 			unset($this->_tempState[$key]);
+			$this->_viewState[$key]=$value;
 		}
 		else
 		{
 			unset($this->_viewState[$key]);
-			$this->_tempState[$key]=$value;
+			if($value===$defaultValue)
+				unset($this->_tempState[$key]);
+			else
+				$this->_tempState[$key]=$value;
 		}
 	}
 
@@ -1328,18 +1349,8 @@ class TControl extends TApplicationComponent implements IRenderable, IBindable
 						$control->evaluateDynamicContent();
 				}
 			}
-			$this->addToPostDataLoader();
 		}
 		$this->_stage=self::CS_PRERENDERED;
-	}
-
-	/**
-	 * Add controls implementing IPostBackDataHandler to post data loaders.
-	 */
-	protected function addToPostDataLoader()
-	{
-		if($this instanceof IPostBackDataHandler)
-			$this->getPage()->registerPostDataLoader($this);
 	}
 
 	/**
@@ -1672,7 +1683,10 @@ class TControl extends TApplicationComponent implements IRenderable, IBindable
 			foreach($this->_rf[self::RF_CONTROLS] as $control)
 			{
 				if($control instanceof TControl)
-					$state[$control->_id]=&$control->saveStateRecursive($needViewState);
+				{
+					if(count($tmp = &$control->saveStateRecursive($needViewState)))
+						$state[$control->_id]=$tmp;
+				}
 			}
 		}
 		if($needViewState && !empty($this->_viewState))
@@ -2159,7 +2173,8 @@ interface IButtonControl
  * ISurroundable interface
  *
  * Identifies controls that may create an additional surrounding tag. The id of the
- * tag can be obtained with {@link getSurroundingTagID}.
+ * tag can be obtained with {@link getSurroundingTagID}, the tag used to render the
+ * surrounding container is obtained by {@link getSurroundingTag}.
  *
  * @package System.Web.UI
  * @since 3.1.2
@@ -2167,7 +2182,12 @@ interface IButtonControl
 interface ISurroundable
 {
 	/**
-	 * @return string the id of the embedding tag of the control or the control's clientID if not surrounded
+	 * @return string the tag used to wrap the control in (if surrounding is needed).
+	 */
+	public function getSurroundingTag();
+
+	/**
+	 * @return string the id of the embedding tag of the control or the control's clientID if not surrounded.
 	 */
 	public function getSurroundingTagID();
 }

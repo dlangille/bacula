@@ -3,9 +3,9 @@
  * TActiveCustomValidator class file.
  *
  * @author Wei Zhuo <weizhuo[at]gamil[dot]com>
- * @link http://www.pradosoft.com/
- * @copyright Copyright &copy; 2005-2014 PradoSoft
- * @license http://www.pradosoft.com/license/
+ * @link https://github.com/pradosoft/prado
+ * @copyright Copyright &copy; 2005-2016 The PRADO Group
+ * @license https://github.com/pradosoft/prado/blob/master/COPYRIGHT
  * @package System.Web.UI.ActiveControls
  */
 
@@ -104,6 +104,9 @@ class TActiveCustomValidator extends TCustomValidator
 	 */
 	public function setIsValid($value)
 	{
+		// Always update the clientside, since the clientside's value for IsValid
+		// it could have been changed by the clientside validation.
+
 		parent::setIsValid($value);
 		if($this->getActiveControl()->canUpdateClientSide())
 		{
@@ -137,11 +140,15 @@ class TActiveCustomValidator extends TCustomValidator
 	}
 
 	/**
-	 * Sets the text for the error message. Updates client-side erorr message.
+	 * Sets the text for the error message. Updates client-side error message.
 	 * @param string the error message
 	 */
 	public function setErrorMessage($value)
 	{
+		if(parent::getErrorMessage() === $value)
+			return;
+
+
 		parent::setErrorMessage($value);
 		if($this->getActiveControl()->canUpdateClientSide())
 		{

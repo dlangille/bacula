@@ -3,9 +3,9 @@
  * TMap, TMapIterator classes
  *
  * @author Qiang Xue <qiang.xue@gmail.com>
- * @link http://www.pradosoft.com/
- * @copyright Copyright &copy; 2005-2014 PradoSoft
- * @license http://www.pradosoft.com/license/
+ * @link https://github.com/pradosoft/prado
+ * @copyright Copyright &copy; 2005-2016 The PRADO Group
+ * @license https://github.com/pradosoft/prado/blob/master/COPYRIGHT
  * @package System.Collections
  */
 
@@ -40,6 +40,21 @@ class TMap extends TComponent implements IteratorAggregate,ArrayAccess,Countable
 	 * @var boolean whether this list is read-only
 	 */
 	private $_r=false;
+
+	/**
+	 * Returns an array with the names of all variables of this object that should NOT be serialized
+	 * because their value is the default one or useless to be cached for the next page loads.
+	 * Reimplement in derived classes to add new variables, but remember to  also to call the parent
+	 * implementation first.
+	 */
+	protected function _getZappableSleepProps(&$exprops)
+	{
+		parent::_getZappableSleepProps($exprops);
+		if ($this->_d===array())
+			$exprops[] = "\0TMap\0_d";
+		if ($this->_r===false)
+			$exprops[] = "\0TMap\0_r";
+	}
 
 	/**
 	 * Constructor.
@@ -275,76 +290,6 @@ class TMap extends TComponent implements IteratorAggregate,ArrayAccess,Countable
  * @package System.Collections
  * @since 3.0
  */
-class TMapIterator implements Iterator
+class TMapIterator extends ArrayIterator
 {
-	/**
-	 * @var array the data to be iterated through
-	 */
-	private $_d;
-	/**
-	 * @var array list of keys in the map
-	 */
-	private $_keys;
-	/**
-	 * @var mixed current key
-	 */
-	private $_key;
-
-	/**
-	 * Constructor.
-	 * @param array the data to be iterated through
-	 */
-	public function __construct(&$data)
-	{
-		$this->_d=&$data;
-		$this->_keys=array_keys($data);
-	}
-
-	/**
-	 * Rewinds internal array pointer.
-	 * This method is required by the interface Iterator.
-	 */
-	public function rewind()
-	{
-		$this->_key=reset($this->_keys);
-	}
-
-	/**
-	 * Returns the key of the current array element.
-	 * This method is required by the interface Iterator.
-	 * @return mixed the key of the current array element
-	 */
-	public function key()
-	{
-		return $this->_key;
-	}
-
-	/**
-	 * Returns the current array element.
-	 * This method is required by the interface Iterator.
-	 * @return mixed the current array element
-	 */
-	public function current()
-	{
-		return $this->_d[$this->_key];
-	}
-
-	/**
-	 * Moves the internal pointer to the next array element.
-	 * This method is required by the interface Iterator.
-	 */
-	public function next()
-	{
-		$this->_key=next($this->_keys);
-	}
-
-	/**
-	 * Returns whether there is an element at current position.
-	 * This method is required by the interface Iterator.
-	 * @return boolean
-	 */
-	public function valid()
-	{
-		return $this->_key!==false;
-	}
 }

@@ -7,10 +7,15 @@
  }
  
 .steps {
-	padding: 20px;
-	height: 435px;
+	padding: 8px 20px;
+	min-height: 435px;
 	background-image: url('wizard-content.png');
 	background-repeat: repeat-y;
+ }
+
+.steps-bar {
+	background-image: url('step-bar.png');
+	background-repeat: no-repeat;
  }
  
 .navigation {

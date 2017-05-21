@@ -3,9 +3,9 @@
  * TActiveImageButton class file.
  *
  * @author Wei Zhuo <weizhuo[at]gamil[dot]com>
- * @link http://www.pradosoft.com/
- * @copyright Copyright &copy; 2005-2014 PradoSoft
- * @license http://www.pradosoft.com/license/
+ * @link https://github.com/pradosoft/prado
+ * @copyright Copyright &copy; 2005-2016 The PRADO Group
+ * @license https://github.com/pradosoft/prado/blob/master/COPYRIGHT
  * @package System.Web.UI.ActiveControls
  */
 
@@ -58,6 +58,9 @@ class TActiveImageButton extends TImageButton implements IActiveControl, ICallba
 	 */
 	public function setAlternateText($value)
 	{
+		if(parent::getAlternateText() === $value)
+			return;
+
 		parent::setAlternateText($value);
 		if($this->getActiveControl()->canUpdateClientSide())
 			$this->getPage()->getCallbackClient()->setAttribute($this, 'alt', $value);
@@ -72,6 +75,9 @@ class TActiveImageButton extends TImageButton implements IActiveControl, ICallba
 	 */
 	public function setImageAlign($value)
 	{
+		if(parent::getImageAlign() === $value)
+			return;
+
 		parent::setImageAlign($value);
 		if($this->getActiveControl()->canUpdateClientSide())
 			$this->getPage()->getCallbackClient()->setAttribute($this, 'align', $value);
@@ -82,6 +88,9 @@ class TActiveImageButton extends TImageButton implements IActiveControl, ICallba
 	 */
 	public function setImageUrl($value)
 	{
+		if(parent::getImageUrl() === $value)
+			return;
+
 		parent::setImageUrl($value);
 		if($this->getActiveControl()->canUpdateClientSide())
 			$this->getPage()->getCallbackClient()->setAttribute($this, 'src', $value);
@@ -92,6 +101,9 @@ class TActiveImageButton extends TImageButton implements IActiveControl, ICallba
 	 */
 	public function setDescriptionUrl($value)
 	{
+		if(parent::getDescriptionUrl() === $value)
+			return;
+
 		parent::setDescriptionUrl($value);
 		if($this->getActiveControl()->canUpdateClientSide())
 			$this->getPage()->getCallbackClient()->setAttribute($this, 'longdesc', $value);
@@ -130,18 +142,6 @@ class TActiveImageButton extends TImageButton implements IActiveControl, ICallba
 	 */
 	protected function renderClientControlScript($writer)
 	{
-	}
-
-	/**
-	 * Register the x and y hidden input names of the position clicked.
-	 * @param THtmlWriter the renderer.
-	 */
-	public function onPreRender($writer)
-	{
-		parent::onPreRender($writer);
-		$uid = $uid=$this->getUniqueID();
-		$this->getPage()->registerPostDataLoader($uid.'_x');
-		$this->getPage()->registerPostDataLoader($uid.'_y');
 	}
 
 	/**

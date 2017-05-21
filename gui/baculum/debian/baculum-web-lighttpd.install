@@ -1,0 +1,3 @@
+build/etc/baculum/Config-web-lighttpd/baculum.users       /etc/baculum/Config-web-lighttpd/
+build/etc/baculum/baculum-web-lighttpd.conf               /etc/baculum/
+build/usr/lib/systemd/system/baculum-web-lighttpd.service /usr/lib/systemd/user/

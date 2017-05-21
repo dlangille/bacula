@@ -1,4 +1,13 @@
-baculum (7.4.3ppa1~trusty1) trusty; urgency=medium
+baculum (9.0.0) xenial; urgency=high
+
+  [ Marcin Haba ]
+  * new Baculum upstream (Web and API)
+  * split deb metafiles into baculum-api-(lighttpd|apache2),
+    baculum-web-(lighttpd|apache2) and baculum-common
+
+ -- Marcin Haba <marcin.haba@bacula.pl>  Sat, 29 Apr 2017 23:35:01 +0200
+
+baculum (7.2.0ppa1~wily1) wily; urgency=medium
 
   [ Marcin Haba ]
   * rebuild upstream 7.2.0 for Ubuntu 15.10

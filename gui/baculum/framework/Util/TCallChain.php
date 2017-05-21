@@ -3,9 +3,9 @@
  * TCallChain class file.
  *
  * @author Brad Anderson <javalizard@gmail.com>
- * @link http://www.pradosoft.com/
- * @copyright Copyright &copy; 2008-2014 Pradosoft
- * @license http://www.pradosoft.com/license/
+ * @link https://github.com/pradosoft/prado
+ * @copyright Copyright &copy; 2008-2015 Pradosoft
+ * @license https://github.com/pradosoft/prado/blob/master/COPYRIGHT
  */
 
 /**
@@ -19,7 +19,7 @@
 class TCallChain extends TList implements IDynamicMethods
 {
 	/**
-	 *	@var {@link TListIterator} for moving through the chained method calls
+	 *	@var {@link ArrayIterator} for moving through the chained method calls
 	 */
 	private $_iterator=null;
 
@@ -97,7 +97,7 @@ class TCallChain extends TList implements IDynamicMethods
 		if(!$this->_iterator)
 		{
 			$chain_array=array_reverse($this->toArray());
-			$this->_iterator=new TListIterator($chain_array);
+			$this->_iterator=new ArrayIterator($chain_array);
 		}
 		if($this->_iterator->valid())
 			do {

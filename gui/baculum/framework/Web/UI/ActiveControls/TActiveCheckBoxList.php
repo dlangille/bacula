@@ -3,9 +3,9 @@
  * TActiveCheckBoxList class file.
  *
  * @author Wei Zhuo <weizhuo[at]gamil[dot]com>
- * @link http://www.pradosoft.com/
- * @copyright Copyright &copy; 2005-2014 PradoSoft
- * @license http://www.pradosoft.com/license/
+ * @link https://github.com/pradosoft/prado
+ * @copyright Copyright &copy; 2005-2016 The PRADO Group
+ * @license https://github.com/pradosoft/prado/blob/master/COPYRIGHT
  * @package System.Web.UI.ActiveControls
  */
 
@@ -63,6 +63,17 @@ class TActiveCheckBoxList extends TCheckBoxList implements IActiveControl, ICall
 	}
 
 	/**
+	 * Since at least a control with id is needed to update the content during callback,
+	 * always force the surrounding span to be rendered, so initially empty lists can be
+	 * updated later.
+	 *@return boolean always true
+	 */
+	protected function getSpanNeeded ()
+	{
+	  return true;
+	}
+
+	/**
 	 * Override parent implementation, no javascript is rendered here instead
 	 * the javascript required for active control is registered in {@link addAttributesToRender}.
 	 */
@@ -76,7 +87,7 @@ class TActiveCheckBoxList extends TCheckBoxList implements IActiveControl, ICall
 	 */
 	protected function createRepeatedControl()
 	{
-		$control = new TActiveCheckBox;
+		$control = new TActiveCheckBoxListItem;
 		$control->getAdapter()->setBaseActiveControl($this->getActiveControl());
 		return $control;
 	}
@@ -111,9 +122,38 @@ class TActiveCheckBoxList extends TCheckBoxList implements IActiveControl, ICall
 	protected function addAttributesToRender($writer)
 	{
 		parent::addAttributesToRender($writer);
-		$this->getActiveControl()->registerCallbackClientScript(
-			$this->getClientClassName(), $this->getPostBackOptions());
+		if($this->getEnableClientScript()
+			&& $this->getAutoPostBack()
+			&& $this->getPage()->getClientSupportsJavaScript())
+		{
+		  $this->getActiveControl()->registerCallbackClientScript(
+		    $this->getClientClassName(), $this->getPostBackOptions());
+		}
 	}
 
+	/**
+	 * Gets the name of the javascript class responsible for performing postback for this control.
+	 * This method overrides the parent implementation.
+	 * @return string the javascript class name
+	 */
+	protected function getClientClassName()
+	{
+		return 'Prado.WebUI.TActiveCheckBoxList';
+	}
+}
+
+class TActiveCheckBoxListItem extends TActiveCheckBox
+{
+	/**
+	 * Override client implementation to avoid emitting the javascript
+	 *
+	 * @param THtmlWriter the writer for the rendering purpose
+	 * @param string checkbox id
+	 * @param string onclick js
+	 */
+	protected function renderInputTag($writer,$clientID,$onclick)
+	{
+		TCheckBox::renderInputTag($writer,$clientID,$onclick);
+	}
 }
 

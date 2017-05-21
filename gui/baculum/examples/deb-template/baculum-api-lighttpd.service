@@ -1,0 +1,11 @@
+[Unit]
+Description=Baculum API Bacula Community tool
+After=network.target
+
+[Service]
+PIDFile=/var/run/baculum-api.pid
+ExecStart=/usr/sbin/lighttpd -f %CONFDIR/baculum-api-lighttpd.conf
+
+[Install]
+WantedBy=multi-user.target
+

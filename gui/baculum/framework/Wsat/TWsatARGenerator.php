@@ -2,29 +2,17 @@
 
 /**
  * @author Daniel Sampedro Bello <darthdaniel85@gmail.com>
- * @link http://www.pradosoft.com/
- * @copyright Copyright &copy; 2005-2013 PradoSoft
- * @license http://www.pradosoft.com/license/
+ * @link https://github.com/pradosoft/prado
+ * @copyright Copyright &copy; 2005-2016 The PRADO Group
+ * @license https://github.com/pradosoft/prado/blob/master/COPYRIGHT
  * @version $Id$
  * @since 3.3
- * @package Wsat
+ * @package System.Wsat
  */
+Prado::using("System.Wsat.TWsatBaseGenerator");
 
-Prado::using('System.Data.Common.TDbMetaData');
-
-class TWsatARGenerator
+class TWsatARGenerator extends TWsatBaseGenerator
 {
-
-        /**
-         * @return TDbMetaData for retrieving metadata information, such as
-         * table and columns information, from a database connection.
-         */
-        private $_dbMetaData;
-
-        /**
-         * Output folder where AR classes will be saved.
-         */
-        private $_opFile;
 
         /**
          * Class name prefix
@@ -43,28 +31,13 @@ class TWsatARGenerator
 
         /**
          * unquote chars
-         * @var array 
+         * @var array
          */
         private $uqChars = array('[', ']', '"', '`', "'");
 
         function __construct()
         {
-                if(!class_exists("TActiveRecordManager", false))
-                        throw new Exception("You need to enable the ActiveRecord module in your application configuration file.");
-                $ar_manager = TActiveRecordManager::getInstance();
-                $_conn = $ar_manager->getDbConnection();
-                $_conn->Active = true;
-                $this->_dbMetaData = TDbMetaData::getInstance($_conn);
-        }
-
-        public function setOpFile($op_file_namespace)
-        {
-                $op_file = Prado::getPathOfNamespace($op_file_namespace);
-                if (empty($op_file))
-                        throw new Exception("You need to fix your output folder namespace.");
-                if (!is_dir($op_file))
-                        mkdir($op_file, 0777, true);
-                $this->_opFile = $op_file;
+                parent::__construct();
         }
 
         public function setClasPrefix($_clas_prefix)
@@ -77,7 +50,7 @@ class TWsatARGenerator
                 $this->_classSufix = $_clas_sufix;
         }
 
-//-----------------------------------------------------------------------------    
+//-----------------------------------------------------------------------------
         // <editor-fold defaultstate="collapsed" desc="Main APIs">
         public function generate($tableName)
         {
@@ -87,10 +60,8 @@ class TWsatARGenerator
 
         public function generateAll()
         {
-                foreach ($this->_dbMetaData->findTableNames() as $tableName)
+                foreach ($this->getAllTableNames() as $tableName)
                 {
-                        if ($tableName == "pradocache")
-                                continue;
                         $tableInfo = $this->_dbMetaData->getTableInfo($tableName);
                         if (!empty($this->_relations))
                         {
@@ -105,7 +76,7 @@ class TWsatARGenerator
         public function buildRelations()
         {
                 $this->_relations = array();
-                foreach ($this->_dbMetaData->findTableNames() as $table_name)
+                foreach ($this->getAllTableNames() as $table_name)
                 {
                         $tableInfo = $this->_dbMetaData->getTableInfo($table_name);
                         $pks = $tableInfo->getPrimaryKeys();
@@ -117,17 +88,17 @@ class TWsatARGenerator
                                 $table_name_mm2 = $fks[1]["table"];
 
                                 $this->_relations[$table_name_mm][] = array(
-                                    "prop_name" => strtolower($table_name_mm2),
-                                    "rel_type" => "self::MANY_TO_MANY",
-                                    "ref_class_name" => $this->_getProperClassName($table_name_mm2),
-                                    "prop_ref" => $table_name
+                                        "prop_name" => strtolower($table_name_mm2),
+                                        "rel_type" => "self::MANY_TO_MANY",
+                                        "ref_class_name" => $this->_getProperClassName($table_name_mm2),
+                                        "prop_ref" => $table_name
                                 );
 
                                 $this->_relations[$table_name_mm2][] = array(
-                                    "prop_name" => strtolower($table_name_mm),
-                                    "rel_type" => "self::MANY_TO_MANY",
-                                    "ref_class_name" => $this->_getProperClassName($table_name_mm),
-                                    "prop_ref" => $table_name
+                                        "prop_name" => strtolower($table_name_mm),
+                                        "rel_type" => "self::MANY_TO_MANY",
+                                        "ref_class_name" => $this->_getProperClassName($table_name_mm),
+                                        "prop_ref" => $table_name
                                 );
                                 continue;
                         }
@@ -138,17 +109,17 @@ class TWsatARGenerator
                                 $fk_prop = key($fk_data["keys"]);
 
                                 $this->_relations[$owner_table][] = array(
-                                    "prop_name" => strtolower($slave_table),
-                                    "rel_type" => "self::HAS_MANY",
-                                    "ref_class_name" => $this->_getProperClassName($slave_table),
-                                    "prop_ref" => $fk_prop
+                                        "prop_name" => strtolower($slave_table),
+                                        "rel_type" => "self::HAS_MANY",
+                                        "ref_class_name" => $this->_getProperClassName($slave_table),
+                                        "prop_ref" => $fk_prop
                                 );
 
                                 $this->_relations[$slave_table][] = array(
-                                    "prop_name" => strtolower($owner_table),
-                                    "rel_type" => "self::BELONGS_TO",
-                                    "ref_class_name" => $this->_getProperClassName($owner_table),
-                                    "prop_ref" => $fk_prop
+                                        "prop_name" => strtolower($owner_table),
+                                        "rel_type" => "self::BELONGS_TO",
+                                        "ref_class_name" => $this->_getProperClassName($owner_table),
+                                        "prop_ref" => $fk_prop
                                 );
                         }
                 }
@@ -165,8 +136,8 @@ class TWsatARGenerator
                 else
                 {
                         $properties = array();
-                        foreach ($tableInfo->getColumns() as $field => $column)
-                                $properties[] = $this->generateProperty($field, $column);
+                        foreach ($tableInfo->getColumns() as $field => $metadata)
+                                $properties[] = $this->generateProperty($field, $metadata);
                         $toString = $this->_buildSmartToString($tableInfo);
                 }
 
@@ -183,23 +154,9 @@ class TWsatARGenerator
                 return $this->_clasPrefix . $final_conversion . $this->_classSufix;
         }
 
-        public function renderAllTablesInformation()
-        {
-                foreach ($this->_dbMetaData->findTableNames() as $table_name)
-                {
-                        echo $table_name . "<br>";
-
-                        $tableInfo = $this->_dbMetaData->getTableInfo($table_name);
-                        echo "Table info:" . "<br>";
-                        echo "<pre>";
-                        var_dump($tableInfo);
-                        echo "</pre>";
-                }
-        }
-
 //-----------------------------------------------------------------------------
 
-        protected function generateProperty($field, $column)
+        protected function generateProperty($field, $metadata)
         {
                 $prop = '';
                 $name = '$' . $field;
@@ -260,10 +217,10 @@ class TWsatARGenerator
 <?php
 /**
  * Auto generated by PRADO - WSAT on $date.
- * @author $env_user               
+ * @author $env_user
  */
-class $classname extends TActiveRecord 
-{       
+class $classname extends TActiveRecord
+{
 	const TABLE='$tablename';
 
 $props
@@ -271,9 +228,9 @@ $props
 	public static function finder(\$className=__CLASS__) {
                 return parent::finder(\$className);
 	}
-                
+
 $relations
-                
+
 $toString
 }
 EOD;

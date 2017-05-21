@@ -1,0 +1,3 @@
+usr/share/doc/baculum-common/copyright usr/share/baculum/htdocs/LICENSE
+var/cache/baculum usr/share/baculum/htdocs/assets
+var/cache/baculum usr/share/baculum/htdocs/protected/runtime

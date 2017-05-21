@@ -6,7 +6,7 @@
  * @author Bérczi Gábor <gabor.berczi@devworx.hu>
  * @link http://www.devworx.hu/
  * @copyright Copyright &copy; 2011 DevWorx
- * @license http://www.pradosoft.com/license/
+ * @license https://github.com/pradosoft/prado/blob/master/COPYRIGHT
  * @package System.Web.UI.WebControls
  */
 
@@ -217,17 +217,12 @@ class TReCaptcha extends TWebControl implements IValidatable
 		// if we're in a callback, then schedule re-rendering of the control 
 		// if not, don't do anything, because a new challenge will be rendered anyway
 		if ($this->Page->IsCallback)
-			$this->Page->ClientScript->registerEndScript($this->getClientID().'::refresh', implode(' ', array(
-				// work-around for "ReCaptchaState is undefined" bug 
-				// (if there's no previous instance yet, regenerating the token is not needed anyway)
-				'if (typeof ReCaptchaState != "undefined") '.
-				'  Recaptcha.reload();',
-			)));
+			$this->Page->CallbackClient->jQuery($this->getClientID().' #recaptcha_reload','click');
 	}
 
 	public function renderContents($writer)
 	{
-		$readyscript = 'Event.fire(document, '.TJavaScript::quoteString('captchaready:'.$this->getClientID()).')';
+		$readyscript = 'jQuery(document).trigger('.TJavaScript::quoteString('captchaready:'.$this->getClientID()).')';
 		$cs = $this->Page->ClientScript;
 		$id = $this->getClientID();
 		$divid = $id.'_1_recaptchadiv';
@@ -250,7 +245,7 @@ class TReCaptcha extends TWebControl implements IValidatable
 				*/
 				$writer->write($html);
 
-				$cs->registerEndScript('ReCaptcha::EventScript', 'Event.observe(document, "dom:loaded", function() { '.$readyscript.'; } );');
+				$cs->registerEndScript('ReCaptcha::EventScript', 'jQuery(document).ready(function() { '.$readyscript.'; } );');
 			}
 		else
 			{
@@ -258,7 +253,7 @@ class TReCaptcha extends TWebControl implements IValidatable
 				$options['callback'] = new TJavaScriptLiteral('function() { '.$readyscript.'; '.$this->getCallbackScript().'; }');
 				$cs->registerScriptFile('ReCaptcha::AjaxScript', 'http://www.google.com/recaptcha/api/js/recaptcha_ajax.js');
 				$cs->registerEndScript('ReCaptcha::CreateScript::'.$id, implode(' ', array(
-					'if (!$('.TJavaScript::quoteString($this->getResponseFieldName()).'))',
+					'if (!jQuery('.TJavaScript::quoteString('#'.$this->getResponseFieldName()).'))',
 					'{',
 					'Recaptcha.destroy();',
 					'Recaptcha.create(',

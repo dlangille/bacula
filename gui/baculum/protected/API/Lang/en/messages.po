@@ -1,0 +1,381 @@
+msgid ""
+msgstr ""
+"PO-Revision-Date: 2016-11-12 05:44:34\n"
+"Project-Id-Version: \n"
+"POT-Creation-Date: \n"
+"Last-Translator: Marcin Haba <marcin.haba@bacula.pl>\n"
+"Language-Team: \n"
+"Language: en\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=iso-8859-1\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 1.5.4\n"
+
+msgid "Language:"
+msgstr "Language:"
+
+msgid "Language"
+msgstr "Language"
+
+msgid "select language"
+msgstr "select language"
+
+msgid "English"
+msgstr "English"
+
+msgid "Polish"
+msgstr "Polish"
+
+msgid "Portuguese"
+msgstr "Portuguese"
+
+msgid "&laquo; Previous"
+msgstr "&laquo; Previous"
+
+msgid "Cancel"
+msgstr "Cancel"
+
+msgid "Next &raquo;"
+msgstr "Next &raquo;"
+
+msgid "Step 1 - select language"
+msgstr "Step 1 - select language"
+
+msgid "Catalog API"
+msgstr "Catalog API"
+
+msgid "Step 2 - share the Bacula Catalog Database"
+msgstr "Step 2 - share the Bacula Catalog Database"
+
+msgid "Do you want to setup and to share the Bacula Catalog Database access for this API instance?"
+msgstr "Do you want to setup and to share the Bacula Catalog Database access for this API instance?"
+
+msgid "Yes"
+msgstr "Yes"
+
+msgid "No"
+msgstr "No"
+
+msgid "Database type:"
+msgstr "Database type:"
+
+msgid "select database"
+msgstr "select database"
+
+msgid "Database name:"
+msgstr "Database name:"
+
+msgid "Please select database type."
+msgstr "Please select database type."
+
+msgid "Please enter database name."
+msgstr "Please enter database name."
+
+msgid "Login:"
+msgstr "Login:"
+
+msgid "Please enter login."
+msgstr "Please enter login."
+
+msgid "Password:"
+msgstr "Password:"
+
+msgid "IP address (or hostname):"
+msgstr "IP address (or hostname):"
+
+msgid "Please enter IP address or hostname."
+msgstr "Please enter IP address or hostname."
+
+msgid "Port:"
+msgstr "Port:"
+
+msgid "Please enter database port."
+msgstr "Please enter database port."
+
+msgid "SQLite database path:"
+msgstr "SQLite database path:"
+
+msgid "Please enter database path."
+msgstr "Please enter database path."
+
+msgid "Connection test:"
+msgstr "Connection test:"
+
+msgid "Loading..."
+msgstr "Loading..."
+
+msgid "OK"
+msgstr "OK"
+
+msgid "Connection error"
+msgstr "Connection error"
+
+msgid "test"
+msgstr "test"
+
+msgid "Do you want to setup and share the Bacula Bconsole interface to execute commands in this API instance?"
+msgstr "Do you want to setup and share the Bacula Bconsole interface to execute commands in this API instance?"
+
+msgid "Bconsole binary file path:"
+msgstr "Bconsole binary file path:"
+
+msgid "Please enter bconsole path."
+msgstr "Please enter bconsole path."
+
+msgid "Please enter bconsole config file path."
+msgstr "Please enter bconsole config file path."
+
+msgid "Use sudo:"
+msgstr "Use sudo:"
+
+msgid "Bconsole connection test:"
+msgstr "Bconsole connection test:"
+
+msgid "Bconsole admin config file path:"
+msgstr "Bconsole admin config file path:"
+
+msgid "NOTE!"
+msgstr "NOTE!"
+
+msgid "Baculum needs access to bconsole by the web server."
+msgstr "Baculum needs access to bconsole by the web server."
+
+msgid "Step 3 - share the Bacula Bconsole commands interface"
+msgstr "Step 3 - share the Bacula Bconsole commands interface"
+
+msgid "Console API"
+msgstr "Console API"
+
+msgid "bdirjson binary file path:"
+msgstr "bdirjson binary file path:"
+
+msgid "bsdjson binary file path:"
+msgstr "bsdjson binary file path:"
+
+msgid "bfdjson binary file path:"
+msgstr "bfdjson binary file path:"
+
+msgid "bbconsjson binary file path:"
+msgstr "bbconsjson binary file path:"
+
+msgid "Main Director config file path (usually bacula-dir.conf):"
+msgstr "Main Director config file path (usually bacula-dir.conf):"
+
+msgid "Main Storage Daemon config file path (usually bacula-sd.conf):"
+msgstr "Main Storage Daemon config file path (usually bacula-sd.conf):"
+
+msgid "Main File Daemon config file path (usually bacula-fd.conf):"
+msgstr "Main File Daemon config file path (usually bacula-fd.conf):"
+
+msgid "Admin Bconsole config file path (usually bconsole.conf):"
+msgstr "Admin Bconsole config file path (usually bconsole.conf):"
+
+msgid "Test configuration"
+msgstr "Test configuration"
+
+msgid "General configuration"
+msgstr "General configuration"
+
+msgid "Directory path for new config files:"
+msgstr "Directory path for new config files:"
+
+msgid "Step 4 - share the Bacula configuration interface"
+msgstr "Step 4 - share the Bacula configuration interface"
+
+msgid "There is required to provide both binary file and config file paths."
+msgstr "There is required to provide both binary file and config file paths."
+
+msgid "Directory path field is required."
+msgstr "Directory path field is required."
+
+msgid "Provided directory path is not writable by web server."
+msgstr "Provided directory path is not writable by web server."
+
+msgid "Config API"
+msgstr "Config API"
+
+msgid "Error"
+msgstr "Error"
+
+msgid "Authorization"
+msgstr "Authorization"
+
+msgid "Finish"
+msgstr "Finish"
+
+msgid "Do you want to setup and share the Bacula configuration interface to configure Bacula components via this API instance?"
+msgstr "Do you want to setup and share the Bacula configuration interface to configure Bacula components via this API instance?"
+
+msgid "Step 5 - authorization to API"
+msgstr "Step 5 - authorization to API"
+
+msgid "Administration login:"
+msgstr "Administration login:"
+
+msgid "Administration password:"
+msgstr "Administration password:"
+
+msgid "Please enter password."
+msgstr "Please enter password."
+
+msgid "Password must be longer than 4 chars."
+msgstr "Password must be longer than 4 chars."
+
+msgid "Retype administration password:"
+msgstr "Retype administration password:"
+
+msgid "Please enter retype password."
+msgstr "Please enter retype password."
+
+msgid "Passwords must be the same."
+msgstr "Passwords must be the same."
+
+msgid "Use HTTP Basic authentication"
+msgstr "Use HTTP Basic authentication"
+
+msgid "Use OAuth2 for authorization and authentication"
+msgstr "Use OAuth2 for authorization and authentication"
+
+msgid "Database port:"
+msgstr "Database port:"
+
+msgid "Database file path (SQLite only):"
+msgstr "Database file path (SQLite only):"
+
+msgid "Use sudo for bconsole requests:"
+msgstr "Use sudo for bconsole requests:"
+
+msgid "Authorization to Baculum REST API"
+msgstr "Authorization to Baculum REST API"
+
+msgid "Save"
+msgstr "Save"
+
+msgid "Authorization type:"
+msgstr "Authorization type:"
+
+msgid "Step 6 - Finish"
+msgstr "Step 6 - Finish"
+
+msgid "Use sudo for Bacula JSON tools:"
+msgstr "Use sudo for Bacula JSON tools:"
+
+msgid "Main Director config file path:"
+msgstr "Main Director config file path:"
+
+msgid "Main Client config file path:"
+msgstr "Main Client config file path:"
+
+msgid "Main Storage Daemon config file path:"
+msgstr "Main Storage Daemon config file path:"
+
+msgid "Main Bconsole config file path:"
+msgstr "Main Bconsole config file path:"
+
+msgid "Please select API endpoint"
+msgstr "Please select API endpoint"
+
+msgid "Catalog access:"
+msgstr "Catalog access:"
+
+msgid "Console access:"
+msgstr "Console access:"
+
+msgid "Config access:"
+msgstr "Config access:"
+
+msgid "Disabled"
+msgstr "Disabled"
+
+msgid "Invalid Client ID value. Client ID may contain a-z A-Z 0-9 - _ characters."
+msgstr "Invalid Client ID value. Client ID may contain a-z A-Z 0-9 - _ characters."
+
+msgid "Please enter Client ID."
+msgstr "Please enter Client ID."
+
+msgid "OAuth2 Client ID:"
+msgstr "OAuth2 Client ID:"
+
+msgid "OAuth2 Client Secret:"
+msgstr "OAuth2 Client Secret:"
+
+msgid "Please enter Client Secret."
+msgstr "Please enter Client Secret."
+
+msgid "Invalid Client Secret value. Client Secret may contain any character that is not a whitespace character."
+msgstr "Invalid Client Secret value. Client Secret may contain any character that is not a whitespace character."
+
+msgid "generate"
+msgstr "generate"
+
+msgid "Dedicated Bconsole config file path:"
+msgstr "Dedicated Bconsole config file path:"
+
+msgid "Please enter Redirect URI."
+msgstr "Please enter Redirect URI."
+
+msgid "OAuth2 Redirect URI (example: https://baculumgui:9095/web/redirect):"
+msgstr "OAuth2 Redirect URI (example: https://baculumgui:9095/web/redirect):"
+
+msgid "(optional)"
+msgstr "(optional)"
+
+msgid "First client registration"
+msgstr "First client registration"
+
+msgid "OAuth2 scopes (space separated):"
+msgstr "OAuth2 scopes (space separated):"
+
+msgid "Please enter OAuth2 scopes."
+msgstr "Please enter OAuth2 scopes."
+
+msgid "Please do not forget to disable HTTP Basic auth in the API web server config. Othwerise OAuth2 will not work."
+msgstr "Please do not forget to disable HTTP Basic auth in the API web server config. Othwerise OAuth2 will not work."
+
+msgid "Refresh token"
+msgstr "Refresh token"
+
+msgid "New HTTP Basic user"
+msgstr "New HTTP Basic user"
+
+msgid "New OAuth2 client"
+msgstr "New OAuth2 client"
+
+msgid "Add"
+msgstr "Add"
+
+msgid "API Login:"
+msgstr "API Login:"
+
+msgid "API Password:"
+msgstr "API Password:"
+
+msgid "Retype password:"
+msgstr "Retype password:"
+
+msgid "Please enter API login."
+msgstr "Please enter API login."
+
+msgid "Please enter API password."
+msgstr "Please enter API password."
+
+msgid "User added successfully."
+msgstr "User added successfully."
+
+msgid "Problem during save to config file. Please check users config file permission."
+msgstr "Problem during save to config file. Please check users config file permission."
+
+msgid "Given user already exists in config file."
+msgstr "Given user already exists in config file."
+
+msgid "List HTTP Basic users"
+msgstr "List HTTP Basic users"
+
+msgid "List OAuth2 clients"
+msgstr "List OAuth2 clients"
+
+msgid "set all scopes"
+msgstr "set all scopes"
+
+msgid "Go to configuration wizard"
+msgstr "Go to configuration wizard"

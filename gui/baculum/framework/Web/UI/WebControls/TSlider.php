@@ -3,9 +3,9 @@
  * TSlider class file.
  *
  * @author Christophe Boulain <Christophe.Boulain@gmail.com>
- * @link http://www.pradosoft.com/
- * @copyright Copyright &copy; 2005-2014 PradoSoft
- * @license http://www.pradosoft.com/license/
+ * @link https://github.com/pradosoft/prado
+ * @copyright Copyright &copy; 2005-2016 The PRADO Group
+ * @license https://github.com/pradosoft/prado/blob/master/COPYRIGHT
  * @package System.Web.UI.WebControls
  * @since 3.1.1
  */
@@ -455,7 +455,7 @@ class TSlider extends TWebControl implements IPostBackDataHandler, IDataRenderer
 		$options['axis'] = strtolower($this->getDirection());
 		$options['maximum'] = $maxValue;
 		$options['minimum'] = $minValue;
-		$options['range'] = TJavascript::quoteJsLiteral('$R('.$minValue.",".$maxValue.")");
+		$options['range'] = array($minValue, $maxValue);
 		$options['sliderValue'] = $this->getValue();
 		$options['disabled'] = !$this->getEnabled();
 		$values=$this->getValues();

@@ -1,4 +1,12 @@
 assets/*
-protected/Data/baculum.log*
-protected/Data/settings.conf
 protected/runtime/*
+protected/Web/Logs/*
+protected/Web/Config/baculum.users
+protected/Web/Config/hosts.conf
+protected/Web/Config/settings.conf
+protected/Web/Config/session.dump
+protected/API/Config/baculum.users
+protected/API/Config/api.conf
+protected/API/Config/oauth2.conf
+protected/API/Config/session.dump
+protected/API/Logs/*

@@ -3,9 +3,9 @@
  * Translation, static.
  *
  * @author Wei Zhuo <weizhuo[at]gmail[dot]com>
- * @link http://www.pradosoft.com/
- * @copyright Copyright &copy; 2005-2014 PradoSoft
- * @license http://www.pradosoft.com/license/
+ * @link https://github.com/pradosoft/prado
+ * @copyright Copyright &copy; 2005-2016 The PRADO Group
+ * @license https://github.com/pradosoft/prado/blob/master/COPYRIGHT
  * @package System.I18N
  */
 
@@ -51,7 +51,7 @@ class Translation extends TComponent
 
 			$source->setCulture($app->getCulture());
 
-			if(TPropertyValue::ensureBoolean($config['cache']))
+			if(isset($config['cache']))
 				$source->setCache(new MessageCache($config['cache']));
 
 			self::$formatters[$catalogue] = new MessageFormat($source, $app->getCharset());

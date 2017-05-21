@@ -1,0 +1,6 @@
+Defaults:lighttpd !requiretty
+lighttpd  ALL = NOPASSWD:  /usr/sbin/bconsole
+lighttpd  ALL = NOPASSWD:  /usr/sbin/bdirjson
+lighttpd  ALL = NOPASSWD:  /usr/sbin/bsdjson
+lighttpd  ALL = NOPASSWD:  /usr/sbin/bfdjson
+lighttpd  ALL = NOPASSWD:  /usr/sbin/bbconsjson

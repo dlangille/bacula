@@ -4,9 +4,9 @@
  *
  * @author Bradley Booms <Bradley.Booms@nsighttel.com>
  * @author Christophe Boulain <Christophe.Boulain@gmail.com>
- * @link http://www.pradosoft.com/
- * @copyright Copyright &copy; 2005-2014 PradoSoft
- * @license http://www.pradosoft.com/license/
+ * @link https://github.com/pradosoft/prado
+ * @copyright Copyright &copy; 2005-2016 The PRADO Group
+ * @license https://github.com/pradosoft/prado/blob/master/COPYRIGHT
  * @package System.Web.UI.ActiveControls
  */
 
@@ -89,6 +89,9 @@ class TActiveDatePicker extends TDatePicker  implements ICallbackEventHandler, I
 	 * @param string text content for the textbox
 	 */
 	public function setText($value){
+		if(parent::getText() === $value)
+			return;
+
 		parent::setText($value);
 		if($this->getActiveControl()->canUpdateClientSide() && $this->getHasLoadedPostData()){
 			$cb=$this->getPage()->getCallbackClient();

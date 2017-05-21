@@ -26,7 +26,6 @@
  */
 define('APPLICATION_DIRECTORY', __DIR__);
 
-require_once('./protected/Init.php');
 require_once('./framework/prado.php');
 
 // Start application

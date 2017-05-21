@@ -3,9 +3,9 @@
  * TSqliteCache class file
  *
  * @author Qiang Xue <qiang.xue@gmail.com>
- * @link http://www.pradosoft.com/
- * @copyright Copyright &copy; 2005-2014 PradoSoft
- * @license http://www.pradosoft.com/license/
+ * @link https://github.com/pradosoft/prado
+ * @copyright Copyright &copy; 2005-2016 The PRADO Group
+ * @license https://github.com/pradosoft/prado/blob/master/COPYRIGHT
  * @package System.Caching
  */
 
@@ -161,7 +161,7 @@ class TSqliteCache extends TCache
 	{
 		$sql='SELECT value FROM '.self::CACHE_TABLE.' WHERE key=\''.$key.'\' AND (expire=0 OR expire>'.time().') LIMIT 1';
 		if(($ret=$this->_db->query($sql))!=false && ($row=$ret->fetch(SQLITE_ASSOC))!==false)
-			return Prado::unserialize($row['value']);
+			return unserialize($row['value']);
 		else
 			return false;
 	}
@@ -178,7 +178,7 @@ class TSqliteCache extends TCache
 	protected function setValue($key,$value,$expire)
 	{
 		$expire=($expire<=0)?0:time()+$expire;
-		$sql='REPLACE INTO '.self::CACHE_TABLE.' VALUES(\''.$key.'\',\''.sqlite_escape_string(Prado::serialize($value)).'\','.$expire.')';
+		$sql='REPLACE INTO '.self::CACHE_TABLE.' VALUES(\''.$key.'\',\''.sqlite_escape_string(serialize($value)).'\','.$expire.')';
 		return $this->_db->query($sql)!==false;
 	}
 
@@ -194,7 +194,7 @@ class TSqliteCache extends TCache
 	protected function addValue($key,$value,$expire)
 	{
 		$expire=($expire<=0)?0:time()+$expire;
-		$sql='INSERT INTO '.self::CACHE_TABLE.' VALUES(\''.$key.'\',\''.sqlite_escape_string(Prado::serialize($value)).'\','.$expire.')';
+		$sql='INSERT INTO '.self::CACHE_TABLE.' VALUES(\''.$key.'\',\''.sqlite_escape_string(serialize($value)).'\','.$expire.')';
 		return @$this->_db->query($sql)!==false;
 	}
 

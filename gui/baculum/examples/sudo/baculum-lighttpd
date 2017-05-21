@@ -1,2 +1,0 @@
-Defaults:lighttpd !requiretty
-lighttpd  ALL= NOPASSWD:  /usr/sbin/bconsole

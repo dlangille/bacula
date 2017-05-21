@@ -3,9 +3,9 @@
  * TActiveImage class file.
  *
  * @author Wei Zhuo <weizhuo[at]gamil[dot]com>
- * @link http://www.pradosoft.com/
- * @copyright Copyright &copy; 2005-2014 PradoSoft
- * @license http://www.pradosoft.com/license/
+ * @link https://github.com/pradosoft/prado
+ * @copyright Copyright &copy; 2005-2016 The PRADO Group
+ * @license https://github.com/pradosoft/prado/blob/master/COPYRIGHT
  * @package System.Web.UI.ActiveControls
  */
 
@@ -48,6 +48,9 @@ class TActiveImage extends TImage implements IActiveControl
 	 */
 	public function setAlternateText($value)
 	{
+		if(parent::getAlternateText() === $value)
+			return;
+
 		parent::setAlternateText($value);
 		if($this->getActiveControl()->canUpdateClientSide())
 			$this->getPage()->getCallbackClient()->setAttribute($this, 'alt', $value);
@@ -62,6 +65,9 @@ class TActiveImage extends TImage implements IActiveControl
 	 */
 	public function setImageAlign($value)
 	{
+		if(parent::getImageAlign() === $value)
+			return;
+
 		parent::setImageAlign($value);
 		if($this->getActiveControl()->canUpdateClientSide())
 			$this->getPage()->getCallbackClient()->setAttribute($this, 'align', $value);
@@ -72,6 +78,9 @@ class TActiveImage extends TImage implements IActiveControl
 	 */
 	public function setImageUrl($value)
 	{
+		if(parent::getImageUrl() === $value)
+			return;
+
 		parent::setImageUrl($value);
 		if($this->getActiveControl()->canUpdateClientSide())
 			$this->getPage()->getCallbackClient()->setAttribute($this, 'src', $value);
@@ -82,6 +91,9 @@ class TActiveImage extends TImage implements IActiveControl
 	 */
 	public function setDescriptionUrl($value)
 	{
+		if(parent::getDescriptionUrl() === $value)
+			return;
+
 		parent::setDescriptionUrl($value);
 		if($this->getActiveControl()->canUpdateClientSide())
 			$this->getPage()->getCallbackClient()->setAttribute($this, 'longdesc', $value);

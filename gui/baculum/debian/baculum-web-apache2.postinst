@@ -1,0 +1,12 @@
+#!/bin/sh
+
+set -e
+
+case "$1" in
+    configure)
+	chown -R www-data:www-data /etc/baculum/Config-web-apache
+	chmod 750 /etc/baculum/Config-web-apache
+    ;;
+esac
+
+#DEBHELPER#

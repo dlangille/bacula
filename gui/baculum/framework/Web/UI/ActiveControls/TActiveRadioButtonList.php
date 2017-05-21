@@ -3,9 +3,9 @@
  * TActiveRadioButtonList class file.
  *
  * @author Wei Zhuo <weizhuo[at]gamil[dot]com>
- * @link http://www.pradosoft.com/
- * @copyright Copyright &copy; 2005-2014 PradoSoft
- * @license http://www.pradosoft.com/license/
+ * @link https://github.com/pradosoft/prado
+ * @copyright Copyright &copy; 2005-2016 The PRADO Group
+ * @license https://github.com/pradosoft/prado/blob/master/COPYRIGHT
  * @package System.Web.UI.ActiveControls
  */
 
@@ -77,7 +77,7 @@ class TActiveRadioButtonList extends TRadioButtonList implements IActiveControl,
 	 */
 	protected function createRepeatedControl()
 	{
-		$control = new TActiveRadioButton;
+		$control = new TActiveRadioButtonItem;
 		$control->getAdapter()->setBaseActiveControl($this->getActiveControl());
 		return $control;
 	}
@@ -115,5 +115,31 @@ class TActiveRadioButtonList extends TRadioButtonList implements IActiveControl,
 		$this->getActiveControl()->registerCallbackClientScript(
 			$this->getClientClassName(), $this->getPostBackOptions());
 	}
+
+	/**
+	 * Gets the name of the javascript class responsible for performing postback for this control.
+	 * This method overrides the parent implementation.
+	 * @return string the javascript class name
+	 */
+	protected function getClientClassName()
+	{
+		return 'Prado.WebUI.TActiveRadioButtonList';
+	}
+
 }
 
+
+class TActiveRadioButtonItem extends TActiveRadioButton
+{
+	/**
+	 * Override client implementation to avoid emitting the javascript
+	 *
+	 * @param THtmlWriter the writer for the rendering purpose
+	 * @param string checkbox id
+	 * @param string onclick js
+	 */
+	protected function renderInputTag($writer,$clientID,$onclick)
+	{
+		TRadioButton::renderInputTag($writer,$clientID,$onclick);
+	}
+}

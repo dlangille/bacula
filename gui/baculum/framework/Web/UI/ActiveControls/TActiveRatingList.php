@@ -4,9 +4,9 @@
  *
  * @author Wei Zhuo <weizhuo[at]gamil[dot]com>
  * @author Bradley Booms <bradley[dot]booms[at]gmail[dot]com>
- * @link http://www.pradosoft.com/
- * @copyright Copyright &copy; 2005-2014 PradoSoft
- * @license http://www.pradosoft.com/license/
+ * @link https://github.com/pradosoft/prado
+ * @copyright Copyright &copy; 2005-2016 The PRADO Group
+ * @license https://github.com/pradosoft/prado/blob/master/COPYRIGHT
  * @version $Id$
  * @package System.Web.UI.ActiveControls
  */
@@ -80,6 +80,9 @@ class TActiveRatingList extends TRatingList implements IActiveControl, ICallback
 	 */
 	public function setReadOnly($value)
 	{
+		if(parent::getReadOnly() === $value)
+			return;
+
 		parent::setReadOnly($value);
 		$value = $this->getReadOnly();
 		$this->callClientFunction('setReadOnly',$value);
@@ -90,6 +93,9 @@ class TActiveRatingList extends TRatingList implements IActiveControl, ICallback
 	 */
 	public function setRating($value)
 	{
+		if(parent::getRating() === $value)
+			return;
+
 		parent::setRating($value);
 		$value = $this->getRating();
 		$this->callClientFunction('setRating',$value);
@@ -105,8 +111,8 @@ class TActiveRatingList extends TRatingList implements IActiveControl, ICallback
 		if($this->getActiveControl()->canUpdateClientSide())
 		{
 			$client = $this->getPage()->getCallbackClient();
-			$code = parent::getClientClassName().'.'.$func;
-			$client->callClientFunction($code,array($this,$value));
+			$code = 'Prado.Registry[\''.$this->ClientID.'\'].'.$func.'('.$value.')';
+			$client->evaluateScript($code,array($value));
 		}
 	}
 
@@ -115,6 +121,9 @@ class TActiveRatingList extends TRatingList implements IActiveControl, ICallback
 	 */
 	public function setCaption($value)
 	{
+		if(parent::getCaption() === $value)
+			return;
+
 		parent::setCaption($value);
 		// if it's an active control, this should not be needed.
 		$this->callClientFunction('setCaption',$value);

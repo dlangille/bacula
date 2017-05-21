@@ -3,9 +3,9 @@
  * TErrorHandler class file
  *
  * @author Qiang Xue <qiang.xue@gmail.com>
- * @link http://www.pradosoft.com/
- * @copyright Copyright &copy; 2005-2014 PradoSoft
- * @license http://www.pradosoft.com/license/
+ * @link https://github.com/pradosoft/prado
+ * @copyright Copyright &copy; 2005-2016 The PRADO Group
+ * @license https://github.com/pradosoft/prado/blob/master/COPYRIGHT
  * @package System.Exceptions
  */
 
@@ -185,7 +185,7 @@ class TErrorHandler extends TModule
 
 		$errorMessage = $exception->getMessage();
 		if($isDebug)
-			$version=$_SERVER['SERVER_SOFTWARE'].' <a href="http://www.pradosoft.com/">PRADO</a>/'.Prado::getVersion();
+			$version=$_SERVER['SERVER_SOFTWARE'].' <a href="https://github.com/pradosoft/prado">PRADO</a>/'.Prado::getVersion();
 		else
 		{
 			$version='';
@@ -199,19 +199,7 @@ class TErrorHandler extends TModule
 			'%%Time%%' => @strftime('%Y-%m-%d %H:%M',time())
 		);
 
-		$CGI=substr(php_sapi_name(), 0, 3) == 'cgi'; // FastCGI / IIS
-		if($isDebug)
-		{
-			if ($CGI)
-				header("Status: $statusCode ".$exception->getMessage(), true, TPropertyValue::ensureInteger($statusCode));
-			else
-				header("HTTP/1.0 $statusCode ".$exception->getMessage(), true, TPropertyValue::ensureInteger($statusCode));
-		} else {
-			if ($CGI)
-				header("Status: $statusCode", true, TPropertyValue::ensureInteger($statusCode));
-			else
-				header("HTTP/1.0 $statusCode", true, TPropertyValue::ensureInteger($statusCode));
-		}
+		$this->getApplication()->getResponse()->setStatusCode($statusCode, $isDebug ? $exception->getMessage() : null);
 
 		echo strtr($content,$tokens);
 	}
@@ -280,7 +268,7 @@ class TErrorHandler extends TModule
 		}
 
 		if($this->getApplication()->getMode()===TApplicationMode::Debug)
-			$version=$_SERVER['SERVER_SOFTWARE'].' <a href="http://www.pradosoft.com/">PRADO</a>/'.Prado::getVersion();
+			$version=$_SERVER['SERVER_SOFTWARE'].' <a href="https://github.com/pradosoft/prado">PRADO</a>/'.Prado::getVersion();
 		else
 			$version='';
 
@@ -357,7 +345,12 @@ class TErrorHandler extends TModule
 		// if PHP exception, we want to show the 2nd stack level context
 		// because the 1st stack level is of little use (it's in error handler)
 		if($exception instanceof TPhpErrorException)
-			$result=isset($trace[0]['file'])?$trace[0]:$trace[1];
+		{
+			if(isset($trace[0]['file']))
+				$result=$trace[0];
+			elseif(isset($trace[1]))
+				$result=$trace[1];
+		}
 		else if($exception instanceof TInvalidOperationException)
 		{
 			// in case of getter or setter error, find out the exact file and row
@@ -404,8 +397,8 @@ class TErrorHandler extends TModule
 
 	private function addLink($message)
 	{
-		$baseUrl='http://www.pradosoft.com/docs/classdoc';
-		return preg_replace('/\b(T[A-Z]\w+)\b/',"<a href=\"$baseUrl/\${1}\" target=\"_blank\">\${1}</a>",$message);
+		$baseUrl='http://pradosoft.github.io/docs/manual/class-';
+		return preg_replace('/\b(T[A-Z]\w+)\b/',"<a href=\"$baseUrl\${1}\" target=\"_blank\">\${1}</a>",$message);
 	}
 }
 

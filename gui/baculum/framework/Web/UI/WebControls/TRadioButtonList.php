@@ -3,9 +3,9 @@
  * TRadioButtonList class file
  *
  * @author Qiang Xue <qiang.xue@gmail.com>
- * @link http://www.pradosoft.com/
- * @copyright Copyright &copy; 2005-2014 PradoSoft
- * @license http://www.pradosoft.com/license/
+ * @link https://github.com/pradosoft/prado
+ * @copyright Copyright &copy; 2005-2016 The PRADO Group
+ * @license https://github.com/pradosoft/prado/blob/master/COPYRIGHT
  * @package System.Web.UI.WebControls
  */
 
@@ -47,7 +47,7 @@ class TRadioButtonList extends TCheckBoxList
 	 */
 	protected function createRepeatedControl()
 	{
-		return new TRadioButton;
+		return new TRadioButtonItem;
 	}
 
 	/**
@@ -97,3 +97,11 @@ class TRadioButtonList extends TCheckBoxList
 	}
 }
 
+class TRadioButtonItem extends TRadioButton {
+	/**
+	 * Override client implementation to avoid emitting the javascript
+	 */
+	protected function renderClientControlScript($writer)
+	{
+	}
+}

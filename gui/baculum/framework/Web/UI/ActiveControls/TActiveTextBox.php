@@ -3,9 +3,9 @@
  * TActiveTextBox class file.
  *
  * @author Wei Zhuo <weizhuo[at]gamil[dot]com>
- * @link http://www.pradosoft.com/
- * @copyright Copyright &copy; 2005-2014 PradoSoft
- * @license http://www.pradosoft.com/license/
+ * @link https://github.com/pradosoft/prado
+ * @copyright Copyright &copy; 2005-2016 The PRADO Group
+ * @license https://github.com/pradosoft/prado/blob/master/COPYRIGHT
  * @package System.Web.UI.ActiveControls
  */
 
@@ -62,6 +62,9 @@ class TActiveTextBox extends TTextBox implements ICallbackEventHandler, IActiveC
 	 */
 	public function setText($value)
 	{
+		if(parent::getText() === $value)
+			return;
+
 		parent::setText($value);
 		if($this->getActiveControl()->canUpdateClientSide() && $this->getHasLoadedPostData())
 			$this->getPage()->getCallbackClient()->setValue($this, $value);

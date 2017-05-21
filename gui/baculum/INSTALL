@@ -1,13 +1,7 @@
 1. Baculum overview
 2. Operating system environment
   2.1 General requirements
-  2.2 Linux Fedora
-  2.3 Linux Debian
-3. Preparing Baculum files
-4. Preparing Apache Web Server
-5. Example VirtualHost configuration
-6. Useful configuration samples
-7. Makefile
+3. Makefile
 
 =========================================
 
@@ -17,16 +11,19 @@
 Baculum is Bacula web based interface. It enables Bacula administration
 functions such as:
 
-- Running Bacula jobs (backup, restore, verify...)
-- Monitoring Bacula services by getting status these services
-- Bacula console available via web interface
-- Support for customized and restricted consoles (Console ACL functionality)
-- Multiple Directors support
-- Volumes management including labeling new volumes
-- User friendly graphs
-- Basic storage daemon operations on volumes (mount, umount, release actions)
-- Easy in use configuration and restore wizards
-- other features...
+- Running Bacula jobs (backup, restore, verify...).
+- Two services: Baculum API and Baculum Web
+- Configuring Bacula on local and remote hosts
+- Monitoring Bacula service status.
+- Bacula console available via a Web window.
+- Multi-user interface.
+- Support for customized and restricted consoles (Console ACL function).
+- Volume management.
+- User friendly graphs and metrics.
+- Basic storage daemon operations (mount, umount, release, ...).
+- Easy to use configuration and restore wizards.
+- Multiple Director support.
+- Live AJAX based statuses.
 
 
 2. Operating system environment
@@ -35,7 +32,7 @@ functions such as:
 2.1 General requirements
 
 
-Environment for Baculum installation should have following components:
+Environment for Baculum API installation should have following components:
 
 - Web Server - with mod_rewrite module loaded. Baculum has been
 tested with Apache HTTP Server and Lighttpd.
@@ -47,231 +44,27 @@ PDO MySQL or PDO SQLite.
       Note, in case using MySQL database there is required to use MySQL native driver.
       It is php-mysqlnd for PHP, not php-mysql.
     * BCMath PHP module.
+    * JSON PHP module.
+    * XML PHP module.
+- Bconsole - configured Bacula text based console
+- Access to Bacula catalog database - computer with Baculum API installation should be
+able to connect to Bacula catalog database. There is not need to install Baculum
+on server with Bacula Catalog DB because Baculum API can communicate with Bacula database
+located on remote server.
+
+Environment for Baculum Web installation should have following components:
+
+- Web Server - with mod_rewrite module loaded. Baculum has been
+tested with Apache HTTP Server and Lighttpd.
+
+- PHP 5.3 or higher - PHP CLI interpreter is unneeded.
+PHP should have installed following modules:
     * cURL PHP module.
     * MB String PHP module.
     * JSON PHP module.
     * XML PHP module.
-- Bconsole - configured Bacula text based console
-- Access to Bacula catalog database - computer with Baculum installation should be
-able to connect to Bacula catalog database. There is not need to install Baculum
-on server with Bacula Catalog DB because Baculum can communicate with Bacula database
-located on remote server.
 
-Above requirements are validated during Baculum start. So if in installation
-environment there is lack some from these components then you will be informed
-about it.
-
-
-2.2 Linux Fedora
-
-
-Packages required to run Baculum in Fedora environment can be installed by command:
-
-# yum install httpd \
-php \
-php-common \
-php-pdo \
-php-pgsql \
-php-mysqlnd \
-php-mbstring \
-php-bcmath \
-php-xml
-
-In Fedora 20 PHP module for cURL support and for JSON support are compiled in PHP.
-
-In case of using SELinux functionality in Baculum environment there is need
-to load SELinux policy module provided together with Baculum sources in location:
-
-examples/selinux/baculum.pp
-
-To load the policy module there can be used following command:
-
-semodule -i baculum.pp
-
-Source file the policies module is located in:
-
-examples/selinux/baculum.te
-
-
-Please make sure that in PHP configuration file (usually located in /etc/php.ini)
-there is option error_reporting set as below:
-
-error_reporting = E_ALL & ~E_STRICT
-memory_limit = 256M
-
-Suggested method for Baculum webGUI access to Bacula Console (bconsole) is using
-"sudo" functionality for that. In this case there is need to add to /etc/sudoers file two
-lines according to following template:
-
-Defaults:apache_user	!requiretty
-apache_user ALL= NOPASSWD:	bconsole_path
-
-For example for user called "apache" from that HTTP service working with Baculum
-there is need to add line like below:
-
-Defaults:apache	!requiretty
-apache	ALL= NOPASSWD:	/usr/sbin/bconsole
-
-
-2.3 Linux Debian
-
-
-Packages required to run Baculum in Debian environment can be installed by command:
-
-# apt-get install apache2 \
-libapache2-mod-php5 \
-php5 \
-php5-pgsql \
-php5-mysql \
-php5-curl \
-php5-json
-
-In Debian 7.4.0, PHP modules for BCMath and MultiByte String support are compiled in PHP.
-
-There is need to create symbolic link as below, for enable mod_rewrite module in Apache.
-
-# ln -s /etc/apache2/mods-available/rewrite.load /etc/apache2/mods-enabled/rewrite.load
-
-Please make sure that in PHP configuration file (usually located in /etc/php5/apache2/php.ini)
-there is option error_reporting set as below:
-
-error_reporting = E_ALL & ~E_STRICT
-memory_limit = 256M
-
-Suggested method for Baculum webGUI access to Bacula Console (bconsole) is using
-"sudo" functionality for that. In this case there is need to add to /etc/sudoers below
-line according to following template:
-
-Defaults:apache_user	!requiretty
-apache_user ALL= NOPASSWD:	bconsole_path
-
-For example for user called "www-data" from that HTTP service working with Baculum
-there is need to add line like below:
-
-Defaults:www-data	!requiretty
-www-data	ALL= NOPASSWD:	/usr/sbin/bconsole
-
-
-3. Preparing Baculum files
-
-
-After downloading and unpacking Baculum sources archive there is need to set write
-permissions for web server for three below directories:
-
-/[files base location]/assets
-/[files base location]/protected/Data
-/[files base location]/protected/runtime
-
-These directories permissions are validated during Baculum start. If web server
-will not be able to write data in some from above directories then you will be
-informed about this fact.
-
-
-4. Preparing Apache Web Server
-
-
-First there is need to configure authentication to Baculum from web server side.
-Baculum supports HTTP Basic authentication from web server with passwords stored
-in file:
-
-./protected/Data/baculum.users
-
-NOTE!
-There is possible to use another location than:
- ./protected/Data/baculum.users
-however then is required provide the same auth data in Baculum initial wizard.
-
-In Apache web server this authentication method may be realized by following
-directives declaration in Apache configuration file:
-
-AuthType Basic
-AuthUserFile /var/www/baculum/protected/Data/baculum.users
-Require valid-user
-
-For creating passwords file you can use htpasswd binary file in following way:
-
-# htpasswd -c /var/www/baculum/protected/Data/baculum.users someuser
-
-You will be asked about inputting password and retype password for user.
-
-NOTE!
-"-c" switcher you should use only for new created passwords file. For existing
-passwords file "-c" switcher should not be typed.
-
-NOTE!
-From version 7.2.0 plain text passwords for HTTP Basic authentication are no longer
-supported by Baculum. For more information please see README file (FAQ, point "b").
-
-At the end there is need to give web server user possibility to manage the auth file,
-for example:
-
-# chown www-data:www-data /var/www/baculum/protected/Data/baculum.users
-
-
-5. Example VirtualHost configuration
-
-
-<VirtualHost *:80>
-	DocumentRoot /var/www/baculum
-	ServerName somehost.example.com
-	<Directory /var/www/baculum>
-		AllowOverride All
-		AuthType Basic
-		AuthName MyPrivateFile
-		AuthUserFile /var/www/baculum/protected/Data/baculum.users
-		Require valid-user
-	</Directory>
-</VirtualHost>
-
-
-Above configuration should be written in a new Apache configuration file.
-for example, location for that can be put to /etc/apache2/sites-enabled/baculum.conf.
-
-In this way, configuration file baculum.conf will be loaded automatically during
-Apache server start.
-
-
-6. Useful configuration samples
-
-
-In directory examples/ exists following configuration samples:
- ./examples/selinux/                                 <=== SELinux module example
- ./examples/selinux/baculum.te                       <--- SELinux text module format
- ./examples/selinux/baculum.pp                       <--- SELinux binary module format
- ./examples/deb/                                     <=== samples for some deb-based distributions
- ./examples/deb/baculum.startup                      <--- Baculum SysVinit startup script
- ./examples/deb/baculum.lighttpd.conf                <--- sample Lighttpd config
- ./examples/deb/baculum.users                        <--- sample HTTP Basic auth file (user: admin, pass: admin)
- ./examples/deb/baculum-apache.conf                  <--- sample Apache config
- ./examples/deb-template                             <=== Directory with templates used by Makefile
- ./examples/deb-template/baculum.users               <--- sample HTTP Basic auth file (user: admin, pass: admin)
- ./examples/deb-template/baculum-lighttpd.conf       <--- Lighttpd config template
- ./examples/deb-template/baculum-lighttpd.service    <--- Baculum systemd unit for Lighttpd
- ./examples/deb-template/baculum-apache.conf         <--- Apache config template
- ./examples/rpm-template/                            <=== Directory with templates used by Makefile
- ./examples/rpm-template/baculum-apache.conf         <--- Apache config template
- ./examples/rpm-template/baculum-lighttpd.service    <--- Baculum systemd unit for Lighttpd
- ./examples/rpm-template/baculum.spec                <--- SPEC file
- ./examples/rpm-template/baculum-lighttpd.conf       <--- Lighttpd config template
- ./examples/rpm-template/baculum.users               <--- HTTP Basic auth file used by SPEC (user: admin, pass: admin)
- ./examples/rpm-template/baculum.startup             <--- Baculum SysVinit startup script
- ./examples/sudo/                                    <=== example sudoers.d configurations
- ./examples/sudo/baculum-httpd                       <--- sample sudo for Apache user
- ./examples/sudo/baculum-lighttpd                    <--- sample sudo for Lighttpd user
- ./examples/sudo/baculum-nginx                       <--- sample sudo for Nginx user
- ./examples/rpm/                                     <=== samples for some rpm-based distributions
- ./examples/rpm/baculum-apache.conf                  <--- Apache config file
- ./examples/rpm/baculum-lighttpd.service             <--- Baculum system unit
- ./examples/rpm/baculum.spec                         <--- example SPEC file
- ./examples/rpm/baculum-lighttpd.conf                <--- Lighttpd config file
- ./examples/rpm/baculum.users                        <--- HTTP Basic auth file (user: admin, pass: admin)
- ./examples/rpm/baculum.startup                      <--- Baculum SysVinit startup script
- ./examples/nginx/                                   <=== example Nginx configurations
- ./examples/nginx/php-fpm/baculum-php.conf           <--- example PHP-FPM config for Nginx
- ./examples/nginx/baculum.conf                       <--- sample Nginx config
-
-
-7 Makefile
+3. Makefile
 
 
 Together with Baculum source code is provided Makefile file. The Makefile is dedicated
@@ -283,5 +76,10 @@ the Makefile in deb metafiles or in rpm SPEC file.
 
 Example usage:
 
-# cd baculum/
-# make DESTDIR=/home/abc/baculum_runtime
+$ cd baculum/
+
+# For RPM distributions:
+$ make DESTDIR=/home/abc/baculum_runtime
+
+# For deb distributions:
+$ make DESTDIR=/home/abc/baculum_runtime SAMPLETYPE=deb-template HTTPDNAME=apache2 HTTPDSITECONF=sites-available

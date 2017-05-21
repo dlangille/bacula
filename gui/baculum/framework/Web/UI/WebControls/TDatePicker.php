@@ -3,9 +3,9 @@
  * TDatePicker class file.
  *
  * @author Wei Zhuo <weizhuo[at]gmail[dot]com>
- * @link http://www.pradosoft.com/
- * @copyright Copyright &copy; 2005-2014 PradoSoft
- * @license http://www.pradosoft.com/license/
+ * @link https://github.com/pradosoft/prado
+ * @copyright Copyright &copy; 2005-2016 The PRADO Group
+ * @license https://github.com/pradosoft/prado/blob/master/COPYRIGHT
  * @package System.Web.UI.WebControls
  */
 
@@ -404,14 +404,6 @@ class TDatePicker extends TTextBox
 	public function onPreRender($param)
 	{
 		parent::onPreRender($param);
-		if($this->getInputMode() === TDatePickerInputMode::DropDownList)
-		{
-			$page = $this->getPage();
-			$uniqueID = $this->getUniqueID();
-			$page->registerPostDataLoader($uniqueID.TControl::ID_SEPARATOR.'day');
-			$page->registerPostDataLoader($uniqueID.TControl::ID_SEPARATOR.'month');
-			$page->registerPostDataLoader($uniqueID.TControl::ID_SEPARATOR.'year');
-		}
 		$this->publishCalendarStyle();
 		$this->registerCalendarClientScriptPre();
 	}
@@ -491,10 +483,19 @@ class TDatePicker extends TTextBox
 	{
 		$date = @getdate();
 
-		if(isset($values[$key.'$day']))
+		$pattern = $this->getDateFormat();
+		$pattern = str_replace(array('MMMM', 'MMM'), array('MM','MM'), $pattern);
+		$formatter = Prado::createComponent('System.Util.TSimpleDateFormatter', $pattern);
+
+		$order = $formatter->getDayMonthYearOrdering();
+
+		if(isset($values[$key.'$day'])) {
 			$day = intval($values[$key.'$day']);
-		else
+		} elseif(in_array('day', $order)) {
 			$day = $date['mday'];
+		} else {
+			$day = 1;
+		}
 
 		if(isset($values[$key.'$month']))
 			$month = intval($values[$key.'$month']) + 1;
@@ -510,9 +511,6 @@ class TDatePicker extends TTextBox
 		$date = $s->getTimeStamp(0, 0, 0, $month, $day, $year);
 		//$date = @mktime(0, 0, 0, $month, $day, $year);
 
-		$pattern = $this->getDateFormat();
-		$pattern = str_replace(array('MMMM', 'MMM'), array('MM','MM'), $pattern);
-		$formatter = Prado::createComponent('System.Util.TSimpleDateFormatter', $pattern);
 		return $formatter->format($date);
 	}
 

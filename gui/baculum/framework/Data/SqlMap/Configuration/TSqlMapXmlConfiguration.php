@@ -3,9 +3,9 @@
  * TSqlMapXmlConfigBuilder, TSqlMapXmlConfiguration, TSqlMapXmlMappingConfiguration classes file.
  *
  * @author Wei Zhuo <weizhuo[at]gmail[dot]com>
- * @link http://www.pradosoft.com/
- * @copyright Copyright &copy; 2005-2014 PradoSoft
- * @license http://www.pradosoft.com/license/
+ * @link https://github.com/pradosoft/prado
+ * @copyright Copyright &copy; 2005-2016 The PRADO Group
+ * @license https://github.com/pradosoft/prado/blob/master/COPYRIGHT
  * @package System.Data.SqlMap.Configuration
  */
 
@@ -347,7 +347,7 @@ class TSqlMapXmlMappingConfiguration extends TSqlMapXmlConfigBuilder
 
 		static $bCacheDependencies;
 		if($bCacheDependencies === null)
-			$bCacheDependencies = Prado::getApplication()->getMode() !== TApplicationMode::Performance;
+			$bCacheDependencies = true; //Prado::getApplication()->getMode() !== TApplicationMode::Performance;
 
 		if($bCacheDependencies)
 			$this->_manager->getCacheDependencies()

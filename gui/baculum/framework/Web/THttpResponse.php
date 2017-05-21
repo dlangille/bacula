@@ -3,9 +3,9 @@
  * THttpResponse class
  *
  * @author Qiang Xue <qiang.xue@gmail.com>
- * @link http://www.pradosoft.com/
- * @copyright Copyright &copy; 2005-2014 PradoSoft
- * @license http://www.pradosoft.com/license/
+ * @link https://github.com/pradosoft/prado
+ * @copyright Copyright &copy; 2005-2016 The PRADO Group
+ * @license https://github.com/pradosoft/prado/blob/master/COPYRIGHT
  * @package System.Web
  */
 
@@ -512,10 +512,15 @@ class THttpResponse extends TModule implements ITextWriter
 	 */
 	protected function sendHttpHeader()
 	{
-		if (($version=$this->getRequest()->getHttpProtocolVersion())==='')
-			header (' ', true, $this->_status);
-		else
-			header($version.' '.$this->_status.' '.$this->_reason, true, $this->_status);
+		$protocol=$this->getRequest()->getHttpProtocolVersion();
+		if($this->getRequest()->getHttpProtocolVersion() === null)
+			$protocol='HTTP/1.1';
+
+		$phpSapiName = substr(php_sapi_name(), 0, 3);
+		$cgi = $phpSapiName == 'cgi' || $phpSapiName == 'fpm';
+
+		header(($cgi ? 'Status:' : $protocol).' '.$this->_status.' '.$this->_reason, true, TPropertyValue::ensureInteger($this->_status));
+
 		$this->_httpHeaderSent = true;
 	}
 

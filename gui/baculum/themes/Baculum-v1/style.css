@@ -6,6 +6,12 @@ body {
 	color: white;
 }
 
+body.api {
+	background-image: none;
+	background-color: #444445;
+	color: white;
+}
+
 #message-body {
 	background-color: #832933;
 	background-image: none;
@@ -30,7 +36,7 @@ input[type=checkbox] {
 		width: 16px;
 }
 
-input.textbox, select.textbox {
+input.textbox, select.textbox, textarea.textbox {
 	width: 260px;
 	border: 1px solid black;
 	font-size: 11pt;
@@ -109,7 +115,7 @@ a.big {
 	margin-left: 20px;
 }
 
-#menu-left {
+#workspace-menu-left {
 	position: absolute;
 	width: 74px;
 	height: 600px;
@@ -384,7 +390,7 @@ div.actions_btn {
 	width: 240px;
 	display: table-cell;
 	vertical-align: middle;
-	font-size: 15px;
+	font-size: 14px;
 }
 
 .field {
@@ -397,14 +403,22 @@ div.actions_btn {
 	width: 98%;
 }
 
-.validator, .validate, .validator-block {
+.validator, .validate, .validator-block, .validator-info {
 	color: #e3454b !important;
 	font-size: 10pt;
 	/*margin-left: 5px;*/
 }
 
+.validator-info {
+	color: white !important;
+}
+
 .validator-block {
 	display: block;
+}
+
+.block {
+	display: block !important;
 }
 
 .validate {
@@ -569,7 +583,7 @@ div.slide-window-bar-title {
 	background: transparent url('panel-border-bg.png') repeat-x top left;
 	height: 14px;
 	margin-right: 51px;
-	padding: 0;
+	padding-top: 3px;
 	-webkit-touch-callout: none;
 	-webkit-user-select: none;
 	-khtml-user-select: none;
@@ -811,6 +825,14 @@ div.button-center {
 	margin: 5px 0;
 }
 
+.txt-noshadow {
+	text-shadow: none;
+}
+
+.box-noshadow {
+	box-shadow: none;
+}
+
 input.validation-error {
 	border-color: red !important;
 }
@@ -838,7 +860,11 @@ textarea.console {
 }
 
 .center {
-	text-align: center;
+	text-align: center !important;
+}
+
+.left {
+	text-align: left !important;
 }
 
 .right {
@@ -927,7 +953,7 @@ span.tab_active {
 	background-color: rgb(163, 180, 197);
 }
 
-#graphs, #dashboard, #users {
+#graphs, #dashboard, #config, #users {
 	min-width: 954px;
 	max-width: 100%;
 	padding: 10px;
@@ -935,6 +961,7 @@ span.tab_active {
 	font-size: 11px;
 	background-color: #585758;
 	border-right: 1px solid black;
+	overflow: auto;
 }
 
 #users input {
@@ -945,6 +972,10 @@ span.tab_active {
 
 #graphs span {
 	margin: 0 3px;
+}
+
+#config {
+	padding: 0;
 }
 
 #legend {
@@ -1010,6 +1041,58 @@ span.tab_active {
 	text-decoration: underline;
 }
 
+#config_submenu {
+	min-width: 300px;
+	height: 22px;
+	position: absolute;
+	top: 59px;
+	right: 8px;
+	border-bottom-left-radius: 5px;
+	border-left: 1px solid black;
+	border-bottom: 1px solid black;
+	background-color: rgba(0, 0, 0, 0.7);
+}
+
+#config_submenu span {
+	display: inline-block;
+	margin: 0 5px;
+	padding: 5px 0;
+}
+
+#config_submenu span:nth-of-type(1) {
+	font-weight: bold;
+}
+
+.config_lines {
+	width: 533px;
+	float: left;
+}
+
+#config_fields {
+	width: 732px;
+	margin-left: 8px;
+	padding-top: 7px;
+}
+
+#config_fields div.button {
+	padding-left: 247px;
+}
+
+fieldset.config_field {
+	width: 667px;
+}
+
+fieldset.config_field .line {
+	height: auto;
+	min-height: 35px !important;
+	padding-top: 2px;
+	padding-bottom: 2px;
+}
+
+span.config_test_loader, span.config_test_result {
+	line-height: 75px;
+}
+
 #jobs_summary_graph {
 	width: 380px;
 	height: 380px;
@@ -1070,4 +1153,94 @@ th.weekDayHead {
 	border: 1px solid #919EA9;
 }
 
+label.normal {
+	font-size: 15px;
+}
+
 /* END - Overwrite date picker classes */
+
+/* API server OAuth2 progress bar */
+
+#progress_label {
+	position: absolute;
+	top: 116px;
+	transform: translate(-50%, -50%);
+	font-weight: bold;
+}
+
+#api_command {
+	border-radius: 5px;
+	height: 26px;
+	width: 617px;
+	font-size: 25px;
+	color: #444444;
+	padding: 9px 10px 2px 9px;
+}
+
+#api_output {
+	margin-top: 20px;
+	border-radius: 6px;
+	border: 1px solid white;
+	width: 75%;
+}
+
+#api_result {
+	margin: 0 auto;
+	white-space: pre-wrap;
+	word-wrap: break-word;
+	font-size: 13px;
+}
+
+.api_button, .api_select {
+	font-weight: bold;
+	border: 1px solid #212121;
+	border-radius: 4px;
+	height: 37px;
+	display: inline-block;
+	vertical-align: super;
+}
+
+.api_button {
+	color: #1a1b1d;
+	background-color: #ffeb3b;
+}
+
+.api_button:hover {
+	color: black;
+	background-color: white;
+	cursor: pointer;
+	transition: all 0.3s linear;
+}
+
+#api_refresh {
+	margin-left: 10px;
+	cursor: pointer;
+}
+
+/**
+ * Override jQuery-UI theming.
+ */
+
+.ui-widget-content td a, .ui-widget-content div a {
+	color: white !important;
+	text-decoration: underline;
+}
+
+.ui-tabs .ui-tabs-panel {
+	background-color: #444445;
+	color: white;
+	font-size: 15px;
+}
+
+.tab-grid {
+	border-spacing: 0;
+}
+
+.tab-grid td  {
+	border-top: 1px solid white;
+	padding: 8px;
+}
+
+.error {
+	color: red;
+}

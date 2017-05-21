@@ -5,7 +5,7 @@
  * @author LANDWEHR Computer und Software GmbH <programmierung@landwehr-software.de>
  * @link http://www.landwehr-software.de/
  * @copyright Copyright &copy; 2009 LANDWEHR Computer und Software GmbH
- * @license http://www.pradosoft.com/license/
+ * @license https://github.com/pradosoft/prado/blob/master/COPYRIGHT
  * @package System.Web.UI.ActiveControls
  */
 
@@ -92,9 +92,8 @@ class TActiveMultiView extends TMultiView implements IActiveControl
 	*/
 	public function setActiveViewIndex($value)
 	{
-		$old=parent::getActiveViewIndex();
 		parent::setActiveViewIndex($value);
-		if($this->getActiveControl()->canUpdateClientSide() && $old!=$value)
+		if($this->getActiveControl()->canUpdateClientSide())
 			$this->getPage()->getAdapter()->registerControlToRender($this,$this->getResponse()->createHtmlWriter());
 	}
 
@@ -104,9 +103,8 @@ class TActiveMultiView extends TMultiView implements IActiveControl
 	*/
 	public function setActiveView($value)
 	{
-		$old=parent::getActiveView();
 		parent::setActiveView($value);
-		if($this->getActiveControl()->canUpdateClientSide() && $old!=$value)
+		if($this->getActiveControl()->canUpdateClientSide())
 			$this->getPage()->getAdapter()->registerControlToRender($this,$this->getResponse()->createHtmlWriter());
 	}
 }

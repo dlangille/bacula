@@ -3,9 +3,9 @@
  * TCallbackClientSide class file
  *
  * @author Wei Zhuo <weizhuo[at]gamil[dot]com>
- * @link http://www.pradosoft.com/
- * @copyright Copyright &copy; 2005-2014 PradoSoft
- * @license http://www.pradosoft.com/license/
+ * @link https://github.com/pradosoft/prado
+ * @copyright Copyright &copy; 2005-2016 The PRADO Group
+ * @license https://github.com/pradosoft/prado/blob/master/COPYRIGHT
  * @package System.Web.UI.ActiveControls
  */
 
@@ -38,11 +38,8 @@
  *
  * - <b>PostState</b> true to collect the form inputs and post them during callback, default is true.
  * - <b>RequestTimeOut</b> The request timeout in milliseconds.
- * - <b>HasPriority</b> true to ensure that the callback request will be sent
- *   immediately and will abort existing prioritized requests. It does not affect
- *   callbacks that are not prioritized.
  * - <b>EnablePageStateUpdate</b> enable the callback response to enable the
- *   viewstate update. This will automatically set HasPriority to true when enabled.
+ *   viewstate update.
  *
  * @author Wei Zhuo <weizhuo[at]gamil[dot]com>
  * @package System.Web.UI.ActiveControls
@@ -239,23 +236,23 @@ class TCallbackClientSide extends TClientSideOptions
 	 * @return boolean true if the callback request has priority and will abort
 	 * existing prioritized request in order to send immediately. It does not
 	 * affect callbacks that are not prioritized. Default is true.
+	 * @deprecated since 3.3.0
 	 */
 	public function getHasPriority()
 	{
-		$option =  $this->getOption('HasPriority');
-		return ($option===null) ? true : $option;
+		return true;
 	}
 
 	/**
 	 * @param boolean true to ensure that the callback request will be sent
 	 * immediately and will abort existing prioritized requests. It does not
 	 * affect callbacks that are not prioritized.
+	 * @deprecated since 3.3.0
 	 */
 	public function setHasPriority($value)
 	{
-		$hasPriority = TPropertyValue::ensureBoolean($value);
-		$this->setOption('HasPriority', $hasPriority);
-		if(!$hasPriority)
+		// mimic the old behavior
+		if(!$value)
 			$this->setEnablePageStateUpdate(false);
 	}
 
@@ -269,8 +266,6 @@ class TCallbackClientSide extends TClientSideOptions
 	{
 		$enabled = TPropertyValue::ensureBoolean($value);
 		$this->setOption('EnablePageStateUpdate', $enabled);
-		if($enabled)
-			$this->setHasPriority(true);
 	}
 
 	/**

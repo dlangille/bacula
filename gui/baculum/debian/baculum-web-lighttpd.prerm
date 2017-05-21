@@ -1,0 +1,17 @@
+#!/bin/sh
+
+set -e
+
+if [ "$1" = "remove" ]
+then
+	[ ! -e /usr/share/baculum/htdocs/protected/Web/Config/settings.conf ] ||
+		mv /usr/share/baculum/htdocs/protected/Web/Config/settings.conf \
+		/usr/share/baculum/htdocs/protected/Web/Config/settings.conf.lighttpd
+	# remove debug files if any
+	[ ! -e /usr/share/baculum/htdocs/protected/Web/Config/baculum-web.dbg ] ||
+		rm /usr/share/baculum/htdocs/protected/Web/Config/baculum-web*.dbg
+fi
+
+#DEBHELPER#
+
+exit 0

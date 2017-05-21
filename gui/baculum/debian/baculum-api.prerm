@@ -1,0 +1,10 @@
+#!/bin/sh
+
+set -e
+
+rm usr/share/baculum/htdocs/protected/API/Lang/en/messages.mo
+rm usr/share/baculum/htdocs/protected/API/Lang/pl/messages.mo
+
+#DEBHELPER#
+
+exit 0

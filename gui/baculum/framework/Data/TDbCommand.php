@@ -3,9 +3,9 @@
  * TDbCommand class file
  *
  * @author Qiang Xue <qiang.xue@gmail.com>
- * @link http://www.pradosoft.com/
- * @copyright Copyright &copy; 2005-2014 PradoSoft
- * @license http://www.pradosoft.com/license/
+ * @link https://github.com/pradosoft/prado
+ * @copyright Copyright &copy; 2005-2016 The PRADO Group
+ * @license https://github.com/pradosoft/prado/blob/master/COPYRIGHT
  * @package System.Data
  */
 
@@ -201,8 +201,8 @@ class TDbCommand extends TComponent
 	 */
 	public function getDebugStatementText()
 	{
-		if(Prado::getApplication()->getMode() === TApplicationMode::Debug)
-			return $this->_statement instanceof PDOStatement ?
+		//if(Prado::getApplication()->getMode() === TApplicationMode::Debug)
+		return $this->_statement instanceof PDOStatement ?
 				$this->_statement->queryString
 				: $this->getText();
 	}

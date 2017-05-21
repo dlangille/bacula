@@ -3,7 +3,7 @@
 # usage: make DESTDIR=/some/runtime_dir
 
 NAME = baculum
-VERSION = 7.4.3
+VERSION = 7.5.0
 DEFTEMPLATE = rpm-template
 DEFHTTPDNAME = httpd
 DEFHTTPDSITECONF = conf.d
@@ -18,7 +18,6 @@ HTTPDCONFDIR = $(SYSCONFDIR)/$(HTTPDNAME)/$(HTTPDSITECONF)
 UNITDIR = $(SYSUSRDIR)/lib/systemd/system
 LOCALEDIR = $(SYSUSRDIR)/share/locale
 WWWDIR = $(SYSUSRDIR)/share/$(NAME)/htdocs
-SELINUXDIR = $(SYSUSRDIR)/share/selinux/packages/$(NAME)
 CACHEDIR = $(SYSVARDIR)/cache/$(NAME)
 LOGDIR = $(SYSVARDIR)/log
 HTTPDLOGS = $(LOGDIR)/$(HTTPDNAME)
@@ -26,21 +25,41 @@ LIGHTTPDLOGS = $(LOGDIR)/lighttpd
 
 # Internal application directories
 datadir = protected
+apidir = API
+webdir = Web
+commondir = Common
 frameworkdir = framework
 themesdir = themes
 cachedir = assets
-configdir = Data
+configdir = Config
 configcachedir = $(datadir)/runtime
 samplesdir = examples/$(SAMPLETYPE)
 
-datadirsrc = $(datadir)/Class \
-	$(datadir)/JavaScript \
-	$(datadir)/Layouts \
-	$(datadir)/Pages \
-	$(datadir)/Portlets
+webdatadirsrc = $(datadir)/$(webdir)/Class \
+	$(datadir)/$(webdir)/Config \
+	$(datadir)/$(webdir)/JavaScript \
+	$(datadir)/$(webdir)/Data \
+	$(datadir)/$(webdir)/Layouts \
+	$(datadir)/$(webdir)/Logs \
+	$(datadir)/$(webdir)/Pages \
+	$(datadir)/$(webdir)/Portlets
 
-datafilesrc = $(datadir)/application.xml \
-	$(datadir)/Init.php
+apidatadirsrc = $(datadir)/$(apidir)/Class \
+	$(datadir)/$(apidir)/Config \
+	$(datadir)/$(apidir)/JavaScript \
+	$(datadir)/$(apidir)/Layouts \
+	$(datadir)/$(apidir)/Logs \
+	$(datadir)/$(apidir)/Pages
+
+commondatadirsrc = $(datadir)/$(commondir)/Class \
+	$(datadir)/$(commondir)/Portlets
+
+datafilesrc = $(datadir)/application.xml
+
+webdatafilesrc = $(datadir)/$(webdir)/endpoints.xml \
+	$(datadir)/$(webdir)/Init.php
+
+apidatafilesrc = $(datadir)/$(apidir)/endpoints.xml
 
 miscfilesrc = index.php \
 	AUTHORS \
@@ -49,7 +68,8 @@ miscfilesrc = index.php \
 	README
 
 localelang = en pl pt
-localedirsrc = $(datadir)/Lang
+localewebdirsrc = $(datadir)/$(webdir)/Lang
+localeapidirsrc = $(datadir)/$(apidir)/Lang
 localefile = messages.mo
 
 excluded_dirs = '.*/\(3rdParty\|tinymce-405\).*'
@@ -65,17 +85,25 @@ prepare_build:
 	$(DESTDIR)$(HTTPDCONFDIR) \
 	$(DESTDIR)$(UNITDIR) \
 	$(DESTDIR)$(WWWDIR) \
-	$(DESTDIR)$(SELINUXDIR) \
 	$(DESTDIR)$(CACHEDIR) \
 	$(DESTDIR)$(LOCALEDIR) \
 	$(DESTDIR)$(WWWDIR)/$(cachedir) \
 	$(DESTDIR)$(WWWDIR)/$(configcachedir)
-	mkdir -m 700 -p $(DESTDIR)$(CONFDIR)/$(configdir)-apache \
-	$(DESTDIR)$(CONFDIR)/$(configdir)-lighttpd
+	mkdir -m 700 -p $(DESTDIR)$(CONFDIR)/$(configdir)-api-apache \
+	$(DESTDIR)$(CONFDIR)/$(configdir)-api-lighttpd \
+	$(DESTDIR)$(CONFDIR)/$(configdir)-web-apache \
+	$(DESTDIR)$(CONFDIR)/$(configdir)-web-lighttpd
 
 prepare_data: prepare_build
-	mkdir -p $(DESTDIR)$(WWWDIR)/$(datadir)
-	cp -ra $(datadirsrc) $(DESTDIR)$(WWWDIR)/$(datadir)
+	mkdir -p $(DESTDIR)$(WWWDIR)/$(datadir) \
+	$(DESTDIR)$(WWWDIR)/$(datadir)/$(webdir) \
+	$(DESTDIR)$(WWWDIR)/$(datadir)/$(apidir) \
+	$(DESTDIR)$(WWWDIR)/$(datadir)/$(commondir)
+	cp -ra $(webdatadirsrc) $(DESTDIR)$(WWWDIR)/$(datadir)/$(webdir)
+	cp -a $(webdatafilesrc) $(DESTDIR)$(WWWDIR)/$(datadir)/$(webdir)
+	cp -ra $(apidatadirsrc) $(DESTDIR)$(WWWDIR)/$(datadir)/$(apidir)
+	cp -a $(apidatafilesrc) $(DESTDIR)$(WWWDIR)/$(datadir)/$(apidir)
+	cp -ra $(commondatadirsrc) $(DESTDIR)$(WWWDIR)/$(datadir)/$(commondir)
 	cp -a $(datafilesrc) $(DESTDIR)$(WWWDIR)/$(datadir)
 	cp -a $(miscfilesrc) $(DESTDIR)$(WWWDIR)/
 
@@ -89,21 +117,36 @@ prepare_themes: prepare_build
 prepare_locale: prepare_build
 	for lang in $(localelang) ; do \
 		mkdir -p $(DESTDIR)$(LOCALEDIR)/$$lang/LC_MESSAGES ; \
-		mkdir -p $(DESTDIR)$(WWWDIR)/$(localedirsrc)/$$lang ; \
-		install -m 644 $(localedirsrc)/$$lang/$(localefile) $(DESTDIR)$(LOCALEDIR)/$$lang/LC_MESSAGES/$(NAME).mo ; \
-		ln -s $(LOCALEDIR)/$$lang/LC_MESSAGES/$(NAME).mo $(DESTDIR)$(WWWDIR)/$(localedirsrc)/$$lang/$(localefile) ; \
+		mkdir -p $(DESTDIR)$(WWWDIR)/$(localewebdirsrc)/$$lang ; \
+		install -m 644 $(localewebdirsrc)/$$lang/$(localefile) $(DESTDIR)$(LOCALEDIR)/$$lang/LC_MESSAGES/$(NAME)-web.mo ; \
+		ln -s $(LOCALEDIR)/$$lang/LC_MESSAGES/$(NAME)-web.mo $(DESTDIR)$(WWWDIR)/$(localewebdirsrc)/$$lang/$(localefile) ; \
+	done
+	for lang in $(localelang) ; do \
+		mkdir -p $(DESTDIR)$(LOCALEDIR)/$$lang/LC_MESSAGES ; \
+		mkdir -p $(DESTDIR)$(WWWDIR)/$(localeapidirsrc)/$$lang ; \
+		install -m 644 $(localeapidirsrc)/$$lang/$(localefile) $(DESTDIR)$(LOCALEDIR)/$$lang/LC_MESSAGES/$(NAME)-api.mo ; \
+		ln -s $(LOCALEDIR)/$$lang/LC_MESSAGES/$(NAME)-api.mo $(DESTDIR)$(WWWDIR)/$(localeapidirsrc)/$$lang/$(localefile) ; \
 	done
 
 prepare_samples:
-	install -m 640 $(samplesdir)/$(NAME)-lighttpd.conf $(DESTDIR)$(CONFDIR)
-	install -m 644 $(samplesdir)/$(NAME)-lighttpd.service $(DESTDIR)$(UNITDIR)
-	install -m 640 $(samplesdir)/$(NAME)-apache.conf $(DESTDIR)$(HTTPDCONFDIR)/$(NAME).conf
-	install -m 600 $(samplesdir)/$(NAME).users $(DESTDIR)$(CONFDIR)/$(configdir)-lighttpd
-	install -m 600 $(samplesdir)/$(NAME).users $(DESTDIR)$(CONFDIR)/$(configdir)-apache
+	install -m 640 $(samplesdir)/$(NAME)-api-lighttpd.conf $(DESTDIR)$(CONFDIR)
+	install -m 640 $(samplesdir)/$(NAME)-web-lighttpd.conf $(DESTDIR)$(CONFDIR)
+	install -m 644 $(samplesdir)/$(NAME)-api-lighttpd.service $(DESTDIR)$(UNITDIR)
+	install -m 644 $(samplesdir)/$(NAME)-web-lighttpd.service $(DESTDIR)$(UNITDIR)
+	install -m 640 $(samplesdir)/$(NAME)-api-apache.conf $(DESTDIR)$(HTTPDCONFDIR)/$(NAME)-api.conf
+	install -m 640 $(samplesdir)/$(NAME)-web-apache.conf $(DESTDIR)$(HTTPDCONFDIR)/$(NAME)-web.conf
+	install -m 600 $(samplesdir)/$(NAME).users $(DESTDIR)$(CONFDIR)/$(configdir)-api-lighttpd
+	install -m 600 $(samplesdir)/$(NAME).users $(DESTDIR)$(CONFDIR)/$(configdir)-api-apache
+	install -m 600 $(samplesdir)/$(NAME).users $(DESTDIR)$(CONFDIR)/$(configdir)-web-lighttpd
+	install -m 600 $(samplesdir)/$(NAME).users $(DESTDIR)$(CONFDIR)/$(configdir)-web-apache
 	# Default link apache config file
-	ln -s $(DESTDIR)$(CONFDIR)/$(configdir)-apache $(DESTDIR)$(WWWDIR)/$(datadir)/$(configdir)
+	#ln -s $(DESTDIR)$(CONFDIR)/$(configdir)-api-apache $(DESTDIR)$(WWWDIR)/$(datadir)/$(configdir)
 
 setup: prepare_samples
-	sed -i -e "s#%DOCUMENTROOT#$(WWWDIR)#g" -e "s#%LOGDIR#$(HTTPDLOGS)#g" $(DESTDIR)$(HTTPDCONFDIR)/$(NAME).conf
-	sed -i -e "s#%DOCUMENTROOT#$(WWWDIR)#g" -e "s#%LOGDIR#$(LIGHTTPDLOGS)#g" $(DESTDIR)$(CONFDIR)/$(NAME)-lighttpd.conf
-	sed -i -e "s#%CONFDIR#$(CONFDIR)#g" $(DESTDIR)$(UNITDIR)/$(NAME)-lighttpd.service
+	sed -i -e "s#%DOCUMENTROOT#$(WWWDIR)#g" -e "s#%LOGDIR#$(HTTPDLOGS)#g" $(DESTDIR)$(HTTPDCONFDIR)/$(NAME)-api.conf
+	sed -i -e "s#%DOCUMENTROOT#$(WWWDIR)#g" -e "s#%LOGDIR#$(HTTPDLOGS)#g" $(DESTDIR)$(HTTPDCONFDIR)/$(NAME)-web.conf
+	sed -i -e "s#%DOCUMENTROOT#$(WWWDIR)#g" -e "s#%LOGDIR#$(LIGHTTPDLOGS)#g" $(DESTDIR)$(CONFDIR)/$(NAME)-api-lighttpd.conf
+	sed -i -e "s#%DOCUMENTROOT#$(WWWDIR)#g" -e "s#%LOGDIR#$(LIGHTTPDLOGS)#g" $(DESTDIR)$(CONFDIR)/$(NAME)-web-lighttpd.conf
+	sed -i -e "s#%CONFDIR#$(CONFDIR)#g" $(DESTDIR)$(UNITDIR)/$(NAME)-api-lighttpd.service
+	sed -i -e "s#%CONFDIR#$(CONFDIR)#g" $(DESTDIR)$(UNITDIR)/$(NAME)-web-lighttpd.service
+	find $(DESTDIR)/ -type f -name .gitignore -exec rm -f {} \;

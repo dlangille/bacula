@@ -3,9 +3,9 @@
  * THttpSession class
  *
  * @author Qiang Xue <qiang.xue@gmail.com>
- * @link http://www.pradosoft.com/
- * @copyright Copyright &copy; 2005-2014 PradoSoft
- * @license http://www.pradosoft.com/license/
+ * @link https://github.com/pradosoft/prado
+ * @copyright Copyright &copy; 2005-2016 The PRADO Group
+ * @license https://github.com/pradosoft/prado/blob/master/COPYRIGHT
  * @package System.Web
  */
 
@@ -54,6 +54,14 @@
  * UseCustomStorage}, {@link getAutoStart AutoStart}, {@link getGCProbability
  * GCProbability}, {@link getUseTransparentSessionID UseTransparentSessionID}
  * and {@link getTimeout TimeOut} are configurable properties of THttpSession.
+ *
+ * To avoid the possibility of identity theft through some variants of XSS attacks,
+ * THttpSessionshould always be configured to enforce HttpOnly setting on session cookie.
+ * The HttpOnly setting is disabled by default. To enable it, configure the THttpSession
+ * module as follows,
+ * <code>
+ * <module id="session" class="THttpSession" Cookie.HttpOnly="true" >
+ * </code>
  *
  * @author Qiang Xue <qiang.xue@gmail.com>
  * @package System.Web
@@ -127,7 +135,7 @@ class THttpSession extends TApplicationComponent implements IteratorAggregate,Ar
 			if($this->_customStorage)
 				session_set_save_handler(array($this,'_open'),array($this,'_close'),array($this,'_read'),array($this,'_write'),array($this,'_destroy'),array($this,'_gc'));
 			if($this->_cookie!==null)
-				session_set_cookie_params($this->_cookie->getExpire(),$this->_cookie->getPath(),$this->_cookie->getDomain(),$this->_cookie->getSecure());
+				session_set_cookie_params($this->_cookie->getExpire(),$this->_cookie->getPath(),$this->_cookie->getDomain(),$this->_cookie->getSecure(),$this->_cookie->getHttpOnly());
 			if(ini_get('session.auto_start')!=='1')
 				session_start();
 			$this->_started=true;
@@ -297,8 +305,11 @@ class THttpSession extends TApplicationComponent implements IteratorAggregate,Ar
 		else
 		{
 			$value=TPropertyValue::ensureEnum($value,'THttpSessionCookieMode');
-			if($value===THttpSessionCookieMode::None)
+			if($value===THttpSessionCookieMode::None) 
+      {
 				ini_set('session.use_cookies','0');
+			  ini_set('session.use_only_cookies','0');
+      }
 			else if($value===THttpSessionCookieMode::Allow)
 			{
 				ini_set('session.use_cookies','1');

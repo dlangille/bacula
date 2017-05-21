@@ -1,0 +1,11 @@
+[Unit]
+Description=Baculum WebGUI Bacula Community tool
+After=network.target
+
+[Service]
+PIDFile=/var/run/baculum-web.pid
+ExecStart=/usr/sbin/lighttpd -f /etc/baculum/baculum-web-lighttpd.conf
+
+[Install]
+WantedBy=multi-user.target
+

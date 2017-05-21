@@ -1,0 +1,162 @@
+div.config_hosts, div.config_components, div.config_resources, div.config_directives {
+	min-height: 25px;
+	max-width: 1024px;
+	margin-left: 10px;
+}
+
+div.config_host {
+	border: 1px solid white;
+	border-radius: 5px;
+	padding: 10px;
+	margin: 5px;
+	font-size: 13px;
+}
+
+fieldset.directive {
+	width: 605px;
+}
+
+fieldset.directive .line {
+	min-height: 35px !important;
+}
+
+div.config_directives > span {
+	display: table-cell;
+	width: 640px;
+}
+
+div.config_directives > div {
+	display: table-cell;
+}
+
+div.directive_setting fieldset, fieldset.directive {
+	border-radius: 5px;
+}
+
+div.directive_setting ul {
+	-webkit-padding-start: 16px;
+}
+div.directive_setting li {
+	cursor: pointer;
+	list-style-type: square;
+}
+
+@keyframes pulse {
+	0% {
+		background-color: rgba(0, 0, 0, 0.0);
+	}
+	100% {
+		background-color: rgba(0, 0, 0, 0.5);
+	}
+}
+
+div.config_host:hover {
+	animation-name: pulse;
+	animation-duration: 1s;
+	animation-timing-function: ease-out;
+	animation-delay: 0;
+	animation-direction: normal;
+	animation-iteration-count: 1;
+	animation-fill-mode: forwards;
+	animation-play-state: running;
+	background-color: rgba(0, 0, 0, 0.5);
+}
+
+div.host_selected, div.host_selected:hover {
+	background-color: rgba(0, 0, 0, 0.5);
+	animation: none;
+}
+
+a.action_link {
+	visibility: hidden;
+}
+
+.hide {
+	display: none !important;
+}
+
+a.resource_selected, a.host_selected {
+	visibility: visible;
+	padding: 0 4px;
+}
+
+div.directive_field {
+	width: 600px;
+}
+
+div.directive_setting {
+	width: 340px;
+	display: table-cell;
+}
+
+div.directive_setting fieldset {
+	margin-left: 64px;
+}
+
+input.ftype_textbox, input.ftype_timeperiod, select.ftype_combobox {
+	font-size: 12px;
+}
+
+input.ftype_textbox {
+	min-width: 250px;
+}
+
+input.ftype_timeperiod {
+	width: 161px;
+}
+
+select.ftype_combobox {
+	height: 29px;
+	min-width: 265px;
+}
+
+table.host td:nth-of-type(1) {
+	width: 205px;
+}
+
+table.host td:nth-of-type(2) {
+	width: 335px;
+}
+
+table.host, table.component, table.resource {
+	width: 100% !important;
+	cursor: pointer;
+}
+
+table.component:hover, table.resource:hover {
+	background-color: rgba(255, 255, 255, 0.1);
+}
+
+table.resource td:nth-of-type(1), table.component td:nth-of-type(1) {
+	width: 250px;
+}
+
+div.config_new_resource, div.config_new_fileset, div.config_new_messages, div.config_new_runscript {
+	position: relative;
+	width: 135px;
+	border-radius: 5px;
+	border: 1px solid black;
+	background-color: gray;
+}
+
+img.reset_btn, img.remove_btn {
+	display: none;
+	cursor: pointer;
+}
+
+div.directive_value {
+	width: 358px;
+	line-height: 27px;
+}
+
+div.directive_value input[type="checkbox"] {
+	vertical-align: middle;
+}
+
+div.directive_value:hover img.reset_btn, div.directive_value:hover img.remove_btn {
+	display: inline;
+}
+
+#new_host {
+	padding: 26px;
+}

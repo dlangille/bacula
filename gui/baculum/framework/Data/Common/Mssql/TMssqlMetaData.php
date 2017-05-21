@@ -3,9 +3,9 @@
  * TMssqlMetaData class file.
  *
  * @author Wei Zhuo <weizhuo[at]gmail[dot]com>
- * @link http://www.pradosoft.com/
- * @copyright Copyright &copy; 2005-2014 PradoSoft
- * @license http://www.pradosoft.com/license/
+ * @link https://github.com/pradosoft/prado
+ * @copyright Copyright &copy; 2005-2016 The PRADO Group
+ * @license https://github.com/pradosoft/prado/blob/master/COPYRIGHT
  * @package System.Data.Common.Mssql
  */
 
@@ -23,7 +23,7 @@ Prado::using('System.Data.Common.Mssql.TMssqlTableInfo');
  * @since 3.1
  */
 class TMssqlMetaData extends TDbMetaData
-{    
+{
 	/**
 	 * @return string TDbTableInfo class name.
 	 */
@@ -258,7 +258,7 @@ EOD;
 		}
 		return false;
 	}
-        
+
         /**
 	 * Returns all table names in the database.
 	 * @param string $schema the schema of the tables. Defaults to empty string, meaning the current or default schema.

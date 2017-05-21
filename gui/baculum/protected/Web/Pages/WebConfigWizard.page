@@ -1,0 +1,167 @@
+<%@ MasterClass="Application.Web.Layouts.Wizard" Theme="Baculum-v1"%>
+<com:TContent ID="Wizard">
+	<com:TWizard ID="InstallWizard"
+		CssClass="wizard"
+		StepStyle.CssClass="steps"
+		HeaderStyle.CssClass="header"
+		NavigationStyle.CssClass="navigation"
+		UseDefaultLayout="false"
+		ShowSideBar="false"
+		OnCancelButtonClick="wizardStop"
+		OnCompleteButtonClick="wizardCompleted"
+		>
+		<prop:HeaderTemplate>
+			<div class="steps-bar">
+				<div class="step step-<%=($this->Parent->ActiveStepIndex === 0) ? 'first-active' : (($this->Parent->ActiveStepIndex === 1) ? 'first-next-active' : 'first')%>">
+					<div><com:TTranslate Text="Language" /></div>
+				</div>
+				<div class="step step-<%=($this->Parent->ActiveStepIndex === 1) ? 'active' : (($this->Parent->ActiveStepIndex === 2) ? 'prev-active' : 'normal')%>">
+					<div><com:TTranslate Text="Add APIs" /></div>
+				</div>
+				<div class="step step-<%=($this->Parent->ActiveStepIndex === 2) ? 'active' : (($this->Parent->ActiveStepIndex === 3) ? 'prev-active' : 'normal')%>">
+					<div><com:TTranslate Text="Authentication" /></div>
+				</div>
+				<div class="step step-<%=($this->Parent->ActiveStepIndex === 3) ? 'active' : (($this->Parent->ActiveStepIndex === 4) ? 'prev-active' : 'normal')%>">
+					<div><com:TTranslate Text="Finish" /></div>
+				</div>
+				<div id="title"><%=$this->Parent->ActiveStep->Title%><div>
+			</div>
+		</prop:HeaderTemplate>
+		<prop:StartNavigationTemplate>
+				<com:TPanel CssClass="button-cancel" Visible="<%=$this->getPage()->first_run === false%>"><com:BButton CommandName="Cancel" Text="<%[ Cancel ]%>" /></com:TPanel>
+				<div <%=$this->getPage()->first_run === false ? 'class="button-prev-next"' : ''%>><com:BButton CommandName="NextStep" Text="<%[ Next &raquo; ]%>" /></div>
+		</prop:StartNavigationTemplate>
+
+		<prop:StepNavigationTemplate>
+			<com:TPanel CssClass="button-cancel" Visible="<%=$this->getPage()->first_run === false%>"><com:BButton CommandName="Cancel" Text="<%[ Cancel ]%>" /></com:TPanel>
+			<div <%=$this->getPage()->first_run === false ? 'class="button-prev-next"' : ''%>>
+				<com:BButton CausesValidation="False" CssClass="bbutton" CommandName="PreviousStep" Text="<%[ &laquo; Previous ]%>" />
+				<com:BButton ID="NextButton" CommandName="NextStep" Text="<%[ Next &raquo; ]%>" />
+			</div>
+		</prop:StepNavigationTemplate>
+		 
+		<prop:FinishNavigationTemplate>
+			<com:TPanel CssClass="button-cancel" Visible="<%=$this->getPage()->first_run === false%>"><com:BButton CommandName="Cancel" Text="<%[ Cancel ]%>" /></com:TPanel>
+			<div <%=$this->getPage()->first_run === false ? 'class="button-prev-next"' : ''%>>
+				<com:BButton CausesValidation="False" CssClass="bbutton" CommandName="PreviousStep" Text="<%[ &laquo; Previous ]%>" />
+				<com:BButton CommandName="Complete" Text="<%[ Save ]%>" />
+			</div>
+		</prop:FinishNavigationTemplate>
+		<com:TWizardStep ID="Step1" Title="<%[ Step 1 - select language ]%>" StepType="Auto">
+			<div class="line">
+				<div class="text"><com:TLabel ForControl="Lang" Text="<%[ Language: ]%>" /></div>
+				<div class="field">
+					<com:TActiveDropDownList ID="Lang" CssClass="textbox" Width="150px" OnTextChanged="setLang" CausesValidation="false" ClientSide.OnComplete="location.reload();">
+						<com:TListItem Value="en" Text="<%[ English ]%>" />
+						<com:TListItem Value="pl" Text="<%[ Polish ]%>" />
+						<com:TListItem Value="pt" Text="<%[ Portuguese ]%>" />
+						<com:TListItem Value="ja" Text="<%[ Japanese ]%>" />
+					</com:TActiveDropDownList>
+					<com:TCompareValidator CssClass="validator-block" Display="Dynamic" ControlToValidate="Lang" DataType="String" ValueToCompare="none" Operator="NotEqual" Text="<%[ Please select language. ]%>" />
+				</div>
+			</div>
+		</com:TWizardStep>
+		<com:TWizardStep ID="Step2" Title="<%[ Step 2 - add API instances ]%>" StepType="Auto">
+			<p><%[ Baculum web interface requires to add at least one Baculum API instance with shared Catalog access. Please add API instance. ]%></p>
+			<com:Application.Common.Portlets.NewHost
+				ID="AddNewHost"
+				ForceHostName="Main"
+				ShowButtons="false"
+				APIRequired="catalog"
+				ClientMode="true"
+			/>
+			<script type="text/javascript">document.getElementById('new_host').style.display = 'block';</script>
+		</com:TWizardStep>
+		<com:TWizardStep ID="Step3" Title="<%[ Step 3 - authentication params to Baculum Web panel ]%>" StepType="Auto">
+			<div class="line">
+				<div class="text"><com:TLabel ForControl="WebLogin" Text="<%[ Administration login: ]%>" /></div>
+				<div class="field">
+					<com:TTextBox ID="WebLogin" CssClass="textbox" CausesValidation="false" />
+					<com:TRequiredFieldValidator CssClass="validator-block" Display="Dynamic" ControlCssClass="invalidate" ControlToValidate="WebLogin" Text="<%[ Please enter login. ]%>" />
+					<com:TRegularExpressionValidator CssClass="validator-block" Display="Dynamic" ControlCssClass="invalidate" ControlToValidate="WebLogin" RegularExpression="<%=BasicWebUserConfig::USER_PATTERN%>" Text="<%[ Invalid login value. Login may contain a-z A-Z 0-9 characters. ]%>" />
+				</div>
+			</div>
+			<div class="line">
+				<div class="text"><com:TLabel ForControl="WebPassword" Text="<%[ Administration password: ]%>" /></div>
+				<div class="field">
+					<com:TTextBox ID="WebPassword" CssClass="textbox" TextMode="Password" MaxLength="30" PersistPassword="true" />
+					<com:TRequiredFieldValidator CssClass="validator-block" Display="Dynamic" ControlCssClass="invalidate" ControlToValidate="WebPassword" Text="<%[ Please enter password. ]%>"/>
+					<com:TRegularExpressionValidator CssClass="validator-block" Display="Dynamic" ControlCssClass="invalidate" ControlToValidate="WebPassword" RegularExpression="[\S\s]{5,30}" Text="<%[ Password must be longer than 4 chars. ]%>" />
+				</div>
+			</div>
+			<div class="line">
+				<div class="text"><com:TLabel ForControl="RetypeWebPassword" Text="<%[ Retype administration password: ]%>" /></div>
+				<div class="field">
+					<com:TTextBox ID="RetypeWebPassword" CssClass="textbox" TextMode="Password" MaxLength="30" PersistPassword="true" />
+					<com:TRequiredFieldValidator ID="RetypeWebPasswordRequireValidator" CssClass="validator-block" Display="Dynamic" ControlCssClass="invalidate" ControlToValidate="RetypeWebPassword" Text="<%[ Please enter retype password. ]%>"/>
+					<com:TRegularExpressionValidator ID="RetypeWebPasswordRegexpValidator" CssClass="validator-block" Display="Dynamic" ControlCssClass="invalidate" ControlToValidate="RetypeWebPassword" RegularExpression="[\S\s]{5,30}" Text="<%[ Password must be longer than 4 chars. ]%>" />
+					<com:TCustomValidator ID="RetypeWebPasswordCustomValidator" CssClass="validator-block" Display="Dynamic" ControlCssClass="invalidate" ControlToValidate="RetypeWebPassword" OnServerValidate="validateAdministratorPassword" Text="<%[ Passwords must be the same. ]%>" />
+				</div>
+			</div>
+		</com:TWizardStep>
+		<com:TWizardStep ID="Step4" Title="<%[ Step 4 - Finish ]%>" StepType="Finish">
+			<fieldset>
+				<legend><%[ Authorization to Baculum API ]%></legend>
+				<div class="line">
+					<div class="text"><%[ Protocol: ]%></div>
+					<div class="field bold"><%=$this->AddNewHost->APIProtocol->SelectedValue%></div>
+				</div>
+				<div class="line">
+					<div class="text"><%[ IP Address/Hostname: ]%></div>
+					<div class="field bold"><%=$this->AddNewHost->APIAddress->Text%></div>
+				</div>
+				<div style="display: <%=$this->AddNewHost->AuthBasic->Checked ? 'block' : 'none'%>">
+					<div class="line">
+						<div class="text"><%[ Auth Type: ]%></div>
+						<div class="field bold">HTTP Basic</div>
+					</div>
+					<div class="line">
+						<div class="text"><%[ Port: ]%></div>
+						<div class="field bold"><%=$this->AddNewHost->APIPort->Text%></div>
+					</div>
+					<div class="line">
+						<div class="text"><%[ API Login: ]%></div>
+						<div class="field bold"><%=$this->AddNewHost->APIBasicLogin->Text%></div>
+					</div>
+					<div class="line">
+						<div class="text"><%[ API Password: ]%></div>
+						<div class="field bold"><%=preg_replace('/.{1}/', '*', $this->AddNewHost->APIBasicPassword->Text)%></div>
+					</div>
+				</div>
+				<div style="display: <%=$this->AddNewHost->AuthOAuth2->Checked ? 'block' : 'none'%>">
+					<div class="line">
+						<div class="text"><%[ Auth Type: ]%></div>
+						<div class="field bold">OAuth2</div>
+					</div>
+					<div class="line">
+						<div class="text"><%[ OAuth2 Client ID: ]%></div>
+						<div class="field bold"><%=$this->AddNewHost->APIOAuth2ClientId->Text%></div>
+					</div>
+					<div class="line">
+						<div class="text"><%[ OAuth2 Client Secret: ]%></div>
+						<div class="field bold"><%=preg_replace('/.{1}/', '*', $this->AddNewHost->APIOAuth2ClientSecret->Text)%></div>
+					</div>
+					<div class="line">
+						<div class="text"><%[ OAuth2 Redirect URI: ]%></div>
+						<div class="field bold"><%=$this->AddNewHost->APIOAuth2RedirectURI->Text%></div>
+					</div>
+					<div class="line">
+						<div class="text"><%[ OAuth2 Scope: ]%></div>
+						<div class="field bold"><%=$this->AddNewHost->APIOAuth2Scope->Text%></div>
+					</div>
+				</div>
+			</fieldset>
+			<fieldset>
+				<legend><%[ Authorization to Baculum Web ]%></legend>
+				<div class="line">
+					<div class="text"><%[ Administration login: ]%></div>
+					<div class="field bold"><%=$this->WebLogin->Text%></div>
+				</div>
+				<div class="line">
+					<div class="text"><%[ Administration password: ]%></div>
+					<div class="field bold"><%=preg_replace('/.{1}/', '*', $this->WebPassword->Text)%></div>
+				</div>
+			</fieldset>
+		</com:TWizardStep>
+	</com:TWizard>
+</com:TContent>

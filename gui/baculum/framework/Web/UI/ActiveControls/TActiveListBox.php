@@ -3,9 +3,9 @@
  * TActiveListBox class file.
  *
  * @author Wei Zhuo <weizhuo[at]gamil[dot]com>
- * @link http://www.pradosoft.com/
- * @copyright Copyright &copy; 2005-2014 PradoSoft
- * @license http://www.pradosoft.com/license/
+ * @link https://github.com/pradosoft/prado
+ * @copyright Copyright &copy; 2005-2016 The PRADO Group
+ * @license https://github.com/pradosoft/prado/blob/master/COPYRIGHT
  * @package System.Web.UI.ActiveControls
  */
 
@@ -85,6 +85,9 @@ class TActiveListBox extends TListBox implements IActiveControl, ICallbackEventH
 	 */
 	public function setSelectionMode($value)
 	{
+		if(parent::getSelectionMode() === $value)
+			return;
+
 		parent::setSelectionMode($value);
 		$multiple = $this->getIsMultiSelect();
 		$id = $this->getUniqueID(); $multi_id = $id.'[]';
@@ -93,8 +96,6 @@ class TActiveListBox extends TListBox implements IActiveControl, ICallbackEventH
 			$client = $this->getPage()->getCallbackClient();
 			$client->setAttribute($this, 'multiple', $multiple ? 'multiple' : false);
 			$client->setAttribute($this, 'name', $multiple ? $multi_id : $id);
-			if($multiple)
-				$client->addPostDataLoader($multi_id);
 		}
 	}
 
@@ -128,10 +129,6 @@ class TActiveListBox extends TListBox implements IActiveControl, ICallbackEventH
 	{
 		parent::onPreRender($param);
 		$this->getAdapter()->updateListItems();
-		$multiple = $this->getIsMultiSelect();
-		$id = $this->getUniqueID(); $multi_id = $id.'[]';
-		if($multiple)
-			$this->getPage()->registerPostDataLoader($multi_id);
 	}
 
 	/**

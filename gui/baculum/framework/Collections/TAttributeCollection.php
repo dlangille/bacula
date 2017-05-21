@@ -3,9 +3,9 @@
  * TAttributeCollection classes
  *
  * @author Qiang Xue <qiang.xue@gmail.com>
- * @link http://www.pradosoft.com/
- * @copyright Copyright &copy; 2005-2014 PradoSoft
- * @license http://www.pradosoft.com/license/
+ * @link https://github.com/pradosoft/prado
+ * @copyright Copyright &copy; 2005-2016 The PRADO Group
+ * @license https://github.com/pradosoft/prado/blob/master/COPYRIGHT
  * @package System.Collections
  */
 
@@ -43,6 +43,19 @@ Prado::using('System.Collections.TMap');
 class TAttributeCollection extends TMap
 {
 	private $_caseSensitive=false;
+
+	/**
+	 * Returns an array with the names of all variables of this object that should NOT be serialized
+	 * because their value is the default one or useless to be cached for the next page loads.
+	 * Reimplement in derived classes to add new variables, but remember to  also to call the parent
+	 * implementation first.
+	 */
+	protected function _getZappableSleepProps(&$exprops)
+	{
+		parent::_getZappableSleepProps($exprops);
+		if ($this->_caseSensitive===false)
+			$exprops[] = "\0TAttributeCollection\0_caseSensitive";
+	}
 
 	/**
 	 * Returns a property value or an event handler list by property or event name.

@@ -1,2 +1,0 @@
-Defaults:nginx !requiretty
-nginx  ALL= NOPASSWD:  /usr/sbin/bconsole

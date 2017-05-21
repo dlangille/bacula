@@ -1,0 +1,42 @@
+<configuration>
+	<paths>
+		<using namespace="System.I18N.*" />
+		<using namespace="Application.API.Class.BaculumAPIServer" />
+	</paths>
+	<modules>
+		<!-- API auth modules (@TODO: change auth method for API to more secure) -->
+		<module id="api_users" class="Application.Common.Class.BaculumUsersManager" />
+		<module id="api_auth" class="System.Security.TAuthManager" UserManager="api_users" AllowAutoLogin="true" AuthExpire="864000" />
+		<!-- database modules -->
+		<module id="db" class="Application.API.Class.Database" />
+		<module id="client" class="Application.API.Class.ClientManager" />
+		<module id="fileset" class="Application.API.Class.FileSetManager" />
+		<module id="job" class="Application.API.Class.JobManager" />
+		<module id="joblog" class="Application.API.Class.LogManager" />
+		<module id="pool" class="Application.API.Class.PoolManager" />
+		<module id="storage" class="Application.API.Class.StorageManager" />
+		<module id="version" class="Application.API.Class.VersionManager" />
+		<module id="volume" class="Application.API.Class.VolumeManager" />
+		<!-- tools modules -->
+		<module id="bconsole" class="Application.API.Class.Bconsole" />
+		<module id="json_tools" class="Application.API.Class.JSONTools" />
+		<!-- config modules -->
+		<module id="api_config" class="Application.API.Class.APIConfig" />
+		<module id="bacula_config" class="Application.API.Class.BaculaConfig" />
+		<module id="bacula_setting" class="Application.API.Class.BaculaSetting" />
+		<!-- internalization modules -->
+		<module id="globalization" class="TGlobalization">
+			<translation type="gettext" source="Application.API.Lang" marker="@@" autosave="false" cache="false" DefaultCulture="en" />
+		</module>
+		<!-- logging modules -->
+		<module id="log" class="System.Util.TLogRouter">
+			<route class="TFileLogRoute"  Categories="Execute, External, Application, General, Security" LogPath="Application.API.Logs" LogFile="baculum-api.log" MaxFileSize="1000" MaxLogFiles="5" />
+		</module>
+		<!-- auth modules -->
+		<module id="basic_apiuser" class="Application.API.Class.BasicAPIUserConfig" />
+		<module id="oauth2" class="Application.API.Class.OAuth2.BaculumOAuth2" />
+		<module id="oauth2_config" class="Application.API.Class.OAuth2.OAuth2Config" />
+		<module id="oauth2_authid" class="Application.API.Class.OAuth2.AuthIdManager" />
+		<module id="oauth2_token" class="Application.API.Class.OAuth2.TokenManager" />
+	</modules>
+</configuration>

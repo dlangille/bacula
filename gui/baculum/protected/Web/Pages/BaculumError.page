@@ -1,0 +1,14 @@
+<%@ MasterClass="Application.Web.Layouts.MessageBox" Theme="Baculum-v1"%>
+<com:TContent ID="Message">
+ <div id="message-box">
+	<h2><%[ Baculum problem ]%></h2>
+	<com:TPanel Visible="<%=$this->error != 2 && $this->error != 4 && $this->error != 6%>">
+		<h3>Error <%=$this->error%> - <%=$this->output%></h3>
+		<hr />
+	</com:TPanel>
+	<p class="center">
+		<a href="<%=$this->Service->constructUrl('WebHome')%>"><%[ TRY AGAIN ]%></a> <%[ or run ]%>
+		<a href="<%=$this->Service->constructUrl('WebConfigWizard')%>"><%[ Baculum Initial Wizard ]%></a>
+	</p>
+ </div>
+</com:TContent>

@@ -12,6 +12,6 @@
 PACKAGE_NAME = baculum
 
 %:
-	dh $@ 
+	dh $@ --with=systemd
 override_dh_auto_build:
 	make DESTDIR=build SAMPLETYPE=deb-template HTTPDNAME=apache2 HTTPDSITECONF=sites-available

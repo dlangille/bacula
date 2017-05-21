@@ -1,0 +1,9 @@
+#!/bin/sh
+
+set -e
+
+rm /usr/share/baculum/htdocs/protected/Web/JavaScript/excanvas.js
+
+#DEBHELPER#
+
+exit 0

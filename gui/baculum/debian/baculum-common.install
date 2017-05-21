@@ -1,0 +1,7 @@
+build/usr/share/baculum/htdocs/AUTHORS                    /usr/share/baculum/htdocs/
+build/usr/share/baculum/htdocs/INSTALL                    /usr/share/baculum/htdocs/
+build/usr/share/baculum/htdocs/framework                  /usr/share/baculum/htdocs/
+build/usr/share/baculum/htdocs/index.php                  /usr/share/baculum/htdocs/
+build/usr/share/baculum/htdocs/protected/application.xml  /usr/share/baculum/htdocs/protected/
+build/usr/share/baculum/htdocs/protected/Common           /usr/share/baculum/htdocs/protected/
+build/usr/share/baculum/htdocs/themes                     /usr/share/baculum/htdocs/

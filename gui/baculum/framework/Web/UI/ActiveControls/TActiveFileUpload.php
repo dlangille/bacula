@@ -36,6 +36,8 @@ Prado::using('System.Web.UI.WebControls.TFileUpload');
  * a status icon is displayed; either a green checkmark if the upload is successful,
  * or a red x if there was an error.
  *
+ * TActiveFileUpload needs either an application level cache or a security manager to work securely.
+ *
  * @author Bradley Booms <Bradley.Booms@nsighttel.com>
  * @author Christophe Boulain <Christophe.Boulain@gmail.com>
  * @package System.Web.UI.ActiveControls
@@ -101,13 +103,11 @@ class TActiveFileUpload extends TFileUpload implements IActiveControl, ICallback
 			// save the file so that it will persist past the end of this return.
 			$localName = str_replace('\\', '/', tempnam(Prado::getPathOfNamespace($this->getTempPath()),''));
 			parent::saveAs($localName);
-
-			$filename=addslashes($this->getFileName());
-
+			$this->_localName = $localName;
 
 			$params = new TActiveFileUploadCallbackParams;
 			$params->localName = $localName;
-			$params->fileName = $filename;
+			$params->fileName = addslashes($this->getFileName());
 			$params->fileSize = $this->getFileSize();
 			$params->fileType = $this->getFileType();
 			$params->errorCode = $this->getErrorCode();
@@ -198,7 +198,7 @@ EOS;
 
 			$params = $this->popParamsByToken($cp->callbackToken);
 
-			$_FILES[$key]['name'] = $params->fileName;
+			$_FILES[$key]['name'] = stripslashes($params->fileName);
 			$_FILES[$key]['size'] = intval($params->fileSize);
 			$_FILES[$key]['type'] = $params->fileType;
 			$_FILES[$key]['error'] = intval($params->errorCode);

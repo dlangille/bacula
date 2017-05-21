@@ -1,17 +1,16 @@
 %global langs en pl
 %global destdir build
+%global metaname baculum
 
-Summary:	WebGUI tool for Bacula Community program
+Summary:	API layer to Baculum WebGUI tool for Bacula Community program
 Name:		baculum
-Version:	7.2.0
-Release:	0%{?dist}
+Version:	9.0.0
+Release:	1%{?dist}
 License:	AGPLv3
 Group:		Applications/Internet
 URL:		http://bacula.org/
-Source0:	bacula-gui-7.2.0.tar.gz
+Source0:	bacula-gui-9.0.0.tar.gz
 BuildRequires:	systemd-units
-BuildRequires:	selinux-policy
-BuildRequires:	selinux-policy-devel
 BuildRequires:	checkpolicy
 Requires:	bacula-console
 # Lower version of PHP ( < 5.3.4) does not provide php-mysqlnd db driver
@@ -29,24 +28,54 @@ BuildArch:	noarch
 %description
 The Baculum program allows the user to administer and manage Bacula jobs.
 By using Baculum it is possible to execute backup/restore operations, monitor
-current Bacula jobs, media management and others. Baculum has integrated web
-console that communicates with Bacula bconsole program.
+current Bacula jobs, configure Bacula, media management and others. Baculum has
+integrated web console that communicates with Bacula bconsole program.
 
-%package selinux
-Summary:		SELinux module for Baculum WebGUI tool
-Requires:		%name = %version-%release
+%package common
+Summary:		Common libraries for Baculum
 Group:			Applications/Internet
-Requires(post):		policycoreutils-python
-Requires(preun):	policycoreutils-python
 
-%description selinux
-This package provides an SELinux module for Baculum WebGUI tool.
-You should install this package if you are using SELinux, that Baculum
-can be run in enforcing mode.
+%description common
+This package provides the common libraries for Baculum.
+This module is a part of Baculum.
 
-%package httpd
-Summary:		Apache configuration for Baculum WebGUI tool
-Requires:		%name = %version-%release
+%package api
+Summary:		Baculum API files
+Requires:		%name-common = %version-%release
+Group:			Applications/Internet
+Requires:		bacula-console
+# Lower version of PHP ( < 5.3.4) does not provide php-mysqlnd db driver
+# and from this reason the lowest is 5.3.4
+Requires:		php >= 5.3.4
+Requires:		php-bcmath
+Requires:		php-common
+Requires:		php-mysqlnd
+Requires:		php-pdo
+Requires:		php-pgsql
+Requires:		php-xml
+
+%description api
+This package provides the API files for Baculum.
+This module is a part of Baculum.
+
+%package web
+Summary:		Baculum API files
+Requires:		%name-common = %version-%release
+Group:			Applications/Internet
+# Lower version of PHP ( < 5.3.4) does not provide php-mysqlnd db driver
+# and from this reason the lowest is 5.3.4
+Requires:		php >= 5.3.4
+Requires:		php-common
+Requires:		php-mbstring
+Requires:		php-xml
+
+%description web
+This package provides the Web files for Baculum.
+This module is a part of Baculum.
+
+%package api-httpd
+Summary:		Apache configuration for Baculum API
+Requires:		%name-api = %version-%release
 Group:			Applications/Internet
 Requires:		httpd
 # This conflict field is required because Lighttpd and Apache
@@ -54,15 +83,15 @@ Requires:		httpd
 # ports cause problems like shared framework cache and
 # web server specific directories permissions (for lighttpd and apache
 # users).
-Conflicts:		%{name}-lighttpd
+Conflicts:		%{name}-api-lighttpd, %{name}-web-lighttpd
 
-%description httpd
-This package provides the Apache configuration for Baculum WebGUI tool.
-By using this module it is possible to run Baculum in Apache environment.
+%description api-httpd
+This package provides the Apache configuration for Baculum API.
+By using this module it is possible to run Baculum API in Apache environment.
 
-%package lighttpd
-Summary:		Lighttpd configuration for Baculum WebGUI tool
-Requires:		%name = %version-%release
+%package api-lighttpd
+Summary:		Lighttpd configuration for Baculum API
+Requires:		%name-api = %version-%release
 Group:			Applications/Internet
 Requires:		lighttpd
 Requires:		lighttpd-fastcgi
@@ -71,11 +100,44 @@ Requires:		lighttpd-fastcgi
 # ports cause problems like shared framework cache and
 # web server specific directories permissions (for lighttpd and apache
 # users).
-Conflicts:		%{name}-httpd
+Conflicts:		%{name}-api-httpd, %{name}-web-httpd
 
-%description lighttpd
-This package provides the Lighttpd configuration for Baculum WebGUI tool.
-By using this module it is possible to run Baculum in Lighttpd environment.
+%description api-lighttpd
+This package provides the Lighttpd configuration for Baculum API.
+By using this module it is possible to run Baculum API in Lighttpd environment.
+
+%package web-httpd
+Summary:		Apache configuration for Baculum WebGUI
+Requires:		%name-web = %version-%release
+Group:			Applications/Internet
+Requires:		httpd
+# This conflict field is required because Lighttpd and Apache
+# cannot listen on the same port at the same time. Even using diffeernt
+# ports cause problems like shared framework cache and
+# web server specific directories permissions (for lighttpd and apache
+# users).
+Conflicts:		%{name}-web-lighttpd, %{name}-api-lighttpd
+
+%description web-httpd
+This package provides the Apache configuration for Baculum WebGUI.
+By using this module it is possible to run Baculum WebGUI in Apache environment.
+
+%package web-lighttpd
+Summary:		Lighttpd configuration for Baculum WebGUI
+Requires:		%name-web = %version-%release
+Group:			Applications/Internet
+Requires:		lighttpd
+Requires:		lighttpd-fastcgi
+# This conflict field is required because Lighttpd and Apache
+# cannot listen on the same port at the same time. Even using diffeernt
+# ports cause problems like shared framework cache and
+# web server specific directories permissions (for lighttpd and apache
+# users).
+Conflicts:		%{name}-web-httpd, %{name}-api-httpd
+
+%description web-lighttpd
+This package provides the Lighttpd configuration for Baculum WebGUI.
+By using this module it is possible to run Baculum WebGUI in Lighttpd environment.
 
 %prep
 %setup -n bacula-gui-%version/baculum
@@ -83,168 +145,231 @@ By using this module it is possible to run Baculum in Lighttpd environment.
 %build
 # Execute files preparation in build directory by Makefile
 make build DESTDIR=%{destdir}
-# Compilation SELinuxu policies before loading them
-make -C examples/selinux/ -f %{_datadir}/selinux/devel/Makefile %{name}.pp
 # Remove these cache directories, because here will be symbolic links
-rmdir %{destdir}/%{_datadir}/%{name}/htdocs/assets
-rmdir %{destdir}/%{_datadir}/%{name}/htdocs/protected/runtime
+rmdir %{destdir}/%{_datadir}/%{metaname}/htdocs/assets
+rmdir %{destdir}/%{_datadir}/%{metaname}/htdocs/protected/runtime
 for lang in  %{langs}; do
-	rm %{destdir}/%{_datadir}/%{name}/htdocs/protected/Lang/${lang}/messages.mo
+	rm %{destdir}/%{_datadir}/%{metaname}/htdocs/protected/API/Lang/${lang}/messages.mo
+	rm %{destdir}/%{_datadir}/%{metaname}/htdocs/protected/Web/Lang/${lang}/messages.mo
 done
 
 %install
 cp -ra build/. %{buildroot}
-%find_lang %{name} --all-name
-install -m 644 examples/selinux/%{name}.pp %{buildroot}%{_datadir}/selinux/packages/%{name}/
+%find_lang %{metaname} --all-name
 
-%post
+%post common
 # these symbolic links indicates to Baculum's cache directory
-ln -s  %{_localstatedir}/cache/%{name} %{_datadir}/%{name}/htdocs/assets
-ln -s  %{_localstatedir}/cache/%{name} %{_datadir}/%{name}/htdocs/protected/runtime
+ln -s  %{_localstatedir}/cache/%{metaname} %{_datadir}/%{metaname}/htdocs/assets
+ln -s  %{_localstatedir}/cache/%{metaname} %{_datadir}/%{metaname}/htdocs/protected/runtime
+
+%post api
 # because framework does not use system locale dir, here are linked
 # locale files to framework location
 for lang in  %{langs}; do
-	ln -s  %{_datadir}/locale/${lang}/LC_MESSAGES/%{name}.mo \
-		%{_datadir}/%{name}/htdocs/protected/Lang/${lang}/messages.mo
+	ln -s  %{_datadir}/locale/${lang}/LC_MESSAGES/%{metaname}-api.mo \
+		%{_datadir}/%{metaname}/htdocs/protected/API/Lang/${lang}/messages.mo
 done
 
-%post selinux
-if [ $1 -le 1 ] ; then
-	# Write access is possible for web servers user only to two directories
-	# -  Data/ directory stores settings and web server HTTP Basic credentials
-	# - /var/cache/baculum - cache used by framework in specific locations (assets/ and protected/runtime/)
-	#   by symbolic links to cache directory
-	semanage fcontext -a -t httpd_sys_rw_content_t '%{_datadir}/%{name}/htdocs/protected/Data(/.*)?' 2>/dev/null || :
-	restorecon -i -R '%{_datadir}/%{name}/htdocs/protected/Data' || :
-	semanage fcontext -a -t httpd_cache_t '%{_localstatedir}/cache/%{name}(/.*)?' 2>/dev/null || :
-	restorecon -i -R %{_localstatedir}/cache/%{name} || :
-	semodule -i %{_datadir}/selinux/packages/%{name}/%{name}.pp 2>/dev/null || :
-fi
-
-%post httpd
-%systemd_post httpd.service
-ln -s  %{_sysconfdir}/%{name}/Data-apache %{_datadir}/%{name}/htdocs/protected/Data
-
-%post lighttpd
-%systemd_post baculum-lighttpd.service
-ln -s  %{_sysconfdir}/%{name}/Data-lighttpd %{_datadir}/%{name}/htdocs/protected/Data
-
-%preun
+%post web
+# because framework does not use system locale dir, here are linked
+# locale files to framework location
 for lang in  %{langs}; do
-	rm %{_datadir}/%{name}/htdocs/protected/Lang/${lang}/messages.mo
+	ln -s  %{_datadir}/locale/${lang}/LC_MESSAGES/%{metaname}-web.mo \
+		%{_datadir}/%{metaname}/htdocs/protected/Web/Lang/${lang}/messages.mo
 done
-rm %{_datadir}/%{name}/htdocs/assets
-rm %{_datadir}/%{name}/htdocs/protected/runtime
 
+%post api-httpd
+%systemd_post httpd.service
+ln -s  %{_sysconfdir}/%{metaname}/Config-api-apache %{_datadir}/%{metaname}/htdocs/protected/API/Config
 
-%preun httpd
+%post api-lighttpd
+%systemd_post baculum-api-lighttpd.service
+ln -s  %{_sysconfdir}/%{metaname}/Config-api-lighttpd %{_datadir}/%{metaname}/htdocs/protected/API/Config
+
+%post web-httpd
+%systemd_post httpd.service
+ln -s  %{_sysconfdir}/%{metaname}/Config-web-apache %{_datadir}/%{metaname}/htdocs/protected/Web/Config
+
+%post web-lighttpd
+%systemd_post baculum-web-lighttpd.service
+ln -s  %{_sysconfdir}/%{metaname}/Config-web-lighttpd %{_datadir}/%{metaname}/htdocs/protected/Web/Config
+
+%preun common
+rm %{_datadir}/%{metaname}/htdocs/assets
+rm %{_datadir}/%{metaname}/htdocs/protected/runtime
+
+%preun api
+for lang in  %{langs}; do
+	rm %{_datadir}/%{metaname}/htdocs/protected/API/Lang/${lang}/messages.mo
+done
+
+%preun web
+for lang in  %{langs}; do
+	rm %{_datadir}/%{metaname}/htdocs/protected/Web/Lang/${lang}/messages.mo
+done
+
+%preun api-httpd
 %systemd_preun httpd.service
 if [ $1 -lt 1 ] ; then
 	# Rename settings if exist.
 	# Note, 'config' macro cannot be used because this file is created after successful
 	# installation via wizard. Also using 'config' macro to /usr location strictly forbidden
 	# by Packaging Guidelines.
-	[ ! -e %{_datadir}/%{name}/htdocs/protected/Data/settings.conf ] ||
-		mv %{_datadir}/%{name}/htdocs/protected/Data/settings.conf \
-		%{_datadir}/%{name}/htdocs/protected/Data/settings.conf.apache
+	[ ! -e %{_datadir}/%{metaname}/htdocs/protected/API/Config/api.conf ] ||
+		mv %{_datadir}/%{metaname}/htdocs/protected/API/Config/api.conf \
+		%{_datadir}/%{metaname}/htdocs/protected/API/Config/api.conf.apache
 	# remove debug files if any
-	[ ! -e %{_datadir}/%{name}/htdocs/protected/Data/baculum.dbg ] ||
-		rm %{_datadir}/%{name}/htdocs/protected/Data/baculum*.dbg
-	rm %{_datadir}/%{name}/htdocs/protected/Data
-
+	[ ! -e %{_datadir}/%{metaname}/htdocs/protected/API/Logs/baculum-api.log ] ||
+		rm %{_datadir}/%{metaname}/htdocs/protected/API/Logs/baculum-api*.log
+	rm %{_datadir}/%{metaname}/htdocs/protected/API/Config
 fi
 
-%preun lighttpd
-%systemd_preun baculum-lighttpd.service
+%preun web-httpd
+%systemd_preun httpd.service
 if [ $1 -lt 1 ] ; then
 	# Rename settings if exist.
 	# Note, 'config' macro cannot be used because this file is created after successful
 	# installation via wizard. Also using 'config' macro to /usr location strictly forbidden
 	# by Packaging Guidelines.
-	[ ! -e %{_datadir}/%{name}/htdocs/protected/Data/settings.conf ] ||
-		mv %{_datadir}/%{name}/htdocs/protected/Data/settings.conf \
-		%{_datadir}/%{name}/htdocs/protected/Data/settings.conf.lighttpd
+	[ ! -e %{_datadir}/%{metaname}/htdocs/protected/Web/Config/settings.conf ] ||
+		mv %{_datadir}/%{metaname}/htdocs/protected/Web/Config/settings.conf \
+		%{_datadir}/%{metaname}/htdocs/protected/Web/Config/settings.conf.apache
+	[ ! -e %{_datadir}/%{metaname}/htdocs/protected/Web/Config/hosts.conf ] ||
+		mv %{_datadir}/%{metaname}/htdocs/protected/Web/Config/hosts.conf \
+		%{_datadir}/%{metaname}/htdocs/protected/Web/Config/hosts.conf.apache
 	# remove debug files if any
-	[ ! -e %{_datadir}/%{name}/htdocs/protected/Data/baculum.dbg ] ||
-		rm %{_datadir}/%{name}/htdocs/protected/Data/baculum*.dbg
-	rm %{_datadir}/%{name}/htdocs/protected/Data
+	[ ! -e %{_datadir}/%{metaname}/htdocs/protected/Web/Logs/baculum-web.log ] ||
+		rm %{_datadir}/%{metaname}/htdocs/protected/Web/Logs/baculum-web*.log
+	rm %{_datadir}/%{metaname}/htdocs/protected/Web/Config
 fi
 
-%postun selinux
-if [ $1 -eq 0 ] ; then
-	semanage fcontext -d -t httpd_sys_rw_content_t '%{_datadir}/%{name}/htdocs/protected/Data(/.*)?' 2>/dev/null || :
-	semanage fcontext -d -t httpd_cache_t '%{_localstatedir}/cache/%{name}(/.*)?' 2>/dev/null || :
-	semodule -r %{name} 2>/dev/null || :
+%preun api-lighttpd
+%systemd_preun baculum-api-lighttpd.service
+if [ $1 -lt 1 ] ; then
+	# stop api service
+	/sbin/service baculum-api-lighttpd stop &>/dev/null || :
+	# Rename settings if exist.
+	# Note, 'config' macro cannot be used because this file is created after successful
+	# installation via wizard. Also using 'config' macro to /usr location strictly forbidden
+	# by Packaging Guidelines.
+	[ ! -e %{_datadir}/%{metaname}/htdocs/protected/API/Config/api.conf ] ||
+		mv %{_datadir}/%{metaname}/htdocs/protected/API/Config/api.conf \
+		%{_datadir}/%{metaname}/htdocs/protected/API/Config/api.conf.lighttpd
+	# remove debug files if any
+	[ ! -e %{_datadir}/%{metaname}/htdocs/protected/API/Logs/baculum-api.log ] ||
+		rm %{_datadir}/%{metaname}/htdocs/protected/API/Logs/baculum-api*.log
+	rm %{_datadir}/%{metaname}/htdocs/protected/API/Config
 fi
 
-%postun httpd
+%preun web-lighttpd
+%systemd_preun baculum-web-lighttpd.service
+if [ $1 -lt 1 ] ; then
+	# stop web service
+	/sbin/service baculum-web-lighttpd stop &>/dev/null || :
+	# Rename settings if exist.
+	# Note, 'config' macro cannot be used because this file is created after successful
+	# installation via wizard. Also using 'config' macro to /usr location strictly forbidden
+	# by Packaging Guidelines.
+	[ ! -e %{_datadir}/%{metaname}/htdocs/protected/Web/Config/settings.conf ] ||
+		mv %{_datadir}/%{metaname}/htdocs/protected/Web/Config/settings.conf \
+		%{_datadir}/%{metaname}/htdocs/protected/Web/Config/settings.conf.lighttpd
+	[ ! -e %{_datadir}/%{metaname}/htdocs/protected/Web/Config/hosts.conf ] ||
+		mv %{_datadir}/%{metaname}/htdocs/protected/Web/Config/hosts.conf \
+		%{_datadir}/%{metaname}/htdocs/protected/Web/Config/hosts.conf.lighttpd
+	# remove debug files if any
+	[ ! -e %{_datadir}/%{metaname}/htdocs/protected/Web/Logs/baculum-web.log ] ||
+		rm %{_datadir}/%{metaname}/htdocs/protected/Web/Logs/baculum-web*.log
+	rm %{_datadir}/%{metaname}/htdocs/protected/Web/Config
+fi
+
+%postun api-httpd
 %systemd_postun_with_restart httpd.service
 
-%postun lighttpd
-%systemd_postun_with_restart baculum-lighttpd.service
+%postun web-httpd
+%systemd_postun_with_restart httpd.service
 
-%files -f %{name}.lang
+%postun api-lighttpd
+%systemd_postun_with_restart baculum-api-lighttpd.service
+
+%postun web-lighttpd
+%systemd_postun_with_restart baculum-web-lighttpd.service
+
+%files -f %{metaname}.lang common
 %defattr(-,root,root)
-# directory excluded here, because it needs to be provided
-# with selected web server privileges (lighttpd or apache)
-%exclude %{_datadir}/%{name}/htdocs/protected/Data
-%{_datadir}/%{name}
+%{_datadir}/%{metaname}/htdocs/protected/Common
+%{_datadir}/%{metaname}/htdocs/protected/application.xml
+%{_datadir}/%{metaname}/htdocs/framework
+%{_datadir}/%{metaname}/htdocs/themes
+%{_datadir}/%{metaname}/htdocs/LICENSE
+%{_datadir}/%{metaname}/htdocs/AUTHORS
+%{_datadir}/%{metaname}/htdocs/README
+%{_datadir}/%{metaname}/htdocs/INSTALL
+%{_datadir}/%{metaname}/htdocs/index.php
 %license LICENSE
 %doc AUTHORS README
 
-%files selinux
+
+%files api
 %defattr(-,root,root)
-%{_datadir}/selinux/packages/%{name}/%{name}.pp
+# directory excluded here, because it needs to be provided
+# with selected web server privileges (lighttpd or apache)
+%exclude %{_datadir}/%{metaname}/htdocs/protected/API/Config
+%exclude %{_datadir}/%{metaname}/htdocs/protected/API/Logs
+%{_datadir}/%{metaname}/htdocs/protected/API
 
-%files httpd
+%files web
+%defattr(-,root,root)
+# directory excluded here, because it needs to be provided
+# with selected web server privileges (lighttpd or apache)
+%exclude %{_datadir}/%{metaname}/htdocs/protected/Web/Config
+%exclude %{_datadir}/%{metaname}/htdocs/protected/Web/Logs
+%{_datadir}/%{metaname}/htdocs/protected/Web
+
+
+%files api-httpd
 %defattr(644,root,root)
+# directory excluded here, because it needs to be provided
+# with selected web server privileges (lighttpd or apache)
+%exclude %{_datadir}/%{metaname}/htdocs/protected/API/Config
 # Apache logs are stored in /var/log/httpd/
-%config(noreplace) %{_sysconfdir}/httpd/conf.d/%{name}.conf
-%attr(755,apache,apache) %{_localstatedir}/cache/%{name}/
-%attr(700,apache,apache) %{_sysconfdir}/%{name}/Data-apache/
-%attr(600,apache,apache) %{_sysconfdir}/%{name}/Data-apache/%{name}.users
+%config(noreplace) %{_sysconfdir}/httpd/conf.d/%{metaname}-api.conf
+%attr(755,apache,apache) %{_localstatedir}/cache/%{metaname}/
+%attr(700,apache,apache) %{_sysconfdir}/%{metaname}/Config-api-apache/
+%attr(600,apache,apache) %{_sysconfdir}/%{metaname}/Config-api-apache/%{metaname}.users
+%attr(755,apache,apache) %{_datadir}/%{metaname}/htdocs/protected/API/Logs
 
-%files lighttpd
+%files web-httpd
+%defattr(644,root,root)
+# directory excluded here, because it needs to be provided
+# with selected web server privileges (lighttpd or apache)
+%exclude %{_datadir}/%{metaname}/htdocs/protected/Web/Config
+# Apache logs are stored in /var/log/httpd/
+%config(noreplace) %{_sysconfdir}/httpd/conf.d/%{metaname}-web.conf
+%attr(755,apache,apache) %{_localstatedir}/cache/%{metaname}/
+%attr(700,apache,apache) %{_sysconfdir}/%{metaname}/Config-web-apache/
+%attr(600,apache,apache) %{_sysconfdir}/%{metaname}/Config-web-apache/%{metaname}.users
+%attr(755,apache,apache) %{_datadir}/%{metaname}/htdocs/protected/Web/Logs
+
+%files api-lighttpd
 %defattr(644,root,root)
 # Lighttpd logs are stored in /var/log/lighttpd
-%attr(755,lighttpd,lighttpd) %{_localstatedir}/cache/%{name}/
-%attr(700,lighttpd,lighttpd) %{_sysconfdir}/%{name}/Data-lighttpd
-%attr(600,lighttpd,lighttpd) %{_sysconfdir}/%{name}/Data-lighttpd/%{name}.users
-%{_unitdir}/%{name}-lighttpd.service
-%config(noreplace) %{_sysconfdir}/%{name}/%{name}-lighttpd.conf
+%attr(755,lighttpd,lighttpd) %{_localstatedir}/cache/%{metaname}/
+%attr(700,lighttpd,lighttpd) %{_sysconfdir}/%{metaname}/Config-api-lighttpd/
+%attr(600,lighttpd,lighttpd) %{_sysconfdir}/%{metaname}/Config-api-lighttpd/%{metaname}.users
+%attr(755,lighttpd,lighttpd) %{_datadir}/%{metaname}/htdocs/protected/API/Logs
+%{_unitdir}/%{metaname}-api-lighttpd.service
+%config(noreplace) %{_sysconfdir}/%{metaname}/%{metaname}-api-lighttpd.conf
+
+%files web-lighttpd
+%defattr(644,root,root)
+# Lighttpd logs are stored in /var/log/lighttpd
+%attr(755,lighttpd,lighttpd) %{_localstatedir}/cache/%{metaname}/
+%attr(700,lighttpd,lighttpd) %{_sysconfdir}/%{metaname}/Config-web-lighttpd/
+%attr(600,lighttpd,lighttpd) %{_sysconfdir}/%{metaname}/Config-web-lighttpd/%{metaname}.users
+%attr(755,lighttpd,lighttpd) %{_datadir}/%{metaname}/htdocs/protected/Web/Logs
+%{_unitdir}/%{metaname}-web-lighttpd.service
+%config(noreplace) %{_sysconfdir}/%{metaname}/%{metaname}-web-lighttpd.conf
 
 %changelog
- * Tue Dec 15 2015 Marcin Haba <marcin.haba@bacula.pl> - 7.2.0
- - Add creating and removing Data/ directory symbolic link
- - Match locations to bacula-gui directories structure
- * Sat Jul 18 2015 Marcin Haba <marcin.haba@bacula.pl> - 7.0.6-0.5.b
- - Change baculum.users and Data/ directory permissions to more
-   restrictive
- - Add noreplace param to Lighttpd config file
- - Add systemd macros for httpd subpackage
- - Fix systemd action in post section
- - Move DESTDIR target and languages to global variables
- - Do not remove settings file when a web server specific package
-   is removed (used move action)
- - Drop storing Lighttpd logs in separate logs directory
- - Define locale files
- * Fri Jul 17 2015 Marcin Haba <marcin.haba@bacula.pl> - 7.0.6-0.4.b
- - Remove source files: baculum.users, baculum-apache.conf
-   baculum-lighttpd.conf and baculum-lighttpd.service
- - Use reorganized upstream Makefile
- * Tue Jul 14 2015 Marcin Haba <marcin.haba@bacula.pl> - 7.0.6-0.3.b
- - Separate to subpackage Lighttpd support
- - Add Apache subpackage
- - Use upstream Makefile to prepare build files
- - Cache symlbolic links only in install section
- - Add comments to Spec
- - Compile SELinux policies instead of install pre-compiled
- - Add source files: baculum.users, baculum-apache.conf
-   baculum-lighttpd.conf and baculum-lighttpd.service
- - Change Source0 URL
- * Mon Jul 13 2015 Marcin Haba <marcin.haba@bacula.pl> - 7.0.6-0.2.b
- - Remove chkconfig and service dependencies from Spec
- - Change Spec sections order
- - Correct package description typos and errors
- * Mon Jul 06 2015 Marcin Haba <marcin.haba@bacula.pl> - 7.0.6-0.1.b
+ * Sat Dec 10 2016 Marcin Haba <marcin.haba@bacula.pl> - 7.5.0-0.1
  - Spec create

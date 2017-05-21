@@ -3,9 +3,9 @@
  * TActiveLabel class file.
  *
  * @author Wei Zhuo <weizhuo[at]gmail[dot]com>
- * @link http://www.pradosoft.com/
- * @copyright Copyright &copy; 2005-2014 PradoSoft
- * @license http://www.pradosoft.com/license/
+ * @link https://github.com/pradosoft/prado
+ * @copyright Copyright &copy; 2005-2016 The PRADO Group
+ * @license https://github.com/pradosoft/prado/blob/master/COPYRIGHT
  * @package System.Web.UI.ActiveControls
  */
 
@@ -55,6 +55,9 @@ class TActiveLabel extends TLabel implements IActiveControl
 	 */
 	public function setText($value)
 	{
+		if(parent::getText() === $value)
+			return;
+
 		parent::setText($value);
 		if($this->getActiveControl()->canUpdateClientSide())
 			$this->getPage()->getCallbackClient()->update($this, $value);
@@ -68,6 +71,9 @@ class TActiveLabel extends TLabel implements IActiveControl
 	 */
 	public function setForControl($value)
 	{
+		if(parent::getForControl() === $value)
+			return;
+
 		parent::setForControl($value);
 		if($this->getActiveControl()->canUpdateClientSide())
 		{

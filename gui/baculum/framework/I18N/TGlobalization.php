@@ -3,9 +3,9 @@
  * TGlobalization class file.
  *
  * @author Wei Zhuo<weizhuo[at]gmail[dot]com>
- * @link http://www.pradosoft.com/
- * @copyright Copyright &copy; 2005-2014 PradoSoft
- * @license http://www.pradosoft.com/license/
+ * @link https://github.com/pradosoft/prado
+ * @copyright Copyright &copy; 2005-2016 The PRADO Group
+ * @license https://github.com/pradosoft/prado/blob/master/COPYRIGHT
  * @package System.I18N
  */
 
@@ -214,7 +214,7 @@ class TGlobalization extends TModule
 				throw new TConfigurationException("invalid source dir '{$config['source']}'");
 			}
 		}
-		if($config['cache'])
+		if(isset($config['cache']) && TPropertyValue::ensureBoolean($config['cache']))
 		{
 			$config['cache'] = $this->getApplication()->getRunTimePath().'/i18n';
 			if(!is_dir($config['cache']))
@@ -224,6 +224,10 @@ class TGlobalization extends TModule
 						$config['cache']);
 				chmod($config['cache'], PRADO_CHMOD); //make it deletable
 			}
+		}
+		else
+		{
+			unset($config['cache']);
 		}
 		$this->_translation = $config;
 	}
@@ -294,4 +298,3 @@ class TGlobalization extends TModule
 	}
 
 }
-

@@ -7,9 +7,9 @@
  * Global Events, intra-object events, Class behaviors, expanded behaviors
  * @author Brad Anderson <javalizard@mac.com>
  *
- * @link http://www.pradosoft.com/
- * @copyright Copyright &copy; 2005-2014 PradoSoft
- * @license http://www.pradosoft.com/license/
+ * @link https://github.com/pradosoft/prado
+ * @copyright Copyright &copy; 2005-2016 The PRADO Group
+ * @license https://github.com/pradosoft/prado/blob/master/COPYRIGHT
  * @package System
  */
 
@@ -555,7 +555,10 @@ class TComponent
 			return isset($args[0])?$args[0]:null;
 		}
 
-		throw new TApplicationException('component_method_undefined',get_class($this),$method);
+		// don't thrown an exception for __magicMethods() or any other weird methods natively implemented by php
+		if (!method_exists($this, $method)) {
+			throw new TApplicationException('component_method_undefined',get_class($this),$method);
+		}
 	}
 
 
@@ -1698,16 +1701,6 @@ class TComponent
 	}
 
 	/**
-	 * Do not call this method. This is a PHP magic method that will be called automatically
-	 * after any unserialization; it can perform reinitialization tasks on the object.
-	 */
-	public function __wakeup()
-	{
-		if ($this->_e===null)
-			$this->_e = array();
-	}
-
-	/**
 	 * Returns an array with the names of all variables of that object that should be serialized.
 	 * Do not call this method. This is a PHP magic method that will be called automatically
 	 * prior to any serialization.
@@ -1717,6 +1710,18 @@ class TComponent
 		$a = (array)$this;
 		$a = array_keys($a);
 		$exprops = array();
+		$this->_getZappableSleepProps($exprops);
+		return array_diff($a, $exprops);
+	}
+
+	/**
+	 * Returns an array with the names of all variables of this object that should NOT be serialized
+	 * because their value is the default one or useless to be cached for the next page loads.
+	 * Reimplement in derived classes to add new variables, but remember to  also to call the parent
+	 * implementation first.
+	 */
+	protected function _getZappableSleepProps(&$exprops)
+	{
 		if($this->_listeningenabled===false)
 			$exprops[] = "\0TComponent\0_listeningenabled";
 		if($this->_behaviorsenabled===true)
@@ -1725,7 +1730,6 @@ class TComponent
 			$exprops[] = "\0TComponent\0_e";
 		if ($this->_m===null)
 			$exprops[] = "\0TComponent\0_m";
-		return array_diff($a,$exprops);
 	}
 }
 

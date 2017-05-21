@@ -6,7 +6,7 @@
  * @author Bérczi Gábor <gabor.berczi@devworx.hu>
  * @link http://www.devworx.hu/
  * @copyright Copyright &copy; 2011 DevWorx
- * @license http://www.pradosoft.com/license/
+ * @license https://github.com/pradosoft/prado/blob/master/COPYRIGHT
  * @package System.Web.UI.WebControls
  */
 
@@ -21,7 +21,7 @@ Prado::using('System.Web.UI.WebControls.TReCaptcha');
  * is not the same as the token displayed in reCAPTCHA. Note, if the user does
  * not enter any thing, it is still considered as failing the validation.
  *
- * To use TReCaptchaValidator, specify the {@link setControlToValidate ControlToValidate}
+ * To use TReCaptchaValidator, specify the {@link setCaptchaControl CaptchaControl}
  * to be the ID path of the {@link TReCaptcha} control.
  *
  * @author Bérczi Gábor <gabor.berczi@devworx.hu>
@@ -116,8 +116,7 @@ class TReCaptchaValidator extends TBaseValidator
 				// this function will be used to update the validator
 				'function '.$fn.'(valid)',
 				'{',
-				'  var v = $('.TJavaScript::quoteString($this->getClientID()).');',
-				'  $('.TJavaScript::quoteString($this->getClientID().'_1').').value = valid;',
+				'  jQuery('.TJavaScript::quoteString('#'.$this->getClientID().'_1').').val(valid);',
 				'  Prado.Validation.validateControl('.TJavaScript::quoteString($control->ClientID).'); ',
 				'}',
 				'',
@@ -125,12 +124,9 @@ class TReCaptchaValidator extends TBaseValidator
 				// (if we're in initial rendering or a postback then the result will be rendered directly to the page html anyway)
 				$this->Page->IsCallback ? $fn.'('.$value.');' : '',
 				'',
-				// wait for the captcha to be constructed
-				'Event.observe(document,"captchaready:'.$control->getClientID().'",function() { ',
-					// install event handler that clears the validation error when user changes the captcha response field
-					'Event.observe('.TJavaScript::quoteString($control->getResponseFieldName()).',"keyup",function() { ',
-						$fn.'("1");',
-					'});',
+				// install event handler that clears the validation error when user changes the captcha response field
+				'jQuery("#'.$control->getClientID().'").on("keyup", '.TJavaScript::quoteString('#'.$control->getResponseFieldName()).', function() { ',
+					$fn.'("1");',
 				'});',
 			)));
 		}

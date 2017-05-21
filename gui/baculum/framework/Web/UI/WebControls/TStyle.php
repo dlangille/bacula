@@ -3,9 +3,9 @@
  * TStyle class file.
  *
  * @author Qiang Xue <qiang.xue@gmail.com>
- * @link http://www.pradosoft.com/
- * @copyright Copyright &copy; 2005-2014 PradoSoft
- * @license http://www.pradosoft.com/license/
+ * @link https://github.com/pradosoft/prado
+ * @copyright Copyright &copy; 2005-2016 The PRADO Group
+ * @license https://github.com/pradosoft/prado/blob/master/COPYRIGHT
  * @package System.Web.UI.WebControls
  */
 
@@ -47,11 +47,33 @@ class TStyle extends TComponent
 	private $_displayStyle='Fixed';
 
 	/**
+	 * Returns an array with the names of all variables of this object that should NOT be serialized
+	 * because their value is the default one or useless to be cached for the next page loads.
+	 * Reimplement in derived classes to add new variables, but remember to  also to call the parent
+	 * implementation first.
+	 */
+	protected function _getZappableSleepProps(&$exprops)
+	{
+		parent::_getZappableSleepProps($exprops);
+		if ($this->_fields===array())
+			$exprops[] = "\0TStyle\0_fields";
+		if($this->_font===null)
+			$exprops[] = "\0TStyle\0_font";
+		if($this->_class===null)
+			$exprops[] = "\0TStyle\0_class";
+		if ($this->_customStyle===null)
+			$exprops[] = "\0TStyle\0_customStyle";
+		if ($this->_displayStyle==='Fixed')
+			$exprops[] = "\0TStyle\0_displayStyle";
+	}
+
+	/**
 	 * Constructor.
 	 * @param TStyle style to copy from
 	 */
 	public function __construct($style=null)
 	{
+    parent::__construct();
 		if($style!==null)
 			$this->copyFrom($style);
 	}
@@ -463,6 +485,29 @@ class TTableStyle extends TStyle
 	private $_borderCollapse=null;
 
 	/**
+	 * Returns an array with the names of all variables of this object that should NOT be serialized
+	 * because their value is the default one or useless to be cached for the next page loads.
+	 * Reimplement in derived classes to add new variables, but remember to  also to call the parent
+	 * implementation first.
+	 */
+	protected function _getZappableSleepProps(&$exprops)
+	{
+		parent::_getZappableSleepProps($exprops);
+		if ($this->_backImageUrl===null)
+			$exprops[] = "\0TTableStyle\0_backImageUrl";
+		if ($this->_horizontalAlign===null)
+			$exprops[] = "\0TTableStyle\0_horizontalAlign";
+		if ($this->_cellPadding===null)
+			$exprops[] = "\0TTableStyle\0_cellPadding";
+		if ($this->_cellSpacing===null)
+			$exprops[] = "\0TTableStyle\0_cellSpacing";
+		if ($this->_gridLines===null)
+			$exprops[] = "\0TTableStyle\0_gridLines";
+		if ($this->_borderCollapse===null)
+			$exprops[] = "\0TTableStyle\0_borderCollapse";
+	}
+
+	/**
 	 * Sets the style attributes to default values.
 	 * This method overrides the parent implementation by
 	 * resetting additional TTableStyle specific attributes.
@@ -689,6 +734,23 @@ class TTableItemStyle extends TStyle
 	 * @var boolean whether the content wraps within the table item
 	 */
 	private $_wrap=null;
+
+	/**
+	 * Returns an array with the names of all variables of this object that should NOT be serialized
+	 * because their value is the default one or useless to be cached for the next page loads.
+	 * Reimplement in derived classes to add new variables, but remember to  also to call the parent
+	 * implementation first.
+	 */
+	protected function _getZappableSleepProps(&$exprops)
+	{
+		parent::_getZappableSleepProps($exprops);
+		if ($this->_horizontalAlign===null)
+			$exprops[] = "\0TTableItemStyle\0_horizontalAlign";
+		if ($this->_verticalAlign===null)
+			$exprops[] = "\0TTableItemStyle\0_verticalAlign";
+		if ($this->_wrap===null)
+			$exprops[] = "\0TTableItemStyle\0_wrap";
+	}
 
 	/**
 	 * Sets the style attributes to default values.

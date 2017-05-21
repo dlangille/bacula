@@ -4,9 +4,9 @@
  *
  * @author Qiang Xue <qiang.xue@gmail.com>
  * @author Gabor Berczi <gabor.berczi@devworx.hu> (lazyload additions & progressive rendering)
- * @link http://www.pradosoft.com/
- * @copyright Copyright &copy; 2005-2014 PradoSoft
- * @license http://www.pradosoft.com/license/
+ * @link https://github.com/pradosoft/prado
+ * @copyright Copyright &copy; 2005-2016 The PRADO Group
+ * @license https://github.com/pradosoft/prado/blob/master/COPYRIGHT
  * @package System.Web.UI
  */
 
@@ -30,6 +30,10 @@ class TClientScriptManager extends TApplicationComponent
 	 * file containing javascript packages and their cross dependencies
 	 */
 	const PACKAGES_FILE='Web/Javascripts/packages.php';
+	/**
+	 * file containing css packages and their cross dependencies
+	 */
+	const CSS_PACKAGES_FILE='Web/Javascripts/css-packages.php';
 	/**
 	 * @var TPage page who owns this manager
 	 */
@@ -80,12 +84,27 @@ class TClientScriptManager extends TApplicationComponent
 	 * @var array
 	 */
 	private static $_pradoPackages;
+	/**
+	 * @var array registered PRADO style libraries
+	 */
+	private $_registeredPradoStyles=array();
+	/**
+	 * Client-side style library dependencies, loads from PACKAGES_FILE;
+	 * @var array
+	 */
+	private static $_pradoStyles;
+	/**
+	 * Client-side style library packages, loads from CSS_PACKAGES_FILE;
+	 * @var array
+	 */
+	private static $_pradoStylePackages;
 
 	private $_renderedHiddenFields;
 
 	private $_renderedScriptFiles=array();
 
 	private $_expandedPradoScripts;
+	private $_expandedPradoStyles;
 
 	/**
 	 * Constructor.
@@ -214,7 +233,7 @@ class TClientScriptManager extends TApplicationComponent
 	}
 
 	/**
-	 * @param string javascript package path.
+	 * @param string javascript or css package path.
 	 * @return array tuple($path,$url).
 	 */
 	protected function getPackagePathUrl($base)
@@ -284,8 +303,6 @@ class TClientScriptManager extends TApplicationComponent
 		$code="new {$class}({$optionString});";
 
 		$this->_endScripts[sprintf('%08X', crc32($code))]=$code;
-		$this->_hiddenFields[TPage::FIELD_POSTBACK_TARGET]='';
-		$this->_hiddenFields[TPage::FIELD_POSTBACK_PARAMETER]='';
 		$this->registerPradoScriptInternal('prado');
 
 		$params=func_get_args();
@@ -313,7 +330,6 @@ class TClientScriptManager extends TApplicationComponent
 		$code = "new Prado.WebUI.DefaultButton($options);";
 
 		$this->_endScripts['prado:'.$panelID]=$code;
-		$this->_hiddenFields[TPage::FIELD_POSTBACK_TARGET]='';
 		$this->registerPradoScriptInternal('prado');
 
 		$params=array($panelID,$buttonID);
@@ -341,14 +357,74 @@ class TClientScriptManager extends TApplicationComponent
 	 */
 	public function registerFocusControl($target)
 	{
-		$this->registerPradoScriptInternal('effects');
+		$this->registerPradoScriptInternal('jquery');
 		if($target instanceof TControl)
 			$target=$target->getClientID();
-		$id = TJavaScript::quoteString($target);
-		$this->_endScripts['prado:focus'] = 'Prado.Element.focus('.$id.');';
+		$this->_endScripts['prado:focus'] = 'jQuery(\'#'.$target.'\').focus();';
 
 		$params=func_get_args();
 		$this->_page->registerCachingAction('Page.ClientScript','registerFocusControl',$params);
+	}
+
+	/**
+	 * Registers Prado style by library name. See "Web/Javascripts/packages.php"
+	 * for library names.
+	 * @param string style library name.
+	 */
+	public function registerPradoStyle($name)
+	{
+		$this->registerPradoStyleInternal($name);
+		$params=func_get_args();
+		$this->_page->registerCachingAction('Page.ClientScript','registerPradoStyle',$params);
+	}
+
+	/**
+	 * Registers a Prado style library to be loaded.
+	 */
+	protected function registerPradoStyleInternal($name)
+	{
+		// $this->checkIfNotInRender();
+		if(!isset($this->_registeredPradoStyles[$name]))
+		{
+			$base = $this->getPradoScriptAssetUrl();
+
+			if(self::$_pradoStyles === null)
+			{
+				$packageFile = Prado::getFrameworkPath().DIRECTORY_SEPARATOR.self::CSS_PACKAGES_FILE;
+				list($packages,$deps)= include($packageFile);
+				self::$_pradoStyles = $deps;
+				self::$_pradoStylePackages = $packages;
+			}
+
+			if (isset(self::$_pradoStyles[$name]))
+				$this->_registeredPradoStyles[$name]=true;
+			else
+				throw new TInvalidOperationException('csmanager_pradostyle_invalid',$name);
+
+			if(($packages=array_keys($this->_registeredPradoStyles))!==array())
+			{
+				$base = Prado::getFrameworkPath().DIRECTORY_SEPARATOR.self::SCRIPT_PATH;
+				list($path,$baseUrl)=$this->getPackagePathUrl($base);
+				$packagesUrl=array();
+				$isDebug=$this->getApplication()->getMode()===TApplicationMode::Debug;
+				foreach ($packages as $p)
+				{
+					foreach (self::$_pradoStyles[$p] as $dep)
+					{
+						foreach (self::$_pradoStylePackages[$dep] as $style)
+						if (!isset($this->_expandedPradoStyles[$style]))
+						{
+							$this->_expandedPradoStyles[$style] = true;
+							// TODO minify css?
+							if (!in_array($url=$baseUrl.'/'.$style,$packagesUrl))
+								$packagesUrl[]=$url;
+						}
+					}
+				}
+				foreach($packagesUrl as $url)
+					$this->registerStyleSheetFile($url,$url);
+			}
+		}
 	}
 
 	/**
@@ -404,9 +480,9 @@ class TClientScriptManager extends TApplicationComponent
 	public function getStyleSheetUrls()
 	{
 		$stylesheets = array_values(
-			array_map(
-				create_function('$e', 'return is_array($e) ? $e[0] : $e;'),
-				$this->_styleSheetFiles)
+			array_map(function($e) {
+				return is_array($e) ? $e[0] : $e;
+			}, $this->_styleSheetFiles)
 		);
 
 		foreach(Prado::getApplication()->getAssetManager()->getPublished() as $path=>$url)
@@ -695,6 +771,22 @@ class TClientScriptManager extends TApplicationComponent
 	public function renderEndScripts($writer)
 	{
 		$writer->write(TJavaScript::renderScriptBlocks($this->_endScripts));
+	}
+
+	/**
+	 * @param THtmlWriter writer for the rendering purpose
+	 */
+	public function renderBeginScriptsCallback($writer)
+	{
+		$writer->write(TJavaScript::renderScriptBlocksCallback($this->_beginScripts));
+	}
+
+	/**
+	 * @param THtmlWriter writer for the rendering purpose
+	 */
+	public function renderEndScriptsCallback($writer)
+	{
+		$writer->write(TJavaScript::renderScriptBlocksCallback($this->_endScripts));
 	}
 
 	public function renderHiddenFieldsBegin($writer)
