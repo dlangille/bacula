@@ -1,5 +1,5 @@
 
-             Last revision: 03 April 2017
+             Last revision: 21 May 2017
 
 Bacula is licensed under the GNU Affero General Public License, version
 3.0 as published by the Free Software Foundation, Inc. ("AGPLv3").
@@ -57,6 +57,8 @@ AGPLv3 are as follows:
    distribute the linked executables.  You must follow the requirements of
    the AGPLv3 in all respects for all of the code used other than for the
    Microsoft VSS code.
+
+If you want to fork Bacula, please read the file LICENSE-FAQ.
 
 The copyright for certain source files may include in addition to what is
 listed above the following copyright:

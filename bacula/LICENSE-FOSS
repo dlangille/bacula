@@ -1,5 +1,6 @@
        
               FOSS Licenses used in Bacula
+                Update 21 May 2017
 
 Note: This file corresponds to the Bacula Community (bacula.org) license.
 
@@ -15,6 +16,25 @@ give your fork another name.  You are not required to remove all
 references to Bacula in the source code or "fair uses" in the
 documentation.
 
+Forking Bacula:
+Bacula is Free Software/Open Source Software and as such you are
+permitted to fork it and/or use parts of it. However, if you fork
+Bacula or you use more than one or two lines of code from it, you
+must respect the copyright which requires you to maintain the headers
+containing the Copyright information intact on any files which you
+use. If you take more than a couple of lines of code, you are required
+to add the Bacula Copyright to your code (see the file: LICENSE or any
+header of a file for what is necessary).
+
+If you have previously forked Bacula, please be aware that the license
+on the current code has most likely changed since your fork, and you
+must respect the new license.
+
+If you are thinking that this requirement to maintain the license intact is
+unusual or not open source, I would like to point out that most open source
+licenses require this.  One simple example is the BSD 2-clause license,
+which is widely used, and which Bacula uses for most of the script files.
+
 ===================================
 
 What follows is information from the authors of the code:
@@ -22,7 +42,6 @@ What follows is information from the authors of the code:
 License:
 To the best of our knowledge, all code used in Bacula, which is
 copyrighted by a third party, has licenses that are compatible.
-
 
 Intellectual Property rights:
 Recipient understands that although each Contributor to Bacula grants
