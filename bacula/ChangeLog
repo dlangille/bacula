@@ -1,6 +1,20 @@
               Changelog on version 9.0.0
 
-08May17
+
+
+21May17
+ - Minor improvement to error message
+ - Fix race in steal_device_lock shown in truncate-concurrent-test
+ - Apply Marcin's fix for 6th week of the month
+ - Add new truncate test
+ - Retab Makefile.in in platforms/systemd.in
+ - Fix compiler warning
+ - Add FD backwards compatibility
+ - Fix regression minor scripting problems
+ - Fix #2807 about an issue with the show command when using incorrectly JobToVerify 
+   directive
+ - Fix #2806 about the director service started before the database with systemd
+ - Update Dart control files
  - Massive (70,000+ lines) backport of code from Bacula Enterprise 8.8.
    See next line ...
  - Adapt update_bacula_tables scripts for catalog version 15
@@ -73,7 +87,7 @@ Misc Features:
 
 Bugs fixed/closed since last release:
 2271 2548 2563 2567 2588 2593 2602 2624 2625 2627 2629 2632 2638 2640 2646
-2698 2520 2559 2561 2582
+2698 2520 2559 2561 2582 2806 2807
 
 
 ==============================================================

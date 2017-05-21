@@ -3,10 +3,14 @@
 
 Release Version 7.9.0 pre-release beta
 
+NOTE: version 7.9.0 is a beta test program.  The final release will
+be made several weeks following the beta release barring any problems.
+The final release will be 9.0.0.
+
 This is either the biggest Bacula release ever made or one of the
 biggest ones. Even without the new Aligned Volumes source code, which
 is substantial, there are over 78,700 lines of diff output between
-Release 7.4.7 and this release of 9.0.0
+Release 7.4.7 and this release of 7.9.0
 
 This is a major new release with a new version number. It has been
 very thoroughly tested, but as always, the new features may not
@@ -35,9 +39,20 @@ the new features.  The new features are currently only in the New Features
 chapter and have not yet been integrated into the main chapters of the
 manual.
 
-08May17
+21May17
+ - Minor improvement to error message
+ - Fix race in steal_device_lock shown in truncate-concurrent-test
+ - Apply Marcin's fix for 6th week of the month
+ - Add new truncate test
+ - Retab Makefile.in in platforms/systemd.in
+ - Fix compiler warning
+ - Add FD backward compatibility
+ - Fix regression minor scripting problems
+ - Fix #2807 about an issue with the show command when using incorrectly JobToVerify 
+   directive
+ - Fix #2806 about the director service started before the database with systemd
+ - Update Dart control files
  - Massive (78,748+ lines) backport of code from Bacula Enterprise 8.8.
-   See next line ...
  - Adapt update_bacula_tables scripts for catalog version 15
  - Allow to use Base directive in a JobDefs
  - Add more debug to the bpipe plugin
@@ -63,11 +78,17 @@ manual.
  - Fix segfault in bdirjson with incorrect configuration files
 
 
-New Features:
--------------
+New Features (summary):
+-----------------------
 
- - The "list" command now filters the results using the current Console ACLs
- - The WhereACL is now verified after the restore menu
+ - See the new features chapter of the manual
+ - Major rewrite of the Storage daemon to: put all drivers in class 
+   structures, provide better separation of core/driver code, add new 
+   drivers (aligned volumes, cloud), simplifies core code, allows loadable
+   device drivers much like plugins but which are better integrated into
+   the SD.
+ - There are a number of new Bacula Systems whitepapers available on
+   www.bacula.org, and a few more will be coming in the next few months.
 
 Core Features:
  - Implement a drive usage counter to do round robin drive assignment
@@ -80,6 +101,18 @@ Core Features:
  - Restore mtime & atime for symlinks
  - New "status network" command to test the connection and the bandwidth
    between a Client and a Storage Daemon
+ - New Tape Alert tracking
+ - Loadable SD device drivers
+ - PostgeSQL SSL connections permitted
+ - JobStatistics improved
+ - DB update required
+ - Autochanger improvements to group Devices
+ - Improved .estimate command
+ - Comm line compression
+ - Separate bxxjson programs for Console, Dir, FD, SD to output .conf contents
+   in Json for easier reading with programs
+ - Read Only storage devices
+
 
 Bconsole Features:
  - Add "ExpiresIn" field in list and llist media output
@@ -100,15 +133,23 @@ Bconsole Features:
  - Do not show disabled resources in selection list
  - Fix bconsole readline and "dumb" terminal handling of CTRL-C
  - Add the priority field to the .api 2 job listing output
+ - Improved restricted consoles when accessing catalog.
  
 Misc Features:
+ - New Tray Monitor program
+ - Client Initiated Backups
+ - Many performance enhancements
+ - Bandwidth limitation timing improved
+ - Global resource variables are not lost during a reload command
  - Change the default "MaximumFileIndex" from 50MB to 100MB by default
  - Add -w option to btape to specify a working directory
  - Enhance bls -D/-F help message
+ - The "list" command now filters the results using the current Console ACLs
+ - The WhereACL is now verified after the restore menu
 
 Bugs fixed/closed since last release:
 2271 2548 2563 2567 2588 2593 2602 2624 2625 2627 2629 2632 2638 2640 2646
-2698 2520 2559 2561 2582
+2698 2520 2559 2561 2582 2806 2807
 
 
 =======================================================================
