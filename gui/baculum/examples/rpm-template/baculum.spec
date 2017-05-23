@@ -1,4 +1,5 @@
-%global langs en pl
+%global langs_api en pl
+%global langs_web en pl pt ja
 %global destdir build
 %global metaname baculum
 
@@ -148,8 +149,10 @@ make build DESTDIR=%{destdir}
 # Remove these cache directories, because here will be symbolic links
 rmdir %{destdir}/%{_datadir}/%{metaname}/htdocs/assets
 rmdir %{destdir}/%{_datadir}/%{metaname}/htdocs/protected/runtime
-for lang in  %{langs}; do
+for lang in  %{langs_api}; do
 	rm %{destdir}/%{_datadir}/%{metaname}/htdocs/protected/API/Lang/${lang}/messages.mo
+done
+for lang in  %{langs_web}; do
 	rm %{destdir}/%{_datadir}/%{metaname}/htdocs/protected/Web/Lang/${lang}/messages.mo
 done
 
@@ -165,7 +168,7 @@ ln -s  %{_localstatedir}/cache/%{metaname} %{_datadir}/%{metaname}/htdocs/protec
 %post api
 # because framework does not use system locale dir, here are linked
 # locale files to framework location
-for lang in  %{langs}; do
+for lang in  %{langs_api}; do
 	ln -s  %{_datadir}/locale/${lang}/LC_MESSAGES/%{metaname}-api.mo \
 		%{_datadir}/%{metaname}/htdocs/protected/API/Lang/${lang}/messages.mo
 done
@@ -173,7 +176,7 @@ done
 %post web
 # because framework does not use system locale dir, here are linked
 # locale files to framework location
-for lang in  %{langs}; do
+for lang in  %{langs_web}; do
 	ln -s  %{_datadir}/locale/${lang}/LC_MESSAGES/%{metaname}-web.mo \
 		%{_datadir}/%{metaname}/htdocs/protected/Web/Lang/${lang}/messages.mo
 done
@@ -199,12 +202,12 @@ rm %{_datadir}/%{metaname}/htdocs/assets
 rm %{_datadir}/%{metaname}/htdocs/protected/runtime
 
 %preun api
-for lang in  %{langs}; do
+for lang in  %{langs_api}; do
 	rm %{_datadir}/%{metaname}/htdocs/protected/API/Lang/${lang}/messages.mo
 done
 
 %preun web
-for lang in  %{langs}; do
+for lang in  %{langs_web}; do
 	rm %{_datadir}/%{metaname}/htdocs/protected/Web/Lang/${lang}/messages.mo
 done
 

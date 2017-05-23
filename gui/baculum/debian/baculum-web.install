@@ -11,3 +11,4 @@ build/usr/share/baculum/htdocs/protected/Web/endpoints.xml    /usr/share/baculum
 build/usr/share/locale/en/LC_MESSAGES/baculum-web.mo          /usr/share/locale/en/LC_MESSAGES/
 build/usr/share/locale/pl/LC_MESSAGES/baculum-web.mo          /usr/share/locale/pl/LC_MESSAGES/
 build/usr/share/locale/pt/LC_MESSAGES/baculum-web.mo          /usr/share/locale/pt/LC_MESSAGES/
+build/usr/share/locale/ja/LC_MESSAGES/baculum-web.mo          /usr/share/locale/ja/LC_MESSAGES/
