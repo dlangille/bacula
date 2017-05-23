@@ -93,6 +93,7 @@ TREE_ROOT *new_tree(int count)
    root->cached_path = get_pool_memory(PM_FNAME);
    root->type = TN_ROOT;
    root->fname = "";
+   root->can_access = 1;
    HL_ENTRY* entry = NULL;
    root->hardlinks.init(entry, &entry->link, 0);
    return root;
@@ -108,6 +109,7 @@ static TREE_NODE *new_tree_node(TREE_ROOT *root)
    node = (TREE_NODE *)tree_alloc(root, size);
    memset(node, 0, size);
    node->delta_seq = -1;
+   node->can_access = 1;
    return node;
 }
 
@@ -328,8 +330,6 @@ static TREE_NODE *search_and_insert_tree_node(char *fname, int type,
    strcpy(node->fname, fname);
    node->parent = parent;
    node->type = type;
-   node->can_access = true;
-
    /* Maintain a linear chain of nodes */
    if (!root->first) {
       root->first = node;
