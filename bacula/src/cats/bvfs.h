@@ -44,7 +44,7 @@ typedef enum {
 typedef enum {
    BVFS_Type    = 0,            /* Could be D, F, V, L */
    BVFS_PathId  = 1,
-   BVFS_FilenameId = 5,         /* No longer in use, use fileid instead */
+   BVFS_FilenameId = 2,
 
    BVFS_Name    = 2,
    BVFS_JobId   = 3,

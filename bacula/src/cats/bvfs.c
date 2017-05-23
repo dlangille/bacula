@@ -73,6 +73,7 @@ Bvfs::Bvfs(JCR *j, BDB *mdb)
    last_dir_acl = NULL;
    dir_acl = NULL;
    use_acl = false;
+   dir_filenameid = 0;       /* special FilenameId where Name='' */
 }
 
 Bvfs::~Bvfs() {
@@ -892,9 +893,9 @@ void Bvfs::get_all_file_versions(DBId_t pathid, FileId_t fnid, const char *clien
    POOL_MEM query;
 
    Mmsg(query,//    1           2              3       
-"SELECT 'V', File.PathId, File.FilenameId,  File.Md5, "
-//         4          5           6
-        "File.JobId, File.LStat, File.FileId, "
+"SELECT 'V', File.PathId, File.FilenameId,  File.JobId, "
+//           4          5           6
+        "File.LStat, File.FileId, File.Md5, "
 //         7                    8
        "Media.VolumeName, Media.InChanger "
 "FROM File, Job, Client, JobMedia, Media "
@@ -1092,23 +1093,27 @@ void Bvfs::ls_special_dirs()
 
    POOL_MEM query;
    Mmsg(query,
-"(SELECT PPathId AS PathId, '..' AS Path "
-    "FROM  PathHierarchy "
-   "WHERE  PathId = %s "
+"(SELECT PathHierarchy.PPathId AS PathId, '..' AS Path "
+    "FROM  PathHierarchy JOIN PathVisibility USING (PathId) "
+   "WHERE  PathHierarchy.PathId = %s "
+   "AND PathVisibility.JobId IN (%s) "
 "UNION "
  "SELECT %s AS PathId, '.' AS Path)",
-        edit_uint64(pwd_id, ed1), ed1);
+        edit_uint64(pwd_id, ed1), jobids, ed1);
 
    POOL_MEM query2;
-   Mmsg(query2,// 1      2     3        4     5       6
-"SELECT 'D', tmp.PathId, 0, tmp.Path, JobId, LStat, FileId "
+   Mmsg(query2,// 1          2     3        4     5 
+"SELECT 'D', tmp.PathId, tmp.Path, JobId, LStat, FileId, FileIndex "
   "FROM %s AS tmp  LEFT JOIN ( " // get attributes if any
        "SELECT File1.PathId AS PathId, File1.JobId AS JobId, "
-              "File1.LStat AS LStat, File1.FileId AS FileId FROM File AS File1 "
+              "File1.LStat AS LStat, File1.FileId AS FileId, "
+              "File1.FileIndex AS FileIndex, "
+              "Job1.JobTDate AS JobTDate "
+      "FROM File AS File1 JOIN Job AS Job1 USING (JobId)"
        "WHERE File1.FilenameId = %s "
        "AND File1.JobId IN (%s)) AS listfile1 "
   "ON (tmp.PathId = listfile1.PathId) "
-  "ORDER BY tmp.Path, JobId DESC ",
+  "ORDER BY tmp.Path, JobTDate DESC ",
         query.c_str(), edit_uint64(dir_filenameid, ed2), jobids);
 
    Dmsg1(dbglevel_sql, "q=%s\n", query2.c_str());
@@ -1146,12 +1151,14 @@ bool Bvfs::ls_dirs()
     */
    /* Then we get all the dir entries from File ... */
    Mmsg(query,
-//       0     1     2   3      4     5       6
-"SELECT 'D', PathId, 0, Path, JobId, LStat, FileId FROM ( "
+//       0     1      2      3      4     5       6
+"SELECT 'D', PathId, Path, JobId, LStat, FileId, FileIndex FROM ( "
     "SELECT Path1.PathId AS PathId, Path1.Path AS Path, "
            "lower(Path1.Path) AS lpath, "
            "listfile1.JobId AS JobId, listfile1.LStat AS LStat, "
-           "listfile1.FileId AS FileId "
+           "listfile1.FileId AS FileId, "
+           "listfile1.JobTDate AS JobTDate, "
+           "listfile1.FileIndex AS FileIndex "
     "FROM ( "
       "SELECT DISTINCT PathHierarchy1.PathId AS PathId "
       "FROM PathHierarchy AS PathHierarchy1 "
@@ -1167,11 +1174,13 @@ bool Bvfs::ls_dirs()
 
    "LEFT JOIN ( " /* get attributes if any */
        "SELECT File1.PathId AS PathId, File1.JobId AS JobId, "
-              "File1.LStat AS LStat, File1.FileId AS FileId FROM File AS File1 "
+              "File1.LStat AS LStat, File1.FileId AS FileId, "
+              "File1.FileIndex, Job1.JobTDate AS JobTDate "
+     "FROM File AS File1 JOIN Job AS Job1 USING (JobId) "
        "WHERE File1.FilenameId = %s "
        "AND File1.JobId IN (%s)) AS listfile1 "
        "ON (listpath1.PathId = listfile1.PathId) "
-    ") AS A ORDER BY 2,3 DESC LIMIT %d OFFSET %d",
+    ") AS A ORDER BY Path,JobTDate DESC LIMIT %d OFFSET %d",
         edit_uint64(pwd_id, ed1),
         jobids,
         filter.c_str(),
