@@ -736,7 +736,7 @@ const char *sql_bvfs_select[] =
 };
 
 static const char *sql_bvfs_list_files_default =
-"SELECT 'F', T1.PathId, Filename.Name, "
+"SELECT 'F', T1.PathId, T1.FilenameId, Filename.Name, "
         "File.JobId, File.LStat, File.FileId "
 "FROM Job, File, ( "
     "SELECT MAX(JobTDate) AS JobTDate, PathId, FilenameId "
@@ -770,7 +770,7 @@ const char *sql_bvfs_list_files[] = {
 
    /* JobId PathId JobId PathId WHERE? Filename? Limit Offset*/
    /* Postgresql */
- "SELECT Type, PathId, Name, JobId, LStat, FileId "
+ "SELECT Type, PathId, FilenameId, Name, JobId, LStat, FileId "
   "FROM ("
    "SELECT DISTINCT ON (FilenameId) 'F' as Type, PathId, T.FilenameId, "
     "Filename.Name, JobId, LStat, FileId, FileIndex "

@@ -892,12 +892,12 @@ void Bvfs::get_all_file_versions(DBId_t pathid, FileId_t fnid, const char *clien
 
    POOL_MEM query;
 
-   Mmsg(query,//    1           2              3       
-"SELECT 'V', File.PathId, File.FilenameId,  File.JobId, "
-//           4          5           6
+   Mmsg(query,//    1           2           3      4 
+"SELECT 'V', File.PathId, File.FilenameId,  0, File.JobId, "
+//            5           6          7
         "File.LStat, File.FileId, File.Md5, "
-//         7                    8
-       "Media.VolumeName, Media.InChanger "
+//         8                    9
+        "Media.VolumeName, Media.InChanger "
 "FROM File, Job, Client, JobMedia, Media "
 "WHERE File.FilenameId = %s "
   "AND File.PathId=%s "
@@ -1102,8 +1102,8 @@ void Bvfs::ls_special_dirs()
         edit_uint64(pwd_id, ed1), jobids, ed1);
 
    POOL_MEM query2;
-   Mmsg(query2,// 1          2     3        4     5 
-"SELECT 'D', tmp.PathId, tmp.Path, JobId, LStat, FileId, FileIndex "
+   Mmsg(query2,// 1      2     3        4     5       6
+"SELECT 'D', tmp.PathId, 0, tmp.Path, JobId, LStat, FileId, FileIndex "
   "FROM %s AS tmp  LEFT JOIN ( " // get attributes if any
        "SELECT File1.PathId AS PathId, File1.JobId AS JobId, "
               "File1.LStat AS LStat, File1.FileId AS FileId, "
@@ -1152,7 +1152,7 @@ bool Bvfs::ls_dirs()
    /* Then we get all the dir entries from File ... */
    Mmsg(query,
 //       0     1      2      3      4     5       6
-"SELECT 'D', PathId, Path, JobId, LStat, FileId, FileIndex FROM ( "
+"SELECT 'D', PathId,  0,    Path, JobId, LStat, FileId, FileIndex FROM ( "
     "SELECT Path1.PathId AS PathId, Path1.Path AS Path, "
            "lower(Path1.Path) AS lpath, "
            "listfile1.JobId AS JobId, listfile1.LStat AS LStat, "
@@ -1363,10 +1363,10 @@ bool Bvfs::compute_restore_list(char *fileid, char *dirid, char *hardlink,
 
    if (*fileid) {               /* Select files with their direct id */
       init=true;
-      Mmsg(tmp,"SELECT Job.JobId, JobTDate, FileIndex, Filename.Name, "
+      Mmsg(tmp,"SELECT Job.JobId, JobTDate, FileIndex, FilenameId, "
                       "PathId, FileId "
-                 "FROM File,Job,Filename WHERE Job.JobId=File.Jobid "
-                 "AND File.FilenameId=Filename.FilenameId AND  FileId IN (%s)",
+                 "FROM File,Job WHERE Job.JobId=File.Jobid "
+                 "AND FileId IN (%s)",
            fileid);
       pm_strcat(query, tmp.c_str());
    }

@@ -44,21 +44,21 @@ typedef enum {
 typedef enum {
    BVFS_Type    = 0,            /* Could be D, F, V, L */
    BVFS_PathId  = 1,
-   BVFS_FilenameId = 5,
+   BVFS_FilenameId = 2,
 
-   BVFS_Name    = 2,
-   BVFS_JobId   = 3,
+   BVFS_Name    = 3,            /* Can be empty for File version */
+   BVFS_JobId   = 4,
 
-   BVFS_LStat   = 4,            /* Can be empty for missing directories */
-   BVFS_FileId  = 5,            /* Can be empty for missing directories */
+   BVFS_LStat   = 5,            /* Can be empty for missing directories */
+   BVFS_FileId  = 6,            /* Can be empty for missing directories */
 
    /* Only if Path record */
-   BVFS_FileIndex = 6,
+   BVFS_FileIndex = 7,
 
    /* Only if File Version record */
-   BVFS_Md5     = 6,
-   BVFS_VolName = 7,
-   BVFS_VolInchanger = 8,
+   BVFS_Md5     = 7,
+   BVFS_VolName = 8,
+   BVFS_VolInchanger = 9,
 
    /* Only if Delta record */
    BVFS_DeltaSeq = 6,
