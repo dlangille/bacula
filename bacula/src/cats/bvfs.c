@@ -1342,9 +1342,11 @@ bool Bvfs::compute_restore_list(char *fileid, char *dirid, char *hardlink,
        (*hardlink && !is_a_number_list(hardlink))||
        (!*hardlink && !*fileid && !*dirid && !*hardlink))
    {
+      Dmsg0(dbglevel, "ERROR: One or more of FileId, DirId or HardLink is not given or not a number.\n");
       return false;
    }
    if (!check_temp(output_table)) {
+      Dmsg0(dbglevel, "ERROR: Wrong format for table name (in path field).\n");
       return false;
    }
 
@@ -1374,12 +1376,13 @@ bool Bvfs::compute_restore_list(char *fileid, char *dirid, char *hardlink,
       Mmsg(tmp, "SELECT Path FROM Path WHERE PathId=%lld", id);
 
       if (!db->bdb_sql_query(tmp.c_str(), get_path_handler, (void *)&tmp2)) {
-         Dmsg0(dbglevel, "Can't search for path\n");
+         Dmsg3(dbglevel, "ERROR: Path not found %lld q=%s s=%s\n",
+               id, tmp.c_str(), tmp2.c_str());
          /* print error */
          goto bail_out;
       }
       if (!strcmp(tmp2.c_str(), "")) { /* path not found */
-         Dmsg3(dbglevel, "Path not found %lld q=%s s=%s\n",
+         Dmsg3(dbglevel, "ERROR: Path not found %lld q=%s s=%s\n",
                id, tmp.c_str(), tmp2.c_str());
          break;
       }
@@ -1431,7 +1434,7 @@ bool Bvfs::compute_restore_list(char *fileid, char *dirid, char *hardlink,
    prev_jobid=0;
    while (get_next_id_from_list(&hardlink, &jobid) == 1) {
       if (get_next_id_from_list(&hardlink, &id) != 1) {
-         Dmsg0(dbglevel, "hardlink should be two by two\n");
+         Dmsg0(dbglevel, "ERROR: hardlink should be two by two\n");
          goto bail_out;
       }
       if (jobid != prev_jobid) { /* new job */
@@ -1464,7 +1467,7 @@ bool Bvfs::compute_restore_list(char *fileid, char *dirid, char *hardlink,
    Dmsg1(dbglevel_sql, "query=%s\n", query.c_str());
 
    if (!db->bdb_sql_query(query.c_str(), NULL, NULL)) {
-      Dmsg1(dbglevel, "Can't execute query=%s\n", query.c_str());
+      Dmsg1(dbglevel, "ERROR executing query=%s\n", query.c_str());
       goto bail_out;
    }
 
@@ -1474,7 +1477,7 @@ bool Bvfs::compute_restore_list(char *fileid, char *dirid, char *hardlink,
    /* TODO: handle jobid filter */
    Dmsg1(dbglevel_sql, "query=%s\n", query.c_str());
    if (!db->bdb_sql_query(query.c_str(), NULL, NULL)) {
-      Dmsg1(dbglevel, "Can't execute query=%s\n", query.c_str());
+      Dmsg1(dbglevel, "ERROR executing query=%s\n", query.c_str());
       goto bail_out;
    }
 
@@ -1484,7 +1487,7 @@ bool Bvfs::compute_restore_list(char *fileid, char *dirid, char *hardlink,
            output_table, output_table);
       Dmsg1(dbglevel_sql, "query=%s\n", query.c_str());
       if (!db->bdb_sql_query(query.c_str(), NULL, NULL)) {
-         Dmsg1(dbglevel, "Can't execute query=%s\n", query.c_str());
+         Dmsg1(dbglevel, "ERROR executing query=%s\n", query.c_str());
          goto bail_out; 
       } 
    }
@@ -1537,7 +1540,7 @@ bail_out:
    db->bdb_unlock();
    return ret;
 }
- 
+
 void Bvfs::insert_missing_delta(char *output_table, int64_t *res)
 {
    char ed1[50];

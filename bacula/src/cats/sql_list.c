@@ -499,12 +499,11 @@ alist *BDB::bdb_list_job_records(JCR *jcr, JOB_DBR *jr, DB_LIST_HANDLER *sendit,
    default:
       break;
    }
-   Dmsg1(100, "SQL: %s\n", cmd);
 
    free_pool_memory(tmp);
    free_pool_memory(where);
 
-   Dmsg1(000, "cmd: %s\n", cmd);
+   Dmsg1(100, "SQL: %s\n", cmd);
    if (!QueryDB(jcr, cmd)) {
       bdb_unlock();
       return NULL;

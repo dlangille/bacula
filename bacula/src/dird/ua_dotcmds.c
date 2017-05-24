@@ -565,6 +565,7 @@ static bool dot_bvfs_restore(UAContext *ua, const char *cmd)
    char *path=NULL, *jobid=NULL, *username=NULL;
    char *empty = (char *)"";
    char *fileid, *dirid, *hardlink;
+
    fileid = dirid = hardlink = empty;
 
    if (!bvfs_parse_arg(ua, &pathid, &path, &jobid, &username,
@@ -598,7 +599,7 @@ static bool dot_bvfs_restore(UAContext *ua, const char *cmd)
    if (fs.compute_restore_list(fileid, dirid, hardlink, path)) {
       ua->send_msg("OK\n");
    } else {
-      ua->error_msg("Can't create restore list\n");
+      ua->error_msg("Cannot create restore list.\n");
    }
 
    return true;
