@@ -1,8 +1,17 @@
-              Changelog on version 9.0.0
+              Changelog on version 7.9.0
 
 
-
-21May17
+24May17
+ - Fix bvfs queries
+ - Use FileId in place of Filename
+ - Revert "Put FilenameId in .bvfs_lsfiles output"
+ - Put FilenameId in .bvfs_lsfiles output
+ - Add more debug in src/cats/bvfs.c
+ - Fix bvfs_lsdirs and bvfs_lsfiles
+ - baculum: Add Japanese language support in deb and rpm packages
+ - Add DirectoryACL directive
+ - baculum: New Baculum API and Baculum Web
+ - Add forking info to LICENSE and LICENSE-FAQ
  - Minor improvement to error message
  - Fix race in steal_device_lock shown in truncate-concurrent-test
  - Apply Marcin's fix for 6th week of the month
