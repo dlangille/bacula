@@ -1,5 +1,8 @@
 #!/bin/sh
 #
+# Copyright (C) 2000-2017 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
 # Run backups with dummy tape driver
 # This test setups an Autochanger with 80 slots
 # and 5 drives (3 LTO3 and 2 LTO1)

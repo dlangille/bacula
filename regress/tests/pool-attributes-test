@@ -1,5 +1,8 @@
 #!/bin/sh
 #
+# Copyright (C) 2000-2017 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
 # See if Pool/Media attributes are correctly handled
 #
 TestName="pool-attributes-test"

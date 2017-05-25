@@ -1,5 +1,8 @@
 #!/bin/sh
 #
+# Copyright (C) 2000-2017 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
 # Run a simple backup of a big file but 
 #   split the archive into four volumes, two of which are
 #   totally full. I.e. make sure that bsr selects all tapes 

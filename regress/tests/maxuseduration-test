@@ -1,5 +1,8 @@
 #!/bin/sh
 #
+# Copyright (C) 2000-2017 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
 # Run four jobs at the same time, with four Volumes, but set
 #   Maximum Job Volumes = 1 on each of the Volumes.  Note,
 #   Volume 2 will probably have two jobs on it.  Something to

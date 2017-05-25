@@ -1,0 +1,168 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2017 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+#
+# Run a simple backup of the Bacula build directory then create some           
+#   new files, do an Incremental and restore those two files.
+# test the bvfs interface
+#
+TestName="bvfs-acl-test"
+JobName=Incremental 
+. scripts/functions
+
+${rscripts}/cleanup
+${rscripts}/copy-test-confs
+echo "${tmpsrc}" >${tmp}/file-list
+echo "${cwd}/build" >> ${tmp}/file-list
+
+mkdir -p ${tmpsrc}
+cp -p ${src}/src/dird/*.c ${tmpsrc}
+cd ${tmp}
+echo "${tmpsrc}/ficheriro1.txt" >restore-list
+echo "${tmpsrc}/ficheriro2.txt" >>restore-list
+cd ${cwd}
+
+# Create a new client
+$bperl -e "print get_resource('$conf/bacula-dir.conf', 'Client', '$HOST-fd')" | sed "s/$HOST-fd/$HOST-fd2/" >> $conf/bacula-dir.conf
+$bperl -e "print get_resource('$conf/bacula-dir.conf', 'Client', '$HOST-fd')" | sed "s/$HOST-fd/$HOST-fd3/" >> $conf/bacula-dir.conf
+
+cat <<EOF >> $conf/bacula-dir.conf
+Console {
+  Name = restricted-user
+  Password = "xxx"
+  JobACL = NightlySave, $JobName
+  ClientACL = $HOST-fd
+  PoolACL = Default
+  FileSetACL = CompressedSet
+  CatalogACL = *all*
+  CommandACL = show, .jobs, messages, .pool, .storage, .client, .fileset, .bvfs_get_jobids, .bvfs_restore, .bvfs_lsdirs, .bvfs_update, reload, quit, .bvfs_lsfiles
+  WhereACL = "/"
+  DirectoryAcl = *all*
+}
+EOF
+
+cp $conf/bconsole.conf $conf/bconsole.conf.2
+
+cat <<EOF >> $conf/bconsole.conf.2
+Console {
+  Name = restricted-user
+  Password = xxx
+}
+EOF
+
+change_jobname CompressedTest $JobName
+start_test
+
+cat <<END_OF_DATA >${tmp}/bconcmds
+@$out /dev/null
+messages
+@$out ${tmp}/log1.out
+label storage=File volume=TestVolume001
+label storage=File volume=TestVolume00
+run job=$JobName client=$HOST-fd yes
+wait
+messages
+run job=$JobName client=$HOST-fd2 yes
+wait
+messages
+run job=$JobName client=$HOST-fd3 yes
+wait
+messages
+run job=NightlySave client=$HOST-fd yes
+wait
+messages
+@exec "touch ${tmpsrc}/fic1"
+run job=$JobName client=$HOST-fd2 yes
+wait
+messages
+run job=$JobName client=$HOST-fd3 yes
+wait
+messages
+run job=$JobName client=$HOST-fd yes
+wait
+messages
+run job=NightlySave client=$HOST-fd yes
+wait
+messages
+.bvfs_update
+@$out $tmp/out10.log
+.bvfs_get_jobids client=$HOST-fd
+quit
+END_OF_DATA
+
+run_bacula
+check_for_zombie_jobs storage=File $HOST-fd
+
+cat << EOF > $tmp/cmd
+@$out $tmp/out10.log
+.bvfs_get_jobids client=$HOST-fd
+.bvfs_lsfiles jobid=1 path=${tmpsrc}/ filename=dird_conf.c
+@$out $tmp/out11.log
+.bvfs_get_jobids client=$HOST-fd2
+.bvfs_lsfiles jobid=2 path=${tmpsrc}/ filename=dird_conf.c
+@$out $tmp/out12.log
+.bvfs_get_jobids client=$HOST-fd3
+.bvfs_lsfiles jobid=3 path=${tmpsrc}/ filename=dird_conf.c
+EOF
+
+cat <<END_OF_DATA >${tmp}/bconcmds
+reload
+END_OF_DATA
+
+$bin/bconsole -c $conf/bconsole.conf.2 < $tmp/cmd
+
+sed -i "s/out1/out2/" $tmp/cmd
+sed -i "s/ClientACL = $HOST-fd/ClientACL = $HOST-fd2/" $conf/bacula-dir.conf
+
+run_bconsole
+
+$bin/bconsole -c $conf/bconsole.conf.2 < $tmp/cmd
+
+sed -i "s/out2/out3/" $tmp/cmd
+sed -i "s/ClientACL = $HOST-fd2/ClientACL = $HOST-fd3/" $conf/bacula-dir.conf
+
+run_bconsole
+
+$bin/bconsole -c $conf/bconsole.conf.2 < $tmp/cmd
+
+stop_bacula
+
+grep -E "\s1\s.*dird_conf.c" $tmp/out10.log > /dev/null
+if [ $? -ne 0 ]; then
+    print_debug "ERROR: should find dird_conf.c for jobid 1 in out10.log"
+    estat=1
+fi
+
+grep -E "\s[32]\s.*dird_conf.c" $tmp/out11.log $tmp/out12.log > /dev/null
+if [ $? -eq 0 ]; then
+    print_debug "ERROR: should not find dird_conf.c for jobid 2 or 3 in out10.log or out11.log"
+    estat=2
+fi
+
+grep -E "\s2\s.*dird_conf.c" $tmp/out21.log > /dev/null
+if [ $? -ne 0 ]; then
+    print_debug "ERROR: should find dird_conf.c for jobid 2 in out21.log"
+    estat=3
+fi
+
+grep -E "\s[31]\s.*dird_conf.c" $tmp/out20.log $tmp/out22.log > /dev/null
+if [ $? -eq 0 ]; then
+    print_debug "ERROR: should not find dird_conf.c for jobid 3 or 1 in out20.log or out22.log"
+    estat=4
+fi
+
+grep -E "\s3\s.*dird_conf.c" $tmp/out32.log > /dev/null
+if [ $? -ne 0 ]; then
+    print_debug "ERROR: should find dird_conf.c for jobid 3 in out32.log"
+    estat=5
+fi
+
+grep -E "\s[21]\s.*dird_conf.c" $tmp/out31.log $tmp/out30.log > /dev/null
+if [ $? -eq 0 ]; then
+    print_debug "ERROR: should not find dird_conf.c for jobid 2 or 1 in out31.log or out30.log"
+    estat=6
+fi
+
+end_test
