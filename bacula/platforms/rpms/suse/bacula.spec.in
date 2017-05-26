@@ -889,7 +889,6 @@ rm -f $RPM_BUILD_DIR/Release_Notes-%{version}-%{release}.txt
 %attr(-, root, %{daemon_group}) /etc/init.d/bacula-dir
 %attr(-, root, %{daemon_group}) /etc/init.d/bacula-fd
 %attr(-, root, %{daemon_group}) %{_sbindir}/dbcheck
-%attr(-, root, %{storage_daemon_group}) %{script_dir}/dvd-handler
 %attr(-, root, %{storage_daemon_group}) /etc/init.d/bacula-sd
 %attr(-, root, %{storage_daemon_group}) %{script_dir}/mtx-changer
 %attr(-, root, %{storage_daemon_group}) %config(noreplace) %{script_dir}/mtx-changer.conf
