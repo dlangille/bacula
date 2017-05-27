@@ -382,7 +382,7 @@ int getJob_to_migrate(JCR *jcr)
       Dmsg2(dbglevel, "Before loop count=%d ids=%s\n", ids.count, ids.list);
       /*
        * Note: to not over load the system, limit the number
-       *  of new jobs started to 100 (see limit above)
+       *  of new jobs started to Maximum Spawned Jobs
        */
       for (int i=1; i < (int)ids.count; i++) {
          JobId = 0;
