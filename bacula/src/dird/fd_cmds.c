@@ -449,7 +449,7 @@ static bool send_fileset(JCR *jcr)
                newopts[j] = '\0';
                if (compress_disabled) {
                   Jmsg(jcr, M_INFO, 0,
-                      _("FD compression disabled for this Job because AllowCompress=No in Storage resource.\n") );
+                      _("FD compression disabled for this Job because AllowCompression=No in Storage resource.\n") );
                }
             }
             if (stripped_opts) {
