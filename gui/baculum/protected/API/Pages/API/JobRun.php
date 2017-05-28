@@ -22,27 +22,58 @@
  
 class JobRun extends BaculumAPIServer {
 
-	public function get() {}
-
 	public function create($params) {
-		$jobid = property_exists($params, 'id') ? intval($params->id) : 0;
-		$job = $jobid > 0 ? $this->getModule('job')->getJobById($jobid)->name : (property_exists($params, 'name') ? $params->name : null);
-		$level = $params->level;
-		$fileset = property_exists($params, 'fileset') ? $params->fileset : null;
-		$clientid = property_exists($params, 'clientid') ? intval($params->clientid) : null;
-		$client = $this->getModule('client')->getClientById($clientid);
-		$storageid = property_exists($params, 'storageid') ? intval($params->storageid) : null;
-		$storage = $this->getModule('storage')->getStorageById($storageid);
-		$poolid = property_exists($params, 'poolid') ? intval($params->poolid) : null;
-		$pool = $this->getModule('pool')->getPoolById($poolid);
+		$job = null;
+		if (property_exists($params, 'id')) {
+			$jobid = intval($params->id);
+			$job_row = $this->getModule('job')->getJobById($jobid);
+			$job = is_object($job_row) ? $job_row->name : null;
+		} elseif (property_exists($params, 'name') && $this->getModule('misc')->isValidName($params->name)) {
+			$job = $params->name;
+		}
+		$level = null;
+		if (property_exists($params, 'level')) {
+			$level = $params->level;
+		}
+		$fileset = null;
+		if (property_exists($params, 'fileset') && $this->getModule('misc')->isValidName($params->fileset)) {
+			$fileset = $params->fileset;
+		}
+		$client = null;
+		if (property_exists($params, 'clientid')) {
+			$clientid = intval($params->clientid);
+			$client_row = $this->getModule('client')->getClientById($clientid);
+			$client = is_object($client_row) ? $client_row->name : null;
+		} elseif (property_exists($params, 'client') && $this->getModule('misc')->isValidName($params->client)) {
+			$client = $params->client;
+		}
+		$storage = null;
+		if (property_exists($params, 'storageid')) {
+			$storageid = intval($params->storageid);
+			$storage_row = $this->getModule('storage')->getStorageById($storageid);
+			$storage = is_object($storage_row) ? $storage_row->name : null;
+		} elseif (property_exists($params, 'storage') && $this->getModule('misc')->isValidName($params->storage)) {
+			$storage = $params->storage;
+		}
+		$pool = null;
+		if (property_exists($params, 'poolid')) {
+			$poolid = intval($params->poolid);
+			$pool_row = $this->getModule('pool')->getPoolById($poolid);
+			$pool = is_object($pool_row) ? $pool_row->name : null;
+		} elseif (property_exists($params, 'pool') && $this->getModule('misc')->isValidName($params->pool)) {
+			$pool = $params->pool;
+		}
 		$priority = property_exists($params, 'priority') ? intval($params->priority) : 10; // default priority is set to 10
+
 		$jobid = property_exists($params, 'jobid') ? 'jobid="' . intval($params->jobid) . '"' : '';
-		// @TODO: Move Job name pattern in more appropriate place
-		$verifyjob = property_exists($params, 'verifyjob')  && preg_match('/^[\w\d\.\-\s]+$/', $params->verifyjob) === 1 ? 'verifyjob="' . ($params->verifyjob) . '"' : '';
+		$verifyjob = null;
+		if (property_exists($params, 'verifyjob') && $this->getModule('misc')->isValidName($params->verifyjob)) {
+			$verifyjob = 'verifyjob="' . $params->verifyjob . '"';
+		}
 		
 		if(!is_null($job)) {
-			$isValidLevel = $this->getModule('misc')->isValidJobLevel($params->level);
-			if($isValidLevel === true) {
+			$is_valid_level = $this->getModule('misc')->isValidJobLevel($params->level);
+			if($is_valid_level === true) {
 				if(!is_null($fileset)) {
 					if(!is_null($client)) {
 						if(!is_null($storage)) {
@@ -53,9 +84,9 @@ class JobRun extends BaculumAPIServer {
 									'job="' . $job . '"',
 									'level="' . $joblevels[$level] . '"',
 									'fileset="' . $fileset . '"',
-									'client="' . $client->name . '"',
-									'storage="' . $storage->name . '"',
-									'pool="' . $pool->name . '"' ,
+									'client="' . $client . '"',
+									'storage="' . $storage . '"',
+									'pool="' . $pool . '"' ,
 									'priority="' . $priority . '"',
 									$jobid,
 									$verifyjob,

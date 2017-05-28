@@ -182,7 +182,7 @@ class Miscellaneous extends TModule {
 	}
 
 	public function isValidName($name) {
-		return (preg_match('/^[\w:\.\-]{1,127}$/', $name) === 1);
+		return (preg_match('/^[\w:\.\-\s]{1,127}$/', $name) === 1);
 	}
 
 	/**

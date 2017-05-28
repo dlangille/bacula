@@ -286,7 +286,7 @@ abstract class BaculumAPIServer extends TPage {
 	 * @return none
 	 */
 	private function post() {
-		$params = null;
+		$params = new stdClass;
 		if ($this->Request->contains('create') && is_array($this->Request['create']) && count($this->Request['create']) > 0) {
 			$params = (object)$this->Request['create'];
 		}
