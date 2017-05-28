@@ -24,8 +24,7 @@ change_jobname NightlySave $JobName
 start_test
 
 # Remove last / and convert all / to cd commands
-CD=`echo $tmp | sed 's:/$::' | sed 's:/:\ncd :g'`
-echo "CD=${CD}"
+CD=`printf $tmp | sed 's:/$::' | sed 's:/:\ncd :g'`
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
 @output /dev/null
