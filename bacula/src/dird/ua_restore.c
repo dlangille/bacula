@@ -246,7 +246,7 @@ int restore_cmd(UAContext *ua, const char *cmd)
    }
 
    get_client_name(ua, &rx);
-   if (!rx.ClientName) {
+   if (!rx.ClientName[0]) {
       ua->error_msg(_("No Client resource found!\n"));
       goto bail_out;
    }

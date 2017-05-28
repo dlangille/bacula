@@ -52,13 +52,6 @@ void output_status(STATUS_PKT *sp)
    list_terminated_jobs(sp);    /* defined in lib/status.h */
 }
 
-#if defined(HAVE_LZO)
-static const bool have_lzo = true;
-#else
-static const bool have_lzo = false;
-#endif
-
-
 static void api_list_status_header(STATUS_PKT *sp)
 {
    char *p;

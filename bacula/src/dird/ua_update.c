@@ -365,7 +365,8 @@ void update_vol_recyclepool(UAContext *ua, char *val, MEDIA_DBR *mr)
 {
    POOL_DBR pr;
    POOL_MEM query(PM_MESSAGE);
-   char ed1[50], ed2[50], *poolname;
+   char ed1[50], ed2[50];
+   const char *poolname;
 
    if(val && *val) { /* update volume recyclepool="Scratch" */
      /* If a pool name is given, look up the PoolId */

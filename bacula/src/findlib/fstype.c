@@ -67,6 +67,7 @@ static int compare_mtab_items(void *item1, void *item2)
    return 0;
 }
 
+#if defined(HAVE_LINUX_OS)
 static void add_mtab_item(void *user_ctx, struct stat *st, const char *fstype,
                const char *mountpoint, const char *mntopts,
                const char *fsname)
@@ -84,6 +85,7 @@ static void add_mtab_item(void *user_ctx, struct stat *st, const char *fstype,
       free(item);
    }
 }
+#endif
 
 /* Compare directly the FS from a fname with a string */
 bool fstype_cmp(FF_PKT *ff_pkt, const char *fsname)

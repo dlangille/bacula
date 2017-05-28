@@ -73,8 +73,10 @@ BPIPE *open_bpipe(char *prog, int wait, const char *mode, char *envp[])
    int mode_read, mode_write, mode_shell;
    BPIPE *bpipe;
    int save_errno;
+#if !defined(HAVE_FCNTL_F_CLOSEM) && !defined(HAVE_CLOSEFROM)
    struct rlimit rl;
    int64_t rlimitResult=0;
+#endif
 
    if (!prog || !*prog) {
       /* execve(3) A component of the file does not name an existing file or file is an empty string. */
