@@ -102,6 +102,9 @@ if [ $nb -ne 4 ]; then
 fi
 nb=`grep "^  Termination: *Verify OK" tmp/log3.out | wc -l`
 if [ $nb -ne $nbok ]; then
+    echo "nb=${nb} nbok=${nbok}"
+    echo "tmp/log3.out"
+    cat tmp/log3.out
     rstat=2
 fi
 dstat=0
