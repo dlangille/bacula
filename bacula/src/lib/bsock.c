@@ -540,7 +540,7 @@ bool BSOCK::send(int aflags)
    }
    if (is_terminated()) {
       if (!m_suppress_error_msgs) {
-         Qmsg4(m_jcr, M_ERROR, 0,  _("Socket is terminated=%d on call to %s:%s:%d\n"),
+         Qmsg4(m_jcr, M_ERROR, 0,  _("Bsock send while terminated=%d on call to %s:%s:%d\n"),
              is_terminated(), m_who, m_host, m_port);
       }
       return false;
