@@ -138,7 +138,6 @@ abstract class BaculumAPIServer extends TPage {
 			$this->error = AuthorizationError::ERROR_AUTHORIZATION_TO_API_PROBLEM;
 			return;
 		}
-
 		try {
 			switch($_SERVER['REQUEST_METHOD']) {
 				case self::GET_METHOD: {
@@ -226,22 +225,13 @@ abstract class BaculumAPIServer extends TPage {
 	}
 
 	/**
-	 * Each of API module should have get() method defined.
-	 * Designed to getting data from API.
-	 *
-	 * @access protected
-	 * @return none
-	 */
-	abstract protected function get();
-
-	/**
 	 * Changing/updating values via API.
 	 *
 	 * @access private
 	 * @return none
 	 */
 	private function put() {
-		$id = isset($this->Request['id']) ? $this->Request['id'] : null;
+		$id = $this->Request->contains('id') ? $this->Request['id'] : null;
 
 		/**
 		 * Check if it is possible to read PUT method data.
@@ -250,7 +240,7 @@ abstract class BaculumAPIServer extends TPage {
 		 * not possible to ready by superglobal $_REQUEST variable, then is try to
 		 * read PUT data by PHP input stream.
 		 */
-		if (is_array($this->Request['update']) && count($this->Request['update']) > 0) {
+		if ($this->Request->contains('update') && is_array($this->Request['update']) && count($this->Request['update']) > 0) {
 			// $_REQUEST available to read
 			$params = (object)$this->Request['update'];
 			$this->set($id, $params);
@@ -296,10 +286,11 @@ abstract class BaculumAPIServer extends TPage {
 	 * @return none
 	 */
 	private function post() {
-		if (is_array($this->Request['create']) && count($this->Request['create']) > 0) {
+		$params = null;
+		if ($this->Request->contains('create') && is_array($this->Request['create']) && count($this->Request['create']) > 0) {
 			$params = (object)$this->Request['create'];
-			$this->create($params);
 		}
+		$this->create($params);
 	}
 
 	/**
@@ -309,10 +300,11 @@ abstract class BaculumAPIServer extends TPage {
 	 * @return none
 	 */
 	private function delete() {
-		if (isset($this->Request['id'])) {
+		$id = null;
+		if ($this->Request->contains('id')) {
 			$id = intval($this->Request['id']);
-			$this->remove($id);
 		}
+		$this->remove($id);
 	}
 
 	/**
