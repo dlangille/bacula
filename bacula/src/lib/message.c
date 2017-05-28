@@ -42,6 +42,7 @@ sql_escape_call p_sql_escape = NULL;
  */
 dlist *daemon_msg_queue = NULL;
 pthread_mutex_t daemon_msg_queue_mutex = PTHREAD_MUTEX_INITIALIZER;
+static bool dequeuing_daemon_msgs = false;
 const char *working_directory = NULL; /* working directory path stored here */
 const char *assert_msg = NULL;        /* ASSERT2 error message */
 const char *version = VERSION " (" BDATE ")";
@@ -1720,8 +1721,9 @@ void dequeue_messages(JCR *jcr)
    }
 
    /* Dequeue daemon messages */
-   if (daemon_msg_queue) {
+   if (daemon_msg_queue && !dequeuing_daemon_msgs) {
       P(daemon_msg_queue_mutex);
+      dequeuing_daemon_msgs = true;
       jcr->dequeuing_msgs = true;
       JobId = jcr->JobId;
       jcr->JobId = 0;       /* set daemon JobId == 0 */
@@ -1732,11 +1734,12 @@ void dequeue_messages(JCR *jcr)
       daemon_msg_queue->destroy();
       jcr->JobId = JobId;   /* restore JobId */
       jcr->dequeuing_msgs = false;
+      dequeuing_daemon_msgs = false;
       V(daemon_msg_queue_mutex);
    }
 
    /* Dequeue Job specific messages */
-   if (!jcr->msg_queue) {
+   if (!jcr->msg_queue || jcr->dequeuing_msgs) {
       return;
    }
    P(jcr->msg_queue_mutex);
