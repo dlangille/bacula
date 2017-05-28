@@ -181,6 +181,10 @@ class Miscellaneous extends TModule {
 		return array_key_exists($jobLevel, $this->getJobLevels());
 	}
 
+	public function isValidName($name) {
+		return (preg_match('/^[\w:\.\-]{1,127}$/', $name) === 1);
+	}
+
 	/**
 	 * Writing INI-style configuration file.
 	 * 

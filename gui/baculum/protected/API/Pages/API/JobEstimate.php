@@ -22,25 +22,52 @@
  
 class JobEstimate extends BaculumAPIServer {
 
-	public function get() {}
-
 	public function create($params) {
-		$jobid = property_exists($params, 'id') ? intval($params->id) : 0;
-		$job = $jobid > 0 ? $this->getModule('job')->getJobById($jobid)->name : $params->name;
-		$level = $params->level;
-		$fileset = $params->fileset;
-		$clientid = intval($params->clientid);
-		$client = $this->getModule('client')->getClientById($clientid);
-		$accurateJob = intval($params->accurate);
-		$accurate = $accurateJob === 1 ? 'yes' : 'no';
+		$job = null;
+		if (property_exists($params, 'id')) {
+			$jobid = intval($params->id);
+			$job_row = $this->getModule('job')->getJobById($jobid);
+			$job = is_object($job_row) ? $job_row->name : null;
+		} elseif (property_exists($params, 'name') && $this->getModule('misc')->isValidName($params->name)) {
+			$job = $params->name;
+		}
+		$level = null;
+		if (property_exists($params, 'level')) {
+			$level = $params->level;
+		}
+		$fileset = null;
+		if (property_exists($params, 'fileset') && $this->getModule('misc')->isValidName($params->fileset)) {
+			$fileset = $params->fileset;
+		}
+		$client = null;
+		if (property_exists($params, 'clientid')) {
+			$clientid = intval($params->clientid);
+			$client_row = $this->getModule('client')->getClientById($clientid);
+			$client = is_object($client_row) ? $client_row->name : null;
+		} elseif (property_exists($params, 'client') && $this->getModule('misc')->isValidName($params->client)) {
+			$client = $params->client;
+		}
+		$accurate = null;
+		if (property_exists($params, 'accurate')) {
+			$accurate_job = intval($params->accurate);
+			$accurate = $accurate_job === 1 ? 'yes' : 'no';
+		}
 
-		if(!is_null($job)) {
-			$isValidLevel = $this->getModule('misc')->isValidJobLevel($params->level);
-			if($isValidLevel === true) {
-				if(!is_null($fileset)) {
-					if(!is_null($client)) {
+		if (!is_null($job)) {
+			$is_valid_level = $this->getModule('misc')->isValidJobLevel($params->level);
+			if ($is_valid_level === true) {
+				if (!is_null($fileset)) {
+					if (!is_null($client)) {
 						$joblevels  = $this->getModule('misc')->getJobLevels();
-						$estimation = $this->getModule('bconsole')->bconsoleCommand($this->director, array('estimate', 'job="' . $job . '"', 'level="' . $joblevels[$level] . '"', 'fileset="' . $fileset. '"', 'client="' . $client->name . '"', 'accurate="' . $accurate . '"'), $this->user);
+						$cmd = array(
+							'estimate',
+							'job="' . $job . '"',
+							'level="' . $joblevels[$level] . '"',
+							'fileset="' . $fileset. '"',
+							'client="' . $client . '"',
+							'accurate="' . $accurate . '"'
+						);
+						$estimation = $this->getModule('bconsole')->bconsoleCommand($this->director, $cmd, $this->user);
 						$this->output = $estimation->output;
 						$this->error = (integer)$estimation->exitcode;
 					} else {
