@@ -82,7 +82,7 @@ sed s/log/logerr/ $tmp/bconcmds > $tmp/bconcmds.err
 # With DNS errors, it will take more times
 (run_bconsole $tmp/bconcmds.err)&
 
-sleep 2
+sleep 10
 
 cat <<EOF > $tmp/bconcmds.sametime
 @out /dev/null
@@ -96,10 +96,15 @@ EOF
 run_bconsole $tmp/bconcmds.sametime
 
 wait
+sleep 10
 
 $bperl -e '(-M "$tmp/logsametime.done" < -M "$tmp/logerr.done") && exit 1'
 if [ $? -ne 0 ]; then
     print_debug "ERROR: The timestamp of $tmp/logsametime.done should be smaller than $tmp/logerr.done"
+    echo "logsametime.done"
+    cat $tmp/logsametime.done
+    echo "logerr.done"
+    cat $tmp/logerr.done
     estat=1
 fi
 
