@@ -886,11 +886,15 @@ rm -f $RPM_BUILD_DIR/Release_Notes-%{version}-%{release}.txt
 %attr(-, root, %{daemon_group}) %{_sbindir}/bacula-sd
 %attr(-, root, %{daemon_group}) %{_sbindir}/btraceback
 %attr(-, root, %{daemon_group}) %{_sbindir}/bconsole
+%attr(-, root, %{daemon_group}) %{_sbindir}/bbconsjson
 %attr(-, root, %{daemon_group}) %{_sbindir}/bsmtp
 %attr(-, root, %{daemon_group}) %{_sbindir}/bscan
 %attr(-, root, %{daemon_group}) %{_sbindir}/btape
+%attr(-, root, %{daemon_group}) %{_sbindir}/bdirjson
+%attr(-, root, %{daemon_group}) %{_sbindir}/bsdjson
 
 %attr(755, root, root) %{_sbindir}/bsnapshot
+%attr(755, root, root) %{_sbindir}/bfdjson
 
 %{_sbindir}/bacula-fd
 %{_sbindir}/bacula
