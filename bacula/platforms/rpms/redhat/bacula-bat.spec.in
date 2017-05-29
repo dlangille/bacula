@@ -122,7 +122,7 @@ Source0: http://www.prdownloads.sourceforge.net/bacula/%{product}-%{version}.tar
 Source1: http://www.prdownloads.sourceforge.net/bacula/depkgs-qt-%{depkgs_qt_version}.tar.gz
 
 BuildRequires: gcc, gcc-c++, make, autoconf
-BuildRequires: libstdc++-devel = %{gccver}-%{gccrel}, zlib-devel
+BuildRequires: libstdc++-devel, zlib-devel
 BuildRequires: openssl-devel, fontconfig-devel, libpng-devel, libstdc++-devel, zlib-devel
 
 Requires: openssl
