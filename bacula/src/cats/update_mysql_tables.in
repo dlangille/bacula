@@ -35,10 +35,10 @@ if [ "x$DBVERSION" = x ]; then
     exit 1
 fi
 
-if [ "$DBVERSION" -lt 12 -o "$DBVERSION" -gt 14 ] ; then
+if [ "$DBVERSION" -lt 12 -o "$DBVERSION" -gt 15 ] ; then
     echo " "
     echo "The existing database is version $DBVERSION !!"
-    echo "This script can only update an existing version 12-14 version 15."
+    echo "This script can only update an existing version 12-15 to version 16."
     echo "Error. Cannot upgrade this database."
     echo " "
     exit 1

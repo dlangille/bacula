@@ -22,10 +22,10 @@ DBVERSION=`sqlite3 ${db_name}.db <<END
 SELECT VersionId FROM Version LIMIT 1;
 END
 `
-if [ "$DBVERSION" -lt 12 -o "$DBVERSION" -gt 14 ] ; then
+if [ "$DBVERSION" -lt 12 -o "$DBVERSION" -gt 15 ] ; then
     echo " "
     echo "The existing database is version $DBVERSION !!"
-    echo "This script can only update an existing version 12, 13, 14 or 1014 database to version 1015."
+    echo "This script can only update an existing version 12, 13, 14 or 15 database to version 16."
     echo "Error. Cannot upgrade this database."
     echo " "
     exit 1
