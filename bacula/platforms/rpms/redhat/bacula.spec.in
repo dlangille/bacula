@@ -698,6 +698,7 @@ rm -f $RPM_BUILD_ROOT%{script_dir}/stopmysql
 # Remove symlinks
 #rm -f $RPM_BUILD_ROOT%{_libdir}/libbaccats.so
 #rm -f $RPM_BUILD_ROOT%{_libdir}/libbaccats-%{version}.so
+rm -f $RPM_BUILD_ROOT%{_libdir}/libbacsd.la
 
 # install the init scripts
 %if !%{usesystemd}

@@ -703,9 +703,13 @@ rm -f $RPM_BUILD_ROOT%{_mandir}/man1/bacula-bgnome-console.1.%{manpage_ext}
 rm -f $RPM_BUILD_ROOT%{_mandir}/man1/bacula-bwxconsole.1.%{manpage_ext}
 rm -f $RPM_BUILD_ROOT%{_mandir}/man1/bacula-tray-monitor.1.%{manpage_ext}
 rm -f $RPM_BUILD_ROOT%{script_dir}/gconsole
+
 # Storage-ctl packaged in shstore rpm
 rm -f $RPM_BUILD_ROOT%{script_dir}/storage-ctl
 rm -f $RPM_BUILD_ROOT%{script_dir}/storage-ctl.conf
+
+# Remove libtool unneeded file
+rm -f $RPM_BUILD_ROOT%{_libdir}/libbacsd.la
 
 # fixme - make installs the mysql scripts for sqlite build
 %if %{sqlite}
