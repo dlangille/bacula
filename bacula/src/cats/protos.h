@@ -55,9 +55,9 @@ BDB *db_init_database(JCR *jcr, const char *db_driver, const char *db_name,
 
 /* Misc */
 #define db_lock(mdb) \
-           mdb->bdb_lock()
+   mdb->bdb_lock(__FILE__, __LINE__)
 #define db_unlock(mdb) \
-           mdb->bdb_unlock()
+   mdb->bdb_unlock()
 
 
 /* Virtual methods */
