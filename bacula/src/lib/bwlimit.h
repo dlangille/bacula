@@ -26,10 +26,13 @@ private:
    int64_t m_bwlimit;           /* set to limit bandwidth */
    int64_t m_nb_bytes;          /* bytes sent/recv since the last tick */
    btime_t m_last_tick;         /* last tick used by bwlimit */
+   btime_t m_backlog_limit;     /* don't handle more backlog thna this us */
+   int64_t m_provision;
    pthread_mutex_t m_bw_mutex;
 
 public:
-   bwlimit(int64_t speed=0): m_bwlimit(speed), m_nb_bytes(0), m_last_tick(0) {
+   bwlimit(int64_t speed=0): m_bwlimit(speed), m_nb_bytes(0), m_last_tick(0),
+         m_backlog_limit(10*1000*1000) {
       pthread_mutex_init(&m_bw_mutex, NULL);
    };
    ~bwlimit() {

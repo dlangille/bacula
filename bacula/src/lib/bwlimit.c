@@ -33,32 +33,33 @@ void bwlimit::control_bwlimit(int bytes)
    now = get_current_btime();          /* microseconds */
    temp = now - m_last_tick;           /* microseconds */
 
-   m_nb_bytes += bytes;
-   if (temp < 0 || temp > (ONE_SEC*10)) { /* Take care of clock problems (>10s) or back in time */
+   if (temp < 0 || temp > m_backlog_limit) { /* Take care of clock problems (>10s) or back in time */
       m_nb_bytes = bytes;
       m_last_tick = now;
       return;
    }
+
+   /* remove what as been consumed */
+   m_nb_bytes -= bytes;;
 
    /* Less than 0.1ms since the last call, see the next time */
    if (temp < 100) {
       return;
    }
 
-   /* Remove what was authorised to be written in temp us */
-   m_nb_bytes -= (int64_t)(temp * ((double)m_bwlimit / ONE_SEC));
+   /* Add what is authorized to be written in temp us */
+   m_nb_bytes += (int64_t)(temp * ((double)m_bwlimit / ONE_SEC));
+   m_last_tick = now;
 
-   if (m_nb_bytes < 0) {
-      m_nb_bytes = 0;
-   }
-
-   /* What exceed should be converted in sleep time */
-   int64_t usec_sleep = (int64_t)(m_nb_bytes /((double)m_bwlimit / ONE_SEC));
-   if (usec_sleep > 100) {
-      bmicrosleep(usec_sleep / ONE_SEC, usec_sleep % ONE_SEC);
-      m_last_tick = get_current_btime();
-      m_nb_bytes = 0;
-   } else {
-      m_last_tick = now;
+   /* limit the backlog */
+   if (m_nb_bytes > m_backlog_limit) {
+      m_nb_bytes = m_backlog_limit;
+   } else if (m_nb_bytes < 0) {
+      /* What exceed should be converted in sleep time */
+      int64_t usec_sleep = (int64_t)(-m_nb_bytes /((double)m_bwlimit / ONE_SEC));
+      if (usec_sleep > 100) {
+         bmicrosleep(usec_sleep / ONE_SEC, usec_sleep % ONE_SEC);
+      }
+      /* m_nb_bytes & m_last_tick will be updated at next iteration */
    }
 }
