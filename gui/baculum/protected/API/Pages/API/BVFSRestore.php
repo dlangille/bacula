@@ -30,14 +30,18 @@ class BVFSRestore extends BaculumAPIServer {
 		$path = property_exists($params, 'path') ? $params->path : null;
 
 		$is_valid = true;
-		$jobidsList = explode(',', $jobids);
-		if(is_array($jobidsList)) {
-			for($i = 0; $i < count($jobidsList); $i++) {
-				$job = $this->getModule('job')->getJobById($jobidsList[$i]);
-				if(is_null($job)) {
-					$is_valid = false;
-					break;
+		if (!is_null($jobids)) {
+			$jobidsList = explode(',', $jobids);
+			if(is_array($jobidsList)) {
+				for($i = 0; $i < count($jobidsList); $i++) {
+					$job = $this->getModule('job')->getJobById($jobidsList[$i]);
+					if(is_null($job)) {
+						$is_valid = false;
+						break;
+					}
 				}
+			} else {
+				$is_valid = false;
 			}
 		} else {
 			$is_valid = false;

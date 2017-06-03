@@ -85,20 +85,20 @@ class PoolError extends GenericError {
 class JobError extends GenericError {
 	const ERROR_JOB_DOES_NOT_EXISTS = 50;
 	const ERROR_INVALID_JOBLEVEL = 51;
-	const ERROR_FILESETID_DOES_NOT_EXISTS = 52;
-	const ERROR_CLIENTID_DOES_NOT_EXISTS = 53;
-	const ERROR_STORAGEID_DOES_NOT_EXISTS = 54;
-	const ERROR_POOLID_DOES_NOT_EXISTS = 55;
+	const ERROR_FILESET_DOES_NOT_EXISTS = 52;
+	const ERROR_CLIENT_DOES_NOT_EXISTS = 53;
+	const ERROR_STORAGE_DOES_NOT_EXISTS = 54;
+	const ERROR_POOL_DOES_NOT_EXISTS = 55;
 	const ERROR_INVALID_RPATH = 56;
 	const ERROR_INVALID_WHERE_OPTION = 57;
 	const ERROR_INVALID_REPLACE_OPTION = 58;
 
 	const MSG_ERROR_JOB_DOES_NOT_EXISTS = 'Job with inputted jobid does not exist.';
 	const MSG_ERROR_INVALID_JOBLEVEL = 'Inputted job level is invalid.';
-	const MSG_ERROR_FILESETID_DOES_NOT_EXISTS = 'FileSet resource with inputted filesetid does not exist.';
-	const MSG_ERROR_CLIENTID_DOES_NOT_EXISTS = 'Client with inputted clientid does not exist.';
-	const MSG_ERROR_STORAGEID_DOES_NOT_EXISTS = 'Storage with inputted storageid does not exist.';
-	const MSG_ERROR_POOLID_DOES_NOT_EXISTS = 'Pool with inputted poolid does not exist.';
+	const MSG_ERROR_FILESET_DOES_NOT_EXISTS = 'FileSet resource does not exist.';
+	const MSG_ERROR_CLIENT_DOES_NOT_EXISTS = 'Client does not exist.';
+	const MSG_ERROR_STORAGE_DOES_NOT_EXISTS = 'Storage does not exist.';
+	const MSG_ERROR_POOL_DOES_NOT_EXISTS = 'Pool does not exist.';
 	const MSG_ERROR_INVALID_RPATH = 'Inputted rpath for restore is invalid. Proper format is b2[0-9]+.';
 	const MSG_ERROR_INVALID_WHERE_OPTION = 'Inputted "where" option is invalid.';
 	const MSG_ERROR_INVALID_REPLACE_OPTION = 'Inputted "replace" option is invalid.';

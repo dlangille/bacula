@@ -28,13 +28,22 @@ class RestoreRun extends BaculumAPIServer {
 
 	public function create($params) {
 		$rfile = property_exists($params, 'rpath') ? $params->rpath : null;
-		$clientid = property_exists($params, 'clientid') ? intval($params->clientid) : null;
-		$fileset = property_exists($params, 'fileset') ? $params->fileset : null;
-		$priority = property_exists($params, 'priority') ? intval($params->priority) : null;
+
+		$fileset = null;
+		if (property_exists($params, 'fileset') && $this->getModule('misc')->isValidName($params->fileset)) {
+			$fileset = $params->fileset;
+		}
+		$client = null;
+		if (property_exists($params, 'clientid')) {
+			$clientid = intval($params->clientid);
+			$client_row = $this->getModule('client')->getClientById($clientid);
+			$client = is_object($client_row) ? $client_row->name : null;
+		} elseif (property_exists($params, 'client') && $this->getModule('misc')->isValidName($params->client)) {
+			$client = $params->client;
+		}
+		$priority = property_exists($params, 'priority') ? intval($params->priority) : 10; // default priority is set to 10
 		$where = property_exists($params, 'where') ? $params->where : null;
 		$replace = property_exists($params, 'replace') ? $params->replace : null;
-
-		$client = $this->getModule('client')->getClientById($clientid);
 		$misc = $this->getModule('misc');
 
 		if(!is_null($fileset)) {
@@ -42,7 +51,16 @@ class RestoreRun extends BaculumAPIServer {
 				if(preg_match($misc::RPATH_PATTERN, $rfile) === 1) {
 					if(!is_null($where)) {
 						if(!is_null($replace)) {
-							$restore = $this->getModule('bconsole')->bconsoleCommand($this->director, array('restore', 'file="?' . $rfile . '"', 'client="' . $client->name . '"', 'where="' . $where . '"', 'replace="' . $replace . '"', 'fileset="' . $fileset . '"', 'priority="' . $priority . '"', 'yes'), $this->user);
+							$command = array('restore',
+								'file="?' . $rfile . '"',
+								'client="' . $client . '"',
+								'where="' . $where . '"',
+								'replace="' . $replace . '"',
+								'fileset="' . $fileset . '"',
+								'priority="' . $priority . '"',
+								'yes'
+							);
+							$restore = $this->getModule('bconsole')->bconsoleCommand($this->director, $command, $this->user);
 							$this->removeTmpRestoreTable($rfile);
 							$this->output = $restore->output;
 							$this->error = (integer)$restore->exitcode;
@@ -59,12 +77,12 @@ class RestoreRun extends BaculumAPIServer {
 					$this->error = JobError::ERROR_INVALID_RPATH;
 				}
 			} else {
-				$this->output = JobError::MSG_ERROR_CLIENTID_DOES_NOT_EXISTS;
-				$this->error = JobError::ERROR_CLIENTID_DOES_NOT_EXISTS;
+				$this->output = JobError::MSG_ERROR_CLIENT_DOES_NOT_EXISTS;
+				$this->error = JobError::ERROR_CLIENT_DOES_NOT_EXISTS;
 			}
 		} else {
-			$this->output = JobError::MSG_ERROR_FILESETID_DOES_NOT_EXISTS;
-			$this->error = JobError::ERROR_FILESETID_DOES_NOT_EXISTS;
+			$this->output = JobError::MSG_ERROR_FILESET_DOES_NOT_EXISTS;
+			$this->error = JobError::ERROR_FILESET_DOES_NOT_EXISTS;
 		}
 	}
 
@@ -77,7 +95,18 @@ class RestoreRun extends BaculumAPIServer {
 			$connection->setActive(true);
 			$sql = "DROP TABLE $tableName";
 			$pdo = $connection->getPdoInstance();
-			$pdo->exec($sql);
+			try {
+				$pdo->exec($sql);
+			} catch(PDOException $e) {
+				$emsg = 'Problem during delete temporary Bvfs table. ' . $e->getMessage();
+				$this->getModule('logging')->log(
+					__FUNCTION__,
+					$emsg,
+					Logging::CATEGORY_APPLICATION,
+					__FILE__,
+					__LINE__
+				);
+			}
 			$pdo = null;
 		}
 	}

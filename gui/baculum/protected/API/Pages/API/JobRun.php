@@ -96,20 +96,20 @@ class JobRun extends BaculumAPIServer {
 								$this->output = $run->output;
 								$this->error = (integer)$run->exitcode;
 							} else {
-								$this->output = JobError::MSG_ERROR_POOLID_DOES_NOT_EXISTS;
-								$this->error = JobError::ERROR_POOLID_DOES_NOT_EXISTS;
+								$this->output = JobError::MSG_ERROR_POOL_DOES_NOT_EXISTS;
+								$this->error = JobError::ERROR_POOL_DOES_NOT_EXISTS;
 							}
 						} else {
-							$this->output = JobError::MSG_ERROR_STORAGEID_DOES_NOT_EXISTS;
-							$this->error = JobError::ERROR_STORAGEID_DOES_NOT_EXISTS;
+							$this->output = JobError::MSG_ERROR_STORAGE_DOES_NOT_EXISTS;
+							$this->error = JobError::ERROR_STORAGE_DOES_NOT_EXISTS;
 						}
 					} else {
-						$this->output = JobError::MSG_ERROR_CLIENTID_DOES_NOT_EXISTS;
-						$this->error = JobError::ERROR_CLIENTID_DOES_NOT_EXISTS;
+						$this->output = JobError::MSG_ERROR_CLIENT_DOES_NOT_EXISTS;
+						$this->error = JobError::ERROR_CLIENT_DOES_NOT_EXISTS;
 					}
 				} else {
-					$this->output = JobError::MSG_ERROR_FILESETID_DOES_NOT_EXISTS;
-					$this->error = JobError::ERROR_FILESETID_DOES_NOT_EXISTS;
+					$this->output = JobError::MSG_ERROR_FILESET_DOES_NOT_EXISTS;
+					$this->error = JobError::ERROR_FILESET_DOES_NOT_EXISTS;
 				}
 			} else {
 				$this->output = JobError::MSG_ERROR_INVALID_JOBLEVEL;
