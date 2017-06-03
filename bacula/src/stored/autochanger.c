@@ -51,7 +51,7 @@ bool init_autochangers()
       foreach_alist(device, changer->device) {
          /*
           * If the device does not have a changer name or changer command
-          *   defined, used the one from the Autochanger resource
+          *   defined, use the one from the Autochanger resource
           */
          if (!device->changer_name && changer->changer_name) {
             device->changer_name = bstrdup(changer->changer_name);
