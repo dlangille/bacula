@@ -1,6 +1,4 @@
 usr/share/javascript/excanvas/excanvas.js usr/share/baculum/htdocs/protected/Web/JavaScript/excanvas.js
-var/cache/baculum usr/share/baculum/htdocs/assets
-var/cache/baculum usr/share/baculum/htdocs/protected/runtime
 usr/share/locale/en/LC_MESSAGES/baculum-web.mo usr/share/baculum/htdocs/protected/Web/Lang/en/messages.mo
 usr/share/locale/pl/LC_MESSAGES/baculum-web.mo usr/share/baculum/htdocs/protected/Web/Lang/pl/messages.mo
 usr/share/locale/pt/LC_MESSAGES/baculum-web.mo usr/share/baculum/htdocs/protected/Web/Lang/pt/messages.mo
