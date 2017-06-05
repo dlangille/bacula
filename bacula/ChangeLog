@@ -1,4 +1,38 @@
-              Changelog on version 7.9.0
+              Changelog on version 7.9.2
+
+
+
+05Jun17
+ - Fix getmsg to handle additional forms of Progress messages
+
+04Jun17
+ - baculum: Fix double assets and runtime symbolic links in baculum-web deb 
+  package
+
+03Jun17
+ - baculum: Fix missing php-xml dependency in deb metafile
+ - baculum: Improve errors handling in API restore pages
+
+29May17
+ - rpm: Remove libbacsd.la for both Red Hat and Suse
+ - rpm: Add missing libs bbconsjson, bdirjson and bsdjson
+ - rpm: Fix libstdc++ version in BAT spec file
+
+28May17
+ - Fix some problems noted by clang
+ - baculum: Reorganize run job code
+ - baculum: Reorganize estimate job code
+ - baculum: Make get method definition not obligatory
+ - Make file-span-vol-test portable
+ - Attempt to fix deadlock in FreeBSD maxtime-test
+
+27May17
+ - Do not produce error if MySQL database exists in create_mysql_database
+ e
+26May17
+ - rpm: Add missing tapealert script
+ - rpm: Add missing libbacsd
+ - rpm: Remove dvd-handler script
 
 
 24May17
