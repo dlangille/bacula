@@ -279,6 +279,8 @@ int bget_dirmsg(BSOCK *bs)
          uint64_t bytes;
          if ((sscanf(bs->msg, "Progress JobId=%ld files=%ld bytes=%lld bps=%ld\n",
                 &JobId,  &files, &bytes, &bps) == 4) ||
+             (sscanf(bs->msg, "Progress JobId=x files=%ld bytes=%lld bps=%ld\n",
+                &files, &bytes, &bps) == 3) ||
              (sscanf(bs->msg, "Progress Job=x files=%ld bytes=%lld bps=%ld\n",
                 &files, &bytes, &bps) == 3)) {
             Dmsg2(900, "JobId=%d %s", jcr->JobId, bs->msg);

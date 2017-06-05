@@ -455,8 +455,8 @@ void do_restore(JCR *jcr)
          jcr->last_stat_time = now;
          jcr->stat_interval = 30;  /* Default 30 seconds */
       } else if (now >= jcr->last_stat_time + jcr->stat_interval) {
-         jcr->dir_bsock->fsend("Progress JobId=x files=%ld bytes=%lld bps=%ld\n",
-            jcr->JobFiles, jcr->JobBytes, jcr->LastRate);
+         jcr->dir_bsock->fsend("Progress JobId=%ld files=%ld bytes=%lld bps=%ld\n",
+            jcr->JobId, jcr->JobFiles, jcr->JobBytes, jcr->LastRate);
          jcr->last_stat_time = now;
       }
 
