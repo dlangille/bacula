@@ -413,7 +413,7 @@ class RestoreWizard extends BaculumWebPage
 
 	public function wizardCompleted() {
 		$jobids = $this->getElementaryBackup();
-		$path = self::BVFS_PATH_PREFIX . str_replace(',', '', $jobids);
+		$path = self::BVFS_PATH_PREFIX . getmypid();
 		$restoreElements = $this->getRestoreElements();
 		$cmdProps = array('jobids' => $jobids, 'path' => $path);
 		if(count($restoreElements['fileid']) > 0) {
