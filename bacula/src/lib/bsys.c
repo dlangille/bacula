@@ -1215,7 +1215,7 @@ int baccept(int sockfd, struct sockaddr *addr, socklen_t *addrlen)
 
 # ifdef HAVE_DECL_FD_CLOEXEC
    if (fd >= 0) {
-      int tmp_errno = errno
+      int tmp_errno = errno;
       if (fcntl(fd, F_SETFD, fcntl(fd, F_GETFD) | FD_CLOEXEC) < 0) {
          berrno be;
          Dmsg2(0, "Unable to set the CLOEXEC flag on fd=%d ERR=%s\n", fd, be.bstrerror());
