@@ -1,6 +1,20 @@
-              Changelog on version 7.9.2
+              Changelog on version 7.9.3
 
 
+
+07Jun17
+ - Remove vestiges of crc32_bad -- fixes Solaris build
+ - Fix #2890 about segfault in .status command on Redhat 5 32bit
+ - Add missing semi-colon in bsys.c
+
+06Jun17
+ - baculum: Fix incorrect table name error during restore start
+
+30May17
+ - Display the correct address in lockdump for db_lock()
+
+Bugs fixed/closed since last release:
+2890
 
 05Jun17
  - Fix getmsg to handle additional forms of Progress messages

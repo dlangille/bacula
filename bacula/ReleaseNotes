@@ -1,5 +1,19 @@
 
-               Release Notes for Bacula 7.9.2
+               Release Notes for Bacula 7.9.3
+
+Release Version 7.9.3 pre-release bet
+
+07Jun17
+ - Remove vestiges of crc32_bad -- fixes Solaris build
+ - Fix #2890 about segfault in .status command on Redhat 5 32bit
+ - Add missing semi-colon in bsys.c
+ - baculum: Fix incorrect table name error during restore start
+ - Display the correct address in lockdump for db_lock()
+
+Bugs fixed/closed since last release:
+2890
+
+Please read the release notes for 7.9.0, 7.9.1 and 7.9.2 below.
 
 Release Version 7.9.2 pre-release beta
 
