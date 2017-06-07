@@ -732,7 +732,6 @@ public:
    int Copy;                          /* identical copy number */
    int Stripe;                        /* RAIT stripe */
    VOLUME_CAT_INFO VolCatInfo;        /* Catalog info for desired volume */
-   uint32_t crc32(unsigned char *buf, int len, uint32_t expected_crc);
 
    /* Methods */
    void set_no_mount_request() { no_mount_request = true; }; /* Just fail in case of mount request */

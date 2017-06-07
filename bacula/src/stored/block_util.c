@@ -234,36 +234,6 @@ void print_block_read_errors(JCR *jcr, DEV_BLOCK *block)
    }
 }
 
-/* We had a problem on some solaris platforms with the CRC32 library, some
- * 8.4.x jobs uses a bad crc32 algorithm. We just try one then the
- * other to not create false problems
- */
-uint32_t DCR::crc32(unsigned char *buf, int len, uint32_t expected_crc)
-{
-#if defined(HAVE_SUN_OS) && defined(HAVE_LITTLE_ENDIAN)
-   uint32_t crc = 0;
-   if (crc32_type) {
-      crc = bcrc32_bad(buf, len);
-
-   } else {
-      crc = bcrc32(buf, len);
-   }
-   if (expected_crc != crc) {
-      crc32_type = !crc32_type; /* Next time, do it well right away */
-
-      if (crc32_type) {
-         crc = bcrc32_bad(buf, len);
-
-      } else {
-         crc = bcrc32(buf, len);
-      }
-   }
-   return crc;
-#else
-   return bcrc32(buf, len);
-#endif
-}
-
 void DEVICE::free_dcr_blocks(DCR *dcr)
 {
    if (dcr->block == dcr->ameta_block) {
@@ -385,7 +355,7 @@ bool unser_block_header(DCR *dcr, DEVICE *dev, DEV_BLOCK *block)
    if (block->adata) {
       /* Checksum the whole block */
       if (block->block_len <= block->read_len && dev->do_checksum()) {
-         BlockCheckSum = dcr->crc32((uint8_t *)block->buf, block->block_len, block->CheckSum);
+         BlockCheckSum = bcrc32((uint8_t *)block->buf, block->block_len);
          if (BlockCheckSum != block->CheckSum) {
             dev->dev_errno = EIO;
             Mmsg5(dev->errmsg, _("Volume data error at %lld!\n"
@@ -489,9 +459,8 @@ bool unser_block_header(DCR *dcr, DEVICE *dev, DEV_BLOCK *block)
    Dmsg3(390, "Read binbuf = %d %d block_len=%d\n", block->binbuf,
       bhl, block_len);
    if (block_len <= block->read_len && dev->do_checksum()) {
-      BlockCheckSum = dcr->crc32((uint8_t *)block->buf+BLKHDR_CS_LENGTH,
-                                 block_len-BLKHDR_CS_LENGTH,
-                                 block->CheckSum);
+      BlockCheckSum = bcrc32((uint8_t *)block->buf+BLKHDR_CS_LENGTH,
+                                 block_len-BLKHDR_CS_LENGTH);
 
       if (BlockCheckSum != block->CheckSum) {
          dev->dev_errno = EIO;

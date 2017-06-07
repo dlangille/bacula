@@ -154,7 +154,6 @@ void hmac_md5(uint8_t* text, int text_len, uint8_t* key, int key_len, uint8_t *h
 /* crc32.c */
 
 uint32_t bcrc32(unsigned char *buf, int len);
-uint32_t bcrc32_bad(unsigned char *buf, int len);
 
 
 /* crypto.c */
