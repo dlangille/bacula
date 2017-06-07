@@ -263,8 +263,9 @@ static void  list_running_jobs_api(STATUS_PKT *sp)
       p = ow.get_output(OT_CLEAR, OT_START_OBJ, OT_END);
 
       if (njcr->JobId == 0) {
+         int val = (njcr->dir_bsock && njcr->dir_bsock->tls)?1:0;
          ow.get_output(OT_UTIME, "DirectorConnected", njcr->start_time,
-                       OT_INT, "DirTLS", (njcr->dir_bsock && njcr->dir_bsock->tls)?1:0,
+                       OT_INT, "DirTLS", val,
                        OT_END);
       } else {
          ow.get_output(OT_INT32,   "JobId", njcr->JobId,
