@@ -26,7 +26,7 @@
 #ifndef __BLOCK_H
 #define __BLOCK_H 1
 
-#define MAX_BLOCK_LENGTH  20000000      /* this is a sort of sanity check */
+#define MAX_BLOCK_SIZE  20000000        /* this is a sort of sanity check */
 #define DEFAULT_BLOCK_SIZE (512 * 126)  /* 64,512 N.B. do not use 65,636 here */
 #define MIN_DEDUP_BLOCK_SIZE (512 * 2)  /* Minimum block (bucket) size */
 

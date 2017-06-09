@@ -439,15 +439,15 @@ void store_uri_style(LEX *lc, RES_ITEM *item, int index, int pass)
 
 
 /*
- * Store Maximum Block Size, and check it is not greater than MAX_BLOCK_LENGTH
+ * Store Maximum Block Size, and check it is not greater than MAX_BLOCK_SIZE
  *
  */
 void store_maxblocksize(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    store_size32(lc, item, index, pass);
-   if (*(uint32_t *)(item->value) > MAX_BLOCK_LENGTH) {
+   if (*(uint32_t *)(item->value) > MAX_BLOCK_SIZE) {
       scan_err2(lc, _("Maximum Block Size configured value %u is greater than allowed maximum: %u"),
-         *(uint32_t *)(item->value), MAX_BLOCK_LENGTH );
+         *(uint32_t *)(item->value), MAX_BLOCK_SIZE );
    }
 }
 

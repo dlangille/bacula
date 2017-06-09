@@ -159,7 +159,7 @@ static bool read_header(DCR *dcr, DEV_BLOCK *block, DEV_RECORD *rec)
    }
 
    /* Sanity check */
-   if (rec->data_bytes >= MAX_BLOCK_LENGTH) {
+   if (rec->data_bytes >= MAX_BLOCK_SIZE) {
       Dmsg0(dbgep, "=== rpath 11b maxlen too big\n");
       /*
        * Something is wrong, force read of next block, abort
@@ -168,7 +168,7 @@ static bool read_header(DCR *dcr, DEV_BLOCK *block, DEV_RECORD *rec)
       rec->state_bits |= (REC_NO_HEADER | REC_BLOCK_EMPTY);
       empty_block(block);
       Jmsg2(dcr->jcr, M_WARNING, 0, _("Sanity check failed. maxlen=%d datalen=%d. Block discarded.\n"),
-         MAX_BLOCK_LENGTH, rec->data_bytes);
+         MAX_BLOCK_SIZE, rec->data_bytes);
       return false;
    }
 

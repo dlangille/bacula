@@ -312,10 +312,10 @@ void DEVICE::device_generic_init(JCR *jcr, DEVRES *device)
       Jmsg(jcr, M_ERROR_TERM, 0, _("[SA0005] Min block size > max on device %s\n"),
            dev->print_name());
    }
-   if (dev->max_block_size > 4096000) {
+   if (dev->max_block_size > MAX_BLOCK_SIZE) {
       Jmsg3(jcr, M_ERROR, 0, _("[SA0006] Block size %u on device %s is too large, using default %u\n"),
          dev->max_block_size, dev->print_name(), DEFAULT_BLOCK_SIZE);
-      dev->max_block_size = 0;
+      dev->max_block_size = DEFAULT_BLOCK_SIZE ;
    }
    if (dev->max_block_size % TAPE_BSIZE != 0) {
       Jmsg3(jcr, M_WARNING, 0, _("[SW0007] Max block size %u not multiple of device %s block size=%d.\n"),

@@ -434,7 +434,7 @@ bool unser_block_header(DCR *dcr, DEVICE *dev, DEV_BLOCK *block)
    }
 
    /* Sanity check */
-   if (block_len > MAX_BLOCK_LENGTH) {
+   if (block_len > MAX_BLOCK_SIZE) {
       dev->dev_errno = EIO;
       Mmsg3(dev->errmsg,  _("Volume data error at %u:%u! Block length %u is insane (too large), probably due to a bad archive.\n"),
          dev->file, dev->block_num, block_len);
