@@ -21,8 +21,6 @@
  */
  
 class BVFSRestore extends BaculumAPIServer {
-	public function get() {}
-
 	public function create($params) {
 		$jobids = property_exists($params, 'jobids') ? $params->jobids : null;
 		$fileids = property_exists($params, 'fileid') ? $params->fileid : null;

@@ -22,8 +22,6 @@
  
 class ConsoleCommand extends BaculumAPIServer {
 
-	public function get() {}
-
 	public function set($id, $params) {
 		$params = (array)$params;
 		$console = $this->getModule('bconsole')->bconsoleCommand($this->director, $params, $this->user);

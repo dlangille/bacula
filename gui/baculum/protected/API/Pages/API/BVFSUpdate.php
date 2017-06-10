@@ -22,8 +22,6 @@
 
 class BVFSUpdate extends BaculumAPIServer {
 
-	public function get() {}
-
 	public function set($param, $ids) {
 		$isValid = true;
 		if (property_exists($ids, 'jobids')) {

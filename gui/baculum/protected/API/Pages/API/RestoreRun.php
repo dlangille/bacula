@@ -24,8 +24,6 @@ Prado::using('Application.API.Class.APIDbModule');
  
 class RestoreRun extends BaculumAPIServer {
 
-	public function get() {}
-
 	public function create($params) {
 		$rfile = property_exists($params, 'rpath') ? $params->rpath : null;
 

@@ -22,8 +22,6 @@
 
 class ConfigDirTest extends BaculumAPIServer {
 
-	public function get() {}
-
 	public function set($id, $params) {
 		$config_dir = property_exists($params, 'path') ? $params->path : '';
 		$result = $this->getModule('bacula_config')->testConfigDir($config_dir);

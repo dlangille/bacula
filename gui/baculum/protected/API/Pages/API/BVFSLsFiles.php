@@ -22,8 +22,6 @@
  
 class BVFSLsFiles extends BaculumAPIServer {
 
-	public function get() {}
-
 	public function set($param, $ids) {
 		$limit = intval($this->Request['limit']);
 		$offset = intval($this->Request['offset']);

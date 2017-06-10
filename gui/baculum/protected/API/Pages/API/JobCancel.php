@@ -22,8 +22,6 @@
  
 class JobCancel extends BaculumAPIServer {
 
-	public function get() {}
-
 	public function set($id, $params) {
 		$jobid = intval($id);
 		$job = $this->getModule('job')->getJobById($jobid);

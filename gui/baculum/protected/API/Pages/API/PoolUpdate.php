@@ -21,7 +21,6 @@
  */
  
 class PoolUpdate extends BaculumAPIServer {
-	public function get() {}
 
 	public function set($id, $params) {
 		$pool = $this->getModule('pool')->getPoolById($id);

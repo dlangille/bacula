@@ -22,8 +22,6 @@
 
 class JSONToolsTest extends BaculumAPIServer {
 
-	public function get() {}
-
 	public function set($id, $params) {
 		$type = property_exists($params, 'type') ? $params->type : '';
 		$path = property_exists($params, 'path') ? $params->path : '';
