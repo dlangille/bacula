@@ -138,6 +138,7 @@ static bool is_msgid(char *msg)
 int bget_dirmsg(BSOCK *bs)
 {
    int32_t n = BNET_TERMINATE;
+   char Job[MAX_NAME_LENGTH];
    JobId_t JobId = 0;
    char MsgType[20];
    int type;
@@ -200,6 +201,7 @@ int bget_dirmsg(BSOCK *bs)
        *  Try to fulfill it.
        */
       if ((sscanf(bs->msg, "%020s JobId=%ld ", MsgType, &JobId) != 2) &&
+          (sscanf(bs->msg, "%020s Job=%127s ", MsgType, Job) != 2) &&
           (sscanf(bs->msg, "%020s Job=x", MsgType) != 1)) {
          if (is_msgid(strchr(bs->msg, '['))) {
             return n;
@@ -221,8 +223,10 @@ int bget_dirmsg(BSOCK *bs)
        *   the protocol.
        */
       if (bs->msg[0] == 'J') {           /* Job message */
-         if (sscanf(bs->msg, "Jmsg JobId=%ld type=%d level=%lld",
-                    &JobId, &type, &mtime) != 3) {
+         if ((sscanf(bs->msg, "Jmsg JobId=%ld type=%d level=%lld",
+                     &JobId, &type, &mtime) != 3) &&
+             (sscanf(bs->msg, "Jmsg Job=%127s type=%d level=%lld",
+                                 Job, &type, &mtime) != 3)) {
             Jmsg1(jcr, M_ERROR, 0, _("Malformed message: %s\n"), bs->msg);
             continue;
          }
