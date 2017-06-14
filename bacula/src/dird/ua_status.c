@@ -229,8 +229,12 @@ static int do_network_status(UAContext *ua)
    }
    
 bail_out:
-   jcr->file_bsock->signal(BNET_TERMINATE);
-   jcr->store_bsock->signal(BNET_TERMINATE);
+   if (jcr->file_bsock) {
+      jcr->file_bsock->signal(BNET_TERMINATE);
+   }
+   if (jcr->store_bsock) {
+      jcr->store_bsock->signal(BNET_TERMINATE);
+   }
    wait_for_storage_daemon_termination(jcr);
 
    free_bsock(jcr->file_bsock);
