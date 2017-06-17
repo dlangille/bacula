@@ -1,7 +1,26 @@
 
-               Release Notes for Bacula 7.9.3
+               Release Notes for Bacula 7.9.5
 
-Release Version 7.9.3 pre-release bet
+Release Version 7.9.5 pre-release beta
+
+17Jun17
+ - Fix bug #2289 version 7.9 not compatible with old FDs -- comm compression
+
+10Jun17
+ - Make getmsg.c compatible with old FDs
+
+09Jun17
+ - Use one MAX_BLOCK_SIZE and set to 20M
+
+08Jun17
+ - rpm: Add Fedora 25 build platform
+
+Bugs fixed/closed since last release:
+2289 2890
+
+====
+
+Release Version 7.9.4 pre-release beta
 
 07Jun17
  - Remove vestiges of crc32_bad -- fixes Solaris build
@@ -14,6 +33,8 @@ Bugs fixed/closed since last release:
 2890
 
 Please read the release notes for 7.9.0, 7.9.1 and 7.9.2 below.
+
+====
 
 Release Version 7.9.2 pre-release beta
 

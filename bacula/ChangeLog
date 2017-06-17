@@ -1,5 +1,23 @@
-              Changelog on version 7.9.3
+              Changelog on version 7.9.5
 
+
+
+17Jun17
+ - Fix bug #2289 version 7.9 not compatible with old FDs -- comm compression
+
+10Jun17
+ - Make getmsg.c compatible with old FDs
+
+09Jun17
+ - Use one MAX_BLOCK_SIZE and set to 20M
+
+08Jun17
+ - rpm: Add Fedora 25 build platform
+
+Bugs fixed/closed since last release:
+2289 2890
+
+==================================================
 
 
 07Jun17
