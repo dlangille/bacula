@@ -299,7 +299,7 @@ int authenticate_file_daemon(JCR *jcr)
       return 0;
    }
    /* For newer FD turn on comm line compression */
-   if (jcr->FDVersion >= 9 && director->comm_compression) {
+   if (jcr->FDVersion >= 214 && director->comm_compression) {
       fd->set_compress();
    } else {
       fd->clear_compress();

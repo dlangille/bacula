@@ -326,7 +326,7 @@ static void *handle_director_request(BSOCK *dir)
                 quit = true;
                 break;
             }
-            Dmsg1(100, "Executing Dir %s command.\n", dir->msg);
+            Dmsg2(100, "Executing %s Dir %s command.\n", cmds[i].cmd, dir->msg);
             if (!cmds[i].func(jcr)) {         /* do command */
                quit = true;         /* error or fully terminated, get out */
                Dmsg1(100, "Quit command loop. Canceled=%d\n", job_canceled(jcr));

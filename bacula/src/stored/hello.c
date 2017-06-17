@@ -282,7 +282,7 @@ bool read_client_hello(JCR *jcr)
    jcr->SDVersion = sd_version;
    Dmsg1(050, "FDVersion=%d\n", fd_version);
    /* Turn on compression for newer FDs, except for Community version */
-   if (jcr->FDVersion >= 9 && jcr->FDVersion != 213 && me->comm_compression) {
+   if (jcr->FDVersion >= 214 && me->comm_compression) {
       cl->set_compress();             /* set compression allowed */
    } else {
       cl->clear_compress();
