@@ -3269,6 +3269,9 @@ solaris)
    5.7|5.8)
       AC_DEFINE(USE_THR_SETCONCURRENCY)
       ;;
+   5.10)
+      AC_DEFINE(HAVE_SOLARIS10, 1, [Set if building on Solaris 10])
+      ;;
    *)
       ;;
    esac

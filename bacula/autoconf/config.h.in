@@ -794,6 +794,9 @@
 /* Set if socklen_t exists */
 #undef HAVE_SOCKLEN_T
 
+/* Set if building on Solaris 10 */
+#undef HAVE_SOLARIS10
+
 /* Set if you have an SQLite3 Database */
 #undef HAVE_SQLITE3
 
