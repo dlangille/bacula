@@ -173,7 +173,9 @@ Note : this source file requires "lz4_encoder.h"
 #  define _PACKED
 #endif
 
-#if !defined(LZ4_FORCE_UNALIGNED_ACCESS) && !defined(__GNUC__) && !defined(HAVE_SOLARIS10)
+#if !defined(LZ4_FORCE_UNALIGNED_ACCESS) && !defined(__GNUC__) && defined(HAVE_SOLARIS10)
+#  pragma pack(1)
+#elif !defined(LZ4_FORCE_UNALIGNED_ACCESS) && !defined(__GNUC__)
 #  pragma pack(push, 1)
 #endif
 
@@ -181,7 +183,9 @@ typedef struct _U16_S { U16 v; } _PACKED U16_S;
 typedef struct _U32_S { U32 v; } _PACKED U32_S;
 typedef struct _U64_S { U64 v; } _PACKED U64_S;
 
-#if !defined(LZ4_FORCE_UNALIGNED_ACCESS) && !defined(__GNUC__) && !defined(HAVE_SOLARIS10)
+#if !defined(LZ4_FORCE_UNALIGNED_ACCESS) && !defined(__GNUC__) && defined(HAVE_SOLARIS10)
+#  pragma pack()
+#elif !defined(LZ4_FORCE_UNALIGNED_ACCESS) && !defined(__GNUC__)
 #  pragma pack(pop)
 #endif
 
