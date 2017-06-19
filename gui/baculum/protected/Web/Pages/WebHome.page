@@ -17,7 +17,7 @@
 				<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/config.png" alt="" onclick="$('#<%=$this->Config->ClientID%>').click()" />
 				<com:TActiveLinkButton ID="Config" Text="<%[ Configuration ]%>" Attributes.onclick="PanelWindow.show('config'); return false;" />
 				<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/logout.png" alt="" onclick="$('#<%=$this->Logout->ClientID%>').click()" />
-				<com:TActiveLinkButton ID="Logout" Text="<%[ Logout ]%>" OnClick="logout" ClientSide.OnComplete="document.location.href = document.location.protocol + '//' + document.location.host;" />
+				<com:TActiveLinkButton ID="Logout" Text="<%[ Logout ]%>" OnCommand="Page.logout" />
 			</div>
 		<com:Application.Web.Portlets.TrayBar ID="TrayBar" />
 		</div>

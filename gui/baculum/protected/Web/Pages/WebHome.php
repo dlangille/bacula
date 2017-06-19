@@ -232,9 +232,8 @@ class WebHome extends BaculumWebPage
 	}
 
 	public function logout($sender, $param) {
-		$http_protocol = isset($_SERVER['HTTPS']) && !empty($_SERVER['HTTPS']) ? 'https' : 'http';
-		$fake_pwd = $this->getModule('web_config')->getRandomString();
-		$this->switchToUser($http_protocol, $_SERVER['SERVER_NAME'], $_SERVER['SERVER_PORT'], $this->User->getName(), $fake_pwd);
+		$fake_pwd = $this->getModule('misc')->getRandomString();
+		$this->switchToUser($this->User->getName(), $fake_pwd);
 		exit();
 	}
 }
