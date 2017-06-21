@@ -29,9 +29,6 @@
    You can contact the author at :
    - LZ4 homepage : http://fastcompression.blogspot.com/p/lz4.html
    - LZ4 source repository : http://code.google.com/p/lz4/
-
-   #ifdef out #pragma pack on Solaris 10 -- KES 18 Jun 2017
-
 */
 
 #include "config.h"
@@ -167,26 +164,16 @@ Note : this source file requires "lz4_encoder.h"
   typedef unsigned long long  U64;
 #endif
 
-#if defined(__GNUC__)  && !defined(LZ4_FORCE_UNALIGNED_ACCESS)
-#  define _PACKED __attribute__ ((packed))
-#else
-#  define _PACKED
-#endif
-
-#if !defined(LZ4_FORCE_UNALIGNED_ACCESS) && !defined(__GNUC__) && defined(HAVE_SOLARIS10)
+#if !defined(LZ4_FORCE_UNALIGNED_ACCESS)
 #  pragma pack(1)
-#elif !defined(LZ4_FORCE_UNALIGNED_ACCESS) && !defined(__GNUC__)
-#  pragma pack(push, 1)
 #endif
 
-typedef struct _U16_S { U16 v; } _PACKED U16_S;
-typedef struct _U32_S { U32 v; } _PACKED U32_S;
-typedef struct _U64_S { U64 v; } _PACKED U64_S;
+typedef struct _U16_S { U16 v; } U16_S;
+typedef struct _U32_S { U32 v; } U32_S;
+typedef struct _U64_S { U64 v; } U64_S;
 
-#if !defined(LZ4_FORCE_UNALIGNED_ACCESS) && !defined(__GNUC__) && defined(HAVE_SOLARIS10)
+#if !defined(LZ4_FORCE_UNALIGNED_ACCESS)
 #  pragma pack()
-#elif !defined(LZ4_FORCE_UNALIGNED_ACCESS) && !defined(__GNUC__)
-#  pragma pack(pop)
 #endif
 
 #define A64(x) (((U64_S *)(x))->v)
