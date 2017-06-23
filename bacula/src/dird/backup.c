@@ -1024,7 +1024,8 @@ void update_bootstrap_file(JCR *jcr)
       BPIPE *bpipe = NULL;
       int got_pipe = 0;
       POOLMEM *fname = get_pool_memory(PM_FNAME);
-      fname = edit_job_codes(jcr, fname, jcr->job->WriteBootstrap, "");
+      fname = edit_job_codes(jcr, fname, jcr->job->WriteBootstrap, "",
+                             job_code_callback_director);
 
       VOL_PARAMS *VolParams = NULL;
       int VolCount;
