@@ -101,11 +101,12 @@ sleep 10
 $bperl -e '(-M "$tmp/logsametime.done" < -M "$tmp/logerr.done") && exit 1'
 if [ $? -ne 0 ]; then
     print_debug "ERROR: The timestamp of $tmp/logsametime.done should be smaller than $tmp/logerr.done"
-    echo "logsametime.done"
-    cat $tmp/logsametime.done
-    echo "logerr.done"
-    cat $tmp/logerr.done
+    stat $tmp/logsametime.done
+    stat $tmp/logerr.done
     estat=1
+else
+    stat $tmp/logsametime.done
+    stat $tmp/logerr.done
 fi
 
 nb=`grep test50-1-fd $tmp/log2.out $tmp/logerr2.out | wc -l`

@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (C) 2000-2015 Kern Sibbald
+# Copyright (C) 2000-2017 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
 #
@@ -61,6 +61,7 @@ stop_bacula
 
 $bperl -e 'add_attribute("$conf/bacula-sd.conf", "BlockChecksum", "no", "Device")'
 
+# Introduce a volume error by modifying the some Volume data
 nbok=2
 if [ x$FORCE_DEDUP = xyes ]; then
     nbok=4
@@ -73,7 +74,9 @@ fi
 cat <<END_OF_DATA >tmp/bconcmds
 @$out tmp/log3.out
 @# 
-@# now do a verify volume with errors
+@# now do a verify volume with errors.  Note, which JobId produces
+@#  verify errors depends on the size of data stored (less with dedup
+@#  and ALIGNED).  
 @#
 @$out ${cwd}/tmp/log3.out
 setdebug level=10 client
@@ -98,14 +101,14 @@ if [ $nb -ne 4 ]; then
 fi
 nb=`grep "^  Termination: *Verify OK" tmp/log2.out | wc -l`
 if [ $nb -ne 4 ]; then
-    rstat=1
+    vstat=1
 fi
 nb=`grep "^  Termination: *Verify OK" tmp/log3.out | wc -l`
 if [ $nb -ne $nbok ]; then
     echo "nb=${nb} nbok=${nbok}"
     echo "tmp/log3.out"
     cat tmp/log3.out
-    rstat=2
+    vstat=2
 fi
 dstat=0
 end_test

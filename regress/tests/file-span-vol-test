@@ -25,6 +25,7 @@ start_test
 
 # Remove last / and convert all / to cd commands
 CD=`printf $tmp | sed 's:/$::' | sed 's:/:\ncd :g'`
+echo "CD=${CD}"
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
 @output /dev/null
@@ -47,7 +48,7 @@ messages
 @$out ${cwd}/tmp/log2.out
 restore where=$tmp/bacula-restores select storage=File1
 unmark *
-$CD
+${CD}
 mark big
 done
 yes
