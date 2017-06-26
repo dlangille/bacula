@@ -23,8 +23,8 @@ echo "${cwd}/build" >>${cwd}/tmp/file-list
 change_jobname NightlySave $JobName
 start_test
 
-# Remove last / and convert all / to cd commands
-CD=`printf $tmp | sed 's:/$::' | sed 's:/:\ncd :g'`
+# Remove last / and convert first / to "cd /"
+CD=`echo $tmp | sed 's:/$::' | sed 's:^/:cd /:'`
 echo "CD=${CD}"
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
