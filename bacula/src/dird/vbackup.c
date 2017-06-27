@@ -376,8 +376,7 @@ void vbackup_cleanup(JCR *jcr, int TermCode)
    Dmsg2(100, "Enter vbackup_cleanup %d %c\n", TermCode, TermCode);
    memset(&cr, 0, sizeof(cr));
 
-   jcr->setJobLevel(L_FULL);         /* we want this to appear as a Full backup */
-   jcr->jr.JobLevel = L_FULL;         /* we want this to appear as a Full backup */
+   jcr->jr.JobLevel = L_FULL;   /* we want this to appear as a Full backup */
    jcr->JobFiles = jcr->SDJobFiles;
    jcr->JobBytes = jcr->SDJobBytes;
    update_job_end(jcr, TermCode);
