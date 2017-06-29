@@ -1715,9 +1715,8 @@ void dequeue_messages(JCR *jcr)
    MQUEUE_ITEM *item;
    JobId_t JobId;
 
-   /* Avoid bad calls, recursion and no Director connection */
-   if (jcr == NULL || jcr->dequeuing_msgs ||
-       jcr->dir_bsock == NULL || jcr->dir_bsock->is_closed()) {
+   /* Avoid bad calls and recursion */
+   if (!jcr || jcr->dequeuing_msgs) {
       return;
    }
 
@@ -1728,11 +1727,11 @@ void dequeue_messages(JCR *jcr)
       jcr->dequeuing_msgs = true;
       JobId = jcr->JobId;
       jcr->JobId = 0;       /* set daemon JobId == 0 */
-      jcr->dir_bsock->suppress_error_messages(true);
+      if (jcr->dir_bsock) jcr->dir_bsock->suppress_error_messages(true);
       foreach_dlist(item, daemon_msg_queue) {
          Jmsg(jcr, item->type, item->mtime, "%s", item->msg);
       }
-      jcr->dir_bsock->suppress_error_messages(false);
+      if (jcr->dir_bsock) jcr->dir_bsock->suppress_error_messages(false);
       /* Remove messages just sent */
       daemon_msg_queue->destroy();
       jcr->JobId = JobId;   /* restore JobId */
@@ -1747,11 +1746,11 @@ void dequeue_messages(JCR *jcr)
    }
    P(jcr->msg_queue_mutex);
    jcr->dequeuing_msgs = true;
-   jcr->dir_bsock->suppress_error_messages(true);
+   if (jcr->dir_bsock) jcr->dir_bsock->suppress_error_messages(true);
    foreach_dlist(item, jcr->msg_queue) {
       Jmsg(jcr, item->type, item->mtime, "%s", item->msg);
    }
-   jcr->dir_bsock->suppress_error_messages(false);
+   if (jcr->dir_bsock) jcr->dir_bsock->suppress_error_messages(false);
    /* Remove messages just sent */
    jcr->msg_queue->destroy();
    jcr->dequeuing_msgs = false;
