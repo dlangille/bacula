@@ -106,9 +106,6 @@ if [ $? -ne 0 ]; then
     stat $tmp/logerr.done
 # I am not convinced that these timestamps will always be correct -- KES
 #    estat=1
-else
-    stat $tmp/logsametime.done
-    stat $tmp/logerr.done
 fi
 
 nb=`grep test50-1-fd $tmp/log2.out $tmp/logerr2.out | wc -l`

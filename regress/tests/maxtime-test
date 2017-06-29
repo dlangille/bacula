@@ -92,7 +92,7 @@ then
     [ "$debug" = 1 ] && echo MAXSTARTDELAY ok
 else
    echo "MAXSTARTDELAY in error"
-   bstat=1
+   bstat=2
 fi
 
 grep -e '4: Fatal error: Max run time exceeded. Job canceled.' ${cwd}/tmp/RUN_MAXTIME.log >/dev/null 
@@ -103,7 +103,7 @@ else
    echo "MAXRUNTIME in error"
    echo "${cwd}/tmp/RUN_MAXTIME.log"
    cat ${cwd}/tmp/RUN_MAXTIME.log
-   bstat=1
+   bstat=3
 fi
 
 grep -e 'Termination: *Backup OK' ${cwd}/tmp/RUN_MAXTIME.log >/dev/null
@@ -112,7 +112,7 @@ then
     [ "$debug" = 1 ] && echo MAXRUNTIME2 ok
 else
    echo "MAXRUNTIME2 in error"
-   bstat=1
+   bstat=4
 fi
 
 
