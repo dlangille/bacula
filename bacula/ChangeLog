@@ -1,5 +1,36 @@
-              Changelog on version 7.9.5
+              Changelog on version 9.0.0
 
+30Jun17
+ - Update po files
+
+29Jun17
+ - Fix error in FreeBSD during maxtime-test
+
+27Jun17
+ - Fix #2853 About character substitution for "virtual full" job level in 
+  RunAfterJob
+
+26Jun17
+ - Attempt to fix timing problem with console-dotcmd-test on FreeBSD
+ - Ensure we have a DIR connection in dequeue_messages
+
+25Jun17
+ - Add more debug to regress for FreeBSD failures
+
+23Jun17
+ - Fix #2940 Allow specific Director job code in WriteBootstrap directive
+
+21Jun17
+ - Fix pragma pack to allow lz4.c work on Solaris and other machines
+
+19Jun17
+ - baculum: Fix working logout button
+ - A more correct fix for lz4.c on Solaris 10
+
+18Jun17
+ - Remove use of #pragma pack in lib/lz4.c for Solaris 10
+ - Recompile configure from configure.in
+ - Detect Solaris 10
 
 
 17Jun17
@@ -14,12 +45,6 @@
 08Jun17
  - rpm: Add Fedora 25 build platform
 
-Bugs fixed/closed since last release:
-2289 2890
-
-==================================================
-
-
 07Jun17
  - Remove vestiges of crc32_bad -- fixes Solaris build
  - Fix #2890 about segfault in .status command on Redhat 5 32bit
@@ -30,9 +55,6 @@ Bugs fixed/closed since last release:
 
 30May17
  - Display the correct address in lockdump for db_lock()
-
-Bugs fixed/closed since last release:
-2890
 
 05Jun17
  - Fix getmsg to handle additional forms of Progress messages
@@ -60,12 +82,11 @@ Bugs fixed/closed since last release:
 
 27May17
  - Do not produce error if MySQL database exists in create_mysql_database
- e
+
 26May17
  - rpm: Add missing tapealert script
  - rpm: Add missing libbacsd
  - rpm: Remove dvd-handler script
-
 
 24May17
  - Fix bvfs queries
@@ -116,53 +137,9 @@ Bugs fixed/closed since last release:
  - Fix bug #2271 where poll interval causes tape mount message to repeat
  - Fix segfault in bdirjson with incorrect configuration files
 
-
-New Features:
--------------
-
- - The "list" command now filters the results using the current Console ACLs
- - The WhereACL is now verified after the restore menu
-
-Core Features:
- - Implement a drive usage counter to do round robin drive assignment
- - Enhance functionality of TapeAlert
- - Implement a "Perpetual Virtual Full" feature that creates a Virtual Full backup
-   that is updated every day
- - Increase Director's default "Maximum Concurrent Jobs" setting from 1 to 20
- - Add "PluginDirectory" by default in bacula-sd.conf and bacula-fd.conf
- - Add support for terabytes in sizes. Submitted by Wanderlei Huttel.
- - Restore mtime & atime for symlinks
- - New "status network" command to test the connection and the bandwidth
-   between a Client and a Storage Daemon
-
-Bconsole Features:
- - Add "ExpiresIn" field in list and llist media output
- - Add command to change the priority of a running job (update jobid=xxx priority=yyy)
- - Add level= and jobtype= parameters to the "list jobs" command
- - Add option to bconsole to list and select a specific Console
- - Add shortcut to RunScript console commands. Submitted by Wanderlei Huttel. 
- - Display "IgnoreFileSetChanges" in show fileset command (#2107)
- - Display PrefixLinks in "show job" output
- - Display permission bits in .bvfs_decode
- - Display the Comment field in "llist job" command
- - Add "ActionOnPurge" field to "llist pool" command. Fix #2487
- - Add "long" keyword to list command, ie "list long job". This is 
-   essentially an alias fo the "llist" command.
- - Modify the "setbandwidth" limit parameter to accept speed input. ex: limit=10kb/s
- - Modify the "setbandwidth" limit parameter so that the default 
-   is no longer kb/s but b/s. 
- - Do not show disabled resources in selection list
- - Fix bconsole readline and "dumb" terminal handling of CTRL-C
- - Add the priority field to the .api 2 job listing output
- 
-Misc Features:
- - Change the default "MaximumFileIndex" from 50MB to 100MB by default
- - Add -w option to btape to specify a working directory
- - Enhance bls -D/-F help message
-
 Bugs fixed/closed since last release:
 2271 2548 2563 2567 2588 2593 2602 2624 2625 2627 2629 2632 2638 2640 2646
-2698 2520 2559 2561 2582 2806 2807
+2698 2520 2559 2561 2582 2806 2807 2890 2289 2890 2853 2940
 
 
 ==============================================================

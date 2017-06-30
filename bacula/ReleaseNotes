@@ -1,85 +1,25 @@
 
-               Release Notes for Bacula 7.9.5
-
-Release Version 7.9.5 pre-release beta
-
-17Jun17
- - Fix bug #2289 version 7.9 not compatible with old FDs -- comm compression
-
-10Jun17
- - Make getmsg.c compatible with old FDs
-
-09Jun17
- - Use one MAX_BLOCK_SIZE and set to 20M
-
-08Jun17
- - rpm: Add Fedora 25 build platform
-
-Bugs fixed/closed since last release:
-2289 2890
-
-====
-
-Release Version 7.9.4 pre-release beta
-
-07Jun17
- - Remove vestiges of crc32_bad -- fixes Solaris build
- - Fix #2890 about segfault in .status command on Redhat 5 32bit
- - Add missing semi-colon in bsys.c
- - baculum: Fix incorrect table name error during restore start
- - Display the correct address in lockdump for db_lock()
-
-Bugs fixed/closed since last release:
-2890
-
-Please read the release notes for 7.9.0, 7.9.1 and 7.9.2 below.
-
-====
-
-Release Version 7.9.2 pre-release beta
-
-05Jun17
- - Fix getmsg to handle additional forms of Progress messages
- - baculum: Fix double assets and runtime symbolic links in baculum-web deb 
-   package
- - baculum: Fix missing php-xml dependency in deb metafile
- - baculum: Improve errors handling in API restore pages
- - rpm: Remove libbacsd.la for both Red Hat and Suse
- - rpm: Add missing libs bbconsjson, bdirjson and bsdjson
- - rpm: Fix libstdc++ version in BAT spec file
- - rpm: Add missing tapealert script
- - rpm: Add missing libbacsd
- - rpm: Remove dvd-handler script
- - Fix some problems noted by clang
- - baculum: Reorganize run job code
- - baculum: Reorganize estimate job code
- - baculum: Make get method definition not obligatory
- - Make file-span-vol-test portable
- - Attempt to fix deadlock in FreeBSD maxtime-test
- - Do not produce error if MySQL database exists in create_mysql_database
-
-Release Version 7.9.0 pre-release beta
-
-NOTE: version 7.9.0 is a beta test program.  The final release will
-be made several weeks following the beta release barring any problems.
-The final release will be 9.0.0.
+               Release Notes for Bacula 9.0.0
 
 This is either the biggest Bacula release ever made or one of the
 biggest ones. Even without the new Aligned Volumes source code, which
-is substantial, there are over 78,700 lines of diff output between
-Release 7.4.7 and this release of 7.9.0
+is substantial, there are over 400,000 lines of diff output between
+Release 7.4.7 and the release of 9.0.0
 
 This is a major new release with a new version number. It has been
-very thoroughly tested, but as always, the new features may not
-always work as expected.  
+very thoroughly tested, but as always, please backup any previous
+version and test this version prior to putting it into production.
 
 For the most part the changes were contributed to the Bacula 
-project by Bacula Systems SA.
+project by Bacula Systems SA and myself, but there were a number
+of other contributors that I thank.
 
 Database Update
 ---------------
 This version of Bacula requires a database update.  So either you or the
-installation process must apply the update_bacula_tables script.
+installation process must apply the update_bacula_tables script.  As a
+precaution, please do a database dump or run your nightly database backup
+prior to running the update script.
 
 Compatibility:
 --------------
@@ -87,68 +27,28 @@ As always, both the Community Director and Storage daemon(s) must be upgraded
 at the same time.  Any File daemon running on the same machine as a Director
 or Storage daemon must be of the same version.
 
-Older File Daemons should be compatible with the 7.9.0 Director and Storage
+Older File Daemons should be compatible with the 9.0.0 Director and Storage
 daemons.  There should be no need to upgrade older File Daemons.
 
-New features and changes:
+Packagers:
+---------
+There are a good number of new binaries (e.g.  bbconsjson, bdirjson,
+bfdjson, and bsdjson) to install; a new tapealert script file that should
+be installed; and some new shared objects (e.g.  libbacsd).  The
+dvd-handler script has been removed.  Note also to run the
+update_bacula_tables script after having dumped the catalog to bring any
+existing catalog up to the new version needed for Bacula 9.0.0.
+
+New Features:
+-------------
 Please see the New Features chapter of the manual for documentation on
 the new features.  The new features are currently only in the New Features
 chapter and have not yet been integrated into the main chapters of the
 manual.
 
-24May17
- - Fix bvfs queries
- - Use FileId in place of Filename
- - Revert "Put FilenameId in .bvfs_lsfiles output"
- - Put FilenameId in .bvfs_lsfiles output
- - Add more debug in src/cats/bvfs.c
- - Fix bvfs_lsdirs and bvfs_lsfiles
- - baculum: Add Japanese language support in deb and rpm packages
- - Add DirectoryACL directive
- - baculum: New Baculum API and Baculum Web
- - Add forking info to LICENSE and LICENSE-FAQ
- - Minor improvement to error message
- - Fix race in steal_device_lock shown in truncate-concurrent-test
- - Apply Marcin's fix for 6th week of the month
- - Add new truncate test
- - Retab Makefile.in in platforms/systemd.in
- - Fix compiler warning
- - Add FD backward compatibility
- - Fix regression minor scripting problems
- - Fix #2807 about an issue with the show command when using incorrectly JobToVerify 
-   directive
- - Fix #2806 about the director service started before the database with systemd
- - Update Dart control files
- - Massive (78,748+ lines) backport of code from Bacula Enterprise 8.8.
- - Adapt update_bacula_tables scripts for catalog version 15
- - Allow to use Base directive in a JobDefs
- - Add more debug to the bpipe plugin
- - Enhance error message when packets are too big
- - Add '.storage unique' bconsole command
- - Allow to use ".jobs type=!B" to display specific job type
- - Add lockdump storage daemon information
-
- - Fix #2698 Display loaded driver list in status storage output
- - Fix autochanger unload message that contains sometime an incorrect volume name
- - Fix issue with open_bpipe() function that may flush stdio buffer if the 
-   command is incorrect
- - Fix unload tape messages to print correct volume + improve output format
- - Fix unload/re-load same volume
- - Fix DIR get unexpected "Connection reset by peer" for FD
- - Fix #2548 about SQL connection leak with RunScript::Console commands
- - Fix #2588 about segfault in bdirjson with JobDefs/Base directive
- - Fix #2593 about incomplete jobs incorrectly rescheduled
- - Fix #2629 about pool argument not listed in the "help cloud" output
- - Fix #2632 about VolType not set correctly for Cloud volumes after a label problem
- - Fix #2640 about a reference to the source directory in query.sql file
- - Fix bug #2271 where poll interval causes tape mount message to repeat
- - Fix segfault in bdirjson with incorrect configuration files
-
-
 New Features (summary):
 -----------------------
 
- - See the new features chapter of the manual
  - Major rewrite of the Storage daemon to: put all drivers in class 
    structures, provide better separation of core/driver code, add new 
    drivers (aligned volumes, cloud), simplifies core code, allows loadable
@@ -210,17 +110,106 @@ Misc Features:
  - Many performance enhancements
  - Bandwidth limitation timing improved
  - Global resource variables are not lost during a reload command
- - Change the default "MaximumFileIndex" from 50MB to 100MB by default
  - Add -w option to btape to specify a working directory
  - Enhance bls -D/-F help message
  - The "list" command now filters the results using the current Console ACLs
  - The WhereACL is now verified after the restore menu
 
+
+30Jun17
+ - Update po files
+ - Fix error in FreeBSD during maxtime-test
+ - Fix #2853 About character substitution for "virtual full" job level in 
+   RunAfterJob
+ - Attempt to fix timing problem with console-dotcmd-test on FreeBSD
+ - Ensure we have a DIR connection in dequeue_messages
+ - Add more debug to regress for FreeBSD failures
+ - Fix #2940 Allow specific Director job code in WriteBootstrap directive
+ - Fix pragma pack to allow lz4.c work on Solaris and other machines
+ - baculum: Fix working logout button
+ - A more correct fix for lz4.c on Solaris 10
+ - Remove use of #pragma pack in lib/lz4.c for Solaris 10
+ - Recompile configure from configure.in
+ - Detect Solaris 10
+ - Fix bug #2289 version 7.9 not compatible with old FDs -- comm compression
+ - Make getmsg.c compatible with old FDs
+ - Use one MAX_BLOCK_SIZE and set to 20M
+ - rpm: Add Fedora 25 build platform
+ - Remove vestiges of crc32_bad -- fixes Solaris build
+ - Fix #2890 about segfault in .status command on Redhat 5 32bit
+ - Add missing semi-colon in bsys.c
+ - baculum: Fix incorrect table name error during restore start
+ - Display the correct address in lockdump for db_lock()
+ - Fix getmsg to handle additional forms of Progress messages
+ - baculum: Fix double assets and runtime symbolic links in baculum-web deb 
+   package
+ - baculum: Fix missing php-xml dependency in deb metafile
+ - baculum: Improve errors handling in API restore pages
+ - rpm: Remove libbacsd.la for both Red Hat and Suse
+ - rpm: Add missing libs bbconsjson, bdirjson and bsdjson
+ - rpm: Fix libstdc++ version in BAT spec file
+ - Fix some problems noted by clang
+ - baculum: Reorganize run job code
+ - baculum: Reorganize estimate job code
+ - baculum: Make get method definition not obligatory
+ - Make file-span-vol-test portable
+ - Attempt to fix deadlock in FreeBSD maxtime-test
+ - Do not produce error if MySQL database exists in create_mysql_database
+ - rpm: Add missing tapealert script
+ - rpm: Add missing libbacsd
+ - rpm: Remove dvd-handler script
+ - Fix bvfs queries
+ - Use FileId in place of Filename
+ - Revert "Put FilenameId in .bvfs_lsfiles output"
+ - Put FilenameId in .bvfs_lsfiles output
+ - Add more debug in src/cats/bvfs.c
+ - Fix bvfs_lsdirs and bvfs_lsfiles
+ - baculum: Add Japanese language support in deb and rpm packages
+ - Add DirectoryACL directive
+ - baculum: New Baculum API and Baculum Web
+ - Add forking info to LICENSE and LICENSE-FAQ
+ - Minor improvement to error message
+ - Fix race in steal_device_lock shown in truncate-concurrent-test
+ - Apply Marcin's fix for 6th week of the month
+ - Add new truncate test
+ - Retab Makefile.in in platforms/systemd.in
+ - Fix compiler warning
+ - Add FD backwards compatibility
+ - Fix regression minor scripting problems
+ - Fix #2807 about an issue with the show command when using incorrectly JobToVerify 
+   directive
+ - Fix #2806 about the director service started before the database with systemd
+ - Update Dart control files
+ - Massive (70,000+ lines) backport of code from Bacula Enterprise 8.8.
+   See next line ...
+ - Adapt update_bacula_tables scripts for catalog version 15
+ - Allow to use Base directive in a JobDefs
+ - Add more debug to the bpipe plugin
+ - Enhance error message when packets are too big
+ - Add '.storage unique' bconsole command
+ - Allow to use ".jobs type=!B" to display specific job type
+ - Add lockdump storage daemon information
+ - Fix #2698 Display loaded driver list in status storage output
+ - Fix autochanger unload message that contains sometime an incorrect volume name
+ - Fix issue with open_bpipe() function that may flush stdio buffer if the 
+   command is incorrect
+ - Fix unload tape messages to print correct volume + improve output format
+ - Fix unload/re-load same volume
+ - Fix DIR get unexpected "Connection reset by peer" for FD
+ - Fix #2548 about SQL connection leak with RunScript::Console commands
+ - Fix #2588 about segfault in bdirjson with JobDefs/Base directive
+ - Fix #2593 about incomplete jobs incorrectly rescheduled
+ - Fix #2629 about pool argument not listed in the "help cloud" output
+ - Fix #2632 about VolType not set correctly for Cloud volumes after a label problem
+ - Fix #2640 about a reference to the source directory in query.sql file
+ - Fix bug #2271 where poll interval causes tape mount message to repeat
+ - Fix segfault in bdirjson with incorrect configuration files
+
 Bugs fixed/closed since last release:
 2271 2548 2563 2567 2588 2593 2602 2624 2625 2627 2629 2632 2638 2640 2646
-2698 2520 2559 2561 2582 2806 2807
+2698 2520 2559 2561 2582 2806 2807 2890 2289 2890 2853 2940
 
-
+======================================================================
 =======================================================================
 
 Release Version 7.4.7
