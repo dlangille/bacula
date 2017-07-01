@@ -62,6 +62,10 @@ install: installdirs
 	$(INSTALL_DATA)   btraceback.gdb $(DESTDIR)$(scriptdir)/btraceback.gdb
 	$(INSTALL_DATA)   btraceback.dbx $(DESTDIR)$(scriptdir)/btraceback.dbx
 	$(INSTALL_DATA)   btraceback.mdb $(DESTDIR)$(scriptdir)/btraceback.mdb
+	@if  test -f ${DESTDIR}${scriptdir}/baculabackupreport; then \
+	   echo "  ==> Saving existing baculabackupreport to baculabackupreport.old"; \
+	   $(MV) -f ${DESTDIR}${scriptdir}/baculabackupreport ${DESTDIR}${scriptdir}/baculabackupreport.old; \
+	fi
 	chmod 0644 $(DESTDIR)$(scriptdir)/btraceback.gdb \
 		   $(DESTDIR)$(scriptdir)/btraceback.dbx \
 		   $(DESTDIR)$(scriptdir)/btraceback.mdb
@@ -74,6 +78,7 @@ uninstall:
 	(cd $(DESTDIR)$(scriptdir); $(RMF) bacula_config)
 	(cd $(DESTDIR)$(sbindir);   $(RMF) bacula)
 	(cd $(DESTDIR)$(sbindir);   $(RMF) tapealert)
+	(cd $(DESTDIR)$(scriptdir); $(RMF) baculabackupreport)
 	(cd $(DESTDIR)$(scriptdir); $(RMF) bacula-ctl-dir)
 	(cd $(DESTDIR)$(scriptdir); $(RMF) bacula-ctl-fd)
 	(cd $(DESTDIR)$(scriptdir); $(RMF) bacula-ctl-sd)
