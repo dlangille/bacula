@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (C) 2000-2015 Kern Sibbald
+# Copyright (C) 2000-2017 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
 # This script deletes a catalog dump
@@ -16,5 +16,10 @@ rm -f @working_dir@/${db_name}.sql
 #  or adjust the script below.	Please replace all %xxx% with what
 #  is appropriate at your site.
 #
-#/opt/bacula/bin/bsmtp -h %smtp-server% -s "catalog.bsr" \
-#   %your-name@company.org% </opt/bacula/bsr/catalog.bsr
+#@bindir@/bsmtp -h %smtp-server% -s "catalog.bsr" \
+#   %your-name@company.org% <@bsrdir@/catalog.bsr
+#
+# The following script will email a summary of the backup jobs that
+#  were completed in the last 24 hours
+#@scriptdir@/baculabackupreport 24
+#
