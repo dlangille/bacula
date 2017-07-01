@@ -66,6 +66,7 @@ install: installdirs
 	   echo "  ==> Saving existing baculabackupreport to baculabackupreport.old"; \
 	   $(MV) -f ${DESTDIR}${scriptdir}/baculabackupreport ${DESTDIR}${scriptdir}/baculabackupreport.old; \
 	fi
+	$(INSTALL_SCRIPT) baculabackupreport $(DESTDIR)$(scriptdir)/baculabackupreport
 	chmod 0644 $(DESTDIR)$(scriptdir)/btraceback.gdb \
 		   $(DESTDIR)$(scriptdir)/btraceback.dbx \
 		   $(DESTDIR)$(scriptdir)/btraceback.mdb

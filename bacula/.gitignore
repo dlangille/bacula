@@ -178,6 +178,7 @@ scripts/bs_alert
 scripts/breload
 scripts/bsg_persist
 scripts/make_catalog_backup.pl
+scripts/baculabackupreport
 scripts/bacula_config
 scripts/wxconsole.console_apps
 scripts/wxconsole.desktop.consolehelper
