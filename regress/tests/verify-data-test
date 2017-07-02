@@ -11,6 +11,8 @@ TestName="verify-data-test"
 JobName=VerifyVol
 . scripts/functions
 
+require_linux
+
 cwd=`pwd`
 scripts/cleanup
 scripts/copy-test-confs
@@ -61,6 +63,12 @@ stop_bacula
 
 $bperl -e 'add_attribute("$conf/bacula-sd.conf", "BlockChecksum", "no", "Device")'
 
+#
+# NOTE!!!  sed is an ASCII file editor not a binary file editor
+#   Thus in general, the following sed will not work and is 
+#   not portable.  It is known to fail on FreeBSD, but *seems* to work
+#   on Linux.
+#
 # Introduce a volume error by modifying the some Volume data
 nbok=2
 if [ x$FORCE_DEDUP = xyes ]; then
