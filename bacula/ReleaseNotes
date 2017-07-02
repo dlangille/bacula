@@ -116,7 +116,14 @@ Misc Features:
  - The WhereACL is now verified after the restore menu
 
 
-30Jun17
+02Jul17
+ - Skip verify-data-test if not running Linux
+ - Skip lzo-test if lzo not in Bacula
+ - Remove double define HAVE_LZO in config.h
+ - Add documentation on baculabackupreport to delete_catalog_backup.in
+ - Install baculabackupreport and ignore script without .in
+ - Recompile configure.in
+ - Add Bill's baculabackupreport script
  - Update po files
  - Fix error in FreeBSD during maxtime-test
  - Fix #2853 About character substitution for "virtual full" job level in 

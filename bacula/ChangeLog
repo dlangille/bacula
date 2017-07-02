@@ -1,5 +1,18 @@
               Changelog on version 9.0.0
 
+
+
+02Jul17
+ - Skip verify-data-test if not running Linux
+ - Skip lzo-test if lzo not in Bacula
+ - Remove double define HAVE_LZO in config.h
+
+01Jul17
+ - Add documentation on baculabackupreport to delete_catalog_backup.in
+ - Install baculabackupreport and ignore script without .in
+ - Recompile configure.in
+ - Add Bill's baculabackupreport script
+
 30Jun17
  - Update po files
 
