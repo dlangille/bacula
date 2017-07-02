@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (C) 2000-2015 Kern Sibbald
+# Copyright (C) 2000-2017 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
 
@@ -11,6 +11,12 @@
 TestName="lzo-test"
 JobName=lzo
 . scripts/functions
+
+grep "LZO support:.*yes" ${cwd}/build/config.out >/dev/null
+if [ $? != 0 ] ; then
+   echo "LZO support not enabled in Bacula. Skipping lzo-test"
+   exit 0
+fi
 
 scripts/cleanup
 scripts/copy-test-confs
