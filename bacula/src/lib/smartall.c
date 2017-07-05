@@ -556,3 +556,10 @@ void operator delete(void *buf)
 #endif
 
 #endif
+
+/* Avoid aggressive optimization */
+void *bmemset(void *s, int c, size_t n)
+{
+   void *ret = memset(s, c, n);
+   return ret;
+}

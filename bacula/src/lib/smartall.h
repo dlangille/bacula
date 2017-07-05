@@ -35,6 +35,9 @@ extern uint32_t DLL_IMP_EXP sm_buffers;
 #define SMARTALLOC SMARTALLOC
 
 
+/* Avoid aggressive GCC optimization */
+extern void *bmemset(void *s, int c, size_t n);
+
 extern void *sm_malloc(const char *fname, int lineno, unsigned int nbytes),
             *sm_calloc(const char *fname, int lineno,
                 unsigned int nelem, unsigned int elsize),
@@ -109,13 +112,13 @@ void *operator new(size_t s, const char *fname, int line)
 {
    size_t size =  s > sizeof(int) ? (unsigned int)s : sizeof(int);
    void *p = sm_malloc(fname, line, size);
-   return memset(p, 0, size);   /* return memset() result to avoid GCC 6.1 issue */
+   return bmemset(p, 0, size);   /* return memset() result to avoid GCC 6.1 issue */
 }
 void *operator new[](size_t s, const char *fname, int line)
 {
    size_t size =  s > sizeof(int) ? (unsigned int)s : sizeof(int);
    void *p = sm_malloc(fname, line, size);
-   return memset(p, 0, size);  /* return memset() result to avoid GCC 6.1 issue */
+   return bmemset(p, 0, size);  /* return memset() result to avoid GCC 6.1 issue */
 }
 
 void  operator delete(void *ptr)
@@ -151,12 +154,12 @@ class SMARTALLOC
    public:
       void *operator new(size_t s) {
          void *p = malloc(s);
-         memset(p, 0, s);
+         bmemset(p, 0, s);
          return p;
       }
       void *operator new[](size_t s) {
          void *p = malloc(s);
-         memset(p, 0, s);
+         bmemset(p, 0, s);
          return p;
       }
       void  operator delete(void *ptr) {
