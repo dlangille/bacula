@@ -439,7 +439,7 @@ static int update_path_hierarchy_cache(JCR *jcr,
    /* Inserting path records for JobId */
    Mmsg(mdb->cmd, "INSERT INTO PathVisibility (PathId, JobId) "
                    "SELECT DISTINCT PathId, JobId "
-                     "FROM (SELECT PathId, JobId FROM File WHERE JobId = %s "
+                     "FROM (SELECT PathId, JobId FROM File WHERE JobId = %s AND FileIndex <> 0 "
                            "UNION "
                            "SELECT PathId, BaseFiles.JobId "
                              "FROM BaseFiles JOIN File AS F USING (FileId) "
