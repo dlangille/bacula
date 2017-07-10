@@ -289,7 +289,7 @@ enum {
    BNET_SIGNAL         = -1,
    BNET_HARDEOF        = -2,
    BNET_ERROR          = -3,
-   BNET_COMMAND        = -4,
+   BNET_COMMAND        = -4
 };
 
 /*
@@ -307,7 +307,7 @@ enum {
    BNET_CMD_STO_BLOCK  =  4, /* backup  FD->SD  FD send requested block */
    BNET_CMD_REC_ACK    =  5, /* restore FD->SD  FD has consumed records from the buffer */
    BNET_CMD_STP_THREAD =  6, /* restore FD->SD  SD must stop thread */
-   BNET_CMD_STP_FLOWCTRL =  7, /* backup FD->SD  SD must stop sending flowcontrol information */
+   BNET_CMD_STP_FLOWCTRL = 7 /* backup FD->SD  SD must stop sending flowcontrol information */
 };
 
 const char *bnet_cmd_to_name(int val);
