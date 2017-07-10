@@ -67,7 +67,8 @@ Note : this source file requires "lz4_encoder.h"
    || defined(__powerpc__) || defined(__ppc__) || defined(__PPC__) \
    || defined(__hpux)  || defined(__hppa) \
    || defined(_MIPSEB) || defined(__s390__)
-#error "BIG Endian detected but not set"
+// KES -- the following is not a correct assumption
+//#error "BIG Endian detected but not set"
 #endif
 #endif
 
