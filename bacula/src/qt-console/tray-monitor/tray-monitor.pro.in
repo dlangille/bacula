@@ -6,6 +6,9 @@
 #
 #  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #    
+# Copyright (C) 2000-2017 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
 # CONFIG options for Windows are pulled from win32/qmake.conf
 CONFIG += qt
 #CONFIG += qt debug 
