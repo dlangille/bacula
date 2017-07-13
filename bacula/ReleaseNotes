@@ -1,5 +1,21 @@
 
-               Release Notes for Bacula 9.0.0
+               Release Notes for Bacula 9.0.1
+
+This is a minor bug fix release that mainly to include the new
+tray-monitor files that were omitted. The tray-monitor now builds
+and runs at least on Ubuntu Linux.
+
+12Jul17
+ - Remove two incorrect trailing commas in bsock.h
+ - Fix bug #2293 bad big endian detection in lz4.c
+ - Add new tray-monitor files that were omitted in the backport from Enterprise
+ - bvfs: Do not insert deleted directories in PathVisibility table
+ - Fix compilation for Debian Stretch with GCC 6.3
+
+Bugs fixed/closed since last release:
+2293
+
+========
 
 This is either the biggest Bacula release ever made or one of the
 biggest ones. Even without the new Aligned Volumes source code, which

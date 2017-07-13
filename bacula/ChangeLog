@@ -1,5 +1,18 @@
-              Changelog on version 9.0.0
+              Changelog on version 9.0.1
 
+10Jul17
+ - Remove two incorrect trailing commas in bsock.h
+ - Fix bug #2293 bad big endian detection in lz4.c
+ - Add new tray-monitor files that were omitted in the backport from Enterprise
+
+06Jul17
+ - bvfs: Do not insert deleted directories in PathVisibility table
+
+05Jul17
+ - Fix compilation for Debian Stretch with GCC 6.3
+
+Bugs fixed/closed since last release:
+2293
 
 
 02Jul17
