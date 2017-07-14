@@ -50,7 +50,7 @@ class BaculumAPIClient extends WebModule {
 	 *
 	 * @access private
 	 */
-	private $session_params = array();
+	private $session_params = array('director');
 
 	/**
 	 * Host params to do API requests.
