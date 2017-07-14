@@ -23,12 +23,13 @@
 Prado::using('Application.Web.Class.BaculumWebPage');
 
 class BaculumError extends BaculumWebPage {
+
 	public $error;
 	public $output;
 
 	public function onInit($param) {
 		$this->error = intval($this->Request['error']);
-		$this->output = $this->Request['output'];
+		$this->output = urldecode($this->Request['output']);
 	}
 }
 ?>
