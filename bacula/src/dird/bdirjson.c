@@ -760,6 +760,7 @@ static void display_run(HPKT &hpkt)
                      sendit(NULL, "      \"%s\": \"%s\"", RunFields[i].name,
                         joblevels[j].level_name);
                      first = false;
+                     break;
                   }
                }
             //}
