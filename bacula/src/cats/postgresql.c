@@ -36,9 +36,18 @@
 #ifdef HAVE_POSTGRESQL
 
 #include  "cats.h"
+
+/* Note in this file, we want these for Postgresql not Bacula */
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_NAME
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_VERSION
+
 #include  "libpq-fe.h"
 #include  "postgres_ext.h"       /* needed for NAMEDATALEN */
 #include  "pg_config_manual.h"   /* get NAMEDATALEN on version 8.3 or later */
+#include  "pg_config.h"          /* for PG_VERSION_NUM */
 #define __BDB_POSTGRESQL_H_ 1
 #include  "bdb_postgresql.h"
 
@@ -262,6 +271,20 @@ bool BDB_POSTGRESQL::bdb_open_database(JCR *jcr)
    /* If connection fails, try at 5 sec intervals for 30 seconds. */
    for (int retry=0; retry < 6; retry++) {
       /* connect to the database */
+
+#if PG_VERSION_NUM < 90000
+
+      /* Old "depreciated" connection call */
+      mdb->m_db_handle = PQsetdbLogin(
+           mdb->m_db_address,         /* default = localhost */
+           port,                      /* default port */
+           NULL,                      /* pg options */
+           NULL,                      /* tty, ignored */
+           mdb->m_db_name,            /* database name */
+           mdb->m_db_user,            /* login name */
+           mdb->m_db_password);       /* password */
+#else
+      /* Code for Postgresql 9.0 and greater */
       const char *keywords[10] = {"host", "port",
                                   "dbname", "user",
                                   "password", "sslmode",
@@ -277,8 +300,8 @@ bool BDB_POSTGRESQL::bdb_open_database(JCR *jcr)
                                 mdb->m_db_ssl_cert,
                                 mdb->m_db_ssl_ca,
                                 NULL };
-      mdb->m_db_handle = PQconnectdbParams(keywords,
-                                           values, 0);
+      mdb->m_db_handle = PQconnectdbParams(keywords, values, 0);
+#endif
 
       /* If no connect, try once more in case it is a timing problem */
       if (PQstatus(mdb->m_db_handle) == CONNECTION_OK) {
