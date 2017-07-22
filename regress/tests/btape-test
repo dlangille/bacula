@@ -40,7 +40,6 @@ quit
 END_OF_DATA
 fi
 
-
 if [ $? != 0 ] ; then
    echo " "
    echo " "
@@ -49,6 +48,13 @@ if [ $? != 0 ] ; then
    echo " "
    exit 1
 fi
+
+grep "This is NOT correct" $tmp/log1.out >/dev/null
+if [ $? != 1 ] ; then
+   print_debug "btape test command failed failed"
+   estat=1
+fi
+
 
 grep "The test autochanger worked" $tmp/log1.out > /dev/null
 if [ $? != 0 ] ; then
