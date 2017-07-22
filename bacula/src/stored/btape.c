@@ -1966,7 +1966,7 @@ static void scancmd()
 
    blocks = block_size = tot_blocks = 0;
    bytes = 0;
-   if (dev->state & ST_EOT) {
+   if (dev->at_eot()) {
       Pmsg0(0, _("End of tape\n"));
       return;
    }
@@ -2009,18 +2009,17 @@ static void scancmd()
          dev->update_pos(dcr);
          printf(_("End of File mark.\n"));
          /* Two reads of zero means end of tape */
-         if (dev->state & ST_EOF)
-            dev->state |= ST_EOT;
-         else {
-            dev->state |= ST_EOF;
-            dev->file++;
+         if (dev->at_eof()) {
+            dev->set_ateot();
+         } else {
+            dev->set_ateof();
          }
-         if (dev->state & ST_EOT) {
+         if (dev->at_eot()) {
             printf(_("End of tape\n"));
             break;
          }
       } else {                        /* Got data */
-         dev->state &= ~ST_EOF;
+         dev->clear_eof();
          blocks++;
          tot_blocks++;
          bytes += stat;
@@ -2057,7 +2056,7 @@ static void scan_blocks()
    for (;;) {
       if (!dcr->read_block_from_device(NO_BLOCK_NUMBER_CHECK)) {
          Dmsg1(100, "!read_block(): ERR=%s\n", dev->bstrerror());
-         if (dev->state & ST_EOT) {
+         if (dev->at_eot()) {
             if (blocks > 0) {
                if (blocks==1) {
                   printf(_("1 block of %d bytes in file %d\n"), block_size, dev->file);

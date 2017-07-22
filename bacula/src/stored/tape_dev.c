@@ -1059,6 +1059,9 @@ bool tape_dev::mount_tape(int mount, int dotimeout)
 
 void tape_dev::set_ateof()
 {
+   if (at_eof()) {
+      return;
+   }
    DEVICE::set_ateof();
    file++;
 }
