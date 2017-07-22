@@ -611,9 +611,11 @@ static void label_from_barcodes(UAContext *ua, int drive)
          }
          continue;                    /* done, go handle next volume */
       }
-      bstrncpy(mr.MediaType, store->media_type, sizeof(mr.MediaType));
 
+      /* Not a cleaning tape */
+      bstrncpy(mr.MediaType, store->media_type, sizeof(mr.MediaType));
       mr.Slot = vl->Slot;
+
       send_label_request(ua, &mr, &omr, &pr, 0, media_record_exists, drive);
    }
 
@@ -984,14 +986,14 @@ int get_num_drives_from_SD(UAContext *ua)
  */
 static bool is_cleaning_tape(UAContext *ua, MEDIA_DBR *mr, POOL_DBR *pr)
 {
+   if (ua->jcr->pool->cleaning_prefix == NULL) {
+      return false;  /* if no cleaning prefix, this is not a cleaning tape */
+   }
    /* Find Pool resource */
    ua->jcr->pool = (POOL *)GetResWithName(R_POOL, pr->Name);
    if (!ua->jcr->pool) {
       ua->error_msg(_("Pool \"%s\" resource not found for volume \"%s\"!\n"),
          pr->Name, mr->VolumeName);
-      return false;
-   }
-   if (ua->jcr->pool->cleaning_prefix == NULL) {
       return false;
    }
    Dmsg4(100, "CLNprefix=%s: Vol=%s: len=%d strncmp=%d\n",
@@ -1003,7 +1005,10 @@ static bool is_cleaning_tape(UAContext *ua, MEDIA_DBR *mr, POOL_DBR *pr)
                   strlen(ua->jcr->pool->cleaning_prefix)) == 0;
 }
 
-static void content_send_info(UAContext *ua, char type, int Slot, char *vol_name)
+/*
+ * Send Volume info to caller in API format
+ */
+static void send_volume_info(UAContext *ua, char type, int Slot, char *vol_name)
 {
    char ed1[50], ed2[50], ed3[50];
    POOL_DBR pr;
@@ -1127,7 +1132,7 @@ void status_content(UAContext *ua, STORE *store)
          ua->send_msg("D|%d||\n", Drive);
 
       } else if (sscanf(sd->msg, "%c:%d:F:%127s", &type, &Slot, vol_name)== 3) {
-         content_send_info(ua, type, Slot, vol_name);
+         send_volume_info(ua, type, Slot, vol_name);
 
       } else if (sscanf(sd->msg, "%c:%d:E", &type, &Slot) == 2) {
          /* type can be S (slot) or I (Import/Export slot) */
@@ -1148,7 +1153,7 @@ void status_content(UAContext *ua, STORE *store)
             }
             prev = vl;
          }
-         content_send_info(ua, type, Slot, vol_name);
+         send_volume_info(ua, type, Slot, vol_name);
 
       } else {
          Dmsg1(10, "Discarding msg=%s\n", sd->msg);
