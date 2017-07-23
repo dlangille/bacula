@@ -67,6 +67,7 @@ install: installdirs
 	   $(MV) -f ${DESTDIR}${scriptdir}/baculabackupreport ${DESTDIR}${scriptdir}/baculabackupreport.old; \
 	fi
 	$(INSTALL_SCRIPT) baculabackupreport $(DESTDIR)$(scriptdir)/baculabackupreport
+	$(INSTALL_SCRIPT) bacula-tray-monitor.desktop $(DESTDIR)$(scriptdir)/bacula-tray-monitor.desktop
 	chmod 0644 $(DESTDIR)$(scriptdir)/btraceback.gdb \
 		   $(DESTDIR)$(scriptdir)/btraceback.dbx \
 		   $(DESTDIR)$(scriptdir)/btraceback.mdb

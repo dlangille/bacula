@@ -3398,6 +3398,7 @@ AC_OUTPUT([autoconf/Make.common \
 	   scripts/bat.desktop.xsu \
 	   scripts/bat.desktop.consolehelper \
 	   scripts/bat.console_apps \
+	   scripts/bacula-tray-monitor.desktop \
 	   src/Makefile \
 	   src/host.h \
 	   src/console/Makefile \
