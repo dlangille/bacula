@@ -1210,7 +1210,7 @@ void status_slots(UAContext *ua, STORE *store_r)
       goto bail_out;
    }
    ua->send_msg(_("+------+----------------------+-----------+-----------------+--------------------+\n"));
-   ua->send_msg(_("| Slot | Volume Name          | Status    |      Media Type | Pool               |\n"));
+   ua->send_msg(_("| Slot | Volume Name          | Status    | Media Type      | Pool               |\n"));
    ua->send_msg(_("+------+----------------------+-----------+-----------------+--------------------+\n"));
 
    /* Walk through the list getting the media records */
