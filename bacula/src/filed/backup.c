@@ -1030,10 +1030,10 @@ static bool setup_compression(bctx_t &bctx)
 
    if ((bctx.ff_pkt->flags & FO_COMPRESS) && bctx.ff_pkt->Compress_algo == COMPRESS_GZIP) {
       if ((bctx.ff_pkt->flags & FO_SPARSE) || (bctx.ff_pkt->flags & FO_OFFSETS)) {
-         bctx.cbuf = (Bytef *)jcr->compress_buf + OFFSET_FADDR_SIZE;
+         bctx.cbuf = (unsigned char *)jcr->compress_buf + OFFSET_FADDR_SIZE;
          bctx.max_compress_len = jcr->compress_buf_size - OFFSET_FADDR_SIZE;
       } else {
-         bctx.cbuf = (Bytef *)jcr->compress_buf;
+         bctx.cbuf = (unsigned char *)jcr->compress_buf;
          bctx.max_compress_len = jcr->compress_buf_size; /* set max length */
       }
       bctx.wbuf = jcr->compress_buf;    /* compressed output here */
@@ -1062,12 +1062,12 @@ static bool setup_compression(bctx_t &bctx)
 
    if ((bctx.ff_pkt->flags & FO_COMPRESS) && bctx.ff_pkt->Compress_algo == COMPRESS_LZO1X) {
       if ((bctx.ff_pkt->flags & FO_SPARSE) || (bctx.ff_pkt->flags & FO_OFFSETS)) {
-         bctx.cbuf = (Bytef *)jcr->compress_buf + OFFSET_FADDR_SIZE;
-         bctx.cbuf2 = (Bytef *)jcr->compress_buf + OFFSET_FADDR_SIZE + sizeof(comp_stream_header);
+         bctx.cbuf = (unsigned char *)jcr->compress_buf + OFFSET_FADDR_SIZE;
+         bctx.cbuf2 = (unsigned char *)jcr->compress_buf + OFFSET_FADDR_SIZE + sizeof(comp_stream_header);
          bctx.max_compress_len = jcr->compress_buf_size - OFFSET_FADDR_SIZE;
       } else {
-         bctx.cbuf = (Bytef *)jcr->compress_buf;
-         bctx.cbuf2 = (Bytef *)jcr->compress_buf + sizeof(comp_stream_header);
+         bctx.cbuf = (unsigned char *)jcr->compress_buf;
+         bctx.cbuf2 = (unsigned char *)jcr->compress_buf + sizeof(comp_stream_header);
          bctx.max_compress_len = jcr->compress_buf_size; /* set max length */
       }
       bctx.ch.magic = COMPRESS_LZO1X;
@@ -1076,8 +1076,6 @@ static bool setup_compression(bctx_t &bctx)
       bctx.cipher_input = (uint8_t *)jcr->compress_buf; /* encrypt compressed data */
    }
  #endif
-#else
-   bctx.max_compress_len = 0;
 #endif
    return true;
 }
@@ -1154,7 +1152,7 @@ static bool do_libz_compression(bctx_t &bctx)
    if (bctx.ff_pkt->flags & FO_COMPRESS && bctx.ff_pkt->Compress_algo == COMPRESS_GZIP && jcr->pZLIB_compress_workset) {
       Dmsg3(400, "cbuf=0x%x rbuf=0x%x len=%u\n", bctx.cbuf, bctx.rbuf, sd->msglen);
 
-      ((z_stream*)jcr->pZLIB_compress_workset)->next_in   = (Bytef *)bctx.rbuf;
+      ((z_stream*)jcr->pZLIB_compress_workset)->next_in   = (unsigned char *)bctx.rbuf;
              ((z_stream*)jcr->pZLIB_compress_workset)->avail_in  = sd->msglen;
       ((z_stream*)jcr->pZLIB_compress_workset)->next_out  = bctx.cbuf;
              ((z_stream*)jcr->pZLIB_compress_workset)->avail_out = bctx.max_compress_len;

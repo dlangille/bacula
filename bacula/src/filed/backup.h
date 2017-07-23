@@ -48,12 +48,19 @@ struct bctx_t {
    uint32_t encrypted_len;
 
    /* Compression variables */
-#if defined(HAVE_LIBZ) || defined(HAVE_LZO)
-   uLong compress_len;
-   uLong max_compress_len;
-   Bytef *cbuf;
-   Bytef *cbuf2;
-#endif
+   /* These are the same as used by libz, but I find it very
+    *  uncomfortable to define variables like this rather than
+    *  specifying a number of bits. Defining them here allows us
+    *  to have code that compiles with and without libz and lzo.
+    *
+    *  uLong == unsigned long int
+    *  Bytef == unsigned char
+    */
+   unsigned long int max_compress_len;
+   unsigned long int compress_len;
+   unsigned char *cbuf;
+   unsigned char *cbuf2;
+
 #ifdef HAVE_LZO
    comp_stream_header ch;
 #endif
