@@ -1175,7 +1175,7 @@ void status_slots(UAContext *ua, STORE *store_r)
    int max_slots;
    int i=1;
    /* Slot | Volume | Status | MediaType | Pool */
-   const char *slot_hformat="| %4i%c| %-30s | %-9s | %-10s | %-18s |\n";
+   const char *slot_hformat="| %4i%c| %-20s | %-9s | %-15s | %-18s |\n";
 
    if (ua->api) {
       status_content(ua, store_r);
@@ -1209,9 +1209,9 @@ void status_slots(UAContext *ua, STORE *store_r)
       ua->warning_msg(_("No Volumes found, or no barcodes.\n"));
       goto bail_out;
    }
-   ua->send_msg(_("+------+--------------------------------+-----------+------------+--------------------+\n"));
-   ua->send_msg(_("| Slot | Volume Name                    | Status    | Media Type | Pool               |\n"));
-   ua->send_msg(_("+------+--------------------------------+-----------+------------+--------------------+\n"));
+   ua->send_msg(_("+------+----------------------+-----------+-----------------+--------------------+\n"));
+   ua->send_msg(_("| Slot | Volume Name          | Status    |      Media Type | Pool               |\n"));
+   ua->send_msg(_("+------+----------------------+-----------+-----------------+--------------------+\n"));
 
    /* Walk through the list getting the media records */
    for (vl=vol_list; vl; vl=vl->next) {
@@ -1244,7 +1244,7 @@ void status_slots(UAContext *ua, STORE *store_r)
             slot_list[i]=0;
          }
       }
-      ua->send_msg(_("+------+--------------------------------+-----------+------------+--------------------+\n"));
+   ua->send_msg(_("+------+----------------------+-----------+-----------------+--------------------+\n"));
 
       memset(&mr, 0, sizeof(MEDIA_DBR));
       bstrncpy(mr.VolumeName, vl->VolName, sizeof(mr.VolumeName));
