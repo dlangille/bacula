@@ -1,5 +1,42 @@
 
-               Release Notes for Bacula 9.0.1
+               Release Notes for Bacula 9.0.2
+
+This is a minor bug fix release, but a few of the bugs are important.
+The main items fixed are:
+
+- Postgresql should now work with Postgresql prior to 9.0
+  Note: the ssl connection feature added in 9.0 is not available on
+  postgresql servers older than 9.0 (it needs the new connection API).
+- The issues with MariaDB (reconnect variable) are now fixed
+- The problem of the btape "test" command finding a wrong number
+  of files in the append test was a bug.  It is now fixed.  It is
+  unlikely that it affected anything but btape.
+- The bacula-tray-monitor.deskop script is released in the scripts
+  directory.
+- We recommend that you build with libz and lzo library support (the
+  developer packages must be installed when building, and the shared 
+  object libraries must be installed at run time).  However we have
+  modified the code so that Bacula *should* build and run with either
+  or both libz or lzo absent.
+
+23Jul17
+ - Use Bacula in place of Libz variables so we can build with/without
+   libz and lzo
+ - Apply ideas from bug #2255 prettier status slots output
+ - Configure and install bacula-tray-monitor.desktop
+ - Fix btape test which counted files incorrectly on EOT
+ - Fix bug #2296 where Bacula would not compile with postgres 8 or older
+ - Fix bug #2294 Bacula does not build with MariaDB 10.2
+ - baculum: Fix multiple directors support
+ - baculum: Fix showing errors from the API
+
+Bugs fixed/closed since last release:
+2255 2294 2296
+
+
+==================================================================
+
+Release 9.0.1 12Jul17:
 
 This is a minor bug fix release that mainly to include the new
 tray-monitor files that were omitted. The tray-monitor now builds

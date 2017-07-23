@@ -1,4 +1,31 @@
-              Changelog on version 9.0.1
+              Changelog on version 9.0.2
+
+Release 9.0.2
+
+23Jul17
+ - Use Bacula in place of Libz variables so we can build with/without libz and 
+   lzo
+ - Apply ideas from bug #2255 prettier status slots output
+ - Configure and install bacula-tray-monitor.desktop
+
+22Jul17
+ - Fix btape test which counted files incorrectly on EOT
+
+21Jul17
+ - Fix bug #2296 where Bacula would not compile with postgres 8 or older
+
+20Jul17
+ - Fix bug #2294 Bacula does not build with MariaDB 10.2
+
+14Jul17
+ - baculum: Fix multiple directors support
+ - baculum: Fix showing errors from the API
+
+Bugs fixed/closed since last release:
+2255 2294 2296
+
+
+Release 9.0.1
 
 10Jul17
  - Remove two incorrect trailing commas in bsock.h
@@ -14,6 +41,7 @@
 Bugs fixed/closed since last release:
 2293
 
+Release 9.0.0
 
 02Jul17
  - Skip verify-data-test if not running Linux
