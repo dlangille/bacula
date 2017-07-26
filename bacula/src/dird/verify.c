@@ -435,10 +435,11 @@ bail_out:
 void verify_cleanup(JCR *jcr, int TermCode)
 {
    char sdt[50], edt[50];
-   char ec1[30], ec2[30];
+   char ec1[30], ec2[30], elapsed[50];
    char term_code[100], fd_term_msg[100], sd_term_msg[100];
    const char *term_msg;
    int msg_type;
+   utime_t RunTime;
    const char *Name;
 
 // Dmsg1(100, "Enter verify_cleanup() TermCod=%d\n", TermCode);
@@ -492,6 +493,7 @@ void verify_cleanup(JCR *jcr, int TermCode)
    }
    bstrftimes(sdt, sizeof(sdt), jcr->jr.StartTime);
    bstrftimes(edt, sizeof(edt), jcr->jr.EndTime);
+   RunTime = jcr->jr.EndTime - jcr->jr.StartTime;
    if (jcr->verify_job) {
       Name = jcr->verify_job->hdr.name;
    } else {
@@ -516,6 +518,7 @@ void verify_cleanup(JCR *jcr, int TermCode)
 "  Verify Job:             %s\n"
 "  Start time:             %s\n"
 "  End time:               %s\n"
+"  Elapsed time:           %s\n"
 "  Accurate:               %s\n"
 "  Files Expected:         %s\n"
 "  Files Examined:         %s\n"
@@ -535,6 +538,7 @@ void verify_cleanup(JCR *jcr, int TermCode)
            Name,
            sdt,
            edt,
+           edit_utime(RunTime, elapsed, sizeof(elapsed)),
            accurate,
            edit_uint64_with_commas(jcr->ExpectedFiles, ec1),
            edit_uint64_with_commas(jcr->JobFiles, ec2),
@@ -555,6 +559,7 @@ void verify_cleanup(JCR *jcr, int TermCode)
 "  Verify Job:             %s\n"
 "  Start time:             %s\n"
 "  End time:               %s\n"
+"  Elapsed time:           %s\n"
 "  Files Examined:         %s\n"
 "  Non-fatal FD errors:    %d\n"
 "  FD termination status:  %s\n"
@@ -570,6 +575,7 @@ void verify_cleanup(JCR *jcr, int TermCode)
            Name,
            sdt,
            edt,
+           edit_utime(RunTime, elapsed, sizeof(elapsed)),
            edit_uint64_with_commas(jcr->JobFiles, ec1),
            jcr->JobErrors,
            fd_term_msg,
