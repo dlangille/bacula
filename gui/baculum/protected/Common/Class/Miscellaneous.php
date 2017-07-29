@@ -22,7 +22,7 @@ class Miscellaneous extends TModule {
 
 	const RPATH_PATTERN = '/^b2\d+$/';
 
-	private $jobTypes = array(
+	public $job_types = array(
 		'B' => 'Backup',
 		'M' => 'Migrated',
 		'V' => 'Verify',
@@ -136,17 +136,6 @@ class Miscellaneous extends TModule {
 			$name = $this->components[$type]['full_name'];
 		}
 		return $name;
-	}
-
-	public function getJobType($jobTypeLetter = null) {
-		$type;
-		if(is_null($jobTypeLetter)) {
-			$type = $this->jobTypes;
-		} else {
-			$type = array_key_exists($jobTypeLetter, $this->jobTypes) ? $this->jobTypes[$jobTypeLetter] : null;
-		}
-		return $type;
-
 	}
 
 	public function getJobStatesByType($type) {

@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2016 Kern Sibbald
+ * Copyright (C) 2013-2017 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -42,6 +42,10 @@ class RestoreRun extends BaculumAPIServer {
 		$priority = property_exists($params, 'priority') ? intval($params->priority) : 10; // default priority is set to 10
 		$where = property_exists($params, 'where') ? $params->where : null;
 		$replace = property_exists($params, 'replace') ? $params->replace : null;
+		$restorejob = null;
+		if (property_exists($params, 'restorejob') && $this->getModule('misc')->isValidName($params->restorejob)) {
+			$restorejob = $params->restorejob;
+		}
 		$misc = $this->getModule('misc');
 
 		if(!is_null($fileset)) {
@@ -55,9 +59,12 @@ class RestoreRun extends BaculumAPIServer {
 								'where="' . $where . '"',
 								'replace="' . $replace . '"',
 								'fileset="' . $fileset . '"',
-								'priority="' . $priority . '"',
-								'yes'
+								'priority="' . $priority . '"'
 							);
+							if (!is_null($restorejob)) {
+								$command[] = 'restorejob="' . $restorejob . '"';
+							}
+							$command[] = 'yes';
 							$restore = $this->getModule('bconsole')->bconsoleCommand($this->director, $command, $this->user);
 							$this->removeTmpRestoreTable($rfile);
 							$this->output = $restore->output;

@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2016 Kern Sibbald
+ * Copyright (C) 2013-2017 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -66,7 +66,7 @@ class JobList extends Portlets implements ISlideWindow {
 		$misc = $this->Application->getModule('misc');
 		$this->jobLevels = $misc->getJobLevels();
 		$this->jobStates = $misc->getJobState();
-		$this->jobTypes = $misc->getJobType();
+		$this->jobTypes = $misc->job_types;
 		$this->runningJobStates = $misc->getRunningJobStates();
 	}
 

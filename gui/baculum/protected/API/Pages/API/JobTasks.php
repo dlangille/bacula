@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2016 Kern Sibbald
+ * Copyright (C) 2013-2017 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -23,13 +23,18 @@
 class JobTasks extends BaculumAPIServer {
 	public function get() {
 		$limit = intval($this->Request['limit']);
+		$jobs_cmd = array('.jobs');
+		if ($this->Request->contains('type') && array_key_exists($this->Request['type'], $this->getModule('misc')->job_types)) {
+			array_push($jobs_cmd, 'type="' . $this->Request['type']. '"');
+		}
+
 		$directors = $this->getModule('bconsole')->getDirectors();
 		if($directors->exitcode === 0) {
 			$jobs = array();
 			$error = false;
 			$error_obj = null;
 			for($i = 0; $i < count($directors->output); $i++) {
-				$jobsList = $this->getModule('bconsole')->bconsoleCommand($directors->output[$i], array('.jobs'), $this->user);
+				$jobsList = $this->getModule('bconsole')->bconsoleCommand($directors->output[$i], $jobs_cmd, $this->user);
 				if ($jobsList->exitcode != 0) {
 					$error_obj = $jobsList;
 					$error = true;

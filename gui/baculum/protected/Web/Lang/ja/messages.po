@@ -1150,3 +1150,6 @@ msgstr "Jobs for Client"
 
 msgid "No jobs for the client."
 msgstr "No jobs for the client."
+
+msgid "Restore job:"
+msgstr "Restore job:"

@@ -54,6 +54,8 @@
 	<!-- jobs endpoints-->
 	<url ServiceParameter="API.Jobs" pattern="api/jobs/" />
 	<url ServiceParameter="API.JobTasks" pattern="api/jobs/tasks/" />
+	<url ServiceParameter="API.JobTasks" pattern="api/jobs/tasks/type/{type}" parameters.type="[a-zA-Z]" />
+	<url ServiceParameter="API.JobTasks" pattern="api/jobs/tasks/type/{type}/limit/{limit}/" parameters.type="[a-zA-Z]" parameters.limit="\d+" />
 	<url ServiceParameter="API.JobTasks" pattern="api/jobs/tasks/limit/{limit}/" parameters.limit="\d+" />
 	<url ServiceParameter="API.Job" pattern="api/jobs/{id}/" parameters.id="\d+" />
 	<url ServiceParameter="API.Jobs" pattern="api/jobs/limit/{limit}/" parameters.limit="\d+" />

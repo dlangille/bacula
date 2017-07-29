@@ -1405,3 +1405,6 @@ msgstr "OAuth2 Redirect URI:"
 
 msgid "OAuth2 Scope:"
 msgstr "OAuth2 Scope:"
+
+msgid "Restore job:"
+msgstr "Restore job:"

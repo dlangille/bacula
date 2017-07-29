@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2016 Kern Sibbald
+ * Copyright (C) 2013-2017 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -59,6 +59,7 @@ class RestoreWizard extends BaculumWebPage
 			$this->setFileVersions(array());
 			$this->setFilesToRestore(array());
 			$this->markFileToRestore(null, null);
+			$this->setRestoreJobs();
 			$_SESSION['restore_path'] = array();
 		}
 	}
@@ -414,31 +415,42 @@ class RestoreWizard extends BaculumWebPage
 	public function wizardCompleted() {
 		$jobids = $this->getElementaryBackup();
 		$path = self::BVFS_PATH_PREFIX . getmypid();
-		$restoreElements = $this->getRestoreElements();
-		$cmdProps = array('jobids' => $jobids, 'path' => $path);
-		if(count($restoreElements['fileid']) > 0) {
-			$cmdProps['fileid'] = implode(',', $restoreElements['fileid']);
+		$restore_elements = $this->getRestoreElements();
+		$cmd_props = array('jobids' => $jobids, 'path' => $path);
+		if(count($restore_elements['fileid']) > 0) {
+			$cmd_props['fileid'] = implode(',', $restore_elements['fileid']);
 		}
-		if(count($restoreElements['dirid']) > 0) {
-			$cmdProps['dirid'] = implode(',', $restoreElements['dirid']);
+		if(count($restore_elements['dirid']) > 0) {
+			$cmd_props['dirid'] = implode(',', $restore_elements['dirid']);
 		}
 
-		$this->getModule('api')->create(array('bvfs', 'restore'), $cmdProps);
-		$restoreProps = array();
-		$restoreProps['rpath'] = $path;
-		$restoreProps['clientid'] = intval($this->RestoreClient->SelectedValue);
-		$restoreProps['fileset'] = $this->GroupBackupFileSet->SelectedValue;
-		$restoreProps['priority'] = intval($this->RestoreJobPriority->Text);
-		$restoreProps['where'] =  $this->RestorePath->Text;
-		$restoreProps['replace'] = $this->ReplaceFiles->SelectedValue;
+		$this->getModule('api')->create(array('bvfs', 'restore'), $cmd_props);
+		$restore_props = array();
+		$restore_props['rpath'] = $path;
+		$restore_props['clientid'] = intval($this->RestoreClient->SelectedValue);
+		$restore_props['fileset'] = $this->GroupBackupFileSet->SelectedValue;
+		$restore_props['priority'] = intval($this->RestoreJobPriority->Text);
+		$restore_props['where'] =  $this->RestorePath->Text;
+		$restore_props['replace'] = $this->ReplaceFiles->SelectedValue;
+		$restore_props['restorejob'] = $this->RestoreJob->SelectedValue;
 		
-		$ret = $this->getModule('api')->create(array('jobs', 'restore'), $restoreProps);
+		$ret = $this->getModule('api')->create(array('jobs', 'restore'), $restore_props);
 		$jobid = $this->getModule('misc')->findJobIdStartedJob($ret->output);
-		$urlParams = array('open' => 'Job');
+		$url_params = array('open' => 'Job');
 		if (is_numeric($jobid)) {
-			$urlParams['id'] = $jobid;
+			$url_params['id'] = $jobid;
 		}
-		$this->goToDefaultPage($urlParams);
+		$this->goToDefaultPage($url_params);
+	}
+
+	private function setRestoreJobs() {
+		$restore_job_tasks = $this->Application->getModule('api')->get(array('jobs', 'tasks', 'type', 'R'))->output;
+		$jobs = array();
+		foreach ($restore_job_tasks as $director => $restore_jobs) {
+			$jobs = array_merge($jobs, $restore_jobs);
+		}
+		$this->RestoreJob->DataSource = array_combine($jobs, $jobs);
+		$this->RestoreJob->dataBind();
 	}
 }
 ?>

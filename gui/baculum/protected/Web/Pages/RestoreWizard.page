@@ -263,6 +263,12 @@
 		</com:TWizardStep>
 		<com:TWizardStep ID="Step5" Title="<%[ Step 5 - options for restore ]%>" StepType="Auto">
 			<div class="line">
+				<div class="text"><com:TLabel ForControl="RestoreJob" Text="<%[ Restore job: ]%>" /></div>
+				<div class="field">
+					<com:TActiveDropDownList ID="RestoreJob" CssClass="textbox" Width="350px" CausesValidation="false" />
+				</div>
+			</div>
+			<div class="line">
 				<div class="text"><com:TLabel ForControl="ReplaceFiles" Text="<%[ Replace files: ]%>" /></div>
 				<div class="field">
 					<com:TDropDownList ID="ReplaceFiles" CssClass="textbox" Width="350px" OnLoad="setRestoreClients" CausesValidation="false">
@@ -332,6 +338,10 @@
 			</fieldset>
 			<fieldset>
 				<legend><%[ Restore job options ]%></legend>
+				<div class="line">
+					<div class="text"><%[ Restore job: ]%></div>
+					<div class="field bold"><%=$this->RestoreJob->Text%></div>
+				</div>
 				<div class="line">
 					<div class="text"><%[ Replace files: ]%></div>
 					<div class="field bold">
