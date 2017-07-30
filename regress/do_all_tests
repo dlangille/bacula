@@ -31,6 +31,7 @@ echo " " >>test.out
 echo " "
 echo "End do_all tests"
 echo "End do_all tests" >>test.out
+./endtime >>test.out
 scripts/cleanup
 cat test.out
 ./endtime
