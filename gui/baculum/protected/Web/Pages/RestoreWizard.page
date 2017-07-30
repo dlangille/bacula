@@ -128,7 +128,7 @@
 										<prop:ItemTemplate>
 											<com:TDraggable ID="FileElementLeft" Revert="false" Handle="<%=$this->FileElementLeft->ClientID%>" Ghosting="true" CssClass="draggable">
 												<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/<%=($this->getParent()->Data['type'] == 'dir' ? 'directory-icon' : 'file-icon')%>.png" alt="<%=$this->getParent()->Data['type'] == 'dir' ? 'directory' : 'file' %>" /> <%=($this->getParent()->Data['name'] != '/') ? preg_replace('/\/$/', '', $this->getParent()->Data['name']) : '/'%>
-														<com:TActiveLinkButton CssClass="link" Style="float: right;" OnCallback="Page.addFileToRestore" ActiveControl.CallbackParameter="<%=isset($this->getParent()->Data['fileid']) ? $this->getParent()->Data['fileid'] : null%>" ActiveControl.EnableUpdate="false" Visible="<%=!in_array($this->getParent()->Data['name'], $this->getPage()->excludedElementsFromAdd)%>" Text="<%[ Add ]%>" />
+														<com:TActiveLinkButton CssClass="link" Style="float: right;" OnCallback="Page.addFileToRestore" ActiveControl.CallbackParameter="<%=isset($this->getParent()->Data['fileid']) ? $this->getParent()->Data['fileid'] : null%>" ActiveControl.EnableUpdate="false" Visible="<%=!in_array($this->getParent()->Data['name'], $this->getPage()->excluded_elements_from_add)%>" Text="<%[ Add ]%>" />
 											</com:TDraggable>
 											<com:TCallback ID="FileElementCall" OnCallback="Page.getVersions" ActiveControl.CallbackParameter="<%=$this->getParent()->Data['name'] . '|' . @$this->getParent()->Data['pathid'] . '|' . @$this->getParent()->Data['filenameid'] . '|' . @$this->getParent()->Data['jobid']%>">
 												<prop:ClientSide.OnLoading>
@@ -271,7 +271,7 @@
 			<div class="line">
 				<div class="text"><com:TLabel ForControl="ReplaceFiles" Text="<%[ Replace files: ]%>" /></div>
 				<div class="field">
-					<com:TDropDownList ID="ReplaceFiles" CssClass="textbox" Width="350px" OnLoad="setRestoreClients" CausesValidation="false">
+					<com:TDropDownList ID="ReplaceFiles" CssClass="textbox" Width="350px" CausesValidation="false">
 						<com:TListItem Value="never" Text="<%[ do not replace files ]%>" />
 						<com:TListItem Value="ifolder" Text="<%[ if files from restore are older]%>" />
 						<com:TListItem Value="ifnewer" Text="<%[ if files from restore are newer]%>" />
@@ -291,7 +291,7 @@
 				<legend><%[ Source parameters ]%></legend>
 				<div class="line">
 					<div class="text"><%[ Backup data from client: ]%></div>
-					<div class="field bold"><%=$this->getModule('api')->get(array('clients', $this->BackupClientName->SelectedValue))->output->name%></div>
+					<div class="field bold"><%=$this->BackupClientName->SelectedValue%></div>
 				</div>
 				<div class="line">
 					<div class="text"><%[ Backup selection method: ]%></div>
@@ -329,7 +329,7 @@
 				<legend><%[ Destination parameters ]%></legend>
 				<div class="line">
 					<div class="text"><%[ Restore to client: ]%></div>
-					<div class="field bold"><%=$this->getModule('api')->get(array('clients', $this->RestoreClient->SelectedValue))->output->name%></div>
+					<div class="field bold"><%=$this->RestoreClient->SelectedValue%></div>
 				</div>
 				<div class="line">
 					<div class="text"><%[ Restore to path: ]%></div>

@@ -35,15 +35,15 @@ Prado::using('System.Web.UI.ActiveControls.TCallback');
 
 class RestoreWizard extends BaculumWebPage
 {
-	private $jobLevelsToRestore = array('F' => 'Full', 'I' => 'Incremental', 'D'=> 'Differential');
+	private $job_levels_to_restore = array('F' => 'Full', 'I' => 'Incremental', 'D'=> 'Differential');
 	private $jobs = null;
 	private $filesets = null;
 	private $storages = null;
 	private $clients = null;
-	private $browserRootDir = array('name' => '.', 'type' => 'dir');
-	private $browserUpDir = array('name' => '..', 'type' => 'dir');
+	private $browser_root_dir = array('name' => '.', 'type' => 'dir');
+	private $browser_up_dir = array('name' => '..', 'type' => 'dir');
 
-	public $excludedElementsFromAdd = array('.', '..');
+	public $excluded_elements_from_add = array('.', '..');
 
 	const BVFS_PATH_PREFIX = 'b2';
 
@@ -101,7 +101,7 @@ class RestoreWizard extends BaculumWebPage
 			}
 			$fileProperties = $this->getBrowserFile($fileid);
 		}
-		if($fileProperties['name'] != $this->browserRootDir['name'] && $fileProperties['name'] != $this->browserUpDir['name']) {
+		if($fileProperties['name'] != $this->browser_root_dir['name'] && $fileProperties['name'] != $this->browser_up_dir['name']) {
 			$this->markFileToRestore($fileid, $fileProperties);
 			$this->prepareFilesToRestore();
 		}
@@ -119,13 +119,7 @@ class RestoreWizard extends BaculumWebPage
 			$this->setBrowserPath($filename);
 			return;
 		}
-		$clientname = null;
-		foreach($this->clients as $client) {
-			if($client->clientid == $this->BackupClientName->SelectedValue) {
-				$clientname = $client->name;
-				break;
-			}
-		}
+		$clientname = $this->BackupClientName->SelectedValue;
 		$versions = $this->getModule('api')->get(array('bvfs', 'versions', $clientname, $jobid, $pathid, $filenameid))->output;
 		$fileVersions = $this->getModule('misc')->parseFileVersions($filename, $versions);
 		$this->setFileVersions($fileVersions);
@@ -150,62 +144,58 @@ class RestoreWizard extends BaculumWebPage
 	}
 
 	public function setJobs($sender, $param) {
-		$jobsList = $jobsGroupList = $fileSetsList = array();
+		$jobs_list = $jobs_group_list = array();
+		$clientid = null;
+		for ($i = 0; $i < count($this->clients); $i++) {
+			if ($this->clients[$i]->name === $this->BackupClientName->SelectedValue) {
+				$clientid = $this->clients[$i]->clientid;
+				break;
+			}
+		}
 		if(is_array($this->jobs)) {
 			foreach($this->jobs as $job) {
-				if(array_key_exists($job->level, $this->jobLevelsToRestore) && $job->type == 'B' && $job->jobstatus == 'T' && $job->clientid == $this->BackupClientName->SelectedValue) {
-					$jobsList[$job->jobid] = sprintf('[%s] %s, %s, %s', $job->jobid, $job->name, $this->jobLevelsToRestore[$job->level], $job->endtime);
-					$jobsGroupList[$job->name] = $job->name;
-					//$fileSetsList[$job->filesetid] = $this->getFileSet($job->filesetid)->fileset;
+				if(array_key_exists($job->level, $this->job_levels_to_restore) && $job->type == 'B' && $job->jobstatus == 'T' && $job->clientid == $clientid) {
+					$jobs_list[$job->jobid] = sprintf('[%s] %s, %s, %s', $job->jobid, $job->name, $this->job_levels_to_restore[$job->level], $job->endtime);
+					$jobs_group_list[$job->name] = $job->name;
 				}
 			}
 		}
-		
+
+		$fileset_list = array();
 		foreach($this->filesets as $director => $filesets) {
-			$fileSetsList = array_merge($filesets, $fileSetsList);
+			$fileset_list = array_merge($fileset_list, $filesets);
 		}
 
-		$this->BackupToRestore->dataSource = $jobsList;
+		$this->BackupToRestore->dataSource = $jobs_list;
 		$this->BackupToRestore->dataBind();
-		$this->GroupBackupToRestore->dataSource = $jobsGroupList;
+		$this->GroupBackupToRestore->dataSource = $jobs_group_list;
 		$this->GroupBackupToRestore->dataBind();
-		$this->GroupBackupFileSet->dataSource = array_combine($fileSetsList, $fileSetsList);
+		$this->GroupBackupFileSet->dataSource = array_combine($fileset_list, $fileset_list);
 		$this->GroupBackupFileSet->dataBind();
 		$this->setRestoreClients($sender, $param);
 	}
 
 	public function setBackupClients($sender, $param) {
 		if(!$this->IsPostBack) {
-			$clientsList = array();
+			$client_list = array();
 			foreach($this->clients as $client) {
-				$clientsList[$client->clientid] = $client->name;
+				$client_list[$client->name] = $client->name;
 			}
-			$this->BackupClientName->dataSource = $clientsList;
+			$this->BackupClientName->dataSource = $client_list;
 			$this->BackupClientName->dataBind();
 		}
 	}
 
 	public function setRestoreClients($sender, $param) {
 		if(!$this->IsPostBack || $sender->ID == $this->BackupClientName->ID) {
-			$clientsList = array();
+			$client_list = array();
 			foreach($this->clients as $client) {
-				$clientsList[$client->clientid] = $client->name;
+				$client_list[$client->name] = $client->name;
 			}
 			$this->RestoreClient->SelectedValue = $this->BackupClientName->SelectedValue;
-			$this->RestoreClient->dataSource = $clientsList;
+			$this->RestoreClient->dataSource = $client_list;
 			$this->RestoreClient->dataBind();
 		}
-	}
-
-	public function getFileSet($filesetId) {
-		$filesetObj = null;
-		foreach($this->filesets as $fileset) {
-			if($fileset->filesetid == $filesetId) {
-				$filesetObj = $fileset;
-				break;
-			}
-		}
-		return $filesetObj;
 	}
 
 	public function setStorage($sender, $param) {
@@ -246,17 +236,9 @@ class RestoreWizard extends BaculumWebPage
 		$_SESSION['restore_path'] = array();
 	}
 
-	/*public function setGroupBackup($sender, $param) {
-		foreach($this->jobs as $job) {
-			if($job->name == $sender->SelectedValue) {
-				$this->GroupBackupFileSet->SelectedValue = $job->filesetid;
-			}
-		}
-	}*/
-
 	public function resetFileBrowser($sender, $param) {
 		$this->markFileToRestore(null, null);
-		$this->setBrowserPath($this->browserRootDir['name']);
+		$this->setBrowserPath($this->browser_root_dir['name']);
 	}
 
 	private function prepareBrowserFiles($files) {
@@ -277,9 +259,9 @@ class RestoreWizard extends BaculumWebPage
 
 	private function setBrowserPath($path) {
 		if(!empty($path)) {
-			if($path == $this->browserUpDir['name']) {
+			if($path == $this->browser_up_dir['name']) {
 				array_pop($_SESSION['restore_path']);
-			} elseif($path == $this->browserRootDir['name']) {
+			} elseif($path == $this->browser_root_dir['name']) {
 				$_SESSION['restore_path'] = array();
 			} else {
 				array_push($_SESSION['restore_path'], $path);
@@ -300,18 +282,20 @@ class RestoreWizard extends BaculumWebPage
 
 	private function prepareBrowserContent() {
 		$jobids = $this->getElementaryBackup();
-	
-		// generating Bvfs may takes a moment
-		$this->generateBvfsCacheByJobids($jobids);
-		$bvfsDirsList = $this->getModule('api')->set(array('bvfs', 'lsdirs'), array('jobids' => $jobids, 'path' => $this->getBrowserPath(true)));
-		$bvfsDirs = is_object($bvfsDirsList) ? $bvfsDirsList->output : array();
-		$dirs = $this->getModule('misc')->parseBvfsList($bvfsDirs);
-		$bvfsFilesList = $this->getModule('api')->set(array('bvfs', 'lsfiles'), array('jobids' => $jobids, 'path' => $this->getBrowserPath(true)));
-		$bvfsFiles = is_object($bvfsFilesList) ? $bvfsFilesList->output : array();
-		$files = $this->getModule('misc')->parseBvfsList($bvfsFiles);
-		$elements = array_merge($dirs, $files);
-		if(count($this->getBrowserPath()) > 0) {
-			array_unshift($elements, $this->browserRootDir);
+		$elements = array();
+		if (!is_null($jobids)) {
+			// generating Bvfs may takes a moment
+			$this->generateBvfsCacheByJobids($jobids);
+			$bvfs_dirs_list = $this->getModule('api')->set(array('bvfs', 'lsdirs'), array('jobids' => $jobids, 'path' => $this->getBrowserPath(true)));
+			$bvfs_dirs = is_object($bvfs_dirs_list) ? $bvfs_dirs_list->output : array();
+			$dirs = $this->getModule('misc')->parseBvfsList($bvfs_dirs);
+			$bvfs_files_list = $this->getModule('api')->set(array('bvfs', 'lsfiles'), array('jobids' => $jobids, 'path' => $this->getBrowserPath(true)));
+			$bvfs_files = is_object($bvfs_files_list) ? $bvfs_files_list->output : array();
+			$files = $this->getModule('misc')->parseBvfsList($bvfs_files);
+			$elements = array_merge($dirs, $files);
+			if(count($this->getBrowserPath()) > 0) {
+				array_unshift($elements, $this->browser_root_dir);
+			}
 		}
 		$this->prepareBrowserFiles($elements);
 	}
@@ -328,15 +312,22 @@ class RestoreWizard extends BaculumWebPage
 				}
 			}
 		} else {
-			$jobsRecent = $this->getModule('api')->get(array('jobs', 'recent', $this->GroupBackupToRestore->SelectedValue, $this->BackupClientName->SelectedValue));
-			if(isset($jobsRecent->output) && count($jobsRecent->output) > 0) {
-				$ids = $jobsRecent->output;
+			$params = array(
+				'jobs',
+				'recent',
+				$this->GroupBackupToRestore->SelectedValue,
+				'client',
+				$this->BackupClientName->SelectedValue,
+				'fileset',
+				$this->GroupBackupFileSet->SelectedValue
+			);
+			$jobs_recent = $this->getModule('api')->get($params);
+			if(count($jobs_recent->output) > 0) {
+				$ids = $jobs_recent->output;
 				$jobids = implode(',', $ids);
 			}
 		}
-
-		$completeJobids = (!is_null($jobids)) ? $jobids : $this->BackupToRestore->SelectedValue;
-		return $completeJobids;
+		return $jobids;
 	}
 
 	private function generateBvfsCacheByJobids($jobids) {
@@ -376,7 +367,7 @@ class RestoreWizard extends BaculumWebPage
 	private function markFileToRestore($fileid, $file) {
 		if($fileid === null) {
 			$_SESSION['restore'] = array();
-		} elseif($file['name'] != $this->browserRootDir['name'] && $file['name'] != $this->browserUpDir['name']) {
+		} elseif($file['name'] != $this->browser_root_dir['name'] && $file['name'] != $this->browser_up_dir['name']) {
 			$_SESSION['restore'][$fileid] = $file;
 		}
 	}
@@ -427,8 +418,7 @@ class RestoreWizard extends BaculumWebPage
 		$this->getModule('api')->create(array('bvfs', 'restore'), $cmd_props);
 		$restore_props = array();
 		$restore_props['rpath'] = $path;
-		$restore_props['clientid'] = intval($this->RestoreClient->SelectedValue);
-		$restore_props['fileset'] = $this->GroupBackupFileSet->SelectedValue;
+		$restore_props['client'] = $this->RestoreClient->SelectedValue;
 		$restore_props['priority'] = intval($this->RestoreJobPriority->Text);
 		$restore_props['where'] =  $this->RestorePath->Text;
 		$restore_props['replace'] = $this->ReplaceFiles->SelectedValue;
