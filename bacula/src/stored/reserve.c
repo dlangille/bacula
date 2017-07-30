@@ -403,8 +403,8 @@ static bool use_device_cmd(JCR *jcr)
           * This can happen if one job reserves a drive or finishes using
           * a drive at the same time a second job wants it.
           */
-         if (repeat++ > 1) {              /* try algorithm 3 times */
-            bmicrosleep(30, 0);           /* wait a bit */
+         if (repeat++ < 20) {             /* try sleeping 20 times */
+            bmicrosleep(30, 0);           /* wait 30 secs */
             Dmsg1(dbglvl, "repeat reserve algorithm JobId=%d\n", jcr->JobId);
          } else if (!rctx.suitable_device || !wait_for_any_device(jcr, wait_for_device_retries)) {
             Dmsg0(dbglvl, "Fail. !suitable_device || !wait_for_device\n");
