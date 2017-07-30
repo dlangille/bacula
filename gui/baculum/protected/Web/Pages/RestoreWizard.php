@@ -68,7 +68,7 @@ class RestoreWizard extends BaculumWebPage
 		parent::onLoad($param);
 			if($this->RestoreWizard->ActiveStepIndex == 0) {
 				$this->jobs = $this->getModule('api')->get(array('jobs'))->output;
-				$this->filesets = $this->getModule('api')->get(array('filesets'))->output;
+				$this->filesets = $this->getModule('api')->get(array('filesets', 'info'))->output;
 			}
 			$this->clients = $this->getModule('api')->get(array('clients'))->output;
 
@@ -162,15 +162,16 @@ class RestoreWizard extends BaculumWebPage
 		}
 
 		$fileset_list = array();
-		foreach($this->filesets as $director => $filesets) {
-			$fileset_list = array_merge($fileset_list, $filesets);
+		for ($i = 0; $i < count($this->filesets); $i++) {
+			$fileset_list[$this->filesets[$i]->filesetid] = $this->filesets[$i]->fileset . ' (' . $this->filesets[$i]->createtime . ')';
 		}
+		asort($fileset_list);
 
 		$this->BackupToRestore->dataSource = $jobs_list;
 		$this->BackupToRestore->dataBind();
 		$this->GroupBackupToRestore->dataSource = $jobs_group_list;
 		$this->GroupBackupToRestore->dataBind();
-		$this->GroupBackupFileSet->dataSource = array_combine($fileset_list, $fileset_list);
+		$this->GroupBackupFileSet->dataSource = $fileset_list;
 		$this->GroupBackupFileSet->dataBind();
 		$this->setRestoreClients($sender, $param);
 	}
@@ -195,30 +196,6 @@ class RestoreWizard extends BaculumWebPage
 			$this->RestoreClient->SelectedValue = $this->BackupClientName->SelectedValue;
 			$this->RestoreClient->dataSource = $client_list;
 			$this->RestoreClient->dataBind();
-		}
-	}
-
-	public function setStorage($sender, $param) {
-		if(!$this->IsPostBack) {
-			$storagesList = array();
-			$storages = $this->getModule('api')->get(array('storages'))->output;
-			foreach($storages as $storage) {
-				$storagesList[$storage->storageid] = $storage->name;
-			}
-			$this->GroupBackupStorage->dataSource = $storagesList;
-			$this->GroupBackupStorage->dataBind();
-		}
-	}
-
-	public function setPool($sender, $param) {
-		if(!$this->IsPostBack) {
-			$poolsList = array();
-			$pools = $this->getModule('api')->get(array('pools'))->output;
-			foreach($pools as $pool) {
-				$poolsList[$pool->poolid] = $pool->name;
-			}
-			$this->GroupBackupPool->dataSource = $poolsList;
-			$this->GroupBackupPool->dataBind();
 		}
 	}
 
@@ -318,7 +295,7 @@ class RestoreWizard extends BaculumWebPage
 				$this->GroupBackupToRestore->SelectedValue,
 				'client',
 				$this->BackupClientName->SelectedValue,
-				'fileset',
+				'filesetid',
 				$this->GroupBackupFileSet->SelectedValue
 			);
 			$jobs_recent = $this->getModule('api')->get($params);

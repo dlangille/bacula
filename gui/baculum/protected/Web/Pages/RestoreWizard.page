@@ -91,18 +91,6 @@
 						<com:TActiveDropDownList ID="GroupBackupFileSet" CssClass="textbox" Width="350px" CausesValidation="false" />
 					</div>
 				</div>
-				<div class="line">
-					<div class="text"><com:TLabel ForControl="GroupBackupStorage" Text="<%[ Storage resource: ]%>" /></div>
-					<div class="field">
-						<com:TActiveDropDownList ID="GroupBackupStorage" OnInit="setStorage" CssClass="textbox" Width="350px" CausesValidation="false" />
-					</div>
-				</div>
-				<div class="line">
-					<div class="text"><com:TLabel ForControl="GroupBackupPool" Text="<%[ Pool resource: ]%>" /></div>
-					<div class="field">
-						<com:TActiveDropDownList ID="GroupBackupPool" OnInit="setPool" CssClass="textbox" Width="350px" CausesValidation="false" />
-					</div>
-				</div>
 			</com:TActivePanel>
 		</com:TWizardStep>
 		<com:TWizardStep ID="Step3" Title="<%[ Step 3 - select files to restore ]%>" StepType="Auto">
