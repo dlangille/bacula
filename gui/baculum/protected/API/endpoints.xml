@@ -59,7 +59,8 @@
 	<url ServiceParameter="API.JobTasks" pattern="api/jobs/tasks/limit/{limit}/" parameters.limit="\d+" />
 	<url ServiceParameter="API.Job" pattern="api/jobs/{id}/" parameters.id="\d+" />
 	<url ServiceParameter="API.Jobs" pattern="api/jobs/limit/{limit}/" parameters.limit="\d+" />
-	<url ServiceParameter="API.JobsRecent" pattern="api/jobs/recent/{name}/{clientid}/" parameters.name="[a-zA-Z0-9:.\-_ ]+" parameters.clientid="\d+" />
+	<url ServiceParameter="API.JobsRecent" pattern="api/jobs/recent/{name}/client/{client}/fileset/{fileset}/" parameters.name="[a-zA-Z0-9:.\-_ ]+" parameters.client="[a-zA-Z0-9:.\-_ ]+" parameters.fileset="[a-zA-Z0-9:.\-_ ]+" />
+	<url ServiceParameter="API.JobsRecent" pattern="api/jobs/recent/{name}/clientid/{clientid}/filesetid/{filesetid}/" parameters.name="[a-zA-Z0-9:.\-_ ]+" parameters.clientid="\d+" parameters.filesetid="\d+" />
 	<url ServiceParameter="API.JobEstimate" pattern="api/jobs/estimate/" />
 	<url ServiceParameter="API.JobRun" pattern="api/jobs/run/" />
 	<url ServiceParameter="API.JobCancel" pattern="api/jobs/cancel/{id}/" parameters.id="\d+"/>

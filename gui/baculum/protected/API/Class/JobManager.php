@@ -65,8 +65,8 @@ class JobManager extends APIModule {
 		return JobRecord::finder()->deleteByjobid($id);
 	}
 
-	public function getRecentJobids($jobname, $clientid) {
-		$sql = "name='$jobname' AND clientid='$clientid' AND jobstatus IN ('T', 'W') AND level IN ('F', 'I', 'D')";
+	public function getRecentJobids($jobname, $clientid, $filesetid) {
+		$sql = "name='$jobname' AND clientid='$clientid' AND filesetid='$filesetid' AND jobstatus IN ('T', 'W') AND level IN ('F', 'I', 'D')";
 		$finder = JobRecord::finder();
 		$criteria = new TActiveRecordCriteria;
 		$order = 'EndTime';

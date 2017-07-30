@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2016 Kern Sibbald
+ * Copyright (C) 2013-2017 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -23,14 +23,40 @@
 class JobsRecent extends BaculumAPIServer {
 	public function get() {
 		$jobname = $this->Request['name'];
-		$clientid = intval($this->Request['clientid']);
-		$jobs = $this->getModule('job')->getRecentJobids($jobname, $clientid);
-		if(!is_null($jobs)) {
-			$this->output = $jobs;
-			$this->error = JobError::ERROR_NO_ERRORS;
+		$clientid = null;
+		if ($this->Request->contains('clientid')) {
+			$clientid = intval($this->Request['clientid']);
+		} elseif ($this->Request->contains('client') && $this->getModule('misc')->isValidName($this->Request['client'])) {
+			$client = $this->Request['client'];
+			$client_row = $this->getModule('client')->getClientByName($client);
+			$clientid = is_object($client_row) ? $client_row->clientid : null;
+		}
+		$filesetid = null;
+		if ($this->Request->contains('filesetid')) {
+			$filesetid = intval($this->Request['filesetid']);
+		} elseif ($this->Request->contains('fileset') && $this->getModule('misc')->isValidName($this->Request['fileset'])) {
+			$fileset = $this->Request['fileset'];
+			$fileset_row = $this->getModule('fileset')->getFileSetByName($fileset);
+			$filesetid = is_object($fileset_row) ? $fileset_row->filesetid : null;
+		}
+
+		if (is_int($clientid)) {
+			if (is_int($filesetid)) {
+				$jobs = $this->getModule('job')->getRecentJobids($jobname, $clientid, $filesetid);
+				if(!is_null($jobs)) {
+					$this->output = $jobs;
+					$this->error = JobError::ERROR_NO_ERRORS;
+				} else {
+					$this->output = JobError::MSG_ERROR_JOB_DOES_NOT_EXISTS;
+					$this->error = JobError::ERROR_JOB_DOES_NOT_EXISTS;
+				}
+			} else {
+				$this->output = FileSetError::MSG_ERROR_FILESET_DOES_NOT_EXISTS;
+				$this->error = FileSetError::ERROR_FILESET_DOES_NOT_EXISTS;
+			}
 		} else {
-			$this->output = JobError::MSG_ERROR_JOB_DOES_NOT_EXISTS;
-			$this->error = JobError::ERROR_JOB_DOES_NOT_EXISTS;
+			$this->output = ClientError::MSG_ERROR_CLIENT_DOES_NOT_EXISTS;
+			$this->error = ClientError::ERROR_CLIENT_DOES_NOT_EXISTS;
 		}
 	}
 }
