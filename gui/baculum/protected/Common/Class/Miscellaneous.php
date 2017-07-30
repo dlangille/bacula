@@ -309,7 +309,7 @@ class Miscellaneous extends TModule {
 	public function parseFileVersions($filename, $list) {
 		$elements = array();
 		for($i = 0; $i < count($list); $i++) {
-			if(preg_match('/^(?P<pathid>\d+)\t(?P<filenameid>\d+)\t(?P<fileid>\d+)\t(?P<jobid>\d+)\t(?P<lstat>[a-zA-z0-9\+\/\ ]+)\t(?P<md5>.+)\t(?P<volname>.+)\t(?P<inchanger>\d+)$/', $list[$i], $match) == 1) {
+			if(preg_match('/^(?P<pathid>\d+)\t(?P<filenameid>\d+)\t(?P<fileid>\d+)\t(?P<jobid>\d+)\t(?P<lstat>[a-zA-Z0-9\+\/\ ]+)\t(?P<md5>.+)\t(?P<volname>.+)\t(?P<inchanger>\d+)$/', $list[$i], $match) == 1) {
 				$elements[$match['fileid']] = array('name' => $filename, 'pathid' => $match['pathid'], 'filenameid' => $match['filenameid'], 'fileid' => $match['fileid'], 'jobid' => $match['jobid'], 'lstat' => $this->decode_bacula_lstat($match['lstat']), 'md5' => $match['md5'], 'volname' => $match['volname'], 'inchanger' => $match['inchanger'], 'type' => 'file');
 			}
 		}
