@@ -26,11 +26,6 @@ class RestoreRun extends BaculumAPIServer {
 
 	public function create($params) {
 		$rfile = property_exists($params, 'rpath') ? $params->rpath : null;
-
-		$fileset = null;
-		if (property_exists($params, 'fileset') && $this->getModule('misc')->isValidName($params->fileset)) {
-			$fileset = $params->fileset;
-		}
 		$client = null;
 		if (property_exists($params, 'clientid')) {
 			$clientid = intval($params->clientid);
@@ -48,46 +43,40 @@ class RestoreRun extends BaculumAPIServer {
 		}
 		$misc = $this->getModule('misc');
 
-		if(!is_null($fileset)) {
-			if(!is_null($client)) {
-				if(preg_match($misc::RPATH_PATTERN, $rfile) === 1) {
-					if(!is_null($where)) {
-						if(!is_null($replace)) {
-							$command = array('restore',
-								'file="?' . $rfile . '"',
-								'client="' . $client . '"',
-								'where="' . $where . '"',
-								'replace="' . $replace . '"',
-								'fileset="' . $fileset . '"',
-								'priority="' . $priority . '"'
-							);
-							if (!is_null($restorejob)) {
-								$command[] = 'restorejob="' . $restorejob . '"';
-							}
-							$command[] = 'yes';
-							$restore = $this->getModule('bconsole')->bconsoleCommand($this->director, $command, $this->user);
-							$this->removeTmpRestoreTable($rfile);
-							$this->output = $restore->output;
-							$this->error = (integer)$restore->exitcode;
-						} else {
-							$this->output = JobError::MSG_ERROR_INVALID_REPLACE_OPTION;
-							$this->error = JobError::ERROR_INVALID_REPLACE_OPTION;
+		if(!is_null($client)) {
+			if(preg_match($misc::RPATH_PATTERN, $rfile) === 1) {
+				if(!is_null($where)) {
+					if(!is_null($replace)) {
+						$command = array('restore',
+							'file="?' . $rfile . '"',
+							'client="' . $client . '"',
+							'where="' . $where . '"',
+							'replace="' . $replace . '"',
+							'priority="' . $priority . '"'
+						);
+						if (!is_null($restorejob)) {
+							$command[] = 'restorejob="' . $restorejob . '"';
 						}
+						$command[] = 'yes';
+						$restore = $this->getModule('bconsole')->bconsoleCommand($this->director, $command, $this->user);
+						$this->removeTmpRestoreTable($rfile);
+						$this->output = $restore->output;
+						$this->error = (integer)$restore->exitcode;
 					} else {
-						$this->output = JobError::MSG_ERROR_INVALID_WHERE_OPTION;
-						$this->error = JobError::ERROR_INVALID_WHERE_OPTION;
+						$this->output = JobError::MSG_ERROR_INVALID_REPLACE_OPTION;
+						$this->error = JobError::ERROR_INVALID_REPLACE_OPTION;
 					}
 				} else {
-					$this->output = JobError::MSG_ERROR_INVALID_RPATH;
-					$this->error = JobError::ERROR_INVALID_RPATH;
+					$this->output = JobError::MSG_ERROR_INVALID_WHERE_OPTION;
+					$this->error = JobError::ERROR_INVALID_WHERE_OPTION;
 				}
 			} else {
-				$this->output = JobError::MSG_ERROR_CLIENT_DOES_NOT_EXISTS;
-				$this->error = JobError::ERROR_CLIENT_DOES_NOT_EXISTS;
+				$this->output = JobError::MSG_ERROR_INVALID_RPATH;
+				$this->error = JobError::ERROR_INVALID_RPATH;
 			}
 		} else {
-			$this->output = JobError::MSG_ERROR_FILESET_DOES_NOT_EXISTS;
-			$this->error = JobError::ERROR_FILESET_DOES_NOT_EXISTS;
+			$this->output = JobError::MSG_ERROR_CLIENT_DOES_NOT_EXISTS;
+			$this->error = JobError::ERROR_CLIENT_DOES_NOT_EXISTS;
 		}
 	}
 
