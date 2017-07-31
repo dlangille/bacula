@@ -180,7 +180,7 @@
 										</com:TDraggable>
 										<com:TActiveLinkButton CssClass="link" Style="float: right;" OnCallback="Page.addFileToRestore" ActiveControl.CallbackParameter="<%=isset($this->getParent()->Data['fileid']) ? $this->getParent()->Data['fileid'] : false%>" ActiveControl.EnableUpdate="false" Text="<%[ Add ]%>"/>
 										<script type="text/javascript">
-											$('#<%=$this->FileElementToRestore->ClientID%>').on('mouseup', function(event) {
+											document.getElementById('<%=$this->FileElementToRestore->ClientID%>').addEventListener('mouseup', function(event) {
 												var el = event.target || event.srcElement;
 												if (el) {
 													el.style.position = 'static';
