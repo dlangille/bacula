@@ -51,9 +51,9 @@ class Bconsole extends APIModule {
 		}
 	}
 
-	public static function setCmdPath($path) {
+	public static function setCmdPath($path, $force = false) {
 		// possible to set only once
-		if (is_null(self::$cmd_path)) {
+		if (is_null(self::$cmd_path) || $force) {
 			 self::$cmd_path = $path;
 		}
 	}
@@ -73,9 +73,9 @@ class Bconsole extends APIModule {
 		return self::$cfg_path;
 	}
 
-	public function setUseSudo($use_sudo) {
+	public function setUseSudo($use_sudo, $force) {
 		// possible to set only once
-		if (is_null($this->use_sudo)) {
+		if (is_null($this->use_sudo) || $force) {
 			$this->use_sudo = $use_sudo;
 		}
 	}
@@ -84,10 +84,10 @@ class Bconsole extends APIModule {
 		return $this->use_sudo;
 	}
 
-	private function setEnvironmentParams($cmd_path, $cfg_path, $use_sudo) {
-		self::setCmdPath($cmd_path);
-		self::setCfgPath($cfg_path);
-		$this->setUseSudo($use_sudo);
+	private function setEnvironmentParams($cmd_path, $cfg_path, $use_sudo, $force = false) {
+		self::setCmdPath($cmd_path, $force);
+		self::setCfgPath($cfg_path, $force);
+		$this->setUseSudo($use_sudo, $force);
 	}
 
 	private function isCommandValid($command) {
@@ -188,7 +188,7 @@ class Bconsole extends APIModule {
 	}
 
 	public function testBconsoleCommand(array $command, $cmd_path, $cfg_path, $use_sudo) {
-		$this->setEnvironmentParams($cmd_path, $cfg_path, $use_sudo);
+		$this->setEnvironmentParams($cmd_path, $cfg_path, $use_sudo, true);
 		$director = '';
 		$result = null;
 		try {
