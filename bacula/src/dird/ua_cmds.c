@@ -1743,9 +1743,6 @@ static void do_storage_cmd(UAContext *ua, const char *command)
    } else {
       slot = get_storage_slot(ua, store.store);
    }
-   if (slot < 0) {
-      return;
-   }
    /* Users may set a device name directly on the command line */
    if ((i = find_arg_with_value(ua, "device")) > 0) {
       POOLMEM *errmsg = get_pool_memory(PM_NAME);
