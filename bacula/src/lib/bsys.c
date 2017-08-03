@@ -1029,7 +1029,7 @@ void stack_trace() {}
 
 int fs_get_free_space(const char *path, int64_t *freeval, int64_t *totalval)
 {
-#ifndef HAVE_WIN32
+#if !defined(HAVE_WIN32) && !defined(HAVE_SUN_OS)
    struct statvfs st;
 
    if (statvfs(path, &st) == 0) {
