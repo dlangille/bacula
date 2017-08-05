@@ -1890,7 +1890,7 @@ int cloud_volumes_cmd(UAContext *ua, const char *cmd, const char *mode)
       }
       if (!ok) {
          ua->warning_msg(_("Unable to %s for volume \"%s\"\n"), action, mr.VolumeName);
-      }  
+      }
    }
 
 bail_out:
@@ -2544,7 +2544,7 @@ bool open_db(UAContext *ua)
                              ua->catalog->db_ssl_mode, ua->catalog->db_ssl_key,
                              ua->catalog->db_ssl_cert, ua->catalog->db_ssl_ca,
                              ua->catalog->db_ssl_capath, ua->catalog->db_ssl_cipher,
-                             mult_db_conn, ua->catalog->disable_batch_insert); 
+                             mult_db_conn, ua->catalog->disable_batch_insert);
    if (!ua->db || !db_open_database(ua->jcr, ua->db)) {
       ua->error_msg(_("Could not open catalog database \"%s\".\n"),
                  ua->catalog->db_name);
