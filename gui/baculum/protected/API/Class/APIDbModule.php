@@ -87,7 +87,12 @@ class APIDbModule extends TActiveRecord {
 		$db_connection = null;
 		if ((array_key_exists('enabled', $db_params) && $db_params['enabled'] === '1') || $force === true) {
 			$dsn = self::getDsn($db_params);
-			$db_connection = new TDbConnection($dsn, $db_params['login'], $db_params['password']);
+			$db_connection = null;
+			if (array_key_exists('login', $db_params) && array_key_exists('password', $db_params)) {
+				$db_connection = new TDbConnection($dsn, $db_params['login'], $db_params['password']);
+			} else {
+				$db_connection = new TDbConnection($dsn);
+			}
 			$db_connection->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 			$db_connection->setAttribute(PDO::ATTR_CASE, PDO::CASE_LOWER);
 		} else {
