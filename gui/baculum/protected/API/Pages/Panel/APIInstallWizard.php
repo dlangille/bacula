@@ -59,9 +59,6 @@ class APIInstallWizard extends BaculumAPIPage {
 		$config = $this->getModule('api_config');
 		$this->config = $config->getConfig();
 		$this->first_run = (count($this->config) === 0);
-		if ($this->first_run === false) {
-			die('Access denied.');
-		}
 	}
 
 	public function onLoad($param) {
