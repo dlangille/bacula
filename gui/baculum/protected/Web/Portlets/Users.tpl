@@ -1,6 +1,6 @@
 <a class="big" href="javascript:void(0)" id="add_user_btn"><img src="/themes/Baculum-v1/add.png" alt="Add"><%[ Add new user ]%></a>
 <div id="add_user" style="display: none">
-	<p><%[ Username: ]%><input id="newuser" type="text" /><%[ Password: ]%><input id="newpwd" type="password" /><%[ API host: ]%><com:TDropDownList ID="HostsList" OnInit="SourceTemplateControl.initHosts" />
+	<p><%[ Username: ]%><input id="newuser" type="text" /><%[ Password: ]%><input id="newpwd" type="password" />
 	<a href="javascript:void(0)" onclick="Users.addUser()">
 		<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/icon_ok.png" alt="<%[ Save ]%>" title="<%[ Save ]%>"/>
 	</a>
@@ -8,7 +8,7 @@
 		<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/icon_err.png" alt="<%[ Close ]%>" title="<%[ Close ]%>" />
 	</a></p>
 </div>
-<com:TRepeater ID="UsersList">
+<com:TActiveRepeater ID="UsersList">
 	<prop:HeaderTemplate>
 	<table id="users_list" class="window-section-detail-smallrow">
 		<tr>
@@ -61,7 +61,7 @@
 	<prop:FooterTemplate>
 		</table>
 	</prop:FooterTemplate>
-</com:TRepeater>
+</com:TActiveRepeater>
 <p><em><%[ Please note that for each user (excluding administrator) there should exist separate Bconsole config file in form: ]%> <strong><com:TLabel ID="BconsoleCustomPath" /></strong></em></p>
 <com:TCallback ID="UserAction" OnCallback="TemplateControl.userAction" ClientSide.OnComplete="Users.hide_loader();" />
 <script type="text/javascript">

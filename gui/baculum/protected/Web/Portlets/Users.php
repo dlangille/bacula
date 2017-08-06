@@ -21,7 +21,7 @@
  */
 
 
-Prado::using('System.Web.UI.WebControls.TConditional');
+Prado::using('System.Web.UI.ActiveControls.TActiveRepeater');
 Prado::using('Application.Web.Portlets.Portlets');
 
 class Users extends Portlets {
@@ -96,6 +96,10 @@ class Users extends Portlets {
 			case 'rmuser': {
 					if ($user != $_SERVER['PHP_AUTH_USER']) {
 						$this->getModule('basic_webuser')->removeUser($user);
+						if (array_key_exists('users', $this->web_config) && array_key_exists($user, $this->web_config['users'])) {
+							unset($this->web_config['users'][$user]);
+						}
+						$this->getModule('web_config')->setConfig($this->web_config);
 						$this->setUsers();
 					}
 				break;
