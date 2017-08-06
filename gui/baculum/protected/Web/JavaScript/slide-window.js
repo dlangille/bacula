@@ -292,7 +292,7 @@ var SlideWindowClass = jQuery.klass({
 					return;
 				}
 				set_callback_parameter(tr);
-			}.bind(tr));
+			});
 		}.bind(this));
 		Formatters.set_formatters();
 		this.revertSortingFromCookie();

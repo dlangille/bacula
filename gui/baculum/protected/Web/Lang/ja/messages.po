@@ -1153,3 +1153,12 @@ msgstr "No jobs for the client."
 
 msgid "Restore job:"
 msgstr "Restore job:"
+
+msgid "API host"
+msgstr "API host"
+
+msgid "API host:"
+msgstr "API host:"
+
+msgid "Select host"
+msgstr "Select host"

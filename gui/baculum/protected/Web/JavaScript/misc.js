@@ -233,8 +233,10 @@ var Dashboard = {
 		document.getElementById(this.ids.jobtotals.total_files).textContent = this.stats.jobtotals.files || 0;
 	},
 	update_database: function() {
-		document.getElementById(this.ids.database.type).textContent = this.dbtype[this.stats.dbsize.dbtype];
-		document.getElementById(this.ids.database.size).textContent = Units.get_decimal_size(this.stats.dbsize.dbsize);
+		if (this.stats.dbsize.dbsize) {
+			document.getElementById(this.ids.database.type).textContent = this.dbtype[this.stats.dbsize.dbtype];
+			document.getElementById(this.ids.database.size).textContent = Units.get_decimal_size(this.stats.dbsize.dbsize);
+		}
 	},
 	update_pools: function() {
 		var pools = this.stats.pools_occupancy;
@@ -277,11 +279,15 @@ var Users = {
 		change_pwd: {
 			rel_chpwd: 'chpwd',
 			rel_chpwd_btn: 'chpwd_btn'
+		},
+		set_host: {
+			rel_user_host: 'user_host_img'
 		}
 	},
 	validators: {
 		user_pattern: null
 	},
+	current_action: null,
 	init: function() {
 		this.setEvents();
 	},
@@ -364,6 +370,16 @@ var Users = {
 		$(el.parentNode.previousElementSibling).show();
 		this.action_callback('chpwd', user, pwd);
 		return true;
+	},
+	set_host: function(user, select) {
+		select.nextElementSibling.style.visibility = 'visible';
+		this.action_callback('set_host', user, select.value);
+	},
+	hide_loader: function() {
+		if (this.current_action === 'set_host') {
+			$('img[rel=\'' + this.ids.set_host.rel_user_host + '\']').css({visibility: 'hidden'});
+		}
+
 	},
 	cancelAddUser: function() {
 		$('#' + this.ids.create_user.add_user).hide();

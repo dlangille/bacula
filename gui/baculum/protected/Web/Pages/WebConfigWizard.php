@@ -40,7 +40,7 @@ class WebConfigWizard extends BaculumWebPage
 		$this->web_config = $config->getConfig();
 		$this->host_config = $this->getModule('host_config')->getConfig();
 		$this->first_run = (count($this->host_config) == 0);
-		if($this->first_run === false && $this->User->getIsAdmin() === false) {
+		if($this->first_run === false && !$_SESSION['admin']) {
 			die('Access denied.');
 		}
 	}
@@ -119,11 +119,19 @@ class WebConfigWizard extends BaculumWebPage
 		$host_config[$host] = $cfg_host;
 		$ret = $this->getModule('host_config')->setConfig($host_config);
 		if($ret === true) {
-			$cfg_web = array('baculum' => array());
+			$web_config = $this->getModule('web_config')->getConfig();
+			$cfg_web = array('baculum' => array(), 'users' => array());
+			if (count($web_config) > 0) {
+				$cfg_web = $web_config;
+			}
 			$cfg_web['baculum']['login'] = $this->WebLogin->Text;
 			$cfg_web['baculum']['password'] = $this->WebPassword->Text;
 			$cfg_web['baculum']['debug'] = 0;
 			$cfg_web['baculum']['lang'] = 'en';
+			if (array_key_exists('users', $cfg_web) && array_key_exists($this->WebLogin->Text, $cfg_web)) {
+				// Admin shoudn't be added to users section, only regular users
+				unset($cfg_web['users'][$this->WebLogin->Text]);
+			}
 			$ret = $this->getModule('web_config')->setConfig($cfg_web);
 			if($ret && $this->getModule('basic_webuser')->isUsersConfig() === true) {
 				$previous_user = !$this->first_run ? $this->web_config['baculum']['login'] : null;

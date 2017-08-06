@@ -968,6 +968,7 @@ span.tab_active {
 	height: 9px;
 	margin: 0 4px;
 	font-size: 10px;
+	vertical-align: super;
 }
 
 #graphs span {
@@ -1104,7 +1105,7 @@ span.config_test_loader, span.config_test_result {
 }
 
 #users_list {
-	width: 720px;
+	width: 890px;
 	font-size: 13px;
 }
 
@@ -1123,14 +1124,15 @@ span.config_test_loader, span.config_test_result {
 
 #users_list td:nth-of-type(1) {
 	width: 200px;
-}
-
-i#users_list td:nth-of-type(1) {
-	width: 120px;
+	text-align: center;
 }
 
 #users_list td:nth-of-type(3) {
-	width: 400px;
+	text-align: center;
+}
+
+#users_list td:nth-of-type(4) {
+	width: 340px;
 }
 
 #users_list img {

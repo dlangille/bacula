@@ -4,9 +4,6 @@
 		<using namespace="Application.API.Class.BaculumAPIServer" />
 	</paths>
 	<modules>
-		<!-- API auth modules (@TODO: change auth method for API to more secure) -->
-		<module id="api_users" class="Application.Common.Class.BaculumUsersManager" />
-		<module id="api_auth" class="System.Security.TAuthManager" UserManager="api_users" AllowAutoLogin="true" AuthExpire="864000" />
 		<!-- database modules -->
 		<module id="db" class="Application.API.Class.Database" />
 		<module id="client" class="Application.API.Class.ClientManager" />

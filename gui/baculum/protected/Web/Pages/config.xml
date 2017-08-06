@@ -3,9 +3,6 @@
 		<using namespace="System.I18N.*" />
 	</paths>
 	<modules>
-		<!-- web auth modules -->
-		<module id="web_users" class="Application.Common.Class.BaculumUsersManager" />
-		<module id="web_auth" class="System.Security.TAuthManager" UserManager="web_users" AllowAutoLogin="true" AuthExpire="864000" />
 		<!-- config modules -->
 		<module id="web_config" class="Application.Web.Class.WebConfig" />
 		<module id="host_config" class="Application.Web.Class.HostConfig" />

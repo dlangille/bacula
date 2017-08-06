@@ -1409,3 +1409,12 @@ msgstr "Zakresy OAuth2:"
 
 msgid "Restore job:"
 msgstr "Zadanie przywracania:"
+
+msgid "API host"
+msgstr "API host"
+
+msgid "API host:"
+msgstr "API host:"
+
+msgid "Select host"
+msgstr "Wybierz host"

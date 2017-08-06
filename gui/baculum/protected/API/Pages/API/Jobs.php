@@ -24,23 +24,16 @@ class Jobs extends BaculumAPIServer {
 	public function get() {
 		$limit = intval($this->Request['limit']);
 		$allowed = array();
-		$error = false;
-		if (!is_null($this->user)) {
-			$allowedJobs = $this->getModule('bconsole')->bconsoleCommand($this->director, array('.jobs'), $this->user);
-			if ($allowedJobs->exitcode === 0) {
-				array_shift($allowedJobs->output);
-				$allowed = $allowedJobs->output;
-			} else {
-				$error = true;
-				$this->output = $allowedJobs->output;
-				$this->error = $allowedJobs->exitcode;
-			}
-		}
-
-		if ($error === false) {
+		$allowedJobs = $this->getModule('bconsole')->bconsoleCommand($this->director, array('.jobs'), $this->user);
+		if ($allowedJobs->exitcode === 0) {
+			array_shift($allowedJobs->output);
+			$allowed = $allowedJobs->output;
 			$jobs = $this->getModule('job')->getJobs($limit, $allowed);
 			$this->output = $jobs;
 			$this->error = JobError::ERROR_NO_ERRORS;
+		} else {
+			$this->output = $allowedJobs->output;
+			$this->error = $allowedJobs->exitcode;
 		}
 	}
 }

@@ -32,6 +32,9 @@ class BaculaHosts extends HostListTemplate {
 	public $config;
 
 	public function loadConfig($sender, $param) {
+		if(!$_SESSION['admin']) {
+			return;
+		}
 		$this->config = $this->getModule('host_config')->getConfig();
 		$hosts = array_keys($this->config);
 		$this->RepeaterHosts->DataSource = $hosts;
@@ -63,6 +66,9 @@ class BaculaHosts extends HostListTemplate {
 	}
 
 	public function removeHost($sender, $param) {
+		if(!$_SESSION['admin']) {
+			return;
+		}
 		$host = $param->getCommandParameter();
 		if (!empty($host)) {
 			$host_config = $this->getModule('host_config');

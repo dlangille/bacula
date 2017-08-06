@@ -47,11 +47,6 @@ class RestoreWizard extends BaculumWebPage
 
 	const BVFS_PATH_PREFIX = 'b2';
 
-	public function onPreInit($param) {
-		parent::onPreInit($param);
-		$this->Application->getModule('web_users')->loginUser();
-	}
-
 	public function onInit($param) {
 		parent::onInit($param);
 		if(!$this->IsPostBack && !$this->IsCallBack) {

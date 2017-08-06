@@ -12,9 +12,9 @@
 				<com:TActiveLinkButton ID="Workspace" Text="<%[ Workspace ]%>" Attributes.onclick="PanelWindow.show('container'); return false;" />
 				<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/graphs.png" alt="" onclick="$('#<%=$this->Graphs->ClientID%>').click()" />
 				<com:TActiveLinkButton ID="Graphs" Text="<%[ Graphs ]%>" Attributes.onclick="PanelWindow.show('graphs'); return false;" />
-				<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/users.png" alt="" onclick="$('#<%=$this->Users->ClientID%>').click()" <%=$this->User->getIsAdmin() === false ? ' style="display: none;"' : ''%>/>
+				<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/users.png" alt="" onclick="$('#<%=$this->Users->ClientID%>').click()" <%=!$_SESSION['admin'] ? ' style="display: none;"' : ''%>/>
 				<com:TActiveLinkButton ID="Users" Text="<%[ Users ]%>" Attributes.onclick="PanelWindow.show('users'); return false;" />
-				<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/config.png" alt="" onclick="$('#<%=$this->Config->ClientID%>').click()" />
+				<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/config.png" alt="" onclick="$('#<%=$this->Config->ClientID%>').click()" <%=!$_SESSION['admin'] ? ' style="display: none;"' : ''%> />
 				<com:TActiveLinkButton ID="Config" Text="<%[ Configuration ]%>" Attributes.onclick="PanelWindow.show('config'); return false;" />
 				<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/logout.png" alt="" onclick="$('#<%=$this->Logout->ClientID%>').click()" />
 				<com:TActiveLinkButton ID="Logout" Text="<%[ Logout ]%>" OnCommand="Page.logout" />
@@ -52,7 +52,7 @@
 					<p><span><%[ Most often used: ]%></span><span id="jobs_most"></span></p>
 					<p><span><%[ Execution count most used: ]%></span><span id="jobs_most_count"></span> <%[ times ]%></p>
 				</fieldset>
-				<fieldset class="dashboard_field"<%=$this->User->getIsAdmin() === false ? ' style="display: none;"' : ''%>>
+				<fieldset class="dashboard_field"<%=!$_SESSION['admin'] ? ' style="display: none;"' : ''%>>
 					<legend><%[ Database ]%></legend>
 					<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/database.png" alt="" />
 					<p><span><%[ Database type: ]%></span><span id="database_type"></span></p>
@@ -75,7 +75,7 @@
 					<legend><%[ Restore Wizard ]%></legend>
 					<a class="big" href="<%=$this->Service->constructUrl('RestoreWizard')%>" style="line-height: 73px; display: block; text-align: center;"><img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/restore.png" alt="" /><%[ Perform Restore ]%></a>
 				</fieldset>
-				<fieldset class="dashboard_field"<%=$this->User->getIsAdmin() === false ? ' style="display: none;"' : ''%>>
+				<fieldset class="dashboard_field"<%=!$_SESSION['admin'] ? ' style="display: none;"' : ''%>>
 					<legend><%[ Configuration Wizard ]%></legend>
 					<a class="big" href="<%=$this->Service->constructUrl('WebConfigWizard')%>" style="line-height: 73px; display: block; text-align: center;"><img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/setting.png" alt="" /><%[ Baculum Settings ]%></a>
 				</fieldset>
@@ -293,78 +293,12 @@
 		<div><com:Application.Web.Portlets.BaculaHosts ID="BaculaConfig" /></div>
 	</div>
 	<div id="users" style="display: none">
-		<div>
-			<a href="javascript:void(0)" id="add_user_btn"><strong><%[ Add new user ]%></strong></a>
-			<div id="add_user" style="display: none">
-				<p><%[ Username: ]%><input id="newuser" type="text" /><%[ Password: ]%><input id="newpwd" type="password" />
-				<a href="javascript:void(0)" onclick="Users.addUser()">
-					<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/icon_ok.png" alt="<%[ Save ]%>" title="<%[ Save ]%>"/>
-				</a>
-				<a href="javascript:void(0)" onclick="Users.cancelAddUser()">
-					<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/icon_err.png" alt="<%[ Close ]%>" title="<%[ Close ]%>" />
-				</a></p>
-			</div>
-			<com:TActiveRepeater ID="UsersList">
-				<prop:HeaderTemplate>
-				<table id="users_list" class="window-section-detail-smallrow">
-					<tr>
-						<th><%[ User name ]%></th>
-						<th><%[ Role ]%></th>
-						<th><%[ Actions ]%></th>
-					</tr>
-				</prop:HeaderTemplate>
-				<prop:ItemTemplate>
-					<tr class="slide-window-element">
-						<td><%=$this->DataItem%></td>
-						<td><%=$this->User->getName() == $this->DataItem ? Prado::localize('Administrator') :  Prado::localize('Normal user')%></td>
-						<td>
-							<a href="javascript:void(0)" <%=$this->User->getName() == $this->DataItem ? 'style="visibility: hidden"' : ''%> onclick="Users.rmUser('<%=$this->DataItem%>')"><img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/user-del.png"> <%[ Remove user ]%></a>
-							<a href="javascript:void(0)" onclick="Users.showChangePwd(this)" rel="chpwd_btn">
-								<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/key.png" alt="" />
-								<%[ Change password ]%>
-							</a>
-							<span style="display: none;" rel="chpwd">
-								<input type="password" onkeydown="event.keyCode == 13 ? Users.changePwd(this, '<%=$this->DataItem%>') : (event.keyCode == 27 ? Users.cancelChangePwd(this.nextElementSibling.nextElementSibling) : '');" />
-								<a href="javascript:void(0)" onclick="Users.changePwd(this.prevousElementSibling, '<%=$this->DataItem%>')">
-									<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/icon_ok.png" alt="<%[ Save ]%>" title="<%[ Save ]%>"/>
-								</a>
-								<a href="javascript:void(0)" onclick="Users.cancelChangePwd(this)">
-									<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/icon_err.png" alt="<%[ Close ]%>" title="<%[ Close ]%>" />
-								</a>
-							</span>
-						</td>
-					</tr>
-				</prop:ItemTemplate>
-				<prop:FooterTemplate>
-					</table>
-				</prop:FooterTemplate>
-			</com:TActiveRepeater>
-			<p><em><%[ Please note that for each user (excluding administrator) there should exist separate Bconsole config file in form: ]%> <strong><com:TLabel ID="BconsoleCustomPath" /></strong></em></p>
-			<com:TCallback ID="UserAction" OnCallback="userAction" />
-			<script type="text/javascript">
-				var send_user_action = function(action, param, value) {
-					if (!value) {
-						value = '';
-					}
-					var user_action_callback = <%=$this->UserAction->ActiveControl->Javascript%>;
-					user_action_callback.setCallbackParameter([action, param, value].join(';'));
-					user_action_callback.dispatch();
-				};
-				Users.txt = {
-					enter_login: '<%[ Please enter login. ]%>',
-					invalid_login: '<%[ Invalid login value. Login may contain a-z A-Z 0-9 characters. ]%>',
-					invalid_pwd: '<%[ Password must be longer than 4 chars. ]%>'
-				};
-				Users.action_callback = send_user_action;
-				Users.validators = { user_pattern: new RegExp('^<%=BasicUserConfig::USER_PATTERN%>$') };
-				Users.init();
-			</script>
-		</div>
+		<div><com:Application.Web.Portlets.Users ID="WebUsers" /></div>
 	</div>
 	<div id="console">
 		<a id="clear_bvfs_cache" href="javascript: void(0)"><com:TActiveImageButton ID="ClearBvfsCache" OnCallback="clearBvfsCache" Attributes.onclick="return (confirm('<%=Prado::localize('This action will clear bvfs cache that was created during preparing restore files. There is not recommended use this action during restore job working. Are you sure?')%>'));" ImageUrl="<%=$this->getPage()->getTheme()->getBaseUrl()%>/trash_icon.png" AlternateText="<%[ clear bvfs cache ]%>" /><com:TLabel ForControl="ClearBvfsCache"><%[ clear bvfs cache ]%></com:TLabel></a>
 		<a id="logging" href="javascript:void(0)"><com:TActiveCheckBox ID="Logging" OnCallback="setDebug" Attributes.onclick="return (this.checked === false || confirm('<%=Prado::localize('Debug files enable possibility to save most of actions executed on Baculum WebGUI. Debug functionality should be enabled if is happening shomething wrong with Baculum or something that looks like a bug. Logs can be useful for detecting a problems in Baculum working. After confirmation this message Baculum debug files will be continuously saving in /protected/Web/Logs/ directory. Are you sure?')%>'));" /><com:TLabel ForControl="Logging"><%[ Enable debug ]%></com:TLabel></a>
-		<a id="volumes_tools_launcher" href="javascript:void(0)" <%=$this->User->getIsAdmin() === false ? ' style="display: none;"' : ''%>><img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/tape_tools_icon.png" alt="<%[ volumes tools ]%>" /><span><%[ volumes tools ]%></span></a>
+		<a id="volumes_tools_launcher" href="javascript:void(0)" <%=!$_SESSION['admin'] ? ' style="display: none;"' : ''%>><img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/tape_tools_icon.png" alt="<%[ volumes tools ]%>" /><span><%[ volumes tools ]%></span></a>
 		<a id="console_launcher" href="javascript:void(0)"><img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/console_icon.png" alt="<%[ Bacula console ]%>" /><span><%[ show console ]%></span></a>
 		<com:Application.Web.Portlets.VolumesTools ID="VolumesTools" />
 		<com:Application.Web.Portlets.Console ID="Console" />
@@ -373,12 +307,12 @@
 	<script type="text/javascript">
 		var oMonitor;
 		$(function() {
-			<%=(!is_null($this->initWindowId) && !is_null($this->initElementId) ?
-				'SlideWindow.getObj("' . $this->initWindowId . 'Window").setInitElementId("' . $this->initElementId . '");'
+			<%=(!is_null($this->init_window_id) && !is_null($this->init_element_id) ?
+				'SlideWindow.getObj("' . $this->init_window_id . 'Window").setInitElementId("' . $this->init_element_id . '");'
 			: '')%>
-			<%=(!is_null($this->openWindow) ?
+			<%=(!is_null($this->open_window) ?
 				'PanelWindow.show("container");
-				$("#' . $this->openWindow . '").trigger(\'click\');
+				$("#' . $this->open_window . '").trigger(\'click\');
 				window.history.pushState("", "", "/");'
 			: '')%>
 		});

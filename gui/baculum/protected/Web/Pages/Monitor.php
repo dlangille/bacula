@@ -25,7 +25,6 @@ Prado::using('Application.Web.Class.BaculumWebPage');
 class Monitor extends BaculumWebPage {
 	public function onInit($param) {
 		parent::onInit($param);
-		$this->Application->getModule('web_users')->loginUser();
 
 		$_SESSION['monitor_data'] = array(
 			'jobs' => array(),
@@ -40,7 +39,7 @@ class Monitor extends BaculumWebPage {
 		$_SESSION['monitor_data']['clients'] = $this->getModule('api')->get(array('clients'))->output;
 		$_SESSION['monitor_data']['pools'] = $this->getModule('api')->get(array('pools'))->output;
 		$_SESSION['monitor_data']['jobtotals'] = $this->getModule('api')->get(array('jobs', 'totals'))->output;
-		if ($this->User->getIsAdmin() === true) {
+		if ($_SESSION['admin']) {
 			$_SESSION['monitor_data']['dbsize'] = $this->getModule('api')->get(array('dbsize'))->output;
 		}
 

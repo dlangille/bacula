@@ -32,43 +32,47 @@ Prado::using('System.Web.UI.ActiveControls.TActiveLinkButton');
 
 class WebHome extends BaculumWebPage
 {
-	protected $app_config;
-
 	public $jobs;
 
-	public $openWindow = null;
+	public $open_window = null;
 
-	public $initWindowId = null;
+	public $init_window_id = null;
 
-	public $initElementId = null;
+	public $init_element_id = null;
 
 	public $jobs_states = null;
 
-	public $dbtype = '';
+	public $window_ids = array('Storage', 'Client', 'Volume', 'Pool', 'Job', 'JobRun');
 
-	public $windowIds = array('Storage', 'Client', 'Volume', 'Pool', 'Job', 'JobRun');
+	private $web_config = array();
 
+	private $api_hosts = array();
+
+	public function onPreInit($param) {
+		parent::onPreInit($param);
+		$this->web_config = $this->getModule('web_config')->getConfig();
+		if (!$this->IsPostBack && !$this->IsCallBack) {
+			$this->setSessionUserVars($this->web_config);
+		}
+	}
 
 	public function onInit($param) {
 		parent::onInit($param);
-		$this->Application->getModule('web_users')->loginUser();
-
+		if(count($this->web_config) === 0) {
+			// Config doesn't exist
+			$this->goToPage('WebConfigWizard');
+		}
 		if (!$this->IsPostBack && !$this->IsCallBack) {
 			$this->getModule('api')->initSessionCache(true);
 		}
 
-		$config = $this->getModule('web_config')->getConfig();
-		if(count($config) === 0) {
-			// Config doesn't exist
-			$this->goToPage('WebConfigWizard');
-		}
-
-		$this->Users->Visible = $this->User->getIsAdmin();
-		$this->SettingsWizardBtn->Visible = $this->User->getIsAdmin();
-		$this->PoolBtn->Visible = $this->User->getIsAdmin();
-		$this->VolumeBtn->Visible = $this->User->getIsAdmin();
-		$this->ClearBvfsCache->Visible = $this->User->getIsAdmin();
-		$this->Logging->Visible = $this->User->getIsAdmin();
+		$this->Users->Visible = $_SESSION['admin'];
+		$this->Config->Visible = $_SESSION['admin'];
+		$this->SettingsWizardBtn->Visible = $_SESSION['admin'];
+		$this->PoolBtn->Visible = $_SESSION['admin'];
+		$this->VolumeBtn->Visible = $_SESSION['admin'];
+		$this->ClearBvfsCache->Visible = $_SESSION['admin'];
+		$this->Logging->Visible = $_SESSION['admin'];
 
 		if(!$this->IsPostBack && !$this->IsCallBack) {
 			$this->Logging->Checked = Logging::$debug_enabled;
@@ -82,16 +86,22 @@ class WebHome extends BaculumWebPage
 			$this->Director->dataSource = array_combine($directors, $directors);
 			$this->Director->SelectedValue = $_SESSION['director'];
 			$this->Director->dataBind();
-			// Web doesn't store any info about db and it is OK
-			/*if ($this->User->getIsAdmin() === true) {
-				$this->dbtype = $this->app_config['db']['type'];
-			}*/
 			$this->setJobsStates();
 			$this->setJobs();
 			$this->setClients();
-			$this->setUsers();
 			$this->setWindowOpen();
 			$this->BaculaConfig->loadConfig(null, null);
+		}
+	}
+
+	private function setSessionUserVars($cfg) {
+		// Set administrator role
+		$_SESSION['admin'] = ($_SERVER['PHP_AUTH_USER'] === $cfg['baculum']['login']);
+		// Set api host for normal user
+		if (!$_SESSION['admin'] && array_key_exists('users', $cfg) && array_key_exists($_SERVER['PHP_AUTH_USER'], $cfg['users'])) {
+			$_SESSION['api_host'] = $cfg['users'][$_SERVER['PHP_AUTH_USER']];
+		} elseif (isset($_SESSION['api_host'])) {
+			unset($_SESSION['api_hosts']);
 		}
 	}
 
@@ -100,7 +110,7 @@ class WebHome extends BaculumWebPage
 	}
 
 	public function setDebug($sender, $param) {
-		if($this->User->getIsAdmin() === true) {
+		if($_SESSION['admin']) {
 			$this->enableDebug($this->Logging->Checked);
 			$this->goToDefaultPage();
 		}
@@ -108,16 +118,15 @@ class WebHome extends BaculumWebPage
 
 	public function enableDebug($enable) {
 		$result = false;
-		$config = $this->getModule('web_config')->getConfig();
-		if(count($config) > 0) {
-			$config['baculum']['debug'] = ($enable === true) ? "1" : "0";
-			$result = $this->getModule('web_config')->setConfig($config);
+		if(count($this->web_config) > 0) {
+			$this->web_config['baculum']['debug'] = ($enable === true) ? "1" : "0";
+			$result = $this->getModule('web_config')->setConfig($this->web_config);
 		}
 		return $result;
 	}
 
 	public function clearBvfsCache($sender, $param) {
-		if($this->User->getIsAdmin() === true) {
+		if($_SESSION['admin']) {
 			$this->getModule('api')->set(array('bvfs', 'clear'), array());
 		}
 	}
@@ -135,7 +144,7 @@ class WebHome extends BaculumWebPage
 			'running' => array()
 		);
 		$job_types = $jobs_summary;
-		$job_states = array();
+		$jobs_states = array();
 
 		$misc = $this->getModule('misc');
 		foreach($job_types as $type => $arr) {
@@ -169,71 +178,20 @@ class WebHome extends BaculumWebPage
 		$this->Clients->dataBind();
 	}
 
-	public function setUsers() {
-		if($this->User->getIsAdmin() === true) {
-			$allUsers = $this->getModule('basic_webuser')->getAllUsers();
-			$users = array_keys($allUsers);
-			sort($users);
-			$this->UsersList->dataSource = $users;
-			$this->UsersList->dataBind();
-		}
-	}
-
-	public function userAction($sender, $param) {
-		$config = $this->getModule('web_config');
-		$cfg = $config->getConfig();
-
-		if($this->User->getIsAdmin() === true) {
-			list($action, $user, $value) = explode(';', $param->CallbackParameter, 3);
-			switch($action) {
-				case 'newuser':
-				case 'chpwd': {
-						$admin = false;
-						$valid = true;
-						if ($user === $cfg['baculum']['login']) {
-							$cfg['baculum']['password'] = $value;
-							$valid = $config->setConfig($cfg);
-							$admin = true;
-						}
-						if ($valid === true) {
-							$this->getModule('basic_webuser')->setUsersConfig($user, $value);
-						}
-						if ($admin === true) {
-							// if admin password changed then try to auto-login by async request
-							$http_protocol = isset($_SERVER['HTTPS']) && !empty($_SERVER['HTTPS']) ? 'https' : 'http';
-							$this->switchToUser($user, $value);
-							exit();
-						} else {
-							// if normal user's password changed then update users grid
-							$this->setUsers();
-						}
-					}
-					break;
-				case 'rmuser': {
-						if ($user != $this->User->getName()) {
-							$this->getModule('basic_webuser')->removeUser($user);
-							$this->setUsers();
-						}
-					break;
-					}
-			}
-		}
-	}
-
 	public function setWindowOpen() {
-		if (isset($this->Request['open']) && in_array($this->Request['open'], $this->windowIds) && $this->Request['open'] != 'JobRun') {
+		if (isset($this->Request['open']) && in_array($this->Request['open'], $this->window_ids) && $this->Request['open'] != 'JobRun') {
 			$btn = $this->Request['open'] . 'Btn';
-			$this->openWindow = $this->{$btn}->ClientID;
+			$this->open_window = $this->{$btn}->ClientID;
 			if (isset($this->Request['id']) && (is_numeric($this->Request['id']))) {
-				$this->initWindowId = $this->Request['open'];
-				$this->initElementId = $this->Request['id'];
+				$this->init_window_id = $this->Request['open'];
+				$this->init_element_id = $this->Request['id'];
 			}
 		}
 	}
 
 	public function logout($sender, $param) {
 		$fake_pwd = $this->getModule('misc')->getRandomString();
-		$this->switchToUser($this->User->getName(), $fake_pwd);
+		$this->switchToUser($_SERVER['PHP_AUTH_USER'], $fake_pwd);
 		exit();
 	}
 }
