@@ -95,13 +95,17 @@ class WebHome extends BaculumWebPage
 	}
 
 	private function setSessionUserVars($cfg) {
-		// Set administrator role
-		$_SESSION['admin'] = ($_SERVER['PHP_AUTH_USER'] === $cfg['baculum']['login']);
-		// Set api host for normal user
-		if (!$_SESSION['admin'] && array_key_exists('users', $cfg) && array_key_exists($_SERVER['PHP_AUTH_USER'], $cfg['users'])) {
-			$_SESSION['api_host'] = $cfg['users'][$_SERVER['PHP_AUTH_USER']];
-		} elseif (isset($_SESSION['api_host'])) {
-			unset($_SESSION['api_hosts']);
+		if (count($cfg) > 0) {
+			// Set administrator role
+			$_SESSION['admin'] = ($_SERVER['PHP_AUTH_USER'] === $cfg['baculum']['login']);
+			// Set api host for normal user
+			if (!$_SESSION['admin'] && array_key_exists('users', $cfg) && array_key_exists($_SERVER['PHP_AUTH_USER'], $cfg['users'])) {
+				$_SESSION['api_host'] = $cfg['users'][$_SERVER['PHP_AUTH_USER']];
+			} elseif (isset($_SESSION['api_host'])) {
+				unset($_SESSION['api_hosts']);
+			}
+		} else {
+			$_SESSION['admin'] = false;
 		}
 	}
 
