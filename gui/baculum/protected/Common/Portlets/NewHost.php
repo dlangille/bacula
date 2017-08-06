@@ -78,7 +78,18 @@ class NewHost extends PortletTemplate {
 
 		// Console test
 		$api->setHostParams($host, $host_params);
+		$director = null;
+		if (array_key_exists('director', $_SESSION)) {
+			// Current director can't be passed to new remote host.
+			$director = $_SESSION['director'];
+			unset($_SESSION['director']);
+		}
+
 		$console = $api->set(array('console'), array('version'), $host, false);
+		if (!is_null($director)) {
+			// Revert director setting if any
+			$_SESSION['director'] = $director;
+		}
 
 		// Config test
 		$api->setHostParams($host, $host_params);
