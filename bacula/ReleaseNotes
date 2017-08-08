@@ -3,7 +3,7 @@
 
 This is a minor bug fix release.
 
-086Aug17
+08Aug17
  - baculum: Fix access denied error on api install wizard page
  - baculum: Remove assigning to api host when user is deleted
  - baculum: Fix empty admin setting
