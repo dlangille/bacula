@@ -5,9 +5,9 @@
 #define COMMUNITY 1      /* Define to create a Windows community binary */
 
 /* Note: there can be only *one* VERSION in this file */
-#define VERSION "9.0.2"
-#define BDATE   "24 July 2017"
-#define LSMDATE "24Jul17"
+#define VERSION "9.0.3"
+#define BDATE   "08 August 2017"
+#define LSMDATE "08Aug17"
 
 #define RELEASE 1   /* Use ONLY in rpms */
 
