@@ -1,5 +1,54 @@
-              Changelog on version 9.0.2
+              Changelog on version 9.0.3
 
+Release 9.0.3
+
+
+06Aug17
+ - baculum: Fix access denied error on api install wizard page
+ - baculum: Remove assigning to api host when user is deleted
+ - baculum: Fix empty admin setting
+ - baculum: Add ability to assign host to specific user
+ - baculum: Fix bconsole test connection for new api host that works with new 
+  director
+
+05Aug17
+ - baculum: Fix sqlite db support
+
+03Aug17
+ - Fix bug #2301 Solaris Available space incorrectly reported by turning off the 
+   output for Solaris
+ - Fix bug #2300 mount/unmount/release of single tape drive does not work
+
+01Aug17
+ - baculum: Fix bconsole connection test in config wizard
+ - baculum: Fix writing config for schedule and message names with space
+
+31Jul17
+ - bpipe: Fix compiler warning
+ - baculum: Fix drag & drop file version elements
+
+30Jul17
+ - baculum: Add fileset info endpoint and use it in restore wizard
+ - baculum: Use client name instead of clientid and start using fileset to 
+  prepare restore tree
+ - baculum: Remove fileset parameter from run restore
+ - baculum: Fix lstat regex pattern
+ - baculum: Get the most recent jobs by client and fileset or by clientid and 
+  filesetid
+ - Fix: bug #3048: jobs are stuck in endless loop in reserve.c
+ - Add total time to test.out file
+
+29Jul17
+ - baculum: Add restore job selection in restore job wizard
+
+26Jul17
+ - Enhance verify job report from bug 2249
+
+Bugs fixed/closed since last release:
+2300 2301 3048
+
+
+======================================================
 Release 9.0.2
 
 23Jul17

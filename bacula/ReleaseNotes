@@ -1,5 +1,40 @@
 
-               Release Notes for Bacula 9.0.2
+               Release Notes for Bacula 9.0.3
+
+This is a minor bug fix release.
+
+086Aug17
+ - baculum: Fix access denied error on api install wizard page
+ - baculum: Remove assigning to api host when user is deleted
+ - baculum: Fix empty admin setting
+ - baculum: Add ability to assign host to specific user
+ - baculum: Fix bconsole test connection for new api host that works with new 
+   director
+ - baculum: Fix sqlite db support
+ - Fix bug #2301 Solaris Available space incorrectly reported by turning off the 
+   output for Solaris
+ - Fix bug #2300 mount/unmount/release of single tape drive does not work
+ - baculum: Fix bconsole connection test in config wizard
+ - baculum: Fix writing config for schedule and message names with space
+ - bpipe: Fix compiler warning
+ - baculum: Fix drag & drop file version elements
+ - baculum: Add fileset info endpoint and use it in restore wizard
+ - baculum: Use client name instead of clientid and start using fileset to 
+   prepare restore tree
+ - baculum: Remove fileset parameter from run restore
+ - baculum: Fix lstat regex pattern
+ - baculum: Get the most recent jobs by client and fileset or by clientid and 
+   filesetid
+ - Fix: bug #3048: jobs are stuck in endless loop in reserve.c
+ - Add total time to test.out file
+ - baculum: Add restore job selection in restore job wizard
+ - Enhance verify job report from bug 2249
+
+Bugs fixed/closed since last release:
+2300 2301 3048
+
+
+===============================================================
 
 This is a minor bug fix release, but a few of the bugs are important.
 The main items fixed are:
