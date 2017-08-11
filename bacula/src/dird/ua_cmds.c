@@ -1541,6 +1541,7 @@ static int delete_cmd(UAContext *ua, const char *cmd)
       NT_("pool"),
       NT_("jobid"),
       NT_("snapshot"),
+      NT_("client"),
       NULL};
 
    /* Deleting large jobs can take time! */
@@ -1698,6 +1699,7 @@ static int delete_volume(UAContext *ua)
 
 /*
  * Delete a pool record from the database -- dangerous
+ * TODO: Check if the resource is still defined?
  */
 static int delete_pool(UAContext *ua)
 {
