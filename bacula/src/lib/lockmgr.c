@@ -433,7 +433,7 @@ public:
    {
       int max_prio = max_priority;
 
-      if (chk_dbglvl(DBGLEVEL_EVENT) || debug_flags & DEBUG_MUTEX_EVENT) {
+      if (chk_dbglvl(DBGLEVEL_EVENT) && debug_flags & DEBUG_MUTEX_EVENT) {
          /* Keep track of this event */
          add_event("P()", (intptr_t)m, 0, f, l);
       }
@@ -502,7 +502,7 @@ public:
       int old_current = current;
 
       /* Keep track of this event */
-      if (chk_dbglvl(DBGLEVEL_EVENT) || debug_flags & DEBUG_MUTEX_EVENT) {
+      if (chk_dbglvl(DBGLEVEL_EVENT) && debug_flags & DEBUG_MUTEX_EVENT) {
          add_event("V()", (intptr_t)m, 0, f, l);
       }
 
@@ -740,7 +740,7 @@ void *check_deadlock(void *)
       pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &old);
       if (lmgr_detect_deadlock()) {
          /* If we have information about P()/V(), display them */
-         if (debug_flags & DEBUG_MUTEX_EVENT || chk_dbglvl(DBGLEVEL_EVENT)) {
+         if (debug_flags & DEBUG_MUTEX_EVENT && chk_dbglvl(DBGLEVEL_EVENT)) {
             debug_flags |= DEBUG_PRINT_EVENT;
          }
          lmgr_dump();
