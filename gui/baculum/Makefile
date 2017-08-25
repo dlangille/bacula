@@ -67,7 +67,8 @@ miscfilesrc = index.php \
 	LICENSE \
 	README
 
-localelang = en pl pt ja
+localeweblang = en pl pt ja
+localeapilang = en pl
 localewebdirsrc = $(datadir)/$(webdir)/Lang
 localeapidirsrc = $(datadir)/$(apidir)/Lang
 localefile = messages.mo
@@ -115,17 +116,17 @@ prepare_themes: prepare_build
 	cp -ra $(themesdir) $(DESTDIR)$(WWWDIR)
 
 prepare_locale: prepare_build
-	for lang in $(localelang) ; do \
+	for lang in $(localeweblang) ; do \
 		mkdir -p $(DESTDIR)$(LOCALEDIR)/$$lang/LC_MESSAGES ; \
 		mkdir -p $(DESTDIR)$(WWWDIR)/$(localewebdirsrc)/$$lang ; \
 		install -m 644 $(localewebdirsrc)/$$lang/$(localefile) $(DESTDIR)$(LOCALEDIR)/$$lang/LC_MESSAGES/$(NAME)-web.mo ; \
-		ln -s $(LOCALEDIR)/$$lang/LC_MESSAGES/$(NAME)-web.mo $(DESTDIR)$(WWWDIR)/$(localewebdirsrc)/$$lang/$(localefile) ; \
+		ln -s $(DESTDIR)$(LOCALEDIR)/$$lang/LC_MESSAGES/$(NAME)-web.mo $(DESTDIR)$(WWWDIR)/$(localewebdirsrc)/$$lang/$(localefile) ; \
 	done
-	for lang in $(localelang) ; do \
+	for lang in $(localeapilang) ; do \
 		mkdir -p $(DESTDIR)$(LOCALEDIR)/$$lang/LC_MESSAGES ; \
 		mkdir -p $(DESTDIR)$(WWWDIR)/$(localeapidirsrc)/$$lang ; \
 		install -m 644 $(localeapidirsrc)/$$lang/$(localefile) $(DESTDIR)$(LOCALEDIR)/$$lang/LC_MESSAGES/$(NAME)-api.mo ; \
-		ln -s $(LOCALEDIR)/$$lang/LC_MESSAGES/$(NAME)-api.mo $(DESTDIR)$(WWWDIR)/$(localeapidirsrc)/$$lang/$(localefile) ; \
+		ln -s $(DESTDIR)$(LOCALEDIR)/$$lang/LC_MESSAGES/$(NAME)-api.mo $(DESTDIR)$(WWWDIR)/$(localeapidirsrc)/$$lang/$(localefile) ; \
 	done
 
 prepare_samples:
