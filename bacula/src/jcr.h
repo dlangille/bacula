@@ -214,6 +214,7 @@ public:
    bool no_client_used() const {
       return (m_JobLevel == L_VIRTUAL_FULL);
    };
+   bool can_be_stopped();                 /* in lib/jcr.c */
    const char *get_OperationName();       /* in lib/jcr.c */
    const char *get_ActionName(bool past); /* in lib/jcr.c */
    void setJobStatus(int JobStatus);      /* in lib/jcr.c */

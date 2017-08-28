@@ -680,8 +680,14 @@ cancel_job(UAContext *ua, JCR *jcr, int wait,  bool cancel)
    int status;
    const char *reason, *cmd;
 
-   Dmsg3(10, "cancel_job jcr=%p jobid=%d use_count\n", jcr, jcr->JobId, jcr->use_count());
-
+   if (!cancel) {               /* stop the job */
+      if (!jcr->can_be_stopped()) {
+         ua->error_msg(_("Cannot stop JobId %s, Job %s is not a regular Backup Job\n"),
+                       edit_uint64(jcr->JobId, ed1), jcr->Job);
+         return true;
+      }
+   }
+   
    if (cancel) {
       status = JS_Canceled;
       reason = _("canceled");

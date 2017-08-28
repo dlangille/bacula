@@ -280,6 +280,23 @@ bool JCR::JobReads()
    return false;
 }
 
+/* We can stop only Backup jobs connected to a client. It doesn't make sens at
+ * this time to stop a copy, migraton, restore or a verify job. The specific
+ * code should be implemented first.
+ */
+bool JCR::can_be_stopped()
+{
+   bool ok=true;
+   if (getJobType() == JT_BACKUP) {          /* Is a Backup */
+      if (getJobLevel() == L_VIRTUAL_FULL) { /* Is a VirtualFull */
+         ok = false;
+      }
+   } else {   /* Is not a backup (so, copy, migration, admin, verify, ... */
+      ok = false;
+   }
+   return ok;
+}
+
 /*
  * Push a subroutine address into the job end callback stack
  */
