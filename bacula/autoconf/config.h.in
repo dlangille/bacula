@@ -797,12 +797,6 @@
 /* Set if building on Solaris 10 */
 #undef HAVE_SOLARIS10
 
-/* Set if you have an SQLite3 Database */
-#undef HAVE_SQLITE3
-
-/* Set if have sqlite3_threadsafe */
-#undef HAVE_SQLITE3_THREADSAFE
-
 /* Define to 1 if you have the <stdarg.h> header file. */
 #undef HAVE_STDARG_H
 
