@@ -31129,6 +31129,7 @@ if test "${with_systemd+set}" = set; then :
 
 	   PFILES="${PFILES} \
 		   platforms/systemd/Makefile \
+		   platforms/systemd/bacula.conf \
 		   platforms/systemd/bacula-dir.service \
 		   platforms/systemd/bacula-fd.service \
 		   platforms/systemd/bacula-sd.service"
