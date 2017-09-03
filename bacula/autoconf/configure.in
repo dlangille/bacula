@@ -1589,7 +1589,7 @@ BA_CHECK_POSTGRESQL_DB
 
 BA_CHECK_MYSQL_DB
 
-#BA_CHECK_SQLITE3_DB
+BA_CHECK_SQLITE3_DB
 
 dnl -------------------------------------------
 dnl If no batch insert backend are enable set
@@ -1606,7 +1606,7 @@ if test "x${db_backends}" = "x" ; then
    echo " "
    echo " "
    echo "You have not specified either --enable-client-only or one of the"
-   echo "supported databases: MySQL, or PostgreSQL."
+   echo "supported databases: MySQL, PostgreSQL, or SQLite3."
    echo "This is not permitted. Please reconfigure."
    echo " "
    echo "Aborting the configuration ..."
@@ -1640,7 +1640,7 @@ case `echo $DB_BACKENDS | wc -w | sed -e 's/^ *//'` in
 	 echo " "
 	 echo " "
 	 echo "You have specified two or more of the"
-	 echo "supported databases: MySQL or PostgreSQL."
+	 echo "supported databases: MySQL, PostgreSQL, or SQLite3."
 	 echo "This is not permitted when not using libtool Please reconfigure."
 	 echo " "
 	 echo "Aborting the configuration ..."
