@@ -38,7 +38,7 @@ typedef enum {
    BVFS_DIR_RECORD   = 'D',
    BVFS_FILE_VERSION = 'V',
    BVFS_VOLUME_LIST  = 'L',
-   BVFS_DELTA_RECORD = 'd',
+   BVFS_DELTA_RECORD = 'd'
 } bvfs_handler_type;
 
 typedef enum {
