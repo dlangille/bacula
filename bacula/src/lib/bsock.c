@@ -439,7 +439,7 @@ bool BSOCK::comm_compress()
       msglen -= offset;
       msg += offset;
       cmsg += offset;
-      clen = LZ4_compress_limitedOutput(msg, cmsg, msglen, msglen);
+      clen = LZ4_compress_default(msg, cmsg, msglen, msglen);
       //Dmsg2(000, "clen=%d msglen=%d\n", clen, msglen);
       /* Compression should save at least 10 characters */
       if (clen > 0 && clen + 10 <= msglen) {
