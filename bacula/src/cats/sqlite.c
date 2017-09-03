@@ -170,7 +170,6 @@ bool BDB_SQLITE::bdb_open_database(JCR *jcr)
    int ret; 
    int errstat; 
    int retry = 0; 
-   int64_t starttime; 
    BDB_SQLITE *mdb = this; 
  
    P(mutex); 
