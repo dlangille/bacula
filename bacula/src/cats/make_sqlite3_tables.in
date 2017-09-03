@@ -175,6 +175,8 @@ CREATE TABLE FileSet (
    PRIMARY KEY(FileSetId)
    );
 
+CREATE INDEX fileset_name_idx on FileSet (FileSet);
+
 CREATE TABLE JobMedia (
    JobMediaId INTEGER,
    JobId INTEGER UNSIGNED REFERENCES Job NOT NULL,
@@ -246,6 +248,7 @@ CREATE TABLE Media (
    PRIMARY KEY(MediaId)
    );
 
+CREATE UNIQUE INDEX Media_Volumename_Id ON Media (VolumeName);
 CREATE INDEX inx8 ON Media (PoolId);
 CREATE INDEX inx9 ON Media (StorageId);
 
@@ -315,6 +318,7 @@ CREATE TABLE Pool (
    PRIMARY KEY (PoolId)
    );
 
+CREATE INDEX pool_name_idx on Pool (Name);
 
 CREATE TABLE Client (
    ClientId INTEGER,
@@ -326,6 +330,8 @@ CREATE TABLE Client (
    UNIQUE (Name),
    PRIMARY KEY(ClientId)
    );
+
+CREATE UNIQUE INDEX client_name_idx on Client (Name);
 
 CREATE TABLE BaseFiles (
    BaseId BIGINT,
@@ -346,17 +352,6 @@ CREATE TABLE UnsavedFiles (
    PRIMARY KEY (UnsavedId)
    );
 
-
-CREATE TABLE NextId (
-   id INTEGER UNSIGNED DEFAULT 0,
-   TableName TEXT NOT NULL,
-   PRIMARY KEY (TableName)
-   );
-
-
-
--- Initialize JobId to start at 1
-INSERT INTO NextId (id, TableName) VALUES (1, 'Job');
 
 CREATE TABLE Version (
    VersionId INTEGER UNSIGNED NOT NULL 
@@ -472,12 +467,18 @@ INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
    ('I', 'Incomplete Job',25);
 
 -- Initialize Version		 
-INSERT INTO Version (VersionId) VALUES (15);
+INSERT INTO Version (VersionId) VALUES (16);
 
 PRAGMA default_cache_size = 100000;
 PRAGMA synchronous = NORMAL;
 
 END-OF-DATA
+
+echo ""
+echo "WARNING: !!!! SQLite3 is no longer supported. !!!!"
+echo "WARNING: !!!! Please switch to MySQL or PostgreSQL !!!!"
+echo "WARNING: !!!!  as soon as possible. !!!!"
+echo ""
 
 chmod 640 ${db_name}.db
 exit 0

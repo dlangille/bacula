@@ -199,5 +199,14 @@ fi
 
 COMMIT;
 END-OF-DATA
+
+echo ""
+
+echo "WARNING: !!!! SQLite3 is no longer supported. !!!!"
+echo "WARNING: !!!! Please switch to MySQL or PostgreSQL !!!!"
+echo "WARNING: !!!!  as soon as possible. !!!!"
+echo ""
+
+
 DBVERSION=16
 fi
