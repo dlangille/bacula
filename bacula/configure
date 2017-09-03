@@ -667,6 +667,9 @@ DEFAULT_DB_TYPE
 DB_LIBS
 DB_BACKENDS
 uncomment_dbi
+SQLITE_BINDIR
+SQLITE_INCLUDE
+SQLITE_LIBS
 MYSQL_BINDIR
 MYSQL_INCLUDE
 MYSQL_LIBS
@@ -1005,6 +1008,7 @@ enable_batch_insert
 with_postgresql
 with_mysql
 with_embedded_mysql
+with_sqlite3
 enable_largefile
 with_x
 with_s3
@@ -1757,6 +1761,9 @@ Optional Packages:
                           Include MySQL support. DIR is the MySQL base install
                           directory, default is to search through a number of
                           common places for the MySQL files.
+  --with-sqlite3[=DIR]    Include SQLite3 support. DIR is the SQLite3 base
+                          install directory, default is to search through a
+                          number of common places for the SQLite3 files.
   --with-x                use the X Window System
   --with-s3[=DIR]         specify s3 library directory
   --with-afsdir[=DIR]     Directory holding AFS includes/libs
@@ -24571,7 +24578,162 @@ fi
 
 
 
-#BA_CHECK_SQLITE3_DB
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for SQLite3 support" >&5
+$as_echo_n "checking for SQLite3 support... " >&6; }
+
+# Check whether --with-sqlite3 was given.
+if test "${with_sqlite3+set}" = set; then :
+  withval=$with_sqlite3;
+  if test "$withval" != "no"; then
+     if test "$withval" = "yes"; then
+        if test -f /usr/local/include/sqlite3.h; then
+           SQLITE_INCDIR=/usr/local/include
+           if test -d /usr/local/lib64; then
+              SQLITE_LIBDIR=/usr/local/lib64
+           else
+              SQLITE_LIBDIR=/usr/local/lib
+           fi
+           SQLITE_BINDIR=/usr/local/bin
+        elif test -f /usr/include/sqlite3.h; then
+           SQLITE_INCDIR=/usr/include
+           if test -d /usr/lib64; then
+              SQLITE_LIBDIR=/usr/lib64
+           else
+              SQLITE_LIBDIR=/usr/lib
+           fi
+           SQLITE_BINDIR=/usr/bin
+        elif test -f $prefix/include/sqlite3.h; then
+           SQLITE_INCDIR=$prefix/include
+           if test -d $prefix/lib64; then
+              SQLITE_LIBDIR=$prefix/lib64
+           else
+              SQLITE_LIBDIR=$prefix/lib
+           fi
+           SQLITE_BINDIR=$prefix/bin
+        else
+           { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+           as_fn_error $? "Unable to find sqlite3.h in standard locations" "$LINENO" 5
+        fi
+     else
+        if test -f $withval/sqlite3.h; then
+           SQLITE_INCDIR=$withval
+           SQLITE_LIBDIR=$withval
+           SQLITE_BINDIR=$withval
+        elif test -f $withval/include/sqlite3.h; then
+           SQLITE_INCDIR=$withval/include
+           if test -d $withval/lib64; then
+              SQLITE_LIBDIR=$withval/lib64
+           else
+              SQLITE_LIBDIR=$withval/lib
+           fi
+           SQLITE_BINDIR=$withval/bin
+        else
+           { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+           as_fn_error $? "Invalid SQLite3 directory $withval - unable to find sqlite3.h under $withval" "$LINENO" 5
+        fi
+     fi
+     SQLITE_INCLUDE=-I$SQLITE_INCDIR
+     if test x$use_libtool != xno; then
+        SQLITE_LIBS="-R $SQLITE_LIBDIR -L$SQLITE_LIBDIR -lsqlite3"
+     else
+        SQLITE_LIBS="-L$SQLITE_LIBDIR -lsqlite3"
+     fi
+     SQLITE_LIB=$SQLITE_LIBDIR/libsqlite3.a
+     DB_LIBS="${DB_LIBS} ${SQLITE_LIBS}"
+
+
+$as_echo "#define HAVE_SQLITE3 1" >>confdefs.h
+
+     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+     if test -z "${db_backends}"; then
+         db_backends="SQLite3"
+     else
+         db_backends="${db_backends} SQLite3"
+     fi
+     if test -z "${DB_BACKENDS}"; then
+         DB_BACKENDS="sqlite3"
+     else
+         DB_BACKENDS="${DB_BACKENDS} sqlite3"
+     fi
+
+                    if test "x$support_batch_insert" = "xyes"; then
+                  saved_LDFLAGS="${LDFLAGS}"
+         LDFLAGS="${saved_LDFLAGS} -lpthread -L$SQLITE_LIBDIR"
+
+         { $as_echo "$as_me:${as_lineno-$LINENO}: checking for sqlite3_threadsafe in -lsqlite3" >&5
+$as_echo_n "checking for sqlite3_threadsafe in -lsqlite3... " >&6; }
+if ${ac_cv_lib_sqlite3_sqlite3_threadsafe+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lsqlite3  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char sqlite3_threadsafe ();
+int
+main ()
+{
+return sqlite3_threadsafe ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_sqlite3_sqlite3_threadsafe=yes
+else
+  ac_cv_lib_sqlite3_sqlite3_threadsafe=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_sqlite3_sqlite3_threadsafe" >&5
+$as_echo "$ac_cv_lib_sqlite3_sqlite3_threadsafe" >&6; }
+if test "x$ac_cv_lib_sqlite3_sqlite3_threadsafe" = xyes; then :
+
+$as_echo "#define HAVE_SQLITE3_THREADSAFE 1" >>confdefs.h
+
+fi
+
+         if test "x$ac_cv_lib_sqlite3_sqlite3_threadsafe" = "xyes"; then
+             if test -z "${batch_insert_db_backends}"; then
+                 batch_insert_db_backends="SQLite3"
+             else
+                 batch_insert_db_backends="${batch_insert_db_backends} SQLite3"
+             fi
+         fi
+
+                  LDFLAGS="${saved_LDFLAGS}"
+     fi
+  else
+     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+  fi
+
+else
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+fi
+
+
+
+
+
+
 
 if test -z "${batch_insert_db_backends}"; then
    batch_insert_db_backends="None"
@@ -24581,7 +24743,7 @@ if test "x${db_backends}" = "x" ; then
    echo " "
    echo " "
    echo "You have not specified either --enable-client-only or one of the"
-   echo "supported databases: MySQL, or PostgreSQL."
+   echo "supported databases: MySQL, PostgreSQL, or SQLite3."
    echo "This is not permitted. Please reconfigure."
    echo " "
    echo "Aborting the configuration ..."
@@ -24606,7 +24768,7 @@ case `echo $DB_BACKENDS | wc -w | sed -e 's/^ *//'` in
 	 echo " "
 	 echo " "
 	 echo "You have specified two or more of the"
-	 echo "supported databases: MySQL or PostgreSQL."
+	 echo "supported databases: MySQL, PostgreSQL, or SQLite3."
 	 echo "This is not permitted when not using libtool Please reconfigure."
 	 echo " "
 	 echo "Aborting the configuration ..."
