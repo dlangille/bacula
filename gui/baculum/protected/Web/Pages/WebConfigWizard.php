@@ -127,7 +127,7 @@ class WebConfigWizard extends BaculumWebPage
 			$cfg_web['baculum']['login'] = $this->WebLogin->Text;
 			$cfg_web['baculum']['password'] = $this->WebPassword->Text;
 			$cfg_web['baculum']['debug'] = 0;
-			$cfg_web['baculum']['lang'] = 'en';
+			$cfg_web['baculum']['lang'] = $this->Lang->SelectedValue;
 			if (array_key_exists('users', $cfg_web) && array_key_exists($this->WebLogin->Text, $cfg_web)) {
 				// Admin shoudn't be added to users section, only regular users
 				unset($cfg_web['users'][$this->WebLogin->Text]);
