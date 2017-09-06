@@ -1,7 +1,51 @@
-              Changelog on version 9.0.3
+              Changelog on version 9.0.4
+
+
+Release 9.0.4
+
+
+06Sep17
+ - Update po files
+
+05Sep17
+ - Fix SQLite3 upgrade tables script fixes bug #2306
+ - baculum: Fix language setting in config file
+
+03Sep17
+ - Upgrade to latest lz4.c to fix bug #2310 bus error on 64 bit Solaris
+ - Recompile configure.in
+ - Ensure systemd/bacula.conf is created by configure fixed bug #2307
+ - Fix compiler warning noted in bug #2309
+ - Fix SQLite3 Version bug #2305
+ - Remove unused variable to elimiate compiler warning
+ - Recompile configure.in
+
+28Aug17
+ - Fix #2925 Do not try to stop non backup jobs (virtualfull, copy, migration, 
+  restore, etc...)
+
+25Aug17
+ - baculum: Fix broken symbolic links for lang files
+
+17Aug17
+ - don't use add_event() when flag "l" is not set
+
+14Jun17
+ - core: bwlimit measure bandwidth
+
+02Jun17
+ - core: bwlimit handle backlog and allow burst
+
+25Apr17
+ - Do not purge running jobs in autoprune
+
+Bugs fixed/closed since last release:
+2305 2306 2307 2309 2310 2925
+
+
+==========================================================
 
 Release 9.0.3
-
 
 06Aug17
  - baculum: Fix access denied error on api install wizard page

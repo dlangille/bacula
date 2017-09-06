@@ -1,5 +1,42 @@
 
-               Release Notes for Bacula 9.0.3
+               Release Notes for Bacula 9.0.4
+
+Release 9.0.4
+
+This is a minor bug fix release. The main fix in this release
+is to allow SQLite3 to work.
+
+Please note: SQLite3 has been depreciated for a long time. If the
+community will step forward (as it did in this case) and prepare
+the appropriate make_sqlite3_tables and update_sqlite3_tables files,
+we can continue to leave the SQLite3 code in Bacula.  However, we
+strongly urge users to update to MySQL, MariaDB, and PostgreSQL,
+which are our supported SQL databases.
+
+06Sep17
+ - Update po files
+ - Fix SQLite3 upgrade tables script fixes bug #2306
+ - baculum: Fix language setting in config file
+ - Upgrade to latest lz4.c to fix bug #2310 bus error on 64 bit Solaris
+ - Recompile configure.in
+ - Ensure systemd/bacula.conf is created by configure fixed bug #2307
+ - Fix compiler warning noted in bug #2309
+ - Fix SQLite3 Version bug #2305
+ - Remove unused variable to elimiate compiler warning
+ - Recompile configure.in
+ - Fix #2925 Do not try to stop non backup jobs (virtualfull, copy, migration, 
+  restore, etc...)
+ - baculum: Fix broken symbolic links for lang files
+ - don't use add_event() when flag "l" is not set
+ - core: bwlimit measure bandwidth
+ - core: bwlimit handle backlog and allow burst
+ - Do not purge running jobs in autoprune
+
+Bugs fixed/closed since last release:
+2305 2306 2307 2309 2310 2925
+
+==================================================================
+Release 9.0.3
 
 This is a minor bug fix release.
 
