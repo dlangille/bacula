@@ -925,6 +925,8 @@ rm -f $RPM_BUILD_DIR/Release_Notes-%{version}-%{release}.txt
 %{_mandir}/man1/bat.1.%{manpage_ext}
 %_prefix/share/doc/*
 
+%attr(-, root, %{daemon_group}) %{script_dir}/bacula-tray-monitor.desktop
+
 %doc ../Release_Notes-%{version}-%{release}.txt
 
 %endif
