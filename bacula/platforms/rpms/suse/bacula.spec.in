@@ -1364,3 +1364,5 @@ echo "The database update scripts were installed to %{script_dir}/updatedb"
 %endif
 
 %changelog
+* Thu Mar 27 2014 Kern Sibbald <kern@sibbald.com> 7.0.0-1
+- New rpm spec file for Suse 
