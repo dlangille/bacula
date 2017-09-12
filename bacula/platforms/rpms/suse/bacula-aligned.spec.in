@@ -138,5 +138,5 @@ rm -f $RPM_BUILD_ROOT%{plugin_dir}/bacula-sd-aligned-driver.so
 [ "$RPM_BUILD_ROOT" != "/" ] && rm -rf "$RPM_BUILD_ROOT"
 
 %changelog
-* Mon Jul 3 2017 Davide Franco <davide.franco@baculasystems.com>
-- First version
+* Mon Jul 3 2017 Davide Franco <davide.franco@baculasystems.com> - 7.4.7-1
+- First version of Bacula aligned plugin rpm spec file 
