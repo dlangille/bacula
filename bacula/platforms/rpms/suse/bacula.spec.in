@@ -866,6 +866,7 @@ rm -f $RPM_BUILD_DIR/Release_Notes-%{version}-%{release}.txt
 %attr(755, root, %{daemon_group}) %{script_dir}/grant_postgresql_privileges
 %{_libdir}/libbaccats*
 %{_libdir}/libbacsql*
+%{_libdir}/libbacsd*.so
 %endif
 
 # The rest is DB backend independent
@@ -894,6 +895,8 @@ rm -f $RPM_BUILD_DIR/Release_Notes-%{version}-%{release}.txt
 %attr(-, root, %{daemon_group}) %{script_dir}/bacula-ctl-fd
 %attr(-, root, %{daemon_group}) %{script_dir}/bacula-ctl-sd
 %attr(-, root, %{daemon_group}) %{script_dir}/tapealert
+%attr(-, root, %{daemon_group}) %{script_dir}/baculabackupreport
+%attr(-, root, %{daemon_group}) %{script_dir}/query.sql
 
 %attr(-, root, %{daemon_group}) %{plugin_dir}/bpipe-fd.so
 
