@@ -270,9 +270,11 @@ int main (int argc, char *argv[])
       }
 
       if (fnid && client) {
+         alist clients(1, not_owned_by_alist);
+         clients.append(client);
          Pmsg0(0, "---------------------------------------------\n");
          Pmsg1(0, "Getting file version for %s\n", file);
-         fs.get_all_file_versions(fs.get_pwd(), fnid, client);
+         fs.get_all_file_versions(fs.get_pwd(), fnid, &clients);
       }
 
       exit (0);
@@ -303,7 +305,7 @@ int main (int argc, char *argv[])
    fs.ls_dirs();
    fs.ls_files();
 
-   fs.get_all_file_versions(1, 347, "zog4-fd");
+   fs.get_all_file_versions(1, 347, (char*)"zog4-fd");
 
    char p[200];
    strcpy(p, "/tmp/toto/rep/");

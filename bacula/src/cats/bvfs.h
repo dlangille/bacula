@@ -119,7 +119,12 @@ public:
    bool ls_files();             /* Returns true if we have more files to read */
    bool ls_dirs();              /* Returns true if we have more dir to read */
    void ls_special_dirs();      /* get . and .. */
-   void get_all_file_versions(DBId_t pathid, FileId_t fnid, const char *client);
+   void get_all_file_versions(DBId_t pathid, FileId_t fnid, char *client) {
+      alist clients(1, not_owned_by_alist);
+      clients.append(client);
+      get_all_file_versions(pathid, fnid, &clients);
+   };
+   void get_all_file_versions(DBId_t pathid, FileId_t fnid, alist *clients);
 
    void update_cache();
 

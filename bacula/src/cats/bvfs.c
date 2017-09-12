@@ -875,22 +875,24 @@ bool Bvfs::ch_dir(const char *path)
 }
 
 /*
- * Get all file versions for a specified client
+ * Get all file versions for a specified list of clients
  * TODO: Handle basejobs using different client
  */
-void Bvfs::get_all_file_versions(DBId_t pathid, FileId_t fnid, const char *client)
+void Bvfs::get_all_file_versions(DBId_t pathid, FileId_t fnid, alist *clients)
 {
-   Dmsg3(dbglevel, "get_all_file_versions(%lld, %lld, %s)\n", (uint64_t)pathid,
-         (uint64_t)fnid, client);
-   char ed1[50], ed2[50];
-   POOL_MEM q;
+   char ed1[50], ed2[50], *eclients;
+   POOL_MEM q, query;
+
    if (see_copies) {
       Mmsg(q, " AND Job.Type IN ('C', 'B') ");
    } else {
       Mmsg(q, " AND Job.Type = 'B' ");
    }
 
-   POOL_MEM query;
+   eclients = escape_list(clients);
+
+   Dmsg3(dbglevel, "get_all_file_versions(%lld, %lld, %s)\n", (uint64_t)pathid,
+         (uint64_t)fnid, eclients);
 
    Mmsg(query,//    1           2           3      4 
 "SELECT 'V', File.PathId, File.FilenameId,  0, File.JobId, "
@@ -907,9 +909,9 @@ void Bvfs::get_all_file_versions(DBId_t pathid, FileId_t fnid, const char *clien
   "AND File.FileIndex <= JobMedia.LastIndex "
   "AND JobMedia.MediaId = Media.MediaId "
   "AND Job.ClientId = Client.ClientId "
-  "AND Client.Name = '%s' "
+  "AND Client.Name IN (%s) "
   "%s ORDER BY FileId LIMIT %d OFFSET %d"
-        ,edit_uint64(fnid, ed1), edit_uint64(pathid, ed2), client, q.c_str(),
+        ,edit_uint64(fnid, ed1), edit_uint64(pathid, ed2), eclients, q.c_str(),
         limit, offset);
    Dmsg1(dbglevel_sql, "q=%s\n", query.c_str());
    db->bdb_sql_query(query.c_str(), list_entries, user_data);

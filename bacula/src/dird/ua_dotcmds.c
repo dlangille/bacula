@@ -445,8 +445,27 @@ static int bvfs_result_handler(void *ctx, int fields, char **row)
    return 0;
 }
 
+static void parse_list(char *items, alist *list)
+{
+   char *start;
+   for(char *p = start = items; *p ; p++) {
+      if (*p == ',') {
+         *p = 0;
+         if (p > start) {
+            list->append(bstrdup(start));
+         }
+         *p = ',';
+         start = p + 1;
+      }
+   }
+   if (*start) {
+      list->append(bstrdup(start));
+   }
+}
+
 static bool bvfs_parse_arg_version(UAContext *ua,
                                    char **client,
+                                   alist *clients,
                                    FileId_t *fnid,
                                    bool *versions,
                                    bool *copies)
@@ -465,6 +484,14 @@ static bool bvfs_parse_arg_version(UAContext *ua,
 
       if (strcasecmp(ua->argk[i], NT_("client")) == 0) {
          *client = ua->argv[i];
+         if (clients) {
+            clients->append(bstrdup(*client));
+         }
+      }
+
+      if (clients != NULL && strcasecmp(ua->argk[i], NT_("clients")) == 0) {
+         /* Turn client1,client2,client3 to a alist of clients */
+         parse_list(ua->argv[i], clients);
       }
 
       if (copies && strcasecmp(ua->argk[i], NT_("copies")) == 0) {
@@ -475,7 +502,7 @@ static bool bvfs_parse_arg_version(UAContext *ua,
          *versions = true;
       }
    }
-   return (*client && *fnid > 0);
+   return ((*client || (clients && clients->size() > 0)) && *fnid > 0);
 }
 
 static bool bvfs_parse_arg(UAContext *ua,
@@ -907,6 +934,7 @@ static bool dot_bvfs_versions(UAContext *ua, const char *cmd)
    int limit=2000, offset=0;
    char *path=NULL, *client=NULL, *username=NULL;
    bool copies=false, versions=false;
+   alist clients(10, owned_by_alist);
    if (!bvfs_parse_arg(ua, &pathid, &path, NULL, &username,
                        &limit, &offset))
    {
@@ -914,7 +942,7 @@ static bool dot_bvfs_versions(UAContext *ua, const char *cmd)
       return true;              /* not enough param */
    }
 
-   if (!bvfs_parse_arg_version(ua, &client, &fnid, &versions, &copies))
+   if (!bvfs_parse_arg_version(ua, &client, &clients, &fnid, &versions, &copies))
    {
       ua->error_msg("Can't find client or fnid argument\n");
       return true;              /* not enough param */
@@ -933,7 +961,7 @@ static bool dot_bvfs_versions(UAContext *ua, const char *cmd)
    fs.set_offset(offset);
    ua->bvfs = &fs;
 
-   fs.get_all_file_versions(pathid, fnid, client);
+   fs.get_all_file_versions(pathid, fnid, &clients);
 
    ua->bvfs = NULL;
    return true;
@@ -1020,37 +1048,34 @@ static bool dot_bvfs_get_jobids(UAContext *ua, const char *cmd)
    } else if ((pos = find_arg_with_value(ua, "ujobid")) >= 0) {
       bstrncpy(jr.Job, ua->argv[pos], MAX_NAME_LENGTH);
 
-   /* Return all backup jobid for a client */
-   } else if ((pos = find_arg_with_value(ua, "client")) >= 0) {
-      CLIENT *cli;
+   /* Return all backup jobid for a client list */
+   } else if ((pos = find_arg_with_value(ua, "client")) >= 0 ||
+              (pos = find_arg_with_value(ua, "clients")) >= 0) {
       POOL_MEM where;
       char limit[50];
       bool ret;
       int  nbjobs;
+      alist clients(10, owned_by_alist);
 
-      cli = GetClientResWithName(ua->argv[pos]);
-      if (!cli) {
-         ua->error_msg(_("Unable to get Client record for Client=%s\n"),
-                       ua->argv[pos]);
-         return true;
-      }
+      /* Turn client1,client2,client3 to a alist of clients */
+      parse_list(ua->argv[pos], &clients);
+
       db_lock(ua->db);
-
       bvfs_get_filter(ua, where, limit, sizeof(limit));
-
       Mmsg(ua->db->cmd,
       "SELECT JobId "
         "FROM Job JOIN Client USING (ClientId) "
-         "WHERE Client.Name = '%s' "
+         "WHERE Client.Name IN (%s) "
            "AND Job.Type = 'B' AND Job.JobStatus IN ('T', 'W') %s "
          "ORDER By JobTDate ASC %s",
-           cli->name(), where.c_str(), limit);
+           fs.escape_list(&clients),
+           where.c_str(), limit);
       ret = db_sql_query(ua->db, ua->db->cmd, db_list_handler, &jobids);
       db_unlock(ua->db);
 
       if (!ret) {
          ua->error_msg(_("Unable to get last Job record for Client=%s\n"),
-                       cli->name());
+                       ua->argv[pos]);
       }
 
       nbjobs = fs.set_jobids(jobids.list);
