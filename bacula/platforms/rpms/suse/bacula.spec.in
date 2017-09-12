@@ -910,6 +910,9 @@ rm -f $RPM_BUILD_DIR/Release_Notes-%{version}-%{release}.txt
 %attr(-, root, %{daemon_group}) %config(noreplace) %{logwatch_dir}/conf/services/bacula.conf
 %attr(-, root, %{daemon_group}) %{script_dir}/sample-query.sql
 
+# Bacula tray-monitor shortcut
+%attr(-, root, %{daemon_group}) %{script_dir}/bacula-tray-monitor.desktop
+
 %attr(-, %{storage_daemon_user}, %{daemon_group}) %dir %{working_dir}
 
 %attr(-, root, %{daemon_group}) %{_sbindir}/bacula-dir
