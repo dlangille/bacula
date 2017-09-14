@@ -244,7 +244,7 @@ class BaculaSetting extends APIModule {
 							}
 							$resource[$resource_type][$directive_name][] = implode(' ', $value);
 						} else {
-							$resource[$resource_type][$directive_name][] = $this->formatDirectiveValue($directive_value[$i]);
+							$resource[$resource_type][$directive_name][] = $directive_value[$i];
 						}
 					}
 				} else {
