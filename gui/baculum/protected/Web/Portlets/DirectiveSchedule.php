@@ -246,6 +246,9 @@ class DirectiveSchedule extends DirectiveListTemplate {
 		$this->WeekRangeTo->setDirectiveValue($week_range_to);
 
 		$wdays_long = array_values(Params::$wdays);
+		$this->Wday->setData(Params::$wdays);
+		$this->WdayRangeFrom->setData(Params::$wdays);
+		$this->WdayRangeTo->setData(Params::$wdays);
 
 		$wday_single = null;
 		$wday_range_from = null;
