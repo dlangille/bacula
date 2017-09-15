@@ -1293,7 +1293,7 @@ msgid "Day of week range"
 msgstr "Day of week range"
 
 msgid "From day of week"
-msgstr "To day of week"
+msgstr "From day of week"
 
 msgid "To day of week"
 msgstr "To day of week"
