@@ -621,7 +621,7 @@ void mac_cleanup(JCR *jcr, int TermCode, int writeTermCode)
 {
    char sdt[MAX_TIME_LENGTH], edt[MAX_TIME_LENGTH];
    char ec1[30], ec2[30], ec3[30], ec4[30], ec5[30], elapsed[50];
-   char ec6[50], ec7[50], ec8[50], ec9[30], ec10[30];
+   char ec6[50], ec7[50], ec8[50], ec9[30], ec10[30], edl[50];
    char sd_term_msg[100];
    POOL_MEM term_code;
    POOL_MEM term_msg;
@@ -875,7 +875,7 @@ void mac_cleanup(JCR *jcr, int TermCode, int writeTermCode)
         wjcr ? edit_uint64(wjcr->jr.JobId, ec7) : "0",
         edit_uint64(jcr->jr.JobId, ec8),
         jcr->jr.Job,
-        level_to_str(jcr->getJobLevel()), jcr->since,
+        level_to_str(edl, sizeof(edl), jcr->getJobLevel()), jcr->since,
         jcr->client->name(),
         jcr->fileset->name(), jcr->FSCreateTime,
         jcr->rpool->name(), jcr->rpool_source,

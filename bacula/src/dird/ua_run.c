@@ -1755,7 +1755,7 @@ static void select_job_level(UAContext *ua, JCR *jcr)
 static bool display_job_parameters(UAContext *ua, JCR *jcr, JOB *job, const char *verify_list,
    char *jid, const char *replace, char *client_name)
 {
-   char ec1[30];
+   char ec1[30], edl[50];
    char dt[MAX_TIME_LENGTH];
 
    Dmsg1(800, "JobType=%c\n", jcr->getJobType());
@@ -1818,7 +1818,7 @@ static bool display_job_parameters(UAContext *ua, JCR *jcr, JOB *job, const char
                         "Priority: %d\n"
                         "%s%s%s",
                  job->name(),
-                 level_to_str(jcr->getJobLevel()),
+                 level_to_str(edl, sizeof(edl), jcr->getJobLevel()),
                  jcr->client->name(),
                  jcr->fileset->name(),
                  NPRT(jcr->pool->name()),
@@ -1848,7 +1848,7 @@ static bool display_job_parameters(UAContext *ua, JCR *jcr, JOB *job, const char
                         "Priority: %d\n"
                         "%s%s%s"),
                  job->name(),
-                 level_to_str(jcr->getJobLevel()),
+                 level_to_str(edl, sizeof(edl), jcr->getJobLevel()),
                  jcr->client->name(),
                  jcr->fileset->name(),
                  NPRT(jcr->pool->name()), jcr->pool_source,
@@ -1898,7 +1898,7 @@ static bool display_job_parameters(UAContext *ua, JCR *jcr, JOB *job, const char
                         "When:        %s\n"
                         "Priority:    %d\n",
               job->name(),
-              level_to_str(jcr->getJobLevel()),
+              level_to_str(edl, sizeof(edl), jcr->getJobLevel()),
               jcr->client->name(),
               jcr->fileset->name(),
               NPRT(jcr->pool->name()), jcr->pool_source,
@@ -1920,7 +1920,7 @@ static bool display_job_parameters(UAContext *ua, JCR *jcr, JOB *job, const char
                         "When:        %s\n"
                         "Priority:    %d\n"),
               job->name(),
-              level_to_str(jcr->getJobLevel()),
+              level_to_str(edl, sizeof(edl), jcr->getJobLevel()),
               jcr->client->name(),
               jcr->fileset->name(),
               NPRT(jcr->pool->name()), jcr->pool_source,

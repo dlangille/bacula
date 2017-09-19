@@ -759,6 +759,7 @@ static bool list_nextvol(UAContext *ua, int ndays)
    bool found = false;
    MEDIA_DBR mr;
    POOL_DBR pr;
+   char edl[50];
 
    int i = find_arg_with_value(ua, "job");
    if (i <= 0) {
@@ -796,11 +797,11 @@ static bool list_nextvol(UAContext *ua, int ndays)
       /* no need to set ScratchPoolId, since we use fnv_no_create_vol */
       if (!find_next_volume_for_append(jcr, &mr, 1, fnv_no_create_vol, fnv_prune)) {
          ua->error_msg(_("Could not find next Volume for Job %s (Pool=%s, Level=%s).\n"),
-            job->name(), pr.Name, level_to_str(run->level));
+            job->name(), pr.Name, level_to_str(edl, sizeof(edl), run->level));
       } else {
          ua->send_msg(
             _("The next Volume to be used by Job \"%s\" (Pool=%s, Level=%s) will be %s\n"),
-            job->name(), pr.Name, level_to_str(run->level), mr.VolumeName);
+            job->name(), pr.Name, level_to_str(edl, sizeof(edl), run->level), mr.VolumeName);
          found = true;
       }
    }

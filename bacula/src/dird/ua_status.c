@@ -668,7 +668,7 @@ struct sched_pkt {
 
 static void prt_runtime(UAContext *ua, sched_pkt *sp, OutputWriter *ow)
 {
-   char dt[MAX_TIME_LENGTH];
+   char dt[MAX_TIME_LENGTH], edl[50];
    const char *level_ptr;
    bool ok = false;
    bool close_db = false;
@@ -705,7 +705,7 @@ static void prt_runtime(UAContext *ua, sched_pkt *sp, OutputWriter *ow)
       level_ptr = "Restore";
       break;
    default:
-      level_ptr = level_to_str(sp->level);
+      level_ptr = level_to_str(edl, sizeof(edl), sp->level);
       break;
    }
    if (ua->api == 1) {
@@ -778,6 +778,20 @@ static int compare(void *i1, void *i2)
    }
 
    return 1;           /* If same name, same time, same prio => insert after */
+}
+
+static bool is_included(const char *str, alist *list)
+{
+   char *v;
+   if (list->size() == 0) {       /* The list is empty, we take everything */
+      return true;
+   }
+   foreach_alist(v, list) {
+      if (strcmp(v, str) == 0) {
+         return true;
+      }
+   }
+   return false;
 }
 
 /*
@@ -1330,7 +1344,7 @@ static void list_running_jobs(UAContext *ua)
          bstrncpy(level, "Restore", sizeof(level));
          break;
       default:
-         bstrncpy(level, level_to_str(jcr->getJobLevel()), sizeof(level));
+         level_to_str(level, sizeof(level), jcr->getJobLevel());
          level[7] = 0;
          break;
       }
@@ -1445,7 +1459,7 @@ static void list_terminated_jobs(UAContext *ua)
          bstrncpy(level, "Restore", sizeof(level));
          break;
       default:
-         bstrncpy(level, level_to_str(je->JobLevel), sizeof(level));
+         level_to_str(level, sizeof(level), je->JobLevel);
          level[4] = 0;
          break;
       }

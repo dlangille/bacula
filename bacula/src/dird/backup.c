@@ -767,7 +767,7 @@ int wait_for_job_termination(JCR *jcr, int timeout)
  */
 void backup_cleanup(JCR *jcr, int TermCode)
 {
-   char sdt[50], edt[50], schedt[50];
+   char sdt[50], edt[50], schedt[50], edl[50];
    char ec1[30], ec2[30], ec3[30], ec4[30], ec5[30];
    char ec6[30], ec7[30], ec8[30], ec9[30], ec10[30], elapsed[50];
    char data_compress[200], comm_compress[200];
@@ -969,7 +969,7 @@ void backup_cleanup(JCR *jcr, int TermCode)
         HOST_OS, DISTNAME, DISTVER,
         jcr->jr.JobId,
         jcr->jr.Job,
-        level_to_str(jcr->getJobLevel()), jcr->since,
+        level_to_str(edl, sizeof(edl), jcr->getJobLevel()), jcr->since,
         jcr->client->name(), cr.Uname,
         jcr->fileset->name(), jcr->FSCreateTime,
         jcr->pool->name(), jcr->pool_source,
@@ -1014,6 +1014,7 @@ void update_bootstrap_file(JCR *jcr)
       FILE *fd;
       BPIPE *bpipe = NULL;
       int got_pipe = 0;
+      char edl[50];
       POOLMEM *fname = get_pool_memory(PM_FNAME);
       fname = edit_job_codes(jcr, fname, jcr->job->WriteBootstrap, "",
                              job_code_callback_director);
@@ -1044,7 +1045,7 @@ void update_bootstrap_file(JCR *jcr)
          /* Start output with when and who wrote it */
          bstrftimes(edt, sizeof(edt), time(NULL));
          fprintf(fd, "# %s - %s - %s%s\n", edt, jcr->jr.Job,
-                 level_to_str(jcr->getJobLevel()), jcr->since);
+                 level_to_str(edl, sizeof(edl), jcr->getJobLevel()), jcr->since);
          for (int i=0; i < VolCount; i++) {
             /* Write the record */
             fprintf(fd, "Volume=\"%s\"\n", VolParams[i].VolumeName);

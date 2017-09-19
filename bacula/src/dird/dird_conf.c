@@ -807,20 +807,17 @@ char *CAT::display(POOLMEM *dst) {
    return dst;
 }
 
-const char *level_to_str(int level)
+char *level_to_str(char *buf, int len, int level)
 {
    int i;
-   static char level_no[30];
-   const char *str = level_no;
-
-   bsnprintf(level_no, sizeof(level_no), "%c (%d)", level, level);    /* default if not found */
+   bsnprintf(buf, len, "%c (%d)", level, level);    /* default if not found */
    for (i=0; joblevels[i].level_name; i++) {
       if (level == (int)joblevels[i].level) {
-         str = joblevels[i].level_name;
+         bstrncpy(buf, joblevels[i].level_name, len);
          break;
       }
    }
-   return str;
+   return buf;
 }
 
 /* Dump contents of resource */
@@ -829,7 +826,7 @@ void dump_resource(int type, RES *ares, void sendit(void *sock, const char *fmt,
    RES *next;
    URES *res = (URES *)ares;
    bool recurse = true;
-   char ed1[100], ed2[100], ed3[100];
+   char ed1[100], ed2[100], ed3[100], edl[50];
    DEVICE *dev;
    UAContext *ua = (UAContext *)sock;
    POOLMEM *buf;
@@ -966,7 +963,7 @@ void dump_resource(int type, RES *ares, void sendit(void *sock, const char *fmt,
       sendit(sock, _("%s: name=%s JobType=%d level=%s Priority=%d Enabled=%d\n"),
          type == R_JOB ? _("Job") : _("JobDefs"),
          res->res_job.hdr.name, res->res_job.JobType,
-         level_to_str(res->res_job.JobLevel), res->res_job.Priority,
+         level_to_str(edl, sizeof(edl), res->res_job.JobLevel), res->res_job.Priority,
          res->res_job.is_enabled());
       sendit(sock, _("     MaxJobs=%u NumJobs=%u Resched=%d Times=%d Interval=%s Spool=%d WritePartAfterJob=%d\n"),
          res->res_job.MaxConcurrentJobs,
@@ -1205,7 +1202,7 @@ void dump_resource(int type, RES *ares, void sendit(void *sock, const char *fmt,
             break;
          }
 next_run:
-         sendit(sock, _("  --> Run Level=%s\n"), level_to_str(run->level));
+         sendit(sock, _("  --> Run Level=%s\n"), level_to_str(edl, sizeof(edl), run->level));
          if (run->MaxRunSchedTime) {
             sendit(sock, _("      MaxRunSchedTime=%u\n"), run->MaxRunSchedTime);
          }

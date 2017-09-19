@@ -87,7 +87,7 @@ bool do_verify(JCR *jcr)
    const char *level;
    BSOCK *fd, *sd;
    int stat;
-   char ed1[100];
+   char ed1[100], edl[50];
    JOB_DBR jr;
    JobId_t verify_jobid = 0;
    char *store_address;
@@ -240,7 +240,7 @@ bool do_verify(JCR *jcr)
 
    /* Print Job Start message */
    Jmsg(jcr, M_INFO, 0, _("Start Verify JobId=%s Level=%s Job=%s\n"),
-      edit_uint64(jcr->JobId, ed1), level_to_str(jcr->getJobLevel()), jcr->Job);
+      edit_uint64(jcr->JobId, ed1), level_to_str(edl, sizeof(edl), jcr->getJobLevel()), jcr->Job);
 
    if (jcr->getJobLevel() == L_VERIFY_VOLUME_TO_CATALOG ||
        jcr->getJobLevel() == L_VERIFY_DATA)
@@ -434,7 +434,7 @@ bail_out:
  */
 void verify_cleanup(JCR *jcr, int TermCode)
 {
-   char sdt[50], edt[50];
+   char sdt[50], edt[50], edl[50];
    char ec1[30], ec2[30], elapsed[50];
    char term_code[100], fd_term_msg[100], sd_term_msg[100];
    const char *term_msg;
@@ -532,7 +532,7 @@ void verify_cleanup(JCR *jcr, int TermCode)
            jcr->jr.JobId,
            jcr->jr.Job,
            jcr->fileset->hdr.name,
-           level_to_str(jcr->getJobLevel()),
+           level_to_str(edl, sizeof(edl), jcr->getJobLevel()),
            jcr->client->hdr.name,
            jcr->previous_jr.JobId,
            Name,
@@ -569,7 +569,7 @@ void verify_cleanup(JCR *jcr, int TermCode)
            jcr->jr.JobId,
            jcr->jr.Job,
            jcr->fileset->hdr.name,
-           level_to_str(jcr->getJobLevel()),
+           level_to_str(edl, sizeof(edl), jcr->getJobLevel()),
            jcr->client->name(),
            jcr->previous_jr.JobId,
            Name,

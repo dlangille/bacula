@@ -2094,6 +2094,7 @@ static bool defaultscmd(UAContext *ua, const char *cmd)
       JOB *job = (JOB *)GetResWithName(R_JOB, ua->argv[1]);
       if (job) {
          USTORE store;
+         char edl[50];
          ua->send_msg("job=%s", job->name());
          ua->send_msg("pool=%s", job->pool->name());
          ua->send_msg("messages=%s", job->messages->name());
@@ -2101,7 +2102,7 @@ static bool defaultscmd(UAContext *ua, const char *cmd)
          get_job_storage(&store, job, NULL);
          ua->send_msg("storage=%s", store.store->name());
          ua->send_msg("where=%s", job->RestoreWhere?job->RestoreWhere:"");
-         ua->send_msg("level=%s", level_to_str(job->JobLevel));
+         ua->send_msg("level=%s", level_to_str(edl, sizeof(edl), job->JobLevel));
          ua->send_msg("type=%s", job_type_to_str(job->JobType));
          ua->send_msg("fileset=%s", job->fileset->name());
          ua->send_msg("enabled=%d", job->is_enabled());

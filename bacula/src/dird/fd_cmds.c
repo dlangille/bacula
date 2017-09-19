@@ -182,7 +182,7 @@ void get_level_since_time(JCR *jcr, char *since, int since_len)
    utime_t now;
    utime_t last_full_time = 0;
    utime_t last_diff_time;
-   char prev_job[MAX_NAME_LENGTH];
+   char prev_job[MAX_NAME_LENGTH], edl[50];
 
    since[0] = 0;
    /* If job cloned and a since time already given, use it */
@@ -259,20 +259,20 @@ void get_level_since_time(JCR *jcr, char *since, int since_len)
          Jmsg(jcr, M_INFO, 0, "%s", db_strerror(jcr->db));
          Jmsg(jcr, M_INFO, 0, _("No prior or suitable Full backup found in catalog. Doing FULL backup.\n"));
          bsnprintf(since, since_len, _(" (upgraded from %s)"),
-            level_to_str(jcr->getJobLevel()));
+            level_to_str(edl, sizeof(edl), jcr->getJobLevel()));
          jcr->setJobLevel(jcr->jr.JobLevel = L_FULL);
       } else if (do_vfull) {
          /* No recent Full job found, and MaxVirtualFull is set so upgrade this one to Virtual Full */
          Jmsg(jcr, M_INFO, 0, "%s", db_strerror(jcr->db));
          Jmsg(jcr, M_INFO, 0, _("No prior or suitable Full backup found in catalog. Doing Virtual FULL backup.\n"));
          bsnprintf(since, since_len, _(" (upgraded from %s)"),
-            level_to_str(jcr->getJobLevel()));
+            level_to_str(edl, sizeof(edl), jcr->getJobLevel()));
          jcr->setJobLevel(jcr->jr.JobLevel = L_VIRTUAL_FULL);
       } else if (do_diff) {
          /* No recent diff job found, so upgrade this one to Diff */
          Jmsg(jcr, M_INFO, 0, _("No prior or suitable Differential backup found in catalog. Doing Differential backup.\n"));
          bsnprintf(since, since_len, _(" (upgraded from %s)"),
-            level_to_str(jcr->getJobLevel()));
+            level_to_str(edl, sizeof(edl), jcr->getJobLevel()));
          jcr->setJobLevel(jcr->jr.JobLevel = L_DIFFERENTIAL);
       } else {
          if (jcr->job->rerun_failed_levels) {
@@ -293,9 +293,9 @@ void get_level_since_time(JCR *jcr, char *since, int since_len)
                  if ((jcr->getJobLevel() == L_INCREMENTAL) || 
                      ((jcr->getJobLevel() == L_DIFFERENTIAL) && (JobLevel == L_FULL))) {
                     Jmsg(jcr, M_INFO, 0, _("Prior failed job found in catalog. Upgrading to %s.\n"),
-                       level_to_str(JobLevel));
+                       level_to_str(edl, sizeof(edl), JobLevel));
                     bsnprintf(since, since_len, _(" (upgraded from %s)"),
-                             level_to_str(jcr->getJobLevel()));
+                             level_to_str(edl, sizeof(edl), jcr->getJobLevel()));
                     jcr->setJobLevel(jcr->jr.JobLevel = JobLevel);
                     jcr->jr.JobId = jcr->JobId;
                     break;
