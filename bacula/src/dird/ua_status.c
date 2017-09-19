@@ -741,24 +741,65 @@ static void prt_runtime(UAContext *ua, sched_pkt *sp, OutputWriter *ow)
    jcr->setJobType(orig_jobtype);
 }
 
+/* We store each job schedule into a rblist to display them ordered */
+typedef struct {
+   rblink  lnk;
+   btime_t time;
+   int     prio;
+   int     level;
+   SCHED  *sched; 
+   JOB    *job;
+} schedule;
+
+static int compare(void *i1, void *i2)
+{
+   int ret;
+   schedule *item1 = (schedule *)i1;
+   schedule *item2 = (schedule *)i2;
+
+   /* Order by time */
+   if (item1->time > item2->time) {
+      return 1;
+   } else if (item1->time < item2->time) {
+      return -1;
+   }
+
+   /* If same time, order by priority */
+   if (item1->prio > item2->prio) {
+      return 1;
+   } else if (item1->prio < item2->prio) {
+      return -1;
+   }
+
+   /* If same priority, order by name */
+   ret = strcmp(item1->job->name(), item2->job->name());
+   if (ret != 0) {
+      return ret;
+   }
+
+   return 1;           /* If same name, same time, same prio => insert after */
+}
+
 /*
  * Detailed listing of all scheduler jobs
  */
 static void llist_scheduled_jobs(UAContext *ua)
 {
-   utime_t runtime;
+   utime_t runtime = 0;
    RUN *run;
    JOB *job;
    int level, num_jobs = 0;
    int priority;
-   bool hdr_printed = false;
+   bool limit_set = false;
    char sched_name[MAX_NAME_LENGTH];
+   char client_name[MAX_NAME_LENGTH];
    char job_name[MAX_NAME_LENGTH];
    SCHED *sched;
    int days, i, limit;
    time_t now = time(NULL);
    time_t next;
-   const char *level_ptr;
+   rblist *list;
+   schedule *item = NULL;
 
    Dmsg0(200, "enter list_sched_jobs()\n");
 
@@ -767,7 +808,10 @@ static void llist_scheduled_jobs(UAContext *ua)
      days = atoi(ua->argv[i]);
      if (((days < 0) || (days > 3000)) && !ua->api) {
        ua->send_msg(_("Ignoring invalid value for days. Max is 3000.\n"));
-       days = 10;
+       days = 3000;
+     }
+     if (!limit_set) {
+        limit = 0;              /* Disable limit if not set explicitely */
      }
    } else {
       days = 10;
@@ -807,15 +851,33 @@ static void llist_scheduled_jobs(UAContext *ua)
       job_name[0] = 0;
    }
 
+   i = find_arg_with_value(ua, NT_("client"));
+   if (i >= 0) {
+      bstrncpy(client_name, ua->argv[i], sizeof(client_name));
+   } else {
+      client_name[0] = 0;
+   }
+
+   list = New(rblist(item, &item->lnk));
+
    /* Loop through all jobs */
    LockRes();
    foreach_res(job, R_JOB) {
+      if (!acl_access_ok(ua, Job_ACL, job->name())) {
+         continue;
+      }
       sched = job->schedule;
       if (!sched || !job->is_enabled() || (sched && !sched->is_enabled()) ||
          (job->client && !job->client->is_enabled())) {
          continue;                    /* no, skip this job */
       }
+      if (sched_name[0] && strcmp(sched_name, sched->name()) != 0) {
+         continue;
+      }
       if (job_name[0] && strcmp(job_name, job->name()) != 0) {
+         continue;
+      }
+      if (client_name[0] && job->client && strcmp(client_name, job->client->name()) != 0) {
          continue;
       }
       for (run=sched->run; run; run=run->next) {
@@ -823,7 +885,6 @@ static void llist_scheduled_jobs(UAContext *ua)
          for (i=0; i<days; i++) {
             struct tm tm;
             int mday, wday, month, wom, woy, ldom;
-            char dt[MAX_TIME_LENGTH];
             bool ok;
 
             /* compute values for next time */
@@ -859,49 +920,32 @@ static void llist_scheduled_jobs(UAContext *ua)
                next += 24 * 60 * 60;   /* Add one day */
                continue;
             }
-
-            level = job->JobLevel;
-            if (run->level) {
-               level = run->level;
-            }
-            switch (job->JobType) {
-            case JT_ADMIN:
-               level_ptr = "Admin";
-               break;
-            case JT_RESTORE:
-               level_ptr = "Restore";
-               break;
-            default:
-               level_ptr = level_to_str(level);
-               break;
-            }
-            priority = job->Priority;
-            if (run->Priority) {
-               priority = run->Priority;
-            }
-            if (!hdr_printed) {
-               prt_lrunhdr(ua);
-               hdr_printed = true;
-            }
-
             for (int j=0; j < 24; j++) {
                if (bit_is_set(j, run->hour)) {
                   tm.tm_hour = j;
                   tm.tm_min = run->minute;
                   tm.tm_sec = 0;
                   runtime = mktime(&tm);
-                  bstrftime_dn(dt, sizeof(dt), runtime);
-                  if (ua->api) {
-                     ua->send_msg(_("%-14s\t%-8s\t%3d\t%-18s\t%-18s\t%s\n"),
-                     level_ptr, job_type_to_str(job->JobType), priority, dt,
-                     job->name(), sched->name());
-                  } else {
-                     ua->send_msg(_("%-14s %-8s %3d  %-18s %-18s %s\n"),
-                     level_ptr, job_type_to_str(job->JobType), priority, dt,
-                     job->name(), sched->name());
-                  }
+                  break;
                }
             }
+
+            level = job->JobLevel;
+            if (run->level) {
+               level = run->level;
+            }
+            priority = job->Priority;
+            if (run->Priority) {
+               priority = run->Priority;
+            }
+            item = (schedule *) malloc(sizeof(schedule));
+            item->time = runtime;
+            item->prio = priority;
+            item->job = job;
+            item->sched = sched;
+            item->level = level;
+            list->insert(item, compare);
+
             next += 24 * 60 * 60;   /* Add one day */
             num_jobs++;
             if (num_jobs >= limit) {
@@ -912,6 +956,62 @@ static void llist_scheduled_jobs(UAContext *ua)
    } /* end for loop over resources */
 get_out:
    UnlockRes();
+   prt_lrunhdr(ua);
+   OutputWriter ow(ua->api_opts);
+   if (ua->api > 1) {
+      ua->send_msg("%s", ow.start_group("scheduled"));
+   }
+   foreach_rblist(item, list) {
+      char dt[MAX_TIME_LENGTH];
+      const char *level_ptr;
+      bstrftime_dn(dt, sizeof(dt), item->time);
+
+      switch (item->job->JobType) {
+      case JT_ADMIN:
+         level_ptr = "Admin";
+         break;
+      case JT_RESTORE:
+         level_ptr = "Restore";
+         break;
+      default:
+         level_ptr = level_to_str(item->level);
+         break;
+      }
+
+      if (ua->api > 1) {
+         bool use_client =
+            item->job->JobType == JT_BACKUP ||
+            item->job->JobType == JT_RESTORE;
+
+         ua->send_msg("%s", ow.get_output(OT_CLEAR,
+                         OT_START_OBJ,
+                         OT_JOBLEVEL ,"level",  item->level,
+                         OT_JOBTYPE, "type",      item->job->JobType,
+                         OT_STRING,  "name",       item->job->name(),
+                         OT_STRING, "client", use_client?item->job->client->name() : "",
+                         OT_STRING,  "fileset",   item->job->fileset->name(),
+                         OT_UTIME,   "schedtime", item->time,
+                         OT_INT32,   "priority",  item->prio,
+                         OT_STRING,  "schedule", item->sched->name(),
+                         OT_END_OBJ,
+                         OT_END));
+
+      } else if (ua->api) {
+         ua->send_msg(_("%-14s\t%-8s\t%3d\t%-18s\t%-18s\t%s\n"),
+                      level_ptr, job_type_to_str(item->job->JobType),
+                      item->prio, dt,
+                      item->job->name(), item->sched->name());
+      } else {
+         ua->send_msg(_("%-14s %-8s %3d  %-18s %-18s %s\n"),
+                      level_ptr, job_type_to_str(item->job->JobType), item->prio, dt,
+                      item->job->name(), item->sched->name());
+      }
+   }
+   if (ua->api > 1) {
+      ua->send_msg("%s", ow.end_group());
+   }
+   delete list;
+
    if (num_jobs == 0 && !ua->api) {
       ua->send_msg(_("No Scheduled Jobs.\n"));
    }
@@ -952,7 +1052,6 @@ static void list_scheduled_jobs(UAContext *ua)
    JOB *job;
    int level, num_jobs = 0;
    int priority;
-   bool hdr_printed = false;
    char sched_name[MAX_NAME_LENGTH];
    dlist sched;
    sched_pkt *sp;
@@ -996,10 +1095,6 @@ static void list_scheduled_jobs(UAContext *ua)
          if (run->Priority) {
             priority = run->Priority;
          }
-         if (!hdr_printed) {
-            prt_runhdr(ua);
-            hdr_printed = true;
-         }
          sp = (sched_pkt *)malloc(sizeof(sched_pkt));
          sp->job = job;
          sp->level = level;
@@ -1014,6 +1109,7 @@ static void list_scheduled_jobs(UAContext *ua)
       }
    } /* end for loop over resources */
    UnlockRes();
+   prt_runhdr(ua);
    foreach_dlist(sp, &sched) {
       prt_runtime(ua, sp, &ow);
    }

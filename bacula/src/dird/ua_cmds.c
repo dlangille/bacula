@@ -168,7 +168,7 @@ static struct cmdstruct commands[] = {                                      /* C
  { NT_("status"),     status_cmd,    _("Report status"),
    NT_("all | network [bytes=<nn-b>] | dir=<dir-name> | director | client=<client-name> |\n"
        "\tstorage=<storage-name> slots |\n"
-       "\tschedule [job=<job-name>] [days=<nn>] [limit=<nn>]\n"
+       "\tschedule [job=<job-name>] [client=<cli-name>] [schedule=<sched-name>] [days=<nn>] [limit=<nn>]\n"
        "\t\t[time=<universal-time-specification>]"), true},
 
  { NT_("stop"),       cancel_cmd,    _("Stop a job"), NT_("jobid=<number-list> job=<job-name> ujobid=<unique-jobid> all"), false},
