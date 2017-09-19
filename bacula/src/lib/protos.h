@@ -300,6 +300,7 @@ typedef void (dbg_hook_t)(FILE *fp);
 void dbg_add_hook(dbg_hook_t *fct);
 
 /* scan.c */
+char *next_name(char **s);
 void             strip_leading_space     (char *str);
 char            *strip_trailing_junk     (char *str);
 char            *strip_trailing_newline  (char *str);

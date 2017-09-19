@@ -95,7 +95,6 @@ int prunecmd(UAContext *ua, const char *cmd)
    DIRRES *dir;
    CLIENT *client;
    POOL *pool;
-   POOL_DBR pr;
    MEDIA_DBR mr;
    utime_t retention;
    int kw;

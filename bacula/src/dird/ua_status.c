@@ -785,77 +785,66 @@ static int compare(void *i1, void *i2)
  */
 static void llist_scheduled_jobs(UAContext *ua)
 {
-   utime_t runtime = 0;
+   utime_t runtime=0;
    RUN *run;
    JOB *job;
    int level, num_jobs = 0;
    int priority;
    bool limit_set = false;
-   char sched_name[MAX_NAME_LENGTH];
-   char client_name[MAX_NAME_LENGTH];
-   char job_name[MAX_NAME_LENGTH];
+   char sched_name[MAX_NAME_LENGTH] = {0}, edl[50];
+   char *n, *p;
    SCHED *sched;
-   int days, i, limit;
+   int days=10, limit=100;
    time_t now = time(NULL);
    time_t next;
    rblist *list;
+   alist clients(10, not_owned_by_alist);
+   alist jobs(10, not_owned_by_alist);
    schedule *item = NULL;
 
    Dmsg0(200, "enter list_sched_jobs()\n");
 
-   i = find_arg_with_value(ua, NT_("days"));
-   if (i >= 0) {
-     days = atoi(ua->argv[i]);
-     if (((days < 0) || (days > 3000)) && !ua->api) {
-       ua->send_msg(_("Ignoring invalid value for days. Max is 3000.\n"));
-       days = 3000;
-     }
-     if (!limit_set) {
-        limit = 0;              /* Disable limit if not set explicitely */
-     }
-   } else {
-      days = 10;
-   }
+   for (int i=0; i < ua->argc ; i++) {
+      if (strcmp(ua->argk[i], NT_("limit")) == 0) {
+         limit = atoi(ua->argv[i]);
+         if (((limit < 0) || (limit > 2000)) && !ua->api) {
+            ua->send_msg(_("Ignoring invalid value for limit. Max is 2000.\n"));
+            limit = 2000;
+         }
+         limit_set = true;
 
-   i = find_arg_with_value(ua, NT_("limit"));
-   if (i >= 0) {
-     limit = atoi(ua->argv[i]);
-     if (((limit < 0) || (limit > 2000)) && !ua->api) {
-       ua->send_msg(_("Ignoring invalid value for limit. Max is 2000.\n"));
-       limit = 100;
-     }
-   } else {
-      limit = 100;
-   }
+      } else if (strcmp(ua->argk[i], NT_("days")) == 0) {
+         days = atoi(ua->argv[i]);
+         if (((days < 0) || (days > 3000)) && !ua->api) {
+            ua->send_msg(_("Ignoring invalid value for days. Max is 3000.\n"));
+            days = 3000;
+         }
+         if (!limit_set) {
+            limit = 0;              /* Disable limit if not set explicitely */
+         }
 
-   i = find_arg_with_value(ua, NT_("time"));
-   if (i >= 0) {
-      now = str_to_utime(ua->argv[i]);
-      if (now == 0) {
-         ua->send_msg(_("Ignoring invalid time.\n"));
-         now = time(NULL);
+      } else if (strcmp(ua->argk[i], NT_("time")) == 0) {
+         now = str_to_utime(ua->argv[i]);
+         if (now == 0) {
+            ua->send_msg(_("Ignoring invalid time.\n"));
+            now = time(NULL);
+         }
+
+      } else if (strcmp(ua->argk[i], NT_("schedule")) == 0 && ua->argv[i]) {
+         bstrncpy(sched_name, ua->argv[i], sizeof(sched_name));
+
+      } else if (strcmp(ua->argk[i], NT_("job")) == 0) {
+         p = ua->argv[i];
+         while ((n = next_name(&p)) != NULL) {
+            jobs.append(n);
+         }
+
+      } else if (strcmp(ua->argk[i], NT_("client")) == 0) {
+         p = ua->argv[i];
+         while ((n = next_name(&p)) != NULL) {
+            clients.append(n);
+         }
       }
-   }
-
-   i = find_arg_with_value(ua, NT_("schedule"));
-   if (i >= 0) {
-      bstrncpy(sched_name, ua->argv[i], sizeof(sched_name));
-   } else {
-      sched_name[0] = 0;
-   }
-
-   i = find_arg_with_value(ua, NT_("job"));
-   if (i >= 0) {
-      bstrncpy(job_name, ua->argv[i], sizeof(job_name));
-   } else {
-      job_name[0] = 0;
-   }
-
-   i = find_arg_with_value(ua, NT_("client"));
-   if (i >= 0) {
-      bstrncpy(client_name, ua->argv[i], sizeof(client_name));
-   } else {
-      client_name[0] = 0;
    }
 
    list = New(rblist(item, &item->lnk));
@@ -874,15 +863,15 @@ static void llist_scheduled_jobs(UAContext *ua)
       if (sched_name[0] && strcmp(sched_name, sched->name()) != 0) {
          continue;
       }
-      if (job_name[0] && strcmp(job_name, job->name()) != 0) {
+      if (!is_included(job->name(), &jobs)) {
          continue;
       }
-      if (client_name[0] && job->client && strcmp(client_name, job->client->name()) != 0) {
+      if (!is_included(job->client->name(), &clients)) {
          continue;
       }
       for (run=sched->run; run; run=run->next) {
          next = now;
-         for (i=0; i<days; i++) {
+         for (int i=0; i<days; i++) {
             struct tm tm;
             int mday, wday, month, wom, woy, ldom;
             bool ok;
@@ -938,6 +927,7 @@ static void llist_scheduled_jobs(UAContext *ua)
             if (run->Priority) {
                priority = run->Priority;
             }
+
             item = (schedule *) malloc(sizeof(schedule));
             item->time = runtime;
             item->prio = priority;
@@ -948,7 +938,7 @@ static void llist_scheduled_jobs(UAContext *ua)
 
             next += 24 * 60 * 60;   /* Add one day */
             num_jobs++;
-            if (num_jobs >= limit) {
+            if (limit > 0 && num_jobs >= limit) {
                goto get_out;
             }
          }
@@ -974,7 +964,7 @@ get_out:
          level_ptr = "Restore";
          break;
       default:
-         level_ptr = level_to_str(item->level);
+         level_ptr = level_to_str(edl, sizeof(edl), item->level);
          break;
       }
 
@@ -1018,7 +1008,6 @@ get_out:
    if (!ua->api) ua->send_msg("====\n");
    Dmsg0(200, "Leave ;list_sched_jobs_runs()\n");
 }
-
 
 /*
  * Sort items by runtime, priority
