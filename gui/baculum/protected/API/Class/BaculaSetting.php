@@ -232,7 +232,14 @@ class BaculaSetting extends APIModule {
 							if (count($directive_value[$i]['Hour']) === 24) {
 								$hourly = 'hourly';
 							}
-							$minute = sprintf('%02d', $directive_value[$i]['Minute']);
+							$minute = '00';
+							/**
+							 * Check if Minute key exists because of bug about missing Minute
+							 * @see http://bugs.bacula.org/view.php?id=2318
+							 */
+							if (array_key_exists('Minute', $directive_value[$i])) {
+								$minute = sprintf('%02d', $directive_value[$i]['Minute']);
+							}
 							$day = count($directive_value[$i]['Day']) === 31 ? '' : 'on ' . implode(',', $directive_value[$i]['Day']);
 							$month = Params::getMonthsConfig($directive_value[$i]['Month']);
 							$week = Params::getWeeksConfig($directive_value[$i]['WeekOfMonth']);

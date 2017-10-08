@@ -79,7 +79,6 @@ class DirectiveSchedule extends DirectiveListTemplate {
 		'WdayRangeTo',
 		'TimeHourAt',
 		'TimeMinAt',
-		'TimeHourHourly',
 		'TimeMinHourly'
 	);
 
@@ -274,13 +273,30 @@ class DirectiveSchedule extends DirectiveListTemplate {
 		$minute = null;
 		if ($load_values) {
 			$hour = $directives->Hour[0]; // @TODO: Check for many hour values;
-			$minute = $directives->Minute;
+			/**
+			 * Check if Minute property exists because of bug about missing Minute
+			 * @see http://bugs.bacula.org/view.php?id=2318
+			 */
+			$minute = property_exists($directives, 'Minute') ? $directives->Minute : 0;
 		}
 		$this->directives['time'] = array(
 			'hour' => $hour,
 			'minute' => $minute
 		);
-		$this->TimeAt->Checked = true;
+		if ($load_values) {
+			if (count($directives->Hour) == 24) {
+				$this->TimeHourly->Checked = true;
+				$this->TimeMinHourly->setDirectiveValue($minute);
+			} elseif (count($directives->Hour) == 1) {
+				$this->TimeAt->Checked = true;
+				$this->TimeHourAt->setDirectiveValue($hour);
+				$this->TimeMinAt->setDirectiveValue($minute);
+			} else {
+				$this->TimeDisable->Checked = true;
+			}
+		} else {
+			$this->TimeDisable->Checked = true;
+		}
 	}
 
 	public function getDirectiveValue() {
@@ -346,9 +362,9 @@ class DirectiveSchedule extends DirectiveListTemplate {
 			$minute = sprintf('%02d', $this->TimeMinAt->getDirectiveValue());
 			$directive_values[] = "at {$hour}:{$minute}";
 		} elseif ($this->TimeHourly->Checked === true) {
-			$hour = $this->TimeHourHourly->getDirectiveValue();
+			$hour = '00';
 			$minute = sprintf('%02d', $this->TimeMinHourly->getDirectiveValue());
-			$directive_values[] = "at {$hour}:{$minute}";
+			$directive_values[] = "hourly at {$hour}:{$minute}";
 		}
 
 		$directive_value = array('Run' => implode(' ', $directive_values));

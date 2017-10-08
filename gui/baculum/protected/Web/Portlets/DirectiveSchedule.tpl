@@ -217,14 +217,12 @@
 	<div id="day<%=$this->TimeAt->ClientID%>" class="day<%=$this->TimeAt->ClientID%>" style="display: <%=$this->TimeAt->Checked ? 'block' : 'none'%>">
 		<com:Application.Web.Portlets.DirectiveText
 			ID="TimeHourAt"
-			DirectiveValue="<%=$this->directives['time']['hour']%>"
 			Label="<%[ Hour ]%>"
 			InConfig="true"
 			Show="true"
 		/>
 		<com:Application.Web.Portlets.DirectiveText
 			ID="TimeMinAt"
-			DirectiveValue="<%=$this->directives['time']['minute']%>"
 			Label="<%[ Minute ]%>"
 			InConfig="true"
 			Show="true"
@@ -232,15 +230,7 @@
 	</div>
 	<div id="day_range<%=$this->TimeAt->ClientID%>" class="day<%=$this->TimeAt->ClientID%>" style="display: <%=$this->TimeHourly->Checked ? 'block' : 'none'%>">
 		<com:Application.Web.Portlets.DirectiveText
-			ID="TimeHourHourly"
-			DirectiveValue="0"
-			Label="<%[ Hour ]%>"
-			InConfig="true"
-			Show="true"
-		/>
-		<com:Application.Web.Portlets.DirectiveText
 			ID="TimeMinHourly"
-			DirectiveValue="<%=$this->directives['time']['minute']%>"
 			Label="<%[ Minute ]%>"
 			InConfig="true"
 			Show="true"
