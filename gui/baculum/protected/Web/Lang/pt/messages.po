@@ -1079,9 +1079,6 @@ msgstr "Adicionar usuário"
 msgid "Username:"
 msgstr "Nome do usuário:"
 
-msgid "Please note that for each user (excluding administrator) there should exist separate Bconsole config file in form:"
-msgstr "Atenção, cada usuário (com excessão do usuário administrador) precisa de um arquivo: "
-
 msgid "Invalid login value. Login may contain a-z A-Z 0-9 characters."
 msgstr "Usuário inválido! O usuário deve conter apenas os seguintes caracteres [a-z A-Z 0-9]."
 

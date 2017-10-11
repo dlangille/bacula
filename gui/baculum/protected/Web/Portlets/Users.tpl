@@ -62,7 +62,6 @@
 		</table>
 	</prop:FooterTemplate>
 </com:TActiveRepeater>
-<p><em><%[ Please note that for each user (excluding administrator) there should exist separate Bconsole config file in form: ]%> <strong><com:TLabel ID="BconsoleCustomPath" /></strong></em></p>
 <com:TCallback ID="UserAction" OnCallback="TemplateControl.userAction" ClientSide.OnComplete="Users.hide_loader();" />
 <script type="text/javascript">
 	var send_user_action = function(action, param, value) {
