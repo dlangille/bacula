@@ -811,6 +811,7 @@ db_password=${db_password:-""}
 working=${working:-"$cwd/working"}
 dumps=${dumps:-"$cwd/dumps"}
 bin=${bin:-"$cwd/bin"}
+PERL5LIB=${PERL5LIB}:$cwd
 
 # Bacula scripts
 scripts=${scripts:-"$cwd/bin"}
@@ -839,6 +840,7 @@ export rscripts
 export tmp
 export src
 export tmpsrc
+export PERL5LIB
 
 bperl="perl -Mscripts::functions"
 export bperl
