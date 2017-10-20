@@ -555,7 +555,7 @@ void restoreTree::fileCurrentItemChanged(QTableWidgetItem *currentFileTableItem,
                foreach (field, fieldlist) {
                   field = field.trimmed();  /* strip leading & trailing spaces */
                   if (column == 5 ) {
-                     QByteArray jtype(field.trimmed().toAscii());
+                     QByteArray jtype(field.trimmed().toLatin1());
                      if (jtype.size()) {
                         field = job_type_to_str(jtype[0]);
                      }
@@ -705,7 +705,7 @@ void restoreTree::populateJobTable()
                field = field.trimmed();  /* strip leading & trailing spaces */
                if (field != "") {
                   if (column == typeIndex) {
-                     QByteArray jtype(field.trimmed().toAscii());
+                     QByteArray jtype(field.trimmed().toLatin1());
                      if (jtype.size()) {
                         field = job_type_to_str(jtype[0]);
                      }

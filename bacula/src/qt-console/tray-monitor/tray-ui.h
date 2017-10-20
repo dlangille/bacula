@@ -198,6 +198,21 @@ public:
         tray = new QSystemTrayIcon(TrayMonitor);
         QMenu* stmenu = new QMenu(TrayMonitor);
 
+#if QT_VERSION >= 0x050000
+        QAction *actShow = new QAction(QApplication::translate("TrayMonitor",
+                               "Display", 0),TrayMonitor);
+        QAction* actQuit = new QAction(QApplication::translate("TrayMonitor",
+                               "Quit", 0),TrayMonitor);
+        QAction* actAbout = new QAction(QApplication::translate("TrayMonitor",
+                               "About", 0),TrayMonitor);
+        QAction* actRun = new QAction(QApplication::translate("TrayMonitor",
+                               "Run...", 0),TrayMonitor);
+        QAction* actRes = new QAction(QApplication::translate("TrayMonitor",
+                              "Restore...", 0),TrayMonitor);
+
+        QAction* actConf = new QAction(QApplication::translate("TrayMonitor",
+                               "Configure...", 0),TrayMonitor);
+#else
         QAction *actShow = new QAction(QApplication::translate("TrayMonitor",
                                "Display",
                                 0, QApplication::UnicodeUTF8),TrayMonitor);
@@ -217,6 +232,7 @@ public:
         QAction* actConf = new QAction(QApplication::translate("TrayMonitor",
                                "Configure...",
                                 0, QApplication::UnicodeUTF8),TrayMonitor);
+#endif
         stmenu->addAction(actShow);
         stmenu->addAction(actRun);
         stmenu->addAction(actRes);
@@ -256,7 +272,12 @@ public:
 
     void retranslateUi(QMainWindow *TrayMonitor)
     {
-       TrayMonitor->setWindowTitle(QApplication::translate("TrayMonitor", "Bacula Tray Monitor", 0, QApplication::UnicodeUTF8));
+#if QT_VERSION >= 0x050000
+        TrayMonitor->setWindowTitle(QApplication::translate("TrayMonitor", "Bacula Tray Monitor", 0));
+#else
+        TrayMonitor->setWindowTitle(QApplication::translate("TrayMonitor", "Bacula Tray Monitor", 0, QApplication::UnicodeUTF8));
+#endif
+
     } // retranslateUi
 
 private slots:

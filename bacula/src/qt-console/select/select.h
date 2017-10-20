@@ -20,7 +20,11 @@
 #ifndef _SELECT_H_
 #define _SELECT_H_
 
+#if QT_VERSION >= 0x050000
+#include <QtWidgets>
+#else
 #include <QtGui>
+#endif
 #include "ui_select.h"
 #include "console.h"
 

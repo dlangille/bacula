@@ -23,7 +23,11 @@
 #ifndef _LABEL_H_
 #define _LABEL_H_
 
+#if QT_VERSION >= 0x050000
+#include <QtWidgets>
+#else
 #include <QtGui>
+#endif
 #include "ui_label.h"
 #include "console.h"
 #include "pages.h"

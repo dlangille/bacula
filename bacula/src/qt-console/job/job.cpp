@@ -407,7 +407,7 @@ void Job::populateForm()
          label_JobId->setText(fld.next());
          label_Name->setText(fld.next());
          
-         label_Level->setText(job_level_to_str(fld.next()[0].toAscii()));
+         label_Level->setText(job_level_to_str(fld.next()[0].toLatin1()));
 
          m_client = fld.next();
          label_Client->setText(m_client);
@@ -457,7 +457,7 @@ void Job::populateForm()
             }
          }
          label_JobStatus->setPixmap(QPixmap(":/images/" + stat + ".png"));
-         jobstatus_to_ascii_gui(stat[0].toAscii(), buf, sizeof(buf));
+         jobstatus_to_ascii_gui(stat[0].toLatin1(), buf, sizeof(buf));
          stat = buf;
          label_JobStatus->setToolTip(stat);
 

@@ -24,6 +24,7 @@
 #include "ui_run.h"
 #include "tray_conf.h"
 #include "task.h"
+#include <QDialog>
 
 class RunJob: public QDialog
 {

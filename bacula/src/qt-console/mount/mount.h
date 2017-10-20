@@ -23,7 +23,11 @@
 #ifndef _MOUNT_H_
 #define _MOUNT_H_
 
+#if QT_VERSION >= 0x050000
+#include <QtWidgets>
+#else
 #include <QtGui>
+#endif
 #include "ui_mount.h"
 #include "console.h"
 

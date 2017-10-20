@@ -25,7 +25,11 @@
 #ifndef _MAINWIN_H_
 #define _MAINWIN_H_
 
+#if QT_VERSION >= 0x050000
+#include <QtWidgets>
+#else
 #include <QtGui>
+#endif
 #include <QList>
 #include "ui_main.h"
 

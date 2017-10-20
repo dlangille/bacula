@@ -13,6 +13,8 @@
 CONFIG += qt
 #CONFIG += qt debug
 
+greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+
 cross-win32 {
   LIBS       +=  -mwindows -L../../win32/release32 -lbacula
   INCLUDEPATH += ../../win32/compat

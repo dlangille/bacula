@@ -23,7 +23,11 @@
 #ifndef _RELABEL_H_
 #define _RELABEL_H_
 
+#if QT_VERSION >= 0x050000
+#include <QtWidgets>
+#else
 #include <QtGui>
+#endif
 #include "ui_relabel.h"
 #include "console.h"
 

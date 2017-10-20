@@ -207,7 +207,7 @@ void MediaView::filterExipired(QStringList &list)
 
          } else {
             stat = fieldlist.at(8);
-            t = str_to_utime(LastWritten.toAscii().data());
+            t = str_to_utime(LastWritten.toLatin1().data());
             t = t + stat.toULongLong();
             if (t > now) {
                list.removeAt(i);
@@ -366,7 +366,7 @@ void MediaView::populateTable()
          buf[0] = 0;
          if (LastWritten != "") {
             stat = fld.next();  // VolUseDuration
-            t = str_to_utime(LastWritten.toAscii().data());
+            t = str_to_utime(LastWritten.toLatin1().data());
             t = t + stat.toULongLong();
             ttime = t;
             localtime_r(&ttime, &tm);         

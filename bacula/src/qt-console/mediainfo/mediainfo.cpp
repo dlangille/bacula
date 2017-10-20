@@ -181,7 +181,7 @@ void MediaInfo::populateForm()
          label_VolRetention->setText(QString(buf));
 
          if (LastWritten != "") {
-            t = str_to_utime(LastWritten.toAscii().data());
+            t = str_to_utime(LastWritten.toLatin1().data());
             t = t + stat.toULongLong();
             ttime = t;
             localtime_r(&ttime, &tm);         
@@ -194,7 +194,7 @@ void MediaInfo::populateForm()
 
 //         stat=fld.next();
 
-//         jobstatus_to_ascii_gui(stat[0].toAscii(), buf, sizeof(buf));
+//         jobstatus_to_ascii_gui(stat[0].toLatin1(), buf, sizeof(buf));
 //         stat = buf;
 //       
       }

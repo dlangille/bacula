@@ -19,7 +19,11 @@
    Bacula(R) is a registered trademark of Kern Sibbald.
 */
 
+#if QT_VERSION >= 0x050000
+#include <QtWidgets>
+#else
 #include <QtGui>
+#endif
 #include "ui_content.h"
 #include "console.h"
 #include "pages.h"

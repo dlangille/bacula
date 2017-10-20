@@ -30,7 +30,7 @@ bool isWin32Path(QString &fullPath)
       return false;
    }
 
-   bool toret = fullPath[1].toAscii() == ':' && fullPath[0].isLetter();
+   bool toret = fullPath[1].toLatin1() == ':' && fullPath[0].isLetter();
    if (mainWin->m_miscDebug) {
       if (toret)
          Pmsg1(000, "returning from isWin32Path true %s\n", fullPath.toUtf8().data());

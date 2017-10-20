@@ -32,6 +32,7 @@
 #include <QBrush>
 #include <QString>
 #include <QStringList>
+#include <QLabel>
 #include <math.h>
 #include "fmtwidgetitem.h"
 
@@ -49,7 +50,7 @@ QString convertJobStatus(const QString &sts)
    }
 
    char buf[256];
-   jobstatus_to_ascii_gui( code[0].toAscii(), buf, sizeof(buf));
+   jobstatus_to_ascii_gui( code[0].toLatin1(), buf, sizeof(buf));
    return QString(buf);
 }
 
@@ -386,7 +387,7 @@ void ItemFormatterBase::setJobStatusFld(int index, const QString &status, bool c
 
 void ItemFormatterBase::setJobTypeFld(int index, const QString &fld, bool center)
 {
-   QByteArray jtype(fld.trimmed().toAscii());
+   QByteArray jtype(fld.trimmed().toLatin1());
    if (jtype.size()) {
       setTextFld(index, job_type_to_str(jtype[0]), center);
    } else {
@@ -396,7 +397,7 @@ void ItemFormatterBase::setJobTypeFld(int index, const QString &fld, bool center
 
 void ItemFormatterBase::setJobLevelFld(int index, const QString &fld, bool center)
 {
-   QByteArray lvl(fld.trimmed().toAscii());
+   QByteArray lvl(fld.trimmed().toLatin1());
    if (lvl.size()) {
       setTextFld(index, job_level_to_str(lvl[0]), center);
    } else {

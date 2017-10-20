@@ -22,7 +22,11 @@
  *   Dirk Bartley, March 2007
  */
 
+#if QT_VERSION >= 0x050000
+#include <QtWidgets>
+#else
 #include <QtGui>
+#endif
 #include <QList>
 
 /*

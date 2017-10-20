@@ -8,7 +8,7 @@
 #
 CONFIG += qt debug @QWT@
 
-datarootdir = @datarootdir@
+greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 bins.path = /$(DESTDIR)@sbindir@
 bins.files = bat

@@ -63,9 +63,11 @@ int main(int argc, char *argv[])
 
 
    app = new QApplication(argc, argv);        
-   app->setStyle(new QPlastiqueStyle());
    app->setQuitOnLastWindowClosed(true);
+#if QT_VERSION < 0x050000
+   app->setStyle(new QPlastiqueStyle());
    QTextCodec::setCodecForCStrings(QTextCodec::codecForName("UTF-8"));
+#endif
      
    QTranslator qtTranslator;
    qtTranslator.load(QString("qt_") + QLocale::system().name(),QLibraryInfo::location(QLibraryInfo::TranslationsPath));

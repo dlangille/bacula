@@ -26,7 +26,11 @@
 
 #include <stdint.h>
 #include <sys/types.h>     /* Needed for some systems */
+#if QT_VERSION >= 0x050000
+#include <QtWidgets>
+#else
 #include <QtGui>
+#endif
 #include "pages.h"
 #include "ui_runrestore.h"
 
