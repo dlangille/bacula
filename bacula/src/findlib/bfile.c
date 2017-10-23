@@ -582,6 +582,7 @@ int bclose(BFILE *bfd)
       stat = plugin_bclose(bfd);
       bfd->fid = -1;
       bfd->cmd_plugin = false;
+      return stat;
    }
 
 #if defined(HAVE_POSIX_FADVISE) && defined(POSIX_FADV_DONTNEED)
@@ -626,10 +627,13 @@ ssize_t bwrite(BFILE *bfd, void *buf, size_t count)
    ssize_t stat;
 
    if (bfd->cmd_plugin && plugin_bwrite) {
-      return plugin_bwrite(bfd, buf, count);
+      stat = plugin_bwrite(bfd, buf, count);
+
+   } else {
+      stat = write(bfd->fid, buf, count);
+      bfd->berrno = errno;
    }
-   stat = write(bfd->fid, buf, count);
-   bfd->berrno = errno;
+
    bfd->block++;
    if (stat > 0) {
       bfd->total_bytes += stat;
