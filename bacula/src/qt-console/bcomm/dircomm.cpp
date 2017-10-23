@@ -329,9 +329,10 @@ int DirComm::read()
       return -1;
    }
    while (m_sock) {
+      /* Poll DIR every 50 milliseconds */
       for (;;) {
          if (!m_sock) break;
-         stat = m_sock->wait_data_intr(0, 50000);
+         stat = m_sock->wait_data_intr(0, 50); /* wait 50 milliseconds */
          if (stat > 0) {
             break;
          } 
