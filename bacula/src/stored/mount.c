@@ -217,6 +217,7 @@ mount_next_vol:
 
       } else {
          Dmsg0(100, "set_unload\n");
+         mark_volume_read_only();
          dev->set_unload();              /* force ask sysop */
          ask = true;
       }
@@ -722,6 +723,23 @@ void DCR::mark_volume_in_error()
    Dmsg0(50, "set_unload\n");
    dev->set_unload();                 /* must get a new volume */
 }
+
+/*
+ * Mark volume read_only in catalog
+ */
+void DCR::mark_volume_read_only()
+{
+   Jmsg(jcr, M_INFO, 0, _("Marking Volume \"%s\" Read-Only in Catalog.\n"),
+        VolumeName);
+   dev->VolCatInfo = VolCatInfo;       /* structure assignment */
+   dev->setVolCatStatus("Read-Only");
+   Dmsg0(150, "dir_update_vol_info. Set Read-Only.\n");
+   dir_update_volume_info(this, false, false);
+   volume_unused(this);
+   Dmsg0(50, "set_unload\n");
+   dev->set_unload();                 /* must get a new volume */
+}
+
 
 /*
  * The Volume is not in the correct slot, so mark this
