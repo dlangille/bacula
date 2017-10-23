@@ -302,7 +302,7 @@ bool DCR::write_block_to_dev()
          dev->update_freespace();
          if (dev->is_freespace_ok() && dev->free_space < dev->min_free_space) {
             dev->set_nospace();
-            Jmsg(jcr, M_WARNING, 0, _("Out of freespace caused End of Volume \"%s\" at %s on device %s. Write of %u bytes got %d.\n"),
+            Jmsg(jcr, M_FATAL, 0, _("Out of freespace caused End of Volume \"%s\" at %s on device %s. Write of %u bytes got %d.\n"),
                dev->getVolCatName(),
                dev->print_addr(ed1, sizeof(ed1)), dev->print_name(), wlen, stat);
          } else {
