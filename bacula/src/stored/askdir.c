@@ -878,7 +878,15 @@ bool dir_ask_sysop_to_mount_volume(DCR *dcr, bool write_access)
       return false;
    }
 
-   for ( ; job_canceled(jcr); ) {
+   for ( ;; ) {
+      if (job_canceled(jcr)) {
+         Mmsg(dev->errmsg,
+              _("Job %s canceled while waiting for mount on Storage Device \"%s\".\n"),
+              jcr->Job, dev->print_name());
+         Jmsg(jcr, M_INFO, 0, "%s", dev->errmsg);
+         dev->poll = false;
+         return false;
+      }
       /*
        * If we are not polling, and the wait timeout or the
        *   user explicitly did a mount, send him the message.
