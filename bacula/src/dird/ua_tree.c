@@ -317,7 +317,7 @@ static int set_extract(UAContext *ua, TREE_NODE *node, TREE_CTX *tree, bool extr
        * Walk up tree marking any unextracted parent to be
        * extracted.
        */
-      if (extract) {
+      if (!tree->no_auto_parent && extract) {
          while (node->parent && !node->parent->extract_dir) {
             node = node->parent;
             node->extract_dir = true;

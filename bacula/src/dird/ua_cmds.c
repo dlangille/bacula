@@ -143,7 +143,7 @@ static struct cmdstruct commands[] = {                                      /* C
  { NT_("query"),      query_cmd,     _("Query catalog"), NT_("[<query-item-number>]"),      false},
  { NT_("restore"),    restore_cmd,   _("Restore files"),
    NT_("where=</path> client=<client> storage=<storage> bootstrap=<file> "
-       "restorejob=<job> restoreclient=<cli>"
+       "restorejob=<job> restoreclient=<cli> noautoparent"
        "\n\tcomment=<text> jobid=<jobid> jobuser=<user> jobgroup=<grp> copies done select all"), false},
 
  { NT_("relabel"),    relabel_cmd,   _("Relabel a tape"),

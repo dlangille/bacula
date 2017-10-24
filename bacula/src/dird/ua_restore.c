@@ -109,8 +109,10 @@ int restore_cmd(UAContext *ua, const char *cmd)
    for (i = 0; i < ua->argc ; i++) {
       if (strcasecmp(ua->argk[i], "fdcalled") == 0) {
          rx.fdcalled = true;
-      }
 
+      } else if (strcasecmp(ua->argk[i], "noautoparent") == 0) {
+         rx.no_auto_parent = true;
+      }
       if (!ua->argv[i]) {
          continue;           /* skip if no value given */
       }
@@ -537,7 +539,7 @@ static int user_select_jobids_or_files(UAContext *ua, RESTORE_CTX *rx)
       "xxxxxxxxx",     /* 24 */
       "fdcalled",      /* 25 */
       "when",          /* 26 */
-
+      "noautoparent",  /* 27 */
       NULL
    };
 
@@ -1245,6 +1247,7 @@ static bool build_directory_tree(UAContext *ua, RESTORE_CTX *rx)
    tree.ua = ua;
    tree.all = rx->all;
    tree.hardlinks_in_mem = rx->hardlinks_in_mem;
+   tree.no_auto_parent = rx->no_auto_parent;
    last_JobId = 0;
    tree.last_dir_acl = NULL;
    /*

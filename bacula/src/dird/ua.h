@@ -80,6 +80,7 @@ struct TREE_CTX {
    int cnt;                           /* count for user feedback */
    bool all;                          /* if set mark all as default */
    bool hardlinks_in_mem;             /* Set to optimize for speed */
+   bool no_auto_parent;               /* Set to not select parent directories */
    UAContext *ua;
    uint32_t FileEstimate;             /* estimate of number of files */
    uint32_t FileCount;                /* current count of files */
@@ -133,6 +134,7 @@ struct RESTORE_CTX {
    bool all;                          /* mark all as default */
    bool hardlinks_in_mem;             /* keep hard links in memory */
    bool fdcalled;                     /* True if we should reuse the FD socket */
+   bool no_auto_parent;               /* Select or not parent directories */
    NAME_LIST name_list;
    POOLMEM *component_fname;
    FILE *component_fd;
