@@ -274,6 +274,8 @@ int        get_blowup            (void);
 bool       handle_hangup_blowup  (JCR *jcr, uint32_t file_count, uint64_t byte_count);
 void       set_assert_msg        (const char *file, int line, const char *msg);
 void       register_message_callback(void msg_callback(int type, char *msg));
+void       setup_daemon_message_queue();
+void       free_daemon_message_queue();
 
 /* bnet_server.c */
 void       bnet_thread_server(dlist *addr_list, int max_clients,

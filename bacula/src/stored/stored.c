@@ -40,10 +40,6 @@
 /* Imported functions and variables */
 extern bool parse_sd_config(CONFIG *config, const char *configfile, int exit_code);
 
-extern dlist *daemon_msg_queue;
-extern pthread_mutex_t daemon_msg_queue_mutex;
-
-
 /* Forward referenced functions */
 void terminate_stored(int sig);
 static int check_resources();
@@ -131,7 +127,6 @@ int main (int argc, char *argv[])
    pthread_t thid;
    char *uid = NULL;
    char *gid = NULL;
-   MQUEUE_ITEM *item = NULL;
 
    start_heap = sbrk(0);
    setlocale(LC_ALL, "");
@@ -142,8 +137,7 @@ int main (int argc, char *argv[])
    my_name_is(argc, argv, "bacula-sd");
    init_msg(NULL, NULL);
    daemon_start_time = time(NULL);
-   /* Setup daemon message queue */
-   daemon_msg_queue = New(dlist(item, &item->link));
+   setup_daemon_message_queue();
 
    /* Sanity checks */
    if (TAPE_BSIZE % B_DEV_BSIZE != 0 || TAPE_BSIZE / B_DEV_BSIZE == 0) {
@@ -756,10 +750,7 @@ void terminate_stored(int sig)
    unload_plugins();
    free_volume_lists();
 
-   P(daemon_msg_queue_mutex);
-   daemon_msg_queue->destroy();
-   free(daemon_msg_queue);
-   V(daemon_msg_queue_mutex);
+   free_daemon_message_queue();
 
    foreach_res(device, R_DEVICE) {
       Dmsg2(10, "Term device %s %s\n", device->hdr.name, device->device_name);

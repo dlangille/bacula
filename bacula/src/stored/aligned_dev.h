@@ -23,8 +23,6 @@
 #ifndef _ALIGNED_DEV_H_
 #define _ALIGNED_DEV_H_
 
-inline const char *DEVICE::aligned_name() const { return adev_name; }
-
 class aligned_dev : public file_dev {
 public:
 

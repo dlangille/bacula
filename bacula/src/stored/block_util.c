@@ -251,7 +251,7 @@ void DEVICE::free_dcr_blocks(DCR *dcr)
 void free_block(DEV_BLOCK *block)
 {
    if (block) {
-      Dmsg1(999, "free_block block=%p\n", block);
+      Dmsg1(999, "free_block buffer=%p\n", block->buf);
       if (block->buf) {
          free_memory(block->buf);
       }

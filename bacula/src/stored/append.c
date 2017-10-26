@@ -304,7 +304,7 @@ fi_checked:
    if (ok || dev->can_write()) {
       if (!dev->flush_before_eos(dcr)) {
          /* Print only if ok and not cancelled to avoid spurious messages */
-         if (!jcr->is_job_canceled()) {
+         if (ok && !jcr->is_job_canceled()) {
             Jmsg2(jcr, M_FATAL, 0, _("Fatal append error on device %s: ERR=%s\n"),
                   dev->print_name(), dev->bstrerror());
             Dmsg0(100, _("Set ok=FALSE after write_block_to_device.\n"));

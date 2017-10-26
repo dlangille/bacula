@@ -400,25 +400,27 @@ bool DEVICE::write_volume_label(DCR *dcr, const char *VolName,
       goto bail_out;
    }
 
-   /* Not aligned data */
-   if (dev->weof(dcr, 1)) {
-      dev->set_labeled();
-   }
-
-   if (chk_dbglvl(100))  {
-      dev->dump_volume_label();
-   }
-   Dmsg0(50, "Call reserve_volume\n");
-   /**** ***FIXME*** if dev changes, dcr must be updated */
-   if (reserve_volume(dcr, VolName) == NULL) {
-      if (!dcr->jcr->errmsg[0]) {
-         Mmsg3(dcr->jcr->errmsg, _("Could not reserve volume %s on %s device %s\n"),
-              dev->VolHdr.VolumeName, dev->print_type(), dev->print_name());
+   if (!dev->is_aligned()) {
+      /* Not aligned data */
+      if (dev->weof(dcr, 1)) {
+         dev->set_labeled();
       }
-      Dmsg1(50, "%s", dcr->jcr->errmsg);
-      goto bail_out;
+
+      if (chk_dbglvl(100))  {
+         dev->dump_volume_label();
+      }
+      Dmsg0(50, "Call reserve_volume\n");
+      /**** ***FIXME*** if dev changes, dcr must be updated */
+      if (reserve_volume(dcr, VolName) == NULL) {
+         if (!dcr->jcr->errmsg[0]) {
+            Mmsg3(dcr->jcr->errmsg, _("Could not reserve volume %s on %s device %s\n"),
+                 dev->VolHdr.VolumeName, dev->print_type(), dev->print_name());
+         }
+         Dmsg1(50, "%s", dcr->jcr->errmsg);
+         goto bail_out;
+      }
+      dev = dcr->dev;                 /* may have changed in reserve_volume */
    }
-   dev = dcr->dev;                    /* may have changed in reserve_volume */
    dev->clear_append();               /* remove append since this is PRE_LABEL */
    Leave(100);
    return true;

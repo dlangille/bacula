@@ -37,9 +37,6 @@ CLIENT *me;                           /* my resource */
 bool no_signals = false;
 void *start_heap;
 extern struct s_cmds cmds[];
-extern dlist *daemon_msg_queue;
-extern pthread_mutex_t daemon_msg_queue_mutex;
-
 
 #ifndef CONFIG_FILE                   /* Might be overwritten */
  #define CONFIG_FILE "bacula-fd.conf" /* default config file */
@@ -90,7 +87,6 @@ int main (int argc, char *argv[])
    bool keep_readall_caps = false;
    char *uid = NULL;
    char *gid = NULL;
-   MQUEUE_ITEM *item = NULL;
 
    start_heap = sbrk(0);
    setlocale(LC_ALL, "");
@@ -101,8 +97,7 @@ int main (int argc, char *argv[])
    my_name_is(argc, argv, PROG_NAME);
    init_msg(NULL, NULL);
    daemon_start_time = time(NULL);
-   /* Setup daemon message queue */
-   daemon_msg_queue = New(dlist(item, &item->link));
+   setup_daemon_message_queue();
 
    while ((ch = getopt(argc, argv, "c:d:fg:kmstTu:v?D:")) != -1) {
       switch (ch) {
@@ -285,10 +280,7 @@ void terminate_filed(int sig)
    generate_daemon_event(NULL, "Exit");
    unload_plugins();
 
-   P(daemon_msg_queue_mutex);
-   daemon_msg_queue->destroy();
-   free(daemon_msg_queue);
-   V(daemon_msg_queue_mutex);
+   free_daemon_message_queue();
 
    if (!test_config) {
       write_state_file(me->working_directory,

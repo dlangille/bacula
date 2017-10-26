@@ -402,7 +402,6 @@ public:
    bool must_load() const { return m_load; };
    const char *strerror() const;
    const char *archive_name() const;
-   const char *aligned_name() const;
    const char *name() const;
    const char *print_name() const;    /* Name for display purposes */
    void set_ateot(); /* in dev.c */
@@ -795,7 +794,6 @@ public:
    int try_autolabel(bool opened);
    bool find_a_volume();
    bool is_suitable_volume_mounted();
-   bool is_eod_valid();
    int check_volume_label(bool &ask, bool &autochanger);
    void release_volume();
    void do_swapping(bool is_writing);

@@ -773,7 +773,7 @@ static void rectestcmd()
    }
    free_record(rec);
    Dmsg0(900, "=== free_blocks\n");
-   dcr->dev->free_dcr_blocks(dcr);
+   free_block(dcr->block);
    dcr->block = save_block;     /* restore block to dcr */
    Dsm_check(200);
 }

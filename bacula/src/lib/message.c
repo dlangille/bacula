@@ -1905,3 +1905,17 @@ bool debug_parse_tags(const char *options, int64_t *current_level)
 }
 
 int generate_daemon_event(JCR *jcr, const char *event) { return 0; }
+
+void setup_daemon_message_queue()
+{
+   static MQUEUE_ITEM *item = NULL;
+   daemon_msg_queue = New(dlist(item, &item->link));
+}
+
+void free_daemon_message_queue()
+{
+   P(daemon_msg_queue_mutex);
+   daemon_msg_queue->destroy();
+   free(daemon_msg_queue);
+   V(daemon_msg_queue_mutex);
+}

@@ -208,7 +208,7 @@ bool file_dev::open_device(DCR *dcr, int omode)
          pm_strcpy(dcr->jcr->errmsg, errmsg);
       }
    }
-   Dmsg1(100, "open dev: disk fd=%d opened, aligned=%d\n", m_fd);
+   Dmsg1(100, "open dev: disk fd=%d opened\n", m_fd);
 
    state |= preserve;                 /* reset any important state info */
    Leave(dbglvl);
@@ -235,7 +235,6 @@ bool DEVICE::truncate(DCR *dcr)
       break;
    }
 
-   /* Do truncate for 1 or 2 devices */
    Dmsg2(100, "Truncate adata=%d fd=%d\n", dev->adata, dev->m_fd);
    if (ftruncate(dev->m_fd, 0) != 0) {
       berrno be;

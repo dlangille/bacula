@@ -82,8 +82,6 @@ extern dlist client_globals;
 extern dlist store_globals;
 extern dlist job_globals;
 extern dlist sched_globals;
-extern dlist *daemon_msg_queue;
-extern pthread_mutex_t daemon_msg_queue_mutex;
 extern RES_ITEM job_items[];
 #if defined(_MSC_VER)
 extern "C" { // work around visual compiler mangling variables
@@ -175,7 +173,6 @@ int main (int argc, char *argv[])
    bool no_signals = false;
    char *uid = NULL;
    char *gid = NULL;
-   MQUEUE_ITEM *item = NULL;
 
    /* DELETE ME when bugs in MA1512, MA1632 MA1639 are fixed */
    MA1512_reload_job_end_cb = reload_job_end_cb;
@@ -190,8 +187,7 @@ int main (int argc, char *argv[])
    init_msg(NULL, NULL);              /* initialize message handler */
    init_reload();
    daemon_start_time = time(NULL);
-   /* Setup daemon message queue */
-   daemon_msg_queue = New(dlist(item, &item->link));
+   setup_daemon_message_queue();
    console_command = run_console_command;
 
    while ((ch = getopt(argc, argv, "c:d:fg:mr:stu:v?T")) != -1) {
@@ -698,10 +694,7 @@ void terminate_dird(int sig)
    term_msg();                        /* terminate message handler */
    cleanup_crypto();
 
-   P(daemon_msg_queue_mutex);
-   daemon_msg_queue->destroy();
-   free(daemon_msg_queue);
-   V(daemon_msg_queue_mutex);
+   free_daemon_message_queue();
 
    if (reload_table) {
       free(reload_table);

@@ -110,6 +110,10 @@ bool fixup_device_block_write_error(DCR *dcr, int retries)
    bstrncpy(PrevVolName, dev->getVolCatName(), sizeof(PrevVolName));
    bstrncpy(dev->VolHdr.PrevVolumeName, PrevVolName, sizeof(dev->VolHdr.PrevVolumeName));
 
+   /* create temporary block, that will be released at the end, current blocks
+    * have been saved in local DEV_BLOCK above and will be restored before to
+    * leave the function
+    */
    dev->new_dcr_blocks(dcr);
 
    /* Inform User about end of medium */
