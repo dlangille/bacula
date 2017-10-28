@@ -28,6 +28,11 @@
 #include "bacula.h"                   /* pull in global headers */
 #include "stored.h"                   /* pull in Storage Deamon headers */
 
+/* Make sure some EROFS is defined */
+#ifndef EROFS                         /* read-only file system */
+#define EROFS -1                      /* make impossible errno */
+#endif
+
 static pthread_mutex_t mount_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 enum {
@@ -210,14 +215,20 @@ mount_next_vol:
             dev->print_type(), dev->print_name(), dcr->VolumeName, dev->bstrerror());
 
       /* If not removable, Volume is broken. This is a serious issue here. */
-      if(dev->is_file() && !dev->is_removable()) {
+      if (dev->is_file() && !dev->is_removable()) {
          Dmsg3(40, "Volume \"%s\" not loaded on %s device %s.\n",
                dcr->VolumeName, dev->print_type(), dev->print_name());
-         mark_volume_in_error();
+         if (dev->dev_errno == EACCES || dev->dev_errno == EROFS) {
+            mark_volume_read_only();
+         } else {
+            mark_volume_in_error();
+         }
 
       } else {
          Dmsg0(100, "set_unload\n");
-         mark_volume_read_only();
+         if (dev->dev_errno == EACCES || dev->dev_errno == EROFS) {
+            mark_volume_read_only();
+         }
          dev->set_unload();              /* force ask sysop */
          ask = true;
       }
