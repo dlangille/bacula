@@ -64,6 +64,7 @@ void init_device_resources();
 
 static char *runjob = NULL;
 static bool foreground = false;
+static bool make_pid_file = true;     /* create pid file */
 static void init_reload(void);
 static CONFIG *config;
 static bool test_config = false;
@@ -131,6 +132,7 @@ static void usage()
       "     -g               groupid\n"
       "     -m               print kaboom output (for debugging)\n"
       "     -r <job>         run <job> now\n"
+      "     -P               do not create pid file\n"
       "     -s               no signals\n"
       "     -t               test - read configuration and exit\n"
       "     -u               userid\n"
@@ -190,7 +192,7 @@ int main (int argc, char *argv[])
    setup_daemon_message_queue();
    console_command = run_console_command;
 
-   while ((ch = getopt(argc, argv, "c:d:fg:mr:stu:v?T")) != -1) {
+   while ((ch = getopt(argc, argv, "c:d:fg:mPr:stu:v?T")) != -1) {
       switch (ch) {
       case 'c':                    /* specify config file */
          if (configfile != NULL) {
@@ -233,6 +235,10 @@ int main (int argc, char *argv[])
 
       case 'm':                    /* print kaboom output */
          prt_kaboom = true;
+         break;
+
+      case 'P':                    /* no pid file */
+         make_pid_file = false;
          break;
 
       case 'r':                    /* run job */
@@ -307,8 +313,10 @@ int main (int argc, char *argv[])
 
    if (!test_config) {
       /* Create pid must come after we are a daemon -- so we have our final pid */
-      create_pid_file(director->pid_directory, "bacula-dir",
-                      get_first_port_host_order(director->DIRaddrs));
+      if (make_pid_file) {
+         create_pid_file(director->pid_directory, "bacula-dir",
+                          get_first_port_host_order(director->DIRaddrs));
+      }
       read_state_file(director->working_directory, "bacula-dir",
                       get_first_port_host_order(director->DIRaddrs));
    }
@@ -673,7 +681,9 @@ void terminate_dird(int sig)
    unload_plugins();
    if (!test_config) {
       write_state_file(director->working_directory, "bacula-dir", get_first_port_host_order(director->DIRaddrs));
-      delete_pid_file(director->pid_directory, "bacula-dir", get_first_port_host_order(director->DIRaddrs));
+      if (make_pid_file) {
+         delete_pid_file(director->pid_directory, "bacula-dir", get_first_port_host_order(director->DIRaddrs));
+      }
    }
    term_scheduler();
    term_job_server();

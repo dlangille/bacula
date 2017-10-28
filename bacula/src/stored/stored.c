@@ -64,7 +64,8 @@ static pthread_t server_tid;
 static bool server_tid_valid = false;
 
 /* Global static variables */
-static bool foreground = 0;
+static bool foreground = false;
+static bool make_pid_file = true;     /* create pid file */
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 static workq_t dird_workq;            /* queue for processing connections */
 static CONFIG *config;
@@ -84,6 +85,7 @@ static void usage()
       "     -g <group>        set groupid to group\n"
       "     -m                print kaboom output (for debugging)\n"
       "     -p                proceed despite I/O errors\n"
+      "     -P                do not create pid file\n"
       "     -s                no signals (for debugging)\n"
       "     -t                test - read config and exit\n"
       "     -u <user>         userid to <user>\n"
@@ -148,7 +150,7 @@ int main (int argc, char *argv[])
       Jmsg1(NULL, M_ABORT, 0, _("Tape block size (%d) is not a power of 2\n"), TAPE_BSIZE);
    }
 
-   while ((ch = getopt(argc, argv, "c:d:fg:mpstu:v?Ti")) != -1) {
+   while ((ch = getopt(argc, argv, "c:d:fg:mpPstu:v?Ti")) != -1) {
       switch (ch) {
       case 'c':                    /* configuration file */
          if (configfile != NULL) {
@@ -188,12 +190,21 @@ int main (int argc, char *argv[])
          gid = optarg;
          break;
 
+      /* Temp code to enable new match_bsr() code, not documented */
+      case 'i':
+         use_new_match_all = 1;
+
+         break;
       case 'm':                    /* print kaboom output */
          prt_kaboom = true;
          break;
 
       case 'p':                    /* proceed in spite of I/O errors */
          forge_on = true;
+         break;
+
+      case 'P':                    /* no pid file */
+         make_pid_file = false;
          break;
 
       case 's':                    /* no signals */
@@ -210,11 +221,6 @@ int main (int argc, char *argv[])
 
       case 'v':                    /* verbose */
          verbose++;
-         break;
-
-      /* Temp code to enable new match_bsr() code, not documented */
-      case 'i':
-         use_new_match_all = 1;
          break;
 
       case '?':
@@ -270,9 +276,10 @@ int main (int argc, char *argv[])
 
    my_name_is(0, (char **)NULL, me->hdr.name);     /* Set our real name */
 
-
-   create_pid_file(me->pid_directory, "bacula-sd",
-                   get_first_port_host_order(me->sdaddrs));
+   if (make_pid_file) {
+      create_pid_file(me->pid_directory, "bacula-sd",
+                      get_first_port_host_order(me->sdaddrs));
+   }
    read_state_file(me->working_directory, "bacula-sd",
                    get_first_port_host_order(me->sdaddrs));
 
@@ -741,8 +748,10 @@ void terminate_stored(int sig)
    if (!test_config) {
       write_state_file(me->working_directory,
                        "bacula-sd", get_first_port_host_order(me->sdaddrs));
-      delete_pid_file(me->pid_directory,
-                      "bacula-sd", get_first_port_host_order(me->sdaddrs));
+      if (make_pid_file) {
+         delete_pid_file(me->pid_directory,
+                         "bacula-sd", get_first_port_host_order(me->sdaddrs));
+      }
    }
 
    Dmsg1(200, "In terminate_stored() sig=%d\n", sig);

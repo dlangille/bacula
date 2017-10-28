@@ -46,6 +46,7 @@ extern struct s_cmds cmds[];
 char *configfile = NULL;
 static bool test_config = false;
 static bool foreground = false;
+static bool make_pid_file = true;     /* create pid file */
 static workq_t dir_workq;             /* queue of work from Director */
 static pthread_t server_tid;
 static CONFIG *config;
@@ -63,6 +64,7 @@ static void usage()
       "     -g               groupid\n"
       "     -k               keep readall capabilities\n"
       "     -m               print kaboom output (for debugging)\n"
+      "     -P               do not create pid file\n"
       "     -s               no signals (for debugging)\n"
       "     -t               test configuration file and exit\n"
       "     -T               set trace on\n"
@@ -99,7 +101,7 @@ int main (int argc, char *argv[])
    daemon_start_time = time(NULL);
    setup_daemon_message_queue();
 
-   while ((ch = getopt(argc, argv, "c:d:fg:kmstTu:v?D:")) != -1) {
+   while ((ch = getopt(argc, argv, "c:d:fg:kmPstTu:v?D:")) != -1) {
       switch (ch) {
       case 'c':                    /* configuration file */
          if (configfile != NULL) {
@@ -141,6 +143,10 @@ int main (int argc, char *argv[])
 
       case 'm':                    /* print kaboom output */
          prt_kaboom = true;
+         break;
+
+      case 'P':
+         make_pid_file = false;
          break;
 
       case 's':
@@ -228,8 +234,10 @@ int main (int argc, char *argv[])
    lmgr_init_thread(); /* initialize the lockmanager stack */
 
    /* Maximum 1 daemon at a time */
-   create_pid_file(me->pid_directory, PROG_NAME,
-                   get_first_port_host_order(me->FDaddrs));
+   if (make_pid_file) {
+      create_pid_file(me->pid_directory, PROG_NAME,
+                      get_first_port_host_order(me->FDaddrs));
+   }
    read_state_file(me->working_directory, PROG_NAME,
                    get_first_port_host_order(me->FDaddrs));
 
@@ -285,8 +293,10 @@ void terminate_filed(int sig)
    if (!test_config) {
       write_state_file(me->working_directory,
                        "bacula-fd", get_first_port_host_order(me->FDaddrs));
-      delete_pid_file(me->pid_directory,
-                      "bacula-fd", get_first_port_host_order(me->FDaddrs));
+      if (make_pid_file) {
+         delete_pid_file(me->pid_directory,
+                         "bacula-fd", get_first_port_host_order(me->FDaddrs));
+      }
    }
 
    if (configfile != NULL) {
