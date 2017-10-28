@@ -34,12 +34,15 @@ setdebug level=200 client
 @#setdebug level=100 director
 label storage=File volume=TestVolume001
 label storage=File volume=TestVolume002
+label storage=File volume=TestVolume003
+label storage=File volume=TestVolume004
 run job=$JobName yes
 status client
 wait
 messages
 quit
 END_OF_DATA
+
 
 run_bacula
 check_for_zombie_jobs storage=File
@@ -49,6 +52,9 @@ check_for_zombie_jobs storage=File
 sleep 1
 echo "ficheriro1.txt" >${tmpsrc}/ficheriro1.txt
 cp -f ${tmpsrc}/dird.c ${tmpsrc}/ficheriro2.txt
+# set Volumes as read-only
+chmod -w $tmp/TestVolume001
+chmod -w $tmp/TestVolume002
 
 cat <<END_OF_DATA >${tmp}/bconcmds
 @output /dev/null
@@ -72,6 +78,8 @@ messages
 @$out ${tmp}/log1.out
 setdebug level=4 storage=File
 run level=Incremental job=$JobName yes
+wait
+llist volumes
 wait
 messages
 @# 
