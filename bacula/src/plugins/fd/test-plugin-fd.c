@@ -121,7 +121,7 @@ struct plugin_ctx {
    char *reader;                      /* reader program for backup */
    char *writer;                      /* writer program for backup */
 
-   char where[512];
+   char where[1000];
    int replace;
 
    int nb_obj;                        /* Number of objects created */
@@ -669,10 +669,10 @@ static bRC endRestoreFile(bpContext *ctx)
 static bRC createFile(bpContext *ctx, struct restore_pkt *rp)
 {
    printf("test-plugin-fd: createFile\n");
-   if (strlen(rp->where) > 512) {
-      printf("Restore target dir too long. Restricting to first 512 bytes.\n");
+   if (strlen(rp->where) > 990) {
+      printf("Restore target dir too long. Restricting to first 990 bytes.\n");
    }
-   strncpy(((struct plugin_ctx *)ctx->pContext)->where, rp->where, 513);
+   strncpy(((struct plugin_ctx *)ctx->pContext)->where, rp->where, 991);
    ((struct plugin_ctx *)ctx->pContext)->replace = rp->replace;
    rp->create_status = CF_EXTRACT;
    return bRC_OK;
