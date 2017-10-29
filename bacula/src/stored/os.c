@@ -116,6 +116,9 @@ void set_os_device_parameters(DCR *dcr)
       }
    }
 #if defined(MTIOCSETEOTMODEL)
+   if (dev->is_fifo()) {
+      return;   /* do not do tape stuff */
+   }
    uint32_t neof;
    if (dev->has_cap(CAP_TWOEOF)) {
       neof = 2;
