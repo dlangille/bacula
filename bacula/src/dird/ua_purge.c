@@ -676,18 +676,18 @@ int truncate_cmd(UAContext *ua, const char *cmd)
    if (find_arg(ua, "cache") > 0) {
       return cloud_volumes_cmd(ua, cmd, "truncate cache");
    }
-   
+
    memset(&pr, 0, sizeof(pr));
 
    /*
     * Look for all Purged volumes that can be recycled, are enabled and
-    *  have more the 10,000 bytes.
+    *  have more than 1,000 bytes (i.e. actually have data).
     */
    mr.Recycle = 1;
    mr.Enabled = 1;
-   mr.VolBytes = 200;
+   mr.VolBytes = 1000;
    bstrncpy(mr.VolStatus, "Purged", sizeof(mr.VolStatus));
-
+   /* Get list of volumes to truncate */
    if (!scan_storage_cmd(ua, cmd, true, /* allfrompool */
                          &drive, &mr, &pr, &action, storage, &nb, &results)) {
       goto bail_out;
