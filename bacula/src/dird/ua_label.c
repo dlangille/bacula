@@ -325,7 +325,7 @@ static int do_label(UAContext *ua, const char *cmd, int relabel)
    POOL_DBR pr;
    bool print_reminder = true;
    bool label_barcodes = false;
-   int ok = FALSE;
+   bool ok = false;
    int i, j;
    int drive;
    bool media_record_exists = false;

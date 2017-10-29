@@ -1003,8 +1003,8 @@ void do_messages(UAContext *ua, const char *cmd)
    if (do_truncate) {
       (void)ftruncate(fileno(con_fd), 0L);
    }
-   console_msg_pending = FALSE;
-   ua->user_notified_msg_pending = FALSE;
+   console_msg_pending = false;
+   ua->user_notified_msg_pending = false;
    pthread_cleanup_pop(0);
    Vw(con_lock);
 }

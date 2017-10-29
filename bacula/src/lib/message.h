@@ -195,6 +195,6 @@ extern DLL_IMP_EXP char          my_name[];
 extern DLL_IMP_EXP const char *  working_directory;
 extern DLL_IMP_EXP utime_t       daemon_start_time;
 
-extern DLL_IMP_EXP int           console_msg_pending;
+extern DLL_IMP_EXP bool          console_msg_pending;
 extern DLL_IMP_EXP FILE *        con_fd;                 /* Console file descriptor */
 extern DLL_IMP_EXP brwlock_t     con_lock;               /* Console lock structure */

@@ -58,7 +58,7 @@ int verbose = 0;                      /* increase User messages */
 int64_t debug_level = 0;              /* debug level */
 int64_t debug_level_tags = 0;         /* debug tags */
 int32_t debug_flags = 0;              /* debug flags */
-int console_msg_pending = false;
+bool console_msg_pending = false;
 utime_t daemon_start_time = 0;        /* Daemon start time */
 FILE *con_fd = NULL;                  /* Console file descriptor */
 brwlock_t con_lock;                   /* Console lock structure */
@@ -420,7 +420,7 @@ void init_console_msg(const char *wd)
           con_fname, be.bstrerror());
    }
    if (lseek(fd, 0, SEEK_END) > 0) {
-      console_msg_pending = 1;
+      console_msg_pending = true;
    }
    close(fd);
    con_fd = bfopen(con_fname, "a+b");
