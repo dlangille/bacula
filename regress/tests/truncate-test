@@ -93,6 +93,7 @@ sql
 select VolumeName, VolStatus, ActionOnPurge FROM Media;
 
 setdebug level=100 director
+messages
 wait
 quit
 END_OF_DATA
@@ -187,6 +188,7 @@ select VolumeName, ActionOnPurge FROM Media;
 select Name, ActionOnPurge FROM Pool;
 
 wait
+messages
 quit
 END_OF_DATA
 
@@ -216,6 +218,31 @@ r=`awk '/TestVolume002/ { print $4 }' $tmp/log4.out`
 if [ "$r" != 0 ]; then
     print_debug "ERROR 7: ActionOnPurge on Media record should be 0"
     estat=7
+fi
+
+# Now test if the truncate command truncates labeled Volumes
+cat >tmp/bconcmds <<END_OF_DATA
+truncate allpools storage=File
+messages
+wait
+@$out $tmp/log6.out
+@# These truncates should not truncate any Volumes
+truncate allpools storage=File
+truncate allpools storage=File
+truncate allpools storage=File
+wait
+messages
+quit
+END_OF_DATA
+
+run_bacula
+stop_bacula
+
+grep "has been truncated" $tmp/log6.out >$tmp/log7.out
+if [ $? = 0 ] ; then
+    cat $tmp/log7.out
+    print_debug "ERROR 8: truncated volumes are truncated multiple times"
+    estat=8
 fi
 
 end_test
