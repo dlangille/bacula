@@ -247,6 +247,7 @@ DROP TABLE BaseFiles;
 ALTER TABLE basefiles_temp RENAME TO BaseFiles;
 
 CREATE INDEX job_jobtdate_inx ON job (JobTDate);
+ALTER TABLE Pool ADD COLUMN CacheRetention BIGINT DEFAULT 0;
 
 UPDATE Version SET VersionId=16;
 COMMIT;
