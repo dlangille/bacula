@@ -1,6 +1,6 @@
 # Systemd Bacula service file
 #
-# Copyright (C) 2000-2016 Kern Sibbald
+# Copyright (C) 2000-2017 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
 # /lib/systemd/system/bacula-dir.service
@@ -22,14 +22,13 @@ RequiresMountsFor=@working_dir@ @sysconfdir@ @sbindir@ @piddir@
 
 # From http://www.freedesktop.org/software/systemd/man/systemd.service.html
 [Service]
-Type=forking
+Type=simple
 User=@dir_user@
 Group=@dir_group@
-ExecStart=@sbindir@/bacula-dir -c @sysconfdir@/bacula-dir.conf
-PIDFile=@piddir@/bacula-dir.@dir_port@.pid
+ExecStart=@sbindir@/bacula-dir -fP -c @sysconfdir@/bacula-dir.conf
 ExecReload=@sbindir@/bacula-dir -t -c @sysconfdir@/bacula-dir.conf
 ExecReload=/bin/kill -HUP $MAINPID
-StandardError=syslog
+SuccessExitStatus=15
 
 [Install]
 WantedBy=multi-user.target
