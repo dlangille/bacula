@@ -18,7 +18,7 @@
 Description=Bacula File Daemon service
 Requires=network.target
 After=network.target
-RequiresMountsFor=@working_dir@ @sysconfdir@ @sbindir@ @piddir@
+RequiresMountsFor=@working_dir@ @sysconfdir@ @sbindir@
 
 # from http://www.freedesktop.org/software/systemd/man/systemd.service.html
 [Service]
