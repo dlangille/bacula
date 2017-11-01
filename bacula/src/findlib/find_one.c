@@ -700,7 +700,7 @@ find_one_file(JCR *jcr, FF_PKT *ff_pkt,
        *    before traversing it.
        */
       rtn_stat = 1;
-      entry = (struct dirent *)malloc(sizeof(struct dirent) + name_max + 100);
+      entry = (struct dirent *)malloc(sizeof(struct dirent) + name_max + 1000);
       for ( ; !job_canceled(jcr); ) {
          char *p, *q;
          int i;
