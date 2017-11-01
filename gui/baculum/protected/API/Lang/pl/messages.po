@@ -379,3 +379,39 @@ msgstr "ustaw wszystkie zakresy"
 
 msgid "Go to configuration wizard"
 msgstr "Idź do przewodnika konfiguracji"
+
+msgid "Welcome on the Baculum API default page"
+msgstr "Witaj na stronie głównej Baculum API"
+
+msgid "Baculum API Client"
+msgstr "Klient API Baculum"
+
+msgid "Here you can try one from API commands"
+msgstr "Tutaj możesz wypróbować jedną z komend API"
+
+msgid "Starting..."
+msgstr "Start..."
+
+msgid "Username"
+msgstr "Użytkownik"
+
+msgid "Delete"
+msgstr "Usuń"
+
+msgid "Client ID"
+msgstr "ID klienta"
+
+msgid "Redirect URI"
+msgstr "Redirect URI"
+
+msgid "Scopes"
+msgstr "Zakresy"
+
+msgid "Bconsole Path"
+msgstr "Lokalizacja Bconsole"
+
+msgid "Access token:"
+msgstr "Żeton dostępu:"
+
+msgid "Send request"
+msgstr "Wyślij żądanie"

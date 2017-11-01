@@ -1,18 +1,18 @@
 <%@ MasterClass="Application.API.Layouts.Main" Theme="Baculum-v1"%>
 <com:TContent ID="Main">
 	<com:TClientScript ScriptUrl=<%~ ../../JavaScript/misc.js %> />
-	<h3 style="clear: left">Welcome on the Baculum API default page <input type="button" class="bbutton" onclick="window.location.href='<%=$this->getService()->constructUrl('Panel.APIInstallWizard')%>'" value="<%[ Go to configuration wizard ]%>" style="float: right" /></h3>
+	<h3 style="clear: left"><%[ Welcome on the Baculum API default page ]%> <input type="button" class="bbutton" onclick="window.location.href='<%=$this->getService()->constructUrl('Panel.APIInstallWizard')%>'" value="<%[ Go to configuration wizard ]%>" style="float: right" /></h3>
 	<div id="tabs">
 		<ul>
-			<li><a href="#tab1">Baculum API Client</a></li>
+			<li><a href="#tab1"><%[ Baculum API Client ]%></a></li>
 			<li><a href="#tab2"><%[ List HTTP Basic users ]%></a></li>
 			<li><a href="#tab3"><%[ List OAuth2 clients ]%></a></li>
 		</ul>
 		<div id="tab1">
-			<p>Here you can try one from API commands</p>
+			<p><%[ Here you can try one from API commands ]%></p>
 			<div>
 				<com:TJuiProgressbar ID="Progress" Options.Max="3" Options.Value="false" Width="700px" CssClass="center" Style="float: left">
-					<span id="progress_label">Starting...</span>
+					<span id="progress_label"><%[ Starting... ]%></span>
 				</com:TJuiProgressbar>
 				<img id="api_refresh" src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/icon_refresh.png" alt="<%[ Refresh token ]%>" title="<%[ Refresh token ]%>" onclick="oAPIHome.init_oauth2_client();" />
 			</div>
@@ -26,7 +26,7 @@
 					<option value="joblog">joblog</option>
 					<option value="bvfs">bvfs</option>
 				</select>
-				<input id="api_command" name="command" onkeydown="if (event.keyCode == 13) { oAPIHome.send_request(); }" /> <input class="api_button" type="button" name="apply" value="Send request" onclick="oAPIHome.send_request();" />
+				<input id="api_command" name="command" onkeydown="if (event.keyCode == 13) { oAPIHome.send_request(); }" /> <input class="api_button" type="button" name="apply" value="<%[ Send request ]%>" onclick="oAPIHome.send_request();" />
 			</div>
 			<div id="api_output">
 				<pre id="api_result"></pre>
@@ -44,17 +44,17 @@
 			>
 				<com:TBoundColumn
 					ID="BasicUsernameColumn"
-					HeaderText="Username"
+					HeaderText="<%[ Username ]%>"
 					DataField="username"
 				/>
 				<com:TTemplateColumn
 					ID="BasicDeleteColumn"
-					HeaderText="Delete"
+					HeaderText="<%[ Delete ]%>"
 					ItemStyle.HorizontalAlign="Center"
 				>
 				<prop:ItemTemplate>
 					<com:TActiveLinkButton
-						Text="Delete"
+						Text="<%[ Delete ]%>"
 						OnCommand="SourceTemplateControl.deleteBasicItem"
 						CommandParameter="<%=$this->getParent()->Data['username']%>"
 						Attributes.onclick="if(!confirm('<%[ Are you sure? ]%>')) return false;"
@@ -75,29 +75,29 @@
 			>
 				<com:TBoundColumn
 					ID="ClientIDColumn"
-					HeaderText="Client ID"
+					HeaderText="<%[ Client ID ]%>"
 					DataField="client_id"
 				/>
 				<com:TBoundColumn
-					HeaderText="Redirect URI"
+					HeaderText="<%[ Redirect URI ]%>"
 					DataField="redirect_uri"
 				/>
 				<com:TBoundColumn
-					HeaderText="Scopes"
+					HeaderText="<%[ Scopes ]%>"
 					DataField="scope"
 				/>
 				<com:TBoundColumn
-					HeaderText="Bconsole Path"
+					HeaderText="<%[ Bconsole Path ]%>"
 					DataField="bconsole_cfg_path"
 				/>
 				<com:TTemplateColumn
 					ID="OAuth2DeleteColumn"
-					HeaderText="Delete"
+					HeaderText="<%[ Delete ]%>"
 					ItemStyle.HorizontalAlign="Center"
 				>
 				<prop:ItemTemplate>
 					<com:TActiveLinkButton
-						Text="Delete"
+						Text="<%[ Delete ]%>"
 						OnCommand="SourceTemplateControl.deleteOAuth2Item"
 						CommandParameter="<%=$this->getParent()->Data['client_id']%>"
 						Attributes.onclick="if(!confirm('<%[ Are you sure? ]%>')) return false;"
@@ -193,7 +193,7 @@
 				request.done(function(data) {
 					if (typeof(data) == 'object' && data.hasOwnProperty('access_token')) {
 						this.token = data.access_token;
-						this.set_progress(3, 'Access token: ' + this.token);
+						this.set_progress(3, '<%[ Access token: ]%> ' + this.token);
 					}
 				}.bind(this));
 			},

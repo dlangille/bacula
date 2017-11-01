@@ -379,3 +379,39 @@ msgstr "set all scopes"
 
 msgid "Go to configuration wizard"
 msgstr "Go to configuration wizard"
+
+msgid "Welcome on the Baculum API default page"
+msgstr "Welcome on the Baculum API default page"
+
+msgid "Baculum API Client"
+msgstr "Baculum API Client"
+
+msgid "Here you can try one from API commands"
+msgstr "Here you can try one from API commands"
+
+msgid "Starting..."
+msgstr "Starting..."
+
+msgid "Username"
+msgstr "Username"
+
+msgid "Delete"
+msgstr "Delete"
+
+msgid "Client ID"
+msgstr "Client ID"
+
+msgid "Redirect URI"
+msgstr "Redirect URI"
+
+msgid "Scopes"
+msgstr "Scopes"
+
+msgid "Bconsole Path"
+msgstr "Bconsole Path"
+
+msgid "Access token:"
+msgstr "Access token:"
+
+msgid "Send request"
+msgstr "Send request"
