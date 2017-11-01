@@ -29,6 +29,7 @@ cat <<END_OF_DATA >${tmp}/bconcmds
 @output /dev/null
 messages
 @$out ${tmp}/log1.out
+setdebug level=500 dir
 setdebug level=200 storage=File
 setdebug level=200 client
 @#setdebug level=100 director

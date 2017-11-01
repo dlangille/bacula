@@ -549,7 +549,7 @@ void verify_cleanup(JCR *jcr, int TermCode)
            term_msg);
    } else {
       Jmsg(jcr, msg_type, 0, _("%s %s %s (%s):\n"
-"  Build:                  %s %s %s\n"
+"  Build OS:               %s %s %s\n"
 "  JobId:                  %d\n"
 "  Job:                    %s\n"
 "  FileSet:                %s\n"
