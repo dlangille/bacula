@@ -282,6 +282,7 @@ static void *handle_director_request(BSOCK *dir)
    jcr->crypto.pki_recipients = me->pki_recipients;
 
    dir->set_jcr(jcr);
+   jcr->set_killable(true);    /* allow dir to kill/cancel job */
    /* Initialize SD start condition variable */
    int errstat = pthread_cond_init(&jcr->job_start_wait, NULL);
    if (errstat != 0) {

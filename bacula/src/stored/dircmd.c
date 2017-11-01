@@ -215,6 +215,8 @@ void *handle_connection_request(void *arg)
 
    dequeue_messages(jcr);     /* dequeue any daemon messages */
 
+   jcr->set_killable(true);    /* allow dir to kill/cancel job */
+
    for (quit=false; !quit;) {
       /* Read command */
       if ((bnet_stat = bs->recv()) <= 0) {
