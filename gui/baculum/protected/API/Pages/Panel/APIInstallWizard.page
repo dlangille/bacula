@@ -60,6 +60,7 @@
 					<com:TActiveDropDownList ID="Lang" CssClass="textbox" Width="150px" OnTextChanged="setLang" CausesValidation="false" ClientSide.OnComplete="location.reload();">
 						<com:TListItem Value="en" Text="<%[ English ]%>" />
 						<com:TListItem Value="pl" Text="<%[ Polish ]%>" />
+						<com:TListItem Value="pt" Text="<%[ Portuguese ]%>" />
 					</com:TActiveDropDownList>
 					<com:TCompareValidator CssClass="validator-block" Display="Dynamic" ControlToValidate="Lang" DataType="String" ValueToCompare="none" Operator="NotEqual" Text="<%[ Please select language. ]%>" />
 				</div>
