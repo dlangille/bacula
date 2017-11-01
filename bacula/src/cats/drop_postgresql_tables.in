@@ -28,7 +28,7 @@ drop table Device;
 drop table Storage;
 drop table MediaType;
 drop table Status;
-drop table MAC;
+drop table if exists MAC;
 drop table log;
 drop table Location;
 drop table locationlog;
