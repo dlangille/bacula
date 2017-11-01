@@ -837,15 +837,11 @@ static void display_run(HPKT &hpkt)
          }
       } /* End all RunFields (overrides) */
       /* Now handle timing */
-      if (run->minute) {
-         if (!first) sendit(NULL, ",\n");
-         sendit(NULL, "      \"Minute\": %d", run->minute);
-         first = false;
-      }
       if (byte_is_set(run->hour, sizeof(run->hour))) {
          if (!first) sendit(NULL, ",\n");
          sendit(NULL, "      \"Hour\":");
          display_bit_array(run->hour, 24);
+         sendit(NULL, ",\n      \"Minute\": %d", run->minute);
          first = false;
       }
       /* bit 32 is used to store the keyword LastDay, so we look up to 0-31 */
