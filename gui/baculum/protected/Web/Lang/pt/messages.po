@@ -65,8 +65,8 @@ msgstr "Passo 1 - Selecionar o idioma"
 msgid "Please select language."
 msgstr "Por favor, selecione o idioma desejado."
 
-msgid "Step 2 - acceptance of a license"
-msgstr "Passo 2 - Aceitar termos de licença"
+msgid "Step 2 - add API instances"
+msgstr "Step 2 - add API instances"
 
 msgid "Step 3 - params of Bacula database connection"
 msgstr "Passo 3 - Configuração da conexão com o banco de dados do Bacula"
@@ -1414,3 +1414,9 @@ msgstr "API host:"
 
 msgid "Select host"
 msgstr "Select host"
+
+msgid "OAuth2 scopes (space separated):"
+msgstr "OAuth2 scopes (space separated):"
+
+msgid "Please enter OAuth2 scopes."
+msgstr "Please enter OAuth2 scopes."

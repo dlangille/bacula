@@ -1415,3 +1415,9 @@ msgstr "API host:"
 
 msgid "Select host"
 msgstr "Wybierz host"
+
+msgid "OAuth2 scopes (space separated):"
+msgstr "Zakresy OAuth2 (oddzielone spacją):"
+
+msgid "Please enter OAuth2 scopes."
+msgstr "Proszę wprowadzić zakresy OAuth2."
