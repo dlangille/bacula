@@ -172,6 +172,7 @@ class APIInstallWizard extends BaculumAPIPage {
 			$cfg_data['api']['client_id'] = $this->APIOAuth2ClientId->Text;
 		}
 		$cfg_data['api']['debug'] = isset($this->config['api']['debug']) ? $this->config['api']['debug'] : "0";
+		$cfg_data['api']['lang'] = $_SESSION['language'];
 		$cfg_data['db']['enabled'] = (integer)($this->DatabaseYes->Checked === true);
 		$cfg_data['db']['type'] = $this->DBType->SelectedValue;
 		$cfg_data['db']['name'] = $this->DBName->Text;
@@ -299,7 +300,7 @@ class APIInstallWizard extends BaculumAPIPage {
 		$_SESSION['language'] = $sender->SelectedValue;
 	}
 
-	 public function renderPanel($sender, $param) {
+	public function renderPanel($sender, $param) {
 		$this->LoginValidator->Display = ($this->Login->Enabled === true) ? 'Dynamic' : 'None';
 		$this->PortValidator->Display = ($this->Port->Enabled === true) ? 'Dynamic' : 'None';
 		$this->IPValidator->Display = ($this->IP->Enabled === true) ? 'Dynamic' : 'None';

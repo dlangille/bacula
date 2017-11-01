@@ -23,7 +23,15 @@
 session_start();
 
 Prado::using('Application.Common.Class.BaculumPage');
+Prado::using('Application.API.Class.APIConfig');
  
 class BaculumAPIPage extends BaculumPage {
+
+	public function onPreInit($param) {
+		parent::onPreInit($param);
+		$config = $this->getModule('api_config')->getConfig('api');
+		$lang = array_key_exists('lang', $config) ? $config['lang'] : APIConfig::DEFAULT_LANGUAGE;
+		$this->Application->getGlobalization()->Culture = $lang;
+	}
 }
 ?>

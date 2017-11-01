@@ -31,6 +31,11 @@ Prado::using('Application.Common.Class.ConfigFileModule');
 class APIConfig extends ConfigFileModule {
 
 	/**
+	 * Default application language
+	 */
+	const DEFAULT_LANGUAGE = 'en';
+
+	/**
 	 * API config file path
 	 */
 	const CONFIG_FILE_PATH = 'Application.API.Config.api';
