@@ -29,6 +29,7 @@ Prado::using('System.Web.UI.ActiveControls.TActiveButton');
 Prado::using('System.Web.UI.ActiveControls.TActiveRadioButton');
 Prado::using('System.Web.UI.ActiveControls.TActiveCustomValidator');
 Prado::using('Application.Common.Class.OAuth2');
+Prado::using('Application.API.Class.APIConfig');
 Prado::using('Application.API.Class.BException');
 Prado::using('Application.API.Class.BaculumAPIPage');
 Prado::using('Application.API.Class.Database');
@@ -172,7 +173,7 @@ class APIInstallWizard extends BaculumAPIPage {
 			$cfg_data['api']['client_id'] = $this->APIOAuth2ClientId->Text;
 		}
 		$cfg_data['api']['debug'] = isset($this->config['api']['debug']) ? $this->config['api']['debug'] : "0";
-		$cfg_data['api']['lang'] = $_SESSION['language'];
+		$cfg_data['api']['lang'] = isset($_SESSION['language']) ? $_SESSION['language'] : APIConfig::DEFAULT_LANGUAGE;
 		$cfg_data['db']['enabled'] = (integer)($this->DatabaseYes->Checked === true);
 		$cfg_data['db']['type'] = $this->DBType->SelectedValue;
 		$cfg_data['db']['name'] = $this->DBName->Text;
