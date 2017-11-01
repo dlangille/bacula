@@ -147,7 +147,7 @@
 				$('#tabs').tabs({active: 0});
 			},
 			init_basic: function() {
-				this.set_progress(3, 'Basic auth ready...');
+				this.set_progress(3, '<%[ Basic auth ready... ]%>');
 				document.getElementById(this.ids.refresh_token).style.display = 'none';
 			},
 			init_oauth2_client: function() {

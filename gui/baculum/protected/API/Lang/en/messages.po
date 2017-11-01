@@ -415,3 +415,6 @@ msgstr "Access token:"
 
 msgid "Send request"
 msgstr "Send request"
+
+msgid "Basic auth ready..."
+msgstr "Basic auth ready..."

@@ -415,3 +415,6 @@ msgstr "Żeton dostępu:"
 
 msgid "Send request"
 msgstr "Wyślij żądanie"
+
+msgid "Basic auth ready..."
+msgstr "Autentykacja Basic jest gotowa..."
