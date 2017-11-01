@@ -44,6 +44,13 @@ class APIInstallWizard extends BaculumAPIPage {
 	const DEFAULT_DB_LOGIN = 'bacula';
 	const DEFAULT_BCONSOLE_BIN = '/usr/sbin/bconsole';
 	const DEFAULT_BCONSOLE_CONF = '/etc/bacula/bconsole.conf';
+	const DEFAULT_BDIRJSON_BIN = '/usr/sbin/bdirjson';
+	const DEFAULT_DIR_CONF = '/etc/bacula/bacula-dir.conf';
+	const DEFAULT_BSDJSON_BIN = '/usr/sbin/bsdjson';
+	const DEFAULT_SD_CONF = '/etc/bacula/bacula-sd.conf';
+	const DEFAULT_BFDJSON_BIN = '/usr/sbin/bfdjson';
+	const DEFAULT_FD_CONF = '/etc/bacula/bacula-fd.conf';
+	const DEFAULT_BBCONJSON_BIN = '/usr/sbin/bbconsjson';
 
 	public function onPreInit($param) {
 		parent::onPreInit($param);
@@ -71,6 +78,14 @@ class APIInstallWizard extends BaculumAPIPage {
 				$this->Login->Text = self::DEFAULT_DB_LOGIN;
 				$this->BconsolePath->Text = self::DEFAULT_BCONSOLE_BIN;
 				$this->BconsoleConfigPath->Text = self::DEFAULT_BCONSOLE_CONF;
+				$this->BDirJSONPath->Text = self::DEFAULT_BDIRJSON_BIN;
+				$this->DirCfgPath->Text = self::DEFAULT_DIR_CONF;
+				$this->BSdJSONPath->Text = self::DEFAULT_BSDJSON_BIN;
+				$this->SdCfgPath->Text = self::DEFAULT_SD_CONF;
+				$this->BFdJSONPath->Text = self::DEFAULT_BFDJSON_BIN;
+				$this->FdCfgPath->Text = self::DEFAULT_FD_CONF;
+				$this->BBconsJSONPath->Text = self::DEFAULT_BBCONJSON_BIN;
+				$this->BconsCfgPath->Text = self::DEFAULT_BCONSOLE_CONF;
 				$this->DatabaseNo->Checked = true;
 				$this->ConsoleNo->Checked = true;
 				$this->ConfigNo->Checked = true;
