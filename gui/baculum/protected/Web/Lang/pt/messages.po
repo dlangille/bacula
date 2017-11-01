@@ -1,15 +1,16 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2016-01-11 09:00:15\n"
+"PO-Revision-Date: 2017-11-01 16:44-0200\n"
 "Project-Id-Version: \n"
 "POT-Creation-Date: \n"
 "Last-Translator: Wanderlei Huttel <wanderlei.huttel@gmail.com>\n"
 "Language-Team: \n"
 "Language: pt\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=iso-8859-1\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"X-Poedit-SourceCharset: utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Poedit 1.5.4\n"
+"X-Generator: Poedit 2.0.4\n"
 
 msgid "Language:"
 msgstr "Idioma:"
@@ -66,7 +67,7 @@ msgid "Please select language."
 msgstr "Por favor, selecione o idioma desejado."
 
 msgid "Step 2 - add API instances"
-msgstr "Step 2 - add API instances"
+msgstr "Passo 2 - Adicionar instâncias da API"
 
 msgid "Step 3 - params of Bacula database connection"
 msgstr "Passo 3 - Configuração da conexão com o banco de dados do Bacula"
@@ -87,7 +88,7 @@ msgid "Save"
 msgstr "Salvar"
 
 msgid "I have read the license terms and agree to"
-msgstr "Eu li os termos de licença e concordo."
+msgstr "Eu li os termos de licença e concordo"
 
 msgid "Database type:"
 msgstr "Tipo do banco de dados:"
@@ -96,7 +97,7 @@ msgid "select database"
 msgstr "selecione o banco de dados"
 
 msgid "Need to move on to accept the license."
-msgstr "É preciso aceitar os termos de licença para avançar"
+msgstr "É preciso aceitar os termos de licença para avançar."
 
 msgid "Database name:"
 msgstr "Nome do banco de dados:"
@@ -174,7 +175,7 @@ msgid "Please enter password."
 msgstr "Por favor digite uma senha."
 
 msgid "Password must be longer than 4 chars."
-msgstr "A senha deve conter mais do que 4 caracteres"
+msgstr "A senha deve conter mais do que 4 caracteres."
 
 msgid "Retype administration password:"
 msgstr "Confirmar senha administrador:"
@@ -648,7 +649,7 @@ msgid "Baculum problem"
 msgstr "Problema no Baculum"
 
 msgid "or run"
-msgstr "or run"
+msgstr "ou execute"
 
 msgid "Baculum Initial Wizard"
 msgstr "Assistente inicial do Baculum"
@@ -765,10 +766,10 @@ msgid "Change the window size"
 msgstr "Alterar o tamanho da janela"
 
 msgid "Configuration of storage daemons."
-msgstr "Configurações dos Storages"
+msgstr "Configurações dos daemons do Storage"
 
 msgid "Configuration of clients daemons."
-msgstr "Configurações dos Clientes"
+msgstr "Configurações dos daemons do Cliente"
 
 msgid "Management of volumes."
 msgstr "Configurações dos Volumes"
@@ -840,7 +841,12 @@ msgid "Delete"
 msgstr "Excluir"
 
 msgid "Output for selected job is not available yet or you do not have enabled logging job logs to catalog database. For watching job log there is need to add to the job Messages resource next directive: console = all, !skipped, !saved"
-msgstr "A saída para o job selecionado ainda não está disponível ou você não possuí ativado o registros de jobs no catálogo.\n\nPara acompanhar o registro dos jobs é preciso adicionar na diretiva Mensagens: \n\nconsole =  all, !skipped, !saved"
+msgstr ""
+"A saída para o job selecionado ainda não está disponível ou você não possuí ativado o registros de jobs no catálogo.\n"
+"\n"
+"Para acompanhar o registro dos jobs é preciso adicionar na diretiva Mensagens: \n"
+"\n"
+"console =  all, !skipped, !saved"
 
 msgid "Workspace"
 msgstr "Área de trabalho"
@@ -1079,344 +1085,347 @@ msgstr "Adicionar usuário"
 msgid "Username:"
 msgstr "Nome do usuário:"
 
+msgid "Please note that for each user (excluding administrator) there should exist separate Bconsole config file in form:"
+msgstr "Atenção, cada usuário (com excessão do usuário administrador) precisa de um arquivo: "
+
 msgid "Invalid login value. Login may contain a-z A-Z 0-9 characters."
 msgstr "Usuário inválido! O usuário deve conter apenas os seguintes caracteres [a-z A-Z 0-9]."
 
 msgid "Jobs on Volume"
-msgstr "Jobs on Volume"
+msgstr "Jobs no Volume"
 
 msgid "No jobs on the volume."
-msgstr "No jobs on the volume."
+msgstr "Nenhum job encontrado no volume."
 
 msgid "Jobs for Client"
-msgstr "Jobs for Client"
+msgstr "Jobs do Cliente"
 
 msgid "No jobs for the client."
-msgstr "No jobs for the client."
+msgstr "Nenhum job encontrado do cliente"
 
 msgid "Configuration"
-msgstr "Configuration"
+msgstr "Configuração"
 
 msgid "bdirjson binary file path:"
-msgstr "bdirjson binary file path:"
+msgstr "caminho do binário bdirjson:"
 
 msgid "bsdjson binary file path:"
-msgstr "bsdjson binary file path:"
+msgstr "caminho do binário bsdjson:"
 
 msgid "bfdjson binary file path:"
-msgstr "bfdjson binary file path:"
+msgstr "caminho do binário bfdjson:"
 
 msgid "bbconsjson binary file path:"
-msgstr "bbconsjson binary file path:"
+msgstr "caminho do binário bbconsjson:"
 
 msgid "Main Director config file path (usually bacula-dir.conf):"
-msgstr "Main Director config file path (usually bacula-dir.conf):"
+msgstr "Caminho da configuração do Director (geralmente bacula-dir.conf):"
 
 msgid "Main Storage Daemon config file path (usually bacula-sd.conf):"
-msgstr "Main Storage Daemon config file path (usually bacula-sd.conf):"
+msgstr "Caminho da configuração do Storage (geralmente bacula-sd.conf):"
 
 msgid "Main File Daemon config file path (usually bacula-fd.conf):"
-msgstr "Main File Daemon config file path (usually bacula-fd.conf):"
+msgstr "Caminho da configuração do File Daemon (geralmente bacula-fd.conf):"
 
 msgid "Admin Bconsole config file path (usually bconsole.conf):"
-msgstr "Admin Bconsole config file path (usually bconsole.conf):"
+msgstr "Caminho de configuração do Bconsole (geralmente bconsole.conf):"
 
 msgid "Start test"
-msgstr "Start test"
+msgstr "Iniciar teste"
 
 msgid "Test configuration"
-msgstr "Test configuration"
+msgstr "Testar configuração"
 
 msgid "General configuration"
-msgstr "General configuration"
+msgstr "Configuração Geral"
 
 msgid "To setup configuration module please provide Bacula JSON tools paths and config files paths."
-msgstr "To setup configuration module please provide Bacula JSON tools paths and config files paths."
+msgstr "Para configurar o módulo de configuração informe os caminhos dos utilitários JSON e dos arquivos de configuração do Bacula."
 
 msgid "Error during config save"
-msgstr "Error during config save"
+msgstr "Erro ao salvar a configuração"
 
 msgid "There is required to provide both binary file and config file paths."
-msgstr "There is required to provide both binary file and config file paths."
+msgstr "É necessário informar o caminho dos binários e dos arquivos de configuração."
 
 msgid "Directory path for new config files:"
-msgstr "Directory path for new config files:"
+msgstr "Diretório para salvar  para as configurações:"
 
 msgid "Directory path field is required."
-msgstr "Directory path field is required."
+msgstr "O caminho do diretório é necessário."
 
 msgid "Provided directory path is not writable by web server."
-msgstr "Provided directory path is not writable by web server."
+msgstr "O caminho do diretório informado não possui permissão de escrita."
 
 msgid "Error"
-msgstr "Error"
+msgstr "Erro"
 
 msgid "Seconds"
-msgstr "Seconds"
+msgstr "Segundos"
 
 msgid "Minutes"
-msgstr "Minutes"
+msgstr "Minutos"
 
 msgid "Hours"
-msgstr "Hours"
+msgstr "Horas"
 
 msgid "Days"
-msgstr "Days"
+msgstr "Dias"
 
 msgid "Host:"
 msgstr "Host:"
 
 msgid "IP Address/Hostname:"
-msgstr "IP Address/Hostname:"
+msgstr "Endereço IP/Hostname:"
 
 msgid "Remove"
-msgstr "Remove"
+msgstr "Remover"
 
 msgid "Edit"
-msgstr "Edit"
+msgstr "Editar"
 
 msgid "Show/hide all resource directives"
-msgstr "Show/hide all resource directives"
+msgstr "Mostrar/ocultar todas as diretivas de recursos"
 
 msgid "Show the resource raw config"
-msgstr "Show the resource raw config"
+msgstr "Mostrar a configuração do recurso "
 
 msgid "Save the resource on multiple hosts"
-msgstr "Save the resource on multiple hosts"
+msgstr "Salvar o recurso em vários hosts"
 
 msgid "Save the resource to additional path"
-msgstr "Save the resource to additional path"
+msgstr "Salve o recurso em um caminho adicional"
 
 msgid "Download the resource config"
-msgstr "Download the resource config"
+msgstr "Efetuar o download das configurações"
 
 msgid "Add APIs"
-msgstr "Add APIs"
+msgstr "Adicionar APIs"
 
 msgid "Protocol:"
-msgstr "Protocol:"
+msgstr "Protocolo:"
 
 msgid "API Address:"
-msgstr "API Address:"
+msgstr "Endereço da API:"
 
 msgid "API Login:"
-msgstr "API Login:"
+msgstr "Login da API:"
 
 msgid "API Password:"
-msgstr "API Password:"
+msgstr "Senha da API:"
 
 msgid "Please enter API address."
-msgstr "Please enter API address."
+msgstr "Por favor informe o endereço da API."
 
 msgid "Please enter API port."
-msgstr "Please enter API port."
+msgstr "Por favor informe a porta da API."
 
 msgid "Please enter API login."
-msgstr "Please enter API login."
+msgstr "Por favor informe o login da API."
 
 msgid "Please enter API password."
-msgstr "Please enter API password."
+msgstr "Por favor infome a senha da API."
 
 msgid "Baculum web interface requires to add at least one Baculum API instance with shared Catalog access. Please add API instance."
-msgstr "Baculum web interface requires to add at least one Baculum API instance with shared Catalog access. Please add API instance."
+msgstr "A interface web do Baculum requer adicionar pelo menos uma instância da API do Baculum com acesso compartilhado ao catálogo. Por favor, adicione a instância da API."
 
 msgid "Save with name:"
-msgstr "Save with name:"
+msgstr "Salve como:"
 
 msgid "API connection test:"
-msgstr "API connection test:"
+msgstr "Teste de conexão da API:"
 
 msgid "Catalog support"
-msgstr "Catalog support"
+msgstr "Suporte do Catálogo"
 
 msgid "Console support"
-msgstr "Console support"
+msgstr "Suporte do Console"
 
 msgid "Config support"
-msgstr "Config support"
+msgstr "Suporte das Configurações"
 
 msgid "Supported"
-msgstr "Supported"
+msgstr "Suportado"
 
 msgid "Not supported"
-msgstr "Not supported"
+msgstr "Não suportado"
 
 msgid "Authorization to Baculum API"
-msgstr "Authorization to Baculum API"
+msgstr "Autorização para a API do Baculum"
 
 msgid "Authorization to Baculum Web"
-msgstr "Authorization to Baculum Web"
+msgstr "Autorização para o Baculum Web"
 
 msgid "Step 3 - authentication params to Baculum Web panel"
-msgstr "Step 3 - authentication params to Baculum Web panel"
+msgstr "Passo 3 - parâmetros de autenticação para o painel Web do Baculum"
 
 msgid "Step 4 - Finish"
-msgstr "Step 4 - Finish"
+msgstr "Passo 4 - Finalizar"
 
 msgid "Disabled"
-msgstr "Disabled"
+msgstr "Desabilitado"
 
 msgid "Single month"
-msgstr "Single month"
+msgstr "Único mês"
 
 msgid "Month range"
-msgstr "Month range"
+msgstr "Intervalo do mês"
 
 msgid "From month"
-msgstr "From month"
+msgstr "Do mês"
 
 msgid "To month"
-msgstr "To month"
+msgstr "Até o mês"
 
 msgid "Month"
-msgstr "Month"
+msgstr "Mês"
 
 msgid "Single day"
-msgstr "Single day"
+msgstr "Único dia"
 
 msgid "Day range"
-msgstr "Day range"
+msgstr "Intervalo do dia"
 
 msgid "From day"
-msgstr "From day"
+msgstr "Do dia"
 
 msgid "To day"
-msgstr "To day"
+msgstr "Até o dia"
 
 msgid "Day"
-msgstr "Day"
+msgstr "Dia"
 
 msgid "Single day of week"
-msgstr "Single day of week"
+msgstr "Único dia da semana"
 
 msgid "Day of week"
-msgstr "Day of week"
+msgstr "Dia da semana"
 
 msgid "Day of week range"
-msgstr "Day of week range"
+msgstr "Intervalo de dia da semana"
 
 msgid "From day of week"
-msgstr "To day of week"
+msgstr "Do dia da semana"
 
 msgid "To day of week"
-msgstr "To day of week"
+msgstr "Até o dia da semana"
 
 msgid "At HH:MM"
-msgstr "At HH:MM"
+msgstr "Em HH:MM"
 
 msgid "Hourly at"
-msgstr "Hourly at"
+msgstr "Por hora"
 
 msgid "Hour"
-msgstr "Hour"
+msgstr "Hora"
 
 msgid "Minute"
-msgstr "Minute"
+msgstr "Minuto"
 
 msgid "Single week"
-msgstr "Single week"
+msgstr "Única semana"
 
 msgid "Week range"
-msgstr "Week range"
+msgstr "Intervalo da semana"
 
 msgid "From week"
-msgstr "From week"
+msgstr "Da semana"
 
 msgid "To week"
-msgstr "To week"
+msgstr "Até a semana"
 
 msgid "Week"
-msgstr "Week"
+msgstr "Semana"
 
 msgid "Add new %resource_type resource on %component_name (%component_type)"
-msgstr "Add new %resource_type resource on %component_name (%component_type)"
+msgstr "Adicionar novo %resource_type resource em %component_name (%component_type)"
 
 msgid "Reset to default value"
-msgstr "Reset to default value"
+msgstr "Redefinir o valor padrão"
 
 msgid "Remove directive"
-msgstr "Remove directive"
+msgstr "Remover diretiva"
 
 msgid "Add API host"
-msgstr "Add API host"
+msgstr "Adicionar host na API"
 
 msgid "Add host"
-msgstr "Add host"
+msgstr "Adicionar host"
 
 msgid "Given host already exists in config file."
-msgstr "Given host already exists in config file."
+msgstr "O host já existe no arquivo de configuração."
 
 msgid "Problem during save to config file. Please check host config file permission."
-msgstr "Problem during save to config file. Please check host config file permission."
+msgstr "Problema durante a gravação do arquivo de configuração. Verifique a permissão do arquivo de configuração do host."
 
 msgid "Host added successfully."
-msgstr "Host added successfully."
+msgstr "Host adicionado com sucesso."
 
 msgid "Save as:"
-msgstr "Save as:"
+msgstr "Salvar como:"
 
 msgid "(optional)"
-msgstr "(optional)"
+msgstr "(opcional)"
 
 msgid "Use HTTP Basic authentication"
-msgstr "Use HTTP Basic authentication"
+msgstr "Usar autenticação básica HTTP"
 
 msgid "Use OAuth2 for authorization and authentication"
-msgstr "Use OAuth2 for authorization and authentication"
+msgstr "Usar autorização e autenticação OAuth2"
 
 msgid "Invalid Client ID value. Client ID may contain a-z A-Z 0-9 - _ characters."
-msgstr "Invalid Client ID value. Client ID may contain a-z A-Z 0-9 - _ characters."
+msgstr "Valor da ID do cliente inválida. A ID do cliente deve conter somente os caracteres a-z A-Z 0-9 - _."
 
 msgid "Please enter Client ID."
-msgstr "Please enter Client ID."
+msgstr "Informe a ID do cliente."
 
 msgid "OAuth2 Client ID:"
-msgstr "OAuth2 Client ID:"
+msgstr "ID OAuth2 do cliente:"
 
 msgid "OAuth2 Client Secret:"
-msgstr "OAuth2 Client Secret:"
+msgstr "Senha OAuth2 do cliente:"
 
 msgid "Please enter Client Secret."
-msgstr "Please enter Client Secret."
+msgstr "Por favor, informe a senha do cliente."
 
 msgid "Invalid Client Secret value. Client Secret may contain any character that is not a whitespace character."
-msgstr "Invalid Client Secret value. Client Secret may contain any character that is not a whitespace character."
+msgstr "Valor da senha do cliente inválida. A senha do cliente pode conter qualquer caractere que não seja espaço em branco."
 
 msgid "generate"
-msgstr "generate"
+msgstr "gerar"
 
 msgid "Dedicated Bconsole config file path:"
-msgstr "Dedicated Bconsole config file path:"
+msgstr "Caminho do arquivo de configuração do Bconsole dedicado:"
 
 msgid "Please enter Redirect URI."
-msgstr "Please enter Redirect URI."
+msgstr "Informe a URI de redirecionamento."
 
 msgid "OAuth2 Redirect URI (example: https://baculumgui:9095/web/redirect):"
-msgstr "OAuth2 Redirect URI (example: https://baculumgui:9095/web/redirect):"
+msgstr "URI de redirecionamento OAuth2 (exemplo: https://baculumgui:9095/web/redirect):"
 
 msgid "Auth Type:"
-msgstr "Auth Type:"
+msgstr "Tipo de autenticação:"
 
 msgid "OAuth2 Redirect URI:"
-msgstr "OAuth2 Redirect URI:"
+msgstr "URI de redirecionamento OAuth2:"
 
 msgid "OAuth2 Scope:"
-msgstr "OAuth2 Scope:"
+msgstr "Escopo OAuth2:"
 
 msgid "Restore job:"
-msgstr "Restore job:"
+msgstr "Restaurar Job:"
 
 msgid "API host"
-msgstr "API host"
+msgstr "Endereço da API"
 
 msgid "API host:"
-msgstr "API host:"
+msgstr "Endereço da API:"
 
 msgid "Select host"
-msgstr "Select host"
+msgstr "Selecione um host"
 
 msgid "OAuth2 scopes (space separated):"
-msgstr "OAuth2 scopes (space separated):"
+msgstr "Escopo OAuth2 (separado por espaço):"
 
 msgid "Please enter OAuth2 scopes."
-msgstr "Please enter OAuth2 scopes."
+msgstr "Informe o escopo OAuth2."
