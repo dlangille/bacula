@@ -102,7 +102,7 @@ bool do_append_data(JCR *jcr)
    dev->start_of_job(dcr);
    jcr->sendJobStatus(JS_Running);
 
-   //ASSERT(dev->VolCatInfo.VolCatName[0]);
+   ASSERTD(dev->VolCatInfo.VolCatName[0], "NULL Volume name. This shouldn't happen!!!\n");
    if (dev->VolCatInfo.VolCatName[0] == 0) {
       Pmsg0(000, _("NULL Volume name. This shouldn't happen!!!\n"));
    }
@@ -112,7 +112,7 @@ bool do_append_data(JCR *jcr)
    begin_attribute_spool(jcr);
 
    Dmsg0(100, "Just after acquire_device_for_append\n");
-   //ASSERT(dev->VolCatInfo.VolCatName[0]);
+   ASSERTD(dev->VolCatInfo.VolCatName[0], "NULL Volume name. This shouldn't happen!!!\n");
    if (dev->VolCatInfo.VolCatName[0] == 0) {
       Pmsg0(000, _("NULL Volume name. This shouldn't happen!!!\n"));
    }
@@ -126,7 +126,7 @@ bool do_append_data(JCR *jcr)
       ok = false;
    }
 
-   //ASSERT(dev->VolCatInfo.VolCatName[0]);
+   ASSERTD(dev->VolCatInfo.VolCatName[0], "NULL Volume name. This shouldn't happen!!!\n");
    if (dev->VolCatInfo.VolCatName[0] == 0) {
       Pmsg0(000, _("NULL Volume name. This shouldn't happen!!!\n"));
    }
