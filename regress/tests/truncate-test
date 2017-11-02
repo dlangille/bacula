@@ -79,7 +79,14 @@ label storage=File volume=TestVolume005
 run level=full job=$JobName yes
 wait
 messages
-@$out $tmp/log6.out
+@$out $tmp/log7.out
+@#########################################################
+@# test that we cannot truncate a volume that is not purged
+@#########################################################
+@exec "du -s -b $tmp/TestVolume001"
+truncate volume=TestVolume001  storage=File
+@exec "du -s -b $tmp/TestVolume001"
+messages
 @#########################################################
 @# tests
 @#########################################################
