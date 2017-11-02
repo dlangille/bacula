@@ -1,8 +1,82 @@
 
-               Release Notes for Bacula 9.0.4
+               Release Notes for Bacula 9.0.5
 
+Release 9.0.5
+
+This is an important bug fix release.  In particular it fixes the cases
+where Bacula would print a very large number of error messages. Additional
+backported code from Bacula Enterprise is included as well as updates to
+the rpm scripts.  A number of minor Baculum issues have also been
+corrected.
+
+01Nov17
+ - Use if exists on dropping MAC table in postgres. Fixes bug #2314
+ - Fix bdirjson display of Minutes. Fixes bug #2318
+ - baculum: Set default language if no language set
+ - baculum: Fix language setting in api
+ - baculum: Update generated .mo files for api
+ - baculum: Add missing texts to translations
+ - baculum: Fix add to translation static texts on the api default page
+ - baculum: Fix missing session start
+ - Make verify job log same as other logs -- fixes bug #2328
+ - Take a more conservative approach for setting killable true
+ - Add extra safety for readdir buffer
+
+31Oct17
+ - Retab systemd/Makefile.in
+ - Don't require mount for @piddir@
+ - Use Debian systemd start/stop scripts supplied by Sven Hartge
+
+29Oct17
+ - Fix bug #2316 add CacheRetention to Pool
+ - Skip tape ioctls on FreeBSD when using a FIFO fixes bug #2324
+ - Fix bug #2338 to not truncate already truncated volumes
+ - Remove some old C int code and use bool
+
+28Oct17
+ - Remove unused lib/lz4.c.orig file
+ - Update AUTHORS file
+ - Mark Volume read-only only if no access rights or read-only partition
+ - Add -P daemon option to supress creating PID file
+ - Fix too big copy to test FD plugin_ctx
+
+26Oct17
+ - Backport Enterprise code
+
+23Oct17
+ - When read-only volume found mark it in catalog -- fixes bug #2337
+ - Make out of space on partition fatal
+ - Fix bug 2323 -- loop exit condition was backward and add error message
+ - Add missing copy-plugin-confs for regress
+ - Fix bug reported by jesper@schmitz.computer where bat hangs on FreeBSD
+
+08Oct17
+ - baculum: Fix reading and writing schedule resource
+
+15Sep17
+ - baculum: Fix undefined offset error during saving director config
+ - baculum: Fix listing days of week in schedule setting
+
+14Sep17
+ - baculum: Fix saving schedule run directive value
+
+12Sep17
+ - rpm: Add missing script baculabackupreport and query.sql for Suse
+ - rpm: Add missing libbacsd* file and tapealert script to Suse rpm spec file
+ - rpm: Add missing libs bbconsjson, bdirjson and bsdjson to Suse rpm spec 
+  file
+ - rpm: Add aligned plugin rpm spec file for Suse
+ - rpm: Add bacula-tray-monitor.desktop launcher in scripts directory
+ - rpm: Add Suse Linux ES 12.1 platform
+
+11Sep17
+ - rpm: Add bacula-tray-monitor.desktop file in script dir
+
+Bugs fixed/closed since last release:
+2314 2316 2318 2324 2328 2337 2338
+
+=================================================================
 Release 9.0.4
-
 This is a minor bug fix release. The main fix in this release
 is to allow SQLite3 to work.
 
