@@ -22,6 +22,7 @@
 
 #include "common.h"
 #include <QtCore/QObject>
+#include <QStandardItemModel>
 #include "tray_conf.h"
 
 enum {
@@ -30,6 +31,8 @@ enum {
    TASK_RESOURCES,
    TASK_QUERY,
    TASK_RUN,
+   TASK_LIST_CLIENT_JOBS,
+   TASK_LIST_JOB_FILES,
    TASK_RESTORE,
    TASK_DEFAULTS,
    TASK_CLOSE,
@@ -44,14 +47,17 @@ class task: public QObject
    Q_OBJECT
 
 public:
-   RESMON   *res;
-   POOLMEM  *errmsg;
-   int       type;
-   bool      status;
-   char     *curline;
-   char     *curend;
-   char     *arg;               /* Argument that can be used by some tasks */
-   char     *arg2;
+   RESMON       *res;
+   POOLMEM      *errmsg;
+   int          type;
+   bool         status;
+   char         *curline;
+   char         *curend;
+   const char   *arg;               /* Argument that can be used by some tasks */
+   const char   *arg2;
+   const char   *arg3;
+   QStandardItemModel   *model;       /* model to fill, depending on context */
+   uint64_t     pathId;
 
    union {
       bool  b;
@@ -94,16 +100,23 @@ public:
    void mark_as_done() {
       status = true;
       emit done(this);
-   };
+   }
    void mark_as_failed() {
       status = false;
       emit done(this);
-   };
+   }
    bool get_resources();
    bool get_next_line(RESMON *res);
    bool get_job_defaults(); /* Look r->defaults.job */
    bool run_job();
    bool get_job_info(const char *level);     /* look r->info */
+   bool get_client_jobs(const char* client);
+   bool get_job_files(const char* job, uint64_t pathId);
+
+   bool prepare_restore(const QString& tableName);
+   bool run_restore(const QString& tableName);
+   bool clean_restore(const QString& tableName);
+   bool restore(const QString& tableName);
 
 signals:
    void done(task *t);

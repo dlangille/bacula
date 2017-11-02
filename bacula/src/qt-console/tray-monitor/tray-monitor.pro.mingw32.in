@@ -58,9 +58,8 @@ QMAKE_LIB               = i686-w64-mingw32-ar -ru
 QMAKE_RC                = i686-w64-mingw32-windres
 
 # Main directory
-HEADERS += tray-monitor.h tray_conf.h tray-ui.h fdstatus.h task.h ../util/fmtwidgetitem.h dirstatus.h conf.h sdstatus.h runjob.h status.h
-SOURCES +=  tray-monitor.cpp tray_conf.cpp fdstatus.cpp task.cpp authenticate.cpp ../util/fmtwidgetitem.cpp dirstatus.cpp sdstatus.cpp conf.cpp runjob.cpp status.cpp common.h
-
-FORMS += fd-monitor.ui dir-monitor.ui sd-monitor.ui main-conf.ui res-conf.ui run.ui
+HEADERS += tray-monitor.h tray_conf.h tray-ui.h fdstatus.h task.h ../util/fmtwidgetitem.h dirstatus.h conf.h sdstatus.h runjob.h status.h restorewizard.h filesmodel.h clientselectwizardpage.h jobselectwizardpage.h fileselectwizardpage.h restoreoptionswizardpage.h
+SOURCES +=  tray-monitor.cpp tray_conf.cpp fdstatus.cpp task.cpp authenticate.cpp ../util/fmtwidgetitem.cpp dirstatus.cpp sdstatus.cpp conf.cpp runjob.cpp status.cpp restorewizard.cpp clientselectwizardpage.cpp jobselectwizardpage.cpp fileselectwizardpage.cpp restoreoptionswizardpage.cpp
+FORMS += fd-monitor.ui dir-monitor.ui sd-monitor.ui main-conf.ui res-conf.ui run.ui restorewizard.ui clientselectwizardpage.ui jobselectwizardpage.ui fileselectwizardpage.ui restoreoptionswizardpage.ui
 
 TRANSLATIONS += ts/tm_fr.ts ts/tm_de.ts ts/tm_ja.ts

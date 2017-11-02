@@ -30,8 +30,6 @@
 
 #include "common.h"
 
-/* NOTE:  #includes at the end of this file */
-
 /*
  * Resource codes -- they must be sequential for indexing
  */
@@ -141,6 +139,7 @@ struct RESMON {
       char *fileset;
       char *catalog;
       int   priority;
+      char *where;
    } defaults;
 
    /* Information about the job */
@@ -153,6 +152,8 @@ struct RESMON {
       char JobLevel;
    } infos;
 };
+
+Q_DECLARE_METATYPE(RESMON*)
 
 /*
  *   Tray Monitor Resource

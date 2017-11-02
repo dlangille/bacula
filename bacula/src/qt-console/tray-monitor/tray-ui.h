@@ -49,6 +49,7 @@
 #include "dirstatus.h"
 #include "conf.h"
 #include "runjob.h"
+#include "restorewizard.h"
 
 void display_error(const char *fmt, ...);
 
@@ -67,7 +68,8 @@ public:
     QSpinBox *spinRefresh;
     QTimer *timer;
     bool    have_systray;
-    
+    RestoreWizard *restorewiz;
+
     TrayUI():
     QMainWindow(),
        tabWidget(NULL),
@@ -75,12 +77,13 @@ public:
        tray(NULL),
        spinRefresh(NULL),
        timer(NULL),
-       have_systray(QSystemTrayIcon::isSystemTrayAvailable())
+       have_systray(QSystemTrayIcon::isSystemTrayAvailable()),
+       restorewiz(NULL)
        {
-       };
+       }
 
     ~TrayUI() {
-    };
+    }
     void addTab(RESMON *r)
     {
        QWidget *tab;
@@ -117,7 +120,7 @@ public:
        }
        tabWidget->setUpdatesEnabled(false);
        tabWidget->addTab(tab, t);
-       tabWidget->setUpdatesEnabled(true);
+       tabWidget->setUpdatesEnabled(true);       
     }
     void clearTabs()
     {
@@ -191,6 +194,7 @@ public:
 
         verticalLayout->addLayout(hLayout);
         //QSystemTrayIcon::isSystemTrayAvailable
+
         tray = new QSystemTrayIcon(TrayMonitor);
         QMenu* stmenu = new QMenu(TrayMonitor);
 
@@ -206,17 +210,16 @@ public:
         QAction* actRun = new QAction(QApplication::translate("TrayMonitor",
                                "Run...",
                                 0, QApplication::UnicodeUTF8),TrayMonitor);
-/* Not yet ready
- *      QAction* actRes = new QAction(QApplication::translate("TrayMonitor",
- *                             "Restore...",
- *                              0, QApplication::UnicodeUTF8),TrayMonitor);
- */
+        QAction* actRes = new QAction(QApplication::translate("TrayMonitor",
+                              "Restore...",
+                               0, QApplication::UnicodeUTF8),TrayMonitor);
+
         QAction* actConf = new QAction(QApplication::translate("TrayMonitor",
                                "Configure...",
                                 0, QApplication::UnicodeUTF8),TrayMonitor);
         stmenu->addAction(actShow);
         stmenu->addAction(actRun);
-        //stmenu->addAction(actRes);
+        stmenu->addAction(actRes);
         stmenu->addSeparator();
         stmenu->addAction(actConf);
         stmenu->addSeparator();
@@ -227,7 +230,7 @@ public:
         connect(actRun, SIGNAL(triggered()), this, SLOT(cb_run()));
         connect(actShow, SIGNAL(triggered()), this, SLOT(cb_show()));
         connect(actConf, SIGNAL(triggered()), this, SLOT(cb_conf()));
-        //connect(actRes, SIGNAL(triggered()), this, SLOT(cb_restore()));
+        connect(actRes, SIGNAL(triggered()), this, SLOT(cb_restore()));
         connect(actQuit, SIGNAL(triggered()), this, SLOT(cb_quit()));
         connect(actAbout, SIGNAL(triggered()), this, SLOT(cb_about()));
         connect(spinRefresh, SIGNAL(valueChanged(int)), this, SLOT(cb_refresh(int)));
@@ -367,7 +370,12 @@ private slots:
        if (!dir) {
           return;
        }
+       task *t = new task();
+       connect(t, SIGNAL(done(task *)), this, SLOT(start_restore_wizard(task *)), Qt::QueuedConnection);
+       t->init(dir, TASK_RESOURCES);
+       dir->wrk->queue(t);
     }
+
     void cb_trayIconActivated(QSystemTrayIcon::ActivationReason r) {
        if (r == QSystemTrayIcon::Trigger) {
           cb_show();
@@ -390,13 +398,21 @@ public slots:
     void task_done(task *t) {
        Dmsg0(0, "Task done!\n");
        t->deleteLater();
-    };
+    }
     void run_job(task *t) {
        Dmsg0(0, "Task done!\n");
        RESMON *dir = t->res;
        t->deleteLater();
        new RunJob(dir);
-    };
+    }
+
+    void start_restore_wizard(task *t) {
+        RESMON *dir = t->res;
+        restorewiz = new RestoreWizard(dir);
+        restorewiz->show();
+        t->deleteLater();
+    }
+
 };
 
 

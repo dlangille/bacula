@@ -19,60 +19,71 @@
 
 #include "task.h"
 #include "jcr.h"
+#include "filesmodel.h"
+
 #define dbglvl 10
 int authenticate_daemon(JCR *jcr, MONITOR *monitor, RESMON *res);
 
 static void *handle_task(void *data)
 {
-   task   *t;
-   worker *wrk = (worker *)data;
-   lmgr_init_thread();
-   
-   wrk->set_running();
-   Dmsg0(dbglvl, "Worker started\n");
+    task   *t;
+    worker *wrk = (worker *)data;
+    lmgr_init_thread();
 
-   while (!wrk->is_quit_state()) {
-      if (wrk->is_wait_state()) {
-         wrk->wait();
-         continue;
-      }   
-      t = (task *)wrk->dequeue();
-      if (!t) {
-         continue;
-      }
-      /* Do the work */
-      switch(t->type) {
-      case TASK_STATUS:
-         t->do_status();
-         break;
-      case TASK_RESOURCES:
-         t->get_resources();
-         break;
-      case TASK_DEFAULTS:
-         t->get_job_defaults();
-         break;
-      case TASK_RUN:
-         t->run_job();
-         break;
-      case TASK_BWLIMIT:
-         t->set_bandwidth();
-         break;
-      case TASK_INFO:
-         t->get_job_info(t->arg2);
-         break;
-      case TASK_DISCONNECT:
-         t->disconnect_bacula();
-         t->mark_as_done();
-         break;
-      default:
-         Mmsg(t->errmsg, "Unknown task");
-         t->mark_as_failed();
-         break;
-      }
-   }
-   Dmsg0(dbglvl, "Worker stoped\n");
-   lmgr_cleanup_thread();
-   return NULL;
+    wrk->set_running();
+    Dmsg0(dbglvl, "Worker started\n");
+
+    while (!wrk->is_quit_state()) {
+        if (wrk->is_wait_state()) {
+            wrk->wait();
+            continue;
+        }
+        t = (task *)wrk->dequeue();
+        if (!t) {
+            continue;
+        }
+        /* Do the work */
+        switch(t->type) {
+        case TASK_STATUS:
+            t->do_status();
+            break;
+        case TASK_RESOURCES:
+            t->get_resources();
+            break;
+        case TASK_DEFAULTS:
+            t->get_job_defaults();
+            break;
+        case TASK_RUN:
+            t->run_job();
+            break;
+        case TASK_BWLIMIT:
+            t->set_bandwidth();
+            break;
+        case TASK_INFO:
+            t->get_job_info(t->arg2);
+            break;
+        case TASK_DISCONNECT:
+            t->disconnect_bacula();
+            t->mark_as_done();
+            break;
+        case TASK_LIST_CLIENT_JOBS:
+            t->get_client_jobs(t->arg);
+            break;
+        case TASK_LIST_JOB_FILES:
+            t->get_job_files(t->arg, t->pathId);
+            break;
+        case TASK_RESTORE:
+            t->restore(QString("b21234"));
+            break;
+        default:
+            Mmsg(t->errmsg, "Unknown task");
+            t->mark_as_failed();
+            break;
+        }
+    }
+    Dmsg0(dbglvl, "Worker stoped\n");
+    lmgr_cleanup_thread();
+    return NULL;
 }
 
 bool task::set_bandwidth()
@@ -95,7 +106,7 @@ bool task::set_bandwidth()
    }
 
    if (!res->bs || !res->bs->is_open() || res->bs->is_error()) {
-      if (!connect_bacula()) { 
+      if (!connect_bacula()) {
          mark_as_failed();
          return false;
       }
@@ -247,7 +258,7 @@ bool task::read_status_running(RESMON *r)
    char *start, *end;
    struct s_running_job *item = NULL;
    alist *running_jobs = New(alist(10, owned_by_alist));
-   
+
    while (r->bs->recv() >= -1) {
       if (r->bs->msglen < 0 &&
           r->bs->msglen != BNET_CMD_BEGIN &&
@@ -335,7 +346,7 @@ bool task::read_status_running(RESMON *r)
       if (r->bs->is_error()) {
          Mmsg(errmsg, "Got error on the socket communication line");
          goto bail_out;
-      } 
+      }
    }
    if (item) {
       Dmsg1(dbglvl, "Append item %ld\n", item->JobId);
@@ -491,7 +502,7 @@ bool task::read_status_header(RESMON *r)
          Mmsg(errmsg, "Got error on the socket communication line");
          goto bail_out;
 
-      } 
+      }
       r->last_update = time(NULL);
       r->mutex->unlock();
    }
@@ -625,7 +636,7 @@ bool task::get_job_defaults()
    char *p;
 
    if (!res->bs || !res->bs->is_open() || res->bs->is_error()) {
-      if (!connect_bacula()) { 
+      if (!connect_bacula()) {
          goto bail_out;
       }
    }
@@ -638,6 +649,7 @@ bool task::get_job_defaults()
    bfree_and_null(res->defaults.type);
    bfree_and_null(res->defaults.fileset);
    bfree_and_null(res->defaults.catalog);
+   bfree_and_null(res->defaults.where);
 
    tid = start_thread_timer(NULL, pthread_self(), (uint32_t)120);
    if (res->type == R_CLIENT && !res->proxy_sent) {
@@ -664,29 +676,33 @@ bool task::get_job_defaults()
       }
       *p++ = 0;
       if (strcasecmp(curline, "client") == 0) {
-         res->defaults.client = bstrdup(p);
+          res->defaults.client = bstrdup(p);
 
       } else if (strcasecmp(curline, "pool") == 0) {
-         res->defaults.pool = bstrdup(p);
+          res->defaults.pool = bstrdup(p);
 
       } else if (strcasecmp(curline, "storage") == 0) {
-         res->defaults.storage = bstrdup(p);
+          res->defaults.storage = bstrdup(p);
 
       } else if (strcasecmp(curline, "level") == 0) {
-         res->defaults.level = bstrdup(p);
+          res->defaults.level = bstrdup(p);
 
       } else if (strcasecmp(curline, "type") == 0) {
-         res->defaults.type = bstrdup(p);
+          res->defaults.type = bstrdup(p);
 
       } else if (strcasecmp(curline, "fileset") == 0) {
-         res->defaults.fileset = bstrdup(p);
+          res->defaults.fileset = bstrdup(p);
 
       } else if (strcasecmp(curline, "catalog") == 0) {
-         res->defaults.catalog = bstrdup(p);
+          res->defaults.catalog = bstrdup(p);
 
       } else if (strcasecmp(curline, "priority") == 0) {
-         res->defaults.priority = str_to_uint64(p);
+          res->defaults.priority = str_to_uint64(p);
+
+      } else if (strcasecmp(curline, "where") == 0) {
+          res->defaults.where = bstrdup(p);
       }
+
    }
    ret = true;
 bail_out:
@@ -698,7 +714,7 @@ bail_out:
    } else {
       mark_as_failed();
    }
-   res->mutex->unlock();   
+   res->mutex->unlock();
    return ret;
 }
 
@@ -709,7 +725,7 @@ bool task::get_job_info(const char *level)
    char *p;
 
    if (!res->bs || !res->bs->is_open() || res->bs->is_error()) {
-      if (!connect_bacula()) { 
+      if (!connect_bacula()) {
          goto bail_out;
       }
    }
@@ -784,7 +800,7 @@ bool task::run_job()
    btimer_t *tid = NULL;
 
    if (!res->bs || !res->bs->is_open() || res->bs->is_error()) {
-      if (!connect_bacula()) { 
+      if (!connect_bacula()) {
          goto bail_out;
       }
    }
@@ -820,7 +836,7 @@ bool task::run_job()
    }
    // Close the socket, it's over or we don't want to reuse it
    disconnect_bacula();
-   
+
 bail_out:
 
    if (tid) {
@@ -834,6 +850,472 @@ bail_out:
    return ret;
 }
 
+bool task::get_client_jobs(const char* client)
+{
+   bool ret = false;
+   btimer_t *tid = NULL;
+   int row=0;
+   QStringList headers;
+   headers << tr("JobId") << tr("Job") << tr("Level") << tr("Date") << tr("Files") << tr("Bytes");
+
+   if (!model) {
+       goto bail_out;
+   }
+
+   model->clear();
+   model->setHorizontalHeaderLabels(headers);
+
+   if (!res->bs || !res->bs->is_open() || res->bs->is_error()) {
+      if (!connect_bacula()) {
+         goto bail_out;
+      }
+   }
+
+   tid = start_thread_timer(NULL, pthread_self(), (uint32_t)120);
+
+   if (res->type == R_CLIENT && !res->proxy_sent) {
+      res->proxy_sent = true;
+      res->bs->fsend("proxy\n");
+      while (get_next_line(res)) {
+         if (strncmp(curline, "2000", 4) != 0) {
+            pm_strcpy(errmsg, curline);
+            goto bail_out;
+         }
+         Dmsg2(dbglvl, "<- %d %s\n", res->bs->msglen, curline);
+      }
+   }
+
+   res->bs->fsend(".api 2\n");
+   while (get_next_line(res)) {
+      Dmsg2(dbglvl, "<- %d %s\n", res->bs->msglen, curline);
+   }
+
+   if (res->type == R_DIRECTOR && res->use_setip) {
+      res->bs->fsend("setip\n");
+      while (get_next_line(res)) {
+         Dmsg2(dbglvl, "<- %d %s\n", res->bs->msglen, curline);
+      }
+   }
+
+   res->bs->fsend(".bvfs_get_jobs client=%s\n", client);
+   while (get_next_line(res)) {
+       QString line(curline);
+       QStringList line_lst = line.split(" ", QString::SkipEmptyParts);
+
+       model->setItem(row, 0, new QStandardItem(line_lst[0]));
+
+       model->setItem(row, 1, new QStandardItem(line_lst[3]));
+
+       QDateTime date;
+       date.setTime_t(line_lst[1].toUInt());
+       QStandardItem *dateItem = new QStandardItem();
+       dateItem->setData(date, Qt::DisplayRole);
+       model->setItem(row, 3, dateItem);
+
+       ret = true;
+       ++row;
+   }
+
+   // Close the socket, it's over or we don't want to reuse it
+   disconnect_bacula();
+
+//   // fill extra job info
+//   for (int r=0; r<model->rowCount(); ++r) {
+//       arg = model->item(r, 0)->text().toUtf8();
+//       get_job_info(NULL);
+//       model->setItem(r, 2, new QStandardItem(res->infos.JobLevel));
+//       model->setItem(r, 4, new QStandardItem(res->infos.JobFiles));
+//       model->setItem(r, 5, new QStandardItem(res->infos.JobBytes));
+//   }
+
+bail_out:
+
+   if (tid) {
+      stop_thread_timer(tid);
+   }
+   if (ret) {
+      mark_as_done();
+   } else {
+      mark_as_failed();
+   }
+   return ret;
+}
+
+
+bool task::get_job_files(const char* job, uint64_t pathid)
+{
+    bool ret = false;
+    btimer_t *tid = NULL;
+    QString jobs;
+
+    if (model) {
+        model->clear();
+    }
+
+    if (!res->bs || !res->bs->is_open() || res->bs->is_error()) {
+        if (!connect_bacula()) {
+            goto bail_out;
+        }
+    }
+
+    tid = start_thread_timer(NULL, pthread_self(), (uint32_t)120);
+
+    if (res->type == R_CLIENT && !res->proxy_sent) {
+        res->proxy_sent = true;
+        res->bs->fsend("proxy\n");
+        while (get_next_line(res)) {
+            if (strncmp(curline, "2000", 4) != 0) {
+                pm_strcpy(errmsg, curline);
+                goto bail_out;
+            }
+            Dmsg2(dbglvl, "<- %d %s\n", res->bs->msglen, curline);
+        }
+    }
+
+    if (res->type == R_DIRECTOR && res->use_setip) {
+        res->bs->fsend("setip\n");
+        while (get_next_line(res)) {
+            Dmsg2(dbglvl, "<- %d %s\n", res->bs->msglen, curline);
+        }
+    }
+
+    res->bs->fsend(".api 2\n");
+    while (get_next_line(res)) {
+        Dmsg2(dbglvl, "<- %d %s\n", res->bs->msglen, curline);
+    }
+
+    /* retrieve all job ids*/
+    res->bs->fsend(".bvfs_get_jobids jobid=%s\n", job);
+    while (get_next_line(res)) {
+        jobs = QString(curline);
+        Dmsg2(dbglvl, "<- %d %s\n", res->bs->msglen, curline);
+    }
+
+    /* cache the file set */
+    res->bs->fsend(".bvfs_update jobid=%s\n", jobs.toUtf8());
+    while (get_next_line(res)) {
+        Dmsg2(dbglvl, "<- %d %s\n", res->bs->msglen, curline);
+    }
+
+    if (pathid == 0) {
+        res->bs->fsend(".bvfs_lsdirs jobid=%s path=\"\"\n", jobs.toUtf8());
+    } else {
+        res->bs->fsend(".bvfs_lsdirs jobid=%s pathid=%lld\n", jobs.toUtf8(), pathid);
+    }
+
+    while (get_next_line(res)) {
+        QString line(curline);
+        QStringList line_lst = line.split("\t", QString::KeepEmptyParts);
+        if ((line_lst.size() == 6) && line_lst[5] != ".")
+        {
+            DirectoryItem *d = new DirectoryItem();
+            d->setData(QVariant(line_lst[0]), PathIdRole);
+            d->setData(QVariant(line_lst[1]), FilenameIdRole);
+            d->setData(QVariant(line_lst[2]), FileIdRole);
+            d->setData(QVariant(line_lst[3]), JobIdRole);
+            d->setData(QVariant(line_lst[4]), LStatRole);
+            d->setData(QVariant(line_lst[5]), PathRole);
+            d->setData(QVariant(line_lst[5]), Qt::DisplayRole);
+
+            model->appendRow(d);
+            ret = true;
+        }
+    }
+
+    /* then, request files */
+    if (pathid == 0) {
+        res->bs->fsend(".bvfs_lsfiles jobid=%s path=\"\"\n", jobs.toUtf8());
+    } else {
+        res->bs->fsend(".bvfs_lsfiles jobid=%s pathid=%lld\n", jobs.toUtf8(), pathid);
+    }
+
+    while (get_next_line(res)) {
+        QString line(curline);
+        QStringList line_lst = line.split("\t", QString::SkipEmptyParts);
+        if ((line_lst.size() == 6) && line_lst[5] != ".")
+        {
+            FileItem *f = new FileItem();
+            f->setData(QVariant(line_lst[0]), PathIdRole);
+            f->setData(QVariant(line_lst[1]), FilenameIdRole);
+            f->setData(QVariant(line_lst[2]), FileIdRole);
+            f->setData(QVariant(line_lst[3]), JobIdRole);
+            f->setData(QVariant(line_lst[4]), LStatRole);
+            f->setData(QVariant(line_lst[5]), PathRole);
+            f->setData(QVariant(line_lst[5]), Qt::DisplayRole);
+            model->appendRow(f);
+            ret = true;
+        }
+    }
+
+    // Close the socket, it's over or we don't want to reuse it
+    disconnect_bacula();
+
+bail_out:
+
+    if (tid) {
+        stop_thread_timer(tid);
+    }
+    if (ret) {
+        mark_as_done();
+    } else {
+        mark_as_failed();
+    }
+    return ret;
+}
+
+extern int decode_stat(char *buf, struct stat *statp, int stat_size, int32_t *LinkFI);
+
+bool task::prepare_restore(const QString& tableName)
+{
+    bool ret = false;
+    btimer_t *tid = NULL;
+    QString q;
+    QStringList fileids, jobids, dirids, findexes;
+    struct stat statp;
+    int32_t LinkFI;
+
+    for (int row=0; row < model->rowCount(); ++row) {
+        QModelIndex idx = model->index(row, 0);
+        if (idx.data(TypeRole) == TYPEROLE_FILE) {
+            fileids << idx.data(FileIdRole).toString();
+            jobids << idx.data(JobIdRole).toString();
+            decode_stat(idx.data(LStatRole).toString().toLocal8Bit().data(),
+                        &statp, sizeof(statp), &LinkFI);
+            if (LinkFI) {
+                findexes << idx.data(JobIdRole).toString() + "," + QString().setNum(LinkFI);
+            }
+        } else // TYPEROLE_DIRECTORY
+        {
+            dirids << idx.data(PathIdRole).toString();
+            jobids << idx.data(JobIdRole).toString().split(","); // Can have multiple jobids
+        }
+    }
+
+    fileids.removeDuplicates();
+    jobids.removeDuplicates();
+    dirids.removeDuplicates();
+    findexes.removeDuplicates();
+
+    if (!res->bs || !res->bs->is_open() || res->bs->is_error()) {
+        if (!connect_bacula()) {
+            goto bail_out;
+        }
+    }
+
+    tid = start_thread_timer(NULL, pthread_self(), (uint32_t)120);
+
+    if (res->type == R_CLIENT && !res->proxy_sent) {
+        res->proxy_sent = true;
+        res->bs->fsend("proxy\n");
+        while (get_next_line(res)) {
+            if (strncmp(curline, "2000", 4) != 0) {
+                pm_strcpy(errmsg, curline);
+                goto bail_out;
+            }
+            Dmsg2(dbglvl, "<- %d %s\n", res->bs->msglen, curline);
+        }
+    }
+
+    if (res->type == R_DIRECTOR && res->use_setip) {
+        res->bs->fsend("setip\n");
+        while (get_next_line(res)) {
+            Dmsg2(dbglvl, "<- %d %s\n", res->bs->msglen, curline);
+        }
+    }
+
+    res->bs->fsend(".api 2\n");
+    while (get_next_line(res)) {
+        Dmsg2(dbglvl, "<- %d %s\n", res->bs->msglen, curline);
+    }
+
+    /* retrieve all job ids*/
+    q = QString(".bvfs_restore path=%1 jobid=%2").arg(tableName, jobids.join(","));
+    if (fileids.size() > 0) {
+        q += " fileid=" + fileids.join(",");
+    }
+    if (dirids.size() > 0) {
+        q += " dirid=" + dirids.join(",");
+    }
+    if (findexes.size() > 0) {
+        q += " hardlink=" + findexes.join(",");
+    }
+
+    q += "\n";
+    res->bs->fsend(q.toUtf8());
+    while (get_next_line(res)) {
+        ret = true;
+        Dmsg2(dbglvl, "<- %d %s\n", res->bs->msglen, curline);
+    }
+
+    // Close the socket, it's over or we don't want to reuse it
+    disconnect_bacula();
+
+ bail_out:
+
+    if (tid) {
+       stop_thread_timer(tid);
+    }
+    if (ret) {
+       mark_as_done();
+    } else {
+       mark_as_failed();
+    }
+    return ret;
+}
+
+bool task::run_restore(const QString& tableName)
+{
+    bool ret = false;
+    btimer_t *tid = NULL;
+    QString q;
+
+    if (!res->bs || !res->bs->is_open() || res->bs->is_error()) {
+        if (!connect_bacula()) {
+            goto bail_out;
+        }
+    }
+
+    tid = start_thread_timer(NULL, pthread_self(), (uint32_t)120);
+
+    if (res->type == R_CLIENT && !res->proxy_sent) {
+        res->proxy_sent = true;
+        res->bs->fsend("proxy\n");
+        while (get_next_line(res)) {
+            if (strncmp(curline, "2000", 4) != 0) {
+                pm_strcpy(errmsg, curline);
+                goto bail_out;
+            }
+            Dmsg2(dbglvl, "<- %d %s\n", res->bs->msglen, curline);
+        }
+    }
+
+    if (res->type == R_DIRECTOR && res->use_setip) {
+        res->bs->fsend("setip\n");
+        while (get_next_line(res)) {
+            Dmsg2(dbglvl, "<- %d %s\n", res->bs->msglen, curline);
+        }
+    }
+
+    res->bs->fsend(".api 2\n");
+    while (get_next_line(res)) {
+        Dmsg2(dbglvl, "<- %d %s\n", res->bs->msglen, curline);
+    }
+
+    q = QString("restore client=%1").arg(arg);
+
+    if (arg2) {
+        QString where(arg2);
+        where.replace("\"", "");
+        q += " where=\"" + where + "\"";
+    }
+
+    if (arg3) {
+        QString comment(arg3);
+        comment.replace("\"", " ");
+        q += " comment=\"" + comment+ "\"";
+    }
+
+    q += " file=\"?" + tableName + "\"";
+    q += " done yes\n";
+
+    res->bs->fsend(q.toUtf8());
+    while (get_next_line(res)) {
+        ret = true;
+        // FIXME : report a signal to have a progress feedback
+        Dmsg2(dbglvl, "<- %d %s\n", res->bs->msglen, curline);
+    }
+
+    // Close the socket, it's over or we don't want to reuse it
+    disconnect_bacula();
+
+ bail_out:
+
+    if (tid) {
+       stop_thread_timer(tid);
+    }
+    if (ret) {
+       mark_as_done();
+    } else {
+       mark_as_failed();
+    }
+    return ret;
+}
+
+bool task::clean_restore(const QString& tableName)
+{
+    bool ret = false;
+    btimer_t *tid = NULL;
+    QString q;
+
+    if (!res->bs || !res->bs->is_open() || res->bs->is_error()) {
+        if (!connect_bacula()) {
+            goto bail_out;
+        }
+    }
+
+    tid = start_thread_timer(NULL, pthread_self(), (uint32_t)120);
+
+    if (res->type == R_CLIENT && !res->proxy_sent) {
+        res->proxy_sent = true;
+        res->bs->fsend("proxy\n");
+        while (get_next_line(res)) {
+            if (strncmp(curline, "2000", 4) != 0) {
+                pm_strcpy(errmsg, curline);
+                goto bail_out;
+            }
+            Dmsg2(dbglvl, "<- %d %s\n", res->bs->msglen, curline);
+        }
+    }
+
+    if (res->type == R_DIRECTOR && res->use_setip) {
+        res->bs->fsend("setip\n");
+        while (get_next_line(res)) {
+            Dmsg2(dbglvl, "<- %d %s\n", res->bs->msglen, curline);
+        }
+    }
+
+    res->bs->fsend(".api 2\n");
+    while (get_next_line(res)) {
+        Dmsg2(dbglvl, "<- %d %s\n", res->bs->msglen, curline);
+    }
+
+    q = QString(".bvfs_cleanup path=%1\n").arg(tableName);
+
+    res->bs->fsend(q.toUtf8());
+    while (get_next_line(res)) {
+        ret = true;
+        // FIXME : report a signal to have a progress feedback
+        Dmsg2(dbglvl, "<- %d %s\n", res->bs->msglen, curline);
+    }
+
+    // Close the socket, it's over or we don't want to reuse it
+    disconnect_bacula();
+
+ bail_out:
+
+    if (tid) {
+       stop_thread_timer(tid);
+    }
+    if (ret) {
+       mark_as_done();
+    } else {
+       mark_as_failed();
+    }
+    return ret;
+}
+
+bool task::restore(const QString& tableName)
+{
+    bool ret=prepare_restore(tableName);
+    if (ret) {
+        ret = run_restore(tableName);
+        if (ret) {
+            return clean_restore(tableName);
+        }
+    }
+    return false;
+}
+
 /* Get resources to run a job */
 bool task::get_resources()
 {
@@ -841,7 +1323,7 @@ bool task::get_resources()
    btimer_t *tid = NULL;
 
    if (!res->bs || !res->bs->is_open() || res->bs->is_error()) {
-      if (!connect_bacula()) { 
+      if (!connect_bacula()) {
          goto bail_out;
       }
    }

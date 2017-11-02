@@ -24,7 +24,7 @@ cross-win32 {
   LIBS       +=  -mwindows -L../win32/release64 -lbacula
 }
 !cross-win32 {
-  LIBS        += -L../lib -lbac -L../findlib -lbacfind -L/opt/local/lib -lssl -lcrypto
+  LIBS        += -L../lib -lbac -L../findlib -lbacfind -lssl -lcrypto
 }
 
 qwt {
