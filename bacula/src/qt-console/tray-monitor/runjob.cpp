@@ -381,6 +381,7 @@ bool TSched::read_command_file(const char *file, alist *lst, btime_t mtime)
 
 void TSched::timerEvent(QTimerEvent *event)
 {
+   Q_UNUSED(event)
    POOL_MEM tmp, command;
    TSchedJob *j;
    alist lst(10, not_owned_by_alist);

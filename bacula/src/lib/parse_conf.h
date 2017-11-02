@@ -21,7 +21,7 @@
  *     Kern Sibbald, January MM
  *
  */
-
+#pragma once
 /* Used for certain keyword tables */
 struct s_kw {
    const char *name;

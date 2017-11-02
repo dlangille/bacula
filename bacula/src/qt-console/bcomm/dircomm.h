@@ -48,12 +48,12 @@ public:
    int  sock_read();
    bool authenticate_director(JCR *jcr, DIRRES *director, CONRES *cons, 
           char *buf, int buflen);
-   bool is_connected() { return m_sock != NULL; };
-   bool is_ready() { return is_connected() && m_at_prompt && m_at_main_prompt; };
+   bool is_connected() { return m_sock != NULL; }
+   bool is_ready() { return is_connected() && m_at_prompt && m_at_main_prompt; }
    char *msg();
    bool notify(bool enable); // enables/disables socket notification - returns the previous state
    bool is_notify_enabled() const;
-   bool is_in_command() const { return m_in_command > 0; };
+   bool is_in_command() const { return m_in_command > 0; }
    void terminate();
    bool connect_dir();                     
    int read(void);
