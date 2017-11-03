@@ -66,4 +66,42 @@ if [ x$FORCE_CLOUD = xyes ]; then
       aws configure set default.s3.signature_version s3v4
       aws s3 rm s3://${CLOUD_BUCKETNAME} $endpoint --recursive --include 'TestVol*' --include 'Vol*' $region 2>/dev/null >/dev/null
    fi
+   if [ x${CLOUD_BUCKETNAME} != x ]; then
+      args="${args} -n ${CLOUD_BUCKETNAME}"
+   fi
+   if [ x${CLOUD_ACCESSKEY} != x ]; then
+      args="${args} -a ${CLOUD_ACCESSKEY}"
+   fi
+   if [ x${CLOUD_SECRETKEY} != x ]; then
+      args="${args} -s ${CLOUD_SECRETKEY}"
+   fi
+   if [ x${CLOUD_PROTOCOL} != x ]; then
+      args="${args} -p ${CLOUD_PROTOCOL}"
+   fi
+   if [ x${CLOUD_REGION} != x ]; then
+      args="${args} -r ${CLOUD_REGION}"
+   fi
+   if [ x${CLOUD_DRIVER} != x ]; then
+      args="${args} -y ${CLOUD_DRIVER}"
+   fi
+   if [ x${CLOUD_URISTYLE} != x ]; then
+      args="${args} -u ${CLOUD_URISTYLE}"
+   fi
+   if [ x${CLOUD_BLOBENDPOINT} != x ]; then
+      args="${args} -b ${CLOUD_BLOBENDPOINT}"
+   fi
+   if [ x${CLOUD_TABLEENDPOINT} != x ]; then
+      args="${args} -t ${CLOUD_TABLEENDPOINT}"
+   fi
+   if [ x${CLOUD_QUEUEENDPOINT} != x ]; then
+      args="${args} -q ${CLOUD_QUEUEENDPOINT}"
+   fi
+   ${bin}/bcloud ${args} -v 'Vol' clean
+   ${bin}/bcloud ${args} -v 'vol' clean
+   ${bin}/bcloud ${args} -v 'TestVol' clean   
+   ${bin}/bcloud ${args} -v 'Small' clean   
+   ${bin}/bcloud ${args} -v 'TEST' clean   
+   ${bin}/bcloud ${args} -v 'Backup-' clean
+   # Might report incorrect error if not setup correctly
+   true
 fi
