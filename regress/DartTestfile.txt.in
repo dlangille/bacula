@@ -6,6 +6,8 @@ ADD_TEST(changer:two-pool-changer "@regressdir@/tests/two-pool-changer")
 ADD_TEST(changer:two-volume-changer "@regressdir@/tests/two-volume-changer")
 ADD_TEST(changer:vol-duration-changer "@regressdir@/tests/vol-duration-changer")
 
+ADD_TEST(aligned:aligned-bug-8013-test "@regressdir@/tests/aligned-bug-8013-test")
+ADD_TEST(aligned:aligned-test "@regressdir@/tests/aligned-test")
 ADD_TEST(aligned:aligned-and-normal-test "@regressdir@/tests/aligned-and-normal-test")
 ADD_TEST(aligned:aligned-multi-test "@regressdir@/tests/aligned-and-normal-test")
 ADD_TEST(aligned:aligned-bug-1919-test "@regressdir@/tests/aligned-bug-1919-test")
