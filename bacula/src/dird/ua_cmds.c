@@ -1615,7 +1615,7 @@ static void delete_job(UAContext *ua)
       if (sl.size() > 25 && (find_arg(ua, "yes") < 0)) {
          bsnprintf(buf, sizeof(buf),
                    _("Are you sure you want to delete %d JobIds ? (yes/no): "), sl.size());
-         if (!get_yesno(ua, buf)) {
+         if (!get_yesno(ua, buf) || ua->pint32_val==0) {
             return;
          }
       }
