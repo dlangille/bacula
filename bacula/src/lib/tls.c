@@ -45,6 +45,8 @@
 
 #ifdef HAVE_OPENSSL /* How about OpenSSL? */
 
+#include "openssl-compat.h"
+
 /* No anonymous ciphers, no <128 bit ciphers, no export ciphers, no MD5 ciphers */
 #define TLS_DEFAULT_CIPHERS "ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH"
 

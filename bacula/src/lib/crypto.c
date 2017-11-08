@@ -131,6 +131,8 @@
 #ifdef HAVE_CRYPTO /* Is encryption enabled? */
 #ifdef HAVE_OPENSSL /* How about OpenSSL? */
 
+#include "openssl-compat.h"
+
 /* ASN.1 Declarations */
 #define BACULA_ASN1_VERSION 0
 
