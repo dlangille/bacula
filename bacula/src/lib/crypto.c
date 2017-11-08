@@ -275,7 +275,7 @@ struct X509_Keypair {
 struct Digest {
    crypto_digest_t type;
    JCR *jcr;
-   EVP_MD_CTX ctx;
+   EVP_MD_CTX *ctx;
 };
 
 /* Message Signature Structure */
@@ -293,7 +293,7 @@ struct Crypto_Session {
 
 /* Symmetric Cipher Context */
 struct Cipher_Context {
-   EVP_CIPHER_CTX ctx;
+   EVP_CIPHER_CTX *ctx;
 };
 
 /* PEM Password Dispatch Context */
@@ -590,7 +590,10 @@ DIGEST *crypto_digest_new(JCR *jcr, crypto_digest_t type)
    Dmsg1(150, "crypto_digest_new jcr=%p\n", jcr);
 
    /* Initialize the OpenSSL message digest context */
-   EVP_MD_CTX_init(&digest->ctx);
+   digest->ctx = EVP_MD_CTX_new();
+   if (!digest->ctx)
+	   goto err;
+   EVP_MD_CTX_reset(digest->ctx);
 
    /* Determine the correct OpenSSL message digest type */
    switch (type) {
@@ -614,7 +617,7 @@ DIGEST *crypto_digest_new(JCR *jcr, crypto_digest_t type)
    }
 
    /* Initialize the backing OpenSSL context */
-   if (EVP_DigestInit_ex(&digest->ctx, md, NULL) == 0) {
+   if (EVP_DigestInit_ex(digest->ctx, md, NULL) == 0) {
       goto err;
    }
 
@@ -635,7 +638,7 @@ err:
  */
 bool crypto_digest_update(DIGEST *digest, const uint8_t *data, uint32_t length)
 {
-   if (EVP_DigestUpdate(&digest->ctx, data, length) == 0) {
+   if (EVP_DigestUpdate(digest->ctx, data, length) == 0) {
       Dmsg0(150, "digest update failed\n");
       openssl_post_errors(digest->jcr, M_ERROR, _("OpenSSL digest update failed"));
       return false;
@@ -653,7 +656,7 @@ bool crypto_digest_update(DIGEST *digest, const uint8_t *data, uint32_t length)
  */
 bool crypto_digest_finalize(DIGEST *digest, uint8_t *dest, uint32_t *length)
 {
-   if (!EVP_DigestFinal(&digest->ctx, dest, (unsigned int *)length)) {
+   if (!EVP_DigestFinal(digest->ctx, dest, (unsigned int *)length)) {
       Dmsg0(150, "digest finalize failed\n");
       openssl_post_errors(digest->jcr, M_ERROR, _("OpenSSL digest finalize failed"));
       return false;
@@ -667,7 +670,7 @@ bool crypto_digest_finalize(DIGEST *digest, uint8_t *dest, uint32_t *length)
  */
 void crypto_digest_free(DIGEST *digest)
 {
-  EVP_MD_CTX_cleanup(&digest->ctx);
+  EVP_MD_CTX_free(digest->ctx);
   free(digest);
 }
 
@@ -790,7 +793,7 @@ crypto_error_t crypto_sign_verify(SIGNATURE *sig, X509_KEYPAIR *keypair, DIGEST 
          sigLen = M_ASN1_STRING_length(si->signature);
          sigData = M_ASN1_STRING_data(si->signature);
 
-         ok = EVP_VerifyFinal(&digest->ctx, sigData, sigLen, keypair->pubkey);
+         ok = EVP_VerifyFinal(digest->ctx, sigData, sigLen, keypair->pubkey);
          if (ok >= 1) {
             return CRYPTO_ERROR_NONE;
          } else if (ok == 0) {
@@ -858,12 +861,12 @@ int crypto_sign_add_signer(SIGNATURE *sig, DIGEST *digest, X509_KEYPAIR *keypair
    /* Set our signature algorithm. We currently require RSA */
    assert(EVP_PKEY_type(keypair->pubkey->type) == EVP_PKEY_RSA);
    /* This is slightly evil. Reach into the MD structure and grab the key type */
-   si->signatureAlgorithm = OBJ_nid2obj(digest->ctx.digest->pkey_type);
+   si->signatureAlgorithm = OBJ_nid2obj(EVP_MD_pkey_type(EVP_MD_CTX_md(digest->ctx)));
 
    /* Finalize/Sign our Digest */
    len = EVP_PKEY_size(keypair->privkey);
    buf = (unsigned char *) malloc(len);
-   if (!EVP_SignFinal(&digest->ctx, buf, &len, keypair->privkey)) {
+   if (!EVP_SignFinal(digest->ctx, buf, &len, keypair->privkey)) {
       openssl_post_errors(M_ERROR, _("Signature creation failed"));
       goto err;
    }
@@ -1249,6 +1252,12 @@ CIPHER_CONTEXT *crypto_cipher_new(CRYPTO_SESSION *cs, bool encrypt, uint32_t *bl
    const EVP_CIPHER *ec;
 
    cipher_ctx = (CIPHER_CONTEXT *)malloc(sizeof(CIPHER_CONTEXT));
+   if (!cipher_ctx)
+	   return NULL;
+
+   cipher_ctx->ctx = EVP_CIPHER_CTX_new();
+   if (!cipher_ctx->ctx)
+	   goto err;
 
    /*
     * Acquire a cipher instance for the given ASN.1 cipher NID
@@ -1261,40 +1270,40 @@ CIPHER_CONTEXT *crypto_cipher_new(CRYPTO_SESSION *cs, bool encrypt, uint32_t *bl
    }
 
    /* Initialize the OpenSSL cipher context */
-   EVP_CIPHER_CTX_init(&cipher_ctx->ctx);
+   EVP_CIPHER_CTX_reset(cipher_ctx->ctx);
    if (encrypt) {
       /* Initialize for encryption */
-      if (!EVP_CipherInit_ex(&cipher_ctx->ctx, ec, NULL, NULL, NULL, 1)) {
+      if (!EVP_CipherInit_ex(cipher_ctx->ctx, ec, NULL, NULL, NULL, 1)) {
          openssl_post_errors(M_ERROR, _("OpenSSL cipher context initialization failed"));
          goto err;
       }
    } else {
       /* Initialize for decryption */
-      if (!EVP_CipherInit_ex(&cipher_ctx->ctx, ec, NULL, NULL, NULL, 0)) {
+      if (!EVP_CipherInit_ex(cipher_ctx->ctx, ec, NULL, NULL, NULL, 0)) {
          openssl_post_errors(M_ERROR, _("OpenSSL cipher context initialization failed"));
          goto err;
       }
    }
 
    /* Set the key size */
-   if (!EVP_CIPHER_CTX_set_key_length(&cipher_ctx->ctx, cs->session_key_len)) {
+   if (!EVP_CIPHER_CTX_set_key_length(cipher_ctx->ctx, cs->session_key_len)) {
       openssl_post_errors(M_ERROR, _("Encryption session provided an invalid symmetric key"));
       goto err;
    }
 
    /* Validate the IV length */
-   if (EVP_CIPHER_iv_length(ec) != M_ASN1_STRING_length(cs->cryptoData->iv)) {
+   if (EVP_CIPHER_iv_length(ec) != ASN1_STRING_length(cs->cryptoData->iv)) {
       openssl_post_errors(M_ERROR, _("Encryption session provided an invalid IV"));
       goto err;
    }
 
    /* Add the key and IV to the cipher context */
-   if (!EVP_CipherInit_ex(&cipher_ctx->ctx, NULL, NULL, cs->session_key, M_ASN1_STRING_data(cs->cryptoData->iv), -1)) {
+   if (!EVP_CipherInit_ex(cipher_ctx->ctx, NULL, NULL, cs->session_key, ASN1_STRING_get0_data(cs->cryptoData->iv), -1)) {
       openssl_post_errors(M_ERROR, _("OpenSSL cipher context key/IV initialization failed"));
       goto err;
    }
 
-   *blocksize = EVP_CIPHER_CTX_block_size(&cipher_ctx->ctx);
+   *blocksize = EVP_CIPHER_CTX_block_size(cipher_ctx->ctx);
    return cipher_ctx;
 
 err:
@@ -1310,7 +1319,7 @@ err:
  */
 bool crypto_cipher_update(CIPHER_CONTEXT *cipher_ctx, const uint8_t *data, uint32_t length, const uint8_t *dest, uint32_t *written)
 {
-   if (!EVP_CipherUpdate(&cipher_ctx->ctx, (unsigned char *)dest, (int *)written, (const unsigned char *)data, length)) {
+   if (!EVP_CipherUpdate(cipher_ctx->ctx, (unsigned char *)dest, (int *)written, (const unsigned char *)data, length)) {
       /* This really shouldn't fail */
       return false;
    } else {
@@ -1328,7 +1337,7 @@ bool crypto_cipher_update(CIPHER_CONTEXT *cipher_ctx, const uint8_t *data, uint3
  */
 bool crypto_cipher_finalize (CIPHER_CONTEXT *cipher_ctx, uint8_t *dest, uint32_t *written)
 {
-   if (!EVP_CipherFinal_ex(&cipher_ctx->ctx, (unsigned char *)dest, (int *) written)) {
+   if (!EVP_CipherFinal_ex(cipher_ctx->ctx, (unsigned char *)dest, (int *) written)) {
       /* This really shouldn't fail */
       return false;
    } else {
@@ -1342,11 +1351,9 @@ bool crypto_cipher_finalize (CIPHER_CONTEXT *cipher_ctx, uint8_t *dest, uint32_t
  */
 void crypto_cipher_free (CIPHER_CONTEXT *cipher_ctx)
 {
-   EVP_CIPHER_CTX_cleanup(&cipher_ctx->ctx);
+   EVP_CIPHER_CTX_free(cipher_ctx->ctx);
    free (cipher_ctx);
 }
-
-
 
 #else /* HAVE_OPENSSL */
 # error No encryption library available
