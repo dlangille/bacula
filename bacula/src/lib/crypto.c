@@ -307,12 +307,7 @@ static ASN1_OCTET_STRING *openssl_cert_keyid(X509 *cert) {
    const X509V3_EXT_METHOD *method;
    ASN1_OCTET_STRING *keyid;
    int i;
-#if (OPENSSL_VERSION_NUMBER >= 0x0090800FL)
    const unsigned char *ext_value_data;
-#else
-   unsigned char *ext_value_data;
-#endif
-
 
    /* Find the index to the subjectKeyIdentifier extension */
    i = X509_get_ext_by_NID(cert, NID_subject_key_identifier, -1);
@@ -331,7 +326,6 @@ static ASN1_OCTET_STRING *openssl_cert_keyid(X509 *cert) {
 
    ext_value_data = ext->value->data;
 
-#if (OPENSSL_VERSION_NUMBER > 0x00907000L)
    if (method->it) {
       /* New style ASN1 */
 
@@ -344,10 +338,6 @@ static ASN1_OCTET_STRING *openssl_cert_keyid(X509 *cert) {
       /* Decode ASN1 item in data */
       keyid = (ASN1_OCTET_STRING *) method->d2i(NULL, &ext_value_data, ext->value->length);
    }
-
-#else
-   keyid = (ASN1_OCTET_STRING *) method->d2i(NULL, &ext_value_data, ext->value->length);
-#endif
 
    return keyid;
 }
@@ -783,11 +773,7 @@ crypto_error_t crypto_sign_verify(SIGNATURE *sig, X509_KEYPAIR *keypair, DIGEST 
    SignerInfo *si;
    int ok, i;
    unsigned int sigLen;
-#if (OPENSSL_VERSION_NUMBER >= 0x0090800FL)
    const unsigned char *sigData;
-#else
-   unsigned char *sigData;
-#endif
 
    signers = sig->sigData->signerInfo;
 
@@ -934,11 +920,7 @@ int crypto_sign_encode(SIGNATURE *sig, uint8_t *dest, uint32_t *length)
 SIGNATURE *crypto_sign_decode(JCR *jcr, const uint8_t *sigData, uint32_t length)
 {
    SIGNATURE *sig;
-#if (OPENSSL_VERSION_NUMBER >= 0x0090800FL)
    const unsigned char *p = (const unsigned char *) sigData;
-#else
-   unsigned char *p = (unsigned char *)sigData;
-#endif
 
    sig = (SIGNATURE *)malloc(sizeof(SIGNATURE));
    if (!sig) {
@@ -1156,11 +1138,7 @@ crypto_error_t crypto_session_decode(const uint8_t *data, uint32_t length, alist
    X509_KEYPAIR *keypair;
    STACK_OF(RecipientInfo) *recipients;
    crypto_error_t retval = CRYPTO_ERROR_NONE;
-#if (OPENSSL_VERSION_NUMBER >= 0x0090800FL)
    const unsigned char *p = (const unsigned char *)data;
-#else
-   unsigned char *p = (unsigned char *)data;
-#endif
 
    /* bacula-fd.conf doesn't contains any key */
    if (!keypairs) {

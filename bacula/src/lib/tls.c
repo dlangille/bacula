@@ -118,13 +118,10 @@ TLS_CONTEXT *new_tls_context(const char *ca_certfile, const char *ca_certdir,
    /* Allows SSLv3, TLSv1, TLSv1.1 and TLSv1.2 protocols */
    ctx->openssl = SSL_CTX_new(TLS_method());
 
-#elif (OPENSSL_VERSION_NUMBER >= 0x10000000L)
+#else
    /* Allows most all protocols */
    ctx->openssl = SSL_CTX_new(SSLv23_method());
 
-#else
-   /* Older method only understands TLSv1 */
-   ctx->openssl = SSL_CTX_new(TLSv1_method());
 #endif
 
    /* Use SSL_OP_ALL to turn on all "rather harmless" workarounds that
@@ -337,11 +334,7 @@ bool tls_postconnect_verify_host(JCR *jcr, TLS_CONNECTION *tls, const char *host
             STACK_OF(CONF_VALUE) *val;
             CONF_VALUE *nval;
             void *extstr = NULL;
-#if (OPENSSL_VERSION_NUMBER >= 0x0090800FL)
             const unsigned char *ext_value_data;
-#else
-            unsigned char *ext_value_data;
-#endif
 
             /* Get x509 extension method structure */
             if (!(method = X509V3_EXT_get(ext))) {
@@ -350,7 +343,6 @@ bool tls_postconnect_verify_host(JCR *jcr, TLS_CONNECTION *tls, const char *host
 
             ext_value_data = ext->value->data;
 
-#if (OPENSSL_VERSION_NUMBER > 0x00907000L)
             if (method->it) {
                /* New style ASN1 */
 
@@ -363,10 +355,6 @@ bool tls_postconnect_verify_host(JCR *jcr, TLS_CONNECTION *tls, const char *host
                /* Decode ASN1 item in data */
                extstr = method->d2i(NULL, &ext_value_data, ext->value->length);
             }
-
-#else
-            extstr = method->d2i(NULL, &ext_value_data, ext->value->length);
-#endif
 
             /* Iterate through to find the dNSName field(s) */
             val = method->i2v(method, extstr, NULL);
