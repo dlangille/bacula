@@ -304,7 +304,7 @@ typedef struct PEM_CB_Context {
 
 /*
  * Extract subjectKeyIdentifier from x509 certificate.
- * Returns: On success, an ASN1_OCTET_STRING that must be freed via M_ASN1_OCTET_STRING_free().
+ * Returns: On success, an ASN1_OCTET_STRING that must be freed via ASN1_OCTET_STRING_free().
  *          NULL on failure.
  */
 static ASN1_OCTET_STRING *openssl_cert_keyid(X509 *cert) {
@@ -312,6 +312,7 @@ static ASN1_OCTET_STRING *openssl_cert_keyid(X509 *cert) {
    const X509V3_EXT_METHOD *method;
    ASN1_OCTET_STRING *keyid;
    int i;
+   const ASN1_STRING *asn1_ext_val;
    const unsigned char *ext_value_data;
 
    /* Find the index to the subjectKeyIdentifier extension */
@@ -329,19 +330,20 @@ static ASN1_OCTET_STRING *openssl_cert_keyid(X509 *cert) {
       return NULL;
    }
 
-   ext_value_data = ext->value->data;
+   asn1_ext_val = X509_EXTENSION_get_data(ext);
+   ext_value_data = ASN1_STRING_get0_data(asn1_ext_val);
 
    if (method->it) {
       /* New style ASN1 */
 
       /* Decode ASN1 item in data */
-      keyid = (ASN1_OCTET_STRING *) ASN1_item_d2i(NULL, &ext_value_data, ext->value->length,
+      keyid = (ASN1_OCTET_STRING *) ASN1_item_d2i(NULL, &ext_value_data, ASN1_STRING_length(asn1_ext_val),
                                                   ASN1_ITEM_ptr(method->it));
    } else {
       /* Old style ASN1 */
 
       /* Decode ASN1 item in data */
-      keyid = (ASN1_OCTET_STRING *) method->d2i(NULL, &ext_value_data, ext->value->length);
+      keyid = (ASN1_OCTET_STRING *) method->d2i(NULL, &ext_value_data, ASN1_STRING_length(asn1_ext_val));
    }
 
    return keyid;
@@ -376,6 +378,7 @@ X509_KEYPAIR *crypto_keypair_new(void)
 X509_KEYPAIR *crypto_keypair_dup(X509_KEYPAIR *keypair)
 {
    X509_KEYPAIR *newpair;
+   int ret;
 
    newpair = crypto_keypair_new();
 
@@ -386,27 +389,32 @@ X509_KEYPAIR *crypto_keypair_dup(X509_KEYPAIR *keypair)
 
    /* Increment the public key ref count */
    if (keypair->pubkey) {
-      CRYPTO_add(&(keypair->pubkey->references), 1, CRYPTO_LOCK_EVP_PKEY);
+      ret = EVP_PKEY_up_ref(keypair->pubkey);
+      if (ret == 0)
+	      goto out_free_new;
       newpair->pubkey = keypair->pubkey;
    }
 
    /* Increment the private key ref count */
    if (keypair->privkey) {
-      CRYPTO_add(&(keypair->privkey->references), 1, CRYPTO_LOCK_EVP_PKEY);
+      ret = EVP_PKEY_up_ref(keypair->privkey);
+      if (ret == 0)
+	      goto out_free_new;
       newpair->privkey = keypair->privkey;
    }
 
    /* Duplicate the keyid */
    if (keypair->keyid) {
-      newpair->keyid = M_ASN1_OCTET_STRING_dup(keypair->keyid);
-      if (!newpair->keyid) {
-         /* Allocation failed */
-         crypto_keypair_free(newpair);
-         return NULL;
-      }
+      newpair->keyid = ASN1_OCTET_STRING_dup(keypair->keyid);
+      if (!newpair->keyid)
+	      goto out_free_new;
    }
 
    return newpair;
+
+out_free_new:
+   crypto_keypair_free(newpair);
+   return NULL;
 }
 
 
@@ -447,9 +455,9 @@ int crypto_keypair_load_cert(X509_KEYPAIR *keypair, const char *file)
    }
 
    /* Validate the public key type (only RSA is supported) */
-   if (EVP_PKEY_type(keypair->pubkey->type) != EVP_PKEY_RSA) {
+   if (EVP_PKEY_base_id(keypair->pubkey) != EVP_PKEY_RSA) {
        Jmsg1(NULL, M_ERROR, 0,
-             _("Unsupported key type provided: %d\n"), EVP_PKEY_type(keypair->pubkey->type));
+             _("Unsupported key type provided: %d\n"), EVP_PKEY_id(keypair->pubkey));
        goto err;
    }
 
@@ -569,7 +577,7 @@ void crypto_keypair_free(X509_KEYPAIR *keypair)
       EVP_PKEY_free(keypair->privkey);
    }
    if (keypair->keyid) {
-      M_ASN1_OCTET_STRING_free(keypair->keyid);
+      ASN1_OCTET_STRING_free(keypair->keyid);
    }
    free(keypair);
 }
@@ -722,7 +730,7 @@ crypto_error_t crypto_sign_get_digest(SIGNATURE *sig, X509_KEYPAIR *keypair,
 
    for (i = 0; i < sk_SignerInfo_num(signers); i++) {
       si = sk_SignerInfo_value(signers, i);
-      if (M_ASN1_OCTET_STRING_cmp(keypair->keyid, si->subjectKeyIdentifier) == 0) {
+      if (ASN1_OCTET_STRING_cmp(keypair->keyid, si->subjectKeyIdentifier) == 0) {
          /* Get the digest algorithm and allocate a digest context */
          Dmsg1(150, "crypto_sign_get_digest jcr=%p\n", sig->jcr);
          switch (OBJ_obj2nid(si->digestAlgorithm)) {
@@ -788,10 +796,10 @@ crypto_error_t crypto_sign_verify(SIGNATURE *sig, X509_KEYPAIR *keypair, DIGEST 
    /* Find the signer */
    for (i = 0; i < sk_SignerInfo_num(signers); i++) {
       si = sk_SignerInfo_value(signers, i);
-      if (M_ASN1_OCTET_STRING_cmp(keypair->keyid, si->subjectKeyIdentifier) == 0) {
+      if (ASN1_OCTET_STRING_cmp(keypair->keyid, si->subjectKeyIdentifier) == 0) {
          /* Extract the signature data */
-         sigLen = M_ASN1_STRING_length(si->signature);
-         sigData = M_ASN1_STRING_data(si->signature);
+         sigLen = ASN1_STRING_length(si->signature);
+         sigData = ASN1_STRING_get0_data(si->signature);
 
          ok = EVP_VerifyFinal(digest->ctx, sigData, sigLen, keypair->pubkey);
          if (ok >= 1) {
@@ -855,11 +863,11 @@ int crypto_sign_add_signer(SIGNATURE *sig, DIGEST *digest, X509_KEYPAIR *keypair
    }
 
    /* Drop the string allocated by OpenSSL, and add our subjectKeyIdentifier */
-   M_ASN1_OCTET_STRING_free(si->subjectKeyIdentifier);
-   si->subjectKeyIdentifier = M_ASN1_OCTET_STRING_dup(keypair->keyid);
+   ASN1_OCTET_STRING_free(si->subjectKeyIdentifier);
+   si->subjectKeyIdentifier = ASN1_OCTET_STRING_dup(keypair->keyid);
 
    /* Set our signature algorithm. We currently require RSA */
-   assert(EVP_PKEY_type(keypair->pubkey->type) == EVP_PKEY_RSA);
+   assert(EVP_PKEY_base_id(keypair->pubkey) == EVP_PKEY_RSA);
    /* This is slightly evil. Reach into the MD structure and grab the key type */
    si->signatureAlgorithm = OBJ_nid2obj(EVP_MD_pkey_type(EVP_MD_CTX_md(digest->ctx)));
 
@@ -872,7 +880,7 @@ int crypto_sign_add_signer(SIGNATURE *sig, DIGEST *digest, X509_KEYPAIR *keypair
    }
 
    /* Add the signature to the SignerInfo structure */
-   if (!M_ASN1_OCTET_STRING_set(si->signature, buf, len)) {
+   if (!ASN1_OCTET_STRING_set(si->signature, buf, len)) {
       /* Allocation failed in OpenSSL */
       goto err;
    }
@@ -1045,7 +1053,7 @@ CRYPTO_SESSION *crypto_session_new (crypto_cipher_t cipher, alist *pubkeys)
       }
 
       /* Store it in our ASN.1 structure */
-      if (!M_ASN1_OCTET_STRING_set(cs->cryptoData->iv, iv, iv_len)) {
+      if (!ASN1_OCTET_STRING_set(cs->cryptoData->iv, iv, iv_len)) {
          /* Allocation failed in OpenSSL */
          crypto_session_free(cs);
          free(iv);
@@ -1074,11 +1082,11 @@ CRYPTO_SESSION *crypto_session_new (crypto_cipher_t cipher, alist *pubkeys)
       ASN1_INTEGER_set(ri->version, BACULA_ASN1_VERSION);
 
       /* Drop the string allocated by OpenSSL, and add our subjectKeyIdentifier */
-      M_ASN1_OCTET_STRING_free(ri->subjectKeyIdentifier);
-      ri->subjectKeyIdentifier = M_ASN1_OCTET_STRING_dup(keypair->keyid);
+      ASN1_OCTET_STRING_free(ri->subjectKeyIdentifier);
+      ri->subjectKeyIdentifier = ASN1_OCTET_STRING_dup(keypair->keyid);
 
       /* Set our key encryption algorithm. We currently require RSA */
-      assert(keypair->pubkey && EVP_PKEY_type(keypair->pubkey->type) == EVP_PKEY_RSA);
+      assert(keypair->pubkey && EVP_PKEY_base_id(keypair->pubkey) == EVP_PKEY_RSA);
       ri->keyEncryptionAlgorithm = OBJ_nid2obj(NID_rsaEncryption);
 
       /* Encrypt the session key */
@@ -1093,7 +1101,7 @@ CRYPTO_SESSION *crypto_session_new (crypto_cipher_t cipher, alist *pubkeys)
       }
 
       /* Store it in our ASN.1 structure */
-      if (!M_ASN1_OCTET_STRING_set(ri->encryptedKey, ekey, ekey_len)) {
+      if (!ASN1_OCTET_STRING_set(ri->encryptedKey, ekey, ekey_len)) {
          /* Allocation failed in OpenSSL */
          RecipientInfo_free(ri);
          crypto_session_free(cs);
@@ -1187,11 +1195,11 @@ crypto_error_t crypto_session_decode(const uint8_t *data, uint32_t length, alist
          ri = sk_RecipientInfo_value(recipients, i);
 
          /* Match against the subjectKeyIdentifier */
-         if (M_ASN1_OCTET_STRING_cmp(keypair->keyid, ri->subjectKeyIdentifier) == 0) {
+         if (ASN1_OCTET_STRING_cmp(keypair->keyid, ri->subjectKeyIdentifier) == 0) {
             /* Match found, extract symmetric encryption session data */
 
             /* RSA is required. */
-            assert(EVP_PKEY_type(keypair->privkey->type) == EVP_PKEY_RSA);
+            assert(EVP_PKEY_base_id(keypair->privkey) == EVP_PKEY_RSA);
 
             /* If we recieve a RecipientInfo structure that does not use
              * RSA, return an error */
@@ -1203,8 +1211,8 @@ crypto_error_t crypto_session_decode(const uint8_t *data, uint32_t length, alist
             /* Decrypt the session key */
             /* Allocate sufficient space for the largest possible decrypted data */
             cs->session_key = (unsigned char *)malloc(EVP_PKEY_size(keypair->privkey));
-            cs->session_key_len = EVP_PKEY_decrypt(cs->session_key, M_ASN1_STRING_data(ri->encryptedKey),
-                                  M_ASN1_STRING_length(ri->encryptedKey), keypair->privkey);
+            cs->session_key_len = EVP_PKEY_decrypt(cs->session_key, ASN1_STRING_get0_data(ri->encryptedKey),
+                                  ASN1_STRING_length(ri->encryptedKey), keypair->privkey);
 
             if (cs->session_key_len <= 0) {
                openssl_post_errors(M_ERROR, _("Failure decrypting the session key"));

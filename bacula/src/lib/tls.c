@@ -337,25 +337,27 @@ bool tls_postconnect_verify_host(JCR *jcr, TLS_CONNECTION *tls, const char *host
             CONF_VALUE *nval;
             void *extstr = NULL;
             const unsigned char *ext_value_data;
+            const ASN1_STRING *asn1_ext_val;
 
             /* Get x509 extension method structure */
             if (!(method = X509V3_EXT_get(ext))) {
                break;
             }
 
-            ext_value_data = ext->value->data;
+            asn1_ext_val = X509_EXTENSION_get_data(ext);
+            ext_value_data = ASN1_STRING_get0_data(asn1_ext_val);
 
             if (method->it) {
                /* New style ASN1 */
 
                /* Decode ASN1 item in data */
-               extstr = ASN1_item_d2i(NULL, &ext_value_data, ext->value->length,
+               extstr = ASN1_item_d2i(NULL, &ext_value_data, ASN1_STRING_length(asn1_ext_val),
                                       ASN1_ITEM_ptr(method->it));
             } else {
                /* Old style ASN1 */
 
                /* Decode ASN1 item in data */
-               extstr = method->d2i(NULL, &ext_value_data, ext->value->length);
+               extstr = method->d2i(NULL, &ext_value_data, ASN1_STRING_length(asn1_ext_val));
             }
 
             /* Iterate through to find the dNSName field(s) */
