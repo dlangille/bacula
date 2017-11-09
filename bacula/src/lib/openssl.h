@@ -39,10 +39,6 @@
 #ifdef HAVE_OPENSSL
 void             openssl_post_errors     (int code, const char *errstring);
 void             openssl_post_errors     (JCR *jcr, int code, const char *errstring);
-int              openssl_init_threads    (void);
-void             openssl_cleanup_threads (void);
-int              openssl_seed_prng       (void);
-int              openssl_save_prng       (void);
 #endif /* HAVE_OPENSSL */
 
 #endif /* __OPENSSL_H_ */

@@ -41,15 +41,6 @@
 
 /* Are we initialized? */
 static int crypto_initialized = false;
-
-/* Array of mutexes for use with OpenSSL static locking */
-static pthread_mutex_t *mutexes;
-
-/* OpenSSL dynamic locking structure */
-struct CRYPTO_dynlock_value {
-   pthread_mutex_t mutex;
-};
-
 /*
  * ***FIXME*** this is a sort of dummy to avoid having to
  *   change all the existing code to pass either a jcr or
@@ -60,7 +51,6 @@ void openssl_post_errors(int code, const char *errstring)
 {
    openssl_post_errors(NULL, code, errstring);
 }
-
 
 /*
  * Post all per-thread openssl errors
@@ -78,6 +68,15 @@ void openssl_post_errors(JCR *jcr, int code, const char *errstring)
       Qmsg2(jcr, M_ERROR, 0, "%s: ERR=%s\n", errstring, buf);
    }
 }
+
+#if (OPENSSL_VERSION_NUMBER < 0x10100000L)
+/* Array of mutexes for use with OpenSSL static locking */
+static pthread_mutex_t *mutexes;
+
+/* OpenSSL dynamic locking structure */
+struct CRYPTO_dynlock_value {
+   pthread_mutex_t mutex;
+};
 
 /*
  * Return an OpenSSL thread ID
@@ -151,11 +150,10 @@ static void openssl_update_static_mutex (int mode, int i, const char *file, int 
  *  Returns: 0 on success
  *           errno on failure
  */
-int openssl_init_threads (void)
+static int openssl_init_threads (void)
 {
    int i, numlocks;
    int stat;
-
 
    /* Set thread ID callback */
    CRYPTO_set_id_callback(get_openssl_thread_id);
@@ -185,7 +183,7 @@ int openssl_init_threads (void)
 /*
  * Clean up OpenSSL threading support
  */
-void openssl_cleanup_threads(void)
+static void openssl_cleanup_threads(void)
 {
    int i, numlocks;
    int stat;
@@ -216,13 +214,14 @@ void openssl_cleanup_threads(void)
    CRYPTO_set_dynlock_destroy_callback(NULL);
 }
 
+#endif
 
 /*
  * Seed OpenSSL PRNG
  *  Returns: 1 on success
  *           0 on failure
  */
-int openssl_seed_prng (void)
+static int openssl_seed_prng (void)
 {
    const char *names[]  = { "/dev/urandom", "/dev/random", NULL };
    int i;
@@ -247,7 +246,7 @@ int openssl_seed_prng (void)
  *  Returns: 1 on success
  *           0 on failure
  */
-int openssl_save_prng (void)
+static int openssl_save_prng (void)
 {
    // ***FIXME***
    // Implement PRNG state save
@@ -262,8 +261,9 @@ int openssl_save_prng (void)
  */
 int init_crypto (void)
 {
-   int stat;
+   int stat = 0;
 
+#if (OPENSSL_VERSION_NUMBER < 0x10100000L)
    if ((stat = openssl_init_threads()) != 0) {
       berrno be;
       Jmsg1(NULL, M_ABORT, 0,
@@ -278,6 +278,7 @@ int init_crypto (void)
 
    /* Register OpenSSL ciphers and digests */
    OpenSSL_add_all_algorithms();
+#endif
 
    if (!openssl_seed_prng()) {
       Jmsg0(NULL, M_ERROR_TERM, 0, _("Failed to seed OpenSSL PRNG\n"));
@@ -309,6 +310,7 @@ int cleanup_crypto (void)
       Jmsg0(NULL, M_ERROR, 0, _("Failed to save OpenSSL PRNG\n"));
    }
 
+#if (OPENSSL_VERSION_NUMBER < 0x10100000L)
    openssl_cleanup_threads();
 
    /* Free libssl and libcrypto error strings */
@@ -319,6 +321,7 @@ int cleanup_crypto (void)
 
    /* Free memory used by PRNG */
    RAND_cleanup();
+#endif
 
    crypto_initialized = false;
 
