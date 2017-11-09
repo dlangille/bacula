@@ -25,6 +25,8 @@ Prado::using('System.Web.UI.ActiveControls.TActiveLabel');
 Prado::using('Application.Web.Portlets.BConditional');
 Prado::using('Application.Web.Portlets.DirectiveListTemplate');
 Prado::using('Application.Web.Portlets.DirectiveBoolean');
+Prado::using('Application.Web.Portlets.DirectiveComboBox');
+Prado::using('Application.Web.Portlets.DirectiveInteger');
 Prado::using('Application.Web.Portlets.DirectiveText');
 Prado::using('Application.Web.Portlets.DirectiveTimePeriod');
 Prado::using('Application.Web.Portlets.DirectiveRunscript');
@@ -42,6 +44,7 @@ class BaculaConfigDirectives extends DirectiveListTemplate {
 	private $directive_types = array(
 		'DirectiveBoolean',
 		'DirectiveComboBox',
+		'DirectiveInteger',
 		'DirectiveText',
 		'DirectiveTimePeriod'
 	);
@@ -243,6 +246,8 @@ class BaculaConfigDirectives extends DirectiveListTemplate {
 				}
 				if ($this->directive_types[$i] === 'DirectiveBoolean') {
 					settype($default_value, 'bool');
+				} elseif ($this->directive_types[$i] === 'DirectiveInteger') {
+					settype($directive_value, 'int');
 				}
 				if ($directive_value === $default_value && $in_config === false) {
 					// value the same as default value, skip it

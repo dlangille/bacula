@@ -10,6 +10,11 @@
 						<com:Application.Web.Portlets.DirectiveText />
 					</prop:TrueTemplate>
 				</com:Application.Web.Portlets.BConditional>
+				<com:Application.Web.Portlets.BConditional BCondition="<%#($this->DataItem['field_type'] === 'Integer')%>">
+					<prop:TrueTemplate>
+						<com:Application.Web.Portlets.DirectiveInteger />
+					</prop:TrueTemplate>
+				</com:Application.Web.Portlets.BConditional>
 				<com:Application.Web.Portlets.BConditional BCondition="<%#($this->DataItem['field_type'] === 'CheckBox')%>">
 					<prop:TrueTemplate>
 						<com:Application.Web.Portlets.DirectiveBoolean />

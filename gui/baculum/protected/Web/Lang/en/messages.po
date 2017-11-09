@@ -1414,3 +1414,9 @@ msgstr "API host:"
 
 msgid "Select host"
 msgstr "Select host"
+
+msgid "Field required."
+msgstr "Field required."
+
+msgid "Invalid value. Integer value required."
+msgstr "Invalid value. Integer value required."

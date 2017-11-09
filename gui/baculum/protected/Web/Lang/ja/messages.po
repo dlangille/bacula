@@ -1165,3 +1165,9 @@ msgstr "OAuth2 scopes (space separated):"
 
 msgid "Please enter OAuth2 scopes."
 msgstr "Please enter OAuth2 scopes."
+
+msgid "Field required."
+msgstr "Field required."
+
+msgid "Invalid value. Integer value required."
+msgstr "Invalid value. Integer value required."

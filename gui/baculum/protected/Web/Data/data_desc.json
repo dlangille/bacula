@@ -87,19 +87,19 @@
 				"Required": false,
 				"ValueType": "pint32",
 				"DefaultValue": 1,
-				"FieldType": "TextBox"
+				"FieldType": "Integer"
 			},
 			"MaximumReloadRequests": {
 				"Required": false,
 				"ValueType": "pint32",
 				"DefaultValue": 32,
-				"FieldType": "TextBox"
+				"FieldType": "Integer"
 			},
 			"MaximumConsoleConnections": {
 				"Required": false,
 				"ValueType": "pint32",
 				"DefaultValue": 20,
-				"FieldType": "TextBox"
+				"FieldType": "Integer"
 			},
 			"Password": {
 				"Required": true,
@@ -227,7 +227,7 @@
 				"Required": false,
 				"ValueType": "pint32",
 				"DefaultValue": 9102,
-				"FieldType": "TextBox"
+				"FieldType": "Integer"
 			},
 			"fdpassword": {
 				"Required": false,
@@ -293,7 +293,7 @@
 				"Required": false,
 				"ValueType": "pint32",
 				"DefaultValue": 1,
-				"FieldType": "TextBox"
+				"FieldType": "Integer"
 			},
 			"TlsAuthenticate": {
 				"Required": false,
@@ -736,13 +736,13 @@
 				"Required": false,
 				"ValueType": "pint32",
 				"DefaultValue": 1,
-				"FieldType": "TextBox"
+				"FieldType": "Integer"
 			},
 			"MaximumSpawnedJobs": {
 				"Required": false,
 				"ValueType": "pint32",
 				"DefaultValue": 600,
-				"FieldType": "TextBox"
+				"FieldType": "Integer"
 			},
 			"RescheduleOnError": {
 				"Required": false,
@@ -766,13 +766,13 @@
 				"Required": false,
 				"ValueType": "pint32",
 				"DefaultValue": 0,
-				"FieldType": "TextBox"
+				"FieldType": "Integer"
 			},
 			"Priority": {
 				"Required": false,
 				"ValueType": "pint32",
 				"DefaultValue": 10,
-				"FieldType": "TextBox"
+				"FieldType": "Integer"
 			},
 			"AllowMixedPriority": {
 				"Required": false,
@@ -866,7 +866,7 @@
 				"Required": false,
 				"ValueType": "pint32",
 				"DefaultValue": 9103,
-				"FieldType": "TextBox"
+				"FieldType": "Integer"
 			},
 			"sdaddress": {
 				"Required": false,
@@ -944,19 +944,19 @@
 				"Required": false,
 				"ValueType": "pint32",
 				"DefaultValue": 1,
-				"FieldType": "TextBox"
+				"FieldType": "Integer"
 			},
 			"MaximumConcurrentReadjobs": {
 				"Required": false,
 				"ValueType": "pint32",
 				"DefaultValue": 0,
-				"FieldType": "TextBox"
+				"FieldType": "Integer"
 			},
 			"sddport": {
 				"Required": false,
 				"ValueType": "pint32",
 				"DefaultValue": 0,
-				"FieldType": "TextBox"
+				"FieldType": "Integer"
 			},
 			"TlsAuthenticate": {
 				"Required": false,
@@ -1030,7 +1030,7 @@
 				"Required": false,
 				"ValueType": "pint32",
 				"DefaultValue": 0,
-				"FieldType": "TextBox"
+				"FieldType": "Integer"
 			},
 			"dbpassword": {
 				"Required": false,
@@ -1366,7 +1366,7 @@
 						"Required": false,
 						"ValueType": "int32",
 						"DefaultValue": 0,
-						"FieldType": "TextBox"
+						"FieldType": "Integer"
 					}
 				}
 			},
@@ -1455,19 +1455,19 @@
 				"Required": false,
 				"ValueType": "pint32",
 				"DefaultValue": 0,
-				"FieldType": "TextBox"
+				"FieldType": "Integer"
 			},
 			"MaximumVolumeJobs": {
 				"Required": false,
 				"ValueType": "pint32",
 				"DefaultValue": 0,
-				"FieldType": "TextBox"
+				"FieldType": "Integer"
 			},
 			"MaximumVolumeFiles": {
 				"Required": false,
 				"ValueType": "pint32",
 				"DefaultValue": 0,
-				"FieldType": "TextBox"
+				"FieldType": "Integer"
 			},
 			"MaximumVolumeBytes": {
 				"Required": false,
@@ -1625,13 +1625,13 @@
 				"Required": false,
 				"ValueType": "int32",
 				"DefaultValue": 0,
-				"FieldType": "TextBox"
+				"FieldType": "Integer"
 			},
 			"Maximum": {
 				"Required": false,
 				"ValueType": "pint32",
 				"DefaultValue": 2147483647,
-				"FieldType": "TextBox"
+				"FieldType": "Integer"
 			},
 			"WrapCounter": {
 				"Required": false,
@@ -2168,13 +2168,13 @@
 				"Required": false,
 				"ValueType": "pint32",
 				"DefaultValue": 1,
-				"FieldType": "TextBox"
+				"FieldType": "Integer"
 			},
 			"MaximumSpawnedJobs": {
 				"Required": false,
 				"ValueType": "pint32",
 				"DefaultValue": 600,
-				"FieldType": "TextBox"
+				"FieldType": "Integer"
 			},
 			"RescheduleOnError": {
 				"Required": false,
@@ -2198,13 +2198,13 @@
 				"Required": false,
 				"ValueType": "pint32",
 				"DefaultValue": 0,
-				"FieldType": "TextBox"
+				"FieldType": "Integer"
 			},
 			"Priority": {
 				"Required": false,
 				"ValueType": "pint32",
 				"DefaultValue": 10,
-				"FieldType": "TextBox"
+				"FieldType": "Integer"
 			},
 			"AllowMixedPriority": {
 				"Required": false,
@@ -2440,7 +2440,7 @@
 				"Required": false,
 				"ValueType": "pint32",
 				"DefaultValue": 20,
-				"FieldType": "TextBox"
+				"FieldType": "Integer"
 			},
 			"ClientConnectTimeout": {
 				"Required": false,
@@ -2749,7 +2749,7 @@
 				"Required": false,
 				"ValueType": "pint32",
 				"DefaultValue": 0,
-				"FieldType": "TextBox"
+				"FieldType": "Integer"
 			},
 			"VolumePollInterval": {
 				"Required": false,
@@ -2815,7 +2815,7 @@
 				"Required": false,
 				"ValueType": "pint32",
 				"DefaultValue": 0,
-				"FieldType": "TextBox"
+				"FieldType": "Integer"
 			},
 			"SpoolDirectory": {
 				"Required": false,
@@ -2839,7 +2839,7 @@
 				"Required": false,
 				"ValueType": "pint32",
 				"DefaultValue": 0,
-				"FieldType": "TextBox"
+				"FieldType": "Integer"
 			},
 			"MaximumPartSize": {
 				"Required": false,
@@ -3144,7 +3144,7 @@
 				"Required": false,
 				"ValueType": "pint32",
 				"DefaultValue": 20,
-				"FieldType": "TextBox"
+				"FieldType": "Integer"
 			},
 			"Messages": {
 				"Required": false,
@@ -3168,7 +3168,7 @@
 				"Required": false,
 				"ValueType": "pint32",
 				"DefaultValue": 0,
-				"FieldType": "TextBox"
+				"FieldType": "Integer"
 			},
 			"PkiSignatures": {
 				"Required": false,
@@ -3322,7 +3322,7 @@
 				"Required": false,
 				"ValueType": "pint32",
 				"DefaultValue": 9101,
-				"FieldType": "TextBox"
+				"FieldType": "Integer"
 			},
 			"TlsAuthenticate": {
 				"Required": false,
@@ -3462,7 +3462,7 @@
 				"Required": false,
 				"ValueType": "pint32",
 				"DefaultValue": 20,
-				"FieldType": "TextBox"
+				"FieldType": "Integer"
 			},
 			"Messages": {
 				"Required": false,
@@ -3486,7 +3486,7 @@
 				"Required": false,
 				"ValueType": "pint32",
 				"DefaultValue": 0,
-				"FieldType": "TextBox"
+				"FieldType": "Integer"
 			},
 			"PkiSignatures": {
 				"Required": false,
@@ -3684,7 +3684,7 @@
 				"Required": false,
 				"ValueType": "pint32",
 				"DefaultValue": 9101,
-				"FieldType": "TextBox"
+				"FieldType": "Integer"
 			},
 			"Address": {
 				"Required": false,

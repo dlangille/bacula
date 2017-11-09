@@ -1421,3 +1421,9 @@ msgstr "Zakresy OAuth2 (oddzielone spacją):"
 
 msgid "Please enter OAuth2 scopes."
 msgstr "Proszę wprowadzić zakresy OAuth2."
+
+msgid "Field required."
+msgstr "Pole wymagane."
+
+msgid "Invalid value. Integer value required."
+msgstr "Niepoprawna wartość. Wymagane jest podanie liczby całkowitej."

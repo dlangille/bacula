@@ -23,6 +23,10 @@
 Prado::using('System.Web.UI.ActiveControls.TActiveRepeater');
 Prado::using('System.Web.UI.ActiveControls.TActiveLinkButton');
 Prado::using('Application.Web.Portlets.DirectiveListTemplate');
+Prado::using('Application.Web.Portlets.DirectiveBoolean');
+Prado::using('Application.Web.Portlets.DirectiveText');
+Prado::using('Application.Web.Portlets.DirectiveComboBox');
+Prado::using('Application.Web.Portlets.DirectiveInteger');
 
 class DirectiveFileSet extends DirectiveListTemplate {
 
@@ -31,7 +35,8 @@ class DirectiveFileSet extends DirectiveListTemplate {
 	private $directive_types = array(
 		'DirectiveBoolean',
 		'DirectiveText',
-		'DirectiveComboBox'
+		'DirectiveComboBox',
+		'DirectiveInteger'
 	);
 
 	private $directive_inc_exc_types = array(

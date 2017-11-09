@@ -385,7 +385,7 @@ class BaculaSetting extends APIModule {
 		$directive_value = null;
 		if (is_bool($value)) {
 			$directive_value = ($value === true) ? 'yes' : 'no';
-		} elseif (is_numeric($value)) {
+		} elseif (is_int($value)) {
 			$directive_value = $value;
 		} elseif (is_string($value)) {
 			$value = str_replace('"', '\"', $value);

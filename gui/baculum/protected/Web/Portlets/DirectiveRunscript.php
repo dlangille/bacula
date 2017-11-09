@@ -21,6 +21,9 @@
  */
 
 Prado::using('Application.Web.Portlets.DirectiveListTemplate');
+Prado::using('Application.Web.Portlets.DirectiveBoolean');
+Prado::using('Application.Web.Portlets.DirectiveText');
+Prado::using('Application.Web.Portlets.DirectiveComboBox');
 
 class DirectiveRunscript extends DirectiveListTemplate {
 

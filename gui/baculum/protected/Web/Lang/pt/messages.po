@@ -1429,3 +1429,9 @@ msgstr "Escopo OAuth2 (separado por espaço):"
 
 msgid "Please enter OAuth2 scopes."
 msgstr "Informe o escopo OAuth2."
+
+msgid "Field required."
+msgstr "Field required."
+
+msgid "Invalid value. Integer value required."
+msgstr "Invalid value. Integer value required."
