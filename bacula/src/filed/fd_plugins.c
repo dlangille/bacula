@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -1066,6 +1066,206 @@ bool plugin_set_attributes(JCR *jcr, ATTR *attr, BFILE *ofd)
 }
 
 /*
+ * The Plugin ACL data backup. We are using a new Plugin callback:
+ *    handleXACLdata() for that. The new callback get a pointer to
+ *    struct xacl_pkt as a main argument which consist of the following
+ *    data:
+ *       xacl.func - could be the one of BACL_BACKUP, BACL_RESTORE,
+ *                   BXATTR_BACKUP, BXATTR_RESTORE
+ *       xacl.count - the length of data at the content buffer
+ *       xacl.content - the buffer itself
+ *    The buffer (xacl.content) is supplied by Bacula during restore and has to
+ *    be supplied by a Plugin during backup.
+ *    The new callback should return bRC_OK on success and bRC_Error on
+ *    any error.
+ *
+ * in:
+ *    jcr - Job Control Record
+ *    ff_pkt - file save packet
+ *    data is a pointer to variable returned
+ * out:
+ *    data - the pointer to data buffer returned from plugin
+ *    0 - Success, no more data to save
+ *    > 0 - Success and the number of bytes returned in **data buffer
+ *    -1 - Error, no acls data to backup
+ */
+int plugin_backup_acl(JCR *jcr, FF_PKT *ff_pkt, char **data)
+{
+   struct xacl_pkt xacl;
+   Plugin *plugin = (Plugin *)jcr->plugin;
+   bRC rc;
+
+   Dmsg0(dbglvl, "plugin_backup_acl\n");
+
+   /* check of input variables */
+   if (!plugin || !jcr->plugin_ctx || !data) {
+      return 0;
+   }
+
+   /* prepare the xacl packet */
+   memset(&xacl, 0, sizeof(xacl));
+   xacl.pkt_size = sizeof(xacl);
+   xacl.pkt_end = sizeof(xacl);
+   xacl.func = BACL_BACKUP;
+
+   rc = plug_func(plugin)->handleXACLdata(jcr->plugin_ctx, &xacl);
+
+   /* check out status */
+   if (rc != bRC_OK){
+      Dmsg0(dbglvl, "plugin->handleXACLdata returned error\n");
+      return -1;
+   }
+   if (xacl.count > 0){
+      /* we have something to save, so prepare return data */
+      *data = xacl.content;
+      return xacl.count;
+   }
+
+   return 0;
+}
+
+/*
+ * Called here when Bacula got ACL stream to restore but not every stream but
+ *    a specific one: STREAM_XACL_PLUGIN_ACL which means a plugin has to
+ *    be called.
+ *
+ * in:
+ *    jcr - Job Control Record
+ *    data - content to restore
+ *    length - the length of the content to restore
+ * out:
+ *    true - when successful
+ *    false - on any Error
+ */
+bool plugin_restore_acl(JCR *jcr, char *data, uint32_t length)
+{
+   struct xacl_pkt xacl;
+   Plugin *plugin = (Plugin *)jcr->plugin;
+   bRC rc;
+
+   Dmsg0(dbglvl, "plugin_restore_acl\n");
+
+   /* check of input variables */
+   if (!plugin || !jcr->plugin_ctx || !data || length == 0) {
+      return true;
+   }
+
+   /* prepare the xacl packet */
+   memset(&xacl, 0, sizeof(xacl));
+   xacl.pkt_size = sizeof(xacl);
+   xacl.pkt_end = sizeof(xacl);
+   xacl.func = BACL_RESTORE;
+   xacl.content = data;
+   xacl.count = length;
+
+   rc = plug_func(plugin)->handleXACLdata(jcr->plugin_ctx, &xacl);
+
+   /* check out status */
+   if (rc != bRC_OK){
+      Dmsg0(dbglvl, "plugin->handleXACLdata returned error\n");
+      return false;
+   }
+
+   return true;
+}
+
+/*
+ * The Plugin XATTR data backup. We are using a new Plugin callback:
+ *    handleXACLdata() for that. Check plugin_backup_acl for new callback
+ *    description.
+ *
+ * in:
+ *    jcr - Job Control Record
+ *    ff_pkt - file save packet
+ *    data is a pointer to variable returned
+ * out:
+ *    data - the pointer to data buffer returned from plugin
+ *    0 - Success, no more data to save
+ *    >0 - Success and the number of bytes returned in **data buffer
+ *    <0 - Error
+ */
+int plugin_backup_xattr(JCR *jcr, FF_PKT *ff_pkt, char **data)
+{
+
+   struct xacl_pkt xacl;
+   Plugin *plugin = (Plugin *)jcr->plugin;
+   bRC rc;
+
+   Dmsg0(dbglvl, "plugin_backup_xattr\n");
+
+   /* check of input variables */
+   if (!plugin || !jcr->plugin_ctx || !data) {
+      return 0;
+   }
+
+   /* prepare the xacl packet */
+   memset(&xacl, 0, sizeof(xacl));
+   xacl.pkt_size = sizeof(xacl);
+   xacl.pkt_end = sizeof(xacl);
+   xacl.func = BXATTR_BACKUP;
+
+   rc = plug_func(plugin)->handleXACLdata(jcr->plugin_ctx, &xacl);
+
+   /* check out status */
+   if (rc != bRC_OK){
+      Dmsg0(dbglvl, "plugin->handleXACLdata returned error\n");
+      return -1;
+   }
+   if (xacl.count > 0){
+      /* we have something to save, so prepare return data */
+      *data = xacl.content;
+      return xacl.count;
+   }
+
+   return 0;
+}
+
+/*
+ * Called here when Bacula got XATTR stream to restore but not every stream but
+ *    a specific one: STREAM_XACL_PLUGIN_XATTR which means a plugin has to
+ *    be called.
+ *
+ * in:
+ *    jcr - Job Control Record
+ *    data - content to restore
+ *    length - the length of the content to restore
+ * out:
+ *    true - when successful
+ *    false - on any Error
+ */
+bool plugin_restore_xattr(JCR *jcr, char *data, uint32_t length)
+{
+   struct xacl_pkt xacl;
+   Plugin *plugin = (Plugin *)jcr->plugin;
+   bRC rc;
+
+   Dmsg0(dbglvl, "plugin_restore_xattr\n");
+
+   /* check of input variables */
+   if (!plugin || !jcr->plugin_ctx || !data || length == 0) {
+      return true;
+   }
+
+   /* prepare the xacl packet */
+   memset(&xacl, 0, sizeof(xacl));
+   xacl.pkt_size = sizeof(xacl);
+   xacl.pkt_end = sizeof(xacl);
+   xacl.func = BXATTR_RESTORE;
+   xacl.content = data;
+   xacl.count = length;
+
+   rc = plug_func(plugin)->handleXACLdata(jcr->plugin_ctx, &xacl);
+
+   /* check out status */
+   if (rc != bRC_OK){
+      Dmsg0(dbglvl, "plugin->handleXACLdata returned error\n");
+      return false;
+   }
+
+   return true;
+}
+
+/*
  * Print to file the plugin info.
  */
 void dump_fd_plugin(Plugin *plugin, FILE *fp)
@@ -1520,6 +1720,10 @@ static bRC baculaGetValue(bpContext *ctx, bVariable var, void *value)
       break;
    case bVarPrefixLinks:
       *(int *)value = (int)jcr->prefix_links;
+      break;
+   case bVarReplace:
+      *((int*)value) = jcr->replace;
+      Dmsg1(dbglvl, "Bacula: return replace=%c\n", jcr->replace);
       break;
    case bVarFDName:             /* get warning with g++ if we missed one */
    case bVarWorkingDir:

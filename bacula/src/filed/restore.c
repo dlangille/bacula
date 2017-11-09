@@ -197,24 +197,26 @@ static inline void push_delayed_restore_stream(r_ctx &rctx, char *msg, int msgle
 static inline bool do_restore_acl(JCR *jcr, int stream, char *content,
                                   uint32_t content_length)
 {
-   if (!jcr->xacl) {
+#ifdef HAVE_ACL
+   if (!jcr->bacl) {
       return true;
    }
-   switch (jcr->xacl->restore_acl(jcr, stream, content, content_length)) {
-      case bRC_XACL_fatal:
+   switch (jcr->bacl->restore_acl(jcr, stream, content, content_length)) {
+      case bRC_BACL_fatal:
          return false;
-      case bRC_XACL_error:
+      case bRC_BACL_error:
          /*
           * Non-fatal errors, count them and when the number is under ACL_MAX_ERROR_PRINT_PER_JOB
           * print the error message set by the lower level routine in jcr->errmsg.
           */
-         if (jcr->xacl->get_acl_nr_errors() < ACL_MAX_ERROR_PRINT_PER_JOB) {
+         if (jcr->bacl->get_acl_nr_errors() < ACL_MAX_ERROR_PRINT_PER_JOB) {
             Jmsg(jcr, M_WARNING, 0, "%s", jcr->errmsg);
          }
          break;
       default:
          break;
    }
+#endif
    return true;
 }
 
@@ -225,24 +227,27 @@ static inline bool do_restore_acl(JCR *jcr, int stream, char *content,
 static inline bool do_restore_xattr(JCR *jcr, int stream, char *content,
                                     uint32_t content_length)
 {
-   if (!jcr->xacl) {
+#ifdef HAVE_XATTR
+   if (!jcr->bxattr) {
       return true;
    }
-   switch (jcr->xacl->restore_xattr(jcr, stream, content, content_length)) {
-      case bRC_XACL_fatal:
+
+   switch (jcr->bxattr->restore_xattr(jcr, stream, content, content_length)) {
+      case bRC_BXATTR_fatal:
          return false;
-      case bRC_XACL_error:
+      case bRC_BXATTR_error:
          /*
           * Non-fatal errors, count them and when the number is under XATTR_MAX_ERROR_PRINT_PER_JOB
           * print the error message set by the lower level routine in jcr->errmsg.
           */
-         if (jcr->xacl->get_xattr_nr_errors() < XATTR_MAX_ERROR_PRINT_PER_JOB) {
+         if (jcr->bxattr->get_xattr_nr_errors() < XATTR_MAX_ERROR_PRINT_PER_JOB) {
             Jmsg(jcr, M_WARNING, 0, "%s", jcr->errmsg);
          }
          break;
       default:
          break;
    }
+#endif
    return true;
 }
 
@@ -278,6 +283,7 @@ static inline bool pop_delayed_data_streams(r_ctx &rctx)
     * - *_XATTR_*
     */
    foreach_alist(rds, rctx.delayed_streams) {
+      Dmsg1(0, "Delayed Stream=%d\n", rds->stream);
       switch (rds->stream) {
       case STREAM_UNIX_ACCESS_ACL:
       case STREAM_UNIX_DEFAULT_ACL:
@@ -301,10 +307,12 @@ static inline bool pop_delayed_data_streams(r_ctx &rctx)
       case STREAM_XACL_FREEBSD_NFS4:
       case STREAM_XACL_HURD_DEFAULT:
       case STREAM_XACL_HURD_ACCESS:
+      case STREAM_XACL_PLUGIN_ACL:
          if (!do_restore_acl(jcr, rds->stream, rds->content, rds->content_length)) {
             goto get_out;
          }
          break;
+      case STREAM_XACL_PLUGIN_XATTR:
       case STREAM_XACL_HURD_XATTR:
       case STREAM_XACL_IRIX_XATTR:
       case STREAM_XACL_TRU64_XATTR:
@@ -322,6 +330,7 @@ static inline bool pop_delayed_data_streams(r_ctx &rctx)
       default:
          Jmsg(jcr, M_WARNING, 0, _("Unknown stream=%d ignored. This shouldn't happen!\n"),
               rds->stream);
+         Dmsg2(0, "Unknown stream=%d data=%s\n", rds->stream, rds->content);
          break;
       }
       if (rds->content) {
@@ -446,7 +455,12 @@ void do_restore(JCR *jcr)
    binit(&rctx.bfd);
    binit(&rctx.forkbfd);
    attr = rctx.attr = new_attr(jcr);
-   jcr->xacl = (XACL*)new_xacl();
+#ifdef HAVE_ACL
+   jcr->bacl = (BACL*)new_bacl();
+#endif
+#ifdef HAVE_XATTR
+   jcr->bxattr = (BXATTR*)new_bxattr();
+#endif
 
    Dsm_check(200);
    while ((bget_ret = fdmsg->bget_msg(&bmsg)) >= 0 && !job_canceled(jcr)) {
@@ -858,6 +872,7 @@ void do_restore(JCR *jcr)
       case STREAM_XACL_FREEBSD_NFS4:
       case STREAM_XACL_HURD_DEFAULT:
       case STREAM_XACL_HURD_ACCESS:
+      case STREAM_XACL_PLUGIN_ACL:
          /*
           * Do not restore ACLs when
           * a) The current file is not extracted
@@ -886,6 +901,7 @@ void do_restore(JCR *jcr)
          }
          break;
 
+      case STREAM_XACL_PLUGIN_XATTR:
       case STREAM_XACL_HURD_XATTR:
       case STREAM_XACL_IRIX_XATTR:
       case STREAM_XACL_TRU64_XATTR:
@@ -1033,14 +1049,17 @@ ok_out:
    Dmsg2(10, "End Do Restore. Files=%d Bytes=%s\n", jcr->JobFiles,
       edit_uint64(jcr->JobBytes, ec1));
 
-   if (jcr->xacl) {
-      if (jcr->xacl->get_acl_nr_errors() > 0) {
-         Jmsg(jcr, M_WARNING, 0, _("Encountered %ld acl errors while doing restore\n"), jcr->xacl->get_acl_nr_errors());
-      }
-      if (jcr->xacl->get_xattr_nr_errors() > 0) {
-         Jmsg(jcr, M_WARNING, 0, _("Encountered %ld xattr errors while doing restore\n"), jcr->xacl->get_xattr_nr_errors());
-      }
+#ifdef HAVE_ACL
+   if (jcr->bacl && jcr->bacl->get_acl_nr_errors() > 0) {
+      Jmsg(jcr, M_WARNING, 0, _("Encountered %ld acl errors while doing restore\n"), jcr->bacl->get_acl_nr_errors());
    }
+#endif
+#ifdef HAVE_XATTR
+   if (jcr->bxattr && jcr->bxattr->get_xattr_nr_errors() > 0) {
+      Jmsg(jcr, M_WARNING, 0, _("Encountered %ld xattr errors while doing restore\n"), jcr->bxattr->get_xattr_nr_errors());
+   }
+#endif
+
    if (non_suppored_data > 1 || non_suppored_attr > 1) {
       Jmsg(jcr, M_WARNING, 0, _("%d non-supported data streams and %d non-supported attrib streams ignored.\n"),
          non_suppored_data, non_suppored_attr);
@@ -1096,10 +1115,18 @@ ok_out:
       jcr->compress_buf_size = 0;
    }
 
-   if (jcr->xacl) {
-      delete(jcr->xacl);
-      jcr->xacl = NULL;
+#ifdef HAVE_ACL
+   if (jcr->bacl) {
+      delete(jcr->bacl);
+      jcr->bacl = NULL;
    }
+#endif
+#ifdef HAVE_XATTR
+   if (jcr->bxattr) {
+      delete(jcr->bxattr);
+      jcr->bxattr = NULL;
+   }
+#endif
 
    /* Free the delayed stream stack list. */
    if (rctx.delayed_streams) {

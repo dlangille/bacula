@@ -136,14 +136,15 @@
 #define STREAM_XACL_FREEBSD_NFS4      1017    /* FreeBSD acl_t string of acl_to_text (NFSv4 or ZFS acl) */
 #define STREAM_XACL_HURD_DEFAULT      1018    /* GNU HURD acl_t string of acl_to_text (POSIX acl) for default acls */
 #define STREAM_XACL_HURD_ACCESS       1019    /* GNU HURD acl_t string of acl_to_text (POSIX acl) for access acls */
+#define STREAM_XACL_PLUGIN_ACL        1020    /* Plugin ACL data for plugin specific acls */
+#define STREAM_XACL_PLUGIN_XATTR      1988    /* Plugin XATTR data for plugin specific xattrs */
 #define STREAM_XACL_HURD_XATTR        1989    /* GNU HURD extended attributes */
 #define STREAM_XACL_IRIX_XATTR        1990    /* IRIX extended attributes */
 #define STREAM_XACL_TRU64_XATTR       1991    /* TRU64 extended attributes */
 #define STREAM_XACL_AIX_XATTR         1992    /* AIX extended attributes */
 #define STREAM_XACL_OPENBSD_XATTR     1993    /* OpenBSD extended attributes */
 #define STREAM_XACL_SOLARIS_SYS_XATTR 1994    /* Solaris extensible attributes or
-                                               * otherwise named extended system attributes.
-                                               */
+                                               * otherwise named extended system attributes. */
 #define STREAM_XACL_SOLARIS_XATTR     1995    /* Solaris extented attributes */
 #define STREAM_XACL_DARWIN_XATTR      1996    /* Darwin (OSX) extended attributes */
 #define STREAM_XACL_FREEBSD_XATTR     1997    /* FreeBSD extended attributes */

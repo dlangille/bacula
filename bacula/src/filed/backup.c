@@ -155,24 +155,31 @@ bool blast_data_to_storage_daemon(JCR *jcr, char *addr)
    }
    start_heartbeat_monitor(jcr);
 
-   jcr->xacl = (XACL*)new_xacl();
+#ifdef HAVE_ACL
+   jcr->bacl = (BACL*)new_bacl();
+#endif
+#ifdef HAVE_XATTR
+   jcr->bxattr = (BXATTR*)new_bxattr();
+#endif
 
    /* Subroutine save_file() is called for each file */
    if (!find_files(jcr, (FF_PKT *)jcr->ff, save_file, plugin_save)) {
       ok = false;                     /* error */
       jcr->setJobStatus(JS_ErrorTerminated);
    }
-
-   if (jcr->xacl) {
-      if (jcr->xacl->get_acl_nr_errors() > 0) {
-         Jmsg(jcr, M_WARNING, 0, _("Had %ld acl errors while doing backup\n"),
-            jcr->xacl->get_acl_nr_errors());
-      }
-      if (jcr->xacl->get_xattr_nr_errors() > 0) {
-         Jmsg(jcr, M_WARNING, 0, _("Had %ld xattr errors while doing backup\n"),
-            jcr->xacl->get_xattr_nr_errors());
-      }
+#ifdef HAVE_ACL
+   if (jcr->bacl && jcr->bacl->get_acl_nr_errors() > 0) {
+      Jmsg(jcr, M_WARNING, 0, _("Had %ld acl errors while doing backup\n"),
+         jcr->bacl->get_acl_nr_errors());
    }
+#endif
+#ifdef HAVE_XATTR
+   if (jcr->bxattr && jcr->bxattr->get_xattr_nr_errors() > 0) {
+      Jmsg(jcr, M_WARNING, 0, _("Had %ld xattr errors while doing backup\n"),
+         jcr->bxattr->get_xattr_nr_errors());
+   }
+#endif
+
    /* Delete or keep snapshots */
    close_snapshot_backup_session(jcr);
    close_vss_backup_session(jcr);
@@ -183,10 +190,18 @@ bool blast_data_to_storage_daemon(JCR *jcr, char *addr)
 
    sd->signal(BNET_EOD);            /* end of sending data */
 
-   if (jcr->xacl) {
-      delete(jcr->xacl);
-      jcr->xacl = NULL;
+#ifdef HAVE_ACL
+   if (jcr->bacl) {
+      delete(jcr->bacl);
+      jcr->bacl = NULL;
    }
+#endif
+#ifdef HAVE_XATTR
+   if (jcr->bxattr) {
+      delete(jcr->bxattr);
+      jcr->bxattr = NULL;
+   }
+#endif
    if (jcr->big_buf) {
       bfree_and_null(jcr->big_buf);
    }
@@ -505,16 +520,18 @@ int save_file(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
 
    /*
     * Save ACLs and Extended Attributes when requested and available
-    * for anything not being a symlink and not being a plugin (why not?).
+    * for anything not being a symlink.
     */
-   if (jcr->xacl){
-      if (jcr->xacl->backup_acl(jcr, ff_pkt) == bRC_XACL_error) {
-         goto bail_out;
-      }
-      if (jcr->xacl->backup_xattr(jcr, ff_pkt) == bRC_XACL_error) {
-         goto bail_out;
-      }
+#ifdef HAVE_ACL
+   if (jcr->bacl && jcr->bacl->backup_acl(jcr, ff_pkt) == bRC_BACL_error) {
+      goto bail_out;
    }
+#endif
+#ifdef HAVE_XATTR
+   if (jcr->bxattr && jcr->bxattr->backup_xattr(jcr, ff_pkt) == bRC_BXATTR_error) {
+      goto bail_out;
+   }
+#endif
 
    if (!crypto_terminate_digests(bctx)) {
       goto bail_out;

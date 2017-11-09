@@ -35,7 +35,8 @@ SVRSRCS = filed.c authenticate.c backup.c crypto.c \
 	  fd_plugins.c accurate.c \
 	  filed_conf.c heartbeat.c hello.c job.c fd_snapshot.c \
 	  restore.c status.c verify.c verify_vol.c \
-	  xacl.c xacl_linux.c xacl_osx.c xacl_solaris.c xacl_freebsd.c
+	  bacl.c bacl_linux.c bacl_osx.c bacl_solaris.c bacl_freebsd.c \
+	  bxattr.c bxattr_linux.c bxattr_osx.c bxattr_solaris.c bxattr_freebsd.c
 SVROBJS = $(SVRSRCS:.c=.o)
 
 JSONOBJS = bfdjson.o filed_conf.o
@@ -62,7 +63,7 @@ all: Makefile bacula-fd @STATIC_FD@ bfdjson
 	@echo "==== Make of filed is good ===="
 	@echo " "
 
-xacl.o: xacl.c
+bacl.o: bacl.c
 	@echo "Compiling $<"
 	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) $(LZO_INC) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) $(AFS_CFLAGS) $<
 

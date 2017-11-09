@@ -40,7 +40,8 @@
 #include  "fd_plugins.h"
 #include  "fd_snapshot.h"
 #include  "findlib/find.h"
-#include  "xacl.h"
+#include  "bacl.h"
+#include  "bxattr.h"
 #include  "jcr.h"
 #include  "protos.h"                   /* file daemon prototypes */
 #include  "lib/runscript.h"

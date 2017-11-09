@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -55,6 +55,7 @@ static bRC endRestoreFile(bpContext *ctx);
 static bRC createFile(bpContext *ctx, struct restore_pkt *rp);
 static bRC setFileAttributes(bpContext *ctx, struct restore_pkt *rp);
 static bRC checkFile(bpContext *ctx, char *fname);
+static bRC handleXACLdata(bpContext *ctx, struct xacl_pkt *xacl);
 
 /* Pointers to Bacula functions */
 static bFuncs *bfuncs = NULL;
@@ -90,7 +91,8 @@ static pFuncs pluginFuncs = {
    pluginIO,
    createFile,
    setFileAttributes,
-   checkFile
+   checkFile,
+   handleXACLdata
 };
 
 #define get_self(x) ((delta_test*)((x)->pContext))
@@ -109,7 +111,7 @@ public:
    bool done;
    int level;
 
-   delta_test(bpContext *bpc) { 
+   delta_test(bpContext *bpc) {
       fd = NULL;
       ctx = bpc;
       done = false;
@@ -146,16 +148,16 @@ bRC loadPlugin(bInfo *lbinfo, bFuncs *lbfuncs, pInfo **pinfo, pFuncs **pfuncs)
 }
 
 /*
- * External entry point to unload the plugin 
+ * External entry point to unload the plugin
  */
-bRC unloadPlugin() 
+bRC unloadPlugin()
 {
 // Dmsg(NULL, dbglvl, "delta-test-fd: Unloaded\n");
    return bRC_OK;
 }
 
 /*
- * The following entry points are accessed through the function 
+ * The following entry points are accessed through the function
  *   pointers we supplied to Bacula. Each plugin type (dir, fd, sd)
  *   has its own set of entry points that the plugin must define.
  */
@@ -188,7 +190,7 @@ static bRC freePlugin(bpContext *ctx)
 /*
  * Return some plugin value (none defined)
  */
-static bRC getPluginValue(bpContext *ctx, pVariable var, void *value) 
+static bRC getPluginValue(bpContext *ctx, pVariable var, void *value)
 {
    return bRC_OK;
 }
@@ -196,7 +198,7 @@ static bRC getPluginValue(bpContext *ctx, pVariable var, void *value)
 /*
  * Set a plugin value (none defined)
  */
-static bRC setPluginValue(bpContext *ctx, pVariable var, void *value) 
+static bRC setPluginValue(bpContext *ctx, pVariable var, void *value)
 {
    return bRC_OK;
 }
@@ -222,7 +224,7 @@ static bRC handlePluginEvent(bpContext *ctx, bEvent *event, void *value)
     */
    switch (event->eventType) {
    case bEventPluginCommand:
-//    Dmsg(ctx, dbglvl, 
+//    Dmsg(ctx, dbglvl,
 //         "delta-test-fd: PluginCommand=%s\n", (char *)value);
       break;
    case bEventJobStart:
@@ -263,7 +265,7 @@ static bRC handlePluginEvent(bpContext *ctx, bEvent *event, void *value)
       if (self->level == 'I' || self->level == 'D') {
          bfuncs->getBaculaValue(ctx, bVarAccurate, (void *)&accurate);
          if (!accurate) {       /* can be changed to FATAL */
-            Jmsg(ctx, M_FATAL, 
+            Jmsg(ctx, M_FATAL,
                  "Accurate mode should be turned on when using the "
                  "delta-test plugin\n");
             return bRC_Error;
@@ -286,7 +288,7 @@ static const char *files[] = {
 };
 static int nb_files = 4;
 
-/* 
+/*
  * Start the backup of a specific file
  */
 static bRC startBackupFile(bpContext *ctx, struct save_pkt *sp)
@@ -313,7 +315,7 @@ static bRC startBackupFile(bpContext *ctx, struct save_pkt *sp)
       self->delta = sp->delta_seq + 1;
    }
    pm_strcpy(self->fname, files[self->delta % nb_files]);
-   Dmsg(ctx, dbglvl, "delta-test-fd: delta_seq=%i delta=%i fname=%s\n", 
+   Dmsg(ctx, dbglvl, "delta-test-fd: delta_seq=%i delta=%i fname=%s\n",
         sp->delta_seq, self->delta, self->fname);
 // Dmsg(ctx, dbglvl, "delta-test-fd: startBackupFile\n");
    return bRC_OK;
@@ -342,7 +344,7 @@ static bRC pluginIO(bpContext *ctx, struct io_pkt *io)
    if (!self) {
       return bRC_Error;
    }
-    
+
    io->status = 0;
    io->io_errno = 0;
    switch(io->func) {
@@ -357,7 +359,7 @@ static bRC pluginIO(bpContext *ctx, struct io_pkt *io)
          }
          if (!self->fd) {
             io->io_errno = errno;
-            Jmsg(ctx, M_FATAL, 
+            Jmsg(ctx, M_FATAL,
                  "Open failed: ERR=%s\n", strerror(errno));
             return bRC_Error;
          }
@@ -366,7 +368,7 @@ static bRC pluginIO(bpContext *ctx, struct io_pkt *io)
          self->fd = fopen(self->fname, "r");
          if (!self->fd) {
             io->io_errno = errno;
-            Jmsg(ctx, M_FATAL, 
+            Jmsg(ctx, M_FATAL,
                "Open failed: ERR=%s\n", strerror(errno));
             return bRC_Error;
          }
@@ -383,7 +385,7 @@ static bRC pluginIO(bpContext *ctx, struct io_pkt *io)
       } else {
          /* first time, read 300, then replace 50-250 by other data */
          if (self->delta == 0) {
-            io->status = fread(io->buf, 1, 400, self->fd);            
+            io->status = fread(io->buf, 1, 400, self->fd);
          } else {
             io->offset = self->delta * 100 / 2; /* chunks are melted */
             io->status = fread(io->buf, 1, 100, self->fd);
@@ -392,9 +394,9 @@ static bRC pluginIO(bpContext *ctx, struct io_pkt *io)
          self->done = true;
       }
       if (io->status == 0 && ferror(self->fd)) {
-         Jmsg(ctx, M_FATAL, 
+         Jmsg(ctx, M_FATAL,
             "Pipe read error: ERR=%s\n", strerror(errno));
-         Dmsg(ctx, dbglvl, 
+         Dmsg(ctx, dbglvl,
             "Pipe read error: ERR=%s\n", strerror(errno));
          return bRC_Error;
       }
@@ -409,9 +411,9 @@ static bRC pluginIO(bpContext *ctx, struct io_pkt *io)
       Dmsg(ctx, dbglvl, "delta-test-fd: WRITE count=%lld\n", (int64_t)io->count);
       io->status = fwrite(io->buf, 1, io->count, self->fd);
       if (io->status == 0 && ferror(self->fd)) {
-         Jmsg(ctx, M_FATAL, 
+         Jmsg(ctx, M_FATAL,
             "Pipe write error\n");
-         Dmsg(ctx, dbglvl, 
+         Dmsg(ctx, dbglvl,
             "Pipe read error: ERR=%s\n", strerror(errno));
          return bRC_Error;
       }
@@ -461,7 +463,7 @@ static bRC endRestoreFile(bpContext *ctx)
 /*
  * This is called during restore to create the file (if necessary)
  * We must return in rp->create_status:
- *   
+ *
  *  CF_ERROR    -- error
  *  CF_SKIP     -- skip processing this file
  *  CF_EXTRACT  -- extract the file (i.e.call i/o routines)
@@ -488,6 +490,14 @@ static bRC setFileAttributes(bpContext *ctx, struct restore_pkt *rp)
 
 /* When using Incremental dump, all previous dumps are necessary */
 static bRC checkFile(bpContext *ctx, char *fname)
+{
+   return bRC_OK;
+}
+
+/*
+ * New Bacula Plugin API require this
+ */
+static bRC handleXACLdata(bpContext *ctx, struct xacl_pkt *xacl)
 {
    return bRC_OK;
 }

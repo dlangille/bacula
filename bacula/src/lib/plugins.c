@@ -226,6 +226,13 @@ void unload_plugins()
    foreach_alist(plugin, b_plugin_list) {
       /* Shut it down and unload it */
       plugin->unloadPlugin();
+      /* TODO:
+       * If you get a SIGSEGV when using plugins then it is very plausible that
+       * one of the plugins has a memory leakage which cannot be tracked by
+       * SMARTALLOC mechanism when you need to disable dlclose() below for
+       * further investigation.
+       * The problem was registered as #0002330 (http://bugs.bacula.org/view.php?id=2330)
+       */
       dlclose(plugin->pHandle);
       if (plugin->file) {
          free(plugin->file);

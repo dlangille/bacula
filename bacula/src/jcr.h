@@ -153,7 +153,8 @@ struct bpContext;
 #ifdef FILE_DAEMON
 class VSSClient;
 class htable;
-class XACL;
+class BACL;
+class BXATTR;
 class snapshot_manager;
 
 struct CRYPTO_CTX {
@@ -424,7 +425,8 @@ public:
    POOLMEM *last_fname;               /* last file saved/verified */
    POOLMEM *job_metadata;             /* VSS job metadata */
    pthread_cond_t job_start_wait;     /* Wait for SD to start Job */
-   XACL *xacl;                        /* ACLs and Extended Attributes for backup/restore */
+   BACL *bacl;                        /* ACLs for backup/restore */
+   BXATTR *bxattr;                    /* Extended Attributes for backup/restore */
    int32_t last_type;                 /* type of last file saved/verified */
    int incremental;                   /* set if incremental for SINCE */
    time_t last_stat_time;             /* Last time stats sent to Dir */

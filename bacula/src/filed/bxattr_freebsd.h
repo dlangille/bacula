@@ -17,7 +17,7 @@
    Bacula(R) is a registered trademark of Kern Sibbald.
  */
 /**
- * Major refactoring of ACL and XATTR code written by:
+ * Major refactoring of XATTR code written by:
  *
  *  Radosław Korzeniewski, MMXVI
  *  radoslaw@korzeniewski.net, radekk@inteos.pl
@@ -25,17 +25,14 @@
  *
  */
 
-#ifndef __XACL_FreeBSD_H_
-#define __XACL_FreeBSD_H_
+#ifndef __BXATTR_FreeBSD_H_
+#define __BXATTR_FreeBSD_H_
 
 #if defined(HAVE_FREEBSD_OS)
 #include <sys/types.h>
 
-#ifdef HAVE_SYS_ACL_H
-#include <sys/acl.h>
-#else
-#error "configure failed to detect availability of sys/acl.h"
-#endif
+/* check if XATTR support is enabled */
+#if defined(HAVE_XATTR)
 
 #if (!defined(HAVE_EXTATTR_GET_LINK) && !defined(HAVE_EXTATTR_GET_FILE)) || \
     (!defined(HAVE_EXTATTR_SET_LINK) && !defined(HAVE_EXTATTR_SET_FILE)) || \
@@ -70,26 +67,19 @@
  *
  *
  */
-class XACL_FreeBSD : public XACL {
+class BXATTR_FreeBSD : public BXATTR {
 private:
-   bRC_XACL os_backup_acl (JCR *jcr, FF_PKT *ff_pkt);
-   bRC_XACL os_restore_acl (JCR *jcr, int stream, char *content, uint32_t length);
-   bRC_XACL os_backup_xattr (JCR *jcr, FF_PKT *ff_pkt);
-   bRC_XACL os_restore_xattr (JCR *jcr, int stream, char *content, uint32_t length);
-   bRC_XACL os_get_acl(JCR *jcr, XACL_type xacltype);
-   bRC_XACL os_set_acl(JCR *jcr, XACL_type xacltype, char *content, uint32_t length);
-   bRC_XACL os_get_xattr_names (JCR *jcr, const int ns, POOLMEM **list, uint32_t *length);
-   bRC_XACL os_get_xattr_value (JCR *jcr, const int ns, char * name, char ** pvalue, uint32_t * plen);
-   bRC_XACL os_set_xattr (JCR *jcr, XACL_xattr *xattr);
-   /* requires acl.h available */
-   bool acl_issimple(acl_t acl);
-   acl_type_t get_acltype(XACL_type xacltype);
-   int acl_nrentries(acl_t acl);
-   bRC_XACL check_xacltype (JCR *jcr, int name);
+   bRC_BXATTR os_backup_xattr (JCR *jcr, FF_PKT *ff_pkt);
+   bRC_BXATTR os_restore_xattr (JCR *jcr, int stream, char *content, uint32_t length);
+   bRC_BXATTR os_get_xattr_names (JCR *jcr, const int ns, POOLMEM **list, uint32_t *length);
+   bRC_BXATTR os_get_xattr_value (JCR *jcr, const int ns, char * name, char ** pvalue, uint32_t * plen);
+   bRC_BXATTR os_set_xattr (JCR *jcr, BXATTR_xattr *xattr);
 public:
-   XACL_FreeBSD ();
+   BXATTR_FreeBSD ();
 };
+
+#endif /* HAVE_XATTR */
 
 #endif /* HAVE_FREEBSD_OS */
 
-#endif /* __XACL_FreeBSD_H_ */
+#endif /* __BXATTR_FreeBSD_H_ */

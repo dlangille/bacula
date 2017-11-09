@@ -151,6 +151,21 @@ struct io_pkt {
    int32_t pkt_end;                   /* end packet sentinel */
 };
 
+enum {
+    BACL_BACKUP = 1,
+    BACL_RESTORE = 2,
+    BXATTR_BACKUP = 3,
+    BXATTR_RESTORE = 4
+};
+
+struct xacl_pkt {
+    int32_t pkt_size;                  /* Size of this packet */
+    int32_t func;                      /* Function code */
+    int32_t count;                     /* read/write count */
+    char *content;                     /* read/write buffer */
+    int32_t pkt_end;                   /* end packet sentinel */
+};
+
 /****************************************************************************
  *                                                                          *
  *                Bacula definitions                                        *
@@ -159,28 +174,29 @@ struct io_pkt {
 
 /* Bacula Variable Ids */
 typedef enum {
-  bVarJobId     = 1,
-  bVarFDName    = 2,
-  bVarLevel     = 3,
-  bVarType      = 4,
-  bVarClient    = 5,
-  bVarJobName   = 6,
-  bVarJobStatus = 7,
-  bVarSinceTime = 8,
-  bVarAccurate  = 9,
-  bVarFileSeen  = 10,
-  bVarVssObject = 11,
-  bVarVssDllHandle = 12,
-  bVarWorkingDir = 13,
-  bVarWhere      = 14,
-  bVarRegexWhere = 15,
-  bVarExePath    = 16,
-  bVarVersion    = 17,
-  bVarDistName   = 18,
-  bVarxxx        = 19,
-  bVarPrevJobName = 20,
-  bVarPrefixLinks = 21,
-  bVarInteractiveSession = 22
+  bVarJobId                 = 1,
+  bVarFDName                = 2,
+  bVarLevel                 = 3,
+  bVarType                  = 4,
+  bVarClient                = 5,
+  bVarJobName               = 6,
+  bVarJobStatus             = 7,
+  bVarSinceTime             = 8,
+  bVarAccurate              = 9,
+  bVarFileSeen              = 10,
+  bVarVssObject             = 11,
+  bVarVssDllHandle          = 12,
+  bVarWorkingDir            = 13,
+  bVarWhere                 = 14,
+  bVarRegexWhere            = 15,
+  bVarExePath               = 16,
+  bVarVersion               = 17,
+  bVarDistName              = 18,
+  bVarxxx                   = 19,
+  bVarPrevJobName           = 20,
+  bVarPrefixLinks           = 21,
+  bVarInteractiveSession    = 22,
+  bVarReplace               = 23,
 } bVariable;
 
 /* Events that are passed to plugin */
@@ -242,6 +258,10 @@ int plugin_save(JCR *jcr, FF_PKT *ff_pkt, bool top_level);
 int plugin_estimate(JCR *jcr, FF_PKT *ff_pkt, bool top_level);
 bool plugin_check_file(JCR *jcr, char *fname);
 bRC plugin_option_handle_file(JCR *jcr, FF_PKT *ff_pkt, struct save_pkt *sp);
+int plugin_backup_acl(JCR *jcr, FF_PKT *ff_pkt, char **data);
+bool plugin_restore_acl(JCR *jcr, char *data, uint32_t length);
+int plugin_backup_xattr(JCR *jcr, FF_PKT *ff_pkt, char **data);
+bool plugin_restore_xattr(JCR *jcr, char *data, uint32_t length);
 #endif
 
 #ifdef __cplusplus
@@ -293,7 +313,7 @@ typedef enum {
 
 # define FD_PLUGIN_MAGIC  "*FDPluginData*"
 
-#define FD_PLUGIN_INTERFACE_VERSION  ( 13 )
+#define FD_PLUGIN_INTERFACE_VERSION  ( 14 )
 
 typedef struct s_pluginInfo {
    uint32_t size;
@@ -326,6 +346,7 @@ typedef struct s_pluginFuncs {
    bRC (*createFile)(bpContext *ctx, struct restore_pkt *rp);
    bRC (*setFileAttributes)(bpContext *ctx, struct restore_pkt *rp);
    bRC (*checkFile)(bpContext *ctx, char *fname);
+   bRC (*handleXACLdata)(bpContext *ctx, struct xacl_pkt *xacl);
 } pFuncs;
 
 #define plug_func(plugin) ((pFuncs *)(plugin->pfuncs))

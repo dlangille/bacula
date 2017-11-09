@@ -17,7 +17,7 @@
    Bacula(R) is a registered trademark of Kern Sibbald.
  */
 /**
- * Major refactoring of ACL and XATTR code written by:
+ * Major refactoring of XATTR code written by:
  *
  *  Radosław Korzeniewski, MMXVI
  *  radoslaw@korzeniewski.net, radekk@inteos.pl
@@ -25,17 +25,14 @@
  *
  */
 
-#ifndef __XACL_OSX_H_
-#define __XACL_OSX_H_
+#ifndef __BXATTR_OSX_H_
+#define __BXATTR_OSX_H_
 
 #if defined(HAVE_DARWIN_OS)
 #include <sys/types.h>
 
-#ifdef HAVE_SYS_ACL_H
-#include <sys/acl.h>
-#else
-#error "configure failed to detect availability of sys/acl.h"
-#endif
+/* check if XATTR support is enabled */
+#if defined(HAVE_XATTR)
 
 #if !defined(HAVE_LISTXATTR) || !defined(HAVE_GETXATTR) || !defined(HAVE_SETXATTR)
 #error "Missing full support for the XATTR functions."
@@ -51,24 +48,19 @@
  *
  *
  */
-class XACL_OSX : public XACL {
+class BXATTR_OSX : public BXATTR {
 private:
-   bRC_XACL os_backup_acl (JCR *jcr, FF_PKT *ff_pkt);
-   bRC_XACL os_restore_acl (JCR *jcr, int stream, char *content, uint32_t length);
-   bRC_XACL os_backup_xattr (JCR *jcr, FF_PKT *ff_pkt);
-   bRC_XACL os_restore_xattr (JCR *jcr, int stream, char *content, uint32_t length);
-   bRC_XACL os_get_acl(JCR *jcr, XACL_type xacltype);
-   bRC_XACL os_set_acl(JCR *jcr, XACL_type xacltype, char *content, uint32_t length);
-   bRC_XACL os_get_xattr_names (JCR *jcr, POOLMEM **list, uint32_t *length);
-   bRC_XACL os_get_xattr_value (JCR *jcr, char * name, char ** pvalue, uint32_t * plen);
-   bRC_XACL os_set_xattr (JCR *jcr, XACL_xattr *xattr);
-   /* requires acl.h available */
-   acl_type_t get_acltype(XACL_type xacltype);
-   int acl_nrentries(acl_t acl);
+   bRC_BXATTR os_backup_xattr (JCR *jcr, FF_PKT *ff_pkt);
+   bRC_BXATTR os_restore_xattr (JCR *jcr, int stream, char *content, uint32_t length);
+   bRC_BXATTR os_get_xattr_names (JCR *jcr, POOLMEM **list, uint32_t *length);
+   bRC_BXATTR os_get_xattr_value (JCR *jcr, char * name, char ** pvalue, uint32_t * plen);
+   bRC_BXATTR os_set_xattr (JCR *jcr, BXATTR_xattr *xattr);
 public:
-   XACL_OSX ();
+   BXATTR_OSX ();
 };
+
+#endif /* HAVE_XATTR */
 
 #endif /* HAVE_DARWIN_OS */
 
-#endif /* __XACL_OSX_H_ */
+#endif /* __BXATTR_OSX_H_ */

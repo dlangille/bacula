@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -61,6 +61,7 @@ static bRC endRestoreFile(bpContext *ctx);
 static bRC createFile(bpContext *ctx, struct restore_pkt *rp);
 static bRC setFileAttributes(bpContext *ctx, struct restore_pkt *rp);
 static bRC checkFile(bpContext *ctx, char *fname);
+static bRC handleXACLdata(bpContext *ctx, struct xacl_pkt *xacl);
 
 /* Pointers to Bacula functions */
 static bFuncs *bfuncs = NULL;
@@ -96,7 +97,8 @@ static pFuncs pluginFuncs = {
    pluginIO,
    createFile,
    setFileAttributes,
-   checkFile
+   checkFile,
+   handleXACLdata
 };
 
 static struct ini_items test_items[] = {
@@ -105,7 +107,7 @@ static struct ini_items test_items[] = {
    { "string2",  ini_store_str,  "2nd String",        0},
    { "ok",       ini_store_bool, "boolean",           0},
 
-// We can also use the ITEMS_DEFAULT  
+// We can also use the ITEMS_DEFAULT
 // { "ok",       ini_store_bool, "boolean",           0, ITEMS_DEFAULT},
    { NULL,       NULL,           NULL,                0}
 };
@@ -147,16 +149,16 @@ bRC loadPlugin(bInfo *lbinfo, bFuncs *lbfuncs, pInfo **pinfo, pFuncs **pfuncs)
 }
 
 /*
- * External entry point to unload the plugin 
+ * External entry point to unload the plugin
  */
-bRC unloadPlugin() 
+bRC unloadPlugin()
 {
 // printf("test-plugin-fd: Unloaded\n");
    return bRC_OK;
 }
 
 /*
- * The following entry points are accessed through the function 
+ * The following entry points are accessed through the function
  *   pointers we supplied to Bacula. Each plugin type (dir, fd, sd)
  *   has its own set of entry points that the plugin must define.
  */
@@ -197,7 +199,7 @@ static bRC freePlugin(bpContext *ctx)
 /*
  * Return some plugin value (none defined)
  */
-static bRC getPluginValue(bpContext *ctx, pVariable var, void *value) 
+static bRC getPluginValue(bpContext *ctx, pVariable var, void *value)
 {
    return bRC_OK;
 }
@@ -205,7 +207,7 @@ static bRC getPluginValue(bpContext *ctx, pVariable var, void *value)
 /*
  * Set a plugin value (none defined)
  */
-static bRC setPluginValue(bpContext *ctx, pVariable var, void *value) 
+static bRC setPluginValue(bpContext *ctx, pVariable var, void *value)
 {
    return bRC_OK;
 }
@@ -257,7 +259,7 @@ static bRC handlePluginEvent(bpContext *ctx, bEvent *event, void *value)
          break;
       }
       rop = (restore_object_pkt *)value;
-      bfuncs->DebugMessage(ctx, fi, li, dbglvl, 
+      bfuncs->DebugMessage(ctx, fi, li, dbglvl,
                            "Get RestoreObject len=%d JobId=%d oname=%s type=%d data=%.127s\n",
                            rop->object_len, rop->JobId, rop->object_name, rop->object_type,
                            rop->object);
@@ -283,7 +285,7 @@ static bRC handlePluginEvent(bpContext *ctx, bEvent *event, void *value)
          }
          ini.register_items(test_items, sizeof(struct ini_items));
          if (ini.parse(ini.out_fname)) {
-            bfuncs->JobMessage(ctx, fi, li, M_INFO, 0, "string1 = %s\n", 
+            bfuncs->JobMessage(ctx, fi, li, M_INFO, 0, "string1 = %s\n",
                                ini.items[0].val.strval);
          } else {
             bfuncs->JobMessage(ctx, fi, li, M_ERROR, 0, "Can't parse config\n");
@@ -323,7 +325,7 @@ static bRC handlePluginEvent(bpContext *ctx, bEvent *event, void *value)
       }
       *p++ = 0;           /* terminate reader string */
       p_ctx->writer = p;
-      printf("test-plugin-fd: plugin=%s fname=%s reader=%s writer=%s\n", 
+      printf("test-plugin-fd: plugin=%s fname=%s reader=%s writer=%s\n",
           p_ctx->cmd, p_ctx->fname, p_ctx->reader, p_ctx->writer);
       break;
    }
@@ -342,7 +344,7 @@ static bRC handlePluginEvent(bpContext *ctx, bEvent *event, void *value)
    return bRC_OK;
 }
 
-/* 
+/*
  * Start the backup of a specific file
  */
 static bRC startBackupFile(bpContext *ctx, struct save_pkt *sp)
@@ -354,15 +356,15 @@ static bRC startBackupFile(bpContext *ctx, struct save_pkt *sp)
 
    if (p_ctx->nb_obj == 0) {
       sp->fname = (char *)"takeme.h";
-      bfuncs->DebugMessage(ctx, fi, li, dbglvl, "AcceptFile=%s = %d\n", 
+      bfuncs->DebugMessage(ctx, fi, li, dbglvl, "AcceptFile=%s = %d\n",
                            sp->fname, bfuncs->AcceptFile(ctx, sp));
 
       sp->fname = (char *)"/path/to/excludeme.o";
-      bfuncs->DebugMessage(ctx, fi, li, dbglvl, "AcceptFile=%s = %d\n", 
+      bfuncs->DebugMessage(ctx, fi, li, dbglvl, "AcceptFile=%s = %d\n",
                            sp->fname, bfuncs->AcceptFile(ctx, sp));
 
       sp->fname = (char *)"/path/to/excludeme.c";
-      bfuncs->DebugMessage(ctx, fi, li, dbglvl, "AcceptFile=%s = %d\n", 
+      bfuncs->DebugMessage(ctx, fi, li, dbglvl, "AcceptFile=%s = %d\n",
                            sp->fname, bfuncs->AcceptFile(ctx, sp));
    }
 
@@ -577,7 +579,7 @@ static bRC startBackupFile(bpContext *ctx, struct save_pkt *sp)
          fclose(fp);
       }
       free_pool_memory(q);
-   
+
    } else if (p_ctx->nb_obj == 1) {
       ConfigFile ini;
       p_ctx->buf = get_pool_memory(PM_BSOCK);
@@ -589,7 +591,7 @@ static bRC startBackupFile(bpContext *ctx, struct save_pkt *sp)
       sp->type = FT_PLUGIN_CONFIG;
 
       Dmsg1(0, "RestoreOptions=<%s>\n", p_ctx->buf);
-   } 
+   }
 
    time_t now = time(NULL);
    sp->index = ++p_ctx->nb_obj;
@@ -601,7 +603,7 @@ static bRC startBackupFile(bpContext *ctx, struct save_pkt *sp)
    sp->statp.st_blksize = 4096;
    sp->statp.st_blocks = 1;
    bfuncs->DebugMessage(ctx, fi, li, dbglvl,
-                        "Creating RestoreObject len=%d oname=%s data=%.127s\n", 
+                        "Creating RestoreObject len=%d oname=%s data=%.127s\n",
                         sp->object_len, sp->object_name, sp->object);
 
    printf("test-plugin-fd: startBackupFile\n");
@@ -630,7 +632,7 @@ static bRC pluginIO(bpContext *ctx, struct io_pkt *io)
    if (!p_ctx) {
       return bRC_Error;
    }
-    
+
    io->status = 0;
    io->io_errno = 0;
    return bRC_OK;
@@ -659,7 +661,7 @@ static bRC endRestoreFile(bpContext *ctx)
 /*
  * This is called during restore to create the file (if necessary)
  * We must return in rp->create_status:
- *   
+ *
  *  CF_ERROR    -- error
  *  CF_SKIP     -- skip processing this file
  *  CF_EXTRACT  -- extract the file (i.e.call i/o routines)
@@ -690,6 +692,14 @@ static bRC setFileAttributes(bpContext *ctx, struct restore_pkt *rp)
 
 /* When using Incremental dump, all previous dumps are necessary */
 static bRC checkFile(bpContext *ctx, char *fname)
+{
+   return bRC_OK;
+}
+
+/*
+ * New Bacula Plugin API require this
+ */
+static bRC handleXACLdata(bpContext *ctx, struct xacl_pkt *xacl)
 {
    return bRC_OK;
 }
