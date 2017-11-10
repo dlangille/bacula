@@ -19,7 +19,7 @@
 						/>
 							<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/ajax-loader-arrows.gif" alt="" style="display: none" />
 						</td>
-						<td><%[ IP Address/Hostname: ]%><span class="bold"> <%=$this->getParent()->getParent()->config[$this->DataItem]['address']%><span></td>
+						<td><%[ IP Address/Hostname: ]%><span class="bold"> <%=$this->getParent()->getParent()->config[$this->DataItem]['address']%></span></td>
 						<td><%[ Port: ]%><span class="bold"> <%=$this->getParent()->getParent()->config[$this->DataItem]['port']%></span>
 						</td>
 						<td class="right"><com:TActiveLinkButton
