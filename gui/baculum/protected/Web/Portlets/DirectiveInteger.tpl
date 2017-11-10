@@ -21,9 +21,12 @@
 		/>
 		<com:TDataTypeValidator
 			ValidationGroup="Directive"
+			Display="Dynamic"
 			ControlToValidate="Directive"
+			FocusOnError="true"
 			DataType="Integer"
 			Text="<%[ Invalid value. Integer value required. ]%>"
+			Enabled="<%=$this->getShow()%>"
 		/>
 	</div>
 </div>
