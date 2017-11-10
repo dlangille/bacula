@@ -59,6 +59,14 @@
 	/>
 	<div class="button center block">
 		<com:BActiveButton
+			ID="Cancel"
+			CssClass="bbutton"
+			ActiveControl.EnableUpdate="false"
+			OnCommand="TemplateControl.unloadDirectives"
+			Text="<%[ Cancel ]%>"
+			Attributes.onclick="$('div.config_directives').slideUp();"
+		/>
+		<com:BActiveButton
 			ID="Save"
 			ValidationGroup="Directive"
 			ActiveControl.EnableUpdate="false"

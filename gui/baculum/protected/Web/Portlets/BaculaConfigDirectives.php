@@ -181,6 +181,11 @@ class BaculaConfigDirectives extends DirectiveListTemplate {
 		$this->loadConfig();
 	}
 
+	public function unloadDirectives() {
+		$this->RepeaterDirectives->DataSource = array();
+		$this->RepeaterDirectives->dataBind();
+	}
+
 	public function createDirectiveElement($sender, $param) {
 		$load_values = $this->getLoadValues();
 		for ($i = 0; $i < count($this->directive_types); $i++) {

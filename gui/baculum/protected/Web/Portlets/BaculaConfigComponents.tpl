@@ -27,7 +27,7 @@
 	</com:TActiveRepeater>
 </div>
 	<com:TActiveLabel ID="ErrorMsg" Display="None" />
-<div class="config_directives" rel="<%=$this->getHost()%>new_resource" style="display: none">
+<div class="config_directives new_resource" rel="<%=$this->getHost()%>new_resource" style="display: none">
 	<h2 rel="<%[ Add new %resource_type resource on %component_name (%component_type) ]%>"></h2>
 	<hr />
 	<com:Application.Web.Portlets.BaculaConfigDirectives ID="NewResource" LoadValues="<%=false%>" />

@@ -1,16 +1,19 @@
 var BaculaConfigClass = jQuery.klass({
-	show_item: function(element, show) {
+	show_item: function(element, show, after_finish) {
 		var el = $(element);
 		var duration;
 		if (show === true && el.is(':visible') === false) {
-			el.slideDown({duration: 400});
+			el.slideDown({duration: 400, complete: after_finish});
 		} else if (show === false && el.is(':visible') === true) {
-			el.slideUp({duration: 500});
+			el.slideUp({duration: 500, complete: after_finish});
 		}
 	},
-	show_items: function(selector, show) {
+	show_items: function(selector, show, callback) {
 		$(selector).each(function(index, el) {
-			this.show_item(el, show);
+			var cb = function() {
+				callback(el);
+			}
+			this.show_item(el, show, cb);
 		}.bind(this));
 	},
 	show_new_config: function(sender, component_type, component_name, resource_type) {
@@ -45,7 +48,20 @@ var BaculaConfigClass = jQuery.klass({
 	unset_config_items: function(id) {
 		var child_container = this.get_child_container(id);
 		var selector = [child_container[0].nodeName.toLowerCase(), child_container[0].className].join('.');
-		this.show_items(selector, false);
+		var callback = function(el) {
+			if (el.style.display === 'none' && !el.classList.contains('new_resource')) {
+				// element closed
+				var divs = el.getElementsByTagName('DIV');
+				if (divs.length > 0) {
+					var fc = divs[0];
+					// clear by removing elements
+					while (fc.firstChild) {
+						fc.removeChild(fc.firstChild);
+					}
+				}
+			}
+		}
+		this.show_items(selector, false, callback);
 		/**
 		 * Send request about items only if items are invisible to avoid
 		 * asking about items when they are visible already.
