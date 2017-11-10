@@ -105,9 +105,6 @@ class DirectiveSchedule extends DirectiveListTemplate {
 				$directive_desc = $resource_desc[$this->overwrite_directives[$i]];
 			}
 			if (is_object($directive_desc)) {
-				if (property_exists($directive_desc, 'Required')) {
-					$required = $directive_desc->Required;
-				}
 				if (property_exists($directive_desc, 'DefaultValue')) {
 					$default_value = $directive_desc->DefaultValue;
 				}
