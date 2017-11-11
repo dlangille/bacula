@@ -68,7 +68,7 @@ miscfilesrc = index.php \
 	README
 
 localeweblang = en pl pt ja
-localeapilang = en pl
+localeapilang = en pl pt
 localewebdirsrc = $(datadir)/$(webdir)/Lang
 localeapidirsrc = $(datadir)/$(apidir)/Lang
 localefile = messages.mo
