@@ -146,8 +146,8 @@ ${BACULA_DESTDIR}: ${BACULA_SOURCE}
 	done
 
 	mkdir -p "${BACULA_DESTDIR}${BACULA_PREFIX}/Library/LaunchDaemons"
-	sed ${INFILE_SUBST} files/com.baculasystems.bacula-fd.plist.in \
-		> "${BACULA_DESTDIR}${BACULA_PREFIX}/Library/LaunchDaemons/com.baculasystems.bacula-fd.plist"
+	sed ${INFILE_SUBST} files/org.bacula.bacula-fd.plist.in \
+		> "${BACULA_DESTDIR}${BACULA_PREFIX}/Library/LaunchDaemons/org.bacula.bacula-fd.plist"
 
 ${BACULA_SOURCE}: ${BACULA_TAR}
 	mkdir -p "${WORKING_DIR}"
