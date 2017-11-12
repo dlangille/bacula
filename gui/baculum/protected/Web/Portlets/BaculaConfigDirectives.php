@@ -303,7 +303,7 @@ class BaculaConfigDirectives extends DirectiveListTemplate {
 			$resource_type,
 			$resource_name
 		);
-		$result = $this->Application->getModule('api')->set($params, array('config' => serialize($directives)), $host, false);
+		$result = $this->Application->getModule('api')->set($params, array('config' => json_encode($directives)), $host, false);
 		if ($result->error === 0) {
 			$this->SaveDirectiveOk->Display = 'Dynamic';
 			$this->SaveDirectiveError->Display = 'None';

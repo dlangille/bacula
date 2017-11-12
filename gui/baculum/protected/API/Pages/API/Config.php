@@ -36,7 +36,7 @@ class Config extends BaculumAPIServer {
 	public function set($id, $params) {
 		$config = (array)$params;
 		if (array_key_exists('config', $config)) {
-			$config = unserialize($config['config']);
+			$config = json_decode($config['config'], true);
 		} else {
 			$config = array();
 		}
