@@ -1029,15 +1029,23 @@ void stack_trace() {}
 
 int fs_get_free_space(const char *path, int64_t *freeval, int64_t *totalval)
 {
-#if !defined(HAVE_WIN32) && !defined(HAVE_SUN_OS)
+
+/* For Windows must have statvfs */
+#if defined(HAVE_WIN32)
+   #if !defined(HAVE_SYS_STATVFS_H)
+      *totalval = *freeval = 0;
+      return -1;
+   #endif
+#endif
+
    struct statvfs st;
 
    if (statvfs(path, &st) == 0) {
-      *freeval = (uint64_t)st.f_bsize * (uint64_t)st.f_bavail;
+      *freeval  = (uint64_t)st.f_bavail * (uint64_t)st.f_frsize;
       *totalval = (uint64_t)st.f_blocks * (uint64_t)st.f_frsize;
       return 0;
    }
-#endif
+
    *totalval = *freeval = 0;
    return -1;
 }
