@@ -526,7 +526,7 @@ void reload_config(int sig)
       if (already_here) {
          V(reload_mutex);
          if (tries++ > 10) {
-            Jmsg(NULL, M_INFO, 0, _("Already doing a reload request, "
+            Qmsg(NULL, M_INFO, 0, _("Already doing a reload request, "
                                     "request ignored.\n"));
             return;
          }
@@ -550,8 +550,8 @@ void reload_config(int sig)
 
    table = find_free_reload_table_entry();
    if (table < 0) {
-      Jmsg(NULL, M_ERROR, 0, _("Too many open reload requests. "
-                               "Request ignored.\n"));
+      Qmsg(NULL, M_ERROR, 0, _("Too many (%d) open reload requests. "
+                               "Request ignored.\n"), max_reloads);
       goto bail_out;
    }
 
@@ -571,11 +571,11 @@ void reload_config(int sig)
        */
       rtable = find_free_reload_table_entry();    /* save new, bad table */
       if (rtable < 0) {
-         Jmsg(NULL, M_ERROR, 0, _("Please correct configuration file: %s\n"), configfile);
-         Jmsg(NULL, M_ERROR_TERM, 0, _("Out of reload table entries. Giving up.\n"));
+         Qmsg(NULL, M_ERROR, 0, _("Please correct configuration file: %s\n"), configfile);
+         Qmsg(NULL, M_ERROR_TERM, 0, _("Out of reload table entries. Giving up.\n"));
       } else {
-         Jmsg(NULL, M_ERROR, 0, _("Please correct configuration file: %s\n"), configfile);
-         Jmsg(NULL, M_ERROR, 0, _("Resetting previous configuration.\n"));
+         Qmsg(NULL, M_ERROR, 0, _("Please correct configuration file: %s\n"), configfile);
+         Qmsg(NULL, M_ERROR, 0, _("Resetting previous configuration.\n"));
       }
       /* Save broken res_head pointer */
       reload_table[rtable].res_head = res_head;
@@ -605,7 +605,7 @@ void reload_config(int sig)
          CLIENT *client;
          client = GetClientResWithName(cg->name);
          if (!client) {
-            Jmsg(NULL, M_INFO, 0, _("Client=%s not found. Assuming it was removed!!!\n"), cg->name);
+            Qmsg(NULL, M_INFO, 0, _("Client=%s not found. Assuming it was removed!!!\n"), cg->name);
          } else {
             client->globals = cg;      /* Set globals pointer */
          }
@@ -615,7 +615,7 @@ void reload_config(int sig)
          STORE *store;
          store = GetStoreResWithName(sg->name);
          if (!store) {
-            Jmsg(NULL, M_INFO, 0, _("Storage=%s not found. Assuming it was removed!!!\n"), sg->name);
+            Qmsg(NULL, M_INFO, 0, _("Storage=%s not found. Assuming it was removed!!!\n"), sg->name);
          } else {
             store->globals = sg;       /* set globals pointer */
             Dmsg2(200, "Reload found numConcurrent=%ld for Store %s\n",
@@ -627,7 +627,7 @@ void reload_config(int sig)
          JOB *job;
          job = GetJobResWithName(jg->name);
          if (!job) {
-            Jmsg(NULL, M_INFO, 0, _("Job=%s not found. Assuming it was removed!!!\n"), jg->name);
+            Qmsg(NULL, M_INFO, 0, _("Job=%s not found. Assuming it was removed!!!\n"), jg->name);
          } else {
             job->globals = jg;         /* Set globals pointer */
          }
@@ -637,7 +637,7 @@ void reload_config(int sig)
          SCHED *sched;
          sched = GetSchedResWithName(schg->name);
          if (!sched) {
-            Jmsg(NULL, M_INFO, 0, _("Schedule=%s not found. Assuming it was removed!!!\n"), schg->name);
+            Qmsg(NULL, M_INFO, 0, _("Schedule=%s not found. Assuming it was removed!!!\n"), schg->name);
          } else {
             sched->globals = schg;     /* Set globals pointer */
          }
