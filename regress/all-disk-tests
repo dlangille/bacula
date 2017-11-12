@@ -60,6 +60,7 @@ rm -f dumps/*
 ./run tests/jobmedia-bug-test
 ./run tests/lzo-encrypt-test
 ./run tests/lzo-test
+./run tests/many-reload-test
 ./run tests/maxbw-test
 ./run tests/maxbytes-test
 ./run tests/maxtime-test

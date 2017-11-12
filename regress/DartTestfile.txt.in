@@ -91,6 +91,7 @@ ADD_TEST(disk:incremental-test "@regressdir@/tests/incremental-test")
 ADD_TEST(disk:jobmedia-bug-test "@regressdir@/tests/jobmedia-bug-test")
 ADD_TEST(disk:lzo-encrypt-test "@regressdir@/tests/lzo-encrypt-test")
 ADD_TEST(disk:lzo-test "@regressdir@/tests/lzo-test")
+ADD_TEST(disk:many-reload-test "@regressdir@/tests/many-reload-test")
 ADD_TEST(disk:maxbw-test "@regressdir@/tests/maxbw-test")
 ADD_TEST(disk:maxbytes-test "@regressdir@/tests/maxbytes-test")
 SET_TESTS_PROPERTIES(disk:maxtime-test PROPERTIES     
