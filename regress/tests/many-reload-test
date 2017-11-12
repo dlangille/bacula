@@ -1,0 +1,99 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2017 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+
+#
+# Do more than 32 reloads to make sure the Director
+#  survives too many reloads
+#
+TestName="many-reload-test"
+. scripts/functions
+
+require_linux
+scripts/cleanup
+scripts/copy-confs
+
+bstat=0
+rstat=0
+zstat=0
+
+cat <<END_OF_DATA >${tmp}/bconcmds
+@output /dev/null
+messages
+@$out ${tmp}/log1.out
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+wait
+messages
+quit
+END_OF_DATA
+
+start_test
+
+# should be ok
+$bin/bacula-dir -t $conf/bacula-dir.conf
+if [ $? != 0 ]; then
+    estat=1
+    print_debug "ERROR: Error on bacula-dir.conf"
+fi
+
+$bin/bacula-ctl-dir start >/dev/null
+pid=`cat $working/bacula-dir.$BASEPORT.pid`
+
+# echo "bacula-dir pid is $pid"
+
+sleep 2
+
+ls -l /proc/$pid/fd | grep bacula-dir.conf
+if [ $? = 0 ]; then
+    estat=1
+    print_debug "ERROR: Should not have bacula-dir.conf open"
+fi
+
+# should work well
+run_bconsole
+
+$bin/bacula-ctl-dir stop >/dev/null
+
+end_test
