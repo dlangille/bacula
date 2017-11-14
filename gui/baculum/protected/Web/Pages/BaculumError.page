@@ -1,6 +1,6 @@
 <%@ MasterClass="Application.Web.Layouts.MessageBox" Theme="Baculum-v1"%>
 <com:TContent ID="Message">
- <div id="message-box">
+<div id="message-box">
 	<h2><%[ Baculum problem ]%></h2>
 	<h3>Error <%=$this->error%> - <%=$this->output%></h3>
 	<hr />
@@ -8,5 +8,8 @@
 		<a href="<%=$this->Service->constructUrl('WebHome')%>"><%[ TRY AGAIN ]%></a> <%[ or run ]%>
 		<a href="<%=$this->Service->constructUrl('WebConfigWizard')%>"><%[ Baculum Initial Wizard ]%></a>
 	</p>
- </div>
+</div>
+<script type="text/javascript">
+	window.history.pushState('page', 'Title', '<%=$this->Service->constructUrl('WebHome')%>');
+</script>
 </com:TContent>
