@@ -57,6 +57,10 @@ rm -f dumps/*
 ./run tests/hardlink-test
 ./run tests/tls-test
 ./run tests/virtual-backup-test
+./run tests/virtual-jobid-test
+./run tests/reload-client-address-test
+./run tests/sd-sd-test
+./run tests/status-network-test
 echo "End sample non-root disk tests"
 echo "End sample non-root disk tests" >>test.out
 
