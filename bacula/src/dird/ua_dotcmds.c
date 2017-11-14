@@ -196,6 +196,7 @@ bool do_a_dot_command(UAContext *ua)
  */
 static bool dot_ls_cmd(UAContext *ua, const char *cmd)
 {
+   POOL_MEM buf;
    CLIENT *client = NULL;
    char *path = NULL;
    JCR *jcr = ua->jcr;
@@ -235,7 +236,7 @@ static bool dot_ls_cmd(UAContext *ua, const char *cmd)
    init_jcr_job_record(jcr);           // need job
 
    ua->send_msg(_("Connecting to Client %s at %s:%d\n"),
-      jcr->client->name(), jcr->client->address(), jcr->client->FDport);
+                jcr->client->name(), jcr->client->address(buf.addr()), jcr->client->FDport);
 
    if (!connect_to_file_daemon(jcr, 1, 15, 0)) {
       ua->error_msg(_("Failed to connect to Client.\n"));
@@ -1267,13 +1268,13 @@ static void do_storage_cmd(UAContext *ua, STORE *store, const char *cmd)
 static void do_client_cmd(UAContext *ua, CLIENT *client, const char *cmd)
 {
    BSOCK *fd;
-
+   POOL_MEM buf;
    /* Connect to File daemon */
 
    ua->jcr->client = client;
    /* Try to connect for 15 seconds */
    ua->send_msg(_("Connecting to Client %s at %s:%d\n"),
-      client->name(), client->address(), client->FDport);
+                client->name(), client->address(buf.addr()), client->FDport);
    if (!connect_to_file_daemon(ua->jcr, 1, 15, 0)) {
       ua->error_msg(_("Failed to connect to Client.\n"));
       return;
@@ -1659,6 +1660,7 @@ static bool clientscmd(UAContext *ua, const char *cmd)
    bool    found=false;
    alist  *clientlist = NULL;
    TmpClient *elt;
+   POOL_MEM buf;
 
    if ((i = find_arg_with_value(ua, "address")) >= 0) {
       ip = ua->argv[i];
@@ -1673,7 +1675,7 @@ static bool clientscmd(UAContext *ua, const char *cmd)
    foreach_res(client, R_CLIENT) {
       if (acl_access_client_ok(ua, client->name(), JT_BACKUP_RESTORE)) {
          if (ip) {
-            elt = new TmpClient(client->name(), client->address());
+            elt = new TmpClient(client->name(), client->address(buf.addr()));
             clientlist->append(elt);
 
          } else {
@@ -2120,8 +2122,9 @@ static bool defaultscmd(UAContext *ua, const char *cmd)
       }
       CLIENT *client = (CLIENT *)GetResWithName(R_CLIENT, ua->argv[1]);
       if (client) {
+         POOL_MEM buf;
          ua->send_msg("client=%s", client->name());
-         ua->send_msg("address=%s", client->address());
+         ua->send_msg("address=%s", client->address(buf.addr()));
          ua->send_msg("fdport=%d", client->FDport);
          ua->send_msg("file_retention=%s", edit_uint64(client->FileRetention, ed1));
          ua->send_msg("job_retention=%s", edit_uint64(client->JobRetention, ed1));

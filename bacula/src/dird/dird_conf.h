@@ -293,7 +293,7 @@ public:
    void create_client_globals();
    int32_t getNumConcurrentJobs();
    void setNumConcurrentJobs(int32_t num);
-   char *address();
+   char *address(POOLMEM *&buf);
    void setAddress(char *addr);
    bool is_enabled();
    void setEnabled(bool val);

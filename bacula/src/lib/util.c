@@ -865,7 +865,7 @@ POOLMEM *edit_job_codes(JCR *jcr, char *omsg, char *imsg, const char *to, job_co
    char *p, *q;
    const char *str;
    char add[50];
-   char name[MAX_NAME_LENGTH];
+   char name[MAX_ESCAPE_NAME_LENGTH];
    int i;
 
    *omsg = 0;
@@ -976,7 +976,7 @@ POOLMEM *edit_job_codes(JCR *jcr, char *omsg, char *imsg, const char *to, job_co
          default:
             str = NULL;
             if (callback != NULL) {
-               str = callback(jcr, p, add, sizeof(add));
+               str = callback(jcr, p, name, sizeof(name));
             }
 
             if (!str) {

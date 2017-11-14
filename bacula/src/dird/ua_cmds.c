@@ -695,6 +695,7 @@ extern char *configfile;
 
 static int setbwlimit_client(UAContext *ua, CLIENT *client, char *Job, int64_t limit)
 {
+   POOL_MEM buf;
    CLIENT *old_client;
    char ed1[50];
    if (!client) {
@@ -708,7 +709,7 @@ static int setbwlimit_client(UAContext *ua, CLIENT *client, char *Job, int64_t l
 
    /* Try to connect for 15 seconds */
    ua->send_msg(_("Connecting to Client %s at %s:%d\n"),
-      client->name(), client->address(), client->FDport);
+                client->name(), client->address(buf.addr()), client->FDport);
    if (!connect_to_file_daemon(ua->jcr, 1, 15, 0)) {
       ua->error_msg(_("Failed to connect to Client.\n"));
       goto bail_out;
@@ -814,8 +815,8 @@ static int setip_cmd(UAContext *ua, const char *cmd)
    }
    /* MA Bug 6 remove ifdef */
    sockaddr_to_ascii(&(ua->UA_sock->client_addr),
-         sizeof(ua->UA_sock->client_addr), addr, sizeof(addr));
-   client->setAddress(bstrdup(addr));
+                     sizeof(ua->UA_sock->client_addr), addr, sizeof(addr));
+   client->setAddress(addr);
    ua->send_msg(_("Client \"%s\" address set to %s\n"),
             client->name(), addr);
 get_out:
@@ -988,6 +989,7 @@ static void do_client_setdebug(UAContext *ua, CLIENT *client,
                int64_t level, int trace, int hangup, int blowup,
                char *options, char *tags)
 {
+   POOL_MEM buf;
    CLIENT *old_client;
    BSOCK *fd;
 
@@ -997,7 +999,8 @@ static void do_client_setdebug(UAContext *ua, CLIENT *client,
    ua->jcr->client = client;
    /* Try to connect for 15 seconds */
    ua->send_msg(_("Connecting to Client %s at %s:%d\n"),
-      client->name(), client->address(), client->FDport);
+                client->name(), client->address(buf.addr()), client->FDport);
+
    if (!connect_to_file_daemon(ua->jcr, 1, 15, 0)) {
       ua->error_msg(_("Failed to connect to Client.\n"));
       ua->jcr->client = old_client;
@@ -1029,6 +1032,7 @@ static void do_all_setdebug(UAContext *ua, int64_t level,
 {
    STORE *store, **unique_store;
    CLIENT *client, **unique_client;
+   POOL_MEM buf1, buf2;
    int i, j, found;
    int64_t t=0;
 
@@ -1086,7 +1090,7 @@ static void do_all_setdebug(UAContext *ua, int64_t level,
    while ((client = (CLIENT *)GetNextRes(R_CLIENT, (RES *)client))) {
       found = 0;
       for (j=0; j<i; j++) {
-         if (strcmp(unique_client[j]->address(), client->address()) == 0 &&
+         if (strcmp(unique_client[j]->address(buf1.addr()), client->address(buf2.addr())) == 0 &&
              unique_client[j]->FDport == client->FDport) {
             found = 1;
             break;
@@ -1094,7 +1098,7 @@ static void do_all_setdebug(UAContext *ua, int64_t level,
       }
       if (!found) {
          unique_client[i++] = client;
-         Dmsg2(140, "Stuffing: %s:%d\n", client->address(), client->FDport);
+         Dmsg2(140, "Stuffing: %s:%d\n", client->address(buf1.addr()), client->FDport);
       }
    }
    UnlockRes();
@@ -1306,6 +1310,7 @@ static int estimate_cmd(UAContext *ua, const char *cmd)
    JOB *job = NULL;
    CLIENT *client = NULL;
    FILESET *fileset = NULL;
+   POOL_MEM buf;
    int listing = 0;
    char since[MAXSTRING];
    JCR *jcr = ua->jcr;
@@ -1447,7 +1452,7 @@ static int estimate_cmd(UAContext *ua, const char *cmd)
    get_level_since_time(ua->jcr, since, sizeof(since));
 
    ua->send_msg(_("Connecting to Client %s at %s:%d\n"),
-      jcr->client->name(), jcr->client->address(), jcr->client->FDport);
+                jcr->client->name(), jcr->client->address(buf.addr()), jcr->client->FDport);
    if (!connect_to_file_daemon(jcr, 1, 15, 0)) {
       ua->error_msg(_("Failed to connect to Client.\n"));
       return 1;

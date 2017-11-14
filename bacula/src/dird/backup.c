@@ -356,6 +356,7 @@ bool send_client_addr_to_sd(JCR *jcr)
 {
    int tls_need = BNET_TLS_NONE;
    BSOCK *sd = jcr->store_bsock;
+   POOL_MEM buf;
 
    /* TLS Requirement for the client */
    if (jcr->client->tls_enable) {
@@ -368,7 +369,7 @@ bool send_client_addr_to_sd(JCR *jcr)
    /*
     * Send Client address to the SD
     */
-   sd->fsend(clientaddr, jcr->client->address(), jcr->client->FDport, tls_need);
+   sd->fsend(clientaddr, jcr->client->address(buf.addr()), jcr->client->FDport, tls_need);
    if (!response(jcr, sd, OKclient, "Client", DISPLAY_ERROR)) {
       return false;
    }

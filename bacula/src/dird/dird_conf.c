@@ -123,19 +123,17 @@ void CLIENT::setNumConcurrentJobs(int32_t num)
       num, globals->name);
 }
 
-char *CLIENT::address()
+char *CLIENT::address(POOLMEM *&buf)
 {
-   if (!globals) {
-      return client_address;
+   P(globals_mutex);
+   if (!globals || !globals->SetIPaddress) {
+      pm_strcpy(buf, client_address);
+
+   } else {
+      pm_strcpy(buf, globals->SetIPaddress);
    }
-   if (!globals->SetIPaddress) {
-      return client_address;
-   }
-   /* TODO: Fix concurrency issue between setAddress() and address()
-    * we need to copy the address in an argument, the variable can be
-    * freed at any time.
-    */
-   return globals->SetIPaddress;
+   V(globals_mutex);
+   return buf;
 }
 
 void CLIENT::setAddress(char *addr)
@@ -833,6 +831,7 @@ void dump_resource(int type, RES *ares, void sendit(void *sock, const char *fmt,
    char ed1[100], ed2[100], ed3[100];
    DEVICE *dev;
    UAContext *ua = (UAContext *)sock;
+   POOLMEM *buf;
 
    if (res == NULL) {
       sendit(sock, _("No %s resource defined\n"), res_to_str(type));
@@ -881,10 +880,12 @@ void dump_resource(int type, RES *ares, void sendit(void *sock, const char *fmt,
       if (!acl_access_ok(ua, Client_ACL, res->res_client.name())) {
          break;
       }
+      buf = get_pool_memory(PM_FNAME);
       sendit(sock, _("Client: Name=%s Enabled=%d Address=%s FDport=%d MaxJobs=%u NumJobs=%u\n"),
          res->res_client.name(), res->res_client.is_enabled(),
-         res->res_client.address(), res->res_client.FDport,
+         res->res_client.address(buf), res->res_client.FDport,
          res->res_client.MaxConcurrentJobs, res->res_client.getNumConcurrentJobs());
+      free_pool_memory(buf);
       sendit(sock, _("      JobRetention=%s FileRetention=%s AutoPrune=%d\n"),
          edit_utime(res->res_client.JobRetention, ed1, sizeof(ed1)),
          edit_utime(res->res_client.FileRetention, ed2, sizeof(ed2)),
@@ -2510,6 +2511,7 @@ extern "C" char *job_code_callback_director(JCR *jcr, const char* param, char *b
    if (jcr == NULL) {
       return nothing;
    }
+   ASSERTD(buflen < 255, "buflen must be long enough to hold an ip address");
    switch (param[0]) {
       case 'f':
          if (jcr->fileset) {
@@ -2517,8 +2519,11 @@ extern "C" char *job_code_callback_director(JCR *jcr, const char* param, char *b
          }
          break;
       case 'h':
-         if (jcr->client && jcr->client->address()) {
-            return jcr->client->address();
+         if (jcr->client) {
+            POOL_MEM tmp;
+            jcr->client->address(tmp.addr());
+            bstrncpy(buf, tmp.c_str(), buflen);
+            return buf;
          }
          break;
       case 'p':

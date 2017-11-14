@@ -123,6 +123,7 @@ static int do_network_status(UAContext *ua)
    char *store_address, ed1[50];
    uint32_t store_port;
    uint64_t nb = 50 * 1024 * 1024;
+   POOL_MEM buf;
 
    int i = find_arg_with_value(ua, "bytes");
    if (i > 0) {
@@ -170,7 +171,7 @@ static int do_network_status(UAContext *ua)
 
    if (!ua->api) {
       ua->send_msg(_("Connecting to Client %s at %s:%d\n"),
-                   client->name(), client->address(), client->FDport);
+                   client->name(), client->address(buf.addr()), client->FDport);
    }
 
    if (!connect_to_file_daemon(jcr, 1, 15, 0)) {
@@ -345,6 +346,7 @@ static void do_all_status(UAContext *ua)
 {
    STORE *store, **unique_store;
    CLIENT *client, **unique_client;
+   POOL_MEM buf1, buf2;
    int i, j;
    bool found;
 
@@ -399,7 +401,7 @@ static void do_all_status(UAContext *ua)
          continue;
       }
       for (j=0; j<i; j++) {
-         if (strcmp(unique_client[j]->address(), client->address()) == 0 &&
+         if (strcmp(unique_client[j]->address(buf1.addr()), client->address(buf2.addr())) == 0 &&
              unique_client[j]->FDport == client->FDport) {
             found = true;
             break;
@@ -407,7 +409,7 @@ static void do_all_status(UAContext *ua)
       }
       if (!found) {
          unique_client[i++] = client;
-         Dmsg2(40, "Stuffing: %s:%d\n", client->address(), client->FDport);
+         Dmsg2(40, "Stuffing: %s:%d\n", client->address(buf1.addr()), client->FDport);
       }
    }
    UnlockRes();
@@ -590,6 +592,7 @@ static void do_storage_status(UAContext *ua, STORE *store, char *cmd)
 static void do_client_status(UAContext *ua, CLIENT *client, char *cmd)
 {
    BSOCK *fd;
+   POOL_MEM buf;
 
    if (!acl_access_client_ok(ua, client->name(), JT_BACKUP_RESTORE)) {
       ua->error_msg(_("No authorization for Client \"%s\"\n"), client->name());
@@ -606,7 +609,7 @@ static void do_client_status(UAContext *ua, CLIENT *client, char *cmd)
 
    /* Try to connect for 15 seconds */
    if (!ua->api) ua->send_msg(_("Connecting to Client %s at %s:%d\n"),
-      client->name(), client->address(), client->FDport);
+                              client->name(), client->address(buf.addr()), client->FDport);
    if (!connect_to_file_daemon(ua->jcr, 1, 15, 0)) {
       ua->send_msg(_("Failed to connect to Client %s.\n====\n"),
          client->name());

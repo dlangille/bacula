@@ -93,6 +93,7 @@ int connect_to_file_daemon(JCR *jcr, int retry_interval, int max_retry_time,
 
    if (!is_bsock_open(jcr->file_bsock)) {
       char name[MAX_NAME_LENGTH + 100];
+      POOL_MEM buf;
 
       if (!fd) {
          fd = jcr->file_bsock = new_bsock();
@@ -101,8 +102,13 @@ int connect_to_file_daemon(JCR *jcr, int retry_interval, int max_retry_time,
       bstrncat(name, jcr->client->name(), sizeof(name));
 
       fd->set_source_address(director->DIRsrc_addr);
-      if (!fd->connect(jcr,retry_interval,max_retry_time, heart_beat, name, jcr->client->address(),
-           NULL, jcr->client->FDport, verbose)) {
+      if (!fd->connect(jcr,retry_interval,
+                       max_retry_time,
+                       heart_beat, name,
+                       jcr->client->address(buf.addr()),
+                       NULL,
+                       jcr->client->FDport,
+                       verbose)) {
          fd->close();
          jcr->setJobStatus(JS_ErrorTerminated);
          return 0;

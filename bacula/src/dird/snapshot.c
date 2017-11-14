@@ -149,6 +149,7 @@ bool send_snapshot_retention(JCR *jcr, utime_t val)
 /* Called from delete_cmd() in ua_cmd.c */
 int delete_snapshot(UAContext *ua)
 {
+   POOL_MEM     buf;
    POOLMEM     *out;
    SNAPSHOT_DBR snapdbr;
    CLIENT      *client;
@@ -178,7 +179,7 @@ int delete_snapshot(UAContext *ua)
 
    /* Try to connect for 15 seconds */
    ua->send_msg(_("Connecting to Client %s at %s:%d\n"),
-      client->name(), client->address(), client->FDport);
+                client->name(), client->address(buf.addr()), client->FDport);
    if (!connect_to_file_daemon(ua->jcr, 1, 15, 0)) {
       ua->error_msg(_("Failed to connect to Client.\n"));
       ua->jcr->client = NULL;
@@ -210,6 +211,7 @@ int delete_snapshot(UAContext *ua)
  */
 int list_snapshot(UAContext *ua, alist *snap_list)
 {
+   POOL_MEM     tmp;
    SNAPSHOT_DBR snap;
    POOLMEM     *buf;
    CLIENT      *client;
@@ -225,7 +227,8 @@ int list_snapshot(UAContext *ua, alist *snap_list)
 
    /* Try to connect for 15 seconds */
    ua->send_msg(_("Connecting to Client %s at %s:%d\n"),
-      client->name(), client->address(), client->FDport);
+                client->name(), client->address(tmp.addr()), client->FDport);
+
    if (!connect_to_file_daemon(ua->jcr, 1, 15, 0)) {
       ua->error_msg(_("Failed to connect to Client.\n"));
       return 0;
@@ -276,6 +279,7 @@ int prune_snapshot(UAContext *ua)
    CLIENT *client = NULL;
    BSOCK  *fd = NULL;
    POOLMEM *buf = NULL;
+   POOL_MEM tmp;
    SNAPSHOT_DBR snapdbr;
    alist *lst;
    intptr_t id;
@@ -318,7 +322,7 @@ int prune_snapshot(UAContext *ua)
 
             /* Try to connect for 15 seconds */
             ua->send_msg(_("Connecting to Client %s at %s:%d\n"),
-                         client->name(), client->address(), client->FDport);
+                         client->name(), client->address(tmp.addr()), client->FDport);
             if (!connect_to_file_daemon(ua->jcr, 1, 15, 0)) {
                ua->error_msg(_("Failed to connect to Client.\n"));
                free_bsock(ua->jcr->file_bsock);
