@@ -253,7 +253,7 @@ public:
    const char *name;                  /* resource name */
    int32_t NumConcurrentJobs;         /* number of concurrent jobs running */
    char *SetIPaddress;                /* address from SetIP command */
-   bool enabled;                      /* Enabled/disabled */
+   int enabled;                       /* -1: not set, 0 disabled, 1 enabled */
 };
 
 /*
@@ -308,7 +308,7 @@ public:
    const char *name;                  /* resource name */
    int32_t NumConcurrentJobs;         /* number of concurrent jobs running */
    int32_t NumConcurrentReadJobs;     /* number of concurrent read jobs running */
-   bool enabled;                      /* Enabled/disabled */
+   int enabled;                       /* -1: not set, 0: disabled, 1: enabled */
 };
 
 
@@ -407,7 +407,7 @@ public:
    dlink link;                        /* double link */
    const char *name;                  /* resource name */
    int32_t NumConcurrentJobs;         /* number of concurrent jobs running */
-   bool enabled;                      /* Enabled/disabled */
+   int enabled;                       /* -1: disabled, 0: disabled, 1: Enabled */
 };
 
 /*
@@ -607,7 +607,7 @@ class SCHED_GLOBALS {
 public:
    dlink link;                        /* double link */
    const char *name;                  /* resource name */
-   bool enabled;                      /* Enabled/disabled */
+   int enabled;                       /* -1: not set, 0: disabled, 1: Enabled */
 };
 
 /*

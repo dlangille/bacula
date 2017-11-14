@@ -98,6 +98,7 @@ void CLIENT::create_client_globals()
    globals = (CLIENT_GLOBALS *)malloc(sizeof(CLIENT_GLOBALS));
    memset(globals, 0, sizeof(CLIENT_GLOBALS));
    globals->name = bstrdup(name());
+   globals->enabled = -1;       /* Not set */
    client_globals.append(globals);
 }
 
@@ -114,9 +115,6 @@ void CLIENT::setNumConcurrentJobs(int32_t num)
    P(globals_mutex);
    if (!globals) {
       create_client_globals();
-      /* Copy .conf IP address and Enabled */
-      globals->enabled = Enabled;
-      globals->SetIPaddress = bstrdup(client_address);
    }
    globals->NumConcurrentJobs = num;
    V(globals_mutex);
@@ -133,6 +131,10 @@ char *CLIENT::address()
    if (!globals->SetIPaddress) {
       return client_address;
    }
+   /* TODO: Fix concurrency issue between setAddress() and address()
+    * we need to copy the address in an argument, the variable can be
+    * freed at any time.
+    */
    return globals->SetIPaddress;
 }
 
@@ -141,7 +143,6 @@ void CLIENT::setAddress(char *addr)
    P(globals_mutex);
    if (!globals) {
       create_client_globals();
-      globals->enabled = Enabled;   /* copy .conf variable */
    }
    if (globals->SetIPaddress) {
       free(globals->SetIPaddress);
@@ -152,7 +153,7 @@ void CLIENT::setAddress(char *addr)
 
 bool CLIENT::is_enabled()
 {
-   if (!globals) {
+   if (!globals || globals->enabled < 0) {
       return Enabled;
    }
    return globals->enabled;
@@ -163,9 +164,9 @@ void CLIENT::setEnabled(bool val)
    P(globals_mutex);
    if (!globals) {
       create_client_globals();
-      globals->SetIPaddress = bstrdup(client_address); /* copy .conf variable */
    }
-   globals->enabled = val;
+   /* TODO: We probably need to set -1 (not set) when we are back to the default value */
+   globals->enabled = val? 1 : 0;
    V(globals_mutex);
    Dmsg2(200, "Set Enabled=%d for Client %s\n",
       val, globals->name);
@@ -176,6 +177,7 @@ void JOB::create_job_globals()
    globals = (JOB_GLOBALS *)malloc(sizeof(JOB_GLOBALS));
    memset(globals, 0, sizeof(JOB_GLOBALS));
    globals->name = bstrdup(name());
+   globals->enabled = -1;       /* Not set */
    job_globals.append(globals);
 }
 
@@ -192,7 +194,6 @@ void JOB::setNumConcurrentJobs(int32_t num)
    P(globals_mutex);
    if (!globals) {
       create_job_globals();
-      globals->enabled = Enabled;   /* copy .conf variable */
    }
    globals->NumConcurrentJobs = num;
    V(globals_mutex);
@@ -203,7 +204,7 @@ void JOB::setNumConcurrentJobs(int32_t num)
 
 bool JOB::is_enabled()
 {
-   if (!globals) {
+   if (!globals || globals->enabled < 0) {
       return Enabled;
    }
    return globals->enabled;
@@ -215,7 +216,7 @@ void JOB::setEnabled(bool val)
    if (!globals) {
       create_job_globals();
    }
-   globals->enabled = val;
+   globals->enabled = val ? 1 : 0;
    V(globals_mutex);
    Dmsg2(200, "Set Enabled=%d for Job %s\n",
       val, globals->name);
@@ -226,6 +227,7 @@ void STORE::create_store_globals()
    globals = (STORE_GLOBALS *)malloc(sizeof(STORE_GLOBALS));
    memset(globals, 0, sizeof(STORE_GLOBALS));
    globals->name = bstrdup(name());
+   globals->enabled = -1;       /* Not set */
    store_globals.append(globals);
 }
 
@@ -242,7 +244,6 @@ void STORE::setNumConcurrentReadJobs(int32_t num)
    P(globals_mutex);
    if (!globals) {
       create_store_globals();
-      globals->enabled = Enabled;    /* copy .conf variable */
    }
    globals->NumConcurrentReadJobs = num;
    V(globals_mutex);
@@ -264,7 +265,6 @@ void STORE::setNumConcurrentJobs(int32_t num)
    P(globals_mutex);
    if (!globals) {
       create_store_globals();
-      globals->enabled = Enabled;  /* copy .conf variable */
    }
    globals->NumConcurrentJobs = num;
    V(globals_mutex);
@@ -275,7 +275,7 @@ void STORE::setNumConcurrentJobs(int32_t num)
 
 bool STORE::is_enabled()
 {
-   if (!globals) {
+   if (!globals || globals->enabled < 0) {
       return Enabled;
    }
    return globals->enabled;
@@ -287,7 +287,7 @@ void STORE::setEnabled(bool val)
    if (!globals) {
       create_store_globals();
    }
-   globals->enabled = val;
+   globals->enabled = val ? 1 : 0;
    V(globals_mutex);
    Dmsg2(200, "Set Enabled=%d for Storage %s\n",
       val, globals->name);
@@ -298,12 +298,13 @@ void SCHED::create_sched_globals()
    globals = (SCHED_GLOBALS *)malloc(sizeof(CLIENT_GLOBALS));
    memset(globals, 0, sizeof(SCHED_GLOBALS));
    globals->name = bstrdup(name());
+   globals->enabled = -1;       /* Not set */
    sched_globals.append(globals);
 }
 
 bool SCHED::is_enabled()
 {
-   if (!globals) {
+   if (!globals || globals->enabled < 0) {
       return Enabled;
    }
    return globals->enabled;
@@ -315,7 +316,7 @@ void SCHED::setEnabled(bool val)
    if (!globals) {
       create_sched_globals();
    }
-   globals->enabled = val;
+   globals->enabled = val ? 1 : 0;
    V(globals_mutex);
    Dmsg2(200, "Set Enabled=%d for Schedule %s\n",
       val, globals->name);
