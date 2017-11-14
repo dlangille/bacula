@@ -20,6 +20,7 @@ change_jobname BackupClient1 $JobName
 start_test
 
 $bperl -e 'add_attribute("$conf/bacula-dir.conf", "Address", "127.0.0.1", "Client")'
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "Enabled", "yes", "Client")'
 
 cat <<END_OF_DATA >$tmp/bconcmds
 @$out /dev/null
@@ -48,32 +49,74 @@ END_OF_DATA
 
 run_bconsole
 
+print_debug "Disable client"
+
+client=`awk '/Name=/ { gsub(/Name=/, "", $2); print $2; exit }' $tmp/log0.out`
+
 cat <<END_OF_DATA >$tmp/bconcmds
 @$out $tmp/log3.out
+disable client=$client
+show client
+@$out $tmp/log4.out
+reload
+show client
+@$out $tmp/log5.out
+enable client=$client
+reload
 show client
 quit
 END_OF_DATA
 
 run_bconsole
 
-grep "127.0.0.1" $tmp/log0.out
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "Enabled", "no", "Client")'
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out $tmp/log6.out
+reload
+show client
+@$out $tmp/log7.out
+enabled client=$client
+reload
+show client
+quit
+END_OF_DATA
+
+grep "127.0.0.1" $tmp/log0.out > /dev/null
 if [ $? -ne 0 ]; then
     print_debug "ERROR: Should find 127.0.0.1 in $tmp/log0.out"
     estat=1
 fi
 
-grep "127.0.0.2" $tmp/log2.out
+grep "127.0.0.2" $tmp/log2.out > /dev/null
 if [ $? -ne 0 ]; then
     print_debug "ERROR: Should find 127.0.0.2 in $tmp/log2.out"
     estat=1
 fi
 
-grep "127.0.0.2" $tmp/log3.out
+grep "127.0.0.2" $tmp/log3.out > /dev/null
 if [ $? -ne 0 ]; then
     print_debug "ERROR: Should find 127.0.0.2 in $tmp/log3.out"
     estat=1
 fi
 
+grep "Enabled=0" $tmp/log3.out > /dev/null
+if [ $? -ne 0 ]; then
+    print_debug "ERROR: Should find Enabled=0 in $tmp/log3.out"
+    estat=1
+fi
+
+grep "Enabled=0" $tmp/log4.out > /dev/null
+if [ $? -ne 0 ]; then
+    print_debug "ERROR: Should find Enabled=0 in $tmp/log4.out"
+    estat=1
+fi
+
+grep "Enabled=1" $tmp/log5.out > /dev/null
+if [ $? -ne 0 ]; then
+    print_debug "ERROR: Should find Enabled=1 in $tmp/log5.out"
+    estat=1
+fi
 
 stop_bacula
 
