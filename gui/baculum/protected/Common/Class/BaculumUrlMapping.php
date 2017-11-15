@@ -27,12 +27,12 @@ class BaculumUrlMapping extends TUrlMapping {
 	private $services = array(
 		'web' => array(
 			'url_manager' => 'Application.Web.Class.WebUrlMapping',
-			'url_pattern' => '!^/web/!',
+			'url_pattern' => '!^(/index\.php)?/web([/,].*)?$!',
 			'endpoints' => 'Application.Web.endpoints'
 		),
 		'api' => array(
 			'url_manager' => 'Application.API.Class.APIUrlMapping',
-			'url_pattern' => '!^/api/!',
+			'url_pattern' => '!^(/index\.php)?/api([/,].*)?$!',
 			'endpoints' => 'Application.API.endpoints'
 		)
 	);
@@ -56,6 +56,7 @@ class BaculumUrlMapping extends TUrlMapping {
 
 	private function setServiceUrlManager() {
 		$service_id = $this->getServiceID();
+		$url = $this->getRequestedUrl();
 		if (array_key_exists($service_id, $this->services)) {
 			$service = $this->services[$service_id];
 			$path = Prado::getPathOfNamespace($service['url_manager'], Prado::CLASS_FILE_EXT);
@@ -63,6 +64,8 @@ class BaculumUrlMapping extends TUrlMapping {
 				$this->setDefaultMappingClass($service['url_manager']);
 				$this->setConfigFile($service['endpoints']);
 			}
+		} elseif (!empty($url)) {
+			throw new THttpException(404, 'pageservice_page_unknown', $url);
 		}
 	}
 
