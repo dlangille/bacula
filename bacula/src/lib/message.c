@@ -834,10 +834,18 @@ void dispatch_message(JCR *jcr, int type, utime_t mtime, char *msg)
     if (!jcr) {
        jcr = get_jcr_from_tsd();
     }
+
+/* Temporary fix for a deadlock in the reload command when
+ * the configuration has a problem. The JCR chain is locked
+ * during the reload, we cannot create a new JCR.
+ */
+#if 0
     if (!jcr) {
        jcr = new_jcr(sizeof(JCR), NULL);
        created_jcr = true;
     }
+#endif
+
     if (jcr) {
        msgs = jcr->jcr_msgs;
     }
