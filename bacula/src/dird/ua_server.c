@@ -89,11 +89,13 @@ JCR *new_control_jcr(const char *base_name, int job_type)
    LockRes();
    jcr->job = (JOB *)GetNextRes(R_JOB, NULL);
    set_jcr_defaults(jcr, jcr->job);
+   /* We use a resource, so we should count in the reload */
+   jcr->setJobType(job_type);
    UnlockRes();
+
    jcr->sd_auth_key = bstrdup("dummy"); /* dummy Storage daemon key */
    create_unique_job_name(jcr, base_name);
    jcr->sched_time = jcr->start_time;
-   jcr->setJobType(job_type);
    jcr->setJobLevel(L_NONE);
    jcr->setJobStatus(JS_Running);
    jcr->JobId = 0;

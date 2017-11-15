@@ -311,6 +311,9 @@ int main (int argc, char *argv[])
       Jmsg((JCR *)NULL, M_ERROR_TERM, 0, _("Please correct configuration file: %s\n"), configfile);
    }
 
+   /* The configuration is correct */
+   director = (DIRRES *)GetNextRes(R_DIRECTOR, NULL);
+
    if (!test_config) {
       /* Create pid must come after we are a daemon -- so we have our final pid */
       if (make_pid_file) {
@@ -585,6 +588,12 @@ void reload_config(int sig)
       table = rtable;           /* release new, bad, saved table below */
    } else {
       invalidate_schedules();
+
+      /* We know that the configuration is correct and we will keep it,
+       * so we can update the global pointer to the director resource.
+       */
+      director = (DIRRES *)GetNextRes(R_DIRECTOR, NULL);
+
       /*
        * Hook all active jobs so that they release this table
        */
@@ -750,76 +759,77 @@ static bool check_resources()
    bool OK = true;
    JOB *job;
    bool need_tls;
+   DIRRES *newDirector;
 
    LockRes();
 
    job = (JOB *)GetNextRes(R_JOB, NULL);
-   director = (DIRRES *)GetNextRes(R_DIRECTOR, NULL);
-   if (!director) {
+   newDirector = (DIRRES *)GetNextRes(R_DIRECTOR, NULL);
+   if (!newDirector) {
       Jmsg(NULL, M_FATAL, 0, _("No Director resource defined in %s\n"
 "Without that I don't know who I am :-(\n"), configfile);
       OK = false;
    } else {
-      set_working_directory(director->working_directory);
-      if (!director->messages) {       /* If message resource not specified */
-         director->messages = (MSGS *)GetNextRes(R_MSGS, NULL);
-         if (!director->messages) {
+      set_working_directory(newDirector->working_directory);
+      if (!newDirector->messages) { /* If message resource not specified */
+         newDirector->messages = (MSGS *)GetNextRes(R_MSGS, NULL);
+         if (!newDirector->messages) {
             Jmsg(NULL, M_FATAL, 0, _("No Messages resource defined in %s\n"), configfile);
             OK = false;
          }
       }
-      if (GetNextRes(R_DIRECTOR, (RES *)director) != NULL) {
+      if (GetNextRes(R_DIRECTOR, (RES *)newDirector) != NULL) {
          Jmsg(NULL, M_FATAL, 0, _("Only one Director resource permitted in %s\n"),
             configfile);
          OK = false;
       }
       /* tls_require implies tls_enable */
-      if (director->tls_require) {
+      if (newDirector->tls_require) {
          if (have_tls) {
-            director->tls_enable = true;
+            newDirector->tls_enable = true;
          } else {
             Jmsg(NULL, M_FATAL, 0, _("TLS required but not configured in Bacula.\n"));
             OK = false;
          }
       }
 
-      need_tls = director->tls_enable || director->tls_authenticate;
+      need_tls = newDirector->tls_enable || newDirector->tls_authenticate;
 
-      if (!director->tls_certfile && need_tls) {
+      if (!newDirector->tls_certfile && need_tls) {
          Jmsg(NULL, M_FATAL, 0, _("\"TLS Certificate\" file not defined for Director \"%s\" in %s.\n"),
-            director->name(), configfile);
+            newDirector->name(), configfile);
          OK = false;
       }
 
-      if (!director->tls_keyfile && need_tls) {
+      if (!newDirector->tls_keyfile && need_tls) {
          Jmsg(NULL, M_FATAL, 0, _("\"TLS Key\" file not defined for Director \"%s\" in %s.\n"),
-            director->name(), configfile);
+            newDirector->name(), configfile);
          OK = false;
       }
 
-      if ((!director->tls_ca_certfile && !director->tls_ca_certdir) &&
-           need_tls && director->tls_verify_peer) {
+      if ((!newDirector->tls_ca_certfile && !newDirector->tls_ca_certdir) &&
+           need_tls && newDirector->tls_verify_peer) {
          Jmsg(NULL, M_FATAL, 0, _("Neither \"TLS CA Certificate\" or \"TLS CA"
               " Certificate Dir\" are defined for Director \"%s\" in %s."
               " At least one CA certificate store is required"
               " when using \"TLS Verify Peer\".\n"),
-              director->name(), configfile);
+              newDirector->name(), configfile);
          OK = false;
       }
 
       /* If everything is well, attempt to initialize our per-resource TLS context */
-      if (OK && (need_tls || director->tls_require)) {
+      if (OK && (need_tls || newDirector->tls_require)) {
          /* Initialize TLS context:
           * Args: CA certfile, CA certdir, Certfile, Keyfile,
           * Keyfile PEM Callback, Keyfile CB Userdata, DHfile, Verify Peer */
-         director->tls_ctx = new_tls_context(director->tls_ca_certfile,
-            director->tls_ca_certdir, director->tls_certfile,
-            director->tls_keyfile, NULL, NULL, director->tls_dhfile,
-            director->tls_verify_peer);
+         newDirector->tls_ctx = new_tls_context(newDirector->tls_ca_certfile,
+            newDirector->tls_ca_certdir, newDirector->tls_certfile,
+            newDirector->tls_keyfile, NULL, NULL, newDirector->tls_dhfile,
+            newDirector->tls_verify_peer);
 
-         if (!director->tls_ctx) {
+         if (!newDirector->tls_ctx) {
             Jmsg(NULL, M_FATAL, 0, _("Failed to initialize TLS context for Director \"%s\" in %s.\n"),
-                 director->name(), configfile);
+                 newDirector->name(), configfile);
             OK = false;
          }
       }
@@ -1113,7 +1123,7 @@ static bool check_resources()
    UnlockRes();
    if (OK) {
       close_msg(NULL);                /* close temp message handler */
-      init_msg(NULL, director->messages); /* open daemon message handler */
+      init_msg(NULL, newDirector->messages); /* open daemon message handler */
       last_reload_time = time(NULL);
    }
    return OK;
