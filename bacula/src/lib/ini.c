@@ -539,26 +539,33 @@ bool ini_store_name(LEX *lc, ConfigFile *inifile, ini_items *item)
 
 bool ini_store_alist_str(LEX *lc, ConfigFile *inifile, ini_items *item)
 {
-   alist *list;
+   alist *list = item->val.alistval;
    if (!lc) {
       /* TODO, write back the alist to edit buffer */
       return true;
    }
-   if (lex_get_token(lc, T_STRING) == T_ERROR) {
-      return false;
+
+   for (;;) {
+      if (lex_get_token(lc, T_STRING) == T_ERROR) {
+         return false;
+      }
+
+      if (list == NULL) {
+         list = New(alist(10, owned_by_alist));
+      }
+      list->append(bstrdup(lc->str));
+
+      if (lc->ch != ',') {         /* if no other item follows */
+         if (!lex_check_eol(lc)) {
+            /* found garbage at the end of the line */
+            return false;
+         }
+         break;                    /* get out */
+      }
+      lex_get_token(lc, T_ALL);    /* eat comma */
    }
 
-   if (item->val.alistval == NULL) {
-      list = New(alist(10, owned_by_alist));
-   } else {
-      list = item->val.alistval;
-   }
-
-   Dmsg4(900, "Append %s to alist %p size=%d %s\n",
-         lc->str, list, list->size(), item->name);
-   list->append(bstrdup(lc->str));
    item->val.alistval = list;
-
    scan_to_eol(lc);
    return true;
 }
@@ -738,7 +745,8 @@ struct ini_items test_items[] = {
 int32_t r_last;
 int32_t r_first;
 RES_HEAD **res_head;
-bool save_resource(RES_HEAD **rhead, int type, RES_ITEM *items, int pass){}
+bool save_resource(RES_HEAD **rhead, int type, RES_ITEM *items, int pass){return false;}
+bool save_resource(CONFIG*, int, RES_ITEM*, int) {return false;}
 void dump_resource(int type, RES *ares, void sendit(void *sock, const char *fmt, ...), void *sock){}
 void free_resource(RES *rres, int type){}
 union URES {
@@ -822,7 +830,7 @@ int main()
    alist *list = ini->items[3].val.alistval;
    nok(ini->items[3].found, "Test presence of alist");
 
-   fprintf(fp, "list=a\nlist=b\nlist=c\n");
+   fprintf(fp, "list=a\nlist=b\nlist=c,d,e\n");
    fflush(fp);
 
    ini->clear_items();
@@ -831,7 +839,7 @@ int main()
    list = ini->items[3].val.alistval;
    ok(ini->items[3].found, "Test presence of alist");
    ok(list != NULL, "Test list member");
-   ok(list->size() == 3, "Test list size");
+   ok(list->size() == 5, "Test list size");
 
    ok(!strcmp((char *)list->get(0), "a"), "Testing alist[0]");
    ok(!strcmp((char *)list->get(1), "b"), "Testing alist[1]");
