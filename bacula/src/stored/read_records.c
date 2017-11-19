@@ -116,6 +116,7 @@ bool read_records(DCR *dcr,
    SESSION_LABEL sessrec;
    dlist *recs;                         /* linked list of rec packets open */
    char ed1[50];
+   bool first_block = true;
 
    recs = New(dlist(rec, &rec->link));
    /* We go to the first_file unless we need to reposition during an
@@ -131,44 +132,48 @@ bool read_records(DCR *dcr,
       }
       ASSERT2(!dcr->dev->adata, "Called with adata block. Wrong!");
 
-      if (dev->at_eot() || !dcr->read_block_from_device(CHECK_BLOCK_NUMBERS)) {
-         if (dev->at_eot()) {
-            Jmsg(jcr, M_INFO, 0,
-                 _("End of Volume \"%s\" at addr=%s on device %s.\n"),
-                 dcr->VolumeName,
-                 dev->print_addr(ed1, sizeof(ed1), dev->EndAddr),
-                 dev->print_name());
-            ok = mount_next_vol(jcr, dcr, jcr->bsr, &sessrec, &should_stop,
-                                record_cb, mount_cb);
-            /* Might have changed after the mount request */
-            dev = dcr->dev;
-            block = dcr->block;
-            if (should_stop) {
+
+      if (! first_block || dev->dev_type != B_FIFO_DEV ) {
+         if (dev->at_eot() || !dcr->read_block_from_device(CHECK_BLOCK_NUMBERS)) {
+            if (dev->at_eot()) {
+               Jmsg(jcr, M_INFO, 0,
+                    _("End of Volume \"%s\" at addr=%s on device %s.\n"),
+                    dcr->VolumeName,
+                    dev->print_addr(ed1, sizeof(ed1), dev->EndAddr),
+                    dev->print_name());
+               ok = mount_next_vol(jcr, dcr, jcr->bsr, &sessrec, &should_stop,
+                                   record_cb, mount_cb);
+               /* Might have changed after the mount request */
+               dev = dcr->dev;
+               block = dcr->block;
+               if (should_stop) {
+                  break;
+               }
+               continue;
+
+            } else if (dev->at_eof()) {
+               Dmsg3(200, "EOF at addr=%s on device %s, Volume \"%s\"\n",
+                     dev->print_addr(ed1, sizeof(ed1), dev->EndAddr),
+                     dev->print_name(), dcr->VolumeName);
+               continue;
+            } else if (dev->is_short_block()) {
+               Jmsg1(jcr, M_ERROR, 0, "%s", dev->errmsg);
+               continue;
+            } else {
+               /* I/O error or strange end of tape */
+               display_tape_error_status(jcr, dev);
+               if (forge_on || jcr->ignore_label_errors) {
+                  dev->fsr(1);       /* try skipping bad record */
+                  Pmsg0(000, _("Did fsr in attemp to skip bad record.\n"));
+                  continue;              /* try to continue */
+               }
+               ok = false;               /* stop everything */
                break;
             }
-            continue;
-
-         } else if (dev->at_eof()) {
-            Dmsg3(200, "EOF at addr=%s on device %s, Volume \"%s\"\n",
-                  dev->print_addr(ed1, sizeof(ed1), dev->EndAddr),
-                  dev->print_name(), dcr->VolumeName);
-            continue;
-         } else if (dev->is_short_block()) {
-            Jmsg1(jcr, M_ERROR, 0, "%s", dev->errmsg);
-            continue;
-         } else {
-            /* I/O error or strange end of tape */
-            display_tape_error_status(jcr, dev);
-            if (forge_on || jcr->ignore_label_errors) {
-               dev->fsr(1);       /* try skipping bad record */
-               Pmsg0(000, _("Did fsr in attemp to skip bad record.\n"));
-               continue;              /* try to continue */
-            }
-            ok = false;               /* stop everything */
-            break;
          }
+             Dmsg1(dbglvl, "Read new block at pos=%s\n", dev->print_addr(ed1, sizeof(ed1)));
       }
-      Dmsg1(dbglvl, "Read new block at pos=%s\n", dev->print_addr(ed1, sizeof(ed1)));
+      first_block = false;
 #ifdef if_and_when_FAST_BLOCK_REJECTION_is_working
       /* this does not stop when file/block are too big */
       if (!match_bsr_block(jcr->bsr, block)) {

@@ -279,7 +279,9 @@ int DEVICE::read_dev_volume_label(DCR *dcr)
       goto bail_out;
    }
 
-   empty_block(block);
+   if (dcr->is_writing()) {
+       empty_block(block);
+   }
 
    Leave(dbglvl);
    return VOL_OK;

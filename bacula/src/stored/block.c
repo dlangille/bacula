@@ -447,6 +447,7 @@ bool DCR::read_block_from_dev(bool check_block_numbers)
    DCR *dcr = this;
    boffset_t pos;
    char ed1[50];
+   int data_len;
 
    if (job_canceled(jcr)) {
       Mmsg(dev->errmsg, _("Job failed or canceled.\n"));
@@ -512,19 +513,30 @@ reread:
       Dmsg2(200, "Pos for read=%s %lld\n",
          dev->print_addr(ed1, sizeof(ed1), pos), pos);
    }
-   do {
-      if ((retry > 0 && stat == -1 && errno == EBUSY)) {
-         berrno be;
-         Dmsg4(100, "===== read retry=%d stat=%d errno=%d: ERR=%s\n",
-               retry, stat, errno, be.bstrerror());
-         bmicrosleep(10, 0);    /* pause a bit if busy or lots of errors */
-         dev->clrerror(-1);
-      }
-      stat = dev->read(block->buf, (size_t)block->buf_len);
 
-   } while (stat == -1 && (errno == EBUSY || errno == EINTR || errno == EIO) && retry++ < 3);
+   data_len = 0;
+
+   do {
+      retry = 0;
+
+      do {
+         if ((retry > 0 && stat == -1 && errno == EBUSY)) {
+            berrno be;
+            Dmsg4(100, "===== read retry=%d stat=%d errno=%d: ERR=%s\n",
+                  retry, stat, errno, be.bstrerror());
+            bmicrosleep(10, 0);    /* pause a bit if busy or lots of errors */
+            dev->clrerror(-1);
+         }
+         stat = dev->read(block->buf + data_len, (size_t)(block->buf_len - data_len));
+         if (stat > 0)
+            data_len += stat;
+
+      } while (stat == -1 && (errno == EBUSY || errno == EINTR || errno == EIO) && retry++ < 3);
+
+   } while (data_len < block->buf_len && stat > 0 && dev->dev_type == B_FIFO_DEV);
+
    Dmsg4(110, "Read() adata=%d vol=%s nbytes=%d pos=%lld\n",
-      block->adata, dev->VolHdr.VolumeName, stat, pos);
+      block->adata, dev->VolHdr.VolumeName, stat < 0 ? stat : data_len, pos);
    if (stat < 0) {
       berrno be;
       dev->clrerror(-1);
@@ -547,6 +559,9 @@ reread:
       }
       return false;
    }
+
+   stat = data_len;
+
    if (stat == 0) {             /* Got EOF ! */
       pos = dev->lseek(dcr, (boffset_t)0, SEEK_CUR); /* get curr pos */
       pos = dev->get_full_addr(pos);
