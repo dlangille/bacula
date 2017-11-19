@@ -141,6 +141,8 @@ class BaculaSetting extends APIModule {
 				$config_new = $config;
 			}
 			$ret = $this->saveConfig($config_orig, $config_new, $component_type, $resource_type, $resource_name);
+		} else {
+			$ret['result'] = $result;
 		}
 		return $ret;
 	}
@@ -165,17 +167,21 @@ class BaculaSetting extends APIModule {
 
 	private function updateConfig(array $config_orig, array $config_new) {
 		$config = array();
-		for ($i = 0; $i < count($config_orig); $i++) {
-			$resource_orig = $config_orig[$i];
-			for ($j = 0; $j < count($config_new); $j++) {
-				$resource_new = $config_new[$j];
+		for ($i = 0; $i < count($config_new); $i++) {
+			$resource_new = $config_new[$i];
+			$found = false;
+			for ($j = 0; $j < count($config_orig); $j++) {
+				$resource_orig = $config_orig[$j];
 				if ($this->compareResources(array($resource_orig, $resource_new)) === true) {
 					// Resource type and name are the same. Update directives.
 					$config[] = $this->updateResource($resource_orig, $resource_new);
-				} else {
-					// Rewrite not modified resource
-					$config[] = $resource_new;
+					$found = true;
+					break;
 				}
+			}
+			if (!$found) {
+				// Newly added resource
+				$config[] = $resource_new;
 			}
 		}
 		return $config;
@@ -506,7 +512,7 @@ function overwrite_directives_callback($directive_name, $directive_value) {
 		'NextPool'
 	);
 	if (in_array($directive_name, $overwrite_directives)) {
-		$directive = "{$directive_name}={$directive_value}";
+		$directive = "{$directive_name}=\"{$directive_value}\"";
 	}
 	return $directive;
 }
