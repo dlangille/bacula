@@ -1171,3 +1171,19 @@ msgstr "Field required."
 
 msgid "Invalid value. Integer value required."
 msgstr "Invalid value. Integer value required."
+
+msgid "Resource %s \"%s\" is used in the following resources:"
+msgstr "Resource %s \"%s\" is used in the following resources:"
+
+msgid "Component: %s, Resource: %s \"%s\", Directive: %s"
+msgstr "Component: %s, Resource: %s \"%s\", Directive: %s"
+
+msgid "Are you sure that you want to remove %s resource \"%s\"?"
+msgstr "Are you sure that you want to remove %s resource \"%s\"?"
+
+msgid "Resource %s \"%s\" removed successfully."
+msgstr "Resource %s \"%s\" removed successfully."
+
+msgid "Please unassign resource %s \"%s\" from these resources and try again."
+msgstr "Please unassign resource %s \"%s\" from these resources and try again."
+

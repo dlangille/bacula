@@ -9,6 +9,7 @@
 		<!-- data modules -->
 		<module id="api" class="Application.Web.Class.BaculumAPIClient" />
 		<module id="data_desc" class="Application.Web.Class.DataDescription" />
+		<module id="data_deps" class="Application.Web.Class.DataDependencies" />
 		<module id="globalization" class="TGlobalization">
 			<translation type="gettext" source="Application.Web.Lang" marker="@@" autosave="false" cache="false" DefaultCulture="en" />
 		</module>

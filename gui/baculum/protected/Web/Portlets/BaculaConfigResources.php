@@ -77,12 +77,152 @@ class BaculaConfigResources extends ResourceListTemplate {
 			$control->setResourceName($param->Item->DataItem['resource_name']);
 			$control->setResourceNames($this->resource_names);
 		}
+		$param->Item->RemoveResource->setCommandParameter($param->Item->DataItem);
 	}
 
 	public function getDirectives($sender, $param) {
 		$control = $this->getChildControl($sender->getParent(), self::CHILD_CONTROL);
 		if (is_object($control)) {
 			$control->raiseEvent('OnDirectiveListLoad', $this, null);
+		}
+	}
+
+	/**
+	 * Remove resource callback method.
+	 *
+	 * @return object $sender sender instance
+	 * @return mixed $param additional parameters
+	 * @return none
+	 */
+	public function removeResource($sender, $param) {
+		if (!$this->getPage()->IsCallback) {
+			// removing resource available only by callback
+			return;
+		}
+		$host_params = $param->getCommandParameter();
+		if (!is_array($host_params) || count($host_params) === 0) {
+			return;
+		}
+		$host = $this->getHost();
+		$config = $this->getConfigData($host, $host_params['component_type']);
+		$deps = $this->getModule('data_deps')->checkDependencies(
+			$host_params['component_type'],
+			$host_params['resource_type'],
+			$host_params['resource_name'],
+			$config
+		);
+		if (count($deps) === 0) {
+			// NO DEPENDENCY. Ready to remove.
+			$this->removeResourceFromConfig(
+				$config,
+				$host_params['resource_type'],
+				$host_params['resource_name']
+			);
+			$result = $this->getModule('api')->set(
+				array('config',	$host_params['component_type']),
+				array('config' => json_encode($config)),
+				$host,
+				false
+			);
+			if ($result->error === 0) {
+				$this->showRemovedResourceInfo(
+					$host_params['resource_type'],
+					$host_params['resource_name']
+				);
+			} else {
+				$this->showRemovedResourceError($result->output);
+			}
+		} else {
+			// DEPENDENCIES EXIST. List them on the interface.
+			$this->showDependenciesError(
+				$deps,
+				$host_params['resource_type'],
+				$host_params['resource_name']
+			);
+		}
+	}
+
+	/**
+	 * Show removed resource information.
+	 *
+	 * @param string $resource_type removed resource type
+	 * @param string $resource_name removed resource name
+	 * @return none
+	 */
+	private function showRemovedResourceInfo($resource_type, $resource_name) {
+		$msg = Prado::localize('Resource %s "%s" removed successfully.');
+		$msg = sprintf(
+			$msg,
+			$resource_type,
+			$resource_name
+		);
+		$this->RemoveResourceOk->Text = $msg;
+		$this->getPage()->getCallbackClient()->hide($this->RemoveResourceError);
+		$this->getPage()->getCallbackClient()->show($this->RemoveResourceOk);
+	}
+
+	/**
+	 * Show removed resource error message.
+	 *
+	 * @param string $error_message error message
+	 * @return none
+	 */
+	private function showRemovedResourceError($error_message) {
+		$this->RemoveResourceError->Text = $error_message;
+		$this->getPage()->getCallbackClient()->hide($this->RemoveResourceOk);
+		$this->getPage()->getCallbackClient()->show($this->RemoveResourceError);
+	}
+
+	/**
+	 * Show dependencies error message.
+	 *
+	 * @param array $deps list dependencies for the removing resource
+	 * @param string $resource_type resource type of the removing resource
+	 * @param string $resource_name resource name of the removing resource
+	 * @return none
+	 */
+	private function showDependenciesError($deps, $resource_type, $resource_name) {
+		$emsg = Prado::localize('Resource %s "%s" is used in the following resources:');
+		$emsg = sprintf($emsg, $resource_type, $resource_name);
+		$emsg_deps = Prado::localize('Component: %s, Resource: %s "%s", Directive: %s');
+		$dependencies = array();
+		for ($i = 0; $i < count($deps); $i++) {
+			$dependencies[] = sprintf(
+				$emsg_deps,
+				$deps[$i]['component_type'],
+				$deps[$i]['resource_type'],
+				$deps[$i]['resource_name'],
+				$deps[$i]['directive_name']
+			);
+		}
+		$emsg_sum = Prado::localize('Please unassign resource %s "%s" from these resources and try again.');
+		$emsg_sum = sprintf($emsg_sum, $resource_type, $resource_name);
+		$error = array($emsg, implode('<br />', $dependencies),  $emsg_sum);
+		$error_message = implode('<br /><br />', $error);
+		$this->showRemovedResourceError($error_message);
+	}
+
+	/**
+	 * Remove resource from config.
+	 * Note, passing config by reference.
+	 *
+	 * @param array $config entire config
+	 * @param string $resource_type resource type to remove
+	 * @param string $resource_name resource name to remove
+	 * @return none
+	 */
+	private function removeResourceFromConfig(&$config, $resource_type, $resource_name) {
+		for ($i = 0; $i < count($config); $i++) {
+			foreach ($config[$i] as $rtype => $resource) {
+				if (!property_exists($resource, 'Name')) {
+					continue;
+				}
+				if ($rtype === $resource_type && $resource->Name === $resource_name) {
+					// remove resource
+					array_splice($config, $i, 1);
+					break;
+				}
+			}
 		}
 	}
 }

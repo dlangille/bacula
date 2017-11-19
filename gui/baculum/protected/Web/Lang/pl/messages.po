@@ -1427,3 +1427,19 @@ msgstr "Pole wymagane."
 
 msgid "Invalid value. Integer value required."
 msgstr "Niepoprawna wartość. Wymagane jest podanie liczby całkowitej."
+
+msgid "Resource %s \"%s\" is used in the following resources:"
+msgstr "Zasób %s \"%s\" jest użyty w następujących zasobach:"
+
+msgid "Component: %s, Resource: %s \"%s\", Directive: %s"
+msgstr "Komponent: %s, Zasób: %s \"%s\", Dyrektywa: %s"
+
+msgid "Are you sure that you want to remove %s resource \"%s\"?"
+msgstr "Czy jesteś pewien, że chcesz usunąć zasób %s \"%s\"?"
+
+msgid "Resource %s \"%s\" removed successfully."
+msgstr "Zasób %s \"%s\" został usunięty pomyślnie."
+
+msgid "Please unassign resource %s \"%s\" from these resources and try again."
+msgstr "Proszę wypisać zasób %s \"%s\" z tych zasobów i spróbować ponownie."
+
