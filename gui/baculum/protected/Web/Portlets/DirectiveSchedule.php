@@ -318,7 +318,7 @@ class DirectiveSchedule extends DirectiveListTemplate {
 					// value the same as default value, skip it
 					continue;
 				}
-				$directive_values[] = "{$directive_name}={$directive_value}";
+				$directive_values[] = "{$directive_name}=\"{$directive_value}\"";
 			}
 		}
 
