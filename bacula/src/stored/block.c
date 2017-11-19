@@ -447,7 +447,7 @@ bool DCR::read_block_from_dev(bool check_block_numbers)
    DCR *dcr = this;
    boffset_t pos;
    char ed1[50];
-   int data_len;
+   uint32_t data_len;
 
    if (job_canceled(jcr)) {
       Mmsg(dev->errmsg, _("Job failed or canceled.\n"));
