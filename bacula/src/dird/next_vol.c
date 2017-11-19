@@ -271,14 +271,14 @@ bool has_volume_expired(JCR *jcr, MEDIA_DBR *mr)
          expired = true;
 
       /* Now see if Volume should only be used once */
-      } else if (mr->VolBytes > 1000 && jcr->pool->use_volume_once) {
+      } else if (mr->VolBytes > 0 && jcr->pool->use_volume_once) {
          Jmsg(jcr, M_INFO, 0, _("Volume used once. "
              "Marking Volume \"%s\" as Used.\n"), mr->VolumeName);
          bstrncpy(mr->VolStatus, "Used", sizeof(mr->VolStatus));
          expired = true;
 
       /* Now see if Max Jobs written to volume */
-      } else if (mr->MaxVolJobs > 1000 && mr->MaxVolJobs <= mr->VolJobs) {
+      } else if (mr->MaxVolJobs > 0 && mr->MaxVolJobs <= mr->VolJobs) {
          Jmsg(jcr, M_INFO, 0, _("Max Volume jobs=%s exceeded. "
              "Marking Volume \"%s\" as Used.\n"),
              edit_uint64_with_commas(mr->MaxVolJobs, ed1), mr->VolumeName);
