@@ -281,7 +281,7 @@
 /* Define to 1 if you have the `backtrace' function. */
 #undef HAVE_BACKTRACE
 
-/* Set if Bacula bat Qt4 GUI support enabled */
+/* Set if Bacula bat Qt GUI support enabled */
 #undef HAVE_BAT
 
 /* Define to 1 if you have the `be64toh' function. */

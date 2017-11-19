@@ -8,6 +8,7 @@
 #
 CONFIG += qt debug @QWT@
 
+
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 bins.path = /$(DESTDIR)@sbindir@
@@ -17,6 +18,7 @@ confs.commands = ./install_conf_file
 help.path = /$(DESTDIR)@docdir@
 help.files = help/*.html images/status.png images/mail-message-new.png
 
+datarootdir  = @datarootdir@
 TEMPLATE     = app
 TARGET       = bat
 DEPENDPATH  += .
