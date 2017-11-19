@@ -36,7 +36,12 @@ class Config extends BaculumAPIServer {
 	public function set($id, $params) {
 		$config = (array)$params;
 		if (array_key_exists('config', $config)) {
-			$config = json_decode($config['config'], true);
+			if ($this->getClientVersion() <= 0.2) {
+				// old way sending config as serialized array
+				$config = unserialize($config['config']);
+			} else {
+				$config = json_decode($config['config'], true);
+			}
 		} else {
 			$config = array();
 		}
@@ -51,7 +56,6 @@ class Config extends BaculumAPIServer {
 		} else if ($result['is_valid'] === false) {
 			$this->output = BaculaConfigError::MSG_ERROR_CONFIG_VALIDATION_ERROR . print_r($result['result'], true);
 			$this->error = BaculaConfigError::ERROR_CONFIG_VALIDATION_ERROR;
-
 		} else {
 			$this->output = BaculaConfigError::MSG_ERROR_WRITE_TO_CONFIG_ERROR . print_r($result['result'], true);
 			$this->error = BaculaConfigError::ERROR_WRITE_TO_CONFIG_ERROR;
