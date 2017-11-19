@@ -1,7 +1,72 @@
-              Changelog on version 9.0.5
+              Changelog on version 9.0.6
+
+Release 9.0.6
+
+
+19Nov17
+ - Update AUTHORS for recent commits
+ - Remove incorrecly placed openssl-compat.h
+ - Add openssl-compat.h which went in wrong directory
+ - baculum: Add removing single resource
+ - baculum: Add module to check resource dependencies
+ - baculum: Fix saving names with spaces inside schedule Run directive
+ - baculum: Fix saving entire config by api request
+ - Backout vol size tests in previous attempt to fix bug #2349
+ - Fix compiler warning in previous patch
+ - Apply patches from bugs #2325 and #2326 to fix FIFO bugs
+ - Fix bug #2315 INTEGER misspelled in update_sqlite3_tables.in
+ - Try to fix bug #2349 multiple recycle messages
+
+15Nov17
+ - baculum: Throw 404 error if service not known
+
+14Nov17
+ - baculum: Use home page url when an error is shown
+
+12Nov17
+ - Fix bug #2346 Dir blocks when max reloads reached
+ - baculum: Send config to api server as json
+ - Remove enterprise code that breaks Mac install -- fixes bug #2351
+ - Correct FS size calculation for FreeBSD, Solaris, and Windows
+
+11Nov17
+ - baculum: Enable Portuguese language support in makefile
+
+10Nov17
+ - baculum: Fix required directives in schedule resource configuration
+ - baculum: Fix saving messages resource
+ - baculum: Improve slow reloading config resource list
+
+09Nov17
+ - crypto: remove most of OpenSSL initcallbacks for 1.1
+ - Update ACL/XATTR code and define new ACL/XATTR API for Plugins.
+ - baculum: Fix numeric password setting bug reported by Heitor Faria
+
+08Nov17
+ - crypto: convert EVP_PKEY access and remainings bits for OpenSSL 1.1
+ - crypto: convert EVP_MD_CTX + EVP_CIPHER_CTX to OpenSSL 1.1
+ - crypto: Use DEFINE_STACK_OF()
+ - crypto: Add a tiny OpenSSL compat level
+ - crypto: remove support for ancient openssl
+
+02Nov17
+ - Add restore wizard to the tray monitor.
+ - Preparation fixes: remove some warning
+ - Add ASSERTD() to track NULL Volume name error
+
+24Oct17
+ - Add "noautoparent" restore command option to disable the automatic parent 
+  directory selection
+
+20Oct17
+ - Make qt-console compatible to Qt5 (Qt4 still work)
+
+Bugs fixed/closed since last release:
+2315 2325 2346 2349 2351
+
+======================================================================
 
 Release 9.0.5
-
 
 01Nov17
  - Use if exists on dropping MAC table in postgres. Fixes bug #2314
