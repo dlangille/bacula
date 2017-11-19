@@ -39,6 +39,11 @@ Prado::using('Application.API.Class.OAuth2.TokenRecord');
 abstract class BaculumAPIServer extends TPage {
 
 	/**
+	 * API server version (used in HTTP header)
+	 */
+	const API_SERVER_VERSION = 0.1;
+
+	/**
 	 * Storing output from API commands in numeric array.
 	 */
 	protected $output;
@@ -208,7 +213,9 @@ abstract class BaculumAPIServer extends TPage {
 	 * Set output headers to send in response.
 	 */
 	private function setOutputHeaders() {
-		$this->getResponse()->setContentType('application/json');
+		$response = $this->getResponse();
+		$response->setContentType('application/json');
+		$response->appendHeader('Baculum-API-Version: ' . strval(self::API_SERVER_VERSION));
 	}
 
 	/**
@@ -344,6 +351,20 @@ abstract class BaculumAPIServer extends TPage {
 	 */
 	public function getModule($name) {
 		return $this->Application->getModule($name);
+	}
+
+	/**
+	 * Get Baculum web client version.
+	 *
+	 * @return float client version
+	 */
+	public function getClientVersion() {
+		$version = 0;
+		$headers = $this->getRequest()->getHeaders(CASE_LOWER);
+		if (array_key_exists('x-baculum-api', $headers)) {
+			$version = floatval($headers['x-baculum-api']);
+		}
+		return $version;
 	}
 }
 ?>

@@ -35,15 +35,28 @@ Prado::using('Application.Web.Class.HostRecord');
 class BaculumAPIClient extends WebModule {
 
 	/**
-	 * API version (used in HTTP header)
+	 * API client version (used in HTTP header)
+	 *
+	 * 0.2 -
+	 * 0.3 - sending config as json instead of serialized array
 	 */
-	const API_VERSION = '0.2';
+	const API_CLIENT_VERSION = 0.3;
 
 	/**
 	 * OAuth2 authorization endpoints
 	 */
 	const OAUTH2_AUTH_URL = 'api/auth/';
 	const OAUTH2_TOKEN_URL = 'api/token/';
+
+	/**
+	 * API server version for current request.
+	 */
+	public $api_server_version = 0;
+
+	/**
+	 * Single request response headers.
+	 */
+	public $response_headers = array();
 
 	/**
 	 * Session params to put in URLs.
@@ -83,6 +96,7 @@ class BaculumAPIClient extends WebModule {
 		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 		curl_setopt($ch, CURLOPT_COOKIE, 'PHPSESSID=' . md5(session_id()));
+		curl_setopt($ch, CURLOPT_HEADER, true);
 		return $ch;
 	}
 
@@ -94,7 +108,7 @@ class BaculumAPIClient extends WebModule {
 	 */
 	private function getAPIHeaders($host = null, $host_cfg = array()) {
 		$headers = array(
-			'X-Baculum-API: ' . self::API_VERSION,
+			'X-Baculum-API: ' . strval(self::API_CLIENT_VERSION),
 			'Accept: application/json'
 		);
 		if (count($host_cfg) > 0 && !is_null($host) && $host_cfg['auth_type'] === 'oauth2') {
@@ -279,8 +293,12 @@ class BaculumAPIClient extends WebModule {
 			$result = curl_exec($ch);
 			$error = curl_error($ch);
 			$errno = curl_errno($ch);
+			$header_size = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
 			curl_close($ch);
-			$ret = $this->preParseOutput($result, $error, $errno, $show_error);
+			$header = substr($result, 0, $header_size);
+			$body = substr($result, $header_size);
+			$this->parseHeader($header);
+			$ret = $this->preParseOutput($body, $error, $errno, $show_error);
 			if ($use_cache === true && $ret->error === 0) {
 				$this->setSessionCache($host, $params, $ret);
 			}
@@ -321,8 +339,12 @@ class BaculumAPIClient extends WebModule {
 		$result = curl_exec($ch);
 		$error = curl_error($ch);
 		$errno = curl_errno($ch);
+		$header_size = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
 		curl_close($ch);
-		return $this->preParseOutput($result, $error, $errno, $show_error);
+		$header = substr($result, 0, $header_size);
+		$body = substr($result, $header_size);
+		$this->parseHeader($header);
+		return $this->preParseOutput($body, $error, $errno, $show_error);
 	}
 
 	/**
@@ -354,8 +376,12 @@ class BaculumAPIClient extends WebModule {
 		$result = curl_exec($ch);
 		$error = curl_error($ch);
 		$errno = curl_errno($ch);
+		$header_size = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
 		curl_close($ch);
-		return $this->preParseOutput($result, $error, $errno, $show_error);
+		$header = substr($result, 0, $header_size);
+		$body = substr($result, $header_size);
+		$this->parseHeader($header);
+		return $this->preParseOutput($body, $error, $errno, $show_error);
 	}
 
 	/**
@@ -384,8 +410,12 @@ class BaculumAPIClient extends WebModule {
 		$result = curl_exec($ch);
 		$error = curl_error($ch);
 		$errno = curl_errno($ch);
+		$header_size = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
 		curl_close($ch);
-		return $this->preParseOutput($result, $error, $errno, $show_error);
+		$header = substr($result, 0, $header_size);
+		$body = substr($result, $header_size);
+		$this->parseHeader($header);
+		return $this->preParseOutput($body, $error, $errno, $show_error);
 	}
 
 	/**
@@ -432,6 +462,23 @@ class BaculumAPIClient extends WebModule {
 		);
 
 		return $resource;
+	}
+
+	/**
+	 * Parse and set response headers.
+	 * Note, header names are lower case.
+	 *
+	 * @return none
+	 */
+	public function parseHeader($header) {
+		$headers = array();
+		$heads = explode("\r\n", $header);
+		for ($i = 0; $i < count($heads); $i++) {
+			if (preg_match('/^(?P<name>[^:]+):(?P<value>[\S\s]+)$/', $heads[$i], $match) === 1) {
+				$headers[strtolower($match['name'])] = trim($match['value']);
+			}
+		}
+		$this->response_headers = $headers;
 	}
 
 	/**
@@ -562,6 +609,20 @@ class BaculumAPIClient extends WebModule {
 			// Host config in session is no longer needed, so remove it
 			HostRecord::deleteByPk($st['host']);
 		}
+	}
+
+	/**
+	 * Get Baculum web server version.
+	 * Value available after receiving response.
+	 *
+	 * @return float server version
+	 */
+	public function getServerVersion() {
+		$version = 0;
+		if (array_key_exists('baculum-api-version', $this->response_headers)) {
+			$version = floatval($this->response_headers['baculum-api-version']);
+		}
+		return $version;
 	}
 }
 ?>
