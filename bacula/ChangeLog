@@ -2,7 +2,6 @@
 
 Release 9.0.6
 
-
 19Nov17
  - Update AUTHORS for recent commits
  - Remove incorrecly placed openssl-compat.h
@@ -17,10 +16,18 @@ Release 9.0.6
  - Fix bug #2315 INTEGER misspelled in update_sqlite3_tables.in
  - Try to fix bug #2349 multiple recycle messages
 
+17Nov17
+ - Add support for items with comma in ini_store_alist_str()
+
 15Nov17
+ - Fix segfault after the reload of an incorrect configuration
+ - Add temporary fix to avoid a deadlock after a reload command on an incorrect 
+  configuration
  - baculum: Throw 404 error if service not known
 
 14Nov17
+ - Fix race condition between setip and the access to CLIENT::address()
+ - Fix #3284 about Client address not reloaded properly
  - baculum: Use home page url when an error is shown
 
 12Nov17
@@ -48,6 +55,9 @@ Release 9.0.6
  - crypto: Use DEFINE_STACK_OF()
  - crypto: Add a tiny OpenSSL compat level
  - crypto: remove support for ancient openssl
+
+06Nov17
+ - fix #3269 obey the user choice of "Are you sure you want to delete X JobIds
 
 02Nov17
  - Add restore wizard to the tray monitor.

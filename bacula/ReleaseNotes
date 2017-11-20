@@ -23,7 +23,13 @@ appreciated.
  - Apply patches from bugs #2325 and #2326 to fix FIFO bugs
  - Fix bug #2315 INTEGER misspelled in update_sqlite3_tables.in
  - Try to fix bug #2349 multiple recycle messages
+ - Add support for items with comma in ini_store_alist_str()
+ - Fix segfault after the reload of an incorrect configuration
+ - Add temporary fix to avoid a deadlock after a reload command on an incorrect 
+   configuration
  - baculum: Throw 404 error if service not known
+ - Fix race condition between setip and the access to CLIENT::address()
+ - Fix #3284 about Client address not reloaded properly
  - baculum: Use home page url when an error is shown
  - Fix bug #2346 Dir blocks when max reloads reached
  - baculum: Send config to api server as json
@@ -41,12 +47,13 @@ appreciated.
  - crypto: Use DEFINE_STACK_OF()
  - crypto: Add a tiny OpenSSL compat level
  - crypto: remove support for ancient openssl
+ - fix #3269 obey the user choice of "Are you sure you want to delete X JobIds
  - Add restore wizard to the tray monitor.
  - Preparation fixes: remove some warning
  - Add ASSERTD() to track NULL Volume name error
  - Add "noautoparent" restore command option to disable the automatic parent 
   directory selection
- - Make qt-console compatible to Qt5 (Qt4 still works)
+ - Make qt-console compatible to Qt5 (Qt4 still work)
 
 Bugs fixed/closed since last release:
 2315 2325 2346 2349 2351
