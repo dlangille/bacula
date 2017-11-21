@@ -50,7 +50,6 @@ AC_SUBST(post_host)dnl
 AC_SUBST(BDB_VERSION)dnl
 AC_SUBST(DEPKGS_QT_VERSION)dnl
 AC_SUBST(DEPKGS_VERSION)dnl
-AC_SUBST(BQT4_VERSION)dnl
 AC_SUBST(VIX_VERSION)dnl
 AC_SUBST(JAVA_VERSION)dnl
 AC_SUBST(NDMP_VERSION)dnl
@@ -403,12 +402,20 @@ AC_ARG_ENABLE(bat,
 
 BAT_DIR=
 if test x$support_bat = xyes; then
+dnl look for Qt4
    abc=`$PKGCONFIG QtGui`
    pkg=$?
    if test $pkg = 0; then
       BAT_DIR=src/qt-console
    else
-      AC_MSG_ERROR(Unable to find Qt installation needed by bat)
+dnl look for Qt5
+     abc=`$PKGCONFIG Qt5Gui`
+     pkg=$?
+     if test $pkg = 0; then
+	BAT_DIR=src/qt-console
+     else
+	AC_MSG_ERROR(Unable to find either Qt4 or Qt5 installation needed by bat)
+     fi
    fi
 fi
 
