@@ -3,10 +3,9 @@
 	<com:TActivePanel ID="RepeaterShow" EnableViewState="false">
 	<com:TActiveRepeater ID="Repeater" EnableViewState="false">
 		<prop:ItemTemplate>
-			<com:TPanel ID="JobElement" CssClass="slide-window-element">
-				<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/job-icon.png" alt="" /> [<%=@$this->DataItem->jobid%>] <%=@$this->DataItem->name%>
-				<input type="hidden" name="<%=$this->ClientID%>" value="<%=isset($this->DataItem->jobid) ? $this->DataItem->jobid : ''%>" />
-			</com:TPanel>
+			<div data-type="item_value" rel="<%#$this->DataItem->jobid%>" class="slide-window-element">
+				<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/job-icon.png" alt="" /> [<%#$this->DataItem->jobid%>] <%#$this->DataItem->name%>
+			</div>
 		</prop:ItemTemplate>
 	</com:TActiveRepeater>
 	</com:TActivePanel>
@@ -35,8 +34,7 @@
 		/>
 		<com:TActiveTemplateColumn HeaderText="<%[ Job name ]%>" SortExpression="name">
 			<prop:ItemTemplate>
-				<div title="<%=$this->getParent()->Data['name']%>"><%=$this->getPage()->JobWindow->formatJobName($this->getParent()->Data['name'])%></div>
-                                <input type="hidden" name="<%=$this->getParent()->ClientID%>" value="<%=$this->getParent()->Data['jobid']%>" />
+				<div data-type="item_value" rel="<%=$this->getParent()->Data['jobid']%>" title="<%=$this->getParent()->Data['name']%>"><%=$this->getPage()->JobWindow->formatJobName($this->getParent()->Data['name'])%></div>
 			</prop:ItemTemplate>
 		</com:TActiveTemplateColumn>
 		<com:TActiveTemplateColumn ItemTemplate="<%=isset($this->getPage()->JobWindow->jobTypes[$this->getParent()->Data['type']]) ? $this->getPage()->JobWindow->jobTypes[$this->getParent()->Data['type']] : ''%>" SortExpression="type">

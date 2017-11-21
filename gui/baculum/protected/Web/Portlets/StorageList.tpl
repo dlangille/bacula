@@ -3,10 +3,9 @@
 	<com:TActivePanel ID="RepeaterShow">
 		<com:TActiveRepeater ID="Repeater">
 			<prop:ItemTemplate>
-				<com:TPanel ID="StorageElement" CssClass="slide-window-element">
-					<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/server-storage-icon.png" alt="" /><%=@$this->DataItem->name%>
-					<input type="hidden" name="<%=$this->ClientID%>" value="<%=isset($this->DataItem->storageid) ? $this->DataItem->storageid : ''%>" />
-				</com:TPanel>
+				<div data-type="item_value" rel="<%#$this->DataItem->storageid%>" class="slide-window-element">
+					<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/server-storage-icon.png" alt="" /><%#$this->DataItem->name%>
+				</div>
 			</prop:ItemTemplate>
 		</com:TActiveRepeater>
 	</com:TActivePanel>
@@ -23,8 +22,7 @@
 		>
 			<com:TActiveTemplateColumn HeaderText="<%[ Storage name ]%>" SortExpression="name">
 				<prop:ItemTemplate>
-					<div><%=$this->getParent()->Data['name']%></div>
-					<input type="hidden" name="<%=$this->getParent()->ClientID%>" value="<%=$this->getParent()->Data['storageid']%>" />
+					<div data-type="item_value" rel="<%=$this->getParent()->Data['storageid']%>"><%=$this->getParent()->Data['name']%></div>
 				</prop:ItemTemplate>
 			</com:TActiveTemplateColumn>
 			<com:TActiveTemplateColumn HeaderText="<%[ Autochanger ]%>" SortExpression="autochanger" ItemStyle.HorizontalAlign="Center">

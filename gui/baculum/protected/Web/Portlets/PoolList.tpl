@@ -3,10 +3,9 @@
 	<com:TActivePanel ID="RepeaterShow">
 		<com:TActiveRepeater ID="Repeater">
 			<prop:ItemTemplate>
-				<com:TPanel ID="PoolElement" CssClass="slide-window-element">
-					<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/pool.png" alt="" /><%=@$this->DataItem->name%>
-					<input type="hidden" name="<%=$this->ClientID%>" value="<%=isset($this->DataItem->poolid) ? $this->DataItem->poolid : ''%>" />
-				</com:TPanel>
+				<div data-type="item_value" rel="<%#$this->DataItem->poolid%>" class="slide-window-element">
+					<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/pool.png" alt="" /><%#$this->DataItem->name%>
+				</div>
 			</prop:ItemTemplate>
 		</com:TActiveRepeater>
 	</com:TActivePanel>
@@ -24,8 +23,7 @@
 		>
 			<com:TActiveTemplateColumn HeaderText="Pool name" SortExpression="name">
 				<prop:ItemTemplate>
-					<div><%=$this->getParent()->Data['name']%></div>
-					<input type="hidden" name="<%=$this->getParent()->ClientID%>" value="<%=$this->getParent()->Data['poolid']%>" />
+					<div data-type="item_value" rel="<%=$this->getParent()->Data['poolid']%>"><%=$this->getParent()->Data['name']%></div>
 				</prop:ItemTemplate>
 			</com:TActiveTemplateColumn>
 			<com:TActiveBoundColumn

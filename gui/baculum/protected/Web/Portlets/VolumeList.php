@@ -34,8 +34,6 @@ class VolumeList extends Portlets implements ISlideWindow {
 	public $ID;
 	public $buttonID;
 	public $windowTitle;
-	public $pools;
-	public $oldPool;
 	public $view;
 
 	public function setID($id) {
@@ -63,7 +61,7 @@ class VolumeList extends Portlets implements ISlideWindow {
 	}
 
 	public function prepareData($sender, $param) {
-		$params = $this->getUrlParams(array('volumes', 'withpools'), $this->getPage()->VolumeWindow->ID);
+		$params = $this->getUrlParams(array('volumes'), $this->getPage()->VolumeWindow->ID);
 		$volumes = $this->Application->getModule('api')->get($params);
 		$isDetailView = $_SESSION['view' . $this->getPage()->VolumeWindow->ID] == 'details';
 		if($isDetailView === true) {
@@ -101,7 +99,7 @@ class VolumeList extends Portlets implements ISlideWindow {
 	}
 
 	public function sortDataGrid($sender, $param) {
-		$params = $this->getUrlParams(array('volumes', 'withpools'), $this->getPage()->VolumeWindow->ID);
+		$params = $this->getUrlParams(array('volumes'), $this->getPage()->VolumeWindow->ID);
 		$data = $this->Application->getModule('api')->get($params)->output;
 		$data = $this->Application->getModule('misc')->objectToArray($data);
 		$this->DataGrid->DataSource = $this->sortData($data, $param->SortExpression, $sender->UniqueID);

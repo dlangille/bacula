@@ -3,10 +3,9 @@
 	<com:TActivePanel ID="RepeaterShow">
 		<com:TActiveRepeater ID="Repeater">
 			<prop:ItemTemplate>
-				<com:TPanel ID="ClientElement" CssClass="slide-window-element" ToolTip="<%=@$this->DataItem->uname%>">
-					<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/client-icon.png" alt="" /><%=@$this->DataItem->name%>
-					<input type="hidden" name="<%=$this->ClientID%>" value="<%=isset($this->DataItem->clientid) ? $this->DataItem->clientid : ''%>" />
-				</com:TPanel>
+				<div data-type="item_value" rel="<%#$this->DataItem->clientid%>" class="slide-window-element" title="<%=@$this->DataItem->uname%>">
+					<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/client-icon.png" alt="" /><%#$this->DataItem->name%>
+				</div>
 			</prop:ItemTemplate>
 		</com:TActiveRepeater>
 	</com:TActivePanel>
@@ -23,8 +22,7 @@
 		>
 			<com:TActiveTemplateColumn HeaderText="<%[ Client name ]%>" SortExpression="name">
 				<prop:ItemTemplate>
-					<div><%=$this->getParent()->Data['name']%></div>
-					<input type="hidden" name="<%=$this->getParent()->ClientID%>" value="<%=$this->getParent()->Data['clientid']%>" />
+					<div data-type="item_value" rel="<%=$this->getParent()->Data['clientid']%>"><%=$this->getParent()->Data['name']%></div>
 				</prop:ItemTemplate>
 			</com:TActiveTemplateColumn>
 			<com:TActiveTemplateColumn ItemStyle.HorizontalAlign="Center" HeaderText="AutoPrune" SortExpression="autoprune">

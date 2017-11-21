@@ -3,13 +3,10 @@
 	<com:TActivePanel ID="RepeaterShow">
 	<com:TActiveRepeater ID="Repeater">
 		<prop:ItemTemplate>
-			<%=(isset($this->DataItem->pool->name) && $this->getPage()->VolumeWindow->oldPool != $this->DataItem->pool->name) ? '<div class="window-section"><span>' . Prado::localize('Pool:') . ' ' . $this->DataItem->pool->name  . '<span></div>': ''%>
-			<com:TPanel ID="VolumeElement" CssClass="slide-window-element" ToolTip="<%=(isset($this->DataItem->recycle) && $this->DataItem->recycle == 1 && !empty($this->DataItem->lastwritten) && in_array($this->DataItem->volstatus, array('Full', 'Used'))) ? Prado::localize('When expire:') . date( 'Y-m-d H:i:s', (strtotime($this->DataItem->lastwritten) + $this->DataItem->volretention)) : ''%> <%=Prado::localize('Last written:')%> <%=!empty($this->DataItem->lastwritten) ? $this->DataItem->lastwritten : Prado::localize('never written')%>">
-				<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/media-icon.png" alt="" /><%=@$this->DataItem->volumename%>
-				<div id="<%=isset($this->DataItem->volumename) ? $this->DataItem->volumename : ''%>_sizebar" class="status-bar-<%=isset($this->DataItem->volstatus) ? strtolower($this->DataItem->volstatus) : ''%>"><%=isset($this->DataItem->volstatus) ? $this->DataItem->volstatus : ''%></div>
-				<input type="hidden" name="<%=$this->ClientID%>" value="<%=isset($this->DataItem->mediaid) ? $this->DataItem->mediaid : ''%>" />
-			</com:TPanel>
-			<%=!(isset($this->DataItem->pool->name) ? ($this->getPage()->VolumeWindow->oldPool = $this->DataItem->pool->name) : false)%>
+			<div data-type="item_value" rel="<%#$this->DataItem->mediaid%>" class="slide-window-element" title="<%#($this->DataItem->recycle == 1 && !empty($this->DataItem->lastwritten) && in_array($this->DataItem->volstatus, array('Full', 'Used'))) ? Prado::localize('When expire:') . date( ' Y-m-d H:i:s', (strtotime($this->DataItem->lastwritten) + $this->DataItem->volretention)) : ''%> <%=Prado::localize('Last written:')%> <%=!empty($this->DataItem->lastwritten) ? $this->DataItem->lastwritten : Prado::localize('never written')%>">
+				<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/media-icon.png" alt="" /><%#$this->DataItem->volumename%>
+				<div id="<%#$this->DataItem->volumename%>_sizebar" class="status-bar-<%#strtolower($this->DataItem->volstatus)%>"><%#$this->DataItem->volstatus%></div>
+			</div>
 		</prop:ItemTemplate>
 	</com:TActiveRepeater>
 	</com:TActivePanel>
@@ -31,8 +28,7 @@
                 </com:TTemplateColumn>
 		<com:TActiveTemplateColumn HeaderText="<%[ Volume name ]%>" SortExpression="volumename">
 			<prop:ItemTemplate>
-				<div title="<%=$this->getParent()->Data['volumename']%>"><%=$this->getPage()->VolumeWindow->formatVolumeField($this->getParent()->Data['volumename'])%></div>
-				<input type="hidden" name="<%=$this->getParent()->ClientID%>" value="<%=$this->getParent()->Data['mediaid']%>" />
+				<div data-type="item_value" rel="<%=$this->getParent()->Data['mediaid']%>" title="<%=$this->getParent()->Data['volumename']%>"><%=$this->getPage()->VolumeWindow->formatVolumeField($this->getParent()->Data['volumename'])%></div>
 			</prop:ItemTemplate>
 		</com:TActiveTemplateColumn>
 		<com:TActiveBoundColumn

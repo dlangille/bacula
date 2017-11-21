@@ -146,9 +146,9 @@ var SlideWindowClass = jQuery.klass({
 			if (actions_btn.length === 1) {
 				actions_btn[0].addEventListener('mouseup', function(e) {
 					var row = self.getGridRowUnderCursor(e);
-					var el = $(row).find('input[type=hidden]');
+					var el = $(row).find('div[data-type="item_value"]');
 					if(el.length === 1) {
-						self.actionsRequest.setCallbackParameter(el[0].value);
+						self.actionsRequest.setCallbackParameter(el[0].getAttribute('rel'));
 						self.actionsRequest.dispatch();
 					}
 				});
@@ -276,9 +276,16 @@ var SlideWindowClass = jQuery.klass({
 		}
 
 		var set_callback_parameter = function(element) {
-			var el = $(element).find('input[type=hidden]')
-			if(el.length === 1) {
-				var val = el[0].value;
+			var val;
+			if ($('#' + this.gridEl).length === 1) {
+				var el = $(element).find('div[data-type="item_value"]')
+				if (el.length === 1) {
+					val = el[0].getAttribute('rel');
+				}
+			} else if ($('#' + this.repeaterEl).length === 1) {
+				val = element.getAttribute('rel');
+			}
+			if (val) {
 				this.openConfigurationById(val);
 			}
 		}.bind(this);
@@ -295,7 +302,9 @@ var SlideWindowClass = jQuery.klass({
 			});
 		}.bind(this));
 		Formatters.set_formatters();
-		this.revertSortingFromCookie();
+		if (grid.length === 1) {
+			this.revertSortingFromCookie();
+		}
 	},
 
 	openConfigurationById: function(id) {
@@ -447,7 +456,7 @@ var SlideWindowClass = jQuery.klass({
 	},
 	setActions: function() {
 		var checkboxes = this.getCheckboxes();
-		checkboxes.each(function(index, el) {
+		$(checkboxes).each(function(index, el) {
 			$(el).on('change', function() {
 				var is_checked = this.isAnyChecked(checkboxes);
 				if(is_checked === true && !this.areActionsOpen()) {

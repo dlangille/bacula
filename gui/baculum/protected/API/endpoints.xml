@@ -37,8 +37,6 @@
 	<!-- volumes (media) endpoints-->
 	<url ServiceParameter="API.Volumes" pattern="api/volumes/" />
 	<url ServiceParameter="API.Volumes" pattern="api/volumes/limit/{limit}/" parameters.limit="\d+" />
-	<url ServiceParameter="API.Volumes" pattern="api/volumes/withpools/" />
-	<url ServiceParameter="API.Volumes" pattern="api/volumes/withpools/limit/{limit}/" parameters.limit="\d+" />
 	<url ServiceParameter="API.Volume" pattern="api/volumes/{id}/" parameters.id="\d+" />
 	<url ServiceParameter="API.VolumePrune" pattern="api/volumes/prune/{id}/" parameters.id="\d+" />
 	<url ServiceParameter="API.VolumePurge" pattern="api/volumes/purge/{id}/" parameters.id="\d+" />
