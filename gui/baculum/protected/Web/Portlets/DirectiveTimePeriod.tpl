@@ -13,7 +13,7 @@
 			DataValueField="format"
 			Visible="<%=$this->display_directive%>"
 			ActiveControl.EnableUpdate="false"
-		/>
+		/> <%=$this->getRequired() ? '*' : ''%>
 		<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/switch.png" class="reset_btn" onclick="var ftime = Units.format_time_period(parseInt('<%=$this->getDefaultValue()%>', 10), 'second'); document.getElementById('<%=$this->Directive->ClientID%>').value = ftime.value; document.getElementById('<%=$this->TimeFormat->ClientID%>').value = ftime.format;" alt="<%[ Reset to default value ]%>" title="<%[ Reset to default value ]%>" />
 		<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/icon_err.png" class="remove_btn" onclick="document.getElementById('<%=$this->Directive->ClientID%>').value = '';" alt="<%[ Remove directive ]%>" title="<%[ Remove directive ]%>" />
 		<com:TRequiredFieldValidator
