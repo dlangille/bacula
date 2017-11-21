@@ -886,7 +886,6 @@ LIBRSYNC_VERSION
 NDMP_VERSION
 JAVA_VERSION
 VIX_VERSION
-BQT4_VERSION
 DEPKGS_VERSION
 DEPKGS_QT_VERSION
 BDB_VERSION
@@ -21835,7 +21834,13 @@ if test x$support_bat = xyes; then
    if test $pkg = 0; then
       BAT_DIR=src/qt-console
    else
-      as_fn_error $? "Unable to find Qt installation needed by bat" "$LINENO" 5
+     abc=`$PKGCONFIG Qt5Gui`
+     pkg=$?
+     if test $pkg = 0; then
+	BAT_DIR=src/qt-console
+     else
+	as_fn_error $? "Unable to find either Qt4 or Qt5 installation needed by bat" "$LINENO" 5
+     fi
    fi
 fi
 
