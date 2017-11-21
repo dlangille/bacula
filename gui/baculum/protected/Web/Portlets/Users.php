@@ -28,10 +28,9 @@ class Users extends Portlets {
 
 	public $web_config;
 
-	public function onInit($param) {
-		parent::onInit($param);
+	public function __construct() {
+		parent::__construct();
 		$this->web_config = $this->getModule('web_config')->getConfig();
-		$this->setUsers();
 	}
 
 	public function setUsers() {

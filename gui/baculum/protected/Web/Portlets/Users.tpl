@@ -8,7 +8,7 @@
 		<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/icon_err.png" alt="<%[ Close ]%>" title="<%[ Close ]%>" />
 	</a></p>
 </div>
-<com:TActiveRepeater ID="UsersList">
+<com:TActiveRepeater ID="UsersList" OnLoad="setUsers" ActiveControl.EnableUpdate="false">
 	<prop:HeaderTemplate>
 	<table id="users_list" class="window-section-detail-smallrow">
 		<tr>
