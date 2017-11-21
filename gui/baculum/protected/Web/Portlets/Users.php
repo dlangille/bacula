@@ -67,6 +67,7 @@ class Users extends Portlets {
 		if(!$_SESSION['admin']) {
 			return;
 		}
+		$this->UsersList->ActiveControl->EnableUpdate = true;
 		list($action, $user, $value) = explode(';', $param->CallbackParameter, 3);
 		switch($action) {
 			case 'newuser':
