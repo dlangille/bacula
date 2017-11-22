@@ -564,8 +564,40 @@ bail_out:
    return false;
 }
 
+/* Create a Plugin Config RestoreObject, will be sent
+ * at restore time to the Plugin
+ */
+static void plugin_create_restoreobject(JCR *jcr, plugin_config_item *elt)
+{
+   ROBJECT_DBR ro;
+   memset(&ro, 0, sizeof(ro));
+   ro.FileIndex = 1;
+   ro.JobId = jcr->JobId;
+   ro.FileType = FT_PLUGIN_CONFIG_FILLED;
+   ro.object_index = 1;
+   ro.object_full_len = ro.object_len = strlen(elt->content);
+   ro.object_compression = 0;
+   ro.plugin_name = elt->plugin_name;
+   ro.object_name = (char*)INI_RESTORE_OBJECT_NAME;
+   ro.object = elt->content;
+   db_create_restore_object_record(jcr, jcr->db, &ro);
+   Dmsg1(50, "Creating restore object for %s\n", elt->plugin_name);
+}
+
 bool do_restore_init(JCR *jcr)
 {
+   /* Will add RestoreObject used for the Plugin configuration */
+   if (jcr->plugin_config) {
+
+      plugin_config_item *elt;
+      foreach_alist(elt, jcr->plugin_config) {
+         plugin_create_restoreobject(jcr, elt);
+         free_plugin_config_item(elt);
+      }
+
+      delete jcr->plugin_config;
+      jcr->plugin_config = NULL;
+   }
    free_wstorage(jcr);
    return true;
 }
