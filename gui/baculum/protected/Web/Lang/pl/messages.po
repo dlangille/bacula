@@ -1443,3 +1443,68 @@ msgstr "Zasób %s \"%s\" został usunięty pomyślnie."
 msgid "Please unassign resource %s \"%s\" from these resources and try again."
 msgstr "Proszę wypisać zasób %s \"%s\" z tych zasobów i spróbować ponownie."
 
+msgid "Size:"
+msgstr "Rozmiar:"
+
+msgid "JobId:"
+msgstr "JobId:"
+
+msgid "Volume:"
+msgstr "Wolumen:"
+
+msgid "InChanger:"
+msgstr "InChanger:"
+
+msgid "Sum:"
+msgstr "Suma:"
+
+msgid "Select"
+msgstr "Wybierz"
+
+msgid "Path:"
+msgstr "Lokalizacja:"
+
+msgid "Restore wizard"
+msgstr "Konfigurator przywracania danych"
+
+msgid "This wizard enables you to do in easy way restore files to destination Bacula Client."
+msgstr "Ten konfigurator umożliwia wykonanie w łatwy sposób przywracania plików do docelowego Klienta Bacula."
+
+msgid "To start, please select backup Client which data you want to restore."
+msgstr "Aby zacząć, proszę wybrać Klienta kopii zapasowych, którego dane chcesz przywrócić."
+
+msgid "There are two ways to select backup to restore. Only selected backup way provides list of jobs from which there is possible to select one job. If you need the latest backups from the Client alternatively you can use Group most recent backups way which will select backups for you basing on backup job name and fileset resource."
+msgstr "Są dwa sposoby na wybranie kopii zapasowych do przywrócenia. Sposób 'Tylko wybrany backup' dostarcza listę zadań, z których możliwe jest wybranie jednej kopii zapasowej. Jeśli potrzebujesz przywrócić dane z najnowszych backupów alternatywnie możesz użyć opcję 'Grupa najaktualniejszych backupów', która będzie wybierać backupy za ciebie bazując na zadaniu kopii zapasowych i zasobie fileset."
+
+msgid "Do not relocate files"
+msgstr "Nie relokuj plików"
+
+msgid "Relocate files with prefix and/or suffix"
+msgstr "Relokuj pliki z prefiksem i/lub sufiksem."
+
+msgid "Relocate files with regular expression"
+msgstr "Relokuj pliki z użyciem wyrażenia regularnego"
+
+msgid "Strip prefix:"
+msgstr "Obetnij prefiks:"
+
+msgid "Add prefix:"
+msgstr "Dodaj prefiks:"
+
+msgid "Add suffix:"
+msgstr "Dodaj sufiks:"
+
+msgid "RegexWhere:"
+msgstr "RegexWhere:"
+
+msgid "File relocation option:"
+msgstr "Opcja relokacji plików:"
+
+msgid "In Changer"
+msgstr "In Changer"
+
+msgid "Volume"
+msgstr "Wolumen"
+
+msgid "During restore there will be used following volumes:"
+msgstr "Podczas zadania przywracania danych potrzebne będą następujące wolumeny:"

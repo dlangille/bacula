@@ -3,10 +3,12 @@
 	<com:TWizard ID="RestoreWizard"
 		CssClass="wizard"
 		StepStyle.CssClass="steps"
-		HeaderStyle.CssClass="header"
+		HeaderStyle.CssClass="wizard-body"
 		NavigationStyle.CssClass="navigation"
 		UseDefaultLayout="false"
 		ShowSideBar="false"
+		OnPreviousButtonClick="wizardPrev"
+		OnNextButtonClick="wizardNext"
 		OnCancelButtonClick="wizardStop"
 		OnCompleteButtonClick="wizardCompleted"
 		>
@@ -42,7 +44,7 @@
 			<div class="button-cancel"><com:BButton CommandName="Cancel" Text="<%[ Cancel ]%>" /></div>
 			<div class="button-prev-next">
 				<com:BButton CausesValidation="False" CssClass="bbutton" CommandName="PreviousStep" Text="<%[ &laquo; Previous ]%>" />
-				<com:BButton ID="NextButton" CommandName="NextStep" Text="<%[ Next &raquo; ]%>" Visible="<%=($this->getPage()->RestoreWizard->ActiveStepIndex != 1 || ($this->getPage()->RestoreWizard->ActiveStepIndex == 1 && $this->getPage()->BackupToRestore->ItemCount > 0))%>" />
+				<com:BButton ID="NextButton" CommandName="NextStep" Text="<%[ Next &raquo; ]%>" Visible="<%=($this->getPage()->RestoreWizard->ActiveStepIndex != 1 || ($this->getPage()->RestoreWizard->ActiveStepIndex == 1 && $this->getPage()->BackupsToRestore->ItemCount > 0))%>" />
 			</div>
 		</prop:StepNavigationTemplate>
 		 
@@ -54,106 +56,235 @@
 			</div>
 		</prop:FinishNavigationTemplate>
 		<com:TWizardStep ID="Step1" Title="<%[ Step 1 - select source backup client ]%>" StepType="Auto">
+			<h2><%[ Restore wizard ]%></h2>
+			<p>
+				<%[ This wizard enables you to do in easy way restore files to destination Bacula Client. ]%>
+				<%[ To start, please select backup Client which data you want to restore. ]%>
+			</p>
 			<div class="line">
 				<div class="text"><com:TLabel ForControl="BackupClientName" Text="<%[ Backup from client: ]%>" /></div>
 				<div class="field">
-					<com:TActiveDropDownList ID="BackupClientName" CssClass="textbox" Width="350px" OnLoad="setBackupClients" OnTextChanged="setJobs" CausesValidation="false" />
-					<com:TCompareValidator CssClass="validator" Display="Dynamic" ControlToValidate="BackupClientName" DataType="String" ValueToCompare="none" Operator="NotEqual" Text="<%[ Please select language. ]%>" />
+					<com:TDropDownList ID="BackupClientName" CssClass="textbox" Width="350px" CausesValidation="false" />
 				</div>
 			</div>
 		</com:TWizardStep>
 		<com:TWizardStep ID="Step2" Title="<%[ Step 2 - select backup to restore ]%>" StepType="Auto">
-			<com:TLabel  Text="<%[ There is no backup for restore. Please go to previous step and select another client for restore or proceed backups for the client selected in previous step. ]%>" CssClass="validation-error-summary" Visible="<%=($this->BackupToRestore->ItemCount == 0 && $this->GroupBackupToRestore->ItemCount == 0)%>"/>
+			<p>
+				<%[ There are two ways to select backup to restore. Only selected backup way provides list of jobs from which there is possible to select one job. If you need the latest backups from the Client alternatively you can use Group most recent backups way which will select backups for you basing on backup job name and fileset resource. ]%>
+			</p>
 			<div class="line" style="margin-top: 15px">
 				<div class="text"><com:TLabel Text="<%[ Backup selection method: ]%>" /></div>
 				<div class="field">
-					<com:TActiveRadioButton ID="OnlySelectedBackupSelection" GroupName="BackupSelection" Checked="true" OnCheckedChanged="setBackupSelection" /> <com:TLabel ForControl="OnlySelectedBackupSelection" Text="<%[ Only selected backup ]%>" />
-					<com:TActiveRadioButton ID="GroupBackupSelection" GroupName="BackupSelection" OnCheckedChanged="setBackupSelection" /> <com:TLabel ForControl="GroupBackupSelection" Text="<%[ Group most recent backups ]%>" /></div>
+					<com:TRadioButton
+						ID="OnlySelectedBackupSelection"
+						GroupName="BackupSelection"
+						Checked="true"
+						Attributes.onclick="$('#group-backup-to-restore-field').hide(); $('#backup-to-restore-field').show();"
+					/>
+					<com:TLabel ForControl="OnlySelectedBackupSelection" Text="<%[ Only selected backup ]%>" />
+					<com:TRadioButton
+						ID="GroupBackupSelection"
+						GroupName="BackupSelection"
+						Attributes.onclick="$('#backup-to-restore-field').hide(); $('#group-backup-to-restore-field').show();"
+					/>
+					<com:TLabel ForControl="GroupBackupSelection" Text="<%[ Group most recent backups ]%>" /></div>
 			</div>
-			<com:TActivePanel ID="BackupToRestoreField">
-				<div class="line">
-					<div class="text"><com:TLabel ForControl="BackupToRestore" Text="<%[ Backup for restore: ]%>" /></div>
-					<div class="field">
-						<com:TActiveDropDownList ID="BackupToRestore" CssClass="textbox" Width="350px" CausesValidation="false" OnTextChanged="resetFileBrowser" />
-					</div>
+			<div id="backup-to-restore-field" style="display: <%=!$this->OnlySelectedBackupSelection->Checked ? 'none' : 'block'%>">
+				<div>
+				<p><%[ Backup for restore: ]%></p>
+				<com:TDataGrid
+					ID="BackupsToRestore"
+					EnableViewState="false"
+					AutoGenerateColumns="false"
+					AllowSorting="false"
+					CellPadding="5px"
+					CssClass="window-section-detail"
+					ItemStyle.CssClass="slide-window-element"
+					AlternatingItemStyle.CssClass="slide-window-element-alternating"
+					>
+					<com:TBoundColumn HeaderText="ID" DataField="jobid" />
+					<com:TTemplateColumn HeaderText="<%[ Job name ]%>" SortExpression="name">
+						<prop:ItemTemplate>
+							<div title="<%=$this->getParent()->Data['name']%>"><%=$this->getParent()->Data['name']%></div>
+						</prop:ItemTemplate>
+					</com:TTemplateColumn>
+					<com:TTemplateColumn>
+						<prop:HeaderText>
+							<span title="<%=Prado::localize('Type')%>" style="cursor: help">T</span>
+						</prop:HeaderText>
+						<prop:ItemTemplate>
+							<%=$this->getParent()->Data['type']%>
+						</prop:ItemTemplate>
+					</com:TTemplateColumn>
+					<com:TTemplateColumn>
+						<prop:HeaderText>
+							<span title="<%=Prado::localize('Level')%>" style="cursor: help">L</span>
+						</prop:HeaderText>
+						<prop:ItemTemplate>
+							<%=$this->getParent()->Data['level']%>
+						</prop:ItemTemplate>
+					</com:TTemplateColumn>
+					<com:TTemplateColumn HeaderText="<%[ Job status ]%>" SortExpression="jobstatus">
+						<prop:ItemTemplate>
+							<div class="job-status-<%=$this->getParent()->Data['jobstatus'] == 'T' && $this->getParent()->Data['joberrors'] > 0 ? 'W' : $this->getParent()->Data['jobstatus']%>" title="<%=$this->getPage()->getModule('misc')->jobStates[$this->getParent()->Data['jobstatus'] == 'T' && $this->getParent()->Data['joberrors'] > 0 ? 'W' : $this->getParent()->Data['jobstatus']]['description']%>"><%=$this->getPage()->getModule('misc')->jobStates[$this->getParent()->Data['jobstatus']]['value']%></div>
+						</prop:ItemTemplate>
+					</com:TTemplateColumn>
+					<com:TTemplateColumn HeaderText="<%[ Size ]%>" SortExpression="jobbytes">
+						<prop:ItemTemplate>
+							<div class="size" rel="<%=$this->getParent()->Data['jobbytes']%>"><%=$this->getParent()->Data['jobbytes']%></div>
+						</prop:ItemTemplate>
+					</com:TTemplateColumn>
+					<com:TBoundColumn SortExpression="jobfiles" HeaderText="<%[ Files ]%>" DataField="jobfiles" />
+					<com:TTemplateColumn HeaderText="<%[ End time ]%>" SortExpression="endtime">
+						<prop:ItemTemplate>
+							<%=$this->getParent()->Data['endtime']%>
+						</prop:ItemTemplate>
+					</com:TTemplateColumn>
+					<com:TTemplateColumn HeaderText="<%[ Select ]%>">
+						<prop:ItemTemplate>
+							<div class="center"><input type="radio" name="backup_to_restore" value="<%=$this->getParent()->Data['jobid']%>" /></div>
+						</prop:ItemTemplate>
+					</com:TTemplateColumn>
+				</com:TDataGrid>
+				<script type="text/javascript">
+					var is_list = <%=$this->BackupsToRestore->ItemCount%> > 0;
+					if (is_list) {
+						SlideWindow.makeSortable('<%=$this->BackupsToRestore->ClientID%>');
+						SlideWindow.sortTable('<%=$this->BackupsToRestore->ClientID%>', 0, true);
+						Formatters.set_formatters();
+						var grid_id = '<%=$this->BackupsToRestore->ClientID%>';
+						var restore_single_jobid = '<%=$this->restore_single_jobid%>';
+						var rows = (
+							'#' + grid_id + ' tr.' + SlideWindow.elements.contentItems + ', ' +
+							'#' + grid_id + ' tr.' + SlideWindow.elements.contentAlternatingItems
+						);
+						$(rows).each(function(index, el) {
+							$(el).on('click', function(e) {
+								var el = $(e.srcElement||e.target);
+								if (el.length === 1) {
+									el = el.parents('tr').find('input[type=radio]');
+									if (el.length === 1) {
+										el[0].checked = true;
+									}
+								}
+							});
+							var radio = $(el).find('input[type=radio]')[0];
+							if (restore_single_jobid === radio.value) {
+								radio.checked = true;
+							}
+						}.bind(this));
+					} else {
+						document.getElementById('backup-to-restore-field').style.display = 'none';
+					}
+				</script>
 				</div>
-			</com:TActivePanel>
-			<com:TActivePanel ID="GroupBackupToRestoreField" Display="None">
+			</div>
+			<div id="group-backup-to-restore-field" style="display: <%=!$this->GroupBackupSelection->Checked ? 'none' : 'block'%>">
 				<div class="line">
 					<div class="text"><com:TLabel ForControl="GroupBackupToRestore" Text="<%[ Backup for restore: ]%>" /></div>
 					<div class="field">
-						<com:TActiveDropDownList ID="GroupBackupToRestore" CssClass="textbox" Width="350px" CausesValidation="false" />
+						<com:TDropDownList ID="GroupBackupToRestore" CssClass="textbox" Width="350px" CausesValidation="false" />
 					</div>
 				</div>
 				<div class="line">
 					<div class="text"><com:TLabel ForControl="GroupBackupFileSet" Text="<%[ FileSet resource: ]%>" /></div>
 					<div class="field">
-						<com:TActiveDropDownList ID="GroupBackupFileSet" CssClass="textbox" Width="350px" CausesValidation="false" />
+						<com:TDropDownList ID="GroupBackupFileSet" CssClass="textbox" Width="350px" CausesValidation="false" />
 					</div>
 				</div>
-			</com:TActivePanel>
+			</div>
+			<com:TLabel Text="<%[ There is no backup for restore. Please go to previous step and select another client for restore or proceed backups for the client selected in previous step. ]%>" CssClass="validation-error-summary" Visible="<%=($this->BackupsToRestore->ItemCount == 0 && $this->GroupBackupToRestore->ItemCount == 0)%>"/>
+
 		</com:TWizardStep>
 		<com:TWizardStep ID="Step3" Title="<%[ Step 3 - select files to restore ]%>" StepType="Auto">
+			<%[ Path: ]%> <com:TActiveTextBox
+					ID="PathField"
+					CssClass="textbox-auto"
+					Attributes.onkeydown="var keycode = (event.keyCode ? event.keyCode : event.which); if (keycode === 13) {$('<%=$this->LoadPathBtn->ClientID%>').click(); return false; } return true;"
+					Width="895px" />
+			<com:TActiveLinkButton ID="LoadPathBtn" OnClick="loadPath" Text="<%[ OK ]%>">
+				<prop:ClientSide.OnLoading>
+					document.getElementById('restore-browser-files-loading').style.display = 'block';
+				</prop:ClientSide.OnLoading>
+				<prop:ClientSide.OnComplete>
+					document.getElementById('restore-browser-files-loading').style.display = 'none';
+				</prop:ClientSide.OnComplete>
+			</com:TActiveLinkButton>
 			<table id="restore-browser">
 				<tr>
 					<td rowspan="2">
 						<div id="restore-browser-files-loading" style="display: none"></div>
 						<div id="restore-browser-files">
-							<com:TActiveDataGrid
-								ID="DataGridFiles"
-								AutoGenerateColumns="false"
-								CellPadding="2px"
-								HeaderStyle.CssClass="file-browser-header"
-								CssClass="file-browser-detail"
-								ItemStyle.CssClass="file-browser-element"
-								DataKeyField="fileid">
-									<prop:EmptyTemplate>
-										<div class="file-browser-watermark" style="padding: 150px 10px">
-											<%[ It seems that there is no files for choosing or file records in database for this job has been purged (file retention period expired) ]%>
+						<com:TActiveDataGrid
+							ID="DataGridFiles"
+							AutoGenerateColumns="false"
+							CellPadding="2px"
+							ShowHeader="false"
+							CssClass="file-browser-detail"
+							ItemStyle.CssClass="file-browser-element"
+							DataKeyField="fileid">
+								<prop:EmptyTemplate>
+									<div class="file-browser-watermark" style="padding: 200px 10px">
+										<%[ It seems that there is no files for choosing or file records in database for this job has been purged (file retention period expired) ]%>
+									</div>
+								</prop:EmptyTemplate>
+								<com:TActiveTemplateColumn>
+									<prop:ItemTemplate>
+										<com:TDraggable ID="FileElementLeft" Revert="false" Handle="<%=$this->FileElementLeft->ClientID%>" Ghosting="true" CssClass="draggable">
+											<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/<%=($this->getParent()->Data['type'] == 'dir' ? 'directory-icon' : 'file-icon')%>.png" alt="<%=$this->getParent()->Data['type'] == 'dir' ? 'directory' : 'file' %>" /> <%=($this->getParent()->Data['name'] != '/') ? preg_replace('/\/$/', '', $this->getParent()->Data['name']) : '/'%>
+										<div class="restore-browser-element-size">
+											<com:TActiveLinkButton
+												CssClass="link"
+												Style="float: right;"
+												OnCallback="Page.addFileToRestore"
+												ActiveControl.CallbackParameter="<%=isset($this->getParent()->Data['fileid']) ? $this->getParent()->Data['fileid'] : null%>"
+												ActiveControl.EnableUpdate="false"
+												Visible="<%=!in_array($this->getParent()->Data['name'], $this->getPage()->excluded_elements_from_add)%>"
+												Text="<%[ Add ]%>"
+											/>
+											<span class="size" style=""><%=isset($this->getParent()->Data['lstat']['size']) ? $this->getParent()->Data['lstat']['size'] : '0'%></span>
 										</div>
-									</prop:EmptyTemplate>
-									<com:TActiveTemplateColumn ID="PathField">
-										<prop:ItemTemplate>
-											<com:TDraggable ID="FileElementLeft" Revert="false" Handle="<%=$this->FileElementLeft->ClientID%>" Ghosting="true" CssClass="draggable">
-												<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/<%=($this->getParent()->Data['type'] == 'dir' ? 'directory-icon' : 'file-icon')%>.png" alt="<%=$this->getParent()->Data['type'] == 'dir' ? 'directory' : 'file' %>" /> <%=($this->getParent()->Data['name'] != '/') ? preg_replace('/\/$/', '', $this->getParent()->Data['name']) : '/'%>
-														<com:TActiveLinkButton CssClass="link" Style="float: right;" OnCallback="Page.addFileToRestore" ActiveControl.CallbackParameter="<%=isset($this->getParent()->Data['fileid']) ? $this->getParent()->Data['fileid'] : null%>" ActiveControl.EnableUpdate="false" Visible="<%=!in_array($this->getParent()->Data['name'], $this->getPage()->excluded_elements_from_add)%>" Text="<%[ Add ]%>" />
-											</com:TDraggable>
-											<com:TCallback ID="FileElementCall" OnCallback="Page.getVersions" ActiveControl.CallbackParameter="<%=$this->getParent()->Data['name'] . '|' . @$this->getParent()->Data['pathid'] . '|' . @$this->getParent()->Data['filenameid'] . '|' . @$this->getParent()->Data['jobid']%>">
-												<prop:ClientSide.OnLoading>
-													document.getElementById('restore-browser-files-loading').style.display = 'block';
-												</prop:ClientSide.OnLoading>
-												<prop:ClientSide.OnComplete>
-													document.getElementById('restore-browser-files-loading').style.display = 'none';
-												</prop:ClientSide.OnComplete>
-											</com:TCallback>
-											<script type="text/javascript">
-												document.getElementById('<%=$this->FileElementLeft->ClientID%>').addEventListener('mouseup', function(event) {
-													var el = event.target || event.srcElement;
-													if (el) {
-													    el.style.position = 'static';
-													    el.style.top = '-1px';
-													    el.style.left = '-1px';
-													}
-													var fel = document.getElementById('<%=$this->FileElementLeft->ClientID%>');
-													fel.style.position = 'static';
-													fel.style.top = '-1px';
-													fel.style.left = '-1px';
-												});
-												
-												document.getElementById('<%=$this->FileElementLeft->ClientID%>').addEventListener('click', function(event) {
-													var el = event.target || event.srcElement;
-													var vposition = el.style.left;
-													if(vposition == null || vposition == '0px'){
-														event.stop();
-													} else {
-														var request = <%=$this->FileElementCall->ActiveControl->Javascript %>;
-														request.dispatch();
-													}
-												});
-											</script>
-										</prop:ItemTemplate>
-									</com:TActiveTemplateColumn>
-							</com:TActiveDataGrid>
+										</com:TDraggable>
+										<com:TCallback ID="FileElementCall" OnCallback="Page.getVersions" ActiveControl.CallbackParameter="<%=$this->getParent()->Data['name'] . '|' . @$this->getParent()->Data['pathid'] . '|' . @$this->getParent()->Data['filenameid'] . '|' . @$this->getParent()->Data['jobid']%>">
+											<prop:ClientSide.OnLoading>
+												document.getElementById('restore-browser-files-loading').style.display = 'block';
+											</prop:ClientSide.OnLoading>
+											<prop:ClientSide.OnComplete>
+												document.getElementById('restore-browser-files-loading').style.display = 'none';
+											</prop:ClientSide.OnComplete>
+										</com:TCallback>
+										<script type="text/javascript">
+											Formatters.set_formatters();
+											document.getElementById('<%=$this->FileElementLeft->ClientID%>').addEventListener('mouseup', function(event) {
+												var el = event.target || event.srcElement;
+												if (el) {
+												    el.style.position = 'static';
+												    el.style.top = '-1px';
+												    el.style.left = '-1px';
+												}
+												var fel = document.getElementById('<%=$this->FileElementLeft->ClientID%>');
+												fel.style.position = 'static';
+												fel.style.top = '-1px';
+												fel.style.left = '-1px';
+											});
+											document.getElementById('<%=$this->FileElementLeft->ClientID%>').addEventListener('click', function(event) {
+												var el = event.target || event.srcElement;
+												if (el.className == 'link') {
+													// 'Add' link doesn't cause sending request
+													return;
+												}
+												var vposition = el.style.left;
+												if(vposition == null || vposition == '0px'){
+													event.stop();
+												} else {
+													var request = <%=$this->FileElementCall->ActiveControl->Javascript %>;
+													request.dispatch();
+												}
+											});
+										</script>
+									</prop:ItemTemplate>
+								</com:TActiveTemplateColumn>
+						</com:TActiveDataGrid>
 						</div>
 					</td>
 					<td>
@@ -176,10 +307,27 @@
 									<prop:ItemTemplate>
 										<com:TDraggable ID="FileElementToRestore" Revert="false" Handle="<%=$this->FileElementToRestore->ClientID%>" Ghosting="true" CssClass="draggable" Style="float: left">
 											<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/<%=($this->getParent()->Data['type'] == 'dir' ? 'directory-icon' : 'file-icon')%>.png" alt="<%=$this->getParent()->Data['type'] == 'dir' ? 'directory' : 'file'%>" />
-											<com:TLabel Text="<%=$this->getParent()->Data['name']%>" Width="50%" /> <%=is_array($this->getParent()->Data['lstat']) && array_key_exists('mtime', $this->getParent()->Data['lstat']) ? date("Y-m-d H:i:s", $this->getParent()->Data['lstat']['mtime']) : ''%>
+											<span><%=$this->getParent()->Data['name']%></span> &raquo; MTIME:<%=date("Y-m-d H:i:s", $this->getParent()->Data['lstat']['mtime'])%> &raquo; <%[ Size: ]%><span class="size"><%=$this->getParent()->Data['lstat']['size']%></span>
 										</com:TDraggable>
-										<com:TActiveLinkButton CssClass="link" Style="float: right;" OnCallback="Page.addFileToRestore" ActiveControl.CallbackParameter="<%=isset($this->getParent()->Data['fileid']) ? $this->getParent()->Data['fileid'] : false%>" ActiveControl.EnableUpdate="false" Text="<%[ Add ]%>"/>
+										<com:TActiveLinkButton
+											CssClass="link"
+											Style="float: right;"
+											OnCallback="Page.addFileToRestore"
+											ActiveControl.CallbackParameter="<%=isset($this->getParent()->Data['fileid']) ? $this->getParent()->Data['fileid'] : false%>"
+											ActiveControl.EnableUpdate="false"
+											Text="<%[ Add ]%>"
+										/>
 										<script type="text/javascript">
+											Formatters.set_formatters();
+											document.getElementById('<%=$this->FileElementToRestore->ClientID%>').addEventListener('mouseover', function(event) {
+												var tip_fields = [
+													'<%[ JobId: ]%> <%=$this->getParent()->Data['jobid']%>',
+													'<%[ Volume: ]%> <%=$this->getParent()->Data['volname']%>',
+													'<%[ InChanger: ]%> <%=$this->getParent()->Data['inchanger'] ? Prado::localize('Yes') : Prado::localize('No')%>',
+													'<%[ Sum: ]%> <%=$this->getParent()->Data['md5']%>'
+												];
+												showTip(this, '<%=$this->getParent()->Data['name']%>', tip_fields.join('<br />'));
+											});
 											document.getElementById('<%=$this->FileElementToRestore->ClientID%>').addEventListener('mouseup', function(event) {
 												var el = event.target || event.srcElement;
 												if (el) {
@@ -217,19 +365,22 @@
 										DataKeyField="fileid"
 									>
 									<prop:EmptyTemplate>
-										<div class="file-browser-watermark" style="padding: 50px 10px">
+										<div class="file-browser-watermark" style="padding: 110px 10px">
 											<%[ For add a file to restore please click 'Add' link or drag a file from frame on left or from above frame and drop it here ]%>
 										</div>
 									</prop:EmptyTemplate>
-										<com:TActiveTemplateColumn>
-											<prop:ItemTemplate>
-													<com:TPanel ID="FileElement" Style="clear: both">
-														<com:TActiveImageButton ImageUrl="<%=$this->getPage()->getTheme()->getBaseUrl()%>/icon_close.png" Style="float: right; vertical-align: text-bottom;margin: 3px;" OnCallback="Page.removeSelectedFile" ActiveControl.CallbackParameter="<%=isset($this->getParent()->Data['fileid']) ? $this->getParent()->Data['fileid'] : ''%>"/>
-														<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/<%=($this->getParent()->Data['type'] == 'dir' ? 'directory-icon' : 'file-icon')%>.png" alt="<%=$this->getParent()->Data['type'] == 'dir' ? 'directory' : 'file'%>" />
-														<com:TLabel Text="<%=$this->getParent()->Data['name']%>" /> <%=is_array($this->getParent()->Data['lstat']) && array_key_exists('mtime', $this->getParent()->Data['lstat']) ? date("Y-m-d H:i:s", $this->getParent()->Data['lstat']['mtime']) : ''%>
-													</com:TPanel>
-											</prop:ItemTemplate>
-										</com:TActiveTemplateColumn>
+									<com:TActiveTemplateColumn>
+										<prop:ItemTemplate>
+												<com:TPanel ID="FileElement" Style="clear: both">
+													<com:TActiveImageButton ImageUrl="<%=$this->getPage()->getTheme()->getBaseUrl()%>/icon_close.png" Style="float: right; vertical-align: text-bottom;margin: 3px;" OnCallback="Page.removeSelectedFile" ActiveControl.CallbackParameter="<%=isset($this->getParent()->Data['fileid']) ? $this->getParent()->Data['fileid'] : ''%>"/>
+													<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/<%=($this->getParent()->Data['type'] == 'dir' ? 'directory-icon' : 'file-icon')%>.png" alt="<%=$this->getParent()->Data['type'] == 'dir' ? 'directory' : 'file'%>" />
+													<span><%=$this->getParent()->Data['name']%></span> &raquo; MTIME:<%=date("Y-m-d H:i:s", $this->getParent()->Data['lstat']['mtime'])%> &raquo; <%[ Size: ]%><span class="size"><%=$this->getParent()->Data['lstat']['size']%></span>
+												</com:TPanel>
+												<script type="text/javascript">
+													Formatters.set_formatters();
+												</script>
+										</prop:ItemTemplate>
+									</com:TActiveTemplateColumn>
 									</com:TActiveDataGrid>
 								</com:TDropContainer>
 						</div>
@@ -241,19 +392,39 @@
 			<div class="line">
 				<div class="text"><com:TLabel ForControl="RestoreClient" Text="<%[ Restore to client: ]%>" /></div>
 				<div class="field">
-					<com:TActiveDropDownList ID="RestoreClient" CssClass="textbox" OnLoad="setRestoreClients" CausesValidation="false" />
+					<com:TDropDownList ID="RestoreClient" CssClass="textbox" CausesValidation="false" />
 				</div>
 			</div>
 			<div class="line">
 				<div class="text"><com:TLabel ForControl="RestorePath" Text="<%[ Restore to directory: ]%>" /></div>
 				<div class="field"><com:TTextBox ID="RestorePath" CssClass="textbox" Width="350px" Text="/tmp/restore" /></div>
 			</div>
+			<hr style="margin-top: 50px" />
+			<p><%[ During restore there will be used following volumes: ]%></p>
+			<com:TRepeater ID="RestoreVolumes">
+				<prop:HeaderTemplate>
+					<table style="min-width: 450px">
+						<tr>
+							<th><%[ In Changer ]%></th>
+							<th><%[ Volume ]%></th>
+						</tr>
+				</prop:HeaderTemplate>
+				<prop:ItemTemplate>
+						<tr>
+							<td class="center"><com:TLabel Text="<%#($this->DataItem['inchanger'] == 1 ? Prado::localize('Yes') : Prado::localize('No'))%>" /></td>
+							<td> <img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/tape_tools_icon.png" alt="" /> <com:TLabel Text="<%#$this->DataItem['volume']%>" /></td>
+						</tr>
+				</prop:ItemTemplate>
+				<prop:FooterTemplate>
+					</table>
+				</prop:FooterTemplate>
+			</com:TRepeater>
 		</com:TWizardStep>
 		<com:TWizardStep ID="Step5" Title="<%[ Step 5 - options for restore ]%>" StepType="Auto">
 			<div class="line">
 				<div class="text"><com:TLabel ForControl="RestoreJob" Text="<%[ Restore job: ]%>" /></div>
 				<div class="field">
-					<com:TActiveDropDownList ID="RestoreJob" CssClass="textbox" Width="350px" CausesValidation="false" />
+					<com:TDropDownList ID="RestoreJob" CssClass="textbox" Width="350px" CausesValidation="false" />
 				</div>
 			</div>
 			<div class="line">
@@ -273,6 +444,68 @@
 					<com:TTextBox ID="RestoreJobPriority" CssClass="textbox" CausesValidation="false" Width="60px" MaxLength="5" Text="10" />
 				</div>
 			</div>
+			<div class="line" style="margin-bottom: 10px">
+				<div class="text" style="vertical-align: top"><%[ File relocation option:  ]%></div>
+				<div class="field">
+					<input type="radio" name="file_relocation" id="file_relocation_1" value="1" onclick="switch_file_relocation_mode(this.value)" /> <label for="file_relocation_1"><%[ Do not relocate files ]%></label><br />
+					<input type="radio" name="file_relocation" id="file_relocation_2" value="2" onclick="switch_file_relocation_mode(this.value)" /> <label for="file_relocation_2"><%[ Relocate files with prefix and/or suffix ]%></label><br />
+					<input type="radio" name="file_relocation" id="file_relocation_3" value="3" onclick="switch_file_relocation_mode(this.value)" /> <label for="file_relocation_3"><%[ Relocate files with regular expression ]%></label>
+				</div>
+			</div>
+			<div id="file_relocation_prefix_suffix" style="display: none">
+				<div class="line">
+					<div class="text"><com:TLabel ForControl="RestoreStripPrefix" Text="<%[ Strip prefix: ]%>" /></div>
+					<div class="field">
+						<com:TTextBox ID="RestoreStripPrefix" CssClass="textbox" Width="350px" CausesValidation="false" />
+					</div>
+				</div>
+				<div class="line">
+					<div class="text"><com:TLabel ForControl="RestoreAddPrefix" Text="<%[ Add prefix: ]%>" /></div>
+					<div class="field">
+						<com:TTextBox ID="RestoreAddPrefix" CssClass="textbox" Width="350px" CausesValidation="false" />
+					</div>
+				</div>
+				<div class="line">
+					<div class="text"><com:TLabel ForControl="RestoreAddSuffix" Text="<%[ Add suffix: ]%>" /></div>
+					<div class="field">
+						<com:TTextBox ID="RestoreAddSuffix" CssClass="textbox" Width="350px" CausesValidation="false" />
+					</div>
+				</div>
+			</div>
+			<div id="file_relocation_regex_where" style="display: none">
+				<div class="line">
+					<div class="text"><com:TLabel ForControl="RestoreRegexWhere" Text="<%[ RegexWhere: ]%>" /></div>
+					<div class="field">
+						<com:TTextBox ID="RestoreRegexWhere" CssClass="textbox" Width="350px" CausesValidation="false" />
+					</div>
+				</div>
+			</div>
+			<script type="text/javascript">
+				function switch_file_relocation_mode(opt) {
+					var prefix_suffix_opts = document.getElementById('file_relocation_prefix_suffix');
+					var regex_where_opts = document.getElementById('file_relocation_regex_where');
+					var radio = document.getElementById('file_relocation_' + opt);
+					if (opt == 1) { // don't use file relocation
+						prefix_suffix_opts.style.display = 'none';
+						regex_where_opts.style.display = 'none';
+						radio.checked = true;
+					} else if (opt == 2) { // use prefix/suffix relocation
+						prefix_suffix_opts.style.display = '';
+						regex_where_opts.style.display = 'none';
+						radio.checked = true;
+					} else if (opt == 3) { // use regex_where relocation
+						prefix_suffix_opts.style.display = 'none';
+						regex_where_opts.style.display = '';
+						radio.checked = true;
+					}
+				}
+				var relocation_opt = '<%=$this->file_relocation_opt%>';
+				if (relocation_opt) {
+					switch_file_relocation_mode(relocation_opt);
+				} else {
+					switch_file_relocation_mode(1); // default setting
+				}
+			</script>
 		</com:TWizardStep>
 		<com:TWizardStep ID="Step6" Title="<%[ Step 6 - Finish ]%>" StepType="Finish">
 			<fieldset>
@@ -291,7 +524,6 @@
 				<div class="line">
 					<div class="text"><%[ Backup for restore: ]%></div>
 					<div class="field bold">
-						<com:TLabel Text="<%=@$this->getModule('api')->get(array('jobs', $this->BackupToRestore->SelectedValue))->output->job%>" Visible="<%=$this->OnlySelectedBackupSelection->Checked%>" />
 						<com:TLabel Text="<%=$this->GroupBackupToRestore->SelectedValue%>" Visible="<%=$this->GroupBackupSelection->Checked%>" />
 					</div>
 				</div>
@@ -342,6 +574,34 @@
 				<div class="line">
 					<div class="text"><%[ Restore job priority: ]%></div>
 					<div class="field bold"><%=$this->RestoreJobPriority->Text%></div>
+				</div>
+				<div class="line">
+					<div class="text"><%[ File relocation option: ]%></div>
+					<div class="field bold">
+						<com:TLabel Visible="<%=$this->file_relocation_opt == 1%>" Text="<%[ Do not relocate files ]%>"/>
+						<com:TLabel Visible="<%=$this->file_relocation_opt == 2%>" Text="<%[ Relocate files with prefix and/or suffix ]%>"/>
+						<com:TLabel Visible="<%=$this->file_relocation_opt == 3%>" Text="<%[ Relocate files with regular expression ]%>"/>
+					</div>
+				</div>
+				<div style="display: <%=$this->file_relocation_opt == 2 ? 'block' : 'none'%>">
+					<div class="line">
+						<div class="text"><%[ Strip prefix: ]%></div>
+						<div class="field bold"><%=$this->RestoreStripPrefix->Text%></div>
+					</div>
+					<div class="line">
+						<div class="text"><%[ Add prefix: ]%></div>
+						<div class="field bold"><%=$this->RestoreAddPrefix->Text%></div>
+					</div>
+					<div class="line">
+						<div class="text"><%[ Add suffix: ]%></div>
+						<div class="field bold"><%=$this->RestoreAddSuffix->Text%></div>
+					</div>
+				</div>
+				<div style="display: <%=$this->file_relocation_opt == 3 ? 'block' : 'none'%>">
+					<div class="line">
+						<div class="text"><%[ RegexWhere: ]%></div>
+						<div class="field bold"><%=$this->RestoreRegexWhere->Text%></div>
+					</div>
 				</div>
 			</fieldset>
 		</com:TWizardStep>

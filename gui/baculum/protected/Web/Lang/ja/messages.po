@@ -1187,3 +1187,68 @@ msgstr "Resource %s \"%s\" removed successfully."
 msgid "Please unassign resource %s \"%s\" from these resources and try again."
 msgstr "Please unassign resource %s \"%s\" from these resources and try again."
 
+msgid "Size:"
+msgstr "Size:"
+
+msgid "JobId:"
+msgstr "JobId:"
+
+msgid "Volume:"
+msgstr "Volume:"
+
+msgid "InChanger:"
+msgstr "InChanger:"
+
+msgid "Sum:"
+msgstr "Sum:"
+
+msgid "Select"
+msgstr "Select"
+
+msgid "Path:"
+msgstr "Path:"
+
+msgid "Restore wizard"
+msgstr "Restore wizard"
+
+msgid "This wizard enables you to do in easy way restore files to destination Bacula Client."
+msgstr "This wizard enables you to do in easy way restore files to destination Bacula Client."
+
+msgid "To start, please select backup Client which data you want to restore."
+msgstr "To start, please select backup Client which data you want to restore."
+
+msgid "There are two ways to select backup to restore. Only selected backup way provides list of jobs from which there is possible to select one job. If you need the latest backups from the Client alternatively you can use Group most recent backups way which will select backups for you basing on backup job name and fileset resource."
+msgstr "There are two ways to select backup to restore. Only selected backup way provides list of jobs from which there is possible to select one job. If you need the latest backups from the Client alternatively you can use Group most recent backups way which will select backups for you basing on backup job name and fileset resource."
+
+msgid "Do not relocate files"
+msgstr "Do not relocate files"
+
+msgid "Relocate files with prefix and/or suffix"
+msgstr "Relocate files with prefix and/or suffix"
+
+msgid "Relocate files with regular expression"
+msgstr "Relocate files with regular expression"
+
+msgid "Strip prefix:"
+msgstr "Strip prefix:"
+
+msgid "Add prefix:"
+msgstr "Add prefix:"
+
+msgid "Add suffix:"
+msgstr "Add suffix:"
+
+msgid "RegexWhere:"
+msgstr "RegexWhere:"
+
+msgid "File relocation option:"
+msgstr "File relocation option:"
+
+msgid "In Changer"
+msgstr "In Changer"
+
+msgid "Volume"
+msgstr "Volume"
+
+msgid "During restore there will be used following volumes:"
+msgstr "During restore there will be used following volumes:"
