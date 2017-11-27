@@ -21,51 +21,56 @@
  */
  
 class BVFSRestore extends BaculumAPIServer {
+
 	public function create($params) {
+		$misc = $this->getModule('misc');
 		$jobids = property_exists($params, 'jobids') ? $params->jobids : null;
 		$fileids = property_exists($params, 'fileid') ? $params->fileid : null;
 		$dirids = property_exists($params, 'dirid') ? $params->dirid : null;
+		$findexes = property_exists($params, 'findex') ? $params->findex : null;
 		$path = property_exists($params, 'path') ? $params->path : null;
 
-		$is_valid = true;
-		if (!is_null($jobids)) {
-			$jobidsList = explode(',', $jobids);
-			if(is_array($jobidsList)) {
-				for($i = 0; $i < count($jobidsList); $i++) {
-					$job = $this->getModule('job')->getJobById($jobidsList[$i]);
-					if(is_null($job)) {
-						$is_valid = false;
-						break;
-					}
-				}
-			} else {
-				$is_valid = false;
-			}
-		} else {
-			$is_valid = false;
+		if (!is_null($jobids) && !$misc->isValidIdsList($jobids)) {
+			$this->output = BVFSError::MSG_ERROR_INVALID_JOBID_LIST;
+			$this->error = BVFSError::ERROR_INVALID_JOBID_LIST;
+			return;
+		}
+		if (!is_null($fileids) && !$misc->isValidIdsList($fileids)) {
+			$this->output = BVFSError::MSG_ERROR_INVALID_FILEID_LIST;
+			$this->error = BVFSError::ERROR_INVALID_FILEID_LIST;
+			return;
+		}
+		if (!is_null($dirids) && !$misc->isValidIdsList($dirids)) {
+			$this->output = BVFSError::MSG_ERROR_INVALID_DIRID_LIST;
+			$this->error = BVFSError::ERROR_INVALID_DIRID_LIST;
+			return;
+		}
+		if (!is_null($findexes) && !$misc->isValidIdsList($findexes)) {
+			$this->output = BVFSError::MSG_ERROR_INVALID_FILEINDEX_LIST;
+			$this->error = BVFSError::ERROR_INVALID_FILEINDEX_LIST;
+			return;
 		}
 
-		if($is_valid === true) {
-			if(!is_null($path)) {
-				$cmd = array('.bvfs_restore', 'jobid="' .  $jobids . '"', 'path="' . $path . '"');
-				if(!is_null($fileids)) {
-					array_push($cmd, 'fileid="' . $fileids . '"');
-				}
-				if(!is_null($dirids)) {
-					array_push($cmd, 'dirid="' . $dirids . '"');
-				}
-
-				$result = $this->getModule('bconsole')->bconsoleCommand($this->director, $cmd, $this->user);
-				$this->output = $result->output;
-				$this->error = $result->exitcode;
-			} else {
-				$this->output = BVFSError::MSG_ERROR_INVALID_RPATH;
-				$this->error = BVFSError::ERROR_INVALID_RPATH;
-			}
-		} else {
-			$this->output = BVFSError::MSG_ERROR_JOB_DOES_NOT_EXISTS;
-			$this->error = BVFSError::ERROR_JOB_DOES_NOT_EXISTS;
+		if (!is_null($path) && !$misc->isValidBvfsPath($path)) {
+			$this->output = BVFSError::MSG_ERROR_INVALID_RPATH;
+			$this->error = BVFSError::ERROR_INVALID_RPATH;
+			return;
 		}
+
+		$cmd = array('.bvfs_restore', 'jobid="' .  $jobids . '"', 'path="' . $path . '"');
+		if (is_string($fileids)) {
+			array_push($cmd, 'fileid="' . $fileids . '"');
+		}
+		if (is_string($dirids)) {
+			array_push($cmd, 'dirid="' . $dirids . '"');
+		}
+		if (is_string($findexes)) {
+			array_push($cmd, 'hardlink="' . $findexes . '"');
+		}
+
+		$result = $this->getModule('bconsole')->bconsoleCommand($this->director, $cmd, $this->user);
+		$this->output = $result->output;
+		$this->error = $result->exitcode;
 	}
 }
 ?>

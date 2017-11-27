@@ -47,7 +47,7 @@ class Miscellaneous extends TModule {
 		'd' => 'DiskToCatalog'
 	);
 
-	private $jobStates =  array(
+	public $jobStates =  array(
 		'C' => array('value' => 'Created', 'description' =>'Created but not yet running'),
 		'R' => array('value' => 'Running', 'description' => 'Running'),
 		'B' => array('value' => 'Blocked', 'description' => 'Blocked'),
@@ -89,6 +89,14 @@ class Miscellaneous extends TModule {
 		'fd' => array('full_name' => 'File Daemon', 'main_resource' => 'FileDaemon'),
 		'bcons' => array('full_name' => 'Console', 'main_resource' => 'Director')
 	);
+
+	private $replace_opts = array(
+		'always',
+		'ifnewer',
+		'ifolder',
+		'never'
+	);
+
 
 	/**
 	 * Getting the licence from file.
@@ -166,12 +174,31 @@ class Miscellaneous extends TModule {
 		return $statesByType;
 	}
 
+	/*
+	 * @TODO: Move it to separate validation module.
+	 */
 	public function isValidJobLevel($jobLevel) {
 		return array_key_exists($jobLevel, $this->getJobLevels());
 	}
 
 	public function isValidName($name) {
 		return (preg_match('/^[\w:\.\-\s]{1,127}$/', $name) === 1);
+	}
+
+	public function isValidPath($path) {
+		return (preg_match('/^[\p{L}\p{N}\p{Z}\[\]\(\)\-\+\/\\\:\.#~_,{}!]{1,1000}$/', $path) === 1);
+	}
+
+	public function isValidReplace($replace) {
+		return in_array($replace, $this->replace_opts);
+	}
+
+	public function isValidIdsList($list) {
+		return (preg_match('/^[\d,]+$/', $list) === 1);
+	}
+
+	public function isValidBvfsPath($path) {
+		return (preg_match('/^b2\d+$/', $path) === 1);
 	}
 
 	/**
@@ -257,13 +284,51 @@ class Miscellaneous extends TModule {
 		$base64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 		$lstat = trim($lstat);
 		$lstat_fields = explode(' ', $lstat);
-
-		if(count($lstat_fields) !== 16) {
-			die('Błąd! Niepoprawna ilość pól wartości LStat. Proszę upewnić się, że podany ciąg znaków jest poprawną wartością LStat');
+		$lstat_len = count($lstat_fields);
+		if ($lstat_len < 16) {
+			// not known or empty lstat value
+			return;
+		} elseif ($lstat_len > 16) {
+			// cut off unknown fields
+			array_splice($lstat_fields, 16);
 		}
 
-		list($dev, $inode, $mode, $nlink, $uid, $gid, $rdev, $size, $blocksize, $blocks, $atime, $mtime, $ctime, $linkfi, $flags, $data) = $lstat_fields;
-		$encoded_values = array('dev' => $dev, 'inode' => $inode, 'mode' => $mode, 'nlink' => $nlink, 'uid' => $uid, 'gid' => $gid, 'rdev' => $rdev, 'size' => $size, 'blocksize' => $blocksize, 'blocks' => $blocks, 'atime' => $atime, 'mtime' => $mtime, 'ctime' => $ctime, 'linkfi' => $linkfi, 'flags' => $flags, 'data' => $data);
+		list(
+			$dev,
+			$inode,
+			$mode,
+			$nlink,
+			$uid,
+			$gid,
+			$rdev,
+			$size,
+			$blocksize,
+			$blocks,
+			$atime,
+			$mtime,
+			$ctime,
+			$linkfi,
+			$flags,
+			$data
+		) = $lstat_fields;
+		$encoded_values = array(
+			'dev' => $dev,
+			'inode' => $inode,
+			'mode' => $mode,
+			'nlink' => $nlink,
+			'uid' => $uid,
+			'gid' => $gid,
+			'rdev' => $rdev,
+			'size' => $size,
+			'blocksize' => $blocksize,
+			'blocks' => $blocks,
+			'atime' => $atime,
+			'mtime' => $mtime,
+			'ctime' => $ctime,
+			'linkfi' => $linkfi,
+			'flags' => $flags,
+			'data' => $data
+		);
 
 		$ret = array();
 		foreach($encoded_values as $key => $val) {
@@ -294,12 +359,28 @@ class Miscellaneous extends TModule {
 				} elseif($match['name'] != '..') {
 					$match['name'] .= '/';
 				}
-				$elements[] = array('pathid' => $match['pathid'], 'filenameid' => $match['filenameid'], 'fileid' => $match['fileid'], 'jobid' => $match['jobid'], 'lstat' => $match['lstat'], 'name' => $match['name'], 'type' => 'dir');
+				$elements[] = array(
+					'pathid' => $match['pathid'],
+					'filenameid' => $match['filenameid'],
+					'fileid' => $match['fileid'],
+					'jobid' => $match['jobid'],
+					'lstat' => $this->decode_bacula_lstat($match['lstat']),
+					'name' => $match['name'],
+					'type' => 'dir'
+				);
 			} elseif(preg_match('/^(?P<pathid>\d+)\t(?P<filenameid>\d+)\t(?P<fileid>\d+)\t(?P<jobid>\d+)\t(?P<lstat>[a-zA-z0-9\+\/\ ]+)\t(?P<name>[^\/]+)$/', $list[$i], $match) == 1) {
 				if($match['name'] == '.') {
 					continue;
 				}
-				$elements[] = array('pathid' => $match['pathid'], 'filenameid' => $match['filenameid'], 'fileid' => $match['fileid'], 'jobid' => $match['jobid'], 'lstat' => $match['lstat'], 'name' => $match['name'], 'type' => 'file'); 
+				$elements[] = array(
+					'pathid' => $match['pathid'],
+					'filenameid' => $match['filenameid'],
+					'fileid' => $match['fileid'],
+					'jobid' => $match['jobid'],
+					'lstat' => $this->decode_bacula_lstat($match['lstat']),
+					'name' => $match['name'],
+					'type' => 'file'
+				);
 			}
 		}
 		usort($elements, 'sortFilesListByName');
@@ -310,7 +391,18 @@ class Miscellaneous extends TModule {
 		$elements = array();
 		for($i = 0; $i < count($list); $i++) {
 			if(preg_match('/^(?P<pathid>\d+)\t(?P<filenameid>\d+)\t(?P<fileid>\d+)\t(?P<jobid>\d+)\t(?P<lstat>[a-zA-Z0-9\+\/\ ]+)\t(?P<md5>.+)\t(?P<volname>.+)\t(?P<inchanger>\d+)$/', $list[$i], $match) == 1) {
-				$elements[$match['fileid']] = array('name' => $filename, 'pathid' => $match['pathid'], 'filenameid' => $match['filenameid'], 'fileid' => $match['fileid'], 'jobid' => $match['jobid'], 'lstat' => $this->decode_bacula_lstat($match['lstat']), 'md5' => $match['md5'], 'volname' => $match['volname'], 'inchanger' => $match['inchanger'], 'type' => 'file');
+				$elements[$match['fileid']] = array(
+					'name' => $filename,
+					'pathid' => $match['pathid'],
+					'filenameid' => $match['filenameid'],
+					'fileid' => $match['fileid'],
+					'jobid' => $match['jobid'],
+					'lstat' => $this->decode_bacula_lstat($match['lstat']),
+					'md5' => $match['md5'],
+					'volname' => $match['volname'],
+					'inchanger' => $match['inchanger'],
+					'type' => 'file'
+				);
 			}
 		}
 		return $elements;
