@@ -444,7 +444,7 @@ class BaculumAPIClient extends WebModule {
 		if (is_null($resource)) {
 			$resource = (object) array(
 				'error' => ConnectionError::ERROR_CONNECTION_TO_HOST_PROBLEM,
-				'output' => ConnectionError::MSG_ERROR_CONNECTION_TO_HOST_PROBLEM . " cURL error $errno: $error"
+				'output' => ConnectionError::MSG_ERROR_CONNECTION_TO_HOST_PROBLEM . " cURL error $errno: $error. $result"
 			);
 		}
 
