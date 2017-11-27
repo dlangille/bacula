@@ -27,30 +27,32 @@
 			<com:TRequiredFieldValidator ValidationGroup="NewHostGroup" CssClass="validator-block" Display="Dynamic" ControlCssClass="invalidate" ControlToValidate="APIPort" Text="<%[ Please enter API port. ]%>" />
 		</div>
 	</div>
-	<div class="line">
-		<com:TRadioButton
-			ID="AuthOAuth2"
-			GroupName="SelectAuth"
-			Attributes.onclick="$('#configure_basic_auth').hide();$('#configure_oauth2_auth').show();"
-		/>
-		<com:TLabel
-			ForControl="AuthOAuth2"
-			CssClass="normal"
-			Text="<%[ Use OAuth2 for authorization and authentication ]%>"
-		/>
-	</div>
-	<div class="line">
-		<com:TRadioButton
-			ID="AuthBasic"
-			GroupName="SelectAuth"
-			Checked="true"
-			Attributes.onclick="$('#configure_oauth2_auth').hide();$('#configure_basic_auth').show();"
-		/>
-		<com:TLabel
-			ForControl="AuthBasic"
-			CssClass="normal"
-			Text="<%[ Use HTTP Basic authentication ]%>"
-		/>
+	<div class="auth_setting">
+		<div class="line left">
+			<com:TRadioButton
+				ID="AuthOAuth2"
+				GroupName="SelectAuth"
+				Attributes.onclick="$('#configure_basic_auth').hide();$('#configure_oauth2_auth').show();"
+			/>
+			<com:TLabel
+				ForControl="AuthOAuth2"
+				CssClass="normal"
+				Text="<%[ Use OAuth2 for authorization and authentication ]%>"
+			/>
+		</div>
+		<div class="line left">
+			<com:TRadioButton
+				ID="AuthBasic"
+				GroupName="SelectAuth"
+				Checked="true"
+				Attributes.onclick="$('#configure_oauth2_auth').hide();$('#configure_basic_auth').show();"
+			/>
+			<com:TLabel
+				ForControl="AuthBasic"
+				CssClass="normal"
+				Text="<%[ Use HTTP Basic authentication ]%>"
+			/>
+		</div>
 	</div>
 	<div id="configure_basic_auth" style="display: <%=($this->AuthBasic->Checked === true) ? '' : 'none';%>">
 		<div class="line">

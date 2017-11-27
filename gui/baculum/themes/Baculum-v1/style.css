@@ -1249,3 +1249,12 @@ label.normal {
 	word-wrap: break-word;
 }
 /* END Overwrite opentip styles */
+
+.auth_setting {
+	width: 660px;
+	margin: 0 auto;
+}
+
+#config .auth_setting {
+	margin: 0 !important;
+}
