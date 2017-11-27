@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2016 Kern Sibbald
+ * Copyright (C) 2013-2017 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -70,6 +70,42 @@ class VolumeManager extends APIModule {
 				}
 			}
 		}
+	}
+
+	/**
+	 * Get volumes for specific jobid and fileid.
+	 *
+	 * @param integer $jobid job identifier
+	 * @param integer $fileid file identifier
+	 * @return array volumes list
+	 */
+	public function getVolumesForJob($jobid, $fileid) {
+		$connection = VolumeRecord::finder()->getDbConnection();
+		$connection->setActive(true);
+		$sql = sprintf('SELECT first_index, last_index, VolumeName AS volname, InChanger AS inchanger FROM (
+		 SELECT VolumeName, InChanger, MIN(FirstIndex) as first_index, MAX(LastIndex) as last_index
+		 FROM JobMedia JOIN Media ON (JobMedia.MediaId = Media.MediaId)
+		 WHERE JobId = %d GROUP BY (VolumeName, InChanger)
+		) AS gv, File
+		 WHERE FileIndex >= first_index
+		 AND FileIndex <= last_index
+		 AND File.FileId = %d', $jobid, $fileid);
+		$pdo = $connection->getPdoInstance();
+		$result = $pdo->query($sql);
+		$ret = $result->fetchAll();
+		$pdo = null;
+		$volumes = array();
+		if (is_array($ret)) {
+			for ($i = 0; $i < count($ret); $i++) {
+				$volumes[] = array(
+					'first_index' => $ret[$i]['first_index'],
+					'last_index' => $ret[$i]['last_index'],
+					'volume' => $ret[$i]['volname'],
+					'inchanger' => $ret[$i]['inchanger']
+				);
+			}
+		}
+		return $volumes;
 	}
 }
 ?>

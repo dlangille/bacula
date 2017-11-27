@@ -40,6 +40,7 @@
 	<url ServiceParameter="API.Volume" pattern="api/volumes/{id}/" parameters.id="\d+" />
 	<url ServiceParameter="API.VolumePrune" pattern="api/volumes/prune/{id}/" parameters.id="\d+" />
 	<url ServiceParameter="API.VolumePurge" pattern="api/volumes/purge/{id}/" parameters.id="\d+" />
+	<url ServiceParameter="API.VolumesRequired" pattern="api/volumes/required/{jobid}/{fileid}/" parameters.jobid="\d+" parameters.fileid="\d+" />
 	<url ServiceParameter="API.JobsOnVolume" pattern="api/volumes/jobs/{id}/" parameters.id="\d+" />
 	<!-- pools endpoints -->
 	<url ServiceParameter="API.Pools" pattern="api/pools/" />
