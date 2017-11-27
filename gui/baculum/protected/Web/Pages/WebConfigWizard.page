@@ -3,7 +3,7 @@
 	<com:TWizard ID="InstallWizard"
 		CssClass="wizard"
 		StepStyle.CssClass="steps"
-		HeaderStyle.CssClass="header"
+		HeaderStyle.CssClass="wizard-body"
 		NavigationStyle.CssClass="navigation"
 		UseDefaultLayout="false"
 		ShowSideBar="false"
@@ -11,7 +11,7 @@
 		OnCompleteButtonClick="wizardCompleted"
 		>
 		<prop:HeaderTemplate>
-			<div class="steps-bar">
+			<div>
 				<div class="step step-<%=($this->Parent->ActiveStepIndex === 0) ? 'first-active' : (($this->Parent->ActiveStepIndex === 1) ? 'first-next-active' : 'first')%>">
 					<div><com:TTranslate Text="Language" /></div>
 				</div>

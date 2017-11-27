@@ -68,10 +68,10 @@
 		</com:TWizardStep>
 		<com:TWizardStep ID="Step2" Title="<%[ Step 2 - share the Bacula Catalog Database ]%>" StepType="Auto">
 			<p><%[ Do you want to setup and to share the Bacula Catalog Database access for this API instance? ]%></p>
-			<div class="line">
+			<div class="line left">
 				<com:TRadioButton ID="DatabaseNo" GroupName="SelectDatabase" Attributes.onclick="$('#configure_database').hide();" /> <com:TLabel ForControl="DatabaseNo" Text="<%[ No ]%>" />
 			</div>
-			<div class="line">
+			<div class="line left">
 				<com:TRadioButton ID="DatabaseYes" GroupName="SelectDatabase" Attributes.onclick="$('#configure_database').show();" /> <com:TLabel ForControl="DatabaseYes" Text="<%[ Yes ]%>" />
 			</div>
 			<div id="configure_database" style="display: <%=($this->DatabaseYes->Checked === true) ? '' : 'none';%>">
@@ -233,10 +233,10 @@
 		</com:TWizardStep>
 		<com:TWizardStep ID="Step3" Title="<%[ Step 3 - share the Bacula Bconsole commands interface ]%>" StepType="Auto">
 			<p><%[ Do you want to setup and share the Bacula Bconsole interface to execute commands in this API instance? ]%></p>
-			<div class="line">
+			<div class="line left">
 				<com:TRadioButton ID="ConsoleNo" GroupName="SelectConsole" Attributes.onclick="$('#configure_console').hide();" /> <com:TLabel ForControl="ConsoleNo" Text="<%[ No ]%>" />
 			</div>
-			<div class="line">
+			<div class="line left">
 				<com:TRadioButton ID="ConsoleYes" GroupName="SelectConsole" Attributes.onclick="$('#configure_console').show();" /> <com:TLabel ForControl="ConsoleYes" Text="<%[ Yes ]%>" />
 			</div>
 			<div id="configure_console" style="display: <%=($this->ConsoleYes->Checked === true) ? '' : 'none';%>">
@@ -286,25 +286,25 @@
 						</table>
 					</div>
 				</div>
-				<div class="line">
+				<div class="line left">
 					<span><b><%[ NOTE! ]%></b><br /><em><%[ Baculum needs access to bconsole by the web server. ]%></em></span>
 				</div>
 			</div>
 		</com:TWizardStep>
 		<com:TWizardStep ID="Step4" Title="<%[ Step 4 - share the Bacula configuration interface ]%>" StepType="Auto">
 			<p><%[ Do you want to setup and share the Bacula configuration interface to configure Bacula components via this API instance? ]%></p>
-			<div class="line">
+			<div class="line left">
 				<com:TRadioButton ID="ConfigNo" GroupName="SelectConfig" Attributes.onclick="$('#configure_config').hide();" /> <com:TLabel ForControl="ConfigNo" Text="<%[ No ]%>" />
 			</div>
-			<div class="line">
+			<div class="line left">
 				<com:TRadioButton ID="ConfigYes" GroupName="SelectConfig" Attributes.onclick="$('#configure_config').show();" /> <com:TLabel ForControl="ConfigYes" Text="<%[ Yes ]%>" />
 			</div>
-			<div id="configure_config" style="display: <%=($this->ConfigYes->Checked === true) ? '' : 'none';%>">
+			<div id="configure_config" style="display: <%=($this->ConfigYes->Checked === true) ? 'block' : 'none';%>">
 				<div id="config_fields">
 					<fieldset class="config_field">
 						<legend><%[ General configuration ]%></legend>
 						<div class="config_lines">
-							<div class="line">
+							<div class="line left">
 								<div class="text"><com:TLabel ForControl="BConfigDir" Text="<%[ Directory path for new config files: ]%>" /></div>
 								<div class="field">
 									<com:TRequiredFieldValidator ValidationGroup="ConfigGroup" ControlToValidate="BConfigDir" Display="Dynamic" Text="<%[ Directory path field is required. ]%>" />
@@ -312,7 +312,7 @@
 									<com:TTextBox ID="BConfigDir" CssClass="textbox" />
 								</div>
 							</div>
-							<div class="line">
+							<div class="line left">
 								<div class="text"><com:TLabel ForControl="BJSONUseSudo" Text="<%[ Use sudo: ]%>" /></div>
 								<div class="field">
 									<com:TCheckBox ID="BJSONUseSudo" />
@@ -326,14 +326,14 @@
 					<fieldset class="config_field">
 						<legend>Director</legend>
 						<div class="config_lines">
-							<div class="line">
+							<div class="line left">
 								<div class="text"><com:TLabel ForControl="BDirJSONPath" Text="<%[ bdirjson binary file path: ]%>" /></div>
 								<div class="field">
 									<com:TCustomValidator ValidationGroup="ConfigGroup" ControlToValidate="BDirJSONPath" ClientValidationFunction="bjsontools_validator" Display="Dynamic" Text="<%[ There is required to provide both binary file and config file paths. ]%>" />
 									<com:TTextBox ID="BDirJSONPath" CssClass="textbox" />
 								</div>
 							</div>
-							<div class="line">
+							<div class="line left">
 								<div class="text"><com:TLabel ForControl="DirCfgPath" Text="<%[ Main Director config file path (usually bacula-dir.conf): ]%>" /></div>
 								<div class="field">
 									<com:TCustomValidator ValidationGroup="ConfigGroup" ControlToValidate="DirCfgPath" ClientValidationFunction="bjsontools_validator" Display="Dynamic" Text="<%[ There is required to provide both binary file and config file paths. ]%>" />
@@ -348,14 +348,14 @@
 					<fieldset class="config_field">
 						<legend>Storage Daemon</legend>
 						<div class="config_lines">
-							<div class="line">
+							<div class="line left">
 								<div class="text"><com:TLabel ForControl="BSdJSONPath" Text="<%[ bsdjson binary file path: ]%>" /></div>
 								<div class="field">
 									<com:TCustomValidator ValidationGroup="ConfigGroup" ControlToValidate="BSdJSONPath" ClientValidationFunction="bjsontools_validator" Display="Dynamic" Text="<%[ There is required to provide both binary file and config file paths. ]%>" />
 									<com:TTextBox ID="BSdJSONPath" CssClass="textbox" />
 								</div>
 							</div>
-							<div class="line">
+							<div class="line left">
 								<div class="text"><com:TLabel ForControl="SdCfgPath" Text="<%[ Main Storage Daemon config file path (usually bacula-sd.conf): ]%>" /></div>
 								<div class="field">
 									<com:TCustomValidator ValidationGroup="ConfigGroup" ControlToValidate="SdCfgPath" ClientValidationFunction="bjsontools_validator" Display="Dynamic" Text="<%[ There is required to provide both binary file and config file paths. ]%>" />
@@ -370,14 +370,14 @@
 					<fieldset class="config_field">
 						<legend>File Daemon/Client</legend>
 						<div class="config_lines">
-							<div class="line">
+							<div class="line left">
 								<div class="text"><com:TLabel ForControl="BFdJSONPath" Text="<%[ bfdjson binary file path: ]%>" /></div>
 								<div class="field">
 									<com:TCustomValidator ValidationGroup="ConfigGroup" ControlToValidate="BFdJSONPath" ClientValidationFunction="bjsontools_validator" Display="Dynamic" Text="<%[ There is required to provide both binary file and config file paths. ]%>" />
 									<com:TTextBox ID="BFdJSONPath" CssClass="textbox" />
 								</div>
 							</div>
-							<div class="line">
+							<div class="line left">
 								<div class="text"><com:TLabel ForControl="FdCfgPath" Text="<%[ Main File Daemon config file path (usually bacula-fd.conf): ]%>" /></div>
 								<div class="field">
 									<com:TCustomValidator ValidationGroup="ConfigGroup" ControlToValidate="FdCfgPath" ClientValidationFunction="bjsontools_validator" Display="Dynamic" Text="<%[ There is required to provide both binary file and config file paths. ]%>" />
@@ -392,14 +392,14 @@
 					<fieldset class="config_field">
 						<legend>Bconsole</legend>
 						<div class="config_lines">
-							<div class="line">
+							<div class="line left">
 								<div class="text"><com:TLabel ForControl="BBconsJSONPath" Text="<%[ bbconsjson binary file path: ]%>" /></div>
 								<div class="field">
 									<com:TCustomValidator ValidationGroup="ConfigGroup" ControlToValidate="BBconsJSONPath" ClientValidationFunction="bjsontools_validator" Display="Dynamic" Text="<%[ There is required to provide both binary file and config file paths. ]%>" />
 									<com:TTextBox ID="BBconsJSONPath" CssClass="textbox" />
 								</div>
 							</div>
-							<div class="line">
+							<div class="line left">
 								<div class="text"><com:TLabel ForControl="BconsCfgPath" Text="<%[ Admin Bconsole config file path (usually bconsole.conf): ]%>" /></div>
 								<div class="field">
 									<com:TCustomValidator ValidationGroup="ConfigGroup" ControlToValidate="BconsCfgPath" ClientValidationFunction="bjsontools_validator" Display="Dynamic" Text="<%[ There is required to provide both binary file and config file paths. ]%>" />
@@ -426,7 +426,7 @@
 			</div>
 		</com:TWizardStep>
 		<com:TWizardStep ID="Step5" Title="<%[ Step 5 - authorization to API ]%>" StepType="Auto">
-			<div class="line">
+			<div class="line left" style="width:500px; margin: 0 auto">
 				<com:TActiveRadioButton
 					ID="AuthOAuth2"
 					GroupName="SelectAuth"
@@ -438,7 +438,7 @@
 					Text="<%[ Use OAuth2 for authorization and authentication ]%>"
 				/>
 			</div>
-			<div class="line">
+			<div class="line left" style="width:500px; margin: 0 auto">
 				<com:TActiveRadioButton
 					ID="AuthBasic"
 					GroupName="SelectAuth"
