@@ -94,7 +94,7 @@ var Formatters = {
 			formatter = this.formatter[i].format_func;
 			for (var i = 0; i < elements.length; i++) {
 				txt = elements[i].firstChild;
-				if (txt.nodeType === 3) {
+				if (txt && txt.nodeType === 3) {
 					txt.nodeValue = formatter(txt.nodeValue);
 				}
 			}

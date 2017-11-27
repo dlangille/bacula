@@ -17,18 +17,20 @@ var SlideWindowClass = jQuery.klass({
 	gridEl: null,
 	checked: [],
 	objects: {},
-	windowSize: null,
 	initElementId: null,
 
 	size: {
-		widthNormal : '53%',
-		heightNormal : '325px',
 		widthHalf : '53%',
 		heightHalf : '586px',
 		widthFull : '100%',
 		heightFull : '586px',
 		menuWidth: '75px'
 	},
+	size_modes: {
+		half: {value: 0, width: '53%', height: '100%'},
+		full: {value: 1, width: '100%', height: '100%'}
+	},
+	current_size_mode: null,
 
 	elements : {
 		content: 'div.slide-window-content',
@@ -185,57 +187,38 @@ var SlideWindowClass = jQuery.klass({
 	},
 
 	resetSize : function() {
-		if(this.isConfigurationOpen()) {
+		if (!this.isConfigurationOpen()) {
 			if(this.isFullSize()) {
 				this.halfSizeWindow();
 			} else if(this.isHalfSize()) {
-					this.normalSizeWindow();
-			} else if (this.isNormalSize()){
-				this.halfSizeWindow();
-			} else {
-				this.normalSizeWindow();
-			}
-		} else {
-			if(this.isFullSize()) {
-				this.normalSizeWindow();
-			} else if(this.isHalfSize() || this.isNormalSize()) {
 				this.fullSizeWindow();
 			}
 		}
 	},
 
-	isNormalSize: function() {
-		return (this.windowSize == this.size.widthNormal && this.window.height()  + 'px' == this.size.heightNormal);
-	},
-
 	isHalfSize: function() {
-		return (this.windowSize == this.size.widthHalf && this.window.height()  + 'px' == this.size.heightHalf);
+		return (this.current_size_mode === this.size_modes.half.value);
 	},
 
 	isFullSize: function() {
-		return (this.windowSize  == this.size.widthFull && this.window.height()  + 'px' == this.size.heightFull);
+		return (this.current_size_mode === this.size_modes.full.value);
 	},
 
-	normalSizeWindow: function() {
-			this.window.animate({width: this.size.widthNormal, height: this.size.heightNormal}, {duration : 400});
-			this.windowSize = this.size.widthNormal;
-	},
-	
 	halfSizeWindow: function() {
-			this.window.animate({width: this.size.widthHalf, height: this.size.heightHalf}, {duration : 400});
-			this.windowSize = this.size.widthHalf;
+		this.window.animate({width: this.size_modes.half.width, height: this.size_modes.half.height}, {duration : 500});
+		this.current_size_mode = this.size_modes.half.value;
 	},
 	
 	fullSizeWindow: function() {
-			this.window.animate({width: this.size.widthFull, height: this.size.heightFull}, {duration : 400});
-			this.windowSize = this.size.widthFull;
+		this.window.animate({width: this.size_modes.full.width, height: this.size_modes.full.height}, {duration : 500});
+		this.current_size_mode = this.size_modes.full.value;
 	},
 
 	hideOtherWindows: function() {
 		$('.slide-window-container').css({
 			display : 'none',
-			width : this.size.widthNormal,
-			height : this.size.heightNormal
+			width : this.size_modes.half.width,
+			height : this.size_modes.half.height
 		});
 	},
 
@@ -631,24 +614,13 @@ var SlideWindow = new SlideWindowClass()
 
 $(function() {
 	if(navigator.userAgent.search("MSIE") > -1  || navigator.userAgent.search("Firefox") > -1 || navigator.userAgent.search("Chrome") > -1) {
-		$('input[type=checkbox], input[type=submit], input[type=radio], input[type=image], a').each(function(el) {
-			$(el).on('focus', function() {
-				el.blur();
-			}.bind(el));
-		});
+		var els = $('input[type=checkbox], input[type=submit], input[type=radio], input[type=image], a');
+		if (els) {
+			els.each(function(el) {
+				$(el).on('focus', function() {
+					el.blur();
+				}.bind(el));
+			});
+		}
 	}
-});
-
-function setContentWidth() {
-	var content_width = $('#container').width() - $('#workspace-menu-left').width() - 1;
-	$('#content').css({'width': content_width + 'px'});
-}
-
-
-$(window).resize(function() {
-	setContentWidth();
-});
-
-$(function() {
-	setContentWidth();
 });

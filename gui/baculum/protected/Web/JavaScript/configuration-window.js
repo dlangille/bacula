@@ -119,3 +119,16 @@ var ConfigurationWindowClass = jQuery.klass({
 });
 
 var ConfigurationWindow = new ConfigurationWindowClass();
+
+function setContentWidth() {
+	var content_width = $('#container').width() - $('#workspace-menu-left').width() - 1;
+	$('#content').css({'width': content_width + 'px'});
+}
+
+$(window).resize(function() {
+	setContentWidth();
+});
+
+$(function() {
+	setContentWidth();
+});
