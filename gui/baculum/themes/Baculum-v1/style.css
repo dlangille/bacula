@@ -968,6 +968,8 @@ span.tab_active {
 
 #config {
 	padding: 0;
+	height: auto !important;
+	min-height: 600px;
 }
 
 #legend {
