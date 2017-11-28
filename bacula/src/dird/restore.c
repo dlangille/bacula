@@ -40,6 +40,9 @@
 #include "dird.h"
 #include "lib/ini.h"
 
+/* Imported variables */
+extern struct s_kw ReplaceOptions[];
+
 /* Commands sent to File daemon */
 static char restorecmd[]  = "restore %sreplace=%c prelinks=%d where=%s\n";
 static char restorecmdR[] = "restore %sreplace=%c prelinks=%d regexwhere=%s\n";
@@ -611,7 +614,7 @@ void restore_cleanup(JCR *jcr, int TermCode)
    char sdt[MAX_TIME_LENGTH], edt[MAX_TIME_LENGTH];
    char ec1[30], ec2[30], ec3[30];
    char term_code[100], fd_term_msg[100], sd_term_msg[100];
-   const char *term_msg;
+   const char *term_msg, *replace = _("N/A");
    int msg_type = M_INFO;
    double kbps;
    utime_t RunTime;
@@ -689,6 +692,12 @@ void restore_cleanup(JCR *jcr, int TermCode)
       kbps = 0;
    }
 
+   for (int i=0; ReplaceOptions[i].name; i++) {
+      if (ReplaceOptions[i].token == (int)jcr->replace) {
+         replace = ReplaceOptions[i].name;
+      }
+   }
+
    jobstatus_to_ascii(jcr->FDJobStatus, fd_term_msg, sizeof(fd_term_msg));
    jobstatus_to_ascii(jcr->SDJobStatus, sd_term_msg, sizeof(sd_term_msg));
 
@@ -697,6 +706,8 @@ void restore_cleanup(JCR *jcr, int TermCode)
 "  JobId:                  %d\n"
 "  Job:                    %s\n"
 "  Restore Client:         %s\n"
+"  Where:                  %s\n"
+"  Replace:                %s\n"
 "  Start time:             %s\n"
 "  End time:               %s\n"
 "  Files Expected:         %s\n"
@@ -712,6 +723,8 @@ void restore_cleanup(JCR *jcr, int TermCode)
         jcr->jr.JobId,
         jcr->jr.Job,
         jcr->client->name(),
+        jcr->RegexWhere?jcr->RegexWhere:jcr->where,
+        replace,
         sdt,
         edt,
         edit_uint64_with_commas((uint64_t)jcr->ExpectedFiles, ec1),
