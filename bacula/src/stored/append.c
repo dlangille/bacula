@@ -102,20 +102,11 @@ bool do_append_data(JCR *jcr)
    dev->start_of_job(dcr);
    jcr->sendJobStatus(JS_Running);
 
-   ASSERTD(dev->VolCatInfo.VolCatName[0], "NULL Volume name. This shouldn't happen!!!\n");
-   if (dev->VolCatInfo.VolCatName[0] == 0) {
-      Pmsg0(000, _("NULL Volume name. This shouldn't happen!!!\n"));
-   }
    Dmsg1(50, "Begin append device=%s\n", dev->print_name());
 
    begin_data_spool(dcr);
    begin_attribute_spool(jcr);
 
-   Dmsg0(100, "Just after acquire_device_for_append\n");
-   ASSERTD(dev->VolCatInfo.VolCatName[0], "NULL Volume name. This shouldn't happen!!!\n");
-   if (dev->VolCatInfo.VolCatName[0] == 0) {
-      Pmsg0(000, _("NULL Volume name. This shouldn't happen!!!\n"));
-   }
    /*
     * Write Begin Session Record
     */
@@ -124,11 +115,6 @@ bool do_append_data(JCR *jcr)
          dev->bstrerror());
       jcr->setJobStatus(JS_ErrorTerminated);
       ok = false;
-   }
-
-   ASSERTD(dev->VolCatInfo.VolCatName[0], "NULL Volume name. This shouldn't happen!!!\n");
-   if (dev->VolCatInfo.VolCatName[0] == 0) {
-      Pmsg0(000, _("NULL Volume name. This shouldn't happen!!!\n"));
    }
 
    /* Tell File daemon to send data */
