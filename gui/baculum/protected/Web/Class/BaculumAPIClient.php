@@ -596,8 +596,12 @@ class BaculumAPIClient extends WebModule {
 			curl_setopt($ch, CURLOPT_POST, true);
 			curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
 			$result = curl_exec($ch);
+			$header_size = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
 			curl_close($ch);
-			$tokens = json_decode($result);
+			$header = substr($result, 0, $header_size);
+			$body = substr($result, $header_size);
+			$tokens = json_decode($body);
+			$this->parseHeader($header);
 			if (is_object($tokens) && isset($tokens->access_token) && isset($tokens->refresh_token)) {
 				$auth = new OAuth2Record();
 				$auth->host = $st['host'];
