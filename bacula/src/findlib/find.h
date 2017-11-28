@@ -32,7 +32,6 @@
 
 #ifdef HAVE_DIRENT_H
 #include <dirent.h>
-#define NAMELEN(dirent) (strlen((dirent)->d_name))
 #endif
 
 #include <sys/file.h>
@@ -57,10 +56,6 @@ struct utimbuf {
 #include "lib/bregex.h"
 #else
 #include <regex.h>
-#endif
-
-#ifndef HAVE_READDIR_R
-int readdir_r(DIR *dirp, struct dirent *entry, struct dirent **result);
 #endif
 
 /* For options FO_xxx values see src/fileopts.h */

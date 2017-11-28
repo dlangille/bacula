@@ -503,7 +503,7 @@ void FillDirectoryTree(char *path, TREE_ROOT *root, TREE_NODE *parent)
    TREE_NODE *node;
    struct stat statbuf;
    DIR *dp;
-   struct dirent *dir;
+   POOL_MEM dname(PM_FNAME);
    char pathbuf[MAXPATHLEN];
    char file[MAXPATHLEN];
    int type;
@@ -514,11 +514,11 @@ void FillDirectoryTree(char *path, TREE_ROOT *root, TREE_NODE *parent)
    if (!dp) {
       return;
    }
-   while ((dir = readdir(dp))) {
-      if (strcmp(dir->d_name, ".") == 0 || strcmp(dir->d_name, "..") == 0) {
+   while (readdir(dp, dname.addr()) != 0) {
+      if (strcmp(dname.c_str(), ".") == 0 || strcmp(dname.c_str(), "..") == 0) {
          continue;
       }
-      bstrncpy(file, dir->d_name, sizeof(file));
+      bstrncpy(file, dname.c_str(), sizeof(file));
       snprintf(pathbuf, MAXPATHLEN-1, "%s/%s", path, file);
       if (lstat(pathbuf, &statbuf) < 0) {
          berrno be;

@@ -471,34 +471,40 @@ struct tm *localtime_r(const time_t *timep, struct tm *tm)
 }
 #endif /* HAVE_LOCALTIME_R */
 
-#ifndef HAVE_READDIR_R
 #ifndef HAVE_WIN32
 #include <dirent.h>
-
-int readdir_r(DIR *dirp, struct dirent *entry, struct dirent **result)
+/*
+ * This is bacula own readdir function, that should be used instead of any
+ * other function
+ * This function is thread safe.
+ * Not all supported systems have a thread safe readdir() function
+ * This is why we are using a mutex.
+ *
+ * The name of the "next" file or directory is returned into d_name
+ * that can be resized to fit the size of the entry
+ *
+ * return 0 for OK
+ * return -1 for EOF
+ * return >0 is for error, the value returned is errno
+*/
+int breaddir(DIR *dirp, POOLMEM *&d_name)
 {
-    static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-    struct dirent *ndir;
-    int stat;
+   static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
-    P(mutex);
-    errno = 0;
-    ndir = readdir(dirp);
-    stat = errno;
-    if (ndir) {
-       memcpy(entry, ndir, sizeof(struct dirent));
-       strcpy(entry->d_name, ndir->d_name);
-       *result = entry;
-    } else {
-       *result = NULL;
-    }
-    V(mutex);
-    return stat;
-
+   P(mutex);
+   errno = 0;
+   struct dirent *d=readdir(dirp);
+   int ret = errno;
+   if (d != NULL) {
+      pm_strcpy(d_name, d->d_name);
+      ret=0;
+   } else {
+      ret = errno==0?-1:errno; // -1 for EOF or errno for error
+   }
+   V(mutex);
+   return ret;
 }
 #endif
-#endif /* HAVE_READDIR_R */
-
 
 int b_strerror(int errnum, char *buf, size_t bufsiz)
 {

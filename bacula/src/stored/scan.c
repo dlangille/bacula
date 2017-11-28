@@ -28,6 +28,8 @@
 #include "bacula.h"
 #include "stored.h"
 
+int breaddir(DIR *dirp, POOLMEM *&d_name);
+
 /* Forward referenced functions */
 static bool is_volume_name_legal(char *name);
 
@@ -35,7 +37,6 @@ static bool is_volume_name_legal(char *name);
 bool DEVICE::scan_dir_for_volume(DCR *dcr)
 {
    DIR* dp;
-   struct dirent *entry, *result;
    int name_max;
    char *mount_point;
    VOLUME_CAT_INFO dcrVolCatInfo, devVolCatInfo;
@@ -43,6 +44,7 @@ bool DEVICE::scan_dir_for_volume(DCR *dcr)
    struct stat statp;
    bool found = false;
    POOL_MEM fname(PM_FNAME);
+   POOL_MEM dname(PM_FNAME);
    bool need_slash = false;
    int len;
 
@@ -73,27 +75,26 @@ bool DEVICE::scan_dir_for_volume(DCR *dcr)
    if (len > 0) {
       need_slash = !IsPathSeparator(mount_point[len - 1]);
    }
-   entry = (struct dirent *)malloc(sizeof(struct dirent) + name_max + 1000);
    for ( ;; ) {
-      if ((readdir_r(dp, entry, &result) != 0) || (result == NULL)) {
+      if (breaddir(dp, dname.addr()) != 0) {
          dev_errno = EIO;
          Dmsg2(129, "scan_dir_for_vol: failed to find suitable file in dir %s (dev=%s)\n",
                mount_point, print_name());
          break;
       }
-      if (strcmp(result->d_name, ".") == 0 ||
-          strcmp(result->d_name, "..") == 0) {
+      if (strcmp(dname.c_str(), ".") == 0 ||
+          strcmp(dname.c_str(), "..") == 0) {
          continue;
       }
 
-      if (!is_volume_name_legal(result->d_name)) {
+      if (!is_volume_name_legal(dname.c_str())) {
          continue;
       }
       pm_strcpy(fname, mount_point);
       if (need_slash) {
          pm_strcat(fname, "/");
       }
-      pm_strcat(fname, result->d_name);
+      pm_strcat(fname, dname);
       if (lstat(fname.c_str(), &statp) != 0 ||
           !S_ISREG(statp.st_mode)) {
          continue;                 /* ignore directories & special files */
@@ -105,7 +106,7 @@ bool DEVICE::scan_dir_for_volume(DCR *dcr)
        *  this volume is really OK. If not, put back the desired
        *  volume name, mark it not in changer and continue.
        */
-      bstrncpy(dcr->VolumeName, result->d_name, sizeof(dcr->VolumeName));
+      bstrncpy(dcr->VolumeName, dname.c_str(), sizeof(dcr->VolumeName));
       /* Check if this is a valid Volume in the pool */
       if (!dir_get_volume_info(dcr, dcr->VolumeName, GET_VOL_INFO_FOR_WRITE)) {
          continue;
@@ -117,7 +118,6 @@ bool DEVICE::scan_dir_for_volume(DCR *dcr)
       found = true;
       break;                /* got a Volume */
    }
-   free(entry);
    closedir(dp);
 
 get_out:

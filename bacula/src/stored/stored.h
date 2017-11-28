@@ -79,10 +79,6 @@ const int sd_dbglvl = 300;
 #endif
 #ifdef HAVE_DIRENT_H
 #include <dirent.h>
-#define NAMELEN(dirent) (strlen((dirent)->d_name))
-#endif
-#ifndef HAVE_READDIR_R
-int readdir_r(DIR *dirp, struct dirent *entry, struct dirent **result);
 #endif
 
 #include "file_dev.h"
@@ -93,6 +89,8 @@ int readdir_r(DIR *dirp, struct dirent *entry, struct dirent **result);
 #include "cloud_dev.h"
 #include "aligned_dev.h"
 #include "sd_plugins.h"
+
+int breaddir(DIR *dirp, POOLMEM *&d_name);
 
 /* Daemon globals from stored.c */
 extern STORES *me;                    /* "Global" daemon resource */

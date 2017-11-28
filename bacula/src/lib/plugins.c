@@ -26,11 +26,8 @@
 #include <dlfcn.h>
 #ifdef HAVE_DIRENT_H
 #include <dirent.h>
-#define NAMELEN(dirent) (strlen((dirent)->d_name))
 #endif
-#ifndef HAVE_READDIR_R
-int readdir_r(DIR *dirp, struct dirent *entry, struct dirent **result);
-#endif
+int breaddir(DIR *dirp, POOLMEM *&d_name);
 
 #ifndef RTLD_NOW
 #define RTLD_NOW 2
@@ -89,10 +86,10 @@ bool load_plugins(void *binfo, void *bfuncs, const char *plugin_dir,
    t_loadPlugin loadPlugin;
    Plugin *plugin = NULL;
    DIR* dp = NULL;
-   struct dirent *entry = NULL, *result;
    int name_max;
    struct stat statp;
    POOL_MEM fname(PM_FNAME);
+   POOL_MEM dname(PM_FNAME);
    bool need_slash = false;
    int len, type_len;
 
@@ -116,11 +113,10 @@ bool load_plugins(void *binfo, void *bfuncs, const char *plugin_dir,
    if (len > 0) {
       need_slash = !IsPathSeparator(plugin_dir[len - 1]);
    }
-   entry = (struct dirent *)malloc(sizeof(struct dirent) + name_max + 1000);
    for ( ;; ) {
       plugin = NULL;            /* Start from a fresh plugin */
 
-      if ((readdir_r(dp, entry, &result) != 0) || (result == NULL)) {
+      if ((breaddir(dp, dname.addr()) != 0)) {
          if (!found) {
             Jmsg(NULL, M_WARNING, 0, _("Failed to find any plugins in %s\n"),
                   plugin_dir);
@@ -128,30 +124,30 @@ bool load_plugins(void *binfo, void *bfuncs, const char *plugin_dir,
          }
          break;
       }
-      if (strcmp(result->d_name, ".") == 0 ||
-          strcmp(result->d_name, "..") == 0) {
+      if (strcmp(dname.c_str(), ".") == 0 ||
+          strcmp(dname.c_str(), "..") == 0) {
          continue;
       }
 
-      len = strlen(result->d_name);
+      len = strlen(dname.c_str());
       type_len = strlen(type);
-      if (len < type_len+1 || strcmp(&result->d_name[len-type_len], type) != 0) {
-         Dmsg3(dbglvl, "Rejected plugin: want=%s name=%s len=%d\n", type, result->d_name, len);
+      if (len < type_len+1 || strcmp(&dname.c_str()[len-type_len], type) != 0) {
+         Dmsg3(dbglvl, "Rejected plugin: want=%s name=%s len=%d\n", type, dname.c_str(), len);
          continue;
       }
-      Dmsg2(dbglvl, "Found plugin: name=%s len=%d\n", result->d_name, len);
+      Dmsg2(dbglvl, "Found plugin: name=%s len=%d\n", dname.c_str(), len);
 
       pm_strcpy(fname, plugin_dir);
       if (need_slash) {
          pm_strcat(fname, "/");
       }
-      pm_strcat(fname, result->d_name);
+      pm_strcat(fname, dname);
       if (lstat(fname.c_str(), &statp) != 0 || !S_ISREG(statp.st_mode)) {
          continue;                 /* ignore directories & special files */
       }
 
       plugin = new_plugin();
-      plugin->file = bstrdup(result->d_name);
+      plugin->file = bstrdup(dname.c_str());
       plugin->file_len = strstr(plugin->file, type) - plugin->file;
       plugin->pHandle = dlopen(fname.c_str(), RTLD_NOW);
       if (!plugin->pHandle) {
@@ -203,9 +199,6 @@ bool load_plugins(void *binfo, void *bfuncs, const char *plugin_dir,
 get_out:
    if (!found && plugin) {
       close_plugin(plugin);
-   }
-   if (entry) {
-      free(entry);
    }
    if (dp) {
       closedir(dp);

@@ -35,6 +35,8 @@
 #include <sys/attr.h>
 #endif
 
+int breaddir(DIR *dirp, POOLMEM *&d_name);
+
 extern int32_t name_max;              /* filename max length */
 extern int32_t path_max;              /* path name max length */
 
@@ -567,7 +569,7 @@ find_one_file(JCR *jcr, FF_PKT *ff_pkt,
 
    } else if (S_ISDIR(ff_pkt->statp.st_mode)) {
       DIR *directory;
-      struct dirent *entry, *result;
+      POOL_MEM dname(PM_FNAME);
       char *link;
       int link_len;
       int len;
@@ -700,31 +702,30 @@ find_one_file(JCR *jcr, FF_PKT *ff_pkt,
        *    before traversing it.
        */
       rtn_stat = 1;
-      entry = (struct dirent *)malloc(sizeof(struct dirent) + name_max + 1000);
-      for ( ; !job_canceled(jcr); ) {
+      while (!job_canceled(jcr)) {
          char *p, *q;
+         int l;
          int i;
 
-         status  = readdir_r(directory, entry, &result);
-         if (status != 0 || result == NULL) {
-//          Dmsg2(99, "readdir returned stat=%d result=0x%x\n",
-//             status, (long)result);
+         status = breaddir(directory, dname.addr());
+         if (status != 0) {
+            /* error or end of directory */
+//          Dmsg1(99, "breaddir returned stat=%d\n", status);
             break;
          }
-         ASSERT(name_max+1 > (int)sizeof(struct dirent) + (int)NAMELEN(entry));
-         p = entry->d_name;
+         p = dname.c_str();
          /* Skip `.', `..', and excluded file names.  */
          if (p[0] == '\0' || (p[0] == '.' && (p[1] == '\0' ||
              (p[1] == '.' && p[2] == '\0')))) {
             continue;
          }
-
-         if ((int)NAMELEN(entry) + len >= link_len) {
-             link_len = len + NAMELEN(entry) + 1;
+         l = strlen(dname.c_str());
+         if (l + len >= link_len) {
+             link_len = len + l + 1;
              link = (char *)brealloc(link, link_len + 1);
          }
          q = link + len;
-         for (i=0; i < (int)NAMELEN(entry); i++) {
+         for (i=0; i < l; i++) {
             *q++ = *p++;
          }
          *q = 0;
@@ -737,7 +738,6 @@ find_one_file(JCR *jcr, FF_PKT *ff_pkt,
       }
       closedir(directory);
       free(link);
-      free(entry);
 
       /*
        * Now that we have recursed through all the files in the

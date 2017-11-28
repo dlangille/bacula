@@ -31,11 +31,8 @@
 #endif
 #ifdef HAVE_DIRENT_H
 #include <dirent.h>
-#define NAMELEN(dirent) (strlen((dirent)->d_name))
 #endif
-#ifndef HAVE_READDIR_R
-int readdir_r(DIR *dirp, struct dirent *entry, struct dirent **result);
-#endif
+int breaddir(DIR *dirp, POOLMEM *&d_name);
 
 /* Forward referenced subroutines */
 void terminate_dird(int sig);
@@ -1369,10 +1366,10 @@ static bool check_catalog(cat_op mode)
 static void cleanup_old_files()
 {
    DIR* dp;
-   struct dirent *entry, *result;
    int rc, name_max;
    int my_name_len = strlen(my_name);
    int len = strlen(director->working_directory);
+   POOL_MEM dname(PM_FNAME);
    POOLMEM *cleanup = get_pool_memory(PM_MESSAGE);
    POOLMEM *basename = get_pool_memory(PM_MESSAGE);
    regex_t preg1;
@@ -1412,28 +1409,26 @@ static void cleanup_old_files()
       return;
    }
 
-   entry = (struct dirent *)malloc(sizeof(struct dirent) + name_max + 1000);
    while (1) {
-      if ((readdir_r(dp, entry, &result) != 0) || (result == NULL)) {
+      if (breaddir(dp, dname.addr()) != 0) {
          break;
       }
       /* Exclude any name with ., .., not my_name or containing a space */
-      if (strcmp(result->d_name, ".") == 0 || strcmp(result->d_name, "..") == 0 ||
-          strncmp(result->d_name, my_name, my_name_len) != 0) {
-         Dmsg1(500, "Skipped: %s\n", result->d_name);
+      if (strcmp(dname.c_str(), ".") == 0 || strcmp(dname.c_str(), "..") == 0 ||
+          strncmp(dname.c_str(), my_name, my_name_len) != 0) {
+         Dmsg1(500, "Skipped: %s\n", dname.c_str());
          continue;
       }
 
       /* Unlink files that match regexes */
-      if (regexec(&preg1, result->d_name, nmatch, pmatch,  0) == 0) {
+      if (regexec(&preg1, dname.c_str(), nmatch, pmatch,  0) == 0) {
          pm_strcpy(cleanup, basename);
-         pm_strcat(cleanup, result->d_name);
+         pm_strcat(cleanup, dname);
          Dmsg1(100, "Unlink: %s\n", cleanup);
          unlink(cleanup);
       }
    }
 
-   free(entry);
    closedir(dp);
 /* Be careful to free up the correct resources */
 get_out1:
