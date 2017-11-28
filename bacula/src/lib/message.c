@@ -1816,6 +1816,7 @@ static struct debugtags debug_tags[] = {
  { NT_("scheduler"),   DT_SCHEDULER,_("Debug scheduler information")},
  { NT_("protocol"),    DT_PROTOCOL, _("Debug protocol information")},
  { NT_("snapshot"),    DT_SNAPSHOT, _("Debug snapshots")},
+ { NT_("record"),      DT_RECORD,   _("Debug records")},
  { NT_("asx"),         DT_ASX,      _("ASX personal's debugging")},
  { NT_("all"),         DT_ALL,      _("Debug all information")},
  { NULL,               0,   NULL}

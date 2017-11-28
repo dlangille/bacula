@@ -161,6 +161,7 @@ struct MQUEUE_ITEM {
 #define    DT_xxxxx      (1<<21)                /* reserved BEE */
 #define    DT_xxx        (1<<20)                /* reserved BEE */
 #define    DT_SNAPSHOT   (1<<19)                /* Snapshot */
+#define    DT_RECORD     (1<<18)                /* Record/block */
 #define    DT_ASX        (1<<16)                /* used by Alain for personal debugging */
 #define    DT_ALL        (0x7FFF0000)           /* all (up to debug_level 65635, 15 flags available) */
 

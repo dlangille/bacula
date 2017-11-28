@@ -32,8 +32,8 @@
 
 /* Imported functions */
 
-static const int dbgep = 250;         /* debug execution path */
-static const int dbgel = 250;         /* debug Enter/Leave code */
+static const int dbgep = 250|DT_RECORD;         /* debug execution path */
+static const int dbgel = 250|DT_RECORD;         /* debug Enter/Leave code */
 
 struct rechdr {
    int32_t FileIndex;
