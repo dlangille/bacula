@@ -307,7 +307,7 @@ bool DEVICE::mount_file(int mount, int dotimeout)
    POOLMEM *results;
    DIR* dp;
    char *icmd;
-   struct dirent *entry, *result;
+   POOL_MEM dname(PM_FNAME);
    int status, tries, name_max, count;
    berrno be;
 
@@ -372,23 +372,21 @@ bool DEVICE::mount_file(int mount, int dotimeout)
          goto get_out;
       }
 
-      entry = (struct dirent *)malloc(sizeof(struct dirent) + name_max + 1000);
       count = 0;
       while (1) {
-         if ((readdir_r(dp, entry, &result) != 0) || (result == NULL)) {
+         if (breaddir(dp, dname.addr()) != 0) {
             dev_errno = EIO;
             Dmsg2(129, "mount_file: failed to find suitable file in dir %s (dev=%s)\n",
                   device->mount_point, print_name());
             break;
          }
-         if ((strcmp(result->d_name, ".")) && (strcmp(result->d_name, "..")) && (strcmp(result->d_name, ".keep"))) {
-            count++; /* result->d_name != ., .. or .keep (Gentoo-specific) */
+         if ((strcmp(dname.c_str(), ".")) && (strcmp(dname.c_str(), "..")) && (strcmp(dname.c_str(), ".keep"))) {
+            count++; /* dname.c_str() != ., .. or .keep (Gentoo-specific) */
             break;
          } else {
-            Dmsg2(129, "mount_file: ignoring %s in %s\n", result->d_name, device->mount_point);
+            Dmsg2(129, "mount_file: ignoring %s in %s\n", dname.c_str(), device->mount_point);
          }
       }
-      free(entry);
       closedir(dp);
 
       Dmsg1(100, "mount_file: got %d files in the mount point (not counting ., .. and .keep)\n", count);
