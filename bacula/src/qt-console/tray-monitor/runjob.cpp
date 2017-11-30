@@ -336,11 +336,8 @@ TSched::~TSched() {
    bfree_and_null(command_dir);
 }
 
-#ifndef HAVE_READDIR_R
-int readdir_r(DIR *dirp, struct dirent *entry, struct dirent **result);
-#else
 #include <dirent.h>
-#endif
+int breaddir(DIR *dirp, POOLMEM *&dname);
 
 bool TSched::read_command_file(const char *file, alist *lst, btime_t mtime)
 {
@@ -457,8 +454,8 @@ bool TSched::scan_for_commands(alist *commands)
    int name_max, len;
    DIR* dp = NULL;
    POOL_MEM fname(PM_FNAME), fname2(PM_FNAME);
+   POOL_MEM dir_entry;
    bool ret=false, found=false;
-   struct dirent *entry = NULL, *result;
    struct stat statp;
 
    name_max = pathconf(".", _PC_NAME_MAX);
@@ -473,27 +470,26 @@ bool TSched::scan_for_commands(alist *commands)
       goto bail_out;
    }
 
-   entry = (struct dirent *)malloc(sizeof(struct dirent) + name_max + 1000);
    for ( ;; ) {
-      if ((readdir_r(dp, entry, &result) != 0) || (result == NULL)) {
+      if (breaddir(dp, dir_entry.addr()) != 0) {
          if (!found) {
             goto bail_out;
          }
          break;
       }
-      if (strcmp(result->d_name, ".") == 0 ||
-          strcmp(result->d_name, "..") == 0) {
+      if (strcmp(dir_entry.c_str(), ".") == 0 ||
+          strcmp(dir_entry.c_str(), "..") == 0) {
          continue;
       }
-      len = strlen(result->d_name);
+      len = strlen(dir_entry.c_str());
       if (len <= 5) {
          continue;
       }
-      if (strcmp(result->d_name + len - 5, ".bcmd") != 0) {
+      if (strcmp(dir_entry.c_str() + len - 5, ".bcmd") != 0) {
          continue;
       }
 
-      Mmsg(fname, "%s/%s", command_dir, result->d_name);
+      Mmsg(fname, "%s/%s", command_dir, dir_entry.c_str());
 
       if (lstat(fname.c_str(), &statp) != 0 || !S_ISREG(statp.st_mode)) {
          continue;                 /* ignore directories & special files */
@@ -506,9 +502,6 @@ bool TSched::scan_for_commands(alist *commands)
       }
    }
 bail_out:
-   if (entry) {
-      free(entry);
-   }
    if (dp) {
       closedir(dp);
    }
