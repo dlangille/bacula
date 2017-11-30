@@ -30,12 +30,15 @@ messages
 label storage=File volume=TestVolume001
 run job=$JobName yes
 wait
+@sleep 1
 @exec "touch $tmpsrc/dird.c"
 run job=$JobName yes
 wait
+@sleep 1
 @exec "touch $tmpsrc/ua_cmds.c"
 run job=$JobName yes
 wait
+@sleep 1
 @exec "touch $tmpsrc/ua_dotcmds.c"
 run job=$JobName yes
 wait
