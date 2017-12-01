@@ -412,7 +412,7 @@ dnl look for Qt5
      abc=`$PKGCONFIG Qt5Gui`
      pkg=$?
      if test $pkg = 0; then
-	BAT_DIR=src/qt-console
+	BAT_DIR="src/qt-console src/qt-console/tray-monitor"
      else
 	AC_MSG_ERROR(Unable to find either Qt4 or Qt5 installation needed by bat)
      fi
