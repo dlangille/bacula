@@ -2249,6 +2249,8 @@ AC_CHECK_FUNCS(strtoll, [AC_DEFINE(HAVE_STRTOLL)])
 AC_CHECK_FUNCS(posix_fadvise)
 AC_CHECK_FUNCS(posix_fallocate)
 AC_CHECK_FUNCS(fdatasync)
+AC_CHECK_FUNCS(realpath)
+AC_CHECK_FUNCS(getrlimit)
 
 AC_CHECK_FUNCS(chflags)
 
