@@ -618,6 +618,8 @@ void t_msg(const char *file, int line, int64_t level, const char *fmt,...);
  *   Windows
  */
 #define PathSeparator '\\'
+#define PathSeparatorUp "..\\"
+#define PathSeparatorCur ".\\"
 
 inline bool IsPathSeparator(int ch) { return ch == '/' || ch == '\\'; }
 inline char *first_path_separator(char *path) { return strpbrk(path, "/\\"); }
@@ -628,6 +630,9 @@ extern void pause_msg(const char *file, const char *func, int line, const char *
 
 #else /* Unix/Linux */
 #define PathSeparator '/'
+#define PathSeparatorUp "../"
+#define PathSeparatorCur "./"
+
 /* Define Winsock functions if we aren't on Windows */
 
 #define WSA_Init() 0 /* 0 = success */

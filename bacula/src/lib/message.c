@@ -244,25 +244,48 @@ void register_message_callback(void msg_callback(int type, char *msg))
  */
 void my_name_is(int argc, char *argv[], const char *name)
 {
-   char *l, *p, *q;
-   char cpath[1024];
+   char *l, *p;
+   char *cpath;
+   char *cargv0;
    int len;
+   int path_max;
+   bool respath;
 
    if (gethostname(host_name, sizeof(host_name)) != 0) {
       bstrncpy(host_name, "Hostname unknown", sizeof(host_name));
    }
    bstrncpy(my_name, name, sizeof(my_name));
+
    if (argc>0 && argv && argv[0]) {
+      /* use a dynamic PATH_MAX and allocate temporary variables */
+      path_max = pathconf(argv[0], _PC_PATH_MAX);
+      if (path_max < 4096){
+         path_max = 4096;
+      }
+      cpath = (char *)malloc(path_max);
+      cargv0 = (char *)malloc(path_max);
+
+      respath = false;
+#ifdef HAVE_REALPATH
+      /* make a canonical argv[0] */
+      if (realpath(argv[0], cargv0) != NULL){
+         respath = true;
+      }
+#endif
+      if (!respath){
+         /* no resolved_path available in cargv0, so populate it */
+         strncpy(cargv0, argv[0], path_max);
+      }
       /* strip trailing filename and save exepath */
-      for (l=p=argv[0]; *p; p++) {
+      for (l=p=cargv0; *p; p++) {
          if (IsPathSeparator(*p)) {
-            l = p;                       /* set pos of last slash */
+            l = p;                       /* set pos of last path separator */
          }
       }
       if (IsPathSeparator(*l)) {
          l++;
       } else {
-         l = argv[0];
+         l = cargv0;
 #if defined(HAVE_WIN32)
          /* On Windows allow c: drive specification */
          if (l[1] == ':') {
@@ -276,23 +299,23 @@ void my_name_is(int argc, char *argv[], const char *name)
       }
       exename = (char *)malloc(len);
       strcpy(exename, l);
-
       if (exepath) {
          free(exepath);
       }
-      exepath = (char *)malloc(strlen(argv[0]) + 1 + len);
-      for (p=argv[0],q=exepath; p < l; ) {
-         *q++ = *p++;
-      }
-      *q = 0;
-      if (strchr(exepath, '.') || !IsPathSeparator(exepath[0])) {
-         if (getcwd(cpath, sizeof(cpath))) {
+      /* separate exepath from exename */
+      *l = 0;
+      exepath = bstrdup(cargv0);
+      if (strstr(exepath, PathSeparatorUp) != NULL || strstr(exepath, PathSeparatorCur) != NULL || !IsPathSeparator(exepath[0])) {
+         /* fallback to legacy code */
+         if (getcwd(cpath, path_max)) {
             free(exepath);
             exepath = (char *)malloc(strlen(cpath) + 1 + len);
             strcpy(exepath, cpath);
          }
       }
       Dmsg2(500, "exepath=%s\nexename=%s\n", exepath, exename);
+      free(cpath);
+      free(cargv0);
    }
 }
 
@@ -307,10 +330,10 @@ set_assert_msg(const char *file, int line, const char *msg)
 }
 
 void set_db_engine_name(const char *name)
-{ 
+{
    bstrncpy(db_engine_name, name, sizeof(db_engine_name)-1);
-} 
- 
+}
+
 /*
  * Initialize message handler for a daemon or a Job
  *   We make a copy of the MSGS resource passed, so it belows
@@ -871,7 +894,7 @@ void dispatch_message(JCR *jcr, int type, utime_t mtime, char *msg)
           switch (d->dest_code) {
              case MD_CATALOG:
                 char ed1[50];
-                if (!jcr || !jcr->db) { 
+                if (!jcr || !jcr->db) {
                    break;
                 }
                 if (p_sql_query && p_sql_escape) {
@@ -882,14 +905,14 @@ void dispatch_message(JCR *jcr, int type, utime_t mtime, char *msg)
                    esc_msg = check_pool_memory_size(esc_msg, len*2+1);
                    ok = p_sql_escape(jcr, jcr->db, esc_msg, msg, len);
                    if (ok) {
-                      bstrutime(dt, sizeof(dt), mtime); 
-                      Mmsg(cmd, "INSERT INTO Log (JobId, Time, LogText) VALUES (%s,'%s','%s')", 
+                      bstrutime(dt, sizeof(dt), mtime);
+                      Mmsg(cmd, "INSERT INTO Log (JobId, Time, LogText) VALUES (%s,'%s','%s')",
                            edit_int64(jcr->JobId, ed1), dt, esc_msg);
                       ok = p_sql_query(jcr, cmd);
-                   } 
+                   }
                    if (!ok) {
                       delivery_error(_("Message delivery error: Unable to store data in database.\n"));
-                   } 
+                   }
                    free_pool_memory(cmd);
                    free_pool_memory(esc_msg);
                 }
