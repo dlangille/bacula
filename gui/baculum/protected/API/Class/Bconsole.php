@@ -32,7 +32,40 @@ class Bconsole extends APIModule {
 
 	const BCONSOLE_DIRECTORS_PATTERN = "%s%s -c %s -l 2>&1";
 
-	private $allowed_commands = array('version', 'status', 'list', 'messages', 'show', 'mount', 'umount', 'release', 'prune', 'purge', 'update', 'estimate', 'run', '.bvfs_update', '.bvfs_lsdirs', '.bvfs_lsfiles', '.bvfs_versions', '.bvfs_get_jobids', '.bvfs_restore', '.bvfs_clear_cache', 'restore', 'cancel', 'delete', '.jobs', 'label', 'reload', '.fileset', '.storage', '.client', '.pool');
+	private $allowed_commands = array(
+		'version',
+		'status',
+		'list',
+		'messages',
+		'show',
+		'mount',
+		'umount',
+		'release',
+		'prune',
+		'purge',
+		'update',
+		'estimate',
+		'run',
+		'.bvfs_update',
+		'.bvfs_lsdirs',
+		'.bvfs_lsfiles',
+		'.bvfs_versions',
+		'.bvfs_get_jobids',
+		'.bvfs_restore',
+		'.bvfs_clear_cache',
+		'restore',
+		'cancel',
+		'delete',
+		'.jobs',
+		'label',
+		'reload',
+		'.fileset',
+		'.storage',
+		'.client',
+		'.pool'
+	);
+
+	private $config;
 
 	private $use_sudo;
 
@@ -41,12 +74,12 @@ class Bconsole extends APIModule {
 	private static $cfg_path;
 
 	public function init($param) {
-		$config = $this->getModule('api_config')->getConfig('bconsole');
-		if(count($config) > 0) {
-			$use_sudo = ((integer)$config['use_sudo'] === 1);
-			$cmd_path = $config['bin_path'];
+		$this->config = $this->getModule('api_config')->getConfig('bconsole');
+		if(count($this->config) > 0) {
+			$use_sudo = ((integer)$this->config['use_sudo'] === 1);
+			$cmd_path = $this->config['bin_path'];
 			$custom_cfg_path = self::getCfgPath();
-			$cfg_path = isset($custom_cfg_path) ? $custom_cfg_path : $config['cfg_path'];
+			$cfg_path = isset($custom_cfg_path) ? $custom_cfg_path : $this->config['cfg_path'];
 			$this->setEnvironmentParams($cmd_path, $cfg_path, $use_sudo);
 		}
 	}
@@ -109,6 +142,12 @@ class Bconsole extends APIModule {
 	}
 
 	public function bconsoleCommand($director, array $command, $user = null) {
+		if (count($this->config) == 0 || $this->config['enabled'] !== '1') {
+			throw new BConsoleException(
+				BconsoleError::MSG_ERROR_BCONSOLE_DISABLED,
+				BconsoleError::ERROR_BCONSOLE_DISABLED
+			);
+		}
 		$base_command = count($command) > 0 ? $command[0] : null;
 		if($this->isCommandValid($base_command) === true) {
 			$result = $this->execCommand($director, $command, $user);
