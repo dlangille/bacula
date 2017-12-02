@@ -25,7 +25,7 @@
 							var accurate = $('#<%=$this->AccurateLine->ClientID%>');
 							var estimate = $('#<%=$this->EstimateLine->ClientID%>');
 							var verify_current_opt = $('#<%=$this->JobToVerifyOptions->ClientID%>').val();
-							if(/^(<%=implode('|', $this->jobToVerify)%>)$/.test(this.value)) {
+							if(/^(<%=implode('|', $this->job_to_verify)%>)$/.test(this.value)) {
 								accurate.hide();
 								estimate.hide();
 								verify_options.show();

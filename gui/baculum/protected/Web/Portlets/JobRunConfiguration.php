@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2016 Kern Sibbald
+ * Copyright (C) 2013-2017 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -20,7 +20,16 @@
  * Bacula(R) is a registered trademark of Kern Sibbald.
  */
 
+Prado::using('System.Web.UI.WebControls.TCallback');
+Prado::using('System.Web.UI.WebControls.TLabel');
+Prado::using('System.Web.UI.WebControls.TPanel');
+Prado::using('System.Web.UI.WebControls.TValidationSummary');
+Prado::using('System.Web.UI.ActiveControls.TActiveCheckBox');
+Prado::using('System.Web.UI.ActiveControls.TActiveCustomValidator');
+Prado::using('System.Web.UI.ActiveControls.TActiveDropDownList');
+Prado::using('System.Web.UI.ActiveControls.TActiveLabel');
 Prado::using('System.Web.UI.ActiveControls.TActivePanel');
+Prado::using('System.Web.UI.ActiveControls.TActiveTextBox');
 Prado::using('Application.Web.Portlets.Portlets');
 
 class JobRunConfiguration extends Portlets {
@@ -29,106 +38,137 @@ class JobRunConfiguration extends Portlets {
 
 	const DEFAULT_JOB_PRIORITY = 10;
 
-	public $jobToVerify = array('C', 'O', 'd');
+	public $job_to_verify = array('C', 'O', 'd');
 
-	public $verifyOptions = array('jobname' => 'Verify by Job Name', 'jobid' => 'Verify by JobId');
+	public $verify_options = array('jobname' => 'Verify by Job Name', 'jobid' => 'Verify by JobId');
 
 	public function configure($jobname) {
-		$jobshow = $this->Application->getModule('api')->get(array('jobs', 'show', 'name', $jobname), null, true, self::USE_CACHE)->output;
+		$job_show = $this->getModule('api')->get(
+			array('jobs', 'show', 'name', $jobname),
+			null,
+			true,
+			self::USE_CACHE
+		)->output;
 
 		$this->JobName->Text = $jobname;
 		$this->Estimation->Text = '';
 
-		$levels = $this->Application->getModule('misc')->getJobLevels();
-		$jobAttr = $this->getPage()->JobConfiguration->getJobAttr($jobshow);
-		$levelsFlip = array_flip($levels);
+		$levels = $this->getModule('misc')->getJobLevels();
+		$job_attr = $this->getPage()->JobConfiguration->getJobAttr($job_show);
+		$levels_flip = array_flip($levels);
+
+		$is_verify = false;
+		if (array_key_exists('level', $job_attr) && array_key_exists($job_attr['level'], $levels_flip)) {
+			$this->Level->SelectedValue = $levels_flip[$job_attr['level']];
+			$is_verify = in_array($levels_flip[$job_attr['level']], $this->job_to_verify);
+		}
+		$this->JobToVerifyOptionsLine->Display = ($is_verify === true) ? 'Dynamic' : 'None';
+		$this->JobToVerifyJobNameLine->Display = ($is_verify === true) ? 'Dynamic' : 'None';
+		$this->JobToVerifyJobIdLine->Display = 'None';
 
 		$this->Level->dataSource = $levels;
-		if (array_key_exists('level', $jobAttr) && array_key_exists($jobAttr['level'], $levelsFlip)) {
-			$this->Level->SelectedValue = $levelsFlip[$jobAttr['level']];
-
-			$isVerifyOption = in_array($levelsFlip[$jobAttr['level']], $this->getPage()->JobConfiguration->jobToVerify);
-			$this->JobToVerifyOptionsLine->Display = ($isVerifyOption === true) ? 'Dynamic' : 'None';
-			$this->JobToVerifyJobNameLine->Display = ($isVerifyOption === true) ? 'Dynamic' : 'None';
-			$this->JobToVerifyJobIdLine->Display = 'None';
-		}
 		$this->Level->dataBind();
 
 		$this->AccurateLine->Display = 'Dynamic';
 		$this->EstimateLine->Display = 'Dynamic';
 
-		$verifyValues = array();
+		$verify_values = array();
 
-		foreach($this->verifyOptions as $value => $text) {
-			$verifyValues[$value] = Prado::localize($text);
+		foreach($this->verify_options as $value => $text) {
+			$verify_values[$value] = Prado::localize($text);
 		}
 
-		$this->JobToVerifyOptions->dataSource = $verifyValues;
+		$this->JobToVerifyOptions->dataSource = $verify_values;
 		$this->JobToVerifyOptions->dataBind();
 
-		$jobTasks = $this->Application->getModule('api')->get(array('jobs', 'tasks'), null, true, self::USE_CACHE)->output;
+		$jobTasks = $this->getModule('api')->get(
+			array('jobs', 'tasks'),
+			null,
+			true,
+			self::USE_CACHE
+		)->output;
 
-		$jobsAllDirs = array();
+		$jobs_all_dirs = array();
 		foreach($jobTasks as $director => $tasks) {
-			$jobsAllDirs = array_merge($jobsAllDirs, $tasks);
+			$jobs_all_dirs = array_merge($jobs_all_dirs, $tasks);
 		}
 
-		$this->JobToVerifyJobName->dataSource = array_combine($jobsAllDirs, $jobsAllDirs);
+		$this->JobToVerifyJobName->dataSource = array_combine($jobs_all_dirs, $jobs_all_dirs);
 		$this->JobToVerifyJobName->dataBind();
 
-		$clients = $this->Application->getModule('api')->get(array('clients'), null, true, self::USE_CACHE)->output;
-		$selectedClient = $this->getPage()->JobConfiguration->getResourceName('client', $jobshow);
-		$selectedClientId = null;
-		$clientsList = array();
+		$clients = $this->getModule('api')->get(
+			array('clients'),
+			null,
+			true,
+			self::USE_CACHE
+		)->output;
+		$selected_client = $this->getPage()->JobConfiguration->getResourceName('client', $job_show);
+		$selected_client_id = null;
+		$client_list = array();
 		foreach($clients as $client) {
-			if ($client->name === $selectedClient) {
-				$selectedClientId = $client->clientid;
+			if ($client->name === $selected_client) {
+				$selected_client_id = $client->clientid;
 			}
-			$clientsList[$client->clientid] = $client->name;
+			$client_list[$client->clientid] = $client->name;
 		}
-		$this->Client->dataSource = $clientsList;
-		$this->Client->SelectedValue = $selectedClientId;
+		$this->Client->dataSource = $client_list;
+		$this->Client->SelectedValue = $selected_client_id;
 		$this->Client->dataBind();
 
-		$filesetsAll = $this->Application->getModule('api')->get(array('filesets'), null, true, self::USE_CACHE)->output;
-		$selectedFileset = $this->getPage()->JobConfiguration->getResourceName('fileset', $jobshow);
-		$filesetsList = array();
-		foreach($filesetsAll as $director => $filesets) {
-			$filesetsList = array_merge($filesets, $filesetsList);
+		$filesets_all = $this->getModule('api')->get(
+			array('filesets'),
+			null,
+			true,
+			self::USE_CACHE
+		)->output;
+		$selected_fileset = $this->getPage()->JobConfiguration->getResourceName('fileset', $job_show);
+		$fileset_list = array();
+		foreach($filesets_all as $director => $filesets) {
+			$fileset_list = array_merge($filesets, $fileset_list);
 		}
-		$this->FileSet->dataSource = array_combine($filesetsList, $filesetsList);
-		$this->FileSet->SelectedValue = $selectedFileset;
+		$this->FileSet->dataSource = array_combine($fileset_list, $fileset_list);
+		$this->FileSet->SelectedValue = $selected_fileset;
 		$this->FileSet->dataBind();
 
-		$pools = $this->Application->getModule('api')->get(array('pools'), null, true, self::USE_CACHE)->output;
-		$selectedPool = $this->getPage()->JobConfiguration->getResourceName('pool', $jobshow);
-		$selectedPoolId = null;
-		$poolList = array();
+		$pools = $this->getModule('api')->get(
+			array('pools'),
+			null,
+			true,
+			self::USE_CACHE
+		)->output;
+		$selected_pool = $this->getPage()->JobConfiguration->getResourceName('pool', $job_show);
+		$selected_pool_id = null;
+		$pool_list = array();
 		foreach($pools as $pool) {
-			if ($pool->name === $selectedPool) {
-				$selectedPoolId = $pool->poolid;
+			if ($pool->name === $selected_pool) {
+				$selected_pool_id = $pool->poolid;
 			}
-			$poolList[$pool->poolid] = $pool->name;
+			$pool_list[$pool->poolid] = $pool->name;
 		}
-		$this->Pool->dataSource = $poolList;
-		$this->Pool->SelectedValue = $selectedPoolId;
+		$this->Pool->dataSource = $pool_list;
+		$this->Pool->SelectedValue = $selected_pool_id;
 		$this->Pool->dataBind();
 
-		$storages = $this->Application->getModule('api')->get(array('storages'), null, true, self::USE_CACHE)->output;
-		$selectedStorage = $this->getPage()->JobConfiguration->getResourceName('storage', $jobshow);
-		$selectedStorageId = null;
-		$storagesList = array();
+		$storages = $this->getModule('api')->get(
+			array('storages'),
+			null,
+			true,
+			self::USE_CACHE
+		)->output;
+		$selected_storage = $this->getPage()->JobConfiguration->getResourceName('storage', $job_show);
+		$selected_storage_id = null;
+		$storage_list = array();
 		foreach($storages as $storage) {
-			if ($storage->name === $selectedStorage) {
-				$selectedStorageId = $storage->storageid;
+			if ($storage->name === $selected_storage) {
+				$selected_storage_id = $storage->storageid;
 			}
-			$storagesList[$storage->storageid] = $storage->name;
+			$storage_list[$storage->storageid] = $storage->name;
 		}
-		$this->Storage->dataSource = $storagesList;
-		$this->Storage->SelectedValue = $selectedStorageId;
+		$this->Storage->dataSource = $storage_list;
+		$this->Storage->SelectedValue = $selected_storage_id;
 		$this->Storage->dataBind();
 
-		$this->Priority->Text = array_key_exists('priority', $jobAttr) ? $jobAttr['priority'] : self::DEFAULT_JOB_PRIORITY;
+		$this->Priority->Text = array_key_exists('priority', $job_attr) ? $job_attr['priority'] : self::DEFAULT_JOB_PRIORITY;
 	}
 
 	public function run_job($sender, $param) {
@@ -144,21 +184,21 @@ class JobRunConfiguration extends Portlets {
 		$params['poolid'] = $this->Pool->SelectedValue;
 		$params['priority'] = $this->Priority->Text;
 
-		if (in_array($this->Level->SelectedItem->Value, $this->jobToVerify)) {
-			$verifyVals = $this->getVerifyVals();
-			if ($this->JobToVerifyOptions->SelectedItem->Value == $verifyVals['jobname']) {
+		if (in_array($this->Level->SelectedItem->Value, $this->job_to_verify)) {
+			$verify_vals = $this->getVerifyVals();
+			if ($this->JobToVerifyOptions->SelectedItem->Value == $verify_vals['jobname']) {
 				$params['verifyjob'] = $this->JobToVerifyJobName->SelectedValue;
-			} elseif ($this->JobToVerifyOptions->SelectedItem->Value == $verifyVals['jobid']) {
+			} elseif ($this->JobToVerifyOptions->SelectedItem->Value == $verify_vals['jobid']) {
 				$params['jobid'] = $this->JobToVerifyJobId->Text;
 			}
 		}
 
-		$result = $this->Application->getModule('api')->create(array('jobs', 'run'), $params)->output;
+		$result = $this->getModule('api')->create(array('jobs', 'run'), $params)->output;
 
-		$startedJobId = $this->Application->getModule('misc')->findJobIdStartedJob($result);
-		if ($this->GoToStartedJob->Checked === true && is_numeric($startedJobId)) {
-			$params['jobid'] = $startedJobId;
-			$this->getPage()->JobConfiguration->configure($startedJobId, $params);
+		$started_job_id = $this->getModule('misc')->findJobIdStartedJob($result);
+		if ($this->GoToStartedJob->Checked === true && is_numeric($started_job_id)) {
+			$params['jobid'] = $started_job_id;
+			$this->getPage()->JobConfiguration->configure($started_job_id, $params);
 		} else {
 			$this->Estimation->Text = implode(PHP_EOL, $result);
 		}
@@ -171,30 +211,30 @@ class JobRunConfiguration extends Portlets {
 		$params['fileset'] = $this->FileSet->SelectedValue;
 		$params['clientid'] = $this->Client->SelectedValue;
 		$params['accurate'] = (integer)$this->Accurate->Checked;
-		$result = $this->Application->getModule('api')->create(array('jobs', 'estimate'), $params)->output;
+		$result = $this->getModule('api')->create(array('jobs', 'estimate'), $params)->output;
 		$this->Estimation->Text = implode(PHP_EOL, $result);
 	}
 
 	public function priorityValidator($sender, $param) {
-		$isValid = preg_match('/^[0-9]+$/', $this->Priority->Text) === 1 && $this->Priority->Text > 0;
-		$param->setIsValid($isValid);
+		$is_valid = preg_match('/^[0-9]+$/', $this->Priority->Text) === 1 && $this->Priority->Text > 0;
+		$param->setIsValid($is_valid);
 	}
 
 	public function jobIdToVerifyValidator($sender, $param) {
-		$verifyVals = $this->getVerifyVals();
-		if(in_array($this->Level->SelectedValue, $this->jobToVerify) && $this->JobToVerifyOptions->SelectedItem->Value == $verifyVals['jobid']) {
-			$isValid = preg_match('/^[0-9]+$/',$this->JobToVerifyJobId->Text) === 1 && $this->JobToVerifyJobId->Text > 0;
+		$verify_vals = $this->getVerifyVals();
+		if(in_array($this->Level->SelectedValue, $this->job_to_verify) && $this->JobToVerifyOptions->SelectedItem->Value == $verify_vals['jobid']) {
+			$is_valid = preg_match('/^[0-9]+$/',$this->JobToVerifyJobId->Text) === 1 && $this->JobToVerifyJobId->Text > 0;
 		} else {
-			$isValid = true;
+			$is_valid = true;
 		}
-		$param->setIsValid($isValid);
-		return $isValid;
+		$param->setIsValid($is_valid);
+		return $is_valid;
 	}
 
 	private function getVerifyVals() {
-		$verifyOpt = array_keys($this->verifyOptions);
-		$verifyVals = array_combine($verifyOpt, $verifyOpt);
-		return $verifyVals;
+		$verify_opt = array_keys($this->verify_options);
+		$verify_vals = array_combine($verify_opt, $verify_opt);
+		return $verify_vals;
 	}
 }
 ?>
