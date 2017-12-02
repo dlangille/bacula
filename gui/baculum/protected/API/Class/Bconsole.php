@@ -142,7 +142,7 @@ class Bconsole extends APIModule {
 	}
 
 	public function bconsoleCommand($director, array $command, $user = null) {
-		if (count($this->config) == 0 || $this->config['enabled'] !== '1') {
+		if (count($this->config) > 0 && $this->config['enabled'] !== '1') {
 			throw new BConsoleException(
 				BconsoleError::MSG_ERROR_BCONSOLE_DISABLED,
 				BconsoleError::ERROR_BCONSOLE_DISABLED
