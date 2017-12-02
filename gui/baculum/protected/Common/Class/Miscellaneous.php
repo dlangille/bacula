@@ -185,8 +185,24 @@ class Miscellaneous extends TModule {
 		return (preg_match('/^[\w:\.\-\s]{1,127}$/', $name) === 1);
 	}
 
+	public function isValidState($state) {
+		return (preg_match('/^\w+$/', $state) === 1);
+	}
+
+	public function isValidNumber($num) {
+		return (preg_match('/^\d+$/', $num) === 1);
+	}
+
+	public function isValidBoolean($val) {
+		return (preg_match('/^(yes|no|0|1|true|false)$/', $val) === 1);
+	}
+
+	public function isValidId($id) {
+		return (preg_match('/^\d+$/', $id) === 1);
+	}
+
 	public function isValidPath($path) {
-		return (preg_match('/^[\p{L}\p{N}\p{Z}\[\]\(\)\-\+\/\\\:\.#~_,{}!]{1,1000}$/', $path) === 1);
+		return (preg_match('/^[\p{L}\p{N}\p{Z}\[\]\(\)\-\+\/\\\:\.#~_,{}!]{0,1000}$/', $path) === 1);
 	}
 
 	public function isValidReplace($replace) {
