@@ -3,10 +3,13 @@
 	<com:TActivePanel ID="RepeaterShow">
 	<com:TActiveRepeater ID="Repeater">
 		<prop:ItemTemplate>
+			<%#$this->SourceTemplateControl->old_pool != $this->SourceTemplateControl->pools[$this->DataItem->poolid] ? '<div class="window-section"><span>' . Prado::localize('Pool:') . ' ' . $this->SourceTemplateControl->pools[$this->DataItem->poolid]  . '<span></div>': ''%>
+
 			<div data-type="item_value" rel="<%#$this->DataItem->mediaid%>" class="slide-window-element" title="<%#($this->DataItem->recycle == 1 && !empty($this->DataItem->lastwritten) && in_array($this->DataItem->volstatus, array('Full', 'Used'))) ? Prado::localize('When expire:') . date( ' Y-m-d H:i:s', (strtotime($this->DataItem->lastwritten) + $this->DataItem->volretention)) : ''%> <%=Prado::localize('Last written:')%> <%=!empty($this->DataItem->lastwritten) ? $this->DataItem->lastwritten : Prado::localize('never written')%>">
 				<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/media-icon.png" alt="" /><%#$this->DataItem->volumename%>
 				<div id="<%#$this->DataItem->volumename%>_sizebar" class="status-bar-<%#strtolower($this->DataItem->volstatus)%>"><%#$this->DataItem->volstatus%></div>
 			</div>
+			<%#!($this->SourceTemplateControl->old_pool = $this->SourceTemplateControl->pools[$this->DataItem->poolid])%>
 		</prop:ItemTemplate>
 	</com:TActiveRepeater>
 	</com:TActivePanel>
@@ -39,7 +42,7 @@
 		/>
 		<com:TActiveTemplateColumn HeaderText="<%[ Pool ]%>" SortExpression="pool">
 			<prop:ItemTemplate>
-				<div title="<%=$this->getParent()->Data['pool']['name']%>"><%=$this->getPage()->VolumeWindow->formatVolumeField($this->getParent()->Data['pool']['name'])%></div>
+				<div title="<%#$this->SourceTemplateControl->pools[$this->getParent()->Data['poolid']]%>"><%#$this->getPage()->VolumeWindow->formatVolumeField($this->SourceTemplateControl->pools[$this->getParent()->Data['poolid']])%></div>
 			</prop:ItemTemplate>
 		</com:TActiveTemplateColumn>
 		<com:TActiveTemplateColumn HeaderText="<%[ Status ]%>" SortExpression="volstatus">

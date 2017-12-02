@@ -34,7 +34,8 @@ class VolumeList extends Portlets implements ISlideWindow {
 	public $ID;
 	public $buttonID;
 	public $windowTitle;
-	public $view;
+	public $pools = array();
+	public $old_pool;
 
 	public function setID($id) {
 		$this->ID = $id;
@@ -61,6 +62,7 @@ class VolumeList extends Portlets implements ISlideWindow {
 	}
 
 	public function prepareData($sender, $param) {
+		$this->setPoolList();
 		$params = $this->getUrlParams(array('volumes'), $this->getPage()->VolumeWindow->ID);
 		$volumes = $this->Application->getModule('api')->get($params);
 		$isDetailView = $_SESSION['view' . $this->getPage()->VolumeWindow->ID] == 'details';
@@ -75,6 +77,13 @@ class VolumeList extends Portlets implements ISlideWindow {
 			$this->Repeater->dataBind();
 			$this->RepeaterShow->Visible = true;
 			$this->DataGridShow->Visible = false;
+		}
+	}
+
+	private function setPoolList() {
+		$pools = $this->Application->getModule('api')->get(array('pools'));
+		for ($i = 0; $i < count($pools->output); $i++) {
+			$this->pools[$pools->output[$i]->poolid] = $pools->output[$i]->name;
 		}
 	}
 
