@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2016 Kern Sibbald
+ * Copyright (C) 2013-2017 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -22,9 +22,9 @@
  
 class JobLog extends BaculumAPIServer {
 	public function get() {
-		$jobid = intval($this->Request['id']);
+		$jobid = $this->Request->contains('id') ? intval($this->Request['id']) : 0;
 		$job = $this->getModule('job')->getJobById($jobid);
-		if(!is_null($job)) {
+		if(is_object($job)) {
 			$log = $this->getModule('joblog')->getLogByJobId($job->jobid);
 			$log = array_map('trim', $log);
 			// Output may contain national characters.

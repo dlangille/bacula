@@ -23,26 +23,30 @@
 class BVFSVersions extends BaculumAPIServer {
 
 	public function get() {
-		$jobid = intval($this->Request['jobid']);
-		$pathid = $this->Request['pathid'];
-		$filenameid = intval($this->Request['filenameid']);
-		$client = $this->Request['client'];
-		$job = $this->getModule('job')->getJobById($jobid);
-		if(!is_null($job)) {
-			$cmd = array(
-				'.bvfs_versions',
-				'client="' . $client . '"',
-				'jobid="' . $job->jobid . '"',
-				'pathid="' . $pathid . '"',
-				'fnid="' . $filenameid . '"'
-			);
-			$result = $this->getModule('bconsole')->bconsoleCommand($this->director, $cmd, $this->user);
-			$this->output = $result->output;
-			$this->error = $result->exitcode;
-		} else {
-			$this->output = BVFSError::MSG_ERROR_JOB_DOES_NOT_EXISTS;
-			$this->error = BVFSError::ERROR_JOB_DOES_NOT_EXISTS;
+		$jobid = $this->Request->contains('jobid') ? intval($this->Request['jobid']) : 0;
+		$pathid = $this->Request->contains('pathid') ? intval($this->Request['pathid']) : 0;
+		$filenameid = $this->Request->contains('filenameid') ? intval($this->Request['filenameid']) : 0;
+		$client = null;
+		if ($this->Request->contains('client') && $this->getModule('misc')->isValidName($this->Request['client'])) {
+			$client = $this->Request['client'];
 		}
+
+		if (is_null($client)) {
+			$this->output = BVFSError::MSG_ERROR_INVALID_CLIENT;
+			$this->error = BVFSError::ERROR_INVALID_CLIENT;
+			return;
+		}
+
+		$cmd = array(
+			'.bvfs_versions',
+			'client="' . $client . '"',
+			'jobid="' . $jobid . '"',
+			'pathid="' . $pathid . '"',
+			'fnid="' . $filenameid . '"'
+		);
+		$result = $this->getModule('bconsole')->bconsoleCommand($this->director, $cmd);
+		$this->output = $result->output;
+		$this->error = $result->exitcode;
 	}
 }
 ?>

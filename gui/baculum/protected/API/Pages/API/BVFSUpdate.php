@@ -22,33 +22,24 @@
 
 class BVFSUpdate extends BaculumAPIServer {
 
-	public function set($param, $ids) {
-		$isValid = true;
-		if (property_exists($ids, 'jobids')) {
-			$jobids = explode(',', $ids->jobids);
-			for($i = 0; $i < count($jobids); $i++) {
-				$job = $this->getModule('job')->getJobById($jobids[$i]);
-				if(is_null($job)) {
-					$isValid = false;
-					break;
-				}
-			}
-		} else {
-			$isValid = false;
+	public function set($id, $params) {
+		$jobids = null;
+		if (property_exists($params, 'jobids') && $this->getModule('misc')->isValidIdsList($params->jobids)) {
+			$jobids = $params->jobids;
 		}
 		
-		if($isValid === true) {
-			$result = $this->getModule('bconsole')->bconsoleCommand(
-				$this->director,
-				array('.bvfs_update', 'jobid="' . $ids->jobids . '"'),
-				$this->user
-			);
-			$this->output = $result->output;
-			$this->error = $result->exitcode;
-		} else {
-			$this->output = BVFSError::MSG_ERROR_JOB_DOES_NOT_EXISTS;
-			$this->error = BVFSError::ERROR_JOB_DOES_NOT_EXISTS;
+		if (is_null($jobids)) {
+			$this->output = BVFSError::MSG_ERROR_INVALID_JOBID_LIST;
+			$this->error = BVFSError::ERROR_INVALID_JOBID_LIST;
+			return;
 		}
+
+		$result = $this->getModule('bconsole')->bconsoleCommand(
+			$this->director,
+			array('.bvfs_update', 'jobid="' . $jobids . '"')
+		);
+		$this->output = $result->output;
+		$this->error = $result->exitcode;
 	}
 }
 ?>

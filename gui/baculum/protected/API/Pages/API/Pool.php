@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2016 Kern Sibbald
+ * Copyright (C) 2013-2017 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -22,9 +22,9 @@
  
 class Pool extends BaculumAPIServer {
 	public function get() {
-		$poolid = intval($this->Request['id']);
+		$poolid = $this->Request->contains('id') ? intval($this->Request['id']) : 0;
 		$pool = $this->getModule('pool')->getPoolById($poolid);
-		$allowedPools = $this->getModule('bconsole')->bconsoleCommand($this->director, array('.pool'), $this->user);
+		$allowedPools = $this->getModule('bconsole')->bconsoleCommand($this->director, array('.pool'));
 		if ($allowedPools->exitcode === 0) {
 			if(!is_null($pool) && in_array($pool->name, $allowedPools->output)) {
 				$this->output = $pool;

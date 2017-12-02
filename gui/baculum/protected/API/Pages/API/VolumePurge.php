@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2016 Kern Sibbald
+ * Copyright (C) 2013-2017 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -22,17 +22,19 @@
  
 class VolumePurge extends BaculumAPIServer {
 	public function get() {
-		$mediaid = intval($this->Request['id']);
+		$mediaid = $this->Request->contains('id') ? intval($this->Request['id']) : 0;
 		$volume = $this->getModule('volume')->getVolumeById($mediaid);
-		if(!is_null($volume)) {
-			$purge = $this->getModule('bconsole')->bconsoleCommand($this->director, array('purge', 'volume="' . $volume->volumename . '"', 'yes'), $this->user);
-			$this->output = $purge->output;
-			$this->error = (integer)$purge->exitcode;
+		if(is_object($volume)) {
+			$result = $this->getModule('bconsole')->bconsoleCommand(
+				$this->director,
+				array('purge', 'volume="' . $volume->volumename . '"', 'yes')
+			);
+			$this->output = $result->output;
+			$this->error = $result->exitcode;
 		} else {
 			$this->output = VolumeError::MSG_ERROR_VOLUME_DOES_NOT_EXISTS;
 			$this->error = VolumeError::ERROR_VOLUME_DOES_NOT_EXISTS;
 		}
 	}
 }
-
 ?>

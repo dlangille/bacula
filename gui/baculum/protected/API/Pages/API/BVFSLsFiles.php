@@ -22,48 +22,42 @@
  
 class BVFSLsFiles extends BaculumAPIServer {
 
-	public function set($param, $ids) {
-		$limit = intval($this->Request['limit']);
-		$offset = intval($this->Request['offset']);
-		$is_valid = true;
-		if (property_exists($ids, 'jobids')) {
-			$jobids = explode(',', $ids->jobids);
-			for($i = 0; $i < count($jobids); $i++) {
-				$job = $this->getModule('job')->getJobById($jobids[$i]);
-				if(is_null($job)) {
-					$is_valid = false;
-					break;
-				}
-			}
-		} else {
-			$is_valid = false;
+	public function set($id, $params) {
+		$limit = $this->Request->contains('limit') ? intval($this->Request['limit']) : 0;
+		$offset = $this->Request->contains('offset') ? intval($this->Request['offset']) : 0;
+		$jobids = null;
+		if (property_exists($params, 'jobids') && $this->getModule('misc')->isValidIdsList($params->jobids)) {
+			$jobids = $params->jobids;
 		}
 
 		$path = null;
-		if (property_exists($ids, 'path')) {
-			$path = $ids->path;
+		if (property_exists($params, 'path') && $this->getModule('misc')->isValidPath($params->path)) {
+			$path = $params->path;
 		}
 
-		if($is_valid === true) {
-			if (!is_null($path)) {
-				$cmd = array('.bvfs_lsfiles', 'jobid="' . $ids->jobids . '"', 'path="' . $path . '"');
-				if($offset > 0) {
-					array_push($cmd, 'offset="' .  $offset . '"');
-				}
-				if($limit > 0) {
-					array_push($cmd, 'limit="' .  $limit . '"');
-				}
-				$result = $this->getModule('bconsole')->bconsoleCommand($this->director, $cmd, $this->user);
-				$this->output = $result->output;
-				$this->error = $result->exitcode;
-			} else {
-				$this->output = BVFSError::ERROR_INVALID_RESTORE_PATH;
-				$this->error = BVFSError::MSG_ERROR_INVALID_RESTORE_PATH;
-			}
-		} else {
-			$this->output = BVFSError::MSG_ERROR_JOB_DOES_NOT_EXISTS;
-			$this->error = BVFSError::ERROR_JOB_DOES_NOT_EXISTS;
+		if (is_null($jobids)) {
+			$this->output = BVFSError::MSG_ERROR_INVALID_JOBID_LIST;
+			$this->error = BVFSError::ERROR_INVALID_JOBID_LIST;
+			return;
 		}
+
+		if (is_null($path)) {
+			$this->output = BVFSError::ERROR_INVALID_RESTORE_PATH;
+			$this->error = BVFSError::MSG_ERROR_INVALID_RESTORE_PATH;
+			return;
+		}
+
+		$cmd = array('.bvfs_lsfiles', 'jobid="' . $jobids . '"', 'path="' . $path . '"');
+
+		if ($offset > 0) {
+			array_push($cmd, 'offset="' .  $offset . '"');
+		}
+		if ($limit > 0) {
+			array_push($cmd, 'limit="' .  $limit . '"');
+		}
+		$result = $this->getModule('bconsole')->bconsoleCommand($this->director, $cmd);
+		$this->output = $result->output;
+		$this->error = $result->exitcode;
 	}
 }
 ?>

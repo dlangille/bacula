@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2016 Kern Sibbald
+ * Copyright (C) 2013-2017 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -26,25 +26,28 @@ class JobShow extends BaculumAPIServer {
 		$error = false;
 		$error_obj = null;
 
-		if (isset($this->Request['id'])) {
+		if ($this->Request->contains('id')) {
 			$jobid = intval($this->Request['id']);
 			$job = $this->getModule('job')->getJobById($jobid);
 			$jobname = property_exists($job, 'name') ? $job->name : null;
-		} elseif (isset($this->Request['name'])) {
-			$allowedJobs = $this->getModule('bconsole')->bconsoleCommand($this->director, array('.jobs'), $this->user);
-			if ($allowedJobs->exitcode === 0) {
-				$jobname = in_array($this->Request['name'], $allowedJobs->output) ? $this->Request['name'] : null;
+		} elseif ($this->Request->contains('name')) {
+			$result = $this->getModule('bconsole')->bconsoleCommand($this->director, array('.jobs'));
+			if ($result->exitcode === 0) {
+				$jobname = in_array($this->Request['name'], $result->output) ? $this->Request['name'] : null;
 			} else {
-				$error_obj = $allowedJobs;
+				$error_obj = $result;
 				$error = true;
 			}
 		}
 
 		if ($error === false) {
-			if(!is_null($jobname)) {
-				$jobShow = $this->getModule('bconsole')->bconsoleCommand($this->director, array('show', 'job="' . $jobname . '"'), $this->user);
-				$this->output = $jobShow->output;
-				$this->error = (integer)$jobShow->exitcode;
+			if(is_string($jobname)) {
+				$job_show = $this->getModule('bconsole')->bconsoleCommand(
+					$this->director,
+					array('show', 'job="' . $jobname . '"')
+				);
+				$this->output = $job_show->output;
+				$this->error = $job_show->exitcode;
 			} else {
 				$this->output = JobError::MSG_ERROR_JOB_DOES_NOT_EXISTS;
 				$this->error = JobError::ERROR_JOB_DOES_NOT_EXISTS;
@@ -55,5 +58,4 @@ class JobShow extends BaculumAPIServer {
 		}
 	}
 }
-
 ?>

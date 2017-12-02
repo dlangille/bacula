@@ -24,12 +24,12 @@ class FileSetsInfo extends BaculumAPIServer {
 
 	public function get() {
 		$filesets = $this->getModule('fileset')->getFileSets();
-		$allowed_filesets = $this->getModule('bconsole')->bconsoleCommand($this->director, array('.fileset'), $this->user);
-		if ($allowed_filesets->exitcode === 0) {
+		$result = $this->getModule('bconsole')->bconsoleCommand($this->director, array('.fileset'));
+		if ($result->exitcode === 0) {
 			if (is_array($filesets) && count($filesets) > 0) {
 				$fs = array();
 				for ($i = 0; $i < count($filesets); $i++) {
-					if(in_array($filesets[$i]->fileset, $allowed_filesets->output)) {
+					if(in_array($filesets[$i]->fileset, $result->output)) {
 						$fs[] = $filesets[$i];
 					}
 				}
@@ -40,8 +40,8 @@ class FileSetsInfo extends BaculumAPIServer {
 				$this->error = FileSetError::ERROR_FILESET_DOES_NOT_EXISTS;
 			}
 		} else {
-			$this->output = $allowed_filesets->output;
-			$this->error = $allowed_filesets->exitcode;
+			$this->output = $result->output;
+			$this->error = $result->exitcode;
 		}
 	}
 }

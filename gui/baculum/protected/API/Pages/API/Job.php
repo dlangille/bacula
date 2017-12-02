@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2016 Kern Sibbald
+ * Copyright (C) 2013-2017 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -22,11 +22,11 @@
  
 class Job extends BaculumAPIServer {
 	public function get() {
-		$jobid = intval($this->Request['id']);
+		$jobid = $this->Request->contains('id') ? intval($this->Request['id']) : 0;
 		$job = $this->getModule('job')->getJobById($jobid);
-		$allowedJobs = $this->getModule('bconsole')->bconsoleCommand($this->director, array('.jobs'), $this->user);
-		if ($allowedJobs->exitcode === 0) {
-			if(!is_null($job) && in_array($job->name, $allowedJobs->output)) {
+		$result = $this->getModule('bconsole')->bconsoleCommand($this->director, array('.jobs'));
+		if ($result->exitcode === 0) {
+			if(!is_null($job) && in_array($job->name, $result->output)) {
 				$this->output = $job;
 				$this->error = JobError::ERROR_NO_ERRORS;
 			} else {
@@ -34,8 +34,8 @@ class Job extends BaculumAPIServer {
 				$this->error = JobError::ERROR_JOB_DOES_NOT_EXISTS;
 			}
 		} else {
-			$this->output = $allowedJobs->output;
-			$this->error = $allowedJobs->exitcode;
+			$this->output = $result->output;
+			$this->error = $result->exitcode;
 		}
 	}
 
@@ -43,7 +43,10 @@ class Job extends BaculumAPIServer {
 		$jobid = intval($id);
 		$job = $this->getModule('job')->getJobById($jobid);
 		if(!is_null($job)) {
-			$delete = $this->getModule('bconsole')->bconsoleCommand($this->director, array('delete', 'jobid="' . $job->jobid . '"'), $this->user);
+			$delete = $this->getModule('bconsole')->bconsoleCommand(
+				$this->director,
+				array('delete', 'jobid="' . $job->jobid . '"')
+			);
 			$this->output = $delete->output;
 			$this->error = (integer)$delete->exitcode;
 		} else {

@@ -23,13 +23,12 @@
 class ClientsShow extends BaculumAPIServer {
 
 	public function get() {
-		$clients = $this->getModule('bconsole')->bconsoleCommand(
+		$result = $this->getModule('bconsole')->bconsoleCommand(
 			$this->director,
-			array('show', 'clients'),
-			$this->user
+			array('show', 'clients')
 		);
-		$this->output = $clients->output;
-		$this->error = $clients->exitcode;
+		$this->output = $result->output;
+		$this->error = $result->exitcode;
 	}
 }
 ?>

@@ -114,10 +114,10 @@ class RestoreRun extends BaculumAPIServer {
 		}
 		$command[] = 'yes';
 
-		$restore = $this->getModule('bconsole')->bconsoleCommand($this->director, $command, $this->user);
+		$restore = $this->getModule('bconsole')->bconsoleCommand($this->director, $command);
 		$this->removeTmpRestoreTable($rfile);
 		$this->output = $restore->output;
-		$this->error = (integer)$restore->exitcode;
+		$this->error = $restore->exitcode;
 	}
 
 	private function removeTmpRestoreTable($tableName) {

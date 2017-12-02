@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2016 Kern Sibbald
+ * Copyright (C) 2013-2017 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -22,11 +22,11 @@
  
 class FileSet extends BaculumAPIServer {
 	public function get() {
-		$filesetid = intval($this->Request['id']);
+		$filesetid = $this->Request->contains('id') ? intval($this->Request['id']) : 0;
 		$fileset = $this->getModule('fileset')->getFileSetById($filesetid);
-		$allowedFileSets = $this->getModule('bconsole')->bconsoleCommand($this->director, array('.fileset'), $this->user);
-		if ($allowedFileSets->exitcode === 0) {
-			if(!is_null($fileset) && in_array($fileset->fileset, $allowedFileSets->output)) {
+		$result = $this->getModule('bconsole')->bconsoleCommand($this->director, array('.fileset'));
+		if ($result->exitcode === 0) {
+			if(!is_null($fileset) && in_array($fileset->fileset, $result->output)) {
 				$this->output = $fileset;
 				$this->error = FileSetError::ERROR_NO_ERRORS;
 			} else {
@@ -34,8 +34,8 @@ class FileSet extends BaculumAPIServer {
 				$this->error = FileSetError::ERROR_FILESET_DOES_NOT_EXISTS;
 			}
 		} else {
-			$this->output = $allowedFileSets->output;
-			$this->error = $allowedFileSets->exitcode;
+			$this->output = $result->output;
+			$this->error = $result->exitcode;
 		}
 	}
 }

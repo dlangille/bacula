@@ -22,8 +22,8 @@
 
 class BVFSClearCache extends BaculumAPIServer {
 
-	public function set($ids, $params) {
-		$result = $this->getModule('bconsole')->bconsoleCommand($this->director, array('.bvfs_clear_cache', 'yes'), $this->user);
+	public function set($id, $params) {
+		$result = $this->getModule('bconsole')->bconsoleCommand($this->director, array('.bvfs_clear_cache', 'yes'));
 		$this->output = $result->output;
 		$this->error = $result->exitcode;
 	}

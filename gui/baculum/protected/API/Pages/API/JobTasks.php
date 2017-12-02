@@ -22,59 +22,59 @@
  
 class JobTasks extends BaculumAPIServer {
 	public function get() {
-		$limit = intval($this->Request['limit']);
+		$limit = $this->Request->contains('limit') ? intval($this->Request['limit']) : 0;
 		$jobs_cmd = array('.jobs');
 		if ($this->Request->contains('type') && array_key_exists($this->Request['type'], $this->getModule('misc')->job_types)) {
 			array_push($jobs_cmd, 'type="' . $this->Request['type']. '"');
 		}
 
 		$directors = $this->getModule('bconsole')->getDirectors();
-		if($directors->exitcode === 0) {
-			$jobs = array();
-			$error = false;
-			$error_obj = null;
-			for($i = 0; $i < count($directors->output); $i++) {
-				$jobsList = $this->getModule('bconsole')->bconsoleCommand($directors->output[$i], $jobs_cmd, $this->user);
-				if ($jobsList->exitcode != 0) {
-					$error_obj = $jobsList;
-					$error = true;
-					break;
-				}
-				$jobsshow = $this->getModule('bconsole')->bconsoleCommand($directors->output[$i], array('show', 'jobs'), $this->user);
-				if ($jobsshow->exitcode != 0) {
-					$error_obj = $jobsshow;
-					$error = true;
-					break;
-				}
-				$jobs[$directors->output[$i]] = array();
-				for($j = 0; $j < count($jobsList->output); $j++) {
-					/**
-					 * Checking by "show job" command is ugly way to be sure that is reading jobname but not some 
-					 * random output (eg. "You have messages." or debugging).
-					 * For now I did not find nothing better for be sure that output contains job.
-					 */
-					for($k = 0; $k < count($jobsshow->output); $k++) {
-						if(preg_match('/^Job: name=' . $jobsList->output[$j] . '.*/', $jobsshow->output[$k]) === 1) {
-							$jobs[$directors->output[$i]][] = $jobsList->output[$j];
-							break;
-						}
-					}
-					// limit per director, not for entire elements
-					if($limit > 0 && count($jobs[$directors->output[$i]]) === $limit) {
+		if($directors->exitcode != 0) {
+			$this->output = $directors->output;
+			$this->error = $directors->exitcode;
+			return;
+		}
+		$jobs = array();
+		$error = false;
+		$error_obj = null;
+		for($i = 0; $i < count($directors->output); $i++) {
+			$job_list = $this->getModule('bconsole')->bconsoleCommand($directors->output[$i], $jobs_cmd);
+			if ($job_list->exitcode != 0) {
+				$error_obj = $job_list;
+				$error = true;
+				break;
+			}
+			$jobs_show = $this->getModule('bconsole')->bconsoleCommand($directors->output[$i], array('show', 'jobs'));
+			if ($jobs_show->exitcode != 0) {
+				$error_obj = $jobs_show;
+				$error = true;
+				break;
+			}
+			$jobs[$directors->output[$i]] = array();
+			for($j = 0; $j < count($job_list->output); $j++) {
+				/**
+				 * Checking by "show job" command is ugly way to be sure that is reading jobname but not some 
+				 * random output (eg. "You have messages." or debugging).
+				 * For now I did not find nothing better for be sure that output contains job.
+				 */
+				for($k = 0; $k < count($jobs_show->output); $k++) {
+					if(preg_match('/^Job: name=' . $job_list->output[$j] . '.*/', $jobs_show->output[$k]) === 1) {
+						$jobs[$directors->output[$i]][] = $job_list->output[$j];
 						break;
 					}
 				}
+				// limit per director, not for entire elements
+				if($limit > 0 && count($jobs[$directors->output[$i]]) === $limit) {
+					break;
+				}
 			}
-			if ($error === true) {
-				$this->output = $error_obj->output;
-				$this->error = $error_obj->exitcode;
-			} else {
-				$this->output = $jobs;
-				$this->error =  BconsoleError::ERROR_NO_ERRORS;
-			}
+		}
+		if ($error === true) {
+			$this->output = $error_obj->output;
+			$this->error = $error_obj->exitcode;
 		} else {
-			$this->output = $directors->output;
-			$this->error = $directors->exitcode;
+			$this->output = $jobs;
+			$this->error =  BconsoleError::ERROR_NO_ERRORS;
 		}
 	}
 }

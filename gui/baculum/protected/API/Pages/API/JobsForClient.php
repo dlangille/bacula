@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2016 Kern Sibbald
+ * Copyright (C) 2013-2017 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -21,23 +21,22 @@
  */
  
 class JobsForClient extends BaculumAPIServer {
+
 	public function get() {
-		$allowed = array();
-		$clientid = intval($this->Request['id']);
+		$allowed_jobs = array();
+		$clientid = $this->Request->contains('id') ? intval($this->Request['id']) : 0;
 		$error = false;
-		if (!is_null($this->user)) {
-			$allowed_jobs = $this->getModule('bconsole')->bconsoleCommand($this->director, array('.jobs'), $this->user);
-			if ($allowed_jobs->exitcode === 0) {
-				$allowed = $allowed_jobs->output;
-			} else {
-				$error = true;
-				$this->output = $allowed_jobs->output;
-				$this->error = $allowed_jobs->exitcode;
-			}
+		$result = $this->getModule('bconsole')->bconsoleCommand($this->director, array('.jobs'));
+		if ($result->exitcode === 0) {
+			$allowed_jobs = $result->output;
+		} else {
+			$error = true;
+			$this->output = $result->output;
+			$this->error = $result->exitcode;
 		}
 
 		if ($error === false) {
-			$jobs = $this->getModule('job')->getJobsForClient($clientid, $allowed);
+			$jobs = $this->getModule('job')->getJobsForClient($clientid, $allowed_jobs);
 			$this->output = $jobs;
 			$this->error = JobError::ERROR_NO_ERRORS;
 		}

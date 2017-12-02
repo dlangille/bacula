@@ -42,9 +42,11 @@ class BconsoleError extends GenericError {
 
 	const ERROR_BCONSOLE_CONNECTION_PROBLEM = 4;
 	const ERROR_INVALID_DIRECTOR = 5;
+	const ERROR_BCONSOLE_DISABLED = 11;
 
 	const MSG_ERROR_BCONSOLE_CONNECTION_PROBLEM = 'Problem with connection to bconsole.';
 	const MSG_ERROR_INVALID_DIRECTOR = 'Invalid director.';
+	const MSG_ERROR_BCONSOLE_DISABLED = 'Bconsole support is disabled.';
 }
 
 class AuthorizationError extends GenericError {
@@ -111,19 +113,21 @@ class FileSetError extends GenericError {
 }
 
 class BVFSError extends GenericError {
-	const ERROR_INVALID_JOBID_LIST = 70;
 	const ERROR_INVALID_RPATH = 71;
 	const ERROR_INVALID_RESTORE_PATH = 72;
-	const ERROR_INVALID_FILEID_LIST = 73;
-	const ERROR_INVALID_FILEINDEX_LIST = 74;
-	const ERROR_INVALID_DIRID_LIST = 75;
+	const ERROR_INVALID_JOBID_LIST = 73;
+	const ERROR_INVALID_FILEID_LIST = 74;
+	const ERROR_INVALID_FILEINDEX_LIST = 75;
+	const ERROR_INVALID_DIRID_LIST = 76;
+	const ERROR_INVALID_CLIENT = 77;
 
-	const MSG_ERROR_INVALID_JOBID_LIST = 'Invalid jobid list.';
 	const MSG_ERROR_INVALID_RPATH = 'Inputted path for restore is invalid. Proper format is b2[0-9]+.';
 	const MSG_ERROR_INVALID_RESTORE_PATH = 'Inputted BVFS path param is invalid.';
+	const MSG_ERROR_INVALID_JOBID_LIST = 'Invalid jobid list.';
 	const MSG_ERROR_INVALID_FILEID_LIST = 'Invalid fileid list.';
 	const MSG_ERROR_INVALID_FILEINDEX_LIST = 'Invalid file index list.';
 	const MSG_ERROR_INVALID_DIRID_LIST = 'Invalid dirid list.';
+	const MSG_ERROR_INVALID_CLIENT = 'Invalid client name.';
 }
 
 class JSONToolsError extends GenericError {

@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2016 Kern Sibbald
+ * Copyright (C) 2013-2017 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -23,21 +23,21 @@
 class Storages extends BaculumAPIServer {
 
 	public function get() {
-		$limit = intval($this->Request['limit']);
+		$limit = $this->Request->contains('limit') ? intval($this->Request['limit']) : 0;
 		$storages = $this->getModule('storage')->getStorages($limit);
-		$allowedStorages = $this->getModule('bconsole')->bconsoleCommand($this->director, array('.storage'), $this->user);
-		if ($allowedStorages->exitcode === 0) {
-			$storagesOutput = array();
+		$result = $this->getModule('bconsole')->bconsoleCommand($this->director, array('.storage'));
+		if ($result->exitcode === 0) {
+			$storages_output = array();
 			foreach($storages as $storage) {
-				if(in_array($storage->name, $allowedStorages->output)) {
-					$storagesOutput[] = $storage;
+				if(in_array($storage->name, $result->output)) {
+					$storages_output[] = $storage;
 				}
 			}
-			$this->output = $storagesOutput;
+			$this->output = $storages_output;
 			$this->error = StorageError::ERROR_NO_ERRORS;
 		} else {
-			$this->output = $allowedStorages->output;
-			$this->error = $allowedStorages->exitcode;
+			$this->output = $result->output;
+			$this->error = $result->exitcode;
 		}
 	}
 }

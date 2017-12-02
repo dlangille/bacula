@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2016 Kern Sibbald
+ * Copyright (C) 2013-2017 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -22,9 +22,9 @@
  
 class Volumes extends BaculumAPIServer {
 	public function get() {
-		$limit = intval($this->Request['limit']);
-		$volumes = $this->getModule('volume')->getVolumes($limit);
-		$this->output = $volumes;
+		$limit = $this->Request->contains('limit') ? intval($this->Request['limit']) : 0;
+		$result = $this->getModule('volume')->getVolumes($limit);
+		$this->output = $result;
 		$this->error = VolumeError::ERROR_NO_ERRORS;
 	}
 }

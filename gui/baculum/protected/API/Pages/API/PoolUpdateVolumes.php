@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2016 Kern Sibbald
+ * Copyright (C) 2013-2017 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -23,13 +23,17 @@
 class PoolUpdateVolumes extends BaculumAPIServer {
 
 	public function set($id, $params) {
-		$pool = $this->getModule('pool')->getPoolById($id);
-		if(!is_null($pool)) {
+		$poolid = intval($id);
+		$pool = $this->getModule('pool')->getPoolById($poolid);
+		if(is_object($pool)) {
 			$voldata = $this->getModule('volume')->getVolumesByPoolId($pool->poolid);
-			if(!is_null($voldata)) {
-				$poolUpdateVolumes = $this->getModule('bconsole')->bconsoleCommand($this->director, array('update', 'volume="' .  $voldata->volumename . '"', 'allfrompool="' . $pool->name . '"'), $this->user);
-				$this->output = $poolUpdateVolumes->output;
-				$this->error = (integer)$poolUpdateVolumes->exitcode;
+			if(is_object($voldata)) {
+				$result = $this->getModule('bconsole')->bconsoleCommand(
+					$this->director,
+					array('update', 'volume="' .  $voldata->volumename . '"', 'allfrompool="' . $pool->name . '"')
+				);
+				$this->output = $result->output;
+				$this->error = $result->exitcode;
 			} else {
 				$this->output = PoolError::MSG_ERROR_NO_VOLUMES_IN_POOL_TO_UPDATE;
 				$this->error = PoolError::ERROR_NO_VOLUMES_IN_POOL_TO_UPDATE;

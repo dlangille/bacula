@@ -20,44 +20,16 @@
  * Bacula(R) is a registered trademark of Kern Sibbald.
  */
  
-/**
- * Clients resources.
- * 
- * Data format:
- * {
- *     "output": [
- *         {
- *             "clientid": client ID,
- *             "name": "client name",
- *             "uname": "client name and environment (uname -a)",
- *             "autoprune": 0 for disabled, 1 for enabled,
- *             "fileretention": file retention period in seconds,
- *             "jobretention": job retention period in seconds,
- *         },
- *         {
- *             "clientid": client ID,
- *             "name": "client name",
- *             "uname": "client name and environment (uname -a)",
- *             "autoprune": 0 for disabled, 1 for enabled,
- *             "fileretention": file retention period in seconds,
- *             "jobretention": job retention period in seconds,
- *         }
- * 		etc...
- *     ],
- *     "error": 0 for no errors, 1 for error
- * }
- */
-
 class Clients extends BaculumAPIServer {
 
 	public function get() {
-		$limit = intval($this->Request['limit']);
+		$limit = $this->Request->contains('limit') ? intval($this->Request['limit']) : 0;
 		$clients = $this->getModule('client')->getClients($limit);
-		$allowed_clients = $this->getModule('bconsole')->bconsoleCommand($this->director, array('.client'), $this->user);
-		if ($allowed_clients->exitcode === 0) {
+		$result = $this->getModule('bconsole')->bconsoleCommand($this->director, array('.client'));
+		if ($result->exitcode === 0) {
 			$clients_output = array();
 			foreach($clients as $client) {
-				if(in_array($client->name, $allowed_clients->output)) {
+				if(in_array($client->name, $result->output)) {
 					$clients_output[] = $client;
 				}
 			}
@@ -65,8 +37,8 @@ class Clients extends BaculumAPIServer {
 			$this->error = ClientError::ERROR_NO_ERRORS;
 		} else {
 
-			$this->output = $allowed_clients->output;
-			$this->error = $allowed_clients->exitcode;
+			$this->output = $result->output;
+			$this->error = $result->exitcode;
 		}
 	}
 }

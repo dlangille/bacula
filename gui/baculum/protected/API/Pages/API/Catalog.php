@@ -21,9 +21,10 @@
  */
  
 class Catalog extends BaculumAPIServer {
+
 	public function get() {
 		$result = $this->getModule('db')->testCatalog();
-		if ($result === true) {
+		if ($result) {
 			$this->output = DatabaseError::MSG_ERROR_NO_ERRORS;
 			$this->error = DatabaseError::ERROR_NO_ERRORS;
 		} else {

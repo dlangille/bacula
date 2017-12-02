@@ -23,16 +23,15 @@
 class BVFSGetJobids extends BaculumAPIServer {
 
 	public function get() {
-		$jobid = intval($this->Request['id']);
-		$job = $this->getModule('job')->getJobById($jobid);
-		if(!is_null($job)) {
-			$cmd = array('.bvfs_get_jobids', 'jobid="' . $job->jobid . '"');
-			$result = $this->getModule('bconsole')->bconsoleCommand($this->director, $cmd, $this->user);
+		$jobid = $this->Request->contains('id') ? intval($this->Request['id']) : 0;
+		if ($jobid > 0) {
+			$cmd = array('.bvfs_get_jobids', 'jobid="' . $jobid . '"');
+			$result = $this->getModule('bconsole')->bconsoleCommand($this->director, $cmd);
 			$this->output = $result->output;
 			$this->error = $result->exitcode;
 		} else {
-			$this->output = BVFSError::MSG_ERROR_JOB_DOES_NOT_EXISTS;
-			$this->error = BVFSError::ERROR_JOB_DOES_NOT_EXISTS;
+			$this->output = BVFSError::MSG_ERROR_INVALID_JOBID;
+			$this->error = BVFSError::ERROR_INVALID_JOBID;
 		}
 	}
 }

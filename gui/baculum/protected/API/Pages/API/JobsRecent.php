@@ -22,7 +22,7 @@
  
 class JobsRecent extends BaculumAPIServer {
 	public function get() {
-		$jobname = $this->Request['name'];
+		$jobname = $this->Request->contains('name') ? $this->Request['name'] : '';
 		$clientid = null;
 		if ($this->Request->contains('clientid')) {
 			$clientid = intval($this->Request['clientid']);

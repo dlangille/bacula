@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2016 Kern Sibbald
+ * Copyright (C) 2013-2017 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -24,9 +24,9 @@ class ConsoleCommand extends BaculumAPIServer {
 
 	public function set($id, $params) {
 		$params = (array)$params;
-		$console = $this->getModule('bconsole')->bconsoleCommand($this->director, $params, $this->user);
-		$this->output = $console->output;
-		$this->error = (integer)$console->exitcode;
+		$result = $this->getModule('bconsole')->bconsoleCommand($this->director, $params);
+		$this->output = $result->output;
+		$this->error = $result->exitcode;
 	}
 }
 
