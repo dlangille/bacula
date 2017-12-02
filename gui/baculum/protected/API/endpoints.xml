@@ -87,8 +87,6 @@
 	<url ServiceParameter="API.FileSet" pattern="api/filesets/{id}/" parameters.id="\d+" />
 	<url ServiceParameter="API.FileSetsInfo" pattern="api/filesets/info/" />
 	<!-- Bacula config module endpoints -->
-	<url ServiceParameter="API.JSONToolsTest" pattern="api/config/tools/test/" />
-	<url ServiceParameter="API.ConfigDirTest" pattern="api/config/directory/test/" />
 	<url ServiceParameter="API.Config" pattern="api/config/" />
 	<url ServiceParameter="API.Config" pattern="api/config/{component_type}/" parameters.component_type="[a-z]+" />
 	<url ServiceParameter="API.Config" pattern="api/config/{component_type}/{resource_type}/" parameters.component_type="[a-z]+" parameters.resource_type="[a-zA-Z]+" />

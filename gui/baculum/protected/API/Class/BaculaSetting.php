@@ -487,12 +487,6 @@ class BaculaSetting extends APIModule {
 		}
 		return $tool_type;
 	}
-
-	// REMOVE ???
-	public function testConfigDir($path) {
-		$valid = is_writable($path);
-		return $valid;
-	}
 }
 function overwrite_directives_callback($directive_name, $directive_value) {
 	$directive = '';
