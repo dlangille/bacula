@@ -843,9 +843,9 @@
 			},
 			"Base": {
 				"Required": false,
-				"ValueType": "alist_res",
+				"ValueType": "res",
 				"DefaultValue": 0,
-				"FieldType": "ComboBox",
+				"FieldType": "ListBox",
 				"Resource": "Job"
 			}
 		},
@@ -2275,9 +2275,9 @@
 			},
 			"Base": {
 				"Required": false,
-				"ValueType": "alist_res",
+				"ValueType": "res",
 				"DefaultValue": 0,
-				"FieldType": "ComboBox",
+				"FieldType": "ListBox",
 				"Resource": "Job"
 			}
 		}
@@ -2932,9 +2932,10 @@
 			},
 			"Device": {
 				"Required": true,
-				"ValueType": "alist_res",
+				"ValueType": "res",
 				"DefaultValue": 0,
-				"FieldType": "ComboBox"
+				"FieldType": "ListBox",
+				"Resource": "Device"
 			},
 			"ChangerDevice": {
 				"Required": true,

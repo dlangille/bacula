@@ -36,6 +36,7 @@ class DirectiveFileSet extends DirectiveListTemplate {
 		'DirectiveBoolean',
 		'DirectiveText',
 		'DirectiveComboBox',
+		'DirectiveListBox',
 		'DirectiveInteger'
 	);
 

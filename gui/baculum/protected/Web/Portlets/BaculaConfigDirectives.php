@@ -27,6 +27,7 @@ Prado::using('Application.Web.Portlets.DirectiveListTemplate');
 Prado::using('Application.Web.Portlets.DirectiveBoolean');
 Prado::using('Application.Web.Portlets.DirectiveComboBox');
 Prado::using('Application.Web.Portlets.DirectiveInteger');
+Prado::using('Application.Web.Portlets.DirectiveListBox');
 Prado::using('Application.Web.Portlets.DirectiveText');
 Prado::using('Application.Web.Portlets.DirectiveTimePeriod');
 Prado::using('Application.Web.Portlets.DirectiveRunscript');
@@ -45,6 +46,7 @@ class BaculaConfigDirectives extends DirectiveListTemplate {
 		'DirectiveBoolean',
 		'DirectiveComboBox',
 		'DirectiveInteger',
+		'DirectiveListBox',
 		'DirectiveText',
 		'DirectiveTimePeriod'
 	);
@@ -54,6 +56,10 @@ class BaculaConfigDirectives extends DirectiveListTemplate {
 		'DirectiveSchedule',
 		'DirectiveMessages',
 		'DirectiveRunscript'
+	);
+
+	private $field_multple_values = array(
+		'ListBox'
 	);
 
 	private function getConfigData($host, array $parameters) {
@@ -133,7 +139,7 @@ class BaculaConfigDirectives extends DirectiveListTemplate {
 				}
 			}
 
-			if (!is_array($directive_value) && !is_object($directive_value)) {
+			if ((!is_array($directive_value) && !is_object($directive_value)) || in_array($field_type, $this->field_multple_values)) {
 				$directive_value = array($directive_value);
 			}
 			if (is_object($directive_value)) {

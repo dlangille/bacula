@@ -1501,3 +1501,6 @@ msgstr "Volume"
 
 msgid "During restore there will be used following volumes:"
 msgstr "During restore there will be used following volumes:"
+
+msgid "Use Ctrl + Mouse Click to change selection"
+msgstr "Use Ctrl + Mouse Click to change selection"

@@ -30,6 +30,11 @@
 						<com:Application.Web.Portlets.DirectiveComboBox />
 					</prop:TrueTemplate>
 				</com:Application.Web.Portlets.BConditional>
+				<com:Application.Web.Portlets.BConditional BCondition="<%#($this->DataItem['field_type'] === 'ListBox')%>">
+					<prop:TrueTemplate>
+						<com:Application.Web.Portlets.DirectiveListBox />
+					</prop:TrueTemplate>
+				</com:Application.Web.Portlets.BConditional>
 				<com:Application.Web.Portlets.BConditional BCondition="<%#($this->DataItem['field_type'] === 'FileSet')%>">
 					<prop:TrueTemplate>
 						<com:Application.Web.Portlets.DirectiveFileSet />

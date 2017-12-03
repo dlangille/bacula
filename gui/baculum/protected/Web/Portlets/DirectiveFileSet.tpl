@@ -29,6 +29,11 @@
 				<com:Application.Web.Portlets.DirectiveInteger />
 			</prop:TrueTemplate>
 		</com:Application.Web.Portlets.BConditional>
+		<com:Application.Web.Portlets.BConditional BCondition="<%#($this->DataItem['field_type'] === 'ListBox')%>">
+			<prop:TrueTemplate>
+				<com:Application.Web.Portlets.DirectiveListBox />
+			</prop:TrueTemplate>
+		</com:Application.Web.Portlets.BConditional>
 	</prop:ItemTemplate>
 	<prop:FooterTemplate>
 	</fieldset>

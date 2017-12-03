@@ -1508,3 +1508,6 @@ msgstr "Wolumen"
 
 msgid "During restore there will be used following volumes:"
 msgstr "Podczas zadania przywracania danych potrzebne będą następujące wolumeny:"
+
+msgid "Use Ctrl + Mouse Click to change selection"
+msgstr "Aby zmienić wybór, użyj Ctrl + klik myszy"
