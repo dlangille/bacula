@@ -430,9 +430,6 @@
 /* Define to 1 if you have the `fdatasync' function. */
 #undef HAVE_FDATASYNC
 
-/* Define to 1 if you have the `realpath' function. */
-#undef HAVE_REALPATH
-
 /* Define to 1 if you have the `fork' function. */
 #undef HAVE_FORK
 
@@ -501,6 +498,9 @@
 
 /* Define to 1 if you have the 'getproplist' function. */
 #undef HAVE_GETPROPLIST
+
+/* Define to 1 if you have the `getrlimit' function. */
+#undef HAVE_GETRLIMIT
 
 /* Define if the GNU gettext() function is already present or preinstalled. */
 #undef HAVE_GETTEXT
@@ -742,6 +742,9 @@
 
 /* Set to enable readline support */
 #undef HAVE_READLINE
+
+/* Define to 1 if you have the `realpath' function. */
+#undef HAVE_REALPATH
 
 /* Define to 1 if you have the <regex.h> header file. */
 #undef HAVE_REGEX_H

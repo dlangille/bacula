@@ -28635,6 +28635,28 @@ _ACEOF
 fi
 done
 
+for ac_func in realpath
+do :
+  ac_fn_c_check_func "$LINENO" "realpath" "ac_cv_func_realpath"
+if test "x$ac_cv_func_realpath" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_REALPATH 1
+_ACEOF
+
+fi
+done
+
+for ac_func in getrlimit
+do :
+  ac_fn_c_check_func "$LINENO" "getrlimit" "ac_cv_func_getrlimit"
+if test "x$ac_cv_func_getrlimit" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_GETRLIMIT 1
+_ACEOF
+
+fi
+done
+
 
 for ac_func in chflags
 do :
