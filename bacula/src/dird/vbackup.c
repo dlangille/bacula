@@ -423,21 +423,11 @@ void vbackup_cleanup(JCR *jcr, int TermCode)
       case JS_ErrorTerminated:
          term_msg = _("*** Backup Error ***");
          msg_type = M_ERROR;          /* Generate error message */
-         if (jcr->store_bsock) {
-            jcr->store_bsock->signal(BNET_TERMINATE);
-            if (jcr->SD_msg_chan_started) {
-               pthread_cancel(jcr->SD_msg_chan);
-            }
-         }
+         terminate_sd_msg_chan_thread(jcr);
          break;
       case JS_Canceled:
          term_msg = _("Backup Canceled");
-         if (jcr->store_bsock) {
-            jcr->store_bsock->signal(BNET_TERMINATE);
-            if (jcr->SD_msg_chan_started) {
-               pthread_cancel(jcr->SD_msg_chan);
-            }
-         }
+         terminate_sd_msg_chan_thread(jcr);
          break;
       default:
          term_msg = term_code;

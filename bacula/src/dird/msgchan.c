@@ -501,6 +501,38 @@ void wait_for_storage_daemon_termination(JCR *jcr)
    jcr->setJobStatus(JS_Terminated);
 }
 
+void terminate_sd_msg_chan_thread(JCR *jcr)
+{
+   if (jcr->store_bsock) {
+      jcr->store_bsock->signal(BNET_TERMINATE);
+      jcr->lock();
+      if (  !jcr->sd_msg_thread_done
+          && jcr->SD_msg_chan_started
+          && !pthread_equal(jcr->SD_msg_chan, pthread_self())) {
+         Dmsg1(800, "Send kill to SD msg chan jid=%d\n", jcr->JobId);
+         int cnt = 6; // 6*5sec
+         while (!jcr->sd_msg_thread_done && cnt>0) {
+            jcr->unlock();
+            pthread_kill(jcr->SD_msg_chan, TIMEOUT_SIGNAL);
+            struct timeval tv;
+            struct timezone tz;
+            struct timespec timeout;
+
+            gettimeofday(&tv, &tz);
+            timeout.tv_nsec = 0;
+            timeout.tv_sec = tv.tv_sec + 5; /* wait 5 seconds */
+            Dmsg0(00, "I'm waiting for message thread termination.\n");
+            P(mutex);
+            pthread_cond_timedwait(&jcr->term_wait, &mutex, &timeout);
+            V(mutex);
+            jcr->lock();
+            cnt--;
+         }
+      }
+      jcr->unlock();
+   }
+}
+
 /*
  * Send bootstrap file to Storage daemon.
  *  This is used for restore, verify VolumeToCatalog, migration,
