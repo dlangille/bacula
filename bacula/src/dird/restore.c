@@ -56,11 +56,10 @@ static char OKstoreend[]  = "2000 OK storage end\n";
 /* Responses received from the Storage daemon */
 static char OKbootstrap[] = "3000 OK bootstrap\n";
 
-static void build_restore_command(JCR *jcr, POOL_MEM &ret)
+static void get_restore_params(JCR *jcr, POOL_MEM &ret_where, char *ret_replace, char **ret_restorecmd)
 {
    char replace, *where, *cmd;
    char empty = '\0';
-   char files[100];
 
    /* Build the restore command */
 
@@ -91,16 +90,34 @@ static void build_restore_command(JCR *jcr, POOL_MEM &ret)
       cmd   = restorecmd;
    }
 
+   pm_strcpy(ret_where, where); /* Where can be a local variable */
+   if (ret_replace) {
+      *ret_replace = replace;
+   }
+   if (ret_restorecmd) {
+      *ret_restorecmd = cmd;
+   }
+}
+
+static void build_restore_command(JCR *jcr, POOL_MEM &ret)
+{
+   POOL_MEM where;
+   char replace;
+   char *cmd;
+   char files[100];
+
+   get_restore_params(jcr, where, &replace, &cmd);
+
    jcr->prefix_links = jcr->job->PrefixLinks;
 
-   bash_spaces(where);
+   bash_spaces(where.c_str());
    if (jcr->FDVersion < 7) {
-      Mmsg(ret, cmd, "", replace, jcr->prefix_links, where);
+      Mmsg(ret, cmd, "", replace, jcr->prefix_links, where.c_str());
    } else {
       snprintf(files, sizeof(files), "files=%d ", jcr->ExpectedFiles);
-      Mmsg(ret, cmd, files, replace, jcr->prefix_links, where);
+      Mmsg(ret, cmd, files, replace, jcr->prefix_links, where.c_str());
    }
-   unbash_spaces(where);
+   unbash_spaces(where.c_str());
 }
 
 struct bootstrap_info
@@ -611,10 +628,13 @@ bool do_restore_init(JCR *jcr)
  */
 void restore_cleanup(JCR *jcr, int TermCode)
 {
+   POOL_MEM where;
+   char creplace;
+   const char *replace;
    char sdt[MAX_TIME_LENGTH], edt[MAX_TIME_LENGTH];
    char ec1[30], ec2[30], ec3[30], ec4[30], elapsed[50];
    char term_code[100], fd_term_msg[100], sd_term_msg[100];
-   const char *term_msg, *replace = _("N/A");
+   const char *term_msg;
    int msg_type = M_INFO;
    double kbps;
    utime_t RunTime;
@@ -682,8 +702,10 @@ void restore_cleanup(JCR *jcr, int TermCode)
       kbps = 0;
    }
 
+   get_restore_params(jcr, where, &creplace, NULL);
+
    for (int i=0; ReplaceOptions[i].name; i++) {
-      if (ReplaceOptions[i].token == (int)jcr->replace) {
+      if (ReplaceOptions[i].token == (int)creplace) {
          replace = ReplaceOptions[i].name;
       }
    }
@@ -714,7 +736,7 @@ void restore_cleanup(JCR *jcr, int TermCode)
         jcr->jr.JobId,
         jcr->jr.Job,
         jcr->client->name(),
-        jcr->RegexWhere?jcr->RegexWhere:jcr->where,
+        where.c_str(),
         replace,
         sdt,
         edt,
