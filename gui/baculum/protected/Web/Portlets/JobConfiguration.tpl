@@ -2,6 +2,16 @@
 <com:TContent ID="ConfigurationWindowContent">
 	<com:TActivePanel DefaultButton="Run">
 		<h4><%[ Job: ]%> [ <com:TActiveLabel ID="JobID" /> ] <com:TActiveLabel ID="JobName" Style="word-break: break-all;" /></h4>
+		<com:TActiveHiddenField ID="GoBack" />
+		<script type="text/javascript">
+			var job_go_back = function() {
+				var prev_window = document.getElementById('<%=$this->GoBack->ClientID%>').value;
+				if (prev_window) {
+					ConfigurationWindow.getObj(prev_window).show();
+				}
+			};
+		</script>
+		<a id="job_go_back" href="javascript:void(0)" onclick="job_go_back()" style="display: none"><strong>&laquo; <%[ Go back ]%></strong></a>
 		<span class="text tab tab_active" rel="job_actions_tab"><%[ Actions ]%></span>
 		<span class="text tab" rel="job_console_tab"><%[ Console status ]%></span>
 		<hr class="tabs" />

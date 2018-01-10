@@ -37,13 +37,13 @@ class JobConfiguration extends Portlets {
 
 	public $verifyOptions = array('jobname' => 'Verify by Job Name', 'jobid' => 'Verify by JobId');
 
-	public function configure($jobId, $params = array()) {
-		$jobdata = $this->Application->getModule('api')->get(array('jobs', $jobId))->output;
+	public function configure($jobid, $params = array()) {
+		$jobdata = $this->Application->getModule('api')->get(array('jobs', $jobid))->output;
 		$this->JobName->Text = $jobdata->job;
 		$this->JobID->Text = $jobdata->jobid;
 		$joblog = $this->Application->getModule('api')->get(array('joblog', $jobdata->jobid))->output;
-		$runningJobStates = $this->Application->getModule('misc')->getRunningJobStates();
-		if (in_array($jobdata->jobstatus, $runningJobStates)) {
+		$running_job_states = $this->Application->getModule('misc')->getRunningJobStates();
+		if (in_array($jobdata->jobstatus, $running_job_states)) {
 			$this->Estimation->CssClass = 'textbox-auto wheel-loader';
 		} else {
 			$this->Estimation->CssClass = 'textbox-auto';
@@ -127,8 +127,7 @@ class JobConfiguration extends Portlets {
 		}
 		$this->Storage->dataBind();
 
-		$runningJobStates = $this->Application->getModule('misc')->getRunningJobStates();
-		$isJobRunning = in_array($jobdata->jobstatus, $runningJobStates);
+		$isJobRunning = in_array($jobdata->jobstatus, $running_job_states);
 
 		$this->Priority->Text = ($jobdata->priorjobid == 0) ? self::DEFAULT_JOB_PRIORITY : $jobdata->priorjobid;
 		$this->DeleteButton->Visible = true;
@@ -137,12 +136,19 @@ class JobConfiguration extends Portlets {
 		$this->Run->Display = 'Dynamic';
 		$this->EstimateLine->Display = 'Dynamic';
 		$this->Status->Visible = true;
+		if (key_exists('prev_window', $params)) {
+			$this->GoBack->Value = $params['prev_window'];
+			$this->getPage()->getCallbackClient()->show('job_go_back');
+		} else {
+
+			$this->getPage()->getCallbackClient()->hide('job_go_back');
+		}
 	}
 
 	public function status($sender, $param) {
 		$jobdata = $this->Application->getModule('api')->get(array('jobs', $this->JobID->Text))->output;
-		$runningJobStates = $this->Application->getModule('misc')->getRunningJobStates();
-		if (in_array($jobdata->jobstatus, $runningJobStates)) {
+		$running_job_states = $this->Application->getModule('misc')->getRunningJobStates();
+		if (in_array($jobdata->jobstatus, $running_job_states)) {
 			$this->RefreshStart->Value = true;
 		} else {
 			$this->RefreshStart->Value = false;

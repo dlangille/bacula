@@ -103,7 +103,10 @@ class VolumeConfiguration extends Portlets {
 
 	public function openJob($sender, $param) {
 		$jobid = $param->CallbackParameter;
-		$this->getPage()->JobConfiguration->configure($jobid);
+		$params = array(
+			'prev_window' => 'VolumeWindow'
+		);
+		$this->getPage()->JobConfiguration->configure($jobid, $params);
 	}
 
 	public function getVolumeStates($forSetOnly = false) {

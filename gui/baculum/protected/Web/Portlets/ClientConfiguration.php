@@ -26,11 +26,6 @@ Prado::using('Application.Web.Portlets.Portlets');
 
 class ClientConfiguration extends Portlets {
 
-	public function onInit($param) {
-		parent::onInit($param);
-		$this->Status->setActionClass($this);
-	}
-
 	public function configure($clientId) {
 		$clientdata = $this->Application->getModule('api')->get(array('clients', 'show', $clientId))->output;
 		$this->ShowClient->Text = implode(PHP_EOL, $clientdata);
@@ -51,7 +46,10 @@ class ClientConfiguration extends Portlets {
 
 	public function openJob($sender, $param) {
 		$jobid = $param->CallbackParameter;
-		$this->getPage()->JobConfiguration->configure($jobid);
+		$params = array(
+			'prev_window' => 'ClientWindow'
+		);
+		$this->getPage()->JobConfiguration->configure($jobid, $params);
 	}
 }
 ?>

@@ -1511,3 +1511,6 @@ msgstr "Podczas zadania przywracania danych potrzebne będą następujące wolum
 
 msgid "Use Ctrl + Mouse Click to change selection"
 msgstr "Aby zmienić wybór, użyj Ctrl + klik myszy"
+
+msgid "Go back"
+msgstr "Powrót"
