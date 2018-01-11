@@ -632,10 +632,28 @@ bool send_include_list(JCR *jcr)
 }
 
 /*
- *
+ * Send a include list with a plugin and listing=<path> parameter
+ */
+bool send_ls_plugin_fileset(JCR *jcr, const char *plugin, const char *path)
+{
+   BSOCK *fd = jcr->file_bsock;
+   fd->fsend(filesetcmd, "" /* no vss */, "" /* no snapshot */);
+
+   fd->fsend("I\n");
+   fd->fsend("O h\n");         /* is it required? */
+   fd->fsend("N\n");
+   fd->fsend("P %s listing=%s\n", plugin, path);
+   fd->fsend("N\n");
+   fd->signal(BNET_EOD);              /* end of data */
+
+   if (!response(jcr, fd, OKinc, "Include", DISPLAY_ERROR)) {
+      return false;
+   }
+   return true;
+}
+
+/*
  * Send a include list with only one directory and recurse=no
- * TODO: Need to display the plugin somewhere
- *       The main point is that we don't introduce any protocol change
  */
 bool send_ls_fileset(JCR *jcr, const char *path)
 {

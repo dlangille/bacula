@@ -95,6 +95,7 @@ int variable_expansion(JCR *jcr, char *inp, POOLMEM **exp);
 extern int connect_to_file_daemon(JCR *jcr, int retry_interval,
                                   int max_retry_time, int verbose);
 extern bool send_ls_fileset(JCR *jcr, const char *path);
+extern bool send_ls_plugin_fileset(JCR *jcr, const char *plugin, const char *path);
 extern bool send_include_list(JCR *jcr);
 extern bool send_exclude_list(JCR *jcr);
 extern bool send_level_command(JCR *jcr);

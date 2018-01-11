@@ -199,6 +199,7 @@ static bool dot_ls_cmd(UAContext *ua, const char *cmd)
    POOL_MEM buf;
    CLIENT *client = NULL;
    char *path = NULL;
+   char *plugin = NULL;
    JCR *jcr = ua->jcr;
    int i;
 
@@ -229,6 +230,12 @@ static bool dot_ls_cmd(UAContext *ua, const char *cmd)
       return false;
    }
 
+   /* optional plugin=... parameter */
+   i = find_arg_with_value(ua, NT_("plugin"));
+   if (i > 0) {
+      plugin = ua->argv[i];
+   }
+
    jcr->client = client;
 
    jcr->setJobType(JT_BACKUP);
@@ -243,9 +250,17 @@ static bool dot_ls_cmd(UAContext *ua, const char *cmd)
       return false;
    }
 
-   if (!send_ls_fileset(jcr, path)) {
-      ua->error_msg(_("Failed to send command to Client.\n"));
-      goto bail_out;
+   /* when .ls plugin prepare a special ls_plugin_fileset */
+   if (plugin){
+      if (!send_ls_plugin_fileset(jcr, plugin, path)) {
+         ua->error_msg(_("Failed to send plugin command to Client.\n"));
+         goto bail_out;
+      }
+   } else {
+      if (!send_ls_fileset(jcr, path)) {
+         ua->error_msg(_("Failed to send command to Client.\n"));
+         goto bail_out;
+      }
    }
 
    jcr->file_bsock->fsend("estimate listing=%d\n", 1);
