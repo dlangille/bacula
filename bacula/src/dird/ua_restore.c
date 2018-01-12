@@ -52,7 +52,7 @@ static bool insert_dir_into_findex_list(UAContext *ua, RESTORE_CTX *rx, char *di
                                         char *date);
 static void insert_one_file_or_dir(UAContext *ua, RESTORE_CTX *rx, char *date, bool dir);
 static int get_client_name(UAContext *ua, RESTORE_CTX *rx);
-static int get_restore_client_name(UAContext *ua, RESTORE_CTX &rx);
+static int get_restore_client_name(UAContext *ua, RESTORE_CTX &rx, char * RestoreClient);
 static bool get_date(UAContext *ua, char *date, int date_len);
 static int restore_count_handler(void *ctx, int num_fields, char **row);
 static void get_and_display_basejobs(UAContext *ua, RESTORE_CTX *rx);
@@ -252,7 +252,7 @@ int restore_cmd(UAContext *ua, const char *cmd)
       ua->error_msg(_("No Client resource found!\n"));
       goto bail_out;
    }
-   get_restore_client_name(ua, rx);
+   get_restore_client_name(ua, rx, job->RestoreClient);
 
    escaped_bsr_name = escape_filename(jcr->RestoreBootstrap);
 
@@ -452,10 +452,14 @@ static int get_client_name(UAContext *ua, RESTORE_CTX *rx)
 /*
  * This is where we pick up a client name to restore to.
  */
-static int get_restore_client_name(UAContext *ua, RESTORE_CTX &rx)
+static int get_restore_client_name(UAContext *ua, RESTORE_CTX &rx, char * RestoreClient)
 {
-   /* Start with same name as backup client */
-   bstrncpy(rx.RestoreClientName, rx.ClientName, sizeof(rx.RestoreClientName));
+   /* Start with same name as backup client or set in RestoreClient */
+   if (!RestoreClient){
+      bstrncpy(rx.RestoreClientName, rx.ClientName, sizeof(rx.RestoreClientName));
+   } else {
+      bstrncpy(rx.RestoreClientName, RestoreClient, sizeof(rx.RestoreClientName));
+   }
 
    /* try command line argument */
    int i = find_arg_with_value(ua, NT_("restoreclient"));

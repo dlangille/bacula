@@ -164,7 +164,7 @@ int run_cmd(UAContext *ua, const char *cmd)
        *   allow him to modify them.
        */
       if (!display_job_parameters(ua, jcr, rc.job, rc.verify_list, rc.jid, rc.replace,
-           rc.client_name)) {
+           rc.client_name ? rc.client_name : jcr->job->client->hdr.name)) {
          break; /* error get out of while loop */
       }
 
@@ -407,6 +407,10 @@ static bool get_client(UAContext *ua, run_ctx &rc)
 
    Dmsg1(800, "Using client=%s\n", rc.client->name());
 
+   if (rc.job->RestoreClient){
+      /* Use restoreclient defined in config Job resource */
+      rc.restore_client_name = rc.job->RestoreClient;
+   }
    if (rc.restore_client_name) {
       rc.client = GetClientResWithName(rc.restore_client_name);
       if (!rc.client) {

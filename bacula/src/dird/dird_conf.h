@@ -432,6 +432,7 @@ public:
    char *add_prefix;                  /* add prefix to filename  */
    char *add_suffix;                  /* add suffix to filename -- .old */
    char *RestoreBootstrap;            /* Bootstrap file */
+   char *RestoreClient;               /* Who to restore */
    char *PluginOptions;               /* Options to pass to plugin */
    union {
       char *WriteBootstrap;           /* Where to write bootstrap Job updates */

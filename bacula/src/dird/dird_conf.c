@@ -542,6 +542,7 @@ RES_ITEM job_items[] = {
    {"AddSuffix",    store_str,  ITEM(res_job.add_suffix), 0, 0, 0},
    /* Where to find bootstrap during restore */
    {"Bootstrap",store_dir,      ITEM(res_job.RestoreBootstrap), 0, 0, 0},
+   {"RestoreClient", store_str,   ITEM(res_job.RestoreClient), 0, 0, 0},
    /* Where to write bootstrap file during backup */
    {"WriteBootstrap",store_dir, ITEM(res_job.WriteBootstrap), 0, 0, 0},
    {"WriteVerifyList",store_dir,ITEM(res_job.WriteVerifyList), 0, 0, 0},
@@ -1000,6 +1001,9 @@ void dump_resource(int type, RES *ares, void sendit(void *sock, const char *fmt,
       if (res->res_job.schedule) {
          sendit(sock, _("  --> "));
          dump_resource(-R_SCHEDULE, (RES *)res->res_job.schedule, sendit, sock);
+      }
+      if (res->res_job.RestoreClient) {
+         sendit(sock, _("  --> RestoreClient=%s\n"), NPRT(res->res_job.RestoreClient));
       }
       if (res->res_job.RestoreWhere && !res->res_job.RegexWhere) {
            sendit(sock, _("  --> Where=%s\n"), NPRT(res->res_job.RestoreWhere));
@@ -1690,6 +1694,9 @@ void free_resource(RES *rres, int type)
       }
       if (res->res_job.RestoreBootstrap) {
          free(res->res_job.RestoreBootstrap);
+      }
+      if (res->res_job.RestoreClient) {
+         free(res->res_job.RestoreClient);
       }
       if (res->res_job.WriteBootstrap) {
          free(res->res_job.WriteBootstrap);

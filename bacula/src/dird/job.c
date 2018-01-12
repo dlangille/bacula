@@ -1591,7 +1591,12 @@ void set_jcr_defaults(JCR *jcr, JOB *job)
    } else {
       copy_rwstorage(jcr, job->pool->storage, _("Pool resource"));
    }
-   jcr->client = job->client;
+   /* check if we run a restore */
+   if (jcr->getJobType() == JT_RESTORE && job->RestoreClient){
+      jcr->client = GetClientResWithName(jcr->job->RestoreClient);
+   } else {
+      jcr->client = job->client;
+   }
    ASSERT2(jcr->client, "jcr->client==NULL!!!");
    if (!jcr->client_name) {
       jcr->client_name = get_pool_memory(PM_NAME);
