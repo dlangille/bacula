@@ -105,4 +105,14 @@ class Params extends CommonModule {
 		return $wday;
 	}
 
+	/**
+	 * Get Bacula config boolean value.
+	 *
+	 * @param boolean $value value
+	 * @return string bacula config boolean value
+	 */
+	public static function getBoolValue($value) {
+		return ($value ? 'yes' : 'no');
+	}
 }
+?>
