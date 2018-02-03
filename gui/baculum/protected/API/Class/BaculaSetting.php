@@ -390,7 +390,7 @@ class BaculaSetting extends APIModule {
 	private function formatDirectiveValue($value) {
 		$directive_value = null;
 		if (is_bool($value)) {
-			$directive_value = ($value === true) ? 'yes' : 'no';
+			$directive_value = Params::getBoolValue($value);
 		} elseif (is_int($value)) {
 			$directive_value = $value;
 		} elseif (is_string($value)) {
