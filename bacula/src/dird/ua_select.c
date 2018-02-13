@@ -1530,10 +1530,16 @@ int scan_storage_cmd(UAContext *ua, const char *cmd,
    bool allpools=false, has_vol = false;;
    STORE *store;
 
-   *nb      = 0;
-   *drive   = 0;
+   *nb = 0;
    *results = NULL;
-   *storage = 0;
+
+   /* Optional parameters */
+   if (drive) {
+      *drive = 0;
+   }
+   if (storage) {
+      *storage = 0;
+   }
 
    /* Look at arguments */
    for (int i=1; i<ua->argc; i++) {
@@ -1553,7 +1559,11 @@ int scan_storage_cmd(UAContext *ua, const char *cmd,
          bstrncpy(mr->MediaType, ua->argv[i], sizeof(mr->MediaType));
 
       } else if (strcasecmp(ua->argk[i], NT_("drive")) == 0 && ua->argv[i]) {
-         *drive = atoi(ua->argv[i]);
+         if (drive) {
+            *drive = atoi(ua->argv[i]);
+         } else {
+            ua->warning_msg(_("Invalid argument \"drive\".\n"));
+         }
 
       } else if (strcasecmp(ua->argk[i], NT_("action")) == 0
                  && is_name_valid(ua->argv[i], NULL)) {
@@ -1566,12 +1576,15 @@ int scan_storage_cmd(UAContext *ua, const char *cmd,
       }
    }
 
-   /* Choose storage */
-   ua->jcr->wstore = store =  get_storage_resource(ua, false);
-   if (!store) {
-      goto bail_out;
+   if (storage) {
+      /* Choose storage */
+      ua->jcr->wstore = store =  get_storage_resource(ua, false);
+      if (!store) {
+         goto bail_out;
+      }
+      bstrncpy(storage, store->dev_name(), MAX_NAME_LENGTH);
+      set_storageid_in_mr(store, mr);
    }
-   bstrncpy(storage, store->dev_name(), MAX_NAME_LENGTH);
 
    if (!open_db(ua)) {
       Dmsg0(100, "Can't open db\n");
@@ -1582,7 +1595,6 @@ int scan_storage_cmd(UAContext *ua, const char *cmd,
     * Look for all volumes that are enabled 
     */
    mr->Enabled = 1;
-   set_storageid_in_mr(store, mr);
 
    if (allfrompool && !has_vol) { /* We need a list of volumes */
 
@@ -1615,12 +1627,11 @@ int scan_storage_cmd(UAContext *ua, const char *cmd,
       if (!select_media_dbr(ua, &mr2)) {
          goto bail_out;
       }
-      /* The select_media_dbr() doesn't filter on the CacheRetention */
-      if (mr->CacheRetention) {
-         if ((mr2.CacheRetention + mr2.LastWritten) > time(NULL)) {
-            /* The volume cache retention is not exipred */
-            goto bail_out;
-         }
+      mr->MediaId = mr2.MediaId;
+      mr->Recycle = mr2.Recycle; /* Should be the same to find a result */
+      if (!db_get_media_ids(ua->jcr, ua->db, mr, nb, results)) {
+         Dmsg0(100, "No results from db_get_media_ids\n");
+         goto bail_out;
       }
       *nb = 1;
       *results = (uint32_t *) malloc(1 * sizeof(uint32_t));

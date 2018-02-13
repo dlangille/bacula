@@ -31,6 +31,7 @@
 /* Forward referenced functions */
 static bool grow_del_list(struct del_ctx *del);
 static bool prune_expired_volumes(UAContext*);
+static bool prune_selected_volumes(UAContext *ua);
 
 /*
  * Called here to count entries to be deleted
@@ -168,19 +169,7 @@ int prunecmd(UAContext *ua, const char *cmd)
       if (find_arg(ua, "expired") >= 0) {
          return prune_expired_volumes(ua);
       }
-
-      if (!select_pool_and_media_dbr(ua, &pr, &mr)) {
-         return false;
-      }
-      if (mr.Enabled == 2) {
-         ua->error_msg(_("Cannot prune Volume \"%s\" because it is archived.\n"),
-            mr.VolumeName);
-         return false;
-      }
-      if (!confirm_retention(ua, &mr.VolRetention, "Volume")) {
-         return false;
-      }
-      prune_volume(ua, &mr);
+      prune_selected_volumes(ua);
       return true;
    case 3:  /* prune stats */
       dir = (DIRRES *)GetNextRes(R_DIRECTOR, NULL);
@@ -622,6 +611,57 @@ bail_out:
    return 1;
 }
 
+static bool prune_selected_volumes(UAContext *ua)
+{
+   int nb=0;
+   uint32_t *results=NULL;
+   MEDIA_DBR mr;
+   POOL_DBR pr;
+   JCR *jcr = ua->jcr;
+   POOL_MEM tmp;
+
+   mr.Recycle=1;                            /* Look for volumes to prune and recycle */
+
+   if (!scan_storage_cmd(ua, ua->cmd, false, /* fromallpool*/
+                         NULL /* drive */,
+                         &mr, &pr,
+                         NULL /* action */,
+                         NULL /* storage */,
+                         &nb, &results))
+   {
+      goto bail_out;
+   }
+   for (int i = 0; i < nb; i++) {
+      mr.clear();
+      mr.MediaId = results[i];
+      if (!db_get_media_record(jcr, jcr->db, &mr)) {
+         ua->error_msg(_("Unable to get Media record for MediaId %d.\n"), mr.MediaId);
+         continue;
+      }
+      if (mr.Enabled == 2 || strcmp(mr.VolStatus, "Archive") == 0) {
+         ua->error_msg(_("Cannot prune Volume \"%s\" because it is archived.\n"),
+                       mr.VolumeName);
+         continue;
+      }
+      if (strcmp(mr.VolStatus, "Full") != 0 &&
+          strcmp(mr.VolStatus, "Used") != 0 )
+      {
+         ua->error_msg(_("Cannot prune Volume \"%s\" because the volume status is \"%s\" and should be Full or Used.\n"), mr.VolumeName, mr.VolStatus);
+         continue;
+      }
+      Mmsg(tmp, "Volume \"%s\"", mr.VolumeName);
+      if (!confirm_retention(ua, &mr.VolRetention, tmp.c_str())) {
+         goto bail_out;
+      }
+      prune_volume(ua, &mr);
+   }
+
+bail_out:
+   if (results) {
+      free(results);
+   }
+   return true;
+}
 
 /*
  * Prune a expired Volumes
