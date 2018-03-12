@@ -446,10 +446,17 @@ DCR *acquire_device_for_append(DCR *dcr)
       jcr->NumWriteVolumes = 1;
    }
    dev->VolCatInfo.VolCatJobs++;              /* increment number of jobs on vol */
+
+   ok = dir_update_volume_info(dcr, false, false); /* send Volume info to Director */
+
+   if (!ok) {                   /* We cannot use this volume/device */
+      dev->num_writers--;       /* on fail update_volume do not update num_writers */
+      /* TODO: See if we revert the NumWriteVolumes as well */
+   }
+
    Dmsg4(100, "=== nwriters=%d nres=%d vcatjob=%d dev=%s\n",
       dev->num_writers, dev->num_reserved(), dev->VolCatInfo.VolCatJobs,
       dev->print_name());
-   ok = dir_update_volume_info(dcr, false, false); /* send Volume info to Director */
 
 get_out:
    /* Don't plugin close here, we might have multiple writers */
