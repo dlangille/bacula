@@ -211,6 +211,8 @@ _("This Job is not an Accurate backup so is not equivalent to a Full backup.\n")
 
    } else {                     /* No argument provided */
       jcr->jr.JobLevel = L_VIRTUAL_FULL;
+      /* We restrict the search of the JobIds to the current job */
+      bstrncpy(jcr->jr.Name, jcr->job->name(), sizeof(jcr->jr.Name));
       db_get_accurate_jobids(jcr, jcr->db, &jcr->jr, &jobids);
       Dmsg1(10, "Accurate jobids=%s\n", jobids.list);
    }

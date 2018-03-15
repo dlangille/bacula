@@ -1327,7 +1327,8 @@ bool BDB::bdb_get_accurate_jobids(JCR *jcr,
    bool ret=false;
    char clientid[50], jobid[50], filesetid[50];
    char date[MAX_TIME_LENGTH];
-   POOL_MEM query(PM_FNAME);
+   char esc[MAX_ESCAPE_NAME_LENGTH];
+   POOL_MEM query(PM_MESSAGE), name(PM_FNAME);
 
    /* Take the current time as upper limit if nothing else specified */
    utime_t StartTime = (jr->StartTime)?jr->StartTime:time(NULL);
@@ -1346,12 +1347,19 @@ bool BDB::bdb_get_accurate_jobids(JCR *jcr,
       edit_uint64(jcr->JobId, jobid);
    }
 
+   if (jr->Name[0] != 0) {
+      bdb_escape_string(jcr, esc, jr->Name, strlen(jr->Name));
+      Mmsg(name, " AND Name = '%s' ", esc);
+   }
+
    /* First, find the last good Full backup for this job/client/fileset */
    Mmsg(query, create_temp_accurate_jobids[bdb_get_type_index()],
         jobid,
         edit_uint64(jr->ClientId, clientid),
         date,
-        edit_uint64(jr->FileSetId, filesetid));
+        edit_uint64(jr->FileSetId, filesetid),
+        name.c_str()
+      );
 
    if (!bdb_sql_query(query.c_str(), NULL, NULL)) {
       goto bail_out;
@@ -1368,12 +1376,15 @@ bool BDB::bdb_get_accurate_jobids(JCR *jcr,
     "AND StartTime > (SELECT EndTime FROM btemp3%s ORDER BY EndTime DESC LIMIT 1) "
     "AND StartTime < '%s' "
     "AND FileSet.FileSet= (SELECT FileSet FROM FileSet WHERE FileSetId = %s) "
+    " %s "                      /* Optional name */
   "ORDER BY Job.JobTDate DESC LIMIT 1 ",
            jobid,
            clientid,
            jobid,
            date,
-           filesetid);
+           filesetid,
+           name.c_str()
+         );
 
       if (!bdb_sql_query(query.c_str(), NULL, NULL)) {
          goto bail_out;
@@ -1389,12 +1400,15 @@ bool BDB::bdb_get_accurate_jobids(JCR *jcr,
     "AND StartTime > (SELECT EndTime FROM btemp3%s ORDER BY EndTime DESC LIMIT 1) "
     "AND StartTime < '%s' "
     "AND FileSet.FileSet= (SELECT FileSet FROM FileSet WHERE FileSetId = %s) "
+    " %s "
   "ORDER BY Job.JobTDate DESC ",
            jobid,
            clientid,
            jobid,
            date,
-           filesetid);
+           filesetid,
+           name.c_str()
+         );
       if (!bdb_sql_query(query.c_str(), NULL, NULL)) {
          goto bail_out;
       }
