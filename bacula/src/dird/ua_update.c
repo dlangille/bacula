@@ -932,18 +932,21 @@ static bool update_pool(UAContext *ua)
 static bool update_job(UAContext *ua)
 {
    int i, priority=0;
-   char ed1[50], ed2[50], ed3[50];
+   char ed1[50], ed2[50], ed3[50], ed4[50];
    POOL_MEM cmd(PM_MESSAGE);
    JOB_DBR jr;
    CLIENT_DBR cr;
+   POOL_DBR pr;
    JCR *jcr;
    utime_t StartTime;
    char *client_name = NULL;
    char *start_time = NULL;
+   char *pool_name = NULL;
    const char *kw[] = {
       NT_("starttime"),                   /* 0 */
       NT_("client"),                      /* 1 */
       NT_("priority"),                    /* 2 */
+      NT_("pool"),                        /* 3 */
       NULL };
 
    Dmsg1(200, "cmd=%s\n", ua->cmd);
@@ -977,14 +980,17 @@ static bool update_job(UAContext *ua)
          case 1:                         /* Client name */
             client_name = ua->argv[j];
             break;
-         case 2:
+         case 2:                         /* Priority */
             priority = str_to_int64(ua->argv[j]);
+            break;
+         case 3:                         /* Change Pool */
+            pool_name = ua->argv[j];
             break;
          }
       }
    }
-   if (!client_name && !start_time && !priority) {
-      ua->error_msg(_("Neither Client, StartTime or Priority specified.\n"));
+   if (!client_name && !start_time && !priority && !pool_name) {
+      ua->error_msg(_("Neither Client, StartTime, Pool or Priority specified.\n"));
       return 0;
    }
    if (priority > 0) {
@@ -1027,14 +1033,40 @@ static bool update_job(UAContext *ua)
       bstrutime(jr.cSchedTime, sizeof(jr.cSchedTime), jr.SchedTime);
       bstrutime(jr.cEndTime, sizeof(jr.cEndTime), jr.EndTime);
    }
+   if (pool_name) {
+      MEDIA_DBR mr;
+      dbid_list lst;
+
+      memset(&pr, 0, sizeof(POOL_DBR));
+      bstrncpy(pr.Name, pool_name, sizeof(pr.Name));
+      /* Get the list of all volumes and update the pool */
+      if (!db_get_pool_record(ua->jcr, ua->db, &pr)) {
+         ua->error_msg("Unable to get pool record %s", db_strerror(ua->db));
+         return false;
+      }
+      jr.PoolId = pr.PoolId;
+      Mmsg(cmd, "SELECT DISTINCT MediaId "
+                "FROM Media JOIN JobMedia USING (MediaId) "
+                "WHERE JobId = %s", edit_uint64(jr.JobId, ed1));
+      if (!db_get_query_dbids(ua->jcr, ua->db, cmd, lst)) {
+         ua->error_msg("%s", db_strerror(ua->db));
+         return false;
+      }
+
+      for (int i=0; i < lst.num_ids; i++) {
+         mr.MediaId = lst.DBId[i];
+         update_vol_pool(ua, pool_name, &mr, &pr);
+      }
+   }
    Mmsg(cmd, "UPDATE Job SET ClientId=%s,StartTime='%s',SchedTime='%s',"
-             "EndTime='%s',JobTDate=%s WHERE JobId=%s",
+             "EndTime='%s',JobTDate=%s, PoolId=%s WHERE JobId=%s",
              edit_int64(jr.ClientId, ed1),
              jr.cStartTime,
              jr.cSchedTime,
              jr.cEndTime,
              edit_uint64(jr.JobTDate, ed2),
-             edit_int64(jr.JobId, ed3));
+             edit_uint64(jr.PoolId, ed3),
+             edit_uint64(jr.JobId, ed4));
    if (!db_sql_query(ua->db, cmd.c_str(), NULL, NULL)) {
       ua->error_msg("%s", db_strerror(ua->db));
       return false;
