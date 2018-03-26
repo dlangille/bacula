@@ -71,8 +71,8 @@ class BXATTR_FreeBSD : public BXATTR {
 private:
    bRC_BXATTR os_backup_xattr (JCR *jcr, FF_PKT *ff_pkt);
    bRC_BXATTR os_restore_xattr (JCR *jcr, int stream, char *content, uint32_t length);
-   bRC_BXATTR os_get_xattr_names (JCR *jcr, const int ns, POOLMEM **list, uint32_t *length);
-   bRC_BXATTR os_get_xattr_value (JCR *jcr, const int ns, char * name, char ** pvalue, uint32_t * plen);
+   bRC_BXATTR os_get_xattr_names_local (JCR *jcr, const int ns, POOLMEM **list, uint32_t *length);
+   bRC_BXATTR os_get_xattr_value_local (JCR *jcr, const int ns, char * name, char ** pvalue, uint32_t * plen);
    bRC_BXATTR os_set_xattr (JCR *jcr, BXATTR_xattr *xattr);
 public:
    BXATTR_FreeBSD ();

@@ -94,8 +94,8 @@ bRC_BXATTR BXATTR_FreeBSD::os_backup_xattr (JCR *jcr, FF_PKT *ff_pkt){
    int a;
 
    for (a = 0; os_xattr_namespaces[a] != -1; a++){ // loop through all available namespaces
-      /* xlist is allocated as POOLMEM by os_get_xattr_names */
-      rc = os_get_xattr_names(jcr, os_xattr_namespaces[a], &xlist, &xlen);
+      /* xlist is allocated as POOLMEM by os_get_xattr_names_local */
+      rc = os_get_xattr_names_local(jcr, os_xattr_namespaces[a], &xlist, &xlen);
       switch (rc){
          case bRC_BXATTR_ok:
             /* it's ok, so go further */
@@ -130,8 +130,8 @@ bRC_BXATTR BXATTR_FreeBSD::os_backup_xattr (JCR *jcr, FF_PKT *ff_pkt){
             continue;
          }
 
-         /* value is allocated as POOLMEM by os_get_xattr_value */
-         rc = os_get_xattr_value(jcr, os_xattr_namespaces[a], name, &value, &value_len);
+         /* value is allocated as POOLMEM by os_get_xattr_value_local */
+         rc = os_get_xattr_value_local(jcr, os_xattr_namespaces[a], name, &value, &value_len);
          switch (rc){
             case bRC_BXATTR_ok:
                /* it's ok, so go further */
@@ -222,7 +222,7 @@ bRC_BXATTR BXATTR_FreeBSD::os_restore_xattr (JCR *jcr, int stream, char *content
  * As a FreeBSD uses a different attributes name schema/format then this method is a very different
  * from a standard generic method because it uses a namespace (ns) value for os dependent optimization.
  */
-bRC_BXATTR BXATTR_FreeBSD::os_get_xattr_names (JCR *jcr, int ns, POOLMEM ** pxlist, uint32_t * xlen){
+bRC_BXATTR BXATTR_FreeBSD::os_get_xattr_names_local (JCR *jcr, int ns, POOLMEM ** pxlist, uint32_t * xlen){
 
    int len;
    POOLMEM * list;
@@ -329,7 +329,7 @@ bRC_BXATTR BXATTR_FreeBSD::os_get_xattr_names (JCR *jcr, int ns, POOLMEM ** pxli
  * As a FreeBSD uses a different attributes name schema/format then this method is a very different
  * from a standard generic method because it uses a namespace (ns) value for os dependent optimization.
  */
-bRC_BXATTR BXATTR_FreeBSD::os_get_xattr_value (JCR *jcr, int ns, char * name, char ** pvalue, uint32_t * plen){
+bRC_BXATTR BXATTR_FreeBSD::os_get_xattr_value_local (JCR *jcr, int ns, char * name, char ** pvalue, uint32_t * plen){
 
    int len;
    POOLMEM * value;
