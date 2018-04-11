@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2017 Kern Sibbald
+ * Copyright (C) 2013-2018 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -26,7 +26,7 @@ Prado::using('Application.API.Class.Database');
 
 class VolumeManager extends APIModule {
 
-	public function getVolumes($limit, $with_pools = false) {
+	public function getVolumes($limit) {
 		$criteria = new TActiveRecordCriteria;
 		$orderPool = 'PoolId';
 		$orderVolume = 'VolumeName';
@@ -41,35 +41,53 @@ class VolumeManager extends APIModule {
 			$criteria->Limit = $limit;
 		}
 		$volumes = VolumeRecord::finder()->findAll($criteria);
-		$this->setExtraVariables($volumes, $with_pools);
+		$this->setExtraVariables($volumes);
 		return $volumes;
 	}
 
 	public function getVolumesByPoolId($poolid) {
-		return VolumeRecord::finder()->findBypoolid($poolid);
+		$volumes = VolumeRecord::finder()->findAllBypoolid($poolid);
+		$this->setExtraVariables($volumes);
+		return $volumes;
+	}
+
+	public function getVolumeByPoolId($poolid) {
+		$volume = VolumeRecord::finder()->findBypoolid($poolid);
+		$this->setExtraVariables($volume);
+		return $volume;
 	}
 
 	public function getVolumeByName($volumeName) {
-		return VolumeRecord::finder()->findByvolumename($volumeName);
+		$volume = VolumeRecord::finder()->findByvolumename($volumeName);
+		$this->setExtraVariables($volume);
+		return $volume;
 	}
 
 	public function getVolumeById($volumeId) {
-		return VolumeRecord::finder()->findBymediaid($volumeId);
+		$volume = VolumeRecord::finder()->findBymediaid($volumeId);
+		$this->setExtraVariables($volume);
+		return $volume;
 	}
 
-	private function setExtraVariables(&$volumes, $with_pools) {
-		$pools = $this->Application->getModule('pool')->getPools(false);
-		foreach($volumes as $volume) {
-			$volstatus = strtolower($volume->volstatus);
-			$volume->whenexpire = ($volstatus == 'full' || $volstatus == 'used') ? date( 'Y-m-d H:i:s', (strtotime($volume->lastwritten) + $volume->volretention)) : 'no date';
-			if ($with_pools === true) {
-				foreach($pools as $pool) {
-					if($volume->poolid == $pool->poolid) {
-						$volume->pool = $pool;
-					}
-				}
+	private function setExtraVariables(&$volumes) {
+		if (is_array($volumes)) {
+			foreach($volumes as $volume) {
+				$this->setWhenExpire($volume);
 			}
+		} else {
+			$this->setWhenExpire($volumes);
 		}
+	}
+
+	private function setWhenExpire(&$volume) {
+		$volstatus = strtolower($volume->volstatus);
+		if ($volstatus == 'full' || $volstatus == 'used') {
+			$whenexpire = strtotime($volume->lastwritten) + $volume->volretention;
+			$whenexpire = date( 'Y-m-d H:i:s', $whenexpire);
+		} else{
+			$whenexpire = 'no date';
+		}
+		$volume->whenexpire = $whenexpire;
 	}
 
 	/**

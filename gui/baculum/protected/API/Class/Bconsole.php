@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2016 Kern Sibbald
+ * Copyright (C) 2013-2018 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -28,7 +28,7 @@ class Bconsole extends APIModule {
 
 	const SUDO = 'sudo';
 
-	const BCONSOLE_COMMAND_PATTERN = "%s%s -c %s %s 2>&1 <<END_OF_DATA\n%s\nquit\nEND_OF_DATA";
+	const BCONSOLE_COMMAND_PATTERN = "%s%s -c %s %s 2>&1 <<END_OF_DATA\ngui on\n%s\nquit\nEND_OF_DATA";
 
 	const BCONSOLE_DIRECTORS_PATTERN = "%s%s -c %s -l 2>&1";
 
@@ -62,7 +62,8 @@ class Bconsole extends APIModule {
 		'.fileset',
 		'.storage',
 		'.client',
-		'.pool'
+		'.pool',
+		'.schedule'
 	);
 
 	private $config;
@@ -129,6 +130,7 @@ class Bconsole extends APIModule {
 	}
 
 	private function prepareResult(array $output, $exitcode, $bconsole_command) {
+		array_shift($output); // deleted 'gui on'
 		array_pop($output); // deleted 'quit' bconsole command
 		for($i = 0; $i < count($output); $i++) {
 			if(strstr($output[$i], $bconsole_command) == false) {

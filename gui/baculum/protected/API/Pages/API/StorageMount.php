@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2017 Kern Sibbald
+ * Copyright (C) 2013-2018 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -24,12 +24,18 @@ class StorageMount extends BaculumAPIServer {
 	public function get() {
 		$storageid = $this->Request->contains('id') ? intval($this->Request['id']) : 0;
 		$drive = $this->Request->contains('drive') ? intval($this->Request['drive']) : 0;
+		$device = $this->Request->contains('device') ? $this->Request['device'] : null;
 		$slot = $this->Request->contains('slot') ? intval($this->Request['slot']) : 0;
 		$storage = $this->getModule('storage')->getStorageById($storageid);
 		if(is_object($storage)) {
 			$result = $this->getModule('bconsole')->bconsoleCommand(
 				$this->director,
-				array('mount', 'storage="' . $storage->name . '"', 'drive=' . $drive, 'slot=' . $slot)
+				array(
+					'mount',
+					'storage="' . $storage->name . '"',
+					(is_string($device) ? 'device="' . $device . '" drive=0' : 'drive=' . $drive),
+					'slot=' . $slot
+				)
 			);
 			$this->output = $result->output;
 			$this->error = $result->exitcode;

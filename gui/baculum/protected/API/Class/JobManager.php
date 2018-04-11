@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2016 Kern Sibbald
+ * Copyright (C) 2013-2018 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -26,7 +26,7 @@ Prado::using('Application.API.Class.Database');
 
 class JobManager extends APIModule {
 
-	public function getJobs($limit, $allowedJobs = array()) {
+	public function getJobs($limit, $params = array()) {
 		$criteria = new TActiveRecordCriteria;
 		$order = 'JobId';
 		$db_params = $this->getModule('api_config')->getConfig('db');
@@ -38,17 +38,26 @@ class JobManager extends APIModule {
 			$criteria->Limit = $limit;
 		}
 
-		if (count($allowedJobs) > 0) {
-			$where = array();
-			$names = array();
-			for ($i = 0; $i < count($allowedJobs); $i++) {
-				$where[] = "name = :name$i";
-				$names[":name$i"] = $allowedJobs[$i];
+		if (count($params) > 0) {
+			$condition = array();
+			foreach ($params as $key => $value) {
+				$cond = array();
+				$vals = array();
+				if (is_array($value['vals'])) {
+					for ($i = 0; $i < count($value['vals']); $i++) {
+						$cond[] = "{$key} = :{$key}{$i}";
+						$vals[":{$key}{$i}"] = $value['vals'][$i];
+					}
+				} else {
+					$cond[] = "$key = :$key";
+					$vals[":$key"] = $value['vals'];
+				}
+				$condition[] = implode(' ' . $value['operator'] . ' ', $cond);
+				foreach ($vals as $pkey => $pval) {
+					$criteria->Parameters[$pkey] = $pval;
+				}
 			}
-			$criteria->Condition = implode(' OR ', $where);
-			foreach($names as $name => $jobname) {
-				$criteria->Parameters[$name] = $jobname;
-			}
+			$criteria->Condition = '(' . implode(') AND (' , $condition) . ')';
 		}
 		return JobRecord::finder()->findAll($criteria);
 	}
@@ -96,14 +105,14 @@ class JobManager extends APIModule {
 		return $jobids;
 	}
 
-	public function getJobTotals($allowedJobs = array()) {
+	public function getJobTotals($allowed_jobs = array()) {
 		$jobtotals = array('bytes' => 0, 'files' => 0);
 		$connection = JobRecord::finder()->getDbConnection();
 		$connection->setActive(true);
 
 		$where = '';
-		if (count($allowedJobs) > 0) {
-			$where = " WHERE name='" . implode("' OR name='", $allowedJobs) . "'";
+		if (count($allowed_jobs) > 0) {
+			$where = " WHERE name='" . implode("' OR name='", $allowed_jobs) . "'";
 		}
 
 		$sql = "SELECT sum(JobFiles) AS files, sum(JobBytes) AS bytes FROM Job $where";

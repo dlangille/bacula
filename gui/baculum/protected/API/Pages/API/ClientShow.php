@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2017 Kern Sibbald
+ * Copyright (C) 2013-2018 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -24,17 +24,25 @@ class ClientShow extends BaculumAPIServer {
 
 	public function get() {
 		$clientid = $this->Request->contains('id') ? intval($this->Request['id']) : 0;
-		$client = $this->getModule('client')->getClientById($clientid);
-		if(is_object($client)) {
-			$result = $this->getModule('bconsole')->bconsoleCommand(
-				$this->director,
-				array('show', 'client="' . $client->name . '"')
-			);
+
+		$result = $this->getModule('bconsole')->bconsoleCommand($this->director, array('.client'));
+		if ($result->exitcode === 0) {
+			array_shift($result->output);
+			$client = $this->getModule('client')->getClientById($clientid);
+			if(!is_null($client) && in_array($client->name, $result->output)) {
+				$result = $this->getModule('bconsole')->bconsoleCommand(
+					$this->director,
+					array('show', 'client="' . $client->name . '"')
+				);
+				$this->output = $result->output;
+				$this->error = $result->exitcode;
+			} else {
+				$this->output = ClientError::MSG_ERROR_CLIENT_DOES_NOT_EXISTS;
+				$this->error = ClientError::ERROR_CLIENT_DOES_NOT_EXISTS;
+			}
+		} else {
 			$this->output = $result->output;
 			$this->error = $result->exitcode;
-		} else {
-			$this->output = ClientError::MSG_ERROR_CLIENT_DOES_NOT_EXISTS;
-			$this->error = ClientError::ERROR_CLIENT_DOES_NOT_EXISTS;
 		}
 	}
 }

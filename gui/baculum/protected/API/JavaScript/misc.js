@@ -17,6 +17,7 @@ var OAuth2Scopes = [
 	'bvfs',
 	'joblog',
 	'filesets',
+	'schedules',
 	'config'
 ];
 var set_scopes = function(field_id) {

@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2017 Kern Sibbald
+ * Copyright (C) 2013-2018 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -56,6 +56,7 @@ class JobTasks extends BaculumAPIServer {
 				 * Checking by "show job" command is ugly way to be sure that is reading jobname but not some 
 				 * random output (eg. "You have messages." or debugging).
 				 * For now I did not find nothing better for be sure that output contains job.
+				 * @NOTE, now is used "gui on" so it is not necessarly @TODO: Rework it
 				 */
 				for($k = 0; $k < count($jobs_show->output); $k++) {
 					if(preg_match('/^Job: name=' . $job_list->output[$j] . '.*/', $jobs_show->output[$k]) === 1) {

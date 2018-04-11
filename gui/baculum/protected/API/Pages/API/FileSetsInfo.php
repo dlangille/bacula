@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2017 Kern Sibbald
+ * Copyright (C) 2013-2018 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -26,6 +26,7 @@ class FileSetsInfo extends BaculumAPIServer {
 		$filesets = $this->getModule('fileset')->getFileSets();
 		$result = $this->getModule('bconsole')->bconsoleCommand($this->director, array('.fileset'));
 		if ($result->exitcode === 0) {
+			array_shift($result->output);
 			if (is_array($filesets) && count($filesets) > 0) {
 				$fs = array();
 				for ($i = 0; $i < count($filesets); $i++) {

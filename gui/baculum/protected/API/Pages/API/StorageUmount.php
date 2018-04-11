@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2017 Kern Sibbald
+ * Copyright (C) 2013-2018 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -24,11 +24,16 @@ class StorageUmount extends BaculumAPIServer {
 	public function get() {
 		$storageid = $this->Request->contains('id') ? intval($this->Request['id']) : 0;
 		$drive = $this->Request->contains('drive') ? intval($this->Request['drive']) : 0;
+		$device = $this->Request->contains('device') ? $this->Request['device'] : null;
 		$storage = $this->getModule('storage')->getStorageById($storageid);
 		if (is_object($storage)) {
 			$result = $this->getModule('bconsole')->bconsoleCommand(
 				$this->director,
-				array('umount', 'storage="' . $storage->name . '"', 'drive=' . $drive)
+				array(
+					'umount',
+					'storage="' . $storage->name . '"',
+					(is_string($device) ? 'device="' . $device . '" slot=0 drive=0' : 'drive=' . $drive . ' slot=0')
+				)
 			);
 			$this->output = $result->output;
 			$this->error = $result->exitcode;

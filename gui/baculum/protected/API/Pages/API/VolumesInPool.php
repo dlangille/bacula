@@ -20,27 +20,12 @@
  * Bacula(R) is a registered trademark of Kern Sibbald.
  */
  
-class JobsForClient extends BaculumAPIServer {
-
+class VolumesInPool extends BaculumAPIServer {
 	public function get() {
-		$allowed_jobs = array();
-		$clientid = $this->Request->contains('id') ? intval($this->Request['id']) : 0;
-		$error = false;
-		$result = $this->getModule('bconsole')->bconsoleCommand($this->director, array('.jobs'));
-		if ($result->exitcode === 0) {
-			array_shift($result->output);
-			$allowed_jobs = $result->output;
-		} else {
-			$error = true;
-			$this->output = $result->output;
-			$this->error = $result->exitcode;
-		}
-
-		if ($error === false) {
-			$jobs = $this->getModule('job')->getJobsForClient($clientid, $allowed_jobs);
-			$this->output = $jobs;
-			$this->error = JobError::ERROR_NO_ERRORS;
-		}
+		$poolid = $this->Request->contains('poolid') ? intval($this->Request['poolid']) : 0;
+		$result = $this->getModule('volume')->getVolumesByPoolId($poolid);
+		$this->output = $result;
+		$this->error = VolumeError::ERROR_NO_ERRORS;
 	}
 }
 ?>

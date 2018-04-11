@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2017 Kern Sibbald
+ * Copyright (C) 2013-2018 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -23,12 +23,25 @@
 class Jobs extends BaculumAPIServer {
 	public function get() {
 		$limit = $this->Request->contains('limit') ? intval($this->Request['limit']) : 0;
+		$jobstatus = $this->Request->contains('jobstatus') ? $this->Request['jobstatus'] : '';
+		$params = array();
+		$jobstatuses = array_keys($this->getModule('misc')->getJobState());
+		$sts = str_split($jobstatus);
+		for ($i = 0; $i < count($sts); $i++) {
+			if (in_array($sts[$i], $jobstatuses)) {
+				if (!key_exists('jobstatus', $params)) {
+					$params['jobstatus'] = array('operator' => 'OR', 'vals' => array());
+				}
+				$params['jobstatus']['vals'][] = $sts[$i];
+			}
+		}
 		$allowed = array();
 		$result = $this->getModule('bconsole')->bconsoleCommand($this->director, array('.jobs'));
 		if ($result->exitcode === 0) {
 			array_shift($result->output);
-			$allowed = $result->output;
-			$jobs = $this->getModule('job')->getJobs($limit, $allowed);
+			$params['name']['operator'] = 'OR';
+			$params['name']['vals'] = $result->output;
+			$jobs = $this->getModule('job')->getJobs($limit, $params);
 			$this->output = $jobs;
 			$this->error = JobError::ERROR_NO_ERRORS;
 		} else {
