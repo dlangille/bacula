@@ -97,6 +97,7 @@ class BaculumAPIClient extends WebModule {
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 		curl_setopt($ch, CURLOPT_COOKIE, 'PHPSESSID=' . md5(session_id()));
 		curl_setopt($ch, CURLOPT_HEADER, true);
+		curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 8);
 		return $ch;
 	}
 
