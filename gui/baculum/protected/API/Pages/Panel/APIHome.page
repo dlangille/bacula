@@ -1,6 +1,6 @@
 <%@ MasterClass="Application.API.Layouts.Main" Theme="Baculum-v1"%>
 <com:TContent ID="Main">
-	<com:TClientScript ScriptUrl=<%~ ../../JavaScript/misc.js %> />
+	<com:BClientScript ScriptUrl=<%~ ../../JavaScript/misc.js %> />
 	<h3 style="clear: left"><%[ Welcome on the Baculum API default page ]%> <input type="button" class="bbutton" onclick="window.location.href='<%=$this->getService()->constructUrl('Panel.APIInstallWizard')%>'" value="<%[ Go to configuration wizard ]%>" style="float: right" /></h3>
 	<div id="tabs">
 		<ul>

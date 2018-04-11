@@ -1,6 +1,6 @@
 <%@ MasterClass="Application.API.Layouts.Wizard" Theme="Baculum-v1"%>
 <com:TContent ID="Wizard">
-	<com:TClientScript ScriptUrl=<%~ ../../JavaScript/misc.js %> />
+	<com:BClientScript ScriptUrl=<%~ ../../JavaScript/misc.js %> />
 	<com:TWizard ID="InstallWizard"
 		CssClass="wizard"
 		StepStyle.CssClass="steps"

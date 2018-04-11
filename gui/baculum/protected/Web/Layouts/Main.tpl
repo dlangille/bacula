@@ -8,16 +8,16 @@
 	<body  class="w3-light-grey">
 		<com:TForm>
 			<com:TClientScript PradoScripts="ajax, effects" />
-			<com:TClientScript ScriptUrl=<%~ ../JavaScript/flotr2.js %> />
-			<com:TClientScript ScriptUrl=<%~ ../JavaScript/fontawesome-all.js %> />
-			<com:TClientScript ScriptUrl=<%~ ../JavaScript/datatables.js %> />
-			<com:TClientScript ScriptUrl=<%~ ../JavaScript/dataTables.responsive.js %> />
-			<com:TClientScript ScriptUrl=<%~ ../JavaScript/responsive.jqueryui.js %> />
-			<com:TClientScript ScriptUrl=<%~ ../JavaScript/excanvas.js %> />
-			<com:TClientScript ScriptUrl=<%~ ../JavaScript/bacula-config.js %> />
-			<com:TClientScript ScriptUrl=<%~ ../JavaScript/misc.js %> />
-			<com:TClientScript ScriptUrl=<%~ ../JavaScript/graph.js %> />
-			<com:TClientScript ScriptUrl=<%~ ../JavaScript/statistics.js %> />
+			<com:BClientScript ScriptUrl=<%~ ../JavaScript/flotr2.js %> />
+			<com:BClientScript ScriptUrl=<%~ ../JavaScript/fontawesome-all.js %> />
+			<com:BClientScript ScriptUrl=<%~ ../JavaScript/datatables.js %> />
+			<com:BClientScript ScriptUrl=<%~ ../JavaScript/dataTables.responsive.js %> />
+			<com:BClientScript ScriptUrl=<%~ ../JavaScript/responsive.jqueryui.js %> />
+			<com:BClientScript ScriptUrl=<%~ ../JavaScript/excanvas.js %> />
+			<com:BClientScript ScriptUrl=<%~ ../JavaScript/bacula-config.js %> />
+			<com:BClientScript ScriptUrl=<%~ ../JavaScript/misc.js %> />
+			<com:BClientScript ScriptUrl=<%~ ../JavaScript/graph.js %> />
+			<com:BClientScript ScriptUrl=<%~ ../JavaScript/statistics.js %> />
 			<!-- Top container -->
 			<div class="w3-bar w3-top w3-black w3-large" style="z-index:4">
 				<button type="button" class="w3-bar-item w3-button w3-hover-none w3-hover-text-light-grey" onclick="W3SideBar.open();"><i class="fa fa-bars"></i>  Menu</button>

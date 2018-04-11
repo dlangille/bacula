@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<application id="baculum" mode="Debug">
+<application id="baculum" mode="Normal">
 	<paths>
 		<using namespace="System.I18N.*" />
 		<using namespace="Application.Common.Portlets.BButton" />
 		<using namespace="Application.Common.Portlets.BActiveButton" />
+		<using namespace="Application.Common.Class.BClientScript" />
 	</paths>
 	<modules>
 		<!-- generic common modules -->

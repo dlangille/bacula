@@ -8,13 +8,13 @@
 	<body  class="w3-light-grey">
 		<com:TForm>
 			<com:TClientScript PradoScripts="ajax, effects" />
-			<com:TClientScript ScriptUrl=<%~ ../JavaScript/fontawesome-all.js %> />
-			<com:TClientScript ScriptUrl=<%~ ../JavaScript/datatables.js %> />
-			<com:TClientScript ScriptUrl=<%~ ../JavaScript/dataTables.responsive.js %> />
-			<com:TClientScript ScriptUrl=<%~ ../JavaScript/responsive.jqueryui.js %> />
-			<com:TClientScript ScriptUrl=<%~ ../JavaScript/opentip.js %> />
-			<com:TClientScript ScriptUrl=<%~ ../JavaScript/tooltip.js %> />
-			<com:TClientScript ScriptUrl=<%~ ../JavaScript/misc.js %> />
+			<com:BClientScript ScriptUrl=<%~ ../JavaScript/fontawesome-all.js %> />
+			<com:BClientScript ScriptUrl=<%~ ../JavaScript/datatables.js %> />
+			<com:BClientScript ScriptUrl=<%~ ../JavaScript/dataTables.responsive.js %> />
+			<com:BClientScript ScriptUrl=<%~ ../JavaScript/responsive.jqueryui.js %> />
+			<com:BClientScript ScriptUrl=<%~ ../JavaScript/opentip.js %> />
+			<com:BClientScript ScriptUrl=<%~ ../JavaScript/tooltip.js %> />
+			<com:BClientScript ScriptUrl=<%~ ../JavaScript/misc.js %> />
 			<!-- Top container -->
 				<com:TContentPlaceHolder ID="Wizard" />
 		</com:TForm>
