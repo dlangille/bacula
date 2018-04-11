@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2017 Kern Sibbald
+ * Copyright (C) 2013-2018 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -65,6 +65,10 @@ class RestoreWizard extends BaculumWebPage
 	 */
 	public $excluded_elements_from_add = array('.', '..');
 
+	public $jobs_to_restore;
+
+	public $show_error = false;
+
 	/**
 	 * Prefix for Bvfs path.
 	 */
@@ -75,6 +79,65 @@ class RestoreWizard extends BaculumWebPage
 		if(!$this->IsPostBack && !$this->IsCallBack) {
 			$this->resetWizard();
 			$this->loadBackupClients();
+			$this->setPreDefinedJobIdToRestore();
+		}
+	}
+
+	public function onPreRender($param) {
+		parent::onPreRender($param);
+		$this->setNavigationButtons();
+	}
+
+	/**
+	 * Set pre-defined jobid to restore.
+	 * Used to restore specific job by jobid.
+	 *
+	 * @return none
+	 */
+	public function setPreDefinedJobIdToRestore() {
+		$jobid = 0;
+		if ($this->Request->contains('jobid')) {
+			$jobid = intval($this->Request['jobid']);
+			$this->setRestoreByJobId($jobid);
+			$this->RestoreWizard->setActiveStep($this->Step3);
+			$param = new stdClass;
+			$param->CurrentStepIndex = 1;
+			$this->RestoreWizard->raiseEvent('OnNextButtonClick', null, $param);
+		}
+	}
+
+	/**
+	 * Set/prepare restore wizard to restore specific jobid.
+	 *
+	 * @return none
+	 */
+	public function setRestoreByJobId($jobid) {
+		$_SESSION['restore_single_jobid'] = $jobid;
+		$job = $this->getModule('api')->get(array('jobs', $_SESSION['restore_single_jobid']))->output;
+		if (is_object($job)) {
+			$this->loadRestoreClients();
+			$client = $this->getBackupClient($job->clientid);
+			$this->BackupClientName->SelectedValue = $client;
+			$this->RestoreClient->SelectedValue = $client;
+			$this->loadBackupsForClient();
+			$step_index = new stdClass;
+			$step_index->CurrentStepIndex = 3;
+			$this->wizardNext(null, $step_index);
+		}
+	}
+
+	/**
+	 * Set navigation buttons.
+	 * Used for restore specific jobid (hide previous button)
+	 *
+	 * @return none
+	 */
+	public function setNavigationButtons() {
+		$prev_btn = $this->RestoreWizard->getStepNavigation()->PreviousStepBtn;
+		if ($this->RestoreWizard->getActiveStepIndex() === 2) {
+			$prev_btn->Visible = false;
+		} else {
+			$prev_btn->Visible = true;
 		}
 	}
 
@@ -114,6 +177,7 @@ class RestoreWizard extends BaculumWebPage
 			}
 			$this->file_relocation_opt = $_SESSION['file_relocation'];
 		}
+		$this->setNavigationButtons();
 	}
 
 	/**
@@ -190,8 +254,7 @@ class RestoreWizard extends BaculumWebPage
 		$clientid = $this->getBackupClientId();
 		$jobs_for_client = $this->getModule('api')->get(array('clients', 'jobs', $clientid))->output;
 		$jobs = $this->getModule('misc')->objectToArray($jobs_for_client);
-		$this->BackupsToRestore->DataSource = array_filter($jobs, array($this, 'isBackupJobToRestore'));
-		$this->BackupsToRestore->dataBind();
+		$this->jobs_to_restore = array_filter($jobs, array($this, 'isBackupJobToRestore'));
 	}
 
 	/**
@@ -230,6 +293,24 @@ class RestoreWizard extends BaculumWebPage
 			}
 		}
 		return $clientid;
+	}
+
+	/**
+	 * Set selected backup client.
+	 *
+	 * @param integer $clientid client identifier
+	 * @return none
+	 */
+	public function getBackupClient($clientid) {
+		$client = null;
+		$clients = $this->getModule('api')->get(array('clients'))->output;
+		for ($i = 0; $i < count($clients); $i++) {
+			if ($clients[$i]->clientid === $clientid) {
+				$client = $clients[$i]->name;
+				break;
+			}
+		}
+		return $client;
 	}
 
 	/**
@@ -321,6 +402,9 @@ class RestoreWizard extends BaculumWebPage
 					$jobids = $match[1];
 					break;
 				}
+			}
+			if (empty($jobids)) {
+				$jobids = $_SESSION['restore_single_jobid'];
 			}
 		} else {
 			$params = array(
@@ -711,11 +795,14 @@ class RestoreWizard extends BaculumWebPage
 			$ret = $this->getModule('api')->create(array('jobs', 'restore'), $restore_props);
 			$jobid = $this->getModule('misc')->findJobIdStartedJob($ret->output);
 		}
-		$url_params = array('open' => 'Job');
+		$url_params = array();
 		if (is_numeric($jobid)) {
-			$url_params['id'] = $jobid;
+			$url_params['jobid'] = $jobid;
+			$this->goToPage('JobHistoryView', $url_params);
+		} else {
+			$this->RestoreError->Text = implode('<br />', $ret->output);
+			$this->show_error = true;
 		}
-		$this->goToDefaultPage($url_params);
 	}
 
 	/**

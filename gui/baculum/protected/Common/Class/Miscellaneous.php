@@ -122,6 +122,11 @@ class Miscellaneous extends TModule {
 		return $state;
 	}
 
+	public function isJobRunning($jobstatus) {
+		$running_job_states = $this->getRunningJobStates();
+		return in_array($jobstatus, $running_job_states);
+	}
+
 	public function getRunningJobStates() {
 		return $this->runningJobStates;
 	}

@@ -29,9 +29,6 @@ msgstr "Portuguese"
 msgid "Japanese"
 msgstr "日本語"
 
-msgid "&lt; Previous"
-msgstr "&lt; 戻る"
-
 msgid "Language"
 msgstr "言語"
 
@@ -49,15 +46,6 @@ msgstr "完了"
 
 msgid "Console"
 msgstr "コンソール"
-
-msgid "≪ Previous"
-msgstr "&laquo; 戻る"
-
-msgid "Next ≫"
-msgstr "次へ &raquo;"
-
-msgid "&laquo; Previous"
-msgstr "&laquo; 戻る"
 
 msgid "Step 1 - select language"
 msgstr "Step 1 - 言語選択"
@@ -79,9 +67,6 @@ msgstr "Step 5 - 管理権限ユーザ作成"
 
 msgid "Step 6 - Finish"
 msgstr "Step 6 - 完了"
-
-msgid "Next &raquo;"
-msgstr "次へ &raquo;"
 
 msgid "Save"
 msgstr "保存"
@@ -377,29 +362,29 @@ msgstr "Job retention value must be integer."
 msgid "Vol. use duration value must be integer."
 msgstr "Vol. use duration value must be integer."
 
-msgid "Max vol. jobs:"
+msgid "Max. vol. jobs:"
 msgstr "最大ボリュームジョブ数:"
 
-msgid "Max vol. jobs value must be integer."
-msgstr "Max vol. jobs value must be integer."
+msgid "Max. vol. jobs value must be integer."
+msgstr "Max. vol. jobs value must be integer."
 
-msgid "Max vol. files:"
+msgid "Max. vol. files:"
 msgstr "最大ボリュームファイル数:"
 
-msgid "Max vol. files value must be integer."
-msgstr "Max vol. files value must be integer."
+msgid "Max. vol. files value must be integer."
+msgstr "Max. vol. files value must be integer."
 
-msgid "Max vol. bytes:"
+msgid "Max. vol. bytes:"
 msgstr "最大ボリューム容量(bytes):"
 
-msgid "Max vol. bytes value must be integer."
-msgstr "Max vol. bytes value must be integer."
+msgid "Max. vol. bytes value must be integer."
+msgstr "Max. vol. bytes value must be integer."
 
 msgid "Slot value must be integer."
 msgstr "Slot value must be integer."
 
-msgid "Max volumes value must be integer."
-msgstr "Max volumes value must be integer."
+msgid "Max. volumes value must be integer."
+msgstr "Max. volumes value must be integer."
 
 msgid "Use duration value must be integer."
 msgstr "Use duration value must be integer."
@@ -893,7 +878,7 @@ msgstr "select action"
 msgid "Delete"
 msgstr "Delete"
 
-msgid "Output for selected job is not available yet or you do not have enabled logging job logs to catalog database. For watching job log there is need to add to the job Messages resource next directive: console = all, !skipped, !saved"
+msgid "Output for selected job is not available yet or you do not have enabled logging job logs to the catalog database. For watching job the log you need to add to the job Messages resource the following directive: console = all, !skipped, !saved"
 msgstr "Output for selected job is not available yet or you do not have enabled logging job logs to catalog database.\n\nFor watching job log there is need to add to the job Messages resource next directive:\n\nconsole = all, !skipped, !saved"
 
 msgid "Workspace"
@@ -968,14 +953,14 @@ msgstr "File retention (in sec.):"
 msgid "Job retention (in sec.):"
 msgstr "Job retention (in sec.):"
 
-msgid "Max Vol. Bytes:"
-msgstr "Max Vol. Bytes:"
+msgid "Max. Vol. Bytes:"
+msgstr "Max. Vol. Bytes:"
 
-msgid "Max Vol. Files:"
-msgstr "Max Vol. Files:"
+msgid "Max. Vol. Files:"
+msgstr "Max. Vol. Files:"
 
-msgid "Max Vol. Jobs:"
-msgstr "Max Vol. Jobs:"
+msgid "Max. Vol. Jobs:"
+msgstr "Max. Vol. Jobs:"
 
 msgid "Retention Period (in sec.):"
 msgstr "Retention Period (in sec.):"
@@ -1034,7 +1019,7 @@ msgstr "ダッシュボード"
 msgid "Go to started job after start:"
 msgstr "Go to started job after start:"
 
-msgid "Jobs status summary"
+msgid "Job status summary"
 msgstr "ジョブステータス サマリー"
 
 msgid "Quick job access"
@@ -1043,16 +1028,16 @@ msgstr "ジョブ一覧"
 msgid "Finished jobs"
 msgstr "実行完了ジョブ"
 
-msgid "Most often used:"
+msgid "The most often used:"
 msgstr "頻度の高いもの:"
 
-msgid "Number of clients:"
-msgstr "クライアント数:"
+msgid "Number of clients"
+msgstr "クライアント数"
 
 msgid "jobs"
 msgstr "jobs"
 
-msgid "Jobs count on most used:"
+msgid "Job count the most used:"
 msgstr "最も多く使用されたジョブ数:"
 
 msgid "level"
@@ -1085,13 +1070,10 @@ msgstr "times"
 msgid "Execution count most used:"
 msgstr "最も多く実行されたジョブ数:"
 
-msgid "Job Totals"
-msgstr "ジョブ統計"
-
 msgid "Restore Wizard"
 msgstr "リストア"
 
-msgid "Perform Restore"
+msgid "Perform restore"
 msgstr "リストア実行"
 
 msgid "Configuration Wizard"
@@ -1136,7 +1118,7 @@ msgstr "Username:"
 msgid "Invalid login value. Login may contain a-z A-Z 0-9 characters."
 msgstr "Invalid login value. Login may contain a-z A-Z 0-9 characters."
 
-msgid "Jobs on Volume"
+msgid "Jobs on volume"
 msgstr "Jobs on Volume"
 
 msgid "No jobs on the volume."
@@ -1258,3 +1240,330 @@ msgstr "Use Ctrl + Mouse Click to change selection"
 
 msgid "Go back"
 msgstr "Go back"
+
+msgid "Total bytes"
+msgstr "Total bytes"
+
+msgid "Start time"
+msgstr "Start time"
+
+msgid "Name"
+msgstr "Name"
+
+msgid "JobId"
+msgstr "JobId"
+
+msgid "Last 10 jobs"
+msgstr "Last 10 jobs"
+
+msgid "More jobs"
+msgstr "More jobs"
+
+msgid "Welcome"
+msgstr "Welcome"
+
+msgid "Details"
+msgstr "Details"
+
+msgid "Job is running"
+msgstr "Job is running"
+
+msgid "Job is finished"
+msgstr "Job is finished"
+
+msgid "Refresh log"
+msgstr "Refresh log"
+
+msgid "Job list"
+msgstr "Job list"
+
+msgid "Action"
+msgstr "Action"
+
+msgid "Storage list"
+msgstr "Storage list"
+
+msgid "Status storage"
+msgstr "Status storage"
+
+msgid "Storages"
+msgstr "Storages"
+
+msgid "Client list"
+msgstr "Client list"
+
+msgid "Uname"
+msgstr "Uname"
+
+msgid "AutoPrune"
+msgstr "AutoPrune"
+
+msgid "Job retention"
+msgstr "Job retention"
+
+msgid "File retention"
+msgstr "File retention"
+
+msgid "Client details"
+msgstr "Client details"
+
+msgid "Status client"
+msgstr "Status client"
+
+msgid "Configure client"
+msgstr "Configure client"
+
+msgid "Add new Client"
+msgstr "Add new Client"
+
+msgid "New"
+msgstr "New"
+
+msgid "Resource to create:"
+msgstr "Resource to create:"
+
+msgid "Create"
+msgstr "Create"
+
+msgid "Add new resource"
+msgstr "Add new resource"
+
+msgid "Please select host"
+msgstr "Please select host"
+
+msgid "Component:"
+msgstr "Component:"
+
+msgid "Please select component"
+msgstr "Please select component"
+
+msgid "Add client"
+msgstr "Add client"
+
+msgid "Add job"
+msgstr "Add job"
+
+msgid "Job to run:"
+msgstr "Job to run:"
+
+msgid "Add storage"
+msgstr "Add storage"
+
+msgid "Add device"
+msgstr "Add device"
+
+msgid "Add autochanger"
+msgstr "Add autochanger"
+
+msgid "Resource has been saved successfully."
+msgstr "Resource has been saved successfully."
+
+msgid "Configure storage"
+msgstr "Configure storage"
+
+msgid "Configure devices"
+msgstr "Configure devices"
+
+msgid "Configure autochanger"
+msgstr "Configure autochanger"
+
+msgid "Storage details"
+msgstr "Storage details"
+
+msgid "Device name"
+msgstr "Device name"
+
+msgid "Device details"
+msgstr "Device details"
+
+msgid "Device:"
+msgstr "Device:"
+
+msgid "Configure device"
+msgstr "Configure device"
+
+msgid "Job details"
+msgstr "Job details"
+
+msgid "No. vols"
+msgstr "No. vols"
+
+msgid "Max. vols"
+msgstr "Max. vols"
+
+msgid "Vol. retention"
+msgstr "Vol. retention"
+
+msgid "Max. vol. jobs"
+msgstr "Max. vol. jobs"
+
+msgid "Max. vol. bytes"
+msgstr "Max. vol. bytes"
+
+msgid "Max. vol. files"
+msgstr "Max. vol. files"
+
+msgid "Recycle"
+msgstr "Recycle"
+
+msgid "Pool list"
+msgstr "Pool list"
+
+msgid "Add pool"
+msgstr "Add pool"
+
+msgid "Update pool"
+msgstr "Update pool"
+
+msgid "Update all vols in pool"
+msgstr "Update all vols in pool"
+
+msgid "Pool details"
+msgstr "Pool details"
+
+msgid "Limits"
+msgstr "Limits"
+
+msgid "Recycling"
+msgstr "Recycling"
+
+msgid "Vol. use duration"
+msgstr "Vol. use duration"
+
+msgid "Action on purge"
+msgstr "Action on purge"
+
+msgid "Recycle pool"
+msgstr "Recycle pool"
+
+msgid "Scratch pool"
+msgstr "Scratch pool"
+
+msgid "Next pool"
+msgstr "Next pool"
+
+msgid "Enabled"
+msgstr "Enabled"
+
+msgid "Volumes in pool"
+msgstr "Volumes in pool"
+
+msgid "Configure pool"
+msgstr "Configure pool"
+
+msgid "First written"
+msgstr "First written"
+
+msgid "Last written"
+msgstr "Last written"
+
+msgid "Vol. jobs"
+msgstr "Vol. jobs"
+
+msgid "Vol. bytes"
+msgstr "Vol. bytes"
+
+msgid "Volume list"
+msgstr "Volume list"
+
+msgid "Volume details"
+msgstr "Volume details"
+
+msgid "Recycle count"
+msgstr "Recycle count"
+
+msgid "Configure volume"
+msgstr "Configure volume"
+
+msgid "InChanger"
+msgstr "InChanger"
+
+msgid "Vol. files"
+msgstr "Vol. files"
+
+msgid "Writing"
+msgstr "Writing"
+
+msgid "Vol. status"
+msgstr "Vol. status"
+
+msgid "Vol. errors"
+msgstr "Vol. errors"
+
+msgid "Vol. mounts"
+msgstr "Vol. mounts"
+
+msgid "Configure job"
+msgstr "Configure job"
+
+msgid "Configure fileset"
+msgstr "Configure fileset"
+
+msgid "Configure schedule"
+msgstr "Configure schedule"
+
+msgid "Remove resource"
+msgstr "Remove resource"
+
+msgid "Job history"
+msgstr "Job history"
+
+msgid "Job history list"
+msgstr "Job history list"
+
+msgid "Job history details"
+msgstr "Job history details"
+
+msgid "Are you sure you want to remove this resource?"
+msgstr "Are you sure you want to remove this resource?"
+
+msgid "FileSets"
+msgstr "FileSets"
+
+msgid "FileSet list"
+msgstr "FileSet list"
+
+msgid "Add fileset"
+msgstr "Add fileset"
+
+msgid "FileSet details"
+msgstr "FileSet details"
+
+msgid "Schedule list"
+msgstr "Schedule list"
+
+msgid "Add schedule"
+msgstr "Add schedule"
+
+msgid "Schedules"
+msgstr "Schedules"
+
+msgid "Schedule:"
+msgstr "Schedule:"
+
+msgid "Schedule details"
+msgstr "Schedule details"
+
+msgid "Configure"
+msgstr "Configure"
+
+msgid "Configure Bacula hosts"
+msgstr "Configure Bacula hosts"
+
+msgid "Next"
+msgstr "次へ"
+
+msgid "Previous"
+msgstr "戻る"
+
+msgid "Exit wizard"
+msgstr "Exit wizard"
+
+msgid "Time range:"
+msgstr "Time range:"
+
+msgid "Application settings"
+msgstr "Application settings"
+
+msgid "Update slots"
+msgstr "Update slots"

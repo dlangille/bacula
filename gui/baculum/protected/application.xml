@@ -2,7 +2,6 @@
 <application id="baculum" mode="Debug">
 	<paths>
 		<using namespace="System.I18N.*" />
-		<!-- modules commonly used (@TODO: include buttons when needed, not here)-->
 		<using namespace="Application.Common.Portlets.BButton" />
 		<using namespace="Application.Common.Portlets.BActiveButton" />
 	</paths>
@@ -18,6 +17,6 @@
 	</modules>
 	<services>
 		<service id="api" class="TPageService" BasePath="Application.API.Pages" DefaultPage="Panel.MainPage" />
-		<service id="web" class="TPageService" BasePath="Application.Web.Pages" DefaultPage="WebHome" />
+		<service id="web" class="TPageService" BasePath="Application.Web.Pages" DefaultPage="Dashboard" />
 	</services>
 </application>

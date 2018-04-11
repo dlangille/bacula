@@ -20,9 +20,9 @@
  * Bacula(R) is a registered trademark of Kern Sibbald.
  */
 
-Prado::using('Application.Web.Class.BaculumWebPage');
+Prado::using('Application.Common.Class.BaculumPage');
 
-class OAuth2Redirect extends BaculumWebPage {
+class OAuth2Redirect extends BaculumPage {
 
 	/**
 	 * Authorization ID (known also as 'authorization_code') regular expression pattern

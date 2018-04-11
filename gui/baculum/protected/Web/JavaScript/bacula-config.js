@@ -47,7 +47,7 @@ var BaculaConfigClass = jQuery.klass({
 	},
 	unset_config_items: function(id) {
 		var child_container = this.get_child_container(id);
-		var selector = [child_container[0].nodeName.toLowerCase(), child_container[0].className].join('.');
+		var selector = [child_container[0].nodeName.toLowerCase(), child_container[0].className.replace(' ', '.')].join('.');
 		var callback = function(el) {
 			if (el.style.display === 'none' && !el.classList.contains('new_resource')) {
 				// element closed
@@ -70,7 +70,7 @@ var BaculaConfigClass = jQuery.klass({
 		return send;
 	},
 	get_loader: function(id) {
-		var loader = $('#' + id).next('img');
+		var loader = $('#' + id).next('svg');
 		return loader;
 	},
 	loader_start: function(id) {
@@ -100,7 +100,7 @@ var BaculaConfigOptionsClass = jQuery.klass({
 	},
 	set_events: function() {
 		var element = document.getElementById(this.options_id);
-		var opts = element.getElementsByTagName('LI');
+		var opts = element.getElementsByTagName('BUTTON');
 		for (var i = 0; i < opts.length; i++) {
 			opts[i].addEventListener('click', function(e) {
 				var el = e.srcElement || e.target;

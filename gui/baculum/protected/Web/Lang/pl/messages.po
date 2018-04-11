@@ -23,9 +23,6 @@ msgstr "Autentykacja"
 msgid "Finish"
 msgstr "Podsumowanie"
 
-msgid "&lt; Previous"
-msgstr "&lt; Wstecz"
-
 msgid "Language"
 msgstr "Język"
 
@@ -49,18 +46,6 @@ msgstr "japoński"
 
 msgid "Console"
 msgstr "Konsola"
-
-msgid "« Previous"
-msgstr "« Wstecz"
-
-msgid "Next »"
-msgstr "Dalej »"
-
-msgid "&laquo; Previous"
-msgstr "&laquo; Wstecz"
-
-msgid "Next &raquo;"
-msgstr "Dalej &raquo;"
 
 msgid "Step 1 - select language"
 msgstr "Krok 1 - wybierz język"
@@ -215,14 +200,14 @@ msgstr "Pula wolumenów:"
 msgid "Vol. Use Duration (in sec.):"
 msgstr "Vol. Use Duration (in sec.):"
 
-msgid "Max Vol. Jobs:"
-msgstr "Max Vol. Jobs:"
+msgid "Max. Vol. Jobs:"
+msgstr "Max. Vol. Jobs:"
 
-msgid "Max Vol. Files:"
-msgstr "Max Vol. Files:"
+msgid "Max. Vol. Files:"
+msgstr "Max. Vol. Files:"
 
-msgid "Max Vol. Bytes:"
-msgstr "Max Vol. Bytes:"
+msgid "Max. Vol. Bytes:"
+msgstr "Max. Vol. Bytes:"
 
 msgid "Slot number:"
 msgstr "Numer slotu:"
@@ -572,23 +557,23 @@ msgstr "Vol. use duration (w godz.):"
 msgid "Vol. use duration value must be integer."
 msgstr "Vol. use duration musi być liczbą całkowitą."
 
-msgid "Max vol. jobs:"
-msgstr "Max vol. jobs:"
+msgid "Max. vol. jobs:"
+msgstr "Max. vol. jobs:"
 
-msgid "Max vol. jobs value must be integer."
-msgstr "Max vol. jobs musi być liczbą całkowitą."
+msgid "Max. vol. jobs value must be integer."
+msgstr "Max. vol. jobs musi być liczbą całkowitą."
 
-msgid "Max vol. files:"
-msgstr "Max vol. files:"
+msgid "Max. vol. files:"
+msgstr "Max. vol. files:"
 
-msgid "Max vol. files value must be integer."
-msgstr "Max vol. files musi być liczbą całkowitą."
+msgid "Max. vol. files value must be integer."
+msgstr "Max. vol. files musi być liczbą całkowitą."
 
-msgid "Max vol. bytes:"
-msgstr "Max vol. bytes:"
+msgid "Max. vol. bytes:"
+msgstr "Max. vol. bytes:"
 
-msgid "Max vol. bytes value must be integer."
-msgstr "Max vol. bytes musi być liczbą całkowitą."
+msgid "Max. vol. bytes value must be integer."
+msgstr "Max. vol. bytes musi być liczbą całkowitą."
 
 msgid "Slot value must be integer."
 msgstr "Slot musi być liczbą całkowitą."
@@ -611,8 +596,8 @@ msgstr "Retencja zadań (w dniach):"
 msgid "Job retention value must be positive integer or zero."
 msgstr "Retencja zadań musi być liczbą całkowitą."
 
-msgid "Max volumes value must be integer."
-msgstr "Max volumes musi być liczbą całkowitą."
+msgid "Max. volumes value must be integer."
+msgstr "Max. volumes musi być liczbą całkowitą."
 
 msgid "Use duration value must be integer."
 msgstr "Vol. use duration musi być liczbą całkowitą."
@@ -827,7 +812,7 @@ msgstr "wybierz akcję"
 msgid "Delete"
 msgstr "Usuń"
 
-msgid "Output for selected job is not available yet or you do not have enabled logging job logs to catalog database. For watching job log there is need to add to the job Messages resource next directive: console = all, !skipped, !saved"
+msgid "Output for selected job is not available yet or you do not have enabled logging job logs to the catalog database. For watching job the log you need to add to the job Messages resource the following directive: console = all, !skipped, !saved"
 msgstr "Listing dla wybranego zadania nie jest jeszcze dostępny lub nie masz włączonego logowania statusów zadań do bazy katalogowej.\n\nW celu oglądania listingów ze statusami zadań potrzeba włączyć w zasobie Messages następującą dyrektywę:\n\nconsole = all, !skipped, !saved."
 
 msgid "Workspace"
@@ -981,7 +966,7 @@ msgstr "Start"
 msgid "Go to started job after start:"
 msgstr "Przejdź do uruchomionego zadania po starcie:"
 
-msgid "Jobs status summary"
+msgid "Job status summary"
 msgstr "Podsumowanie statusu zadań"
 
 msgid "Quick job access"
@@ -990,16 +975,16 @@ msgstr "Quick job access"
 msgid "Finished jobs"
 msgstr "Zakończone zadania"
 
-msgid "Most often used:"
+msgid "The most often used:"
 msgstr "Najczęściej używany:"
 
-msgid "Number of clients:"
-msgstr "Ilość klientów:"
+msgid "Number of clients"
+msgstr "Ilość klientów"
 
 msgid "jobs"
 msgstr "zadań"
 
-msgid "Jobs count on most used:"
+msgid "Job count the most used:"
 msgstr "Ilość zadań na najczęściej używanym:"
 
 msgid "level"
@@ -1032,13 +1017,10 @@ msgstr "razy"
 msgid "Execution count most used:"
 msgstr "Ilość wykonań najczęściej używanego:"
 
-msgid "Job Totals"
-msgstr "Podsumowanie zadań"
-
 msgid "Restore Wizard"
 msgstr "Kreator przywracania danych"
 
-msgid "Perform Restore"
+msgid "Perform restore"
 msgstr "Wykonaj przywracanie danych"
 
 msgid "Configuration Wizard"
@@ -1083,8 +1065,8 @@ msgstr "Nazwa użytkownika:"
 msgid "Invalid login value. Login may contain a-z A-Z 0-9 characters."
 msgstr "Niepoprawny login. Login może zawierać znaki z zakresu: a-z A-Z 0-9"
 
-msgid "Jobs on Volume"
-msgstr "Zadania na volumenie"
+msgid "Jobs on volume"
+msgstr "Zadania na wolumenie"
 
 msgid "No jobs on the volume."
 msgstr "Na wolumenie nie ma żadnych zadań."
@@ -1514,3 +1496,330 @@ msgstr "Aby zmienić wybór, użyj Ctrl + klik myszy"
 
 msgid "Go back"
 msgstr "Powrót"
+
+msgid "Total bytes"
+msgstr "Ilość bajtów"
+
+msgid "Start time"
+msgstr "Czas rozpoczęcia"
+
+msgid "Name"
+msgstr "Nazwa"
+
+msgid "JobId"
+msgstr "JobId"
+
+msgid "Last 10 jobs"
+msgstr "Ostatnie 10 zadań"
+
+msgid "More jobs"
+msgstr "Więcej zadań"
+
+msgid "Welcome"
+msgstr "Witaj"
+
+msgid "Details"
+msgstr "Szczegóły"
+
+msgid "Job is running"
+msgstr "Zadanie jest uruchomione"
+
+msgid "Job is finished"
+msgstr "Zadanie jest zakończone"
+
+msgid "Refresh log"
+msgstr "Odśwież dziennink"
+
+msgid "Job list"
+msgstr "Lista zadań"
+
+msgid "Action"
+msgstr "Akcja"
+
+msgid "Storage list"
+msgstr "Lista magazynów danych"
+
+msgid "Status storage"
+msgstr "Status magazynu danych"
+
+msgid "Storages"
+msgstr "Magazyny danych"
+
+msgid "Client list"
+msgstr "Lista klientów"
+
+msgid "Uname"
+msgstr "Uname"
+
+msgid "AutoPrune"
+msgstr "AutoPrune"
+
+msgid "Job retention"
+msgstr "Retencja zadań"
+
+msgid "File retention"
+msgstr "Retencja plików"
+
+msgid "Client details"
+msgstr "Szczegóły klienta"
+
+msgid "Status client"
+msgstr "Status klienta"
+
+msgid "Configure client"
+msgstr "Konfiguruj klienta"
+
+msgid "Add new Client"
+msgstr "Dodaj nowego klienta"
+
+msgid "New"
+msgstr "Nowy"
+
+msgid "Resource to create:"
+msgstr "Zasób do stworzenia:"
+
+msgid "Create"
+msgstr "Utwórz"
+
+msgid "Add new resource"
+msgstr "Dodaj nowy zasób"
+
+msgid "Please select host"
+msgstr "Proszę wybrać host"
+
+msgid "Component:"
+msgstr "Komponent:"
+
+msgid "Please select component"
+msgstr "Proszę wybrać komponent"
+
+msgid "Add client"
+msgstr "Dodaj klienta"
+
+msgid "Add job"
+msgstr "Dodaj zadanie"
+
+msgid "Job to run:"
+msgstr "Zadanie do uruchomienia:"
+
+msgid "Add storage"
+msgstr "Dodaj magazyn danych"
+
+msgid "Add device"
+msgstr "Dodaj urządzenie"
+
+msgid "Add autochanger"
+msgstr "Dodaj zmieniarkę taśm"
+
+msgid "Resource has been saved successfully."
+msgstr "Zasób został zapisany poprawnie."
+
+msgid "Configure storage"
+msgstr "Konfiguruj magazyn danych"
+
+msgid "Configure devices"
+msgstr "Konfiguruj urządzenia"
+
+msgid "Configure autochanger"
+msgstr "Konfiguruj zmieniarkę taśm"
+
+msgid "Storage details"
+msgstr "Szczegóły magazynu danych"
+
+msgid "Device name"
+msgstr "Nazwa urządzenia"
+
+msgid "Device details"
+msgstr "Szczegóły urządzenia"
+
+msgid "Device:"
+msgstr "Urządzenie:"
+
+msgid "Configure device"
+msgstr "Konfiguruj urządzenie"
+
+msgid "Job details"
+msgstr "Szczegóły zadania"
+
+msgid "No. vols"
+msgstr "Liczba vol."
+
+msgid "Max. vols"
+msgstr "Maks. wolumenów"
+
+msgid "Vol. retention"
+msgstr "Retencja vol."
+
+msgid "Max. vol. jobs"
+msgstr "Maks. zadań na vol."
+
+msgid "Max. vol. bytes"
+msgstr "Maks. bajtów na vol."
+
+msgid "Max. vol. files"
+msgstr "Maks. plików. na vol."
+
+msgid "Recycle"
+msgstr "Recykling"
+
+msgid "Pool list"
+msgstr "Lista puli wolumenów"
+
+msgid "Add pool"
+msgstr "Dodaj pulę"
+
+msgid "Update pool"
+msgstr "Aktualizuj pulę"
+
+msgid "Update all vols in pool"
+msgstr "Aktualizuj wszystkie wolumeny w puli"
+
+msgid "Pool details"
+msgstr "Szczegóły puli"
+
+msgid "Limits"
+msgstr "Limity"
+
+msgid "Recycling"
+msgstr "Recykling"
+
+msgid "Vol. use duration"
+msgstr "Vol. use duration"
+
+msgid "Action on purge"
+msgstr "Action on purge"
+
+msgid "Recycle pool"
+msgstr "Recycle pool"
+
+msgid "Scratch pool"
+msgstr "Scratch pool"
+
+msgid "Next pool"
+msgstr "Następna pula"
+
+msgid "Enabled"
+msgstr "Włączony"
+
+msgid "Volumes in pool"
+msgstr "Wolumeny w puli"
+
+msgid "Configure pool"
+msgstr "Konfiguruj pulę"
+
+msgid "First written"
+msgstr "Pierwszy zapis"
+
+msgid "Last written"
+msgstr "Ostatni zapis"
+
+msgid "Vol. jobs"
+msgstr "Zadania na wol."
+
+msgid "Vol. bytes"
+msgstr "Bajtów na wol."
+
+msgid "Volume list"
+msgstr "Lista wolumenów"
+
+msgid "Volume details"
+msgstr "Szczegóły wolumenu"
+
+msgid "Recycle count"
+msgstr "Ilość recyklingów"
+
+msgid "Configure volume"
+msgstr "Konfiguruj wolumen"
+
+msgid "InChanger"
+msgstr "InChanger"
+
+msgid "Vol. files"
+msgstr "Plików na wol."
+
+msgid "Writing"
+msgstr "Zapisywanie"
+
+msgid "Vol. status"
+msgstr "Status wolumenu"
+
+msgid "Vol. errors"
+msgstr "Błędy na wolumenie"
+
+msgid "Vol. mounts"
+msgstr "Montowania wolumena"
+
+msgid "Configure job"
+msgstr "Konfiguruj zadanie"
+
+msgid "Configure fileset"
+msgstr "Konfiguruj fileset"
+
+msgid "Configure schedule"
+msgstr "Konfiguruj harmonogram"
+
+msgid "Remove resource"
+msgstr "Usuń zasób"
+
+msgid "Job history"
+msgstr "Historia zadań"
+
+msgid "Job history list"
+msgstr "Lista historii zadań"
+
+msgid "Job history details"
+msgstr "Szczegóły historii zadania"
+
+msgid "Are you sure you want to remove this resource?"
+msgstr "Are you sure you want to remove this resource?"
+
+msgid "FileSets"
+msgstr "FileSets"
+
+msgid "FileSet list"
+msgstr "Lista FileSet"
+
+msgid "Add fileset"
+msgstr "Dodaj fileset"
+
+msgid "FileSet details"
+msgstr "FileSet details"
+
+msgid "Schedule list"
+msgstr "Lista harmonogramów zadań"
+
+msgid "Add schedule"
+msgstr "Dodaj harmonogram zadań"
+
+msgid "Schedules"
+msgstr "Harmonogramy"
+
+msgid "Schedule:"
+msgstr "Harmonogram:"
+
+msgid "Schedule details"
+msgstr "Szczegóły harmonogramu zadań"
+
+msgid "Configure"
+msgstr "Konfiguracja"
+
+msgid "Configure Bacula hosts"
+msgstr "Konfiguracja hostów Bacula"
+
+msgid "Next"
+msgstr "Dalej"
+
+msgid "Previous"
+msgstr "Wstecz"
+
+msgid "Exit wizard"
+msgstr "Wyjdź z konfiguratora"
+
+msgid "Time range:"
+msgstr "Zakres czasu:"
+
+msgid "Application settings"
+msgstr "Ustawienia aplikacji"
+
+msgid "Update slots"
+msgstr "Aktualizacja slotów"

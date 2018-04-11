@@ -1,0 +1,97 @@
+#jobs_summary_graph {
+	height: 450px;
+	z-index: 0;
+}
+
+#jobs_summary_graph canvas:nth-child(2) {
+	position: static !important;
+}
+
+.monospace {
+	font-family: "Courier New", Courier, monospace !important;
+}
+
+pre {
+	white-space: pre-wrap;       /* css-3 */
+	white-space: -moz-pre-wrap;  /* Mozilla, since 1999 */
+	white-space: -pre-wrap;      /* Opera 4-6 */
+	white-space: -o-pre-wrap;    /* Opera 7 */
+	word-wrap: break-word;       /* Internet Explorer 5.5+ */
+}
+
+th, table.dataTable thead td {
+	border-bottom: none !important;
+}
+
+table.dataTable.no-footer {
+	border-bottom: none !important;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button {
+	color: black !important;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+	border: 1px solid #4CAF50 !important;
+	background: #4CAF50 !important;
+	border-radius: unset !important;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button.current, .dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
+	background: none !important;
+	border: 1px solid #4CAF50 !important;
+	border-radius: unset !important;
+}
+.dataTables_wrapper .dataTables_paginate .paginate_button:active, .dataTables_wrapper .dataTables_paginate .paginate_button.current:active {
+	border: 1px solid #4CAF50 !important;
+	box-shadow: none !important;
+}
+
+.hide {
+        display: none !important;
+}
+
+img.reset_btn, img.remove_btn {
+        display: none;
+        cursor: pointer;
+        vertical-align: middle;
+}
+
+.step {
+	/*width: 30% !important;*/
+	min-height: 130px;
+}
+
+.step_title {
+	clear: left;
+	
+}
+
+div.opentip div.ot-header h1 {
+	font-size: 14px !important;
+	font-weight: bold;
+}
+
+div.opentip div.ot-content {
+	padding: 5px;
+	font-size: 14px;
+	line-height: 18px;
+}
+
+div.TDatePicker_default {
+	z-index: 10 !important;
+}
+
+svg.reset_btn, svg.remove_btn {
+	display: none;
+	cursor: pointer;
+	margin-left: 4px;
+}
+
+div.directive_value svg {
+	vertical-align: middle;
+}
+
+div.directive_value:hover svg.reset_btn, div.directive_value:hover svg.remove_btn {
+	display: inline;
+}

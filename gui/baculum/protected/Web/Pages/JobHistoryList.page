@@ -1,0 +1,138 @@
+<%@ MasterClass="Application.Web.Layouts.Main" Theme="Baculum-v2"%>
+<com:TContent ID="Main">
+	<!-- Header -->
+	<header class="w3-container">
+		<h5>
+			<b><i class="fa fa-tasks"></i> <%[ Job history list ]%></b>
+		</h5>
+	</header>
+	<div class="w3-margin-left w3-margin-bottom">
+		<button type="button" class="w3-button w3-green<%=empty($_SESSION['dir']) ? ' hide': ''%>" onclick="document.location.href='<%=$this->Service->constructUrl('NewResource', array('component_type' => 'dir', 'component_name' => $_SESSION['dir'], 'resource_type' => 'Job'))%>';"><i class="fa fa-plus"></i> &nbsp;<%[ Add job ]%></button>
+		<com:TActiveLinkButton
+			CssClass="w3-button w3-green"
+			OnClick="loadRunJobModal"
+			Attributes.onclick="document.getElementById('run_job').style.display='block'"
+		>
+			<prop:Text><%=Prado::localize('Run job')%> &nbsp;<i class="fa fa-cogs"></i></prop:Text>
+		</com:TActiveLinkButton>
+	</div>
+	<div class="w3-container">
+		<table id="job_list" class="w3-table w3-striped w3-hoverable w3-white w3-margin-bottom" style="width: 100%">
+			<thead>
+				<tr>
+					<th></th>
+					<th><%[ JobId ]%></th>
+					<th><%[ Name ]%></th>
+					<th><%[ Type ]%></th>
+					<th class="w3-center"><%[ Level ]%></th>
+					<th class="w3-center"><%[ Start time ]%></th>
+					<th class="w3-center"><%[ End time ]%></th>
+					<th class="w3-center"><%[ Job status ]%></th>
+					<th class="w3-center"><%[ Size ]%></th>
+					<th class="w3-center"><%[ Files ]%></th>
+					<th class="w3-center"><%[ Action ]%></th>
+				</tr>
+			</thead>
+			<tbody id="job_list_body">
+			</tbody>
+		</table>
+	</div>
+	<com:Application.Web.Portlets.RunJob ID="RunJobModal" />
+<script type="text/javascript">
+var oJobList = {
+	ids: {
+		job_list: 'job_list',
+		job_list_body: 'job_list_body'
+	},
+	init: function() {
+		this.set_table();
+	},
+	set_table: function() {
+		var table = $('#' + this.ids.job_list).DataTable({
+			data: oData.jobs,
+			columns: [
+				{
+					className: 'details-control',
+					orderable: false,
+					data: null,
+					defaultContent: '<button type="button" class="w3-button w3-blue"><i class="fa fa-angle-down"></i></button>'
+				},
+				{data: 'jobid'},
+				{data: 'name'},
+				{
+					data: 'type',
+					render: function(data, type, row) {
+						return JobType.get_type(data);
+					}
+				},
+				{
+					data: 'level',
+					render: function(data, type, row) {
+						return JobLevel.get_level(data);
+					}
+				},
+				{data: 'starttime'},
+				{data: 'endtime'},
+				{
+					data: 'jobstatus',
+					render: function (data, type, row) {
+						var ret;
+						if (type == 'display') {
+							ret = JobStatus.get_icon(data).outerHTML;
+						} else {
+							ret = data;
+						}
+						return ret;
+					},
+					className: 'w3-center'
+				},
+				{
+					data: 'jobbytes',
+					render: function (data, type, row) {
+						var s;
+						if (type == 'display') {
+							s = Units.get_decimal_size(data)
+						} else {
+							s = data;
+						}
+						return s;
+					}
+				},
+				{data: 'jobfiles'},
+				{
+					data: 'jobid',
+					render: function (data, type, row) {
+						var btn = document.createElement('BUTTON');
+						btn.className = 'w3-button w3-green';
+						btn.type = 'button';
+						var i = document.createElement('I');
+						i.className = 'fa fa-list-ul';
+						var label = document.createTextNode(' <%[ Details ]%>');
+						btn.appendChild(i);
+						btn.innerHTML += '&nbsp';
+						btn.appendChild(label);
+						btn.setAttribute('onclick', "document.location.href = '/web/job/history/" + data + "/'");
+						return btn.outerHTML;
+					}
+				}
+			],
+			responsive: {
+				details: {
+					type: 'column'
+				}
+			},
+			columnDefs: [{
+				className: 'control',
+				orderable: false,
+				targets: 0
+			}],
+			order: [1, 'desc']
+		});
+	}
+};
+MonitorParams = ['jobs'];
+$(function() {
+	MonitorCalls.push(function() { oJobList.init(); });
+});
+</script>
+</com:TContent>

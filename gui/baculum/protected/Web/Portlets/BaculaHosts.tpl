@@ -1,12 +1,13 @@
-<a class="big" href="javascript:void(0)" onclick="$('#new_host').slideToggle()"><img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/add.png" alt="<%[ Add ]%>" /> <%[ Add API host]%></a>
+<button type="button" class="w3-button w3-green w3-margin-left" onclick="$('#new_host').slideToggle()"><i class="fa fa-plus"></i> &nbsp;<%[ Add API host]%></button>
 <com:Application.Common.Portlets.NewHost ID="AddNewHost" APIRequired="config" ClientMode="true" OnCallback="loadConfig" />
-<div class="config_hosts">
+<div class="w3-margin-left config_hosts">
 	<com:TActiveRepeater ID="RepeaterHosts" OnItemCreated="createHostListElement">
 		<prop:ItemTemplate>
-			<com:TPanel ID="HostBox" CssClass="config_host">
-				<table class="host" onmousedown="$('div.config_host').removeClass('host_selected');(event.target||event.srcElement).id != '<%=$this->Host->ClientID%>' && (event.target||event.srcElement).id != '<%=$this->RemoveHost->ClientID%>' ? $('#<%=$this->Host->ClientID%>').trigger('click') : '';">
-					<tr onmouseover="$(this).find('a.action_link').addClass('host_selected');" onmouseout="$(this).find('a.action_link').removeClass('host_selected');">
-						<td><%[ Host: ]%> <com:TActiveLinkButton
+			<com:TPanel ID="HostBox" CssClass="w3-sand w3-margin-top w3-padding-large w3-border config_host w3-large">
+				<table class="host" onmousedown="var el = (event.target||event.srcElement); $('div.config_host').removeClass('host_selected'); (el.parentNode.id != '<%=$this->Host->ClientID%>' && el.id != '<%=$this->Host->ClientID%>' && el.id != '<%=$this->RemoveHost->ClientID%>') ? $('#<%=$this->Host->ClientID%>').trigger('click') : '';" style="width: 100%">
+					<tr onmouseover="$(this).find('a.action_link').addClass('host_selected');" onmouseout="$(this).find('a.action_link').removeClass('host_selected');" style="cursor: pointer;">
+						<td style="width: 30%"><%[ Host: ]%>
+						<com:TActiveLinkButton
 							ID="Host"
 							ActiveControl.EnableUpdate="false"
 							OnCommand="SourceTemplateControl.getComponents"
@@ -14,20 +15,21 @@
 							ClientSide.OnComplete="BaculaConfig.set_config_items(sender.options.ID);"
 							ClientSide.OnSuccess="$('#<%=$this->HostBox->ClientID%>').addClass('host_selected');"
 							Attributes.onclick="return BaculaConfig.unset_config_items(this.id);"
-							CssClass="bold"
-							Text="<%=$this->DataItem%>"
-						/>
-							<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/ajax-loader-arrows.gif" alt="" style="display: none" />
+							Style="text-decoration: none"
+						>
+							<strong><%=$this->DataItem%></strong>
+						</com:TActiveLinkButton>
+							<i class="fa fa-sync w3-spin" style="display: none"><i/>
 						</td>
-						<td><%[ IP Address/Hostname: ]%><span class="bold"> <%=$this->getParent()->getParent()->config[$this->DataItem]['address']%></span></td>
-						<td><%[ Port: ]%><span class="bold"> <%=$this->getParent()->getParent()->config[$this->DataItem]['port']%></span>
+						<td style="width: 45%"><%[ IP Address/Hostname: ]%><strong> <%=$this->getParent()->getParent()->config[$this->DataItem]['address']%></strong></td>
+						<td style="width: 10%"><%[ Port: ]%><strong> <%=$this->getParent()->getParent()->config[$this->DataItem]['port']%></strong>
 						</td>
-						<td class="right"><com:TActiveLinkButton
+						<td style="width: 15%"><com:TActiveLinkButton
 							ID="RemoveHost"
 							OnCommand="SourceTemplateControl.removeHost"
-							CssClass="action_link"
+							CssClass="action_link w3-button w3-green w3-right"
 						>
-							<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/icon_err.png" alt="<%[ Remove ]%>" /> <%[ Remove ]%>
+							<i class="fa fa-trash-alt"></i> &nbsp;<%[ Remove ]%>
 						</com:TActiveLinkButton>
 						</td>
 

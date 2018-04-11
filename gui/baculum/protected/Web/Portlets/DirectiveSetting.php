@@ -20,6 +20,7 @@
  * Bacula(R) is a registered trademark of Kern Sibbald.
  */
 
+Prado::using('System.Web.UI.ActiveControls.TCallback');
 Prado::using('Application.Web.Portlets.DirectiveListTemplate');
 
 class DirectiveSetting extends DirectiveListTemplate {

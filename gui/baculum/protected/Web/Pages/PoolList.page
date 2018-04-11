@@ -1,0 +1,123 @@
+<%@ MasterClass="Application.Web.Layouts.Main" Theme="Baculum-v2"%>
+<com:TContent ID="Main">
+	<!-- Header -->
+	<header class="w3-container">
+		<h5>
+			<b><i class="fa fa-tape"></i> <%[ Pool list ]%></b>
+		</h5>
+	</header>
+	<div class="w3-margin-left w3-margin-bottom">
+		<button type="button" class="w3-button w3-green<%=empty($_SESSION['dir']) ? ' hide': ''%>" onclick="document.location.href='<%=$this->Service->constructUrl('NewResource', array('component_type' => 'dir', 'component_name' => $_SESSION['dir'], 'resource_type' => 'Pool'))%>';"><i class="fa fa-plus"></i> &nbsp;<%[ Add pool ]%></button>
+	</div>
+	<div class="w3-container">
+		<table id="pool_list" class="w3-table w3-striped w3-hoverable w3-white w3-margin-bottom" style="width: 100%">
+			<thead>
+				<tr>
+					<th></th>
+					<th>PoolId</th>
+					<th><%[ Name ]%></th>
+					<th><%[ No. vols ]%></th>
+					<th><%[ Max. vols ]%></th>
+					<th><%[ Vol. retention ]%></th>
+					<th><%[ AutoPrune ]%></th>
+					<th><%[ Recycle ]%></th>
+					<th><%[ Actions ]%></th>
+				</tr>
+			</thead>
+			<tbody id="pool_list_body">
+			</tbody>
+		</table>
+	</div>
+<script type="text/javascript">
+var oPoolList = {
+	ids: {
+		pool_list: 'pool_list',
+		pool_list_body: 'pool_list_body'
+	},
+	init: function() {
+		this.set_table();
+	},
+	set_table: function() {
+		var table = $('#' + this.ids.pool_list).DataTable({
+			data: oData.pools,
+			columns: [
+				{
+					className: 'details-control',
+					orderable: false,
+					data: null,
+					defaultContent: '<button type="button" class="w3-button w3-blue"><i class="fa fa-angle-down"></i></button>'
+				},
+				{data: 'poolid'},
+				{data: 'name'},
+				{
+					data: 'numvols',
+					className: 'w3-center'
+				},
+				{
+					data: 'maxvols',
+					className: 'w3-center'
+				},
+				{
+					data: 'volretention',
+					render: function (data, type, row) {
+						var ret;
+						if (type == 'display') {
+							var time = Units.format_time_period(data);
+							ret = time.value + ' ' + time.format + ((time.value > 0) ? 's': '');
+						} else {
+							ret = data;
+						}
+						return ret;
+					}
+				},
+				{
+					data: 'autoprune',
+					className: 'w3-center',
+					render: function(data, type, row) {
+						return (data == 1 ? '<%[ Yes ]%>' : '<%[ No ]%>');
+					}
+				},
+				{
+					data: 'recycle',
+					className: 'w3-center',
+					render: function(data, type, row) {
+						return (data == 1 ? '<%[ Yes ]%>' : '<%[ No ]%>');
+					}
+				},
+				{
+					data: 'poolid',
+					render: function (data, type, row) {
+						var btn = document.createElement('BUTTON');
+						btn.className = 'w3-button w3-green';
+						btn.type = 'button';
+						var i = document.createElement('I');
+						i.className = 'fa fa-list-ul';
+						var label = document.createTextNode(' <%[ Details ]%>');
+						btn.appendChild(i);
+						btn.innerHTML += '&nbsp';
+						btn.appendChild(label);
+						btn.setAttribute('onclick', "document.location.href = '/web/pool/" + data + "/'");
+						return btn.outerHTML;
+					}
+				}
+			],
+			responsive: {
+				details: {
+					type: 'column'
+				}
+			},
+			columnDefs: [{
+				className: 'control',
+				orderable: false,
+				targets: 0
+			}],
+			order: [2, 'asc']
+		});
+	}
+};
+MonitorParams = ['pools'];
+$(function() {
+	MonitorCalls.push(function() { oPoolList.init(); });
+});
+</script>
+</com:TContent>

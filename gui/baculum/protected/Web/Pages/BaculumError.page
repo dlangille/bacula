@@ -5,11 +5,12 @@
 	<h3>Error <%=$this->error%> - <%=$this->output%></h3>
 	<hr />
 	<p class="center">
-		<a href="<%=$this->Service->constructUrl('WebHome')%>"><%[ TRY AGAIN ]%></a> <%[ or run ]%>
+		<a href="<%=$this->Service->constructUrl('Dashboard')%>"><%[ TRY AGAIN ]%></a>
+		<%[ or run ]%>
 		<a href="<%=$this->Service->constructUrl('WebConfigWizard')%>"><%[ Baculum Initial Wizard ]%></a>
 	</p>
 </div>
 <script type="text/javascript">
-	window.history.pushState('page', 'Title', '<%=$this->Service->constructUrl('WebHome')%>');
+	window.history.pushState('page', 'Title', '<%=$this->Service->constructUrl('Dashboard')%>');
 </script>
 </com:TContent>

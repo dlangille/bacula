@@ -19,10 +19,4 @@
 		<!-- auth modules -->
 		<module id="basic_webuser" class="Application.Web.Class.BasicWebUserConfig" />
 	</modules>
-	<authorization>
-		<allow pages="BaculumError,Requirements,OAuth2Redirect" users="*" />
-		<allow pages="WebHome,RestoreWizard,Monitor" roles="admin,user" />
-		<allow pages="WebConfigWizard" roles="admin" />
-		<deny users="*" />
-	</authorization>
 </configuration>

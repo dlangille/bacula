@@ -36,7 +36,7 @@ var JobClass = jQuery.klass({
 	},
 
 	set_job_size: function(unit) {
-		var units = ['Bi', 'KiB', 'MiB', 'GiB', 'TiB'];
+		var units = ['B', 'KiB', 'MiB', 'GiB', 'TiB'];
 		var pos = units.indexOf(unit);
 		var size = 0;
 
@@ -47,7 +47,7 @@ var JobClass = jQuery.klass({
 			unit = 3;
 		}
 
-		this.job_size = this.job.jobbytes / (1 << (10 * unit));
+		this.job_size = this.job.jobbytes / Math.pow(1024, unit);
 	},
 
 	set_start_stamp: function() {
@@ -69,6 +69,7 @@ var GraphClass = jQuery.klass({
 	time_range: null,
 	date_from: null,
 	date_to: null,
+	job_filter: null,
 	txt: {},
 	filter_include: {
 		type: 'B'
@@ -83,7 +84,7 @@ var GraphClass = jQuery.klass({
 			show: true,
 			noColumns: 9,
 			labelBoxHeight: 10,
-			fontColor: '#ffffff'
+			fontColor: '#000000'
 		},
 		bars: {
 			show: true,
@@ -96,11 +97,11 @@ var GraphClass = jQuery.klass({
 			timeMode: 'local',
 			labelsAngle : 45,
 			autoscale: true,
-			color: 'white',
+			color: 'black',
 			showLabels: true
 		},
 		yaxis: {
-			color: 'white',
+			color: 'black',
 			min: 0
 		},
 		selection: {
@@ -113,7 +114,7 @@ var GraphClass = jQuery.klass({
 			steps: true
 		},
 		grid: {
-			color: '#ffffff',
+			color: '#000000',
 			outlineWidth: 0
 		},
 		HtmlText: false
@@ -130,6 +131,7 @@ var GraphClass = jQuery.klass({
 		this.set_date_fields_events(date_from, date_to);
 		this.set_jobs_filter(job_filter);
 		this.set_clients_filter(client_filter);
+		this.set_job_list();
 		this.update();
 		this.set_events();
 	},
@@ -141,23 +143,34 @@ var GraphClass = jQuery.klass({
 		this.draw_graph();
 	},
 
-	set_jobs: function(jobs) {
-		if (typeof(jobs) == "object") {
-			if (jobs.hasOwnProperty('output')) {
-				var job;
-				for (var i = 0; i<jobs.output.length; i++) {
-					if(jobs.output[i].jobstatus == 'R' || jobs.output[i].jobstatus == 'C' || jobs.output[i].endtime == null) {
-						continue;
-					}
-					job = new JobClass(jobs.output[i]);
-					this.jobs.push(job);
+	set_jobs: function(jobs, filter) {
+		if (!filter) {
+			var job;
+			for (var i = 0; i<jobs.length; i++) {
+				if(jobs[i].jobstatus == 'R' || jobs[i].jobstatus == 'C' || jobs[i].endtime == null) {
+					continue;
 				}
-				this.jobs_all = this.jobs;
-			} else {
-				this.jobs = jobs;
+				job = new JobClass(jobs[i]);
+				this.jobs.push(job);
 			}
+			this.jobs_all = this.jobs;
 		} else {
-			alert('No jobs found.');
+			this.jobs = jobs;
+		}
+	},
+
+	set_job_list: function() {
+		var job_list = {};
+		for (var i = 0; i < this.jobs_all.length; i++) {
+			job_list[this.jobs_all[i].job.name] = 1;
+		}
+		var job_filter = document.getElementById(this.job_filter);
+		for (var job in job_list) {
+			var opt = document.createElement('OPTION');
+			var label = document.createTextNode(job);
+			opt.value = job;
+			opt.appendChild(label);
+			job_filter.appendChild(opt);
 		}
 	},
 
@@ -260,8 +273,6 @@ var GraphClass = jQuery.klass({
 
 	set_date_fields_events: function(date_from, date_to) {
 		var self = this;
-		this.date_from = date_from;
-		this.date_to = date_to;
 		$('#' + date_from).on('change', function() {
 			var from_stamp = iso_date_to_timestamp(this.value);
 			self.set_xaxis_min(from_stamp);
@@ -292,6 +303,7 @@ var GraphClass = jQuery.klass({
 
 	set_jobs_filter: function(job_filter) {
 		var self = this;
+		this.job_filter = job_filter;
 		$('#' + job_filter).on('change', function() {
 			if (this.value == self.filter_all_mark) {
 				delete self.filter_include['name'];
@@ -335,7 +347,7 @@ var GraphClass = jQuery.klass({
 				delete filtred_jobs[i];
 			});
 		}
-		this.set_jobs(filtred_jobs);
+		this.set_jobs(filtred_jobs, true);
 	},
 
 	prepare_series: function() {
@@ -419,7 +431,7 @@ var GraphPieClass = jQuery.klass({
 	graph_options: {
 		colors: ['#63c422', '#d70808', '#FFFF66', 'orange', 'blue'],
 		HtmlText: false,
-		fontColor: '#ffffff',
+		fontColor: '#000000',
 		grid: {
 			verticalLines : false,
 			horizontalLines : false,
@@ -429,16 +441,17 @@ var GraphPieClass = jQuery.klass({
 		yaxis: { showLabels : false },
 		pie: {
 			show : true,
-			explode : 5,
+			explode : 6,
 			labelFormatter: PieGraph.pie_label_formatter,
 			shadowSize: 4,
 			fillOpacity: 1,
-			sizeRatio: 0.6
+			sizeRatio: 0.77
 		},
 		mouse: {
 			track : true,
 			trackFormatter: PieGraph.pie_track_formatter,
-			relative: true
+			relative: false,
+			position : 'sw'
 		},
 		legend: {
 			position : 'se',

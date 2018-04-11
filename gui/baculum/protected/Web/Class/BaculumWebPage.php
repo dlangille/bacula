@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2016 Kern Sibbald
+ * Copyright (C) 2013-2018 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -23,17 +23,29 @@
 session_start();
 
 Prado::using('Application.Common.Class.BaculumPage');
+Prado::using('Application.Web.Init');
 Prado::using('Application.Web.Class.WebConfig');
 
 class BaculumWebPage extends BaculumPage {
+
+	/**
+	 * It is first application user pre-defined for first login.
+	 * It is removed just after setup application.
+	 */
+	const DEFAULT_AUTH_USER = 'admin';
 
 	private $config;
 
 	public function onPreInit($param) {
 		parent::onPreInit($param);
-		$this->config = $this->getModule('web_config')->getConfig('baculum');
-		Logging::$debug_enabled = (array_key_exists('debug', $this->config) && $this->config['debug'] == 1);
+		$this->config = $this->getModule('web_config')->getConfig();
+		Logging::$debug_enabled = (isset($this->config['baculum']['debug']) && $this->config['baculum']['debug'] == 1);
 		$this->Application->getGlobalization()->Culture = $this->getLanguage();
+		if (!$this->IsPostBack && !$this->IsCallBack) {
+			$this->getModule('api')->initSessionCache(true);
+			$this->setSessionUserVars();
+		}
+		$this->checkPrivileges();
 	}
 
 	/**
@@ -51,8 +63,8 @@ class BaculumWebPage extends BaculumPage {
 		if (isset($_SESSION['language']) && !empty($_SESSION['language'])) {
 			$language =  $_SESSION['language'];
 		} else {
-			if (array_key_exists('lang', $this->config)) {
-				$language = $this->config['lang'];
+			if (key_exists('lang', $this->config['baculum'])) {
+				$language = $this->config['baculum']['lang'];
 			}
 			if (is_null($language)) {
 				$language = WebConfig::DEFAULT_LANGUAGE;
@@ -62,5 +74,54 @@ class BaculumWebPage extends BaculumPage {
 		return $language;
 	}
 
+	/**
+	 * Set page session values.
+	 *
+	 * @return none
+	 */
+	private function setSessionUserVars() {
+		// NOTE. For oauth2 callback, the PHP_AUTH_USER is empty because no user/pass.
+		if (count($this->config) > 0 && isset($_SERVER['PHP_AUTH_USER'])) {
+			// Set administrator role
+			$_SESSION['admin'] = ($_SERVER['PHP_AUTH_USER'] === $this->config['baculum']['login']);
+
+			// Set api host for normal user
+			if (!$_SESSION['admin'] && key_exists('users', $this->config) && array_key_exists($_SERVER['PHP_AUTH_USER'], $this->config['users'])) {
+				$_SESSION['api_host'] = $this->config['users'][$_SERVER['PHP_AUTH_USER']];
+			} elseif ($_SESSION['admin']) {
+				$_SESSION['api_host'] = 'Main';
+			}
+		} else {
+			$_SESSION['admin'] = false;
+		}
+
+		// Set director
+		$directors = $this->getModule('api')->get(array('directors'))->output;
+		if(count($directors) > 0 && (!key_exists('director', $_SESSION) || $directors[0] != $_SESSION['director'])) {
+			$_SESSION['director'] = $directors[0];
+		}
+
+		// Set config main component names
+		$config = $this->getModule('api')->get(array('config'), null, false);
+		$_SESSION['dir'] = $_SESSION['sd'] = $_SESSION['fd'] = $_SESSION['bcons'] = '';
+		if ($config->error === 0) {
+			for ($i = 0; $i < count($config->output); $i++) {
+				$component = (array)$config->output[$i];
+				if (key_exists('component_type', $component) && key_exists('component_name', $component)) {
+					$_SESSION[$component['component_type']] = $component['component_name'];
+				}
+			}
+		}
+	}
+
+	private function checkPrivileges() {
+		if (property_exists($this, 'admin') && $this->admin === true && !$_SESSION['admin']) {
+			self::accessDenied();
+		}
+	}
+
+	public static function accessDenied() {
+		die('Access denied');
+	}
 }
 ?>

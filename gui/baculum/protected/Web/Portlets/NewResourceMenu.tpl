@@ -1,6 +1,6 @@
-<div id="<%=$this->ClientID%>_new_resource" class="config_new_resource left" style="display: none">
-	<div class="right"><img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/close.png" alt="" style="margin: 3px 3px 0 0" onclick="$('#<%=$this->ClientID%>_new_resource').hide();" /></div>
-	<ul style="display: <%=$this->getComponentType() === 'dir' ? 'block': 'none'%>; margin-top: 0;">
+<div id="<%=$this->ClientID%>_new_resource" class="w3-card w3-white w3-padding config_new_resource left" style="display: none">
+	<i class="fa fa-times w3-right" onclick="$('#<%=$this->ClientID%>_new_resource').hide();"></i>
+	<ul class="w3-ul" style="display: <%=$this->getComponentType() === 'dir' ? 'block': 'none'%>; margin-top: 0;">
 		<li><com:TActiveLinkButton
 			OnCommand="Parent.SourceTemplateControl.newResource"
 			CommandParameter="Director|<%=$this->getHost()%>|<%=$this->getComponentType()%>|<%=$this->getComponentName()%>"

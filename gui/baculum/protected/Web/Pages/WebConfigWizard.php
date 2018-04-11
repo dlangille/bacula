@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2016 Kern Sibbald
+ * Copyright (C) 2013-2018 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -29,6 +29,9 @@ Prado::using('System.Web.UI.ActiveControls.TActiveDropDownList');
 
 class WebConfigWizard extends BaculumWebPage
 {
+
+	protected $admin = false;
+
 	public $first_run;
 	public $web_config;
 	public $host_config;
@@ -39,43 +42,44 @@ class WebConfigWizard extends BaculumWebPage
 		$config = $this->getModule('web_config');
 		$this->web_config = $config->getConfig();
 		$this->host_config = $this->getModule('host_config')->getConfig();
-		$this->first_run = (count($this->host_config) == 0);
+		$this->first_run = (count($this->host_config) == 0 || !key_exists(HostConfig::MAIN_CATALOG_HOST, $this->host_config));
 		if($this->first_run === false && !$_SESSION['admin']) {
-			die('Access denied.');
+			parent::accessDenied();
 		}
 	}
 
 	public function onLoad($param) {
 		parent::onLoad($param);
-		if(!$this->IsPostBack && !$this->IsCallBack) {
-			if ($this->first_run === false) {
-				$host = HostConfig::MAIN_CATALOG_HOST;
-				$this->AddNewHost->APIProtocol->SelectedValue = $this->host_config[$host]['protocol'];
-				$this->AddNewHost->APIAddress->Text = $this->host_config[$host]['address'];
-				$this->AddNewHost->APIPort->Text = $this->host_config[$host]['port'];
+		if($this->IsPostBack || $this->IsCallBack) {
+			return;
+		}
+		if ($this->first_run === false) {
+			$host = HostConfig::MAIN_CATALOG_HOST;
+			$this->AddNewHost->APIProtocol->SelectedValue = $this->host_config[$host]['protocol'];
+			$this->AddNewHost->APIAddress->Text = $this->host_config[$host]['address'];
+			$this->AddNewHost->APIPort->Text = $this->host_config[$host]['port'];
+			$this->AddNewHost->APIBasicLogin->Text = $this->host_config[$host]['login'];
+			if ($this->host_config[$host]['auth_type'] === 'basic') {
+				$this->AddNewHost->AuthOAuth2->Checked = false;
+				$this->AddNewHost->AuthBasic->Checked = true;
 				$this->AddNewHost->APIBasicLogin->Text = $this->host_config[$host]['login'];
-				if ($this->host_config[$host]['auth_type'] === 'basic') {
-					$this->AddNewHost->AuthOAuth2->Checked = false;
-					$this->AddNewHost->AuthBasic->Checked = true;
-					$this->AddNewHost->APIBasicLogin->Text = $this->host_config[$host]['login'];
-					$this->AddNewHost->APIBasicPassword->Text = $this->host_config[$host]['password'];
-				} elseif ($this->host_config[$host]['auth_type'] === 'oauth2') {
-					$this->AddNewHost->AuthBasic->Checked = false;
-					$this->AddNewHost->AuthOAuth2->Checked = true;
-					$this->AddNewHost->APIOAuth2ClientId->Text = $this->host_config[$host]['client_id'];
-					$this->AddNewHost->APIOAuth2ClientSecret->Text = $this->host_config[$host]['client_secret'];
-					$this->AddNewHost->APIOAuth2RedirectURI->Text = $this->host_config[$host]['redirect_uri'];
-					$this->AddNewHost->APIOAuth2Scope->Text = $this->host_config[$host]['scope'];
-				}
-				$this->WebLogin->Text = $this->web_config['baculum']['login'];
-				$this->WebPassword->Text = $this->web_config['baculum']['password'];
-				$this->RetypeWebPassword->Text = $this->web_config['baculum']['password'];
-			} else {
-				$this->AddNewHost->APIProtocol->SelectedValue = 'http';
-				$this->AddNewHost->APIAddress->Text = 'localhost';
-				$this->AddNewHost->APIPort->Text = 9096;
-				$this->AddNewHost->APIBasicLogin->Text = 'admin';
+				$this->AddNewHost->APIBasicPassword->Text = $this->host_config[$host]['password'];
+			} elseif ($this->host_config[$host]['auth_type'] === 'oauth2') {
+				$this->AddNewHost->AuthBasic->Checked = false;
+				$this->AddNewHost->AuthOAuth2->Checked = true;
+				$this->AddNewHost->APIOAuth2ClientId->Text = $this->host_config[$host]['client_id'];
+				$this->AddNewHost->APIOAuth2ClientSecret->Text = $this->host_config[$host]['client_secret'];
+				$this->AddNewHost->APIOAuth2RedirectURI->Text = $this->host_config[$host]['redirect_uri'];
+				$this->AddNewHost->APIOAuth2Scope->Text = $this->host_config[$host]['scope'];
 			}
+			$this->WebLogin->Text = $this->web_config['baculum']['login'];
+			$this->WebPassword->Text = $this->web_config['baculum']['password'];
+			$this->RetypeWebPassword->Text = $this->web_config['baculum']['password'];
+		} else {
+			$this->AddNewHost->APIProtocol->SelectedValue = 'http';
+			$this->AddNewHost->APIAddress->Text = 'localhost';
+			$this->AddNewHost->APIPort->Text = 9096;
+			$this->AddNewHost->APIBasicLogin->Text = 'admin';
 		}
 	}
 
@@ -134,11 +138,11 @@ class WebConfigWizard extends BaculumWebPage
 			}
 			$ret = $this->getModule('web_config')->setConfig($cfg_web);
 			if($ret && $this->getModule('basic_webuser')->isUsersConfig() === true) {
-				$previous_user = !$this->first_run ? $this->web_config['baculum']['login'] : null;
+				$previous_user = $this->first_run ? parent::DEFAULT_AUTH_USER : $this->web_config['baculum']['login'];
 				$this->getModule('basic_webuser')->setUsersConfig(
 					$cfg_web['baculum']['login'],
 					$cfg_web['baculum']['password'],
-					$this->first_run,
+					false,
 					$previous_user
 				);
 

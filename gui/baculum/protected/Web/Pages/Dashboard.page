@@ -1,0 +1,120 @@
+<%@ MasterClass="Application.Web.Layouts.Main" Theme="Baculum-v2"%>
+<com:TContent ID="Main">
+	<!-- Header -->
+	<header class="w3-container">
+		<h5>
+			<b><i class="fa fa-tachometer-alt"></i> <%[ Dashboard ]%></b>
+		</h5>
+	</header>
+	<div class="w3-row-padding w3-margin-bottom">
+		<div class="w3-quarter">
+			<div class="w3-container w3-red w3-padding-16 w3-tooltip w3-animate-top">
+				<div class="w3-left"><i class="fa fa-desktop w3-xxxlarge"></i></div>
+				<div class="w3-right">
+					<h3 id="client_no">-</h3>
+				</div>
+				<div class="w3-clear"></div>
+				<h4><%[ Clients ]%></h4>
+				<div class="w3-text">
+					<p class="w3-small"><%[ The most often used: ]%> <strong><span id="client_most"></span></strong></p>
+					<p class="w3-small"><%[ Job count the most used: ]%> <strong><span id="client_jobs"></span> <%[ jobs ]%></strong></p>
+				</div>
+				
+			</div>
+		</div>
+		<div class="w3-quarter">
+			<div class="w3-container w3-blue w3-padding-16 w3-tooltip w3-animate-top">
+				<div class="w3-left"><i class="fa fa-tasks w3-xxxlarge"></i></div>
+				<div class="w3-right">
+					<h3 id="job_no">-</h3>
+				</div>
+				<div class="w3-clear"></div>
+				<h4><%[ Finished jobs ]%></h4>
+				<div class="w3-text">
+					<p class="w3-small"><%[ The most often used: ]%> <strong><span id="job_most"></span></strong></p>
+					<p class="w3-small"><%[ Execution count most used: ]%> <strong><span id="job_most_count"></span> <%[ times ]%></strong></p>
+				</div>
+			</div>
+		</div>
+		<div class="w3-quarter">
+			<div class="w3-container w3-teal w3-padding-16 w3-tooltip w3-animate-top">
+				<div class="w3-left"><i class="fa fa-tape w3-xxxlarge"></i></div>
+				<div class="w3-right">
+					<h3 id="pool_no">-</h3>
+				</div>
+				<div class="w3-clear"></div>
+				<h4><%[ Pools ]%></h4>
+				<div class="w3-text">
+					<p class="w3-small"><%[ The most often used: ]%> <strong><span id="pool_most"></span></strong></p>
+					<p class="w3-small"><%[ Job count the most used: ]%> <strong><span id="pool_jobs"></span> <%[ jobs ]%></strong></p>
+				</div>
+			</div>
+		</div>
+		<div class="w3-quarter">
+			<div class="w3-container w3-orange w3-text-white w3-padding-16 w3-tooltip w3-animate-top">
+				<div class="w3-left"><i class="fa fa-copy w3-xxxlarge"></i></div>
+				<div class="w3-right">
+					<h3 id="jobs_total_bytes">-</h3>
+				</div>
+				<div class="w3-clear"></div>
+				<h4><%[ Total bytes ]%></h4>
+				<div class="w3-text">
+					<p><%[ Total files: ]%><strong><span id="jobs_total_files"></span></strong></p>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="w3-panel">
+		<div class="w3-row-padding" style="margin:0 -16px">
+			<div class="w3-third">
+				<h5><%[ Job status summary ]%></h5>
+				<div class="dashboard_graph">
+					<div id="jobs_summary_graph"></div>
+				</div>
+				<div class="w3-card-4 w3-padding-16 w3-margin-top">
+					<header class="w3-container w3-light-grey">
+						<h3><i class="fa fa-database w3-xxxlarge"></i> <%[ Database ]%></h3>
+					</header>
+					<div class="w3-container">
+						<p><%[ Database type: ]%> <span id="database_type"></span></p>
+						<p><%[ Database size: ]%> <span id="database_size"></span></p>
+					</div>
+				</div>
+			</div>
+			<div class="w3-twothird">
+				<h5><%[ Last 10 jobs ]%></h5>
+				<table class="w3-table w3-striped w3-hoverable w3-white w3-margin-bottom">
+					<thead>
+						<tr>
+							<th><%[ JobId ]%></th>
+							<th><%[ Name ]%></th>
+							<th class="w3-center"><%[ Level ]%></th>
+							<th class="w3-center"><%[ Start time ]%></th>
+							<th class="w3-center"><%[ Job status ]%></th>
+						</tr>
+					</thead>
+					<tbody id="all_jobs">
+					</tbody>
+				</table>
+				<button type="button" class="w3-button w3-dark-grey w3-right w3-margin-bottom" onclick="document.location.href='<%=$this->Service->constructUrl('JobHistoryList')%>'"><%[ More jobs ]%> &nbsp;<i class="fa fa-arrow-right"></i></button>
+				<div class="w3-clear"></div>
+				<div class="w3-container w3-blue w3-half w3-center w3-padding-16">
+					<com:TActiveLinkButton
+						OnClick="loadRunJobModal"
+						Attributes.onclick="document.getElementById('run_job').style.display='block'"
+						Style="text-decoration: none"
+					>
+						<h1><%[ Run job ]%>  <i class="fa fa-play w3-xlarge"></i></h1>
+					</com:TActiveLinkButton>
+				</div>
+				<div class="w3-container w3-blue w3-half w3-center w3-padding-16">
+					<a href="<%=$this->Service->constructUrl('RestoreWizard')%>" style="text-decoration: none"><h1><%[ Perform restore ]%>  <i class="fa fa-reply w3-xlarge"></i></h1></a>
+				</div>
+				<com:Application.Web.Portlets.RunJob ID="RunJobModal" />
+			</div>
+		</div>
+	</div>
+<script type="text/javascript">
+MonitorParams = ['jobs', 'clients', 'pools', 'job_totals', 'dbsize'];
+</script>
+</com:TContent>

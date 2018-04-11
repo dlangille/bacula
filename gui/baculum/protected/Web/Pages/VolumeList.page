@@ -1,0 +1,113 @@
+<%@ MasterClass="Application.Web.Layouts.Main" Theme="Baculum-v2"%>
+<com:TContent ID="Main">
+	<!-- Header -->
+	<header class="w3-container">
+		<h5>
+			<b><i class="fa fa-hdd"></i> <%[ Volume list ]%></b>
+		</h5>
+	</header>
+	<div class="w3-container tab_item">
+		<div class="w3-section">
+			<com:Application.Web.Portlets.LabelVolume />
+			<com:Application.Web.Portlets.UpdateSlots />
+		</div>
+		<table id="volume_list" class="w3-table w3-striped w3-hoverable w3-white w3-margin-bottom" style="width: 100%">
+			<thead>
+				<tr>
+					<th></th>
+					<th>MediaId</th>
+					<th><%[ Name ]%></th>
+					<th><%[ Slot ]%></th>
+					<th>InChanger</th>
+					<th><%[ Vol. status ]%></th>
+					<th>MediaType</th>
+					<th><%[ Last written ]%></th>
+					<th><%[ Vol. bytes ]%></th>
+					<th><%[ Actions ]%></th>
+				</tr>
+			</thead>
+			<tbody id="pool_list_body">
+			</tbody>
+		</table>
+	</div>
+<script type="text/javascript">
+var oVolumeList = {
+	ids: {
+		volume_list: 'volume_list',
+		volume_list_body: 'volume_list_body'
+	},
+	init: function() {
+		this.set_table();
+	},
+	set_table: function() {
+		var table = $('#' + this.ids.volume_list).DataTable({
+			data: <%=json_encode($this->volumes)%>,
+			columns: [
+				{
+					className: 'details-control',
+					orderable: false,
+					data: null,
+					defaultContent: '<button type="button" class="w3-button w3-blue"><i class="fa fa-angle-down"></i></button>'
+				},
+				{data: 'mediaid'},
+				{data: 'volumename'},
+				{
+					data: 'slot',
+					className: 'w3-center'
+				},
+				{
+					data: 'inchanger',
+					className: 'w3-center',
+					render: function(data, type, row) {
+						return (data === 1) ? '<%[ Yes ]%>' : '<%[ No ]%>';
+					}
+				},
+				{data: 'volstatus'},
+				{data: 'mediatype'},
+				{data: 'lastwritten'},
+				{
+					data: 'volbytes',
+					render: function (data, type, row) {
+						var s;
+						if (type == 'display') {
+							s = Units.get_decimal_size(data)
+						} else {
+							s = data;
+						}
+						return s;
+					}
+				},
+				{
+					data: 'mediaid',
+					render: function(data, type, row) {
+						var btn = document.createElement('BUTTON');
+						btn.className = 'w3-button w3-green';
+						btn.type = 'button';
+						var i = document.createElement('I');
+						i.className = 'fa fa-list-ul';
+						var label = document.createTextNode(' <%[ Details ]%>');
+						btn.appendChild(i);
+						btn.innerHTML += '&nbsp';
+						btn.appendChild(label);
+						btn.setAttribute('onclick', "document.location.href = '/web/volume/" + data + "/'");
+						return btn.outerHTML;
+					}
+				}
+			],
+			responsive: {
+				details: {
+					type: 'column'
+				}
+			},
+			columnDefs: [{
+				className: 'control',
+				orderable: false,
+				targets: 0
+			}],
+			order: [3, 'asc']
+		});
+	}
+};
+oVolumeList.init();
+</script>
+</com:TContent>

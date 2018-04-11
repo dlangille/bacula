@@ -1,4 +1,4 @@
-<div class="config_resources" style="display: none">
+<div class="config_resources w3-margin-left" style="display: none">
 	<com:TActiveLabel ID="RemoveResourceOk" Display="None" CssClass="validate" />
 	<com:TActiveLabel ID="RemoveResourceError" Display="None" CssClass="validator" />
 	<com:TActiveRepeater ID="RepeaterResources" OnItemCreated="createResourceListElement">
@@ -8,7 +8,7 @@
 				<%=$this->Resource->ClientID%>_mousedown = function(event) {
 					var t = (event.target||event.srcElement);
 					var res_id = '<%=$this->Resource->ClientID%>';
-					if (t.id != res_id && !/^<%=$this->RemoveResource->ClientID%>/.test(t.id)) {
+					if (t.parentNode.id != res_id && t.id != res_id && !/^<%=$this->RemoveResource->ClientID%>/.test(t.id)) {
 						$('.validate, .validator').hide(); // hide validator messages
 						$('#' + res_id).trigger('click');
 					}
@@ -24,9 +24,9 @@
 					return false;
 				};
 				</script>
-				<table class="resource" onmousedown="return <%=$this->Resource->ClientID%>_mousedown(event);" onmouseover="$(this).find('a.action_link').addClass('resource_selected');" onmouseout="$(this).find('a.action_link').removeClass('resource_selected');">
+				<table class="resource" onmousedown="return <%=$this->Resource->ClientID%>_mousedown(event);" onmouseover="$(this).find('a.action_link').addClass('resource_selected');" onmouseout="$(this).find('a.action_link').removeClass('resource_selected');" style="width: 100%">
 					<tr>
-						<td><com:TActiveLinkButton
+						<td style="width:80%; cursor: pointer;"><com:TActiveLinkButton
 							ID="Resource"
 							ActiveControl.EnableUpdate="false"
 							OnCommand="SourceTemplateControl.getDirectives"
@@ -34,15 +34,15 @@
 							ClientSide.OnComplete="BaculaConfig.set_config_items(sender.options.ID);"
 							Attributes.onclick="return BaculaConfig.unset_config_items(this.id);"
 							Text="<strong><%=$this->DataItem['resource_type']%></strong>: <%=$this->DataItem['resource_name']%>"
+							Style="text-decoration: none"
 						/>
-							<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/ajax-loader-arrows.gif" alt="" style="display: none" />
+							<i class="fa fa-sync w3-spin" style="display: none"><i/>
 						</td>
-						<td class="right" style="height: 26px">
-							<!--a class="action_link" href="javascript:void(0)"><img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/config.png" alt="<%[ Edit ]%>" /> <%[ Edit ]%></a -->
+						<td class="right" style="height: 26px; width: 20%;">
 							<com:TActiveLinkButton
 								ID="RemoveResource"
 								OnCommand="SourceTemplateControl.removeResource"
-								CssClass="action_link"
+								CssClass="action_link w3-button w3-green w3-right"
 							>
 							<prop:ClientSide.OnComplete>
 								var vid = '<%=$this->SourceTemplateControl->RemoveResourceError->ClientId%>';
@@ -54,15 +54,18 @@
 									scrollTop: $('#' + vid).closest('div').prev().offset().top
 								}, 500);
 							</prop:ClientSide.OnComplete>
-								<img id="<%=$this->RemoveResource->ClientID%>_img" src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/icon_err.png" alt="<%[ Remove ]%>" /> <%[ Remove ]%>
+								<i class="fa fa-trash-alt"></i> &nbsp;<%[ Remove ]%>
 							</com:TActiveLinkButton>
 						</td>
 					</tr>
 				</table>
+				<div class="config_directives" style="display: none">
 				<com:Application.Web.Portlets.BaculaConfigDirectives
 					Resource="<%#$this->DataItem['resource_name']%>"
 					LoadValues="<%=true%>"
+					ShowRemoveButton="false"
 				/>
+				</div>
 			</com:TPanel>
 		</prop:ItemTemplate>
 	</com:TActiveRepeater>

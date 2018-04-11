@@ -1,11 +1,11 @@
-<fieldset class="directive">
-	<legend><%=$this->getDirectiveName()%></legend>
-	<a href="javascript:void(0)" onmousedown="openElementOnCursor(event, '<%=$this->FileSetMenu->ClientID%>_new_fileset', 0, 20);"><img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/add.png" alt="<%[ Add ]%>" /> <%[ Add ]%></a>
+<div class="w3-card-4 w3-padding w3-margin-bottom directive incexc">
+	<h2><%=$this->getDirectiveName()%></h2>
+	<button type="button" onmousedown="openElementOnCursor(event, '<%=$this->FileSetMenu->ClientID%>_new_fileset', 0, 20);" class="w3-button w3-green w3-margin-bottom"><i class="fa fa-plus"></i> &nbsp;<%[ Add ]%></button>
 	<com:Application.Web.Portlets.NewFileSetMenu ID="FileSetMenu" />
 <com:TActiveRepeater ID="RepeaterFileSetOptions" OnItemDataBound="createFileSetOptions">
 	<prop:HeaderTemplate>
-	<fieldset class="directive">
-		<legend><%[ Options ]%></legend>
+		<div class="w3-card-4 w3-padding w3-margin-bottom directive">
+			<h2><%[ Options ]%></h2>
 	</prop:HeaderTemplate>
 	<prop:ItemTemplate>
 		<%=($this->getItemIndex() % 31 === 0 ? '<h3 class="options">Options #' . (($this->getItemIndex()/31)+1) . '</h3><hr />' : '')%>
@@ -36,13 +36,13 @@
 		</com:Application.Web.Portlets.BConditional>
 	</prop:ItemTemplate>
 	<prop:FooterTemplate>
-	</fieldset>
+		</div>
 	</prop:FooterTemplate>
 </com:TActiveRepeater>
-<com:TActiveRepeater ID="RepeaterFileSetInclude" OnItemCreated="createFileSetIncExcElement">
+<com:TActiveRepeater ID="RepeaterFileSetInclude" OnItemCreated="createFileSetIncExcElement" CssClass="incexc_item">
 	<prop:HeaderTemplate>
-	<fieldset class="directive include_file">
-		<legend><%[ Files ]%></legend>
+		<div class="w3-card-4 w3-padding w3-margin-bottom directive include_file">
+			<h2><%[ Files ]%></h2>
 	</prop:HeaderTemplate>
 	<prop:ItemTemplate>
 			<div class="directive_field">
@@ -50,13 +50,13 @@
 			</div>
 	</prop:ItemTemplate>
 	<prop:FooterTemplate>
-	</fieldset>
+		</div>
 	</prop:FooterTemplate>
 </com:TActiveRepeater>
-<com:TActiveRepeater ID="RepeaterFileSetExclude" OnItemCreated="createFileSetIncExcElement">
+<com:TActiveRepeater ID="RepeaterFileSetExclude" OnItemCreated="createFileSetIncExcElement" CssClass="incexc_item">
 	<prop:HeaderTemplate>
-	<fieldset class="directive">
-		<legend><%[ Files ]%></legend>
+		<div class="w3-card-4 w3-padding w3-margin-bottom directive">
+			<h2><%[ Files ]%></h2>
 	</prop:HeaderTemplate>
 	<prop:ItemTemplate>
 			<div class="directive_field">
@@ -64,7 +64,19 @@
 			</div>
 	</prop:ItemTemplate>
 	<prop:FooterTemplate>
-	</fieldset>
+		</div>
 	</prop:FooterTemplate>
 </com:TActiveRepeater>
-</fieldset>
+</div>
+<script type="text/javascript">
+var incexc = document.getElementsByClassName('incexc');
+for (var i = 0; i < incexc.length; i++) {
+	var dvs = incexc[i].getElementsByTagName('H2');
+	for (var j = 0; j < dvs.length; j++) {
+		if (dvs[j].childNodes.length === 0) {
+			incexc[i].style.display = 'none';
+			break;
+		}
+	}
+}
+</script>

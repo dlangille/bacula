@@ -1,0 +1,230 @@
+<%@ MasterClass="Application.Web.Layouts.Main" Theme="Baculum-v2"%>
+<com:TContent ID="Main">
+	<!-- Header -->
+	<header class="w3-container">
+		<h5>
+			<b><i class="fa fa-desktop"></i> <%[ Pool details ]%></b>
+		</h5>
+	</header>
+	<h3 class="w3-margin-left">[PoolId <%=$this->getPoolId()%>] <%[ Pool: ]%> <%=$this->getPoolName()%></h3>
+	<div class="w3-bar w3-green w3-margin-bottom">
+		<a class="w3-bar-item w3-button tab_btn" href="<%=$this->Service->constructUrl('PoolList')%>"><i class="fa fa-angle-left"></i></a>
+		<button id="btn_pool_actions" type="button" class="w3-bar-item w3-button tab_btn w3-grey" onclick="W3Tabs.open(this.id, 'pool_actions');"><%[ Actions ]%></button>
+		<button id="btn_volumes_in_pool" type="button" class="w3-bar-item w3-button tab_btn" onclick="W3Tabs.open(this.id, 'volumes_in_pool');"><%[ Volumes in pool ]%></button>
+		<com:TLinkButton
+			CssClass="w3-bar-item w3-button tab_btn"
+			Attributes.onclick="W3Tabs.open(this.id, 'pool_config'); return false;"
+			Text="<%[ Configure pool ]%>"
+			Visible="<%=!empty($_SESSION['dir'])%>"
+		/>
+	</div>
+	<div class="w3-container tab_item" id="pool_actions">
+		<com:TActiveLinkButton
+			ID="UpdatePoolBtn"
+			OnClick="updatePool"
+			CssClass="w3-button w3-green w3-margin-bottom"
+			CausesValidation="false"
+			ClientSide.OnLoading="$('#status_pool_loading').show();"
+			ClientSide.OnSuccess="$('#status_pool_loading').hide();"
+		>
+			<prop:Text><%=Prado::localize('Update pool')%> &nbsp;<i class="fa fa-wrench"></i></prop:Text>
+		</com:TActiveLinkButton>
+		<com:TActiveLinkButton
+			ID="UpdateAllVolInPoolBtn"
+			OnClick="updateAllVolumesInPool"
+			CssClass="w3-button w3-green w3-margin-bottom"
+			CausesValidation="false"
+			ClientSide.OnLoading="$('#status_pool_loading').show();"
+			ClientSide.OnSuccess="$('#status_pool_loading').hide();"
+		>
+			<prop:Text><%=Prado::localize('Update all vols in pool')%> &nbsp;<i class="fa fa-wrench"></i></prop:Text>
+		</com:TActiveLinkButton>
+		<i id="status_pool_loading" class="fa fa-undo w3-spin" style="display: none"></i>
+		<div class="w3-row">
+			<div class="w3-card w3-quarter w3-padding w3-margin-right" style="min-height: 200px">
+				<h4><%[ Limits ]%></h4>
+				<table style="width: 90%">
+					<tr>
+						<td><%[ Max. vols ]%></td>
+						<td><strong><com:TActiveLabel ID="MaxVols" /></strong></td>
+					</tr>
+					<tr>
+						<td><%[ Max. vol. jobs ]%></td>
+						<td><strong><com:TActiveLabel ID="MaxVolJobs" /></strong></td>
+					</tr>
+					<tr>
+						<td><%[ Max. vol. files ]%></td>
+						<td><strong><com:TActiveLabel ID="MaxVolFiles" /></strong></td>
+					</tr>
+					<tr>
+						<td><%[ Max. vol. bytes ]%></td>
+						<td><strong><com:TActiveLabel ID="MaxVolBytes" CssClass="size" /></strong></td>
+					</tr>
+					<tr>
+						<td><%[ Vol. use duration ]%></td>
+						<td><strong><com:TActiveLabel ID="VolUseDuration" CssClass="time" /></strong></td>
+					</tr>
+				</table>
+			</div>
+			<div class="w3-card w3-quarter w3-padding w3-margin-right" style="min-height: 200px">
+				<h4><%[ Recycling ]%></h4>
+				<table style="width: 90%">
+					<tr>
+						<td class="w3-half"><%[ Recycle ]%></td>
+						<td><strong><com:TActiveLabel ID="Recycle" /></strong></td>
+					</tr>
+					<tr>
+						<td><%[ Vol. retention ]%></td>
+						<td><strong><com:TActiveLabel ID="VolRetention" CssClass="time" /></strong></td>
+					</tr>
+					<tr>
+						<td><%[ AutoPrune ]%></td>
+						<td><strong><com:TActiveLabel ID="AutoPrune" /></strong></td>
+					</tr>
+					<tr>
+						<td><%[ Recycle pool ]%></td>
+						<td><strong><com:TActiveLabel ID="RecyclePool" /></strong></td>
+					</tr>
+				</table>
+			</div>
+			<div class="w3-card w3-quarter w3-padding w3-margin-right" style="min-height: 200px">
+				<h4><%[ Options ]%></h4>
+				<table style="width: 90%">
+					<tr>
+						<td><%[ Enabled ]%></td>
+						<td><strong><com:TActiveLabel ID="Enabled" /></strong></td>
+					</tr>
+					<tr>
+						<td><%[ Action on purge ]%></td>
+						<td><strong><com:TActiveLabel ID="ActionOnPurge" /></strong></td>
+					</tr>
+					<tr>
+						<td><%[ Scratch pool ]%></td>
+						<td><strong><com:TActiveLabel ID="ScratchPool" /></strong></td>
+					</tr>
+					<tr>
+						<td><%[ Next pool ]%></td>
+						<td><strong><com:TActiveLabel ID="NextPool" /></strong></td>
+					</tr>
+				</table>
+			</div>
+		</div>
+		<div class="w3-panel w3-card w3-light-grey">
+			<div class="w3-code notranslate">
+				<pre><com:TActiveLabel ID="PoolLog" /></pre>
+			</div>
+		</div>
+	</div>
+	<div class="w3-container tab_item" id="volumes_in_pool" style="display: none">
+		<table id="volume_list" class="w3-table w3-striped w3-hoverable w3-white w3-margin-bottom" style="width: 100%">
+			<thead>
+				<tr>
+					<th></th>
+					<th>MediaId</th>
+					<th><%[ Name ]%></th>
+					<th><%[ Slot ]%></th>
+					<th>InChanger</th>
+					<th><%[ Vol. status ]%></th>
+					<th>MediaType</th>
+					<th><%[ First written ]%></th>
+					<th><%[ Vol. jobs ]%></th>
+					<th><%[ Vol. bytes ]%></th>
+					<th><%[ Actions ]%></th>
+				</tr>
+			</thead>
+			<tbody id="pool_list_body">
+			</tbody>
+		</table>
+	</div>
+	<div class="w3-container tab_item" id="pool_config" style="display: none">
+		<com:Application.Web.Portlets.BaculaConfigDirectives
+			ID="PoolConfig"
+			ComponentType="dir"
+			ResourceType="Pool"
+		/>
+	</div>
+<script type="text/javascript">
+$(function() {
+	Formatters.set_formatters();
+});
+var oVolumeList = {
+	ids: {
+		volume_list: 'volume_list',
+		volume_list_body: 'volume_list_body'
+	},
+	init: function() {
+		this.set_table();
+	},
+	set_table: function() {
+		var table = $('#' + this.ids.volume_list).DataTable({
+			data: <%=json_encode($this->volumes_in_pool)%>,
+			columns: [
+				{
+					className: 'details-control',
+					orderable: false,
+					data: null,
+					defaultContent: '<button type="button" class="w3-button w3-blue"><i class="fa fa-angle-down"></i></button>'
+				},
+				{data: 'mediaid'},
+				{data: 'volumename'},
+				{
+					data: 'slot',
+					className: 'w3-center'
+				},
+				{
+					data: 'inchanger',
+					className: 'w3-center',
+					render: function(data, type, row) {
+						return (data === 1) ? '<%[ Yes ]%>' : '<%[ No ]%>';
+					}
+				},
+				{data: 'volstatus'},
+				{data: 'mediatype'},
+				{data: 'lastwritten'},
+				{data: 'voljobs'},
+				{
+					data: 'volbytes',
+					render: function (data, type, row) {
+						var s;
+						if (type == 'display') {
+							s = Units.get_decimal_size(data)
+						} else {
+							s = data;
+						}
+						return s;
+					}
+				},
+				{
+					data: 'mediaid',
+					render: function(data, type, row) {
+						var btn = document.createElement('BUTTON');
+						btn.className = 'w3-button w3-green';
+						btn.type = 'button';
+						var i = document.createElement('I');
+						i.className = 'fa fa-list-ul';
+						var label = document.createTextNode(' <%[ Details ]%>');
+						btn.appendChild(i);
+						btn.innerHTML += '&nbsp';
+						btn.appendChild(label);
+						btn.setAttribute('onclick', "document.location.href = '/web/volume/" + data + "/'");
+						return btn.outerHTML;
+					}
+				}
+			],
+			responsive: {
+				details: {
+					type: 'column'
+				}
+			},
+			columnDefs: [{
+				className: 'control',
+				orderable: false,
+				targets: 0
+			}],
+			order: [3, 'asc']
+		});
+	}
+};
+oVolumeList.init();
+</script>
+</com:TContent>

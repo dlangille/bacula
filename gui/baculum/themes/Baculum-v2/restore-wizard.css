@@ -1,0 +1,78 @@
+#restore-browser {
+	width: 100%;
+	height: 100%;
+}
+
+#restore-browser td {
+	width: 45%;
+}
+
+#restore-browser-files {
+	height: 364px;
+}
+
+#restore-browser-files, #restore-browser-versions, #restore-browser-selected {
+	overflow: auto;
+	width: 100%;
+	background-color: white;
+	padding: 0 4px;
+	-moz-user-select: -moz-none;
+	-webkit-user-select: none;
+	-ms-user-select: none;
+}
+
+#restore-browser-versions {
+	height: 180px;
+}
+
+#restore-browser-selected {
+	height: 180px;
+}
+
+#restore-browser-files-loading {
+	position: absolute;
+	z-index: 10;
+	height: 100%;
+	background: rgba(182,182,182,0.4) url('progress.gif') no-repeat center center;
+}
+
+.file-browser-detail {
+	width: 100%;
+}
+
+tr.file-browser-element {
+	cursor: pointer;
+}
+
+tr.file-browser-element:hover {
+	background-color: rgb(219, 222, 223);
+}
+
+.restore-browser-element-size {
+	float: right;
+	width: 100px;
+}
+
+.restore-browser-element-size {
+	line-height: 24px;
+}
+
+.file-browser-watermark {
+	padding: 77px 10px;
+	text-align: center;
+	font-size: 21px;
+	color: rgb(185, 184, 184);
+}
+
+#backup-to-restore-field > div {
+	height: 467px;
+	overflow-y: auto;
+}
+
+.draggable {
+	position: relative !important;
+}
+
+.bold {
+	font-weight: bold;
+}

@@ -1,0 +1,133 @@
+<%@ MasterClass="Application.Web.Layouts.Main" Theme="Baculum-v2"%>
+<com:TContent ID="Main">
+	<!-- Header -->
+	<header class="w3-container">
+		<h5>
+			<b><i class="fa fa-tasks"></i> <%[ Job history details ]%></b>
+		</h5>
+	</header>
+	<h3>[<%[ JobId ]%> <%=$this->getJobId()%>] <%[ Job: ]%> <%=$this->getJobName()%> &nbsp;</h3>
+	<div class="w3-bar w3-green w3-margin-bottom">
+		<a class="w3-bar-item w3-button tab_btn" href="<%=$this->Service->constructUrl('JobHistoryList')%>"><i class="fa fa-angle-left"></i></a>
+		<button id="btn_job_actions" type="button" class="w3-bar-item w3-button tab_btn w3-grey" onclick="W3Tabs.open(this.id, 'job_actions');"><%[ Actions ]%></button>
+		<com:TActiveLinkButton
+			CssClass="w3-bar-item w3-button tab_btn"
+			Attributes.onclick="W3Tabs.open(this.id, 'job_config'); clear_node('#fileset_config div.directive_field'); clear_node('#schedule_config div.directive_field');"
+			Text="<%[ Configure job ]%>"
+			Visible="<%=!empty($_SESSION['dir'])%>"
+			OnClick="loadJobConfig"
+		/>
+		<com:TActiveLinkButton
+			CssClass="w3-bar-item w3-button tab_btn"
+			Attributes.onclick="W3Tabs.open(this.id, 'fileset_config'); clear_node('#job_config div.directive_field'); clear_node('#schedule_config  div.directive_field');"
+			Text="<%[ Configure fileset ]%>"
+			Visible="<%=!empty($_SESSION['dir'])%>"
+			OnClick="loadFileSetConfig"
+		/>
+		<com:TActiveLinkButton
+			CssClass="w3-bar-item w3-button tab_btn"
+			Attributes.onclick="W3Tabs.open(this.id, 'schedule_config'); clear_node('#job_config div.directive_field'); clear_node('#fileset_config div.directive_field');"
+			Text="<%[ Configure schedule ]%>"
+			Visible="<%=!empty($_SESSION['dir'])%>"
+			OnClick="loadScheduleConfig"
+		/>
+	</div>
+	<div class="w3-container tab_item" id="job_actions">
+		<com:TActiveLinkButton
+			ID="CancelBtn"
+			OnClick="cancel"
+			CssClass="w3-button w3-green w3-margin-bottom"
+			Display="None"
+			ClientSide.OnSuccess="job_callback_func(true);"
+		>
+			<prop:Text><%=Prado::localize('Cancel job')%> &nbsp;<i class="fa fa-hand-paper"></i></prop:Text>
+		</com:TActiveLinkButton>
+		<com:TActiveLinkButton
+			CssClass="w3-button w3-green w3-margin-bottom"
+			OnClick="loadRunJobModal"
+			Attributes.onclick="document.getElementById('run_job').style.display='block'"
+		>
+			<prop:Text><%=Prado::localize('Run job again')%> &nbsp;<i class="fa fa-undo"></i></prop:Text>
+		</com:TActiveLinkButton>
+		<com:TActiveLinkButton
+			ID="DeleteBtn"
+			CssClass="w3-button w3-green w3-margin-bottom"
+			OnClick="delete"
+			Display="None"
+			ClientSide.OnSuccess="document.location.href='<%=$this->Service->constructUrl('JobHistoryList')%>';"
+		>
+			<prop:Text><%=Prado::localize('Delete')%> &nbsp;<i class="fa fa-trash-alt"></i></prop:Text>
+		</com:TActiveLinkButton>
+		<button type="button" class="w3-button w3-green w3-margin-bottom" onclick="job_callback_func(true);"><%[ Refresh log ]%> &nbsp;<i class="fa fa-sync"></i></button>
+		<com:TActiveLinkButton
+			ID="RestoreBtn"
+			Attributes.onclick="document.location = '<%=$this->Service->constructUrl('RestoreWizard', array('jobid' => $this->getJobId()))%>';"
+			CssClass="w3-button w3-green w3-margin-bottom"
+			Display="None"
+		>
+			<%[ Restore ]%> &nbsp;<i class="fa fa-reply"></i>
+		</com:TActiveLinkButton>
+		<i id="joblog_loading" class="fa fa-undo w3-spin" style="display: none"></i>
+		<div class="w3-panel w3-card w3-light-grey">
+			<h3><%[ Job: ]%> <%=$this->getJobUname()%> &nbsp;
+				<com:TActiveLabel ID="RunningIcon">
+					<i class="fa fa-sync-alt w3-spin" Attributes.title="<%[ Job is running ]%>"></i>
+				</com:TActiveLabel>
+				<com:TActiveLabel ID="FinishedIcon" Attributes.title="<%[ Job is finished ]%>">
+					<i class="fa fa-check"></i>
+				</com:TActiveLabel>
+			</h3>
+			<div class="w3-code notranslate">
+				<pre><com:TActiveLabel ID="JobLog" /></pre>
+			</div>
+		</div>
+		<com:TCallback
+			ID="RefreshJobLog"
+			OnCallback="refreshJobLog"
+			ClientSide.OnLoading="show_joblog_loader(true)"
+			ClientSide.OnComplete="show_joblog_loader(false); job_callback_duration = new Date().getTime();"
+		/>
+		<script type="text/javascript">
+			var job_callback_duration;
+			var job_callback_func = function(force) {
+				var callback = <%=$this->RefreshJobLog->ActiveControl->Javascript%>;
+				var reload = document.getElementById('<%=$this->RunningIcon->ClientID%>').style.display != 'none';
+				if (reload || force) {
+					callback.dispatch();
+				}
+			}
+			var show_joblog_loader = function(show) {
+				var loader = document.getElementById('joblog_loading');
+				if (show) {
+					loader.style.display = '';
+				} else {
+					loader.style.display = 'none';
+				}
+			}
+		</script>
+		<com:Application.Web.Portlets.RunJob ID="RunJobModal" />
+	</div>
+	<div class="w3-container tab_item" id="job_config" style="display: none">
+		<com:Application.Web.Portlets.BaculaConfigDirectives
+			ID="JobConfig"
+			ComponentType="dir"
+			ResourceType="Job"
+		/>
+	</div>
+	<div class="w3-container tab_item" id="fileset_config" style="display: none">
+		<com:Application.Web.Portlets.BaculaConfigDirectives
+			ID="FileSetConfig"
+			ComponentType="dir"
+			ResourceType="Fileset"
+			ShowRemoveButton="false"
+		/>
+	</div>
+	<div class="w3-container tab_item" id="schedule_config" style="display: none">
+		<com:Application.Web.Portlets.BaculaConfigDirectives
+			ID="ScheduleConfig"
+			ComponentType="dir"
+			ResourceType="Schedule"
+			ShowRemoveButton="false"
+		/>
+	</div>
+</com:TContent>

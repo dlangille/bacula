@@ -56,7 +56,7 @@ var Units = {
 
 var Strings = {
 	limits: {
-		label: 15
+		label: 19
 	},
 	get_short_label: function(txt) {
 		var short_txt = txt;
@@ -85,17 +85,23 @@ var PieGraph  = {
 
 var Formatters = {
 	formatter: [
-		{css_class: 'size', format_func: Units.get_decimal_size}
+		{css_class: 'size', format_func: Units.get_decimal_size},
+		{css_class: 'time', format_func: function(val) { return Units.format_time_period(val); }}
 	],
 	set_formatters: function() {
-		var elements, formatter, txt;
+		var elements, formatter, txt, val;
 		for (var i = 0; i < this.formatter.length; i++) {
 			elements = document.getElementsByClassName(this.formatter[i].css_class);
 			formatter = this.formatter[i].format_func;
-			for (var i = 0; i < elements.length; i++) {
-				txt = elements[i].firstChild;
+			for (var j = 0; j < elements.length; j++) {
+				txt = elements[j].firstChild;
 				if (txt && txt.nodeType === 3) {
-					txt.nodeValue = formatter(txt.nodeValue);
+					val = formatter(txt.nodeValue);
+					if (typeof(val) === 'object' && val.hasOwnProperty('value') && val.hasOwnProperty('format')) {
+						txt.nodeValue = val.value + ' ' + val.format + ((val.value > 0) ? 's' : '');
+					} else {
+						txt.nodeValue = val;
+					}
 				}
 			}
 		}
@@ -129,6 +135,175 @@ var Cookies = {
 	}
 }
 
+var JobStatus = {
+	st: {
+		ok: ['T', 'D'],
+		warning: ['W'],
+		error: ['E', 'e', 'f', 'I'],
+		cancel: ['A'],
+		running: ['C', 'R']
+	},
+
+	is_ok: function(s) {
+		return (this.st.ok.indexOf(s) !== -1);
+	},
+	is_warning: function(s) {
+		return (this.st.warning.indexOf(s) !== -1);
+	},
+	is_error: function(s) {
+		return (this.st.error.indexOf(s) !== -1);
+	},
+	is_cancel: function(s) {
+		return (this.st.cancel.indexOf(s) !== -1);
+	},
+	is_running: function(s) {
+		return (this.st.running.indexOf(s) !== -1);
+	},
+	get_icon: function(s) {
+		var css = 'fa ';
+		if (this.is_ok(s)) {
+			css += 'fa-check-square w3-text-green';
+		} else if (this.is_error(s)) {
+			css += 'fa-exclamation-circle w3-text-red';
+		} else if (this.is_running(s)) {
+			css += 'fa-cogs w3-text-blue';
+		} else if (this.is_cancel(s)) {
+			css += 'fa-minus-square w3-text-yellow';
+		} else if (this.is_warning(s)) {
+			css += 'fa-exclamation-triangle w3-text-orange';
+		} else {
+			css += 'fa-question-circle w3-text-red';
+		}
+		css += ' w3-large';
+		var ret = document.createElement('I');
+		ret.className = css;
+		ret.title = this.get_desc(s);
+		return ret;
+	},
+	get_desc: function(s) {
+		var desc;
+		if (s == 'C') {
+			desc = 'Created but not yet running';
+		} else if (s == 'R') {
+			desc = 'Running';
+		} else if (s == 'B') {
+			desc = 'Blocked';
+		} else if (s == 'T') {
+			desc = 'Terminated normally';
+		} else if (s == 'W') {
+			desc = 'Terminated normally with warnings';
+		} else if (s == 'E') {
+			desc = 'Terminated in Error';
+		} else if (s == 'e') {
+			desc = 'Non-fatal error';
+		} else if (s == 'f') {
+			desc = 'Fatal error';
+		} else if (s == 'D') {
+			desc = 'Verify Differences';
+		} else if (s == 'A') {
+			desc = 'Canceled by the user';
+		} else if (s == 'I') {
+			desc = 'Incomplete Job';
+
+		/*
+		 * Some statuses are used only internally by Bacula and
+		 * they are not exposed to end interface.
+		 */
+		} else if (s == 'F') {
+			desc = 'Waiting on the File daemon';
+		} else if (s == 'S') {
+			desc = 'Waiting on the Storage daemon';
+		} else if (s == 'm') {
+			desc = 'Waiting for a new Volume to be mounted';
+		} else if (s == 'M') {
+			desc = 'Waiting for a Mount';
+		} else if (s == 's') {
+			desc = 'Waiting for Storage resource';
+		} else if (s == 'j') {
+			desc = 'Waiting for Job resource';
+		} else if (s == 'c') {
+			desc = 'Waiting for Client resource';
+		} else if (s == 'd') {
+			desc = 'Wating for Maximum jobs';
+		} else if (s == 't') {
+			desc = 'Waiting for Start Time';
+		} else if (s == 'p') {
+			desc = 'Waiting for higher priority job to finish';
+		} else if (s == 'i') {
+			desc = 'Doing batch insert file records';
+		} else if (s == 'a') {
+			desc = 'SD despooling attributes';
+		} else if (s == 'l') {
+			desc = 'Doing data despooling';
+		} else if (s == 'L') {
+			desc = 'Committing data (last despool)';
+		} else {
+			desc = 'Unknown status';
+		}
+		return desc;
+	},
+	get_states: function() {
+		var states = {};
+		var keys = Object.keys(this.st);
+		for (var i = 0; i < keys.length; i++) {
+			for (var j = 0; j < this.st[keys[i]].length; j++) {
+				states[this.st[keys[i]][j]] = {
+					type: keys[i],
+					value: this.get_desc(this.st[keys[i]][j])
+				};
+			}
+		}
+		return states;
+	}
+};
+
+var JobLevel = {
+	level: {
+		'F': 'Full',
+		'I': 'Incremental',
+		'D': 'Differential',
+		'B': 'Base',
+		'f': 'VirtualFull',
+		'V': 'InitCatalog',
+		'C': 'Catalog',
+		'O': 'VolumeToCatalog',
+		'd': 'DiskToCatalog'
+	},
+	get_level: function(l) {
+		var level;
+		if (this.level.hasOwnProperty(l)) {
+			level = this.level[l];
+		} else {
+			level = 'Unknown';
+		}
+		return level;
+	}
+};
+
+var JobType = {
+	type: {
+		'B': 'Backup',
+		'M': 'Migrated',
+		'V': 'Verify',
+		'R': 'Restore',
+		'I': 'Internal',
+		'D': 'Admin',
+		'A': 'Archive',
+		'C': 'Copy',
+		'c': 'Copy Job',
+		'g': 'Migration'
+	},
+	get_type: function(t) {
+		var type;
+		if (this.type.hasOwnProperty(t)) {
+			type = this.type[t];
+		} else {
+			type = 'Unknown';
+		}
+		return type;
+	}
+};
+
 var Dashboard = {
 	stats: null,
 	txt: null,
@@ -136,14 +311,15 @@ var Dashboard = {
 	noval: '-',
 	ids: {
 		clients: {
-			no: 'clients_no',
-			most: 'clients_most',
-			jobs: 'clients_jobs'
+			no: 'client_no',
+			most: 'client_most',
+			jobs: 'client_jobs'
 		},
 		jobs: {
-			to_view: 'jobs_to_view',
-			most: 'jobs_most',
-			most_count: 'jobs_most_count'
+			no: 'job_no',
+			most: 'job_most',
+			most_count: 'job_most_count',
+			all: 'all_jobs'
 		},
 		jobtotals: {
 			total_bytes: 'jobs_total_bytes',
@@ -154,9 +330,9 @@ var Dashboard = {
 			size: 'database_size'
 		},
 		pools: {
-			no: 'pools_no',
-			most: 'pools_most',
-			jobs: 'pools_jobs'
+			no: 'pool_no',
+			most: 'pool_most',
+			jobs: 'pool_jobs'
 		},
 		pie_summary: 'jobs_summary_graph'
 	},
@@ -165,16 +341,15 @@ var Dashboard = {
 		mysql: 'MySQL',
 		sqlite: 'SQLite'
 	},
-	update_all: function(statistics, txt) {
+	update_all: function(statistics) {
 		this.stats = statistics;
-		this.txt = txt;
 		this.update_pie_jobstatus();
 		this.update_clients();
-		this.update_job_access();
 		this.update_jobs();
+		this.update_job_access();
+		this.update_pools();
 		this.update_jobtotals();
 		this.update_database();
-		this.update_pools();
 	},
 	update_clients: function() {
 		var clients = this.stats.clients_occupancy;
@@ -197,16 +372,38 @@ var Dashboard = {
 		document.getElementById(this.ids.clients.jobs).textContent = occupancy;
 	},
 	update_job_access: function() {
-		var jobs_combobox= document.getElementById(this.ids.jobs.to_view);
-		jobs_combobox.innerHTML = '';
-		var last_jobs = this.stats.jobs.slice(0, 100);
+		var job_table= document.getElementById(this.ids.jobs.all);
+		job_table.innerHTML = '';
+		var last_jobs = this.stats.jobs.slice(0, 10);
+		var add_job_dest_page = function(i) {
+			tr.addEventListener('click', function(e) {
+				var url = '/web/job/history/%jobid/'.replace('%jobid', last_jobs[i].jobid);
+				document.location.href = url;
+			});
+		}
 		for (var i = 0; i < last_jobs.length; i++) {
-			var opt = document.createElement('OPTION');
-			var txt = '[' + last_jobs[i].jobid + '] ' + last_jobs[i].name + ' (' + this.txt.level + ': ' + last_jobs[i].level + ' ' + this.txt.status + ': ' + last_jobs[i].jobstatus + ' ' + this.txt.starttime + ': ' + last_jobs[i].starttime + ')';
-			var label = document.createTextNode(txt);
-			opt.value = last_jobs[i].jobid;
-			opt.appendChild(label);
-			jobs_combobox.appendChild(opt);
+			var tr = document.createElement('TR');
+			tr.style.cursor = 'pointer';
+			add_job_dest_page(i);
+			var td_jobid = document.createElement('TD');
+			var td_name = document.createElement('TD');
+			var td_level = document.createElement('TD');
+			var td_starttime = document.createElement('TD');
+			var td_jobstatus = document.createElement('TD');
+			td_jobid.textContent = last_jobs[i].jobid;
+			td_name.textContent = Strings.get_short_label(last_jobs[i].name);
+			td_level.textContent = last_jobs[i].level;
+			td_level.className = 'w3-center';
+			td_starttime.textContent = last_jobs[i].starttime;
+			td_starttime.className = 'w3-center';
+			td_jobstatus.appendChild(JobStatus.get_icon(last_jobs[i].jobstatus));
+			td_jobstatus.className = 'w3-center';
+			tr.appendChild(td_jobid);
+			tr.appendChild(td_name);
+			tr.appendChild(td_level);
+			tr.appendChild(td_starttime);
+			tr.appendChild(td_jobstatus);
+			job_table.appendChild(tr);
 		}
 	},
 	update_jobs: function() {
@@ -224,6 +421,7 @@ var Dashboard = {
 			occupancy = 0;
 		}
 
+		document.getElementById(this.ids.jobs.no).textContent = Object.keys(this.stats.jobs).length;
 		document.getElementById(this.ids.jobs.most).setAttribute('title',most_occuped_job);
 		document.getElementById(this.ids.jobs.most).textContent = Strings.get_short_label(most_occuped_job);
 		document.getElementById(this.ids.jobs.most_count).textContent = occupancy;
@@ -259,12 +457,10 @@ var Dashboard = {
 		document.getElementById(this.ids.pools.jobs).textContent = occupancy;
 	},
 	update_pie_jobstatus: function() {
-		if (PanelWindow.currentWindowId === 'dashboard') {
-			if (this.pie != null) {
-				this.pie.pie.destroy();
-			}
-			this.pie = new GraphPieClass(this.stats.jobs_summary, this.ids.pie_summary);
+		if (this.pie != null) {
+			this.pie.pie.destroy();
 		}
+		this.pie = new GraphPieClass(this.stats.jobs_summary, this.ids.pie_summary);
 	}
 }
 
@@ -299,7 +495,7 @@ var Users = {
 		document.getElementById(this.ids.create_user.newuser).addEventListener('keydown', function(e) {
 			var target = e.target || e.srcElement;
 			if (e.keyCode == 13) {
-				$(target.parentNode.getElementsByTagName('A')[0]).click();
+				this.addUser();
 			} else if (e.keyCode == 27) {
 				this.cancelAddUser();
 			}
@@ -308,7 +504,7 @@ var Users = {
 		document.getElementById(this.ids.create_user.newpwd).addEventListener('keydown', function(e) {
 			var target = e.target || e.srcElement;
 			if (e.keyCode == 13) {
-				$(target.nextElementSibling).click();
+				this.addUser();
 			} else if (e.keyCode == 27) {
 				this.cancelAddUser();
 			}
@@ -336,17 +532,19 @@ var Users = {
 		return valid;
 	},
 	addUser: function() {
-		var user = document.getElementById(this.ids.create_user.newuser).value;
-		var pwd = document.getElementById(this.ids.create_user.newpwd).value;
-		if (this.userValidator(user) === false) {
+		var user = document.getElementById(this.ids.create_user.newuser);
+		var pwd = document.getElementById(this.ids.create_user.newpwd);
+		if (this.userValidator(user.value) === false) {
 			return false;
 		}
-		if (this.pwdValidator(pwd) === false) {
+		if (this.pwdValidator(pwd.value) === false) {
 			return false;
 		}
 
 		$('#' + this.ids.create_user.add_user).hide();
-		this.action_callback('newuser', user, pwd);
+		this.action_callback('newuser', user.value, pwd.value);
+		user.value = '';
+		pwd.value = '';
 		return true;
 	},
 	rmUser: function(user) {
@@ -357,7 +555,7 @@ var Users = {
 		$('#' + el).hide();
 		$('span[rel=\'' + this.ids.change_pwd.rel_chpwd + '\']').hide();
 		$(el.nextElementSibling).show();
-		$(el.nextElementSibling).select('input')[0].focus();
+		$(el.nextElementSibling).find('input')[0].focus();
 	},
 	changePwd: function(el, user) {
 		var pwd = el.value;
@@ -376,9 +574,11 @@ var Users = {
 		this.action_callback('set_host', user, select.value);
 	},
 	hide_loader: function() {
-		if (this.current_action === 'set_host') {
-			$('img[rel=\'' + this.ids.set_host.rel_user_host + '\']').css({visibility: 'hidden'});
-		}
+		setTimeout(function() {
+			if (this.current_action === 'set_host') {
+				$('svg[rel=\'' + this.ids.set_host.rel_user_host + '\']').css({visibility: 'hidden'});
+			}
+		}.bind(this), 300);
 
 	},
 	cancelAddUser: function() {
@@ -390,6 +590,85 @@ var Users = {
 	}
 
 };
+
+var W3SideBar = {
+	ids: {
+		sidebar: 'sidebar',
+		overlay_bg: 'overlay_bg',
+		page_main: 'page_main'
+	},
+	cookies: {
+		side_bar_hide: 'baculum_side_bar_hide'
+	},
+	init: function() {
+		this.sidebar = document.getElementById(this.ids.sidebar);
+		this.overlay_bg = document.getElementById(this.ids.overlay_bg);
+		this.page_main = document.getElementById(this.ids.page_main);
+		var hide = Cookies.get_cookie(this.cookies.side_bar_hide);
+		if (hide == 1) {
+			this.close();
+		}
+	},
+	open: function() {
+		if (this.sidebar.style.display === 'block' || this.sidebar.style.display === '') {
+			Cookies.set_cookie('baculum_side_bar_hide', 1);
+			this.sidebar.style.display = 'none';
+			this.overlay_bg.style.display = 'none';
+			this.page_main.style.marginLeft = 0;
+		} else {
+			Cookies.set_cookie('baculum_side_bar_hide', 0);
+			this.sidebar.style.display = 'block';
+			this.overlay_bg.style.display = 'block';
+			this.page_main.style.marginLeft = '300px';
+		}
+	},
+	close: function() {
+		Cookies.set_cookie('baculum_side_bar_hide', 1);
+		this.sidebar.style.display = 'none';
+		this.overlay_bg.style.display = 'none';
+		this.page_main.style.marginLeft = 0;
+	}
+};
+
+W3Tabs = {
+	css: {
+		tab_btn: 'tab_btn',
+		tab_item: 'tab_item'
+	},
+	open: function(btn_id, item_id) {
+		var tab_items = document.getElementsByClassName(this.css.tab_item);
+		for (var i = 0; i < tab_items.length; i++) {
+			if (tab_items[i].id === item_id) {
+				tab_items[i].style.display = 'block';
+			} else {
+				tab_items[i].style.display = 'none';
+			}
+		}
+		var tab_btns = document.getElementsByClassName(this.css.tab_btn);
+		for (var i = 0; i < tab_btns.length; i++) {
+			tab_btns[i].className = 'w3-bar-item w3-button ' + this.css.tab_btn;
+			if (tab_btns[i].id === btn_id) {
+				tab_btns[i].className += ' w3-gray';
+			}
+		}
+	}
+}
+
+function get_url_param (name) {
+	var url = window.location.href;
+	var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)");
+        var results = regex.exec(url);
+	var ret;
+	if (!results) {
+		ret = null;
+	} else if (!results[2]) {
+		ret = '';
+	} else {
+		ret = results[2].replace(/\+/g, " ");
+		ret = decodeURIComponent(ret);
+	}
+	return ret;
+}
 
 function openElementOnCursor(e, element, offsetX, offsetY) {
 	if (!offsetX) {
@@ -417,3 +696,34 @@ function get_random_string(allowed, len) {
 	}
 	return random_string;
 }
+
+function clear_node(selector) {
+	var node = $(selector);
+	for (var i = 0; i < node.length; i++) {
+		while (node[i].firstChild) {
+			node[i].removeChild(node[i].firstChild);
+		}
+	}
+}
+
+/**
+ * Set compatibility with Send Bacula Backup Report tool.
+ * @see https://giunchi.net/send-bacula-backup-report
+ */
+function set_sbbr_compatibility() {
+	var open = get_url_param('open');
+	var id = get_url_param('id');
+	if (open && id) {
+		open = open.toLowerCase();
+		if (open === 'job') {
+			open = 'job/history';
+		}
+		var url = '/web/%open/%id/'.replace('%open',  open.toLowerCase()).replace('%id', id);
+		document.location.href = url;
+	}
+}
+
+$(function() {
+	W3SideBar.init();
+	set_sbbr_compatibility();
+});

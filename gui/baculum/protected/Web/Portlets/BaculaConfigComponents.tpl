@@ -1,10 +1,11 @@
-<div class="config_components" style="display: none">
+<div class="config_components w3-margin-left" style="display: none">
 	<com:TActiveRepeater ID="RepeaterComponents" OnItemCreated="createComponentListElement">
 		<prop:ItemTemplate>
 			<com:TPanel>
-				<table class="component">
+				<table class="component" style="width: 100%">
 					<tr>
-						<td onmousedown="(event.target||event.srcElement).id != '<%=$this->Component->ClientID%>' ? $('#<%=$this->Component->ClientID%>').trigger('click') : '';" style="width: 900px" ><com:TActiveLinkButton
+						<td onmousedown="var el = (event.target||event.srcElement); el.parentNode.id != '<%=$this->Component->ClientID%>' && el.id != '<%=$this->Component->ClientID%>' ? $('#<%=$this->Component->ClientID%>').trigger('click') : '';" style="width: 80%; cursor: pointer;" class="w3-threequarter">
+						<com:TActiveLinkButton
 							ID="Component"
 							ActiveControl.EnableUpdate="false"
 							OnCommand="SourceTemplateControl.getResources"
@@ -12,11 +13,12 @@
 							ClientSide.OnComplete="BaculaConfig.set_config_items(sender.options.ID);"
 							Attributes.onclick="return BaculaConfig.unset_config_items(this.id);"
 							Text="<strong><%=$this->DataItem['label']%></strong>: <%=$this->DataItem['component_name']%>"
+							Style="text-decoration: none"
 						/>
-							<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/ajax-loader-arrows.gif" alt="" style="display: none" />
+							<i class="fa fa-sync w3-spin" style="display: none"><i/>
 						</td>
-						<td class="right">
-							<a href="javascript:void(0)" onmousedown="openElementOnCursor(event, '<%=$this->ResourcesMenu->ClientID%>_new_resource', -80, 20);"><img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/add.png" alt="<%[ Add ]%>" /> <%[ Add ]%></a>
+						<td class="right" style="width: 20%">
+							<a class="w3-button w3-green w3-right" href="javascript:void(0)" onmousedown="openElementOnCursor(event, '<%=$this->ResourcesMenu->ClientID%>_new_resource', -80, 20);"><i class="fa fa-plus"></i> &nbsp;<%[ Add ]%></a>
 							<com:Application.Web.Portlets.NewResourceMenu ID="ResourcesMenu" />
 						</td>
 					</tr>

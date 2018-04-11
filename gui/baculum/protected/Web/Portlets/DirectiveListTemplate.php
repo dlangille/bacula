@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2016 Kern Sibbald
+ * Copyright (C) 2013-2018 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -35,6 +35,9 @@ class DirectiveListTemplate extends ConfigListTemplate implements IActiveControl
 	const DIRECTIVE_NAME = 'DirectiveName';
 	const DATA = 'Data';
 	const LOAD_VALUES = 'LoadValues';
+	const SHOW = 'Show';
+
+	public $display_directive;
 
 	public function __construct() {
 		parent::__construct();
@@ -53,6 +56,12 @@ class DirectiveListTemplate extends ConfigListTemplate implements IActiveControl
 
 	public function onDirectiveListLoad($handler) {
 		$this->attachEventHandler('OnDirectiveListLoad', $handler);
+	}
+
+	public function onPreRender($param) {
+		parent::onPreRender($param);
+		// show directives existing in config or all
+		$this->display_directive = $this->getShow();
 	}
 
 	public function getHost() {
@@ -134,6 +143,14 @@ class DirectiveListTemplate extends ConfigListTemplate implements IActiveControl
 	public function setLoadValues($load_values) {
 		settype($load_values, 'bool');
 		$this->setViewState(self::LOAD_VALUES, $load_values);
+	}
+
+	public function getShow() {
+		return $this->getViewState(self::SHOW);
+	}
+
+	public function setShow($show) {
+		$this->setViewState(self::SHOW, $show);
 	}
 }
 ?>

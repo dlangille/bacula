@@ -1,0 +1,68 @@
+<%@ MasterClass="Application.Web.Layouts.Main" Theme="Baculum-v2"%>
+<com:TContent ID="Main">
+	<!-- Header -->
+	<header class="w3-container">
+		<h5>
+			<b><i class="fa fa-tasks"></i> <%[ Job details ]%></b>
+		</h5>
+	</header>
+	<h3 class="w3-margin-left"><%[ Job: ]%> <%=$this->getJobName()%> &nbsp;</h3>
+	<div class="w3-bar w3-green w3-margin-bottom">
+		<a class="w3-bar-item w3-button tab_btn" href="<%=$this->Service->constructUrl('JobList')%>"><i class="fa fa-angle-left"></i></a>
+		<button id="btn_job_actions" type="button" class="w3-bar-item w3-button tab_btn w3-grey" onclick="W3Tabs.open(this.id, 'job_actions');"><%[ Actions ]%></button>
+		<com:TActiveLinkButton
+			CssClass="w3-bar-item w3-button tab_btn"
+			Attributes.onclick="W3Tabs.open(this.id, 'job_config'); clear_node('#fileset_config div.directive_field'); clear_node('#schedule_config div.directive_field');"
+			Text="<%[ Configure job ]%>"
+			Visible="<%=!empty($_SESSION['dir'])%>"
+			OnClick="loadJobConfig"
+		/>
+		<com:TActiveLinkButton
+			CssClass="w3-bar-item w3-button tab_btn"
+			Attributes.onclick="W3Tabs.open(this.id, 'fileset_config'); clear_node('#job_config div.directive_field'); clear_node('#schedule_config  div.directive_field');"
+			Text="<%[ Configure fileset ]%>"
+			Visible="<%=!empty($_SESSION['dir'])%>"
+			OnClick="loadFileSetConfig"
+		/>
+		<com:TActiveLinkButton
+			CssClass="w3-bar-item w3-button tab_btn"
+			Attributes.onclick="W3Tabs.open(this.id, 'schedule_config'); clear_node('#job_config div.directive_field'); clear_node('#fileset_config div.directive_field');"
+			Text="<%[ Configure schedule ]%>"
+			Visible="<%=!empty($_SESSION['dir'])%>"
+			OnClick="loadScheduleConfig"
+		/>
+	</div>
+	<div class="w3-container tab_item" id="job_actions">
+		<com:TActiveLinkButton
+			CssClass="w3-button w3-green w3-margin-bottom"
+			OnClick="loadRunJobModal"
+			Attributes.onclick="document.getElementById('run_job').style.display='block'"
+		>
+			<prop:Text><%=Prado::localize('Run job')%> &nbsp;<i class="fa fa-undo"></i></prop:Text>
+		</com:TActiveLinkButton>
+		<com:Application.Web.Portlets.RunJob ID="RunJobModal" />
+	</div>
+	<div class="w3-container tab_item" id="job_config" style="display: none">
+		<com:Application.Web.Portlets.BaculaConfigDirectives
+			ID="JobConfig"
+			ComponentType="dir"
+			ResourceType="Job"
+		/>
+	</div>
+	<div class="w3-container tab_item" id="fileset_config" style="display: none">
+		<com:Application.Web.Portlets.BaculaConfigDirectives
+			ID="FileSetConfig"
+			ComponentType="dir"
+			ResourceType="Fileset"
+			ShowRemoveButton="false"
+		/>
+	</div>
+	<div class="w3-container tab_item" id="schedule_config" style="display: none">
+		<com:Application.Web.Portlets.BaculaConfigDirectives
+			ID="ScheduleConfig"
+			ComponentType="dir"
+			ResourceType="Schedule"
+			ShowRemoveButton="false"
+		/>
+	</div>
+</com:TContent>

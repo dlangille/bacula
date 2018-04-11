@@ -1,0 +1,47 @@
+<%@ MasterClass="Application.Web.Layouts.Main" Theme="Baculum-v2"%>
+<com:TContent ID="Main">
+	<!-- Header -->
+	<header class="w3-container">
+		<h5>
+			<b><i class="fa fa-cog"></i> <%[ Application settings ]%></b>
+		</h5>
+	</header>
+	<div class="w3-container w3-row w3-padding">
+		<div class="w3-third w3-col"><%[ Enable debug ]%></div>
+		<div class="w3-third w3-col">
+			<com:TCheckBox
+				ID="Debug"
+				CssClass="w3-check"
+				Attributes.onclick="if (this.checked){document.getElementById('debug_confirm').style.display='block';}"
+			/>
+		</div>
+	</div>
+	<div class="w3-center">
+		<com:TActiveLinkButton
+			CssClass="w3-button w3-green"
+			OnClick="save"
+		>
+			<prop:ClientSide.OnLoading>
+				document.getElementById('save_settings_loader').style.display = '';
+			</prop:ClientSide.OnLoading>
+			<prop:ClientSide.OnComplete>
+				setTimeout(function() {	
+					document.getElementById('save_settings_loader').style.display = 'none';
+				}, 300)
+			</prop:ClientSide.OnComplete>
+			<i class="fa fa-save"></i> &nbsp;<%[ Save ]%>
+		</com:TActiveLinkButton>
+		<i id="save_settings_loader" class="fa fa-sync w3-spin" style="display: none"></i>
+	</div>
+	<div id="debug_confirm" class="w3-modal" style="display: none">
+		<div class="w3-modal-content w3-card-4 w3-animate-zoom w3-padding" style="max-width: 600px">
+			<span onclick="document.getElementById('debug_confirm').style.display='none'" class="w3-button w3-xlarge w3-hover-red w3-display-topright">&times;</span>
+			<h4><%[ Enable debug ]%></h4>
+			<p>Debug files enable possibility to save most of actions executed on Baculum WebGUI. Debug functionality should be enabled if is happening shomething wrong with Baculum or something that looks like a bug. Logs can be useful for detecting a problems in Baculum working. After confirmation this message Baculum debug files will be continuously saving in /protected/Web/Logs/ directory. Are you sure?</p>
+			<div class="w3-center">
+				<button class="w3-button w3-red" type="button" onclick="document.getElementById('<%=$this->Debug->ClientID%>').checked = false; document.getElementById('debug_confirm').style.display='none'"><i class="fa fa-times"></i> &nbsp;<%[ No ]%></button>
+				<button class="w3-button w3-green" type="button" onclick="document.getElementById('debug_confirm').style.display='none'"><i class="fa fa-check"></i> &nbsp;<%[ Yes ]%></button>
+			</div>
+		</div>
+	</div>
+</com:TContent>

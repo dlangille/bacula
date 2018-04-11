@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2016 Kern Sibbald
+ * Copyright (C) 2013-2018 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -23,9 +23,9 @@
 Prado::using('Application.Web.Class.BaculumWebPage');
 
 class Monitor extends BaculumWebPage {
+
 	public function onInit($param) {
 		parent::onInit($param);
-
 		$_SESSION['monitor_data'] = array(
 			'jobs' => array(),
 			'running_jobs' => array(),
@@ -35,21 +35,31 @@ class Monitor extends BaculumWebPage {
 			'dbsize' => array()
 		);
 
-		$_SESSION['monitor_data']['jobs'] = $this->Application->getModule('api')->get(array('jobs'))->output;
-		$_SESSION['monitor_data']['clients'] = $this->getModule('api')->get(array('clients'))->output;
-		$_SESSION['monitor_data']['pools'] = $this->getModule('api')->get(array('pools'))->output;
-		$_SESSION['monitor_data']['jobtotals'] = $this->getModule('api')->get(array('jobs', 'totals'))->output;
-		if ($_SESSION['admin']) {
+		$params = $this->Request->contains('params') ? $this->Request['params'] : array();
+		if (in_array('jobs', $params)) {
+			$_SESSION['monitor_data']['jobs'] = $this->getModule('api')->get(array('jobs'))->output;
+		}
+		$_SESSION['monitor_data']['running_jobs'] = $this->getModule('api')->get(array('jobs', 'jobstatus', 'CR'))->output;
+		if (in_array('clients', $params)) {
+			$_SESSION['monitor_data']['clients'] = $this->getModule('api')->get(array('clients'))->output;
+		}
+		if (in_array('pools', $params)) {
+			$_SESSION['monitor_data']['pools'] = $this->getModule('api')->get(array('pools'))->output;
+		}
+		if (in_array('job_totals', $params)) {
+			$_SESSION['monitor_data']['jobtotals'] = $this->getModule('api')->get(array('jobs', 'totals'))->output;
+		}
+		if ($_SESSION['admin'] && in_array('dbsize', $params)) {
 			$_SESSION['monitor_data']['dbsize'] = $this->getModule('api')->get(array('dbsize'))->output;
 		}
 
 		$runningJobStates = $this->Application->getModule('misc')->getRunningJobStates();
 
-		for ($i = 0; $i < count($_SESSION['monitor_data']['jobs']); $i++) {
-			if (in_array($_SESSION['monitor_data']['jobs'][$i]->jobstatus, $runningJobStates)) {
-				$_SESSION['monitor_data']['running_jobs'][] = $_SESSION['monitor_data']['jobs'][$i];
-			} else {
-				$_SESSION['monitor_data']['terminated_jobs'][] = $_SESSION['monitor_data']['jobs'][$i];
+		if (in_array('jobs', $params)) {
+			for ($i = 0; $i < count($_SESSION['monitor_data']['jobs']); $i++) {
+				if (!in_array($_SESSION['monitor_data']['jobs'][$i]->jobstatus, $runningJobStates)) {
+					$_SESSION['monitor_data']['terminated_jobs'][] = $_SESSION['monitor_data']['jobs'][$i];
+				}
 			}
 		}
 		echo json_encode($_SESSION['monitor_data']);

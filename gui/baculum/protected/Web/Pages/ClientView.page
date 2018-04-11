@@ -1,0 +1,175 @@
+<%@ MasterClass="Application.Web.Layouts.Main" Theme="Baculum-v2"%>
+<com:TContent ID="Main">
+	<!-- Header -->
+	<header class="w3-container">
+		<h5>
+			<b><i class="fa fa-desktop"></i> <%[ Client details ]%></b>
+		</h5>
+	</header>
+	<h3 class="w3-margin-left">[ClientId <%=$this->getClientId()%>] <%[ Client: ]%> <%=$this->getClientName()%></h3>
+	<div class="w3-bar w3-green w3-margin-bottom">
+		<a class="w3-bar-item w3-button tab_btn" href="<%=$this->Service->constructUrl('ClientList')%>"><i class="fa fa-angle-left"></i></a>
+		<button id="btn_client_actions" type="button" class="w3-bar-item w3-button tab_btn w3-grey" onclick="W3Tabs.open(this.id, 'client_actions'); clear_node('#new_client div.directive_value');"><%[ Actions ]%></button>
+		<button id="btn_client_jobs" type="button" class="w3-bar-item w3-button tab_btn" onclick="W3Tabs.open(this.id, 'client_jobs'); clear_node('#new_client  div.directive_value');"><%[ Jobs for Client ]%></button>
+		<com:TLinkButton
+			CssClass="w3-bar-item w3-button tab_btn"
+			Attributes.onclick="W3Tabs.open(this.id, 'client_config'); clear_node('#new_client  div.directive_value'); return false;"
+			Text="<%[ Configure client ]%>"
+			Visible="<%=!empty($_SESSION['dir'])%>"
+		/>
+	</div>
+	<div class="w3-container tab_item" id="client_actions">
+		<com:TActiveLinkButton
+			ID="ClientStatusBtn"
+			OnClick="status"
+			CssClass="w3-button w3-green w3-margin-bottom"
+			CausesValidation="false"
+			ClientSide.OnLoading="$('#status_storage_loading').show();"
+			ClientSide.OnSuccess="$('#status_storage_loading').hide();"
+		>
+			<prop:Text><%=Prado::localize('Status client')%> &nbsp;<i class="fa fa-file-medical-alt"></i></prop:Text>
+		</com:TActiveLinkButton>
+		<i id="status_storage_loading" class="fa fa-undo w3-spin" style="display: none"></i>
+		<div class="w3-panel w3-card w3-light-grey">
+			<div class="w3-code notranslate">
+				<pre><com:TActiveLabel ID="ClientLog" /></pre>
+			</div>
+		</div>
+	</div>
+	<div class="w3-container tab_item" id="client_jobs" style="display: none">
+		<table id="job_for_client_list" class="w3-table w3-striped w3-hoverable w3-white w3-margin-bottom" style="width: 100%">
+			<thead>
+				<tr>
+					<th></th>
+					<th><%[ JobId ]%></th>
+					<th><%[ Name ]%></th>
+					<th><%[ Type ]%></th>
+					<th class="w3-center"><%[ Level ]%></th>
+					<th class="w3-center"><%[ Start time ]%></th>
+					<th class="w3-center"><%[ End time ]%></th>
+					<th class="w3-center"><%[ Job status ]%></th>
+					<th class="w3-center"><%[ Size ]%></th>
+					<th class="w3-center"><%[ Files ]%></th>
+					<th class="w3-center"><%[ Action ]%></th>
+				</tr>
+			</thead>
+			<tbody id="job_for_client_list_body">
+			</tbody>
+		</table>
+	</div>
+<script type="text/javascript">
+var oJobForClientList = {
+	ids: {
+		job_list: 'job_for_client_list',
+		job_list_body: 'job_for_client_list_body'
+	},
+	clientid: 0,
+	data: [],
+	init: function(clientid) {
+		this.clientid = clientid;
+		this.prepare_data();
+		this.set_table();
+	},
+	prepare_data: function() {
+		for (var i = 0; i < oData.jobs.length; i++) {
+			if (oData.jobs[i].clientid == this.clientid) {
+				this.data.push(oData.jobs[i]);
+			}
+		}
+	},
+	set_table: function() {
+		var table = $('#' + this.ids.job_list).DataTable({
+			data: this.data,
+			columns: [
+				{
+					className: 'details-control',
+					orderable: false,
+					data: null,
+					defaultContent: '<button type="button" class="w3-button w3-blue"><i class="fa fa-angle-down"></i></button>'
+				},
+				{data: 'jobid'},
+				{data: 'name'},
+				{
+					data: 'type',
+					render: function(data, type, row) {
+						return JobType.get_type(data);
+					}
+				},
+				{
+					data: 'level',
+					render: function(data, type, row) {
+						return JobLevel.get_level(data);
+					}
+				},
+				{data: 'starttime'},
+				{data: 'endtime'},
+				{
+					data: 'jobstatus',
+					render: function (data, type, row) {
+						var ret;
+						if (type == 'display') {
+							ret = JobStatus.get_icon(data).outerHTML;
+						} else {
+							ret = data;
+						}
+						return ret;
+					},
+					className: 'w3-center'
+				},
+				{
+					data: 'jobbytes',
+					render: function (data, type, row) {
+						var s;
+						if (type == 'display') {
+							s = Units.get_decimal_size(data)
+						} else {
+							s = data;
+						}
+						return s;
+					}
+				},
+				{data: 'jobfiles'},
+				{
+					data: 'jobid',
+					render: function (data, type, row) {
+						var btn = document.createElement('BUTTON');
+						btn.className = 'w3-button w3-green';
+						btn.type = 'button';
+						var i = document.createElement('I');
+						i.className = 'fa fa-list-ul';
+						var label = document.createTextNode(' <%[ Details ]%>');
+						btn.appendChild(i);
+						btn.innerHTML += '&nbsp';
+						btn.appendChild(label);
+						btn.setAttribute('onclick', "document.location.href = '/web/job/" + data + "/'");
+						return btn.outerHTML;
+					}
+				}
+			],
+			responsive: {
+				details: {
+					type: 'column'
+				}
+			},
+			columnDefs: [{
+				className: 'control',
+				orderable: false,
+				targets: 0
+			}],
+			order: [1, 'desc']
+		});
+	}
+};
+MonitorParams = ['jobs'];
+$(function() {
+	MonitorCalls.push(function() { oJobForClientList.init(<%=$this->getClientId()%>); });
+});
+</script>
+	<div class="w3-container tab_item" id="client_config" style="display: none">
+		<com:Application.Web.Portlets.BaculaConfigDirectives
+			ID="ClientConfig"
+			ComponentType="dir"
+			ResourceType="Client"
+		/>
+	</div>
+</com:TContent>

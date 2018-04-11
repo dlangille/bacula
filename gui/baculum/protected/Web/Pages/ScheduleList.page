@@ -1,0 +1,79 @@
+<%@ MasterClass="Application.Web.Layouts.Main" Theme="Baculum-v2"%>
+<com:TContent ID="Main">
+	<!-- Header -->
+	<header class="w3-container">
+		<h5>
+			<b><i class="fa fa-clock"></i> <%[ Schedule list ]%></b>
+		</h5>
+	</header>
+	<div class="w3-margin-left w3-margin-bottom">
+		<button type="button" class="w3-button w3-green<%=empty($_SESSION['dir']) ? ' hide': ''%>" onclick="document.location.href='<%=$this->Service->constructUrl('NewResource', array('component_type' => 'dir', 'component_name' => $_SESSION['dir'], 'resource_type' => 'Schedule'))%>';"><i class="fa fa-plus"></i> &nbsp;<%[ Add schedule ]%></button>
+	</div>
+	<div class="w3-container">
+			<table id="schedule_list" class="w3-table w3-striped w3-hoverable w3-white w3-margin-bottom">
+				<thead>
+					<tr>
+						<th></th>
+						<th><%[ Name ]%></th>
+						<th class="w3-center"><%[ Actions ]%></th>
+					</tr>
+				</thead>
+				<tbody id="schedule_list_body"></tbody>
+			</table>
+		</table>
+	</div>
+<script type="text/javascript">
+var oScheduleList = {
+	ids: {
+		schedule_list: 'schedule_list',
+		schedule_list_body: 'schedule_list_body'
+	},
+	init: function() {
+		this.set_table();
+	},
+	set_table: function() {
+		var table = $('#' + this.ids.schedule_list).DataTable({
+			data: <%=json_encode($this->schedules)%>,
+			columns: [
+				{
+					className: 'details-control',
+					orderable: false,
+					data: null,
+					defaultContent: '<button type="button" class="w3-button w3-blue"><i class="fa fa-angle-down"></i></button>'
+				},
+				{data: 'schedule'},
+				{
+					data: 'schedule',
+					render: function (data, type, row) {
+						var btn = document.createElement('BUTTON');
+						btn.className = 'w3-button w3-green';
+						btn.type = 'button';
+						var i = document.createElement('I');
+						i.className = 'fa fa-list-ul';
+						var label = document.createTextNode(' <%[ Details ]%>');
+						btn.appendChild(i);
+						btn.innerHTML += '&nbsp';
+						btn.appendChild(label);
+						btn.setAttribute('onclick', "document.location.href = '/web/schedule/" + data + "/'");
+						return btn.outerHTML;
+					},
+					className: 'w3-center'
+				}
+			],
+			responsive: {
+				details: {
+					type: 'column'
+				}
+			},
+			columnDefs: [{
+				className: 'control',
+				orderable: false,
+				targets: 0
+			}],
+			order: [1, 'asc']
+		});
+	}
+};
+oScheduleList.init();
+</script>
+</com:TContent>

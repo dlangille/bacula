@@ -1,0 +1,194 @@
+<%@ MasterClass="Application.Web.Layouts.Wizard" Theme="Baculum-v1"%>
+<com:TContent ID="Wizard">
+	<com:TWizard ID="NewJobWizard"
+		CssClass="wizard"
+		StepStyle.CssClass="steps"
+		HeaderStyle.CssClass="wizard-body"
+		NavigationStyle.CssClass="navigation"
+		UseDefaultLayout="false"
+		ShowSideBar="false"
+		OnPreviousButtonClick="wizardPrev"
+		OnNextButtonClick="wizardNext"
+		OnCancelButtonClick="wizardStop"
+		OnCompleteButtonClick="wizardCompleted"
+		>
+		<prop:HeaderTemplate>
+			<div>
+				<div class="step step-<%=($this->Parent->ActiveStepIndex === 0) ? 'first-active' : (($this->Parent->ActiveStepIndex === 1) ? 'first-next-active' : 'first')%>">
+					<div><com:TTranslate Text="Type" /></div>
+				</div>
+				<div class="step step-<%=($this->Parent->ActiveStepIndex === 1) ? 'active' : (($this->Parent->ActiveStepIndex === 2) ? 'prev-active' : 'normal')%>">
+					<div><com:TTranslate Text="What" /></div>
+				</div>
+				 <div class="step step-<%=($this->Parent->ActiveStepIndex === 2) ? 'active' : (($this->Parent->ActiveStepIndex === 3) ? 'prev-active' : 'normal')%>">
+					<div><com:TTranslate Text="Where" /></div>
+				</div>
+				<div class="step step-<%=($this->Parent->ActiveStepIndex === 3) ? 'active' : (($this->Parent->ActiveStepIndex === 4) ? 'prev-active' : 'normal')%>">
+					<div><com:TTranslate Text="How" /></div>
+				</div>
+				<div class="step step-<%=($this->Parent->ActiveStepIndex === 4) ? 'active' : (($this->Parent->ActiveStepIndex === 5) ? 'prev-active' : 'normal')%>">
+					<div><com:TTranslate Text="When" /></div>
+				</div>
+				<div class="step step-<%=($this->Parent->ActiveStepIndex === 5) ? 'last-active' : (($this->Parent->ActiveStepIndex === 6) ? 'last-prev-active' : 'last')%>">
+					<div><com:TTranslate Text="Summary" /></div>
+				</div>
+				<div id="title"><%=$this->Parent->ActiveStep->Title%><div>
+			</div>
+		</prop:HeaderTemplate>
+		<prop:StartNavigationTemplate>
+				<div class="button-cancel"><com:BButton CommandName="Cancel" Text="<%[ Cancel ]%>" /></div>
+				<div class="button-prev-next"><com:BButton CommandName="NextStep" Text="<%[ Next &raquo; ]%>" /></div>
+		</prop:StartNavigationTemplate>
+
+		<prop:StepNavigationTemplate>
+			<div class="button-cancel"><com:BButton CommandName="Cancel" Text="<%[ Cancel ]%>" /></div>
+			<div class="button-prev-next">
+				<com:BButton CausesValidation="False" CssClass="bbutton" CommandName="PreviousStep" Text="<%[ &laquo; Previous ]%>" />
+				<com:BButton ID="NextButton" CommandName="NextStep" Text="<%[ Next &raquo; ]%>" Visible="<%=($this->getPage()->NewJobWizard->ActiveStepIndex != 1%)>" />
+			</div>
+		</prop:StepNavigationTemplate>
+		 
+		<prop:FinishNavigationTemplate>
+			<div class="button-cancel"><com:BButton CommandName="Cancel" Text="<%[ Cancel ]%>" /></div>
+			<div class="button-prev-next">
+			<com:BButton CausesValidation="False" CssClass="bbutton" CommandName="PreviousStep" Text="<%[ &laquo; Previous ]%>" />
+			<com:BButton CommandName="Complete" Text="<%[ Run restore ]%>" />
+			</div>
+		</prop:FinishNavigationTemplate>
+		<com:TWizardStep ID="Step1" Title="<%[ Step 1 - select job type ]%>" StepType="Auto">
+			<h2><%[ New job wizard ]%></h2>
+			<p><%[ This wizard enables you to create in easy way new job. ]%></p>
+			<p><%[ To start, please select job type that you wish to create. ]%></p>
+			<div class="line">
+				<div class="text"><com:TLabel ForControl="JobType" Text="<%[ Job type: ]%>" /></div>
+				<div class="field">
+					<com:TDropDownList
+						ID="JobType"
+						CssClass="textbox"
+						Width="350px"
+						CausesValidation="false">
+						<com:TListItem Text="Backup" Value="backup" />
+						<com:TListItem Text="Restore" Value="restore" />
+						<com:TListItem Text="Copy" Value="copy" />
+						<com:TListItem Text="Verify" Value="verify" />
+						<com:TListItem Text="Migrate" Value="migrate" />
+						<com:TListItem Text="Admin" Value="admin" />
+					</com:TDropDownList>
+				</div>
+			</div>
+		</com:TWizardStep>
+		<com:TWizardStep ID="Step2" Title="<%[ Step 2 - what you want to backup ]%>" StepType="Auto">
+			<div class="line">
+				<div class="text"><com:TLabel ForControl="Client" Text="<%[ Client: ]%>" /></div>
+				<div class="field">
+					<com:TDropDownList
+						ID="Client"
+						CssClass="textbox"
+						Width="350px"
+						CausesValidation="false"
+						OnInit="loadClients"
+						>
+					</com:TDropDownList>
+				</div>
+			</div>
+		</com:TWizardStep>
+		<com:TWizardStep ID="Step6" Title="<%[ Step 6 - Summary ]%>" StepType="Finish">
+			<fieldset>
+				<legend><%[ Source parameters ]%></legend>
+				<div class="line">
+					<div class="text"><%[ Backup data from client: ]%></div>
+					<div class="field bold"><%=$this->BackupClientName->SelectedValue%></div>
+				</div>
+				<div class="line">
+					<div class="text"><%[ Backup selection method: ]%></div>
+					<div class="field bold">
+						<com:TLabel Text="<%[ Only selected backup ]%>" Visible="<%=$this->OnlySelectedBackupSelection->Checked%>" />
+						<com:TLabel Text="<%[ Group most recent backups ]%>" Visible="<%=$this->GroupBackupSelection->Checked%>" />
+					</div>
+				</div>
+				<div class="line">
+					<div class="text"><%[ Backup for restore: ]%></div>
+					<div class="field bold">
+						<com:TLabel Text="<%=$this->GroupBackupToRestore->SelectedValue%>" Visible="<%=$this->GroupBackupSelection->Checked%>" />
+					</div>
+				</div>
+				<com:TPanel Visible="<%=$this->GroupBackupSelection->Checked%>">
+					<div class="line">
+						<div class="text"><%[ FileSet for restore: ]%></div>
+						<div class="field bold"><%=$this->GroupBackupFileSet->SelectedValue%></div>
+					</div>
+				</com:TPanel>
+			</fieldset>
+			<fieldset>
+				<legend><%[ Files for restore ]%></legend>
+				<div class="line">
+					<div class="text"><%[ Selected directories count: ]%></div>
+					<div class="field bold"><%=isset($this->getRestoreElements(true)->dirid) ? count($this->getRestoreElements(true)->dirid) : '0'%></div>
+				</div>
+				<div class="line">
+					<div class="text"><%[ Selected files count: ]%></div>
+					<div class="field bold"><%=isset($this->getRestoreElements(true)->fileid) ? count($this->getRestoreElements(true)->fileid) : '0'%></div>
+				</div>
+			</fieldset>
+			<fieldset>
+				<legend><%[ Destination parameters ]%></legend>
+				<div class="line">
+					<div class="text"><%[ Restore to client: ]%></div>
+					<div class="field bold"><%=$this->RestoreClient->SelectedValue%></div>
+				</div>
+				<div class="line">
+					<div class="text"><%[ Restore to path: ]%></div>
+					<div class="field bold"><%=$this->RestorePath->Text%></div>
+				</div>
+			</fieldset>
+			<fieldset>
+				<legend><%[ Restore job options ]%></legend>
+				<div class="line">
+					<div class="text"><%[ Restore job: ]%></div>
+					<div class="field bold"><%=$this->RestoreJob->Text%></div>
+				</div>
+				<div class="line">
+					<div class="text"><%[ Replace files: ]%></div>
+					<div class="field bold">
+						<com:TLabel Visible="<%=$this->ReplaceFiles->SelectedValue == 'never'%>" Text="<%[ do not replace files ]%>"/>
+						<com:TLabel Visible="<%=$this->ReplaceFiles->SelectedValue == 'ifolder'%>" Text="<%[ if files from restore are older]%>"/>
+						<com:TLabel Visible="<%=$this->ReplaceFiles->SelectedValue == 'ifnewer'%>" Text="<%[ if files from restore are newer]%>"/>
+						<com:TLabel Visible="<%=$this->ReplaceFiles->SelectedValue == 'always'%>" Text="<%[ always replace files ]%>"/>
+					</div>
+				</div>
+				<div class="line">
+					<div class="text"><%[ Restore job priority: ]%></div>
+					<div class="field bold"><%=$this->RestoreJobPriority->Text%></div>
+				</div>
+				<div class="line">
+					<div class="text"><%[ File relocation option: ]%></div>
+					<div class="field bold">
+						<com:TLabel Visible="<%=$this->file_relocation_opt == 1%>" Text="<%[ Do not relocate files ]%>"/>
+						<com:TLabel Visible="<%=$this->file_relocation_opt == 2%>" Text="<%[ Relocate files with prefix and/or suffix ]%>"/>
+						<com:TLabel Visible="<%=$this->file_relocation_opt == 3%>" Text="<%[ Relocate files with regular expression ]%>"/>
+					</div>
+				</div>
+				<div style="display: <%=$this->file_relocation_opt == 2 ? 'block' : 'none'%>">
+					<div class="line">
+						<div class="text"><%[ Strip prefix: ]%></div>
+						<div class="field bold"><%=$this->RestoreStripPrefix->Text%></div>
+					</div>
+					<div class="line">
+						<div class="text"><%[ Add prefix: ]%></div>
+						<div class="field bold"><%=$this->RestoreAddPrefix->Text%></div>
+					</div>
+					<div class="line">
+						<div class="text"><%[ Add suffix: ]%></div>
+						<div class="field bold"><%=$this->RestoreAddSuffix->Text%></div>
+					</div>
+				</div>
+				<div style="display: <%=$this->file_relocation_opt == 3 ? 'block' : 'none'%>">
+					<div class="line">
+						<div class="text"><%[ RegexWhere: ]%></div>
+						<div class="field bold"><%=$this->RestoreRegexWhere->Text%></div>
+					</div>
+				</div>
+			</fieldset>
+		</com:TWizardStep>
+	</com:TWizard>
+</com:TContent>

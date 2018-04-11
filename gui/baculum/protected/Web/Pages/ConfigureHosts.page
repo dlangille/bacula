@@ -1,0 +1,10 @@
+<%@ MasterClass="Application.Web.Layouts.Main" Theme="Baculum-v2"%>
+<com:TContent ID="Main">
+	<!-- Header -->
+	<header class="w3-container">
+		<h5>
+			<b><i class="fa fa-cog"></i> <%[ Configure Bacula hosts ]%></b>
+		</h5>
+	</header>
+	<div><com:Application.Web.Portlets.BaculaHosts ID="BaculaConfig" /></div>
+</com:TContent>

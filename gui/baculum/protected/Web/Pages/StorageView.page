@@ -1,0 +1,150 @@
+<%@ MasterClass="Application.Web.Layouts.Main" Theme="Baculum-v2"%>
+<com:TContent ID="Main">
+	<!-- Header -->
+	<header class="w3-container">
+		<h5>
+			<b><i class="fa fa-database"></i> <%[ Storage details ]%></b>
+		</h5>
+	</header>
+	<h3 class="w3-margin-left">[StorageId <%=$this->getStorageId()%>] <%[ Storage: ]%> <%=$this->getStorageName()%> &nbsp;</h3>
+	<div class="w3-bar w3-green w3-margin-bottom">
+		<a class="w3-bar-item w3-button tab_btn" href="<%=$this->Service->constructUrl('StorageList')%>"><i class="fa fa-angle-left"></i></a>
+		<button id="btn_storage_actions" type="button" class="w3-bar-item w3-button tab_btn w3-grey" onclick="W3Tabs.open(this.id, 'storage_actions');"><%[ Actions ]%></button>
+		<com:TActiveLinkButton
+			CssClass="w3-bar-item w3-button tab_btn"
+			Attributes.onclick="W3Tabs.open(this.id, 'configure_storage');clear_node('#configure_autochanger  div.directive_value');"
+			Text="<%[ Configure storage ]%>"
+			Visible="<%=!empty($_SESSION['sd'])%>"
+			OnClick="setStorage"
+		/>
+		<com:TActiveLinkButton
+			CssClass="w3-bar-item w3-button tab_btn"
+			Attributes.onclick="W3Tabs.open(this.id, 'configure_devices');"
+			Text="<%[ Configure devices ]%>"
+			Visible="<%=!empty($_SESSION['sd'])%>"
+			OnClick="setDevices"
+		/>
+		<com:TActiveLinkButton
+			CssClass="w3-bar-item w3-button tab_btn"
+			Attributes.onclick="W3Tabs.open(this.id, 'configure_autochanger');clear_node('#configure_storage  div.directive_value');"
+			Text="<%[ Configure autochanger ]%>"
+			Visible="<%=!empty($_SESSION['sd']) && $this->getIsAutochanger()%>"
+			OnClick="setAutochanger"
+		/>
+	</div>
+	<div class="w3-container tab_item" id="storage_actions">
+		<com:TValidationSummary
+			ID="ValidationSummary"
+			CssClass="validation-error-summary"
+			ValidationGroup="AutoChangerGroup"
+			AutoUpdate="true"
+			Display="Dynamic"
+			HeaderText="<%[ There is not possible to run selected action because: ]%>"
+		/>
+		<com:TActiveLinkButton
+			ID="StorageStatusBtn"
+			OnClick="status"
+			CssClass="w3-button w3-green w3-margin-bottom"
+			CausesValidation="false"
+			ClientSide.OnLoading="$('#status_storage_loading').show();"
+			ClientSide.OnSuccess="$('#status_storage_loading').hide();"
+		>
+			<prop:Text><%=Prado::localize('Status storage')%> &nbsp;<i class="fa fa-file-medical-alt"></i></prop:Text>
+		</com:TActiveLinkButton>
+		<com:TActiveLinkButton
+			ID="Mount"
+			OnClick="mount"
+			CssClass="w3-button w3-green w3-margin-bottom"
+			ValidationGroup="AutoChangerGroup"
+			CausesValidation="true"
+			ClientSide.OnLoading="$('#status_storage_loading').show();"
+			ClientSide.OnSuccess="$('#status_storage_loading').hide();"
+		>
+			<prop:Text><%=Prado::localize('Mount')%> &nbsp;<i class="fa fa-caret-down"></i></prop:Text>
+		</com:TActiveLinkButton>
+		<com:TActiveLinkButton
+			ID="Release"
+			OnClick="release"
+			CssClass="w3-button w3-green w3-margin-bottom"
+			ValidationGroup="AutoChangerGroup"
+			CausesValidation="true"
+			ClientSide.OnLoading="$('#status_storage_loading').show();"
+			ClientSide.OnSuccess="$('#status_storage_loading').hide();"
+		>
+			<prop:Text><%=Prado::localize('Release')%> &nbsp;<i class="fa fa-caret-right"></i></prop:Text>
+		</com:TActiveLinkButton>
+		<com:TActiveLinkButton
+			ID="Umount"
+			OnClick="umount"
+			CssClass="w3-button w3-green w3-margin-bottom"
+			ValidationGroup="AutoChangerGroup"
+			CausesValidation="true"
+			ClientSide.OnLoading="$('#status_storage_loading').show();"
+			ClientSide.OnSuccess="$('#status_storage_loading').hide();"
+		>
+			<prop:Text><%=Prado::localize('Umount')%> &nbsp;<i class="fa fa-caret-up"></i></prop:Text>
+		</com:TActiveLinkButton>
+		<i id="status_storage_loading" class="fa fa-undo w3-spin" style="display: none"></i>
+		<com:TActivePanel ID="Autochanger" Display="None">
+			<div class="w3-row">
+				<div class="w3-quarter w3-container">
+						<label><%[ Drive number: ]%></label>
+						<com:TActiveTextBox ID="Drive" AutoPostBack="false" Text="0" MaxLength="3" CssClass="w3-input" />
+						<com:TDataTypeValidator ID="DriveValidator" ValidationGroup="AutoChangerGroup" ControlToValidate="Drive" ErrorMessage="<%[ Drive number must be integer. ]%>" Display="None" DataType="Integer" />
+				</div>
+			</div>
+			<div class="w3-row">
+				<div class="w3-quarter w3-container">
+					<%[ Slot number: ]%>
+					<com:TActiveTextBox ID="Slot" AutoPostBack="false" Text="0" MaxLength="3" CssClass="w3-input" />
+					<com:TDataTypeValidator ID="SlotValidator" ValidationGroup="AutoChangerGroup" ControlToValidate="Slot" ErrorMessage="<%[ Slot number must be integer. ]%>" Display="None" DataType="Integer" />
+				</div>
+			</div>
+		</com:TActivePanel>
+		<div class="w3-panel w3-card w3-light-grey">
+			<div class="w3-code notranslate">
+				<pre><com:TActiveLabel ID="StorageLog" /></pre>
+			</div>
+		</div>
+	</div>
+	<div class="w3-container tab_item" id="configure_storage" style="display: none">
+		<com:Application.Web.Portlets.BaculaConfigDirectives
+			ID="StorageConfig"
+			ComponentType="dir"
+			ResourceType="Storage"
+		/>
+	</div>
+	<div class="w3-container tab_item" id="configure_devices" style="display: none">
+		<com:TActiveRepeater ID="Devices">
+			<prop:HeaderTemplate>
+				<table id="storage_list" class="w3-table w3-striped w3-hoverable w3-white w3-margin-bottom">
+					<thead>
+						<tr>
+							<th><%[ Device name  ]%></th>
+							<th><%[ Autochanger ]%></th>
+							<th class="w3-center"><%[ Actions ]%></th>
+						</tr>
+					</thead>
+			</prop:HeaderTemplate>
+			<prop:ItemTemplate>
+				<tr>
+					<td><%#$this->DataItem%></td>
+					<td><%=$this->TemplateControl->IsAutochanger ? $this->TemplateControl->getDeviceName() : '-'%></td>
+					<td class="w3-center"><button type="button" class="w3-button w3-green" onclick="document.location.href='<%=$this->Service->constructUrl('DeviceView', array('storageid' => $this->TemplateControl->getStorageId(), 'device' => $this->DataItem))%>';"><i class="fa fa-list-ul"></i> &nbsp;<%[ Details ]%></button></td>
+				</tr>
+			</prop:ItemTemplate>
+			<prop:FooterTemplate>
+				</table>
+			</prop:FooterTemplate>
+			<
+		</com:TActiveRepeater>
+		</table>
+	</div>
+	<div class="w3-container tab_item" id="configure_autochanger" style="display: none">
+		<com:Application.Web.Portlets.BaculaConfigDirectives
+			ID="AutochangerConfig"
+			ComponentType="sd"
+			ResourceType="Autochanger"
+		/>
+	</div>
+</com:TContent>
