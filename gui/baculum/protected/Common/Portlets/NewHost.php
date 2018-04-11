@@ -112,6 +112,16 @@ class NewHost extends PortletTemplate {
 			$status_ok = $is_config;
 		}
 
+		if (!$is_catalog) {
+			$this->APITestResultErr->Text .= $catalog->output . '<br />';
+		}
+		if (!$is_console) {
+			$this->APITestResultErr->Text .= $console->output . '<br />';
+		}
+		if (!$is_config) {
+			$this->APITestResultErr->Text .= $config->output . '<br />';
+		}
+
 		$this->APITestResultOk->Display = ($status_ok === true) ? 'Dynamic' : 'None';
 		$this->APITestResultErr->Display = ($status_ok === false) ? 'Dynamic' : 'None';
 		$this->APICatalogSupportYes->Display = ($is_catalog === true) ? 'Dynamic' : 'None';
