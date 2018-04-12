@@ -34,11 +34,22 @@ class BaculumWebPage extends BaculumPage {
 	 */
 	const DEFAULT_AUTH_USER = 'admin';
 
-	private $config;
+	private $config = array();
 
 	public function onPreInit($param) {
 		parent::onPreInit($param);
 		$this->config = $this->getModule('web_config')->getConfig();
+		if (count($this->config) === 0) {
+			if (isset($_SERVER['PHP_AUTH_USER'])) {
+				if ($this->Service->getRequestedPagePath() != 'WebConfigWizard') {
+					$this->goToPage('WebConfigWizard');
+				}
+				// without config there is no way to call api below
+				return;
+			} else {
+				self::accessDenied();
+			}
+		}
 		Logging::$debug_enabled = (isset($this->config['baculum']['debug']) && $this->config['baculum']['debug'] == 1);
 		$this->Application->getGlobalization()->Culture = $this->getLanguage();
 		if (!$this->IsPostBack && !$this->IsCallBack) {
