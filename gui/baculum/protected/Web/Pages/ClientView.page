@@ -141,7 +141,7 @@ var oJobForClientList = {
 						btn.appendChild(i);
 						btn.innerHTML += '&nbsp';
 						btn.appendChild(label);
-						btn.setAttribute('onclick', "document.location.href = '/web/job/" + data + "/'");
+						btn.setAttribute('onclick', "document.location.href = '/web/job/history/" + data + "/'");
 						return btn.outerHTML;
 					}
 				}
