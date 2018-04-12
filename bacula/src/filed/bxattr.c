@@ -431,6 +431,7 @@ bRC_BXATTR BXATTR::restore_xattr (JCR *jcr, int stream, char *data, uint32_t len
             if (flags & BXATTR_FLAG_NATIVE){
                for (a = 0; xattr_streams[a] > 0; a++){
                   if (xattr_streams[a] == stream){
+                     Dmsg0(400, "make Native XATTR call\n");
                      return os_restore_xattr(jcr, stream, content, content_len);
                   }
                }
