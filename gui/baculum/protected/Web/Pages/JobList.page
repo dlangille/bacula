@@ -13,7 +13,7 @@
 			OnClick="loadRunJobModal"
 			Attributes.onclick="document.getElementById('run_job').style.display='block'"
 		>
-			<prop:Text><%=Prado::localize('Run job')%> &nbsp;<i class="fa fa-cogs"></i></prop:Text>
+			<i class="fa fa-cogs"></i> &nbsp;<%[ Run job ]%>
 		</com:TActiveLinkButton>
 	</div>
 	<div class="w3-container">
