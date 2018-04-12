@@ -40,6 +40,14 @@
 #endif
 
 /*
+ * As the header acl.h doesn't seem to define this one we need to.
+ */
+extern "C" {
+int acl_type(acl_t *);
+char *acl_strerror(int);
+};
+
+/*
  *
  */
 #if defined(HAVE_EXTENDED_ACL)
@@ -49,14 +57,6 @@ typedef enum acl_type {
    ACE_T = 1
 } acl_type_t;
 #endif
-
-/*
- *
- */
-extern "C" {
-int acl_type(acl_t *);
-char *acl_strerror(int);
-};
 #endif
 
 /*
