@@ -134,7 +134,7 @@ class RestoreWizard extends BaculumWebPage
 	 */
 	public function setNavigationButtons() {
 		$prev_btn = $this->RestoreWizard->getStepNavigation()->PreviousStepBtn;
-		if ($this->RestoreWizard->getActiveStepIndex() === 2) {
+		if ($this->Request->contains('jobid') && $this->RestoreWizard->getActiveStepIndex() === 2) {
 			$prev_btn->Visible = false;
 		} else {
 			$prev_btn->Visible = true;
