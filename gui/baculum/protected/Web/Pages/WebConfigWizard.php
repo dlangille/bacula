@@ -43,6 +43,7 @@ class WebConfigWizard extends BaculumWebPage
 		$this->web_config = $config->getConfig();
 		$this->host_config = $this->getModule('host_config')->getConfig();
 		$this->first_run = (count($this->host_config) == 0 || !key_exists(HostConfig::MAIN_CATALOG_HOST, $this->host_config));
+		Logging::$debug_enabled = Logging::$debug_enabled ?: $this->first_run;
 		if($this->first_run === false && !$_SESSION['admin']) {
 			parent::accessDenied();
 		}
