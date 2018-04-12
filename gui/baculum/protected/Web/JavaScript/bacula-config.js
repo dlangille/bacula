@@ -39,7 +39,7 @@ var BaculaConfigClass = jQuery.klass({
 		var element_sender = el.closest('table').prev('a');
 		return element_sender;
 	},
-	set_config_items(id) {
+	set_config_items: function(id) {
 		var child_container = this.get_child_container(id);
 		var show = !child_container.is(':visible');
 		this.show_item(child_container, show);
