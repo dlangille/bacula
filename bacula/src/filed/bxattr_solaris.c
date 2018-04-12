@@ -22,7 +22,7 @@
  *  Radosław Korzeniewski, MMXVI
  *  radoslaw@korzeniewski.net, radekk@inteos.pl
  *  Inteos Sp. z o.o. http://www.inteos.pl/
- *
+ * 
  */
 
 #include "bacula.h"
@@ -33,6 +33,17 @@
 
 /* check if XATTR support is enabled */
 #if defined(HAVE_XATTR)
+
+#ifdef HAVE_SYS_NVPAIR_H
+#include <sys/nvpair.h>
+#endif
+
+#if !defined(HAVE_OPENAT) || \
+    !defined(HAVE_UNLINKAT) || \
+    !defined(HAVE_FCHOWNAT) || \
+    !defined(HAVE_FUTIMESAT)
+#error "Unable to compile code because of missing openat, unlinkat, fchownat or futimesat function"
+#endif
 
 /*
  * Define the supported XATTR streams for this OS
@@ -109,8 +120,7 @@ bRC_BXATTR BXATTR_Solaris::os_backup_xattr (JCR *jcr, FF_PKT *ff_pkt){
    uint32_t name_len;
    POOLMEM *value = NULL;
    uint32_t value_len;
-   char * bxattrtext;
-   uint32_t bxattrtext_len;
+   char * bxattracl;
    POOLMEM *data = NULL;
    bool skip;
    struct stat st;
@@ -118,6 +128,7 @@ bRC_BXATTR BXATTR_Solaris::os_backup_xattr (JCR *jcr, FF_PKT *ff_pkt){
    int stream;
    int attrfd;
    int len;
+   mode_t stmode;
 
    /* sanity check of input variables */
    if (jcr == NULL || ff_pkt == NULL){
@@ -147,9 +158,10 @@ bRC_BXATTR BXATTR_Solaris::os_backup_xattr (JCR *jcr, FF_PKT *ff_pkt){
          /* skip read-only or other unused attribute names */
          skip =  check_xattr_skiplists(jcr, ff_pkt, name);
          if (skip || name_len == 0){
-            Dmsg1(100, "Skipping xattr named \"%s\"\n", name);
+            Dmsg1(200, "Skipping xattr named \"%s\"\n", name);
             continue;
          }
+         Dmsg1(200, "Processing xattr: %s\n", name);
          /* set a correct stream */
          stream = STREAM_XACL_SOLARIS_XATTR;
 
@@ -179,15 +191,11 @@ bRC_BXATTR BXATTR_Solaris::os_backup_xattr (JCR *jcr, FF_PKT *ff_pkt){
             }
          }
 
-         /* we have a struct stat of the attribute so encode it to the buffer */
-         encode_stat(attribs, &st, sizeof(st), st.st_ino, stream);
-
          /* get xattr acl data, but only when it is not trivial acls */
-         rc = os_get_xattr_acl(jcr, attrfd, &bxattrtext);
+         rc = os_get_xattr_acl(jcr, attrfd, &bxattracl, name);
          if (rc != bRC_BXATTR_ok){
             goto bailout;
          }
-         bxattrtext_len = strlen(bxattrtext);
 
          /*
           * Solaris support only S_IFREG and S_IFDIR as an attribute file type, no other types are supported
@@ -196,7 +204,17 @@ bRC_BXATTR BXATTR_Solaris::os_backup_xattr (JCR *jcr, FF_PKT *ff_pkt){
           * to remove unsupported code. To check if the current Solaris version support for xattr was extended
           * simply verify a man fsattr(5) for it.
           */
-         switch (st.st_mode & S_IFMT){
+         stmode = st.st_mode & S_IFMT;
+         Dmsg1(800, "st.st_mode: 0x%X\n", stmode);
+         switch (stmode){
+            case S_IFDIR:
+               /* we have a struct stat of the attribute so encode it to the buffer
+                * we distinguish standard file by setting ino to zero in attribs */
+               encode_stat(attribs, &st, sizeof(st), 0, stream);
+               /* prepare and save xattr info */
+               len = bsnprintf(data, sizeof_pool_memory(data), "%s%c%s%c%s%c", name, 0, attribs, 0, (bxattracl) ? bxattracl : "", 0);
+               set_content(data, len);
+               break;
             case S_IFREG:
                /* check for hardlinked attributes which Solaris support */
                if (st.st_nlink > 1){
@@ -204,6 +222,10 @@ bRC_BXATTR BXATTR_Solaris::os_backup_xattr (JCR *jcr, FF_PKT *ff_pkt){
                   lnkname = find_xattr_cache(jcr, st.st_ino, name);
                   if (lnkname != NULL){
                      /* found a previous saved file, link to it and render xattr data for hardlinked attribute */
+                     Dmsg0(400, "saving linked attr\n");
+                     /* we have a struct stat of the attribute so encode it to the buffer
+                      * we distinguish hardlinked file by setting a real ino in attribs */
+                     encode_stat(attribs, &st, sizeof(st), st.st_ino, stream);
                      len = bsnprintf(data, sizeof_pool_memory(data), "%s%c%s%c%s%c", name, 0, attribs, 0, lnkname, 0);
                      set_content(data, len);
                      /* content is ready */
@@ -224,24 +246,31 @@ bRC_BXATTR BXATTR_Solaris::os_backup_xattr (JCR *jcr, FF_PKT *ff_pkt){
                      /* error / fatal */
                      goto bailout;
                }
-               /* save xattr info */
-               len = bsnprintf(data, sizeof_pool_memory(data), "%s%c%s%c%s%c", name, 0, attribs, 0, (bxattrtext) ? bxattrtext : "", 0);
+               /* we have a struct stat of the attribute so encode it to the buffer
+                * we distinguish standard file by setting ino to zero in attribs */
+               encode_stat(attribs, &st, sizeof(st), 0, stream);
+               /* prepare and save xattr info */
+               len = bsnprintf(data, sizeof_pool_memory(data), "%s%c%s%c%s%c", name, 0, attribs, 0, (bxattracl) ? bxattracl : "", 0);
                /* append value data to the end of the xattr info */
-               check_pool_memory_size(data, len + value_len);
-               memcpy(data + len, value, value_len);
-               set_content(data,len + value_len);
-               free_pool_memory(value);
-               value = NULL;
+               if (value_len > 0){
+                  check_pool_memory_size(data, len + value_len);
+                  memcpy(data + len, value, value_len);
+                  set_content(data, len + value_len);
+                  free_pool_memory(value);
+                  value = NULL;
+               } else {
+                  set_content(data, len);
+               }
                break;
-            case S_IFDIR:
-               /* save xattr info */
-               len = bsnprintf(data, sizeof_pool_memory(data), "%s%c%s%c%s%c", name, 0, attribs, 0, (bxattrtext) ? bxattrtext : "", 0);
-               set_content(data);
             default:
-               Mmsg3(jcr->errmsg, _("Unsupported extended attribute type: %i for \"%s\" on file \"%s\"\n"), st.st_mode & S_IFMT, name, jcr->last_fname);
-               Dmsg3(100, "Unsupported extended attribute type: %i for \"%s\" on file \"%s\"\n", st.st_mode & S_IFMT, name, jcr->last_fname);
+               Dmsg3(100, "Unsupported extended attribute type: 0x%X for \"%s\" on file \"%s\"\n", stmode, name, jcr->last_fname);
+               Mmsg3(jcr->errmsg, _("Unsupported extended attribute type: 0x%X for \"%s\" on file \"%s\"\n"), stmode, name, jcr->last_fname);
                rc = bRC_BXATTR_error;
                goto bailout;
+         }
+         if (bxattracl){
+            actuallyfree(bxattracl);
+            bxattracl = NULL;
          }
          /* send stream to the sd */
          rc = send_xattr_stream(jcr, stream);
@@ -265,6 +294,8 @@ bailout:
       delete_xattr_cache();
 
       return rc;
+   } else {
+      Dmsg1(500, "xattr does not exist on: %s\n", jcr->last_fname);
    }
    return bRC_BXATTR_ok;
 };
@@ -338,6 +369,7 @@ bRC_BXATTR BXATTR_Solaris::os_restore_xattr (JCR *jcr, int stream, char *content
       return bRC_BXATTR_inval;
    }
 
+   Dmsg2(400, "restore xattr stream %i on file: %s\n", stream, jcr->last_fname);
    /* First make sure we can restore xattr on the filesystem */
    switch (stream){
 #if defined(HAVE_SYS_NVPAIR_H) && defined(_PC_SATTR_ENABLED)
@@ -367,27 +399,53 @@ bail_out:
    return rc;
 };
 
+#ifdef HAVE_ACL
+/*
+ * See if an acl is a trivial one (e.g. just the stat bits encoded as acl.)
+ * There is no need to store those acls as we already store the stat bits too.
+ */
+static bool acl_is_trivial(int count, aclent_t *entries)
+{
+   int n;
+   aclent_t *ace;
+
+   for (n = 0; n < count; n++) {
+      ace = &entries[n];
+
+      if (!(ace->a_type == USER_OBJ ||
+            ace->a_type == GROUP_OBJ ||
+            ace->a_type == OTHER_OBJ ||
+            ace->a_type == CLASS_OBJ))
+        return false;
+   }
+   return true;
+}
+#endif
+
 /*
  * Low level OS specific runtime to get ACL on XATTR. The ACL data is set in supplied buffer
  *
  * in:
  *    jcr - Job Control Record
  *    fd - an opened file descriptor of the saved attribute
- *    buffer - a pointer to the memory buffer where we will render an acl text
+ *    buffer - a memory buffer pointer which we will return when render an acl text
  * out:
+ *    buffer - NULL when no ACL or any error else the memory with acl representation.
+ *    The memory for the external text string is obtained using malloc(3C).
+ *    The caller is responsible for freeing the memory upon completion.
  *    bRC_BXATTR_ok - backup acl for extended attribute finish without problems
  *    bRC_BXATTR_error - backup acl unsuccessful
  *    bRC_BXATTR_inval - input variables are invalid (null)
  *
  */
-bRC_BXATTR BXATTR_Solaris::os_get_xattr_acl(JCR *jcr, int fd, char **buffer)
+bRC_BXATTR BXATTR_Solaris::os_get_xattr_acl(JCR *jcr, int fd, char **buffer, char *attrname)
 {
 // a function is valid only when Bacula have a support for ACL
 #ifdef HAVE_ACL
    bRC_BXATTR rc = bRC_BXATTR_error;
 
    /* sanity check of input variables */
-   if (jcr == NULL || buffer == NULL || *buffer == NULL || fd < 0){
+   if (jcr == NULL || buffer == NULL || fd < 0){
       return bRC_BXATTR_inval;
    }
 
@@ -422,6 +480,7 @@ bRC_BXATTR BXATTR_Solaris::os_get_xattr_acl(JCR *jcr, int fd, char **buffer)
 #endif /* ACL_SID_FMT */
 
          *buffer = acl_totext(aclp, flags);
+         Dmsg1(500, "xattr extended acl found: %s\n", *buffer);
          acl_free(aclp);
       } else {
          *buffer = NULL;
@@ -438,45 +497,39 @@ bail_out:
    aclent_t *acls = NULL;
 
    /* See if this attribute has an ACL */
-   if (fd != -1){
-      n = facl(fd, GETACLCNT, 0, NULL);
-   } else {
-      n = acl(attrname, GETACLCNT, 0, NULL);
-   }
+   n = facl(fd, GETACLCNT, 0, NULL);
 
    if (n >= MIN_ACL_ENTRIES){
       acls = (aclent_t *)malloc(n * sizeof(aclent_t));
-      if ((fd != -1 && facl(fd, GETACL, n, acls) != n) ||
-          acl(attrname, GETACL, n, acls) != n){
+      if (facl(fd, GETACL, n, acls) != n){
          berrno be;
 
          switch (errno){
          case ENOENT:
-            free(acls);
-            retval = bRC_BXATTR_ok;
+            rc = bRC_BXATTR_ok;
             goto bail_out;
          default:
             Mmsg3(jcr->errmsg, _("Unable to get acl on xattr %s on file \"%s\": ERR=%s\n"), attrname, jcr->last_fname, be.bstrerror());
             Dmsg3(100, "facl/acl of xattr %s on \"%s\" failed: ERR=%s\n", attrname, jcr->last_fname, be.bstrerror());
-            free(acls);
+            rc = bRC_BXATTR_error;
             goto bail_out;
          }
       }
 
       /* See if there is a non trivial acl on the file. */
       if (!acl_is_trivial(n, acls)){
-         if ((*acl_text = acltotext(acls, n)) == NULL){
+         if ((*buffer = acltotext(acls, n)) == NULL){
             berrno be;
 
             Mmsg3(jcr->errmsg, _("Unable to get acl text on xattr %s on file \"%s\": ERR=%s\n"), attrname, jcr->last_fname, be.bstrerror());
             Dmsg3(100, "acltotext of xattr %s on \"%s\" failed: ERR=%s\n", attrname, jcr->last_fname, be.bstrerror());
-            free(acls);
-            goto bail_out;
+            rc = bRC_BXATTR_error;
          }
+         Dmsg1(500, "xattr acl found: %s\n", *buffer);
       } else {
          *buffer = NULL;
       }
-
+bail_out:
      free(acls);
    } else {
       *buffer = NULL;
@@ -506,7 +559,7 @@ bRC_BXATTR BXATTR_Solaris::os_set_xattr_acl(JCR *jcr, int fd, char *name, char *
 // a function is valid only when Bacula have a support for ACL
 #ifdef HAVE_ACL
 
-   bRC_BXATTR rc = bRC_BXATTR_error;
+   bRC_BXATTR rc = bRC_BXATTR_ok;
 
    /* sanity check of input variables */
    if (jcr == NULL || name == NULL || acltext == NULL || fd < 0){
@@ -523,7 +576,7 @@ bRC_BXATTR BXATTR_Solaris::os_set_xattr_acl(JCR *jcr, int fd, char *name, char *
       return bRC_BXATTR_error;
    }
 
-   if (fd != -1 && facl_set(fd, aclp) != 0){
+   if (facl_set(fd, aclp) != 0){
       berrno be;
 
       Mmsg3(jcr->errmsg, _("Unable to restore acl of xattr %s on file \"%s\": ERR=%s\n"), name, jcr->last_fname, be.bstrerror());
@@ -543,14 +596,14 @@ bail_out:
 
    acls = aclfromtext(acltext, &n);
    if (acls){
-      if (fd != -1 && facl(fd, SETACL, n, acls) != 0){
+      if (facl(fd, SETACL, n, acls) != 0){
          berrno be;
 
          Mmsg3(jcr->errmsg, _("Unable to restore acl of xattr %s on file \"%s\": ERR=%s\n"), name, jcr->last_fname, be.bstrerror());
          Dmsg3(100, "Unable to restore acl of xattr %s on file \"%s\": ERR=%s\n", name, jcr->last_fname, be.bstrerror());
          rc = bRC_BXATTR_error;
       }
-      free(acls);
+      actuallyfree(acls);
    }
 
 #endif /* HAVE_EXTENDED_ACL */
@@ -585,6 +638,7 @@ bRC_BXATTR BXATTR_Solaris::os_get_xattr_names (JCR *jcr, POOLMEM ** pxlist, uint
    }
 
    /* Open the xattr stream on file */
+   Dmsg1(500, "os_get_xattr_names on file: %s\n", jcr->last_fname);
    if ((xattrdfd = attropen(jcr->last_fname, ".", O_RDONLY)) < 0){
       berrno be;
 
@@ -616,35 +670,29 @@ bRC_BXATTR BXATTR_Solaris::os_get_xattr_names (JCR *jcr, POOLMEM ** pxlist, uint
     * allocate memory for the extented attribute list
     * default size is a 4k for PM_BSOCK, which should be sufficient in most cases
     */
-   list = p = get_pool_memory(PM_BSOCK);
+   list = get_pool_memory(PM_BSOCK);
    memset(list, 0, sizeof_pool_memory(list));
-   len = 0;
+   bstrncpy(list, ".", sizeof_pool_memory(list));
+   len = strlen(list) + 1;
+   p = list + len;
 
    /* read all directory entries as a xattr names */
    while ((dp = readdir(dirp)) != NULL){
 
-      /* skip '..' name as it a file we backup */
-      if (bstrcmp(dp->d_name, "..") == 0){
+      /* skip '.' as we added it above */
+      if (bstrcmp(dp->d_name, ".")){
          continue;
       }
 
-#if defined(HAVE_SYS_NVPAIR_H) && defined(_PC_SATTR_ENABLED)
-      /* skip a read only attributes which we cant restore later */
-      if (bstrcmp(dp->d_name, VIEW_READONLY)){
-         Dmsg2(400, "Skipping readonly extensible attributes %s on file \"%s\"\n", dp->d_name, jcr->last_fname);
-         continue;
-      }
-#endif /* HAVE_SYS_NVPAIR_H && _PC_SATTR_ENABLED */
-
+      Dmsg1(500, "Found attribute: %s\n", dp->d_name);
       /* compute a buffer length = string length and nul char */
-      slen = strlen (dp->d_name);
-      len += slen + 1;
+      slen = strlen (dp->d_name) + 1;
+      len += slen;
       list = check_pool_memory_size(list, len);
 
       /* copy the name into a list */
-      bstrncpy(p, dp->d_name, slen);
-      p[slen] = '\0';
-      p += slen + 1;
+      bstrncpy(p, dp->d_name, sizeof_pool_memory(list) - slen);
+      p += slen;
    }
    if (closedir(dirp) < 0){
       berrno be;
@@ -748,7 +796,7 @@ bRC_BXATTR BXATTR_Solaris::os_get_xattr_value (JCR *jcr, char * name, char ** pv
  */
 bRC_BXATTR BXATTR_Solaris::os_set_xattr (JCR *jcr, bool extended, char *content, uint32_t length){
 
-   char *bp = content + 1;    /* original code saves attribute name with '/' */
+   char *bp;
    char *name;
    char *attribs;
    char *acltext;
@@ -761,6 +809,7 @@ bRC_BXATTR BXATTR_Solaris::os_set_xattr (JCR *jcr, bool extended, char *content,
    struct stat st;
    struct timeval times[2];
    bRC_BXATTR rc = bRC_BXATTR_ok;
+   mode_t stmode;
 
    /* check input data */
    if (jcr == NULL || content == NULL){
@@ -769,24 +818,30 @@ bRC_BXATTR BXATTR_Solaris::os_set_xattr (JCR *jcr, bool extended, char *content,
    /*
     * Parse content stream and extract valuable data.
     * STD/EXT: <xattr name>\0<encoded stat>\0<acl rendered text>\0<xattr data>
+    *    where <encoded stat>.inum = 0
     * LNK:     <xattr name>\0<encoded stat>\0<target xattr name>\0
+    *    where <encoded stat>.inum != 0
     */
-   /* attribute name and length */
+   bp = content;
+   if (bp[0] == '/'){
+      bp = content + 1;    /* original code saves attribute name with '/' */
+   }
+   /* attribute name in name variable */
    name = bp;
    len = strlen (bp);
    bp += len + 1;
 
-   /* attribute encoded stat */
+   /* attribute encoded stat in attribs variable */
    attribs = bp;
    len = strlen (bp);
    bp += len + 1;
-   /* decode it */
+   /* decode attributes into st and inum which distinguish between STX/EXT and LNK xattrs */
    decode_stat(attribs, &st, sizeof(st), &inum);
 
    /* acltext and link target name goes here */
    acltext = lntarget = bp;
    len = strlen (bp);
-   /* now 'bp' should have a xattr data */
+   /* now 'bp' should have the xattr data */
    bp += len + 1;
 
    /*
@@ -801,12 +856,22 @@ bRC_BXATTR BXATTR_Solaris::os_set_xattr (JCR *jcr, bool extended, char *content,
       goto bail_out;
    }
 
-   switch (st.st_mode & S_IFMT){
+   stmode = st.st_mode & S_IFMT;
+   Dmsg1(800, "st.st_mode: 0x%X\n", stmode);
+   switch (stmode) {
+      case S_IFDIR:
+         /* if it is a current dir on file then we can restore acl data only */
+         Dmsg1(400, "Processing dir xattr: %s\n", name);
+         if (bstrcmp(name, ".")){
+            break;
+         }
+         break;
       case S_IFREG:
          if (inum != 0){
             /* it is a linked attribute, perform a link operation */
+            Dmsg2(400, "Processing linked xattr: %s => %s\n", lntarget, name);
             unlinkat(attrdirfd, name, 0);
-            if (link(lntarget, name) < 0){
+            if (linkat(attrdirfd, lntarget, attrdirfd, name, 0) < 0){
                berrno be;
 
                Mmsg4(jcr->errmsg, _("Unable to link xattr %s to %s on file \"%s\": ERR=%s\n"), name, lntarget, jcr->last_fname, be.bstrerror());
@@ -816,10 +881,11 @@ bRC_BXATTR BXATTR_Solaris::os_set_xattr (JCR *jcr, bool extended, char *content,
             }
             goto bail_out;
          } else {
+            Dmsg1(400, "Processing xattr: %s\n", name);
             if (!extended){
                unlinkat(attrdirfd, name, 0);
             }
-            if ((attrfd = openat(attrdirfd, name, O_CREAT|O_RDWR)) < 0){
+            if ((attrfd = openat(attrdirfd, name, O_CREAT | O_RDWR | O_TRUNC, st.st_mode)) < 0){
                berrno be;
 
                Mmsg3(jcr->errmsg, _("Unable to open attribute \"%s\" at file \"%s\": ERR=%s\n"), name, jcr->last_fname, be.bstrerror());
@@ -841,14 +907,9 @@ bRC_BXATTR BXATTR_Solaris::os_set_xattr (JCR *jcr, bool extended, char *content,
             }
          }
          break;
-      case S_IFDIR:
-         /* if it is a current dir ob file then we can restore acl data only */
-         if (bstrcmp(name, ".")){
-            break;
-         }
       default:
-         Mmsg2(jcr->errmsg, _("Unsupported xattr type %s on file \"%s\"\n"), name, jcr->last_fname);
-         Dmsg2(100, "Unsupported xattr type %s on file \"%s\"\n", name, jcr->last_fname);
+         Dmsg3(100, "Unsupported extended attribute type: 0x%X for \"%s\" on file \"%s\"\n", stmode, name, jcr->last_fname);
+         Mmsg3(jcr->errmsg, _("Unsupported extended attribute type: 0x%X for \"%s\" on file \"%s\"\n"), stmode, name, jcr->last_fname);
          goto bail_out;
    }
 

@@ -45,6 +45,7 @@
  */
 #ifdef HAVE_SYS_ACL_H
 #include <sys/acl.h>
+static bool acl_is_trivial(int count, aclent_t *entries);
 #endif
 
 /*
@@ -56,8 +57,84 @@ struct BXATTR_Solaris_Cache {
 };
 
 /*
+ * This is a Solaris specific XATTR implementation.
+ * 
+ * Solaris extended attributes were introduced in Solaris 9
+ * by PSARC 1999/209
  *
+ * Solaris extensible attributes were introduced in OpenSolaris
+ * by PSARC 2007/315 Solaris extensible attributes are also
+ * sometimes called extended system attributes.
  *
+ * man fsattr(5) on Solaris gives a wealth of info. The most
+ * important bits are:
+ *
+ * Attributes are logically supported as files within the  file
+ * system.   The  file  system  is  therefore augmented with an
+ * orthogonal name space of file attributes. Any file  (includ-
+ * ing  attribute files) can have an arbitrarily deep attribute
+ * tree associated with it. Attribute values  are  accessed  by
+ * file descriptors obtained through a special attribute inter-
+ * face.  This logical view of "attributes as files" allows the
+ * leveraging  of  existing file system interface functionality
+ * to support the construction, deletion, and  manipulation  of
+ * attributes.
+ *
+ * The special files  "."  and  ".."  retain  their  accustomed
+ * semantics within the attribute hierarchy.  The "." attribute
+ * file refers to the current directory and the ".."  attribute
+ * file  refers to the parent directory.  The unnamed directory
+ * at the head of each attribute tree is considered the "child"
+ * of  the  file it is associated with and the ".." file refers
+ * to the associated file.  For  any  non-directory  file  with
+ * attributes,  the  ".." entry in the unnamed directory refers
+ * to a file that is not a directory.
+ *
+ * Conceptually, the attribute model is fully general. Extended
+ * attributes  can  be  any  type of file (doors, links, direc-
+ * tories, and so forth) and can even have their own attributes
+ * (fully  recursive).   As a result, the attributes associated
+ * with a file could be an arbitrarily deep directory hierarchy
+ * where each attribute could have an equally complex attribute
+ * tree associated with it.  Not all implementations  are  able
+ * to,  or  want to, support the full model. Implementation are
+ * therefore permitted to reject operations that are  not  sup-
+ * ported.   For  example,  the implementation for the UFS file
+ * system allows only regular files as attributes (for example,
+ * no sub-directories) and rejects attempts to place attributes
+ * on attributes.
+ *
+ * The following list details the operations that are  rejected
+ * in the current implementation:
+ *
+ * link                     Any attempt to create links between
+ *                          attribute  and  non-attribute space
+ *                          is rejected  to  prevent  security-
+ *                          related   or   otherwise  sensitive
+ *                          attributes from being exposed,  and
+ *                          therefore  manipulable,  as regular
+ *                          files.
+ *
+ * rename                   Any  attempt  to   rename   between
+ *                          attribute  and  non-attribute space
+ *                          is rejected to prevent  an  already
+ *                          linked  file from being renamed and
+ *                          thereby circumventing the link res-
+ *                          triction above.
+ *
+ * mkdir, symlink, mknod    Any  attempt  to  create  a   "non-
+ *                          regular" file in attribute space is
+ *                          rejected to reduce the  functional-
+ *                          ity,  and  therefore  exposure  and
+ *                          risk, of  the  initial  implementa-
+ *                          tion.
+ *
+ * The entire available name space has been allocated to  "gen-
+ * eral use" to bring the implementation in line with the NFSv4
+ * draft standard [NFSv4]. That standard defines "named  attri-
+ * butes"  (equivalent  to Solaris Extended Attributes) with no
+ * naming restrictions.  All Sun  applications  making  use  of
+ * opaque extended attributes will use the prefix "SUNW".
  */
 class BXATTR_Solaris : public BXATTR {
 private:
@@ -67,7 +144,7 @@ private:
    bRC_BXATTR os_get_xattr_names (JCR *jcr, POOLMEM **list, uint32_t *length);
    bRC_BXATTR os_get_xattr_value (JCR *jcr, char * name, char ** pvalue, uint32_t * plen);
    bRC_BXATTR os_set_xattr (JCR *jcr, bool extended, char *content, uint32_t length);
-   bRC_BXATTR os_get_xattr_acl(JCR *jcr, int fd, char **buffer);
+   bRC_BXATTR os_get_xattr_acl(JCR *jcr, int fd, char **buffer, char* attrname);
    bRC_BXATTR os_set_xattr_acl(JCR *jcr, int fd, char *name, char *acltext);
    inline char * find_xattr_cache(JCR *jcr, ino_t ino, char * name);
    inline void delete_xattr_cache();
