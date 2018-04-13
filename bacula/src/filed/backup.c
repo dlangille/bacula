@@ -523,12 +523,12 @@ int save_file(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
     * for anything not being a symlink.
     */
 #ifdef HAVE_ACL
-   if (jcr->bacl && jcr->bacl->backup_acl(jcr, ff_pkt) == bRC_BACL_error) {
+   if (jcr->bacl && jcr->bacl->backup_acl(jcr, ff_pkt) != bRC_BACL_ok) {
       goto bail_out;
    }
 #endif
 #ifdef HAVE_XATTR
-   if (jcr->bxattr && jcr->bxattr->backup_xattr(jcr, ff_pkt) == bRC_BXATTR_error) {
+   if (jcr->bxattr && jcr->bxattr->backup_xattr(jcr, ff_pkt) != bRC_BXATTR_ok) {
       goto bail_out;
    }
 #endif
