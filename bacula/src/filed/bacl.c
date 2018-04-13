@@ -453,6 +453,7 @@ bRC_BACL BACL::restore_acl (JCR *jcr, int stream, char *data, uint32_t length)
             return restore_plugin_acl(jcr);
          default:
             if (flags & BACL_FLAG_NATIVE){
+               Dmsg0(400, "make Native ACL call\n");
                for (a = 0; acl_streams[a] > 0; a++){
                   if (acl_streams[a] == stream){
                      return os_restore_acl(jcr, stream, content, content_len);

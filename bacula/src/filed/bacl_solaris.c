@@ -181,6 +181,7 @@ bRC_BACL BACL_Solaris::os_restore_acl (JCR *jcr, int stream, char *content, uint
          break;
    }
 
+   Dmsg2(400, "restore acl stream %i on file: %s\n", stream, jcr->last_fname);
    switch (stream){
       case STREAM_XACL_SOLARIS_POSIX:
          if ((aclrc & (_ACL_ACLENT_ENABLED | _ACL_ACE_ENABLED)) == 0){
@@ -211,7 +212,7 @@ bRC_BACL BACL_Solaris::os_get_acl(JCR *jcr, int *stream){
    int flags;
    acl_t *aclp;
    char *acl_text;
-   bRC_BACL rc = bRC_BACL_fatal;
+   bRC_BACL rc = bRC_BACL_ok;
 
    if (!stream){
       return bRC_BACL_fatal;
@@ -249,20 +250,20 @@ bRC_BACL BACL_Solaris::os_get_acl(JCR *jcr, int *stream){
 
    if ((acl_text = acl_totext(aclp, flags)) != NULL){
       set_content(acl_text);
-      actuallyfree(acl_text);
-
       switch (acl_type(aclp)){
          case ACLENT_T:
             *stream = STREAM_XACL_SOLARIS_POSIX;
+            Dmsg1(500, "found acl SOLARIS_POSIX: %s\n", acl_text);
             break;
          case ACE_T:
             *stream = STREAM_XACL_SOLARIS_NFS4;
+            Dmsg1(500, "found acl SOLARIS_NFS4: %s\n", acl_text);
             break;
          default:
             rc = bRC_BACL_error;
             break;
       }
-
+      actuallyfree(acl_text);
       acl_free(aclp);
    }
    return rc;
