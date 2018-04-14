@@ -815,6 +815,10 @@ THE SOFTWARE.
 Baculum uses ExplorerCanvas library to simulate the HTML5 canvas
 in Internet Explorer 7 or 8.
 
+Files:
+  protected/Web/JavaScript/excanvas.js
+
+
 Copyright 2006 Google Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
