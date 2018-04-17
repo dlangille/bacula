@@ -296,3 +296,8 @@ gui/debian/files
 gui/debian/sched-builder.debhelper.log
 gui/install-arch-stamp
 gui/install-indep-stamp
+
+# Solaris binaries
+bacula/platforms/solaris/bacula-dir
+bacula/platforms/solaris/bacula-fd
+bacula/platforms/solaris/bacula-sd
