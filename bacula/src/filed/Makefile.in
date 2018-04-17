@@ -25,6 +25,8 @@ GETTEXT_LIBS = @LIBINTL@
 
 AFS_CFLAGS = @AFS_CFLAGS@
 AFS_LIBS = @AFS_LIBS@
+ACLOBJS = @ACLOBJS@
+XATTROBJS=@XATTROBJS@
 
 first_rule: all
 dummy:
@@ -35,8 +37,8 @@ SVRSRCS = filed.c authenticate.c backup.c crypto.c \
 	  fd_plugins.c accurate.c \
 	  filed_conf.c heartbeat.c hello.c job.c fd_snapshot.c \
 	  restore.c status.c verify.c verify_vol.c \
-	  bacl.c bacl_linux.c bacl_osx.c bacl_solaris.c bacl_freebsd.c \
-	  bxattr.c bxattr_linux.c bxattr_osx.c bxattr_solaris.c bxattr_freebsd.c
+	  $(ACLOBJS) $(XATTROBJS)
+
 SVROBJS = $(SVRSRCS:.c=.o)
 
 JSONOBJS = bfdjson.o filed_conf.o

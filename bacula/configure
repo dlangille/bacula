@@ -648,6 +648,8 @@ DINCLUDE
 DEBUG
 FDLIBS
 CAP_LIBS
+XATTROBJS
+ACLOBJS
 LZO_LIBS
 LZO_INC
 AFS_LIBS
@@ -29858,8 +29860,7 @@ fi
             ac_fn_c_check_func "$LINENO" "acl_get_file" "ac_cv_func_acl_get_file"
 if test "x$ac_cv_func_acl_get_file" = xyes; then :
 
-	  have_acl=yes
-
+      have_acl=yes
 
 fi
 
@@ -29903,24 +29904,22 @@ fi
 $as_echo "$ac_cv_lib_acl_acl_get_file" >&6; }
 if test "x$ac_cv_lib_acl_acl_get_file" = xyes; then :
 
-	     have_acl=yes
-	     if test $have_afs = yes; then
-								if test -d /usr/lib64/; then
-		   FDLIBS="-L/usr/lib64 -lacl $FDLIBS"
-		else
-		   FDLIBS="-L/usr/lib -lacl $FDLIBS"
-		fi
-	     else
-		FDLIBS="-lacl $FDLIBS"
-	     fi
-
+        have_acl=yes
+        if test $have_afs = yes; then
+                                       if test -d /usr/lib64/; then
+               FDLIBS="-L/usr/lib64 -lacl $FDLIBS"
+            else
+               FDLIBS="-L/usr/lib -lacl $FDLIBS"
+            fi
+         else
+            FDLIBS="-lacl $FDLIBS"
+         fi
 
 fi
 
    fi
 
-               if test $have_acl = no -a \
-	   x${HAVE_OSF1_OS_TRUE} = x; then
+               if test $have_acl = no -a x${HAVE_OSF1_OS_TRUE} = x; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: checking for acl_get_file in -lpacl" >&5
 $as_echo_n "checking for acl_get_file in -lpacl... " >&6; }
 if ${ac_cv_lib_pacl_acl_get_file+:} false; then :
@@ -29959,9 +29958,8 @@ fi
 $as_echo "$ac_cv_lib_pacl_acl_get_file" >&6; }
 if test "x$ac_cv_lib_pacl_acl_get_file" = xyes; then :
 
-	     have_acl=yes
-	     FDLIBS="-lpacl $FDLIBS"
-
+         have_acl=yes
+         FDLIBS="-lpacl $FDLIBS"
 
 fi
 
@@ -29973,16 +29971,15 @@ $as_echo_n "checking for ACL_TYPE_DEFAULT_DIR in acl.h include file... " >&6; }
 
 $as_echo "#define HAVE_ACL_TYPE_DEFAULT_DIR 1" >>confdefs.h
 
-	 { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+         { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
       else
-	 { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+         { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
       fi
    fi
 
-            if test $have_acl = yes -a \
-	   x${HAVE_DARWIN_OS_TRUE} = x; then
+            if test $have_acl = yes -a x${HAVE_DARWIN_OS_TRUE} = x; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ACL_TYPE_EXTENDED in acl.h include file" >&5
 $as_echo_n "checking for ACL_TYPE_EXTENDED in acl.h include file... " >&6; }
       grep ACL_TYPE_EXTENDED /usr/include/sys/acl.h > /dev/null 2>&1
@@ -29990,16 +29987,16 @@ $as_echo_n "checking for ACL_TYPE_EXTENDED in acl.h include file... " >&6; }
 
 $as_echo "#define HAVE_ACL_TYPE_EXTENDED 1" >>confdefs.h
 
-	 { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+         { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
       else
-	 { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+         { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
       fi
    fi
 
             if test $have_acl = yes -a \
-	   x${HAVE_FREEBSD_OS_TRUE} = x; then
+      x${HAVE_FREEBSD_OS_TRUE} = x; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ACL_TYPE_NFS4 in acl.h include file" >&5
 $as_echo_n "checking for ACL_TYPE_NFS4 in acl.h include file... " >&6; }
       grep ACL_TYPE_NFS4 /usr/include/sys/acl.h > /dev/null 2>&1
@@ -30007,16 +30004,16 @@ $as_echo_n "checking for ACL_TYPE_NFS4 in acl.h include file... " >&6; }
 
 $as_echo "#define HAVE_ACL_TYPE_NFS4 1" >>confdefs.h
 
-	 { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
       else
-	 { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
       fi
    fi
 
             if test $have_acl = no -a \
-	   x${HAVE_SUN_OS_TRUE} = x; then
+      x${HAVE_SUN_OS_TRUE} = x; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: checking for acltotext in -lsec" >&5
 $as_echo_n "checking for acltotext in -lsec... " >&6; }
 if ${ac_cv_lib_sec_acltotext+:} false; then :
@@ -30055,10 +30052,10 @@ fi
 $as_echo "$ac_cv_lib_sec_acltotext" >&6; }
 if test "x$ac_cv_lib_sec_acltotext" = xyes; then :
 
-	     have_acl=yes
-	     FDLIBS="-lsec $FDLIBS"
+        have_acl=yes
+        FDLIBS="-lsec $FDLIBS"
 
-	     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for acl_totext in -lsec" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for acl_totext in -lsec" >&5
 $as_echo_n "checking for acl_totext in -lsec... " >&6; }
 if ${ac_cv_lib_sec_acl_totext+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -30096,7 +30093,7 @@ fi
 $as_echo "$ac_cv_lib_sec_acl_totext" >&6; }
 if test "x$ac_cv_lib_sec_acl_totext" = xyes; then :
 
-		    have_extended_acl=yes
+          have_extended_acl=yes
 
 
 fi
@@ -30128,6 +30125,7 @@ fi
 
    fi
 
+ACLOBJS=
    if test x$support_acl = xyes -a $have_acl != yes; then
       as_fn_error $? "acl support explicitly enabled but no supported acl implementation found,
   please either load the acl libraries or rerun configure without --enable-acl" "$LINENO" 5
@@ -30136,8 +30134,19 @@ fi
 
 $as_echo "#define HAVE_ACL 1" >>confdefs.h
 
+                                    if test x${HAVE_LINUX_OS_TRUE} = x; then
+            ACLOBJS="bacl.c bacl_linux.c"
+         fi
+         if test x${HAVE_SUN_OS_TRUE} = x; then
+            ACLOBJS="bacl.c bacl_solaris.c"
+         fi
+         if test x${HAVE_FREEBSD_OS_TRUE} = x; then
+            ACLOBJS="bacl.c bacl_freebsd.c"
+         fi
+         if test x${HAVE_DARWIN_OS_TRUE} = x; then
+            ACLOBJS="bacl.c bacl_osx.c"
+         fi
       fi
-
       if test $have_extended_acl = yes; then
 
 $as_echo "#define HAVE_EXTENDED_ACL 1" >>confdefs.h
@@ -30145,6 +30154,7 @@ $as_echo "#define HAVE_EXTENDED_ACL 1" >>confdefs.h
       fi
    fi
 fi
+
 
 support_xattr=auto
 # Check whether --enable-xattr was given.
@@ -30586,6 +30596,7 @@ done
       fi
    fi
 
+XATTROBJS=
    if test x$support_xattr = xyes -a $have_xattr != yes; then
       as_fn_error $? "xattr support explicitly enabled but no supported xattr implementation found,
   please either load the xattr libraries or rerun configure without --enable-xattr" "$LINENO" 5
@@ -30594,9 +30605,22 @@ done
 
 $as_echo "#define HAVE_XATTR 1" >>confdefs.h
 
+                                    if test x${HAVE_LINUX_OS_TRUE} = x; then
+            XATTROBJS="bxattr.c bxattr_linux.c"
+         fi
+         if test x${HAVE_SUN_OS_TRUE} = x; then
+            XATTROBJS="bxattr.c bxattr_solaris.c"
+         fi
+         if test x${HAVE_FREEBSD_OS_TRUE} = x; then
+            XATTROBJS="bxattr.c bxattr_freebsd.c"
+         fi
+         if test x${HAVE_DARWIN_OS_TRUE} = x; then
+            XATTROBJS="bxattr.c bxattr_osx.c"
+         fi
       fi
    fi
 fi
+
 
 PTHREAD_LIB=""
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for pthread_create in -lpthread" >&5

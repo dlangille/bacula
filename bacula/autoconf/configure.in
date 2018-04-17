@@ -2596,69 +2596,64 @@ if test x$support_acl = xyes -o x$support_acl = xauto; then
    dnl First check for acl_get_file in libc
    dnl
    AC_CHECK_FUNC(acl_get_file,
-      [
-	  have_acl=yes
-      ]
-   )
+   [
+      have_acl=yes
+   ])
 
    dnl
    dnl Check for acl_get_file in libacl (Linux)
    dnl
    if test $have_acl = no; then
       AC_CHECK_LIB(acl, acl_get_file,
-	 [
-	     have_acl=yes
-	     if test $have_afs = yes; then
-		dnl
-		dnl Because of possible naming conflict with AFS libacl make sure we use the one in /usr/lib64 or /usr/lib !!!
-		dnl
-		if test -d /usr/lib64/; then
-		   FDLIBS="-L/usr/lib64 -lacl $FDLIBS"
-		else
-		   FDLIBS="-L/usr/lib -lacl $FDLIBS"
-		fi
-	     else
-		FDLIBS="-lacl $FDLIBS"
-	     fi
-	 ]
-      )
+      [
+        have_acl=yes
+        if test $have_afs = yes; then
+         dnl
+         dnl Because of possible naming conflict with AFS libacl make sure we use the one in /usr/lib64 or /usr/lib !!!
+         dnl
+            if test -d /usr/lib64/; then
+               FDLIBS="-L/usr/lib64 -lacl $FDLIBS"
+            else
+               FDLIBS="-L/usr/lib -lacl $FDLIBS"
+            fi
+         else
+            FDLIBS="-lacl $FDLIBS"
+         fi
+      ])
    fi
 
    dnl
    dnl Check for acl_get_file in libpacl (OSF1)
    dnl and if ACL_TYPE_DEFAULT_DIR is defined.
    dnl
-   if test $have_acl = no -a \
-	   x${HAVE_OSF1_OS_TRUE} = x; then
+   if test $have_acl = no -a x${HAVE_OSF1_OS_TRUE} = x; then
       AC_CHECK_LIB(pacl, acl_get_file,
-	 [
-	     have_acl=yes
-	     FDLIBS="-lpacl $FDLIBS"
-	 ]
-      )
+      [
+         have_acl=yes
+         FDLIBS="-lpacl $FDLIBS"
+      ])
 
       AC_MSG_CHECKING(for ACL_TYPE_DEFAULT_DIR in acl.h include file)
       grep ACL_TYPE_DEFAULT_DIR /usr/include/sys/acl.h > /dev/null 2>&1
       if test $? = 0; then
-	 AC_DEFINE(HAVE_ACL_TYPE_DEFAULT_DIR,1,[Defines if your system have the ACL_TYPE_DEFAULT_DIR acl type])
-	 AC_MSG_RESULT(yes)
+         AC_DEFINE(HAVE_ACL_TYPE_DEFAULT_DIR,1,[Defines if your system have the ACL_TYPE_DEFAULT_DIR acl type])
+         AC_MSG_RESULT(yes)
       else
-	 AC_MSG_RESULT(no)
+         AC_MSG_RESULT(no)
       fi
    fi
 
    dnl
    dnl On OSX check for availability of ACL_TYPE_EXTENDED
    dnl
-   if test $have_acl = yes -a \
-	   x${HAVE_DARWIN_OS_TRUE} = x; then
+   if test $have_acl = yes -a x${HAVE_DARWIN_OS_TRUE} = x; then
       AC_MSG_CHECKING(for ACL_TYPE_EXTENDED in acl.h include file)
       grep ACL_TYPE_EXTENDED /usr/include/sys/acl.h > /dev/null 2>&1
       if test $? = 0; then
-	 AC_DEFINE(HAVE_ACL_TYPE_EXTENDED,1,[Defines if your system have the ACL_TYPE_EXTENDED acl type])
-	 AC_MSG_RESULT(yes)
+         AC_DEFINE(HAVE_ACL_TYPE_EXTENDED,1,[Defines if your system have the ACL_TYPE_EXTENDED acl type])
+         AC_MSG_RESULT(yes)
       else
-	 AC_MSG_RESULT(no)
+         AC_MSG_RESULT(no)
       fi
    fi
 
@@ -2666,14 +2661,14 @@ if test x$support_acl = xyes -o x$support_acl = xauto; then
    dnl On FreeBSD check for availability of ACL_TYPE_NFS4
    dnl
    if test $have_acl = yes -a \
-	   x${HAVE_FREEBSD_OS_TRUE} = x; then
+      x${HAVE_FREEBSD_OS_TRUE} = x; then
       AC_MSG_CHECKING(for ACL_TYPE_NFS4 in acl.h include file)
       grep ACL_TYPE_NFS4 /usr/include/sys/acl.h > /dev/null 2>&1
       if test $? = 0; then
-	 AC_DEFINE(HAVE_ACL_TYPE_NFS4,1,[Defines if your system have the ACL_TYPE_NFS4 acl type])
-	 AC_MSG_RESULT(yes)
+    AC_DEFINE(HAVE_ACL_TYPE_NFS4,1,[Defines if your system have the ACL_TYPE_NFS4 acl type])
+    AC_MSG_RESULT(yes)
       else
-	 AC_MSG_RESULT(no)
+    AC_MSG_RESULT(no)
       fi
    fi
 
@@ -2681,18 +2676,18 @@ if test x$support_acl = xyes -o x$support_acl = xauto; then
    dnl Check for acltotext and acl_totext (Solaris)
    dnl
    if test $have_acl = no -a \
-	   x${HAVE_SUN_OS_TRUE} = x; then
+      x${HAVE_SUN_OS_TRUE} = x; then
       AC_CHECK_LIB(sec, acltotext,
-	 [
-	     have_acl=yes
-	     FDLIBS="-lsec $FDLIBS"
+    [
+        have_acl=yes
+        FDLIBS="-lsec $FDLIBS"
 
-	     AC_CHECK_LIB(sec, acl_totext,
-		[
-		    have_extended_acl=yes
-		]
-	     )
-	 ]
+        AC_CHECK_LIB(sec, acl_totext,
+      [
+          have_extended_acl=yes
+      ]
+        )
+    ]
       )
    fi
 
@@ -2714,19 +2709,35 @@ if test x$support_acl = xyes -o x$support_acl = xauto; then
       )
    fi
 
+ACLOBJS=
    if test x$support_acl = xyes -a $have_acl != yes; then
       AC_MSG_ERROR([acl support explicitly enabled but no supported acl implementation found,
   please either load the acl libraries or rerun configure without --enable-acl])
    else
       if test $have_acl = yes; then
-	 AC_DEFINE([HAVE_ACL],1,[Normal acl support])
+         AC_DEFINE([HAVE_ACL],1,[Normal acl support])
+         dnl
+         dnl Prepare obj building
+         dnl
+         if test x${HAVE_LINUX_OS_TRUE} = x; then
+            ACLOBJS="bacl.c bacl_linux.c"
+         fi
+         if test x${HAVE_SUN_OS_TRUE} = x; then
+            ACLOBJS="bacl.c bacl_solaris.c"
+         fi
+         if test x${HAVE_FREEBSD_OS_TRUE} = x; then
+            ACLOBJS="bacl.c bacl_freebsd.c"
+         fi
+         if test x${HAVE_DARWIN_OS_TRUE} = x; then
+            ACLOBJS="bacl.c bacl_osx.c"
+         fi
       fi
-
       if test $have_extended_acl = yes; then
-	 AC_DEFINE([HAVE_EXTENDED_ACL],1,[Extended acl support])
+         AC_DEFINE([HAVE_EXTENDED_ACL],1,[Extended acl support])
       fi
    fi
 fi
+AC_SUBST(ACLOBJS)
 
 dnl
 dnl Check for XATTR support
@@ -2903,15 +2914,32 @@ if test x$support_xattr = xyes -o x$support_xattr = xauto; then
       fi
    fi
 
+XATTROBJS=
    if test x$support_xattr = xyes -a $have_xattr != yes; then
       AC_MSG_ERROR([xattr support explicitly enabled but no supported xattr implementation found,
   please either load the xattr libraries or rerun configure without --enable-xattr])
    else
       if test $have_xattr = yes; then
-	 AC_DEFINE([HAVE_XATTR],1,[Extended Attributes support])
+         AC_DEFINE([HAVE_XATTR],1,[Extended Attributes support])
+         dnl
+         dnl Prepare obj building
+         dnl
+         if test x${HAVE_LINUX_OS_TRUE} = x; then
+            XATTROBJS="bxattr.c bxattr_linux.c"
+         fi
+         if test x${HAVE_SUN_OS_TRUE} = x; then
+            XATTROBJS="bxattr.c bxattr_solaris.c"
+         fi
+         if test x${HAVE_FREEBSD_OS_TRUE} = x; then
+            XATTROBJS="bxattr.c bxattr_freebsd.c"
+         fi
+         if test x${HAVE_DARWIN_OS_TRUE} = x; then
+            XATTROBJS="bxattr.c bxattr_osx.c"
+         fi
       fi
    fi
 fi
+AC_SUBST(XATTROBJS)
 
 dnl
 dnl Check for pthread libraries
