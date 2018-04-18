@@ -1222,8 +1222,24 @@ static bool check_catalog(cat_op mode)
                client->catalog->name(), client->name());
          memset(&cr, 0, sizeof(cr));
          bstrncpy(cr.Name, client->name(), sizeof(cr.Name));
+         cr.AutoPrune = client->AutoPrune;
+         cr.FileRetention = client->FileRetention;
+         cr.JobRetention = client->JobRetention;
 
          db_create_client_record(NULL, db, &cr);
+
+         /* If the record doesn't reflect the current settings
+          * we can adjust the catalog record.
+          */
+         if (cr.AutoPrune     != client->AutoPrune     ||
+             cr.JobRetention  != client->JobRetention  ||
+             cr.FileRetention != client->FileRetention)
+         {
+            cr.AutoPrune = client->AutoPrune;
+            cr.FileRetention = client->FileRetention;
+            cr.JobRetention = client->JobRetention;
+            db_update_client_record(NULL, db, &cr);
+         }
       }
 
       /* Ensure basic storage record is in DB */

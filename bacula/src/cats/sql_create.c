@@ -478,7 +478,8 @@ int BDB::bdb_create_client_record(JCR *jcr, CLIENT_DBR *cr)
    bdb_lock();
    bdb_escape_string(jcr, esc_name, cr->Name, strlen(cr->Name));
    bdb_escape_string(jcr, esc_uname, cr->Uname, strlen(cr->Uname));
-   Mmsg(cmd, "SELECT ClientId,Uname FROM Client WHERE Name='%s'",esc_name);
+   Mmsg(cmd, "SELECT ClientId,Uname,AutoPrune,"
+        "FileRetention,JobRetention FROM Client WHERE Name='%s'",esc_name);
 
    cr->ClientId = 0;
    if (QueryDB(jcr, cmd)) {
@@ -501,6 +502,9 @@ int BDB::bdb_create_client_record(JCR *jcr, CLIENT_DBR *cr)
          } else {
             cr->Uname[0] = 0;         /* no name */
          }
+         cr->AutoPrune = str_to_int64(row[2]);
+         cr->FileRetention = str_to_int64(row[3]);
+         cr->JobRetention = str_to_int64(row[4]);
          sql_free_result();
          bdb_unlock();
          return 1;
