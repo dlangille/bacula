@@ -171,7 +171,7 @@ class VolumeView extends BaculumWebPage {
 		$this->Pool->SelectedValue = $volume->poolid;
 		$this->Pool->dataBind();
 
-		$this->jobs_on_volume = $this->getModule('api')->get(array('volumes', 'jobs', $volume->mediaid))->output;
+		$this->jobs_on_volume = $this->getModule('api')->get(array('volumes', $volume->mediaid, 'jobs'))->output;
 	}
 
 	public function updateVolume($sender, $param) {

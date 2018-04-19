@@ -122,26 +122,41 @@ class DeviceView extends BaculumWebPage {
 	}
 
 	public function mount($sender, $param) {
-		$slot = intval($this->Slot->Text);
+		$query = '?device=' . rawurlencode($this->getDeviceName());
+		$query .= '&slot=' . intval($this->Slot->Text);
 		$mount = $this->getModule('api')->get(
-			array('storages', 'mount', $this->getStorageId(), $this->getDeviceName(), $slot)
-		)->output;
-		$this->DeviceLog->Text = implode(PHP_EOL, $mount);
+			array('storages',$this->getStorageId(), 'mount', $query)
+		);
+		if ($mount->error === 0) {
+			$this->DeviceLog->Text = implode(PHP_EOL, $mount->output);
+		} else {
+			$this->DeviceLog->Text = $mount->output;
+		}
 	}
 
 	public function umount($sender, $param) {
+		$query = '?device=' . rawurlencode($this->getDeviceName());
 		$umount = $this->getModule('api')->get(
-			array('storages', 'umount', $this->getStorageId(), $this->getDeviceName())
-		)->output;
-		$this->DeviceLog->Text = implode(PHP_EOL, $umount);
+			array('storages', $this->getStorageId(), 'umount', $query)
+		);
+		if ($umount->error === 0) {
+			$this->DeviceLog->Text = implode(PHP_EOL, $umount->output);
+		} else {
+			$this->DeviceLog->Text = $umount->output;
+		}
 
 	}
 
 	public function release($sender, $param) {
+		$query = '?device=' . rawurlencode($this->getDeviceName());
 		$release = $this->getModule('api')->get(
-			array('storages', 'release', $this->getStorageId(), $this->getDeviceName())
-		)->output;
-		$this->DeviceLog->Text = implode(PHP_EOL, $release);
+			array('storages', $this->getStorageId(), 'release', $query)
+		);
+		if ($release->error === 0) {
+			$this->DeviceLog->Text = implode(PHP_EOL, $release->output);
+		} else {
+			$this->DeviceLog->Text = $release->output;
+		}
 	}
 }
 ?>

@@ -43,6 +43,11 @@ class BaculumAPIClient extends WebModule {
 	const API_CLIENT_VERSION = 0.3;
 
 	/**
+	 * API version used by Web
+	 */
+	const API_VERSION = 'v1';
+
+	/**
 	 * OAuth2 authorization endpoints
 	 */
 	const OAUTH2_AUTH_URL = 'api/auth/';
@@ -153,6 +158,9 @@ class BaculumAPIClient extends WebModule {
 		if (count($host_cfg) > 0) {
 			$uri = $this->getBaseURI($host_cfg);
 
+			// API version
+			array_unshift($params, self::API_VERSION);
+
 			// API URLs start with /api/
 			array_unshift($params, 'api');
 
@@ -236,7 +244,14 @@ class BaculumAPIClient extends WebModule {
 	 * @return string parameters ready to put in URI
 	 */
 	private function prepareUrlParams(array $params, $separator = '/') {
-		$params_encoded = array_map('rawurlencode', $params);
+		$callback = function($p) {
+			if (strpos($p, '?') === 0) {
+				// query string should be encoded manually
+				return $p;
+			}
+			return rawurlencode($p);
+		};
+		$params_encoded = array_map($callback, $params);
 		$params_url = implode($separator, $params_encoded);
 		return $params_url;
 	}

@@ -35,7 +35,7 @@ class FileSetList extends BaculumWebPage {
 		if ($this->IsPostBack || $this->IsCallBack) {
 			return;
 		}
-		$result = $this->getModule('api')->get(array('filesets'), null, true, self::USE_CACHE);
+		$result = $this->getModule('api')->get(array('filesets', 'resnames'), null, true, self::USE_CACHE);
 		if ($result->error === 0) {
 			$filesets = array();
 			foreach ($result->output as $director => $fileset) {

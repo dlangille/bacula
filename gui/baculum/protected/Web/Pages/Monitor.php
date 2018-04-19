@@ -39,7 +39,7 @@ class Monitor extends BaculumWebPage {
 		if (in_array('jobs', $params)) {
 			$_SESSION['monitor_data']['jobs'] = $this->getModule('api')->get(array('jobs'))->output;
 		}
-		$_SESSION['monitor_data']['running_jobs'] = $this->getModule('api')->get(array('jobs', 'jobstatus', 'CR'))->output;
+		$_SESSION['monitor_data']['running_jobs'] = $this->getModule('api')->get(array('jobs', '?jobstatus=CR'))->output;
 		if (in_array('clients', $params)) {
 			$_SESSION['monitor_data']['clients'] = $this->getModule('api')->get(array('clients'))->output;
 		}

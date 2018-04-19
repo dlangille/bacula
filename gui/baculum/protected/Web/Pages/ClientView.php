@@ -40,7 +40,7 @@ class ClientView extends BaculumWebPage {
 		}
 		$this->setClientId($clientid);
 		$clientshow = $this->getModule('api')->get(
-			array('clients', 'show', $clientid),
+			array('clients', $clientid, 'show'),
 			null,
 			true
 		);
@@ -100,7 +100,7 @@ class ClientView extends BaculumWebPage {
 
 	public function status($sender, $param) {
 		$status = $this->getModule('api')->get(
-			array('clients', 'status', $this->getClientId())
+			array('clients', $this->getClientId(), 'status')
 		)->output;
 		$this->ClientLog->Text = implode(PHP_EOL, $status);
 	}

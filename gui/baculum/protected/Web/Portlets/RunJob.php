@@ -56,7 +56,7 @@ class RunJob extends Portlets {
 		} elseif (!empty($jobname)) {
 			$jobdata = new stdClass;
 			$job_show = $this->getModule('api')->get(
-				array('jobs', 'show', 'name', $jobname),
+				array('jobs', 'show', '?name='. rawurlencode($jobname)),
 				null,
 				true,
 				self::USE_CACHE
@@ -77,7 +77,7 @@ class RunJob extends Portlets {
 			}
 		} else {
 			$jobs = array();
-			$job_list = $this->getModule('api')->get(array('jobs', 'tasks'), null, true, self::USE_CACHE)->output;
+			$job_list = $this->getModule('api')->get(array('jobs', 'resnames'), null, true, self::USE_CACHE)->output;
 			foreach ($job_list as $director => $job) {
 				// Note for doubles for different dirs with different databases
 				$jobs = array_merge($jobs, $job);
@@ -105,7 +105,7 @@ class RunJob extends Portlets {
 		$this->JobToVerifyOptions->dataSource = $verify_values;
 		$this->JobToVerifyOptions->dataBind();
 
-		$jobTasks = $this->getModule('api')->get(array('jobs', 'tasks'), null, true, self::USE_CACHE)->output;
+		$jobTasks = $this->getModule('api')->get(array('jobs', 'resnames'), null, true, self::USE_CACHE)->output;
 		$jobsAllDirs = array();
 		foreach($jobTasks as $director => $tasks) {
 			$jobsAllDirs = array_merge($jobsAllDirs, $tasks);
@@ -128,7 +128,7 @@ class RunJob extends Portlets {
 		}
 		$this->Client->dataBind();
 
-		$fileset_all = $this->getModule('api')->get(array('filesets'), null, true, self::USE_CACHE)->output;
+		$fileset_all = $this->getModule('api')->get(array('filesets', 'resnames'), null, true, self::USE_CACHE)->output;
 		$fileset_list = array();
 		foreach($fileset_all as $director => $filesets) {
 			$fileset_list = array_merge($filesets, $fileset_list);
@@ -166,7 +166,7 @@ class RunJob extends Portlets {
 
 		if (is_object($jobdata) && !property_exists($jobdata, 'storage')) {
 			$jobshow = $this->getModule('api')->get(
-				array('jobs', 'show', $jobdata->jobid), null, true, self::USE_CACHE
+				array('jobs', $jobdata->jobid, 'show'), null, true, self::USE_CACHE
 			)->output;
 			$jobdata->storage = $this->getResourceName('storage', $jobshow);
 		}
@@ -315,6 +315,7 @@ class RunJob extends Portlets {
 		$params['storageid'] = $this->Storage->SelectedValue;
 		$params['poolid'] = $this->Pool->SelectedValue;
 		$params['priority'] = $this->Priority->Text;
+		$params['accurate'] = (integer)$this->Accurate->Checked;
 
 		if (in_array($this->Level->SelectedItem->Value, $this->job_to_verify)) {
 			$verifyVals = $this->getVerifyVals();

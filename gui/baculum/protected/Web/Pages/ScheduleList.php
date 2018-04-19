@@ -35,7 +35,7 @@ class ScheduleList extends BaculumWebPage {
 		if ($this->IsPostBack || $this->IsCallBack) {
 			return;
 		}
-		$result = $this->getModule('api')->get(array('schedules'), null, true, self::USE_CACHE);
+		$result = $this->getModule('api')->get(array('schedules', 'resnames'), null, true, self::USE_CACHE);
 		if ($result->error === 0) {
 			$schedules = array();
 			for ($i = 0; $i < count($result->output); $i++) {

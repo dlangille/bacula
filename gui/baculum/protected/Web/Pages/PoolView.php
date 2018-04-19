@@ -46,7 +46,7 @@ class PoolView extends BaculumWebPage {
 		$this->setPool();
 		$this->setVolumesinPool();
 		$poolshow = $this->getModule('api')->get(
-			array('pools', 'show', $this->getPoolId())
+			array('pools', $this->getPoolId(), 'show')
 		);
 		if ($poolshow->error === 0) {
 			$this->PoolLog->Text = implode(PHP_EOL, $poolshow->output);
@@ -175,7 +175,7 @@ class PoolView extends BaculumWebPage {
 
 	public function updatePool($sender, $param) {
 		$result = $this->getModule('api')->set(
-			array('pools', 'update', $this->getPoolId()),
+			array('pools', $this->getPoolId(), 'update'),
 			array()
 		);
 		$this->PoolLog->Text = implode(PHP_EOL, $result->output);
@@ -183,7 +183,7 @@ class PoolView extends BaculumWebPage {
 
 	public function updateAllVolumesInPool($sender, $param) {
 		$result = $this->getModule('api')->set(
-			array('pools', 'update', 'volumes', $this->getPoolId()),
+			array('pools', $this->getPoolId(), 'update', 'volumes'),
 			array()
 		);
 		if ($result->error == 0) {

@@ -199,7 +199,7 @@ class JobHistoryView extends BaculumWebPage {
 	public function loadFileSetConfig($sender, $param) {
 		if (!empty($_SESSION['dir'])) {
 			$jobshow = $this->getModule('api')->get(array(
-				'jobs', 'show', $this->getJobId()
+				'jobs', $this->getJobId(), 'show'
 			))->output;
 			$fileset = $this->getResourceName('fileset', $jobshow);
 			$this->FileSetConfig->setComponentName($_SESSION['dir']);
@@ -212,7 +212,7 @@ class JobHistoryView extends BaculumWebPage {
 	public function loadScheduleConfig($sender, $param) {
 		if (!empty($_SESSION['dir'])) {
 			$jobshow = $this->getModule('api')->get(array(
-				'jobs', 'show', $this->getJobId()
+				'jobs', $this->getJobId(), 'show'
 			))->output;
 			$schedule = $this->getResourceName('schedule', $jobshow);
 			$this->ScheduleConfig->setComponentName($_SESSION['dir']);
@@ -223,7 +223,7 @@ class JobHistoryView extends BaculumWebPage {
 	}
 
 	public function cancel($sender, $param) {
-		$this->getModule('api')->set(array('jobs', 'cancel', $this->getJobId()), array('a' => 'b'));
+		$this->getModule('api')->set(array('jobs', $this->getJobId(), 'cancel'), array('a' => 'b'));
 		$this->refreshJobLog(null, null);
 	}
 

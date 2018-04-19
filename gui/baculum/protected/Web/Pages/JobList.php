@@ -35,7 +35,7 @@ class JobList extends BaculumWebPage {
 			return;
 		}
 		$result = $this->getModule('api')->get(
-			array('jobs', 'tasks'), null, true, self::USE_CACHE
+			array('jobs', 'resnames'), null, true, self::USE_CACHE
 		)->output;
 		$jobs = array();
 		foreach ($result as $director => $job_list) {

@@ -59,7 +59,7 @@ class StorageView extends BaculumWebPage {
 		$this->setIsAutochanger($is_autochanger);
 		$this->Autochanger->Display = $is_autochanger ? 'Dynamic': 'None';
 		$storageshow = $this->Application->getModule('api')->get(
-			array('storages', 'show', $storage->storageid)
+			array('storages', $storage->storageid, 'show')
 		)->output;
 		$this->StorageLog->Text = implode(PHP_EOL, $storageshow);
 		$this->setStorageDevice($storageshow);
@@ -174,7 +174,7 @@ class StorageView extends BaculumWebPage {
 
 	public function status($sender, $param) {
 		$status = $this->getModule('api')->get(
-			array('storages', 'status', $this->getStorageId())
+			array('storages', $this->getStorageId(), 'status')
 		)->output;
 		$this->StorageLog->Text = implode(PHP_EOL, $status);
 	}
@@ -182,27 +182,43 @@ class StorageView extends BaculumWebPage {
 	public function mount($sender, $param) {
 		$drive = $this->getIsAutochanger() ? intval($this->Drive->Text) : 0;
 		$slot = $this->getIsAutochanger() ? intval($this->Slot->Text) : 0;
+		$query = '?drive=' . rawurlencode($drive);
+		$query .= 'slot=' . rawurlencode($slot);
 		$mount = $this->getModule('api')->get(
-			array('storages', 'mount', $this->getStorageId(), $drive, $slot)
-		)->output;
-		$this->StorageLog->Text = implode(PHP_EOL, $mount);
+			array('storages', $this->getStorageId(), 'mount', $query)
+		);
+		if ($mount->error === 0) {
+			$this->StorageLog->Text = implode(PHP_EOL, $mount->output);
+		} else {
+			$this->StorageLog->Text = $mount->output;
+		}
 	}
 
 	public function umount($sender, $param) {
 		$drive = $this->getIsAutochanger() ? intval($this->Drive->Text) : 0;
+		$query = '?drive=' . rawurlencode($drive);
 		$umount = $this->getModule('api')->get(
-			array('storages', 'umount', $this->getStorageId(), $drive)
-		)->output;
-		$this->StorageLog->Text = implode(PHP_EOL, $umount);
+			array('storages', $this->getStorageId(), 'umount', $query)
+		);
+		if ($umount->error === 0) {
+			$this->StorageLog->Text = implode(PHP_EOL, $umount->output);
+		} else {
+			$this->StorageLog->Text = $umount->output;
+		}
 
 	}
 
 	public function release($sender, $param) {
 		$drive = $this->getIsAutochanger() ? intval($this->Drive->Text) : 0;
+		$query = '?drive=' . rawurlencode($drive);
 		$release = $this->getModule('api')->get(
-			array('storages', 'release', $this->getStorageId(), $drive)
-		)->output;
-		$this->StorageLog->Text = implode(PHP_EOL, $release);
+			array('storages', $this->getStorageId(), 'release', $query)
+		);
+		if ($release->error === 0) {
+			$this->StorageLog->Text = implode(PHP_EOL, $release->output);
+		} else {
+			$this->StorageLog->Text = $release->output;
+		}
 	}
 
 	public function setAutochanger($sender, $param) {

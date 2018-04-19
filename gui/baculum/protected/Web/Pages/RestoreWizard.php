@@ -252,7 +252,7 @@ class RestoreWizard extends BaculumWebPage
 	 */
 	public function loadBackupsForClient() {
 		$clientid = $this->getBackupClientId();
-		$jobs_for_client = $this->getModule('api')->get(array('clients', 'jobs', $clientid))->output;
+		$jobs_for_client = $this->getModule('api')->get(array('clients', $clientid, 'jobs'))->output;
 		$jobs = $this->getModule('misc')->objectToArray($jobs_for_client);
 		$this->jobs_to_restore = array_filter($jobs, array($this, 'isBackupJobToRestore'));
 	}
@@ -340,7 +340,7 @@ class RestoreWizard extends BaculumWebPage
 	 * @return none
 	 */
 	public function loadGroupFileSetToRestore() {
-		$filesets = $this->getModule('api')->get(array('filesets', 'info'))->output;
+		$filesets = $this->getModule('api')->get(array('filesets'))->output;
 		$fileset_list = array();
 		for ($i = 0; $i < count($filesets); $i++) {
 			$fileset_list[$filesets[$i]->filesetid] = $filesets[$i]->fileset . ' (' . $filesets[$i]->createtime . ')';
@@ -364,16 +364,19 @@ class RestoreWizard extends BaculumWebPage
 			$this->generateBvfsCache($jobids);
 
 			// get directories list
-			$bvfs_dirs = $this->getModule('api')->set(
-				array('bvfs', 'lsdirs'),
-				array('jobids' => $jobids, 'path' => implode($_SESSION['restore_path']))
+			$query = sprintf(
+				'?jobids=%s&path=%s',
+				rawurlencode($jobids),
+				rawurlencode(implode($_SESSION['restore_path']))
+			);
+			$bvfs_dirs = $this->getModule('api')->get(
+				array('bvfs', 'lsdirs', $query)
 			);
 			$dirs = $this->getModule('misc')->parseBvfsList($bvfs_dirs->output);
 
 			// get files list
-			$bvfs_files = $this->getModule('api')->set(
-				array('bvfs', 'lsfiles'),
-				array('jobids' => $jobids, 'path' =>  implode($_SESSION['restore_path']))
+			$bvfs_files = $this->getModule('api')->get(
+				array('bvfs', 'lsfiles', $query)
 			);
 			$files = $this->getModule('misc')->parseBvfsList($bvfs_files->output);
 
@@ -394,7 +397,7 @@ class RestoreWizard extends BaculumWebPage
 		$jobids = '';
 		if($this->OnlySelectedBackupSelection->Checked && isset($_SESSION['restore_single_jobid'])) {
 			$jobs = $this->getModule('api')->get(
-				array('bvfs', 'getjobids', $_SESSION['restore_single_jobid'])
+				array('bvfs', 'getjobids', '?jobid=' . rawurlencode($_SESSION['restore_single_jobid']))
 			);
 			$ids = is_object($jobs) ? $jobs->output : array();
 			foreach ($ids as $jobid) {
@@ -407,14 +410,13 @@ class RestoreWizard extends BaculumWebPage
 				$jobids = $_SESSION['restore_single_jobid'];
 			}
 		} else {
+			$query = '?client=' . rawurlencode($this->BackupClientName->SelectedValue);
+			$query .= '&filesetid=' . rawurlencode($this->GroupBackupFileSet->SelectedValue);
 			$params = array(
 				'jobs',
 				'recent',
 				$this->GroupBackupToRestore->SelectedValue,
-				'client',
-				$this->BackupClientName->SelectedValue,
-				'filesetid',
-				$this->GroupBackupFileSet->SelectedValue
+				$query
 			);
 			$jobs_recent = $this->getModule('api')->get($params);
 			if (count($jobs_recent->output) > 0) {
@@ -539,7 +541,14 @@ class RestoreWizard extends BaculumWebPage
 			return;
 		}
 		$clientname = $this->BackupClientName->SelectedValue;
-		$versions = $this->getModule('api')->get(array('bvfs', 'versions', $clientname, $jobid, $pathid, $filenameid))->output;
+		$query = sprintf(
+			'?client=%s&jobid=%s&pathid=%s&filenameid=%s',
+			rawurlencode($clientname),
+			rawurlencode($jobid),
+			rawurlencode($pathid),
+			rawurlencode($filenameid)
+		);
+		$versions = $this->getModule('api')->get(array('bvfs', 'versions', $query))->output;
 		$file_versions = $this->getModule('misc')->parseFileVersions($filename, $versions);
 		$this->setFileVersions($file_versions);
 		$this->VersionsDataGrid->dataSource = $file_versions;
@@ -811,7 +820,7 @@ class RestoreWizard extends BaculumWebPage
 	 * @return none
 	 */
 	private function loadRestoreJobs() {
-		$restore_job_tasks = $this->getModule('api')->get(array('jobs', 'tasks', 'type', 'R'))->output;
+		$restore_job_tasks = $this->getModule('api')->get(array('jobs', 'resnames', '?type=R'))->output;
 		$jobs = array();
 		foreach ($restore_job_tasks as $director => $restore_jobs) {
 			$jobs = array_merge($jobs, $restore_jobs);
