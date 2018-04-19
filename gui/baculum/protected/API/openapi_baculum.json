@@ -1,0 +1,3708 @@
+{
+	"openapi": "3.0.0",
+	"info": {
+		"title": "Baculum API",
+		"description": "This is the Baculum API documentation.",
+		"contact": {
+			"name": "Marcin Haba",
+			"url": "http://www.bacula.org/9.0.x-manuals/en/console/Baculum_API_Web_GUI_Tools.html",
+			"email": "marcin.haba@bacula.pl"
+		},
+		"license": {
+			"name": "AGPLv3",
+			"url": "https://www.gnu.org/licenses/agpl-3.0-standalone.html"
+		},
+		"version": "1.0.0"
+	},
+	"server": {
+		"servers": [{
+			"url": "https://{username}:{password}@localhost:{port}/{basePath}",
+			"description": "The API server",
+			"variables": {
+				"username": {
+					"default": "admin"
+				},
+				"password": {
+					"default": "admin"
+				},
+				"port": {
+					"default": "9096"
+				},
+				"basePath": {
+					"default": ""
+				}
+			}
+		}]
+	},
+	"components": {
+		"schemas": {
+			"Clients": {
+				"type": "array",
+				"items": {
+					"$ref": "#/definitions/Client"
+				}
+			},
+			"Client": {
+				"$ref": "#/definitions/Client"
+			},
+			"Jobs": {
+				"type": "array",
+				"items": {
+					"$ref": "#/definitions/Job"
+				}
+			},
+			"Job": {
+				"$ref": "#/definitions/Job"
+			},
+			"Storages": {
+				"type": "array",
+				"items": {
+					"$ref": "#/definitions/Storage"
+				}
+			},
+			"Storage": {
+				"$ref": "#/definitions/Storage"
+			},
+			"Pools": {
+				"type": "array",
+				"items": {
+					"$ref": "#/definitions/Pool"
+				}
+			},
+			"Pool": {
+				"$ref": "#/definitions/Pool"
+			},
+			"Volumes": {
+				"type": "array",
+				"items": {
+					"$ref": "#/definitions/Volume"
+				}
+			},
+			"Volume": {
+				"$ref": "#/definitions/Volume"
+			},
+			"FileSets": {
+				"type": "array",
+				"items": {
+					"$ref": "#/definitions/FileSet"
+				}
+			},
+			"FileSet": {
+				"$ref": "#/definitions/FileSet"
+			}
+		},
+		"parameters": {
+			"Limit": {
+				"name": "limit",
+				"in": "query",
+				"description": "Item limit",
+				"required": false,
+				"schema": {
+					"type": "integer"
+				}
+			},
+			"ClientId": {
+				"name": "clientid",
+				"in": "path",
+				"description": "Client identifier",
+				"required":  true,
+				"schema": {
+					"type": "integer",
+					"minimum": 1
+				}
+			},
+			"JobId": {
+				"name": "jobid",
+				"in": "path",
+				"description": "Job identifier",
+				"required":  true,
+				"schema": {
+					"type": "integer",
+					"minimum": 1
+				}
+			},
+			"StorageId": {
+				"name": "storageid",
+				"in": "path",
+				"description": "Storage identifier",
+				"required":  true,
+				"schema": {
+					"type": "integer",
+					"minimum": 1
+				}
+			},
+			"Drive": {
+				"name": "drive",
+				"in": "query",
+				"description": "Storage drive",
+				"required":  true,
+				"schema": {
+					"type": "integer"
+				}
+			},
+			"Device": {
+				"name": "device",
+				"in": "query",
+				"description": "Storage device (can be used instead drive)",
+				"required":  true,
+				"schema": {
+					"type": "string",
+					"pattern": "[a-zA-Z0-9:.-_ ]+"
+				}
+			},
+			"Slot": {
+				"name": "slot",
+				"in": "query",
+				"description": "Storage slot",
+				"required":  true,
+				"schema": {
+					"type": "integer"
+				}
+			},
+			"PoolId": {
+				"name": "poolid",
+				"in": "path",
+				"description": "Pool identifier",
+				"required":  true,
+				"schema": {
+					"type": "integer",
+					"minimum": 1
+				}
+			},
+			"FileSetId": {
+				"name": "filesetid",
+				"in": "path",
+				"description": "FileSet identifier",
+				"required":  true,
+				"schema": {
+					"type": "integer",
+					"minimum": 1
+				}
+			},
+			"MediaId": {
+				"name": "mediaid",
+				"in": "path",
+				"description": "Media/volume identifier",
+				"required":  true,
+				"schema": {
+					"type": "integer",
+					"minimum": 1
+				}
+			},
+			"ComponentType": {
+				"name": "component_type",
+				"in": "path",
+				"description": "Component type: dir, sd, fd or bcons",
+				"required":  true,
+				"schema": {
+					"type": "string"
+				}
+			},
+			"ResourceType": {
+				"name": "resource_type",
+				"in": "path",
+				"description": "Resource type: Client, Pool, Job...etc.",
+				"required":  true,
+				"schema": {
+					"type": "string"
+				}
+			},
+			"ResourceName": {
+				"name": "resource_name",
+				"in": "path",
+				"description": "Resource name",
+				"required":  true,
+				"schema": {
+					"type": "string"
+				}
+			}
+		}
+	},
+	"tags": [{
+		"name": "clients",
+		"description": "Bacula Client endpoints",
+		"externalDocs": {
+			"description": "Find out more",
+			"url": "http://www.bacula.org/9.0.x-manuals/en/main/Configuring_Director.html#SECTION0018130000000000000000"
+		}
+	},
+	{
+		"name": "jobs",
+		"description": "Bacula Job endpoints",
+		"externalDocs": {
+			"description": "Find out more",
+			"url": "http://www.bacula.org/9.0.x-manuals/en/main/Configuring_Director.html#SECTION001830000000000000000"
+		}
+	},
+	{
+		"name": "storages",
+		"description": "Bacula Storage endpoints",
+		"externalDocs": {
+			"description": "Find out more",
+			"url": "http://www.bacula.org/9.0.x-manuals/en/main/Configuring_Director.html#SECTION0018140000000000000000"
+		}
+	},
+	{
+		"name": "pools",
+		"description": "Bacula Pool endpoints",
+		"externalDocs": {
+			"description": "Find out more",
+			"url": "http://www.bacula.org/9.0.x-manuals/en/main/Configuring_Director.html#SECTION0018150000000000000000"
+		}
+	},
+	{
+		"name": "volumes",
+		"description": "Bacula Volume endpoints",
+		"externalDocs": {
+			"description": "Find out more",
+			"url": "http://www.bacula.org/9.0.x-manuals/en/main/Basic_Volume_Management.html"
+		}
+	},
+	{
+		"name": "filesets",
+		"description": "Bacula FileSet endpoints",
+		"externalDocs": {
+			"description": "Find out more",
+			"url": "http://www.bacula.org/9.0.x-manuals/en/main/Configuring_Director.html#SECTION001870000000000000000"
+		}
+	},
+	{
+		"name": "schedules",
+		"description": "Bacula Schedule endpoints",
+		"externalDocs": {
+			"description": "Find out more",
+			"url": "http://www.bacula.org/9.0.x-manuals/en/main/Configuring_Director.html#SECTION001850000000000000000"
+		}
+	},
+	{
+		"name": "bvfs",
+		"description": "Bacula BVFS endpoints",
+		"externalDocs": {
+			"description": "Find out more",
+			"url": "http://www.bacula.org/9.0.x-manuals/en/main/New_Features_in_5_2_13.html#SECTION00714000000000000000"
+		}
+	},
+	{
+		"name": "config",
+		"description": "Bacula config endpoints"
+	},
+	{
+		"name": "joblog",
+		"description": "Bacula joblog endpoints"
+	}],
+	"paths": {
+		"/api/v1/clients": {
+			"get": {
+				"tags": ["clients"],
+				"summary": "Client list",
+				"description": "Get client list.",
+				"responses": {
+					"200": {
+						"description": "List of clients",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"$ref": "#/components/schemas/Clients"
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [{
+					"$ref": "#/components/parameters/Limit"
+				}]
+			}
+		},
+		"/api/v1/clients/{clientid}": {
+			"get": {
+				"tags": ["clients"],
+				"summary": "Find client by ClientId",
+				"description": "Get client by specific Client identifier.",
+				"responses": {
+					"200": {
+						"description": "Client properties",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"$ref": "#/components/schemas/Client"
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 10, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [{
+					"$ref": "#/components/parameters/ClientId"
+				}]
+			}
+		},
+		"/api/v1/clients/{clientid}/show": {
+			"get": {
+				"tags": ["clients"],
+				"summary": "Show client",
+				"description": "Get 'show clients' bconsole command output for specific client",
+				"responses": {
+					"200": {
+						"description": "Show clients output",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"type": "array",
+											"items": {
+												"type": "string",
+												"description": "Show client output"
+											}
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 10, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [{
+					"$ref": "#/components/parameters/ClientId"
+				}]
+			}
+		},
+		"/api/v1/clients/{clientid}/status": {
+			"get": {
+				"tags": ["clients"],
+				"summary": "Client status",
+				"description": "Get client status for specific client",
+				"responses": {
+					"200": {
+						"description": "Client status output",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"type": "array",
+											"items": {
+												"type": "string",
+												"description": "Client status"
+											}
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 10, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [{
+					"$ref": "#/components/parameters/ClientId"
+				}]
+			}
+		},
+		"/api/v1/clients/{clientid}/jobs": {
+			"get": {
+				"tags": ["clients"],
+				"summary": "Jobs for client",
+				"description": "Get jobs done by specific client",
+				"responses": {
+					"200": {
+						"description": "Jobs for client",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"$ref": "#/components/schemas/Jobs"
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [{
+					"$ref": "#/components/parameters/ClientId"
+				}]
+			}
+		},
+		"/api/v1/clients/show": {
+			"get": {
+				"tags": ["clients"],
+				"summary": "Show clients",
+				"description": "Get 'show clients' bconsole command output",
+				"responses": {
+					"200": {
+						"description": "Show clients output",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"type": "array",
+											"items": {
+												"type": "string",
+												"description": "Show clients output"
+											}
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 4, 5, 6, 7, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					{
+						"name": "name",
+						"in": "query",
+						"required": false,
+						"description": "Client name",
+						"schema": {
+							"type": "string",
+							"pattern": "[a-zA-Z0-9:.-_ ]+"
+						}
+					}
+				]
+			}
+		},
+		"/api/v1/jobs": {
+			"get": {
+				"tags": ["jobs"],
+				"summary": "Job list",
+				"description": "Get job list.",
+				"responses": {
+					"200": {
+						"description": "List of jobs",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"$ref": "#/components/schemas/Jobs"
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					{
+						"$ref": "#/components/parameters/Limit"
+					},
+					{
+						"name": "name",
+						"in": "query",
+						"required": false,
+						"description": "Job name",
+						"schema": {
+							"type": "string",
+							"pattern": "[a-zA-Z0-9:.-_ ]+"
+						}
+					},
+					{
+						"name": "jobstatus",
+						"in": "query",
+						"required": false,
+						"description": "Job status letter",
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/api/v1/jobs/{jobid}": {
+			"get": {
+				"tags": ["jobs"],
+				"summary": "Find job by JobId",
+				"description": "Get job by specific Job identifier.",
+				"responses": {
+					"200": {
+						"description": "Job properties",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"$ref": "#/components/schemas/Job"
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 50, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					{
+						"name": "jobid",
+						"in": "path",
+						"description": "Job identifier",
+						"required":  true,
+						"schema": {
+							"type": "integer"
+						}
+					}
+				]
+			},
+			"delete": {
+				"tags": ["jobs"],
+				"summary": "Delete job",
+				"description": "Delete job by specific Job identifier.",
+				"responses": {
+					"200": {
+						"description": "Job properties",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"type": "array",
+											"items": {
+												"description": "Console output from removing specific jobid",
+												"type": "string"
+											}
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 50, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					{
+						"name": "jobid",
+						"in": "path",
+						"description": "Job identifier",
+						"required":  true,
+						"schema": {
+							"type": "integer"
+						}
+					}
+				]
+			}
+		},
+		"/api/v1/jobs/{jobid}/cancel": {
+			"put": {
+				"tags": ["jobs"],
+				"summary": "Cancel job",
+				"description": "Cancel running job.",
+				"responses": {
+					"200": {
+						"description": "Cancel command output",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"type": "array",
+											"items": {
+												"description": "Output from cancel command",
+												"type": "string"
+											}
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 4, 5, 6, 7, 50, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					{
+						"name": "jobid",
+						"in": "path",
+						"description": "Job identifier",
+						"required": true,
+						"schema": {
+							"type": "integer"
+						}
+					}
+				]
+			}
+		},
+		"/api/v1/jobs/{jobid}/show": {
+			"get": {
+				"tags": ["jobs"],
+				"summary": "Show job",
+				"description": "Get 'show jobs' bconsole command output for specific job",
+				"responses": {
+					"200": {
+						"description": "Show jobs output",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"type": "array",
+											"items": {
+												"type": "string",
+												"description": "Show job output"
+											}
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 10, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					{
+						"name": "jobid",
+						"in": "path",
+						"description": "Job identifier",
+						"required":  true,
+						"schema": {
+							"type": "integer"
+						}
+					}
+				]
+			}
+		},
+		"/api/v1/jobs/resnames": {
+			"get": {
+				"tags": ["jobs"],
+				"summary": "Job resource names",
+				"description": "Get job resource names (after applying console ACL)",
+				"responses": {
+					"200": {
+						"description": "List of job resource names",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"type": "array",
+											"items": {
+												"description": "List resource job names",
+												"type": "string"
+											}
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					{
+						"$ref": "#/components/parameters/Limit"
+					}
+				]
+			}
+		},
+		"/api/v1/jobs/recent/{jobname}": {
+			"get": {
+				"tags": ["jobs"],
+				"summary": "Get most recent jobids for job to restore",
+				"description": "Useful for restore. Determines all single jobids required to restore job given in jobname. Besides jobname there are required only two parameters (client OR clientid) AND (fileset OR filesetid)",
+				"responses": {
+					"200": {
+						"description": "List of job resource names",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"type": "array",
+											"items": {
+												"description": "List job identifiers to restore job given as jobname",
+												"type": "integer"
+											}
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 50, 52, 53, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					{
+						"name": "jobname",
+						"in": "path",
+						"description": "Job name",
+						"required":  true,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"name": "clientid",
+						"in": "query",
+						"description": "Client identifier",
+						"required":  true,
+						"schema": {
+							"type": "integer"
+						}
+					},
+					{
+						"name": "client",
+						"in": "query",
+						"description": "Client name (can be used instead clientid)",
+						"required": true,
+						"schema": {
+							"type": "string",
+							"pattern": "[a-zA-Z0-9:.-_ ]+"
+						}
+					},
+					{
+						"name": "filesetid",
+						"in": "query",
+						"description": "FileSet identifier",
+						"required":  true,
+						"schema": {
+							"type": "integer"
+						}
+					},
+					{
+						"name": "fileset",
+						"in": "query",
+						"description": "FileSet name (can be used instead filesetid)",
+						"required": true,
+						"schema": {
+							"type": "string",
+							"pattern": "[a-zA-Z0-9:.-_ ]+"
+						}
+					}
+				]
+			}
+		},
+		"/api/v1/jobs/estimate": {
+			"post": {
+				"tags": ["jobs"],
+				"summary": "Estimate job bytes and files",
+				"description": "Estimate job bytes and files before real job run. There can be used (id OR name) and (clientid OR client)",
+				"responses": {
+					"200": {
+						"description": "Estimate output",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"type": "array",
+											"items": {
+												"description": "Output with estimated bytes and files",
+												"type": "string"
+											}
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 50, 51, 52, 53, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					{
+						"name": "create[id]",
+						"in": "header",
+						"description": "Job identifier",
+						"required": true,
+						"schema": {
+							"type": "integer"
+						}
+					},
+					{
+						"name": "create[name]",
+						"in": "header",
+						"description": "Job name (can be used instead id)",
+						"required": true,
+						"schema": {
+							"type": "string",
+							"pattern": "[a-zA-Z0-9:.-_ ]+"
+						}
+					},
+					{
+						"name": "create[clientid]",
+						"in": "header",
+						"description": "Client identifier",
+						"required":  true,
+						"schema": {
+							"type": "integer"
+						}
+					},
+					{
+						"name": "create[client]",
+						"in": "header",
+						"description": "Client name (can be used instead clientid)",
+						"required":  true,
+						"schema": {
+							"type": "string",
+							"pattern": "[a-zA-Z0-9:.-_ ]+"
+						}
+					},
+					{
+						"name": "create[fileset]",
+						"in": "header",
+						"description": "FileSet name",
+						"required": true,
+						"schema": {
+							"type": "string",
+							"pattern": "[a-zA-Z0-9:.-_ ]+"
+						}
+					},
+					{
+						"name": "create[accurate]",
+						"in": "header",
+						"description": "Accurate mode, 1 if enabled, otherwise 0",
+						"required": false,
+						"schema": {
+							"type": "integer"
+						}
+					}
+				]
+			}
+		},
+		"/api/v1/jobs/run": {
+			"post": {
+				"tags": ["jobs"],
+				"summary": "Run job",
+				"description": "Run job with specific parameters. There can be used (id OR name) and (clientid OR client)",
+				"responses": {
+					"200": {
+						"description": "Run job output",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"type": "array",
+											"items": {
+												"description": "Output from job start",
+												"type": "string"
+											}
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 50, 51, 52, 53, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					{
+						"name": "create[id]",
+						"in": "header",
+						"description": "Job identifier",
+						"required": true,
+						"schema": {
+							"type": "integer"
+						}
+					},
+					{
+						"name": "create[name]",
+						"in": "header",
+						"description": "Job name (can be used instead id)",
+						"required": true,
+						"schema": {
+							"type": "string",
+							"pattern": "[a-zA-Z0-9:.-_ ]+"
+						}
+					},
+					{
+						"name": "create[clientid]",
+						"in": "header",
+						"description": "Client identifier",
+						"required":  true,
+						"schema": {
+							"type": "integer"
+						}
+					},
+					{
+						"name": "create[client]",
+						"in": "header",
+						"description": "Client name (can be used instead clientid)",
+						"required":  true,
+						"schema": {
+							"type": "string",
+							"pattern": "[a-zA-Z0-9:.-_ ]+"
+						}
+					},
+					{
+						"name": "create[storageid]",
+						"in": "header",
+						"description": "Storage identifier",
+						"required":  true,
+						"schema": {
+							"type": "integer"
+						}
+					},
+					{
+						"name": "create[storage]",
+						"in": "header",
+						"description": "Storage name (can be used instead storageid)",
+						"required":  true,
+						"schema": {
+							"type": "string",
+							"pattern": "[a-zA-Z0-9:.-_ ]+"
+						}
+					},
+					{
+						"name": "create[poolid]",
+						"in": "header",
+						"description": "Pool identifier",
+						"required":  true,
+						"schema": {
+							"type": "integer"
+						}
+					},
+					{
+						"name": "create[pool]",
+						"in": "header",
+						"description": "Pool name (can be used instead poolid)",
+						"required":  true,
+						"schema": {
+							"type": "string",
+							"pattern": "[a-zA-Z0-9:.-_ ]+"
+						}
+					},
+					{
+						"name": "create[fileset]",
+						"in": "header",
+						"description": "FileSet name",
+						"required": true,
+						"schema": {
+							"type": "string",
+							"pattern": "[a-zA-Z0-9:.-_ ]+"
+						}
+					},
+					{
+						"name": "create[priority]",
+						"in": "header",
+						"description": "Job priority",
+						"required":  false,
+						"schema": {
+							"type": "integer"
+						}
+					},
+					{
+						"name": "create[accurate]",
+						"in": "header",
+						"description": "Accurate mode, 1 if enabled, otherwise 0",
+						"required": false,
+						"schema": {
+							"type": "integer"
+						}
+					},
+					{
+						"name": "create[jobid]",
+						"in": "header",
+						"description": "Job identifier for verify job",
+						"required":  false,
+						"schema": {
+							"type": "integer"
+						}
+					},
+					{
+						"name": "create[verifyjob]",
+						"in": "header",
+						"description": "Verify job name",
+						"required":  false,
+						"schema": {
+							"type": "string",
+							"pattern": "[a-zA-Z0-9:.-_ ]+"
+						}
+					}
+				]
+			}
+		},
+		"/api/v1/jobs/show": {
+			"get": {
+				"tags": ["jobs"],
+				"summary": "Show jobs",
+				"description": "Get 'show jobs' bconsole command output",
+				"responses": {
+					"200": {
+						"description": "Show jobs output",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"type": "array",
+											"items": {
+												"type": "string",
+												"description": "Show jobs output"
+											}
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 4, 5, 6, 7, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					{
+						"name": "name",
+						"in": "query",
+						"required": false,
+						"description": "Job name",
+						"schema": {
+							"type": "string",
+							"pattern": "[a-zA-Z0-9:.-_ ]+"
+						}
+					}
+				]
+			}
+		},
+		"/api/v1/jobs/totals": {
+			"get": {
+				"tags": ["jobs"],
+				"summary": "Show job total bytes and files",
+				"description": "Get total number backed up bytes and files from all jobs. It works also with Console ACL.",
+				"responses": {
+					"200": {
+						"description": "Total bytes and files",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"type": "object",
+											"properties": {
+												"bytes": {
+													"type": "integer",
+													"description": "Total number backed up bytes"
+												},
+												"files": {
+													"type": "integer",
+													"description": "Total number backed up files"
+												}
+											}
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/api/v1/jobs/restore": {
+			"post": {
+				"tags": ["jobs"],
+				"summary": "Restore job",
+				"description": "Restore backup job.",
+				"responses": {
+					"200": {
+						"description": "Restore command output",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"type": "array",
+											"items": {
+												"type": "string",
+												"description": "Restore job output"
+											}
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 10, 56, 57, 58, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					{
+						"name": "create[id]",
+						"in": "header",
+						"description": "Job identifier",
+						"required": true,
+						"schema": {
+							"type": "integer"
+						}
+					},
+					{
+						"name": "create[name]",
+						"in": "header",
+						"description": "Job name (can be used instead id)",
+						"required": true,
+						"schema": {
+							"type": "string",
+							"pattern": "[a-zA-Z0-9:.-_ ]+"
+						}
+					},
+					{
+						"name": "create[clientid]",
+						"in": "header",
+						"description": "Client identifier",
+						"required":  true,
+						"schema": {
+							"type": "integer"
+						}
+					},
+					{
+						"name": "create[client]",
+						"in": "header",
+						"description": "Client name (can be used instead clientid)",
+						"required":  true,
+						"schema": {
+							"type": "string",
+							"pattern": "[a-zA-Z0-9:.-_ ]+"
+						}
+					},
+					{
+						"name": "create[rpath]",
+						"in": "header",
+						"description": "Rpath (restore path)",
+						"required": true,
+						"schema": {
+							"type": "string",
+							"pattern": "b2[0-9]+"
+						}
+					},
+					{
+						"name": "create[where]",
+						"in": "header",
+						"description": "Where to restore files",
+						"required":  true,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"name": "create[priority]",
+						"in": "header",
+						"description": "Job priority",
+						"required":  false,
+						"schema": {
+							"type": "integer"
+						}
+					},
+					{
+						"name": "create[restorejob]",
+						"in": "header",
+						"description": "Restore job name",
+						"required": false,
+						"schema": {
+							"type": "string",
+							"pattern": "[a-zA-Z0-9:.-_ ]+"
+						}
+					},
+					{
+						"name": "create[strip_prefix]",
+						"in": "header",
+						"description": "Strip prefix in restored paths",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"name": "create[add_prefix]",
+						"in": "header",
+						"description": "Add prefix to restored paths",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"name": "create[add_suffix]",
+						"in": "header",
+						"description": "Add suffix to restored paths",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"name": "create[regex_where]",
+						"in": "header",
+						"description": "Use regex to file relocation",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/api/v1/storages": {
+			"get": {
+				"tags": ["storages"],
+				"summary": "Storage list",
+				"description": "Get storage list.",
+				"responses": {
+					"200": {
+						"description": "List of storages",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"$ref": "#/components/schemas/Storages"
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [{
+					"$ref": "#/components/parameters/Limit"
+				}]
+			}
+		},
+		"/api/v1/storages/{storageid}": {
+			"get": {
+				"tags": ["storages"],
+				"summary": "Find storage by StorageId",
+				"description": "Get storage by specific Storage identifier.",
+				"responses": {
+					"200": {
+						"description": "Storage properties",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"$ref": "#/components/schemas/Storage"
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 20, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [{
+					"$ref": "#/components/parameters/StorageId"
+				}]
+			}
+		},
+		"/api/v1/storages/{storageid}/show": {
+			"get": {
+				"tags": ["storages"],
+				"summary": "Show storage",
+				"description": "Get 'show storages' bconsole command output for specific storage",
+				"responses": {
+					"200": {
+						"description": "Show storages output",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"type": "array",
+											"items": {
+												"type": "string",
+												"description": "Show storage output"
+											}
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 20, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [{
+					"$ref": "#/components/parameters/StorageId"
+				}]
+			}
+		},
+		"/api/v1/storages/{storageid}/status": {
+			"get": {
+				"tags": ["storages"],
+				"summary": "Storage status",
+				"description": "Get storage status for specific storage",
+				"responses": {
+					"200": {
+						"description": "Storage status output",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"type": "array",
+											"items": {
+												"type": "string",
+												"description": "Storage status"
+											}
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 10, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [{
+					"$ref": "#/components/parameters/StorageId"
+				}]
+			}
+		},
+		"/api/v1/storages/{storageid}/mount": {
+			"get": {
+				"tags": ["storages"],
+				"summary": "Mount storage",
+				"description": "Mount storage",
+				"responses": {
+					"200": {
+						"description": "Mount storage output",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"type": "array",
+											"items": {
+												"type": "string",
+												"description": "Mount storage output"
+											}
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 20, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					{
+					"$ref": "#/components/parameters/StorageId"
+					},
+					{
+					"$ref": "#/components/parameters/Drive"
+					},
+					{
+					"$ref": "#/components/parameters/Device"
+					},
+					{
+					"$ref": "#/components/parameters/Slot"
+					}
+				]
+			}
+		},
+		"/api/v1/storages/{storageid}/umount": {
+			"get": {
+				"tags": ["storages"],
+				"summary": "Umount storage",
+				"description": "Umount storage",
+				"responses": {
+					"200": {
+						"description": "Umount storage output",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"type": "array",
+											"items": {
+												"type": "string",
+												"description": "Umount storage output"
+											}
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 20, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					{
+					"$ref": "#/components/parameters/StorageId"
+					},
+					{
+					"$ref": "#/components/parameters/Drive"
+					},
+					{
+					"$ref": "#/components/parameters/Device"
+					}
+				]
+			}
+		},
+		"/api/v1/storages/{storageid}/release": {
+			"get": {
+				"tags": ["storages"],
+				"summary": "Release storage",
+				"description": "Release storage",
+				"responses": {
+					"200": {
+						"description": "Release storage output",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"type": "array",
+											"items": {
+												"type": "string",
+												"description": "Release storage output"
+											}
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 20, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					{
+					"$ref": "#/components/parameters/StorageId"
+					},
+					{
+					"$ref": "#/components/parameters/Drive"
+					},
+					{
+					"$ref": "#/components/parameters/Device"
+					}
+				]
+			}
+		},
+		"/api/v1/storages/show": {
+			"get": {
+				"tags": ["storages"],
+				"summary": "Show storages",
+				"description": "Get 'show storages' bconsole command output",
+				"responses": {
+					"200": {
+						"description": "Show storages output",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"type": "array",
+											"items": {
+												"type": "string",
+												"description": "Show storages output"
+											}
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 4, 5, 6, 7, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					{
+						"name": "name",
+						"in": "query",
+						"required": false,
+						"description": "Storage name",
+						"schema": {
+							"type": "string",
+							"pattern": "[a-zA-Z0-9:.-_ ]+"
+						}
+					}
+				]
+			}
+		},
+		"/api/v1/pools": {
+			"get": {
+				"tags": ["pools"],
+				"summary": "Pool list",
+				"description": "Get pool list.",
+				"responses": {
+					"200": {
+						"description": "List of pools",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"$ref": "#/components/schemas/Pools"
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 40, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [{
+					"$ref": "#/components/parameters/Limit"
+				}]
+			}
+		},
+		"/api/v1/pools/{poolid}": {
+			"get": {
+				"tags": ["pools"],
+				"summary": "Find pool by PoolId",
+				"description": "Get pool by specific Pool identifier.",
+				"responses": {
+					"200": {
+						"description": "Pool properties",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"$ref": "#/components/schemas/Pool"
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 40, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [{
+					"$ref": "#/components/parameters/PoolId"
+				}]
+			}
+		},
+		"/api/v1/pools/{poolid}/volumes": {
+			"get": {
+				"tags": ["pools"],
+				"summary": "Get all volumes in pool",
+				"description": "Get all volumes in specific pool",
+				"responses": {
+					"200": {
+						"description": "Volume list with properties",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"$ref": "#/components/schemas/Volumes"
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 40, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [{
+					"$ref": "#/components/parameters/PoolId"
+				}]
+			}
+		},
+		"/api/v1/pools/{poolid}/show": {
+			"get": {
+				"tags": ["pools"],
+				"summary": "Show pool",
+				"description": "Get 'show pools' bconsole command output for specific pool",
+				"responses": {
+					"200": {
+						"description": "Show pools output",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"type": "array",
+											"items": {
+												"type": "string",
+												"description": "Show pool output"
+											}
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 40, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [{
+					"$ref": "#/components/parameters/PoolId"
+				}]
+			}
+		},
+		"/api/v1/pools/{poolid}/update": {
+			"put": {
+				"tags": ["pools"],
+				"summary": "Update pool properties",
+				"description": "Update properties in specific pool",
+				"responses": {
+					"200": {
+						"description": "Update pool output",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"type": "array",
+											"items": {
+												"type": "string",
+												"description": "Show update pool output"
+											}
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 40, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [{
+					"$ref": "#/components/parameters/PoolId"
+				}]
+			}
+		},
+		"/api/v1/pools/{poolid}/update/volumes": {
+			"put": {
+				"tags": ["pools"],
+				"summary": "Update properties all volumes in pool",
+				"description": "Update properties all volumes in specific pool",
+				"responses": {
+					"200": {
+						"description": "Update all volumes in pool output",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"type": "array",
+											"items": {
+												"type": "string",
+												"description": "Show update all volumes output"
+											}
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 40, 41, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [{
+					"$ref": "#/components/parameters/PoolId"
+				}]
+			}
+		},
+		"/api/v1/pools/show": {
+			"get": {
+				"tags": ["pools"],
+				"summary": "Show pools",
+				"description": "Get 'show pools' bconsole command output",
+				"responses": {
+					"200": {
+						"description": "Show pools output",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"type": "array",
+											"items": {
+												"type": "string",
+												"description": "Show pools output"
+											}
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 4, 5, 6, 7, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					{
+						"name": "name",
+						"in": "query",
+						"required": false,
+						"description": "Pool name",
+						"schema": {
+							"type": "string",
+							"pattern": "[a-zA-Z0-9:.-_ ]+"
+						}
+					}
+				]
+			}
+		},
+		"/api/v1/volumes": {
+			"get": {
+				"tags": ["volumes"],
+				"summary": "Volume list",
+				"description": "Get volume list.",
+				"responses": {
+					"200": {
+						"description": "List of volumes",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"$ref": "#/components/schemas/Volumes"
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [{
+					"$ref": "#/components/parameters/Limit"
+				}]
+			}
+		},
+		"/api/v1/volumes/{mediaid}": {
+			"get": {
+				"tags": ["volumes"],
+				"summary": "Find volume by MediaId",
+				"description": "Get volume by specific Volume/Media identifier.",
+				"responses": {
+					"200": { 
+						"description": "Volume properties",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"$ref": "#/components/schemas/Volume"
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 30, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [{
+					"$ref": "#/components/parameters/MediaId"
+				}]
+			},
+			"put": {
+				"tags": ["volumes"],
+				"summary": "Update volume properties",
+				"description": "Update specific volume properties.",
+				"responses": {
+					"200": { 
+						"description": "Update volume output",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"type": "array",
+											"items": {
+												"type": "string",
+												"description": "Show update volume output"
+											}
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 30, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					{
+						"$ref": "#/components/parameters/MediaId"
+					},
+					{
+						"name": "update[volstatus]",
+						"in": "header",
+						"description": "Volume status",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"name": "update[poolid]",
+						"in": "header",
+						"description": "Update Volume Pool by Pool identifier",
+						"required": false,
+						"schema": {
+							"type": "integer"
+						}
+					},
+					{
+						"name": "update[volretention]",
+						"in": "header",
+						"description": "Volume retention time",
+						"required": false,
+						"schema": {
+							"type": "integer"
+						}
+					},
+					{
+						"name": "update[voluseduration]",
+						"in": "header",
+						"description": "Volume use duration time",
+						"required": false,
+						"schema": {
+							"type": "integer"
+						}
+					},
+					{
+						"name": "update[maxvoljobs]",
+						"in": "header",
+						"description": "Maximum volume jobs",
+						"required": false,
+						"schema": {
+							"type": "integer"
+						}
+					},
+					{
+						"name": "update[maxvolfiles]",
+						"in": "header",
+						"description": "Maximum volume files",
+						"required": false,
+						"schema": {
+							"type": "integer"
+						}
+					},
+					{
+						"name": "update[maxvolbytes]",
+						"in": "header",
+						"description": "Maximum volume bytes",
+						"required": false,
+						"schema": {
+							"type": "integer"
+						}
+					},
+					{
+						"name": "update[slot]",
+						"in": "header",
+						"description": "Volume slot",
+						"required": false,
+						"schema": {
+							"type": "integer"
+						}
+					},
+					{
+						"name": "update[recycle]",
+						"in": "header",
+						"description": "Volume recycle flag",
+						"required": false,
+						"schema": {
+							"type": "integer",
+							"minimum": 0,
+							"maximum": 1
+						}
+					},
+					{
+						"name": "update[enabled]",
+						"in": "header",
+						"description": "Volume enabled flag",
+						"required": false,
+						"schema": {
+							"type": "integer",
+							"minimum": 0,
+							"maximum": 1
+						}
+					},
+					{
+						"name": "update[inchanger]",
+						"in": "header",
+						"description": "Volume InChanger flag",
+						"required": false,
+						"schema": {
+							"type": "integer",
+							"minimum": 0,
+							"maximum": 1
+						}
+					}
+				]
+			}
+		},
+		"/api/v1/volumes/{mediaid}/prune": {
+			"put": {
+				"tags": ["volumes"],
+				"summary": "Prune volume",
+				"description": "Do prunning on volume.",
+				"responses": {
+					"200": { 
+						"description": "Prune volume output",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"type": "array",
+											"items": {
+												"type": "string",
+												"description": "Show prune volume output"
+											}
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 30, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					{
+						"$ref": "#/components/parameters/MediaId"
+					}
+				]
+			}
+		},
+		"/api/v1/volumes/{mediaid}/purge": {
+			"put": {
+				"tags": ["volumes"],
+				"summary": "Purge volume",
+				"description": "Do purging on volume.",
+				"responses": {
+					"200": { 
+						"description": "Purge volume output",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"type": "array",
+											"items": {
+												"type": "string",
+												"description": "Show purge volume output"
+											}
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 30, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					{
+						"$ref": "#/components/parameters/MediaId"
+					}
+				]
+			}
+		},
+		"/api/v1/volumes/{mediaid}/jobs": {
+			"get": {
+				"tags": ["volumes"],
+				"summary": "Jobs on volume",
+				"description": "Get jobs done on volume",
+				"responses": {
+					"200": {
+						"description": "Jobs on volume",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"$ref": "#/components/schemas/Jobs"
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [{
+					"$ref": "#/components/parameters/MediaId"
+				}]
+			}
+		},
+		"/api/v1/volumes/required/{jobid}/{fileid}": {
+			"get": {
+				"tags": ["volumes"],
+				"summary": "Get volumes required to restore file",
+				"description": "Get volumes required to restore a file from a job",
+				"responses": {
+					"200": { 
+						"description": "Volumes list to restore a file",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"type": "array",
+											"items": {
+												"type": "object",
+												"properties": {
+													"first_index": {
+														"name": "first_index",
+														"type": "integer"
+													},
+													"last_index": {
+														"name": "last_index",
+														"type": "integer"
+													},
+													"volume": {
+														"name": "volume",
+														"type": "string"
+													},
+													"inchanger": {
+														"type": "integer",
+														"minimum": 0,
+														"maximum": 1
+													}
+												}
+											}
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 30, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					{
+						"$ref": "#/components/parameters/MediaId"
+					},
+					{
+						"name": "fileid",
+						"in": "path",
+						"description": "File identifier",
+						"required": true,
+						"schema": {
+							"type": "integer"
+						}
+					}
+				]
+			}
+		},
+		"/api/v1/filesets": {
+			"get": {
+				"tags": ["filesets"],
+				"summary": "FileSet list",
+				"description": "Get fileset list.",
+				"responses": {
+					"200": {
+						"description": "List of FileSets",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"$ref": "#/components/schemas/FileSets"
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 60, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [{
+					"$ref": "#/components/parameters/Limit"
+				}]
+			}
+		},
+		"/api/v1/filesets/{filesetid}": {
+			"get": {
+				"tags": ["filesets"],
+				"summary": "Find FileSet by FileSetId",
+				"description": "Get FileSet by specific FileSet identifier.",
+				"responses": {
+					"200": {
+						"description": "FileSet properties",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"$ref": "#/components/schemas/FileSet"
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 60, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [{
+					"$ref": "#/components/parameters/FileSetId"
+				}]
+			}
+		},
+		"/api/v1/filesets/resnames": {
+			"get": {
+				"tags": ["filesets"],
+				"summary": "FileSet resource names",
+				"description": "Get FileSet resource names (after applying console ACL)",
+				"responses": {
+					"200": {
+						"description": "List of FileSet resource names",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"type": "array",
+											"items": {
+												"description": "List resource FileSet names",
+												"type": "string"
+											}
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/api/v1/schedules/resnames": {
+			"get": {
+				"tags": ["schedules"],
+				"summary": "Schedule resource names",
+				"description": "Get Schedule resource names (after applying console ACL)",
+				"responses": {
+					"200": {
+						"description": "List of Schedule resource names",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"type": "array",
+											"items": {
+												"description": "List resource Schedule names",
+												"type": "string"
+											}
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/api/v1/bvfs/update": {
+			"put": {
+				"tags": ["bvfs"],
+				"summary": "Update BVFS cache",
+				"description": "Update BVFS cache for specific jobs identifiers",
+				"responses": {
+					"200": {
+						"description": "BVFS update command output",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"type": "array",
+											"items": {
+												"description": "BVFS update cache output",
+												"type": "string"
+											}
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 73, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/api/v1/bvfs/lsdirs": {
+			"get": {
+				"tags": ["bvfs"],
+				"summary": "BVFS list directories",
+				"description": "BVFS list directories",
+				"responses": {
+					"200": {
+						"description": "BVFS list directories",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"type": "array",
+											"items": {
+												"description": "BVFS list directories",
+												"type": "string"
+											}
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 72, 73, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					{
+						"name": "jobids",
+						"in": "query",
+						"description": "Comma separated job identifiers",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"name": "path",
+						"in": "query",
+						"description": "Path to list",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"name": "offset",
+						"in": "query",
+						"description": "Offset",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"name": "limit",
+						"in": "query",
+						"description": "Limit",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/api/v1/bvfs/lsfiles": {
+			"get": {
+				"tags": ["bvfs"],
+				"summary": "BVFS list files",
+				"description": "BVFS list files",
+				"responses": {
+					"200": {
+						"description": "BVFS list files",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"type": "array",
+											"items": {
+												"description": "BVFS list files",
+												"type": "string"
+											}
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 72, 73, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					{
+						"name": "jobids",
+						"in": "query",
+						"description": "Comma separated job identifiers",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"name": "path",
+						"in": "query",
+						"description": "Path to list",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"name": "offset",
+						"in": "query",
+						"description": "Offset",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"name": "limit",
+						"in": "query",
+						"description": "Limit",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/api/v1/bvfs/versions": {
+			"get": {
+				"tags": ["bvfs"],
+				"summary": "BVFS list file versions",
+				"description": "BVFS list file versions",
+				"responses": {
+					"200": {
+						"description": "BVFS list file versions",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"type": "array",
+											"items": {
+												"description": "BVFS list file versions",
+												"type": "string"
+											}
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 77, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					{
+						"name": "client",
+						"in": "query",
+						"description": "Client name",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"name": "jobid",
+						"in": "query",
+						"description": "Job identifier",
+						"required": true,
+						"schema": {
+							"type": "integer"
+						}
+					},
+					{
+						"name": "pathid",
+						"in": "query",
+						"description": "Path identifier",
+						"required": true,
+						"schema": {
+							"type": "integer"
+						}
+					},
+					{
+						"name": "filenameid",
+						"in": "query",
+						"description": "Filename identifier",
+						"required": true,
+						"schema": {
+							"type": "integer"
+						}
+					}
+				]
+			}
+		},
+		"/api/v1/bvfs/getjobids": {
+			"get": {
+				"tags": ["bvfs"],
+				"summary": "BVFS get particular jobids to restore",
+				"description": "BVFS get particular jobids to restore job with given jobid",
+				"responses": {
+					"200": {
+						"description": "Console output with list job identifiers",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"type": "array",
+											"items": {
+												"description": "Console output with list job identifiers",
+												"type": "string"
+											}
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 78, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					{
+						"name": "jobid",
+						"in": "query",
+						"description": "Job identifier",
+						"required": true,
+						"schema": {
+							"type": "integer"
+						}
+					}
+				]
+			}
+		},
+		"/api/v1/bvfs/restore": {
+			"post": {
+				"tags": ["bvfs"],
+				"summary": "Prepare BVFS restore",
+				"description": "Prepare BVFS restore",
+				"responses": {
+					"200": {
+						"description": "BVFS restore command output",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"type": "array",
+											"items": {
+												"description": "BVFS restore command output",
+												"type": "string"
+											}
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 71, 73, 74, 75, 76, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					{
+						"name": "create[path]",
+						"in": "header",
+						"description": "Path in format b2[0-9]+",
+						"required": true,
+						"schema": {
+							"type": "integer"
+						}
+					},
+					{
+						"name": "create[jobids]",
+						"in": "header",
+						"description": "Comma separated job identifiers",
+						"required": true,
+						"schema": {
+							"type": "integer"
+						}
+					},
+					{
+						"name": "create[fileid]",
+						"in": "header",
+						"description": "Comma seprated file identifiers",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"name": "create[dirid]",
+						"in": "header",
+						"description": "Comma seprated directory identifiers",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"name": "create[findex]",
+						"in": "header",
+						"description": "Comma seprated directory file indexes",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/api/v1/bvfs/clear": {
+			"put": {
+				"tags": ["bvfs"],
+				"summary": "Clear BVFS cache",
+				"description": "Clear BVFS cache",
+				"responses": {
+					"200": {
+						"description": "BVFS clear cache command output",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"type": "array",
+											"items": {
+												"description": "BVFS clear cache command output",
+												"type": "string"
+											}
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/api/v1/config": {
+			"get": {
+				"tags": ["config"],
+				"summary": "Get components information",
+				"description": "Get components information such as component types and component names",
+				"responses": {
+					"200": {
+						"description": "List components information",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"type": "array",
+											"items": {
+												"type": "object",
+												"properties": {
+													"component_type": {
+														"type": "string",
+														"description": "Component type"
+													},
+													"component_name": {
+														"type": "string",
+														"description": "Component name"
+													},
+													"state": {
+														"type": "bool",
+														"description": "State"
+													},
+													"error_msg": {
+														"type": "string",
+														"description": "Error message"
+													}
+												}
+											}
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 80, 81, 82, 83, 84, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/api/v1/config/{component_type}": {
+			"get": {
+				"tags": ["config"],
+				"summary": "Get component config",
+				"description": "Get specific component config",
+				"responses": {
+					"200": {
+						"description": "Component config",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"type": "array",
+											"items": {
+												"type": "object",
+												"description": "Component config"
+											}
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 80, 81, 82, 83, 84, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					{
+						"$ref": "#/components/parameters/ComponentType"
+					}
+				]
+			},
+			"put": {
+				"tags": ["config"],
+				"summary": "Set component config",
+				"description": "Set specific component config",
+				"responses": {
+					"200": {
+						"description": "Set config status",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"type": "string",
+											"description": "Set config error message"
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 80, 81, 82, 83, 84, 90, 91, 92, 93, 94, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					{
+						"$ref": "#/components/parameters/ComponentType"
+					},
+					{
+						"name": "update[config]",
+						"in": "header",
+						"description": "Config in JSON form to set",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/api/v1/config/{component_type}/{resource_type}": {
+			"get": {
+				"tags": ["config"],
+				"summary": "Get component resources config",
+				"description": "Get component resources config by type",
+				"responses": {
+					"200": {
+						"description": "Given type resources config",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"type": "array",
+											"items": {
+												"type": "object",
+												"description": "Resources config"
+											}
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 80, 81, 82, 83, 84, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					{
+						"$ref": "#/components/parameters/ComponentType"
+					},
+					{
+						"$ref": "#/components/parameters/ResourceType"
+					}
+				]
+			},
+			"put": {
+				"tags": ["config"],
+				"summary": "Set component resources config",
+				"description": "Set specific component resources config",
+				"responses": {
+					"200": {
+						"description": "Set resources config",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"type": "object",
+											"description": "Set resources config error message"
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 80, 81, 82, 83, 84, 90, 91, 92, 93, 94, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					{
+						"$ref": "#/components/parameters/ComponentType"
+					},
+					{
+						"$ref": "#/components/parameters/ResourceType"
+					},
+					{
+						"name": "update[config]",
+						"in": "header",
+						"description": "Config in JSON form to set",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/api/v1/config/{component_type}/{resource_type}/{resource_name}": {
+			"get": {
+				"tags": ["config"],
+				"summary": "Get component resource config",
+				"description": "Get component resource config by name",
+				"responses": {
+					"200": {
+						"description": "Resource config with given name",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"type": "array",
+											"items": {
+												"type": "object",
+												"description": "Single resource config"
+											}
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 80, 81, 82, 83, 84, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					{
+						"$ref": "#/components/parameters/ComponentType"
+					},
+					{
+						"$ref": "#/components/parameters/ResourceType"
+					},
+					{
+						"$ref": "#/components/parameters/ResourceName"
+					}
+				]
+			},
+			"put": {
+				"tags": ["config"],
+				"summary": "Set component resource config",
+				"description": "Set specific component resource config",
+				"responses": {
+					"200": {
+						"description": "Set single resource config",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"type": "object",
+											"description": "Set resource config error message"
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 80, 81, 82, 83, 84, 90, 91, 92, 93, 94, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					{
+						"$ref": "#/components/parameters/ComponentType"
+					},
+					{
+						"$ref": "#/components/parameters/ResourceType"
+					},
+					{
+						"$ref": "#/components/parameters/ResourceName"
+					},
+					{
+						"name": "update[config]",
+						"in": "header",
+						"description": "Config in JSON form to set",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/api/v1/joblog/{jobid}": {
+			"get": {
+				"tags": ["joblog"],
+				"summary": "Get job log for jobid",
+				"description": "Get job log for jobid",
+				"responses": {
+					"200": {
+						"description": "Job log output",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"type": "array",
+											"items": {
+												"description": "Job log output",
+												"type": "string"
+											}
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 50, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [{
+					"$ref": "#/components/parameters/JobId"
+				}]
+			}
+		}
+	},
+	"definitions": {
+		"Client": {
+			"type": "object",
+			"properties": {
+				"clientid": {
+					"description": "Unique client identifier",
+					"type": "integer",
+					"minimum": 1
+				},
+				"name": {
+					"description": "Client name",
+					"type": "string",
+					"pattern": "[a-zA-Z0-9:.-_ ]+"
+				},
+				"uname": {
+					"description": "Uname for client",
+					"type": "string"
+				},
+				"autoprune": {
+					"description": "Determines if automatic prunning is enabled/disabled",
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 1
+				},
+				"fileretention": {
+					"description": "Retention time (in seconds) for files",
+					"type": "integer"
+				},
+				"jobretention": {
+					"description": "Retention time (in seconds) for jobs",
+					"type": "integer"
+				}
+			}
+		},
+		"Job": {
+			"type": "object",
+			"properties": {
+				"jobid": {
+					"description": "Job identifier",
+					"type": "integer",
+					"minimum": 1
+				},
+				"job": {
+					"description": "Job name with date and time",
+					"type": "string"
+				},
+				"name": {
+					"description": "Job name",
+					"type": "string"
+				},
+				"type": {
+					"description": "Job type",
+					"type": "string",
+					"enum": ["B", "M", "V", "R", "I", "D", "A", "C", "c", "g"]
+				},
+				"level": {
+					"description": "Job level",
+					"type": "string",
+					"enum": ["F","I", "D", "B", "f", "V", "C", "O", "d"]
+				},
+				"clientid": {
+					"description": "Client identifier",
+					"type": "integer",
+					"minimum": 1
+				},
+				"jobstatus": {
+					"description": "Job status. Note, some statuses can be not visible outside (used internally by Bacula)",
+					"type": "string",
+					"enum": ["C", "R", "B", "T", "W", "E", "e", "f", "D", "A", "I", "F", "S", "m", "M", "s", "j", "c", "d", "t", "p", "i", "a", "l", "L"]
+				},
+				"schedtime": {
+					"description": "Scheduled time (YYY-MM-DD HH:MM:SS)",
+					"type": "string"
+				},
+				"starttime": {
+					"description": "Start time (YYYY-MM-DD HH:M:SS)",
+					"type": "string"
+				},
+				"endtime": {
+					"description": "End time (YYYY-MM-DD HH:M:SS)",
+					"type": "string"
+				},
+				"realendtime": {
+					"description": "Real end time (YYYY-MM-DD HH:M:SS)",
+					"type": "string"
+				},
+				"jobtdate": {
+					"description": "Backup time/date in seconds",
+					"type": "integer"
+				},
+				"volsessionid": {
+					"description": "Volume session identifier",
+					"type": "integer"
+				},
+				"volsessiontime": {
+					"description": "Volume session time",
+					"type": "integer"
+				},
+				"jobfiles": {
+					"description": "Job file count",
+					"type": "integer"
+				},
+				"jobbytes": {
+					"description": "Job size in bytes",
+					"type": "integer"
+				},
+				"readbytes": {
+					"description": "Read bytes",
+					"type": "integer"
+				},
+				"joberrors": {
+					"description": "Job error count",
+					"type": "integer"
+				},
+				"jobmissingfiles": {
+					"description": "Job missing file count",
+					"type": "integer"
+				},
+				"poolid": {
+					"description": "Pool identifier",
+					"type": "integer",
+					"minimum": 1
+				},
+				"filesetid": {
+					"description": "FileSet identifier",
+					"type": "integer",
+					"minimum": 1
+				},
+				"priorjobid": {
+					"description": "JobId of migrated (prior) job",
+					"type": "integer",
+					"minimum": 1
+				},
+				"purgedfiles": {
+					"description": "Purged file count",
+					"type": "integer"
+				},
+				"hasbase": {
+					"description": "Has base jobs, 1 if job uses base job, otherwise 0",
+					"type": "integer"
+				},
+				"hascache": {
+					"description": "Has Bvfs cache, 1 if job has Bvfs cache, otherwise 0",
+					"type": "integer"
+				},
+				"reviewed": {
+					"description": "Reviewed",
+					"type": "integer"
+				},
+				"comment": {
+					"description": "Job comment",
+					"type": "string"
+				},
+				"filetable": {
+					"description": "File table",
+					"type": "string"
+				}
+			}
+		},
+		"Storage": {
+			"type": "object",
+			"properties": {
+				"storageid": {
+					"description": "Unique storage identifier",
+					"type": "integer",
+					"minimum": 1
+				},
+				"name": {
+					"description": "Storage name",
+					"type": "string",
+					"pattern": "[a-zA-Z0-9:.-_ ]+"
+				},
+				"autochanger": {
+					"description": "Determines if storage is autochanger type. 1 if it is autochanger, otherwise 0",
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 1
+				}
+			}
+		},
+		"Pool": {
+			"type": "object",
+			"properties": {
+				"poolid": {
+					"description": "Unique pool identifier",
+					"type": "integer",
+					"minimum": 1
+				},
+				"name": {
+					"description": "Pool name",
+					"type": "string",
+					"pattern": "[a-zA-Z0-9:.-_ ]+"
+				},
+				"numvols": {
+					"description": "Number of volumes in pool",
+					"type": "integer"
+				},
+				"maxvols": {
+					"description": "Maximum number volumes in pool",
+					"type": "integer"
+				},
+				"useonce": {
+					"description": "Use volume only once (deprecated)",
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 1
+				},
+				"usecatalog": {
+					"description": "Use catalog",
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 1
+				},
+				"acceptanyvolume": {
+					"description": "Accept any volume sequence",
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 1
+				},
+				"volretention": {
+					"description": "Volume retention time",
+					"type": "integer"
+				},
+				"voluseduration": {
+					"description": "Volume use duration",
+					"type": "integer"
+				},
+				"maxvoljobs": {
+					"description": "Maximum number of jobs on volume",
+					"type": "integer"
+				},
+				"maxvolfiles": {
+					"description": "Maximum number of files on volume",
+					"type": "integer"
+				},
+				"maxvolbytes": {
+					"description": "Maximum number of bytes on volume",
+					"type": "integer"
+				},
+				"autoprune": {
+					"description": "AutoPrune (automatic pruning) for volume",
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 1
+				},
+				"recycle": {
+					"description": "If set to 1 it enables volume recycling",
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 1
+				},
+				"actiononpurge": {
+					"description": "Action on purge to do on volumes",
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 1
+				},
+				"pooltype": {
+					"description": "Pool type. Currently is possible to set only one value: 'Backup'",
+					"type": "string"
+				},
+				"labeltype": {
+					"description": "Label type",
+					"type": "integer"
+				},
+				"labelformat": {
+					"description": "Label format",
+					"type": "string"
+				},
+				"enabled": {
+					"description": "Determines if volume is enabled or not",
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 1
+				},
+				"scratchpoolid": {
+					"description": "Scratch pool identifier",
+					"type": "integer",
+					"minimum": 1
+				},
+				"recyclepoolid": {
+					"description": "Recycle pool identifier",
+					"type": "integer",
+					"minimum": 1
+				},
+				"nextpoolid": {
+					"description": "Next pool identifier",
+					"type": "integer",
+					"minimum": 1
+				},
+				"migrationhighbytes": {
+					"description": "Migration high bytes",
+					"type": "integer"
+				},
+				"migrationlowbytes": {
+					"description": "Migration low bytes",
+					"type": "integer"
+				},
+				"migrationtime": {
+					"description": "Migration time",
+					"type": "integer"
+				},
+				"cacheretention": {
+					"description": "Cache retention time",
+					"type": "integer"
+				}
+			}
+		},
+		"Volume": {
+			"type": "object",
+			"properties": {
+				"mediaid": {
+					"description": "Unique volume identifier",
+					"type": "integer",
+					"minimum": 1
+				},
+				"name": {
+					"description": "Volume name",
+					"type": "string",
+					"pattern": "[a-zA-Z0-9:.-_ ]+"
+				},
+				"slot": {
+					"description": "Slot number",
+					"type": "integer"
+				},
+				"poolid": {
+					"description": "Pool identifier",
+					"type": "integer",
+					"minimum": 1
+				},
+				"mediatype": {
+					"description": "Media type",
+					"type": "string"
+				},
+				"mediatypeid": {
+					"description": "Media type identifier",
+					"type": "integer"
+				},
+				"labeltype": {
+					"description": "Label type",
+					"type": "integer"
+				},
+				"firstwritten": {
+					"description": "Date and time first write to volume",
+					"type": "string"
+				},
+				"lastwritten": {
+					"description": "Date and time last write to volume",
+					"type": "string"
+				},
+				"labeldate": {
+					"description": "Data and time label",
+					"type": "string"
+				},
+				"voljobs": {
+					"description": "Number of jobs written on volume",
+					"type": "integer"
+				},
+				"volfiles": {
+					"description": "Number of files written on volume",
+					"type": "integer"
+				},
+				"volblocks": {
+					"description": "Number of blocks written on volume",
+					"type": "integer"
+				},
+				"volmounts": {
+					"description": "Number of volume mounts",
+					"type": "integer"
+				},
+				"volbytes": {
+					"description": "Number of bytes written on volume",
+					"type": "integer"
+				},
+				"volabytes": {
+					"description": "Size of aligned volume",
+					"type": "integer"
+				},
+				"volapadding": {
+					"description": "Volume apadding",
+					"type": "integer"
+				},
+				"volholebytes": {
+					"description": "Volume hole bytes",
+					"type": "integer"
+				},
+				"volholes": {
+					"description": "Volume holes",
+					"type": "integer"
+				},
+				"volparts": {
+					"description": "Volume parts",
+					"type": "integer"
+				},
+				"volerrors": {
+					"description": "Volume errors",
+					"type": "integer"
+				},
+				"volwrites": {
+					"description": "Volume writes",
+					"type": "integer"
+				},
+				"maxvolbytes": {
+					"description": "Maximum volume bytes",
+					"type": "integer"
+				},
+				"volcapacitybytes": {
+					"description": "Volume capacity bytes",
+					"type": "integer"
+				},
+				"volstatus": {
+					"description": "Volume status",
+					"type": "integer"
+				},
+				"enabled": {
+					"description": "Determines if volume is enabled or not",
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 1
+				},
+				"recycle": {
+					"description": "If set to 1 it enables volume recycling",
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 1
+				},
+				"actiononpurge": {
+					"description": "Action on purge to do on volumes",
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 1
+				},
+				"volretention": {
+					"description": "Volume retention time",
+					"type": "integer"
+				},
+				"voluseduration": {
+					"description": "Volume use duration",
+					"type": "integer"
+				},
+				"maxvoljobs": {
+					"description": "Maximum volume jobs",
+					"type": "integer"
+				},
+				"maxvolfiles": {
+					"description": "Maximum volume files",
+					"type": "integer"
+				},
+				"inchanger": {
+					"description": "InChanger flag",
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 1
+				},
+				"storageid": {
+					"description": "Storage identifier",
+					"type": "integer",
+					"minimum": 1
+				},
+				"deviceid": {
+					"description": "Device identifier",
+					"type": "integer",
+					"minimum": 1
+				},
+				"mediaaddressing": {
+					"description": "Media adressing",
+					"type": "integer"
+				},
+				"volreadtime": {
+					"description": "Volume read time",
+					"type": "integer"
+				},
+				"volwritetime": {
+					"description": "Volume write time",
+					"type": "integer"
+				},
+				"endfile": {
+					"description": "End file",
+					"type": "integer"
+				},
+				"endblock": {
+					"description": "End block",
+					"type": "integer"
+				},
+				"locationid": {
+					"description": "Location identifier",
+					"type": "integer"
+				},
+				"recyclecount": {
+					"description": "Recycle count",
+					"type": "integer"
+				},
+				"initialwrite": {
+					"description": "Initial write",
+					"type": "integer"
+				},
+				"scratchpoolid": {
+					"description": "Scratch pool identifier",
+					"type": "integer",
+					"minimum": 1
+				},
+				"recyclepoolid": {
+					"description": "Recycle pool identifier",
+					"type": "integer",
+					"minimum": 1
+				},
+				"comment": {
+					"description": "Volume comment",
+					"type": "string"
+				},
+				"voltype": {
+					"description": "Volume type",
+					"type": "integer"
+				},
+				"volcloudparts": {
+					"description": "Volume cloud parts",
+					"type": "integer"
+				},
+				"lastpartbytes": {
+					"description": "Last part bytes",
+					"type": "integer"
+				},
+				"cacheretention": {
+					"description": "Cache retention time",
+					"type": "integer"
+				},
+				"whenexpire": {
+					"description": "Expiration date and time",
+					"type": "string"
+				}
+			}
+		},
+		"FileSet": {
+			"type": "object",
+			"properties": {
+				"filesetid": {
+					"description": "Unique FileSet identifier",
+					"type": "integer",
+					"minimum": 1
+				},
+				"fileset": {
+					"description": "FileSet name",
+					"type": "string",
+					"pattern": "[a-zA-Z0-9:.-_ ]+"
+				},
+				"md5": {
+					"description": "MD5 sum",
+					"type": "string"
+				},
+				"createtime": {
+					"description": "Create date and time",
+					"type": "string"
+				}
+			}
+		}
+	}
+}
