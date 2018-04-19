@@ -24,23 +24,33 @@ class PoolUpdateVolumes extends BaculumAPIServer {
 
 	public function set($id, $params) {
 		$poolid = intval($id);
-		$pool = $this->getModule('pool')->getPoolById($poolid);
-		if(is_object($pool)) {
-			$voldata = $this->getModule('volume')->getVolumeByPoolId($pool->poolid);
-			if(is_object($voldata)) {
-				$result = $this->getModule('bconsole')->bconsoleCommand(
-					$this->director,
-					array('update', 'volume="' .  $voldata->volumename . '"', 'allfrompool="' . $pool->name . '"')
-				);
-				$this->output = $result->output;
-				$this->error = $result->exitcode;
+		$result = $this->getModule('bconsole')->bconsoleCommand(
+			$this->director,
+			array('.pool')
+		);
+		if ($result->exitcode === 0) {
+			array_shift($result->output);
+			$pool = $this->getModule('pool')->getPoolById($poolid);
+			if (is_object($pool) && in_array($pool->name, $result->output)) {
+				$voldata = $this->getModule('volume')->getVolumeByPoolId($pool->poolid);
+				if(is_object($voldata)) {
+					$result = $this->getModule('bconsole')->bconsoleCommand(
+						$this->director,
+						array('update', 'volume="' .  $voldata->volumename . '"', 'allfrompool="' . $pool->name . '"')
+					);
+					$this->output = $result->output;
+					$this->error = $result->exitcode;
+				} else {
+					$this->output = PoolError::MSG_ERROR_NO_VOLUMES_IN_POOL_TO_UPDATE;
+					$this->error = PoolError::ERROR_NO_VOLUMES_IN_POOL_TO_UPDATE;
+				}
 			} else {
-				$this->output = PoolError::MSG_ERROR_NO_VOLUMES_IN_POOL_TO_UPDATE;
-				$this->error = PoolError::ERROR_NO_VOLUMES_IN_POOL_TO_UPDATE;
+				$this->output = PoolError::MSG_ERROR_POOL_DOES_NOT_EXISTS;
+				$this->error = PoolError::ERROR_POOL_DOES_NOT_EXISTS;
 			}
 		} else {
-			$this->output = PoolError::MSG_ERROR_POOL_DOES_NOT_EXISTS;
-			$this->error = PoolError::ERROR_POOL_DOES_NOT_EXISTS;
+			$this->output = $result->output;
+			$this->error = $result->exitcode;
 		}
 	}
 }

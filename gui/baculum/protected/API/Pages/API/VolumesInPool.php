@@ -22,10 +22,26 @@
  
 class VolumesInPool extends BaculumAPIServer {
 	public function get() {
-		$poolid = $this->Request->contains('poolid') ? intval($this->Request['poolid']) : 0;
-		$result = $this->getModule('volume')->getVolumesByPoolId($poolid);
-		$this->output = $result;
-		$this->error = VolumeError::ERROR_NO_ERRORS;
+		$poolid = $this->Request->contains('id') ? intval($this->Request['id']) : 0;
+		$result = $this->getModule('bconsole')->bconsoleCommand(
+			$this->director,
+			array('.pool')
+		);
+		if ($result->exitcode === 0) {
+			array_shift($result->output);
+			$pool = $this->getModule('pool')->getPoolById($poolid);
+			if (is_object($pool) && in_array($pool->name, $result->output)) {
+				$result = $this->getModule('volume')->getVolumesByPoolId($poolid);
+				$this->output = $result;
+				$this->error = VolumeError::ERROR_NO_ERRORS;
+			} else {
+				$this->output = PoolError::MSG_ERROR_POOL_DOES_NOT_EXISTS;
+				$this->error = PoolError::ERROR_POOL_DOES_NOT_EXISTS;
+			}
+		} else {
+			$this->output = $result->output;
+			$this->error = $result->exitcode;
+		}
 	}
 }
 ?>

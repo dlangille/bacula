@@ -23,17 +23,14 @@
 class Pool extends BaculumAPIServer {
 	public function get() {
 		$poolid = $this->Request->contains('id') ? intval($this->Request['id']) : 0;
-		$pool_name = $this->Request->contains('name') ? $this->Request['name'] : '';
-		$pool = null;
-		if ($poolid > 0) {
+		$result = $this->getModule('bconsole')->bconsoleCommand(
+			$this->director,
+			array('.pool')
+		);
+		if ($result->exitcode === 0) {
+			array_shift($result->output);
 			$pool = $this->getModule('pool')->getPoolById($poolid);
-		} elseif (!empty($pool_name)) {
-			$pool = $this->getModule('pool')->getPoolByName($pool_name);
-		}
-		$allowedPools = $this->getModule('bconsole')->bconsoleCommand($this->director, array('.pool'));
-		if ($allowedPools->exitcode === 0) {
-			array_shift($allowedPools->output);
-			if(!is_null($pool) && in_array($pool->name, $allowedPools->output)) {
+			if(!is_null($pool) && in_array($pool->name, $result->output)) {
 				$this->output = $pool;
 				$this->error = PoolError::ERROR_NO_ERRORS;
 			} else {
@@ -41,10 +38,9 @@ class Pool extends BaculumAPIServer {
 				$this->error = PoolError::ERROR_POOL_DOES_NOT_EXISTS;
 			}
 		} else {
-			$this->output = $allowedPools->output;
-			$this->error = $allowedPools->exitcode;
+			$this->output = $result->output;
+			$this->error = $result->exitcode;
 		}
 	}
 }
-
 ?>

@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2017 Kern Sibbald
+ * Copyright (C) 2013-2018 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -24,16 +24,28 @@ class StorageStatus extends BaculumAPIServer {
 	public function get() {
 		$storageid = $this->Request->contains('id') ? intval($this->Request['id']) : 0;
 		$storage = $this->getModule('storage')->getStorageById($storageid);
-		if(is_object($storage)) {
-			$result = $this->getModule('bconsole')->bconsoleCommand(
-				$this->director,
-				array('status', 'storage="' . $storage->name . '"')
-			);
+
+		$result = $this->getModule('bconsole')->bconsoleCommand(
+			$this->director,
+			array('.storage')
+		);
+		if ($result->exitcode === 0) {
+			array_shift($result->output);
+			$storage = $this->getModule('storage')->getStorageById($storageid);
+			if (is_object($storage) && in_array($storage->name, $result->output)) {
+				$result = $this->getModule('bconsole')->bconsoleCommand(
+					$this->director,
+					array('status', 'storage="' . $storage->name . '"')
+				);
+				$this->output = $result->output;
+				$this->error = $result->exitcode;
+			} else {
+				$this->output = StorageError::MSG_ERROR_STORAGE_DOES_NOT_EXISTS;
+				$this->error = StorageError::ERROR_STORAGE_DOES_NOT_EXISTS;
+			}
+		} else {
 			$this->output = $result->output;
 			$this->error = $result->exitcode;
-		} else {
-			$this->output = StorageError::MSG_ERROR_STORAGE_DOES_NOT_EXISTS;
-			$this->error = StorageError::ERROR_STORAGE_DOES_NOT_EXISTS;
 		}
 	}
 }

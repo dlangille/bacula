@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2017 Kern Sibbald
+ * Copyright (C) 2013-2018 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -23,7 +23,7 @@
 class BVFSGetJobids extends BaculumAPIServer {
 
 	public function get() {
-		$jobid = $this->Request->contains('id') ? intval($this->Request['id']) : 0;
+		$jobid = $this->Request->contains('jobid') ? intval($this->Request['jobid']) : 0;
 		if ($jobid > 0) {
 			$cmd = array('.bvfs_get_jobids', 'jobid="' . $jobid . '"');
 			$result = $this->getModule('bconsole')->bconsoleCommand($this->director, $cmd);

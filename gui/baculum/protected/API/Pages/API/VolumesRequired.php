@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2017 Kern Sibbald
+ * Copyright (C) 2013-2018 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -25,9 +25,25 @@ class VolumesRequired extends BaculumAPIServer {
 	public function get() {
 		$jobid = $this->Request->contains('jobid') ? intval($this->Request['jobid']) : 0;
 		$fileid = $this->Request->contains('fileid') ? intval($this->Request['fileid']) : 0;
-		$volumes = $this->getModule('volume')->getVolumesForJob($jobid, $fileid);
-		$this->output = $volumes;
-		$this->error = VolumeError::ERROR_NO_ERRORS;
+		$result = $this->getModule('bconsole')->bconsoleCommand(
+			$this->director,
+			array('.jobs')
+		);
+		if ($result->exitcode === 0) {
+			array_shift($result->output);
+			$job = $this->getModule('job')->getJobById($jobid);
+			if(is_object($job) && in_array($job->name, $result->output)) {
+				$volumes = $this->getModule('volume')->getVolumesForJob($jobid, $fileid);
+				$this->output = $volumes;
+				$this->error = VolumeError::ERROR_NO_ERRORS;
+			} else {
+				$this->output = JobError::MSG_ERROR_JOB_DOES_NOT_EXISTS;
+				$this->error = JobError::ERROR_JOB_DOES_NOT_EXISTS;
+			}
+		} else {
+			$this->output = $result->output;
+			$this->error = $result->exitcode;
+		}
 	}
 }
 ?>

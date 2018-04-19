@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2017 Kern Sibbald
+ * Copyright (C) 2013-2018 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -40,23 +40,33 @@ class JobsRecent extends BaculumAPIServer {
 			$filesetid = is_object($fileset_row) ? $fileset_row->filesetid : null;
 		}
 
-		if (is_int($clientid)) {
-			if (is_int($filesetid)) {
-				$jobs = $this->getModule('job')->getRecentJobids($jobname, $clientid, $filesetid);
-				if(!is_null($jobs)) {
-					$this->output = $jobs;
-					$this->error = JobError::ERROR_NO_ERRORS;
+		if (!is_int($clientid)) {
+			$this->output = ClientError::MSG_ERROR_CLIENT_DOES_NOT_EXISTS;
+			$this->error = ClientError::ERROR_CLIENT_DOES_NOT_EXISTS;
+		} elseif (!is_int($filesetid)) {
+			$this->output = FileSetError::MSG_ERROR_FILESET_DOES_NOT_EXISTS;
+			$this->error = FileSetError::ERROR_FILESET_DOES_NOT_EXISTS;
+		} else {
+			$result = $this->getModule('bconsole')->bconsoleCommand($this->director, array('.jobs'));
+			if ($result->exitcode === 0) {
+				array_shift($result->output);
+				if (in_array($jobname, $result->output)) {
+					$jobs = $this->getModule('job')->getRecentJobids($jobname, $clientid, $filesetid);
+					if (is_array($jobs)) {
+						$this->output = $jobs;
+						$this->error = JobError::ERROR_NO_ERRORS;
+					} else {
+						$this->output = JobError::MSG_ERROR_JOB_DOES_NOT_EXISTS;
+						$this->error = JobError::ERROR_JOB_DOES_NOT_EXISTS;
+					}
 				} else {
 					$this->output = JobError::MSG_ERROR_JOB_DOES_NOT_EXISTS;
 					$this->error = JobError::ERROR_JOB_DOES_NOT_EXISTS;
 				}
 			} else {
-				$this->output = FileSetError::MSG_ERROR_FILESET_DOES_NOT_EXISTS;
-				$this->error = FileSetError::ERROR_FILESET_DOES_NOT_EXISTS;
+				$this->output = $result->output;
+				$this->error = $result->exitcode;
 			}
-		} else {
-			$this->output = ClientError::MSG_ERROR_CLIENT_DOES_NOT_EXISTS;
-			$this->error = ClientError::ERROR_CLIENT_DOES_NOT_EXISTS;
 		}
 	}
 }

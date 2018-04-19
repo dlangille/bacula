@@ -23,17 +23,13 @@
 class FileSet extends BaculumAPIServer {
 	public function get() {
 		$filesetid = $this->Request->contains('id') ? intval($this->Request['id']) : 0;
-		$fileset_name = $this->Request->contains('name') ? $this->Request['name'] : '';
-		$fileset = null;
-		if ($filesetid > 0) {
-			$fileset = $this->getModule('fileset')->getFileSetById($filesetid);
-		} elseif (!empty($fileset_name)) {
-			// Not advised for many directors (filesets per director)
-			$fileset = $this->getModule('fileset')->getFileSetByName($fileset_name);
-		}
-		$result = $this->getModule('bconsole')->bconsoleCommand($this->director, array('.fileset'));
+		$result = $this->getModule('bconsole')->bconsoleCommand(
+			$this->director,
+			array('.fileset')
+		);
 		if ($result->exitcode === 0) {
 			array_shift($result->output);
+			$fileset = $this->getModule('fileset')->getFileSetById($filesetid);
 			if(!is_null($fileset) && in_array($fileset->fileset, $result->output)) {
 				$this->output = $fileset;
 				$this->error = FileSetError::ERROR_NO_ERRORS;

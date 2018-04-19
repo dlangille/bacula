@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2017 Kern Sibbald
+ * Copyright (C) 2013-2018 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -25,8 +25,7 @@ class JobCancel extends BaculumAPIServer {
 	public function set($id, $params) {
 		$jobid = intval($id);
 		$job = $this->getModule('job')->getJobById($jobid);
-
-		if(is_object($job)) {
+		if (is_object($job)) {
 			$cancel = $this->getModule('bconsole')->bconsoleCommand(
 				$this->director,
 				array('cancel', 'jobid="' . $job->jobid . '"')

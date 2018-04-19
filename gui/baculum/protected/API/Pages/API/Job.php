@@ -23,11 +23,14 @@
 class Job extends BaculumAPIServer {
 	public function get() {
 		$jobid = $this->Request->contains('id') ? intval($this->Request['id']) : 0;
-		$job = $this->getModule('job')->getJobById($jobid);
-		$result = $this->getModule('bconsole')->bconsoleCommand($this->director, array('.jobs'));
+		$result = $this->getModule('bconsole')->bconsoleCommand(
+			$this->director,
+			array('.jobs')
+		);
 		if ($result->exitcode === 0) {
 			array_shift($result->output);
-			if(!is_null($job) && in_array($job->name, $result->output)) {
+			$job = $this->getModule('job')->getJobById($jobid);
+			if (is_object($job) && in_array($job->name, $result->output)) {
 				$this->output = $job;
 				$this->error = JobError::ERROR_NO_ERRORS;
 			} else {
@@ -42,17 +45,27 @@ class Job extends BaculumAPIServer {
 
 	public function remove($id) {
 		$jobid = intval($id);
-		$job = $this->getModule('job')->getJobById($jobid);
-		if(!is_null($job)) {
-			$delete = $this->getModule('bconsole')->bconsoleCommand(
-				$this->director,
-				array('delete', 'jobid="' . $job->jobid . '"')
-			);
-			$this->output = $delete->output;
-			$this->error = (integer)$delete->exitcode;
+		$result = $this->getModule('bconsole')->bconsoleCommand(
+			$this->director,
+			array('.jobs')
+		);
+		if ($result->exitcode === 0) {
+			array_shift($result->output);
+			$job = $this->getModule('job')->getJobById($jobid);
+			if(is_object($job) && in_array($job->name, $result->output)) {
+				$result = $this->getModule('bconsole')->bconsoleCommand(
+					$this->director,
+					array('delete', 'jobid="' . $job->jobid . '"')
+				);
+				$this->output = $result->output;
+				$this->error = $result->exitcode;
+			} else {
+				$this->output = JobError::MSG_ERROR_JOB_DOES_NOT_EXISTS;
+				$this->error = JobError::ERROR_JOB_DOES_NOT_EXISTS;
+			}
 		} else {
-			$this->output = JobError::MSG_ERROR_JOB_DOES_NOT_EXISTS;
-			$this->error = JobError::ERROR_JOB_DOES_NOT_EXISTS;
+			$this->output = $result->output;
+			$this->error = $result->exitcode;
 		}
 	}
 }

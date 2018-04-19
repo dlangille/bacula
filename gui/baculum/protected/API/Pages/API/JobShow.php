@@ -22,40 +22,28 @@
 
 class JobShow extends BaculumAPIServer {
 	public function get() {
-		$jobname = null;
-		$error = false;
-		$error_obj = null;
-
-		if ($this->Request->contains('id')) {
-			$jobid = intval($this->Request['id']);
+		$jobid = $this->Request->contains('id') ? intval($this->Request['id']) : 0;
+		$result = $this->getModule('bconsole')->bconsoleCommand(
+			$this->director,
+			array('.jobs')
+		);
+		if ($result->exitcode === 0) {
+			array_shift($result->output);
 			$job = $this->getModule('job')->getJobById($jobid);
-			$jobname = property_exists($job, 'name') ? $job->name : null;
-		} elseif ($this->Request->contains('name')) {
-			$result = $this->getModule('bconsole')->bconsoleCommand($this->director, array('.jobs'));
-			if ($result->exitcode === 0) {
-				array_shift($result->output);
-				$jobname = in_array($this->Request['name'], $result->output) ? $this->Request['name'] : null;
-			} else {
-				$error_obj = $result;
-				$error = true;
-			}
-		}
-
-		if ($error === false) {
-			if(is_string($jobname)) {
-				$job_show = $this->getModule('bconsole')->bconsoleCommand(
+			if (is_object($job) && in_array($job->name, $result->output)) {
+				$result = $this->getModule('bconsole')->bconsoleCommand(
 					$this->director,
-					array('show', 'job="' . $jobname . '"')
+					array('show', 'job="' . $job->name . '"')
 				);
-				$this->output = $job_show->output;
-				$this->error = $job_show->exitcode;
+				$this->output = $result->output;
+				$this->error = $result->exitcode;
 			} else {
 				$this->output = JobError::MSG_ERROR_JOB_DOES_NOT_EXISTS;
 				$this->error = JobError::ERROR_JOB_DOES_NOT_EXISTS;
 			}
 		} else {
-			$this->output = $error_obj->output;
-			$this->error = $error_obj->exitcode;
+			$this->output = $result->output;
+			$this->error = $result->exitcode;
 		}
 	}
 }

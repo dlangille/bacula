@@ -27,14 +27,19 @@ class Pools extends BaculumAPIServer {
 		$result = $this->getModule('bconsole')->bconsoleCommand($this->director, array('.pool'));
 		if ($result->exitcode === 0) {
 			array_shift($result->output);
-			$pools_output = array();
-			foreach($pools as $pool) {
-				if(in_array($pool->name, $result->output)) {
-					$pools_output[] = $pool;
+			if (is_array($pools) && count($pools) > 0) {
+				$pools_output = array();
+				foreach($pools as $pool) {
+					if(in_array($pool->name, $result->output)) {
+						$pools_output[] = $pool;
+					}
 				}
+				$this->output = $pools_output;
+				$this->error = PoolError::ERROR_NO_ERRORS;
+			} else {
+				$this->output = PoolError::MSG_ERROR_POOL_DOES_NOT_EXISTS;
+				$this->error = PoolError::ERROR_POOL_DOES_NOT_EXISTS;
 			}
-			$this->output = $pools_output;
-			$this->error = PoolError::ERROR_NO_ERRORS;
 		} else {
 			$this->output = $result->output;
 			$this->error = $result->exitcode;

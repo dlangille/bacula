@@ -23,17 +23,14 @@
 class Storage extends BaculumAPIServer {
 	public function get() {
 		$storageid = $this->Request->contains('id') ? intval($this->Request['id']) : 0;
-		$storage_name = $this->Request->contains('name') ? $this->Request['name'] : '';
 		$storage = null;
 		if ($storageid > 0) {
 			$storage = $this->getModule('storage')->getStorageById($storageid);
-		} elseif (!empty($storage_name)) {
-			$storage = $this->getModule('storage')->getStorageByName($storage_name);
 		}
 		$result = $this->getModule('bconsole')->bconsoleCommand($this->director, array('.storage'));
 		if ($result->exitcode === 0) {
 			array_shift($result->output);
-			if(!is_null($storage) && in_array($storage->name, $result->output)) {
+			if(is_object($storage) && in_array($storage->name, $result->output)) {
 				$this->output = $storage;
 				$this->error =  StorageError::ERROR_NO_ERRORS;
 			} else {

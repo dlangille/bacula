@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2017 Kern Sibbald
+ * Copyright (C) 2013-2018 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -23,7 +23,40 @@
 class PoolsShow extends BaculumAPIServer {
 
 	public function get() {
-		$result = $this->getModule('bconsole')->bconsoleCommand($this->director, array('show', 'pools'));
+		$result = $this->getModule('bconsole')->bconsoleCommand(
+			$this->director,
+			array('.pool')
+		);
+
+		$pool = null;
+		if ($result->exitcode === 0) {
+			array_shift($result->output);
+			if ($this->Request->contains('name')) {
+				if (in_array($this->Request['name'], $result->output)) {
+					$pool = $this->Request['name'];
+				} else {
+					$this->output = PoolError::MSG_ERROR_POOL_DOES_NOT_EXISTS;
+					$this->error = PoolError::ERROR_POOL_DOES_NOT_EXISTS;
+					return;
+				}
+			}
+		} else {
+			$this->output = $result->output;
+			$this->error = $result->exitcode;
+			return;
+		}
+
+		$cmd = array('show');
+		if (is_string($pool)) {
+			$cmd[] = 'pool="' . $pool . '"';
+		} else {
+			$cmd[] = 'pools';
+		}
+
+		$result = $this->getModule('bconsole')->bconsoleCommand(
+			$this->director,
+			$cmd
+		);
 		$this->output = $result->output;
 		$this->error = $result->exitcode;
 	}

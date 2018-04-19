@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2017 Kern Sibbald
+ * Copyright (C) 2013-2018 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -22,19 +22,31 @@
  
 class BVFSLsDirs extends BaculumAPIServer {
 
+	private $jobids;
+	private $path;
+
 	public function set($id, $params) {
+		// TODO: Remove when finished support for old API
+		$misc = $this->getModule('misc');
+		$this->jobids = property_exists($params, 'jobids') && $misc->isValidIdsList($params->jobids) ? $params->jobids : null;
+		$this->path = property_exists($params, 'path') && $misc->isValidPath($params->path) ? $params->path : null;
+		$this->get();
+	}
+
+	public function get() {
+		$misc = $this->getModule('misc');
 		$limit = $this->Request->contains('limit') ? intval($this->Request['limit']) : 0;
 		$offset = $this->Request->contains('offset') ? intval($this->Request['offset']) : 0;
-		$jobids = null;
-		if (property_exists($params, 'jobids') && $this->getModule('misc')->isValidIdsList($params->jobids)) {
-			$jobids = $params->jobids;
+		$jobids = $this->Request->contains('jobids') && $misc->isValidIdsList($this->Request['jobids']) ? $this->Request['jobids'] : null;
+		$path = $this->Request->contains('path') && $misc->isValidPath($this->Request['path']) ? $this->Request['path'] : null;
+		if (is_null($jobids) && !is_null($this->jobids)) {
+			$jobids = $this->jobids;
 		}
 
-		$path = null;
-		if (property_exists($params, 'path') && $this->getModule('misc')->isValidPath($params->path)) {
-			$path = $params->path;
+		if (is_null($path) && !is_null($this->path)) {
+			$path = $this->path;
 		}
-		
+
 		if (is_null($jobids)) {
 			$this->output = BVFSError::MSG_ERROR_INVALID_JOBID_LIST;
 			$this->error = BVFSError::ERROR_INVALID_JOBID_LIST;

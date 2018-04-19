@@ -25,21 +25,33 @@ class StorageRelease extends BaculumAPIServer {
 		$storageid = $this->Request->contains('id') ? intval($this->Request['id']) : 0;
 		$drive = $this->Request->contains('drive') ? intval($this->Request['drive']) : 0;
 		$device = $this->Request->contains('device') ? $this->Request['device'] : null;
-		$storage = $this->getModule('storage')->getStorageById($storageid);
-		if (is_object($storage)) {
-			$result = $this->getModule('bconsole')->bconsoleCommand(
-				$this->director,
-				array(
-					'release',
-					'storage="' . $storage->name . '"',
-					(is_string($device) ? 'device="' . $device . '" drive=0 slot=0' : 'drive=' . $drive . ' slot=0')
-				)
-			);
+
+		$result = $this->getModule('bconsole')->bconsoleCommand(
+			$this->director,
+			array('.storage')
+		);
+
+		if ($result->exitcode === 0) {
+			array_shift($result->output);
+			$storage = $this->getModule('storage')->getStorageById($storageid);
+			if (is_object($storage) && in_array($storage->name, $result->output)) {
+				$result = $this->getModule('bconsole')->bconsoleCommand(
+					$this->director,
+					array(
+						'release',
+						'storage="' . $storage->name . '"',
+						(is_string($device) ? 'device="' . $device . '" drive=0 slot=0' : 'drive=' . $drive . ' slot=0')
+					)
+				);
+				$this->output = $result->output;
+				$this->error = $result->exitcode;
+			} else {
+				$this->output = StorageError::MSG_ERROR_STORAGE_DOES_NOT_EXISTS;
+				$this->error = StorageError::ERROR_STORAGE_DOES_NOT_EXISTS;
+			}
+		} else {
 			$this->output = $result->output;
 			$this->error = $result->exitcode;
-		} else {
-			$this->output = StorageError::MSG_ERROR_STORAGE_DOES_NOT_EXISTS;
-			$this->error = StorageError::ERROR_STORAGE_DOES_NOT_EXISTS;
 		}
 	}
 }

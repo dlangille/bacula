@@ -7,6 +7,85 @@
 	<url ServiceParameter="OAuth2.Authorize" pattern="api/auth/" />
 	<url ServiceParameter="OAuth2.RequestToken" pattern="api/token/" />
 
+
+	<!-- #### NEW API version 1 #### -->
+	<!-- general endpoint -->
+	<url ServiceParameter="API.Welcome" pattern="api/v1/welcome/" />
+	<!-- bconsole endpoints -->
+	<url ServiceParameter="API.ConsoleCommand" pattern="api/v1/console/" />
+	<!-- database endpoints -->
+	<url ServiceParameter="API.Catalog" pattern="api/v1/catalog/" />
+	<url ServiceParameter="API.DbSize" pattern="api/v1/dbsize/" />
+	<!-- director endpoints -->
+	<url ServiceParameter="API.Directors" pattern="api/v1/directors/" />
+	<!-- clients (file daemons) endpoints -->
+	<url ServiceParameter="API.Clients" pattern="api/v1/clients/" />
+	<url ServiceParameter="API.Client" pattern="api/v1/clients/{id}/" parameters.id="\d+" />
+	<url ServiceParameter="API.ClientsShow" pattern="api/v1/clients/show/" />
+	<url ServiceParameter="API.ClientShow" pattern="api/v1/clients/{id}/show/" parameters.id="\d+" />
+	<url ServiceParameter="API.ClientStatus" pattern="api/v1/clients/{id}/status/" parameters.id="\d+" />
+	<url ServiceParameter="API.JobsForClient" pattern="api/v1/clients/{id}/jobs/" parameters.id="\d+" />
+	<!-- storages (storage daemons) endpoints -->
+	<url ServiceParameter="API.Storages" pattern="api/v1/storages/" />
+	<url ServiceParameter="API.Storage" pattern="api/v1/storages/{id}/" parameters.id="\d+" />
+	<url ServiceParameter="API.StoragesShow" pattern="api/v1/storages/show/" />
+	<url ServiceParameter="API.StorageShow" pattern="api/v1/storages/{id}/show/" parameters.id="\d+" />
+	<url ServiceParameter="API.StorageStatus" pattern="api/v1/storages/{id}/status/" parameters.id="\d+" />
+	<url ServiceParameter="API.StorageMount" pattern="api/v1/storages/{id}/mount/" parameters.id="\d+" />
+	<url ServiceParameter="API.StorageUmount" pattern="api/v1/storages/{id}/umount/" parameters.id="\d+" />
+	<url ServiceParameter="API.StorageRelease" pattern="api/v1/storages/{id}/release/" parameters.id="\d+" />
+	<!-- volumes (media) endpoints-->
+	<url ServiceParameter="API.Volumes" pattern="api/v1/volumes/" />
+	<url ServiceParameter="API.Volume" pattern="api/v1/volumes/{id}/" parameters.id="\d+" />
+	<url ServiceParameter="API.VolumePrune" pattern="api/v1/volumes/{id}/prune/" parameters.id="\d+" />
+	<url ServiceParameter="API.VolumePurge" pattern="api/v1/volumes/{id}/purge/" parameters.id="\d+" />
+	<url ServiceParameter="API.VolumesRequired" pattern="api/v1/volumes/required/{jobid}/{fileid}/" parameters.jobid="\d+" parameters.fileid="\d+" />
+	<url ServiceParameter="API.JobsOnVolume" pattern="api/v1/volumes/{id}/jobs/" parameters.id="\d+" />
+	<!-- pools endpoints -->
+	<url ServiceParameter="API.Pools" pattern="api/v1/pools/" />
+	<url ServiceParameter="API.Pool" pattern="api/v1/pools/{id}/" parameters.id="\d+" />
+	<url ServiceParameter="API.VolumesInPool" pattern="api/v1/pools/{id}/volumes/" parameters.id="\d+" />
+	<url ServiceParameter="API.PoolUpdate" pattern="api/v1/pools/{id}/update/" parameters.id="\d+" />
+	<url ServiceParameter="API.PoolUpdateVolumes" pattern="api/v1/pools/{id}/update/volumes/" parameters.id="\d+" />
+	<url ServiceParameter="API.PoolsShow" pattern="api/v1/pools/show/" />
+	<url ServiceParameter="API.PoolShow" pattern="api/v1/pools/{id}/show/" parameters.id="\d+" />
+	<!-- jobs endpoints-->
+	<url ServiceParameter="API.Jobs" pattern="api/v1/jobs/" />
+	<url ServiceParameter="API.Job" pattern="api/v1/jobs/{id}/" parameters.id="\d+" />
+	<url ServiceParameter="API.JobResNames" pattern="api/v1/jobs/resnames/" />
+	<url ServiceParameter="API.JobsShow" pattern="api/v1/jobs/show/" />
+	<url ServiceParameter="API.JobShow" pattern="api/v1/jobs/{id}/show/" parameters.id="\d+" />
+	<url ServiceParameter="API.JobsRecent" pattern="api/v1/jobs/recent/{name}/" parameters.name="[a-zA-Z0-9:.\-_ ]+" />
+	<url ServiceParameter="API.JobEstimate" pattern="api/v1/jobs/estimate/" />
+	<url ServiceParameter="API.JobRun" pattern="api/v1/jobs/run/" />
+	<url ServiceParameter="API.JobCancel" pattern="api/v1/jobs/{id}/cancel/" parameters.id="\d+"/>
+	<url ServiceParameter="API.JobTotals" pattern="api/v1/jobs/totals/" />
+	<url ServiceParameter="API.RestoreRun" pattern="api/v1/jobs/restore/" />
+	<!-- bvfs endpoints-->
+	<url ServiceParameter="API.BVFSUpdate" pattern="api/v1/bvfs/update/" />
+	<url ServiceParameter="API.BVFSLsDirs" pattern="api/v1/bvfs/lsdirs/" />
+	<url ServiceParameter="API.BVFSLsFiles" pattern="api/v1/bvfs/lsfiles/" />
+	<url ServiceParameter="API.BVFSVersions" pattern="api/v1/bvfs/versions/" />
+	<url ServiceParameter="API.BVFSGetJobids" pattern="api/v1/bvfs/getjobids/" />
+	<url ServiceParameter="API.BVFSRestore" pattern="api/v1/bvfs/restore/" />
+	<url ServiceParameter="API.BVFSClearCache" pattern="api/v1/bvfs/clear/" />
+	<!-- joblog endpoints -->
+	<url ServiceParameter="API.JobLog" pattern="api/v1/joblog/{id}/" parameters.id="\d+" />
+	<!-- fileset endpoints -->
+	<url ServiceParameter="API.FileSets" pattern="api/v1/filesets/" />
+	<url ServiceParameter="API.FileSet" pattern="api/v1/filesets/{id}/" parameters.id="\d+" />
+	<url ServiceParameter="API.FileSetResNames" pattern="api/v1/filesets/resnames/" />
+	<!-- schedule endpoints -->
+	<url ServiceParameter="API.Schedules" pattern="api/v1/schedules/resnames/" />
+	<!-- Bacula config module endpoints -->
+	<url ServiceParameter="API.Config" pattern="api/v1/config/" />
+	<url ServiceParameter="API.Config" pattern="api/v1/config/{component_type}/" parameters.component_type="[a-z]+" />
+	<url ServiceParameter="API.Config" pattern="api/v1/config/{component_type}/{resource_type}/" parameters.component_type="[a-z]+" parameters.resource_type="[a-zA-Z]+" />
+	<url ServiceParameter="API.Config" pattern="api/v1/config/{component_type}/{resource_type}/{resource_name}/" parameters.component_type="[a-z]+" parameters.resource_type="[a-zA-Z]+" parameters.resource_name="[a-zA-Z0-9:.\-_ ]+" />
+
+
+
+	<!-- #### OLD API (deprecated) #### -->
 	<!-- general endpoint -->
 	<url ServiceParameter="API.Welcome" pattern="api/welcome/" />
 	<!-- bconsole endpoints -->
@@ -19,7 +98,6 @@
 	<!-- clients (file daemons) endpoints -->
 	<url ServiceParameter="API.Clients" pattern="api/clients/" />
 	<url ServiceParameter="API.Client" pattern="api/clients/{id}/" parameters.id="\d+" />
-	<url ServiceParameter="API.Client" pattern="api/clients/{name}/" parameters.name="[a-zA-Z0-9:.\-_ ]+" />
 	<url ServiceParameter="API.Clients" pattern="api/clients/limit/{limit}/" parameters.limit="\d+" />
 	<url ServiceParameter="API.ClientsShow" pattern="api/clients/show/" />
 	<url ServiceParameter="API.ClientShow" pattern="api/clients/show/{id}/" parameters.id="\d+" />
@@ -60,10 +138,10 @@
 	<!-- jobs endpoints-->
 	<url ServiceParameter="API.Jobs" pattern="api/jobs/" />
 	<url ServiceParameter="API.Jobs" pattern="api/jobs/jobstatus/{jobstatus}/" parameters.jobstatus="[a-zA-Z]+" />
-	<url ServiceParameter="API.JobTasks" pattern="api/jobs/tasks/" />
-	<url ServiceParameter="API.JobTasks" pattern="api/jobs/tasks/type/{type}" parameters.type="[a-zA-Z]" />
-	<url ServiceParameter="API.JobTasks" pattern="api/jobs/tasks/type/{type}/limit/{limit}/" parameters.type="[a-zA-Z]" parameters.limit="\d+" />
-	<url ServiceParameter="API.JobTasks" pattern="api/jobs/tasks/limit/{limit}/" parameters.limit="\d+" />
+	<url ServiceParameter="API.JobResNames" pattern="api/jobs/tasks/" />
+	<url ServiceParameter="API.JobResNames" pattern="api/jobs/tasks/type/{type}" parameters.type="[a-zA-Z]" />
+	<url ServiceParameter="API.JobResNames" pattern="api/jobs/tasks/type/{type}/limit/{limit}/" parameters.type="[a-zA-Z]" parameters.limit="\d+" />
+	<url ServiceParameter="API.JobResNames" pattern="api/jobs/tasks/limit/{limit}/" parameters.limit="\d+" />
 	<url ServiceParameter="API.Job" pattern="api/jobs/{id}/" parameters.id="\d+" />
 	<url ServiceParameter="API.Jobs" pattern="api/jobs/limit/{limit}/" parameters.limit="\d+" />
 	<url ServiceParameter="API.JobsRecent" pattern="api/jobs/recent/{name}/client/{client}/filesetid/{filesetid}/" parameters.name="[a-zA-Z0-9:.\-_ ]+" parameters.client="[a-zA-Z0-9:.\-_ ]+" parameters.filesetid="\d+" />
@@ -85,15 +163,15 @@
 	<url ServiceParameter="API.BVFSLsFiles" pattern="api/bvfs/lsfiles/limit/{limit}/" parameters.limit="\d+" />
 	<url ServiceParameter="API.BVFSLsFiles" pattern="api/bvfs/lsfiles/limit/{limit}/{offset}/" parameters.limit="\d+" parameters.offset="\d+" />
 	<url ServiceParameter="API.BVFSVersions" pattern="api/bvfs/versions/{client}/{jobid}/{pathid}/{filenameid}/" parameters.client="[a-zA-Z0-9:.\-_ ]+" parameters.jobid="\d+" parameters.pathid="\d+" parameters.filenameid="\d+" />
-	<url ServiceParameter="API.BVFSGetJobids" pattern="api/bvfs/getjobids/{id}/" parameters.id="[\d\,]+" />
+	<url ServiceParameter="API.BVFSGetJobids" pattern="api/bvfs/getjobids/{jobid}/" parameters.jobid="[\d\,]+" />
 	<url ServiceParameter="API.BVFSRestore" pattern="api/bvfs/restore/" />
 	<url ServiceParameter="API.BVFSClearCache" pattern="api/bvfs/clear/" />
 	<!-- joblog endpoints -->
 	<url ServiceParameter="API.JobLog" pattern="api/joblog/{id}/" parameters.id="\d+" />
 	<!-- fileset endpoints -->
-	<url ServiceParameter="API.FileSets" pattern="api/filesets/" />
+	<url ServiceParameter="API.FileSetResNames" pattern="api/filesets/" />
 	<url ServiceParameter="API.FileSet" pattern="api/filesets/{id}/" parameters.id="\d+" />
-	<url ServiceParameter="API.FileSetsInfo" pattern="api/filesets/info/" />
+	<url ServiceParameter="API.FileSets" pattern="api/filesets/info/" />
 	<url ServiceParameter="API.FileSet" pattern="api/filesets/{name}/" parameters.name="[a-zA-Z0-9:.\-_ ]+" />
 	<!-- schedule endpoints -->
 	<url ServiceParameter="API.Schedules" pattern="api/schedules/" />

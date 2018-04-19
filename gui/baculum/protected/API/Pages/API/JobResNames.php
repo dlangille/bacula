@@ -20,11 +20,12 @@
  * Bacula(R) is a registered trademark of Kern Sibbald.
  */
  
-class JobTasks extends BaculumAPIServer {
+class JobResNames extends BaculumAPIServer {
 	public function get() {
 		$limit = $this->Request->contains('limit') ? intval($this->Request['limit']) : 0;
 		$jobs_cmd = array('.jobs');
-		if ($this->Request->contains('type') && array_key_exists($this->Request['type'], $this->getModule('misc')->job_types)) {
+		$types = $this->getModule('misc')->job_types;
+		if ($this->Request->contains('type') && key_exists($this->Request['type'], $types)) {
 			array_push($jobs_cmd, 'type="' . $this->Request['type']. '"');
 		}
 
@@ -37,35 +38,21 @@ class JobTasks extends BaculumAPIServer {
 		$jobs = array();
 		$error = false;
 		$error_obj = null;
-		for($i = 0; $i < count($directors->output); $i++) {
+		for ($i = 0; $i < count($directors->output); $i++) {
 			$job_list = $this->getModule('bconsole')->bconsoleCommand($directors->output[$i], $jobs_cmd);
 			if ($job_list->exitcode != 0) {
 				$error_obj = $job_list;
 				$error = true;
 				break;
 			}
-			$jobs_show = $this->getModule('bconsole')->bconsoleCommand($directors->output[$i], array('show', 'jobs'));
-			if ($jobs_show->exitcode != 0) {
-				$error_obj = $jobs_show;
-				$error = true;
-				break;
-			}
+			// shift command
+			array_shift($job_list->output);
 			$jobs[$directors->output[$i]] = array();
-			for($j = 0; $j < count($job_list->output); $j++) {
-				/**
-				 * Checking by "show job" command is ugly way to be sure that is reading jobname but not some 
-				 * random output (eg. "You have messages." or debugging).
-				 * For now I did not find nothing better for be sure that output contains job.
-				 * @NOTE, now is used "gui on" so it is not necessarly @TODO: Rework it
-				 */
-				for($k = 0; $k < count($jobs_show->output); $k++) {
-					if(preg_match('/^Job: name=' . $job_list->output[$j] . '.*/', $jobs_show->output[$k]) === 1) {
-						$jobs[$directors->output[$i]][] = $job_list->output[$j];
-						break;
-					}
-				}
+			for ($j = 0; $j < count($job_list->output); $j++) {
+				$jobs[$directors->output[$i]][] = $job_list->output[$j];
+
 				// limit per director, not for entire elements
-				if($limit > 0 && count($jobs[$directors->output[$i]]) === $limit) {
+				if ($limit > 0 && count($jobs[$directors->output[$i]]) === $limit) {
 					break;
 				}
 			}

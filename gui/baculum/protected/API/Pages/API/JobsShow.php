@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2017 Kern Sibbald
+ * Copyright (C) 2013-2018 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -23,7 +23,37 @@
 class JobsShow extends BaculumAPIServer {
 
 	public function get() {
-		$result = $this->getModule('bconsole')->bconsoleCommand($this->director, array('show', 'jobs'));
+		$result = $this->getModule('bconsole')->bconsoleCommand(
+			$this->director,
+			array('.jobs')
+		);
+		$job = null;
+		if ($result->exitcode === 0) {
+			array_shift($result->output);
+			if ($this->Request->contains('name')) {
+				if (in_array($this->Request['name'], $result->output)) {
+					$job = $this->Request['name'];
+				} else {
+					$this->output = JobError::MSG_ERROR_JOB_DOES_NOT_EXISTS;
+					$this->error = JobError::ERROR_JOB_DOES_NOT_EXISTS;
+					return;
+				}
+			}
+		} else {
+			$this->output = $result->output;
+			$this->error = $result->exitcode;
+			return;
+		}
+		$cmd = array('show');
+		if (is_string($job)) {
+			$cmd[] = 'job="' . $job . '"';
+		} else {
+			$cmd[] = 'jobs';
+		}
+		$result = $this->getModule('bconsole')->bconsoleCommand(
+			$this->director,
+			$cmd
+		);
 		$this->output = $result->output;
 		$this->error = $result->exitcode;
 	}

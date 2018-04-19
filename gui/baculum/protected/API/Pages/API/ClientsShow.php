@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2017 Kern Sibbald
+ * Copyright (C) 2013-2018 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -25,7 +25,34 @@ class ClientsShow extends BaculumAPIServer {
 	public function get() {
 		$result = $this->getModule('bconsole')->bconsoleCommand(
 			$this->director,
-			array('show', 'clients')
+			array('.client')
+		);
+		$client = null;
+		if ($result->exitcode === 0) {
+			array_shift($result->output);
+			if ($this->Request->contains('name')) {
+				if (in_array($this->Request['name'], $result->output)) {
+					$client = $this->Request['name'];
+				} else {
+					$this->output = ClientError::MSG_ERROR_CLIENT_DOES_NOT_EXISTS;
+					$this->error = ClientError::ERROR_CLIENT_DOES_NOT_EXISTS;
+					return;
+				}
+			}
+		} else {
+			$this->output = $result->output;
+			$this->error = $result->exitcode;
+			return;
+		}
+		$cmd = array('show');
+		if (is_string($client)) {
+			$cmd[] = 'client="' . $client . '"';
+		} else {
+			$cmd[] = 'clients';
+		}
+		$result = $this->getModule('bconsole')->bconsoleCommand(
+			$this->director,
+			$cmd
 		);
 		$this->output = $result->output;
 		$this->error = $result->exitcode;

@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2016 Kern Sibbald
+ * Copyright (C) 2013-2018 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -25,8 +25,12 @@ Prado::using('Application.API.Class.FileSetRecord');
 
 class FileSetManager extends APIModule {
 
-	public function getFileSets() {
-		return FileSetRecord::finder()->findAll();
+	public function getFileSets($limit) {
+		$criteria = new TActiveRecordCriteria;
+		if(is_int($limit) && $limit > 0) {
+			$criteria->Limit = $limit;
+		}
+		return FileSetRecord::finder()->findAll($criteria);
 	}
 
 	public function getFileSetById($id) {

@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2017 Kern Sibbald
+ * Copyright (C) 2013-2018 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -47,7 +47,7 @@ class JobEstimate extends BaculumAPIServer {
 		} elseif (property_exists($params, 'client') && $this->getModule('misc')->isValidName($params->client)) {
 			$client = $params->client;
 		}
-		$accurate = null;
+		$accurate = 'no';
 		if (property_exists($params, 'accurate')) {
 			$accurate_job = intval($params->accurate);
 			$accurate = $accurate_job === 1 ? 'yes' : 'no';
@@ -57,9 +57,23 @@ class JobEstimate extends BaculumAPIServer {
 			$this->output = JobError::MSG_ERROR_JOB_DOES_NOT_EXISTS;
 			$this->error = JobError::ERROR_JOB_DOES_NOT_EXISTS;
 			return;
+		} else {
+			$result = $this->getModule('bconsole')->bconsoleCommand($this->director, array('.jobs'));
+			if ($result->exitcode === 0) {
+				array_shift($result->output);
+				if (!in_array($job, $result->output)) {
+					$this->output = JobError::MSG_ERROR_JOB_DOES_NOT_EXISTS;
+					$this->error = JobError::ERROR_JOB_DOES_NOT_EXISTS;
+					return;
+				}
+			} else {
+				$this->output = $result->output;
+				$this->error = $result->exitcode;
+				return;
+			}
 		}
 
-		$is_valid_level = $this->getModule('misc')->isValidJobLevel($params->level);
+		$is_valid_level = $this->getModule('misc')->isValidJobLevel($level);
 		if (!$is_valid_level) {
 			$this->output = JobError::MSG_ERROR_INVALID_JOBLEVEL;
 			$this->error = JobError::ERROR_INVALID_JOBLEVEL;

@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2016 Kern Sibbald
+ * Copyright (C) 2013-2018 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -61,26 +61,26 @@ class AuthorizationError extends GenericError {
 class ClientError extends GenericError {
 	const ERROR_CLIENT_DOES_NOT_EXISTS = 10;
 
-	const MSG_ERROR_CLIENT_DOES_NOT_EXISTS = 'Client with inputted clientid does not exist.';
+	const MSG_ERROR_CLIENT_DOES_NOT_EXISTS = 'Client does not exist.';
 }
 
 class StorageError extends GenericError {
 	const ERROR_STORAGE_DOES_NOT_EXISTS = 20;
 
-	const MSG_ERROR_STORAGE_DOES_NOT_EXISTS = 'Storage with inputted storageid does not exist.';
+	const MSG_ERROR_STORAGE_DOES_NOT_EXISTS = 'Storage does not exist.';
 }
 
 class VolumeError extends GenericError {
 	const ERROR_VOLUME_DOES_NOT_EXISTS = 30;
 
-	const MSG_ERROR_VOLUME_DOES_NOT_EXISTS = 'Volume with inputted mediaid does not exist.';
+	const MSG_ERROR_VOLUME_DOES_NOT_EXISTS = 'Volume does not exist.';
 }
 
 class PoolError extends GenericError {
 	const ERROR_POOL_DOES_NOT_EXISTS = 40;
 	const ERROR_NO_VOLUMES_IN_POOL_TO_UPDATE = 41;
 
-	const MSG_ERROR_POOL_DOES_NOT_EXISTS = 'Pool with inputted poolid does not exist.';
+	const MSG_ERROR_POOL_DOES_NOT_EXISTS = 'Pool does not exist.';
 	const MSG_ERROR_NO_VOLUMES_IN_POOL_TO_UPDATE= 'Pool with inputted poolid does not contain any volume to update.';
 }
 
@@ -95,7 +95,7 @@ class JobError extends GenericError {
 	const ERROR_INVALID_WHERE_OPTION = 57;
 	const ERROR_INVALID_REPLACE_OPTION = 58;
 
-	const MSG_ERROR_JOB_DOES_NOT_EXISTS = 'Job with inputted jobid does not exist.';
+	const MSG_ERROR_JOB_DOES_NOT_EXISTS = 'Job does not exist.';
 	const MSG_ERROR_INVALID_JOBLEVEL = 'Inputted job level is invalid.';
 	const MSG_ERROR_FILESET_DOES_NOT_EXISTS = 'FileSet resource does not exist.';
 	const MSG_ERROR_CLIENT_DOES_NOT_EXISTS = 'Client does not exist.';
@@ -109,7 +109,7 @@ class JobError extends GenericError {
 class FileSetError extends GenericError {
 	const ERROR_FILESET_DOES_NOT_EXISTS = 60;
 
-	const MSG_ERROR_FILESET_DOES_NOT_EXISTS = 'FileSet with inputted filesetid does not exist.';
+	const MSG_ERROR_FILESET_DOES_NOT_EXISTS = 'FileSet does not exist.';
 }
 
 class BVFSError extends GenericError {
@@ -120,6 +120,7 @@ class BVFSError extends GenericError {
 	const ERROR_INVALID_FILEINDEX_LIST = 75;
 	const ERROR_INVALID_DIRID_LIST = 76;
 	const ERROR_INVALID_CLIENT = 77;
+	const ERROR_INVALID_JOBID = 78;
 
 	const MSG_ERROR_INVALID_RPATH = 'Inputted path for restore is invalid. Proper format is b2[0-9]+.';
 	const MSG_ERROR_INVALID_RESTORE_PATH = 'Inputted BVFS path param is invalid.';
@@ -128,6 +129,7 @@ class BVFSError extends GenericError {
 	const MSG_ERROR_INVALID_FILEINDEX_LIST = 'Invalid file index list.';
 	const MSG_ERROR_INVALID_DIRID_LIST = 'Invalid dirid list.';
 	const MSG_ERROR_INVALID_CLIENT = 'Invalid client name.';
+	const MSG_ERROR_INVALID_JOBID = 'Invalid jobid.';
 }
 
 class JSONToolsError extends GenericError {

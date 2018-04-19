@@ -24,12 +24,14 @@ class ClientShow extends BaculumAPIServer {
 
 	public function get() {
 		$clientid = $this->Request->contains('id') ? intval($this->Request['id']) : 0;
-
-		$result = $this->getModule('bconsole')->bconsoleCommand($this->director, array('.client'));
+		$result = $this->getModule('bconsole')->bconsoleCommand(
+			$this->director,
+			array('.client')
+		);
 		if ($result->exitcode === 0) {
 			array_shift($result->output);
 			$client = $this->getModule('client')->getClientById($clientid);
-			if(!is_null($client) && in_array($client->name, $result->output)) {
+			if (is_object($client) && in_array($client->name, $result->output)) {
 				$result = $this->getModule('bconsole')->bconsoleCommand(
 					$this->director,
 					array('show', 'client="' . $client->name . '"')

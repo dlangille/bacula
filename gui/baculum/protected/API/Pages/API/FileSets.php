@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2017 Kern Sibbald
+ * Copyright (C) 2013-2018 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -19,42 +19,36 @@
  *
  * Bacula(R) is a registered trademark of Kern Sibbald.
  */
- 
+
 class FileSets extends BaculumAPIServer {
+
 	public function get() {
-		$directors = $this->getModule('bconsole')->getDirectors();
-		if($directors->exitcode != 0) {
-			$this->output = $directors->output;
-			$this->error = $directors->exitcode;
-			return;
-		}
-
-		$filesets = array();
-		$error = false;
-		$error_obj = null;
-		for($i = 0; $i < count($directors->output); $i++) {
-			$result = $this->getModule('bconsole')->bconsoleCommand($directors->output[$i], array('show', 'fileset'));
-			if ($result->exitcode != 0) {
-				$error_obj = $result;
-				$error = true;
-				break;
-			}
-			$filesets[$directors->output[$i]] = array();
-
-			for($j = 0; $j < count($result->output); $j++) {
-				if(preg_match('/^FileSet:\ name=(.+?(?=\s\S+\=.+)|.+$)/i', $result->output[$j], $match) === 1) {
-					$filesets[$directors->output[$i]][] = $match[1];
+		$limit = $this->Request->contains('limit') ? intval($this->Request['limit']) : 0;
+		$filesets = $this->getModule('fileset')->getFileSets($limit);
+		$result = $this->getModule('bconsole')->bconsoleCommand(
+			$this->director,
+			array('.fileset')
+		);
+		if ($result->exitcode === 0) {
+			array_shift($result->output);
+			if (is_array($filesets) && count($filesets) > 0) {
+				$fs = array();
+				for ($i = 0; $i < count($filesets); $i++) {
+					if(in_array($filesets[$i]->fileset, $result->output)) {
+						$fs[] = $filesets[$i];
+					}
 				}
+				$this->output = $fs;
+				$this->error = FileSetError::ERROR_NO_ERRORS;
+			} else {
+				$this->output = FileSetError::MSG_ERROR_FILESET_DOES_NOT_EXISTS;
+				$this->error = FileSetError::ERROR_FILESET_DOES_NOT_EXISTS;
 			}
-		}
-
-		if ($error === true) {
-			$this->output = $error_obj->output;
-			$this->error = $error_obj->exitcode;
 		} else {
-			$this->output = $filesets;
-			$this->error =  BconsoleError::ERROR_NO_ERRORS;
+			$this->output = $result->output;
+			$this->error = $result->exitcode;
 		}
 	}
 }
+
 ?>

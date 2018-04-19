@@ -25,7 +25,10 @@ class JobsOnVolume extends BaculumAPIServer {
 		$allowed = array();
 		$mediaid = $this->Request->contains('id') ? intval($this->Request['id']) : 0;
 		$error = false;
-		$result = $this->getModule('bconsole')->bconsoleCommand($this->director, array('.jobs'));
+		$result = $this->getModule('bconsole')->bconsoleCommand(
+			$this->director,
+			array('.jobs')
+		);
 		if ($result->exitcode === 0) {
 			array_shift($result->output);
 			$allowed = $result->output;

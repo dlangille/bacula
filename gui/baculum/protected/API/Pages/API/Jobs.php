@@ -24,8 +24,10 @@ class Jobs extends BaculumAPIServer {
 	public function get() {
 		$limit = $this->Request->contains('limit') ? intval($this->Request['limit']) : 0;
 		$jobstatus = $this->Request->contains('jobstatus') ? $this->Request['jobstatus'] : '';
+		$misc = $this->getModule('misc');
+		$jobname = $this->Request->contains('name') && $misc->isValidName($this->Request['name']) ? $this->Request['name'] : '';
 		$params = array();
-		$jobstatuses = array_keys($this->getModule('misc')->getJobState());
+		$jobstatuses = array_keys($misc->getJobState());
 		$sts = str_split($jobstatus);
 		for ($i = 0; $i < count($sts); $i++) {
 			if (in_array($sts[$i], $jobstatuses)) {
@@ -39,8 +41,14 @@ class Jobs extends BaculumAPIServer {
 		$result = $this->getModule('bconsole')->bconsoleCommand($this->director, array('.jobs'));
 		if ($result->exitcode === 0) {
 			array_shift($result->output);
+			$vals = array();
+			if (!empty($jobname) && in_array($jobname, $result->output)) {
+				$vals = array($jobname);
+			} else {
+				$vals = $result->output;
+			}
 			$params['name']['operator'] = 'OR';
-			$params['name']['vals'] = $result->output;
+			$params['name']['vals'] = $vals;
 			$jobs = $this->getModule('job')->getJobs($limit, $params);
 			$this->output = $jobs;
 			$this->error = JobError::ERROR_NO_ERRORS;
