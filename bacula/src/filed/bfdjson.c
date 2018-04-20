@@ -56,6 +56,8 @@ extern "C" { // work around visual compiler mangling variables
 extern URES res_all;
 #endif
 extern s_kw msg_types[];
+extern s_ct ciphertypes[];
+extern s_ct digesttypes[];
 extern RES_TABLE resources[];
 
 #define CONFIG_FILE "bacula-fd.conf" /* default config file */
@@ -82,6 +84,30 @@ PROG_COPYRIGHT
 "\n"), 2012, "", VERSION, BDATE);
 
    exit(1);
+}
+
+static void display_cipher(HPKT &hpkt)
+{
+   int i;
+   for (i=0; ciphertypes[i].type_name; i++) {
+      if (*(int32_t *)(hpkt.ritem->value) == ciphertypes[i].type_value) {
+         sendit(NULL, "\n    \"%s\": \"%s\"", hpkt.ritem->name,
+                ciphertypes[i].type_name);
+         return;
+      }
+   }
+}
+
+static void display_digest(HPKT &hpkt)
+{
+   int i;
+   for (i=0; digesttypes[i].type_name; i++) {
+      if (*(int32_t *)(hpkt.ritem->value) == digesttypes[i].type_value) {
+         sendit(NULL, "\n    \"%s\": \"%s\"", hpkt.ritem->name,
+                digesttypes[i].type_name);
+         return;
+      }
+   }
 }
 
 
@@ -379,6 +405,10 @@ static void dump_json(display_filter *filter)
                if (first_directive++ > 0) printf(",");
                if (display_global_item(hpkt)) {
                   /* Fall-through wanted */
+               } else if (items[item].handler == store_cipher_type) {
+                  display_cipher(hpkt);
+               } else if (items[item].handler == store_digest_type) {
+                  display_digest(hpkt);
                } else {
                   printf("\n    \"%s\": null", items[item].name);
                }

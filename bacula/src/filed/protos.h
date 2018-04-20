@@ -80,3 +80,7 @@ int snapshot_cmd(JCR *jcr);
 void VSSCleanup(VSSClient *c);
 VSSClient *VSSInit();
 #endif
+
+/* Definition for encyption cipher/digest type  */
+void store_cipher_type(LEX *lc, RES_ITEM *item, int index, int pass);
+void store_digest_type(LEX *lc, RES_ITEM *item, int index, int pass);

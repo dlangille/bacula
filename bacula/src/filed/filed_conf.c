@@ -67,10 +67,6 @@ URES res_all;
 #endif
 int32_t res_all_size = sizeof(res_all);
 
-/* Forward definition for encyption cipher/digest type  */
-static void store_cipher_type(LEX *lc, RES_ITEM *item, int index, int pass);
-static void store_digest_type(LEX *lc, RES_ITEM *item, int index, int pass);
-
 /* Definition of records permitted within each
  * resource with the routine to process the record
  * information.
@@ -179,12 +175,6 @@ RES_TABLE resources[] = {
    {NULL,            NULL,        0}
 };
 
-/* Cipher/Digest keyword structure */
-struct s_ct {
-   const char *type_name;
-   int32_t type_value;
-};
-
 struct s_ct ciphertypes[] = {
    {"aes128",        CRYPTO_CIPHER_AES_128_CBC},
    {"aes192",        CRYPTO_CIPHER_AES_192_CBC},
@@ -205,7 +195,7 @@ struct s_ct digesttypes[] = {
  * Store cipher type
  *
  */
-static void store_cipher_type(LEX *lc, RES_ITEM *item, int index, int pass)
+void store_cipher_type(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    int i;
 
@@ -229,7 +219,7 @@ static void store_cipher_type(LEX *lc, RES_ITEM *item, int index, int pass)
  * Store digest type
  *
  */
-static void store_digest_type(LEX *lc, RES_ITEM *item, int index, int pass)
+void store_digest_type(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    int i;
 

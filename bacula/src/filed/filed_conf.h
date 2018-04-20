@@ -42,6 +42,11 @@
 #define R_PASSWORD                    1022
 #define R_TYPE                        1023
 
+/* Cipher/Digest keyword structure */
+struct s_ct {
+   const char *type_name;
+   int32_t type_value;
+};
 
 /* Definition of the contents of each Resource */
 struct CONSRES {
