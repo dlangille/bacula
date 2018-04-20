@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2017-11-01 16:44-0200\n"
+"PO-Revision-Date: 2018-04-20 15:12-0300\n"
 "Project-Id-Version: \n"
 "POT-Creation-Date: \n"
 "Last-Translator: Wanderlei Huttel <wanderlei.huttel@gmail.com>\n"
@@ -10,7 +10,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "X-Poedit-SourceCharset: utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Poedit 2.0.4\n"
+"X-Generator: Poedit 2.0.6\n"
 
 msgid "Language:"
 msgstr "Idioma:"
@@ -475,7 +475,7 @@ msgid "It seems that there is no files for choosing or file records in database 
 msgstr "Parece que não há arquivos para selecionar ou o arquivo foi excluído do catálogo (período de retenção do arquivo expirou)"
 
 msgid "Group most recent backups"
-msgstr "Grupo de backups mais recentes"
+msgstr "Backups mais recentes"
 
 msgid "Where"
 msgstr "Onde"
@@ -1413,28 +1413,28 @@ msgid "Please enter OAuth2 scopes."
 msgstr "Informe o escopo OAuth2."
 
 msgid "Field required."
-msgstr "Field required."
+msgstr "Campo requirido"
 
 msgid "Invalid value. Integer value required."
-msgstr "Invalid value. Integer value required."
+msgstr "Valor inválido. Um valor inteiro é requerido."
 
 msgid "Resource %s \"%s\" is used in the following resources:"
-msgstr "Resource %s \"%s\" is used in the following resources:"
+msgstr "O resource %s \"%s\" é utilizado nos seguintes recursos:"
 
 msgid "Component: %s, Resource: %s \"%s\", Directive: %s"
-msgstr "Component: %s, Resource: %s \"%s\", Directive: %s"
+msgstr "Componente: %s, Recurso: %s \"%s\", Diretiva: %s"
 
 msgid "Are you sure that you want to remove %s resource \"%s\"?"
-msgstr "Are you sure that you want to remove %s resource \"%s\"?"
+msgstr "Você tem certeza que deseja remover o recurso %s \"%s\"?"
 
 msgid "Resource %s \"%s\" removed successfully."
-msgstr "Resource %s \"%s\" removed successfully."
+msgstr "Recurso %s \"%s\" removido com sucesso."
 
 msgid "Please unassign resource %s \"%s\" from these resources and try again."
-msgstr "Please unassign resource %s \"%s\" from these resources and try again."
+msgstr "Por favor, desmarque o recurso %s \"%s\" desses recursos e tente novamente."
 
 msgid "Size:"
-msgstr "Size:"
+msgstr "Tamanho:"
 
 msgid "JobId:"
 msgstr "JobId:"
@@ -1446,49 +1446,49 @@ msgid "InChanger:"
 msgstr "InChanger:"
 
 msgid "Sum:"
-msgstr "Sum:"
+msgstr "Total:"
 
 msgid "Select"
-msgstr "Select"
+msgstr "Selecione"
 
 msgid "Path:"
-msgstr "Path:"
+msgstr "Caminho:"
 
 msgid "Restore wizard"
-msgstr "Restore wizard"
+msgstr "Assistente de restauração"
 
 msgid "This wizard enables you to do in easy way restore files to destination Bacula Client."
-msgstr "This wizard enables you to do in easy way restore files to destination Bacula Client."
+msgstr "Este assistente permite que você execute de maneira fácil a restauração de arquivos de um determinado cliente."
 
 msgid "To start, please select backup Client which data you want to restore."
-msgstr "To start, please select backup Client which data you want to restore."
+msgstr "Para começar, selecione o cliente que você deseja restaurar."
 
 msgid "There are two ways to select backup to restore. Only selected backup way provides list of jobs from which there is possible to select one job. If you need the latest backups from the Client alternatively you can use Group most recent backups way which will select backups for you basing on backup job name and fileset resource."
-msgstr "There are two ways to select backup to restore. Only selected backup way provides list of jobs from which there is possible to select one job. If you need the latest backups from the Client alternatively you can use Group most recent backups way which will select backups for you basing on backup job name and fileset resource."
+msgstr "Existem duas maneiras de selecionar backups para restauração. Apenas o modo de backup selecionado fornece uma lista de jobs a partir da qual é possível selecionar um único job. Se você precisar dos backups mais recentes do Cliente, poderá usar o modo de backup mais recente do Grupo, que selecionará os backups para você com base no nome do job de backup e no recurso do fileset."
 
 msgid "Do not relocate files"
-msgstr "Do not relocate files"
+msgstr "Não realoque arquivos"
 
 msgid "Relocate files with prefix and/or suffix"
-msgstr "Relocate files with prefix and/or suffix"
+msgstr "Realocar arquivos com prefixo e/ou sufixo"
 
 msgid "Relocate files with regular expression"
-msgstr "Relocate files with regular expression"
+msgstr "Realocar arquivos com expressão regular"
 
 msgid "Strip prefix:"
-msgstr "Strip prefix:"
+msgstr "Tirar parte do prefixo:"
 
 msgid "Add prefix:"
-msgstr "Add prefix:"
+msgstr "Adicionar prefixo:"
 
 msgid "Add suffix:"
-msgstr "Add suffix:"
+msgstr "Adicionar sufixo:"
 
 msgid "RegexWhere:"
-msgstr "RegexWhere:"
+msgstr "Onde regexp:"
 
 msgid "File relocation option:"
-msgstr "File relocation option:"
+msgstr "Opção de realocação de arquivos:"
 
 msgid "In Changer"
 msgstr "In Changer"
@@ -1497,13 +1497,13 @@ msgid "Volume"
 msgstr "Volume"
 
 msgid "During restore there will be used following volumes:"
-msgstr "During restore there will be used following volumes:"
+msgstr "Durante a restauração, serão utilizados os seguintes volumes:"
 
 msgid "Use Ctrl + Mouse Click to change selection"
-msgstr "Use Ctrl + Mouse Click to change selection"
+msgstr "Use Ctrl + Mouse Click para alterar a seleção"
 
 msgid "Go back"
-msgstr "Go back"
+msgstr "Voltar"
 
 msgid "Total bytes"
 msgstr "Total bytes"
