@@ -83,7 +83,11 @@ static void usage()
  *
  */
 
-int main (int argc, char *argv[])
+#if defined(HAVE_WIN32)
+#define main BaculaMain
+#endif
+
+int main(int argc, char *argv[])
 {
    int ch;
    bool keep_readall_caps = false;

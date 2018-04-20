@@ -85,6 +85,9 @@ struct CRYPTO_dynlock_value {
  */
 static unsigned long get_openssl_thread_id(void)
 {
+#ifdef HAVE_WIN32
+   return (unsigned long)GetCurrentThreadId();
+#else
    /*
     * Comparison without use of pthread_equal() is mandated by the OpenSSL API
     *
@@ -92,6 +95,7 @@ static unsigned long get_openssl_thread_id(void)
     *   emulation code, which defines pthread_t as a structure.
     */
    return ((unsigned long)pthread_self());
+#endif
 }
 
 /*

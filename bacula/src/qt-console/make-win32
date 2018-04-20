@@ -2,6 +2,10 @@
 #
 #  Used to build the Win32/Win64 version of bat
 #
+#
+# Copyright (C) 2000-2018 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
 
 prepare_bat_build ()
 {
@@ -70,4 +74,4 @@ if test -e ../config.h.orig ; then
    mv -f ../config.h.orig ../config.h
 fi
 
-prepare_tray_monitor_build ${BUILD_ARCH:-64}
+#prepare_tray_monitor_build ${BUILD_ARCH:-64}

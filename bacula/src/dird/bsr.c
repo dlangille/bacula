@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2017 Kern Sibbald
+   Copyright (C) 2000-2018 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,18 +11,20 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
+ *
  *   Bacula Director -- Bootstrap Record routines.
  *
  *      BSR (bootstrap record) handling routines split from
  *        ua_restore.c July MMIII
  *
  *     Kern Sibbald, July MMII
+ *
  */
 
 #include "bacula.h"
@@ -598,5 +600,161 @@ void add_findex_all(rblist *bsr_list, uint32_t JobId, const char *fileregex)
    fi->findex = 1;
    fi->findex2 = INT32_MAX;
    bsr->fi_list->insert(fi, search_fi);
+   return;
+}
+
+#ifdef needed
+/* Foreach files in currrent list, send "/path/fname\0LStat\0MD5\0Delta" to FD
+ *      row[0]=Path, row[1]=Filename, row[2]=FileIndex
+ *      row[3]=JobId row[4]=LStat row[5]=DeltaSeq row[6]=MD5
+ */
+static int sendit(void *arg, int num_fields, char **row)
+{
+   JCR *jcr = (JCR *)arg;
+
+   if (job_canceled(jcr)) {
+      return 1;
+   }
+
+   if (row[2][0] == '0') {           /* discard when file_index == 0 */
+      return 0;
+   }
+
+   /* sending with checksum */
+   if (num_fields == 7
+       && row[6][0] /* skip checksum = '0' */
+       && row[6][1])
+   {
+      jcr->file_bsock->fsend("%s%s%c%s%c%s%c%s",
+                             row[0], row[1], 0, row[4], 0, row[6], 0, row[5]);
+   } else {
+      jcr->file_bsock->fsend("%s%s%c%s%c%c%s",
+                             row[0], row[1], 0, row[4], 0, 0, row[5]);
+   }
+   return 0;
+}
+#endif
+
+/* We list all files for a given FI structure */
+static void scan_findex(JCR *jcr, RBSR *bsr,
+                        int32_t FirstIndex, int32_t LastIndex,
+                        int32_t &lastFileIndex, uint32_t &lastJobId)
+{
+   RBSR_FINDEX *fi;
+   FILE_DBR fdbr;
+   memset(&fdbr, 0, sizeof(fdbr));
+
+   fi = (RBSR_FINDEX *) bsr->fi_list->first();
+   while (fi) {
+      int32_t findex, findex2;
+
+      /* fi points to the first item of the list, or the next item that is not
+       * contigous to the previous group
+       */
+      findex = fi->findex;
+      findex2 = fi->findex2;
+
+      /* Sometime (with the restore command for example), the fi_list can
+       * contain false gaps (1-10, 11-11, 12-20 instead of 1-20). The for loop
+       * is here to merge blocks and reduce the bsr output. The next while(fi)
+       * iteration will use the next_fi that points to the last merged element.
+       */
+      RBSR_FINDEX *next_fi;
+      for (next_fi = (RBSR_FINDEX*) bsr->fi_list->next(fi);
+           next_fi && next_fi->findex == (findex2+1);
+           next_fi = (RBSR_FINDEX *) bsr->fi_list->next(next_fi))
+      {
+         findex2 = next_fi->findex2;
+      }
+
+      /* next_fi points after the current block (or to the end of the list), so
+       * the next while() iteration will use the next value
+       */
+      fi = next_fi;
+
+      /* We look if the current FI block match the volume information */
+      if ((findex >= FirstIndex && findex <= LastIndex) ||
+          (findex2 >= FirstIndex && findex2 <= LastIndex) ||
+          (findex < FirstIndex && findex2 > LastIndex)) {
+
+         findex = findex < FirstIndex ? FirstIndex : findex;
+         findex2 = findex2 > LastIndex ? LastIndex : findex2;
+
+         bool dolist=false;
+         /* Display only new files */
+         if (findex != lastFileIndex || bsr->JobId != lastJobId) {
+            /* Not the same file, or not the same job */
+            fdbr.FileIndex = findex;
+            //dolist = true;
+
+         } else if (findex2 != lastFileIndex) {
+            /* We are in the same job, and the first index was already generated */
+            fdbr.FileIndex = findex + 1;
+            //dolist = true;
+         }
+
+         /* Keep the current values for the next loop */
+         lastJobId = bsr->JobId;
+         lastFileIndex = findex2;
+
+         /* Generate if needed the list of files */
+         if (dolist) {
+            fdbr.FileIndex2 = findex2;
+            fdbr.JobId = bsr->JobId;
+            /* New code not working */
+            //db_list_files(jcr, jcr->db, &fdbr, sendit, jcr);
+         }
+      }
+   }
+}
+
+/*
+ * Scan bsr data for a single bsr record
+ */
+static void scan_bsr_item(JCR *jcr, RBSR *bsr)
+{
+   int32_t lastFileIndex=0;
+   uint32_t lastJobId=0;
+   /*
+    * For a given volume, loop over all the JobMedia records.
+    *   VolCount is the number of JobMedia records.
+    */
+   for (int i=0; i < bsr->VolCount; i++) {
+      if (!is_volume_selected(bsr->fi_list,
+                              bsr->VolParams[i].FirstIndex,
+                              bsr->VolParams[i].LastIndex))
+      {
+         continue;
+      }
+
+      scan_findex(jcr, bsr,
+                  bsr->VolParams[i].FirstIndex,
+                  bsr->VolParams[i].LastIndex,
+                  lastFileIndex, lastJobId);
+   }
+}
+
+/*
+ * We need to find all files from the BSR. All files are listed, this is used
+ * to send the list of the files to be restored to a plugin for example.
+ */
+void scan_bsr(JCR *jcr)
+{
+   char *p;
+   JobId_t JobId;
+   RBSR *bsr;
+   if (!jcr->JobIds || *jcr->JobIds == 0) {
+      foreach_rblist(bsr, jcr->bsr_list) {
+         scan_bsr_item(jcr, bsr);
+      }
+      return;
+   }
+   for (p=jcr->JobIds; get_next_jobid_from_list(&p, &JobId) > 0; ) {
+      foreach_rblist(bsr, jcr->bsr_list) {
+         if (JobId == bsr->JobId) {
+            scan_bsr_item(jcr, bsr);
+         }
+      }
+   }
    return;
 }

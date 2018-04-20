@@ -1,0 +1,21 @@
+diff -rup a/src/corelib/tools/qsimd_p.h b/src/corelib/tools/qsimd_p.h
+--- a/src/corelib/tools/qsimd_p.h	2012-11-23 11:09:55.000000000 +0100
++++ b/src/corelib/tools/qsimd_p.h	2014-07-22 17:11:48.552071394 +0200
+@@ -48,7 +48,7 @@
+ QT_BEGIN_HEADER
+ 
+ 
+-#if defined(QT_NO_MAC_XARCH) || (defined(Q_OS_DARWIN) && (defined(__ppc__) || defined(__ppc64__)))
++//#if defined(QT_NO_MAC_XARCH) || (defined(Q_OS_DARWIN) && (defined(__ppc__) || defined(__ppc64__)))
+ // Disable MMX and SSE on Mac/PPC builds, or if the compiler
+ // does not support -Xarch argument passing
+ #undef QT_HAVE_SSE
+@@ -60,7 +60,7 @@ QT_BEGIN_HEADER
+ #undef QT_HAVE_AVX
+ #undef QT_HAVE_3DNOW
+ #undef QT_HAVE_MMX
+-#endif
++//#endif
+ 
+ // SSE intrinsics
+ #if defined(QT_HAVE_SSE2) && (defined(__SSE2__) || defined(Q_CC_MSVC))

@@ -864,10 +864,13 @@ bool inc_read_store(JCR *jcr)
    P(rstore_mutex);
    int num = jcr->rstore->getNumConcurrentJobs();
    int numread = jcr->rstore->getNumConcurrentReadJobs();
+   int maxread = jcr->rstore->MaxConcurrentReadJobs;
    if (num < jcr->rstore->MaxConcurrentJobs &&
        (jcr->getJobType() == JT_RESTORE ||
-        numread == 0 ||
-        numread < jcr->rstore->MaxConcurrentReadJobs)) {
+        numread == 0     ||
+        maxread == 0     ||     /* No limit set */
+        numread < maxread))     /* Below the limit */
+   {
       num++;
       numread++;
       jcr->rstore->setNumConcurrentReadJobs(numread);

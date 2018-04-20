@@ -253,6 +253,8 @@ enum {
 /* Size of crypto length stored at head of crypto buffer. Do NOT change! */
 #define CRYPTO_LEN_SIZE ((int)sizeof(uint32_t))
 
+/* Plugin Features */
+#define PLUGIN_FEATURE_RESTORELISTFILES "RestoreListFiles"
 
 /**
  * This is for dumb compilers/libraries like Solaris. Linux GCC

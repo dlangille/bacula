@@ -556,7 +556,7 @@ static void cleanup_old_files()
       }
       /* Exclude any name with ., .., not my_name or containing a space */
       if (strcmp(dname.c_str(), ".") == 0 || strcmp(dname.c_str(), "..") == 0 ||
-          strncmp(dname.c_str(), my_name, my_name_len) != 0) {
+         strncmp(dname.c_str(), my_name, my_name_len) != 0) {
          Dmsg1(500, "Skipped: %s\n", dname.c_str());
          continue;
       }
@@ -591,8 +591,6 @@ void *device_initialization(void *arg)
    DEVICE *dev;
    struct stat statp;
 
-   LockRes();
-
    pthread_detach(pthread_self());
    jcr = new_jcr(sizeof(JCR), stored_free_jcr);
    new_plugins(jcr);  /* instantiate plugins */
@@ -604,6 +602,8 @@ void *device_initialization(void *arg)
       Jmsg1(jcr, M_ABORT, 0, _("Unable to init job cond variable: ERR=%s\n"), be.bstrerror(errstat));
    }
 
+   LockRes();
+
    foreach_res(device, R_DEVICE) {
       Dmsg1(90, "calling init_dev %s\n", device->hdr.name);
       dev = init_dev(NULL, device);
@@ -611,7 +611,7 @@ void *device_initialization(void *arg)
       if (!dev) {
          Jmsg1(NULL, M_ERROR, 0, _("Could not initialize SD device \"%s\"\n"), device->hdr.name);
          continue;
-      }
+     }
 
       jcr->dcr = dcr = new_dcr(jcr, NULL, dev);
       generate_plugin_event(jcr, bsdEventDeviceInit, dcr);
@@ -627,6 +627,15 @@ void *device_initialization(void *arg)
          Jmsg0(jcr, M_ERROR_TERM, 0, _("No plugin directory configured for SAN shared storage\n"));
       }
 
+      if (device->min_block_size > device->max_block_size) {
+         Jmsg1(jcr, M_ERROR_TERM, 0, _("MaximumBlockSize must be greater or equal than MinimumBlockSize for Device \"%s\"\n"),
+               dev->print_name());
+      }
+
+      if (device->min_block_size > device->max_block_size) {
+         Jmsg1(jcr, M_ERROR_TERM, 0, _("MaximumBlockSize must be greater or equal than MinimumBlockSize for Device \"%s\"\n"),
+               dev->print_name());
+      }
 
       /*
        * Note: be careful setting the slot here. If the drive
@@ -672,6 +681,7 @@ void *device_initialization(void *arg)
       jcr->dcr = NULL;
    }
 
+   UnlockRes();
 
 #ifdef xxx
    if (jcr->dcr) {
@@ -683,7 +693,6 @@ void *device_initialization(void *arg)
    free_plugins(jcr);
    free_jcr(jcr);
    init_done = true;
-   UnlockRes();
    return NULL;
 }
 

@@ -30,7 +30,7 @@ INCLUDE_FILES = bfile.h find.h protos.h win32filter.h
 #
 LIBBACFIND_SRCS = find.c match.c find_one.c attribs.c create_file.c \
 		  bfile.c drivetype.c enable_priv.c fstype.c mkpath.c \
-		  savecwd.c win32filter.c
+		  savecwd.c namedpipe.c win32filter.c
 LIBBACFIND_OBJS = $(LIBBACFIND_SRCS:.c=.o)
 LIBBACFIND_LOBJS = $(LIBBACFIND_SRCS:.c=.lo)
 

@@ -141,9 +141,20 @@ find_files(JCR *jcr, FF_PKT *ff, int file_save(JCR *jcr, FF_PKT *ff_pkt, bool to
           */
          for (j=0; j<incexe->opts_list.size(); j++) {
             findFOPTS *fo = (findFOPTS *)incexe->opts_list.get(j);
+            /* TODO options are "simply" reset by Options block that come next
+             * For example :
+             * Options { IgnoreCase = yes }
+             * ATTN: some plugins use AddOptions() that create extra Option block
+             * Also see accept_file() below that could suffer of the same problem
+             */
             ff->flags |= fo->flags;
-            ff->Compress_algo = fo->Compress_algo;
-            ff->Compress_level = fo->Compress_level;
+            /* If the compress option was set in the previous block, overwrite the
+             * algorithm only if defined
+             */
+            if ((ff->flags & FO_COMPRESS) && fo->Compress_algo != 0) {
+               ff->Compress_algo = fo->Compress_algo;
+               ff->Compress_level = fo->Compress_level;
+            }
             ff->strip_path = fo->strip_path;
             ff->fstypes = fo->fstype;
             ff->drivetypes = fo->drivetype;
@@ -159,7 +170,7 @@ find_files(JCR *jcr, FF_PKT *ff, int file_save(JCR *jcr, FF_PKT *ff_pkt, bool to
                bstrncpy(ff->BaseJobOpts, fo->BaseJobOpts, sizeof(ff->BaseJobOpts));
             }
          }
-         Dmsg4(50, "Verify=<%s> Accurate=<%s> BaseJob=<%s> flags=<%d>\n",
+         Dmsg4(50, "Verify=<%s> Accurate=<%s> BaseJob=<%s> flags=<%lld>\n",
                ff->VerifyOpts, ff->AccurateOpts, ff->BaseJobOpts, ff->flags);
          dlistString *node;
          foreach_dlist(node, &incexe->name_list) {

@@ -51,12 +51,12 @@ To start it:
 To start it (as a developer). This is not appropriate if you
 are installing Bacula.
 
-   ./startit
+   ./bacula start
    ./console
 
 To stop it:
 
-  ./stopit
+  ./bacula stop
 
 Well, it is all just a bit more complicated than that,
 but you should have the idea.

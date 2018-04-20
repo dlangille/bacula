@@ -191,7 +191,12 @@ const bool have_dde_extra_check = false;
 #undef malloc
 #endif
 
+#if defined(HAVE_WIN32)
+#include "winapi.h"
+#include "winhost.h"
+#else
 #include "host.h"
+#endif
 
 #ifndef HAVE_ZLIB_H
 #undef HAVE_LIBZ                      /* no good without headers */

@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2017 Kern Sibbald
+   Copyright (C) 2000-2018 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -20,6 +20,7 @@
  *  Bacula File Daemon Status routines
  *
  *    Kern Sibbald, August MMI
+ *
  */
 
 #include "bacula.h"
@@ -42,6 +43,16 @@ static char qstatus2[] = ".status %127s api=%d api_opts=%127s";
 static char OKqstatus[]   = "2000 OK .status\n";
 static char DotStatusJob[] = "JobId=%d JobStatus=%c JobErrors=%d\n";
 
+#if defined(HAVE_WIN32)
+static int privs = 0;
+#endif
+#ifdef WIN32_VSS
+#include "vss.h"
+#define VSS " VSS"
+#else
+#define VSS ""
+#endif
+
 /*
  * General status generator
  */
@@ -52,12 +63,25 @@ void output_status(STATUS_PKT *sp)
    list_terminated_jobs(sp);    /* defined in lib/status.h */
 }
 
+#if defined(HAVE_LZO)
+static const bool have_lzo = true;
+#else
+static const bool have_lzo = false;
+#endif
+
+
 static void api_list_status_header(STATUS_PKT *sp)
 {
    char *p;
    char buf[300];
    OutputWriter wt(sp->api_opts);
    *buf = 0;
+
+#if defined(HAVE_WIN32)
+   if (!GetWindowsVersionString(buf, sizeof(buf))) {
+      *buf = 0;
+   }
+#endif
 
    wt.start_group("header");
    wt.get_output(
@@ -90,14 +114,72 @@ static void  list_status_header(STATUS_PKT *sp)
       return;
    }
 
-   len = Mmsg(msg, _("%s %sVersion: %s (%s) %s %s %s\n"),
-              my_name, "", VERSION, BDATE, HOST_OS,
+   len = Mmsg(msg, _("%s %sVersion: %s (%s) %s %s %s %s\n"),
+              my_name, BDEMO, VERSION, BDATE, VSS, HOST_OS,
               DISTNAME, DISTVER);
    sendit(msg.c_str(), len, sp);
    bstrftime_nc(dt, sizeof(dt), daemon_start_time);
    len = Mmsg(msg, _("Daemon started %s. Jobs: run=%d running=%d.\n"),
         dt, num_jobs_run, job_count());
    sendit(msg.c_str(), len, sp);
+#if defined(HAVE_WIN32)
+   char buf[300];
+   if (GetWindowsVersionString(buf, sizeof(buf))) {
+      len = Mmsg(msg, "%s\n", buf);
+      sendit(msg.c_str(), len, sp);
+   }
+   memused = get_memory_info(buf, sizeof(buf));
+   if (debug_level > 0) {
+      if (!privs) {
+         privs = enable_backup_privileges(NULL, 1);
+      }
+      len = Mmsg(msg, "Priv 0x%x\n", privs);
+      sendit(msg.c_str(), len, sp);
+
+      /* Display detailed information that we got from get_memory_info() */
+      len = Mmsg(msg, "Memory: %s\n", buf);
+      sendit(msg.c_str(), len, sp);
+
+      len = Mmsg(msg, "APIs=%sOPT,%sATP,%sLPV,%sCFA,%sCFW,\n",
+                 p_OpenProcessToken?"":"!",
+                 p_AdjustTokenPrivileges?"":"!",
+                 p_LookupPrivilegeValue?"":"!",
+                 p_CreateFileA?"":"!",
+                 p_CreateFileW?"":"!");
+      sendit(msg.c_str(), len, sp);
+      len = Mmsg(msg, " %sWUL,%sWMKD,%sGFAA,%sGFAW,%sGFAEA,%sGFAEW,%sSFAA,%sSFAW,%sBR,%sBW,%sSPSP,\n",
+                 p_wunlink?"":"!",
+                 p_wmkdir?"":"!",
+                 p_GetFileAttributesA?"":"!",
+                 p_GetFileAttributesW?"":"!",
+                 p_GetFileAttributesExA?"":"!",
+                 p_GetFileAttributesExW?"":"!",
+                 p_SetFileAttributesA?"":"!",
+                 p_SetFileAttributesW?"":"!",
+                 p_BackupRead?"":"!",
+                 p_BackupWrite?"":"!",
+                 p_SetProcessShutdownParameters?"":"!");
+      sendit(msg.c_str(), len, sp);
+      len = Mmsg(msg, " %sWC2MB,%sMB2WC,%sFFFA,%sFFFW,%sFNFA,%sFNFW,%sSCDA,%sSCDW,\n",
+                 p_WideCharToMultiByte?"":"!",
+                 p_MultiByteToWideChar?"":"!",
+                 p_FindFirstFileA?"":"!",
+                 p_FindFirstFileW?"":"!",
+                 p_FindNextFileA?"":"!",
+                 p_FindNextFileW?"":"!",
+                 p_SetCurrentDirectoryA?"":"!",
+                 p_SetCurrentDirectoryW?"":"!");
+      sendit(msg.c_str(), len, sp);
+      len = Mmsg(msg, " %sGCDA,%sGCDW,%sGVPNW,%sGVNFVMPW,%sLZO,%sEFS\n",
+                 p_GetCurrentDirectoryA?"":"!",
+                 p_GetCurrentDirectoryW?"":"!",
+                 p_GetVolumePathNameW?"":"!",
+                 p_GetVolumeNameForVolumeMountPointW?"":"!",
+                 have_lzo?"":"!",
+                 "!");
+      sendit(msg.c_str(), len, sp);
+   }
+#endif
    len = Mmsg(msg, _(" Heap: heap=%s smbytes=%s max_bytes=%s bufs=%s max_bufs=%s\n"),
          edit_uint64_with_commas(memused, b1),
          edit_uint64_with_commas(sm_bytes, b2),
@@ -154,6 +236,12 @@ static void  list_running_jobs_plain(STATUS_PKT *sp)
    len = Mmsg(msg, _("\nRunning Jobs:\n"));
    sendit(msg.c_str(), len, sp);
    foreach_jcr(njcr) {
+      const char *vss = "";
+#ifdef WIN32_VSS
+      if (njcr->pVSSClient && njcr->pVSSClient->IsInitialized()) {
+         vss = "VSS ";
+      }
+#endif
       bstrftime_nc(dt, sizeof(dt), njcr->start_time);
       if (njcr->JobId == 0) {
          len = Mmsg(msg, _("Director connected %sat: %s\n"),
@@ -163,8 +251,8 @@ static void  list_running_jobs_plain(STATUS_PKT *sp)
          len = Mmsg(msg, _("JobId %d Job %s is running.\n"),
                     njcr->JobId, njcr->Job);
          sendit(msg.c_str(), len, sp);
-         len = Mmsg(msg, _("    %s %s Job started: %s\n"),
-                    job_level_to_str(njcr->getJobLevel()),
+         len = Mmsg(msg, _("    %s%s %s Job started: %s\n"),
+                    vss, job_level_to_str(njcr->getJobLevel()),
                     job_type_to_str(njcr->getJobType()), dt);
       }
       sendit(msg.c_str(), len, sp);
@@ -201,11 +289,17 @@ static void  list_running_jobs_plain(STATUS_PKT *sp)
            edit_uint64_with_commas(njcr->ReadBytes, b6));
       sendit(msg.c_str(), len, sp);
 
-      if (njcr->is_JobType(JT_RESTORE) && njcr->ExpectedFiles > 0) {
-         len = Mmsg(msg, _("    Files: Restored=%s Expected=%s Completed=%d%%\n"),
-            edit_uint64_with_commas(njcr->num_files_examined, b1),
-            edit_uint64_with_commas(njcr->ExpectedFiles, b2),
-            (100*njcr->num_files_examined)/njcr->ExpectedFiles);
+      if (njcr->is_JobType(JT_RESTORE)) {
+         if (njcr->ExpectedFiles > 0) {
+            len = Mmsg(msg, _("    Files: Restored=%s Expected=%s Completed=%d%%\n"),
+                       edit_uint64_with_commas(njcr->num_files_examined, b1),
+                       edit_uint64_with_commas(njcr->ExpectedFiles, b2),
+                       (100*njcr->num_files_examined)/njcr->ExpectedFiles);
+
+         } else {
+            len = Mmsg(msg, _("    Files: Restored=%s\n"),
+                       edit_uint64_with_commas(njcr->num_files_examined, b1));
+         }
       } else {
          len = Mmsg(msg, _("    Files: Examined=%s Backed up=%s\n"),
             edit_uint64_with_commas(njcr->num_files_examined, b1),
@@ -260,6 +354,12 @@ static void  list_running_jobs_api(STATUS_PKT *sp)
    /* API v1, edit with comma, space before the name, sometime ' ' as separator */
 
    foreach_jcr(njcr) {
+      int vss = 0;
+#ifdef WIN32_VSS
+      if (njcr->pVSSClient && njcr->pVSSClient->IsInitialized()) {
+         vss = 1;
+      }
+#endif
       p = ow.get_output(OT_CLEAR, OT_START_OBJ, OT_END);
 
       if (njcr->JobId == 0) {
@@ -270,6 +370,7 @@ static void  list_running_jobs_api(STATUS_PKT *sp)
       } else {
          ow.get_output(OT_INT32,   "JobId", njcr->JobId,
                        OT_STRING,  "Job",   njcr->Job,
+                       OT_INT,     "VSS",   vss,
                        OT_JOBLEVEL,"Level", njcr->getJobLevel(),
                        OT_JOBTYPE, "Type",  njcr->getJobType(),
                        OT_JOBSTATUS, "Status", njcr->getJobStatus(),
@@ -313,9 +414,10 @@ static void  list_running_jobs_api(STATUS_PKT *sp)
       }
 
       if (njcr->store_bsock) {
+         int val = (njcr->store_bsock->tls)?1:0;
          ow.get_output(OT_INT64, "SDReadSeqNo", (int64_t)njcr->store_bsock->read_seqno,
                        OT_INT,   "fd",          njcr->store_bsock->m_fd,
-                       OT_INT,   "SDtls",       (njcr->store_bsock->tls)?1:0,
+                       OT_INT,   "SDtls",       val,
                        OT_END);
       } else {
          ow.get_output(OT_STRING, "SDSocket", "closed", OT_END);

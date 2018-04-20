@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2015 Kern Sibbald
+   Copyright (C) 2000-2018 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -42,7 +42,11 @@
 #endif
 
 /* Fold case in fnmatch() on Win32 */
+#ifdef HAVE_WIN32
+static const int fnmode = FNM_CASEFOLD;
+#else
 static const int fnmode = 0;
+#endif
 
 
 #undef bmalloc
@@ -223,6 +227,14 @@ void add_fname_to_include_list(FF_PKT *ff, int prefixed, const char *fname)
          break;
       }
    }
+#if defined(HAVE_WIN32)
+   /* Convert any \'s into /'s */
+   for (p=inc->fname; *p; p++) {
+      if (*p == '\\') {
+         *p = '/';
+      }
+   }
+#endif
    inc->next = NULL;
    /* Chain this one on the end of the list */
    if (!ff->included_files_list) {
@@ -262,6 +274,14 @@ void add_fname_to_exclude_list(FF_PKT *ff, const char *fname)
    exc->next = *list;
    exc->len = len;
    strcpy(exc->fname, fname);
+#if defined(HAVE_WIN32)
+   /* Convert any \'s into /'s */
+   for (char *p=exc->fname; *p; p++) {
+      if (*p == '\\') {
+         *p = '/';
+      }
+   }
+#endif
    *list = exc;
 }
 
@@ -357,6 +377,16 @@ file_in_excluded_list(struct s_excluded_file *exc, const char *file)
 int file_is_excluded(FF_PKT *ff, const char *file)
 {
    const char *p;
+
+#if defined(HAVE_WIN32)
+   /*
+    *  ***NB*** this removes the drive from the exclude
+    *  rule.  Why?????
+    */
+   if (file[1] == ':') {
+      file += 2;
+   }
+#endif
 
    if (file_in_excluded_list(ff->excluded_paths_list, file)) {
       return 1;

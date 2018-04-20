@@ -3,7 +3,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2017 Kern Sibbald
+   Copyright (C) 2000-2018 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -22,6 +22,7 @@
  *   Dirk Bartley, March 2007
  */
 
+#include <QtGlobal>
 #if QT_VERSION >= 0x050000
 #include <QtWidgets>
 #else

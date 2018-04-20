@@ -53,6 +53,7 @@ struct r_ctx {
    ATTR *attr;                         /* Pointer to attributes */
    bool extract;                       /* set when extracting */
    alist *delayed_streams;             /* streams that should be restored as last */
+   worker *efs;                        /* Windows EFS worker thread */
    int32_t count;                      /* Debug count */
 
    SIGNATURE *sig;                     /* Cryptographic signature (if any) for file */
@@ -61,4 +62,12 @@ struct r_ctx {
    RESTORE_CIPHER_CTX fork_cipher_ctx; /* Cryptographic restore context (if any) for alternative stream */
 };
 
+#endif
+
+#ifdef TEST_WORKER
+bool test_write_efs_data(r_ctx &rctx, char *data, const int32_t length);
+#endif
+
+#ifdef HAVE_WIN32
+bool win_write_efs_data(r_ctx &rctx, char *data, const int32_t length);
 #endif

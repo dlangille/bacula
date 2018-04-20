@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2017 Kern Sibbald
+   Copyright (C) 2000-2018 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -35,10 +35,22 @@
 #if !defined(SOL_TCP)              /* Not defined on some systems */
 #define SOL_TCP  IPPROTO_TCP
 #endif 
- 
+
+#ifdef HAVE_WIN32
+#include <mswsock.h>
+#define socketRead(fd, buf, len)  ::recv(fd, buf, len, 0)
+#define socketWrite(fd, buf, len) ::send(fd, buf, len, 0)
+#define socketClose(fd)           ::closesocket(fd)
+static void win_close_wait(int fd);
+#ifndef SOCK_CLOEXEC
+#define SOCK_CLOEXEC 0
+#endif
+#else
 #define socketRead(fd, buf, len)  ::read(fd, buf, len)
 #define socketWrite(fd, buf, len) ::write(fd, buf, len)
 #define socketClose(fd)           ::close(fd)
+#endif
+
 
 /*
  * make a nice dump of a message
@@ -1117,6 +1129,7 @@ bool BSOCK::set_buffer_size(uint32_t size, int rw)
  */
 int BSOCK::set_nonblocking()
 {
+#ifndef HAVE_WIN32
    int oflags;
 
    /* Get current flags */
@@ -1133,6 +1146,16 @@ int BSOCK::set_nonblocking()
 
    m_blocking = 0;
    return oflags;
+#else
+   int flags;
+   u_long ioctlArg = 1;
+
+   flags = m_blocking;
+   ioctlsocket(m_fd, FIONBIO, &ioctlArg);
+   m_blocking = 0;
+
+   return flags;
+#endif
 }
 
 /*
@@ -1141,6 +1164,7 @@ int BSOCK::set_nonblocking()
  */
 int BSOCK::set_blocking()
 {
+#ifndef HAVE_WIN32
    int oflags;
    /* Get current flags */
    if ((oflags = fcntl(m_fd, F_GETFL, 0)) < 0) {
@@ -1156,6 +1180,16 @@ int BSOCK::set_blocking()
 
    m_blocking = 1;
    return oflags;
+#else
+   int flags;
+   u_long ioctlArg = 0;
+
+   flags = m_blocking;
+   ioctlsocket(m_fd, FIONBIO, &ioctlArg);
+   m_blocking = 1;
+
+   return flags;
+#endif
 }
 
 void BSOCK::set_killable(bool killable)
@@ -1170,12 +1204,19 @@ void BSOCK::set_killable(bool killable)
  */
 void BSOCK::restore_blocking (int flags)
 {
+#ifndef HAVE_WIN32
    if ((fcntl(m_fd, F_SETFL, flags)) < 0) {
       berrno be;
       Qmsg1(get_jcr(), M_ABORT, 0, _("fcntl F_SETFL error. ERR=%s\n"), be.bstrerror());
    }
 
    m_blocking = (flags & O_NONBLOCK) ? true : false;
+#else
+   u_long ioctlArg = flags;
+
+   ioctlsocket(m_fd, FIONBIO, &ioctlArg);
+   m_blocking = 1;
+#endif
 }
 
 /*
@@ -1287,9 +1328,15 @@ void BSOCK::close()
          bsock->tls = NULL;
       }
 
+#ifdef HAVE_WIN32
+      if (!bsock->is_timed_out()) {
+         win_close_wait(bsock->m_fd);  /* Ensure that data is not discarded */
+      }
+#else
       if (bsock->is_timed_out()) {
          shutdown(bsock->m_fd, SHUT_RDWR);   /* discard any pending I/O */
       }
+#endif
       /* On Windows this discards data if we did not do a close_wait() */
       socketClose(bsock->m_fd);      /* normal close */
    }
@@ -1494,3 +1541,25 @@ void BSOCK::control_bwlimit(int bytes)
       m_last_tick = now;
    }
 }
+
+#ifdef HAVE_WIN32
+/*
+ * closesocket is supposed to do a graceful disconnect under Window
+ *   but it doesn't. Comments on http://msdn.microsoft.com/en-us/li
+ *   confirm this behaviour. DisconnectEx is required instead, but
+ *   that function needs to be retrieved via WS IOCTL
+ */
+static void
+win_close_wait(int fd)
+{
+   int ret;
+   GUID disconnectex_guid = WSAID_DISCONNECTEX;
+   DWORD bytes_returned;
+   LPFN_DISCONNECTEX DisconnectEx;
+   ret = WSAIoctl(fd, SIO_GET_EXTENSION_FUNCTION_POINTER, &disconnectex_guid, sizeof(disconnectex_guid), &DisconnectEx, sizeof(DisconnectEx), &bytes_returned, NULL, NULL);
+   Dmsg1(100, "WSAIoctl(SIO_GET_EXTENSION_FUNCTION_POINTER, WSAID_DISCONNECTEX) ret = %d\n", ret);
+   if (!ret) {
+      DisconnectEx(fd, NULL, 0, 0);
+   }
+}
+#endif

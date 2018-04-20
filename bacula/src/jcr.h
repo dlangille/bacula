@@ -379,6 +379,7 @@ public:
    POOLMEM *wstore_source;            /* Where write storage came from */
    POOLMEM *catalog_source;           /* Where catalog came from */
    POOLMEM *next_vol_list;            /* Volumes previously requested */
+   rblist  *bsr_list;                 /* Bootstrap that can be needed during restore */
    int32_t replace;                   /* Replace option */
    int32_t NumVols;                   /* Number of Volume used in pool */
    int32_t reschedule_count;          /* Number of times rescheduled */

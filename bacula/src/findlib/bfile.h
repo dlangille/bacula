@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2015 Kern Sibbald
+   Copyright (C) 2000-2018 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -27,21 +27,7 @@
 #ifndef __BFILE_H
 #define __BFILE_H
 
-
-/* this should physically correspond to WIN32_STREAM_ID
- * from winbase.h on Win32. We didn't inlcude cStreamName
- * as we don't use it and don't need it for a correct struct size.
- */
-
-#define WIN32_BACKUP_DATA 1
-
-typedef struct _BWIN32_STREAM_ID {
-        int32_t        dwStreamId;
-        int32_t        dwStreamAttributes;
-        int64_t        Size;
-        int32_t        dwStreamNameSize;
-} BWIN32_STREAM_ID, *LPBWIN32_STREAM_ID ;
-
+#include "win32filter.h"
 
 typedef struct _PROCESS_WIN32_BACKUPAPIBLOCK_CONTEXT {
         int64_t          liNextHeader;
@@ -73,6 +59,7 @@ public:
    HANDLE fh;                         /* Win32 file handle */
    int fid;                           /* fd if doing Unix style */
    LPVOID lpContext;                  /* BackupRead/Write context */
+   PVOID pvContext;                   /* Windows encryption (EFS) context */
    POOLMEM *errmsg;                   /* error message buffer */
    DWORD rw_bytes;                    /* Bytes read or written */
    DWORD lerror;                      /* Last error code */
@@ -82,7 +69,7 @@ public:
    uint64_t total_bytes;              /* bytes written */
    boffset_t offset;                  /* Delta offset */
    JCR *jcr;                          /* jcr for editing job codes */
-   PROCESS_WIN32_BACKUPAPIBLOCK_CONTEXT win32DecompContext; /* context for decomposition of win32 backup streams */
+   Win32Filter win32filter;           /* context for decomposition of win32 backup streams */
    int use_backup_decomp;             /* set if using BackupRead Stream Decomposition */
    bool reparse_point;                /* set if reparse point */
    bool cmd_plugin;                   /* set if we have a command plugin */
@@ -115,7 +102,7 @@ struct BFILE {
    uint64_t total_bytes;              /* bytes written */
    boffset_t offset;                  /* Delta offset */
    JCR *jcr;                          /* jcr for editing job codes */
-   PROCESS_WIN32_BACKUPAPIBLOCK_CONTEXT win32DecompContext; /* context for decomposition of win32 backup streams */
+   Win32Filter win32filter;           /* context for decomposition of win32 backup streams */
    int use_backup_decomp;             /* set if using BackupRead Stream Decomposition */
    bool reparse_point;                /* not used in Unix */
    bool cmd_plugin;                   /* set if we have a command plugin */

@@ -36,6 +36,7 @@ bool Win32Filter::have_data(char **raw, int64_t *raw_len, int64_t *use_len)
 {
    int64_t size;
    char *orig=*raw;
+   initialized = true;
    Dmsg1(100, "have_data(%lld)\n", *raw_len);
    while (*raw_len > 0) {
       /* In this rec, we could have multiple streams of data and headers

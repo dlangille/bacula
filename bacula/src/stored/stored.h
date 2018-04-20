@@ -88,6 +88,8 @@ const int sd_dbglvl = 300;
 #include "vtape_dev.h"
 #include "cloud_dev.h"
 #include "aligned_dev.h"
+#include "win_file_dev.h"
+#include "win_tape_dev.h"
 #include "sd_plugins.h"
 
 int breaddir(DIR *dirp, POOLMEM *&d_name);

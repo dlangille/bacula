@@ -82,7 +82,7 @@ bool path_list_add(JCR *jcr, uint32_t len, char *fname);
 
 /* from fstype.c */
 bool fstype(FF_PKT *ff_pkt, char *fs, int fslen);
-bool fstype_cmp(FF_PKT *ff_pkt, const char *fstype_name);
+bool fstype_equals(const char *fname, const char *fstype_name);
 
 /* from drivetype.c */
 bool drivetype(const char *fname, char *fs, int fslen);

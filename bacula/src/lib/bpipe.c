@@ -26,7 +26,12 @@
 
 #include "bacula.h"
 #include "jcr.h"
+#ifdef HAVE_GETRLIMIT
 #include <sys/resource.h>
+#else
+/* If not available, use a wrapper that will not use it */
+#define getrlimit(a,b) -1
+#endif
 
 int execvp_errors[] = {
         EACCES,

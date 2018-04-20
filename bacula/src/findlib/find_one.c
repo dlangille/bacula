@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2015 Kern Sibbald
+   Copyright (C) 2000-2018 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -608,6 +608,30 @@ find_one_file(JCR *jcr, FF_PKT *ff_pkt,
        * We have set st_rdev to 1 if it is a reparse point, otherwise 0,
        *  if st_rdev is 2, it is a mount point
        */
+#if defined(HAVE_WIN32)
+      /*
+       * A reparse point (WIN32_REPARSE_POINT)
+       *  is something special like one of the following:
+       *  IO_REPARSE_TAG_DFS              0x8000000A
+       *  IO_REPARSE_TAG_DFSR             0x80000012
+       *  IO_REPARSE_TAG_HSM              0xC0000004
+       *  IO_REPARSE_TAG_HSM2             0x80000006
+       *  IO_REPARSE_TAG_SIS              0x80000007
+       *  IO_REPARSE_TAG_SYMLINK          0xA000000C
+       *
+       * A junction point is a:
+       *  IO_REPARSE_TAG_MOUNT_POINT      0xA0000003
+       * which can be either a link to a Volume (WIN32_MOUNT_POINT)
+       * or a link to a directory (WIN32_JUNCTION_POINT)
+       *
+       * Ignore WIN32_REPARSE_POINT and WIN32_JUNCTION_POINT
+       */
+      if (ff_pkt->statp.st_rdev == WIN32_REPARSE_POINT) {
+         ff_pkt->type = FT_REPARSE;
+      } else if (ff_pkt->statp.st_rdev == WIN32_JUNCTION_POINT) {
+         ff_pkt->type = FT_JUNCTION;
+      }
+#endif
       /*
        * Note, we return the directory to the calling program (handle_file)
        * when we first see the directory (FT_DIRBEGIN.
@@ -647,6 +671,9 @@ find_one_file(JCR *jcr, FF_PKT *ff_pkt,
        * file systems.
        */
       bool is_win32_mount_point = false;
+#if defined(HAVE_WIN32)
+      is_win32_mount_point = ff_pkt->statp.st_rdev == WIN32_MOUNT_POINT;
+#endif
       if (!top_level && ff_pkt->flags & FO_NO_RECURSION) {
          ff_pkt->type = FT_NORECURSE;
          recurse = false;
@@ -764,7 +791,7 @@ find_one_file(JCR *jcr, FF_PKT *ff_pkt,
     *  a block device, we do a raw backup of it or if it is
     *  a fifo, we simply read it.
     */
-#if defined(HAVE_FREEBSD_OS) || defined(__FreeBSD_kernel__)
+#ifdef HAVE_FREEBSD_OS
    /*
     * On FreeBSD, all block devices are character devices, so
     *   to be able to read a raw disk, we need the check for

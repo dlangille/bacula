@@ -196,7 +196,8 @@ typedef enum {
   bVarPrevJobName           = 20,
   bVarPrefixLinks           = 21,
   bVarInteractiveSession    = 22,
-  bVarReplace               = 23,
+  bVarFileIndex             = 23,
+  bVarReplace               = 24
 } bVariable;
 
 /* Events that are passed to plugin */

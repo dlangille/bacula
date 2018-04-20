@@ -819,6 +819,8 @@ src/wx-console/bwx-console.conf
 src/wx-console/.libs
 
 # updatedb/
+updatedb/update_mysql_tables_1019_to_1020
+updatedb/update_postgresql_tables_1019_to_1020
 updatedb/update_mysql_tables
 updatedb/update_postgresql_tables
 updatedb/update_sqlite3_tables

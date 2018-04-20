@@ -1,0 +1,45 @@
+diff --git a/src/gui/widgets/qdialogbuttonbox.cpp b/src/gui/widgets/qdialogbuttonbox.cpp
+index b0f14ca..8e69e5f 100644 (file)
+--- a/src/gui/widgets/qdialogbuttonbox.cpp
++++ b/src/gui/widgets/qdialogbuttonbox.cpp
+@@ -212,7 +212,7 @@ static QDialogButtonBox::ButtonRole roleFor(QDialogButtonBox::StandardButton but
+     return QDialogButtonBox::InvalidRole;
+ }
+ 
+-static const int layouts[2][5][14] =
++static const uint layouts[2][5][14] =
+ {
+     // Qt::Horizontal
+     {
+@@ -407,7 +407,7 @@ void QDialogButtonBoxPrivate::layoutButtons()
+             tmpPolicy = 4;  // Mac modeless
+     }
+ 
+-    const int *currentLayout = layouts[orientation == Qt::Vertical][tmpPolicy];
++    const uint *currentLayout = layouts[orientation == Qt::Vertical][tmpPolicy];
+ 
+     if (center)
+         buttonLayout->addStretch();
+diff --git a/src/opengl/gl2paintengineex/qtriangulator.cpp b/src/opengl/gl2paintengineex/qtriangulator.cpp
+index 3e9dbb8..e8d7db5 100644 (file)
+--- a/src/opengl/gl2paintengineex/qtriangulator.cpp
++++ b/src/opengl/gl2paintengineex/qtriangulator.cpp
+@@ -1710,7 +1710,7 @@ void QTriangulator<T>::ComplexToSimple::initEdges()
+         } else {
+             Q_ASSERT(i + 1 < m_parent->m_indices.size());
+             // {node, from, to, next, previous, winding, mayIntersect, pointingUp, originallyPointingUp}
+-            Edge edge = {0, m_parent->m_indices.at(i), m_parent->m_indices.at(i + 1), -1, -1, 0, true, false, false};
++            Edge edge = {0, int(m_parent->m_indices.at(i)), int(m_parent->m_indices.at(i + 1)), -1, -1, 0, true, false, false};
+             m_edges.add(edge);
+         }
+     }
+--- ./src/plugins/accessible/widgets/itemviews.cpp      2018-04-11 19:01:29.073721147 +0000
++++ /home/bsbuild/dev/git/depkgs-mingw32/src/qt-everywhere-opensource-src-4.8.4/src/plugins/accessible/widgets/itemviews.cpp 2012-11-23 10:09:55.000000000 +0000
+@@ -393,7 +393,7 @@
+     QModelIndex index = view()->model()->index(0, column, view()->rootIndex());
+     if (!index.isValid() || view()->selectionMode() & QAbstractItemView::NoSelection)
+         return false;
+-    view()->selectionModel()->select(index, QItemSelectionModel::Columns & QItemSelectionModel::Deselect);
++    view()->selectionModel()->select(index, (QItemSelectionModel::SelectionFlag)(QItemSelectionModel::Columns & QItemSelectionModel::Deselect));
+     return true;
+ }

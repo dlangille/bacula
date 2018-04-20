@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2015 Kern Sibbald
+   Copyright (C) 2000-2018 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,12 +11,11 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
 */
-
 /*
  *  Kern Sibbald, September MMVII
  *
@@ -45,6 +44,8 @@
 #define lchmod chmod
 #endif
 
+/* Defined in attribs.c */
+void set_own_mod(ATTR *attr, char *path, uid_t owner, gid_t group, mode_t mode);
 
 typedef struct PrivateCurDir {
    hlink link;
@@ -167,28 +168,6 @@ static bool makedir(JCR *jcr, char *path, mode_t mode, int *created)
 }
 
 /*
- * Restore the owner and permissions (mode) of a Directory.
- *  See attribs.c for the equivalent for files.
- */
-static void set_own_mod(ATTR *attr, char *path, uid_t owner, gid_t group, mode_t mode)
-{
-   if (lchown(path, owner, group) != 0 && attr->uid == 0
-#ifdef AFS
-        && errno != EPERM
-#endif
-   ) {
-      berrno be;
-      Jmsg2(attr->jcr, M_WARNING, 0, _("Cannot change owner and/or group of %s: ERR=%s\n"),
-           path, be.bstrerror());
-   }
-   if (lchmod(path, mode) != 0 && attr->uid == 0) {
-      berrno be;
-      Jmsg2(attr->jcr, M_WARNING, 0, _("Cannot change permissions of %s: ERR=%s\n"),
-           path, be.bstrerror());
-   }
-}
-
-/*
  * mode is the mode bits to use in creating a new directory
  *
  * parent_mode are the parent's modes if we need to create parent
@@ -243,7 +222,32 @@ bool makepath(ATTR *attr, const char *apath, mode_t mode, mode_t parent_mode,
     */
    tmode = 0777;
 
+#if defined(HAVE_WIN32)
+   /* Validate drive letter */
+   if (path[1] == ':') {
+      char drive[4] = "X:\\";
+
+      drive[0] = path[0];
+
+      UINT drive_type = GetDriveType(drive);
+
+      if (drive_type == DRIVE_UNKNOWN || drive_type == DRIVE_NO_ROOT_DIR) {
+         Jmsg1(jcr, M_ERROR, 0, _("%c: is not a valid drive.\n"), path[0]);
+         goto bail_out;
+      }
+
+      if (path[2] == '\0') {          /* attempt to create a drive */
+         ok = true;
+         goto bail_out;               /* OK, it is already there */
+      }
+
+      p = &path[3];
+   } else {
+      p = path;
+   }
+#else
    p = path;
+#endif
 
    /* Skip leading slash(es) */
    while (IsPathSeparator(*p)) {
@@ -276,7 +280,20 @@ bool makepath(ATTR *attr, const char *apath, mode_t mode, mode_t parent_mode,
    }
 
    /* Now set the proper owner and modes */
+#if defined(HAVE_WIN32)
+
+   /* Don't propagate the hidden or encrypted attributes to parent directories */
+   parent_mode &= ~S_ISVTX;
+   parent_mode &= ~S_ISGID;
+
+   if (path[1] == ':') {
+      p = &path[3];
+   } else {
+      p = path;
+   }
+#else
    p = path;
+#endif
    /* Skip leading slash(es) */
    while (IsPathSeparator(*p)) {
       p++;

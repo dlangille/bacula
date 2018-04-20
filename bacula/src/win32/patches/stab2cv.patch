@@ -1,0 +1,11 @@
+--- src/PEExecutable.cpp.orig	2014-07-09 15:34:55.630375959 +0200
++++ src/PEExecutable.cpp	2014-07-09 15:35:35.966377397 +0200
+@@ -16,6 +16,8 @@
+     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ */
+ 
++#include <unistd.h>
++#include <stdio.h>
+ #include "stdafx.h"
+ #include "defs.h"
+ #include "ntexe.h"

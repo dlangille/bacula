@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2017 Kern Sibbald
+   Copyright (C) 2000-2018 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -215,7 +215,9 @@ void htable::stats()
    printf("buckets=%d num_items=%d max_items=%d\n", buckets, num_items, max_items);
    printf("max hits in a bucket = %d\n", max);
 #ifdef BIG_MALLOC
-   printf("total bytes malloced = %lld\n", (lli)total_size);
+   char ed1[100];
+   edit_uint64(total_size, ed1);
+   printf("total bytes malloced = %s\n", ed1);
    printf("total blocks malloced = %d\n", blocks);
 #endif
 }

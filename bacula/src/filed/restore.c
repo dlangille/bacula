@@ -1134,6 +1134,12 @@ ok_out:
       delete rctx.delayed_streams;
    }
 
+   if (rctx.efs) {
+      rctx.efs->stop();
+      rctx.efs->destroy();
+      free(rctx.efs);
+      rctx.efs = NULL;
+   }
    Dsm_check(200);
    bclose(&rctx.forkbfd);
    bclose(&rctx.bfd);
@@ -1324,6 +1330,31 @@ static bool store_data(r_ctx &rctx, char *data, const int32_t length, bool win32
    if (jcr->crypto.digest) {
       crypto_digest_update(jcr->crypto.digest, (uint8_t *)data, length);
    }
+#ifdef TEST_WORKER
+   if (!test_write_efs_data(rctx, data, length)) {
+      berrno be;
+      Jmsg2(jcr, M_ERROR, 0, _("Write error on %s: ERR=%s\n"),
+         jcr->last_fname, be.bstrerror(bfd->berrno));
+      return false;
+   }
+   return true;
+#endif
+
+#ifdef HAVE_WIN32
+   if (bfd->fattrs & FILE_ATTRIBUTE_ENCRYPTED) {
+      if (!p_WriteEncryptedFileRaw) {
+         Jmsg0(jcr, M_FATAL, 0, _("Windows Encrypted data not supported on this OS.\n"));
+         return false;
+      }
+      if (!win_write_efs_data(rctx, data, length)) {
+         berrno be;
+         Jmsg2(jcr, M_ERROR, 0, _("Encrypted file write error on %s: ERR=%s\n"),
+            jcr->last_fname, be.bstrerror(bfd->berrno));
+         return false;
+      }
+      return true;
+   }
+#endif
    if (win32_decomp) {
       if (!processWin32BackupAPIBlock(bfd, data, length)) {
          berrno be;
@@ -1505,6 +1536,12 @@ static bool close_previous_stream(r_ctx &rctx)
       if (rctx.prev_stream != STREAM_ENCRYPTED_SESSION_DATA) {
          deallocate_cipher(rctx);
          deallocate_fork_cipher(rctx);
+      }
+
+      if (rctx.efs) {
+         rctx.efs->finish_work();
+         bclose(&rctx.bfd);
+         rctx.count = 0;
       }
 
       if (rctx.jcr->plugin) {

@@ -25,6 +25,10 @@
 #include "bacula.h"
 #include "filed.h"
 #include "ch.h"
+#ifdef WIN32_VSS
+#include "vss.h"
+static pthread_mutex_t vss_mutex = PTHREAD_MUTEX_INITIALIZER;
+#endif
 
 /* Globals */
 bool win32decomp = false;
@@ -32,6 +36,12 @@ bool no_win32_write_errors = false;
 
 /* Static variables */
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+
+#ifdef HAVE_WIN32
+const bool have_win32 = true;
+#else 
+const bool have_win32 = false;
+#endif
 
 #ifdef HAVE_ACL
 const bool have_acl = true; 
@@ -907,7 +917,11 @@ static int job_cmd(JCR *jcr)
    Mmsg(jcr->errmsg, "JobId=%d Job=%s", jcr->JobId, jcr->Job);
    new_plugins(jcr);                  /* instantiate plugins for this jcr */
    generate_plugin_event(jcr, bEventJobStart, (void *)jcr->errmsg);
-   return dir->fsend(OKjob, VERSION, LSMDATE, HOST_OS, DISTNAME, DISTVER);
+#ifdef HAVE_WIN32
+   return dir->fsend(OKjob, VERSION, LSMDATE, win_os, DISTNAME, DISTVER);
+#else
+    return dir->fsend(OKjob, VERSION, LSMDATE, HOST_OS, DISTNAME, DISTVER);
+#endif
 }
 
 extern "C" char *job_code_callback_filed(JCR *jcr, const char* param, char *buf, int buflen)
@@ -1174,7 +1188,20 @@ static void append_file(JCR *jcr, findINCEXE *incexe,
                         const char *buf, bool is_file)
 {
    if (is_file) {
+#ifdef HAVE_WIN32
+      /* Special case for / under Win32,
+       * user is requesting to include all local drives
+       */
+      if (strcmp(buf, "/") == 0) {
+         //list_drives(&incexe->name_list);
+
+      } else {
+         incexe->name_list.append(new_dlistString(buf));
+      }
+#else
       incexe->name_list.append(new_dlistString(buf));
+#endif  /* HAVE_WIN32 */
+
    } else if (me->plugin_directory) {
       generate_plugin_event(jcr, bEventPluginCommand, (void *)buf);
       incexe->plugin_list.append(new_dlistString(buf));
@@ -1830,7 +1857,11 @@ static int fileset_cmd(JCR *jcr)
    BSOCK *dir = jcr->dir_bsock;
    int rtnstat;
 
+#if HAVE_WIN32
+   jcr->Snapshot = (strstr(dir->msg, "vss=1") != NULL);
+#else
    jcr->Snapshot = (strstr(dir->msg, "snap=1") != NULL);
+#endif
    if (!init_fileset(jcr)) {
       return 0;
    }
@@ -2174,6 +2205,185 @@ bail_out:
    return 0;
 }
 
+#ifdef HAVE_WIN32
+/* TODO: merge find.c ? */
+static bool is_excluded(findFILESET *fileset, char *path)
+{
+   int fnm_flags=FNM_CASEFOLD;
+   int fnmode=0;
+
+   /* Now apply the Exclude { } directive */
+   for (int i=0; i<fileset->exclude_list.size(); i++) {
+      findINCEXE *incexe = (findINCEXE *)fileset->exclude_list.get(i);
+      dlistString *node;
+
+      foreach_dlist(node, &incexe->name_list) {
+         char *fname = node->c_str();
+         Dmsg2(DT_VOLUME|50, "Testing %s against %s\n", path, fname);
+         if (fnmatch(fname, path, fnmode|fnm_flags) == 0) {
+            Dmsg1(050, "Reject wild2: %s\n", path);
+            return true;
+         }
+         /* On windows, the path separator is a bit complex to handle. For
+          * example, in fnmatch(), \ is written as \\\\ in the config file / is
+          * different from \ So we have our own little strcmp for filenames
+          */
+         char *p;
+         bool same=true;
+         for (p = path; *p && *fname && same ; p++, fname++) {
+            if (!((IsPathSeparator(*p) && IsPathSeparator(*fname)) ||
+                  (tolower(*p) == tolower(*fname)))) {
+               same = false;           /* Stop after the first one */
+            }
+         }
+
+         if (same) {
+            /* End of the for loop, strings looks to be identical */
+            Dmsg1(DT_VOLUME|50, "Reject: %s\n", path);
+            return true;
+         }
+
+         /* Looks to be the same string, but with a trailing slash */
+         if (fname[0] && IsPathSeparator(fname[0]) && fname[1] == '\0'
+             && p[0] == '\0')
+         {
+            Dmsg1(DT_VOLUME|50, "Reject: %s\n", path);
+            return true;
+         }
+      }
+   }
+   return false;
+}
+
+/*
+ * For VSS we need to know which windows drives
+ * are used, because we create a snapshot of all used
+ * drives before operation
+ *
+ */
+static int
+get_win32_driveletters(JCR *jcr, FF_PKT *ff, char* szDrives)
+{
+   int nCount = 0;
+
+   findFILESET *fileset = ff->fileset;
+   int  flags = 0;
+   char drive[4];
+
+   MTab mtab;
+   mtab.get();                  /* read the disk structure */
+
+   /* Keep this part for compatibility reasons */
+   strcpy(drive, "c:\\");
+   for (int i=0; szDrives[i] ; i++) {
+      drive[0] = szDrives[i];
+      if (mtab.addInSnapshotSet(drive)) { /* When all volumes are selected, we can stop */
+         Dmsg0(DT_VOLUME|50, "All Volumes are marked, stopping the loop here\n");
+         goto all_included;
+      }
+   }
+
+   if (fileset) {
+      dlistString *node;
+
+      for (int i=0; i<fileset->include_list.size(); i++) {
+
+         findFOPTS  *fo;
+         findINCEXE *incexe = (findINCEXE *)fileset->include_list.get(i);
+
+         /* look through all files */
+         foreach_dlist(node, &incexe->name_list) {
+            char *fname = node->c_str();
+            if (mtab.addInSnapshotSet(fname)) {
+               /* When all volumes are selected, we can stop */
+               Dmsg0(DT_VOLUME|50, "All Volumes are marked, stopping the loop here\n");
+               goto all_included;
+            }
+         }
+
+         foreach_alist(fo, &incexe->opts_list) {
+            flags |= fo->flags; /* We are looking for FO_MULTIFS and recurse */
+         }
+      }
+
+      /* TODO: it needs to be done Include by Include, but in the worst case,
+       * we take too much snapshots...
+       */
+      if (flags & FO_MULTIFS) {
+         /* Need to add subdirectories */
+         POOLMEM   *fn = get_pool_memory(PM_FNAME);
+         MTabEntry *elt, *elt2;
+         int len;
+
+         Dmsg0(DT_VOLUME|50, "OneFS is set, looking for remaining volumes\n");
+
+         foreach_rblist(elt, mtab.entries) {
+            if (elt->in_SnapshotSet) {
+               continue;         /* Already in */
+            }
+            /* A volume can have multiple mount points */
+            for (wchar_t *p = elt->first() ; p && *p ; p = elt->next(p)) {
+               wchar_2_UTF8(&fn, p);
+
+               Dmsg1(DT_VOLUME|50, "Looking for path %s\n", fn);
+
+               /* First case, root drive (c:/, e:/, d:/), not a submount point */
+               len = strlen(fn);
+               if (len <= 3) {
+                  Dmsg1(DT_VOLUME|50, "Skiping %s\n", fn);
+                  continue;
+               }
+
+               /* First thing is to look in the exclude list to see if this directory
+                * is explicitely excluded
+                */
+               if (is_excluded(fileset, fn)) {
+                  Dmsg1(DT_VOLUME|50, "Looks to be excluded %s\n", fn);
+                  continue;
+               }
+
+               /* c:/vol/vol2/vol3
+                * will look c:/, then c:/vol/, then c:/vol2/ and if one of them
+                * is selected, the sub volume will be directly marked.
+                */
+               for (char *p1 = fn ; *p1 && !elt->in_SnapshotSet ; p1++) {
+                  if (IsPathSeparator(*p1)) {
+
+                     char c = *(p1 + 1);
+                     *(p1 + 1) = 0;
+
+                     /* We look for the previous directory, and if marked, we mark
+                      * the current one as well
+                      */
+                     Dmsg1(DT_VOLUME|50, "Looking for %s\n", fn);
+                     elt2 = mtab.search(fn);
+                     if (elt2 && elt2->in_SnapshotSet) {
+                        Dmsg0(DT_VOLUME|50, "Put volume in SnapshotSet\n");
+                        elt->setInSnapshotSet();
+                     }
+
+                     *(p1 + 1) = c; /* restore path separator */
+                  }
+               }
+            }
+         }
+         free_pool_memory(fn);
+      }
+   all_included:
+      /* Now, we look the volume list to know which one to include */
+      MTabEntry *elt;
+      foreach_rblist(elt, mtab.entries) {
+         if (elt->in_SnapshotSet) {
+            Dmsg1(DT_VOLUME|50,"Adding volume in mount_points list %ls\n",elt->volumeName);
+            nCount++;
+            ff->mount_points.append(bwcsdup(elt->volumeName));
+         }
+      }
+   }
+
+   return nCount;
+}
+#endif  /* HAVE_WIN32 */
 
 /*
  * Do a backup.
@@ -2195,7 +2405,7 @@ static int backup_cmd(JCR *jcr)
     * If explicitly requesting FO_ACL or FO_XATTR, fail job if it
     *  is not available on Client machine
     */ 
-   if (jcr->ff->flags & FO_ACL && !(have_acl)) {
+   if (jcr->ff->flags & FO_ACL && !(have_acl||have_win32)) {
       Jmsg(jcr, M_FATAL, 0, _("ACL support not configured for Client.\n"));
       goto cleanup; 
    } 
@@ -2253,9 +2463,47 @@ static int backup_cmd(JCR *jcr)
    generate_plugin_event(jcr, bEventStartBackupJob);
 
    if (jcr->Snapshot) {
+#if defined(WIN32_VSS)
+      P(vss_mutex);
+   /* START VSS ON WIN32 */
+      jcr->pVSSClient = VSSInit();
+      if (jcr->pVSSClient->InitializeForBackup(jcr)) {
+         generate_plugin_event(jcr, bEventVssBackupAddComponents);
+         /* tell vss which drives to snapshot */
+         char szWinDriveLetters[27];
+         *szWinDriveLetters=0;
+         generate_plugin_event(jcr, bEventVssPrepareSnapshot, szWinDriveLetters);
+         if (get_win32_driveletters(jcr, jcr->ff, szWinDriveLetters)) {
+            Jmsg(jcr, M_INFO, 0, _("Generate VSS snapshots. Driver=\"%s\"\n"),
+                 jcr->pVSSClient->GetDriverName());
+
+            if (!jcr->pVSSClient->CreateSnapshots(&jcr->ff->mount_points)) {
+               berrno be;
+               Jmsg(jcr, M_FATAL, 0, _("VSS CreateSnapshots failed. ERR=%s\n"),
+                    be.bstrerror());
+            } else {
+               /* inform user about writer states */
+               for (int i=0; i < (int)jcr->pVSSClient->GetWriterCount(); i++) {
+                  if (jcr->pVSSClient->GetWriterState(i) < 1) {
+                     Jmsg(jcr, M_INFO, 0, _("VSS Writer (PrepareForBackup): %s\n"),
+                          jcr->pVSSClient->GetWriterInfo(i));
+                  }
+               }
+            }
+         } else {
+            Jmsg(jcr, M_WARNING, 0, _("No drive letters found for generating VSS snapshots.\n"));
+         }
+      } else {
+         berrno be;
+         Jmsg(jcr, M_FATAL, 0, _("VSS was not initialized properly. ERR=%s\n"),
+            be.bstrerror());
+      }
+      V(vss_mutex);
+#else
       Dmsg0(10, "Open a snapshot session\n");
       /* TODO: See if we abort the job */
       jcr->Snapshot = open_snapshot_backup_session(jcr);
+#endif
    }
    /* Call RunScript just after the Snapshot creation, usually, we restart services */
    run_scripts(jcr, jcr->RunScripts, "ClientAfterVSS");
@@ -2315,6 +2563,14 @@ static int backup_cmd(JCR *jcr)
    }
 
 cleanup:
+#if defined(WIN32_VSS)
+   if (jcr->Snapshot) {
+      Win32ConvCleanupCache();
+      if (jcr->pVSSClient) {
+         jcr->pVSSClient->DestroyWriterInfo();
+      }
+   }
+#endif
    generate_plugin_event(jcr, bEventEndBackupJob);
    return 0;                          /* return and stop command loop */
 }
@@ -2417,6 +2673,14 @@ static int restore_cmd(JCR *jcr)
     * Scan WHERE (base directory for restore) from command
     */
    Dmsg0(100, "restore command\n");
+#if defined(WIN32_VSS)
+
+   /**
+    * No need to enable VSS for restore if we do not have plugin
+    *  data to restore
+    */
+   jcr->Snapshot = jcr->got_metadata;
+#endif
 
    /* Pickup where string */
    args = get_memory(dir->msglen+1);
@@ -2462,6 +2726,7 @@ static int restore_cmd(JCR *jcr)
                Jmsg(jcr, M_FATAL, 0, _("Bad replace command. CMD=%s\n"), jcr->errmsg);
                goto free_mempool;
             }
+            jcr->RegexWhere = bstrdup(args);
             *args = 0;          /* No where argument */
          } else {
             use_regexwhere = true;
@@ -2516,6 +2781,19 @@ static int restore_cmd(JCR *jcr)
    generate_daemon_event(jcr, "JobStart");
    generate_plugin_event(jcr, bEventStartRestoreJob);
 
+#if defined(WIN32_VSS)
+   /* START VSS ON WIN32 */
+   if (jcr->Snapshot) {
+      jcr->pVSSClient = VSSInit();
+      if (!jcr->pVSSClient->InitializeForRestore(jcr)) {
+         berrno be;
+         Jmsg(jcr, M_WARNING, 0, _("VSS was not initialized properly. VSS support is disabled. ERR=%s\n"), be.bstrerror());
+      }
+      //free_and_null_pool_memory(jcr->job_metadata);
+      run_scripts(jcr, jcr->RunScripts, "ClientAfterVSS");
+   }
+#endif
+
    if (!jcr->is_canceled()) {
       do_restore(jcr);
    }
@@ -2538,8 +2816,39 @@ static int restore_cmd(JCR *jcr)
    /* Inform Storage daemon that we are done */
    sd->signal(BNET_TERMINATE);
 
+#if defined(WIN32_VSS)
+   /* STOP VSS ON WIN32 */
+   /* tell vss to close the restore session */
+   Dmsg0(100, "About to call CloseRestore\n");
+   if (jcr->Snapshot) {
+#if 0
+      generate_plugin_event(jcr, bEventVssBeforeCloseRestore);
+#endif
+      Dmsg0(100, "Really about to call CloseRestore\n");
+      if (jcr->pVSSClient->CloseRestore()) {
+         Dmsg0(100, "CloseRestore success\n");
+#if 0
+         /* inform user about writer states */
+         for (int i=0; i<(int)jcr->pVSSClient->GetWriterCount(); i++) {
+            int msg_type = M_INFO;
+            if (jcr->pVSSClient->GetWriterState(i) < 1) {
+               //msg_type = M_WARNING;
+               //jcr->JobErrors++;
+            }
+            Jmsg(jcr, msg_type, 0, _("VSS Writer (RestoreComplete): %s\n"),
+                 jcr->pVSSClient->GetWriterInfo(i));
+         }
+#endif
+      }
+      else {
+         Dmsg1(100, "CloseRestore fail - %08x\n", errno);
+      }
+   }
+#endif
+
 bail_out:
    bfree_and_null(jcr->where);
+   bfree_and_null(jcr->RegexWhere);
 
    if (jcr->JobErrors) {
       jcr->setJobStatus(JS_ErrorTerminated);
@@ -2656,6 +2965,9 @@ static void filed_free_jcr(JCR *jcr)
    if (jcr->last_fname) {
       free_pool_memory(jcr->last_fname);
    }
+#ifdef WIN32_VSS
+   VSSCleanup(jcr->pVSSClient);
+#endif
    free_plugins(jcr);                 /* release instantiated plugins */
    free_runscripts(jcr->RunScripts);
    delete jcr->RunScripts;

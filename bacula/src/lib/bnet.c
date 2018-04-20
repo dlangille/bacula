@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2017 Kern Sibbald
+   Copyright (C) 2000-2018 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -527,33 +527,64 @@ const char *bnet_sig_to_ascii(int32_t msglen)
    static char buf[30];
    switch (msglen) {
    case BNET_EOD:
-      return "BNET_EOD";           /* end of data stream */
+      return "BNET_EOD";        /* End of data stream, new data may follow */
    case BNET_EOD_POLL:
-      return "BNET_EOD_POLL";
+      return "BNET_EOD_POLL";   /* End of data and poll all in one */
    case BNET_STATUS:
-      return "BNET_STATUS";
+      return "BNET_STATUS";     /* Send full status */
    case BNET_TERMINATE:
-      return "BNET_TERMINATE";     /* terminate connection */
+      return "BNET_TERMINATE";  /* Conversation terminated, doing close() */
    case BNET_POLL:
-      return "BNET_POLL";
+      return "BNET_POLL";       /* Poll request, I'm hanging on a read */
    case BNET_HEARTBEAT:
-      return "BNET_HEARTBEAT";
+      return "BNET_HEARTBEAT";  /* Heartbeat Response requested */
    case BNET_HB_RESPONSE:
-      return "BNET_HB_RESPONSE";
-   case BNET_SUB_PROMPT:
-      return "BNET_SUB_PROMPT";
-   case BNET_TEXT_INPUT:
-      return "BNET_TEXT_INPUT";
-   case BNET_FDCALLED:
-      return "BNET_FDCALLED";
+      return "BNET_HB_RESPONSE"; /* Only response permited to HB */
+   case BNET_BTIME:
+      return "BNET_BTIME";      /* Send UTC btime */
+   case BNET_BREAK:
+      return "BNET_BREAK";      /* Stop current command -- ctl-c */
+   case BNET_START_SELECT:
+      return "BNET_START_SELECT"; /* Start of a selection list */
+   case BNET_END_SELECT:
+      return "BNET_END_SELECT"; /* End of a select list */
+   case BNET_INVALID_CMD:
+      return "BNET_INVALID_CMD"; /* Invalid command sent */
+   case BNET_CMD_FAILED:
+      return "BNET_CMD_FAILED"; /* Command failed */
    case BNET_CMD_OK:
-      return "BNET_CMD_OK";
+      return "BNET_CMD_OK";     /* Command succeeded */
    case BNET_CMD_BEGIN:
-      return "BNET_CMD_BEGIN";
+      return "BNET_CMD_BEGIN";  /* Start command execution */
+   case BNET_MSGS_PENDING:
+      return "BNET_MSGS_PENDING"; /* Messages pending */
    case BNET_MAIN_PROMPT:
-      return "BNET_MAIN_PROMPT";
+      return "BNET_MAIN_PROMPT"; /* Server ready and waiting */
+   case BNET_SELECT_INPUT:
+      return "BNET_SELECT_INPUT"; /* Return selection input */
+   case BNET_WARNING_MSG:
+      return "BNET_WARNING_MSG"; /* Warning message */
    case BNET_ERROR_MSG:
-      return "BNET_ERROR_MSG";
+      return "BNET_ERROR_MSG";  /* Error message -- command failed */
+   case BNET_INFO_MSG:
+      return "BNET_INFO_MSG";   /* Info message -- status line */
+   case BNET_RUN_CMD:
+      return "BNET_RUN_CMD";    /* Run command follows */
+   case BNET_YESNO:
+      return "BNET_YESNO";      /* Request yes no response */
+   case BNET_START_RTREE:
+      return "BNET_START_RTREE"; /* Start restore tree mode */
+   case BNET_END_RTREE:
+      return "BNET_END_RTREE";  /* End restore tree mode */
+   case BNET_SUB_PROMPT:
+      return "BNET_SUB_PROMPT"; /* Indicate we are at a subprompt */
+   case BNET_TEXT_INPUT:
+      return "BNET_TEXT_INPUT"; /* Get text input from user */
+   case BNET_EXT_TERMINATE:
+       return "BNET_EXT_TERMINATE"; /* A Terminate condition has been met and
+                               already reported somewhere else */
+   case BNET_FDCALLED      :
+      return "BNET_FDCALLED"; /* The FD should keep the connection for a new job */
    default:
       bsnprintf(buf, sizeof(buf), _("Unknown sig %d"), (int)msglen);
       return buf;
@@ -637,14 +668,12 @@ int set_socket_errno(int sockstat)
       /* Handle errrors from prior connections as EAGAIN */
       switch (errno) {
          case ENETDOWN:
-#ifdef EPROTO
          case EPROTO:
-#endif
+         case ENOPROTOOPT:
+         case EHOSTDOWN:
 #ifdef ENONET
          case ENONET:
 #endif
-         case ENOPROTOOPT:
-         case EHOSTDOWN:
          case EHOSTUNREACH:
          case EOPNOTSUPP:
          case ENETUNREACH:

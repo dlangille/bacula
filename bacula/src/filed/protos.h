@@ -75,3 +75,8 @@ findINCEXE *new_include(JCR *jcr);
 
 /* from snapshot.c */
 int snapshot_cmd(JCR *jcr);
+
+#ifdef HAVE_WIN32
+void VSSCleanup(VSSClient *c);
+VSSClient *VSSInit();
+#endif

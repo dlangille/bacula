@@ -1,4 +1,69 @@
-              Changelog on version 9.0.6
+              Changelog on version 9.0.7
+
+Release 9.0.7
+
+
+18Apr18
+ - Remove NSIS debug
+
+12Apr18
+ - baculum: Fix opening configuration tabs bug reported by Heitor Faria
+
+25Feb18
+ - Restore win32 dir from Branch-5.2 and update it
+
+23Feb18
+ - Add Phil Stracchino's fix for Qt5
+
+03Feb18
+ - baculum: Fix saving boolean values in schedule Run directive
+
+19Jan18
+ - rpm: Add Fedora26-64 platform
+
+10Jan18
+ - baculum: Add link to go back from job configuration window
+
+09Dec17
+ - Use correct SQL table encoding for Postgresql 10.x
+
+03Dec17
+ - baculum: Add listbox control and use it for base and device directives
+
+02Dec17
+ - baculum: Fix showing verify job fields in job run configuration window
+ - baculum: Revert back volume pool name in volume list window
+ - baculum: Fix error message about disabled bconsole
+ - baculum: API endpoints code refactor
+ - baculum: Add state, number, boolean and id validators
+ - baculum: Return bconsole disabled error if bconsole support isn't enabled
+ - baculum: Remove unused api endpoints
+
+28Nov17
+ - baculum: Fix oauth2 client working in the web part
+
+27Nov17
+ - baculum: Fix auth setting radio buttons alignement
+ - baculum: Enlarge interface height to 100%
+ - baculum: Add more information to cURL error
+ - baculum: New reworked restore wizard
+ - baculum: Wizards view improvements
+ - baculum: Add restore hardlinks support in api
+ - baculum: Add strip_prefix, add_prefix, add_suffix and regex_where restore 
+  options to api restore
+ - baculum: Add new volumes required api endpoint
+
+22Nov17
+ - Port missing RestoreObject Plugin Config code from BEE.
+
+21Nov17
+ - baculum: Stop using hidden fields to store item identifiers
+ - baculum: Fix redundant loading users portlet
+ - baculum: Add required config fields asterisk mark
+
+Bugs fixed/closed since last release:
+
+==========================================================
 
 Release 9.0.6
 

@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2017 Kern Sibbald
+   Copyright (C) 2000-2018 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -133,7 +133,7 @@ PROG_COPYRIGHT
 "       -u <nn>     set command execution timeout to <nn> seconds\n"
 "       -t          test - read configuration and exit\n"
 "       -?          print this message.\n"
-"\n"), 2000, "", HOST_OS, DISTNAME, DISTVER);
+"\n"), 2000, BDEMO, HOST_OS, DISTNAME, DISTVER);
 }
 
 
@@ -845,6 +845,7 @@ wait_for_data(int fd, int sec)
 int
 get_cmd(FILE *input, const char *prompt, BSOCK *sock, int sec)
 {
+   int len;
    if (!stop) {
       if (output == stdout || teeout) {
          sendit(prompt);
@@ -857,19 +858,20 @@ again:
    case -1:
       return -1;                   /* error */
    default:
+      len = sizeof_pool_memory(sock->msg) - 1;
       if (stop) {
          sleep(1);
          goto again;
       }
 #ifdef HAVE_CONIO
       if (bisatty(fileno(input))) {
-         input_line(sock->msg, sizeof_pool_memory(sock->msg)-1);
+         input_line(sock->msg, len);
          break;
       }
 #endif
 #ifdef HAVE_WIN32 /* use special console for input on win32 */
       if (input == stdin) {
-         if (win32_cgets(sock->msg, sizeof_pool_memory(sock->msg)-1) == NULL) {
+         if (win32_cgets(sock->msg, len) == NULL) {
             return -1;
          }
       }

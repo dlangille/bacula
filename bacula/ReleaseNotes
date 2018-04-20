@@ -1,5 +1,60 @@
 
-               Release Notes for Bacula 9.0.6
+               Release Notes for Bacula 9.0.7
+
+Release 9.0.7
+
+This is a significant release because it now has the Windows code
+reintegrated and updated to work with this version.  Other than
+Baculum updates and the new Windows update, there is no significant
+change to the other code.  
+
+If you wish to use the Windows 9.0.7 File daemon binaries with 
+your existing 9.0.x Bacula Director and Storage daemon it should
+work fine but has not been tested.
+
+The 64 bit version of the Windows binaries has been installed and
+very quickly tested, as a consequence, please test it carefully before
+putting into production.  There seem to be some minor installation errors
+that are probably related to .conf files.  Also the Windows binaries do
+not yet contain the tray-monitor or the old Exchange plug.  Both currently
+fail to build.
+
+18Apr18
+ - Remove NSIS debug
+ - baculum: Fix opening configuration tabs bug reported by Heitor Faria
+ - Restore win32 dir from Branch-5.2 and update it
+ - Add Phil Stracchino's fix for Qt5
+ - baculum: Fix saving boolean values in schedule Run directive
+ - rpm: Add Fedora26-64 platform
+ - baculum: Add link to go back from job configuration window
+ - Use correct SQL table encoding for Postgresql 10.x
+ - baculum: Add listbox control and use it for base and device directives
+ - baculum: Fix showing verify job fields in job run configuration window
+ - baculum: Revert back volume pool name in volume list window
+ - baculum: Fix error message about disabled bconsole
+ - baculum: API endpoints code refactor
+ - baculum: Add state, number, boolean and id validators
+ - baculum: Return bconsole disabled error if bconsole support isn't enabled
+ - baculum: Remove unused api endpoints
+ - baculum: Fix oauth2 client working in the web part
+ - baculum: Fix auth setting radio buttons alignement
+ - baculum: Enlarge interface height to 100%
+ - baculum: Add more information to cURL error
+ - baculum: New reworked restore wizard
+ - baculum: Wizards view improvements
+ - baculum: Add restore hardlinks support in api
+ - baculum: Add strip_prefix, add_prefix, add_suffix and regex_where restore 
+   options to api restore
+ - Port missing RestoreObject Plugin Config code from BEE.
+ - baculum: Stop using hidden fields to store item identifiers
+ - baculum: Fix redundant loading users portlet
+ - baculum: Add required config fields asterisk mark
+
+Bugs fixed/closed since last release:
+None
+
+
+==============================================================
 
 Release 9.0.6
 

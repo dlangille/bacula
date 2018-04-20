@@ -31,7 +31,11 @@ extern DLL_IMP_EXP char *version;
 extern DLL_IMP_EXP char *dist_name;
 
 const int dbglvl = 150;
+#ifdef HAVE_WIN32
+const char *plugin_type = "-fd.dll";
+#else
 const char *plugin_type = "-fd.so";
+#endif
 
 extern int save_file(JCR *jcr, FF_PKT *ff_pkt, bool top_level);
 extern bool check_changes(JCR *jcr, FF_PKT *ff_pkt);
@@ -1360,7 +1364,7 @@ static bool is_plugin_compatible(Plugin *plugin)
    }
    if (strcmp(info->plugin_license, "Bacula AGPLv3") != 0 &&
        strcmp(info->plugin_license, "AGPLv3") != 0 &&
-       strcmp(info->plugin_license, "Bacula Systems(R) SA") != 0) {
+       strcmp(info->plugin_license, "Bacula") != 0) {
       Jmsg(NULL, M_ERROR, 0, _("Plugin license incompatible. Plugin=%s license=%s\n"),
            plugin->file, info->plugin_license);
       Dmsg2(50, "Plugin license incompatible. Plugin=%s license=%s\n",
@@ -1706,11 +1710,24 @@ static bRC baculaGetValue(bpContext *ctx, bVariable var, void *value)
    case bVarInteractiveSession:
       *(int *)value = (int)jcr->interactive_session;
       break;
+   case bVarFileIndex:
+      *(int *)value = (int)jcr->JobFiles;
+      break;
    case bVarFileSeen:
       break;                 /* a write only variable, ignore read request */
    case bVarVssObject:
+#ifdef HAVE_WIN32
+      if (jcr->pVSSClient) {
+         *(void **)value = jcr->pVSSClient->GetVssObject();
+         break;
+       }
+#endif
        return bRC_Error;
    case bVarVssDllHandle:
+#ifdef HAVE_WIN32
+      *(void **)value = vsslib;
+      break;
+#endif
        return bRC_Error;
    case bVarWhere:
       *(char **)value = jcr->where;

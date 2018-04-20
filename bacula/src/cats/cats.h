@@ -242,6 +242,7 @@ struct ROBJECT_DBR {
 struct FILE_DBR {
    FileId_t FileId;
    uint32_t FileIndex;
+   uint32_t FileIndex2;
    JobId_t  JobId;
    DBId_t FilenameId;
    DBId_t PathId;

@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2017 Kern Sibbald
+   Copyright (C) 2000-2018 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -67,10 +67,9 @@ static int compare_mtab_items(void *item1, void *item2)
    return 0;
 }
 
-#if defined(HAVE_LINUX_OS)
-static void add_mtab_item(void *user_ctx, struct stat *st, const char *fstype,
-               const char *mountpoint, const char *mntopts,
-               const char *fsname)
+void add_mtab_item(void *user_ctx, struct stat *st, const char *fstype,
+                      const char *mountpoint, const char *mntopts,
+                      const char *fsname)
 {
    rblist *mtab_list = (rblist *)user_ctx;
    mtab_item *item, *ritem;
@@ -85,17 +84,7 @@ static void add_mtab_item(void *user_ctx, struct stat *st, const char *fstype,
       free(item);
    }
 }
-#endif
 
-/* Compare directly the FS from a fname with a string */
-bool fstype_cmp(FF_PKT *ff_pkt, const char *fsname)
-{
-   char buf[256];
-   if (fstype(ff_pkt, buf, sizeof(buf))) {
-      return (strcmp(buf, fsname) == 0);
-   }
-   return false;
-}
 
 /*
  * These functions should be implemented for each OS
@@ -104,7 +93,6 @@ bool fstype_cmp(FF_PKT *ff_pkt, const char *fsname)
  */
 #if defined(HAVE_DARWIN_OS) \
    || defined(HAVE_FREEBSD_OS ) \
-   || defined(HAVE_KFREEBSD_OS ) \
    || defined(HAVE_OPENBSD_OS)
 
 #include <sys/param.h>
@@ -192,7 +180,7 @@ bool fstype(FF_PKT *ff_pkt, char *fs, int fslen)
          ff_pkt->last_fstype = st.f_type;
          bstrncpy(ff_pkt->last_fstypename, item->fstype, sizeof(ff_pkt->last_fstypename));
          bstrncpy(fs, ff_pkt->last_fstypename, fslen);
-         return true; 
+         return true;
       }
       /*
        * Values obtained from statfs(2), testing and
@@ -274,7 +262,7 @@ bool fstype(FF_PKT *ff_pkt, char *fs, int fslen)
       case 0x858458f6:     fstype = "tmpfs"; break;         /* RAMFS_MAGIC */
       case 0x01021994:     fstype = "tmpfs"; break;         /* TMPFS_MAGIC */
 #endif
- 
+
       default:
          Dmsg2(10, "Unknown file system type \"0x%x\" for \"%s\".\n", st.f_type,
                fname);
@@ -293,7 +281,6 @@ bool fstype(FF_PKT *ff_pkt, char *fs, int fslen)
 
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/mnttab.h>
 
 bool fstype(FF_PKT *ff_pkt, char *fs, int fslen)
 {
@@ -306,7 +293,8 @@ bool fstype(FF_PKT *ff_pkt, char *fs, int fslen)
 /* Tru64 */
 #include <sys/stat.h>
 #include <sys/mount.h>
- 
+#include <sys/mnttab.h>
+
 bool fstype(FF_PKT *ff_pkt, char *fs, int fslen)
 {
    char *fname = ff_pkt->fname;
@@ -327,6 +315,35 @@ bool fstype(FF_PKT *ff_pkt, char *fs, int fslen)
 }
 /* Tru64 */
 
+#elif defined (HAVE_WIN32)
+/* Windows */
+bool fstype(FF_PKT *ff_pkt, char *fs, int fslen)
+{
+   char *fname = ff_pkt->fname;
+   DWORD componentlength;
+   DWORD fsflags;
+   CHAR rootpath[4];
+   UINT oldmode;
+   BOOL result;
+
+   /* Copy Drive Letter, colon, and backslash to rootpath */
+   bstrncpy(rootpath, fname, sizeof(rootpath));
+
+   /* We don't want any popups if there isn't any media in the drive */
+   oldmode = SetErrorMode(SEM_FAILCRITICALERRORS);
+   result = GetVolumeInformation(rootpath, NULL, 0, NULL, &componentlength, &fsflags, fs, fslen);
+   SetErrorMode(oldmode);
+
+   if (result) {
+      /* Windows returns NTFS, FAT, etc.  Make it lowercase to be consistent with other OSes */
+      lcase(fs);
+   } else {
+      Dmsg2(10, "GetVolumeInformation() failed for \"%s\", Error = %d.\n", rootpath, GetLastError());
+   }
+   return result != 0;
+}
+/* Windows */
+
 #else    /* No recognised OS */
 
 bool fstype(FF_PKT *ff_pkt, char *fs, int fslen)
@@ -340,41 +357,7 @@ bool fstype(FF_PKT *ff_pkt, char *fs, int fslen)
 /* Read mtab entries  */
 bool read_mtab(mtab_handler_t *mtab_handler, void *user_ctx)
 { 
-/* Debian stretch GNU/KFreeBSD has both getmntinfo and getmntent, but
-   only the first seems to work, so ordering is important here */
-#ifdef HAVE_GETMNTINFO
-   struct stat st;
-#if defined(ST_NOWAIT)
-   int flags = ST_NOWAIT;
-#elif defined(MNT_NOWAIT)
-   int flags = MNT_NOWAIT;
-#else
-   int flags = 0;
-#endif
-#if defined(HAVE_NETBSD_OS)
-   struct statvfs *mntinfo;
-#else
-   struct statfs *mntinfo;
-#endif
-   int nument;
-
-   P(mutex);
-   if ((nument = getmntinfo(&mntinfo, flags)) > 0) {
-      while (nument-- > 0) {
-         if (is_rootfs(mntinfo->f_fstypename)) {
-            continue;
-         }
-         if (stat(mntinfo->f_mntonname, &st) < 0) {
-            continue;
-         }
-         mtab_handler(user_ctx, &st, mntinfo->f_mntfromname,
-            mntinfo->f_mntonname, mntinfo->f_fstypename, NULL);
-         mntinfo++;
-      }
-   }
-   V(mutex);
-/* HAVE_GETMNTINFO */
-#elif defined(HAVE_GETMNTENT)
+#ifdef HAVE_GETMNTENT
    FILE *mntfp;
    struct stat st;
  
@@ -426,9 +409,42 @@ bool read_mtab(mtab_handler_t *mtab_handler, void *user_ctx)
 #endif
 
 #endif /* HAVE_GETMNTENT */
+
+#ifdef HAVE_GETMNTINFO
+   struct stat st;
+#if defined(ST_NOWAIT)
+   int flags = ST_NOWAIT;
+#elif defined(MNT_NOWAIT)
+   int flags = MNT_NOWAIT;
+#else
+   int flags = 0;
+#endif
+#if defined(HAVE_NETBSD_OS)
+   struct statvfs *mntinfo;
+#else
+   struct statfs *mntinfo;
+#endif
+   int nument;
+
+   P(mutex);
+   if ((nument = getmntinfo(&mntinfo, flags)) > 0) {
+      while (nument-- > 0) {
+         if (is_rootfs(mntinfo->f_fstypename)) {
+            continue;
+         }
+         if (stat(mntinfo->f_mntonname, &st) < 0) {
+            continue;
+         }
+         mtab_handler(user_ctx, &st, mntinfo->f_mntfromname,
+            mntinfo->f_mntonname, mntinfo->f_fstypename, NULL);
+         mntinfo++;
+      }
+   }
+   V(mutex);
+#endif /* HAVE_GETMNTINFO */
    return true;
 } 
- 
+
 #ifdef TEST_PROGRAM
 int main(int argc, char **argv)
 {

@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2017 Kern Sibbald
+   Copyright (C) 2000-2018 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -490,6 +490,58 @@ switch_top:
       count = -1;
    }
    return count;
+}
+
+/*
+ * Return next name from a comma separated list.  Note, this
+ *   routine is destructive because it stored 0 at the end
+ *   of each argument.
+ * Called with pointer to pointer to command line. This
+ *   pointer is updated to point to the remainder of the
+ *   command line.
+ *
+ * Returns pointer to next name -- don't store the result
+ *   in the pointer you passed as an argument ...
+ *   The next argument is terminated by a , unless within
+ *   quotes. Double quote characters (unless preceded by a \) are
+ *   stripped.
+ *
+ */
+char *next_name(char **s)
+{
+   char *p, *q, *n;
+   bool in_quote = false;
+
+   if (s == NULL || *s == NULL || **s == '\0') {
+      return NULL;
+   }
+   p = *s;
+   Dmsg1(900, "Next name=%s\n", p);
+   for (n = q = p; *p ; ) {
+      if (*p == '\\') {                 /* slash? */
+         p++;                           /* yes, skip it */
+         if (*p) {
+            *q++ = *p++;
+         } else {
+            *q++ = *p;
+         }
+         continue;
+      }
+      if (*p == '"') {                  /* start or end of quote */
+         p++;
+         in_quote = !in_quote;          /* change state */
+         continue;
+      }
+      if (!in_quote && *p == ',') { /* end of field */
+         p++;
+         break;
+      }
+      *q++ = *p++;
+   }
+   *q = 0;
+   *s = p;
+   Dmsg2(900, "End arg=%s next=%s\n", n, p);
+   return n;
 }
 
 #ifdef TEST_PROGRAM

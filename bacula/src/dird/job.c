@@ -1465,6 +1465,10 @@ void dird_free_jcr(JCR *jcr)
    Dmsg0(200, "Start dird free_jcr\n");
 
    dird_free_jcr_pointers(jcr);
+   if (jcr->bsr_list) {
+      free_bsr(jcr->bsr_list);
+      jcr->bsr_list = NULL;
+   }
    if (jcr->wjcr) {
       free_jcr(jcr->wjcr);
       jcr->wjcr = NULL;
@@ -1622,11 +1626,8 @@ void set_jcr_defaults(JCR *jcr, JOB *job)
    jcr->spool_size = job->spool_size;
    jcr->write_part_after_job = job->write_part_after_job;
    jcr->MaxRunSchedTime = job->MaxRunSchedTime;
-   if (jcr->RestoreBootstrap) {
-      free(jcr->RestoreBootstrap);
-      jcr->RestoreBootstrap = NULL;
-   }
    /* This can be overridden by Console program */
+   bfree_and_null(jcr->RestoreBootstrap);
    if (job->RestoreBootstrap) {
       jcr->RestoreBootstrap = bstrdup(job->RestoreBootstrap);
    }

@@ -1,0 +1,12 @@
+diff -rup a/src/3rdparty/webkit/Source/WebKit/qt/tests/hybridPixmap/widget.ui b/src/3rdparty/webkit/Source/WebKit/qt/tests/hybridPixmap/widget.ui
+--- a/src/3rdparty/webkit/Source/WebKit/qt/tests/hybridPixmap/widget.ui	2014-07-22 17:04:10.504085732 +0200
++++ b/src/3rdparty/webkit/Source/WebKit/qt/tests/hybridPixmap/widget.ui	2014-07-22 17:01:08.000000000 +0200
+@@ -87,7 +87,7 @@
+   <customwidget>
+    <class>WebView</class>
+    <extends>QWidget</extends>
+-   <header>widget.h</header>
++   <header>../../widget.h</header>
+   </customwidget>
+  </customwidgets>
+  <resources/>
