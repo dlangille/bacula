@@ -22,7 +22,7 @@
  *  Radosław Korzeniewski, MMXVI
  *  radoslaw@korzeniewski.net, radekk@inteos.pl
  *  Inteos Sp. z o.o. http://www.inteos.pl/
- * 
+ *
  */
 
 #include "bacula.h"
@@ -288,6 +288,7 @@ bailout:
          free_pool_memory(value);
       }
       if (xlist != NULL){
+         // Dmsg1(400, "free xlist: %p\n", xlist);
          free_pool_memory(xlist);
       }
       /* this is a cache for a particular file, so no needed after backup of this file */
@@ -630,7 +631,6 @@ bRC_BXATTR BXATTR_Solaris::os_get_xattr_names (JCR *jcr, POOLMEM ** pxlist, uint
    int len;
    int slen;
    POOLMEM * list;
-   char * p;
 
    /* check input data */
    if (jcr == NULL || xlen == NULL || pxlist == NULL){
@@ -671,10 +671,10 @@ bRC_BXATTR BXATTR_Solaris::os_get_xattr_names (JCR *jcr, POOLMEM ** pxlist, uint
     * default size is a 4k for PM_BSOCK, which should be sufficient in most cases
     */
    list = get_pool_memory(PM_BSOCK);
+   // Dmsg1(400, "allocated xlist: %p\n", list);
    memset(list, 0, sizeof_pool_memory(list));
    bstrncpy(list, ".", sizeof_pool_memory(list));
    len = strlen(list) + 1;
-   p = list + len;
 
    /* read all directory entries as a xattr names */
    while ((dp = readdir(dirp)) != NULL){
@@ -687,12 +687,11 @@ bRC_BXATTR BXATTR_Solaris::os_get_xattr_names (JCR *jcr, POOLMEM ** pxlist, uint
       Dmsg1(500, "Found attribute: %s\n", dp->d_name);
       /* compute a buffer length = string length and nul char */
       slen = strlen (dp->d_name) + 1;
-      len += slen;
-      list = check_pool_memory_size(list, len);
-
+      list = check_pool_memory_size(list, len + slen);
+      // Dmsg3(400, "xlist: %p len: %i slen: %i\n", list, len, slen);
       /* copy the name into a list */
-      bstrncpy(p, dp->d_name, sizeof_pool_memory(list) - slen);
-      p += slen;
+      bstrncpy(list + len, dp->d_name, sizeof_pool_memory(list) - len);
+      len += slen;
    }
    if (closedir(dirp) < 0){
       berrno be;
