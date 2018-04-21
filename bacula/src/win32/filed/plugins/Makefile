@@ -29,6 +29,10 @@ DEFINES = \
 #vpath %.c $(BUILDDIR)/compat $(MAINDIR)/src/findlib $(MAINDIR)/src/lib
 #vpath %.cpp $(BUILDDIR)/compat $(MAINDIR)/src/findlib $(MAINDIR)/src/lib
 
+# Look files in src/lib and plugins/fd mainly for SAP and Oracle
+vpath %.c $(MAINDIR)/src/lib $(MAINDIR)/src/plugins/fd
+vpath %.h $(MAINDIR)/src/lib $(MAINDIR)/src/plugins/fd
+
 ######################################################################
 
 # Files files in src/win32/filed/plugins

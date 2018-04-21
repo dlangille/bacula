@@ -70,7 +70,7 @@ is the version number.  The directory must be renamed to docs (ie remove
 the leading bacula- and the -version portion of the name).
 
 An alternative to setting up the old documents that are needed by the Win32
-installer, you may comment out the following lines in 
+installer, you may comment out the following lines in
 src/win32/win32_installer/Makefile:
 
 #DOC_FILES := \
@@ -79,7 +79,7 @@ src/win32/win32_installer/Makefile:
 #       manual/bacula/*.png  \
 #       manual/bacula/*.css
 
-Note, a number of packages must be installed to build the the depkgs files. 
+Note, a number of packages must be installed to build the the depkgs files.
 Most are rather standard such as gcc, g++,
 make, ...  However a few that you may not have are:
 
@@ -115,7 +115,7 @@ Make sure that libgcc and libstdc++ mingw files are copied to depkgs-mingw32/bin
    /usr/lib/gcc/i686-w64-mingw32/*-posix/libgcc_s_sjlj-1.dll
    /usr/lib/gcc/i686-w64-mingw32/*-posix/libstdc++-6.dll
    /usr/i686-w64-mingw32/lib/libwinpthread-1.dll
-   
+
    /usr/lib/gcc/x86_64-w64-mingw32/*-posix/libgcc_s_seh-1.dll
    /usr/lib/gcc/x86_64-w64-mingw32/*-posix/libstdc++-6.dll
    /usr/x86_64-w64-mingw32/lib/libwinpthread-1.dll
@@ -123,13 +123,13 @@ Make sure that libgcc and libstdc++ mingw files are copied to depkgs-mingw32/bin
 Note, that during the build process you will see a moderate amount of
 output and some warnings.  If something more serious happens
 and the build fails, it is probably because you don't have one
-of the build dependencies (hopefully all mentioned above) loaded on your  
+of the build dependencies (hopefully all mentioned above) loaded on your
 system. To find out what is going wrong, do the following:
 
   cd .../depkgs-mingw32/src/<package-name>
-   
+
 where <package-name> is where the package is unpacked and built. Normally
-it is relatively obvious when looking at the src directory.             
+it is relatively obvious when looking at the src directory.
 
 In that directory, you should find a make.log, which has the full details
 of the compiles, links, and installs done for that package.
@@ -141,7 +141,7 @@ QT website
 
 the http://download.qt-project.org/archive/qt/4.8/4.8.4/
 
-Then, copy Qt*dll files to depkgs-mingw32/bin and headers to 
+Then, copy Qt*dll files to depkgs-mingw32/bin and headers to
 depkgs-mingw32/include
 
 ===
@@ -159,7 +159,7 @@ If that link doesn't work then go to http://www.microsoft.com and search for
 
         "download volume shadow copy service sdk"
 
-we are currently using version 7.2 released 8/3/2005 (a bit old, but it 
+we are currently using version 7.2 released 8/3/2005 (a bit old, but it
 works).
 
 Normally the files will be installed in:
@@ -167,9 +167,9 @@ Normally the files will be installed in:
         c:\Program Files\Microsoft\VSSSDK72
 
 You only need to copy everything under the c:\Program Files\Microsoft\VSSSDK72\inc
-directory into .../depkgs-mingw32/vss/inc. and .../depkgs-mingw-w64/vss/inc 
+directory into .../depkgs-mingw32/vss/inc. and .../depkgs-mingw-w64/vss/inc
 In doing so, please ensure that
-the case in maintained on the directory and filenames -- some contain uppercase 
+the case in maintained on the directory and filenames -- some contain uppercase
 characters !!!
 
 Some definitions are already defined in other headers, it produces warnings
@@ -251,7 +251,7 @@ extern DLL_IMP_EXP dlist * last_jobs;
 
 
 Exporting functions is now more or less automated.  If you find that
-a function name has been added, changed, or an argument modified,    
+a function name has been added, changed, or an argument modified,
 simply do the following:
 
    cd .../bacula/src/win32/lib
@@ -259,7 +259,7 @@ simply do the following:
    ./make_def >bacula64.def   or >bacula64.def
 
 This should rebuild the bacula.def file, but it uses relative paths
-and assumes you have the directory structure noted above. If you 
+and assumes you have the directory structure noted above. If you
 are using something different, you can set the NM variable at the
 top of the make_def file to use an absolute path to the correct
 directory.
@@ -273,7 +273,7 @@ C++ mangled name of the new function.
 
 Note, strings often will not show the desired symbol. In that case,
 use:
-   
+
    nm .../bacula/src/win32/lib/<file>.o
 
 Replace <file> with the base part of the name of the source code file

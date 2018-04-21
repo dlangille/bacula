@@ -8,11 +8,11 @@ WIN64_DIRS=lib filed filed/plugins console scripts
 ifeq ($(WIN64),yes)
 	 DIRS=$(WIN64_DIRS)
 	 INSTALLER=win64_installer
-	 SPECIAL=bsmtp
+	 SPECIAL=bat64 bsmtp
 else
 	 DIRS=$(WIN32_DIRS)
 	 INSTALLER=win32_installer
-	 SPECIAL=bat
+	 SPECIAL=bat32
 endif
 
 .PHONY: $(DIRS) clean all Makefile.inc win32_installer full_win32_installer \
@@ -23,8 +23,12 @@ all: Makefile.inc $(DIRS) $(SPECIAL) $(INSTALLER)
 clean: $(DIRS) win32_installer win64_installer
 	$(ECHO_CMD)-rm -rf release32 release64
 
-bat:
-	(cd ../qt-console; ./make-win32)
+bat32:
+    ( cd ../qt-console; ./make-win32 "32" )
+
+bat64:
+    ( cd ../qt-console; ./make-win32 "64" )
+
 
 full_win32_installer:
 	@if test -f Makefile.inc; then \
