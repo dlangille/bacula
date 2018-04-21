@@ -14,6 +14,27 @@
 		<button id="btn_volume_config" type="button" class="w3-bar-item w3-button tab_btn" onclick="W3Tabs.open(this.id, 'volume_config');"><%[ Configure volume ]%></button>
 	</div>
 	<div class="w3-container tab_item" id="volume_actions">
+		<div class="w3-margin-left w3-margin-bottom">
+			<com:TActiveLinkButton
+				CssClass="w3-button w3-green"
+				OnClick="prune"
+				Attributes.onclick="document.getElementById('volume_action_log').style.display='block'"
+			>
+				<i class="fa fa-shower"></i> &nbsp;<%[ Prune ]%>
+			</com:TActiveLinkButton>
+			<com:TActiveLinkButton
+				CssClass="w3-button w3-green"
+				OnClick="purge"
+				Attributes.onclick="document.getElementById('volume_action_log').style.display='block'"
+			>
+				<i class="fa fa-recycle"></i> &nbsp;<%[ Purge ]%>
+			</com:TActiveLinkButton>
+		</div>
+		<div id="volume_action_log" class="w3-panel w3-card w3-light-grey" style="display: none;">
+			<div class="w3-code notranslate">
+				<pre><com:TActiveLabel ID="VolumeActionLog" /></pre>
+			</div>
+		</div>
 		<div class="w3-row">
 			<div class="w3-card w3-quarter w3-padding w3-margin-right" style="min-height: 200px">
 				<h4><%[ Limits ]%></h4>
@@ -304,9 +325,9 @@
 				<com:TActiveCheckBox ID="InChanger" AutoPostBack="false" CssClass="w3-check" />
 			</div>
 		</div>
-		<div id="volume_log" class="w3-panel w3-card w3-light-grey" style="display: none">
+		<div id="volume_config_log" class="w3-panel w3-card w3-light-grey" style="display: none">
 			<div class="w3-code notranslate">
-				<pre><com:TActiveLabel ID="VolumeLog" /></pre>
+				<pre><com:TActiveLabel ID="VolumeConfigLog" /></pre>
 			</div>
 		</div>
 		<div class="w3-container w3-center">
@@ -317,7 +338,7 @@
 				OnClick="updateVolume"
 				ClientSide.OnLoading="$('#status_volume_loading').show();"
 				ClientSide.OnSuccess="$('#status_volume_loading').hide();"
-				Attributes.onclick="document.getElementById('volume_log').style.display = '';"
+				Attributes.onclick="document.getElementById('volume_config_log').style.display = '';"
 			>
 				<prop:Text>
 					<i class="fa fa-save"></i> &nbsp;<%=Prado::localize('Save')%>

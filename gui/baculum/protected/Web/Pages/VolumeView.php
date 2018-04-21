@@ -188,9 +188,40 @@ class VolumeView extends BaculumWebPage {
 		$volume['recycle'] = (integer)$this->Recycle->Checked;
 		$volume['enabled'] = (integer)$this->Enabled->Checked;
 		$volume['inchanger'] = (integer)$this->InChanger->Checked;
-		$result = $this->getModule('api')->set(array('volumes', $volume['mediaid']), $volume);
-		$this->VolumeLog->Text = implode(PHP_EOL, $result->output);
+		$result = $this->getModule('api')->set(
+			array('volumes', $volume['mediaid']),
+			$volume
+		);
+		if ($result->error === 0) {
+			$this->VolumeConfigLog->Text = implode(PHP_EOL, $result->output);
+		} else {
+			$this->VolumeConfigLog->Text = $result->output;
+		}
 		$this->setVolume();
+	}
+
+	public function prune($sender, $param) {
+		$result = $this->getModule('api')->set(
+			array('volumes', $this->getMediaId(), 'prune'),
+			array()
+		);
+		if ($result->error === 0) {
+			$this->VolumeActionLog->Text = implode(PHP_EOL, $result->output);
+		} else {
+			$this->VolumeActionLog->Text = $result->output;
+		}
+	}
+
+	public function purge($sender, $param) {
+		$result = $this->getModule('api')->set(
+			array('volumes', $this->getMediaId(), 'purge'),
+			array()
+		);
+		if ($result->error === 0) {
+			$this->VolumeActionLog->Text = implode(PHP_EOL, $result->output);
+		} else {
+			$this->VolumeActionLog->Text = $result->output;
+		}
 	}
 }
 ?>
