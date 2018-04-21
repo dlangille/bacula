@@ -21,7 +21,15 @@
  */
  
 class VolumePurge extends BaculumAPIServer {
-	public function set() {
+
+	/**
+	 * Remove this method when finished support for old API
+	 */
+	public function get() {
+		$this->set(null, null);
+	}
+
+	public function set($id, $params) {
 		$mediaid = $this->Request->contains('id') ? intval($this->Request['id']) : 0;
 		$volume = $this->getModule('volume')->getVolumeById($mediaid);
 		if(is_object($volume)) {
