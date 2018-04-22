@@ -2,7 +2,7 @@
 #
 #   Bacula(R) - The Network Backup Solution
 #
-#   Copyright (C) 2000-2016 Kern Sibbald
+#   Copyright (C) 2000-2018 Kern Sibbald
 #
 #   The original author of Bacula is Kern Sibbald, with contributions
 #   from many others, a complete list can be found in the file AUTHORS.
@@ -225,6 +225,7 @@ case "$1" in
 	    OPTIONS="${OPTIONS} -g ${SD_GROUP}"
 	 fi
 
+	 ulimit -l unlimited > /dev/null 2> /dev/null || true
 	 if [ "x${VALGRIND_SD}" = "x1" ]; then
 	    valgrind --leak-check=full ${BACSDBIN}/bacula-sd $2 $3 ${OPTIONS} -v -c ${BACSDCFG}/bacula-sd.conf
 	 else

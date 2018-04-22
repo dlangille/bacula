@@ -253,6 +253,7 @@ enum {
 /* Size of crypto length stored at head of crypto buffer. Do NOT change! */
 #define CRYPTO_LEN_SIZE ((int)sizeof(uint32_t))
 
+
 /* Plugin Features */
 #define PLUGIN_FEATURE_RESTORELISTFILES "RestoreListFiles"
 
@@ -567,6 +568,9 @@ void t_msg(const char *file, int line, int64_t level, const char *fmt,...);
 /** Use our sscanf, which is safer and works with known sizes */
 #define sscanf bsscanf
 
+/* Use our fopen, which uses the CLOEXEC flag */
+#define fopen bfopen
+
 #ifdef DEBUG
 #define bstrdup(str) strcpy((char *)b_malloc(__FILE__,__LINE__,strlen((str))+1),(str))
 #else
@@ -579,9 +583,6 @@ void t_msg(const char *file, int line, int64_t level, const char *fmt,...);
 
 /** Macro to simplify free/reset pointers */
 #define bfree_and_null(a) do{if(a){free(a); (a)=NULL;}} while(0)
-
-/* Use bfopen instead of fopen */
-#define fopen(path, mode) bfopen(path, mode)
 
 /**
  * Replace codes needed in both file routines and non-file routines

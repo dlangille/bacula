@@ -1340,7 +1340,7 @@ int main(int argc, char *argv[])
       FILE *fd;
       pm_strcpy(&UA_sock->msg, env);
       pm_strcat(&UA_sock->msg, "/.bconsolerc");
-      fd = fopen(UA_sock->msg, "rb");
+      fd = bfopen(UA_sock->msg, "rb");
       if (fd) {
          read_and_process_input(fd, UA_sock);
          fclose(fd);
@@ -1491,7 +1491,7 @@ static int inputcmd(FILE *input, BSOCK *UA_sock)
       sendit(_("First argument to input command must be a filename.\n"));
       return 1;
    }
-   fd = fopen(argk[1], "rb");
+   fd = bfopen(argk[1], "rb");
    if (!fd) {
       berrno be;
       senditf(_("Cannot open file %s for input. ERR=%s\n"),
@@ -1552,7 +1552,7 @@ static int do_outputcmd(FILE *input, BSOCK *UA_sock)
    if (argc == 3) {
       mode = argk[2];
    }
-   fd = fopen(argk[1], mode);
+   fd = bfopen(argk[1], mode);
    if (!fd) {
       berrno be;
       senditf(_("Cannot open file %s for output. ERR=%s\n"),
@@ -1675,7 +1675,7 @@ static int putfilecmd(FILE *input, BSOCK *UA_sock)
       return 1;
    }
 
-   fp = fopen(fname, "r");
+   fp = bfopen(fname, "r");
    if (!fp) {
       berrno be;
       senditf("Unable to open %s. ERR=%s\n", fname, be.bstrerror(errno));

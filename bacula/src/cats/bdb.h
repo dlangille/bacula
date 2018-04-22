@@ -164,6 +164,7 @@ public:
    int bdb_delete_media_record(JCR *jcr, MEDIA_DBR *mr);
    int bdb_purge_media_record(JCR *jcr, MEDIA_DBR *mr);
    int bdb_delete_snapshot_record(JCR *jcr, SNAPSHOT_DBR *sr);
+   int bdb_delete_client_record(JCR *jcr, CLIENT_DBR *cr);
 
    /* sql_find.c */
    bool bdb_find_last_job_end_time(JCR *jcr, JOB_DBR *jr, POOLMEM **etime, char *job);
@@ -201,6 +202,8 @@ public:
    bool bdb_get_snapshot_record(JCR *jcr, SNAPSHOT_DBR *snap);
    bool bdb_get_volume_jobids(JCR *jcr,
             MEDIA_DBR *mr, db_list_ctx *lst);
+   bool bdb_get_client_jobids(JCR *jcr,
+            CLIENT_DBR *cr, db_list_ctx *lst);
    bool bdb_get_base_file_list(JCR *jcr, bool use_md5,
             DB_RESULT_HANDLER *result_handler,void *ctx);
    int bdb_get_filename_record(JCR *jcr);
@@ -228,6 +231,7 @@ public:
    bool bdb_get_accurate_jobids(JCR *jcr, JOB_DBR *jr, db_list_ctx *jobids);
    bool bdb_get_used_base_jobids(JCR *jcr, POOLMEM *jobids, db_list_ctx *result);
    bool bdb_get_restoreobject_record(JCR *jcr, ROBJECT_DBR *rr);
+   int  bdb_get_num_restoreobject_records(JCR *jcr, ROBJECT_DBR *rr);
    bool bdb_get_job_statistics(JCR *jcr, JOB_DBR *jr);
 
 /* sql_list.c */
@@ -245,6 +249,7 @@ public:
    void bdb_list_restore_objects(JCR *jcr, ROBJECT_DBR *rr, DB_LIST_HANDLER *sendit, void *ctx, e_list_type type);
    void bdb_list_snapshot_records(JCR *jcr, SNAPSHOT_DBR *sdbr,
               DB_LIST_HANDLER *sendit, void *ctx, e_list_type type);
+   void bdb_list_files(JCR *jcr, FILE_DBR *fr, DB_RESULT_HANDLER *sendit, void *ctx);
 
 
    /* sql_update.c */

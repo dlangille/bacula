@@ -33,7 +33,10 @@
 #include "console_conf.h"
 
 /*
- * Version at end of Hello
+ * Version at end of Hello Enterprise:
+ *   prior to 06Aug13 no version
+ *   1 06Aug13 - added comm line compression
+ * Community
  *   prior to 06Aug13 no version
  *   100  14Feb17 - added comm line compression
  */

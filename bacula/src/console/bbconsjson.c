@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2018 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -93,7 +93,7 @@ PROG_COPYRIGHT
 "       -t          test - read configuration and exit\n"
 "       -v          verbose\n"
 "       -?          print this message.\n"
-"\n"), 2012, "", HOST_OS, DISTNAME, DISTVER);
+"\n"), 2012, BDEMO, HOST_OS, DISTNAME, DISTVER);
 
    exit(1);
 }
