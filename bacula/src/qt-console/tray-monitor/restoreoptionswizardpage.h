@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2017 Kern Sibbald
+   Copyright (C) 2000-2018 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -16,6 +16,12 @@
 
    Bacula(R) is a registered trademark of Kern Sibbald.
 */
+/*
+ * Restore Wizard: Options page
+ *
+ * Written by Norbert Bizet, May MMXVII
+ *
+ */
 #ifndef RESTOREOPTIONSWIZARDPAGE_H
 #define RESTOREOPTIONSWIZARDPAGE_H
 
@@ -37,20 +43,15 @@ class RestoreOptionsWizardPage : public QWizardPage
 public:
     explicit RestoreOptionsWizardPage(QWidget *parent = 0);
     ~RestoreOptionsWizardPage();
-
-    void setClients(alist *lst);
-    void setModel(QStandardItemModel *model);
-    void setResmon(RESMON *res);
-
+    /* QWizardPage interface */
+    void initializePage();
     bool validatePage();
-
-public slots:
-    void fill_defaults(task *t);
+    /* local interface */
+    inline void setRes(RESMON *r) {res=r;}
 
 private:
     Ui::RestoreOptionsWizardPage *ui;
-    QStandardItemModel *dest_model;
-    RESMON *m_res;
+    RESMON *res;
 };
 
 #endif // RESTOREOPTIONSWIZARDPAGE_H

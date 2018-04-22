@@ -1,20 +1,20 @@
 /*
-   Bacula® - The Network Backup Solution
+   Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2004-2015 Bacula Systems S.A.
-   All Rights Reserved.
+   Copyright (C) 2000-2018 Kern Sibbald
 
-   The main author of Bacula is Kern Sibbald, with contributions from
-   many others, a complete list can be found in the file AUTHORS.
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
 
-   For the details of the license, see the file LICENSE.
+   You may use this file and others of this release according to the
+   license defined in the LICENSE file, which includes the Affero General
+   Public License, v3.0 ("AGPLv3") and some additional permissions and
+   terms pursuant to its AGPLv3 Section 7.
 
-   This program is distributed in the hope that it will be useful, but
-   WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-   General Public License for more details.
+   This notice must be preserved when any source code is
+   conveyed and/or propagated.
 
-   Bacula® is a registered trademark of Kern Sibbald.
+   Bacula(R) is a registered trademark of Kern Sibbald.
 */
 //                              -*- Mode: C++ -*-
 // compat.cpp -- compatibilty layer to make bacula-fd run

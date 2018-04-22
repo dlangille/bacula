@@ -74,4 +74,4 @@ if test -e ../config.h.orig ; then
    mv -f ../config.h.orig ../config.h
 fi
 
-#prepare_tray_monitor_build ${BUILD_ARCH:-64}
+prepare_tray_monitor_build ${BUILD_ARCH:-64}

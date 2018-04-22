@@ -36,7 +36,7 @@
     <string>Select a Client.</string>
    </property>
   </widget>
-  <widget class="JobSelectWizardPage" name="RestWizBackupSelectPage">
+  <widget class="JobSelectWizardPage" name="RestWizJobSelectPage">
    <property name="title">
     <string>Restore</string>
    </property>
@@ -52,12 +52,20 @@
     <string>Files Selection</string>
    </property>
   </widget>
+  <widget class="PluginWizardPage" name="RestWizPluginPage">
+   <property name="title">
+    <string>Plugins</string>
+   </property>
+   <property name="subTitle">
+    <string>Restore pluging values</string>
+   </property>
+  </widget>
   <widget class="RestoreOptionsWizardPage" name="RestWizAdvancedOptionsPage">
    <property name="title">
     <string>Restore Options</string>
    </property>
    <property name="subTitle">
-    <string>Select advanced options for restore and plugins </string>
+    <string>Select advanced options for restore</string>
    </property>
   </widget>
  </widget>
@@ -83,7 +91,13 @@
   <customwidget>
    <class>RestoreOptionsWizardPage</class>
    <extends>QWizardPage</extends>
-   <header location="global">restoreoptionswizardpage.h</header>
+   <header>restoreoptionswizardpage.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>PluginWizardPage</class>
+   <extends>QWizardPage</extends>
+   <header location="global">pluginwizardpage.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

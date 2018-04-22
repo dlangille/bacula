@@ -45,22 +45,22 @@
     <widget class="QComboBox" name="replaceComboBox">
      <item>
       <property name="text">
-       <string>never</string>
+       <string>Never</string>
       </property>
      </item>
      <item>
       <property name="text">
-       <string>always</string>
+       <string>Always</string>
       </property>
      </item>
      <item>
       <property name="text">
-       <string>if newer</string>
+       <string>IfNewer</string>
       </property>
      </item>
      <item>
       <property name="text">
-       <string>if older</string>
+       <string>IfOlder</string>
       </property>
      </item>
     </widget>

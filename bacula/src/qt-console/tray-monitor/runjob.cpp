@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2017 Kern Sibbald
+   Copyright (C) 2000-2018 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -83,7 +83,7 @@ RunJob::RunJob(RESMON *r): QDialog(), res(r), tabAdvanced(NULL)
    }
 
    show();
-};
+}
 
 void RunJob::tabChange(int idx)
 {
@@ -181,9 +181,9 @@ void RunJob::runjob()
    
    // Build the command and run it!
    task *t = new task();
+   t->init(res, TASK_RUN);
    connect(t, SIGNAL(done(task *)), this, SLOT(jobStarted(task *)), Qt::QueuedConnection);
    t->arg = command.c_str();
-   t->init(res, TASK_RUN);
    res->wrk->queue(t);
 }
 
@@ -223,11 +223,11 @@ void RunJob::jobChanged(int)
    p = ui.jobCombo->currentText().toUtf8().data();
    if (p && *p) {
       task *t = new task();
+      t->init(res, TASK_INFO);
       pm_strcpy(info, p);
       connect(t, SIGNAL(done(task *)), this, SLOT(jobInfo(task *)), Qt::QueuedConnection);
       t->arg = info.c_str();    // Jobname
       t->arg2 = NULL;           // Level
-      t->init(res, TASK_INFO);
       res->wrk->queue(t);
    }
 }
@@ -243,9 +243,9 @@ void RunJob::levelChanged(int)
          task *t = new task();
          pm_strcpy(level, p);
          connect(t, SIGNAL(done(task *)), this, SLOT(jobInfo(task *)), Qt::QueuedConnection);
+         t->init(res, TASK_INFO);
          t->arg = info.c_str();    // Jobname
          t->arg2 = level.c_str();  // Level
-         t->init(res, TASK_INFO);
          res->wrk->queue(t);
       }
    }
@@ -426,9 +426,9 @@ void TSched::timerEvent(QTimerEvent *event)
    
                   // Build the command and run it!
                   t = new task();
+                  t->init(res, TASK_RUN);
                   connect(t, SIGNAL(done(task *)), this, SLOT(jobStarted(task *)), Qt::QueuedConnection);
                   t->arg = command.c_str();
-                  t->init(res, TASK_RUN);
                   res->wrk->queue(t);
 
                   break;

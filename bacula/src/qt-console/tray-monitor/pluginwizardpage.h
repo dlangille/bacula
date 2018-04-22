@@ -17,53 +17,44 @@
    Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
- * Restore Wizard: Job selection page
+ * Restore Wizard: Plugin selection page
  *
  * Written by Norbert Bizet, May MMXVII
  *
  */
-#ifndef JOBSELECTWIZARDPAGE_H
-#define JOBSELECTWIZARDPAGE_H
+#ifndef PLUGINWIZARDPAGE_H
+#define PLUGINWIZARDPAGE_H
 
-#include "common.h"
 #include <QWizardPage>
 
-class QStandardItemModel;
-class QItemSelection;
-class RESMON;
-
 namespace Ui {
-class JobSelectWizardPage;
+class PluginWizardPage;
 }
 
-class JobSelectWizardPage : public QWizardPage
+class RESMON;
+
+class PluginWizardPage : public QWizardPage
 {
     Q_OBJECT
-    Q_PROPERTY(qlonglong currentJob READ currentJob NOTIFY currentJobChanged)
+    Q_PROPERTY(QString pluginKeysStr READ pluginKeysStr NOTIFY pluginKeysStrChanged)
+
+private: QString    m_pluginKeysStr;
+public:  QString    pluginKeysStr() const { return m_pluginKeysStr; }
+signals: void       pluginKeysStrChanged();
 
 public:
-    explicit JobSelectWizardPage(QWidget *parent = 0);
-    ~JobSelectWizardPage();
+    explicit PluginWizardPage(QWidget *parent = 0);
+    ~PluginWizardPage();
     /* QWizardPage interface */
     void initializePage();
-    bool isComplete() const;
+    bool validatePage();
     /* local interface */
     inline void setRes(RESMON *r) {res=r;}
-    /* currentJob READ */
-    qlonglong currentJob() const;
-
-signals:
-    /* currentJob NOTIFY */
-    void currentJobChanged();
-
-protected slots:
-    void populateModel();
-
 private:
-    Ui::JobSelectWizardPage     *ui;
-    RESMON                      *res;
-    QStandardItemModel          *model;
-    qlonglong                   m_jobId;
+    Ui::PluginWizardPage *ui;
+    RESMON *res;
+    QStringList         registeredFields;
+
 };
 
-#endif // JOBSELECTWIZARDPAGE_H
+#endif // PLUGINWIZARDPAGE_H

@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2017 Kern Sibbald
+   Copyright (C) 2000-2018 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -16,12 +16,21 @@
 
    Bacula(R) is a registered trademark of Kern Sibbald.
 */
+/*
+ * definition of models related to file selection wizard page.
+ *
+ * Written by Norbert Bizet, May MMXVII
+ *
+ */
 #ifndef FILESMODEL_H
 #define FILESMODEL_H
 #include <QStandardItemModel>
 #include <QFileIconProvider>
 #include <QMimeData>
 #include "task.h"
+#include <QTableWidgetItem>
+#include "../util/fmtwidgetitem.h"
+
 enum {
     PathIdRole = Qt::UserRole+1,
     FilenameIdRole = Qt::UserRole+2,
@@ -29,7 +38,8 @@ enum {
     JobIdRole = Qt::UserRole+4,
     LStatRole = Qt::UserRole+5,
     PathRole = Qt::UserRole+6,
-    TypeRole = Qt::UserRole+7
+    TypeRole = Qt::UserRole+7,
+    FullPathRole = Qt::UserRole+8
 };
 
 enum {
@@ -102,9 +112,6 @@ public:
 public slots:
     void taskComplete(task *t)
     {
-        // increase cursor
-        // update canfetch
-        // deletelater
         t->deleteLater();
     }
 
@@ -113,6 +120,8 @@ private:
     u_int64_t       m_batchSize;
     bool            m_canFetchMore;
 };
+
+extern int decode_stat(char *buf, struct stat *statp, int stat_size, int32_t *LinkFI);
 
 class FileDestModel : public QStandardItemModel
 {
@@ -165,30 +174,44 @@ class FileDestModel : public QStandardItemModel
             QMap<int,  QVariant> roleDataMap;
             stream >> row >> col >> roleDataMap;
 
-            QStandardItem *item;
-            /* do something with the data */
-            int type = roleDataMap[TypeRole].toInt();
+            if (col == 0) {
+                QStandardItem *item;
+                /* do something with the data */
+                int type = roleDataMap[TypeRole].toInt();
 
-            switch(type) {
-            case TYPEROLE_DIRECTORY:
-                item = new DirectoryItem();
-                break;
-            case TYPEROLE_FILE:
-                item = new FileItem();
-                break;
-            default:
-                return false;
+                switch(type) {
+                case TYPEROLE_DIRECTORY:
+                    item = new DirectoryItem();
+                    break;
+                case TYPEROLE_FILE:
+                    item = new FileItem();
+                    break;
+                default:
+                    return false;
+                }
+
+                item->setData(roleDataMap[PathIdRole], PathIdRole);
+                item->setData(roleDataMap[FilenameIdRole], FilenameIdRole);
+                item->setData(roleDataMap[FileIdRole], FileIdRole);
+                item->setData(roleDataMap[JobIdRole], JobIdRole);
+                item->setData(roleDataMap[LStatRole], LStatRole);
+                item->setData(roleDataMap[PathRole], PathRole);
+                item->setData(roleDataMap[Qt::DisplayRole], Qt::DisplayRole);
+                item->setData(roleDataMap[Qt::ToolTipRole], Qt::ToolTipRole);
+                if (type == TYPEROLE_FILE) {
+                    QList<QStandardItem*> colums;
+                    struct stat statp;
+                    int32_t LinkFI;
+                    decode_stat(roleDataMap[LStatRole].toString().toLocal8Bit().data(),
+                                &statp, sizeof(statp), &LinkFI);
+                    char buf[200];
+                    bstrutime(buf, sizeof(buf), statp.st_mtime);
+                    colums << item << new QStandardItem(convertBytesSI(statp.st_size)) << new QStandardItem(buf);
+                    appendRow(colums);
+                } else {
+                    appendRow(item);
+                }
             }
-
-            item->setData(roleDataMap[PathIdRole], PathIdRole);
-            item->setData(roleDataMap[FilenameIdRole], FilenameIdRole);
-            item->setData(roleDataMap[FileIdRole], FileIdRole);
-            item->setData(roleDataMap[JobIdRole], JobIdRole);
-            item->setData(roleDataMap[LStatRole], LStatRole);
-            item->setData(roleDataMap[PathRole], PathRole);
-            item->setData(roleDataMap[PathRole], Qt::DisplayRole);
-
-            appendRow(item);
         }
         return true;
     }

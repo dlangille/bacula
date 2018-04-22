@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2018 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -185,14 +185,14 @@ static void usage()
 {
    fprintf(stderr, _(
 PROG_COPYRIGHT
-"\nVersion: %s (%s) %s %s %s\n\n"
+"\n%sVersion: %s (%s) %s %s %s\n\n"
 "Usage: bat [-s] [-c config_file] [-d debug_level] [config_file]\n"
 "       -c <file>   set configuration file to file\n"
 "       -dnn        set debug level to nn\n"
 "       -s          no signals\n"
 "       -t          test - read configuration and exit\n"
 "       -?          print this message.\n"
-"\n"), 2007, VERSION, BDATE, HOST_OS, DISTNAME, DISTVER);
+"\n"), 2007, BDEMO, VERSION, BDATE, HOST_OS, DISTNAME, DISTVER);
 
    exit(1);
 }

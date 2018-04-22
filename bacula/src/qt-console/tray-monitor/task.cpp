@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2017 Kern Sibbald
+   Copyright (C) 2000-2018 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -16,10 +16,12 @@
 
    Bacula(R) is a registered trademark of Kern Sibbald.
 */
-
 #include "task.h"
 #include "jcr.h"
 #include "filesmodel.h"
+#include "pluginmodel.h"
+#include <QTableWidgetItem>
+#include "../util/fmtwidgetitem.h"
 
 #define dbglvl 10
 int authenticate_daemon(JCR *jcr, MONITOR *monitor, RESMON *res);
@@ -73,7 +75,7 @@ static void *handle_task(void *data)
             t->get_job_files(t->arg, t->pathId);
             break;
         case TASK_RESTORE:
-            t->restore(QString("b21234"));
+            t->restore();
             break;
         default:
             Mmsg(t->errmsg, "Unknown task");
@@ -668,7 +670,7 @@ bool task::get_job_defaults()
    while (get_next_line(res)) {
       Dmsg2(dbglvl, "<- %d %s\n", res->bs->msglen, curline);
    }
-   res->bs->fsend(".defaults job=\"%s\"\n", res->defaults.job);
+   res->bs->fsend(".defaults job=%s\n", res->defaults.job);
    while (get_next_line(res)) {
       Dmsg1(dbglvl, "line = [%s]\n", curline);
       if ((p = strchr(curline, '=')) == NULL) {
@@ -701,6 +703,9 @@ bool task::get_job_defaults()
 
       } else if (strcasecmp(curline, "where") == 0) {
           res->defaults.where = bstrdup(p);
+
+      } else if (strcasecmp(curline, "replace") == 0) {
+          res->defaults.replace = str_to_uint64(p);
       }
 
    }
@@ -852,105 +857,114 @@ bail_out:
 
 bool task::get_client_jobs(const char* client)
 {
-   bool ret = false;
-   btimer_t *tid = NULL;
-   int row=0;
-   QStringList headers;
-   headers << tr("JobId") << tr("Job") << tr("Level") << tr("Date") << tr("Files") << tr("Bytes");
+    bool ret = false;
+    btimer_t *tid = NULL;
+    int row=0;
+    QStringList headers;
+    struct s_last_job *ljob=NULL;
 
-   if (!model) {
-       goto bail_out;
-   }
+    if (!model) {
+        goto bail_out;
+    }
 
-   model->clear();
-   model->setHorizontalHeaderLabels(headers);
+    model->clear();
+    headers << tr("JobId") << tr("Job") << tr("Level") << tr("Date") << tr("Files") << tr("Bytes");
+    model->setHorizontalHeaderLabels(headers);
 
-   if (!res->bs || !res->bs->is_open() || res->bs->is_error()) {
-      if (!connect_bacula()) {
-         goto bail_out;
-      }
-   }
-
-   tid = start_thread_timer(NULL, pthread_self(), (uint32_t)120);
-
-   if (res->type == R_CLIENT && !res->proxy_sent) {
-      res->proxy_sent = true;
-      res->bs->fsend("proxy\n");
-      while (get_next_line(res)) {
-         if (strncmp(curline, "2000", 4) != 0) {
-            pm_strcpy(errmsg, curline);
+    if (!res->bs || !res->bs->is_open() || res->bs->is_error()) {
+        if (!connect_bacula()) {
             goto bail_out;
-         }
-         Dmsg2(dbglvl, "<- %d %s\n", res->bs->msglen, curline);
-      }
-   }
+        }
+    }
 
-   res->bs->fsend(".api 2\n");
-   while (get_next_line(res)) {
-      Dmsg2(dbglvl, "<- %d %s\n", res->bs->msglen, curline);
-   }
+    tid = start_thread_timer(NULL, pthread_self(), (uint32_t)120);
 
-   if (res->type == R_DIRECTOR && res->use_setip) {
-      res->bs->fsend("setip\n");
-      while (get_next_line(res)) {
-         Dmsg2(dbglvl, "<- %d %s\n", res->bs->msglen, curline);
-      }
-   }
+    if (res->type == R_CLIENT && !res->proxy_sent) {
+        res->proxy_sent = true;
+        res->bs->fsend("proxy\n");
+        while (get_next_line(res)) {
+            if (strncmp(curline, "2000", 4) != 0) {
+                pm_strcpy(errmsg, curline);
+                goto bail_out;
+            }
+            Dmsg2(dbglvl, "<- %d %s\n", res->bs->msglen, curline);
+        }
+    }
 
-   res->bs->fsend(".bvfs_get_jobs client=%s\n", client);
-   while (get_next_line(res)) {
-       QString line(curline);
-       QStringList line_lst = line.split(" ", QString::SkipEmptyParts);
+    res->bs->fsend(".api 2\n");
+    while (get_next_line(res)) {
+        Dmsg2(dbglvl, "<- %d %s\n", res->bs->msglen, curline);
+    }
 
-       model->setItem(row, 0, new QStandardItem(line_lst[0]));
+    if (res->type == R_DIRECTOR && res->use_setip) {
+        res->bs->fsend("setip\n");
+        while (get_next_line(res)) {
+            Dmsg2(dbglvl, "<- %d %s\n", res->bs->msglen, curline);
+        }
+    }
 
-       model->setItem(row, 1, new QStandardItem(line_lst[3]));
+    res->bs->fsend(".bvfs_get_jobs client=%s\n", client);
+    while (get_next_line(res)) {
+        QString line(curline);
+        QStringList line_lst = line.split(" ", QString::SkipEmptyParts);
 
-       QDateTime date;
-       date.setTime_t(line_lst[1].toUInt());
-       QStandardItem *dateItem = new QStandardItem();
-       dateItem->setData(date, Qt::DisplayRole);
-       model->setItem(row, 3, dateItem);
+        model->setItem(row, 0, new QStandardItem(line_lst[0]));
+        
+        model->setItem(row, 1, new QStandardItem(line_lst[3]));
 
-       ret = true;
-       ++row;
-   }
+        QDateTime date;
+        date.setTime_t(line_lst[1].toUInt());
+        QStandardItem *dateItem = new QStandardItem();
+        dateItem->setData(date, Qt::DisplayRole);
+        model->setItem(row, 3, dateItem);
 
-   // Close the socket, it's over or we don't want to reuse it
-   disconnect_bacula();
+        /* find the job in res terminated list */
+        if (res->terminated_jobs) {
+            foreach_dlist(ljob, res->terminated_jobs) {
+                if (ljob->JobId == line_lst[0].toUInt()) {
+                    model->setItem(row, 2, new QStandardItem(QString(job_level_to_str(ljob->JobLevel))));
+                    model->setItem(row, 4, new QStandardItem(QString::number(ljob->JobFiles)));
+                    model->setItem(row, 5, new QStandardItem(QString::number(ljob->JobBytes)));
+                    break;
+                }
+            }
+        }
 
-//   // fill extra job info
-//   for (int r=0; r<model->rowCount(); ++r) {
-//       arg = model->item(r, 0)->text().toUtf8();
-//       get_job_info(NULL);
-//       model->setItem(r, 2, new QStandardItem(res->infos.JobLevel));
-//       model->setItem(r, 4, new QStandardItem(res->infos.JobFiles));
-//       model->setItem(r, 5, new QStandardItem(res->infos.JobBytes));
-//   }
+        ret = true;
+        ++row;
+    }
+
+    // Close the socket, it's over or we don't want to reuse it
+    disconnect_bacula();
 
 bail_out:
 
-   if (tid) {
-      stop_thread_timer(tid);
-   }
-   if (ret) {
-      mark_as_done();
-   } else {
-      mark_as_failed();
-   }
-   return ret;
+    if (tid) {
+        stop_thread_timer(tid);
+    }
+    if (ret) {
+        mark_as_done();
+    } else {
+        mark_as_failed();
+    }
+    return ret;
 }
 
+extern int decode_stat(char *buf, struct stat *statp, int stat_size, int32_t *LinkFI);
 
 bool task::get_job_files(const char* job, uint64_t pathid)
 {
     bool ret = false;
     btimer_t *tid = NULL;
     QString jobs;
+    struct stat statp;
+    int32_t LinkFI;
 
-    if (model) {
-        model->clear();
+    if (!model) {
+        goto bail_out;
     }
+
+    model->removeRows(0, model->rowCount());
 
     if (!res->bs || !res->bs->is_open() || res->bs->is_error()) {
         if (!connect_bacula()) {
@@ -992,17 +1006,18 @@ bool task::get_job_files(const char* job, uint64_t pathid)
     }
 
     /* cache the file set */
-    res->bs->fsend(".bvfs_update jobid=%s\n", jobs.toUtf8());
+    res->bs->fsend(".bvfs_update jobid=%s\n", jobs.toLatin1().data());
     while (get_next_line(res)) {
         Dmsg2(dbglvl, "<- %d %s\n", res->bs->msglen, curline);
     }
 
     if (pathid == 0) {
-        res->bs->fsend(".bvfs_lsdirs jobid=%s path=\"\"\n", jobs.toUtf8());
+        res->bs->fsend(".bvfs_lsdirs jobid=%s path=\"\"\n", jobs.toLatin1().data());
     } else {
-        res->bs->fsend(".bvfs_lsdirs jobid=%s pathid=%lld\n", jobs.toUtf8(), pathid);
+        res->bs->fsend(".bvfs_lsdirs jobid=%s pathid=%lld\n", jobs.toLatin1().data(), pathid);
     }
 
+    //+ " limit=" + limit + " offset=" + offset ;
     while (get_next_line(res)) {
         QString line(curline);
         QStringList line_lst = line.split("\t", QString::KeepEmptyParts);
@@ -1012,22 +1027,32 @@ bool task::get_job_files(const char* job, uint64_t pathid)
             d->setData(QVariant(line_lst[0]), PathIdRole);
             d->setData(QVariant(line_lst[1]), FilenameIdRole);
             d->setData(QVariant(line_lst[2]), FileIdRole);
-            d->setData(QVariant(line_lst[3]), JobIdRole);
+            d->setData(QVariant(jobs), JobIdRole);
             d->setData(QVariant(line_lst[4]), LStatRole);
             d->setData(QVariant(line_lst[5]), PathRole);
+            QFileInfo fi(QDir(QString(arg3)), line_lst[5]);
+            d->setData(QVariant(fi.absoluteFilePath()), Qt::ToolTipRole);
             d->setData(QVariant(line_lst[5]), Qt::DisplayRole);
-
             model->appendRow(d);
             ret = true;
         }
     }
 
     /* then, request files */
-    if (pathid == 0) {
-        res->bs->fsend(".bvfs_lsfiles jobid=%s path=\"\"\n", jobs.toUtf8());
+    if (strcmp(arg2,"") == 0) {
+        if (pathid == 0) {
+            res->bs->fsend(".bvfs_lsfiles jobid=%s path=\"\"\n", jobs.toLatin1().data());
+        } else {
+            res->bs->fsend(".bvfs_lsfiles jobid=%s pathid=%lld\n", jobs.toLatin1().data(), pathid);
+        }
     } else {
-        res->bs->fsend(".bvfs_lsfiles jobid=%s pathid=%lld\n", jobs.toUtf8(), pathid);
+        if (pathid == 0) {
+            res->bs->fsend(".bvfs_lsfiles jobid=%s path=\"\" pattern=\"%s\"\n", jobs.toLatin1().data(), arg2);
+        } else {
+            res->bs->fsend(".bvfs_lsfiles jobid=%s pathid=%lld pattern=\"%s\"\n", jobs.toLatin1().data(), pathid, arg2);
+        }
     }
+    //+ " limit=" + limit + " offset=" + offset ;
 
     while (get_next_line(res)) {
         QString line(curline);
@@ -1038,11 +1063,19 @@ bool task::get_job_files(const char* job, uint64_t pathid)
             f->setData(QVariant(line_lst[0]), PathIdRole);
             f->setData(QVariant(line_lst[1]), FilenameIdRole);
             f->setData(QVariant(line_lst[2]), FileIdRole);
-            f->setData(QVariant(line_lst[3]), JobIdRole);
+            f->setData(QVariant(jobs), JobIdRole);
             f->setData(QVariant(line_lst[4]), LStatRole);
             f->setData(QVariant(line_lst[5]), PathRole);
+            QFileInfo fi(QDir(QString(arg3)), line_lst[5]);
+            f->setData(QVariant(fi.absoluteFilePath()), Qt::ToolTipRole);
             f->setData(QVariant(line_lst[5]), Qt::DisplayRole);
-            model->appendRow(f);
+            QList<QStandardItem*> colums;
+            decode_stat(line_lst[4].toLocal8Bit().data(),
+                        &statp, sizeof(statp), &LinkFI);
+            char buf[200];
+            bstrutime(buf, sizeof(buf), statp.st_mtime);
+            colums << f << new QStandardItem(convertBytesSI(statp.st_size)) << new QStandardItem(buf);
+            model->appendRow(colums);
             ret = true;
         }
     }
@@ -1063,38 +1096,27 @@ bail_out:
     return ret;
 }
 
-extern int decode_stat(char *buf, struct stat *statp, int stat_size, int32_t *LinkFI);
-
-bool task::prepare_restore(const QString& tableName)
+bool task::prepare_restore()
 {
     bool ret = false;
     btimer_t *tid = NULL;
     QString q;
-    QStringList fileids, jobids, dirids, findexes;
-    struct stat statp;
-    int32_t LinkFI;
+    /* in the restore prepare phase, we apply plugins settings. 
+    * Upload and restoration must be done in one shot within the same connection since
+    *  the director uses UA adress to create a local file unique name */
+    FILE *fp;
+    int idx = 0;
+    QStringList pluginKeys;
+    QStringList pluginNames;
 
-    for (int row=0; row < model->rowCount(); ++row) {
-        QModelIndex idx = model->index(row, 0);
-        if (idx.data(TypeRole) == TYPEROLE_FILE) {
-            fileids << idx.data(FileIdRole).toString();
-            jobids << idx.data(JobIdRole).toString();
-            decode_stat(idx.data(LStatRole).toString().toLocal8Bit().data(),
-                        &statp, sizeof(statp), &LinkFI);
-            if (LinkFI) {
-                findexes << idx.data(JobIdRole).toString() + "," + QString().setNum(LinkFI);
-            }
-        } else // TYPEROLE_DIRECTORY
-        {
-            dirids << idx.data(PathIdRole).toString();
-            jobids << idx.data(JobIdRole).toString().split(","); // Can have multiple jobids
-        }
+    if (!restore_field.pluginkeys.isEmpty()) {
+        pluginKeys = restore_field.pluginkeys.split(',');
+    }
+    if (!restore_field.pluginnames.isEmpty()) {
+        pluginNames = restore_field.pluginnames.split(',');
     }
 
-    fileids.removeDuplicates();
-    jobids.removeDuplicates();
-    dirids.removeDuplicates();
-    findexes.removeDuplicates();
+    ASSERT(pluginKeys.count() == pluginNames.count());
 
     if (!res->bs || !res->bs->is_open() || res->bs->is_error()) {
         if (!connect_bacula()) {
@@ -1129,22 +1151,58 @@ bool task::prepare_restore(const QString& tableName)
     }
 
     /* retrieve all job ids*/
-    q = QString(".bvfs_restore path=%1 jobid=%2").arg(tableName, jobids.join(","));
-    if (fileids.size() > 0) {
-        q += " fileid=" + fileids.join(",");
+    q = QString(".bvfs_restore path=%1 jobid=%2").arg(restore_field.tableName, restore_field.jobIds);
+    if (!restore_field.fileIds.isEmpty()) {
+        q += QString(" fileid=%1").arg(restore_field.fileIds);
     }
-    if (dirids.size() > 0) {
-        q += " dirid=" + dirids.join(",");
+    if (!restore_field.dirIds.isEmpty()) {
+        q += QString(" dirid=%1").arg(restore_field.dirIds);
     }
-    if (findexes.size() > 0) {
-        q += " hardlink=" + findexes.join(",");
+    if (!restore_field.hardlinks.isEmpty()) {
+        q += QString(" hardlink=%1").arg(restore_field.hardlinks);
     }
-
     q += "\n";
-    res->bs->fsend(q.toUtf8());
+    res->bs->fsend(q.toLatin1().data());
     while (get_next_line(res)) {
         ret = true;
         Dmsg2(dbglvl, "<- %d %s\n", res->bs->msglen, curline);
+    }
+
+    /* parse plugins files, upload them and call restore pluginrestoreconf*/
+    foreach(QString k, pluginKeys) {
+        QStringList keysplit=k.split(':');
+        if (keysplit.count() > 1) {
+            QString key = keysplit[1];
+            QString name = pluginNames[idx];
+
+            fp = fopen(name.toLatin1().data(), "r");
+            if (!fp) {
+                berrno be;
+                Dmsg2(dbglvl, "Unable to open %s. ERR=%s\n", name.toLatin1().data(), be.bstrerror(errno));
+                goto bail_out;
+            }
+
+            res->bs->fsend(".putfile key=\"%s\"\n", key.toLatin1().data());
+
+            /* Just read the file and send it to the director */
+            while (!feof(fp)) {
+                int i = fread(res->bs->msg, 1, sizeof_pool_memory(res->bs->msg) - 1, fp);
+                if (i > 0) {
+                    res->bs->msg[i] = 0;
+                    res->bs->msglen = i;
+                    res->bs->send();
+                }
+            }
+
+            res->bs->signal(BNET_EOD);
+            fclose(fp);
+
+            res->bs->fsend("restore pluginrestoreconf=\"%s\"\n", k.toLatin1().data());
+            while (get_next_line(res)) {
+                Dmsg2(dbglvl, "<- %d %s\n", res->bs->msglen, curline);
+            }
+        }
+        ++idx;
     }
 
     // Close the socket, it's over or we don't want to reuse it
@@ -1155,17 +1213,14 @@ bool task::prepare_restore(const QString& tableName)
     if (tid) {
        stop_thread_timer(tid);
     }
-    if (ret) {
-       mark_as_done();
-    } else {
-       mark_as_failed();
-    }
+
     return ret;
 }
 
-bool task::run_restore(const QString& tableName)
+bool task::run_restore()
 {
     bool ret = false;
+    uint timeout = 1000;
     btimer_t *tid = NULL;
     QString q;
 
@@ -1201,24 +1256,24 @@ bool task::run_restore(const QString& tableName)
         Dmsg2(dbglvl, "<- %d %s\n", res->bs->msglen, curline);
     }
 
-    q = QString("restore client=%1").arg(arg);
+    q = QString("restore client=%1").arg(restore_field.client);
 
-    if (arg2) {
-        QString where(arg2);
-        where.replace("\"", "");
-        q += " where=\"" + where + "\"";
+    if (!restore_field.where.isEmpty()) {
+        restore_field.where.replace("\"", "");
+        q += QString(" where=\"%1\"").arg(restore_field.where);
     }
 
-    if (arg3) {
-        QString comment(arg3);
-        comment.replace("\"", " ");
-        q += " comment=\"" + comment+ "\"";
+    if (!restore_field.comment.isEmpty()) {
+        restore_field.comment.replace("\"", "");
+        q += QString(" comment=\"%1\"").arg(restore_field.comment);
     }
 
-    q += " file=\"?" + tableName + "\"";
+    q += QString(" file=\"?%1\"").arg(restore_field.tableName);
     q += " done yes\n";
 
-    res->bs->fsend(q.toUtf8());
+    res->bs->fsend(q.toLatin1().data());
+
+    /* drain the messages */
     while (get_next_line(res)) {
         ret = true;
         // FIXME : report a signal to have a progress feedback
@@ -1233,15 +1288,11 @@ bool task::run_restore(const QString& tableName)
     if (tid) {
        stop_thread_timer(tid);
     }
-    if (ret) {
-       mark_as_done();
-    } else {
-       mark_as_failed();
-    }
+
     return ret;
 }
 
-bool task::clean_restore(const QString& tableName)
+bool task::clean_restore()
 {
     bool ret = false;
     btimer_t *tid = NULL;
@@ -1279,9 +1330,9 @@ bool task::clean_restore(const QString& tableName)
         Dmsg2(dbglvl, "<- %d %s\n", res->bs->msglen, curline);
     }
 
-    q = QString(".bvfs_cleanup path=%1\n").arg(tableName);
+    q = QString(".bvfs_cleanup path=%1\n").arg(restore_field.tableName);
 
-    res->bs->fsend(q.toUtf8());
+    res->bs->fsend(q.toLatin1().data());
     while (get_next_line(res)) {
         ret = true;
         // FIXME : report a signal to have a progress feedback
@@ -1296,6 +1347,20 @@ bool task::clean_restore(const QString& tableName)
     if (tid) {
        stop_thread_timer(tid);
     }
+
+    return ret;
+}
+
+bool task::restore()
+{
+    bool ret=prepare_restore();
+    if (ret) {
+        ret = run_restore();
+        if (ret) {
+            ret = clean_restore();
+        }
+    }
+
     if (ret) {
        mark_as_done();
     } else {
@@ -1304,16 +1369,137 @@ bool task::clean_restore(const QString& tableName)
     return ret;
 }
 
-bool task::restore(const QString& tableName)
+QString task::plugins_ids(const QString& jobIds)
 {
-    bool ret=prepare_restore(tableName);
-    if (ret) {
-        ret = run_restore(tableName);
-        if (ret) {
-            return clean_restore(tableName);
+    return parse_plugins(jobIds, "restoreobjectid");
+}
+
+QString task::plugins_names(const QString& jobIds)
+{
+    return parse_plugins(jobIds, "pluginname");
+}
+
+QString task::parse_plugins(const QString& jobIds, const QString& fieldName)
+{
+    btimer_t *tid = NULL;
+    QString ret;
+    QString q;
+
+    if (!res->bs || !res->bs->is_open() || res->bs->is_error()) {
+        if (!connect_bacula()) {
+            return ret;
         }
     }
-    return false;
+
+    tid = start_thread_timer(NULL, pthread_self(), (uint32_t)120);
+
+    if (res->type == R_CLIENT && !res->proxy_sent) {
+        res->proxy_sent = true;
+        res->bs->fsend("proxy\n");
+        while (get_next_line(res)) {
+            if (strncmp(curline, "2000", 4) != 0) {
+                pm_strcpy(errmsg, curline);
+                return ret;
+            }
+            Dmsg2(dbglvl, "<- %d %s\n", res->bs->msglen, curline);
+        }
+    }
+
+    if (res->type == R_DIRECTOR && res->use_setip) {
+        res->bs->fsend("setip\n");
+        while (get_next_line(res)) {
+            Dmsg2(dbglvl, "<- %d %s\n", res->bs->msglen, curline);
+        }
+    }
+
+    q = QString("llist pluginrestoreconf jobid=%1\n").arg(jobIds);
+    res->bs->fsend(q.toLatin1().data());
+
+    QStringList sl;
+    while (get_next_line(res)) {
+        QString line(curline);
+        line = line.simplified();
+        QStringList line_lst = line.split(":", QString::SkipEmptyParts);
+
+        if (!line_lst.empty() && fieldName.compare(line_lst[0]) == 0) {
+            sl << line_lst[1];
+        }
+    }
+
+    ret = sl.join(",");
+    // Close the socket, it's over or we don't want to reuse it
+    disconnect_bacula();
+
+
+    if (tid) {
+        stop_thread_timer(tid);
+    }
+
+    return ret;
+}
+
+QFile* task::plugin(const QString& name, const QString& jobIds, int id)
+{
+    QFile *ret(NULL);
+    btimer_t *tid = NULL;
+    QString q;
+
+    if (id < 0)
+        return NULL;
+
+    if (!res->bs || !res->bs->is_open() || res->bs->is_error()) {
+        if (!connect_bacula()) {
+            return NULL;
+        }
+    }
+
+    tid = start_thread_timer(NULL, pthread_self(), (uint32_t)120);
+
+    if (res->type == R_CLIENT && !res->proxy_sent) {
+        res->proxy_sent = true;
+        res->bs->fsend("proxy\n");
+        while (get_next_line(res)) {
+            if (strncmp(curline, "2000", 4) != 0) {
+                pm_strcpy(errmsg, curline);
+                return NULL;
+            }
+            Dmsg2(dbglvl, "<- %d %s\n", res->bs->msglen, curline);
+        }
+    }
+
+    if (res->type == R_DIRECTOR && res->use_setip) {
+        res->bs->fsend("setip\n");
+        while (get_next_line(res)) {
+            Dmsg2(dbglvl, "<- %d %s\n", res->bs->msglen, curline);
+        }
+    }
+
+    res->bs->fsend(".api 1\n");
+    while (get_next_line(res)) {
+        Dmsg2(dbglvl, "<- %d %s\n", res->bs->msglen, curline);
+    }
+
+    ret = new QFile(name);
+    ret->open(QIODevice::WriteOnly);
+
+    q = QString("llist pluginrestoreconf jobid=%1 id=%2\n").arg(jobIds).arg(id);
+    res->bs->fsend(q.toLatin1().data());
+    while (get_next_line(res)) {
+        if (QString(curline).contains(":"))
+            continue;
+        ret->write(curline);
+        ret->write("\n");
+    }
+    ret->close();
+
+    // Close the socket, it's over or we don't want to reuse it
+    disconnect_bacula();
+
+    if (tid) {
+        stop_thread_timer(tid);
+    }
+
+    return ret;
 }
 
 /* Get resources to run a job */
@@ -1398,7 +1584,7 @@ bool task::get_resources()
       res->storages->append(bstrdup(curline));
    }
 
-   res->bs->fsend(".catalog\n");
+   res->bs->fsend(".catalogs\n");
    while (get_next_line(res)) {
       res->catalogs->append(bstrdup(curline));
    }

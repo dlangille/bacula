@@ -140,6 +140,7 @@ struct RESMON {
       char *catalog;
       int   priority;
       char *where;
+      int   replace;
    } defaults;
 
    /* Information about the job */

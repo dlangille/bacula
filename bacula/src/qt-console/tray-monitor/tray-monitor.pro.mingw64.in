@@ -1,3 +1,21 @@
+/*
+   Bacula(R) - The Network Backup Solution
+
+   Copyright (C) 2000-2018 Kern Sibbald
+
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
+
+   You may use this file and others of this release according to the
+   license defined in the LICENSE file, which includes the Affero General
+   Public License, v3.0 ("AGPLv3") and some additional permissions and
+   terms pursuant to its AGPLv3 Section 7.
+
+   This notice must be preserved when any source code is
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
+*/
 ######################################################################
 #
 #  !!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -18,7 +36,7 @@ CONFIG += qt cross-win32
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 cross-win32 {
-  LIBS       +=  -mwindows -L../../win32/release64 -lbacula -lpthread
+  LIBS       +=  ../../win32/lib/obj64/ini.o -mwindows -L../../win32/release64 -lbacula -lpthread
   INCLUDEPATH += ../../win32/compat
 }
 !cross-win32 {
@@ -60,8 +78,8 @@ QMAKE_LIB               = x86_64-w64-mingw32-ar -ru
 QMAKE_RC                = x86_64-w64-mingw32-windres
 
 # Main directory
-HEADERS += tray-monitor.h tray_conf.h tray-ui.h fdstatus.h task.h ../util/fmtwidgetitem.h dirstatus.h conf.h sdstatus.h runjob.h status.h restorewizard.h filesmodel.h clientselectwizardpage.h jobselectwizardpage.h fileselectwizardpage.h restoreoptionswizardpage.h
-SOURCES +=  tray-monitor.cpp tray_conf.cpp fdstatus.cpp task.cpp authenticate.cpp ../util/fmtwidgetitem.cpp dirstatus.cpp sdstatus.cpp conf.cpp runjob.cpp status.cpp restorewizard.cpp clientselectwizardpage.cpp jobselectwizardpage.cpp fileselectwizardpage.cpp restoreoptionswizardpage.cpp
-FORMS += fd-monitor.ui dir-monitor.ui sd-monitor.ui main-conf.ui res-conf.ui run.ui restorewizard.ui clientselectwizardpage.ui jobselectwizardpage.ui fileselectwizardpage.ui restoreoptionswizardpage.ui
+HEADERS += tray-monitor.h tray_conf.h tray-ui.h fdstatus.h task.h ../util/fmtwidgetitem.h dirstatus.h conf.h sdstatus.h runjob.h status.h restorewizard.h filesmodel.h clientselectwizardpage.h jobselectwizardpage.h fileselectwizardpage.h restoreoptionswizardpage.h pluginwizardpage.h
+SOURCES +=  tray-monitor.cpp tray_conf.cpp fdstatus.cpp task.cpp authenticate.cpp ../util/fmtwidgetitem.cpp dirstatus.cpp sdstatus.cpp conf.cpp runjob.cpp status.cpp restorewizard.cpp clientselectwizardpage.cpp jobselectwizardpage.cpp fileselectwizardpage.cpp restoreoptionswizardpage.cpp pluginwizardpage.cpp
+FORMS += fd-monitor.ui dir-monitor.ui sd-monitor.ui main-conf.ui res-conf.ui run.ui restorewizard.ui clientselectwizardpage.ui jobselectwizardpage.ui fileselectwizardpage.ui restoreoptionswizardpage.ui pluginwizardpage.ui
 
 TRANSLATIONS += ts/tm_fr.ts ts/tm_de.ts ts/tm_ja.ts

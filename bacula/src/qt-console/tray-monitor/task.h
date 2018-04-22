@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2017 Kern Sibbald
+   Copyright (C) 2000-2018 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -34,6 +34,7 @@ enum {
    TASK_LIST_CLIENT_JOBS,
    TASK_LIST_JOB_FILES,
    TASK_RESTORE,
+   TASK_PLUGIN,
    TASK_DEFAULTS,
    TASK_CLOSE,
    TASK_INFO,
@@ -65,27 +66,50 @@ public:
       char  c[256];
    } result;                    /* The task might return something */
    
+   struct r_field
+   {
+       QString tableName;
+       QString jobIds;
+       QString fileIds;
+       QString dirIds;
+       QString hardlinks;
+       QString client;
+       QString where;
+       QString replace;
+       QString comment;
+       QString pluginnames;
+       QString pluginkeys;
+   } restore_field;
+
    task(): QObject(), res(NULL), type(TASK_NONE), status(false), curline(NULL),
-      curend(NULL), arg(NULL), arg2(NULL)
+      curend(NULL), arg(NULL), arg2(NULL), arg3(NULL), model(NULL), pathId(0)
    {
       errmsg = get_pool_memory(PM_FNAME);
       *errmsg = 0;
       memset(result.c, 0, sizeof(result.c));
-   };
+   }
+
    ~task() {
       Enter();
       disconnect();             /* disconnect all signals */
       free_pool_memory(errmsg);
-   };
+   }
+
    void init(int t) {
       res = NULL;
       type = t;
       status = false;
-   };
+      arg = NULL;
+      arg2 = NULL;
+      arg3 = NULL;
+      model = NULL;
+      pathId = 0;
+   }
+
    void init(RESMON *s, int t) {
       init(t);
       res = s;
-   };
+   }
 
    RESMON *get_res();
    void lock_res();
@@ -113,12 +137,18 @@ public:
    bool get_client_jobs(const char* client);
    bool get_job_files(const char* job, uint64_t pathId);
 
-   bool prepare_restore(const QString& tableName);
-   bool run_restore(const QString& tableName);
-   bool clean_restore(const QString& tableName);
-   bool restore(const QString& tableName);
+   bool prepare_restore();
+   bool run_restore();
+   bool clean_restore();
+   bool restore();
+
+   QString plugins_ids(const QString &jobIds);
+   QString plugins_names(const QString& jobIds);
+   QString parse_plugins(const QString& jobIds, const QString& fieldName);
+   QFile* plugin(const QString &name, const QString& jobIds, int id);
 
 signals:
+
    void done(task *t);
 };
 
