@@ -44,9 +44,9 @@ class BaculaHosts extends HostListTemplate {
 	public function createHostListElement($sender, $param) {
 		$control = $this->getChildControl($param->Item, self::CHILD_CONTROL);
 		if (is_object($control)) {
-			$control->setHost($param->Item->DataItem);
+			$control->setHost($param->Item->Data);
 		}
-		$param->Item->RemoveHost->setCommandParameter($param->Item->DataItem);
+		$param->Item->RemoveHost->setCommandParameter($param->Item->Data);
 	}
 
 	public function getComponents($sender, $param) {

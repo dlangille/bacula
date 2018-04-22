@@ -54,20 +54,20 @@ class MessageTypes extends DirectiveListTemplate {
 	public function createTypeListElement($sender, $param) {
 		$control = $this->getChildControl($param->Item, 'DirectiveBoolean');
 		if (is_object($control)) {
-			$control->setHost($param->Item->DataItem['host']);
-			$control->setComponentType($param->Item->DataItem['component_type']);
-			$control->setComponentName($param->Item->DataItem['component_name']);
-			$control->setResourceType($param->Item->DataItem['resource_type']);
-			$control->setResourceName($param->Item->DataItem['resource_name']);
-			$control->setDirectiveName($param->Item->DataItem['directive_name']);
-			$control->setDirectiveValue($param->Item->DataItem['directive_value']);
-			$control->setDefaultValue($param->Item->DataItem['default_value']);
-			$control->setRequired($param->Item->DataItem['required']);
-			$control->setLabel($param->Item->DataItem['label']);
-			$control->setData($param->Item->DataItem['directive_value']);
-			$control->setInConfig($param->Item->DataItem['in_config']);
-			$control->setShow($param->Item->DataItem['show']);
-			$control->setParentName($param->Item->DataItem['parent_name']);
+			$control->setHost($param->Item->Data['host']);
+			$control->setComponentType($param->Item->Data['component_type']);
+			$control->setComponentName($param->Item->Data['component_name']);
+			$control->setResourceType($param->Item->Data['resource_type']);
+			$control->setResourceName($param->Item->Data['resource_name']);
+			$control->setDirectiveName($param->Item->Data['directive_name']);
+			$control->setDirectiveValue($param->Item->Data['directive_value']);
+			$control->setDefaultValue($param->Item->Data['default_value']);
+			$control->setRequired($param->Item->Data['required']);
+			$control->setLabel($param->Item->Data['label']);
+			$control->setData($param->Item->Data['directive_value']);
+			$control->setInConfig($param->Item->Data['in_config']);
+			$control->setShow($param->Item->Data['show']);
+			$control->setParentName($param->Item->Data['parent_name']);
 		}
 	}
 }

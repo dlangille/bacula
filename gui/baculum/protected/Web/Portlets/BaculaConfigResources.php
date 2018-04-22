@@ -70,14 +70,14 @@ class BaculaConfigResources extends ResourceListTemplate {
 	public function createResourceListElement($sender, $param) {
 		$control = $this->getChildControl($param->Item, self::CHILD_CONTROL);
 		if (is_object($control)) {
-			$control->setHost($param->Item->DataItem['host']);
-			$control->setComponentType($param->Item->DataItem['component_type']);
-			$control->setComponentName($param->Item->DataItem['component_name']);
-			$control->setResourceType($param->Item->DataItem['resource_type']);
-			$control->setResourceName($param->Item->DataItem['resource_name']);
+			$control->setHost($param->Item->Data['host']);
+			$control->setComponentType($param->Item->Data['component_type']);
+			$control->setComponentName($param->Item->Data['component_name']);
+			$control->setResourceType($param->Item->Data['resource_type']);
+			$control->setResourceName($param->Item->Data['resource_name']);
 			$control->setResourceNames($this->resource_names);
 		}
-		$param->Item->RemoveResource->setCommandParameter($param->Item->DataItem);
+		$param->Item->RemoveResource->setCommandParameter($param->Item->Data);
 	}
 
 	public function getDirectives($sender, $param) {

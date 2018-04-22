@@ -9,27 +9,27 @@
 	</prop:HeaderTemplate>
 	<prop:ItemTemplate>
 		<%=($this->getItemIndex() % 31 === 0 ? '<h3 class="options">Options #' . (($this->getItemIndex()/31)+1) . '</h3><hr />' : '')%>
-		<com:Application.Web.Portlets.BConditional BCondition="<%#($this->DataItem['field_type'] === 'ComboBox')%>">
+		<com:Application.Web.Portlets.BConditional BCondition="<%#($this->Data['field_type'] === 'ComboBox')%>">
 			<prop:TrueTemplate>
 				<com:Application.Web.Portlets.DirectiveComboBox />
 			</prop:TrueTemplate>
 		</com:Application.Web.Portlets.BConditional>
-		<com:Application.Web.Portlets.BConditional BCondition="<%#($this->DataItem['field_type'] === 'TextBox')%>">
+		<com:Application.Web.Portlets.BConditional BCondition="<%#($this->Data['field_type'] === 'TextBox')%>">
 			<prop:TrueTemplate>
 				<com:Application.Web.Portlets.DirectiveText />
 			</prop:TrueTemplate>
 		</com:Application.Web.Portlets.BConditional>
-		<com:Application.Web.Portlets.BConditional BCondition="<%#($this->DataItem['field_type'] === 'CheckBox')%>">
+		<com:Application.Web.Portlets.BConditional BCondition="<%#($this->Data['field_type'] === 'CheckBox')%>">
 			<prop:TrueTemplate>
 				<com:Application.Web.Portlets.DirectiveBoolean />
 			</prop:TrueTemplate>
 		</com:Application.Web.Portlets.BConditional>
-		<com:Application.Web.Portlets.BConditional BCondition="<%#($this->DataItem['field_type'] === 'Integer')%>">
+		<com:Application.Web.Portlets.BConditional BCondition="<%#($this->Data['field_type'] === 'Integer')%>">
 			<prop:TrueTemplate>
 				<com:Application.Web.Portlets.DirectiveInteger />
 			</prop:TrueTemplate>
 		</com:Application.Web.Portlets.BConditional>
-		<com:Application.Web.Portlets.BConditional BCondition="<%#($this->DataItem['field_type'] === 'ListBox')%>">
+		<com:Application.Web.Portlets.BConditional BCondition="<%#($this->Data['field_type'] === 'ListBox')%>">
 			<prop:TrueTemplate>
 				<com:Application.Web.Portlets.DirectiveListBox />
 			</prop:TrueTemplate>

@@ -16,8 +16,8 @@
 				document.getElementById('<%=$this->RemoveResource->ClientID%>').onclick = function(event) {
 					var t = (event.target||event.srcElement);
 					var cmsg = '<%[ Are you sure that you want to remove %s resource "%s"? ]%>';
-					cmsg = cmsg.replace('%s', '<%=$this->DataItem['resource_type']%>');
-					cmsg = cmsg.replace('%s', '<%=$this->DataItem['resource_name']%>');
+					cmsg = cmsg.replace('%s', '<%=$this->Data['resource_type']%>');
+					cmsg = cmsg.replace('%s', '<%=$this->Data['resource_name']%>');
 					if (/^<%=$this->RemoveResource->ClientID%>/.test(t.id) && confirm(cmsg)) {
 						return true;
 					}
@@ -33,7 +33,7 @@
 							ClientSide.OnLoading="BaculaConfig.loader_start(sender.options.ID);"
 							ClientSide.OnComplete="BaculaConfig.set_config_items(sender.options.ID);"
 							Attributes.onclick="return BaculaConfig.unset_config_items(this.id);"
-							Text="<strong><%=$this->DataItem['resource_type']%></strong>: <%=$this->DataItem['resource_name']%>"
+							Text="<strong><%=$this->Data['resource_type']%></strong>: <%=$this->Data['resource_name']%>"
 							Style="text-decoration: none"
 						/>
 							<i class="fa fa-sync w3-spin" style="display: none"><i/>
@@ -61,7 +61,7 @@
 				</table>
 				<div class="config_directives" style="display: none">
 				<com:Application.Web.Portlets.BaculaConfigDirectives
-					Resource="<%#$this->DataItem['resource_name']%>"
+					Resource="<%#$this->Data['resource_name']%>"
 					LoadValues="<%=true%>"
 					ShowRemoveButton="false"
 				/>

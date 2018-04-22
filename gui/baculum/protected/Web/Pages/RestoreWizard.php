@@ -24,11 +24,11 @@ Prado::using('Application.Web.Class.BaculumWebPage');
 Prado::using('System.Exceptions.TException');
 Prado::using('System.Web.UI.WebControls.TWizard');
 Prado::using('System.Web.UI.WebControls.TDataGrid');
+Prado::using('System.Web.UI.JuiControls.TJuiDroppable');
 Prado::using('System.Web.UI.ActiveControls.TActiveLinkButton');
 Prado::using('System.Web.UI.ActiveControls.TActiveImageButton');
-Prado::using('System.Web.UI.ActiveControls.TDropContainer');
-Prado::using('System.Web.UI.ActiveControls.TDraggable');
 Prado::using('System.Web.UI.ActiveControls.TActiveDataGrid');
+Prado::using('System.Web.UI.ActiveControls.TActiveRepeater');
 Prado::using('System.Web.UI.ActiveControls.TCallback');
 Prado::using('System.Web.UI.ActiveControls.TActiveTextBox');
 
@@ -486,17 +486,17 @@ class RestoreWizard extends BaculumWebPage
 		$fileid = null;
 		$source_element_id = null;
 		$file_prop = array();
-		if (isset($param->CallbackParameter)) {
+		if (get_class($param) == 'Prado\Web\UI\ActiveControls\TCallbackEventParameter') {
 			$id_parts = explode('_', $sender->ClientID, 6);
 			$source_element_id = $id_parts[3];
 			$fileid = $param->CallbackParameter;
 		} else {
-			$control = $param->getDroppedControl();
+			$control = $param->DraggableControl;
 		        $item = $control->getNamingContainer();
-			$id_parts = explode('_', $param->getDragElementID(), 6);
+			$id_parts = explode('_', $control->ClientID, 6);
 			$source_element_id = $id_parts[3];
 		}
-		if($source_element_id == $this->VersionsDataGrid->ID) {
+		if ($source_element_id == $this->VersionsDataGrid->ID) {
 			if (is_null($fileid)) {
 				$fileid = $this->VersionsDataGrid->getDataKeys()->itemAt($item->getItemIndex());
 			}

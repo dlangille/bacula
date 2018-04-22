@@ -17,12 +17,12 @@
 							Attributes.onclick="return BaculaConfig.unset_config_items(this.id);"
 							Style="text-decoration: none"
 						>
-							<strong><%=$this->DataItem%></strong>
+							<strong><%=$this->Data%></strong>
 						</com:TActiveLinkButton>
 							<i class="fa fa-sync w3-spin" style="display: none"><i/>
 						</td>
-						<td style="width: 45%"><%[ IP Address/Hostname: ]%><strong> <%=$this->getParent()->getParent()->config[$this->DataItem]['address']%></strong></td>
-						<td style="width: 10%"><%[ Port: ]%><strong> <%=$this->getParent()->getParent()->config[$this->DataItem]['port']%></strong>
+						<td style="width: 45%"><%[ IP Address/Hostname: ]%><strong> <%=$this->getParent()->getParent()->config[$this->Data]['address']%></strong></td>
+						<td style="width: 10%"><%[ Port: ]%><strong> <%=$this->getParent()->getParent()->config[$this->Data]['port']%></strong>
 						</td>
 						<td style="width: 15%"><com:TActiveLinkButton
 							ID="RemoveHost"

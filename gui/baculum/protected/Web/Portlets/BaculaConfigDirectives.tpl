@@ -51,52 +51,52 @@
 		>
 		<prop:ItemTemplate>
 			<div class="directive_field">
-				<com:Application.Web.Portlets.BConditional BCondition="<%#($this->DataItem['field_type'] === 'TextBox')%>">
+				<com:Application.Web.Portlets.BConditional BCondition="<%#($this->Data['field_type'] === 'TextBox')%>">
 					<prop:TrueTemplate>
 						<com:Application.Web.Portlets.DirectiveText />
 					</prop:TrueTemplate>
 				</com:Application.Web.Portlets.BConditional>
-				<com:Application.Web.Portlets.BConditional BCondition="<%#($this->DataItem['field_type'] === 'Integer')%>">
+				<com:Application.Web.Portlets.BConditional BCondition="<%#($this->Data['field_type'] === 'Integer')%>">
 					<prop:TrueTemplate>
 						<com:Application.Web.Portlets.DirectiveInteger />
 					</prop:TrueTemplate>
 				</com:Application.Web.Portlets.BConditional>
-				<com:Application.Web.Portlets.BConditional BCondition="<%#($this->DataItem['field_type'] === 'CheckBox')%>">
+				<com:Application.Web.Portlets.BConditional BCondition="<%#($this->Data['field_type'] === 'CheckBox')%>">
 					<prop:TrueTemplate>
 						<com:Application.Web.Portlets.DirectiveBoolean />
 					</prop:TrueTemplate>
 				</com:Application.Web.Portlets.BConditional>
-				<com:Application.Web.Portlets.BConditional BCondition="<%#($this->DataItem['field_type'] === 'TimePeriod')%>">
+				<com:Application.Web.Portlets.BConditional BCondition="<%#($this->Data['field_type'] === 'TimePeriod')%>">
 					<prop:TrueTemplate>
 						<com:Application.Web.Portlets.DirectiveTimePeriod />
 					</prop:TrueTemplate>
 				</com:Application.Web.Portlets.BConditional>
-				<com:Application.Web.Portlets.BConditional BCondition="<%#($this->DataItem['field_type'] === 'ComboBox')%>">
+				<com:Application.Web.Portlets.BConditional BCondition="<%#($this->Data['field_type'] === 'ComboBox')%>">
 					<prop:TrueTemplate>
 						<com:Application.Web.Portlets.DirectiveComboBox />
 					</prop:TrueTemplate>
 				</com:Application.Web.Portlets.BConditional>
-				<com:Application.Web.Portlets.BConditional BCondition="<%#($this->DataItem['field_type'] === 'ListBox')%>">
+				<com:Application.Web.Portlets.BConditional BCondition="<%#($this->Data['field_type'] === 'ListBox')%>">
 					<prop:TrueTemplate>
 						<com:Application.Web.Portlets.DirectiveListBox />
 					</prop:TrueTemplate>
 				</com:Application.Web.Portlets.BConditional>
-				<com:Application.Web.Portlets.BConditional BCondition="<%#($this->DataItem['field_type'] === 'FileSet')%>">
+				<com:Application.Web.Portlets.BConditional BCondition="<%#($this->Data['field_type'] === 'FileSet')%>">
 					<prop:TrueTemplate>
 						<com:Application.Web.Portlets.DirectiveFileSet />
 					</prop:TrueTemplate>
 				</com:Application.Web.Portlets.BConditional>
-				<com:Application.Web.Portlets.BConditional BCondition="<%#($this->DataItem['field_type'] === 'Schedule')%>">
+				<com:Application.Web.Portlets.BConditional BCondition="<%#($this->Data['field_type'] === 'Schedule')%>">
 					<prop:TrueTemplate>
 						<com:Application.Web.Portlets.DirectiveSchedule />
 					</prop:TrueTemplate>
 				</com:Application.Web.Portlets.BConditional>
-				<com:Application.Web.Portlets.BConditional BCondition="<%#($this->DataItem['field_type'] === 'Messages')%>">
+				<com:Application.Web.Portlets.BConditional BCondition="<%#($this->Data['field_type'] === 'Messages')%>">
 					<prop:TrueTemplate>
 						<com:Application.Web.Portlets.DirectiveMessages />
 					</prop:TrueTemplate>
 				</com:Application.Web.Portlets.BConditional>
-				<com:Application.Web.Portlets.BConditional BCondition="<%#($this->DataItem['field_type'] === 'Runscript')%>">
+				<com:Application.Web.Portlets.BConditional BCondition="<%#($this->Data['field_type'] === 'Runscript')%>">
 					<prop:TrueTemplate>
 						<com:Application.Web.Portlets.DirectiveRunscript />
 					</prop:TrueTemplate>

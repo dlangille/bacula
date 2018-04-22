@@ -67,9 +67,9 @@ class BaculaConfigComponents extends ComponentListTemplate {
 		for ($i = 0; $i < count($controls); $i++) {
 			$control = $this->getChildControl($param->Item, $controls[$i]);
 			if (is_object($control)) {
-				$control->setHost($param->Item->DataItem['host']);
-				$control->setComponentType($param->Item->DataItem['component_type']);
-				$control->setComponentName($param->Item->DataItem['component_name']);
+				$control->setHost($param->Item->Data['host']);
+				$control->setComponentType($param->Item->Data['component_type']);
+				$control->setComponentName($param->Item->Data['component_name']);
 			}
 		}
 	}

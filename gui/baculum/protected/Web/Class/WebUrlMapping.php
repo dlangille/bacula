@@ -26,7 +26,7 @@ class WebUrlMapping extends TUrlMappingPattern {
 
 	const SERVICE_ID = 'web';
 
-	public function __construct(TUrlManager $manager) {
+	public function __construct(BaculumUrlMapping $manager) {
 		parent::__construct($manager);
 		$this->setServiceID(self::SERVICE_ID);
 	}

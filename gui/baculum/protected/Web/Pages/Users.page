@@ -49,20 +49,20 @@
 	</prop:HeaderTemplate>
 	<prop:ItemTemplate>
 		<tr class="slide-window-element">
-			<td><%=$this->DataItem['user']%></td>
-			<td><%=$this->DataItem['admin'] ? Prado::localize('Administrator') :  Prado::localize('Normal user')%></td>
+			<td><%=$this->Data['user']%></td>
+			<td><%=$this->Data['admin'] ? Prado::localize('Administrator') :  Prado::localize('Normal user')%></td>
 			<td>
-				<com:TPanel Visible="<%=$this->DataItem['admin']%>" Style="line-height: 29px">
+				<com:TPanel Visible="<%=$this->Data['admin']%>" Style="line-height: 29px">
 					Main
 				</com:TPanel>
-				<com:TPanel Visible="<%=!$this->DataItem['admin']%>">
-						<select rel="user_host" onchange="Users.set_host('<%=$this->DataItem['user']%>', this);" class="w3-select w3-border" style="width: 85%; float: left;">
+				<com:TPanel Visible="<%=!$this->Data['admin']%>">
+						<select rel="user_host" onchange="Users.set_host('<%=$this->Data['user']%>', this);" class="w3-select w3-border" style="width: 85%; float: left;">
 							<com:TRepeater OnInit="SourceTemplateControl.initHosts">
 								<prop:HeaderTemplate>
 							<option value=""><%[ Select host ]%></option>
 								</prop:HeaderTemplate>
 								<prop:ItemTemplate>
-							<option value="<%=$this->DataItem%>" <%=$this->SourceTemplateControl->isSelectedHost($this->Parent->Parent->Parent->DataItem['user'], $this->DataItem) ? 'selected' : ''%>><%=$this->DataItem%></option>
+							<option value="<%=$this->Data%>" <%=$this->SourceTemplateControl->isSelectedHost($this->Parent->Parent->Parent->Data['user'], $this->Data) ? 'selected' : ''%>><%=$this->Data%></option>
 								</prop:ItemTemplate>
 							</com:TRepeater>
 						</select>
@@ -70,7 +70,7 @@
 				</com:TPanel>
 			</td>
 			<td>
-				<a href="javascript:void(0)" class="w3-button w3-green"  <%=$this->DataItem['admin'] ? 'style="visibility: hidden"' : ''%> onclick="Users.rmUser('<%=$this->DataItem['user']%>')">
+				<a href="javascript:void(0)" class="w3-button w3-green"  <%=$this->Data['admin'] ? 'style="visibility: hidden"' : ''%> onclick="Users.rmUser('<%=$this->Data['user']%>')">
 					<i class="fa fa-trash-alt"></i> &nbsp;<%[ Remove user ]%>
 				</a>
 				<a href="javascript:void(0)" class="w3-button w3-green" onclick="Users.showChangePwd(this)" rel="chpwd_btn">
@@ -79,8 +79,8 @@
 				<span style="display: none;" rel="chpwd">
 					<div class="w3-threequarter w3-section">
 						<%[ Password: ]%>
-						<input type="password" onkeydown="event.keyCode == 13 ? Users.changePwd(this, '<%=$this->DataItem['user']%>') : (event.keyCode == 27 ? Users.cancelChangePwd(this.nextElementSibling.nextElementSibling) : '');" class="w3-input w3-border" />
-						<a href="javascript:void(0)" onclick="Users.changePwd(this.previousElementSibling, '<%=$this->DataItem['user']%>')" class="w3-button w3-green w3-margin-top">
+						<input type="password" onkeydown="event.keyCode == 13 ? Users.changePwd(this, '<%=$this->Data['user']%>') : (event.keyCode == 27 ? Users.cancelChangePwd(this.nextElementSibling.nextElementSibling) : '');" class="w3-input w3-border" />
+						<a href="javascript:void(0)" onclick="Users.changePwd(this.previousElementSibling, '<%=$this->Data['user']%>')" class="w3-button w3-green w3-margin-top">
 							<i class="fa fa-save"></i> &nbsp;<%[ Save ]%>
 						</a>
 						<a href="javascript:void(0)" onclick="Users.cancelChangePwd(this)" class="w3-button w3-red w3-margin-top">

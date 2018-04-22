@@ -244,22 +244,22 @@ class DirectiveFileSet extends DirectiveListTemplate {
 			for ($j = 0; $j < count($this->directive_types); $j++) {
 				$control = $this->getChildControl($item, $this->directive_types[$j]);
 				if (is_object($control)) {
-					$control->setHost($item->DataItem['host']);
-					$control->setComponentType($item->DataItem['component_type']);
-					$control->setComponentName($item->DataItem['component_name']);
-					$control->setResourceType($item->DataItem['resource_type']);
-					$control->setResourceName($item->DataItem['resource_name']);
-					$control->setDirectiveName($item->DataItem['directive_name']);
-					$control->setDirectiveValue($item->DataItem['directive_value']);
-					$control->setDefaultValue($item->DataItem['default_value']);
-					$control->setRequired($item->DataItem['required']);
-					$control->setData($item->DataItem['data']);
-					$control->setLabel($item->DataItem['label']);
-					$control->setInConfig($item->DataItem['in_config']);
-					$show_all_directives = ($item->DataItem['in_config'] || !$load_values || $this->SourceTemplateControl->getShowAllDirectives());
+					$control->setHost($item->Data['host']);
+					$control->setComponentType($item->Data['component_type']);
+					$control->setComponentName($item->Data['component_name']);
+					$control->setResourceType($item->Data['resource_type']);
+					$control->setResourceName($item->Data['resource_name']);
+					$control->setDirectiveName($item->Data['directive_name']);
+					$control->setDirectiveValue($item->Data['directive_value']);
+					$control->setDefaultValue($item->Data['default_value']);
+					$control->setRequired($item->Data['required']);
+					$control->setData($item->Data['data']);
+					$control->setLabel($item->Data['label']);
+					$control->setInConfig($item->Data['in_config']);
+					$show_all_directives = ($item->Data['in_config'] || !$load_values || $this->SourceTemplateControl->getShowAllDirectives());
 					$control->setShow($show_all_directives);
-					$control->setParentName($item->DataItem['parent_name']);
-					$control->setGroupName($item->DataItem['group_name']);
+					$control->setParentName($item->Data['parent_name']);
+					$control->setGroupName($item->Data['group_name']);
 				}
 			}
 		}
@@ -269,18 +269,18 @@ class DirectiveFileSet extends DirectiveListTemplate {
 		for ($i = 0; $i < count($this->directive_inc_exc_types); $i++) {
 			$control = $this->getChildControl($param->Item, $this->directive_inc_exc_types[$i]);
 			if (is_object($control)) {
-				$control->setHost($param->Item->DataItem['host']);
-				$control->setComponentType($param->Item->DataItem['component_type']);
-				$control->setComponentName($param->Item->DataItem['component_name']);
-				$control->setResourceType($param->Item->DataItem['resource_type']);
-				$control->setResourceName($param->Item->DataItem['resource_name']);
-				$control->setDirectiveName($param->Item->DataItem['directive_name']);
-				$control->setDirectiveValue($param->Item->DataItem['directive_value']);
-				$control->setLabel($param->Item->DataItem['directive_name']);
-				$control->setData($param->Item->DataItem['directive_value']);
+				$control->setHost($param->Item->Data['host']);
+				$control->setComponentType($param->Item->Data['component_type']);
+				$control->setComponentName($param->Item->Data['component_name']);
+				$control->setResourceType($param->Item->Data['resource_type']);
+				$control->setResourceName($param->Item->Data['resource_name']);
+				$control->setDirectiveName($param->Item->Data['directive_name']);
+				$control->setDirectiveValue($param->Item->Data['directive_value']);
+				$control->setLabel($param->Item->Data['directive_name']);
+				$control->setData($param->Item->Data['directive_value']);
 				$control->setInConfig(true);
 				$control->setShow(true);
-				$control->setParentName($param->Item->DataItem['parent_name']);
+				$control->setParentName($param->Item->Data['parent_name']);
 			}
 		}
 	}

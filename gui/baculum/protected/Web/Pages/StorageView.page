@@ -128,9 +128,9 @@
 			</prop:HeaderTemplate>
 			<prop:ItemTemplate>
 				<tr>
-					<td><%#$this->DataItem%></td>
+					<td><%#$this->Data%></td>
 					<td><%=$this->TemplateControl->IsAutochanger ? $this->TemplateControl->getDeviceName() : '-'%></td>
-					<td class="w3-center"><button type="button" class="w3-button w3-green" onclick="document.location.href='<%=$this->Service->constructUrl('DeviceView', array('storageid' => $this->TemplateControl->getStorageId(), 'device' => $this->DataItem))%>';"><i class="fa fa-list-ul"></i> &nbsp;<%[ Details ]%></button></td>
+					<td class="w3-center"><button type="button" class="w3-button w3-green" onclick="document.location.href='<%=$this->Service->constructUrl('DeviceView', array('storageid' => $this->TemplateControl->getStorageId(), 'device' => $this->Data))%>';"><i class="fa fa-list-ul"></i> &nbsp;<%[ Details ]%></button></td>
 				</tr>
 			</prop:ItemTemplate>
 			<prop:FooterTemplate>

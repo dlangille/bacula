@@ -4,7 +4,7 @@
 <com:TActiveRepeater ID="RepeaterMessages" OnItemCreated="createDirectiveListElement" OnItemDataBound="loadMessageTypes">
 	<prop:ItemTemplate>
 		<div class="w3-card w3-white w3-padding directive">
-			<h2><%=$this->DataItem['directive_name']%></h2>
+			<h2><%=$this->Data['directive_name']%></h2>
 			<com:Application.Web.Portlets.DirectiveText />
 			<com:Application.Web.Portlets.MessageTypes ID="Types" />
 		</div>

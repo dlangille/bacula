@@ -20,7 +20,6 @@
  * Bacula(R) is a registered trademark of Kern Sibbald.
  */
  
-Prado::using('System.interfaces');
 Prado::using('Application.Common.Class.Errors');
 Prado::using('Application.API.Class.BException');
 Prado::using('Application.API.Class.APIModule');

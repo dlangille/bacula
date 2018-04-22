@@ -178,24 +178,24 @@ class DirectiveMessages extends DirectiveListTemplate {
 		for ($i = 0; $i < count($this->directive_types); $i++) {
 			$control = $this->getChildControl($param->Item, $this->directive_types[$i]);
 			if (is_object($control)) {
-				$control->setHost($param->Item->DataItem['host']);
-				$control->setComponentType($param->Item->DataItem['component_type']);
-				$control->setComponentName($param->Item->DataItem['component_name']);
-				$control->setResourceType($param->Item->DataItem['resource_type']);
-				$control->setResourceName($param->Item->DataItem['resource_name']);
-				$control->setDirectiveName($param->Item->DataItem['directive_name']);
-				$control->setDirectiveValue($param->Item->DataItem['directive_value']);
-				$control->setDefaultValue($param->Item->DataItem['default_value']);
-				$control->setRequired($param->Item->DataItem['required']);
-				$control->setLabel($param->Item->DataItem['label']);
-				$control->setInConfig($param->Item->DataItem['in_config']);
-				$control->setShow($param->Item->DataItem['is_address_type']);
-				$control->setParentName($param->Item->DataItem['parent_name']);
+				$control->setHost($param->Item->Data['host']);
+				$control->setComponentType($param->Item->Data['component_type']);
+				$control->setComponentName($param->Item->Data['component_name']);
+				$control->setResourceType($param->Item->Data['resource_type']);
+				$control->setResourceName($param->Item->Data['resource_name']);
+				$control->setDirectiveName($param->Item->Data['directive_name']);
+				$control->setDirectiveValue($param->Item->Data['directive_value']);
+				$control->setDefaultValue($param->Item->Data['default_value']);
+				$control->setRequired($param->Item->Data['required']);
+				$control->setLabel($param->Item->Data['label']);
+				$control->setInConfig($param->Item->Data['in_config']);
+				$control->setShow($param->Item->Data['is_address_type']);
+				$control->setParentName($param->Item->Data['parent_name']);
 				break;
 			}
 		}
-		$param->Item->Types->setData($param->Item->DataItem['messages_types']);
-		$param->Item->Types->setDirectiveName($param->Item->DataItem['directive_name']);
+		$param->Item->Types->setData($param->Item->Data['messages_types']);
+		$param->Item->Types->setDirectiveName($param->Item->Data['directive_name']);
 	}
 
 	public function loadMessageTypes($sender, $param) {

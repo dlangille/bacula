@@ -344,7 +344,8 @@ oJobsToRestoreList.init();
 							ShowHeader="false"
 							CssClass="file-browser-detail"
 							ItemStyle.CssClass="file-browser-element"
-							DataKeyField="fileid">
+							DataKeyField="fileid"
+							>
 								<prop:EmptyTemplate>
 									<div class="file-browser-watermark" style="padding: 200px 10px">
 										<%[ It seems that there is no files for choosing or file records in database for this job has been purged (file retention period expired) ]%>
@@ -352,7 +353,7 @@ oJobsToRestoreList.init();
 								</prop:EmptyTemplate>
 								<com:TActiveTemplateColumn>
 									<prop:ItemTemplate>
-										<com:TDraggable ID="FileElementLeft" Revert="false" Handle="<%=$this->FileElementLeft->ClientID%>" Ghosting="true" CssClass="draggable">
+										<com:TPanel ID="FileElementLeft" CssClass="draggable">
 											<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/<%=($this->getParent()->Data['type'] == 'dir' ? 'directory-icon' : 'file-icon')%>.png" alt="<%=$this->getParent()->Data['type'] == 'dir' ? 'directory' : 'file' %>" /> <%=($this->getParent()->Data['name'] != '/') ? preg_replace('/\/$/', '', $this->getParent()->Data['name']) : '/'%>
 										<div class="restore-browser-element-size">
 											<com:TActiveLinkButton
@@ -362,33 +363,13 @@ oJobsToRestoreList.init();
 												ActiveControl.CallbackParameter="<%=isset($this->getParent()->Data['fileid']) ? $this->getParent()->Data['fileid'] : null%>"
 												ActiveControl.EnableUpdate="false"
 												Visible="<%=!in_array($this->getParent()->Data['name'], $this->getPage()->excluded_elements_from_add)%>"
+												ClientSide.OnComplete="Formatters.set_formatters();"
 												Text="<%[ Add ]%>"
 											/>
 											<span class="size" style=""><%=isset($this->getParent()->Data['lstat']['size']) ? $this->getParent()->Data['lstat']['size'] : '0'%></span>
 										</div>
-										</com:TDraggable>
-										<com:TCallback ID="FileElementCall" OnCallback="Page.getVersions" ActiveControl.CallbackParameter="<%=$this->getParent()->Data['name'] . '|' . @$this->getParent()->Data['pathid'] . '|' . @$this->getParent()->Data['filenameid'] . '|' . @$this->getParent()->Data['jobid']%>">
-											<prop:ClientSide.OnLoading>
-												document.getElementById('restore-browser-files-loading').style.display = 'block';
-											</prop:ClientSide.OnLoading>
-											<prop:ClientSide.OnComplete>
-												document.getElementById('restore-browser-files-loading').style.display = 'none';
-											</prop:ClientSide.OnComplete>
-										</com:TCallback>
+										</com:TPanel>
 										<script type="text/javascript">
-											Formatters.set_formatters();
-											document.getElementById('<%=$this->FileElementLeft->ClientID%>').addEventListener('mouseup', function(event) {
-												var el = event.target || event.srcElement;
-												if (el) {
-												    el.style.position = 'static';
-												    el.style.top = '-1px';
-												    el.style.left = '-1px';
-												}
-												var fel = document.getElementById('<%=$this->FileElementLeft->ClientID%>');
-												fel.style.position = 'static';
-												fel.style.top = '-1px';
-												fel.style.left = '-1px';
-											});
 											document.getElementById('<%=$this->FileElementLeft->ClientID%>').addEventListener('click', function(event) {
 												var el = event.target || event.srcElement;
 												if (el.className == 'link') {
@@ -399,7 +380,14 @@ oJobsToRestoreList.init();
 												if(vposition == null || vposition == '0px'){
 													event.stop();
 												} else {
-													var request = <%=$this->FileElementCall->ActiveControl->Javascript %>;
+													var cbp = "<%=$this->getParent()->Data['name']%>|<%=@$this->getParent()->Data['pathid']%>|<%=@$this->getParent()->Data['filenameid']%>|<%=@$this->getParent()->Data['jobid']%>";
+													var request = <%=$this->getPage()->FileElementCall->ActiveControl->Javascript %>;
+													request.setCallbackParameter(cbp);
+													var ocf = request.options.onComplete;
+													request.options.onComplete = function() {
+														ocf();
+														make_draggable();
+													};
 													request.dispatch();
 												}
 											});
@@ -407,10 +395,18 @@ oJobsToRestoreList.init();
 									</prop:ItemTemplate>
 								</com:TActiveTemplateColumn>
 						</com:TActiveDataGrid>
+						<com:TCallback ID="FileElementCall" OnCallback="Page.getVersions">
+							<prop:ClientSide.OnLoading>
+								document.getElementById('restore-browser-files-loading').style.display = 'block';
+							</prop:ClientSide.OnLoading>
+							<prop:ClientSide.OnComplete>
+								document.getElementById('restore-browser-files-loading').style.display = 'none';
+							</prop:ClientSide.OnComplete>
+						</com:TCallback>
 						</div>
 					</td>
 					<td>
-						<div id="restore-browser-versions" class="w3-border">
+						<div id="restore-browser-versions" class="w3-border" style="position: relative">
 							<com:TActiveDataGrid
 								ID="VersionsDataGrid"
 								ShowHeader="false"
@@ -427,7 +423,7 @@ oJobsToRestoreList.init();
 								</prop:EmptyTemplate>
 								<com:TActiveTemplateColumn>
 									<prop:ItemTemplate>
-										<com:TDraggable ID="FileElementToRestore" Revert="false" Handle="<%=$this->FileElementToRestore->ClientID%>" Ghosting="true" CssClass="draggable" Style="width: 100%; height: 28px;">
+										<com:TPanel ID="FileElementToRestore" CssClass="draggable" Style="height: 28px;">
 											<span class="w3-third">
 												<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/<%=($this->getParent()->Data['type'] == 'dir' ? 'directory-icon' : 'file-icon')%>.png" alt="<%=$this->getParent()->Data['type'] == 'dir' ? 'directory' : 'file'%>" />
 												 <%=$this->getParent()->Data['name']%>
@@ -444,12 +440,12 @@ oJobsToRestoreList.init();
 												OnCallback="Page.addFileToRestore"
 												ActiveControl.CallbackParameter="<%=isset($this->getParent()->Data['fileid']) ? $this->getParent()->Data['fileid'] : false%>"
 												ActiveControl.EnableUpdate="false"
+												ClientSide.OnComplete="Formatters.set_formatters();"
 												Text="<%[ Add ]%>"
 											/>
 											</span>
-										</com:TDraggable>
+										</com:TPanel>
 										<script type="text/javascript">
-											Formatters.set_formatters();
 											document.getElementById('<%=$this->FileElementToRestore->ClientID%>').addEventListener('mouseover', function(event) {
 												var tip_fields = [
 													'<%[ JobId: ]%> <%=$this->getParent()->Data['jobid']%>',
@@ -458,18 +454,6 @@ oJobsToRestoreList.init();
 													'<%[ Sum: ]%> <%=$this->getParent()->Data['md5']%>'
 												];
 												showTip(this, '<%=$this->getParent()->Data['name']%>', tip_fields.join('<br />'));
-											});
-											document.getElementById('<%=$this->FileElementToRestore->ClientID%>').addEventListener('mouseup', function(event) {
-												var el = event.target || event.srcElement;
-												if (el) {
-													el.style.position = 'static';
-													el.style.top = 0;
-													el.style.left = 0;
-												}
-												var fetr = document.getElementById('<%=$this->FileElementToRestore->ClientID%>');
-												fetr.style.position = 'static';
-												fetr.style.top = 0;
-												fetr.style.left = 0;
 											});
 										</script>
 									</prop:ItemTemplate>
@@ -481,8 +465,8 @@ oJobsToRestoreList.init();
 				<tr>
 					<td style="vertical-align: bottom;">
 						<div id="restore-browser-selected" class="w3-border">
-							<com:TDropContainer ID="SelectedVersionsDropper" Height="100%" Width="100%"
-								AcceptCssClass="draggable"
+							<com:TJuiDroppable ID="SelectedVersionsDropper" Height="100%" Width="100%"
+								Options.accept=".draggable"
 								OnDrop="addFileToRestore"
 								OnCallback="refreshSelectedFiles"
 								>
@@ -496,7 +480,7 @@ oJobsToRestoreList.init();
 										DataKeyField="fileid"
 									>
 									<prop:EmptyTemplate>
-										<div class="file-browser-watermark" style="padding: 110px 10px">
+										<div class="file-browser-watermark" style="padding: 50px 10px">
 											<%[ For add a file to restore please click 'Add' link or drag a file from frame on left or from above frame and drop it here ]%>
 										</div>
 									</prop:EmptyTemplate>
@@ -515,13 +499,10 @@ oJobsToRestoreList.init();
 														<com:TActiveImageButton CssClass="w3-right" ImageUrl="<%=$this->getPage()->getTheme()->getBaseUrl()%>/icon_close.png" OnCallback="Page.removeSelectedFile" ActiveControl.CallbackParameter="<%=isset($this->getParent()->Data['fileid']) ? $this->getParent()->Data['fileid'] : ''%>"/>
 													</span>
 												</com:TPanel>
-												<script type="text/javascript">
-													Formatters.set_formatters();
-												</script>
 										</prop:ItemTemplate>
 									</com:TActiveTemplateColumn>
 									</com:TActiveDataGrid>
-								</com:TDropContainer>
+								</com:TJuiDroppable>
 						</div>
 					</td>
 				</tr>
@@ -530,6 +511,15 @@ oJobsToRestoreList.init();
 				var browser = document.getElementById('restore-browser-files');
 				document.getElementById('restore-browser-files-loading').style.width = browser.offsetWidth + 'px';
 				document.getElementById('restore-browser-files-loading').style.height = browser.offsetHeight + 'px';
+				function make_draggable() {
+					$('.draggable').draggable({
+						'helper':"clone",
+						'scroll':false,
+						'appendTo':"body",
+						'containment':"window"
+					});
+				}
+				make_draggable('<%=$this->getPage()->DataGridFiles->ClientID%>');
 			</script>
 		</com:TWizardStep>
 		<com:TWizardStep ID="Step4" Title="<%[ Step 4 - select destination for restore ]%>" StepType="Auto">
@@ -557,8 +547,8 @@ oJobsToRestoreList.init();
 				</prop:HeaderTemplate>
 				<prop:ItemTemplate>
 						<tr>
-							<td class="center"><com:TLabel Text="<%#($this->DataItem['inchanger'] == 1 ? Prado::localize('Yes') : Prado::localize('No'))%>" /></td>
-							<td> <i class="fa fa-hdd w3-text-black"></i> <com:TLabel Text="<%#$this->DataItem['volume']%>" /></td>
+							<td class="center"><com:TLabel Text="<%#($this->Data['inchanger'] == 1 ? Prado::localize('Yes') : Prado::localize('No'))%>" /></td>
+							<td> <i class="fa fa-hdd w3-text-black"></i> <com:TLabel Text="<%#$this->Data['volume']%>" /></td>
 						</tr>
 				</prop:ItemTemplate>
 				<prop:FooterTemplate>

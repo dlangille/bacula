@@ -58,7 +58,7 @@ tr.file-browser-element:hover {
 }
 
 .file-browser-watermark {
-	padding: 77px 10px;
+	padding: 68px 10px;
 	text-align: center;
 	font-size: 21px;
 	color: rgb(185, 184, 184);
@@ -67,10 +67,6 @@ tr.file-browser-element:hover {
 #backup-to-restore-field > div {
 	height: 467px;
 	overflow-y: auto;
-}
-
-.draggable {
-	position: relative !important;
 }
 
 .bold {

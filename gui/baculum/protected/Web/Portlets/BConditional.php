@@ -46,8 +46,8 @@ class BConditional extends TTemplateControl implements IActiveControl {
 		parent::onLoad($param);
 	}
 
-	public function bubbleEvent($sender,$param) {
-		if ($param instanceof TCommandEventParameter) {
+	public function bubbleEvent($sender, $param) {
+		if ($param instanceof Prado\Web\UI\TCommandEventParameter) {
 			$this->raiseBubbleEvent($this, $param);
 			return true;
 		} else {
@@ -91,7 +91,7 @@ class BConditional extends TTemplateControl implements IActiveControl {
 	}
 
 	public function setTrueTemplate($template) {
-		if ($template instanceof ITemplate) {
+		if ($template instanceof Prado\Web\UI\ITemplate) {
 			$this->item_true_template = $template;
 		}
 	}
@@ -101,7 +101,7 @@ class BConditional extends TTemplateControl implements IActiveControl {
 	}
 
 	public function setFalseTemplate($template) {
-		if ($template instanceof ITemplate) {
+		if ($template instanceof Prado\Web\UI\ITemplate) {
 			$this->item_false_template = $template;
 		}
 	}
@@ -112,8 +112,7 @@ class BConditional extends TTemplateControl implements IActiveControl {
 	}
 
 	public function getBCondition() {
-		$value = $this->getViewState(self::BCONDITION);
-		return $value;
+		return $this->getViewState(self::BCONDITION);
 	}
 
 	public function dataBind() {
@@ -151,7 +150,7 @@ class BConditionalItem extends TTemplateControl implements IDataRenderer, INamin
 	}
 
 	public function bubbleEvent($sender,$param) {
-		if ($param instanceof TCommandEventParameter) {
+		if ($param instanceof Prado\Web\UI\TCommandEventParameter) {
 			$this->raiseBubbleEvent($this, $param);
 			return true;
 		} else {

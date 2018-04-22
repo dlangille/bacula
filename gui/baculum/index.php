@@ -26,9 +26,7 @@
  */
 define('APPLICATION_DIRECTORY', __DIR__);
 
-require_once('./framework/prado.php');
-
-// Start application
-$application=new TApplication;
+require 'framework/autoload.php';
+$application = new \Prado\TApplication;
 $application->run();
 ?>
