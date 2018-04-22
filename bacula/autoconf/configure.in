@@ -399,10 +399,10 @@ dnl -------------------------------------------
 dnl bat (default off)
 dnl -------------------------------------------
 AC_ARG_ENABLE(bat,
-   AC_HELP_STRING([--enable-bat], [enable build of bat Qt GUI @<:@default=no@:>@]),
+   AC_HELP_STRING([--enable-bat], [enable build of bat Qt4/5 GUI @<:@default=no@:>@]),
    [
        if test x$enableval = xyes; then
-	  AC_DEFINE(HAVE_BAT, 1, [Set if Bacula bat Qt GUI support enabled])
+	  AC_DEFINE(HAVE_BAT, 1, [Set if Bacula bat Qt4/5 GUI support enabled])
 	  support_bat=yes
        fi
    ]
@@ -2262,6 +2262,12 @@ AC_CHECK_FUNCS(getrlimit)
 
 AC_CHECK_FUNCS(chflags)
 
+AC_TRY_LINK([
+int f(int b) {
+  return __builtin_bswap32(b);
+}
+],[int a = f(10);], [AC_DEFINE([HAVE_BSWAP32], 1, [Define to 1 if you have the '__builtin_bswap32' function ])])
+
 AC_CHECK_FUNCS(snprintf vsnprintf gethostid fseeko)
 
 AC_CACHE_CHECK(for va_copy, ba_cv_va_copy,
@@ -2606,19 +2612,19 @@ if test x$support_acl = xyes -o x$support_acl = xauto; then
    if test $have_acl = no; then
       AC_CHECK_LIB(acl, acl_get_file,
       [
-        have_acl=yes
-        if test $have_afs = yes; then
-         dnl
-         dnl Because of possible naming conflict with AFS libacl make sure we use the one in /usr/lib64 or /usr/lib !!!
-         dnl
-            if test -d /usr/lib64/; then
-               FDLIBS="-L/usr/lib64 -lacl $FDLIBS"
-            else
-               FDLIBS="-L/usr/lib -lacl $FDLIBS"
-            fi
-         else
-            FDLIBS="-lacl $FDLIBS"
-         fi
+	have_acl=yes
+	if test $have_afs = yes; then
+	 dnl
+	 dnl Because of possible naming conflict with AFS libacl make sure we use the one in /usr/lib64 or /usr/lib !!!
+	 dnl
+	    if test -d /usr/lib64/; then
+	       FDLIBS="-L/usr/lib64 -lacl $FDLIBS"
+	    else
+	       FDLIBS="-L/usr/lib -lacl $FDLIBS"
+	    fi
+	 else
+	    FDLIBS="-lacl $FDLIBS"
+	 fi
       ])
    fi
 
@@ -2629,17 +2635,17 @@ if test x$support_acl = xyes -o x$support_acl = xauto; then
    if test $have_acl = no -a x${HAVE_OSF1_OS_TRUE} = x; then
       AC_CHECK_LIB(pacl, acl_get_file,
       [
-         have_acl=yes
-         FDLIBS="-lpacl $FDLIBS"
+	 have_acl=yes
+	 FDLIBS="-lpacl $FDLIBS"
       ])
 
       AC_MSG_CHECKING(for ACL_TYPE_DEFAULT_DIR in acl.h include file)
       grep ACL_TYPE_DEFAULT_DIR /usr/include/sys/acl.h > /dev/null 2>&1
       if test $? = 0; then
-         AC_DEFINE(HAVE_ACL_TYPE_DEFAULT_DIR,1,[Defines if your system have the ACL_TYPE_DEFAULT_DIR acl type])
-         AC_MSG_RESULT(yes)
+	 AC_DEFINE(HAVE_ACL_TYPE_DEFAULT_DIR,1,[Defines if your system have the ACL_TYPE_DEFAULT_DIR acl type])
+	 AC_MSG_RESULT(yes)
       else
-         AC_MSG_RESULT(no)
+	 AC_MSG_RESULT(no)
       fi
    fi
 
@@ -2650,10 +2656,10 @@ if test x$support_acl = xyes -o x$support_acl = xauto; then
       AC_MSG_CHECKING(for ACL_TYPE_EXTENDED in acl.h include file)
       grep ACL_TYPE_EXTENDED /usr/include/sys/acl.h > /dev/null 2>&1
       if test $? = 0; then
-         AC_DEFINE(HAVE_ACL_TYPE_EXTENDED,1,[Defines if your system have the ACL_TYPE_EXTENDED acl type])
-         AC_MSG_RESULT(yes)
+	 AC_DEFINE(HAVE_ACL_TYPE_EXTENDED,1,[Defines if your system have the ACL_TYPE_EXTENDED acl type])
+	 AC_MSG_RESULT(yes)
       else
-         AC_MSG_RESULT(no)
+	 AC_MSG_RESULT(no)
       fi
    fi
 
@@ -2679,14 +2685,14 @@ if test x$support_acl = xyes -o x$support_acl = xauto; then
       x${HAVE_SUN_OS_TRUE} = x; then
       AC_CHECK_LIB(sec, acltotext,
     [
-        have_acl=yes
-        FDLIBS="-lsec $FDLIBS"
+	have_acl=yes
+	FDLIBS="-lsec $FDLIBS"
 
-        AC_CHECK_LIB(sec, acl_totext,
+	AC_CHECK_LIB(sec, acl_totext,
       [
-          have_extended_acl=yes
+	  have_extended_acl=yes
       ]
-        )
+	)
     ]
       )
    fi
@@ -2715,25 +2721,25 @@ ACLOBJS=
   please either load the acl libraries or rerun configure without --enable-acl])
    else
       if test $have_acl = yes; then
-         AC_DEFINE([HAVE_ACL],1,[Normal acl support])
-         dnl
-         dnl Prepare obj building
-         dnl
-         if test x${HAVE_LINUX_OS_TRUE} = x; then
-            ACLOBJS="bacl.c bacl_linux.c"
-         fi
-         if test x${HAVE_SUN_OS_TRUE} = x; then
-            ACLOBJS="bacl.c bacl_solaris.c"
-         fi
-         if test x${HAVE_FREEBSD_OS_TRUE} = x; then
-            ACLOBJS="bacl.c bacl_freebsd.c"
-         fi
-         if test x${HAVE_DARWIN_OS_TRUE} = x; then
-            ACLOBJS="bacl.c bacl_osx.c"
-         fi
+	 AC_DEFINE([HAVE_ACL],1,[Normal acl support])
+	 dnl
+	 dnl Prepare obj building
+	 dnl
+	 if test x${HAVE_LINUX_OS_TRUE} = x; then
+	    ACLOBJS="bacl.c bacl_linux.c"
+	 fi
+	 if test x${HAVE_SUN_OS_TRUE} = x; then
+	    ACLOBJS="bacl.c bacl_solaris.c"
+	 fi
+	 if test x${HAVE_FREEBSD_OS_TRUE} = x; then
+	    ACLOBJS="bacl.c bacl_freebsd.c"
+	 fi
+	 if test x${HAVE_DARWIN_OS_TRUE} = x; then
+	    ACLOBJS="bacl.c bacl_osx.c"
+	 fi
       fi
       if test $have_extended_acl = yes; then
-         AC_DEFINE([HAVE_EXTENDED_ACL],1,[Extended acl support])
+	 AC_DEFINE([HAVE_EXTENDED_ACL],1,[Extended acl support])
       fi
    fi
 fi
@@ -2920,22 +2926,22 @@ XATTROBJS=
   please either load the xattr libraries or rerun configure without --enable-xattr])
    else
       if test $have_xattr = yes; then
-         AC_DEFINE([HAVE_XATTR],1,[Extended Attributes support])
-         dnl
-         dnl Prepare obj building
-         dnl
-         if test x${HAVE_LINUX_OS_TRUE} = x; then
-            XATTROBJS="bxattr.c bxattr_linux.c"
-         fi
-         if test x${HAVE_SUN_OS_TRUE} = x; then
-            XATTROBJS="bxattr.c bxattr_solaris.c"
-         fi
-         if test x${HAVE_FREEBSD_OS_TRUE} = x; then
-            XATTROBJS="bxattr.c bxattr_freebsd.c"
-         fi
-         if test x${HAVE_DARWIN_OS_TRUE} = x; then
-            XATTROBJS="bxattr.c bxattr_osx.c"
-         fi
+	 AC_DEFINE([HAVE_XATTR],1,[Extended Attributes support])
+	 dnl
+	 dnl Prepare obj building
+	 dnl
+	 if test x${HAVE_LINUX_OS_TRUE} = x; then
+	    XATTROBJS="bxattr.c bxattr_linux.c"
+	 fi
+	 if test x${HAVE_SUN_OS_TRUE} = x; then
+	    XATTROBJS="bxattr.c bxattr_solaris.c"
+	 fi
+	 if test x${HAVE_FREEBSD_OS_TRUE} = x; then
+	    XATTROBJS="bxattr.c bxattr_freebsd.c"
+	 fi
+	 if test x${HAVE_DARWIN_OS_TRUE} = x; then
+	    XATTROBJS="bxattr.c bxattr_osx.c"
+	 fi
       fi
    fi
 fi
@@ -3373,8 +3379,6 @@ AC_OUTPUT([autoconf/Make.common \
 	   scripts/logrotate \
 	   scripts/mtx-changer \
 	   scripts/disk-changer \
-	   scripts/dvd-handler \
-	   scripts/dvd-simulator \
 	   scripts/logwatch/Makefile \
 	   scripts/logwatch/logfile.bacula.conf \
 	   scripts/bat.desktop \
@@ -3474,7 +3478,16 @@ if test "${support_bat}" = "yes" ; then
    touch bat
    chmod 755 bat
    rm -f Makefile
-   rm -rf moc32 obj32
+   rm -rf moc32 obj32 moc64 obj64 ui32 ui64
+   $QMAKE
+   ${MAKE:-make} clean
+
+   cd tray-monitor
+   echo "Creating tray-monitor Makefile"
+   rm -f Makefile
+   rm -rf moc32 obj32 moc64 obj64 ui32 ui64
+   $QMAKE
+   ${MAKE:-make} clean
    $QMAKE
    ${MAKE:-make} clean
    cd ${BUILD_DIR}
@@ -3495,7 +3508,6 @@ cd ${BUILD_DIR}
 
 cd scripts
 chmod 755 bacula btraceback mtx-changer
-chmod 755 dvd-handler dvd-simulator
 chmod 755 bconsole disk-changer devel_bacula logrotate
 cd ..
 
@@ -3525,6 +3537,8 @@ chmod 755 $c/sqlite
 chmod 755 $c/mysql
 
 chmod 755 $c/install-default-backend
+
+chmod 755 src/win32/build-depkgs-mingw32 src/win32/build-depkgs-mingw-w64
 
 if test "x$ac_cv_sys_largefile_CFLAGS" != "xno" ; then
    largefile_support="yes"
