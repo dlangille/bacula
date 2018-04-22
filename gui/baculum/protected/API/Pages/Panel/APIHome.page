@@ -119,12 +119,12 @@
 				refresh_token: 'api_refresh'
 			},
 			default_commands: {
-				storages: '/api/storages/',
-				clients: '/api/clients/limit/5/',
-				volumes: '/api/volumes/limit/4/',
-				jobs: '/api/jobs/limit/10/',
-				joblog: '/api/joblog/1/',
-				bvfs: '/api/bvfs/lsdirs/limit/8/'
+				storages: '/api/v1/storages/',
+				clients: '/api/v1/clients?limit=5',
+				volumes: '/api/v1/volumes?limit=4',
+				jobs: '/api/v1/jobs/limit/10/',
+				joblog: '/api/v1/joblog/1/',
+				bvfs: '/api/v1/bvfs/lsdirs?jobids=1&path=&limit=8'
 			},
 			token: null,
 			baculum_auth: JSON.parse('<%=$this->auth_params%>'),
