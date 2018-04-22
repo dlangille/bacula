@@ -1,0 +1,159 @@
+[
+    {
+        "name": "bower-asset/jquery",
+        "version": "3.3.1",
+        "version_normalized": "3.3.1.0",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/jquery/jquery-dist.git",
+            "reference": "9e8ec3d10fad04748176144f108d7355662ae75e"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/jquery/jquery-dist/zipball/9e8ec3d10fad04748176144f108d7355662ae75e",
+            "reference": "9e8ec3d10fad04748176144f108d7355662ae75e",
+            "shasum": null
+        },
+        "type": "bower-asset",
+        "installation-source": "dist",
+        "license": [
+            "MIT"
+        ]
+    },
+    {
+        "name": "bower-asset/jquery-ui",
+        "version": "1.12.1",
+        "version_normalized": "1.12.1.0",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/components/jqueryui.git",
+            "reference": "44ecf3794cc56b65954cc19737234a3119d036cc"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/components/jqueryui/zipball/44ecf3794cc56b65954cc19737234a3119d036cc",
+            "reference": "44ecf3794cc56b65954cc19737234a3119d036cc",
+            "shasum": null
+        },
+        "require": {
+            "bower-asset/jquery": ">=1.6"
+        },
+        "type": "bower-asset",
+        "installation-source": "dist",
+        "license": [
+            "MIT"
+        ]
+    },
+    {
+        "name": "pradosoft/prado",
+        "version": "4.0.1",
+        "version_normalized": "4.0.1.0",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/pradosoft/prado.git",
+            "reference": "da21818ddfa4f76756435b0e7ab35fa86d7842f4"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/pradosoft/prado/zipball/da21818ddfa4f76756435b0e7ab35fa86d7842f4",
+            "reference": "da21818ddfa4f76756435b0e7ab35fa86d7842f4",
+            "shasum": ""
+        },
+        "require": {
+            "bower-asset/bootstrap": "^3.3",
+            "bower-asset/clipboard": "*",
+            "bower-asset/highlightjs": "^9",
+            "bower-asset/highlightjs-line-numbers.js": "*",
+            "bower-asset/jquery": "^3",
+            "bower-asset/jquery-ui": "^1",
+            "bower-asset/tinymce": "^4",
+            "erusev/parsedown": "*",
+            "ext-ctype": "*",
+            "ext-dom": "*",
+            "ext-json": "*",
+            "ext-pcre": "*",
+            "ext-spl": "*",
+            "ezyang/htmlpurifier": "*",
+            "firephp/firephp-core": "*",
+            "mrclay/jsmin-php": "*",
+            "php": ">=5.4.0",
+            "pradosoft/prado-tinymce3": "*",
+            "pradosoft/prado-wsdlgenerator": "*",
+            "psy/psysh": "*"
+        },
+        "provide": {
+            "pradosoft/prado": "4.0.1"
+        },
+        "require-dev": {
+            "phpunit/dbunit": "*",
+            "phpunit/php-invoker": "*",
+            "phpunit/phpunit": "5.*",
+            "phpunit/phpunit-selenium": "3.*",
+            "pradosoft/apigen": "4.2.x-dev",
+            "pradosoft/prado-apigen-theme": "*"
+        },
+        "suggest": {
+            "ext-apc": "Enables the use of TAPCCache as a cache handler",
+            "ext-eaccelerator": "Enables the use of TEACache as a cache handler",
+            "ext-hash": "Enables use of hash functions other than md5 and sha1",
+            "ext-iconv": "Used by some internationaization components",
+            "ext-mbstring": "Prado can use the mbstring extension for locale-aware string operations",
+            "ext-memcache": "Enables the use of TMemCache as a cache handler",
+            "ext-openssl": "Enables encryption of sensitive data, eg. page viewstate",
+            "ext-pdo": "Used by all the Prado\\Data components, eg. TActiveRecord",
+            "ext-soap": "Used by TSoapService to provide a soap backend",
+            "ext-xcache": "Enables the use of TXCache as a cache handler",
+            "ext-xdebug": "Useful to get stack traces on Php fatal errors",
+            "ext-xsl": "Used by the TXmlTransform component",
+            "ext-zlib": "Enables compression to reduce page size",
+            "pradosoft/prado-demos": "Demo applications for Prado"
+        },
+        "time": "2018-03-30T20:55:31+00:00",
+        "bin": [
+            "bin/prado-cli"
+        ],
+        "type": "library",
+        "installation-source": "dist",
+        "autoload": {
+            "psr-4": {
+                "Prado\\": "framework"
+            }
+        },
+        "notification-url": "https://packagist.org/downloads/",
+        "license": [
+            "BSD-3-Clause"
+        ],
+        "authors": [
+            {
+                "name": "Fabio Bas",
+                "email": "ctrlaltca@gmail.com",
+                "role": "Developer"
+            },
+            {
+                "name": "Ciro Mattia Gonano",
+                "email": "ciromattia@gmail.com",
+                "role": "Github/Packagist Maintainer"
+            },
+            {
+                "name": "David Otto",
+                "role": "Developer"
+            },
+            {
+                "name": "Daniel Sampedro",
+                "email": "darthdaniel85@gmail.com",
+                "role": "Developer"
+            },
+            {
+                "name": "Jens Klaer",
+                "email": "kj.landwehr.software@gmail.com",
+                "role": "Developer"
+            }
+        ],
+        "description": "Component Framework for PHP",
+        "homepage": "https://github.com/pradosoft/prado",
+        "keywords": [
+            "component",
+            "framework"
+        ]
+    }
+]
