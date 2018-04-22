@@ -647,15 +647,15 @@ Section "Tray Monitor" SecTrayMonitor
   Call InstallCommonFiles
   File "${SRC64_DIR}\QtCore4.dll"
   File "${SRC64_DIR}\QtGui4.dll"
-  ;File "${SRC64_DIR}\bacula-tray-monitor.exe"
+  File "${SRC64_DIR}\bacula-tray-monitor.exe"
 
-  ;File "/oname=$INSTDIR\working\bacula-tray-monitor.conf.in" "bacula-tray-monitor.conf.in"
-  ;StrCpy $0 "$INSTDIR"
-  ;StrCpy $1 bacula-tray-monitor.conf
-  ;Call ConfigEditAndCopy
+  File "/oname=$INSTDIR\working\bacula-tray-monitor.conf.in" "bacula-tray-monitor.conf.in"
+  StrCpy $0 "$INSTDIR"
+  StrCpy $1 bacula-tray-monitor.conf
+  Call ConfigEditAndCopy
 
   ; Create Start Menu entry
-  ;CreateShortCut "$SMPROGRAMS\Bacula\TrayMonitor.lnk" "$INSTDIR\bacula-tray-monitor.exe" "" "$INSTDIR\bacula-tray-monitor.exe" 0
+  CreateShortCut "$SMPROGRAMS\Bacula\TrayMonitor.lnk" "$INSTDIR\bacula-tray-monitor.exe" "" "$INSTDIR\bacula-tray-monitor.exe" 0
   SetOutPath "$INSTDIR"
 !endif
 

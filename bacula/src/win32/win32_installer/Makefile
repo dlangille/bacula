@@ -41,7 +41,7 @@ ifeq ($(bat),no)
 	BACULA_BINARIES=$(BACULABINARIES)
 	HELP=
 else
-	BACULA_BINARIES=$(BACULABINARIES) bat.exe #bacula-tray-monitor.exe
+	BACULA_BINARIES=$(BACULABINARIES) bat.exe bacula-tray-monitor.exe
 	HELP=help
 endif
 

@@ -601,15 +601,15 @@ Section "Bacula Tray Monitor" SecTrayMonitor
   File "${SRC_DIR}\QtCore4.dll"
   File "${SRC_DIR}\QtGui4.dll"
   File "${SRC_DIR}\libgcc_s_sjlj-1.dll"
-; File "${SRC_DIR}\bacula-tray-monitor.exe"
+  File "${SRC_DIR}\bacula-tray-monitor.exe"
 
-; File "/oname=$PLUGINSDIR\bacula-tray-monitor.conf" "bacula-tray-monitor.conf.in"
-; StrCpy $0 "$INSTDIR"
-; StrCpy $1 bacula-tray-monitor.conf
-; Call ConfigEditAndCopy
+  ;File "/oname=$PLUGINSDIR\bacula-tray-monitor.conf" "bacula-tray-monitor.conf.in"
+  StrCpy $0 "$INSTDIR"
+  StrCpy $1 bacula-tray-monitor.conf
+  ;Call ConfigEditAndCopy
 
   ; Create Start Menu entry
-;  CreateShortCut "$SMPROGRAMS\Bacula\TrayMonitor.lnk" "$INSTDIR\bacula-tray-monitor.exe" "" "$INSTDIR\bacula-tray-monitor.exe" 0
+   CreateShortCut "$SMPROGRAMS\Bacula\TrayMonitor.lnk" "$INSTDIR\bacula-tray-monitor.exe" "" "$INSTDIR\bacula-tray-monitor.exe" 0
 !endif
 
 SectionEnd
@@ -737,8 +737,8 @@ LangString DESC_SecFileDaemon ${LANG_ENGLISH} "Install Bacula 32 bit File Daemon
 LangString DESC_SecStorageDaemon ${LANG_ENGLISH} "Install Bacula 32 bit Storage Daemon on this system."
 LangString DESC_SecConsole ${LANG_ENGLISH} "Install bconsole program on this system."
 LangString DESC_SecBatConsole ${LANG_ENGLISH} "Install Bat graphical console program on this system."
-; LangString DESC_SecTrayMonitor ${LANG_ENGLISH} "Install Tray Monitor graphical program on this system."
- LangString DESC_SecAllDrivesPlugin ${LANG_ENGLISH} "Install alldrives Plugin on this system."
+LangString DESC_SecTrayMonitor ${LANG_ENGLISH} "Install Tray Monitor graphical program on this system."
+LangString DESC_SecAllDrivesPlugin ${LANG_ENGLISH} "Install alldrives Plugin on this system."
 ; LangString DESC_SecWinBMRPlugin ${LANG_ENGLISH} "Install winbmr Plugin on this system."
 LangString DESC_SecOldExchangePlugin ${LANG_ENGLISH} "Install old (deprecated) Exchange Plugin on this system."
 
@@ -760,7 +760,7 @@ LangString SUBTITLE_WriteTemplates ${LANG_ENGLISH} "Create a resource template f
   !InsertMacro MUI_DESCRIPTION_TEXT ${SecStorageDaemon} $(DESC_SecStorageDaemon)
   !InsertMacro MUI_DESCRIPTION_TEXT ${SecConsole} $(DESC_SecConsole)
   !InsertMacro MUI_DESCRIPTION_TEXT ${SecBatConsole} $(DESC_SecBatConsole)
-;  !InsertMacro MUI_DESCRIPTION_TEXT ${SecTrayMonitor} $(DESC_SecTrayMonitor)
+  !InsertMacro MUI_DESCRIPTION_TEXT ${SecTrayMonitor} $(DESC_SecTrayMonitor)
   !InsertMacro MUI_DESCRIPTION_TEXT ${SecAllDrivesPlugin} $(DESC_SecAllDrivesPlugin)
 ;  !InsertMacro MUI_DESCRIPTION_TEXT ${SecWinBMRPlugin} $(DESC_SecWinBMRPlugin)
   !InsertMacro MUI_DESCRIPTION_TEXT ${SecOldExchangePlugin} $(DESC_SecOldExchangePlugin)
@@ -973,9 +973,9 @@ Function GetSelectedComponents
   ${If} ${SectionIsSelected} ${SecBatConsole}
     IntOp $R0 $R0 | ${ComponentBatConsole}
   ${EndIf}
-;  ${If} ${SectionIsSelected} ${SecTrayMonitor}
-;    IntOp $R0 $R0 | ${ComponentTrayMonitor}
-;  ${EndIf}
+   ${If} ${SectionIsSelected} ${SecTrayMonitor}
+     IntOp $R0 $R0 | ${ComponentTrayMonitor}
+   ${EndIf}
   ${If} ${SectionIsSelected} ${SecAllDrivesPlugin}
     IntOp $R0 $R0 | ${ComponentAllDrivesPlugin}
   ${EndIf}
@@ -1118,14 +1118,14 @@ Function SelectPreviousComponents
       !InsertMacro UnselectSection ${SecBatConsole}
       !InsertMacro ClearSectionFlag ${SecBatConsole} ${SF_RO}
     ${EndIf}
-;    IntOp $R1 $PreviousComponents & ${ComponentTrayMonitor}
-;    ${If} $R1 <> 0
-;      !InsertMacro SelectSection ${SecTrayMonitor}
-;      !InsertMacro SetSectionFlag ${SecTrayMonitor} ${SF_RO}
-;    ${Else}
-;      !InsertMacro UnselectSection ${SecTrayMonitor}
-;      !InsertMacro ClearSectionFlag ${SecTrayMonitor} ${SF_RO}
-;    ${EndIf}
+     IntOp $R1 $PreviousComponents & ${ComponentTrayMonitor}
+     ${If} $R1 <> 0
+       !InsertMacro SelectSection ${SecTrayMonitor}
+       !InsertMacro SetSectionFlag ${SecTrayMonitor} ${SF_RO}
+     ${Else}
+       !InsertMacro UnselectSection ${SecTrayMonitor}
+       !InsertMacro ClearSectionFlag ${SecTrayMonitor} ${SF_RO}
+     ${EndIf}
     IntOp $R1 $PreviousComponents & ${ComponentAllDrivesPlugin}
     ${If} $R1 <> 0
       !InsertMacro SelectSection ${SecAllDrivesPlugin}
@@ -1196,12 +1196,12 @@ Function UpdateComponentUI
     ${Else}
       !InsertMacro ClearSectionFlag ${SecBatConsole} ${SF_BOLD}
     ${EndIf}
-;    IntOp $R1 $NewComponents & ${ComponentTrayMonitor}
-;    ${If} $R1 <> 0
-;      !InsertMacro SetSectionFlag ${SecTrayMonitor} ${SF_BOLD}
-;    ${Else}
-;      !InsertMacro ClearSectionFlag ${SecTrayMonitor} ${SF_BOLD}
-;    ${EndIf}
+     IntOp $R1 $NewComponents & ${ComponentTrayMonitor}
+     ${If} $R1 <> 0
+       !InsertMacro SetSectionFlag ${SecTrayMonitor} ${SF_BOLD}
+     ${Else}
+       !InsertMacro ClearSectionFlag ${SecTrayMonitor} ${SF_BOLD}
+     ${EndIf}
     IntOp $R1 $NewComponents & ${ComponentAllDrivesPlugin}
     ${If} $R1 <> 0
       !InsertMacro SetSectionFlag ${SecAllDrivesPlugin} ${SF_BOLD}
