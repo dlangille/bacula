@@ -316,7 +316,7 @@ oJobsToRestoreList.init();
 						ID="PathField"
 						CssClass="w3-input w3-twothird w3-border"
 						Style="display: inline"
-						Attributes.onkeydown="var keycode = (event.keyCode ? event.keyCode : event.which); if (keycode === 13) {$('<%=$this->LoadPathBtn->ClientID%>').click(); return false; } return true;"
+						Attributes.onkeydown="var keycode = (event.keyCode ? event.keyCode : event.which); if (keycode === 13) {$('#<%=$this->LoadPathBtn->ClientID%>').click(); return false; } return true;"
 						/>
 					<com:TActiveLinkButton
 						ID="LoadPathBtn"
