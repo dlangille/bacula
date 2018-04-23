@@ -403,13 +403,13 @@ var GraphClass = jQuery.klass({
 					mode : 'time',
 					timeMode: 'local',
 					labelsAngle : 45,
-					color: 'white',
+					color: 'black',
 					autoscale: true
 					},
 				yaxis : {
 					min : area.y1,
 					max : area.y2,
-					color: 'white',
+					color: 'black',
 					autoscale: true
 				}
 			};
