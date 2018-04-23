@@ -1,0 +1,21 @@
+diff -rup prado-4.0.1/framework/I18N/core/Gettext/TGettext.php prado-4.0.1-new/framework/I18N/core/Gettext/TGettext.php
+--- prado-4.0.1/framework/I18N/core/Gettext/TGettext.php	2018-03-30 22:55:31.000000000 +0200
++++ prado-4.0.1-new/framework/I18N/core/Gettext/TGettext.php	2018-04-22 08:11:25.624877554 +0200
+@@ -101,14 +101,13 @@ class TGettext
+ 	public static function factory($format, $file = '')
+ 	{
+ 		$format = strToUpper($format);
+-		$filename = __DIR__ . '/' . $format . '.php';
++		$class = 'TGettext_' . $format;
++		$filename = __DIR__ . '/' . $class . '.php';
+ 		if (is_file($filename) == false) {
+-			throw new Exception("Class file $file not found");
++			throw new Exception("Class file $filename not found");
+ 		}
+ 
+ 		include_once $filename;
+-		$class = 'TGettext_' . $format;
+-
+ 		return new $class($file);
+ 	}
+ 
