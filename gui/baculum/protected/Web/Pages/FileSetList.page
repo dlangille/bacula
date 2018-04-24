@@ -35,6 +35,7 @@ var oFileSetList = {
 	set_table: function() {
 		var table = $('#' + this.ids.fileset_list).DataTable({
 			data: <%=json_encode($this->filesets)%>,
+			deferRender: true,
 			columns: [
 				{
 					className: 'details-control',

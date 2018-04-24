@@ -43,6 +43,7 @@ var oJobHistoryList = {
 	set_table: function() {
 		var table = $('#' + this.ids.job_history_list).DataTable({
 			data: <%=json_encode($this->jobs)%>,
+			deferRender: true,
 			columns: [
 				{
 					className: 'details-control',

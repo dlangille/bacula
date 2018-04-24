@@ -39,6 +39,7 @@ var oClientList = {
 	set_table: function() {
 		var table = $('#' + this.ids.client_list).DataTable({
 			data: oData.clients,
+			deferRender: true,
 			columns: [
 				{
 					className: 'details-control',

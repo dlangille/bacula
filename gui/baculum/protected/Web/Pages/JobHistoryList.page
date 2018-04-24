@@ -50,6 +50,7 @@ var oJobList = {
 	set_table: function() {
 		var table = $('#' + this.ids.job_list).DataTable({
 			data: oData.jobs,
+			deferRender: true,
 			columns: [
 				{
 					className: 'details-control',

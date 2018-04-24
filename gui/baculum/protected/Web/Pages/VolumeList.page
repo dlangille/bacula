@@ -42,6 +42,7 @@ var oVolumeList = {
 	set_table: function() {
 		var table = $('#' + this.ids.volume_list).DataTable({
 			data: <%=json_encode($this->volumes)%>,
+			deferRender: true,
 			columns: [
 				{
 					className: 'details-control',

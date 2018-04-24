@@ -80,6 +80,7 @@ var oJobForClientList = {
 	set_table: function() {
 		var table = $('#' + this.ids.job_list).DataTable({
 			data: this.data,
+			deferRender: true,
 			columns: [
 				{
 					className: 'details-control',

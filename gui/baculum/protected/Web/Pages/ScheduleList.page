@@ -34,6 +34,7 @@ var oScheduleList = {
 	set_table: function() {
 		var table = $('#' + this.ids.schedule_list).DataTable({
 			data: <%=json_encode($this->schedules)%>,
+			deferRender: true,
 			columns: [
 				{
 					className: 'details-control',

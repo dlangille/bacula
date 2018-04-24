@@ -359,6 +359,7 @@ var oJobsOnVolumeList = {
 	set_table: function() {
 		var table = $('#' + this.ids.jobs_on_volume_list).DataTable({
 			data: <%=json_encode($this->jobs_on_volume)%>,
+			deferRender: true,
 			columns: [
 				{
 					className: 'details-control',

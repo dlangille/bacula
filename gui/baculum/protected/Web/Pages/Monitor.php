@@ -26,7 +26,7 @@ class Monitor extends BaculumWebPage {
 
 	public function onInit($param) {
 		parent::onInit($param);
-		$_SESSION['monitor_data'] = array(
+		$monitor_data = array(
 			'jobs' => array(),
 			'running_jobs' => array(),
 			'terminated_jobs' => array(),
@@ -37,32 +37,32 @@ class Monitor extends BaculumWebPage {
 
 		$params = $this->Request->contains('params') ? $this->Request['params'] : array();
 		if (in_array('jobs', $params)) {
-			$_SESSION['monitor_data']['jobs'] = $this->getModule('api')->get(array('jobs'))->output;
+			$monitor_data['jobs'] = $this->getModule('api')->get(array('jobs'))->output;
 		}
-		$_SESSION['monitor_data']['running_jobs'] = $this->getModule('api')->get(array('jobs', '?jobstatus=CR'))->output;
+		$monitor_data['running_jobs'] = $this->getModule('api')->get(array('jobs', '?jobstatus=CR'))->output;
 		if (in_array('clients', $params)) {
-			$_SESSION['monitor_data']['clients'] = $this->getModule('api')->get(array('clients'))->output;
+			$monitor_data['clients'] = $this->getModule('api')->get(array('clients'))->output;
 		}
 		if (in_array('pools', $params)) {
-			$_SESSION['monitor_data']['pools'] = $this->getModule('api')->get(array('pools'))->output;
+			$monitor_data['pools'] = $this->getModule('api')->get(array('pools'))->output;
 		}
 		if (in_array('job_totals', $params)) {
-			$_SESSION['monitor_data']['jobtotals'] = $this->getModule('api')->get(array('jobs', 'totals'))->output;
+			$monitor_data['jobtotals'] = $this->getModule('api')->get(array('jobs', 'totals'))->output;
 		}
 		if ($_SESSION['admin'] && in_array('dbsize', $params)) {
-			$_SESSION['monitor_data']['dbsize'] = $this->getModule('api')->get(array('dbsize'))->output;
+			$monitor_data['dbsize'] = $this->getModule('api')->get(array('dbsize'))->output;
 		}
 
 		$runningJobStates = $this->Application->getModule('misc')->getRunningJobStates();
 
 		if (in_array('jobs', $params)) {
-			for ($i = 0; $i < count($_SESSION['monitor_data']['jobs']); $i++) {
-				if (!in_array($_SESSION['monitor_data']['jobs'][$i]->jobstatus, $runningJobStates)) {
-					$_SESSION['monitor_data']['terminated_jobs'][] = $_SESSION['monitor_data']['jobs'][$i];
+			for ($i = 0; $i < count($monitor_data['jobs']); $i++) {
+				if (!in_array($monitor_data['jobs'][$i]->jobstatus, $runningJobStates)) {
+					$monitor_data['terminated_jobs'][] = $monitor_data['jobs'][$i];
 				}
 			}
 		}
-		echo json_encode($_SESSION['monitor_data']);
+		echo json_encode($monitor_data);
 		exit();
 	}
 }

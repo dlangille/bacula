@@ -40,6 +40,7 @@ var oPoolList = {
 	set_table: function() {
 		var table = $('#' + this.ids.pool_list).DataTable({
 			data: oData.pools,
+			deferRender: true,
 			columns: [
 				{
 					className: 'details-control',

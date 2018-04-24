@@ -185,6 +185,7 @@ var oJobsToRestoreList = {
 	set_table: function() {
 		var table = $('#' + this.ids.job_list).DataTable({
 			data: <%=json_encode(array_values($this->getPage()->jobs_to_restore))%>,
+			deferRender: true,
 			columns: [
 				{
 					className: 'details-control',

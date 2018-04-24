@@ -38,6 +38,7 @@ var oStorageList = {
 	set_table: function() {
 		var table = $('#' + this.ids.storage_list).DataTable({
 			data: <%=json_encode($this->storages)%>,
+			deferRender: true,
 			columns: [
 				{
 					className: 'details-control',
