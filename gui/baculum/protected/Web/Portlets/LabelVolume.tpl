@@ -121,7 +121,7 @@
 				>
 					<i class="fa fa-tag"></i> &nbsp;<%[ Label ]%>
 				</com:TActiveLinkButton>
-				<i id="status_label_volume_loading" class="fa fa-undo w3-spin" style="display: none"></i>
+				<i id="status_label_volume_loading" class="fa fa-sync w3-spin" style="display: none;"></i>
 			</div>
 		</div>
 	</div>

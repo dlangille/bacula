@@ -67,7 +67,7 @@
 		>
 			<%[ Restore ]%> &nbsp;<i class="fa fa-reply"></i>
 		</com:TActiveLinkButton>
-		<i id="joblog_loading" class="fa fa-undo w3-spin" style="display: none"></i>
+		<i id="joblog_loading" class="fa fa-sync w3-spin" style="display: none; vertical-align: super;"></i>
 		<div class="w3-panel w3-card w3-light-grey">
 			<h3><%[ Job: ]%> <%=$this->getJobUname()%> &nbsp;
 				<com:TActiveLabel ID="RunningIcon">

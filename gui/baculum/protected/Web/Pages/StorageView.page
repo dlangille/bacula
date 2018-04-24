@@ -84,7 +84,7 @@
 		>
 			<prop:Text><%=Prado::localize('Umount')%> &nbsp;<i class="fa fa-caret-up"></i></prop:Text>
 		</com:TActiveLinkButton>
-		<i id="status_storage_loading" class="fa fa-undo w3-spin" style="display: none"></i>
+		<i id="status_storage_loading" class="fa fa-sync w3-spin" style="display: none; vertical-align: super;"></i>
 		<com:TActivePanel ID="Autochanger" Display="None">
 			<div class="w3-row">
 				<div class="w3-quarter w3-container">

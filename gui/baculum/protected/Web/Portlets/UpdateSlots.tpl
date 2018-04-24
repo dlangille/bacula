@@ -88,7 +88,7 @@
 				>
 					<i class="fa fa-retweet"></i> &nbsp;<%[ Update slots ]%>
 				</com:TActiveLinkButton>
-				<i id="status_update_slots_loading" class="fa fa-undo w3-spin" style="display: none"></i>
+				<i id="status_update_slots_loading" class="fa fa-sync w3-spin" style="display: none;"></i>
 			</div>
 		</div>
 	</div>
