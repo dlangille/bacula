@@ -1816,3 +1816,9 @@ msgstr "Application settings"
 
 msgid "Update slots"
 msgstr "Update slots"
+
+msgid "Max. number of jobs visible in tables"
+msgstr "Max. number of jobs visible in tables"
+
+msgid "Max. number of jobs value must be integer greather than 0."
+msgstr "Max. number of jobs value must be integer greather than 0."

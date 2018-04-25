@@ -16,9 +16,36 @@
 			/>
 		</div>
 	</div>
+	<div class="w3-container w3-row w3-padding">
+		<div class="w3-third w3-col"><%[ Max. number of jobs visible in tables ]%></div>
+		<div class="w3-third w3-col">
+			<com:TTextBox
+				ID="MaxJobs"
+				CssClass="w3-input w3-border"
+				ValidationGroup="AppSetting"
+			/>
+			<com:TRequiredFieldValidator
+				ID="MaxJobsRequiredValidator"
+				ValidationGroup="AppSetting"
+				ControlToValidate="MaxJobs"
+				ErrorMessage="<%[ Field required. ]%>"
+				Display="Dynamic"
+			/>
+			<com:TDataTypeValidator
+				ID="MaxJobsTypeValidator"
+				ValidationGroup="AppSetting"
+				ControlToValidate="MaxJobs"
+				ErrorMessage="<%[ Max. number of jobs value must be integer greather than 0. ]%>"
+				Display="Dynamic"
+				DataType="Integer"
+			/>
+		</div>
+	</div>
 	<div class="w3-center">
 		<com:TActiveLinkButton
 			CssClass="w3-button w3-green"
+			CausesValidation="true"
+			ValidationGroup="AppSetting"
 			OnClick="save"
 		>
 			<prop:ClientSide.OnLoading>

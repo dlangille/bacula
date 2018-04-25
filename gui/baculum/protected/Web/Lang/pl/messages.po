@@ -1823,3 +1823,9 @@ msgstr "Ustawienia aplikacji"
 
 msgid "Update slots"
 msgstr "Aktualizacja slotów"
+
+msgid "Max. number of jobs visible in tables"
+msgstr "Maks. liczba zadań widzialna w tabelach"
+
+msgid "Max. number of jobs value must be integer greather than 0."
+msgstr "Maks. liczba zadań musi być liczbą całkowitą większą od zera."

@@ -22,6 +22,7 @@
 
 Prado::using('System.Web.UI.ActiveControls.TActiveLinkButton');
 Prado::using('Application.Web.Class.BaculumWebPage'); 
+Prado::using('Application.Web.Pages.Monitor');
 
 class ApplicationSettings extends BaculumWebPage {
 
@@ -34,21 +35,18 @@ class ApplicationSettings extends BaculumWebPage {
 		$this->web_config = $this->getModule('web_config')->getConfig();
 		if(count($this->web_config) > 0) {
 			$this->Debug->Checked = ($this->web_config['baculum']['debug'] == 1);
+			$this->MaxJobs->Text = (key_exists('max_jobs', $this->web_config['baculum']) ? intval($this->web_config['baculum']['max_jobs']) : Monitor::DEFAULT_MAX_JOBS);
 		}
 	}
 
 
 	public function save() {
-		$this->enableDebug($this->Debug->Checked);
-	}
-
-	public function enableDebug($enable) {
-		$result = false;
-		if(count($this->web_config) > 0) {
-			$this->web_config['baculum']['debug'] = ($enable === true) ? 1 : 0;
-			$result = $this->getModule('web_config')->setConfig($this->web_config);
+		if (count($this->web_config) > 0) {
+			$this->web_config['baculum']['debug'] = ($this->Debug->Checked === true) ? 1 : 0;
+			$max_jobs = intval($this->MaxJobs->Text);
+			$this->web_config['baculum']['max_jobs'] = $max_jobs;
+			$this->getModule('web_config')->setConfig($this->web_config);
 		}
-		return $result;
 	}
 }
 ?>

@@ -24,6 +24,8 @@ Prado::using('Application.Web.Class.BaculumWebPage');
 
 class Monitor extends BaculumWebPage {
 
+	const DEFAULT_MAX_JOBS = 10000;
+
 	public function onInit($param) {
 		parent::onInit($param);
 		$monitor_data = array(
@@ -35,9 +37,19 @@ class Monitor extends BaculumWebPage {
 			'dbsize' => array()
 		);
 
+		$web_config = $this->getModule('web_config')->getConfig();
+		$job_limit = self::DEFAULT_MAX_JOBS;
+		if (count($web_config) > 0 && key_exists('max_jobs', $web_config['baculum'])) {
+			$job_limit = $web_config['baculum']['max_jobs'];
+		}
+
 		$params = $this->Request->contains('params') ? $this->Request['params'] : array();
 		if (in_array('jobs', $params)) {
-			$monitor_data['jobs'] = $this->getModule('api')->get(array('jobs'))->output;
+			$job_params = array('jobs');
+			if ($this->Request->contains('use_limit') && $this->Request['use_limit'] == 1) {
+				$job_params[] = '?limit=' . $job_limit;
+			}
+			$monitor_data['jobs'] = $this->getModule('api')->get($job_params)->output;
 		}
 		$monitor_data['running_jobs'] = $this->getModule('api')->get(array('jobs', '?jobstatus=CR'))->output;
 		if (in_array('clients', $params)) {
@@ -53,11 +65,11 @@ class Monitor extends BaculumWebPage {
 			$monitor_data['dbsize'] = $this->getModule('api')->get(array('dbsize'))->output;
 		}
 
-		$runningJobStates = $this->Application->getModule('misc')->getRunningJobStates();
+		$running_job_states = $this->Application->getModule('misc')->getRunningJobStates();
 
 		if (in_array('jobs', $params)) {
 			for ($i = 0; $i < count($monitor_data['jobs']); $i++) {
-				if (!in_array($monitor_data['jobs'][$i]->jobstatus, $runningJobStates)) {
+				if (!in_array($monitor_data['jobs'][$i]->jobstatus, $running_job_states)) {
 					$monitor_data['terminated_jobs'][] = $monitor_data['jobs'][$i];
 				}
 			}

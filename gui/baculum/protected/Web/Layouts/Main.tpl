@@ -57,7 +57,10 @@ $(function() {
 		return $.ajax('<%=$this->Service->constructUrl("Monitor")%>', {
 			dataType: 'json',
 			type: 'post',
-			data: {'params': (typeof(MonitorParams) == 'object' ? MonitorParams : [])},
+			data: {
+				'params': (typeof(MonitorParams) == 'object' ? MonitorParams : []),
+				'use_limit' : <%=$this->Service->getRequestedPagePath() == "Dashboard" ? '0' : '1'%>,
+			},
 			beforeSend: function() {
 				last_callback_time = new Date().getTime();
 			},
