@@ -459,8 +459,8 @@ static RES_ITEM store_items[] = {
     * Big kludge, these two autochanger definitions must be in
     * this order and together.
     */
-   {"Autochanger", store_ac_res,   ITEM(res_store.changer), 0, ITEM_DEFAULT, 0},
-   {"Autochanger", store_bool,     ITEM(res_store.autochanger), 0, ITEM_DEFAULT, false},
+   {"autochanger", store_ac_res,   ITEM(res_store.changer), 0, ITEM_DEFAULT, 0},
+   {"autochanger", store_bool,     ITEM(res_store.autochanger), 0, ITEM_DEFAULT, false},
    {"SharedStorage", store_ac_res, ITEM(res_store.shared_storage), 1, ITEM_DEFAULT, 0},
    {"Enabled",     store_bool,     ITEM(res_store.Enabled),     0, ITEM_DEFAULT, true},
    {"AllowCompression",  store_bool, ITEM(res_store.AllowCompress), 0, ITEM_DEFAULT, true},
@@ -1848,8 +1848,12 @@ bool save_resource(CONFIG *config, int type, RES_ITEM *items, int pass)
          res->res_store.changer = res_all.res_store.changer;
          res->res_store.shared_storage = res_all.res_store.shared_storage;
          res->res_store.autochanger = res_all.res_store.autochanger;
+         /* The resource name is Autochanger instead of Storage
+          * so we force the Autochanger attributes 
+          */
          if (strcasecmp(resources[rindex].name, "autochanger") == 0) {
-            res->res_store.changer = &res->res_store;
+            /* The Autochanger resource might be already defined */
+            res->res_store.changer = (res->res_store.changer == NULL)? &res->res_store : res->res_store.changer;
             res->res_store.autochanger = true;
          }
          break;
@@ -2048,11 +2052,13 @@ void store_ac_res(LEX *lc, RES_ITEM *item, int index, int pass)
    if (strcasecmp(item->name, "autochanger") == 0) {
       if (strcasecmp(lc->str, "yes") == 0 || strcasecmp(lc->str, "true") == 0) {
          *(bool *)(next->value) = true;
+         *(item->value) = NULL;
          Dmsg2(100, "Item=%s got value=%s\n", item->name, lc->str);
          scan_to_eol(lc);
          return;
       } else if (strcasecmp(lc->str, "no") == 0 || strcasecmp(lc->str, "false") == 0) {
          *(bool *)(next->value) = false;
+         *(item->value) = NULL;
          Dmsg2(100, "Item=%s got value=%s\n", item->name, lc->str);
          scan_to_eol(lc);
          return;
@@ -2074,7 +2080,9 @@ void store_ac_res(LEX *lc, RES_ITEM *item, int index, int pass)
       }
       Dmsg2(100, "Store %s value=%p\n", lc->str, res);
       *(item->value) = (char *)res;
-      *(bool *)(next->value) = true;
+      if (strcasecmp(item->name, "autochanger") == 0) {
+         *(bool *)(next->value) = true;
+      }
    }
    scan_to_eol(lc);
    set_bit(index, res_all.hdr.item_present);

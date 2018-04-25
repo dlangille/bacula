@@ -1068,18 +1068,22 @@ static void dump_json(display_filter *filter)
                }
             } else { /* end if is present */
                /* For some directive, the bitmap is not set (like addresses) */
-
                /* Special trick for the Autochanger directive, it can be yes/no/storage */
                if (strcmp(resources[resinx].name, "Storage") == 0) {
-                  if (strcmp(items[item].name, "Autochanger") == 0
+                  if (strcasecmp(items[item].name, "Autochanger") == 0
                       && items[item].handler == store_bool /* yes or no */
-                      && *(items[item].value) != NULL
-                      && *(items[item-1].value) == NULL) /* The previous "Autochanger" name is not set */
+                      && *(bool *)(items[item].value) == true)
                   {
                      if (first_directive++ > 0) sendit(NULL, ",");
-                     sendit(NULL, "\n    \"Autochanger\": %s", quote_string(hpkt.edbuf2, *items[name_pos].value));
+                     if (*(items[item-1].value) == NULL) {
+                        sendit(NULL, "\n    \"Autochanger\": %s", quote_string(hpkt.edbuf2, *items[name_pos].value));
+                     } else {
+                        STORE *r = (STORE *)*(items[item-1].value);
+                        sendit(NULL, "\n    \"Autochanger\": %s", quote_string(hpkt.edbuf2, r->name()));
+                     }
                   }
                }
+
                if (strcmp(resources[resinx].name, "Director") == 0) {
                   if (strcmp(items[item].name, "DirPort") == 0) {
                      if (get_first_port_host_order(director->DIRaddrs) != items[item].default_value) {
