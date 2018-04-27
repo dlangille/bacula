@@ -97,6 +97,10 @@ static FF_PKT *new_dir_ff_pkt(FF_PKT *ff_pkt)
       pm_strcpy(dir_ff_pkt->fname_save, ff_pkt->fname_save);
       pm_strcpy(dir_ff_pkt->link_save, ff_pkt->link_save);
 
+      // need its own "working" buffers, some pm_strcat or pm_strcopy
+      // will realloc these ones, no need to copy the current values
+      dir_ff_pkt->snap_top_fname = get_pool_memory(PM_FNAME);
+      dir_ff_pkt->snap_fname = get_pool_memory(PM_FNAME);
    } else {
       dir_ff_pkt->fname_save = NULL;
       dir_ff_pkt->link_save = NULL;
@@ -123,6 +127,10 @@ static void free_dir_ff_pkt(FF_PKT *dir_ff_pkt)
    }
    if (dir_ff_pkt->link_save) {
       free_pool_memory(dir_ff_pkt->link_save);
+   }
+   if (dir_ff_pkt->snap_top_fname) {
+      free_pool_memory(dir_ff_pkt->snap_top_fname);
+      free_pool_memory(dir_ff_pkt->snap_fname);
    }
    free(dir_ff_pkt);
 }
