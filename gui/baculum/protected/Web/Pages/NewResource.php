@@ -32,6 +32,7 @@ class NewResource extends BaculumWebPage {
 	const RESOURCE_TYPE = 'ResourceType';
 
 	public function onInit($param) {
+		parent::onInit($param);
 		if ($this->IsCallBack || $this->IsPostBack) {
 			return;
 		}
