@@ -122,7 +122,7 @@
 				storages: '/api/v1/storages/',
 				clients: '/api/v1/clients?limit=5',
 				volumes: '/api/v1/volumes?limit=4',
-				jobs: '/api/v1/jobs/limit/10/',
+				jobs: '/api/v1/jobs?limit=10',
 				joblog: '/api/v1/joblog/1/',
 				bvfs: '/api/v1/bvfs/lsdirs?jobids=1&path=&limit=8'
 			},
