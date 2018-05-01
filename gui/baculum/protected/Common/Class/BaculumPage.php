@@ -21,6 +21,7 @@
  */
 
 Prado::using('System.Web.UI.TPage');
+Prado::using('Application.Common.Class.BClientScript');
 
 /**
  * Base pages module.
@@ -34,6 +35,11 @@ class BaculumPage extends TPage {
 	public function onPreInit($param) {
 		parent::onPreInit($param);
 		$this->setURLPrefixForSubdir();
+	}
+
+	public function onInit($param) {
+		parent::onInit($param);
+		$this->setStyleSheetFiles();
 	}
 
 	/**
@@ -140,6 +146,34 @@ class BaculumPage extends TPage {
 
 		// Log in by header
 		header("Location: $location");
+	}
+
+	public function setStyleSheetFiles(){
+		$theme = $this->getPage()->getTheme();
+		if (is_null($theme)) {
+			return;
+		}
+		$css_path = $theme->getBaseUrl() . '/css/';
+		$css_dir = APPLICATION_DIRECTORY . $css_path;
+		if (!is_dir($css_dir)) {
+			return;
+		}
+		$files = new FilesystemIterator($css_dir);
+		foreach ($files as $file) {
+			$filename = $file->getFilename();
+			if (!is_file($css_dir . $filename)) {
+				continue;
+			}
+			if (preg_match('/\.css$/', $filename) === 1) {
+				$url = sprintf(
+					'%s%s?ver=%s',
+					$css_path,
+					$filename,
+					BClientScript::SCRIPTS_VERSION
+				);
+				$this->getPage()->getClientScript()->registerStyleSheetFile($filename, $url);
+			}
+		}
 	}
 }
 ?>
