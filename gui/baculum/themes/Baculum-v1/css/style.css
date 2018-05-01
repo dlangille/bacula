@@ -427,11 +427,11 @@ div.actions_btn {
 }
 
 input.bbutton {
-	font-size: 12px;
+	font-size: 12px !important;
 	vertical-align: baseline;
 	-webkit-appearance: none;
 	text-shadow: 0 1px 1px #7b2121;
-	font-family: "times, serif";
+	font-family: "times, serif" !important;
 	font-weight: 600;
 	color: white;
 	height: 28px;
@@ -1227,7 +1227,7 @@ label.normal {
 }
 
 .ui-tabs .ui-tabs-panel {
-	background-color: #444445;
+	background-color: #444445 !important;
 	color: white;
 	font-size: 15px;
 }

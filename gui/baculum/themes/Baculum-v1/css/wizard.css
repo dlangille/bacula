@@ -5,7 +5,7 @@
 	font-family: Arial;
 	color: white;
 	background-color: #585756;
-	background-image: url('step-head.png');
+	background-image: url('../step-head.png');
 	background-repeat: repeat-x;
 	border: 1px solid black;
 	border-radius: 15px;
@@ -31,7 +31,7 @@
 .navigation {
 	text-align: center;
 	padding: 5px 0;
-	background-image: url('wizard-bottom-1.png');
+	background-image: url('../wizard-bottom-1.png');
 	background-repeat: repeat-x;
 	border-bottom-left-radius: 14px;
 	border-bottom-right-radius: 14px;
@@ -56,51 +56,51 @@
  
   .step-first {
 	width: 126px;
-	background-image: url('step-first.png');
+	background-image: url('../step-first.png');
  }
  
  .step-first-active {
 	width: 126px;
-	background-image: url('step-first-active.png');
+	background-image: url('../step-first-active.png');
  }
  
  .step-first-next-active{
 	width: 126px;
-	background-image: url('step-first-next-active.png');
+	background-image: url('../step-first-next-active.png');
  }
 
 .step-last {
 	width: 130px;
-	background-image: url('step-last-1.png');
+	background-image: url('../step-last-1.png');
  }
 
  .step-last-active {
 	width: 130px;
-	background-image: url('step-last-active-1.png');
+	background-image: url('../step-last-active-1.png');
  }
  
  .step-last-next-active{
 	width: 130px;
-	background-image: url('step-last-next-active.png');
+	background-image: url('../step-last-next-active.png');
  }
 
 .step-normal, .step-prev-active {
-	background-image: url('step.png');
+	background-image: url('../step.png');
  }
  
 .step-active{
-	background-image: url('step-active.png');
+	background-image: url('../step-active.png');
  }
  
 .step-prev-active {
-	background-image: url('step-prev-active.png');
+	background-image: url('../step-prev-active.png');
  }
  
 #title {
 	clear: left;
 	font-size: 14px;
 	font-weight: bold;
-	background-image: url('wizard-header-1.png');
+	background-image: url('../wizard-header-1.png');
 	background-repeat: repeat-x;
 	padding: 4px;
 }
