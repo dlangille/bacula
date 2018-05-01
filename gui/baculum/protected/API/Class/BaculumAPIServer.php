@@ -162,7 +162,7 @@ abstract class BaculumAPIServer extends TPage {
 					break;
 				}
 			}
-		} catch(TException $e) {
+		} catch(Prado\Exceptions\TException $e) {
 			$this->getModule('logging')->log(
 				__FUNCTION__,
 				"Method: {$_SERVER['REQUEST_METHOD']} $e",

@@ -53,7 +53,7 @@ class Database extends APIModule {
 			$connection->setActive(true);
 			$tables_format = $this->getTablesFormat($connection);
 			$is_connection = (is_numeric($tables_format) === true && $tables_format > 0);
-		} catch (TDbException $e) {
+		} catch (Prado\Exceptions\TDbException $e) {
 			throw new BCatalogException(
 				DatabaseError::MSG_ERROR_DB_CONNECTION_PROBLEM . ' ' . $e->getErrorMessage(),
 				DatabaseError::ERROR_DB_CONNECTION_PROBLEM
