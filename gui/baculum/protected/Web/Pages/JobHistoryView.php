@@ -35,6 +35,9 @@ class JobHistoryView extends BaculumWebPage {
 
 	const USE_CACHE = true;
 
+	const SORT_ASC = 0;
+	const SORT_DESC = 1;
+
 	const RESOURCE_SHOW_PATTERN = '/^\s+--> %resource: name=(.+?(?=\s\S+\=.+)|.+$)/i';
 
 	private $jobdata;
@@ -149,11 +152,13 @@ class JobHistoryView extends BaculumWebPage {
 	 * @param $param TCallbackParameter parameter object
 	 */
 	public function refreshJobLog($sender, $param) {
-		$joblog = $this->getModule('api')->get(array('joblog', $this->getJobId()))->output;
-		if (!is_array($joblog) || count($joblog) == 0) {
+		$log = $this->getModule('api')->get(array('joblog', $this->getJobId()));
+		if (!is_array($log->output) || count($log->output) == 0) {
 			$msg = Prado::localize("Output for selected job is not available yet or you do not have enabled logging job logs to the catalog database. For watching job the log you need to add to the job Messages resource the following directive: console = all, !skipped, !saved");
 			$joblog = array($msg);
 
+		} else {
+			$joblog = $log->output;
 		}
 		if ($this->is_running) {
 			$this->RunningIcon->Display = 'Dynamic';
@@ -168,7 +173,10 @@ class JobHistoryView extends BaculumWebPage {
 			$this->DeleteBtn->Display = 'Dynamic';
 			$this->RestoreBtn->Display = $this->getJobType() == 'B' ? 'Dynamic' : 'None';
 		}
-		$this->JobLog->Text = implode(PHP_EOL, array_reverse($joblog));
+		if ($this->getJobLogOrder() === self::SORT_DESC) {
+			$joblog = array_reverse($joblog);
+		}
+		$this->JobLog->Text = implode(PHP_EOL, $joblog);
 	}
 
 	public function loadRunJobModal($sender, $param) {
@@ -229,6 +237,26 @@ class JobHistoryView extends BaculumWebPage {
 
 	public function delete($sender, $param) {
 		$this->getModule('api')->remove(array('jobs', $this->getJobId()));
+	}
+
+	public function setJobLogOrder($order) {
+		$order = TPropertyValue::ensureInteger($order);
+		setcookie('log_order', $order, time()+60*60*24*365, '/'); // set cookie for one year
+		$_COOKIE['log_order'] = $order;
+	}
+
+	public function getJobLogOrder() {
+		return (key_exists('log_order', $_COOKIE) ? intval($_COOKIE['log_order']) : self::SORT_DESC);
+	}
+
+	public function changeJobLogOrder($sender, $param) {
+		$order = $this->getJobLogOrder();
+		if ($order === self::SORT_DESC) {
+			$this->setJobLogOrder(self::SORT_ASC);
+		} else {
+			$this->setJobLogOrder(self::SORT_DESC);
+		}
+		$this->refreshJobLog(null, null);
 	}
 }
 ?>

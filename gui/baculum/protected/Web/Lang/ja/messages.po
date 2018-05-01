@@ -1573,3 +1573,6 @@ msgstr "Max. number of jobs visible in tables"
 
 msgid "Max. number of jobs value must be integer greather than 0."
 msgstr "Max. number of jobs value must be integer greather than 0."
+
+msgid "Log order"
+msgstr "Log order"

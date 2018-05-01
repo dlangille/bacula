@@ -67,6 +67,13 @@
 		>
 			<%[ Restore ]%> &nbsp;<i class="fa fa-reply"></i>
 		</com:TActiveLinkButton>
+		<com:TActiveLinkButton
+			ID="LogOrderBtn"
+			CssClass="w3-button w3-green w3-margin-bottom"
+			OnClick="changeJobLogOrder"
+		>
+			<%[ Log order ]%> &nbsp;<i class="fa fa-sort-amount-down"></i>
+		</com:TActiveLinkButton>
 		<i id="joblog_loading" class="fa fa-sync w3-spin" style="display: none; vertical-align: super;"></i>
 		<div class="w3-panel w3-card w3-light-grey">
 			<h3><%[ Job: ]%> <%=$this->getJobUname()%> &nbsp;
