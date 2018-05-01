@@ -130,10 +130,10 @@ class Bconsole extends APIModule {
 	}
 
 	private function prepareResult(array $output, $exitcode, $bconsole_command) {
-		array_shift($output); // deleted 'gui on'
 		array_pop($output); // deleted 'quit' bconsole command
-		for($i = 0; $i < count($output); $i++) {
-			if(strstr($output[$i], $bconsole_command) == false) {
+		$out = $output;
+		for($i = 0; $i < count($out); $i++) {
+			if(strstr($out[$i], $bconsole_command) == false) {
 				unset($output[$i]);
 			} else {
 				break;
