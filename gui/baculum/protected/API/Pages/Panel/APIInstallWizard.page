@@ -43,7 +43,7 @@
 			<com:TPanel CssClass="button-cancel" Visible="<%=$this->getPage()->first_run === false%>"><com:BButton CommandName="Cancel" Text="<%[ Cancel ]%>" /></com:TPanel>
 			<div <%=$this->getPage()->first_run === false ? 'class="button-prev-next"' : ''%>>
 				<com:BButton CausesValidation="False" CssClass="bbutton" CommandName="PreviousStep" Text="<%[ &laquo; Previous ]%>" />
-				<com:BButton ID="NextButton" CommandName="NextStep" Attributes.onclick="return (wizard_validation) ? wizard_validation() : true;" Text="<%[ Next &raquo; ]%>" />
+				<com:BButton ID="NextButton" CommandName="NextStep" Attributes.onclick="return (typeof(wizard_validation) == 'function') ? wizard_validation() : true;" Text="<%[ Next &raquo; ]%>" />
 			</div>
 		</prop:StepNavigationTemplate>
 		<prop:FinishNavigationTemplate>
@@ -192,7 +192,7 @@
 						</div>
 					</com:TActivePanel>
 					<div class="line">
-						<div class="text"><com:TLabel ForControl="ConnectionTest" Text="<%[ Connection test: ]%>" /></div>
+						<div class="text" style="vertical-align: top"><com:TLabel ForControl="ConnectionTest" Text="<%[ Connection test: ]%>" CssClass="test_label" /></div>
 						<div class="field">
 							<table border="0" cellpadding="1px">
 								<tr>
@@ -261,7 +261,7 @@
 					</div>
 				</div>
 				<div class="line">
-					<div class="text"><com:TLabel ForControl="BconsoleConnectionTest" Text="<%[ Bconsole connection test: ]%>" /></div>
+					<div class="text" style="vertical-align: top"><com:TLabel ForControl="BconsoleConnectionTest" Text="<%[ Bconsole connection test: ]%>" CssClass="test_label" /></div>
 					<div class="field">
 						<table border="0" cellpadding="1px">
 							<tr>

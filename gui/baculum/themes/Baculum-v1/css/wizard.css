@@ -13,6 +13,8 @@
 
 .steps {
 	padding: 8px 20px;
+	background-image: none;
+	min-height: 520px;
 }
 
 .steps div.line {
