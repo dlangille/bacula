@@ -758,7 +758,7 @@ Baculum uses Opentip JavaScript framework.
 
 Files:
   protected/Web/JavaScript/opentip.js
-  themes/Baculum-v2/opentip.css
+  themes/Baculum-v2/css/opentip.css
 
 More info at http://www.opentip.org
 
@@ -842,8 +842,8 @@ Files:
   protected/Web/JavaScript/datatables.js
   protected/Web/JavaScript/dataTables.responsive.js
   protected/Web/JavaScript/responsive.jqueryui.js
-  themes/Baculum-v2/datatables.css
-  themes/Baculum-v2/responsive.dataTables.css
+  themes/Baculum-v2/css/datatables.css
+  themes/Baculum-v2/css/responsive.dataTables.css
 
 Copyright (C) 2008-2018, SpryMedia Ltd.
 
@@ -871,6 +871,6 @@ Baculum uses Font Awesome Free for icons.
 
 Files:
   protected/Web/JavaScript/fontawesome-all.js
-  themes/Baculum-v2/fa-svg-with-js.css
+  themes/Baculum-v2/css/fa-svg-with-js.css
 
 License - https://fontawesome.com/license - Icons: CC BY 4.0, Code: MIT License
