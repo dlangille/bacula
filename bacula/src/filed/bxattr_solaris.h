@@ -36,8 +36,10 @@
 /*
  *
  */
-#ifdef HAVE_SYS_ATTR_H
+#if defined(HAVE_SYS_ATTR_H)
 #include <sys/attr.h>
+#elif defined(HAVE_ATTR_H)
+#include <attr.h>
 #endif
 
 /*
@@ -45,7 +47,7 @@
  */
 #ifdef HAVE_SYS_ACL_H
 #include <sys/acl.h>
-static bool acl_is_trivial(int count, aclent_t *entries);
+bool acl_is_trivial(int count, aclent_t *entries);
 #endif
 
 /*

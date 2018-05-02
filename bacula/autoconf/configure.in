@@ -2868,29 +2868,30 @@ if test x$support_xattr = xyes -o x$support_xattr = xauto; then
    dnl when running on a Solaris.
    dnl
    if test $have_xattr = no -a \
-	   x${HAVE_SUN_OS_TRUE} = x; then
+      x${HAVE_SUN_OS_TRUE} = x; then
       AC_CHECK_HEADER(sys/attr.h, [ AC_DEFINE(HAVE_SYS_ATTR_H,1,[Defines if your system have the sys/attr.h header file])] , )
       AC_CHECK_HEADER(sys/nvpair.h, [ AC_DEFINE(HAVE_SYS_NVPAIR_H,1,[Defines if your system have the sys/nvpair.h header file])] , )
       AC_CHECK_HEADER(attr.h, [ AC_DEFINE(HAVE_ATTR_H,1,[Defines if your system have the attr.h header file])] , )
 
-      AC_CHECK_FUNCS(openat fstatat unlinkat fchownat futimesat,
-	 [
-	     have_xattr=yes
-	     AC_DEFINE([HAVE_OPENAT],1,[Define to 1 if you have the 'openat' function.])
-	     AC_DEFINE([HAVE_FSTATAT],1,[Define to 1 if you have the 'fstatat' function.])
-	     AC_DEFINE([HAVE_UNLINKAT],1,[Define to 1 if you have the 'unlinkat' function.])
-	     AC_DEFINE([HAVE_FCHOWNAT],1,[Define to 1 if you have the 'fchownat' function.])
-	     AC_DEFINE([HAVE_FUTIMESAT],1,[Define to 1 if you have the 'futimesat' function.])
-	 ]
+      AC_CHECK_FUNCS(openat attropen unlinkat fchownat futimesat linkat,
+         [
+            have_xattr=yes
+            AC_DEFINE([HAVE_OPENAT],1,[Define to 1 if you have the 'openat' function.])
+            AC_DEFINE([HAVE_ATTROPEN],1,[Define to 1 if you have the 'attropen' function.])
+            AC_DEFINE([HAVE_UNLINKAT],1,[Define to 1 if you have the 'unlinkat' function.])
+            AC_DEFINE([HAVE_FCHOWNAT],1,[Define to 1 if you have the 'fchownat' function.])
+            AC_DEFINE([HAVE_FUTIMESAT],1,[Define to 1 if you have the 'futimesat' function.])
+            AC_DEFINE([HAVE_LINKAT],1,[Define to 1 if you have the 'linkat' function.])
+         ]
       )
 
       if test $have_xattr = yes; then
-	 AC_CHECK_LIB(nvpair, nvlist_next_nvpair,
-	    [
-		AC_DEFINE([HAVE_NVLIST_NEXT_NVPAIR],1,[Define to 1 if you have the 'nvlist_next_nvpair' function.])
-		FDLIBS="-lnvpair $FDLIBS"
-	    ]
-	 )
+         AC_CHECK_LIB(nvpair, nvlist_next_nvpair,
+            [
+               AC_DEFINE([HAVE_NVLIST_NEXT_NVPAIR],1,[Define to 1 if you have the 'nvlist_next_nvpair' function.])
+               FDLIBS="-lnvpair $FDLIBS"
+            ]
+         )
       fi
    fi
 

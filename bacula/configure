@@ -30460,7 +30460,7 @@ done
    fi
 
                if test $have_xattr = no -a \
-	   x${HAVE_SUN_OS_TRUE} = x; then
+      x${HAVE_SUN_OS_TRUE} = x; then
       ac_fn_c_check_header_mongrel "$LINENO" "sys/attr.h" "ac_cv_header_sys_attr_h" "$ac_includes_default"
 if test "x$ac_cv_header_sys_attr_h" = xyes; then :
 
@@ -30486,7 +30486,7 @@ fi
 
 
 
-      for ac_func in openat fstatat unlinkat fchownat futimesat
+      for ac_func in openat attropen unlinkat fchownat futimesat linkat
 do :
   as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
 ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
@@ -30495,12 +30495,12 @@ if eval test \"x\$"$as_ac_var"\" = x"yes"; then :
 #define `$as_echo "HAVE_$ac_func" | $as_tr_cpp` 1
 _ACEOF
 
-	     have_xattr=yes
+            have_xattr=yes
 
 $as_echo "#define HAVE_OPENAT 1" >>confdefs.h
 
 
-$as_echo "#define HAVE_FSTATAT 1" >>confdefs.h
+$as_echo "#define HAVE_ATTROPEN 1" >>confdefs.h
 
 
 $as_echo "#define HAVE_UNLINKAT 1" >>confdefs.h
@@ -30512,13 +30512,16 @@ $as_echo "#define HAVE_FCHOWNAT 1" >>confdefs.h
 $as_echo "#define HAVE_FUTIMESAT 1" >>confdefs.h
 
 
+$as_echo "#define HAVE_LINKAT 1" >>confdefs.h
+
+
 
 fi
 done
 
 
       if test $have_xattr = yes; then
-	 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for nvlist_next_nvpair in -lnvpair" >&5
+         { $as_echo "$as_me:${as_lineno-$LINENO}: checking for nvlist_next_nvpair in -lnvpair" >&5
 $as_echo_n "checking for nvlist_next_nvpair in -lnvpair... " >&6; }
 if ${ac_cv_lib_nvpair_nvlist_next_nvpair+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -30559,7 +30562,7 @@ if test "x$ac_cv_lib_nvpair_nvlist_next_nvpair" = xyes; then :
 
 $as_echo "#define HAVE_NVLIST_NEXT_NVPAIR 1" >>confdefs.h
 
-		FDLIBS="-lnvpair $FDLIBS"
+               FDLIBS="-lnvpair $FDLIBS"
 
 
 fi

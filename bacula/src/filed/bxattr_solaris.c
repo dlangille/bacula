@@ -39,10 +39,11 @@
 #endif
 
 #if !defined(HAVE_OPENAT) || \
+    !defined(HAVE_ATTROPEN) || \
     !defined(HAVE_UNLINKAT) || \
     !defined(HAVE_FCHOWNAT) || \
     !defined(HAVE_FUTIMESAT)
-#error "Unable to compile code because of missing openat, unlinkat, fchownat or futimesat function"
+#error "Unable to compile code because of missing openat, attropen, unlinkat, fchownat or futimesat functions"
 #endif
 
 /*
@@ -68,6 +69,21 @@ static const char *os_xattr_acl_skiplist[] = {
    NULL
 };
 
+/* Provide a suplement for Solaris 10 missing linkat function */
+#ifndef HAVE_LINKAT
+int linkat(int fd1, const char *path1, int fd2, const char *path2, int flag)
+{
+   int rc;
+   
+   rc = fchdir(fd1);
+   if (rc != 0){
+      return rc;
+   }
+   
+   rc = link(path1, path2);
+   return rc;
+};
+#endif
 /*
  * OS Specific constructor
  */
@@ -153,7 +169,7 @@ bRC_BXATTR BXATTR_Solaris::os_backup_xattr (JCR *jcr, FF_PKT *ff_pkt){
 
       data = get_pool_memory(PM_BSOCK);
       /* follow the list of xattr names and get the values */
-      for (name = xlist; (name - xlist) + 1 < xlen; name = strchr(name, '\0') + 1){
+      for (name = xlist; (unsigned int)(name - xlist) + 1 < xlen; name = strchr(name, '\0') + 1){
          name_len = strlen(name);
          /* skip read-only or other unused attribute names */
          skip =  check_xattr_skiplists(jcr, ff_pkt, name);
@@ -185,7 +201,7 @@ bRC_BXATTR BXATTR_Solaris::os_backup_xattr (JCR *jcr, FF_PKT *ff_pkt){
                   goto bailout;
                default:
                   Mmsg3(jcr->errmsg, _("Unable to get status on xattr \"%s\" on file \"%s\": ERR=%s\n"), name, jcr->last_fname, be.bstrerror());
-                  Dmsg3(100, "fstatat of xattr %s on \"%s\" failed: ERR=%s\n", name, jcr->last_fname, be.bstrerror());
+                  Dmsg3(100, "fstat of xattr %s on \"%s\" failed: ERR=%s\n", name, jcr->last_fname, be.bstrerror());
                   rc = bRC_BXATTR_error;
                   goto bailout;
             }
@@ -405,7 +421,7 @@ bail_out:
  * See if an acl is a trivial one (e.g. just the stat bits encoded as acl.)
  * There is no need to store those acls as we already store the stat bits too.
  */
-static bool acl_is_trivial(int count, aclent_t *entries)
+bool acl_is_trivial(int count, aclent_t *entries)
 {
    int n;
    aclent_t *ace;
@@ -585,7 +601,6 @@ bRC_BXATTR BXATTR_Solaris::os_set_xattr_acl(JCR *jcr, int fd, char *name, char *
       rc = bRC_BXATTR_error;
    }
 
-bail_out:
    if (aclp){
       acl_free(aclp);
    }

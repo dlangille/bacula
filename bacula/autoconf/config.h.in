@@ -701,6 +701,9 @@
 /* Define to 1 if you have the 'openat' function. */
 #undef HAVE_OPENAT
 
+/* Define to 1 if you have the 'attropen' function. */
+#undef HAVE_ATTROPEN
+
 /* Define if OpenSSL library is available */
 #undef HAVE_OPENSSL
 

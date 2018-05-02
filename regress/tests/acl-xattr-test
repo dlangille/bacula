@@ -100,7 +100,6 @@ sed -f ${outf} ${cwd}/tmp/1 >${cwd}/bin/bacula-dir.conf
 
 d=${cwd}/build/acl
 
-uid=`id -u`
 rm -rf $d
 mkdir -p $d
 mkdir -p $d/acl-dir
@@ -108,6 +107,7 @@ cp ${cwd}/bin/bconsole $d
 
 case `uname -s` in
    Linux)
+      uid=`id -u`
       setfacl -m d:user:$uid:r-x $d/acl-dir 2>/dev/null 1>/dev/null
       setfacl -m d:user:root:-wx $d/acl-dir 2>/dev/null 1>/dev/null
       setfacl -m user:nobody:--- $d/acl-dir 2>/dev/null 1>/dev/null
@@ -126,6 +126,7 @@ case `uname -s` in
       ;;
    Darwin)
       username=`id -un`
+      uid=`id -u`
       chmod +a "user:$username allow read,execute" $d/acl-dir
       chmod +a "user:root allow write,execute" $d/acl-dir
       chmod +a "user:nobody deny read,write,execute" $d/acl-dir
@@ -146,6 +147,7 @@ case `uname -s` in
       #
       # See if we need to set ZFS or POSIX acls
       #
+      uid=`/usr/xpg4/bin/id -u`
       df -F zfs $d > /dev/null 2>&1
       if [ $? = 0 ]; then
          /bin/chmod A+user:$uid:rx:allow $d/acl-dir
@@ -167,6 +169,7 @@ EOF
       /bin/runat $d/other 'cat > bacula.secondtest' << EOF
 rulez
 EOF
+      /bin/runat $d/other 'ln bacula.secondtest linking.test'
       ( cd $cwd/build
         /bin/ls -ldv -R acl > $cwd/tmp/org
         /bin/runat $d/other 'cat bacula.test' > $cwd/tmp/attr.org
@@ -174,6 +177,7 @@ EOF
       )
       ;;
    FreeBSD)
+      uid=`id -u`
       setfacl -m d:user:$uid:r-x $d/acl-dir 
       setfacl -m d:user:root:-wx $d/acl-dir
       setfacl -m user:nobody:--- $d/acl-dir
@@ -194,6 +198,7 @@ EOF
       )
       ;;
    NetBSD)
+      uid=`id -u`
       cp ${cwd}/bin/bconsole $d/other
       setextattr user bacula.test rulez $d/other 2>/dev/null 1>/dev/null
       setextattr user bacula.secondtest rulez $d/other 2>/dev/null 1>/dev/null
