@@ -103,7 +103,7 @@ class VolumeManager extends APIModule {
 		$sql = sprintf('SELECT first_index, last_index, VolumeName AS volname, InChanger AS inchanger FROM (
 		 SELECT VolumeName, InChanger, MIN(FirstIndex) as first_index, MAX(LastIndex) as last_index
 		 FROM JobMedia JOIN Media ON (JobMedia.MediaId = Media.MediaId)
-		 WHERE JobId = %d GROUP BY (VolumeName, InChanger)
+		 WHERE JobId = %d GROUP BY VolumeName, InChanger
 		) AS gv, File
 		 WHERE FileIndex >= first_index
 		 AND FileIndex <= last_index
