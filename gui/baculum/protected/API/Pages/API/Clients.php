@@ -24,9 +24,9 @@ class Clients extends BaculumAPIServer {
 
 	public function get() {
 		$limit = $this->Request->contains('limit') ? intval($this->Request['limit']) : 0;
-		$clients = $this->getModule('client')->getClients($limit);
 		$result = $this->getModule('bconsole')->bconsoleCommand($this->director, array('.client'));
 		if ($result->exitcode === 0) {
+			$clients = $this->getModule('client')->getClients($limit);
 			array_shift($result->output);
 			$clients_output = array();
 			foreach($clients as $client) {
