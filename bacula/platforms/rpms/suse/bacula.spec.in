@@ -205,6 +205,8 @@ Source2: Release_Notes-%{version}-%{release}.tar.gz
 %{?build_su112:%define su112 1}
 %define su121 0
 %{?build_su121:%define su121 1}
+%define su423 0
+%{?build_su423:%define su423 1}
 # Mandrake builds
 %define mdk 0
 %{?build_mdk:%define mdk 1}
@@ -226,7 +228,7 @@ Source2: Release_Notes-%{version}-%{release}.tar.gz
 %define fed 1
 %endif
 %define suse 0
-%if %{su9} || %{su10} || %{su102} || %{su103} || %{su110} || %{su111} || %{su112} || %{su121}
+%if %{su9} || %{su10} || %{su102} || %{su103} || %{su110} || %{su111} || %{su112} || %{su121} || %{su423}
 %define suse 1
 %endif
 %define rhel 0
