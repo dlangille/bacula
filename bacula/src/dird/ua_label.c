@@ -986,9 +986,6 @@ int get_num_drives_from_SD(UAContext *ua)
  */
 static bool is_cleaning_tape(UAContext *ua, MEDIA_DBR *mr, POOL_DBR *pr)
 {
-   if (ua->jcr->pool->cleaning_prefix == NULL) {
-      return false;  /* if no cleaning prefix, this is not a cleaning tape */
-   }
    /* Find Pool resource */
    ua->jcr->pool = (POOL *)GetResWithName(R_POOL, pr->Name);
    if (!ua->jcr->pool) {
@@ -996,11 +993,14 @@ static bool is_cleaning_tape(UAContext *ua, MEDIA_DBR *mr, POOL_DBR *pr)
          pr->Name, mr->VolumeName);
       return false;
    }
+   if (ua->jcr->pool->cleaning_prefix == NULL) {
+      return false;  /* if no cleaning prefix, this is not a cleaning tape */
+   }
    Dmsg4(100, "CLNprefix=%s: Vol=%s: len=%d strncmp=%d\n",
       ua->jcr->pool->cleaning_prefix, mr->VolumeName,
       strlen(ua->jcr->pool->cleaning_prefix),
       strncmp(mr->VolumeName, ua->jcr->pool->cleaning_prefix,
-                  strlen(ua->jcr->pool->cleaning_prefix)));
+                 (int)strlen(ua->jcr->pool->cleaning_prefix)));
    return strncmp(mr->VolumeName, ua->jcr->pool->cleaning_prefix,
                   strlen(ua->jcr->pool->cleaning_prefix)) == 0;
 }
