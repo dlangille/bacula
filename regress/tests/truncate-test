@@ -53,7 +53,7 @@ messages
 @# Run a 3th job on TestVolume003
 @#########################################################
 @$out $tmp/log3.out
-update volume=TestVolume002 volstatus=Used
+update volume=TestVolume002 volstatus=Full
 label storage=File volume=TestVolume003
 messages
 show pool
@@ -82,9 +82,17 @@ messages
 @$out $tmp/log7.out
 @#########################################################
 @# test that we cannot truncate a volume that is not purged
+@# TestVolume001 - Used
+@# TestVolume002 - Full
+@# TestVolume005 - Append
 @#########################################################
+llist volume=TestVolume001
+llist volume=TestVolume002
+llist volume=TestVolume005
 @exec "du -s -b $tmp/TestVolume001"
-truncate volume=TestVolume001  storage=File
+truncate volume=TestVolume001 storage=File
+truncate volume=TestVolume002 storage=File
+truncate volume=TestVolume005 storage=File
 @exec "du -s -b $tmp/TestVolume001"
 messages
 @#########################################################
@@ -109,6 +117,18 @@ run_bacula
 check_for_zombie_jobs storage=File
 
 cd $tmp
+
+# First check if volumes which were not purged were truncated
+TV1=`grep "The volume \"TestVolume001\" has been truncated" $tmp/log7.out`
+TV2=`grep "The volume \"TestVolume002\" has been truncated" $tmp/log7.out`
+TV3=`grep "The volume \"TestVolume005\" has been truncated" $tmp/log7.out`
+if test "x$TV1" != "x" -o "x$TV2" != "x" -o "x$TV3" != "x"
+then
+  # error, the volumes in non purge status should not be truncated
+  dstat=1
+  print_debug "ERROR 1: Volumes not in Purged status Truncated!!!"
+fi
+
 if test "$debug" -eq 1 ; then
   echo "Volume sizes before truncate ..."
   ls -l TestVolume*
@@ -245,9 +265,9 @@ END_OF_DATA
 run_bacula
 stop_bacula
 
-grep "has been truncated" $tmp/log6.out >$tmp/log7.out
+grep "has been truncated" $tmp/log6.out >$tmp/log8.out
 if [ $? = 0 ] ; then
-    cat $tmp/log7.out
+    cat $tmp/log8.out
     print_debug "ERROR 8: truncated volumes are truncated multiple times"
     estat=8
 fi
