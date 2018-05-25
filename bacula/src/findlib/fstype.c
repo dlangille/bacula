@@ -93,6 +93,7 @@ void add_mtab_item(void *user_ctx, struct stat *st, const char *fstype,
  */
 #if defined(HAVE_DARWIN_OS) \
    || defined(HAVE_FREEBSD_OS ) \
+   || defined(HAVE_KFREEBSD_OS ) \
    || defined(HAVE_OPENBSD_OS)
 
 #include <sys/param.h>
@@ -356,7 +357,10 @@ bool fstype(FF_PKT *ff_pkt, char *fs, int fslen)
 
 /* Read mtab entries  */
 bool read_mtab(mtab_handler_t *mtab_handler, void *user_ctx)
-{ 
+{
+/* Debian stretch GNU/KFreeBSD has both getmntinfo and getmntent, but
+   only the first seems to work, so we skip over getmntent in this case */
+#ifndef HAVE_KFREEBSD_OS
 #ifdef HAVE_GETMNTENT
    FILE *mntfp;
    struct stat st;
@@ -409,6 +413,7 @@ bool read_mtab(mtab_handler_t *mtab_handler, void *user_ctx)
 #endif
 
 #endif /* HAVE_GETMNTENT */
+#endif /* HAVE_KFREEBSD_OS */
 
 #ifdef HAVE_GETMNTINFO
    struct stat st;
