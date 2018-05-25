@@ -1,3 +1,43 @@
+/*
+ *
+ * Note: 25 May 2018. This code appears not to have a copyright, however,
+ *   it appears to come from exactly the same code source as bsnprintf.c
+ *   in the Bacula src/lib.  The code in that file has two licenses that
+ * am adding here:
+ */
+
+/*
+   Bacula(R) - The Network Backup Solution
+
+   Copyright (C) 2000-2018 Kern Sibbald
+
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
+
+   You may use this file and others of this release according to the
+   license defined in the LICENSE file, which includes the Affero General
+   Public License, v3.0 ("AGPLv3") and some additional permissions and
+   terms pursuant to its AGPLv3 Section 7.
+
+   This notice must be preserved when any source code is
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
+*/
+/*
+ * Copyright Patrick Powell 1995
+ *
+ * This code is based on code written by Patrick Powell
+ * (papowell@astart.com) It may be used for any purpose as long
+ * as this notice remains intact on all source code distributions.
+ *
+ * Adapted for Bacula -- note there were lots of bugs in
+ *     the original code: %lld and %s were seriously broken, and
+ *     with FP turned off %f seg faulted.
+ *
+ *   Kern Sibbald, November MMV
+ *
+ */
 /**************************************************************
  * Original:
  * Patrick Powell Tue Apr 11 09:48:21 PDT 1995

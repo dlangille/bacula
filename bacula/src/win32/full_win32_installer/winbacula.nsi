@@ -1,3 +1,7 @@
+#
+# Copyright (C) 2000-2018 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
 ; winbacula.nsi
 ;
 ; Began as a version written by Michel Meyers (michel@tcnnet.dyndns.org)
