@@ -705,6 +705,11 @@ int truncate_cmd(UAContext *ua, const char *cmd)
       mr.clear();
       mr.MediaId = results[i];
       if (db_get_media_record(ua->jcr, ua->db, &mr)) {
+         if (strcasecmp(mr.VolStatus, "Purged") != 0) {
+            ua->send_msg(_("Truncate Volume \"%s\" skipped. Status is \"%s\", but must be \"Purged\".\n"),
+               mr.VolumeName, mr.VolStatus);
+            continue;
+         }
          if (drive < 0) {
             STORE *store = (STORE*)GetResWithName(R_STORAGE, storage);
             drive = get_storage_drive(ua, store);
@@ -714,7 +719,7 @@ int truncate_cmd(UAContext *ua, const char *cmd)
          if (pr.PoolId == 0) {
             pr.PoolId = mr.PoolId;
             if (!db_get_pool_record(ua->jcr, ua->db, &pr)) {
-               return 1;
+               goto bail_out;   /* free allocated memory */
             }
          }
          if (strcasecmp("truncate", action) == 0) {
