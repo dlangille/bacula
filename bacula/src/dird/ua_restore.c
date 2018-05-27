@@ -1005,6 +1005,13 @@ static bool insert_file_into_findex_list(UAContext *ua, RESTORE_CTX *rx, char *f
    } else {
       Mmsg(rx->query, uar_jobids_fileindex, rx->JobIds, date,
            rx->path, rx->fname, rx->ClientName);
+      /*
+       * Note: we have just edited the JobIds into the query, so
+       *  we need to clear JobIds, or they will be added
+       *  back into JobIds with the query below, and then
+       *  restored twice.  Fixes bug #2212.
+       */
+      rx->JobIds[0] = 0;
    }
    rx->found = false;
    /* Find and insert jobid and File Index */
