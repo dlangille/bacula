@@ -612,7 +612,7 @@ bool do_restore_init(JCR *jcr)
 void restore_cleanup(JCR *jcr, int TermCode)
 {
    char sdt[MAX_TIME_LENGTH], edt[MAX_TIME_LENGTH];
-   char ec1[30], ec2[30], ec3[30];
+   char ec1[30], ec2[30], ec3[30], ec4[30], elapsed[50];
    char term_code[100], fd_term_msg[100], sd_term_msg[100];
    const char *term_msg, *replace = _("N/A");
    int msg_type = M_INFO;
@@ -710,9 +710,10 @@ void restore_cleanup(JCR *jcr, int TermCode)
 "  Replace:                %s\n"
 "  Start time:             %s\n"
 "  End time:               %s\n"
+"  Elapsed time:           %s\n"
 "  Files Expected:         %s\n"
 "  Files Restored:         %s\n"
-"  Bytes Restored:         %s\n"
+"  Bytes Restored:         %s (%sB)\n"
 "  Rate:                   %.1f KB/s\n"
 "  FD Errors:              %d\n"
 "  FD termination status:  %s\n"
@@ -727,9 +728,10 @@ void restore_cleanup(JCR *jcr, int TermCode)
         replace,
         sdt,
         edt,
+        edit_utime(RunTime, elapsed, sizeof(elapsed)),
         edit_uint64_with_commas((uint64_t)jcr->ExpectedFiles, ec1),
         edit_uint64_with_commas((uint64_t)jcr->jr.JobFiles, ec2),
-        edit_uint64_with_commas(jcr->jr.JobBytes, ec3),
+        edit_uint64_with_commas(jcr->jr.JobBytes, ec3), edit_uint64_with_suffix(jcr->jr.JobBytes, ec4),
         (float)kbps,
         jcr->JobErrors,
         fd_term_msg,
