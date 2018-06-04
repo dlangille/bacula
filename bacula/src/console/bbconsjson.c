@@ -115,6 +115,10 @@ int main(int argc, char *argv[])
    bindtextdomain("bacula", LOCALEDIR);
    textdomain("bacula");
 
+   if (init_crypto() != 0) {
+      Emsg0(M_ERROR_TERM, 0, _("Cryptography library initialization failed.\n"));
+   }
+
    init_stack_dump();
    lmgr_init_thread();
    my_name_is(argc, argv, "bconsole");

@@ -331,6 +331,10 @@ static void dump_json(display_filter *filter)
    regmatch_t pmatch[32];
    STORES *me = (STORES *)GetNextRes(R_STORAGE, NULL);
 
+   if (init_crypto() != 0) {
+      Emsg0(M_ERROR_TERM, 0, _("Cryptography library initialization failed.\n"));
+   }
+
    init_hpkt(hpkt);
 
    if (filter->do_only_data) {

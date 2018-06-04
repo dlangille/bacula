@@ -122,6 +122,10 @@ int main (int argc, char *argv[])
    bindtextdomain("bacula", LOCALEDIR);
    textdomain("bacula");
 
+   if (init_crypto() != 0) {
+      Emsg0(M_ERROR_TERM, 0, _("Cryptography library initialization failed.\n"));
+   }
+
    my_name_is(argc, argv, "bacula-dir");
    init_msg(NULL, NULL);
 
@@ -1255,7 +1259,7 @@ static bool check_resources(bool apply_jobdefs)
             cons->tls_keyfile, NULL, NULL, cons->tls_dhfile, cons->tls_verify_peer);
 
          if (!cons->tls_ctx) {
-            Jmsg(NULL, M_FATAL, 0, _("Failed to initialize TLS context for File daemon \"%s\" in %s.\n"),
+            Jmsg(NULL, M_FATAL, 0, _("Failed to initialize TLS context for Console \"%s\" in %s.\n"),
                cons->name(), configfile);
             OK = false;
          }

@@ -128,6 +128,10 @@ int main (int argc, char *argv[])
    bindtextdomain("bacula", LOCALEDIR);
    textdomain("bacula");
 
+   if (init_crypto() != 0) {
+      Emsg0(M_ERROR_TERM, 0, _("Cryptography library initialization failed.\n"));
+   }
+
    my_name_is(argc, argv, "bacula-fd");
    init_msg(NULL, NULL);
 
