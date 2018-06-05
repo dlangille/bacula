@@ -237,7 +237,7 @@ extern "C" void signal_handler(int sig)
          bmicrosleep(30, 0);
       }
       if (WEXITSTATUS(chld_status) == 0) {
-         fprintf(stderr, _("It looks like the traceback worked...\n"));
+         fprintf(stderr, "%s", _("It looks like the traceback worked...\n"));
       } else {
          fprintf(stderr, _("The btraceback call returned %d\n"),
                            WEXITSTATUS(chld_status));
