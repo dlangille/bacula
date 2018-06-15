@@ -37,7 +37,7 @@ check_exit_code
 if [ x$PREBUILT != xyes ]; then
   which git >/dev/null 2>/dev/null
   if [ $? = 0 ] ; then
-    git show HEAD | grep commit | hread -1 | awk '{print $2}' > build/git-version
+    git show HEAD | grep commit | head -1 | awk '{print $2}' > build/git-version
   else
     echo "Git not found." >build/git-version
   fi
