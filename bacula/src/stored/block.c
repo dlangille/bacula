@@ -301,8 +301,12 @@ bool DCR::write_block_to_dev()
       if (dev->dev_errno == ENOSPC) {
          dev->update_freespace();
          if (dev->is_freespace_ok() && dev->free_space < dev->min_free_space) {
+            int mtype = M_FATAL;
             dev->set_nospace();
-            Jmsg(jcr, M_FATAL, 0, _("Out of freespace caused End of Volume \"%s\" at %s on device %s. Write of %u bytes got %d.\n"),
+            if (dev->is_removable()) {
+               mtype = M_INFO;
+            }
+            Jmsg(jcr, mtype, 0, _("Out of freespace caused End of Volume \"%s\" at %s on device %s. Write of %u bytes got %d.\n"),
                dev->getVolCatName(),
                dev->print_addr(ed1, sizeof(ed1)), dev->print_name(), wlen, stat);
          } else {
