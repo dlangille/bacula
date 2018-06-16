@@ -55,7 +55,7 @@ Device {
   Name = LTO3_1
   Media Type = LTO3
   Archive Device = @working_dir@/ach/drive1
-  Control Device = @working_dir@/ach/sg1
+  Control Device = @working_dir@/ach/sg0
   AutomaticMount = yes;               # when device opened, read it
   Autochanger = yes
   Drive Index = 1
@@ -195,4 +195,3 @@ Cloud {
   Protocol = HTTPS
   UriStyle = VirtualHost
 }
-
