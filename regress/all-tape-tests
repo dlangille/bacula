@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (C) 2000-2017 Kern Sibbald
+# Copyright (C) 2000-2018 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
 # ./run all tape tests
@@ -11,7 +11,7 @@
 # If we have an autoloader, load the tape in slot1
 if test ! x$AUTOCHANGER = x/dev/null ; then
    a=`bin/mtx-changer $AUTOCHANGER loaded $SLOT1 $TAPE_DRIVE $DRIVE1`
-   if test $a = 0 ; then
+   if [ x$a = x0 ] ; then
       bin/mtx-changer $AUTOCHANGER load $SLOT1 $TAPE_DRIVE $DRIVE1
    fi
 fi
