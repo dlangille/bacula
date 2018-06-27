@@ -52,6 +52,12 @@ static void win_close_wait(int fd);
 #endif
 
 
+/* TODO: We are flooded by tickets about lost console messages. We probably
+ * need to store them in a specific place, but waiting for that, we can
+ * discard them. See #3615 for example.
+ */
+#define isJobMessage(jcr) (jcr && jcr->JobId != 0)
+
 /*
  * make a nice dump of a message
  */
@@ -539,14 +545,25 @@ bool BSOCK::send(int aflags)
 
    if (is_closed()) {
       if (!m_suppress_error_msgs) {
-         Qmsg0(m_jcr, M_ERROR, 0,  _("Socket is closed\n"));
+         /* TODO: We probably need to store them in a specific place see mantis #3615 */
+         if (isJobMessage(m_jcr)) {
+            Qmsg0(m_jcr, M_ERROR, 0,  _("Socket is closed\n"));
+         } else {
+            Dmsg0(100, "Socket is closed\n");
+         }
       }
       return false;
    }
    if (errors) {
       if (!m_suppress_error_msgs) {
-         Qmsg4(m_jcr, M_ERROR, 0,  _("Socket has errors=%d on call to %s:%s:%d\n"),
-             errors, m_who, m_host, m_port);
+         /* TODO: We probably need to store them in a specific place */
+         if (isJobMessage(m_jcr)) {
+            Qmsg4(m_jcr, M_ERROR, 0,  _("Socket has errors=%d on call to %s:%s:%d\n"),
+                  errors, m_who, m_host, m_port);
+         } else {
+            Dmsg4(100, "Socket has errors=%d on call to %s:%s:%d\n",
+                  errors, m_who, m_host, m_port);
+         }
       }
       return false;
    }
@@ -655,10 +672,17 @@ bool BSOCK::send(int aflags)
       }
       if (rc < 0) {
          if (!m_suppress_error_msgs) {
-            Qmsg5(m_jcr, M_ERROR, 0,
-                  _("Write error sending %d bytes to %s:%s:%d: ERR=%s\n"),
-                  pktsiz, m_who,
-                  m_host, m_port, this->bstrerror());
+            /* TODO: We probably need to store them in a specific place see Mantis #3615 */
+            if (isJobMessage(m_jcr)) {
+               Qmsg5(m_jcr, M_ERROR, 0,
+                     _("Write error sending %d bytes to %s:%s:%d: ERR=%s\n"),
+                     pktsiz, m_who,
+                     m_host, m_port, this->bstrerror());
+            } else {
+               Dmsg5(100, "Write error sending %d bytes to %s:%s:%d: ERR=%s\n",
+                     pktsiz, m_who,
+                     m_host, m_port, this->bstrerror());
+            }
          }
       } else {
          Qmsg5(m_jcr, M_ERROR, 0,
