@@ -207,7 +207,7 @@ class Miscellaneous extends TModule {
 	}
 
 	public function isValidPath($path) {
-		return (preg_match('/^[\p{L}\p{N}\p{Z}\[\]\(\)\-\+\/\\\:\.#~_,{}!]{0,1000}$/', $path) === 1);
+		return (preg_match('/^[\p{L}\p{N}\p{Z}\[\]\(\)\-\+\/\\\:\.#~_,{}!]{0,10000}$/u', $path) === 1);
 	}
 
 	public function isValidReplace($replace) {
