@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2017 Kern Sibbald
+   Copyright (C) 2000-2018 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -477,7 +477,7 @@ void add_msg_dest(MSGS *msg, int dest_code, int msg_type, char *where, char *mai
     */
    for (d=msg->dest_chain; d; d=d->next) {
       if (dest_code == d->dest_code && ((where == NULL && d->where == NULL) ||
-                     (strcmp(where, d->where) == 0))) {
+                     bstrcmp(where, d->where))) {
          Dmsg4(850, "Add to existing d=%p msgtype=%d destcode=%d where=%s\n",
              d, msg_type, dest_code, NPRT(where));
          set_bit(msg_type, d->msg_types);
