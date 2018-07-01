@@ -236,4 +236,19 @@ int BDB::bdb_delete_snapshot_record(JCR *jcr, SNAPSHOT_DBR *sr)
    return 1;
 }
 
+/* Delete Client record */
+int BDB::bdb_delete_client_record(JCR *jcr, CLIENT_DBR *cr)
+{
+   bdb_lock();
+   if (cr->ClientId == 0 && !bdb_get_client_record(jcr, cr)) {
+      bdb_unlock();
+      return 0;
+   }
+
+   Mmsg(cmd, "DELETE FROM Client WHERE ClientId=%d", cr->ClientId);
+   bdb_sql_query(cmd, NULL, (void *)NULL);
+   bdb_unlock();
+   return 1;
+}
+
 #endif /* HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL */

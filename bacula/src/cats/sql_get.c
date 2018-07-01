@@ -1491,6 +1491,21 @@ bool BDB::bdb_get_volume_jobids(JCR *jcr,
    return ret;
 }
 
+/* Get JobIds associated with a client */
+bool BDB::bdb_get_client_jobids(JCR *jcr,
+                                CLIENT_DBR *cr, db_list_ctx *lst)
+{
+   char ed1[50];
+   bool ret = false;
+
+   bdb_lock();
+   Mmsg(cmd, "SELECT JobId FROM Job WHERE ClientId=%s",
+        edit_int64(cr->ClientId, ed1));
+   ret = bdb_sql_query(cmd, db_list_handler, lst);
+   bdb_unlock();
+   return ret;
+}
+
 /**
  * Get Snapshot Record
  *

@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2017 Kern Sibbald
+   Copyright (C) 2000-2018 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -669,6 +669,7 @@ public:
    uint32_t MaxVolJobs;               /* Maximum jobs on the Volume */
    uint32_t MaxVolFiles;              /* Maximum files on the Volume */
    uint64_t MaxVolBytes;              /* Maximum bytes on the Volume */
+   uint64_t MaxPoolBytes;             /* Maximum bytes on the pool to create new vol */
    utime_t MigrationTime;             /* Time to migrate to next pool */
    uint64_t MigrationHighBytes;       /* When migration starts */
    uint64_t MigrationLowBytes;        /* When migration stops */

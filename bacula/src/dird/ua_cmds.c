@@ -80,6 +80,7 @@ static void do_job_delete(UAContext *ua, JobId_t JobId);
 static int delete_volume(UAContext *ua);
 static int delete_pool(UAContext *ua);
 static void delete_job(UAContext *ua);
+static int delete_client(UAContext *ua);
 static void do_storage_cmd(UAContext *ua, const char *command);
 
 int qhelp_cmd(UAContext *ua, const char *cmd);
@@ -103,7 +104,7 @@ static struct cmdstruct commands[] = {                                      /* C
    NT_("[storage=<storage-name>] [volume=<vol>] [pool=<pool>] [allpools] [allfrompool] [mediatype=<type>] [drive=<number>] [slots=<number] \n"
        "\tstatus  | prune | list | upload | truncate"), true},
  { NT_("create"),     create_cmd,    _("Create DB Pool from resource"), NT_("pool=<pool-name>"),                    false},
- { NT_("delete"),     delete_cmd,    _("Delete volume, pool or job"), NT_("volume=<vol-name> | pool=<pool-name> | jobid=<id> | snapshot"), true},
+ { NT_("delete"),     delete_cmd,    _("Delete volume, pool, client or job"), NT_("volume=<vol-name> | pool=<pool-name> | jobid=<id> | client=<client-name> | snapshot"), true},
  { NT_("disable"),    disable_cmd,   _("Disable a job, attributes batch process"), NT_("job=<name> | client=<name> | schedule=<name> | storage=<name> | batch"),  true},
  { NT_("enable"),     enable_cmd,    _("Enable a job, attributes batch process"), NT_("job=<name> | client=<name> | schedule=<name> | storage=<name> | batch"),   true},
  { NT_("estimate"),   estimate_cmd,  _("Performs FileSet estimate, listing gives full listing"),
@@ -1564,6 +1565,9 @@ static int delete_cmd(UAContext *ua, const char *cmd)
    case 3:
       delete_snapshot(ua);
       return 1;
+   case 4:
+      delete_client(ua);
+      return 1;
    default:
       break;
    }
@@ -1584,6 +1588,9 @@ static int delete_cmd(UAContext *ua, const char *cmd)
       return 1;
    case 3:
       delete_snapshot(ua);
+      return 1;
+   case 4:
+      delete_client(ua);
       return 1;
    default:
       ua->warning_msg(_("Nothing done.\n"));
@@ -1709,6 +1716,59 @@ static int delete_pool(UAContext *ua)
    }
    if (ua->pint32_val) {
       db_delete_pool_record(ua->jcr, ua->db, &pr);
+   }
+   return 1;
+}
+
+/*
+ * Delete a client record from the database
+ */
+static int delete_client(UAContext *ua)
+{
+   CLIENT *client;
+   CLIENT_DBR  cr;
+   char buf[200];
+   db_list_ctx lst;
+
+   memset(&cr, 0, sizeof(cr));
+
+   if (!get_client_dbr(ua, &cr, 0)) {
+      return 1;
+   }
+
+   client = (CLIENT*) GetResWithName(R_CLIENT, cr.Name);
+
+   if (client) {
+      ua->error_msg(_("Unable to delete Client \"%s\", the resource is still defined in the configuration.\n"), cr.Name);
+      return 1;
+   }
+
+   if (!db_get_client_jobids(ua->jcr, ua->db, &cr, &lst)) {
+      ua->error_msg(_("Can't list jobs on this client\n"));
+      return 1;
+   }
+
+   if (find_arg(ua, "yes") > 0) {
+      ua->pint32_val = 1;
+
+   } else {
+      if (lst.count  == 0) {
+         bsnprintf(buf, sizeof(buf), _("Are you sure you want to delete Client \"%s\? (yes/no): "), cr.Name);
+      } else {
+         bsnprintf(buf, sizeof(buf), _("Are you sure you want to delete Client \"%s\" and purge %d job(s)? (yes/no): "), cr.Name, lst.count);
+      }
+      if (!get_yesno(ua, buf)) {
+         return 1;
+      }
+   }
+
+   if (ua->pint32_val) {
+      if (lst.count) {
+         ua->send_msg(_("Purging %d job(s).\n"), lst.count);
+         purge_jobs_from_catalog(ua, lst.list);
+      }
+      ua->send_msg(_("Deleting client \"%s\".\n"), cr.Name);
+      db_delete_client_record(ua->jcr, ua->db, &cr);
    }
    return 1;
 }

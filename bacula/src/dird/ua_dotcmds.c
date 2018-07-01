@@ -180,7 +180,9 @@ bool do_a_dot_command(UAContext *ua)
          ok = (*commands[i].func)(ua, ua->cmd);   /* go execute command */
          if (ua->api) ua->signal(ok?BNET_CMD_OK:BNET_CMD_FAILED);
          ua->gui = gui;
-         found = ua->UA_sock->is_stop() ? false : true;
+         if (ua->UA_sock) {
+            found = ua->UA_sock->is_stop() ? false : true;
+         }
          break;
       }
    }

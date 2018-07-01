@@ -161,6 +161,8 @@ void bdb_free_restoreobject_record(JCR *jcr, ROBJECT_DBR *rr);
            mdb->bdb_purge_media_record(jcr, mr)
 #define db_delete_snapshot_record(jcr, mdb, sr) \
            mdb->bdb_delete_snapshot_record(jcr, sr)
+#define db_delete_client_record(jcr, mdb, cr)         \
+           mdb->bdb_delete_client_record(jcr, cr)
 
 
 /* sql_find.c */
@@ -180,6 +182,8 @@ void bdb_free_restoreobject_record(JCR *jcr, ROBJECT_DBR *rr);
 /* sql_get.c */
 #define db_get_volume_jobids(jcr, mdb, mr, lst) \
            mdb->bdb_get_volume_jobids(jcr, mr, lst)
+#define db_get_client_jobids(jcr, mdb, cr, lst) \
+           mdb->bdb_get_client_jobids(jcr, cr, lst)
 #define db_get_base_file_list(jcr, mdb, use_md5, result_handler, ctx) \
            mdb->bdb_get_base_file_list(jcr, use_md5, result_handler, ctx)
 #define db_get_path_record(jcr, mdb) \
