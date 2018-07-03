@@ -376,7 +376,7 @@ BuildRequires: %{postgres_devel_package} >= %{postgres_version}
 #
 %if %{mysql}
 %package mysql
-Provides: libbaccats-%{version}.so()(64bit)
+Provides: bacula-mysql
 #
 # The following provides is to work around an 
 #  auto generated requires from src/scripts/logwatch/applybaculadate
@@ -386,11 +386,13 @@ Provides: perl(Logwatch)
 %endif
 %if %{postgresql}
 %package postgresql
+Provides: bacula-postgresql
 %endif
 
 Summary: Bacula - The Network Backup Solution
 Group: System Environment/Daemons
 Provides: bacula-dir, bacula-sd, bacula-fd, bacula-server
+Provides: libbaccats-%{version}.so()(64bit)
 Conflicts: bacula-client
 
 Requires: ncurses, libstdc++, zlib, openssl
