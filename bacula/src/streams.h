@@ -36,7 +36,7 @@
 /* TYPE represents our current (old) stream types -- e.g. values 0 - 2047 */
 #define STREAMBASE_TYPE                0         /* base for types */
 #define STREAMBITS_TYPE               11         /* type bit size */
-#define STREAMMASK_TYPE               (~((~0)<< STREAMBITS_TYPE) << STREAMBASE_TYPE)
+#define STREAMMASK_TYPE               (~((~0u)<< STREAMBITS_TYPE) << STREAMBASE_TYPE)
 /*
  * Note additional base, bits, and masks can be defined for new     
  *  ranges or subranges of stream attributes.
