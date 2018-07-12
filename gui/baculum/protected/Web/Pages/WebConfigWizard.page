@@ -47,6 +47,7 @@
 					<com:TLinkButton
 						CommandName="Cancel"
 						CssClass="w3-button w3-red"
+						CausesValidation="false"
 						>
 						<i class="fa fa-times"></i> &nbsp;<%[ Cancel ]%>
 					</com:TLinkButton>
@@ -66,6 +67,7 @@
 					<com:TLinkButton
 						CommandName="Cancel"
 						CssClass="w3-button w3-red"
+						CausesValidation="false"
 					>
 						<i class="fa fa-times"></i> &nbsp;<%[ Cancel ]%>
 					</com:TLinkButton>
@@ -93,6 +95,7 @@
 					<com:TLinkButton
 						CommandName="Cancel"
 						CssClass="w3-button w3-red"
+						CausesValidation="false"
 					>
 						<i class="fa fa-times"></i> &nbsp;<%[ Cancel ]%>
 					</com:TLinkButton>
