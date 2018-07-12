@@ -49,7 +49,7 @@ class WebConfig extends ConfigFileModule {
 	 * These options are obligatory for web config.
 	 */
 	private $required_options = array(
-		'baculum' => array('login', 'password', 'debug', 'lang')
+		'baculum' => array('login', 'debug', 'lang')
 	);
 
 	/**

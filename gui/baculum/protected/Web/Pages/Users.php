@@ -69,17 +69,8 @@ class Users extends BaculumWebPage {
 		switch($action) {
 			case 'newuser':
 			case 'chpwd': {
-					$admin = false;
-					$valid = true;
+					$this->getModule('basic_webuser')->setUsersConfig($user, $value);
 					if ($user === $this->web_config['baculum']['login']) {
-						$this->web_config['baculum']['password'] = $value;
-						$valid = $this->getModule('web_config')->setConfig($this->web_config);
-						$admin = true;
-					}
-					if ($valid === true) {
-						$this->getModule('basic_webuser')->setUsersConfig($user, $value);
-					}
-					if ($admin === true) {
 						// if admin password changed then try to auto-login by async request
 						$http_protocol = isset($_SERVER['HTTPS']) && !empty($_SERVER['HTTPS']) ? 'https' : 'http';
 						$this->switchToUser($user, $value);

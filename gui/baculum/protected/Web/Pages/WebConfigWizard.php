@@ -74,8 +74,6 @@ class WebConfigWizard extends BaculumWebPage
 				$this->AddNewHost->APIOAuth2Scope->Text = $this->host_config[$host]['scope'];
 			}
 			$this->WebLogin->Text = $this->web_config['baculum']['login'];
-			$this->WebPassword->Text = $this->web_config['baculum']['password'];
-			$this->RetypeWebPassword->Text = $this->web_config['baculum']['password'];
 		} else {
 			$this->AddNewHost->APIProtocol->SelectedValue = 'http';
 			$this->AddNewHost->APIAddress->Text = 'localhost';
@@ -130,7 +128,6 @@ class WebConfigWizard extends BaculumWebPage
 				$cfg_web = $web_config;
 			}
 			$cfg_web['baculum']['login'] = $this->WebLogin->Text;
-			$cfg_web['baculum']['password'] = $this->WebPassword->Text;
 			$cfg_web['baculum']['debug'] = 0;
 			$cfg_web['baculum']['lang'] = $this->Lang->SelectedValue;
 			if (array_key_exists('users', $cfg_web) && array_key_exists($this->WebLogin->Text, $cfg_web)) {
@@ -142,13 +139,13 @@ class WebConfigWizard extends BaculumWebPage
 				$previous_user = $this->first_run ? parent::DEFAULT_AUTH_USER : $this->web_config['baculum']['login'];
 				$this->getModule('basic_webuser')->setUsersConfig(
 					$cfg_web['baculum']['login'],
-					$cfg_web['baculum']['password'],
+					$this->WebPassword->Text,
 					false,
 					$previous_user
 				);
 
 				// Automatic login after finish wizard.
-				$this->switchToUser($cfg_web['baculum']['login'], $cfg_web['baculum']['password']);
+				$this->switchToUser($cfg_web['baculum']['login'], $this->WebPassword->Text);
 				// here is exit
 				exit();
 			}
