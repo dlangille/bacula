@@ -657,11 +657,14 @@ static void update_attribute(JCR *jcr, char *msg, int32_t msglen)
                         db_strerror(jcr->db));
             }
             jcr->cached_attribute = false;
-         } else {
+         } else if (ar->FileId != 0) {
             if (!db_add_digest_to_file_record(jcr, jcr->db, ar->FileId, digestbuf, type)) {
                Jmsg(jcr, M_ERROR, 0, _("Catalog error updating file digest. %s"),
                   db_strerror(jcr->db));
             }
+         } else { /* Something is wrong FileId == 0 */
+            Jmsg(jcr, M_WARNING, 0, "Illegal FileId in update attribute: FileId=0 Stream=%d fname=%s\n",
+                 ar->Stream, ar->fname);
          }
       }
    }
