@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2015 Kern Sibbald
+   Copyright (C) 2000-2018 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -16,7 +16,7 @@
 
    Bacula(R) is a registered trademark of Kern Sibbald.
 */
-/**
+/*
  * Main program to test loading and running Bacula plugins.
  *   Destined to become Bacula pluginloader, ...
  *
@@ -355,6 +355,7 @@ static void update_ff_pkt(FF_PKT *ff_pkt, struct save_pkt *sp)
    Dsm_check(999);
    ff_pkt->no_read = sp->no_read;
    ff_pkt->delta_seq = sp->delta_seq;
+
    if (sp->flags & FO_DELTA) {
       ff_pkt->flags |= FO_DELTA;
       ff_pkt->delta_seq++;          /* make new delta sequence number */
@@ -537,7 +538,7 @@ int plugin_save(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
          sp.flags = 0;
          sp.cmd = cmd;
          Dmsg3(dbglvl, "startBackup st_size=%p st_blocks=%p sp=%p\n", &sp.statp.st_size, &sp.statp.st_blocks,
-                &sp);
+               &sp);
          Dsm_check(999);
          /* Get the file save parameters. I.e. the stat pkt ... */
          if (plug_func(plugin)->startBackupFile(jcr->plugin_ctx, &sp) != bRC_OK) {
@@ -580,6 +581,7 @@ int plugin_save(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
 
             ff_pkt->fname = fname.c_str();
             ff_pkt->link = link.c_str();
+            ff_pkt->LinkFI = sp.LinkFI;
             update_ff_pkt(ff_pkt, &sp);
          }
 
@@ -766,6 +768,7 @@ bool send_plugin_name(JCR *jcr, BSOCK *sd, bool start)
    int stat;
    int index = jcr->JobFiles;
    struct save_pkt *sp = (struct save_pkt *)jcr->plugin_sp;
+   int32_t stream = STREAM_PLUGIN_NAME;
 
    Dsm_check(999);
    if (!sp) {
@@ -782,10 +785,13 @@ bool send_plugin_name(JCR *jcr, BSOCK *sd, bool start)
    Dmsg1(dbglvl, "send_plugin_name=%s\n", sp->cmd);
    /* Send stream header */
    Dsm_check(999);
-   if (!sd->fsend("%ld %d 0", index, STREAM_PLUGIN_NAME)) {
-     Jmsg1(jcr, M_FATAL, 0, _("Network send error to SD. ERR=%s\n"),
-           sd->bstrerror());
-     return false;
+   if (start) {
+      plugin_check_stream(jcr, stream);    /* get stream modified by plugin */
+   }
+   if (!sd->fsend("%ld %d 0", index, stream)) {
+      Jmsg1(jcr, M_FATAL, 0, _("Network send error to SD. ERR=%s\n"),
+            sd->bstrerror());
+      return false;
    }
    Dmsg1(dbglvl, "send plugin name hdr: %s\n", sd->msg);
 
@@ -1106,6 +1112,11 @@ int plugin_backup_acl(JCR *jcr, FF_PKT *ff_pkt, char **data)
       return 0;
    }
 
+   /* The plugin is not handling ACL/XATTR */
+   if (plug_func(jcr->plugin)->handleXACLdata == NULL) {
+      return 0;
+   }
+   
    /* prepare the xacl packet */
    memset(&xacl, 0, sizeof(xacl));
    xacl.pkt_size = sizeof(xacl);
@@ -1154,6 +1165,11 @@ bool plugin_restore_acl(JCR *jcr, char *data, uint32_t length)
       return true;
    }
 
+   /* The plugin is not handling ACL/XATTR */
+   if (plug_func(jcr->plugin)->handleXACLdata == NULL) {
+      return 0;
+   }
+
    /* prepare the xacl packet */
    memset(&xacl, 0, sizeof(xacl));
    xacl.pkt_size = sizeof(xacl);
@@ -1199,6 +1215,11 @@ int plugin_backup_xattr(JCR *jcr, FF_PKT *ff_pkt, char **data)
 
    /* check of input variables */
    if (!plugin || !jcr->plugin_ctx || !data) {
+      return 0;
+   }
+
+   /* The plugin is not handling ACL/XATTR */
+   if (plug_func(jcr->plugin)->handleXACLdata == NULL) {
       return 0;
    }
 
@@ -1250,6 +1271,11 @@ bool plugin_restore_xattr(JCR *jcr, char *data, uint32_t length)
       return true;
    }
 
+   /* The plugin is not handling ACL/XATTR */
+   if (plug_func(jcr->plugin)->handleXACLdata == NULL) {
+      return 0;
+   }
+
    /* prepare the xacl packet */
    memset(&xacl, 0, sizeof(xacl));
    xacl.pkt_size = sizeof(xacl);
@@ -1265,6 +1291,40 @@ bool plugin_restore_xattr(JCR *jcr, char *data, uint32_t length)
       Dmsg0(dbglvl, "plugin->handleXACLdata returned error\n");
       return false;
    }
+
+   return true;
+}
+
+/*
+ * Allow plugin to modify stream 
+ */
+bool plugin_check_stream(JCR *jcr, int32_t &stream)
+{
+   struct stream_pkt sp;
+   Plugin *plugin = (Plugin *)jcr->plugin;
+   bRC rc;
+
+   Dmsg0(dbglvl, "plugin_check_stream\n");
+
+   /* check of input variables */
+   if (!plugin || !jcr->plugin_ctx || !plug_func(plugin)->checkStream) {
+      return true;
+   }
+
+   /* prepare the stream packet */
+   memset(&sp, 0, sizeof(sp));
+   sp.pkt_size = sizeof(sp);
+   sp.stream = stream;
+   sp.pkt_end = sizeof(sp);
+
+   rc = plug_func(plugin)->checkStream(jcr->plugin_ctx, &sp);
+
+   /* check out status */
+   if (rc != bRC_OK){
+      Dmsg0(dbglvl, "plugin->checkStream returned error\n");
+      return false;
+   }
+   stream = sp.stream;
 
    return true;
 }
@@ -1651,11 +1711,11 @@ static bRC baculaGetValue(bpContext *ctx, bVariable var, void *value)
    case bVarDistName:
       *(char **)value = dist_name;
       break;
+   case bVarxxx:
+      break;
    case bVarPrevJobName:
       break;
    case bVarPrefixLinks:
-      break;
-   case bVarxxx:
       break;
    default:
       break;

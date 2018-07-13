@@ -2726,7 +2726,6 @@ static int restore_cmd(JCR *jcr)
                Jmsg(jcr, M_FATAL, 0, _("Bad replace command. CMD=%s\n"), jcr->errmsg);
                goto free_mempool;
             }
-            jcr->RegexWhere = bstrdup(args);
             *args = 0;          /* No where argument */
          } else {
             use_regexwhere = true;
@@ -2753,6 +2752,7 @@ static int restore_cmd(JCR *jcr)
          Jmsg(jcr, M_FATAL, 0, _("Bad where regexp. where=%s\n"), args);
          goto free_mempool;
       }
+      jcr->RegexWhere = bstrdup(args);
    } else {
       jcr->where = bstrdup(args);
    }
@@ -2850,10 +2850,6 @@ bail_out:
    bfree_and_null(jcr->where);
    bfree_and_null(jcr->RegexWhere);
 
-   if (jcr->JobErrors) {
-      jcr->setJobStatus(JS_ErrorTerminated);
-   }
-
    Dmsg0(100, "Done in job.c\n");
 
    if (jcr->multi_restore) {
@@ -2883,6 +2879,9 @@ free_mempool:
 static int end_restore_cmd(JCR *jcr)
 {
    Dmsg0(5, "end_restore_cmd\n");
+   if (jcr->JobErrors) {
+      jcr->setJobStatus(JS_ErrorTerminated);
+   }
    generate_plugin_event(jcr, bEventEndRestoreJob);
    return 0;                          /* return and terminate command loop */
 }

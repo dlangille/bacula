@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2017 Kern Sibbald
+   Copyright (C) 2000-2018 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -20,6 +20,7 @@
  * Application Programming Interface (API) definition for Bacula Plugins
  *
  * Kern Sibbald, October 2007
+ *
  */
 
 #ifndef __FD_PLUGINS_H
@@ -82,6 +83,15 @@ struct restore_object_pkt {
 };
 
 /*
+ * Packet to allow plugin to set stream
+ */
+struct stream_pkt {
+   int32_t pkt_size;                  /* size of this packet */
+   int32_t stream;                    /* Stream */
+   int32_t pkt_end;                   /* end packet sentinel */
+};
+
+/*
  * This packet is used for file save info transfer.
 */
 struct save_pkt {
@@ -100,6 +110,7 @@ struct save_pkt {
    char *object;                      /* restore object data to save */
    int32_t object_len;                /* restore object length */
    int32_t index;                     /* restore object index */
+   int32_t LinkFI;                    /* LinkFI if LINKSAVED */
    int32_t pkt_end;                   /* end packet sentinel */
 };
 
@@ -123,6 +134,21 @@ struct restore_pkt {
    int replace;                       /* replace flag */
    int create_status;                 /* status from createFile() */
    uint32_t delta_seq;                /* Delta sequence number */
+   int32_t pkt_end;                   /* end packet sentinel */
+};
+
+/*
+ * This packet is used for file restore info transfer.
+*/
+struct restore_filelist_pkt {
+   int32_t pkt_size;                  /* size of this packet */
+   int32_t file_index;                /* file index */
+   int32_t LinkFI;                    /* file index to data if hard link */
+   struct stat statp;                 /* decoded stat packet */
+   const char *attrEx;                /* extended attributes if any */
+   const char *ofname;                /* output filename */
+   uint32_t delta_seq;                /* Delta sequence number */
+   const char *chksum;                /* Checksum if available */
    int32_t pkt_end;                   /* end packet sentinel */
 };
 
@@ -231,8 +257,10 @@ typedef enum {
   bEventVssPrepareSnapshot              = 22,
   bEventOptionPlugin                    = 23,
   bEventHandleBackupFile                = 24, /* Used with Options Plugin */
-  bEventComponentInfo                   = 25  /* Plugin component */
+  bEventComponentInfo                   = 25, /* Plugin component */
+  bEventFeatures                        = 26  /* Ask for file list, ... "xxx,yyy,zzz" */
 } bEventType;
+
 
 typedef struct s_bEvent {
    uint32_t eventType;
@@ -259,10 +287,22 @@ int plugin_save(JCR *jcr, FF_PKT *ff_pkt, bool top_level);
 int plugin_estimate(JCR *jcr, FF_PKT *ff_pkt, bool top_level);
 bool plugin_check_file(JCR *jcr, char *fname);
 bRC plugin_option_handle_file(JCR *jcr, FF_PKT *ff_pkt, struct save_pkt *sp);
+int plugin_get_idx(JCR *jcr, char *plugin);
+bool plugin_send_restorefilelist(JCR *jcr, int plugin_index,
+                                 char *path, char *lstat, char *checksum,
+                                 int delta_seq);
+
+typedef struct {
+   const char *plugin;
+   const char *features;
+} bFeature;
+
+bool plugin_get_features(JCR *jcr, alist *list);
 int plugin_backup_acl(JCR *jcr, FF_PKT *ff_pkt, char **data);
 bool plugin_restore_acl(JCR *jcr, char *data, uint32_t length);
 int plugin_backup_xattr(JCR *jcr, FF_PKT *ff_pkt, char **data);
 bool plugin_restore_xattr(JCR *jcr, char *data, uint32_t length);
+bool plugin_check_stream(JCR *jcr, int32_t &stream);
 #endif
 
 #ifdef __cplusplus
@@ -312,7 +352,7 @@ typedef enum {
   pVarDescription = 2
 } pVariable;
 
-# define FD_PLUGIN_MAGIC  "*FDPluginData*"
+#define FD_PLUGIN_MAGIC  "*FDPluginData*"
 
 #define FD_PLUGIN_INTERFACE_VERSION  ( 14 )
 
@@ -348,6 +388,7 @@ typedef struct s_pluginFuncs {
    bRC (*setFileAttributes)(bpContext *ctx, struct restore_pkt *rp);
    bRC (*checkFile)(bpContext *ctx, char *fname);
    bRC (*handleXACLdata)(bpContext *ctx, struct xacl_pkt *xacl);
+   bRC (*checkStream)(bpContext *ctx, struct stream_pkt *sp);
 } pFuncs;
 
 #define plug_func(plugin) ((pFuncs *)(plugin->pfuncs))
