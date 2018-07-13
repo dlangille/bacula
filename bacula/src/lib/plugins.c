@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2018 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -118,8 +118,6 @@ bool load_plugins(void *binfo, void *bfuncs, const char *plugin_dir,
 
       if ((breaddir(dp, dname.addr()) != 0)) {
          if (!found) {
-            Jmsg(NULL, M_WARNING, 0, _("Failed to find any plugins in %s\n"),
-                  plugin_dir);
             Dmsg1(dbglvl, "Failed to find any plugins in %s\n", plugin_dir);
          }
          break;
@@ -132,7 +130,7 @@ bool load_plugins(void *binfo, void *bfuncs, const char *plugin_dir,
       len = strlen(dname.c_str());
       type_len = strlen(type);
       if (len < type_len+1 || strcmp(&dname.c_str()[len-type_len], type) != 0) {
-         Dmsg3(dbglvl, "Rejected plugin: want=*%s got name=%s len=%d\n", type, dname.c_str(), len);
+         Dmsg3(dbglvl, "Rejected plugin: want=%s name=%s len=%d\n", type, dname.c_str(), len);
          continue;
       }
       Dmsg2(dbglvl, "Found plugin: name=%s len=%d\n", dname.c_str(), len);
@@ -219,13 +217,6 @@ void unload_plugins()
    foreach_alist(plugin, b_plugin_list) {
       /* Shut it down and unload it */
       plugin->unloadPlugin();
-      /* TODO:
-       * If you get a SIGSEGV when using plugins then it is very plausible that
-       * one of the plugins has a memory leakage which cannot be tracked by
-       * SMARTALLOC mechanism when you need to disable dlclose() below for
-       * further investigation.
-       * The problem was registered as #0002330 (http://bugs.bacula.org/view.php?id=2330)
-       */
       dlclose(plugin->pHandle);
       if (plugin->file) {
          free(plugin->file);

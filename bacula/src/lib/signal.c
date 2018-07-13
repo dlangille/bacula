@@ -90,7 +90,7 @@ static void dbg_print_bacula()
    char buf[512];
 
    snprintf(buf, sizeof(buf), "%s/bacula.%d.traceback", working_directory, main_pid);
-   FILE *fp = fopen(buf, "a+") ;
+   FILE *fp = bfopen(buf, "a+") ;
    if (!fp) {
       fp = stderr;
    }
@@ -253,7 +253,7 @@ extern "C" void signal_handler(int sig)
       if (prt_kaboom) {
          FILE *fd;
          snprintf(buf, sizeof(buf), "%s/bacula.%s.traceback", working_directory, pid_buf);
-         fd = fopen(buf, "r");
+         fd = bfopen(buf, "r");
          if (fd != NULL) {
             printf("\n\n ==== Traceback output ====\n\n");
             while (fgets(buf, (int)sizeof(buf), fd) != NULL) {

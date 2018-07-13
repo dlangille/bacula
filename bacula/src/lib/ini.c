@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2017 Kern Sibbald
+   Copyright (C) 2000-2018 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -766,7 +766,7 @@ int main()
    printf("Begin Memory buffer Test\n");
    ok(ini->register_items(membuf_items, sizeof(struct ini_items)), "Check sizeof ini_items");
 
-   if ((fp = fopen("test.cfg", "w")) == NULL) {
+   if ((fp = bfopen("test.cfg", "w")) == NULL) {
       exit (1);
    }
    fprintf(fp, "client=JohnDoe\n");
@@ -777,7 +777,7 @@ int main()
    size = ftell(fp);
    fclose(fp);
 
-   if ((fp = fopen("test.cfg", "rb")) == NULL) {
+   if ((fp = bfopen("test.cfg", "rb")) == NULL) {
       printf("Could not open file test.cfg\n");
       exit (1);
    }
@@ -797,7 +797,7 @@ int main()
    nok(ini->register_items(test_items, 5), "Check bad sizeof ini_items");
    ok(ini->register_items(test_items, sizeof(struct ini_items)), "Check sizeof ini_items");
 
-   if ((fp = fopen("test.cfg", "w")) == NULL) {
+   if ((fp = bfopen("test.cfg", "w")) == NULL) {
       exit (1);
    }
    fprintf(fp, "# this is a comment\ndatastore=datastore1\nnewhost=\"host1\"\n");
@@ -861,7 +861,7 @@ int main()
    ini->free_items();
 
    /* Test  */
-   if ((fp = fopen("test2.cfg", "w")) == NULL) {
+   if ((fp = bfopen("test2.cfg", "w")) == NULL) {
       exit (1);
    }
    fprintf(fp,

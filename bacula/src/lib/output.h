@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2017 Kern Sibbald
+   Copyright (C) 2000-2018 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -45,7 +45,8 @@ typedef enum {
    OT_END,                      /* Last operator (no extra arg) */
    OT_START_OBJ,                /* Skip a line to start a new object (no extra arg) */
    OT_END_OBJ,                  /* Skip a line to end current object (no extra arg) */
-   OT_CLEAR                     /* truncate current buffer (no extra arg) */
+   OT_CLEAR,                    /* truncate current buffer (no extra arg) */
+   OT_DURATION                  /* time duration in second */
 } OutputType;
 
 /* Keep the same order for get_options/parse_options */

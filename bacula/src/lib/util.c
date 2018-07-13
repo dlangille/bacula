@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2017 Kern Sibbald
+   Copyright (C) 2000-2018 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -829,13 +829,20 @@ void decode_session_key(char *decode, char *session, char *key, int maxlen)
 /*
  * Edit job codes into main command line
  *  %% = %
+ *  %b = Job Bytes
  *  %c = Client's name
- *  %d = Director's name
+ *  %C = If the job is a Cloned job (Only on director side)
+ *  %d = Director's name (also valid on file daemon)
  *  %e = Job Exit code
+ *  %E = Non-fatal Job Errors
+ *  %f = Job FileSet (Only on director side)
+ *  %F = Job Files
+ *  %h = Client address (Only on director side)
  *  %i = JobId
  *  %j = Unique Job id
  *  %l = job level
  *  %n = Unadorned Job name
+ *  %o = Job Priority
  *  %p = Pool name (Director)
  *  %P = Process PID
  *  %w = Write Store (Director)
@@ -843,17 +850,12 @@ void decode_session_key(char *decode, char *session, char *key, int maxlen)
  *  %D = Director name (Director/FileDaemon)
  *  %C = Cloned (Director)
  *  %I = wjcr->JobId (Director)
- *  %f = FileSet (Director)
- *  %h = Client Address (Director)
  *  %s = Since time
+ *  %S = Previous Job name (FileDaemon) for Incremental/Differential
  *  %t = Job type (Backup, ...)
  *  %r = Recipients
  *  %v = Volume name
- *  %b = Job Bytes
- *  %F = Job Files
- *  %E = Job Errors
  *  %R = Job ReadBytes
- *  %S = Previous Job name (FileDaemon) for Incremental/Differential
  *
  *  omsg = edited output message
  *  imsg = input string containing edit codes (%x)
@@ -965,6 +967,10 @@ POOLMEM *edit_job_codes(JCR *jcr, char *omsg, char *imsg, const char *to, job_co
             } else {
                str = _("*none*");
             }
+            break;
+         case 'o':
+            edit_uint64(jcr->JobPriority, add);
+            str = add;
             break;
          case 'P':
             edit_uint64(getpid(), add);

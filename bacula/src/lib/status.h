@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2017 Kern Sibbald
+   Copyright (C) 2000-2018 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -28,6 +28,11 @@
 
 #ifndef __STATUS_H_
 #define __STATUS_H_
+
+#ifdef HAVE_GETRLIMIT
+   #include <sys/time.h>
+   #include <sys/resource.h>
+#endif
 
 /*
  * Packet to send to output_status()
@@ -83,7 +88,7 @@ static void list_terminated_jobs(STATUS_PKT *sp)
       return;
    }
    lock_last_jobs_list();
-   msg =  _(" JobId  Level      Files    Bytes   Status   Finished        Name \n");
+   msg =  _(" JobId  Level    Files      Bytes   Status   Finished        Name \n");
    if (!sp->api) sendit(msg, strlen(msg), sp);
    msg =  _("===================================================================\n");
    if (!sp->api) sendit(msg, strlen(msg), sp);
@@ -145,7 +150,7 @@ static void list_terminated_jobs(STATUS_PKT *sp)
          }
       }
       if (sp->api == 1) {
-         bsnprintf(buf, sizeof(buf), _("%6d\t%-7s\t%8s\t%10s\t%-7s\t%-8s\t%s\n"),
+         bsnprintf(buf, sizeof(buf), _("%6d\t%-6s\t%8s\t%10s\t%-7s\t%-8s\t%s\n"),
             je->JobId,
             level,
             edit_uint64_with_commas(je->JobFiles, b1),
@@ -174,7 +179,7 @@ static void list_terminated_jobs(STATUS_PKT *sp)
 
 
       } else {
-         bsnprintf(buf, sizeof(buf), _("%6d  %-7s %8s %10s  %-7s  %-8s %s\n"),
+         bsnprintf(buf, sizeof(buf), _("%6d  %-6s %8s %10s  %-7s  %-8s %s\n"),
             je->JobId,
             level,
             edit_uint64_with_commas(je->JobFiles, b1),

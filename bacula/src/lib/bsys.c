@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2017 Kern Sibbald
+   Copyright (C) 2000-2018 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -34,6 +34,20 @@
 
 static pthread_mutex_t timer_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t timer = PTHREAD_COND_INITIALIZER;
+
+/* bacula => Bacula
+ * Works only for standard ASCII strings
+ */
+char *ucfirst(char *dst, const char *src, int len)
+{
+   int i=0;
+   len--;                       /* Keep the last byte for \0 */
+   for (i=0; src[i] && i < len ; i++) {
+      dst[i] = (i == 0) ? toupper(src[i]) : tolower(src[i]);
+   }
+   dst[i] = 0;
+   return dst;
+}
 
 /*
  * Quote a string
@@ -1170,33 +1184,43 @@ int fd_wait_data(int fd, fd_wait_mode mode, int sec, int msec)
 
 int fd_wait_data(int fd, fd_wait_mode mode, int sec, int msec)
 {
-
-   /* TODO: Allocate the fd_set when fd > SELECT_MAX_FD */
    union {
       fd_set fdset;
       char bfd_buf[1000];
    };
+
+   fd_set *pfdset=NULL, *tmp=NULL;
    struct timeval tv;
    int ret;
 
+   /* If the amount of static memory is not big enough to handle the file
+    * descriptor, we allocate a new buffer ourself
+    */
    if (fd > SELECT_MAX_FD) {
-      Pmsg1(0, "Too many open files for the current system fd=%d\n", fd);
-      return -1;
+      int len = (fd+1+1024) * sizeof(char);
+      tmp = (fd_set *) malloc(len);
+      pfdset = tmp;
+      memset(tmp, 0, len);      /* FD_ZERO() */
+
+   } else {
+      pfdset = &fdset;
+      memset(&bfd_buf, 0, sizeof(bfd_buf)); /* FD_ZERO(&fdset) */
    }
 
-   memset(&bfd_buf, 0, sizeof(bfd_buf)); /* FD_ZERO(&fdset) */
-   FD_SET((unsigned)fd, &fdset);
+   FD_SET((unsigned)fd, pfdset);
 
    tv.tv_sec = sec;
    tv.tv_usec = msec * 1000;
 
    if (mode == WAIT_READ) {
-      ret = select(fd + 1, &fdset, NULL, NULL, &tv);
+      ret = select(fd + 1, pfdset, NULL, NULL, &tv);
 
    } else { /* WAIT_WRITE */
-      ret = select(fd + 1, NULL, &fdset, NULL, &tv);
+      ret = select(fd + 1, NULL, pfdset, NULL, &tv);
    }
-
+   if (tmp) {
+      free(tmp);
+   }
    switch (ret) {
    case 0:                      /* timeout */
       return 0;
@@ -1238,8 +1262,8 @@ int baccept(int sockfd, struct sockaddr *addr, socklen_t *addrlen)
 #undef fopen
 FILE *bfopen(const char *path, const char *mode)
 {
-   char options[50];
    FILE *fp;
+   char options[50];
 
    bstrncpy(options, mode, sizeof(options));
 
@@ -1264,7 +1288,6 @@ FILE *bfopen(const char *path, const char *mode)
 #endif
    return fp;
 }
-
 
 #ifdef TEST_PROGRAM
 /* The main idea of the test is pretty simple, we have a writer and a reader, and

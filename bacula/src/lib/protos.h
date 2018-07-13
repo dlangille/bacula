@@ -66,6 +66,7 @@ void term_hpkt(HPKT &hpkt);
 bool display_global_item(HPKT &hpkt);
 
 /* bsys.c */
+char *ucfirst(char *dest, const char *src, int len);
 typedef enum {
    WAIT_READ  = 1,
    WAIT_WRITE = 2

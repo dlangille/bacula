@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2017 Kern Sibbald
+   Copyright (C) 2000-2018 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -31,6 +31,16 @@
 
 
 #include "bacula.h"
+
+#ifdef HAVE_GETRLIMIT
+#include <sys/resource.h>
+#else
+/* If not available, use a wrapper that will not use it */
+#define getrlimit(a,b) -1
+struct rlimit {
+   int64_t rlim_max;
+};
+#endif
 
 void
 daemon_start()
@@ -70,7 +80,19 @@ daemon_start()
 #elif defined(HAVE_CLOSEFROM)
    closefrom(next_fd);
 #else
-   for (i=sysconf(_SC_OPEN_MAX); i >= next_fd; i--) {
+   struct rlimit rl;
+   int64_t rlimitResult=0;
+
+   /* Many systems doesn't have the correct system call
+    * to determine the FD list to close.
+    */
+   if (getrlimit(RLIMIT_NOFILE, &rl) == -1) {
+      rlimitResult = sysconf(_SC_OPEN_MAX);
+   } else {
+      rlimitResult = rl.rlim_max;
+   }
+
+   for (i=rlimitResult; i >= next_fd; i--) {
       close(i);
    }
 #endif
