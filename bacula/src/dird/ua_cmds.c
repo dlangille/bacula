@@ -1804,8 +1804,10 @@ static void do_storage_cmd(UAContext *ua, const char *command)
    pm_strcpy(store.store_source, _("unknown source"));
    set_wstorage(jcr, &store);
    drive = get_storage_drive(ua, store.store);
-   /* For the disable/enable command, the slot is not mandatory */
-   if (strcasecmp(command, "disable") == 0 || strcasecmp(command, "enable") == 0) {
+   /* For the disable/enable/unmount commands, the slot is not mandatory */
+   if (strcasecmp(command, "disable") == 0 ||
+        strcasecmp(command, "enable") == 0 ||
+        strcasecmp(command, "unmount")  == 0) {
       slot = 0;
    } else {
       slot = get_storage_slot(ua, store.store);
