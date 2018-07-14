@@ -266,7 +266,7 @@ int main(int argc, char **argv)
          exit(4);
       }
 
-      fp = fopen(argv[3], "rb");
+      fp = bfopen(argv[3], "rb");
       if (!fp) {
          printf("Unable to open %s for reading\n", argv[3]);
          exit(4);
@@ -305,7 +305,7 @@ int main(int argc, char **argv)
       printf("buf=[%s]\n", buf);
 
       snprintf(file, sizeof(file), "%s.out", argv[3]);
-      fp = fopen(file, "wb");
+      fp = bfopen(file, "wb");
       if (!fp) {
          printf("Unable to open %s for writing\n", buf);
          exit(4);

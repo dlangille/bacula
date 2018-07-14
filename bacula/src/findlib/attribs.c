@@ -979,8 +979,8 @@ void win_error(JCR *jcr, const char *prefix, DWORD lerror)
    strip_trailing_junk(msg);
    if (jcr) {
       Jmsg2(jcr, M_ERROR, 0, _("Error in %s: ERR=%s\n"), prefix, msg);
-      MessageBox(NULL, msg, prefix, MB_OK);
    }
+   MessageBox(NULL, msg, prefix, MB_OK);
    LocalFree(msg);
 }
 #endif /* HAVE_WIN32 */

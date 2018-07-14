@@ -1014,7 +1014,7 @@ int bopen(BFILE *bfd, const char *fname, uint64_t flags, mode_t mode)
    Dmsg1(dbglvl, "open file %s\n", fname);
 
    /* We use fnctl to set O_NOATIME if requested to avoid open error */
-   bfd->fid = open(fname, flags & ~O_NOATIME, mode);
+   bfd->fid = open(fname, (flags | O_CLOEXEC) & ~O_NOATIME, mode);
 
    /* Set O_NOATIME if possible */
    if (bfd->fid != -1 && flags & O_NOATIME) {
