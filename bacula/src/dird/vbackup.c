@@ -602,7 +602,7 @@ static bool create_bootstrap_file(JCR *jcr, char *jobids)
       Pmsg1(000,  "Found %d files to consolidate.\n", jcr->ExpectedFiles);
    }
    Jmsg(jcr, M_INFO, 0, _("Found %d files to consolidate into Virtual Full.\n"),
-      jcr->ExpectedFiles);
+        jcr->ExpectedFiles);
    free_ua_context(ua);
    free_bsr(rx.bsr_list);
    return jcr->ExpectedFiles==0?false:true;
