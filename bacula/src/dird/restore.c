@@ -704,6 +704,7 @@ void restore_cleanup(JCR *jcr, int TermCode)
 
    get_restore_params(jcr, where, &creplace, NULL);
 
+   replace = ReplaceOptions[0].name;     /* default */
    for (int i=0; ReplaceOptions[i].name; i++) {
       if (ReplaceOptions[i].token == (int)creplace) {
          replace = ReplaceOptions[i].name;
