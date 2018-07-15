@@ -241,6 +241,7 @@ _Z7bacceptiP8sockaddrPi
 _Z7bcallocjj
 _Z7bstrcmpPKcS0_
 _Z7cstrlenPKc
+_Z7ucfirstPcPKci
 _Z8b_mallocPKcij
 _Z8breallocPvj
 _Z8bstrncatPcPKci
@@ -709,7 +710,6 @@ _Z10set_hangupi
 _Z12add_msg_destP4MSGSiiPcS1_
 _Z12get_basenamePKc
 _Z12rem_msg_destP4MSGSiiPc
-_Z13debug_get_tagjPPKc
 _Z13free_msgs_resP4MSGS
 _Z14debug_find_tagPKcbPx
 _Z14set_assert_msgPKciS0_
