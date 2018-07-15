@@ -27,9 +27,9 @@
 #include "stored.h"                   /* pull in Storage Deamon headers */
 
 #ifdef SD_DEBUG_LOCK
-const int dbglvl = 300;
+const int dbglvl = DT_LOCK|30;
 #else
-const int dbglvl = 500;
+const int dbglvl = DT_LOCK|50;
 #endif
 
 
@@ -117,10 +117,8 @@ const int dbglvl = 500;
  *                    save status
  *                    set new blocked status
  *                    set new pid
- *                    Unlock()
  *
- *   give_back_device_block() does (must be blocked but not locked)
- *                    Lock()
+ *   give_back_device_block() does (must be blocked and locked)
  *                    reset blocked status
  *                    save previous blocked
  *                    reset pid
@@ -432,43 +430,59 @@ void _unblock_device(const char *file, int line, DEVICE *dev)
 
 static pthread_mutex_t block_mutex = PTHREAD_MUTEX_INITIALIZER;
 /*
- * Enter with device locked
+ * Enter and leave with device locked
  *
  * Note: actually this routine:
  *   returns true if it can either set or steal the device block
  *   returns false if it cannot block the device
  */
-bool _obtain_device_block(const char *file, int line, DEVICE *dev, bsteal_lock_t *hold, int state)
+bool DEVICE::_obtain_device_block(const char *file, int line,
+                                  bsteal_lock_t *hold, int retry, int state)
 {
+   int ret;
+   int r = retry;
+
+   if (!can_obtain_block() && !pthread_equal(no_wait_id, pthread_self())) {
+      num_waiting++;             /* indicate that I am waiting */
+      while ((retry == 0 || r-- > 0) && !can_obtain_block()) {
+         if ((ret = bthread_cond_wait_p(&wait, &m_mutex, file, line)) != 0) {
+            berrno be;
+            Emsg1(M_ABORT, 0, _("pthread_cond_wait failure. ERR=%s\n"),
+                  be.bstrerror(ret));
+         }
+      }
+      num_waiting--;             /* no longer waiting */
+   }
+
    P(block_mutex);
    Dmsg4(sd_dbglvl, "Steal lock %s old=%s from %s:%d\n",
-      dev->device->hdr.name, dev->print_blocked(), file, line);
-   if (!dev->can_obtain_block()) {
+      device->hdr.name, print_blocked(), file, line);
+
+   if (!can_obtain_block() && !pthread_equal(no_wait_id, pthread_self())) { 
       V(block_mutex);
       return false;
    }
-   hold->dev_blocked = dev->blocked();
-   hold->dev_prev_blocked = dev->dev_prev_blocked;
-   hold->no_wait_id = dev->no_wait_id;
-   hold->blocked_by = dev->blocked_by;
-   dev->set_blocked(state);
-   Dmsg1(sd_dbglvl, "steal block. new=%s\n", dev->print_blocked());
-   dev->no_wait_id = pthread_self();
-   dev->blocked_by = get_jobid_from_tsd();
+   hold->dev_blocked = blocked();
+   hold->dev_prev_blocked = dev_prev_blocked;
+   hold->no_wait_id = no_wait_id;
+   hold->blocked_by = blocked_by;
+   set_blocked(state);
+   Dmsg1(sd_dbglvl, "steal block. new=%s\n", print_blocked());
+   no_wait_id = pthread_self();
+   blocked_by = get_jobid_from_tsd();
    V(block_mutex);
-   dev->Unlock();
    return true;
 }
 
 /*
- * Enter with device blocked by us but not locked
+ * Enter with device blocked and locked by us
  * Exit with device locked, and blocked by previous owner
  */
-void _give_back_device_block(const char *file, int line, DEVICE *dev, bsteal_lock_t *hold)
+void _give_back_device_block(const char *file, int line,
+                             DEVICE *dev, bsteal_lock_t *hold)
 {
    Dmsg4(sd_dbglvl, "Return lock %s old=%s from %s:%d\n",
       dev->device->hdr.name, dev->print_blocked(), file, line);
-   dev->Lock();
    P(block_mutex);
    dev->set_blocked(hold->dev_blocked);
    dev->dev_prev_blocked = hold->dev_prev_blocked;

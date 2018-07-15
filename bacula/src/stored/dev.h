@@ -625,6 +625,10 @@ public:
    virtual void dblock(int why);                  /* in lock.c */
    virtual void dunblock(bool locked=false);      /* in lock.c */
 
+   /* use obtain_device_block() macro */
+   bool _obtain_device_block(const char *file, int line,
+                             bsteal_lock_t *hold, int retry, int state);
+
 
    int init_mutex();                      /* in lock.c */
    int init_acquire_mutex();              /* in lock.c */

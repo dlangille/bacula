@@ -482,17 +482,16 @@ bool release_device(DCR *dcr)
    DEVICE *dev = dcr->dev;
    bool ok = true;
    char tbuf[100];
-   int was_blocked;
-
+   bsteal_lock_t holder;
 
    dev->Lock();
-   was_blocked = BST_NOT_BLOCKED;
-   if (!dev->is_blocked()) {
-      block_device(dev, BST_RELEASING);
-   } else {
-      was_blocked = dev->blocked();
-      dev->set_blocked(BST_RELEASING);
+   if (!obtain_device_block(dev,
+                            &holder,
+                            0,  /* infinite wait */
+                            BST_RELEASING)) {
+      ASSERT2(0, "unable to obtain device block");
    }
+
    lock_volumes();
    Dmsg2(100, "release_device device %s is %s\n", dev->print_name(), dev->is_tape()?"tape":"disk");
 
@@ -578,15 +577,13 @@ bool release_device(DCR *dcr)
          (uint32_t)jcr->JobId, bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
    pthread_cond_broadcast(&wait_device_release);
 
-
+   give_back_device_block(dev, &holder);
    /*
     * If we are the thread that blocked the device, then unblock it
     */
    if (pthread_equal(dev->no_wait_id, pthread_self())) {
       dev->dunblock(true);
    } else {
-      /* Otherwise, reset the prior block status and unlock */
-      dev->set_blocked(was_blocked);
       dev->Unlock();
    }
 

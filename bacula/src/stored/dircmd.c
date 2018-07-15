@@ -913,10 +913,15 @@ static void label_volume_if_ok(DCR *dcr, char *oldname,
    const char *volname = (relabel == 1) ? oldname : newname;
    uint64_t volCatBytes;
 
-   if (!obtain_device_block(dev, &hold, BST_WRITING_LABEL)) {
+   if (!obtain_device_block(dev,
+                            &hold,
+                            1,     /* one try */
+                            BST_WRITING_LABEL)) {
       send_dir_busy_message(dir, dev);
       return;
    }
+   dev->Unlock();
+
    Dmsg1(100, "Stole device %s lock, writing label.\n", dev->print_name());
 
    Dmsg0(90, "try_autoload_device - looking for volume_info\n");
@@ -1026,6 +1031,7 @@ bail_out:
       dev->clear_volhdr();
    }
    volume_unused(dcr);                   /* no longer using volume */
+   dev->Lock();
    give_back_device_block(dev, &hold);
    return;
 }
@@ -1044,11 +1050,14 @@ static bool read_label(DCR *dcr)
    bsteal_lock_t hold;
    DEVICE *dev = dcr->dev;
 
-   if (!obtain_device_block(dev, &hold, BST_DOING_ACQUIRE)) {
+   if (!obtain_device_block(dev,
+                            &hold,
+                            1 /* one try */,
+                            BST_DOING_ACQUIRE)) {
       send_dir_busy_message(dir, dev);
       return false;
    }
-
+   dev->Unlock();
    dcr->VolumeName[0] = 0;
    dev->clear_labeled();              /* force read of label */
    switch (dev->read_dev_volume_label(dcr)) {
@@ -1063,6 +1072,7 @@ static bool read_label(DCR *dcr)
       break;
    }
    volume_unused(dcr);
+   dev->Lock();
    give_back_device_block(dev, &hold);
    return ok;
 }
@@ -1831,10 +1841,14 @@ static void read_volume_label(JCR *jcr, DCR *dcr, DEVICE *dev, int Slot)
    bsteal_lock_t hold;
 
    dcr->set_dev(dev);
-   if (!obtain_device_block(dev, &hold, BST_WRITING_LABEL)) {
+   if (!obtain_device_block(dev,
+                            &hold,
+                            1 /* one try */,
+                            BST_WRITING_LABEL)) {
       send_dir_busy_message(dir, dev);
       return;
    }
+   dev->Unlock();
 
    if (!try_autoload_device(jcr, dcr, Slot, "")) {
       goto bail_out;                  /* error */
@@ -1854,6 +1868,7 @@ static void read_volume_label(JCR *jcr, DCR *dcr, DEVICE *dev, int Slot)
    }
 
 bail_out:
+   dev->Lock();
    give_back_device_block(dev, &hold);
    return;
 }

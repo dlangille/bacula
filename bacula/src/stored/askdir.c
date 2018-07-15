@@ -446,6 +446,7 @@ bool dir_update_volume_info(DCR *dcr, bool label, bool update_LastWritten,
 
    /* This happens when nothing to update after fixup_device ... */
    if (vol.VolCatName[0] == 0) {
+      Dmsg0(50, "Volume Name is NULL\n");
       goto bail_out;
    }
    Dmsg4(100, "Update cat VolBytes=%lld VolABytes=%lld Status=%s Vol=%s\n",

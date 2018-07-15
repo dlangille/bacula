@@ -189,7 +189,6 @@ void     _lock_device(const char *file, int line, DEVICE *dev);
 void     _unlock_device(const char *file, int line, DEVICE *dev);
 void     _block_device(const char *file, int line, DEVICE *dev, int state);
 void     _unblock_device(const char *file, int line, DEVICE *dev);
-bool     _obtain_device_block(const char *file, int line, DEVICE *dev, bsteal_lock_t *hold, int state);
 void     _give_back_device_block(const char *file, int line, DEVICE *dev, bsteal_lock_t *hold);
 
 
