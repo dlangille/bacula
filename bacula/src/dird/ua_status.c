@@ -808,7 +808,7 @@ static void llist_scheduled_jobs(UAContext *ua)
    char sched_name[MAX_NAME_LENGTH] = {0}, edl[50];
    char *n, *p;
    SCHED *sched;
-   int days=10, limit=100;
+   int days=10, limit=30;
    time_t now = time(NULL);
    time_t next;
    rblist *list;
