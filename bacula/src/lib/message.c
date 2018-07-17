@@ -1847,8 +1847,7 @@ static struct debugtags debug_tags[] = {
 
 #define MAX_TAG (sizeof(debug_tags) / sizeof(struct debugtags))
 
-#ifdef xxx   /* Hey  what is unit??? it is not defined on all platforms */
-const char *debug_get_tag(uint pos, const char **desc)
+const char *debug_get_tag(uint32_t pos, const char **desc)
 {
    if (pos < MAX_TAG) {
       if (desc) {
@@ -1858,7 +1857,6 @@ const char *debug_get_tag(uint pos, const char **desc)
    }
    return NULL;
 }
-#endif
 
 /* Allow +-, */
 bool debug_find_tag(const char *tagname, bool add, int64_t *current_level)
