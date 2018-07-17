@@ -259,6 +259,8 @@ var oJobsToRestoreList = {
 							radio.type = 'radio';
 							radio.name = 'backup_to_restore';
 							radio.value = data;
+							radio.style.display = 'block';
+							radio.style.margin = 'auto';
 							radio.className = 'w3-radio';
 							ret = radio.outerHTML;
 						} else {
