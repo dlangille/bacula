@@ -1,8 +1,14 @@
               Changelog on version 9.2.0
 
 
+20Jul18
+ - Separate dequeuing msgs and dequeuing daemon msgs
+
+17Jul18
+ - Replace uint with uint32_t
 
 15Jul18
+ - Reset default status schedule limit to 30
  - Comment out use of uint that breaks Windows build
  - Update win32 .def files
  - Fix concurrent acquire/release of device

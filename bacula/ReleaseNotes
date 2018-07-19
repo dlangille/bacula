@@ -28,9 +28,10 @@ or Storage daemon must be of the same version.
 Older File Daemons should be compatible with the 9.2.0 Director and Storage
 daemons.  There should be no need to upgrade older File Daemons.
 
-
-
-15Jul18
+20Jul18
+ - Separate dequeuing msgs and dequeuing daemon msgs
+ - Replace uint with uint32_t
+ - Reset default status schedule limit to 30
  - Comment out use of uint that breaks Windows build
  - Update win32 .def files
  - Fix concurrent acquire/release of device
