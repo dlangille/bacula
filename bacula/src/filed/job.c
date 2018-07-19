@@ -387,6 +387,7 @@ static void *handle_director_request(BSOCK *dir)
 bail_out:
    dequeue_messages(jcr);  /* send any queued messages, will no longer impact
                             * the job status... */
+   dequeue_daemon_messages(jcr);
 
    /* Inform Director that we are done */
    dir->signal(BNET_TERMINATE);

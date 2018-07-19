@@ -1739,17 +1739,12 @@ void Qmsg(JCR *jcr, int type, utime_t mtime, const char *fmt,...)
 }
 
 /*
- * Dequeue messages
+ * Dequeue daemon messages
  */
-void dequeue_messages(JCR *jcr)
+void dequeue_daemon_messages(JCR *jcr)
 {
    MQUEUE_ITEM *item;
    JobId_t JobId;
-
-   /* Avoid bad calls and recursion */
-   if (!jcr || jcr->dequeuing_msgs) {
-      return;
-   }
 
    /* Dequeue daemon messages */
    if (daemon_msg_queue && !dequeuing_daemon_msgs) {
@@ -1770,6 +1765,20 @@ void dequeue_messages(JCR *jcr)
       dequeuing_daemon_msgs = false;
       V(daemon_msg_queue_mutex);
    }
+}
+
+/*
+ * Dequeue messages
+ */
+void dequeue_messages(JCR *jcr)
+{
+   MQUEUE_ITEM *item;
+
+   /* Avoid bad calls and recursion */
+   if (!jcr || jcr->dequeuing_msgs) {
+      return;
+   }
+
 
    /* Dequeue Job specific messages */
    if (!jcr->msg_queue || jcr->dequeuing_msgs) {

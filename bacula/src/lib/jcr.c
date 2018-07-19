@@ -544,6 +544,7 @@ void free_jcr(JCR *jcr)
    unlock_jcr_chain();
 
    dequeue_messages(jcr);
+   dequeue_daemon_messages(jcr);
    close_msg(jcr);                    /* close messages for this job */
    job_end_pop(jcr);                  /* pop and call hooked routines */
 

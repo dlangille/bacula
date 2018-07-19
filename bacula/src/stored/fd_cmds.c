@@ -177,6 +177,7 @@ bail_out:
               edit_uint64(jcr->JobBytes, ec1), jcr->JobErrors, jcr->StatusErrMsg);
    Dmsg1(100, "==== %s", dir->msg);
    unbash_spaces(jcr->StatusErrMsg);
+   dequeue_daemon_messages(jcr);
    dir->signal(BNET_EOD);             /* send EOD to Director daemon */
    free_plugins(jcr);                 /* release instantiated plugins */
    garbage_collect_memory_pool();

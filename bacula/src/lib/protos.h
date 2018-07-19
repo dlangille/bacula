@@ -265,6 +265,7 @@ void       dispatch_message      (JCR *jcr, int type, utime_t mtime, char *buf);
 void       init_console_msg      (const char *wd);
 void       free_msgs_res         (MSGS *msgs);
 void       dequeue_messages      (JCR *jcr);
+void       dequeue_daemon_messages (JCR *jcr);
 void       set_db_engine_name    (const char *name);
 void       set_trace             (int trace_flag);
 bool       get_trace             (void);

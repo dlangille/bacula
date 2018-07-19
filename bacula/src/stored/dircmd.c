@@ -257,6 +257,7 @@ bail_out:
    generate_plugin_event(jcr, bsdEventJobEnd);
    flush_jobmedia_queue(jcr);
    dequeue_messages(jcr);             /* send any queued messages */
+   dequeue_daemon_messages(jcr);
    bs->signal(BNET_TERMINATE);
    free_plugins(jcr);                 /* release instantiated plugins */
    free_jcr(jcr);

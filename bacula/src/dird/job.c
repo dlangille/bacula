@@ -499,6 +499,7 @@ static void *job_thread(void *arg)
    generate_daemon_event(jcr, "JobEnd");
    generate_plugin_event(jcr, bDirEventJobEnd);
    Dmsg1(50, "======== End Job stat=%c ==========\n", jcr->JobStatus);
+   dequeue_daemon_messages(jcr);
    Dsm_check(100);
    return NULL;
 }
