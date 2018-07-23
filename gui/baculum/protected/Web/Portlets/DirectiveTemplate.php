@@ -96,7 +96,7 @@ class DirectiveTemplate extends TTemplateControl implements IDirectiveField, IAc
 		$this->display_directive = $this->getShow();
 	}
 
-	public function createDirective($value_loaded = false) {
+	public function createDirective() {
 		// so far nothing to do
 	}
 
