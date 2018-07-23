@@ -120,7 +120,7 @@ class PoolView extends BaculumWebPage {
 		$recyclepool = '-';
 		if ($pool->recyclepoolid === $pool->scratchpoolid) {
 			$recyclepool = $scratchpool;
-		} else {
+		} elseif ($pool->recyclepoolid > 0) {
 			$result = $this->getModule('api')->get(
 				array('pools', $pool->recyclepoolid),
 				null,
@@ -136,9 +136,9 @@ class PoolView extends BaculumWebPage {
 			$nextpool = $scratchpool;
 		} elseif ($pool->nextpoolid === $pool->recyclepoolid) {
 			$nextpool = $recyclepool;
-		} else {
+		} elseif ($pool->nextpoolid > 0) {
 			$result = $this->getModule('api')->get(
-				array('pools', $pool->recyclepoolid),
+				array('pools', $pool->nextpoolid),
 				null,
 				true,
 				self::USE_CACHE
