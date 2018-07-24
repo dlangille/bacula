@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2018-04-20 15:12-0300\n"
+"PO-Revision-Date: 2018-07-23 17:01-0300\n"
 "Project-Id-Version: \n"
 "POT-Creation-Date: \n"
 "Last-Translator: Wanderlei Huttel <wanderlei.huttel@gmail.com>\n"
@@ -10,7 +10,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "X-Poedit-SourceCharset: utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Poedit 2.0.6\n"
+"X-Generator: Poedit 2.0.8\n"
 
 msgid "Language:"
 msgstr "Idioma:"
@@ -196,7 +196,7 @@ msgid "Console status"
 msgstr "Status do Console"
 
 msgid "Drive number:"
-msgstr "Número do Drive:"
+msgstr "Número do drive:"
 
 msgid "Slot number:"
 msgstr "Número do slot:"
@@ -307,7 +307,7 @@ msgid "Priority:"
 msgstr "Prioridade:"
 
 msgid "Run job"
-msgstr "Executar jobs"
+msgstr "Executar job"
 
 msgid "Estimate job"
 msgstr "Estimar job"
@@ -574,7 +574,7 @@ msgid "Run job again"
 msgstr "Executar job novamente"
 
 msgid "Job status"
-msgstr "Job status"
+msgstr "Status"
 
 msgid "Bacula console"
 msgstr "Bacula console"
@@ -598,10 +598,10 @@ msgid "Update slots without barcodes"
 msgstr "Atualizar  slots sem usar código de barras"
 
 msgid "Label name:"
-msgstr "Nome do Rótulo:"
+msgstr "Nome do rótulo:"
 
 msgid "Label"
-msgstr "Aplicar Rótulo"
+msgstr "Aplicar rótulo"
 
 msgid "Use barcodes as label:"
 msgstr "Usar código de barras como rótulos:"
@@ -646,7 +646,7 @@ msgid "TRY AGAIN"
 msgstr "Tentar novamente"
 
 msgid "Enable debug"
-msgstr "habilitar depuração"
+msgstr "Habilitar depuração"
 
 msgid "clear bvfs cache"
 msgstr "limpar bvfs cache"
@@ -688,7 +688,7 @@ msgid "This action will clear bvfs cache that was created during preparing resto
 msgstr "Esta ação vai limpar o bvfs cache que é criado durante a preparação da restauração dos arquivos.\\n\\nNão é recomendado executar esta ação durante a restauração de um backup.\\n\\nVocê tem certeza que deseja continuar?"
 
 msgid "Debug files enable possibility to save most of actions executed on Baculum WebGUI. Debug functionality should be enabled if is happening shomething wrong with Baculum or something that looks like a bug. Logs can be useful for detecting a problems in Baculum working. After confirmation this message Baculum debug files will be continuously saving in /protected/Web/Logs/ directory. Are you sure?"
-msgstr "Habilitar a depuração possibilita registrar a maioria das ações executadas no Baculum WebGUI.\\n\\nA depuração deve ser habilitada se estiver acontecendo algo de estranho com o Baculum ou ocorrer algum erro que pode ser algum bug. \\n\\nOs logs são usados para detectar possíveis problemas na execução do Baculum.\\n\\nApós confirmar esta mensagem, os arquivos de depuração serão salvos de forma contínua no diretório \"/protected/Web/Logs/\".\\n\\nVocê tem certeza que deseja habilitar a depuração?"
+msgstr "Habilitar a depuração possibilita registrar a maioria das ações executadas no Baculum WebGUI. A depuração deve ser habilitada se estiver acontecendo algo de estranho com o Baculum ou ocorrer algum erro que pode ser algum bug. Os logs são usados para detectar possíveis problemas na execução do Baculum. Após confirmar esta mensagem, os arquivos de depuração serão salvos de forma contínua no diretório /protected/Web/Logs/. Você tem certeza que deseja habilitar a depuração?"
 
 msgid "10 elements"
 msgstr "10 registros"
@@ -814,7 +814,7 @@ msgid "Director"
 msgstr "Diretor"
 
 msgid "Enter"
-msgstr "Entrar"
+msgstr "Executar"
 
 msgid "Clear"
 msgstr "Limpar"
@@ -873,10 +873,10 @@ msgid "Last year"
 msgstr "Último ano"
 
 msgid "Date From:"
-msgstr "Data Inicial:"
+msgstr "Data inicial:"
 
 msgid "Date To:"
-msgstr "Data Final:"
+msgstr "Data final:"
 
 msgid "Legend:"
 msgstr "Legenda:"
@@ -888,7 +888,7 @@ msgid "Graph: Jobs size / Time"
 msgstr "Gráfico: Tamanho Job / Tempo"
 
 msgid "Jobs size (GiB)"
-msgstr "Tamaho do Job (GB)"
+msgstr "Tamanho do job (GB)"
 
 msgid "Time"
 msgstr "Tempo"
@@ -909,13 +909,13 @@ msgid "Max. Vol. Bytes:"
 msgstr "Tamanho Máximo do Volume:"
 
 msgid "Max. Vol. Files:"
-msgstr "Nº Máximo de Arquivos:"
+msgstr "Nº máximo de arquivos:"
 
 msgid "Max. Vol. Jobs:"
-msgstr "Nº Máximo de Jobs:"
+msgstr "Nº máximo de jobs:"
 
 msgid "Retention Period (in sec.):"
-msgstr "Período de Retenção (in seg.):"
+msgstr "Período de retenção (in seg.):"
 
 msgid "Storage Daemons."
 msgstr "Storages."
@@ -963,16 +963,16 @@ msgid "Job:"
 msgstr "Job:"
 
 msgid "Media Type"
-msgstr "Tipo de Mídia"
+msgstr "Tipo de mídia"
 
 msgid "Dashboard"
-msgstr "Painel de Controle"
+msgstr "Painel de controle"
 
 msgid "Go to started job after start:"
 msgstr "Ir para o job após iniciar:"
 
 msgid "Job status summary"
-msgstr "Resumo dos Jobs"
+msgstr "Resumo dos jobs"
 
 msgid "Quick job access"
 msgstr "Últimos 100 Jobs"
@@ -1011,7 +1011,7 @@ msgid "Total files:"
 msgstr "Quantidade de arquivos:"
 
 msgid "Database size:"
-msgstr "Tamanho do Banco de Dados:"
+msgstr "Tamanho do banco de dados:"
 
 msgid "Number of pools:"
 msgstr "Número de pools:"
@@ -1026,7 +1026,7 @@ msgid "Restore Wizard"
 msgstr "Assistente de Restauração"
 
 msgid "Perform restore"
-msgstr "Executar Restauração"
+msgstr "Executar restauração"
 
 msgid "Configuration Wizard"
 msgstr "Assistente de Configuração"
@@ -1038,10 +1038,10 @@ msgid "start time"
 msgstr "hora de início"
 
 msgid "Users"
-msgstr "Usuários"
+msgstr "Lista de usuários"
 
 msgid "User name"
-msgstr "Nome do Usuário"
+msgstr "Nome do usuário"
 
 msgid "Role"
 msgstr "Tipo"
@@ -1074,13 +1074,13 @@ msgid "Invalid login value. Login may contain a-z A-Z 0-9 characters."
 msgstr "Usuário inválido! O usuário deve conter apenas os seguintes caracteres [a-z A-Z 0-9]."
 
 msgid "Jobs on volume"
-msgstr "Jobs no Volume"
+msgstr "Jobs no volume"
 
 msgid "No jobs on the volume."
 msgstr "Nenhum job encontrado no volume."
 
 msgid "Jobs for Client"
-msgstr "Jobs do Cliente"
+msgstr "Jobs do cliente"
 
 msgid "No jobs for the client."
 msgstr "Nenhum job encontrado do cliente"
@@ -1395,7 +1395,7 @@ msgid "OAuth2 Scope:"
 msgstr "Escopo OAuth2:"
 
 msgid "Restore job:"
-msgstr "Restaurar Job:"
+msgstr "Restaurar job:"
 
 msgid "API host"
 msgstr "Endereço da API"
@@ -1509,310 +1509,310 @@ msgid "Total bytes"
 msgstr "Total bytes"
 
 msgid "Start time"
-msgstr "Start time"
+msgstr "Início"
 
 msgid "Name"
-msgstr "Name"
+msgstr "Nome"
 
 msgid "JobId"
 msgstr "JobId"
 
 msgid "Last 10 jobs"
-msgstr "Last 10 jobs"
+msgstr "Último 10 jobs"
 
 msgid "More jobs"
-msgstr "More jobs"
+msgstr "Mostrar mais jobs"
 
 msgid "Welcome"
-msgstr "Welcome"
+msgstr "Seja bem vindo"
 
 msgid "Details"
-msgstr "Details"
+msgstr "Detalhes"
 
 msgid "Job is running"
-msgstr "Job is running"
+msgstr "Job em execução"
 
 msgid "Job is finished"
-msgstr "Job is finished"
+msgstr "Job finalizado"
 
 msgid "Refresh log"
-msgstr "Refresh log"
+msgstr "Atualizar log"
 
 msgid "Job list"
-msgstr "Job list"
+msgstr "Lista de Jobs"
 
 msgid "Action"
-msgstr "Action"
+msgstr "Ação"
 
 msgid "Storage list"
-msgstr "Storage list"
+msgstr "Lista de Storages"
 
 msgid "Status storage"
-msgstr "Status storage"
+msgstr "Status do storage"
 
 msgid "Storages"
 msgstr "Storages"
 
 msgid "Client list"
-msgstr "Client list"
+msgstr "Lista de Clientes"
 
 msgid "Uname"
-msgstr "Uname"
+msgstr "Versão"
 
 msgid "AutoPrune"
 msgstr "AutoPrune"
 
 msgid "Job retention"
-msgstr "Job retention"
+msgstr "Retenção de job"
 
 msgid "File retention"
-msgstr "File retention"
+msgstr "Retenção de arquivo"
 
 msgid "Client details"
-msgstr "Client details"
+msgstr "Detalhes do Cliente"
 
 msgid "Status client"
-msgstr "Status client"
+msgstr "Status do cliente"
 
 msgid "Configure client"
-msgstr "Configure client"
+msgstr "Configurar cliente"
 
 msgid "Add new Client"
-msgstr "Add new Client"
+msgstr "Adicionar cliente"
 
 msgid "New"
-msgstr "New"
+msgstr "Novo"
 
 msgid "Resource to create:"
-msgstr "Resource to create:"
+msgstr "Recurso para criar"
 
 msgid "Create"
-msgstr "Create"
+msgstr "Criar"
 
 msgid "Add new resource"
-msgstr "Add new resource"
+msgstr "Adicionar recurso"
 
 msgid "Please select host"
-msgstr "Please select host"
+msgstr "Selecione o host"
 
 msgid "Component:"
-msgstr "Component:"
+msgstr "Componente:"
 
 msgid "Please select component"
-msgstr "Please select component"
+msgstr "Selecione um componente"
 
 msgid "Add client"
-msgstr "Add client"
+msgstr "Adicionar cliente"
 
 msgid "Add job"
-msgstr "Add job"
+msgstr "Adicionar job"
 
 msgid "Job to run:"
-msgstr "Job to run:"
+msgstr "Job:"
 
 msgid "Add storage"
-msgstr "Add storage"
+msgstr "Adicionar storage"
 
 msgid "Add device"
-msgstr "Add device"
+msgstr "Adicionar device"
 
 msgid "Add autochanger"
-msgstr "Add autochanger"
+msgstr "Adicionar autochanger"
 
 msgid "Resource has been saved successfully."
-msgstr "Resource has been saved successfully."
+msgstr "O recurso foi salvo com sucesso."
 
 msgid "Configure storage"
-msgstr "Configure storage"
+msgstr "Configurar storage"
 
 msgid "Configure devices"
-msgstr "Configure devices"
+msgstr "Configurar devices"
 
 msgid "Configure autochanger"
-msgstr "Configure autochanger"
+msgstr "Configurar autochanger"
 
 msgid "Storage details"
-msgstr "Storage details"
+msgstr "Detalhes do Storage"
 
 msgid "Device name"
-msgstr "Device name"
+msgstr "Nome do device"
 
 msgid "Device details"
-msgstr "Device details"
+msgstr "Detalhes do Dispositivo"
 
 msgid "Device:"
-msgstr "Device:"
+msgstr "Dispositivo:"
 
 msgid "Configure device"
-msgstr "Configure device"
+msgstr "Configurar device"
 
 msgid "Job details"
-msgstr "Job details"
+msgstr "Detalhes do Job"
 
 msgid "No. vols"
-msgstr "No. vols"
+msgstr "Nº de volumes"
 
 msgid "Max. vols"
-msgstr "Max. vols"
+msgstr "Nº máximo de volumes"
 
 msgid "Vol. retention"
-msgstr "Vol. retention"
+msgstr "Retenção"
 
 msgid "Max. vol. jobs"
-msgstr "Max. vol. jobs"
+msgstr "Nº máximo de jobs:"
 
 msgid "Max. vol. bytes"
-msgstr "Max. vol. bytes"
+msgstr "Tamanho máximo do volume:"
 
 msgid "Max. vol. files"
-msgstr "Max. vol. files"
+msgstr "Nº máximo de arquivos:"
 
 msgid "Recycle"
-msgstr "Recycle"
+msgstr "Reciclar"
 
 msgid "Pool list"
-msgstr "Pool list"
+msgstr "Lista de Pools"
 
 msgid "Add pool"
-msgstr "Add pool"
+msgstr "Adicionar pool"
 
 msgid "Update pool"
-msgstr "Update pool"
+msgstr "Atualizar pool"
 
 msgid "Update all vols in pool"
-msgstr "Update all vols in pool"
+msgstr "Atualizar todos volumes da pool"
 
 msgid "Pool details"
-msgstr "Pool details"
+msgstr "Detalhes da Pool"
 
 msgid "Limits"
-msgstr "Limits"
+msgstr "Limites"
 
 msgid "Recycling"
-msgstr "Recycling"
+msgstr "Reciclagem"
 
 msgid "Vol. use duration"
-msgstr "Vol. use duration"
+msgstr "Tempo de uso do volume:"
 
 msgid "Action on purge"
-msgstr "Action on purge"
+msgstr "Ação quando purgar"
 
 msgid "Recycle pool"
-msgstr "Recycle pool"
+msgstr "Pool de reciclagem"
 
 msgid "Scratch pool"
-msgstr "Scratch pool"
+msgstr "Pool Scratch"
 
 msgid "Next pool"
 msgstr "Next pool"
 
 msgid "Enabled"
-msgstr "Enabled"
+msgstr "Habilitado"
 
 msgid "Volumes in pool"
-msgstr "Volumes in pool"
+msgstr "Volumes da pool"
 
 msgid "Configure pool"
-msgstr "Configure pool"
+msgstr "Configurar pool"
 
 msgid "First written"
-msgstr "First written"
+msgstr "Primeira gravação"
 
 msgid "Last written"
-msgstr "Last written"
+msgstr "Última gravação"
 
 msgid "Vol. jobs"
-msgstr "Vol. jobs"
+msgstr "Nº jobs"
 
 msgid "Vol. bytes"
-msgstr "Vol. bytes"
+msgstr "Utilizado"
 
 msgid "Volume list"
-msgstr "Volume list"
+msgstr "Lista de volumes"
 
 msgid "Volume details"
-msgstr "Volume details"
+msgstr "Detalhes do Volume"
 
 msgid "Recycle count"
-msgstr "Recycle count"
+msgstr "Número de reciclagens"
 
 msgid "Configure volume"
-msgstr "Configure volume"
+msgstr "Configurar volume"
 
 msgid "InChanger"
 msgstr "InChanger"
 
 msgid "Vol. files"
-msgstr "Vol. files"
+msgstr "Arquivos no volume"
 
 msgid "Writing"
-msgstr "Writing"
+msgstr "Gravações"
 
 msgid "Vol. status"
-msgstr "Vol. status"
+msgstr "Status"
 
 msgid "Vol. errors"
-msgstr "Vol. errors"
+msgstr "Nº de erros no volume"
 
 msgid "Vol. mounts"
-msgstr "Vol. mounts"
+msgstr "Nº de montagens do volume"
 
 msgid "Configure job"
-msgstr "Configure job"
+msgstr "Configurar job"
 
 msgid "Configure fileset"
-msgstr "Configure fileset"
+msgstr "Configurar fileset"
 
 msgid "Configure schedule"
-msgstr "Configure schedule"
+msgstr "Configurar agenda"
 
 msgid "Remove resource"
-msgstr "Remove resource"
+msgstr "Remover recurso"
 
 msgid "Job history"
-msgstr "Job history"
+msgstr "Jobs executados"
 
 msgid "Job history list"
-msgstr "Job history list"
+msgstr "Histórico de Jobs executados"
 
 msgid "Job history details"
-msgstr "Job history details"
+msgstr "Detalhes do histórico do job"
 
 msgid "Are you sure you want to remove this resource?"
-msgstr "Are you sure you want to remove this resource?"
+msgstr "Tem certeza de que deseja remover este recurso?"
 
 msgid "FileSets"
 msgstr "FileSets"
 
 msgid "FileSet list"
-msgstr "FileSet list"
+msgstr "Lista de FileSets"
 
 msgid "Add fileset"
-msgstr "Add fileset"
+msgstr "Adicionar fileset"
 
 msgid "FileSet details"
-msgstr "FileSet details"
+msgstr "Detalhes do FileSet"
 
 msgid "Schedule list"
-msgstr "Schedule list"
+msgstr "Lista de Agendas"
 
 msgid "Add schedule"
-msgstr "Add schedule"
+msgstr "Adicionar agenda"
 
 msgid "Schedules"
-msgstr "Schedules"
+msgstr "Agendas"
 
 msgid "Schedule:"
-msgstr "Schedule:"
+msgstr "Agenda:"
 
 msgid "Schedule details"
-msgstr "Schedule details"
+msgstr "Detalhes da Agenda"
 
 msgid "Configure"
-msgstr "Configure"
+msgstr "Configurar"
 
 msgid "Configure Bacula hosts"
-msgstr "Configure Bacula hosts"
+msgstr "Configurar Hosts do Bacula"
 
 msgid "Previous"
 msgstr "Voltar"
@@ -1821,22 +1821,22 @@ msgid "Next"
 msgstr "Avançar"
 
 msgid "Exit wizard"
-msgstr "Exit wizard"
+msgstr "Sair do assistente"
 
 msgid "Time range:"
-msgstr "Time range:"
+msgstr "Intervalo de tempo:"
 
 msgid "Application settings"
-msgstr "Application settings"
+msgstr "Configurações da aplicação"
 
 msgid "Update slots"
-msgstr "Update slots"
+msgstr "Atualizar slots"
 
 msgid "Max. number of jobs visible in tables"
-msgstr "Max. number of jobs visible in tables"
+msgstr "Número máximo de jobs visíveis"
 
 msgid "Max. number of jobs value must be integer greather than 0."
-msgstr "Max. number of jobs value must be integer greather than 0."
+msgstr "O número máximo de jobs deve ser um valor inteiro maior que 0."
 
 msgid "Log order"
-msgstr "Log order"
+msgstr "Ordenar log"
