@@ -126,7 +126,7 @@
 					<th>InChanger</th>
 					<th><%[ Vol. status ]%></th>
 					<th>MediaType</th>
-					<th><%[ First written ]%></th>
+					<th><%[ Last written ]%></th>
 					<th><%[ Vol. jobs ]%></th>
 					<th><%[ Vol. bytes ]%></th>
 					<th><%[ Actions ]%></th>
