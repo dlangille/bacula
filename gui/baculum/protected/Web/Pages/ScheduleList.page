@@ -57,8 +57,7 @@ var oScheduleList = {
 						btn.appendChild(label);
 						btn.setAttribute('onclick', "document.location.href = '/web/schedule/" + data + "/'");
 						return btn.outerHTML;
-					},
-					className: 'w3-center'
+					}
 				}
 			],
 			responsive: {
@@ -70,6 +69,10 @@ var oScheduleList = {
 				className: 'control',
 				orderable: false,
 				targets: 0
+			},
+			{
+				className: "dt-center",
+				targets: [ 2 ]
 			}],
 			order: [1, 'asc']
 		});

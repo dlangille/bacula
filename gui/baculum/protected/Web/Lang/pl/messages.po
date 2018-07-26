@@ -669,7 +669,7 @@ msgid "This action will clear bvfs cache that was created during preparing resto
 msgstr "Ta akcja wyczyści bvfs cache który był stworzony podczas przygotowania każdej akcji przywracania danych.\\n\\nNie jest zalecane używanie tej akcji podczas gdy jest uruchomione zadanie przywracania danych.\\n\\nCzy chcesz kontynuować?"
 
 msgid "Debug files enable possibility to save most of actions executed on Baculum WebGUI. Debug functionality should be enabled if is happening shomething wrong with Baculum or something that looks like a bug. Logs can be useful for detecting a problems in Baculum working. After confirmation this message Baculum debug files will be continuously saving in /protected/Web/Logs/ directory. Are you sure?"
-msgstr "Pliki rozszerzonych dzienników programu (tzw. debug programu) umożliwiają zapisywanie akcji wykonywanych na interfejsie Baculum.\\n\\nFunkcjonalność dzienników programu powinna być załączana jeśli wydarzy się coś złego z interfejsem Baculum lub coś co wygląda jak błąd.\\n\\nRozszerzone dzienniki programu mogą być użyteczne przy wykrywaniu problemów w działaniu Baculum. Po potwierdzeniu tej wiadomości debug Baculum będą zapisywany w lokalizacji /protected/Web/Logs/.\\n\\nCzy chcesz kontynuować?"
+msgstr "Pliki rozszerzonych dzienników programu (tzw. debug programu) umożliwiają zapisywanie akcji wykonywanych na interfejsie Baculum. Funkcjonalność dzienników programu powinna być załączana jeśli wydarzy się coś złego z interfejsem Baculum lub coś co wygląda jak błąd. Rozszerzone dzienniki programu mogą być użyteczne przy wykrywaniu problemów w działaniu Baculum. Po potwierdzeniu tej wiadomości debug Baculum będą zapisywany w lokalizacji /protected/Web/Logs/. Czy chcesz kontynuować?"
 
 msgid "unlimited"
 msgstr "bez limitu"
@@ -1832,3 +1832,6 @@ msgstr "Maks. liczba zadań musi być liczbą całkowitą większą od zera."
 
 msgid "Log order"
 msgstr "Kolejność dziennika"
+
+msgid "Close Menu"
+msgstr "Zamknij Menu"

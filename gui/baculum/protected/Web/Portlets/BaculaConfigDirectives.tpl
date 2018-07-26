@@ -15,7 +15,7 @@
 			<com:TActiveLinkButton
 				ID="RemoveResource"
 				OnCommand="SourceTemplateControl.removeResource"
-				CssClass="w3-button w3-green"
+				CssClass="w3-button w3-green button_fixed"
 				Visible="<%=$this->ShowRemoveButton && $this->LoadValues%>"
 				Attributes.onclick="$(this).closest('div.resource_remove_confirm').hide();"
 			>

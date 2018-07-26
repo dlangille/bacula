@@ -23,7 +23,7 @@
 		<h5>Baculum Menu</h5>
 	</div>
 	<div class="w3-bar-block" style="margin-bottom: 45px;">
-		<a href="#" class="w3-bar-item w3-button w3-padding-16 w3-black w3-hover-black" onclick="W3SideBar.close(); return false;" title="close menu">  Close Menu <i class="fa fa-window-close fa-fw w3-right w3-xlarge"></i></a>
+		<a href="#" class="w3-bar-item w3-button w3-padding-16 w3-black w3-hover-black" onclick="W3SideBar.close(); return false;" title="close menu">  <%[ Close Menu ]%> <i class="fa fa-window-close fa-fw w3-right w3-xlarge"></i></a>
 		<a href="<%=$this->Service->constructUrl('Dashboard')%>" class="w3-bar-item w3-button w3-padding<%=$this->Service->getRequestedPagePath() == 'Dashboard' ? ' w3-blue': ''%>"><i class="fa fa-tachometer-alt fa-fw"></i>  <%[ Dashboard ]%></a>
 		<a href="<%=$this->Service->constructUrl('JobHistoryList')%>" class="w3-bar-item w3-button w3-padding<%=in_array($this->Service->getRequestedPagePath(), array('JobHistoryList', 'JobHistoryView')) ? ' w3-blue': ''%>"><i class="fa fa-history fa-fw"></i>  <%[ Job history ]%></a>
 		<a href="<%=$this->Service->constructUrl('JobList')%>" class="w3-bar-item w3-button w3-padding<%=in_array($this->Service->getRequestedPagePath(), array('JobList', 'JobView')) ? ' w3-blue': ''%>"><i class="fa fa-tasks fa-fw"></i>  <%[ Jobs ]%></a>

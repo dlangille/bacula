@@ -684,7 +684,7 @@ msgid "This action will clear bvfs cache that was created during preparing resto
 msgstr "This action will clear bvfs cache that was created during preparing restore files.\\n\\nThere is not recommended use this action during restore job working.\\n\\nAre you sure?"
 
 msgid "Debug files enable possibility to save most of actions executed on Baculum WebGUI. Debug functionality should be enabled if is happening shomething wrong with Baculum or something that looks like a bug. Logs can be useful for detecting a problems in Baculum working. After confirmation this message Baculum debug files will be continuously saving in /protected/Web/Logs/ directory. Are you sure?"
-msgstr "Debug files enable possibility to save most of actions executed on Baculum WebGUI.\\n\\nDebug functionality should be enabled if is happening shomething wrong with Baculum or something that looks like a bug. Logs can be useful for detecting a problems in Baculum working.\\n\\nAfter confirmation this message Baculum debug files will be continuously saving in /protected/Web/Logs/ directory.\\n\\nAre you sure?"
+msgstr "Debug files enable possibility to save most of actions executed on Baculum WebGUI. Debug functionality should be enabled if is happening shomething wrong with Baculum or something that looks like a bug. Logs can be useful for detecting a problems in Baculum working. After confirmation this message Baculum debug files will be continuously saving in /protected/Web/Logs/ directory. Are you sure?"
 
 msgid "10 elements"
 msgstr "10 elements"
@@ -1825,3 +1825,6 @@ msgstr "Max. number of jobs value must be integer greather than 0."
 
 msgid "Log order"
 msgstr "Log order"
+
+msgid "Close Menu"
+msgstr "Close Menu"

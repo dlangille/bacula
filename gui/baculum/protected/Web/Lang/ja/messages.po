@@ -740,8 +740,8 @@ msgstr "unmark all and close"
 msgid "This action will clear bvfs cache that was created during preparing restore files. There is not recommended use this action during restore job working. Are you sure?"
 msgstr "リストアファイル準備中に作成されたbvfsキャッシュをクリアします。\\n\\nリストアジョブ実行中にbvfsキャッシュクリアは実行しないでください。\\n\\n実行しますか？"
 
-msgid "Debug files enable possibility to save most of actions executed on Baculum WebGUI. Debug functionality should be enabled if is happening shomething wrong with Baculum or something that looks like a bug. Logs can be useful for detecting a problems in Baculum working. After confirmation this message Baculum debug files will be continuously saving in /protected/Data/ directory. Are you sure?"
-msgstr "デバッグを有効にするとBaculumに関するほとんどのアクションを保存することができます。\\n\\nデバックを有効にすることによりBaculumのバグや作業中の問題検出をするために役立ちます。\\n\\nデバッグログは/usr/share/baculum/htdocs/protected/Dataに出力されます。\\n\\nデバッグを有効にしますか?"
+msgid "Debug files enable possibility to save most of actions executed on Baculum WebGUI. Debug functionality should be enabled if is happening shomething wrong with Baculum or something that looks like a bug. Logs can be useful for detecting a problems in Baculum working. After confirmation this message Baculum debug files will be continuously saving in /protected/Web/Logs/ directory. Are you sure?"
+msgstr "デバッグを有効にするとBaculumに関するほとんどのアクションを保存することができます。デバックを有効にすることによりBaculumのバグや作業中の問題検出をするために役立ちます。デバッグログは/protected/Web/Logs/に出力されます。デバッグを有効にしますか?"
 
 msgid "10 elements"
 msgstr "10件"
@@ -1576,3 +1576,6 @@ msgstr "Max. number of jobs value must be integer greather than 0."
 
 msgid "Log order"
 msgstr "Log order"
+
+msgid "Close Menu"
+msgstr "Close Menu"

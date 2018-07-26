@@ -226,7 +226,6 @@ var oJobsToRestoreList = {
 						}
 						return ret;
 					},
-					className: 'w3-center',
 					aresponsivePriority: 6
 				},
 				{
@@ -259,8 +258,6 @@ var oJobsToRestoreList = {
 							radio.type = 'radio';
 							radio.name = 'backup_to_restore';
 							radio.value = data;
-							radio.style.display = 'block';
-							radio.style.margin = 'auto';
 							radio.className = 'w3-radio';
 							ret = radio.outerHTML;
 						} else {
@@ -280,6 +277,14 @@ var oJobsToRestoreList = {
 				className: 'control',
 				orderable: false,
 				targets: 0
+			},
+			{
+				className: "dt-center",
+				targets: [ 1, 3, 4, 5, 7, 8, 9 ]
+			},
+			{
+				className: "dt-body-right",
+				targets: [ 6 ]
 			}],
 			order: [1, 'desc']
 		});

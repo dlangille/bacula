@@ -42,7 +42,7 @@
 							<com:TActiveLinkButton
 								ID="RemoveResource"
 								OnCommand="SourceTemplateControl.removeResource"
-								CssClass="action_link w3-button w3-green w3-right"
+								CssClass="action_link w3-button w3-green w3-right button_fixed"
 							>
 							<prop:ClientSide.OnComplete>
 								var vid = '<%=$this->SourceTemplateControl->RemoveResourceError->ClientId%>';
@@ -59,7 +59,7 @@
 						</td>
 					</tr>
 				</table>
-				<div class="config_directives" style="display: none">
+				<div class="config_directives w3-khaki" style="display: none">
 				<com:Application.Web.Portlets.BaculaConfigDirectives
 					Resource="<%#$this->Data['resource_name']%>"
 					LoadValues="<%=true%>"

@@ -108,6 +108,10 @@ var oClientList = {
 				className: 'control',
 				orderable: false,
 				targets: 0
+			},
+			{
+				className: "dt-center",
+				targets: [ 1, 4, 5, 6, 7 ]
 			}],
 			order: [2, 'asc']
 		});

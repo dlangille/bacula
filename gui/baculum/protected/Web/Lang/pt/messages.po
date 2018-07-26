@@ -1840,3 +1840,6 @@ msgstr "O número máximo de jobs deve ser um valor inteiro maior que 0."
 
 msgid "Log order"
 msgstr "Ordenar log"
+
+msgid "Close Menu"
+msgstr "Close Menu"

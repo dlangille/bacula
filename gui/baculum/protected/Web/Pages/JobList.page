@@ -3,7 +3,7 @@
 	<!-- Header -->
 	<header class="w3-container">
 		<h5>
-			<b><i class="fa fa-tasks"></i> <%[ Job history list ]%></b>
+			<b><i class="fa fa-tasks"></i> <%[ Job list ]%></b>
 		</h5>
 	</header>
 	<div class="w3-margin-left w3-margin-bottom">
@@ -67,8 +67,7 @@ var oJobHistoryList = {
 						btn.appendChild(label);
 						btn.setAttribute('onclick', "document.location.href = '/web/job/" + data + "/'");
 						return btn.outerHTML;
-					},
-					className: 'w3-center'
+					}
 				}
 			],
 			responsive: {
@@ -80,6 +79,10 @@ var oJobHistoryList = {
 				className: 'control',
 				orderable: false,
 				targets: 0
+			},
+			{
+				className: "dt-center",
+				targets: [ 3 ]
 			}],
 			order: [1, 'asc']
 		});

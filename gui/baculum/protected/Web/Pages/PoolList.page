@@ -51,12 +51,10 @@ var oPoolList = {
 				{data: 'poolid'},
 				{data: 'name'},
 				{
-					data: 'numvols',
-					className: 'w3-center'
+					data: 'numvols'
 				},
 				{
-					data: 'maxvols',
-					className: 'w3-center'
+					data: 'maxvols'
 				},
 				{
 					data: 'volretention',
@@ -73,14 +71,12 @@ var oPoolList = {
 				},
 				{
 					data: 'autoprune',
-					className: 'w3-center',
 					render: function(data, type, row) {
 						return (data == 1 ? '<%[ Yes ]%>' : '<%[ No ]%>');
 					}
 				},
 				{
 					data: 'recycle',
-					className: 'w3-center',
 					render: function(data, type, row) {
 						return (data == 1 ? '<%[ Yes ]%>' : '<%[ No ]%>');
 					}
@@ -111,6 +107,10 @@ var oPoolList = {
 				className: 'control',
 				orderable: false,
 				targets: 0
+			},
+			{
+				className: "dt-center",
+				targets: [ 1, 3, 4, 6, 7, 8 ]
 			}],
 			order: [2, 'asc']
 		});

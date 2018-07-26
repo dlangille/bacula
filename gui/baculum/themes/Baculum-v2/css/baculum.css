@@ -95,3 +95,26 @@ div.directive_value svg {
 div.directive_value:hover svg.reset_btn, div.directive_value:hover svg.remove_btn {
 	display: inline;
 }
+
+div.details_card {
+	min-height: 200px;
+}
+
+@media screen and (max-width: 620px) {
+	div.details_card {
+		width: 100%;
+	}
+}
+@media screen and (min-width: 621px) {
+	div.details_card {
+		width: 270px;
+	}
+}
+
+.button_fixed {
+	min-width: 125px;
+}
+
+div.config_directives {
+	padding: 10px;
+}
