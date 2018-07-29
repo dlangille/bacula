@@ -38,6 +38,26 @@ class BaculaSetting extends APIModule {
 	const COMPONENT_FD_TYPE = 'fd';
 	const COMPONENT_BCONS_TYPE = 'bcons';
 
+	/**
+	 * These string value directives cannot by defined in quotes.
+	 */
+	private $unquoted_string_directives = array(
+		'Director' => array(
+			'DirAddress',
+			'DirAddresses',
+			'DirSourceAddress'
+		),
+		'FileDaemon' => array(
+			'FdAddress',
+			'FdAddresses',
+			'FdSourceAddress'
+		),
+		'Storage' => array(
+			'SdAddress',
+			'SdAddresses'
+		)
+	);
+
 	private function getComponentTypes() {
 		$types = array(
 			self::COMPONENT_DIR_TYPE,
@@ -261,7 +281,7 @@ class BaculaSetting extends APIModule {
 						}
 					}
 				} else {
-					$resource[$resource_type][$directive_name] = $this->formatDirectiveValue($directive_value);
+					$resource[$resource_type][$directive_name] = $this->formatDirectiveValue($resource_type, $directive_name, $directive_value);
 				}
 			}
 
@@ -294,17 +314,17 @@ class BaculaSetting extends APIModule {
 				}
 				if (is_array($resource_new[$resource_type][$directive_name])) {
 					// nested directive (name { key = val })
-					$resource[$resource_type][$directive_name] = $this->updateSubResource($resource_new[$resource_type][$directive_name]);
+					$resource[$resource_type][$directive_name] = $this->updateSubResource($resource_type, $resource_new[$resource_type][$directive_name]);
 				} else {
 					// simple directive (key=val)
 					// existing directive in resource
-					$resource[$resource_type][$directive_name] = $this->formatDirectiveValue($resource_new[$resource_type][$directive_name]);
+					$resource[$resource_type][$directive_name] = $this->formatDirectiveValue($resource_type, $directive_name, $resource_new[$resource_type][$directive_name]);
 				}
 			}
 			foreach ($resource_new[$resource_type] as $directive_name => $directive_value) {
 				if (!array_key_exists($directive_name, $resource_orig[$resource_type])) {
 					// new directive in resource
-					$resource[$resource_type][$directive_name] = $this->formatDirectiveValue($directive_value);
+					$resource[$resource_type][$directive_name] = $this->formatDirectiveValue($resource_type, $directive_name, $directive_value);
 				}
 			}
 		} else {
@@ -321,7 +341,7 @@ class BaculaSetting extends APIModule {
 		return $resource;
 	}
 
-	private function updateSubResource(array $subresource_new) {
+	private function updateSubResource(string $resource_type, array $subresource_new) {
 		$resource = array();
 		foreach($subresource_new as $directive_name => $directive_value) {
 			$check_recursive = false;
@@ -330,9 +350,9 @@ class BaculaSetting extends APIModule {
 				$check_recursive = count($assoc_keys) > 0;
 			}
 			if ($check_recursive === true) {
-				$resource[$directive_name] = $this->updateSubResource($directive_value);
+				$resource[$directive_name] = $this->updateSubResource($resource_type, $directive_value);
 			} else {
-				$resource[$directive_name] = $this->formatDirectiveValue($directive_value);
+				$resource[$directive_name] = $this->formatDirectiveValue($resource_type, $directive_name, $directive_value);
 			}
 		}
 		return $resource;
@@ -384,27 +404,31 @@ class BaculaSetting extends APIModule {
 	 * It is used on write config action to last prepare config before
 	 * sending it to config writer.
 	 *
+	 * @param string $resource_type resource type name
+	 * @param string $directive_name directive name
 	 * @param mixed $value directive value
 	 * @return mixed formatted directive value
 	 */
-	private function formatDirectiveValue($value) {
+	private function formatDirectiveValue($resource_type, $directive_name, $value) {
 		$directive_value = null;
 		if (is_bool($value)) {
 			$directive_value = Params::getBoolValue($value);
 		} elseif (is_int($value)) {
 			$directive_value = $value;
 		} elseif (is_string($value)) {
-			$value = str_replace('"', '\"', $value);
-			$value = "\"$value\"";
+			if (!isset($this->unquoted_string_directives[$resource_type]) || !in_array($directive_name, $this->unquoted_string_directives[$resource_type])) {
+				$value = str_replace('"', '\"', $value);
+				$value = "\"$value\"";
+			}
 			$directive_value = $value;
 		} elseif (is_array($value)) {
 			// only simple numeric arrays
 			$dvalues = array();
 			for ($i = 0; $i < count($value); $i++) {
 				if (is_array($value[$i])) {
-					$dvalues[] = $this->updateSubResource($value[$i]);
+					$dvalues[] = $this->updateSubResource($resource_type, $value[$i]);
 				} else {
-					$dvalues[] = $this->formatDirectiveValue($value[$i]);
+					$dvalues[] = $this->formatDirectiveValue($resource_type, $directive_name, $value[$i]);
 				}
 			}
 			$directive_value = $dvalues;
