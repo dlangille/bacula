@@ -79,6 +79,15 @@ static int openssl_verify_peer(int ok, X509_STORE_CTX *store)
       char issuer[256];
       char subject[256];
 
+      if (err == X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT ||
+          err == X509_V_ERR_SELF_SIGNED_CERT_IN_CHAIN)
+      {
+         Jmsg0(NULL, M_ERROR, 0, _("CA certificate is self signed. With OpenSSL 1.1, enforce basicConstraints = CA:true in the certificate creation to avoid this issue.\n"));
+      } else if (err == X509_V_ERR_INVALID_CA) {
+         Jmsg0(NULL, M_ERROR, 0, _("CA certificate is invalid (possibly self signed). With OpenSSL 1.1, enforce basicConstraints = CA:true in the certificate creation to avoid this issue.\n"));
+      }   
+
+
       X509_NAME_oneline(X509_get_issuer_name(cert), issuer, 256);
       X509_NAME_oneline(X509_get_subject_name(cert), subject, 256);
 
