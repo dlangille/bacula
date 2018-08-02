@@ -1142,6 +1142,9 @@ static bool check_catalog(cat_op mode)
 
    /* Loop over databases */
    CAT *catalog;
+   const char *BDB_db_driver = NULL; // global dbdriver from BDB class
+   int db_driver_len = 0;
+
    foreach_res(catalog, R_CATALOG) {
       BDB *db;
       /*
@@ -1157,6 +1160,67 @@ static bool check_catalog(cat_op mode)
               catalog->db_ssl_capath, catalog->db_ssl_cipher,
               catalog->mult_db_connections,
               catalog->disable_batch_insert);
+
+      /*  To fill appropriate "dbdriver" field into "CAT" catalog resource class */
+
+      if (db) {
+         /* To fetch dbdriver from "BDB" Catalog DB Interface class (global)
+          * filled with database passed during bacula compilation
+          */
+         BDB_db_driver = db_get_engine_name(db);
+         db_driver_len = strlen(BDB_db_driver);
+
+         if (catalog->db_driver == NULL) { // dbdriver  field not present in bacula director conf file
+            catalog->db_driver = (char *)malloc(db_driver_len + 1);
+            memset(catalog->db_driver, 0 , (db_driver_len + 1));
+         } else { // dbdriver  field present in bacula director conf file
+            if (strlen(catalog->db_driver) == 0) {  // dbdriver  field present but empty in bacula director conf file
+                /* warning message displayed on Console while running bacula command:
+                 * "bacula-dir -tc", in case "dbdriver" field  is empty in director
+                 * configuration file while database argument is passed during compile time
+                 */
+               Pmsg1(000, _("Dbdriver field within director config file is empty " \
+                  "but Database argument \"%s\" is " \
+                  "passed during Bacula compilation. \n"),
+                  BDB_db_driver);
+               /* warning message displayed in log file (bacula.log) while running
+                * bacula command: "bacula-dir -tc", in case "dbdriver" field  is empty in director
+                * configuration file while database argument is passed during compile time
+                */
+               Jmsg(NULL, M_WARNING, 0, _("Dbdriver field within director config file " \
+                  "is empty but Database argument \"%s\" is " \
+                  "passed during Bacula compilation. \n"),
+                  BDB_db_driver);
+
+            } else if (strcasecmp(catalog->db_driver, BDB_db_driver)) { // dbdriver  field mismatch in bacula director conf file
+               /* warning message displayed on Console while running bacula command:
+                * "bacula-dir -tc", in case "catalog->db_driver" field  doesn’t match
+                * with database argument  during compile time
+                */
+               Pmsg2(000, _("Dbdriver field within director config file \"%s\" " \
+                  "mismatched with the Database argument \"%s\" " \
+                  "passed during Bacula compilation. \n"),
+                  catalog->db_driver, BDB_db_driver);
+               /* warning message displayed on log file (bacula.log) while running
+                * bacula command: "bacula-dir -tc", in case "catalog->db_driver" field
+                * doesn’t match with database argument  during compile time
+                */
+               Jmsg(NULL, M_WARNING, 0, _("Dbdriver field within director config file \"%s\" " \
+                  "mismatched with the Database argument \"%s\" " \
+                  "passed during Bacula compilation. \n"),
+                  catalog->db_driver, BDB_db_driver);
+            }
+            catalog->db_driver = (char *)realloc(catalog->db_driver, (db_driver_len + 1));
+            memset(catalog->db_driver, 0 , (db_driver_len + 1));
+         }
+         if (catalog->db_driver) {
+           /* To copy dbdriver field into "CAT" catalog resource class (local)
+            * from dbdriver in "BDB" catalog DB Interface class (global)
+            */
+            strncpy(catalog->db_driver, BDB_db_driver, db_driver_len);
+         }
+      }
+
       if (!db || !db_open_database(NULL, db)) {
          Pmsg2(000, _("Could not open Catalog \"%s\", database \"%s\".\n"),
               catalog->name(), catalog->db_name);
