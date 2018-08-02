@@ -304,6 +304,100 @@ var JobType = {
 	}
 };
 
+var oLastJobsList = {
+	last_jobs_table: null,
+	ids: {
+		last_jobs_list: 'last_jobs_list',
+		last_jobs_list_body: 'lats_jobs_list_body'
+	},
+	init: function(data) {
+		this.destroy();
+		this.set_table(data);
+	},
+	destroy: function() {
+		if (this.last_jobs_table) {
+			this.last_jobs_table.destroy();
+		}
+	},
+	set_table: function(data) {
+		this.last_jobs_table = $('#' + this.ids.last_jobs_list).DataTable({
+			data: data,
+			bInfo: false,
+			paging: false,
+			searching: false,
+			deferRender: true,
+			columns: [
+				{
+					className: 'details-control',
+					orderable: false,
+					data: null,
+					defaultContent: '<button type="button" class="w3-button w3-blue"><i class="fa fa-angle-down"></i></button>'
+				},
+				{
+					data: 'jobid',
+					responsivePriority: 1
+				},
+				{
+					data: 'name',
+					responsivePriority: 2
+				},
+				{
+					data: 'level',
+					render: function(data, type, row) {
+						return JobLevel.get_level(data);
+					},
+					responsivePriority: 3
+				},
+				{
+					data: 'starttime',
+					responsivePriority: 5
+				},
+				{
+					data: 'jobstatus',
+					render: function (data, type, row) {
+						var ret;
+						if (type == 'display') {
+							ret = JobStatus.get_icon(data).outerHTML;
+						} else {
+							ret = data;
+						}
+						return ret;
+					},
+					responsivePriority: 4
+				}
+			],
+			responsive: {
+				details: {
+					type: 'column'
+				}
+			},
+			columnDefs: [{
+				className: 'control',
+				orderable: false,
+				targets: 0
+			},
+			{
+				className: "dt-center",
+				targets: [ 1, 3, 4, 5 ]
+			}],
+			order: [1, 'desc']
+		});
+		this.set_events();
+	},
+	set_events: function() {
+		var self = this;
+		$('#' + this.ids.last_jobs_list + ' tbody').on('click', 'tr', function (e) {
+			var node_name = e.target.nodeName.toUpperCase();
+			if (node_name === 'BUTTON' || node_name === 'SVG' || node_name === 'PATH') {
+				// clicking on button doesn't cause directing to job details
+				return;
+			}
+			var data = self.last_jobs_table.row(this).data();
+			document.location.href = '/web/job/history/' + data.jobid + '/'
+		});
+	}
+};
+
 var Dashboard = {
 	stats: null,
 	txt: null,
@@ -318,8 +412,7 @@ var Dashboard = {
 		jobs: {
 			no: 'job_no',
 			most: 'job_most',
-			most_count: 'job_most_count',
-			all: 'all_jobs'
+			most_count: 'job_most_count'
 		},
 		jobtotals: {
 			total_bytes: 'jobs_total_bytes',
@@ -336,6 +429,7 @@ var Dashboard = {
 		},
 		pie_summary: 'jobs_summary_graph'
 	},
+	last_jobs_table: null,
 	dbtype: {
 		pgsql: 'PostgreSQL',
 		mysql: 'MySQL',
@@ -372,39 +466,9 @@ var Dashboard = {
 		document.getElementById(this.ids.clients.jobs).textContent = occupancy;
 	},
 	update_job_access: function() {
-		var job_table= document.getElementById(this.ids.jobs.all);
-		job_table.innerHTML = '';
-		var last_jobs = this.stats.jobs.slice(0, 10);
-		var add_job_dest_page = function(i) {
-			tr.addEventListener('click', function(e) {
-				var url = '/web/job/history/%jobid/'.replace('%jobid', last_jobs[i].jobid);
-				document.location.href = url;
-			});
-		}
-		for (var i = 0; i < last_jobs.length; i++) {
-			var tr = document.createElement('TR');
-			tr.style.cursor = 'pointer';
-			add_job_dest_page(i);
-			var td_jobid = document.createElement('TD');
-			var td_name = document.createElement('TD');
-			var td_level = document.createElement('TD');
-			var td_starttime = document.createElement('TD');
-			var td_jobstatus = document.createElement('TD');
-			td_jobid.textContent = last_jobs[i].jobid;
-			td_name.textContent = Strings.get_short_label(last_jobs[i].name);
-			td_level.textContent = last_jobs[i].level;
-			td_level.className = 'w3-center';
-			td_starttime.textContent = last_jobs[i].starttime;
-			td_starttime.className = 'w3-center';
-			td_jobstatus.appendChild(JobStatus.get_icon(last_jobs[i].jobstatus));
-			td_jobstatus.className = 'w3-center';
-			tr.appendChild(td_jobid);
-			tr.appendChild(td_name);
-			tr.appendChild(td_level);
-			tr.appendChild(td_starttime);
-			tr.appendChild(td_jobstatus);
-			job_table.appendChild(tr);
-		}
+		// get last 10 jobs
+		var data = this.stats.jobs.slice(0, 10);
+		oLastJobsList.init(data);
 	},
 	update_jobs: function() {
 		var jobs = this.stats.jobs_occupancy;

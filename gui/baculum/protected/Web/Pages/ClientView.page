@@ -10,7 +10,7 @@
 	<div class="w3-bar w3-green w3-margin-bottom">
 		<a class="w3-bar-item w3-button tab_btn" href="<%=$this->Service->constructUrl('ClientList')%>"><i class="fa fa-angle-left"></i></a>
 		<button id="btn_client_actions" type="button" class="w3-bar-item w3-button tab_btn w3-grey" onclick="W3Tabs.open(this.id, 'client_actions'); clear_node('#new_client div.directive_value');"><%[ Actions ]%></button>
-		<button id="btn_client_jobs" type="button" class="w3-bar-item w3-button tab_btn" onclick="W3Tabs.open(this.id, 'client_jobs'); clear_node('#new_client  div.directive_value');"><%[ Jobs for Client ]%></button>
+		<button id="btn_client_jobs" type="button" class="w3-bar-item w3-button tab_btn" onclick="W3Tabs.open(this.id, 'client_jobs'); clear_node('#new_client  div.directive_value');oJobForClientList.table.responsive.recalc();"><%[ Jobs for Client ]%></button>
 		<com:TLinkButton
 			CssClass="w3-bar-item w3-button tab_btn"
 			Attributes.onclick="W3Tabs.open(this.id, 'client_config'); clear_node('#new_client  div.directive_value'); return false;"
@@ -65,6 +65,7 @@ var oJobForClientList = {
 	},
 	clientid: 0,
 	data: [],
+	table: null,
 	init: function(clientid) {
 		this.clientid = clientid;
 		this.prepare_data();
@@ -78,7 +79,7 @@ var oJobForClientList = {
 		}
 	},
 	set_table: function() {
-		var table = $('#' + this.ids.job_list).DataTable({
+		this.table = $('#' + this.ids.job_list).DataTable({
 			data: this.data,
 			deferRender: true,
 			columns: [

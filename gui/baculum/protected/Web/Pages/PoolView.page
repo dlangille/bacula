@@ -10,7 +10,7 @@
 	<div class="w3-bar w3-green w3-margin-bottom">
 		<a class="w3-bar-item w3-button tab_btn" href="<%=$this->Service->constructUrl('PoolList')%>"><i class="fa fa-angle-left"></i></a>
 		<button id="btn_pool_actions" type="button" class="w3-bar-item w3-button tab_btn w3-grey" onclick="W3Tabs.open(this.id, 'pool_actions');"><%[ Actions ]%></button>
-		<button id="btn_volumes_in_pool" type="button" class="w3-bar-item w3-button tab_btn" onclick="W3Tabs.open(this.id, 'volumes_in_pool');"><%[ Volumes in pool ]%></button>
+		<button id="btn_volumes_in_pool" type="button" class="w3-bar-item w3-button tab_btn" onclick="W3Tabs.open(this.id, 'volumes_in_pool');oVolumeList.table.responsive.recalc();"><%[ Volumes in pool ]%></button>
 		<com:TLinkButton
 			CssClass="w3-bar-item w3-button tab_btn"
 			Attributes.onclick="W3Tabs.open(this.id, 'pool_config'); return false;"
@@ -132,7 +132,7 @@
 					<th><%[ Actions ]%></th>
 				</tr>
 			</thead>
-			<tbody id="pool_list_body">
+			<tbody id="volume_list_body">
 			</tbody>
 		</table>
 	</div>
@@ -148,6 +148,7 @@ $(function() {
 	Formatters.set_formatters();
 });
 var oVolumeList = {
+	table: null,
 	ids: {
 		volume_list: 'volume_list',
 		volume_list_body: 'volume_list_body'
@@ -156,7 +157,7 @@ var oVolumeList = {
 		this.set_table();
 	},
 	set_table: function() {
-		var table = $('#' + this.ids.volume_list).DataTable({
+		this.table = $('#' + this.ids.volume_list).DataTable({
 			data: <%=json_encode($this->volumes_in_pool)%>,
 			deferRender: true,
 			columns: [

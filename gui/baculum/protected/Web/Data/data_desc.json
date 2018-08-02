@@ -1191,7 +1191,7 @@
 						"ValueType": "str",
 						"DefaultValue": 0,
 						"FieldType": "ComboBox",
-						"Data": ["Gzip1", "Gzip2", "Gzip3", "Gzip4", "Gzip5", "Gzip6", "Gzip7", "Gzip8", "Gzip9", "Lzo"]
+						"Data": ["Gzip", "Gzip1", "Gzip2", "Gzip3", "Gzip4", "Gzip5", "Gzip6", "Gzip7", "Gzip8", "Gzip9", "Lzo"]
 					},
 					"Signature": {
 						"Required": false,

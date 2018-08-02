@@ -118,3 +118,7 @@ div.details_card {
 div.config_directives {
 	padding: 10px;
 }
+
+#last_jobs_list tbody tr {
+	cursor: pointer;
+}

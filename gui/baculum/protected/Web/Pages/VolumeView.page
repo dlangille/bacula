@@ -10,7 +10,7 @@
 	<div class="w3-bar w3-green w3-margin-bottom">
 		<a class="w3-bar-item w3-button tab_btn" href="<%=$this->Service->constructUrl('VolumeList')%>"><i class="fa fa-angle-left"></i></a>
 		<button id="btn_volume_actions" type="button" class="w3-bar-item w3-button tab_btn w3-grey" onclick="W3Tabs.open(this.id, 'volume_actions');"><%[ Actions ]%></button>
-		<button id="btn_jobs_on_volume" type="button" class="w3-bar-item w3-button tab_btn" onclick="W3Tabs.open(this.id, 'jobs_on_volume');"><%[ Jobs on volume ]%></button>
+		<button id="btn_jobs_on_volume" type="button" class="w3-bar-item w3-button tab_btn" onclick="W3Tabs.open(this.id, 'jobs_on_volume');oJobsOnVolumeList.table.responsive.recalc();"><%[ Jobs on volume ]%></button>
 		<button id="btn_volume_config" type="button" class="w3-bar-item w3-button tab_btn" onclick="W3Tabs.open(this.id, 'volume_config');"><%[ Configure volume ]%></button>
 	</div>
 	<div class="w3-container tab_item" id="volume_actions">
@@ -349,6 +349,7 @@
 	</div>
 <script type="text/javascript">
 var oJobsOnVolumeList = {
+	table: null,
 	ids: {
 		jobs_on_volume_list: 'jobs_on_volume_list',
 		jobs_on_volume_list_body: 'jobs_on_volume_list_body'
@@ -357,7 +358,7 @@ var oJobsOnVolumeList = {
 		this.set_table();
 	},
 	set_table: function() {
-		var table = $('#' + this.ids.jobs_on_volume_list).DataTable({
+		this.table = $('#' + this.ids.jobs_on_volume_list).DataTable({
 			data: <%=json_encode($this->jobs_on_volume)%>,
 			deferRender: true,
 			columns: [
