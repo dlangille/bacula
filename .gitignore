@@ -301,3 +301,10 @@ gui/install-indep-stamp
 bacula/platforms/solaris/bacula-dir
 bacula/platforms/solaris/bacula-fd
 bacula/platforms/solaris/bacula-sd
+
+# files generated for systemd
+bacula/platforms/systemd/bacula-dir.service
+bacula/platforms/systemd/bacula-fd.service
+bacula/platforms/systemd/bacula-sd.service
+bacula/platforms/systemd/bacula.conf
+bacula/scripts/baculabackupreport
