@@ -29,7 +29,9 @@ class JobsRecent extends BaculumAPIServer {
 		} elseif ($this->Request->contains('client') && $this->getModule('misc')->isValidName($this->Request['client'])) {
 			$client = $this->Request['client'];
 			$client_row = $this->getModule('client')->getClientByName($client);
-			$clientid = is_object($client_row) ? $client_row->clientid : null;
+			if (is_object($client_row)) {
+				$clientid = intval($client_row->clientid);
+			}
 		}
 		$filesetid = null;
 		if ($this->Request->contains('filesetid')) {
@@ -37,13 +39,15 @@ class JobsRecent extends BaculumAPIServer {
 		} elseif ($this->Request->contains('fileset') && $this->getModule('misc')->isValidName($this->Request['fileset'])) {
 			$fileset = $this->Request['fileset'];
 			$fileset_row = $this->getModule('fileset')->getFileSetByName($fileset);
-			$filesetid = is_object($fileset_row) ? $fileset_row->filesetid : null;
+			if (is_object($fileset_row)) {
+				$filesetid = intval($fileset_row->filesetid);
+			}
 		}
 
-		if (!is_int($clientid)) {
+		if (is_null($clientid)) {
 			$this->output = ClientError::MSG_ERROR_CLIENT_DOES_NOT_EXISTS;
 			$this->error = ClientError::ERROR_CLIENT_DOES_NOT_EXISTS;
-		} elseif (!is_int($filesetid)) {
+		} elseif (is_null($filesetid)) {
 			$this->output = FileSetError::MSG_ERROR_FILESET_DOES_NOT_EXISTS;
 			$this->error = FileSetError::ERROR_FILESET_DOES_NOT_EXISTS;
 		} else {
