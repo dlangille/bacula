@@ -832,13 +832,13 @@ void MainWin::setPreferences()
    prefs.rtRestore3CheckBox->setCheckState(m_rtRestore3Debug ? Qt::Checked : Qt::Unchecked);
    switch (ItemFormatterBase::getBytesConversion()) {
    case ItemFormatterBase::BYTES_CONVERSION_NONE:
-      prefs.radioConvertOff->setChecked(Qt::Checked);
+      prefs.radioConvertOff->setChecked(true);
       break;
    case ItemFormatterBase::BYTES_CONVERSION_IEC:
-      prefs.radioConvertIEC->setChecked(Qt::Checked);
+      prefs.radioConvertIEC->setChecked(true);
       break;
    default:
-      prefs.radioConvertStandard->setChecked(Qt::Checked);
+      prefs.radioConvertStandard->setChecked(true);
       break;
    }
    prefs.openPlotCheckBox->setCheckState(m_openPlot ? Qt::Checked : Qt::Unchecked);
