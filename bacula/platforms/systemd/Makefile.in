@@ -92,7 +92,7 @@ uninstall-autostart-sd:
 	@rm -f	$(DESTDIR)$(SYSTEMD_UNITDIR)/bacula-sd.service
 
 uninstall-autostart-dir:
-	@if test x$(DESTDIR) = x -a  -f $(SYSTEMD)/bacula-dir.service; then \
+	@if test x$(DESTDIR) = x -a  -f $(SYSTEMD_UNITDIR)/bacula-dir.service; then \
 	   /bin/systemctl stop bacula-dir.service; \
 	   /bin/systemctl disable bacula-dir.service; \
 	fi
