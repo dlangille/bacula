@@ -18984,7 +18984,7 @@ if test x$sbindir = x'${exec_prefix}/sbin' ; then
 fi
 sbindir=`eval echo ${sbindir}`
 
-if test x$mandir = x'${prefix}/man' ; then
+if test x$mandir = x'${datarootdir}/man' ; then
    mandir=/usr/share/man
 fi
 
