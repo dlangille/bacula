@@ -56,6 +56,8 @@
 /regress/Testing
 
 # /regress/scripts/
+/regress/scripts/bacula-dir.conf.vc
+/regress/scripts/bacula-sd.conf.vc
 /regress/scripts/multi-client-bacula-dir.conf
 /regress/scripts/bacula-dir-2d.conf
 /regress/scripts/bacula-dir.conf.errors
