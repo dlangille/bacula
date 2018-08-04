@@ -2874,24 +2874,24 @@ if test x$support_xattr = xyes -o x$support_xattr = xauto; then
       AC_CHECK_HEADER(attr.h, [ AC_DEFINE(HAVE_ATTR_H,1,[Defines if your system have the attr.h header file])] , )
 
       AC_CHECK_FUNCS(openat attropen unlinkat fchownat futimesat linkat,
-         [
-            have_xattr=yes
-            AC_DEFINE([HAVE_OPENAT],1,[Define to 1 if you have the 'openat' function.])
-            AC_DEFINE([HAVE_ATTROPEN],1,[Define to 1 if you have the 'attropen' function.])
-            AC_DEFINE([HAVE_UNLINKAT],1,[Define to 1 if you have the 'unlinkat' function.])
-            AC_DEFINE([HAVE_FCHOWNAT],1,[Define to 1 if you have the 'fchownat' function.])
-            AC_DEFINE([HAVE_FUTIMESAT],1,[Define to 1 if you have the 'futimesat' function.])
-            AC_DEFINE([HAVE_LINKAT],1,[Define to 1 if you have the 'linkat' function.])
-         ]
+	 [
+	    have_xattr=yes
+	    AC_DEFINE([HAVE_OPENAT],1,[Define to 1 if you have the 'openat' function.])
+	    AC_DEFINE([HAVE_ATTROPEN],1,[Define to 1 if you have the 'attropen' function.])
+	    AC_DEFINE([HAVE_UNLINKAT],1,[Define to 1 if you have the 'unlinkat' function.])
+	    AC_DEFINE([HAVE_FCHOWNAT],1,[Define to 1 if you have the 'fchownat' function.])
+	    AC_DEFINE([HAVE_FUTIMESAT],1,[Define to 1 if you have the 'futimesat' function.])
+	    AC_DEFINE([HAVE_LINKAT],1,[Define to 1 if you have the 'linkat' function.])
+	 ]
       )
 
       if test $have_xattr = yes; then
-         AC_CHECK_LIB(nvpair, nvlist_next_nvpair,
-            [
-               AC_DEFINE([HAVE_NVLIST_NEXT_NVPAIR],1,[Define to 1 if you have the 'nvlist_next_nvpair' function.])
-               FDLIBS="-lnvpair $FDLIBS"
-            ]
-         )
+	 AC_CHECK_LIB(nvpair, nvlist_next_nvpair,
+	    [
+	       AC_DEFINE([HAVE_NVLIST_NEXT_NVPAIR],1,[Define to 1 if you have the 'nvlist_next_nvpair' function.])
+	       FDLIBS="-lnvpair $FDLIBS"
+	    ]
+	 )
       fi
    fi
 
@@ -3307,7 +3307,8 @@ AC_ARG_WITH(systemd,
    [
        if test "$withval" != "no"; then
 	   if test "$withval" = "yes"; then
-	       SYSTEMD_UNITDIR="`systemctl show | grep UnitPath | cut -d " " -f2`"
+	       dnl An alternative could be /lib/systemd/system
+	       SYSTEMD_UNITDIR="/etc/systemd/system"
 	   else
 	       SYSTEMD_UNITDIR="${withval}"
 	   fi
