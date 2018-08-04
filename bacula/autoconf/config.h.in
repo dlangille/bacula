@@ -275,6 +275,9 @@
 /* Define to 1 if you have the <assert.h> header file. */
 #undef HAVE_ASSERT_H
 
+/* Define to 1 if you have the 'attropen' function. */
+#undef HAVE_ATTROPEN
+
 /* Defines if your system have the attr.h header file */
 #undef HAVE_ATTR_H
 
@@ -438,9 +441,6 @@
 
 /* Define to 1 if you have the `fseeko' function. */
 #undef HAVE_FSEEKO
-
-/* Define to 1 if you have the 'fstatat' function. */
-#undef HAVE_FSTATAT
 
 /* Define to 1 if you have the `futimes' function. */
 #undef HAVE_FUTIMES
@@ -614,6 +614,9 @@
 /* Define to 1 if you have the <limits.h> header file. */
 #undef HAVE_LIMITS_H
 
+/* Define to 1 if you have the 'linkat' function. */
+#undef HAVE_LINKAT
+
 /* Define to 1 if you have the 'listea' function. */
 #undef HAVE_LISTEA
 
@@ -700,9 +703,6 @@
 
 /* Define to 1 if you have the 'openat' function. */
 #undef HAVE_OPENAT
-
-/* Define to 1 if you have the 'attropen' function. */
-#undef HAVE_ATTROPEN
 
 /* Define if OpenSSL library is available */
 #undef HAVE_OPENSSL
