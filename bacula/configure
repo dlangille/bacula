@@ -22018,6 +22018,9 @@ fi
 
 if test x$build_client_only = xno; then
    ALL_DIRS="subdirs"
+
+$as_echo "#define HAVE_CIENT_ONLY 1" >>confdefs.h
+
 else
    ALL_DIRS=""
 fi
