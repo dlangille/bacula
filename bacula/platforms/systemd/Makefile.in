@@ -37,8 +37,9 @@ install-autostart-fd:
 	   /bin/systemctl disable bacula-fd.service; \
 	fi
 	@$(INSTALL_PROGRAM) -m 644 bacula-fd.service $(DESTDIR)/$(SYSTEMD_UNITDIR)/bacula-fd.service
-	# set symlinks for script at startup and shutdown
+	# set bacula-fd symlinks for script at startup and shutdown
 	@if test x$(DESTDIR) = x ; then \
+	   /bin/systemctl disable bacula-fd.service; \
 	   /bin/systemctl enable bacula-fd.service; \
 	   /bin/systemctl start bacula-fd.service; \
 	fi
@@ -50,8 +51,9 @@ install-autostart-sd:
 	   /bin/systemctl disable bacula-sd.service; \
 	fi
 	@$(INSTALL_PROGRAM) -m 644 bacula-sd.service $(DESTDIR)/$(SYSTEMD_UNITDIR)/bacula-sd.service
-	# set symlinks for script at startup and shutdown
+	# set bacula-sd symlinks for script at startup and shutdown
 	@if test x$(DESTDIR) = x ; then \
+	   /bin/systemctl disable bacula-sd.service; \
 	   /bin/systemctl enable bacula-sd.service; \
 	   /bin/systemctl start bacula-sd.service; \
 	fi
@@ -63,8 +65,9 @@ install-autostart-dir:
 	   /bin/systemctl disable bacula-dir.service; \
 	fi
 	@$(INSTALL_PROGRAM) -m 644 bacula-dir.service $(DESTDIR)/$(SYSTEMD_UNITDIR)/bacula-dir.service
-	# set symlinks for script at startup and shutdown
+	# set bacula-dir symlinks for script at startup and shutdown
 	@if test x$(DESTDIR) = x ; then \
+	   /bin/systemctl disable bacula-dir.service; \
 	   /bin/systemctl enable bacula-dir.service; \
 	   /bin/systemctl start bacula-dir.service; \
 	fi
@@ -84,8 +87,8 @@ uninstall-autostart-fd:
 
 uninstall-autostart-sd:
 	@if test x$(DESTDIR) = x -a  -f $(SYSTEMD_UNITDIR)/bacula-sd.service; then \
-	   /bin/systemctl stop bacula-fd.service; \
-	   /bin/systemctl disable bacula-fd.service; \
+	   /bin/systemctl stop bacula-sd.service; \
+	   /bin/systemctl disable bacula-sd.service; \
 	fi
 	@rm -f	$(DESTDIR)$(SYSTEMD_UNITDIR)/bacula-sd.service
 
