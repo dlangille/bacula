@@ -31203,9 +31203,9 @@ if test "${with_systemd+set}" = set; then :
   withval=$with_systemd;
        if test "$withval" != "no"; then
 	   if test "$withval" = "yes"; then
-	       	       SYSTEMD_UNITDIR="/etc/systemd/system"
+	       SYSTEMD_UNITDIR="/lib/systemd/system"
 	   else
-	       SYSTEMD_UNITDIR="${withval}"
+	       	       SYSTEMD_UNITDIR="${withval}"
 	   fi
 
 	   PFILES="${PFILES} \
