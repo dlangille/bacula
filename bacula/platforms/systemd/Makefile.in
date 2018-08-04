@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2000-2017 Kern Sibbald
+# Copyright (C) 2000-2018 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
 # This file is used as the template to create the
@@ -11,8 +11,6 @@
 
 INSTALL = @INSTALL@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
-# should be /lib/systemd/system and get be get with
-# systemctl show | grep UnitPath | cut -d " " -f2
 SYSTEMD_UNITDIR = @SYSTEMD_UNITDIR@
 SYSTEMD_TMPFILES = /etc/tmpfiles.d
 
