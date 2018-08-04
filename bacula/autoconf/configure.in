@@ -3307,9 +3307,9 @@ AC_ARG_WITH(systemd,
    [
        if test "$withval" != "no"; then
 	   if test "$withval" = "yes"; then
-	       dnl An alternative could be /lib/systemd/system
-	       SYSTEMD_UNITDIR="/etc/systemd/system"
+	       SYSTEMD_UNITDIR="/lib/systemd/system"
 	   else
+	       dnl Use user supplied path
 	       SYSTEMD_UNITDIR="${withval}"
 	   fi
 
