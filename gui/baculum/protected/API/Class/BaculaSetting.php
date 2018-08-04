@@ -314,7 +314,7 @@ class BaculaSetting extends APIModule {
 				}
 				if (is_array($resource_new[$resource_type][$directive_name])) {
 					// nested directive (name { key = val })
-					$resource[$resource_type][$directive_name] = $this->updateSubResource($resource_type, $resource_new[$resource_type][$directive_name]);
+					$resource[$resource_type][$directive_name] = $this->updateSubResource($resource_type, $directive_name, $resource_new[$resource_type][$directive_name]);
 				} else {
 					// simple directive (key=val)
 					// existing directive in resource
@@ -341,18 +341,18 @@ class BaculaSetting extends APIModule {
 		return $resource;
 	}
 
-	private function updateSubResource(string $resource_type, array $subresource_new) {
+	private function updateSubResource(string $resource_type, string $directive_name, array $subresource_new) {
 		$resource = array();
-		foreach($subresource_new as $directive_name => $directive_value) {
+		foreach($subresource_new as $index => $directive_value) {
 			$check_recursive = false;
 			if (is_array($directive_value)) {
 				$assoc_keys = array_filter(array_keys($directive_value), 'is_string');
 				$check_recursive = count($assoc_keys) > 0;
 			}
 			if ($check_recursive === true) {
-				$resource[$directive_name] = $this->updateSubResource($resource_type, $directive_value);
+				$resource[$index] = $this->updateSubResource($resource_type, $directive_name, $directive_value);
 			} else {
-				$resource[$directive_name] = $this->formatDirectiveValue($resource_type, $directive_name, $directive_value);
+				$resource[$index] = $this->formatDirectiveValue($resource_type, $directive_name, $directive_value);
 			}
 		}
 		return $resource;
@@ -416,7 +416,7 @@ class BaculaSetting extends APIModule {
 		} elseif (is_int($value)) {
 			$directive_value = $value;
 		} elseif (is_string($value)) {
-			if (!isset($this->unquoted_string_directives[$resource_type]) || !in_array($directive_name, $this->unquoted_string_directives[$resource_type])) {
+			if (!key_exists($resource_type, $this->unquoted_string_directives) || !in_array($directive_name, $this->unquoted_string_directives[$resource_type])) {
 				$value = str_replace('"', '\"', $value);
 				$value = "\"$value\"";
 			}
@@ -426,7 +426,7 @@ class BaculaSetting extends APIModule {
 			$dvalues = array();
 			for ($i = 0; $i < count($value); $i++) {
 				if (is_array($value[$i])) {
-					$dvalues[] = $this->updateSubResource($resource_type, $value[$i]);
+					$dvalues[] = $this->updateSubResource($resource_type, $directive_name, $value[$i]);
 				} else {
 					$dvalues[] = $this->formatDirectiveValue($resource_type, $directive_name, $value[$i]);
 				}
