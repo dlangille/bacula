@@ -84,6 +84,10 @@
 				</div>
 			</div>
 			<div class="w3-row-padding w3-section">
+				<div class="w3-col w3-half"><com:TLabel ForControl="PoolLabel" Text="<%[ Pool: ]%>" /></div>
+				<div class="w3-col w3-half"><com:TActiveDropDownList ID="PoolLabel" CssClass="w3-select w3-border" /></div>
+			</div>
+			<div class="w3-row-padding w3-section">
 				<div class="w3-col w3-half"><com:TLabel ForControl="StorageLabel" Text="<%[ Storage: ]%>" /></div>
 				<div class="w3-col w3-half"><com:TActiveDropDownList ID="StorageLabel" CssClass="w3-select w3-border" /></div>
 			</div>
@@ -99,9 +103,21 @@
 					/>
 				</div>
 			</div>
-			<div class="w3-row-padding w3-section">
-				<div class="w3-col w3-half"><com:TLabel ForControl="PoolLabel" Text="<%[ Pool: ]%>" /></div>
-				<div class="w3-col w3-half"><com:TActiveDropDownList ID="PoolLabel" CssClass="w3-select w3-border" /></div>
+			<div id="label_without_barcodes" class="w3-row-padding w3-section">
+				<div class="w3-col w3-half"><com:TLabel ForControl="SlotLabel" Text="<%[ Slot number: ]%>" /></div>
+				<div class="w3-col w3-half">
+					<com:TActiveTextBox ID="SlotLabel" CssClass="w3-input w3-border" Text="0" />
+					<com:TRequiredFieldValidator
+						ValidationGroup="LabelVolumeGroup"
+						ControlToValidate="SlotLabel"
+						ErrorMessage="<%[ Field required. ]%>"
+						Display="Dynamic"
+					>
+						<prop:ClientSide.OnValidate>
+							sender.enabled = !document.getElementById('<%=$this->Barcodes->ClientID%>').checked;
+						</prop:ClientSide.OnValidate>
+					</com:TRequiredFieldValidator>
+				</div>
 			</div>
 			<div id="label_volume_log" class="w3-panel w3-card w3-light-grey" style="display: none; max-height: 200px; overflow-x: auto;">
 				<div class="w3-code notranslate">
@@ -130,12 +146,15 @@
 function set_barcodes() {
 	var chkb = document.getElementById('<%=$this->Barcodes->ClientID%>');
 	var name_el = document.getElementById('label_with_name');
-	var barcodes_el = document.getElementById('label_with_barcodes');
+	var with_barcodes_el = document.getElementById('label_with_barcodes');
+	var without_barcodes_el = document.getElementById('label_without_barcodes');
 	if (chkb.checked) {
 		name_el.style.display = 'none';
-		barcodes_el.style.display = 'block';
+		without_barcodes_el.style.display = 'none';
+		with_barcodes_el.style.display = 'block';
 	} else {
-		barcodes_el.style.display = 'none';
+		without_barcodes_el.style.display = 'block';
+		with_barcodes_el.style.display = 'none';
 		name_el.style.display = 'block';
 	}
 }

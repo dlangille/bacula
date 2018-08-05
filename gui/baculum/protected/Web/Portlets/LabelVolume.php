@@ -54,11 +54,12 @@ class LabelVolume extends Portlets {
 
 	public function labelVolumes($sender, $param) {
 		$cmd = array('label');
-		if($this->Barcodes->Checked == true) {
+		if ($this->Barcodes->Checked == true) {
 			$cmd[] = 'barcodes';
 			$cmd[] = 'slots="' . $this->SlotsLabel->Text . '"';
 		} else {
 			$cmd[] = 'volume="' . $this->LabelName->Text . '"';
+			$cmd[] = 'slot="' . $this->SlotLabel->Text . '"';
 		}
 		$cmd[] = 'drive="' . $this->DriveLabel->Text . '"';
 		$cmd[] = 'storage="'. $this->StorageLabel->SelectedItem->Text . '"';
