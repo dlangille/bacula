@@ -112,6 +112,7 @@
 			ID="StorageConfig"
 			ComponentType="dir"
 			ResourceType="Storage"
+			ShowCancelButton="false"
 		/>
 	</div>
 	<div class="w3-container tab_item" id="configure_devices" style="display: none">
@@ -145,6 +146,7 @@
 			ID="AutochangerConfig"
 			ComponentType="sd"
 			ResourceType="Autochanger"
+			ShowCancelButton="false"
 		/>
 	</div>
 </com:TContent>

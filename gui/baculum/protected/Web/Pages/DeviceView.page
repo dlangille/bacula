@@ -80,6 +80,7 @@
 			ID="DeviceConfig"
 			ComponentType="sd"
 			ResourceType="Device"
+			ShowCancelButton="false"
 		/>
 	</div>
 </com:TContent>

@@ -15,6 +15,7 @@
 			ID="FileSetConfig"
 			ComponentType="dir"
 			ResourceType="Fileset"
+			ShowCancelButton="false"
 		/>
 	</div>
 </com:TContent>

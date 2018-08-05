@@ -15,6 +15,7 @@
 			ID="ScheduleConfig"
 			ComponentType="dir"
 			ResourceType="Schedule"
+			ShowCancelButton="false"
 		/>
 	</div>
 </com:TContent>

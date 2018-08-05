@@ -122,3 +122,7 @@ div.config_directives {
 #last_jobs_list tbody tr {
 	cursor: pointer;
 }
+
+.justify {
+	text-align: justify;
+}

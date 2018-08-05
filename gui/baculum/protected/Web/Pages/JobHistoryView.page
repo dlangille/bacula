@@ -119,6 +119,7 @@
 			ID="JobConfig"
 			ComponentType="dir"
 			ResourceType="Job"
+			ShowCancelButton="false"
 		/>
 	</div>
 	<div class="w3-container tab_item" id="fileset_config" style="display: none">
@@ -127,6 +128,7 @@
 			ComponentType="dir"
 			ResourceType="Fileset"
 			ShowRemoveButton="false"
+			ShowCancelButton="false"
 		/>
 	</div>
 	<div class="w3-container tab_item" id="schedule_config" style="display: none">
@@ -135,6 +137,7 @@
 			ComponentType="dir"
 			ResourceType="Schedule"
 			ShowRemoveButton="false"
+			ShowCancelButton="false"
 		/>
 	</div>
 </com:TContent>

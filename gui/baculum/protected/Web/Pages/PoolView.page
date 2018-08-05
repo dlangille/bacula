@@ -141,6 +141,7 @@
 			ID="PoolConfig"
 			ComponentType="dir"
 			ResourceType="Pool"
+			ShowCancelButton="false"
 		/>
 	</div>
 <script type="text/javascript">

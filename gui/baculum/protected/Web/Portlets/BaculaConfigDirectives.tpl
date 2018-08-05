@@ -107,11 +107,10 @@
 	<div class="w3-row w3-center">
 		<com:TActiveLinkButton
 			ID="Cancel"
-			CssClass="w3-button w3-green"
+			CssClass="w3-button w3-red"
 			ActiveControl.EnableUpdate="false"
 			OnCommand="TemplateControl.unloadDirectives"
 			Attributes.onclick="$('div.config_directives').slideUp();"
-			Visible="false"
 		>
 			<prop:Text>
 				<i class="fa fa-times"></i> &nbsp;<%=Prado::localize('Cancel')%>

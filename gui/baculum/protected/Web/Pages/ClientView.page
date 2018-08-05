@@ -180,6 +180,7 @@ $(function() {
 			ID="ClientConfig"
 			ComponentType="dir"
 			ResourceType="Client"
+			ShowCancelButton="false"
 		/>
 	</div>
 </com:TContent>

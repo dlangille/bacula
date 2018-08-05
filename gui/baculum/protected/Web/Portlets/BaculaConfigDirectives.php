@@ -38,6 +38,7 @@ Prado::using('Application.Web.Portlets.DirectiveMessages');
 class BaculaConfigDirectives extends DirectiveListTemplate {
 
 	const SHOW_REMOVE_BUTTON = 'ShowRemoveButton';
+	const SHOW_CANCEL_BUTTON = 'ShowCancelButton';
 	const SHOW_ALL_DIRECTIVES = 'ShowAllDirectives';
 	const SAVE_DIRECTIVE_ACTION_OK = 'SaveDirectiveActionOk';
 
@@ -66,6 +67,13 @@ class BaculaConfigDirectives extends DirectiveListTemplate {
 	);
 
 	public $display_directives;
+
+	public function onInit($param) {
+		parent::onInit($param);
+		if (!$this->getPage()->isPostBack && !$this->getPage()->IsCallBack) {
+			$this->Cancel->Visible = $this->getShowCancelButton();
+		}
+	}
 
 	private function getConfigData($host, array $parameters) {
 		$default_params = array('config');
@@ -515,6 +523,25 @@ class BaculaConfigDirectives extends DirectiveListTemplate {
 	 */
 	public function getShowRemoveButton() {
 		return $this->getViewState(self::SHOW_REMOVE_BUTTON, true);
+	}
+
+	/**
+	 * Set if cancel button should be available.
+	 *
+	 * @return none;
+	 */
+	public function setShowCancelButton($show) {
+		$show = TPropertyValue::ensureBoolean($show);
+		$this->setViewState(self::SHOW_CANCEL_BUTTON, $show);
+	}
+
+	/**
+	 * Get if cancel button should be available.
+	 *
+	 * @return bool true if available, otherwise false
+	 */
+	public function getShowCancelButton() {
+		return $this->getViewState(self::SHOW_CANCEL_BUTTON, true);
 	}
 }
 ?>

@@ -91,6 +91,7 @@
 			ID="NewResource"
 			SaveDirectiveActionOk="$('#resource_config').slideUp(); $('#resource_save_ok').show();"
 			ShowRemoveButton="false"
+			ShowCancelButton="false"
 		/>
 	</div>
 </com:TContent>
