@@ -1315,7 +1315,7 @@ Prado.WebUI.TBaseValidator = jQuery.klass(Prado.WebUI.Control,
 	{
 		switch(this.options.ControlType)
 		{
-			case 'TCheckBoxList': case 'TRadioButtonList':
+			case 'TCheckBoxList': case 'TRadioButtonList': case 'TActiveCheckBoxList': case 'TActiveRadioButtonList':
 				var elements = [];
 				for(var i = 0; i < this.options.TotalItems; i++)
 				{
@@ -1324,7 +1324,7 @@ Prado.WebUI.TBaseValidator = jQuery.klass(Prado.WebUI.Control,
 						elements.push(element);
 				}
 				return elements;
-			case 'TListBox':
+			case 'TListBox': case 'TActiveListBox':
 				var elements = [];
 				var element = jQuery("#" + this.options.ControlToValidate).get(0);
 				var type;
@@ -1362,7 +1362,7 @@ Prado.WebUI.TBaseValidator = jQuery.klass(Prado.WebUI.Control,
 	 */
 	isListControlType : function()
 	{
-		var list = ['TCheckBoxList', 'TRadioButtonList', 'TListBox'];
+		var list = ['TCheckBoxList', 'TRadioButtonList', 'TListBox', 'TActiveCheckBoxList', 'TActiveButtonList', 'TActiveListBox'];
 		return (jQuery.inArray(this.options.ControlType, list)!=-1);
 	},
 
