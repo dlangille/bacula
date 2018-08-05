@@ -117,12 +117,15 @@ class RestoreWizard extends BaculumWebPage
 		if (is_object($job)) {
 			$this->loadRestoreClients();
 			$client = $this->getBackupClient($job->clientid);
-			$this->BackupClientName->SelectedValue = $client;
-			$this->RestoreClient->SelectedValue = $client;
-			$this->loadBackupsForClient();
-			$step_index = new stdClass;
-			$step_index->CurrentStepIndex = 3;
-			$this->wizardNext(null, $step_index);
+			// client is null for restore backup from deleted clients in catalog
+			if (!is_null($client)) {
+				$this->BackupClientName->SelectedValue = $client;
+				$this->RestoreClient->SelectedValue = $client;
+				$this->loadBackupsForClient();
+				$step_index = new stdClass;
+				$step_index->CurrentStepIndex = 3;
+				$this->wizardNext(null, $step_index);
+			}
 		}
 	}
 
