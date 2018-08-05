@@ -1,0 +1,46 @@
+From 202e93551485c5085db159c547252c434b0e34ae Mon Sep 17 00:00:00 2001
+From: Marcin Haba <marcin.haba@bacula.pl>
+Date: Sun, 5 Aug 2018 13:21:51 +0200
+Subject: [PATCH] baculum: Fix framework validation for active list type
+ controls
+
+Problem reported to the PRADO framework developers:
+https://github.com/pradosoft/prado/issues/683
+---
+ .../framework/Web/Javascripts/source/prado/validator/validation3.js | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/gui/baculum/framework/pradosoft/prado/framework/Web/Javascripts/source/prado/validator/validation3.js b/gui/baculum/framework/pradosoft/prado/framework/Web/Javascripts/source/prado/validator/validation3.js
+index 04ca3318fb..a6591ca451 100644
+--- a/gui/baculum/framework/pradosoft/prado/framework/Web/Javascripts/source/prado/validator/validation3.js
++++ b/gui/baculum/framework/pradosoft/prado/framework/Web/Javascripts/source/prado/validator/validation3.js
+@@ -1315,7 +1315,7 @@ Prado.WebUI.TBaseValidator = jQuery.klass(Prado.WebUI.Control,
+ 	{
+ 		switch(this.options.ControlType)
+ 		{
+-			case 'TCheckBoxList': case 'TRadioButtonList':
++			case 'TCheckBoxList': case 'TRadioButtonList': case 'TActiveCheckBoxList': case 'TActiveRadioButtonList':
+ 				var elements = [];
+ 				for(var i = 0; i < this.options.TotalItems; i++)
+ 				{
+@@ -1324,7 +1324,7 @@ Prado.WebUI.TBaseValidator = jQuery.klass(Prado.WebUI.Control,
+ 						elements.push(element);
+ 				}
+ 				return elements;
+-			case 'TListBox':
++			case 'TListBox': case 'TActiveListBox':
+ 				var elements = [];
+ 				var element = jQuery("#" + this.options.ControlToValidate).get(0);
+ 				var type;
+@@ -1362,7 +1362,7 @@ Prado.WebUI.TBaseValidator = jQuery.klass(Prado.WebUI.Control,
+ 	 */
+ 	isListControlType : function()
+ 	{
+-		var list = ['TCheckBoxList', 'TRadioButtonList', 'TListBox'];
++		var list = ['TCheckBoxList', 'TRadioButtonList', 'TListBox', 'TActiveCheckBoxList', 'TActiveButtonList', 'TActiveListBox'];
+ 		return (jQuery.inArray(this.options.ControlType, list)!=-1);
+ 	},
+ 
+-- 
+2.14.3
+
