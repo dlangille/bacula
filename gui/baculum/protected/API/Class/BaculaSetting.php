@@ -266,7 +266,7 @@ class BaculaSetting extends APIModule {
 							if (array_key_exists('Minute', $directive_value[$i])) {
 								$minute = sprintf('%02d', $directive_value[$i]['Minute']);
 							}
-							$day = count($directive_value[$i]['Day']) === 31 ? '' : 'on ' . implode(',', $directive_value[$i]['Day']);
+							$day = Params::getDaysConfig($directive_value[$i]['Day']);
 							$month = Params::getMonthsConfig($directive_value[$i]['Month']);
 							$week = Params::getWeeksConfig($directive_value[$i]['WeekOfMonth']);
 							$wday = Params::getWdaysConfig($directive_value[$i]['DayOfWeek']);

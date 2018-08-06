@@ -106,6 +106,31 @@ class Params extends CommonModule {
 	}
 
 	/**
+	 * Get day value in config form.
+	 *
+	 * @param array $days_cfg days array (ex. array(0,1,2,3,4))
+	 * @return string days config value
+	 */
+	public function getDaysConfig(array $days_cfg) {
+		$days = '';
+		if (count($days_cfg) < 31) {
+			$days_map = array_map(array('Params', 'getDayByNo') , $days_cfg);
+			$days = 'on ' . implode(',', $days_map);
+		}
+		return $days;
+	}
+
+	/**
+	 * Simple method to prepare day config value by day number.
+	 *
+	 * @static
+	 * @return integer single day config value
+	 */
+	private static function getDayByNo($day_no) {
+		return ++$day_no;
+	}
+
+	/**
 	 * Get Bacula config boolean value.
 	 *
 	 * @param boolean $value value
