@@ -1382,7 +1382,7 @@ e_msg(const char *file, int line, int type, int level, const char *fmt,...)
        len = bsnprintf(buf, sizeof(buf), _("%s: Warning: "), my_name);
        break;
     case M_SECURITY:
-       len = bsnprintf(buf, sizeof(buf), _("%s: Security violation: "), my_name);
+       len = bsnprintf(buf, sizeof(buf), _("%s: Security Alert: "), my_name);
        break;
     default:
        len = bsnprintf(buf, sizeof(buf), "%s: ", my_name);
@@ -1439,11 +1439,14 @@ Jmsg(JCR *jcr, int type, utime_t mtime, const char *fmt,...)
 
     Dmsg1(850, "Enter Jmsg type=%d\n", type);
 
-    /* Special case for the console, which has a dir_bsock and JobId==0,
+    /*
+     * Special case for the console, which has a dir_bsock and JobId==0,
      *  in that case, we send the message directly back to the
      *  dir_bsock.
+     *  This allow commands such as "estimate" to work.
+     *  It probably should be restricted to work only in the FD.
      */
-    if (jcr && jcr->JobId == 0 && jcr->dir_bsock) {
+    if (jcr && jcr->JobId == 0 && jcr->dir_bsock && type != M_SECURITY) {
        BSOCK *dir = jcr->dir_bsock;
        va_start(arg_ptr, fmt);
        dir->msglen = bvsnprintf(dir->msg, sizeof_pool_memory(dir->msg),
@@ -1515,7 +1518,7 @@ Jmsg(JCR *jcr, int type, utime_t mtime, const char *fmt,...)
        }
        break;
     case M_SECURITY:
-       len = bsnprintf(rbuf, sizeof(rbuf), _("%s JobId %u: Security violation: "),
+       len = bsnprintf(rbuf, sizeof(rbuf), _("%s JobId %u: Security Alert: "),
                my_name, JobId);
        break;
     default:
@@ -1755,6 +1758,9 @@ void dequeue_daemon_messages(JCR *jcr)
       jcr->JobId = 0;       /* set daemon JobId == 0 */
       if (jcr->dir_bsock) jcr->dir_bsock->suppress_error_messages(true);
       foreach_dlist(item, daemon_msg_queue) {
+         if (item->type == M_FATAL || item->type == M_ERROR) {
+            item->type = M_SECURITY;
+         }
          Jmsg(jcr, item->type, item->mtime, "%s", item->msg);
       }
       if (jcr->dir_bsock) jcr->dir_bsock->suppress_error_messages(false);

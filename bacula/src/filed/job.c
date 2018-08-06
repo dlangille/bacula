@@ -505,7 +505,7 @@ bail_out:
    Dmsg2(100, "Bad command from %s. Len=%d.\n", bs->who(), bs->msglen);
    char addr[64];
    char *who = bs->get_peer(addr, sizeof(addr)) ? bs->who() : addr;
-   Jmsg2(NULL, M_FATAL, 0, _("Bad command from %s. Len=%d.\n"), who, bs->msglen);
+   Qmsg2(NULL, M_SECURITY, 0, _("FD expecting Hello got bad command from %s. Len=%d.\n"), who, bs->msglen);
    bs->destroy();
    return NULL;
 }

@@ -193,6 +193,9 @@ void do_client_commands(JCR *jcr)
    bool found, quit;
    BSOCK *fd = jcr->file_bsock;
 
+   if (!fd) {
+      return;
+   }
    fd->set_jcr(jcr);
    for (quit=false; !quit;) {
       int stat;

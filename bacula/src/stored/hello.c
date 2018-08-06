@@ -73,7 +73,7 @@ bool validate_dir_hello(JCR* jcr)
    if (dir->msglen < 25 || dir->msglen > 500) {
       Dmsg2(dbglvl, "Bad Hello command from Director at %s. Len=%d.\n",
             dir->who(), dir->msglen);
-      Jmsg2(jcr, M_FATAL, 0, _("Bad Hello command from Director at %s. Len=%d.\n"),
+      Qmsg2(jcr, M_SECURITY, 0, _("Bad Hello command from Director at %s. Len=%d.\n"),
             dir->who(), dir->msglen);
       return false;
    }
@@ -87,7 +87,7 @@ bool validate_dir_hello(JCR* jcr)
       dir->msg[100] = 0;
       Dmsg2(dbglvl, "Bad Hello command from Director at %s: %s\n",
             dir->who(), dir->msg);
-      Jmsg2(jcr, M_FATAL, 0, _("Bad Hello command from Director at %s: %s\n"),
+      Qmsg2(jcr, M_SECURITY, 0, _("Bad Hello command from Director at %s: %s\n"),
             dir->who(), dir->msg);
       free_pool_memory(dirname);
       return false;
@@ -109,7 +109,7 @@ bool validate_dir_hello(JCR* jcr)
    if (!director) {
       Dmsg2(dbglvl, "Connection from unknown Director %s at %s rejected.\n",
             dirname, dir->who());
-      Jmsg2(jcr, M_FATAL, 0, _("Connection from unknown Director %s at %s rejected.\n"
+      Qmsg2(jcr, M_SECURITY, 0, _("Connection from unknown Director %s at %s rejected.\n"
             "Please see " MANUAL_AUTH_URL " for help.\n"),
             dirname, dir->who());
       free_pool_memory(dirname);
@@ -135,7 +135,7 @@ void handle_client_connection(BSOCK *fd)
     */
    if (fd->msglen < 25 || fd->msglen > (int)sizeof(job_name)) {
       Pmsg1(000, "<filed: %s", fd->msg);
-      Jmsg2(NULL, M_ERROR, 0, _("Invalid connection from %s. Len=%d\n"), fd->who(), fd->msglen);
+      Qmsg2(NULL, M_SECURITY, 0, _("Invalid connection from %s. Len=%d\n"), fd->who(), fd->msglen);
       bmicrosleep(5, 0);   /* make user wait 5 seconds */
       fd->destroy();
       return;
@@ -149,12 +149,13 @@ void handle_client_connection(BSOCK *fd)
    if (sscanf(fd->msg, "Hello Bacula SD: Start Job %127s %d %d", job_name, &fd_version, &sd_version) != 3 &&
        sscanf(fd->msg, "Hello FD: Bacula Storage calling Start Job %127s %d", job_name, &sd_version) != 2 &&
        sscanf(fd->msg, "Hello Start Job %127s", job_name) != 1) {
-      Jmsg2(NULL, M_ERROR, 0, _("Invalid Hello from %s. Len=%d\n"), fd->who(), fd->msglen);
+      Qmsg2(NULL, M_SECURITY, 0, _("Invalid Hello from %s. Len=%d\n"), fd->who(), fd->msglen);
+      fd->destroy();
       return;
    }
 
    if (!(jcr=get_jcr_by_full_name(job_name))) {
-      Jmsg1(NULL, M_FATAL, 0, _("Client connect failed: Job name not found: %s\n"), job_name);
+      Qmsg1(NULL, M_SECURITY, 0, _("Client connect failed: Job name not found: %s\n"), job_name);
       Dmsg1(3, "**** Job \"%s\" not found.\n", job_name);
       fd->destroy();
       return;
@@ -163,7 +164,7 @@ void handle_client_connection(BSOCK *fd)
    /* After this point, we can use bail_out */
    Dmsg1(100, "Found Client Job %s\n", job_name);
    if (jcr->authenticated) {
-      Jmsg3(jcr, M_WARNING, 0, _("A Client \"%s\" tried to authenticate for Job %s, "
+      Jmsg3(jcr, M_SECURITY, 0, _("A Client \"%s\" tried to authenticate for Job %s, "
                                  "but the Job is already authenticated with \"%s\".\n"),
             fd->who(), jcr->Job, jcr->file_bsock?jcr->file_bsock->who():"N/A");
       Dmsg2(050, "Hey!!!! JobId %u Job %s already authenticated.\n",
@@ -187,14 +188,14 @@ void handle_client_connection(BSOCK *fd)
     */
    jcr->lock_auth();     /* Ensure that only one thread is dealing with auth */
    if (jcr->authenticated) {
-      Jmsg2(jcr, M_WARNING, 0, _("A Client \"%s\" tried to authenticate for Job %s, "
+      Jmsg2(jcr, M_SECURITY, 0, _("A Client \"%s\" tried to authenticate for Job %s, "
                                  "but the job is already authenticated.\n"),
             fd->who(), jcr->Job);
 
    } else if (!authenticate_filed(jcr, fd, fd_version)) {
       Dmsg1(50, "Authentication failed Job %s\n", jcr->Job);
       /* Job not yet started, we can cancel */
-      Jmsg(jcr, M_FATAL, 0, _("Unable to authenticate File daemon\n"));
+      Jmsg(jcr, M_SECURITY, 0, _("Unable to authenticate File daemon\n"));
 
    } else {
       Dmsg2(050, "OK Authentication jid=%u Job %s\n", (uint32_t)jcr->JobId, jcr->Job);
@@ -219,7 +220,7 @@ void handle_client_connection(BSOCK *fd)
 bail_out:
    /* file_bsock might be NULL or a previous BSOCK */
    if (jcr->file_bsock != fd) {
-      free_bsock(fd);
+      fd->destroy();
    }
    pthread_cond_signal(&jcr->job_start_wait); /* wake waiting job */
    free_jcr(jcr);

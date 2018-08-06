@@ -190,7 +190,7 @@ void bnet_thread_server(dlist *addrs, int max_clients,
             fromhost(&request);
             if (!hosts_access(&request)) {
                V(mutex);
-               Jmsg2(NULL, M_SECURITY, 0,
+               Qmsg2(NULL, M_SECURITY, 0,
                      _("Connection from %s:%d refused by hosts.access\n"),
                      sockaddr_to_ascii((struct sockaddr *)&clientaddr,
                                        sizeof(clientaddr), buf, sizeof(buf)),
@@ -207,7 +207,7 @@ void bnet_thread_server(dlist *addrs, int max_clients,
             if (setsockopt(newsockfd, SOL_SOCKET, SO_KEEPALIVE, (sockopt_val_t)&turnon,
                  sizeof(turnon)) < 0) {
                berrno be;
-               Emsg1(M_WARNING, 0, _("Cannot set SO_KEEPALIVE on socket: %s\n"),
+               Qmsg1(NULL, M_WARNING, 0, _("Cannot set SO_KEEPALIVE on socket: %s\n"),
                      be.bstrerror());
             }
 
@@ -219,14 +219,15 @@ void bnet_thread_server(dlist *addrs, int max_clients,
             bs = init_bsock(NULL, newsockfd, "client", buf, ntohs(fd_ptr->port),
                     (struct sockaddr *)&clientaddr);
             if (bs == NULL) {
-               Jmsg0(NULL, M_ABORT, 0, _("Could not create client BSOCK.\n"));
+               Qmsg0(NULL, M_ABORT, 0, _("Could not create client BSOCK.\n"));
             }
 
             /* Queue client to be served */
             if ((stat = workq_add(client_wq, (void *)bs, NULL, 0)) != 0) {
                berrno be;
                be.set_errno(stat);
-               Jmsg1(NULL, M_ABORT, 0, _("Could not add job to client queue: ERR=%s\n"),
+               bs->destroy();
+               Qmsg1(NULL, M_ABORT, 0, _("Could not add job to client queue: ERR=%s\n"),
                      be.bstrerror());
             }
          }
@@ -243,7 +244,7 @@ void bnet_thread_server(dlist *addrs, int max_clients,
    if ((stat = workq_destroy(client_wq)) != 0) {
       berrno be;
       be.set_errno(stat);
-      Emsg1(M_FATAL, 0, _("Could not destroy client queue: ERR=%s\n"),
+      Jmsg1(NULL, M_FATAL, 0, _("Could not destroy client queue: ERR=%s\n"),
             be.bstrerror());
    }
 }

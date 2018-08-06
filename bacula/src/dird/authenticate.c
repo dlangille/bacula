@@ -326,7 +326,7 @@ int authenticate_user_agent(UAContext *uac)
    int ua_version = 0;
 
    if (ua->msglen < 16 || ua->msglen >= MAX_NAME_LENGTH + 15) {
-      Emsg4(M_ERROR, 0, _("UA Hello from %s:%s:%d is invalid. Len=%d\n"), ua->who(),
+      Jmsg4(NULL, M_SECURITY, 0, _("UA Hello from %s:%s:%d is invalid. Len=%d\n"), ua->who(),
             ua->host(), ua->port(), ua->msglen);
       return 0;
    }
@@ -334,7 +334,7 @@ int authenticate_user_agent(UAContext *uac)
    if (sscanf(ua->msg, "Hello %127s calling %d", name, &ua_version) != 2 &&
        sscanf(ua->msg, "Hello %127s calling", name) != 1) {
       ua->msg[100] = 0;               /* terminate string */
-      Emsg4(M_ERROR, 0, _("UA Hello from %s:%s:%d is invalid. Got: %s\n"), ua->who(),
+      Jmsg4(NULL, M_SECURITY, 0, _("UA Hello from %s:%s:%d is invalid. Got: %s\n"), ua->who(),
             ua->host(), ua->port(), ua->msg);
       return 0;
    }
@@ -409,7 +409,7 @@ int authenticate_user_agent(UAContext *uac)
 
    /* Verify that the remote peer is willing to meet our TLS requirements */
    if (tls_remote_need < tls_local_need && tls_local_need != BNET_TLS_OK && tls_remote_need != BNET_TLS_OK) {
-      Emsg0(M_FATAL, 0, _("Authorization problem:"
+      Jmsg0(NULL, M_SECURITY, 0, _("Authorization problem:"
             " Remote client did not advertise required TLS support.\n"));
       auth_success = false;
       goto auth_done;
@@ -417,7 +417,7 @@ int authenticate_user_agent(UAContext *uac)
 
    /* Verify that we are willing to meet the peer's requirements */
    if (tls_remote_need > tls_local_need && tls_local_need != BNET_TLS_OK && tls_remote_need != BNET_TLS_OK) {
-      Emsg0(M_FATAL, 0, _("Authorization problem:"
+      Jmsg0(NULL, M_SECURITY, 0, _("Authorization problem:"
             " Remote client requires TLS.\n"));
       auth_success = false;
       goto auth_done;
@@ -432,7 +432,7 @@ int authenticate_user_agent(UAContext *uac)
 
       /* Engage TLS! Full Speed Ahead! */
       if (!bnet_tls_server(tls_ctx, ua, verify_list)) {
-         Emsg0(M_ERROR, 0, _("TLS negotiation failed.\n"));
+         Jmsg0(NULL, M_SECURITY, 0, _("TLS negotiation failed.\n"));
          auth_success = false;
          goto auth_done;
       }
@@ -446,7 +446,7 @@ int authenticate_user_agent(UAContext *uac)
 auth_done:
    if (!auth_success) {
       ua->fsend("%s", _(Dir_sorry));
-      Emsg4(M_ERROR, 0, _("Unable to authenticate console \"%s\" at %s:%s:%d.\n"),
+      Jmsg4(NULL, M_SECURITY, 0, _("Unable to authenticate console \"%s\" at %s:%s:%d.\n"),
             name, ua->who(), ua->host(), ua->port());
       sleep(5);
       return 0;

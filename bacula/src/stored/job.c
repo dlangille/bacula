@@ -196,7 +196,7 @@ bool run_cmd(JCR *jcr)
       Dmsg0(050, "=== Authenticate FD\n");
       if (jcr->authenticated || !authenticate_filed(jcr, jcr->file_bsock, jcr->FDVersion)) {
          Dmsg1(050, "Authentication failed Job %s\n", jcr->Job);
-         Jmsg(jcr, M_FATAL, 0, _("Unable to authenticate File daemon\n"));
+         Qmsg(jcr, M_FATAL, 0, _("Unable to authenticate File daemon\n"));
       } else {
          jcr->authenticated = true;
       }
@@ -331,8 +331,11 @@ void stored_free_jcr(JCR *jcr)
       Dmsg2(800, "Send terminate jid=%d %p\n", jcr->JobId, jcr);
       jcr->dir_bsock->signal(BNET_EOD);
       jcr->dir_bsock->signal(BNET_TERMINATE);
+      jcr->dir_bsock->destroy();
    }
-   free_bsock(jcr->file_bsock);
+   if (jcr->file_bsock) {
+      jcr->file_bsock->destroy();
+   }
    if (jcr->job_name) {
       free_pool_memory(jcr->job_name);
    }
@@ -358,7 +361,7 @@ void stored_free_jcr(JCR *jcr)
       jcr->RestoreBootstrap = NULL;
    }
    if (jcr->next_dev || jcr->prev_dev) {
-      Emsg0(M_FATAL, 0, _("In free_jcr(), but still attached to device!!!!\n"));
+      Qmsg0(NULL, M_FATAL, 0, _("In free_jcr(), but still attached to device!!!!\n"));
    }
    pthread_cond_destroy(&jcr->job_start_wait);
    if (jcr->dcrs) {

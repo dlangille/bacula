@@ -169,7 +169,7 @@ void *handle_connection_request(void *arg)
    char tbuf[100];
 
    if (bs->recv() <= 0) {
-      Jmsg1(NULL, M_ERROR, 0, _("Connection request from %s failed.\n"), bs->who());
+      Qmsg1(NULL, M_ERROR, 0, _("Connection request from %s failed.\n"), bs->who());
       bmicrosleep(5, 0);   /* make user wait 5 seconds */
       bs->destroy();
       return NULL;
@@ -195,7 +195,7 @@ void *handle_connection_request(void *arg)
    int errstat = pthread_cond_init(&jcr->job_start_wait, NULL);
    if (errstat != 0) {
       berrno be;
-      Jmsg1(jcr, M_FATAL, 0, _("Unable to init job cond variable: ERR=%s\n"), be.bstrerror(errstat));
+      Qmsg1(jcr, M_FATAL, 0, _("Unable to init job cond variable: ERR=%s\n"), be.bstrerror(errstat));
       goto bail_out;
    }
 
@@ -208,7 +208,7 @@ void *handle_connection_request(void *arg)
       goto bail_out;
    }
    if (!authenticate_director(jcr)) {
-      Jmsg(jcr, M_FATAL, 0, _("[SF0100] Unable to authenticate Director\n"));
+      Qmsg(jcr, M_FATAL, 0, _("[SF0100] Unable to authenticate Director\n"));
       goto bail_out;
    }
    Dmsg0(90, "Message channel init completed.\n");
@@ -259,6 +259,8 @@ bail_out:
    dequeue_messages(jcr);             /* send any queued messages */
    dequeue_daemon_messages(jcr);
    bs->signal(BNET_TERMINATE);
+   bs->destroy();
+   jcr->dir_bsock = NULL;             /* just freed bsock */
    free_plugins(jcr);                 /* release instantiated plugins */
    free_jcr(jcr);
    return NULL;
