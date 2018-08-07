@@ -849,7 +849,7 @@ static void display_run(HPKT &hpkt)
          first = false;
       }
       /* bit 32 is used to store the keyword LastDay, so we look up to 0-31 */
-      if (byte_is_set(run->mday, sizeof(run->mday) - 1)) {
+      if (byte_is_set(run->mday, sizeof(run->mday))) {
          if (!first) sendit(NULL, ",\n");
          sendit(NULL, "      \"Day\":");
          display_bit_array(run->mday, 31);
