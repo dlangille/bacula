@@ -26,6 +26,18 @@ class Jobs extends BaculumAPIServer {
 		$jobstatus = $this->Request->contains('jobstatus') ? $this->Request['jobstatus'] : '';
 		$misc = $this->getModule('misc');
 		$jobname = $this->Request->contains('name') && $misc->isValidName($this->Request['name']) ? $this->Request['name'] : '';
+		$clientid = $this->Request->contains('clientid') ? $this->Request['clientid'] : '';
+		if (!empty($clientid) && !$misc->isValidId($clientid)) {
+			$this->output = JobError::MSG_ERROR_CLIENT_DOES_NOT_EXISTS;
+			$this->error = JobError::ERROR_CLIENT_DOES_NOT_EXISTS;
+			return;
+		}
+		$client = $this->Request->contains('client') ? $this->Request['client'] : '';
+		if (!empty($client) && !$misc->isValidName($client)) {
+			$this->output = JobError::MSG_ERROR_CLIENT_DOES_NOT_EXISTS;
+			$this->error = JobError::ERROR_CLIENT_DOES_NOT_EXISTS;
+			return;
+		}
 		$params = array();
 		$jobstatuses = array_keys($misc->getJobState());
 		$sts = str_split($jobstatus);
@@ -49,9 +61,39 @@ class Jobs extends BaculumAPIServer {
 			}
 			$params['name']['operator'] = 'OR';
 			$params['name']['vals'] = $vals;
-			$jobs = $this->getModule('job')->getJobs($limit, $params);
-			$this->output = $jobs;
-			$this->error = JobError::ERROR_NO_ERRORS;
+
+			$error = false;
+			// Client name and clientid filter
+			if (!empty($client) || !empty($clientid)) {
+				$result = $this->getModule('bconsole')->bconsoleCommand($this->director, array('.client'));
+				if ($result->exitcode === 0) {
+					array_shift($result->output);
+					$cli = null;
+					if (!empty($client)) {
+						$cli = $this->getModule('client')->getClientByName($client);
+					} elseif (!empty($clientid)) {
+						$cli = $this->getModule('client')->getClientById($clientid);
+					}
+					if (is_object($cli) && in_array($cli->name, $result->output)) {
+						$params['clientid']['operator'] = 'AND';
+						$params['clientid']['vals'] = array($cli->clientid);
+					} else {
+						$error = true;
+						$this->output = JobError::MSG_ERROR_CLIENT_DOES_NOT_EXISTS;
+						$this->error = JobError::ERROR_CLIENT_DOES_NOT_EXISTS;
+					}
+				} else {
+					$error = true;
+					$this->output = $result->output;
+					$this->error = $result->exitcode;
+				}
+			}
+
+			if ($error === false) {
+				$jobs = $this->getModule('job')->getJobs($limit, $params);
+				$this->output = $jobs;
+				$this->error = JobError::ERROR_NO_ERRORS;
+			}
 		} else {
 			$this->output = $result->output;
 			$this->error = $result->exitcode;
