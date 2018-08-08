@@ -216,7 +216,8 @@ void bnet_thread_server(dlist *addrs, int max_clients,
             sockaddr_to_ascii((struct sockaddr *)&clientaddr, sizeof(clientaddr), buf, sizeof(buf));
             V(mutex);
             BSOCK *bs;
-            bs = init_bsock(NULL, newsockfd, "client", buf, ntohs(fd_ptr->port),
+            bs = init_bsock(NULL, newsockfd, "client", buf,
+                    sockaddr_get_port((struct sockaddr *)&clientaddr),
                     (struct sockaddr *)&clientaddr);
             if (bs == NULL) {
                Qmsg0(NULL, M_ABORT, 0, _("Could not create client BSOCK.\n"));
