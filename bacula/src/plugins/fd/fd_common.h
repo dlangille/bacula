@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2017 Kern Sibbald
+   Copyright (C) 2000-2018 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -154,21 +154,6 @@ static void copy_drives(char *drives, char *dest) {
 
 #endif  /* ! PCOMMON_H */
 
-/* Check if the bacula version is enterprise */
-#ifndef check_beef
-# define check_beef(ctx, ret) \
-  do {                       \
-     const char *v;          \
-     bfuncs->getBaculaValue(ctx, bVarVersion, (void *)&v);  \
-     if (v[0] == '6' || v[0] == '8') {                      \
-        *(ret) = true;       \
-     } else {                \
-        *(ret) = false;      \
-     }                       \
-  } while (0)
-
-#endif  /* check_beef */
-
 #ifdef USE_JOB_LIST
 
 /* This class is used to store locally the job history, you can attach data
@@ -297,8 +282,7 @@ bool joblist::find_job(const char *name, POOLMEM **data)
    P(joblist_mutex);
    if (bopen(&fp, tmp, O_RDONLY, 0) < 0) {
       berrno be;
-      Jmsg(ctx, M_ERROR, "Unable to open job database. "
-           "Can't open %s for reading ERR=%s\n",
+      Jmsg(ctx, M_ERROR, "Unable to open job database %s for reading. ERR=%s\n",
            tmp, be.bstrerror(errno));
       goto bail_out;
    }
@@ -692,3 +676,23 @@ bail_out:
 
 #endif  /* ! USE_JOB_LIST */
 
+#ifdef USE_FULL_WRITE
+static int32_t full_write(int fd, const char *ptr, int32_t nbytes, bool *canceled=NULL)
+{
+   ssize_t nleft, nwritten;
+   nleft = nbytes;
+   while (nleft > 0 && (canceled == NULL || *canceled == false)) {
+      do {
+         errno = 0;
+         nwritten = write(fd, ptr, nleft);
+      } while (nwritten == -1 && errno == EINTR && (canceled == NULL || *canceled == false));
+
+      if (nwritten <= 0) {
+         return nwritten;          /* error */
+      }
+      nleft -= nwritten;
+      ptr += nwritten;
+   }
+   return nbytes - nleft;
+}
+#endif

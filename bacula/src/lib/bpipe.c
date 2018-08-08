@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2017 Kern Sibbald
+   Copyright (C) 2000-2018 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -26,6 +26,7 @@
 
 #include "bacula.h"
 #include "jcr.h"
+
 #ifdef HAVE_GETRLIMIT
 #include <sys/resource.h>
 #else
@@ -51,6 +52,11 @@ int num_execvp_errors = (int)(sizeof(execvp_errors)/sizeof(int));
 
 #define MAX_ARGV 100
 
+#define MODE_READ 1
+#define MODE_WRITE 2
+#define MODE_SHELL 4
+#define MODE_STDERR 8
+
 #if !defined(HAVE_WIN32)
 static void build_argc_argv(char *cmd, int *bargc, char *bargv[], int max_arg);
 
@@ -73,34 +79,32 @@ BPIPE *open_bpipe(char *prog, int wait, const char *mode, char *envp[])
 {
    char *bargv[MAX_ARGV];
    int bargc, i;
-   int readp[2], writep[2];
+   int readp[2], writep[2], errp[2];
    POOLMEM *tprog;
-   int mode_read, mode_write, mode_shell;
+   int mode_map = 0;
    BPIPE *bpipe;
    int save_errno;
-#if !defined(HAVE_FCNTL_F_CLOSEM) && !defined(HAVE_CLOSEFROM)
    struct rlimit rl;
    int64_t rlimitResult=0;
-#endif
 
    if (!prog || !*prog) {
       /* execve(3) A component of the file does not name an existing file or file is an empty string. */
       errno = ENOENT; 
       return NULL;
    }
-   
+
    bpipe = (BPIPE *)malloc(sizeof(BPIPE));
    memset(bpipe, 0, sizeof(BPIPE));
-   mode_read = (mode[0] == 'r');
-   mode_write = (mode[0] == 'w' || mode[1] == 'w');
-   /* mode is at least 2 bytes long, can be 3, rs, rws, ws */
-   mode_shell = (mode[1] == 's' || (mode[1] && mode[2] == 's'));
+   if (strchr(mode,'r')) mode_map|=MODE_READ;
+   if (strchr(mode,'w')) mode_map|=MODE_WRITE;
+   if (strchr(mode,'s')) mode_map|=MODE_SHELL;
+   if (strchr(mode,'e')) mode_map|=MODE_STDERR;
+
    /* Build arguments for running program. */
    tprog = get_pool_memory(PM_FNAME);
    pm_strcpy(tprog, prog);
-   if (mode_shell) {
+   if (mode_map & MODE_SHELL) {
       build_sh_argc_argv(tprog, &bargc, bargv, MAX_ARGV);
-
    } else {
       build_argc_argv(tprog, &bargc, bargv, MAX_ARGV);
    }
@@ -122,18 +126,33 @@ BPIPE *open_bpipe(char *prog, int wait, const char *mode, char *envp[])
 #endif
 
    /* Each pipe is one way, write one end, read the other, so we need two */
-   if (mode_write && pipe(writep) == -1) {
+   if ((mode_map & MODE_WRITE) && pipe(writep) == -1) {
       save_errno = errno;
       free(bpipe);
       free_pool_memory(tprog);
       errno = save_errno;
       return NULL;
    }
-   if (mode_read && pipe(readp) == -1) {
+   if ((mode_map & MODE_READ) && pipe(readp) == -1) {
       save_errno = errno;
-      if (mode_write) {
+      if (mode_map & MODE_WRITE) {
          close(writep[0]);
          close(writep[1]);
+      }
+      free(bpipe);
+      free_pool_memory(tprog);
+      errno = save_errno;
+      return NULL;
+   }
+   if ((mode_map & MODE_STDERR) && pipe(errp) == -1) {
+      save_errno = errno;
+      if (mode_map & MODE_WRITE) {
+         close(writep[0]);
+         close(writep[1]);
+      }
+      if (mode_map & MODE_READ) {
+         close(readp[0]);
+         close(readp[1]);
       }
       free(bpipe);
       free_pool_memory(tprog);
@@ -156,13 +175,17 @@ BPIPE *open_bpipe(char *prog, int wait, const char *mode, char *envp[])
    switch (bpipe->worker_pid = fork()) {
    case -1:                           /* error */
       save_errno = errno;
-      if (mode_write) {
+      if (mode_map & MODE_WRITE) {
          close(writep[0]);
          close(writep[1]);
       }
-      if (mode_read) {
+      if (mode_map & MODE_READ) {
          close(readp[0]);
          close(readp[1]);
+      }
+      if (mode_map & MODE_STDERR) {
+         close(errp[0]);
+         close(errp[1]);
       }
       free(bpipe);
       free_pool_memory(tprog);
@@ -170,14 +193,19 @@ BPIPE *open_bpipe(char *prog, int wait, const char *mode, char *envp[])
       return NULL;
 
    case 0:                            /* child */
-      if (mode_write) {
+      if (mode_map & MODE_WRITE) {
          close(writep[1]);
          dup2(writep[0], 0);          /* Dup our write to his stdin */
       }
-      if (mode_read) {
+      if (mode_map & MODE_READ) {
          close(readp[0]);             /* Close unused child fds */
          dup2(readp[1], 1);           /* dup our read to his stdout */
-         dup2(readp[1], 2);           /*   and his stderr */
+         if (mode_map & MODE_STDERR) {  /*   and handle stderr */
+            close(errp[0]); 
+            dup2(errp[1], 2);
+         } else {
+            dup2(readp[1], 2);
+         }
       }
 
 #if HAVE_FCNTL_F_CLOSEM
@@ -210,11 +238,15 @@ BPIPE *open_bpipe(char *prog, int wait, const char *mode, char *envp[])
       break;
    }
    free_pool_memory(tprog);
-   if (mode_read) {
+   if (mode_map & MODE_READ) {
       close(readp[1]);                /* close unused parent fds */
       bpipe->rfd = fdopen(readp[0], "r"); /* open file descriptor */
    }
-   if (mode_write) {
+   if (mode_map & MODE_STDERR) {
+      close(errp[1]);                /* close unused parent fds */
+      bpipe->efd = fdopen(errp[0], "r"); /* open file descriptor */
+   }
+   if (mode_map & MODE_WRITE) {
       close(writep[0]);
       bpipe->wfd = fdopen(writep[1], "w");
    }
@@ -226,7 +258,8 @@ BPIPE *open_bpipe(char *prog, int wait, const char *mode, char *envp[])
    return bpipe;
 }
 
-/* Close the write pipe only */
+/* Close the write pipe only
+ * BE careful ! return 1 if ok */
 int close_wpipe(BPIPE *bpipe)
 {
    int stat = 1;
@@ -237,6 +270,20 @@ int close_wpipe(BPIPE *bpipe)
          stat = 0;
       }
       bpipe->wfd = NULL;
+   }
+   return stat;
+}
+
+/* Close the stderror pipe only */
+int close_epipe(BPIPE *bpipe)
+{
+   int stat = 1;
+
+   if (bpipe->efd) {
+      if (fclose(bpipe->efd) != 0) {
+         stat = 0;
+      }
+      bpipe->efd = NULL;
    }
    return stat;
 }
@@ -264,6 +311,10 @@ int close_bpipe(BPIPE *bpipe)
    if (bpipe->wfd) {
       fclose(bpipe->wfd);
       bpipe->wfd = NULL;
+   }
+   if (bpipe->efd) {
+      fclose(bpipe->efd);
+      bpipe->efd = NULL;
    }
 
    if (bpipe->wait == 0) {
