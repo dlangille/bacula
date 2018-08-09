@@ -22,9 +22,11 @@
  
 class Jobs extends BaculumAPIServer {
 	public function get() {
+		$misc = $this->getModule('misc');
 		$limit = $this->Request->contains('limit') ? intval($this->Request['limit']) : 0;
 		$jobstatus = $this->Request->contains('jobstatus') ? $this->Request['jobstatus'] : '';
-		$misc = $this->getModule('misc');
+		$level = $this->Request->contains('level') && $misc->isValidJobLevel($this->Request['level']) ? $this->Request['level'] : '';
+		$type = $this->Request->contains('type') && $misc->isValidJobType($this->Request['type']) ? $this->Request['type'] : '';
 		$jobname = $this->Request->contains('name') && $misc->isValidName($this->Request['name']) ? $this->Request['name'] : '';
 		$clientid = $this->Request->contains('clientid') ? $this->Request['clientid'] : '';
 		if (!empty($clientid) && !$misc->isValidId($clientid)) {
@@ -48,6 +50,14 @@ class Jobs extends BaculumAPIServer {
 				}
 				$params['jobstatus']['vals'][] = $sts[$i];
 			}
+		}
+		if (!empty($level)) {
+			$params['level']['operator'] = '';
+			$params['level']['vals'] = $level;
+		}
+		if (!empty($type)) {
+			$params['type']['operator'] = '';
+			$params['type']['vals'] = $type;
 		}
 		$allowed = array();
 		$result = $this->getModule('bconsole')->bconsoleCommand($this->director, array('.jobs'));

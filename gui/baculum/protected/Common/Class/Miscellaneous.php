@@ -183,7 +183,11 @@ class Miscellaneous extends TModule {
 	 * @TODO: Move it to separate validation module.
 	 */
 	public function isValidJobLevel($jobLevel) {
-		return array_key_exists($jobLevel, $this->getJobLevels());
+		return key_exists($jobLevel, $this->getJobLevels());
+	}
+
+	public function isValidJobType($job_type) {
+		return key_exists($job_type, $this->job_types);
 	}
 
 	public function isValidName($name) {
