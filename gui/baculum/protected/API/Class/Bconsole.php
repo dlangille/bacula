@@ -30,6 +30,8 @@ class Bconsole extends APIModule {
 
 	const BCONSOLE_COMMAND_PATTERN = "%s%s -c %s %s 2>&1 <<END_OF_DATA\ngui on\n%s\nquit\nEND_OF_DATA";
 
+	const BCONSOLE_API_COMMAND_PATTERN = "%s%s -c %s %s 2>&1 <<END_OF_DATA\ngui on\n.api 2 nosignal api_opts=o\n%s\nquit\nEND_OF_DATA";
+
 	const BCONSOLE_DIRECTORS_PATTERN = "%s%s -c %s -l 2>&1";
 
 	private $allowed_commands = array(
@@ -63,7 +65,9 @@ class Bconsole extends APIModule {
 		'.storage',
 		'.client',
 		'.pool',
-		'.schedule'
+		'.schedule',
+		'.api',
+		'.status'
 	);
 
 	private $config;
@@ -143,7 +147,7 @@ class Bconsole extends APIModule {
 		return (object)array('output' => $output, 'exitcode' => (integer)$exitcode);
 	}
 
-	public function bconsoleCommand($director, array $command, $user = null) {
+	public function bconsoleCommand($director, array $command, $api = false) {
 		if (count($this->config) > 0 && $this->config['enabled'] !== '1') {
 			throw new BConsoleException(
 				BconsoleError::MSG_ERROR_BCONSOLE_DISABLED,
@@ -152,7 +156,7 @@ class Bconsole extends APIModule {
 		}
 		$base_command = count($command) > 0 ? $command[0] : null;
 		if($this->isCommandValid($base_command) === true) {
-			$result = $this->execCommand($director, $command, $user);
+			$result = $this->execCommand($director, $command, $api);
 		} else {
 			throw new BConsoleException(
 				BconsoleError::MSG_ERROR_INVALID_COMMAND,
@@ -162,7 +166,7 @@ class Bconsole extends APIModule {
 		return $result;
 	}
 
-	private function execCommand($director, array $command, $user) {
+	private function execCommand($director, array $command, $api = false) {
 		$cmd = '';
 		$result = null;
 		if(!is_null($director) && $this->isValidDirector($director) === false) {
@@ -174,8 +178,9 @@ class Bconsole extends APIModule {
 			$dir = is_null($director) ? '': '-D ' . $director;
 			$sudo = ($this->getUseSudo() === true) ? self::SUDO . ' ' : '';
 			$bconsole_command = implode(' ', $command);
+			$pattern = ($api === true) ? self::BCONSOLE_API_COMMAND_PATTERN : self::BCONSOLE_COMMAND_PATTERN;
 			$cmd = sprintf(
-				self::BCONSOLE_COMMAND_PATTERN,
+				$pattern,
 				$sudo,
 				self::getCmdPath(),
 				self::getCfgPath(),
