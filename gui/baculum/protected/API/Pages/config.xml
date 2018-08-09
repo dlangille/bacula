@@ -35,5 +35,8 @@
 		<module id="oauth2_config" class="Application.API.Class.OAuth2.OAuth2Config" />
 		<module id="oauth2_authid" class="Application.API.Class.OAuth2.AuthIdManager" />
 		<module id="oauth2_token" class="Application.API.Class.OAuth2.TokenManager" />
+		<!-- component status modules -->
+		<module id="status_dir" class="Application.API.Class.DirectorStatus" />
+		<module id="status_sd" class="Application.API.Class.StorageStatus" />
 	</modules>
 </configuration>
