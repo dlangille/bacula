@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -79,15 +79,6 @@ static int openssl_verify_peer(int ok, X509_STORE_CTX *store)
       char issuer[256];
       char subject[256];
 
-      if (err == X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT ||
-          err == X509_V_ERR_SELF_SIGNED_CERT_IN_CHAIN)
-      {
-         Jmsg0(NULL, M_ERROR, 0, _("CA certificate is self signed. With OpenSSL 1.1, enforce basicConstraints = CA:true in the certificate creation to avoid this issue.\n"));
-      } else if (err == X509_V_ERR_INVALID_CA) {
-         Jmsg0(NULL, M_ERROR, 0, _("CA certificate is invalid (possibly self signed). With OpenSSL 1.1, enforce basicConstraints = CA:true in the certificate creation to avoid this issue.\n"));
-      }   
-
-
       X509_NAME_oneline(X509_get_issuer_name(cert), issuer, 256);
       X509_NAME_oneline(X509_get_subject_name(cert), subject, 256);
 
@@ -136,7 +127,7 @@ TLS_CONTEXT *new_tls_context(const char *ca_certfile, const char *ca_certdir,
 #endif
 
    /* Use SSL_OP_ALL to turn on all "rather harmless" workarounds that
-    * OpenSSL offers 
+    * OpenSSL offers
     */
    SSL_CTX_set_options(ctx->openssl, SSL_OP_ALL);
 
@@ -580,7 +571,7 @@ bool tls_bsock_accept(BSOCK *bsock)
 /*
  * Shutdown TLS_CONNECTION instance
  */
-void tls_bsock_shutdown(BSOCK *bsock)
+void tls_bsock_shutdown(BSOCKCORE *bsock)
 {
    /*
     * SSL_shutdown must be called twice to fully complete the process -
@@ -734,7 +725,7 @@ int tls_bsock_readn(BSOCK *bsock, char *ptr, int32_t nbytes)
 }
 
 /* test if 4 bytes can be read without "blocking" */
-bool tls_bsock_probe(BSOCK *bsock)
+bool tls_bsock_probe(BSOCKCORE *bsock)
 {
    int32_t pktsiz;
    return SSL_peek(bsock->tls->openssl, &pktsiz, sizeof(pktsiz))==sizeof(pktsiz);

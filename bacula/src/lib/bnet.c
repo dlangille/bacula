@@ -52,149 +52,6 @@ static pthread_mutex_t ip_mutex = PTHREAD_MUTEX_INITIALIZER;
 #endif
 
 /*
- * Read a nbytes from the network.
- * It is possible that the total bytes require in several
- * read requests
- */
-
-int32_t read_nbytes(BSOCK * bsock, char *ptr, int32_t nbytes)
-{
-   int32_t nleft, nread;
-
-#ifdef HAVE_TLS
-   if (bsock->tls) {
-      /* TLS enabled */
-      return (tls_bsock_readn(bsock, ptr, nbytes));
-   }
-#endif /* HAVE_TLS */
-
-   nleft = nbytes;
-   while (nleft > 0) {
-      errno = 0;
-      nread = socketRead(bsock->m_fd, ptr, nleft);
-      if (bsock->is_timed_out() || bsock->is_terminated()) {
-         return -1;
-      }
-
-#ifdef HAVE_WIN32
-      /*
-       * We simulate errno on Windows for a socket
-       *  error in order to handle errors correctly.
-       */
-      if (nread == SOCKET_ERROR) {
-        DWORD err = WSAGetLastError();
-        nread = -1;
-        if (err == WSAEINTR) {
-           errno = EINTR;
-        } else if (err == WSAEWOULDBLOCK) {
-           errno = EAGAIN;
-        } else {
-           errno = EIO;            /* some other error */
-        }
-     }
-#endif
-
-      if (nread == -1) {
-         if (errno == EINTR) {
-            continue;
-         }
-         if (errno == EAGAIN) {
-            bmicrosleep(0, 20000);  /* try again in 20ms */
-            continue;
-         }
-      }
-      if (nread <= 0) {
-         return -1;                /* error, or EOF */
-      }
-      nleft -= nread;
-      ptr += nread;
-      if (bsock->use_bwlimit()) {
-         bsock->control_bwlimit(nread);
-      }
-   }
-   return nbytes - nleft;          /* return >= 0 */
-}
-
-/*
- * Write nbytes to the network.
- * It may require several writes.
- */
-
-int32_t write_nbytes(BSOCK * bsock, char *ptr, int32_t nbytes)
-{
-   int32_t nleft, nwritten;
-
-   if (bsock->is_spooling()) {
-      nwritten = fwrite(ptr, 1, nbytes, bsock->m_spool_fd);
-      if (nwritten != nbytes) {
-         berrno be;
-         bsock->b_errno = errno;
-         Qmsg3(bsock->jcr(), M_FATAL, 0, _("Attr spool write error. wrote=%d wanted=%d bytes. ERR=%s\n"),
-               nbytes, nwritten, be.bstrerror());
-         Dmsg2(400, "nwritten=%d nbytes=%d.\n", nwritten, nbytes);
-         errno = bsock->b_errno;
-         return -1;
-      }
-      return nbytes;
-   }
-
-#ifdef HAVE_TLS
-   if (bsock->tls) {
-      /* TLS enabled */
-      return (tls_bsock_writen(bsock, ptr, nbytes));
-   }
-#endif /* HAVE_TLS */
-
-   nleft = nbytes;
-   while (nleft > 0) {
-      do {
-         errno = 0;
-         nwritten = socketWrite(bsock->m_fd, ptr, nleft);
-         if (bsock->is_timed_out() || bsock->is_terminated()) {
-            return -1;
-         }
-
-#ifdef HAVE_WIN32
-         /*
-          * We simulate errno on Windows for a socket
-          *  error in order to handle errors correctly.
-          */
-         if (nwritten == SOCKET_ERROR) {
-            DWORD err = WSAGetLastError();
-            nwritten = -1;
-            if (err == WSAEINTR) {
-               errno = EINTR;
-            } else if (err == WSAEWOULDBLOCK) {
-               errno = EAGAIN;
-            } else {
-               errno = EIO;        /* some other error */
-            }
-         }
-#endif
-
-      } while (nwritten == -1 && errno == EINTR);
-      /*
-       * If connection is non-blocking, we will get EAGAIN, so
-       * use select()/poll to keep from consuming all the CPU
-       * and try again.
-       */
-      if (nwritten == -1 && errno == EAGAIN) {
-         fd_wait_data(bsock->m_fd, WAIT_WRITE, 1, 0);
-         continue;
-      }
-      if (nwritten <= 0) {
-         return -1;                /* error */
-      }
-      nleft -= nwritten;
-      ptr += nwritten;
-      if (bsock->use_bwlimit()) {
-         bsock->control_bwlimit(nwritten);
-      }
-   }
-   return nbytes - nleft;
-}
-
-/*
  * Establish a TLS connection -- server side
  *  Returns: true  on success
  *           false on failure
@@ -321,16 +178,16 @@ bool bnet_tls_client(TLS_CONTEXT *ctx, BSOCK * bsock, alist *verify_list)
 #endif
 
 #if defined(HAVE_GETADDRINFO)
-/* 
+/*
  * getaddrinfo.c - Simple example of using getaddrinfo(3) function.
- * 
+ *
  * Michal Ludvig <michal@logix.cz> (c) 2002, 2003
  * http://www.logix.cz/michal/devel/
  *
  * License: public domain.
  */
-const char *resolv_host(int family, const char *host, dlist *addr_list) 
-{ 
+const char *resolv_host(int family, const char *host, dlist *addr_list)
+{
    IPADDR *ipaddr;
    struct addrinfo hints, *res, *rp;
    int errcode;
@@ -338,8 +195,8 @@ const char *resolv_host(int family, const char *host, dlist *addr_list)
    void *ptr;
 
    memset (&hints, 0, sizeof(hints));
-   hints.ai_family = family; 
-   hints.ai_socktype = SOCK_STREAM; 
+   hints.ai_family = family;
+   hints.ai_socktype = SOCK_STREAM;
    //hints.ai_flags |= AI_CANONNAME;
 
    errcode = getaddrinfo (host, NULL, &hints, &res);
@@ -348,33 +205,33 @@ const char *resolv_host(int family, const char *host, dlist *addr_list)
    for (rp=res; res; res=res->ai_next) {
       //inet_ntop (res->ai_family, res->ai_addr->sa_data, addrstr, 100);
       switch (res->ai_family) {
-      case AF_INET: 
+      case AF_INET:
          ipaddr = New(IPADDR(rp->ai_addr->sa_family));
          ipaddr->set_type(IPADDR::R_MULTIPLE);
          ptr = &((struct sockaddr_in *) res->ai_addr)->sin_addr;
          ipaddr->set_addr4((in_addr *)ptr);
-         break; 
+         break;
 #if defined(HAVE_IPV6)
-      case AF_INET6: 
+      case AF_INET6:
          ipaddr = New(IPADDR(rp->ai_addr->sa_family));
          ipaddr->set_type(IPADDR::R_MULTIPLE);
          ptr = &((struct sockaddr_in6 *) res->ai_addr)->sin6_addr;
          ipaddr->set_addr6((in6_addr *)ptr);
-         break; 
-#endif 
-      default: 
-         continue; 
-      } 
+         break;
+#endif
+      default:
+         continue;
+      }
       //inet_ntop (res->ai_family, ptr, addrstr, 100);
       //Pmsg3(000, "IPv%d address: %s (%s)\n", res->ai_family == PF_INET6 ? 6 : 4,
       //         addrstr, res->ai_canonname);
       addr_list->append(ipaddr);
-   } 
+   }
    freeaddrinfo(rp);
-   return NULL; 
-} 
+   return NULL;
+}
 
-#else 
+#else
 
 /*
  * Get human readable error for gethostbyname()
@@ -484,13 +341,13 @@ dlist *bnet_host2ipaddrs(const char *host, int family, const char **errstr)
       addr->set_addr4(&inaddr);
       addr_list->append(addr);
 #ifdef HAVE_IPV6
-   } else if (inet_pton(AF_INET6, host, &inaddr6) == 1) { 
+   } else if (inet_pton(AF_INET6, host, &inaddr6) == 1) {
       addr = New(IPADDR(AF_INET6));
       addr->set_type(IPADDR::R_MULTIPLE);
       addr->set_addr6(&inaddr6);
       addr_list->append(addr);
 #endif
-   } else { 
+   } else {
       if (family != 0) {
          errmsg = resolv_host(family, host, addr_list);
          if (errmsg) {
@@ -527,119 +384,68 @@ const char *bnet_sig_to_ascii(int32_t msglen)
    static char buf[30];
    switch (msglen) {
    case BNET_EOD:
-      return "BNET_EOD";        /* End of data stream, new data may follow */
+      return "BNET_EOD";            /* End of data stream, new data may follow */
    case BNET_EOD_POLL:
-      return "BNET_EOD_POLL";   /* End of data and poll all in one */
+      return "BNET_EOD_POLL";       /* End of data and poll all in one */
    case BNET_STATUS:
-      return "BNET_STATUS";     /* Send full status */
+      return "BNET_STATUS";         /* Send full status */
    case BNET_TERMINATE:
-      return "BNET_TERMINATE";  /* Conversation terminated, doing close() */
+      return "BNET_TERMINATE";      /* Conversation terminated, doing close() */
    case BNET_POLL:
-      return "BNET_POLL";       /* Poll request, I'm hanging on a read */
+      return "BNET_POLL";           /* Poll request, I'm hanging on a read */
    case BNET_HEARTBEAT:
-      return "BNET_HEARTBEAT";  /* Heartbeat Response requested */
+      return "BNET_HEARTBEAT";      /* Heartbeat Response requested */
    case BNET_HB_RESPONSE:
-      return "BNET_HB_RESPONSE"; /* Only response permited to HB */
+      return "BNET_HB_RESPONSE";    /* Only response permited to HB */
    case BNET_BTIME:
-      return "BNET_BTIME";      /* Send UTC btime */
+      return "BNET_BTIME";          /* Send UTC btime */
    case BNET_BREAK:
-      return "BNET_BREAK";      /* Stop current command -- ctl-c */
+      return "BNET_BREAK";          /* Stop current command -- ctl-c */
    case BNET_START_SELECT:
-      return "BNET_START_SELECT"; /* Start of a selection list */
+      return "BNET_START_SELECT";   /* Start of a selection list */
    case BNET_END_SELECT:
-      return "BNET_END_SELECT"; /* End of a select list */
+      return "BNET_END_SELECT";     /* End of a select list */
    case BNET_INVALID_CMD:
-      return "BNET_INVALID_CMD"; /* Invalid command sent */
+      return "BNET_INVALID_CMD";    /* Invalid command sent */
    case BNET_CMD_FAILED:
-      return "BNET_CMD_FAILED"; /* Command failed */
+      return "BNET_CMD_FAILED";     /* Command failed */
    case BNET_CMD_OK:
-      return "BNET_CMD_OK";     /* Command succeeded */
+      return "BNET_CMD_OK";         /* Command succeeded */
    case BNET_CMD_BEGIN:
-      return "BNET_CMD_BEGIN";  /* Start command execution */
+      return "BNET_CMD_BEGIN";      /* Start command execution */
    case BNET_MSGS_PENDING:
-      return "BNET_MSGS_PENDING"; /* Messages pending */
+      return "BNET_MSGS_PENDING";   /* Messages pending */
    case BNET_MAIN_PROMPT:
-      return "BNET_MAIN_PROMPT"; /* Server ready and waiting */
+      return "BNET_MAIN_PROMPT";    /* Server ready and waiting */
    case BNET_SELECT_INPUT:
-      return "BNET_SELECT_INPUT"; /* Return selection input */
+      return "BNET_SELECT_INPUT";   /* Return selection input */
    case BNET_WARNING_MSG:
-      return "BNET_WARNING_MSG"; /* Warning message */
+      return "BNET_WARNING_MSG";    /* Warning message */
    case BNET_ERROR_MSG:
-      return "BNET_ERROR_MSG";  /* Error message -- command failed */
+      return "BNET_ERROR_MSG";      /* Error message -- command failed */
    case BNET_INFO_MSG:
-      return "BNET_INFO_MSG";   /* Info message -- status line */
+      return "BNET_INFO_MSG";       /* Info message -- status line */
    case BNET_RUN_CMD:
-      return "BNET_RUN_CMD";    /* Run command follows */
+      return "BNET_RUN_CMD";        /* Run command follows */
    case BNET_YESNO:
-      return "BNET_YESNO";      /* Request yes no response */
+      return "BNET_YESNO";          /* Request yes no response */
    case BNET_START_RTREE:
-      return "BNET_START_RTREE"; /* Start restore tree mode */
+      return "BNET_START_RTREE";    /* Start restore tree mode */
    case BNET_END_RTREE:
-      return "BNET_END_RTREE";  /* End restore tree mode */
+      return "BNET_END_RTREE";      /* End restore tree mode */
    case BNET_SUB_PROMPT:
-      return "BNET_SUB_PROMPT"; /* Indicate we are at a subprompt */
+      return "BNET_SUB_PROMPT";     /* Indicate we are at a subprompt */
    case BNET_TEXT_INPUT:
-      return "BNET_TEXT_INPUT"; /* Get text input from user */
+      return "BNET_TEXT_INPUT";     /* Get text input from user */
    case BNET_EXT_TERMINATE:
        return "BNET_EXT_TERMINATE"; /* A Terminate condition has been met and
-                               already reported somewhere else */
-   case BNET_FDCALLED      :
-      return "BNET_FDCALLED"; /* The FD should keep the connection for a new job */
+                                       already reported somewhere else */
+   case BNET_FDCALLED:
+      return "BNET_FDCALLED";       /* The FD should keep the connection for a new job */
    default:
       bsnprintf(buf, sizeof(buf), _("Unknown sig %d"), (int)msglen);
       return buf;
    }
-}
-
-/* Initialize internal socket structure.
- *  This probably should be done in bsock.c
- */
-BSOCK *init_bsock(JCR *jcr, int sockfd, const char *who,
-                   const char *host, int port, struct sockaddr *client_addr)
-{
-   Dmsg4(100, "socket=%d who=%s host=%s port=%d\n", sockfd, who, host, port);
-   BSOCK *bsock = (BSOCK *)malloc(sizeof(BSOCK));
-   bmemzero(bsock, sizeof(BSOCK));
-   bsock->m_master=bsock; /* don't use set_master() here */
-   bsock->m_fd = sockfd;
-   bsock->tls = NULL;
-   bsock->errors = 0;
-   bsock->m_blocking = 1;
-   bsock->pout_msg_no = &bsock->out_msg_no;
-   bsock->uninstall_send_hook_cb();
-   bsock->msg = get_pool_memory(PM_BSOCK);
-   bsock->cmsg = get_pool_memory(PM_BSOCK);
-   bsock->errmsg = get_pool_memory(PM_MESSAGE);
-   bsock->set_who(bstrdup(who));
-   bsock->set_host(bstrdup(host));
-   bsock->set_port(port);
-   bmemzero(&bsock->peer_addr, sizeof(bsock->peer_addr));
-   memcpy(&bsock->client_addr, client_addr, sizeof(bsock->client_addr));
-   bsock->timeout = BSOCK_TIMEOUT;
-   bsock->set_jcr(jcr);
-   return bsock;
-}
-
-BSOCK *dup_bsock(BSOCK *osock)
-{
-   BSOCK *bsock = (BSOCK *)malloc(sizeof(BSOCK));
-   osock->set_locking();
-   memcpy(bsock, osock, sizeof(BSOCK));
-   bsock->msg = get_pool_memory(PM_BSOCK);
-   bsock->cmsg = get_pool_memory(PM_BSOCK);
-   bsock->errmsg = get_pool_memory(PM_MESSAGE);
-   if (osock->who()) {
-      bsock->set_who(bstrdup(osock->who()));
-   }
-   if (osock->host()) {
-      bsock->set_host(bstrdup(osock->host()));
-   }
-   if (osock->src_addr) {
-      bsock->src_addr = New( IPADDR( *(osock->src_addr)) );
-   }
-   bsock->set_duped();
-   bsock->set_master(osock);
-   return bsock;
 }
 
 int set_socket_errno(int sockstat)

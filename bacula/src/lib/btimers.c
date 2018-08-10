@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -153,7 +153,7 @@ btimer_t *start_thread_timer(JCR *jcr, pthread_t tid, uint32_t wait)
  *  Returns: btimer_t *(pointer to btimer_t struct) on success
  *           NULL on failure
  */
-btimer_t *start_bsock_timer(BSOCK *bsock, uint32_t wait)
+btimer_t *_start_bsock_timer(BSOCK *bsock, uint32_t wait)
 {
    btimer_t *wid;
    if (wait <= 0) {                 /* wait should be > 0 */
@@ -178,6 +178,28 @@ btimer_t *start_bsock_timer(BSOCK *bsock, uint32_t wait)
 
    return wid;
 }
+
+/*
+ * Start a timer on a BSOCK. kill it after wait seconds.
+ *
+ *  Returns: btimer_t *(pointer to btimer_t struct) on success
+ *           NULL on failure
+ */
+btimer_t *start_bsock_timer(BSOCKCORE *bsock, uint32_t wait)
+{
+   return _start_bsock_timer((BSOCK*)bsock, wait);
+};
+
+/*
+ * Start a timer on a BSOCK. kill it after wait seconds.
+ *
+ *  Returns: btimer_t *(pointer to btimer_t struct) on success
+ *           NULL on failure
+ */
+btimer_t *start_bsock_timer(BSOCK *bsock, uint32_t wait)
+{
+   return _start_bsock_timer(bsock, wait);
+};
 
 /*
  * Stop bsock timer

@@ -338,10 +338,10 @@ TLS_CONNECTION   *new_tls_connection     (TLS_CONTEXT *ctx, int fd);
 bool             tls_bsock_accept        (BSOCK *bsock);
 int              tls_bsock_writen        (BSOCK *bsock, char *ptr, int32_t nbytes);
 int              tls_bsock_readn         (BSOCK *bsock, char *ptr, int32_t nbytes);
-bool             tls_bsock_probe         (BSOCK *bsock);
+bool             tls_bsock_probe         (BSOCKCORE *bsock);
 #endif /* HAVE_TLS */
 bool             tls_bsock_connect       (BSOCK *bsock);
-void             tls_bsock_shutdown      (BSOCK *bsock);
+void             tls_bsock_shutdown      (BSOCKCORE *bsock);
 void             free_tls_connection     (TLS_CONNECTION *tls);
 bool             get_tls_require         (TLS_CONTEXT *ctx);
 bool             get_tls_enable          (TLS_CONTEXT *ctx);

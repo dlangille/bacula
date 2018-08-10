@@ -32,7 +32,7 @@ dummy:
 #
 INCLUDE_FILES = ../baconfig.h ../bacula.h ../bc_types.h \
       ../config.h ../jcr.h ../version.h \
-      address_conf.h alist.h attr.h base64.h \
+      address_conf.h alist.h attr.h base64.h bsockcore.h \
       berrno.h bits.h bjson.h bpipe.h breg.h bregex.h \
       bsock.h btime.h btimers.h crypto.h dlist.h \
       flist.h fnmatch.h guid_to_name.h htable.h lex.h \
@@ -51,7 +51,7 @@ LIBBAC_SRCS = attr.c base64.c berrno.c bsys.c binflate.c bget_msg.c \
       cram-md5.c crc32.c crypto.c daemon.c edit.c fnmatch.c \
       guid_to_name.c hmac.c jcr.c lex.c lz4.c alist.c dlist.c \
       md5.c message.c mem_pool.c openssl.c \
-      plugins.c priv.c queue.c bregex.c \
+      plugins.c priv.c queue.c bregex.c bsockcore.c \
       runscript.c rwlock.c scan.c sellist.c serial.c sha1.c sha2.c \
       signal.c smartall.c rblist.c tls.c tree.c \
       util.c var.c watchdog.c workq.c btimers.c \
@@ -203,7 +203,6 @@ sellist_test: Makefile sellist.c
 	$(RMF) sellist.o
 	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) sellist.c
 
-
 xml_test: Makefile xml.o
 	$(RMF) xml.o
 	$(CXX) -DTEST_PROG $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE)  $(CFLAGS) xml.c
@@ -238,6 +237,20 @@ ini: Makefile ini.o
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -o $@ ini.o -lbaccfg -lbac $(DLIB) -lm $(LIBS) $(OPENSSL_LIBS)
 	$(RMF) ini.o
 	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) ini.c
+
+bsockcore_test: Makefile bsockcore.o
+	$(RMF) bsockcore.o
+	$(CXX) -DTEST_PROGRAM $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE)  $(CFLAGS) bsockcore.c
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -o $@ bsockcore.o $(DLIB) -lbac -lm $(LIBS)
+	$(RMF) bsockcore.o
+	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) bsockcore.c
+
+bsock_test: Makefile bsock.o
+	$(RMF) bsock.o
+	$(CXX) -DTEST_PROGRAM $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE)  $(CFLAGS) bsock.c
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -o $@ bsock.o $(DLIB) -lbac -lm $(LIBS)
+	$(RMF) bsock.o
+	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) bsock.c
 
 install-includes:
 	$(MKDIR) $(DESTDIR)/$(includedir)/bacula
