@@ -23,41 +23,44 @@
 Prado::using('Application.API.Class.ComponentStatusModule');
 
 /**
- * Module used to parse and prepare storage status output.
+ * Module used to parse and prepare director status output.
  */
-class StorageStatus extends ComponentStatusModule {
+class StatusDirector extends ComponentStatusModule {
 
 	/**
 	 * Get director status by raw bconsole status director output.
 	 *
 	 * @param array $output bconsole status director output
-	 * @return array array with parsed storage status values
+	 * @return array array with parsed director status values
 	 */
 	public function getStatus(array $output) {
 		$result = array();
+		$section = null;
 		$line = null;
+		$sections = array('header:', 'running:', 'terminated:');
 		$opts = array();
-		$header = false;
 		for($i = 0; $i < count($output); $i++) {
-			if (empty($output[$i])) {
-				if  (count($opts) > 10) {
-					$result[] = $opts;
-				}
-				if (count($opts) > 0) {
+			if (in_array($output[$i], $sections)) { // check if section
+				$section = rtrim($output[$i], ':');
+			} elseif ($section === 'header' && count($opts) == 0 && $output[$i] === '') {
+				/**
+				 * special treating 'scheduled' section because this section
+				 * is missing in the api status dir output.
+				 */
+				$section = 'scheduled';
+			} elseif (!empty($section)) {
+				$line = $this->parseLine($output[$i]);
+				if (is_array($line)) { // check if line
+					if (!key_exists($section, $result)) {
+						$result[$section] = array();
+						continue;
+					}
+					$opts[$line['key']] = $line['value'];
+				} elseif (count($opts) > 0) { // dump all parameters
+					$result[$section][] = $opts;
 					$opts = array();
 				}
-			} elseif ($output[$i] === 'header:') {
-				$header = true;
-			} else {
-				$line = $this->parseLine($output[$i]);
-				if (is_array($line)) {
-					$opts[$line['key']] = $line['value'];
-				}
 			}
-		}
-		if ($header) {
-			// header is only one so get it without using list
-			$result = array_pop($result);
 		}
 		return $result;
 	}
