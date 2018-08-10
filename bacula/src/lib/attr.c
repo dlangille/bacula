@@ -262,7 +262,7 @@ void print_ls_output(JCR *jcr, ATTR *attr, int message_type /* M_RESTORED */)
 
    if (attr->type == FT_DELETED) { /* TODO: change this to get last seen values */
       bsnprintf(buf, sizeof(buf),
-                "----------   - -        -                  - ---------- --------  %s\n", attr->ofname);
+                "-*DELETED*-  - -        -                  - ---------- --------  %s\n", attr->ofname);
       Dmsg1(dbglvl, "%s", buf);
       Jmsg(jcr, message_type, 1, "%s", buf);
       return;
