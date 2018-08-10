@@ -18,7 +18,8 @@ var OAuth2Scopes = [
 	'joblog',
 	'filesets',
 	'schedules',
-	'config'
+	'config',
+	'status'
 ];
 var set_scopes = function(field_id) {
 	document.getElementById(field_id).value = OAuth2Scopes.join(' ');
