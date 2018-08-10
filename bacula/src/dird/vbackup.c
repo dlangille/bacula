@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2017 Kern Sibbald
+   Copyright (C) 2000-2018 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -19,16 +19,17 @@
 /*
  *   Bacula Director -- vbackup.c -- responsible for doing virtual
  *     backup jobs or in other words, consolidation or synthetic
- *     backups.  No connection to the Client is made.
+ *     backups.
  *
  *     Kern Sibbald, July MMVIII
  *
  *  Basic tasks done here:
- *    Open DB and create records for this job.
- *    Figure out what Jobs to copy.
- *    Open Message Channel with Storage daemon to tell him a 
- *      job will be starting.
- *    Connect to the storage daemon and run the job.
+ *     Open DB and create records for this job.
+ *     Figure out what Jobs to copy.
+ *     Open Message Channel with Storage daemon to tell him a job will be starting.
+ *     Open connection with File daemon and pass him commands
+ *       to do the backup.
+ *     When the File daemon finishes the job, update the DB.
  */
 
 #include "bacula.h"
@@ -46,6 +47,7 @@ void vbackup_cleanup(JCR *jcr, int TermCode);
  */
 bool do_vbackup_init(JCR *jcr)
 {
+
    if (!get_or_create_fileset_record(jcr)) {
       Dmsg1(dbglevel, "JobId=%d no FileSet\n", (int)jcr->JobId);
       return false;
@@ -57,13 +59,6 @@ bool do_vbackup_init(JCR *jcr)
       return false;
    }
 
-   /*
-    * If the read pool has not been allocated yet due to the job
-    *  being upgraded to a virtual full then allocate it now
-    */
-   if (!jcr->rpool_source) {
-     jcr->rpool_source = get_pool_memory(PM_MESSAGE);
-   }
    jcr->jr.PoolId = get_or_create_pool_record(jcr, jcr->pool->name());
    if (jcr->jr.PoolId == 0) {
       Dmsg1(dbglevel, "JobId=%d no PoolId\n", (int)jcr->JobId);
@@ -598,9 +593,6 @@ static bool create_bootstrap_file(JCR *jcr, char *jobids)
 
    complete_bsr(ua, rx.bsr_list);
    jcr->ExpectedFiles = write_bsr_file(ua, rx);
-   if (chk_dbglvl(10)) {
-      Pmsg1(000,  "Found %d files to consolidate.\n", jcr->ExpectedFiles);
-   }
    Jmsg(jcr, M_INFO, 0, _("Found %d files to consolidate into Virtual Full.\n"),
         jcr->ExpectedFiles);
    free_ua_context(ua);
