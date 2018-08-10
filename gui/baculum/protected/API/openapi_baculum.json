@@ -289,6 +289,10 @@
 	{
 		"name": "joblog",
 		"description": "Bacula joblog endpoints"
+	},
+	{
+		"name": "status",
+		"description": "Bacula status endpoints"
 	}],
 	"paths": {
 		"/api/v1/clients": {
@@ -568,6 +572,24 @@
 						"in": "query",
 						"required": false,
 						"description": "Client name",
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"name": "type",
+						"in": "query",
+						"required": false,
+						"description": "Job type letter",
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"name": "level",
+						"in": "query",
+						"required": false,
+						"description": "Job level letter",
 						"schema": {
 							"type": "string"
 						}
@@ -3164,6 +3186,677 @@
 				"parameters": [{
 					"$ref": "#/components/parameters/JobId"
 				}]
+			}
+		},
+		"/api/v1/status/director/": {
+			"get": {
+				"tags": ["status"],
+				"summary": "Get director status",
+				"description": "Get director status",
+				"responses": {
+					"200": {
+						"description": "Director status output",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"type": "object",
+											"properties": {
+												"header": {
+													"description": "Status header",
+													"type": "array",
+													"items": {
+														"type": "object",
+														"properties": {
+															"version": {
+																"description": "Director version",
+																"type": "string"
+															},
+															"uname": {
+																"description": "Director uname",
+																"type": "string"
+															},
+															"started_epoch": {
+																"description": "Started epoch",
+																"type": "string"
+															},
+															"started": {
+																"description": "Started time",
+																"type": "string"
+															},
+															"reloaded_epoch": {
+																"description": "Reloaded epoch",
+																"type": "string"
+															},
+															"reloaded": {
+																"description": "Reloaded time",
+																"type": "string"
+															},
+															"jobs_run": {
+																"description": "Jobs run",
+																"type": "string"
+															},
+															"jobs_running": {
+																"description": "Jobs running",
+																"type": "string"
+															},
+															"nclients": {
+																"description": "Number of clients",
+																"type": "string"
+															},
+															"nstores": {
+																"description": "Number of storages",
+																"type": "string"
+															},
+															"npools": {
+																"description": "Number of pools",
+																"type": "string"
+															},
+															"ncats": {
+																"description": "Number of cats",
+																"type": "string"
+															},
+															"nfset": {
+																"description": "Number of filesets",
+																"type": "string"
+															},
+															"nscheds": {
+																"description": "Number of schedules",
+																"type": "string"
+															},
+															"plugins": {
+																"description": "Plugins",
+																"type": "string"
+															}
+														}
+													}
+												},
+												"scheduled": {
+													"description": "Scheduled jobs",
+													"type": "array",
+													"items": {
+														"type": "object",
+														"properties": {
+															"level": {
+																"description": "Job level",
+																"type": "string"
+															},
+															"type": {
+																"description": "Job type",
+																"type": "string"
+															},
+															"priority": {
+																"description": "Priority",
+																"type": "string"
+															},
+															"schedtime_epocha": {
+																"description": "Scheduled time epoch",
+																"type": "string"
+															},
+															"schedtime": {
+																"description": "Scheduled time",
+																"type": "string"
+															},
+															"volume": {
+																"description": "Volume name",
+																"type": "string"
+															},
+															"pool": {
+																"description": "Pool name",
+																"type": "string"
+															},
+															"storage": {
+																"description": "Storage name",
+																"type": "string"
+															}
+														}
+													}
+												},
+												"running": {
+													"description": "Running jobs",
+													"type": "array",
+													"items": {
+														"type": "object",
+														"properties": {
+															"level": {
+																"description": "Job level",
+																"type": "string"
+															},
+															"type": {
+																"description": "Job type",
+																"type": "string"
+															},
+															"status": {
+																"description": "Job status letter",
+																"type": "string"
+															},
+															"status_desc": {
+																"description": "Status description",
+																"type": "string"
+															},
+															"comment": {
+																"description": "Comment",
+																"type": "string"
+															},
+															"jobbytes": {
+																"description": "jobbytes",
+																"type": "string"
+															},
+															"jobfiles": {
+																"description": "Job files",
+																"type": "string"
+															},
+															"job": {
+																"description": "Job uname",
+																"type": "string"
+															},
+															"name": {
+																"description": "Job name",
+																"type": "string"
+															},
+															"clientname": {
+																"description": "Client name",
+																"type": "string"
+															},
+															"fileset": {
+																"description": "Fileset name",
+																"type": "string"
+															},
+															"storage": {
+																"description": "Storage name",
+																"type": "string"
+															},
+															"rstorage": {
+																"description": "Restore storage name",
+																"type": "string"
+															},
+															"schedtime_epoch": {
+																"description": "Schedule time epoch",
+																"type": "string"
+															},
+															"schedtime": {
+																"description": "Schedule time",
+																"type": "string"
+															},
+															"starttime_epoch": {
+																"description": "Start time epoch",
+																"type": "string"
+															},
+															"starttime": {
+																"description": "Start time",
+																"type": "string"
+															},
+															"priority": {
+																"description": "Priority",
+																"type": "string"
+															},
+															"errors": {
+																"description": "Errors",
+																"type": "string"
+															}
+														}
+													}
+												},
+												"terminated": {
+													"description": "Terminated jobs",
+													"type": "array",
+													"items": {
+														"type": "object",
+														"properties": {
+															"level": {
+																"description": "Job level",
+																"type": "string"
+															},
+															"type": {
+																"description": "Job type",
+																"type": "string"
+															},
+															"status": {
+																"description": "Job status letter",
+																"type": "string"
+															},
+															"status_desc": {
+																"description": "Status description",
+																"type": "string"
+															},
+															"jobbytes": {
+																"description": "jobbytes",
+																"type": "string"
+															},
+															"jobfiles": {
+																"description": "Job files",
+																"type": "string"
+															},
+															"job": {
+																"description": "Job uname",
+																"type": "string"
+															},
+															"starttime_epoch": {
+																"description": "Start time epoch",
+																"type": "string"
+															},
+															"starttime": {
+																"description": "Start time",
+																"type": "string"
+															},
+															"endtime_epoch": {
+																"description": "End time epoch",
+																"type": "string"
+															},
+															"endtime": {
+																"description": "End time",
+																"type": "string"
+															},
+															"errors": {
+																"description": "Errors",
+																"type": "string"
+															}
+														}
+													}
+												}
+											}
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					{
+						"name": "type",
+						"in": "query",
+						"description": "Output type (header, scheduled, running, terminated)",
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/api/v1/status/storage/": {
+			"get": {
+				"tags": ["status"],
+				"summary": "Get storage status",
+				"description": "Get storage status",
+				"responses": {
+					"200": {
+						"description": "Storage status output",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"description": "Storage status output",
+											"type": "object",
+											"properties": {
+												"header": {
+													"description": "Status header",
+													"type": "array",
+													"items": {
+														"type": "object",
+														"properties": {
+															"name": {
+																"description": "Storage name",
+																"type": "string"
+															},
+															"version": {
+																"description": "Storage version",
+																"type": "string"
+															},
+															"uname": {
+																"description": "Storage uname",
+																"type": "string"
+															},
+															"started_epoch": {
+																"description": "Started epoch",
+																"type": "string"
+															},
+															"started": {
+																"description": "Started time",
+																"type": "string"
+															},
+															"jobs_run": {
+																"description": "Jobs run",
+																"type": "string"
+															},
+															"jobs_running": {
+																"description": "Jobs running",
+																"type": "string"
+															},
+															"ndevices": {
+																"description": "Number of devices",
+																"type": "string"
+															},
+															"nautochgr": {
+																"description": "Number of autochangers",
+																"type": "string"
+															},
+															"plugins": {
+																"description": "Plugins",
+																"type": "string"
+															},
+															"drivers": {
+																"description": "Drivers",
+																"type": "string"
+															}
+														}
+													}
+												},
+												"devices": {
+													"description": "Storage devicesuu",
+													"type": "array",
+													"items": {
+														"type": "object",
+														"properties": {
+															"name": {
+																"description": "Device name",
+																"type": "string"
+															},
+															"archive_device": {
+																"description": "Archive device",
+																"type": "string"
+															},
+															"type": {
+																"description": "Device type",
+																"type": "string"
+															},
+															"media_type": {
+																"description": "Media type",
+																"type": "string"
+															},
+															"open": {
+																"description": "Open",
+																"type": "string"
+															},
+															"writers": {
+																"description": "Writers",
+																"type": "string"
+															},
+															"maximum_concurrent_jobs": {
+																"description": "Maximum concurrent jobs",
+																"type": "string"
+															},
+															"maximum_volume_size": {
+																"description": "Maximum volume size",
+																"type": "string"
+															},
+															"read_only": {
+																"description": "Read only",
+																"type": "string"
+															},
+															"autoselect": {
+																"description": "Auto select",
+																"type": "string"
+															},
+															"enabled": {
+																"description": "Enabled",
+																"type": "string"
+															},
+															"free_space": {
+																"description": "Free space",
+																"type": "string"
+															},
+															"total_space": {
+																"description": "Total space",
+																"type": "string"
+															},
+															"devno": {
+																"description": "Device number",
+																"type": "string"
+															},
+															"mounted": {
+																"description": "Mounted",
+																"type": "string"
+															},
+															"waiting": {
+																"description": "Waiting",
+																"type": "string"
+															},
+															"volume": {
+																"description": "Volume name",
+																"type": "string"
+															},
+															"pool": {
+																"description": "Pool name",
+																"type": "string"
+															},
+															"blocked_desc": {
+																"description": "Blocked description",
+																"type": "string"
+															},
+															"blocked": {
+																"description": "Blocked",
+																"type": "string"
+															},
+															"append": {
+																"description": "Append",
+																"type": "string"
+															},
+															"bytes": {
+																"description": "Bytes",
+																"type": "string"
+															},
+															"blocks": {
+																"description": "Blocks",
+																"type": "string"
+															},
+															"file": {
+																"description": "File",
+																"type": "string"
+															},
+															"block": {
+																"description": "Block",
+																"type": "string"
+															}
+														}
+													}
+												},
+												"running": {
+													"description": "Running jobs",
+													"type": "array",
+													"items": {
+														"type": "object",
+														"properties": {
+															"jobid": {
+																"description": "Job identifier",
+																"type": "string"
+															},
+															"job": {
+																"description": "Job uname",
+																"type": "string"
+															},
+															"level": {
+																"description": "Job level",
+																"type": "string"
+															},
+															"type": {
+																"description": "Job type",
+																"type": "string"
+															},
+															"status": {
+																"description": "Job status letter",
+																"type": "string"
+															},
+															"status_desc": {
+																"description": "Status description",
+																"type": "string"
+															},
+															"jobbytes": {
+																"description": "jobbytes",
+																"type": "string"
+															},
+															"jobfiles": {
+																"description": "Job files",
+																"type": "string"
+															},
+															"starttime_epoch": {
+																"description": "Start time epoch",
+																"type": "string"
+															},
+															"starttime": {
+																"description": "Start time",
+																"type": "string"
+															},
+															"errors": {
+																"description": "Errors",
+																"type": "string"
+															},
+															"newbsr": {
+																"description": "New BSR",
+																"type": "string"
+															},
+															"read_volume": {
+																"description": "Read volume",
+																"type": "string"
+															},
+															"read_pool": {
+																"description": "Read pool",
+																"type": "string"
+															},
+															"read_device": {
+																"description": "Read device",
+																"type": "string"
+															},
+															"write_volume": {
+																"description": "Write volume",
+																"type": "string"
+															},
+															"write_pool": {
+																"description": "Write pool",
+																"type": "string"
+															},
+															"write_device": {
+																"description": "Write device",
+																"type": "string"
+															},
+															"spooling": {
+																"description": "Spooling",
+																"type": "string"
+															},
+															"despooling": {
+																"description": "Despooling",
+																"type": "string"
+															},
+															"despool_wait": {
+																"description": "Despool wait",
+																"type": "string"
+															},
+															"avebytes_sec": {
+																"description": "Averate bytes/second",
+																"type": "string"
+															},
+															"lastbytes_sec": {
+																"description": "Last bytes/second",
+																"type": "string"
+															}
+														}
+													}
+												},
+												"terminated": {
+													"description": "Terminated jobs",
+													"type": "array",
+													"items": {
+														"type": "object",
+														"properties": {
+															"jobid": {
+																"description": "Job identifier",
+																"type": "string"
+															},
+															"level": {
+																"description": "Job level",
+																"type": "string"
+															},
+															"type": {
+																"description": "Job type",
+																"type": "string"
+															},
+															"status": {
+																"description": "Job status letter",
+																"type": "string"
+															},
+															"status_desc": {
+																"description": "Status description",
+																"type": "string"
+															},
+															"jobbytes": {
+																"description": "jobbytes",
+																"type": "string"
+															},
+															"jobfiles": {
+																"description": "Job files",
+																"type": "string"
+															},
+															"job": {
+																"description": "Job uname",
+																"type": "string"
+															},
+															"name": {
+																"description": "Job name",
+																"type": "string"
+															},
+															"starttime_epoch": {
+																"description": "Start time epoch",
+																"type": "string"
+															},
+															"starttime": {
+																"description": "Start time",
+																"type": "string"
+															},
+															"endtime_epoch": {
+																"description": "End time epoch",
+																"type": "string"
+															},
+															"endtime": {
+																"description": "End time",
+																"type": "string"
+															},
+															"errors": {
+																"description": "Errors",
+																"type": "string"
+															}
+														}
+													}
+												}
+											}
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					{
+						"name": "name",
+						"in": "query",
+						"description": "Storage name to get status",
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"name": "type",
+						"in": "query",
+						"description": "Output type (header, devices, running, terminated)",
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
 			}
 		}
 	},
