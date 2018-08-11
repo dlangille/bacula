@@ -1,6 +1,87 @@
-              Changelog on version 9.2.0
+              Changelog on version 9.2.1
 
 
+
+11Aug18
+ - Permit catalog to contain negative FileIndexes
+ - baculum: Fix saving directives in messages resource
+
+10Aug18
+ - Refactoring of BSOCK and introducing BSOCKCORE.
+ - baculum: Update API documentation
+ - baculum: Add status endpoint to available scopes endpoints
+ - Make print_ls_output identify delete files more clearly
+ - Backport stored/vbackup.c
+
+09Aug18
+ - baculum: Add status director and status storage endpoints
+ - baculum: Add type and level filters to jobs endpoint
+ - baculum: Add support for .api 2 command in bconsole module
+
+08Aug18
+ - Implement a keepalive on bpipe sockets fixes bug #2347
+ - Backport bpipe enhancements
+ - Fix bug #2319 wrong port value stored in bsock giving incorrect error messages
+
+07Aug18
+ - baculum: Add to jobs endpoint filtering by client and clientid
+ - Fix bug #2410 bdirjson output incorrect for day greater than 24
+ - Attempt to avoid MySQL complaints about not allowing zero or empty in DATETIME
+
+06Aug18
+ - Add M_SECURITY when connection is bad + fix bug where invalid probes sent to 
+  Dir
+ - baculum: Fix schedule single day value setting
+
+05Aug18
+ - Fix bug #2286 copied jobs always have level=Incremental
+ - baculum: Fix add slot parameter to label command
+ - baculum: Fix restoring backup from deleted clients
+ - baculum: Fix click action on remove config resource button
+ - baculum: Fix framework validation for active list type controls
+ - baculum: Implement ideas from Wanderlei Huttel
+
+04Aug18
+ - Fix bug 2395 problem with man dir
+ - baculum: Fix saving subresources in config
+ - Start work on HAVE_CLIENT_ONLY install
+ - Switch to using /lib/systemd/system to install service files
+ - Install Bacula systemd files in /etc/systemd/system
+ - baculum: Update Portuguese translations
+
+03Aug18
+ - baculum: Fix group most recent backups option in restore wizard for mysql
+ - Fix bug #2404 uninstall systemd service
+ - Fix warning during compilations of mainwin.cpp
+
+02Aug18
+ - baculum: Implement second part ideas and fixes proposed by Wanderlei Huttel
+ - Update catalog update scripts in updatedb directory
+ - Fix bug #2340. Display of db_driver
+ - Add warning messages for bad or old self-signed certificates
+
+29Jul18
+ - baculum: Fix #2403 error while writing diraddress directive in Bacula config
+
+26Jul18
+ - baculum: Implement ideas and fixes proposed by Wanderlei Huttel
+
+24Jul18
+ - baculum: Update Portuguese translations
+
+23Jul18
+ - baculum: Fix pool does not exist error on pool details page
+ - baculum: Fix create directive base method
+
+03Jul18
+ - rpm: Fix MySQL dependency on bacula-postgresql package
+
+Bugs fixed/closed since last release:
+2410 2389 2286 2319 2340 2347 2357 2403 2404 2405 2395 2392
+
+==================================================================
+
+Version 9.2.0
 20Jul18
  - Separate dequeuing msgs and dequeuing daemon msgs
 

@@ -1,5 +1,66 @@
 
-               Release Notes for Bacula 9.2.0
+               Release Notes for Bacula 9.2.1
+
+Release 9.2.1
+
+This is a bug fix release. It also contains some refactoring. That said,
+there are 10,909 lines of diff between release 9.2.0 and this release.
+One major improvement is that this release should eliminate the persistent
+problem we have seen with MySQL unhappy with zero DATETIME fields.  If you
+have problems with that, please simply execute the script update_bacula_tables
+found in the <bacula>/src/cats library.  It will modify the table default
+values for DATETIME fields to be friendly to the whims of MySQL and MariaDB.
+
+12Aug18
+ - baculum: Fix saving directives in messages resource
+ - Refactoring of BSOCK and introducing BSOCKCORE.
+ - baculum: Update API documentation
+ - baculum: Add status endpoint to available scopes endpoints
+ - Make print_ls_output identify delete files more clearly
+ - Backport stored/vbackup.c
+ - baculum: Add status director and status storage endpoints
+ - baculum: Add type and level filters to jobs endpoint
+ - baculum: Add support for .api 2 command in bconsole module
+ - Implement a keepalive on bpipe sockets fixes bug #2347
+ - Backport bpipe enhancements
+ - Permit catalog to contain negative FileIndexes
+ - Fix bug #2319 wrong port value stored in bsock giving incorrect error messages
+ - baculum: Add to jobs endpoint filtering by client and clientid
+ - Fix bug #2410 bdirjson output incorrect for day greater than 24
+ - Attempt to avoid MySQL complaints about not allowing zero or empty in DATETIME
+ - Add M_SECURITY when connection is bad + fix bug where invalid probes sent to 
+   Dir
+ - baculum: Fix schedule single day value setting
+ - Fix bug #2286 copied jobs always have level=Incremental
+ - baculum: Fix add slot parameter to label command
+ - baculum: Fix restoring backup from deleted clients
+ - baculum: Fix click action on remove config resource button
+ - baculum: Fix framework validation for active list type controls
+ - baculum: Implement ideas from Wanderlei Huttel
+ - Fix bug 2395 problem with man dir
+ - baculum: Fix saving subresources in config
+ - Start work on HAVE_CLIENT_ONLY install
+ - Switch to using /lib/systemd/system to install service files
+ - Install Bacula systemd files in /etc/systemd/system
+ - baculum: Update Portuguese translations
+ - baculum: Fix group most recent backups option in restore wizard for mysql
+ - Fix bug #2404 uninstall systemd service
+ - Fix warning during compilations of mainwin.cpp
+ - baculum: Implement second part ideas and fixes proposed by Wanderlei Huttel
+ - Update catalog update scripts in updatedb directory
+ - Fix bug #2340. Display of db_driver
+ - Add warning messages for bad or old self-signed certificates
+ - baculum: Fix #2403 error while writing diraddress directive in Bacula config
+ - baculum: Implement ideas and fixes proposed by Wanderlei Huttel
+ - baculum: Update Portuguese translations
+ - baculum: Fix pool does not exist error on pool details page
+ - baculum: Fix create directive base method
+ - rpm: Fix MySQL dependency on bacula-postgresql package
+
+Bugs fixed/closed since last release:
+2410 2389 2286 2319 2340 2347 2357 2403 2404 2405 2395 2392
+
+=====================================================================
 
 Release 9.2.0
 
