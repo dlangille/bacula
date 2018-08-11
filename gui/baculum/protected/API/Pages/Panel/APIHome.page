@@ -16,6 +16,9 @@
 				</com:TJuiProgressbar>
 				<img id="api_refresh" src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/icon_refresh.png" alt="<%[ Refresh token ]%>" title="<%[ Refresh token ]%>" onclick="oAPIHome.init_oauth2_client();" />
 			</div>
+			<div>
+				<com:TActiveDropDownList ID="AuthParams" OnLoad="loadAuthParams" />
+			</div>
 			<div style="clear: left; margin-top: 60px;">
 				<select id="section" class="api_select">
 					<option value="none"><%[ Please select API endpoint ]%></option>
@@ -73,6 +76,10 @@
 				AlternatingItemStyle.BackColor="#4e4e50"
 				CssClass="tab-grid"
 			>
+				<com:TBoundColumn
+					HeaderText="<%[ Name ]%>"
+					DataField="name"
+				/>
 				<com:TBoundColumn
 					ID="ClientIDColumn"
 					HeaderText="<%[ Client ID ]%>"

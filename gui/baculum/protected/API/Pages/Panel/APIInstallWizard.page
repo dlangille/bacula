@@ -660,6 +660,16 @@
 						/> <%[ (optional) ]%>
 					</div>
 				</div>
+				<div class="line">
+					<div class="text"><com:TLabel ForControl="APIOAuth2Name" Text="<%[ Short name: ]%>" /></div>
+					<div class="field">
+						<com:TTextBox
+							ID="APIOAuth2Name"
+							CssClass="textbox"
+							CausesValidation="false"
+						/> <%[ (optional) ]%>
+					</div>
+				</div>
 			</div>
 			<script type="text/javascript">
 				var wizard_validation = function() {

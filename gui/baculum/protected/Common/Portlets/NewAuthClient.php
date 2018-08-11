@@ -45,7 +45,7 @@ class NewAuthClient extends PortletTemplate {
 		$config = $this->getModule('api_config')->getConfig();
 		if ($this->getAuthType() === 'basic') {
 			$users = $this->getModule('basic_apiuser')->getAllUsers();
-			if (!array_key_exists($this->APIBasicLogin->Text, $users)) {
+			if (!key_exists($this->APIBasicLogin->Text, $users)) {
 				$result = $this->getModule('basic_apiuser')->setUsersConfig(
 					$this->APIBasicLogin->Text,
 					$this->APIBasicPassword->Text
@@ -55,13 +55,14 @@ class NewAuthClient extends PortletTemplate {
 			}
 		} elseif ($this->getAuthType() === 'oauth2') {
 			$oauth2_cfg = $this->getModule('oauth2_config')->getConfig();
-			if (!array_key_exists($this->APIOAuth2ClientId->Text, $oauth2_cfg)) {
+			if (!key_exists($this->APIOAuth2ClientId->Text, $oauth2_cfg)) {
 				$oauth2_cfg[$this->APIOAuth2ClientId->Text] = array();
 				$oauth2_cfg[$this->APIOAuth2ClientId->Text]['client_id'] = $this->APIOAuth2ClientId->Text;
 				$oauth2_cfg[$this->APIOAuth2ClientId->Text]['client_secret'] = $this->APIOAuth2ClientSecret->Text;
 				$oauth2_cfg[$this->APIOAuth2ClientId->Text]['redirect_uri'] = $this->APIOAuth2RedirectURI->Text;
 				$oauth2_cfg[$this->APIOAuth2ClientId->Text]['scope'] = $this->APIOAuth2Scope->Text;
 				$oauth2_cfg[$this->APIOAuth2ClientId->Text]['bconsole_cfg_path'] = $this->APIOAuth2BconsoleCfgPath->Text;
+				$oauth2_cfg[$this->APIOAuth2ClientId->Text]['name'] = $this->APIOAuth2Name->Text;
 				$result = $this->getModule('oauth2_config')->setConfig($oauth2_cfg);
 			} else {
 				$exists = true;

@@ -46,6 +46,14 @@ class OAuth2Config extends ConfigFileModule {
 	private $required_options = array('client_id', 'client_secret', 'redirect_uri', 'scope');
 
 	/**
+	 * New options with default values that has been added later (after creating config).
+	 * They are added to config output.
+	 *
+	 * @see OAuth2Config::setAddedOptions()
+	 */
+	private $added_options = array('name' => '');
+
+	/**
 	 * Get (read) OAuth2 client config.
 	 *
 	 * @access public
@@ -56,7 +64,7 @@ class OAuth2Config extends ConfigFileModule {
 		$config = $this->readConfig(self::CONFIG_FILE_PATH, self::CONFIG_FILE_FORMAT);
 		$is_valid = true;
 		if (!is_null($section)) {
-			$config = array_key_exists($section, $config) ? $config[$section] : array();
+			$config = key_exists($section, $config) ? $config[$section] : array();
 			$is_valid = $this->validateConfig($config);
 		} else {
 			foreach ($config as $value) {
@@ -69,6 +77,8 @@ class OAuth2Config extends ConfigFileModule {
 		if ($is_valid === false) {
 			// no validity, no config
 			$config = array();
+		} else {
+			$this->setAddedOptions($config, $section);
 		}
 		return $config;
 	}
@@ -101,7 +111,7 @@ class OAuth2Config extends ConfigFileModule {
 		 * case errors and it could cause save to log a private auth params.
 		 */
 		for ($i = 0; $i < count($this->required_options); $i++) {
-			if (!array_key_exists($this->required_options[$i], $config)) {
+			if (!key_exists($this->required_options[$i], $config)) {
 				$is_valid = false;
 				$emsg = 'Invalid OAuth2 config. Missing ' . $this->required_options[$i] . ' option.';
 				$this->getModule('logging')->log(
@@ -116,4 +126,27 @@ class OAuth2Config extends ConfigFileModule {
 		}
 		return $is_valid;
 	}
+
+	/**
+	 * Add "on the fly" new options to config.
+	 * Note, this method should be used after config validation.
+	 *
+	 * @param array reference $config config to set added options.
+	 * @param mixed $section determines if passed all config or only section
+	 * @return none
+	 */
+	private function setAddedOptions(&$config, $section = null) {
+		foreach ($this->added_options as $added_opt => $defval) {
+			if (is_null($section)) {
+				foreach($config as $key => $value) {
+					if (!key_exists($added_opt, $value)) {
+						$config[$key][$added_opt] = $defval;
+					}
+				}
+			} elseif (!key_exists($added_opt, $config)) {
+				$config[$added_opt] = $defval;
+			}
+		}
+	}
 }
+?>

@@ -190,6 +190,16 @@
 				/> <%[ (optional) ]%>
 			</div>
 		</div>
+		<div class="line">
+			<div class="text"><com:TLabel ForControl="APIOAuth2Name" Text="<%[ Short name: ]%>" /></div>
+			<div class="field">
+				<com:TTextBox
+					ID="APIOAuth2Name"
+					CssClass="textbox"
+					CausesValidation="false"
+				/> <%[ (optional) ]%>
+			</div>
+		</div>
 	</div>
 	<div class="center" style="width: 550px;<%=($this->getShowButtons() ? '' : 'display: none;')%>">
 		<com:BButton

@@ -42,15 +42,15 @@ class APIHome extends BaculumAPIPage {
 			$params = array();
 			$oauth2_cfg = $this->getModule('oauth2_config')->getConfig();
 			if ($config['api']['auth_type'] === 'oauth2') {
-				if (array_key_exists($config['api']['client_id'], $oauth2_cfg)) {
+				if (key_exists($config['api']['client_id'], $oauth2_cfg)) {
 					$this->main_client_id = $config['api']['client_id'];
+				}
 					$params = array(
 						'client_id' => $config['api']['client_id'],
 						'client_secret' =>  $oauth2_cfg[$config['api']['client_id']]['client_secret'],
 						'redirect_uri' => $oauth2_cfg[$config['api']['client_id']]['redirect_uri'],
 						'scope' => explode(' ', $oauth2_cfg[$config['api']['client_id']]['scope'])
 					);
-				}
 			} elseif ($config['api']['auth_type'] === 'basic') {
 				$params = array(
 					'login' => $config['api']['login'],
@@ -76,6 +76,13 @@ class APIHome extends BaculumAPIPage {
 		$oauth2_cfg = $this->getModule('oauth2_config')->getConfig();
 		$this->OAuth2ClientList->dataSource = array_values($oauth2_cfg);
 		$this->OAuth2ClientList->dataBind();
+	}
+
+	public function loadAuthParams($sneder, $param) {
+		$oauth2_cfg = $this->getModule('oauth2_config')->getConfig();
+		$clientids = array_keys($oauth2_cfg);
+		$this->AuthParams->DataSource = array_combine($clientids, $clientids);
+		$this->AuthParams->dataBind();
 	}
 
 	private function getBasicUsers() {

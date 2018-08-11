@@ -150,12 +150,13 @@ class APIInstallWizard extends BaculumAPIPage {
 					$this->AuthBasic->Checked = false;
 					$this->AuthOAuth2->Checked = true;
 					$oauth2_cfg = $this->getModule('oauth2_config')->getConfig();
-					if (array_key_exists($this->config['api']['client_id'], $oauth2_cfg)) {
+					if (key_exists($this->config['api']['client_id'], $oauth2_cfg)) {
 						$this->APIOAuth2ClientId->Text = $this->config['api']['client_id'];
 						$this->APIOAuth2ClientSecret->Text = $oauth2_cfg[$this->config['api']['client_id']]['client_secret'];
 						$this->APIOAuth2RedirectURI->Text = $oauth2_cfg[$this->config['api']['client_id']]['redirect_uri'];
 						$this->APIOAuth2Scope->Text = $oauth2_cfg[$this->config['api']['client_id']]['scope'];
 						$this->APIOAuth2BconsoleCfgPath->Text = $oauth2_cfg[$this->config['api']['client_id']]['bconsole_cfg_path'];
+						$this->APIOAuth2Name->Text = $oauth2_cfg[$this->config['api']['client_id']]['name'];
 					}
 				}
 			}
@@ -236,6 +237,7 @@ class APIInstallWizard extends BaculumAPIPage {
 				$oauth2_cfg[$this->APIOAuth2ClientId->Text]['redirect_uri'] = $this->APIOAuth2RedirectURI->Text;
 				$oauth2_cfg[$this->APIOAuth2ClientId->Text]['scope'] = $this->APIOAuth2Scope->Text;
 				$oauth2_cfg[$this->APIOAuth2ClientId->Text]['bconsole_cfg_path'] = $this->APIOAuth2BconsoleCfgPath->Text;
+				$oauth2_cfg[$this->APIOAuth2ClientId->Text]['name'] = $this->APIOAuth2Name->Text;
 				$this->getModule('oauth2_config')->setConfig($oauth2_cfg);
 			}
 			$this->goToDefaultPage();
