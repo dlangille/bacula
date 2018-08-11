@@ -286,6 +286,9 @@ class BaculaSetting extends APIModule {
 			}
 
 		} elseif ($resource_type_new === 'Messages') {
+			$formatted_msg_directives = array(
+				'Name', 'Description', 'MailCommand', 'OperatorCommand'
+			);
 			$resource_type = $resource_type_new;
 			$resource = array($resource_type => array());
 			foreach ($resource_new[$resource_type] as $directive_name => $directive_value) {
@@ -298,6 +301,8 @@ class BaculaSetting extends APIModule {
 						array_push($value, implode(', ', $directive_value[$i]['MsgTypes']));
 						$resource[$resource_type][$directive_value[$i]['Type']] = implode(' = ', $value);
 					}
+				} elseif (in_array($directive_name, $formatted_msg_directives)) {
+					$resource[$resource_type][$directive_name] = $this->formatDirectiveValue($resource_type, $directive_name, $directive_value);
 				} else {
 					$resource[$resource_type][$directive_name] = $directive_value;
 				}
