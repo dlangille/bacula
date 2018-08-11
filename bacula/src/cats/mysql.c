@@ -754,7 +754,7 @@ bool BDB_MYSQL::sql_batch_insert(JCR *jcr, ATTR_DBR *ar)
     */ 
    if (mdb->changes == 0) { 
       Mmsg(cmd, "INSERT INTO batch VALUES " 
-           "(%u,%s,'%s','%s','%s','%s',%u)", 
+           "(%d,%s,'%s','%s','%s','%s',%u)", 
            ar->FileIndex, edit_int64(ar->JobId,ed1), mdb->esc_path, 
            mdb->esc_name, ar->attr, digest, ar->DeltaSeq); 
       mdb->changes++; 
@@ -763,7 +763,7 @@ bool BDB_MYSQL::sql_batch_insert(JCR *jcr, ATTR_DBR *ar)
        * We use the esc_obj for temporary storage otherwise 
        * we keep on copying data. 
        */ 
-      Mmsg(mdb->esc_obj, ",(%u,%s,'%s','%s','%s','%s',%u)", 
+      Mmsg(mdb->esc_obj, ",(%d,%s,'%s','%s','%s','%s',%u)", 
            ar->FileIndex, edit_int64(ar->JobId,ed1), mdb->esc_path, 
            mdb->esc_name, ar->attr, digest, ar->DeltaSeq); 
       pm_strcat(mdb->cmd, mdb->esc_obj); 

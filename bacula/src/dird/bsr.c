@@ -514,6 +514,7 @@ void add_findex(rblist *bsr_list, uint32_t JobId, int32_t findex)
    if (findex == 0) {
       return;                         /* probably a dummy directory */
    }
+   if (findex < 0) findex = -findex;
 
    bsr2.JobId = JobId;
    /* Walk down list of bsrs until we find the JobId */

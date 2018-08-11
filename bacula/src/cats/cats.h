@@ -161,7 +161,7 @@ struct JOB_DBR {
    int     order;                     /* 0 ASC, 1 DESC */
    int     limit;                     /* limit records to display */
    faddr_t rec_addr;
-   uint32_t FileIndex;                /* added during Verify */
+   int32_t FileIndex;                 /* added during Verify */
 
    int     CorrNbJob;                 /* used by dbd_get_job_statistics() */
    int     CorrJobBytes;              /* used by dbd_get_job_statistics() */
@@ -208,7 +208,7 @@ struct ATTR_DBR {
    char *fname;                       /* full path & filename */
    char *link;                        /* link if any */
    char *attr;                        /* attributes statp */
-   uint32_t FileIndex;
+   int32_t FileIndex;
    uint32_t Stream;
    uint32_t FileType;
    uint32_t DeltaSeq;
@@ -230,7 +230,7 @@ struct ROBJECT_DBR {
    uint32_t object_full_len;
    uint32_t object_index;
    int32_t  object_compression;
-   uint32_t FileIndex;
+   int32_t FileIndex;
    uint32_t Stream;
    uint32_t FileType;
    JobId_t  JobId;
@@ -241,8 +241,8 @@ struct ROBJECT_DBR {
 /* File record -- same format as database */
 struct FILE_DBR {
    FileId_t FileId;
-   uint32_t FileIndex;
-   uint32_t FileIndex2;
+   int32_t FileIndex;
+   int32_t FileIndex2;
    JobId_t  JobId;
    DBId_t FilenameId;
    DBId_t PathId;

@@ -436,7 +436,7 @@ static void update_attribute(JCR *jcr, char *msg, int32_t msglen)
    unser_declare;
    uint32_t VolSessionId, VolSessionTime;
    int32_t Stream;
-   uint32_t FileIndex;
+   int32_t FileIndex;
    char *p;
    int len;
    char *fname, *attr;

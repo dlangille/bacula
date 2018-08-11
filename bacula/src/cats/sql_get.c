@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2017 Kern Sibbald
+   Copyright (C) 2000-2018 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -102,7 +102,7 @@ bool BDB::bdb_get_file_record(JCR *jcr, JOB_DBR *jr, FILE_DBR *fdbr)
    case L_VERIFY_VOLUME_TO_CATALOG:
       Mmsg(cmd,
 "SELECT FileId, LStat, MD5 FROM File WHERE File.JobId=%s AND File.PathId=%s AND "
-"File.FilenameId=%s AND File.FileIndex=%u",
+"File.FilenameId=%s AND File.FileIndex=%d",
       edit_int64(fdbr->JobId, ed1),
       edit_int64(fdbr->PathId, ed2),
       edit_int64(fdbr->FilenameId,ed3),

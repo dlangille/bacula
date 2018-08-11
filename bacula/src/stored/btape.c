@@ -2735,8 +2735,8 @@ static int flush_block(DEV_BLOCK *block, int dump)
          first_block = dup_block(block); /* first block second tape */
       }
       if (verbose) {
-         Pmsg3(000, _("Block not written: FileIndex=%u blk_block=%u Size=%u\n"),
-            (unsigned)file_index, block->BlockNumber, block->block_len);
+         Pmsg3(000, _("Block not written: FileIndex=%d blk_block=%u Size=%u\n"),
+            file_index, block->BlockNumber, block->block_len);
          dump_block(dev, last_block, _("Last block written"));
          Pmsg0(-1, "\n");
          dump_block(dev, block, _("Block not written"));

@@ -354,7 +354,7 @@ public:
    volatile int32_t FDJobStatus;      /* File daemon Job Status */
    uint32_t ExpectedFiles;            /* Expected restore files */
    uint32_t MediaId;                  /* DB record IDs associated with this job */
-   uint32_t FileIndex;                /* Last FileIndex processed */
+   int32_t FileIndex;                 /* Last FileIndex processed */
    utime_t MaxRunSchedTime;           /* max run time in seconds from Initial Scheduled time */
    POOLMEM *fname;                    /* name to put into catalog */
    POOLMEM *component_fname;          /* Component info file name */

@@ -949,7 +949,7 @@ int get_attributes_and_put_in_catalog(JCR *jcr)
    Dmsg0(120, "bdird: waiting to receive file attributes\n");
    /* Pickup file attributes and digest */
    while (!fd->errors && (n = bget_dirmsg(fd)) > 0) {
-      uint32_t file_index;
+      int32_t file_index;
       int stream, len;
       char *p, *fn;
       char Digest[MAXSTRING];      /* either Verify opts or MD5/SHA1 digest */
@@ -1018,7 +1018,7 @@ int get_attributes_and_put_in_catalog(JCR *jcr)
        * At the end, we have to add the last file
        */
       } else if (crypto_digest_stream_type(stream) != CRYPTO_DIGEST_NONE) {
-         if (jcr->FileIndex != (uint32_t)file_index) {
+         if (jcr->FileIndex != file_index) {
             Jmsg3(jcr, M_ERROR, 0, _("%s index %d not same as attributes %d\n"),
                stream_to_ascii(stream), file_index, jcr->FileIndex);
             continue;

@@ -721,7 +721,7 @@ public:
 
    uint32_t VolFirstIndex;            /* First file index this Volume */
    uint32_t VolLastIndex;             /* Last file index this Volume */
-   uint32_t FileIndex;                /* Current File Index */
+   int32_t FileIndex;                 /* Current File Index */
    uint64_t StartAddr;                /* Starting write addr */
    uint64_t EndAddr;                  /* Ending write addr */
    int64_t  VolMediaId;               /* MediaId */

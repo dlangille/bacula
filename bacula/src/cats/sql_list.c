@@ -570,10 +570,10 @@ void BDB::bdb_list_files_for_job(JCR *jcr, JobId_t jobid, int deleted, DB_LIST_H
 
    switch (deleted) {
    case 0:                      /* Show only actual files */
-      opt = " AND FileIndex <> 0 ";
+      opt = " AND FileIndex > 0 ";
       break;
    case 1:                      /* Show only deleted files */
-      opt = " AND FileIndex = 0 ";
+      opt = " AND FileIndex <= 0 ";
       break;
    default:                     /* Show everything */
       opt = "";

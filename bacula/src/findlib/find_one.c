@@ -51,7 +51,7 @@ struct f_link {
     struct f_link *next;
     dev_t dev;                        /* device */
     ino_t ino;                        /* inode with device is unique */
-    uint32_t FileIndex;               /* Bacula FileIndex of this file */
+    int32_t FileIndex;                /* Bacula FileIndex of this file */
     int32_t digest_stream;            /* Digest type if needed */
     uint32_t digest_len;              /* Digest len if needed */
     char *digest;                     /* Checksum of the file if needed */

@@ -360,7 +360,7 @@ CREATE TABLE basefiles
     baseid	      bigserial 	    not null,
     jobid	      integer		    not null,
     fileid	      bigint		    not null,
-    fileindex	      integer			    ,
+    fileindex	      integer		   default 0,
     basejobid	      integer			    ,
     primary key (baseid)
 );
