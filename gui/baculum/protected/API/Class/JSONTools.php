@@ -45,7 +45,7 @@ class JSONTools extends APIModule
 		$output_txt = implode('', $output);
 		$out = json_decode($output_txt, true);
 		if (!is_array($out)) {
-			$this->getModule('logging')->log('Parse output', $out, Logging::CATEGORY_EXTERNAL, __FILE__, __LINE__);
+			$this->getModule('logging')->log('Parse output', $output_txt, Logging::CATEGORY_EXTERNAL, __FILE__, __LINE__);
 			$out = null;
 		}
 		return $out;
