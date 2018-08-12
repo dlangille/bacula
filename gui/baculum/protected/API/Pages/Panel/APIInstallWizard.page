@@ -443,7 +443,7 @@
 					ID="AuthBasic"
 					GroupName="SelectAuth"
 					Checked="true"
-					Attributes.onclick="$('#configure_oauth2_auth').hide();$('#configure_basic_auth').show();%>;"
+					Attributes.onclick="$('#configure_oauth2_auth').hide();$('#configure_basic_auth').show();"
 					OnCallback="setBasicValidation"
 				/>
 				<com:TLabel
