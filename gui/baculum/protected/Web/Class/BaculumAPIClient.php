@@ -467,6 +467,8 @@ class BaculumAPIClient extends WebModule {
 		if ($show_error === true && $resource->error != 0) {
 			$url = $this->Service->constructUrl('BaculumError', (array)$resource, false);
 			header("Location: $url");
+			// write all logs before exiting, otherwise they will be lost
+			$this->getModule('log')->collectLogs(null);
 			exit();
 		}
 
