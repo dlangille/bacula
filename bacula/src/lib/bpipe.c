@@ -34,8 +34,6 @@
 #define getrlimit(a,b) -1
 #endif
 
-static void set_keepalive(int sockfd);
-
 int execvp_errors[] = {
         EACCES,
         ENOEXEC,
@@ -61,6 +59,7 @@ int num_execvp_errors = (int)(sizeof(execvp_errors)/sizeof(int));
 
 #if !defined(HAVE_WIN32)
 static void build_argc_argv(char *cmd, int *bargc, char *bargv[], int max_arg);
+static void set_keepalive(int sockfd);
 
 void build_sh_argc_argv(char *cmd, int *bargc, char *bargv[], int max_arg)
 {
@@ -425,6 +424,22 @@ static void build_argc_argv(char *cmd, int *bargc, char *bargv[], int max_argv)
    }
    *bargc = argc;
 }
+
+#
+static void set_keepalive(int sockfd)
+{
+   /*
+    * Keep socket from timing out from inactivity
+    *  Ignore all errors
+    */
+   int turnon = 1;
+   setsockopt(sockfd, SOL_SOCKET, SO_KEEPALIVE, (sockopt_val_t)&turnon, sizeof(turnon));
+#if defined(TCP_KEEPIDLE)
+   int opt = 240 /* 2 minuites in half-second intervals recommended by IBM */
+   setsockopt(sockfd, SOL_TCP, TCP_KEEPIDLE, (sockopt_val_t)&opt, sizeof(opt));
+#endif
+}
+
 #endif /* HAVE_WIN32 */
 
 /*
@@ -568,18 +583,4 @@ bail_out:
    free_pool_memory(tmp);
    free(buf);
    return stat1;
-}
-
-static void set_keepalive(int sockfd)
-{
-   /*
-    * Keep socket from timing out from inactivity
-    *  Ignore all errors
-    */
-   int turnon = 1;
-   setsockopt(sockfd, SOL_SOCKET, SO_KEEPALIVE, (sockopt_val_t)&turnon, sizeof(turnon));
-#if defined(TCP_KEEPIDLE)
-   int opt = 240 /* 2 minuites in half-second intervals recommended by IBM */
-   setsockopt(sockfd, SOL_TCP, TCP_KEEPIDLE, (sockopt_val_t)&opt, sizeof(opt));
-#endif
 }

@@ -40,6 +40,7 @@ LIB_OBJS = \
 	$(OBJDIR)/bshm.o \
 	$(OBJDIR)/bsnprintf.o \
 	$(OBJDIR)/bsock.o \
+	$(OBJDIR)/bsockcore.o \
 	$(OBJDIR)/bsys.o \
 	$(OBJDIR)/btime.o \
 	$(OBJDIR)/btimers.o \

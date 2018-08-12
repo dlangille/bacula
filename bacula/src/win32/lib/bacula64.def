@@ -63,6 +63,7 @@ _Z9win_errorP3JCRPKcPc
 _Z15print_ls_outputP3JCRP4ATTRi
 _Z24build_attr_output_fnamesP3JCRP4ATTR
 _Z24unpack_attributes_recordP3JCRiPciP4ATTR
+_Z7sprintfPcPKcz
 _Z8new_attrP3JCR
 _Z9free_attrP4ATTR
  
@@ -97,6 +98,7 @@ _Z5breadP5BFILEPvy
 _Z6bcloseP5BFILE
 _Z6blseekP5BFILExi
 _Z6bwriteP5BFILEPvy
+_Z7sprintfPcPKcz
 _Z8is_bopenP5BFILE
 _Z9pause_msgPKcS0_iS0_
  
@@ -126,16 +128,12 @@ _Z8ZdeflatePciS_Ri
 _Z8ZinflatePciS_Ri
  
 ; bnet.o
-_Z10init_bsockP3JCRiPKcS2_iP8sockaddr
-_Z11read_nbytesP5BSOCKPci
 _Z11resolv_hostiPKcP5dlist
-_Z12write_nbytesP5BSOCKPci
 _Z15bnet_tls_clientP11TLS_ContextP5BSOCKP5alist
 _Z15bnet_tls_serverP11TLS_ContextP5BSOCKP5alist
 _Z16set_socket_errnoi
 _Z17bnet_host2ipaddrsPKciPS0_
 _Z17bnet_sig_to_asciii
-_Z9dup_bsockP5BSOCK
  
 ; bnet_server.o
 _Z18bnet_thread_serverP5dlistiP9workq_tagPFPvS3_E
@@ -161,6 +159,7 @@ _Z14apply_bregexpsPKcP5alistPPc
 _Z19bregexp_build_wherePciS_S_S_
 _Z21bregexp_escape_stringPcPKcc
 _Z28bregexp_get_build_where_sizePcS_S_
+_Z6printfPKcz
 _ZN7BREGEXP10edit_substEPKcP12b_regmatch_t
 _ZN7BREGEXP12return_fnameEPKci
 _ZN7BREGEXP14extract_regexpEPKc
@@ -172,43 +171,71 @@ _ZN7BREGEXP7replaceEPKc
 _Z10bvsnprintfPciPKcS_
 _Z9bsnprintfPciPKcz
  
-; bsock.o
+; bsockcore.o
 _Z14dump_bsock_msgijPKcjijPci
-_Z9new_bsockv
 _ZN13BSOCKCallbackC1Ev
 _ZN13BSOCKCallbackC2Ev
 _ZN13BSOCKCallbackD0Ev
 _ZN13BSOCKCallbackD1Ev
 _ZN13BSOCKCallbackD2Ev
-_ZN5BSOCK11set_lockingEv
-_ZN5BSOCK12set_blockingEv
-_ZN5BSOCK12set_killableEb
-_ZN5BSOCK13clear_lockingEv
+_ZN9BSOCKCORE11read_nbytesEPci
+_ZN9BSOCKCORE11set_lockingEv
+_ZN9BSOCKCORE12set_blockingEv
+_ZN9BSOCKCORE12set_killableEb
+_ZN9BSOCKCORE12write_nbytesEPci
+_ZN9BSOCKCORE13clear_lockingEv
+_ZN9BSOCKCORE14wait_data_intrEii
+_ZN9BSOCKCORE15control_bwlimitEi
+_ZN9BSOCKCORE15set_buffer_sizeEji
+_ZN9BSOCKCORE15set_nonblockingEv
+_ZN9BSOCKCORE16restore_blockingEi
+_ZN9BSOCKCORE18set_source_addressEP5dlist
+_ZN9BSOCKCORE4dumpEv
+_ZN9BSOCKCORE4initEv
+_ZN9BSOCKCORE4openEP3JCRPKcPcS4_ixPi
+_ZN9BSOCKCORE4recvEi
+_ZN9BSOCKCORE4sendEv
+_ZN9BSOCKCORE5closeEv
+_ZN9BSOCKCORE5fsendEPKcz
+_ZN9BSOCKCORE6cancelEv
+_ZN9BSOCKCORE7connectEP3JCRixxPKcPcS4_ii
+_ZN9BSOCKCORE7destroyEv
+_ZN9BSOCKCORE8_destroyEv
+_ZN9BSOCKCORE8fin_initEP3JCRiPKcS3_iP8sockaddr
+_ZN9BSOCKCORE8free_tlsEv
+_ZN9BSOCKCORE8get_peerEPci
+_ZN9BSOCKCORE9bstrerrorEv
+_ZN9BSOCKCORE9wait_dataEii
+_ZN9BSOCKCOREC1Ev
+_ZN9BSOCKCOREC2Ev
+_ZN9BSOCKCORED0Ev
+_ZN9BSOCKCORED1Ev
+_ZN9BSOCKCORED2Ev
+ 
+; bsock.o
+_Z10init_bsockP3JCRiPKcS2_iP8sockaddr
+_Z9dup_bsockP5BSOCK
+_Z9new_bsockv
+_ZN5BSOCK12write_nbytesEPci
 _ZN5BSOCK13comm_compressEv
-_ZN5BSOCK14wait_data_intrEii
-_ZN5BSOCK15control_bwlimitEi
-_ZN5BSOCK15set_buffer_sizeEji
-_ZN5BSOCK15set_nonblockingEv
-_ZN5BSOCK16restore_blockingEi
-_ZN5BSOCK18set_source_addressEP5dlist
 _ZN5BSOCK21authenticate_directorEPKcS1_P11TLS_ContextPci
+_ZN5BSOCK4dumpEv
 _ZN5BSOCK4initEv
 _ZN5BSOCK4openEP3JCRPKcPcS4_ixPi
 _ZN5BSOCK4recvEv
 _ZN5BSOCK4sendEi
+_ZN5BSOCK4sendEv
 _ZN5BSOCK5closeEv
-_ZN5BSOCK5fsendEPKcz
-_ZN5BSOCK6cancelEv
 _ZN5BSOCK6signalEi
-_ZN5BSOCK7connectEP3JCRixxPKcPcS4_ii
 _ZN5BSOCK7despoolEPFvxEx
-_ZN5BSOCK7destroyEv
 _ZN5BSOCK8_destroyEv
-_ZN5BSOCK8fin_initEP3JCRiPKcS3_iP8sockaddr
-_ZN5BSOCK8free_tlsEv
-_ZN5BSOCK8get_peerEPci
-_ZN5BSOCK9bstrerrorEv
-_ZN5BSOCK9wait_dataEii
+_ZN5BSOCKC1Ei
+_ZN5BSOCKC1Ev
+_ZN5BSOCKC2Ei
+_ZN5BSOCKC2Ev
+_ZN5BSOCKD0Ev
+_ZN5BSOCKD1Ev
+_ZN5BSOCKD2Ev
  
 ; bsys.o
 _Z10b_strerroriPcy
@@ -274,8 +301,10 @@ _Z9tm_encodeP9date_timeP2tm
 _Z16stop_bsock_timerP8btimer_t
 _Z16stop_child_timerP8btimer_t
 _Z17start_bsock_timerP5BSOCKj
+_Z17start_bsock_timerP9BSOCKCOREj
 _Z17start_child_timerP3JCRxj
 _Z17stop_thread_timerP8btimer_t
+_Z18_start_bsock_timerP5BSOCKj
 _Z18start_thread_timerP3JCR14ptw32_handle_tj
  
 ; compat.o
@@ -327,6 +356,7 @@ _Z5sleepi
 _Z6dlopenPKci
 _Z6execvpPKcPPc
 _Z6lchownPKcjj
+_Z6printfPKcz
 _Z6randomv
 _Z6syslogiPKcz
 _Z7dlclosePv
@@ -345,6 +375,7 @@ _Z8getgrgidj
 _Z8getpwuidj
 _Z8pathconfPKci
 _Z8readlinkPKcPci
+_Z8snprintfPcyPKcz
 _Z8WSA_Initv
 _Z9ErrorExitPKc
 _Z9inet_atonPKcP7in_addr
@@ -354,6 +385,7 @@ _ZN6winverC2Ev
 ; cram-md5.o
 _Z16cram_md5_respondP5BSOCKPKcPiS3_
 _Z18cram_md5_challengeP5BSOCKPKcii
+_ZN5BSOCK4sendEv
  
 ; crc32.o
 _Z6bcrc32Phi
@@ -494,6 +526,7 @@ _ZN9guid_list11uid_to_nameEjPci
 _Z8hmac_md5PhiS_iS_
  
 ; htable.o
+_Z6printfPKcz
 _ZN6htable10grow_tableEv
 _ZN6htable10hash_indexEPc
 _ZN6htable10hash_indexEy
@@ -566,6 +599,7 @@ _Z20write_last_jobs_listiy
 _Z21unlock_last_jobs_listv
 _Z23get_jcr_by_partial_namePc
 _Z24get_next_jobid_from_listPPcPj
+_Z7fprintfP6_iobufPKcz
 _Z7new_jcriPFvP3JCRE
 _Z9job_countv
 _Z9lock_jobsv
@@ -691,7 +725,10 @@ _Z5m_msgPKciRPcS0_z
 _Z5p_msgPKciiS0_z
 _Z5q_msgPKciP3JCRixS0_z
 _Z5t_msgPKcixS0_z
+_Z6printfPKcz
 _Z6vd_msgPKcixS0_Pc
+_Z7fprintfP6_iobufPKcz
+_Z7sprintfPcPKcz
 _Z8init_msgP3JCRP4MSGSPFPcS0_PKcS3_iE
 _Z8term_msgv
 _Z9close_msgP3JCR
@@ -700,6 +737,7 @@ _Z9set_tracei
 _ZN4MSGS15wait_not_in_useEv
 _ZN4MSGS4lockEv
 _ZN4MSGS6unlockEv
+_ZN5BSOCK4sendEv
  
 ; mkpath.o
 _Z13path_list_addP3JCRjPc
@@ -714,6 +752,7 @@ _Z19openssl_post_errorsiPKc
 _Z19openssl_post_errorsP3JCRiPKc
  
 ; output.o
+_Z8snprintfPcyPKcz
 _ZN12OutputWriter10get_outputE10OutputTypez
 _ZN12OutputWriter10get_outputEPcPS0_10OutputType
 _ZN12OutputWriter10get_outputEPPc10OutputTypez
@@ -733,6 +772,7 @@ _Z12load_pluginsPvS_PKcS1_PFbP6PluginE
 _Z14unload_pluginsv
 _Z16dbg_print_pluginP6_iobuf
 _Z19dbg_plugin_add_hookPFvP6PluginP6_iobufE
+_Z7fprintfP6_iobufPKcz
  
 ; print.o
 _Z10__snprintfPcyPKcz
@@ -844,6 +884,7 @@ _Z15actuallyreallocPvj
 _Z7bmemsetPviy
 _Z7sm_dumpbb
 _Z7sm_freePKciPv
+_Z7sprintfPcPKcz
 _Z8sm_checkPKcib
 _Z9sm_callocPKcijj
 _Z9sm_mallocPKcij
@@ -853,14 +894,14 @@ _Z9sm_staticb
 _Z14get_tls_enableP11TLS_Context
 _Z15get_tls_requireP11TLS_Context
 _Z15new_tls_contextPKcS0_S0_S0_PFiPciPKvES3_S0_b
-_Z15tls_bsock_probeP5BSOCK
+_Z15tls_bsock_probeP9BSOCKCORE
 _Z15tls_bsock_readnP5BSOCKPci
 _Z16free_tls_contextP11TLS_Context
 _Z16tls_bsock_acceptP5BSOCK
 _Z16tls_bsock_writenP5BSOCKPci
 _Z17tls_bsock_connectP5BSOCK
 _Z18new_tls_connectionP11TLS_Contexti
-_Z18tls_bsock_shutdownP5BSOCK
+_Z18tls_bsock_shutdownP9BSOCKCORE
 _Z19free_tls_connectionP14TLS_Connection
 _Z25tls_postconnect_verify_cnP3JCRP14TLS_ConnectionP5alist
 _Z27tls_postconnect_verify_hostP3JCRP14TLS_ConnectionPKc
@@ -902,6 +943,7 @@ _Z25action_on_purge_to_stringiR8POOL_MEM
 _Z5lcasePc
 _Z7hexdumpPKciPcib
 _Z7is_nullPKv
+_Z7sprintfPcPKcz
 _Z8bmemzeroPvy
 _Z9asciidumpPKciPci
 _Z9smartdumpPKciPciPb
@@ -915,6 +957,7 @@ _Z11var_destroyP6var_st
 _Z11var_formatvP6var_stPPciPKcS1_
 _Z12var_strerrorP6var_st8var_rc_t
 _Z12var_unescapeP6var_stPKciPcii
+_Z7sprintfPcPKcz
  
 ; watchdog.o
 _Z11is_watchdogv
