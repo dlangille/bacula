@@ -41,9 +41,9 @@ input[type=checkbox] {
 }
 
 input.textbox, select.textbox, textarea.textbox {
-	width: 260px;
+	width: 300px;
 	border: 1px solid black;
-	font-size: 11pt;
+	font-size: 11pt !important;
 	display: table-cell;
 }
 
@@ -236,6 +236,11 @@ input.bbutton:hover {
 
 .ui-widget-content td a, .ui-widget-content div a {
 	color: white !important;
+	text-decoration: underline !important;
+}
+
+.ui-dialog-content div a {
+	color: black !important;
 	text-decoration: underline !important;
 }
 

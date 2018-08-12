@@ -16,8 +16,11 @@
 				</com:TJuiProgressbar>
 				<img id="api_refresh" src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/icon_refresh.png" alt="<%[ Refresh token ]%>" title="<%[ Refresh token ]%>" onclick="oAPIHome.init_oauth2_client();" />
 			</div>
-			<div>
-				<com:TActiveDropDownList ID="AuthParams" OnLoad="loadAuthParams" />
+			<div class="line" id="auth_params_combo_container" style="margin-top: 10px; width: 700px; display: none">
+				<div class="text"><com:TLabel ForControl="AuthParamsCombo" Text="<%[ Select: ]%>" /></div>
+				<div class="field">
+					<com:TActiveDropDownList ID="AuthParamsCombo" AutoPostBack="false" />
+				</div>
 			</div>
 			<div style="clear: left; margin-top: 60px;">
 				<select id="section" class="api_select">
@@ -89,14 +92,6 @@
 					HeaderText="<%[ Redirect URI ]%>"
 					DataField="redirect_uri"
 				/>
-				<com:TBoundColumn
-					HeaderText="<%[ Scopes ]%>"
-					DataField="scope"
-				/>
-				<com:TBoundColumn
-					HeaderText="<%[ Bconsole Path ]%>"
-					DataField="bconsole_cfg_path"
-				/>
 				<com:TTemplateColumn
 					ID="OAuth2DeleteColumn"
 					HeaderText="<%[ Delete ]%>"
@@ -104,17 +99,148 @@
 				>
 				<prop:ItemTemplate>
 					<com:TActiveLinkButton
+						Text="<%[ Edit ]%>"
+						OnCommand="SourceTemplateControl.editOAuth2Item"
+						CommandParameter="<%#$this->getParent()->Data['client_id']%>"
+					/>
+					<com:TActiveLinkButton
 						Text="<%[ Delete ]%>"
 						OnCommand="SourceTemplateControl.deleteOAuth2Item"
 						CommandParameter="<%=$this->getParent()->Data['client_id']%>"
 						Attributes.onclick="if(!confirm('<%[ Are you sure? ]%>')) return false;"
-						Visible="<%=($this->getParent()->Data['client_id'] != $this->getPage()->main_client_id)%>"
 					/>
 				</prop:ItemTemplate>
 				</com:TTemplateColumn>
 			</com:TActiveDataGrid>
 		</div>
+		<com:TJuiDialog
+			ID="APIOAuth2EditPopup"
+			Options.Title="<%[ Edit OAuth2 client parameters ]%>"
+			Options.AutoOpen="False"
+			Options.Width="700px"
+		>
+			<com:TPanel DefaultButton="APIOAuth2SaveBtn">
+			<div class="line">
+				<div class="text"><com:TLabel ForControl="APIOAuth2ClientId" Text="<%[ OAuth2 Client ID: ]%>" /></div>
+				<div class="field">
+					<com:TActiveTextBox
+						ID="APIOAuth2ClientId"
+						CssClass="textbox"
+						ReadOnly="true"
+					/>
+				</div>
+			</div>
+			<div class="line">
+				<div class="text"><com:TLabel ForControl="APIOAuth2ClientSecret" Text="<%[ OAuth2 Client Secret: ]%>" /></div>
+				<div class="field">
+					<com:TActiveTextBox
+						ID="APIOAuth2ClientSecret"
+						CssClass="textbox"
+						CausesValidation="false"
+						MaxLength="40"
+					/>
+					<com:TRequiredFieldValidator
+						CssClass="validator-block"
+						Display="Dynamic"
+						ControlCssClass="invalidate"
+						ControlToValidate="APIOAuth2ClientSecret"
+						ValidationGroup="APIOAuth2Edit"
+						Text="<%[ Please enter Client Secret. ]%>"
+					/>
+					<com:TRegularExpressionValidator
+						CssClass="validator-block"
+						Display="Dynamic"
+						ControlCssClass="invalidate"
+						ControlToValidate="APIOAuth2ClientSecret"
+						RegularExpression="<%=OAuth2::CLIENT_SECRET_PATTERN%>"
+						ValidationGroup="APIOAuth2Edit"
+						Text="<%[ Invalid Client Secret value. Client Secret may contain any character that is not a whitespace character. ]%>"
+					/>
+					<a href="javascript:void(0)" onclick="document.getElementById('<%=$this->APIOAuth2ClientSecret->ClientID%>').value = get_random_string('ABCDEFabcdef0123456789', 40); return false;"><%[ generate ]%></a>
+				</div>
+			</div>
+			<div class="line">
+				<div class="text"><com:TLabel ForControl="APIOAuth2RedirectURI" Text="<%[ OAuth2 Redirect URI (example: https://baculumgui:9095/web/redirect): ]%>" /></div>
+				<div class="field">
+					<com:TActiveTextBox
+						ID="APIOAuth2RedirectURI"
+						CssClass="textbox"
+						CausesValidation="false"
+					/>
+					<com:TRequiredFieldValidator
+						CssClass="validator-block"
+						Display="Dynamic"
+						ControlCssClass="invalidate"
+						ControlToValidate="APIOAuth2RedirectURI"
+						ValidationGroup="APIOAuth2Edit"
+						Text="<%[ Please enter Redirect URI. ]%>"
+					/>
+				</div>
+			</div>
+			<div class="line">
+				<div class="text"><com:TLabel ForControl="APIOAuth2Scope" Text="<%[ OAuth2 scopes (space separated): ]%>" /></div>
+				<div class="field">
+					<com:TActiveTextBox
+						ID="APIOAuth2Scope"
+						CssClass="textbox"
+						CausesValidation="false"
+						TextMode="MultiLine"
+					/>
+					<a href="javascript:void(0)" onclick="set_scopes('<%=$this->APIOAuth2Scope->ClientID%>'); return false;" style="vertical-align: top"><%[ set all scopes ]%></a>
+					<com:TRequiredFieldValidator
+						CssClass="validator-block"
+						Display="Dynamic"
+						ControlCssClass="invalidate"
+						ControlToValidate="APIOAuth2Scope"
+						ValidationGroup="APIOAuth2Edit"
+						Text="<%[ Please enter OAuth2 scopes. ]%>"
+					/>
+				</div>
+			</div>
+			<div class="line">
+				<div class="text"><com:TLabel ForControl="APIOAuth2BconsoleCfgPath" Text="<%[ Dedicated Bconsole config file path: ]%>" /></div>
+				<div class="field">
+					<com:TActiveTextBox
+						ID="APIOAuth2BconsoleCfgPath"
+						CssClass="textbox"
+						CausesValidation="false"
+					/> <%[ (optional) ]%>
+				</div>
+			</div>
+			<div class="line">
+				<div class="text"><com:TLabel ForControl="APIOAuth2Name" Text="<%[ Short name: ]%>" /></div>
+				<div class="field">
+					<com:TActiveTextBox
+						ID="APIOAuth2Name"
+						CssClass="textbox"
+						CausesValidation="false"
+					/> <%[ (optional) ]%>
+				</div>
+			</div>
+			<div class="center">
+				<com:BButton
+					Text="<%[ Cancel ]%>"
+					CausesValidation="false"
+					Attributes.onclick="$('#<%=$this->APIOAuth2EditPopup->ClientID%>').dialog('close'); return false;"
+				/>
+				<com:BActiveButton
+					ID="APIOAuth2SaveBtn"
+					ValidationGroup="APIOAuth2Edit"
+					OnCommand="TemplateControl.saveOAuth2Item"
+					Text="<%[ Save ]%>"
+				>
+				</com:BActiveButton>
+			</div>
+			</com:TPanel>
+		</com:TJuiDialog>
 	</div>
+	<com:TActiveHiddenField ID="AuthParamsInput" />
+	<com:TCallback ID="AuthParamsCallback" OnCallback="setAuthParams">
+		<prop:ClientSide.OnComplete>
+			oAPIHome.set_auth_params();
+			oAPIHome.init_auth();
+		</prop:ClientSide.OnComplete>
+	</com:TCallback>
 	<com:TClientScript>
 		var oAPIHome = {
 			ids: {
@@ -123,7 +249,10 @@
 				result: 'api_result',
 				progress_bar: '<%=$this->Progress->ClientID%>',
 				progress_label: 'progress_label',
-				refresh_token: 'api_refresh'
+				refresh_token: 'api_refresh',
+				auth_params_combo_container: 'auth_params_combo_container',
+				auth_params_combo: '<%=$this->AuthParamsCombo->ClientID%>',
+				auth_params_input: '<%=$this->AuthParamsInput->ClientID%>'
 			},
 			default_commands: {
 				storages: '/api/v1/storages/',
@@ -134,17 +263,26 @@
 				bvfs: '/api/v1/bvfs/lsdirs?jobids=1&path=&limit=8'
 			},
 			token: null,
-			baculum_auth: JSON.parse('<%=$this->auth_params%>'),
+			auth_params_cb: <%=$this->AuthParamsCallback->ActiveControl->Javascript%>,
 			init: function() {
 				this.set_events();
+				this.set_auth_params();
+				this.init_auth();
+				this.init_tabs();
+			},
+			init_auth: function() {
 				if (typeof(this.baculum_auth) == 'object') {
 					if (this.baculum_auth.auth_type == 'oauth2') {
+						document.getElementById(this.ids.auth_params_combo_container).style.display = '';
 						this.init_oauth2_client();
 					} else if (this.baculum_auth.auth_type == 'basic') {
 						this.init_basic();
 					}
 				}
-				this.init_tabs();
+			},
+			set_auth_params: function() {
+				var params = document.getElementById(this.ids.auth_params_input).value;
+				this.baculum_auth = JSON.parse(params);
 			},
 			set_progress: function(value, text) {
 				$('#' + this.ids.progress_bar).progressbar('value', value);
@@ -158,6 +296,11 @@
 				document.getElementById(this.ids.refresh_token).style.display = 'none';
 			},
 			init_oauth2_client: function() {
+				if (this.baculum_auth && !this.baculum_auth.hasOwnProperty('client_id')) {
+					// no client id, no client initialization
+					// Posibly case when first (default) API client is not able to get token
+					return;
+				}
 				this.set_progress(1, 'Sending auth code request...');
 				var authorization_uri = document.location.origin + '/api/auth';
 				var auth_params = {
@@ -209,6 +352,11 @@
 					var el = e.srcElement || e.target;
 					this.set_default_command(el.value);
 				}.bind(this));
+				var auth_params_combo = document.getElementById(this.ids.auth_params_combo);
+				auth_params_combo.addEventListener('change', function(e) {
+					this.auth_params_cb.setCallbackParameter(auth_params_combo.value)
+					this.auth_params_cb.dispatch();
+				}.bind(this));
 			},
 			set_default_command: function(section) {
 				if (this.default_commands.hasOwnProperty(section)) {
@@ -223,6 +371,7 @@
 				} else if (this.baculum_auth.auth_type == 'basic') {
 					headers = {'Authorization': 'Basic ' + btoa(this.baculum_auth.login + ":" + this.baculum_auth.password)};
 				}
+				this.clear_result();
 				var request = $.ajax({
 					url: url,
 					type: 'GET',
@@ -235,6 +384,9 @@
 			},
 			show_result: function(data) {
 				document.getElementById(this.ids.result).textContent = JSON.stringify(data, null, 2);
+			},
+			clear_result: function() {
+				document.getElementById(this.ids.result).textContent = '';
 			}
 		};
 		$(function() {

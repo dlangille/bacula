@@ -418,3 +418,18 @@ msgstr "Enviar solicitação"
 
 msgid "Basic auth ready..."
 msgstr "Autenticação básica pronta..."
+
+msgid "Name"
+msgstr "Name"
+
+msgid "Short name:"
+msgstr "Short name:"
+
+msgid "Edit"
+msgstr "Edit"
+
+msgid "Edit OAuth2 client parameters"
+msgstr "Edit OAuth2 client parameters"
+
+msgid "Select:"
+msgstr "Select:"

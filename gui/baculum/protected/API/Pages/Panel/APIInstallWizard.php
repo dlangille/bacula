@@ -38,6 +38,7 @@ Prado::using('Application.API.Class.BasicAPIUserConfig');
 class APIInstallWizard extends BaculumAPIPage {
 
 	public $first_run;
+	public $add_auth_params = false;
 	public $config;
 
 	const DEFAULT_DB_NAME = 'bacula';
@@ -67,6 +68,8 @@ class APIInstallWizard extends BaculumAPIPage {
 		$config = $this->getModule('api_config');
 		$this->config = $config->getConfig();
 		$this->first_run = (count($this->config) === 0);
+		$oauth2_cfg = $this->getModule('oauth2_config')->getConfig();
+		$this->add_auth_params = (count($oauth2_cfg) === 0);
 	}
 
 	public function onLoad($param) {

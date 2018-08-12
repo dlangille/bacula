@@ -443,7 +443,7 @@
 					ID="AuthBasic"
 					GroupName="SelectAuth"
 					Checked="true"
-					Attributes.onclick="$('#configure_oauth2_auth').hide();$('#configure_basic_auth').show();"
+					Attributes.onclick="$('#configure_oauth2_auth').hide();$('#configure_basic_auth').show();%>;"
 					OnCallback="setBasicValidation"
 				/>
 				<com:TLabel
@@ -452,224 +452,228 @@
 				/>
 			</div>
 			<div id="configure_basic_auth" style="display: <%=($this->AuthBasic->Checked === true) ? '' : 'none';%>">
-				<div class="line">
-					<div class="text"><com:TLabel ForControl="APILogin" Text="<%[ Administration login: ]%>" /></div>
-					<div class="field">
-						<com:TTextBox
-							ID="APILogin"
-							CssClass="textbox"
-							CausesValidation="false"
-						/>
-						<com:TRequiredFieldValidator
-							CssClass="validator-block"
-							Display="Dynamic"
-							ControlCssClass="invalidate"
-							ControlToValidate="APILogin"
-							ValidationGroup="Basic"
-							Text="<%[ Please enter login. ]%>"
-						/>
-						<com:TRegularExpressionValidator
-							CssClass="validator-block"
-							Display="Dynamic"
-							ControlCssClass="invalidate"
-							ControlToValidate="APILogin"
-							ValidationGroup="Basic"
-							RegularExpression="<%=BasicAPIUserConfig::USER_PATTERN%>"
-							Text="<%[ Invalid login value. Login may contain a-z A-Z 0-9 characters. ]%>"
-						/>
-					</div>
-				</div>
-				<div class="line">
-					<div class="text"><com:TLabel ForControl="APIPassword" Text="<%[ Administration password: ]%>" /></div>
-					<div class="field">
-						<com:TTextBox
-							ID="APIPassword"
-							CssClass="textbox"
-							TextMode="Password"
-							MaxLength="30"
-							PersistPassword="true"
-						/>
-						<com:TRequiredFieldValidator
-							CssClass="validator-block"
-							Display="Dynamic"
-							ControlCssClass="invalidate"
-							ControlToValidate="APIPassword"
-							ValidationGroup="Basic"
-							Text="<%[ Please enter password. ]%>"
-						/>
-						<com:TRegularExpressionValidator
-							CssClass="validator-block"
-							Display="Dynamic"
-							ControlCssClass="invalidate"
-							ControlToValidate="APIPassword"
-							RegularExpression="[\S\s]{5,30}"
-							ValidationGroup="Basic"
-							Text="<%[ Password must be longer than 4 chars. ]%>"
-						/>
-					</div>
-				</div>
-				<div class="line">
-					<div class="text"><com:TLabel ForControl="RetypeAPIPassword" Text="<%[ Retype administration password: ]%>" /></div>
-					<div class="field">
-						<com:TTextBox
-							ID="RetypeAPIPassword"
-							CssClass="textbox"
-							TextMode="Password"
-							MaxLength="30"
-							PersistPassword="true"
-						/>
-						<com:TRequiredFieldValidator
-							ID="RetypePasswordRequireValidator"
-							CssClass="validator-block"
-							Display="Dynamic"
-							ControlCssClass="invalidate"
-							ControlToValidate="RetypeAPIPassword"
-							ValidationGroup="Basic"
-							Text="<%[ Please enter retype password. ]%>"
-						/>
-						<com:TRegularExpressionValidator
-							ID="RetypePasswordRegexpValidator"
-							CssClass="validator-block"
-							Display="Dynamic"
-							ControlCssClass="invalidate"
-							ControlToValidate="RetypeAPIPassword"
-							RegularExpression="[\S\s]{5,30}"
-							ValidationGroup="Basic"
-							Text="<%[ Password must be longer than 4 chars. ]%>"
-						/>
-						<com:TCompareValidator
-							ID="RetypePasswordCustomValidator"
-							CssClass="validator-block"
-							Display="Dynamic"
-							ControlCssClass="invalidate"
-							ControlToValidate="RetypeAPIPassword"
-							ControlToCompare="APIPassword"
-							ValidationGroup="Basic"
-							Text="<%[ Passwords must be the same. ]%>"
-						/>
-					</div>
-				</div>
-			</div>
-			<div id="configure_oauth2_auth" style="display: <%=($this->AuthOAuth2->Checked === true) ? '' : 'none';%>">
-				<h3><%[ First client registration ]%></h3>
-				<h4><%[ Please do not forget to disable HTTP Basic auth in the API web server config. Othwerise OAuth2 will not work. ]%></h4>
-				<div class="line">
-					<div class="text"><com:TLabel ForControl="APIOAuth2ClientId" Text="<%[ OAuth2 Client ID: ]%>" /></div>
-					<div class="field">
-						<com:TTextBox
-							ID="APIOAuth2ClientId"
-							CssClass="textbox"
-							CausesValidation="false"
-							MaxLength="32"
-						/>
-						<com:TRequiredFieldValidator
-							CssClass="validator-block"
-							Display="Dynamic"
-							ControlCssClass="invalidate"
-							ControlToValidate="APIOAuth2ClientId"
-							ValidationGroup="OAuth2"
-							Text="<%[ Please enter Client ID. ]%>"
-						/>
-						<com:TRegularExpressionValidator
-							CssClass="validator-block"
-							Display="Dynamic"
-							ControlCssClass="invalidate"
-							ControlToValidate="APIOAuth2ClientId"
-							RegularExpression="<%=OAuth2::CLIENT_ID_PATTERN%>"
-							ValidationGroup="OAuth2"
-							Text="<%[ Invalid Client ID value. Client ID may contain a-z A-Z 0-9 - _ characters. ]%>"
+				<com:TPanel Visible="<%=$this->first_run%>">
+					<div class="line">
+						<div class="text"><com:TLabel ForControl="APILogin" Text="<%[ Administration login: ]%>" /></div>
+						<div class="field">
+							<com:TTextBox
+								ID="APILogin"
+								CssClass="textbox"
+								CausesValidation="false"
 							/>
-						<a href="javascript:void(0)" onclick="document.getElementById('<%=$this->APIOAuth2ClientId->ClientID%>').value = get_random_string('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_', 32); return false;"><%[ generate ]%></a>
+							<com:TRequiredFieldValidator
+								CssClass="validator-block"
+								Display="Dynamic"
+								ControlCssClass="invalidate"
+								ControlToValidate="APILogin"
+								ValidationGroup="Basic"
+								Text="<%[ Please enter login. ]%>"
+							/>
+							<com:TRegularExpressionValidator
+								CssClass="validator-block"
+								Display="Dynamic"
+								ControlCssClass="invalidate"
+								ControlToValidate="APILogin"
+								ValidationGroup="Basic"
+								RegularExpression="<%=BasicAPIUserConfig::USER_PATTERN%>"
+								Text="<%[ Invalid login value. Login may contain a-z A-Z 0-9 characters. ]%>"
+							/>
+						</div>
 					</div>
-				</div>
-				<div class="line">
-					<div class="text"><com:TLabel ForControl="APIOAuth2ClientSecret" Text="<%[ OAuth2 Client Secret: ]%>" /></div>
-					<div class="field">
-						<com:TTextBox
-							ID="APIOAuth2ClientSecret"
-							CssClass="textbox"
-							CausesValidation="false"
-							MaxLength="40"
-						/>
-						<com:TRequiredFieldValidator
-							CssClass="validator-block"
-							Display="Dynamic"
-							ControlCssClass="invalidate"
-							ControlToValidate="APIOAuth2ClientSecret"
-							ValidationGroup="OAuth2"
-							Text="<%[ Please enter Client Secret. ]%>"
-						/>
-						<com:TRegularExpressionValidator
-							CssClass="validator-block"
-							Display="Dynamic"
-							ControlCssClass="invalidate"
-							ControlToValidate="APIOAuth2ClientSecret"
-							RegularExpression="<%=OAuth2::CLIENT_SECRET_PATTERN%>"
-							ValidationGroup="OAuth2"
-							Text="<%[ Invalid Client Secret value. Client Secret may contain any character that is not a whitespace character. ]%>"
-						/>
-						<a href="javascript:void(0)" onclick="document.getElementById('<%=$this->APIOAuth2ClientSecret->ClientID%>').value = get_random_string('ABCDEFabcdef0123456789', 40); return false;"><%[ generate ]%></a>
+					<div class="line">
+						<div class="text"><com:TLabel ForControl="APIPassword" Text="<%[ Administration password: ]%>" /></div>
+						<div class="field">
+							<com:TTextBox
+								ID="APIPassword"
+								CssClass="textbox"
+								TextMode="Password"
+								MaxLength="30"
+								PersistPassword="true"
+							/>
+							<com:TRequiredFieldValidator
+								CssClass="validator-block"
+								Display="Dynamic"
+								ControlCssClass="invalidate"
+								ControlToValidate="APIPassword"
+								ValidationGroup="Basic"
+								Text="<%[ Please enter password. ]%>"
+							/>
+							<com:TRegularExpressionValidator
+								CssClass="validator-block"
+								Display="Dynamic"
+								ControlCssClass="invalidate"
+								ControlToValidate="APIPassword"
+								RegularExpression="[\S\s]{5,30}"
+								ValidationGroup="Basic"
+								Text="<%[ Password must be longer than 4 chars. ]%>"
+							/>
+						</div>
 					</div>
-				</div>
-				<div class="line">
-					<div class="text"><com:TLabel ForControl="APIOAuth2RedirectURI" Text="<%[ OAuth2 Redirect URI (example: https://baculumgui:9095/web/redirect): ]%>" /></div>
-					<div class="field">
-						<com:TTextBox
-							ID="APIOAuth2RedirectURI"
-							CssClass="textbox"
-							CausesValidation="false"
-						/>
-						<com:TRequiredFieldValidator
-							CssClass="validator-block"
-							Display="Dynamic"
-							ControlCssClass="invalidate"
-							ControlToValidate="APIOAuth2RedirectURI"
-							ValidationGroup="OAuth2"
-							Text="<%[ Please enter Redirect URI. ]%>"
-						/>
+					<div class="line">
+						<div class="text"><com:TLabel ForControl="RetypeAPIPassword" Text="<%[ Retype administration password: ]%>" /></div>
+						<div class="field">
+							<com:TTextBox
+								ID="RetypeAPIPassword"
+								CssClass="textbox"
+								TextMode="Password"
+								MaxLength="30"
+								PersistPassword="true"
+							/>
+							<com:TRequiredFieldValidator
+								ID="RetypePasswordRequireValidator"
+								CssClass="validator-block"
+								Display="Dynamic"
+								ControlCssClass="invalidate"
+								ControlToValidate="RetypeAPIPassword"
+								ValidationGroup="Basic"
+								Text="<%[ Please enter retype password. ]%>"
+							/>
+							<com:TRegularExpressionValidator
+								ID="RetypePasswordRegexpValidator"
+								CssClass="validator-block"
+								Display="Dynamic"
+								ControlCssClass="invalidate"
+								ControlToValidate="RetypeAPIPassword"
+								RegularExpression="[\S\s]{5,30}"
+								ValidationGroup="Basic"
+								Text="<%[ Password must be longer than 4 chars. ]%>"
+							/>
+							<com:TCompareValidator
+								ID="RetypePasswordCustomValidator"
+								CssClass="validator-block"
+								Display="Dynamic"
+								ControlCssClass="invalidate"
+								ControlToValidate="RetypeAPIPassword"
+								ControlToCompare="APIPassword"
+								ValidationGroup="Basic"
+								Text="<%[ Passwords must be the same. ]%>"
+							/>
+						</div>
 					</div>
-				</div>
-				<div class="line">
-					<div class="text"><com:TLabel ForControl="APIOAuth2Scope" Text="<%[ OAuth2 scopes (space separated): ]%>" /></div>
-					<div class="field">
-						<com:TTextBox
-							ID="APIOAuth2Scope"
-							CssClass="textbox"
-							CausesValidation="false"
-							TextMode="MultiLine"
-						/>
-						<a href="javascript:void(0)" onclick="set_scopes('<%=$this->APIOAuth2Scope->ClientID%>'); return false;" style="vertical-align: top"><%[ set all scopes ]%></a>
-						<com:TRequiredFieldValidator
-							CssClass="validator-block"
-							Display="Dynamic"
-							ControlCssClass="invalidate"
-							ControlToValidate="APIOAuth2Scope"
-							ValidationGroup="OAuth2"
-							Text="<%[ Please enter OAuth2 scopes. ]%>"
-						/>
+				</com:TPanel>
+			</div>
+			<div id="configure_oauth2_auth" style="display: <%=$this->AuthOAuth2->Checked ? '' : 'none';%>">
+				<com:TPanel Visible="<%=($this->first_run || $this->add_auth_params)%>">
+					<h3><%[ First client registration ]%></h3>
+					<h4><%[ Please do not forget to disable HTTP Basic auth in the API web server config. Othwerise OAuth2 will not work. ]%></h4>
+					<div class="line">
+						<div class="text"><com:TLabel ForControl="APIOAuth2ClientId" Text="<%[ OAuth2 Client ID: ]%>" /></div>
+						<div class="field">
+							<com:TTextBox
+								ID="APIOAuth2ClientId"
+								CssClass="textbox"
+								CausesValidation="false"
+								MaxLength="32"
+							/>
+							<com:TRequiredFieldValidator
+								CssClass="validator-block"
+								Display="Dynamic"
+								ControlCssClass="invalidate"
+								ControlToValidate="APIOAuth2ClientId"
+								ValidationGroup="OAuth2"
+								Text="<%[ Please enter Client ID. ]%>"
+							/>
+							<com:TRegularExpressionValidator
+								CssClass="validator-block"
+								Display="Dynamic"
+								ControlCssClass="invalidate"
+								ControlToValidate="APIOAuth2ClientId"
+								RegularExpression="<%=OAuth2::CLIENT_ID_PATTERN%>"
+								ValidationGroup="OAuth2"
+								Text="<%[ Invalid Client ID value. Client ID may contain a-z A-Z 0-9 - _ characters. ]%>"
+								/>
+							<a href="javascript:void(0)" onclick="document.getElementById('<%=$this->APIOAuth2ClientId->ClientID%>').value = get_random_string('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_', 32); return false;"><%[ generate ]%></a>
+						</div>
 					</div>
-				</div>
-				<div class="line">
-					<div class="text"><com:TLabel ForControl="APIOAuth2BconsoleCfgPath" Text="<%[ Dedicated Bconsole config file path: ]%>" /></div>
-					<div class="field">
-						<com:TTextBox
-							ID="APIOAuth2BconsoleCfgPath"
-							CssClass="textbox"
-							CausesValidation="false"
-							ValidationGroup="OAuth2"
-						/> <%[ (optional) ]%>
+					<div class="line">
+						<div class="text"><com:TLabel ForControl="APIOAuth2ClientSecret" Text="<%[ OAuth2 Client Secret: ]%>" /></div>
+						<div class="field">
+							<com:TTextBox
+								ID="APIOAuth2ClientSecret"
+								CssClass="textbox"
+								CausesValidation="false"
+								MaxLength="40"
+							/>
+							<com:TRequiredFieldValidator
+								CssClass="validator-block"
+								Display="Dynamic"
+								ControlCssClass="invalidate"
+								ControlToValidate="APIOAuth2ClientSecret"
+								ValidationGroup="OAuth2"
+								Text="<%[ Please enter Client Secret. ]%>"
+							/>
+							<com:TRegularExpressionValidator
+								CssClass="validator-block"
+								Display="Dynamic"
+								ControlCssClass="invalidate"
+								ControlToValidate="APIOAuth2ClientSecret"
+								RegularExpression="<%=OAuth2::CLIENT_SECRET_PATTERN%>"
+								ValidationGroup="OAuth2"
+								Text="<%[ Invalid Client Secret value. Client Secret may contain any character that is not a whitespace character. ]%>"
+							/>
+							<a href="javascript:void(0)" onclick="document.getElementById('<%=$this->APIOAuth2ClientSecret->ClientID%>').value = get_random_string('ABCDEFabcdef0123456789', 40); return false;"><%[ generate ]%></a>
+						</div>
 					</div>
-				</div>
-				<div class="line">
-					<div class="text"><com:TLabel ForControl="APIOAuth2Name" Text="<%[ Short name: ]%>" /></div>
-					<div class="field">
-						<com:TTextBox
-							ID="APIOAuth2Name"
-							CssClass="textbox"
-							CausesValidation="false"
-						/> <%[ (optional) ]%>
+					<div class="line">
+						<div class="text"><com:TLabel ForControl="APIOAuth2RedirectURI" Text="<%[ OAuth2 Redirect URI (example: https://baculumgui:9095/web/redirect): ]%>" /></div>
+						<div class="field">
+							<com:TTextBox
+								ID="APIOAuth2RedirectURI"
+								CssClass="textbox"
+								CausesValidation="false"
+							/>
+							<com:TRequiredFieldValidator
+								CssClass="validator-block"
+								Display="Dynamic"
+								ControlCssClass="invalidate"
+								ControlToValidate="APIOAuth2RedirectURI"
+								ValidationGroup="OAuth2"
+								Text="<%[ Please enter Redirect URI. ]%>"
+							/>
+						</div>
 					</div>
-				</div>
+					<div class="line">
+						<div class="text"><com:TLabel ForControl="APIOAuth2Scope" Text="<%[ OAuth2 scopes (space separated): ]%>" /></div>
+						<div class="field">
+							<com:TTextBox
+								ID="APIOAuth2Scope"
+								CssClass="textbox"
+								CausesValidation="false"
+								TextMode="MultiLine"
+							/>
+							<a href="javascript:void(0)" onclick="set_scopes('<%=$this->APIOAuth2Scope->ClientID%>'); return false;" style="vertical-align: top"><%[ set all scopes ]%></a>
+							<com:TRequiredFieldValidator
+								CssClass="validator-block"
+								Display="Dynamic"
+								ControlCssClass="invalidate"
+								ControlToValidate="APIOAuth2Scope"
+								ValidationGroup="OAuth2"
+								Text="<%[ Please enter OAuth2 scopes. ]%>"
+							/>
+						</div>
+					</div>
+					<div class="line">
+						<div class="text"><com:TLabel ForControl="APIOAuth2BconsoleCfgPath" Text="<%[ Dedicated Bconsole config file path: ]%>" /></div>
+						<div class="field">
+							<com:TTextBox
+								ID="APIOAuth2BconsoleCfgPath"
+								CssClass="textbox"
+								CausesValidation="false"
+								ValidationGroup="OAuth2"
+							/> <%[ (optional) ]%>
+						</div>
+					</div>
+					<div class="line">
+						<div class="text"><com:TLabel ForControl="APIOAuth2Name" Text="<%[ Short name: ]%>" /></div>
+						<div class="field">
+							<com:TTextBox
+								ID="APIOAuth2Name"
+								CssClass="textbox"
+								CausesValidation="false"
+							/> <%[ (optional) ]%>
+						</div>
+					</div>
+				</com:TPanel>
 			</div>
 			<script type="text/javascript">
 				var wizard_validation = function() {
