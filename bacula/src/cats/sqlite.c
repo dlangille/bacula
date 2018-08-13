@@ -1,7 +1,7 @@
 /* 
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2018 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -728,7 +728,7 @@ bool BDB_SQLITE::sql_batch_insert(JCR *jcr, ATTR_DBR *ar)
    } 
  
    Mmsg(mdb->cmd, "INSERT INTO batch VALUES " 
-        "(%u,%s,'%s','%s','%s','%s',%u)", 
+        "(%d,%s,'%s','%s','%s','%s',%u)", 
         ar->FileIndex, edit_int64(ar->JobId,ed1), mdb->esc_path, 
         mdb->esc_name, ar->attr, digest, ar->DeltaSeq); 
  

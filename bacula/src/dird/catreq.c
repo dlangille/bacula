@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2017 Kern Sibbald
+   Copyright (C) 2000-2018 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -538,7 +538,8 @@ static void update_attribute(JCR *jcr, char *msg, int32_t msglen)
       ar->attr = attr;
       ar->fname = fname;
       if (ar->FileType == FT_DELETED) {
-         ar->FileIndex = 0;     /* special value */
+         FileIndex = -FileIndex;
+         ar->FileIndex = FileIndex;     /* special value */
       } else {
          ar->FileIndex = FileIndex;
       }
@@ -606,6 +607,7 @@ static void update_attribute(JCR *jcr, char *msg, int32_t msglen)
 
    } else if (crypto_digest_stream_type(Stream) != CRYPTO_DIGEST_NONE) {
       fname = p;
+      if (ar->FileIndex < 0) FileIndex = -FileIndex;
       if (ar->FileIndex != FileIndex) {
          Jmsg3(jcr, M_WARNING, 0, _("%s not same FileIndex=%d as attributes FI=%d\n"),
             stream_to_ascii(Stream), FileIndex, ar->FileIndex);

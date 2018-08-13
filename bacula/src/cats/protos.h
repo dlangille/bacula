@@ -220,8 +220,8 @@ void bdb_free_restoreobject_record(JCR *jcr, ROBJECT_DBR *rr);
            mdb->bdb_get_counter_record(jcr, cr)
 #define db_get_query_dbids(jcr, mdb, query, ids) \
            mdb->bdb_get_query_dbids(jcr, query, ids)
-#define db_get_file_list(jcr, mdb, jobids, use_md5, use_delta, result_handler, ctx) \
-           mdb->bdb_get_file_list(jcr, jobids, use_md5, use_delta, result_handler, ctx)
+#define db_get_file_list(jcr, mdb, jobids, opts, result_handler, ctx) \
+           mdb->bdb_get_file_list(jcr, jobids, opts, result_handler, ctx)
 #define db_get_base_jobid(jcr, mdb, jr, jobid) \
            mdb->bdb_get_base_jobid(jcr, jr, jobid)
 #define db_get_accurate_jobids(jcr, mdb, jr, jobids) \

@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2017 Kern Sibbald
+   Copyright (C) 2000-2018 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -315,8 +315,9 @@ bool send_accurate_current_files(JCR *jcr)
       }
 
    } else {
+      int opts = jcr->use_accurate_chksum ? DBL_USE_MD5 : DBL_NONE;
       if (!db_get_file_list(jcr, jcr->db_batch,
-                       jobids.list, jcr->use_accurate_chksum, false /* no delta */,
+                       jobids.list, opts,
                        accurate_list_handler, (void *)jcr)) {
          Jmsg1(jcr, M_FATAL, 0, "%s", db_strerror(jcr->db_batch));
          return false;

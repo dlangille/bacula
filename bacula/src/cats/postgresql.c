@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2017 Kern Sibbald
+   Copyright (C) 2000-2018 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -1155,7 +1155,7 @@ bool BDB_POSTGRESQL::sql_batch_insert(JCR *jcr, ATTR_DBR *ar)
       digest = ar->Digest;
    }
 
-   len = Mmsg(mdb->cmd, "%u\t%s\t%s\t%s\t%s\t%s\t%u\n",
+   len = Mmsg(mdb->cmd, "%d\t%s\t%s\t%s\t%s\t%s\t%u\n",
               ar->FileIndex, edit_int64(ar->JobId, ed1), mdb->esc_path,
               mdb->esc_name, ar->attr, digest, ar->DeltaSeq);
 

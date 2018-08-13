@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2017 Kern Sibbald
+   Copyright (C) 2000-2018 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -868,7 +868,7 @@ bail_out:
 bool BDB::bdb_create_batch_file_attributes_record(JCR *jcr, ATTR_DBR *ar)
 {
    ASSERT(ar->FileType != FT_BASE);
-   Dmsg1(dbglevel, "Fname=%s\n", ar->fname);
+   Dmsg2(dbglevel, "FileIndex=%d Fname=%s\n", ar->FileIndex, ar->fname);
    Dmsg0(dbglevel, "put_file_into_catalog\n");
 
    if (jcr->batch_started && jcr->db_batch->changes > 500000) {
@@ -907,7 +907,7 @@ bool BDB::bdb_create_batch_file_attributes_record(JCR *jcr, ATTR_DBR *ar)
 bool BDB::bdb_create_file_attributes_record(JCR *jcr, ATTR_DBR *ar)
 {
    bdb_lock();
-   Dmsg1(dbglevel, "Fname=%s\n", ar->fname);
+   Dmsg2(dbglevel, "FileIndex=%d Fname=%s\n", ar->FileIndex, ar->fname);
    Dmsg0(dbglevel, "put_file_into_catalog\n");
 
    split_path_and_file(jcr, this, ar->fname);
@@ -1026,6 +1026,7 @@ bool BDB::bdb_create_attributes_record(JCR *jcr, ATTR_DBR *ar)
 {
    bool ret;
 
+   Dmsg2(dbglevel, "FileIndex=%d Fname=%s\n", ar->FileIndex, ar->fname);
    errmsg[0] = 0;
    /*
     * Make sure we have an acceptable attributes record.

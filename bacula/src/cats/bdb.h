@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2017 Kern Sibbald
+   Copyright (C) 2000-2018 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -42,6 +42,16 @@ typedef enum
    DB_ACL_LOG,
    DB_ACL_LAST                  /* Keep last */
 } DB_ACL_t;
+
+/*
+ * Bits for the opts argument of db_get_job_list()
+ * If neither DBL_ALL_FILES nor DBL_DELETED, return non-deleted files
+ */
+#define DBL_NONE             0     /* no options */
+#define DBL_USE_DELTA    (1<<0)    /* Use delta indexes */
+#define DBL_ALL_FILES    (1<<1)    /* Return all files including deleted ones */
+#define DBL_DELETED      (1<<2)    /* Return only deleted files */
+#define DBL_USE_MD5      (1<<3)    /* Include md5 */
 
 /* Turn the num to a bit field */
 #define DB_ACL_BIT(x) (1<<x)
@@ -225,7 +235,7 @@ public:
    bool bdb_get_counter_record(JCR *jcr, COUNTER_DBR *cr);
    bool bdb_get_query_dbids(JCR *jcr, POOL_MEM &query, dbid_list &ids);
    bool bdb_get_file_list(JCR *jcr, char *jobids,
-            bool use_md5, bool use_delta,
+            int opts,
             DB_RESULT_HANDLER *result_handler, void *ctx);
    bool bdb_get_base_jobid(JCR *jcr, JOB_DBR *jr, JobId_t *jobid);
    bool bdb_get_accurate_jobids(JCR *jcr, JOB_DBR *jr, db_list_ctx *jobids);

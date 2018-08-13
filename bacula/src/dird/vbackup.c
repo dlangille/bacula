@@ -561,8 +561,7 @@ static bool create_bootstrap_file(JCR *jcr, char *jobids)
       return false;
    }
 
-   if (!db_get_file_list(jcr, jcr->db_batch, jobids, false /* don't use md5 */,
-                         true /* use delta */,
+   if (!db_get_file_list(jcr, jcr->db_batch, jobids, DBL_USE_DELTA | DBL_ALL_FILES,
                          insert_bootstrap_handler, (void *)rx.bsr_list))
    {
       Jmsg(jcr, M_ERROR, 0, "%s", db_strerror(jcr->db_batch));

@@ -1246,10 +1246,20 @@ static void strip_md5(char *q)
  *
  * TODO: See if we can do the SORT only if needed (as an argument)
  */
-bool BDB::bdb_get_file_list(JCR *jcr, char *jobids,
-                      bool use_md5, bool use_delta,
+bool BDB::bdb_get_file_list(JCR *jcr, char *jobids, int opts,
                       DB_RESULT_HANDLER *result_handler, void *ctx)
 {
+   const char *type;
+
+   if (opts & DBL_ALL_FILES) {
+      type = ""; 
+   } else {
+      /* Only non-deleted files */
+      type = "WHERE FileIndex > 0";
+   }
+   if (opts & DBL_DELETED) {
+      type = "WHERE FileIndex <= 0";
+   }
    if (!*jobids) {
       bdb_lock();
       Mmsg(errmsg, _("ERR=JobIds are empty\n"));
@@ -1258,7 +1268,7 @@ bool BDB::bdb_get_file_list(JCR *jcr, char *jobids,
    }
    POOL_MEM buf(PM_MESSAGE);
    POOL_MEM buf2(PM_MESSAGE);
-   if (use_delta) {
+   if (opts & DBL_USE_DELTA) {
       Mmsg(buf2, select_recent_version_with_basejob_and_delta[bdb_get_type_index()],
            jobids, jobids, jobids, jobids);
 
@@ -1275,13 +1285,12 @@ bool BDB::bdb_get_file_list(JCR *jcr, char *jobids,
 "SELECT Path.Path, Filename.Name, T1.FileIndex, T1.JobId, LStat, DeltaSeq, MD5 "
  "FROM ( %s ) AS T1 "
  "JOIN Filename ON (Filename.FilenameId = T1.FilenameId) "
- "JOIN Path ON (Path.PathId = T1.PathId) "
-"WHERE FileIndex > 0 "
+ "JOIN Path ON (Path.PathId = T1.PathId) %s "
 "ORDER BY T1.JobTDate, FileIndex ASC",/* Return sorted by JobTDate */
                                       /* FileIndex for restore code */
-        buf2.c_str());
+        buf2.c_str(), type);
 
-   if (!use_md5) {
+   if (!(opts & DBL_USE_MD5)) {
       strip_md5(buf.c_str());
    }
 

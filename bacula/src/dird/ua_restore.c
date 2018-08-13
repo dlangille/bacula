@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2017 Kern Sibbald
+   Copyright (C) 2000-2018 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -1286,8 +1286,7 @@ static bool build_directory_tree(UAContext *ua, RESTORE_CTX *rx)
 #define new_get_file_list
 #ifdef new_get_file_list
    if (!db_get_file_list(ua->jcr, ua->db,
-                         rx->JobIds, false /* do not use md5 */,
-                         true /* get delta */,
+                         rx->JobIds, DBL_USE_DELTA,
                          insert_tree_handler, (void *)&tree))
    {
       ua->error_msg("%s", db_strerror(ua->db));
