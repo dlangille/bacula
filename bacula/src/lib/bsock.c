@@ -40,6 +40,10 @@
 
 #define BSOCK_DEBUG_LVL    900
 
+#if !defined(ENODATA)              /* not defined on BSD systems */
+#define ENODATA  EPIPE
+#endif
+
 /* Commands sent to Director */
 static char hello[]    = "Hello %s calling\n";
 
