@@ -583,7 +583,7 @@ void BDB::bdb_list_files_for_job(JCR *jcr, JobId_t jobid, int deleted, DB_LIST_H
    bdb_lock();
 
    /*
-    * Stupid MySQL is NON-STANDARD !
+    * MySQL is different with no || operator
     */
    if (bdb_get_type_index() == SQL_TYPE_MYSQL) {
       Mmsg(cmd, "SELECT CONCAT(Path.Path,Filename.Name) AS Filename "
