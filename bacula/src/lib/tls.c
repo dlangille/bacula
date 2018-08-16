@@ -751,7 +751,7 @@ TLS_CONTEXT *new_tls_context(const char *ca_certfile, const char *ca_certdir,
 }
 void free_tls_context(TLS_CONTEXT *ctx) { }
 
-void tls_bsock_shutdown(BSOCK *bsock) { }
+void tls_bsock_shutdown(BSOCKCORE *bsock) { }
 
 void free_tls_connection(TLS_CONNECTION *tls) { }
 
