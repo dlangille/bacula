@@ -53,8 +53,6 @@ class APIHome extends BaculumAPIPage {
 			$client_id = null;
 			if (is_object($param)) {
 				$client_id = $param->CallbackParameter;
-			} elseif (key_exists($config['api']['client_id'], $oauth2_cfg)) {
-				$client_id = $config['api']['client_id'];
 			}
 			if (is_string($client_id)) {
 				$params = array(
@@ -65,12 +63,12 @@ class APIHome extends BaculumAPIPage {
 				);
 			}
 		} elseif ($config['api']['auth_type'] === 'basic') {
-			if (is_null($param)) {
-				$params['login'] = $config['api']['login'];
-				$params['password'] = $config['api']['password'];
-			} elseif (is_object($param)) {
+			if (is_object($param)) {
 				$params['login'] = $param->CallbackParameter;
 				$params['password'] = '';
+			} else {
+				// no auth params, possibly no authentication
+				$params['login'] = $params['password'] = '';
 			}
 		}
 		$params = array_merge($base_params, $params);

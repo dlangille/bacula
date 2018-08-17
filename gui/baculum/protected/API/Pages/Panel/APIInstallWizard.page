@@ -431,7 +431,6 @@
 					ID="AuthOAuth2"
 					GroupName="SelectAuth"
 					Attributes.onclick="$('#configure_basic_auth').hide();$('#configure_oauth2_auth').show();"
-					OnCallback="setOAuth2Validation"
 				/>
 				<com:TLabel
 					ForControl="AuthOAuth2"
@@ -444,7 +443,6 @@
 					GroupName="SelectAuth"
 					Checked="true"
 					Attributes.onclick="$('#configure_oauth2_auth').hide();$('#configure_basic_auth').show();"
-					OnCallback="setBasicValidation"
 				/>
 				<com:TLabel
 					ForControl="AuthBasic"
@@ -812,38 +810,42 @@
 						<%=$this->AuthOAuth2->Checked ? 'OAuth2' : ''%>
 					</div>
 				</div>
-				<div style="display: <%=$this->AuthBasic->Checked ? 'block' : 'none'%>">
-					<div class="line">
-						<div class="text"><%[ Administration login: ]%></div>
-						<div class="field bold"><%=$this->APILogin->Text%></div>
+				<com:TPanel Visible="<%=$this->first_run%>">
+					<div style="display: <%=$this->AuthBasic->Checked ? 'block' : 'none'%>">
+						<div class="line">
+							<div class="text"><%[ Administration login: ]%></div>
+							<div class="field bold"><%=$this->APILogin->Text%></div>
+						</div>
+						<div class="line">
+							<div class="text"><%[ Administration password: ]%></div>
+							<div class="field bold"><%=preg_replace('/.{1}/', '*', $this->APIPassword->Text)%></div>
+						</div>
 					</div>
-					<div class="line">
-						<div class="text"><%[ Administration password: ]%></div>
-						<div class="field bold"><%=preg_replace('/.{1}/', '*', $this->APIPassword->Text)%></div>
+				</com:TPanel>
+				<com:TPanel Visible="<%=($this->first_run || $this->add_auth_params)%>">
+					<div style="display: <%=$this->AuthOAuth2->Checked ? 'block' : 'none'%>">
+						<div class="line">
+							<div class="text">Client ID:</div>
+							<div class="field bold"><%=$this->APIOAuth2ClientId->Text%></div>
+						</div>
+						<div class="line">
+							<div class="text">Client Secret:</div>
+							<div class="field bold"><%=preg_replace('/.{1}/', '*', $this->APIOAuth2ClientSecret->Text)%></div>
+						</div>
+						<div class="line">
+							<div class="text">Redirect URI:</div>
+							<div class="field bold"><%=$this->APIOAuth2RedirectURI->Text%></div>
+						</div>
+						<div class="line">
+							<div class="text">Scope:</div>
+							<div class="field bold"><%=$this->APIOAuth2Scope->Text%></div>
+						</div>
+						<div class="line">
+							<div class="text"><%[ Dedicated Bconsole config file path: ]%></div>
+							<div class="field bold"><%=!empty($this->APIOAuth2BconsoleCfgPath->Text) ? $this->APIOAuth2BconsoleCfgPath->Text : '-'%></div>
+						</div>
 					</div>
-				</div>
-				<div style="display: <%=$this->AuthOAuth2->Checked ? 'block' : 'none'%>">
-					<div class="line">
-						<div class="text">Client ID:</div>
-						<div class="field bold"><%=$this->APIOAuth2ClientId->Text%></div>
-					</div>
-					<div class="line">
-						<div class="text">Client Secret:</div>
-						<div class="field bold"><%=preg_replace('/.{1}/', '*', $this->APIOAuth2ClientSecret->Text)%></div>
-					</div>
-					<div class="line">
-						<div class="text">Redirect URI:</div>
-						<div class="field bold"><%=$this->APIOAuth2RedirectURI->Text%></div>
-					</div>
-					<div class="line">
-						<div class="text">Scope:</div>
-						<div class="field bold"><%=$this->APIOAuth2Scope->Text%></div>
-					</div>
-					<div class="line">
-						<div class="text"><%[ Dedicated Bconsole config file path: ]%></div>
-						<div class="field bold"><%=!empty($this->APIOAuth2BconsoleCfgPath->Text) ? $this->APIOAuth2BconsoleCfgPath->Text : '-'%></div>
-					</div>
-				</div>
+				</com:TPanel>
 			</fieldset>
 		</com:TWizardStep>
 	</com:TWizard>

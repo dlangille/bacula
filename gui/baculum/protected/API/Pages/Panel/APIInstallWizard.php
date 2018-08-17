@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2016 Kern Sibbald
+ * Copyright (C) 2013-2018 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -145,22 +145,10 @@ class APIInstallWizard extends BaculumAPIPage {
 					// API basic auth data
 					$this->AuthBasic->Checked = true;
 					$this->AuthOAuth2->Checked = false;
-					$this->APILogin->Text = $this->config['api']['login'];
-					$this->APIPassword->Text = $this->config['api']['password'];
-					$this->RetypeAPIPassword->Text = $this->config['api']['password'];
 				} elseif ($this->config['api']['auth_type'] === 'oauth2') {
 					// API oauth2 auth data
 					$this->AuthBasic->Checked = false;
 					$this->AuthOAuth2->Checked = true;
-					$oauth2_cfg = $this->getModule('oauth2_config')->getConfig();
-					if (key_exists($this->config['api']['client_id'], $oauth2_cfg)) {
-						$this->APIOAuth2ClientId->Text = $this->config['api']['client_id'];
-						$this->APIOAuth2ClientSecret->Text = $oauth2_cfg[$this->config['api']['client_id']]['client_secret'];
-						$this->APIOAuth2RedirectURI->Text = $oauth2_cfg[$this->config['api']['client_id']]['redirect_uri'];
-						$this->APIOAuth2Scope->Text = $oauth2_cfg[$this->config['api']['client_id']]['scope'];
-						$this->APIOAuth2BconsoleCfgPath->Text = $oauth2_cfg[$this->config['api']['client_id']]['bconsole_cfg_path'];
-						$this->APIOAuth2Name->Text = $oauth2_cfg[$this->config['api']['client_id']]['name'];
-					}
 				}
 			}
 		}
@@ -185,11 +173,8 @@ class APIInstallWizard extends BaculumAPIPage {
 		);
 		if ($this->AuthBasic->Checked) {
 			$cfg_data['api']['auth_type'] =  'basic';
-			$cfg_data['api']['login'] = $this->APILogin->Text;
-			$cfg_data['api']['password'] = $this->APIPassword->Text;
 		} elseif($this->AuthOAuth2->Checked) {
 			$cfg_data['api']['auth_type'] =  'oauth2';
-			$cfg_data['api']['client_id'] = $this->APIOAuth2ClientId->Text;
 		}
 		$cfg_data['api']['debug'] = isset($this->config['api']['debug']) ? $this->config['api']['debug'] : "0";
 		$cfg_data['api']['lang'] = isset($_SESSION['language']) ? $_SESSION['language'] : APIConfig::DEFAULT_LANGUAGE;
@@ -218,18 +203,17 @@ class APIInstallWizard extends BaculumAPIPage {
 		$cfg_data['jsontools']['bcons_cfg_path'] = $this->BconsCfgPath->Text;
 
 		$ret = $this->getModule('api_config')->setConfig($cfg_data);
-		if($ret) {
+		if ($ret && ($this->first_run || $this->add_auth_params)) {
 			if ($this->AuthBasic->Checked && $this->getModule('basic_apiuser')->isUsersConfig()) {
-				$previous_user = !$this->first_run && array_key_exists('login', $this->config['api']) ? $this->config['api']['login'] : null;
 				$this->getModule('basic_apiuser')->setUsersConfig(
-					$cfg_data['api']['login'],
-					$cfg_data['api']['password'],
-					$this->first_run,
-					$previous_user
+					$this->APILogin->Text,
+					$this->APIPassword->Text,
+					true,
+					$_SERVER['PHP_AUTH_USER']
 				);
 
 				// Automatic login after finish wizard.
-				$this->switchToUser($cfg_data['api']['login'], $cfg_data['api']['password']);
+				$this->switchToUser($this->APILogin->Text, $this->APIPassword->Text);
 				// here is exit
 			}
 			if ($this->AuthOAuth2->Checked) {
@@ -243,8 +227,8 @@ class APIInstallWizard extends BaculumAPIPage {
 				$oauth2_cfg[$this->APIOAuth2ClientId->Text]['name'] = $this->APIOAuth2Name->Text;
 				$this->getModule('oauth2_config')->setConfig($oauth2_cfg);
 			}
-			$this->goToDefaultPage();
 		}
+		$this->goToDefaultPage();
 
 	}
 

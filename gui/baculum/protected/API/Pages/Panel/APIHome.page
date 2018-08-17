@@ -62,8 +62,9 @@
 					<com:TActiveLinkButton
 						Text="<%[ Delete ]%>"
 						OnCommand="SourceTemplateControl.deleteBasicItem"
-						CommandParameter="<%=$this->getParent()->Data['username']%>"
-						Attributes.onclick="if(!confirm('<%[ Are you sure? ]%>')) return false;"
+						CommandParameter="<%#$this->getParent()->Data['username']%>"
+						Attributes.onclick="return confirm('<%[ Are you sure? ]%>')"
+						Visible="<%=($this->getParent()->getParent()->getItemCount() > 1)%>"
 					/>
 				</prop:ItemTemplate>
 				</com:TTemplateColumn>
@@ -106,8 +107,9 @@
 					<com:TActiveLinkButton
 						Text="<%[ Delete ]%>"
 						OnCommand="SourceTemplateControl.deleteOAuth2Item"
-						CommandParameter="<%=$this->getParent()->Data['client_id']%>"
+						CommandParameter="<%#$this->getParent()->Data['client_id']%>"
 						Attributes.onclick="if(!confirm('<%[ Are you sure? ]%>')) return false;"
+						Visible="<%=($this->getParent()->getParent()->getItemCount() > 1)%>"
 					/>
 				</prop:ItemTemplate>
 				</com:TTemplateColumn>
@@ -269,6 +271,7 @@
 				this.set_auth_params();
 				this.init_auth();
 				this.init_tabs();
+				this.change_auth_params();
 			},
 			init_auth: function() {
 				if (typeof(this.baculum_auth) == 'object') {
@@ -353,10 +356,12 @@
 					this.set_default_command(el.value);
 				}.bind(this));
 				var auth_params_combo = document.getElementById(this.ids.auth_params_combo);
-				auth_params_combo.addEventListener('change', function(e) {
-					this.auth_params_cb.setCallbackParameter(auth_params_combo.value)
-					this.auth_params_cb.dispatch();
-				}.bind(this));
+				auth_params_combo.addEventListener('change', this.change_auth_params.bind(this));
+			},
+			change_auth_params: function(e) {
+				var auth_params_combo = document.getElementById(this.ids.auth_params_combo);
+				this.auth_params_cb.setCallbackParameter(auth_params_combo.value)
+				this.auth_params_cb.dispatch();
 			},
 			set_default_command: function(section) {
 				if (this.default_commands.hasOwnProperty(section)) {
@@ -369,7 +374,8 @@
 				if (this.baculum_auth.auth_type == 'oauth2' && this.token) {
 					headers = {'Authorization': 'Bearer ' + this.token};
 				} else if (this.baculum_auth.auth_type == 'basic') {
-					headers = {'Authorization': 'Basic ' + btoa(this.baculum_auth.login + ":" + this.baculum_auth.password)};
+					// Password is not known so don't send auth header (it should be inherited automatically)
+					// headers = {'Authorization': 'Basic ' + btoa(this.baculum_auth.login + ":" + this.baculum_auth.password)};
 				}
 				this.clear_result();
 				var request = $.ajax({
