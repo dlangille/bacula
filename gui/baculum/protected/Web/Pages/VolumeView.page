@@ -343,6 +343,9 @@
 				<prop:Text>
 					<i class="fa fa-save"></i> &nbsp;<%=Prado::localize('Save')%>
 				</prop:Text>
+				<prop:ClientSide.OnComplete>
+					Formatters.set_formatters();
+				</prop:ClientSide.OnComplete>
 			</com:TActiveLinkButton>
 			<i id="status_volume_loading" class="fa fa-sync w3-spin" style="display: none; vertical-align: super;"></i>
 		</div>
