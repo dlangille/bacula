@@ -1579,3 +1579,10 @@ msgstr "Log order"
 
 msgid "Close Menu"
 msgstr "Close Menu"
+
+msgid "Error code:"
+msgstr "Error code:"
+
+msgid "Message:"
+msgstr "Message:"
+

@@ -1835,3 +1835,9 @@ msgstr "Kolejność dziennika"
 
 msgid "Close Menu"
 msgstr "Zamknij Menu"
+
+msgid "Error code:"
+msgstr "Kod błędu:"
+
+msgid "Message:"
+msgstr "Wiadomość:"

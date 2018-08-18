@@ -34,7 +34,8 @@ class Monitor extends BaculumWebPage {
 			'terminated_jobs' => array(),
 			'pools' => array(),
 			'jobtotals' => array(),
-			'dbsize' => array()
+			'dbsize' => array(),
+			'error' => array('error' => 0, 'output' => '')
 		);
 
 		$web_config = $this->getModule('web_config')->getConfig();
@@ -43,26 +44,59 @@ class Monitor extends BaculumWebPage {
 			$job_limit = $web_config['baculum']['max_jobs'];
 		}
 
+		$error = null;
 		$params = $this->Request->contains('params') ? $this->Request['params'] : array();
 		if (in_array('jobs', $params)) {
 			$job_params = array('jobs');
 			if ($this->Request->contains('use_limit') && $this->Request['use_limit'] == 1) {
 				$job_params[] = '?limit=' . $job_limit;
 			}
-			$monitor_data['jobs'] = $this->getModule('api')->get($job_params)->output;
+			$result = $this->getModule('api')->get($job_params);
+			if ($result->error === 0) {
+				$monitor_data['jobs'] = $result->output;
+			} else {
+				$error = $result;
+			}
 		}
-		$monitor_data['running_jobs'] = $this->getModule('api')->get(array('jobs', '?jobstatus=CR'))->output;
-		if (in_array('clients', $params)) {
-			$monitor_data['clients'] = $this->getModule('api')->get(array('clients'))->output;
+		if (!$error) {
+			$result = $this->getModule('api')->get(array('jobs', '?jobstatus=CR'));
+			if ($result->error === 0) {
+				$monitor_data['running_jobs'] = $result->output;
+			} else {
+				$error = $result;
+			}
 		}
-		if (in_array('pools', $params)) {
-			$monitor_data['pools'] = $this->getModule('api')->get(array('pools'))->output;
+		if (!$error && in_array('clients', $params)) {
+			$result = $this->getModule('api')->get(array('clients'));
+			if ($result->error === 0) {
+				$monitor_data['clients'] = $result->output;
+			} else {
+				$error = $result;
+			}
 		}
-		if (in_array('job_totals', $params)) {
-			$monitor_data['jobtotals'] = $this->getModule('api')->get(array('jobs', 'totals'))->output;
+		if (!$error && in_array('pools', $params)) {
+			$result = $this->getModule('api')->get(array('pools'));
+			if ($result->error === 0) {
+				$monitor_data['pools'] = $result->output;
+			} else {
+				$error = $result;
+			}
 		}
-		if ($_SESSION['admin'] && in_array('dbsize', $params)) {
-			$monitor_data['dbsize'] = $this->getModule('api')->get(array('dbsize'))->output;
+		if (!$error && in_array('job_totals', $params)) {
+			$result = $this->getModule('api')->get(array('jobs', 'totals'));
+			if ($result->error === 0) {
+				$monitor_data['jobtotals'] = $result->output;
+			} else {
+				$error = $result;
+			}
+		}
+		if (!$error && $_SESSION['admin'] && in_array('dbsize', $params)) {
+			$result = $this->getModule('api')->get(array('dbsize'));
+			if ($result->error === 0) {
+				$monitor_data['dbsize'] = $result->output;
+			} else {
+				$error = $result;
+			}
 		}
 
 		$running_job_states = $this->Application->getModule('misc')->getRunningJobStates();
@@ -74,6 +108,10 @@ class Monitor extends BaculumWebPage {
 				}
 			}
 		}
+		if (is_object($error)) {
+			$monitor_data['error'] = $error;
+		}
+
 		echo json_encode($monitor_data);
 		exit();
 	}

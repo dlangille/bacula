@@ -465,11 +465,15 @@ class BaculumAPIClient extends WebModule {
 		}
 
 		if ($show_error === true && $resource->error != 0) {
-			$url = $this->Service->constructUrl('BaculumError', (array)$resource, false);
-			header("Location: $url");
-			// write all logs before exiting, otherwise they will be lost
-			$this->getModule('log')->collectLogs(null);
-			exit();
+			$headers = $this->Request->getHeaders(CASE_UPPER);
+			if (!isset($headers['X-REQUESTED-WITH']) || $headers['X-REQUESTED-WITH'] !== 'XMLHttpRequest') {
+				// it is non-ajax request - redirect it to error page
+				$url = $this->Service->constructUrl('BaculumError', (array)$resource, false);
+				header("Location: $url");
+				// write all logs before exiting, otherwise they will be lost
+				$this->getModule('log')->collectLogs(null);
+				exit();
+			}
 		}
 
 		$this->Application->getModule('logging')->log(

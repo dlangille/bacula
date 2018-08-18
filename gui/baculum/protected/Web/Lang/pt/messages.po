@@ -1843,3 +1843,10 @@ msgstr "Ordenar log"
 
 msgid "Close Menu"
 msgstr "Fechar menu"
+
+msgid "Error code:"
+msgstr "Error code:"
+
+msgid "Message:"
+msgstr "Message:"
+
