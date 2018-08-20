@@ -1413,8 +1413,8 @@ bool Bvfs::compute_restore_list(char *fileid, char *dirid, char *hardlink,
       Mmsg(tmp, "SELECT Job.JobId, JobTDate, File.FileIndex, File.FilenameId, "
                         "File.PathId, FileId "
                    "FROM Path JOIN File USING (PathId) JOIN Job USING (JobId) "
-                  "WHERE Path.Path LIKE '%s' AND File.JobId IN (%s) ",
-           tmp2.c_str(), jobids);
+                  "WHERE Path.Path LIKE '%s' ESCAPE '%s' AND File.JobId IN (%s) ",
+           tmp2.c_str(), escape_char_value[db->bdb_get_type_index()], jobids);
       query.strcat(tmp.c_str());
       init = true;
 

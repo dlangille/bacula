@@ -1040,3 +1040,14 @@ const char *strip_restore[] = {
    /* SQLite */
    "DELETE FROM %s WHERE FileId IN (SELECT FileId FROM %s JOIN File USING (FileId) WHERE PathId IN (%s))"
 };
+
+static const char *escape_char_value_default = "\\";
+
+const char *escape_char_value[] = {
+   /* MySQL */
+   "\\\\",
+   /* PostgreSQL */
+   escape_char_value_default,
+   /* SQLite */
+   escape_char_value_default
+};

@@ -89,3 +89,4 @@ extern const char CATS_IMP_EXP *update_counter_values[];
 extern const char CATS_IMP_EXP *expires_in[];
 extern const char CATS_IMP_EXP *prune_cache[];
 extern const char CATS_IMP_EXP *strip_restore[];
+extern const char CATS_IMP_EXP *escape_char_value[];
