@@ -1,0 +1,23 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Copyright (c) 2018 by Inteos sp. z o.o.
+# All rights reserved. IP transfered to Bacula Systems according to agreement.
+#
+# This is a BSOCKCORE unit test
+#
+TestName="bsockcore_test"
+NC="/bin/netcat"
+if [ -f $NC ]
+then
+. scripts/functions
+make -C $src/src/lib $TestName
+
+$src/src/lib/$TestName
+exit $?
+else
+	echo "$0 requires $NC to complete"
+fi
+exit 1

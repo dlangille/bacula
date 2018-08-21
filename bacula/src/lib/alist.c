@@ -44,7 +44,7 @@ void baselist::grow_list()
    int i;
    int new_max_items;
 
-   /* put() can insert and item anywhere in the list so 
+   /* put() can insert and item anywhere in the list so
    it's important to allocate at least last_item+1 items */
    int min_grow = MAX(10, last_item+1);
    if (num_grow < min_grow) {
@@ -211,240 +211,263 @@ void baselist::destroy()
 }
 
 #ifdef TEST_PROGRAM
+#include "unittests.h"
 
-#include "rtest.h"
+#define NUMITEMS        20
+#define MORENUMITEMS    115
 
 struct FILESET {
    alist mylist;
 };
 
+void check_all_alist_contents(alist *mlist)
+{
+   bool check_cont = true;
+   char buf[30];
+   int i;
+
+   for (i = 0; i < mlist->size(); i++) {
+      sprintf(buf, "This is item %d", i);
+      if (strcmp(buf, (char*)mlist->get(i)) != 0){
+         check_cont = false;
+      }
+   }
+   ok(check_cont, "Checking alist contents");
+};
+
+void check_all_ilist_contents(ilist *vlist, int start)
+{
+   bool check_cont = true;
+   char buf[30];
+   int i;
+
+   for (i = start; i< vlist->size(); i++) {
+      sprintf(buf, "This is item %d", i);
+      if (strcmp(buf, (char*)vlist->get(i)) != 0){
+         check_cont = false;
+      }
+   }
+   ok(check_cont, "Checking ilist contents");
+};
+
+void check_all_alist_indexes(alist *mlist)
+{
+   bool check_cont = true;
+   char *bp;
+   int i = 0;
+   int nb;
+
+   foreach_alist(bp, mlist) {
+      nb = atoi(bp);
+      if (nb != i++){
+         check_cont = false;
+      }
+   }
+   ok(check_cont, "Check all alist indexes");
+};
+
+void check_alist_destroy_and_delete(alist *mlist)
+{
+   mlist->destroy();
+   ok(mlist->size() == 0, "Check alist size after destroy");
+   ok(mlist->last() == NULL, "Check alist last after destroy");
+   delete mlist;
+};
+
+void check_ilist_destroy_delete(ilist *vlist)
+{
+   vlist->destroy();
+   ok(vlist->size() == 0, "Check ilist size after destroy");
+   delete vlist;
+}
+
 int main()
 {
+   Unittests alist_test("alist_test");
    FILESET *fileset;
    char buf[30];
    alist *mlist;
+   ilist *vlist;
    char *bp;
+   int i;
+   bool check_cont;
+   bool check_indx;
 
+   Pmsg0(0, "Initialize tests ...\n");
    fileset = (FILESET *)malloc(sizeof(FILESET));
    bmemzero(fileset, sizeof(FILESET));
    fileset->mylist.init();
+   ok(fileset && fileset->mylist.empty() && fileset->mylist.max_size() == 0,
+      "Default initialization");
 
-   log("Automatic allocation/destruction of list:");
+   Pmsg0(0, "Automatic allocation/destruction of alist:\n");
 
-   for (int i=0; i<20; i++) {
+   for (int i = 0; i < NUMITEMS; i++) {
       sprintf(buf, "This is item %d", i);
       fileset->mylist.append(bstrdup(buf));
    }
-/*
- * for (int i=0; i< fileset->mylist.size(); i++) {
- *    log("Item %d = %s", i, (char *)fileset->mylist[i]);
- * }
- */
-   ok(fileset->mylist.size() == 20, "Check fileset size");
-   ok(strcmp((char*)fileset->mylist.last(), "This is item 19") == 0, "Check last item");
+   ok(fileset->mylist.size() == NUMITEMS, "Checking size");
+
+   check_all_alist_contents(&fileset->mylist);
    fileset->mylist.destroy();
-   ok(fileset->mylist.size() == 0, "Check fileset size after delete");
-   ok(fileset->mylist.last() == NULL, "Check fileset last after delete");
+   ok(fileset->mylist.size() == 0, "Check size after delete");
+   ok(fileset->mylist.last() == NULL, "Check last after delete");
    free(fileset);
 
-   log("Allocation/destruction using new delete");
-   mlist = New(alist(50));
+   Pmsg0(0, "Allocation/destruction using new delete\n");
 
-   for (int i=0; i<20; i++) {
+   mlist = New(alist(50));
+   ok(mlist && mlist->empty() && mlist->max_size() == 0,
+      "Constructor initialization");
+   for (i = 0; i < NUMITEMS; i++) {
       sprintf(buf, "This is item %d", i);
       mlist->append(bstrdup(buf));
    }
-/*
- * for (int i=0; i< mlist->size(); i++) {
- *    log("Item %d = %s", i, (char *)mlist->get(i));
- * }
- */
-   ok(mlist->size() == 20, "Check fileset size");
-   ok(strcmp((char*)mlist->last(), "This is item 19") == 0, "Check last item");
+   ok(mlist->size() == NUMITEMS, "Checking size");
+   check_all_alist_contents(mlist);
+   check_alist_destroy_and_delete(mlist);
 
-   /* Test indexed list */
-   mlist->destroy();
-   ok(mlist->size() == 0, "Check fileset size after delete");
-   ok(mlist->last() == NULL, "Check fileset last after delete");
-   delete mlist;
+   Pmsg0(0, "Test alist::remove(0)\n");
+   mlist = New(alist(10, owned_by_alist));
+   mlist->append(bstrdup("trash"));
+   mlist->append(bstrdup("0"));
+   mlist->append(bstrdup("1"));
+   mlist->append(bstrdup("2"));
+   mlist->append(bstrdup("3"));
+   ok(mlist && mlist->size() == 5, "Checking size");
+   ok(mlist->last_index() == 5, "Check last_index");
+   free(mlist->remove(0));
+   ok(mlist->size() == 4, "Remove test size");
+   ok(mlist->last_index() == 4, "Check last_index");
+   check_all_alist_indexes(mlist);
+   check_alist_destroy_and_delete(mlist);
 
-   {
-      log("Test alist::remove(0)");
-      char *elt;
-      int i=0;
-      alist *alst = New(alist(10, owned_by_alist));
-      alst->append(bstrdup("trash"));
-      alst->append(bstrdup("0"));
-      alst->append(bstrdup("1"));
-      alst->append(bstrdup("2"));
-      alst->append(bstrdup("3"));
-      free(alst->remove(0));
-      foreach_alist(elt, alst) {
-         int nb = atoi(elt);
-         ok(nb == i++, "Check list index after remove(0)");
-      }
-      delete alst;
-   }
+   Pmsg0(0, "Test alist::remove(3)\n");
+   mlist = New(alist(10, owned_by_alist));
+   mlist->append(bstrdup("0"));
+   mlist->append(bstrdup("1"));
+   mlist->append(bstrdup("2"));
+   mlist->append(bstrdup("trash"));
+   mlist->append(bstrdup("3"));
+   ok(mlist && mlist->size() == 5, "Checking size");
+   ok(mlist->last_index() == 5, "Check last_index");
+   free(mlist->remove(3));
+   ok(mlist->size() == 4, "Remove test size");
+   ok(mlist->last_index() == 4, "Check last_index");
+   check_all_alist_indexes(mlist);
+   check_alist_destroy_and_delete(mlist);
 
-   {
-      log("Test alist::remove(3)");
-      char *elt;
-      int i=0;
-      alist *alst = New(alist(10, owned_by_alist));
-      alst->append(bstrdup("0"));
-      alst->append(bstrdup("1"));
-      alst->append(bstrdup("2"));
-      alst->append(bstrdup("trash"));
-      alst->append(bstrdup("3"));
-      free(alst->remove(3));
-      foreach_alist(elt, alst) {
-         int nb = atoi(elt);
-         ok(nb == i++, "Check list index after remove(3)");
-      }
-      delete alst;
-   }
+   Pmsg0(0, "Test alist::remove(last)\n");
+   mlist = New(alist(10, owned_by_alist));
+   mlist->append(bstrdup("0"));
+   mlist->append(bstrdup("1"));
+   mlist->append(bstrdup("2"));
+   mlist->append(bstrdup("3"));
+   mlist->append(bstrdup("trash"));
+   ok(mlist && mlist->size() == 5, "Checking size");
+   ok(mlist->last_index() == 5, "Check last_index");
+   free(mlist->remove(4));
+   ok(mlist->size() == 4, "Remove test size");
+   check_all_alist_indexes(mlist);
+   check_alist_destroy_and_delete(mlist);
 
-   {
-      log("Test alist::remove(last)");
-      char *elt;
-      int i=0;
-      alist *alst = New(alist(10, owned_by_alist));
-      alst->append(bstrdup("0"));
-      alst->append(bstrdup("1"));
-      alst->append(bstrdup("2"));
-      alst->append(bstrdup("3"));
-      alst->append(bstrdup("trash"));
-      free(alst->remove(4));
-      foreach_alist(elt, alst) {
-         int nb = atoi(elt);
-         ok(nb == i++, "Check list index after remove(last)");
-      }
-      delete alst;
-   }
+   Pmsg0(0, "Test alist::remove(last+1)\n");
+   mlist = New(alist(10, owned_by_alist));
+   mlist->append(bstrdup("0"));
+   mlist->append(bstrdup("1"));
+   mlist->append(bstrdup("2"));
+   mlist->append(bstrdup("3"));
+   mlist->append(bstrdup("4"));
+   ok(mlist && mlist->size() == 5, "Checking size");
+   ok(mlist->last_index() == 5, "Check last_index");
+   ok(mlist->remove(5) == NULL, "Check remove returns null");
+   ok(mlist->size() == 5, "Remove test size");
+   check_all_alist_indexes(mlist);
+   check_alist_destroy_and_delete(mlist);
 
-   {
-      log("Test alist::remove(last+1)");
-      char *elt;
-      int i=0;
-      alist *alst = New(alist(10, owned_by_alist));
-      alst->append(bstrdup("0"));
-      alst->append(bstrdup("1"));
-      alst->append(bstrdup("2"));
-      alst->append(bstrdup("3"));
-      alst->append(bstrdup("4"));
-      ok(alst->remove(5) == NULL, "Check remove returns null");
-      foreach_alist(elt, alst) {
-         int nb = atoi(elt);
-         ok(nb == i++, "Check list index after remove(last+1)");
-      }
-      delete alst;
-   }
+   Pmsg0(0, "Test alist::pop()\n");
+   mlist = New(alist(10, owned_by_alist));
+   mlist->append(bstrdup("0"));
+   mlist->append(bstrdup("1"));
+   mlist->append(bstrdup("2"));
+   mlist->append(bstrdup("3"));
+   mlist->append(bstrdup("trash"));
+   ok(mlist && mlist->size() == 5, "Checking size");
+   ok(mlist->last_index() == 5, "Check last_index");
+   free(mlist->pop());
+   ok(mlist->size() == 4, "Check last_index after pop()");
+   check_all_alist_indexes(mlist);
+   check_alist_destroy_and_delete(mlist);
 
-   {
-      log("Test alist::pop()");
-      char *elt;
-      int i=0;
-      alist *alst = New(alist(10, owned_by_alist));
-      alst->append(bstrdup("0"));
-      alst->append(bstrdup("1"));
-      alst->append(bstrdup("2"));
-      alst->append(bstrdup("3"));
-      alst->append(bstrdup("trash"));
-      ok(alst->last_index() == 5, "Check last_index");
-      free(alst->pop());
-      ok(alst->last_index() == 4, "Check last_index after pop()");
-      foreach_alist(elt, alst) {
-         int nb = atoi(elt);
-         ok(nb == i++, "Check list index after pop()");
-      }
-      delete alst;
-   }
-   {
-      log("Test ilist::put()");
-      ilist *ilst = New(ilist(10, owned_by_alist));
-      sprintf(buf, "This is item 10");
-      ilst->put(10, bstrdup(buf));
-      log("ilst size is %d. last_item=%d.  max_items=%d",
-          ilst->size(), ilst->last_index(), ilst->max_size());
-      ok(ilst->size() == 1, "Check size() after put()");
-      delete ilst;
-   }
+   Pmsg0(0, "Test ilist::put()\n");
+   vlist = New(ilist(10, owned_by_alist));
+   sprintf(buf, "This is item 10");
+   vlist->put(10, bstrdup(buf));
+   ok(vlist && vlist->size() == 1, "Checking size after put()");
+   ok(vlist->last_index() == 10, "Check last_index");
+   check_ilist_destroy_delete(vlist);
 
-   {
-      log("Test ilist::last_index");
-      ilist *ilst = New(ilist(10, not_owned_by_alist));
-      ilst->put(15, (char *)"something");
-      log("ilst size is %d. last_item=%d.  max_items=%d",
-         ilst->size(), ilst->last_index(), ilst->max_size());
-      ok(ilst->size() == 1, "Check size() after put()");
-      ok(ilst->last_index() == 15, "check last index after put()");
-      delete ilst;
-   }
-
-   log("Test ilist with multiple put()");
-   ilist *ilst = New(ilist(50));
-   for (int i=0; i<115; i++) {
+   Pmsg0(0, "Test ilist with multiple put()\n");
+   vlist = New(ilist(50, owned_by_alist));
+   sprintf(buf, "This is item 10");
+   vlist->put(10, bstrdup(buf));
+   ok(vlist && vlist->size() == 1, "Checking size after put()");
+   ok(vlist->last_index() == 10, "Check last_index");
+   sprintf(buf, "This is item 15");
+   vlist->put(15, bstrdup(buf));
+   ok(vlist->size() == 2, "Checking size after put()");
+   ok(vlist->last_index() == 15, "Check last_index");
+   for (i = NUMITEMS; i < NUMITEMS + MORENUMITEMS; i++) {
       sprintf(buf, "This is item %d", i);
-      ilst->put(i, bstrdup(buf));
+      vlist->put(i, bstrdup(buf));
    }
-   log("ilst size is %d. last_item=%d.  max_items=%d",
-       ilst->size(), ilst->last_index(), ilst->max_size());
-   ok(ilst->size() == 115, "Check ilist size after put()");
-   ok(ilst->last_index() == 114, "Check ilist last_index after put()");
-   for (int i=0; i< ilst->size(); i++) {
-      sprintf(buf, "This is item %d", i);
-      ok(strcmp(buf, (char *)ilst->get(i)) == 0, "Check ilist content");
-   }
+   ok(vlist->size() == 2 + MORENUMITEMS, "Checking size after put()");
+   ok(vlist->last_index() == NUMITEMS + MORENUMITEMS - 1, "Check last_index");
+   /* check contents, first two sparse elements */
+   ok(strcmp("This is item 10", (char *)vlist->get(10)) == 0, "Check ilist content at 10");
+   ok(strcmp("This is item 15", (char *)vlist->get(15)) == 0, "Check ilist content at 15");
+   check_all_ilist_contents(vlist, NUMITEMS);
+   check_ilist_destroy_delete(vlist);
 
-   delete ilst;
-
-   log("Test alist push().");
-   mlist = New(alist(10));
-   ok(ilst->size() == 0, "Check ilist size after new()");
-   ok(ilst->last_index() == 0, "Check ilist last_index after new()");
-
-   log("mlist size is %d. last_item=%d.  max_items=%d",
-       mlist->size(), mlist->last_index(), mlist->max_size());
-   for (int i=0; i<20; i++) {
+   Pmsg0(0, "Test alist::push()\n");
+   mlist = New(alist(10, owned_by_alist));
+   check_cont = true;
+   check_indx = true;
+   for (i = 0; i < NUMITEMS; i++) {
       sprintf(buf, "This is item %d", i);
       mlist->push(bstrdup(buf));
-      ok(mlist->size() == i+1, "Check current size after push");
-      ok(mlist->last_index() == i+1, "Check last_index after push");
+      if (mlist->size() != i + 1){
+         check_cont = false;
+      }
+      if (mlist->last_index() != i + 1){
+         check_indx = false;
+      }
    }
-   log("Test alist pop()");
-   for (int i=19; (bp=(char *)mlist->pop()); i--) {
+   ok(check_cont, "Check all sizes after push");
+   ok(check_indx, "Check all last_indexes after push");
+   Pmsg0(0, "Test alist::pop()\n");
+   check_cont = true;
+   for (i = NUMITEMS-1; (bp = (char *)mlist->pop()); i--) {
       sprintf(buf, "This is item %d", i);
-      ok(strcmp(buf, bp) == 0, "Check ilist content after pop()");
+      if (strcmp(buf, bp) != 0){
+         check_cont = false;
+      }
       free(bp);
    }
-
-   ok(ilst->size() == 0, "Check ilist size after pop()");
-   ok(ilst->last_index() == 0, "Check ilist last_index after pop()");
-
-   log("mlist size is %d. last_item=%d.  max_items=%d",
-       mlist->size(), mlist->last_index(), mlist->max_size());
-
+   ok(check_cont, "Check alist content after pop()");
+   ok(mlist->size() == 0, "Check alist size after pop()");
+   ok(mlist->last_index() == 0, "Check alist last_index after pop()");
+   /* check get after pop, it should be NULL */
+   check_cont = true;
    for (int i=0; i<mlist->max_size(); i++) {
       bp = (char *) mlist->get(i);
-      ok(bp == NULL, "Check get() after pop(). Should be NULL");
+      if (bp != NULL){
+         check_cont = false;
+      }
    }
-   delete mlist;
+   ok(check_cont, "Check get() after pop() contents.");
+   check_alist_destroy_and_delete(mlist);
 
-   ilst = New(ilist(10, not_owned_by_alist));
-   ilst->put(1, ilst);
-   ilst->append((void*)1);
-   //ilst->first();
-   //ilst->remove(1);
-   delete ilst;
-   {
-      ilist a(4, not_owned_by_alist);
-      a.append((void*)"test1");
-
-      ilist b(4, not_owned_by_alist);
-      bmemzero(&b, sizeof b);
-      b.append((void*)"test1");
-   }
-   sm_dump(false);       /* test program */
    return report();
 }
 #endif

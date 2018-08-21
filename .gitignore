@@ -310,3 +310,14 @@ bacula/platforms/systemd/bacula-fd.service
 bacula/platforms/systemd/bacula-sd.service
 bacula/platforms/systemd/bacula.conf
 bacula/scripts/baculabackupreport
+
+# unittests
+bacula/src/lib/alist_test
+bacula/src/lib/base64_test
+bacula/src/lib/bsnprintf_test
+bacula/src/lib/bsock_test
+bacula/src/lib/bsockcore_test
+bacula/src/lib/crc32_test
+bacula/src/lib/flist_test
+bacula/src/lib/output_test
+bacula/src/lib/sellist_test

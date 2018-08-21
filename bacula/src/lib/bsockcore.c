@@ -1259,54 +1259,81 @@ void BSOCKCORE::dump()
 #endif
 };
 
-#ifdef TEST_PROGRAM
 
-void terminate(int sig){};
+#ifdef TEST_PROGRAM
+#include "unittests.h"
+
 void free_my_jcr(JCR *jcr){
    /* TODO: handle full JCR free */
    free_jcr(jcr);
 };
 
+#define  ofnamefmt      "/tmp/bsockcore.%d.test"
+const char *data =      "This is a BSOCKCORE communication test: 1234567\n";
+const char *hexdata =   "< 00000000 54 68 69 73 20 69 73 20 61 20 42 53 4f 43 4b 43 # This is a BSOCKC\n" \
+                        "< 00000010 4f 52 45 20 63 6f 6d 6d 75 6e 69 63 61 74 69 6f # ORE communicatio\n" \
+                        "< 00000020 6e 20 74 65 73 74 3a 20 31 32 33 34 35 36 37 0a # n test: 1234567.\n";
+
 int main()
 {
+   Unittests bsockcore_test("bsockcore_test", true);
    BSOCKCORE *bs;
    pid_t pid;
    int rc;
    char *host = (char*)"localhost";
    char *name = (char*)"Test";
    JCR *jcr;
+   bool btest;
+   char buf[256];       // extend this buffer when hexdata becomes longer
+   int fd;
 
-   debug_level = 500;
-   my_name_is(0, NULL, "bsockcore_test");
-   init_signals(terminate);
-   lmgr_init_thread(); /* initialize the lockmanager stack */
+   Pmsg0(0, "Initialize tests ...\n");
 
    jcr = new_jcr(sizeof(JCR), NULL);
    bs = New(BSOCKCORE);
-   Pmsg0(0, "Initialize ...\n");
    bs->set_jcr(jcr);
-   bs->dump();
+   ok(bs != NULL && bs->jcr() == jcr,
+         "Default initialization");
 
+   Pmsg0(0, "Preparing fork\n");
    pid = fork();
    if (0 == pid){
-      Pmsg0(0, "prepare to execute netcat\n");
-      rc = execl("/bin/netcat", "netcat", "-p", "20000", "-l", NULL);
+      Pmsg0(0, "Prepare to execute netcat\n");
+      pid_t mypid = getpid();
+      char ofname[30];
+      snprintf(ofname, sizeof(ofname), ofnamefmt, mypid);
+      rc = execl("/bin/netcat", "netcat", "-v", "-p", "20000", "-l", "-o", ofname, NULL);
       Pmsg1(0, "Error executing netcat: %s\n", strerror(rc));
       exit(1);
    }
-   Pmsg1(0, "after fork: %d\n", pid);
-   bmicrosleep(1, 0);
-   if (bs->connect(jcr, 1, 10, 0, name, host, NULL, 20000, 0)) {
-      /* connected */
-      Pmsg0(0, "connected ...\n");
-      bs->dump();
-   } else {
-      Pmsg1(0, "connection error: %s\n", bs->bstrerror());
+   Pmsg1(0, "After fork: %d\n", pid);
+   bmicrosleep(2, 0);      // we wait a bit to netcat to start
+   btest = bs->connect(jcr, 1, 10, 0, name, host, NULL, 20000, 0);
+   ok(btest, "BSOCKCORE connection test");
+   if (btest){
+      /* we are connected, so send some data */
+      bs->fsend("%s", data);
+      bmicrosleep(2, 0);      // wait until data received by netcat
+      bs->close();
+      ok(bs->is_closed(), "Close bsockcore");
+      /* now check what netcat received */
+      char ofname[30];
+      snprintf(ofname, sizeof(ofname), ofnamefmt, pid);
+      fd = open(ofname, O_RDONLY);
+      btest = false;
+      if (fd > 0){
+         btest = true;
+         read(fd, buf, strlen(hexdata));
+         close(fd);
+         unlink(ofname);
+      }
+      ok(btest, "Output file available");
+      ok(strcmp(buf, hexdata) == 0, "Communication data");
    }
    kill(pid, SIGTERM);
    delete(bs);
    free_my_jcr(jcr);
-   lmgr_cleanup_main();
-   // sm_dump(false);
+   term_last_jobs_list();
+   return report();
 };
 #endif /* TEST_PROGRAM */

@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -847,17 +847,22 @@ static int32_t fmtfp(char *buffer, int32_t currlen, int32_t maxlen,
 }
 #endif  /* FP_OUTPUT */
 
-
 #ifdef TEST_PROGRAM
+#include "unittests.h"
 
 #ifndef LONG_STRING
 #define LONG_STRING 1024
 #endif
+#define MSGLEN    80
 
 int main(int argc, char *argv[])
 {
+   Unittests bsnprintf_test("bsnprintf_test");
    char buf1[LONG_STRING];
    char buf2[LONG_STRING];
+   char msg[MSGLEN];
+   bool check_cont, check_nr;
+   int pcount, bcount;
 
 #ifdef FP_OUTPUT
    const char *fp_fmt[] = {
@@ -955,110 +960,111 @@ int main(int argc, char *argv[])
    const wchar_t *ls_nums[] = { L"abc", L"def", L"ghi", L"123", L"4567", L"a", L"bb", L"ccccccc", NULL};
 
    int x, y;
-   int fail = 0;
-   int num = 0;
 
-   printf("Testing snprintf format codes against system sprintf...\n");
-
+   printf("\n\tTesting bsnprintf against system sprintf...\n\n");
 #ifdef FP_OUTPUT
-   for (x = 0; fp_fmt[x] != NULL; x++)
+   printf("Testing bsnprintf float format codes\n");
+   for (x = 0; fp_fmt[x] != NULL; x++){
+      check_cont = true;
+      check_nr = true;
       for (y = 0; fp_nums[y] != 0; y++) {
-         bsnprintf(buf1, sizeof(buf1), fp_fmt[x], fp_nums[y]);
-         sprintf(buf2, fp_fmt[x], fp_nums[y]);
-         if (strcmp(buf1, buf2)) {
-            printf
-               ("snprintf doesn't match Format: %s\n\tsnprintf = %s\n\tsprintf  = %s\n",
-                fp_fmt[x], buf1, buf2);
-            fail++;
+         bcount = bsnprintf(buf1, sizeof(buf1), fp_fmt[x], fp_nums[y]);
+         pcount = sprintf(buf2, fp_fmt[x], fp_nums[y]);
+         if (bcount != pcount) {
+            check_nr = false;
          }
-         num++;
+         if (strcmp(buf1, buf2) != 0){
+            check_cont = false;
+         }
       }
+      snprintf(msg, MSGLEN, "Checking return length for format %s", fp_fmt[x]);
+      ok(check_nr, msg);
+      snprintf(msg, MSGLEN, "Checking format %s", fp_fmt[x]);
+      ok(check_cont, msg);
+   }
 #endif
 
-   for (x = 0; int_fmt[x] != NULL; x++)
+   printf("Testing bsnprintf int format codes\n");
+   for (x = 0; int_fmt[x] != NULL; x++){
+      check_cont = true;
+      check_nr = true;
       for (y = 0; int_nums[y] != 0; y++) {
-         int pcount, bcount;
          bcount = bsnprintf(buf1, sizeof(buf1), int_fmt[x], int_nums[y]);
-         printf("%s\n", buf1);
          pcount = sprintf(buf2, int_fmt[x], int_nums[y]);
          if (bcount != pcount) {
-            printf("bsnprintf count %d doesn't match sprintf count %d\n",
-               bcount, pcount);
+            check_nr = false;
          }
-         if (strcmp(buf1, buf2)) {
-            printf
-               ("bsnprintf doesn't match Format: %s\n\tsnprintf = %s\n\tsprintf  = %s\n",
-                int_fmt[x], buf1, buf2);
-            fail++;
+         if (strcmp(buf1, buf2) != 0) {
+            check_cont = false;
          }
-         num++;
       }
+      snprintf(msg, MSGLEN, "Checking return length for format %s", int_fmt[x]);
+      ok(check_nr, msg);
+      snprintf(msg, MSGLEN, "Checking format %s", int_fmt[x]);
+      ok(check_cont, msg);
+   }
 
+   printf("Testing bsnprintf long format codes\n");
    for (x = 0; ll_fmt[x] != NULL; x++) {
+      check_cont = true;
+      check_nr = true;
       for (y = 0; ll_nums[y] != 0; y++) {
-         int pcount, bcount;
          bcount = bsnprintf(buf1, sizeof(buf1), ll_fmt[x], ll_nums[y]);
-         printf("%s\n", buf1);
          pcount = sprintf(buf2, ll_fmt[x], ll_nums[y]);
          if (bcount != pcount) {
-            printf("bsnprintf count %d doesn't match sprintf count %d\n",
-               bcount, pcount);
+            check_nr = false;
          }
-         if (strcmp(buf1, buf2)) {
-            printf
-               ("bsnprintf doesn't match Format: %s\n\tsnprintf = %s\n\tsprintf  = %s\n",
-                ll_fmt[x], buf1, buf2);
-            fail++;
+         if (strcmp(buf1, buf2) != 0) {
+            check_cont = false;
          }
-         num++;
       }
+      snprintf(msg, MSGLEN, "Checking return length for format %s", ll_fmt[x]);
+      ok(check_nr, msg);
+      snprintf(msg, MSGLEN, "Checking format %s", ll_fmt[x]);
+      ok(check_cont, msg);
    }
 
+   printf("Testing bsnprintf str format codes\n");
    for (x = 0; s_fmt[x] != NULL; x++) {
+      check_cont = true;
+      check_nr = true;
       for (y = 0; s_nums[y] != 0; y++) {
-         int pcount, bcount;
          bcount = bsnprintf(buf1, sizeof(buf1), s_fmt[x], s_nums[y]);
-         printf("%s\n", buf1);
          pcount = sprintf(buf2, s_fmt[x], s_nums[y]);
          if (bcount != pcount) {
-            printf("bsnprintf count %d doesn't match sprintf count %d\n",
-               bcount, pcount);
+            check_nr = false;
          }
-         if (strcmp(buf1, buf2)) {
-            printf
-               ("bsnprintf doesn't match Format: %s\n\tsnprintf = %s\n\tsprintf  = %s\n",
-                s_fmt[x], buf1, buf2);
-            fail++;
+         if (strcmp(buf1, buf2) != 0) {
+            check_cont = false;
          }
-         num++;
       }
+      snprintf(msg, MSGLEN, "Checking return length for format %s", s_fmt[x]);
+      ok(check_nr, msg);
+      snprintf(msg, MSGLEN, "Checking format %s", s_fmt[x]);
+      ok(check_cont, msg);
    }
 
+   printf("Testing bsnprintf long str format codes\n");
    for (x = 0; ls_fmt[x] != NULL; x++) {
+      check_cont = true;
+      check_nr = true;
       for (y = 0; ls_nums[y] != 0; y++) {
-         int pcount, bcount;
          bcount = bsnprintf(buf1, sizeof(buf1), ls_fmt[x], ls_nums[y]);
-         printf("%s\n", buf1);
          pcount = sprintf(buf2, ls_fmt[x], ls_nums[y]);
          if (bcount != pcount) {
-            printf("bsnprintf count %d doesn't match sprintf count %d\n",
-               bcount, pcount);
+            check_nr = false;
          }
-         if (strcmp(buf1, buf2)) {
-            printf
-               ("bsnprintf doesn't match Format: %s\n\tsnprintf = %s\n\tsprintf  = %s\n",
-                ls_fmt[x], buf1, buf2);
-            fail++;
+         if (strcmp(buf1, buf2) != 0) {
+            check_cont = false;
          }
-         num++;
       }
+      snprintf(msg, MSGLEN, "Checking return length for format %s", ls_fmt[x]);
+      ok(check_nr, msg);
+      snprintf(msg, MSGLEN, "Checking format %s", ls_fmt[x]);
+      ok(check_cont, msg);
    }
 
-
-
-   printf("%d tests failed out of %d.\n", fail, num);
-
-   exit(fail > 0);
+   return report();
 }
 #endif /* TEST_PROGRAM */
 

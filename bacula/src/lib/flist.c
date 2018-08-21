@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -75,62 +75,94 @@ void flist::destroy()
    items = NULL;
 }
 
-#ifdef TEST_PROGRAM
+#ifndef TEST_PROGRAM
+#define TEST_PROGRAM_A
+#endif
 
+#ifdef TEST_PROGRAM
+#include "unittests.h"
+
+#define NUMITEMS        20
 
 struct FILESET {
    flist mylist;
 };
 
-int main(int argc, char *argv[])
+int main()
 {
+   Unittests flist_test("flist_test");
    FILESET *fileset;
    char buf[30];
+   char buftmp[30];
    flist *mlist;
    char *p, *q;
    int i;
+   int dn;
+   bool check_dq;
+   bool check_qa;
 
+   Pmsg0(0, "Initialize tests ...\n");
    fileset = (FILESET *)malloc(sizeof(FILESET));
    bmemzero(fileset, sizeof(FILESET));
    fileset->mylist.init();
+   ok(fileset && fileset->mylist.empty(), "Default initialization");
 
-   printf("Manual allocation/destruction of list:\n");
+   Pmsg0(0, "Manual allocation/destruction of flist:\n");
+   fileset->mylist.queue((void*)"first");
+   fileset->mylist.queue((void*)"second");
+   fileset->mylist.queue((void*)"third");
+   q = (char*)fileset->mylist.dequeue();
+   ok(strcmp("first", q) == 0, "Checking first dequeue");
+   q = (char*)fileset->mylist.dequeue();
+   ok(strcmp("second", q) == 0, "Checking second dequeue");
+   q = (char*)fileset->mylist.dequeue();
+   ok(strcmp("third", q) == 0, "Checking third dequeue");
+   ok(fileset->mylist.empty(), "Checking if empty");
 
-   for (i=0; i<20; i++) {
+   Pmsg0(0, "automatic allocation/destruction of flist:\n");
+
+   dn = 0;
+   check_dq = true;
+   check_qa = true;
+   for (i = dn; i < NUMITEMS; i++) {
       sprintf(buf, "This is item %d", i);
       p = bstrdup(buf);
-      if (fileset->mylist.queue(p)) {
-         printf("Added item = %s\n", p);
-      } else {
+      if (!fileset->mylist.queue(p)) {
          q = (char *)fileset->mylist.dequeue();
-         printf("Dequeue item = %s\n", q);
+         sprintf(buftmp, "This is item %d", dn++);
+         if (strcmp(q, buftmp) != 0){
+            check_dq = false;
+         }
          free(q);
-         if (fileset->mylist.queue(p)) {
-            printf("Added item = %s\n", p);
-         } else {
-            printf("Big problem could not queue item %d %s\n", i, p);
+         if (!fileset->mylist.queue(p)) {
+            check_qa = false;
          }
       }
    }
+   ok(check_dq, "Checking first out dequeue");
+   ok(check_qa, "Checking queue again after dequeue");
+   /* dequeue rest of the list */
+   check_dq = true;
    while ((q=(char *)fileset->mylist.dequeue())) {
-      printf("Dequeue item = %s\n", q);
-      free(q);
-   }
-   for (i=1; !fileset->mylist.empty(); i++) {
-      q = (char *)fileset->mylist.dequeue();
-      if (!q) {
-         break;
+      sprintf(buftmp, "This is item %d", dn++);
+      if (strcmp(q, buftmp) != 0){
+         check_dq = false;
       }
-      printf("Item %d = %s\n", i, q);
       free(q);
    }
+   ok(check_dq, "Checking dequeue rest of the list");
+   ok(fileset->mylist.empty(), "Checking if list is empty");
+   ok(fileset->mylist.dequeue() == NULL, "Checking empty dequeue");
    fileset->mylist.destroy();
+   ok(fileset->mylist.size() == 0, "Check size after destroy");
    free(fileset);
 
-   printf("Allocation/destruction using new delete\n");
-   mlist = New(flist(10));
+   Pmsg0(0, "Allocation/destruction using new delete\n");
 
-   for (i=0; i<20; i++) {
+   mlist = New(flist(10));
+   ok(mlist && mlist->empty(), "Constructor initialization");
+
+   for (i = 0; i < NUMITEMS; i++) {
       sprintf(buf, "This is item %d", i);
       p = bstrdup(buf);
       if (!mlist->queue(p)) {
@@ -138,15 +170,22 @@ int main(int argc, char *argv[])
          break;
       }
    }
+   ok(mlist->size() == 10, "Checking list size");
+   dn = 0;
+   check_dq = true;
    for (i=1; !mlist->empty(); i++) {
       p = (char *)mlist->dequeue();
-      printf("Item %d = %s\n", i, p);
+      sprintf(buf, "This is item %d", dn++);
+      if (strcmp(p, buf) != 0){
+         check_dq = false;
+      }
       free(p);
    }
+   ok(check_dq, "Checking dequeue list");
+   ok(mlist->empty(), "Checking list empty");
 
    delete mlist;
 
-   sm_dump(false);       /* test program */
-
+   return report();
 }
-#endif
+#endif   /* TEST_PROGRAM */

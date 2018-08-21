@@ -371,3 +371,72 @@ int main(int argc, char *argv[])
    return 0;
 }
 #endif
+
+#ifndef TEST_PROGRAM
+#define TEST_PROGRAM_A
+#endif
+
+#ifdef TEST_PROGRAM
+#include "unittests.h"
+
+static const unsigned char rnddata[16] = {
+   0xa5, 0x7d, 0xa3, 0xc4, 0x2c, 0xa0, 0x08, 0xe9, 0x32, 0xb9, 0xc7, 0x84, 0xf6, 0xd3, 0xdf, 0x4f
+};
+static const char *resb16 = "pX2jxCygCOkyuceE9tPfTw";
+static const char *resb8 = "q83v7c";
+#define VARREF    0xABCDEFEDC
+
+int main()
+{
+   Unittests base64_test("base64_test");
+   char buf[30];
+   char binbuf[30];
+   uint len;
+   bool check_cont;
+   int64_t var;
+
+   base64_init();
+/*
+   for (int a=0; a < 16; a++){
+      fprintf(stderr, "%c", rnddata[a]);
+   }
+*/
+   /* encode reference binary data to base64 */
+   len = bin_to_base64(buf, 30, (char*)rnddata, 16, true);
+   ok(len == strlen(resb16), "Checking bin_to_base64 encoded length");
+   ok(strcmp(resb16, buf) == 0, "Checking bin_to_base64 encoded data");
+   /* decode reference base64 data to bin*/
+   len = base64_to_bin(binbuf, 30, (char*)resb16, strlen(resb16));
+   ok(len == 16, "Checking base64_to_bin decoded length");
+   check_cont = true;
+   for (uint a = 0; a < len; a++){
+      if ((unsigned char)binbuf[a] != rnddata[a]){
+         check_cont = false;
+      }
+   }
+   ok(check_cont, "Checking base64_to_bin decoded data");
+   /* decode the encoded base64 data to bin */
+   len = base64_to_bin(binbuf, 30, buf, strlen(buf));
+   ok(len == 16, "Checking base64_to_bin decoded length - encoded");
+   check_cont = true;
+   for (uint a = 0; a < len; a++){
+      if ((unsigned char)binbuf[a] != rnddata[a]){
+         check_cont = false;
+      }
+   }
+   ok(check_cont, "Checking base64_to_bin decoded data - encoded");
+   /* encode reference variable to base64 */
+   len = to_base64(VARREF, buf);
+   ok(len == 6, "Checking to_base64 encode length");
+   ok(strcmp(resb8, buf) == 0, "Checking to_base64 encoded data");
+   /* decode reference data to bin */
+   len = from_base64(&var, (char*)resb8);
+   ok(var == VARREF, "Checking from_base64 decoded data");
+   ok(len == 6, "Checking from_base64 decoded length");
+   /* decode encoded data to bin */
+   len = from_base64(&var, buf);
+   ok(var == VARREF, "Checking from_base64 decoded data - encoded");
+   ok(len == 6, "Checking from_base64 decoded length - encoded");
+   return report();
+};
+#endif /* TEST_PROGRAM */

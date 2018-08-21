@@ -366,43 +366,16 @@ char *OutputWriter::get_output(va_list ap, POOLMEM **out, OutputType first)
    return *out;
 }
 
+#ifndef TEST_PROGRAM
+#define TEST_PROGRAM_A
+#endif
+
 #ifdef TEST_PROGRAM
-int err=0;
-int nb=0;
-void _ok(const char *file, int l, const char *op, int value, const char *label)
-{
-   nb++;
-   if (!value) {
-      err++;
-      printf("ERR %.30s %s:%i on %s\n", label, file, l, op);
-   } else {
-      printf("OK  %.30s\n", label);
-   }
-}
-
-#define ok(x, label) _ok(__FILE__, __LINE__, #x, (x), label)
-
-void _nok(const char *file, int l, const char *op, int value, const char *label)
-{
-   nb++;
-   if (value) {
-      err++;
-      printf("ERR %.30s %s:%i on !%s\n", label, file, l, op);
-   } else {
-      printf("OK  %.30s\n", label);
-   }
-}
-
-#define nok(x, label) _nok(__FILE__, __LINE__, #x, (x), label)
-
-int report()
-{
-   printf("Result %i/%i OK\n", nb - err, nb);
-   return err>0;
-}
+#include "unittests.h"
 
 int main(int argc, char **argv)
 {
+   Unittests output_test("output_test");
    char ed1[50];
    OutputWriter wt;
    POOLMEM *tmp = get_pool_memory(PM_FNAME);
@@ -432,7 +405,6 @@ int main(int argc, char **argv)
    Pmsg1(000, "%s", tmp);
 
    free_pool_memory(tmp);
-
 
    Pmsg1(000, "%s",
          wt.get_output(OT_CLEAR,
@@ -491,6 +463,8 @@ int main(int argc, char **argv)
                  OT_END_OBJ,
                  OT_END));
 
+   free(str);
+
    return report();
 }
-#endif
+#endif   /* TEST_PROGRAM */

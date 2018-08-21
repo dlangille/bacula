@@ -1,0 +1,36 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Copyright (c) 2018 by Inteos sp. z o.o.
+# All rights reserved. IP transfered to Bacula Systems according to agreement.
+#
+# This script will execute all unit tests located in tests/ directory.
+#   The unit tests script has a following name: tests/*-unittests
+#
+UNITS=`echo tests/*-unittests`
+
+rc=0
+nt=0
+FAIL=""
+echo "========= Starting Unit Tests ========="
+for ut in $UNITS
+do
+	$ut
+	if [ $? -ne 0 ]
+	then
+		FAIL="$FAIL $ut"
+		rc=$(($rc+1))
+	fi
+	nt=$(($nt+1))
+done
+echo
+if [ $rc -eq 0 ]
+then
+	echo "=== Successful finish all ($nt) unit tests! Good Job! ==="
+else
+	echo "=== Finish all unit tests: $rc was unsuccessful! ==="
+	echo "* the following tests failed: $FAIL"
+fi
+echo
