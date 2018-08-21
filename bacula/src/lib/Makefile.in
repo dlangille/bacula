@@ -153,6 +153,13 @@ flist_test: Makefile flist.c unittests.o
 	$(RMF) flist.o
 	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) flist.c
 
+fnmatch_test: Makefile fnmatch.c unittests.o
+	$(RMF) fnmatch.o
+	$(CXX) -DTEST_PROGRAM $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) fnmatch.c
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -o $@ fnmatch.o unittests.o $(DLIB) -lbac -lm $(LIBS) $(OPENSSL_LIBS)
+	$(RMF) fnmatch.o
+	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) fnmatch.c
+
 worker_test: Makefile worker.c
 	$(RMF) worker.o
 	$(CXX) -DTEST_PROGRAM $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) worker.c

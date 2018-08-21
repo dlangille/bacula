@@ -321,3 +321,4 @@ bacula/src/lib/crc32_test
 bacula/src/lib/flist_test
 bacula/src/lib/output_test
 bacula/src/lib/sellist_test
+bacula/src/lib/fnmatch_test
