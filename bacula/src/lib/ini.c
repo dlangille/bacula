@@ -675,48 +675,17 @@ bool ini_store_date(LEX *lc, ConfigFile *inifile, ini_items *item)
    return true;
 }
 
+#ifndef TEST_PROGRAM
+#define TEST_PROGRAM_A
+#endif
+
 /* ---------------------------------------------------------------- */
 #ifdef TEST_PROGRAM
-/* make ini
+#include "unittests.h"
+/* make ini_test
  * export LD_LIBRARY_PATH=.libs/
- * ./.libs/ini
+ * ./.libs/ini_test
  */
-
-#include <stdio.h>
-
-int err=0;
-int nb=0;
-void _ok(const char *file, int l, const char *op, int value, const char *label)
-{
-   nb++;
-   if (!value) {
-      err++;
-      printf("ERR %.45s %s:%i on %s\n", label, file, l, op);
-   } else {
-      printf("OK  %.45s\n", label);
-   }
-}
-
-#define ok(x, label) _ok(__FILE__, __LINE__, #x, (x), label)
-
-void _nok(const char *file, int l, const char *op, int value, const char *label)
-{
-   nb++;
-   if (value) {
-      err++;
-      printf("ERR %.45s %s:%i on !%s\n", label, file, l, op);
-   } else {
-      printf("OK  %.45s\n", label);
-   }
-}
-
-#define nok(x, label) _nok(__FILE__, __LINE__, #x, (x), label)
-
-int report()
-{
-   printf("Result %i/%i OK\n", nb - err, nb);
-   return err>0;
-}
 
 struct ini_items membuf_items[] = {
    /* name          handler           comment             req */
@@ -725,7 +694,6 @@ struct ini_items membuf_items[] = {
    {"max_clients", ini_store_int32,   "Max Clients",       0},
    {NULL,          NULL,              NULL,                0}
 };
-
 
 struct ini_items test_items[] = {
    /* name          handler           comment             req */
@@ -749,13 +717,13 @@ bool save_resource(RES_HEAD **rhead, int type, RES_ITEM *items, int pass){return
 bool save_resource(CONFIG*, int, RES_ITEM*, int) {return false;}
 void dump_resource(int type, RES *ares, void sendit(void *sock, const char *fmt, ...), void *sock){}
 void free_resource(RES *rres, int type){}
-union URES {
-};
+union URES {};
 RES_TABLE resources[] = {};
 URES res_all;
 
 int main()
 {
+   Unittests ini_test("ini_test");
    FILE *fp;
    int pos, size;
    ConfigFile *ini = new ConfigFile();
@@ -763,7 +731,7 @@ int main()
    char buffer[2000];
 
    //debug_level=500;
-   printf("Begin Memory buffer Test\n");
+   Pmsg0(0, "Begin Memory buffer Test\n");
    ok(ini->register_items(membuf_items, sizeof(struct ini_items)), "Check sizeof ini_items");
 
    if ((fp = bfopen("test.cfg", "w")) == NULL) {
@@ -790,10 +758,11 @@ int main()
    ok(ini->parse_buf(buffer), "Test memory read with all members");
 
    ini->clear_items();
+   ini->free_items();
    fclose(fp);
 
    //debug_level = 0;
-   printf("\n\nBegin Original Full Tests\n");
+   Pmsg0(0, "Begin Original Full Tests\n");
    nok(ini->register_items(test_items, 5), "Check bad sizeof ini_items");
    ok(ini->register_items(test_items, sizeof(struct ini_items)), "Check sizeof ini_items");
 
@@ -915,11 +884,14 @@ int main()
 
    ini->clear_items();
    ini->free_items();
-   report();
-
+   delete(ini);
    free_pool_memory(buf);
-   exit (0);
+   /* clean after tests */
+   unlink("test.cfg");
+   unlink("test2.cfg");
+   unlink("test3.cfg");
+   unlink("test4.cfg");
+
+   return report();
 }
-
-
-#endif
+#endif   /* TEST_PROGRAM */

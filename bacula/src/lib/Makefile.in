@@ -251,10 +251,10 @@ bsnprintf_test: Makefile bsnprintf.c unittests.o
 	$(RMF) bsnprintf.o
 	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) bsnprintf.c
 
-ini: Makefile ini.o
+ini_test: Makefile libbac.la ini.c unittests.o
 	$(RMF) ini.o
 	$(CXX) -DTEST_PROGRAM $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE)  $(CFLAGS) ini.c
-	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -o $@ ini.o -lbaccfg -lbac $(DLIB) -lm $(LIBS) $(OPENSSL_LIBS)
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -o $@ ini.o unittests.o -lbaccfg -lbac $(DLIB) -lm $(LIBS) $(OPENSSL_LIBS)
 	$(RMF) ini.o
 	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) ini.c
 
