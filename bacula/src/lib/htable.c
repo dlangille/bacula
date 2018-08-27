@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -83,7 +83,7 @@ void htable::hash_big_free()
 #endif
 
 /*
- * Normal hash malloc routine that gets a 
+ * Normal hash malloc routine that gets a
  *  "small" buffer from the big buffer
  */
 char *htable::hash_malloc(int size)
@@ -105,7 +105,7 @@ char *htable::hash_malloc(int size)
    buf = mem_block->mem;
    mem_block->mem += asize;
    return buf;
-#else 
+#else
    total_size += size;
    blocks++;
    return (char *)malloc(size);
@@ -113,7 +113,7 @@ char *htable::hash_malloc(int size)
 }
 
 
- 
+
 
 /*
  * Create hash of key, stored in hash then
@@ -128,16 +128,16 @@ void htable::hash_index(char *key)
    /* Multiply by large prime number, take top bits, mask for remainder */
    index = ((hash * 1103515249LL) >> rshift) & mask;
    Dmsg2(dbglvl, "Leave hash_index hash=0x%x index=%d\n", hash, index);
-} 
- 
+}
+
 void htable::hash_index(uint64_t ikey)
-{ 
+{
    hash = ikey;           /* already have starting binary hash */
    /* Same algorithm as for char * */
    index = ((hash * 1103515249LL) >> rshift) & mask;
    Dmsg2(dbglvl, "Leave hash_index hash=0x%x index=%d\n", hash, index);
-} 
- 
+}
+
 /*
  * tsize is the estimated number of entries in the hash table
  */
@@ -177,7 +177,7 @@ uint32_t htable::size()
 
 /*
  * Take each hash link and walk down the chain of items
- *  that hash there counting them (i.e. the hits), 
+ *  that hash there counting them (i.e. the hits),
  *  then report that number.
  * Obiously, the more hits in a chain, the more time
  *  it takes to reference them. Empty chains are not so
@@ -257,7 +257,7 @@ void htable::grow_table()
       } else {
          Dmsg1(100, "Grow insert: %s\n", hp->key.key);
          big->insert(hp->key.key, item);
-      }  
+      }
       if (ni) {
          item = (void *)((char *)ni-loffset);
       } else {
@@ -303,59 +303,59 @@ bool htable::insert(char *key, void *item)
 }
 
 void *htable::lookup(char *key)
-{ 
-   hash_index(key); 
-   for (hlink *hp=table[index]; hp; hp=(hlink *)hp->next) { 
+{
+   hash_index(key);
+   for (hlink *hp=table[index]; hp; hp=(hlink *)hp->next) {
 //    Dmsg2(100, "hp=%p key=%s\n", hp, hp->key.key);
       if (hash == hp->hash && strcmp(key, hp->key.key) == 0) {
-         Dmsg1(dbglvl, "lookup return %p\n", ((char *)hp)-loffset); 
-         return ((char *)hp)-loffset; 
-      } 
-   } 
-   return NULL; 
-} 
- 
+         Dmsg1(dbglvl, "lookup return %p\n", ((char *)hp)-loffset);
+         return ((char *)hp)-loffset;
+      }
+   }
+   return NULL;
+}
+
 bool htable::insert(uint64_t ikey, void *item)
-{ 
-   hlink *hp; 
+{
+   hlink *hp;
    if (lookup(ikey)) {
       return false;                  /* already exists */
-   } 
-   ASSERT(index < buckets); 
-   Dmsg2(dbglvl, "Insert: hash=%p index=%d\n", hash, index); 
-   hp = (hlink *)(((char *)item)+loffset); 
-   Dmsg4(dbglvl, "Insert hp=%p index=%d item=%p offset=%u\n", hp, index, 
+   }
+   ASSERT(index < buckets);
+   Dmsg2(dbglvl, "Insert: hash=%p index=%d\n", hash, index);
+   hp = (hlink *)(((char *)item)+loffset);
+   Dmsg4(dbglvl, "Insert hp=%p index=%d item=%p offset=%u\n", hp, index,
      item, loffset);
-   hp->next = table[index]; 
-   hp->hash = hash; 
+   hp->next = table[index];
+   hp->hash = hash;
    hp->key.ikey = ikey;
    hp->is_ikey = true;
-   table[index] = hp; 
-   Dmsg3(dbglvl, "Insert hp->next=%p hp->hash=0x%x hp->ikey=%lld\n", hp->next, 
+   table[index] = hp;
+   Dmsg3(dbglvl, "Insert hp->next=%p hp->hash=0x%x hp->ikey=%lld\n", hp->next,
       hp->hash, hp->key.ikey);
- 
-   if (++num_items >= max_items) { 
-      Dmsg2(dbglvl, "num_items=%d max_items=%d\n", num_items, max_items); 
-      grow_table(); 
-   } 
+
+   if (++num_items >= max_items) {
+      Dmsg2(dbglvl, "num_items=%d max_items=%d\n", num_items, max_items);
+      grow_table();
+   }
    Dmsg3(dbglvl, "Leave insert index=%d num_items=%d key=%lld\n",
       index, num_items, ikey);
-   return true;  
-} 
- 
+   return true;
+}
+
 void *htable::lookup(uint64_t ikey)
-{ 
+{
    hash_index(ikey);
-   for (hlink *hp=table[index]; hp; hp=(hlink *)hp->next) { 
+   for (hlink *hp=table[index]; hp; hp=(hlink *)hp->next) {
 //    Dmsg2(100, "hp=%p key=%lld\n", hp, hp->key.ikey);
       if (hash == hp->hash && ikey == hp->key.ikey) {
-         Dmsg1(dbglvl, "lookup return %p\n", ((char *)hp)-loffset); 
-         return ((char *)hp)-loffset; 
-      } 
-   } 
-   return NULL; 
-} 
- 
+         Dmsg1(dbglvl, "lookup return %p\n", ((char *)hp)-loffset);
+         return ((char *)hp)-loffset;
+      }
+   }
+   return NULL;
+}
+
 void *htable::next()
 {
    Dmsg1(dbglvl, "Enter next: walkptr=%p\n", walkptr);
@@ -419,9 +419,13 @@ void htable::destroy()
    Dmsg0(100, "Done destroy.\n");
 }
 
+#ifndef TEST_PROGRAM
+#define TEST_PROGRAM_A
+#endif
 
 
 #ifdef TEST_PROGRAM
+#include "unittests.h"
 
 struct MYJCR {
    char *key;
@@ -432,18 +436,23 @@ struct MYJCR {
 
 int main()
 {
+   Unittests htable_test("htable_test");
    char mkey[30];
    htable *jcrtbl;
    MYJCR *save_jcr = NULL, *item;
    MYJCR *jcr = NULL;
    int count = 0;
+   int i;
+   int len;
+   bool check_cont;
 
+   Pmsg0(0, "Initialize tests ...\n");
    jcrtbl = (htable *)malloc(sizeof(htable));
-   jcrtbl->init(jcr, &jcr->link, NITEMS); 
+   jcrtbl->init(jcr, &jcr->link, NITEMS);
+   ok(jcrtbl && jcrtbl->size() == 0, "Default initialization");
 
-   Dmsg1(000, "Inserting %d items\n", NITEMS);
-   for (int i=0; i<NITEMS; i++) {
-      int len;
+   Pmsg1(0, "Inserting %d items\n", NITEMS);
+   for (i = 0; i < NITEMS; i++) {
       len = sprintf(mkey, "This is htable item %d", i) + 1;
 
       jcr = (MYJCR *)jcrtbl->hash_malloc(sizeof(MYJCR));
@@ -456,29 +465,36 @@ int main()
          save_jcr = jcr;
       }
    }
-   if (!(item = (MYJCR *)jcrtbl->lookup(save_jcr->key))) {
-      printf("Bad news: %s not found.\n", save_jcr->key);
-   } else {
-      printf("Item 10's key is: %s\n", item->key);
-   }
+   ok(jcrtbl->size() == NITEMS, "Checking size");
+   item = (MYJCR *)jcrtbl->lookup(save_jcr->key);
+   ok(item != NULL, "Checking saved key lookup");
+   ok(item != NULL && strcmp(save_jcr->key, item->key) == 0, "Checking key");
 
+   /* some stats for human to consider */
    jcrtbl->stats();
-   printf("Walk the hash table:\n");
+
+   Pmsg0(0, "Walk the hash table\n");
+   check_cont = true;
+   for (i = 0; i < NITEMS; i++) {
+      sprintf(mkey, "This is htable item %d", i);
+      item = (MYJCR *)jcrtbl->lookup(mkey);
+      if (!item){
+         check_cont = false;
+      }
+   }
+   ok(check_cont, "Checking htable content");
+
    foreach_htable (jcr, jcrtbl) {
-//    printf("htable item = %s\n", jcr->key);
 #ifndef BIG_MALLOC
       free(jcr->key);
 #endif
       count++;
    }
-   printf("Got %d items -- %s\n", count, count==NITEMS?"OK":"***ERROR***");
+   ok(count == NITEMS, "Checking number of items");
    printf("Calling destroy\n");
    jcrtbl->destroy();
-
    free(jcrtbl);
-   printf("Freed jcrtbl\n");
 
-   sm_dump(false);   /* unit test */
-
+   return report();
 }
 #endif

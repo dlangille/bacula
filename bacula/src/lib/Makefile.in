@@ -188,10 +188,10 @@ devlock_test: Makefile
 	$(RMF) devlock.o
 	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) devlock.c
 
-htable_test: Makefile htable.c
+htable_test: Makefile libbac.la htable.c unittests.o
 	$(RMF) htable.o
 	$(CXX) -DTEST_SMALL_HTABLE -DTEST_NON_CHAR -DTEST_PROGRAM $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE)	$(CFLAGS) htable.c
-	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -o $@ htable.o $(DLIB) -lbac -lm $(LIBS) $(OPENSSL_LIBS) 
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -o $@ htable.o unittests.o $(DLIB) -lbac -lm $(LIBS) $(OPENSSL_LIBS) 
 	$(RMF) htable.o
 	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) htable.c 
  
