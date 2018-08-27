@@ -99,9 +99,10 @@ void terminate(int sig) {};
 /*
  * Initializes the application env, including lockmanager.
  */
-void prolog(const char *name, bool lmgr=false)
+void prolog(const char *name, bool lmgr=false, bool motd=true)
 {
-   Pmsg1(-1, "==== Starting %s ... ====\n", name);
+   if (motd)
+      Pmsg1(-1, "==== Starting %s ... ====\n", name);
    my_name_is(0, NULL, name);
    init_signals(terminate);
    if (lmgr){

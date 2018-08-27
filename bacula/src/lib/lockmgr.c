@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -66,6 +66,17 @@
    Pmsg4(000, _("ASSERT failed at %s:%i: %s (%s)\n"), f, l, #x, m);        \
    jcr[0] = 0; }
 
+/* for lockmgr unit tests we have to clean up developer flags and asserts which breaks our tests */
+#ifdef TEST_PROGRAM
+#ifdef DEVELOPER
+#undef DEVELOPER
+#endif
+#ifdef ASSERTD
+#undef ASSERTD
+#define ASSERTD(x, y)
+#endif
+#endif
+
 /*
   Inspired from
   http://www.cs.berkeley.edu/~kamil/teaching/sp03/041403.pdf
@@ -77,8 +88,8 @@
   rwlock object or the smartalloc lib. To disable LMGR, just add
   LOCKMGR_COMPLIANT before the inclusion of "bacula.h"
 
-  cd build/src/tools
-  g++ -g -c lockmgr.c -I.. -I../lib -DUSE_LOCKMGR -D_TEST_IT
+  cd build/src/lib
+  g++ -g -c lockmgr.c -I.. -I../lib -DUSE_LOCKMGR -DTEST_PROGRAM
   g++ -o lockmgr lockmgr.o -lbac -L../lib/.libs -lssl -lpthread
 
 */
@@ -276,7 +287,7 @@ static int32_t global_event_id=0;
 static int global_int_thread_id=0; /* Keep an integer for each thread */
 
 /* Keep this number of event per thread */
-#ifdef _TEST_IT
+#ifdef TEST_PROGRAM
 # define LMGR_THREAD_EVENT_MAX  15
 #else
 # define LMGR_THREAD_EVENT_MAX  1024
@@ -319,10 +330,12 @@ public:
                   const char *from, int32_t line)
    {
       char *p;
+      int32_t oldflags;
       int   i = lmgr_thread_event_get_pos(event_id);
 
-      events[i].flags = LMGR_EVENT_INVALID;
+      oldflags = events[i].flags;
       p = events[i].comment;
+      events[i].flags = LMGR_EVENT_INVALID;
       events[i].comment = (char *)"*Freed*";
 
       /* Shared between thread, just an indication about timing */
@@ -335,7 +348,7 @@ public:
        * to check if the memory need to be freed
        */
       if (event_id >= LMGR_THREAD_EVENT_MAX) {
-         if (events[i].flags & LMGR_EVENT_FREE) {
+         if (oldflags & LMGR_EVENT_FREE) {
             free(p);
          }
       }
@@ -1215,9 +1228,13 @@ int bthread_change_uid(uid_t uid, gid_t gid)
    return -1;
 }
 
+#ifndef TEST_PROGRAM
+#define TEST_PROGRAM_A
+#endif
 
-#ifdef _TEST_IT
-
+#ifdef TEST_PROGRAM
+#include "bacula.h"
+#include "unittests.h"
 #include "lockmgr.h"
 #undef P
 #undef V
@@ -1235,6 +1252,8 @@ bthread_mutex_t mutex_p1 = BTHREAD_MUTEX_PRIORITY(1);
 bthread_mutex_t mutex_p2 = BTHREAD_MUTEX_PRIORITY(2);
 bthread_mutex_t mutex_p3 = BTHREAD_MUTEX_PRIORITY(3);
 static const char *my_prog;
+static bool thevent1ok = false;
+static bool thevent2ok = false;
 
 void *self_lock(void *temp)
 {
@@ -1282,10 +1301,9 @@ void *mix_rwl_mutex(void *temp)
    return NULL;
 }
 
-
 void *thuid(void *temp)
 {
-   char buf[512];
+//   char buf[512];
 //   if (restrict_job_permissions("eric", "users", buf, sizeof(buf)) < 0) {
    if (bthread_change_uid(2, 100) == -1) {
       berrno be;
@@ -1379,6 +1397,7 @@ void *th_prio(void *a) {
 }
 
 void *th_event1(void *a) {
+   lmgr_thread_t *self = lmgr_get_thread_info();
    for (int i=0; i < 10000; i++) {
       if ((i % 7) == 0) {
          lmgr_add_event_flag("strdup test", i, LMGR_EVENT_DUP);
@@ -1386,11 +1405,13 @@ void *th_event1(void *a) {
          lmgr_add_event("My comment", i);
       }
    }
+   thevent1ok = self->event_id == 10000;
    sleep(5);
    return NULL;
 }
 
 void *th_event2(void *a) {
+   lmgr_thread_t *self = lmgr_get_thread_info();
    for (int i=0; i < 10000; i++) {
       if ((i % 2) == 0) {
          lmgr_add_event_flag(bstrdup("free test"), i, LMGR_EVENT_FREE);
@@ -1398,46 +1419,9 @@ void *th_event2(void *a) {
          lmgr_add_event("My comment", i);
       }
    }
+   thevent2ok = self->event_id == 10000;
    sleep(5);
    return NULL;
-}
-
-int err=0;
-int nb=0;
-void _ok(const char *file, int l, const char *op, int value, const char *label)
-{
-   nb++;
-   if (!value) {
-      err++;
-      printf("ERR %.30s %s:%i on %s\n", label, file, l, op);
-   } else {
-      printf("OK  %.30s\n", label);
-   }
-}
-
-#define ok(x, label) _ok(__FILE__, __LINE__, #x, (x), label)
-
-void _nok(const char *file, int l, const char *op, int value, const char *label)
-{
-   nb++;
-   if (value) {
-      err++;
-      printf("ERR %.30s %s:%i on !%s\n", label, file, l, op);
-   } else {
-      printf("OK  %.30s\n", label);
-   }
-}
-
-#define nok(x, label) _nok(__FILE__, __LINE__, #x, (x), label)
-
-int report()
-{
-   printf("Result %i/%i OK\n", nb - err, nb);
-   return err>0;
-}
-
-void terminate(int sig)
-{
 }
 
 /*
@@ -1448,18 +1432,18 @@ void terminate(int sig)
  */
 int main(int argc, char **argv)
 {
+   Unittests lmgr_test("lockmgr_test", true, argc != 2);
    void *ret=NULL;
    lmgr_thread_t *self;
    pthread_t id1, id2, id3, id4, id5, tab[200];
    bthread_mutex_t bmutex1;
    pthread_mutex_t pmutex2;
-   debug_level = 10;
-   my_prog = argv[0];
-   init_signals(terminate);
+
    use_undertaker = false;
-   lmgr_init_thread();
+   my_prog = argv[0];
    self = lmgr_get_thread_info();
 
+   /* below is used for checking forced SIGSEGV in separate process */
    if (argc == 2) {             /* do priority check */
       P(mutex_p2);                /* not permited */
       P(mutex_p1);
@@ -1468,10 +1452,17 @@ int main(int argc, char **argv)
       return 0;
    }
 
-   pthread_create(&id5, NULL, thuid, NULL);
-   pthread_join(id5, NULL);
-   fprintf(stderr, "UID %d:%d\n", (int)getuid(), (int)getgid());
-   exit(0);
+   /* workaround for bthread_change_uid() failure for non-root */
+   if (getuid() == 0){
+      /* we can change uid/git, so proceed the test */
+      pthread_create(&id5, NULL, thuid, NULL);
+      pthread_join(id5, NULL);
+      Pmsg2(0, "UID %d:%d\n", (int)getuid(), (int)getgid());
+   } else {
+      Pmsg0(0, "Skipped bthread_change_uid() for non-root\n");
+   }
+
+   Pmsg0(0, "Starting mutex priority test\n");
    pthread_mutex_init(&bmutex1, NULL);
    bthread_mutex_set_priority(&bmutex1, 10);
 
@@ -1484,12 +1475,14 @@ int main(int argc, char **argv)
    V(bmutex1);
    ok(self->max_priority == 0, "Check self max_priority");
 
+   Pmsg0(0, "Starting self deadlock tests\n");
    pthread_create(&id1, NULL, self_lock, NULL);
    sleep(2);
    ok(lmgr_detect_deadlock(), "Check self deadlock");
    lmgr_v(&mutex1.mutex);                /* a bit dirty */
    pthread_join(id1, NULL);
 
+   Pmsg0(0, "Starting thread kill tests\n");
    pthread_create(&id1, NULL, nolock, NULL);
    sleep(2);
    ok(bthread_kill(id1, SIGUSR2) == 0, "Kill existing thread");
@@ -1497,6 +1490,7 @@ int main(int argc, char **argv)
    ok(bthread_kill(id1, SIGUSR2) == -1, "Kill non-existing thread");
    ok(bthread_kill(pthread_self(), SIGUSR2) == -1, "Kill self");
 
+   Pmsg0(0, "Starting thread locks tests\n");
    pthread_create(&id1, NULL, nolock, NULL);
    sleep(2);
    nok(lmgr_detect_deadlock(), "Check for nolock");
@@ -1512,7 +1506,6 @@ int main(int argc, char **argv)
    pthread_join(id1, NULL);
    pthread_join(id2, NULL);
    pthread_join(id3, NULL);
-
 
    brwlock_t wr;
    rwl_init(&wr);
@@ -1562,16 +1555,18 @@ int main(int argc, char **argv)
    P(mutex6);
    ok(lmgr_mutex_is_locked(&mutex6) == 1, "Check if mutex is locked");
    V(mutex6);
-   ok(lmgr_mutex_is_locked(&mutex6) == 0, "Check if mutex is locked");
+   ok(lmgr_mutex_is_locked(&mutex6) == 0, "Check if mutex is unlocked");
    V(mutex5);
    V(mutex4);
 
+   Pmsg0(0, "Starting threads deadlock tests\n");
    pthread_create(&id1, NULL, th1, NULL);
    sleep(1);
    pthread_create(&id2, NULL, th2, NULL);
    sleep(1);
    ok(lmgr_detect_deadlock(), "Check for deadlock");
 
+   Pmsg0(0, "Starting for max_priority locks tests\n");
    pthread_create(&id3, NULL, th_prio, NULL);
    pthread_join(id3, &ret);
    ok(ret != 0, "Check for priority segfault");
@@ -1613,6 +1608,7 @@ int main(int argc, char **argv)
    V(mutex_p1);
    V(mutex_p2);
 
+   Pmsg0(0, "Start lmgr_add_even tests\n");
    for (int i=0; i < 10000; i++) {
       if ((i % 7) == 0) {
          lmgr_add_event_flag("xxxxxxxxxxxxxxxx strdup test xxxxxxxxxxxxxxxx", i, LMGR_EVENT_DUP);
@@ -1620,24 +1616,19 @@ int main(int argc, char **argv)
          lmgr_add_event("My comment", i);
       }
    }
+   ok(self->event_id == 10000, "Checking registered events in self");
 
    pthread_create(&id4, NULL, th_event1, NULL);
    pthread_create(&id5, NULL, th_event2, NULL);
 
    sleep(2);
 
-   lmgr_dump();
-
    pthread_join(id4, NULL);
    pthread_join(id5, NULL);
-//
-//   pthread_create(&id3, NULL, th3, NULL);
-//
-//   pthread_join(id1, NULL);
-//   pthread_join(id2, NULL);
-   lmgr_cleanup_main();
-   sm_check(__FILE__, __LINE__, false);
+
+   ok(thevent1ok, "Checking registered events in thread1");
+   ok(thevent2ok, "Checking registered events in thread2");
+
    return report();
 }
-
-#endif
+#endif   /* TEST_PROGRAM */

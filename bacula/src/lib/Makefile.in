@@ -132,10 +132,10 @@ output_test: Makefile output.c unittests.o
 	$(RMF) output.o
 	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) output.c
 
-lockmgr_test: Makefile lockmgr.c
+lockmgr_test: Makefile libbac.la lockmgr.c unittests.o
 	$(RMF) lockmgr.o
-	$(CXX) -D _TEST_IT $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE)  $(CFLAGS) lockmgr.c
-	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -o $@ lockmgr.o $(DLIB) -lbac -lm $(LIBS) $(OPENSSL_LIBS)
+	$(CXX) -DTEST_PROGRAM $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE)  $(CFLAGS) lockmgr.c
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -o $@ lockmgr.o unittests.o $(DLIB) -lbac -lm $(LIBS) $(OPENSSL_LIBS)
 	$(RMF) lockmgr.o
 	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) lockmgr.c
 

@@ -45,14 +45,17 @@ void _ok(const char *file, int l, const char *op, int value, const char *label);
 void _nok(const char *file, int l, const char *op, int value, const char *label);
 int report();
 void terminate(int sig);
-void prolog(const char *name, bool lmgr=false);
+void prolog(const char *name, bool lmgr=false, bool motd=true);
 void epilog();
 
 /* The class based approach for C++ geeks */
 class Unittests
 {
 public:
-   Unittests(const char *name, bool lmgr=false) { prolog(name, lmgr); };
+   Unittests(const char *name, bool lmgr=false, bool motd=true)
+   {
+      prolog(name, lmgr, motd);
+   };
    ~Unittests() { epilog(); };
 };
 
