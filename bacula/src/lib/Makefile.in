@@ -122,28 +122,28 @@ wait_test: Makefile bsys.c
 	$(RMF) bsys.o
 	$(CXX) -DTEST_PROGRAM $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE)  $(CFLAGS) bsys.c
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -L../findlib -o $@ bsys.o $(DLIB) -lbac -lbacfind -lm $(LIBS) $(OPENSSL_LIBS)
-	rm -f bsys.o
+	$(RMF) bsys.o
 	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) bsys.c
 
 output_test: Makefile output.c unittests.o
 	$(RMF) output.o
 	$(CXX) -DTEST_PROGRAM $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE)  $(CFLAGS) output.c
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -o $@ output.o unittests.o $(DLIB) -lbac -lm $(LIBS) $(OPENSSL_LIBS)
-	rm -f output.o
+	$(RMF) output.o
 	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) output.c
 
 lockmgr_test: Makefile lockmgr.c
 	$(RMF) lockmgr.o
 	$(CXX) -D _TEST_IT $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE)  $(CFLAGS) lockmgr.c
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -o $@ lockmgr.o $(DLIB) -lbac -lm $(LIBS) $(OPENSSL_LIBS)
-	rm -f lockmgr.o
+	$(RMF) lockmgr.o
 	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) lockmgr.c
 
 base64_test: Makefile base64.c unittests.o
 	$(RMF) base64.o
 	$(CXX) -DTEST_PROGRAM $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) base64.c
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -o $@ base64.o unittests.o $(DLIB) -lbac -lm $(LIBS) $(OPENSSL_LIBS)
-	rm -f base64.o
+	$(RMF) base64.o
 	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) base64.c
 
 flist_test: Makefile flist.c unittests.o
@@ -178,7 +178,7 @@ rwlock_test: Makefile rwlock.c
 	$(RMF) rwlock.o
 	$(CXX) -DTEST_RWLOCK $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE)  $(CFLAGS) rwlock.c
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -o $@ rwlock.o $(DLIB) -lbac -lm $(LIBS) $(OPENSSL_LIBS)
-	rm -f rwlock.o
+	$(RMF) rwlock.o
 	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) rwlock.c
 
 devlock_test: Makefile
