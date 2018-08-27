@@ -322,3 +322,4 @@ bacula/src/lib/flist_test
 bacula/src/lib/output_test
 bacula/src/lib/sellist_test
 bacula/src/lib/fnmatch_test
+bacula/src/lib/sha1_test
