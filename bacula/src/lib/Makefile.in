@@ -238,11 +238,11 @@ sha1sum: Makefile sha1.o
 	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) sha1.c
 
 sha1_test: Makefile libbac.la sha1.c unittests.o
-       $(RMF) sha1.o
-       $(CXX) -DTEST_PROGRAM $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) sha1.c
-       $(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -o $@ sha1.o unittests.o $(DLIB) -lbac -lm $(LIBS)
-       $(RMF) sha1.o
-       $(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) sha1.c
+	$(RMF) sha1.o
+	$(CXX) -DTEST_PROGRAM $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) sha1.c
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -o $@ sha1.o unittests.o $(DLIB) -lbac -lm $(LIBS)
+	$(RMF) sha1.o
+	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) sha1.c
 
 bsnprintf_test: Makefile bsnprintf.c unittests.o
 	$(RMF) bsnprintf.o
