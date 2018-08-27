@@ -209,10 +209,10 @@ crc32_test: Makefile crc32.c unittests.o
 	$(RMF) crc32.o
 	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) crc32.c
 
-sellist_test: Makefile sellist.c
+sellist_test: Makefile libbac.la sellist.c unittests.o
 	$(RMF) sellist.o
 	$(CXX) -DTEST_PROGRAM $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) sellist.c
-	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -o $@ sellist.o $(DLIB) -lbac -lm $(LIBS) $(OPENSSL_LIBS)
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -o $@ sellist.o unittests.o $(DLIB) -lbac -lm $(LIBS) $(OPENSSL_LIBS)
 	$(RMF) sellist.o
 	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) sellist.c
 

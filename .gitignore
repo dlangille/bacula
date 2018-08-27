@@ -326,3 +326,4 @@ bacula/src/lib/sha1_test
 bacula/src/lib/htable_test
 bacula/src/lib/ini_test
 bacula/src/lib/lockmgr_test
+bacula/src/lib/sellist_test

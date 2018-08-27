@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -212,63 +212,57 @@ char *sellist::get_expanded_list()
    return expanded;
 }
 
+#ifndef TEST_PROGRAM
+#define TEST_PROGRAM_A
+#endif
+
 #ifdef TEST_PROGRAM
+#include "unittests.h"
 
-/* Test input string */
-const char *sinp[] = {
-   "1,70",
-   "1",
-   "256",
-   "1-5",
-   "1-5,7",
-   "1 10 20 30",
-   "1-5,7,20 21",
-   "all",
-   "12a",    /* error */
-   "12-11",  /* error */
-   "12-13a", /* error */
-   "a123",   /* error */
-   NULL
+struct test {
+   const int nr;
+   const char *sinp;
+   const char *sout;
+   const bool res;
 };
 
-/* Scanned output string -- or ERROR if input is illegal */
-const char *sout[] = {
-   "1,70",
-   "1",
-   "256",
-   "1,2,3,4,5",
-   "1,2,3,4,5,7",
-   "1,10,20,30",
-   "1,2,3,4,5,7,20,21",
-   "0",
-   "ERROR",
-   "ERROR",
-   "ERROR",
-   "ERROR",
-   NULL
+static struct test tests[] = {
+   { 1, "1,70", "1,70", true, },
+   { 2, "1", "1", true, },
+   { 3, "256", "256", true, },
+   { 4, "1-5", "1,2,3,4,5", true, },
+   { 5, "1-5,7", "1,2,3,4,5,7", true, },
+   { 6, "1 10 20 30", "1,10,20,30", true, },
+   { 7, "1-5,7,20 21", "1,2,3,4,5,7,20,21", true, },
+   { 8, "all", "0", true, },
+   { 9, "12a", "", false, },
+   {10, "12-11", "", false, },
+   {11, "12-13a", "", false, },
+   {12, "a123", "", false, },
+   {13, "1  3", "", false, },
+   {0, "dummy", "dummy", false, },
 };
 
-int main(int argc, char **argv, char **env)
+#define ntests ((int)(sizeof(tests)/sizeof(struct test)))
+#define MSGLEN 80
+
+int main()
 {
+   Unittests sellist_test("sellist_test");
    const char *msg;
    sellist sl;
-   int x;
+   char buf[MSGLEN];
+   bool check_rc;
 
-   for (x=0; sinp[x] != NULL; x++) {
-      if (!sl.set_string(sinp[x], true)) {
-         printf("ERR: input: %s ERR=%s", sinp[x], sl.get_errmsg());
-         continue;
-      }
-      msg = sl.get_expanded_list();
-      if (sl.get_errmsg() == NULL && strcmp(msg, sout[x]) == 0) {
-         printf("OK: input: %s output: %s\n", sinp[x], msg);
-      } else {
-         printf("ERR: input: %s gave output: %s ERR=%s\n", sinp[x], msg,
-            sl.get_errmsg());
+   for (int i = 0; i < ntests; i++) {
+      if (tests[i].nr > 0){
+         snprintf(buf, MSGLEN, "Checking test: %d - %s", tests[i].nr, tests[i].sinp);
+         check_rc = sl.set_string(tests[i].sinp, true);
+         msg = sl.get_expanded_list();
+         ok(check_rc == tests[i].res && strcmp(msg, tests[i].sout) == 0, buf);
       }
    }
-   printf("\n");
-   return 0;
 
+   return report();
 }
-#endif /* TEST_PROGRAM */
+#endif   /* TEST_PROGRAM */
