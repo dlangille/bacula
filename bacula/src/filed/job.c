@@ -506,6 +506,7 @@ bail_out:
    char addr[64];
    char *who = bs->get_peer(addr, sizeof(addr)) ? bs->who() : addr;
    Qmsg2(NULL, M_SECURITY, 0, _("FD expecting Hello got bad command from %s. Len=%d.\n"), who, bs->msglen);
+   sleep(5);
    bs->destroy();
    return NULL;
 }

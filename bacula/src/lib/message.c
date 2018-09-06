@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -1697,7 +1697,7 @@ void Qmsg(JCR *jcr, int type, utime_t mtime, const char *fmt,...)
    va_list   arg_ptr;
    int len, maxlen;
    POOLMEM *pool_buf;
-   MQUEUE_ITEM *item;
+   MQUEUE_ITEM *item, *last_item;
 
    pool_buf = get_pool_memory(PM_EMSG);
 
@@ -1714,6 +1714,7 @@ void Qmsg(JCR *jcr, int type, utime_t mtime, const char *fmt,...)
    }
    item = (MQUEUE_ITEM *)malloc(sizeof(MQUEUE_ITEM) + strlen(pool_buf) + 1);
    item->type = type;
+   item->repeat = 0;
    item->mtime = time(NULL);
    strcpy(item->msg, pool_buf);
    if (!jcr) {
@@ -1729,7 +1730,20 @@ void Qmsg(JCR *jcr, int type, utime_t mtime, const char *fmt,...)
       syslog(LOG_DAEMON|LOG_ERR, "%s", item->msg);
       P(daemon_msg_queue_mutex);
       if (daemon_msg_queue) {
-         daemon_msg_queue->append(item);
+         if (item->type == M_SECURITY) {  /* can be repeated */
+            /* Keep repeat count of identical messages */
+            last_item = (MQUEUE_ITEM *)daemon_msg_queue->last();
+            if (last_item) {
+               if (strcmp(last_item->msg, item->msg) == 0) {
+                  last_item->repeat++;
+                  free(item);
+                  item = NULL;
+               }
+            }
+         }
+         if (item) {
+            daemon_msg_queue->append(item);
+         }
       }
       V(daemon_msg_queue_mutex);
    } else {
@@ -1761,7 +1775,12 @@ void dequeue_daemon_messages(JCR *jcr)
          if (item->type == M_FATAL || item->type == M_ERROR) {
             item->type = M_SECURITY;
          }
-         Jmsg(jcr, item->type, item->mtime, "%s", item->msg);
+         if (item->repeat == 0) {
+            Jmsg(jcr, item->type, item->mtime, "%s", item->msg);
+         } else {
+            Jmsg(jcr, item->type, item->mtime, "Message repeated %d times: %s",
+                 item->repeat, item->msg);
+         }
       }
       if (jcr->dir_bsock) jcr->dir_bsock->suppress_error_messages(false);
       /* Remove messages just sent */

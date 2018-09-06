@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2017 Kern Sibbald
+   Copyright (C) 2000-2018 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -63,8 +63,8 @@
  *
  *  M_RESTORED    An ls -l of each restored file.
  *
- *  M_SECURITY    For security viloations. This is equivalent to FATAL.
- *                (note, this is currently being implemented in 1.33).
+ *  M_SECURITY    For security alerts. This is equivalent to FATAL, but
+ *                  generally occurs in a daemon with no JCR.
  *
  *  M_ALERT       For Tape Alert messages.
  *
@@ -127,9 +127,10 @@ enum {
 /* Queued message item */
 struct MQUEUE_ITEM {
    dlink link;
-   int type;
-   utime_t mtime;
-   char msg[1];
+   int type;                          /* message M_ type */
+   int repeat;                        /* count of identical messages */
+   utime_t mtime;                     /* time stamp message queued */
+   char msg[1];                       /* message text */
 };
 
 /* Debug options */

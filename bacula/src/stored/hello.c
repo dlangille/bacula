@@ -75,6 +75,7 @@ bool validate_dir_hello(JCR* jcr)
             dir->who(), dir->msglen);
       Qmsg2(jcr, M_SECURITY, 0, _("Bad Hello command from Director at %s. Len=%d.\n"),
             dir->who(), dir->msglen);
+      sleep(5);
       return false;
    }
    dirname = get_pool_memory(PM_MESSAGE);
@@ -90,6 +91,7 @@ bool validate_dir_hello(JCR* jcr)
       Qmsg2(jcr, M_SECURITY, 0, _("Bad Hello command from Director at %s: %s\n"),
             dir->who(), dir->msg);
       free_pool_memory(dirname);
+      sleep(5);
       return false;
    }
 
@@ -113,6 +115,7 @@ bool validate_dir_hello(JCR* jcr)
             "Please see " MANUAL_AUTH_URL " for help.\n"),
             dirname, dir->who());
       free_pool_memory(dirname);
+      sleep(5);
       return false;
    }
    jcr->director = director;
@@ -150,6 +153,7 @@ void handle_client_connection(BSOCK *fd)
        sscanf(fd->msg, "Hello FD: Bacula Storage calling Start Job %127s %d", job_name, &sd_version) != 2 &&
        sscanf(fd->msg, "Hello Start Job %127s", job_name) != 1) {
       Qmsg2(NULL, M_SECURITY, 0, _("Invalid Hello from %s. Len=%d\n"), fd->who(), fd->msglen);
+      sleep(5);
       fd->destroy();
       return;
    }
@@ -157,6 +161,7 @@ void handle_client_connection(BSOCK *fd)
    if (!(jcr=get_jcr_by_full_name(job_name))) {
       Qmsg1(NULL, M_SECURITY, 0, _("Client connect failed: Job name not found: %s\n"), job_name);
       Dmsg1(3, "**** Job \"%s\" not found.\n", job_name);
+      sleep(5);
       fd->destroy();
       return;
    }
@@ -224,6 +229,9 @@ bail_out:
    }
    pthread_cond_signal(&jcr->job_start_wait); /* wake waiting job */
    free_jcr(jcr);
+   if (!jcr->authenticated) {
+      sleep(5);
+   }
    return;
 }
 
