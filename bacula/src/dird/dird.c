@@ -726,18 +726,21 @@ void terminate_dird(int sig)
       if (cg->SetIPaddress) {
          free(cg->SetIPaddress);
       }
-      free(cg);
    }
+   client_globals.destroy();
+
    STORE_GLOBALS *sg;
    foreach_dlist(sg, &store_globals) {
       free(sg->name);
-      free(sg);
    }
+   store_globals.destroy();
+
    JOB_GLOBALS *jg;
    foreach_dlist(jg, &job_globals) {
       free(jg->name);
-      free(jg);
    }
+   job_globals.destroy();
+
    close_memory_pool();               /* release free memory in pool */
    lmgr_cleanup_main();
    sm_dump(false);
