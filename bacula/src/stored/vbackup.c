@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2017 Kern Sibbald
+   Copyright (C) 2000-2018 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -17,7 +17,8 @@
    Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
- * SD -- vbackup.c --  responsible for doing virtual backup jobs.
+ * Storage daemon -- vbackup.c --  responsible for doing a backup that
+ *  does not require a Client -- migration, copy, or virtual backup.
  *
  *     Kern Sibbald, January MMVI
  *

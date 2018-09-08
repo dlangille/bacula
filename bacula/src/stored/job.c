@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2017 Kern Sibbald
+   Copyright (C) 2000-2018 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -177,7 +177,10 @@ bool run_cmd(JCR *jcr)
    Dsm_check(200);
    Dmsg1(200, "Run_cmd: %s\n", jcr->dir_bsock->msg);
 
-   /* If we do not need the FD, we are doing a virtual backup. */
+   /*
+    * If we do not need the FD,
+    *  we are doing a migration, copy, or virtual backup.
+    */
    if (jcr->no_client_used()) {
       do_vbackup(jcr);
       return false;
