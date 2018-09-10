@@ -141,12 +141,13 @@ void run_job(JCR *jcr)
       append_end_session(jcr);
    } else if (jcr->is_JobType(JT_MIGRATE) || jcr->is_JobType(JT_COPY)) {
       jcr->session_opened = true;
-      /* send "3000 OK data" now to avoid a dead lock, the other side is also
-       * waiting for one. The old peace of code was reading the "3000 OK" reply
+      /*
+       * Send "3000 OK data" now to avoid a dead lock, the other side is also
+       * waiting for one. The old code was reading the "3000 OK" reply
        * at the end of the backup (not really appropriate).
-       * dedup need duplex communication with the other side and need the
-       * "3000 OK" to be out of the socket, and be handle here by the right
-       * peace of code */
+       * dedup needs duplex communication with the other side and needs the
+       * "3000 OK" to be read, which is handled here by the code below.
+       */
       Dmsg0(215, "send OK_data\n");
       jcr->file_bsock->fsend(OK_data);
       jcr->is_ok_data_sent = true;
