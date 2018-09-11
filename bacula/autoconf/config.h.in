@@ -308,7 +308,7 @@
 #undef HAVE_CHFLAGS
 
 /* Set if we build only client */
-#undef HAVE_CIENT_ONLY
+#undef HAVE_CLIENT_ONLY
 
 /* Define to 1 if you have the 'closefrom' function. */
 #undef HAVE_CLOSEFROM
