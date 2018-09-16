@@ -571,6 +571,13 @@ class RestoreWizard extends BaculumWebPage
 		$this->SelectedVersionsDropper->render($param->NewWriter);
 	}
 
+	/**
+	 * Call formatters method.
+	 */
+	public function callFormatters($sender, $param) {
+		$this->getCallbackClient()->callClientFunction('Formatters.set_formatters');
+	}
+
 	/*
 	 * Load file browser files to list.
 	 *

@@ -394,6 +394,7 @@ oJobsToRestoreList.init();
 													var ocf = request.options.onComplete;
 													request.options.onComplete = function() {
 														ocf();
+														Formatters.set_formatters();
 														make_draggable();
 													};
 													request.dispatch();
@@ -477,6 +478,7 @@ oJobsToRestoreList.init();
 								Options.accept=".draggable"
 								OnDrop="addFileToRestore"
 								OnCallback="refreshSelectedFiles"
+								OnDeactivate="callFormatters"
 								>
 									<com:TActiveDataGrid
 										ID="SelectedVersionsDataGrid"
@@ -528,6 +530,7 @@ oJobsToRestoreList.init();
 					});
 				}
 				make_draggable('<%=$this->getPage()->DataGridFiles->ClientID%>');
+				Formatters.set_formatters();
 			</script>
 		</com:TWizardStep>
 		<com:TWizardStep ID="Step4" Title="<%[ Step 4 - select destination for restore ]%>" StepType="Auto">

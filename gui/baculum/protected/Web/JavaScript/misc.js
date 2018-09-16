@@ -90,9 +90,9 @@ var Formatters = {
 	],
 	set_formatters: function() {
 		var elements, formatter, txt, val;
-		for (var i = 0; i < this.formatter.length; i++) {
-			elements = document.getElementsByClassName(this.formatter[i].css_class);
-			formatter = this.formatter[i].format_func;
+		for (var i = 0; i < Formatters.formatter.length; i++) {
+			elements = document.getElementsByClassName(Formatters.formatter[i].css_class);
+			formatter = Formatters.formatter[i].format_func;
 			for (var j = 0; j < elements.length; j++) {
 				txt = elements[j].firstChild;
 				if (txt && txt.nodeType === 3) {
