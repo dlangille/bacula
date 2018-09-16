@@ -355,7 +355,7 @@ class BaculaSetting extends APIModule {
 		return $resource;
 	}
 
-	private function updateSubResource(string $resource_type, string $directive_name, array $subresource_new) {
+	private function updateSubResource($resource_type, $directive_name, array $subresource_new) {
 		$resource = array();
 		foreach($subresource_new as $index => $directive_value) {
 			$check_recursive = false;
