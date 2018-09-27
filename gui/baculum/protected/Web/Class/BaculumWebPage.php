@@ -74,7 +74,7 @@ class BaculumWebPage extends BaculumPage {
 		if (isset($_SESSION['language']) && !empty($_SESSION['language'])) {
 			$language =  $_SESSION['language'];
 		} else {
-			if (key_exists('lang', $this->config['baculum'])) {
+			if (isset($this->config['baculum']) && key_exists('lang', $this->config['baculum'])) {
 				$language = $this->config['baculum']['lang'];
 			}
 			if (is_null($language)) {

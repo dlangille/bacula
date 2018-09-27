@@ -38,7 +38,7 @@ class WebConfigWizard extends BaculumWebPage
 
 	public function onInit($param) {
 		parent::onInit($param);
-		$this->Lang->SelectedValue = $_SESSION['language'];
+		$this->Lang->SelectedValue = $this->getLanguage();
 		$config = $this->getModule('web_config');
 		$this->web_config = $config->getConfig();
 		$this->host_config = $this->getModule('host_config')->getConfig();
