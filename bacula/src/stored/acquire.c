@@ -448,8 +448,9 @@ DCR *acquire_device_for_append(DCR *dcr)
    dev->VolCatInfo.VolCatJobs++;              /* increment number of jobs on vol */
 
    ok = dir_update_volume_info(dcr, false, false); /* send Volume info to Director */
-
    if (!ok) {                   /* We cannot use this volume/device */
+      Jmsg(jcr, M_WARNING, 0, _("Warning cannot use Volume \"%s\", update_volume_info failed.\n"),
+         dev->VolCatInfo.VolCatName);
       dev->num_writers--;       /* on fail update_volume do not update num_writers */
       /* TODO: See if we revert the NumWriteVolumes as well */
    }
