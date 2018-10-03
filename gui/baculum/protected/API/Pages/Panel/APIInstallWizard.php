@@ -203,8 +203,9 @@ class APIInstallWizard extends BaculumAPIPage {
 		$cfg_data['jsontools']['bcons_cfg_path'] = $this->BconsCfgPath->Text;
 
 		$ret = $this->getModule('api_config')->setConfig($cfg_data);
-		if ($ret && ($this->first_run || $this->add_auth_params)) {
-			if ($this->AuthBasic->Checked && $this->getModule('basic_apiuser')->isUsersConfig()) {
+		if ($ret) {
+			if ($this->first_run && $this->AuthBasic->Checked && $this->getModule('basic_apiuser')->isUsersConfig()) {
+				// save basic auth user only on first run
 				$this->getModule('basic_apiuser')->setUsersConfig(
 					$this->APILogin->Text,
 					$this->APIPassword->Text,
@@ -216,7 +217,8 @@ class APIInstallWizard extends BaculumAPIPage {
 				$this->switchToUser($this->APILogin->Text, $this->APIPassword->Text);
 				// here is exit
 			}
-			if ($this->AuthOAuth2->Checked) {
+			if (($this->first_run || $this->add_auth_params) && $this->AuthOAuth2->Checked) {
+				// save OAuth2 auth user on first run or when no OAuth2 client defined
 				$oauth2_cfg = $this->getModule('oauth2_config')->getConfig();
 				$oauth2_cfg[$this->APIOAuth2ClientId->Text] = array();
 				$oauth2_cfg[$this->APIOAuth2ClientId->Text]['client_id'] = $this->APIOAuth2ClientId->Text;
