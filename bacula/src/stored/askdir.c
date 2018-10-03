@@ -413,10 +413,10 @@ get_out:
  * dev record.
  */
 bool dir_update_volume_info(DCR *dcr, bool label, bool update_LastWritten,
-                            bool use_dcr)
+                            bool use_dcr_only)
 {
    if (askdir_handler) {
-      return askdir_handler->dir_update_volume_info(dcr, label, update_LastWritten, use_dcr);
+      return askdir_handler->dir_update_volume_info(dcr, label, update_LastWritten, use_dcr_only);
    }
 
    JCR *jcr = dcr->jcr;
@@ -438,9 +438,13 @@ bool dir_update_volume_info(DCR *dcr, bool label, bool update_LastWritten,
    P(vol_info_mutex);
    dev->Lock_VolCatInfo();
 
-   if (use_dcr) {
+   if (use_dcr_only) {
       vol = dcr->VolCatInfo;        /* structure assignment */
    } else {
+      /* Just labeled or relabeled the tape */
+      if (label) {
+         dev->setVolCatStatus("Append");
+      }
       vol = dev->VolCatInfo;        /* structure assignment */
    }
 
@@ -451,10 +455,6 @@ bool dir_update_volume_info(DCR *dcr, bool label, bool update_LastWritten,
    }
    Dmsg4(100, "Update cat VolBytes=%lld VolABytes=%lld Status=%s Vol=%s\n",
       vol.VolCatAmetaBytes, vol.VolCatAdataBytes, vol.VolCatStatus, vol.VolCatName);
-   /* Just labeled or relabeled the tape */
-   if (label) {
-      dev->setVolCatStatus("Append");
-   }
 // if (update_LastWritten) {
       vol.VolLastWritten = time(NULL);
 // }
@@ -507,24 +507,24 @@ bool dir_update_volume_info(DCR *dcr, bool label, bool update_LastWritten,
       Dmsg1(100, "get_volume_info() %s", dir->msg);
 
       /* Update dev Volume info in case something changed (e.g. expired) */
-      if (!use_dcr) {
-         dcr->VolCatInfo.Slot = dev->VolCatInfo.Slot;
-         bstrncpy(dcr->VolCatInfo.VolCatStatus, dev->VolCatInfo.VolCatStatus, sizeof(vol.VolCatStatus));
-         dcr->VolCatInfo.VolCatAdataBytes = dev->VolCatInfo.VolCatAdataBytes;
-         dcr->VolCatInfo.VolCatAmetaBytes = dev->VolCatInfo.VolCatAmetaBytes;
-         dcr->VolCatInfo.VolCatHoleBytes = dev->VolCatInfo.VolCatHoleBytes;
-         dcr->VolCatInfo.VolCatHoles = dev->VolCatInfo.VolCatHoles;
-         dcr->VolCatInfo.VolCatPadding = dev->VolCatInfo.VolCatPadding;
-         dcr->VolCatInfo.VolCatAmetaPadding = dev->VolCatInfo.VolCatAmetaPadding;
-         dcr->VolCatInfo.VolCatAdataPadding = dev->VolCatInfo.VolCatAdataPadding;
-         dcr->VolCatInfo.VolCatFiles = dev->VolCatInfo.VolCatFiles;
-         dcr->VolCatInfo.VolCatBytes = dev->VolCatInfo.VolCatBytes;
-         dcr->VolCatInfo.VolCatMounts = dev->VolCatInfo.VolCatMounts;
-         dcr->VolCatInfo.VolCatJobs = dev->VolCatInfo.VolCatJobs;
-         dcr->VolCatInfo.VolCatFiles = dev->VolCatInfo.VolCatFiles;
-         dcr->VolCatInfo.VolCatRecycles = dev->VolCatInfo.VolCatRecycles;
-         dcr->VolCatInfo.VolCatWrites = dev->VolCatInfo.VolCatWrites;
-         dcr->VolCatInfo.VolCatReads = dev->VolCatInfo.VolCatReads;
+      if (!use_dcr_only) {
+         dev->VolCatInfo.Slot = dcr->VolCatInfo.Slot;
+         bstrncpy(dev->VolCatInfo.VolCatStatus, dcr->VolCatInfo.VolCatStatus, sizeof(vol.VolCatStatus));
+         dev->VolCatInfo.VolCatAdataBytes = dcr->VolCatInfo.VolCatAdataBytes;
+         dev->VolCatInfo.VolCatAmetaBytes = dcr->VolCatInfo.VolCatAmetaBytes;
+         dev->VolCatInfo.VolCatHoleBytes = dcr->VolCatInfo.VolCatHoleBytes;
+         dev->VolCatInfo.VolCatHoles = dcr->VolCatInfo.VolCatHoles;
+         dev->VolCatInfo.VolCatPadding = dcr->VolCatInfo.VolCatPadding;
+         dev->VolCatInfo.VolCatAmetaPadding = dcr->VolCatInfo.VolCatAmetaPadding;
+         dev->VolCatInfo.VolCatAdataPadding = dcr->VolCatInfo.VolCatAdataPadding;
+         dev->VolCatInfo.VolCatFiles = dcr->VolCatInfo.VolCatFiles;
+         dev->VolCatInfo.VolCatBytes = dcr->VolCatInfo.VolCatBytes;
+         dev->VolCatInfo.VolCatMounts = dcr->VolCatInfo.VolCatMounts;
+         dev->VolCatInfo.VolCatJobs = dcr->VolCatInfo.VolCatJobs;
+         dev->VolCatInfo.VolCatFiles = dcr->VolCatInfo.VolCatFiles;
+         dev->VolCatInfo.VolCatRecycles = dcr->VolCatInfo.VolCatRecycles;
+         dev->VolCatInfo.VolCatWrites = dcr->VolCatInfo.VolCatWrites;
+         dev->VolCatInfo.VolCatReads = dcr->VolCatInfo.VolCatReads;
       }
       ok = true;
    }
