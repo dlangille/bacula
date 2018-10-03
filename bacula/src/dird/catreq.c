@@ -364,7 +364,7 @@ void catalog_request(JCR *jcr, BSOCK *bs)
    Dmsg1(1000, "Tried update_media. fields wanted=25, got=%d\n", n);
 
    /*
-    * Request to create a JobMedia record
+    * Request to create a JobMedia record(s)
     */
    if (sscanf(bs->msg, Create_jobmedia, &JobId) == 1) {
       if (jcr->wjcr) {
@@ -379,6 +379,8 @@ void catalog_request(JCR *jcr, BSOCK *bs)
          if (ok && sscanf(bs->msg, "%u %u %u %u %u %u %lld\n",
              &jm.FirstIndex, &jm.LastIndex, &jm.StartFile, &jm.EndFile,
              &jm.StartBlock, &jm.EndBlock, &MediaId) != 7) {
+            Jmsg(jcr, M_FATAL, 0, _("Error scanning create JobMedia request: %s\n"),
+               bs->msg);
             ok = false;
             continue;
          }
@@ -387,20 +389,21 @@ void catalog_request(JCR *jcr, BSOCK *bs)
             Dmsg6(400, "create_jobmedia JobId=%ld MediaId=%lu SF=%lu EF=%lu FI=%lu LI=%lu\n",
               jm.JobId, jm.MediaId, jm.StartFile, jm.EndFile, jm.FirstIndex, jm.LastIndex);
             ok = db_create_jobmedia_record(jcr, jcr->db, &jm);
+            if (!ok) {
+               Jmsg(jcr, M_FATAL, 0, _("Catalog error creating JobMedia record. %s"),
+                  db_strerror(jcr->db));
+            }
             if (jm.FirstIndex == 0 && jm.LastIndex == 0) {
                jcr->dummy_jobmedia = true;
             }
          }
       }
       db_end_transaction(jcr, jcr->db);
+      db_unlock(jcr->db);
       if (!ok) {
-         Jmsg(jcr, M_FATAL, 0, _("Catalog error creating JobMedia record. %s"),
-            db_strerror(jcr->db));
-         db_unlock(jcr->db);
          bs->fsend(_("1992 Create JobMedia error\n"));
          goto ok_out;
       }
-      db_unlock(jcr->db);
       Dmsg0(400, "JobMedia record created\n");
       bs->fsend(OK_create);
       goto ok_out;
