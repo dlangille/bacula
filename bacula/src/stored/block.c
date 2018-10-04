@@ -91,7 +91,7 @@ bool DCR::write_block_to_device(bool final)
          }
          /* Flush any existing JobMedia info */
          if (!(ok = dir_create_jobmedia_record(dcr))) {
-            Jmsg(jcr, M_FATAL, 0, _("Error writing JobMedia record to catalog.\n"));
+            Jmsg(jcr, M_FATAL, 0, _("[SF0201] Error writing JobMedia record to catalog.\n"));
          } else {
             Dmsg1(40, "Calling fixup_device was_adata=%d...\n", was_adata);
             ok = fixup_device_block_write_error(dcr);
@@ -102,7 +102,7 @@ bool DCR::write_block_to_device(bool final)
       }
    }
    if (ok && final && !dir_create_jobmedia_record(dcr)) {
-      Jmsg(jcr, M_FATAL, 0, _("Error writing final JobMedia record to catalog.\n"));
+      Jmsg(jcr, M_FATAL, 0, _("[SF0202] Error writing final JobMedia record to catalog.\n"));
    }
 
 bail_out:
@@ -138,7 +138,7 @@ bool DCR::write_block_to_dev()
       return false;
    }
    if (!dev->enabled) {
-      Jmsg1(jcr, M_FATAL, 0,  _("Cannot write block. Device is disabled. dev=%s\n"), dev->print_name());
+      Jmsg1(jcr, M_FATAL, 0,  _("[SF0203] Cannot write block. Device is disabled. dev=%s\n"), dev->print_name());
       return false;
    }
 
@@ -155,18 +155,18 @@ bool DCR::write_block_to_dev()
    if (dev->at_weot()) {
       Dmsg1(50, "==== FATAL: At EOM with ST_WEOT. adata=%d.\n", dev->adata);
       dev->dev_errno = ENOSPC;
-      Jmsg1(jcr, M_FATAL, 0,  _("Cannot write block. Device at EOM. dev=%s\n"), dev->print_name());
+      Jmsg1(jcr, M_FATAL, 0,  _("[SF0204] Cannot write block. Device at EOM. dev=%s\n"), dev->print_name());
       return false;
    }
    if (!dev->can_append()) {
       dev->dev_errno = EIO;
-      Jmsg1(jcr, M_FATAL, 0, _("Attempt to write on read-only Volume. dev=%s\n"), dev->print_name());
+      Jmsg1(jcr, M_FATAL, 0, _("[SF0205] Attempt to write on read-only Volume. dev=%s\n"), dev->print_name());
       Dmsg1(50, "Attempt to write on read-only Volume. dev=%s\n", dev->print_name());
       return false;
    }
 
    if (!dev->is_open()) {
-      Jmsg1(jcr, M_FATAL, 0, _("Attempt to write on closed device=%s\n"), dev->print_name());
+      Jmsg1(jcr, M_FATAL, 0, _("[SF0206] Attempt to write on closed device=%s\n"), dev->print_name());
       Dmsg1(50, "Attempt to write on closed device=%s\n", dev->print_name());
       return false;
    }
@@ -189,7 +189,7 @@ bool DCR::write_block_to_dev()
 #ifdef DEBUG_BLOCK_ZEROING
    uint32_t *bp = (uint32_t *)block->buf;
    if (bp[0] == 0 && bp[1] == 0 && bp[2] == 0 && block->buf[12] == 0) {
-      Jmsg0(jcr, M_ABORT, 0, _("Write block header zeroed.\n"));
+      Jmsg0(jcr, M_ABORT, 0, _("[SA0201] Write block header zeroed.\n"));
    }
 #endif
 
@@ -210,7 +210,7 @@ bool DCR::write_block_to_dev()
          } else if (block->BlockAddr < cur) {
            Pmsg5(000, "Vol=%s cur=%lld BlockAddr=%lld adata=%d block=%p\n",
               dev->getVolCatName(), cur, block->BlockAddr, block->adata, block);
-           Jmsg3(jcr, M_FATAL, 0, "Bad seek on adata Vol=%s BlockAddr=%lld DiskAddr=%lld. Multiple simultaneous Jobs?\n",
+           Jmsg3(jcr, M_FATAL, 0, "[SF0207] Bad seek on adata Vol=%s BlockAddr=%lld DiskAddr=%lld. Multiple simultaneous Jobs?\n",
               dev->getVolCatName(), block->BlockAddr, cur);
            //Pmsg2(000, "HoleBytes would go negative cur=%lld blkaddr=%lld\n", cur, block->BlockAddr);
          }
@@ -247,7 +247,7 @@ bool DCR::write_block_to_dev()
    if (debug_block_checksum) {
       uint32_t achecksum = ser_block_header(block, dev->do_checksum());
       if (checksum != achecksum) {
-         Jmsg2(jcr, M_ERROR, 0, _("Block checksum changed during write: before=%u after=%u\n"),
+         Jmsg2(jcr, M_ERROR, 0, _("[SA0201] Block checksum changed during write: before=%u after=%u\n"),
             checksum, achecksum);
          dump_block(dev, block, "with checksum error");
       }
@@ -255,7 +255,7 @@ bool DCR::write_block_to_dev()
 
 #ifdef DEBUG_BLOCK_ZEROING
    if (bp[0] == 0 && bp[1] == 0 && bp[2] == 0 && block->buf[12] == 0) {
-      Jmsg0(jcr, M_ABORT, 0, _("Write block header zeroed.\n"));
+      Jmsg0(jcr, M_ABORT, 0, _("[SA0202] Write block header zeroed.\n"));
    }
 #endif
 
@@ -288,7 +288,8 @@ bool DCR::write_block_to_dev()
                etype = M_FATAL;
             }
             dev->VolCatInfo.VolCatErrors++;
-            Jmsg4(jcr, etype, 0, _("Write error at %s on device %s Vol=%s. ERR=%s.\n"),
+            Jmsg5(jcr, etype, 0, _("%s Write error at %s on device %s Vol=%s. ERR=%s.\n"),
+               etype==M_FATAL?"[SF0208]":"[SE0201]",
                dev->print_addr(ed1, sizeof(ed1)), dev->print_name(),
                dev->getVolCatName(), be.bstrerror());
             if (dev->get_tape_alerts(this)) {
@@ -306,12 +307,13 @@ bool DCR::write_block_to_dev()
             if (dev->is_removable()) {
                mtype = M_INFO;
             }
-            Jmsg(jcr, mtype, 0, _("Out of freespace caused End of Volume \"%s\" at %s on device %s. Write of %u bytes got %d.\n"),
+            Jmsg(jcr, mtype, 0, _("%s Out of freespace caused End of Volume \"%s\" at %s on device %s. Write of %u bytes got %d.\n"),
+               mtype==M_FATAL?"[SF0209]":"[SI0201]",
                dev->getVolCatName(),
                dev->print_addr(ed1, sizeof(ed1)), dev->print_name(), wlen, stat);
          } else {
             dev->clear_nospace();
-            Jmsg(jcr, M_INFO, 0, _("End of Volume \"%s\" at %s on device %s. Write of %u bytes got %d.\n"),
+            Jmsg(jcr, M_INFO, 0, _("[SI0202] End of Volume \"%s\" at %s on device %s. Write of %u bytes got %d.\n"),
                dev->getVolCatName(),
                dev->print_addr(ed1, sizeof(ed1)), dev->print_name(), wlen, stat);
          }
@@ -460,13 +462,13 @@ bool DCR::read_block_from_dev(bool check_block_numbers)
       return false;
    }
    if (!dev->enabled) {
-      Mmsg(dev->errmsg, _("Cannot write block. Device is disabled. dev=%s\n"), dev->print_name());
+      Mmsg(dev->errmsg, _("[SF0210] Cannot write block. Device is disabled. dev=%s\n"), dev->print_name());
       Jmsg1(jcr, M_FATAL, 0, "%s", dev->errmsg);
       return false;
    }
 
    if (dev->at_eot()) {
-      Mmsg(dev->errmsg, _("At EOT: attempt to read past end of Volume.\n"));
+      Mmsg(dev->errmsg, _("[SX0201] At EOT: attempt to read past end of Volume.\n"));
       Dmsg1(000, "%s", dev->errmsg);
       block->read_len = 0;
       return false;
@@ -474,7 +476,7 @@ bool DCR::read_block_from_dev(bool check_block_numbers)
    looping = 0;
 
    if (!dev->is_open()) {
-      Mmsg4(dev->errmsg, _("Attempt to read closed device: fd=%d at file:blk %u:%u on device %s\n"),
+      Mmsg4(dev->errmsg, _("[SF0211] Attempt to read closed device: fd=%d at file:blk %u:%u on device %s\n"),
          dev->fd(), dev->file, dev->block_num, dev->print_name());
       Jmsg(dcr->jcr, M_FATAL, 0, "%s", dev->errmsg);
       Pmsg4(000, "Fatal: dev=%p dcr=%p adata=%d bytes=%lld\n", dev, dcr, dev->adata,
@@ -489,7 +491,7 @@ bool DCR::read_block_from_dev(bool check_block_numbers)
 reread:
    if (looping > 1) {
       dev->dev_errno = EIO;
-      Mmsg1(dev->errmsg, _("Block buffer size looping problem on device %s\n"),
+      Mmsg1(dev->errmsg, _("[SE0202] Block buffer size looping problem on device %s\n"),
          dev->print_name());
       Dmsg1(000, "%s", dev->errmsg);
       Jmsg(jcr, M_ERROR, 0, "%s", dev->errmsg);
@@ -547,11 +549,11 @@ reread:
       Dmsg2(90, "Read device fd=%d got: ERR=%s\n", dev->fd(), be.bstrerror());
       block->read_len = 0;
       if (reading_label) {      /* Trying to read Volume label */
-         Mmsg(dev->errmsg, _("The %sVolume=%s on device=%s appears to be unlabeled.%s\n"),
+         Mmsg(dev->errmsg, _("[SE0203] The %sVolume=%s on device=%s appears to be unlabeled.%s\n"),
             dev->adata?"adata ":"", VolumeName, dev->print_name(),
-            dev->is_fs_nearly_full(1048576)?" Notice that the filesystem is nearly full.":"");
+            dev->is_fs_nearly_full(1048576)?" Warning: The filesystem is nearly full.":"");
       } else {
-         Mmsg4(dev->errmsg, _("Read error on fd=%d at addr=%s on device %s. ERR=%s.\n"),
+         Mmsg4(dev->errmsg, _("[SE0204] Read error on fd=%d at addr=%s on device %s. ERR=%s.\n"),
             dev->fd(), dev->print_addr(ed1, sizeof(ed1)), dev->print_name(), be.bstrerror());
       }
       Jmsg(jcr, M_ERROR, 0, "%s", dev->errmsg);
@@ -572,7 +574,7 @@ reread:
       if (reading_label) {      /* Trying to read Volume label */
          Mmsg4(dev->errmsg, _("The %sVolume=%s on device=%s appears to be unlabeled.%s\n"),
             dev->adata?"adata ":"", VolumeName, dev->print_name(),
-            dev->is_fs_nearly_full(1048576)?" Notice tha the filesystem is nearly full.":"");
+            dev->is_fs_nearly_full(1048576)?" Warning: The filesystem is nearly full.":"");
       } else {
          Mmsg4(dev->errmsg, _("Read zero %sbytes Vol=%s at %s on device %s.\n"),
                dev->adata?"adata ":"", dev->VolCatInfo.VolCatName,
@@ -612,7 +614,7 @@ reread:
 
       if (block->read_len < BLKHDR2_LENGTH) {
          dev->dev_errno = EIO;
-         Mmsg3(dev->errmsg, _("Volume data error at %s! Very short block of %d bytes on device %s discarded.\n"),
+         Mmsg3(dev->errmsg, _("[SE0205] Volume data error at %s! Very short block of %d bytes on device %s discarded.\n"),
             dev->print_addr(ed1, sizeof(ed1)), block->read_len, dev->print_name());
          Jmsg(jcr, M_ERROR, 0, "%s", dev->errmsg);
          dev->set_short_block();
@@ -639,7 +641,7 @@ reread:
    Dmsg3(150, "adata=%d block_len=%d buf_len=%d\n", block->adata, block->block_len, block->buf_len);
    if (block->block_len > block->buf_len) {
       dev->dev_errno = EIO;
-      Mmsg2(dev->errmsg,  _("Block length %u is greater than buffer %u. Attempting recovery.\n"),
+      Mmsg2(dev->errmsg,  _("[SE0206] Block length %u is greater than buffer %u. Attempting recovery.\n"),
          block->block_len, block->buf_len);
       Jmsg(jcr, M_ERROR, 0, "%s", dev->errmsg);
       Pmsg1(000, "%s", dev->errmsg);
@@ -649,7 +651,7 @@ reread:
          if (!dev->bsr(1)) {
             Mmsg(dev->errmsg, "%s", dev->bstrerror());
             if (dev->errmsg[0]) {
-               Jmsg(jcr, M_ERROR, 0, "%s", dev->errmsg);
+               Jmsg(jcr, M_ERROR, 0, "[SE0207] %s", dev->errmsg);
             }
             block->read_len = 0;
             return false;
@@ -661,7 +663,7 @@ reread:
          dev->lseek(dcr, pos, SEEK_SET);
          dev->file_addr = pos;
       }
-      Mmsg1(dev->errmsg, _("Setting block buffer size to %u bytes.\n"), block->block_len);
+      Mmsg1(dev->errmsg, _("[SI0203] Setting block buffer size to %u bytes.\n"), block->block_len);
       Jmsg(jcr, M_INFO, 0, "%s", dev->errmsg);
       Pmsg1(000, "%s", dev->errmsg);
       /* Set new block length */
@@ -676,7 +678,7 @@ reread:
 
    if (block->block_len > block->read_len) {
       dev->dev_errno = EIO;
-      Mmsg4(dev->errmsg, _("Volume data error at %u:%u! Short block of %d bytes on device %s discarded.\n"),
+      Mmsg4(dev->errmsg, _("[SE0208] Volume data error at %u:%u! Short block of %d bytes on device %s discarded.\n"),
          dev->file, dev->block_num, block->read_len, dev->print_name());
       Jmsg(jcr, M_ERROR, 0, "%s", dev->errmsg);
       dev->set_short_block();
