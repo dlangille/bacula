@@ -203,7 +203,7 @@ int bget_dirmsg(BSOCK *bs)
       if ((sscanf(bs->msg, "%020s JobId=%ld ", MsgType, &JobId) != 2) &&
           (sscanf(bs->msg, "%020s Job=%127s ", MsgType, Job) != 2) &&
           (sscanf(bs->msg, "%020s Job=x", MsgType) != 1)) {
-         if (is_msgid(strchr(bs->msg, '['))) {
+         if (jcr->JobId == 0 || is_msgid(strchr(bs->msg, '['))) {
             return n;
          }
          Jmsg1(jcr, M_ERROR, 0, _("Malformed message: %s\n"), bs->msg);
@@ -212,6 +212,9 @@ int bget_dirmsg(BSOCK *bs)
 
       /* Skip past first two fields: "Jmsg JobId=nnn" */
       if (!(msg=find_msg_start(bs->msg))) {
+         if (jcr->JobId == 0) {
+            return n;
+         }
          Jmsg1(jcr, M_ERROR, 0, _("Malformed message: %s\n"), bs->msg);
          continue;
       }
