@@ -512,17 +512,12 @@ int32_t BSOCK::recv()
    /* If signal or packet size too big */
    if (pktsiz < 0 || pktsiz > 1000000) {
       if (pktsiz > 0) {            /* if packet too big */
-         int m_type = M_FATAL;
-         if (!m_jcr) {
-            m_type = M_SECURITY;
-         }
-         Qmsg4(m_jcr, m_type, 0,
+         if (m_jcr) {
+            Qmsg4(m_jcr, M_FATAL, 0,
                _("Packet size=%d too big from \"%s:%s:%d\". Maximum permitted 1000000. Terminating connection.\n"),
                pktsiz, m_who, m_host, m_port);
-         pktsiz = BNET_TERMINATE;  /* hang up */
-         if (m_type == M_SECURITY) {
-            sleep(5);
          }
+         pktsiz = BNET_TERMINATE;  /* hang up */
       }
       if (pktsiz == BNET_TERMINATE) {
          set_terminated();

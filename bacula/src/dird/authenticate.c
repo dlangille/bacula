@@ -326,8 +326,8 @@ int authenticate_user_agent(UAContext *uac)
    int ua_version = 0;
 
    if (ua->msglen < 16 || ua->msglen >= MAX_NAME_LENGTH + 15) {
-      Jmsg4(NULL, M_SECURITY, 0, _("UA Hello from %s:%s:%d is invalid. Len=%d\n"), ua->who(),
-            ua->host(), ua->port(), ua->msglen);
+      Qmsg3(NULL, M_SECURITY, 0, _("UA Hello from %s:%s is invalid. Len=%d\n"), ua->who(),
+            ua->host(), ua->msglen);
       sleep(5);
       return 0;
    }
@@ -335,8 +335,8 @@ int authenticate_user_agent(UAContext *uac)
    if (sscanf(ua->msg, "Hello %127s calling %d", name, &ua_version) != 2 &&
        sscanf(ua->msg, "Hello %127s calling", name) != 1) {
       ua->msg[100] = 0;               /* terminate string */
-      Jmsg4(NULL, M_SECURITY, 0, _("UA Hello from %s:%s:%d is invalid. Got: %s\n"), ua->who(),
-            ua->host(), ua->port(), ua->msg);
+      Qmsg3(NULL, M_SECURITY, 0, _("UA Hello from %s:%s is invalid. Got: %s\n"), ua->who(),
+            ua->host(), ua->msg);
       sleep(5);
       return 0;
    }
