@@ -69,7 +69,7 @@ public:
    BSOCK();
    BSOCK(int sockfd);
    ~BSOCK();
-   int32_t recv(int /*len*/) { return recv(); };
+  // int32_t recv(int /*len*/) { return recv(); };
    int32_t recv();
    bool send() { return send(0); };
    bool send(int flags);
