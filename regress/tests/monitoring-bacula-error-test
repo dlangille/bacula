@@ -1,0 +1,120 @@
+#!/bin/sh
+#
+# Run a simple backup of the Bacula build directory and simulate network probes
+# from a "check_tcp" like tool. It should not be in the job log. (Waiting
+# to store security messages at a proper place)
+#
+TestName="monitoring-bacula-error-test"
+JobName=backup
+. scripts/functions
+
+scripts/cleanup
+scripts/copy-confs
+
+#
+# Zap out any schedule in default conf file so that
+#  it doesn't start during our test
+#
+outf="$tmp/sed_tmp"
+echo "s%  Schedule =%# Schedule =%g" >${outf}
+cp $scripts/bacula-dir.conf $tmp/1
+sed -f ${outf} $tmp/1 >$scripts/bacula-dir.conf
+
+change_jobname BackupClient1 $JobName
+start_test
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@output /dev/null
+messages
+@$out $tmp/log1.out
+setdebug level=50 trace=1 dir
+setdebug level=50 trace=1 client
+setdebug level=50 trace=1 storage=File1
+@sleep 5
+label volume=TestVolume001 storage=File1 pool=File slot=1 drive=0
+setbandwidth limit=5MB/s client
+run job=$JobName yes
+wait
+messages
+@# 
+@# now do a restore
+@#
+@$out $tmp/log2.out
+restore where=$tmp/bacula-restores select all done
+yes
+wait
+messages
+@sleep 10
+quit
+END_OF_DATA
+
+pfd=`expr $BASEPORT + 1`
+psd=`expr $BASEPORT + 2`
+
+f1=$working/bacula-fd.$pfd.pid
+f2=$working/bacula-sd.$psd.pid
+f3=$working/bacula-dir.$BASEPORT.pid
+
+$bperl -e "check_tcp_loop('$f1', 'localhost', $pfd)" &
+$bperl -e "check_tcp_loop('$f2', 'localhost', $psd)" &
+$bperl -e "check_tcp_loop('$f3', 'localhost', $BASEPORT)" &
+
+run_bacula
+check_for_zombie_jobs storage=File1
+sleep 10
+stop_bacula
+
+wait
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out $tmp/joblog.out
+list joblog jobid=1
+list joblog jobid=2
+END_OF_DATA
+
+run_bacula
+sleep 10
+stop_bacula
+
+grep "Terminating connection" $working/*dir.trace > /dev/null
+if [ $? != 0 ]; then
+    estat=1
+    print_debug "ERROR: Unable to find network errors in $working/*dir.trace"
+fi
+
+grep "Terminating connection" $working/*sd.trace > /dev/null
+if [ $? != 0 ]; then
+    estat=1
+    print_debug "ERROR: Unable to find network errors in $working/*sd.trace"
+fi
+
+grep "Terminating connection" $working/*fd.trace > /dev/null
+if [ $? != 0 ]; then
+    estat=1
+    print_debug "ERROR: Unable to find network errors in $working/*fd.trace"
+fi
+
+grep -i "Security" $tmp/joblog.out
+if [ $? = 0 ]; then
+    estat=1
+    print_debug "ERROR: Should not find security problems in the job log"
+fi
+
+if [ ! $tmp/localhost.$pfd ]; then
+    estat=1
+    print_debug "ERROR: Unable to send network probes to the FD"
+fi
+
+if [ ! $tmp/localhost.$sfd ]; then
+    estat=1
+    print_debug "ERROR: Unable to send network probes to the SD"
+fi
+
+if [ ! $tmp/localhost.$BASEPORT ]; then
+    estat=1
+    print_debug "ERROR: Unable to send network probes to the DIR"
+fi
+
+check_two_logs
+check_restore_diff
+end_test

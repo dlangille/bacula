@@ -44,6 +44,7 @@ our @EXPORT = qw(update_some_files create_many_files check_multiple_copies
                   set_global_maximum_concurrent_jobs check_volumes update_some_files_rep
                   remote_init remote_config remote_stop remote_diff remote_check
                   get_field_size get_field_ratio create_binfile get_bytes get_mbytes
+                  check_tcp check_tcp_loop
                   check_parts);
 
 
@@ -1412,6 +1413,44 @@ sub check_jobmedia_content
     }
 
     close(FP);
+}
+
+use IO::Socket::INET;
+
+sub check_tcp
+{
+    my ($host, $port) = @_;
+    my $sock = IO::Socket::INET->new(PeerAddr => $host,
+                                     PeerPort => $port,
+                                     Proto    => 'tcp') or die "Error: check_tcp Unable to connect $host:$port $@";
+    $sock->write("Hello !\n");
+    $sock->close();
+}
+
+sub check_tcp_loop
+{
+    my ($pid, $host, $port) = @_;
+    my $count=5;
+    while (! -f $pid && $count > 0) {
+        if ($debug) {
+            print "Waiting for $pid to appear\n";
+        }
+        $count--;
+        sleep(1);
+    }
+    $count=0;
+    while (-f $pid) {
+        check_tcp($host, $port);
+        $count++;
+        sleep(1);
+    }
+    if ($count > 0) {
+        open(FP, ">$tmp/$host.$port.probe") or die "ERROR: Unable to open $tmp/$host.$port.probe $@";
+        print FP "$count\n";
+        close(FP);
+    }
+    print "Did $count network probes on $host:$port\n";
+    return $count;
 }
 
 1;
