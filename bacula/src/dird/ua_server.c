@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2015 Kern Sibbald
+   Copyright (C) 2000-2018 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -36,7 +36,9 @@ static void *handle_UA_client_request(void *arg);
 
 
 /* Global variables */
-static int started = FALSE;
+static bool started = false;
+static pthread_t server_tid;
+static bool server_tid_valid = false;
 static workq_t ua_workq;
 
 struct s_addr_port {
@@ -58,8 +60,16 @@ void start_UA_server(dlist *addrs)
       berrno be;
       Emsg1(M_ABORT, 0, _("Cannot create UA thread: %s\n"), be.bstrerror(status));
    }
-   started = TRUE;
+   started = true;
    return;
+}
+
+void stop_UA_server()
+{
+   if (started && server_tid_valid) {
+      server_tid_valid = false;
+      bnet_stop_thread_server(server_tid);
+   }
 }
 
 extern "C"
@@ -67,6 +77,9 @@ void *connect_thread(void *arg)
 {
    pthread_detach(pthread_self());
    set_jcr_in_tsd(INVALID_JCR);
+
+   server_tid = pthread_self();
+   server_tid_valid = true;
 
    /* Permit MaxConsoleConnect console connections */
    bnet_thread_server((dlist*)arg, director->MaxConsoleConnect, &ua_workq, handle_UA_client_request);
@@ -215,15 +228,4 @@ void free_ua_context(UAContext *ua)
    }
    free_bsock(ua->UA_sock);
    free(ua);
-}
-
-
-/*
- * Called from main Bacula thread
- */
-void term_ua_server()
-{
-   if (!started) {
-      return;
-   }
 }

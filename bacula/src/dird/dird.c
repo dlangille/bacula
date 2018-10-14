@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2017 Kern Sibbald
+   Copyright (C) 2000-2018 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -48,8 +48,8 @@ extern bool parse_dir_config(CONFIG *config, const char *configfile, int exit_co
 /* Imported subroutines */
 JCR *wait_for_next_job(char *runjob);
 void term_scheduler();
-void term_ua_server();
 void start_UA_server(dlist *addrs);
+void stop_UA_server();
 void init_job_server(int max_workers);
 void term_job_server();
 void store_jobtype(LEX *lc, RES_ITEM *item, int index, int pass);
@@ -706,7 +706,7 @@ void terminate_dird(int sig)
       delete config;
       config = NULL;
    }
-   term_ua_server();
+   stop_UA_server();
    term_msg();                        /* terminate message handler */
    cleanup_crypto();
 
