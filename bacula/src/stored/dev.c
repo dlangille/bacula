@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2017 Kern Sibbald
+   Copyright (C) 2000-2018 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -1047,4 +1047,9 @@ void DEVICE::show_tape_alerts(DCR *dcr, alert_list_type type,
 int DEVICE::delete_alerts()
 {
    return 0;
+}
+
+bool DEVICE::get_tape_worm(DCR *dcr)
+{
+   return false;
 }

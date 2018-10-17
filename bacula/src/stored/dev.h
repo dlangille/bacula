@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2017 Kern Sibbald
+   Copyright (C) 2000-2018 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -208,6 +208,7 @@ struct VOLUME_CAT_INFO {
    bool     InChanger;                /* Set if vol in current magazine */
    bool     is_valid;                 /* set if this data is valid */
    bool     VolEnabled;               /* set if volume enabled */
+   bool     VolRecycle;               /* set if volume can be recycled */
    char VolCatStatus[20];             /* Volume status */
    char VolCatName[MAX_NAME_LENGTH];  /* Desired volume to mount */
 };
@@ -265,6 +266,7 @@ public:
    bool autoselect;                   /* Autoselect in autochanger */
    bool read_only;                    /* Device is read only */
    bool initiated;                    /* set when init_dev() called */
+   bool m_is_worm;                    /* set for worm tape */
    bool m_shstore;                    /* Shares storage can be used */
    bool m_shstore_lock;               /* set if shared lock set */
    bool m_shstore_user_lock;          /* set if user set shared lock */
@@ -349,6 +351,7 @@ public:
    int has_cap(int cap) const { return capabilities & cap; }
    void clear_cap(int cap) { capabilities &= ~cap; }
    void set_cap(int cap) { capabilities |= cap; }
+   void set_worm(bool is_worm) { m_is_worm = is_worm; }
    bool do_checksum() const { return (capabilities & CAP_BLOCKCHECKSUM) != 0; }
    int is_autochanger() const { return capabilities & CAP_AUTOCHANGER; }
    int requires_mount() const { return capabilities & CAP_REQMOUNT; }
@@ -363,6 +366,7 @@ public:
    bool is_fifo() const { return dev_type == B_FIFO_DEV; }
    bool is_vtl() const  { return dev_type == B_VTL_DEV; }
    bool is_vtape() const  { return dev_type == B_VTAPE_DEV; }
+   bool is_worm() const { return m_is_worm; }
    bool is_open() const { return m_fd >= 0; }
    int is_offline() const { return state & ST_OFFLINE; }
    int is_labeled() const { return state & ST_LABEL; }
@@ -564,6 +568,7 @@ public:
    virtual char *print_addr(char *buf, int32_t maxlen, boffset_t addr);
    virtual bool do_size_checks(DCR *dcr, DEV_BLOCK *block); /* in dev.c */
 
+   virtual bool get_tape_worm(DCR *dcr);
    virtual bool get_tape_alerts(DCR *dcr);
    virtual void show_tape_alerts(DCR *dcr, alert_list_type type,
       alert_list_which which, alert_cb alert_callback);

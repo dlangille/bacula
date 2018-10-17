@@ -1,6 +1,5 @@
 #
-#
-# Copyright (C) 2000-2016 Kern Sibbald
+# Copyright (C) 2000-2018 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
 @MCOMMON@
@@ -40,6 +39,7 @@ install: installdirs
 	$(INSTALL_SCRIPT) bacula_config $(DESTDIR)$(scriptdir)/bacula_config
 	$(INSTALL_SCRIPT) bacula $(DESTDIR)$(sbindir)/bacula
 	$(INSTALL_SCRIPT) tapealert $(DESTDIR)$(scriptdir)/tapealert
+	$(INSTALL_SCRIPT) isworm $(DESTDIR)$(scriptdir)/isworm
 	$(INSTALL_SCRIPT) bacula-ctl-dir $(DESTDIR)$(scriptdir)/bacula-ctl-dir
 	$(INSTALL_SCRIPT) bacula-ctl-fd $(DESTDIR)$(scriptdir)/bacula-ctl-fd
 	$(INSTALL_SCRIPT) bacula-ctl-sd $(DESTDIR)$(scriptdir)/bacula-ctl-sd

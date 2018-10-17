@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2017 Kern Sibbald
+   Copyright (C) 2000-2018 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -169,6 +169,7 @@ public:
    char *changer_command;             /* Changer command  -- external program */
    char *alert_command;               /* Alert command -- external program */
    char *lock_command;                /* Share storage lock command -- external program */
+   char *worm_command;                /* Worm detection command -- external program */
    char *spool_directory;             /* Spool file directory */
    uint32_t dev_type;                 /* device type */
    uint32_t label_type;               /* label type */

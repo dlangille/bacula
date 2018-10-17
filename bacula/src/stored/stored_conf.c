@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2017 Kern Sibbald
+   Copyright (C) 2000-2018 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -140,6 +140,7 @@ static RES_ITEM dev_items[] = {
    {"ChangerCommand",        store_strname,ITEM(res_dev.changer_command), 0, 0, 0},
    {"AlertCommand",          store_strname,ITEM(res_dev.alert_command), 0, 0, 0},
    {"LockCommand",           store_strname,ITEM(res_dev.lock_command), 0, 0, 0},
+   {"WormCommand",           store_strname,ITEM(res_dev.worm_command), 0, 0, 0},
    {"MaximumChangerWait",    store_time,   ITEM(res_dev.max_changer_wait), 0, ITEM_DEFAULT, 5 * 60},
    {"MaximumOpenWait",       store_time,   ITEM(res_dev.max_open_wait), 0, ITEM_DEFAULT, 5 * 60},
    {"MaximumNetworkBufferSize", store_pint32, ITEM(res_dev.max_network_buffer_size), 0, 0, 0},
@@ -509,6 +510,9 @@ void dump_resource(int type, RES *rres, void sendit(void *sock, const char *fmt,
       sendit(sock, "        spool_directory=%s\n", NPRT(res->res_dev.spool_directory));
       sendit(sock, "        max_spool_size=%lld max_job_spool_size=%lld\n",
          res->res_dev.max_spool_size, res->res_dev.max_job_spool_size);
+      if (res->res_dev.worm_command) {
+         sendit(sock, "         worm command=%s\n", res->res_dev.worm_command);
+      }
       if (res->res_dev.changer_res) {
          sendit(sock, "         changer=%p\n", res->res_dev.changer_res);
       }
@@ -756,6 +760,9 @@ void free_resource(RES *sres, int type)
       }
       if (res->res_dev.alert_command) {
          free(res->res_dev.alert_command);
+      }
+      if (res->res_dev.worm_command) {
+         free(res->res_dev.worm_command);
       }
       if (res->res_dev.lock_command) {
          free(res->res_dev.lock_command);

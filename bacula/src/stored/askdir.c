@@ -37,7 +37,7 @@ static char Update_media[] = "CatReq JobId=%ld UpdateMedia VolName=%s"
    " VolErrors=%u VolWrites=%u MaxVolBytes=%s EndTime=%s VolStatus=%s"
    " Slot=%d relabel=%d InChanger=%d VolReadTime=%s VolWriteTime=%s"
    " VolFirstWritten=%s VolType=%u VolParts=%d VolCloudParts=%d"
-   " LastPartBytes=%lld Enabled=%d\n";
+   " LastPartBytes=%lld Enabled=%d Recycle=%d\n";
 static char Create_jobmedia[] = "CatReq JobId=%ld CreateJobMedia\n";
 static char FileAttributes[] = "UpdCat JobId=%ld FileAttributes ";
 
@@ -50,7 +50,8 @@ static char OK_media[] = "1000 OK VolName=%127s VolJobs=%u VolFiles=%lu"
    " Slot=%ld MaxVolJobs=%lu MaxVolFiles=%lu InChanger=%ld"
    " VolReadTime=%lld VolWriteTime=%lld EndFile=%lu EndBlock=%lu"
    " VolType=%lu LabelType=%ld MediaId=%lld ScratchPoolId=%lld"
-   " VolParts=%d VolCloudParts=%d LastPartBytes=%lld Enabled=%d\n";
+   " VolParts=%d VolCloudParts=%d LastPartBytes=%lld Enabled=%d"
+   " Recycle=%d\n";
 
 
 static char OK_create[] = "1000 OK CreateJobMedia\n";
@@ -58,6 +59,8 @@ static char OK_create[] = "1000 OK CreateJobMedia\n";
 static bthread_mutex_t vol_info_mutex = BTHREAD_MUTEX_PRIORITY(PRIO_SD_VOL_INFO);
 
 #ifdef needed
+
+Note: if you turn this on, be sure to add the Recycle Flag
 
 static char Device_update[] = "DevUpd JobId=%ld device=%s "
    "append=%d read=%d num_writers=%d "
@@ -204,7 +207,7 @@ static bool do_get_volume_info(DCR *dcr)
     BSOCK *dir = jcr->dir_bsock;
     VOLUME_CAT_INFO vol;
     int n;
-    int32_t Enabled;
+    int32_t Enabled, Recycle;
     int32_t InChanger;
 
     dcr->setVolCatInfo(false);
@@ -226,9 +229,9 @@ static bool do_get_volume_info(DCR *dcr)
                &vol.EndFile, &vol.EndBlock, &vol.VolCatType,
                &vol.LabelType, &vol.VolMediaId, &vol.VolScratchPoolId,
                &vol.VolCatParts, &vol.VolCatCloudParts,
-               &vol.VolLastPartBytes, &Enabled);
+               &vol.VolLastPartBytes, &Enabled, &Recycle);
     Dmsg2(dbglvl, "<dird n=%d %s", n, dir->msg);
-    if (n != 30) {
+    if (n != 31) {
        Dmsg1(dbglvl, "get_volume_info failed: ERR=%s", dir->msg);
        /*
         * Note, we can get an error here either because there is
@@ -241,6 +244,7 @@ static bool do_get_volume_info(DCR *dcr)
     }
     vol.InChanger = InChanger;        /* bool in structure */
     vol.VolEnabled = Enabled;         /* bool in structure */
+    vol.VolRecycle = Recycle;         /* bool in structure */
     vol.is_valid = true;
     vol.VolCatBytes = vol.VolCatAmetaBytes + vol.VolCatAdataBytes;
     unbash_spaces(vol.VolCatName);
@@ -424,7 +428,7 @@ bool dir_update_volume_info(DCR *dcr, bool label, bool update_LastWritten,
    DEVICE *dev = dcr->ameta_dev;
    VOLUME_CAT_INFO vol;
    char ed1[50], ed2[50], ed3[50], ed4[50], ed5[50], ed6[50], ed7[50], ed8[50];
-   int InChanger;
+   int InChanger, Enabled, Recycle;
    bool ok = false;
    POOL_MEM VolumeName;
 
@@ -458,9 +462,16 @@ bool dir_update_volume_info(DCR *dcr, bool label, bool update_LastWritten,
 // if (update_LastWritten) {
       vol.VolLastWritten = time(NULL);
 // }
+   /* worm cannot be recycled, ensure catalog correct */
+   if (dev->is_worm() && vol.VolRecycle) {
+      Jmsg(jcr, M_INFO, 0, _("WORM cassette detected: setting Recycle=No on Volume=\"%s\"\n"));
+      vol.VolRecycle = false;
+   }
    pm_strcpy(VolumeName, vol.VolCatName);
    bash_spaces(VolumeName);
    InChanger = vol.InChanger;
+   Enabled = vol.VolEnabled;
+   Recycle = vol.VolRecycle;
    /* Insanity test */
    if (vol.VolCatHoleBytes > (((uint64_t)2)<<60)) {
       Pmsg1(010, "VolCatHoleBytes too big: %lld. Reset to zero.\n",
@@ -488,7 +499,8 @@ bool dir_update_volume_info(DCR *dcr, bool label, bool update_LastWritten,
       vol.VolCatParts,
       vol.VolCatCloudParts,
       vol.VolLastPartBytes,
-      vol.VolEnabled);
+      Enabled,
+      Recycle);
     Dmsg1(100, ">dird %s", dir->msg);
 
    /* Do not lock device here because it may be locked from label */

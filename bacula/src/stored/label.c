@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2017 Kern Sibbald
+   Copyright (C) 2000-2018 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -74,6 +74,7 @@ int DEVICE::read_dev_volume_label(DCR *dcr)
       block->adata, num_reserved(), print_name(), VolName,
       VolHdr.VolumeName[0]?VolHdr.VolumeName:"*NULL*");
 
+
    if (!is_open()) {
       if (!open_device(dcr, OPEN_READ_ONLY)) {
          Leave(dbglvl);
@@ -85,6 +86,8 @@ int DEVICE::read_dev_volume_label(DCR *dcr)
    clear_append();
    clear_read();
    label_type = B_BACULA_LABEL;
+   set_worm(get_tape_worm(dcr));
+   Dmsg1(dbglvl, "==== worm=%d ====\n", is_worm());
 
    if (!rewind(dcr)) {
       Mmsg(jcr->errmsg, _("Couldn't rewind %s device %s: ERR=%s\n"),
@@ -535,6 +538,12 @@ bool DEVICE::rewrite_volume_label(DCR *dcr, bool recycle)
    Enter(100);
    ASSERT2(dcr->VolumeName[0], "Empty Volume name");
    ASSERT(!dcr->block->adata);
+   if (is_worm()) {
+      Jmsg3(jcr, M_FATAL, 0,  _("Cannot relabel worm %s device %s Volume \"%s\"\n"),
+             print_type(), print_name(), dcr->VolumeName);
+      Leave(100);
+      return false;
+   }
    if (!open_device(dcr, OPEN_READ_WRITE)) {
        Jmsg4(jcr, M_WARNING, 0, _("Open %s device %s Volume \"%s\" failed: ERR=%s\n"),
              print_type(), print_name(), dcr->VolumeName, bstrerror());
@@ -784,13 +793,14 @@ void create_volume_header(DEVICE *dev, const char *VolName,
       bstrncpy(dev->VolHdr.Id, BaculaS3CloudId, sizeof(dev->VolHdr.Id));
       dev->VolHdr.VerNum = BaculaS3CloudVersion;
       dev->VolHdr.BlockSize = dev->max_block_size;
+      dev->VolHdr.MaxPartSize = dev->max_part_size;
    } else {
       bstrncpy(dev->VolHdr.Id, BaculaId, sizeof(dev->VolHdr.Id));
       dev->VolHdr.VerNum = BaculaTapeVersion;
       dev->VolHdr.BlockSize = dev->max_block_size;
    }
 
-   if (dev->has_cap(CAP_STREAM) && no_prelabel) {
+   if ((dev->has_cap(CAP_STREAM) && no_prelabel) || dev->is_worm()) {
       /* We do not want to re-label so write VOL_LABEL now */
       dev->VolHdr.LabelType = VOL_LABEL;
    } else {

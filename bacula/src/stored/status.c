@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2017 Kern Sibbald
+   Copyright (C) 2000-2018 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -129,9 +129,7 @@ void output_status(STATUS_PKT *sp)
    list_volumes(sendit, (void *)sp);
    if (!sp->api) sendit("====\n\n", 6, sp);
 
-
    list_spool_stats(sendit, (void *)sp);
-
    if (!sp->api) sendit("====\n\n", 6, sp);
 
    if (chk_dbglvl(10)) {
@@ -670,20 +668,22 @@ void send_device_status(DEVICE *dev, STATUS_PKT *sp)
 
    len = Mmsg(msg, _("Device state:\n"));
    sendit(msg, len, sp);
-   len = Mmsg(msg, "   %sOPENED %sTAPE %sLABEL %sMALLOC %sAPPEND %sREAD %sEOT %sWEOT %sEOF %sNEXTVOL %sSHORT %sMOUNTED\n",
+   len = Mmsg(msg, "   %sOPENED %sTAPE %sLABEL %sAPPEND %sREAD %sEOT %sWEOT %sEOF %sWORM %sNEXTVOL %sSHORT %sMOUNTED %sMALLOC\n",
       dev->is_open() ? "" : "!",
       dev->is_tape() ? "" : "!",
       dev->is_labeled() ? "" : "!",
-      dev->state & ST_MALLOC ? "" : "!",
       dev->can_append() ? "" : "!",
       dev->can_read() ? "" : "!",
       dev->at_eot() ? "" : "!",
       dev->state & ST_WEOT ? "" : "!",
       dev->at_eof() ? "" : "!",
-      dev->state & ST_NEXTVOL ? "" : "!",
-      dev->state & ST_SHORT ? "" : "!",
-      dev->state & ST_MOUNTED ? "" : "!");
+      dev->is_worm() ?  "" : "!",
+      dev->state & ST_NEXTVOL ?  "" : "!",
+      dev->state & ST_SHORT ?  "" : "!",
+      dev->state & ST_MOUNTED ?  "" : "!",
+      dev->state & ST_MALLOC ?  "" : "!");
    sendit(msg, len, sp);
+
    len = Mmsg(msg, _("   Writers=%d reserves=%d blocked=%d enabled=%d usage=%s\n"), dev->num_writers,
               dev->num_reserved(), dev->blocked(), dev->enabled,
                edit_uint64_with_commas(dev->usage, b1));

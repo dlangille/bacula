@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2000-2017 Kern Sibbald
+# Copyright (C) 2000-2018 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
 @MCOMMON@
@@ -78,7 +78,7 @@ LIBBACSD_SRCS = \
    init_dev.c label.c lock.c match_bsr.c mount.c \
    null_dev.c os.c parse_bsr.c read.c read_records.c \
    record_read.c record_util.c record_write.c reserve.c \
-   scan.c sd_plugins.c spool.c tape_alert.c vol_mgr.c wait.c \
+   scan.c sd_plugins.c spool.c tape_alert.c tape_worm.c vol_mgr.c wait.c \
    fifo_dev.c file_dev.c tape_dev.c vtape_dev.c
 
 LIBBACSD_OBJS = $(LIBBACSD_SRCS:.c=.o)

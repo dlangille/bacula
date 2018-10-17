@@ -238,9 +238,9 @@ void list_volumes(void sendit(const char *msg, int len, void *sarg), void *arg)
          len = Mmsg(msg, "Reserved volume: %s on %s device %s\n", vol->vol_name,
                   dev->print_type(), dev->print_name());
          sendit(msg.c_str(), len, arg);
-         len = Mmsg(msg, "    Reader=%d writers=%d reserves=%d volinuse=%d\n",
+         len = Mmsg(msg, "    Reader=%d writers=%d reserves=%d volinuse=%d worm=%d\n",
             dev->can_read()?1:0, dev->num_writers, dev->num_reserved(),
-            vol->is_in_use());
+            vol->is_in_use(), dev->is_worm());
          sendit(msg.c_str(), len, arg);
       } else {
          len = Mmsg(msg, "Volume %s no device. volinuse=%d\n", vol->vol_name,

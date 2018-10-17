@@ -47,7 +47,7 @@ static char Update_media[] = "CatReq JobId=%ld UpdateMedia VolName=%s"
    " VolErrors=%u VolWrites=%lld MaxVolBytes=%lld EndTime=%lld VolStatus=%10s"
    " Slot=%d relabel=%d InChanger=%d VolReadTime=%lld VolWriteTime=%lld"
    " VolFirstWritten=%lld VolType=%u VolParts=%d VolCloudParts=%d"
-   " LastPartBytes=%lld Enabled=%d\n";
+   " LastPartBytes=%lld Enabled=%d Recycle=%d\n";
 
 static char Create_jobmedia[] = "CatReq JobId=%ld CreateJobMedia\n";
 
@@ -59,7 +59,7 @@ static char OK_media[] = "1000 OK VolName=%s VolJobs=%u VolFiles=%u"
    " MaxVolJobs=%u MaxVolFiles=%u InChanger=%d VolReadTime=%s"
    " VolWriteTime=%s EndFile=%u EndBlock=%u VolType=%u LabelType=%d"
    " MediaId=%s ScratchPoolId=%s VolParts=%d VolCloudParts=%d"
-   " LastPartBytes=%lld Enabled=%d\n";
+   " LastPartBytes=%lld Enabled=%d Recycle=%d\n";
 
 static char OK_create[] = "1000 OK CreateJobMedia\n";
 
@@ -106,7 +106,8 @@ static int send_volume_info_to_storage_daemon(JCR *jcr, BSOCK *sd, MEDIA_DBR *mr
       mr->VolParts,
       mr->VolCloudParts,
       mr->LastPartBytes,
-      mr->Enabled);
+      mr->Enabled,
+      mr->Recycle);
    unbash_spaces(mr->VolumeName);
    Dmsg2(100, "Vol Info for %s: %s", jcr->Job, sd->msg);
    return stat;
@@ -127,7 +128,7 @@ void catalog_request(JCR *jcr, BSOCK *bs)
    utime_t VolFirstWritten;
    utime_t VolLastWritten;
    int n;
-   int Enabled;
+   int Enabled, Recycle;
    JobId_t JobId = 0;
 
    memset(&sdmr, 0, sizeof(sdmr));
@@ -250,8 +251,8 @@ void catalog_request(JCR *jcr, BSOCK *bs)
       &VolLastWritten, &sdmr.VolStatus, &sdmr.Slot, &label, &sdmr.InChanger,
       &sdmr.VolReadTime, &sdmr.VolWriteTime, &VolFirstWritten,
       &sdmr.VolType, &sdmr.VolParts, &sdmr.VolCloudParts,
-      &sdmr.LastPartBytes, &Enabled);
-    if (n == 26) {
+      &sdmr.LastPartBytes, &Enabled, &Recycle);
+    if (n == 27) {
       db_lock(jcr->db);
       Dmsg3(400, "Update media %s oldStat=%s newStat=%s\n", sdmr.VolumeName,
          mr.VolStatus, sdmr.VolStatus);
@@ -336,6 +337,7 @@ void catalog_request(JCR *jcr, BSOCK *bs)
       mr.VolCloudParts = sdmr.VolCloudParts;
       mr.LastPartBytes = sdmr.LastPartBytes;
       mr.Enabled       = Enabled;  /* byte assignment */
+      mr.Recycle       = Recycle;  /* byte assignment */
       bstrncpy(mr.VolStatus, sdmr.VolStatus, sizeof(mr.VolStatus));
       if (sdmr.VolReadTime >= 0) {
          mr.VolReadTime  = sdmr.VolReadTime;
