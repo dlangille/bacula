@@ -1685,6 +1685,8 @@ AC_CHECK_HEADERS( \
    sys/mtio.h \
    sys/tape.h \
    regex.h \
+   attr/attributes.h \
+   attr/xattr.h \
 )
 AC_HEADER_STDC
 AC_HEADER_MAJOR
