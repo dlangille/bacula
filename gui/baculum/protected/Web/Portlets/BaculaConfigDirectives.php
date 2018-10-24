@@ -30,6 +30,7 @@ Prado::using('Application.Web.Portlets.DirectiveBoolean');
 Prado::using('Application.Web.Portlets.DirectiveComboBox');
 Prado::using('Application.Web.Portlets.DirectiveInteger');
 Prado::using('Application.Web.Portlets.DirectiveListBox');
+Prado::using('Application.Web.Portlets.DirectiveSize');
 Prado::using('Application.Web.Portlets.DirectiveText');
 Prado::using('Application.Web.Portlets.DirectiveTimePeriod');
 Prado::using('Application.Web.Portlets.DirectiveRunscript');
@@ -52,6 +53,7 @@ class BaculaConfigDirectives extends DirectiveListTemplate {
 		'DirectiveInteger',
 		'DirectiveListBox',
 		'DirectiveText',
+		'DirectiveSize',
 		'DirectiveTimePeriod'
 	);
 

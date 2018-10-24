@@ -667,7 +667,7 @@
 				"Required": false,
 				"ValueType": "size64",
 				"DefaultValue": 0,
-				"FieldType": "TextBox"
+				"FieldType": "Size"
 			},
 			"ReRunFailedLevels": {
 				"Required": false,
@@ -1473,7 +1473,7 @@
 				"Required": false,
 				"ValueType": "size64",
 				"DefaultValue": 0,
-				"FieldType": "TextBox"
+				"FieldType": "Size"
 			},
 			"CatalogFiles": {
 				"Required": false,
@@ -1503,13 +1503,13 @@
 				"Required": false,
 				"ValueType": "size64",
 				"DefaultValue": 0,
-				"FieldType": "TextBox"
+				"FieldType": "Size"
 			},
 			"MigrationLowBytes": {
 				"Required": false,
 				"ValueType": "size64",
 				"DefaultValue": 0,
-				"FieldType": "TextBox"
+				"FieldType": "Size"
 			},
 			"NextPool": {
 				"Required": false,
@@ -2099,7 +2099,7 @@
 				"Required": false,
 				"ValueType": "size64",
 				"DefaultValue": 0,
-				"FieldType": "TextBox"
+				"FieldType": "Size"
 			},
 			"ReRunFailedLevels": {
 				"Required": false,
@@ -2767,49 +2767,49 @@
 				"Required": false,
 				"ValueType": "size32",
 				"DefaultValue": 0,
-				"FieldType": "TextBox"
+				"FieldType": "Size"
 			},
 			"MaximumBlockSize": {
 				"Required": false,
 				"ValueType": "maxblocksize",
 				"DefaultValue": 0,
-				"FieldType": "TextBox"
+				"FieldType": "Size"
 			},
 			"PaddingSize": {
 				"Required": false,
 				"ValueType": "size32",
 				"DefaultValue": 4096,
-				"FieldType": "TextBox"
+				"FieldType": "Size"
 			},
 			"FileAlignment": {
 				"Required": false,
 				"ValueType": "size32",
 				"DefaultValue": 4096,
-				"FieldType": "TextBox"
+				"FieldType": "Size"
 			},
 			"MaximumVolumeSize": {
 				"Required": false,
 				"ValueType": "size64",
 				"DefaultValue": 0,
-				"FieldType": "TextBox"
+				"FieldType": "Size"
 			},
 			"MaximumFileSize": {
 				"Required": false,
 				"ValueType": "size64",
 				"DefaultValue": 1000000000,
-				"FieldType": "TextBox"
+				"FieldType": "Size"
 			},
 			"VolumeCapacity": {
 				"Required": false,
 				"ValueType": "size64",
 				"DefaultValue": 0,
-				"FieldType": "TextBox"
+				"FieldType": "Size"
 			},
 			"MinimumFeeSpace": {
 				"Required": false,
 				"ValueType": "size64",
 				"DefaultValue": 5000000,
-				"FieldType": "TextBox"
+				"FieldType": "Size"
 			},
 			"MaximumConcurrentJobs": {
 				"Required": false,
@@ -2827,13 +2827,13 @@
 				"Required": false,
 				"ValueType": "size64",
 				"DefaultValue": 0,
-				"FieldType": "TextBox"
+				"FieldType": "Size"
 			},
 			"MaximumJobSpoolSize": {
 				"Required": false,
 				"ValueType": "size64",
 				"DefaultValue": 0,
-				"FieldType": "TextBox"
+				"FieldType": "Size"
 			},
 			"DriveIndex": {
 				"Required": false,
@@ -2845,7 +2845,7 @@
 				"Required": false,
 				"ValueType": "size64",
 				"DefaultValue": 0,
-				"FieldType": "TextBox"
+				"FieldType": "Size"
 			},
 			"MountPoint": {
 				"Required": false,

@@ -71,6 +71,11 @@
 						<com:Application.Web.Portlets.DirectiveTimePeriod />
 					</prop:TrueTemplate>
 				</com:Application.Web.Portlets.BConditional>
+				<com:Application.Web.Portlets.BConditional BCondition="<%#($this->Data['field_type'] === 'Size')%>">
+					<prop:TrueTemplate>
+						<com:Application.Web.Portlets.DirectiveSize />
+					</prop:TrueTemplate>
+				</com:Application.Web.Portlets.BConditional>
 				<com:Application.Web.Portlets.BConditional BCondition="<%#($this->Data['field_type'] === 'ComboBox')%>">
 					<prop:TrueTemplate>
 						<com:Application.Web.Portlets.DirectiveComboBox />

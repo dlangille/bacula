@@ -1,16 +1,28 @@
 var Units = {
-	formats: [
-		{format: 'second', value: 1},
-		{format: 'minute', value: 60},
-		{format: 'hour', value: 60},
-		{format: 'day', value: 24}
-	],
-	units: ['K', 'M', 'G', 'T', 'P'],
+	units: {
+		size: [
+			{short: '',  long: 'byte', value: 1},
+			{short: 'K', long: 'kilobyte', value: 1000},
+			{short: 'M', long: 'megabyte', value: 1000},
+			{short: 'G', long: 'gigabyte', value: 1000},
+			{short: 'T', long: 'terabyte', value: 1000},
+			{short: 'P', long: 'petabyte', value: 1000}
+		],
+		time: [
+			{long: 'second', value: 1},
+			{long: 'minute', value: 60},
+			{long: 'hour', value: 60},
+			{long: 'day', value: 24}
+		]
+	},
 	get_decimal_size: function(size) {
 		var dec_size;
 		var size_unit = 'B';
-		var units = Units.units.slice(0);
-
+		var units = [];
+		for (var u in Units.units.size) {
+			units.push(Units.units.size[u].short);
+		}
+		units.shift(); // remove "byte" unit
 		if (size === null) {
 			size = 0;
 		}
@@ -35,15 +47,32 @@ var Units = {
 		}
 		return dec_size;
 	},
+	format_size: function(size_bytes, format) {
+		var reminder;
+		var f = this.units.size[0].long;
+		for (var i = 0; i < this.units.size.length; i++) {
+			if (this.units.size[i].long != format && size_bytes) {
+				reminder = size_bytes % this.units.size[i].value
+				if (reminder === 0) {
+					size_bytes /= this.units.size[i].value;
+					f = this.units.size[i].long;
+					continue;
+				}
+				break;
+			}
+		}
+		var ret = {value: size_bytes, format: f};
+		return ret;
+	},
 	format_time_period: function(time_seconds, format) {
 		var reminder;
-		var f;
-		for (var i = 0; i < this.formats.length; i++) {
-			if (this.formats[i].format != format) {
-				reminder = time_seconds % this.formats[i].value;
+		var f = this.units.time[0].long;
+		for (var i = 0; i < this.units.time.length; i++) {
+			if (this.units.time[i].long != format && time_seconds) {
+				reminder = time_seconds % this.units.time[i].value;
 				if (reminder === 0) {
-					time_seconds /= this.formats[i].value;
-					f = this.formats[i].format;
+					time_seconds /= this.units.time[i].value;
+					f = this.units.time[i].long;
 					continue;
 				}
 				break;
