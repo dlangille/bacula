@@ -107,9 +107,9 @@ class BaculumWebPage extends BaculumPage {
 		}
 
 		// Set director
-		$directors = $this->getModule('api')->get(array('directors'))->output;
-		if(count($directors) > 0 && (!key_exists('director', $_SESSION) || $directors[0] != $_SESSION['director'])) {
-			$_SESSION['director'] = $directors[0];
+		$directors = $this->getModule('api')->get(array('directors'), null, false);
+		if ($directors->error === 0 && count($directors->output) > 0 && (!key_exists('director', $_SESSION) || $directors->output[0] != $_SESSION['director'])) {
+			$_SESSION['director'] = $directors->output[0];
 		}
 
 		// Set config main component names
