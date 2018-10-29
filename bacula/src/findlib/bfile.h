@@ -122,6 +122,7 @@ bool    set_portable_backup(BFILE *bfd);
 bool    set_cmd_plugin(BFILE *bfd, JCR *jcr);
 bool    have_win32_api();
 bool    is_portable_backup(BFILE *bfd);
+bool    is_plugin_data(BFILE *bfd);
 bool    is_restore_stream_supported(int stream);
 bool    is_win32_stream(int stream);
 int     bopen(BFILE *bfd, const char *fname, uint64_t flags, mode_t mode);

@@ -337,6 +337,11 @@ bool is_portable_backup(BFILE *bfd)
    return !bfd->use_backup_api;
 }
 
+bool is_plugin_data(BFILE *bfd)
+{
+   return bfd->cmd_plugin;
+}
+
 bool have_win32_api()
 {
    return p_BackupRead && p_BackupWrite;
@@ -901,6 +906,11 @@ bool set_win32_backup(BFILE *bfd)
 bool set_portable_backup(BFILE *bfd)
 {
    return true;                        /* no problem */
+}
+
+bool is_plugin_data(BFILE *bfd)
+{
+   return bfd->cmd_plugin;
 }
 
 /*
