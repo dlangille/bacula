@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2016-12-07 22:43:34\n"
+"PO-Revision-Date: 2014-11-30 22:43:34\n"
 "Project-Id-Version: \n"
 "POT-Creation-Date: \n"
 "Last-Translator: Ken Sawada <ksawa0126@gmail.com>\n"
@@ -11,914 +11,381 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: Poedit 1.5.4\n"
 
-msgid "Language:"
-msgstr "言語:"
+msgid "(optional)"
+msgstr "(optional)"
 
-msgid "select language"
-msgstr "select language"
+msgid "10 elements"
+msgstr "10 elements"
 
-msgid "English"
-msgstr "English"
+msgid "100 elements"
+msgstr "100 elements"
 
-msgid "Polish"
-msgstr "Polish"
+msgid "1000 elements"
+msgstr "1000 elements"
 
-msgid "Portuguese"
-msgstr "Portuguese"
+msgid "200 elements"
+msgstr "200 elements"
 
-msgid "Japanese"
-msgstr "日本語"
+msgid "25 elements"
+msgstr "25 elements"
 
-msgid "Language"
-msgstr "言語"
+msgid "50 elements"
+msgstr "50 elements"
 
-msgid "Licence"
-msgstr "ライセンス"
+msgid "500 elements"
+msgstr "500 elements"
 
-msgid "Database"
-msgstr "データベース"
+msgid "API Address:"
+msgstr "API Address:"
 
-msgid "Authorization"
-msgstr "管理者設定"
+msgid "API Login:"
+msgstr "APIログイン名:"
 
-msgid "Finish"
-msgstr "完了"
+msgid "API Password:"
+msgstr "APIパスワード:"
 
-msgid "Console"
-msgstr "コンソール"
+msgid "API connection test:"
+msgstr "API接続テスト:"
 
-msgid "Step 1 - select language"
-msgstr "Step 1 - 言語選択"
+msgid "API host"
+msgstr "API host"
 
-msgid "Please select language."
-msgstr "言語を選択してください"
+msgid "API host:"
+msgstr "API host:"
 
-msgid "Step 2 - add API instances"
-msgstr "Step 2 - add API instances"
-
-msgid "Step 3 - params of Bacula database connection"
-msgstr "Step 3 - Baculaデータベース接続情報入力"
-
-msgid "Step 4 - Baculum access to bconsole"
-msgstr "Step 4 - Baculumからbconsoleへ接続設定"
-
-msgid "Step 5 - authorization params to Baculum"
-msgstr "Step 5 - 管理権限ユーザ作成"
-
-msgid "Step 6 - Finish"
-msgstr "Step 6 - 完了"
-
-msgid "Save"
-msgstr "保存"
-
-msgid "I have read the license terms and accept them"
-msgstr "I have read the license terms and accept them"
-
-msgid "Database type:"
-msgstr "使用データベース:"
-
-msgid "select database"
-msgstr "select database"
-
-msgid "Need to move on to accept the license."
-msgstr "Need to move on to accept the license."
-
-msgid "Database name:"
-msgstr "データベース名:"
-
-msgid "Please select database type."
-msgstr "Please select database type."
-
-msgid "Please enter database name."
-msgstr "Please enter database name."
-
-msgid "Login:"
-msgstr "ログイン名:"
-
-msgid "Please enter login."
-msgstr "Please enter login."
-
-msgid "Password:"
-msgstr "パスワード:"
-
-msgid "IP address (or hostname):"
-msgstr "IPアドレス (もしくはホスト名):"
-
-msgid "Please enter IP address or hostname."
-msgstr "Please enter IP address or hostname."
-
-msgid "Port:"
-msgstr "ポート番号:"
-
-msgid "Please enter database port."
-msgstr "Please enter database port."
-
-msgid "SQLite database path:"
-msgstr "SQLite database path:"
-
-msgid "Please enter database path."
-msgstr "Please enter database path."
-
-msgid "Connection test:"
-msgstr "接続テスト:"
-
-msgid "Loading..."
-msgstr "Loading..."
-
-msgid "OK"
-msgstr "OK"
-
-msgid "Connection error"
-msgstr "Connection error"
-
-msgid "test"
-msgstr "テスト実行"
-
-msgid "Bconsole binary file path:"
-msgstr "bconsoleパス:"
-
-msgid "Please enter bconsole path."
-msgstr "bconsoleのパス"
-
-msgid "Please enter bconsole config file path."
-msgstr "bconsoleの設定ファイルの場所"
-
-msgid "Use sudo:"
-msgstr "sudoを使用:"
-
-msgid "Bconsole connection test:"
-msgstr "Bconsole接続テスト"
-
-msgid "Administration login:"
-msgstr "管理者名:"
-
-msgid "Administration password:"
-msgstr "管理者パスワード:"
-
-msgid "Please enter password."
-msgstr "パスワード入力"
-
-msgid "Password must be longer than 4 chars."
-msgstr "Password must be longer than 4 chars."
-
-msgid "Retype administration password:"
-msgstr "管理者パスワード再入力:"
-
-msgid "Please enter retype password."
-msgstr "Please enter retype password."
-
-msgid "Passwords must be the same."
-msgstr "Passwords must be the same."
-
-msgid "Database parameters"
-msgstr "データベース接続設定"
-
-msgid "Database port:"
-msgstr "データベースポート番号:"
-
-msgid "Bconsole access"
-msgstr "bconsoleアクセス設定"
-
-msgid "Use sudo for bconsole requests:"
-msgstr "bconsole使用にsudoを使用する:"
-
-msgid "Authorization to Baculum panel"
-msgstr "管理者設定"
-
-msgid "Step 7 - Finish"
-msgstr "Step 7 - 完了"
-
-msgid "Storage name:"
-msgstr "ストレージ名:"
-
-msgid "Console status"
-msgstr "bconsole ステータス"
-
-msgid "Drive number:"
-msgstr "Drive number:"
-
-msgid "Slot number:"
-msgstr "スロット番号:"
-
-msgid "Mount"
-msgstr "マウント"
-
-msgid "Release"
-msgstr "リリース"
-
-msgid "Umount"
-msgstr "アンマウント"
-
-msgid "Status"
-msgstr "ステータス"
-
-msgid "Available actions"
-msgstr "Available actions"
-
-msgid "Close"
-msgstr "Close"
-
-msgid "Operation is in progress"
-msgstr "Operation is in progress"
-
-msgid "Volume status:"
-msgstr "ボリュームステータス:"
-
-msgid "Pool:"
-msgstr "プール:"
-
-msgid "Recycle:"
-msgstr "ボリューム再利用:"
-
-msgid "Enabled:"
-msgstr "ボリューム有効:"
-
-msgid "In changer:"
-msgstr "In changer:"
-
-msgid "Apply"
-msgstr "適用"
-
-msgid "Volume name:"
-msgstr "ボリューム名:"
-
-msgid "Client name:"
-msgstr "クライアント名:"
-
-msgid "Information about version"
-msgstr "Information about version"
-
-msgid "Pool name:"
-msgstr "プール名:"
-
-msgid "Purge"
-msgstr "Purge"
-
-msgid "Prune"
-msgstr "Prune"
-
-msgid "Switch the window view (normal/details)"
-msgstr "閲覧モード切り替え (シンプル/詳細)"
-
-msgid "Maximum volumes:"
-msgstr "最大ボリューム数:"
-
-msgid "AutoPrune:"
-msgstr "自動削除:"
-
-msgid "Action on purge:"
-msgstr "Action on purge:"
-
-msgid "Label format:"
-msgstr "ラベルフォーマット:"
-
-msgid "Scratch pool:"
-msgstr "Scratch pool:"
-
-msgid "Recycle pool:"
-msgstr "Recycle pool:"
-
-msgid "Restore configuration"
-msgstr "Restore configuration"
-
-msgid "Update volumes"
-msgstr "Update volumes"
-
-msgid "Client:"
-msgstr "クライアント:"
-
-msgid "Job name:"
-msgstr "ジョブ名:"
-
-msgid "Storage:"
-msgstr "ストレージ:"
-
-msgid "Level:"
-msgstr "ジョブ実行レベル:"
-
-msgid "FileSet:"
-msgstr "ファイルセット:"
-
-msgid "Priority:"
-msgstr "優先度:"
-
-msgid "Run job"
-msgstr "ジョブ実行"
-
-msgid "Estimate job"
-msgstr "ジョブテスト実行"
+msgid ""
+"Above administration login and administration password will be used for "
+"login as administrator to Baculum WebGUI. They are your HTTP Basic "
+"authorization params by using which you will be logged in to Baculum."
+msgstr ""
+"Above administration login and administration password will be used for "
+"login as administrator to Baculum WebGUI. They are your HTTP Basic "
+"authorization params by using which you will be logged in to Baculum."
 
 msgid "Accurate:"
 msgstr "Accurate(高精度モード):"
 
-msgid "Storage Daemons"
-msgstr "ストレージ"
+msgid "Action"
+msgstr "Action"
 
-msgid "Clients"
-msgstr "クライアント"
+msgid "Action on purge"
+msgstr "Action on purge"
 
-msgid "Volumes"
-msgstr "ボリューム"
-
-msgid "Pools"
-msgstr "プール"
-
-msgid "Jobs"
-msgstr "一覧"
-
-msgid "Limit:"
-msgstr "表示件数:"
-
-msgid "Search:"
-msgstr "検索:"
-
-msgid "View mode:"
-msgstr "閲覧モード:"
-
-msgid "simple"
-msgstr "シンプル"
-
-msgid "details"
-msgstr "詳細"
-
-msgid "Retention period value must be integer."
-msgstr "Retention period value must be integer."
-
-msgid "There is not possible to run selected action because:"
-msgstr "There is not possible to run selected action because:"
-
-msgid "Drive number must be integer."
-msgstr "Drive number must be integer."
-
-msgid "Slot number must be integer."
-msgstr "Slot number must be integer."
-
-msgid "File retention value must be integer."
-msgstr "File retention value must be integer."
-
-msgid "Job retention value must be integer."
-msgstr "Job retention value must be integer."
-
-msgid "Vol. use duration value must be integer."
-msgstr "Vol. use duration value must be integer."
-
-msgid "Max. vol. jobs:"
-msgstr "最大ボリュームジョブ数:"
-
-msgid "Max. vol. jobs value must be integer."
-msgstr "Max. vol. jobs value must be integer."
-
-msgid "Max. vol. files:"
-msgstr "最大ボリュームファイル数:"
-
-msgid "Max. vol. files value must be integer."
-msgstr "Max. vol. files value must be integer."
-
-msgid "Max. vol. bytes:"
-msgstr "最大ボリューム容量(bytes):"
-
-msgid "Max. vol. bytes value must be integer."
-msgstr "Max. vol. bytes value must be integer."
-
-msgid "Slot value must be integer."
-msgstr "Slot value must be integer."
-
-msgid "Max. volumes value must be integer."
-msgstr "Max. volumes value must be integer."
-
-msgid "Use duration value must be integer."
-msgstr "Use duration value must be integer."
-
-msgid "Label format value must not be empty."
-msgstr "Label format value must not be empty."
-
-msgid "Priority value must be integer greather than 0."
-msgstr "Priority value must be integer greather than 0."
-
-msgid "File retention value must be positive integer or zero."
-msgstr "File retention value must be positive integer or zero."
-
-msgid "Job retention value must be positive integer or zero."
-msgstr "Job retention value must be positive integer or zero."
-
-msgid "File retention (in days):"
-msgstr "ファイル保持期間 (日数で指定):"
-
-msgid "Job retention (in days):"
-msgstr "ジョブ保持期間 (日数で指定):"
-
-msgid "select pool"
-msgstr "プール選択"
-
-msgid "Retention period (in hours):"
-msgstr "ボリューム保持期間 (in hours):"
-
-msgid "Vol. use duration (in hours):"
-msgstr "ボリューム使用期間 (in hours):"
-
-msgid "Job to restore:"
-msgstr "Job to restore:"
-
-msgid "Backup from client:"
-msgstr "リストアするクライアント選択:"
-
-msgid "Restore to client:"
-msgstr "リストア先クライアント:"
-
-msgid "Backup for restore:"
-msgstr "リストア一覧:"
-
-msgid "Step 1 - select source backup client"
-msgstr "Step 1 - リストアするクラアントを選択"
-
-msgid "Client"
-msgstr "クライアント"
-
-msgid "Backup"
-msgstr "Backup"
-
-msgid "Step 2 - select backup to restore"
-msgstr "Step 2 - リストア対象を選択"
-
-msgid "Backup selection method:"
-msgstr "リストア対象を選択:"
-
-msgid "Only selected backup"
-msgstr "手動でリストア対象を一覧から選択"
-
-msgid "FileSet resource:"
-msgstr "ファイルセット リソース:"
-
-msgid "Storage resource:"
-msgstr "ストレージ リソース:"
-
-msgid "Pool resource:"
-msgstr "プール リソース:"
-
-msgid "Step 3 - select files to restore"
-msgstr "Step 3 - リストアするファイルを選択"
-
-msgid "Files"
-msgstr "ファイル"
-
-msgid "For see a file versions please click file on the left files browser."
-msgstr "For see a file versions please click file on the left files browser."
-
-msgid "For add a file to restore please click 'Add' link or drag a file from frame on left or from above frame and drop it here"
-msgstr "左側のフレームからaddをクリックするか「ここ」にファイルをドラック＆ドロップしてリストア対象のファイルを追加してください"
-
-msgid "It seems that there is no files for choosing or file records in database for this job has been purged (file retention period expired)"
-msgstr "It seems that there is no files for choosing or file records in database for this job has been purged (file retention period expired)"
-
-msgid "Group most recent backups"
-msgstr "最新ファイルからリストア"
-
-msgid "Where"
-msgstr "リストア先"
-
-msgid "Restore to directory:"
-msgstr "リストア先ディレクトリ:"
-
-msgid "Step 4 - select destination for restore"
-msgstr "Step 4 - リストア先を指定"
-
-msgid "Step 5 - options for restore"
-msgstr "Step 5 - リストアオプション"
-
-msgid "Replace files:"
-msgstr "リストア先のファイル上書き:"
-
-msgid "Options"
-msgstr "オプション"
-
-msgid "Restore job priority:"
-msgstr "リストアジョブの優先度:"
-
-msgid "do not replace files"
-msgstr "ファイルの上書きはしない"
-
-msgid "if files from restore are older"
-msgstr "リストアするファイルが古い場合上書き"
-
-msgid "if files from restore are newer"
-msgstr "リストアするファイルが新しい場合上書き"
-
-msgid "always replace files"
-msgstr "ファイルの上書きをする"
-
-msgid "Source parameters"
-msgstr "リストア情報"
-
-msgid "Backup data from client:"
-msgstr "リストア対象クライアント:"
-
-msgid "FileSet for restore:"
-msgstr "FileSet for restore:"
-
-msgid "Files for restore"
-msgstr "リストアファイル情報"
-
-msgid "Selected files count:"
-msgstr "選択されたファイル数:"
-
-msgid "Destination parameters"
-msgstr "リストア先クライアント情報"
-
-msgid "Restore to path:"
-msgstr "リストア先パス:"
-
-msgid "Restore job options"
-msgstr "リストアジョブオプション"
-
-msgid "Run restore"
-msgstr "リストア実行"
-
-msgid "Run"
-msgstr "実行"
-
-msgid "Cancel"
-msgstr "キャンセル"
-
-msgid "There is no backup for restore. Please go to previous step and select another client for restore or proceed backups for the client selected in previous step."
-msgstr "There is no backup for restore. Please go to previous step and select another client for restore or proceed backups for the client selected in previous step."
-
-msgid "Database file path (SQLite only):"
-msgstr "データベースパス (SQLiteのみ):"
-
-msgid "Selected directories count:"
-msgstr "選択されたディレクトリ数:"
-
-msgid "Delete job"
-msgstr "ジョブ削除"
-
-msgid "Cancel job"
-msgstr "Cancel job"
-
-msgid "NOTE!"
-msgstr "注意!"
-
-msgid "Baculum needs access to bconsole by the web server."
-msgstr "Baculumはbconsoleからアクセスできるよう設定しておく必要があります。"
-
-msgid "Director:"
-msgstr "Director:"
-
-msgid "Jobs for run"
-msgstr "Jobs for run"
-
-msgid "Run job again"
-msgstr "ジョブ再実行"
-
-msgid "Job status"
-msgstr "ジョブ ステータス"
-
-msgid "Bacula console"
-msgstr "Bacula console"
-
-msgid "show console"
-msgstr "bconsole表示"
-
-msgid "hide console"
-msgstr "bconsole非表示"
-
-msgid "volumes tools"
-msgstr "ボリュームツール"
-
-msgid "Label volume(s)"
-msgstr "Label volume(s)"
-
-msgid "Update slots using barcodes"
-msgstr "Update slots using barcodes"
-
-msgid "Update slots without barcodes"
-msgstr "Update slots without barcodes"
-
-msgid "Label name:"
-msgstr "Label name:"
-
-msgid "Label"
-msgstr "Label"
-
-msgid "Use barcodes as label:"
-msgstr "Use barcodes as label:"
-
-msgid "Slots for label:"
-msgstr "Slots for label:"
-
-msgid "Slots for update:"
-msgstr "Slots for update:"
-
-msgid "Update barcodes slots"
-msgstr "Update barcodes slots"
-
-msgid "Update slots scan"
-msgstr "Update slots scan"
-
-msgid "Label name have to contain string value from set [0-9a-zA-Z_-]."
-msgstr "Label name has to contain string value from set [0-9a-zA-Z_-]."
-
-msgid "Slots for label have to contain string value from set [0-9-,]."
-msgstr "Slots for label have to contain string value from set [0-9-,]."
-
-msgid "Drive has to contain digit value from set [0-9]."
-msgstr "Drive has to contain digit value from set [0-9]."
-
-msgid "Slots for update have to contain string value from set [0-9-,]."
-msgstr "Slots for update have to contain string value from set [0-9-,]."
-
-msgid "Baculum problem"
-msgstr "Baculum problem"
-
-msgid "What can I do"
-msgstr "What can I do"
-
-msgid "Please check Baculum logs if there are some errors."
-msgstr "Please check Baculum logs if there are some errors."
-
-msgid "Please check Web Server logs if there are some errors."
-msgstr "Please check Web Server logs if there are some errors."
-
-msgid "Please check other system logs if there are some errors."
-msgstr "Please check other system logs if there are some errors."
-
-msgid "Error 2 - problem with connection to database."
-msgstr "Error 2 - problem with connection to database."
-
-msgid "Please check if Catalog database service is running."
-msgstr "Please check if Catalog database service is running."
-
-msgid "Please check if Web Server user is allowed for connection to Catalog database."
-msgstr "Please check if Web Server user is allowed for connection to Catalog database."
-
-msgid "Please re-run"
-msgstr "Please re-run"
-
-msgid "Baculum Initial Wizard"
-msgstr "Baculum Initial Wizard"
-
-msgid "and on step"
-msgstr "and on step"
-
-msgid "please perform connection test."
-msgstr "please perform connection test."
-
-msgid "Error 4 - problem with connection to bconsole."
-msgstr "Error 4 - problem with connection to bconsole."
-
-msgid "Please check if Bacula Director service is running."
-msgstr "Please check if Bacula Director service is running."
-
-msgid "Please check in shell console if bconsole program is able to connect to Bacula Director service."
-msgstr "Please check in shell console if bconsole program is able to connect to Bacula Director service."
-
-msgid "Please be sure if Web Server user is allowed for executing bconsole program."
-msgstr "Please be sure if Web Server user is allowed for executing bconsole program."
-
-msgid "You can login to shell console as Web Server user and try to run bconsole program."
-msgstr "You can login to shell console as Web Server user and try to run bconsole program."
-
-msgid "internal Baculum error."
-msgstr "internal Baculum error."
-
-msgid "TRY AGAIN"
-msgstr "TRY AGAIN"
-
-msgid "authorization to Baculum error."
-msgstr "authorization to Baculum error."
-
-msgid "Please check Web Server authorization file if it is correct."
-msgstr "Please check Web Server authorization file if it is correct."
-
-msgid "Please check Web Server authorization file if it is defined and it is correct."
-msgstr "Please check Web Server authorization file if it is defined and it is correct."
-
-msgid "Please be sure if Web Server authorization is enabled (for Apache it is option 'AllowOverride All') and if the authorization works properly."
-msgstr "Please be sure if Web Server authorization is enabled (for Apache it is option 'AllowOverride All') and if the authorization works properly."
-
-msgid "please retype authorization login and authorization password to according Web Server authorization values."
-msgstr "please retype authorization login and authorization password to according Web Server authorization values."
-
-msgid "Enable debug"
-msgstr "Baculumデバッグ有効"
-
-msgid "clear bvfs cache"
-msgstr "bvfsキャッシュクリア"
-
-msgid "Bconsole admin config file path:"
-msgstr "bconsoleの設定ファイルパス:"
-
-msgid "Bconsole custom config file path:"
-msgstr "ユーザごとのbconsole設定ファイルパス:"
-
-msgid "Please enter bconsole custom config file path."
-msgstr "Please enter bconsole custom config file path."
-
-msgid "For need defining more Baculum users with custom access or restricted console access (Bconsole ACLs) here is possible to determine custom bconsole configuration file format for each user."
-msgstr "Baculumユーザごとの制限付きbconsole設定(bconsole ACL)を行う場合はユーザごとに設定ファイルが必要になります。"
-
-msgid "If there is used only one Baculum user then below field value will be ignored"
-msgstr "Baculumユーザが一人の場合はbconsole.confのみの設定で問題ありません。"
-
-msgid "{user} keyword will be replaced for each logged user into according username."
-msgstr "{user} キーワードはログインした各ユーザーのユーザー名に置き換えられます。"
-
-msgid "If there is used only one Baculum user then below field value will be ignored."
-msgstr "Baculumユーザが一人の場合はbconsole.confのみの設定で問題ありません。"
-
-msgid "Above administration login and administration password will be used for login as administrator to Baculum WebGUI. They are your HTTP Basic authorization params by using which you will be logged in to Baculum."
-msgstr "上記で設定する管理者名と管理者パスワードは、BaculumのWebGUI管理者としてのログインに使用されます。BaculumにログインするためのHTTP Basic認証パラメータとなります。"
-
-msgid "If all above steps will not help or if during installation you made mistake in password in Initial Wizard, please remove settings file located in baculum/protected/Data/settings.conf and re-run Initial wizard."
-msgstr "If all above steps will not help or if during installation you made mistake in password in Initial Wizard, please remove settings file located in baculum/protected/Data/settings.conf and re-run Initial wizard."
+msgid "Action on purge:"
+msgstr "Action on purge:"
 
 msgid "Action:"
 msgstr "Action:"
 
-msgid "unmark all and close"
-msgstr "unmark all and close"
+msgid "Actions"
+msgstr "Actions"
 
-msgid "This action will clear bvfs cache that was created during preparing restore files. There is not recommended use this action during restore job working. Are you sure?"
-msgstr "リストアファイル準備中に作成されたbvfsキャッシュをクリアします。\\n\\nリストアジョブ実行中にbvfsキャッシュクリアは実行しないでください。\\n\\n実行しますか？"
+msgid "Add"
+msgstr "追加"
 
-msgid "Debug files enable possibility to save most of actions executed on Baculum WebGUI. Debug functionality should be enabled if is happening shomething wrong with Baculum or something that looks like a bug. Logs can be useful for detecting a problems in Baculum working. After confirmation this message Baculum debug files will be continuously saving in /protected/Web/Logs/ directory. Are you sure?"
-msgstr "デバッグを有効にするとBaculumに関するほとんどのアクションを保存することができます。デバックを有効にすることによりBaculumのバグや作業中の問題検出をするために役立ちます。デバッグログは/protected/Web/Logs/に出力されます。デバッグを有効にしますか?"
+msgid "Add API host"
+msgstr "APIサーバー追加"
 
-msgid "10 elements"
-msgstr "10件"
+msgid "Add APIs"
+msgstr "API追加"
 
-msgid "25 elements"
-msgstr "25件"
+msgid "Add autochanger"
+msgstr "Add autochanger"
 
-msgid "50 elements"
-msgstr "50件"
+msgid "Add client"
+msgstr "Add client"
 
-msgid "100 elements"
-msgstr "100件"
+msgid "Add device"
+msgstr "Add device"
 
-msgid "200 elements"
-msgstr "200件"
+msgid "Add fileset"
+msgstr "Add fileset"
 
-msgid "500 elements"
-msgstr "500件"
+msgid "Add host"
+msgstr "Add host"
 
-msgid "unlimited"
-msgstr "全て表示"
+msgid "Add job"
+msgstr "Add job"
 
-msgid "1000 elements"
-msgstr "1000件"
+msgid "Add new %resource_type resource on %component_name (%component_type)"
+msgstr "Add new %resource_type resource on %component_name (%component_type)"
 
-msgid "Volume name"
-msgstr "ボリューム名"
+msgid "Add new Client"
+msgstr "Add new Client"
 
-msgid "Slot"
-msgstr "Slot"
+msgid "Add new resource"
+msgstr "Add new resource"
 
-msgid "Pool"
-msgstr "プール"
+msgid "Add new user"
+msgstr "ユーザー追加"
 
-msgid "When expire"
-msgstr "削除日"
+msgid "Add pool"
+msgstr "Add pool"
 
-msgid "Storage name"
-msgstr "ストレージ名"
+msgid "Add prefix:"
+msgstr "Add prefix:"
+
+msgid "Add schedule"
+msgstr "Add schedule"
+
+msgid "Add storage"
+msgstr "Add storage"
+
+msgid "Add suffix:"
+msgstr "Add suffix:"
+
+msgid "Admin Bconsole config file path (usually bconsole.conf):"
+msgstr "Admin Bconsole config file path (usually bconsole.conf):"
+
+msgid "Administration login:"
+msgstr "管理者ログイン名:"
+
+msgid "Administration password:"
+msgstr "管理者パスワード:"
+
+msgid "Administrator"
+msgstr "Administrator"
+
+msgid "Application settings"
+msgstr "Application settings"
+
+msgid "Apply"
+msgstr "Apply"
+
+msgid "Are you sure that you want to remove %s resource \"%s\"?"
+msgstr "Are you sure that you want to remove %s resource \"%s\"?"
+
+msgid "Are you sure you want to remove this resource?"
+msgstr "Are you sure you want to remove this resource?"
+
+msgid "At HH:MM"
+msgstr "At HH:MM"
+
+msgid "Auth Type:"
+msgstr "Auth Type:"
+
+msgid "Authentication"
+msgstr "認証"
+
+msgid "Authorization to Baculum API"
+msgstr "Baculum API 設定"
+
+msgid "Authorization to Baculum Web"
+msgstr "Baculum Web 管理ユーザー設定"
+
+msgid "Authorization to Baculum panel"
+msgstr "Authorization to Baculum panel"
+
+msgid "AutoPrune"
+msgstr "AutoPrune(自動削除)"
+
+msgid "AutoPrune:"
+msgstr "AutoPrune:"
 
 msgid "Autochanger"
-msgstr "オートチェンジャー"
+msgstr "Autochanger"
 
-msgid "No"
-msgstr "No"
+msgid "Available actions"
+msgstr "Available actions"
 
-msgid "days"
-msgstr "days"
+msgid "Backup"
+msgstr "バックアップ"
 
-msgid "day"
-msgstr "day"
+msgid "Backup data from client:"
+msgstr "リストア対象クライアント:"
 
-msgid "Warning! You checked over 50 elements. Please note, that in case more time consuming actions, web browser request may timed out after 30 seconds. It this case action will be canceled and in consequence the action may not touch all selected elements. Are you sure you want to continue?"
-msgstr "Warning!\\n\\nYou checked over 50 elements.\\n\\nPlease note, that in case more time consuming actions, web browser request may timed out after 30 seconds. It this case action will be canceled and in consequence the action may not touch all selected elements.\\n\\nAre you sure you want to continue?"
+msgid "Backup for restore:"
+msgstr "リストア一覧:"
 
-msgid "Close the window"
-msgstr "ウインドウを閉じる"
+msgid "Backup from client:"
+msgstr "リストア対象クライアント:"
+
+msgid "Backup selection method:"
+msgstr "リストア対象を選択:"
+
+msgid "Bacula console"
+msgstr "Bacula console"
+
+msgid "Baculum Initial Wizard"
+msgstr "Baculum Initial Wizard"
+
+msgid "Baculum Settings"
+msgstr "Baculum Settings"
+
+msgid "Baculum needs access to bconsole by the web server."
+msgstr "Baculum needs access to bconsole by the web server."
+
+msgid "Baculum problem"
+msgstr "Baculum problem"
+
+msgid ""
+"Baculum web interface requires to add at least one Baculum API instance with "
+"shared Catalog access. Please add API instance."
+msgstr ""
+"Baculum webを使用するためにはBaculum APIがインストールされたサーバーと通信できる必要があります。"
+"最低1台以上のAPIサーバを登録してください。"
+
+msgid "Bconsole access"
+msgstr "Bconsole access"
+
+msgid "Bconsole admin config file path:"
+msgstr "Bconsole admin config file path:"
+
+msgid "Bconsole binary file path:"
+msgstr "Bconsole binary file path:"
+
+msgid "Bconsole connection test:"
+msgstr "Bconsole connection test:"
+
+msgid "Bconsole custom config file path:"
+msgstr "Bconsole custom config file path:"
+
+msgid "Cancel"
+msgstr "キャンセル"
+
+msgid "Cancel job"
+msgstr "Cancel job"
+
+msgid "Catalog support"
+msgstr "Catalog support"
+
+msgid "Change password"
+msgstr "パスワード変更"
 
 msgid "Change the window size"
-msgstr "ウインドウサイズ変更"
-
-msgid "Configuration of storage daemons."
-msgstr "ストレージ設定表示"
-
-msgid "Configuration of clients daemons."
-msgstr "クライアント一覧"
-
-msgid "Management of volumes."
-msgstr "ボリューム設定表示"
-
-msgid "Management of volumes pools."
-msgstr "プール設定表示"
-
-msgid "Jobs settings."
-msgstr "ジョブ一覧"
-
-msgid "Starting jobs."
-msgstr "ジョブ実行"
-
-msgid "Restore"
-msgstr "リストア"
-
-msgid "Restore wizard."
-msgstr "リストア実行"
-
-msgid "Settings"
-msgstr "設定"
-
-msgid "Management settings wizard."
-msgstr "Baculum設定"
-
-msgid "Client name"
-msgstr "クライアント名"
-
-msgid "File Retention"
-msgstr "ファイル保持期間"
-
-msgid "Job Retention"
-msgstr "ジョブ保持期間"
-
-msgid "Last written:"
-msgstr "Last written:"
-
-msgid "never written"
-msgstr "never written"
-
-msgid "When expire:"
-msgstr "When expire:"
-
-msgid "Job name"
-msgstr "ジョブ名"
-
-msgid "End time"
-msgstr "終了時間"
-
-msgid "Type"
-msgstr "Type"
-
-msgid "Level"
-msgstr "Level"
-
-msgid "Director"
-msgstr "Director"
-
-msgid "Enter"
-msgstr "Enter"
+msgstr "Change the window size"
 
 msgid "Clear"
 msgstr "Clear"
 
-msgid "select action"
-msgstr "select action"
+msgid "Client"
+msgstr "クライアント"
 
-msgid "Delete"
-msgstr "Delete"
+msgid "Client details"
+msgstr "Client details"
 
-msgid "Output for selected job is not available yet or you do not have enabled logging job logs to the catalog database. For watching job the log you need to add to the job Messages resource the following directive: console = all, !skipped, !saved"
-msgstr "Output for selected job is not available yet or you do not have enabled logging job logs to catalog database.\n\nFor watching job log there is need to add to the job Messages resource next directive:\n\nconsole = all, !skipped, !saved"
+msgid "Client list"
+msgstr "Client list"
 
-msgid "Workspace"
-msgstr "ワークスペース"
+msgid "Client name"
+msgstr "Client name"
 
-msgid "Graphs"
-msgstr "統計レポート"
+msgid "Client name:"
+msgstr "Client name:"
 
-msgid "select job"
-msgstr "select job"
+msgid "Client:"
+msgstr "Client:"
 
-msgid "Last 6 hours"
-msgstr "Last 6 hours"
+msgid "Clients"
+msgstr "Clients"
 
-msgid "Last 12 hours"
-msgstr "Last 12 hours"
+msgid "Close"
+msgstr "閉じる"
 
-msgid "Today"
-msgstr "Today"
+msgid "Close Menu"
+msgstr "メニューを閉じる"
 
-msgid "Two days"
-msgstr "Two days"
+msgid "Close the window"
+msgstr "Close the window"
 
-msgid "Last week"
-msgstr "Last week"
+msgid "Component:"
+msgstr "Component:"
 
-msgid "Last two weeks"
-msgstr "Last two weeks"
+msgid "Component: %s, Resource: %s \"%s\", Directive: %s"
+msgstr "Component: %s, Resource: %s \"%s\", Directive: %s"
 
-msgid "Last month"
-msgstr "Last month"
+msgid "Config support"
+msgstr "Config support"
 
-msgid "Last three months"
-msgstr "Last three months"
+msgid "Configuration"
+msgstr "Configuration"
 
-msgid "Last six months"
-msgstr "Last six months"
+msgid "Configuration Wizard"
+msgstr "Configuration Wizard"
 
-msgid "Last year"
-msgstr "Last year"
+msgid "Configuration of clients daemons."
+msgstr "Configuration of clients daemons."
+
+msgid "Configuration of storage daemons."
+msgstr "Configuration of storage daemons."
+
+msgid "Configure"
+msgstr "API設定"
+
+msgid "Configure Bacula hosts"
+msgstr "API設定"
+
+msgid "Configure autochanger"
+msgstr "Configure autochanger"
+
+msgid "Configure client"
+msgstr "Configure client"
+
+msgid "Configure device"
+msgstr "Configure device"
+
+msgid "Configure devices"
+msgstr "Configure devices"
+
+msgid "Configure fileset"
+msgstr "Configure fileset"
+
+msgid "Configure job"
+msgstr "Configure job"
+
+msgid "Configure pool"
+msgstr "Configure pool"
+
+msgid "Configure schedule"
+msgstr "Configure schedule"
+
+msgid "Configure storage"
+msgstr "Configure storage"
+
+msgid "Configure volume"
+msgstr "Configure volume"
+
+msgid "Connection error"
+msgstr "Connection error"
+
+msgid "Connection test:"
+msgstr "Connection test:"
+
+msgid "Console"
+msgstr "Console"
+
+msgid "Console status"
+msgstr "Console status"
+
+msgid "Console support"
+msgstr "Console support"
+
+msgid "Create"
+msgstr "Create"
+
+msgid "Dashboard"
+msgstr "ダッシュボード"
+
+msgid "Database"
+msgstr "Database"
+
+msgid "Database file path (SQLite only):"
+msgstr "Database file path (SQLite only):"
+
+msgid "Database name:"
+msgstr "Database name:"
+
+msgid "Database parameters"
+msgstr "Database parameters"
+
+msgid "Database port:"
+msgstr "Database port:"
+
+msgid "Database size:"
+msgstr "データベース サイズ:"
+
+msgid "Database type:"
+msgstr "データベース タイプ:"
 
 msgid "Date From:"
 msgstr "Date From:"
@@ -926,32 +393,532 @@ msgstr "Date From:"
 msgid "Date To:"
 msgstr "Date To:"
 
-msgid "Legend:"
-msgstr "Legend:"
+msgid "Day"
+msgstr "Day"
 
-msgid "select client"
-msgstr "select client"
+msgid "Day of week"
+msgstr "Day of week"
 
-msgid "Graph: Jobs size / Time"
-msgstr "統計情報: ジョブサイズ / 時間"
+msgid "Day of week range"
+msgstr "Day of week range"
 
-msgid "Jobs size (GiB)"
-msgstr "ジョブサイズ (GiB)"
+msgid "Day range"
+msgstr "Day range"
 
-msgid "Time"
-msgstr "Time"
+msgid "Days"
+msgstr "Days"
 
-msgid "Tip: for getting zoom, please mark area on graph."
-msgstr "Tip: グラフをズームさせるにはズームする範囲をクリックで選択してください。"
+msgid ""
+"Debug files enable possibility to save most of actions executed on Baculum "
+"WebGUI. Debug functionality should be enabled if is happening shomething "
+"wrong with Baculum or something that looks like a bug. Logs can be useful "
+"for detecting a problems in Baculum working. After confirmation this message "
+"Baculum debug files will be continuously saving in /protected/Web/Logs/ "
+"directory. Are you sure?"
+msgstr ""
+"Debug files enable possibility to save most of actions executed on Baculum "
+"WebGUI. Debug functionality should be enabled if is happening shomething "
+"wrong with Baculum or something that looks like a bug. Logs can be useful "
+"for detecting a problems in Baculum working. After confirmation this message "
+"Baculum debug files will be continuously saving in /protected/Web/Logs/ "
+"directory. Are you sure?"
 
-msgid "Tip 2: for back from zoom, please click somewhere on graph."
-msgstr "Tip 2: ズームを解除するにはグラフの外をクリックして元に戻します。"
+msgid "Dedicated Bconsole config file path:"
+msgstr "Dedicated Bconsole config file path:"
+
+msgid "Delete"
+msgstr "削除"
+
+msgid "Delete job"
+msgstr "Delete job"
+
+msgid "Destination parameters"
+msgstr "リストア先クライアント情報"
+
+msgid "Details"
+msgstr "詳細"
+
+msgid "Device details"
+msgstr "Device details"
+
+msgid "Device name"
+msgstr "Device name"
+
+msgid "Device:"
+msgstr "Device:"
+
+msgid "Director"
+msgstr "Director"
+
+msgid "Director:"
+msgstr "Director:"
+
+msgid "Directory path field is required."
+msgstr "Directory path field is required."
+
+msgid "Directory path for new config files:"
+msgstr "Directory path for new config files:"
+
+msgid "Disabled"
+msgstr "Disabled"
+
+msgid "Do not relocate files"
+msgstr "ファイルの上書きはしない"
+
+msgid "Download the resource config"
+msgstr "Download the resource config"
+
+msgid "Drive has to contain digit value from set [0-9]."
+msgstr "Drive has to contain digit value from set [0-9]."
+
+msgid "Drive number must be integer."
+msgstr "Drive number must be integer."
+
+msgid "Drive number:"
+msgstr "Drive number:"
+
+msgid "During restore there will be used following volumes:"
+msgstr "リストアには以下のvolumeが使用されます:"
+
+msgid "Edit"
+msgstr "Edit"
+
+msgid "Enable debug"
+msgstr "Enable debug"
+
+msgid "Enabled"
+msgstr "Enabled"
+
+msgid "Enabled:"
+msgstr "Enabled:"
+
+msgid "End time"
+msgstr "終了時間"
+
+msgid "English"
+msgstr "English"
+
+msgid "Enter"
+msgstr "Enter"
+
+msgid "Error"
+msgstr "Error"
+
+msgid "Error during config save"
+msgstr "Error during config save"
+
+msgid "Estimate job"
+msgstr "ジョブをテスト実行"
+
+msgid "Execution count most used:"
+msgstr "Execution count most used:"
+
+msgid "Exit wizard"
+msgstr "Exit wizard"
+
+msgid "Field required."
+msgstr "Field required."
+
+msgid "File Retention"
+msgstr "File Retention"
+
+msgid "File relocation option:"
+msgstr "ファイル上書きオプション:"
+
+msgid "File retention"
+msgstr "File retention(バックアップファイル保持期間)"
+
+msgid "File retention (in days):"
+msgstr "File retention (in days):"
 
 msgid "File retention (in sec.):"
 msgstr "File retention (in sec.):"
 
+msgid "File retention value must be integer."
+msgstr "File retention value must be integer."
+
+msgid "File retention value must be positive integer or zero."
+msgstr "File retention value must be positive integer or zero."
+
+msgid "FileSet details"
+msgstr "FileSet details"
+
+msgid "FileSet for restore:"
+msgstr "FileSet for restore:"
+
+msgid "FileSet list"
+msgstr "FileSet list"
+
+msgid "FileSet resource:"
+msgstr "FileSet resource:"
+
+msgid "FileSet:"
+msgstr "FileSet:"
+
+msgid "FileSets"
+msgstr "FileSets"
+
+msgid "Files"
+msgstr "ファイル"
+
+msgid "Files for restore"
+msgstr "リストアファイル情報"
+
+msgid "Finish"
+msgstr "完了"
+
+msgid "Finished jobs"
+msgstr "完了ジョブ"
+
+msgid "Finished jobs:"
+msgstr "Finished jobs:"
+
+msgid "First written"
+msgstr "First written"
+
+msgid ""
+"For add a file to restore please click 'Add' link or drag a file from frame "
+"on left or from above frame and drop it here"
+msgstr ""
+"左のフレームから追加をクリックするか「ここ」にファイルをドラック＆ "
+"ドロップしてリストア対象のファイルを追加してください"
+
+msgid ""
+"For need defining more Baculum users with custom access or restricted "
+"console access (Bconsole ACLs) here is possible to determine custom bconsole "
+"configuration file format for each user."
+msgstr ""
+"For need defining more Baculum users with custom access or restricted "
+"console access (Bconsole ACLs) here is possible to determine custom bconsole "
+"configuration file format for each user."
+
+msgid "For see a file versions please click file on the left files browser."
+msgstr "ファイルのバージョンチェックをするには左のフレームのファイルをクリックしてください"
+
+msgid "From day"
+msgstr "From day"
+
+msgid "From day of week"
+msgstr "From day of week"
+
+msgid "From month"
+msgstr "From month"
+
+msgid "From week"
+msgstr "From week"
+
+msgid "General configuration"
+msgstr "General configuration"
+
+msgid "Given host already exists in config file."
+msgstr "Given host already exists in config file."
+
+msgid "Go back"
+msgstr "Go back"
+
+msgid "Go to started job after start:"
+msgstr "Go to started job after start:"
+
+msgid "Graph: Jobs size / Time"
+msgstr "Graph: Jobs size / Time"
+
+msgid "Graphs"
+msgstr "統計レポート"
+
+msgid "Group most recent backups"
+msgstr "最新ファイルからリストア"
+
+msgid "Host added successfully."
+msgstr "Host added successfully."
+
+msgid "Host:"
+msgstr "Host:"
+
+msgid "Hour"
+msgstr "Hour"
+
+msgid "Hourly at"
+msgstr "Hourly at"
+
+msgid "Hours"
+msgstr "Hours"
+
+msgid "I have read the license terms and agree to"
+msgstr "I have read the license terms and agree to"
+
+msgid "IP Address/Hostname:"
+msgstr "IPアドレス or ホスト名:"
+
+msgid "IP address (or hostname):"
+msgstr "IP address (or hostname):"
+
+msgid ""
+"If all above steps will not help or if during installation you made mistake "
+"in password in Initial Wizard, please remove settings file located in "
+"baculum/protected/Data/settings.conf and re-run Initial wizard."
+msgstr ""
+"If all above steps will not help or if during installation you made mistake "
+"in password in Initial Wizard, please remove settings file located in "
+"baculum/protected/Data/settings.conf and re-run Initial wizard."
+
+msgid ""
+"If there is used only one Baculum user then below field value will be ignored"
+msgstr ""
+"If there is used only one Baculum user then below field value will be ignored"
+
+msgid ""
+"If there is used only one Baculum user then below field value will be "
+"ignored."
+msgstr ""
+"If there is used only one Baculum user then below field value will be "
+"ignored."
+
+msgid "In Changer"
+msgstr "In Changer"
+
+msgid "In changer:"
+msgstr "In changer:"
+
+msgid "InChanger"
+msgstr "オートチェンジャー"
+
+msgid "InChanger:"
+msgstr "InChanger:"
+
+msgid "Information about version"
+msgstr "Information about version"
+
+msgid ""
+"Invalid Client ID value. Client ID may contain a-z A-Z 0-9 - _ characters."
+msgstr ""
+"Invalid Client ID value. Client ID may contain a-z A-Z 0-9 - _ characters."
+
+msgid ""
+"Invalid Client Secret value. Client Secret may contain any character that is "
+"not a whitespace character."
+msgstr ""
+"Invalid Client Secret value. Client Secret may contain any character that is "
+"not a whitespace character."
+
+msgid "Invalid login value. Login may contain a-z A-Z 0-9 characters."
+msgstr "Invalid login value. Login may contain a-z A-Z 0-9 characters."
+
+msgid "Invalid value. Integer value required."
+msgstr "Invalid value. Integer value required."
+
+msgid ""
+"It seems that there is no files for choosing or file records in database for "
+"this job has been purged (file retention period expired)"
+msgstr ""
+"It seems that there is no files for choosing or file records in database for "
+"this job has been purged (file retention period expired)"
+
+msgid "Japanese"
+msgstr "Japanese"
+
+msgid "Job Retention"
+msgstr "Job Retention"
+
+msgid "Job count the most used:"
+msgstr "Job count the most used:"
+
+msgid "Job details"
+msgstr "Job details"
+
+msgid "Job history"
+msgstr "ジョブ実行履歴"
+
+msgid "Job history details"
+msgstr "Job history details"
+
+msgid "Job history list"
+msgstr "ジョブ実行履歴一覧"
+
+msgid "Job is finished"
+msgstr "Job is finished"
+
+msgid "Job is running"
+msgstr "Job is running"
+
+msgid "Job list"
+msgstr "Job list"
+
+msgid "Job name"
+msgstr "Job name"
+
+msgid "Job name:"
+msgstr "ジョブ名:"
+
+msgid "Job retention"
+msgstr "Job retention(ジョブ保持期間)"
+
+msgid "Job retention (in days):"
+msgstr "Job retention (in days):"
+
 msgid "Job retention (in sec.):"
 msgstr "Job retention (in sec.):"
+
+msgid "Job retention value must be integer."
+msgstr "Job retention value must be integer."
+
+msgid "Job retention value must be positive integer or zero."
+msgstr "Job retention value must be positive integer or zero."
+
+msgid "Job status"
+msgstr "ジョブステータス"
+
+msgid "Job status summary"
+msgstr "ジョブステータス概要"
+
+msgid "Job to Verify:"
+msgstr "Job to Verify:"
+
+msgid "Job to restore:"
+msgstr "Job to restore:"
+
+msgid "Job to run:"
+msgstr "実行ジョブ:"
+
+msgid "Job:"
+msgstr "Job:"
+
+msgid "JobId"
+msgstr "ジョブID"
+
+msgid "JobId to Verify value must be integer greather than 0."
+msgstr "JobId to Verify value must be integer greather than 0."
+
+msgid "JobId to Verify:"
+msgstr "JobId to Verify:"
+
+msgid "JobId:"
+msgstr "JobId:"
+
+msgid "Jobs"
+msgstr "Jobs"
+
+msgid "Jobs for Client"
+msgstr "Jobs for Client"
+
+msgid "Jobs for run"
+msgstr "Jobs for run"
+
+msgid "Jobs on volume"
+msgstr "Jobs on volume"
+
+msgid "Jobs settings."
+msgstr "Jobs settings."
+
+msgid "Jobs size (GiB)"
+msgstr "Jobs size (GiB)"
+
+msgid "Jump to job (last 100):"
+msgstr "Jump to job (last 100):"
+
+msgid "Label"
+msgstr "Label"
+
+msgid "Label format value must not be empty."
+msgstr "Label format value must not be empty."
+
+msgid "Label format:"
+msgstr "Label format:"
+
+msgid "Label name have to contain string value from set [0-9a-zA-Z_-]."
+msgstr "Label name has to contain string value from set [0-9a-zA-Z_-]."
+
+msgid "Label name:"
+msgstr "Label name:"
+
+msgid "Label volume(s)"
+msgstr "Label volume(s)"
+
+msgid "Language"
+msgstr "言語"
+
+msgid "Language:"
+msgstr "言語:"
+
+msgid "Last 10 jobs"
+msgstr "直近10件のジョブ実行結果"
+
+msgid "Last 12 hours"
+msgstr "Last 12 hours"
+
+msgid "Last 6 hours"
+msgstr "Last 6 hours"
+
+msgid "Last month"
+msgstr "Last month"
+
+msgid "Last six months"
+msgstr "Last six months"
+
+msgid "Last three months"
+msgstr "Last three months"
+
+msgid "Last two weeks"
+msgstr "Last two weeks"
+
+msgid "Last week"
+msgstr "Last week"
+
+msgid "Last written"
+msgstr "最終書き込み時間"
+
+msgid "Last written:"
+msgstr "Last written:"
+
+msgid "Last year"
+msgstr "Last year"
+
+msgid "Legend:"
+msgstr "Legend:"
+
+msgid "Level"
+msgstr "Level"
+
+msgid "Level:"
+msgstr "Level:"
+
+msgid "Licence"
+msgstr "Licence"
+
+msgid "Limit:"
+msgstr "Limit:"
+
+msgid "Limits"
+msgstr "Limits"
+
+msgid "Loading..."
+msgstr "Loading..."
+
+msgid "Log order"
+msgstr "Log order"
+
+msgid "Login:"
+msgstr "Login:"
+
+msgid "Logout"
+msgstr "Logout"
+
+msgid "Main Director config file path (usually bacula-dir.conf):"
+msgstr "Main Director config file path (usually bacula-dir.conf):"
+
+msgid "Main File Daemon config file path (usually bacula-fd.conf):"
+msgstr "Main File Daemon config file path (usually bacula-fd.conf):"
+
+msgid "Main Storage Daemon config file path (usually bacula-sd.conf):"
+msgstr "Main Storage Daemon config file path (usually bacula-sd.conf):"
+
+msgid "Management of volumes pools."
+msgstr "Management of volumes pools."
+
+msgid "Management of volumes."
+msgstr "Management of volumes."
+
+msgid "Management settings wizard."
+msgstr "Management settings wizard."
 
 msgid "Max. Vol. Bytes:"
 msgstr "Max. Vol. Bytes:"
@@ -962,26 +929,792 @@ msgstr "Max. Vol. Files:"
 msgid "Max. Vol. Jobs:"
 msgstr "Max. Vol. Jobs:"
 
+msgid "Max. number of jobs value must be integer greather than 0."
+msgstr "Max. number of jobs value must be integer greather than 0."
+
+msgid "Max. number of jobs visible in tables"
+msgstr "Max. number of jobs visible in tables"
+
+msgid "Max. vol. bytes"
+msgstr "Max. vol. bytes"
+
+msgid "Max. vol. bytes value must be integer."
+msgstr "Max. vol. bytes value must be integer."
+
+msgid "Max. vol. bytes:"
+msgstr "Max. vol. bytes:"
+
+msgid "Max. vol. files"
+msgstr "Max. vol. files"
+
+msgid "Max. vol. files value must be integer."
+msgstr "Max. vol. files value must be integer."
+
+msgid "Max. vol. files:"
+msgstr "Max. vol. files:"
+
+msgid "Max. vol. jobs"
+msgstr "Max. vol. jobs"
+
+msgid "Max. vol. jobs value must be integer."
+msgstr "Max. vol. jobs value must be integer."
+
+msgid "Max. vol. jobs:"
+msgstr "Max. vol. jobs:"
+
+msgid "Max. vols"
+msgstr "最大ボリューム容量(GB)"
+
+msgid "Max. volumes value must be integer."
+msgstr "Max. volumes value must be integer."
+
+msgid "Maximum volumes:"
+msgstr "Maximum volumes:"
+
+msgid "Media Type"
+msgstr "Media Type"
+
+msgid "Minute"
+msgstr "Minute"
+
+msgid "Minutes"
+msgstr "Minutes"
+
+msgid "Month"
+msgstr "Month"
+
+msgid "Month range"
+msgstr "Month range"
+
+msgid "More jobs"
+msgstr "ジョブ一覧"
+
+msgid "Mount"
+msgstr "Mount"
+
+msgid "NOTE!"
+msgstr "NOTE!"
+
+msgid "Name"
+msgstr "Name"
+
+msgid "Need to move on to accept the license."
+msgstr "Need to move on to accept the license."
+
+msgid "New"
+msgstr "New"
+
+msgid "Next"
+msgstr "次へ"
+
+msgid "Next pool"
+msgstr "Next pool"
+
+msgid "No"
+msgstr "No"
+
+msgid "No jobs for the client."
+msgstr "No jobs for the client."
+
+msgid "No jobs on the volume."
+msgstr "No jobs on the volume."
+
+msgid "No. vols"
+msgstr "No. vols"
+
+msgid "Normal user"
+msgstr "Normal user"
+
+msgid "Not supported"
+msgstr "Not supported"
+
+msgid "Number of clients"
+msgstr "Number of clients"
+
+msgid "Number of pools:"
+msgstr "Number of pools:"
+
+msgid "OAuth2 Client ID:"
+msgstr "OAuth2 Client ID:"
+
+msgid "OAuth2 Client Secret:"
+msgstr "OAuth2 Client Secret:"
+
+msgid "OAuth2 Redirect URI (example: https://baculumgui:9095/web/redirect):"
+msgstr "OAuth2 Redirect URI (example: https://baculumgui:9095/web/redirect):"
+
+msgid "OAuth2 Redirect URI:"
+msgstr "OAuth2 Redirect URI:"
+
+msgid "OAuth2 Scope:"
+msgstr "OAuth2 Scope:"
+
+msgid "OAuth2 scopes (space separated):"
+msgstr "OAuth2 scopes (space separated):"
+
+msgid "OK"
+msgstr "OK"
+
+msgid "Only selected backup"
+msgstr "手動でリストア対象を選択"
+
+msgid "Operation is in progress"
+msgstr "Operation is in progress"
+
+msgid "Options"
+msgstr "オプション"
+
+msgid ""
+"Output for selected job is not available yet or you do not have enabled "
+"logging job logs to the catalog database. For watching job the log you need "
+"to add to the job Messages resource the following directive: console = all, !"
+"skipped, !saved"
+msgstr ""
+"Output for selected job is not available yet or you do not have enabled "
+"logging job logs to the catalog database.\n"
+"\n"
+"For watching the job log you need to add to the job Messages resource the "
+"following directive:\n"
+"\n"
+"console = all, !skipped, !saved"
+
+msgid "Password must be longer than 4 chars."
+msgstr "Password must be longer than 4 chars."
+
+msgid "Password:"
+msgstr "パスワード:"
+
+msgid "Passwords must be the same."
+msgstr "Passwords must be the same."
+
+msgid "Path:"
+msgstr "Path:"
+
+msgid "Perform restore"
+msgstr "リストア実行"
+
+msgid "Please enter API address."
+msgstr "Please enter API address."
+
+msgid "Please enter API login."
+msgstr "Please enter API login."
+
+msgid "Please enter API password."
+msgstr "Please enter API password."
+
+msgid "Please enter API port."
+msgstr "Please enter API port."
+
+msgid "Please enter Client ID."
+msgstr "Please enter Client ID."
+
+msgid "Please enter Client Secret."
+msgstr "Please enter Client Secret."
+
+msgid "Please enter IP address or hostname."
+msgstr "Please enter IP address or hostname."
+
+msgid "Please enter OAuth2 scopes."
+msgstr "Please enter OAuth2 scopes."
+
+msgid "Please enter Redirect URI."
+msgstr "Please enter Redirect URI."
+
+msgid "Please enter bconsole config file path."
+msgstr "Please enter bconsole config file path."
+
+msgid "Please enter bconsole custom config file path."
+msgstr "Please enter bconsole custom config file path."
+
+msgid "Please enter bconsole path."
+msgstr "Please enter bconsole path."
+
+msgid "Please enter database name."
+msgstr "Please enter database name."
+
+msgid "Please enter database path."
+msgstr "Please enter database path."
+
+msgid "Please enter database port."
+msgstr "Please enter database port."
+
+msgid "Please enter login."
+msgstr "Please enter login."
+
+msgid "Please enter password."
+msgstr "Please enter password."
+
+msgid "Please enter retype password."
+msgstr "パスワードを再入力してください"
+
+msgid "Please select component"
+msgstr "Please select component"
+
+msgid "Please select database type."
+msgstr "Please select database type."
+
+msgid "Please select host"
+msgstr "Please select host"
+
+msgid "Please select language."
+msgstr "Please select language."
+
+msgid "Please unassign resource %s \"%s\" from these resources and try again."
+msgstr "Please unassign resource %s \"%s\" from these resources and try again."
+
+msgid "Polish"
+msgstr "Polish"
+
+msgid "Pool"
+msgstr "Pool"
+
+msgid "Pool details"
+msgstr "Pool details"
+
+msgid "Pool list"
+msgstr "Pool list"
+
+msgid "Pool name:"
+msgstr "Pool name:"
+
+msgid "Pool resource:"
+msgstr "Pool resource:"
+
+msgid "Pool:"
+msgstr "Pool:"
+
+msgid "Pools"
+msgstr "Pools"
+
+msgid "Port:"
+msgstr "ポート番号:"
+
+msgid "Portuguese"
+msgstr "Portuguese"
+
+msgid "Previous"
+msgstr "戻る"
+
+msgid "Priority value must be integer greather than 0."
+msgstr "Priority value must be integer greather than 0."
+
+msgid "Priority:"
+msgstr "Priority:"
+
+msgid ""
+"Problem during save to config file. Please check host config file permission."
+msgstr ""
+"Problem during save to config file. Please check host config file permission."
+
+msgid "Protocol:"
+msgstr "プロトコル:"
+
+msgid "Provided directory path is not writable by web server."
+msgstr "Provided directory path is not writable by web server."
+
+msgid "Prune"
+msgstr "Prune"
+
+msgid "Purge"
+msgstr "Purge"
+
+msgid "Quick job access"
+msgstr "Quick job access"
+
+msgid "Recycle"
+msgstr "Recycle(再利用)"
+
+msgid "Recycle count"
+msgstr "Recycle count"
+
+msgid "Recycle pool"
+msgstr "Recycle pool"
+
+msgid "Recycle pool:"
+msgstr "Recycle pool:"
+
+msgid "Recycle:"
+msgstr "Recycle:"
+
+msgid "Recycling"
+msgstr "Recycling"
+
+msgid "Refresh log"
+msgstr "ログ表示更新"
+
+msgid "RegexWhere:"
+msgstr "RegexWhere:"
+
+msgid "Release"
+msgstr "Release"
+
+msgid "Relocate files with prefix and/or suffix"
+msgstr "Relocate files with prefix and/or suffix"
+
+msgid "Relocate files with regular expression"
+msgstr "Relocate files with regular expression"
+
+msgid "Remove"
+msgstr "Remove"
+
+msgid "Remove directive"
+msgstr "Remove directive"
+
+msgid "Remove resource"
+msgstr "Remove resource"
+
+msgid "Remove user"
+msgstr "ユーザー削除"
+
+msgid "Replace files:"
+msgstr "リストア先のファイル上書き:"
+
+msgid "Reset to default value"
+msgstr "Reset to default value"
+
+msgid "Resource %s \"%s\" is used in the following resources:"
+msgstr "Resource %s \"%s\" is used in the following resources:"
+
+msgid "Resource %s \"%s\" removed successfully."
+msgstr "Resource %s \"%s\" removed successfully."
+
+msgid "Resource has been saved successfully."
+msgstr "Resource has been saved successfully."
+
+msgid "Resource to create:"
+msgstr "Resource to create:"
+
+msgid "Restore"
+msgstr "Restore"
+
+msgid "Restore Wizard"
+msgstr "Restore Wizard"
+
+msgid "Restore configuration"
+msgstr "Restore configuration"
+
+msgid "Restore job options"
+msgstr "リストアジョブオプション"
+
+msgid "Restore job priority:"
+msgstr "リストアジョブの優先度:"
+
+msgid "Restore job:"
+msgstr "リストアジョブ:"
+
+msgid "Restore to client:"
+msgstr "リストア対象サーバー:"
+
+msgid "Restore to directory:"
+msgstr "リストアするファイルの出力先ディレクトリ:"
+
+msgid "Restore to path:"
+msgstr "リストア先パス:"
+
+msgid "Restore wizard"
+msgstr "リストア実行"
+
+msgid "Restore wizard."
+msgstr "Restore wizard."
+
 msgid "Retention Period (in sec.):"
 msgstr "Retention Period (in sec.):"
 
+msgid "Retention period (in hours):"
+msgstr "Retention period (in hours):"
+
+msgid "Retention period value must be integer."
+msgstr "Retention period value must be integer."
+
+msgid "Retype administration password:"
+msgstr "管理者パスワード再入力:"
+
+msgid "Role"
+msgstr "Role"
+
+msgid "Run"
+msgstr "実行"
+
+msgid "Run job"
+msgstr "ジョブ実行"
+
+msgid "Run job again"
+msgstr "ジョブ再実行"
+
+msgid "Run restore"
+msgstr "リストア実行"
+
+msgid "Running jobs:"
+msgstr "実行中ジョブ:"
+
+msgid "SQLite database path:"
+msgstr "SQLite database path:"
+
+msgid "Save"
+msgstr "保存"
+
+msgid "Save as:"
+msgstr "Save as:"
+
+msgid "Save the resource on multiple hosts"
+msgstr "Save the resource on multiple hosts"
+
+msgid "Save the resource to additional path"
+msgstr "Save the resource to additional path"
+
+msgid "Save with name:"
+msgstr "Save with name:"
+
+msgid "Schedule details"
+msgstr "Schedule details"
+
+msgid "Schedule list"
+msgstr "Schedule list"
+
+msgid "Schedule:"
+msgstr "Schedule:"
+
+msgid "Schedules"
+msgstr "Schedules"
+
+msgid "Scratch pool"
+msgstr "Scratch pool"
+
+msgid "Scratch pool:"
+msgstr "Scratch pool:"
+
+msgid "Search:"
+msgstr "検索:"
+
+msgid "Seconds"
+msgstr "Seconds"
+
+msgid "Select"
+msgstr "選択"
+
+msgid "Select host"
+msgstr "Select host"
+
+msgid "Selected directories count:"
+msgstr "選択ディレクトリ数:"
+
+msgid "Selected files count:"
+msgstr "選択ファイル数:"
+
+msgid "Settings"
+msgstr "Baculum設定"
+
+msgid "Show the resource raw config"
+msgstr "Show the resource raw config"
+
+msgid "Show/hide all resource directives"
+msgstr "Show/hide all resource directives"
+
+msgid "Single day"
+msgstr "Single day"
+
+msgid "Single day of week"
+msgstr "Single day of week"
+
+msgid "Single month"
+msgstr "Single month"
+
+msgid "Single week"
+msgstr "Single week"
+
+msgid "Size"
+msgstr "サイズ"
+
+msgid "Size:"
+msgstr "Size:"
+
+msgid "Slot"
+msgstr "Slot"
+
+msgid "Slot number must be integer."
+msgstr "Slot number must be integer."
+
+msgid "Slot number:"
+msgstr "Slot number:"
+
+msgid "Slot value must be integer."
+msgstr "Slot value must be integer."
+
+msgid "Slots for label have to contain string value from set [0-9-,]."
+msgstr "Slots for label have to contain string value from set [0-9-,]."
+
+msgid "Slots for label:"
+msgstr "Slots for label:"
+
+msgid "Slots for update have to contain string value from set [0-9-,]."
+msgstr "Slots for update have to contain string value from set [0-9-,]."
+
+msgid "Slots for update:"
+msgstr "Slots for update:"
+
+msgid "Source parameters"
+msgstr "リストア情報"
+
+msgid "Start time"
+msgstr "開始時間"
+
+msgid "Starting jobs."
+msgstr "Starting jobs."
+
+msgid "Status"
+msgstr "Status"
+
+msgid "Status client"
+msgstr "Status client"
+
+msgid "Status storage"
+msgstr "Status storage"
+
+msgid "Step 1 - select language"
+msgstr "Step 1 - 言語選択"
+
+msgid "Step 1 - select source backup client"
+msgstr "Step 1 - リストア対象の選択"
+
+msgid "Step 2 - add API instances"
+msgstr "Step 2 - APIサーバー追加"
+
+msgid "Step 2 - select backup to restore"
+msgstr "Step 2 - リストア対象を選択"
+
+msgid "Step 3 - authentication params to Baculum Web panel"
+msgstr "Step 3 - Baculum Web 管理ユーザー設定"
+
+msgid "Step 3 - params of Bacula database connection"
+msgstr "Step 3 - params of Bacula database connection"
+
+msgid "Step 3 - select files to restore"
+msgstr "Step 3 - リストアするファイルを選択"
+
+msgid "Step 4 - Baculum access to bconsole"
+msgstr "Step 4 - Baculum access to bconsole"
+
+msgid "Step 4 - Finish"
+msgstr "Step 4 - 完了"
+
+msgid "Step 4 - select destination for restore"
+msgstr "Step 4 - リストアするファイルの出力先を指定"
+
+msgid "Step 5 - authorization params to Baculum"
+msgstr "Step 5 - authorization params to Baculum"
+
+msgid "Step 5 - options for restore"
+msgstr "Step 5 - リストア オプション"
+
+msgid "Step 6 - Finish"
+msgstr "Step 6 - 完了"
+
+msgid "Step 7 - Finish"
+msgstr "Step 7 - Finish"
+
+msgid "Storage Daemons"
+msgstr "Storage Daemons"
+
 msgid "Storage Daemons."
-msgstr "ストレージ"
+msgstr "Storage Daemons."
 
-msgid "Vol. Use Duration (in sec.):"
-msgstr "Vol. Use Duration (in sec.):"
+msgid "Storage details"
+msgstr "Storage details"
 
-msgid "Yes"
-msgstr "Yes"
+msgid "Storage list"
+msgstr "Storage list"
 
-msgid "JobId to Verify:"
-msgstr "JobId to Verify:"
+msgid "Storage name"
+msgstr "Storage name"
 
-msgid "JobId to Verify value must be integer greather than 0."
-msgstr "JobId to Verify value must be integer greather than 0."
+msgid "Storage name:"
+msgstr "Storage name:"
 
-msgid "Job to Verify:"
-msgstr "Job to Verify:"
+msgid "Storage resource:"
+msgstr "Storage resource:"
+
+msgid "Storage:"
+msgstr "Storage:"
+
+msgid "Storages"
+msgstr "Storages"
+
+msgid "Strip prefix:"
+msgstr "Strip prefix:"
+
+msgid "Sum:"
+msgstr "Sum:"
+
+msgid "Supported"
+msgstr "Supported"
+
+msgid "Switch the window view (normal/details)"
+msgstr "Switch the window view (normal/details)"
+
+msgid "TRY AGAIN"
+msgstr "TRY AGAIN"
+
+msgid "Test configuration"
+msgstr "Test configuration"
+
+msgid "The most often used:"
+msgstr "The most often used:"
+
+msgid ""
+"There are two ways to select backup to restore. Only selected backup way "
+"provides list of jobs from which there is possible to select one job. If you "
+"need the latest backups from the Client alternatively you can use Group most "
+"recent backups way which will select backups for you basing on backup job "
+"name and fileset resource."
+msgstr ""
+"リストア方法は2種類あります。"
+"手動でリアストア対象を選択するか、自動的に最近ファイルからリストアするか選択できます"
+""
+""
+""
+
+msgid ""
+"There is no backup for restore. Please go to previous step and select "
+"another client for restore or proceed backups for the client selected in "
+"previous step."
+msgstr ""
+"There is no backup for restore. Please go to previous step and select "
+"another client for restore or proceed backups for the client selected in "
+"previous step."
+
+msgid "There is not possible to run selected action because:"
+msgstr "There is not possible to run selected action because:"
+
+msgid "There is required to provide both binary file and config file paths."
+msgstr "There is required to provide both binary file and config file paths."
+
+msgid ""
+"This action will clear bvfs cache that was created during preparing restore "
+"files. There is not recommended use this action during restore job working. "
+"Are you sure?"
+msgstr ""
+"This action will clear bvfs cache that was created during preparing restore "
+"files.\\n\\nThere is not recommended use this action during restore job "
+"working.\\n\\nAre you sure?"
+
+msgid ""
+"This wizard enables you to do in easy way restore files to destination "
+"Bacula Client."
+msgstr ""
+"ファイルを簡単にリストアすることが可能です。"
+""
+
+msgid "Time"
+msgstr "Time"
+
+msgid "Time range:"
+msgstr "日時範囲指定:"
+
+msgid "Tip 2: for back from zoom, please click somewhere on graph."
+msgstr "Tip 2: ズームを解除するにはグラフの外をクリックして元に戻します"
+
+msgid "Tip: for getting zoom, please mark area on graph."
+msgstr "Tis: グラフをズームさせるにはズームする範囲をクリックして選択してください"
+
+msgid "To day"
+msgstr "To day"
+
+msgid "To day of week"
+msgstr "To day of week"
+
+msgid "To month"
+msgstr "To month"
+
+msgid ""
+"To setup configuration module please provide Bacula JSON tools paths and "
+"config files paths."
+msgstr ""
+"To setup configuration module please provide Bacula JSON tools paths and "
+"config files paths."
+
+msgid "To start, please select backup Client which data you want to restore."
+msgstr "まずリストアするクライアントを選択してください"
+
+msgid "To week"
+msgstr "To week"
+
+msgid "Today"
+msgstr "Today"
+
+msgid "Total bytes"
+msgstr "使用容量"
+
+msgid "Total bytes:"
+msgstr "Total bytes:"
+
+msgid "Total files:"
+msgstr "Total files:"
+
+msgid "Two days"
+msgstr "Two days"
+
+msgid "Type"
+msgstr "Type"
+
+msgid "Umount"
+msgstr "Umount"
+
+msgid "Uname"
+msgstr "Uname"
+
+msgid "Update all vols in pool"
+msgstr "Update all vols in pool"
+
+msgid "Update barcodes slots"
+msgstr "Update barcodes slots"
+
+msgid "Update pool"
+msgstr "Update pool"
+
+msgid "Update slots"
+msgstr "Update slots"
+
+msgid "Update slots scan"
+msgstr "Update slots scan"
+
+msgid "Update slots using barcodes"
+msgstr "Update slots using barcodes"
+
+msgid "Update slots without barcodes"
+msgstr "Update slots without barcodes"
+
+msgid "Update volumes"
+msgstr "Update volumes"
+
+msgid "Use Ctrl + Mouse Click to change selection"
+msgstr "Use Ctrl + Mouse Click to change selection"
+
+msgid "Use HTTP Basic authentication"
+msgstr "ベーシック認証使用"
+
+msgid "Use OAuth2 for authorization and authentication"
+msgstr "OAuth2認証使用"
+
+msgid "Use barcodes as label:"
+msgstr "Use barcodes as label:"
+
+msgid "Use duration value must be integer."
+msgstr "Use duration value must be integer."
+
+msgid "Use sudo for bconsole requests:"
+msgstr "Use sudo for bconsole requests:"
+
+msgid "Use sudo:"
+msgstr "Use sudo:"
+
+msgid "User name"
+msgstr "ユーザー名"
+
+msgid "Username:"
+msgstr "ユーザー名:"
+
+msgid "Users"
+msgstr "ユーザー管理"
 
 msgid "Verify by Job Name"
 msgstr "Verify by Job Name"
@@ -992,597 +1725,213 @@ msgstr "Verify by JobId"
 msgid "Verify option:"
 msgstr "Verify option:"
 
-msgid "Running jobs:"
-msgstr "実行中ジョブ数:"
-
-msgid "Finished jobs:"
-msgstr "実行完了ジョブ数:"
-
-msgid "Add"
-msgstr "Add"
-
-msgid "Actions"
-msgstr "アクション"
-
-msgid "Size"
-msgstr "サイズ"
-
-msgid "Job:"
-msgstr "Job:"
-
-msgid "Media Type"
-msgstr "Media Type"
-
-msgid "Dashboard"
-msgstr "ダッシュボード"
-
-msgid "Go to started job after start:"
-msgstr "Go to started job after start:"
-
-msgid "Job status summary"
-msgstr "ジョブステータス サマリー"
-
-msgid "Quick job access"
-msgstr "ジョブ一覧"
-
-msgid "Finished jobs"
-msgstr "実行完了ジョブ"
-
-msgid "The most often used:"
-msgstr "頻度の高いもの:"
-
-msgid "Number of clients"
-msgstr "クライアント数"
-
-msgid "jobs"
-msgstr "jobs"
-
-msgid "Job count the most used:"
-msgstr "最も多く使用されたジョブ数:"
-
-msgid "level"
-msgstr "level"
-
-msgid "status"
-msgstr "status"
-
-msgid "Jump to job (last 100):"
-msgstr "ジョブ一覧 (最新100件):"
-
 msgid "View"
-msgstr "ジョブ表示"
+msgstr "View"
 
-msgid "Total bytes:"
-msgstr "総容量:"
+msgid "View mode:"
+msgstr "View mode:"
 
-msgid "Total files:"
-msgstr "総ファイル数:"
-
-msgid "Database size:"
-msgstr "データベースサイズ:"
-
-msgid "Number of pools:"
-msgstr "プール数:"
-
-msgid "times"
-msgstr "times"
-
-msgid "Execution count most used:"
-msgstr "最も多く実行されたジョブ数:"
-
-msgid "Restore Wizard"
-msgstr "リストア"
-
-msgid "Perform restore"
-msgstr "リストア実行"
-
-msgid "Configuration Wizard"
-msgstr "設定"
-
-msgid "Baculum Settings"
-msgstr "Baculum設定"
-
-msgid "start time"
-msgstr "start time"
-
-msgid "Users"
-msgstr "ユーザ設定"
-
-msgid "User name"
-msgstr "ユーザ名"
-
-msgid "Role"
-msgstr "権限"
-
-msgid "Remove user"
-msgstr "ユーザ削除"
-
-msgid "Logout"
-msgstr "ログアウト"
-
-msgid "Change password"
-msgstr "パスワード変更"
-
-msgid "Administrator"
-msgstr "Administrator"
-
-msgid "Normal user"
-msgstr "一般ユーザ"
-
-msgid "Add new user"
-msgstr "ユーザ追加"
-
-msgid "Username:"
-msgstr "Username:"
-
-msgid "Invalid login value. Login may contain a-z A-Z 0-9 characters."
-msgstr "Invalid login value. Login may contain a-z A-Z 0-9 characters."
-
-msgid "Jobs on volume"
-msgstr "Jobs on Volume"
-
-msgid "No jobs on the volume."
-msgstr "No jobs on the volume."
-
-msgid "Jobs for Client"
-msgstr "Jobs for Client"
-
-msgid "No jobs for the client."
-msgstr "No jobs for the client."
-
-msgid "Restore job:"
-msgstr "Restore job:"
-
-msgid "API host"
-msgstr "API host"
-
-msgid "API host:"
-msgstr "API host:"
-
-msgid "Select host"
-msgstr "Select host"
-
-msgid "OAuth2 scopes (space separated):"
-msgstr "OAuth2 scopes (space separated):"
-
-msgid "Please enter OAuth2 scopes."
-msgstr "Please enter OAuth2 scopes."
-
-msgid "Field required."
-msgstr "Field required."
-
-msgid "Invalid value. Integer value required."
-msgstr "Invalid value. Integer value required."
-
-msgid "Resource %s \"%s\" is used in the following resources:"
-msgstr "Resource %s \"%s\" is used in the following resources:"
-
-msgid "Component: %s, Resource: %s \"%s\", Directive: %s"
-msgstr "Component: %s, Resource: %s \"%s\", Directive: %s"
-
-msgid "Are you sure that you want to remove %s resource \"%s\"?"
-msgstr "Are you sure that you want to remove %s resource \"%s\"?"
-
-msgid "Resource %s \"%s\" removed successfully."
-msgstr "Resource %s \"%s\" removed successfully."
-
-msgid "Please unassign resource %s \"%s\" from these resources and try again."
-msgstr "Please unassign resource %s \"%s\" from these resources and try again."
-
-msgid "Size:"
-msgstr "Size:"
-
-msgid "JobId:"
-msgstr "JobId:"
-
-msgid "Volume:"
-msgstr "Volume:"
-
-msgid "InChanger:"
-msgstr "InChanger:"
-
-msgid "Sum:"
-msgstr "Sum:"
-
-msgid "Select"
-msgstr "Select"
-
-msgid "Path:"
-msgstr "Path:"
-
-msgid "Restore wizard"
-msgstr "Restore wizard"
-
-msgid "This wizard enables you to do in easy way restore files to destination Bacula Client."
-msgstr "This wizard enables you to do in easy way restore files to destination Bacula Client."
-
-msgid "To start, please select backup Client which data you want to restore."
-msgstr "To start, please select backup Client which data you want to restore."
-
-msgid "There are two ways to select backup to restore. Only selected backup way provides list of jobs from which there is possible to select one job. If you need the latest backups from the Client alternatively you can use Group most recent backups way which will select backups for you basing on backup job name and fileset resource."
-msgstr "There are two ways to select backup to restore. Only selected backup way provides list of jobs from which there is possible to select one job. If you need the latest backups from the Client alternatively you can use Group most recent backups way which will select backups for you basing on backup job name and fileset resource."
-
-msgid "Do not relocate files"
-msgstr "Do not relocate files"
-
-msgid "Relocate files with prefix and/or suffix"
-msgstr "Relocate files with prefix and/or suffix"
-
-msgid "Relocate files with regular expression"
-msgstr "Relocate files with regular expression"
-
-msgid "Strip prefix:"
-msgstr "Strip prefix:"
-
-msgid "Add prefix:"
-msgstr "Add prefix:"
-
-msgid "Add suffix:"
-msgstr "Add suffix:"
-
-msgid "RegexWhere:"
-msgstr "RegexWhere:"
-
-msgid "File relocation option:"
-msgstr "File relocation option:"
-
-msgid "In Changer"
-msgstr "In Changer"
-
-msgid "Volume"
-msgstr "Volume"
-
-msgid "During restore there will be used following volumes:"
-msgstr "During restore there will be used following volumes:"
-
-msgid "Use Ctrl + Mouse Click to change selection"
-msgstr "Use Ctrl + Mouse Click to change selection"
-
-msgid "Go back"
-msgstr "Go back"
-
-msgid "Total bytes"
-msgstr "Total bytes"
-
-msgid "Start time"
-msgstr "Start time"
-
-msgid "Name"
-msgstr "Name"
-
-msgid "JobId"
-msgstr "JobId"
-
-msgid "Last 10 jobs"
-msgstr "Last 10 jobs"
-
-msgid "More jobs"
-msgstr "More jobs"
-
-msgid "Welcome"
-msgstr "Welcome"
-
-msgid "Details"
-msgstr "Details"
-
-msgid "Job is running"
-msgstr "Job is running"
-
-msgid "Job is finished"
-msgstr "Job is finished"
-
-msgid "Refresh log"
-msgstr "Refresh log"
-
-msgid "Job list"
-msgstr "Job list"
-
-msgid "Action"
-msgstr "Action"
-
-msgid "Storage list"
-msgstr "Storage list"
-
-msgid "Status storage"
-msgstr "Status storage"
-
-msgid "Storages"
-msgstr "Storages"
-
-msgid "Client list"
-msgstr "Client list"
-
-msgid "Uname"
-msgstr "Uname"
-
-msgid "AutoPrune"
-msgstr "AutoPrune"
-
-msgid "Job retention"
-msgstr "Job retention"
-
-msgid "File retention"
-msgstr "File retention"
-
-msgid "Client details"
-msgstr "Client details"
-
-msgid "Status client"
-msgstr "Status client"
-
-msgid "Configure client"
-msgstr "Configure client"
-
-msgid "Add new Client"
-msgstr "Add new Client"
-
-msgid "New"
-msgstr "New"
-
-msgid "Resource to create:"
-msgstr "Resource to create:"
-
-msgid "Create"
-msgstr "Create"
-
-msgid "Add new resource"
-msgstr "Add new resource"
-
-msgid "Please select host"
-msgstr "Please select host"
-
-msgid "Component:"
-msgstr "Component:"
-
-msgid "Please select component"
-msgstr "Please select component"
-
-msgid "Add client"
-msgstr "Add client"
-
-msgid "Add job"
-msgstr "Add job"
-
-msgid "Job to run:"
-msgstr "Job to run:"
-
-msgid "Add storage"
-msgstr "Add storage"
-
-msgid "Add device"
-msgstr "Add device"
-
-msgid "Add autochanger"
-msgstr "Add autochanger"
-
-msgid "Resource has been saved successfully."
-msgstr "Resource has been saved successfully."
-
-msgid "Configure storage"
-msgstr "Configure storage"
-
-msgid "Configure devices"
-msgstr "Configure devices"
-
-msgid "Configure autochanger"
-msgstr "Configure autochanger"
-
-msgid "Storage details"
-msgstr "Storage details"
-
-msgid "Device name"
-msgstr "Device name"
-
-msgid "Device details"
-msgstr "Device details"
-
-msgid "Device:"
-msgstr "Device:"
-
-msgid "Configure device"
-msgstr "Configure device"
-
-msgid "Job details"
-msgstr "Job details"
-
-msgid "No. vols"
-msgstr "No. vols"
-
-msgid "Max. vols"
-msgstr "Max. vols"
-
-msgid "Vol. retention"
-msgstr "Vol. retention"
-
-msgid "Max. vol. jobs"
-msgstr "Max. vol. jobs"
-
-msgid "Max. vol. bytes"
-msgstr "Max. vol. bytes"
-
-msgid "Max. vol. files"
-msgstr "Max. vol. files"
-
-msgid "Recycle"
-msgstr "Recycle"
-
-msgid "Pool list"
-msgstr "Pool list"
-
-msgid "Add pool"
-msgstr "Add pool"
-
-msgid "Update pool"
-msgstr "Update pool"
-
-msgid "Update all vols in pool"
-msgstr "Update all vols in pool"
-
-msgid "Pool details"
-msgstr "Pool details"
-
-msgid "Limits"
-msgstr "Limits"
-
-msgid "Recycling"
-msgstr "Recycling"
-
-msgid "Vol. use duration"
-msgstr "Vol. use duration"
-
-msgid "Action on purge"
-msgstr "Action on purge"
-
-msgid "Recycle pool"
-msgstr "Recycle pool"
-
-msgid "Scratch pool"
-msgstr "Scratch pool"
-
-msgid "Next pool"
-msgstr "Next pool"
-
-msgid "Enabled"
-msgstr "Enabled"
-
-msgid "Volumes in pool"
-msgstr "Volumes in pool"
-
-msgid "Configure pool"
-msgstr "Configure pool"
-
-msgid "First written"
-msgstr "First written"
-
-msgid "Last written"
-msgstr "Last written"
-
-msgid "Vol. jobs"
-msgstr "Vol. jobs"
+msgid "Vol. Use Duration (in sec.):"
+msgstr "Vol. Use Duration (in sec.):"
 
 msgid "Vol. bytes"
-msgstr "Vol. bytes"
-
-msgid "Volume list"
-msgstr "Volume list"
-
-msgid "Volume details"
-msgstr "Volume details"
-
-msgid "Recycle count"
-msgstr "Recycle count"
-
-msgid "Configure volume"
-msgstr "Configure volume"
-
-msgid "InChanger"
-msgstr "InChanger"
-
-msgid "Vol. files"
-msgstr "Vol. files"
-
-msgid "Writing"
-msgstr "Writing"
-
-msgid "Vol. status"
-msgstr "Vol. status"
+msgstr "ボリューム使用容量"
 
 msgid "Vol. errors"
 msgstr "Vol. errors"
 
+msgid "Vol. files"
+msgstr "Vol. files"
+
+msgid "Vol. jobs"
+msgstr "Vol. jobs"
+
 msgid "Vol. mounts"
 msgstr "Vol. mounts"
 
-msgid "Configure job"
-msgstr "Configure job"
+msgid "Vol. retention"
+msgstr "ボリューム保持期間"
 
-msgid "Configure fileset"
-msgstr "Configure fileset"
+msgid "Vol. status"
+msgstr "ボリュームステータス"
 
-msgid "Configure schedule"
-msgstr "Configure schedule"
+msgid "Vol. use duration"
+msgstr "Vol. use duration"
 
-msgid "Remove resource"
-msgstr "Remove resource"
+msgid "Vol. use duration (in hours):"
+msgstr "Vol. use duration (in hours):"
 
-msgid "Job history"
-msgstr "Job history"
+msgid "Vol. use duration value must be integer."
+msgstr "Vol. use duration value must be integer."
 
-msgid "Job history list"
-msgstr "Job history list"
+msgid "Volume"
+msgstr "Volume"
 
-msgid "Job history details"
-msgstr "Job history details"
+msgid "Volume details"
+msgstr "Volume details"
 
-msgid "Are you sure you want to remove this resource?"
-msgstr "Are you sure you want to remove this resource?"
+msgid "Volume list"
+msgstr "Volume list"
 
-msgid "FileSets"
-msgstr "FileSets"
+msgid "Volume name"
+msgstr "Volume name"
 
-msgid "FileSet list"
-msgstr "FileSet list"
+msgid "Volume name:"
+msgstr "Volume name:"
 
-msgid "Add fileset"
-msgstr "Add fileset"
+msgid "Volume status:"
+msgstr "Volume status:"
 
-msgid "FileSet details"
-msgstr "FileSet details"
+msgid "Volume:"
+msgstr "Volume:"
 
-msgid "Schedule list"
-msgstr "Schedule list"
+msgid "Volumes"
+msgstr "Volumes"
 
-msgid "Add schedule"
-msgstr "Add schedule"
+msgid "Volumes in pool"
+msgstr "Volumes in pool"
 
-msgid "Schedules"
-msgstr "Schedules"
+msgid ""
+"Warning! You checked over 50 elements. Please note, that in case more time "
+"consuming actions, web browser request may timed out after 30 seconds. It "
+"this case action will be canceled and in consequence the action may not "
+"touch all selected elements. Are you sure you want to continue?"
+msgstr ""
+"Warning!\\n\\nYou checked over 50 elements.\\n\\nPlease note, that in case "
+"more time consuming actions, web browser request may timed out after 30 "
+"seconds. It this case action will be canceled and in consequence the action "
+"may not touch all selected elements.\\n\\nAre you sure you want to continue?"
 
-msgid "Schedule:"
-msgstr "Schedule:"
+msgid "Week"
+msgstr "Week"
 
-msgid "Schedule details"
-msgstr "Schedule details"
+msgid "Week range"
+msgstr "Week range"
 
-msgid "Configure"
-msgstr "Configure"
+msgid "Welcome"
+msgstr "Welcome"
 
-msgid "Configure Bacula hosts"
-msgstr "Configure Bacula hosts"
+msgid "When expire"
+msgstr "When expire"
 
-msgid "Next"
-msgstr "次へ"
+msgid "When expire:"
+msgstr "When expire:"
 
-msgid "Previous"
-msgstr "戻る"
+msgid "Where"
+msgstr "リストア先"
 
-msgid "Exit wizard"
-msgstr "Exit wizard"
+msgid "Workspace"
+msgstr "Workspace"
 
-msgid "Time range:"
-msgstr "Time range:"
+msgid "Writing"
+msgstr "Writing"
 
-msgid "Application settings"
-msgstr "Application settings"
+msgid "Yes"
+msgstr "Yes"
 
-msgid "Update slots"
-msgstr "Update slots"
+msgid "always replace files"
+msgstr "全てファイルを上書き"
 
-msgid "Max. number of jobs visible in tables"
-msgstr "Max. number of jobs visible in tables"
+msgid "bbconsjson binary file path:"
+msgstr "bbconsjson binary file path:"
 
-msgid "Max. number of jobs value must be integer greather than 0."
-msgstr "Max. number of jobs value must be integer greather than 0."
+msgid "bdirjson binary file path:"
+msgstr "bdirjson binary file path:"
 
-msgid "Log order"
-msgstr "Log order"
+msgid "bfdjson binary file path:"
+msgstr "bfdjson binary file path:"
 
-msgid "Close Menu"
-msgstr "Close Menu"
+msgid "bsdjson binary file path:"
+msgstr "bsdjson binary file path:"
 
-msgid "Error code:"
-msgstr "Error code:"
+msgid "clear bvfs cache"
+msgstr "clear bvfs cache"
 
-msgid "Message:"
-msgstr "Message:"
+msgid "day"
+msgstr "day"
 
+msgid "days"
+msgstr "days"
+
+msgid "details"
+msgstr "details"
+
+msgid "do not replace files"
+msgstr "ファイルの上書きをしない"
+
+msgid "generate"
+msgstr "generate"
+
+msgid "hide console"
+msgstr "hide console"
+
+msgid "if files from restore are newer"
+msgstr "リストアするファイルが新しい場合に上書き"
+
+msgid "if files from restore are older"
+msgstr "リストアするファイルが古い場合に上書き"
+
+msgid "internal Baculum error."
+msgstr "internal Baculum error."
+
+msgid "jobs"
+msgstr "jobs"
+
+msgid "level"
+msgstr "level"
+
+msgid "never written"
+msgstr "never written"
+
+msgid "or run"
+msgstr "or run"
+
+msgid "select action"
+msgstr "select action"
+
+msgid "select client"
+msgstr "select client"
+
+msgid "select database"
+msgstr "select database"
+
+msgid "select job"
+msgstr "select job"
+
+msgid "select language"
+msgstr "select language"
+
+msgid "select pool"
+msgstr "select pool"
+
+msgid "show console"
+msgstr "show console"
+
+msgid "simple"
+msgstr "simple"
+
+msgid "start time"
+msgstr "start time"
+
+msgid "status"
+msgstr "status"
+
+msgid "test"
+msgstr "テスト実行"
+
+msgid "times"
+msgstr "times"
+
+msgid "unlimited"
+msgstr "unlimited"
+
+msgid "unmark all and close"
+msgstr "unmark all and close"
+
+msgid "volumes tools"
+msgstr "volumes tools"
+
+msgid ""
+"{user} keyword will be replaced for each logged user into according username."
+msgstr ""
+"{user} keyword will be replaced for each logged user into according username."
