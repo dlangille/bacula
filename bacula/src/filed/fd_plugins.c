@@ -377,10 +377,10 @@ static void update_ff_pkt(FF_PKT *ff_pkt, struct save_pkt *sp)
    } else {
       ff_pkt->flags &= ~FO_SPARSE;
    }
-   if (sp->flags & FO_PORTABLE_DATA) {
-      ff_pkt->flags |= FO_PORTABLE_DATA;
+   if (sp->flags & FO_PORTABLE) {
+      ff_pkt->flags |= FO_PORTABLE;
    } else {
-      ff_pkt->flags &= ~FO_PORTABLE_DATA;
+      ff_pkt->flags &= ~FO_PORTABLE;
    }
    ff_pkt->flags |= FO_PLUGIN;       /* data from plugin */
    Dsm_check(999);
@@ -448,7 +448,6 @@ bRC plugin_option_handle_file(JCR *jcr, FF_PKT *ff_pkt, struct save_pkt *sp)
          jcr->plugin_ctx = &plugin_ctx_list[i];
 
          update_ff_pkt(ff_pkt, sp);
-
       /* reset plugin in JCR if not used this time */
       } else {
          jcr->plugin_ctx = NULL;

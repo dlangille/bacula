@@ -31,7 +31,7 @@
  * Options saved int "options" of the include/exclude lists.
  * They are directly jammed ito  "flag" of ff packet
  */
-#define FO_PORTABLE_DATA (1<<0)       /* Data is portable */
+#define FO_PORTABLE_DATA (1<<0)       /* Data is portable (Not used) */
 #define FO_MD5           (1<<1)       /* Do MD5 checksum */
 #define FO_COMPRESS      (1<<2)       /* Do compression */
 #define FO_NO_RECURSION  (1<<3)       /* no recursion in directories */
