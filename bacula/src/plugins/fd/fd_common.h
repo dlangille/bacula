@@ -696,3 +696,35 @@ static int32_t full_write(int fd, const char *ptr, int32_t nbytes, bool *cancele
    return nbytes - nleft;
 }
 #endif
+
+#ifdef USE_MAKEDIR
+/* Skip leading slash(es) */
+static bool makedir(char *path, mode_t mode)
+{
+   struct stat statp;
+   char *p = path;
+
+   while (IsPathSeparator(*p)) {
+      p++;
+   }
+   while ((p = first_path_separator(p))) {
+      char save_p;
+      save_p = *p;
+      *p = 0;
+      if (mkdir(path, mode) != 0) {
+         if (stat(path, &statp) != 0) {
+            *p = save_p;
+            return false;
+         } else if (!S_ISDIR(statp.st_mode)) {
+            *p = save_p;
+            return false;
+         }
+      }
+      *p = save_p;
+      while (IsPathSeparator(*p)) {
+         p++;
+      }
+   }
+   return true;
+}
+#endif
