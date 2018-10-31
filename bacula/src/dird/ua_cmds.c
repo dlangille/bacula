@@ -122,14 +122,15 @@ static struct cmdstruct commands[] = {                                      /* C
  { NT_("list"),       list_cmd,      _("List objects from catalog"),
    NT_("jobs [client=<cli>] [jobid=<nn>] [ujobid=<name>] [job=<name>] [joberrors] [jobstatus=<s>] [level=<l>] [jobtype=<t>] [limit=<n>]|\n"
        "\tjobtotals | pools | volume | media <pool=pool-name> | files [type=<deleted|all>] jobid=<nn> | copies jobid=<nn> |\n"
-       "\tjoblog jobid=<nn> | pluginrestoreconf jobid=<nn> restoreobjectid=<nn> | snapshot\n"
+       "\tjoblog jobid=<nn> | pluginrestoreconf jobid=<nn> restoreobjectid=<nn> | snapshot | \n"
+       "\tfileindex=<mm> | clients\n"
       ), false},
 
  { NT_("llist"),      llist_cmd,     _("Full or long list like list command"),
    NT_("jobs [client=<cli>] [jobid=<nn>] [ujobid=<name>] [job=<name>] [joberrors] [jobstatus=<s>] [level=<l>] [jobtype=<t>] [order=<asc/desc>] [limit=<n>]|\n"
        "\tjobtotals | pools | volume | media <pool=pool-name> | files jobid=<nn> | copies jobid=<nn> |\n"
        "\tjoblog jobid=<nn> | pluginrestoreconf jobid=<nn> restoreobjectid=<nn> | snapshot |\n"
-       "\tfileindex=<mm>\n"), false},
+       "\tjobid=<nn> fileindex=<mm> | clients\n"), false},
 
  { NT_("messages"),   messagescmd,   _("Display pending messages"),   NT_(""),    false},
  { NT_("memory"),     memory_cmd,    _("Print current memory usage"), NT_(""),    true},
