@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2017 Kern Sibbald
+   Copyright (C) 2000-2018 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -146,7 +146,7 @@ int main (int argc, char *argv[])
          break;
 
       case 'e':                    /* exclude list */
-         if ((fd = fopen(optarg, "rb")) == NULL) {
+         if ((fd = bfopen(optarg, "rb")) == NULL) {
             berrno be;
             Pmsg2(0, _("Could not open exclude file: %s, ERR=%s\n"),
                optarg, be.bstrerror());
@@ -161,7 +161,7 @@ int main (int argc, char *argv[])
          break;
 
       case 'i':                    /* include list */
-         if ((fd = fopen(optarg, "rb")) == NULL) {
+         if ((fd = bfopen(optarg, "rb")) == NULL) {
             berrno be;
             Pmsg2(0, _("Could not open include file: %s, ERR=%s\n"),
                optarg, be.bstrerror());
