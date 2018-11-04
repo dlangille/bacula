@@ -13,6 +13,12 @@ TestName="big-vol-test"
 JobName=bigvol
 . scripts/functions
 
+if test x$FORCE_CLOUD = xyes ; then
+  echo "\n=== Test $TestName skipped not compatible with Cloud  ==="
+  exit 0
+fi
+
+
 scripts/cleanup
 scripts/copy-test-confs
 cwd=`pwd`
