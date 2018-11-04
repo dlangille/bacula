@@ -96,12 +96,12 @@ if [ x$FORCE_CLOUD = xyes ]; then
    if [ x${CLOUD_QUEUEENDPOINT} != x ]; then
       args="${args} -q ${CLOUD_QUEUEENDPOINT}"
    fi
-   ${bin}/bcloud ${args} -v 'Vol' clean
-   ${bin}/bcloud ${args} -v 'vol' clean
-   ${bin}/bcloud ${args} -v 'TestVol' clean   
-   ${bin}/bcloud ${args} -v 'Small' clean   
-   ${bin}/bcloud ${args} -v 'TEST' clean   
-   ${bin}/bcloud ${args} -v 'Backup-' clean
+   #${bin}/bcloud ${args} -v 'Vol' clean
+   #${bin}/bcloud ${args} -v 'vol' clean
+   #${bin}/bcloud ${args} -v 'TestVol' clean
+   #${bin}/bcloud ${args} -v 'Small' clean
+   #${bin}/bcloud ${args} -v 'TEST' clean
+   #${bin}/bcloud ${args} -v 'Backup-' clean
    # Might report incorrect error if not setup correctly
    true
 fi
