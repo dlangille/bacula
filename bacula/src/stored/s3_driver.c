@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2017 Kern Sibbald
+   Copyright (C) 2000-2018 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -191,12 +191,12 @@ public:
    bwlimit *limit;        /* Used to control the bandwidth */
    bacula_ctx(POOLMEM *&err) : jcr(NULL), xfer(NULL), errMsg(err), parts(NULL),
                               isTruncated(0), nextMarker(NULL), obj_len(0), caller(NULL),
-                              infile(NULL), outfile(NULL), volumes(NULL), status(S3StatusOK), limit(NULL) 
+                              infile(NULL), outfile(NULL), volumes(NULL), status(S3StatusOK), limit(NULL)
    {}
    bacula_ctx(transfer *t) : jcr(NULL), xfer(t), errMsg(t->m_message), parts(NULL),
                               isTruncated(0), nextMarker(NULL), obj_len(0), caller(NULL),
-                              infile(NULL), outfile(NULL), volumes(NULL), status(S3StatusOK), limit(NULL) 
-   {}   
+                              infile(NULL), outfile(NULL), volumes(NULL), status(S3StatusOK), limit(NULL)
+   {}
 };
 
 
@@ -326,7 +326,7 @@ S3Status s3_driver::put_object(transfer *xfer, const char *cache_fname, const ch
    Enter(dbglvl);
    bacula_ctx ctx(xfer);
    ctx.limit = upload_limit.use_bwlimit() ? &upload_limit : NULL;
-   
+
    struct stat statbuf;
    if (lstat(cache_fname, &statbuf) == -1) {
       berrno be;
@@ -515,7 +515,7 @@ bool s3_driver::copy_cache_part_to_cloud(transfer *xfer)
 {
    Enter(dbglvl);
    POOLMEM *cloud_fname = get_pool_memory(PM_FNAME);
-   make_cloud_filename(cloud_fname, xfer->m_volume_name, xfer->m_part);   
+   make_cloud_filename(cloud_fname, xfer->m_volume_name, xfer->m_part);
    uint32_t retry = max_upload_retries;
    S3Status status = S3StatusOK;
    do {

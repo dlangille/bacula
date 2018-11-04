@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2017 Kern Sibbald
+   Copyright (C) 2000-2018 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -25,20 +25,58 @@
 #ifndef _CLOUD_DEV_H_
 #define _CLOUD_DEV_H_
 
+#define part_bits 20
+#define part_mask 0x7FFFFLL
+#define off_bits  (64-part_bits)
+#define off_mask  0xFFFFFFFFFFFLL
+
 #include "bacula.h"
 #include "stored.h"
 #include "cloud_driver.h"
+#include "cloud_transfer_mgr.h"
+#include "cloud_parts.h"
 
 class cloud_dev: public file_dev {
 public:
    int64_t obj_len;
    int status;
 
+   uint64_t *cache_sizes;
+   uint32_t num_cache_parts;
+   uint32_t max_cache_part;
+   uint32_t max_cache_size;
+
+   uint32_t trunc_opt;
+   uint32_t upload_opt;
+
+   cloud_driver *driver;
+
+   static transfer_manager download_mgr;
+   static transfer_manager upload_mgr;
+
+   cloud_proxy *cloud_prox;
+
+   void add_vol_and_part(POOLMEM *&filename, const char *VolumeName, const char *name, uint32_t part);
+
+private:
+   char *cache_directory;
+   bool download_parts_to_read(DCR *dcr, alist* parts);
+   bool upload_part_to_cloud(DCR *dcr, const char *VolumeName, uint32_t part);
+   transfer *download_part_to_cache(DCR *dcr, const char *VolumeName,  uint32_t part);
+   void make_cache_filename(POOLMEM *&filename, const char *VolumeName, uint32_t part);
+   void make_cache_volume_name(POOLMEM *&full_volname, const char *VolumeName);
+   bool get_cache_sizes(DCR *dcr, const char *VolumeName);
+   bool wait_end_of_transfer(DCR *dcr, transfer *elem);
+   bool get_cache_volume_parts_list(DCR *dcr, const char* VolumeName, ilist *parts);
+   bool wait_one_transfer(DCR *dcr, char *VolName, uint32_t part);
+   bool probe_cloud_proxy(DCR *dcr, const char* VolName, bool force=false);
+
 public:
    cloud_dev(JCR *jcr, DEVRES *device);
    ~cloud_dev();
 
-   cloud_driver *driver;
+   bool close_part(DCR *dcr);
+   uint32_t get_part(boffset_t ls_offset);
 
    /* DEVICE virtual interfaces that we redefine */
    boffset_t lseek(DCR *dcr, off_t offset, int whence);
@@ -74,5 +112,8 @@ public:
    uint32_t get_cloud_upload_transfer_status(POOL_MEM &msg, bool verbose);
    uint32_t get_cloud_download_transfer_status(POOL_MEM &msg, bool verbose);
 };
+
+/* Exported subroutines */
+bool makedir(JCR *jcr, char *path, mode_t mode);
 
 #endif /* _CLOUD_DEV_H_ */

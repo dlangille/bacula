@@ -783,7 +783,65 @@ static bool cloud_prunecache_cmd(JCR *jcr)
 /* List volumes in the cloud */
 static bool cloud_list_cmd(JCR *jcr)
 {
-   jcr->dir_bsock->fsend(_("3900 Not yet implemented\n"));
+   BSOCK *dir = jcr->dir_bsock;
+   POOL_MEM dev_name;
+   POOLMEM *errmsg = get_pool_memory(PM_FNAME);
+   errmsg[0] = 0;
+   char volname[MAX_NAME_LENGTH];
+   char mtype[MAX_NAME_LENGTH];
+   int slot, drive;
+   DCR *dcr = NULL;
+
+   if (sscanf(dir->msg, "cloudlist Storage=%127s Volume=%127s MediaType=%127s Slot=%d drive=%d",
+              dev_name.c_str(), volname, mtype, &slot, &drive) != 5) {
+      dir->fsend(_("3912 Error scanning the command\n"));
+      goto bail_out;
+   }
+
+   /* In fact, we do not need to find and reserve a device for this operation,
+    * we just need to find one, idle or not
+    */
+   dcr = find_device(jcr, dev_name, mtype, drive);
+   if (!dcr) {
+      dir->fsend(_("3900 Error reserving device %s %s\n"), dev_name.c_str(), mtype);
+      goto bail_out;
+   }
+
+   if (volname[0] == 0) {       /* List all volumes, TODO: Switch to a callback mode */
+      char *vol;
+      alist volumes(100, not_owned_by_alist);
+      if (!dcr->dev->get_cloud_volumes_list(dcr, &volumes, errmsg)) {
+         dir->fsend(_("3900 Error cannot get cloud Volume list. ERR=%s\n"), errmsg);
+      }
+      free_dcr(dcr);
+
+      foreach_alist(vol, &volumes) {
+         bash_spaces(vol);
+         dir->fsend("volume=%s\n", vol);
+         free(vol);             /* Walk through the list only one time */
+      }
+
+   } else {
+      ilist parts(100, not_owned_by_alist);
+      if (!dcr->dev->get_cloud_volume_parts_list(dcr, volname, &parts, errmsg)) {
+         dir->fsend(_("3900 Error cannot get cloud Volume list. ERR=%s\n"), errmsg);
+         free_dcr(dcr);
+         goto bail_out;
+      }
+      free_dcr(dcr);
+
+      for (int i=1; i <= parts.last_index() ; i++) {
+         cloud_part *p = (cloud_part *)parts.get(i);
+         if (p) {
+            dir->fsend("part=%d size=%lld mtime=%lld\n", i, p->size, p->mtime);
+            free(p);
+         }
+      }
+   }
+
+bail_out:
+   free_pool_memory(errmsg);
+   dir->signal(BNET_EOD);
    return true;
 }
 

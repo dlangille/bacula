@@ -25,7 +25,8 @@ extern s_kw dev_types[];
 enum {
    TRUNC_NO           = 0,             /* default value */
    TRUNC_AFTER_UPLOAD = 1,
-   TRUNC_AT_ENDOFJOB  = 2
+   TRUNC_AT_ENDOFJOB  = 2,
+   TRUNC_CONF_DEFAULT = 3              /* only use as a parameter, not in the conf */
 };
 
 /*
@@ -75,6 +76,11 @@ public:
    char *bucket_name;
    char *access_key;
    char *secret_key;
+   char *blob_endpoint;
+   char *file_endpoint;
+   char *queue_endpoint;
+   char *table_endpoint;
+   char *endpoint_suffix;
    char *region;
    int32_t protocol;
    int32_t uri_style;
