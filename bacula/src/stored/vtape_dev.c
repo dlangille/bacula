@@ -385,13 +385,29 @@ ssize_t vtape::d_write(int, const void *buffer, size_t count)
    ASSERT(buffer);
 
    ssize_t nb;
-   Dmsg3(dbglevel*2, "write len=%i %i:%i\n",
+   Dmsg3(0, "write len=%i %i:%i\n",
          count, current_file,current_block);
 
    if (atEOT) {
       Dmsg0(dbglevel, "write nothing, EOT !\n");
       errno = ENOSPC;
       return -1;
+   }
+
+   if (m_is_worm) {
+      /* The start of the vtape volume has a WEOF */
+      int64_t size = ::lseek(fd, 0, SEEK_END);
+      if (size < 100) {
+         size = 0;
+      }
+      int64_t pos = DEVICE::get_full_addr(current_file, current_block);
+      if ( pos < size ) {
+         Dmsg2(0, "WORM detected. Cannot write at %lld with current size at %lld\n", pos, size -20);
+         errno = EIO;
+         return -1;
+      }
+   } else {
+      Dmsg0(0, "Not worm!\n");
    }
 
    if (!atEOD) {                /* if not at the end of the data */
