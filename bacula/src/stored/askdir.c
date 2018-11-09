@@ -464,7 +464,7 @@ bool dir_update_volume_info(DCR *dcr, bool label, bool update_LastWritten,
 // }
    /* worm cannot be recycled, ensure catalog correct */
    if (dev->is_worm() && vol.VolRecycle) {
-      Jmsg(jcr, M_INFO, 0, _("WORM cassette detected: setting Recycle=No on Volume=\"%s\"\n"));
+      Jmsg(jcr, M_INFO, 0, _("WORM cassette detected: setting Recycle=No on Volume=\"%s\"\n"), vol.VolCatName);
       vol.VolRecycle = false;
    }
    pm_strcpy(VolumeName, vol.VolCatName);
@@ -537,6 +537,8 @@ bool dir_update_volume_info(DCR *dcr, bool label, bool update_LastWritten,
          dev->VolCatInfo.VolCatRecycles = dcr->VolCatInfo.VolCatRecycles;
          dev->VolCatInfo.VolCatWrites = dcr->VolCatInfo.VolCatWrites;
          dev->VolCatInfo.VolCatReads = dcr->VolCatInfo.VolCatReads;
+         dev->VolCatInfo.VolRecycle = dcr->VolCatInfo.VolRecycle;
+         dev->VolCatInfo.BytesWritten = 0;
       }
       ok = true;
    }
