@@ -670,13 +670,14 @@ static bRC endRestoreFile(bpContext *ctx)
  */
 static bRC createFile(bpContext *ctx, struct restore_pkt *rp)
 {
+   struct plugin_ctx *pctx = (struct plugin_ctx *)ctx->pContext;
    printf("test-plugin-fd: createFile\n");
    if (strlen(rp->where) > 990) {
       printf("Restore target dir too long. Restricting to first 990 bytes.\n");
    }
-   strncpy(((struct plugin_ctx *)ctx->pContext)->where, rp->where, 991);
-   ((struct plugin_ctx *)ctx->pContext)->replace = rp->replace;
-   rp->create_status = CF_EXTRACT;
+   strncpy(pctx->where, rp->where, sizeof(pctx->where));
+   pctx->replace = rp->replace;
+   rp->create_status = CF_CORE;
    return bRC_OK;
 }
 
