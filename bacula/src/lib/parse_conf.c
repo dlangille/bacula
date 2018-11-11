@@ -94,7 +94,7 @@ static const char *get_default_configdir();
  *  name         handler      value       code   flags  default_value
  */
 RES_ITEM msgs_items[] = {
-   {"Name",        store_name,    ITEM(res_msgs.hdr.name),  0, 0, 0},
+   {"Name",        store_name,    ITEM(res_msgs.hdr.name),  0, ITEM_REQUIRED, 0},
    {"Description", store_str,     ITEM(res_msgs.hdr.desc),  0, 0, 0},
    {"MailCommand", store_str,     ITEM(res_msgs.mail_cmd),  0, ITEM_ALLOW_DUPS, 0},
    {"OperatorCommand", store_str, ITEM(res_msgs.operator_cmd), 0, ITEM_ALLOW_DUPS, 0},

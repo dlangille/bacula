@@ -179,6 +179,7 @@ bool get_trace(void);
 void set_debug_flags(char *options);
 const char *get_basename(const char *pathname);
 bool is_message_type_set(JCR *jcr, int type);
+void set_trace_for_tools(FILE *new_trace_fd); // called by Bacula's tools only
 
 class BDB;                                              /* define forward reference */
 typedef bool (*sql_query_call)(JCR *jcr, const char *cmd);

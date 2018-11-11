@@ -1191,6 +1191,21 @@ void set_trace(int trace_flag)
    }
 }
 
+/*
+ * Can be called by Bacula's tools that use Bacula's libraries, to control where
+ * to redirect Dmsg() emitted by the code inside the Bacula's library.
+ * This should not be called by the main daemon, this is a Hack !
+ * See in bsnapshot.c how it is used
+ * In your tools be careful to no call any function that here in messages.c
+ * that modify "trace" or close() or re-open() trace_fd
+ */
+void set_trace_for_tools(FILE *new_trace_fd)
+{
+   // don't call fclose(trace_fd) here
+   trace = true;
+   trace_fd = new_trace_fd;
+}
+
 void set_hangup(int hangup_value)
 {
    if (hangup_value != -1) {

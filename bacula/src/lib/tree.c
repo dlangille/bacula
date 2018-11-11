@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2017 Kern Sibbald
+   Copyright (C) 2000-2018 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -81,7 +81,7 @@ TREE_ROOT *new_tree(int count)
       count = 1000;
    }
    root = (TREE_ROOT *)malloc(sizeof(TREE_ROOT));
-   memset(root, 0, sizeof(TREE_ROOT));
+   bmemset(root, 0, sizeof(TREE_ROOT));
    /* Assume filename + node  = 40 characters average length */
    size = count * (BALIGN(sizeof(TREE_NODE)) + 40);
    if (count > 1000000 || size > (MAX_BUF_SIZE / 2)) {
@@ -107,7 +107,7 @@ static TREE_NODE *new_tree_node(TREE_ROOT *root)
    TREE_NODE *node;
    int size = sizeof(TREE_NODE);
    node = (TREE_NODE *)tree_alloc(root, size);
-   memset(node, 0, size);
+   bmemset(node, 0, size);
    node->delta_seq = -1;
    node->can_access = 1;
    return node;

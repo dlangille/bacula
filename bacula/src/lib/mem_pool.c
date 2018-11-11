@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2017 Kern Sibbald
+   Copyright (C) 2000-2018 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -145,9 +145,11 @@ POOLMEM *sm_get_memory(const char *fname, int lineno, int32_t size)
    buf->ablen = size;
    buf->pool = pool;
    buf->next = NULL;
+   P(mutex);
    pool_ctl[pool].in_use++;
    if (pool_ctl[pool].in_use > pool_ctl[pool].max_used)
       pool_ctl[pool].max_used = pool_ctl[pool].in_use;
+   V(mutex);
    return (POOLMEM *)(((char *)buf)+HEAD_SIZE);
 }
 

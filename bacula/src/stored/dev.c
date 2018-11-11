@@ -430,7 +430,7 @@ btime_t DEVICE::get_timer_count()
 /* read from fd */
 ssize_t DEVICE::read(void *buf, size_t len)
 {
-   ssize_t read_len ;
+   ssize_t read_len;
 
    get_timer_count();
 

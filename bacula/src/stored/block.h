@@ -52,6 +52,7 @@
  *  int32_t FileIndex
  *  int32_t Stream
  *  uint32_t data_length
+ *  uint64_t FileOffset (if offset_stream)
  */
 #define RECHDR2_LENGTH  (3*sizeof(int32_t))
 #define WRITE_RECHDR_LENGTH RECHDR2_LENGTH

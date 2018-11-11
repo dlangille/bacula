@@ -195,7 +195,7 @@ IMPLEMENT_ASN1_FUNCTIONS(RecipientInfo)
 IMPLEMENT_ASN1_FUNCTIONS(SignatureData)
 IMPLEMENT_ASN1_FUNCTIONS(CryptoData)
 
-#if (OPENSSL_VERSION_NUMBER >= 0x10100000L)
+#if defined(DEFINE_STACK_OF)
 DEFINE_STACK_OF(SignerInfo);
 DEFINE_STACK_OF(RecipientInfo);
 #else
@@ -391,7 +391,7 @@ X509_KEYPAIR *crypto_keypair_dup(X509_KEYPAIR *keypair)
    if (keypair->pubkey) {
       ret = EVP_PKEY_up_ref(keypair->pubkey);
       if (ret == 0)
-	      goto out_free_new;
+              goto out_free_new;
       newpair->pubkey = keypair->pubkey;
    }
 
@@ -399,7 +399,7 @@ X509_KEYPAIR *crypto_keypair_dup(X509_KEYPAIR *keypair)
    if (keypair->privkey) {
       ret = EVP_PKEY_up_ref(keypair->privkey);
       if (ret == 0)
-	      goto out_free_new;
+              goto out_free_new;
       newpair->privkey = keypair->privkey;
    }
 
@@ -407,7 +407,7 @@ X509_KEYPAIR *crypto_keypair_dup(X509_KEYPAIR *keypair)
    if (keypair->keyid) {
       newpair->keyid = ASN1_OCTET_STRING_dup(keypair->keyid);
       if (!newpair->keyid)
-	      goto out_free_new;
+              goto out_free_new;
    }
 
    return newpair;
@@ -600,7 +600,7 @@ DIGEST *crypto_digest_new(JCR *jcr, crypto_digest_t type)
    /* Initialize the OpenSSL message digest context */
    digest->ctx = EVP_MD_CTX_new();
    if (!digest->ctx)
-	   goto err;
+           goto err;
    EVP_MD_CTX_reset(digest->ctx);
 
    /* Determine the correct OpenSSL message digest type */
@@ -1261,11 +1261,11 @@ CIPHER_CONTEXT *crypto_cipher_new(CRYPTO_SESSION *cs, bool encrypt, uint32_t *bl
 
    cipher_ctx = (CIPHER_CONTEXT *)malloc(sizeof(CIPHER_CONTEXT));
    if (!cipher_ctx)
-	   return NULL;
+           return NULL;
 
    cipher_ctx->ctx = EVP_CIPHER_CTX_new();
    if (!cipher_ctx->ctx)
-	   goto err;
+           goto err;
 
    /*
     * Acquire a cipher instance for the given ASN.1 cipher NID

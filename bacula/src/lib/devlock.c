@@ -44,7 +44,7 @@ devlock *new_devlock()
 {
    devlock *lock;
    lock = (devlock *)malloc(sizeof (devlock));
-   memset(lock, 0, sizeof(devlock));
+   bmemset(lock, 0, sizeof(devlock));
    return lock;
 }
 

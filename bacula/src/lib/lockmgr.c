@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2017 Kern Sibbald
+   Copyright (C) 2000-2018 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -582,7 +582,11 @@ static pthread_key_t lmgr_key;  /* used to get lgmr_thread_t object */
 static dlist *global_mgr = NULL;  /* used to store all lgmr_thread_t objects */
 static pthread_mutex_t lmgr_global_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_t undertaker;
-static bool use_undertaker=true;
+static pthread_cond_t undertaker_cond;
+static pthread_mutex_t undertaker_mutex = PTHREAD_MUTEX_INITIALIZER;
+static bool use_undertaker = true;
+static bool do_quit = false;
+
 
 #define lmgr_is_active() (global_mgr != NULL)
 
@@ -745,12 +749,26 @@ void cln_hdl(void *a)
 
 void *check_deadlock(void *)
 {
-   int old;
    lmgr_init_thread();
    pthread_cleanup_push(cln_hdl, NULL);
 
-   while (!bmicrosleep(30, 0)) {
-      pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &old);
+   while (!do_quit) {
+      struct timeval tv;
+      struct timezone tz;
+      struct timespec timeout;
+
+      gettimeofday(&tv, &tz);
+      timeout.tv_nsec = 0;
+      timeout.tv_sec = tv.tv_sec + 30;
+
+      pthread_mutex_lock(&undertaker_mutex);
+      pthread_cond_timedwait(&undertaker_cond, &undertaker_mutex, &timeout);
+      pthread_mutex_unlock(&undertaker_mutex);
+
+      if(do_quit) {
+         goto bail_out;
+      }
+   
       if (lmgr_detect_deadlock()) {
          /* If we have information about P()/V(), display them */
          if (debug_flags & DEBUG_MUTEX_EVENT && chk_dbglvl(DBGLEVEL_EVENT)) {
@@ -759,9 +777,9 @@ void *check_deadlock(void *)
          lmgr_dump();
          ASSERT2(0, "Lock deadlock");   /* Abort if we found a deadlock */
       }
-      pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, &old);
-      pthread_testcancel();
    }
+   
+bail_out:
    Dmsg0(100, "Exit check_deadlock.\n");
    pthread_cleanup_pop(1);
    return NULL;
@@ -817,6 +835,14 @@ void create_lmgr_key()
    global_mgr = New(dlist(n, &n->link));
 
    if (use_undertaker) {
+      /* Create condwait */
+      status = pthread_cond_init(&undertaker_cond, NULL);
+      if (status != 0) {
+         berrno be;
+         Pmsg1(000, _("pthread_cond_init failed: ERR=%s\n"),
+               be.bstrerror(status));
+         ASSERT2(0, "pthread_cond_init failed");
+      }
       status = pthread_create(&undertaker, NULL, check_deadlock, NULL);
       if (status != 0) {
          berrno be;
@@ -871,11 +897,14 @@ void lmgr_cleanup_main()
       return;
    }
    if (use_undertaker) {
-      pthread_cancel(undertaker);
-#ifdef DEVELOPER
+      /* Signal to the check_deadlock thread to stop itself */
+      pthread_mutex_lock(&undertaker_mutex);
+      do_quit = true;
+      pthread_cond_signal(&undertaker_cond);
+      pthread_mutex_unlock(&undertaker_mutex);
       /* Should avoid memory leak reporting */
       pthread_join(undertaker, NULL);
-#endif
+      pthread_cond_destroy(&undertaker_cond);
    }
    lmgr_cleanup_thread();
    lmgr_p(&lmgr_global_mutex);

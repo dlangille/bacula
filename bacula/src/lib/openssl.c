@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2018 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -69,7 +69,7 @@ void openssl_post_errors(JCR *jcr, int code, const char *errstring)
    }
 }
 
-#if (OPENSSL_VERSION_NUMBER < 0x10100000L)
+#if (OPENSSL_VERSION_NUMBER < 0x10100000L) || defined(LIBRESSL_VERSION_NUMBER)
 /* Array of mutexes for use with OpenSSL static locking */
 static pthread_mutex_t *mutexes;
 
@@ -267,7 +267,7 @@ int init_crypto (void)
 {
    int stat = 0;
 
-#if (OPENSSL_VERSION_NUMBER < 0x10100000L)
+#if (OPENSSL_VERSION_NUMBER < 0x10100000L) || defined(LIBRESSL_VERSION_NUMBER)
    if ((stat = openssl_init_threads()) != 0) {
       berrno be;
       Jmsg1(NULL, M_ABORT, 0,
@@ -314,7 +314,7 @@ int cleanup_crypto (void)
       Jmsg0(NULL, M_ERROR, 0, _("Failed to save OpenSSL PRNG\n"));
    }
 
-#if (OPENSSL_VERSION_NUMBER < 0x10100000L)
+#if (OPENSSL_VERSION_NUMBER < 0x10100000L) || defined(LIBRESSL_VERSION_NUMBER)
    openssl_cleanup_threads();
 
    /* Free libssl and libcrypto error strings */

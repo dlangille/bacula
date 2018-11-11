@@ -391,12 +391,12 @@ static void do_scan()
 {
    attr = new_attr(bjcr);
 
-   memset(&ar, 0, sizeof(ar));
-   memset(&pr, 0, sizeof(pr));
-   memset(&jr, 0, sizeof(jr));
-   memset(&cr, 0, sizeof(cr));
-   memset(&fsr, 0, sizeof(fsr));
-   memset(&fr, 0, sizeof(fr));
+   bmemset(&ar, 0, sizeof(ar));
+   bmemset(&pr, 0, sizeof(pr));
+   bmemset(&jr, 0, sizeof(jr));
+   bmemset(&cr, 0, sizeof(cr));
+   bmemset(&fsr, 0, sizeof(fsr));
+   bmemset(&fr, 0, sizeof(fr));
 
    /* Detach bscan's jcr as we are not a real Job on the tape */
 
@@ -483,7 +483,7 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
          }
 
          /* Check Media Info */
-         memset(&mr, 0, sizeof(mr));
+         bmemset(&mr, 0, sizeof(mr));
          bstrncpy(mr.VolumeName, dev->VolHdr.VolumeName, sizeof(mr.VolumeName));
          mr.PoolId = pr.PoolId;
          num_media++;
@@ -528,7 +528,7 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
             ignored_msgs = 0;
          }
          unser_session_label(&label, rec);
-         memset(&jr, 0, sizeof(jr));
+         bmemset(&jr, 0, sizeof(jr));
          bstrncpy(jr.Job, label.Job, sizeof(jr.Job));
          if (db_get_job_record(bjcr, db, &jr)) {
             /* Job record already exists in DB */
@@ -669,6 +669,9 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
          Pmsg3(0, _("End of all Volumes. VolFiles=%u VolBlocks=%u VolBytes=%s\n"), mr.VolFiles,
                     mr.VolBlocks, edit_uint64_with_commas(mr.VolBytes, ec1));
          break;
+      case STREAM_PLUGIN_NAME:
+         break;
+
       default:
          break;
       } /* end switch */
@@ -887,7 +890,7 @@ static void bscan_free_jcr(JCR *jcr)
    free_bsock(jcr->file_bsock);
    free_bsock(jcr->store_bsock);
    if (jcr->RestoreBootstrap) {
-      free(jcr->RestoreBootstrap);
+      bfree_and_null(jcr->RestoreBootstrap);
    }
    if (jcr->dcr) {
       free_dcr(jcr->dcr);
@@ -1279,7 +1282,7 @@ static int create_jobmedia_record(BDB *db, JCR *mjcr)
    dcr->EndAddr = dev->EndAddr;
    dcr->VolMediaId = dev->VolCatInfo.VolMediaId;
 
-   memset(&jmr, 0, sizeof(jmr));
+   bmemset(&jmr, 0, sizeof(jmr));
    jmr.JobId = mjcr->JobId;
    jmr.MediaId = mr.MediaId;
    jmr.FirstIndex = dcr->VolFirstIndex;

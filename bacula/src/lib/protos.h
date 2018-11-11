@@ -145,6 +145,7 @@ int      bget_msg(BSOCK *sock);
 /* bpipe.c */
 BPIPE *          open_bpipe(char *prog, int wait, const char *mode, char *envp[]=NULL);
 int              close_wpipe(BPIPE *bpipe);
+int              close_epipe(BPIPE *bpipe);
 int              close_bpipe(BPIPE *bpipe);
 
 /* cram-md5.c */

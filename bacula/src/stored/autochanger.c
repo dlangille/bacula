@@ -771,7 +771,9 @@ char *edit_device_codes(DCR *dcr, char *omsg, const char *imsg, const char *cmd)
             str = dcr->jcr->Job;
             break;
          case 'v':
-            if (dcr->VolCatInfo.VolCatName[0]) {
+            if (dcr->dev->LoadedVolName[0]) {
+               str = dcr->dev->LoadedVolName;
+            } else if (dcr->VolCatInfo.VolCatName[0]) {
                str = dcr->VolCatInfo.VolCatName;
             } else if (dcr->VolumeName[0]) {
                str = dcr->VolumeName;

@@ -319,7 +319,13 @@ bool dir_find_next_appendable_volume(DCR *dcr)
     BSOCK *dir = jcr->dir_bsock;
     bool rtn;
     char lastVolume[MAX_NAME_LENGTH];
+    int nb_retry;
 
+    /*
+     * Calculate the number of possible drives + 30 for the size of the
+     *  Volume list to consider.
+     */
+    nb_retry = ((rblist *)res_head[R_DEVICE-r_first]->res_list)->size() + 30;
     Dmsg2(dbglvl, "dir_find_next_appendable_volume: reserved=%d Vol=%s\n",
        dcr->is_reserved(), dcr->VolumeName);
     Mmsg(jcr->errmsg, "Unknown error\n");
@@ -333,7 +339,7 @@ bool dir_find_next_appendable_volume(DCR *dcr)
     P(vol_info_mutex);
     dcr->clear_found_in_use();
     lastVolume[0] = 0;
-    for (int vol_index=1;  vol_index < 30; vol_index++) {
+    for (int vol_index=1;  vol_index < nb_retry; vol_index++) {
        bash_spaces(dcr->media_type);
        bash_spaces(dcr->pool_name);
        dir->fsend(Find_media, jcr->JobId, vol_index, dcr->pool_name, dcr->media_type,
@@ -358,7 +364,7 @@ bool dir_find_next_appendable_volume(DCR *dcr)
            */
           /* ***FIXME*** find better way to handle voltype */
           if (dcr->VolCatInfo.VolCatType != 0 &&
-              (dcr->dev->dev_type == B_FILE_DEV || dcr->dev->dev_type == B_ALIGNED_DEV || 
+              (dcr->dev->dev_type == B_FILE_DEV || dcr->dev->dev_type == B_ALIGNED_DEV ||
                dcr->dev->dev_type == B_CLOUD_DEV) &&
                dcr->dev->dev_type != (int)dcr->VolCatInfo.VolCatType) {
              Dmsg2(000, "Skip vol. Wanted VolType=%d Got=%d\n", dcr->dev->dev_type, dcr->VolCatInfo.VolCatType);
@@ -433,7 +439,7 @@ bool dir_update_volume_info(DCR *dcr, bool label, bool update_LastWritten,
    POOL_MEM VolumeName;
 
    /* If system job, do not update catalog, except if we explicitly force it. */
-   if (jcr->getJobType() == JT_SYSTEM && 
+   if (jcr->getJobType() == JT_SYSTEM &&
        !dcr->force_update_volume_info) {
       return true;
    }
@@ -537,6 +543,7 @@ bool dir_update_volume_info(DCR *dcr, bool label, bool update_LastWritten,
          dev->VolCatInfo.VolCatRecycles = dcr->VolCatInfo.VolCatRecycles;
          dev->VolCatInfo.VolCatWrites = dcr->VolCatInfo.VolCatWrites;
          dev->VolCatInfo.VolCatReads = dcr->VolCatInfo.VolCatReads;
+         dev->VolCatInfo.VolEnable = dcr->VolCatInfo.VolEnable;
          dev->VolCatInfo.VolRecycle = dcr->VolCatInfo.VolRecycle;
       }
       ok = true;

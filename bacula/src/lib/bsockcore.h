@@ -124,7 +124,7 @@ protected:
    void master_lock() const { if (m_use_locking) pP((&m_mmutex)); };
    void master_unlock() const { if (m_use_locking) pV((&m_mmutex)); };
    virtual void init();
-   void _destroy();                   /* called by destroy() */
+   virtual void _destroy();                   /* called by destroy() */
    virtual int32_t write_nbytes(char *ptr, int32_t nbytes);
    virtual int32_t read_nbytes(char *ptr, int32_t nbytes);
 
@@ -140,7 +140,7 @@ public:
    virtual int32_t recv(int /*len*/);
    virtual bool send();
    bool fsend(const char*, ...);
-   void close();              /* close connection and destroy packet */
+   virtual void close();              /* close connection and destroy packet */
    void destroy();                    /* destroy socket packet */
    const char *bstrerror();           /* last error on socket */
    int get_peer(char *buf, socklen_t buflen);

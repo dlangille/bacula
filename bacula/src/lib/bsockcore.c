@@ -714,7 +714,8 @@ bool BSOCKCORE::set_buffer_size(uint32_t size, int rw)
       dbuf_size = DEFAULT_NETWORK_BUFFER_SIZE;
    }
    start_size = dbuf_size;
-   if ((msg = realloc_pool_memory(msg, dbuf_size + 100)) == NULL) {
+   /* The extra 512 can hold data such as Sparse/Offset pointer */
+   if ((msg = realloc_pool_memory(msg, dbuf_size + 512)) == NULL) {
       Qmsg0(get_jcr(), M_FATAL, 0, _("Could not malloc BSOCKCORE data buffer\n"));
       return false;
    }

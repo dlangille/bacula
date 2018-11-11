@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2017 Kern Sibbald
+   Copyright (C) 2000-2018 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -79,6 +79,15 @@ static int openssl_verify_peer(int ok, X509_STORE_CTX *store)
       char issuer[256];
       char subject[256];
 
+      if (err == X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT ||
+          err == X509_V_ERR_SELF_SIGNED_CERT_IN_CHAIN)
+      {
+         /* It seems that the error can be also
+          * 24 X509_V_ERR_INVALID_CA: invalid CA certificate
+          * But it's not very specific...
+          */
+         Jmsg0(NULL, M_ERROR, 0, _("CA certificate is self signed. With OpenSSL 1.1, enforce basicConstraints = CA:true in the certificate creation to avoid this issue\n"));
+      }
       X509_NAME_oneline(X509_get_issuer_name(cert), issuer, 256);
       X509_NAME_oneline(X509_get_subject_name(cert), subject, 256);
 
@@ -219,7 +228,6 @@ TLS_CONTEXT *new_tls_context(const char *ca_certfile, const char *ca_certdir,
                          SSL_VERIFY_PEER|SSL_VERIFY_FAIL_IF_NO_PEER_CERT,
                          openssl_verify_peer);
    }
-
    return ctx;
 
 err:
@@ -730,7 +738,6 @@ bool tls_bsock_probe(BSOCKCORE *bsock)
    int32_t pktsiz;
    return SSL_peek(bsock->tls->openssl, &pktsiz, sizeof(pktsiz))==sizeof(pktsiz);
 }
-
 
 #else /* HAVE_OPENSSL */
 # error No TLS implementation available.

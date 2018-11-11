@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2017 Kern Sibbald
+   Copyright (C) 2000-2018 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -205,7 +205,7 @@ char *OutputWriter::get_output(va_list ap, POOLMEM **out, OutputType first)
    POOLMEM   *tmp2 = get_pool_memory(PM_FNAME);
    POOLMEM   *tmp = get_pool_memory(PM_FNAME);
    OutputType val = first;
-
+         
    while (val != OT_END) {
 
       *tmp = 0;
@@ -306,6 +306,12 @@ char *OutputWriter::get_output(va_list ap, POOLMEM **out, OutputType first)
          Mmsg(tmp, "%s_epoch=%lld%c%s=%s%c", k, bt, separator, k, ed1, separator);
          break;
 
+      case OT_DURATION:
+         bt = va_arg(ap, utime_t);     
+         bstrutime(ed1, sizeof(ed1), bt); 
+         Mmsg(tmp, "%s=%lld%c%s_str=%s%c", k, bt, separator, k, edit_utime(bt, ed1, sizeof(ed1)), separator);
+         break;
+
       case OT_SIZE:
       case OT_INT64:
          i64 = va_arg(ap, int64_t);
@@ -326,7 +332,11 @@ char *OutputWriter::get_output(va_list ap, POOLMEM **out, OutputType first)
       case OT_JOBTYPE:
       case OT_JOBSTATUS:
          i32 = va_arg(ap, int32_t);
-         Mmsg(tmp, "%s=%c%c", k, (char) i32, separator);
+         if (i32 == 0) {
+            Mmsg(tmp, "%s=%c", k, separator);
+         } else {
+            Mmsg(tmp, "%s=%c%c", k, (char)i32, separator);
+         }
          break;
 
       case OT_CLEAR:
