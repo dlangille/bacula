@@ -1,20 +1,18 @@
 /*
-   Bacula(R) - The Network Backup Solution
+   Bacula® - The Network Backup Solution
 
-   Copyright (C) 2000-2015 Kern Sibbald
+   Copyright (C) 2000-2014 Bacula Systems SA
+   All rights reserved.
 
-   The original author of Bacula is Kern Sibbald, with contributions
-   from many others, a complete list can be found in the file AUTHORS.
+   The main author of Bacula is Kern Sibbald, with contributions from many
+   others, a complete list can be found in the file AUTHORS.
 
-   You may use this file and others of this release according to the
-   license defined in the LICENSE file, which includes the Affero General
-   Public License, v3.0 ("AGPLv3") and some additional permissions and
-   terms pursuant to its AGPLv3 Section 7.
+   Licensees holding a valid Bacula Systems SA license may use this file
+   and others of this release in accordance with the proprietary license
+   agreement provided in the LICENSE file.  Redistribution of any part of
+   this release is not permitted.
 
-   This notice must be preserved when any source code is 
-   conveyed and/or propagated.
-
-   Bacula(R) is a registered trademark of Kern Sibbald.
+   Bacula® is a registered trademark of Kern Sibbald.
 */
 /*
  *
@@ -44,61 +42,77 @@ static bool perform_full_name_substitution(JCR *jcr, MEDIA_DBR *mr, POOL_DBR *pr
  *  The media record must have the PoolId filled in when
  *   calling this routine.
  */
-bool newVolume(JCR *jcr, MEDIA_DBR *mr, STORE *store)
+bool newVolume(JCR *jcr, MEDIA_DBR *mr, STORE *store, POOL_MEM &errmsg)
 {
    POOL_DBR pr;
 
-   memset(&pr, 0, sizeof(pr));
+   bmemset(&pr, 0, sizeof(pr));
 
    /* See if we can create a new Volume */
    db_lock(jcr->db);
    pr.PoolId = mr->PoolId;
+   pr.PoolBytes = 1;            /* Get the size of the pool */
+
    if (!db_get_pool_numvols(jcr, jcr->db, &pr)) {
       goto bail_out;
    }
-   if (pr.MaxVols == 0 || pr.NumVols < pr.MaxVols) {
-      mr->clear();
-      set_pool_dbr_defaults_in_media_dbr(mr, &pr);
-      jcr->VolumeName[0] = 0;
-      bstrncpy(mr->MediaType, jcr->wstore->media_type, sizeof(mr->MediaType));
-      generate_plugin_event(jcr, bDirEventNewVolume); /* return void... */
-      if (jcr->VolumeName[0] && is_volume_name_legal(NULL, jcr->VolumeName)) {
-         bstrncpy(mr->VolumeName, jcr->VolumeName, sizeof(mr->VolumeName));
-      /* Check for special characters */
-      } else if (pr.LabelFormat[0] && pr.LabelFormat[0] != '*') {
-         if (is_volume_name_legal(NULL, pr.LabelFormat)) {
-            /* No special characters, so apply simple algorithm */
-            if (!create_simple_name(jcr, mr, &pr)) {
-               goto bail_out;
-            }
-         } else {  /* try full substitution */
-            /* Found special characters, so try substitution */
-            if (!perform_full_name_substitution(jcr, mr, &pr)) {
-               goto bail_out;
-            }
-            if (!is_volume_name_legal(NULL, mr->VolumeName)) {
-               Jmsg(jcr, M_ERROR, 0, _("Illegal character in Volume name \"%s\"\n"),
-                  mr->VolumeName);
-               goto bail_out;
-            }
-         }
-      } else {
-         goto bail_out;
-      }
-      pr.NumVols++;
-      mr->Enabled = 1;
-      set_storageid_in_mr(store, mr);
-      if (db_create_media_record(jcr, jcr->db, mr) &&
-         db_update_pool_record(jcr, jcr->db, &pr)) {
-         Jmsg(jcr, M_INFO, 0, _("Created new Volume=\"%s\", Pool=\"%s\", MediaType=\"%s\" in catalog.\n"),
-            mr->VolumeName, pr.Name, mr->MediaType);
-         Dmsg1(90, "Created new Volume=%s\n", mr->VolumeName);
-         db_unlock(jcr->db);
-         return true;
-      } else {
-         Jmsg(jcr, M_ERROR, 0, "%s", db_strerror(jcr->db));
-      }
+
+   if (pr.MaxVols > 0 && pr.NumVols >= pr.MaxVols) {
+      Mmsg(errmsg, "Maximum Volumes exceeded for Pool %s", pr.Name);
+      Dmsg1(90, "Too much volumes for Pool %s\n", pr.Name);
+      goto bail_out;
    }
+
+   if (check_max_pool_bytes(&pr)) {
+      Mmsg(errmsg, "Maximum Pool Bytes exceeded for Pool %s", pr.Name);
+      Dmsg1(90, "Too much bytes for Pool %s\n", pr.Name);
+      goto bail_out;
+   }
+
+   mr->clear();
+   set_pool_dbr_defaults_in_media_dbr(mr, &pr);
+   jcr->VolumeName[0] = 0;
+   bstrncpy(mr->MediaType, jcr->wstore->media_type, sizeof(mr->MediaType));
+   generate_plugin_event(jcr, bDirEventNewVolume); /* return void... */
+   if (jcr->VolumeName[0] && is_volume_name_legal(NULL, jcr->VolumeName)) {
+      bstrncpy(mr->VolumeName, jcr->VolumeName, sizeof(mr->VolumeName));
+      /* Check for special characters */
+   } else if (pr.LabelFormat[0] && pr.LabelFormat[0] != '*') {
+      if (is_volume_name_legal(NULL, pr.LabelFormat)) {
+         /* No special characters, so apply simple algorithm */
+         if (!create_simple_name(jcr, mr, &pr)) {
+            goto bail_out;
+         }
+      } else {  /* try full substitution */
+         /* Found special characters, so try substitution */
+         if (!perform_full_name_substitution(jcr, mr, &pr)) {
+            goto bail_out;
+         }
+         if (!is_volume_name_legal(NULL, mr->VolumeName)) {
+            Mmsg(errmsg, _("Illegal character in Volume name"));
+            Jmsg(jcr, M_ERROR, 0, _("Illegal character in Volume name \"%s\"\n"),
+                 mr->VolumeName);
+            goto bail_out;
+         }
+      }
+   } else {
+      goto bail_out;
+   }
+   pr.NumVols++;
+   mr->Enabled = 1;
+   set_storageid_in_mr(store, mr);
+   if (db_create_media_record(jcr, jcr->db, mr) &&
+       db_update_pool_record(jcr, jcr->db, &pr)) {
+      Jmsg(jcr, M_INFO, 0, _("Created new Volume=\"%s\", Pool=\"%s\", MediaType=\"%s\" in catalog.\n"),
+           mr->VolumeName, pr.Name, mr->MediaType);
+      Dmsg1(90, "Created new Volume=%s\n", mr->VolumeName);
+      db_unlock(jcr->db);
+      return true;
+   } else {
+      Mmsg(errmsg, "%s", db_strerror(jcr->db));
+      Jmsg(jcr, M_ERROR, 0, "%s", db_strerror(jcr->db));
+   }
+
 bail_out:
    db_unlock(jcr->db);
    return false;

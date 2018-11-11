@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (C) 2000-2015 Kern Sibbald
+# Copyright (C) 2000-2018 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
 
@@ -81,7 +81,7 @@ if [ $? != 0 -o $bsrstat != 0 -o $bstat != 0 -o $rstat != 0 ] ; then
    echo " "
    exit 1
 else
-   echo "  ===== bsr-opt-test Bacula source OK `date +%R:%S` ===== "
-   echo "  ===== bsr-opt-test OK `date +%R:%S` ===== " >>test.out
+   echo "  ===== End bsr-opt-test OK `date +%R:%S` ===== "
+   echo "  ===== End bsr-opt-test OK `date +%R:%S` ===== " >>test.out
    scripts/cleanup
 fi
