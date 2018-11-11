@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2018 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -20,8 +20,6 @@
  *   Generic base 64 input and output routines
  *
  *    Written by Kern E. Sibbald, March MM.
- *
- *   Version $Id$
  */
 
 
@@ -183,6 +181,11 @@ bin_to_base64(char *buf, int buflen, char *bin, int binlen, int compatible)
  *
  * the base64_to_bin routine is compatible with what the rest of the world
  * uses.
+ *
+ * 'dest_size' must be big enough! Giving the right size here could fail as
+ * we consider 'srclen' as an unpadded size, even if 'src' is padded
+ * we suggest to use dest_size=srclen for easiness or at least
+ * dest_size=((srclen + 3) / 4) * 3) for optimization lovers
  *
  *  Returns: the number of characters stored not
  *           including the EOS

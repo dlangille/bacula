@@ -120,8 +120,9 @@ Makefile: $(srcdir)/Makefile.in $(topdir)/config.status
 
 wait_test: Makefile bsys.c
 	$(RMF) bsys.o
-	$(CXX) -DTEST_PROGRAM $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE)  $(CFLAGS) bsys.c
+	$(CXX) -DTEST_PROGRAM $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) bsys.c
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -L../findlib -o $@ bsys.o $(DLIB) -lbac -lbacfind -lm $(LIBS) $(OPENSSL_LIBS)
+	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) $@ $(DESTDIR)$(sbindir)/
 	$(RMF) bsys.o
 	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) bsys.c
 
@@ -129,6 +130,7 @@ output_test: Makefile output.c unittests.o
 	$(RMF) output.o
 	$(CXX) -DTEST_PROGRAM $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE)  $(CFLAGS) output.c
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -o $@ output.o unittests.o $(DLIB) -lbac -lm $(LIBS) $(OPENSSL_LIBS)
+	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) $@ $(DESTDIR)$(sbindir)/
 	$(RMF) output.o
 	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) output.c
 
@@ -136,6 +138,7 @@ lockmgr_test: Makefile libbac.la lockmgr.c unittests.o
 	$(RMF) lockmgr.o
 	$(CXX) -DTEST_PROGRAM $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE)  $(CFLAGS) lockmgr.c
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -o $@ lockmgr.o unittests.o $(DLIB) -lbac -lm $(LIBS) $(OPENSSL_LIBS)
+	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) $@ $(DESTDIR)$(sbindir)/
 	$(RMF) lockmgr.o
 	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) lockmgr.c
 
@@ -143,6 +146,7 @@ base64_test: Makefile base64.c unittests.o
 	$(RMF) base64.o
 	$(CXX) -DTEST_PROGRAM $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) base64.c
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -o $@ base64.o unittests.o $(DLIB) -lbac -lm $(LIBS) $(OPENSSL_LIBS)
+	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) $@ $(DESTDIR)$(sbindir)/
 	$(RMF) base64.o
 	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) base64.c
 
@@ -150,6 +154,7 @@ flist_test: Makefile flist.c unittests.o
 	$(RMF) flist.o
 	$(CXX) -DTEST_PROGRAM $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) flist.c
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -o $@ flist.o unittests.o $(DLIB) -lbac -lm $(LIBS) $(OPENSSL_LIBS)
+	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) $@ $(DESTDIR)$(sbindir)/
 	$(RMF) flist.o
 	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) flist.c
 
@@ -157,6 +162,7 @@ fnmatch_test: Makefile fnmatch.c unittests.o
 	$(RMF) fnmatch.o
 	$(CXX) -DTEST_PROGRAM $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) fnmatch.c
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -o $@ fnmatch.o unittests.o $(DLIB) -lbac -lm $(LIBS) $(OPENSSL_LIBS)
+	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) $@ $(DESTDIR)$(sbindir)/
 	$(RMF) fnmatch.o
 	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) fnmatch.c
 
@@ -164,6 +170,7 @@ worker_test: Makefile worker.c
 	$(RMF) worker.o
 	$(CXX) -DTEST_PROGRAM $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) worker.c
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -o $@ worker.o $(DLIB) -lbac -lm $(LIBS) $(OPENSSL_LIBS)
+	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) $@ $(DESTDIR)$(sbindir)/
 	$(RMF) worker.o
 	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) worker.c
 
@@ -171,12 +178,14 @@ workq_test: Makefile workq.c
 	$(RMF) workq.o
 	$(CXX) -DTEST_PROGRAM $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) workq.c
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -o $@ workq.o $(DLIB) -lbac -lm $(LIBS) $(OPENSSL_LIBS)
+	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) $@ $(DESTDIR)$(sbindir)/
 	$(RMF) workq.o
 	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) workq.c
 
 rwlock_test: Makefile rwlock.c
 	$(RMF) rwlock.o
 	$(CXX) -DTEST_RWLOCK $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE)  $(CFLAGS) rwlock.c
+	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) $@ $(DESTDIR)$(sbindir)/
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -o $@ rwlock.o $(DLIB) -lbac -lm $(LIBS) $(OPENSSL_LIBS)
 	$(RMF) rwlock.o
 	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) rwlock.c
@@ -185,27 +194,31 @@ devlock_test: Makefile
 	$(RMF) devlock.o
 	$(CXX) -DTEST_devlock $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE)  $(CFLAGS) devlock.c
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -o $@ devlock.o $(DLIB) -lbac -lm $(LIBS) $(OPENSSL_LIBS)
+	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) $@ $(DESTDIR)$(sbindir)/
 	$(RMF) devlock.o
 	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) devlock.c
 
 htable_test: Makefile libbac.la htable.c unittests.o
 	$(RMF) htable.o
 	$(CXX) -DTEST_SMALL_HTABLE -DTEST_NON_CHAR -DTEST_PROGRAM $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE)	$(CFLAGS) htable.c
-	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -o $@ htable.o unittests.o $(DLIB) -lbac -lm $(LIBS) $(OPENSSL_LIBS) 
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -o $@ htable.o unittests.o $(DLIB) -lbac -lm $(LIBS) $(OPENSSL_LIBS)
+	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) $@ $(DESTDIR)$(sbindir)/
 	$(RMF) htable.o
 	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) htable.c 
  
 alist_test: Makefile alist.c unittests.o
 	$(RMF) alist.o
 	$(CXX) -DTEST_PROGRAM $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) alist.c
-	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -o $@ alist.o unittests.o $(DLIB) -lbac -lm $(LIBS) $(OPENSSL_LIBS) 
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -o $@ alist.o unittests.o $(DLIB) -lbac -lm $(LIBS) $(OPENSSL_LIBS)
+	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) $@ $(DESTDIR)$(sbindir)/
 	$(RMF) alist.o
 	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) alist.c
 
 crc32_test: Makefile crc32.c unittests.o
 	$(RMF) crc32.o
 	$(CXX) -DTEST_PROGRAM $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) crc32.c
-	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -o $@ crc32.o unittests.o $(DLIB) -lbac -lm $(LIBS) $(OPENSSL_LIBS) 
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -o $@ crc32.o unittests.o $(DLIB) -lbac -lm $(LIBS) $(OPENSSL_LIBS)
+	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) $@ $(DESTDIR)$(sbindir)/
 	$(RMF) crc32.o
 	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) crc32.c
 
@@ -213,27 +226,31 @@ sellist_test: Makefile libbac.la sellist.c unittests.o
 	$(RMF) sellist.o
 	$(CXX) -DTEST_PROGRAM $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) sellist.c
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -o $@ sellist.o unittests.o $(DLIB) -lbac -lm $(LIBS) $(OPENSSL_LIBS)
+	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) $@ $(DESTDIR)$(sbindir)/
 	$(RMF) sellist.o
 	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) sellist.c
 
-xml_test: Makefile xml.o
+xml_test: Makefile libbac.la xml.c
 	$(RMF) xml.o
 	$(CXX) -DTEST_PROG $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE)  $(CFLAGS) xml.c
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -o $@ xml.o $(DLIB) -lbac -lm $(LIBS) $(OPENSSL_LIBS)
+	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) $@ $(DESTDIR)$(sbindir)/
 	$(RMF) xml.o
 	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) xml.c
 
-md5sum: Makefile md5.o	
+md5sum: Makefile libbac.la md5.c
 	$(RMF) md5.o
 	$(CXX) -DMD5_SUM $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE)  $(CFLAGS) md5.c
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -o $@ md5.o $(DLIB) -lbac -lm $(LIBS) $(OPENSSL_LIBS)
+	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) $@ $(DESTDIR)$(sbindir)/
 	$(RMF) md5.o
 	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) md5.c
 
-sha1sum: Makefile sha1.o
+sha1sum: Makefile libbac.la sha1.c
 	$(RMF) sha1.o
 	$(CXX) -DSHA1_SUM $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE)	$(CFLAGS) sha1.c
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -o $@ sha1.o $(DLIB) -lbac -lm $(LIBS) $(OPENSSL_LIBS)
+	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) $@ $(DESTDIR)$(sbindir)/
 	$(RMF) sha1.o
 	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) sha1.c
 
@@ -241,13 +258,15 @@ sha1_test: Makefile libbac.la sha1.c unittests.o
 	$(RMF) sha1.o
 	$(CXX) -DTEST_PROGRAM $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) sha1.c
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -o $@ sha1.o unittests.o $(DLIB) -lbac -lm $(LIBS)
+	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) $@ $(DESTDIR)$(sbindir)/
 	$(RMF) sha1.o
 	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) sha1.c
 
-bsnprintf_test: Makefile bsnprintf.c unittests.o
+bsnprintf_test: Makefile libbac.la bsnprintf.c unittests.o
 	$(RMF) bsnprintf.o
 	$(CXX) -DTEST_PROGRAM $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE)  $(CFLAGS) bsnprintf.c
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -o $@ bsnprintf.o unittests.o $(DLIB) -lbac -lm $(LIBS) $(OPENSSL_LIBS)
+	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) $@ $(DESTDIR)$(sbindir)/
 	$(RMF) bsnprintf.o
 	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) bsnprintf.c
 
@@ -255,20 +274,23 @@ ini_test: Makefile libbac.la ini.c unittests.o
 	$(RMF) ini.o
 	$(CXX) -DTEST_PROGRAM $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE)  $(CFLAGS) ini.c
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -o $@ ini.o unittests.o -lbaccfg -lbac $(DLIB) -lm $(LIBS) $(OPENSSL_LIBS)
+	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) $@ $(DESTDIR)$(sbindir)/
 	$(RMF) ini.o
 	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) ini.c
 
-bsockcore_test: Makefile bsockcore.c unittests.o
+bsockcore_test: Makefile libbac.la bsockcore.c unittests.o
 	$(RMF) bsockcore.o
 	$(CXX) -DTEST_PROGRAM $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE)  $(CFLAGS) bsockcore.c
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -o $@ bsockcore.o unittests.o $(DLIB) -lbac -lm $(LIBS)
+	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) $@ $(DESTDIR)$(sbindir)/
 	$(RMF) bsockcore.o
 	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) bsockcore.c
 
-bsock_test: Makefile bsock.c unittests.o
+bsock_test: Makefile libbac.la bsock.c unittests.o
 	$(RMF) bsock.o
 	$(CXX) -DTEST_PROGRAM $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE)  $(CFLAGS) bsock.c
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -o $@ bsock.o unittests.o $(DLIB) -lbac -lm $(LIBS)
+	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) $@ $(DESTDIR)$(sbindir)/
 	$(RMF) bsock.o
 	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) bsock.c
 

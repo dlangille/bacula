@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2018 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -54,7 +54,7 @@ public:
    POOLMEM *result;             /* match result */
    bool success;                /* match is ok */
 
-   char *replace(const char *fname); /* return this.result */
+   char *replace(const char *fname, struct stat *sp=NULL); /* return this.result */
    void debug();
 
    /* private */
@@ -65,7 +65,7 @@ public:
    char *eor;                   /* end of regexp in expr */
 
    char *return_fname(const char *fname, int len); /* return fname as result */
-   char *edit_subst(const char *fname, regmatch_t breg[]);
+   char *edit_subst(const char *fname, struct stat *sp, regmatch_t breg[]);
    int compute_dest_len(const char *fname, regmatch_t breg[]);
    bool extract_regexp(const char *motif);
 };
@@ -83,6 +83,7 @@ void free_bregexp(BREGEXP *script);
 alist *get_bregexps(const char *where);
 
 /* apply every regexps from the alist */
+bool apply_bregexps(const char *fname, struct stat *sp, alist *bregexps, char **result);
 bool apply_bregexps(const char *fname, alist *bregexps, char **result);
 
 /* foreach_alist free RUNSCRIPT */

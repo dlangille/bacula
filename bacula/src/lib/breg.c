@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2018 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -79,16 +79,24 @@ void free_bregexps(alist *bregexps)
    }
 }
 
+
 /* Apply all regexps to fname
  */
 bool apply_bregexps(const char *fname, alist *bregexps, char **result)
+{
+   return apply_bregexps(fname, NULL, bregexps, result);
+}
+
+/* Apply all regexps to fname
+ */
+bool apply_bregexps(const char *fname, struct stat *sp, alist *bregexps, char **result)
 {
    BREGEXP *elt;
    bool ok=false;
 
    char *ret = (char *) fname;
    foreach_alist(elt, bregexps) {
-      ret = elt->replace(ret);
+      ret = elt->replace(ret, sp);
       ok = ok || elt->success;
    }
    Dmsg2(500, "bregexp: fname=%s ret=%s\n", fname, ret);
@@ -214,7 +222,7 @@ bool BREGEXP::extract_regexp(const char *motif)
 }
 
 /* return regexp->result */
-char *BREGEXP::replace(const char *fname)
+char *BREGEXP::replace(const char *fname, struct stat *sp)
 {
    success = false;             /* use this.success to known if it's ok */
    int flen = strlen(fname);
@@ -229,7 +237,7 @@ char *BREGEXP::replace(const char *fname)
 
    if (len) {
       result = check_pool_memory_size(result, len);
-      edit_subst(fname, regs);
+      edit_subst(fname, sp, regs);
       success = true;
       Dmsg2(500, "bregexp: len = %i, result_len = %i\n", len, strlen(result));
 
@@ -265,8 +273,12 @@ int BREGEXP::compute_dest_len(const char *fname, regmatch_t breg[])
    }
 
    for (p = psubst++; *p ; p = psubst++) {
+      /* match a substitution with a struct stat field */
+      if ((*p == '$') && (*psubst == 'm')) {
+         len += 50;             /* Will add a integer */
+
       /* match $1 \1 back references */
-      if ((*p == '$' || *p == '\\') && ('0' <= *psubst && *psubst <= '9')) {
+      } else if ((*p == '$' || *p == '\\') && ('0' <= *psubst && *psubst <= '9')) {
          no = *psubst++ - '0';
 
          /* we check if the back reference exists */
@@ -288,10 +300,11 @@ int BREGEXP::compute_dest_len(const char *fname, regmatch_t breg[])
    return len;
 }
 
-char *BREGEXP::edit_subst(const char *fname, regmatch_t breg[])
+char *BREGEXP::edit_subst(const char *fname, struct stat *sp, regmatch_t breg[])
 {
    int i;
    char *p;
+   char ed[50];
    char *psubst = subst;
    int no;
    int len;
@@ -305,10 +318,17 @@ char *BREGEXP::edit_subst(const char *fname, regmatch_t breg[])
    }
 
    /* on recopie le motif de remplacement (avec tous les $x) */
-
    for (p = psubst++; *p ; p = psubst++) {
+      /* match specific % variables, coming from struct stat */
+      if ((*p == '$' && *psubst == 'm')) {
+         edit_uint64(sp?sp->st_mtime : 0, ed);
+         len = strlen(ed);
+         bstrncpy(result + i, ed, len+1);
+         i+=len;
+         psubst++;              /* Eat m */
+
       /* match $1 \1 back references */
-      if ((*p == '$' || *p == '\\') && ('0' <= *psubst && *psubst <= '9')) {
+      } else if ((*p == '$' || *p == '\\') && ('0' <= *psubst && *psubst <= '9')) {
          no = *psubst++ - '0';
 
          /* have a back reference ? */

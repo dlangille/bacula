@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2017 Kern Sibbald
+   Copyright (C) 2000-2018 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -167,7 +167,7 @@ void build_attr_output_fnames(JCR *jcr, ATTR *attr)
 
    if (jcr->where_bregexp) {
       char *ret;
-      apply_bregexps(attr->fname, jcr->where_bregexp, &ret);
+      apply_bregexps(attr->fname, &attr->statp, jcr->where_bregexp, &ret);
       pm_strcpy(attr->ofname, ret);
 
       if (attr->type == FT_LNKSAVED || attr->type == FT_LNK) {
@@ -176,7 +176,7 @@ void build_attr_output_fnames(JCR *jcr, ATTR *attr)
           */
 
          if ((attr->type == FT_LNKSAVED || jcr->prefix_links)) {
-            apply_bregexps(attr->lname, jcr->where_bregexp, &ret);
+            apply_bregexps(attr->lname, &attr->statp, jcr->where_bregexp, &ret);
             pm_strcpy(attr->olname, ret);
 
          } else {
@@ -262,7 +262,7 @@ void print_ls_output(JCR *jcr, ATTR *attr, int message_type /* M_RESTORED */)
 
    if (attr->type == FT_DELETED) { /* TODO: change this to get last seen values */
       bsnprintf(buf, sizeof(buf),
-                "-*DELETED*-  - -        -                  - ---------- --------  %s\n", attr->ofname);
+                "-*DELETED-   - -        -                  - ---------- --------  %s\n", attr->ofname);
       Dmsg1(dbglvl, "%s", buf);
       Jmsg(jcr, message_type, 1, "%s", buf);
       return;
@@ -277,7 +277,7 @@ void print_ls_output(JCR *jcr, ATTR *attr, int message_type /* M_RESTORED */)
    p += sprintf(p, "%-8.8s %-8.8s",
                 guid->uid_to_name(attr->statp.st_uid, en1, sizeof(en1)),
                 guid->gid_to_name(attr->statp.st_gid, en2, sizeof(en2)));
-   p += sprintf(p, "%12.12s ", edit_int64(attr->statp.st_size, ec1));
+   p += sprintf(p, " %18.18s ", edit_int64(attr->statp.st_size, ec1));
    p = encode_time(attr->statp.st_ctime, p);
    *p++ = ' ';
    *p++ = ' ';

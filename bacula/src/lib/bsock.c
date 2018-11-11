@@ -244,6 +244,8 @@ bail_out:
  * Returns: false on failure
  *          true  on success
  */
+#define display_errmsg() (!m_suppress_error_msgs && m_jcr && m_jcr->JobId != 0)
+
 bool BSOCK::send(int aflags)
 {
    int32_t rc;
@@ -258,22 +260,22 @@ bool BSOCK::send(int aflags)
    bool locked = false;
 
    if (is_closed()) {
-      if (!m_suppress_error_msgs) {
+      if (display_errmsg()) {
          Qmsg0(m_jcr, M_ERROR, 0,  _("Socket is closed\n"));
       }
       return false;
    }
    if (errors) {
-      if (!m_suppress_error_msgs) {
+      if (display_errmsg()) {
          Qmsg4(m_jcr, M_ERROR, 0,  _("Socket has errors=%d on call to %s:%s:%d\n"),
-             errors, m_who, m_host, m_port);
+               errors, m_who, m_host, m_port);
       }
       return false;
    }
    if (is_terminated()) {
-      if (!m_suppress_error_msgs) {
+      if (display_errmsg()) {
          Qmsg4(m_jcr, M_ERROR, 0,  _("Bsock send while terminated=%d on call to %s:%s:%d\n"),
-             is_terminated(), m_who, m_host, m_port);
+               is_terminated(), m_who, m_host, m_port);
       }
       return false;
    }
@@ -281,7 +283,7 @@ bool BSOCK::send(int aflags)
    if (msglen > 4000000) {
       if (!m_suppress_error_msgs) {
          Qmsg4(m_jcr, M_ERROR, 0,
-            _("Socket has insane msglen=%d on call to %s:%s:%d\n"),
+            _("Write socket has insane msglen=%d on call to %s:%s:%d\n"),
              msglen, m_who, m_host, m_port);
       }
       return false;
