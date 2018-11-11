@@ -674,6 +674,7 @@ static void prt_runtime(UAContext *ua, sched_pkt *sp, OutputWriter *ow)
    bool close_db = false;
    JCR *jcr = ua->jcr;
    MEDIA_DBR mr;
+   POOL_MEM errmsg;
    int orig_jobtype;
 
    orig_jobtype = jcr->getJobType();
@@ -690,7 +691,7 @@ static void prt_runtime(UAContext *ua, sched_pkt *sp, OutputWriter *ow)
          set_storageid_in_mr(jcr->wstore, &mr);
          Dmsg0(250, "call find_next_volume_for_append\n");
          /* no need to set ScratchPoolId, since we use fnv_no_create_vol */
-         ok = find_next_volume_for_append(jcr, &mr, 1, fnv_no_create_vol, fnv_no_prune);
+         ok = find_next_volume_for_append(jcr, &mr, 1, fnv_no_create_vol, fnv_no_prune, errmsg);
       }
       if (!ok) {
          bstrncpy(mr.VolumeName, "*unknown*", sizeof(mr.VolumeName));

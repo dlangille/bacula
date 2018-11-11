@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2015 Kern Sibbald
+   Copyright (C) 2000-2018 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -297,6 +297,7 @@ void free_plugins(JCR *jcr)
 static bRC baculaGetValue(bpContext *ctx, brDirVariable var, void *value)
 {
    JCR *jcr;
+   POOL_DBR pr;
    bRC ret = bRC_OK;
 
    if (!ctx) {
@@ -335,8 +336,7 @@ static bRC baculaGetValue(bpContext *ctx, brDirVariable var, void *value)
       Dmsg1(dbglvl, "Bacula: return bDirVarClient=%s\n", jcr->client->hdr.name);
       break;
    case bDirVarNumVols:
-      POOL_DBR pr;
-      memset(&pr, 0, sizeof(pr));
+      bmemset(&pr, 0, sizeof(pr));
       bstrncpy(pr.Name, jcr->pool->hdr.name, sizeof(pr.Name));
       if (!db_get_pool_numvols(jcr, jcr->db, &pr)) {
          ret=bRC_Error;

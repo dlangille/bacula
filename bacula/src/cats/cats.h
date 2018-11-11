@@ -121,6 +121,7 @@ struct JOB_DBR {
    JobId_t JobId;
    char Job[MAX_NAME_LENGTH];         /* Job unique name */
    char Name[MAX_NAME_LENGTH];        /* Job base name */
+   char PriorJob[MAX_NAME_LENGTH];    /* PriorJob name if any */
    int JobType;                       /* actually char(1) */
    int JobLevel;                      /* actually char(1) */
    int JobStatus;                     /* actually char(1) */
@@ -254,7 +255,14 @@ struct FILE_DBR {
 };
 
 /* Pool record -- same format as database */
-struct POOL_DBR {
+class POOL_DBR {
+public:
+   /*
+    * Do not turn on constructor until all bmemset on POOL_DBR removed
+    *
+    * POOL_DBR() { bmemset(this, 0, sizeof(POOL_DBR)); };
+    * ~POOL_DBR() {  };
+    */
    DBId_t PoolId;
    char Name[MAX_NAME_LENGTH];        /* Pool name */
    uint32_t NumVols;                  /* total number of volumes */

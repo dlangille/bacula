@@ -123,7 +123,6 @@ void catalog_request(JCR *jcr, BSOCK *bs)
    char pool_name[MAX_NAME_LENGTH];
    int index, ok, label, writing;
    POOLMEM *omsg;
-   POOL_DBR pr;
    uint64_t MediaId;
    utime_t VolFirstWritten;
    utime_t VolLastWritten;
@@ -131,8 +130,8 @@ void catalog_request(JCR *jcr, BSOCK *bs)
    int Enabled, Recycle;
    JobId_t JobId = 0;
 
-   memset(&sdmr, 0, sizeof(sdmr));
-   memset(&jm, 0, sizeof(jm));
+   bmemset(&sdmr, 0, sizeof(sdmr));
+   bmemset(&jm, 0, sizeof(jm));
    Dsm_check(100);
 
    /*
@@ -152,7 +151,9 @@ void catalog_request(JCR *jcr, BSOCK *bs)
     */
    n = sscanf(bs->msg, Find_media, &JobId, &index, &pool_name, &mr.MediaType, &mr.VolType);
    if (n == 5) {
-      memset(&pr, 0, sizeof(pr));
+      POOL_MEM errmsg;
+      POOL_DBR pr;
+      bmemset(&pr, 0, sizeof(pr));
       bstrncpy(pr.Name, pool_name, sizeof(pr.Name));
       unbash_spaces(pr.Name);
       ok = db_get_pool_record(jcr, jcr->db, &pr);
@@ -160,7 +161,7 @@ void catalog_request(JCR *jcr, BSOCK *bs)
          mr.PoolId = pr.PoolId;
          set_storageid_in_mr(jcr->wstore, &mr);
          mr.ScratchPoolId = pr.ScratchPoolId;
-         ok = find_next_volume_for_append(jcr, &mr, index, fnv_create_vol, fnv_prune);
+         ok = find_next_volume_for_append(jcr, &mr, index, fnv_create_vol, fnv_prune, errmsg);
          Dmsg3(050, "find_media ok=%d idx=%d vol=%s\n", ok, index, mr.VolumeName);
       } else {
          /* Report problem finding pool */
@@ -173,8 +174,8 @@ void catalog_request(JCR *jcr, BSOCK *bs)
       if (ok) {
          send_volume_info_to_storage_daemon(jcr, bs, &mr);
       } else {
-         bs->fsend(_("1901 No Media.\n"));
-         Dmsg0(500, "1901 No Media.\n");
+         bs->fsend(_("1901 No Media. %s\n"), errmsg.c_str());
+         Dmsg1(500, "1901 No Media. %s\n", errmsg.c_str());
       }
       goto ok_out;
    }
@@ -566,7 +567,7 @@ static void update_attribute(JCR *jcr, char *msg, int32_t msglen)
    } else if (Stream == STREAM_RESTORE_OBJECT) {
       ROBJECT_DBR ro;
 
-      memset(&ro, 0, sizeof(ro));
+      bmemset(&ro, 0, sizeof(ro));
       ro.Stream = Stream;
       ro.FileIndex = FileIndex;
       if (jcr->wjcr) {

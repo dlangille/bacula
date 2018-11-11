@@ -759,6 +759,7 @@ static bool list_nextvol(UAContext *ua, int ndays)
    bool found = false;
    MEDIA_DBR mr;
    POOL_DBR pr;
+   POOL_MEM errmsg;
    char edl[50];
 
    int i = find_arg_with_value(ua, "job");
@@ -786,7 +787,7 @@ static bool list_nextvol(UAContext *ua, int ndays)
          ua->error_msg(_("Could not find Pool for Job %s\n"), job->name());
          continue;
       }
-      memset(&pr, 0, sizeof(pr));
+      bmemset(&pr, 0, sizeof(pr));
       pr.PoolId = jcr->jr.PoolId;
       if (!db_get_pool_record(jcr, jcr->db, &pr)) {
          bstrncpy(pr.Name, "*UnknownPool*", sizeof(pr.Name));
@@ -795,9 +796,9 @@ static bool list_nextvol(UAContext *ua, int ndays)
       get_job_storage(&store, job, run);
       set_storageid_in_mr(store.store, &mr);
       /* no need to set ScratchPoolId, since we use fnv_no_create_vol */
-      if (!find_next_volume_for_append(jcr, &mr, 1, fnv_no_create_vol, fnv_prune)) {
-         ua->error_msg(_("Could not find next Volume for Job %s (Pool=%s, Level=%s).\n"),
-            job->name(), pr.Name, level_to_str(edl, sizeof(edl), run->level));
+      if (!find_next_volume_for_append(jcr, &mr, 1, fnv_no_create_vol, fnv_prune, errmsg)) {
+         ua->error_msg(_("Could not find next Volume for Job %s (Pool=%s, Level=%s). %s\n"),
+            job->name(), pr.Name, level_to_str(edl, sizeof(edl), run->level), errmsg.c_str());
       } else {
          ua->send_msg(
             _("The next Volume to be used by Job \"%s\" (Pool=%s, Level=%s) will be %s\n"),
@@ -925,7 +926,7 @@ bool complete_jcr_for_job(JCR *jcr, JOB *job, POOL *pool)
 {
    POOL_DBR pr;
 
-   memset(&pr, 0, sizeof(POOL_DBR));
+   bmemset(&pr, 0, sizeof(POOL_DBR));
    set_jcr_defaults(jcr, job);
    if (pool) {
       jcr->pool = pool;               /* override */

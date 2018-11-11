@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2017 Kern Sibbald
+   Copyright (C) 2000-2018 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -98,7 +98,7 @@ static void set_volume_to_exclude_list(JCR *jcr, int index, MEDIA_DBR *mr)
  *   create -- whether or not to create a new volume
  */
 int find_next_volume_for_append(JCR *jcr, MEDIA_DBR *mr, int index,
-                                bool create, bool prune)
+                                bool create, bool prune, POOL_MEM &errmsg)
 {
    int retry = 0;
    bool ok;
@@ -123,6 +123,7 @@ int find_next_volume_for_append(JCR *jcr, MEDIA_DBR *mr, int index,
     */
    db_lock(jcr->db);
    for ( ;; ) {
+      pm_strcpy(errmsg, "");
       bstrncpy(mr->VolStatus, "Append", sizeof(mr->VolStatus));  /* want only appendable volumes */
       /*
        *  1. Look for volume with "Append" status.
@@ -185,7 +186,7 @@ int find_next_volume_for_append(JCR *jcr, MEDIA_DBR *mr, int index,
             /*
              * 6. Try "creating" a new Volume
              */
-            ok = newVolume(jcr, mr, store);
+            ok = newVolume(jcr, mr, store, errmsg);
          }
          /*
           *  Look at more drastic ways to find an Appendable Volume
@@ -233,6 +234,7 @@ int find_next_volume_for_append(JCR *jcr, MEDIA_DBR *mr, int index,
             } else {
                Jmsg(jcr, M_ERROR, 0, _(
 "We seem to be looping trying to find the next volume. I give up.\n"));
+               ok = false;
             }
          }
       }
@@ -420,7 +422,7 @@ bool get_scratch_volume(JCR *jcr, bool InChanger, MEDIA_DBR *mr,
                         STORE *store)
 {
    MEDIA_DBR smr;                        /* for searching scratch pool */
-   POOL_DBR spr, pr;
+   POOL_DBR spr;
    bool ok = false;
    bool found = false;
 
@@ -432,7 +434,7 @@ bool get_scratch_volume(JCR *jcr, bool InChanger, MEDIA_DBR *mr,
     * db_get_pool_numvols will first try ScratchPoolId,
     * and then try the pool named Scratch
     */
-   memset(&spr, 0, sizeof(spr));
+   bmemset(&spr, 0, sizeof(spr));
    bstrncpy(spr.Name, "Scratch", sizeof(spr.Name));
    spr.PoolId = mr->ScratchPoolId;
    if (db_get_pool_record(jcr, jcr->db, &spr)) {
@@ -457,13 +459,14 @@ bool get_scratch_volume(JCR *jcr, bool InChanger, MEDIA_DBR *mr,
       }
 
       if (found) {
+         POOL_DBR pr;
          POOL_MEM query(PM_MESSAGE);
 
          /*
           * Get pool record where the Scratch Volume will go to ensure
           * that we can add a Volume.
           */
-         memset(&pr, 0, sizeof(pr));
+         bmemset(&pr, 0, sizeof(pr));
          bstrncpy(pr.Name, jcr->pool->name(), sizeof(pr.Name));
 
          if (!db_get_pool_numvols(jcr, jcr->db, &pr)) {

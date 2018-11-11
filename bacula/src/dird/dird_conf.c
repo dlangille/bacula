@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2017 Kern Sibbald
+   Copyright (C) 2000-2018 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -708,21 +708,21 @@ extern RES_ITEM msgs_items[];
  *  name             items        rcode
  */
 RES_TABLE resources[] = {
-   {"Director",      dir_items,   R_DIRECTOR},
-   {"Client",        cli_items,   R_CLIENT},
-   {"Job",           job_items,   R_JOB},
-   {"Storage",       store_items, R_STORAGE},
-   {"Catalog",       cat_items,   R_CATALOG},
-   {"Schedule",      sch_items,   R_SCHEDULE},
-   {"Fileset",       fs_items,    R_FILESET},
-   {"Pool",          pool_items,  R_POOL},
-   {"Messages",      msgs_items,  R_MSGS},
-   {"Counter",       counter_items, R_COUNTER},
-   {"Console",       con_items,   R_CONSOLE},
-   {"JobDefs",       job_items,   R_JOBDEFS},
-   {"Device",        NULL,        R_DEVICE},  /* info obtained from SD */
-   {"Autochanger",   store_items, R_AUTOCHANGER},  /* alias for R_STORAGE */
-   {NULL,            NULL,        0}
+   {"Director",      dir_items,        R_DIRECTOR},
+   {"Client",        cli_items,        R_CLIENT},
+   {"Job",           job_items,        R_JOB},
+   {"Storage",       store_items,      R_STORAGE},
+   {"Catalog",       cat_items,        R_CATALOG},
+   {"Schedule",      sch_items,        R_SCHEDULE},
+   {"Fileset",       fs_items,         R_FILESET},
+   {"Pool",          pool_items,       R_POOL},
+   {"Messages",      msgs_items,       R_MSGS},
+   {"Counter",       counter_items,    R_COUNTER},
+   {"Console",       con_items,        R_CONSOLE},
+   {"JobDefs",       job_items,        R_JOBDEFS},
+   {"Device",        NULL,             R_DEVICE},  /* info obtained from SD */
+   {"Autochanger",   store_items,      R_AUTOCHANGER},  /* alias for R_STORAGE */
+   {NULL,            NULL,             0}
 };
 
 
@@ -963,7 +963,8 @@ void dump_resource(int type, RES *ares, void sendit(void *sock, const char *fmt,
       sendit(sock, _("%s: name=%s JobType=%d level=%s Priority=%d Enabled=%d\n"),
          type == R_JOB ? _("Job") : _("JobDefs"),
          res->res_job.hdr.name, res->res_job.JobType,
-         level_to_str(edl, sizeof(edl), res->res_job.JobLevel), res->res_job.Priority,
+         level_to_str(edl, sizeof(edl), res->res_job.JobLevel),
+         res->res_job.Priority,
          res->res_job.is_enabled());
       sendit(sock, _("     MaxJobs=%u NumJobs=%u Resched=%d Times=%d Interval=%s Spool=%d WritePartAfterJob=%d\n"),
          res->res_job.MaxConcurrentJobs,
@@ -1202,7 +1203,8 @@ void dump_resource(int type, RES *ares, void sendit(void *sock, const char *fmt,
             break;
          }
 next_run:
-         sendit(sock, _("  --> Run Level=%s\n"), level_to_str(edl, sizeof(edl), run->level));
+         sendit(sock, _("  --> Run Level=%s\n"),
+                level_to_str(edl, sizeof(edl), run->level));
          if (run->MaxRunSchedTime) {
             sendit(sock, _("      MaxRunSchedTime=%u\n"), run->MaxRunSchedTime);
          }

@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2017 Kern Sibbald
+   Copyright (C) 2000-2018 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -246,7 +246,7 @@ static bool set_mac_next_pool(JCR *jcr, POOL **retpool)
     * Get the PoolId used with the original job. Then
     *  find the pool name from the database record.
     */
-   memset(&pr, 0, sizeof(pr));
+   bmemset(&pr, 0, sizeof(pr));
    pr.PoolId = jcr->jr.PoolId;
    if (!db_get_pool_record(jcr, jcr->db, &pr)) {
       Jmsg(jcr, M_FATAL, 0, _("Pool for JobId %s not in database. ERR=%s\n"),
@@ -654,6 +654,11 @@ void mac_cleanup(JCR *jcr, int TermCode, int writeTermCode)
       wjcr->JobBytes = jcr->JobBytes = wjcr->SDJobBytes;
       wjcr->jr.RealEndTime = 0;
       wjcr->jr.PriorJobId = jcr->previous_jr.JobId;
+      if (jcr->previous_jr.PriorJob[0]) {
+         bstrncpy(wjcr->jr.PriorJob, jcr->previous_jr.PriorJob, sizeof(wjcr->jr.PriorJob));
+      } else {
+         bstrncpy(wjcr->jr.PriorJob, jcr->previous_jr.Job, sizeof(wjcr->jr.PriorJob));
+      }
       wjcr->JobErrors += wjcr->SDErrors;
       update_job_end(wjcr, TermCode);
 

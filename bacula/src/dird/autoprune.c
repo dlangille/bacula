@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2017 Kern Sibbald
+   Copyright (C) 2000-2018 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -92,7 +92,7 @@ void prune_volumes(JCR *jcr, bool InChanger, MEDIA_DBR *mr,
       return;
    }
 
-   memset(&prune_list, 0, sizeof(prune_list));
+   bmemset(&prune_list, 0, sizeof(prune_list));
    prune_list.max_ids = 10000;
    prune_list.JobId = (JobId_t *)malloc(sizeof(JobId_t) * prune_list.max_ids);
 
@@ -104,7 +104,7 @@ void prune_volumes(JCR *jcr, bool InChanger, MEDIA_DBR *mr,
    /*
     * Get Pool record for Scratch Pool
     */
-   memset(&spr, 0, sizeof(spr));
+   bmemset(&spr, 0, sizeof(spr));
    bstrncpy(spr.Name, "Scratch", sizeof(spr.Name));
    if (db_get_pool_record(jcr, jcr->db, &spr)) {
       edit_int64(spr.PoolId, ed2);
