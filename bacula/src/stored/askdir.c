@@ -543,7 +543,7 @@ bool dir_update_volume_info(DCR *dcr, bool label, bool update_LastWritten,
          dev->VolCatInfo.VolCatRecycles = dcr->VolCatInfo.VolCatRecycles;
          dev->VolCatInfo.VolCatWrites = dcr->VolCatInfo.VolCatWrites;
          dev->VolCatInfo.VolCatReads = dcr->VolCatInfo.VolCatReads;
-         dev->VolCatInfo.VolEnable = dcr->VolCatInfo.VolEnable;
+         dev->VolCatInfo.VolEnabled = dcr->VolCatInfo.VolEnabled;
          dev->VolCatInfo.VolRecycle = dcr->VolCatInfo.VolRecycle;
       }
       ok = true;
