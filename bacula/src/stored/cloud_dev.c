@@ -1587,7 +1587,7 @@ bool cloud_dev::open_next_part(DCR *dcr)
    }
    if (openmode == CREATE_READ_WRITE) {
       VolCatInfo.VolCatParts = num_cache_parts;
-      if (!dir_update_volume_info(dcr, false, false)) {
+      if (!dir_update_volume_info(dcr, false, false, true)) {
          Dmsg0(dbglvl, "Error from update_vol_info.\n");
          dev_errno = EIO;
          return false;
