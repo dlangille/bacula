@@ -1,6 +1,131 @@
 
-               Release Notes for Bacula 9.2.1
+               Release Notes for Bacula 9.3.0 (Beta version)
 
+This is a major release (currently a Beta release) comprised of more than
+12,600 lines of differences since version 9.2.2.
+
+The main new feature is the addition support for WORM cassets and support
+for using Amazon S3 (and other *identical* S3 providers).  Note: Azur,
+Oracle S3, and Goggle S3 are not compatible with Amazon S3.
+
+14Nov18
+ - Add use_dcr_only in cloud_dev.c so that manual truncate works
+ - More Enterprise backports
+ - More Enterprise backports + changes to the backporting
+ - Minor backport from Enterprise + my own changes
+ - Update bdirjson.c
+ - Add pseudo WORM support for vtape
+ - worm: Fix multiple display of the WORM Recycle message
+ - Add first cut cloud drivers
+ - Use bfopen in place of fopen
+ - Fix #3574 Add "clients" option to the "help list" output
+ - Add makedir() in fd_common.h
+ - Add bfile is_plugin_data() API
+ - Fix issue between FO_PORTABLE and FO_PORTABLE_DATA
+ - baculum: Update Japanese translation files
+ - baculum: Fix availability web config wizard when there is problem with access 
+   to api
+ - baculum: Add new size directive control
+ - Fix NOATTR detection
+ - Implement worm cassette support
+ - Make detection of duplicate M_SECURITY messages work
+ - Remove unused prototype recv(len)
+ - Add new security monitoring test
+ - Implement new message numbers in stored/block.c
+ - Fix incorrectly indicating: malformed message
+ - baculum: Fix basic auth user setting in API install wizard
+ - Fix bugs #2335 and #2349 Volume messages printed many times
+ - Add new test for bug printing many multiple Max Volume jobs= info
+ - Add worning message about failure to update volume info
+ - Improve error messages when JobMedia errors
+ - baculum: Fix undefined index error on web config wizard page
+ - baculum: Fix #2418 creating or updating new resource
+ - baculum: Fix size unit formatters in restore browser reported by Wanderlei 
+   Huttel
+ - Fix complier warning due to unused subroutine variable
+ - Fix bug #2334 seg fault when releasing globals
+ - Security: sleep(5) on error + aggregating identical messages
+ - Update sellist unittests.
+ - Update unittests for lockmgr.c and fix memory leak.
+ - Update unittests fir ConfigFile/ini.c.
+ - Update 'rm -f' for libtool $(RMF).
+ - Correct libs/Makefile.in separator.
+ - Update htable unittests.
+ - Update sha1 unittests.
+ - Add fnmatch unittests.
+ - Update unit tests and add regression tests for it.
+ - Fix escaping special characters in bvfs restore for sqlite catalog
+ - baculum: Improve error handling in web part
+ - baculum: Fix formatted size and time values on the volume details page
+ - Add new manual test
+ - baculum: Do not store any main oauth2 client nor main http basic user in api 
+  config
+ - Fix tls_bsock_shutdown() compilation when no TLS available.
+ - Fix bsock compilation warning.
+ - Fix bsock compilation problem in *BSD.
+ - Permit negative FileIndex values in the catalog
+ - baculum: Fix logging output if it is not possible to decode to json
+ - baculum: Fix saving logs when an error occurs
+ - baculum: API panel and wizard improvements
+ - baculum: Add name field to api client parameters
+ - Fix format string is not a string literal (potentially insecure).
+
+Bugs fixed/closed since last release:
+2334 2335 2418 3574
+
+
+====================== Release 9.2.2 ======================
+Release 9.2.2
+
+This is a minor bug fix release (6,143 lines of diff).  The main fixes to
+this version are: eliminate most messages that are repeately printed,
+eliminate malformed message output, error when compiling without TLS, ... 
+
+Note: if you are running MySQL and have not recently executed
+src/cats/update_bacula_tables, please do so.  It will not change your
+database version but it will fix some potential MySQL problems (for more
+detals see the release notes for version 9.2.1).
+
+06Nov18
+ - Fix bug #2421 by Adam about quoting Windows paths in CreateChildProcess()
+ - Update po files
+ - Implement new message numbers in stored/block.c
+ - Fix incorrectly indicating: malformed message
+ - Fix bugs #2335 and #2349 Volume messages printed many times
+ - Add new test for bug printing many multiple Max Volume jobs= info
+ - Fix complier warning due to unused subroutine variable
+ - Fix bug #2334 seg fault when releasing globals
+ - Fix escaping special characters in bvfs restore for sqlite catalog
+ - Fix tls_bsock_shutdown() compilation when no TLS available.
+ - Fix bsock compilation warning.
+ - Fix bsock compilation problem in *BSD.
+ - Add new manual test
+
+ - rpm: Fix mysql dependency for bacula-postgresql
+
+ - baculum: Fix basic auth user setting in API install wizard
+ - baculum: Improve error handling in web part
+ - baculum: Fix formatted size and time values on the volume details page
+ - baculum: Fix undefined index error on web config wizard page
+ - baculum: Fix #2418 creating or updating new resource
+ - baculum: Fix size unit formatters in restore browser reported by Wanderlei 
+   Huttel
+ - baculum: Do not store any main oauth2 client nor main http basic user in api 
+   config
+ - baculum: Update Japanese translation files
+ - baculum: Fix availability web config wizard when there is problem with access 
+   to api
+ - baculum: Add new size directive control
+ - baculum: Fix logging output if it is not possible to decode to json
+ - baculum: Fix saving logs when an error occurs
+ - baculum: API panel and wizard improvements
+ - baculum: Add name field to api client parameters
+
+Bugs fixed/closed since last release:
+2334 2335 2418 2421
+
+
+=======================================================================
 Release 9.2.1
 
 This is a bug fix release. It also contains some refactoring. That said,

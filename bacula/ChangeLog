@@ -1,6 +1,208 @@
-              Changelog on version 9.2.1
+              Changelog on version 9.3.0 (Beta version)
 
 
+14Nov18
+ - Add use_dcr_only in cloud_dev.c so that manual truncate works
+
+11Nov18
+ - More Enterprise backports
+ - More Enterprise backports + changes to the backporting
+ - Minor backport from Enterprise + my own changes
+
+10Nov18
+ - Update bdirjson.c
+
+09Nov18
+ - Add pseudo WORM support for vtape
+ - worm: Fix multiple display of the WORM Recycle message
+
+04Nov18
+ - Add first cut cloud drivers
+ - Use bfopen in place of fopen
+
+31Oct18
+ - Fix #3574 Add "clients" option to the "help list" output
+ - Add makedir() in fd_common.h
+
+29Oct18
+ - Add bfile is_plugin_data() API
+ - Fix issue between FO_PORTABLE and FO_PORTABLE_DATA
+ - baculum: Update Japanese translation files
+
+25Oct18
+ - baculum: Fix availability web config wizard when there is problem with access 
+  to api
+
+24Oct18
+ - baculum: Add new size directive control
+
+22Oct18
+ - Fix NOATTR detection
+
+17Oct18
+ - Implement worm cassette support
+
+14Oct18
+ - Make detection of duplicate M_SECURITY messages work
+ - Remove unused prototype recv(len)
+ - Add new security monitoring test
+
+04Oct18
+ - Implement new message numbers in stored/block.c
+ - Fix incorrectly indicating: malformed message
+
+03Oct18
+ - baculum: Fix basic auth user setting in API install wizard
+ - Fix bugs #2335 and #2349 Volume messages printed many times
+ - Add new test for bug printing many multiple Max Volume jobs= info
+ - Add worning message about failure to update volume info
+ - Improve error messages when JobMedia errors
+
+27Sep18
+ - baculum: Fix undefined index error on web config wizard page
+
+16Sep18
+ - baculum: Fix #2418 creating or updating new resource
+ - baculum: Fix size unit formatters in restore browser reported by Wanderlei 
+  Huttel
+
+14Sep18
+ - Fix complier warning due to unused subroutine variable
+
+06Sep18
+ - Fix bug #2334 seg fault when releasing globals
+ - Security: sleep(5) on error + aggregating identical messages
+
+27Aug18
+ - Update sellist unittests.
+ - Update unittests for lockmgr.c and fix memory leak.
+ - Update unittests fir ConfigFile/ini.c.
+ - Update 'rm -f' for libtool $(RMF).
+ - Correct libs/Makefile.in separator.
+ - Update htable unittests.
+ - Update sha1 unittests.
+
+21Aug18
+ - Add fnmatch unittests.
+ - Update unit tests and add regression tests for it.
+
+20Aug18
+ - Fix escaping special characters in bvfs restore for sqlite catalog
+
+18Aug18
+ - baculum: Improve error handling in web part
+ - baculum: Fix formatted size and time values on the volume details page
+ - Add new manual test
+
+17Aug18
+ - baculum: Do not store any main oauth2 client nor main http basic user in api 
+  config
+
+16Aug18
+ - Fix tls_bsock_shutdown() compilation when no TLS available.
+
+15Aug18
+ - Fix bsock compilation warning.
+
+14Aug18
+ - Fix bsock compilation problem in *BSD.
+
+13Aug18
+ - Permit negative FileIndex values in the catalog
+
+12Aug18
+ - baculum: Fix logging output if it is not possible to decode to json
+ - baculum: Fix saving logs when an error occurs
+ - baculum: API panel and wizard improvements
+
+11Aug18
+ - baculum: Add name field to api client parameters
+
+05Jun18
+ - Fix format string is not a string literal (potentially insecure).
+
+Bugs fixed/closed since last release:
+2334 2335 2418 3574
+
+====================== Version 9.2.2 ====================
+
+06Nov18
+ - Fix bug #2421 by Adam about quoting Windows paths in CreateChildProcess()
+
+05Nov18
+ - Update po files
+
+29Oct18
+ - baculum: Update Japanese translation files
+
+25Oct18
+ - baculum: Fix availability web config wizard when there is problem with access 
+  to api
+
+24Oct18
+ - baculum: Add new size directive control
+
+04Oct18
+ - Implement new message numbers in stored/block.c
+ - Fix incorrectly indicating: malformed message
+
+03Oct18
+ - baculum: Fix basic auth user setting in API install wizard
+ - Fix bugs #2335 and #2349 Volume messages printed many times
+ - Add new test for bug printing many multiple Max Volume jobs= info
+
+27Sep18
+ - baculum: Fix undefined index error on web config wizard page
+
+16Sep18
+ - baculum: Fix #2418 creating or updating new resource
+ - baculum: Fix size unit formatters in restore browser reported by Wanderlei 
+  Huttel
+
+14Sep18
+ - Fix complier warning due to unused subroutine variable
+
+06Sep18
+ - Fix bug #2334 seg fault when releasing globals
+
+03Sep18
+ - rpm: Fix mysql dependency for bacula-postgresql
+
+20Aug18
+ - Fix escaping special characters in bvfs restore for sqlite catalog
+
+18Aug18
+ - baculum: Improve error handling in web part
+ - baculum: Fix formatted size and time values on the volume details page
+ - Add new manual test
+
+17Aug18
+ - baculum: Do not store any main oauth2 client nor main http basic user in api 
+  config
+
+16Aug18
+ - Fix tls_bsock_shutdown() compilation when no TLS available.
+
+15Aug18
+ - Fix bsock compilation warning.
+
+14Aug18
+ - Fix bsock compilation problem in *BSD.
+
+12Aug18
+ - baculum: Fix logging output if it is not possible to decode to json
+ - baculum: Fix saving logs when an error occurs
+ - baculum: API panel and wizard improvements
+
+11Aug18
+ - baculum: Add name field to api client parameters
+
+Bugs fixed/closed since last release:
+2334 2335 2418 2421
+
+
+============================================================
+Version 9.2.1
 
 11Aug18
  - Permit catalog to contain negative FileIndexes
