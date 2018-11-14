@@ -10836,8 +10836,8 @@ msgstr "No se pudo bloquear la base de datos"
 
 #~ msgid "Tape block size (%d) not multiple of system size (%d)\n"
 #~ msgstr ""
-#~ "Tamaño de bloque de cinta (%d) no es múltiplo del tamaño de sistema "
-#~ "(% d)\n"
+#~ "Tamaño de bloque de cinta (%d) no es múltiplo del tamaño de sistema (% "
+#~ "d)\n"
 
 #~ msgid "Tape block size (%d) is not a power of 2\n"
 #~ msgstr "Tamaño de bloque de cinta (%d) no es una potencia de 2\n"

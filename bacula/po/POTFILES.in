@@ -105,6 +105,7 @@ src/lib/status.h
 src/lib/tcpd.h
 src/lib/tls.h
 src/lib/tree.h
+src/lib/unittests.h
 src/lib/var.h
 src/lib/waitq.h
 src/lib/watchdog.h
