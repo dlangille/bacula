@@ -590,7 +590,7 @@ static void truncate_volume(UAContext *ua, MEDIA_DBR *mr,
    /* Do it only if action on purge = truncate is set */
    if (!(mr->ActionOnPurge & ON_PURGE_TRUNCATE)) {
       ua->error_msg(_("\nThe option \"Action On Purge = Truncate\" was not defined in the Pool resource.\n"
-                      "Unable to truncate volume \"%s\"\n"), mr->VolumeName);
+                      "Truncate not allowd on Volume \"%s\"\n"), mr->VolumeName);
       return;
    }
 
@@ -625,7 +625,7 @@ static void truncate_volume(UAContext *ua, MEDIA_DBR *mr,
       if (sscanf(sd->msg, "3000 OK label. VolBytes=%llu VolABytes=%lld VolType=%d ",
                  &VolBytes, &VolABytes, &VolType) == 3) {
 
-         ok=true;
+         ok = true;
          mr->VolBytes = VolBytes;
          mr->VolABytes = VolABytes;
          mr->VolType = VolType;
@@ -636,13 +636,15 @@ static void truncate_volume(UAContext *ua, MEDIA_DBR *mr,
 
          set_storageid_in_mr(NULL, mr);
          if (!db_update_media_record(ua->jcr, ua->db, mr)) {
-            ua->error_msg(_("Can't update volume size in the catalog\n"));
+            ua->error_msg(_("Can't update volume size in the catalog for Volume \"%s\"\n"),
+               mr->VolumeName);
+            ok = false;
          }
          ua->send_msg(_("The volume \"%s\" has been truncated\n"), mr->VolumeName);
       }
    }
    if (!ok) {
-      ua->warning_msg(_("Unable to truncate volume \"%s\"\n"), mr->VolumeName);
+      ua->warning_msg(_("Error truncating Volume \"%s\"\n"), mr->VolumeName);
    }
 }
 
