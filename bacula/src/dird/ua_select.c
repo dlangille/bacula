@@ -607,7 +607,7 @@ bool select_pool_dbr(UAContext *ua, POOL_DBR *pr, const char *argk)
    POOL_DBR opr;
    char name[MAX_NAME_LENGTH];
    int num_pools, i;
-   uint32_t *ids;
+   uint32_t *ids = NULL;
 
    for (i=1; i<ua->argc; i++) {
       if (strcasecmp(ua->argk[i], argk) == 0 && ua->argv[i] &&
@@ -630,6 +630,9 @@ bool select_pool_dbr(UAContext *ua, POOL_DBR *pr, const char *argk)
    }
    if (num_pools <= 0) {
       ua->error_msg(_("No pools defined. Use the \"create\" command to create one.\n"));
+      if (ids) {
+         free(ids);
+      }
       return false;
    }
 
