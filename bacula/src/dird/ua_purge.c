@@ -626,6 +626,7 @@ static void truncate_volume(UAContext *ua, MEDIA_DBR *mr,
                  &VolBytes, &VolABytes, &VolType) == 3) {
 
          ok = true;
+         /* Clean up a few things in the media record */
          mr->VolBytes = VolBytes;
          mr->VolABytes = VolABytes;
          mr->VolType = VolType;
@@ -633,6 +634,11 @@ static void truncate_volume(UAContext *ua, MEDIA_DBR *mr,
          mr->VolParts = 1;
          mr->VolCloudParts = 0;
          mr->LastPartBytes = VolBytes;
+         mr->VolJobs = 0;
+         mr->VolBlocks = 1;
+         mr->VolHoleBytes = 0;
+         mr->VolHoles = 0;
+         mr->EndBlock = 1;
 
          set_storageid_in_mr(NULL, mr);
          if (!db_update_media_record(ua->jcr, ua->db, mr)) {

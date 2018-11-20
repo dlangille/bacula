@@ -375,7 +375,7 @@ int BDB::bdb_update_media_record(JCR *jcr, MEDIA_DBR *mr)
         "LabelType=%d,StorageId=%s,PoolId=%s,VolRetention=%s,VolUseDuration=%s,"
         "MaxVolJobs=%d,MaxVolFiles=%d,Enabled=%d,LocationId=%s,"
         "ScratchPoolId=%s,RecyclePoolId=%s,RecycleCount=%d,Recycle=%d,"
-        "ActionOnPurge=%d,CacheRetention=%s"
+        "ActionOnPurge=%d,CacheRetention=%s,EndBlock=%d"
         " WHERE VolumeName='%s'",
         mr->VolJobs, mr->VolFiles, mr->VolBlocks,
         edit_uint64(mr->VolBytes, ed1),
@@ -402,6 +402,7 @@ int BDB::bdb_update_media_record(JCR *jcr, MEDIA_DBR *mr)
         edit_uint64(mr->RecyclePoolId, ed15),
         mr->RecycleCount,mr->Recycle, mr->ActionOnPurge,
         edit_uint64(mr->CacheRetention, ed16),
+        mr->EndBlock,
         esc_name);
 
    Dmsg1(dbglevel1, "%s\n", cmd);
