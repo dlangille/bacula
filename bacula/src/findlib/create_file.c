@@ -116,6 +116,11 @@ int create_file(JCR *jcr, ATTR *attr, BFILE *bfd, int replace)
       exists = true;
       switch (replace) {
       case REPLACE_IFNEWER:
+         /* Set attributes if we created this directory */
+         if (attr->type == FT_DIREND && path_list_lookup(jcr, attr->ofname)) {
+            break;
+         }
+
          if (attr->statp.st_mtime <= mstatp.st_mtime) {
             Qmsg(jcr, M_SKIPPED, 0, _("File skipped. Not newer: %s\n"), attr->ofname);
             return CF_SKIP;
