@@ -243,6 +243,7 @@ public:
    bool bdb_get_restoreobject_record(JCR *jcr, ROBJECT_DBR *rr);
    int  bdb_get_num_restoreobject_records(JCR *jcr, ROBJECT_DBR *rr);
    bool bdb_get_job_statistics(JCR *jcr, JOB_DBR *jr);
+   bool bdb_get_client_pool(JCR *jcr, alist *results);
 
 /* sql_list.c */
    void bdb_list_pool_records(JCR *jcr, POOL_DBR *pr, DB_LIST_HANDLER sendit, void *ctx, e_list_type type);

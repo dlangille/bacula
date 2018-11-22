@@ -1754,4 +1754,47 @@ bail_out:
    return ok;
 }
 
+/*
+ * List Client/Pool associations. Return a list of Client/Pool in a alist.
+ * [0] Client
+ * [1] Pool
+ * [2] Client
+ * [3] Pool
+ * ...
+ */
+bool BDB::bdb_get_client_pool(JCR *jcr, alist *results)
+{
+   SQL_ROW row;
+   bool ret=false;
+   POOLMEM *where  = get_pool_memory(PM_MESSAGE);
+   POOLMEM *tmp    = get_pool_memory(PM_MESSAGE);
+   bdb_lock();
+
+   /* Build the WHERE part with the current ACLs if any */
+   pm_strcpy(where, get_acls(DB_ACL_BIT(DB_ACL_CLIENT)  |
+                             DB_ACL_BIT(DB_ACL_JOB)     |
+                             DB_ACL_BIT(DB_ACL_POOL),
+                             true));
+
+   Mmsg(cmd, "SELECT DISTINCT Client.Name, Pool.Name "
+        "FROM Job JOIN Client USING (ClientId) JOIN Pool USING (PoolId) %s",
+        where);
+
+   Dmsg1(100, "sql=%s\n", cmd);
+   if (QueryDB(jcr, cmd)) {
+      ret = true;
+
+      while ((row = sql_fetch_row()) != NULL) {
+         results->append(bstrdup(row[0])); /* append client */
+         results->append(bstrdup(row[1])); /* append pool */
+      }
+      sql_free_result();
+   }
+
+   bdb_unlock();
+   free_pool_memory(where);
+   free_pool_memory(tmp);
+   return ret;
+}
+
 #endif /* HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL */

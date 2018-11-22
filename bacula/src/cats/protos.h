@@ -106,7 +106,8 @@ void bdb_disable_batch_insert(bool disable);
 
 /* sql_get.c */
 void bdb_free_restoreobject_record(JCR *jcr, ROBJECT_DBR *rr);
-
+#define db_get_client_pool(jcr, mdb, results)    \
+   mdb->bdb_get_client_pool(jcr, results)
 
 /* sql_create.c */
 #define db_create_path_record(jcr, mdb, ar) \

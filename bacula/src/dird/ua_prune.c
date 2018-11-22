@@ -82,6 +82,87 @@ int file_delete_handler(void *ctx, int num_fields, char **row)
    return 0;
 }
 
+/* Prune jobs or files for all combinations of Client/Pool that we
+ * can find in the Job table. Doing so, the pruning will not prune a
+ * job that is needed to restore the client. As the command will detect
+ * all parameters automatically, it is very convenient to schedule it a
+ * couple of times per day.
+ */
+static int prune_all_clients_and_pools(UAContext *ua, int kw)
+{
+   alist results(owned_by_alist, 100);
+   POOL_MEM label;
+   CLIENT *client;
+   POOL *pool;
+
+   /* Get the combination of all Client/Pool in the Job table (respecting the ACLs) */
+   if (!db_get_client_pool(ua->jcr, ua->db, &results)) {
+      ua->error_msg(_("Unable to list Client/Pool. ERR=%s\n"), ua->db->errmsg);
+      return false;
+   }
+   while (!results.empty()) {
+      /* Each "record" is made of two values in results */
+      char *pool_s = (char *)results.pop();
+      char *client_s = (char *)results.pop();
+      Dmsg2(100, "Trying to prune %s/%s\n", client_s, pool_s);
+
+      if (!pool_s || !client_s) { /* Just in case */
+         ua->error_msg(_("Unable to list Client/Pool %s/%s\n"),
+                       NPRTB(client_s), NPRTB(pool_s));
+         bfree_and_null(pool_s);
+         bfree_and_null(client_s);
+         return false;
+      }
+
+      /* Make sure the client and the pool are still defined */
+      client = (CLIENT *)GetResWithName(R_CLIENT, client_s);
+      pool = (POOL *)GetResWithName(R_POOL, pool_s);
+      if (!client || !pool) {
+         Dmsg2(10, "Skip pruning of %s/%s, one resource is missing\n", client_s, pool_s);
+      }
+      free(client_s);
+      free(pool_s);
+      if (!client || !pool) {
+         continue;
+      }
+
+      /* Display correct messages and do the actual pruning */
+      if (kw == 0) {
+         ua->info_msg(_("Pruning Files for Client %s with Pool %s...\n"),
+                      client->name(), pool->name());
+         if (pool->FileRetention > 0) {
+            Mmsg(label, "Pool %s File", pool->name());
+            if (!confirm_retention(ua, &pool->FileRetention, label.c_str())) {
+               return false;
+            }
+         } else {
+            Mmsg(label, "Client %s File", client->name());
+            if (!confirm_retention(ua, &client->FileRetention, label.c_str())) {
+               return false;
+            }
+         }
+         prune_files(ua, client, pool);
+      }
+      if (kw == 1) {
+         ua->info_msg(_("Pruning Jobs for Client %s with Pool %s...\n"),
+                      client->name(), pool->name());
+         if (pool->JobRetention > 0) {
+            Mmsg(label, "Pool %s Job", pool->name());
+            if (!confirm_retention(ua, &pool->JobRetention, label.c_str())) {
+               return false;
+            }
+         } else {
+            Mmsg(label, "Client %s Job", client->name());
+            if (!confirm_retention(ua, &client->JobRetention, label.c_str())) {
+               return false;
+            }
+         }
+         prune_jobs(ua, client, pool, JT_BACKUP);
+      }
+   }
+   return true;
+}
+
 /*
  *   Prune records from database
  *
@@ -116,6 +197,11 @@ int prunecmd(UAContext *ua, const char *cmd)
    if (kw < 0 || kw > 4) {
       /* no args, so ask user */
       kw = do_keyword_prompt(ua, _("Choose item to prune"), keywords);
+   }
+
+   /* prune files/jobs all (prune all Client/Pool automatically) */
+   if ((kw == 0 || kw == 1) && find_arg(ua, _("all")) > 0) {
+      return prune_all_clients_and_pools(ua, kw);
    }
 
    switch (kw) {
@@ -293,8 +379,10 @@ int prune_files(UAContext *ua, CLIENT *client, POOL *pool)
    }
 
 //   edit_utime(now-period, ed1, sizeof(ed1));
-//   Jmsg(ua->jcr, M_INFO, 0, _("Begin pruning Jobs older than %s secs.\n"), ed1);
-   Jmsg(ua->jcr, M_INFO, 0, _("Begin pruning Files.\n"));
+//   Jmsg(ua->jcr, M_INFO, 0, _("Begin pruning Jobs older than %s secs.\n"), ed1)
+   if (ua->jcr->getJobType() != JT_CONSOLE) {
+      Jmsg(ua->jcr, M_INFO, 0, _("Begin pruning Files.\n"));
+   }
    /* Select Jobs -- for counting */
    Mmsg(query,
         "SELECT COUNT(1) FROM Job %s WHERE PurgedFiles=0 %s",
@@ -477,8 +565,10 @@ int prune_jobs(UAContext *ua, CLIENT *client, POOL *pool, int JobType)
       goto bail_out;
    }
 
-   edit_utime(period, ed1, sizeof(ed1));
-   Jmsg(ua->jcr, M_INFO, 0, _("Begin pruning Jobs older than %s.\n"), ed1);
+   if (ua->jcr->getJobType() != JT_CONSOLE) {
+      edit_utime(period, ed1, sizeof(ed1));
+      Jmsg(ua->jcr, M_INFO, 0, _("Begin pruning Jobs older than %s.\n"), ed1);
+   }
 
    del.max_ids = 100;
    del.JobId = (JobId_t *)malloc(sizeof(JobId_t) * del.max_ids);

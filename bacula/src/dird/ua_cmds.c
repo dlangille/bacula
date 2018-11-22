@@ -138,7 +138,9 @@ static struct cmdstruct commands[] = {                                      /* C
    NT_("storage=<storage-name> slot=<num> drive=<num> [ device=<device-name> ] [ jobid=<id> | job=<job-name> ]"), false},
 
  { NT_("prune"),      prunecmd,      _("Prune expired records from catalog"),
-   NT_("files | jobs | pool=<pool> | snapshot  [client=<client-name>] | client=<client-name> | [ expired ] volume=<volume-name> "), true},
+   NT_("files | jobs | snapshot  [client=<client-name>] | client=<client-name> | \n"
+       "\t[expired] [all | allpools | allfrompool] [pool=<pool>] [mediatype=<type>] volume=<volume-name> [yes]"),
+   true},
 
  { NT_("purge"),      purge_cmd,     _("Purge records from catalog"), NT_("files jobs volume=<vol> [mediatype=<type> pool=<pool> allpools storage=<st> drive=<num>]"),  true},
  { NT_("quit"),       quit_cmd,      _("Terminate Bconsole session"), NT_(""),              false},

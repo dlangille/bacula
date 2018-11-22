@@ -405,7 +405,6 @@ bail_out:
    bdb_unlock();
 }
 
-
 /*
  * List Job record(s) that match JOB_DBR
  *
