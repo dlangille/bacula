@@ -1,0 +1,207 @@
+#!/bin/sh
+#
+# This script will test prune algo with fromallpools option
+#
+. scripts/functions
+
+TestName="prune-fromallpools-test"
+JobName=NightlySave
+
+scripts/cleanup
+scripts/copy-test-confs
+
+start_test
+
+echo $PWD/build/po > tmp/file-list
+
+dircfg=$conf/bacula-dir.conf
+
+# copy the Default pool to Special pool
+cat >> $dircfg <<EOF
+Pool {
+  Name = Special
+  Pool Type = Backup
+  Recycle = yes                       # Bacula can automatically recycle Volumes
+  AutoPrune = no                     # Prune expired volumes
+  Volume Retention = 365d             # one year
+  Job Retention = 10m
+  File Retention = 10m
+}
+Pool {
+  Name = Special2
+  Pool Type = Backup
+  Recycle = yes                       # Bacula can automatically recycle Volumes
+  AutoPrune = no                     # Prune expired volumes
+  Volume Retention = 365d             # one year
+  Job Retention = 1s
+  File Retention = 1s
+}
+Job {
+  Name = "prune"
+  Type = Admin
+  JobDefs = "BackupJob"
+  Client = $HOST-fd
+  FileSet = "Full Set"
+  RunScript {
+    Console = "prune jobs fromallpools yes"
+    RunsWhen = Before
+    failjobonerror = no
+    runsonclient = no
+  }
+}
+EOF
+$bperl -e "extract_resource('$dircfg', 'Client', '$HOST-fd')" | sed "s/$HOST-fd/$HOST-fd2/" >> $conf/bacula-dir.conf
+$bperl -e "add_attribute('$dircfg', 'AutoPrune', 'No', 'Client')"
+$bperl -e "add_attribute('$dircfg', 'Job Retention', '1s', 'Client')"
+$bperl -e "add_attribute('$dircfg', 'File Retention', '1s', 'Client')"
+
+cat <<EOF > ${cwd}/tmp/bconcmds
+@output /dev/null
+messages
+@$out $tmp/log1.out
+label storage=File pool=Default volume=TestVolume001
+label storage=File pool=Special volume=TestVolume002
+label storage=File pool=Special2 volume=TestVolume003
+run job=$JobName pool=Default level=full yes
+run job=$JobName pool=Default level=full client=$HOST-fd2 yes
+wait
+messages
+@exec "touch $cwd/build/po/fr.po"
+run job=$JobName pool=Special level=incremental yes
+run job=$JobName pool=Special level=incremental client=$HOST-fd2 yes
+wait
+messages
+@exec "touch $cwd/build/po/de.po"
+run job=$JobName pool=Special level=incremental yes
+run job=$JobName pool=Special level=incremental client=$HOST-fd2 yes
+wait
+messages
+@exec "touch $cwd/build/po/es.po"
+run job=$JobName level=incremental yes
+run job=$JobName level=incremental client=$HOST-fd2 yes
+wait
+messages
+run job=$JobName pool=Default level=Differential yes
+run job=$JobName pool=Default level=Differential client=$HOST-fd2 yes
+wait
+messages
+@sleep 2
+@$out $tmp/log3.out
+@################################################################
+list jobs
+@################################################################
+@$out $tmp/log4.out
+list jobs
+prune jobs fromallpools yes
+list jobs
+run job=$JobName pool=Default level=Differential yes
+wait
+messages
+@################################################################
+@$out $tmp/log5.out
+list jobs
+prune jobs fromallpools yes
+list jobs
+@################################################################
+@$out $tmp/log6.out
+list jobs
+prune jobs client=$HOST-fd yes
+list jobs
+@exec "touch $cwd/build/po/pl.po"
+run job=$JobName pool=Special2 level=Incremental yes
+wait
+@exec "touch $cwd/build/po/pl.po"
+run job=$JobName pool=Special2 level=Incremental yes
+wait
+@exec "touch $cwd/build/po/pl.po"
+run job=$JobName pool=Default level=Incremental yes
+wait
+run job=$JobName pool=Default level=Differential yes
+wait
+messages
+@################################################################
+@$out $tmp/log7.out
+list jobs
+prune jobs fromallpools yes
+list jobs
+@################################################################
+@$out $tmp/log8.out
+run job=$JobName pool=Default level=Differential yes
+wait
+messages
+list jobs
+run job=prune yes
+wait
+messages
+list jobs
+@################################################################
+@$out $tmp/log2.out
+restore where=${cwd}/tmp/bacula-restores client=$HOST-fd select all storage=File done
+yes
+wait
+messages
+quit
+EOF
+
+run_bacula
+
+check_for_zombie_jobs storage=File client=$HOST-fd
+stop_bacula
+
+check_two_logs
+
+###############################################################################
+# Now we will verify that the pruning code is working as expected.  Each time,
+# we run 'list jobs', 'prune', 'list jobs'. check_prune_list ensures that jobids
+# in argument are present in the first 'list jobs', the 'prune' command deletes
+# them (same number), and checks that the last 'list jobs' doesn't contain them
+# anymore. See scripts/functions.pm for details.
+
+# Pool:  S  => Special    (10 mins retention)
+#        S2 => Special2   (1s retention
+#        D  => Default    (nothing specified, client retention used 1s)
+
+# Client $HOST-fd
+# Id     1 3 5 7 9
+# Pool   S S S D D 
+# Level  F I I I D
+# Result       x
+
+# Client $HOST-fd2
+# Id     2 4 6 8 10
+# Pool   S S S D D 
+# Level  F I I I D
+# Result       x
+
+$bperl -e "check_prune_list('$tmp/log4.out', 7, 8)"
+estat=$(($estat + $?))
+
+# Id     1 3 5 9 11
+# Pool   S S S D D
+# Level  F I I D D
+# Result       x
+$bperl -e "check_prune_list('$tmp/log5.out', 9)"
+estat=$(($estat + $?))
+
+# Here, we prune only with the client settings
+# Id     1 3 5 11
+# Level  F I I D
+# Result   x x
+$bperl -e "check_prune_list('$tmp/log6.out', 3, 5)"
+estat=$(($estat + $?))
+
+# Id     1 11 12 13 14 15
+# Pool   S D  S2 S2 D  D
+# Level  F D  I  I  I  D
+# Result   x  x  x  x
+$bperl -e "check_prune_list('$tmp/log7.out', 11, 12, 13, 14)"
+estat=$(($estat + $?))
+
+# Id     1 15 16
+# Pool   S D  D
+# Level  F D  D
+# Result   x
+$bperl -e "check_prune_list('$tmp/log8.out', 15)"
+estat=$(($estat + $?))
+
+end_test

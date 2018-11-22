@@ -36,6 +36,9 @@ ADD_TEST(misc:source-fd-storage-addr-test "@regressdir@/tests/source-fd-storage-
 ADD_TEST(misc:storageid-test-changer "@regressdir@/tests/storageid-test-changer")
 ADD_TEST(misc:storageid-test2-changer "@regressdir@/tests/storageid-test2-changer")
 ADD_TEST(misc:restart-reschedule-test "@regressdir@/tests/restart-reschedule-test")
+ADD_TEST(misc:console-delete-test "@regressdir@/tests/console-delete-test")
+ADD_TEST(misc:prune-expired-test "@regressdir@/tests/prune-expired-test")
+ADD_TEST(misc:prune-all-test "@regressdir@/tests/prune-all-test")
 # ADD_TEST(misc:priority-test "@regressdir@/tests/priority-test")
 
 
