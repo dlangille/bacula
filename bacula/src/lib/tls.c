@@ -627,12 +627,9 @@ void tls_bsock_shutdown(BSOCKCORE *bsock)
 static inline int openssl_bsock_readwrite(BSOCK *bsock, char *ptr, int nbytes, bool write)
 {
    TLS_CONNECTION *tls = bsock->tls;
-   int flags;
    int nleft = 0;
    int nwritten = 0;
 
-   /* Ensure that socket is non-blocking */
-   flags = bsock->set_nonblocking();
 
    /* start timer */
    bsock->timer_start = watchdog_time;
@@ -647,20 +644,32 @@ static inline int openssl_bsock_readwrite(BSOCK *bsock, char *ptr, int nbytes, b
    while (nleft > 0) {
 
       pthread_mutex_lock(&tls->rwlock);
-      if (write) {
-         nwritten = SSL_write(tls->openssl, ptr, nleft);
-      } else {
-         nwritten = SSL_read(tls->openssl, ptr, nleft);
+      /* Ensure that socket is non-blocking */
+      int flags = bsock->set_nonblocking();
+      int ssl_error = SSL_ERROR_NONE;
+      while (nleft > 0 && ssl_error == SSL_ERROR_NONE) {
+         if (write) {
+            nwritten = SSL_write(tls->openssl, ptr, nleft);
+         } else {
+            nwritten = SSL_read(tls->openssl, ptr, nleft);
+         }
+         if (nwritten > 0) {
+            nleft -= nwritten;
+            if (nleft) {
+               ptr += nwritten;
+            }
+         } else {
+            ssl_error = SSL_get_error(tls->openssl, nwritten);
+         }
       }
+      /* Restore saved flags */
+      bsock->restore_blocking(flags);
       pthread_mutex_unlock(&tls->rwlock);
 
       /* Handle errors */
-      switch (SSL_get_error(tls->openssl, nwritten)) {
+      switch (ssl_error) {
       case SSL_ERROR_NONE:
-         nleft -= nwritten;
-         if (nleft) {
-            ptr += nwritten;
-         }
+         ASSERT2(nleft == 0, "the buffer should be empty");
          break;
 
       case SSL_ERROR_SYSCALL:
@@ -710,8 +719,6 @@ cleanup:
    if (write) {
       pthread_mutex_unlock(&tls->wlock);
    }
-   /* Restore saved flags */
-   bsock->restore_blocking(flags);
 
    /* Clear timer */
    bsock->timer_start = 0;
