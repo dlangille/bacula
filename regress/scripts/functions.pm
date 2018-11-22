@@ -948,6 +948,8 @@ sub check_prune_list
     my %seen;
     my $in_list_jobs=0;
     my $nb_list_job=0;
+    my $nb_pruned=0;
+    my $fromallpools=0;
     my $nb = scalar(@_);
     open(FP, $f) or die "Can't open $f $!";
     while (my $l = <FP>)          # read all files to check
@@ -969,15 +971,19 @@ sub check_prune_list
         if ($nb_list_job == 0) {
             next;
         }
-        if ($l =~ /Pruned (\d+) Job for client/) {
-            if ($1 != $nb) {
+        if ($l =~ /prune (jobs|files) fromallpools/) {
+            $fromallpools=1;
+        }
+        if ($l =~ /Pruned (\d+) Jobs? for client/i) {
+            $nb_pruned += $1;
+            if (!$fromallpools && $1 != $nb) {
                 print "ERROR: in $f, Prune command returns $1 jobs, want $nb\n";
                 exit 1;
             }
         }
 
         if ($l =~ /No Jobs found to prune/) {
-           if ($nb != 0) {
+           if (!$fromallpools && $nb != 0) {
                 print "ERROR: in $f, Prune command returns 0 job, want $nb\n";
                 exit 1;
             }            
@@ -994,6 +1000,10 @@ sub check_prune_list
         }
     }
     close(FP);
+    if ($fromallpools && $nb_pruned != $nb) {
+        print "ERROR: in $f, Prune command returns $nb_pruned job, want $nb\n";
+        exit 1;
+    }
     foreach my $jobid (keys %to_check) {
         if (!$seen{$jobid}) {
             print "******** listing of $f *********\n";
