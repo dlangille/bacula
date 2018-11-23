@@ -230,7 +230,6 @@ bool RUNSCRIPT::run(JCR *jcr, const char *name)
    switch (cmd_type) {
    case SHELL_CMD:
       bpipe = open_bpipe(ecmd, 0, "r");
-      free_pool_memory(ecmd);
       if (bpipe == NULL) {
          berrno be;
          Jmsg(jcr, M_ERROR, 0, _("Runscript: %s could not execute. ERR=%s\n"), name,
@@ -261,9 +260,11 @@ bool RUNSCRIPT::run(JCR *jcr, const char *name)
       }
       break;
    }
+   free_pool_memory(ecmd);
    return true;
 
 bail_out:
+   free_pool_memory(ecmd);
    /* cancel running job properly */
    if (fail_on_error) {
       jcr->setJobStatus(JS_ErrorTerminated);
