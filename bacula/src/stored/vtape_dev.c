@@ -385,7 +385,7 @@ ssize_t vtape::d_write(int, const void *buffer, size_t count)
    ASSERT(buffer);
 
    ssize_t nb;
-   Dmsg3(0, "write len=%i %i:%i\n",
+   Dmsg3(dbglevel, "write len=%i %i:%i\n",
          count, current_file,current_block);
 
    if (atEOT) {
@@ -402,12 +402,12 @@ ssize_t vtape::d_write(int, const void *buffer, size_t count)
       }
       int64_t pos = DEVICE::get_full_addr(current_file, current_block);
       if ( pos < size ) {
-         Dmsg2(0, "WORM detected. Cannot write at %lld with current size at %lld\n", pos, size -20);
+         Dmsg2(dbglevel, "WORM detected. Cannot write at %lld with current size at %lld\n", pos, size -20);
          errno = EIO;
          return -1;
       }
    } else {
-      Dmsg0(0, "Not worm!\n");
+      Dmsg0(dbglevel, "Not worm!\n");
    }
 
    if (!atEOD) {                /* if not at the end of the data */
