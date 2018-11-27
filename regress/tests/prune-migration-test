@@ -72,13 +72,17 @@ messages
 @$out $cwd/tmp/log10.out
 setdebug level=1 director
 sql
-SELECT JobId, JobTDate, StartTime, EndTime, Type FROM Job;
+SELECT JobId, Level, JobTDate, StartTime, EndTime, Type FROM Job ORDER BY JobId;
 
 list jobs
 prune jobs yes
 list jobs
 sql
-SELECT JobId, JobTDate, StartTime, EndTime, Type FROM Job;
+SELECT JobId, Level, JobTDate, StartTime, EndTime, Type FROM Job ORDER BY JobId;
+
+@$out $cwd/tmp/log11.out
+sql
+SELECT JobId FROM Job LIMIT 1;
 
 @################################################################ 
 @# now do a restore
@@ -111,9 +115,18 @@ check_restore_diff
 
 # M M g g F F I0 -> F
 # Note, for some strange reason, we end either with JobId=5 or
-#  with JobId=8.  Why it changes, I do not know, so we permit
-#  both of them below (absence of 5 and 8 in the list).
-$bperl -e "check_prune_list('$tmp/log10.out',1,2,3,4,7,9)"
+#  with JobId=8.  Why it changes, I do not know...
+# So, we get it from the job list to exclude it and build the check_prune_list
+id=`awk '/ [0-9] / { print $2 }' $tmp/log11.out`
+
+jobid=1
+for i in `seq 2 9`
+do
+    if [ $i != $id ]; then
+        jobid="$jobid,$i"
+    fi
+done
+$bperl -e "check_prune_list('$tmp/log10.out',$jobid)"
 estat=$(($estat + $?))
 
 end_test
