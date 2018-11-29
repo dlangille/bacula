@@ -37,7 +37,17 @@ static int read_digest(BFILE *bfd, DIGEST *digest, JCR *jcr);
 void do_verify(JCR *jcr)
 {
    jcr->setJobStatus(JS_Running);
-   jcr->buf_size = DEFAULT_NETWORK_BUFFER_SIZE;
+
+   LockRes();
+   CLIENT *client = (CLIENT *)GetNextRes(R_CLIENT, NULL);
+   UnlockRes();
+
+   if (client) {
+      jcr->buf_size = client->max_network_buffer_size ?
+         client->max_network_buffer_size : DEFAULT_NETWORK_BUFFER_SIZE;
+   } else {
+      jcr->buf_size = DEFAULT_NETWORK_BUFFER_SIZE; /* use default */
+   }
    if ((jcr->big_buf = (char *) malloc(jcr->buf_size)) == NULL) {
       Jmsg1(jcr, M_ABORT, 0, _("Cannot malloc %d network read buffer\n"),
          DEFAULT_NETWORK_BUFFER_SIZE);
@@ -327,14 +337,20 @@ int digest_file(JCR *jcr, FF_PKT *ff_pkt, DIGEST *digest)
  */
 static int read_digest(BFILE *bfd, DIGEST *digest, JCR *jcr)
 {
-   char buf[DEFAULT_NETWORK_BUFFER_SIZE];
+   char  *buf;
    int64_t n;
-   int64_t bufsiz = (int64_t)sizeof(buf);
+   int64_t bufsiz = jcr->buf_size;
    FF_PKT *ff_pkt = (FF_PKT *)jcr->ff;
    uint64_t fileAddr = 0;             /* file address */
 
-
+   buf = (char *)malloc(bufsiz);
    Dmsg0(50, "=== read_digest\n");
+   /* With this option, we read shorter blocks, so to not break the
+    * sparse block detection, we need to adjust the read size.
+    */
+   if (ff_pkt->flags & FO_SPARSE) {
+      bufsiz -= OFFSET_FADDR_SIZE;
+   }
    while ((n=bread(bfd, buf, bufsiz)) > 0) {
       /* Check for sparse blocks */
       if (ff_pkt->flags & FO_SPARSE) {
@@ -362,6 +378,7 @@ static int read_digest(BFILE *bfd, DIGEST *digest, JCR *jcr)
       }
       jcr->ReadBytes += n;
    }
+   free(buf);
    if (n < 0) {
       berrno be;
       be.set_errno(bfd->berrno);
