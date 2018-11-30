@@ -544,6 +544,7 @@ bool dir_update_volume_info(DCR *dcr, bool label, bool update_LastWritten,
          dev->VolCatInfo.VolCatWrites = dcr->VolCatInfo.VolCatWrites;
          dev->VolCatInfo.VolCatReads = dcr->VolCatInfo.VolCatReads;
          dev->VolCatInfo.VolEnabled = dcr->VolCatInfo.VolEnabled;
+         dev->VolCatInfo.VolCatMaxBytes = dcr->VolCatInfo.VolCatMaxBytes;
          dev->VolCatInfo.VolRecycle = dcr->VolCatInfo.VolRecycle;
       }
       ok = true;
