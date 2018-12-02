@@ -75,6 +75,8 @@ if [ x$FORCE_DEDUP = xyes ]; then
     nbok=4
 elif [ x$FORCE_ALIGNED = xyes ]; then
     sed -i 's/DUALCASE/PUALCASE/g' $tmp/TestVolume001.add
+elif [ x$FORCE_CLOUD = xyes ]; then
+    sed -i 's/DUALCASE/PUALCASE/g' $tmp/TestVolume001/part.2
 else
     sed -i 's/DUALCASE/PUALCASE/g' $tmp/TestVolume001
 fi
