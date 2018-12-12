@@ -42,6 +42,7 @@ public:
    JOB *verify_job;
    JOB *previous_job;
    JOB_DBR jr;
+   POOL_DBR pr;
    USTORE *store;
    CLIENT *client;
    FILESET *fileset;
@@ -577,7 +578,6 @@ static bool get_jobid_list(UAContext *ua, sellist &sl, run_ctx &rc)
 static bool get_jobid_from_list(UAContext *ua, sellist &sl, run_ctx &rc)
 {
    int JobId;
-
    if (rc.done) {
       return false;
    }
@@ -596,9 +596,17 @@ static bool get_jobid_from_list(UAContext *ua, sellist &sl, run_ctx &rc)
    Dmsg3(100, "Job=%s JobId=%d JobStatus=%c\n", rc.jr.Name, rc.jr.JobId,
          rc.jr.JobStatus);
    rc.job_name = rc.jr.Name;
+
    if (!get_job(ua, rc)) {
       return false;
    }
+   rc.pr.PoolId = rc.jr.PoolId;
+   if (!db_get_pool_record(ua->jcr, ua->db, &rc.pr)) {
+      ua->error_msg(_("Could not get pool record for selected JobId=%d. ERR=%s"),
+                    rc.JobId, db_strerror(ua->db));
+      return false;
+   }
+   rc.pool_name = rc.pr.Name;
    if (!get_pool(ua, rc)) {
       return false;
    }
