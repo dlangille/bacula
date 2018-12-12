@@ -1,0 +1,95 @@
+#!/bin/sh
+#
+# Run a backup of the build directory but do a stop and restart in the middle
+#   and check that it restarts correctly.
+#
+TestName="stop-restart-job"
+JobName=RestartJob
+. scripts/functions
+
+scripts/cleanup
+scripts/copy-test-confs
+
+setup_shstore # simulate shared storage if enabled
+
+echo "${cwd}/build" >${cwd}/tmp/file-list
+
+change_jobname NightlySave $JobName
+start_test
+
+# We add a pool to the configuration that is not the default pool
+# for the job
+cat <<EOF >> $conf/bacula-dir.conf
+Pool {
+  Name = PoolA
+  Pool Type = Backup
+  Recycle = yes                       # Bacula can automatically recycle Volumes
+  AutoPrune = yes                     # Prune expired volumes
+  Volume Retention = 365d             # one year
+  Label Format = "Vol"
+  Maximum Volume Bytes = 30MB
+}
+EOF
+
+# If needed, the job can create a volume in the Default pool
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "LabelFormat", "Vol", "Pool", "Default")'
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@output /dev/null
+messages
+@$out ${cwd}/tmp/log0.out
+setbandwidth limit=3MB/s client
+run job=$JobName yes pool=PoolA
+@sleep 3
+stop jobid=1
+wait
+messages
+setbandwidth limit=0 client
+@$out ${cwd}/tmp/log1.out
+restart
+1
+1
+wait
+messages
+@$out $tmp/log3.out
+list pools
+quit
+END_OF_DATA
+
+run_bacula  
+
+scripts/check_for_zombie_jobs storage=File
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@output /dev/null
+messages
+@# 
+@# now do a restore
+@#
+@$out ${cwd}/tmp/log2.out
+restore where=$tmp/bacula-restores storage=File select all done
+yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+scripts/check_for_zombie_jobs storage=File
+stop_bacula
+
+nb=`awk '/Default/ { print $6 }' $tmp/log3.out`
+if [ "$nb" -ne 0  ]; then
+    print_debug "ERROR: volumes should come from PoolA in $tmp/log3.out"
+    estat=1
+fi
+
+nb=`awk '/PoolA/ { print $6 }' $tmp/log3.out`
+if [ "$nb" -lt 1  ]; then
+    print_debug "ERROR: volumes should go to PoolA in $tmp/log3.out"
+    estat=1
+fi
+
+check_two_logs
+check_restore_diff
+end_test
