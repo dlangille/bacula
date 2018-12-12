@@ -21,19 +21,32 @@ echo "${cwd}/build" >${cwd}/tmp/file-list
 change_jobname NightlySave $JobName
 start_test
 
+cat <<EOF >> $conf/bacula-dir.conf
+Pool {
+  Name = PoolA
+  Pool Type = Backup
+  Recycle = yes                       # Bacula can automatically recycle Volumes
+  AutoPrune = yes                     # Prune expired volumes
+  Volume Retention = 365d             # one year
+  Label Format = "Vol"
+  Maximum Volume Bytes = 30MB
+}
+EOF
+
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
 @output /dev/null
 messages
 @$out ${cwd}/tmp/log1.out
 setdebug level=0 trace=0 hangup=596 client
 @#setdebug level=20 dir
-label storage=File volume=TestVolume001 slot=1 drive=0
-run job=$JobName yes
+run job=$JobName yes pool=PoolA
 wait
 messages
 sql
 select * from JobMedia where JobId=1;
 
+@$out $tmp/log3.out
+list pools
 quit
 END_OF_DATA
 
@@ -58,6 +71,19 @@ END_OF_DATA
 run_bconsole
 scripts/check_for_zombie_jobs storage=File
 stop_bacula
+
+nb=`awk '/Default/ { print $6 }' $tmp/log3.out`
+if [ "$nb" -ne 0  ]; then
+    print_debug "ERROR: volumes should come from PoolA in $tmp/log3.out"
+    estat=1
+fi
+
+nb=`awk '/PoolA/ { print $6 }' $tmp/log3.out`
+if [ "$nb" -lt 1  ]; then
+    print_debug "ERROR: volumes should go to PoolA in $tmp/log3.out"
+    estat=1
+fi
+
 
 check_two_logs
 check_restore_diff
