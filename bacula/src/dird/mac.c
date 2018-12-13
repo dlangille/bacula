@@ -568,7 +568,8 @@ bool do_mac(JCR *jcr)
    wjcr->setJobStatus(wjcr->SDJobStatus);
    wait_for_storage_daemon_termination(jcr);
    jcr->setJobStatus(jcr->SDJobStatus);
-   db_write_batch_file_records(wjcr);    /* used by bulk batch file insert */
+
+   flush_file_records(wjcr);     /* cached attribute + batch insert */
 
    ok = jcr->is_JobStatus(JS_Terminated) && wjcr->is_JobStatus(JS_Terminated);
 

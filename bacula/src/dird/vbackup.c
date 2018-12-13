@@ -337,7 +337,8 @@ _("This Job is not an Accurate backup so is not equivalent to a Full backup.\n")
    /* Note, the SD stores in jcr->JobFiles/ReadBytes/JobBytes/JobErrors */
    wait_for_storage_daemon_termination(jcr);
    jcr->setJobStatus(jcr->SDJobStatus);
-   db_write_batch_file_records(jcr);    /* used by bulk batch file insert */
+   flush_file_records(jcr);     /* cached attribute + batch insert */
+
    if (jcr->JobStatus != JS_Terminated) {
       return false;
    }

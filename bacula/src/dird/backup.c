@@ -631,7 +631,8 @@ bool do_backup(JCR *jcr)
 
    /* Pickup Job termination data */
    stat = wait_for_job_termination(jcr);
-   db_write_batch_file_records(jcr);    /* used by bulk batch file insert */
+
+   flush_file_records(jcr);     /* cached attribute + batch insert */
 
    if (jcr->HasBase) {
       db_commit_base_file_attributes_record(jcr, jcr->db);

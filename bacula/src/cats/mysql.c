@@ -458,13 +458,6 @@ void BDB_MYSQL::bdb_start_transaction(JCR *jcr)
  
 void BDB_MYSQL::bdb_end_transaction(JCR *jcr) 
 { 
-   if (jcr && jcr->cached_attribute) { 
-      Dmsg0(400, "Flush last cached attribute.\n"); 
-      if (!bdb_create_attributes_record(jcr, jcr->ar)) { 
-         Jmsg1(jcr, M_FATAL, 0, _("Attribute create error. %s"), jcr->db->bdb_strerror()); 
-      } 
-      jcr->cached_attribute = false; 
-   } 
 } 
  
 /* 

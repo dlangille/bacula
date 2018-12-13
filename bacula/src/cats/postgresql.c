@@ -546,14 +546,6 @@ void BDB_POSTGRESQL::bdb_end_transaction(JCR *jcr)
 {
    BDB_POSTGRESQL *mdb = this;
 
-   if (jcr && jcr->cached_attribute) { 
-      Dmsg0(dbglvl_info, "Flush last cached attribute.\n");
-      if (!bdb_create_attributes_record(jcr, jcr->ar)) {
-         Jmsg1(jcr, M_FATAL, 0, _("Attribute create error. %s"), jcr->db->bdb_strerror());
-      }
-      jcr->cached_attribute = false; 
-   }
-
    if (!mdb->m_allow_transactions) {
       return; 
    }

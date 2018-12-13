@@ -395,7 +395,7 @@ void BDB_SQLITE::bdb_start_transaction(JCR *jcr)
    if (!mdb->m_transaction) { 
       sql_query("BEGIN");                  /* begin transaction */ 
       Dmsg0(400, "Start SQLite transaction\n"); 
-      mdb->m_transaction = true; 
+      mdb->m_transaction = true;
    } 
    bdb_unlock(); 
 }  
@@ -403,15 +403,6 @@ void BDB_SQLITE::bdb_start_transaction(JCR *jcr)
 void BDB_SQLITE::bdb_end_transaction(JCR *jcr) 
 {  
    BDB_SQLITE *mdb = this; 
- 
-   if (jcr && jcr->cached_attribute) { 
-      Dmsg0(400, "Flush last cached attribute.\n"); 
-      if (!bdb_create_attributes_record(jcr, jcr->ar)) { 
-         Jmsg1(jcr, M_FATAL, 0, _("Attribute create error. %s"), jcr->db->bdb_strerror()); 
-      } 
-      jcr->cached_attribute = false; 
-   } 
- 
    if (!mdb->m_allow_transactions) { 
       return; 
    } 

@@ -1919,3 +1919,16 @@ bool run_console_command(JCR *jcr, const char *cmd)
    free_jcr(ljcr);
    return ok;
 }
+
+bool flush_file_records(JCR *jcr)
+{
+   if (jcr->cached_attribute) {
+      Dmsg0(400, "Flush last cached attribute.\n");
+      if (!db_create_attributes_record(jcr, jcr->db, jcr->ar)) {
+         Jmsg1(jcr, M_FATAL, 0, _("Attribute create error. %s"), jcr->db->bdb_strerror());
+      }
+      jcr->cached_attribute = false;
+   }
+
+   return db_write_batch_file_records(jcr);    /* used by bulk batch file insert */
+}

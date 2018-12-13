@@ -407,7 +407,7 @@ bool do_verify(JCR *jcr)
       jcr->SDJobStatus = JS_Terminated;
       get_attributes_and_put_in_catalog(jcr);
       db_end_transaction(jcr, jcr->db);   /* terminate any open transaction */
-      db_write_batch_file_records(jcr);
+      flush_file_records(jcr);     /* cached attribute + batch insert */
       break;
 
    case L_VERIFY_DATA:
