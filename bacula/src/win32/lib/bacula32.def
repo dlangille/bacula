@@ -84,6 +84,7 @@ _Z11bget_handleP5BFILE
 _Z11int32_LE2BEPii
 _Z11int64_LE2BEPxx
 _Z14have_win32_apiv
+_Z14is_plugin_dataP5BFILE
 _Z14set_cmd_pluginP5BFILEP3JCR
 _Z15is_win32_streami
 _Z15stream_to_asciii
@@ -148,17 +149,18 @@ _Z11new_bregexpPKc
 _Z12free_bregexpP7BREGEXP
 _Z12get_bregexpsPKc
 _Z13free_bregexpsP5alist
+_Z14apply_bregexpsPKcP4statP5alistPPc
 _Z14apply_bregexpsPKcP5alistPPc
 _Z19bregexp_build_wherePciS_S_S_
 _Z21bregexp_escape_stringPcPKcc
 _Z28bregexp_get_build_where_sizePcS_S_
 _Z6printfPKcz
-_ZN7BREGEXP10edit_substEPKcP12b_regmatch_t
+_ZN7BREGEXP10edit_substEPKcP4statP12b_regmatch_t
 _ZN7BREGEXP12return_fnameEPKci
 _ZN7BREGEXP14extract_regexpEPKc
 _ZN7BREGEXP16compute_dest_lenEPKcP12b_regmatch_t
 _ZN7BREGEXP5debugEv
-_ZN7BREGEXP7replaceEPKc
+_ZN7BREGEXP7replaceEPKcP4stat
  
 ; bregex.o
 b_re_compile_fastmap
@@ -754,6 +756,7 @@ _Z16dispatch_messageP3JCRixPc
 _Z16init_console_msgPKc
 _Z18set_db_engine_namePKc
 _Z19is_message_type_setP3JCRi
+_Z19set_trace_for_toolsP6_iobuf
 _Z20handle_hangup_blowupP3JCRjy
 _Z21generate_daemon_eventP3JCRPKc
 _Z23dequeue_daemon_messagesP3JCR
