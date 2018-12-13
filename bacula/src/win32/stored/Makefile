@@ -39,6 +39,7 @@ vpath %.cpp $(MAINDIR)/src/stored $(BUILDDIR)/libwin32
 COMMON_OBJS = \
 	$(OBJDIR)/askdir.o \
 	$(OBJDIR)/tape_alert.o \
+	$(OBJDIR)/tape_worm.o \
 	$(OBJDIR)/vtape_dev.o \
 	$(OBJDIR)/tape_dev.o \
 	$(OBJDIR)/init_dev.o \
