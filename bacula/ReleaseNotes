@@ -1,14 +1,25 @@
 
-               Release Notes for Bacula 9.3.0 (Beta version)
+               Release Notes for Bacula 9.4.0
 
 This is a major release (currently a Beta release) comprised of more than
-12,600 lines of differences since version 9.2.2.
+13,000 lines of differences since version 9.2.2.
 
-The main new feature is the addition support for WORM cassets and support
-for using Amazon S3 (and other *identical* S3 providers).  Note: Azur,
-Oracle S3, and Goggle S3 are not compatible with Amazon S3.
+The main new feature is the addition support for using Amazon S3 (and other
+*identical* S3 providers), and WORM tape cassettes.  Note: Azur, Oracle S3,
+and Goggle S3 are not compatible with Amazon S3.
 
-14Nov18
+14Dec18
+ - Add copyright and correct name on stop-restart-test
+ - Fix #4449 about an incorrect pool selected with the restart command
+ - Fix #4386 About incorrect permission on directories after a restore with 
+   replace=ifnewer
+ - Fix bug #4379 certain fields of Media record not reset after Truncate command
+ - Revert "Update bdirjson.c"
+ - Improve volume truncation error messages
+ - Free ids buffer
+ - Update PO files
+ - Initial version and date update
+ - Initial cut of ChangeLog and ReleaseNotes
  - Add use_dcr_only in cloud_dev.c so that manual truncate works
  - More Enterprise backports
  - More Enterprise backports + changes to the backporting
@@ -59,7 +70,7 @@ Oracle S3, and Goggle S3 are not compatible with Amazon S3.
  - baculum: Fix formatted size and time values on the volume details page
  - Add new manual test
  - baculum: Do not store any main oauth2 client nor main http basic user in api 
-  config
+   config
  - Fix tls_bsock_shutdown() compilation when no TLS available.
  - Fix bsock compilation warning.
  - Fix bsock compilation problem in *BSD.
@@ -71,8 +82,7 @@ Oracle S3, and Goggle S3 are not compatible with Amazon S3.
  - Fix format string is not a string literal (potentially insecure).
 
 Bugs fixed/closed since last release:
-2334 2335 2418 3574
-
+2334 2335 2418 3574 4379 4386 4449
 
 ====================== Release 9.2.2 ======================
 Release 9.2.2

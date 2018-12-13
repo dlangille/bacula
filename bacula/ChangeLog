@@ -1,7 +1,31 @@
-              Changelog on version 9.3.0 (Beta version)
+              Changelog on version 9.4.0
 
+14Dec18
+ - Add copyright and correct name on stop-restart-test
+
+12Dec18
+ - Fix #4449 about an incorrect pool selected with the restart command
+
+21Nov18
+ - Fix #4386 About incorrect permission on directories after a restore with 
+  replace=ifnewer
+
+20Nov18
+ - Fix bug #4379 certain fields of Media record not reset after Truncate command
+
+17Nov18
+ - Revert "Update bdirjson.c"
+
+16Nov18
+ - Improve volume truncation error messages
+ - Free ids buffer
 
 14Nov18
+ - Update PO files
+ - Initial version and date update
+ - Initial cut of ChangeLog and ReleaseNotes
+
+13Nov18
  - Add use_dcr_only in cloud_dev.c so that manual truncate works
 
 11Nov18
@@ -122,7 +146,7 @@
  - Fix format string is not a string literal (potentially insecure).
 
 Bugs fixed/closed since last release:
-2334 2335 2418 3574
+2334 2335 2418 3574 4379 4386 4449
 
 ====================== Version 9.2.2 ====================
 
