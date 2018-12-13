@@ -112,6 +112,7 @@ rm -f dumps/*
 ./run tests/sparse-test
 ./run tests/stats-test
 ./run tests/strip-test
+./run tests/stop-restart-test
 ./run tests/tls-duplicate-job-test
 ./run tests/tls-test
 ./run tests/truncate-test
