@@ -161,6 +161,17 @@ void sm_new_owner(const char *fname, int lineno, char *buf)
    return;
 }
 
+/* Print a debug message with the owner of a smartalloc buffer */
+void sm_get_owner(int64_t dbglvl, char *buf)
+{
+   /* Decrement to header */
+   struct abufhead *h = (struct abufhead *) (buf - HEAD_SIZE);
+   Dmsg3(dbglvl, "%p from %s:%d\n",
+         buf + HEAD_SIZE, 
+         NPRT(h->abfname),
+         h->ablineno);
+}
+
 /*  SM_FREE  --  Update free pool availability.  FREE is never called
                  except  through  this interface or by actuallyfree().
                  free(x)  is  defined  to  generate  a  call  to  this

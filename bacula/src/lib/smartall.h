@@ -49,7 +49,7 @@ extern void sm_free(const char *fname, int lineno, void *fp);
 extern void actuallyfree(void *cp),
             sm_dump(bool bufdump, bool in_use=false), sm_static(int mode);
 extern void sm_new_owner(const char *fname, int lineno, char *buf);
-
+extern void sm_get_owner(int64_t dbglvl, char *buf);
 #ifdef SMCHECK
 #define Dsm_check(lvl) if ((lvl)<=debug_level) sm_check(__FILE__, __LINE__, true)
 extern void sm_check(const char *fname, int lineno, bool bufdump);
@@ -82,6 +82,7 @@ extern int sm_check_rtn(const char *fname, int lineno, bool bufdump);
 inline void sm_dump(int x, int y=0) {} /* with default arguments, we can't use a #define */
 #define sm_static(x)
 #define sm_new_owner(a, b, c)
+#define sm_get_owner(a,b)
 #define sm_malloc(f, l, n)     malloc(n)
 #define sm_free(f, l, n)       free(n)
 #define sm_check(f, l, fl)
