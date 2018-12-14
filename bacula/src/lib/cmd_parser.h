@@ -89,11 +89,11 @@ public:
     */
    int find_next_arg_with_value(const int previous, ...)
    {
-      va_list args;
+      va_list vaargs;
       for (int i=previous + 1; i<argc; i++) {
          char *arg;
-         va_start(args, previous);
-         while ((arg = va_arg(args, char *)) != NULL) {
+         va_start(vaargs, previous);
+         while ((arg = va_arg(vaargs, char *)) != NULL) {
             if (strcasecmp(arg, argk[i]) == 0) {
                if (argv[i]) {
                   /* va_end should match indentation of va_start so we can't just return here */
@@ -101,7 +101,7 @@ public:
                }
             }
          }
-         va_end(args);
+         va_end(vaargs);
          if (arg) {
             return i;
          }
