@@ -375,6 +375,7 @@ fi
 support_smartalloc=yes
 support_readline=yes
 support_lzo=yes
+support_s3=yes
 support_conio=yes
 support_bat=no
 support_tls=no
