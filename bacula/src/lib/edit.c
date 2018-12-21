@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2017 Kern Sibbald
+   Copyright (C) 2000-2018 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -29,8 +29,8 @@
 /* We assume ASCII input and don't worry about overflow */
 uint64_t str_to_uint64(char *str)
 {
-   register char *p = str;
-   register uint64_t value = 0;
+   char *p = str;
+   uint64_t value = 0;
 
    if (!p) {
       return 0;
@@ -64,8 +64,8 @@ uint64_t str_to_uint64(char *str)
 
 int64_t str_to_int64(char *str)
 {
-   register char *p = str;
-   register int64_t value;
+   char *p = str;
+   int64_t value;
    bool negative = false;
 
    if (!p) {
