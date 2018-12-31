@@ -44,7 +44,8 @@ class Miscellaneous extends TModule {
 		'V' => 'InitCatalog',
 		'C' => 'Catalog',
 		'O' => 'VolumeToCatalog',
-		'd' => 'DiskToCatalog'
+		'd' => 'DiskToCatalog',
+		'A' => 'Data'
 	);
 
 	public $jobStates =  array(

@@ -296,7 +296,8 @@ var JobLevel = {
 		'V': 'InitCatalog',
 		'C': 'Catalog',
 		'O': 'VolumeToCatalog',
-		'd': 'DiskToCatalog'
+		'd': 'DiskToCatalog',
+		'A': 'Data'
 	},
 	get_level: function(l) {
 		var level;
