@@ -1,0 +1,78 @@
+#!/bin/sh
+#
+# Run a simple backup of the Bacula build directory, remove the job definition,
+#   and then migrate it to another device.
+#
+# This script uses the virtual disk autochanger
+#
+TestName="migration-job-no-resource-test"
+JobName=MigrationJobSave
+. scripts/functions
+
+
+scripts/cleanup
+scripts/copy-migration-confs
+echo "${cwd}/build" >${cwd}/tmp/file-list
+
+change_jobname NightlySave $JobName
+start_test
+
+#
+# Note, we first backup into Pool Default, 
+#          then Migrate into Pool Full. 
+#              Pool Default uses Storage=File
+#              Pool Full    uses Storage=DiskChanger
+
+# Write out bconsole commands
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@output /dev/null
+messages
+@$out ${cwd}/tmp/log1.out
+setdebug level=000 storage=File
+label storage=File volume=FileVolume001 Pool=Default
+label storage=DiskChanger volume=ChangerVolume001 slot=1 Pool=Full drive=0
+label storage=DiskChanger volume=ChangerVolume002 slot=2 Pool=Full drive=0
+@# run two jobs (both will be migrated)
+run job=$JobName yes
+run job=$JobName yes
+wait
+run job=$JobName level=incremental yes
+wait
+messages
+list jobs
+list volumes
+quit
+END_OF_DATA
+
+run_bacula
+
+sed "s/Name = \"$JobName\"/Name = \"No$JobName\"/" $conf/bacula-dir.conf > $tmp/1
+mv $tmp/1 $conf/bacula-dir.conf
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@$out ${cwd}/tmp/log3.out
+reload
+run job=migrate-job yes
+wait
+messages
+list jobs 
+@$out ${cwd}/tmp/log2.out
+restore where=${cwd}/tmp/bacula-restores select all done
+yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+check_for_zombie_jobs storage=File
+stop_bacula
+
+grep "Migration Error" $tmp/log3.out > /dev/null
+if [ $? -ne 0 ]; then
+    print_debug "ERROR: Migration termination message should be in Error"
+    estat=1
+fi
+
+check_two_logs
+end_test
