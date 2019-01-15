@@ -673,7 +673,8 @@ void mac_cleanup(JCR *jcr, int TermCode, int writeTermCode)
       goterrors = jcr->SDErrors > 0 || jcr->JobErrors > 0 ||
          jcr->SDJobStatus == JS_Canceled ||
          jcr->SDJobStatus == JS_ErrorTerminated ||
-         jcr->SDJobStatus == JS_FatalError;
+         jcr->SDJobStatus == JS_FatalError ||
+         jcr->JobStatus == JS_FatalError;
 
       if (goterrors && jcr->getJobType() == JT_MIGRATE && jcr->JobStatus == JS_Terminated) {
          Jmsg(jcr, M_WARNING, 0, _("Found errors during the migration process. "
@@ -786,39 +787,44 @@ void mac_cleanup(JCR *jcr, int TermCode, int writeTermCode)
               JS_ErrorTerminated, new_jobid);
          db_sql_query(wjcr->db, query.c_str(), NULL, NULL);
       }
+   }
 
-      switch (jcr->JobStatus) {
-      case JS_Terminated:
-         if (jcr->JobErrors || jcr->SDErrors) {
-            Mmsg(term_msg, _("%%s OK -- %s"), jcr->StatusErrMsg[0] ? jcr->StatusErrMsg : _("with warnings"));
-         } else {
-            Mmsg(term_msg, _("%%s OK"));
+   switch (jcr->JobStatus) {
+   case JS_Terminated:
+      if (jcr->JobErrors || jcr->SDErrors) {
+         Mmsg(term_msg, _("%%s OK -- %s"), jcr->StatusErrMsg[0] ? jcr->StatusErrMsg : _("with warnings"));
+      } else {
+         Mmsg(term_msg, _("%%s OK"));
+      }
+      break;
+   case JS_FatalError:
+   case JS_ErrorTerminated:
+      Mmsg(term_msg, _("*** %%s Error ***"));
+      msg_type = M_ERROR;          /* Generate error message */
+      terminate_sd_msg_chan_thread(jcr);
+      terminate_sd_msg_chan_thread(wjcr);
+      break;
+   case JS_Canceled:
+      Mmsg(term_msg, _("%%s Canceled"));
+      terminate_sd_msg_chan_thread(jcr);
+      terminate_sd_msg_chan_thread(wjcr);
+      break;
+   default:
+      Mmsg(term_msg, _("Inappropriate %s term code"));
+      break;
+   }
+
+   if (!wjcr) {                 /* We did nothing */
+      goterrors = jcr->JobErrors > 0 || jcr->JobStatus == JS_FatalError;
+      if (!goterrors) {
+         if (jcr->getJobType() == JT_MIGRATE && jcr->previous_jr.JobId != 0) {
+            /* Mark previous job as migrated */
+            Mmsg(query, "UPDATE Job SET Type='%c' WHERE JobId=%s",
+                 (char)JT_MIGRATED_JOB, edit_uint64(jcr->previous_jr.JobId, ec1));
+            db_sql_query(jcr->db, query.c_str(), NULL, NULL);
          }
-         break;
-      case JS_FatalError:
-      case JS_ErrorTerminated:
-         Mmsg(term_msg, _("*** %%s Error ***"));
-         msg_type = M_ERROR;          /* Generate error message */
-         terminate_sd_msg_chan_thread(jcr);
-         terminate_sd_msg_chan_thread(wjcr);
-         break;
-      case JS_Canceled:
-         Mmsg(term_msg, _("%%s Canceled"));
-         terminate_sd_msg_chan_thread(jcr);
-         terminate_sd_msg_chan_thread(wjcr);
-         break;
-      default:
-         Mmsg(term_msg, _("Inappropriate %s term code"));
-         break;
+         Mmsg(term_msg, _("%%s -- no files to %%s"));
       }
-   } else {
-      if (!goterrors && jcr->getJobType() == JT_MIGRATE && jcr->previous_jr.JobId != 0) {
-         /* Mark previous job as migrated */
-         Mmsg(query, "UPDATE Job SET Type='%c' WHERE JobId=%s",
-              (char)JT_MIGRATED_JOB, edit_uint64(jcr->previous_jr.JobId, ec1));
-         db_sql_query(jcr->db, query.c_str(), NULL, NULL);
-      }
-      Mmsg(term_msg, _("%%s -- no files to %%s"));
    }
 
    Mmsg(term_code, term_msg.c_str(), jcr->get_OperationName(), jcr->get_ActionName(0));

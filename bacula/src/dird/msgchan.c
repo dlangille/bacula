@@ -503,7 +503,7 @@ void wait_for_storage_daemon_termination(JCR *jcr)
 
 void terminate_sd_msg_chan_thread(JCR *jcr)
 {
-   if (jcr->store_bsock) {
+   if (jcr && jcr->store_bsock) {
       jcr->store_bsock->signal(BNET_TERMINATE);
       jcr->lock();
       if (  !jcr->sd_msg_thread_done
