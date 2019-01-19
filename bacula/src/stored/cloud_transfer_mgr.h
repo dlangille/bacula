@@ -32,7 +32,7 @@
 #include "lib/workq.h"
 
 /* forward declarations */
-struct transfer_manager;
+class transfer_manager;
 class cloud_driver;
 class DCR;
 class transfer;
