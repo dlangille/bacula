@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2019 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -58,7 +58,7 @@ int main(int argc, char *const *argv)
    bindtextdomain("bacula", LOCALEDIR);
    textdomain("bacula");
 
-   while ((ch = getopt(argc, argv, "d:f:in?")) != -1) {
+   while ((ch = getopt(argc, argv, "d:f:iln?")) != -1) {
       switch (ch) {
       case 'd':                       /* set debug level */
          debug_level = atoi(optarg);
