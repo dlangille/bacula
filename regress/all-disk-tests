@@ -70,6 +70,7 @@ rm -f dumps/*
 ./run tests/maxvol-test
 ./run tests/messages-test
 ./run tests/messages-saved-test
+./run tests/migration-job-no-resource-test
 ./run tests/migration-job-purge-test
 ./run tests/migration-jobspan-test
 ./run tests/migration-job-test
