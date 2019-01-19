@@ -5,14 +5,14 @@
 #define COMMUNITY 1      /* Define to create a Windows community binary */
 
 /* Note: there can be only *one* VERSION in this file */
-#define VERSION "9.4.1"
-#define BDATE   "21 December 2018"
-#define LSMDATE "21Dec18"
+#define VERSION "9.4.2"
+#define BDATE   "19 January 2019"
+#define LSMDATE "19Jan19"
 
 #define RELEASE 1   /* Use ONLY in rpms */
 
-#define PROG_COPYRIGHT "Copyright (C) %d-2018 Kern Sibbald.\n"
-#define BYEAR "2018"       /* year for copyright messages in progs */
+#define PROG_COPYRIGHT "Copyright (C) %d-2019 Kern Sibbald.\n"
+#define BYEAR "2019"       /* year for copyright messages in progs */
 
 /*
  * Versions of packages needed to build Bacula components
@@ -23,7 +23,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2018 Kern Sibbald
+   Copyright (C) 2000-2019 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
