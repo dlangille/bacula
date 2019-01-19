@@ -1,6 +1,18 @@
-              Changelog on version 9.4.0
+              Changelog on version 9.4.1
 
-16Dec18 Release
+21Dec18
+ - Remove register attribute on variables as it is not supported by newer C++ 
+  compilers
+
+20Dec18
+ - Fix regression from 9.2 when backporting Enterprise code
+ - Add missing default flag so that configure looks for libs3
+
+Bugs fixed/closed since last release:
+
+
+==========================================================
+16Dec18 Release 9.4.0
 
 14Dec18
  - Add copyright and correct name on stop-restart-test

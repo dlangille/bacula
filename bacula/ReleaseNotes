@@ -1,7 +1,29 @@
 
-               Release Notes for Bacula 9.4.0
+               Release Notes for Bacula 9.4.1
 
-This is a major release (currently a Beta release) comprised of more than
+This is a minor bug fix release for 9.4.0.  It should fix a few of
+the warning messages, but not all, on FreeBSD and Solaris.  More importantly
+The ./configure process now properly detects that libs3 is installed
+on your system.  If you do not want to use the Amazon S3 driver, this
+update is not required.
+
+In addition to this release, I have posted the current source code with
+patches for libs3 to bacula.org. This package is needed if you wish to
+build the S3 driver. You may download it from the following location:
+
+https://www.bacula.org/downloads/libs3-20181010.tar.gz
+
+21Dec18
+ - Remove register attribute on variables as it is not supported by newer C++ 
+   compilers
+ - Fix regression from 9.2 when backporting Enterprise code in bsock code
+ - Add missing default flag so that configure looks for libs3
+
+
+=====================================================================
+Release 9.4.0
+
+This is a major release comprised of more than
 13,000 lines of differences since version 9.2.2.  It has updates to Baculum
 and small number of bug fixes and back ports from Bacula Systems Enterprise
 since version 9.2.2, but primarily it has two new features ...
