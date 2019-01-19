@@ -744,9 +744,11 @@ static int reserve_device(RCTX &rctx)
       }
       return -1;  /* no use waiting */
    } else if (!rctx.device->dev->enabled) {
-      Jmsg(rctx.jcr, M_WARNING, 0, _("\n"
-           "     Device \"%s\" requested by DIR is disabled.\n"),
+      if (verbose) {
+         Jmsg(rctx.jcr, M_WARNING, 0, _("\n"
+              "     Device \"%s\" requested by DIR is disabled.\n"),
               rctx.device_name);
+      }
       return -1;  /* no use waiting */
    }
 
