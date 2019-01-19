@@ -1459,7 +1459,6 @@ static void cleanup_old_files()
    char prbuf[500];
    const int nmatch = 30;
    regmatch_t pmatch[nmatch];
-   berrno be;
 
    /* Exclude spaces and look for .mail, .tmp or .restore.xx.bsr files */
    const char *pat1 = "^[^ ]+\\.(restore\\.[^ ]+\\.bsr|mail|tmp)$";
@@ -1489,7 +1488,6 @@ static void cleanup_old_files()
       Pmsg2(000, "Failed to open working dir %s for cleanup: ERR=%s\n",
             director->working_directory, be.bstrerror());
       goto get_out1;
-      return;
    }
 
    while (1) {
