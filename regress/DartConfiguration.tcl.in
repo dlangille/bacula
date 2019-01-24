@@ -4,7 +4,7 @@ Site: @sitename@
 BuildName: @bversion@-@bdate@-@dbengine@-@os@
 DropMethod: http
 DropSite: regress.bacula.org
-DropLocation: /submit.php?project=Bacula-9.0
+DropLocation: /submit.php?project=Bacula-9.4
 DroptSiteCdash: true
 TriggerSite: http://regress.bacula.org
 NightlyStartTime: 23:00:00 CET
