@@ -873,9 +873,13 @@ static void eliminate_orphaned_path_records()
    lctx.count=0;
    db_sql_query(db, "SELECT 1 FROM Job WHERE HasCache=1 LIMIT 1", 
                 db_int64_handler, &lctx);
-   
+
+   /* The BVFS code uses Path records that are not in the File table, for
+    * example if a Job has /home/test/ BVFS will need to create a Path record /
+    * and /home/ to work correctly
+    */
    if (lctx.count == 1) {
-      printf(_("Pruning orphaned Path entries isn't possible when using BVFS.\n"));
+      printf(_("To prune orphaned Path entries, it is necessary to clear the BVFS Cache first with the bconsole \".bvfs_clear_cache yes\" command.\n"));
       return;
    }
 
