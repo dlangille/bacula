@@ -502,6 +502,7 @@ static void api_list_sd_status_header(STATUS_PKT *sp)
       OT_STRING, "version",     VERSION " (" BDATE ")",
       OT_STRING, "uname",       HOST_OS " " DISTNAME " " DISTVER,
       OT_UTIME,  "started",     daemon_start_time,
+      OT_INT64,  "pid",         (int64_t)getpid(),
       OT_INT,    "jobs_run",    num_jobs_run,
       OT_INT,    "jobs_running",job_count(),
       OT_INT,    "ndevices",    ((rblist *)res_head[R_DEVICE-r_first]->res_list)->size(),

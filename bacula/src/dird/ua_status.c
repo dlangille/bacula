@@ -436,6 +436,7 @@ static void api_list_dir_status_header(UAContext *ua)
       OT_STRING, "uname",       HOST_OS " " DISTNAME " " DISTVER,
       OT_UTIME,  "started",     daemon_start_time,
       OT_UTIME,  "reloaded",    last_reload_time,
+      OT_INT64,  "pid",         (int64_t)getpid(),
       OT_INT,    "jobs_run",    num_jobs_run,
       OT_INT,    "jobs_running",job_count(),
       OT_INT,    "nclients",    ((rblist *)res_head[R_CLIENT-r_first]->res_list)->size(),
