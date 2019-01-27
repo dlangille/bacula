@@ -137,7 +137,7 @@ public:
    bool connect(JCR * jcr, int retry_interval, utime_t max_retry_time,
                 utime_t heart_beat, const char *name, char *host,
                 char *service, int port, int verbose);
-   virtual int32_t recv(int /*len*/);
+  virtual int32_t recvn(int /*len*/);
    virtual bool send();
    bool fsend(const char*, ...);
    void close();              /* close connection and destroy packet */

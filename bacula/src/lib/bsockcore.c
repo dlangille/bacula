@@ -590,7 +590,7 @@ bool BSOCKCORE::fsend(const char *fmt, ...)
  * Returns number of bytes read (may return zero), the msglen is set accordingly.
  * Returns -1 on error so msglen will be zero.
  */
-int32_t BSOCKCORE::recv(int len)
+int32_t BSOCKCORE::recvn(int len)
 {
    /* The method has to be redesigned from scratch */
    int32_t nbytes;
