@@ -15,7 +15,7 @@
 **  For disclaimer see below.
 */
 /*
- * Modified for use with Bacula by Kern Sibbald, June 2003
+ * Modified for use with Bacula by Kern Sibbald, June 2003, Jan 2019
  */
 
 
@@ -77,11 +77,13 @@ typedef enum {
 struct var_st;
 typedef struct var_st var_t;
 
-typedef enum {
+enum _var_config_t {
     VAR_CONFIG_SYNTAX,
     VAR_CONFIG_CB_VALUE,
     VAR_CONFIG_CB_OPERATION
-} var_config_t;
+};
+/* Force var_config_t to int to avoid compiler default conversion warnings */
+typedef int var_config_t;
 
 typedef struct {
     char  escape;       /* default: '\' */

@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2018 Kern Sibbald
+   Copyright (C) 2000-2019 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -25,7 +25,7 @@
 
 #include "bacula.h"
 
-typedef enum {
+enum _OutputType {
    OT_INT,                      /* Integer */
    OT_SIZE,                     /* int64 size */
    OT_PINT32,                   /* Uint32 */
@@ -47,7 +47,9 @@ typedef enum {
    OT_END_OBJ,                  /* Skip a line to end current object (no extra arg) */
    OT_CLEAR,                    /* truncate current buffer (no extra arg) */
    OT_DURATION                  /* time duration in second */
-} OutputType;
+};
+/* Force OutputType to int to avoid compiler default conversion warnings */
+typedef int OutputType;
 
 /* Keep the same order for get_options/parse_options */
 typedef enum {
