@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (C) 2000-2015 Kern Sibbald
+# Copyright (C) 2000-2019 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
 
@@ -12,6 +12,8 @@ LANG=C
 echo "Begin nightly-disk `date`"
 REGRESS_DEBUG=1
 export REGRESS_DEBUG
+CTEST_CUSTOM_MAXIMUM_FAILED_TEST_OUTPUT_SIZE=2000000
+export CTEST_CUSTOM_MAXIMUM_FAILED_TEST_OUTPUT_SIZE
 rm -rf Testing
 rm -f dumps/*
 git pull
@@ -26,7 +28,7 @@ git pull
 make distclean
 scripts/config_dart
 make setup
-nice ctest -D Nightly -R "^disk:"
+nice ctest --output-on-failure -D Nightly -R "^disk:"
 rtn=$?
 i=0
 while [ $i -le 5 ]; do
