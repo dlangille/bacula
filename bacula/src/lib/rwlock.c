@@ -445,7 +445,10 @@ int main (int argc, char *argv[])
      * For Solaris 2.5,2.6,7 and 8 threads are not timesliced.
      * Ensure our threads can run concurrently.
      */
+
+#ifdef USE_THR_SETCONCURRENCY
     thr_setconcurrency(THREADS);      /* Only implemented on Solaris */
+#endif
 
     /*
      * Initialize the shared data.
