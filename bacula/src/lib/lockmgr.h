@@ -228,7 +228,7 @@ int bthread_kill(pthread_t thread, int sig,
 
 #else   /* !USE_LOCKMGR */
 
-# define lmgr_detect_deadloc()
+# define lmgr_detect_deadlock()
 # define lmgr_add_event_p(c, u, f, l)
 # define lmgr_add_event(c, u)
 # define lmgr_dump()
