@@ -60,7 +60,7 @@ bool newVolume(JCR *jcr, MEDIA_DBR *mr, STORE *store, POOL_MEM &errmsg)
 
    if (pr.MaxVols > 0 && pr.NumVols >= pr.MaxVols) {
       Mmsg(errmsg, "Maximum Volumes exceeded for Pool %s", pr.Name);
-      Dmsg1(90, "Too much volumes for Pool %s\n", pr.Name);
+      Dmsg1(90, "Too many volumes for Pool %s\n", pr.Name);
       goto bail_out;
    }
 

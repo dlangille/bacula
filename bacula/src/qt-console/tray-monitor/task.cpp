@@ -83,7 +83,7 @@ static void *handle_task(void *data)
             break;
         }
     }
-    Dmsg0(dbglvl, "Worker stoped\n");
+    Dmsg0(dbglvl, "Worker stopped\n");
     lmgr_cleanup_thread();
     return NULL;
 }
