@@ -565,6 +565,10 @@ bool do_restore(JCR *jcr)
    /* Print Job Start message */
    Jmsg(jcr, M_INFO, 0, _("Start Restore Job %s\n"), jcr->Job);
 
+   if (jcr->JobIds) {
+      Jmsg(jcr, M_INFO, 0, _("Restoring files from JobId(s) %s\n"), jcr->JobIds);
+   }
+
    if (jcr->client) {
       jcr->sd_calls_client = jcr->client->sd_calls_client;
    }
