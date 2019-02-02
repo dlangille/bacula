@@ -813,6 +813,8 @@ class RestoreWizard extends BaculumWebPage
 
 			$ret = $this->getModule('api')->create(array('jobs', 'restore'), $restore_props);
 			$jobid = $this->getModule('misc')->findJobIdStartedJob($ret->output);
+			// Remove temporary BVFS table
+			$this->getModule('api')->set(array('bvfs', 'cleanup'), array('path' => $path));
 		}
 		$url_params = array();
 		if (is_numeric($jobid)) {

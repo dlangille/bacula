@@ -115,35 +115,8 @@ class RestoreRun extends BaculumAPIServer {
 		$command[] = 'yes';
 
 		$restore = $this->getModule('bconsole')->bconsoleCommand($this->director, $command);
-		$this->removeTmpRestoreTable($rfile);
 		$this->output = $restore->output;
 		$this->error = $restore->exitcode;
 	}
-
-	private function removeTmpRestoreTable($tableName) {
-		$misc = $this->getModule('misc');
-		if (preg_match($misc::RPATH_PATTERN, $tableName) === 1) {
-			// @TODO: Move it to API module. It shouldn't look like here.
-			$db_params = $this->getModule('api_config')->getConfig('db');
-			$connection = APIDbModule::getAPIDbConnection($db_params);
-			$connection->setActive(true);
-			$sql = "DROP TABLE $tableName";
-			$pdo = $connection->getPdoInstance();
-			try {
-				$pdo->exec($sql);
-			} catch(PDOException $e) {
-				$emsg = 'Problem during delete temporary Bvfs table. ' . $e->getMessage();
-				$this->getModule('logging')->log(
-					__FUNCTION__,
-					$emsg,
-					Logging::CATEGORY_APPLICATION,
-					__FILE__,
-					__LINE__
-				);
-			}
-			$pdo = null;
-		}
-	}
 }
-
 ?>
