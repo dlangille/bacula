@@ -55,6 +55,7 @@ class Bconsole extends APIModule {
 		'.bvfs_get_jobids',
 		'.bvfs_restore',
 		'.bvfs_clear_cache',
+		'.bvfs_cleanup',
 		'restore',
 		'cancel',
 		'delete',

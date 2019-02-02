@@ -69,6 +69,7 @@
 	<url ServiceParameter="API.BVFSGetJobids" pattern="api/v1/bvfs/getjobids/" />
 	<url ServiceParameter="API.BVFSRestore" pattern="api/v1/bvfs/restore/" />
 	<url ServiceParameter="API.BVFSClearCache" pattern="api/v1/bvfs/clear/" />
+	<url ServiceParameter="API.BVFSCleanUp" pattern="api/v1/bvfs/cleanup/" />
 	<!-- joblog endpoints -->
 	<url ServiceParameter="API.JobLog" pattern="api/v1/joblog/{id}/" parameters.id="\d+" />
 	<!-- fileset endpoints -->
