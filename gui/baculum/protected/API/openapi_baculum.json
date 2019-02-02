@@ -5,7 +5,7 @@
 		"description": "This is the Baculum API documentation.",
 		"contact": {
 			"name": "Marcin Haba",
-			"url": "http://www.bacula.org/9.2.x-manuals/en/console/Baculum_API_Web_GUI_Tools.html",
+			"url": "https://www.bacula.org/9.4.x-manuals/en/console/Baculum_API_Web_GUI_Tools.html",
 			"email": "marcin.haba@bacula.pl"
 		},
 		"license": {
@@ -223,7 +223,7 @@
 		"description": "Bacula Client endpoints",
 		"externalDocs": {
 			"description": "Find out more",
-			"url": "http://www.bacula.org/9.2.x-manuals/en/main/Configuring_Director.html#SECTION0019130000000000000000"
+			"url": "https://www.bacula.org/9.4.x-manuals/en/main/Configuring_Director.html#SECTION0020130000000000000000"
 		}
 	},
 	{
@@ -231,7 +231,7 @@
 		"description": "Bacula Job endpoints",
 		"externalDocs": {
 			"description": "Find out more",
-			"url": "http://www.bacula.org/9.2.x-manuals/en/main/Configuring_Director.html#SECTION001930000000000000000"
+			"url": "https://www.bacula.org/9.4.x-manuals/en/main/Configuring_Director.html#SECTION002030000000000000000"
 		}
 	},
 	{
@@ -239,7 +239,7 @@
 		"description": "Bacula Storage endpoints",
 		"externalDocs": {
 			"description": "Find out more",
-			"url": "http://www.bacula.org/9.2.x-manuals/en/main/Configuring_Director.html#SECTION0019140000000000000000"
+			"url": "https://www.bacula.org/9.4.x-manuals/en/main/Configuring_Director.html#SECTION0020140000000000000000"
 		}
 	},
 	{
@@ -247,7 +247,7 @@
 		"description": "Bacula Pool endpoints",
 		"externalDocs": {
 			"description": "Find out more",
-			"url": "http://www.bacula.org/9.2.x-manuals/en/main/Configuring_Director.html#SECTION0019160000000000000000"
+			"url": "https://www.bacula.org/9.4.x-manuals/en/main/Configuring_Director.html#SECTION0020160000000000000000"
 		}
 	},
 	{
@@ -255,7 +255,7 @@
 		"description": "Bacula Volume endpoints",
 		"externalDocs": {
 			"description": "Find out more",
-			"url": "http://www.bacula.org/9.2.x-manuals/en/main/Basic_Volume_Management.html"
+			"url": "http://www.bacula.org/9.4.x-manuals/en/main/Basic_Volume_Management.html"
 		}
 	},
 	{
@@ -263,7 +263,7 @@
 		"description": "Bacula FileSet endpoints",
 		"externalDocs": {
 			"description": "Find out more",
-			"url": "http://www.bacula.org/9.2.x-manuals/en/main/Configuring_Director.html#SECTION001970000000000000000"
+			"url": "https://www.bacula.org/9.4.x-manuals/en/main/Configuring_Director.html#SECTION002070000000000000000"
 		}
 	},
 	{
@@ -271,7 +271,7 @@
 		"description": "Bacula Schedule endpoints",
 		"externalDocs": {
 			"description": "Find out more",
-			"url": "http://www.bacula.org/9.2.x-manuals/en/main/Configuring_Director.html#SECTION001950000000000000000"
+			"url": "https://www.bacula.org/9.4.x-manuals/en/main/Configuring_Director.html#SECTION002050000000000000000"
 		}
 	},
 	{
@@ -279,7 +279,7 @@
 		"description": "Bacula BVFS endpoints",
 		"externalDocs": {
 			"description": "Find out more",
-			"url": "http://www.bacula.org/9.2.x-manuals/en/main/New_Features_in_5_2_13.html#SECTION00814000000000000000"
+			"url": "https://www.bacula.org/9.4.x-manuals/en/main/New_Features_in_5_2_13.html#SECTION00914000000000000000"
 		}
 	},
 	{
@@ -684,6 +684,7 @@
 				"tags": ["jobs"],
 				"summary": "Cancel job",
 				"description": "Cancel running job.",
+				"consumes": [ "application/x-www-form-urlencoded" ],
 				"responses": {
 					"200": {
 						"description": "Cancel command output",
@@ -891,6 +892,7 @@
 			"post": {
 				"tags": ["jobs"],
 				"summary": "Estimate job bytes and files",
+				"consumes": [ "application/x-www-form-urlencoded" ],
 				"description": "Estimate job bytes and files before real job run. There can be used (id OR name) and (clientid OR client)",
 				"responses": {
 					"200": {
@@ -921,7 +923,7 @@
 				"parameters": [
 					{
 						"name": "create[id]",
-						"in": "header",
+						"in": "body",
 						"description": "Job identifier",
 						"required": true,
 						"schema": {
@@ -930,7 +932,7 @@
 					},
 					{
 						"name": "create[name]",
-						"in": "header",
+						"in": "body",
 						"description": "Job name (can be used instead id)",
 						"required": true,
 						"schema": {
@@ -940,7 +942,7 @@
 					},
 					{
 						"name": "create[clientid]",
-						"in": "header",
+						"in": "body",
 						"description": "Client identifier",
 						"required":  true,
 						"schema": {
@@ -949,7 +951,7 @@
 					},
 					{
 						"name": "create[client]",
-						"in": "header",
+						"in": "body",
 						"description": "Client name (can be used instead clientid)",
 						"required":  true,
 						"schema": {
@@ -959,7 +961,7 @@
 					},
 					{
 						"name": "create[fileset]",
-						"in": "header",
+						"in": "body",
 						"description": "FileSet name",
 						"required": true,
 						"schema": {
@@ -969,7 +971,7 @@
 					},
 					{
 						"name": "create[accurate]",
-						"in": "header",
+						"in": "body",
 						"description": "Accurate mode, 1 if enabled, otherwise 0",
 						"required": false,
 						"schema": {
@@ -983,6 +985,7 @@
 			"post": {
 				"tags": ["jobs"],
 				"summary": "Run job",
+				"consumes": [ "application/x-www-form-urlencoded" ],
 				"description": "Run job with specific parameters. There can be used (id OR name) and (clientid OR client)",
 				"responses": {
 					"200": {
@@ -1013,7 +1016,7 @@
 				"parameters": [
 					{
 						"name": "create[id]",
-						"in": "header",
+						"in": "body",
 						"description": "Job identifier",
 						"required": true,
 						"schema": {
@@ -1022,7 +1025,7 @@
 					},
 					{
 						"name": "create[name]",
-						"in": "header",
+						"in": "body",
 						"description": "Job name (can be used instead id)",
 						"required": true,
 						"schema": {
@@ -1032,7 +1035,7 @@
 					},
 					{
 						"name": "create[clientid]",
-						"in": "header",
+						"in": "body",
 						"description": "Client identifier",
 						"required":  true,
 						"schema": {
@@ -1041,7 +1044,7 @@
 					},
 					{
 						"name": "create[client]",
-						"in": "header",
+						"in": "body",
 						"description": "Client name (can be used instead clientid)",
 						"required":  true,
 						"schema": {
@@ -1051,7 +1054,7 @@
 					},
 					{
 						"name": "create[storageid]",
-						"in": "header",
+						"in": "body",
 						"description": "Storage identifier",
 						"required":  true,
 						"schema": {
@@ -1060,7 +1063,7 @@
 					},
 					{
 						"name": "create[storage]",
-						"in": "header",
+						"in": "body",
 						"description": "Storage name (can be used instead storageid)",
 						"required":  true,
 						"schema": {
@@ -1070,7 +1073,7 @@
 					},
 					{
 						"name": "create[poolid]",
-						"in": "header",
+						"in": "body",
 						"description": "Pool identifier",
 						"required":  true,
 						"schema": {
@@ -1079,7 +1082,7 @@
 					},
 					{
 						"name": "create[pool]",
-						"in": "header",
+						"in": "body",
 						"description": "Pool name (can be used instead poolid)",
 						"required":  true,
 						"schema": {
@@ -1089,7 +1092,7 @@
 					},
 					{
 						"name": "create[fileset]",
-						"in": "header",
+						"in": "body",
 						"description": "FileSet name",
 						"required": true,
 						"schema": {
@@ -1099,7 +1102,7 @@
 					},
 					{
 						"name": "create[priority]",
-						"in": "header",
+						"in": "body",
 						"description": "Job priority",
 						"required":  false,
 						"schema": {
@@ -1108,7 +1111,7 @@
 					},
 					{
 						"name": "create[accurate]",
-						"in": "header",
+						"in": "body",
 						"description": "Accurate mode, 1 if enabled, otherwise 0",
 						"required": false,
 						"schema": {
@@ -1117,7 +1120,7 @@
 					},
 					{
 						"name": "create[jobid]",
-						"in": "header",
+						"in": "body",
 						"description": "Job identifier for verify job",
 						"required":  false,
 						"schema": {
@@ -1126,7 +1129,7 @@
 					},
 					{
 						"name": "create[verifyjob]",
-						"in": "header",
+						"in": "body",
 						"description": "Verify job name",
 						"required":  false,
 						"schema": {
@@ -1225,6 +1228,7 @@
 			"post": {
 				"tags": ["jobs"],
 				"summary": "Restore job",
+				"consumes": [ "application/x-www-form-urlencoded" ],
 				"description": "Restore backup job.",
 				"responses": {
 					"200": {
@@ -1255,7 +1259,7 @@
 				"parameters": [
 					{
 						"name": "create[id]",
-						"in": "header",
+						"in": "body",
 						"description": "Job identifier",
 						"required": true,
 						"schema": {
@@ -1264,7 +1268,7 @@
 					},
 					{
 						"name": "create[name]",
-						"in": "header",
+						"in": "body",
 						"description": "Job name (can be used instead id)",
 						"required": true,
 						"schema": {
@@ -1274,7 +1278,7 @@
 					},
 					{
 						"name": "create[clientid]",
-						"in": "header",
+						"in": "body",
 						"description": "Client identifier",
 						"required":  true,
 						"schema": {
@@ -1283,7 +1287,7 @@
 					},
 					{
 						"name": "create[client]",
-						"in": "header",
+						"in": "body",
 						"description": "Client name (can be used instead clientid)",
 						"required":  true,
 						"schema": {
@@ -1293,7 +1297,7 @@
 					},
 					{
 						"name": "create[rpath]",
-						"in": "header",
+						"in": "body",
 						"description": "Rpath (restore path)",
 						"required": true,
 						"schema": {
@@ -1303,7 +1307,7 @@
 					},
 					{
 						"name": "create[where]",
-						"in": "header",
+						"in": "body",
 						"description": "Where to restore files",
 						"required":  true,
 						"schema": {
@@ -1312,7 +1316,7 @@
 					},
 					{
 						"name": "create[priority]",
-						"in": "header",
+						"in": "body",
 						"description": "Job priority",
 						"required":  false,
 						"schema": {
@@ -1321,7 +1325,7 @@
 					},
 					{
 						"name": "create[restorejob]",
-						"in": "header",
+						"in": "body",
 						"description": "Restore job name",
 						"required": false,
 						"schema": {
@@ -1331,7 +1335,7 @@
 					},
 					{
 						"name": "create[strip_prefix]",
-						"in": "header",
+						"in": "body",
 						"description": "Strip prefix in restored paths",
 						"required": false,
 						"schema": {
@@ -1340,7 +1344,7 @@
 					},
 					{
 						"name": "create[add_prefix]",
-						"in": "header",
+						"in": "body",
 						"description": "Add prefix to restored paths",
 						"required": false,
 						"schema": {
@@ -1349,7 +1353,7 @@
 					},
 					{
 						"name": "create[add_suffix]",
-						"in": "header",
+						"in": "body",
 						"description": "Add suffix to restored paths",
 						"required": false,
 						"schema": {
@@ -1358,7 +1362,7 @@
 					},
 					{
 						"name": "create[regex_where]",
-						"in": "header",
+						"in": "body",
 						"description": "Use regex to file relocation",
 						"required": false,
 						"schema": {
@@ -1821,6 +1825,7 @@
 				"tags": ["pools"],
 				"summary": "Update pool properties",
 				"description": "Update properties in specific pool",
+				"consumes": [ "application/x-www-form-urlencoded" ],
 				"responses": {
 					"200": {
 						"description": "Update pool output",
@@ -1857,6 +1862,7 @@
 				"tags": ["pools"],
 				"summary": "Update properties all volumes in pool",
 				"description": "Update properties all volumes in specific pool",
+				"consumes": [ "application/x-www-form-urlencoded" ],
 				"responses": {
 					"200": {
 						"description": "Update all volumes in pool output",
@@ -2000,6 +2006,7 @@
 				"tags": ["volumes"],
 				"summary": "Update volume properties",
 				"description": "Update specific volume properties.",
+				"consumes": [ "application/x-www-form-urlencoded" ],
 				"responses": {
 					"200": { 
 						"description": "Update volume output",
@@ -2032,7 +2039,7 @@
 					},
 					{
 						"name": "update[volstatus]",
-						"in": "header",
+						"in": "body",
 						"description": "Volume status",
 						"required": false,
 						"schema": {
@@ -2041,7 +2048,7 @@
 					},
 					{
 						"name": "update[poolid]",
-						"in": "header",
+						"in": "body",
 						"description": "Update Volume Pool by Pool identifier",
 						"required": false,
 						"schema": {
@@ -2050,7 +2057,7 @@
 					},
 					{
 						"name": "update[volretention]",
-						"in": "header",
+						"in": "body",
 						"description": "Volume retention time",
 						"required": false,
 						"schema": {
@@ -2059,7 +2066,7 @@
 					},
 					{
 						"name": "update[voluseduration]",
-						"in": "header",
+						"in": "body",
 						"description": "Volume use duration time",
 						"required": false,
 						"schema": {
@@ -2068,7 +2075,7 @@
 					},
 					{
 						"name": "update[maxvoljobs]",
-						"in": "header",
+						"in": "body",
 						"description": "Maximum volume jobs",
 						"required": false,
 						"schema": {
@@ -2077,7 +2084,7 @@
 					},
 					{
 						"name": "update[maxvolfiles]",
-						"in": "header",
+						"in": "body",
 						"description": "Maximum volume files",
 						"required": false,
 						"schema": {
@@ -2086,7 +2093,7 @@
 					},
 					{
 						"name": "update[maxvolbytes]",
-						"in": "header",
+						"in": "body",
 						"description": "Maximum volume bytes",
 						"required": false,
 						"schema": {
@@ -2095,7 +2102,7 @@
 					},
 					{
 						"name": "update[slot]",
-						"in": "header",
+						"in": "body",
 						"description": "Volume slot",
 						"required": false,
 						"schema": {
@@ -2104,7 +2111,7 @@
 					},
 					{
 						"name": "update[recycle]",
-						"in": "header",
+						"in": "body",
 						"description": "Volume recycle flag",
 						"required": false,
 						"schema": {
@@ -2115,7 +2122,7 @@
 					},
 					{
 						"name": "update[enabled]",
-						"in": "header",
+						"in": "body",
 						"description": "Volume enabled flag",
 						"required": false,
 						"schema": {
@@ -2126,7 +2133,7 @@
 					},
 					{
 						"name": "update[inchanger]",
-						"in": "header",
+						"in": "body",
 						"description": "Volume InChanger flag",
 						"required": false,
 						"schema": {
@@ -2143,6 +2150,7 @@
 				"tags": ["volumes"],
 				"summary": "Prune volume",
 				"description": "Do prunning on volume.",
+				"consumes": [ "application/x-www-form-urlencoded" ],
 				"responses": {
 					"200": { 
 						"description": "Prune volume output",
@@ -2181,6 +2189,7 @@
 				"tags": ["volumes"],
 				"summary": "Purge volume",
 				"description": "Do purging on volume.",
+				"consumes": [ "application/x-www-form-urlencoded" ],
 				"responses": {
 					"200": { 
 						"description": "Purge volume output",
@@ -2446,6 +2455,7 @@
 				"tags": ["bvfs"],
 				"summary": "Update BVFS cache",
 				"description": "Update BVFS cache for specific jobs identifiers",
+				"consumes": [ "application/x-www-form-urlencoded" ],
 				"responses": {
 					"200": {
 						"description": "BVFS update command output",
@@ -2735,6 +2745,7 @@
 			"post": {
 				"tags": ["bvfs"],
 				"summary": "Prepare BVFS restore",
+				"consumes": [ "application/x-www-form-urlencoded" ],
 				"description": "Prepare BVFS restore",
 				"responses": {
 					"200": {
@@ -2765,7 +2776,7 @@
 				"parameters": [
 					{
 						"name": "create[path]",
-						"in": "header",
+						"in": "body",
 						"description": "Path in format b2[0-9]+",
 						"required": true,
 						"schema": {
@@ -2774,7 +2785,7 @@
 					},
 					{
 						"name": "create[jobids]",
-						"in": "header",
+						"in": "body",
 						"description": "Comma separated job identifiers",
 						"required": true,
 						"schema": {
@@ -2783,7 +2794,7 @@
 					},
 					{
 						"name": "create[fileid]",
-						"in": "header",
+						"in": "body",
 						"description": "Comma seprated file identifiers",
 						"required": false,
 						"schema": {
@@ -2792,7 +2803,7 @@
 					},
 					{
 						"name": "create[dirid]",
-						"in": "header",
+						"in": "body",
 						"description": "Comma seprated directory identifiers",
 						"required": false,
 						"schema": {
@@ -2801,7 +2812,7 @@
 					},
 					{
 						"name": "create[findex]",
-						"in": "header",
+						"in": "body",
 						"description": "Comma seprated directory file indexes",
 						"required": false,
 						"schema": {
@@ -2816,6 +2827,7 @@
 				"tags": ["bvfs"],
 				"summary": "Clear BVFS cache",
 				"description": "Clear BVFS cache",
+				"consumes": [ "application/x-www-form-urlencoded" ],
 				"responses": {
 					"200": {
 						"description": "BVFS clear cache command output",
@@ -2842,6 +2854,51 @@
 						}
 					}
 				}
+			}
+		},
+		"/api/v1/bvfs/cleanup": {
+			"put": {
+				"tags": ["bvfs"],
+				"summary": "Cleanup BVFS (remove temporary table)",
+				"description": "Cleanup BVFS",
+				"consumes": [ "application/x-www-form-urlencoded" ],
+				"responses": {
+					"200": {
+						"description": "BVFS cleanup output",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"type": "array",
+											"items": {
+												"description": "BVFS cleanup command output",
+												"type": "string"
+											}
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					{
+						"name": "update[path]",
+						"in": "body",
+						"description": "Path in format b2[0-9]+",
+						"required": true,
+						"schema": {
+							"type": "integer"
+						}
+					}
+				]
 			}
 		},
 		"/api/v1/config": {
@@ -2935,6 +2992,7 @@
 				"tags": ["config"],
 				"summary": "Set component config",
 				"description": "Set specific component config",
+				"consumes": [ "application/x-www-form-urlencoded" ],
 				"responses": {
 					"200": {
 						"description": "Set config status",
@@ -2964,7 +3022,7 @@
 					},
 					{
 						"name": "update[config]",
-						"in": "header",
+						"in": "body",
 						"description": "Config in JSON form to set",
 						"required": true,
 						"schema": {
@@ -3018,6 +3076,7 @@
 				"tags": ["config"],
 				"summary": "Set component resources config",
 				"description": "Set specific component resources config",
+				"consumes": [ "application/x-www-form-urlencoded" ],
 				"responses": {
 					"200": {
 						"description": "Set resources config",
@@ -3050,7 +3109,7 @@
 					},
 					{
 						"name": "update[config]",
-						"in": "header",
+						"in": "body",
 						"description": "Config in JSON form to set",
 						"required": true,
 						"schema": {
@@ -3107,6 +3166,7 @@
 				"tags": ["config"],
 				"summary": "Set component resource config",
 				"description": "Set specific component resource config",
+				"consumes": [ "application/x-www-form-urlencoded" ],
 				"responses": {
 					"200": {
 						"description": "Set single resource config",
@@ -3142,7 +3202,7 @@
 					},
 					{
 						"name": "update[config]",
-						"in": "header",
+						"in": "body",
 						"description": "Config in JSON form to set",
 						"required": true,
 						"schema": {
