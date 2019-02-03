@@ -276,7 +276,8 @@ int sqlquery_cmd(UAContext *ua, const char *cmd)
    while (get_cmd(ua, msg)) {
       len = strlen(ua->cmd);
       Dmsg2(400, "len=%d cmd=%s:\n", len, ua->cmd);
-      if (len == 0) {
+      /* Break on empty or . */
+      if (len == 0 || (len == 1 && ua->cmd[0] == ".")) {
          break;
       }
       if (*query.c_str() != 0) {
