@@ -122,6 +122,13 @@ if test ! -e $CXX; then
 fi
 
 dnl -------------------------------------------------------
+dnl Check for multiarch.
+dnl ------------------------------------------------------
+AC_MSG_CHECKING(for multiarch system)
+multiarch=`$CC $CFLAGS -print-multiarch 2>/dev/null`
+AC_MSG_RESULT($multiarch)
+
+dnl -------------------------------------------------------
 dnl Check for programs.
 dnl ------------------------------------------------------
 AC_PROG_INSTALL

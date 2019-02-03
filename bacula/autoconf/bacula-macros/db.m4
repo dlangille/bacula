@@ -763,7 +763,9 @@ AC_HELP_STRING([--with-sqlite3@<:@=DIR@:>@], [Include SQLite3 support. DIR is th
            SQLITE_BINDIR=/usr/local/bin
         elif test -f /usr/include/sqlite3.h; then
            SQLITE_INCDIR=/usr/include
-           if test -d /usr/lib64; then
+           if test -n $multiarch -a -d /usr/lib/$multiarch; then
+              SQLITE_LIBDIR=/usr/lib/$multiarch
+           elif test -d /usr/lib64; then
               SQLITE_LIBDIR=/usr/lib64
            else
               SQLITE_LIBDIR=/usr/lib
