@@ -130,7 +130,7 @@ cats_test: Makefile ../findlib/libbacfind$(DEFAULT_ARCHIVE_TYPE) ../lib/libbac$(
 	  -lbaccats -lbacsql -lbacfind -lbac -lm $(DB_LIBS) $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
 
 gigaslam.o: gigaslam.c
-	$(CXX) $(CFLAGS) -c $<
+	$(CXX) $(CFLAGS) -c $(CPPFLAGS) $<
 
 gigaslam: gigaslam.o
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -o $@ gigaslam.o
