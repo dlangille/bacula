@@ -676,6 +676,10 @@ void get_attributes_and_compare_to_catalog(JCR *jcr, JobId_t JobId)
           * Find equivalent record in the database
           */
          fdbr.FileId = 0;
+         /* Don't look for deleted records */
+         if (jcr->FileIndex <= 0) {
+            continue;
+         }
          if (!db_get_file_attributes_record(jcr, jcr->db, jcr->fname,
               &jcr->previous_jr, &fdbr)) {
             Jmsg(jcr, M_INFO, 0, _("New file: %s\n"), jcr->fname);
