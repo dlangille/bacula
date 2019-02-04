@@ -1,5 +1,50 @@
 
-               Release Notes for Bacula 9.4.1
+               Release Notes for Bacula 9.4.2
+
+Release 9.4.2
+
+This is a bug fix release for version 9.4.1.  It includes a number of bug
+fixes and patches.  Thanks to the community for your participation.
+7 bug reports were closed.  This version should fix virtually all 
+the problems found on FreeBSD.
+
+If you are trying to build the S3 drivers, please remember to use the
+community supplied (from Bacula Enterprise) version of libs3.so found at:
+
+https://www.bacula.org/downloads/libs3-20181010.tar.gz
+
+
+04Feb19
+ - Change create_postgresql_database.in script to be more flexible
+ - Implement eliminate verify records in dbcheck bug #2434
+ - Enhance verify-voltocat-test to detect comparing deleted files
+ - Fix bug #2452 VerifyToCatalog reports deleted files as being new
+ - Use correct quoting for a character -- fixes previous patch
+ - Recompile configure.in
+ - Apply Carsten's multiarch patch fixes bug #2437
+ - Apply Carsten's patch for adding CPPFLAGS to tools/gigaslam.c compile
+ - Allow . to terminate sql queries prompts
+ - baculum: Update Baculum API OpenAPI documentation
+ - Fix rwlock_test unittest bug #2449 Only call thr_setconcurrency if it's 
+   available. Fix order of linking and installation.
+ - FixFix spelling errors found by lintian by Carston in bug #2436
+ - Apply chmods from Leo in bug #2445
+ - Add license files LICENSE and LICENSE-FOSS to the regression directory
+ - Display daemon pid in .apiV2 status output
+ - Attempt to ensure that ctest job output gets uploaded
+ - Apply varargs patch from Martin for bug 2443
+ - Apply recv() hide patch from Martin
+ - Fix lz4.c register compilation from bug #2443
+ - dbcheck: Improve error message when trying to prune Path records with BVFS is 
+   used.
+ - Update cdash for version 9.4
+
+Bugs fixed/closed since last release:
+2434 2436 2437 2443 2445 2449 2452
+
+
+====================================================================
+Release 9.4.1
 
 This is a minor bug fix release for 9.4.0.  It should fix a few of
 the warning messages, but not all, on FreeBSD and Solaris.  More importantly

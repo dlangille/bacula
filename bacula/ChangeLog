@@ -1,5 +1,53 @@
-              Changelog on version 9.4.1
+              Changelog on version 9.4.2
 
+Release 9.4.2
+
+
+04Feb19
+ - Change create_postgresql_database.in script to be more flexible
+ - Implement eliminate verify records in dbcheck bug #2434
+ - Enhance verify-voltocat-test to detect comparing deleted files
+ - Fix bug #2452 VerifyToCatalog reports deleted files as being new
+ - Use correct quoting for a character -- fixes previous patch
+
+03Feb19
+ - Recompile configure.in
+ - Apply Carsten's multiarch patch fixes bug #2437
+ - Apply Carsten's patch for adding CPPFLAGS to tools/gigaslam.c compile
+ - Allow . to terminate sql queries prompts
+
+02Feb19
+ - baculum: Update Baculum API OpenAPI documentation
+
+29Jan19
+ - Fix rwlock_test unittest bug #2449 Only call thr_setconcurrency if it's 
+  available. Fix order of linking and installation.
+ - FixFix spelling errors found by lintian by Carston in bug #2436
+ - Apply chmods from Leo in bug #2445
+
+28Jan19
+ - Add license files LICENSE and LICENSE-FOSS to the regression directory
+
+27Jan19
+ - Display daemon pid in .apiV2 status output
+ - Attempt to ensure that ctest job output gets uploaded
+ - Apply varargs patch from Martin for bug 2443
+ - Apply recv() hide patch from Martin
+ - Fix lz4.c register compilation from bug #2443
+
+25Jan19
+ - dbcheck: Improve error message when trying to prune Path records with BVFS is 
+  used.
+
+24Jan19
+ - Update cdash for version 9.4
+
+Bugs fixed/closed since last release:
+2434 2436 2437 2443 2445 2449 2452
+
+
+======================================================
+Release 9.4.1
 21Dec18
  - Remove register attribute on variables as it is not supported by newer C++ 
   compilers
