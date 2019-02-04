@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (C) 2000-2017 Kern Sibbald
+# Copyright (C) 2000-2019 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
 # shell script to create Bacula database(s)
@@ -18,14 +18,13 @@ PSQLVERSION=`psql -d template1 -c 'select version()' $* | awk '/PostgreSQL/ {pri
 #
 # Note, LC_COLLATE and LC_TYPE are needed on 8.4 and beyond, but are
 #   not implemented in 8.3 or below.
-# This must be updated for future versions of PostgreSQL
 #
 case ${PSQLVERSION} in
-   8.[456789] | 9.* | 10.*)
-	ENCODING="ENCODING 'SQL_ASCII' LC_COLLATE 'C' LC_CTYPE 'C'"
+   6.* | 7.* | 8.[0123])
+	ENCODING="ENCODING 'SQL_ASCII'"
    ;;
    *)
-	ENCODING="ENCODING 'SQL_ASCII'"
+	ENCODING="ENCODING 'SQL_ASCII' LC_COLLATE 'C' LC_CTYPE 'C'"
    ;;
 esac
 
@@ -53,7 +52,7 @@ else
    echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
    exit 1
 fi
-if psql -l | grep " ${db_name}.*SQL_ASCII" >/dev/null; then 
+if psql -l $* | grep " ${db_name}.*SQL_ASCII" >/dev/null; then 
    echo "Database encoding OK"
 else
    echo " "
