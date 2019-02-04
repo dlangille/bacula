@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2019 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -80,6 +80,7 @@ static void eliminate_orphaned_client_records();
 static void eliminate_orphaned_job_records();
 static void eliminate_admin_records();
 static void eliminate_restore_records();
+static void eliminate_verify_records();
 static void repair_bad_paths();
 static void repair_bad_filenames();
 static void do_interactive_mode();
@@ -400,8 +401,9 @@ static void do_interactive_mode()
 "    13) Eliminate orphaned Job records\n"
 "    14) Eliminate all Admin records\n"
 "    15) Eliminate all Restore records\n"
-"    16) All (3-15)\n"
-"    17) Quit\n"));
+"    16) Eliminate all Verify records\n"
+"    17) All (3-16)\n"
+"    18) Quit\n"));
        } else {
          printf(_("\n"
 "     1) Toggle modify database flag\n"
@@ -419,8 +421,9 @@ static void do_interactive_mode()
 "    13) Check for orphaned Job records\n"
 "    14) Check for all Admin records\n"
 "    15) Check for all Restore records\n"
-"    16) All (3-15)\n"
-"    17) Quit\n"));
+"    16) Check for all Verify records\n"
+"    17) All (3-16)\n"
+"    18) Quit\n"));
        }
 
       cmd = get_cmd(_("Select function number: "));
@@ -481,6 +484,9 @@ static void do_interactive_mode()
             eliminate_restore_records();
             break;
          case 16:
+            eliminate_verify_records();
+            break;
+         case 17:
             repair_bad_filenames();
             repair_bad_paths();
             eliminate_duplicate_filenames();
@@ -494,8 +500,9 @@ static void do_interactive_mode()
             eliminate_orphaned_job_records();
             eliminate_admin_records();
             eliminate_restore_records();
+            eliminate_verify_records();
             break;
-         case 17:
+         case 18:
             quit = true;
             break;
          }
@@ -1164,6 +1171,39 @@ static void eliminate_restore_records()
    }
    if (fix && id_list.num_ids > 0) {
       printf(_("Deleting %d Restore Job records.\n"), id_list.num_ids);
+      delete_id_list("DELETE FROM Job WHERE JobId=%s", &id_list);
+   }
+}
+
+static void eliminate_verify_records()
+{
+   const char *query;
+
+   printf(_("Checking for Verify Job entries.\n"));
+   query = "SELECT Job.JobId FROM Job "
+           "WHERE Job.Type='V'";
+   if (verbose > 1) {
+      printf("%s\n", query);
+   }
+   if (!make_id_list(query, &id_list)) {
+      exit(1);
+   }
+   printf(_("Found %d Verify Job records.\n"), id_list.num_ids);
+   if (id_list.num_ids && verbose && yes_no(_("Print them? (yes/no): "))) {
+      for (int i=0; i < id_list.num_ids; i++) {
+         char ed1[50];
+         bsnprintf(buf, sizeof(buf), "SELECT JobId,Name,StartTime FROM Job "
+                      "WHERE JobId=%s", edit_int64(id_list.Id[i], ed1));
+         if (!db_sql_query(db, buf, print_job_handler, NULL)) {
+            printf("%s\n", db_strerror(db));
+         }
+      }
+   }
+   if (quit) {
+      return;
+   }
+   if (fix && id_list.num_ids > 0) {
+      printf(_("Deleting %d Verify Job records.\n"), id_list.num_ids);
       delete_id_list("DELETE FROM Job WHERE JobId=%s", &id_list);
    }
 }
