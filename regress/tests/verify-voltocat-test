@@ -15,6 +15,7 @@ JobName=VerifyVol
 cwd=`pwd`
 scripts/cleanup
 scripts/copy-test-confs
+touch ${cwd}/build/src/dird/verify-dummy # create dummy file
 echo "${cwd}/build" >${cwd}/tmp/file-list
 
 change_jobname NightlySave $JobName
@@ -50,11 +51,15 @@ wait
 messages
 @$out ${cwd}/tmp/log3.out
 @#
-@# Now a backup with nothing changed
-run job=$JobName level=Incremental yes
+@# Delete file and make some changes to be backed up
+@exec "rm $cwd/build/src/dird/verify-dummy"
+@exec "sh -c 'touch ${cwd}/build/src/dird/*.o'"
+@# now run and Incremental job
+@#setdebug level=50 dir
+run job=$JobName Accurate=yes level=Incremental yes
 wait
 messages
-run job=VerifyVolume level=VolumeToCatalog
+run job=VerifyVolume Accurate=yes level=VolumeToCatalog
 yes
 wait
 messages
