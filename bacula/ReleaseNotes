@@ -5,7 +5,7 @@ Release 9.4.2
 
 This is a bug fix release for version 9.4.1.  It includes a number of bug
 fixes and patches.  Thanks to the community for your participation.
-7 bug reports were closed.  This version should fix virtually all 
+9 bug reports were closed.  This version should fix virtually all 
 the problems found on FreeBSD.
 
 If you are trying to build the S3 drivers, please remember to use the
@@ -13,8 +13,8 @@ community supplied (from Bacula Enterprise) version of libs3.so found at:
 
 https://www.bacula.org/downloads/libs3-20181010.tar.gz
 
-
 04Feb19
+ - Update Windows .def files
  - Change create_postgresql_database.in script to be more flexible
  - Implement eliminate verify records in dbcheck bug #2434
  - Enhance verify-voltocat-test to detect comparing deleted files
@@ -38,10 +38,23 @@ https://www.bacula.org/downloads/libs3-20181010.tar.gz
  - dbcheck: Improve error message when trying to prune Path records with BVFS is 
    used.
  - Update cdash for version 9.4
+ - Fix bug #2448 bregex and bwild do not accept -l command line option
+ - Partial update copyright year
+ - Fix struct transfer_manager to be class transfer_manager
+ - Print Device xxx requested by DIR disabled only if verbose is enabled in 
+   SD
+ - Add migrate-job-no-resource-test to all-disk-tests
+ - Remove unused berrno call + return
+ - Remove mention of Beta release from ReleaseNotes
+ - Fix #3225 about Migration issue when the Job resource is no longer defined
+ - baculum: Fix restore paths with apostrophe
+ - baculum: Fix data level
+ - Change endblock edit to unsigned -- suggested by Martin Simmons
+ - Update DEPKGS_VERSION
+ - baculum: Adapt Apache configs to version 2.4
 
 Bugs fixed/closed since last release:
-2434 2436 2437 2443 2445 2449 2452
-
+2434 2436 2437 2443 2445 2448 2449 2452 3225
 
 ====================================================================
 Release 9.4.1
