@@ -226,10 +226,10 @@ _ZN9BSOCKCORE18set_source_addressEP5dlist
 _ZN9BSOCKCORE4dumpEv
 _ZN9BSOCKCORE4initEv
 _ZN9BSOCKCORE4openEP3JCRPKcPcS4_ixPi
-_ZN9BSOCKCORE4recvEi
 _ZN9BSOCKCORE4sendEv
 _ZN9BSOCKCORE5closeEv
 _ZN9BSOCKCORE5fsendEPKcz
+_ZN9BSOCKCORE5recvnEi
 _ZN9BSOCKCORE6cancelEv
 _ZN9BSOCKCORE7connectEP3JCRixxPKcPcS4_ii
 _ZN9BSOCKCORE7destroyEv
@@ -804,9 +804,9 @@ _Z19openssl_post_errorsP3JCRiPKc
  
 ; output.o
 _Z8snprintfPcjPKcz
-_ZN12OutputWriter10get_outputE10OutputTypez
-_ZN12OutputWriter10get_outputEPcPS0_10OutputType
-_ZN12OutputWriter10get_outputEPPc10OutputTypez
+_ZN12OutputWriter10get_outputEiz
+_ZN12OutputWriter10get_outputEPcPS0_i
+_ZN12OutputWriter10get_outputEPPciz
 _ZN12OutputWriter10start_listEPKcb
 _ZN12OutputWriter11get_optionsEPc
 _ZN12OutputWriter11start_groupEPKcb
@@ -1000,7 +1000,7 @@ _Z9asciidumpPKciPci
 _Z9smartdumpPKciPciPb
  
 ; var.o
-_Z10var_configP6var_st12var_config_tz
+_Z10var_configP6var_stiz
 _Z10var_createPP6var_st
 _Z10var_expandP6var_stPKciPPcPii
 _Z10var_formatP6var_stPPciPKcz
