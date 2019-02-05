@@ -1791,10 +1791,12 @@ void dequeue_daemon_messages(JCR *jcr)
             item->type = M_SECURITY;
          }
          if (item->repeat == 0) {
+            /* repeat = 0 => seen 1 time */
             Jmsg(jcr, item->type, item->mtime, "%s", item->msg);
          } else {
+            /* repeat = 1, seen 2 times */
             Jmsg(jcr, item->type, item->mtime, "Message repeated %d times: %s",
-                 item->repeat, item->msg);
+                 item->repeat+1, item->msg);
          }
       }
       if (jcr->dir_bsock) jcr->dir_bsock->suppress_error_messages(false);
