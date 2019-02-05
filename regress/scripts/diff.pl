@@ -1,6 +1,6 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl
 #
-# Copyright (C) 2000-2015 Kern Sibbald
+# Copyright (C) 2000-2019 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
 
