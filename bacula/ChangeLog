@@ -24,8 +24,8 @@ Release 9.4.2
 29Jan19
  - Fix rwlock_test unittest bug #2449 Only call thr_setconcurrency if it's 
   available. Fix order of linking and installation.
- - FixFix spelling errors found by lintian by Carston in bug #2436
- - Apply chmods from Leo in bug #2445
+ - FixFix spelling errors found by lintian by Carsten in bug #2436
+ - Apply chmods from Carsten in bug #2445
 
 28Jan19
  - Add license files LICENSE and LICENSE-FOSS to the regression directory
@@ -473,7 +473,7 @@ Version 9.2.0
 
 25May18
  - Fix license problems in Bug #2382
- - Apply patch from Leo to fix bug 2192
+ - Apply patch from Carsten to fix bug 2192
 
 21May18
  - Fix bad placement of jcr->pool reference as pointed out by Martin Simmons
@@ -705,7 +705,7 @@ Release 9.0.8
 
 25May18
  - Fix license problems in Bug #2382
- - Apply patch from Leo to fix bug 2192
+ - Apply patch from Carsten to fix bug 2192
 
 21May18
  - Fix bad placement of jcr->pool reference as pointed out by Martin Simmons
