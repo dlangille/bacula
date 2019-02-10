@@ -104,7 +104,7 @@ bool BDB::bdb_create_jobmedia_record(JCR *jcr, JOBMEDIA_DBR *jm)
    bdb_lock();
 
    /* Now get count for VolIndex */
-   Mmsg(cmd, "SELECT count(*) from JobMedia WHERE JobId=%s",
+   Mmsg(cmd, "SELECT MAX(VolIndex) from JobMedia WHERE JobId=%s",
         edit_int64(jm->JobId, ed1));
    count = get_sql_record_max(jcr, this);
    if (count < 0) {
