@@ -900,6 +900,8 @@ rm -f $RPM_BUILD_DIR/Release_Notes-%{version}-%{release}.txt
 %attr(-, root, %{daemon_group}) %{script_dir}/baculabackupreport
 %attr(-, root, %{daemon_group}) %{script_dir}/query.sql
 
+%attr(-, root, %{daemon_group}) %{script_dir}/isworm
+%attr(-, root, %{daemon_group}) %{plugin_dir}/bpipe-fd.so
 %attr(-, root, %{daemon_group}) %{plugin_dir}/bpipe-fd.so
 
 %attr(-, root, %{daemon_group}) /etc/init.d/bacula-dir
