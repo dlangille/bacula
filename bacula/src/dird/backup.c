@@ -439,7 +439,8 @@ bool do_backup(JCR *jcr)
    char *store_address;
    uint32_t store_port;
    char ed1[100];
-   db_int64_ctx job;
+   db_int64_ctx job, first, last;
+   int64_t val=0;
    POOL_MEM buf;
 
    if (jcr->is_JobLevel(L_VIRTUAL_FULL)) {
@@ -473,7 +474,21 @@ bool do_backup(JCR *jcr)
          Jmsg(jcr, M_FATAL, 0, "%s", db_strerror(jcr->db));
          return false;
       }
-      jcr->JobFiles = job.value;
+      Mmsg(buf, "SELECT max(LastIndex) FROM JobMedia WHERE JobId=%s", ed1);
+      if (!db_sql_query(jcr->db, buf.c_str(), db_int64_handler, &last)) {
+         Jmsg(jcr, M_FATAL, 0, "%s", db_strerror(jcr->db));
+         return false;
+      }
+      Mmsg(buf, "SELECT max(FirstIndex) FROM JobMedia WHERE JobId=%s", ed1);
+      if (!db_sql_query(jcr->db, buf.c_str(), db_int64_handler, &first)) {
+         Jmsg(jcr, M_FATAL, 0, "%s", db_strerror(jcr->db));
+         return false;
+      }
+      /* We skip the last FileIndex (MAX) and the one after (MAX+1), can be
+       * already referenced in JobMedia or a Volume
+       */
+      val = MAX(job.value, MAX(first.value, last.value));
+      jcr->JobFiles = val + 2;
       Dmsg1(100, "==== FI=%ld\n", jcr->JobFiles);
       Mmsg(buf, "SELECT VolSessionId FROM Job WHERE JobId=%s", ed1);
       if (!db_sql_query(jcr->db, buf.c_str(), db_int64_handler, &job)) {
@@ -764,6 +779,97 @@ int wait_for_job_termination(JCR *jcr, int timeout)
    return jcr->SDJobStatus;
 }
 
+/* Not used */
+#if 0
+
+/* When the job is incomplete, we need to make sure the catalog
+ * is consistent. The JobMedia table should reference Files that
+ * are not in the file table for example.
+ */
+void incomplete_cleanup(JCR *jcr)
+{
+   POOL_MEM buf;
+   char ed1[50], *jmid;
+   bool ok=true;
+   db_int64_ctx job;
+   alist ids(owned_by_alist, 10);
+   alist *pids = &ids;
+
+   if (!jcr->is_incomplete()) {
+      return;
+   }
+
+   edit_int64(jcr->JobId, ed1);
+   /* Get the last valid FileIndex */
+   Mmsg(buf, "SELECT max(FileIndex) FROM File WHERE JobId=%s", ed1);
+   if (!db_sql_query(jcr->db, buf.c_str(), db_int64_handler, &job)) {
+      Jmsg(jcr, M_FATAL, 0, "%s", db_strerror(jcr->db));
+      return;
+   }
+
+   Mmsg(buf, "SELECT JobMediaId FROM JobMedia "
+        "WHERE JobId=%s "
+        "AND (FirstIndex > %lld OR LastIndex > %lld)",
+        ed1, job.value, job.value);
+   if (!db_sql_query(jcr->db, buf.c_str(), db_string_list_handler, &pids)) {
+      Jmsg(jcr, M_FATAL, 0, "%s", db_strerror(jcr->db));
+      return;
+   }
+   /* Nothing to fix */
+   if (pids->size() == 0) {
+      return;
+   }
+
+   db_lock(jcr->db);
+   db_start_transaction(jcr, jcr->db);
+
+   /* Foreach id */
+   foreach_alist(jmid, pids) {
+      JOBMEDIA_DBR jmr;
+      memset(&jmr, 0, sizeof(jmr));
+
+      jmr.JobMediaId = str_to_int64(jmid);
+      if (!db_get_jobmedia_record(jcr, jcr->db, &jmr)) {
+         Jmsg(jcr, M_ERROR, 0, "%s", db_strerror(jcr->db));
+         ok=false;
+         goto bail_out;
+      }
+      if (jmr.FirstIndex > job.value) { /* JobMedia for files not in the catalog */
+         if (jmr.LastIndex > job.value) {
+            Dmsg3(50, "Drop JobMediaId=%d FirstIndex=%lld LastIndex=%lld\n",
+                  jmr.JobMediaId, jmr.FirstIndex, jmr.LastIndex);
+
+         } else {
+            Dmsg3(50, "Incorrect JobMediaId=%d FirstIndex=%lld LastIndex=%lld\n",
+                  jmr.JobMediaId, jmr.FirstIndex, jmr.LastIndex);
+         }
+         Mmsg(buf, "DELETE  FROM JobMedia WHERE JobMediaId=%s", jmid);
+         if (!db_sql_query(jcr->db, buf.c_str(), NULL, NULL)) {
+            ok=false;
+            goto bail_out;
+         }
+      } else if (jmr.LastIndex > job.value) { /* The last index is not in the catalog */
+         Dmsg4(50, "Fix JobMediaId=%d LastIndex=%lld FirstIndex=%lld LastIndex=%lld\n",
+               jmr.JobMediaId, job.value, jmr.FirstIndex, jmr.LastIndex);
+         Mmsg(buf, "UPDATE JobMedia SET LastIndex=%lld WHERE JobMediaId=%s", job.value, jmid);
+         if (!db_sql_query(jcr->db, buf.c_str(), NULL, NULL)) {
+            ok=false;
+            goto bail_out;
+         }
+      } else {
+         Dmsg1(50, "?? JobMedia %d\n", jmr.JobMediaId);
+      }
+   }
+bail_out:
+   if (!ok) {
+      db_sql_query(jcr->db, "ROLLBACK", NULL, NULL);
+      Jmsg(jcr, M_FATAL, 0, _("Unable to cleanup JobMedia records\n"));
+   }
+   db_end_transaction(jcr, jcr->db);
+   db_unlock(jcr->db);
+}
+#endif
+
 /*
  * Release resources allocated during backup.
  */
@@ -784,6 +890,11 @@ void backup_cleanup(JCR *jcr, int TermCode)
    POOL_MEM vol_info;
 
    remove_dummy_jobmedia_records(jcr);
+
+#if 0
+   /* cleanup the job media table after an incomplete job, should not be needed */
+   incomplete_cleanup(jcr);
+#endif
 
    if (jcr->is_JobLevel(L_VIRTUAL_FULL)) {
       vbackup_cleanup(jcr, TermCode);
