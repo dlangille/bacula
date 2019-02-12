@@ -236,11 +236,13 @@ class BaculaSetting extends APIModule {
 			}
 		}
 		if ($is_update === false) {
+			$resource_fname = $this->formatDirectiveValue($resource_type, 'Name', $resource_name);
 			// Existing resource with changed name, or new resource
-			$resource_index = $this->getConfigResourceIndex($config, $resource_type, $resource_name);
+			$resource_index = $this->getConfigResourceIndex($config, $resource_type, $resource_fname);
 			if (!is_null($resource_index)) {
 				// Existing resource
 				$resource_orig = $config[$resource_index];
+
 				// Remove existing resource
 				array_splice($config, $resource_index, 1);
 				// Add resource with new name
