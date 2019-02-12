@@ -482,6 +482,59 @@ int BDB::bdb_get_job_volume_parameters(JCR *jcr, JobId_t JobId, VOL_PARAMS **Vol
 }
 
 
+/**
+ * Get JobMedia record
+ *  Returns: false on error or no JobMedia found
+ *           JobMedia in argument, use JobMediaId to find it
+ *
+ *  Returns: true on success
+ */
+bool BDB::bdb_get_jobmedia_record(JCR *jcr, JOBMEDIA_DBR *jmr)
+{
+   SQL_ROW row;
+   char ed1[50];
+
+   bdb_lock();
+   Mmsg(cmd,
+        "SELECT FirstIndex,LastIndex,StartFile,"
+        "EndFile,StartBlock,EndBlock,VolIndex, JobId, MediaId"
+        " FROM JobMedia WHERE JobMedia.JobMediaId=%s",
+        edit_int64(jmr->JobMediaId, ed1));
+
+   if (QueryDB(jcr, cmd)) {
+      Dmsg1(200, "Num rows=%d\n", sql_num_rows());
+      if (sql_num_rows() != 1) {
+         Mmsg1(errmsg, _("No JobMedia found for JobMediaId=%d\n"), jmr->JobMediaId);
+         sql_free_result();
+         bdb_unlock();
+         return false;
+      }
+
+      if ((row = sql_fetch_row()) == NULL) {
+         Mmsg1(errmsg, _("No JobMedia found for JobMediaId %d\n"),
+               edit_int64(jmr->JobMediaId, ed1));
+         sql_free_result();
+         bdb_unlock();
+         return false;                   /* failed */
+      }
+
+      jmr->FirstIndex = str_to_uint64(row[0]);
+      jmr->LastIndex = str_to_uint64(row[1]);
+      jmr->StartFile = str_to_int64(row[2]);
+      jmr->EndFile = str_to_int64(row[3]);
+      jmr->StartBlock = str_to_int64(row[4]);
+      jmr->EndBlock = str_to_int64(row[5]);
+      jmr->VolIndex = str_to_int64(row[6]);
+      jmr->JobId = str_to_int64(row[7]);
+      jmr->MediaId = str_to_int64(row[8]);
+      sql_free_result();
+      bdb_unlock();
+      return true;
+   }
+   return false;
+}
+
+
 
 /**
  * Get the number of pool records

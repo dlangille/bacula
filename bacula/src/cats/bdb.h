@@ -221,6 +221,7 @@ public:
    bool bdb_get_pool_record(JCR *jcr, POOL_DBR *pdbr);
    bool bdb_get_pool_numvols(JCR *jcr, POOL_DBR *pdbr);
    int bdb_get_client_record(JCR *jcr, CLIENT_DBR *cr);
+   bool bdb_get_jobmedia_record(JCR *jcr, JOBMEDIA_DBR *jmr);
    bool bdb_get_job_record(JCR *jcr, JOB_DBR *jr);
    int bdb_get_job_volume_names(JCR *jcr, JobId_t JobId, POOLMEM **VolumeNames);
    bool bdb_get_file_attributes_record(JCR *jcr, char *fname, JOB_DBR *jr, FILE_DBR *fdbr);
