@@ -58,7 +58,7 @@
 %{?contrib_packager:%define _packager %{contrib_packager}}
 
 Summary: Bacula - The Network Backup Solution
-Name: %{base_package_name}-cloud-storage-s3
+Name: %{base_package_name}-cloud-storage
 Version: %{_version}
 Release: %{_release}
 Group: System Environment/Daemons
@@ -140,13 +140,6 @@ cd ../bacula-%{_version}
         --with-openssl \
 	     --with-tcp-wrappers
 
-# Make sure libs3 is built correctly or die
-grep "Have libs3:" config.out | grep yes
-if [ $? != 0 ] ; then
-  echo "libs3 not found"
-  exit 1
-fi
-
 make
 
 %install
@@ -188,11 +181,10 @@ mkdir -p $RPM_BUILD_ROOT%{docdir}/bacula-cloud-storage
 cp -p %{depkgs}/libs3-*/LICENSE $RPM_BUILD_ROOT%{docdir}/bacula-cloud-storage/libs3.license
 
 %files
-%attr(755, root, root) %{plugin_dir}/bacula-sd-cloud-driver-%{version}.so
 %defattr(-,root,root)
+%attr(755, root, root) %{plugin_dir}/bacula-sd-cloud-driver-%{version}.so
 %{_libdir}/libs3*
-%attr(755, root, root) %{plugin_dir}/bacula-sd-cloud-s3-driver-%{_version}.so
-%{docdir}/bacula-enterprise-cloud-storage/libs3.license
+%{docdir}/bacula-cloud-storage/libs3.license
 
 %clean
 [ "$RPM_BUILD_ROOT" != "/" ] && rm -rf "$RPM_BUILD_ROOT"
