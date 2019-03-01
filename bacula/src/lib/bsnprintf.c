@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2016 Kern Sibbald
+   Copyright (C) 2000-2019 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -619,7 +619,7 @@ static LDOUBLE pow10(int exp)
    return result;
 }
 
-static int64_t round(LDOUBLE value)
+static int64_t bround(LDOUBLE value)
 {
    int64_t intpart;
 
@@ -685,7 +685,7 @@ static int32_t fmtfp(char *buffer, int32_t currlen, int32_t maxlen,
    /* We "cheat" by converting the fractional part to integer by
     * multiplying by a factor of 10
     */
-   fracpart = round((pow10(max)) * (ufvalue - intpart));
+   fracpart = bround((pow10(max)) * (ufvalue - intpart));
 
    if (fracpart >= pow10(max)) {
       intpart++;
