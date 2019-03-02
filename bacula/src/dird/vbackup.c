@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2018 Kern Sibbald
+   Copyright (C) 2000-2019 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -425,6 +425,9 @@ void vbackup_cleanup(JCR *jcr, int TermCode)
       case JS_Canceled:
          term_msg = _("Backup Canceled");
          terminate_sd_msg_chan_thread(jcr);
+         break;
+      case JS_Incomplete:
+         term_msg = _("Backup failed -- Incomplete");
          break;
       default:
          term_msg = term_code;
