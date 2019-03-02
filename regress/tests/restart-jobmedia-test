@@ -1,0 +1,154 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2019 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Run a backup of the build directory but force it to have
+#   a comm error, and check that it restarts correctly.
+#
+# We generate a Jobmedia just before the issue, so inside the
+# catalog we may have duplicate entries for the fileindex
+#
+TestName="restart-jobmedia-test"
+JobName=RestartJob
+. scripts/functions
+
+scripts/cleanup
+scripts/copy-test-confs
+
+# Unfortunately this code is designed for the Enterprise database
+#  and does not work for the Community database.
+#  FileName table ...
+exit 1
+
+setup_shstore # simulate shared storage if enabled
+
+echo "$tmp/files/po"    >${cwd}/tmp/file-list
+echo "$tmp/files/big1" >>${cwd}/tmp/file-list
+echo "$tmp/files/big2" >>${cwd}/tmp/file-list
+
+mkdir -p $tmp/files
+cp -r $cwd/build/po $tmp/files
+# will cut the comm here
+$bperl -e "create_binfile('$tmp/files/big1', 200)"
+$bperl -e "create_binfile('$tmp/files/big2', 200)"
+
+# BCONSOLE...BIG1.................BIG2...............
+#                       |                    |
+#                             X
+#
+# Every 2MB, we despool data and we send a JobMedia
+$bperl -e "add_attribute('$conf/bacula-sd.conf', 'MaximumFileSize', '2MB', 'Device')"
+$bperl -e "add_attribute('$conf/bacula-sd.conf', 'MaximumSpoolSize', '2MB', 'Device')"
+$bperl -e "add_attribute('$conf/bacula-dir.conf', 'LabelFormat', 'Vol', 'Pool')"
+$bperl -e "add_attribute('$conf/bacula-dir.conf', 'NextPool', 'VF', 'Pool')"
+
+cat <<EOF >> $conf/bacula-dir.conf
+Job {
+ Name = migrate
+ Type = Migrate
+ Selection Type = Job
+ Selection Pattern = $JobName
+ Client = $HOST-fd
+ Fileset = "Full Set"
+ JobDefs = BackupJob
+}
+Job {
+ Name = verify
+ Type = Verify
+ Client = $HOST-fd
+ Fileset = "Full Set"
+ JobDefs = BackupJob
+ Level = data
+}
+Pool {
+ Name = VF
+ Pool Type = backup
+ Storage = File1
+ LabelFormat = "VF"
+}
+EOF
+
+change_jobname NightlySave $JobName
+start_test
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@output /dev/null
+messages
+@$out ${cwd}/tmp/log1.out
+setdebug level=0 trace=0 hangup=-9000 client
+@#run job=$JobName spooldata=no yes
+run job=$JobName spooldata=no yes
+@sleep 8
+messages
+sql
+select * from JobMedia;
+select FileId, FileIndex, Path.Path, Filename from File JOIN Path USING (PathId);
+
+wait
+messages
+sql
+select * from JobMedia;
+select FileId, FileIndex, Path.Path, Filename from File JOIN Path USING (PathId);
+
+quit
+END_OF_DATA
+
+run_bacula  
+
+scripts/check_for_zombie_jobs storage=File
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@output /dev/null
+messages
+@# 
+@# now do a restore
+@#
+@$out ${cwd}/tmp/log2.out
+restore where=$tmp/bacula-restores storage=File select all done
+yes
+wait
+messages
+@$out ${cwd}/tmp/log3.out
+run job=migrate yes
+wait
+messages
+run job=verify jobid=4 yes
+wait
+messages
+restore where=$tmp/bacula-restores2 jobid=4 all done
+yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+scripts/check_for_zombie_jobs storage=File
+stop_bacula
+
+check_two_logs
+$rscripts/diff.pl -e $tmp/files -s $tmp/files/ -d $tmp/bacula-restores/$tmp/files/
+if [ $? != 0 ]; then
+    print_debug "ERROR: Found differences after the restore"
+    estat=1
+fi
+$rscripts/diff.pl -e $tmp/files -s $tmp/files/ -d $tmp/bacula-restores2/$tmp/files/
+if [ $? != 0 ]; then
+    print_debug "ERROR: Found differences after the migration/restore"
+    estat=1
+fi
+
+grep "Migration OK" $tmp/log3.out > /dev/null
+if [ $? != 0 ]; then
+    print_debug "ERROR: Found error with migration in $tmp/log3.out"
+    estat=1
+fi
+
+grep "Verify OK" $tmp/log3.out > /dev/null
+if [ $? != 0 ]; then
+    print_debug "ERROR: Found error with verify in $tmp/log3.out"
+    estat=1
+fi
+
+end_test
