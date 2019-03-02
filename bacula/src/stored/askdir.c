@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2017 Kern Sibbald
+   Copyright (C) 2000-2019 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -488,29 +488,29 @@ bool dir_update_volume_info(DCR *dcr, bool label, bool update_LastWritten,
    if (vol.VolCatType == 0) {
       vol.VolCatType = dev->dev_type;
    }
-   dir->fsend(Update_media, jcr->JobId,
-      VolumeName.c_str(), vol.VolCatJobs, vol.VolCatFiles,
-      vol.VolCatBlocks, edit_uint64(vol.VolCatAmetaBytes, ed1),
-      edit_uint64(vol.VolCatAdataBytes, ed2),
-      edit_uint64(vol.VolCatHoleBytes, ed3),
-      vol.VolCatHoles, vol.VolCatMounts, vol.VolCatErrors,
-      vol.VolCatWrites, edit_uint64(vol.VolCatMaxBytes, ed4),
-      edit_uint64(vol.VolLastWritten, ed5),
-      vol.VolCatStatus, vol.Slot, label,
-      InChanger,                      /* bool in structure */
-      edit_int64(vol.VolReadTime, ed6),
-      edit_int64(vol.VolWriteTime, ed7),
-      edit_uint64(vol.VolFirstWritten, ed8),
-      vol.VolCatType,
-      vol.VolCatParts,
-      vol.VolCatCloudParts,
-      vol.VolLastPartBytes,
-      Enabled,
-      Recycle);
-    Dmsg1(100, ">dird %s", dir->msg);
 
    /* Do not lock device here because it may be locked from label */
    if (!jcr->is_canceled()) {
+      dir->fsend(Update_media, jcr->JobId,
+         VolumeName.c_str(), vol.VolCatJobs, vol.VolCatFiles,
+         vol.VolCatBlocks, edit_uint64(vol.VolCatAmetaBytes, ed1),
+         edit_uint64(vol.VolCatAdataBytes, ed2),
+         edit_uint64(vol.VolCatHoleBytes, ed3),
+         vol.VolCatHoles, vol.VolCatMounts, vol.VolCatErrors,
+         vol.VolCatWrites, edit_uint64(vol.VolCatMaxBytes, ed4),
+         edit_uint64(vol.VolLastWritten, ed5),
+         vol.VolCatStatus, vol.Slot, label,
+         InChanger,                      /* bool in structure */
+         edit_int64(vol.VolReadTime, ed6),
+         edit_int64(vol.VolWriteTime, ed7),
+         edit_uint64(vol.VolFirstWritten, ed8),
+         vol.VolCatType,
+         vol.VolCatParts,
+         vol.VolCatCloudParts,
+         vol.VolLastPartBytes,
+         Enabled,
+         Recycle);
+       Dmsg1(100, ">dird %s", dir->msg);
       /*
        * We sent info directly from dev to the Director.
        *  What the Director sends back is first read into
