@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2017 Kern Sibbald
+   Copyright (C) 2000-2019 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -54,6 +54,7 @@ private:
    boffset_t m_last_data_end;         /* offset of last valid data written */
    int32_t m_FileIndex;               /* attr spool FI */
    int32_t m_lastFileIndex;           /* last valid attr spool FI */
+   int32_t m_lastFlushIndex;          /* Last FileIndex flushed */
    bool m_spool: 1;                   /* set for spooling */
    bool m_compress: 1;                /* set to use comm line compression */
    uint64_t m_CommBytes;              /* Bytes sent */
@@ -91,8 +92,10 @@ public:
               m_data_end = ftello(m_spool_fd);
            }
         };
+   void set_lastFlushIndex(int32_t FlushIndex) { m_lastFlushIndex = FlushIndex; };
    boffset_t get_last_data_end() { return m_last_data_end; };
-   int32_t get_lastFileIndex() { return m_lastFileIndex; };
+   uint32_t get_lastFileIndex() { return m_lastFileIndex; };
+   uint32_t get_lastFlushIndex() { return m_lastFlushIndex; };
    uint32_t CommBytes() { return m_CommBytes; };
    uint32_t CommCompressedBytes() { return m_CommCompressedBytes; };
    void set_spooling() { m_spool = true; };

@@ -591,11 +591,21 @@ bool flush_jobmedia_queue(JCR *jcr)
 
    dir->fsend(Create_jobmedia, jcr->JobId);
    foreach_dlist(item, jcr->jobmedia_queue) {
+      if (jcr->is_JobStatus(JS_Incomplete)) {
+         if (item->VolFirstIndex >= dir->get_lastFileIndex()) {
+            continue;
+         }
+         if (item->VolLastIndex >= dir->get_lastFileIndex()) {
+            item->VolLastIndex = dir->get_lastFileIndex() - 1;
+         }
+      }
       ok = dir->fsend("%u %u %u %u %u %u %lld\n",
          item->VolFirstIndex, item->VolLastIndex,
          item->StartFile, item->EndFile,
          item->StartBlock, item->EndBlock,
          item->VolMediaId);
+      /* Keep track of last FileIndex flushed */
+      dir->set_lastFlushIndex(item->VolLastIndex);
       Dmsg2(400, "sd->dir: ok=%d Jobmedia=%s", ok, dir->msg);
    }
    dir->signal(BNET_EOD);
@@ -667,10 +677,6 @@ bool dir_create_jobmedia_record(DCR *dcr, bool zero)
     *  to the last correctly saved file so that the JobMedia
     *  LastIndex is correct.
     *
-    *  Note: ***FIXME*** though it is not required, we probably
-    *   should also keep a last EndFile and last EndBlock and
-    *   reset them correctly too so that the JobMedia record is
-    *   really correct.
     */
    if (jcr->is_JobStatus(JS_Incomplete)) {
       dcr->VolLastIndex = dir->get_lastFileIndex();
@@ -699,8 +705,8 @@ bool dir_create_jobmedia_record(DCR *dcr, bool zero)
       item->VolMediaId = dcr->VolMediaId;
    }
    jcr->jobmedia_queue->append(item);
-   /* Flush at 100 queue size of 100 jobmedia records */
-   if (zero || jcr->jobmedia_queue->size() >= 100) {
+   /* Flush at queue size of 1000 jobmedia records */
+   if (zero || jcr->jobmedia_queue->size() >= 1000) {
       ok = flush_jobmedia_queue(jcr);
    }
 

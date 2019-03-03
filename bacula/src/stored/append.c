@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2017 Kern Sibbald
+   Copyright (C) 2000-2019 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -36,18 +36,23 @@ static char OK_append[]  = "3000 OK append data\n";
  * Check if we can mark this job incomplete
  *
  */
-void possible_incomplete_job(JCR *jcr, int32_t last_file_index)
+void possible_incomplete_job(JCR *jcr, uint32_t last_file_index)
 {
+   BSOCK *dir = jcr->dir_bsock;
    /*
     * Note, here we decide if it is worthwhile to restart
     *  the Job at this point. For the moment, if at least
     *  10 Files have been seen.
-    *  We must be sure that the saved files are safe.
-    *  Using this function when their is as comm line problem is probably safe,
+    * We must be sure that the saved files are safe.
+    * Using this function when there is as comm line problem is probably safe,
     *  it is inappropriate to use it for a any failure that could
     *  involve corrupted data.
+    * We cannot mark a job Incomplete if we have already flushed
+    *  a bad JobMedia record (i.e. one beyond the last FileIndex
+    *  that is known to be good).
     */
-   if (jcr->spool_attributes && last_file_index > 10) {
+   if (jcr->spool_attributes && last_file_index > 10 &&
+       dir->get_lastFlushIndex() < last_file_index) {
       jcr->setJobStatus(JS_Incomplete);
    }
 }
