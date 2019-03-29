@@ -653,7 +653,7 @@ void send_device_status(DEVICE *dev, STATUS_PKT *sp)
    if (chk_dbglvl(5)) {
       len = Mmsg(msg, _("Configured device capabilities:\n"));
       sendit(msg, len, sp);
-      len = Mmsg(msg, "   %sEOF %sBSR %sBSF %sFSR %sFSF %sEOM %sREM %sRACCESS %sAUTOMOUNT %sLABEL %sANONVOLS %sALWAYSOPEN\n",
+      len = Mmsg(msg, "   %sEOF %sBSR %sBSF %sFSR %sFSF %sEOM %sREM %sRACCESS %sAUTOMOUNT %sLABEL %sANONVOLS %sALWAYSOPEN %sSYNCONCLOSE\n",
          dev->capabilities & CAP_EOF ? "" : "!",
          dev->capabilities & CAP_BSR ? "" : "!",
          dev->capabilities & CAP_BSF ? "" : "!",
@@ -665,7 +665,8 @@ void send_device_status(DEVICE *dev, STATUS_PKT *sp)
          dev->capabilities & CAP_AUTOMOUNT ? "" : "!",
          dev->capabilities & CAP_LABEL ? "" : "!",
          dev->capabilities & CAP_ANONVOLS ? "" : "!",
-         dev->capabilities & CAP_ALWAYSOPEN ? "" : "!");
+         dev->capabilities & CAP_ALWAYSOPEN ? "" : "!",
+         dev->capabilities & CAP_SYNCONCLOSE ? "" : "!");
       sendit(msg, len, sp);
    }
 

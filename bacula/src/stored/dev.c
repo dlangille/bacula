@@ -317,8 +317,8 @@ bool DEVICE::close(DCR *dcr)
       if (d_close(m_fd) != 0) {
          berrno be;
          dev_errno = errno;
-         Mmsg2(errmsg, _("Error closing device %s. ERR=%s.\n"),
-               print_name(), be.bstrerror());
+         Mmsg(errmsg, _("Error closing volume \"%s\" device %s. ERR=%s.\n"),
+              VolHdr.VolumeName, print_name(), be.bstrerror());
          ok = false;
       }
       break;

@@ -543,9 +543,13 @@ bool release_device(DCR *dcr)
          if (dev->num_writers == 0) {         /* if not being used */
             volume_unused(dcr);               /*  we obviously are not using the volume */
             generate_plugin_event(jcr, bsdEventDeviceClose, dcr);
+         } else {
+            /* Other jobs are writing, make sure our data is safely written */
+            if (!dev->sync_data(dcr)) {
+               Jmsg(jcr, M_ERROR, 0, ("%s\n"), dev->errmsg);
+            }
          }
       }
-
    } else {
       /*
        * If we reach here, it is most likely because the job
@@ -561,6 +565,10 @@ bool release_device(DCR *dcr)
    /* If no writers, close if file or !CAP_ALWAYS_OPEN */
    if (dev->num_writers == 0 && (!dev->is_tape() || !dev->has_cap(CAP_ALWAYSOPEN))) {
       generate_plugin_event(jcr, bsdEventDeviceClose, dcr);
+      /* Sync the data before close() if needed for this device */
+      if (!dev->sync_data(dcr)) {
+         Jmsg(jcr, M_ERROR, 0, ("%s\n"), dev->errmsg);
+      }
       if (!dev->close(dcr) && dev->errmsg[0]) {
          Jmsg(jcr, M_ERROR, 0, "%s", dev->errmsg);
       }

@@ -168,6 +168,7 @@ static RES_ITEM dev_items[] = {
    {"FreeSpaceCommand",      store_strname,ITEM(res_dev.free_space_command), 0, 0, 0},
    {"LabelType",             store_label,  ITEM(res_dev.label_type), 0, 0, 0},
    {"Cloud",                 store_res,    ITEM(res_dev.cloud), R_CLOUD, 0, 0},
+   {"SyncOnClose",           store_bit,    ITEM(res_dev.cap_bits), CAP_SYNCONCLOSE, ITEM_DEFAULT, 0},
    {NULL, NULL, {0}, 0, 0, 0}
 };
 

@@ -140,6 +140,7 @@ typedef struct {
 #define CAP_CHECKLABELS    (1<<22)    /* Check for ANSI/IBM labels */
 #define CAP_BLOCKCHECKSUM  (1<<23)    /* Create/test block checksum */
 #define CAP_LSEEK          (1<<24)    /* Has lseek function defined i.e. basically File storage */
+#define CAP_SYNCONCLOSE    (1<<25)    /* Need to call fsync() when releasing/closing the device */
 
 /* Test state */
 #define dev_state(dev, st_state) ((dev)->state & (st_state))
@@ -553,6 +554,7 @@ public:
    virtual bool open_device(DCR *dcr, int omode) = 0;
    virtual bool open_next_part(DCR *dcr);
    virtual bool close(DCR *dcr);                /* in dev.c */
+   virtual bool sync_data(DCR *dcr);            /* in dev.c */
    virtual void term(DCR *dcr);                 /* in dev.c */
    virtual bool close_part(DCR *dcr);
    virtual bool reposition(DCR *dcr, uint64_t raddr);
