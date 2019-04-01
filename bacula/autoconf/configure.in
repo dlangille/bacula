@@ -1531,6 +1531,40 @@ AC_ARG_WITH(sbin-perm,
 
 AC_SUBST(SBINPERM)
 
+dnl ------------------------------------------
+dnl Python Cython detection
+dnl ------------------------------------------
+CYTHON=cython
+CYTHON_LIBS=
+CYTHON_INC=
+AC_ARG_WITH(cython,
+   AC_HELP_STRING([--with-cython=cython], [Cython path]),
+   [
+       if test "x$withval" != "xno" ; then
+       	  CYTHON=$withval
+       fi
+   ]
+)
+
+$CYTHON -h > /dev/null 2> /dev/null
+if test $? = 0; then
+   if echo $CYTHON | grep cython3 > /dev/null; then
+      PYTHON=python3
+      CYTHON="$CYTHON -3"
+   else
+      PYTHON=python
+      CYTHON="$CYTHON -2"
+   fi
+   CYTHON_LIBS=`${PYTHON}-config --libs 2>/dev/null`
+   CYTHON_INC=`${PYTHON}-config --includes 2>/dev/null`
+else
+   CYTHON=
+fi
+
+AC_SUBST(CYTHON)
+AC_SUBST(CYTHON_LIBS)
+AC_SUBST(CYTHON_INC)
+
 dnl -------------------------------------------
 dnl enable batch attribute DB insert (default on)
 dnl -------------------------------------------
