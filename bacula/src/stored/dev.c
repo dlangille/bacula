@@ -261,11 +261,9 @@ void DEVICE::set_volcatinfo_from_dcr(DCR *dcr)
 
 bool DEVICE::sync_data(DCR *dcr)
 {
-   int ret;
-#ifdef HAVE_WIN32
-   return false;
-#endif
+   int ret=false;
 
+#ifndef HAVE_WIN32
    if (!has_cap(CAP_SYNCONCLOSE)) {
        return true;
    }
@@ -286,7 +284,9 @@ bool DEVICE::sync_data(DCR *dcr)
            VolHdr.VolumeName, print_name(), be.bstrerror());
       return false;
    }
-   return true;
+   ret = true;
+#endif
+   return ret;
 }
 
 /*
