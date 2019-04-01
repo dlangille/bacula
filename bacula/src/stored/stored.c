@@ -641,6 +641,11 @@ void *device_initialization(void *arg)
                dev->print_name());
       }
 
+#ifdef HAVE_WIN32
+      if (device->cap_bits & CAP_SYNCONCLOSE) {
+         device->cap_bits & ~CAP_SYNCONCLOSE; /* Not available on windows */
+      }
+#endif
       /*
        * Note: be careful setting the slot here. If the drive
        *  is shared storage, the contents can change before

@@ -259,6 +259,36 @@ void DEVICE::set_volcatinfo_from_dcr(DCR *dcr)
    VolCatInfo = dcr->VolCatInfo;
 }
 
+bool DEVICE::sync_data(DCR *dcr)
+{
+   int ret;
+#ifdef HAVE_WIN32
+   return false;
+#endif
+
+   if (!has_cap(CAP_SYNCONCLOSE)) {
+       return true;
+   }
+   if (!is_open()) {
+      Dmsg2(200, "device %s closed vol=%s\n", print_name(),
+            VolHdr.VolumeName);
+      return true;                    /* already closed */
+   }
+
+   while ((ret = fsync(m_fd)) < 0 && errno == EINTR) {
+      bmicrosleep(0, 5000);
+   }
+
+   if (ret < 0) {
+      berrno be;
+      dev_errno = errno;
+      Mmsg(errmsg, _("Error syncing volume \"%s\" on device %s. ERR=%s."),
+           VolHdr.VolumeName, print_name(), be.bstrerror());
+      return false;
+   }
+   return true;
+}
+
 /*
  * Close the device
  *   Can enter with dcr==NULL
@@ -1112,4 +1142,3 @@ bool DEVICE::get_tape_worm(DCR *dcr)
 {
    return false;
 }
-
