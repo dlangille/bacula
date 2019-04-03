@@ -1233,6 +1233,7 @@ void add_file_to_fileset(JCR *jcr, const char *fname, bool is_file)
    ch = (uint8_t)*p;
    switch (ch) {
    case '|':
+      Dmsg1(100, "Doing | of '%s' include on client.\n", p + 1);
       p++;                            /* skip over | */
       fn = get_pool_memory(PM_FNAME);
       fn = edit_job_codes(jcr, fn, p, "", job_code_callback_filed);
@@ -1247,7 +1248,9 @@ void add_file_to_fileset(JCR *jcr, const char *fname, bool is_file)
       free_pool_memory(fn);
       while (fgets(buf, sizeof(buf), bpipe->rfd)) {
          strip_trailing_junk(buf);
-         append_file(jcr, fileset->incexe, buf, is_file);
+         if (*buf) {            /* Avoid empty lines */
+            append_file(jcr, fileset->incexe, buf, is_file);
+         }
       }
       if ((stat=close_bpipe(bpipe)) != 0) {
          berrno be;
