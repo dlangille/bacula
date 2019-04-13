@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2018 Kern Sibbald
+ * Copyright (C) 2013-2019 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -40,6 +40,7 @@ class RunJob extends Portlets {
 
 	const RESOURCE_SHOW_PATTERN = '/^\s+--> %resource: name=(.+?(?=\s\S+\=.+)|.+$)/i';
 	const JOB_SHOW_PATTERN = '/^Job:\sname=(?P<jobname>.+)\sJobType=\d+\slevel=(?P<level>\w+)?\sPriority=(?P<priority>\d+)/i';
+	const ACCURATE_PATTERN = '/^\s+Accurate=(?P<accurate>\d)/i';
 
 	const DEFAULT_JOB_PRIORITY = 10;
 
@@ -75,6 +76,8 @@ class RunJob extends Portlets {
 			if (empty($jobdata->storage)) {
 				$jobdata->storage = $this->getResourceName('autochanger', $job_show);
 			}
+			$jobdata->priorjobid = $job_attr['priority'];
+			$jobdata->accurate = (key_exists('accurate', $job_attr) && $job_attr['accurate'] == 1);
 		} else {
 			$jobs = array();
 			$job_list = $this->getModule('api')->get(array('jobs', 'resnames'), null, true, self::USE_CACHE)->output;
@@ -184,6 +187,10 @@ class RunJob extends Portlets {
 		}
 		$this->Storage->dataBind();
 
+		if (is_object($jobdata) && property_exists($jobdata, 'accurate')) {
+			$this->Accurate->Checked = $jobdata->accurate;
+		}
+
 		$priority = self::DEFAULT_JOB_PRIORITY;
 		if (is_object($jobdata) && property_exists($jobdata, 'priorjobid') && $jobdata->priorjobid > 0) {
 			$priority = $jobdata->priorjobid;
@@ -269,6 +276,9 @@ class RunJob extends Portlets {
 				$attr['jobname'] = $match['jobname'];
 				$attr['level'] = $match['level'];
 				$attr['priority'] = $match['priority'];
+			}
+			if (preg_match(self::ACCURATE_PATTERN, $jobshow[$i], $match) === 1) {
+				$attr['accurate'] = $match['accurate'];
 				break;
 			}
 		}

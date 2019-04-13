@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2018 Kern Sibbald
+ * Copyright (C) 2013-2019 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -24,14 +24,13 @@ Prado::using('System.Web.UI.ActiveControls.TActiveLabel');
 Prado::using('System.Web.UI.ActiveControls.TActiveLinkButton');
 Prado::using('System.Web.UI.ActiveControls.TActivePanel');
 Prado::using('System.Web.UI.ActiveControls.TActiveRepeater');
-Prado::using('Application.Web.Portlets.BConditional');
 Prado::using('Application.Web.Portlets.DirectiveListTemplate');
-Prado::using('Application.Web.Portlets.DirectiveBoolean');
+Prado::using('Application.Web.Portlets.DirectiveCheckBox');
 Prado::using('Application.Web.Portlets.DirectiveComboBox');
 Prado::using('Application.Web.Portlets.DirectiveInteger');
 Prado::using('Application.Web.Portlets.DirectiveListBox');
 Prado::using('Application.Web.Portlets.DirectiveSize');
-Prado::using('Application.Web.Portlets.DirectiveText');
+Prado::using('Application.Web.Portlets.DirectiveTextBox');
 Prado::using('Application.Web.Portlets.DirectiveTimePeriod');
 Prado::using('Application.Web.Portlets.DirectiveRunscript');
 Prado::using('Application.Web.Portlets.DirectiveMessages');
@@ -48,11 +47,11 @@ class BaculaConfigDirectives extends DirectiveListTemplate {
 	public $resource_names = array();
 
 	private $directive_types = array(
-		'DirectiveBoolean',
+		'DirectiveCheckBox',
 		'DirectiveComboBox',
 		'DirectiveInteger',
 		'DirectiveListBox',
-		'DirectiveText',
+		'DirectiveTextBox',
 		'DirectiveSize',
 		'DirectiveTimePeriod'
 	);
@@ -117,6 +116,7 @@ class BaculaConfigDirectives extends DirectiveListTemplate {
 				));
 			}
 		}
+
 		$data_desc = $this->Application->getModule('data_desc');
 		$resource_desc = $data_desc->getDescription($component_type, $resource_type);
 		foreach ($resource_desc as $directive_name => $directive_desc) {
@@ -164,6 +164,21 @@ class BaculaConfigDirectives extends DirectiveListTemplate {
 			if (is_object($directive_value)) {
 				$directive_value = (array)$directive_value;
 			}
+
+			if ($directive_name === 'Include' || $directive_name === 'Exclude' || $directive_name === 'Runscript') {
+				// provide all include blocks at once
+				$directive_value = array(array(
+					$directive_name => $directive_value,
+				));
+				if (property_exists($config, 'Exclude')) {
+					$directive_value[0]['Exclude'] = (array)$config->{'Exclude'};
+				}
+			}
+
+			if ($directive_name === 'Exclude') {
+				continue;
+			}
+
 			foreach ($directive_value as $key => $value) {
 				$directive = array(
 					'host' => $host,
@@ -180,6 +195,8 @@ class BaculaConfigDirectives extends DirectiveListTemplate {
 					'field_type' => $field_type,
 					'label' => $directive_name,
 					'in_config' => $in_config,
+					'parent_name' => null,
+					'group_name' => null,
 					'show' => (($in_config || !$load_values) || $this->getShowAllDirectives())
 				);
 				array_push($directives, $directive);
@@ -269,13 +286,16 @@ class BaculaConfigDirectives extends DirectiveListTemplate {
 				}
 				$directive_name = $controls[$j]->getDirectiveName();
 				$directive_value = $controls[$j]->getDirectiveValue();
-				$default_value = $resource_desc[$directive_name]->DefaultValue;
+				$default_value = null;
+				if (key_exists($directive_name, $resource_desc)) {
+					$default_value = $resource_desc[$directive_name]->DefaultValue;
+				}
 				$in_config = $controls[$j]->getInConfig();
 				if (is_null($directive_value)) {
 					// skip not changed values that don't exist in config
 					continue;
 				}
-				if ($this->directive_types[$i] === 'DirectiveBoolean') {
+				if ($this->directive_types[$i] === 'DirectiveCheckBox') {
 					settype($default_value, 'bool');
 				} elseif ($this->directive_types[$i] === 'DirectiveInteger') {
 					settype($directive_value, 'int');
@@ -295,6 +315,9 @@ class BaculaConfigDirectives extends DirectiveListTemplate {
 				if (is_null($directive_value)) {
 					continue;
 				}
+				if ($directive_name === 'Exclude') {
+					continue;
+				}
 				if (!array_key_exists($directive_name, $directives)) {
 					$directives[$directive_name] = array();
 				}
@@ -306,6 +329,11 @@ class BaculaConfigDirectives extends DirectiveListTemplate {
 							$directives[$directive_name] = array();
 						}
 						$directives[$directive_name] = array_merge($directives[$directive_name], $directive_value[$directive_name]);
+					} elseif ($this->directive_list_types[$i] === 'DirectiveFileSet') {
+						if (key_exists('Exclude', $directive_value) && count($directive_value['Exclude']) > 0) {
+							$directives['Exclude'] = array($directive_value['Exclude']);
+						}
+						$directives[$directive_name] = $directive_value[$directive_name];
 					} elseif (array_key_exists($directive_name, $directive_value)) {
 						$directives[$directive_name][] = $directive_value[$directive_name];
 					} elseif (count($directive_value) > 0) {

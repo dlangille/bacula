@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2016 Kern Sibbald
+ * Copyright (C) 2013-2019 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -20,10 +20,9 @@
  * Bacula(R) is a registered trademark of Kern Sibbald.
  */
 
-Prado::using('System.Web.UI.TTemplateControl');
-Prado::using('System.Web.UI.ActiveControls.TActiveControlAdapter');
+Prado::using('System.Web.UI.WebControls.TConditional');
 
-class BConditional extends TTemplateControl implements IActiveControl {
+class BConditional extends TTemplateControl implements IDataRenderer, IActiveControl {
 
 	const BCONDITION = 'BCondition';
 	const TYPE_TPL_FALSE = 0;
@@ -31,6 +30,12 @@ class BConditional extends TTemplateControl implements IActiveControl {
 
 	private $item_true_template;
 	private $item_false_template;
+	private $data;
+	private $creating_children = false;
+
+	public function onInit($param) {
+		parent::onInit($param);
+	}
 
 	public function __construct() {
 		parent::__construct();
@@ -41,49 +46,46 @@ class BConditional extends TTemplateControl implements IActiveControl {
 		return $this->getAdapter()->getBaseActiveControl();
 	}
 
-	public function onLoad($param) {
-		$this->prepareControlContent();
-		parent::onLoad($param);
+	public function getData() {
+		return $this->data;
 	}
 
-	public function bubbleEvent($sender, $param) {
-		if ($param instanceof Prado\Web\UI\TCommandEventParameter) {
-			$this->raiseBubbleEvent($this, $param);
-			return true;
-		} else {
-			return false;
-		}
+	public function setData($data) {
+		$this->data = $data;
 	}
 
-	private function createItemInternal($item_type) {
-		$item = $this->createItem($item_type);
-		if (!is_null($item)) {
-			$this->getControls()->add($item);
-		}
-		return $item;
+	public function setCondition($value) {
+		settype($value, 'bool');
+		$this->setViewState(self::BCONDITION, $value);
 	}
 
-	protected function createItem($item_type) {
-		$template = null;
-		$item = null;
-		switch ($item_type) {
-			case self::TYPE_TPL_TRUE: {
-				$template = $this->getTrueTemplate();
-				break;
+	public function getCondition() {
+		return $this->getViewState(self::BCONDITION);
+	}
+
+	public function createChildControls()
+	{
+		$this->creating_children = true;
+		$this->dataBindProperties();
+		$result = $this->getCondition();
+		$true_template = $this->getTrueTemplate();
+		$false_template = $this->getFalseTemplate();
+		if ($result) {
+			if ($true_template) {
+				$true_template->instantiateIn($this->getTemplateControl(), $this);
 			}
-			case self::TYPE_TPL_FALSE: {
-				$template = $this->getFalseTemplate();
-				break;
-			}
+		} elseif ($false_template) {
+			$false_template->instantiateIn($this->getTemplateControl(), $this);
 		}
-		if (!is_null($template)) {
-			$item = new BConditionalItem;
-			$item->setItemType($item_type);
-			$item->setTemplate($template);
-			$item->setTemplateControl($this);
-			$item->setData($this->getTemplateControl());
+		$this->setData($this->getTemplateControl());
+		$this->creating_children = false;
+	}
+
+	public function addParsedObject($object)
+	{
+		if ($this->creating_children) {
+			parent::addParsedObject($object);
 		}
-		return $item;
 	}
 
 	public function getTrueTemplate() {
@@ -103,58 +105,6 @@ class BConditional extends TTemplateControl implements IActiveControl {
 	public function setFalseTemplate($template) {
 		if ($template instanceof Prado\Web\UI\ITemplate) {
 			$this->item_false_template = $template;
-		}
-	}
-
-	public function setBCondition($value) {
-		settype($value, 'bool');
-		$this->setViewState(self::BCONDITION, $value);
-	}
-
-	public function getBCondition() {
-		return $this->getViewState(self::BCONDITION);
-	}
-
-	public function dataBind() {
-		$this->dataBindProperties();
-		$this->prepareControlContent();
-	}
-
-	public function prepareControlContent() {
-		if ($this->getBCondition() === true) {
-			$this->createItemInternal(self::TYPE_TPL_TRUE);
-		} else {
-			$this->createItemInternal(self::TYPE_TPL_FALSE);
-		}
-	}
-}
-
-class BConditionalItem extends TTemplateControl implements IDataRenderer, INamingContainer {
-	private $item_type;
-	private $data;
-
-	public function getItemType() {
-		return $this->item_type;
-	}
-
-	public function setItemType($type) {
-		$this->item_type = $type;
-	}
-
-	public function getData() {
-		return $this->data;
-	}
-
-	public function setData($data) {
-		$this->data = $data;
-	}
-
-	public function bubbleEvent($sender,$param) {
-		if ($param instanceof Prado\Web\UI\TCommandEventParameter) {
-			$this->raiseBubbleEvent($this, $param);
-			return true;
-		} else {
-			return false;
 		}
 	}
 }

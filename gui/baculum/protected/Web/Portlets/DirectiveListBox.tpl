@@ -13,7 +13,7 @@
 		<i class="fa fa-trash-alt remove_btn" onclick="document.getElementById('<%=$this->Directive->ClientID%>').value = '';" alt="<%[ Remove directive ]%>" title="<%[ Remove directive ]%>"></i>
 		<com:TRequiredFieldValidator
 			ID="DirectiveValidator"
-			ValidationGroup="Directive"
+			ValidationGroup="<%=$this->getValidationGroup()%>"
 			Display="Dynamic"
 			ControlToValidate="Directive"
 			FocusOnError="true"

@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2016 Kern Sibbald
+ * Copyright (C) 2013-2019 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -44,6 +44,7 @@ class DirectiveTemplate extends TTemplateControl implements IDirectiveField, IAc
 	const PARENT_NAME = 'ParentName';
 	const GROUP_NAME = 'GroupName';
 	const IS_DIRECTIVE_CREATED = 'IsDirectiveCreated';
+	const VALIDATION_GROUP = 'ValidationGroup';
 
 	public $display_directive;
 
@@ -58,6 +59,11 @@ class DirectiveTemplate extends TTemplateControl implements IDirectiveField, IAc
 		return $this->getAdapter()->getBaseActiveControl();
 	}
 
+	public function onInit($param) {
+		parent::onInit($param);
+		$this->ensureChildControls();
+	}
+
 	public function bubbleEvent($sender, $param) {
 		if ($param instanceof TCommandEventParameter) {
 			$this->raiseBubbleEvent($this, $param);
@@ -68,9 +74,6 @@ class DirectiveTemplate extends TTemplateControl implements IDirectiveField, IAc
 	}
 
 	public function saveValue($sender, $param) {
-		if (!$this->getPage()->IsPostBack) {
-			return;
-		}
 		$command_param = $this->getCmdParam();
 		if ($command_param === 'save' && method_exists($this, 'getValue')) {
 			$new_value = $this->getValue();
@@ -78,20 +81,27 @@ class DirectiveTemplate extends TTemplateControl implements IDirectiveField, IAc
 		}
 	}
 
-	private function getCmdParam() {
+	public function getCmdParam() {
 		$command_param = null;
-		if (method_exists($this->getPage()->CallBackEventTarget, 'getCommandParameter')) {
-			$command_param = $this->getPage()->CallBackEventTarget->getCommandParameter();
+		if ($this->getPage()->IsCallBack) {
+			if (method_exists($this->getPage()->CallBackEventTarget, 'getCommandParameter')) {
+				$command_param = $this->getPage()->CallBackEventTarget->getCommandParameter();
+			}
+		} elseif ($this->getPage()->IsPostBack) {
+			if (method_exists($this->getPage()->PostBackEventTarget, 'getCommandParameter')) {
+				$command_param = $this->getPage()->PostBackEventTarget->getCommandParameter();
+			}
 		}
 		return $command_param;
 	}
 
-	public function onPreRender($param) {
-		parent::onPreRender($param);
+	public function onLoad($param) {
+		parent::onLoad($param);
 		if (!$this->getIsDirectiveCreated()) {
 			$this->createDirective();
 			$this->setIsDirectiveCreated(true);
 		}
+
 		// show directives existing in config or all
 		$this->display_directive = $this->getShow();
 	}
@@ -248,6 +258,14 @@ class DirectiveTemplate extends TTemplateControl implements IDirectiveField, IAc
 
 	public function setIsDirectiveCreated($is_created) {
 		$this->setViewState(self::IS_DIRECTIVE_CREATED, $is_created);
+	}
+
+	public function getValidationGroup() {
+		return $this->getViewState(self::VALIDATION_GROUP, 'Directive');
+	}
+
+	public function setValidationGroup($validation_group) {
+		$this->setViewState(self::VALIDATION_GROUP, $validation_group);
 	}
 }
 ?>

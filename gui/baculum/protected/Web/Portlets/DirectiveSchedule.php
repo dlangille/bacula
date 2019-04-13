@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2017 Kern Sibbald
+ * Copyright (C) 2013-2019 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -22,9 +22,9 @@
 
 Prado::using('Application.Common.Class.Params');
 Prado::using('Application.Web.Portlets.DirectiveListTemplate');
-Prado::using('Application.Web.Portlets.DirectiveBoolean');
+Prado::using('Application.Web.Portlets.DirectiveCheckBox');
 Prado::using('Application.Web.Portlets.DirectiveComboBox');
-Prado::using('Application.Web.Portlets.DirectiveText');
+Prado::using('Application.Web.Portlets.DirectiveTextBox');
 Prado::using('Application.Web.Portlets.DirectiveTimePeriod');
 
 class DirectiveSchedule extends DirectiveListTemplate {
@@ -32,8 +32,8 @@ class DirectiveSchedule extends DirectiveListTemplate {
 	public $directives;
 
 	private $directive_types = array(
-		'DirectiveBoolean',
-		'DirectiveText',
+		'DirectiveCheckBox',
+		'DirectiveTextBox',
 		'DirectiveComboBox',
 		'DirectiveTimePeriod'
 	);
@@ -310,7 +310,7 @@ class DirectiveSchedule extends DirectiveListTemplate {
 				if (is_null($directive_value)) {
 					continue;
 				}
-				if ($this->directive_types[$i] === 'DirectiveBoolean') {
+				if ($this->directive_types[$i] === 'DirectiveCheckBox') {
 					settype($default_value, 'bool');
 				}
 
@@ -318,7 +318,7 @@ class DirectiveSchedule extends DirectiveListTemplate {
 					// value the same as default value, skip it
 					continue;
 				}
-				if ($this->directive_types[$i] === 'DirectiveBoolean') {
+				if ($this->directive_types[$i] === 'DirectiveCheckBox') {
 					$directive_value = Params::getBoolValue($directive_value);
 				}
 				$directive_values[] = "{$directive_name}=\"{$directive_value}\"";

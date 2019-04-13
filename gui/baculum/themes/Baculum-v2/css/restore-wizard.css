@@ -69,6 +69,10 @@ tr.file-browser-element:hover {
 	overflow-y: auto;
 }
 
+.normal {
+	font-weight: normal;
+}
+
 .bold {
 	font-weight: bold;
 }

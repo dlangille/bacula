@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2017 Kern Sibbald
+ * Copyright (C) 2013-2019 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -21,13 +21,12 @@
  */
 
 Prado::using('Application.Web.Portlets.DirectiveListTemplate');
-Prado::using('Application.Web.Portlets.BConditional');
-Prado::using('Application.Web.Portlets.DirectiveText');
+Prado::using('Application.Web.Portlets.DirectiveTextBox');
 
 class DirectiveMessages extends DirectiveListTemplate {
 
 	private $directive_types = array(
-		'DirectiveText'
+		'DirectiveTextBox'
 	);
 
 	public $destination_simple = array(
@@ -129,7 +128,7 @@ class DirectiveMessages extends DirectiveListTemplate {
 		$controls = $this->RepeaterMessages->getControls();
 		for ($i = 0; $i < $controls->count(); $i++) {
 			$directive_values = array();
-			$where_control = $controls->itemAt($i)->findControlsByType('DirectiveText');
+			$where_control = $controls->itemAt($i)->findControlsByType('DirectiveTextBox');
 			if (count($where_control) === 1 && $where_control[0]->getShow() === true) {
 				$directive_values = array($where_control[0]->getDirectiveValue());
 			}
@@ -162,7 +161,7 @@ class DirectiveMessages extends DirectiveListTemplate {
 		$controls = $this->RepeaterMessages->getControls();
 		for ($i = 0; $i < $controls->count(); $i++) {
 			$directive_values = array();
-			$where_control = $controls->itemAt($i)->findControlsByType('DirectiveText');
+			$where_control = $controls->itemAt($i)->findControlsByType('DirectiveTextBox');
 			if (count($where_control) === 1 && $where_control[0]->getShow() === true) {
 				$directive_values['Where'] = array($where_control[0]->getDirectiveValue());
 			}

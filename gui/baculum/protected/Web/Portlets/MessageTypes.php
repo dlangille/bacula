@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2017 Kern Sibbald
+ * Copyright (C) 2013-2019 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -23,7 +23,7 @@
 
 Prado::using('System.Web.Ui.ActiveControls.TActiveRepeater');
 Prado::using('Application.Web.Portlets.DirectiveListTemplate');
-Prado::using('Application.Web.Portlets.DirectiveBoolean');
+Prado::using('Application.Web.Portlets.DirectiveCheckBox');
 
 class MessageTypes extends DirectiveListTemplate {
 
@@ -33,7 +33,7 @@ class MessageTypes extends DirectiveListTemplate {
 	}
 
 	public function getDirectiveValues() {
-		$type_controls = $this->RepeaterMessageTypes->findControlsByType('DirectiveBoolean');
+		$type_controls = $this->RepeaterMessageTypes->findControlsByType('DirectiveCheckBox');
 		$is_all = false;
 		$types = array();
 		for ($i = 0; $i < count($type_controls); $i++) {
@@ -52,7 +52,7 @@ class MessageTypes extends DirectiveListTemplate {
 	}
 
 	public function createTypeListElement($sender, $param) {
-		$control = $this->getChildControl($param->Item, 'DirectiveBoolean');
+		$control = $this->getChildControl($param->Item, 'DirectiveCheckBox');
 		if (is_object($control)) {
 			$control->setHost($param->Item->Data['host']);
 			$control->setComponentType($param->Item->Data['component_type']);

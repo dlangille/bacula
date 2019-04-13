@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2016 Kern Sibbald
+ * Copyright (C) 2013-2019 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -24,7 +24,7 @@ Prado::using('System.Web.UI.ActiveControls.TActiveLabel');
 Prado::using('System.Web.UI.ActiveControls.TActiveTextBox');
 Prado::using('Application.Web.Portlets.DirectiveTemplate');
 
-class DirectiveText extends DirectiveTemplate {
+class DirectiveTextBox extends DirectiveTemplate {
 
 	public function getValue() {
 		$value = $this->Directive->getText();
@@ -38,7 +38,7 @@ class DirectiveText extends DirectiveTemplate {
 		$this->Label->Text = $this->getLabel();
 		$directive_value = $this->getDirectiveValue();
 		$default_value = $this->getDefaultValue();
-		if ($this->getInConfig() === false) {
+		if ($this->getInConfig() === false && empty($directive_value)) {
 			if ($default_value !== 0) {
 				$directive_value = $default_value;
 			} else {

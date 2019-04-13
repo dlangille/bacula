@@ -126,3 +126,82 @@ div.config_directives {
 .justify {
 	text-align: justify;
 }
+
+#fileset_browser_file_container, #fileset_browser_include_container, #fileset_browser_exclude_container {
+	width: 50%;
+	overflow-y: auto;
+	overflow-x: none;
+	background-color: white;
+	padding: 0;
+	height: 384px;
+}
+
+#fileset_browser_include_container {
+	height: 150px;
+}
+
+#fileset_browser_exclude_container {
+	height: 162px;
+}
+
+.item {
+	cursor: pointer;
+	clear: left;
+	height: 30px;
+}
+
+.item a {
+	text-decoration: underline;
+}
+
+.item, .item_included, .item_excluded {
+	padding: 4px 0 4px 4px;
+	background-color: transparent;
+}
+
+.item_included, .item_excluded {
+	width: 100%;
+}
+
+.item:hover, .item_included:hover, .item_excluded:hover {
+	width: 100%;
+	height: 30px;
+	background-color: #e7e7e7;
+}
+
+.item_inc_exc_btn {
+	display: inline-block;
+	float: right;
+	margin-left: 5px;
+}
+
+.item_selected_del_btn {
+	float: right;
+	margin: 2px 10px;
+	cursor: pointer;
+}
+
+.item_name {
+	width: 69%;
+	float: left;
+	padding-left: 5px;
+}
+
+.dir_item_img, .file_item_img, .link_item_img {
+	width: 30px;
+	height: 24px;
+	background-repeat: no-repeat;
+	float: left;
+}
+
+.dir_item_img {
+	background-image: url('/themes/Baculum-v2/directory-icon.png');
+}
+
+.file_item_img {
+	background-image: url('/themes/Baculum-v2/file-icon.png');
+}
+
+.link_item_img {
+	background-image: url('/themes/Baculum-v2/link-icon.png');
+}

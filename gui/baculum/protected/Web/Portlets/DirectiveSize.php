@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2018 Kern Sibbald
+ * Copyright (C) 2013-2019 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -74,7 +74,7 @@ class DirectiveSize extends DirectiveTemplate {
 		$size_format = $this->getSizeFormat();
 		$directive_value = $this->getDirectiveValue();
 		$default_value = $this->getDefaultValue();
-		if ($this->getInConfig() === false) {
+		if ($this->getInConfig() === false && empty($directive_value)) {
 			if ($default_value !== 0) {
 				$directive_value = $default_value;
 			} else {

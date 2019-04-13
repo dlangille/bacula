@@ -47,67 +47,8 @@
 	</com:TActiveLinkButton>
 	<com:TActiveRepeater
 		ID="RepeaterDirectives"
-		OnItemDataBound="createDirectiveElement"
+		ItemRenderer="Application.Web.Portlets.DirectiveRenderer"
 		>
-		<prop:ItemTemplate>
-			<div class="directive_field">
-				<com:Application.Web.Portlets.BConditional BCondition="<%#($this->Data['field_type'] === 'TextBox')%>">
-					<prop:TrueTemplate>
-						<com:Application.Web.Portlets.DirectiveText />
-					</prop:TrueTemplate>
-				</com:Application.Web.Portlets.BConditional>
-				<com:Application.Web.Portlets.BConditional BCondition="<%#($this->Data['field_type'] === 'Integer')%>">
-					<prop:TrueTemplate>
-						<com:Application.Web.Portlets.DirectiveInteger />
-					</prop:TrueTemplate>
-				</com:Application.Web.Portlets.BConditional>
-				<com:Application.Web.Portlets.BConditional BCondition="<%#($this->Data['field_type'] === 'CheckBox')%>">
-					<prop:TrueTemplate>
-						<com:Application.Web.Portlets.DirectiveBoolean />
-					</prop:TrueTemplate>
-				</com:Application.Web.Portlets.BConditional>
-				<com:Application.Web.Portlets.BConditional BCondition="<%#($this->Data['field_type'] === 'TimePeriod')%>">
-					<prop:TrueTemplate>
-						<com:Application.Web.Portlets.DirectiveTimePeriod />
-					</prop:TrueTemplate>
-				</com:Application.Web.Portlets.BConditional>
-				<com:Application.Web.Portlets.BConditional BCondition="<%#($this->Data['field_type'] === 'Size')%>">
-					<prop:TrueTemplate>
-						<com:Application.Web.Portlets.DirectiveSize />
-					</prop:TrueTemplate>
-				</com:Application.Web.Portlets.BConditional>
-				<com:Application.Web.Portlets.BConditional BCondition="<%#($this->Data['field_type'] === 'ComboBox')%>">
-					<prop:TrueTemplate>
-						<com:Application.Web.Portlets.DirectiveComboBox />
-					</prop:TrueTemplate>
-				</com:Application.Web.Portlets.BConditional>
-				<com:Application.Web.Portlets.BConditional BCondition="<%#($this->Data['field_type'] === 'ListBox')%>">
-					<prop:TrueTemplate>
-						<com:Application.Web.Portlets.DirectiveListBox />
-					</prop:TrueTemplate>
-				</com:Application.Web.Portlets.BConditional>
-				<com:Application.Web.Portlets.BConditional BCondition="<%#($this->Data['field_type'] === 'FileSet')%>">
-					<prop:TrueTemplate>
-						<com:Application.Web.Portlets.DirectiveFileSet />
-					</prop:TrueTemplate>
-				</com:Application.Web.Portlets.BConditional>
-				<com:Application.Web.Portlets.BConditional BCondition="<%#($this->Data['field_type'] === 'Schedule')%>">
-					<prop:TrueTemplate>
-						<com:Application.Web.Portlets.DirectiveSchedule />
-					</prop:TrueTemplate>
-				</com:Application.Web.Portlets.BConditional>
-				<com:Application.Web.Portlets.BConditional BCondition="<%#($this->Data['field_type'] === 'Messages')%>">
-					<prop:TrueTemplate>
-						<com:Application.Web.Portlets.DirectiveMessages />
-					</prop:TrueTemplate>
-				</com:Application.Web.Portlets.BConditional>
-				<com:Application.Web.Portlets.BConditional BCondition="<%#($this->Data['field_type'] === 'Runscript')%>">
-					<prop:TrueTemplate>
-						<com:Application.Web.Portlets.DirectiveRunscript />
-					</prop:TrueTemplate>
-				</com:Application.Web.Portlets.BConditional>
-			</div>
-		</prop:ItemTemplate>
 	</com:TActiveRepeater>
 	<div class="w3-row w3-center">
 		<com:TActiveLinkButton
@@ -130,7 +71,7 @@
 			CommandParameter="save"
 		>
 			<prop:Text>
-				<i class="fa fa-save"></i> &nbsp;<%=Prado::localize('Save')%>
+				<i class="fa fa-save"></i> &nbsp;<%=$this->getLoadValues() ? Prado::localize('Save') : Prado::localize('Create')%>
 			</prop:Text>
 			<prop:ClientSide.OnLoading>
 				$('.save_progress').show();

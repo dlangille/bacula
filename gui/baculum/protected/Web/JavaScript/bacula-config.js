@@ -28,8 +28,14 @@ var BaculaConfigClass = jQuery.klass({
 		this.show_item(container, true);
 		this.scroll_to_element(container);
 	},
-	scroll_to_element: function(selector) {
-		$('html,body').animate({scrollTop: $(selector).offset().top}, 'slow');
+	scroll_to_element: function(selector, additional_offset) {
+		var offset = $(selector).offset().top;
+		if (additional_offset) {
+			offset += additional_offset;
+		}
+		$('html,body').animate({
+			scrollTop: offset
+		}, 'slow');
 	},
 	get_child_container: function(sender) {
 		var child_container = $('#' + sender).closest('table').next('div');

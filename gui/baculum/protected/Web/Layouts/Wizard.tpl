@@ -15,8 +15,12 @@
 			<com:BClientScript ScriptUrl=<%~ ../JavaScript/opentip.js %> />
 			<com:BClientScript ScriptUrl=<%~ ../JavaScript/tooltip.js %> />
 			<com:BClientScript ScriptUrl=<%~ ../JavaScript/misc.js %> />
+			<com:BClientScript ScriptUrl=<%~ ../JavaScript/bacula-config.js %> />
 			<!-- Top container -->
 				<com:TContentPlaceHolder ID="Wizard" />
 		</com:TForm>
+	<script type="text/javascript">
+		Formatters.set_formatters();
+	</script>
 	</body>
 </html>

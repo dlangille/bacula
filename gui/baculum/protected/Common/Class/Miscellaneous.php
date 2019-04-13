@@ -204,7 +204,15 @@ class Miscellaneous extends TModule {
 	}
 
 	public function isValidBoolean($val) {
-		return (preg_match('/^(yes|no|0|1|true|false)$/', $val) === 1);
+		return (preg_match('/^(yes|no|1|0|true|false)$/i', $val) === 1);
+	}
+
+	public function isValidBooleanTrue($val) {
+		return (preg_match('/^(yes|1|true)$/i', $val) === 1);
+	}
+
+	public function isValidBooleanFalse($val) {
+		return (preg_match('/^(no|0|false)$/i', $val) === 1);
 	}
 
 	public function isValidId($id) {

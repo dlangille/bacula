@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2016 Kern Sibbald
+ * Copyright (C) 2013-2019 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -26,6 +26,18 @@ Prado::using('Application.Web.Portlets.DirectiveTemplate');
 
 class DirectiveComboBox extends DirectiveTemplate {
 
+	public function onLoad($param) {
+		$this->createDirectiveInternal();
+		$this->saveDirective();
+		parent::onLoad($param);
+	}
+
+	public function saveDirective() {
+		$value = $this->getValue();
+		$this->Directive->setSelectedValue($value);
+		$this->setDirectiveValue($value);
+	}
+
 	public function getValue() {
 		$value = $this->Directive->getSelectedValue();
 		if (!is_string($value) || empty($value)) {
@@ -34,7 +46,7 @@ class DirectiveComboBox extends DirectiveTemplate {
 		return $value;
 	}
 
-	public function createDirective() {
+	public function createDirectiveInternal() {
 		$this->Label->Text = $this->getLabel();
 		$data = $this->getData();
 		$resource_names = $this->getResourceNames();
@@ -57,7 +69,7 @@ class DirectiveComboBox extends DirectiveTemplate {
 
 		$directive_value = $this->getDirectiveValue();
 		$default_value = $this->getDefaultValue();
-		if ($in_config === false) {
+		if ($in_config === false && empty($directive_value)) {
 			if ($default_value !== 0) {
 				$directive_value = $default_value;
 			} else {
