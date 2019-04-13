@@ -60,6 +60,14 @@ class DirectiveRunscript extends DirectiveListTemplate {
 						$directive_value = $config[$i]->{$directive_name};
 					}
 
+					/**
+					 * Because of bug in bdirjson: http://bugs.bacula.org/view.php?id=2464
+					 * Here is workaround for bdirjson from Bacula versions without fix for it.
+					 */
+					if ($directive_name === 'RunsWhen' && $directive_value === 'Any') {
+						$directive_value = 'Always';
+					}
+
 					$default_value = null;
 					$data = null;
 					$field_type = 'TextBox';
