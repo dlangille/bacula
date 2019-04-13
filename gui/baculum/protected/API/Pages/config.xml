@@ -38,5 +38,7 @@
 		<!-- component status modules -->
 		<module id="status_dir" class="Application.API.Class.StatusDirector" />
 		<module id="status_sd" class="Application.API.Class.StatusStorage" />
+		<!-- misc modules -->
+		<module id="ls" class="Application.API.Class.Ls" />
 	</modules>
 </configuration>
