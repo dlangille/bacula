@@ -370,7 +370,7 @@ class DirectiveFileSet extends DirectiveListTemplate {
 		$inc_index = $this->RepeaterFileSetIncludes->getItems()->getCount() - 1;
 		$inc_exc = $param->getCallbackParameter();
 		if (property_exists($inc_exc, 'Include') && is_array($inc_exc->Include)) {
-			if (!key_exists($inc_index, $data['Include'])) {
+			if (!key_exists($inc_index, $data['Include']) || !key_exists('File', $data['Include'][$inc_index])) {
 				$data['Include'][$inc_index] = array('File' => array());
 			}
 			for ($i = 0; $i < count($inc_exc->Include); $i++) {
