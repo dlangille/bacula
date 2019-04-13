@@ -368,6 +368,14 @@ class BaculaSetting extends APIModule {
 			if ($check_recursive === true) {
 				$resource[$index] = $this->updateSubResource($resource_type, $directive_name, $directive_value);
 			} else {
+				/**
+				 * Because of bug in bdirjson: http://bugs.bacula.org/view.php?id=2464
+				 * Here is workaround for bdirjson from Bacula versions without fix for it.
+				 * @TODO: Remove it from here ASAP, here shouldn't be this type conditions
+				 */
+				if ($index === 'RunsWhen' && $directive_value === 'Any') {
+					$directive_value = 'Always';
+				}
 				$resource[$index] = $this->formatDirectiveValue($resource_type, $directive_name, $directive_value);
 			}
 		}
