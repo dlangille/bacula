@@ -6,6 +6,6 @@
 			<h2>Runscript</h2>
 	</prop:HeaderTemplate>
 	<prop:FooterTemplate>
-		</fieldset>
+		</div>
 	</prop:FooterTemplate>
 </com:TActiveRepeater>
