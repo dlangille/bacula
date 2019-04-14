@@ -29,8 +29,6 @@ Prado::using('Application.Web.Portlets.DirectiveTimePeriod');
 
 class DirectiveSchedule extends DirectiveListTemplate {
 
-	public $directives;
-
 	private $directive_types = array(
 		'DirectiveCheckBox',
 		'DirectiveTextBox',
@@ -92,225 +90,282 @@ class DirectiveSchedule extends DirectiveListTemplate {
 		$resource_name = $this->getResourceName();
 		$data_desc = $this->Application->getModule('data_desc');
 		$resource_desc = $data_desc->getDescription($this->getComponentType(), 'Job');
+		$overwrite_directives = $time_directives = $directive_values = array();
+		foreach ($directives as $index => $directive) {
+			for ($i = 0; $i < count($this->overwrite_directives); $i++) {
+				$default_value = null;
+				$data = null;
+				$resource = null;
+				$directive_desc = null;
+				$required = false;
+				if (array_key_exists($this->overwrite_directives[$i], $resource_desc)) {
+					$directive_desc = $resource_desc[$this->overwrite_directives[$i]];
+				}
+				if (is_object($directive_desc)) {
+					if (property_exists($directive_desc, 'DefaultValue')) {
+						$default_value = $directive_desc->DefaultValue;
+					}
+					if (property_exists($directive_desc, 'Data')) {
+						$data = $directive_desc->Data;
+					}
+					if (property_exists($directive_desc, 'Resource')) {
+						$resource = $directive_desc->Resource;
+					}
+				}
+				if (preg_match('/^(Full|Incremental|Differential)Pool$/', $this->overwrite_directives[$i]) === 1) {
+					$resource = 'Pool';
+				}
+				$in_config = false;
+				if ($load_values === true) {
+					$in_config = property_exists($directive, $this->overwrite_directives[$i]);
+				}
+
+				$directive_value = $in_config ? $directive->{$this->overwrite_directives[$i]} : null;
+				$overwrite_directives[$this->overwrite_directives[$i]] = array(
+					'host' => $host,
+					'component_type' => $component_type,
+					'component_name' => $component_name,
+					'resource_type' => $resource_type,
+					'resource_name' => $resource_name,
+					'directive_name' => $this->overwrite_directives[$i],
+					'directive_value' => $directive_value,
+					'default_value' => $default_value,
+					'required' => $required,
+					'data' => $data,
+					'resource' => $resource,
+					'label' => $this->overwrite_directives[$i],
+					'in_config' => $in_config,
+					'show' => $in_config || !$load_values || $this->SourceTemplateControl->getShowAllDirectives(),
+					'resource_names' => $this->getResourceNames(),
+					'parent_name' => __CLASS__,
+					'group_name' => $index
+				);
+			}
+
+			for ($i = 0; $i < count($this->time_directives); $i++) {
+				$time_directives[$this->time_directives[$i]] = array(
+					'host' => $host,
+					'component_type' => $component_type,
+					'component_name' => $component_name,
+					'resource_type' => $resource_type,
+					'resource_name' => $resource_name,
+					'directive_name' => $this->time_directives[$i],
+					'directive_values' => $directive,
+					'default_value' => 0,
+					'parent_name' => __CLASS__,
+					'group_name' => $index
+				);
+			}
+			$directive_values[] = array(
+				'overwrite_directives' => $overwrite_directives,
+				'time_directives' => $time_directives
+			);
+		}
+		$this->RepeaterScheduleRuns->DataSource = $directive_values;
+		$this->RepeaterScheduleRuns->dataBind();
+	}
+
+	public function createRunItem($sender, $param) {
+		$load_values = $this->getLoadValues();
 		for ($i = 0; $i < count($this->overwrite_directives); $i++) {
-			$key = strtolower($this->overwrite_directives[$i]);
-			$this->directives[$key] = array();
-			$this->directives[$key]['directive_name'] = $this->overwrite_directives[$i];
-			$default_value = null;
-			$data = null;
-			$resource = null;
-			$directive_desc = null;
-			$required = false;
-			if (array_key_exists($this->overwrite_directives[$i], $resource_desc)) {
-				$directive_desc = $resource_desc[$this->overwrite_directives[$i]];
+			$control = $param->Item->{$this->overwrite_directives[$i]};
+			if (is_object($control)) {
+				$data = $param->Item->Data['overwrite_directives'][$this->overwrite_directives[$i]];
+				$control->setHost($data['host']);
+				$control->setComponentType($data['component_type']);
+				$control->setComponentName($data['component_name']);
+				$control->setResourceType($data['resource_type']);
+				$control->setResourceName($data['resource_name']);
+				$control->setDirectiveName($data['directive_name']);
+				$control->setDirectiveValue($data['directive_value']);
+				$control->setDefaultValue($data['default_value']);
+				$control->setRequired($data['required']);
+				$control->setData($data['data']);
+				$control->setResource($data['resource']);
+				$control->setLabel($data['label']);
+				$control->setInConfig($data['in_config']);
+				$control->setShow($data['show']);
+				$control->setResourceNames($data['resource_names']);
+				$control->setParentName($data['parent_name']);
+				$control->onLoad(null);
+				$control->createDirective();
 			}
-			if (is_object($directive_desc)) {
-				if (property_exists($directive_desc, 'DefaultValue')) {
-					$default_value = $directive_desc->DefaultValue;
-				}
-				if (property_exists($directive_desc, 'Data')) {
-					$data = $directive_desc->Data;
-				}
-				if (property_exists($directive_desc, 'Resource')) {
-					$resource = $directive_desc->Resource;
-				}
-			}
-			if (preg_match('/^(Full|Incremental|Differential)Pool$/', $this->overwrite_directives[$i]) === 1) {
-				$resource = 'Pool';
-			}
-			$in_config = false;
-			if ($load_values === true) {
-				$in_config = property_exists($directives, $this->overwrite_directives[$i]);
-			}
-
-			$directive_value = $in_config ? $directives->{$this->overwrite_directives[$i]} : null;
-			$this->{$this->overwrite_directives[$i]}->setHost($host);
-			$this->{$this->overwrite_directives[$i]}->setComponentType($component_type);
-			$this->{$this->overwrite_directives[$i]}->setComponentName($component_name);
-			$this->{$this->overwrite_directives[$i]}->setResourceType($resource_type);
-			$this->{$this->overwrite_directives[$i]}->setResourceName($resource_name);
-			$this->{$this->overwrite_directives[$i]}->setDirectiveName($this->overwrite_directives[$i]);
-			$this->{$this->overwrite_directives[$i]}->setDirectiveValue($directive_value);
-			$this->{$this->overwrite_directives[$i]}->setDefaultValue($default_value);
-			$this->{$this->overwrite_directives[$i]}->setRequired($required);
-			$this->{$this->overwrite_directives[$i]}->setData($data);
-			$this->{$this->overwrite_directives[$i]}->setResource($resource);
-			$this->{$this->overwrite_directives[$i]}->setLabel($this->overwrite_directives[$i]);
-			$this->{$this->overwrite_directives[$i]}->setInConfig($in_config);
-			$this->{$this->overwrite_directives[$i]}->setShow($in_config || $this->SourceTemplateControl->getShowAllDirectives());
-			$this->{$this->overwrite_directives[$i]}->setResourceNames($this->getResourceNames());
-			$this->{$this->overwrite_directives[$i]}->setParentName(__CLASS__);
-
-
 		}
 
 		for ($i = 0; $i < count($this->time_directives); $i++) {
-			$this->{$this->time_directives[$i]}->setHost($host);
-			$this->{$this->time_directives[$i]}->setComponentType($component_type);
-			$this->{$this->time_directives[$i]}->setComponentName($component_name);
-			$this->{$this->time_directives[$i]}->setResourceType($resource_type);
-			$this->{$this->time_directives[$i]}->setResourceName($resource_name);
-			$this->{$this->time_directives[$i]}->setDirectiveName($this->time_directives[$i]);
-			$this->{$this->time_directives[$i]}->setDefaultValue(0);
-			$this->{$this->time_directives[$i]}->setParentName(__CLASS__);
+			$control = $param->Item->{$this->time_directives[$i]};
+			if (is_object($control)) {
+				$data = $param->Item->Data['time_directives'][$this->time_directives[$i]];
+				$control->setHost($data['host']);
+				$control->setComponentType($data['component_type']);
+				$control->setComponentName($data['component_name']);
+				$control->setResourceType($data['resource_type']);
+				$control->setResourceName($data['resource_name']);
+				$control->setDirectiveName($data['directive_name']);
+				$control->setDefaultValue($data['default_value']);
+				$control->setParentName($data['parent_name']);
+			}
 		}
+
+		$directive = $param->Item->Data['time_directives']['Month']['directive_values'];
 
 		$months_long = array_values(Params::$months);
 
-		$this->directives['month'] = array(
-			'data' => Params::$months,
-		);
-
 		$single_months = Params::$months;
 		$single_months['monthly'] = 'Monthly';
-		$this->Month->setData($single_months);
-		$this->MonthRangeFrom->setData(Params::$months);
-		$this->MonthRangeTo->setData(Params::$months);
+		$param->Item->Month->setData($single_months);
+		$param->Item->MonthRangeFrom->setData(Params::$months);
+		$param->Item->MonthRangeTo->setData(Params::$months);
 
 		$month_single = null;
 		$month_range_from = null;
 		$month_range_to = null;
-		$month_count = $load_values ? count($directives->Month) : 0;
+		$month_count = $load_values ? count($directive->Month) : 0;
 		if ($month_count === 12) {
 			$month_single = 'Monthly';
 		} elseif ($month_count == 1) {
-			$month_single = $months_long[$directives->Month[0]];
-			$this->MonthSingle->Checked = true;
+			$month_single = $months_long[$directive->Month[0]];
+			$param->Item->MonthSingle->Checked = true;
 		} elseif ($month_count > 0 && $month_count < 12) {
-			$month_start = $directives->Month[0];
-			$month_end = $directives->Month[$month_count-1];
+			$month_start = $directive->Month[0];
+			$month_end = $directive->Month[$month_count-1];
 			$month_range_from = $months_long[$month_start];
 			$month_range_to = $months_long[$month_end];
-			$this->MonthRange->Checked = true;
+			$param->Item->MonthRange->Checked = true;
 		}
-		$this->Month->setDirectiveValue($month_single);
-		$this->MonthRangeFrom->setDirectiveValue($month_range_from);
-		$this->MonthRangeTo->setDirectiveValue($month_range_to);
+		$param->Item->Month->setDirectiveValue($month_single);
+		$param->Item->MonthRangeFrom->setDirectiveValue($month_range_from);
+		$param->Item->MonthRangeTo->setDirectiveValue($month_range_to);
 
 		$days = range(1, 31);
 		$single_days = $days;
 		$single_days['daily'] = 'Daily';
-		$this->Day->setData($single_days);
-		$this->DayRangeFrom->setData($days);
-		$this->DayRangeTo->setData($days);
+		$param->Item->Day->setData($single_days);
+		$param->Item->DayRangeFrom->setData($days);
+		$param->Item->DayRangeTo->setData($days);
 
 		$day_single = null;
 		$day_range_from = null;
 		$day_range_to = null;
-		$day_count = $load_values ? count($directives->Day) : 0;
+		$day_count = $load_values ? count($directive->Day) : 0;
 		if ($day_count === 31) {
 			$day_single = 'Daily';
 		} elseif ($day_count === 1) {
-			$day_single = $days[$directives->Day[0]];
-			$this->DaySingle->Checked = true;
+			$day_single = $days[$directive->Day[0]];
+			$param->Item->DaySingle->Checked = true;
 		} elseif ($day_count > 0 && $day_count < 31) {
-			$day_start = $directives->Day[0];
-			$day_end = $directives->Day[$day_count-1];
+			$day_start = $directive->Day[0];
+			$day_end = $directive->Day[$day_count-1];
 			$day_range_from = $day_start;
 			$day_range_to = $day_end;
-			$this->DayRange->Checked = true;
+			$param->Item->DayRange->Checked = true;
 		}
-		$this->Day->setDirectiveValue($day_single);
-		$this->DayRangeFrom->setDirectiveValue($day_range_from);
-		$this->DayRangeTo->setDirectiveValue($day_range_to);
+		$param->Item->Day->setDirectiveValue($day_single);
+		$param->Item->DayRangeFrom->setDirectiveValue($day_range_from);
+		$param->Item->DayRangeTo->setDirectiveValue($day_range_to);
 
 		$weeks_long = array_values(Params::$weeks);
 
 		$single_weeks = Params::$weeks;
 		$single_weeks['weekly'] = 'Weekly';
-		$this->Week->setData($single_weeks);
-		$this->WeekRangeFrom->setData(Params::$weeks);
-		$this->WeekRangeTo->setData(Params::$weeks);
+		$param->Item->Week->setData($single_weeks);
+		$param->Item->WeekRangeFrom->setData(Params::$weeks);
+		$param->Item->WeekRangeTo->setData(Params::$weeks);
 		$week_single = null;
 		$week_range_from = null;
 		$week_range_to = null;
-		$week_count = $load_values ? count($directives->WeekOfMonth) : 0;
+		$week_count = $load_values ? count($directive->WeekOfMonth) : 0;
 		if ($week_count === 5) {
 			$week_single = 'Weekly';
 		} elseif ($week_count == 1) {
-			$week_single = $weeks_long[$directives->WeekOfMonth[0]];
-			$this->WeekSingle->Checked = true;
+			$week_single = $weeks_long[$directive->WeekOfMonth[0]];
+			$param->Item->WeekSingle->Checked = true;
 		} elseif ($week_count > 0 && $week_count < 5) {
-			$week_start = $directives->WeekOfMonth[0];
-			$week_end = $directives->WeekOfMonth[$week_count-1];
+			$week_start = $directive->WeekOfMonth[0];
+			$week_end = $directive->WeekOfMonth[$week_count-1];
 			$week_range_from = $weeks_long[$week_start];
 			$week_range_to = $weeks_long[$week_end];
-			$this->WeekRange->Checked = true;
+			$param->Item->WeekRange->Checked = true;
 		}
-		$this->Week->setDirectiveValue($week_single);
-		$this->WeekRangeFrom->setDirectiveValue($week_range_from);
-		$this->WeekRangeTo->setDirectiveValue($week_range_to);
+		$param->Item->Week->setDirectiveValue($week_single);
+		$param->Item->WeekRangeFrom->setDirectiveValue($week_range_from);
+		$param->Item->WeekRangeTo->setDirectiveValue($week_range_to);
 
 		$wdays_long = array_values(Params::$wdays);
-		$this->Wday->setData(Params::$wdays);
-		$this->WdayRangeFrom->setData(Params::$wdays);
-		$this->WdayRangeTo->setData(Params::$wdays);
+		$param->Item->Wday->setData(Params::$wdays);
+		$param->Item->WdayRangeFrom->setData(Params::$wdays);
+		$param->Item->WdayRangeTo->setData(Params::$wdays);
 
 		$wday_single = null;
 		$wday_range_from = null;
 		$wday_range_to = null;
-		$wday_count = $load_values ? count($directives->DayOfWeek) : 0;
+		$wday_count = $load_values ? count($directive->DayOfWeek) : 0;
 		if ($wday_count === 7) {
 			$wday_single = '';
 		} elseif ($wday_count === 1) {
-			$wday_single = $wdays_long[$directives->DayOfWeek[0]];
-			$this->WdaySingle->Checked = true;
+			$wday_single = $wdays_long[$directive->DayOfWeek[0]];
+			$param->Item->WdaySingle->Checked = true;
 		} elseif ($wday_count > 0 && $wday_count < 7) {
-			$wday_start = $directives->DayOfWeek[0];
-			$wday_end = $directives->DayOfWeek[$wday_count-1];
+			$wday_start = $directive->DayOfWeek[0];
+			$wday_end = $directive->DayOfWeek[$wday_count-1];
 			$wday_range_from = $wdays_long[$wday_start];
 			$wday_range_to = $wdays_long[$wday_end];
-			$this->WdayRange->Checked = true;
+			$param->Item->WdayRange->Checked = true;
 		}
-		$this->Wday->setDirectiveValue($wday_single);
-		$this->WdayRangeFrom->setDirectiveValue($wday_range_from);
-		$this->WdayRangeTo->setDirectiveValue($wday_range_to);
+		$param->Item->Wday->setDirectiveValue($wday_single);
+		$param->Item->WdayRangeFrom->setDirectiveValue($wday_range_from);
+		$param->Item->WdayRangeTo->setDirectiveValue($wday_range_to);
 
 		$hour = null;
 		$minute = null;
 		if ($load_values) {
-			$hour = $directives->Hour[0]; // @TODO: Check for many hour values;
+			$hour = $directive->Hour[0]; // @TODO: Check for many hour values;
 			/**
 			 * Check if Minute property exists because of bug about missing Minute
 			 * @see http://bugs.bacula.org/view.php?id=2318
 			 */
-			$minute = property_exists($directives, 'Minute') ? $directives->Minute : 0;
+			$minute = property_exists($directive, 'Minute') ? $directive->Minute : 0;
 		}
-		$this->directives['time'] = array(
-			'hour' => $hour,
-			'minute' => $minute
-		);
 		if ($load_values) {
-			if (count($directives->Hour) == 24) {
-				$this->TimeHourly->Checked = true;
-				$this->TimeMinHourly->setDirectiveValue($minute);
-			} elseif (count($directives->Hour) == 1) {
-				$this->TimeAt->Checked = true;
-				$this->TimeHourAt->setDirectiveValue($hour);
-				$this->TimeMinAt->setDirectiveValue($minute);
+			if (count($directive->Hour) == 24) {
+				$param->Item->TimeHourly->Checked = true;
+				$param->Item->TimeMinHourly->setDirectiveValue($minute);
+			} elseif (count($directive->Hour) == 1) {
+				$param->Item->TimeAt->Checked = true;
+				$param->Item->TimeHourAt->setDirectiveValue($hour);
+				$param->Item->TimeMinAt->setDirectiveValue($minute);
 			} else {
-				$this->TimeDisable->Checked = true;
+				$param->Item->TimeDisable->Checked = true;
 			}
 		} else {
-			$this->TimeDisable->Checked = true;
+			$param->Item->TimeDisable->Checked = true;
+		}
+
+		// @TODO: Fix controls to avoid forcing onLoad() and createDirective()
+		for ($i = 0; $i < count($this->time_directives); $i++) {
+			$control = $param->Item->{$this->time_directives[$i]};
+			$control->onLoad(null);
+			$control->createDirective();
 		}
 	}
 
 	public function getDirectiveValue() {
 		$directive_values = array();
+		$values = array('Run' => array());
 		$component_type = $this->getComponentType();
 		$resource_type = $this->getResourceType();
 
-		for ($i = 0; $i < count($this->directive_types); $i++) {
-			$controls = $this->DirectiveContainer->findControlsByType($this->directive_types[$i]);
-			for ($j = 0; $j < count($controls); $j++) {
-				$directive_name = $controls[$j]->getDirectiveName();
-				$directive_value = $controls[$j]->getDirectiveValue();
-				$default_value = $controls[$j]->getDefaultValue();
+		$ctrls = $this->RepeaterScheduleRuns->getItems();
+		foreach ($ctrls as $value) {
+			for ($i = 0; $i < count($this->overwrite_directives); $i++) {
+				$control = $value->{$this->overwrite_directives[$i]};
+				$directive_name = $control->getDirectiveName();
+				$directive_value = $control->getDirectiveValue();
+				$default_value = $control->getDefaultValue();
 				if (is_null($directive_value)) {
 					continue;
 				}
-				if ($this->directive_types[$i] === 'DirectiveCheckBox') {
+				if (get_class($control) === 'DirectiveCheckBox') {
 					settype($default_value, 'bool');
 				}
 
@@ -318,57 +373,78 @@ class DirectiveSchedule extends DirectiveListTemplate {
 					// value the same as default value, skip it
 					continue;
 				}
-				if ($this->directive_types[$i] === 'DirectiveCheckBox') {
+				if (get_class($control) === 'DirectiveCheckBox') {
 					$directive_value = Params::getBoolValue($directive_value);
 				}
 				$directive_values[] = "{$directive_name}=\"{$directive_value}\"";
 			}
-		}
 
-		if ($this->MonthSingle->Checked === true) {
-			$directive_values[] = $this->Month->getDirectiveValue();
-		} elseif ($this->MonthRange->Checked === true) {
-			$from = $this->MonthRangeFrom->getDirectiveValue();
-			$to = $this->MonthRangeTo->getDirectiveValue();
-			$directive_values[] = "{$from}-{$to}";
-		}
+			if ($value->MonthSingle->Checked === true) {
+				$directive_values[] = $value->Month->getDirectiveValue();
+			} elseif ($value->MonthRange->Checked === true) {
+				$from = $value->MonthRangeFrom->getDirectiveValue();
+				$to = $value->MonthRangeTo->getDirectiveValue();
+				$directive_values[] = "{$from}-{$to}";
+			}
 
-		if ($this->WeekSingle->Checked === true) {
-			$directive_values[] = $this->Week->getDirectiveValue();
-		} elseif ($this->WeekRange->Checked === true) {
-			$from = $this->WeekRangeFrom->getDirectiveValue();
-			$to = $this->WeekRangeTo->getDirectiveValue();
-			$directive_values[] = "{$from}-{$to}";
-		}
+			if ($value->WeekSingle->Checked === true) {
+				$directive_values[] = $value->Week->getDirectiveValue();
+			} elseif ($value->WeekRange->Checked === true) {
+				$from = $value->WeekRangeFrom->getDirectiveValue();
+				$to = $value->WeekRangeTo->getDirectiveValue();
+				$directive_values[] = "{$from}-{$to}";
+			}
 
-		if ($this->DaySingle->Checked === true) {
-			$directive_values[] = $this->Day->getDirectiveValue();
-		} elseif ($this->DayRange->Checked === true) {
-			$from = $this->DayRangeFrom->getDirectiveValue();
-			$to = $this->DayRangeTo->getDirectiveValue();
-			$directive_values[] = "{$from}-{$to}";
-		}
+			if ($value->DaySingle->Checked === true) {
+				$directive_values[] = $value->Day->getDirectiveValue();
+			} elseif ($value->DayRange->Checked === true) {
+				$from = $value->DayRangeFrom->getDirectiveValue();
+				$to = $value->DayRangeTo->getDirectiveValue();
+				$directive_values[] = "{$from}-{$to}";
+			}
 
-		if ($this->WdaySingle->Checked === true) {
-			$directive_values[] = $this->Wday->getDirectiveValue();
-		} elseif ($this->WdayRange->Checked === true) {
-			$from = $this->WdayRangeFrom->getDirectiveValue();
-			$to = $this->WdayRangeTo->getDirectiveValue();
-			$directive_values[] = "{$from}-{$to}";
-		}
+			if ($value->WdaySingle->Checked === true) {
+				$directive_values[] = $value->Wday->getDirectiveValue();
+			} elseif ($value->WdayRange->Checked === true) {
+				$from = $value->WdayRangeFrom->getDirectiveValue();
+				$to = $value->WdayRangeTo->getDirectiveValue();
+				$directive_values[] = "{$from}-{$to}";
+			}
 
-		if ($this->TimeAt->Checked === true) {
-			$hour = $this->TimeHourAt->getDirectiveValue();
-			$minute = sprintf('%02d', $this->TimeMinAt->getDirectiveValue());
-			$directive_values[] = "at {$hour}:{$minute}";
-		} elseif ($this->TimeHourly->Checked === true) {
-			$hour = '00';
-			$minute = sprintf('%02d', $this->TimeMinHourly->getDirectiveValue());
-			$directive_values[] = "hourly at {$hour}:{$minute}";
+			if ($value->TimeAt->Checked === true) {
+				$hour = $value->TimeHourAt->getDirectiveValue();
+				$minute = sprintf('%02d', $value->TimeMinAt->getDirectiveValue());
+				$directive_values[] = "at {$hour}:{$minute}";
+			} elseif ($value->TimeHourly->Checked === true) {
+				$hour = '00';
+				$minute = sprintf('%02d', $value->TimeMinHourly->getDirectiveValue());
+				$directive_values[] = "hourly at {$hour}:{$minute}";
+			}
+			$values['Run'][] = implode(' ', $directive_values);
+			$directive_values = array();
 		}
+		return $values;
+	}
 
-		$directive_value = array('Run' => implode(' ', $directive_values));
-		return $directive_value;
+	public function newScheduleDirective() {
+		$data = $this->getData();
+		$obj = new StdClass;
+		$obj->Hour = array(0);
+		$obj->Minute = 0;
+		$obj->Day = range(0, 30);
+		$obj->Month = range(0, 11);
+		$obj->DayOfWeek = range(0, 6);
+		$obj->WeekOfMonth = range(0, 5);
+		$obj->WeekOfYear = range(0, 53);
+
+		if (is_array($data)) {
+			$data[] = $obj;
+		} else {
+			$data = array($obj);
+		}
+		$this->setData($data);
+		$this->SourceTemplateControl->setShowAllDirectives(true);
+		$this->loadConfig(null, null);
 	}
 }
 ?>

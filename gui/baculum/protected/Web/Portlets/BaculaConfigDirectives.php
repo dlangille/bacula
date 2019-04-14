@@ -175,6 +175,10 @@ class BaculaConfigDirectives extends DirectiveListTemplate {
 				}
 			}
 
+			if ($resource_type === 'Schedule' && $directive_name === 'Run') {
+				$directive_value = array($directive_value);
+			}
+
 			if ($directive_name === 'Exclude') {
 				continue;
 			}
@@ -333,6 +337,8 @@ class BaculaConfigDirectives extends DirectiveListTemplate {
 						if (key_exists('Exclude', $directive_value) && count($directive_value['Exclude']) > 0) {
 							$directives['Exclude'] = array($directive_value['Exclude']);
 						}
+						$directives[$directive_name] = $directive_value[$directive_name];
+					} elseif ($this->directive_list_types[$i] === 'DirectiveSchedule') {
 						$directives[$directive_name] = $directive_value[$directive_name];
 					} elseif (array_key_exists($directive_name, $directive_value)) {
 						$directives[$directive_name][] = $directive_value[$directive_name];

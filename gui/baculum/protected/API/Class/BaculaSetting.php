@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2016 Kern Sibbald
+ * Copyright (C) 2013-2019 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -267,31 +267,47 @@ class BaculaSetting extends APIModule {
 				if ($directive_name === 'Run') {
 					for($i = 0; $i < count($directive_value); $i++) {
 						if (is_array($directive_value[$i])) {
-							$overwrite_directive = array_map('overwrite_directives_callback', array_keys($directive_value[$i]), array_values($directive_value[$i]));
-							$overwrite_directive = implode(' ', array_filter($overwrite_directive));
-							$hour = $directive_value[$i]['Hour'][0];
-							$hourly = '';
-							if (count($directive_value[$i]['Hour']) === 24) {
-								$hourly = 'hourly';
+							if (key_exists('Hour', $directive_value[$i])) {
+								$values = array();
+								foreach ($directive_value[$i] as $value) {
+									$values[] = $this->formatDirectiveValue(
+										$resource_type,
+										$directive_name,
+										$value
+									);
+								}
+								$overwrite_directive = array_map(
+									'overwrite_directives_callback',
+									array_keys($directive_value[$i]),
+									$values
+								);
+								$overwrite_directive = implode(' ', array_filter($overwrite_directive));
+								$hour = $directive_value[$i]['Hour'][0];
+								$hourly = '';
+								if (count($directive_value[$i]['Hour']) === 24) {
+									$hourly = 'hourly';
+								}
+								$minute = '00';
+								/**
+								 * Check if Minute key exists because of bug about missing Minute
+								 * @see http://bugs.bacula.org/view.php?id=2318
+								 */
+								if (array_key_exists('Minute', $directive_value[$i])) {
+									$minute = sprintf('%02d', $directive_value[$i]['Minute']);
+								}
+								$day = Params::getDaysConfig($directive_value[$i]['Day']);
+								$month = Params::getMonthsConfig($directive_value[$i]['Month']);
+								$week = Params::getWeeksConfig($directive_value[$i]['WeekOfMonth']);
+								$wday = Params::getWdaysConfig($directive_value[$i]['DayOfWeek']);
+								$value = array($overwrite_directive, $month, $week, $day, $wday, $hourly, 'at', "$hour:$minute");
+								$value = array_filter($value);
+								if (!array_key_exists($directive_name, $resource[$resource_type])) {
+									$resource[$resource_type][$directive_name] = array();
+								}
+								$resource[$resource_type][$directive_name][] = implode(' ', $value);
+							} else {
+								$resource[$resource_type][$directive_name][] = implode(' ', $directive_value[$i]);
 							}
-							$minute = '00';
-							/**
-							 * Check if Minute key exists because of bug about missing Minute
-							 * @see http://bugs.bacula.org/view.php?id=2318
-							 */
-							if (array_key_exists('Minute', $directive_value[$i])) {
-								$minute = sprintf('%02d', $directive_value[$i]['Minute']);
-							}
-							$day = Params::getDaysConfig($directive_value[$i]['Day']);
-							$month = Params::getMonthsConfig($directive_value[$i]['Month']);
-							$week = Params::getWeeksConfig($directive_value[$i]['WeekOfMonth']);
-							$wday = Params::getWdaysConfig($directive_value[$i]['DayOfWeek']);
-							$value = array($overwrite_directive, $month, $week, $day, $wday, $hourly, 'at', "$hour:$minute");
-							$value = array_filter($value);
-							if (!array_key_exists($directive_name, $resource[$resource_type])) {
-								$resource[$resource_type][$directive_name] = array();
-							}
-							$resource[$resource_type][$directive_name][] = implode(' ', $value);
 						} else {
 							$resource[$resource_type][$directive_name][] = $directive_value[$i];
 						}
@@ -554,7 +570,7 @@ function overwrite_directives_callback($directive_name, $directive_value) {
 		'NextPool'
 	);
 	if (in_array($directive_name, $overwrite_directives)) {
-		$directive = "{$directive_name}=\"{$directive_value}\"";
+		$directive = "{$directive_name}={$directive_value}";
 	}
 	return $directive;
 }
