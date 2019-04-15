@@ -349,14 +349,16 @@ class DirectiveSchedule extends DirectiveListTemplate {
 		}
 	}
 
-	public function getDirectiveValue() {
+	public function getDirectiveValue($ret_obj = false) {
 		$directive_values = array();
 		$values = array('Run' => array());
 		$component_type = $this->getComponentType();
 		$resource_type = $this->getResourceType();
+		$objs = array();
 
 		$ctrls = $this->RepeaterScheduleRuns->getItems();
 		foreach ($ctrls as $value) {
+			$obj = new StdClass;
 			for ($i = 0; $i < count($this->overwrite_directives); $i++) {
 				$control = $value->{$this->overwrite_directives[$i]};
 				$directive_name = $control->getDirectiveName();
@@ -377,57 +379,88 @@ class DirectiveSchedule extends DirectiveListTemplate {
 					$directive_value = Params::getBoolValue($directive_value);
 				}
 				$directive_values[] = "{$directive_name}=\"{$directive_value}\"";
+				$obj->{$directive_name} = $directive_value;
 			}
 
+			$obj->Month = range(0, 11);
+			$months_short = array_keys(Params::$months);
 			if ($value->MonthSingle->Checked === true) {
 				$directive_values[] = $value->Month->getDirectiveValue();
+				$obj->Month = array(array_search($value->Month->getDirectiveValue(), $months_short));
 			} elseif ($value->MonthRange->Checked === true) {
 				$from = $value->MonthRangeFrom->getDirectiveValue();
 				$to = $value->MonthRangeTo->getDirectiveValue();
 				$directive_values[] = "{$from}-{$to}";
+				$f = array_search($from, $months_short);
+				$t = array_search($to, $months_short);
+				$obj->Month = range($f, $t);
 			}
 
+			$obj->WeekOfMonth = range(0, 6);
+			$weeks_short = array_keys(Params::$weeks);
 			if ($value->WeekSingle->Checked === true) {
 				$directive_values[] = $value->Week->getDirectiveValue();
+				$obj->WeekOfMonth = array(array_search($value->Week->getDirectiveValue(), $weeks_short));
 			} elseif ($value->WeekRange->Checked === true) {
 				$from = $value->WeekRangeFrom->getDirectiveValue();
 				$to = $value->WeekRangeTo->getDirectiveValue();
 				$directive_values[] = "{$from}-{$to}";
+				$f = array_search($from, $weeks_short);
+				$t = array_search($to, $weeks_short);
+				$obj->WeekOfMonth = range($f, $t);
 			}
 
+			$obj->Day = range(0, 30);
 			if ($value->DaySingle->Checked === true) {
 				$directive_values[] = $value->Day->getDirectiveValue();
+				$obj->Day = array($value->Day->getDirectiveValue());
 			} elseif ($value->DayRange->Checked === true) {
 				$from = $value->DayRangeFrom->getDirectiveValue();
 				$to = $value->DayRangeTo->getDirectiveValue();
 				$directive_values[] = "{$from}-{$to}";
+				$obj->Day = range($from, $to);
 			}
 
+			$obj->DayOfWeek = range(0, 6);
+			$wdays_short = array_values(Params::$wdays);
 			if ($value->WdaySingle->Checked === true) {
 				$directive_values[] = $value->Wday->getDirectiveValue();
+				$obj->DayOfWeek = array(array_search($value->Wday->getDirectiveValue(), $wdays_short));
 			} elseif ($value->WdayRange->Checked === true) {
 				$from = $value->WdayRangeFrom->getDirectiveValue();
 				$to = $value->WdayRangeTo->getDirectiveValue();
 				$directive_values[] = "{$from}-{$to}";
+				$f = array_search($from, $wdays_short);
+				$t = array_search($to, $wdays_short);
+				$obj->DayOfWeek = range($f, $t);
 			}
 
+			$obj->Hour = array(0);
+			$obj->Minute = 0;
 			if ($value->TimeAt->Checked === true) {
 				$hour = $value->TimeHourAt->getDirectiveValue();
 				$minute = sprintf('%02d', $value->TimeMinAt->getDirectiveValue());
 				$directive_values[] = "at {$hour}:{$minute}";
+				$obj->Hour = array($hour);
+				$obj->Minute = $minute;
+
 			} elseif ($value->TimeHourly->Checked === true) {
 				$hour = '00';
 				$minute = sprintf('%02d', $value->TimeMinHourly->getDirectiveValue());
 				$directive_values[] = "hourly at {$hour}:{$minute}";
+				$obj->Hour = array(0);
+				$obj->Minute = $minute;
 			}
 			$values['Run'][] = implode(' ', $directive_values);
+			$objs[] = $obj;
 			$directive_values = array();
+			$obj = null;
 		}
-		return $values;
+		return (($ret_obj) ? $objs : $values);
 	}
 
 	public function newScheduleDirective() {
-		$data = $this->getData();
+		$data = $this->getDirectiveValue(true);
 		$obj = new StdClass;
 		$obj->Hour = array(0);
 		$obj->Minute = 0;
