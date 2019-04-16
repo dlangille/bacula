@@ -1853,15 +1853,6 @@ msgstr "This wizard enables you to create in easy way a new job."
 msgid "To start please select job type that you wish to create."
 msgstr "To start please select job type that you wish to create."
 
-msgid "Job Type"
-msgstr "Job Type"
-
-msgid "Job Name"
-msgstr "Job Name"
-
-msgid "JobDefs"
-msgstr "JobDefs"
-
 msgid "Step 2 - what you want to backup"
 msgstr "Step 2 - what you want to backup"
 
@@ -1873,9 +1864,6 @@ msgstr "Please select Client from which you want to backup data and please selec
 
 msgid "If your FileSet for this backup does not exist yet, you can create it."
 msgstr "If your FileSet for this backup does not exist yet, you can create it."
-
-msgid "FileSet"
-msgstr "FileSet"
 
 msgid "Add new FileSet"
 msgstr "Add new FileSet"
@@ -1889,26 +1877,14 @@ msgstr "Step 3 - where you want to backup"
 msgid "Storage and Pool"
 msgstr "Storage and Pool"
 
-msgid "Please select Storage where you want to backup data and please select Pool with volumes which Storage will use to store backup data."
-msgstr "Please select Storage where you want to backup data and please select Pool with volumes which Storage will use to store backup data."
-
-msgid "Storage"
-msgstr "Storage"
-
-msgid "Show Storage directives for Job"
-msgstr "Show Storage directives for Job"
-
 msgid "Spool setting"
 msgstr "Spool setting"
 
-msgid "Spool Data"
-msgstr "Spool Data"
+msgid "Please select Storage where you want to backup data and please select Pool with volumes which Storage will use to store backup data."
+msgstr "Please select Storage where you want to backup data and please select Pool with volumes which Storage will use to store backup data."
 
-msgid "Spool Attributes"
-msgstr "Spool Attributes"
-
-msgid "Spool Size"
-msgstr "Spool Size"
+msgid "Show Storage directives for Job"
+msgstr "Show Storage directives for Job"
 
 msgid "Show Pool directives for Job"
 msgstr "Show Pool directives for Job"
@@ -1916,29 +1892,14 @@ msgstr "Show Pool directives for Job"
 msgid "Pool setting"
 msgstr "Pool setting"
 
-msgid "Full Backup Pool"
-msgstr "Full Backup Pool"
-
-msgid "Incremental Backup Pool"
-msgstr "Incremental Backup Pool"
-
-msgid "Differential Backup Pool"
-msgstr "Differential Backup Pool"
-
 msgid "Step 4 - how would you like to backup"
 msgstr "Step 4 - how would you like to backup"
 
-msgid "Backup Job directives"
-msgstr "Backup Job directives"
-
-msgid "Accurate"
-msgstr "Accurate"
+msgid "Job directives"
+msgstr "Job directives"
 
 msgid "Step 5 - when would you like to run backup"
 msgstr "Step 5 - when would you like to run backup"
-
-msgid "Schedule"
-msgstr "Schedule"
 
 msgid "Show Reschedule directives"
 msgstr "Show Reschedule directives"
@@ -1946,29 +1907,8 @@ msgstr "Show Reschedule directives"
 msgid "Reschedule setting"
 msgstr "Reschedule setting"
 
-msgid "Reschedule On Error"
-msgstr "Reschedule On Error"
-
-msgid "Reschedule Incomplete Jobs"
-msgstr "Reschedule Incomplete Jobs"
-
-msgid "Reschedule Interval"
-msgstr "Reschedule Interval"
-
-msgid "Reschedule Times"
-msgstr "Reschedule Times"
-
 msgid "What"
 msgstr "What"
-
-msgid "Maximum Concurrent Jobs"
-msgstr "Maximum Concurrent Jobs"
-
-msgid "Priority"
-msgstr "Priority"
-
-msgid "ReRun Failed Levels"
-msgstr "ReRun Failed Levels"
 
 msgid "General"
 msgstr "General"
@@ -1981,9 +1921,6 @@ msgstr "When"
 
 msgid "Other directives"
 msgstr "Other directives"
-
-msgid "Messages"
-msgstr "Messages"
 
 msgid "Step 6 - summary"
 msgstr "Step 6 - summary"
@@ -2026,3 +1963,9 @@ msgstr "Include files to FileSet"
 
 msgid "Apply file selection"
 msgstr "Apply file selection"
+
+msgid "Schedule"
+msgstr "Schedule"
+
+msgid "To browse Windows host please type in text field below drive letter as path, for example: C:/"
+msgstr "To browse Windows host please type in text field below drive letter as path, for example: C:/"

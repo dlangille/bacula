@@ -12,6 +12,7 @@
 			</com:TActiveDropDownList>
 		</div>
 	</div>
+	<p><%[ To browse Windows host please type in text field below drive letter as path, for example: C:/ ]%></p>
 	<div class="w3-section w3-half">
 		<input type="text" id="fileset_browser_path" class="w3-input w3-twothird w3-border" placeholder="<%[ Go to path ]%>" />
 		<button type="button" class="w3-button w3-green" onclick="oFileSetBrowser.ls_items(document.getElementById('fileset_browser_path').value);"><i class="fa fa-check"></i> &nbsp;<%[ OK ]%></button>
@@ -65,6 +66,7 @@ var oFileSetBrowser = {
 		this.clear_content();
 		this.clear_includes();
 		this.path_field.value = '';
+		document.getElementById('<%=$this->Client->ClientID%>').value = '';
 	},
 	ls_items: function(path) {
 		var dpath;

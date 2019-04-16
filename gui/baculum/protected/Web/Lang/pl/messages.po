@@ -1860,15 +1860,6 @@ msgstr "Ten konfigurator umożliwia ci stworzenie nowego zadania w łatwy sposó
 msgid "To start please select job type that you wish to create."
 msgstr "Aby zacząć proszę wybrać typ zadania, które życzysz sobie stworzyć."
 
-msgid "Job Type"
-msgstr "Typ Zadania"
-
-msgid "Job Name"
-msgstr "Nazwa Zadania"
-
-msgid "JobDefs"
-msgstr "JobDefs"
-
 msgid "Step 2 - what you want to backup"
 msgstr "Krok 2 - co chcesz backupować"
 
@@ -1880,9 +1871,6 @@ msgstr "Proszę wybrać Klienta z którego chcesz backupować dane i proszę wyb
 
 msgid "If your FileSet for this backup does not exist yet, you can create it."
 msgstr "Jeśli twój FileSet dla backupu nie istnieje jeszcze, możesz go stworzyć."
-
-msgid "FileSet"
-msgstr "FileSet"
 
 msgid "Add new FileSet"
 msgstr "Dodaj nowy FileSet"
@@ -1896,26 +1884,14 @@ msgstr "Krok 3 - gdzie chcesz składować backup"
 msgid "Storage and Pool"
 msgstr "Magazyn i Pula wolumenów"
 
+msgid "Spool setting"
+msgstr "Ustawienia spoolingu"
+
 msgid "Please select Storage where you want to backup data and please select Pool with volumes which Storage will use to store backup data."
 msgstr "Proszę wybrać Magazyn danych gdzie chcesz składować backup i proszę wybrać Pulę z wolumenami które Magazyn będzie używał do składowania danych backupu"
 
-msgid "Storage"
-msgstr "Magazyn danych"
-
 msgid "Show Storage directives for Job"
 msgstr "Pokaż opcje Magazynu danych dla zadania"
-
-msgid "Spool setting"
-msgstr "Ustawienia Spool"
-
-msgid "Spool Data"
-msgstr "Spool Data"
-
-msgid "Spool Attributes"
-msgstr "Spool Attributes"
-
-msgid "Spool Size"
-msgstr "Spool Size"
 
 msgid "Show Pool directives for Job"
 msgstr "Pokaż opcje Puli wolumenów dla zadania"
@@ -1923,29 +1899,14 @@ msgstr "Pokaż opcje Puli wolumenów dla zadania"
 msgid "Pool setting"
 msgstr "Ustawienia Puli wolumenów"
 
-msgid "Full Backup Pool"
-msgstr "Full Backup Pool"
-
-msgid "Incremental Backup Pool"
-msgstr "Incremental Backup Pool"
-
-msgid "Differential Backup Pool"
-msgstr "Differential Backup Pool"
-
 msgid "Step 4 - how would you like to backup"
 msgstr "Krok 4 - jak chciałbyś backupować"
 
-msgid "Backup Job directives"
-msgstr "Opcje zadania backupowego"
-
-msgid "Accurate"
-msgstr "Tryb dokładny"
+msgid "Job directives"
+msgstr "Opcje zadania"
 
 msgid "Step 5 - when would you like to run backup"
 msgstr "Krok 5 - kiedy chciałbyć uruchamiać backup"
-
-msgid "Schedule"
-msgstr "Harmonogram zadań"
 
 msgid "Show Reschedule directives"
 msgstr "Pokaż opcje Reschedule"
@@ -1953,29 +1914,8 @@ msgstr "Pokaż opcje Reschedule"
 msgid "Reschedule setting"
 msgstr "Ustawienia Reschedule"
 
-msgid "Reschedule On Error"
-msgstr "Reschedule On Error"
-
-msgid "Reschedule Incomplete Jobs"
-msgstr "Reschedule Incomplete Jobs"
-
-msgid "Reschedule Interval"
-msgstr "Reschedule Interval"
-
-msgid "Reschedule Times"
-msgstr "Reschedule Times"
-
 msgid "What"
 msgstr "Co"
-
-msgid "Maximum Concurrent Jobs"
-msgstr "Maximum Concurrent Jobs"
-
-msgid "Priority"
-msgstr "Priorytet"
-
-msgid "ReRun Failed Levels"
-msgstr "ReRun Failed Levels"
 
 msgid "General"
 msgstr "Ogólne"
@@ -1988,9 +1928,6 @@ msgstr "Kiedy"
 
 msgid "Other directives"
 msgstr "Inne dyrektywy"
-
-msgid "Messages"
-msgstr "Messages"
 
 msgid "Step 6 - summary"
 msgstr "Krok 6 - podsumowanie"
@@ -2033,3 +1970,9 @@ msgstr "Dołącz pliki do FileSet"
 
 msgid "Apply file selection"
 msgstr "Zastosuj wybrane pliki"
+
+msgid "Schedule"
+msgstr "Harmonogram zadań"
+
+msgid "To browse Windows host please type in text field below drive letter as path, for example: C:/"
+msgstr "Aby przeglądać host z systemem Windows proszę wprowadzić w polu tekstowym poniżej literę dysku jako lokalizację, na przykład: C:/"

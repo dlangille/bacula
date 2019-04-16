@@ -133,7 +133,7 @@
 				<com:Application.Web.Portlets.DirectiveComboBox
 					ID="Type"
 					DirectiveName="Type"
-					Label="<%[ Job Type ]%>"
+					Label="Job Type"
 					Show="true"
 					ValidationGroup="NewJobDirective"
 					Required="true"
@@ -143,7 +143,7 @@
 				<com:Application.Web.Portlets.DirectiveTextBox
 					ID="Name"
 					DirectiveName="Name"
-					Label="<%[ Job Name ]%>"
+					Label="Job Name"
 					ValidationGroup="NewJobDirective"
 					Required="true"
 					Show="true"
@@ -153,7 +153,7 @@
 				<com:Application.Web.Portlets.DirectiveComboBox
 					ID="JobDefs"
 					DirectiveName="JobDefs"
-					Label="<%[ JobDefs ]%>"
+					Label="JobDefs"
 					Show="true"
 					/>
 			</div>
@@ -168,7 +168,7 @@
 				<com:Application.Web.Portlets.DirectiveComboBox
 					ID="Client"
 					DirectiveName="Client"
-					Label="<%[ Client ]%>"
+					Label="Client"
 					Show="true"
 					ValidationGroup="NewJobDirective"
 					Required="true"
@@ -178,7 +178,7 @@
 				<com:Application.Web.Portlets.DirectiveComboBox
 					ID="Fileset"
 					DirectiveName="Fileset"
-					Label="<%[ FileSet ]%>"
+					Label="FileSet"
 					Show="true"
 					ValidationGroup="NewJobDirective"
 					Required="true"
@@ -216,7 +216,7 @@
 				<com:Application.Web.Portlets.DirectiveComboBox
 					ID="Storage"
 					DirectiveName="Storage"
-					Label="<%[ Storage ]%>"
+					Label="Storage"
 					Show="true"
 					ValidationGroup="NewJobDirective"
 					Required="true"
@@ -229,7 +229,7 @@
 					<com:Application.Web.Portlets.DirectiveCheckBox
 						ID="SpoolData"
 						DirectiveName="SpoolData"
-						Label="<%[ Spool Data ]%>"
+						Label="Spool Data"
 						Show="true"
 						 />
 				</div>
@@ -237,7 +237,7 @@
 					<com:Application.Web.Portlets.DirectiveCheckBox
 						ID="SpoolAttributes"
 						DirectiveName="SpoolAttributes"
-						Label="<%[ Spool Attributes ]%>"
+						Label="Spool Attributes"
 						Show="true"
 						 />
 				</div>
@@ -245,7 +245,7 @@
 					<com:Application.Web.Portlets.DirectiveSize
 						ID="SpoolSize"
 						DirectiveName="SpoolSize"
-						Label="<%[ Spool Size ]%>"
+						Label="Spool Size"
 						Show="true"
 						/>
 				</div>
@@ -254,7 +254,7 @@
 				<com:Application.Web.Portlets.DirectiveComboBox
 					ID="Pool"
 					DirectiveName="Pool"
-					Label="<%[ Pool ]%>"
+					Label="Pool"
 					Show="true"
 					ValidationGroup="NewJobDirective"
 					Required="true"
@@ -282,7 +282,7 @@
 					<com:Application.Web.Portlets.DirectiveComboBox
 						ID="FullBackupPool"
 						DirectiveName="FullBackupPool"
-						Label="<%[ Full Backup Pool ]%>"
+						Label="Full Backup Pool"
 						Show="true"
 						/>
 				</div>
@@ -290,7 +290,7 @@
 					<com:Application.Web.Portlets.DirectiveComboBox
 						ID="IncrementalBackupPool"
 						DirectiveName="IncrementalBackupPool"
-						Label="<%[ Incremental Backup Pool ]%>"
+						Label="Incremental Backup Pool"
 						Show="true"
 						/>
 				</div>
@@ -298,7 +298,7 @@
 					<com:Application.Web.Portlets.DirectiveComboBox
 						ID="DifferentialBackupPool"
 						DirectiveName="DifferentialBackupPool"
-						Label="<%[ Differential Backup Pool ]%>"
+						Label="Differential Backup Pool"
 						Show="true"
 						/>
 				</div>
@@ -313,14 +313,14 @@
 		</com:TWizardStep>
 		<com:TWizardStep ID="Step4" Title="<%[ Step 4 - how would you like to backup ]%>" StepType="Auto">
 			<div class="w3-container">
-				<h2><%[ Backup Job directives ]%></h2>
+				<h2><%[ Job directives ]%></h2>
 			</div>
 			<div class="w3-container">
 				<com:Application.Web.Portlets.DirectiveCheckBox
 					ID="Accurate"
 					DirectiveName="Accurate"
 					DefaultValue="0"
-					Label="<%[ Accurate ]%>"
+					Label="Accurate"
 					Show="true"
 					 />
 			</div>
@@ -329,7 +329,7 @@
 					ID="MaximumConcurrentJobs"
 					DirectiveName="MaximumConcurrentJobs"
 					DefaultValue="1"
-					Label="<%[ Maximum Concurrent Jobs ]%>"
+					Label="Maximum Concurrent Jobs"
 					Show="true"
 					 />
 			</div>
@@ -338,7 +338,7 @@
 					ID="Priority"
 					DirectiveName="Priority"
 					DefaultValue="10"
-					Label="<%[ Priority ]%>"
+					Label="Priority"
 					Show="true"
 					 />
 			</div>
@@ -347,7 +347,7 @@
 					ID="ReRunFailedLevels"
 					DirectiveName="ReRunFailedLevels"
 					DefaultValue="0"
-					Label="<%[ ReRun Failed Levels ]%>"
+					Label="ReRun Failed Levels"
 					Show="true"
 					 />
 			</div>
@@ -358,7 +358,7 @@
 				<com:Application.Web.Portlets.DirectiveComboBox
 					ID="Messages"
 					DirectiveName="Messages"
-					Label="<%[ Messages ]%>"
+					Label="Messages"
 					Show="true"
 					ValidationGroup="NewJobDirective"
 					Required="true"
@@ -373,7 +373,7 @@
 				<com:Application.Web.Portlets.DirectiveComboBox
 					ID="Schedule"
 					DirectiveName="Schedule"
-					Label="<%[ Schedule ]%>"
+					Label="Schedule"
 					Show="true"
 					/>
 				<span><a href="javascript:void(0)" onclick="$('#job_wizard_schedule_directives').hide(); $('#job_wizard_new_schedule').slideToggle();" class="w3-button w3-green"><i class="fa fa-plus"></i> &nbsp;<%[ Add new Schedule ]%></a></span>
@@ -400,7 +400,7 @@
 						ID="RescheduleOnError"
 						DirectiveName="RescheduleOnError"
 						DefaultValue="0"
-						Label="<%[ Reschedule On Error ]%>"
+						Label="Reschedule On Error"
 						Show="true"
 						 />
 				</div>
@@ -409,7 +409,7 @@
 						ID="RescheduleIncompleteJobs"
 						DirectiveName="RescheduleIncompleteJobs"
 						DefaultValue="0"
-						Label="<%[ Reschedule Incomplete Jobs ]%>"
+						Label="Reschedule Incomplete Jobs"
 						Show="true"
 						 />
 				</div>
@@ -418,7 +418,7 @@
 						ID="RescheduleInterval"
 						DirectiveName="RescheduleInterval"
 						DefaultValue="1800"
-						Label="<%[ Reschedule Interval ]%>"
+						Label="Reschedule Interval"
 						Show="true"
 						 />
 				</div>
@@ -426,7 +426,7 @@
 					<com:Application.Web.Portlets.DirectiveInteger
 						ID="RescheduleTimes"
 						DirectiveName="RescheduleTimes"
-						Label="<%[ Reschedule Times ]%>"
+						Label="Reschedule Times"
 						Show="true"
 						 />
 				</div>
@@ -443,29 +443,29 @@
 			<fieldset>
 				<legend><%[ General ]%></legend>
 				<div class="w3-container">
-					<div class="w3-quarter"><%[ Job Type ]%></div>
+					<div class="w3-quarter">Job Type</div>
 					<div class="w3-threequarter bold"><%=$this->Type->getDirectiveValue()%></div>
 				</div>
 				<div class="w3-container">
-					<div class="w3-quarter"><%[ Job Name ]%></div>
+					<div class="w3-quarter">Job Name</div>
 					<div class="w3-threequarter bold"><%=$this->Name->getDirectiveValue()%></div>
 				</div>
 				<div class="w3-container">
-					<div class="w3-quarter"><%[ JobDefs ]%></div>
+					<div class="w3-quarter">JobDefs</div>
 					<div class="w3-threequarter bold"><%=$this->JobDefs->getDirectiveValue()%></div>
 				</div>
 			</fieldset>
 			<fieldset>
 				<legend><%[ What ]%></legend>
 				<div class="w3-container">
-					<div class="w3-quarter"><%[ Client ]%></div>
+					<div class="w3-quarter">Client</div>
 					<div class="w3-threequarter bold">
 						<%=$this->Client->getDirectiveValue()%>
 						<span class="w3-small normal"><%=$this->isInJobDefs('Client', $this->Client->getDirectiveValue()) ? ' (' . Prado::localize('inherited from JobDefs') . ')': ''%></span>
 					</div>
 				</div>
 				<div class="w3-container">
-					<div class="w3-quarter"><%[ FileSet ]%></div>
+					<div class="w3-quarter">FileSet</div>
 					<div class="w3-threequarter bold">
 						<%=$this->Fileset->getDirectiveValue()%>
 						<span class="w3-small normal"><%=$this->isInJobDefs('Fileset', $this->Fileset->getDirectiveValue()) ? ' (' . Prado::localize('inherited from JobDefs') . ')': ''%></span>
@@ -475,56 +475,56 @@
 			<fieldset>
 				<legend><%[ Where ]%></legend>
 				<div class="w3-container">
-					<div class="w3-quarter"><%[ Storage ]%></div>
+					<div class="w3-quarter">Storage</div>
 					<div class="w3-threequarter bold">
 						<%=$this->Storage->getDirectiveValue()%>
 						<span class="w3-small normal"><%=$this->isInJobDefs('Storage', $this->Storage->getDirectiveValue()) ? ' (' . Prado::localize('inherited from JobDefs') . ')': ''%></span>
 					</div>
 				</div>
 				<div class="w3-container">
-					<div class="w3-quarter"><%[ Spool Data ]%></div>
+					<div class="w3-quarter">Spool Data</div>
 					<div class="w3-threequarter bold">
 						<%=$this->SpoolData->getDirectiveValue() ? Prado::localize('Yes') : Prado::localize('No')%>
 						<span class="w3-small normal"><%=$this->isInJobDefs('SpoolData', $this->SpoolData->getDirectiveValue()) ? ' (' . Prado::localize('inherited from JobDefs') . ')': ''%></span>
 					</div>
 				</div>
 				<div class="w3-container">
-					<div class="w3-quarter"><%[ Spool Attributes ]%></div>
+					<div class="w3-quarter">Spool Attributes</div>
 					<div class="w3-threequarter bold">
 						<%=$this->SpoolAttributes->getDirectiveValue() ? Prado::localize('Yes') : Prado::localize('No')%>
 						<span class="w3-small normal"><%=$this->isInJobDefs('SpoolAttributes', $this->SpoolAttributes->getDirectiveValue()) ? ' (' . Prado::localize('inherited from JobDefs') . ')': ''%></span>
 					</div>
 				</div>
 				<div class="w3-container">
-					<div class="w3-quarter"><%[ Spool Size ]%></div>
+					<div class="w3-quarter">Spool Size</div>
 					<div class="w3-threequarter bold size">
 						<%=$this->SpoolSize->getDirectiveValue() ?: '0'%>
 						<span class="w3-small normal"><%=$this->isInJobDefs('SpoolSize', $this->SpoolSize->getDirectiveValue()) ? ' (' . Prado::localize('inherited from JobDefs') . ')': ''%></span>
 					</div>
 				</div>
 				<div class="w3-container">
-					<div class="w3-quarter"><%[ Pool ]%></div>
+					<div class="w3-quarter">Pool</div>
 					<div class="w3-threequarter bold">
 						<%=$this->Pool->getDirectiveValue()%>
 						<span class="w3-small normal"><%=$this->isInJobDefs('Pool', $this->Pool->getDirectiveValue()) ? ' (' . Prado::localize('inherited from JobDefs') . ')': ''%></span>
 					</div>
 				</div>
 				<div class="w3-container">
-					<div class="w3-quarter"><%[ Full Backup Pool ]%></div>
+					<div class="w3-quarter">Full Backup Pool</div>
 					<div class="w3-threequarter bold">
 						<%=$this->FullBackupPool->getDirectiveValue() ?: '-'%>
 						<span class="w3-small normal"><%=$this->isInJobDefs('FullBackupPool', $this->FullBackupPool->getDirectiveValue()) ? ' (' . Prado::localize('inherited from JobDefs') . ')': ''%></span>
 					</div>
 				</div>
 				<div class="w3-container">
-					<div class="w3-quarter"><%[ Incremental Backup Pool ]%></div>
+					<div class="w3-quarter">Incremental Backup Pool</div>
 					<div class="w3-threequarter bold">
 						<%=$this->IncrementalBackupPool->getDirectiveValue() ?: '-'%>
 						<span class="w3-small normal"><%=$this->isInJobDefs('IncrementalBackupPool', $this->IncrementalBackupPool->getDirectiveValue()) ? ' (' . Prado::localize('inherited from JobDefs') . ')': ''%></span>
 					</div>
 				</div>
 				<div class="w3-container">
-					<div class="w3-quarter"><%[ Differential Backup Pool ]%></div>
+					<div class="w3-quarter">Differential Backup Pool</div>
 					<div class="w3-threequarter bold">
 						<%=$this->DifferentialBackupPool->getDirectiveValue() ?: '-'%>
 						<span class="w3-small normal"><%=$this->isInJobDefs('DifferentialBackupPool', $this->DifferentialBackupPool->getDirectiveValue()) ? ' (' . Prado::localize('inherited from JobDefs') . ')': ''%></span>
@@ -534,28 +534,28 @@
 			<fieldset>
 				<legend><%[ How ]%></legend>
 				<div class="w3-container">
-					<div class="w3-quarter"><%[ Accurate ]%></div>
+					<div class="w3-quarter">Accurate</div>
 					<div class="w3-threequarter bold">
 						<%=$this->Accurate->getDirectiveValue() ? Prado::localize('Yes') : Prado::localize('No') %>
 						<span class="w3-small normal"><%=$this->isInJobDefs('Accurate', $this->Accurate->getDirectiveValue()) ? ' (' . Prado::localize('inherited from JobDefs') . ')': ''%></span>
 					</div>
 				</div>
 				<div class="w3-container">
-					<div class="w3-quarter"><%[ Maximum Concurrent Jobs ]%></div>
+					<div class="w3-quarter">Maximum Concurrent Jobs</div>
 					<div class="w3-threequarter bold">
 						<%=$this->MaximumConcurrentJobs->getDirectiveValue() ?: $this->MaximumConcurrentJobs->getDefaultValue()%>
 						<span class="w3-small normal"><%=$this->isInJobDefs('MaximumConcurrentJobs', $this->MaximumConcurrentJobs->getDirectiveValue()) ? ' (' . Prado::localize('inherited from JobDefs') . ')': ''%></span>
 					</div>
 				</div>
 				<div class="w3-container">
-					<div class="w3-quarter"><%[ Priority ]%></div>
+					<div class="w3-quarter">Priority</div>
 					<div class="w3-threequarter bold">
 						<%=$this->Priority->getDirectiveValue() ?: $this->Priority->getDefaultValue()%>
 						<span class="w3-small normal"><%=$this->isInJobDefs('Priority', $this->Priority->getDirectiveValue()) ? ' (' . Prado::localize('inherited from JobDefs') . ')': ''%></span>
 					</div>
 				</div>
 				<div class="w3-container">
-					<div class="w3-quarter"><%[ ReRun Failed Levels ]%></div>
+					<div class="w3-quarter">ReRun Failed Levels</div>
 					<div class="w3-threequarter bold">
 						<%=$this->ReRunFailedLevels->getDirectiveValue() ? Prado::localize('Yes') : Prado::localize('No') %>
 						<span class="w3-small normal"><%=$this->isInJobDefs('ReRunFailedLevels', $this->ReRunFailedLevels->getDirectiveValue()) ? ' (' . Prado::localize('inherited from JobDefs') . ')': ''%></span>
@@ -565,35 +565,35 @@
 			<fieldset>
 				<legend><%[ When ]%></legend>
 				<div class="w3-container">
-					<div class="w3-quarter"><%[ Schedule ]%></div>
+					<div class="w3-quarter">Schedule</div>
 					<div class="w3-threequarter bold">
 						<%=$this->Schedule->getDirectiveValue() ?: '-' %>
 						<span class="w3-small normal"><%=$this->isInJobDefs('Schedule', $this->Schedule->getDirectiveValue()) ? ' (' . Prado::localize('inherited from JobDefs') . ')': ''%></span>
 					</div>
 				</div>
 				<div class="w3-container">
-					<div class="w3-quarter"><%[ Reschedule On Error ]%></div>
+					<div class="w3-quarter">Reschedule On Error</div>
 					<div class="w3-threequarter bold">
 						<%=$this->RescheduleOnError->getDirectiveValue() ? Prado::localize('Yes') : Prado::localize('No') %>
 						<span class="w3-small normal"><%=$this->isInJobDefs('RescheduleOnError', $this->RescheduleOnError->getDirectiveValue()) ? ' (' . Prado::localize('inherited from JobDefs') . ')': ''%></span>
 					</div>
 				</div>
 				<div class="w3-container">
-					<div class="w3-quarter"><%[ Reschedule Incomplete Jobs ]%></div>
+					<div class="w3-quarter">Reschedule Incomplete Jobs</div>
 					<div class="w3-threequarter bold">
 						<%=$this->RescheduleIncompleteJobs->getDirectiveValue() ? Prado::localize('Yes') : Prado::localize('No') %>
 						<span class="w3-small normal"><%=$this->isInJobDefs('RescheduleIncompleteJobs', $this->RescheduleIncompleteJobs->getDirectiveValue()) ? ' (' . Prado::localize('inherited from JobDefs') . ')': ''%></span>
 					</div>
 				</div>
 				<div class="w3-container">
-					<div class="w3-quarter"><%[ Reschedule Interval ]%></div>
+					<div class="w3-quarter">Reschedule Interval</div>
 					<div class="w3-threequarter bold time">
 						<%=$this->RescheduleInterval->getDirectiveValue()%>
 						<span class="w3-small normal"><%=$this->isInJobDefs('RescheduleInterval', $this->RescheduleInterval->getDirectiveValue()) ? ' (' . Prado::localize('inherited from JobDefs') . ')': ''%></span>
 					</div>
 				</div>
 				<div class="w3-container">
-					<div class="w3-quarter"><%[ Reschedule Times ]%></div>
+					<div class="w3-quarter">Reschedule Times</div>
 					<div class="w3-threequarter bold">
 						<%=$this->RescheduleTimes->getDirectiveValue() ?: '-'%>
 						<span class="w3-small normal"><%=$this->isInJobDefs('RescheduleTimes', $this->RescheduleTimes->getDirectiveValue()) ? ' (' . Prado::localize('inherited from JobDefs') . ')': ''%></span>
@@ -603,7 +603,7 @@
 			<fieldset>
 				<legend><%[ Other directives ]%></legend>
 				<div class="w3-container">
-					<div class="w3-quarter"><%[ Messages ]%></div>
+					<div class="w3-quarter">Messages</div>
 					<div class="w3-threequarter bold">
 						<%=$this->Messages->getDirectiveValue() ?: '-'%>
 						<span class="w3-small normal"><%=$this->isInJobDefs('Messages', $this->Messages->getDirectiveValue()) ? ' (' . Prado::localize('inherited from JobDefs') . ')': ''%></span>
