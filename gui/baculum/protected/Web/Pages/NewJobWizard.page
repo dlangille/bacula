@@ -106,6 +106,9 @@
 		 
 		<prop:FinishNavigationTemplate>
 			<div class="w3-center w3-section">
+				<com:TLinkButton CommandName="Cancel" CssClass="w3-button w3-red">
+					<i class="fa fa-times"></i> &nbsp;<%[ Cancel ]%>
+				</com:TLinkButton>
 				<com:TLinkButton
 					CommandName="PreviousStep"
 					CausesValidation="false"
