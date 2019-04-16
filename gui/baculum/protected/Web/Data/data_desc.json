@@ -1394,7 +1394,8 @@
 				"Required": true,
 				"ValueType": "strname",
 				"DefaultValue": 0,
-				"FieldType": "TextBox"
+				"FieldType": "ComboBox",
+				"Data": ["Backup"]
 			},
 			"LabelFormat": {
 				"Required": false,
