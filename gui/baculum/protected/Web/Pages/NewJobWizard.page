@@ -319,6 +319,14 @@
 				<h2><%[ Job directives ]%></h2>
 			</div>
 			<div class="w3-container">
+				<com:Application.Web.Portlets.DirectiveComboBox
+					ID="Level"
+					DirectiveName="Level"
+					Label="Level"
+					Show="true"
+					/>
+			</div>
+			<div class="w3-container">
 				<com:Application.Web.Portlets.DirectiveCheckBox
 					ID="Accurate"
 					DirectiveName="Accurate"
@@ -455,7 +463,7 @@
 				</div>
 				<div class="w3-container">
 					<div class="w3-quarter">JobDefs</div>
-					<div class="w3-threequarter bold"><%=$this->JobDefs->getDirectiveValue()%></div>
+					<div class="w3-threequarter bold"><%=$this->JobDefs->getDirectiveValue() ?: '-'%></div>
 				</div>
 			</fieldset>
 			<fieldset>
@@ -536,6 +544,13 @@
 			</fieldset>
 			<fieldset>
 				<legend><%[ How ]%></legend>
+				<div class="w3-container">
+					<div class="w3-quarter">Level</div>
+					<div class="w3-threequarter bold">
+						<%=$this->Level->getDirectiveValue() ?: '-'%>
+						<span class="w3-small normal"><%=$this->isInJobDefs('Level', $this->Level->getDirectiveValue()) ? ' (' . Prado::localize('inherited from JobDefs') . ')': ''%></span>
+					</div>
+				</div>
 				<div class="w3-container">
 					<div class="w3-quarter">Accurate</div>
 					<div class="w3-threequarter bold">

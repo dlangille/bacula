@@ -39,6 +39,7 @@ class NewJobWizard extends BaculumWebPage {
 		$this->FullBackupPool->saveDirective();
 		$this->IncrementalBackupPool->saveDirective();
 		$this->DifferentialBackupPool->saveDirective();
+		$this->Level->saveDirective();
 		$this->Messages->saveDirective();
 		$this->Schedule->saveDirective();
 	}
@@ -72,6 +73,7 @@ class NewJobWizard extends BaculumWebPage {
 			}
 			case 3: {
 				$this->loadBackupJobDirectives();
+				$this->loadLevels();
 				$this->loadMessages();
 				break;
 			}
@@ -360,6 +362,24 @@ class NewJobWizard extends BaculumWebPage {
 		}
 	}
 
+
+	/**
+	 * Load job levels.
+	 *
+	 * @return none
+	 */
+	public function loadLevels() {
+		// so far backup job levels only
+		$level_list = array(
+			'Full', 'Incremental', 'Differential', 'VirtualFull'
+		);
+		$this->Level->setData($level_list);
+		$jobdefs = $this->getJobDefs();
+		if (key_exists('Level', $jobdefs)) {
+			$this->Level->setDirectiveValue($jobdefs['Level']);
+		}
+		$this->Level->onLoad(null);
+	}
 	/**
 	 * Load messages.
 	 *
@@ -409,7 +429,7 @@ class NewJobWizard extends BaculumWebPage {
 		$jd = $this->JobDefs->getDirectiveValue();
 		$directives = array('Client', 'Fileset', 'Storage', 'SpoolData', 'SpoolAttributes',
 			'SpoolSize', 'Pool', 'FullBackupPool', 'IncrementalBackupPool', 'DifferentialBackupPool',
-			'Accurate', 'MaximumConcurrentJobs', 'Priority', 'ReRunFailedLevels', 'Schedule',
+			'Level', 'Accurate', 'MaximumConcurrentJobs', 'Priority', 'ReRunFailedLevels', 'Schedule',
 			'RescheduleOnError', 'RescheduleIncompleteJobs', 'RescheduleInterval', 'RescheduleTimes',
 			'Messages'
 		);
