@@ -463,6 +463,54 @@
 				}]
 			}
 		},
+		"/api/v1/clients/{clientid}/ls": {
+			"get": {
+				"tags": ["clients"],
+				"summary": "List Client files/directories",
+				"description": "Get list Client files/directories for specific path",
+				"responses": {
+					"200": {
+						"description": "Client list files/directories output",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"type": "array",
+											"items": {
+												"type": "string",
+												"description": "Client files/directories list output"
+											}
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 8, 10, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					{
+						"$ref": "#/components/parameters/ClientId"
+					},
+					{
+						"name": "path",
+						"in": "query",
+						"required": true,
+						"description": "Path on Client",
+						"schema": {
+							"type": "string",
+							"pattern": "[p{L}p{N}p{Z}[]()-+/:.#~_,{}!']{1,10000}"
+						}
+					}
+				]
+			}
+		},
 		"/api/v1/clients/show": {
 			"get": {
 				"tags": ["clients"],
