@@ -31,6 +31,7 @@ Prado::using('Application.Web.Portlets.DirectiveInteger');
 Prado::using('Application.Web.Portlets.DirectiveListBox');
 Prado::using('Application.Web.Portlets.DirectiveSize');
 Prado::using('Application.Web.Portlets.DirectiveTextBox');
+Prado::using('Application.Web.Portlets.DirectiveMultiTextBox');
 Prado::using('Application.Web.Portlets.DirectiveTimePeriod');
 Prado::using('Application.Web.Portlets.DirectiveRunscript');
 Prado::using('Application.Web.Portlets.DirectiveMessages');
@@ -54,7 +55,8 @@ class DirectiveRenderer extends DirectiveListTemplate implements IItemDataRender
 		'DirectiveFileSet',
 		'DirectiveSchedule',
 		'DirectiveMessages',
-		'DirectiveRunscript'
+		'DirectiveRunscript',
+		'DirectiveMultiTextBox'
 	);
 
 	public $resource_names = array();
@@ -99,9 +101,16 @@ class DirectiveRenderer extends DirectiveListTemplate implements IItemDataRender
 			$control->setData($data['directive_value']);
 			$control->setLoadValues($this->SourceTemplateControl->getLoadValues());
 			$control->setResourceNames($this->SourceTemplateControl->getResourceNames());
-			$control->setShow(true);
+			$control->setShow($data['show']);
+			$control->setGroupName($data['group_name']);
 			$this->getControls()->add($control);
-			$control->raiseEvent('OnDirectiveListLoad', $this, null);
+			if (!$this->getPage()->IsCallBack || $this->getPage()->getCallbackEventParameter()  === 'show_all_directives' || $this->getCmdParam() === 'show') {
+				/*
+				 * List types should be loaded only by load request, not by callback request.
+				 * Otherwise OnLoad above is called during callback and overwrites data in controls.
+				 */
+				$control->raiseEvent('OnDirectiveListLoad', $this, null);
+			}
 		}
 	}
 

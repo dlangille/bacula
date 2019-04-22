@@ -23,6 +23,7 @@
 			Text="<%[ Configure fileset ]%>"
 			Visible="<%=!empty($_SESSION['dir'])%>"
 			OnClick="loadFileSetConfig"
+			CommandParameter="show"
 		/>
 		<com:TActiveLinkButton
 			CssClass="w3-bar-item w3-button tab_btn"

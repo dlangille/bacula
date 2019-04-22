@@ -20,11 +20,11 @@
  * Bacula(R) is a registered trademark of Kern Sibbald.
  */
 
-Prado::using('System.Web.UI.TTemplateControl');
 Prado::using('System.Web.UI.ActiveControls.TActiveControlAdapter');
+Prado::using('Application.Web.Portlets.DirectiveControlTemplate');
 Prado::using('Application.Web.Portlets.IDirectiveField');
 
-class DirectiveTemplate extends TTemplateControl implements IDirectiveField, IActiveControl {
+class DirectiveTemplate extends DirectiveControlTemplate implements IDirectiveField, IActiveControl {
 
 	const HOST = 'Host';
 	const COMPONENT_TYPE = 'ComponentType';
@@ -79,20 +79,6 @@ class DirectiveTemplate extends TTemplateControl implements IDirectiveField, IAc
 			$new_value = $this->getValue();
 			$this->setDirectiveValue($new_value);
 		}
-	}
-
-	public function getCmdParam() {
-		$command_param = null;
-		if ($this->getPage()->IsCallBack) {
-			if (method_exists($this->getPage()->CallBackEventTarget, 'getCommandParameter')) {
-				$command_param = $this->getPage()->CallBackEventTarget->getCommandParameter();
-			}
-		} elseif ($this->getPage()->IsPostBack) {
-			if (method_exists($this->getPage()->PostBackEventTarget, 'getCommandParameter')) {
-				$command_param = $this->getPage()->PostBackEventTarget->getCommandParameter();
-			}
-		}
-		return $command_param;
 	}
 
 	public function onLoad($param) {

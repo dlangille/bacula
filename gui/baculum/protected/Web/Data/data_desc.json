@@ -1288,37 +1288,37 @@
 						"Required": false,
 						"ValueType": "str",
 						"DefaultValue": 0,
-						"FieldType": "TextBox"
+						"FieldType": "MultiTextBox"
 					},
 					"WildDir": {
 						"Required": false,
 						"ValueType": "str",
 						"DefaultValue": 0,
-						"FieldType": "TextBox"
+						"FieldType": "MultiTextBox"
 					},
 					"WildFile": {
 						"Required": false,
 						"ValueType": "str",
 						"DefaultValue": 0,
-						"FieldType": "TextBox"
+						"FieldType": "MultiTextBox"
 					},
 					"Regex": {
 						"Required": false,
 						"ValueType": "str",
 						"DefaultValue": 0,
-						"FieldType": "TextBox"
+						"FieldType": "MultiTextBox"
 					},
 					"RegexDir": {
 						"Required": false,
 						"ValueType": "str",
 						"DefaultValue": 0,
-						"FieldType": "TextBox"
+						"FieldType": "MultiTextBox"
 					},
 					"RegexFile": {
 						"Required": false,
 						"ValueType": "str",
 						"DefaultValue": 0,
-						"FieldType": "TextBox"
+						"FieldType": "MultiTextBox"
 					},
 					"Exclude": {
 						"Required": false,

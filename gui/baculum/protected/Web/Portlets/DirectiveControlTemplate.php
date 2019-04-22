@@ -20,28 +20,23 @@
  * Bacula(R) is a registered trademark of Kern Sibbald.
  */
 
-Prado::using('Application.Web.Portlets.DirectiveControlTemplate');
+Prado::using('System.Web.UI.TTemplateControl');
 
-class ConfigListTemplate extends DirectiveControlTemplate {
+abstract class DirectiveControlTemplate extends TTemplateControl {
 
-	public function getChildControl($parent, $type) {
-		$child_control = null;
-		$controls = $parent->findControlsByType($type, true);
-		// Only one config-type child control is expected
-		if (count($controls) === 1) {
-			$child_control = $controls[0];
+	public function getCmdParam() {
+		$command_param = null;
+		if ($this->getPage()->IsCallBack) {
+			if (method_exists($this->getPage()->CallBackEventTarget, 'getCommandParameter')) {
+				$command_param = $this->getPage()->CallBackEventTarget->getCommandParameter();
+			}
+		} elseif ($this->getPage()->IsPostBack) {
+			if (method_exists($this->getPage()->PostBackEventTarget, 'getCommandParameter')) {
+				$command_param = $this->getPage()->PostBackEventTarget->getCommandParameter();
+			}
 		}
-		return $child_control;
+		return $command_param;
 	}
 
-	public function getConfigResourceType($obj) {
-		$obj_vars = get_object_vars($obj);
-		$resource_type = key($obj_vars);
-		return $resource_type;
-	}
-
-	protected function getModule($id) {
-		return $this->getApplication()->getModule($id);
-	}
 }
 ?>

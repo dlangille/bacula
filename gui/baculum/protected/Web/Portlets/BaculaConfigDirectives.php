@@ -31,6 +31,7 @@ Prado::using('Application.Web.Portlets.DirectiveInteger');
 Prado::using('Application.Web.Portlets.DirectiveListBox');
 Prado::using('Application.Web.Portlets.DirectiveSize');
 Prado::using('Application.Web.Portlets.DirectiveTextBox');
+Prado::using('Application.Web.Portlets.DirectiveMultiTextBox');
 Prado::using('Application.Web.Portlets.DirectiveTimePeriod');
 Prado::using('Application.Web.Portlets.DirectiveRunscript');
 Prado::using('Application.Web.Portlets.DirectiveMessages');
@@ -231,49 +232,6 @@ class BaculaConfigDirectives extends DirectiveListTemplate {
 		$this->RepeaterDirectives->DataSource = array();
 		$this->RepeaterDirectives->dataBind();
 	}
-
-	public function createDirectiveElement($sender, $param) {
-		$load_values = $this->getLoadValues();
-		for ($i = 0; $i < count($this->directive_types); $i++) {
-			$control = $this->getChildControl($param->Item, $this->directive_types[$i]);
-			if (is_object($control)) {
-				$control->setHost($param->Item->Data['host']);
-				$control->setComponentType($param->Item->Data['component_type']);
-				$control->setComponentName($param->Item->Data['component_name']);
-				$control->setResourceType($param->Item->Data['resource_type']);
-				$control->setResourceName($param->Item->Data['resource_name']);
-				$control->setDirectiveName($param->Item->Data['directive_name']);
-				$control->setDirectiveValue($param->Item->Data['directive_value']);
-				$control->setDefaultValue($param->Item->Data['default_value']);
-				$control->setRequired($param->Item->Data['required']);
-				$control->setData($param->Item->Data['data']);
-				$control->setResource($param->Item->Data['resource']);
-				$control->setLabel($param->Item->Data['label']);
-				$control->setInConfig($param->Item->Data['in_config']);
-				$show_all_directives = ($param->Item->Data['in_config'] || !$load_values || $this->getShowAllDirectives());
-				$control->setShow($show_all_directives);
-				$control->setResourceNames($this->resource_names);
-				break;
-			}
-		}
-		for ($i = 0; $i < count($this->directive_list_types); $i++) {
-			$control = $this->getChildControl($param->Item, $this->directive_list_types[$i]);
-			if (is_object($control)) {
-				$control->setHost($param->Item->Data['host']);
-				$control->setComponentType($param->Item->Data['component_type']);
-				$control->setComponentName($param->Item->Data['component_name']);
-				$control->setResourceType($param->Item->Data['resource_type']);
-				$control->setResourceName($param->Item->Data['resource_name']);
-				$control->setDirectiveName($param->Item->Data['directive_name']);
-				$control->setData($param->Item->Data['directive_value']);
-				$control->setLoadValues($this->getLoadValues());
-				$control->setResourceNames($this->resource_names);
-				$control->setShow(true);
-				$control->raiseEvent('OnDirectiveListLoad', $this, null);
-			}
-		}
-	}
-
 
 	public function saveResource($sender, $param) {
 		$directives = array();

@@ -40,11 +40,15 @@ class DirectiveFileSet extends DirectiveListTemplate {
 		'DirectiveInteger'
 	);
 
+	private $directive_list_types = array(
+		'DirectiveMultiTextBox'
+	);
+
 	private $directive_inc_exc_types = array(
 		'DirectiveTextBox'
 	);
 
-	public function loadConfig($sender, $param) {
+	public function loadConfig() {
 		$component_type = $this->getComponentType();
 		$component_name = $this->getComponentType();
 		$resource_type = $this->getResourceType();
@@ -188,6 +192,11 @@ class DirectiveFileSet extends DirectiveListTemplate {
 						$directive_value = false;
 					}
 				}
+
+				if ($field_type === 'MultiTextBox') {
+					$directive_value = array($directive_value);
+				}
+
 				if (!is_array($directive_value)) {
 					$directive_value = array($directive_value);
 				}
@@ -244,14 +253,18 @@ class DirectiveFileSet extends DirectiveListTemplate {
 						// value the same as default value, skip it
 						continue;
 					}
-					if (!isset($counter, $directive_values['Include'][$counter])) {
-						$directive_values['Include'][$counter] = array('Options' => array());
+					if (!key_exists($counter, $directive_values['Include'])) {
+						$directive_values['Include'][$counter] = array();
 					}
-					if (!isset($directive_values['Include'][$counter]['Options'][$index])) {
+					if (!key_exists('Options', $directive_values['Include'][$counter])) {
+						$directive_values['Include'][$counter]['Options'] = array();
+					}
+					if (!key_exists($index, $directive_values['Include'][$counter]['Options'])) {
 						$directive_values['Include'][$counter]['Options'][$index] = array();
 					}
 					$directive_values['Include'][$counter]['Options'][$index][$directive_name] = $directive_value;
 				}
+
 				$controls = $value->RepeaterFileSetInclude->findControlsByType($this->directive_types[$i]);
 				for ($j = 0; $j < count($controls); $j++) {
 					$directive_name = $controls[$j]->getDirectiveName();
@@ -260,16 +273,36 @@ class DirectiveFileSet extends DirectiveListTemplate {
 						// Include file directive removed
 						continue;
 					}
-					if (!key_exists('Include', $directive_values)) {
-						$directive_values['Include'] = array();
-					}
-					if (!isset($directive_values['Include'][$counter])) {
+					if (!key_exists($counter, $directive_values['Include'])) {
 						$directive_values['Include'][$counter] = array();
 					}
 					if (!key_exists($directive_name, $directive_values['Include'][$counter])) {
 						$directive_values['Include'][$counter][$directive_name] = array();
 					}
-					array_push($directive_values['Include'][$counter][$directive_name], $directive_value);
+					$directive_values['Include'][$counter][$directive_name][] = $directive_value;
+				}
+			}
+			for ($i = 0; $i < count($this->directive_list_types); $i++) {
+				$controls = $value->RepeaterFileSetOptions->findControlsByType($this->directive_list_types[$i]);
+				for ($j = 0; $j < count($controls); $j++) {
+					$directive_name = $controls[$j]->getDirectiveName();
+					$directive_value = array_filter($controls[$j]->getDirectiveValue());
+					sort($directive_value);
+					$index = $controls[$j]->getGroupName();
+					if (count($directive_value) == 0) {
+						// option not set or removed
+						continue;
+					}
+					if (!key_exists($counter, $directive_values['Include'])) {
+						$directive_values['Include'][$counter] = array();
+					}
+					if (!key_exists('Options', $directive_values['Include'][$counter])) {
+						$directive_values['Include'][$counter]['Options'] = array();
+					}
+					if (!key_exists($index, $directive_values['Include'][$counter]['Options'])) {
+						$directive_values['Include'][$counter]['Options'][$index] = array();
+					}
+					$directive_values['Include'][$counter]['Options'][$index][$directive_name] = $directive_value;
 				}
 			}
 			$counter++;
@@ -324,7 +357,7 @@ class DirectiveFileSet extends DirectiveListTemplate {
 		$data = $this->getDirectiveValue();
 		$data['Include'][] = array();
 		$this->setData($data);
-		$this->loadConfig(null, null);
+		$this->loadConfig();
 	}
 
 	public function newIncludeFile($sender, $param) {
@@ -336,7 +369,7 @@ class DirectiveFileSet extends DirectiveListTemplate {
 		}
 		$data['Include'][$inc_index]['File'][$file_index] = '';
 		$this->setData($data);
-		$this->loadConfig(null, null);
+		$this->loadConfig();
 	}
 
 	public function newExcludeFile($sender, $param) {
@@ -349,7 +382,7 @@ class DirectiveFileSet extends DirectiveListTemplate {
 		}
 		$data['Exclude']['File'][$file_index] = '';
 		$this->setData($data);
-		$this->loadConfig(null, null);
+		$this->loadConfig();
 	}
 
 	public function newIncludeOptions($sender, $param) {
@@ -362,7 +395,7 @@ class DirectiveFileSet extends DirectiveListTemplate {
 		$data['Include'][$inc_index]['Options'][$opt_index] = array();
 		$this->SourceTemplateControl->setShowAllDirectives(true);
 		$this->setData($data);
-		$this->loadConfig(null, null);
+		$this->loadConfig();
 	}
 
 	public function newIncludeExcludeFile($sender, $param) {
@@ -370,8 +403,11 @@ class DirectiveFileSet extends DirectiveListTemplate {
 		$inc_index = $this->RepeaterFileSetIncludes->getItems()->getCount() - 1;
 		$inc_exc = $param->getCallbackParameter();
 		if (property_exists($inc_exc, 'Include') && is_array($inc_exc->Include)) {
-			if (!key_exists($inc_index, $data['Include']) || !key_exists('File', $data['Include'][$inc_index])) {
-				$data['Include'][$inc_index] = array('File' => array());
+			if (!key_exists($inc_index, $data['Include'])){
+				$data['Include'][$inc_index] = array();
+			}
+			if (!key_exists('File', $data['Include'][$inc_index])) {
+				$data['Include'][$inc_index]['File'] = array();
 			}
 			for ($i = 0; $i < count($inc_exc->Include); $i++) {
 				if (in_array($inc_exc->Include[$i], $data['Include'][$inc_index]['File'])) {
@@ -383,7 +419,7 @@ class DirectiveFileSet extends DirectiveListTemplate {
 		}
 		if (property_exists($inc_exc, 'Exclude') && is_array($inc_exc->Exclude)) {
 			if (!key_exists('File', $data['Exclude'])) {
-				$data['Exclude'] = array('File' => array());
+				$data['Exclude']['File'] = array();
 			}
 			for ($i = 0; $i < count($inc_exc->Exclude); $i++) {
 				if (in_array($inc_exc->Exclude[$i], $data['Exclude']['File'])) {
@@ -394,7 +430,7 @@ class DirectiveFileSet extends DirectiveListTemplate {
 			}
 		}
 		$this->setData($data);
-		$this->loadConfig(null, null);
+		$this->loadConfig();
 	}
 }
 ?>

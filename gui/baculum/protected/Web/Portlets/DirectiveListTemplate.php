@@ -36,6 +36,7 @@ class DirectiveListTemplate extends ConfigListTemplate implements IActiveControl
 	const DATA = 'Data';
 	const LOAD_VALUES = 'LoadValues';
 	const SHOW = 'Show';
+	const GROUP_NAME = 'GroupName';
 
 	public $display_directive;
 
@@ -153,6 +154,14 @@ class DirectiveListTemplate extends ConfigListTemplate implements IActiveControl
 
 	public function setShow($show) {
 		$this->setViewState(self::SHOW, $show);
+	}
+
+	public function getGroupName() {
+		return $this->getViewState(self::GROUP_NAME);
+	}
+
+	public function setGroupName($group_name) {
+		$this->setViewState(self::GROUP_NAME, $group_name);
 	}
 }
 ?>
