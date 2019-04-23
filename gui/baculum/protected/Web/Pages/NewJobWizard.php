@@ -26,6 +26,8 @@ Prado::using('System.Web.UI.WebControls.TWizard');
 
 class NewJobWizard extends BaculumWebPage {
 
+	protected $admin = true;
+
 	const PREV_STEP = 'PrevStep';
 	const JOBDEFS = 'JobDefs';
 
