@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2018-08-03 08:19-0300\n"
+"PO-Revision-Date: 2019-04-23 08:11-0300\n"
 "Project-Id-Version: \n"
 "POT-Creation-Date: \n"
 "Last-Translator: Wanderlei Hüttel <wanderlei.huttel@gmail.com>\n"
@@ -10,7 +10,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "X-Poedit-SourceCharset: utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Poedit 2.0.8\n"
+"X-Generator: Poedit 2.1.1\n"
 
 msgid "Language:"
 msgstr "Idioma:"
@@ -49,25 +49,25 @@ msgid "Console"
 msgstr "Console"
 
 msgid "Step 1 - select language"
-msgstr "Passo 1 - Selecionar o idioma"
+msgstr "Etapa 1 - Selecionar o idioma"
 
 msgid "Please select language."
 msgstr "Por favor, selecione o idioma desejado."
 
 msgid "Step 2 - add API instances"
-msgstr "Passo 2 - Adicionar instâncias da API"
+msgstr "Etapa 2 - Adicionar instâncias da API"
 
 msgid "Step 3 - params of Bacula database connection"
-msgstr "Passo 3 - Configuração da conexão com o banco de dados do Bacula"
+msgstr "Etapa 3 - Configuração da conexão com o banco de dados do Bacula"
 
 msgid "Step 4 - Baculum access to bconsole"
-msgstr "Passo 4 - Dados de acesso para o bconsole"
+msgstr "Etapa 4 - Dados de acesso para o bconsole"
 
 msgid "Step 5 - authorization params to Baculum"
-msgstr "Passo 5 - Configuração de autenticação"
+msgstr "Etapa 5 - Configuração de autenticação"
 
 msgid "Step 6 - Finish"
-msgstr "Passo 6 - Finalizar"
+msgstr "Etapa 6 - Finalizar"
 
 msgid "Save"
 msgstr "Salvar"
@@ -187,7 +187,7 @@ msgid "Authorization to Baculum panel"
 msgstr "Autenticação ao painel do Baculum"
 
 msgid "Step 7 - Finish"
-msgstr "Passo 7 - Finalizar"
+msgstr "Etapa 7 - Finalizar"
 
 msgid "Storage name:"
 msgstr "Nome do Storage:"
@@ -433,7 +433,7 @@ msgid "Backup for restore:"
 msgstr "Backup para restauração:"
 
 msgid "Step 1 - select source backup client"
-msgstr "Passo 1 - Selecione a origem do backup"
+msgstr "Etapa 1 - Selecione a origem do backup"
 
 msgid "Client"
 msgstr "Cliente"
@@ -442,7 +442,7 @@ msgid "Backup"
 msgstr "Backup"
 
 msgid "Step 2 - select backup to restore"
-msgstr "Passo 2 - Selecione o backup que deseja restaurar"
+msgstr "Etapa 2 - Selecione o backup que deseja restaurar"
 
 msgid "Backup selection method:"
 msgstr "Método de seleção de backup:"
@@ -460,7 +460,7 @@ msgid "Pool resource:"
 msgstr "Pool:"
 
 msgid "Step 3 - select files to restore"
-msgstr "Passo 3 - Selecione os arquivos para restaurar"
+msgstr "Etapa 3 - Selecione os arquivos para restaurar"
 
 msgid "Files"
 msgstr "Arquivos"
@@ -484,10 +484,10 @@ msgid "Restore to directory:"
 msgstr "Restaurar para o diretório:"
 
 msgid "Step 4 - select destination for restore"
-msgstr "Passo  4 - Selecione o destino para restauração"
+msgstr "Etapa  4 - Selecione o destino para restauração"
 
 msgid "Step 5 - options for restore"
-msgstr "Passo 5 - Opções de restauração"
+msgstr "Etapa 5 - Opções de restauração"
 
 msgid "Replace files:"
 msgstr "Substituir arquivos:"
@@ -1239,10 +1239,10 @@ msgid "Authorization to Baculum Web"
 msgstr "Autorização para o Baculum Web"
 
 msgid "Step 3 - authentication params to Baculum Web panel"
-msgstr "Passo 3 - parâmetros de autenticação para o painel Web do Baculum"
+msgstr "Etapa 3 - Parâmetros de autenticação para o painel Web do Baculum"
 
 msgid "Step 4 - Finish"
-msgstr "Passo 4 - Finalizar"
+msgstr "Etapa 4 - Finalizar"
 
 msgid "Disabled"
 msgstr "Desabilitado"
@@ -1845,142 +1845,142 @@ msgid "Close Menu"
 msgstr "Fechar menu"
 
 msgid "Error code:"
-msgstr "Error code:"
+msgstr "Código do erro:"
 
 msgid "Message:"
-msgstr "Message:"
+msgstr "Mensagem:"
 
 msgid "Include"
-msgstr "Include"
+msgstr "Incluir"
 
 msgid "Exclude"
-msgstr "Exclude"
+msgstr "Excluir"
 
 msgid "Step 1 - select job type"
-msgstr "Step 1 - select job type"
+msgstr "Etapa 1 - Selecione o tipo de Job"
 
 msgid "New job wizard"
-msgstr "New job wizard"
+msgstr "Assistente de criação de job"
 
 msgid "This wizard enables you to create in easy way a new job."
-msgstr "This wizard enables you to create in easy way a new job."
+msgstr "Este assistente permite que você crie de maneira fácil um novo job."
 
 msgid "To start please select job type that you wish to create."
-msgstr "To start please select job type that you wish to create."
+msgstr "Para começar, selecione o tipo de job que você deseja criar."
 
 msgid "Step 2 - what you want to backup"
-msgstr "Step 2 - what you want to backup"
+msgstr "Etapa 2 - O que você deseja fazer backup?"
 
 msgid "Client and FileSet"
-msgstr "Client and FileSet"
+msgstr "Cliente e FileSet"
 
 msgid "Please select Client from which you want to backup data and please select FileSet with files/directories definition to backup."
-msgstr "Please select Client from which you want to backup data and please select FileSet with files/directories definition to backup."
+msgstr "Por favor, selecione o Cliente e o FileSet com a definição de arquivos/diretórios para backup."
 
 msgid "If your FileSet for this backup does not exist yet, you can create it."
-msgstr "If your FileSet for this backup does not exist yet, you can create it."
+msgstr "Se o FileSet para este backup ainda não existir, você poderá criar um novo."
 
 msgid "Add new FileSet"
-msgstr "Add new FileSet"
+msgstr "Adicionar Novo FileSet"
 
 msgid "New FileSet"
-msgstr "New FileSet"
+msgstr "Novo FileSet"
 
 msgid "Step 3 - where you want to backup"
-msgstr "Step 3 - where you want to backup"
+msgstr "Etapa 3 - Onde você deseja efetuar o backup?"
 
 msgid "Storage and Pool"
-msgstr "Storage and Pool"
+msgstr "Storage e Pool"
 
 msgid "Spool setting"
-msgstr "Spool setting"
+msgstr "Configuração de Spool"
 
 msgid "Please select Storage where you want to backup data and please select Pool with volumes which Storage will use to store backup data."
-msgstr "Please select Storage where you want to backup data and please select Pool with volumes which Storage will use to store backup data."
+msgstr "Por favor, selecione o Storage e a Pool que serão utilizados para armazenar os dados do backup."
 
 msgid "Show Storage directives for Job"
-msgstr "Show Storage directives for Job"
+msgstr "Mostrar configurações do Storage para o Job"
 
 msgid "Show Pool directives for Job"
-msgstr "Show Pool directives for Job"
+msgstr "Mostrar configurações da Pool para o Job"
 
 msgid "Pool setting"
-msgstr "Pool setting"
+msgstr "Configurações da Pool"
 
 msgid "Step 4 - how would you like to backup"
-msgstr "Step 4 - how would you like to backup"
+msgstr "Etapa 4 - Como você gostaria de fazer o backup?"
 
 msgid "Job directives"
-msgstr "Job directives"
+msgstr "Configurações do Job "
 
 msgid "Step 5 - when would you like to run backup"
-msgstr "Step 5 - when would you like to run backup"
+msgstr "Etapa 5 - Quando você gostaria de executar o backup?"
 
 msgid "Show Reschedule directives"
-msgstr "Show Reschedule directives"
+msgstr "Mostrar Configurações de Reangendamento"
 
 msgid "Reschedule setting"
-msgstr "Reschedule setting"
+msgstr "Configuração de Reagendamento"
 
 msgid "What"
-msgstr "What"
+msgstr "O que"
 
 msgid "General"
-msgstr "General"
+msgstr "Geral"
 
 msgid "How"
-msgstr "How"
+msgstr "Como"
 
 msgid "When"
-msgstr "When"
+msgstr "Quando"
 
 msgid "Other directives"
-msgstr "Other directives"
+msgstr "Outras configurações do Job"
 
 msgid "Step 6 - summary"
-msgstr "Step 6 - summary"
+msgstr "Etapa 6 - Resumo"
 
 msgid "Add new Pool"
-msgstr "Add new Pool"
+msgstr "Adicionar Nova Pool"
 
 msgid "New Pool"
-msgstr "New Pool"
+msgstr "Nova Pool"
 
 msgid "Add new Schedule"
-msgstr "Add new Schedule"
+msgstr "Adicionar Nova Agenda"
 
 msgid "New Schedule"
-msgstr "New Schedule"
+msgstr "Nova Agenda"
 
 msgid "Summary"
-msgstr "Summary"
+msgstr "Resumo"
 
 msgid "inherited from JobDefs"
-msgstr "inherited from JobDefs"
+msgstr "herdado de JobDefs"
 
 msgid "Create job"
-msgstr "Create job"
+msgstr "Criar Job"
 
 msgid "Please select Client"
-msgstr "Please select Client"
+msgstr "Por favor selecione o Cliente"
 
 msgid "Go to path"
-msgstr "Go to path"
+msgstr "Ir para o caminho"
 
 msgid "Add new include path"
-msgstr "Add new include path"
+msgstr "Adicionar novo caminho de inclusão"
 
 msgid "Add new global exclude path"
-msgstr "Add new global exclude path"
+msgstr "Adicionar novo caminho de exclusão global"
 
 msgid "Include files to FileSet"
-msgstr "Include files to FileSet"
+msgstr "Incluir arquivos no FileSet"
 
 msgid "Apply file selection"
-msgstr "Apply file selection"
+msgstr "Aplicar seleção de arquivos"
 
 msgid "Schedule"
-msgstr "Schedule"
+msgstr "Agenda"
 
 msgid "To browse Windows host please type in text field below drive letter as path, for example: C:/"
-msgstr "To browse Windows host please type in text field below drive letter as path, for example: C:/"
+msgstr "Para navegar em hosts Windows, digite o campo de texto abaixo da letra da unidade como caminho, por exemplo: C: /"
