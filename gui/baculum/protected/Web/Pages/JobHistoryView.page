@@ -31,6 +31,7 @@
 			Text="<%[ Configure schedule ]%>"
 			Visible="<%=!empty($_SESSION['dir'])%>"
 			OnClick="loadScheduleConfig"
+			CommandParameter="show"
 		/>
 	</div>
 	<div class="w3-container tab_item" id="job_actions">
