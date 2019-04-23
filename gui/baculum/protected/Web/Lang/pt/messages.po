@@ -1984,3 +1984,22 @@ msgstr "Agenda"
 
 msgid "To browse Windows host please type in text field below drive letter as path, for example: C:/"
 msgstr "Para navegar em hosts Windows, digite o campo de texto abaixo da letra da unidade como caminho, por exemplo: C: /"
+
+msgid "Add single file/directory"
+msgstr "Add single file/directory"
+
+msgid "Add files by file browser"
+msgstr "Add files by file browser"
+
+msgid "Add options block"
+msgstr "Add options block"
+
+msgid "Add include block"
+msgstr "Add include block"
+
+msgid "Add exclude block"
+msgstr "Add exclude block"
+
+msgid "Add file/directory"
+msgstr "Add file/directory"
+

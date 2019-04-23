@@ -1976,3 +1976,22 @@ msgstr "Harmonogram zadań"
 
 msgid "To browse Windows host please type in text field below drive letter as path, for example: C:/"
 msgstr "Aby przeglądać host z systemem Windows proszę wprowadzić w polu tekstowym poniżej literę dysku jako lokalizację, na przykład: C:/"
+
+msgid "Add single file/directory"
+msgstr "Dodaj pojedynczy plik/katalog"
+
+msgid "Add files by file browser"
+msgstr "Dodaj pliki poprzez przeglądarkę plików"
+
+msgid "Add options block"
+msgstr "Dodaj blok opcji"
+
+msgid "Add include block"
+msgstr "Dodaj blok listy dołączeń"
+
+msgid "Add exclude block"
+msgstr "Dodaj blok listy wykluczeń"
+
+msgid "Add file/directory"
+msgstr "Dodaj plik/katalog"
+

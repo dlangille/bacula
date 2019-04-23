@@ -6,9 +6,10 @@
 			OnCommand="Parent.SourceTemplateControl.newExcludeFile"
 			CommandParameter="save"
 			ClientSide.OnComplete="var el = $('#<%=$this->ExcludeFileItem->ClientID%>').parents('div').find('div.exclude_file');  BaculaConfig.scroll_to_element(el[el.length-1], -80); $(el[el.length-1]).find('input')[0].focus();"
-			Text="Add file/directory"
 			Attributes.onclick="$(this).closest('div.config_new_fileset').hide();"
-			/>
+			>
+			<i class='fa fa-plus'></i> &nbsp;<%[ Add file/directory ]%>
+		</com:TActiveLinkButton>
 		</li>
 	</ul>
 </div>
