@@ -31,7 +31,7 @@ class FileSets extends BaculumAPIServer {
 		);
 		if ($result->exitcode === 0) {
 			array_shift($result->output);
-			if (is_array($filesets) && count($filesets) > 0) {
+			if (is_array($filesets)) {
 				$fs = array();
 				for ($i = 0; $i < count($filesets); $i++) {
 					if(in_array($filesets[$i]->fileset, $result->output)) {
