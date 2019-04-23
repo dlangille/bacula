@@ -61,7 +61,8 @@ class BaculaConfigDirectives extends DirectiveListTemplate {
 		'DirectiveFileSet',
 		'DirectiveSchedule',
 		'DirectiveMessages',
-		'DirectiveRunscript'
+		'DirectiveRunscript',
+		'DirectiveMultiTextBox'
 	);
 
 	private $field_multple_values = array(
@@ -298,6 +299,11 @@ class BaculaConfigDirectives extends DirectiveListTemplate {
 						$directives[$directive_name] = $directive_value[$directive_name];
 					} elseif ($this->directive_list_types[$i] === 'DirectiveSchedule') {
 						$directives[$directive_name] = $directive_value[$directive_name];
+					} elseif ($this->directive_list_types[$i] === 'DirectiveMultiTextBox') {
+						if (key_exists($directive_name, $directives)) {
+							$directive_value = array_merge($directives[$directive_name], $directive_value);
+						}
+						$directives[$directive_name] = array_filter($directive_value);
 					} elseif (array_key_exists($directive_name, $directive_value)) {
 						$directives[$directive_name][] = $directive_value[$directive_name];
 					} elseif (count($directive_value) > 0) {

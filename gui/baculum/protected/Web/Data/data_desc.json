@@ -1670,67 +1670,67 @@
 				"Required": false,
 				"ValueType": "acl",
 				"DefaultValue": 0,
-				"FieldType": "TextBox"
+				"FieldType": "MultiTextBox"
 			},
 			"ClientAcl": {
 				"Required": false,
 				"ValueType": "acl",
 				"DefaultValue": 0,
-				"FieldType": "TextBox"
+				"FieldType": "MultiTextBox"
 			},
 			"StorageAcl": {
 				"Required": false,
 				"ValueType": "acl",
 				"DefaultValue": 0,
-				"FieldType": "TextBox"
+				"FieldType": "MultiTextBox"
 			},
 			"ScheduleAcl": {
 				"Required": false,
 				"ValueType": "acl",
 				"DefaultValue": 0,
-				"FieldType": "TextBox"
+				"FieldType": "MultiTextBox"
 			},
 			"RunAcl": {
 				"Required": false,
 				"ValueType": "acl",
 				"DefaultValue": 0,
-				"FieldType": "TextBox"
+				"FieldType": "MultiTextBox"
 			},
 			"PoolAcl": {
 				"Required": false,
 				"ValueType": "acl",
 				"DefaultValue": 0,
-				"FieldType": "TextBox"
+				"FieldType": "MultiTextBox"
 			},
 			"CommandAcl": {
 				"Required": false,
 				"ValueType": "acl",
 				"DefaultValue": 0,
-				"FieldType": "TextBox"
+				"FieldType": "MultiTextBox"
 			},
 			"FilesetAcl": {
 				"Required": false,
 				"ValueType": "acl",
 				"DefaultValue": 0,
-				"FieldType": "TextBox"
+				"FieldType": "MultiTextBox"
 			},
 			"CatalogAcl": {
 				"Required": false,
 				"ValueType": "acl",
 				"DefaultValue": 0,
-				"FieldType": "TextBox"
+				"FieldType": "MultiTextBox"
 			},
 			"WhereAcl": {
 				"Required": false,
 				"ValueType": "acl",
 				"DefaultValue": 0,
-				"FieldType": "TextBox"
+				"FieldType": "MultiTextBox"
 			},
 			"PluginOptionsAcl": {
 				"Required": false,
 				"ValueType": "acl",
 				"DefaultValue": 0,
-				"FieldType": "TextBox"
+				"FieldType": "MultiTextBox"
 			},
 			"TlsAuthenticate": {
 				"Required": false,
