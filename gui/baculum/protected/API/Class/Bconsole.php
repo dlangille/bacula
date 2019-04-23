@@ -145,7 +145,7 @@ class Bconsole extends APIModule {
 				break;
 			}
 		}
-		$output = count($output) > 1 ? array_values($output) : array_shift($output);
+		$output = array_values($output);
 		return (object)array('output' => $output, 'exitcode' => (integer)$exitcode);
 	}
 
