@@ -1,18 +1,18 @@
-%global langs en pl
+%global langs_api en pl pt
+%global langs_web en pl pt ja
 %global destdir build
 %global metaname baculum
 
-Summary:	API layer to Baculum WebGUI tool for Bacula Community program
+Summary:	Baculum WebGUI tool for Bacula Community program
 Name:		baculum
-Version:	7.9.0
+Version:	9.4.2
 Release:	1%{?dist}
 License:	AGPLv3
 Group:		Applications/Internet
 URL:		http://bacula.org/
-Source0:	bacula-gui-7.9.0.tar.gz
+Source0:	bacula-gui-9.4.2.tar.gz
 BuildRequires:	systemd-units
 BuildRequires:	checkpolicy
-Requires:	bacula-console
 # Lower version of PHP ( < 5.3.4) does not provide php-mysqlnd db driver
 # and from this reason the lowest is 5.3.4
 Requires:	php >= 5.3.4
@@ -43,7 +43,6 @@ This module is a part of Baculum.
 Summary:		Baculum API files
 Requires:		%name-common = %version-%release
 Group:			Applications/Internet
-Requires:		bacula-console
 # Lower version of PHP ( < 5.3.4) does not provide php-mysqlnd db driver
 # and from this reason the lowest is 5.3.4
 Requires:		php >= 5.3.4
@@ -148,8 +147,10 @@ make build DESTDIR=%{destdir}
 # Remove these cache directories, because here will be symbolic links
 rmdir %{destdir}/%{_datadir}/%{metaname}/htdocs/assets
 rmdir %{destdir}/%{_datadir}/%{metaname}/htdocs/protected/runtime
-for lang in  %{langs}; do
+for lang in  %{langs_api}; do
 	rm %{destdir}/%{_datadir}/%{metaname}/htdocs/protected/API/Lang/${lang}/messages.mo
+done
+for lang in  %{langs_web}; do
 	rm %{destdir}/%{_datadir}/%{metaname}/htdocs/protected/Web/Lang/${lang}/messages.mo
 done
 
@@ -158,55 +159,57 @@ cp -ra build/. %{buildroot}
 %find_lang %{metaname} --all-name
 
 %post common
-# these symbolic links indicates to Baculum's cache directory
-ln -s  %{_localstatedir}/cache/%{metaname} %{_datadir}/%{metaname}/htdocs/assets
-ln -s  %{_localstatedir}/cache/%{metaname} %{_datadir}/%{metaname}/htdocs/protected/runtime
-
-%post api
-# because framework does not use system locale dir, here are linked
-# locale files to framework location
-for lang in  %{langs}; do
-	ln -s  %{_datadir}/locale/${lang}/LC_MESSAGES/%{metaname}-api.mo \
-		%{_datadir}/%{metaname}/htdocs/protected/API/Lang/${lang}/messages.mo
-done
-
-%post web
-# because framework does not use system locale dir, here are linked
-# locale files to framework location
-for lang in  %{langs}; do
-	ln -s  %{_datadir}/locale/${lang}/LC_MESSAGES/%{metaname}-web.mo \
-		%{_datadir}/%{metaname}/htdocs/protected/Web/Lang/${lang}/messages.mo
-done
+if [ $1 -ge 1 ] ; then
+    # these symbolic links indicates to Baculum's cache directory
+    [ -e %{_datadir}/%{metaname}/htdocs/assets ] ||
+	ln -s  %{_localstatedir}/cache/%{metaname} %{_datadir}/%{metaname}/htdocs/assets
+    [ -e %{_datadir}/%{metaname}/htdocs/protected/runtime ] ||
+	ln -s %{_localstatedir}/cache/%{metaname} %{_datadir}/%{metaname}/htdocs/protected/runtime
+fi
 
 %post api-httpd
 %systemd_post httpd.service
-ln -s  %{_sysconfdir}/%{metaname}/Config-api-apache %{_datadir}/%{metaname}/htdocs/protected/API/Config
+if [ $1 -eq 1 ] ; then
+	ln -s  %{_sysconfdir}/%{metaname}/Config-api-apache %{_datadir}/%{metaname}/htdocs/protected/API/Config
+fi
 
 %post api-lighttpd
 %systemd_post baculum-api-lighttpd.service
-ln -s  %{_sysconfdir}/%{metaname}/Config-api-lighttpd %{_datadir}/%{metaname}/htdocs/protected/API/Config
+if [ $1 -eq 1 ] ; then
+	ln -s  %{_sysconfdir}/%{metaname}/Config-api-lighttpd %{_datadir}/%{metaname}/htdocs/protected/API/Config
+fi
 
 %post web-httpd
 %systemd_post httpd.service
-ln -s  %{_sysconfdir}/%{metaname}/Config-web-apache %{_datadir}/%{metaname}/htdocs/protected/Web/Config
+if [ $1 -eq 1 ] ; then
+	ln -s  %{_sysconfdir}/%{metaname}/Config-web-apache %{_datadir}/%{metaname}/htdocs/protected/Web/Config
+fi
 
 %post web-lighttpd
 %systemd_post baculum-web-lighttpd.service
-ln -s  %{_sysconfdir}/%{metaname}/Config-web-lighttpd %{_datadir}/%{metaname}/htdocs/protected/Web/Config
+if [ $1 -eq 1 ] ; then
+	ln -s  %{_sysconfdir}/%{metaname}/Config-web-lighttpd %{_datadir}/%{metaname}/htdocs/protected/Web/Config
+fi
 
 %preun common
-rm %{_datadir}/%{metaname}/htdocs/assets
-rm %{_datadir}/%{metaname}/htdocs/protected/runtime
+if [ $1 -lt 1 ] ; then
+	rm %{_datadir}/%{metaname}/htdocs/assets
+	rm %{_datadir}/%{metaname}/htdocs/protected/runtime
+fi
 
 %preun api
-for lang in  %{langs}; do
-	rm %{_datadir}/%{metaname}/htdocs/protected/API/Lang/${lang}/messages.mo
-done
+if [ $1 -lt 1 ] ; then
+	for lang in  %{langs_api}; do
+		rm %{_datadir}/%{metaname}/htdocs/protected/API/Lang/${lang}/messages.mo
+	done
+fi
 
 %preun web
-for lang in  %{langs}; do
-	rm %{_datadir}/%{metaname}/htdocs/protected/Web/Lang/${lang}/messages.mo
-done
+if [ $1 -lt 1 ] ; then
+	for lang in  %{langs_web}; do
+		rm %{_datadir}/%{metaname}/htdocs/protected/Web/Lang/${lang}/messages.mo
+	done
+fi
 
 %preun api-httpd
 %systemd_preun httpd.service
@@ -294,6 +297,24 @@ fi
 %postun web-lighttpd
 %systemd_postun_with_restart baculum-web-lighttpd.service
 
+%posttrans api
+# because framework does not use system locale dir, here are linked
+# locale files to framework location
+for lang in  %{langs_api}; do
+	[ -e %{_datadir}/%{metaname}/htdocs/protected/API/Lang/${lang}/messages.mo ] ||
+		ln -s  %{_datadir}/locale/${lang}/LC_MESSAGES/%{metaname}-api.mo \
+			%{_datadir}/%{metaname}/htdocs/protected/API/Lang/${lang}/messages.mo
+done
+
+%posttrans web
+# because framework does not use system locale dir, here are linked
+# locale files to framework location
+for lang in  %{langs_web}; do
+	[ -e %{_datadir}/%{metaname}/htdocs/protected/Web/Lang/${lang}/messages.mo ] ||
+		ln -s  %{_datadir}/locale/${lang}/LC_MESSAGES/%{metaname}-web.mo \
+			%{_datadir}/%{metaname}/htdocs/protected/Web/Lang/${lang}/messages.mo
+done
+
 %files -f %{metaname}.lang common
 %defattr(-,root,root)
 %{_datadir}/%{metaname}/htdocs/protected/Common
@@ -335,7 +356,7 @@ fi
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/%{metaname}-api.conf
 %attr(755,apache,apache) %{_localstatedir}/cache/%{metaname}/
 %attr(700,apache,apache) %{_sysconfdir}/%{metaname}/Config-api-apache/
-%attr(600,apache,apache) %{_sysconfdir}/%{metaname}/Config-api-apache/%{metaname}.users
+%config(noreplace) %attr(600,apache,apache) %{_sysconfdir}/%{metaname}/Config-api-apache/%{metaname}.users
 %attr(755,apache,apache) %{_datadir}/%{metaname}/htdocs/protected/API/Logs
 
 %files web-httpd
@@ -347,7 +368,7 @@ fi
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/%{metaname}-web.conf
 %attr(755,apache,apache) %{_localstatedir}/cache/%{metaname}/
 %attr(700,apache,apache) %{_sysconfdir}/%{metaname}/Config-web-apache/
-%attr(600,apache,apache) %{_sysconfdir}/%{metaname}/Config-web-apache/%{metaname}.users
+%config(noreplace) %attr(600,apache,apache) %{_sysconfdir}/%{metaname}/Config-web-apache/%{metaname}.users
 %attr(755,apache,apache) %{_datadir}/%{metaname}/htdocs/protected/Web/Logs
 
 %files api-lighttpd
@@ -355,7 +376,7 @@ fi
 # Lighttpd logs are stored in /var/log/lighttpd
 %attr(755,lighttpd,lighttpd) %{_localstatedir}/cache/%{metaname}/
 %attr(700,lighttpd,lighttpd) %{_sysconfdir}/%{metaname}/Config-api-lighttpd/
-%attr(600,lighttpd,lighttpd) %{_sysconfdir}/%{metaname}/Config-api-lighttpd/%{metaname}.users
+%config(noreplace) %attr(600,lighttpd,lighttpd) %{_sysconfdir}/%{metaname}/Config-api-lighttpd/%{metaname}.users
 %attr(755,lighttpd,lighttpd) %{_datadir}/%{metaname}/htdocs/protected/API/Logs
 %{_unitdir}/%{metaname}-api-lighttpd.service
 %config(noreplace) %{_sysconfdir}/%{metaname}/%{metaname}-api-lighttpd.conf
@@ -365,7 +386,7 @@ fi
 # Lighttpd logs are stored in /var/log/lighttpd
 %attr(755,lighttpd,lighttpd) %{_localstatedir}/cache/%{metaname}/
 %attr(700,lighttpd,lighttpd) %{_sysconfdir}/%{metaname}/Config-web-lighttpd/
-%attr(600,lighttpd,lighttpd) %{_sysconfdir}/%{metaname}/Config-web-lighttpd/%{metaname}.users
+%config(noreplace) %attr(600,lighttpd,lighttpd) %{_sysconfdir}/%{metaname}/Config-web-lighttpd/%{metaname}.users
 %attr(755,lighttpd,lighttpd) %{_datadir}/%{metaname}/htdocs/protected/Web/Logs
 %{_unitdir}/%{metaname}-web-lighttpd.service
 %config(noreplace) %{_sysconfdir}/%{metaname}/%{metaname}-web-lighttpd.conf
