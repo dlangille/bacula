@@ -16,6 +16,7 @@
 			Text="<%[ Configure job ]%>"
 			Visible="<%=!empty($_SESSION['dir'])%>"
 			OnClick="loadJobConfig"
+			CommandParameter="show"
 		/>
 		<com:TActiveLinkButton
 			CssClass="w3-bar-item w3-button tab_btn"
