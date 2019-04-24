@@ -273,6 +273,10 @@ class BaculaConfigDirectives extends DirectiveListTemplate {
 		for ($i = 0; $i < count($this->directive_list_types); $i++) {
 			$controls = $this->RepeaterDirectives->findControlsByType($this->directive_list_types[$i]);
 			for ($j = 0; $j < count($controls); $j++) {
+				$parent_name = $controls[$j]->getParentName();
+				if (!is_null($parent_name)) {
+					continue;
+				}
 				$directive_name = $controls[$j]->getDirectiveName();
 				$directive_value = $controls[$j]->getDirectiveValue();
 				if (is_null($directive_value)) {

@@ -91,6 +91,7 @@ class DirectiveRenderer extends DirectiveListTemplate implements IItemDataRender
 			$control->setParentName($data['parent_name']);
 			$control->setResourceNames($this->SourceTemplateControl->getResourceNames());
 			$this->getControls()->add($control);
+			$control->createDirective();
 		} elseif (in_array($type, $this->directive_list_types)) {
 			$control->setHost($data['host']);
 			$control->setComponentType($data['component_type']);
@@ -99,6 +100,7 @@ class DirectiveRenderer extends DirectiveListTemplate implements IItemDataRender
 			$control->setResourceName($data['resource_name']);
 			$control->setDirectiveName($data['directive_name']);
 			$control->setData($data['directive_value']);
+			$control->setParentName($data['parent_name']);
 			$control->setLoadValues($this->SourceTemplateControl->getLoadValues());
 			$control->setResourceNames($this->SourceTemplateControl->getResourceNames());
 			$control->setShow($data['show']);
