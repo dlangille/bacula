@@ -1348,13 +1348,13 @@
 						"Required": false,
 						"ValueType": "str",
 						"DefaultValue": 0,
-						"FieldType": "TextBox"
+						"FieldType": "MultiTextBox"
 					},
 					"DriveType": {
 						"Required": false,
 						"ValueType": "str",
 						"DefaultValue": 0,
-						"FieldType": "TextBox"
+						"FieldType": "MultiTextBox"
 					},
 					"HfsPlusSupport": {
 						"Required": false,
