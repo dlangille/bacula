@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2019-04-23 08:11-0300\n"
+"PO-Revision-Date: 2019-04-23 16:40-0300\n"
 "Project-Id-Version: \n"
 "POT-Creation-Date: \n"
 "Last-Translator: Wanderlei Hüttel <wanderlei.huttel@gmail.com>\n"
@@ -1983,23 +1983,22 @@ msgid "Schedule"
 msgstr "Agenda"
 
 msgid "To browse Windows host please type in text field below drive letter as path, for example: C:/"
-msgstr "Para navegar em hosts Windows, digite o campo de texto abaixo da letra da unidade como caminho, por exemplo: C: /"
+msgstr "Para navegar em hosts Windows, digite o campo de texto abaixo da letra da unidade como caminho, por exemplo: C:/, D:/, etc"
 
 msgid "Add single file/directory"
-msgstr "Add single file/directory"
+msgstr "Um arquivo/diretório"
 
 msgid "Add files by file browser"
-msgstr "Add files by file browser"
+msgstr "Vários arquivos/diretórios"
 
 msgid "Add options block"
-msgstr "Add options block"
+msgstr "Opções"
 
 msgid "Add include block"
-msgstr "Add include block"
+msgstr "Incluir Arquivos"
 
 msgid "Add exclude block"
-msgstr "Add exclude block"
+msgstr "Excluir Arquivos"
 
 msgid "Add file/directory"
-msgstr "Add file/directory"
-
+msgstr "Arquivo/diretório"
