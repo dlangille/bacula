@@ -158,14 +158,14 @@ class DirectiveMessages extends DirectiveListTemplate {
 
 	public function getDirectiveData() {
 		$values = array();
-		$controls = $this->RepeaterMessages->getControls();
-		for ($i = 0; $i < $controls->count(); $i++) {
+		$controls = $this->RepeaterMessages->getItems();
+		foreach ($controls as $control) {
 			$directive_values = array();
-			$where_control = $controls->itemAt($i)->findControlsByType('DirectiveTextBox');
+			$where_control = $control->findControlsByType('DirectiveTextBox');
 			if (count($where_control) === 1 && $where_control[0]->getShow() === true) {
 				$directive_values['Where'] = array($where_control[0]->getDirectiveValue());
 			}
-			$types_control = $controls->itemAt($i)->Types;
+			$types_control = $control->Types;
 			$directive_values['MsgTypes'] = $types_control->getDirectiveValues();
 			$directive_values['Type'] = $types_control->getDirectiveName();
 			array_push($values, $directive_values);
