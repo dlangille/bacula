@@ -559,6 +559,7 @@ static bool regex_find_jobids(JCR *jcr, idpkt *ids, const char *query1,
             Dmsg1(dbglevel, "Remove item %s\n", last_item->item);
             free(last_item->item);
             item_chain->remove(last_item);
+            free(last_item);
          }
          Dmsg1(dbglevel, "get name Item=%s\n", item->item);
          rc = regexec(&preg, item->item, nmatch, pmatch,  0);
@@ -572,6 +573,7 @@ static bool regex_find_jobids(JCR *jcr, idpkt *ids, const char *query1,
          Dmsg1(dbglevel, "Remove item %s\n", last_item->item);
          free(last_item->item);
          item_chain->remove(last_item);
+         free(last_item);
       }
       regfree(&preg);
    }
