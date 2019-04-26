@@ -176,6 +176,8 @@ class JobHistoryView extends BaculumWebPage {
 		if ($this->getJobLogOrder() === self::SORT_DESC) {
 			$joblog = array_reverse($joblog);
 		}
+		$joblog = $this->getModule('log_parser')->parse($joblog);
+
 		$this->JobLog->Text = implode(PHP_EOL, $joblog);
 	}
 

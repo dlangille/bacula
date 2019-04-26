@@ -40,9 +40,21 @@ class PoolView extends BaculumWebPage {
 		if ($this->IsPostBack || $this->IsCallBack) {
 			return;
 		}
+		$poolid = 0;
 		if ($this->Request->contains('poolid')) {
-			$this->setPoolId($this->Request['poolid']);
+			$poolid = $this->Request['poolid'];
+		} elseif ($this->Request->contains('pool')) {
+			$result = $this->getModule('api')->get(array('pools'));
+			if ($result->error === 0) {
+				for ($i = 0; $i < count($result->output); $i++) {
+					if ($this->Request['pool'] === $result->output[$i]->name) {
+						$poolid = $result->output[$i]->poolid;
+						break;
+					}
+				}
+			}
 		}
+		$this->setPoolId($poolid);
 		$this->setPool();
 		$this->setVolumesinPool();
 		$poolshow = $this->getModule('api')->get(

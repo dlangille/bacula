@@ -37,6 +37,16 @@ class ClientView extends BaculumWebPage {
 		$clientid = 0;
 		if ($this->Request->contains('clientid')) {
 			$clientid = $this->Request['clientid'];
+		} elseif ($this->Request->contains('client')) {
+			$result = $this->getModule('api')->get(array('clients'));
+			if ($result->error === 0) {
+				for ($i = 0; $i < count($result->output); $i++) {
+					if ($this->Request['client'] === $result->output[$i]->name) {
+						$clientid = $result->output[$i]->clientid;
+						break;
+					}
+				}
+			}
 		}
 		$this->setClientId($clientid);
 		$clientshow = $this->getModule('api')->get(

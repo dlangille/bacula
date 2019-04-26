@@ -46,6 +46,16 @@ class StorageView extends BaculumWebPage {
 		$storageid = 0;
 		if ($this->Request->contains('storageid')) {
 			$storageid = intval($this->Request['storageid']);
+		} elseif ($this->Request->contains('storage')) {
+			$result = $this->getModule('api')->get(array('storages'));
+			if ($result->error === 0) {
+				for ($i = 0; $i < count($result->output); $i++) {
+					if ($this->Request['storage'] === $result->output[$i]->name) {
+						$storageid = $result->output[$i]->storageid;
+						break;
+					}
+				}
+			}
 		}
 		$storage = $this->Application->getModule('api')->get(
 			array('storages', $storageid),

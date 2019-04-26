@@ -7,13 +7,16 @@
 	<url ServiceParameter="JobView" pattern="web/job/{job}/" parameters.job="[a-zA-Z0-9:.\-_ ]+" />
 	<url ServiceParameter="StorageList" pattern="web/storage/" />
 	<url ServiceParameter="StorageView" pattern="web/storage/{storageid}/" parameters.storageid="\d+" />
+	<url ServiceParameter="StorageView" pattern="web/storage/{storage}/" parameters.storage="[a-zA-Z0-9:.\-_ ]+" />
 	<url ServiceParameter="DeviceView" pattern="web/device/{storageid}/{device}/" parameters.storageid="\d+" parameters.device="[a-zA-Z0-9:.\-_ ]+" />
 	<url ServiceParameter="PoolList" pattern="web/pool/" />
 	<url ServiceParameter="PoolView" pattern="web/pool/{poolid}/" parameters.poolid="\d+" />
+	<url ServiceParameter="PoolView" pattern="web/pool/{pool}/" parameters.pool="[a-zA-Z0-9:.\-_ ]+" />
 	<url ServiceParameter="VolumeList" pattern="web/volume/" />
 	<url ServiceParameter="VolumeView" pattern="web/volume/{mediaid}/" parameters.mediaid="\d+" />
 	<url ServiceParameter="ClientList" pattern="web/client/" />
 	<url ServiceParameter="ClientView" pattern="web/client/{clientid}/" parameters.clientid="\d+" />
+	<url ServiceParameter="ClientView" pattern="web/client/{client}/" parameters.client="[a-zA-Z0-9:.\-_ ]+" />
 	<url ServiceParameter="FileSetList" pattern="web/fileset/" />
 	<url ServiceParameter="FileSetView" pattern="web/fileset/{fileset}/" parameters.fileset="[a-zA-Z0-9:.\-_ ]+" />
 	<url ServiceParameter="ScheduleList" pattern="web/schedule/" />
