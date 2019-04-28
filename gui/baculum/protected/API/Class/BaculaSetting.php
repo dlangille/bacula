@@ -167,7 +167,7 @@ class BaculaSetting extends APIModule {
 		$result = $json_tools->execCommand($component_type, $params);
 		if ($result['exitcode'] === 0 && is_array($result['output'])) {
 			$config_orig = $result['output'];
-			if (!is_null($resource_type)) {
+			if (!is_null($resource_type) && !is_null($resource_name)) {
 				// Set single resource
 				$config_new = array($resource_type => $config);
 			} else {
@@ -200,7 +200,8 @@ class BaculaSetting extends APIModule {
 	}
 
 	private function updateConfig(array $config_orig, array $config_new) {
-		$config = array();
+		$config = $config_orig;
+		$updated_res = array();
 		for ($i = 0; $i < count($config_new); $i++) {
 			$resource_new = $config_new[$i];
 			$found = false;
@@ -208,7 +209,8 @@ class BaculaSetting extends APIModule {
 				$resource_orig = $config_orig[$j];
 				if ($this->compareResources(array($resource_orig, $resource_new)) === true) {
 					// Resource type and name are the same. Update directives.
-					$config[] = $this->updateResource($resource_orig, $resource_new);
+					$config[$j] = $this->updateResource($resource_orig, $resource_new);
+					$updated_res[] = $config[$j];
 					$found = true;
 					break;
 				}
@@ -217,6 +219,22 @@ class BaculaSetting extends APIModule {
 				// Newly added resource
 				$config[] = $resource_new;
 			}
+		}
+
+		/**
+		 * Now there is needed to update all resources to get
+		 * formatted directive values in all config directives.
+		 */
+		for ($i = 0; $i < count($config); $i++) {
+			$resource = $config[$i];
+			for ($j = 0; $j < count($updated_res); $j++) {
+				if ($this->compareResources(array($resource, $updated_res[$j])) === true) {
+					// skip already formatted resources
+					continue 2;
+				}
+			}
+			// Rewrite not modified resource
+			$config[$i] = $this->updateResource($resource, $resource);
 		}
 		return $config;
 	}
