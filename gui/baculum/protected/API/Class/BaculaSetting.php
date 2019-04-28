@@ -187,12 +187,16 @@ class BaculaSetting extends APIModule {
 		if (!is_null($resource_type) && !is_null($resource_name)) {
 			// Update single resource in config
 			$config = $this->updateConfigResource($config_orig, $config_new, $resource_type, $resource_name);
-		} elseif (count($config_orig) > 0) {
+		} elseif (count($config_orig) > 0 && !is_null($resource_type)) {
 			// Update whole config
 			$config = $this->updateConfig($config_orig, $config_new);
 		} elseif (count($config_new) > 0) {
 			// Add new config (create component config)
 			$config = $config_new;
+			for ($i = 0; $i < count($config); $i++) {
+				// update resource for formatting values
+				$config[$i] = $this->updateResource($config[$i], $config[$i]);
+			}
 		}
 
 		// Save config to file
