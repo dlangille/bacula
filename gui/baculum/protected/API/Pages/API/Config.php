@@ -45,6 +45,11 @@ class Config extends BaculumAPIServer {
 		} else {
 			$config = array();
 		}
+		if (is_null($config)) {
+			$this->output = BaculaConfigError::MSG_ERROR_CONFIG_VALIDATION_ERROR;
+			$this->error = BaculaConfigError::ERROR_CONFIG_VALIDATION_ERROR;
+			return;
+		}
 		$component_type = $this->Request->contains('component_type') ? $this->Request['component_type'] : null;
 		$resource_type = $this->Request->contains('resource_type') ? $this->Request['resource_type'] : null;
 		$resource_name = $this->Request->contains('resource_name') ? $this->Request['resource_name'] : null;
