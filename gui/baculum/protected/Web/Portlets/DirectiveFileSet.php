@@ -56,6 +56,7 @@ class DirectiveFileSet extends DirectiveListTemplate {
 		$directives = $this->getData();
 		$includes = array();
 		$file = array();
+		$plugin = array();
 		$exclude = array();
 		$options = array();
 		if (!is_array($directives) || $directive_name === 'Exclude') {
@@ -74,6 +75,10 @@ class DirectiveFileSet extends DirectiveListTemplate {
 								$this->setFile($file, $name, $values);
 								break;
 							}
+							case 'Plugin': {
+								$this->setPlugin($plugin, $name, $values);
+								break;
+							}
 							case 'Options': {
 								$this->setOption($options, $name, $values);
 								break;
@@ -82,9 +87,10 @@ class DirectiveFileSet extends DirectiveListTemplate {
 					}
 					$includes[] = array(
 						'file' => $file,
+						'plugin' => $plugin,
 						'options' => $options
 					);
-					$file = $options = array();
+					$file = $plugin = $options = array();
 				}
 			} elseif ($index === 'Exclude') {
 				if (!key_exists('File', $subres)) {
@@ -115,6 +121,41 @@ class DirectiveFileSet extends DirectiveListTemplate {
 
 		for ($i = 0; $i < count($config); $i++) {
 			$files[] = array(
+				'host' => $host,
+				'component_type' => $component_type,
+				'component_name' => $component_name,
+				'resource_type' => $resource_type,
+				'resource_name' => $resource_name,
+				'directive_name' => $name,
+				'directive_value' => $config[$i],
+				'parent_name' => $name,
+				'field_type' => $field_type,
+				'default_value' => $default_value,
+				'required' => $required,
+				'data' => null,
+				'resource' => null,
+				'in_config' => true,
+				'label' => $directive_name,
+				'show' => true,
+				'parent_name' => $name,
+				'group_name' => $i
+			);
+		}
+	}
+
+	private function setPlugin(&$plugins, $name, $config) {
+		$host = $this->getHost();
+		$component_type = $this->getComponentType();
+		$component_name = $this->getComponentName();
+		$resource_type = $this->getResourceType();
+		$resource_name = $this->getResourceName();
+		$directive_name = 'Plugin';
+		$field_type = 'TextBox';
+		$default_value = '';
+		$required = false;
+
+		for ($i = 0; $i < count($config); $i++) {
+			$plugins[] = array(
 				'host' => $host,
 				'component_type' => $component_type,
 				'component_name' => $component_name,
@@ -281,6 +322,22 @@ class DirectiveFileSet extends DirectiveListTemplate {
 					}
 					$directive_values['Include'][$counter][$directive_name][] = $directive_value;
 				}
+				$controls = $value->RepeaterFileSetPlugin->findControlsByType($this->directive_types[$i]);
+				for ($j = 0; $j < count($controls); $j++) {
+					$directive_name = $controls[$j]->getDirectiveName();
+					$directive_value = $controls[$j]->getDirectiveValue();
+					if (empty($directive_value)) {
+						// Include plugin directive removed
+						continue;
+					}
+					if (!key_exists($counter, $directive_values['Include'])) {
+						$directive_values['Include'][$counter] = array();
+					}
+					if (!key_exists($directive_name, $directive_values['Include'][$counter])) {
+						$directive_values['Include'][$counter][$directive_name] = array();
+					}
+					$directive_values['Include'][$counter][$directive_name][] = $directive_value;
+				}
 			}
 			for ($i = 0; $i < count($this->directive_list_types); $i++) {
 				$controls = $value->RepeaterFileSetOptions->findControlsByType($this->directive_list_types[$i]);
@@ -330,6 +387,8 @@ class DirectiveFileSet extends DirectiveListTemplate {
 		$param->Item->RepeaterFileSetOptions->dataBind();
 		$param->Item->RepeaterFileSetInclude->DataSource = $param->Item->Data['file'];
 		$param->Item->RepeaterFileSetInclude->dataBind();
+		$param->Item->RepeaterFileSetPlugin->DataSource = $param->Item->Data['plugin'];
+		$param->Item->RepeaterFileSetPlugin->dataBind();
 		$param->Item->FileSetFileOptMenu->setItemIndex($param->Item->getItemIndex());
 	}
 
@@ -368,6 +427,18 @@ class DirectiveFileSet extends DirectiveListTemplate {
 			$file_index = count($data['Include'][$inc_index]['File']);
 		}
 		$data['Include'][$inc_index]['File'][$file_index] = '';
+		$this->setData($data);
+		$this->loadConfig();
+	}
+
+	public function newIncludePlugin($sender, $param) {
+		$data = $this->getDirectiveValue();
+		$inc_index = $sender->Parent->getItemIndex();
+		$plugin_index = 0;
+		if (key_exists($inc_index, $data['Include']) && key_exists('Plugin', $data['Include'][$inc_index])) {
+			$plugin_index = count($data['Include'][$inc_index]['Plugin']);
+		}
+		$data['Include'][$inc_index]['Plugin'][$plugin_index] = '';
 		$this->setData($data);
 		$this->loadConfig();
 	}

@@ -2002,3 +2002,9 @@ msgstr "Excluir Arquivos"
 
 msgid "Add file/directory"
 msgstr "Arquivo/diretório"
+
+msgid "Add plugin"
+msgstr "Add plugin"
+
+msgid "Plugins"
+msgstr "Plugins"

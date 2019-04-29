@@ -2089,3 +2089,8 @@ msgstr "Add exclude block"
 msgid "Add file/directory"
 msgstr "Add file/directory"
 
+msgid "Add plugin"
+msgstr "Add plugin"
+
+msgid "Plugins"
+msgstr "Plugins"

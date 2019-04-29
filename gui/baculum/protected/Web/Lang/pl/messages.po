@@ -1995,3 +1995,8 @@ msgstr "Dodaj blok listy wykluczeń"
 msgid "Add file/directory"
 msgstr "Dodaj plik/katalog"
 
+msgid "Add plugin"
+msgstr "Dodaj wtyczkę"
+
+msgid "Plugins"
+msgstr "Wtyczki"

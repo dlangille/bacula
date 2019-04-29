@@ -402,7 +402,7 @@ class Miscellaneous extends TModule {
 					'name' => $match['name'],
 					'type' => 'dir'
 				);
-			} elseif(preg_match('/^(?P<pathid>\d+)\t(?P<filenameid>\d+)\t(?P<fileid>\d+)\t(?P<jobid>\d+)\t(?P<lstat>[a-zA-z0-9\+\/\ ]+)\t(?P<name>[^\/]+)$/', $list[$i], $match) == 1) {
+			} elseif(preg_match('/^(?P<pathid>\d+)\t(?P<filenameid>\d+)\t(?P<fileid>\d+)\t(?P<jobid>\d+)\t(?P<lstat>[a-zA-z0-9\+\-\/\ ]+)\t(?P<name>[^\/]+)$/', $list[$i], $match) == 1) {
 				if($match['name'] == '.') {
 					continue;
 				}

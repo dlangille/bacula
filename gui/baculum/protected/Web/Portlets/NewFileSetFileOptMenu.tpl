@@ -28,5 +28,15 @@
 			<i class='fa fa-plus'></i> &nbsp;<%[ Add options block ]%>
 		</com:TActiveLinkButton>
 		</li>
+		<li><com:TActiveLinkButton
+			ID="PluginsItem"
+			OnCommand="Parent.SourceTemplateControl.newIncludePlugin"
+			CommandParameter="save"
+			ClientSide.OnComplete="var el1 = $('#<%=$this->PluginsItem->ClientID%>').parents('div').find('div.include_plugin')[<%=$this->Parent->ItemIndex%>]; var el2 = $(el1).find('div'); BaculaConfig.scroll_to_element(el2[el2.length-1], -80); $(el2[el2.length-1]).find('input')[0].focus();"
+			Attributes.onclick="$(this).closest('div.config_new_fileset').hide();"
+			>
+			<i class='fa fa-plus'></i> &nbsp;<%[ Add plugin ]%>
+		</com:TActiveLinkButton>
+		</li>
 	</ul>
 </div>

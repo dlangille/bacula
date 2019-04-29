@@ -27,6 +27,15 @@
 				</div>
 			</prop:FooterTemplate>
 		</com:TActiveRepeater>
+		<com:TActiveRepeater ID="RepeaterFileSetPlugin"  ItemRenderer="Application.Web.Portlets.DirectiveRenderer" CssClass="incexc_item">
+			<prop:HeaderTemplate>
+				<div class="w3-card-4 w3-padding w3-margin-bottom directive include_plugin">
+					<h3><%[ Plugins ]%></h3>
+			</prop:HeaderTemplate>
+			<prop:FooterTemplate>
+				</div>
+			</prop:FooterTemplate>
+		</com:TActiveRepeater>
 		</div>
 	</prop:ItemTemplate>
 </com:TActiveRepeater>
