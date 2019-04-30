@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2019-04-23 16:40-0300\n"
+"PO-Revision-Date: 2019-04-30 07:45-0300\n"
 "Project-Id-Version: \n"
 "POT-Creation-Date: \n"
 "Last-Translator: Wanderlei Hüttel <wanderlei.huttel@gmail.com>\n"
@@ -2004,7 +2004,7 @@ msgid "Add file/directory"
 msgstr "Arquivo/diretório"
 
 msgid "Add plugin"
-msgstr "Add plugin"
+msgstr "Plugin"
 
 msgid "Plugins"
 msgstr "Plugins"
