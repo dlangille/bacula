@@ -618,7 +618,7 @@ void lmgr_unregister_thread(lmgr_thread_t *item)
       for(int i=0; i<=item->current; i++) {
          lmgr_lock_t *lock = &item->lock_list[i];
          if (lock->state == LMGR_LOCK_GRANTED) {
-            ASSERT2(0, "Thread exits with granted locks");
+            ASSERT2(0, "Thread is exiting holding locks!!!!");
          }
       }
 #endif
