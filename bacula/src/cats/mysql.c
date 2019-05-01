@@ -1,7 +1,7 @@
 /* 
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2017 Kern Sibbald
+   Copyright (C) 2000-2018 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -198,7 +198,7 @@ bool BDB_MYSQL::bdb_open_database(JCR *jcr)
    BDB_MYSQL *mdb = this; 
    bool retval = false; 
    int errstat; 
-   my_bool reconnect = 1;
+   bool reconnect = true;
  
    P(mutex); 
    if (mdb->m_connected) { 
