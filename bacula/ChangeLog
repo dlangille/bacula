@@ -3,7 +3,12 @@
 Release 9.4.3
 
 
+02May19
+ - baculum: Add status schedule page
+ - baculum: Add status schedule API endpoint
+
 01May19
+ - baculum: Fix schedule directives setting
  - Change mysql my_bool to bool as it was removed from mysql
 
 30Apr19
