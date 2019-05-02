@@ -90,7 +90,7 @@
 				<th><%[ Type ]%></th>
 				<th><%[ Priority ]%></th>
 				<th><%[ Scheduled ]%></th>
-				<%=empty($this->getJob()) ? '<th>' . Prado::localize('Job name') . '</th>': ''%>
+				<%=empty($this->Job) ? '<th>' . Prado::localize('Job name') . '</th>': ''%>
 				<th><%[ Client ]%></th>
 				<th><%[ FileSet ]%></th>
 				<th><%[ Schedule ]%></th>
@@ -154,7 +154,7 @@ var oJobScheduleList = {
 						return Units.format_date(data);
 					}
 				},
-				<%=empty($this->getJob()) ? '{data: "name"},' : ''%>
+				<%=empty($this->Job) ? '{data: "name"},' : ''%>
 				{data: 'client'},
 				{data: 'fileset'},
 				{data: 'schedule'}
