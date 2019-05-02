@@ -1,8 +1,133 @@
-              Changelog on version 9.4.2
+              Changelog on version 9.4.3
 
+Release 9.4.3
+
+
+01May19
+ - Change mysql my_bool to bool as it was removed from mysql
+
+30Apr19
+ - baculum: Update Portuguese translation file
+ - Improve assert message
+
+29Apr19
+ - baculum: Fix #2466 add plugin directive support in fileset resource
+
+28Apr19
+ - baculum: Fix updating whole Bacula config at once
+ - baculum: Fix showing validation error if new config is incorrect
+ - baculum: Fix setting multiple config resources at once
+
+27Apr19
+ - examples: move backup-to-cdwriter.txt to move-backup-to-usb.txt
+
+26Apr19
+ - fix memory leak in DIR for copy-job
+ - baculum: Add links to resources in job log output
+
+24Apr19
+ - baculum: Update example web server config files and spec file
+ - baculum: Fix list type directives on configure hosts page
+ - baculum: Fix showing messages resource configuration
+ - baculum: Add parent node property to directive list types
+ - baculum: Add capability to define multiple drivetype and fstype directives in 
+  fileset resource
+ - baculum: Fix showing runscript subresource on job pages
+ - baculum: Update new texts in Portuguese translation file
+
+23Apr19
+ - baculum: Add missing texts to translation files reported by Wanderlei Huttel
+ - baculum: Update Portuguese translations
+ - baculum: Fix showing schedule resource configuration on job view and job 
+  history view pages
+ - baculum: Fix returning one line output from bconsole
+ - baculum: Fix restore wizard error when no fileset available for normal user 
+  with limited access
+ - baculum: Add capability to use many ACL Console directives in one config 
+  resource
+
+22Apr19
+ - baculum: Add client ls command to openapi file
+ - baculum: Add text box list control to support directives that can be defined 
+  multiple times in one resource
+
+16Apr19
+ - baculum: Add cancel button to last step new job wizard
+ - baculum: Change PoolType field from text box into combo box
+
+15Apr19
+ - baculum: Fix adding new schedule run directives
+
+14Apr19
+ - baculum: Add support to multiple schedule run directives
+
+13Apr19
+ - baculum: Fix in API part saving job runscript config if RunsWhen=Always
+ - baculum: Fix adding paths to empty include block
+ - baculum: Fix saving job runscript config if RunsWhen=Always
+ - baculum: New create backup job wizard
+ - baculum: Add API endpoint to list files/dirs on client
+
+03Apr19
+ - Skip empty lines when generating the FileSet from a command
+
+03Mar19
+ - Fix creation of bad JobMedia records in Incomplete Job
+
+02Mar19
+ - Add messages for Incomplete Jobs
+ - Fix misplaced cancel check reported by Alain
+
+01Mar19
+ - Change round() to bround() to avoid library definition conflict
+
+13Feb19
+ - rpms: Fix bacula-cloud spec file
+
+12Feb19
+ - rpms: Add bacula-cloud spec file
+ - rpms: Add missing isworm script
+ - baculum: Fix renaming resources
+
+10Feb19
+ - Use more appropriate computation for VolIndex when creating restore .bsr
+
+05Feb19
+ - Fix Daemon message "Message repeated X times" count
+ - Fix Carsten's names
+ - Make diff.pl adapt to different install locations
+
+31Jan19
+ - Fix #4598 Display JobIds used in the restore job log
+
+14Dec18
+ - Add smartalloc function to print the owner of a buffer
+ - Avoid to use the same variable name for two different things in the cmd_parser 
+  class
+
+13Dec18
+ - Fix #4433 about 'UPDATE File SET MD5='...' WHERE FileId=0' error when using 
+  SpoolAttributes=no
+
+30Nov18
+ - Fix MaxVolumeBytes accounting after a mount request
+
+29Nov18
+ - Fix verify volume jobs with sparse files
+
+23Nov18
+ - Fix small memory leak with Console runscripts
+
+22Nov18
+ - Add 'prune jobs/files all' command
+ - fix #4383 Sometime SD hangs when TLS and DEDUP are used together
+
+Bugs fixed/closed since last release:
+2466 4383 4433 4598
+
+
+============================================================
 Release 9.4.2
-
-
 
 04Feb19
  - Update Windows .def files

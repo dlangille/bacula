@@ -1,6 +1,96 @@
 
-               Release Notes for Bacula 9.4.2
+               Release Notes for Bacula 9.4.3
 
+Release 9.4.3
+This is a bug fix release for version 9.4.2.  It includes a number of bug
+fixes and patches. 
+
+Note: there have been significant additions and changes to Baculum
+ If you want a web gui please check it ou.
+
+If you are trying to build the S3 drivers, please remember to use the
+community supplied (from Bacula Enterprise) version of libs3.so found at:
+
+https://www.bacula.org/downloads/libs3-20181010.tar.gz
+
+As usual the binaries that correspond to this release will follow in
+a week or two.
+
+If there are no additional major bugs, this will be the last of the 9.4.x
+releases.  The next release will have a number of new features, and will
+require a major database upgrade (don't worry it will be easy -- just
+run update_bacula_tables
+
+01May19
+ - Change mysql my_bool to bool as it was removed from mysql
+ - Improve assert message
+ - examples: move backup-to-cdwriter.txt to move-backup-to-usb.txt - fix memory leak in DIR for copy-job
+ - Skip empty lines when generating the FileSet from a command
+ - Fix creation of bad JobMedia records in Incomplete Job
+ - Add messages for Incomplete Jobs
+ - Fix misplaced cancel check reported by Alain
+ - Change round() to bround() to avoid library definition conflict
+ - rpms: Fix bacula-cloud spec file
+ - rpms: Add bacula-cloud spec file
+ - rpms: Add missing isworm script
+ - Use more appropriate computation for VolIndex when creating restore .bsr
+ - Fix Daemon message "Message repeated X times" count
+ - Fix Carsten's names
+ - Make diff.pl adapt to different install locations
+ - Fix #4598 Display JobIds used in the restore job log
+ - Add smartalloc function to print the owner of a buffer
+ - Avoid to use the same variable name for two different things in the cmd_parser 
+   class
+ - Fix #4433 about 'UPDATE File SET MD5='...' WHERE FileId=0' error when using 
+   SpoolAttributes=no
+ - Fix MaxVolumeBytes accounting after a mount request
+ - Fix verify volume jobs with sparse files
+ - Fix small memory leak with Console runscripts
+ - Add 'prune jobs/files all' command
+ - fix #4383 Sometime SD hangs when TLS and DEDUP are used together
+
+ - baculum: Update Portuguese translation file
+ - baculum: Fix #2466 add plugin directive support in fileset resource
+ - baculum: Fix updating whole Bacula config at once
+ - baculum: Fix showing validation error if new config is incorrect
+ - baculum: Fix setting multiple config resources at once
+ - baculum: Add links to resources in job log output
+ - baculum: Update example web server config files and spec file
+ - baculum: Fix list type directives on configure hosts page
+ - baculum: Fix showing messages resource configuration
+ - baculum: Add parent node property to directive list types
+ - baculum: Add capability to define multiple drivetype and fstype directives in 
+   fileset resource
+ - baculum: Fix showing runscript subresource on job pages
+ - baculum: Update new texts in Portuguese translation file
+ - baculum: Add missing texts to translation files reported by Wanderlei Huttel
+ - baculum: Update Portuguese translations
+ - baculum: Fix showing schedule resource configuration on job view and job 
+   history view pages
+ - baculum: Fix returning one line output from bconsole
+ - baculum: Fix restore wizard error when no fileset available for normal user 
+   with limited access
+ - baculum: Add capability to use many ACL Console directives in one config 
+  resource
+ - baculum: Add client ls command to openapi file
+ - baculum: Add text box list control to support directives that can be defined 
+   multiple times in one resource
+ - baculum: Add cancel button to last step new job wizard
+ - baculum: Change PoolType field from text box into combo box
+ - baculum: Fix adding new schedule run directives
+ - baculum: Add support to multiple schedule run directives
+ - baculum: Fix in API part saving job runscript config if RunsWhen=Always
+ - baculum: Fix adding paths to empty include block
+ - baculum: Fix saving job runscript config if RunsWhen=Always
+ - baculum: New create backup job wizard
+ - baculum: Add API endpoint to list files/dirs on client
+ - baculum: Fix renaming resources
+
+Bugs fixed/closed since last release:
+2466 4383 4433 4598
+
+
+=======================================================================
 Release 9.4.2
 
 This is a bug fix release for version 9.4.1.  It includes a number of bug
