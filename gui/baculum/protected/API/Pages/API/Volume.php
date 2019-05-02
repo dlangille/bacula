@@ -47,22 +47,22 @@ class Volume extends BaculumAPIServer {
 					$cmd[] = 'pool="' . $pool->name . '"';
 				}
 			}
-			if(property_exists($params, 'volretention') && $misc->isValidNumber($params->volretention)) {
+			if(property_exists($params, 'volretention') && $misc->isValidInteger($params->volretention)) {
 				$cmd[] = 'volretention="' . $params->volretention . '"';
 			}
-			if(property_exists($params, 'voluseduration') && $misc->isValidNumber($params->voluseduration)) {
+			if(property_exists($params, 'voluseduration') && $misc->isValidInteger($params->voluseduration)) {
 				$cmd[] = 'voluseduration="' . $params->voluseduration . '"';
 			}
-			if(property_exists($params, 'maxvoljobs') && $misc->isValidNumber($params->maxvoljobs)) {
+			if(property_exists($params, 'maxvoljobs') && $misc->isValidInteger($params->maxvoljobs)) {
 				$cmd[] = 'maxvoljobs="' . $params->maxvoljobs . '"';
 			}
-			if(property_exists($params, 'maxvolfiles') && $misc->isValidNumber($params->maxvolfiles)) {
+			if(property_exists($params, 'maxvolfiles') && $misc->isValidInteger($params->maxvolfiles)) {
 				$cmd[] = 'maxvolfiles="' . $params->maxvolfiles . '"';
 			}
-			if(property_exists($params, 'maxvolbytes') && $misc->isValidNumber($params->maxvolbytes)) {
+			if(property_exists($params, 'maxvolbytes') && $misc->isValidInteger($params->maxvolbytes)) {
 				$cmd[] = 'maxvolbytes="' . $params->maxvolbytes . '"';
 			}
-			if(property_exists($params, 'slot') && $misc->isValidNumber($params->slot)) {
+			if(property_exists($params, 'slot') && $misc->isValidInteger($params->slot)) {
 				$cmd[] = 'slot="' . $params->slot . '"';
 			}
 			if(property_exists($params, 'recycle') && $misc->isValidBoolean($params->recycle)) {

@@ -199,7 +199,7 @@ class Miscellaneous extends TModule {
 		return (preg_match('/^\w+$/', $state) === 1);
 	}
 
-	public function isValidNumber($num) {
+	public function isValidInteger($num) {
 		return (preg_match('/^\d+$/', $num) === 1);
 	}
 
@@ -233,6 +233,10 @@ class Miscellaneous extends TModule {
 
 	public function isValidBvfsPath($path) {
 		return (preg_match('/^b2\d+$/', $path) === 1);
+	}
+
+	public function isValidBDateAndTime($time) {
+		return (preg_match('/^\d{4}-\d{2}-\d{2} \d{1,2}:\d{2}:\d{2}$/', $time) === 1);
 	}
 
 	/**

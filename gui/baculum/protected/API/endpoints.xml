@@ -79,6 +79,7 @@
 	<url ServiceParameter="API.FileSetResNames" pattern="api/v1/filesets/resnames/" />
 	<!-- schedule endpoints -->
 	<url ServiceParameter="API.Schedules" pattern="api/v1/schedules/resnames/" />
+	<url ServiceParameter="API.ScheduleStatus" pattern="api/v1/schedules/status/" />
 	<!-- Bacula config module endpoints -->
 	<url ServiceParameter="API.Config" pattern="api/v1/config/" />
 	<url ServiceParameter="API.Config" pattern="api/v1/config/{component_type}/" parameters.component_type="[a-z]+" />
