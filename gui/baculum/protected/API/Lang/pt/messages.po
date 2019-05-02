@@ -176,9 +176,6 @@ msgstr "Testar configuração"
 msgid "General configuration"
 msgstr "Configuração Geral"
 
-msgid "Directory path for new config files:"
-msgstr "Diretório para salvar as configurações:"
-
 msgid "Step 4 - share the Bacula configuration interface"
 msgstr "Passo 4 - Compartilhar a interface de configuração do Bacula"
 
@@ -433,3 +430,9 @@ msgstr "Edit OAuth2 client parameters"
 
 msgid "Select:"
 msgstr "Select:"
+
+msgid "Baculum working directory for Bacula config:"
+msgstr "Baculum working directory for Bacula config:"
+
+msgid "In this directory Baculum API saves temporarily Bacula configuration files (mainly for validation purposes) just before they are written as real Bacula configuration files."
+msgstr "In this directory Baculum API saves temporarily Bacula configuration files (mainly for validation purposes) just before they are written as real Bacula configuration files."

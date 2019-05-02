@@ -304,11 +304,11 @@
 					<fieldset class="config_field">
 						<legend><%[ General configuration ]%></legend>
 						<div class="config_lines">
-							<div class="line left">
-								<div class="text"><com:TLabel ForControl="BConfigDir" Text="<%[ Directory path for new config files: ]%>" /></div>
+							<div class="line left" title="<%[ In this directory Baculum API saves temporarily Bacula configuration files (mainly for validation purposes) just before they are written as real Bacula configuration files. ]%>">
+								<div class="text"><com:TLabel ForControl="BConfigDir" Text="<%[ Baculum working directory for Bacula config: ]%>" /></div>
 								<div class="field">
 									<com:TRequiredFieldValidator ValidationGroup="ConfigGroup" ControlToValidate="BConfigDir" Display="Dynamic" Text="<%[ Directory path field is required. ]%>" />
-									<com:TActiveCustomValidator ID="BConfigDirWritableTest" ValidationGroup="ConfigGroup" ControlToValidate="BConfigDir" ErrorMessage="<%[ Provided directory path is not writable by web server. ]%>" ControlCssClass="validation-error" Display="Dynamic" OnServerValidate="testConfigDir" />
+									<com:TActiveCustomValidator ID="BConfigDirWritableTest" ValidationGroup="ConfigGroup" ControlToValidate="BConfigDir" Text="<%[ Provided directory path is not writable by web server. ]%>" ControlCssClass="validation-error" Display="Dynamic" OnServerValidate="testConfigDir" CssClass="validator" />
 									<com:TTextBox ID="BConfigDir" CssClass="textbox" />
 								</div>
 							</div>
