@@ -928,6 +928,7 @@ _Z9SHA1FinalP11SHA1ContextPh
 _Z10sm_reallocPKciPvj
 _Z12actuallyfreePv
 _Z12sm_check_rtnPKcib
+_Z12sm_get_ownerxPc
 _Z12sm_new_ownerPKciPc
 _Z14actuallycallocjj
 _Z14actuallymallocj
