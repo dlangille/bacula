@@ -34,6 +34,13 @@
 			OnClick="loadScheduleConfig"
 			CommandParameter="show"
 		/>
+		<com:TActiveLinkButton
+			CssClass="w3-bar-item w3-button tab_btn"
+			Text="<%[ Job schedules ]%>"
+			OnCallback="loadSchedules"
+			CommandParameter="show"
+			Attributes.onclick="W3Tabs.open(this.id, 'job_schedules'); clear_node('#job_config div.directive_field'); clear_node('#fileset_config div.directive_field'); clear_node('#schedule_config  div.directive_field');"
+		/>
 	</div>
 	<div class="w3-container tab_item" id="job_actions">
 		<com:TActiveLinkButton
@@ -69,6 +76,11 @@
 			ResourceType="Schedule"
 			ShowRemoveButton="false"
 			ShowCancelButton="false"
+		/>
+	</div>
+	<div class="w3-container tab_item" id="job_schedules" style="display: none">
+		<com:Application.Web.Portlets.StatusSchedule
+			ID="Schedules"
 		/>
 	</div>
 </com:TContent>

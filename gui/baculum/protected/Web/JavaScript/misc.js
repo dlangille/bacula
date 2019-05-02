@@ -80,6 +80,18 @@ var Units = {
 		}
 		var ret = {value: time_seconds, format: f};
 		return ret;
+	},
+	format_date: function(timestamp) {
+		if (typeof(timestamp) === 'string') {
+			timestamp = parseInt(timestamp, 10);
+		}
+		if (timestamp < 9999999999) {
+			timestamp *= 1000;
+		}
+		var d = new Date(timestamp);
+		var date = [d.getFullYear(), ('0' + (d.getMonth()+1)).slice(-2), ('0' + d.getDate()).slice(-2)].join('-');
+		var time = [d.getHours(), ('0' + d.getMinutes()).slice(-2), ('0' + d.getSeconds()).slice(-2)].join(':');
+		return (date + ' ' + time);
 	}
 }
 

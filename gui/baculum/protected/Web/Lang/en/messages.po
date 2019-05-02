@@ -1993,3 +1993,39 @@ msgstr "Plugins"
 
 msgid "Add plugin"
 msgstr "Add plugin"
+
+msgid "Job schedules"
+msgstr "Job schedules"
+
+msgid "Priority"
+msgstr "Priority"
+
+msgid "Scheduled"
+msgstr "Scheduled"
+
+msgid "FileSet"
+msgstr "FileSet"
+
+msgid "Filters:"
+msgstr "Filters:"
+
+msgid "Date from:"
+msgstr "Date from:"
+
+msgid "Days:"
+msgstr "Days:"
+
+msgid "Apply filters"
+msgstr "Apply filters"
+
+msgid "You must enter an integer."
+msgstr "You must enter an integer."
+
+msgid "Invalid date format."
+msgstr "Invalid date format."
+
+msgid "Input must be between 1 and 1000."
+msgstr "Input must be between 1 and 1000."
+
+msgid "Schedule status"
+msgstr "Schedule status"

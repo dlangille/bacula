@@ -49,6 +49,8 @@ class JobView extends BaculumWebPage {
 		}
 		$this->RunJobModal->setJobName($job_name);
 		$this->setJobName($job_name);
+		$this->Schedules->setJob($job_name);
+		$this->Schedules->setDays(90);
 	}
 
 	/**
@@ -118,6 +120,10 @@ class JobView extends BaculumWebPage {
 			$this->ScheduleConfig->setLoadValues(true);
 			$this->ScheduleConfig->raiseEvent('OnDirectiveListLoad', $this, null);
 		}
+	}
+
+	public function loadSchedules($sender, $param) {
+		$this->Schedules->loadSchedules();
 	}
 }
 ?>

@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2018 Kern Sibbald
+ * Copyright (C) 2013-2019 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -20,20 +20,8 @@
  * Bacula(R) is a registered trademark of Kern Sibbald.
  */
 
-Prado::using('System.Web.UI.WebControls.TClientScript');
+Prado::using('Application.Web.Class.BaculumWebPage');
 
-class BClientScript extends TClientScript {
-
-	const SCRIPTS_VERSION = 3;
-
-	public function getScriptUrl()
-	{
-		$url = parent::getScriptUrl();
-		if (!empty($url)) {
-			$url .= '?ver=' . self::SCRIPTS_VERSION;
-		}
-		return $url;
-	}
-
+class ScheduleStatusList extends BaculumWebPage {
 }
 ?>

@@ -2000,3 +2000,39 @@ msgstr "Dodaj wtyczkę"
 
 msgid "Plugins"
 msgstr "Wtyczki"
+
+msgid "Job schedules"
+msgstr "Harmonogramy zadania"
+
+msgid "Priority"
+msgstr "Priorytet"
+
+msgid "Scheduled"
+msgstr "Zaplanowane"
+
+msgid "FileSet"
+msgstr "FileSet"
+
+msgid "Filters:"
+msgstr "Filtry:"
+
+msgid "Date from:"
+msgstr "Data od:"
+
+msgid "Days:"
+msgstr "Dni:"
+
+msgid "Apply filters"
+msgstr "Zastosuj filtry"
+
+msgid "You must enter an integer."
+msgstr "Musisz wprowadzić liczbę całkowitą."
+
+msgid "Invalid date format."
+msgstr "Niepoprawny format daty."
+
+msgid "Input must be between 1 and 1000."
+msgstr "Pole musi mieć wartość z zakresu 1-1000."
+
+msgid "Schedule status"
+msgstr "Status harmonogramu zadań"
