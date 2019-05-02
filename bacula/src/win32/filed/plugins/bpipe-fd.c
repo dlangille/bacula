@@ -443,10 +443,10 @@ static bRC endRestoreFile(bpContext *ctx)
  */
 static bRC createFile(bpContext *ctx, struct restore_pkt *rp)
 {
-// printf("bpipe-fd: createFile\n");
    if (strlen(rp->where) >= sizeof(plugin_ctx::where)) {
-      printf("Restore target dir too long. Restricting to first %d bytes.\n",
-         sizeof(plugin_ctx::where));
+      /* Note: this really should fail Bacula!!! */
+      printf("Restore where directory name too long. Restricting to first %d bytes.\n",
+         (int)sizeof(plugin_ctx::where)-1);
    }
    strncpy(((struct plugin_ctx *)ctx->pContext)->where, rp->where,
       sizeof(plugin_ctx::where));
