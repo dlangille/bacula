@@ -23,6 +23,7 @@ require a major database upgrade (don't worry it will be easy -- just
 run update_bacula_tables)
 
 02May19
+ - Fix Window bpipe-fd strncpy programming error
  - Change mysql my_bool to bool as it was removed from mysql
  - Improve assert message
  - examples: move backup-to-cdwriter.txt to move-backup-to-usb.txt
