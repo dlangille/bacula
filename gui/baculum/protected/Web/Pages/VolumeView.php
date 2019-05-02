@@ -48,10 +48,21 @@ class VolumeView extends BaculumWebPage {
 			return;
 		}
 
+		$mediaid = 0;
 		if ($this->Request->contains('mediaid')) {
 			$mediaid = intval($this->Request['mediaid']);
-			$this->setMediaId($mediaid);
+		} elseif ($this->Request->contains('media')) {
+			$result = $this->getModule('api')->get(array('volumes'));
+			if ($result->error === 0) {
+				for ($i = 0; $i < count($result->output); $i++) {
+					if ($this->Request['media'] === $result->output[$i]->volumename) {
+						$mediaid = $result->output[$i]->mediaid;
+						break;
+					}
+				}
+			}
 		}
+		$this->setMediaId($mediaid);
 		$this->setVolume();
 	}
 

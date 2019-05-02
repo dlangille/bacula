@@ -25,6 +25,7 @@ Prado::using('Application.Web.Class.WebModule');
 class LogParser extends WebModule {
 
 	const CLIENT_PATTERN = '/^\s+Client\:\s+"?(?P<client>[a-zA-Z0-9:.\-_ ]+)"?/i';
+	const RESTORE_CLIENT_PATTERN = '/^\s+Restore Client\:\s+"?(?P<restore_client>[a-zA-Z0-9:.\-_ ]+)"?/i';
 	const POOL_PATTERN = '/^\s+Pool\:\s+"?(?P<pool>[a-zA-Z0-9:.\-_ ]+)"?/i';
 	const READ_POOL_PATTERN = '/^\s+Read Pool\:\s+"?(?P<read_pool>[a-zA-Z0-9:.\-_ ]+)"?/i';
 	const WRITE_POOL_PATTERN = '/^\s+Write Pool\:\s+"?(?P<write_pool>[a-zA-Z0-9:.\-_ ]+)"?/i';
@@ -33,6 +34,8 @@ class LogParser extends WebModule {
 	const WRITE_STORAGE_PATTERN = '/^\s+Write Storage\:\s+"?(?P<write_storage>[a-zA-Z0-9:.\-_ ]+)"?/i';
 	const FILESET_PATTERN = '/^\s+FileSet\:\s+"?(?P<fileset>[a-zA-Z0-9:.\-_ ]+)"?/i';
 	const VERIFY_JOB_PATTERN = '/^\s+Verify Job\:\s+"?(?P<verify_job>[a-zA-Z0-9:.\-_ ]+)"?/i';
+	const JOB_PATTERN = '/^\s+Job\:\s+"?(?P<job>[a-zA-Z0-9:.\-_ ]+)"?\.\d{4}-\d{2}-\d{2}_\d{2}\.\d{2}\.\d{2}_\d{2}/i';
+	const VOLUME_PATTERN = '/^\s+Volume name\(s\)\:\s+"?(?P<volumes>[^\s]+[a-zA-Z0-9:.\-\|_ ]+[^\s]+)"?/i';
 
 	public function parse(array $logs) {
 		$out = array();
@@ -49,6 +52,9 @@ class LogParser extends WebModule {
 		if (preg_match(self::CLIENT_PATTERN, $log_line, $match) === 1) {
 			$link = $this->getLink('client', $match['client']);
 			$log_line = str_replace($match['client'], $link, $log_line);
+		} elseif (preg_match(self::RESTORE_CLIENT_PATTERN, $log_line, $match) === 1) {
+			$link = $this->getLink('client', $match['restore_client']);
+			$log_line = str_replace($match['restore_client'], $link, $log_line);
 		} elseif (preg_match(self::POOL_PATTERN, $log_line, $match) === 1) {
 			$link = $this->getLink('pool', $match['pool']);
 			$log_line = str_replace($match['pool'], $link, $log_line);
@@ -73,6 +79,19 @@ class LogParser extends WebModule {
 		} elseif (preg_match(self::VERIFY_JOB_PATTERN, $log_line, $match) === 1) {
 			$link = $this->getLink('job', $match['verify_job']);
 			$log_line = str_replace($match['verify_job'], $link, $log_line);
+		} elseif (preg_match(self::JOB_PATTERN, $log_line, $match) === 1) {
+			$link = $this->getLink('job', $match['job']);
+			$log_line = str_replace($match['job'], $link, $log_line);
+		} elseif (preg_match(self::VOLUME_PATTERN, $log_line, $match) === 1) {
+			$volumes = explode('|', $match['volumes']);
+			$vol_count = count($volumes);
+			for ($i = 0; $i < $vol_count; $i++) {
+				$before = ($i > 0) ? '|' : '';
+				$after = ($i > 0 && $i < $vol_count) ? '|' : '';
+				$link = $before . $this->getLink('volume', $volumes[$i]) . $after;
+				$vol_pattern = '/\|?' . $volumes[$i] . '\|?/';
+				$log_line = preg_replace($vol_pattern, $link, $log_line);
+			}
 		}
 		return $log_line;
 	}
