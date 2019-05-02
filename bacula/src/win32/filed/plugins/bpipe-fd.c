@@ -448,8 +448,7 @@ static bRC createFile(bpContext *ctx, struct restore_pkt *rp)
       printf("Restore where directory name too long. Restricting to first %d bytes.\n",
          (int)sizeof(plugin_ctx::where)-1);
    }
-   strncpy(((struct plugin_ctx *)ctx->pContext)->where, rp->where,
-      sizeof(plugin_ctx::where));
+   bstrncpy(((struct plugin_ctx *)ctx->pContext)->where, rp->where, sizeof(plugin_ctx::where));
    ((struct plugin_ctx *)ctx->pContext)->replace = rp->replace;
    rp->create_status = CF_EXTRACT;
    return bRC_OK;
