@@ -89,6 +89,15 @@
 			},
 			"FileSet": {
 				"$ref": "#/definitions/FileSet"
+			},
+			"Schedules": {
+				"type": "array",
+				"items": {
+					"$ref": "#/definitions/Schedule"
+				}
+			},
+			"Schedule": {
+				"$ref": "#/definitions/Schedule"
 			}
 		},
 		"parameters": {
@@ -2498,6 +2507,96 @@
 				}
 			}
 		},
+		"/api/v1/schedules/status": {
+			"get": {
+				"tags": ["schedules"],
+				"summary": "Schedule status",
+				"description": "Get Schedule status",
+				"responses": {
+					"200": {
+						"description": "List of Schedule status",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"$ref": "#/components/schemas/Schedules"
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 4, 5, 6, 7, 11, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					{
+						"name": "job",
+						"in": "query",
+						"required": false,
+						"description": "Job name",
+						"schema": {
+							"type": "string",
+							"pattern": "[a-zA-Z0-9:.-_ ]+"
+						}
+					},
+					{
+						"name": "client",
+						"in": "query",
+						"required": false,
+						"description": "Client name",
+						"schema": {
+							"type": "string",
+							"pattern": "[a-zA-Z0-9:.-_ ]+"
+						}
+					},
+					{
+						"name": "schedule",
+						"in": "query",
+						"required": false,
+						"description": "Schedule name",
+						"schema": {
+							"type": "string",
+							"pattern": "[a-zA-Z0-9:.-_ ]+"
+						}
+					},
+					{
+						"name": "days",
+						"in": "query",
+						"required": false,
+						"description": "Days number to show schedule",
+						"schema": {
+							"type": "integer",
+							"minimum": 1
+						}
+					},
+					{
+						"name": "limit",
+						"in": "query",
+						"required": false,
+						"description": "Schedule results limit",
+						"schema": {
+							"type": "integer",
+							"minimum": 1
+						}
+					},
+					{
+						"name": "time",
+						"in": "query",
+						"required": false,
+						"description": "Schedule start time to show (YYYY-MM-DD HH:MM::SS)",
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
 		"/api/v1/bvfs/update": {
 			"put": {
 				"tags": ["bvfs"],
@@ -4016,7 +4115,8 @@
 				},
 				"name": {
 					"description": "Job name",
-					"type": "string"
+					"type": "string",
+					"pattern": "[a-zA-Z0-9:.-_ ]+"
 				},
 				"type": {
 					"description": "Job type",
@@ -4520,6 +4620,53 @@
 				"createtime": {
 					"description": "Create date and time",
 					"type": "string"
+				}
+			}
+		},
+		"Schedule": {
+			"type": "object",
+			"properties": {
+				"level": {
+					"description": "Job level letter",
+					"type": "string",
+					"enum": ["F","I", "D", "B", "f", "V", "C", "O", "d"]
+				},
+				"type": {
+					"description": "Job type letter",
+					"type": "string",
+					"enum": ["B", "M", "V", "R", "I", "D", "A", "C", "c", "g"]
+				},
+				"name": {
+					"description": "Job name",
+					"type": "string",
+					"pattern": "[a-zA-Z0-9:.-_ ]+"
+				},
+				"client": {
+					"description": "Client name",
+					"type": "string",
+					"pattern": "[a-zA-Z0-9:.-_ ]+"
+				},
+				"fileset": {
+					"description": "FileSet name",
+					"type": "string",
+					"pattern": "[a-zA-Z0-9:.-_ ]+"
+				},
+				"schedtime_epoch": {
+					"description": "Scheduled time (UNIX timestamp format)",
+					"type": "string"
+				},
+				"schedtime": {
+					"description": "Scheduled date in time (YYYY-MM-DD HH:M:SS)",
+					"type": "string"
+				},
+				"priority": {
+					"description": "Job priority",
+					"type": "string"
+				},
+				"schedule": {
+					"description": "Schedule name",
+					"type": "string",
+					"pattern": "[a-zA-Z0-9:.-_ ]+"
 				}
 			}
 		}
