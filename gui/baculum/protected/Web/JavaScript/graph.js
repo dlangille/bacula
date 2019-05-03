@@ -51,11 +51,20 @@ var JobClass = jQuery.klass({
 	},
 
 	set_start_stamp: function() {
-		this.start_stamp = iso_date_to_timestamp(this.job.starttime);
+		/**
+		 * NOTE: Start time can be null if job finishes with error before
+		 * writing starttime to the Catalog. Noticed for example with staring
+		 * migration job in which no SelectionType defined.
+		 */
+		if (this.job.starttime) {
+			this.start_stamp = iso_date_to_timestamp(this.job.starttime);
+		}
 	},
 
 	set_end_stamp: function() {
-		this.end_stamp =  iso_date_to_timestamp(this.job.endtime);
+		if (this.job.endtime) {
+			this.end_stamp =  iso_date_to_timestamp(this.job.endtime);
+		}
 	}
 });
 
