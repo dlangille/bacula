@@ -6,8 +6,8 @@ Release 9.4.3
 This is a bug fix release for version 9.4.2.  It includes a number of bug
 fixes and patches. 
 
-Baculum: there have been significant additions and changes to Baculum
- If you want a web gui please check it ou.
+Baculum: there have been significant additions and changes to Baculum.
+If you want a web gui please check it out.
 
 S3 driver: If you are trying to build the S3 drivers, please remember to use the
 community supplied (from Bacula Enterprise) version of libs3.so found at:
