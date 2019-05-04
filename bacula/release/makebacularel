@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (C) 2000-2017 Kern Sibbald
+# Copyright (C) 2000-2018 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
 # This script is used to make a Bacula release
@@ -11,7 +11,7 @@
 #  do not run it in the Bacula source or Git directory, but
 #  in a special release directory.
 #
-# Commit all changes, update the language files, 
+# Commit all changes, update the language files,
 #    export the release, make a release tar.
 #
 # source config
@@ -35,9 +35,9 @@ if [ $? -ne 0 ]; then
    echo "Directory: $1 does not exist"
    exit 1
 fi
-src=`pwd` 
+src=`pwd`
 current=`git branch | awk '/*/ { print $2 }'`
-cd $base_dir 
+cd $base_dir
 if [ $?  -ne 0 ]; then
    echo "Directory: $1 does not exist"
    exit 1
@@ -66,7 +66,7 @@ if [ a$updatepo != ano ]; then
    ./configure --enable-client-only
    cd po
    make update-po
-   cd ${src}   
+   cd ${src}
 fi
 
 git tag -d ${fulltag}
@@ -93,7 +93,7 @@ if [ $? != 0 ] ; then
 fi
 echo "Exported release into ${cwd}/$base_pkg-$ver.tar.gz"
 cd ${cwd}
-tar xfz $base_pkg-$ver.tar.gz 
+tar xfz $base_pkg-$ver.tar.gz
 # First remove Enterprise Win32 plugin source
 cd $base_pkg-$ver/bacula
 cp -fp ReleaseNotes ChangeLog src/version.h ${cwd}/
