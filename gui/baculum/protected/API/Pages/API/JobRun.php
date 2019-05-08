@@ -36,7 +36,11 @@ class JobRun extends BaculumAPIServer {
 			$level = $params->level;
 		}
 		$fileset = null;
-		if (property_exists($params, 'fileset') && $this->getModule('misc')->isValidName($params->fileset)) {
+		if (property_exists($params, 'filesetid')) {
+			$filesetid = intval($params->filesetid);
+			$fileset_row = $this->getModule('fileset')->getFileSetById($filesetid);
+			$fileset = is_object($fileset_row) ? $fileset_row->fileset : null;
+		} elseif (property_exists($params, 'fileset') && $this->getModule('misc')->isValidName($params->fileset)) {
 			$fileset = $params->fileset;
 		}
 		$client = null;
