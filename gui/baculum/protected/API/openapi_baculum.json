@@ -1148,9 +1148,18 @@
 						}
 					},
 					{
+						"name": "create[filesetid]",
+						"in": "body",
+						"description": "FileSet identifier",
+						"required":  true,
+						"schema": {
+							"type": "integer"
+						}
+					},
+					{
 						"name": "create[fileset]",
 						"in": "body",
-						"description": "FileSet name",
+						"description": "FileSet name (can be used instead filesetid)",
 						"required": true,
 						"schema": {
 							"type": "string",
