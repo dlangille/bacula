@@ -43,7 +43,7 @@
 			Display="None"
 			ClientSide.OnSuccess="job_callback_func(true);"
 		>
-			<prop:Text><%=Prado::localize('Cancel job')%> &nbsp;<i class="fa fa-hand-paper"></i></prop:Text>
+			<prop:Text><%=Prado::localize('Cancel job')%> &nbsp;<i class="fa fa-stop"></i></prop:Text>
 		</com:TActiveLinkButton>
 		<com:TActiveLinkButton
 			CssClass="w3-button w3-green w3-margin-bottom"

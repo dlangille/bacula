@@ -47,6 +47,14 @@ table.dataTable.no-footer {
 	box-shadow: none !important;
 }
 
+th.action_col, td.action_col {
+	width: 90px !important;
+}
+
+td.action_col button {
+	margin-right: 3px;
+}
+
 .hide {
         display: none !important;
 }

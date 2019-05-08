@@ -21,10 +21,74 @@
  */
 
 Prado::using('System.Web.UI.ActiveControls.TActiveLinkButton');
+Prado::using('System.Web.UI.ActiveControls.TCallback');
 Prado::using('Application.Web.Class.BaculumWebPage'); 
+Prado::using('Application.Web.Portlets.RunJob');
 
 class JobHistoryList extends BaculumWebPage {
+
+	const USE_CACHE = true;
+
 	public function loadRunJobModal($sender, $param) {
 		$this->RunJobModal->loadData();
+	}
+
+	public function runJobAgain($sender, $param) {
+		$jobid = intval($param->getCallbackParameter());
+		if ($jobid > 0) {
+			$jobdata = $this->getModule('api')->get(
+				array('jobs', $jobid),
+				null,
+				true,
+				self::USE_CACHE
+			)->output;
+			$params = array();
+			$params['id'] = $jobid;
+			$level = trim($jobdata->level);
+			$params['level'] = !empty($level) ? $level : 'F'; // Admin job has empty level
+			$job_show = $this->getModule('api')->get(
+				array('jobs', $jobid, 'show'), null, true, self::USE_CACHE
+			)->output;
+			if ($jobdata->filesetid > 0) {
+				$params['filesetid'] = $jobdata->filesetid;
+			} else {
+				$params['fileset'] = RunJob::getResourceName('fileset', $job_show);
+			}
+			$params['clientid'] = $jobdata->clientid;
+			$params['storage'] = RunJob::getResourceName('storage', $job_show);
+			if (empty($params['storage'])) {
+				$params['storage'] = RunJob::getResourceName('autochanger', $job_show);
+			}
+			if ($jobdata->poolid > 0) {
+				$params['poolid'] = $jobdata->poolid;
+			} else {
+				$params['pool'] = RunJob::getResourceName('pool', $job_show);
+			}
+			$job_attr = RunJob::getJobAttr($job_show);
+			$params['priority'] = key_exists('priority', $job_attr) ? $job_attr['priority'] : 10;
+			$params['accurate'] = (key_exists('accurate', $job_attr) && $job_attr['accurate'] == 1);
+
+			$result = $this->getModule('api')->create(array('jobs', 'run'), $params);
+			if ($result->error === 0) {
+				$started_jobid = $this->getModule('misc')->findJobIdStartedJob($result->output);
+				if (is_numeric($started_jobid)) {
+					$this->getPage()->getCallbackClient()->callClientFunction('refresh_job_history');
+				} else {
+					$errmsg = implode('<br />', $result->output);
+					$this->getPage()->getCallbackClient()->callClientFunction('show_error', array($errmsg, $result->error));
+				}
+			} else {
+				$this->getPage()->getCallbackClient()->callClientFunction('show_error', array($result->output, $result->error));
+			}
+		}
+	}
+
+	public function cancelJob($sender, $param) {
+		$jobid = intval($param->getCallbackParameter());
+		$result = $this->getModule('api')->set(
+			array('jobs', $jobid, 'cancel'),
+			array()
+		);
+		$this->getPage()->getCallbackClient()->callClientFunction('refresh_job_history');
 	}
 }

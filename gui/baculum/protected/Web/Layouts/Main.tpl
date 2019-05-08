@@ -84,12 +84,7 @@ $(function() {
 					clearTimeout(timeout_handler);
 				}
 				if (response && response.hasOwnProperty('error') && response.error.error !== 0) {
-					var err_box = document.getElementById('error_message_box');
-					var err_code = document.getElementById('error_message_error_code');
-					var err_msg = document.getElementById('error_message_error_msg');
-					err_code.textContent = response.error.error;
-					err_msg.textContent = response.error.output;
-					err_box.style.display = 'block';
+					show_error(response.error.output, response.error.error);
 				}
 
 				oData = response;
@@ -122,6 +117,14 @@ $(function() {
 	};
 	oMonitor();
 });
+function show_error(output, error) {
+	var err_box = document.getElementById('error_message_box');
+	var err_code = document.getElementById('error_message_error_code');
+	var err_msg = document.getElementById('error_message_error_msg');
+	err_code.textContent = error;
+	err_msg.innerHTML = output;
+	err_box.style.display = 'block';
+}
 	</script>
 	</body>
 </html>

@@ -39,7 +39,14 @@
 		</table>
 	</div>
 	<com:Application.Web.Portlets.RunJob ID="RunJobModal" />
+	<com:TCallback ID="RunJobCb" OnCallback="runJobAgain" />
+	<com:TCallback ID="CancelJobCb" OnCallback="cancelJob" />
 <script type="text/javascript">
+var run_job_callback = <%=$this->RunJobCb->ActiveControl->Javascript%>;
+var cancel_job_callback = <%=$this->CancelJobCb->ActiveControl->Javascript%>;
+function refresh_job_history(jobid) {
+	document.location.href = '<%=$this->Service->constructUrl('JobHistoryList')%>';
+}
 var oJobList = {
 	ids: {
 		job_list: 'job_list',
@@ -104,17 +111,42 @@ var oJobList = {
 				{
 					data: 'jobid',
 					render: function (data, type, row) {
+						var container = document.createElement('DIV');
+
+						// job details button
 						var btn = document.createElement('BUTTON');
-						btn.className = 'w3-button w3-green';
+						btn.className = 'w3-button w3-green w3-right';
 						btn.type = 'button';
 						var i = document.createElement('I');
 						i.className = 'fa fa-list-ul';
-						var label = document.createTextNode(' <%[ Details ]%>');
+						btn.title = '<%[ Details ]%>';
 						btn.appendChild(i);
 						btn.innerHTML += '&nbsp';
-						btn.appendChild(label);
 						btn.setAttribute('onclick', "document.location.href = '/web/job/history/" + data + "/'");
-						return btn.outerHTML;
+						container.appendChild(btn);
+						if (['C', 'R'].indexOf(row.jobstatus) === -1) {
+							// rerun job button
+							btn = document.createElement('BUTTON');
+							btn.className = 'w3-button w3-green w3-right';
+							btn.type = 'button';
+							i = document.createElement('I');
+							btn.title = '<%[ Run job again ]%>';
+							i.className = 'fa fa-play';
+							btn.appendChild(i);
+							btn.setAttribute('onclick', 'run_job_callback.setCallbackParameter(' + data + '); run_job_callback.dispatch();');
+						} else {
+							// cancel job button
+							btn = document.createElement('BUTTON');
+							btn.className = 'w3-button w3-green w3-right';
+							btn.type = 'button';
+							i = document.createElement('I');
+							btn.title = '<%[ Cancel job ]%>';
+							i.className = 'fa fa-stop';
+							btn.appendChild(i);
+							btn.setAttribute('onclick', 'cancel_job_callback.setCallbackParameter(' + data + '); cancel_job_callback.dispatch();');
+						}
+						container.appendChild(btn);
+						return container.outerHTML;
 					}
 				}
 			],
@@ -127,6 +159,11 @@ var oJobList = {
 				className: 'control',
 				orderable: false,
 				targets: 0
+			},
+			{
+				className: 'action_col',
+				orderable: false,
+				targets: [ 10 ]
 			},
 			{
 				className: "dt-center",
