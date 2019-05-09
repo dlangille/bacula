@@ -53,18 +53,25 @@ class LabelVolume extends Portlets {
 	}
 
 	public function labelVolumes($sender, $param) {
-		$cmd = array('label');
+		$result = null;
 		if ($this->Barcodes->Checked == true) {
-			$cmd[] = 'barcodes';
-			$cmd[] = 'slots="' . $this->SlotsLabel->Text . '"';
+			$params = array(
+				'slots' => $this->SlotsLabel->Text,
+				'drive' => $this->DriveLabel->Text,
+				'storageid' => $this->StorageLabel->SelectedValue,
+				'poolid' => $this->PoolLabel->SelectedValue
+			);
+			$result = $this->getModule('api')->create(array('volumes', 'label', 'barcodes'), $params);
 		} else {
-			$cmd[] = 'volume="' . $this->LabelName->Text . '"';
-			$cmd[] = 'slot="' . $this->SlotLabel->Text . '"';
+			$params = array(
+				'slot' => $this->SlotLabel->Text,
+				'volume' => $this->LabelName->Text,
+				'drive' => $this->DriveLabel->Text,
+				'storageid' => $this->StorageLabel->SelectedValue,
+				'poolid' => $this->PoolLabel->SelectedValue
+			);
+			$result = $this->getModule('api')->create(array('volumes', 'label'), $params);
 		}
-		$cmd[] = 'drive="' . $this->DriveLabel->Text . '"';
-		$cmd[] = 'storage="'. $this->StorageLabel->SelectedItem->Text . '"';
-		$cmd[] = 'pool="'. $this->PoolLabel->SelectedItem->Text . '"';
-		$result = $this->getModule('api')->set(array('console'), $cmd);
 		if ($result->error === 0) {
 			$this->LabelVolumeLog->Text = implode(PHP_EOL, $result->output);
 		} else {
