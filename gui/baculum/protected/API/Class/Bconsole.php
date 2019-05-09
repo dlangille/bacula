@@ -28,7 +28,16 @@ class Bconsole extends APIModule {
 
 	const SUDO = 'sudo';
 
+	/**
+	 * Pattern types used to prepare command.
+	 */
+	const PTYPE_REG_CMD = 0;
+	const PTYPE_API_CMD = 1;
+	const PTYPE_CONFIRM_YES_CMD = 2;
+
 	const BCONSOLE_COMMAND_PATTERN = "%s%s -c %s %s 2>&1 <<END_OF_DATA\ngui on\n%s\nquit\nEND_OF_DATA";
+
+	const BCONSOLE_CONFIRM_YES_COMMAND_PATTERN = "%s%s -c %s %s 2>&1 <<END_OF_DATA\ngui on\n%s\nyes\nquit\nEND_OF_DATA";
 
 	const BCONSOLE_API_COMMAND_PATTERN = "%s%s -c %s %s 2>&1 <<END_OF_DATA\ngui on\n.api 2 nosignal api_opts=o\n%s\nquit\nEND_OF_DATA";
 
@@ -149,7 +158,7 @@ class Bconsole extends APIModule {
 		return (object)array('output' => $output, 'exitcode' => (integer)$exitcode);
 	}
 
-	public function bconsoleCommand($director, array $command, $api = false) {
+	public function bconsoleCommand($director, array $command, $ptype = null) {
 		if (count($this->config) > 0 && $this->config['enabled'] !== '1') {
 			throw new BConsoleException(
 				BconsoleError::MSG_ERROR_BCONSOLE_DISABLED,
@@ -158,7 +167,7 @@ class Bconsole extends APIModule {
 		}
 		$base_command = count($command) > 0 ? $command[0] : null;
 		if($this->isCommandValid($base_command) === true) {
-			$result = $this->execCommand($director, $command, $api);
+			$result = $this->execCommand($director, $command, $ptype);
 		} else {
 			throw new BConsoleException(
 				BconsoleError::MSG_ERROR_INVALID_COMMAND,
@@ -168,7 +177,7 @@ class Bconsole extends APIModule {
 		return $result;
 	}
 
-	private function execCommand($director, array $command, $api = false) {
+	private function execCommand($director, array $command, $ptype = null) {
 		$cmd = '';
 		$result = null;
 		if(!is_null($director) && $this->isValidDirector($director) === false) {
@@ -180,7 +189,12 @@ class Bconsole extends APIModule {
 			$dir = is_null($director) ? '': '-D ' . $director;
 			$sudo = ($this->getUseSudo() === true) ? self::SUDO . ' ' : '';
 			$bconsole_command = implode(' ', $command);
-			$pattern = ($api === true) ? self::BCONSOLE_API_COMMAND_PATTERN : self::BCONSOLE_COMMAND_PATTERN;
+			$pattern = null;
+			switch ($ptype) {
+				case self::PTYPE_API_CMD: $pattern = self::BCONSOLE_API_COMMAND_PATTERN; break;
+				case self::PTYPE_CONFIRM_YES_CMD: $pattern = self::BCONSOLE_CONFIRM_YES_COMMAND_PATTERN; break;
+				default: $pattern = self::BCONSOLE_COMMAND_PATTERN;
+			}
 			$cmd = sprintf(
 				$pattern,
 				$sudo,

@@ -239,6 +239,11 @@ class Miscellaneous extends TModule {
 		return (preg_match('/^\d{4}-\d{2}-\d{2} \d{1,2}:\d{2}:\d{2}$/', $time) === 1);
 	}
 
+	public function isValidRange($range) {
+		return (preg_match('/^[\d\-\,]+$/', $range) === 1);
+	}
+
+
 	/**
 	 * Writing INI-style configuration file.
 	 * 

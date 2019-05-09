@@ -42,6 +42,8 @@
 	<url ServiceParameter="API.VolumePurge" pattern="api/v1/volumes/{id}/purge/" parameters.id="\d+" />
 	<url ServiceParameter="API.VolumesRequired" pattern="api/v1/volumes/required/{jobid}/{fileid}/" parameters.jobid="\d+" parameters.fileid="\d+" />
 	<url ServiceParameter="API.JobsOnVolume" pattern="api/v1/volumes/{id}/jobs/" parameters.id="\d+" />
+	<url ServiceParameter="API.VolumeLabel" pattern="api/v1/volumes/label/" />
+	<url ServiceParameter="API.VolumeLabelBarcodes" pattern="api/v1/volumes/label/barcodes/" />
 	<!-- pools endpoints -->
 	<url ServiceParameter="API.Pools" pattern="api/v1/pools/" />
 	<url ServiceParameter="API.Pool" pattern="api/v1/pools/{id}/" parameters.id="\d+" />

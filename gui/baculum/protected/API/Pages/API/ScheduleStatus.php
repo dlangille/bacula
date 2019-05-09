@@ -20,6 +20,8 @@
  * Bacula(R) is a registered trademark of Kern Sibbald.
  */
 
+Prado::using('Application.API.Class.Bconsole');
+
 class ScheduleStatus extends BaculumAPIServer {
 
 	public function get() {
@@ -44,7 +46,7 @@ class ScheduleStatus extends BaculumAPIServer {
 			$cmd[] = 'time="' . $this->Request['time'] . '"';
 		}
 
-		$result = $this->getModule('bconsole')->bconsoleCommand($this->director, $cmd, true);
+		$result = $this->getModule('bconsole')->bconsoleCommand($this->director, $cmd, Bconsole::PTYPE_API_CMD);
 		if ($result->exitcode === 0) {
 			array_shift($result->output);
 			$this->output = $this->formatSchedules($result->output);
