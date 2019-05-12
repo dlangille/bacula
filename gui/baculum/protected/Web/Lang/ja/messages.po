@@ -1443,14 +1443,8 @@ msgstr "Slot value must be integer."
 msgid "Slots for label have to contain string value from set [0-9-,]."
 msgstr "Slots for label have to contain string value from set [0-9-,]."
 
-msgid "Slots for label:"
-msgstr "Slots for label:"
-
 msgid "Slots for update have to contain string value from set [0-9-,]."
 msgstr "Slots for update have to contain string value from set [0-9-,]."
-
-msgid "Slots for update:"
-msgstr "Slots for update:"
 
 msgid "Source parameters"
 msgstr "リストア情報"
@@ -2130,3 +2124,27 @@ msgstr "Input must be between 1 and 1000."
 
 msgid "Schedule status"
 msgstr "Schedule status"
+
+msgid "Slots to label (ex. 4 or 1-5 or 2,4,6-10):"
+msgstr "Slots to label (ex. 4 or 1-5 or 2,4,6-10):"
+
+msgid "Labeling status:"
+msgstr "Labeling status:"
+
+msgid "Ready to label"
+msgstr "Ready to label"
+
+msgid "Finished"
+msgstr "Finished"
+
+msgid "Updating status:"
+msgstr "Updating status:"
+
+msgid "Ready to update"
+msgstr "Ready to update"
+
+msgid "Updating..."
+msgstr "Updating..."
+
+msgid "Slots to update (ex. 4 or 1-5 or 2,4,6-10):"
+msgstr "Slots to update (ex. 4 or 1-5 or 2,4,6-10):"

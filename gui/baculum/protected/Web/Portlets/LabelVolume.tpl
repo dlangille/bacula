@@ -1,8 +1,15 @@
 <com:TActiveLinkButton
 	CssClass="w3-button w3-green"
-	Attributes.onclick="document.getElementById('label_volume').style.display = 'block';"
 	OnClick="loadValues"
 >
+	<prop:Attributes.onclick>
+		var logbox = document.getElementById('<%=$this->LabelVolumeLog->ClientID%>');
+		logbox.innerHTML = '';
+		var logbox_container = document.getElementById('label_volume_log');
+		logbox_container.style.display = 'none';
+		set_labeling_status('start');
+		document.getElementById('label_volume').style.display = 'block';
+	</prop:Attributes.onclick>
 	<i class="fa fa-tag"></i> &nbsp;<%[ Label volume(s) ]%>
 </com:TActiveLinkButton>
 </button>
@@ -68,7 +75,7 @@
 				</div>
 			</div>
 			<div id="label_with_barcodes" class="w3-row-padding w3-section" style="display: none">
-				<div class="w3-col w3-half"><com:TLabel ForControl="SlotsLabel" Text="<%[ Slots for label: ]%>" /></div>
+				<div class="w3-col w3-half"><com:TLabel ForControl="SlotsLabel" Text="<%[ Slots to label (ex. 4 or 1-5 or 2,4,6-10): ]%>" /></div>
 				<div class="w3-col w3-half">
 					<com:TActiveTextBox ID="SlotsLabel" CssClass="w3-input w3-border" Text="0" />
 					<com:TRequiredFieldValidator
@@ -119,6 +126,14 @@
 					</com:TRequiredFieldValidator>
 				</div>
 			</div>
+			<div class="w3-row-padding w3-section">
+				<div class="w3-col w3-half"><%[ Labeling status: ]%></div>
+				<div class="w3-col w3-half">
+					<i id="label_status_start" class="fa fa-step-forward" title="<%[ Ready to label ]%>"></i>
+					<i id="label_status_loading" class="fa fa-sync w3-spin" style="display: none" title="<%[ Loading... ]%>"></i>
+					<i id="label_status_finish" class="fa fa-check" style="display: none" title="<%[ Finished ]%>"></i>
+				</div>
+			</div>
 			<div id="label_volume_log" class="w3-panel w3-card w3-light-grey" style="display: none; max-height: 200px; overflow-x: auto;">
 				<div class="w3-code notranslate">
 					<pre><com:TActiveLabel ID="LabelVolumeLog" /></pre>
@@ -132,17 +147,43 @@
 					ValidationGroup="LabelVolumeGroup"
 					OnClick="labelVolumes"
 					CssClass="w3-button w3-green"
-					ClientSide.OnLoading="$('#status_label_volume_loading').show();"
-					ClientSide.OnSuccess="$('#status_label_volume_loading').hide();$('#label_volume_log').show();"
+					ClientSide.OnLoading="$('#status_label_volume_loading').css('visibility', 'visible');"
 				>
+					<prop:ClientSide.OnComplete>
+						$('#status_label_volume_loading').css('visibility', 'hidden');
+						$('#label_volume_log').show();
+						var logbox = document.getElementById('label_volume_log');
+						logbox.scrollTo(0, logbox.scrollHeight);
+					</prop:ClientSide.OnComplete>
 					<i class="fa fa-tag"></i> &nbsp;<%[ Label ]%>
 				</com:TActiveLinkButton>
-				<i id="status_label_volume_loading" class="fa fa-sync w3-spin" style="display: none;"></i>
+				<i id="status_label_volume_loading" class="fa fa-sync w3-spin" style="visibility: hidden;"></i>
 			</div>
 		</div>
 	</div>
 </div>
+<com:TCallback ID="LabelVolumeOutputRefresh"
+	OnCallback="refreshOutput"
+>
+	<prop:ClientSide.OnLoading>
+		$('#status_label_volume_loading').css('visibility', 'visible');
+		var logbox = document.getElementById('label_volume_log');
+		if ((logbox.offsetHeight + logbox.scrollTop) === logbox.scrollHeight) {
+			label_volume_logbox_scroll = true;
+		} else {
+			label_volume_logbox_scroll = false;
+		}
+	</prop:ClientSide.OnLoading>
+	<prop:ClientSide.OnComplete>
+		$('#status_label_volume_loading').css('visibility', 'hidden');
+		if (label_volume_logbox_scroll) {
+			var logbox = document.getElementById('label_volume_log');
+			logbox.scrollTo(0, logbox.scrollHeight);
+		}
+	</prop:ClientSide.OnComplete>
+</com:TCallback>
 <script type="text/javascript">
+var label_volume_logbox_scroll = false;
 function set_barcodes() {
 	var chkb = document.getElementById('<%=$this->Barcodes->ClientID%>');
 	var name_el = document.getElementById('label_with_name');
@@ -157,5 +198,36 @@ function set_barcodes() {
 		with_barcodes_el.style.display = 'none';
 		name_el.style.display = 'block';
 	}
+}
+
+function set_labeling_status(status) {
+	var start = document.getElementById('label_status_start');
+	var loading = document.getElementById('label_status_loading');
+	var finish = document.getElementById('label_status_finish');
+	if (status === 'finish') {
+		start.style.display = 'none';
+		loading.style.display = 'none';
+		finish.style.display = '';
+	} else if (status === 'loading') {
+		start.style.display = 'none';
+		loading.style.display = '';
+		finish.style.display = 'none';
+	} else if (status === 'start') {
+		start.style.display = '';
+		loading.style.display = 'none';
+		finish.style.display = 'none';
+	}
+}
+
+function label_volume_output_refresh(out_id) {
+	setTimeout(function() {
+		set_label_volume_output(out_id)
+	}, 3000);
+}
+
+function set_label_volume_output(out_id) {
+	var cb = <%=$this->LabelVolumeOutputRefresh->ActiveControl->Javascript%>;
+	cb.setCallbackParameter(out_id);
+	cb.dispatch();
 }
 </script>

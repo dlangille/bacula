@@ -22,7 +22,7 @@
 
 Prado::using('Application.API.Class.Bconsole');
 
-class VolumeLabelBarcodes extends BaculumAPIServer {
+class SlotsUpdate extends BaculumAPIServer {
 
 	public function get() {
 		$output = array();
@@ -35,9 +35,10 @@ class VolumeLabelBarcodes extends BaculumAPIServer {
 		$this->error = VolumeError::ERROR_NO_ERRORS;
 	}
 
-	public function create($params) {
+	public function set($id, $params) {
 		$slots = property_exists($params, 'slots') ? $params->slots : 0;
 		$drive = property_exists($params, 'drive') ? intval($params->drive) : 0;
+		$barcodes = ($this->Request->contains('barcodes') && $this->Request->itemAt('barcodes') === 'barcodes');
 		$misc = $this->getModule('misc');
 
 		$storage = null;
@@ -49,23 +50,6 @@ class VolumeLabelBarcodes extends BaculumAPIServer {
 			}
 		} elseif (property_exists($params, 'storage') && $misc->isValidName($params->storage)) {
 			$storage = $params->storage;
-		}
-
-		if (!$misc->isValidRange($slots)) {
-			$this->output = VolumeError::MSG_ERROR_INVALID_SLOT;
-			$this->error = VolumeError::ERROR_INVALID_SLOT;
-			return;
-		}
-
-		$pool = null;
-		if (property_exists($params, 'poolid')) {
-			$poolid = intval($params->poolid);
-			$result = $this->getModule('pool')->getPoolById($poolid);
-			if (is_object($result)) {
-				$pool = $result->name;
-			}
-		} elseif (property_exists($params, 'pool') && $misc->isValidName($params->pool)) {
-			$pool = $params->pool;
 		}
 
 		if (!is_null($storage)) {
@@ -91,41 +75,28 @@ class VolumeLabelBarcodes extends BaculumAPIServer {
 			return;
 		}
 
-		if (!is_null($pool)) {
-			$result = $this->getModule('bconsole')->bconsoleCommand(
-				$this->director,
-				array('.pool')
-			);
-			if ($result->exitcode === 0) {
-				array_shift($result->output);
-				if (!in_array($pool, $result->output)) {
-					$this->output = PoolError::MSG_ERROR_POOL_DOES_NOT_EXISTS;
-					$this->error = PoolError::ERROR_POOL_DOES_NOT_EXISTS;
-					return;
-				}
-			} else {
-				$this->output = $result->output;
-				$this->error = $result->exitcode;
-				return;
-			}
-		} else {
-			$this->output = PoolError::MSG_ERROR_POOL_DOES_NOT_EXISTS;
-			$this->error = PoolError::ERROR_POOL_DOES_NOT_EXISTS;
+		if (!$misc->isValidRange($slots)) {
+			$this->output = VolumeError::MSG_ERROR_INVALID_SLOT;
+			$this->error = VolumeError::ERROR_INVALID_SLOT;
 			return;
 		}
 
-		$cmd = array (
-			'label',
-			'barcodes',
-			'slots="' . $slots . '"',
+		$cmd = array(
+			'update',
+			'slots',
 			'storage="' . $storage . '"',
 			'drive="' . $drive . '"',
-			'pool="' . $pool . '"'
+			'slot="' . $slots . '"'
 		);
+
+		if ($barcodes === false) {
+			array_splice($cmd, 2, 0, array('scan'));
+		}
+
 		$result = $this->getModule('bconsole')->bconsoleCommand(
 			$this->director,
 			$cmd,
-			Bconsole::PTYPE_CONFIRM_YES_BG_CMD
+			Bconsole::PTYPE_BG_CMD
 		);
 		array_shift($result->output);
 		if ($result->exitcode === 0) {
@@ -137,5 +108,4 @@ class VolumeLabelBarcodes extends BaculumAPIServer {
 		}
 	}
 }
-
 ?>

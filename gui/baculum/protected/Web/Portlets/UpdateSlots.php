@@ -41,17 +41,65 @@ class UpdateSlots extends Portlets {
 	}
 
 	public function update($sender, $param) {
-		$cmd = array('label');
-		$cmd = array('update');
-		$cmd[] = 'slots="' . $this->SlotsUpdate->Text . '"';
-		if($this->Barcodes->Checked == false) {
-			$cmd[] = 'scan';
+		$url_params = array();
+		if($this->Barcodes->Checked == true) {
+			$url_params = array('volumes', 'update', 'barcodes');
+		} else {
+			$url_params = array('volumes', 'update');
 		}
-		$cmd[] = 'drive="' . $this->DriveUpdate->Text . '"';
-		$cmd[] = 'storage="'. $this->StorageUpdate->SelectedItem->Text . '"';
-		$result = $this->getModule('api')->set(array('console'), $cmd);
+		$params = array(
+			'slots' => $this->SlotsUpdate->Text,
+			'drive' => $this->DriveUpdate->Text,
+			'storageid' => $this->StorageUpdate->SelectedValue
+		);
+
+		$result = $this->getModule('api')->set($url_params, $params);
+
+		if ($result->error === 0 && count($result->output) === 1) {
+			$out = json_decode($result->output[0]);
+			if (is_object($out) && property_exists($out, 'out_id')) {
+				$result = $this->getUpdateSlotsOutput($out->out_id);
+				$this->getPage()->getCallbackClient()->callClientFunction('update_slots_output_refresh', array($out->out_id));
+			}
+		}
 		if ($result->error === 0) {
-			$this->UpdateSlotsLog->Text = implode(PHP_EOL, $result->output);
+			$this->getPage()->getCallbackClient()->callClientFunction('set_updating_status', array('loading'));
+			$this->UpdateSlotsLog->Text = implode('', $result->output);
+		} else {
+			$this->UpdateSlotsLog->Text = $result->output;
+		}
+	}
+
+	private function getUpdateSlotsOutput($out_id) {
+		$result = $this->getModule('api')->get(
+			array('volumes', 'update', '?out_id=' . rawurlencode($out_id))
+		);
+		return $result;
+	}
+
+	private function getUpdateSlotsBarcodesOutput($out_id) {
+		$result = $this->getModule('api')->get(
+			array('volumes', 'update', 'barcodes', '?out_id=' . rawurlencode($out_id))
+		);
+		return $result;
+	}
+
+	public function refreshOutput($sender, $param) {
+		$out_id = $param->getCallbackParameter();
+		$result = null;
+		if ($this->Barcodes->Checked == true) {
+			$result = $this->getUpdateSlotsBarcodesOutput($out_id);
+		} else {
+			$result = $this->getUpdateSlotsOutput($out_id);
+		}
+
+		if ($result->error === 0) {
+			if (count($result->output) > 0) {
+				$this->UpdateSlotsLog->Text = implode('', $result->output);
+				$this->getPage()->getCallbackClient()->callClientFunction('update_slots_output_refresh', array($out_id));
+			} else {
+				$this->getPage()->getCallbackClient()->callClientFunction('set_updating_status', array('finish'));
+			}
 		} else {
 			$this->UpdateSlotsLog->Text = $result->output;
 		}

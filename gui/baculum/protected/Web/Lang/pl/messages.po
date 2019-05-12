@@ -476,17 +476,11 @@ msgstr "Użyj barcode jako etykiet"
 msgid "Label name:"
 msgstr "Nazwa etykiety:"
 
-msgid "Slots for label:"
-msgstr "Sloty do etykietowania:"
-
 msgid "Label"
 msgstr "Etykieta"
 
 msgid "Update slots using barcodes"
 msgstr "Aktualizuj sloty używając barcode"
-
-msgid "Slots for update:"
-msgstr "Sloty do aktualizacji"
 
 msgid "Update barcodes slots"
 msgstr "Aktualizuj sloty z etykietami barcode"
@@ -2036,3 +2030,27 @@ msgstr "Pole musi mieć wartość z zakresu 1-1000."
 
 msgid "Schedule status"
 msgstr "Status harmonogramu zadań"
+
+msgid "Slots to label (ex. 4 or 1-5 or 2,4,6-10):"
+msgstr "Sloty do etykietowania (np. 4 lub 1-5 lub 2,4,6-10):"
+
+msgid "Labeling status:"
+msgstr "Status etykietowania:"
+
+msgid "Ready to label"
+msgstr "Gotowy do etykietowania"
+
+msgid "Finished"
+msgstr "Zakończony"
+
+msgid "Updating status:"
+msgstr "Status aktualizowania:"
+
+msgid "Ready to update"
+msgstr "Gotowy do aktualizacji"
+
+msgid "Updating..."
+msgstr "Aktualizowanie..."
+
+msgid "Slots to update (ex. 4 or 1-5 or 2,4,6-10):"
+msgstr "Sloty do aktualizacji (np. 4 lub 1-5 lub 2,4,6-10):"

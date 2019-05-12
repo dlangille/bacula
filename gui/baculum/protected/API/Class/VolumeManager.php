@@ -74,7 +74,7 @@ class VolumeManager extends APIModule {
 			foreach($volumes as $volume) {
 				$this->setWhenExpire($volume);
 			}
-		} else {
+		} elseif (is_object($volumes)) {
 			$this->setWhenExpire($volumes);
 		}
 	}

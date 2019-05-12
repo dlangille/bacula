@@ -76,10 +76,12 @@ class VolumeError extends GenericError {
 	const ERROR_VOLUME_DOES_NOT_EXISTS = 30;
 	const ERROR_INVALID_VOLUME = 31;
 	const ERROR_INVALID_SLOT = 32;
+	const ERROR_VOLUME_ALREADY_EXISTS = 33;
 
 	const MSG_ERROR_VOLUME_DOES_NOT_EXISTS = 'Volume does not exist.';
 	const MSG_ERROR_INVALID_VOLUME = 'Invalid volume.';
 	const MSG_ERROR_INVALID_SLOT = 'Invalid slot.';
+	const MSG_ERROR_VOLUME_ALREADY_EXISTS = 'Volume already exists.';
 }
 
 class PoolError extends GenericError {

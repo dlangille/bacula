@@ -243,6 +243,10 @@ class Miscellaneous extends TModule {
 		return (preg_match('/^[\d\-\,]+$/', $range) === 1);
 	}
 
+	public function isValidAlphaNumeric($str) {
+		return (preg_match('/^[a-zA-Z0-9]+$/', $str) === 1);
+	}
+
 
 	/**
 	 * Writing INI-style configuration file.

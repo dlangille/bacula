@@ -33,15 +33,23 @@ class Bconsole extends APIModule {
 	 */
 	const PTYPE_REG_CMD = 0;
 	const PTYPE_API_CMD = 1;
-	const PTYPE_CONFIRM_YES_CMD = 2;
+	const PTYPE_BG_CMD = 2;
+	const PTYPE_CONFIRM_YES_CMD = 3;
+	const PTYPE_CONFIRM_YES_BG_CMD = 4;
 
 	const BCONSOLE_COMMAND_PATTERN = "%s%s -c %s %s 2>&1 <<END_OF_DATA\ngui on\n%s\nquit\nEND_OF_DATA";
 
+	const BCONSOLE_BG_COMMAND_PATTERN = "echo 'gui on\n%s\nquit\n' | nohup %s%s -c %s %s >%s 2>&1 &";
+
 	const BCONSOLE_CONFIRM_YES_COMMAND_PATTERN = "%s%s -c %s %s 2>&1 <<END_OF_DATA\ngui on\n%s\nyes\nquit\nEND_OF_DATA";
+
+	const BCONSOLE_CONFIRM_YES_BG_COMMAND_PATTERN = "echo 'gui on\n%s\nyes\nquit\n' | nohup %s%s -c %s %s >%s 2>&1 &";
 
 	const BCONSOLE_API_COMMAND_PATTERN = "%s%s -c %s %s 2>&1 <<END_OF_DATA\ngui on\n.api 2 nosignal api_opts=o\n%s\nquit\nEND_OF_DATA";
 
 	const BCONSOLE_DIRECTORS_PATTERN = "%s%s -c %s -l 2>&1";
+
+	const OUTPUT_FILE_PREFIX = 'output_';
 
 	private $allowed_commands = array(
 		'version',
@@ -189,21 +197,9 @@ class Bconsole extends APIModule {
 			$dir = is_null($director) ? '': '-D ' . $director;
 			$sudo = ($this->getUseSudo() === true) ? self::SUDO . ' ' : '';
 			$bconsole_command = implode(' ', $command);
-			$pattern = null;
-			switch ($ptype) {
-				case self::PTYPE_API_CMD: $pattern = self::BCONSOLE_API_COMMAND_PATTERN; break;
-				case self::PTYPE_CONFIRM_YES_CMD: $pattern = self::BCONSOLE_CONFIRM_YES_COMMAND_PATTERN; break;
-				default: $pattern = self::BCONSOLE_COMMAND_PATTERN;
-			}
-			$cmd = sprintf(
-				$pattern,
-				$sudo,
-				self::getCmdPath(),
-				self::getCfgPath(),
-				$dir,
-				$bconsole_command
-			);
-			exec($cmd, $output, $exitcode);
+			$pattern = $this->getCmdPattern($ptype);
+			$cmd = $this->getCommand($pattern, $sudo, $dir, $bconsole_command);
+			exec($cmd['cmd'], $output, $exitcode);
 			if($exitcode != 0) {
 				$emsg = ' Output=>' . implode("\n", $output) . ', Exitcode=>' . $exitcode;
 				throw new BConsoleException(
@@ -211,11 +207,18 @@ class Bconsole extends APIModule {
 					BconsoleError::ERROR_BCONSOLE_CONNECTION_PROBLEM
 				);
 			} else {
+				if ($pattern === self::BCONSOLE_BG_COMMAND_PATTERN || $pattern === self::BCONSOLE_CONFIRM_YES_BG_COMMAND_PATTERN) {
+					$output = array(
+						$bconsole_command,
+						json_encode(array('out_id' => $cmd['out_id'])),
+						'quit' // in prepareResult() this value is deleted
+					);
+				}
 				$result = $this->prepareResult($output, $exitcode, $bconsole_command);
 			}
 		}
 		$this->Application->getModule('logging')->log(
-			$cmd,
+			$cmd['cmd'],
 			$output,
 			Logging::CATEGORY_EXECUTE,
 			__FILE__,
@@ -223,6 +226,48 @@ class Bconsole extends APIModule {
 		);
 
 		return $result;
+	}
+
+	private function getCommand($pattern, $sudo, $director, $bconsole_command) {
+		$command = array('cmd' => null, 'out_id' => null);
+		if ($pattern === self::BCONSOLE_BG_COMMAND_PATTERN || $pattern === self::BCONSOLE_CONFIRM_YES_BG_COMMAND_PATTERN) {
+			$file = $this->prepareOutputFile();
+			$cmd = sprintf(
+				$pattern,
+				$bconsole_command,
+				$sudo,
+				self::getCmdPath(),
+				self::getCfgPath(),
+				$director,
+				$file
+			);
+			$command['cmd'] = $cmd;
+			$command['out_id'] = preg_replace('/^[\s\S]+\/output_/', '', $file);
+		} else {
+			$cmd = sprintf(
+				$pattern,
+				$sudo,
+				self::getCmdPath(),
+				self::getCfgPath(),
+				$director,
+				$bconsole_command
+			);
+			$command['cmd'] = $cmd;
+			$command['out_id'] = '';
+		}
+		return $command;
+	}
+
+	private function getCmdPattern($ptype) {
+		$pattern = null;
+		switch ($ptype) {
+			case self::PTYPE_API_CMD: $pattern = self::BCONSOLE_API_COMMAND_PATTERN; break;
+			case self::PTYPE_BG_CMD: $pattern = self::BCONSOLE_BG_COMMAND_PATTERN; break;
+			case self::PTYPE_CONFIRM_YES_CMD: $pattern = self::BCONSOLE_CONFIRM_YES_COMMAND_PATTERN; break;
+			case self::PTYPE_CONFIRM_YES_BG_CMD: $pattern = self::BCONSOLE_CONFIRM_YES_BG_COMMAND_PATTERN; break;
+			default: $pattern = self::BCONSOLE_COMMAND_PATTERN;
+		}
+		return $pattern;
 	}
 
 	public function getDirectors() {
@@ -247,6 +292,30 @@ class Bconsole extends APIModule {
 
 	private function isValidDirector($director) {
 		return in_array($director, $this->getDirectors()->output);
+	}
+
+	private function prepareOutputFile() {
+		$dir = Prado::getPathOfNamespace('Application.API.Config');
+		$fname = tempnam($dir, self::OUTPUT_FILE_PREFIX);
+		return $fname;
+	}
+
+	public static function readOutputFile($out_id) {
+		$output = array();
+		$dir = Prado::getPathOfNamespace('Application.API.Config');
+		if (preg_match('/^[a-z0-9]+$/i', $out_id) === 1) {
+			$file = $dir . '/' . self::OUTPUT_FILE_PREFIX . $out_id;
+			if (file_exists($file)) {
+				$output = file($file);
+			}
+			$output_count = count($output);
+			$last = $output_count > 0 ? trim($output[$output_count-1]) : '';
+			if ($last === 'quit') {
+				// output is complete, so remove the file
+				unlink($file);
+			}
+		}
+		return $output;
 	}
 
 	public function testBconsoleCommand(array $command, $cmd_path, $cfg_path, $use_sudo) {

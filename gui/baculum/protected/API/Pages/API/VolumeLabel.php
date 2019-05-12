@@ -24,11 +24,21 @@ Prado::using('Application.API.Class.Bconsole');
 
 class VolumeLabel extends BaculumAPIServer {
 
+	public function get() {
+		$output = array();
+		$misc = $this->getModule('misc');
+		if ($this->Request->contains('out_id') && $misc->isValidAlphaNumeric($this->Request->itemAt('out_id'))) {
+			$out_id = $this->Request->itemAt('out_id');
+			$output = Bconsole::readOutputFile($out_id);
+		}
+		$this->output = $output;
+		$this->error = VolumeError::ERROR_NO_ERRORS;
+	}
+
 	public function create($params) {
 		$volume = property_exists($params, 'volume') ? $params->volume : 0;
 		$slot = property_exists($params, 'slot') ? $params->slot : 0;
 		$drive = property_exists($params, 'drive') ? intval($params->drive) : 0;
-		$poolid = property_exists($params, 'poolid') ? intval($params->poolid) : 0;
 		$misc = $this->getModule('misc');
 
 		if (!$misc->isValidName($volume)) {
@@ -111,6 +121,13 @@ class VolumeLabel extends BaculumAPIServer {
 			return;
 		}
 
+		$result = $this->getModule('volume')->getVolumeByName($volume);
+		if (is_object($result)) {
+			$this->output = VolumeError::MSG_ERROR_VOLUME_ALREADY_EXISTS;
+			$this->error = VolumeError::ERROR_VOLUME_ALREADY_EXISTS;
+			return;
+		}
+
 		$cmd = array(
 			'label',
 			'volume="' . $volume . '"',
@@ -121,8 +138,10 @@ class VolumeLabel extends BaculumAPIServer {
 		);
 		$result = $this->getModule('bconsole')->bconsoleCommand(
 			$this->director,
-			$cmd
+			$cmd,
+			Bconsole::PTYPE_BG_CMD
 		);
+		array_shift($result->output);
 		if ($result->exitcode === 0) {
 			$this->output = $result->output;
 			$this->error = VolumeError::ERROR_NO_ERRORS;

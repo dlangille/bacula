@@ -62,6 +62,13 @@ class LabelVolume extends Portlets {
 				'poolid' => $this->PoolLabel->SelectedValue
 			);
 			$result = $this->getModule('api')->create(array('volumes', 'label', 'barcodes'), $params);
+			if ($result->error === 0 && count($result->output) === 1) {
+				$out = json_decode($result->output[0]);
+				if (is_object($out) && property_exists($out, 'out_id')) {
+					$result = $this->getLabelBarcodesOutput($out->out_id);
+					$this->getPage()->getCallbackClient()->callClientFunction('label_volume_output_refresh', array($out->out_id));
+				}
+			}
 		} else {
 			$params = array(
 				'slot' => $this->SlotLabel->Text,
@@ -71,9 +78,52 @@ class LabelVolume extends Portlets {
 				'poolid' => $this->PoolLabel->SelectedValue
 			);
 			$result = $this->getModule('api')->create(array('volumes', 'label'), $params);
+			if ($result->error === 0 && count($result->output) === 1) {
+				$out = json_decode($result->output[0]);
+				if (is_object($out) && property_exists($out, 'out_id')) {
+					$result = $this->getLabelOutput($out->out_id);
+					$this->getPage()->getCallbackClient()->callClientFunction('label_volume_output_refresh', array($out->out_id));
+				}
+			}
 		}
 		if ($result->error === 0) {
-			$this->LabelVolumeLog->Text = implode(PHP_EOL, $result->output);
+			$this->getPage()->getCallbackClient()->callClientFunction('set_labeling_status', array('loading'));
+			$this->LabelVolumeLog->Text = implode('', $result->output);
+		} else {
+			$this->LabelVolumeLog->Text = $result->output;
+		}
+	}
+
+	private function getLabelOutput($out_id) {
+		$result = $this->getModule('api')->get(
+			array('volumes', 'label', '?out_id=' . rawurlencode($out_id))
+		);
+		return $result;
+	}
+
+	private function getLabelBarcodesOutput($out_id) {
+		$result = $this->getModule('api')->get(
+			array('volumes', 'label', 'barcodes', '?out_id=' . rawurlencode($out_id))
+		);
+		return $result;
+	}
+
+	public function refreshOutput($sender, $param) {
+		$out_id = $param->getCallbackParameter();
+		$result = null;
+		if ($this->Barcodes->Checked == true) {
+			$result = $this->getLabelBarcodesOutput($out_id);
+		} else {
+			$result = $this->getLabelOutput($out_id);
+		}
+
+		if ($result->error === 0) {
+			if (count($result->output) > 0) {
+				$this->LabelVolumeLog->Text = implode('', $result->output);
+				$this->getPage()->getCallbackClient()->callClientFunction('label_volume_output_refresh', array($out_id));
+			} else {
+				$this->getPage()->getCallbackClient()->callClientFunction('set_labeling_status', array('finish'));
+			}
 		} else {
 			$this->LabelVolumeLog->Text = $result->output;
 		}

@@ -606,12 +606,6 @@ msgstr "Aplicar rótulo"
 msgid "Use barcodes as label:"
 msgstr "Usar código de barras como rótulos:"
 
-msgid "Slots for label:"
-msgstr "Slots para rotular:"
-
-msgid "Slots for update:"
-msgstr "Slots para atualizar:"
-
 msgid "Update barcodes slots"
 msgstr "Atualizar código de barras dos slots"
 
@@ -2044,3 +2038,27 @@ msgstr "Input must be between 1 and 1000."
 
 msgid "Schedule status"
 msgstr "Schedule status"
+
+msgid "Slots to label (ex. 4 or 1-5 or 2,4,6-10):"
+msgstr "Slots para rotular (ex. 4 or 1-5 or 2,4,6-10):"
+
+msgid "Labeling status:"
+msgstr "Labeling status:"
+
+msgid "Ready to label"
+msgstr "Ready to label"
+
+msgid "Finished"
+msgstr "Finished"
+
+msgid "Updating status:"
+msgstr "Updating status:"
+
+msgid "Ready to update"
+msgstr "Ready to update"
+
+msgid "Updating..."
+msgstr "Updating..."
+
+msgid "Slots to update (ex. 4 or 1-5 or 2,4,6-10):"
+msgstr "Slots to update (ex. 4 or 1-5 or 2,4,6-10):"
