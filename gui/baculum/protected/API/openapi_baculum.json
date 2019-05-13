@@ -2607,22 +2607,12 @@
 				},
 				"parameters": [
 					{
-						"name": "create[volume]",
+						"name": "create[slots]",
 						"in": "body",
-						"description": "Volume name",
+						"description": "Slots numbers or slots range (ex. 1-3,5,10)",
 						"required": true,
 						"schema": {
 							"type": "string"
-						}
-					},
-					{
-						"name": "create[slot]",
-						"in": "body",
-						"description": "Slot number",
-						"required": true,
-						"schema": {
-							"type": "integer",
-							"minimum": 0
 						}
 					},
 					{
