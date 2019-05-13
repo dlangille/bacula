@@ -571,7 +571,9 @@ class RestoreWizard extends BaculumWebPage
 	 */
 	public function refreshSelectedFiles($sender, $param) {
 		$this->loadSelectedFiles();
-		$this->SelectedVersionsDropper->render($param->NewWriter);
+		if ($this->IsCallBack && is_object($param)) {
+			$this->SelectedVersionsDropper->render($param->NewWriter);
+		}
 	}
 
 	/**

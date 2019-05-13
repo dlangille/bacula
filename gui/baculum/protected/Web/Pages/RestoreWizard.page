@@ -476,6 +476,7 @@ oJobsToRestoreList.init();
 						<div id="restore-browser-selected" class="w3-border">
 							<com:TJuiDroppable ID="SelectedVersionsDropper" Height="100%" Width="100%"
 								Options.accept=".draggable"
+								OnLoad="refreshSelectedFiles"
 								OnDrop="addFileToRestore"
 								OnCallback="refreshSelectedFiles"
 								OnDeactivate="callFormatters"
