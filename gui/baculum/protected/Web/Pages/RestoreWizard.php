@@ -164,6 +164,9 @@ class RestoreWizard extends BaculumWebPage
 			if ($this->Request->contains('backup_to_restore')) {
 				$_SESSION['restore_single_jobid'] = $this->Request['backup_to_restore'];
 			}
+			if (isset($_SESSION['restore_path'])) {
+				$_SESSION['restore_path'] = array();
+			}
 			$this->setFileVersions();
 			$this->loadSelectedFiles();
 			$this->loadFileVersions();
