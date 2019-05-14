@@ -21,6 +21,7 @@
  */
 
 
+Prado::using('System.Web.UI.ActiveControls.TCallback');
 Prado::using('System.Web.UI.ActiveControls.TActiveCheckBox');
 Prado::using('System.Web.UI.ActiveControls.TActiveDropDownList');
 Prado::using('System.Web.UI.ActiveControls.TActiveTextBox');
