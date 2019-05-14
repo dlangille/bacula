@@ -302,14 +302,54 @@ class RunJob extends Portlets {
 		$params['clientid'] = $this->Client->SelectedValue;
 		$params['accurate'] = (integer)$this->Accurate->Checked;
 		$result = $this->getModule('api')->create(array('jobs', 'estimate'), $params);
+		if ($result->error === 0 && count($result->output) == 1) {
+			$out = json_decode($result->output[0]);
+			if (is_object($out) && property_exists($out, 'out_id')) {
+				$result = $this->getEstimateOutput($out->out_id);
+				$this->getPage()->getCallbackClient()->callClientFunction(
+					'estimate_output_refresh',
+					array($out->out_id)
+				);
+			}
+		}
+
 		if ($result->error === 0) {
-			$this->EstimationLog->Text = implode(PHP_EOL, $result->output);
+			$this->getPage()->getCallbackClient()->callClientFunction('set_loading_status', array('loading'));
+			$this->EstimationLog->Text = implode($result->output);
 		} else {
 			$this->EstimationLog->Text = $result->output;
 		}
 	}
 
-	public function run_again($sender, $param) {
+	public function getEstimateOutput($out_id) {
+		$result = $this->getModule('api')->get(
+			array('jobs', 'estimate', '?out_id=' . rawurlencode($out_id))
+		);
+		return $result;
+	}
+
+	public function refreshEstimateOutput($sender, $param) {
+		$out_id = $param->getCallbackParameter();
+		$result = $this->getEstimateOutput($out_id);
+
+		if ($result->error === 0) {
+			if (count($result->output) > 0) {
+				$this->EstimationLog->Text = implode($result->output);
+				$this->getPage()->getCallbackClient()->callClientFunction(
+					'estimate_output_refresh',
+					array($out_id)
+				);
+			} else {
+				$this->getPage()->getCallbackClient()->callClientFunction(
+					'set_loading_status',
+					array('finish')
+				);
+			}
+		} else {
+			$this->EstimationLog->Text = $result->output;
+		}
+	}
+	public function runJobAgain($sender, $param) {
 		$jobid = $this->getJobId();
 		$job_name = $this->getJobName();
 		if ($jobid > 0) {

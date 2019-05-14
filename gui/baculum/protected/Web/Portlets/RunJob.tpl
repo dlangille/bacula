@@ -1,7 +1,7 @@
 <div id="run_job" class="w3-modal">
 	<div class="w3-modal-content w3-animate-top w3-card-4">
 		<header class="w3-container w3-teal"> 
-			<span onclick="document.getElementById('run_job').style.display='none'" class="w3-button w3-display-topright">&times;</span>
+			<span onclick="close_run_job_window();" class="w3-button w3-display-topright">&times;</span>
 			<h2><%[ Run job ]%><%=$this->getJobName() ? ' - ' . $this->getJobName() : ''%></h2>
 		</header>
 		<div class="w3-container w3-margin-left w3-margin-right">
@@ -121,13 +121,20 @@
 				<div class="field"><com:TActiveCheckBox ID="Accurate" AutoPostBack="false" CssClass="w3-check" /></div>
 			</com:TActivePanel>
 		</div>
+		<div class="w3-row-padding w3-section">
+			<div class="w3-col w3-half"><%[ Command status: ]%></div>
+			<div class="w3-col w3-half">
+				<i id="command_status_start" class="fa fa-step-forward" title="<%[ Ready ]%>"></i>
+				<i id="command_status_loading" class="fa fa-sync w3-spin" style="display: none" title="<%[ Loading... ]%>"></i>
+				<i id="command_status_finish" class="fa fa-check" style="display: none" title="<%[ Finished ]%>"></i>
+			</div>
+		</div>
 		<div id="run_job_log" class="w3-panel w3-card w3-light-grey" style="display: none; max-height: 200px; overflow-x: auto;">
 			<div class="w3-code notranslate">
 				<pre><com:TActiveLabel ID="EstimationLog" /></pre>
 			</div>
 		</div>
 		<footer class="w3-container w3-center">
-			<i id="estimate_status" class="fa fa-sync w3-spin" style="display: none"></i> &nbsp;
 			<com:TActiveButton
 				ID="Estimate"
 				Text="<%[ Estimate job ]%>"
@@ -135,11 +142,14 @@
 				CssClass="w3-button w3-section w3-teal w3-padding"
 			>
 				<prop:ClientSide.OnLoading>
-					document.getElementById('estimate_status').style.display = '';
+					document.getElementById('status_command_loading').style.visibility = 'visible';
 				</prop:ClientSide.OnLoading>
 				<prop:ClientSide.OnComplete>
-					document.getElementById('estimate_status').style.display = 'none';
+					$('#status_update_slots_loading').css('visibility', 'hidden');
+					document.getElementById('status_command_loading').style.visibility = 'hidden';
 					document.getElementById('run_job_log').style.display = '';
+					var logbox = document.getElementById('run_job_log');
+					logbox.scrollTo(0, logbox.scrollHeight);
 				</prop:ClientSide.OnComplete>
 			</com:TActiveButton>
 			<com:TButton
@@ -147,7 +157,7 @@
 				Text="<%[ Run job ]%>"
 				ValidationGroup="JobGroup"
 				CausesValidation="true"
-				OnClick="run_again"
+				OnClick="runJobAgain"
 				CssClass="w3-button w3-section w3-teal w3-padding"
 			>
 				<prop:Attributes.onclick>
@@ -159,6 +169,65 @@
 					return send;
 				</prop:Attributes.onclick>
 			</com:TButton>
+			<i id="status_command_loading" class="fa fa-sync w3-spin" style="visibility: hidden;"></i>
 		</footer>
 	</div>
 </div>
+<com:TCallback ID="EstimateOutputRefresh"
+	OnCallback="refreshEstimateOutput"
+>
+	<prop:ClientSide.OnLoading>
+		$('#status_command_loading').css('visibility', 'visible');
+		var logbox = document.getElementById('run_job_log');
+		if ((logbox.offsetHeight + logbox.scrollTop) === logbox.scrollHeight) {
+			command_logbox_scroll = true;
+		} else {
+			command_logbox_scroll = false;
+		}
+	</prop:ClientSide.OnLoading>
+	<prop:ClientSide.OnComplete>
+		$('#status_command_loading').css('visibility', 'hidden');
+		if (command_logbox_scroll) {
+			var logbox = document.getElementById('run_job_log');
+			logbox.scrollTo(0, logbox.scrollHeight);
+		}
+	</prop:ClientSide.OnComplete>
+</com:TCallback>
+<script type="text/javascript">
+var command_logbox_scroll = false;
+function close_run_job_window() {
+	document.getElementById('run_job').style.display = 'none';
+	var joblog = document.getElementById('<%=$this->EstimationLog->ClientID%>');
+	joblog.innerHTML = '';
+	joblog.style.display = 'none';
+	set_loading_status('start');
+}
+function set_loading_status(status) {
+	var start = document.getElementById('command_status_start');
+	var loading = document.getElementById('command_status_loading');
+	var finish = document.getElementById('command_status_finish');
+	if (status === 'finish') {
+		start.style.display = 'none';
+		loading.style.display = 'none';
+		finish.style.display = '';
+	} else if (status === 'loading') {
+		start.style.display = 'none';
+		loading.style.display = '';
+		finish.style.display = 'none';
+	} else if (status === 'start') {
+		start.style.display = '';
+		loading.style.display = 'none';
+		finish.style.display = 'none';
+	}
+}
+function estimate_output_refresh(out_id) {
+	setTimeout(function() {
+		set_estimate_output(out_id)
+	}, 3000);
+}
+function set_estimate_output(out_id) {
+	var cb = <%=$this->EstimateOutputRefresh->ActiveControl->Javascript%>;
+	cb.setCallbackParameter(out_id);
+	cb.dispatch();
+}
+</script>

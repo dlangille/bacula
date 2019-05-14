@@ -2071,3 +2071,9 @@ msgstr "Selected directory cannot be restored. Usually it means that the directo
 
 msgid "Please select other path which is inside paths defined in FileSet."
 msgstr "Please select other path which is inside paths defined in FileSet."
+
+msgid "Command status:"
+msgstr "Command status:"
+
+msgid "Ready"
+msgstr "Ready"

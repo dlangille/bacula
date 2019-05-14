@@ -2063,3 +2063,9 @@ msgstr "Wybrany katalog nie może być przywrócony. Zazwyczaj oznacza to, że l
 
 msgid "Please select other path which is inside paths defined in FileSet."
 msgstr "Proszę wybrać inną ścieżkę, która jest wewnątrz ścieżek zdefiniowanych w zasobie FileSet."
+
+msgid "Command status:"
+msgstr "Status komendy:"
+
+msgid "Ready"
+msgstr "Gotowy"
