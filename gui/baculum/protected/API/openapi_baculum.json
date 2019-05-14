@@ -946,6 +946,47 @@
 			}
 		},
 		"/api/v1/jobs/estimate": {
+			"get": {
+				"tags": ["jobs"],
+				"summary": "Get estimate output",
+				"description": "Get estimate output by output identifier",
+				"responses": {
+					"200": {
+						"description": "Estimate output",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"type": "array",
+											"items": {
+												"type": "string",
+												"description": "Estimate output."
+											}
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [{
+					"name": "out_id",
+					"in": "query",
+					"description": "Output identifier acquired during estimate start.",
+					"required": true,
+					"schema": {
+						"type": "string",
+						"pattern": "[a-zA-Z0-9]+"
+					}
+				}]
+			},
 			"post": {
 				"tags": ["jobs"],
 				"summary": "Estimate job bytes and files",
@@ -962,8 +1003,8 @@
 										"output": {
 											"type": "array",
 											"items": {
-												"description": "Output with estimated bytes and files",
-												"type": "string"
+												"type": "string",
+												"description": "JSON string with output identifier"
 											}
 										},
 										"error": {
