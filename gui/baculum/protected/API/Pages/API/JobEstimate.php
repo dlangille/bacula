@@ -20,7 +20,20 @@
  * Bacula(R) is a registered trademark of Kern Sibbald.
  */
  
+Prado::using('Application.API.Class.Bconsole');
+
 class JobEstimate extends BaculumAPIServer {
+
+	public function get() {
+		$output = array();
+		$misc = $this->getModule('misc');
+		if ($this->Request->contains('out_id') && $misc->isValidAlphaNumeric($this->Request->itemAt('out_id'))) {
+			$out_id = $this->Request->itemAt('out_id');
+			$output = Bconsole::readOutputFile($out_id);
+		}
+		$this->output = $output;
+		$this->error = VolumeError::ERROR_NO_ERRORS;
+	}
 
 	public function create($params) {
 		$job = null;
@@ -101,7 +114,12 @@ class JobEstimate extends BaculumAPIServer {
 			'client="' . $client . '"',
 			'accurate="' . $accurate . '"'
 		);
-		$result = $this->getModule('bconsole')->bconsoleCommand($this->director, $cmd);
+		$result = $this->getModule('bconsole')->bconsoleCommand(
+			$this->director,
+			$cmd,
+			Bconsole::PTYPE_BG_CMD
+		);
+		array_shift($result->output);
 		$this->output = $result->output;
 		$this->error = $result->exitcode;
 	}
