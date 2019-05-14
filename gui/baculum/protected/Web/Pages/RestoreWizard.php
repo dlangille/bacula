@@ -47,8 +47,8 @@ class RestoreWizard extends BaculumWebPage
 	/**
 	 * File browser special directories.
 	 */
-	private $browser_root_dir = array('name' => '.', 'type' => 'dir', 'fileid' => null);
-	private $browser_up_dir = array('name' => '..', 'type' => 'dir');
+	private $browser_root_dir = array('name' => '.', 'type' => 'dir', 'fileid' => null, 'lstat' => '');
+	private $browser_up_dir = array('name' => '..', 'type' => 'dir', 'lstat' => '');
 
 	/**
 	 * Used to provide in template selected by user single jobid to restore.
@@ -378,13 +378,19 @@ class RestoreWizard extends BaculumWebPage
 			$bvfs_dirs = $this->getModule('api')->get(
 				array('bvfs', 'lsdirs', $query)
 			);
-			$dirs = $this->getModule('misc')->parseBvfsList($bvfs_dirs->output);
+			$dirs = array();
+			if ($bvfs_dirs->error === 0) {
+				$dirs = $this->getModule('misc')->parseBvfsList($bvfs_dirs->output);
+			}
 
 			// get files list
 			$bvfs_files = $this->getModule('api')->get(
 				array('bvfs', 'lsfiles', $query)
 			);
-			$files = $this->getModule('misc')->parseBvfsList($bvfs_files->output);
+			$files = array();
+			if ($bvfs_files->error === 0) {
+				$files = $this->getModule('misc')->parseBvfsList($bvfs_files->output);
+			}
 
 			$elements = array_merge($dirs, $files);
 			if(count($_SESSION['restore_path']) > 0) {
@@ -444,7 +450,7 @@ class RestoreWizard extends BaculumWebPage
 	public function loadPath($sender, $param) {
 		$path = explode('/', $this->PathField->Text);
 		$path_len = count($path);
-		for ($i = 0; $i < count($path); $i++) {
+		for ($i = 0; $i < $path_len; $i++) {
 			if ($i == ($path_len - 1) && empty($path[$i])) {
 				// last path dir is slash so not add slash to last element
 				break;
@@ -513,6 +519,13 @@ class RestoreWizard extends BaculumWebPage
 			}
 			$file_prop = $this->getBrowserFile($fileid);
 		}
+
+		if ($file_prop['type'] === 'dir' && is_null($file_prop['lstat'])) {
+			// Path belongs to locations defined in FileSet (not restorable)
+			$this->getCallbackClient()->callClientFunction('show_invalid_path_to_restore');
+			return;
+		}
+
 		if($file_prop['name'] != $this->browser_root_dir['name'] && $file_prop['name'] != $this->browser_up_dir['name']) {
 			$this->markFileToRestore($fileid, $file_prop);
 			$this->loadSelectedFiles();

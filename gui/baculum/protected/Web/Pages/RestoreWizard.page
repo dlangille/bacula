@@ -370,7 +370,7 @@ oJobsToRestoreList.init();
 												OnCallback="Page.addFileToRestore"
 												ActiveControl.CallbackParameter="<%=isset($this->getParent()->Data['fileid']) ? $this->getParent()->Data['fileid'] : null%>"
 												ActiveControl.EnableUpdate="false"
-												Visible="<%=!in_array($this->getParent()->Data['name'], $this->getPage()->excluded_elements_from_add)%>"
+												Visible="<%=!in_array($this->getParent()->Data['name'], $this->getPage()->excluded_elements_from_add) && ($this->getParent()->Data['type'] !== 'dir' || !is_null($this->getParent()->Data['lstat']))%>"
 												ClientSide.OnComplete="Formatters.set_formatters();"
 												Text="<%[ Add ]%>"
 											/>
@@ -518,10 +518,26 @@ oJobsToRestoreList.init();
 					</td>
 				</tr>
 			</table>
+			<div id="invalid_path_to_restore_modal" class="w3-modal" style="display: none">
+				<div class="w3-modal-content w3-card-4 w3-animate-zoom w3-padding" style="max-width: 600px">
+					<span onclick="document.getElementById('invalid_path_to_restore_modal').style.display='none'" class="w3-button w3-xlarge w3-hover-red w3-display-topright">&times;</span>
+					<h4><%[ Invalid path to restore ]%></h4>
+					<div class="w3-section">
+						<p><%[ Selected directory cannot be restored. Usually it means that the directory path contains in the path defined in FileSet (ex. selected path: /home, in FileSet: File = "/home/john/Documents"). ]%></p>
+						<p><%[ Please select other path which is inside paths defined in FileSet. ]%></p>
+					</div>
+					<div class="w3-center">
+						<button class="w3-button w3-red" type="button" onclick="document.getElementById('invalid_path_to_restore_modal').style.display='none'"><i class="fa fa-times"></i> &nbsp;<%[ OK ]%></button>
+					</div>
+				</div>
+			</div>
 			<script type="text/javascript">
 				var browser = document.getElementById('restore-browser-files');
 				document.getElementById('restore-browser-files-loading').style.width = browser.offsetWidth + 'px';
 				document.getElementById('restore-browser-files-loading').style.height = browser.offsetHeight + 'px';
+				function show_invalid_path_to_restore() {
+					document.getElementById('invalid_path_to_restore_modal').style.display = 'block';
+				}
 				function make_draggable() {
 					$('.draggable').draggable({
 						'helper':"clone",

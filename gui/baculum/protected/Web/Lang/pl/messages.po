@@ -2054,3 +2054,12 @@ msgstr "Aktualizowanie..."
 
 msgid "Slots to update (ex. 4 or 1-5 or 2,4,6-10):"
 msgstr "Sloty do aktualizacji (np. 4 lub 1-5 lub 2,4,6-10):"
+
+msgid "Invalid path to restore"
+msgstr "Niepoprawna ścieżka wybrana do przywrócenia"
+
+msgid "Selected directory cannot be restored. Usually it means that the directory path contains in the path defined in FileSet (ex. selected path: /home, in FileSet: File = \"/home/john/Documents\")."
+msgstr "Wybrany katalog nie może być przywrócony. Zazwyczaj oznacza to, że lokalizacja katalogu zawiera się w ścieżce zdefiniowanej w zasobie FileSet (np. wybrana ścieżka: /home, w zasobie FileSet: File = \"/home/jan/Dokumenty\"."
+
+msgid "Please select other path which is inside paths defined in FileSet."
+msgstr "Proszę wybrać inną ścieżkę, która jest wewnątrz ścieżek zdefiniowanych w zasobie FileSet."
