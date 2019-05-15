@@ -16,11 +16,6 @@ JobName=RestartJob
 scripts/cleanup
 scripts/copy-test-confs
 
-# Unfortunately this code is designed for the Enterprise database
-#  and does not work for the Community database.
-#  FileName table ...
-exit 1
-
 setup_shstore # simulate shared storage if enabled
 
 echo "$tmp/files/po"    >${cwd}/tmp/file-list
@@ -73,7 +68,7 @@ Job {
 }
 Pool {
  Name = VF
- Pool Type = backup
+ Pool Type = Backup
  Storage = File1
  LabelFormat = "VF"
 }
@@ -93,13 +88,13 @@ run job=$JobName spooldata=no yes
 messages
 sql
 select * from JobMedia;
-select FileId, FileIndex, Path.Path, Filename from File JOIN Path USING (PathId);
+select FileId, FileIndex, Path.Path, Filename.Name from File JOIN Path USING (PathId) JOIN Filename USING (FilenameId);
 
 wait
 messages
 sql
 select * from JobMedia;
-select FileId, FileIndex, Path.Path, Filename from File JOIN Path USING (PathId);
+select FileId, FileIndex, Path.Path, Filename.Name from File JOIN Path USING (PathId) JOIN Filename USING (FilenameId);
 
 quit
 END_OF_DATA
