@@ -759,6 +759,11 @@ bool process_and_send_data(bctx_t &bctx)
 
    jcr->ReadBytes += sd->msglen;         /* count bytes read */
 
+   /* Debug code: check if we must hangup or blowup */
+   if (handle_hangup_blowup(jcr, 0, jcr->ReadBytes)) {
+      goto err;
+   }
+
    /** Uncompressed cipher input length */
    bctx.cipher_input_len = sd->msglen;
 
