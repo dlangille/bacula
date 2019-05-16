@@ -779,9 +779,6 @@ int wait_for_job_termination(JCR *jcr, int timeout)
    return jcr->SDJobStatus;
 }
 
-/* Not used */
-#if 0
-
 /* When the job is incomplete, we need to make sure the catalog
  * is consistent. The JobMedia table should reference Files that
  * are not in the file table for example.
@@ -868,7 +865,6 @@ bail_out:
    db_end_transaction(jcr, jcr->db);
    db_unlock(jcr->db);
 }
-#endif
 
 /*
  * Release resources allocated during backup.
@@ -891,10 +887,8 @@ void backup_cleanup(JCR *jcr, int TermCode)
 
    remove_dummy_jobmedia_records(jcr);
 
-#if 0
    /* cleanup the job media table after an incomplete job, should not be needed */
    incomplete_cleanup(jcr);
-#endif
 
    if (jcr->is_JobLevel(L_VIRTUAL_FULL)) {
       vbackup_cleanup(jcr, TermCode);
@@ -1158,7 +1152,8 @@ void update_bootstrap_file(JCR *jcr)
          /* Start output with when and who wrote it */
          bstrftimes(edt, sizeof(edt), time(NULL));
          fprintf(fd, "# %s - %s - %s%s\n", edt, jcr->jr.Job,
-                 level_to_str(edl, sizeof(edl), jcr->getJobLevel()), jcr->since);
+                 level_to_str(edl, sizeof(edl), jcr->getJobLevel()),
+                 jcr->since);
          for (int i=0; i < VolCount; i++) {
             /* Write the record */
             fprintf(fd, "Volume=\"%s\"\n", VolParams[i].VolumeName);
