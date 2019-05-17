@@ -439,8 +439,7 @@ bool do_backup(JCR *jcr)
    char *store_address;
    uint32_t store_port;
    char ed1[100];
-   db_int64_ctx job, first, last;
-   int64_t val=0;
+   db_int64_ctx job;
    POOL_MEM buf;
 
    if (jcr->is_JobLevel(L_VIRTUAL_FULL)) {
@@ -474,21 +473,7 @@ bool do_backup(JCR *jcr)
          Jmsg(jcr, M_FATAL, 0, "%s", db_strerror(jcr->db));
          return false;
       }
-      Mmsg(buf, "SELECT max(LastIndex) FROM JobMedia WHERE JobId=%s", ed1);
-      if (!db_sql_query(jcr->db, buf.c_str(), db_int64_handler, &last)) {
-         Jmsg(jcr, M_FATAL, 0, "%s", db_strerror(jcr->db));
-         return false;
-      }
-      Mmsg(buf, "SELECT max(FirstIndex) FROM JobMedia WHERE JobId=%s", ed1);
-      if (!db_sql_query(jcr->db, buf.c_str(), db_int64_handler, &first)) {
-         Jmsg(jcr, M_FATAL, 0, "%s", db_strerror(jcr->db));
-         return false;
-      }
-      /* We skip the last FileIndex (MAX) and the one after (MAX+1), can be
-       * already referenced in JobMedia or a Volume
-       */
-      val = MAX(job.value, MAX(first.value, last.value));
-      jcr->JobFiles = val + 2;
+      jcr->JobFiles = job.value;
       Dmsg1(100, "==== FI=%ld\n", jcr->JobFiles);
       Mmsg(buf, "SELECT VolSessionId FROM Job WHERE JobId=%s", ed1);
       if (!db_sql_query(jcr->db, buf.c_str(), db_int64_handler, &job)) {
@@ -1152,8 +1137,7 @@ void update_bootstrap_file(JCR *jcr)
          /* Start output with when and who wrote it */
          bstrftimes(edt, sizeof(edt), time(NULL));
          fprintf(fd, "# %s - %s - %s%s\n", edt, jcr->jr.Job,
-                 level_to_str(edl, sizeof(edl), jcr->getJobLevel()),
-                 jcr->since);
+                 level_to_str(edl, sizeof(edl), jcr->getJobLevel()), jcr->since);
          for (int i=0; i < VolCount; i++) {
             /* Write the record */
             fprintf(fd, "Volume=\"%s\"\n", VolParams[i].VolumeName);
