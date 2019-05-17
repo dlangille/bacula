@@ -94,6 +94,7 @@ rm -f dumps/*
 ./run tests/restart2-job-test
 ./run tests/restart-accurate-job-test
 ./run tests/restart-job-test
+./run tests/restart-jobmedia-test
 ./run tests/restart-sd-test
 ./run tests/restart-reschedule-test
 ./run tests/restore2-by-file-test
