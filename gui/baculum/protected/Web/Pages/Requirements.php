@@ -62,10 +62,6 @@ class Requirements {
 			$requirements[] = 'Please install <b>BCMath PHP module</b>.';
 		}
 
-		if(!extension_loaded('pdo_pgsql') && !extension_loaded('pdo_mysql')) {
-			$requirements[] = 'Please install <b>PDO (PHP Data Objects) PHP module for PostgreSQL or MySQL</b> depending on what database type you are using with Bacula.';
-		}
-
 		if(!function_exists('mb_strlen')) {
 			$requirements[] = 'Please install <b>MB String PHP module</b> for support for multi-byte string handling to PHP.';
 		}
@@ -85,7 +81,7 @@ class Requirements {
 				
 			}
 			echo '</ul>';
-			echo 'For run Baculum <u>please correct above requirements</u> and refresh this page in web browser.';
+			echo 'To run Baculum <u>please correct above requirements</u> and refresh this page in web browser.';
 			echo '</body></html>';
 			exit();
 		}
