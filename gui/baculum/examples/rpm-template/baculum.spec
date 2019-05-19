@@ -1,19 +1,20 @@
-%global langs_api en pl
+%global langs_api en pl pt
 %global langs_web en pl pt ja
 %global destdir build
 %global metaname baculum
 
-Summary:	API layer to Baculum WebGUI tool for Bacula Community program
+Summary:	Baculum WebGUI tool for Bacula Community program
 Name:		baculum
-Version:	9.0.0
+Version:	9.4.3
 Release:	1%{?dist}
 License:	AGPLv3
 Group:		Applications/Internet
 URL:		http://bacula.org/
-Source0:	bacula-gui-9.0.0.tar.gz
+Source0:	bacula-gui-9.4.3.tar.gz
 BuildRequires:	systemd-units
+BuildRequires:	selinux-policy
+BuildRequires:	selinux-policy-devel
 BuildRequires:	checkpolicy
-Requires:	bacula-console
 # Lower version of PHP ( < 5.3.4) does not provide php-mysqlnd db driver
 # and from this reason the lowest is 5.3.4
 Requires:	php >= 5.3.4
@@ -44,12 +45,11 @@ This module is a part of Baculum.
 Summary:		Baculum API files
 Requires:		%name-common = %version-%release
 Group:			Applications/Internet
-Requires:		bacula-console
 # Lower version of PHP ( < 5.3.4) does not provide php-mysqlnd db driver
 # and from this reason the lowest is 5.3.4
 Requires:		php >= 5.3.4
-Requires:		php-bcmath
 Requires:		php-common
+Requires:		php-json
 Requires:		php-mysqlnd
 Requires:		php-pdo
 Requires:		php-pgsql
@@ -67,6 +67,8 @@ Group:			Applications/Internet
 # and from this reason the lowest is 5.3.4
 Requires:		php >= 5.3.4
 Requires:		php-common
+Requires:		php-json
+Requires:		php-bcmath
 Requires:		php-mbstring
 Requires:		php-xml
 
@@ -140,12 +142,39 @@ Conflicts:		%{name}-web-httpd, %{name}-api-httpd
 This package provides the Lighttpd configuration for Baculum WebGUI.
 By using this module it is possible to run Baculum WebGUI in Lighttpd environment.
 
+%package api-selinux
+Summary:                SELinux module for Baculum API
+Requires:               %name-api-selinux = %version-%release
+Group:                  Applications/Internet
+Requires(post):         policycoreutils-python
+Requires(preun):        policycoreutils-python
+
+%description api-selinux
+This package provides the SELinux module for Baculum API.
+You should install this package if you are using SELinux, that Baculum API
+can be run in enforcing mode.
+
+%package web-selinux
+Summary:                SELinux module for Baculum Web
+Requires:               %name-web-selinux = %version-%release
+Group:                  Applications/Internet
+Requires(post):         policycoreutils-python
+Requires(preun):        policycoreutils-python
+
+%description web-selinux
+This package provides the SELinux module for Baculum Web.
+You should install this package if you are using SELinux, that Baculum Web
+can be run in enforcing mode.
+
 %prep
 %setup -n bacula-gui-%version/baculum
 
 %build
 # Execute files preparation in build directory by Makefile
 make build DESTDIR=%{destdir}
+# Compilation SELinuxu policies before loading them
+make -C examples/selinux/ -f %{_datadir}/selinux/devel/Makefile %{name}-api.pp
+make -C examples/selinux/ -f %{_datadir}/selinux/devel/Makefile %{name}-web.pp
 # Remove these cache directories, because here will be symbolic links
 rmdir %{destdir}/%{_datadir}/%{metaname}/htdocs/assets
 rmdir %{destdir}/%{_datadir}/%{metaname}/htdocs/protected/runtime
@@ -159,57 +188,89 @@ done
 %install
 cp -ra build/. %{buildroot}
 %find_lang %{metaname} --all-name
+install -D -m 644 examples/selinux/%{name}-api.pp %{buildroot}%{_datadir}/selinux/packages/%{name}-api/%{name}-api.pp
+install -D -m 644 examples/selinux/%{name}-web.pp %{buildroot}%{_datadir}/selinux/packages/%{name}-web/%{name}-web.pp
 
 %post common
-# these symbolic links indicates to Baculum's cache directory
-ln -s  %{_localstatedir}/cache/%{metaname} %{_datadir}/%{metaname}/htdocs/assets
-ln -s  %{_localstatedir}/cache/%{metaname} %{_datadir}/%{metaname}/htdocs/protected/runtime
-
-%post api
-# because framework does not use system locale dir, here are linked
-# locale files to framework location
-for lang in  %{langs_api}; do
-	ln -s  %{_datadir}/locale/${lang}/LC_MESSAGES/%{metaname}-api.mo \
-		%{_datadir}/%{metaname}/htdocs/protected/API/Lang/${lang}/messages.mo
-done
-
-%post web
-# because framework does not use system locale dir, here are linked
-# locale files to framework location
-for lang in  %{langs_web}; do
-	ln -s  %{_datadir}/locale/${lang}/LC_MESSAGES/%{metaname}-web.mo \
-		%{_datadir}/%{metaname}/htdocs/protected/Web/Lang/${lang}/messages.mo
-done
+if [ $1 -ge 1 ] ; then
+    # these symbolic links indicates to Baculum's cache directory
+    [ -e %{_datadir}/%{metaname}/htdocs/assets ] ||
+	ln -s  %{_localstatedir}/cache/%{metaname} %{_datadir}/%{metaname}/htdocs/assets
+    [ -e %{_datadir}/%{metaname}/htdocs/protected/runtime ] ||
+	ln -s %{_localstatedir}/cache/%{metaname} %{_datadir}/%{metaname}/htdocs/protected/runtime
+fi
 
 %post api-httpd
 %systemd_post httpd.service
-ln -s  %{_sysconfdir}/%{metaname}/Config-api-apache %{_datadir}/%{metaname}/htdocs/protected/API/Config
+if [ $1 -eq 1 ] ; then
+	ln -s  %{_sysconfdir}/%{metaname}/Config-api-apache %{_datadir}/%{metaname}/htdocs/protected/API/Config
+fi
 
 %post api-lighttpd
 %systemd_post baculum-api-lighttpd.service
-ln -s  %{_sysconfdir}/%{metaname}/Config-api-lighttpd %{_datadir}/%{metaname}/htdocs/protected/API/Config
+if [ $1 -eq 1 ] ; then
+	ln -s  %{_sysconfdir}/%{metaname}/Config-api-lighttpd %{_datadir}/%{metaname}/htdocs/protected/API/Config
+fi
 
 %post web-httpd
 %systemd_post httpd.service
-ln -s  %{_sysconfdir}/%{metaname}/Config-web-apache %{_datadir}/%{metaname}/htdocs/protected/Web/Config
+if [ $1 -eq 1 ] ; then
+	ln -s  %{_sysconfdir}/%{metaname}/Config-web-apache %{_datadir}/%{metaname}/htdocs/protected/Web/Config
+fi
 
 %post web-lighttpd
 %systemd_post baculum-web-lighttpd.service
-ln -s  %{_sysconfdir}/%{metaname}/Config-web-lighttpd %{_datadir}/%{metaname}/htdocs/protected/Web/Config
+if [ $1 -eq 1 ] ; then
+	ln -s  %{_sysconfdir}/%{metaname}/Config-web-lighttpd %{_datadir}/%{metaname}/htdocs/protected/Web/Config
+fi
+
+%post api-selinux
+# Write access is possible for web servers user only to two directories
+# -  Config/ directory stores API settings and web server HTTP Basic credentials
+# - /var/cache/baculum - cache used by framework in specific locations (assets/ and protected/runtime/)
+#   by symbolic links to cache directory
+semanage fcontext -a -t httpd_sys_rw_content_t '%{_sysconfdir}/%{name}(/.*)?' 2>/dev/null || :
+restorecon -i -R '%{_sysconfdir}/%{name}' || :
+restorecon -i -R '%{_datadir}/%{name}/htdocs/protected/API/Config' || :
+semanage fcontext -a -t httpd_cache_t '%{_localstatedir}/cache/%{name}(/.*)?' 2>/dev/null || :
+restorecon -i -R %{_localstatedir}/cache/%{name} || :
+semanage fcontext -a -t httpd_sys_rw_content_t '%{_datadir}/%{name}/htdocs/protected/API/Logs(/.*)?' 2>/dev/null || :
+restorecon -i -R '%{_datadir}/%{name}/htdocs/protected/API/Logs' || :
+semodule -i %{_datadir}/selinux/packages/%{name}-api/%{name}-api.pp 2>/dev/null || :
+
+%post web-selinux
+# Write access is possible for web servers user only to two directories
+# -  Config/ directory stores Web settings and web server HTTP Basic credentials
+# - /var/cache/baculum - cache used by framework in specific locations (assets/ and protected/runtime/)
+#   by symbolic links to cache directory
+semanage fcontext -a -t httpd_sys_rw_content_t '%{_sysconfdir}/%{name}(/.*)?' 2>/dev/null || :
+restorecon -i -R '%{_sysconfdir}/%{name}' || :
+restorecon -i -R '%{_datadir}/%{name}/htdocs/protected/Web/Config' || :
+semanage fcontext -a -t httpd_cache_t '%{_localstatedir}/cache/%{name}(/.*)?' 2>/dev/null || :
+restorecon -i -R %{_localstatedir}/cache/%{name} || :
+semanage fcontext -a -t httpd_sys_rw_content_t '%{_datadir}/%{name}/htdocs/protected/Web/Logs(/.*)?' 2>/dev/null || :
+restorecon -i -R '%{_datadir}/%{name}/htdocs/protected/Web/Logs' || :
+semodule -i %{_datadir}/selinux/packages/%{name}-web/%{name}-web.pp 2>/dev/null || :
 
 %preun common
-rm %{_datadir}/%{metaname}/htdocs/assets
-rm %{_datadir}/%{metaname}/htdocs/protected/runtime
+if [ $1 -lt 1 ] ; then
+	rm %{_datadir}/%{metaname}/htdocs/assets
+	rm %{_datadir}/%{metaname}/htdocs/protected/runtime
+fi
 
 %preun api
-for lang in  %{langs_api}; do
-	rm %{_datadir}/%{metaname}/htdocs/protected/API/Lang/${lang}/messages.mo
-done
+if [ $1 -lt 1 ] ; then
+	for lang in  %{langs_api}; do
+		rm %{_datadir}/%{metaname}/htdocs/protected/API/Lang/${lang}/messages.mo
+	done
+fi
 
 %preun web
-for lang in  %{langs_web}; do
-	rm %{_datadir}/%{metaname}/htdocs/protected/Web/Lang/${lang}/messages.mo
-done
+if [ $1 -lt 1 ] ; then
+	for lang in  %{langs_web}; do
+		rm %{_datadir}/%{metaname}/htdocs/protected/Web/Lang/${lang}/messages.mo
+	done
+fi
 
 %preun api-httpd
 %systemd_preun httpd.service
@@ -285,6 +346,18 @@ if [ $1 -lt 1 ] ; then
 	rm %{_datadir}/%{metaname}/htdocs/protected/Web/Config
 fi
 
+%preun api-selinux
+if [ $1 -lt 1 ] ; then
+	# remove SELinux module
+	semodule -r %{name}-api 2>/dev/null || :
+fi
+
+%preun web-selinux
+if [ $1 -lt 1 ] ; then
+	# remove SELinux module
+	semodule -r %{name}-web 2>/dev/null || :
+fi
+
 %postun api-httpd
 %systemd_postun_with_restart httpd.service
 
@@ -296,6 +369,24 @@ fi
 
 %postun web-lighttpd
 %systemd_postun_with_restart baculum-web-lighttpd.service
+
+%posttrans api
+# because framework does not use system locale dir, here are linked
+# locale files to framework location
+for lang in  %{langs_api}; do
+	[ -e %{_datadir}/%{metaname}/htdocs/protected/API/Lang/${lang}/messages.mo ] ||
+		ln -s  %{_datadir}/locale/${lang}/LC_MESSAGES/%{metaname}-api.mo \
+			%{_datadir}/%{metaname}/htdocs/protected/API/Lang/${lang}/messages.mo
+done
+
+%posttrans web
+# because framework does not use system locale dir, here are linked
+# locale files to framework location
+for lang in  %{langs_web}; do
+	[ -e %{_datadir}/%{metaname}/htdocs/protected/Web/Lang/${lang}/messages.mo ] ||
+		ln -s  %{_datadir}/locale/${lang}/LC_MESSAGES/%{metaname}-web.mo \
+			%{_datadir}/%{metaname}/htdocs/protected/Web/Lang/${lang}/messages.mo
+done
 
 %files -f %{metaname}.lang common
 %defattr(-,root,root)
@@ -338,7 +429,7 @@ fi
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/%{metaname}-api.conf
 %attr(755,apache,apache) %{_localstatedir}/cache/%{metaname}/
 %attr(700,apache,apache) %{_sysconfdir}/%{metaname}/Config-api-apache/
-%attr(600,apache,apache) %{_sysconfdir}/%{metaname}/Config-api-apache/%{metaname}.users
+%config(noreplace) %attr(600,apache,apache) %{_sysconfdir}/%{metaname}/Config-api-apache/%{metaname}.users
 %attr(755,apache,apache) %{_datadir}/%{metaname}/htdocs/protected/API/Logs
 
 %files web-httpd
@@ -350,7 +441,7 @@ fi
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/%{metaname}-web.conf
 %attr(755,apache,apache) %{_localstatedir}/cache/%{metaname}/
 %attr(700,apache,apache) %{_sysconfdir}/%{metaname}/Config-web-apache/
-%attr(600,apache,apache) %{_sysconfdir}/%{metaname}/Config-web-apache/%{metaname}.users
+%config(noreplace) %attr(600,apache,apache) %{_sysconfdir}/%{metaname}/Config-web-apache/%{metaname}.users
 %attr(755,apache,apache) %{_datadir}/%{metaname}/htdocs/protected/Web/Logs
 
 %files api-lighttpd
@@ -358,7 +449,7 @@ fi
 # Lighttpd logs are stored in /var/log/lighttpd
 %attr(755,lighttpd,lighttpd) %{_localstatedir}/cache/%{metaname}/
 %attr(700,lighttpd,lighttpd) %{_sysconfdir}/%{metaname}/Config-api-lighttpd/
-%attr(600,lighttpd,lighttpd) %{_sysconfdir}/%{metaname}/Config-api-lighttpd/%{metaname}.users
+%config(noreplace) %attr(600,lighttpd,lighttpd) %{_sysconfdir}/%{metaname}/Config-api-lighttpd/%{metaname}.users
 %attr(755,lighttpd,lighttpd) %{_datadir}/%{metaname}/htdocs/protected/API/Logs
 %{_unitdir}/%{metaname}-api-lighttpd.service
 %config(noreplace) %{_sysconfdir}/%{metaname}/%{metaname}-api-lighttpd.conf
@@ -368,10 +459,18 @@ fi
 # Lighttpd logs are stored in /var/log/lighttpd
 %attr(755,lighttpd,lighttpd) %{_localstatedir}/cache/%{metaname}/
 %attr(700,lighttpd,lighttpd) %{_sysconfdir}/%{metaname}/Config-web-lighttpd/
-%attr(600,lighttpd,lighttpd) %{_sysconfdir}/%{metaname}/Config-web-lighttpd/%{metaname}.users
+%config(noreplace) %attr(600,lighttpd,lighttpd) %{_sysconfdir}/%{metaname}/Config-web-lighttpd/%{metaname}.users
 %attr(755,lighttpd,lighttpd) %{_datadir}/%{metaname}/htdocs/protected/Web/Logs
 %{_unitdir}/%{metaname}-web-lighttpd.service
 %config(noreplace) %{_sysconfdir}/%{metaname}/%{metaname}-web-lighttpd.conf
+
+%files api-selinux
+%defattr(-,root,root)
+%{_datadir}/selinux/packages/%{name}-api/%{name}-api.pp
+
+%files web-selinux
+%defattr(-,root,root)
+%{_datadir}/selinux/packages/%{name}-web/%{name}-web.pp
 
 %changelog
  * Sat Dec 10 2016 Marcin Haba <marcin.haba@bacula.pl> - 7.5.0-0.1

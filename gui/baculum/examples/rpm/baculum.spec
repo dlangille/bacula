@@ -5,13 +5,15 @@
 
 Summary:	Baculum WebGUI tool for Bacula Community program
 Name:		baculum
-Version:	9.4.2
+Version:	9.4.3
 Release:	1%{?dist}
 License:	AGPLv3
 Group:		Applications/Internet
 URL:		http://bacula.org/
-Source0:	bacula-gui-9.4.2.tar.gz
+Source0:	bacula-gui-9.4.3.tar.gz
 BuildRequires:	systemd-units
+BuildRequires:	selinux-policy
+BuildRequires:	selinux-policy-devel
 BuildRequires:	checkpolicy
 # Lower version of PHP ( < 5.3.4) does not provide php-mysqlnd db driver
 # and from this reason the lowest is 5.3.4
@@ -46,8 +48,8 @@ Group:			Applications/Internet
 # Lower version of PHP ( < 5.3.4) does not provide php-mysqlnd db driver
 # and from this reason the lowest is 5.3.4
 Requires:		php >= 5.3.4
-Requires:		php-bcmath
 Requires:		php-common
+Requires:		php-json
 Requires:		php-mysqlnd
 Requires:		php-pdo
 Requires:		php-pgsql
@@ -65,6 +67,8 @@ Group:			Applications/Internet
 # and from this reason the lowest is 5.3.4
 Requires:		php >= 5.3.4
 Requires:		php-common
+Requires:		php-json
+Requires:		php-bcmath
 Requires:		php-mbstring
 Requires:		php-xml
 
@@ -138,12 +142,39 @@ Conflicts:		%{name}-web-httpd, %{name}-api-httpd
 This package provides the Lighttpd configuration for Baculum WebGUI.
 By using this module it is possible to run Baculum WebGUI in Lighttpd environment.
 
+%package api-selinux
+Summary:                SELinux module for Baculum API
+Requires:               %name-api-selinux = %version-%release
+Group:                  Applications/Internet
+Requires(post):         policycoreutils-python
+Requires(preun):        policycoreutils-python
+
+%description api-selinux
+This package provides the SELinux module for Baculum API.
+You should install this package if you are using SELinux, that Baculum API
+can be run in enforcing mode.
+
+%package web-selinux
+Summary:                SELinux module for Baculum Web
+Requires:               %name-web-selinux = %version-%release
+Group:                  Applications/Internet
+Requires(post):         policycoreutils-python
+Requires(preun):        policycoreutils-python
+
+%description web-selinux
+This package provides the SELinux module for Baculum Web.
+You should install this package if you are using SELinux, that Baculum Web
+can be run in enforcing mode.
+
 %prep
 %setup -n bacula-gui-%version/baculum
 
 %build
 # Execute files preparation in build directory by Makefile
 make build DESTDIR=%{destdir}
+# Compilation SELinuxu policies before loading them
+make -C examples/selinux/ -f %{_datadir}/selinux/devel/Makefile %{name}-api.pp
+make -C examples/selinux/ -f %{_datadir}/selinux/devel/Makefile %{name}-web.pp
 # Remove these cache directories, because here will be symbolic links
 rmdir %{destdir}/%{_datadir}/%{metaname}/htdocs/assets
 rmdir %{destdir}/%{_datadir}/%{metaname}/htdocs/protected/runtime
@@ -157,6 +188,8 @@ done
 %install
 cp -ra build/. %{buildroot}
 %find_lang %{metaname} --all-name
+install -D -m 644 examples/selinux/%{name}-api.pp %{buildroot}%{_datadir}/selinux/packages/%{name}-api/%{name}-api.pp
+install -D -m 644 examples/selinux/%{name}-web.pp %{buildroot}%{_datadir}/selinux/packages/%{name}-web/%{name}-web.pp
 
 %post common
 if [ $1 -ge 1 ] ; then
@@ -190,6 +223,34 @@ fi
 if [ $1 -eq 1 ] ; then
 	ln -s  %{_sysconfdir}/%{metaname}/Config-web-lighttpd %{_datadir}/%{metaname}/htdocs/protected/Web/Config
 fi
+
+%post api-selinux
+# Write access is possible for web servers user only to two directories
+# -  Config/ directory stores API settings and web server HTTP Basic credentials
+# - /var/cache/baculum - cache used by framework in specific locations (assets/ and protected/runtime/)
+#   by symbolic links to cache directory
+semanage fcontext -a -t httpd_sys_rw_content_t '%{_sysconfdir}/%{name}(/.*)?' 2>/dev/null || :
+restorecon -i -R '%{_sysconfdir}/%{name}' || :
+restorecon -i -R '%{_datadir}/%{name}/htdocs/protected/API/Config' || :
+semanage fcontext -a -t httpd_cache_t '%{_localstatedir}/cache/%{name}(/.*)?' 2>/dev/null || :
+restorecon -i -R %{_localstatedir}/cache/%{name} || :
+semanage fcontext -a -t httpd_sys_rw_content_t '%{_datadir}/%{name}/htdocs/protected/API/Logs(/.*)?' 2>/dev/null || :
+restorecon -i -R '%{_datadir}/%{name}/htdocs/protected/API/Logs' || :
+semodule -i %{_datadir}/selinux/packages/%{name}-api/%{name}-api.pp 2>/dev/null || :
+
+%post web-selinux
+# Write access is possible for web servers user only to two directories
+# -  Config/ directory stores Web settings and web server HTTP Basic credentials
+# - /var/cache/baculum - cache used by framework in specific locations (assets/ and protected/runtime/)
+#   by symbolic links to cache directory
+semanage fcontext -a -t httpd_sys_rw_content_t '%{_sysconfdir}/%{name}(/.*)?' 2>/dev/null || :
+restorecon -i -R '%{_sysconfdir}/%{name}' || :
+restorecon -i -R '%{_datadir}/%{name}/htdocs/protected/Web/Config' || :
+semanage fcontext -a -t httpd_cache_t '%{_localstatedir}/cache/%{name}(/.*)?' 2>/dev/null || :
+restorecon -i -R %{_localstatedir}/cache/%{name} || :
+semanage fcontext -a -t httpd_sys_rw_content_t '%{_datadir}/%{name}/htdocs/protected/Web/Logs(/.*)?' 2>/dev/null || :
+restorecon -i -R '%{_datadir}/%{name}/htdocs/protected/Web/Logs' || :
+semodule -i %{_datadir}/selinux/packages/%{name}-web/%{name}-web.pp 2>/dev/null || :
 
 %preun common
 if [ $1 -lt 1 ] ; then
@@ -283,6 +344,18 @@ if [ $1 -lt 1 ] ; then
 	[ ! -e %{_datadir}/%{metaname}/htdocs/protected/Web/Logs/baculum-web.log ] ||
 		rm %{_datadir}/%{metaname}/htdocs/protected/Web/Logs/baculum-web*.log
 	rm %{_datadir}/%{metaname}/htdocs/protected/Web/Config
+fi
+
+%preun api-selinux
+if [ $1 -lt 1 ] ; then
+	# remove SELinux module
+	semodule -r %{name}-api 2>/dev/null || :
+fi
+
+%preun web-selinux
+if [ $1 -lt 1 ] ; then
+	# remove SELinux module
+	semodule -r %{name}-web 2>/dev/null || :
 fi
 
 %postun api-httpd
@@ -390,6 +463,14 @@ done
 %attr(755,lighttpd,lighttpd) %{_datadir}/%{metaname}/htdocs/protected/Web/Logs
 %{_unitdir}/%{metaname}-web-lighttpd.service
 %config(noreplace) %{_sysconfdir}/%{metaname}/%{metaname}-web-lighttpd.conf
+
+%files api-selinux
+%defattr(-,root,root)
+%{_datadir}/selinux/packages/%{name}-api/%{name}-api.pp
+
+%files web-selinux
+%defattr(-,root,root)
+%{_datadir}/selinux/packages/%{name}-web/%{name}-web.pp
 
 %changelog
  * Sat Dec 10 2016 Marcin Haba <marcin.haba@bacula.pl> - 7.5.0-0.1
