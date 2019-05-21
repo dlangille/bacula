@@ -105,7 +105,7 @@
 				"Required": true,
 				"ValueType": "password",
 				"DefaultValue": 0,
-				"FieldType": "TextBox"
+				"FieldType": "Password"
 			},
 			"FdConnectTimeout": {
 				"Required": false,
@@ -233,13 +233,13 @@
 				"Required": false,
 				"ValueType": "password",
 				"DefaultValue": 0,
-				"FieldType": "TextBox"
+				"FieldType": "Password"
 			},
 			"Password": {
 				"Required": true,
 				"ValueType": "password",
 				"DefaultValue": 0,
-				"FieldType": "TextBox"
+				"FieldType": "Password"
 			},
 			"FdStorageAddress": {
 				"Required": false,
@@ -890,13 +890,13 @@
 				"Required": false,
 				"ValueType": "password",
 				"DefaultValue": 0,
-				"FieldType": "TextBox"
+				"FieldType": "Password"
 			},
 			"Password": {
 				"Required": true,
 				"ValueType": "password",
 				"DefaultValue": 0,
-				"FieldType": "TextBox"
+				"FieldType": "Password"
 			},
 			"Device": {
 				"Required": true,
@@ -1036,13 +1036,13 @@
 				"Required": false,
 				"ValueType": "str",
 				"DefaultValue": 0,
-				"FieldType": "TextBox"
+				"FieldType": "Password"
 			},
 			"Password": {
 				"Required": false,
 				"ValueType": "str",
 				"DefaultValue": 0,
-				"FieldType": "TextBox"
+				"FieldType": "Password"
 			},
 			"dbuser": {
 				"Required": false,
@@ -1664,7 +1664,7 @@
 				"Required": true,
 				"ValueType": "password",
 				"DefaultValue": 0,
-				"FieldType": "TextBox"
+				"FieldType": "Password"
 			},
 			"JobAcl": {
 				"Required": false,
@@ -2301,7 +2301,7 @@
 				"Required": true,
 				"ValueType": "password",
 				"DefaultValue": 0,
-				"FieldType": "TextBox"
+				"FieldType": "Password"
 			},
 			"Monitor": {
 				"Required": false,
@@ -2970,7 +2970,7 @@
 				"Required": true,
 				"ValueType": "password",
 				"DefaultValue": 0,
-				"FieldType": "TextBox"
+				"FieldType": "Password"
 			},
 			"Address": {
 				"Required": false,
@@ -3312,7 +3312,7 @@
 				"Required": true,
 				"ValueType": "password",
 				"DefaultValue": 0,
-				"FieldType": "TextBox"
+				"FieldType": "Password"
 			},
 			"Address": {
 				"Required": false,
@@ -3612,7 +3612,7 @@
 				"Required": true,
 				"ValueType": "password",
 				"DefaultValue": 0,
-				"FieldType": "TextBox"
+				"FieldType": "Password"
 			},
 			"TlsAuthenticate": {
 				"Required": false,
@@ -3698,7 +3698,7 @@
 				"Required": true,
 				"ValueType": "password",
 				"DefaultValue": 0,
-				"FieldType": "TextBox"
+				"FieldType": "Password"
 			},
 			"TlsAuthenticate": {
 				"Required": false,

@@ -29,6 +29,7 @@ Prado::using('Application.Web.Portlets.DirectiveCheckBox');
 Prado::using('Application.Web.Portlets.DirectiveComboBox');
 Prado::using('Application.Web.Portlets.DirectiveInteger');
 Prado::using('Application.Web.Portlets.DirectiveListBox');
+Prado::using('Application.Web.Portlets.DirectivePassword');
 Prado::using('Application.Web.Portlets.DirectiveSize');
 Prado::using('Application.Web.Portlets.DirectiveTextBox');
 Prado::using('Application.Web.Portlets.DirectiveMultiTextBox');
@@ -46,6 +47,7 @@ class DirectiveRenderer extends DirectiveListTemplate implements IItemDataRender
 		'DirectiveComboBox',
 		'DirectiveInteger',
 		'DirectiveListBox',
+		'DirectivePassword',
 		'DirectiveTextBox',
 		'DirectiveSize',
 		'DirectiveTimePeriod'
