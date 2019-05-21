@@ -26,7 +26,8 @@ GETTEXT_LIBS = @LIBINTL@
 AFS_CFLAGS = @AFS_CFLAGS@
 AFS_LIBS = @AFS_LIBS@
 ACLOBJS = @ACLOBJS@
-XATTROBJS=@XATTROBJS@
+XATTROBJS = @XATTROBJS@
+IOKITLIBS = @IOKITLIBS@
 
 first_rule: all
 dummy:
@@ -36,7 +37,7 @@ SVRSRCS = filed.c authenticate.c backup.c crypto.c \
 	  win_efs.c estimate.c \
 	  fd_plugins.c accurate.c \
 	  filed_conf.c heartbeat.c hello.c job.c fd_snapshot.c \
-	  restore.c status.c verify.c verify_vol.c \
+	  restore.c status.c suspend.c verify.c verify_vol.c \
 	  $(ACLOBJS) $(XATTROBJS)
 
 SVROBJS = $(SVRSRCS:.c=.o)
@@ -104,7 +105,7 @@ bacula-fd:  Makefile $(SVROBJS) ../findlib/libbacfind$(DEFAULT_ARCHIVE_TYPE) ../
 	@echo "Linking $@ ..."
 	$(LIBTOOL_LINK) $(CXX) $(WLDFLAGS) $(LDFLAGS) -L../lib -L../findlib -o $@ $(SVROBJS) \
 	  $(WIN32LIBS) $(FDLIBS) $(ZLIBS) -lbacfind -lbaccfg -lbac -lm $(LIBS) \
-	  $(DLIB) $(WRAPLIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS) $(CAP_LIBS) $(AFS_LIBS) $(LZO_LIBS)
+	  $(DLIB) $(WRAPLIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS) $(CAP_LIBS) $(AFS_LIBS) $(LZO_LIBS) $(IOKITLIBS)
 
 bfdjson:  Makefile $(JSONOBJS) ../findlib/libbacfind$(DEFAULT_ARCHIVE_TYPE) ../lib/libbaccfg$(DEFAULT_ARCHIVE_TYPE) ../lib/libbac$(DEFAULT_ARCHIVE_TYPE) @WIN32@
 	@echo "Linking $@ ..."

@@ -22,7 +22,7 @@ AC_CONFIG_HEADERS(src/config.h:autoconf/config.h.in)
 dnl minimal Win32 stuff for "make clean"
 WIN32BUILDDIR=${BUILD_DIR}/src/win32
 WIN32MAINDIR=${BUILD_DIR}
-WIN32TOPDIR=${TOP_DIR} 
+WIN32TOPDIR=${TOP_DIR}
 AC_SUBST(WIN32BUILDDIR)
 AC_SUBST(WIN32MAINDIR)
 AC_SUBST(WIN32TOPDIR)
@@ -368,7 +368,7 @@ if test x$docdir = x'/usr/share/doc/' ; then
    docdir=`eval echo ${docdir}bacula`
 fi
 
-	
+
 AC_PATH_PROGS(MSGFMT, msgfmt, no)
 if test "$MSGFMT" = "no"
 then
@@ -677,7 +677,7 @@ if test x$support_ipv6 = xyes; then
 
    if test x$support_in6addr_any = xno ; then
        in6addr_any="const struct in6_addr in6addr_any"
-   else 
+   else
        in6addr_any="1"
    fi
 
@@ -765,7 +765,7 @@ if test x$support_readline = xyes; then
 		[
 		    AC_DEFINE(HAVE_READLINE, 1, [Set to enable readline support])
 		    CONS_LIBS="-lreadline -lhistory ${TERM_LIB}"
-		    got_readline="yes"	
+		    got_readline="yes"
 		], [
 		    echo " "
 		    echo "readline.h not found. readline turned off ..."
@@ -1006,6 +1006,17 @@ dnl -----------------------------------------------------------
 dnl dlopen is needed for plugins
 dnl -----------------------------------------------------------
 AC_SEARCH_LIBS(dlopen, [dl])
+
+dnl -----------------------------------------------------------
+dnl check for macOS IOKit
+dnl -----------------------------------------------------------
+IOKITLIBS=""
+if test x${HAVE_DARWIN_OS_TRUE} = x; then
+   AC_CHECK_HEADER(IOKit/pwr_mgt/IOPMLib.h,
+      IOKITLIBS="-framework IOKit"
+   )
+fi
+AC_SUBST(IOKITLIBS)
 
 dnl ------------------------------------------
 dnl Where to place working dir
@@ -1422,7 +1433,7 @@ AC_ARG_WITH(db_port,
 AC_SUBST(db_port)
 
 dnl
-dnl Pickup MySQL SSL options for database user connection 
+dnl Pickup MySQL SSL options for database user connection
 dnl
 db_ssl_options=
 AC_ARG_WITH(db_ssl_options,
@@ -1920,7 +1931,7 @@ if test x$support_s3 = xyes; then
 		[
 		    AC_DEFINE(HAVE_LIBS3, 1, [Define to 1 if you have libs3])
 		    S3_LIBS="${S3_LDFLAGS} -ls3"
-		    have_libs3="yes"	
+		    have_libs3="yes"
 		], [
 		    echo " "
 		    echo "libs3.h not found. s3 turned off ..."
@@ -2560,7 +2571,7 @@ if test x$support_lzo = xyes; then
 		[
 		    AC_DEFINE(HAVE_LZO, 1, [Define to 1 if you have LZO compression])
 		    LZO_LIBS="${LZO_LDFLAGS} -llzo2"
-		    have_lzo="yes"	
+		    have_lzo="yes"
 		], [
 		    echo " "
 		    echo "lzoconf.h not found. lzo turned off ..."
@@ -3040,8 +3051,8 @@ aix)
    DISTVER=`uname -r`
    PSCMD="ps -e -o pid,comm"
    PFILES="${PFILES} platforms/aix/Makefile"
-   TAPEDRIVE="/dev/rmt0.1" 
-  ;;	 
+   TAPEDRIVE="/dev/rmt0.1"
+  ;;
 alpha)
    DISTVER=`uname -r`
    PTHREAD_LIB="-lpthread -lexc"

@@ -73,6 +73,7 @@ FILED_OBJS = \
 	$(OBJDIR)/bxattr.o \
 	$(OBJDIR)/bxattr_linux.o \
 	$(OBJDIR)/bxattr_solaris.o \
+	$(OBJDIR)/suspend.o \
 	$(OBJDIR)/bacula.res
 
 #	$(OBJDIR)/trayMonitor.o \

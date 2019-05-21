@@ -39,22 +39,22 @@ static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 #ifdef HAVE_WIN32
 const bool have_win32 = true;
-#else 
+#else
 const bool have_win32 = false;
 #endif
 
 #ifdef HAVE_ACL
-const bool have_acl = true; 
-#else 
-const bool have_acl = false; 
-#endif 
+const bool have_acl = true;
+#else
+const bool have_acl = false;
+#endif
 
 #if HAVE_XATTR
-const bool have_xattr = true; 
-#else 
-const bool have_xattr = false; 
-#endif 
- 
+const bool have_xattr = true;
+#else
+const bool have_xattr = false;
+#endif
+
 extern CLIENT *me;                    /* our client resource */
 
 /* Imported functions */
@@ -271,8 +271,9 @@ static void *handle_director_request(BSOCK *dir)
    bool first = true;
    JCR *jcr;
    const char jobname[12] = "*Director*";
+   suspendres_t suspend;
 
-   prevent_os_suspensions();   /* do not suspend during backup/restore */
+   prevent_os_suspensions(suspend);   /* do not suspend during backup/restore */
    jcr = new_jcr(sizeof(JCR), filed_free_jcr); /* create JCR */
    jcr->sd_calls_client_bsock = NULL;
    jcr->sd_calls_client = false;
@@ -471,7 +472,7 @@ bail_out:
    pthread_cond_destroy(&jcr->job_start_wait);
    free_jcr(jcr);                     /* destroy JCR record */
    Dmsg0(100, "Done with free_jcr\n");
-   allow_os_suspensions();            /* FD can now be suspended */
+   allow_os_suspensions(suspend);            /* FD can now be suspended */
    Dsm_check(100);
    garbage_collect_memory_pool();
    return NULL;
@@ -512,7 +513,7 @@ bail_out:
 }
 
 
-/* 
+/*
  * Test the Network between FD/SD
  */
 static int fd_testnetwork_cmd(JCR *jcr)
@@ -607,7 +608,7 @@ static int proxy_cmd(JCR *jcr)
    /* Inform the console that the command is OK */
    jcr->dir_bsock->fsend("2000 proxy OK.\n");
    jcr->dir_bsock->signal(BNET_MAIN_PROMPT);
-   
+
    maxfd = MAX(cons_bsock->m_fd, jcr->dir_bsock->m_fd) + 1;
 
    /* Start to forward events from one to the other
@@ -676,7 +677,7 @@ static int proxy_cmd(JCR *jcr)
          OK = false;
       }
    } while (OK && !jcr->is_canceled());
-   
+
    /* Close the socket, nothing more will come */
    jcr->dir_bsock->signal(BNET_TERMINATE);
    jcr->dir_bsock->close();
@@ -2409,15 +2410,15 @@ static int backup_cmd(JCR *jcr)
    /*
     * If explicitly requesting FO_ACL or FO_XATTR, fail job if it
     *  is not available on Client machine
-    */ 
+    */
    if (jcr->ff->flags & FO_ACL && !(have_acl||have_win32)) {
       Jmsg(jcr, M_FATAL, 0, _("ACL support not configured for Client.\n"));
-      goto cleanup; 
-   } 
-   if (jcr->ff->flags & FO_XATTR && !have_xattr) { 
+      goto cleanup;
+   }
+   if (jcr->ff->flags & FO_XATTR && !have_xattr) {
       Jmsg(jcr, M_FATAL, 0, _("XATTR support not configured for Client.\n"));
-      goto cleanup; 
-   } 
+      goto cleanup;
+   }
    jcr->setJobStatus(JS_Blocked);
    jcr->setJobType(JT_BACKUP);
    Dmsg1(100, "begin backup ff=%p\n", jcr->ff);

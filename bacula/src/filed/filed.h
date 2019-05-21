@@ -46,6 +46,7 @@
 #include  "protos.h"                   /* file daemon prototypes */
 #include  "lib/runscript.h"
 #include  "lib/breg.h"
+#include  "suspend.h"
 #ifdef HAVE_LIBZ
 #include <zlib.h>                     /* compression headers */
 #else
@@ -67,6 +68,3 @@ struct s_cmds {
    int (*func)(JCR *);
    int access; /* specify if monitors/restricted have access to this function */
 };
-
-void allow_os_suspensions();
-void prevent_os_suspensions();

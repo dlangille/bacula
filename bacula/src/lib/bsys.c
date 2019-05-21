@@ -964,19 +964,6 @@ char *escape_filename(const char *file_path)
    return escaped_path;
 }
 
-/*
- * For the moment preventing suspensions is only
- *  implemented on Windows.
- */
-#ifndef HAVE_WIN32
-void prevent_os_suspensions()
-{ }
-
-void allow_os_suspensions()
-{ }
-#endif
-
-
 #if HAVE_BACKTRACE && HAVE_GCC
 /* if some names are not resolved you can try using : addr2line, like this
  * $ addr2line -e bin/bacula-sd -a 0x43cd11
@@ -1089,7 +1076,7 @@ void setup_env(char *envp[])
    }
 }
 
-/* Small function to copy a file somewhere else, 
+/* Small function to copy a file somewhere else,
  * for debug purpose.
  */
 int copyfile(const char *src, const char *dst)
@@ -1432,7 +1419,7 @@ int main(int argc, char **argv)
    int maxfd = (argc == 3) ? atoi(argv[2]) : 0;
 
    j = MIN(10000, j);
-   
+
    lmgr_init_thread();
    set_debug_flags((char *)"h");
 
