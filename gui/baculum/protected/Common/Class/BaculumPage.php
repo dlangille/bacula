@@ -114,7 +114,9 @@ class BaculumPage extends TPage {
 		for($i = 0; $i < count($dirs); $i++) {
 			$document_root_part =  implode('/', $root_dir) . '/' . $dirs[$i];
 			if (is_link($document_root_part)) {
-				$root_dir = array(readlink($document_root_part));
+				$temp = readlink($document_root_part);
+				$temp = rtrim($temp, '/');
+				$root_dir = array($temp);
 			} else {
 				$root_dir[] = $dirs[$i];
 			}
