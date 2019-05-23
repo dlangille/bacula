@@ -12,7 +12,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -75,7 +75,7 @@ static char my_hostname[MAXSTRING];
 static bool content_utf8 = false;
 static resolv_type default_resolv_type = RESOLV_PROTO_IPV4;
 
-/* 
+/*
  * Take input that may have names and other stuff and strip
  *  it down to the mail box address ... i.e. what is enclosed
  *  in < >.  Otherwise add < >.
@@ -267,7 +267,7 @@ int main (int argc, char *argv[])
 #else
    const char *options = "48ac:d:f:h:r:s:l:?";
 #endif
-    
+
    setlocale(LC_ALL, "en_US");
    bindtextdomain("bacula", LOCALEDIR);
    textdomain("bacula");
@@ -568,7 +568,7 @@ lookup_host:
    get_response(); /* banner */
    chat("HELO %s\r\n", my_hostname);
    chat("MAIL FROM:%s\r\n", cleanup_addr(from_addr, buf, sizeof(buf)));
-   
+
    for (i = 0; i < argc; i++) {
       Dmsg1(20, "rcpt to: %s\n", argv[i]);
       chat("RCPT TO:%s\r\n", cleanup_addr(argv[i], buf, sizeof(buf)));
@@ -633,10 +633,18 @@ lookup_host:
       Dmsg1(10, "Cc: %s\r\n", cc_addr);
    }
 
+   fprintf(sfp, "MIME-Version: 1.0\r\n");
+   Dmsg0(10, "MIME-Version: 1.0\r\n");
    if (content_utf8) {
       fprintf(sfp, "Content-Type: text/plain; charset=UTF-8\r\n");
       Dmsg0(10, "Content-Type: text/plain; charset=UTF-8\r\n");
+   } else {
+     fprintf(sfp, "Content-Type: text/plain\r\n");
+     Dmsg0(10, "Content-Type: text/plain\r\n");
    }
+
+   fprintf(sfp, "Message-Id: <%d-%ld@%s>\r\n", getpid(), time(NULL), my_hostname);
+   Dmsg3(10, "Message-Id: <%d-%ld@%s>\r\n", getpid(), time(NULL), my_hostname);
 
    get_date_string(buf, sizeof(buf));
    fprintf(sfp, "Date: %s\r\n", buf);
