@@ -38,6 +38,7 @@ rm -f dumps/*
 ./run tests/compressed-test
 ./run tests/compress-encrypt-test
 ./run tests/concurrent-jobs-test
+./run tests/copy-jobspan-label-wait-test
 ./run tests/copy-jobspan-test
 ./run tests/copy-job-test
 ./run tests/copy-uncopied-test
