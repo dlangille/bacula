@@ -106,8 +106,12 @@ int wait_for_sysop(DCR *dcr)
       /* Note, this always triggers the first time. We want that. */
       if (me->heartbeat_interval) {
          if (now - last_heartbeat >= me->heartbeat_interval) {
-            /* send heartbeats */
-            if (jcr->file_bsock) {
+            /* Send Heartbeats
+               Note when sd_client is set, the SD is acting as an FD,
+                bug the SD has code to receive heartbeats, so we skip
+                sending them.
+            */
+            if (jcr->file_bsock && !(jcr->is_JobType(JT_BACKUP) && jcr->sd_client)) {
                jcr->file_bsock->signal(BNET_HEARTBEAT);
                Dmsg0(dbglvl, "Send heartbeat to FD.\n");
             }
