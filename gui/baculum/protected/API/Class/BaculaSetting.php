@@ -479,7 +479,7 @@ class BaculaSetting extends APIModule {
 			$directive_value = $value;
 		} elseif (is_string($value)) {
 			if (!key_exists($resource_type, $this->unquoted_string_directives) || !in_array($directive_name, $this->unquoted_string_directives[$resource_type])) {
-				$value = str_replace('"', '\"', $value);
+				$value = addcslashes($value, '\\"');
 				$value = "\"$value\"";
 			}
 			$directive_value = $value;
