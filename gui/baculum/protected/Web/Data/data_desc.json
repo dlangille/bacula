@@ -347,7 +347,7 @@
 				"Required": false,
 				"ValueType": "speed",
 				"DefaultValue": 0,
-				"FieldType": "TextBox"
+				"FieldType": "Speed"
 			},
 			"Enabled": {
 				"Required": false,
@@ -535,7 +535,7 @@
 				"Required": false,
 				"ValueType": "speed",
 				"DefaultValue": 0,
-				"FieldType": "TextBox"
+				"FieldType": "Speed"
 			},
 			"MaxRunSchedTime": {
 				"Required": false,
@@ -1968,7 +1968,7 @@
 				"Required": false,
 				"ValueType": "speed",
 				"DefaultValue": 0,
-				"FieldType": "TextBox"
+				"FieldType": "Speed"
 			},
 			"MaxRunSchedTime": {
 				"Required": false,
@@ -3054,7 +3054,7 @@
 				"Required": false,
 				"ValueType": "speed",
 				"DefaultValue": 0,
-				"FieldType": "TextBox"
+				"FieldType": "Speed"
 			},
 			"DisableCommand": {
 				"Required": false,
@@ -3254,7 +3254,7 @@
 				"Required": false,
 				"ValueType": "speed",
 				"DefaultValue": 0,
-				"FieldType": "TextBox"
+				"FieldType": "Speed"
 			},
 			"DisableCommand": {
 				"Required": false,
@@ -3572,7 +3572,7 @@
 				"Required": false,
 				"ValueType": "speed",
 				"DefaultValue": 0,
-				"FieldType": "TextBox"
+				"FieldType": "Speed"
 			},
 			"DisableCommand": {
 				"Required": false,

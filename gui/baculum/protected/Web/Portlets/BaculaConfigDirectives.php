@@ -31,6 +31,7 @@ Prado::using('Application.Web.Portlets.DirectiveInteger');
 Prado::using('Application.Web.Portlets.DirectiveListBox');
 Prado::using('Application.Web.Portlets.DirectivePassword');
 Prado::using('Application.Web.Portlets.DirectiveSize');
+Prado::using('Application.Web.Portlets.DirectiveSpeed');
 Prado::using('Application.Web.Portlets.DirectiveTextBox');
 Prado::using('Application.Web.Portlets.DirectiveMultiTextBox');
 Prado::using('Application.Web.Portlets.DirectiveTimePeriod');
@@ -56,6 +57,7 @@ class BaculaConfigDirectives extends DirectiveListTemplate {
 		'DirectivePassword',
 		'DirectiveTextBox',
 		'DirectiveSize',
+		'DirectiveSpeed',
 		'DirectiveTimePeriod'
 	);
 

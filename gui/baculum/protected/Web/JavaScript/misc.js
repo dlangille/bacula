@@ -8,6 +8,13 @@ var Units = {
 			{short: 'T', long: 'terabyte', value: 1000},
 			{short: 'P', long: 'petabyte', value: 1000}
 		],
+		speed: [
+			{short: '',  long: 'B/s', value: 1},
+			{short: 'kb/s', long: 'KB/s', value: 1000},
+			{short: 'k/s', long: 'KiB/s', value: 1024},
+			{short: 'mb/s', long: 'MB/s', value: 1000},
+			{short: 'm/s', long: 'MiB/s', value: 1024}
+		],
 		time: [
 			{long: 'second', value: 1},
 			{long: 'minute', value: 60},
@@ -92,7 +99,24 @@ var Units = {
 		var date = [d.getFullYear(), ('0' + (d.getMonth()+1)).slice(-2), ('0' + d.getDate()).slice(-2)].join('-');
 		var time = [d.getHours(), ('0' + d.getMinutes()).slice(-2), ('0' + d.getSeconds()).slice(-2)].join(':');
 		return (date + ' ' + time);
-	}
+	},
+	format_speed: function(speed_bytes, format) {
+		var reminder;
+		var f = this.units.speed[0].long;
+		for (var i = 0; i < this.units.speed.length; i++) {
+			if (this.units.speed[i].long != format && speed_bytes) {
+				reminder = speed_bytes % this.units.speed[i].value
+				if (reminder === 0) {
+					speed_bytes /= this.units.speed[i].value;
+					f = this.units.speed[i].long;
+					continue;
+				}
+				break;
+			}
+		}
+		var ret = {value: speed_bytes, format: f};
+		return ret;
+	},
 }
 
 var Strings = {
