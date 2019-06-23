@@ -1,12 +1,17 @@
 var Units = {
 	units: {
 		size: [
-			{short: '',  long: 'byte', value: 1},
-			{short: 'K', long: 'kilobyte', value: 1000},
-			{short: 'M', long: 'megabyte', value: 1000},
-			{short: 'G', long: 'gigabyte', value: 1000},
-			{short: 'T', long: 'terabyte', value: 1000},
-			{short: 'P', long: 'petabyte', value: 1000}
+			{short: '',  long: 'B', value: 1},
+			{short: 'kb', long: 'KB', value: 1000},
+			{short: 'k', long: 'KiB', value: 1024},
+			{short: 'mb', long: 'MB', value: 1000},
+			{short: 'm', long: 'MiB', value: 1024},
+			{short: 'gb', long: 'GB', value: 1000},
+			{short: 'g', long: 'GiB', value: 1024},
+			{short: 'tb', long: 'TB', value: 1000},
+			{short: 't', long: 'TiB', value: 1024},
+			{short: 'pb', long: 'PB', value: 1000},
+			{short: 'p', long: 'PiB', value: 1024}
 		],
 		speed: [
 			{short: '',  long: 'B/s', value: 1},
@@ -24,32 +29,34 @@ var Units = {
 	},
 	get_decimal_size: function(size) {
 		var dec_size;
-		var size_unit = 'B';
 		var units = [];
 		for (var u in Units.units.size) {
-			units.push(Units.units.size[u].short);
+			if ([1, 1000].indexOf(Units.units.size[u].value) !== -1) {
+				units.push(Units.units.size[u].long);
+			}
 		}
-		units.shift(); // remove "byte" unit
 		if (size === null) {
 			size = 0;
 		}
 
-		var size_pattern = new RegExp('^[\\d\\.]+(' + units.join('|') + ')?' + size_unit + '$');
-
+		var size_pattern = new RegExp('^[\\d\\.]+(' + units.join('|') + ')$');
 		if (size_pattern.test(size.toString())) {
 			// size is already formatted
 			dec_size = size;
 		} else {
+			units.shift(); // remove byte unit
 			size = parseInt(size, 10);
 			var unit;
-			dec_size = size.toString() + ((size > 0 ) ? size_unit : '');
+			dec_size = size.toString();
 			while(size >= 1000) {
 				size /= 1000;
-				unit = units.shift(units);
+				unit = units.shift();
 			}
 			if (unit) {
 				dec_size = (Math.floor(size * 10) / 10).toFixed(1);
-				dec_size += unit + size_unit;
+				dec_size += unit;
+			} else if (size > 0) {
+				dec_size += 'B';
 			}
 		}
 		return dec_size;

@@ -17,7 +17,7 @@
 			AutoPostBack="false"
 			OnSelectedIndexChanged="saveValue"
 		/> <%=$this->getRequired() ? '&nbsp;<i class="fa fa-asterisk w3-text-red" style="line-height: 40px"></i>' : ''%>
-		<i class="fa fa-undo reset_btn" onclick="var fsize = Units.format_size(parseInt('<%=$this->getDefaultValue()%>', 10), 'byte'); document.getElementById('<%=$this->Directive->ClientID%>').value = fsize.value; document.getElementById('<%=$this->SizeFormat->ClientID%>').value = fsize.format;" alt="<%[ Reset to default value ]%>" title="<%[ Reset to default value ]%>"></i>
+		<i class="fa fa-undo reset_btn" onclick="var fsize = Units.format_size(parseInt('<%=$this->getDefaultValue()%>', 10), 'B'); document.getElementById('<%=$this->Directive->ClientID%>').value = fsize.value; document.getElementById('<%=$this->SizeFormat->ClientID%>').value = fsize.format;" alt="<%[ Reset to default value ]%>" title="<%[ Reset to default value ]%>"></i>
 		<i class="fa fa-trash-alt remove_btn" onclick="document.getElementById('<%=$this->Directive->ClientID%>').value = '';" alt="<%[ Remove directive ]%>" title="<%[ Remove directive ]%>"></i>
 		<com:TRequiredFieldValidator
 			ID="DirectiveValidator"

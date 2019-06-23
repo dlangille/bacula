@@ -28,14 +28,18 @@ Prado::using('Application.Web.Portlets.DirectiveTemplate');
 class DirectiveSize extends DirectiveTemplate {
 
 	const SIZE_FORMAT = 'SizeFormat';
-	const DEFAULT_SIZE_FORMAT = 'byte';
+	const DEFAULT_SIZE_FORMAT = '';
 
 	private $size_formats = array(
-		array('format' => 'byte', 'value' => 1, 'label' => 'Bytes'),
-		array('format' => 'kilobyte', 'value' => 1000, 'label' => 'Kilobytes'),
-		array('format' => 'megabyte', 'value' => 1000, 'label' => 'Megabytes'),
-		array('format' => 'gigabyte', 'value' => 1000, 'label' => 'Gigabytes'),
-		array('format' => 'terabyte', 'value' => 1000, 'label' => 'Terabytes')
+		array('format' => '', 'value' => 1, 'label' => 'B'),
+		array('format' => 'kb', 'value' => 1000, 'label' => 'KB'),
+		array('format' => 'k', 'value' => 1024, 'label' => 'KiB'),
+		array('format' => 'mb', 'value' => 1000000, 'label' => 'MB'),
+		array('format' => 'm', 'value' => 1048576, 'label' => 'MiB'),
+		array('format' => 'gb', 'value' => 1000000000, 'label' => 'GB'),
+		array('format' => 'g', 'value' => 1073741824, 'label' => 'GiB'),
+		array('format' => 'tb', 'value' => 1000000000000, 'label' => 'TB'),
+		array('format' => 't', 'value' => 1099511627776, 'label' => 'TiB')
 	);
 
 	public function getValue() {
@@ -61,11 +65,7 @@ class DirectiveSize extends DirectiveTemplate {
 	public function getSizeFormats() {
 		$size_formats = array();
 		for ($i = 0; $i < count($this->size_formats); $i++) {
-			$format = array(
-				'label' => Prado::localize($this->size_formats[$i]['label']),
-				'format' => $this->size_formats[$i]['format']
-			);
-			array_push($size_formats, $format);
+			$size_formats[$this->size_formats[$i]['format']] = $this->size_formats[$i]['label'];
 		}
 		return $size_formats;
 	}
@@ -83,9 +83,9 @@ class DirectiveSize extends DirectiveTemplate {
 		}
 		$formatted_value = $this->formatSize($directive_value, $size_format);
 		$this->Directive->Text = $formatted_value['value'];
-		$this->SizeFormat->DataSource = $this->size_formats;
-		$this->SizeFormat->SelectedValue = $formatted_value['format'];
+		$this->SizeFormat->DataSource = $this->getSizeFormats();
 		$this->SizeFormat->dataBind();
+		$this->SizeFormat->SelectedValue = $formatted_value['format'];
 		$this->Label->Text = $this->getLabel();
 		$validate = $this->getRequired();
 		$this->DirectiveValidator->setVisible($validate);
@@ -98,32 +98,31 @@ class DirectiveSize extends DirectiveTemplate {
 	 * then there will be returned value converted by using as close format as possible.
 	 * Example:
 	 *  size_value: 121000
-	 *  given format: byte
+	 *  given format: b
 	 *  returned value: 121
-	 *  returned format: kilobyte
+	 *  returned format: kb
 	 */
 	private function formatSize($size_bytes, $format) {
 		$value = $size_bytes;
-		for ($i = 0; $i < count($this->size_formats); $i++) {
-			if ($this->size_formats[$i]['format'] != $format) {
-				$remainder = $value % $this->size_formats[$i]['value'];
-				if ($remainder === 0) {
-					$value /= $this->size_formats[$i]['value'];
-					$format = $this->size_formats[$i]['format'];
-					continue;
+		if ($value > 0) {
+			for ($i = (count($this->size_formats) - 1); $i >= 0; $i--) {
+				if ($this->size_formats[$i]['format'] != $format) {
+					$remainder = $value % $this->size_formats[$i]['value'];
+					if ($remainder == 0) {
+						$value /= $this->size_formats[$i]['value'];
+						$format = $this->size_formats[$i]['format'];
+						break;
+					}
 				}
-				break;
 			}
-			break;
 		}
-		$result = array('value' => $value, 'format' => $format);
-		return $result;
+		return array('value' => $value, 'format' => $format);
 	}
 
 	private function getValueBytes($value, $size_format) {
 		for ($i = 0; $i < count($this->size_formats); $i++) {
-			$value *= $this->size_formats[$i]['value'];
 			if ($this->size_formats[$i]['format'] === $size_format) {
+				$value *= $this->size_formats[$i]['value'];
 				break;
 			}
 		}
