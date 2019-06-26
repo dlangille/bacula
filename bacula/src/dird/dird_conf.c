@@ -2525,7 +2525,7 @@ extern "C" char *job_code_callback_director(JCR *jcr, const char* param, char *b
    if (jcr == NULL) {
       return nothing;
    }
-   ASSERTD(buflen < 255, "buflen must be long enough to hold an ip address");
+   ASSERTD(buflen > 255, "buflen must be long enough to hold an ip address");
    switch (param[0]) {
       case 'f':
          if (jcr->fileset) {
