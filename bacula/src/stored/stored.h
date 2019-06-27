@@ -92,6 +92,16 @@ const int sd_dbglvl = 300;
 #include "win_tape_dev.h"
 #include "sd_plugins.h"
 
+typedef struct {
+   int bacula_storage_config_devices;
+   int bacula_storage_config_autochangers;
+   int bacula_storage_memory_bufs;
+   int bacula_storage_memory_heap;
+   int bacula_storage_memory_maxbufs;
+   int bacula_storage_memory_maxbytes;
+   int bacula_storage_memory_smbytes;
+} sdstatmetrics_t;
+
 int breaddir(DIR *dirp, POOLMEM *&d_name);
 
 /* Daemon globals from stored.c */
@@ -99,5 +109,8 @@ extern STORES *me;                    /* "Global" daemon resource */
 extern bool forge_on;                 /* proceed inspite of I/O errors */
 extern pthread_mutex_t device_release_mutex;
 extern pthread_cond_t wait_device_release; /* wait for any device to be released */
+extern bool update_permanent_stats(void *data);
+extern bstatcollect *statcollector;
+extern sdstatmetrics_t sdstatmetrics;
 
 #endif /* __STORED_H_ */

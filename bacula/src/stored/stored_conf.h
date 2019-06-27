@@ -51,8 +51,9 @@ enum {
    R_MSGS        = 3004,
    R_AUTOCHANGER = 3005,
    R_CLOUD       = 3006,
+   R_COLLECTOR   = 3007,
    R_FIRST = R_DIRECTOR,
-   R_LAST  = R_CLOUD                  /* keep this updated */
+   R_LAST  = R_COLLECTOR                  /* keep this updated */
 };
 
 enum {
@@ -225,4 +226,5 @@ union URES {
    AUTOCHANGER res_changer;
    CLOUD       res_cloud;
    RES         hdr;
+   COLLECTOR   res_collector;
 };

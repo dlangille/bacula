@@ -1063,6 +1063,8 @@ static void dump_json(display_filter *filter)
                   if (!display_runscript(hpkt)) {
                      first_directive = 0;  /* Do not print a comma after this empty runscript */
                   }
+               } else if (items[item].handler == store_coll_type) {
+                  display_collector_types(hpkt);
                } else {
                   sendit(NULL, "\n    \"%s\": null", items[item].name);
                }
@@ -1380,20 +1382,20 @@ static bool check_resources(bool apply_jobdefs)
 
                   def_avalue = (alist **)((char *)(job->jobdefs) + offset);
                   avalue = (alist **)((char *)job + offset);
-                  
+
                   *avalue = New(alist(10, owned_by_alist));
 
                   foreach_alist(elt, (*def_avalue)) {
                      (*avalue)->append(bstrdup(elt));
                   }
                   set_bit(i, job->hdr.item_present);
-                  
+
                } else if (job_items[i].handler == store_alist_res) {
                   void *elt;
 
                   def_avalue = (alist **)((char *)(job->jobdefs) + offset);
                   avalue = (alist **)((char *)job + offset);
-                  
+
                   *avalue = New(alist(10, not_owned_by_alist));
 
                   foreach_alist(elt, (*def_avalue)) {

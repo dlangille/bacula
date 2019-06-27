@@ -454,6 +454,8 @@ static void dump_json(display_filter *filter)
                   display_truncate_cache(hpkt);
                } else if (items[item].handler == store_upload) {
                   display_upload(hpkt);
+               } else if (items[item].handler == store_coll_type) {
+                  display_collector_types(hpkt);
                } else {
                   printf("\n      \"%s\": \"null\"", items[item].name);
                }

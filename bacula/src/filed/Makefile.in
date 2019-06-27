@@ -34,7 +34,7 @@ dummy:
 
 #
 SVRSRCS = filed.c authenticate.c backup.c crypto.c \
-	  win_efs.c estimate.c \
+	  win_efs.c estimate.c fdcollect.c \
 	  fd_plugins.c accurate.c \
 	  filed_conf.c heartbeat.c hello.c job.c fd_snapshot.c \
 	  restore.c status.c suspend.c verify.c verify_vol.c \

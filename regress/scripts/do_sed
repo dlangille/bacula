@@ -75,10 +75,13 @@ sed -f ${out} ${rscripts}/tls-crypto-bacula-fd.conf.in >${rscripts}/tls-crypto-b
 sed -f ${out} ${rscripts}/tls-bacula-sd.conf.in >${rscripts}/tls-bacula-sd.conf
 sed -f ${out} ${rscripts}/tls-bacula-dir.conf.in >${rscripts}/tls-bacula-dir.conf
 
+sed -f ${out} ${rscripts}/collect-bacula-dir.conf.in >${rscripts}/collect-bacula-dir.conf
+sed -f ${out} ${rscripts}/collect-bacula-sd.conf.in >${rscripts}/collect-bacula-sd.conf
+sed -f ${out} ${rscripts}/collect-bacula-fd.conf.in >${rscripts}/collect-bacula-fd.conf
+
 sed -f ${out} ${rscripts}/tls-auth-bacula-fd.conf.in >${rscripts}/tls-auth-bacula-fd.conf
 sed -f ${out} ${rscripts}/tls-auth-bacula-sd.conf.in >${rscripts}/tls-auth-bacula-sd.conf
 sed -f ${out} ${rscripts}/tls-auth-bacula-dir.conf.in >${rscripts}/tls-auth-bacula-dir.conf
-
 
 sed -f ${out} ${rscripts}/bacula-fd-2d.conf.in >${rscripts}/bacula-fd-2d.conf
 sed -f ${out} ${rscripts}/bacula-sd-2d.conf.in >${rscripts}/bacula-sd-2d.conf

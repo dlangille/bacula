@@ -129,7 +129,7 @@ void    display_tape_error_status(JCR *jcr, DEVICE *dev);
 
 /* From dev.c */
 void     sd_list_loaded_drivers(alist *list);
-DEVICE  *init_dev(JCR *jcr, DEVRES *device, bool adata=false);
+DEVICE  *init_dev(JCR *jcr, DEVRES *device, bool adata=false, bstatcollect *statcollector=NULL);
 bool     can_open_mounted_dev(DEVICE *dev);
 bool     load_dev(DEVICE *dev);
 int      write_block(DEVICE *dev);
@@ -296,3 +296,9 @@ void store_upload(LEX *lc, RES_ITEM *item, int index, int pass);
 void store_devtype(LEX *lc, RES_ITEM *item, int index, int pass);
 void store_cloud_driver(LEX *lc, RES_ITEM *item, int index, int pass);
 void store_maxblocksize(LEX *lc, RES_ITEM *item, int index, int pass);
+
+/* from sdcollect.c */
+bool update_permanent_stats(void *data);
+void initialize_statcollector();
+void start_collector_threads();
+void terminate_collector_threads();

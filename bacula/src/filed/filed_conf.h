@@ -24,6 +24,7 @@
 
 /*
  * Resource codes -- they must be sequential for indexing
+ * TODO: Check if we can change R_codes to enum like for other daemons.
  */
 #define R_FIRST                       1001
 
@@ -31,8 +32,9 @@
 #define R_CLIENT                      1002
 #define R_MSGS                        1003
 #define R_CONSOLE                     1004
+#define R_COLLECTOR                   1005
 
-#define R_LAST                        R_CONSOLE
+#define R_LAST                        R_COLLECTOR
 
 /*
  * Some resource attributes
@@ -140,9 +142,10 @@ struct CLIENT {
  * resource structure definitions.
  */
 union URES {
-   DIRRES res_dir;
-   CLIENT res_client;
-   MSGS   res_msgs;
-   CONSRES res_cons;
-   RES    hdr;
+   DIRRES       res_dir;
+   CLIENT       res_client;
+   MSGS         res_msgs;
+   CONSRES      res_cons;
+   RES          hdr;
+   COLLECTOR    res_collector;
 };

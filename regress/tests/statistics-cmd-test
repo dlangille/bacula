@@ -1,0 +1,96 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Radosław Korzeniewski, MMXVIII
+# radoslaw@korzeniewski.net, radekk@inteos.pl
+# Inteos Sp. z o.o. http://www.inteos.pl/
+#
+# The test verifies if the internal collector is runing and changing statistic metric values
+#
+TestName="statistics-cmd-test"
+JobName=Simple
+. scripts/functions
+
+cwd=`pwd`
+scripts/cleanup
+scripts/copy-test-confs
+echo "${cwd}/build" >${cwd}/tmp/file-list
+
+start_test
+
+cat <<END_OF_DATA >tmp/bconcmds
+@output /dev/null
+messages
+@$out tmp/log1.out
+@# Director metrics
+statistics all
+@$out tmp/log2.out
+@# FD metrics
+statistics client all
+@$out tmp/log3.out
+@# SD metrics
+statistics storage all
+# now run some jobs
+@$out tmp/log4.out
+label storage=File1 volume=TestVolume001
+run job=$JobName storage=File1 yes
+wait
+messages
+@$out tmp/log5.out
+@# Director metrics
+statistics all
+@$out tmp/log6.out
+@# FD metrics
+statistics client all
+@$out tmp/log7.out
+@# SD metrics
+statistics storage all
+@$out tmp/log8.out
+@# show command
+show statistics
+quit
+END_OF_DATA
+
+run_bacula
+check_for_zombie_jobs storage=File1
+stop_bacula
+
+vstat=0
+
+# now chack if collect command was working
+t1=`grep bacula.jobs.all ${cwd}/tmp/log1.out | wc -l`
+t2=`grep bacula.*.heap ${cwd}/tmp/log2.out | wc -l`
+t3=`grep bacula.*.heap ${cwd}/tmp/log3.out | wc -l`
+if [ $t1 -ne 1 -o $t2 -ne 1 -o $t3 -ne 1 ]
+then
+	vstat=$((vstat+1))
+	echo "Collect command is not working!"
+fi
+d1=`diff ${cwd}/tmp/log1.out ${cwd}/tmp/log5.out | wc -l`
+d2=`diff ${cwd}/tmp/log2.out ${cwd}/tmp/log6.out | wc -l`
+d3=`diff ${cwd}/tmp/log3.out ${cwd}/tmp/log7.out | wc -l`
+if [ $d1 -eq 0 -o $d2 -eq 0 -o $d3 -eq 0 ]
+then
+	vstat=$((vstat+1))
+	echo "Internal collector is not working!"
+fi
+if [ $t1 -eq 1 ]
+then
+	j1=`grep bacula.jobs.all ${cwd}/tmp/log5.out | cut -f2 -d'='`
+	if [ $j1 -ne 1 ]
+	then
+		vstat=$((vstat+1))
+		echo "Internal collector not updating correctly!"
+	fi
+fi
+sd=`grep "^Statistics" $conf/bacula-dir.conf | wc -l`
+sc=`grep "^Statistics:" ${cwd}/tmp/log8.out | wc -l`
+if [ $sd -ne $sc ]
+then
+	vstat=$((vstat+1))
+	echo "show command is not working properly!"
+fi
+
+end_test

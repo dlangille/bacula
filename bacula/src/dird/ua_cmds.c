@@ -49,6 +49,7 @@ extern int show_cmd(UAContext *ua, const char *cmd);
 extern int sqlquery_cmd(UAContext *ua, const char *cmd);
 extern int status_cmd(UAContext *ua, const char *cmd);
 extern int update_cmd(UAContext *ua, const char *cmd);
+extern int collect_cmd(UAContext *ua, const char *cmd);
 
 /* Forward referenced functions */
 static int add_cmd(UAContext *ua, const char *cmd);
@@ -114,7 +115,7 @@ static struct cmdstruct commands[] = {                                      /* C
  { NT_("gui"),        gui_cmd,       _("Non-interactive gui mode"),   NT_("on | off"), false},
  { NT_("help"),       help_cmd,      _("Print help on specific command"),
    NT_("add autodisplay automount cancel create delete disable\n\tenable estimate exit gui label list llist"
-       "\n\tmessages memory mount prune purge quit query\n\trestore relabel release reload run status"
+       "\n\tmessages memory mount prune purge quit query\n\trestore relabel release reload run status statistics"
        "\n\tsetbandwidth setdebug setip show sqlquery time trace unmount\n\tumount update use var version wait"
        "\n\tsnapshot"),         false},
 
@@ -189,6 +190,8 @@ static struct cmdstruct commands[] = {                                      /* C
    NT_("job=<xxx> |  pool=<yyy> | fileset=<aaa> | schedule=<sss> | client=<zzz> | storage=<sss> | disabled | all"), true},
 
  { NT_("sqlquery"),   sqlquery_cmd,  _("Use SQL to query catalog"), NT_(""),          false},
+ { NT_("statistics"),    collect_cmd,   _("Display daemon statistics data"), NT_("[ simple | full | json ] all | <metric>\n"
+       "\t[ client=<client-name> | storage=<storage-name> ]"), true},
  { NT_("time"),       time_cmd,      _("Print current time"),       NT_(""),          true},
  { NT_("trace"),      trace_cmd,     _("Turn on/off trace to file"), NT_("on | off"), true},
  { NT_("truncate"),   truncate_cmd,  _("Truncate one or more Volumes"), NT_("volume=<vol> [mediatype=<type> pool=<pool> allpools storage=<st> drive=<num>]"),  true},

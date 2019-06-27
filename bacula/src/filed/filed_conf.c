@@ -162,17 +162,22 @@ static RES_ITEM cons_items[] = {
 /* Message resource */
 extern RES_ITEM msgs_items[];
 
+/* Statistics resource */
+extern RES_ITEM collector_items[];
+
+
 /*
  * This is the master resource definition.
  * It must have one item for each of the resources.
  */
 RES_TABLE resources[] = {
-   {"Director",      dir_items,   R_DIRECTOR},
-   {"FileDaemon",    cli_items,   R_CLIENT},
-   {"Messages",      msgs_items,  R_MSGS},
-   {"Console",       cons_items,  R_CONSOLE},
-   {"Client",        cli_items,   R_CLIENT},     /* alias for filedaemon */
-   {NULL,            NULL,        0}
+   {"Director",      dir_items,        R_DIRECTOR},
+   {"FileDaemon",    cli_items,        R_CLIENT},
+   {"Messages",      msgs_items,       R_MSGS},
+   {"Console",       cons_items,       R_CONSOLE},
+   {"Statistics",    collector_items,  R_COLLECTOR},
+   {"Client",        cli_items,        R_CLIENT},     /* alias for filedaemon */
+   {NULL,            NULL,             0}
 };
 
 struct s_ct ciphertypes[] = {
@@ -272,6 +277,9 @@ void dump_resource(int type, RES *ares, void sendit(void *sock, const char *fmt,
          sendit(sock, "      mailcmd=%s\n", res->res_msgs.mail_cmd);
       if (res->res_msgs.operator_cmd)
          sendit(sock, "      opcmd=%s\n", res->res_msgs.operator_cmd);
+      break;
+   case R_COLLECTOR:
+      dump_collector_resource(res->res_collector, sendit, sock);
       break;
    default:
       sendit(sock, "Unknown resource type %d\n", type);
@@ -460,6 +468,9 @@ void free_resource(RES *sres, int type)
       free_msgs_res((MSGS *)res);  /* free message resource */
       res = NULL;
       break;
+   case R_COLLECTOR:
+      free_collector_resource(res->res_collector);
+      break;
    default:
       printf(_("Unknown resource type %d\n"), type);
    }
@@ -539,12 +550,20 @@ bool save_resource(CONFIG *config, int type, RES_ITEM *items, int pass)
             res->res_client.messages = res_all.res_client.messages;
             res->res_client.disable_cmds = res_all.res_client.disable_cmds;
             break;
+         case R_COLLECTOR:
+            if ((res = (URES *)GetResWithName(R_COLLECTOR, res_all.res_collector.hdr.name)) == NULL) {
+               Mmsg(config->m_errmsg, _("Cannot find Statistics resource %s\n"), res_all.res_collector.hdr.name);
+               return false;
+            }
+            res->res_collector.metrics = res_all.res_collector.metrics;
+            // Dmsg2(100, "metrics = 0x%p 0x%p\n", res->res_collector.metrics, res_all.res_collector.metrics);
+            break;
          default:
             Emsg1(M_ERROR, 0, _("Unknown resource type %d\n"), type);
             error = 1;
             break;
       }
-      /* Note, the resoure name was already saved during pass 1,
+      /* Note, the resource name was already saved during pass 1,
        * so here, we can just release it.
        */
       if (res_all.res_dir.hdr.name) {
@@ -571,6 +590,9 @@ bool save_resource(CONFIG *config, int type, RES_ITEM *items, int pass)
          break;
       case R_MSGS:
          size = sizeof(MSGS);
+         break;
+      case R_COLLECTOR:
+         size = sizeof(COLLECTOR);
          break;
       default:
          printf(_("Unknown resource type %d\n"), type);

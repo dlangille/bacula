@@ -1,0 +1,16 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Radosław Korzeniewski, MMXVIII
+# radoslaw@korzeniewski.net, radekk@inteos.pl
+# Inteos Sp. z o.o. http://www.inteos.pl/
+#
+
+cp -f ${rscripts}/collect-bacula-dir.conf ${conf}/bacula-dir.conf
+cp -f ${rscripts}/collect-bacula-sd.conf ${conf}/bacula-sd.conf
+cp -f ${rscripts}/collect-bacula-fd.conf ${conf}/bacula-fd.conf
+cp -f ${rscripts}/test-console.conf ${conf}/bconsole.conf
+cp -f ${rscripts}/test-console.conf ${conf}/bat.conf
+

@@ -331,3 +331,6 @@ bacula/src/lib/sellist_test
 # win32
 /bacula/src/win32/lib/bacula32.def
 /bacula/src/win32/lib/bacula64.def
+
+# OS and Editor/IDE files
+.AppleDouble

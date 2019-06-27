@@ -1041,6 +1041,24 @@ const char *strip_restore[] = {
    "DELETE FROM %s WHERE FileId IN (SELECT FileId FROM %s JOIN File USING (FileId) WHERE PathId IN (%s))"
 };
 
+const char *count_all_jobs = "SELECT COUNT(1) FROM Job";
+const char *count_success_jobs = "SELECT COUNT(1) FROM Job WHERE JobStatus IN ('T', 'I') AND JobErrors=0";
+const char *count_success_jobids = "SELECT COUNT(1) FROM Job WHERE JobStatus IN ('T', 'I') AND JobErrors=0 and JobId in (%s)";
+const char *count_error_jobs = "SELECT COUNT(1) FROM Job WHERE JobStatus IN ('E','f','A')";
+const char *count_error_jobids = "SELECT COUNT(1) FROM Job WHERE JobStatus IN ('E','f','A') and JobId in (%s)";
+const char *count_warning_jobs = "SELECT COUNT(1) FROM Job WHERE JobStatus IN ('T','I') AND NOT JobErrors=0";
+const char *count_warning_jobids = "SELECT COUNT(1) FROM Job WHERE JobStatus IN ('T','I') AND NOT JobErrors=0 and JobId in (%s)";
+const char *sum_jobs_bytes = "SELECT SUM(JobBytes) FROM Job";
+const char *sum_jobids_bytes = "SELECT SUM(JobBytes) FROM Job WHERE JobId in (%s)";
+const char *sum_jobs_files = "SELECT SUM(JobFiles) FROM Job";
+const char *sum_jobids_files = "SELECT SUM(JobFiles) FROM Job WHERE JobId in (%s)";
+const char *count_all_volumes = "SELECT COUNT(1) FROM Media";
+const char *count_avl_volumes = "SELECT COUNT(1) FROM Media WHERE VolStatus='Append'";
+const char *count_error_volumes = "SELECT COUNT(1) FROM Media WHERE VolStatus='Error'";
+const char *count_full_volumes = "SELECT COUNT(1) FROM Media WHERE VolStatus='Full'";
+const char *count_used_volumes = "SELECT COUNT(1) FROM Media WHERE VolStatus='Used'";
+const char *sum_volumes_bytes = "SELECT SUM(VolBytes) FROM Media";
+const char *get_volume_size = "SELECT VolBytes FROM Media WHERE VolumeName='%s'";
 static const char *escape_char_value_default = "\\";
 
 const char *escape_char_value[] = {

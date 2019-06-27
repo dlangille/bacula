@@ -40,7 +40,7 @@ SVRSRCS = dird.c admin.c authenticate.c \
 	  recycle.c restore.c run_conf.c \
 	  scheduler.c \
 	  ua_acl.c ua_cmds.c ua_dotcmds.c \
-	  ua_query.c \
+	  ua_query.c ua_collect.c \
 	  ua_input.c ua_label.c ua_output.c ua_prune.c \
 	  ua_purge.c ua_restore.c ua_run.c \
 	  ua_select.c ua_server.c snapshot.c \

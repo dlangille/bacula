@@ -64,6 +64,7 @@ void display_last(HPKT &hpkt);
 void init_hpkt(HPKT &hpkt);
 void term_hpkt(HPKT &hpkt);
 bool display_global_item(HPKT &hpkt);
+void display_collector_types(HPKT &hpkt);
 
 /* bsys.c */
 char *ucfirst(char *dest, const char *src, int len);

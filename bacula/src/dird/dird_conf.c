@@ -698,6 +698,9 @@ static RES_ITEM counter_items[] = {
 /* Message resource */
 extern RES_ITEM msgs_items[];
 
+/* Statistics resource */
+extern RES_ITEM collector_items[];
+
 /*
  * This is the master resource definition.
  * It must have one item for each of the resources.
@@ -720,6 +723,7 @@ RES_TABLE resources[] = {
    {"Counter",       counter_items,    R_COUNTER},
    {"Console",       con_items,        R_CONSOLE},
    {"JobDefs",       job_items,        R_JOBDEFS},
+   {"Statistics",    collector_items,  R_COLLECTOR},
    {"Device",        NULL,             R_DEVICE},  /* info obtained from SD */
    {"Autochanger",   store_items,      R_AUTOCHANGER},  /* alias for R_STORAGE */
    {NULL,            NULL,             0}
@@ -1364,6 +1368,9 @@ next_run:
          sendit(sock, _("      opcmd=%s\n"), res->res_msgs.operator_cmd);
       break;
 
+   case R_COLLECTOR:
+      dump_collector_resource(res->res_collector, sendit, sock);
+      break;
    default:
       sendit(sock, _("Unknown resource type %d in dump_resource.\n"), type);
       break;
@@ -1730,6 +1737,9 @@ void free_resource(RES *rres, int type)
       free_msgs_res((MSGS *)res);  /* free message resource */
       res = NULL;
       break;
+   case R_COLLECTOR:
+      free_collector_resource(res->res_collector);
+      break;
    default:
       printf(_("Unknown resource type %d in free_resource.\n"), type);
    }
@@ -1940,7 +1950,16 @@ bool save_resource(CONFIG *config, int type, RES_ITEM *items, int pass)
          }
          res->res_sch.run = res_all.res_sch.run;
          break;
-      default:
+      case R_COLLECTOR:
+         if ((res = (URES *)GetResWithName(R_COLLECTOR, res_all.res_collector.hdr.name)) == NULL) {
+            Mmsg(config->m_errmsg, _("Cannot find Statistics resource %s\n"), res_all.res_collector.hdr.name);
+            return false;
+         }
+         res->res_collector.metrics = res_all.res_collector.metrics;
+         // Dmsg2(100, "metrics = 0x%p 0x%p\n", res->res_collector.metrics, res_all.res_collector.metrics);
+         break;
+
+         default:
          Emsg1(M_ERROR, 0, _("Unknown resource type %d in save_resource.\n"), type);
          error = true;
          break;
@@ -1999,6 +2018,9 @@ bool save_resource(CONFIG *config, int type, RES_ITEM *items, int pass)
       break;
    case R_MSGS:
       size = sizeof(MSGS);
+      break;
+   case R_COLLECTOR:
+      size = sizeof(COLLECTOR);
       break;
    case R_COUNTER:
       size = sizeof(COUNTER);

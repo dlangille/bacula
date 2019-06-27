@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -26,6 +26,12 @@
 struct s_kw {
    const char *name;
    int token;
+};
+
+/* Collector Type keyword structure */
+struct s_collt {
+   const char *type_name;
+   int32_t coll_type;
 };
 
 struct RES_ITEM;                   /* Declare forward referenced structure */
@@ -189,6 +195,46 @@ public:
 
 inline char *MSGS::name() const { return hdr.name; }
 
+/* just for reference */
+class bstatcollect;
+
+/* Statistics Resource */
+class COLLECTOR {
+public:
+   RES   hdr;                          /* standard resource header */
+   char *file;                         /* stat file if required */
+   char *prefix;                       /* metric prefix */
+   const char *daemon;                 /* the Daemon type string for spooling */
+   const char *spool_directory;        /* a working directory of the Daemon */
+   utime_t interval;                   /* interval in seconds between metrics collection */
+   uint32_t port;                      /* TCP port when using network backend */
+   char *host;                         /* remote host address when using network backend */
+   int32_t type;                       /* the Collector backend type */
+   alist *metrics;                     /* the list for Metrics parameters in resource */
+   /* private */
+   JCR *jcr;                           /* JCR resource */
+   bstatcollect *statcollector;        /* the reference to daemon's bstatcollect'or class */
+   time_t timestamp;                   /* the last collection time */
+   bool valid;                         /* when set to false the collector thread should involuntary exit */
+   bool running;                       /* set when a collector thread is running */
+   bool mangle_name;                   /* when set metrics name will be mangled by replacing dot '.' for "%32" */
+   int spooled;                        /* the spooling status of the collector */
+   POOLMEM *errmsg;                    /* error message if any */
+   pthread_t thid;                     /* thread id for collector thread */
+   pthread_mutex_t mutex;              /* when accessing collector resource data you should lock it first */
+
+public:
+   /* Methods */
+   char *name() const;
+   void lock();                        /* in bcollector.c */
+   void unlock();                      /* in bcollector.c */
+   void setspooled(int s);             /* in bcollector.c */
+   int getspooled();                   /* in bcollector.c */
+   void updatetimestamp();             /* in bcollector.c */
+};
+
+inline char *COLLECTOR::name() const { return hdr.name; }
+
 /*
  * New C++ configuration routines
  */
@@ -261,7 +307,7 @@ bool find_config_file(const char *config_file, char *full_path, int max_path);
 
 
 /*
- * Standard global parsers defined in parse_config.c
+ * Standard global parsers defined in parse_config.c and bcollector.c
  */
 void store_str(LEX *lc, RES_ITEM *item, int index, int pass);
 void store_dir(LEX *lc, RES_ITEM *item, int index, int pass);
@@ -284,6 +330,7 @@ void store_size32(LEX *lc, RES_ITEM *item, int index, int pass);
 void store_speed(LEX *lc, RES_ITEM *item, int index, int pass);
 void store_defs(LEX *lc, RES_ITEM *item, int index, int pass);
 void store_label(LEX *lc, RES_ITEM *item, int index, int pass);
+void store_coll_type(LEX *lc, RES_ITEM *item, int index, int pass);
 
 /* ***FIXME*** eliminate these globals */
 extern int32_t r_first;

@@ -33,7 +33,7 @@ our @EXPORT = qw(update_some_files create_many_files check_multiple_copies
                   update_client $HOST $BASEPORT add_to_backup_list
                   run_bconsole run_bacula start_test end_test create_bconcmds
                   create_many_dirs cleanup start_bacula
-                  get_dirname check_jobmedia_content
+                  get_dirname check_jobmedia_content setup_collector
                   stop_bacula get_resource set_maximum_concurrent_jobs get_time
                   add_attribute check_prune_list check_min_volume_size
                   init_delta update_delta check_max_backup_size comment_out
@@ -1605,6 +1605,32 @@ sub check_json_tools
     }
 }
 
+sub setup_collector
+{
+    my ($conf, $name, $type, $interval) = @_;
+    my $file='';
+
+    $name = $name || "collector1";
+    $type = $type || "csv";
+    $interval = $interval || 60;
+
+    if ($type eq 'csv') {
+        $file = "File = \"$tmp/$name.csv\"";
+    } else {
+        $file = "Host = localhost\nPort = 9223\n";
+    }
+    open(FP, ">>$conf") or die "Error: Unable to open $conf $@";
+    print FP "
+Statistics {
+  Name = $name
+  Interval = 60
+  Type = $type
+  $file
+}
+";
+    close(FP);
+}
+
 use Fcntl 'SEEK_SET';
 use Data::Dumper;
 sub check_aligned_data
@@ -1751,3 +1777,4 @@ sub check_tcp_loop
 }
 
 1;
+

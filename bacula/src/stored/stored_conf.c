@@ -207,16 +207,20 @@ static RES_ITEM cloud_items[] = {
 /* Message resource */
 extern RES_ITEM msgs_items[];
 
+/* Statistics resource */
+extern RES_ITEM collector_items[];
+
 
 /* This is the master resource definition */
 RES_TABLE resources[] = {
-   {"Director",      dir_items,     R_DIRECTOR},
-   {"Storage",       store_items,   R_STORAGE},
-   {"Device",        dev_items,     R_DEVICE},
-   {"Messages",      msgs_items,    R_MSGS},
-   {"Autochanger",   changer_items, R_AUTOCHANGER},
-   {"Cloud",         cloud_items,   R_CLOUD},
-   {NULL,            NULL,          0}
+   {"Director",      dir_items,        R_DIRECTOR},
+   {"Storage",       store_items,      R_STORAGE},
+   {"Device",        dev_items,        R_DEVICE},
+   {"Messages",      msgs_items,       R_MSGS},
+   {"Autochanger",   changer_items,    R_AUTOCHANGER},
+   {"Cloud",         cloud_items,      R_CLOUD},
+   {"Statistics",    collector_items,  R_COLLECTOR},
+   {NULL,            NULL,             0}
 };
 
 /*
@@ -598,6 +602,9 @@ void dump_resource(int type, RES *rres, void sendit(void *sock, const char *fmt,
       if (res->res_msgs.operator_cmd)
          sendit(sock, "      opcmd=%s\n", res->res_msgs.operator_cmd);
       break;
+   case R_COLLECTOR:
+      dump_collector_resource(res->res_collector, sendit, sock);
+      break;
    default:
       sendit(sock, _("Warning: unknown resource type %d\n"), type);
       break;
@@ -796,6 +803,9 @@ void free_resource(RES *sres, int type)
       free_msgs_res((MSGS *)res);  /* free message resource */
       res = NULL;
       break;
+   case R_COLLECTOR:
+      free_collector_resource(res->res_collector);
+      break;
    default:
       Dmsg1(0, _("Unknown resource type %d\n"), type);
       break;
@@ -894,6 +904,14 @@ bool save_resource(CONFIG *config, int type, RES_ITEM *items, int pass)
          }
          res->res_dev.cloud = res_all.res_dev.cloud;
          break;
+      case R_COLLECTOR:
+         if ((res = (URES *)GetResWithName(R_COLLECTOR, res_all.res_collector.hdr.name)) == NULL) {
+            Mmsg(config->m_errmsg, _("Cannot find Statistics resource %s\n"), res_all.res_collector.hdr.name);
+            return false;
+         }
+         res->res_collector.metrics = res_all.res_collector.metrics;
+         // Dmsg2(100, "metrics = 0x%p 0x%p\n", res->res_collector.metrics, res_all.res_collector.metrics);
+         break;
       default:
          printf(_("Unknown resource type %d\n"), type);
          error = 1;
@@ -931,6 +949,9 @@ bool save_resource(CONFIG *config, int type, RES_ITEM *items, int pass)
          break;
       case R_CLOUD:
          size = sizeof(CLOUD);
+         break;
+      case R_COLLECTOR:
+         size = sizeof(COLLECTOR);
          break;
       default:
          printf(_("Unknown resource type %d\n"), type);

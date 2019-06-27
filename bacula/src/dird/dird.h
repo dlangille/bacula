@@ -77,7 +77,39 @@ struct idpkt {
    uint32_t count;
 };
 
+typedef struct {
+   int bacula_dir_config_clients;
+   int bacula_dir_config_jobs;
+   int bacula_dir_config_filesets;
+   int bacula_dir_config_pools;
+   int bacula_dir_config_schedules;
+   int bacula_dir_config_storages;
+   int bacula_dir_memory_bufs;
+   int bacula_dir_memory_heap;
+   int bacula_dir_memory_maxbufs;
+   int bacula_dir_memory_maxbytes;
+   int bacula_dir_memory_smbytes;
+   int bacula_jobs_queued_all;
+   int bacula_jobs_running_all;
+   int bacula_jobs_all;
+   int bacula_jobs_bytes;
+   int bacula_jobs_files;
+   int bacula_jobs_success_all;
+   int bacula_jobs_errors_all;
+   int bacula_jobs_warning_all;
+   int bacula_volumes_all;
+   int bacula_volumes_available;
+   int bacula_volumes_bytes;
+   int bacula_volumes_errors_all;
+   int bacula_volumes_full_all;
+   int bacula_volumes_used_all;
+} dirdstatmetrics_t;
+
 void free_plugin_config_item(plugin_config_item *lst);
 void free_plugin_config_items(alist *lst);
+bool update_permanent_stats(void *data);
+
+extern bstatcollect *statcollector;
+extern dirdstatmetrics_t dirstatmetrics;
 
 #include "protos.h"

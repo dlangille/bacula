@@ -40,6 +40,7 @@ enum {
    R_COUNTER,
    R_CONSOLE,
    R_JOBDEFS,
+   R_COLLECTOR,
    R_DEVICE,       /* This is the real last device class */
 
    R_AUTOCHANGER,  /* Alias for R_STORAGE after R_LAST */
@@ -716,6 +717,7 @@ union URES {
    DEVICE     res_dev;
    RES        hdr;
    RUNSCRIPT  res_runscript;
+   COLLECTOR  res_collector;
 };
 
 

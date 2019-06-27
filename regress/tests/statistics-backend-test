@@ -1,0 +1,154 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Radosław Korzeniewski, MMXVIII
+# radoslaw@korzeniewski.net, radekk@inteos.pl
+# Inteos Sp. z o.o. http://www.inteos.pl/
+#
+# The test verifies if the internal collector is runing and changing statistic metric values
+#
+TestName="statistics-backend-test"
+JobName=Simple
+. scripts/functions
+
+cwd=`pwd`
+scripts/cleanup
+scripts/copy-collect-confs
+echo "${cwd}/build" >${cwd}/tmp/file-list
+#export debug=1
+
+start_test
+
+cat <<END_OF_DATA >tmp/bconcmds
+@output /dev/null
+messages
+@# wait a little bit for backend to start
+@sleep 10
+@# disaplay a backends statuses
+@$out tmp/log1.out
+.api 2
+.status dir statistics
+@$out tmp/log2.out
+.api 2
+.status storage statistics
+@$out tmp/log3.out
+.api 2
+.status client statistics
+quit
+END_OF_DATA
+
+run_bacula
+# wait for Graphite backend to start spooling
+sleep 120
+
+cat <<END_OF_DATA >tmp/bconcmds
+@$out tmp/log4.out
+.api 2
+.status dir statistics
+@$out tmp/log5.out
+.api 2
+.status storage statistics
+@$out tmp/log6.out
+.api 2
+.status client statistics
+quit
+END_OF_DATA
+
+run_bconsole
+# start a Graphite simulator :)
+netcat -l -p 9223 -w 180 > ${cwd}/tmp/log7.out
+netcat -l -p 9223 -w 180 > ${cwd}/tmp/log8.out
+netcat -l -p 9223 -w 180 > ${cwd}/tmp/log9.out
+
+#cat <<END_OF_DATA >tmp/bconcmds
+#@# FD metrics
+#collect client all
+#@$out tmp/log3.out
+#@# SD metrics
+#collect storage all
+## now run some jobs
+#@$out tmp/log4.out
+#label storage=File1 volume=TestVolume001
+#run job=$JobName storage=File1 yes
+#wait
+#messages
+#@$out tmp/log5.out
+#@# Director metrics
+#collect all
+#@$out tmp/log6.out
+#@# FD metrics
+#collect client all
+#@$out tmp/log7.out
+#@# SD metrics
+#collect storage all
+#quit
+#END_OF_DATA
+
+check_for_zombie_jobs storage=File1
+stop_bacula
+
+vstat=0
+
+# check if all collectors are running
+dcr=`grep running ${cwd}/tmp/log1.out | wc -l`
+scr=`grep running ${cwd}/tmp/log2.out | wc -l`
+fcr=`grep running ${cwd}/tmp/log3.out | wc -l`
+if [ $dcr -ne 4 -o $scr -ne 4 -o $fcr -ne 4 ]
+then
+	echo "Problem with collectors running!"
+	vstat=$((vstat+1))
+fi
+
+# check if Graphite collector are spooling
+dcs=`grep "spooling=in progress" ${cwd}/tmp/log4.out | wc -l`
+scs=`grep "spooling=in progress" ${cwd}/tmp/log5.out | wc -l`
+fcs=`grep "spooling=in progress" ${cwd}/tmp/log6.out | wc -l`
+if [ $dcs -ne 1 -o $scs -ne 1 -o $fcs -ne 1 ]
+then
+	echo "Problem with collectors spooling!"
+	vstat=$((vstat+1))
+fi
+
+# check what collectors has written to stat files
+timecoll=`head -1 ${cwd}/tmp/stats-dir.csv | cut -f1 -d','`
+dircollnr=`grep $timecoll ${cwd}/tmp/stats-dir.csv | wc -l`
+timecoll=`head -1 ${cwd}/tmp/stats-dir-memory.csv | cut -f1 -d','`
+dirmemcollnr=`grep $timecoll ${cwd}/tmp/stats-dir-memory.csv | wc -l`
+if [ $dircollnr -ne 25 -o $dirmemcollnr -ne 4 ]
+then
+	echo "Problem with CSV Dir collector!"
+	vstat=$((vstat+1))
+fi
+
+timecoll=`head -1 ${cwd}/tmp/stats-sd.csv | cut -f1 -d','`
+sdcollnr=`grep $timecoll ${cwd}/tmp/stats-sd.csv | wc -l`
+timecoll=`head -1 ${cwd}/tmp/stats-sd-memory.csv | cut -f1 -d','`
+sdmemcollnr=`grep $timecoll ${cwd}/tmp/stats-sd-memory.csv | wc -l`
+if [ $sdcollnr -ne 34 -o $dirmemcollnr -ne 4 ]
+then
+	echo "Problem with CSV SD collector!"
+	vstat=$((vstat+1))
+fi
+
+timecoll=`head -1 ${cwd}/tmp/stats-fd.csv | cut -f1 -d','`
+fdcollnr=`grep $timecoll ${cwd}/tmp/stats-fd.csv | wc -l`
+timecoll=`head -1 ${cwd}/tmp/stats-fd-memory.csv | cut -f1 -d','`
+fdmemcollnr=`grep $timecoll ${cwd}/tmp/stats-fd-memory.csv | wc -l`
+if [ $fdcollnr -ne 5 -o $fdmemcollnr -ne 4 ]
+then
+	echo "Problem with CSV FD collector!"
+	vstat=$((vstat+1))
+fi
+
+gdrm=`grep "backup.bacula.dir.config.jobs 20" ${cwd}/tmp/log7.out ${cwd}/tmp/log8.out ${cwd}/tmp/log9.out | wc -l`
+gsrm=`grep "backup.bacula.storage.*.config.devices 3" ${cwd}/tmp/log7.out ${cwd}/tmp/log8.out ${cwd}/tmp/log9.out | wc -l`
+gfrm=`grep "backup.bacula.client.*.memory.bufs " ${cwd}/tmp/log7.out ${cwd}/tmp/log8.out ${cwd}/tmp/log9.out | wc -l`
+if [ $gdrm -le 1 -o $gsrm -le 1 -o $gfrm -le 1 ]
+then
+	echo "Problem with collectors despooling!"
+	vstat=$((vstat+1))
+fi
+
+end_test

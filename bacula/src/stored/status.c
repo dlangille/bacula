@@ -53,6 +53,8 @@ static void list_status_header(STATUS_PKT *sp);
 static void list_devices(STATUS_PKT *sp, char *name=NULL);
 static void list_plugins(STATUS_PKT *sp);
 static void list_cloud_transfers(STATUS_PKT *sp, bool verbose);
+static void list_collectors_status(STATUS_PKT *sp, char *collname);
+static void api_collectors_status(STATUS_PKT *sp, char *collname);
 
 void status_alert_callback(void *ctx, const char *short_msg,
    const char *long_msg, char *Volume, int severity,
@@ -1027,6 +1029,7 @@ bool qstatus_cmd(JCR *jcr)
    bool ret=true;
    char *cmd;
    char *device=NULL;
+   char *collname=NULL;
    int api = true;
 
    sp.bs = dir;
@@ -1056,8 +1059,12 @@ bool qstatus_cmd(JCR *jcr)
       } else if (!strcmp(argk[i], "api") && argv[i]) {
          api = atoi(argv[i]);
 
+      } else if (!strcmp(argk[i], "statistics") && argv[i]) {
+         collname = argv[i];
+         unbash_spaces(collname);
+
       } else if (!strcmp(argk[i], "api_opts") && argv[i]) {
-         strncpy(sp.api_opts, argv[i], sizeof(sp.api_opts));;
+         strncpy(sp.api_opts, argv[i], sizeof(sp.api_opts));
       }
    }
 
@@ -1103,6 +1110,9 @@ bool qstatus_cmd(JCR *jcr)
        list_resources(&sp);
    } else if (strcasecmp(cmd, "cloud") == 0) {
       list_cloud_transfers(&sp, true);
+   } else if (strcasecmp(cmd, "statistics") == 0) {
+      sp.api = api;
+      list_collectors_status(&sp, collname);
    } else {
       pm_strcpy(jcr->errmsg, dir->msg);
       dir->fsend(_("3900 Unknown arg in .status command: %s\n"), jcr->errmsg);
@@ -1157,3 +1167,59 @@ static void list_plugins(STATUS_PKT *sp)
       sendit(msg.c_str(), len, sp);
    }
 }
+
+static void list_collectors_status(STATUS_PKT *sp, char *collname)
+{
+   URES *res;
+   int len;
+   POOL_MEM buf(PM_MESSAGE);
+
+   Dmsg2(200, "enter list_collectors_status() api=%i coll=%s\n", sp->api, NPRTB(collname));
+   if (sp->api > 1) {
+      api_collectors_status(sp, collname);
+      return;
+   }
+
+   LockRes();
+   foreach_res(res, R_COLLECTOR) {
+      if (collname && !bstrcmp(collname, res->res_collector.hdr.name)){
+         continue;
+      }
+      Dmsg1(500, "processing: %s\n", res->res_collector.hdr.name);
+      len = render_collector_status(res->res_collector, buf);
+      sendit(buf.c_str(), len, sp);
+   };
+   UnlockRes();
+   if (!collname){
+      len = render_updcollector_status(buf);
+      sendit(buf.c_str(), len, sp);
+   }
+   Dmsg0(200, "leave list_collectors_status()\n");
+}
+
+static void api_collectors_status(STATUS_PKT *sp, char *collname)
+{
+   URES *res;
+   OutputWriter ow(sp->api_opts);
+   POOLMEM *buf;
+
+   Dmsg1(200, "enter api_collectors_status() %s\n", NPRTB(collname));
+   ow.start_group("collector_backends");
+   LockRes();
+   foreach_res(res, R_COLLECTOR) {
+      if (collname && !bstrcmp(collname, res->res_collector.hdr.name)){
+         continue;
+      }
+      Dmsg1(500, "processing: %s\n", res->res_collector.hdr.name);
+      api_render_collector_status(res->res_collector, ow);
+   };
+   UnlockRes();
+   buf = ow.end_group();
+   if (!collname){
+      ow.start_group("collector_update");
+      api_render_updcollector_status(ow);
+      buf = ow.end_group();
+   }
+   sendit(buf, strlen(buf), sp);
+   Dmsg0(200, "leave api_collectors_status()\n");
+};

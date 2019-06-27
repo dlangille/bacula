@@ -76,7 +76,7 @@
 
 static const int dbglvl = 150;
 
-/* Imported functions */
+/* Imported functions and variables */
 extern void set_os_device_parameters(DCR *dcr);
 extern bool dev_get_os_pos(DEVICE *dev, struct mtget *mt_stat);
 extern uint32_t status_dev(DEVICE *dev);
@@ -431,6 +431,7 @@ btime_t DEVICE::get_timer_count()
 ssize_t DEVICE::read(void *buf, size_t len)
 {
    ssize_t read_len;
+   ssize_t stat_read_len = 0;
 
    get_timer_count();
 
@@ -443,7 +444,11 @@ ssize_t DEVICE::read(void *buf, size_t len)
 
    if (read_len > 0) {          /* skip error */
       DevReadBytes += read_len;
+      stat_read_len = read_len;
    }
+
+   collector_update_add2_value_int64(devstatcollector, devstatmetrics.bacula_storage_device_readbytes, stat_read_len,
+         devstatmetrics.bacula_storage_device_readtime, last_tick);
 
    return read_len;
 }
@@ -452,6 +457,7 @@ ssize_t DEVICE::read(void *buf, size_t len)
 ssize_t DEVICE::write(const void *buf, size_t len)
 {
    ssize_t write_len;
+   ssize_t stat_write_len = 0;
 
    get_timer_count();
 
@@ -464,7 +470,11 @@ ssize_t DEVICE::write(const void *buf, size_t len)
 
    if (write_len > 0) {         /* skip error */
       DevWriteBytes += write_len;
+      stat_write_len = write_len;
    }
+
+   collector_update_add2_value_int64(devstatcollector, devstatmetrics.bacula_storage_device_writebytes, stat_write_len,
+         devstatmetrics.bacula_storage_device_writetime, last_tick);
 
    return write_len;
 }
@@ -1049,7 +1059,57 @@ int DEVICE::delete_alerts()
    return 0;
 }
 
+// TODO: fill metrics description
+void DEVICE::register_metrics(bstatcollect *collector)
+{
+   POOL_MEM met(PM_NAME);
+
+   devstatcollector = collector;
+   if (!collector){
+      return;
+   }
+   Dmsg2(100, "DEVICE::register_metrics called. 0x%p collector=0x%p\n", this, collector);
+   Mmsg(met, "bacula.storage.%s.device.%s.readbytes", me->hdr.name, name());
+   devstatmetrics.bacula_storage_device_readbytes =
+         devstatcollector->registration(met.c_str(), METRIC_INT, METRIC_UNIT_BYTE,
+            (char*)"The number of bytes read from device.");
+   Mmsg(met, "bacula.storage.%s.device.%s.readtime", me->hdr.name, name());
+   devstatmetrics.bacula_storage_device_readtime =
+         devstatcollector->registration(met.c_str(), METRIC_INT, METRIC_UNIT_MSEC,
+            (char*)"Time spent reading from device.");
+   Mmsg(met, "bacula.storage.%s.device.%s.readspeed", me->hdr.name, name());
+   devstatmetrics.bacula_storage_device_readspeed =
+         devstatcollector->registration(met.c_str(), METRIC_FLOAT, METRIC_UNIT_BYTESEC,
+            (char*)"Device read throughput.");
+   Mmsg(met, "bacula.storage.%s.device.%s.writespeed", me->hdr.name, name());
+   devstatmetrics.bacula_storage_device_writespeed =
+         devstatcollector->registration(met.c_str(), METRIC_FLOAT, METRIC_UNIT_BYTESEC,
+            (char*)"Device write throughput.");
+   Mmsg(met, "bacula.storage.%s.device.%s.status", me->hdr.name, name());
+   devstatmetrics.bacula_storage_device_status =
+         devstatcollector->registration_bool(met.c_str(), METRIC_UNIT_STATUS, enabled,
+            (char*)"Show if device is enabled (True/1) or disabled (False/0).");
+   Mmsg(met, "bacula.storage.%s.device.%s.writebytes", me->hdr.name, name());
+   devstatmetrics.bacula_storage_device_writebytes =
+         devstatcollector->registration(met.c_str(), METRIC_INT, METRIC_UNIT_BYTE,
+            (char*)"The number of bytes written to device.");
+   Mmsg(met, "bacula.storage.%s.device.%s.writetime", me->hdr.name, name());
+   devstatmetrics.bacula_storage_device_writetime =
+         devstatcollector->registration(met.c_str(), METRIC_INT, METRIC_UNIT_MSEC,
+            (char*)"Time spent writting to device.");
+   /* total and free space metrics registration */
+   Mmsg(met, "bacula.storage.%s.device.%s.freespace", me->hdr.name, name());
+   devstatmetrics.bacula_storage_device_freespace =
+         devstatcollector->registration(met.c_str(), METRIC_INT, METRIC_UNIT_BYTE,
+            (char*)"The size of available space of the disk storage for device (could be shared).");
+   Mmsg(met, "bacula.storage.%s.device.%s.totalspace", me->hdr.name, name());
+   devstatmetrics.bacula_storage_device_totalspace =
+         devstatcollector->registration(met.c_str(), METRIC_INT, METRIC_UNIT_BYTE,
+            (char*)"The size of the disk storage for device (could be shared).");
+};
+
 bool DEVICE::get_tape_worm(DCR *dcr)
 {
    return false;
 }
+

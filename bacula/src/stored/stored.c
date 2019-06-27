@@ -54,7 +54,8 @@ char OK_msg[]   = "3000 OK\n";
 char TERM_msg[] = "3999 Terminate\n";
 void *start_heap;
 static bool test_config = false;
-
+bstatcollect *statcollector = NULL;
+sdstatmetrics_t sdstatmetrics;
 
 static uint32_t VolSessionId = 0;
 uint32_t VolSessionTime;
@@ -69,7 +70,6 @@ static bool make_pid_file = true;     /* create pid file */
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 static workq_t dird_workq;            /* queue for processing connections */
 static CONFIG *config;
-
 
 static void usage()
 {
@@ -292,6 +292,9 @@ int main (int argc, char *argv[])
 
    drop(uid, gid, false);
 
+   /* initialize a statistics collector */
+   initialize_statcollector();
+
    cleanup_old_files();
 
    /* Ensure that Volume Session Time and Id are both
@@ -314,6 +317,8 @@ int main (int argc, char *argv[])
    start_watchdog();                  /* start watchdog thread */
    init_jcr_subsystem();              /* start JCR watchdogs etc. */
    dbg_jcr_add_hook(sd_debug_print); /* used to director variables */
+
+   start_collector_threads();    /* start collector thread for every Collector resource */
 
    /* Single server used for Director and File daemon */
    server_tid = pthread_self();
@@ -595,7 +600,7 @@ void *device_initialization(void *arg)
    jcr = new_jcr(sizeof(JCR), stored_free_jcr);
    new_plugins(jcr);  /* instantiate plugins */
    jcr->setJobType(JT_SYSTEM);
-   /* Initialize FD start condition variable */
+   /* Initialize SD start condition variable */
    int errstat = pthread_cond_init(&jcr->job_start_wait, NULL);
    if (errstat != 0) {
       berrno be;
@@ -606,13 +611,12 @@ void *device_initialization(void *arg)
 
    foreach_res(device, R_DEVICE) {
       Dmsg1(90, "calling init_dev %s\n", device->hdr.name);
-      dev = init_dev(NULL, device);
-      Dmsg1(10, "SD init done %s\n", device->hdr.name);
+      dev = init_dev(NULL, device, false, statcollector);
+      Dmsg2(10, "SD init done %s (0x%p)\n", device->hdr.name, dev);
       if (!dev) {
          Jmsg1(NULL, M_ERROR, 0, _("Could not initialize SD device \"%s\"\n"), device->hdr.name);
          continue;
-     }
-
+      }
       jcr->dcr = dcr = new_dcr(jcr, NULL, dev);
       generate_plugin_event(jcr, bsdEventDeviceInit, dcr);
 
@@ -676,7 +680,6 @@ void *device_initialization(void *arg)
             break;
          }
       }
-
       free_dcr(dcr);
       jcr->dcr = NULL;
    }
@@ -711,6 +714,7 @@ void terminate_stored(int sig)
    in_here = true;
    debug_level = 0;                   /* turn off any debug */
    stop_watchdog();
+   terminate_collector_threads();
 
    if (sig == SIGTERM || sig == SIGINT) { /* normal shutdown request? or ^C */
       /*
@@ -794,6 +798,10 @@ void terminate_stored(int sig)
 
    if (chk_dbglvl(10)) {
       print_memory_pool_stats();
+   }
+   if (statcollector){
+      // statcollector->dump();
+      delete(statcollector);
    }
    term_msg();
    cleanup_crypto();

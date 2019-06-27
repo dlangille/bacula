@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -65,6 +65,7 @@
 union URES {
    MSGS  res_msgs;
    RES hdr;
+   COLLECTOR  res_collector;
 };
 
 #if defined(_MSC_VER)
@@ -114,6 +115,25 @@ RES_ITEM msgs_items[] = {
    {NULL,          NULL,       {0},       0, 0, 0}
 };
 
+/*
+ * Statistics resource directives
+ *
+ *  name         handler      value       code   flags  default_value
+ */
+RES_ITEM collector_items[] = {
+   {"Name",             store_name,       ITEM(res_collector.hdr.name),          0, ITEM_REQUIRED, 0},
+   {"Description",      store_str,        ITEM(res_collector.hdr.desc),          0, 0, 0},
+   {"Prefix",           store_str,        ITEM(res_collector.prefix),            0, 0, 0},
+   {"Metrics",          store_alist_str,  ITEM(res_collector.metrics),           0, 0, 0},   /* default all */
+   {"Interval",         store_time,       ITEM(res_collector.interval),          0, ITEM_DEFAULT, 5*60}, /* default 5 min */
+   {"Port",             store_pint32,     ITEM(res_collector.port),              0, 0, 0},
+   {"Host",             store_str,        ITEM(res_collector.host),              0, 0, 0},
+   {"Type",             store_coll_type,  ITEM(res_collector.type),              0, ITEM_REQUIRED, 0},
+   {"File",             store_str,        ITEM(res_collector.file),              0, 0, 0},
+   {"MangleMetric",     store_bool,       ITEM(res_collector.mangle_name),       0, 0, 0},
+   {NULL,               NULL,             {0},                                   0, 0, 0}
+};
+
 /* Various message types */
 s_kw msg_types[] = {
    {"Debug",         M_DEBUG},  /* Keep 1st place */
@@ -146,6 +166,18 @@ s_kw tapelabels[] = {
    {"Bacula",        B_BACULA_LABEL},
    {"ANSI",          B_ANSI_LABEL},
    {"IBM",           B_IBM_LABEL},
+   {NULL,            0}
+};
+
+
+/*
+ * Keywords (RHS) permitted in Statistics type records
+ *
+ *   type_name       backend_type
+ */
+s_collt collectortypes[] = {
+   {"CSV",           COLLECTOR_BACKEND_CSV},
+   {"Graphite",      COLLECTOR_BACKEND_Graphite},
    {NULL,            0}
 };
 
@@ -224,7 +256,7 @@ static void init_resource(CONFIG *config, int type, RES_ITEM *items, int pass)
 {
    int i;
    int rindex = type - r_first;
-   
+
    memset(config->m_res_all, 0, config->m_res_all_size);
    res_all.hdr.rcode = type;
    res_all.hdr.refcnt = 1;
@@ -930,6 +962,28 @@ void store_label(LEX *lc, RES_ITEM *item, int index, int pass)
    set_bit(index, res_all.hdr.item_present);
 }
 
+/*
+ * Store Statistics Type (CSV, Graphite - only supported)
+ */
+void store_coll_type(LEX *lc, RES_ITEM *item, int index, int pass)
+{
+   int i;
+
+   lex_get_token(lc, T_NAME);
+   /* Store the type both pass 1 and pass 2 */
+   for (i = 0; collectortypes[i].type_name; i++) {
+      if (strcasecmp(lc->str, collectortypes[i].type_name) == 0) {
+         *(int32_t *)(item->value) = collectortypes[i].coll_type;
+         i = 0;
+         break;
+      }
+   }
+   if (i != 0) {
+      scan_err1(lc, _("Expected a Statistics backend type keyword, got: %s"), lc->str);
+   }
+   scan_to_eol(lc);
+   set_bit(index, res_all.hdr.item_present);
+}
 
 /* Parser state */
 enum parse_state {

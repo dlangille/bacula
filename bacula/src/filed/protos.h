@@ -72,6 +72,7 @@ int add_options_to_fileset(JCR *jcr, const char *item);
 int add_wild_to_fileset(JCR *jcr, const char *item, int type);
 int add_regex_to_fileset(JCR *jcr, const char *item, int type);
 findINCEXE *new_include(JCR *jcr);
+void filed_free_jcr(JCR *jcr);
 
 /* from snapshot.c */
 int snapshot_cmd(JCR *jcr);
@@ -80,6 +81,12 @@ int snapshot_cmd(JCR *jcr);
 void VSSCleanup(VSSClient *c);
 VSSClient *VSSInit();
 #endif
+
+/* from fdcollect.c */
+bool update_permanent_stats(void *data);
+void initialize_statcollector();
+void start_collector_threads();
+void terminate_collector_threads();
 
 /* Definition for encyption cipher/digest type  */
 void store_cipher_type(LEX *lc, RES_ITEM *item, int index, int pass);

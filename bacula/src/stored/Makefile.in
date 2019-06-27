@@ -36,7 +36,7 @@ SDCORE_OBJS = \
 # bacula-sd
 SDOBJS = \
    stored.o append.o authenticate.o dircmd.o fd_cmds.o job.o \
-   hello.o status.o vbackup.o \
+   hello.o status.o vbackup.o sdcollect.o \
    $(SDCORE_OBJS)
 
 JSONOBJS = bsdjson.o stored_conf.o

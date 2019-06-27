@@ -73,7 +73,8 @@ int SDConnectTimeout;
 char *configfile = NULL;
 void *start_heap;
 utime_t last_reload_time = 0;
-
+bstatcollect *statcollector = NULL;
+dirdstatmetrics_t dirstatmetrics;
 
 /* Globals Imported */
 extern dlist client_globals;
@@ -330,6 +331,9 @@ int main (int argc, char *argv[])
 
    drop(uid, gid, false);                    /* reduce privileges if requested */
 
+   /* initialize a statistics collector */
+   initialize_statcollector();
+
    /* If we are in testing mode, we don't try to fix the catalog */
    cat_op mode=(test_config)?CHECK_CONNECTION:UPDATE_AND_FIX;
 
@@ -340,6 +344,8 @@ int main (int argc, char *argv[])
    if (test_config) {
       terminate_dird(0);
    }
+
+   update_permanent_stats(NULL);
 
    my_name_is(0, NULL, director->name());    /* set user defined name */
 
@@ -370,7 +376,9 @@ int main (int argc, char *argv[])
    init_job_server(director->MaxConcurrentJobs);
 
    dbg_jcr_add_hook(dir_debug_print); /* used to director variables */
-   dbg_jcr_add_hook(bdb_debug_print);     /* used to debug B_DB connexion after fatal signal */
+   dbg_jcr_add_hook(bdb_debug_print);     /* used to debug B_DB connection after fatal signal */
+
+   start_collector_threads();    /* start collector thread for every Collector resource */
 
 //   init_device_resources();
 
@@ -545,6 +553,9 @@ void reload_config(int sig)
    sigprocmask(SIG_BLOCK, &set, NULL);
 #endif
 
+   /* handle collector threads restart*/
+   terminate_collector_threads();
+
    lock_jobs();
    LockRes();
 
@@ -647,7 +658,7 @@ void reload_config(int sig)
          } else {
             sched->globals = schg;     /* Set globals pointer */
          }
-      }
+      };
    }
 
    /* Reset other globals */
@@ -655,6 +666,9 @@ void reload_config(int sig)
    FDConnectTimeout = director->FDConnectTimeout;
    SDConnectTimeout = director->SDConnectTimeout;
    Dmsg0(10, "Director's configuration file reread.\n");
+
+   /* populate statistics data */
+   update_config_stats();
 
    /* Now release saved resources, if no jobs using the resources */
    if (njobs == 0) {
@@ -664,6 +678,8 @@ void reload_config(int sig)
 bail_out:
    UnlockRes();
    unlock_jobs();
+/* start collector threads again */
+   start_collector_threads();
 #if !defined(HAVE_WIN32)
    sigprocmask(SIG_UNBLOCK, &set, NULL);
    signal(SIGHUP, reload_config);
@@ -683,6 +699,7 @@ void terminate_dird(int sig)
    already_here = true;
    debug_level = 0;                   /* turn off debug */
    stop_watchdog();
+   terminate_collector_threads();
    generate_daemon_event(NULL, "Exit");
    unload_plugins();
    if (!test_config) {
@@ -740,6 +757,11 @@ void terminate_dird(int sig)
       free(jg->name);
    }
    job_globals.destroy();
+
+   if (statcollector){
+      // statcollector->dump();
+      delete(statcollector);
+   }
 
    close_memory_pool();               /* release free memory in pool */
    lmgr_cleanup_main();
@@ -1120,6 +1142,29 @@ static bool check_resources()
       }
    }
 
+   /* verify a Collector resource */
+   COLLECTOR *collect;
+   foreach_res(collect, R_COLLECTOR){
+      switch (collect->type){
+         case COLLECTOR_BACKEND_CSV:
+            /* a CSV backend require a file parameter */
+            if (!collect->file){
+               Jmsg(NULL, M_FATAL, 0, _("File parameter required in Collector CSV resource \"%s\".\n"), 
+                     collect->hdr.name);
+               OK = false;
+            }
+            break;
+         case COLLECTOR_BACKEND_Graphite:
+            /* we require a host parameter at least */
+            if (!collect->host){
+               Jmsg(NULL, M_FATAL, 0, _("Host parameter required in Collector Graphite resource \"%s\".\n"), 
+                     collect->hdr.name);
+               OK = false;
+            }
+            break;
+      }
+   }
+
    UnlockRes();
    if (OK) {
       close_msg(NULL);                /* close temp message handler */
@@ -1459,6 +1504,7 @@ static void cleanup_old_files()
    char prbuf[500];
    const int nmatch = 30;
    regmatch_t pmatch[nmatch];
+   berrno be;
 
    /* Exclude spaces and look for .mail, .tmp or .restore.xx.bsr files */
    const char *pat1 = "^[^ ]+\\.(restore\\.[^ ]+\\.bsr|mail|tmp)$";

@@ -360,3 +360,10 @@ int  delete_snapshot(UAContext *ua);
 bool update_snapshot(UAContext *ua);
 int prune_snapshot(UAContext *ua);
 bool send_snapshot_retention(JCR *jcr, utime_t val);
+
+/* ua_collect.c */
+bool update_permanent_stats(void *data);
+void initialize_statcollector();
+void start_collector_threads();
+void terminate_collector_threads();
+void update_config_stats();

@@ -35,6 +35,8 @@ extern bool GetWindowsVersionString(char *buf, int maxsiz);
 /* Forward referenced functions */
 static void  list_running_jobs(STATUS_PKT *sp);
 static void  list_status_header(STATUS_PKT *sp);
+static void  list_collectors_status(STATUS_PKT *sp, char *collname);
+static void  api_collectors_status(STATUS_PKT *sp, char *collname);
 
 /* Static variables */
 static char qstatus1[] = ".status %127s\n";
@@ -244,6 +246,10 @@ static void  list_running_jobs_plain(STATUS_PKT *sp)
       }
 #endif
       bstrftime_nc(dt, sizeof(dt), njcr->start_time);
+      if (!njcr->director){
+         /* skip any internal system jobs */
+         continue;
+      }
       if (njcr->JobId == 0) {
          len = Mmsg(msg, _("Director connected %sat: %s\n"),
                     (njcr->dir_bsock && njcr->dir_bsock->tls)?_("using TLS "):"",
@@ -463,6 +469,7 @@ int qstatus_cmd(JCR *jcr)
    BSOCK *dir = jcr->dir_bsock;
    POOLMEM *cmd;
    JCR *njcr;
+   char *collname;
    s_last_job* job;
    STATUS_PKT sp;
 
@@ -481,6 +488,11 @@ int qstatus_cmd(JCR *jcr)
    }
    unbash_spaces(cmd);
 
+   collname = strchr(cmd, '=');
+   if (collname){
+      *collname = 0;
+      collname++;
+   }
    if (strcasecmp(cmd, "current") == 0) {
       dir->fsend(OKqstatus, cmd);
       foreach_jcr(njcr) {
@@ -504,6 +516,9 @@ int qstatus_cmd(JCR *jcr)
    } else if (strcasecmp(cmd, "terminated") == 0) {
        sp.api = MAX(sp.api, 1);
        list_terminated_jobs(&sp); /* defined in lib/status.h */
+   } else if (strcasecmp(cmd, "statistics") == 0) {
+       sp.api = MAX(sp.api, 1);
+       list_collectors_status(&sp, collname);
    } else {
       pm_strcpy(&jcr->errmsg, dir->msg);
       Jmsg1(jcr, M_FATAL, 0, _("Bad .status command: %s\n"), jcr->errmsg);
@@ -517,3 +532,59 @@ int qstatus_cmd(JCR *jcr)
    free_memory(cmd);
    return 1;
 }
+
+static void list_collectors_status(STATUS_PKT *sp, char *collname)
+{
+   URES *res;
+   int len;
+   POOL_MEM buf(PM_MESSAGE);
+
+   Dmsg2(200, "enter list_collectors_status() api=%i coll=%s\n", sp->api, NPRTB(collname));
+   if (sp->api > 1) {
+      api_collectors_status(sp, collname);
+      return;
+   }
+
+   LockRes();
+   foreach_res(res, R_COLLECTOR) {
+      if (collname && !bstrcmp(collname, res->res_collector.hdr.name)){
+         continue;
+      }
+      Dmsg1(500, "processing: %s\n", res->res_collector.hdr.name);
+      len = render_collector_status(res->res_collector, buf);
+      sendit(buf.c_str(), len, sp);
+   };
+   UnlockRes();
+   if (!collname){
+      len = render_updcollector_status(buf);
+      sendit(buf.c_str(), len, sp);
+   }
+   Dmsg0(200, "leave list_collectors_status()\n");
+}
+
+static void api_collectors_status(STATUS_PKT *sp, char *collname)
+{
+   URES *res;
+   OutputWriter ow(sp->api_opts);
+   POOLMEM *buf;
+
+   Dmsg1(200, "enter api_collectors_status() %s\n", NPRTB(collname));
+   ow.start_group("collector_backends");
+   LockRes();
+   foreach_res(res, R_COLLECTOR) {
+      if (collname && !bstrcmp(collname, res->res_collector.hdr.name)){
+         continue;
+      }
+      Dmsg1(500, "processing: %s\n", res->res_collector.hdr.name);
+      api_render_collector_status(res->res_collector, ow);
+   };
+   UnlockRes();
+   buf = ow.end_group();
+   if (!collname){
+      ow.start_group("collector_update");
+      api_render_updcollector_status(ow);
+      buf = ow.end_group();
+   }
+   sendit(buf, strlen(buf), sp);
+   Dmsg0(200, "leave api_collectors_status()\n");
+};

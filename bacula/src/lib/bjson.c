@@ -28,6 +28,7 @@
 #include "lib/breg.h"
 
 extern s_kw msg_types[];
+extern s_collt collectortypes[];
 extern RES_TABLE resources[];
 
 union URES {
@@ -405,4 +406,16 @@ void display_bit_array(char *array, int num)
       }
    }
    sendit(NULL, "]");
+}
+
+void display_collector_types(HPKT &hpkt)
+{
+   int i;
+   for (i=0; collectortypes[i].type_name; i++) {
+      if (*(int32_t *)(hpkt.ritem->value) == collectortypes[i].coll_type) {
+         sendit(NULL, "\n    \"%s\": %s", hpkt.ritem->name,
+            quote_string(hpkt.edbuf, collectortypes[i].type_name));
+         return;
+      }
+   }
 }

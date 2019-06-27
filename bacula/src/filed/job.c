@@ -61,6 +61,7 @@ extern CLIENT *me;                    /* our client resource */
 extern int status_cmd(JCR *jcr);
 extern int qstatus_cmd(JCR *jcr);
 extern int accurate_cmd(JCR *jcr);
+extern int collect_cmd(JCR *jcr);
 
 /* Forward referenced functions */
 static int backup_cmd(JCR *jcr);
@@ -79,7 +80,6 @@ static int end_restore_cmd(JCR *jcr);
 static int storage_cmd(JCR *jcr);
 static int session_cmd(JCR *jcr);
 static int response(JCR *jcr, BSOCK *sd, char *resp, const char *cmd);
-static void filed_free_jcr(JCR *jcr);
 static int open_sd_read_session(JCR *jcr);
 static int runscript_cmd(JCR *jcr);
 static int runbefore_cmd(JCR *jcr);
@@ -132,6 +132,7 @@ struct s_cmds cmds[] = {
    {"stop",         cancel_cmd,  ACCESS_REMOTE},
    {"proxy",        proxy_cmd,   ACCESS_REMOTE},
    {"testnetwork",  fd_testnetwork_cmd, 0},
+   {"statistics",   collect_cmd, 0},
 #ifdef DEVELOPER
    {"exit",         exit_cmd, 0},
 #endif
@@ -315,7 +316,7 @@ static void *handle_director_request(BSOCK *dir)
       }
       first = false;
       dir->msg[dir->msglen] = 0;
-      Dmsg1(100, "<dird: %s", dir->msg);
+      Dmsg1(100, "<dird: %s\n", dir->msg);
       found = false;
       for (i=0; cmds[i].cmd; i++) {
          if (strncmp(cmds[i].cmd, dir->msg, strlen(cmds[i].cmd)) == 0) {
@@ -2953,7 +2954,7 @@ static int open_sd_read_session(JCR *jcr)
  * Destroy the Job Control Record and associated
  * resources (sockets).
  */
-static void filed_free_jcr(JCR *jcr)
+void filed_free_jcr(JCR *jcr)
 {
    if (jcr->dir_bsock) {
       free_bsock(jcr->dir_bsock);

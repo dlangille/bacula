@@ -68,3 +68,20 @@ struct s_cmds {
    int (*func)(JCR *);
    int access; /* specify if monitors/restricted have access to this function */
 };
+
+typedef struct {
+   int bacula_client_memory_bufs;
+   int bacula_client_memory_heap;
+   int bacula_client_memory_maxbufs;
+   int bacula_client_memory_maxbytes;
+   int bacula_client_memory_smbytes;
+   int bacula_client_test_metric;
+   int bacula_client_test_metric2;
+} fdstatmetrics_t;
+
+void allow_os_suspensions();
+void prevent_os_suspensions();
+bool update_permanent_stats(void *data);
+
+extern bstatcollect *statcollector;
+extern fdstatmetrics_t fdstatmetrics;

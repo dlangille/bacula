@@ -106,7 +106,7 @@ void sd_list_loaded_drivers(alist *list)
  *     is the directory in which the file will be placed.
  *
  */
-DEVICE *init_dev(JCR *jcr, DEVRES *device, bool adata)
+DEVICE *init_dev(JCR *jcr, DEVRES *device, bool adata, bstatcollect *statcollector)
 {
    struct stat statp;
    DEVICE *dev = NULL;
@@ -209,7 +209,7 @@ DEVICE *init_dev(JCR *jcr, DEVRES *device, bool adata)
    if (!dev) {
       return NULL;
    }
-
+   Dmsg1(100, "init_dev allocated: %p\n", dev);
    dev->adata = adata;
 
    /* Keep the device ID in the DEVICE struct to identify the hardware */
@@ -226,6 +226,8 @@ DEVICE *init_dev(JCR *jcr, DEVRES *device, bool adata)
    if (dev->is_fifo()) {
       dev->capabilities |= CAP_STREAM; /* set stream device */
    }
+
+   dev->register_metrics(statcollector);
 
    return dev;
 }

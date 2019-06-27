@@ -270,7 +270,7 @@ bool query_cmd(JCR *jcr)
          /* Find resource, and make sure we were able to open it */
          if (strcmp(dev_name.c_str(), device->hdr.name) == 0) {
             if (!device->dev) {
-               device->dev = init_dev(jcr, device);
+               device->dev = init_dev(jcr, device, false, statcollector);
             }
             if (!device->dev) {
                break;

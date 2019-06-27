@@ -61,6 +61,7 @@ extern bool use_cmd(JCR *jcr);
 extern bool run_cmd(JCR *jcr);
 extern bool status_cmd(JCR *sjcr);
 extern bool qstatus_cmd(JCR *jcr);
+extern bool collect_cmd(JCR *jcr);
 //extern bool query_cmd(JCR *jcr);
 
 /* Forward referenced functions */
@@ -138,6 +139,7 @@ static struct s_cmds cmds[] = {
    {"unmount",     unmount_cmd,     0},
    {"use storage=", use_cmd,        0},
    {"run",         run_cmd,         0},
+   {"statistics",  collect_cmd,     0},
 // {"query",       query_cmd,       0},
    {NULL,        NULL}                      /* list terminator */
 };
@@ -222,7 +224,7 @@ void *handle_connection_request(void *arg)
       if ((bnet_stat = bs->recv()) <= 0) {
          break;               /* connection terminated */
       }
-      Dmsg1(199, "<dird: %s", bs->msg);
+      Dmsg1(199, "<dird: %s\n", bs->msg);
       /* Ensure that device initialization is complete */
       while (!init_done) {
          bmicrosleep(1, 0);
@@ -1156,7 +1158,7 @@ static DCR *find_device(JCR *jcr, POOL_MEM &devname,
       if (strcmp(device->hdr.name, devname.c_str()) == 0 &&
           (!media_type || strcmp(device->media_type, media_type) ==0)) {
          if (!device->dev) {
-            device->dev = init_dev(jcr, device);
+            device->dev = init_dev(jcr, device, false, statcollector);
          }
          if (!device->dev) {
             Jmsg(jcr, M_WARNING, 0, _("\n"
@@ -1177,7 +1179,7 @@ static DCR *find_device(JCR *jcr, POOL_MEM &devname,
             foreach_alist(device, changer->device) {
                Dmsg1(100, "Try changer device %s\n", device->hdr.name);
                if (!device->dev) {
-                  device->dev = init_dev(jcr, device);
+                  device->dev = init_dev(jcr, device, false, statcollector);
                }
                if (!device->dev) {
                   Dmsg1(100, "Device %s could not be opened. Skipped\n", devname.c_str());
@@ -1234,7 +1236,7 @@ static DCR *find_any_device(JCR *jcr, POOL_MEM &devname,
       if (strcmp(device->hdr.name, devname.c_str()) == 0 &&
           (!media_type || strcmp(device->media_type, media_type) ==0)) {
          if (!device->dev) {
-            device->dev = init_dev(jcr, device);
+            device->dev = init_dev(jcr, device, false, statcollector);
          }
          if (!device->dev) {
             Jmsg(jcr, M_WARNING, 0, _("\n"
@@ -1255,7 +1257,7 @@ static DCR *find_any_device(JCR *jcr, POOL_MEM &devname,
             foreach_alist(device, changer->device) {
                Dmsg1(100, "Try changer device %s\n", device->hdr.name);
                if (!device->dev) {
-                  device->dev = init_dev(jcr, device);
+                  device->dev = init_dev(jcr, device, false, statcollector);
                }
                if (!device->dev) {
                   Dmsg1(100, "Device %s could not be opened. Skipped\n", devname.c_str());
@@ -1467,6 +1469,7 @@ static bool enable_cmd(JCR *jcr)
             dir->fsend(_("3003 Device \"%s\" already enabled.\n"), dev->print_name());
          } else {
             dev->enabled = true;
+            dev->devstatcollector->set_value_bool(dev->devstatmetrics.bacula_storage_device_status, true);
             dir->fsend(_("3002 Device \"%s\" enabled.\n"), dev->print_name());
          }
          deleted = dev->delete_alerts();
@@ -1505,6 +1508,7 @@ static bool disable_cmd(JCR *jcr)
          dev = dcr->dev;
          dev->Lock();
          dev->enabled = false;
+         dev->devstatcollector->set_value_bool(dev->devstatmetrics.bacula_storage_device_status, false);
          dir->fsend(_("3002 Device \"%s\" disabled.\n"), dev->print_name());
          dev->Unlock();
          free_dcr(dcr);

@@ -33,6 +33,8 @@ static void list_scheduled_jobs(UAContext *ua);
 static void llist_scheduled_jobs(UAContext *ua);
 static void list_running_jobs(UAContext *ua);
 static void list_terminated_jobs(UAContext *ua);
+static void list_collectors_status(UAContext *ua);
+static void api_collectors_status(UAContext *ua, char *collname);
 static void do_storage_status(UAContext *ua, STORE *store, char *cmd);
 static void do_client_status(UAContext *ua, CLIENT *client, char *cmd);
 static void do_director_status(UAContext *ua);
@@ -89,6 +91,8 @@ bool dot_status_cmd(UAContext *ua, const char *cmd)
           list_running_jobs(ua);
       } else if (strcasecmp(ua->argk[2], "terminated") == 0) {
           list_terminated_jobs(ua);
+      } else if (strcasecmp(ua->argk[2], "statistics") == 0) {
+          list_collectors_status(ua);
       } else {
          ua->send_msg("1900 Bad .status command, wrong argument.\n");
          return false;
@@ -528,7 +532,7 @@ static void do_storage_status(UAContext *ua, STORE *store, char *cmd)
 {
    BSOCK *sd;
    USTORE lstore;
-
+   int i;
 
    if (!acl_access_ok(ua, Storage_ACL, store->name())) {
       ua->error_msg(_("No authorization for Storage \"%s\"\n"), store->name());
@@ -574,8 +578,19 @@ static void do_storage_status(UAContext *ua, STORE *store, char *cmd)
          sd->fsend(".status %s %s %s api=%d api_opts=%s",
                    cmd, ua->argk[3], devname.c_str(),
                    ua->api, ua->api_opts);
+      } else if (strcasecmp(cmd, "collector") == 0){
+         i = find_arg_with_value(ua, "collector");
+         if (i>0){
+            Mmsg(devname, "%s", ua->argv[i]);
+            bash_spaces(devname.c_str());
+            sd->fsend(".status %s=%s api=%d api_opts=%s",
+                   cmd, devname.c_str(), ua->api, ua->api_opts);
+         } else {
+            sd->fsend(".status %s api=%d api_opts=%s",
+                   cmd, ua->api, ua->api_opts);
+         }
       } else {
-         int i = find_arg_with_value(ua, "device");
+         i = find_arg_with_value(ua, "device");
          if (i>0) {
             Mmsg(devname, "device=%s", ua->argv[i]);
             bash_spaces(devname.c_str());
@@ -598,6 +613,7 @@ static void do_client_status(UAContext *ua, CLIENT *client, char *cmd)
 {
    BSOCK *fd;
    POOL_MEM buf;
+   int i;
 
    if (!acl_access_client_ok(ua, client->name(), JT_BACKUP_RESTORE)) {
       ua->error_msg(_("No authorization for Client \"%s\"\n"), client->name());
@@ -624,7 +640,13 @@ static void do_client_status(UAContext *ua, CLIENT *client, char *cmd)
    Dmsg0(20, _("Connected to file daemon\n"));
    fd = ua->jcr->file_bsock;
    if (cmd) {
-      fd->fsend(".status %s api=%d api_opts=%s", cmd, ua->api, ua->api_opts);
+      if (strcasecmp(cmd, "collector") == 0 && (i = find_arg_with_value(ua, "collector")) > 0){
+         Mmsg(buf, "%s", ua->argv[i]);
+         bash_spaces(buf.c_str());
+         fd->fsend(".status %s=%s api=%d api_opts=%s", cmd, buf.c_str(), ua->api, ua->api_opts);
+      } else {
+         fd->fsend(".status %s api=%d api_opts=%s", cmd, ua->api, ua->api_opts);
+      }
    } else {
       fd->fsend("status");
    }
@@ -1535,3 +1557,64 @@ static void list_terminated_jobs(UAContext *ua)
    }
    unlock_last_jobs_list();
 }
+
+static void list_collectors_status(UAContext *ua)
+{
+   URES *res;
+   int i;
+   char *collname = NULL;
+   POOL_MEM buf(PM_MESSAGE);
+
+   if ((i = find_arg_with_value(ua, "statistics")) >= 0) {
+      collname = ua->argv[i];
+   }
+
+   Dmsg2(200, "enter list_collectors_status() api=%i coll=%s\n", ua->api, NPRTB(collname));
+   if (ua->api > 1) {
+      api_collectors_status(ua, collname);
+      return;
+   }
+
+   LockRes();
+   foreach_res(res, R_COLLECTOR) {
+      if (collname && !bstrcmp(collname, res->res_collector.hdr.name)){
+         continue;
+      }
+      Dmsg1(500, "processing: %s\n", res->res_collector.hdr.name);
+      render_collector_status(res->res_collector, buf);
+      ua->send_msg(buf.c_str());
+   };
+   UnlockRes();
+   if (!collname){
+      render_updcollector_status(buf);
+      ua->send_msg(buf.c_str());
+   }
+   Dmsg0(200, "leave list_collectors_status()\n");
+}
+
+static void api_collectors_status(UAContext *ua, char *collname)
+{
+   URES *res;
+   OutputWriter ow(ua->api_opts);
+   POOLMEM *buf;
+
+   Dmsg1(200, "enter api_collectors_status() %s\n", NPRTB(collname));
+   ow.start_group("collector_backends");
+   LockRes();
+   foreach_res(res, R_COLLECTOR) {
+      if (collname && !bstrcmp(collname, res->res_collector.hdr.name)){
+         continue;
+      }
+      Dmsg1(500, "processing: %s\n", res->res_collector.hdr.name);
+      api_render_collector_status(res->res_collector, ow);
+   };
+   UnlockRes();
+   buf = ow.end_group();
+   if (!collname){
+      ow.start_group("collector_update");
+      api_render_updcollector_status(ow);
+      buf = ow.end_group();
+   }
+   ua->send_msg(buf);
+   Dmsg0(200, "leave api_collectors_status()\n");
+};

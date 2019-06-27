@@ -121,6 +121,7 @@ static struct showstruct reses[] = {
    {NT_("filesets"),   R_FILESET},
    {NT_("pools"),      R_POOL},
    {NT_("messages"),   R_MSGS},
+   {NT_("statistics"), R_COLLECTOR},
 // {NT_("consoles"),   R_CONSOLE},
 // {NT_("jobdefs"),    R_JOBDEFS},
 // {NT_{"autochangers"), R_AUTOCHANGER},

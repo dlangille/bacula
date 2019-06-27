@@ -1,0 +1,78 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2018 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Radosław Korzeniewski, MMXVIII
+# radoslaw@korzeniewski.net, radekk@inteos.pl
+# Inteos Sp. z o.o. http://www.inteos.pl/
+#
+# The test verifies if the reload process after adding a collector resource
+#
+TestName="statistics-reload-test"
+JobName=Simple
+. scripts/functions
+
+cwd=`pwd`
+scripts/cleanup
+scripts/copy-test-confs
+echo "${cwd}/build" >${cwd}/tmp/file-list
+
+$bperl -e 'setup_collector("$tmp/bacula-dir.conf.new", "MyCollector")'
+echo "@$tmp/bacula-dir.conf.new" >> $conf/bacula-dir.conf
+
+start_test
+
+cat <<END_OF_DATA >tmp/bconcmds
+@output /dev/null
+messages
+@$out tmp/log1.out
+show statistics
+quit
+END_OF_DATA
+
+run_bacula
+
+# Clear the collector
+> $tmp/bacula-dir.conf.new
+
+cat <<END_OF_DATA >tmp/bconcmds
+@$out tmp/log2.out
+reload
+show statistics
+quit
+END_OF_DATA
+
+run_bconsole
+
+$bperl -e 'setup_collector("$tmp/bacula-dir.conf.new", "MyCollector2")'
+
+cat <<END_OF_DATA >tmp/bconcmds
+@$out tmp/log3.out
+reload
+show statistics
+quit
+END_OF_DATA
+
+run_bconsole
+
+grep "MyCollector" $tmp/log1.out > /dev/null
+if [ $? != 0 ]; then
+    print_debug "ERROR: Should find MyCollector in $tmp/log1.out"
+    estat=1
+fi
+
+grep "MyCollector" $tmp/log2.out > /dev/null
+if [ $? -eq 0 ]; then
+    print_debug "ERROR: Should not find MyCollector in $tmp/log2.out"
+    estat=1
+fi
+
+grep "MyCollector" $tmp/log3.out > /dev/null
+if [ $? != 0 ]; then
+    print_debug "ERROR: Should find MyCollector in $tmp/log3.out"
+    estat=1
+fi
+
+stop_bacula
+end_test

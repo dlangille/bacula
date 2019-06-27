@@ -37,6 +37,8 @@ CLIENT *me;                           /* my resource */
 bool no_signals = false;
 void *start_heap;
 extern struct s_cmds cmds[];
+bstatcollect *statcollector = NULL;
+fdstatmetrics_t fdstatmetrics;
 
 #ifndef CONFIG_FILE                   /* Might be overwritten */
  #define CONFIG_FILE "bacula-fd.conf" /* default config file */
@@ -76,13 +78,11 @@ static void usage()
    exit(1);
 }
 
-
 /*********************************************************************
  *
  *  Main Bacula Unix Client Program
  *
  */
-
 #if defined(HAVE_WIN32)
 #define main BaculaMain
 #endif
@@ -252,6 +252,8 @@ int main(int argc, char *argv[])
 #ifdef BOMB
    me += 1000000;
 #endif
+   /* initialize a statistics collector */
+   initialize_statcollector();
 
    /* Setup default value for the the snapshot handler */
    if (!me->snapshot_command) {
@@ -262,6 +264,9 @@ int main(int argc, char *argv[])
       start_watchdog();               /* start watchdog thread */
       init_jcr_subsystem();           /* start JCR watchdogs etc. */
    }
+
+   start_collector_threads();    /* start collector thread for every Collector resource */
+
    server_tid = pthread_self();
 
    /* Become server, and handle requests */
@@ -287,6 +292,7 @@ void terminate_filed(int sig)
    already_here = true;
    debug_level = 0;                   /* turn off debug */
    stop_watchdog();
+   terminate_collector_threads();
 
    bnet_stop_thread_server(server_tid);
    generate_daemon_event(NULL, "Exit");
@@ -314,6 +320,10 @@ void terminate_filed(int sig)
    if (config) {
       delete config;
       config = NULL;
+   }
+   if (statcollector){
+      // statcollector->dump();
+      delete(statcollector);
    }
    term_msg();
    cleanup_crypto();

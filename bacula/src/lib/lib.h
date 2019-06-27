@@ -41,6 +41,7 @@
 #include "queue.h"
 #include "serial.h"
 #include "message.h"
+#include "bcollector.h"
 #include "openssl.h"
 #include "lex.h"
 #include "parse_conf.h"
@@ -68,3 +69,6 @@
 #include "output.h"
 #include "protos.h"
 #include "bget_msg.h"
+#include "bstat.h"
+#include "collect.h"
+

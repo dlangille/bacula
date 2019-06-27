@@ -85,6 +85,19 @@ typedef void (alert_cb)(void *alert_ctx, const char *short_msg,
    const char *long_msg, char *Volume, int severity,
    int flags, int alert, utime_t alert_time);
 
+/* registered device metrics */
+typedef struct {
+   int bacula_storage_device_freespace;
+   int bacula_storage_device_totalspace;
+   int bacula_storage_device_readbytes;
+   int bacula_storage_device_readtime;
+   int bacula_storage_device_readspeed;
+   int bacula_storage_device_writespeed;
+   int bacula_storage_device_status;
+   int bacula_storage_device_writebytes;
+   int bacula_storage_device_writetime;
+} devstatmetrics_t;
+
 /* Aligned Data Disk Volume extension */
 #define ADATA_EXTENSION ".add"
 
@@ -335,14 +348,21 @@ public:
    int rem_wait_sec;
    int num_wait;
 
-   btime_t last_timer;         /* used by read/write/seek to get stats (usec) */
-   btime_t last_tick;          /* contains last read/write time (usec) */
+   btime_t last_timer;           /* used by read/write/seek to get stats (usec) */
+   btime_t last_tick;            /* contains last read/write time (usec) */
+   utime_t last_stat_timer;      /* used by update_permanent_stats() to count throughput */
 
    btime_t  DevReadTime;
    btime_t  DevWriteTime;
    uint64_t DevWriteBytes;
    uint64_t DevReadBytes;
    uint64_t usage;             /* Drive usage read+write bytes */
+
+   uint64_t last_stat_DevWriteBytes;
+   uint64_t last_stat_DevReadBytes;
+
+   devstatmetrics_t devstatmetrics;    /* these are a device metrics for every device */
+   bstatcollect *devstatcollector;        /* a pointer to daemon's statcollector */
 
    /* Methods */
    btime_t get_timer_count(); /* return the last timer interval (ms) */
@@ -595,7 +615,7 @@ public:
    virtual void select_data_stream(DCR *dcr, DEV_RECORD *rec) { return; };
    virtual bool flush_block(DCR *dcr);    /* in block_util.c */
    virtual bool do_pre_write_checks(DCR *dcr, DEV_RECORD *rec) { return true; };
-
+   virtual void register_metrics(bstatcollect *collector);
 
    /*
     * Locking and blocking calls

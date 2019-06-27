@@ -34,20 +34,20 @@ INCLUDE_FILES = ../baconfig.h ../bacula.h ../bc_types.h \
       ../config.h ../jcr.h ../version.h \
       address_conf.h alist.h attr.h base64.h bsockcore.h \
       berrno.h bits.h bjson.h bpipe.h breg.h bregex.h \
-      bsock.h btime.h btimers.h crypto.h dlist.h \
+      bsock.h bstat.h btime.h btimers.h crypto.h dlist.h \
       flist.h fnmatch.h guid_to_name.h htable.h lex.h \
       lib.h lz4.h md5.h mem_pool.h message.h \
       openssl.h parse_conf.h plugins.h protos.h queue.h rblist.h \
       runscript.h rwlock.h serial.h sellist.h sha1.h sha2.h \
       smartall.h status.h tls.h tree.h var.h \
-      watchdog.h workq.h ini.h \
+      watchdog.h workq.h ini.h collect.h \
       lockmgr.h devlock.h output.h bwlimit.h
 
 #
 # libbac
 #
 LIBBAC_SRCS = attr.c base64.c berrno.c bsys.c binflate.c bget_msg.c \
-      bnet.c bnet_server.c bsock.c bpipe.c bsnprintf.c btime.c \
+      bnet.c bnet_server.c bsock.c bpipe.c bsnprintf.c bstat.c btime.c \
       cram-md5.c crc32.c crypto.c daemon.c edit.c fnmatch.c \
       guid_to_name.c hmac.c jcr.c lex.c lz4.c alist.c dlist.c \
       md5.c message.c mem_pool.c openssl.c \
@@ -55,7 +55,7 @@ LIBBAC_SRCS = attr.c base64.c berrno.c bsys.c binflate.c bget_msg.c \
       runscript.c rwlock.c scan.c sellist.c serial.c sha1.c sha2.c \
       signal.c smartall.c rblist.c tls.c tree.c \
       util.c var.c watchdog.c workq.c btimers.c \
-      worker.c flist.c \
+      worker.c flist.c bcollector.c collect.c \
       address_conf.c breg.c htable.c lockmgr.c devlock.c output.c bwlimit.c
 
 LIBBAC_OBJS = $(LIBBAC_SRCS:.c=.o) 
@@ -278,6 +278,13 @@ ini_test: Makefile libbac.la ini.c unittests.o
 	$(RMF) ini.o
 	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) ini.c
 
+bstat_test: Makefile libbac.la bstat.c unittests.o
+	$(RMF) bstat.o
+	$(CXX) -DTEST_PROGRAM $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE)  $(CFLAGS) bstat.c
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -o $@ bstat.o unittests.o $(DLIB) -lbac -lm $(LIBS)
+	$(RMF) bstat.o
+	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) bstat.c
+
 bsockcore_test: Makefile libbac.la bsockcore.c unittests.o
 	$(RMF) bsockcore.o
 	$(CXX) -DTEST_PROGRAM $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE)  $(CFLAGS) bsockcore.c
@@ -293,6 +300,13 @@ bsock_test: Makefile libbac.la bsock.c unittests.o
 	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) $@ $(DESTDIR)$(sbindir)/
 	$(RMF) bsock.o
 	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) bsock.c
+
+collect_test: Makefile libbac.la collect.c unittests.o
+	$(RMF) collect.o
+	$(CXX) -DTEST_PROGRAM $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE)  $(CFLAGS) collect.c
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -o $@ collect.o unittests.o $(DLIB) -lbac -lm $(LIBS)
+	$(RMF) collect.o
+	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) collect.c
 
 install-includes:
 	$(MKDIR) $(DESTDIR)/$(includedir)/bacula
