@@ -233,7 +233,7 @@ var oJobsToRestoreList = {
 					render: function (data, type, row) {
 						var s;
 						if (type == 'display') {
-							s = Units.get_decimal_size(data)
+							s = Units.get_formatted_size(data)
 						} else {
 							s = data;
 						}
@@ -476,9 +476,7 @@ oJobsToRestoreList.init();
 						<div id="restore-browser-selected" class="w3-border">
 							<com:TJuiDroppable ID="SelectedVersionsDropper" Height="100%" Width="100%"
 								Options.accept=".draggable"
-								OnLoad="refreshSelectedFiles"
 								OnDrop="addFileToRestore"
-								OnCallback="refreshSelectedFiles"
 								OnDeactivate="callFormatters"
 								>
 									<com:TActiveDataGrid

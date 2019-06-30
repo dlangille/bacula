@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2018 Kern Sibbald
+ * Copyright (C) 2013-2019 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -576,24 +576,10 @@ class RestoreWizard extends BaculumWebPage
 	}
 
 	/**
-	 * Refresh/re-render selected files list.
-	 *
-	 * @param TDropContainer $sender sender object
-	 * @param TEventParameter $param param object
-	 * @return none
-	 */
-	public function refreshSelectedFiles($sender, $param) {
-		$this->loadSelectedFiles();
-		if ($this->IsCallBack && is_object($param)) {
-			$this->SelectedVersionsDropper->render($param->NewWriter);
-		}
-	}
-
-	/**
 	 * Call formatters method.
 	 */
 	public function callFormatters($sender, $param) {
-		$this->getCallbackClient()->callClientFunction('Formatters.set_formatters');
+		$this->getCallbackClient()->callClientFunction('set_formatters');
 	}
 
 	/*

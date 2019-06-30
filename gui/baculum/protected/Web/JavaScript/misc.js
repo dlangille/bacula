@@ -2,7 +2,7 @@ var Units = {
 	units: {
 		size: [
 			{short: '',  long: 'B', value: 1},
-			{short: 'kb', long: 'KB', value: 1000},
+			{short: 'kb', long: 'kB', value: 1000},
 			{short: 'k', long: 'KiB', value: 1024},
 			{short: 'mb', long: 'MB', value: 1000},
 			{short: 'm', long: 'MiB', value: 1024},
@@ -27,11 +27,11 @@ var Units = {
 			{long: 'day', value: 24}
 		]
 	},
-	get_decimal_size: function(size) {
+	get_size: function(size, unit_value) {
 		var dec_size;
 		var units = [];
 		for (var u in Units.units.size) {
-			if ([1, 1000].indexOf(Units.units.size[u].value) !== -1) {
+			if ([1, unit_value].indexOf(Units.units.size[u].value) !== -1) {
 				units.push(Units.units.size[u].long);
 			}
 		}
@@ -48,8 +48,8 @@ var Units = {
 			size = parseInt(size, 10);
 			var unit;
 			dec_size = size.toString();
-			while(size >= 1000) {
-				size /= 1000;
+			while(size >= unit_value) {
+				size /= unit_value;
 				unit = units.shift();
 			}
 			if (unit) {
@@ -60,6 +60,23 @@ var Units = {
 			}
 		}
 		return dec_size;
+	},
+	get_decimal_size: function(size) {
+		return this.get_size(size, 1000);
+	},
+	get_binary_size: function(size) {
+		return this.get_size(size, 1024);
+	},
+	get_formatted_size: function(size) {
+		var value = '';
+		if (typeof(SIZE_VALUES_UNIT) === 'string') {
+			if (SIZE_VALUES_UNIT === 'decimal') {
+				value = this.get_decimal_size(size);
+			} else if (SIZE_VALUES_UNIT === 'binary') {
+				value = this.get_binary_size(size);
+			}
+		}
+		return value;
 	},
 	format_size: function(size_bytes, format) {
 		var reminder;
@@ -157,7 +174,7 @@ var PieGraph  = {
 
 var Formatters = {
 	formatter: [
-		{css_class: 'size', format_func: Units.get_decimal_size},
+		{css_class: 'size', format_func: function(val) { return Units.get_formatted_size(val); }},
 		{css_class: 'time', format_func: function(val) { return Units.format_time_period(val); }}
 	],
 	set_formatters: function() {
@@ -178,6 +195,10 @@ var Formatters = {
 			}
 		}
 	}
+}
+
+function set_formatters() {
+	Formatters.set_formatters();
 }
 
 var Cookies = {
@@ -564,13 +585,13 @@ var Dashboard = {
 		document.getElementById(this.ids.jobs.most_count).textContent = occupancy;
 	},
 	update_jobtotals: function() {
-		document.getElementById(this.ids.jobtotals.total_bytes).textContent = Units.get_decimal_size(this.stats.jobtotals.bytes);
+		document.getElementById(this.ids.jobtotals.total_bytes).textContent = Units.get_formatted_size(this.stats.jobtotals.bytes);
 		document.getElementById(this.ids.jobtotals.total_files).textContent = this.stats.jobtotals.files || 0;
 	},
 	update_database: function() {
 		if (this.stats.dbsize.dbsize) {
 			document.getElementById(this.ids.database.type).textContent = this.dbtype[this.stats.dbsize.dbtype];
-			document.getElementById(this.ids.database.size).textContent = Units.get_decimal_size(this.stats.dbsize.dbsize);
+			document.getElementById(this.ids.database.size).textContent = Units.get_formatted_size(this.stats.dbsize.dbsize);
 		}
 	},
 	update_pools: function() {

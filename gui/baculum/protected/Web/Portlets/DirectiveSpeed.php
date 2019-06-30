@@ -32,7 +32,7 @@ class DirectiveSpeed extends DirectiveTemplate {
 
 	private $speed_formats = array(
 		array('format' => '', 'value' => 1, 'label' => 'B/s'),
-		array('format' => 'kb/s', 'value' => 1000, 'label' => 'KB/s'),
+		array('format' => 'kb/s', 'value' => 1000, 'label' => 'kB/s'),
 		array('format' => 'k/s', 'value' => 1024, 'label' => 'KiB/s'),
 		array('format' => 'mb/s', 'value' => 1000000, 'label' => 'MB/s'),
 		array('format' => 'm/s', 'value' => 1048576, 'label' => 'MiB/s')

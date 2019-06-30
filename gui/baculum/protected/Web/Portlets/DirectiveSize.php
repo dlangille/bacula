@@ -32,7 +32,7 @@ class DirectiveSize extends DirectiveTemplate {
 
 	private $size_formats = array(
 		array('format' => '', 'value' => 1, 'label' => 'B'),
-		array('format' => 'kb', 'value' => 1000, 'label' => 'KB'),
+		array('format' => 'kb', 'value' => 1000, 'label' => 'kB'),
 		array('format' => 'k', 'value' => 1024, 'label' => 'KiB'),
 		array('format' => 'mb', 'value' => 1000000, 'label' => 'MB'),
 		array('format' => 'm', 'value' => 1048576, 'label' => 'MiB'),

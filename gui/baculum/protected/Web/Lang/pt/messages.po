@@ -2077,3 +2077,12 @@ msgstr "Command status:"
 
 msgid "Ready"
 msgstr "Ready"
+
+msgid "Show size values as:"
+msgstr "Show size values as:"
+
+msgid "Decimal Bytes (1 mega = 10<sup>6</sup>)"
+msgstr "Decimal Bytes (1 mega = 10<sup>6</sup>)"
+
+msgid "Binary Bytes (1 mebi = 2<sup>20</sup>)"
+msgstr "Binary Bytes (1 mebi = 2<sup>20</sup>)"

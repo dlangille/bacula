@@ -100,7 +100,7 @@ var oJobList = {
 					render: function (data, type, row) {
 						var s;
 						if (type == 'display') {
-							s = Units.get_decimal_size(data)
+							s = Units.get_formatted_size(data)
 						} else {
 							s = data;
 						}

@@ -2069,3 +2069,12 @@ msgstr "Status komendy:"
 
 msgid "Ready"
 msgstr "Gotowy"
+
+msgid "Show size values as:"
+msgstr "Pokaż wartości rozmiaru jako:"
+
+msgid "Decimal Bytes (1 mega = 10<sup>6</sup>)"
+msgstr "Dziesiętne Bajty (1 mega = 10<sup>6</sup>)"
+
+msgid "Binary Bytes (1 mebi = 2<sup>20</sup>)"
+msgstr "Binarne Bajty (1 mebi = 2<sup>20</sup>)"

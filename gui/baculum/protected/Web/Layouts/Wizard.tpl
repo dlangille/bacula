@@ -6,6 +6,9 @@
 	<link rel="icon" href="<%=$this->getPage()->getTheme()->getBaseUrl()%>/favicon.ico" type="image/x-icon" />
 	</com:THead>
 	<body  class="w3-light-grey">
+		<script type="text/javascript">
+			var SIZE_VALUES_UNIT = '<%=(count($this->web_config) > 0 && key_exists('size_values_unit', $this->web_config['baculum'])) ? $this->web_config['baculum']['size_values_unit'] : 'decimal'%>';
+		</script>
 		<com:TForm>
 			<com:TClientScript PradoScripts="ajax, effects" />
 			<com:BClientScript ScriptUrl=<%~ ../JavaScript/fontawesome-all.js %> />

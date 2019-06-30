@@ -41,6 +41,22 @@
 			/>
 		</div>
 	</div>
+	<div class="w3-container w3-row w3-padding">
+		<div class="w3-third w3-col"><%[ Show size values as: ]%></div>
+		<div class="w3-third w3-col">
+			<p><com:TRadioButton
+				ID="DecimalBytes"
+				CssClass="w3-radio"
+				GroupName="SizeBytes"
+			/> <com:TLabel ForControl="DecimalBytes"><%[ Decimal Bytes (1 mega = 10<sup>6</sup>) ]%></com:TLabel></p>
+			<p>
+			<com:TRadioButton
+				ID="BinaryBytes"
+				CssClass="w3-radio"
+				GroupName="SizeBytes"
+			/> <com:TLabel ForControl="BinaryBytes"><%[ Binary Bytes (1 mebi = 2<sup>20</sup>) ]%></com:TLabel></p>
+		</div>
+	</div>
 	<div class="w3-center">
 		<com:TActiveLinkButton
 			CssClass="w3-button w3-green"

@@ -55,6 +55,7 @@
 		</div>
 <script type="text/javascript">
 var is_small = $('#small').is(':visible');
+var SIZE_VALUES_UNIT = '<%=(count($this->web_config) > 0 && key_exists('size_values_unit', $this->web_config['baculum'])) ? $this->web_config['baculum']['size_values_unit'] : 'decimal'%>';
 
 var oMonitor;
 var default_refresh_interval = 60000;
