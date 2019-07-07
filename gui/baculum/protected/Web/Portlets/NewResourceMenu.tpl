@@ -89,6 +89,14 @@
 			Attributes.onclick="$(this).closest('div.config_new_resource').hide();$('div.config_directives').slideUp();"
 			/>
 		</li>
+		<li><com:TActiveLinkButton
+			OnCommand="Parent.SourceTemplateControl.newResource"
+			CommandParameter="Statistics|<%=$this->getHost()%>|<%=$this->getComponentType()%>|<%=$this->getComponentName()%>"
+			Text="Statistics"
+			ClientSide.OnComplete="BaculaConfig.show_new_config('<%=$this->getHost()%>new_resource', '<%=$this->getComponentType()%>', '<%=$this->getComponentName()%>', 'Statistics');"
+			Attributes.onclick="$(this).closest('div.config_new_resource').hide();$('div.config_directives').slideUp();"
+			/>
+		</li>
 	</ul>
 	<ul style="display: <%=$this->getComponentType() === 'sd' ? 'block': 'none'%>; margin-top: 0;">
 		<li><com:TActiveLinkButton
@@ -131,6 +139,14 @@
 			Attributes.onclick="$(this).closest('div.config_new_resource').hide();$('div.config_directives').slideUp();"
 			/>
 		</li>
+		<li><com:TActiveLinkButton
+			OnCommand="Parent.SourceTemplateControl.newResource"
+			CommandParameter="Statistics|<%=$this->getHost()%>|<%=$this->getComponentType()%>|<%=$this->getComponentName()%>"
+			Text="Statistics"
+			ClientSide.OnComplete="BaculaConfig.show_new_config('<%=$this->getHost()%>new_resource', '<%=$this->getComponentType()%>', '<%=$this->getComponentName()%>', 'Statistics');"
+			Attributes.onclick="$(this).closest('div.config_new_resource').hide();$('div.config_directives').slideUp();"
+			/>
+		</li>
 	</ul>
 	<ul style="display: <%=$this->getComponentType() === 'fd' ? 'block': 'none'%>; margin-top: 0;">
 		<li><com:TActiveLinkButton
@@ -154,6 +170,14 @@
 			CommandParameter="Messages|<%=$this->getHost()%>|<%=$this->getComponentType()%>|<%=$this->getComponentName()%>"
 			Text="Messages"
 			ClientSide.OnComplete="BaculaConfig.show_new_config('<%=$this->getHost()%>new_resource', '<%=$this->getComponentType()%>', '<%=$this->getComponentName()%>', 'Messages');"
+			Attributes.onclick="$(this).closest('div.config_new_resource').hide();$('div.config_directives').slideUp();"
+			/>
+		</li>
+		<li><com:TActiveLinkButton
+			OnCommand="Parent.SourceTemplateControl.newResource"
+			CommandParameter="Statistics|<%=$this->getHost()%>|<%=$this->getComponentType()%>|<%=$this->getComponentName()%>"
+			Text="Statistics"
+			ClientSide.OnComplete="BaculaConfig.show_new_config('<%=$this->getHost()%>new_resource', '<%=$this->getComponentType()%>', '<%=$this->getComponentName()%>', 'Statistics');"
 			Attributes.onclick="$(this).closest('div.config_new_resource').hide();$('div.config_directives').slideUp();"
 			/>
 		</li>

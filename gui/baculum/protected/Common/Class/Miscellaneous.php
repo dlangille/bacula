@@ -133,7 +133,7 @@ class Miscellaneous extends TModule {
 	}
 
 	public function getComponents() {
-		$components = array_keys($this->components);
+		return array_keys($this->components);
 	}
 
 	public function getMainComponentResource($type) {

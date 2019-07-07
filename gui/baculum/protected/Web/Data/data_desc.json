@@ -2281,6 +2281,69 @@
 				"FieldType": "ListBox",
 				"Resource": "Job"
 			}
+		},
+		"Statistics": {
+			"Name": {
+				"Required": true,
+				"ValueType": "name",
+				"DefaultValue": 0,
+				"FieldType": "TextBox"
+			},
+			"Description": {
+				"Required": false,
+				"ValueType": "str",
+				"DefaultValue": 0,
+				"FieldType": "TextBox"
+			},
+			"Interval": {
+				"Required": false,
+				"ValueType": "time",
+				"DefaultValue": 300,
+				"FieldType": "TimePeriod"
+			},
+			"Type": {
+				"Required": true,
+				"ValueType": "str",
+				"DefaultValue": 0,
+				"FieldType": "ComboBox",
+				"Data": ["CSV", "Graphite"]
+			},
+			"Metrics": {
+				"Required": false,
+				"ValueType": "str",
+				"DefaultValue": 0,
+				"FieldType": "MultiTextBox"
+			},
+			"Prefix": {
+				"Required": false,
+				"ValueType": "str",
+				"DefaultValue": 0,
+				"FieldType": "TextBox"
+			},
+			"File": {
+				"Required": false,
+				"ValueType": "str",
+				"DefaultValue": 0,
+				"FieldType": "TextBox"
+			},
+			"Host": {
+				"Required": false,
+				"ValueType": "str",
+				"DefaultValue": 0,
+				"FieldType": "TextBox"
+			},
+			"Port": {
+				"Required": false,
+				"ValueType": "pint32",
+				"DefaultValue": 0,
+				"FieldType": "Integer"
+			},
+			"MangleMetric": {
+				"Required": false,
+				"ValueType": "bool",
+				"DefaultValue": 0,
+				"FieldType": "CheckBox"
+			}
 		}
 	},
 	"sd": {
@@ -2950,6 +3013,69 @@
 				"DefaultValue": 0,
 				"FieldType": "TextBox"
 			}
+		},
+		"Statistics": {
+			"Name": {
+				"Required": true,
+				"ValueType": "name",
+				"DefaultValue": 0,
+				"FieldType": "TextBox"
+			},
+			"Description": {
+				"Required": false,
+				"ValueType": "str",
+				"DefaultValue": 0,
+				"FieldType": "TextBox"
+			},
+			"Interval": {
+				"Required": false,
+				"ValueType": "time",
+				"DefaultValue": 300,
+				"FieldType": "TimePeriod"
+			},
+			"Type": {
+				"Required": true,
+				"ValueType": "str",
+				"DefaultValue": 0,
+				"FieldType": "ComboBox",
+				"Data": ["CSV", "Graphite"]
+			},
+			"Metrics": {
+				"Required": false,
+				"ValueType": "str",
+				"DefaultValue": 0,
+				"FieldType": "MultiTextBox"
+			},
+			"Prefix": {
+				"Required": false,
+				"ValueType": "str",
+				"DefaultValue": 0,
+				"FieldType": "TextBox"
+			},
+			"File": {
+				"Required": false,
+				"ValueType": "str",
+				"DefaultValue": 0,
+				"FieldType": "TextBox"
+			},
+			"Host": {
+				"Required": false,
+				"ValueType": "str",
+				"DefaultValue": 0,
+				"FieldType": "TextBox"
+			},
+			"Port": {
+				"Required": false,
+				"ValueType": "pint32",
+				"DefaultValue": 0,
+				"FieldType": "Integer"
+			},
+			"MangleMetric": {
+				"Required": false,
+				"ValueType": "bool",
+				"DefaultValue": 0,
+				"FieldType": "CheckBox"
+			}
 		}
 	},
 	"fd": {
@@ -3579,6 +3705,69 @@
 				"ValueType": "alist_str",
 				"DefaultValue": 0,
 				"FieldType": "TextBox"
+			}
+		},
+		"Statistics": {
+			"Name": {
+				"Required": true,
+				"ValueType": "name",
+				"DefaultValue": 0,
+				"FieldType": "TextBox"
+			},
+			"Description": {
+				"Required": false,
+				"ValueType": "str",
+				"DefaultValue": 0,
+				"FieldType": "TextBox"
+			},
+			"Interval": {
+				"Required": false,
+				"ValueType": "time",
+				"DefaultValue": 300,
+				"FieldType": "TimePeriod"
+			},
+			"Type": {
+				"Required": true,
+				"ValueType": "str",
+				"DefaultValue": 0,
+				"FieldType": "ComboBox",
+				"Data": ["CSV", "Graphite"]
+			},
+			"Metrics": {
+				"Required": false,
+				"ValueType": "str",
+				"DefaultValue": 0,
+				"FieldType": "MultiTextBox"
+			},
+			"Prefix": {
+				"Required": false,
+				"ValueType": "str",
+				"DefaultValue": 0,
+				"FieldType": "TextBox"
+			},
+			"File": {
+				"Required": false,
+				"ValueType": "str",
+				"DefaultValue": 0,
+				"FieldType": "TextBox"
+			},
+			"Host": {
+				"Required": false,
+				"ValueType": "str",
+				"DefaultValue": 0,
+				"FieldType": "TextBox"
+			},
+			"Port": {
+				"Required": false,
+				"ValueType": "pint32",
+				"DefaultValue": 0,
+				"FieldType": "Integer"
+			},
+			"MangleMetric": {
+				"Required": false,
+				"ValueType": "bool",
+				"DefaultValue": 0,
+				"FieldType": "CheckBox"
 			}
 		}
 	},

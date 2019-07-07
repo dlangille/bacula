@@ -2078,3 +2078,30 @@ msgstr "Dziesiętne Bajty (1 mega = 10<sup>6</sup>)"
 
 msgid "Binary Bytes (1 mebi = 2<sup>20</sup>)"
 msgstr "Binarne Bajty (1 mebi = 2<sup>20</sup>)"
+
+msgid "Statistics list"
+msgstr "Lista statystyk"
+
+msgid "Add director statistics"
+msgstr "Dodaj statystyki zarządcy"
+
+msgid "Add storage statistics"
+msgstr "Dodaj statystyki magazynu danych"
+
+msgid "Add file daemon statistics"
+msgstr "Dodaj statystyki klienta"
+
+msgid "Component type"
+msgstr "Typ komponentu"
+
+msgid "Component name"
+msgstr "Nazwa komponentu"
+
+msgid "Statistics details"
+msgstr "Szczegóły statystyk"
+
+msgid "Statistics:"
+msgstr "Statystyki:"
+
+msgid "Statistics"
+msgstr "Statystyki"

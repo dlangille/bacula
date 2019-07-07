@@ -2086,3 +2086,30 @@ msgstr "Decimal Bytes (1 mega = 10<sup>6</sup>)"
 
 msgid "Binary Bytes (1 mebi = 2<sup>20</sup>)"
 msgstr "Binary Bytes (1 mebi = 2<sup>20</sup>)"
+
+msgid "Statistics list"
+msgstr "Statistics list"
+
+msgid "Add director statistics"
+msgstr "Add director statistics"
+
+msgid "Add storage statistics"
+msgstr "Add storage statistics"
+
+msgid "Add file daemon statistics"
+msgstr "Add file daemon statistics"
+
+msgid "Component type"
+msgstr "Component type"
+
+msgid "Component name"
+msgstr "Component name"
+
+msgid "Statistics details"
+msgstr "Statistics details"
+
+msgid "Statistics:"
+msgstr "Statistics:"
+
+msgid "Statistics"
+msgstr "Statistics"
