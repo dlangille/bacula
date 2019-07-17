@@ -861,19 +861,19 @@ msgid "select client"
 msgstr "wybierz klienta"
 
 
-msgid "Graph: Jobs size / Time"
-msgstr "Graf: Rozmiar zadania / Czas"
+msgid "Job size / Time"
+msgstr "Rozmiar zadań / Czas"
 
-msgid "Jobs size (GiB)"
-msgstr "Rozmiar zadania (GiB)"
+msgid "Job size"
+msgstr "Rozmiar zadań"
 
 msgid "Time"
 msgstr "Czas"
 
-msgid "Tip: for getting zoom, please mark area on graph."
+msgid "Tip: to use zoom, please mark area on graph."
 msgstr "Porada: Aby użyć zbliżenia proszę zaznaczyć obszar na grafie."
 
-msgid "Tip 2: for back from zoom, please click somewhere on graph."
+msgid "Tip 2: to exit zoom, please click somewhere on graph."
 msgstr "Porada 2: aby powrócić ze zbliżenia, proszę kliknąć gdzieś na grafie."
 
 msgid "Baculum problem"
@@ -2105,3 +2105,126 @@ msgstr "Statystyki:"
 
 msgid "Statistics"
 msgstr "Statystyki"
+
+msgid "Job files / Time"
+msgstr "Pliki zadań / Czas"
+
+msgid "Job files per day"
+msgstr "Ilość plików na dzień"
+
+msgid "Files count"
+msgstr "Ilość plików"
+
+msgid "Jobs status / Day"
+msgstr "Status zadań / Dzień"
+
+msgid "Job status per day"
+msgstr "Status zadań na dzień"
+
+msgid "Jobs count"
+msgstr "Ilość zadań"
+
+msgid "Job files"
+msgstr "Pliki zadań"
+
+msgid "Graph type:"
+msgstr "Typ grafu:"
+
+msgid "Job size / Day"
+msgstr "Rozmiar zadań / Dzień"
+
+msgid "Job size per day"
+msgstr "Rozmiar zadań na dzień"
+
+msgid "Job files / Day"
+msgstr "Job files / Day"
+
+msgid "Graph:"
+msgstr "Graf:"
+
+msgid "Job duration"
+msgstr "Czas trwania zadań"
+
+msgid "Jobs duration / Time"
+msgstr "Czas trwania zadania / Czas"
+
+msgid "Duration"
+msgstr "Czas trwania"
+
+msgid "Job size per hour"
+msgstr "Rozmiar zadań na godzinę"
+
+msgid "Job size / Hour"
+msgstr "Rozmiar zadań / Godzina"
+
+msgid "Job files per hour"
+msgstr "Ilość plików na godzinę"
+
+msgid "Job files / Hour"
+msgstr "Ilość plików / Godzina"
+
+msgid "Average job size per hour"
+msgstr "Średni rozmiar zadania na godzinę"
+
+msgid "Average job size per day"
+msgstr "Średni rozmiar zadania na dzień"
+
+msgid "Average job size / Hour"
+msgstr "Średni rozmiar zadania / Godzina"
+
+msgid "Average job size / Day"
+msgstr "Średni rozmiar zadania / Dzień"
+
+msgid "Average job files per hour"
+msgstr "Średnia ilość plików na godzinę"
+
+msgid "Average job files per day"
+msgstr "Średnia ilość plików na dzień"
+
+msgid "Average job files / Hour"
+msgstr "Średnia ilość plików / Godzina"
+
+msgid "Average job files / Day"
+msgstr "Średnia ilość plików / Dzień"
+
+msgid "Average job speed / Time"
+msgstr "Średnia prędkość zadań / Time"
+
+msgid "Job speed"
+msgstr "Prędkość zadania"
+
+msgid "Average job speed"
+msgstr "Średnia prędkość zadań"
+
+msgid "Job count per hour"
+msgstr "Ilość zadań na godzinę"
+
+msgid "Job count per day"
+msgstr "Ilość zadań na dzień"
+
+msgid "Job count / Hour"
+msgstr "Ilość zadań / Godzina"
+
+msgid "Job count"
+msgstr "Ilość zadań"
+
+msgid "Job count / Day"
+msgstr "Ilość zadań / Dzień"
+
+msgid "Job level:"
+msgstr "Poziom zadania:"
+
+msgid "All levels"
+msgstr "Wszystkie poziomy"
+
+msgid "Full"
+msgstr "Pełny"
+
+msgid "Incremental"
+msgstr "Przyrostowy"
+
+msgid "Differential"
+msgstr "Różnicowy"
+
+msgid "Custom time range"
+msgstr "Dopasowany zakres czasu"

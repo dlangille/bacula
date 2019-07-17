@@ -869,20 +869,14 @@ msgstr "Legend:"
 msgid "select client"
 msgstr "select client"
 
-msgid "Graph: Jobs size / Time"
-msgstr "Graph: Jobs size / Time"
+msgid "Job size / Time"
+msgstr "Job size / Time"
 
-msgid "Jobs size (GiB)"
-msgstr "Jobs size (GiB)"
+msgid "Job size"
+msgstr "Job size"
 
 msgid "Time"
 msgstr "Time"
-
-msgid "Tip: for getting zoom, please mark area on graph."
-msgstr "Tip: for getting zoom, please mark area on graph."
-
-msgid "Tip 2: for back from zoom, please click somewhere on graph."
-msgstr "Tip 2: for back from zoom, please click somewhere on graph."
 
 msgid "File retention (in sec.):"
 msgstr "File retention (in sec.):"
@@ -2098,3 +2092,132 @@ msgstr "Statistics:"
 
 msgid "Statistics"
 msgstr "Statistics"
+
+msgid "Job files / Time"
+msgstr "Job files / Time"
+
+msgid "Job files per day"
+msgstr "Job files per day"
+
+msgid "Files count"
+msgstr "Files count"
+
+msgid "Jobs status / Day"
+msgstr "Jobs status / Day"
+
+msgid "Job status per day"
+msgstr "Job status per day"
+
+msgid "Jobs count"
+msgstr "Jobs count"
+
+msgid "Job files"
+msgstr "Job files"
+
+msgid "Graph type:"
+msgstr "Graph type:"
+
+msgid "Tip: to use zoom, please mark area on graph."
+msgstr "Tip: to use zoom, please mark area on graph."
+
+msgid "Tip 2: to exit zoom, please click somewhere on graph."
+msgstr "Tip 2: to exit zoom, please click somewhere on graph."
+
+msgid "Job size / Day"
+msgstr "Job size / Day"
+
+msgid "Job size per day"
+msgstr "Job size per day"
+
+msgid "Job files / Day"
+msgstr "Job files / Day"
+
+msgid "Graph:"
+msgstr "Graph:"
+
+msgid "Job duration"
+msgstr "Job duration"
+
+msgid "Jobs duration / Time"
+msgstr "Jobs duration / Time"
+
+msgid "Duration"
+msgstr "Duration"
+
+msgid "Job size per hour"
+msgstr "Job size per hour"
+
+msgid "Job size / Hour"
+msgstr "Job size / Hour"
+
+msgid "Job files per hour"
+msgstr "Job files per hour"
+
+msgid "Job files / Hour"
+msgstr "Job files / Hour"
+
+msgid "Average job size per hour"
+msgstr "Average job size per hour"
+
+msgid "Average job size per day"
+msgstr "Average job size per day"
+
+msgid "Average job size / Hour"
+msgstr "Average job size / Hour"
+
+msgid "Average job size / Day"
+msgstr "Average job size / Day"
+
+msgid "Average job files per hour"
+msgstr "Average job files per hour"
+
+msgid "Average job files per day"
+msgstr "Average job files per day"
+
+msgid "Average job files / Hour"
+msgstr "Average job files / Hour"
+
+msgid "Average job files / Day"
+msgstr "Average job files / Day"
+
+msgid "Average job speed / Time"
+msgstr "Average job speed / Time"
+
+msgid "Job speed"
+msgstr "Job speed"
+
+msgid "Average job speed"
+msgstr "Average job speed"
+
+msgid "Job count per hour"
+msgstr "Job count per hour"
+
+msgid "Job count per day"
+msgstr "Job count per day"
+
+msgid "Job count / Hour"
+msgstr "Job count / Hour"
+
+msgid "Job count"
+msgstr "Job count"
+
+msgid "Job count / Day"
+msgstr "Job count / Day"
+
+msgid "Job level:"
+msgstr "Job level:"
+
+msgid "All levels"
+msgstr "All levels"
+
+msgid "Full"
+msgstr "Full"
+
+msgid "Incremental"
+msgstr "Incremental"
+
+msgid "Differential"
+msgstr "Differential"
+
+msgid "Custom time range"
+msgstr "Custom time range"

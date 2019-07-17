@@ -95,13 +95,13 @@ var Units = {
 		var ret = {value: size_bytes, format: f};
 		return ret;
 	},
-	format_time_period: function(time_seconds, format) {
+	format_time_period: function(time_seconds, format, float_val) {
 		var reminder;
 		var f = this.units.time[0].long;
 		for (var i = 0; i < this.units.time.length; i++) {
 			if (this.units.time[i].long != format && time_seconds) {
 				reminder = time_seconds % this.units.time[i].value;
-				if (reminder === 0) {
+				if (reminder === 0 || (float_val && time_seconds >= this.units.time[i].value)) {
 					time_seconds /= this.units.time[i].value;
 					f = this.units.time[i].long;
 					continue;
@@ -124,13 +124,16 @@ var Units = {
 		var time = [d.getHours(), ('0' + d.getMinutes()).slice(-2), ('0' + d.getSeconds()).slice(-2)].join(':');
 		return (date + ' ' + time);
 	},
-	format_speed: function(speed_bytes, format) {
+	format_speed: function(speed_bytes, format, float_val, decimal) {
 		var reminder;
 		var f = this.units.speed[0].long;
 		for (var i = 0; i < this.units.speed.length; i++) {
 			if (this.units.speed[i].long != format && speed_bytes) {
+				if (decimal && [1, 1000].indexOf(this.units.speed[i].value) == -1) {
+					continue;
+				}
 				reminder = speed_bytes % this.units.speed[i].value
-				if (reminder === 0) {
+				if (reminder === 0 || (float_val && speed_bytes >= this.units.speed[i].value)) {
 					speed_bytes /= this.units.speed[i].value;
 					f = this.units.speed[i].long;
 					continue;

@@ -36,22 +36,132 @@
 		<option value="@"><%[ select job ]%></option>
 	</select>
 </div>
+<div class="w3-right w3-margin-top" style="width: 250px; margin-right: 28px;">
+	<span><%[ Graph type: ]%></span><br />
+	<select id="graph_type" name="graph_type" class="w3-select w3-border w3-right" style="width: 250px">
+		<option value="job_size" selected><%[ Job size ]%></option>
+		<option value="job_size_per_hour"><%[ Job size per hour ]%></option>
+		<option value="job_size_per_day"><%[ Job size per day ]%></option>
+		<option value="avg_job_size_per_hour"><%[ Average job size per hour ]%></option>
+		<option value="avg_job_size_per_day"><%[ Average job size per day ]%></option>
+		<option value="job_files"><%[ Job files ]%></option>
+		<option value="job_files_per_hour"><%[ Job files per hour ]%></option>
+		<option value="job_files_per_day"><%[ Job files per day ]%></option>
+		<option value="avg_job_files_per_hour"><%[ Average job files per hour ]%></option>
+		<option value="avg_job_files_per_day"><%[ Average job files per day ]%></option>
+		<option value="job_count_per_hour"><%[ Job count per hour ]%></option>
+		<option value="job_count_per_day"><%[ Job count per day ]%></option>
+		<option value="job_duration"><%[ Job duration ]%></option>
+		<option value="avg_job_speed"><%[ Average job speed ]%></option>
+		<option value="job_status_per_day"><%[ Job status per day ]%></option>
+	</select>
+</div>
+<div class="w3-right w3-margin-top w3-margin-right" style="width: 215px">
+	<span><%[ Job level: ]%></span><br />
+	<select id="job_level" name="job_level" class="w3-select w3-border" style="width: 200px">
+		<option value="@" selected><%[ All levels ]%></option>
+		<option value="F"><%[ Full ]%></option>
+		<option value="I"><%[ Incremental ]%></option>
+		<option value="D"><%[ Differential ]%></option>
+	</select>
+</div>
 <span class="w3-margin-left"><%[ Legend: ]%></span>
-<div id="legend" class="w3-margin-left"></div>
-<div id="graphs_content" style="height: 500px"></div>
+<div id="legend_container" class="w3-margin-left"></div>
+<div id="graphs_container" style="height: 500px; margin-top: 60px;"></div>
 <script type="text/javascript">
 	MonitorParams = ['jobs'];
 	var graph_lang = {
-		"graph_title": "<%[ Graph: Jobs size / Time ]%>",
-		"xaxis_title": "<%[ Time ]%>",
-		"yaxis_title": "<%[ Jobs size (GiB) ]%>"
+		job_size: {
+			graph_title: '<%[ Graph: ]%> <%[ Job size / Time ]%>',
+			xaxis_title: '<%[ Time ]%>',
+			yaxis_title: '<%[ Job size ]%>'
+		},
+		job_size_per_hour: {
+			graph_title: '<%[ Graph: ]%> <%[ Job size / Hour ]%>',
+			xaxis_title: '<%[ Hours ]%>',
+			yaxis_title: '<%[ Job size ]%>'
+		},
+		job_size_per_day: {
+			graph_title: '<%[ Graph: ]%> <%[ Job size / Day ]%>',
+			xaxis_title: '<%[ Days ]%>',
+			yaxis_title: '<%[ Job size ]%>'
+		},
+		avg_job_size_per_hour: {
+			graph_title: '<%[ Graph: ]%> <%[ Average job size / Hour ]%>',
+			xaxis_title: '<%[ Hours ]%>',
+			yaxis_title: '<%[ Job size ]%>'
+		},
+		avg_job_size_per_day: {
+			graph_title: '<%[ Graph: ]%> <%[ Average job size / Day ]%>',
+			xaxis_title: '<%[ Days ]%>',
+			yaxis_title: '<%[ Job size ]%>'
+		},
+		job_files: {
+			graph_title: '<%[ Graph: ]%> <%[ Job files / Time ]%>',
+			xaxis_title: '<%[ Time ]%>',
+			yaxis_title: '<%[ Files count ]%>'
+		},
+		job_files_per_hour: {
+			graph_title: '<%[ Graph: ]%> <%[ Job files / Hour ]%>',
+			xaxis_title: '<%[ Hours ]%>',
+			yaxis_title: '<%[ Files count ]%>'
+		},
+		job_files_per_day: {
+			graph_title: '<%[ Graph: ]%> <%[ Job files / Day ]%>',
+			xaxis_title: '<%[ Days ]%>',
+			yaxis_title: '<%[ Files count ]%>'
+		},
+		avg_job_files_per_hour: {
+			graph_title: '<%[ Graph: ]%> <%[ Average job files / Hour ]%>',
+			xaxis_title: '<%[ Hours ]%>',
+			yaxis_title: '<%[ Files count ]%>'
+		},
+		avg_job_files_per_day: {
+			graph_title: '<%[ Graph: ]%> <%[ Average job files / Day ]%>',
+			xaxis_title: '<%[ Days ]%>',
+			yaxis_title: '<%[ Files count ]%>'
+		},
+		job_count_per_hour: {
+			graph_title: '<%[ Graph: ]%> <%[ Job count / Hour ]%>',
+			xaxis_title: '<%[ Hours ]%>',
+			yaxis_title: '<%[ Job count ]%>'
+		},
+		job_count_per_day: {
+			graph_title: '<%[ Graph: ]%> <%[ Job count / Day ]%>',
+			xaxis_title: '<%[ Days ]%>',
+			yaxis_title: '<%[ Job count ]%>'
+		},
+		job_duration: {
+			graph_title: '<%[ Graph: ]%> <%[ Jobs duration / Time ]%>',
+			xaxis_title: '<%[ Time ]%>',
+			yaxis_title: '<%[ Duration ]%>'
+		},
+		avg_job_speed: {
+			graph_title: '<%[ Graph: ]%> <%[ Average job speed / Time ]%>',
+			xaxis_title: '<%[ Time ]%>',
+			yaxis_title: '<%[ Job speed ]%>'
+		},
+		job_status_per_day: {
+			graph_title: '<%[ Graph: ]%> <%[ Jobs status / Day ]%>',
+			xaxis_title: '<%[ Time ]%>',
+			yaxis_title: '<%[ Jobs count ]%>'
+		},
+		filters: {
+			custom_time_range: '<%[ Custom time range ]%>'
+		}
 	};
-	var graph;
+	var oGraph;
 	$(function() {
 		MonitorCalls.push(function() {
-			graph = new GraphClass(oData.jobs, graph_lang, 'graphs_content', 'legend', 'time_range', '<%=$this->DateFrom->ClientID%>', '<%=$this->DateTo->ClientID%>', '<%=$this->Clients->ClientID%>', 'graph_jobs');
+			oGraph = new GraphClass({
+				jobs: oData.jobs,
+				txt: graph_lang,
+				date_from: '<%=$this->DateFrom->ClientID%>',
+				date_to: '<%=$this->DateTo->ClientID%>',
+				client_filter: '<%=$this->Clients->ClientID%>'
+			});
 		});
 	});
 </script>
-<p class="bold"><%[ Tip: for getting zoom, please mark area on graph. ]%></p>
-<p class="bold"><%[ Tip 2: for back from zoom, please click somewhere on graph. ]%></p>
+<p class="bold"><%[ Tip: to use zoom, please mark area on graph. ]%></p>
+<p class="bold"><%[ Tip 2: to exit zoom, please click somewhere on graph. ]%></p>

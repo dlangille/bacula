@@ -6,50 +6,82 @@ var JobClass = jQuery.klass({
 	start_point: [],
 	end_point: [],
 
-	initialize: function(job) {
-		this.set_job(job);
+	initialize: function(job, type) {
+		this.set_job(job, type);
 	},
-
-	set_job: function(job) {
+	set_job: function(job, type) {
 		if (typeof(job) == "object") {
 			this.job = job;
-			this.set_job_size();
 			this.set_start_stamp();
 			this.set_end_stamp();
+			this.set_job_by_type(type);
 			this.set_start_point();
 			this.set_end_point();
 		} else {
 			alert('Job is not object');
 		}
 	},
-
+	set_job_by_type: function(type) {
+		switch (type) {
+			case 'job_size':
+			case 'job_size_per_hour':
+			case 'job_size_per_day':
+			case 'avg_job_size_per_hour':
+			case 'avg_job_size_per_day':
+				this.set_job_size();
+				break;
+			case 'job_files':
+			case 'job_files_per_hour':
+			case 'job_files_per_day':
+			case 'avg_job_files_per_hour':
+			case 'avg_job_files_per_day':
+				this.set_job_files();
+				break;
+			case 'job_status_per_day':
+				this.set_job_status();
+				break;
+			case 'job_count_per_hour':
+			case 'job_count_per_day':
+				// nothing to do
+				break;
+			case 'job_duration':
+				this.set_job_duration();
+				break;
+			case 'avg_job_speed':
+				this.set_avg_job_speed();
+				break;
+		}
+	},
 	set_start_point: function() {
 		var xaxis = this.start_stamp;
-		var yaxis = this.job_size;
+		var yaxis = this.job_val;
 		this.start_point = [xaxis, yaxis];
 	},
-
 	set_end_point: function() {
 		var xaxis = this.end_stamp;
-		var yaxis = this.job_size;
+		var yaxis = this.job_val;
 		this.end_point = [xaxis, yaxis];
 	},
-
-	set_job_size: function(unit) {
-		var units = ['B', 'KiB', 'MiB', 'GiB', 'TiB'];
-		var pos = units.indexOf(unit);
-		var size = 0;
-
-		if (pos != -1) {
-			unit = pos;
-		} else {
-			// default GiB
-			unit = 3;
-		}
-
-		this.job_size = this.job.jobbytes / Math.pow(1024, unit);
+	set_job_size: function() {
+		this.job_val = this.job.jobbytes;
 	},
-
+	set_job_status: function() {
+		this.job_val = this.job.jobstatus;
+	},
+	set_job_files: function() {
+		this.job_val = this.job.jobfiles;
+	},
+	set_job_duration: function() {
+		this.job_val = this.end_stamp - this.start_stamp;
+	},
+	set_avg_job_speed: function() {
+		var t = (this.end_stamp - this.start_stamp) / 1000;
+		if (t > 0) {
+			this.job_val = this.job.jobbytes / t;
+		} else {
+			this.job_val = 0;
+		}
+	},
 	set_start_stamp: function() {
 		/**
 		 * NOTE: Start time can be null if job finishes with error before
@@ -60,7 +92,6 @@ var JobClass = jQuery.klass({
 			this.start_stamp = iso_date_to_timestamp(this.job.starttime);
 		}
 	},
-
 	set_end_stamp: function() {
 		if (this.job.endtime) {
 			this.end_stamp =  iso_date_to_timestamp(this.job.endtime);
@@ -73,12 +104,6 @@ var GraphClass = jQuery.klass({
 	jobs_all: [],
 	series: [],
 	graph_obj: null,
-	graph_container: null,
-	legend_container: null,
-	time_range: null,
-	date_from: null,
-	date_to: null,
-	job_filter: null,
 	txt: {},
 	filter_include: {
 		type: 'B'
@@ -88,7 +113,12 @@ var GraphClass = jQuery.klass({
 		end_stamp: 0
 	},
 	filter_all_mark: '@',
-	graph_options:  {
+	time_range_custom_val: 'custom',
+	graph_options: {
+		xaxis: {},
+		yaxis: {}
+	},
+	graph_options_orig:  {
 		legend: {
 			show: true,
 			noColumns: 9,
@@ -116,296 +146,103 @@ var GraphClass = jQuery.klass({
 		selection: {
 			mode : 'x'
 		},
-		lines: {
-			show: true,
-			lineWidth: 0,
-			fill: true,
-			steps: true
-		},
 		grid: {
 			color: '#000000',
 			outlineWidth: 0
 		},
 		HtmlText: false
 	},
-
-	initialize: function(jobs, txt, container, legend, time_range, date_from, date_to, client_filter, job_filter) {
-		this.set_jobs(jobs);
-		this.txt = txt;
-		this.set_graph_container(container);
-		this.set_legend_container(legend);
-		this.set_time_range_filter(time_range);
-		this.set_date_from_el(date_from);
-		this.set_date_to_el(date_to);
-		this.set_date_fields_events(date_from, date_to);
-		this.set_jobs_filter(job_filter);
-		this.set_clients_filter(client_filter);
+	default_graph_color: '#63c422',
+	ids : {
+		graph_type: 'graph_type',
+		job_filter: 'graph_jobs',
+		graph_container: 'graphs_container',
+		legend_container: 'legend_container',
+		time_range: 'time_range',
+		job_level: 'job_level'
+	},
+	initialize: function(prop) {
+		this.txt = prop.txt;
+		this.ids.date_from = prop.date_from;
+		this.ids.date_to = prop.date_to;
+		this.ids.client_filter = prop.client_filter;
+		this.set_jobs(prop.jobs);
+		this.set_time_range();
 		this.set_job_list();
 		this.update();
 		this.set_events();
 	},
-
 	update: function() {
-		this.extend_graph_options();
 		this.apply_jobs_filter();
 		this.prepare_series();
 		this.draw_graph();
 	},
-
-	set_jobs: function(jobs, filter) {
-		if (!filter) {
-			var job;
-			for (var i = 0; i<jobs.length; i++) {
-				if(jobs[i].jobstatus == 'R' || jobs[i].jobstatus == 'C' || jobs[i].endtime == null) {
-					continue;
-				}
-				job = new JobClass(jobs[i]);
-				this.jobs.push(job);
-			}
-			this.jobs_all = this.jobs;
-		} else {
-			this.jobs = jobs;
-		}
-	},
-
-	set_job_list: function() {
-		var job_list = {};
-		for (var i = 0; i < this.jobs_all.length; i++) {
-			job_list[this.jobs_all[i].job.name] = 1;
-		}
-		var job_filter = document.getElementById(this.job_filter);
-		for (var job in job_list) {
-			var opt = document.createElement('OPTION');
-			var label = document.createTextNode(job);
-			opt.value = job;
-			opt.appendChild(label);
-			job_filter.appendChild(opt);
-		}
-	},
-
-	get_jobs: function() {
-		return this.jobs;
-	},
-
-	set_graph_container: function(id) {
-		this.graph_container = document.getElementById(id);
-	},
-
-	get_graph_container: function() {
-		return this.graph_container;
-	},
-
-	set_legend_container: function(id) {
-		this.legend_container = $('#' + id);
-	},
-
-	get_legend_container: function() {
-		return this.legend_container;
-	},
-
-	set_time_range_filter: function(id) {
-		var self = this;
-		this.time_range = $('#' + id);
-		this.time_range.on('change', function() {
-			var time_range = self.get_time_range();
-			self.set_time_range(time_range);
-			self.update();
-		});
-	},
-
-	get_time_range: function() {
-		var time_range = parseInt(this.time_range[0].value, 10) * 1000;
-		return time_range;
-	},
-
-	set_date_from_el: function(date_from) {
-		this.date_from = $('#' + date_from);
-	},
-
-	get_date_from_el: function() {
-		return this.date_from;
-	},
-
-	set_date_to_el: function(date_to) {
-		this.date_to = $('#' + date_to);
-	},
-
-	get_date_to_el: function() {
-		return this.date_to;
-	},
-
-	set_time_range: function(timestamp) {
-		var to_stamp = Math.round(new Date().getTime());
-		this.set_xaxis_max(to_stamp, true);
-		var from_stamp = (Math.round(new Date().getTime()) - this.get_time_range());
-		this.set_xaxis_min(from_stamp, true);
-	},
-
-
-	set_xaxis_min: function(value, set_range) {
-		if (this.graph_options.xaxis.max && value > this.graph_options.xaxis.max) {
-			alert('Wrong time range.');
-			return;
-		}
-
-		if (value == this.graph_options.xaxis.max) {
-			value -= 86400000;
-		}
-
-		this.graph_options.xaxis.min = value;
-
-		if (set_range) {
-			var iso_date = timestamp_to_iso_date(value);
-			var from_el = this.get_date_from_el();
-			from_el[0].value = iso_date;
-		}
-	},
-
-	set_xaxis_max: function(value, set_range) {
-		if (value < this.graph_options.xaxis.min) {
-			alert('Wrong time range.');
-			return;
-		}
-
-		if (value == this.graph_options.xaxis.min) {
-			value += 86400000;
-		}
-
-		this.graph_options.xaxis.max = value;
-
-		if (set_range) {
-			var iso_date = timestamp_to_iso_date(value);
-			var to_el = this.get_date_to_el();
-			to_el[0].value = iso_date;
-		}
-	},
-
-	set_date_fields_events: function(date_from, date_to) {
-		var self = this;
-		$('#' + date_from).on('change', function() {
-			var from_stamp = iso_date_to_timestamp(this.value);
-			self.set_xaxis_min(from_stamp);
-			self.update();
-		});
-
-		$('#' + date_to).on('change', function() {
-			var to_stamp = iso_date_to_timestamp(this.value);
-			self.set_xaxis_max(to_stamp);
-			self.update();
-		});
-
-		var date = this.get_time_range();
-		this.set_time_range(date);
-	},
-
-	set_clients_filter: function(client_filter) {
-		var self = this;
-		$('#' + client_filter).on('change', function() {
-			if (this.value == self.filter_all_mark) {
-				delete self.filter_include['clientid'];
-			} else {
-				self.filter_include['clientid'] = parseInt(this.value, 10);
-			}
-			self.update();
-		});
-	},
-
-	set_jobs_filter: function(job_filter) {
-		var self = this;
-		this.job_filter = job_filter;
-		$('#' + job_filter).on('change', function() {
-			if (this.value == self.filter_all_mark) {
-				delete self.filter_include['name'];
-			} else {
-				self.filter_include['name'] = this.value;
-			}
-			self.update();
-		});
-	},
-
-	apply_jobs_filter: function() {
-		var self = this;
-		var jobs = this.jobs_all;
-		var filtred_jobs = [];
-		var to_add;
-		for (var i = 0; i < jobs.length; i++) {
-			to_add = true;
-			jQuery.each(this.filter_include, function(key, value) {
-				if (jobs[i].hasOwnProperty(key) && jobs[i][key] != value) {
-					to_add = false;
-					return;
-				}
-				if (jobs[i].job.hasOwnProperty(key) && jobs[i].job[key] != value) {
-					to_add = false;
-					return;
-				}
-			});
-			if (to_add === true) {
-				filtred_jobs.push(jobs[i]);
-			}
-		}
-
-		for (var i = 0; i < filtred_jobs.length; i++) {
-			jQuery.each(this.filter_exclude, function(key, value) {
-				if (filtred_jobs[i].hasOwnProperty(key) && filtred_jobs[i][key] != value) {
-					return;
-				}
-				if (filtred_jobs[i].job.hasOwnProperty(key) && filtred_jobs[i].job[key] != value) {
-					return;
-				}
-				delete filtred_jobs[i];
-			});
-		}
-		this.set_jobs(filtred_jobs, true);
-	},
-
-	prepare_series: function() {
-		var self = this;
-		this.series = [];
-		var series_uniq = {};
-		var x_vals = [];
-		var y_vals = [];
-		var jobs = this.get_jobs();
-		for (var i = 0; i < jobs.length; i++) {
-			if(jobs[i].start_stamp < this.graph_options.xaxis.min || jobs[i].end_stamp > this.graph_options.xaxis.max) {
-				continue;
-			}
-			if (series_uniq.hasOwnProperty(jobs[i].job.name) == false) {
-				series_uniq[jobs[i].job.name] = [];
-			}
-			series_uniq[jobs[i].job.name].push(jobs[i].start_point, jobs[i].end_point, [null, null]);
-
-		}
-		jQuery.each(series_uniq, function(key, value) {
-			var serie = [];
-			for (var i = 0; i<value.length; i++) {
-				serie.push(value[i]);
-			}
-			self.series.push({data: serie, label: key});
-		});
-	},
-
-	extend_graph_options: function() {
-		this.graph_options.legend.container = this.get_legend_container();
-		this.graph_options.title = this.txt.graph_title;
-		this.graph_options.xaxis.title = this.txt.xaxis_title;
-		this.graph_options.yaxis.title = this.txt.yaxis_title;
-	},
-
-	draw_graph: function(opts) {
-		var options = Flotr._.extend(Flotr._.clone(this.graph_options), opts || {});
-
-		this.graph_obj = Flotr.draw(
-			this.get_graph_container(),
-			this.series,
-			options
-		);
-	},
-
 	set_events: function() {
-		var self = this;
-		Flotr.EventAdapter.observe(this.graph_container, 'flotr:select', function(area) {
-			var options = {
+		// set graph type change combobox selection event
+		$('#' + this.ids.graph_type).on('change', function(e) {
+			var jobs = [];
+			for (var i = 0; i < this.jobs_all.length; i++) {
+				jobs.push(this.jobs_all[i].job);
+			}
+			this.set_jobs(jobs);
+			this.update();
+		}.bind(this));
+
+		$('#' + this.ids.job_filter).on('change', function(e) {
+			if (e.target.value == this.filter_all_mark) {
+				delete this.filter_include['name'];
+			} else {
+				this.filter_include['name'] = e.target.value;
+			}
+			this.update();
+		}.bind(this));
+
+		$('#' + this.ids.job_level).on('change', function(e) {
+			if (e.target.value == this.filter_all_mark) {
+				delete this.filter_include['level'];
+			} else {
+				this.filter_include['level'] = e.target.value;
+			}
+			this.update();
+		}.bind(this));
+
+		// set time range change combobox selection event
+		$('#' + this.ids.time_range).on('change', function(e) {
+			this.set_time_range();
+			this.show_custom_range(false);
+			this.update();
+		}.bind(this));
+
+		// set 'date from' change combobox selection event
+		$('#' + this.ids.date_from).on('change', function(e) {
+			var from_stamp = iso_date_to_timestamp(e.target.value);
+			this.set_xaxis_min(from_stamp);
+			this.show_custom_range(true);
+			this.update();
+		}.bind(this));
+
+		// set 'date to' change combobox selection event
+		$('#' + this.ids.date_to).on('change', function(e) {
+			var to_stamp = iso_date_to_timestamp(e.target.value);
+			this.set_xaxis_max(to_stamp);
+			this.show_custom_range(true);
+			this.update();
+		}.bind(this));
+
+		// set client filter change combobox selection event
+		$('#' + this.ids.client_filter).on('change', function(e) {
+			if (e.target.value == this.filter_all_mark) {
+				delete this.filter_include['clientid'];
+			} else {
+				this.filter_include['clientid'] = parseInt(e.target.value, 10);
+			}
+			this.update();
+		}.bind(this));
+
+		var graph_container = document.getElementById(this.ids.graph_container);
+		var select_callback = function(area) {
+			var graph_options = $.extend({}, this.graph_options);
+			var options = $.extend(true, graph_options, {
 				xaxis : {
 					min : area.x1,
 					max : area.x2,
@@ -421,15 +258,978 @@ var GraphClass = jQuery.klass({
 					color: 'black',
 					autoscale: true
 				}
-			};
+			});
+			if (!this.is_custom_range()) {
+				this.set_time_range();
+			}
+			this.draw_graph(options);
+		}.bind(this);
 
-			self.draw_graph(options);
+		// set Flotr-specific select area event
+		Flotr.EventAdapter.observe(graph_container, 'flotr:select', select_callback);
+
+		// set Flotr-specific click area event (zoom reset)
+		Flotr.EventAdapter.observe(graph_container, 'flotr:click', function () {
+			this.update();
+		}.bind(this));
+	},
+	set_jobs: function(jobs, filter) {
+		if (!filter) {
+			this.jobs = this.jobs_all = this.prepare_job_objs(jobs);
+		} else {
+			this.jobs = jobs;
+		}
+	},
+	prepare_job_objs: function(jobs) {
+		var job;
+		var job_objs = [];
+		var graph_type = document.getElementById(this.ids.graph_type).value;
+		for (var i = 0; i < jobs.length; i++) {
+			if (jobs[i].jobstatus == 'R' || jobs[i].jobstatus == 'C' || jobs[i].endtime === null) {
+				continue;
+			}
+			job = new JobClass(jobs[i], graph_type);
+			job_objs.push(job);
+		}
+		return job_objs;
+	},
+	set_job_list: function() {
+		var job_list = {};
+		for (var i = 0; i < this.jobs_all.length; i++) {
+			job_list[this.jobs_all[i].job.name] = 1;
+		}
+		var job_filter = document.getElementById(this.ids.job_filter);
+		for (var job in job_list) {
+			var opt = document.createElement('OPTION');
+			var label = document.createTextNode(job);
+			opt.value = job;
+			opt.appendChild(label);
+			job_filter.appendChild(opt);
+		}
+	},
+	get_time_range: function() {
+		var time_range = document.getElementById(this.ids.time_range).value;
+		return parseInt(time_range, 10) * 1000;
+	},
+	show_custom_range: function(show) {
+		var time_range = document.getElementById(this.ids.time_range);
+		if (show) {
+			if (!this.is_custom_range()) {
+				var option = document.createElement('OPTION');
+				var label = document.createTextNode(this.txt.filters.custom_time_range);
+				option.value = this.time_range_custom_val;
+				option.appendChild(label);
+				time_range.appendChild(option);
+				time_range.value = this.time_range_custom_val;
+			}
+		} else {
+			for (var i = 0; i < time_range.options.length; i++) {
+				if (time_range.options[i].value === this.time_range_custom_val) {
+					time_range.removeChild(time_range.options[i]);
+					break;
+				}
+			}
+		}
+	},
+	is_custom_range: function() {
+		var is_custom = false;
+		var time_range = document.getElementById(this.ids.time_range);
+
+		for (var i = 0; i < time_range.options.length; i++) {
+			if (time_range.options[i].value === this.time_range_custom_val) {
+				is_custom = true;
+				break;
+			}
+		}
+		return is_custom;
+	},
+	set_time_range: function() {
+		var to_stamp = Math.round(new Date().getTime());
+		this.set_xaxis_max(to_stamp, true);
+		var from_stamp = (Math.round(new Date().getTime()) - this.get_time_range());
+		this.set_xaxis_min(from_stamp, true);
+	},
+	set_xaxis_min: function(value, set_range) {
+		if (this.graph_options_orig.xaxis.max && value > this.graph_options_orig.xaxis.max) {
+			alert('Wrong time range.');
+			return;
+		}
+
+		if (value == this.graph_options_orig.xaxis.max) {
+			value -= 86400000;
+		}
+
+		this.graph_options_orig.xaxis.min = value;
+
+		if (set_range) {
+			var iso_date = timestamp_to_iso_date(value);
+			document.getElementById(this.ids.date_from).value = iso_date;
+		}
+	},
+	set_xaxis_max: function(value, set_range) {
+		if (value < this.graph_options_orig.xaxis.min) {
+			alert('Wrong time range.');
+			return;
+		}
+
+		if (value == this.graph_options_orig.xaxis.min) {
+			value += 86400000;
+		}
+
+		this.graph_options_orig.xaxis.max = value;
+
+		if (set_range) {
+			var iso_date = timestamp_to_iso_date(value);
+			document.getElementById(this.ids.date_to).value = iso_date;
+		}
+	},
+	apply_jobs_filter: function() {
+		var filtred_jobs = [];
+		var to_add;
+		for (var i = 0; i < this.jobs_all.length; i++) {
+			to_add = true;
+			for (var key in this.filter_include) {
+				if (this.jobs_all[i].hasOwnProperty(key) && this.jobs_all[i][key] != this.filter_include[key]) {
+					to_add = false;
+					break;
+				}
+				if (this.jobs_all[i].job.hasOwnProperty(key) && this.jobs_all[i].job[key] != this.filter_include[key]) {
+					to_add = false;
+					break;
+				}
+			}
+			if (to_add === true) {
+				filtred_jobs.push(this.jobs_all[i]);
+			}
+		}
+
+		var filtred_jobs_copy = filtred_jobs.slice();
+		for (var i = 0; i < filtred_jobs.length; i++) {
+			for (var key in this.filter_exclude) {
+				if (filtred_jobs[i].hasOwnProperty(key) && filtred_jobs[i][key] != this.filter_exclude[key]) {
+					continue;
+				}
+				if (filtred_jobs[i].job.hasOwnProperty(key) && filtred_jobs[i].job[key] != this.filter_exclude[key]) {
+					continue;
+				}
+				delete filtred_jobs_copy[i];
+				break;
+			}
+		}
+		this.set_jobs(filtred_jobs_copy, true);
+	},
+	prepare_series: function() {
+		var graph_type = document.getElementById(this.ids.graph_type).value;
+		switch (graph_type) {
+			case 'job_size':
+				this.prepare_series_job_size();
+				break;
+			case 'job_size_per_hour':
+				this.prepare_series_job_size_per_hour();
+				break;
+			case 'job_size_per_day':
+				this.prepare_series_job_size_per_day();
+				break;
+			case 'avg_job_size_per_hour':
+				this.prepare_series_avg_job_size_per_hour();
+				break;
+			case 'avg_job_size_per_day':
+				this.prepare_series_avg_job_size_per_day();
+				break;
+			case 'job_files':
+				this.prepare_series_job_files();
+				break;
+			case 'job_files_per_hour':
+				this.prepare_series_job_files_per_hour();
+				break;
+			case 'job_files_per_day':
+				this.prepare_series_job_files_per_day();
+				break;
+			case 'avg_job_files_per_hour':
+				this.prepare_series_avg_job_files_per_hour();
+				break;
+			case 'avg_job_files_per_day':
+				this.prepare_series_avg_job_files_per_day();
+				break;
+			case 'job_count_per_hour':
+				this.prepare_series_job_count_per_hour();
+				break;
+			case 'job_count_per_day':
+				this.prepare_series_job_count_per_day();
+				break;
+			case 'job_duration':
+				this.prepare_series_job_duration();
+				break;
+			case 'avg_job_speed':
+				this.prepare_series_avg_job_speed();
+				break;
+			case 'job_status_per_day':
+				this.prepare_series_job_status_per_day();
+				break;
+		}
+	},
+	prepare_series_job_size: function() {
+		var graph_options = $.extend(true, {}, this.graph_options_orig);
+		this.graph_options = $.extend(true, graph_options, {
+			title: this.txt.job_size.graph_title,
+			xaxis: {
+				title: this.txt.job_size.xaxis_title
+			},
+			yaxis: {
+				title: this.txt.job_size.yaxis_title,
+				tickFormatter: function(val, axis_opts) {
+					return Units.get_formatted_size(val);
+				}
+			},
+			lines: {
+				show: true,
+				lineWidth: 0,
+				fill: true,
+				steps: true
+			}
 		});
 
-		Flotr.EventAdapter.observe(this.graph_container, 'flotr:click', function () {
-			self.update();
+		this.series = [];
+		var series_uniq = {};
+		for (var i = 0; i < this.jobs.length; i++) {
+			if(this.jobs[i].start_stamp < this.graph_options.xaxis.min || this.jobs[i].end_stamp > this.graph_options.xaxis.max) {
+				continue;
+			}
+			if (series_uniq.hasOwnProperty(this.jobs[i].job.name) == false) {
+				series_uniq[this.jobs[i].job.name] = [];
+			}
+			series_uniq[this.jobs[i].job.name].push(this.jobs[i].start_point, this.jobs[i].end_point, [null, null]);
+
+		}
+		var serie;
+		for (var key in series_uniq) {
+			serie = [];
+			for (var i = 0; i < series_uniq[key].length; i++) {
+				serie.push(series_uniq[key][i]);
+			}
+			this.series.push({data: serie, label: key});
+		}
+	},
+	prepare_series_job_size_per_hour: function() {
+		var graph_options = $.extend(true, {}, this.graph_options_orig);
+		this.graph_options = $.extend(true, graph_options, {
+			title: this.txt.job_size_per_hour.graph_title,
+			legend: {
+				show: false
+			},
+			xaxis: {
+				title: this.txt.job_size_per_hour.xaxis_title,
+				mode: 'normal',
+				tickFormatter: function(val, axis_opts) {
+					val = parseInt(val, 10);
+					var d = new Date(val);
+					return d.toLocaleDateString() + ' ' + d.getHours() + ':00';
+				}
+			},
+			yaxis: {
+				title: this.txt.job_size_per_hour.yaxis_title,
+				tickFormatter: function(val, axis_opts) {
+					return Units.get_formatted_size(val);
+				}
+			},
+			bars: {
+				barWidth: 3600000,
+			},
+			mouse : {
+				track : true
+			}
 		});
-	}
+
+		this.series = [];
+		var series_uniq = {};
+		var d, date;
+		for (var i = 0; i < this.jobs.length; i++) {
+			if(this.jobs[i].start_stamp < this.graph_options.xaxis.min || this.jobs[i].end_stamp > this.graph_options.xaxis.max) {
+				continue;
+			}
+			d = new Date(this.jobs[i].start_stamp);
+			date = (new Date(d.getFullYear(), d.getMonth(), d.getDate(), d.getHours())).getTime();
+			if (series_uniq.hasOwnProperty(date) == false) {
+				series_uniq[date] = 0;
+			}
+			series_uniq[date] += this.jobs[i].job_val;
+
+		}
+		for (var key in series_uniq) {
+			key = parseInt(key, 10);
+			this.series.push({data: [[key, series_uniq[key]]], label: key, color: this.default_graph_color});
+		}
+	},
+	prepare_series_job_size_per_day: function() {
+		var graph_options = $.extend(true, {}, this.graph_options_orig);
+		this.graph_options = $.extend(true, graph_options, {
+			title: this.txt.job_size_per_day.graph_title,
+			legend: {
+				show: false
+			},
+			xaxis: {
+				title: this.txt.job_size_per_day.xaxis_title,
+				mode: 'normal',
+				tickFormatter: function(val, axis_opts) {
+					val = parseInt(val, 10);
+					return (new Date(val)).toLocaleDateString();
+				}
+			},
+			yaxis: {
+				title: this.txt.job_size_per_day.yaxis_title,
+				tickFormatter: function(val, axis_opts) {
+					return Units.get_formatted_size(val);
+				}
+			},
+			bars: {
+				barWidth: 86400000,
+			},
+			mouse : {
+				track : true
+			}
+		});
+
+		this.series = [];
+		var series_uniq = {};
+		var d, date;
+		for (var i = 0; i < this.jobs.length; i++) {
+			if(this.jobs[i].start_stamp < this.graph_options.xaxis.min || this.jobs[i].end_stamp > this.graph_options.xaxis.max) {
+				continue;
+			}
+			d = new Date(this.jobs[i].start_stamp);
+			date = (new Date(d.getFullYear(), d.getMonth(), d.getDate())).getTime();
+			if (series_uniq.hasOwnProperty(date) == false) {
+				series_uniq[date] = 0;
+			}
+			series_uniq[date] += this.jobs[i].job_val;
+
+		}
+		for (var key in series_uniq) {
+			key = parseInt(key, 10);
+			this.series.push({data: [[key, series_uniq[key]]], label: key, color: this.default_graph_color});
+		}
+	},
+	prepare_series_avg_job_size_per_hour: function() {
+		var graph_options = $.extend(true, {}, this.graph_options_orig);
+		this.graph_options = $.extend(true, graph_options, {
+			title: this.txt.avg_job_size_per_hour.graph_title,
+			legend: {
+				show: false
+			},
+			xaxis: {
+				title: this.txt.avg_job_size_per_hour.xaxis_title,
+				mode: 'normal',
+				tickFormatter: function(val, axis_opts) {
+					val = parseInt(val, 10);
+					var d = new Date(val);
+					return d.toLocaleDateString() + ' ' + d.getHours() + ':00';
+				}
+			},
+			yaxis: {
+				title: this.txt.avg_job_size_per_hour.yaxis_title,
+				tickFormatter: function(val, axis_opts) {
+					return Units.get_formatted_size(val);
+				}
+			},
+			bars: {
+				barWidth: 3600000,
+			},
+			mouse : {
+				track : true
+			}
+		});
+
+		this.series = [];
+		var series_uniq = {};
+		var series_count = {};
+		var d, date;
+		for (var i = 0; i < this.jobs.length; i++) {
+			if(this.jobs[i].start_stamp < this.graph_options.xaxis.min || this.jobs[i].end_stamp > this.graph_options.xaxis.max) {
+				continue;
+			}
+			d = new Date(this.jobs[i].start_stamp);
+			date = (new Date(d.getFullYear(), d.getMonth(), d.getDate(), d.getHours())).getTime();
+			if (series_uniq.hasOwnProperty(date) == false) {
+				series_uniq[date] = 0;
+				series_count[date] = 0;
+			}
+			series_uniq[date] += this.jobs[i].job_val;
+			series_count[date]++;
+
+		}
+		var val;
+		for (var key in series_uniq) {
+			val = series_uniq[key] / series_count[key];
+			key = parseInt(key, 10);
+			this.series.push({data: [[key, val]], label: key, color: this.default_graph_color});
+		}
+	},
+	prepare_series_avg_job_size_per_day: function() {
+		var graph_options = $.extend(true, {}, this.graph_options_orig);
+		this.graph_options = $.extend(true, graph_options, {
+			title: this.txt.avg_job_size_per_day.graph_title,
+			legend: {
+				show: false
+			},
+			xaxis: {
+				title: this.txt.avg_job_size_per_day.xaxis_title,
+				mode: 'normal',
+				tickFormatter: function(val, axis_opts) {
+					val = parseInt(val, 10);
+					return (new Date(val)).toLocaleDateString();
+				}
+			},
+			yaxis: {
+				title: this.txt.avg_job_size_per_day.yaxis_title,
+				tickFormatter: function(val, axis_opts) {
+					return Units.get_formatted_size(val);
+				}
+			},
+			bars: {
+				barWidth: 86400000,
+			},
+			mouse : {
+				track : true
+			}
+		});
+
+		this.series = [];
+		var series_uniq = {};
+		var series_count = {};
+		var d, date;
+		for (var i = 0; i < this.jobs.length; i++) {
+			if(this.jobs[i].start_stamp < this.graph_options.xaxis.min || this.jobs[i].end_stamp > this.graph_options.xaxis.max) {
+				continue;
+			}
+			d = new Date(this.jobs[i].start_stamp);
+			date = (new Date(d.getFullYear(), d.getMonth(), d.getDate())).getTime();
+			if (series_uniq.hasOwnProperty(date) == false) {
+				series_uniq[date] = 0;
+				series_count[date] = 0;
+			}
+			series_uniq[date] += this.jobs[i].job_val;
+			series_count[date]++;
+
+		}
+		var val;
+		for (var key in series_uniq) {
+			val = series_uniq[key] / series_count[key];
+			key = parseInt(key, 10);
+			this.series.push({data: [[key, val]], label: key, color: this.default_graph_color});
+		}
+	},
+	prepare_series_job_files: function() {
+		var graph_options = $.extend(true, {}, this.graph_options_orig);
+		this.graph_options = $.extend(true, graph_options, {
+			title: this.txt.job_files.graph_title,
+			xaxis: {
+				title: this.txt.job_files.xaxis_title
+			},
+			yaxis: {
+				title: this.txt.job_files.yaxis_title,
+				tickFormatter: function(val, axis_opts) {
+					return parseInt(val, 10);
+				}
+			},
+			lines: {
+				show: true,
+				lineWidth: 0,
+				fill: true,
+				steps: true
+			}
+		});
+
+		this.series = [];
+		var series_uniq = {};
+		for (var i = 0; i < this.jobs.length; i++) {
+			if(this.jobs[i].start_stamp < this.graph_options.xaxis.min || this.jobs[i].end_stamp > this.graph_options.xaxis.max) {
+				continue;
+			}
+			if (series_uniq.hasOwnProperty(this.jobs[i].job.name) == false) {
+				series_uniq[this.jobs[i].job.name] = [];
+			}
+			series_uniq[this.jobs[i].job.name].push(this.jobs[i].start_point, this.jobs[i].end_point, [null, null]);
+
+		}
+		var serie;
+		for (var key in series_uniq) {
+			serie = [];
+			for (var i = 0; i < series_uniq[key].length; i++) {
+				serie.push(series_uniq[key][i]);
+			}
+			this.series.push({data: serie, label: key});
+		}
+	},
+	prepare_series_job_files_per_hour: function() {
+		var graph_options = $.extend(true, {}, this.graph_options_orig);
+		this.graph_options = $.extend(true, graph_options, {
+			title: this.txt.job_files_per_hour.graph_title,
+			legend: {
+				show: false
+			},
+			xaxis: {
+				title: this.txt.job_files_per_hour.xaxis_title,
+				mode: 'normal',
+				tickFormatter: function(val, axis_opts) {
+					val = parseInt(val, 10);
+					var d = new Date(val);
+					return d.toLocaleDateString() + ' ' + d.getHours() + ':00';
+				}
+			},
+			yaxis: {
+				title: this.txt.job_files_per_hour.yaxis_title,
+				tickFormatter: function(val, axis_opts) {
+					return parseInt(val, 10);
+				}
+			},
+			bars: {
+				barWidth: 3600000,
+			},
+			mouse : {
+				track : true
+			}
+		});
+
+		this.series = [];
+		var series_uniq = {};
+		var d, date;
+		for (var i = 0; i < this.jobs.length; i++) {
+			if(this.jobs[i].start_stamp < this.graph_options.xaxis.min || this.jobs[i].end_stamp > this.graph_options.xaxis.max) {
+				continue;
+			}
+			d = new Date(this.jobs[i].start_stamp);
+			date = (new Date(d.getFullYear(), d.getMonth(), d.getDate(), d.getHours())).getTime();
+			if (series_uniq.hasOwnProperty(date) == false) {
+				series_uniq[date] = 0;
+			}
+			series_uniq[date] += this.jobs[i].job_val;
+
+		}
+		for (var key in series_uniq) {
+			key = parseInt(key, 10);
+			this.series.push({data: [[key, series_uniq[key]]], label: key, color: this.default_graph_color});
+		}
+	},
+	prepare_series_job_files_per_day: function() {
+		var graph_options = $.extend(true, {}, this.graph_options_orig);
+		this.graph_options = $.extend(true, graph_options, {
+			title: this.txt.job_files_per_day.graph_title,
+			legend: {
+				show: false
+			},
+			xaxis: {
+				title: this.txt.job_files_per_day.xaxis_title,
+				mode: 'normal',
+				tickFormatter: function(val, axis_opts) {
+					val = parseInt(val, 10);
+					return (new Date(val)).toLocaleDateString();
+				}
+			},
+			yaxis: {
+				title: this.txt.job_files_per_day.yaxis_title,
+				tickFormatter: function(val, axis_opts) {
+					return parseInt(val, 10);
+				}
+			},
+			bars: {
+				barWidth: 86400000,
+			},
+			mouse : {
+				track : true
+			}
+		});
+
+		this.series = [];
+		var series_uniq = {};
+		var d, date;
+		for (var i = 0; i < this.jobs.length; i++) {
+			if(this.jobs[i].start_stamp < this.graph_options.xaxis.min || this.jobs[i].end_stamp > this.graph_options.xaxis.max) {
+				continue;
+			}
+			d = new Date(this.jobs[i].start_stamp);
+			date = (new Date(d.getFullYear(), d.getMonth(), d.getDate())).getTime();
+			if (series_uniq.hasOwnProperty(date) == false) {
+				series_uniq[date] = 0;
+			}
+			series_uniq[date] += this.jobs[i].job_val;
+
+		}
+		for (var key in series_uniq) {
+			key = parseInt(key, 10);
+			this.series.push({data: [[key, series_uniq[key]]], label: key, color: this.default_graph_color});
+		}
+	},
+	prepare_series_avg_job_files_per_hour: function() {
+		var graph_options = $.extend(true, {}, this.graph_options_orig);
+		this.graph_options = $.extend(true, graph_options, {
+			title: this.txt.avg_job_files_per_hour.graph_title,
+			legend: {
+				show: false
+			},
+			xaxis: {
+				title: this.txt.avg_job_files_per_hour.xaxis_title,
+				mode: 'normal',
+				tickFormatter: function(val, axis_opts) {
+					val = parseInt(val, 10);
+					var d = new Date(val);
+					return d.toLocaleDateString() + ' ' + d.getHours() + ':00';
+				}
+			},
+			yaxis: {
+				title: this.txt.avg_job_files_per_hour.yaxis_title,
+				tickFormatter: function(val, axis_opts) {
+					return parseInt(val, 10);
+				}
+			},
+			bars: {
+				barWidth: 3600000,
+			},
+			mouse : {
+				track : true
+			}
+		});
+
+		this.series = [];
+		var series_uniq = {};
+		var series_count = {};
+		var d, date;
+		for (var i = 0; i < this.jobs.length; i++) {
+			if(this.jobs[i].start_stamp < this.graph_options.xaxis.min || this.jobs[i].end_stamp > this.graph_options.xaxis.max) {
+				continue;
+			}
+			d = new Date(this.jobs[i].start_stamp);
+			date = (new Date(d.getFullYear(), d.getMonth(), d.getDate(), d.getHours())).getTime();
+			if (series_uniq.hasOwnProperty(date) == false) {
+				series_uniq[date] = 0;
+				series_count[date] = 0;
+			}
+			series_uniq[date] += this.jobs[i].job_val;
+			series_count[date]++;
+
+		}
+		var val;
+		for (var key in series_uniq) {
+			val = series_uniq[key] / series_count[key];
+			key = parseInt(key, 10);
+			this.series.push({data: [[key, val]], label: key, color: this.default_graph_color});
+		}
+	},
+	prepare_series_avg_job_files_per_day: function() {
+		var graph_options = $.extend(true, {}, this.graph_options_orig);
+		this.graph_options = $.extend(true, graph_options, {
+			title: this.txt.avg_job_files_per_day.graph_title,
+			legend: {
+				show: false
+			},
+			xaxis: {
+				title: this.txt.avg_job_files_per_day.xaxis_title,
+				mode: 'normal',
+				tickFormatter: function(val, axis_opts) {
+					val = parseInt(val, 10);
+					return (new Date(val)).toLocaleDateString();
+				}
+			},
+			yaxis: {
+				title: this.txt.avg_job_files_per_day.yaxis_title,
+				tickFormatter: function(val, axis_opts) {
+					return parseInt(val, 10);
+				}
+			},
+			bars: {
+				barWidth: 86400000,
+			},
+			mouse : {
+				track : true
+			}
+		});
+
+		this.series = [];
+		var series_uniq = {};
+		var series_count = {};
+		var d, date;
+		for (var i = 0; i < this.jobs.length; i++) {
+			if(this.jobs[i].start_stamp < this.graph_options.xaxis.min || this.jobs[i].end_stamp > this.graph_options.xaxis.max) {
+				continue;
+			}
+			d = new Date(this.jobs[i].start_stamp);
+			date = (new Date(d.getFullYear(), d.getMonth(), d.getDate())).getTime();
+			if (series_uniq.hasOwnProperty(date) == false) {
+				series_uniq[date] = 0;
+				series_count[date] = 0;
+			}
+			series_uniq[date] += this.jobs[i].job_val;
+			series_count[date]++;
+
+		}
+		var val;
+		for (var key in series_uniq) {
+			val = series_uniq[key] / series_count[key];
+			key = parseInt(key, 10);
+			this.series.push({data: [[key, val]], label: key, color: this.default_graph_color});
+		}
+	},
+	prepare_series_job_count_per_hour: function() {
+		var graph_options = $.extend(true, {}, this.graph_options_orig);
+		this.graph_options = $.extend(true, graph_options, {
+			title: this.txt.job_count_per_hour.graph_title,
+			legend: {
+				show: false
+			},
+			xaxis: {
+				title: this.txt.job_count_per_hour.xaxis_title,
+				mode: 'normal',
+				tickFormatter: function(val, axis_opts) {
+					val = parseInt(val, 10);
+					var d = new Date(val);
+					return d.toLocaleDateString() + ' ' + d.getHours() + ':00';
+				}
+			},
+			yaxis: {
+				title: this.txt.job_count_per_hour.yaxis_title,
+				tickFormatter: function(val, axis_opts) {
+					return parseInt(val, 10);
+				}
+			},
+			bars: {
+				barWidth: 3600000,
+			},
+			mouse : {
+				track : true
+			}
+		});
+
+		this.series = [];
+		var series_uniq = {};
+		var d, date;
+		for (var i = 0; i < this.jobs.length; i++) {
+			if(this.jobs[i].start_stamp < this.graph_options.xaxis.min || this.jobs[i].end_stamp > this.graph_options.xaxis.max) {
+				continue;
+			}
+			d = new Date(this.jobs[i].start_stamp);
+			date = (new Date(d.getFullYear(), d.getMonth(), d.getDate(), d.getHours())).getTime();
+			if (series_uniq.hasOwnProperty(date) == false) {
+				series_uniq[date] = 0;
+			}
+			series_uniq[date]++;
+
+		}
+		for (var key in series_uniq) {
+			key = parseInt(key, 10);
+			this.series.push({data: [[key, series_uniq[key]]], label: key, color: this.default_graph_color});
+		}
+	},
+	prepare_series_job_count_per_day: function() {
+		var graph_options = $.extend(true, {}, this.graph_options_orig);
+		this.graph_options = $.extend(true, graph_options, {
+			title: this.txt.job_count_per_day.graph_title,
+			legend: {
+				show: false
+			},
+			xaxis: {
+				title: this.txt.job_count_per_day.xaxis_title,
+				mode: 'normal',
+				tickFormatter: function(val, axis_opts) {
+					val = parseInt(val, 10);
+					return (new Date(val)).toLocaleDateString();
+				}
+			},
+			yaxis: {
+				title: this.txt.job_count_per_day.yaxis_title,
+				tickFormatter: function(val, axis_opts) {
+					return parseInt(val, 10);
+				}
+			},
+			bars: {
+				barWidth: 86400000
+			},
+			mouse : {
+				track : true
+			}
+		});
+
+		this.series = [];
+		var series_uniq = {};
+		var d, date;
+		for (var i = 0; i < this.jobs.length; i++) {
+			if(this.jobs[i].start_stamp < this.graph_options.xaxis.min || this.jobs[i].end_stamp > this.graph_options.xaxis.max) {
+				continue;
+			}
+			d = new Date(this.jobs[i].start_stamp);
+			date = (new Date(d.getFullYear(), d.getMonth(), d.getDate())).getTime();
+			if (series_uniq.hasOwnProperty(date) == false) {
+				series_uniq[date] = 0;
+			}
+			series_uniq[date]++;
+
+		}
+		for (var key in series_uniq) {
+			key = parseInt(key, 10);
+			this.series.push({data: [[key, series_uniq[key]]], label: key, color: this.default_graph_color});
+		}
+	},
+	prepare_series_job_duration: function() {
+		var graph_options = $.extend(true, {}, this.graph_options_orig);
+		this.graph_options = $.extend(true, graph_options, {
+			title: this.txt.job_duration.graph_title,
+			xaxis: {
+				title: this.txt.job_duration.xaxis_title
+			},
+			yaxis: {
+				title: this.txt.job_duration.yaxis_title,
+				tickFormatter: function(val, axis_opts) {
+					val = parseInt(val, 10) / 1000;
+					var value = Units.format_time_period(val, null, true);
+					return (value.value.toFixed(1) + ' ' + value.format + (value.value >= 1 ? 's' : ''));
+				}
+			},
+			lines: {
+				show: true,
+				lineWidth: 0,
+				fill: true,
+				steps: true
+			}
+		});
+
+		this.series = [];
+		var series_uniq = {};
+		for (var i = 0; i < this.jobs.length; i++) {
+			if(this.jobs[i].start_stamp < this.graph_options.xaxis.min || this.jobs[i].end_stamp > this.graph_options.xaxis.max) {
+				continue;
+			}
+			if (series_uniq.hasOwnProperty(this.jobs[i].job.name) == false) {
+				series_uniq[this.jobs[i].job.name] = [];
+			}
+			series_uniq[this.jobs[i].job.name].push(this.jobs[i].start_point, this.jobs[i].end_point, [null, null]);
+
+		}
+		var serie;
+		for (var key in series_uniq) {
+			serie = [];
+			for (var i = 0; i < series_uniq[key].length; i++) {
+				serie.push(series_uniq[key][i]);
+			}
+			this.series.push({data: serie, label: key});
+		}
+	},
+	prepare_series_avg_job_speed: function() {
+		var graph_options = $.extend(true, {}, this.graph_options_orig);
+		this.graph_options = $.extend(true, graph_options, {
+			title: this.txt.avg_job_speed.graph_title,
+			xaxis: {
+				title: this.txt.avg_job_speed.xaxis_title
+			},
+			yaxis: {
+				title: this.txt.avg_job_speed.yaxis_title,
+				tickFormatter: function(val, axis_opts) {
+					val = parseInt(val);
+					var s = Units.format_speed(val, null, true, true);
+					return (s.value.toFixed(1) + s.format);
+				}
+			},
+			lines: {
+				show: true,
+				lineWidth: 0,
+				fill: true,
+				steps: true
+			}
+		});
+
+		this.series = [];
+		var series_uniq = {};
+		for (var i = 0; i < this.jobs.length; i++) {
+			if(this.jobs[i].start_stamp < this.graph_options.xaxis.min || this.jobs[i].end_stamp > this.graph_options.xaxis.max) {
+				continue;
+			}
+			if (series_uniq.hasOwnProperty(this.jobs[i].job.name) == false) {
+				series_uniq[this.jobs[i].job.name] = [];
+			}
+			series_uniq[this.jobs[i].job.name].push(this.jobs[i].start_point, this.jobs[i].end_point, [null, null]);
+
+		}
+		var serie;
+		for (var key in series_uniq) {
+			serie = [];
+			for (var i = 0; i < series_uniq[key].length; i++) {
+				serie.push(series_uniq[key][i]);
+			}
+			this.series.push({data: serie, label: key});
+		}
+	},
+	prepare_series_job_status_per_day: function() {
+		var graph_options = $.extend(true, {}, this.graph_options_orig);
+		this.graph_options = $.extend(true, graph_options, {
+			title: this.txt.job_status_per_day.graph_title,
+			colors: ['#63c422', '#FFFF66', '#d70808'],
+			xaxis: {
+				title: this.txt.job_status_per_day.xaxis_title
+			},
+			yaxis: {
+				title: this.txt.job_status_per_day.yaxis_title,
+				tickFormatter: function(val, axis_opts) {
+					return parseInt(val, 10);
+				}
+			},
+			bars: {
+				barWidth: 86400000,
+				stacked: true
+			}
+		});
+		this.series = [];
+		var series_uniq = {};
+		var ok = [];
+		var error = [];
+		var warning = []
+		var cancel = []
+		var date, d;
+		for (var i = 0; i < this.jobs.length; i++) {
+			if(this.jobs[i].start_stamp < this.graph_options.xaxis.min || this.jobs[i].end_stamp > this.graph_options.xaxis.max) {
+				continue;
+			}
+			d = new Date(this.jobs[i].start_stamp);
+			date = (new Date(d.getFullYear(), d.getMonth(), d.getDate())).getTime();
+			if (!series_uniq.hasOwnProperty(date)) {
+				series_uniq[date] = {ok: 0, error: 0, cancel: 0};
+			}
+			if (['T', 'D'].indexOf(this.jobs[i].job_val) != -1) {
+				series_uniq[date].ok++;
+			} else if (['E', 'e', 'f', 'I'].indexOf(this.jobs[i].job_val) != -1) {
+				series_uniq[date].error++;
+			} else if (this.jobs[i].job_val === 'A') {
+				series_uniq[date].cancel++;
+			}
+
+		}
+		var d1 = [];
+		var d2 = [];
+		var d3 = [];
+		var d;
+		for (var date in series_uniq) {
+			if (date <= 0) {
+				continue;
+			}
+			d = parseInt(date, 10);
+			d1.push([d, series_uniq[date].ok]);
+			d2.push([d, series_uniq[date].cancel]);
+			d3.push([d, series_uniq[date].error]);
+		}
+		this.series = [
+			{data: d1, label: 'OK'},
+			{data: d2, label: 'Cancel'},
+			{data: d3, label: 'Error'}
+		];
+	},
+	draw_graph: function(opts) {
+		this.graph_options.legend.container = document.getElementById(this.ids.legend_container);
+
+		var options = Flotr._.extend(Flotr._.clone(this.graph_options), opts || {});
+
+		var graph_container = document.getElementById(this.ids.graph_container);
+		this.graph_obj = Flotr.draw(
+			graph_container,
+			this.series,
+			options
+		);
+	},
 });
 
 var GraphPieClass = jQuery.klass({
