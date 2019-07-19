@@ -28,8 +28,9 @@
  */
 
 Prado::using('Application.Common.Class.Errors');
-Prado::using('Application.API.Class.BException');
 Prado::using('Application.API.Class.APIConfig');
+Prado::using('Application.API.Class.BException');
+Prado::using('Application.API.Class.Database');
 Prado::using('System.Data.ActiveRecord.TActiveRecord');
 
 class APIDbModule extends TActiveRecord {
@@ -92,6 +93,10 @@ class APIDbModule extends TActiveRecord {
 				$db_connection = new TDbConnection($dsn, $db_params['login'], $db_params['password']);
 			} else {
 				$db_connection = new TDbConnection($dsn);
+			}
+			$db_connection->setActive(true);
+			if ($db_params['type'] === Database::MYSQL_TYPE) {
+				$db_connection->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
 			}
 			$db_connection->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 			$db_connection->setAttribute(PDO::ATTR_CASE, PDO::CASE_LOWER);
