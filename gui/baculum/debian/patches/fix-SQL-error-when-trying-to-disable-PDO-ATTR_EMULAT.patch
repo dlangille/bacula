@@ -1,0 +1,33 @@
+From 9cee6a7c924748c8531725d107676a53ed279b84 Mon Sep 17 00:00:00 2001
+From: Marcin Haba <marcin.haba@bacula.pl>
+Date: Fri, 19 Jul 2019 17:33:42 +0200
+Subject: [PATCH] Fix SQL error when trying to disable
+ PDO::ATTR_EMULATE_PREPARES option for MySQL (#696)
+
+---
+ framework/Data/Common/Mysql/TMysqlMetaData.php | 5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
+
+diff --git a/framework/Data/Common/Mysql/TMysqlMetaData.php b/framework/Data/Common/Mysql/TMysqlMetaData.php
+index 6d066cc89..b28a73079 100644
+--- a/framework/Data/Common/Mysql/TMysqlMetaData.php
++++ b/framework/Data/Common/Mysql/TMysqlMetaData.php
+@@ -264,13 +264,12 @@ class TMysqlMetaData extends TDbMetaData
+ 			return false;
+ 		}
+ 		if ($schemaName !== null) {
+-			$sql = "SHOW FULL TABLES FROM `{$schemaName}` LIKE :table";
++			$sql = "SHOW FULL TABLES FROM `{$schemaName}` LIKE '{$tableName}'";
+ 		} else {
+-			$sql = "SHOW FULL TABLES LIKE :table";
++			$sql = "SHOW FULL TABLES LIKE '{$tableName}'";
+ 		}
+ 
+ 		$command = $this->getDbConnection()->createCommand($sql);
+-		$command->bindValue(':table', $tableName);
+ 		try {
+ 			return count($result = $command->queryRow()) > 0 && $result['Table_type'] === 'VIEW';
+ 		} catch (TDbException $e) {
+-- 
+2.21.0
+
