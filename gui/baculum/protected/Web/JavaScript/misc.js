@@ -364,7 +364,8 @@ var JobLevel = {
 		'C': 'Catalog',
 		'O': 'VolumeToCatalog',
 		'd': 'DiskToCatalog',
-		'A': 'Data'
+		'A': 'Data',
+		' ': '-' // using by jobs without job level (ex. Admin job)
 	},
 	get_level: function(l) {
 		var level;
