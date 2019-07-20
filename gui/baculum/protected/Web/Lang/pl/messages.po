@@ -806,7 +806,7 @@ msgstr "wybierz akcję"
 msgid "Delete"
 msgstr "Usuń"
 
-msgid "Output for selected job is not available yet or you do not have enabled logging job logs to the catalog database.\n\nFor watching job log you need to add to the job Messages resource the following directive:\n\nCatalog = all, !debug, !skipped, !saved"
+msgid "Output for selected job is not available yet or you do not have enabled logging job logs to the catalog database.\n\nTo watch job log you need to add to the job Messages resource the following directive:\n\nCatalog = all, !debug, !skipped, !saved"
 msgstr "Listing dla wybranego zadania nie jest jeszcze dostępny lub nie masz włączonego logowania statusów zadań do bazy katalogowej.\n\nW celu oglądania listingów ze statusami zadań potrzeba włączyć w zasobie Messages następującą dyrektywę:\n\nCatalog = all, !debug, !skipped, !saved"
 
 msgid "Workspace"

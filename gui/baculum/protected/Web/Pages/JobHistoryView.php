@@ -154,7 +154,7 @@ class JobHistoryView extends BaculumWebPage {
 	public function refreshJobLog($sender, $param) {
 		$log = $this->getModule('api')->get(array('joblog', $this->getJobId()));
 		if (!is_array($log->output) || count($log->output) == 0) {
-			$msg = Prado::localize("Output for selected job is not available yet or you do not have enabled logging job logs to the catalog database.\n\nFor watching job log you need to add to the job Messages resource the following directive:\n\nCatalog = all, !debug, !skipped, !saved");
+			$msg = Prado::localize("Output for selected job is not available yet or you do not have enabled logging job logs to the catalog database.\n\nTo watch job log you need to add to the job Messages resource the following directive:\n\nCatalog = all, !debug, !skipped, !saved");
 			$joblog = array($msg);
 
 		} else {

@@ -815,8 +815,8 @@ msgstr "select action"
 msgid "Delete"
 msgstr "Delete"
 
-msgid "Output for selected job is not available yet or you do not have enabled logging job logs to the catalog database.\n\nFor watching job log you need to add to the job Messages resource the following directive:\n\nCatalog = all, !debug, !skipped, !saved"
-msgstr "Output for selected job is not available yet or you do not have enabled logging job logs to the catalog database.\n\nFor watching job log you need to add to the job Messages resource the following directive:\n\nCatalog = all, !debug, !skipped, !saved"
+msgid "Output for selected job is not available yet or you do not have enabled logging job logs to the catalog database.\n\nTo watch job log you need to add to the job Messages resource the following directive:\n\nCatalog = all, !debug, !skipped, !saved"
+msgstr "Output for selected job is not available yet or you do not have enabled logging job logs to the catalog database.\n\nTo watch job log you need to add to the job Messages resource the following directive:\n\nCatalog = all, !debug, !skipped, !saved"
 
 msgid "Workspace"
 msgstr "Workspace"
