@@ -436,3 +436,6 @@ msgstr "Katalog roboczy Baculum dla plików konfiguracyjnych Bacula:"
 
 msgid "In this directory Baculum API saves temporarily Bacula configuration files (mainly for validation purposes) just before they are written as real Bacula configuration files."
 msgstr "W tym katalogu Baculum API tymczasowo zapisuje pliki konfiguracyjne Bacula (głównie do celów walidacji) zaraz przed tym, gdy są one zapisane jako właściwe pliki konfiguracyjne Bacula."
+
+msgid "Version:"
+msgstr "Wersja:"

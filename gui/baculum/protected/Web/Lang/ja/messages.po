@@ -2311,3 +2311,6 @@ msgstr "Differential"
 
 msgid "Custom time range"
 msgstr "Custom time range"
+
+msgid "Version:"
+msgstr "Version:"

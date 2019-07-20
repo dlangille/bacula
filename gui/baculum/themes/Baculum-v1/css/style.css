@@ -172,6 +172,12 @@ input.bbutton:hover {
 	width: 98%;
 }
 
+.footer {
+	font-size: 12px;
+	text-align: right;
+	margin-top: 5px;
+}
+
 /* API server OAuth2 progress bar */
 
 #progress_label {

@@ -2228,3 +2228,6 @@ msgstr "Różnicowy"
 
 msgid "Custom time range"
 msgstr "Dopasowany zakres czasu"
+
+msgid "Version:"
+msgstr "Wersja:"

@@ -20,6 +20,8 @@
  * Bacula(R) is a registered trademark of Kern Sibbald.
  */
  
+Prado::using('Application.Common.Class.Params');
+
 class Main extends TTemplateControl {
 
 	public $web_config;

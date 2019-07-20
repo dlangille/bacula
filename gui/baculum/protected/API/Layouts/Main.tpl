@@ -6,5 +6,6 @@
 			<com:TClientScript PradoScripts="effects" />
 			<com:TContentPlaceHolder ID="Main" />
 		</com:TForm>
+		<footer class="footer"><%[ Version: ]%> <%=Params::BACULUM_VERSION%></footer>
 	</body>
 </html>

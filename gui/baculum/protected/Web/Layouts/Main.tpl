@@ -33,8 +33,7 @@
 				</span>
 				<com:TContentPlaceHolder ID="Main" />
 				<!-- Footer -->
-				<footer class="w3-container w3-padding-16 w3-light-grey">
-				</footer>
+				<footer class="w3-container w3-right-align w3-small"><%[ Version: ]%> <%=Params::BACULUM_VERSION%></footer>
 			</div>
 		</com:TForm>
 		<div id="small" class="w3-hide-large"></div>
