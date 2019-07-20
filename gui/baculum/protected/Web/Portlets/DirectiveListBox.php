@@ -26,6 +26,11 @@ Prado::using('Application.Web.Portlets.DirectiveTemplate');
 
 class DirectiveListBox extends DirectiveTemplate {
 
+	public function onPreRender($param) {
+		parent::onPreRender($param);
+		$this->createDirectiveInternal();
+	}
+
 	public function getValue() {
 		$value = array();
 		$values = $this->Directive->getSelectedIndices();
@@ -36,7 +41,7 @@ class DirectiveListBox extends DirectiveTemplate {
 		return $value;
 	}
 
-	public function createDirective() {
+	public function createDirectiveInternal() {
 		$this->Label->Text = $this->getLabel();
 		$data = $this->getData();
 		$resource_names = $this->getResourceNames();
@@ -53,7 +58,7 @@ class DirectiveListBox extends DirectiveTemplate {
 				$items = $resource_names[$resource];
 			}
 		}
-		$this->Directive->dataSource = array_combine($items, $items);
+		$this->Directive->DataSource = array_combine($items, $items);
 
 		$directive_value = $this->getDirectiveValue();
 		$default_value = $this->getDefaultValue();

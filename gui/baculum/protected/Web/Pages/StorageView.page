@@ -137,7 +137,6 @@
 			<prop:FooterTemplate>
 				</table>
 			</prop:FooterTemplate>
-			<
 		</com:TActiveRepeater>
 		</table>
 	</div>
