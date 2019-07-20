@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2018 Kern Sibbald
+ * Copyright (C) 2013-2019 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -127,7 +127,8 @@ class NewResource extends BaculumWebPage {
 					"Fileset",
 					"Pool",
 					"Messages",
-					"Console"
+					"Console",
+					"Statistics"
 				);
 			} elseif ($component_type == 'sd') {
 				$resources = array(
@@ -135,13 +136,16 @@ class NewResource extends BaculumWebPage {
 					"Storage",
 					"Device",
 					"Autochanger",
-					"Messages"
+					"Messages",
+					"Statistics",
+					"Cloud"
 				);
 			} elseif ($component_type == 'fd') {
 				$resources = array(
 					"Director",
 					"FileDaemon",
-					"Messages"
+					"Messages",
+					"Statistics"
 				);
 			} elseif ($component_type == 'bcons') {
 				$resources = array(

@@ -196,6 +196,12 @@
 				"ValueType": "str",
 				"DefaultValue": 0,
 				"FieldType": "TextBox"
+			},
+			"CommCompression": {
+				"Required": false,
+				"ValueType": "bool",
+				"DefaultValue": 1,
+				"FieldType": "CheckBox"
 			}
 		},
 		"Client": {
@@ -429,6 +435,13 @@
 				"FieldType": "ComboBox",
 				"Resource": "Pool"
 			},
+			"VirtualFullBackupPool": {
+				"Required": false,
+				"ValueType": "res",
+				"DefaultValue": 0,
+				"FieldType": "ComboBox",
+				"Resource": "Pool"
+			},
 			"Client": {
 				"Required": true,
 				"ValueType": "res",
@@ -598,6 +611,12 @@
 				"FieldType": "TimePeriod"
 			},
 			"MaxFullInterval": {
+				"Required": false,
+				"ValueType": "time",
+				"DefaultValue": 0,
+				"FieldType": "TimePeriod"
+			},
+			"MaxVirtualFullInterval": {
 				"Required": false,
 				"ValueType": "time",
 				"DefaultValue": 0,
@@ -775,6 +794,18 @@
 				"FieldType": "Integer"
 			},
 			"AllowMixedPriority": {
+				"Required": false,
+				"ValueType": "bool",
+				"DefaultValue": 0,
+				"FieldType": "CheckBox"
+			},
+			"BackupsToKeep": {
+				"Required": false,
+				"ValueType": "pint32",
+				"DefaultValue": 0,
+				"FieldType": "Integer"
+			},
+			"DeleteConsolidatedJobs": {
 				"Required": false,
 				"ValueType": "bool",
 				"DefaultValue": 0,
@@ -1732,6 +1763,24 @@
 				"DefaultValue": 0,
 				"FieldType": "MultiTextBox"
 			},
+			"RestoreClientAcl": {
+				"Required": false,
+				"ValueType": "acl",
+				"DefaultValue": 0,
+				"FieldType": "MultiTextBox"
+			},
+			"BackupClientAcl": {
+				"Required": false,
+				"ValueType": "acl",
+				"DefaultValue": 0,
+				"FieldType": "MultiTextBox"
+			},
+			"DirectoryAcl": {
+				"Required": false,
+				"ValueType": "acl",
+				"DefaultValue": 0,
+				"FieldType": "MultiTextBox"
+			},
 			"TlsAuthenticate": {
 				"Required": false,
 				"ValueType": "bool",
@@ -1860,6 +1909,13 @@
 				"Resource": "Pool"
 			},
 			"DifferentialBackupPool": {
+				"Required": false,
+				"ValueType": "res",
+				"DefaultValue": 0,
+				"FieldType": "ComboBox",
+				"Resource": "Pool"
+			},
+			"VirtualFullBackupPool": {
 				"Required": false,
 				"ValueType": "res",
 				"DefaultValue": 0,
@@ -2031,6 +2087,12 @@
 				"FieldType": "TimePeriod"
 			},
 			"MaxFullInterval": {
+				"Required": false,
+				"ValueType": "time",
+				"DefaultValue": 0,
+				"FieldType": "TimePeriod"
+			},
+			"MaxVirtualFullInterval": {
 				"Required": false,
 				"ValueType": "time",
 				"DefaultValue": 0,
@@ -2208,6 +2270,18 @@
 				"FieldType": "Integer"
 			},
 			"AllowMixedPriority": {
+				"Required": false,
+				"ValueType": "bool",
+				"DefaultValue": 0,
+				"FieldType": "CheckBox"
+			},
+			"BackupsToKeep": {
+				"Required": false,
+				"ValueType": "pint32",
+				"DefaultValue": 0,
+				"FieldType": "Integer"
+			},
+			"DeleteConsolidatedJobs": {
 				"Required": false,
 				"ValueType": "bool",
 				"DefaultValue": 0,
@@ -2589,6 +2663,12 @@
 				"ValueType": "str",
 				"DefaultValue": 0,
 				"FieldType": "TextBox"
+			},
+			"CommCompression": {
+				"Required": false,
+				"ValueType": "bool",
+				"DefaultValue": 1,
+				"FieldType": "CheckBox"
 			}
 		},
 		"Device": {
@@ -2615,7 +2695,7 @@
 				"ValueType": "devtype",
 				"DefaultValue": 0,
 				"FieldType": "ComboBox",
-				"Data": ["File", "Tape", "Fifo"]
+				"Data": ["File", "Tape", "Cloud", "Fifo"]
 			},
 			"ArchiveDevice": {
 				"Required": true,
@@ -2797,6 +2877,12 @@
 				"DefaultValue": 0,
 				"FieldType": "TextBox"
 			},
+			"WormCommand": {
+				"Required": false,
+				"ValueType": "strname",
+				"DefaultValue": 0,
+				"FieldType": "TextBox"
+			},
 			"MaximumChangerWait": {
 				"Required": false,
 				"ValueType": "time",
@@ -2947,6 +3033,13 @@
 				"DefaultValue": 0,
 				"FieldType": "ComboBox",
 				"Data": ["Bacula", "ANSI", "IBM"]
+			},
+			"Cloud": {
+				"Required": false,
+				"ValueType": "res",
+				"DefaultValue": 0,
+				"FieldType": "ComboBox",
+				"Resource": "Cloud"
 			}
 		},
 		"Messages": {
@@ -3075,6 +3168,109 @@
 				"ValueType": "bool",
 				"DefaultValue": 0,
 				"FieldType": "CheckBox"
+			}
+		},
+		"Cloud": {
+			"Name": {
+				"Required": true,
+				"ValueType": "name",
+				"DefaultValue": 0,
+				"FieldType": "TextBox"
+			},
+			"Description": {
+				"Required": false,
+				"ValueType": "str",
+				"DefaultValue": 0,
+				"FieldType": "TextBox"
+			},
+			"Driver": {
+				"Required": true,
+				"ValueType": "str",
+				"DefaultValue": 0,
+				"FieldType": "ComboBox",
+				"Data": ["S3", "File"]
+			},
+			"HostName": {
+				"Required": true,
+				"ValueType": "str",
+				"DefaultValue": 0,
+				"FieldType": "TextBox"
+			},
+			"BucketName": {
+				"Required": true,
+				"ValueType": "str",
+				"DefaultValue": 0,
+				"FieldType": "TextBox"
+			},
+			"AccessKey": {
+				"Required": true,
+				"ValueType": "str",
+				"DefaultValue": 0,
+				"FieldType": "TextBox"
+			},
+			"SecretKey": {
+				"Required": true,
+				"ValueType": "str",
+				"DefaultValue": 0,
+				"FieldType": "Password"
+			},
+			"Region": {
+				"Required": false,
+				"ValueType": "str",
+				"DefaultValue": 0,
+				"FieldType": "TextBox"
+			},
+			"Protocol": {
+				"Required": false,
+				"ValueType": "str",
+				"DefaultValue": "HTTPS",
+				"FieldType": "ComboBox",
+				"Data": ["HTTP", "HTTPS"]
+			},
+			"UriStyle": {
+				"Required": false,
+				"ValueType": "str",
+				"DefaultValue": "VirtualHost",
+				"FieldType": "ComboBox",
+				"Data": ["VirtualHost", "Path"]
+			},
+			"TruncateCache": {
+				"Required": false,
+				"ValueType": "str",
+				"DefaultValue": "No",
+				"FieldType": "ComboBox",
+				"Data": ["No", "AfterUpload", "AtEndOfJob"]
+			},
+			"Upload": {
+				"Required": false,
+				"ValueType": "str",
+				"DefaultValue": "No",
+				"FieldType": "ComboBox",
+				"Data": ["No", "EachPart", "AtEndOfJob"]
+			},
+			"MaximumConcurrentUploads": {
+				"Required": false,
+				"ValueType": "pint32",
+				"DefaultValue": 0,
+				"FieldType": "Integer"
+			},
+			"MaximumConcurrentDownloads": {
+				"Required": false,
+				"ValueType": "pint32",
+				"DefaultValue": 0,
+				"FieldType": "Integer"
+			},
+			"MaximumUploadBandwidth": {
+				"Required": false,
+				"ValueType": "speed",
+				"DefaultValue": 0,
+				"FieldType": "Speed"
+			},
+			"MaximumDownloadBandwidth": {
+				"Required": false,
+				"ValueType": "speed",
+				"DefaultValue": 0,
+				"FieldType": "Speed"
 			}
 		}
 	},
@@ -3387,6 +3583,12 @@
 				"ValueType": "alist_str",
 				"DefaultValue": 0,
 				"FieldType": "TextBox"
+			},
+			"CommCompression": {
+				"Required": false,
+				"ValueType": "bool",
+				"DefaultValue": 1,
+				"FieldType": "CheckBox"
 			}
 		},
 		"Messages": {
@@ -3856,6 +4058,12 @@
 				"ValueType": "time",
 				"DefaultValue": 300,
 				"FieldType": "TimePeriod"
+			},
+			"CommCompression": {
+				"Required": false,
+				"ValueType": "bool",
+				"DefaultValue": 1,
+				"FieldType": "CheckBox"
 			}
 		},
 		"Director": {

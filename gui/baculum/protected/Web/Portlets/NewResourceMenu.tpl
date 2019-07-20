@@ -147,6 +147,14 @@
 			Attributes.onclick="$(this).closest('div.config_new_resource').hide();$('div.config_directives').slideUp();"
 			/>
 		</li>
+		<li><com:TActiveLinkButton
+			OnCommand="Parent.SourceTemplateControl.newResource"
+			CommandParameter="Cloud|<%=$this->getHost()%>|<%=$this->getComponentType()%>|<%=$this->getComponentName()%>"
+			Text="Cloud"
+			ClientSide.OnComplete="BaculaConfig.show_new_config('<%=$this->getHost()%>new_resource', '<%=$this->getComponentType()%>', '<%=$this->getComponentName()%>', 'Cloud');"
+			Attributes.onclick="$(this).closest('div.config_new_resource').hide();$('div.config_directives').slideUp();"
+			/>
+		</li>
 	</ul>
 	<ul style="display: <%=$this->getComponentType() === 'fd' ? 'block': 'none'%>; margin-top: 0;">
 		<li><com:TActiveLinkButton
