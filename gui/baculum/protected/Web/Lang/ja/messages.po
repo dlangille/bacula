@@ -576,12 +576,8 @@ msgstr "Finished jobs:"
 msgid "First written"
 msgstr "First written"
 
-msgid ""
-"For add a file to restore please click 'Add' link or drag a file from frame "
-"on left or from above frame and drop it here"
-msgstr ""
-"左のフレームから追加をクリックするか「ここ」にファイルをドラック＆ "
-"ドロップしてリストア対象のファイルを追加してください"
+msgid "To add a file to restore please click 'Add' link or please drag here the file from the top frame or from the frame on the left."
+msgstr "左のフレームから追加をクリックするか「ここ」にファイルをドラック＆ ドロップしてリストア対象のファイルを追加してください"
 
 msgid ""
 "For need defining more Baculum users with custom access or restricted "
@@ -592,7 +588,7 @@ msgstr ""
 "console access (Bconsole ACLs) here is possible to determine custom bconsole "
 "configuration file format for each user."
 
-msgid "For see a file versions please click file on the left files browser."
+msgid "To see file versions please click a file on the left files browser."
 msgstr "ファイルのバージョンチェックをするには左のフレームのファイルをクリックしてください"
 
 msgid "From day"

@@ -335,6 +335,7 @@ oJobsToRestoreList.init();
 						</prop:ClientSide.OnLoading>
 						<prop:ClientSide.OnComplete>
 							document.getElementById('restore-browser-files-loading').style.display = 'none';
+							make_draggable('<%=$this->getPage()->DataGridFiles->ClientID%>');
 						</prop:ClientSide.OnComplete>
 						<i class="fa fa-check"></i> &nbsp;<%[ OK ]%>
 					</com:TActiveLinkButton>
@@ -342,7 +343,7 @@ oJobsToRestoreList.init();
 			</div>
 			<table id="restore-browser">
 				<tr>
-					<td rowspan="2">
+					<td rowspan="2" style="height: 100%">
 						<div id="restore-browser-files-loading" style="display: none"></div>
 						<div id="restore-browser-files" class="w3-border">
 						<com:TActiveDataGrid
@@ -355,7 +356,7 @@ oJobsToRestoreList.init();
 							DataKeyField="fileid"
 							>
 								<prop:EmptyTemplate>
-									<div class="file-browser-watermark" style="padding: 200px 10px">
+									<div class="file-browser-watermark">
 										<%[ It seems that there is no files for choosing or file records in database for this job has been purged (file retention period expired) ]%>
 									</div>
 								</prop:EmptyTemplate>
@@ -414,7 +415,7 @@ oJobsToRestoreList.init();
 						</com:TCallback>
 						</div>
 					</td>
-					<td>
+					<td style="height: 50%">
 						<div id="restore-browser-versions" class="w3-border" style="position: relative">
 							<com:TActiveDataGrid
 								ID="VersionsDataGrid"
@@ -427,7 +428,7 @@ oJobsToRestoreList.init();
 							>
 								<prop:EmptyTemplate>
 									<div class="file-browser-watermark">
-										<%[ For see a file versions please click file on the left files browser. ]%>
+										<%[ To see file versions please click a file on the left files browser. ]%>
 									</div>
 								</prop:EmptyTemplate>
 								<com:TActiveTemplateColumn>
@@ -472,7 +473,7 @@ oJobsToRestoreList.init();
 					</td>
 				</tr>
 				<tr>
-					<td style="vertical-align: bottom;">
+					<td style="height: 50%; vertical-align: bottom;">
 						<div id="restore-browser-selected" class="w3-border">
 							<com:TCallback
 								ID="RemoveSelectedItem"
@@ -501,8 +502,8 @@ oJobsToRestoreList.init();
 										DataKeyField="fileid"
 									>
 									<prop:EmptyTemplate>
-										<div class="file-browser-watermark" style="padding: 50px 10px">
-											<%[ For add a file to restore please click 'Add' link or drag a file from frame on left or from above frame and drop it here ]%>
+										<div class="file-browser-watermark">
+											<%[ To add a file to restore please click 'Add' link or please drag here the file from the top frame or from the frame on the left. ]%>
 										</div>
 									</prop:EmptyTemplate>
 									<com:TActiveTemplateColumn>
@@ -542,9 +543,25 @@ oJobsToRestoreList.init();
 				</div>
 			</div>
 			<script type="text/javascript">
-				var browser = document.getElementById('restore-browser-files');
-				document.getElementById('restore-browser-files-loading').style.width = browser.offsetWidth + 'px';
-				document.getElementById('restore-browser-files-loading').style.height = browser.offsetHeight + 'px';
+				function set_browser_sizes() {
+					var win_height = $(window).height();
+					// 70 - bottom bar, 234 - top bar, 40 - path field
+					var h = win_height - 70 - 234 - 40;
+					if (h < 220) {
+						h = 220; // minimal fs browser height
+					}
+					var comp_rb_height = h.toString() + 'px';
+					var rb = document.getElementById('restore-browser');
+					rb.style.height = comp_rb_height;
+
+					// workaround for setting proper browser height on Firefox
+					$(rb).find('tbody')[0].style.height = comp_rb_height;
+
+					var rb_files = document.getElementById('restore-browser-files');
+					var rb_load = document.getElementById('restore-browser-files-loading');
+					rb_load.style.width = rb_files.offsetWidth + 'px';
+					rb_load.style.height = rb_files.offsetHeight + 'px';
+				}
 				function show_invalid_path_to_restore() {
 					document.getElementById('invalid_path_to_restore_modal').style.display = 'block';
 				}
@@ -556,6 +573,10 @@ oJobsToRestoreList.init();
 						'containment':"window"
 					});
 				}
+				$(window).resize(function() {
+					set_browser_sizes();
+				});
+				set_browser_sizes();
 				make_draggable('<%=$this->getPage()->DataGridFiles->ClientID%>');
 				Formatters.set_formatters();
 			</script>

@@ -461,11 +461,11 @@ msgstr "Step 3 - select files to restore"
 msgid "Files"
 msgstr "Files"
 
-msgid "For see a file versions please click file on the left files browser."
-msgstr "For see a file versions please click file on the left files browser."
+msgid "To see file versions please click a file on the left files browser."
+msgstr "To see file versions please click a file on the left files browser."
 
-msgid "For add a file to restore please click 'Add' link or drag a file from frame on left or from above frame and drop it here"
-msgstr "For add a file to restore please click 'Add' link or drag a file from frame on left or from above frame and drop it here"
+msgid "To add a file to restore please click 'Add' link or please drag here the file from the top frame or from the frame on the left."
+msgstr "To add a file to restore please click 'Add' link or please drag here the file from the top frame or from the frame on the left."
 
 msgid "It seems that there is no files for choosing or file records in database for this job has been purged (file retention period expired)"
 msgstr "It seems that there is no files for choosing or file records in database for this job has been purged (file retention period expired)"

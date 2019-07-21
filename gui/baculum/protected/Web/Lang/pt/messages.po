@@ -465,10 +465,10 @@ msgstr "Etapa 3 - Selecione os arquivos para restaurar"
 msgid "Files"
 msgstr "Arquivos"
 
-msgid "For see a file versions please click file on the left files browser."
+msgid "To see file versions please click a file on the left files browser."
 msgstr "Para verificar as versões disponíveis dos arquivos, clique no menu à esquerda no arquivo desejado."
 
-msgid "For add a file to restore please click 'Add' link or drag a file from frame on left or from above frame and drop it here"
+msgid "To add a file to restore please click 'Add' link or please drag here the file from the top frame or from the frame on the left."
 msgstr "Para adicionar um arquivo para restauração clique no link 'Adicionar' ou arraste e solte o arquivo do menu à esquerda neste quadro"
 
 msgid "It seems that there is no files for choosing or file records in database for this job has been purged (file retention period expired)"
