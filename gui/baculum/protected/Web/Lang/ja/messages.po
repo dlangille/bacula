@@ -2314,3 +2314,6 @@ msgstr "Custom time range"
 
 msgid "Version:"
 msgstr "Version:"
+
+msgid "Add directive"
+msgstr "Add directive"

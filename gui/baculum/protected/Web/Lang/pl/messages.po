@@ -2231,3 +2231,6 @@ msgstr "Dopasowany zakres czasu"
 
 msgid "Version:"
 msgstr "Wersja:"
+
+msgid "Add directive"
+msgstr "Dodaj dyrektywę"

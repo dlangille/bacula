@@ -1701,25 +1701,29 @@
 				"Required": false,
 				"ValueType": "acl",
 				"DefaultValue": 0,
-				"FieldType": "MultiTextBox"
+				"FieldType": "MultiComboBox",
+				"Resource": "Job"
 			},
 			"ClientAcl": {
 				"Required": false,
 				"ValueType": "acl",
 				"DefaultValue": 0,
-				"FieldType": "MultiTextBox"
+				"FieldType": "MultiComboBox",
+				"Resource": "Client"
 			},
 			"StorageAcl": {
 				"Required": false,
 				"ValueType": "acl",
 				"DefaultValue": 0,
-				"FieldType": "MultiTextBox"
+				"FieldType": "MultiComboBox",
+				"Resource": "Storage"
 			},
 			"ScheduleAcl": {
 				"Required": false,
 				"ValueType": "acl",
 				"DefaultValue": 0,
-				"FieldType": "MultiTextBox"
+				"FieldType": "MultiComboBox",
+				"Resource": "Schedule"
 			},
 			"RunAcl": {
 				"Required": false,
@@ -1731,7 +1735,8 @@
 				"Required": false,
 				"ValueType": "acl",
 				"DefaultValue": 0,
-				"FieldType": "MultiTextBox"
+				"FieldType": "MultiComboBox",
+				"Resource": "Pool"
 			},
 			"CommandAcl": {
 				"Required": false,
@@ -1743,13 +1748,15 @@
 				"Required": false,
 				"ValueType": "acl",
 				"DefaultValue": 0,
-				"FieldType": "MultiTextBox"
+				"FieldType": "MultiComboBox",
+				"Resource": "Fileset"
 			},
 			"CatalogAcl": {
 				"Required": false,
 				"ValueType": "acl",
 				"DefaultValue": 0,
-				"FieldType": "MultiTextBox"
+				"FieldType": "MultiComboBox",
+				"Resource": "Catalog"
 			},
 			"WhereAcl": {
 				"Required": false,
@@ -1763,17 +1770,19 @@
 				"DefaultValue": 0,
 				"FieldType": "MultiTextBox"
 			},
-			"RestoreClientAcl": {
-				"Required": false,
-				"ValueType": "acl",
-				"DefaultValue": 0,
-				"FieldType": "MultiTextBox"
-			},
 			"BackupClientAcl": {
 				"Required": false,
 				"ValueType": "acl",
 				"DefaultValue": 0,
-				"FieldType": "MultiTextBox"
+				"FieldType": "MultiComboBox",
+				"Resource": "Client"
+			},
+			"RestoreClientAcl": {
+				"Required": false,
+				"ValueType": "acl",
+				"DefaultValue": 0,
+				"FieldType": "MultiComboBox",
+				"Resource": "Client"
 			},
 			"DirectoryAcl": {
 				"Required": false,

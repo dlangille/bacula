@@ -33,6 +33,7 @@ Prado::using('Application.Web.Portlets.DirectivePassword');
 Prado::using('Application.Web.Portlets.DirectiveSize');
 Prado::using('Application.Web.Portlets.DirectiveSpeed');
 Prado::using('Application.Web.Portlets.DirectiveTextBox');
+Prado::using('Application.Web.Portlets.DirectiveMultiComboBox');
 Prado::using('Application.Web.Portlets.DirectiveMultiTextBox');
 Prado::using('Application.Web.Portlets.DirectiveTimePeriod');
 Prado::using('Application.Web.Portlets.DirectiveRunscript');
@@ -66,6 +67,7 @@ class BaculaConfigDirectives extends DirectiveListTemplate {
 		'DirectiveSchedule',
 		'DirectiveMessages',
 		'DirectiveRunscript',
+		'DirectiveMultiComboBox',
 		'DirectiveMultiTextBox'
 	);
 
@@ -307,7 +309,7 @@ class BaculaConfigDirectives extends DirectiveListTemplate {
 						$directives[$directive_name] = $directive_value[$directive_name];
 					} elseif ($this->directive_list_types[$i] === 'DirectiveSchedule') {
 						$directives[$directive_name] = $directive_value[$directive_name];
-					} elseif ($this->directive_list_types[$i] === 'DirectiveMultiTextBox') {
+					} elseif ($this->directive_list_types[$i] === 'DirectiveMultiTextBox' || $this->directive_list_types[$i] === 'DirectiveMultiComboBox') {
 						if (key_exists($directive_name, $directives)) {
 							$directive_value = array_merge($directives[$directive_name], $directive_value);
 						}

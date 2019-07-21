@@ -21,28 +21,26 @@
  */
 
 Prado::using('System.Web.UI.ActiveControls.TActiveLabel');
-Prado::using('System.Web.UI.ActiveControls.TActiveTextBox');
+Prado::using('System.Web.UI.ActiveControls.TActiveDropDownList');
 Prado::using('System.Web.UI.ActiveControls.TActiveLinkButton');
 Prado::using('Application.Web.Portlets.DirectiveListTemplate');
 
-class DirectiveMultiTextBox extends DirectiveListTemplate {
+class DirectiveMultiComboBox extends DirectiveListTemplate {
 
 	public function onLoad($param) {
 		parent::onLoad($param);
-		if ($this->getCmdParam() !== 'add_multitextbox') {
+		if ($this->getCmdParam() !== 'add_multicombobox') {
 			$this->loadConfig();
 		}
 	}
 
 	public function getDirectiveValue() {
 		$values = array();
-		$controls = $this->MultiTextBoxRepeater->getItems();
+		$controls = $this->MultiComboBoxRepeater->getItems();
 		foreach ($controls as $control) {
-			$val = $control->Directive->getText();
+			$val = $control->Directive->getSelectedValue();
 			if (!empty($val)) {
 				$values[] = $val;
-			} else {
-				$values[] = null;
 			}
 		}
 		return $values;
@@ -52,27 +50,49 @@ class DirectiveMultiTextBox extends DirectiveListTemplate {
 		$resource_type = $this->getResourceType();
 		$resource_name = $this->getResourceName();
 		$directive_name = $this->getDirectiveName();
-
+		$resource = $this->getResource();
+		$resource_names = $this->getResourceNames();
 		$data = $this->getData();
-		if (!is_array($data) ) {
+		$items = array();
+
+		if (!is_array($data)) {
 			$data = array($data);
 		}
+		if (is_array($resource_names)) {
+			if (key_exists($directive_name, $resource_names)) {
+				$items = $resource_names[$directive_name];
+			} elseif (key_exists($resource, $resource_names)) {
+				$items = $resource_names[$resource];
+			}
+		}
+
+		/**
+		 * Dirty hack to support *all* keyword in resource name list
+		 * @TODO: Add an control property to support this type cases
+		 */
+		if ($resource_type == 'Console' && preg_match('/Acl$/i', $directive_name) == 1) {
+			array_unshift($items, '*all*');
+		}
+
+		array_unshift($items, '');
 		$values = array();
 		for ($i = 0; $i < count($data); $i++) {
 			$values[] = array(
+				'items' => $items,
 				'directive_value' => $data[$i],
 				'label' => $this->getDirectiveName(),
 				'show' => $this->getShow()
 			);
 		}
-		$this->MultiTextBoxRepeater->DataSource = $values;
-		$this->MultiTextBoxRepeater->dataBind();
+		$this->MultiComboBoxRepeater->DataSource = $values;
+		$this->MultiComboBoxRepeater->dataBind();
 	}
 
-	public function createMultiTextBoxElement($sender, $param) {
+	public function createMultiComboBoxElement($sender, $param) {
 		$param->Item->Label->Text = $param->Item->Data['label'];
-		$param->Item->Directive->Text = $param->Item->Data['directive_value'];
-
+		$param->Item->Directive->DataSource = array_combine($param->Item->Data['items'], $param->Item->Data['items']);
+		$param->Item->Directive->setSelectedValue($param->Item->Data['directive_value']);
+		$param->Item->Directive->dataBind();
 	}
 
 	public function addField($sender, $param) {

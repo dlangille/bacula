@@ -33,6 +33,7 @@ Prado::using('Application.Web.Portlets.DirectivePassword');
 Prado::using('Application.Web.Portlets.DirectiveSize');
 Prado::using('Application.Web.Portlets.DirectiveSpeed');
 Prado::using('Application.Web.Portlets.DirectiveTextBox');
+Prado::using('Application.Web.Portlets.DirectiveMultiComboBox');
 Prado::using('Application.Web.Portlets.DirectiveMultiTextBox');
 Prado::using('Application.Web.Portlets.DirectiveTimePeriod');
 Prado::using('Application.Web.Portlets.DirectiveRunscript');
@@ -60,6 +61,7 @@ class DirectiveRenderer extends DirectiveListTemplate implements IItemDataRender
 		'DirectiveSchedule',
 		'DirectiveMessages',
 		'DirectiveRunscript',
+		'DirectiveMultiComboBox',
 		'DirectiveMultiTextBox'
 	);
 
@@ -109,6 +111,7 @@ class DirectiveRenderer extends DirectiveListTemplate implements IItemDataRender
 			$control->setResourceNames($this->SourceTemplateControl->getResourceNames());
 			$control->setShow($data['show']);
 			$control->setGroupName($data['group_name']);
+			$control->setResource($data['resource']);
 			$this->getControls()->add($control);
 			if (!$this->getPage()->IsCallBack || $this->getPage()->getCallbackEventParameter()  === 'show_all_directives' || $this->getCmdParam() === 'show') {
 				/*
