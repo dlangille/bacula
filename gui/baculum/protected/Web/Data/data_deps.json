@@ -50,6 +50,9 @@
 		},
 		"Messages": {
 			"Storage": ["Messages"]
+		},
+		"Cloud": {
+			"Device": ["Cloud"]
 		}
 	},
 	"fd": {
