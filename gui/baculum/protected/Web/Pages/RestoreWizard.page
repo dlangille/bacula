@@ -474,6 +474,18 @@ oJobsToRestoreList.init();
 				<tr>
 					<td style="vertical-align: bottom;">
 						<div id="restore-browser-selected" class="w3-border">
+							<com:TCallback
+								ID="RemoveSelectedItem"
+								OnCallback="removeSelectedFile"
+								ClientSide.OnComplete="set_formatters();"
+							/>
+							<script type="text/javascript">
+								function remove_selected_item(fileid) {
+									var cb = <%=$this->RemoveSelectedItem->ActiveControl->Javascript%>;
+									cb.setCallbackParameter(fileid);
+									cb.dispatch();
+								}
+							</script>
 							<com:TJuiDroppable ID="SelectedVersionsDropper" Height="100%" Width="100%"
 								Options.accept=".draggable"
 								OnDrop="addFileToRestore"
@@ -505,7 +517,7 @@ oJobsToRestoreList.init();
 													</span>
 													<span class="w3-third">
 														<%[ Size: ]%><span class="size"><%=$this->getParent()->Data['lstat']['size']%></span>
-														<com:TActiveImageButton CssClass="w3-right" ImageUrl="<%=$this->getPage()->getTheme()->getBaseUrl()%>/icon_close.png" OnCallback="Page.removeSelectedFile" ActiveControl.CallbackParameter="<%=isset($this->getParent()->Data['fileid']) ? $this->getParent()->Data['fileid'] : ''%>"/>
+														<input type="image" src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/icon_close.png" alt="" class="w3-right" onclick="remove_selected_item('<%=isset($this->getParent()->Data['fileid']) ? $this->getParent()->Data['fileid'] : ''%>'); return false;">
 													</span>
 												</com:TPanel>
 										</prop:ItemTemplate>

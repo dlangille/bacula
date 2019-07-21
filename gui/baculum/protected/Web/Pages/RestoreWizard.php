@@ -26,7 +26,6 @@ Prado::using('System.Web.UI.WebControls.TWizard');
 Prado::using('System.Web.UI.WebControls.TDataGrid');
 Prado::using('System.Web.UI.JuiControls.TJuiDroppable');
 Prado::using('System.Web.UI.ActiveControls.TActiveLinkButton');
-Prado::using('System.Web.UI.ActiveControls.TActiveImageButton');
 Prado::using('System.Web.UI.ActiveControls.TActiveDataGrid');
 Prado::using('System.Web.UI.ActiveControls.TActiveRepeater');
 Prado::using('System.Web.UI.ActiveControls.TCallback');
@@ -535,7 +534,7 @@ class RestoreWizard extends BaculumWebPage
 	/**
 	 * Remove file from files marked to restre.
 	 *
-	 * @param TActiveImageButton $sender remove button object
+	 * @param TCallback $sender sender object
 	 * @param TEventParameter $param param object
 	 * @return none
 	 */
