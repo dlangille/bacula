@@ -1,6 +1,6 @@
 <div id="<%=$this->ClientID%>_new_fileset" class="w3-card w3-white w3-padding left config_new_fileset" style="display: none">
 	<i class="fa fa-times w3-right" onclick="$('#<%=$this->ClientID%>_new_fileset').hide();" /></i>
-	<ul class="w3-ul" style="margin-top: 0">
+	<ul class="w3-ul new_element_menu">
 		<li><com:TActiveLinkButton
 			ID="IncludeFileItem"
 			OnCommand="Parent.SourceTemplateControl.newIncludeFile"

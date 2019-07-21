@@ -213,3 +213,17 @@ div.config_directives {
 .link_item_img {
 	background-image: url('/themes/Baculum-v2/link-icon.png');
 }
+
+ul.new_element_menu {
+	margin-top: 0;
+	padding-left: 0;
+	padding-top: 8px
+}
+
+ul.new_element_menu li {
+	padding: 2px 16px;
+}
+
+ul.new_element_menu li a {
+	text-decoration: none;
+}
