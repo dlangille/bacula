@@ -2,29 +2,22 @@ Baculum - Bacula web interface
 
 ================================================================================
 
-=== 1. FAQ ===
+=== FAQ ===
 
-a) Why Jobs list and/or Media list windows do not show any content?
+a) Why do job list or media list pages not show any content?
 
-   In case when in Bacula Catalog database exist a lot of finished Jobs or Media
-records, for example more than 2000, and window with Jobs or Media list do not
-show any content, then please consider increase "memory_limit" option in php.ini
-PHP configuration file to higher value than 256M. There is also possible to set
-limit window list elements on webGUI in window tools option (on window bottom
-bar), without changing "memory_limit" value.
+   In case when in the Bacula Catalog database exist a lot of records
+(for example 20000 finished job records) and the Baculum web page does not show
+any content, please consider increasing "memory_limit" option in php.ini
+PHP configuration file to greater value than 128M. Information about exhausted
+memory should be visible in web server error log. Alternatively there is also
+possible set limit for visible elements in tables that does not require
+increasing "memory_limit" value. This change can be done directly on
+the Baculum Web interface at the gear wheel icon on the top left.
 
-b) Just after finish initial wizard there is not possible to login to Baculum
-
-   From Baculum 7.2.0 has been changed format storing passwords. Passwords
-stored by Baculum for HTTP Basic authentication are encrypted by MD5. It is default
-alghoritm used by "htpasswd" program. Plain text passwords for HTTP Basic auth
-are not longer supported by Baculum.
-   From this reason good to check if used web server for Baculum is set to using
-MD5 type passwords in HTTP Basic authentication.
-
-c) Why time fields values contain invalid date/time values?
-  This case can mean that timezone is not set for PHP in php.ini file or the
-timezone value needs correction. To fix it please add (or update) "date.timezone"
-value in php.ini file. For example:
+b) Why do time fields contain invalid date/time values?
+  This case can mean that the timezone is not set for PHP or it needs to be
+corrected. To fix it please add (or update) "date.timezone" value in php.ini
+file, for example:
 
 date.timezone = "Europe/Warsaw"
