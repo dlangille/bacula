@@ -46,8 +46,20 @@ class RestoreWizard extends BaculumWebPage
 	/**
 	 * File browser special directories.
 	 */
-	private $browser_root_dir = array('name' => '.', 'type' => 'dir', 'fileid' => null, 'lstat' => '');
-	private $browser_up_dir = array('name' => '..', 'type' => 'dir', 'lstat' => '');
+	private $browser_root_dir = array(
+		'name' => '.',
+		'type' => 'dir',
+		'fileid' => null,
+		'lstat' => '',
+		'uniqid' => null
+	);
+	private $browser_up_dir = array(
+		'name' => '..',
+		'type' => 'dir',
+		'fileid' => null,
+		'lstat' => '',
+		'uniqid' => null
+	);
 
 	/**
 	 * Used to provide in template selected by user single jobid to restore.
@@ -75,7 +87,7 @@ class RestoreWizard extends BaculumWebPage
 
 	public function onInit($param) {
 		parent::onInit($param);
-		if(!$this->IsPostBack && !$this->IsCallBack) {
+		if (!$this->IsPostBack && !$this->IsCallBack) {
 			$this->resetWizard();
 			$this->loadBackupClients();
 			$this->setPreDefinedJobIdToRestore();
@@ -392,11 +404,30 @@ class RestoreWizard extends BaculumWebPage
 			}
 
 			$elements = array_merge($dirs, $files);
-			if(count($_SESSION['restore_path']) > 0) {
+			$elements = array_map(array('RestoreWizard', 'addUniqid'), $elements);
+			if (count($_SESSION['restore_path']) > 0) {
 				array_unshift($elements, $this->browser_root_dir);
 			}
 		}
 		$this->loadBrowserFiles($elements);
+	}
+
+	/**
+	 * Small helper to prepare unique identifier for file and directory items.
+	 * Uniqid is important to support restore all paths including paths that contain
+	 * in FileSet File value, ex. restore "/home" where File="/home/gani/abc".
+	 *
+	 * @param array $el parsed Bvfs list item
+	 * @return array Bvfs list item with uniqid
+	 */
+	public static function addUniqid($el) {
+		$el['uniqid'] = sprintf(
+			'%d:%d:%d',
+			$el['jobid'],
+			$el['pathid'],
+			$el['fileid']
+		);
+		return $el;
 	}
 
 	/*
@@ -406,13 +437,13 @@ class RestoreWizard extends BaculumWebPage
 	 */
 	private function getElementaryBackup() {
 		$jobids = '';
-		if($this->OnlySelectedBackupSelection->Checked && isset($_SESSION['restore_single_jobid'])) {
+		if ($this->OnlySelectedBackupSelection->Checked && isset($_SESSION['restore_single_jobid'])) {
 			$jobs = $this->getModule('api')->get(
 				array('bvfs', 'getjobids', '?jobid=' . rawurlencode($_SESSION['restore_single_jobid']))
 			);
 			$ids = is_object($jobs) ? $jobs->output : array();
 			foreach ($ids as $jobid) {
-				if(preg_match('/^([\d\,]+)$/', $jobid, $match) == 1) {
+				if (preg_match('/^([\d\,]+)$/', $jobid, $match) == 1) {
 					$jobids = $match[1];
 					break;
 				}
@@ -469,10 +500,10 @@ class RestoreWizard extends BaculumWebPage
 	 * @return none
 	 */
 	private function goToPath($path = '', $full_path = false) {
-		if(!empty($path) && !$full_path) {
-			if($path == $this->browser_up_dir['name']) {
+		if (!empty($path) && !$full_path) {
+			if ($path == $this->browser_up_dir['name']) {
 				array_pop($_SESSION['restore_path']);
-			} elseif($path == $this->browser_root_dir['name']) {
+			} elseif ($path == $this->browser_root_dir['name']) {
 				$_SESSION['restore_path'] = array();
 			} else {
 				array_push($_SESSION['restore_path'], $path);
@@ -494,13 +525,13 @@ class RestoreWizard extends BaculumWebPage
 	 * @return none
 	 */
 	public function addFileToRestore($sender, $param) {
-		$fileid = null;
+		$uniqid = null;
 		$source_element_id = null;
 		$file_prop = array();
 		if (get_class($param) == 'Prado\Web\UI\ActiveControls\TCallbackEventParameter') {
 			$id_parts = explode('_', $sender->ClientID, 6);
 			$source_element_id = $id_parts[3];
-			$fileid = $param->CallbackParameter;
+			$uniqid = $param->CallbackParameter;
 		} else {
 			$control = $param->DraggableControl;
 		        $item = $control->getNamingContainer();
@@ -508,25 +539,19 @@ class RestoreWizard extends BaculumWebPage
 			$source_element_id = $id_parts[3];
 		}
 		if ($source_element_id == $this->VersionsDataGrid->ID) {
-			if (is_null($fileid)) {
-				$fileid = $this->VersionsDataGrid->getDataKeys()->itemAt($item->getItemIndex());
+			if (is_null($uniqid)) {
+				$uniqid = $this->VersionsDataGrid->getDataKeys()->itemAt($item->getItemIndex());
 			}
-			$file_prop = $this->getFileVersions($fileid);
+			$file_prop = $this->getFileVersions($uniqid);
 		} else {
-			if (is_null($fileid)) {
-				$fileid = $this->DataGridFiles->getDataKeys()->itemAt($item->getItemIndex());
+			if (is_null($uniqid)) {
+				$uniqid = $this->DataGridFiles->getDataKeys()->itemAt($item->getItemIndex());
 			}
-			$file_prop = $this->getBrowserFile($fileid);
+			$file_prop = $this->getBrowserFile($uniqid);
 		}
 
-		if ($file_prop['type'] === 'dir' && is_null($file_prop['lstat'])) {
-			// Path belongs to locations defined in FileSet (not restorable)
-			$this->getCallbackClient()->callClientFunction('show_invalid_path_to_restore');
-			return;
-		}
-
-		if($file_prop['name'] != $this->browser_root_dir['name'] && $file_prop['name'] != $this->browser_up_dir['name']) {
-			$this->markFileToRestore($fileid, $file_prop);
+		if ($file_prop['name'] != $this->browser_root_dir['name'] && $file_prop['name'] != $this->browser_up_dir['name']) {
+			$this->markFileToRestore($uniqid, $file_prop);
 			$this->loadSelectedFiles();
 		}
 	}
@@ -539,8 +564,8 @@ class RestoreWizard extends BaculumWebPage
 	 * @return none
 	 */
 	public function removeSelectedFile($sender, $param) {
-		$fileid = $param->CallbackParameter;
-		$this->unmarkFileToRestore($fileid);
+		$uniqid = $param->CallbackParameter;
+		$this->unmarkFileToRestore($uniqid);
 		$this->loadSelectedFiles();
 	}
 
@@ -554,7 +579,7 @@ class RestoreWizard extends BaculumWebPage
 	 */
 	public function getVersions($sender, $param) {
 		list($filename, $pathid, $filenameid, $jobid) = explode('|', $param->CallbackParameter, 4);
-		if($filenameid == 0) {
+		if ($filenameid == 0) {
 			$this->goToPath($filename);
 			return;
 		}
@@ -568,6 +593,7 @@ class RestoreWizard extends BaculumWebPage
 		);
 		$versions = $this->getModule('api')->get(array('bvfs', 'versions', $query))->output;
 		$file_versions = $this->getModule('misc')->parseFileVersions($filename, $versions);
+		$file_versions = array_map(array('RestoreWizard', 'addUniqid'), $file_versions);
 		$this->setFileVersions($file_versions);
 		$this->VersionsDataGrid->dataSource = $file_versions;
 		$this->VersionsDataGrid->dataBind();
@@ -646,15 +672,15 @@ class RestoreWizard extends BaculumWebPage
 	}
 
 	/**
-	 * Get file versions for specified fileid.
+	 * Get file versions for specified uniqid.
 	 *
-	 * @param integer $fileid file identifier
+	 * @param string $uniqid file identifier
 	 * @return none
 	 */
-	private function getFileVersions($fileid) {
+	private function getFileVersions($uniqid) {
 		$versions = array();
-		foreach($_SESSION['files_versions'] as $file) {
-			if(array_key_exists('fileid', $file) && $file['fileid'] == $fileid) {
+		foreach ($_SESSION['files_versions'] as $file) {
+			if (key_exists('uniqid', $file) && $file['uniqid'] === $uniqid) {
 				$versions = $file;
 				break;
 			}
@@ -673,15 +699,15 @@ class RestoreWizard extends BaculumWebPage
 	}
 
 	/**
-	 * Get browser file by fileid.
+	 * Get browser file by uniqid.
 	 *
-	 * @param integer $fileid file identifier
+	 * @param string $uniqid file identifier
 	 * @return none
 	 */
-	private function getBrowserFile($fileid) {
+	private function getBrowserFile($uniqid) {
 		$element = array();
-		foreach($_SESSION['files_browser'] as $file) {
-			if(array_key_exists('fileid', $file) && $file['fileid'] == $fileid) {
+		foreach ($_SESSION['files_browser'] as $file) {
+			if (key_exists('uniqid', $file) && $file['uniqid'] === $uniqid) {
 				$element = $file;
 				break;
 			}
@@ -692,27 +718,27 @@ class RestoreWizard extends BaculumWebPage
 	/**
 	 * Mark file to restore.
 	 *
-	 * @param integer $fileid file identifier
+	 * @param string $uniqid file identifier
 	 * @param array $file file properties to mark
 	 * @return none
 	 */
-	private function markFileToRestore($fileid, $file) {
-		if($fileid === null) {
+	private function markFileToRestore($uniqid, $file) {
+		if (is_null($uniqid)) {
 			$_SESSION['restore'] = array();
-		} elseif($file['name'] != $this->browser_root_dir['name'] && $file['name'] != $this->browser_up_dir['name']) {
-			$_SESSION['restore'][$fileid] = $file;
+		} elseif ($file['name'] != $this->browser_root_dir['name'] && $file['name'] != $this->browser_up_dir['name']) {
+			$_SESSION['restore'][$uniqid] = $file;
 		}
 	}
 
 	/**
 	 * Unmark file to restore.
 	 *
-	 * @param integer $fileid file identifier
+	 * @param string $uniqid file identifier
 	 * @return none
 	 */
-	private function unmarkFileToRestore($fileid) {
-		if(array_key_exists($fileid, $_SESSION['restore'])) {
-			unset($_SESSION['restore'][$fileid]);
+	private function unmarkFileToRestore($uniqid) {
+		if (key_exists($uniqid, $_SESSION['restore'])) {
+			unset($_SESSION['restore'][$uniqid]);
 		}
 	}
 
@@ -745,18 +771,18 @@ class RestoreWizard extends BaculumWebPage
 		$fileids = array();
 		$dirids = array();
 		$findexes = array();
-		foreach ($this->getFilesToRestore() as $fileid => $properties) {
+		foreach ($this->getFilesToRestore() as $uniqid => $properties) {
 			if ($properties['type'] == 'dir') {
 				$dirids[] = $properties['pathid'];
 			} elseif ($properties['type'] == 'file') {
-				$fileids[] = $fileid;
+				$fileids[] = $properties['fileid'];
 				if ($properties['lstat']['linkfi'] !== 0) {
 					$findexes[] = $properties['jobid'] . ',' . $properties['lstat']['linkfi'];
 				}
 			}
 		}
 		$ret = array('fileid' => $fileids, 'dirid' => $dirids, 'findex' => $findexes);
-		if($as_object === true) {
+		if ($as_object === true) {
 			$ret = (object)$ret;
 		}
 		return $ret;
@@ -773,11 +799,11 @@ class RestoreWizard extends BaculumWebPage
 		$restore_elements = $this->getRestoreElements();
 		$cmd_props = array('jobids' => $jobids, 'path' => $path);
 		$is_element = false;
-		if(count($restore_elements['fileid']) > 0) {
+		if (count($restore_elements['fileid']) > 0) {
 			$cmd_props['fileid'] = implode(',', $restore_elements['fileid']);
 			$is_element = true;
 		}
-		if(count($restore_elements['dirid']) > 0) {
+		if (count($restore_elements['dirid']) > 0) {
 			$cmd_props['dirid'] = implode(',', $restore_elements['dirid']);
 			$is_element = true;
 		}
@@ -808,7 +834,7 @@ class RestoreWizard extends BaculumWebPage
 					$restore_props['regex_where'] = $this->RestoreRegexWhere->Text;
 				}
 			}
-			if (!array_key_exists('add_prefix', $restore_props)) {
+			if (!key_exists('add_prefix', $restore_props)) {
 				$restore_props['where'] =  $this->RestorePath->Text;
 			}
 			$restore_props['replace'] = $this->ReplaceFiles->SelectedValue;
@@ -846,9 +872,18 @@ class RestoreWizard extends BaculumWebPage
 
 	private function loadRequiredVolumes() {
 		$volumes = array();
-		foreach ($this->getFilesToRestore() as $fileid => $props) {
+		foreach ($this->getFilesToRestore() as $uniqid => $props) {
+			list($jobid, $pathid, $fileid) = explode(':', $uniqid, 3);
+			if ($jobid === '0') {
+				/**
+				 * No way to determine proper jobid for elements.
+				 * jobid=0 usually means that path is part of FileSet File value
+				 * for example: selected path "/home" where File = "/home/gani/bbb".
+				 */
+				continue;
+			}
 			// it can be expensive for many restore paths
-			$result = $this->getModule('api')->get(array('volumes', 'required', $props['jobid'], $fileid));
+			$result = $this->getModule('api')->get(array('volumes', 'required', $jobid, $fileid));
 			if ($result->error === 0) {
 				for ($i = 0; $i < count($result->output); $i++) {
 					$volumes[$result->output[$i]->volume] = array(

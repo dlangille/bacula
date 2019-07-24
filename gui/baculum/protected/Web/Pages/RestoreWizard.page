@@ -199,7 +199,16 @@ var oJobsToRestoreList = {
 				},
 				{
 					data: 'name',
-					responsivePriority: 3
+					responsivePriority: 3,
+					render: function(data, type, row) {
+						var i = document.createElement('I');
+						i.className = 'fa fa-external-link-alt fa-xs';
+						var a = document.createElement('A');
+						a.href = '/web/job/history/' + row.jobid + '/';
+						a.appendChild(i);
+						a.title = '<%[ Go to job with jobid %jobid ]%>'.replace('%jobid', row.jobid);
+						return (data + ' ' + a.outerHTML);
+					}
 				},
 				{
 					data: 'type',
@@ -353,7 +362,7 @@ oJobsToRestoreList.init();
 							ShowHeader="false"
 							CssClass="file-browser-detail"
 							ItemStyle.CssClass="file-browser-element"
-							DataKeyField="fileid"
+							DataKeyField="uniqid"
 							>
 								<prop:EmptyTemplate>
 									<div class="file-browser-watermark">
@@ -369,9 +378,9 @@ oJobsToRestoreList.init();
 												CssClass="link"
 												Style="float: right;"
 												OnCallback="Page.addFileToRestore"
-												ActiveControl.CallbackParameter="<%=isset($this->getParent()->Data['fileid']) ? $this->getParent()->Data['fileid'] : null%>"
+												ActiveControl.CallbackParameter="<%=$this->getParent()->Data['uniqid']%>"
 												ActiveControl.EnableUpdate="false"
-												Visible="<%=!in_array($this->getParent()->Data['name'], $this->getPage()->excluded_elements_from_add) && ($this->getParent()->Data['type'] !== 'dir' || !is_null($this->getParent()->Data['lstat']))%>"
+												Visible="<%=!in_array($this->getParent()->Data['name'], $this->getPage()->excluded_elements_from_add)%>"
 												ClientSide.OnComplete="Formatters.set_formatters();"
 												Text="<%[ Add ]%>"
 											/>
@@ -424,7 +433,7 @@ oJobsToRestoreList.init();
 								CellPadding="2px"
 								CssClass="file-browser-detail"
 								ItemStyle.CssClass="file-browser-element"
-								DataKeyField="fileid"
+								DataKeyField="uniqid"
 							>
 								<prop:EmptyTemplate>
 									<div class="file-browser-watermark">
@@ -448,7 +457,7 @@ oJobsToRestoreList.init();
 												CssClass="link"
 												Style="float: right;"
 												OnCallback="Page.addFileToRestore"
-												ActiveControl.CallbackParameter="<%=isset($this->getParent()->Data['fileid']) ? $this->getParent()->Data['fileid'] : false%>"
+												ActiveControl.CallbackParameter="<%=$this->getParent()->Data['uniqid']%>"
 												ActiveControl.EnableUpdate="false"
 												ClientSide.OnComplete="Formatters.set_formatters();"
 												Text="<%[ Add ]%>"
@@ -481,9 +490,9 @@ oJobsToRestoreList.init();
 								ClientSide.OnComplete="set_formatters();"
 							/>
 							<script type="text/javascript">
-								function remove_selected_item(fileid) {
+								function remove_selected_item(uniqid) {
 									var cb = <%=$this->RemoveSelectedItem->ActiveControl->Javascript%>;
-									cb.setCallbackParameter(fileid);
+									cb.setCallbackParameter(uniqid);
 									cb.dispatch();
 								}
 							</script>
@@ -499,7 +508,7 @@ oJobsToRestoreList.init();
 										CellPadding="2px"
 										CssClass="file-browser-detail"
 										ItemStyle.CssClass="file-browser-element"
-										DataKeyField="fileid"
+										DataKeyField="uniqid"
 									>
 									<prop:EmptyTemplate>
 										<div class="file-browser-watermark">
@@ -514,11 +523,11 @@ oJobsToRestoreList.init();
 														<%=$this->getParent()->Data['name']%>
 													</span>
 													<span class="w3-third">
-														MTIME:<%=date("Y-m-d H:i:s", $this->getParent()->Data['lstat']['mtime'])%>
+														MTIME:<%=is_array($this->getParent()->Data['lstat']) ? date("Y-m-d H:i:s", $this->getParent()->Data['lstat']['mtime']) : '-'%>
 													</span>
 													<span class="w3-third">
-														<%[ Size: ]%><span class="size"><%=$this->getParent()->Data['lstat']['size']%></span>
-														<input type="image" src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/icon_close.png" alt="" class="w3-right" onclick="remove_selected_item('<%=isset($this->getParent()->Data['fileid']) ? $this->getParent()->Data['fileid'] : ''%>'); return false;">
+														<%[ Size: ]%><span class="size"><%=is_array($this->getParent()->Data['lstat']) ? $this->getParent()->Data['lstat']['size'] : '0'%></span>
+														<a href="javascript:void(0)" class="w3-right remove_selected_item" onclick="remove_selected_item('<%=$this->getParent()->Data['uniqid']%>'); return false;"><i class="fa fa-trash-alt item_selected_del_btn"></i></a>
 													</span>
 												</com:TPanel>
 										</prop:ItemTemplate>
@@ -529,19 +538,6 @@ oJobsToRestoreList.init();
 					</td>
 				</tr>
 			</table>
-			<div id="invalid_path_to_restore_modal" class="w3-modal" style="display: none">
-				<div class="w3-modal-content w3-card-4 w3-animate-zoom w3-padding" style="max-width: 600px">
-					<span onclick="document.getElementById('invalid_path_to_restore_modal').style.display='none'" class="w3-button w3-xlarge w3-hover-red w3-display-topright">&times;</span>
-					<h4><%[ Invalid path to restore ]%></h4>
-					<div class="w3-section">
-						<p><%[ Selected directory cannot be restored. Usually it means that the directory path contains in the path defined in FileSet (ex. selected path: /home, in FileSet: File = "/home/john/Documents"). ]%></p>
-						<p><%[ Please select other path which is inside paths defined in FileSet. ]%></p>
-					</div>
-					<div class="w3-center">
-						<button class="w3-button w3-red" type="button" onclick="document.getElementById('invalid_path_to_restore_modal').style.display='none'"><i class="fa fa-times"></i> &nbsp;<%[ OK ]%></button>
-					</div>
-				</div>
-			</div>
 			<script type="text/javascript">
 				function set_browser_sizes() {
 					var win_height = $(window).height();
@@ -561,9 +557,6 @@ oJobsToRestoreList.init();
 					var rb_load = document.getElementById('restore-browser-files-loading');
 					rb_load.style.width = rb_files.offsetWidth + 'px';
 					rb_load.style.height = rb_files.offsetHeight + 'px';
-				}
-				function show_invalid_path_to_restore() {
-					document.getElementById('invalid_path_to_restore_modal').style.display = 'block';
 				}
 				function make_draggable() {
 					$('.draggable').draggable({
@@ -725,7 +718,7 @@ oJobsToRestoreList.init();
 				<com:TPanel Visible="<%=$this->GroupBackupSelection->Checked%>">
 					<div class="w3-section w3-row">
 						<div class="w3-col w3-third"><%[ FileSet for restore: ]%></div>
-						<div class="w3-col w3-third bold"><%=$this->GroupBackupFileSet->SelectedValue%></div>
+						<div class="w3-col w3-third bold"><%=$this->GroupBackupFileSet->SelectedItem->Text%></div>
 					</div>
 				</com:TPanel>
 			</fieldset>

@@ -2134,15 +2134,6 @@ msgstr "Updating..."
 msgid "Slots to update (ex. 4 or 1-5 or 2,4,6-10):"
 msgstr "Slots to update (ex. 4 or 1-5 or 2,4,6-10):"
 
-msgid "Invalid path to restore"
-msgstr "Invalid path to restore"
-
-msgid "Selected directory cannot be restored. Usually it means that the directory path contains in the path defined in FileSet (ex. selected path: /home, in FileSet: File = \"/home/john/Documents\")."
-msgstr "Selected directory cannot be restored. Usually it means that the directory path contains in the path defined in FileSet (ex. selected path: /home, in FileSet: File = \"/home/john/Documents\")."
-
-msgid "Please select other path which is inside paths defined in FileSet."
-msgstr "Please select other path which is inside paths defined in FileSet."
-
 msgid "Command status:"
 msgstr "Command status:"
 
@@ -2313,3 +2304,6 @@ msgstr "Version:"
 
 msgid "Add directive"
 msgstr "Add directive"
+
+msgid "Go to job with jobid %jobid"
+msgstr "Go to job with jobid %jobid"

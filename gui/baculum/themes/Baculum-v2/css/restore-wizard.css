@@ -49,6 +49,10 @@ tr.file-browser-element:hover {
 	color: rgb(185, 184, 184);
 }
 
+a.remove_selected_item {
+	padding-top: 2px;
+}
+
 #backup-to-restore-field > div {
 	height: 467px;
 	overflow-y: auto;
