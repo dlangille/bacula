@@ -31,6 +31,9 @@
 				<span class="w3-tag w3-large w3-purple w3-right w3-padding-small w3-margin-top w3-margin-right">
 					<i class="fa fa-cogs w3-large"></i> <%[ Running jobs: ]%> <span id="running_jobs"></span>
 				</span>
+				<script type="text/javascript">
+					var SIZE_VALUES_UNIT = '<%=(count($this->web_config) > 0 && key_exists('size_values_unit', $this->web_config['baculum'])) ? $this->web_config['baculum']['size_values_unit'] : 'decimal'%>';
+				</script>
 				<com:TContentPlaceHolder ID="Main" />
 				<!-- Footer -->
 				<footer class="w3-container w3-right-align w3-small"><%[ Version: ]%> <%=Params::BACULUM_VERSION%></footer>
@@ -54,7 +57,6 @@
 		</div>
 <script type="text/javascript">
 var is_small = $('#small').is(':visible');
-var SIZE_VALUES_UNIT = '<%=(count($this->web_config) > 0 && key_exists('size_values_unit', $this->web_config['baculum'])) ? $this->web_config['baculum']['size_values_unit'] : 'decimal'%>';
 
 var oMonitor;
 var default_refresh_interval = 60000;
