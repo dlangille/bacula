@@ -230,6 +230,7 @@ class Bconsole extends APIModule {
 
 	private function getCommand($pattern, $sudo, $director, $bconsole_command) {
 		$command = array('cmd' => null, 'out_id' => null);
+		$misc = $this->getModule('misc');
 		if ($pattern === self::BCONSOLE_BG_COMMAND_PATTERN || $pattern === self::BCONSOLE_CONFIRM_YES_BG_COMMAND_PATTERN) {
 			$file = $this->prepareOutputFile();
 			$cmd = sprintf(
@@ -241,7 +242,7 @@ class Bconsole extends APIModule {
 				$director,
 				$file
 			);
-			$command['cmd'] = $cmd;
+			$command['cmd'] = $misc->escapeCharsToConsole($cmd);
 			$command['out_id'] = preg_replace('/^[\s\S]+\/output_/', '', $file);
 		} else {
 			$cmd = sprintf(
@@ -252,7 +253,7 @@ class Bconsole extends APIModule {
 				$director,
 				$bconsole_command
 			);
-			$command['cmd'] = $cmd;
+			$command['cmd'] = $misc->escapeCharsToConsole($cmd);
 			$command['out_id'] = '';
 		}
 		return $command;
@@ -278,6 +279,7 @@ class Bconsole extends APIModule {
 			self::getCmdPath(),
 			self::getCfgPath()
 		);
+		$cmd = $this->getModule('misc')->escapeCharsToConsole($cmd);
 		exec($cmd, $output, $exitcode);
 		if($exitcode != 0) {
 			$emsg = ' Output=>' . implode("\n", $output) . ', Exitcode=>' . $exitcode;

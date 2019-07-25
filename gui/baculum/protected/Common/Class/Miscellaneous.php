@@ -220,7 +220,7 @@ class Miscellaneous extends TModule {
 	}
 
 	public function isValidPath($path) {
-		return (preg_match('/^[\p{L}\p{N}\p{Z}\[\]\(\)\-\+\/\\\:\.#~_,{}!\']{0,10000}$/u', $path) === 1);
+		return (preg_match('/^[\p{L}\p{N}\p{Z}\[\]\-\'\/\\(){}:.#~_,+!$]{0,10000}$/u', $path) === 1);
 	}
 
 	public function isValidReplace($replace) {
@@ -245,6 +245,10 @@ class Miscellaneous extends TModule {
 
 	public function isValidAlphaNumeric($str) {
 		return (preg_match('/^[a-zA-Z0-9]+$/', $str) === 1);
+	}
+
+	public function escapeCharsToConsole($path) {
+		return preg_replace('/([$])/', '\\\${1}', $path);
 	}
 
 
