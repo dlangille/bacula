@@ -8,14 +8,17 @@
 				Width="350px"
 				CausesValidation="false"
 				OnSelectedIndexChanged="selectClient"
+				ClientSide.OnLoading="oFileSetBrowser.show_file_loader(true)"
+				ClientSide.OnComplete="oFileSetBrowser.show_file_loader(false)"
 				>
 			</com:TActiveDropDownList>
 		</div>
 	</div>
 	<p><%[ To browse Windows host please type in text field below drive letter as path, for example: C:/ ]%></p>
 	<div class="w3-section w3-half">
-		<input type="text" id="fileset_browser_path" class="w3-input w3-twothird w3-border" placeholder="<%[ Go to path ]%>" />
+		<input type="text" id="fileset_browser_path" class="w3-input w3-twothird w3-border" placeholder="<%[ Go to path ]%>" onkeypress="var k = event.which || event.keyCode; if (k == 13) { oFileSetBrowser.ls_items(document.getElementById('fileset_browser_path').value); }" />
 		<button type="button" class="w3-button w3-green" onclick="oFileSetBrowser.ls_items(document.getElementById('fileset_browser_path').value);"><i class="fa fa-check"></i> &nbsp;<%[ OK ]%></button>
+		<span id="fileset_browser_file_loader" style="display: none"><i class="fa fa-sync-alt w3-spin"></i></span>
 	</div>
 	<div class="w3-section w3-half">
 		<input type="text" id="fileset_browser_add_include_path" class="w3-input w3-twothird w3-border w3-margin-left" placeholder="<%[ Add new include path ]%>" onkeypress="oFileSetBrowser.add_include_path_by_input(event);" autocomplete="off" />
@@ -28,7 +31,12 @@
 		<button type="button" class="w3-button w3-green" onclick="oFileSetBrowser.add_exclude_path();"><i class="fa fa-plus"></i> &nbsp;<%[ Add ]%></button>
 	</div>
 	<div id="fileset_browser_exclude_container" class="w3-container w3-half w3-border"></div>
-	<com:TCallback ID="FileSetBrowserFiles" OnCallback="TemplateControl.getItems" />
+	<com:TCallback
+		ID="FileSetBrowserFiles"
+		OnCallback="TemplateControl.getItems"
+		ClientSide.OnLoading="oFileSetBrowser.show_file_loader(true)"
+		ClientSide.OnComplete="oFileSetBrowser.show_file_loader(false)"
+	/>
 </div>
 <script type="text/javascript">
 var oFileSetBrowser = {
@@ -42,7 +50,8 @@ var oFileSetBrowser = {
 		exclude_container: 'fileset_browser_exclude_container',
 		path_field: 'fileset_browser_path',
 		add_include_path_field: 'fileset_browser_add_include_path',
-		add_exclude_path_field: 'fileset_browser_add_exclude_path'
+		add_exclude_path_field: 'fileset_browser_add_exclude_path',
+		file_loader: 'fileset_browser_file_loader'
 	},
 	css: {
 		item: 'item',
@@ -60,6 +69,7 @@ var oFileSetBrowser = {
 		this.include_content = document.getElementById(this.ids.include_container);
 		this.exclude_content = document.getElementById(this.ids.exclude_container);
 		this.path_field = document.getElementById(this.ids.path_field);
+		this.file_loader = document.getElementById(this.ids.file_loader);
 		this.make_droppable();
 	},
 	reset: function() {
@@ -125,13 +135,17 @@ var oFileSetBrowser = {
 		});
 	},
 	set_item: function(item) {
-		var pattern = new RegExp('^' + this.get_path() + '/?');
+		var path = this.get_path();
+		var base_path_pattern = new RegExp('^' + this.esc_path_spec_chars(path) + '/?');
+		var win_path_pattern = new RegExp('^[A-Z]:/', 'i');
+		var win_rootpath_pattern = new RegExp('^[A-Z]:/$', 'i');
 		var item_name = item.item;
-		if (item_name.substr(0, 1) !== '/') {
+		if (item_name.substr(0, 1) !== '/' && win_path_pattern.test(item_name) == false) {
 			item_name += '/';
 		}
-		if (item_name !== this.get_path()) {
-			item_name = item.item.replace(pattern, '');
+
+		if (item_name !== path) {
+			item_name = item.item.replace(base_path_pattern, '');
 		} else {
 			item_name = '.';
 		}
@@ -184,7 +198,8 @@ var oFileSetBrowser = {
 		el.appendChild(exclude_btn);
 		el.appendChild(include_btn);
 		this.file_content.appendChild(el);
-		if (item_name === '.' && this.get_path() !== '/') {
+
+		if (item_name === '.' && path !== '/' && win_rootpath_pattern.test(path) == false) {
 			this.set_special_items();
 		}
 	},
@@ -286,6 +301,8 @@ var oFileSetBrowser = {
 		if (path.length === 1) {
 			if (item === '..') {
 				this.path.pop();
+			} else if (/^[A-Z]:$/i.test(path)) {
+				this.path = path;
 			} else {
 				this.path.push(item);
 			}
@@ -296,7 +313,7 @@ var oFileSetBrowser = {
 	},
 	get_path: function() {
 		var path = this.path.join('/');
-		if (!path) {
+		if (!path || /^[A-Z]:$/i.test(path)) {
 			path += '/';
 		}
 		return path;
@@ -330,6 +347,16 @@ var oFileSetBrowser = {
 			el.value = '';
 			el.focus();
 		}
+	},
+	show_file_loader: function(show) {
+		if (show) {
+			this.file_loader.style.display = '';
+		} else {
+			this.file_loader.style.display = 'none';
+		}
+	},
+	esc_path_spec_chars: function(path) {
+		return path.replace('$', '\\$');
 	}
 };
 
