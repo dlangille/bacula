@@ -2307,3 +2307,6 @@ msgstr "Add directive"
 
 msgid "Go to job with jobid %jobid"
 msgstr "Go to job with jobid %jobid"
+
+msgid "Go to job %job"
+msgstr "Go to job %job"

@@ -195,7 +195,16 @@ var oJobsToRestoreList = {
 				},
 				{
 					data: 'jobid',
-					responsivePriority: 1
+					responsivePriority: 1,
+					render: function(data, type, row) {
+						var i = document.createElement('I');
+						i.className = 'fa fa-external-link-alt fa-xs';
+						var a = document.createElement('A');
+						a.href = '/web/job/history/' + data + '/';
+						a.appendChild(i);
+						a.title = '<%[ Go to job with jobid %jobid ]%>'.replace('%jobid', data);
+						return (data + ' ' + a.outerHTML);
+					}
 				},
 				{
 					data: 'name',
@@ -204,9 +213,9 @@ var oJobsToRestoreList = {
 						var i = document.createElement('I');
 						i.className = 'fa fa-external-link-alt fa-xs';
 						var a = document.createElement('A');
-						a.href = '/web/job/history/' + row.jobid + '/';
+						a.href = '/web/job/' + encodeURIComponent(data) + '/';
 						a.appendChild(i);
-						a.title = '<%[ Go to job with jobid %jobid ]%>'.replace('%jobid', row.jobid);
+						a.title = '<%[ Go to job %job ]%>'.replace('%job', data);
 						return (data + ' ' + a.outerHTML);
 					}
 				},

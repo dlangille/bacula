@@ -2228,3 +2228,6 @@ msgstr "Dodaj dyrektywę"
 
 msgid "Go to job with jobid %jobid"
 msgstr "Przejdź do zadania z jobid %jobid"
+
+msgid "Go to job %job"
+msgstr "Przejdź do zadania %job"
