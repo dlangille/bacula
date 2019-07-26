@@ -1,7 +1,7 @@
 {
-	"BaculaVersion": "7.4.1",
-	"BaculaDate": "15 February 2016",
-	"GenerateTime": "2016-08-24 22:02:39",
+	"BaculaVersion": "9.4.4",
+	"BaculaDate": "28 May 2019",
+	"GenerateTime": "2019-08-20 20:28:55",
 	"Description": "",
 	"dir": {
 		"Director": {
@@ -217,12 +217,6 @@
 				"DefaultValue": 0,
 				"FieldType": "TextBox"
 			},
-			"fdaddress": {
-				"Required": false,
-				"ValueType": "str",
-				"DefaultValue": 0,
-				"FieldType": "TextBox"
-			},
 			"Address": {
 				"Required": true,
 				"ValueType": "str",
@@ -234,12 +228,6 @@
 				"ValueType": "pint32",
 				"DefaultValue": 9102,
 				"FieldType": "Integer"
-			},
-			"fdpassword": {
-				"Required": false,
-				"ValueType": "password",
-				"DefaultValue": 0,
-				"FieldType": "Password"
 			},
 			"Password": {
 				"Required": true,
@@ -562,24 +550,6 @@
 				"DefaultValue": 0,
 				"FieldType": "TimePeriod"
 			},
-			"fullmaxwaittime": {
-				"Required": false,
-				"ValueType": "time",
-				"DefaultValue": 0,
-				"FieldType": "TimePeriod"
-			},
-			"incrementalmaxwaittime": {
-				"Required": false,
-				"ValueType": "time",
-				"DefaultValue": 0,
-				"FieldType": "TimePeriod"
-			},
-			"differentialmaxwaittime": {
-				"Required": false,
-				"ValueType": "time",
-				"DefaultValue": 0,
-				"FieldType": "TimePeriod"
-			},
 			"FullMaxRunTime": {
 				"Required": false,
 				"ValueType": "time",
@@ -842,12 +812,6 @@
 				"DefaultValue": 1,
 				"FieldType": "CheckBox"
 			},
-			"allowhigherduplicates": {
-				"Required": false,
-				"ValueType": "bool",
-				"DefaultValue": 1,
-				"FieldType": "CheckBox"
-			},
 			"CancelLowerLevelDuplicates": {
 				"Required": false,
 				"ValueType": "bool",
@@ -899,12 +863,6 @@
 				"DefaultValue": 9103,
 				"FieldType": "Integer"
 			},
-			"sdaddress": {
-				"Required": false,
-				"ValueType": "str",
-				"DefaultValue": 0,
-				"FieldType": "TextBox"
-			},
 			"Address": {
 				"Required": true,
 				"ValueType": "str",
@@ -916,12 +874,6 @@
 				"ValueType": "str",
 				"DefaultValue": 0,
 				"FieldType": "TextBox"
-			},
-			"sdpassword": {
-				"Required": false,
-				"ValueType": "password",
-				"DefaultValue": 0,
-				"FieldType": "Password"
 			},
 			"Password": {
 				"Required": true,
@@ -983,12 +935,6 @@
 				"DefaultValue": 0,
 				"FieldType": "Integer"
 			},
-			"sddport": {
-				"Required": false,
-				"ValueType": "pint32",
-				"DefaultValue": 0,
-				"FieldType": "Integer"
-			},
 			"TlsAuthenticate": {
 				"Required": false,
 				"ValueType": "bool",
@@ -1045,12 +991,6 @@
 				"DefaultValue": 0,
 				"FieldType": "TextBox"
 			},
-			"dbaddress": {
-				"Required": false,
-				"ValueType": "str",
-				"DefaultValue": 0,
-				"FieldType": "TextBox"
-			},
 			"Address": {
 				"Required": false,
 				"ValueType": "str",
@@ -1063,23 +1003,11 @@
 				"DefaultValue": 0,
 				"FieldType": "Integer"
 			},
-			"dbpassword": {
-				"Required": false,
-				"ValueType": "str",
-				"DefaultValue": 0,
-				"FieldType": "Password"
-			},
 			"Password": {
 				"Required": false,
 				"ValueType": "str",
 				"DefaultValue": 0,
 				"FieldType": "Password"
-			},
-			"dbuser": {
-				"Required": false,
-				"ValueType": "str",
-				"DefaultValue": 0,
-				"FieldType": "TextBox"
 			},
 			"User": {
 				"Required": false,
@@ -1134,12 +1062,6 @@
 				"ValueType": "str",
 				"DefaultValue": 0,
 				"FieldType": "TextBox"
-			},
-			"MultipleConnections": {
-				"Required": false,
-				"ValueType": "bit",
-				"DefaultValue": 0,
-				"FieldType": "CheckBox"
 			},
 			"DisableBatchInsert": {
 				"Required": false,
@@ -2047,24 +1969,6 @@
 				"DefaultValue": 0,
 				"FieldType": "TimePeriod"
 			},
-			"fullmaxwaittime": {
-				"Required": false,
-				"ValueType": "time",
-				"DefaultValue": 0,
-				"FieldType": "TimePeriod"
-			},
-			"incrementalmaxwaittime": {
-				"Required": false,
-				"ValueType": "time",
-				"DefaultValue": 0,
-				"FieldType": "TimePeriod"
-			},
-			"differentialmaxwaittime": {
-				"Required": false,
-				"ValueType": "time",
-				"DefaultValue": 0,
-				"FieldType": "TimePeriod"
-			},
 			"FullMaxRunTime": {
 				"Required": false,
 				"ValueType": "time",
@@ -2296,7 +2200,7 @@
 				"DefaultValue": 0,
 				"FieldType": "CheckBox"
 			},
-			"writepartafterjob": {
+			"WritePartAfterJob": {
 				"Required": false,
 				"ValueType": "bool",
 				"DefaultValue": 1,
@@ -2322,12 +2226,6 @@
 				"FieldType": "CheckBox"
 			},
 			"AllowDuplicateJobs": {
-				"Required": false,
-				"ValueType": "bool",
-				"DefaultValue": 1,
-				"FieldType": "CheckBox"
-			},
-			"allowhigherduplicates": {
 				"Required": false,
 				"ValueType": "bool",
 				"DefaultValue": 1,
