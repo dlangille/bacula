@@ -1,24 +1,26 @@
 <?php
-
 /*
- * Small sorting callback function to sort files and directories by name.
- * Function keeps '.' and '..' names always in the beginning of array.
- * Used to sort files and directories from Bvfs.
+ * Bacula(R) - The Network Backup Solution
+ * Baculum   - Bacula web interface
+ *
+ * Copyright (C) 2013-2019 Kern Sibbald
+ *
+ * The main author of Baculum is Marcin Haba.
+ * The original author of Bacula is Kern Sibbald, with contributions
+ * from many others, a complete list can be found in the file AUTHORS.
+ *
+ * You may use this file and others of this release according to the
+ * license defined in the LICENSE file, which includes the Affero General
+ * Public License, v3.0 ("AGPLv3") and some additional permissions and
+ * terms pursuant to its AGPLv3 Section 7.
+ *
+ * This notice must be preserved when any source code is
+ * conveyed and/or propagated.
+ *
+ * Bacula(R) is a registered trademark of Kern Sibbald.
  */
-function sortFilesListByName($a, $b) {
-	$firstLeft = substr($a['name'], 0, 1);
-	$firstRight = substr($b['name'], 0, 1);
-	if ($firstLeft == '.' && $firstRight != '.') {
-		return -1;
-	} else if ($firstRight == '.' && $firstLeft != '.') {
-		return 1;
-	}
-	return strcasecmp($a['name'], $b['name']);
-}
-
+ 
 class Miscellaneous extends TModule {
-
-	const LICENCE_FILE = 'LICENSE';
 
 	const RPATH_PATTERN = '/^b2\d+$/';
 
@@ -97,17 +99,6 @@ class Miscellaneous extends TModule {
 		'ifolder',
 		'never'
 	);
-
-
-	/**
-	 * Getting the licence from file.
-	 * 
-	 * @access public
-	 * @return string licence text
-	 */
-	public function getLicence() {
-		return nl2br(htmlspecialchars(file_get_contents(self::LICENCE_FILE)));
-	}
 
 	public function getJobLevels() {
 		return $this->jobLevels;
@@ -251,87 +242,11 @@ class Miscellaneous extends TModule {
 		return preg_replace('/([$])/', '\\\${1}', $path);
 	}
 
-
-	/**
-	 * Writing INI-style configuration file.
-	 * 
-	 * Functions has been got from StackOverflow.com service (http://stackoverflow.com/questions/4082626/save-ini-file-with-comments).
-	 * 
-	 * @access public
-	 * @param string $file file localization
-	 * @param array $options structure of config file params
-	 * @return mixed if success then returns the number of bytes that were written to the file as the integer type, if failure then returns false
-	 */
-	public function writeINIFile($file, array $options){
-		$tmp = '';
-		foreach($options as $section => $values){
-			$tmp .= "[$section]\n";
-				foreach($values as $key => $val){
-					if(is_array($val)){
-						foreach($val as $k => $v) {
-							$v = $this->escapeINIVal($v);
-							$tmp .= "{$key}[$k] = \"$v\"\n";
-						}
-					} else {
-						$val = $this->escapeINIVal($val);
-						$tmp .= "$key = \"$val\"\n";
-					}
-				}
-			$tmp .= "\n";
-		}
-		$old_umask = umask(0);
-		umask(0077);
-		$result = file_put_contents($file, $tmp);
-		umask($old_umask);
-		return $result;
-	}
-
-	/**
-	 * Escape text written to INI-style file.
-	 *
-	 * @access private
-	 * @param string $value text to escape
-	 * @return string escaped text
-	 */
-	private function escapeINIVal($value) {
-		$esc_value = str_replace('"', '\"', $value);
-		return $esc_value;
-	}
-
-	/**
-	 * Parse INI-style configuration file.
-	 * 
-	 * @access public
-	 * @param string $file file localization
-	 * @return array data of configuration file
-	 */
-	public static function parseINIFile($file) {
-		$content = array();
-		if (file_exists($file)) {
-			$content = parse_ini_file($file, true);
-			if (!is_array($content)) {
-				$content = array();
-			}
-		}
-		return $content;
-	}
-
-
-	/**
-	 * This method is copied from http://stackoverflow.com/questions/4345554/convert-php-object-to-associative-array
-	 */
 	public function objectToArray($data) {
-		if (is_array($data) || is_object($data)) {
-			$result = array();
-			foreach ($data as $key => $value) {
-				$result[$key] = $this->objectToArray($value);
-			}
-			return $result;
-		}
-		return $data;
+		return json_decode(json_encode($data), true);
 	}
 
-	public function decode_bacula_lstat($lstat) {
+	public function decodeBaculaLStat($lstat) {
 		$base64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 		$lstat = trim($lstat);
 		$lstat_fields = explode(' ', $lstat);
@@ -415,7 +330,7 @@ class Miscellaneous extends TModule {
 					'filenameid' => $match['filenameid'],
 					'fileid' => $match['fileid'],
 					'jobid' => $match['jobid'],
-					'lstat' => $this->decode_bacula_lstat($match['lstat']),
+					'lstat' => $this->decodeBaculaLStat($match['lstat']),
 					'name' => $match['name'],
 					'type' => 'dir'
 				);
@@ -428,7 +343,7 @@ class Miscellaneous extends TModule {
 					'filenameid' => $match['filenameid'],
 					'fileid' => $match['fileid'],
 					'jobid' => $match['jobid'],
-					'lstat' => $this->decode_bacula_lstat($match['lstat']),
+					'lstat' => $this->decodeBaculaLStat($match['lstat']),
 					'name' => $match['name'],
 					'type' => 'file'
 				);
@@ -448,7 +363,7 @@ class Miscellaneous extends TModule {
 					'filenameid' => $match['filenameid'],
 					'fileid' => $match['fileid'],
 					'jobid' => $match['jobid'],
-					'lstat' => $this->decode_bacula_lstat($match['lstat']),
+					'lstat' => $this->decodeBaculaLStat($match['lstat']),
 					'md5' => $match['md5'],
 					'volname' => $match['volname'],
 					'inchanger' => $match['inchanger'],
@@ -499,5 +414,21 @@ class Miscellaneous extends TModule {
 		$enc_pwd = crypt($password, base64_encode($password));
 		return $enc_pwd;
 	}
+}
+
+/*
+ * Small sorting callback function to sort files and directories by name.
+ * Function keeps '.' and '..' names always in the beginning of array.
+ * Used to sort files and directories from Bvfs.
+ */
+function sortFilesListByName($a, $b) {
+	$firstLeft = substr($a['name'], 0, 1);
+	$firstRight = substr($b['name'], 0, 1);
+	if ($firstLeft == '.' && $firstRight != '.') {
+		return -1;
+	} else if ($firstRight == '.' && $firstLeft != '.') {
+		return 1;
+	}
+	return strcasecmp($a['name'], $b['name']);
 }
 ?>
