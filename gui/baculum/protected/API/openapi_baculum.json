@@ -224,6 +224,15 @@
 				"schema": {
 					"type": "string"
 				}
+			},
+			"Output": {
+				"name": "output",
+				"in": "query",
+				"description": "Output format",
+				"schema": {
+					"type": "string",
+					"enum": ["raw", "json"]
+				}
 			}
 		}
 	},
@@ -382,10 +391,64 @@
 									"type": "object",
 									"properties": {
 										"output": {
-											"type": "array",
-											"items": {
-												"type": "string",
-												"description": "Show client output"
+											"type": "object",
+											"properties": {
+												"name": {
+													"type": "string",
+													"description": "Client name"
+												},
+												"enabled": {
+													"type": "string",
+													"description": "Enabled state"
+												},
+												"address": {
+													"type": "string",
+													"description": "File Daemon address"
+												},
+												"fdport": {
+													"type": "string",
+													"description": "File Daemon port"
+												},
+												"maxjobs": {
+													"type": "string",
+													"description": "Maximum Concurrent Jobs value for client"
+												},
+												"numjobs": {
+													"type": "string",
+													"description": "Number jobs run on client"
+												},
+												"jobretention": {
+													"type": "string",
+													"description": "Job retention time"
+												},
+												"fileretention": {
+													"type": "string",
+													"description": "File retention time"
+												},
+												"autoprune": {
+													"type": "string",
+													"description": "AutoPrune state"
+												},
+												"dbport": {
+													"type": "string",
+													"description": "Database port"
+												},
+												"db_name": {
+													"type": "string",
+													"description": "Database name"
+												},
+												"db_driver": {
+													"type": "string",
+													"description": "Database driver"
+												},
+												"db_user": {
+													"type": "string",
+													"description": "Database user"
+												},
+												"multidbconn": {
+													"type": "string",
+													"description": "Multiple database connection"
+												}
 											}
 										},
 										"error": {
@@ -399,9 +462,14 @@
 						}
 					}
 				},
-				"parameters": [{
-					"$ref": "#/components/parameters/ClientId"
-				}]
+				"parameters": [
+					{
+						"$ref": "#/components/parameters/ClientId"
+					},
+					{
+						"$ref": "#/components/parameters/Output"
+					}
+				]
 			}
 		},
 		"/api/v1/clients/{clientid}/status": {
@@ -4325,7 +4393,7 @@
 													}
 												},
 												"devices": {
-													"description": "Storage devicesuu",
+													"description": "Storage devices",
 													"type": "array",
 													"items": {
 														"type": "object",
@@ -4625,6 +4693,263 @@
 						"name": "type",
 						"in": "query",
 						"description": "Output type (header, devices, running, terminated)",
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/api/v1/status/client/": {
+			"get": {
+				"tags": ["status"],
+				"summary": "Get client status",
+				"description": "Get client status",
+				"responses": {
+					"200": {
+						"description": "Client status output",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"description": "Client status output",
+											"type": "object",
+											"properties": {
+												"header": {
+													"description": "Status header",
+													"type": "array",
+													"items": {
+														"type": "object",
+														"properties": {
+															"name": {
+																"description": "Client name",
+																"type": "string"
+															},
+															"version": {
+																"description": "Client version",
+																"type": "string"
+															},
+															"uname": {
+																"description": "Client uname",
+																"type": "string"
+															},
+															"started_epoch": {
+																"description": "Started epoch",
+																"type": "string"
+															},
+															"started": {
+																"description": "Started time",
+																"type": "string"
+															},
+															"jobs_run": {
+																"description": "Jobs run",
+																"type": "string"
+															},
+															"jobs_running": {
+																"description": "Jobs running",
+																"type": "string"
+															},
+															"winver": {
+																"description": "Winver",
+																"type": "string"
+															},
+															"debug": {
+																"description": "Debug state",
+																"type": "string"
+															},
+															"trace": {
+																"description": "Trace state",
+																"type": "string"
+															},
+															"bwlimit": {
+																"description": "Bandwidth limit",
+																"type": "string"
+															},
+															"plugins": {
+																"description": "Plugins",
+																"type": "string"
+															}
+														}
+													}
+												},
+												"running": {
+													"description": "Running jobs",
+													"type": "array",
+													"items": {
+														"type": "object",
+														"properties": {
+															"jobid": {
+																"description": "Job identifier",
+																"type": "string"
+															},
+															"job": {
+																"description": "Job uname",
+																"type": "string"
+															},
+															"vss": {
+																"description": "VSS state",
+																"type": "string"
+															},
+															"level": {
+																"description": "Job level",
+																"type": "string"
+															},
+															"type": {
+																"description": "Job type",
+																"type": "string"
+															},
+															"status": {
+																"description": "Job status letter",
+																"type": "string"
+															},
+															"jobbytes": {
+																"description": "jobbytes",
+																"type": "string"
+															},
+															"jobfiles": {
+																"description": "Job files",
+																"type": "string"
+															},
+															"starttime_epoch": {
+																"description": "Start time epoch",
+																"type": "string"
+															},
+															"starttime": {
+																"description": "Start time",
+																"type": "string"
+															},
+															"errors": {
+																"description": "Errors",
+																"type": "string"
+															},
+															"bytes_sec": {
+																"description": "Averate bytes/second",
+																"type": "string"
+															},
+															"readbytes": {
+																"description": "Bytes read",
+																"type": "string"
+															},
+															"files_examined": {
+																"description": "Examined files count",
+																"type": "string"
+															},
+															"processing_file": {
+																"description": "Processing file",
+																"type": "string"
+															},
+															"sdreadseqno": {
+																"description": "SD read seq number",
+																"type": "string"
+															},
+															"fd": {
+																"description": "FD",
+																"type": "string"
+															},
+															"bwlimit": {
+																"description": "Bandwidth limit",
+																"type": "string"
+															},
+															"sdtls": {
+																"description": "SD Tls option",
+																"type": "string"
+															}
+														}
+													}
+												},
+												"terminated": {
+													"description": "Terminated jobs",
+													"type": "array",
+													"items": {
+														"type": "object",
+														"properties": {
+															"jobid": {
+																"description": "Job identifier",
+																"type": "string"
+															},
+															"level": {
+																"description": "Job level",
+																"type": "string"
+															},
+															"type": {
+																"description": "Job type",
+																"type": "string"
+															},
+															"status": {
+																"description": "Job status letter",
+																"type": "string"
+															},
+															"status_desc": {
+																"description": "Status description",
+																"type": "string"
+															},
+															"jobbytes": {
+																"description": "Job bytes",
+																"type": "string"
+															},
+															"jobfiles": {
+																"description": "Job files",
+																"type": "string"
+															},
+															"job": {
+																"description": "Job uname",
+																"type": "string"
+															},
+															"name": {
+																"description": "Job name",
+																"type": "string"
+															},
+															"starttime_epoch": {
+																"description": "Start time epoch",
+																"type": "string"
+															},
+															"starttime": {
+																"description": "Start time",
+																"type": "string"
+															},
+															"endtime_epoch": {
+																"description": "End time epoch",
+																"type": "string"
+															},
+															"endtime": {
+																"description": "End time",
+																"type": "string"
+															},
+															"errors": {
+																"description": "Errors",
+																"type": "string"
+															}
+														}
+													}
+												}
+											}
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 11, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					{
+						"name": "name",
+						"in": "query",
+						"description": "Client name to get status",
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"name": "type",
+						"in": "query",
+						"description": "Output type (header, running, terminated)",
 						"schema": {
 							"type": "string"
 						}
