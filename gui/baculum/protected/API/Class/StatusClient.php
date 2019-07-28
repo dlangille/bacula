@@ -20,25 +20,22 @@
  * Bacula(R) is a registered trademark of Kern Sibbald.
  */
 
-Prado::using('Application.API.Class.Bconsole');
 Prado::using('Application.API.Class.ComponentStatusModule');
 
 /**
- * Module used to parse and prepare director status output.
+ * Module used to get and parse client status output.
  */
-class StatusDirector extends ComponentStatusModule {
+class StatusClient extends ComponentStatusModule {
 
 	/**
 	 * Output types (output sections).
 	 */
 	const OUTPUT_TYPE_HEADER = 'header';
-	const OUTPUT_TYPE_SCHEDULED = 'scheduled';
 	const OUTPUT_TYPE_RUNNING = 'running';
 	const OUTPUT_TYPE_TERMINATED = 'terminated';
 
-
 	/**
-	 * Get parsed director status.
+	 * Get parsed client status.
 	 *
 	 * @param string $director director name
 	 * @param string $component_name component name
@@ -49,18 +46,11 @@ class StatusDirector extends ComponentStatusModule {
 		$ret = array('output' => array(), 'error' => 0);
 		$result = $this->getModule('bconsole')->bconsoleCommand(
 			$director,
-			array('status', 'director'),
+			array('.status', 'client="' . $component_name . '"', $type),
 			Bconsole::PTYPE_API_CMD
 		);
 		if ($result->exitcode === 0) {
 			$ret['output'] = $this->parseStatus($result->output, $type);
-			if (is_string($type) && key_exists($type, $ret['output'])) {
-				if ($type === self::OUTPUT_TYPE_HEADER) {
-					$ret['output'] = array_pop($ret['output'][$type]);
-				} else {
-					$ret['output'] = $ret['output'][$type];
-				}
-			}
 		} else {
 			$ret['output'] = $result->output;
 		}
@@ -69,41 +59,28 @@ class StatusDirector extends ComponentStatusModule {
 	}
 
 	/**
-	 * Parse .api 2 director status output from bconsole.
+	 * Parse .api 2 client status output from bconsole.
 	 *
-	 * @param array $output bconsole status director output
+	 * @param array $output bconsole status client output
 	 * @param string $type output type (e.g. header, running, terminated ...etc.)
-	 * @return array array with parsed director status values
+	 * @return array array with parsed client status values
 	 */
 	public function parseStatus(array $output, $type) {
 		$result = array();
-		$type = null;
 		$line = null;
-		$types = array(
-			self::OUTPUT_TYPE_HEADER . ':',
-			self::OUTPUT_TYPE_RUNNING . ':',
-			self::OUTPUT_TYPE_TERMINATED . ':'
-		);
 		$opts = array();
 		for($i = 0; $i < count($output); $i++) {
-			if (in_array($output[$i], $types)) { // check if type
-				$type = rtrim($output[$i], ':');
-			} elseif ($type === self::OUTPUT_TYPE_HEADER && count($opts) == 0 && $output[$i] === '') {
-				/**
-				 * special treating 'scheduled' type because this type
-				 * is missing in the api status dir output.
-				 */
-				$type = self::OUTPUT_TYPE_SCHEDULED;
-			} elseif (!empty($type)) {
-				$line = $this->parseLine($output[$i]);
-				if (is_array($line)) { // check if line
-					if (!key_exists($type, $result)) {
-						$result[$type] = array();
-					}
-					$opts[$line['key']] = $line['value'];
-				} elseif (count($opts) > 0) { // dump all parameters
-					$result[$type][] = $opts;
+			if (empty($output[$i])) {
+				if  (count($opts) > 10) {
+					$result[] = $opts;
+				}
+				if (count($opts) > 0) {
 					$opts = array();
+				}
+			} else {
+				$line = $this->parseLine($output[$i]);
+				if (is_array($line)) {
+					$opts[$line['key']] = $line['value'];
 				}
 			}
 		}
@@ -124,7 +101,6 @@ class StatusDirector extends ComponentStatusModule {
 			$type,
 			array(
 				self::OUTPUT_TYPE_HEADER,
-				self::OUTPUT_TYPE_SCHEDULED,
 				self::OUTPUT_TYPE_RUNNING,
 				self::OUTPUT_TYPE_TERMINATED
 			)

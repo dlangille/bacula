@@ -38,6 +38,7 @@
 		<!-- component status modules -->
 		<module id="status_dir" class="Application.API.Class.StatusDirector" />
 		<module id="status_sd" class="Application.API.Class.StatusStorage" />
+		<module id="status_fd" class="Application.API.Class.StatusClient" />
 		<!-- misc modules -->
 		<module id="ls" class="Application.API.Class.Ls" />
 	</modules>

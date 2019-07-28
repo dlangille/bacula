@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2018 Kern Sibbald
+ * Copyright (C) 2013-2019 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -29,11 +29,24 @@ Prado::using('Application.API.Class.APIModule');
 abstract class ComponentStatusModule extends APIModule {
 
 	/**
-	 * Method to get parsed status ready to show in API results.
+	 * Get parsed status.
 	 *
-	 * @param array $output array with parsed component status values
+	 * @param string $director director name
+	 * @param string $component_name component name
+	 * @param string $type output type (e.g. header, running, terminated ...etc.)
+	 * @return array ready array parsed component status output
 	 */
-	abstract public function getStatus(array $output);
+	abstract public function getStatus($director, $component_name = null, $type = null);
+
+
+	/**
+	 * Parse component status.
+	 *
+	 * @param array $output component status output from bconsole
+	 * @param string $type output type (e.g. header, running, terminated ...etc.)
+	 * @return array parsed component status output
+	 */
+	abstract public function parseStatus(array $output, $type);
 
 	/**
 	 * Parse single component status line to find key=value pairs.
@@ -48,5 +61,13 @@ abstract class ComponentStatusModule extends APIModule {
 		}
 		return $ret;
 	}
+
+	/**
+	 * Validate status output type.
+	 *
+	 * @param string $type output type (e.g. header, running, terminated ...etc.)
+	 * @return boolean true if output type is valid for component, otherwise false
+	 */
+	abstract public function isValidOutputType($type);
 }
 ?>

@@ -28,52 +28,37 @@ Prado::using('Application.API.Class.Bconsole');
 class ComponentStatus extends BaculumAPIServer {
 
 	public function get() {
-		$status = array();
-		$misc = $this->getModule('misc');
 		$component = $this->Request->contains('component') ? $this->Request['component'] : '';
-		$type = $this->Request->contains('type') && $misc->isValidName($this->Request['type']) ? $this->Request['type'] : '';
-
+		$component_name = $this->Request->contains('name') && $this->getModule('misc')->isValidName($this->Request['name']) ? $this->Request['name'] : null;
+		$type = null;
+		$status = null;
 		switch($component) {
 			case 'director': {
-				$result = $this->getModule('bconsole')->bconsoleCommand(
-					$this->director,
-					array('status', 'director'),
-					Bconsole::PTYPE_API_CMD
-				);
-				if ($result->exitcode === 0) {
-					$output = $this->getModule('status_dir')->getStatus($result->output);
-					if ($misc->isValidName($type) && key_exists($type, $output)) {
-						$this->output = $output[$type];
-					} else {
-						$this->output = $output;
-					}
-				} else {
-					$this->output = $result->output;
-				}
-				$this->error = $result->exitcode;
+				$status = $this->getModule('status_dir');
+				$type = $this->Request->contains('type') && $status->isValidOutputType($this->Request['type']) ? $this->Request['type'] : '';
 				break;
 			}
 			case 'storage': {
-				$storage = 'storage';
-				if (empty($type)) {
-					$type = 'header'; // default list terminated jobs
-				}
-				if ($this->Request->contains('name') && $misc->isValidName($this->Request['name'])) {
-					$storage .= '="' . $this->Request['name'] . '"';
-				}
-				$result = $this->getModule('bconsole')->bconsoleCommand(
-					$this->director,
-					array('.status', $storage, $type),
-					Bconsole::PTYPE_API_CMD
-				);
-				if ($result->exitcode === 0) {
-					$this->output = $this->getModule('status_sd')->getStatus($result->output);
-				} else {
-					$this->output = $result->output;
-				}
-				$this->error = $result->exitcode;
+				$status = $this->getModule('status_sd');
+				$type = $this->Request->contains('type') && $status->isValidOutputType($this->Request['type']) ? $this->Request['type'] : 'header';
 				break;
 			}
+			case 'client':  {
+				$status = $this->getModule('status_fd');
+				$type = $this->Request->contains('type') && $status->isValidOutputType($this->Request['type']) ? $this->Request['type'] : 'header';
+			}
+		}
+		if (is_object($status)) {
+			$ret = $status->getStatus(
+				$this->director,
+				$component_name,
+				$type
+			);
+			$this->output = $ret['output'];
+			$this->error = $ret['error'];
+		} else {
+			$this->output = GenericError::MSG_ERROR_INTERNAL_ERROR;
+			$this->error =  GenericError::ERROR_INTERNAL_ERROR;
 		}
 	}
 }
