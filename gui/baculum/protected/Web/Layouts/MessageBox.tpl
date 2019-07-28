@@ -3,7 +3,7 @@
 	<com:THead Title="Baculum - Bacula Web Interface" ShortcutIcon="<%=$this->getPage()->getTheme()->getBaseUrl()%>/favicon.ico" />
 	<body id="message-body">
 		<com:TForm>
-			<com:BClientScript ScriptUrl=<%~ ../JavaScript/fontawesome-all.js %> />
+			<com:BClientScript ScriptUrl=<%~ ../JavaScript/fontawesome-all.min.js %> />
 			<com:TContentPlaceHolder ID="Message" />
 		</com:TForm>
 	</body>

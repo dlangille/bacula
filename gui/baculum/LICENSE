@@ -870,7 +870,7 @@ THE SOFTWARE.
 Baculum uses Font Awesome Free for icons.
 
 Files:
-  protected/Web/JavaScript/fontawesome-all.js
-  themes/Baculum-v2/css/fa-svg-with-js.css
+  protected/Web/JavaScript/fontawesome-all.min.js
+  themes/Baculum-v2/css/fa-svg-with-js.min.css
 
 License - https://fontawesome.com/license - Icons: CC BY 4.0, Code: MIT License
