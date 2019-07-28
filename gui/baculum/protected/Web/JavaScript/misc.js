@@ -792,11 +792,7 @@ var W3SideBar = {
 	}
 };
 
-W3Tabs = {
-	css: {
-		tab_btn: 'tab_btn',
-		tab_item: 'tab_item'
-	},
+W3TabsCommon = {
 	open: function(btn_id, item_id) {
 		var tab_items = document.getElementsByClassName(this.css.tab_item);
 		for (var i = 0; i < tab_items.length; i++) {
@@ -808,11 +804,34 @@ W3Tabs = {
 		}
 		var tab_btns = document.getElementsByClassName(this.css.tab_btn);
 		for (var i = 0; i < tab_btns.length; i++) {
-			tab_btns[i].className = 'w3-bar-item w3-button ' + this.css.tab_btn;
-			if (tab_btns[i].id === btn_id) {
-				tab_btns[i].className += ' w3-gray';
+			if (tab_btns[i].id === btn_id && !tab_btns[i].classList.contains(this.css.tab_item_hover)) {
+				tab_btns[i].classList.add(this.css.tab_item_hover);
+			} else if (tab_btns[i].classList.contains(this.css.tab_item_hover)) {
+				tab_btns[i].classList.remove(this.css.tab_item_hover);
 			}
 		}
+	}
+};
+
+W3Tabs = {
+	css: {
+		tab_btn: 'tab_btn',
+		tab_item: 'tab_item',
+		tab_item_hover: 'w3-grey'
+	},
+	open: function(btn_id, item_id) {
+		W3TabsCommon.open.call(this, btn_id, item_id);
+	}
+};
+
+W3SubTabs = {
+	css: {
+		tab_btn: 'subtab_btn',
+		tab_item: 'subtab_item',
+		tab_item_hover: 'w3-border-red'
+	},
+	open: function(btn_id, item_id) {
+		W3TabsCommon.open.call(this, btn_id, item_id);
 	}
 }
 

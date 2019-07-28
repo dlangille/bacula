@@ -2231,3 +2231,69 @@ msgstr "Przejdź do zadania z jobid %jobid"
 
 msgid "Go to job %job"
 msgstr "Przejdź do zadania %job"
+
+msgid "Graphical status"
+msgstr "Status graficzny"
+
+msgid "Text status"
+msgstr "Status tekstowy"
+
+msgid "Uname:"
+msgstr "Uname:"
+
+msgid "Started time:"
+msgstr "Czas uruchomienia:"
+
+msgid "Plugins:"
+msgstr "Wtyczki:"
+
+msgid "Bandwidth limit:"
+msgstr "Limit transferu:"
+
+msgid "No limit"
+msgstr "Bez limitu"
+
+msgid "Debug:"
+msgstr "Debug:"
+
+msgid "No debug"
+msgstr "Bez debugu"
+
+msgid "Job bytes:"
+msgstr "Ilość bajtów zadania:"
+
+msgid "Job files:"
+msgstr "Ilość plików zadania:"
+
+msgid "Average speed:"
+msgstr "Średnia prędkość:"
+
+msgid "Processing file:"
+msgstr "Przetwarzany plik:"
+
+msgid "Read bytes:"
+msgstr "Przeczytanych bajtów:"
+
+msgid "Examined files:"
+msgstr "Przeczytanych plików:"
+
+msgid "Running jobs"
+msgstr "Uruchomione zadania"
+
+msgid "Job errors:"
+msgstr "Błędy zadania:"
+
+msgid "Type:"
+msgstr "Typ:"
+
+msgid "Refresh interval (sec.):"
+msgstr "Interwał odświeżania (sek.):"
+
+msgid "To disable refreshing please type 0."
+msgstr "Aby wyłączyć odświeżanie proszę wypisać 0."
+
+msgid "No jobs running"
+msgstr "Nie ma uruchomionych zadań"
+
+msgid "Graphical client status is supported for Bacula clients version 9.0 and greater."
+msgstr "Graficzny status klienta jest wspierany dla klientów Bacula w wersji 9.0 i większych."

@@ -55,7 +55,7 @@ class ClientView extends BaculumWebPage {
 			true
 		);
 		if ($clientshow->error === 0) {
-			$this->ClientLog->Text = implode(PHP_EOL, $clientshow->output);
+			$this->ShowLog->Text = implode(PHP_EOL, $clientshow->output);
 		}
 		$client = $this->getModule('api')->get(
 			array('clients', $clientid)
@@ -109,10 +109,54 @@ class ClientView extends BaculumWebPage {
 	}
 
 	public function status($sender, $param) {
-		$status = $this->getModule('api')->get(
+		$raw_status = $this->getModule('api')->get(
 			array('clients', $this->getClientId(), 'status')
 		)->output;
-		$this->ClientLog->Text = implode(PHP_EOL, $status);
+		$this->ClientLog->Text = implode(PHP_EOL, $raw_status);
+
+		$query_str = '?name=' . rawurlencode($this->getClientName()) . '&type=header';
+		$graph_status = $this->getModule('api')->get(
+			array('status', 'client', $query_str),
+		);
+		$client_status = array(
+			'header' => array(),
+			'running' => array(),
+			'version' => $this->getClientVersion($raw_status)
+		);
+		if ($graph_status->error === 0) {
+			$client_status['header'] = $graph_status->output;
+		}
+
+		$query_str = '?name=' . rawurlencode($this->getClientName()) . '&type=running';
+		$graph_status = $this->getModule('api')->get(
+			array('status', 'client', $query_str),
+		);
+		if ($graph_status->error === 0) {
+			$client_status['running'] = $graph_status->output;
+		}
+
+		$query_str = '?output=json';
+		$show = $this->getModule('api')->get(
+			array('clients', $this->getClientId(), 'show', $query_str),
+		);
+		if ($show->error === 0) {
+			$client_status['show'] = $show->output;
+		}
+
+		$this->getCallbackClient()->callClientFunction('init_graphical_client_status', array($client_status));
+	}
+
+	private function getClientVersion($output) {
+		$version = array('major' => 0, 'minor' => 0, 'release' => 0);
+		for ($i = 0; $i < count($output); $i++) {
+			if (preg_match('/^[\w\d\s:.\-]+Version:\s+(?P<major>\d+)\.(?P<minor>\d+)\.(?P<release>\d+)\s+\(/', $output[$i], $match) === 1) {
+				$version['major'] = intval($match['major']);
+				$version['minor'] = intval($match['minor']);
+				$version['release'] = intval($match['release']);
+				break;
+			}
+		}
+		return $version;
 	}
 }
 ?>

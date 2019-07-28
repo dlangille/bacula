@@ -2310,3 +2310,69 @@ msgstr "Go to job with jobid %jobid"
 
 msgid "Go to job %job"
 msgstr "Go to job %job"
+
+msgid "Graphical status"
+msgstr "Graphical status"
+
+msgid "Text status"
+msgstr "Text status"
+
+msgid "Uname:"
+msgstr "Uname:"
+
+msgid "Started time:"
+msgstr "Started time:"
+
+msgid "Plugins:"
+msgstr "Plugins:"
+
+msgid "Bandwidth limit:"
+msgstr "Bandwidth limit:"
+
+msgid "No limit"
+msgstr "No limit"
+
+msgid "Debug:"
+msgstr "Debug:"
+
+msgid "No debug"
+msgstr "No debug"
+
+msgid "Job bytes:"
+msgstr "Job bytes:"
+
+msgid "Job files:"
+msgstr "Job files:"
+
+msgid "Average speed:"
+msgstr "Average speed:"
+
+msgid "Processing file:"
+msgstr "Processing file:"
+
+msgid "Read bytes:"
+msgstr "Read bytes:"
+
+msgid "Examined files:"
+msgstr "Examined files:"
+
+msgid "Running jobs"
+msgstr "Running jobs"
+
+msgid "Job errors:"
+msgstr "Job errors:"
+
+msgid "Type:"
+msgstr "Type:"
+
+msgid "Refresh interval (sec.):"
+msgstr "Refresh interval (sec.):"
+
+msgid "To disable refreshing please type 0."
+msgstr "To disable refreshing please type 0."
+
+msgid "No jobs running"
+msgstr "No jobs running"
+
+msgid "Graphical client status is supported for Bacula clients version 9.0 and greater."
+msgstr "Graphical client status is supported for Bacula clients version 9.0 and greater."

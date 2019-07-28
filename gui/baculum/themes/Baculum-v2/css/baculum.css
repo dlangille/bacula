@@ -227,3 +227,15 @@ ul.new_element_menu li {
 ul.new_element_menu li a {
 	text-decoration: none;
 }
+
+table.status_table tr {
+	height: 40px;
+}
+
+table.status_table td:nth-of-type(1) {
+	width: 35%;
+}
+
+table.status_table td, table.status_table td svg {
+	vertical-align: middle;
+}

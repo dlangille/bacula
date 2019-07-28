@@ -24,15 +24,389 @@
 			OnClick="status"
 			CssClass="w3-button w3-green w3-margin-bottom"
 			CausesValidation="false"
-			ClientSide.OnLoading="$('#status_storage_loading').show();"
-			ClientSide.OnSuccess="$('#status_storage_loading').hide();"
+			ClientSide.OnLoading="$('#status_client_loading').show();"
+			ClientSide.OnSuccess="$('#status_client_loading').hide();$('#show_client_container').hide();$('#status_client_container').show();oGraphicalClientStatus.set_refresh_timeout(document.getElementById('status_client_refresh_interval').value);"
 		>
 			<prop:Text><%=Prado::localize('Status client')%> &nbsp;<i class="fa fa-file-medical-alt"></i></prop:Text>
 		</com:TActiveLinkButton>
-		<i id="status_storage_loading" class="fa fa-sync w3-spin" style="display: none; vertical-align: super;"></i>
-		<div class="w3-panel w3-card w3-light-grey">
-			<div class="w3-code notranslate">
-				<pre><com:TActiveLabel ID="ClientLog" /></pre>
+		<i id="status_client_loading" class="fa fa-sync w3-spin" style="display: none; vertical-align: super; margin-left: 6px;"></i>
+		<div id="show_client_container">
+			<div id="status_client_text_output" class="w3-code">
+				<pre><com:TActiveLabel ID="ShowLog" /></pre>
+			</div>
+		</div>
+		<div id="status_client_container" style="display: none">
+			<div class="w3-right w3-margin-top w3-margin-right" title="<%[ To disable refreshing please type 0. ]%>">
+				<span style="line-height: 41px"><%[ Refresh interval (sec.): ]%></span> <input type="text" id="status_client_refresh_interval" class="w3-input w3-border w3-right w3-margin-left" value="0" style="width: 50px"/>
+			</div>
+			<div class="w3-panel w3-card w3-light-grey" style="padding-bottom: 16px;">
+				<div class="w3-row">
+					<a href="javascript:void(0)" onclick="W3SubTabs.open('status_client_subtab_graphical', 'status_client_graphical_output');">
+						<div id="status_client_subtab_graphical" class="subtab_btn w3-half w3-bottombar w3-hover-light-grey w3-border-red w3-padding"><%[ Graphical status ]%></div>
+					 </a>
+					<a href="javascript:void(0)" onclick="W3SubTabs.open('status_client_subtab_text', 'status_client_text_output');">
+						<div id="status_client_subtab_text" class="subtab_btn w3-half w3-bottombar w3-hover-light-grey w3-padding"><%[ Text status ]%></div>
+					</a>
+				</div>
+				<div id="status_client_graphical_output" class="subtab_item">
+					<h4 id="status_client_status_not_supported" style="display: none"><%[ Graphical client status is supported for Bacula clients version 9.0 and greater. ]%></h4>
+					<div id="status_client_graphical_container">
+						<table class="w3-table w3-stripped w3-border status_table">
+							<tr>
+								<td><%[ Version: ]%></td>
+								<td id="status_client_version"></td>
+							</tr>
+							<tr>
+								<td><%[ Uname: ]%></td>
+								<td id="status_client_uname"></td>
+							</tr>
+							<tr>
+								<td><%[ Started time: ]%></td>
+								<td id="status_client_started_time"></td>
+							</tr>
+							<tr>
+								<td><%[ Running jobs: ]%></td>
+								<td><span id="status_client_jobs_running"></span> / <span id="status_client_maxjobs"></span></td>
+							</tr>
+							<tr>
+								<td><%[ Enabled: ]%></td>
+								<td id="status_client_enabled"></td>
+							</tr>
+							<tr>
+								<td><%[ Plugins: ]%></td>
+								<td id="status_client_plugins"></td>
+							</tr>
+							<tr>
+								<td><%[ Bandwidth limit: ]%></td>
+								<td id="status_client_bwlimit"></td>
+							</tr>
+							<tr>
+								<td><%[ Debug: ]%></td>
+								<td id="status_client_debug"></td>
+							</tr>
+						</table>
+						<h3><%[ Running jobs ]%></h3>
+						<h5 id="status_client_no_jobs_running" style="display: none"><%[ No jobs running ]%></h5>
+						<div id="status_client_running_jobs"></div>
+					</div>
+<script type="text/javascript">
+var oGraphicalClientStatus = {
+	data: {},
+	refresh_timeout: null,
+	running_jobids: [],
+	ids: {
+		running_jobs: 'status_client_running_jobs',
+		refresh_interval: 'status_client_refresh_interval',
+		no_jobs_running: 'status_client_no_jobs_running',
+		status_not_supported: 'status_client_status_not_supported',
+		graphical_container: 'status_client_graphical_container',
+		header: {
+			version: 'status_client_version',
+			uname: 'status_client_uname',
+			started_epoch: 'status_client_started_time',
+			jobs_run: 'status_client_jobs_running',
+			plugins: 'status_client_plugins',
+			bwlimit: 'status_client_bwlimit',
+			debug: 'status_client_debug'
+		},
+		show: {
+			maxjobs: 'status_client_maxjobs',
+			enabled: 'status_client_enabled'
+		}
+	},
+	formatters: {
+		uname: function(value) {
+			var img = document.createElement('I');
+			img.className = 'fab fa-2x';
+			if (/win\d{2}/i.test(value)) {
+				img.className += ' fa-windows';
+			} else if (/ubuntu/i.test(value)) {
+				img.className += ' fa-ubuntu';
+			} else if (/fedora/i.test(value)) {
+				img.className += ' fa-fedora';
+			} else if (/centos/i.test(value)) {
+				img.className += ' fa-centos';
+			} else if (/redhat/i.test(value)) {
+				img.className += ' fa-redhat';
+			} else if (/suse/i.test(value)) {
+				img.className += ' fa-suse';
+			} else if (/linux/i.test(value)) {
+				img.className += ' fa-linux';
+			} else if (/freebsd/i.test(value)) {
+				img.className += ' fa-freebsd';
+			} else if (/(darwin|mac\s?os)/i.test(value)) {
+				img.className += ' fa-apple';
+			} else {
+				img.className += ' fa-question';
+			}
+			img.style.marginRight = '10px';
+			var el = document.createElement('SPAN');
+			var text = document.createTextNode(value);
+			el.appendChild(img);
+			el.appendChild(text);
+			return el;
+		},
+		started_epoch: function(value) {
+			var t = parseInt(value, 10) * 1000;
+			return (new Date(t)).toLocaleString();
+		},
+		jobs_run: function(value) {
+			return (this.data.hasOwnProperty('running') ? this.data.running.length : 0);
+		},
+		enabled: function(value) {
+			var img = document.createElement('I');
+			img.className = 'fa';
+			if (value == 1) {
+				img.className += ' fa-check w3-text-green';
+			} else {
+				img.className += ' fa-times w3-text-red';
+			}
+			return img;
+		},
+		plugins: function(value) {
+			return (value ? value.replace(/-fd\.so/g, '').replace(/,/g, ', ') : '-');
+		},
+		bwlimit: function(value) {
+			var limit = '<%[ No limit ]%>';
+			var l = parseInt(value, 10);
+			if (l > 0) {
+				var fl = Units.format_speed(l, null, true, true);
+				limit = fl.value.toFixed(2) + ' ' + fl.format;
+			}
+			return limit;
+		},
+		debug: function(value) {
+			var debug = '<%[ No debug ]%>';
+			if (value !== '0') {
+				debug = value;
+			}
+			return debug;
+		}
+	},
+	init: function() {
+		this.set_events();
+	},
+	set_data: function(data) {
+		this.data = data;
+	},
+	set_events: function() {
+		var refresh_interval_el = document.getElementById(this.ids.refresh_interval);
+		refresh_interval_el.addEventListener('keyup', function(e) {
+			var interval = refresh_interval_el.value;
+			this.set_refresh_timeout(interval);
+		}.bind(this));
+	},
+	set_refresh_timeout: function(timeout) {
+		timeout = parseInt(timeout, 10) * 1000;
+		if (isNaN(timeout)) {
+			return;
+		}
+		if (this.refresh_timeout !== null) {
+			clearTimeout(this.refresh_timeout);
+		}
+		if (timeout === 0) {
+			return;
+		}
+		this.refresh_timeout = setTimeout(function() {
+			$('#<%=$this->ClientStatusBtn->ClientID%>').click();
+		}.bind(this), timeout);
+	},
+	update: function(data) {
+		this.set_data(data);
+		if (this.is_status_supported() === false) {
+			return;
+		}
+		var el, val;
+		['header', 'show'].forEach(function(section) {
+			if (!this.data.hasOwnProperty(section)) {
+				return;
+			}
+			for (var key in this.ids[section]) {
+				if (!this.data[section].hasOwnProperty(key)) {
+					continue;
+				}
+				el = document.getElementById(this.ids[section][key]);
+				val = this.formatters.hasOwnProperty(key) ? this.formatters[key].call(this, this.data[section][key]) : this.data[section][key];
+				if (val instanceof HTMLElement) {
+					el.innerHTML = val.outerHTML;
+				} else {
+					el.textContent = val;
+				}
+			}
+		}.bind(this));
+		this.set_jobs_header();
+		if (this.data.hasOwnProperty('running')) {
+			var full_refresh = this.is_full_refresh();
+			if (full_refresh) {
+				// remembered job list empty so job list changed - full refresh list
+				this.remove_elements('running_job_header');
+				this.remove_elements('running_job_table');
+			}
+			this.running_jobids = [];
+			for (var i = 0; i < this.data.running.length; i++) {
+				this.add_running_job(i, this.data.running[i], full_refresh);
+				this.running_jobids.push(this.data.running[i].jobid);
+			}
+		}
+	},
+	add_running_job: function(job_nb, job, full_refresh) {
+		var header = document.createElement('H4');
+		header.className = 'running_job_header';
+		header.textContent = '<%[ Job: ]%> #' + (job_nb+1) + ' ' + job.job;
+
+		var table = document.createElement('TABLE');
+		table.className = 'w3-table w3-stripped w3-border status_table running_job_table';
+		table.setAttribute('rel', job.jobid);
+
+		// JobId
+		var jobid_img = document.createElement('I');
+		jobid_img.className = 'fa fa-external-link-alt fa-xs';
+		var jobid_a = document.createElement('A');
+		jobid_a.href = '/web/job/history/' + job.jobid + '/';
+		jobid_a.appendChild(jobid_img);
+		jobid_a.title = '<%[ Go to job with jobid %jobid ]%>'.replace('%jobid', job.jobid);
+		var jobid = job.jobid + ' ' + jobid_a.outerHTML;
+		this.add_job_row(table, 'JobId', jobid);
+
+		// Type
+		var type = JobType.get_type(job.type);
+		this.add_job_row(table, '<%[ Type: ]%>', type);
+
+		// Level
+		var level = JobLevel.get_level(job.level);
+		this.add_job_row(table, '<%[ Level: ]%>', level);
+
+		// Job bytes
+		var jobbytes = Units.get_formatted_size(job.jobbytes);
+		this.add_job_row(table, '<%[ Job bytes: ]%>', jobbytes);
+
+		// Job files
+		this.add_job_row(table, '<%[ Job files: ]%>', job.jobfiles);
+
+		// Average job speed
+		var ave_speed = Units.format_speed(job.bytes_sec, null, true, true);
+		var ave_job_speed = ave_speed.value.toFixed(2) + ' ' + ave_speed.format;
+		this.add_job_row(table, '<%[ Average speed: ]%>', ave_job_speed);
+
+		// Processing file
+		if (job.hasOwnProperty('processing_file') && job.processing_file) {
+			var processing_file = document.createElement('SPAN');
+			processing_file.title = job.processing_file;
+			if (job.processing_file.length > 60) {
+				processing_file.textContent = job.processing_file.substr(0, 17) + ' (..) ' + job.processing_file.substr(-37);
+			} else {
+				processing_file.textContent = job.processing_file;
+			}
+			this.add_job_row(table, '<%[ Processing file: ]%>', processing_file.outerHTML);
+		}
+
+		// Job errors
+		this.add_job_row(table, '<%[ Job errors: ]%>', job.errors);
+
+		// Read bytes
+		var read_bytes = Units.get_formatted_size(job.readbytes);
+		this.add_job_row(table, '<%[ Read bytes: ]%>', read_bytes);
+
+		// Examined files
+		this.add_job_row(table, '<%[ Examined files: ]%>', job.files_examined);
+
+		// Bandwidth limit
+		var bwlimit = '<%[ No limit ]%>';
+		var l = parseInt(job.bwlimit, 10);
+		if (l > 0) {
+			var fl = Units.format_speed(l, null, true, true);
+			bwlimit = fl.value.toFixed(2) + ' ' + fl.format;
+		}
+		this.add_job_row(table, '<%[ Bandwidth limit: ]%>', bwlimit);
+
+		var running_jobs_el = document.getElementById(this.ids.running_jobs);
+		if (full_refresh) {
+			// job list changed - full refresh
+			running_jobs_el.appendChild(header);
+			running_jobs_el.appendChild(table);
+		} else {
+			var t = running_jobs_el.querySelector('table[rel="' + job.jobid + '"]');
+			running_jobs_el.replaceChild(table, t);
+		}
+	},
+	is_full_refresh: function() {
+		var full_refresh = false;
+		var running_jobids = [];
+		// check if with data came new jobs or disapeared some finished jobs
+		for (var i = 0; i < this.data.running.length; i++) {
+			running_jobids.push(this.data.running[i].jobid);
+			if (this.running_jobids.indexOf(this.data.running[i].jobid) === -1) {
+				full_refresh = true;
+				break;
+			}
+		}
+		if (!full_refresh) {
+			for (var i = 0; i < this.running_jobids.length; i++) {
+				if (running_jobids.indexOf(this.running_jobids[i]) === -1) {
+					full_refresh = true;
+					break;
+				}
+			}
+		}
+		return full_refresh;
+	},
+	remove_elements: function(css_class) {
+		var elements = document.getElementsByClassName(css_class);
+		for (var i = 0; i < elements.length; i++) {
+			while (elements[i].firstChild) {
+				elements[i].removeChild(elements[i].firstChild);
+			}
+		}
+		var els = [].slice.call(elements);
+		var els_len = els.length;
+		for (var i = 0; i < els_len; i++) {
+			els[i].parentNode.removeChild(els[i]);
+		}
+	},
+	add_job_row: function(table, key, value) {
+		var tr = document.createElement('TR');
+		var tdl = document.createElement('TD');
+		var tdr = document.createElement('TD');
+		tdl.textContent = key;
+		tdr.innerHTML = value;
+		tr.appendChild(tdl);
+		tr.appendChild(tdr);
+		table.appendChild(tr);
+	},
+	is_status_supported: function() {
+		var supported = false;
+		var not_supported = document.getElementById(this.ids.status_not_supported);
+		var graphical_container = document.getElementById(this.ids.graphical_container);
+		if (this.data && this.data.hasOwnProperty('version') && this.data.version.hasOwnProperty('major') && this.data.version.major >= 9 && this.data.version.minor >= 0 && this.data.version.release >= 0) {
+			supported = true;
+			not_supported.style.display = 'none';
+			graphical_container.style.display = '';
+		} else if (not_supported.style.display == 'none') {
+			not_supported.style.display = '';
+			graphical_container.style.display = 'none';
+			W3SubTabs.open('status_client_subtab_text', 'status_client_text_output');
+		}
+		return supported;
+	},
+	set_jobs_header: function() {
+		var no_jobs_running = document.getElementById(this.ids.no_jobs_running);
+		if (this.data.hasOwnProperty('running') && this.data.running.length > 0) {
+			no_jobs_running.style.display = 'none';
+		} else {
+			no_jobs_running.style.display = '';
+		}
+	}
+};
+
+function init_graphical_client_status(data) {
+	oGraphicalClientStatus.update(data);
+}
+oGraphicalClientStatus.init();
+</script>
+				</div>
+				<div id="status_client_text_output" class="w3-code subtab_item" style="display: none">
+					<pre><com:TActiveLabel ID="ClientLog" /></pre>
+				</div>
 			</div>
 		</div>
 	</div>
