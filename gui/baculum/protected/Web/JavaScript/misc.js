@@ -442,7 +442,7 @@ var oLastJobsList = {
 				{
 					data: 'level',
 					render: function(data, type, row) {
-						return JobLevel.get_level(data);
+						return (['R', 'D'].indexOf(row.type) === -1 ? JobLevel.get_level(data) : '-');
 					},
 					responsivePriority: 3
 				},

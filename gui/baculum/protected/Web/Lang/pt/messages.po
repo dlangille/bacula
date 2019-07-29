@@ -2305,3 +2305,6 @@ msgstr "No jobs running"
 
 msgid "Graphical client status is supported for Bacula clients version 9.0 and greater."
 msgstr "Graphical client status is supported for Bacula clients version 9.0 and greater."
+
+msgid "Status request timed out. The most probably the Bacula client is not available or it is not running."
+msgstr "Status request timed out. The most probably the Bacula client is not available or it is not running."

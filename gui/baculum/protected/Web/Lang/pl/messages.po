@@ -2297,3 +2297,6 @@ msgstr "Nie ma uruchomionych zadań"
 
 msgid "Graphical client status is supported for Bacula clients version 9.0 and greater."
 msgstr "Graficzny status klienta jest wspierany dla klientów Bacula w wersji 9.0 i większych."
+
+msgid "Status request timed out. The most probably the Bacula client is not available or it is not running."
+msgstr "Upłynął limit czasu żądania statusu. Najprawdopodobniej klient Bacula nie jest dostępny lub nie jest uruchomiony."

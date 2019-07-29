@@ -24,12 +24,13 @@
 			OnClick="status"
 			CssClass="w3-button w3-green w3-margin-bottom"
 			CausesValidation="false"
-			ClientSide.OnLoading="$('#status_client_loading').show();"
+			ClientSide.OnLoading="$('#status_client_loading').show();$('#status_client_error').hide();"
 			ClientSide.OnSuccess="$('#status_client_loading').hide();$('#show_client_container').hide();$('#status_client_container').show();oGraphicalClientStatus.set_refresh_timeout(document.getElementById('status_client_refresh_interval').value);"
+			ClientSide.OnFailure="$('#status_client_loading').hide();status_client_show_error(parameter);"
 		>
 			<prop:Text><%=Prado::localize('Status client')%> &nbsp;<i class="fa fa-file-medical-alt"></i></prop:Text>
 		</com:TActiveLinkButton>
-		<i id="status_client_loading" class="fa fa-sync w3-spin" style="display: none; vertical-align: super; margin-left: 6px;"></i>
+		<i id="status_client_loading" class="fa fa-sync w3-spin" style="display: none; vertical-align: super; margin-left: 6px;"></i> <span id="status_client_error" class="w3-text-red" style="display: none"></span>
 		<div id="show_client_container">
 			<div id="status_client_text_output" class="w3-code">
 				<pre><com:TActiveLabel ID="ShowLog" /></pre>
@@ -137,7 +138,7 @@ var oGraphicalClientStatus = {
 			} else if (/(darwin|mac\s?os)/i.test(value)) {
 				img.className += ' fa-apple';
 			} else {
-				img.className += ' fa-question';
+				img.className = 'fa fa-2x fa-question';
 			}
 			img.style.marginRight = '10px';
 			var el = document.createElement('SPAN');
@@ -273,7 +274,7 @@ var oGraphicalClientStatus = {
 		this.add_job_row(table, '<%[ Type: ]%>', type);
 
 		// Level
-		var level = JobLevel.get_level(job.level);
+		var level = job.type === 'R' ? '-' : JobLevel.get_level(job.level);
 		this.add_job_row(table, '<%[ Level: ]%>', level);
 
 		// Job bytes
@@ -400,6 +401,15 @@ var oGraphicalClientStatus = {
 
 function init_graphical_client_status(data) {
 	oGraphicalClientStatus.update(data);
+}
+function status_client_show_error(error) {
+	var errmsg = error;
+	if (error === 'timeout') {
+		errmsg = '<%[ Status request timed out. The most probably the Bacula client is not available or it is not running. ]%>';
+	}
+	var err_el = document.getElementById('status_client_error');
+	err_el.textContent = errmsg;
+	err_el.style.display = '';
 }
 oGraphicalClientStatus.init();
 </script>
