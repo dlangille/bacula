@@ -3,7 +3,7 @@
 	<!-- Header -->
 	<header class="w3-container">
 		<h5>
-			<strong><i class="fa fa-file-medical-alt"></i> <%[ Statistics details ]%></strong>
+			<strong><i class="fas fa-chart-line"></i> <%[ Statistics details ]%></strong>
 		</h5>
 	</header>
 	<h3 class="w3-margin-left"><%[ Statistics: ]%> <%=$this->getStatisticsName()%></h3>

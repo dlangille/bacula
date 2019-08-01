@@ -3,7 +3,7 @@
 	<!-- Header -->
 	<header class="w3-container">
 		<h5>
-			<strong><i class="fa fa-file-medical-alt"></i> <%[ Statistics list ]%></strong>
+			<strong><i class="fas fa-chart-line"></i> <%[ Statistics list ]%></strong>
 		</h5>
 	</header>
 	<div class="w3-margin-left w3-margin-bottom">
