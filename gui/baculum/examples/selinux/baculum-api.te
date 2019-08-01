@@ -1,6 +1,7 @@
 module baculum-api 1.0.0;
 
 require {
+	type init_t;
 	type postgresql_port_t;
 	type mysqld_port_t;
 	type httpd_t;
@@ -13,11 +14,15 @@ require {
 	type bacula_exec_t;
 	type httpd_sys_rw_content_t;
 	type shadow_t;
+	type systemd_systemctl_exec_t;
+	type systemd_unit_file_t;
 	class tcp_socket { name_bind name_connect };
 	class dir { search read write create };
 	class file { append read write create getattr open execute execute_no_trans };
 	class netlink_audit_socket { write nlmsg_relay create read };
 	class capability { audit_write sys_resource net_admin };
+	class service { start stop };
+	class unix_stream_socket { connectto };
 }
 
 #============= httpd_t ==============
@@ -37,3 +42,6 @@ allow httpd_t self:capability { audit_write sys_resource net_admin };
 allow httpd_t httpd_sys_rw_content_t:dir { read write };
 allow httpd_t httpd_sys_rw_content_t:file { create append };
 allow httpd_t shadow_t:file { open read };
+allow httpd_t systemd_systemctl_exec_t:file { getattr open read execute execute_no_trans };
+allow httpd_t systemd_unit_file_t:service { start stop };
+allow httpd_t init_t:unix_stream_socket connectto;
