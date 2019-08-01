@@ -239,3 +239,15 @@ table.status_table td:nth-of-type(1) {
 table.status_table td, table.status_table td svg {
 	vertical-align: middle;
 }
+
+.fa-ellipsis-v {
+	width: 43px !important;
+	height: 43px;
+	padding: 10px;
+	border-radius: 50%;
+	background-color: transparent;
+}
+
+.fa-ellipsis-v:hover {
+	background-color: #efeff0;
+}

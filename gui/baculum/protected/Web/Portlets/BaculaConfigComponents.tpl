@@ -18,8 +18,9 @@
 							<i class="fa fa-sync w3-spin" style="display: none"><i/>
 						</td>
 						<td class="right" style="width: 20%">
+							<com:Application.Web.Portlets.ComponentActionsMenu ID="CompActions" Visible="<%=$this->CompActions->getComponentType() !== 'bcons'%>" />
 							<a class="w3-button w3-green w3-right button_fixed" href="javascript:void(0)" onmousedown="openElementOnCursor(event, '<%=$this->ResourcesMenu->ClientID%>_new_resource', -80, 20);"><i class="fa fa-plus"></i> &nbsp;<%[ Add ]%></a>
-							<com:Application.Web.Portlets.NewResourceMenu ID="ResourcesMenu" />
+							<com:Application.Web.Portlets.NewResourceMenu ID="ResourcesMenu"/>
 						</td>
 					</tr>
 				</table>

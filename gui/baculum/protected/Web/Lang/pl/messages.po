@@ -2300,3 +2300,24 @@ msgstr "Graficzny status klienta jest wspierany dla klientów Bacula w wersji 9.
 
 msgid "Status request timed out. The most probably the Bacula client is not available or it is not running."
 msgstr "Upłynął limit czasu żądania statusu. Najprawdopodobniej klient Bacula nie jest dostępny lub nie jest uruchomiony."
+
+msgid "Start"
+msgstr "Start"
+
+msgid "Stop"
+msgstr "Stop"
+
+msgid "Restart"
+msgstr "Restart"
+
+msgid "Component action result"
+msgstr "Rezultat akcji na komponencie"
+
+msgid "Component start finished successfully."
+msgstr "Uruchomienie komponentu zakończyło się pomyślnie."
+
+msgid "Component stop finished successfully."
+msgstr "Zatrzymanie komponentu zakończyło się pomyślnie."
+
+msgid "Component restart finished successfully."
+msgstr "Restart komponentu zakończył się pomyślnie."

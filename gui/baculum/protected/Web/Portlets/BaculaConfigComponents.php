@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2017 Kern Sibbald
+ * Copyright (C) 2013-2019 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -31,6 +31,8 @@ class BaculaConfigComponents extends ComponentListTemplate {
 	const CHILD_CONTROL = 'BaculaConfigResources';
 
 	const MENU_CONTROL = 'NewResourceMenu';
+
+	const ACTIONS_CONTROL = 'ComponentActionsMenu';
 
 	private function getConfigData($host) {
 		$params = array('config');
@@ -63,13 +65,16 @@ class BaculaConfigComponents extends ComponentListTemplate {
 	}
 
 	public function createComponentListElement($sender, $param) {
-		$controls = array(self::CHILD_CONTROL, self::MENU_CONTROL);
-		for ($i = 0; $i < count($controls); $i++) {
-			$control = $this->getChildControl($param->Item, $controls[$i]);
-			if (is_object($control)) {
-				$control->setHost($param->Item->Data['host']);
-				$control->setComponentType($param->Item->Data['component_type']);
-				$control->setComponentName($param->Item->Data['component_name']);
+		$conts = array(self::MENU_CONTROL, self::ACTIONS_CONTROL);
+		for ($i = 0; $i < count($conts); $i++) {
+			$controls = array(self::CHILD_CONTROL, $conts[$i]);
+			for ($j = 0; $j < count($controls); $j++) {
+				$control = $this->getChildControl($param->Item, $controls[$j]);
+				if (is_object($control)) {
+					$control->setHost($param->Item->Data['host']);
+					$control->setComponentType($param->Item->Data['component_type']);
+					$control->setComponentName($param->Item->Data['component_name']);
+				}
 			}
 		}
 	}

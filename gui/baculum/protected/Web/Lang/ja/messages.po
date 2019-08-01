@@ -2379,3 +2379,24 @@ msgstr "Graphical client status is supported for Bacula clients version 9.0 and 
 
 msgid "Status request timed out. The most probably the Bacula client is not available or it is not running."
 msgstr "Status request timed out. The most probably the Bacula client is not available or it is not running."
+
+msgid "Start"
+msgstr "Start"
+
+msgid "Stop"
+msgstr "Stop"
+
+msgid "Restart"
+msgstr "Restart"
+
+msgid "Component action result"
+msgstr "Component action result"
+
+msgid "Component start finished successfully."
+msgstr "Component start finished successfully."
+
+msgid "Component stop finished successfully."
+msgstr "Component stop finished successfully."
+
+msgid "Component restart finished successfully."
+msgstr "Component restart finished successfully."
