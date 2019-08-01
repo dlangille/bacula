@@ -139,8 +139,8 @@ abstract class BaculumAPIServer extends TPage {
 		if ($is_auth === false) {
 			// Authorization error.
 			header(OAuth2::HEADER_UNAUTHORIZED);
-			$this->output = AuthorizationError::MSG_ERROR_AUTHORIZATION_TO_API_PROBLEM;
-			$this->error = AuthorizationError::ERROR_AUTHORIZATION_TO_API_PROBLEM;
+			$this->output = AuthorizationError::MSG_ERROR_AUTHENTICATION_TO_API_PROBLEM;
+			$this->error = AuthorizationError::ERROR_AUTHENTICATION_TO_API_PROBLEM;
 			return;
 		}
 		try {

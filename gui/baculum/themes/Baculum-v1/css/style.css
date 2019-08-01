@@ -311,16 +311,39 @@ h4 {
 	width: 590px;
 	float: left;
 }
-
+.actions_lines {
+	width: 743px;
+}
 
 .config_lines div.field {
 	width: 280px !important;
 }
 
-#config_fields {
+.actions_lines div.field {
+	width: 332px !important;
+}
+
+#config_fields, #actions_fields {
 	width: 732px;
 	margin: 0 auto;
 	padding-top: 7px;
+}
+
+#actions_fields {
+	width: 810px;
+}
+
+#actions_fields .button {
+	display: inline-block;
+	width: 50px;
+}
+
+#actions_fields .button input[type="submit"] {
+	min-width: 60px;
+}
+
+#actions_fields .action_test_loader, #actions_fields .action_success, #actions_fields .action_error {
+	margin-left: 11px;
 }
 
 #config_fields div.button {
@@ -331,7 +354,11 @@ fieldset.config_field {
 	width: 667px;
 }
 
-fieldset.config_field .line {
+fieldset.actions_field {
+	width: 745px;
+}
+
+fieldset.config_field .line, fieldset.actions_field .line {
 	height: auto;
 	min-height: 35px !important;
 	padding-top: 2px;

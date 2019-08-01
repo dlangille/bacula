@@ -194,17 +194,11 @@ msgstr "Config API"
 msgid "Error"
 msgstr "Error"
 
-msgid "Authorization"
-msgstr "Authorization"
-
 msgid "Finish"
 msgstr "Finish"
 
 msgid "Do you want to setup and share the Bacula configuration interface to configure Bacula components via this API instance?"
 msgstr "Do you want to setup and share the Bacula configuration interface to configure Bacula components via this API instance?"
-
-msgid "Step 5 - authorization to API"
-msgstr "Step 5 - authorization to API"
 
 msgid "Administration login:"
 msgstr "Administration login:"
@@ -242,17 +236,11 @@ msgstr "Database file path (SQLite only):"
 msgid "Use sudo for bconsole requests:"
 msgstr "Use sudo for bconsole requests:"
 
-msgid "Authorization to Baculum REST API"
-msgstr "Authorization to Baculum REST API"
-
 msgid "Save"
 msgstr "Save"
 
-msgid "Authorization type:"
-msgstr "Authorization type:"
-
-msgid "Step 6 - Finish"
-msgstr "Step 6 - Finish"
+msgid "Step 7 - Finish"
+msgstr "Step 7 - Finish"
 
 msgid "Use sudo for Bacula JSON tools:"
 msgstr "Use sudo for Bacula JSON tools:"
@@ -439,3 +427,87 @@ msgstr "In this directory Baculum API saves temporarily Bacula configuration fil
 
 msgid "Version:"
 msgstr "Version:"
+
+msgid "Authentication"
+msgstr "Authentication"
+
+msgid "Authentication to Baculum REST API"
+msgstr "Authentication to Baculum REST API"
+
+msgid "Authentication type:"
+msgstr "Authentication type:"
+
+msgid "Step 6 - authentication to API"
+msgstr "Step 6 - authentication to API"
+
+msgid "Actions"
+msgstr "Actions"
+
+msgid "Start"
+msgstr "Start"
+
+msgid "Stop"
+msgstr "Stop"
+
+msgid "Restart"
+msgstr "Restart"
+
+msgid "Director start command:"
+msgstr "Director start command:"
+
+msgid "Director stop command:"
+msgstr "Director stop command:"
+
+msgid "Director restart command:"
+msgstr "Director restart command:"
+
+msgid "Storage Daemon start command:"
+msgstr "Storage Daemon start command:"
+
+msgid "Storage Daemon stop command:"
+msgstr "Storage Daemon stop command:"
+
+msgid "Storage Daemon restart command:"
+msgstr "Storage Daemon restart command:"
+
+msgid "File Daemon/Client start command:"
+msgstr "File Daemon/Client start command:"
+
+msgid "File Daemon/Client stop command:"
+msgstr "File Daemon/Client stop command:"
+
+msgid "File Daemon/Client restart command:"
+msgstr "File Daemon/Client restart command:"
+
+msgid "Do you want to setup start, stop and restart actions for Bacula components? If you define them, there will be possible to call these actions via API interface and by Baculum Web as well."
+msgstr "Do you want to setup start, stop and restart actions for Bacula components? If you define them, there will be possible to call these actions via API interface and by Baculum Web as well."
+
+msgid "Sudo configuration"
+msgstr "Sudo configuration"
+
+msgid "Example sudo configuration for Apache web server user (RHEL, CentOS and others):"
+msgstr "Example sudo configuration for Apache web server user (RHEL, CentOS and others):"
+
+msgid "Example sudo configuration for Lighttpd web server user (RHEL, CentOS and others):"
+msgstr "Example sudo configuration for Lighttpd web server user (RHEL, CentOS and others):"
+
+msgid "Example sudo configuration for Apache and Lighttpd web servers user (Debian, Ubuntu and others):"
+msgstr "Example sudo configuration for Apache and Lighttpd web servers user (Debian, Ubuntu and others):"
+
+msgid "Get sudo configuration"
+msgstr "Get sudo configuration"
+
+msgid "Please copy appropriate sudo configuration and put it to a new sudoers.d file for example /etc/sudoers.d/baculum-api"
+msgstr "Please copy appropriate sudo configuration and put it to a new sudoers.d file for example /etc/sudoers.d/baculum-api"
+
+msgid "Step 5 - enable actions for components"
+msgstr "Step 5 - enable actions for components"
+
+msgid "Directory path for new config files:"
+msgstr "Directory path for new config files:"
+
+msgid "Use sudo for actions:"
+msgstr "Use sudo for actions:"
+
+msgid "Actions setting:"
+msgstr "Actions setting:"

@@ -53,6 +53,16 @@ class APIInstallWizard extends BaculumAPIPage {
 	const DEFAULT_FD_CONF = '/etc/bacula/bacula-fd.conf';
 	const DEFAULT_BBCONJSON_BIN = '/usr/sbin/bbconsjson';
 
+	const DEFAULT_ACTION_DIR_START = '/usr/bin/systemctl start bacula-dir';
+	const DEFAULT_ACTION_DIR_STOP = '/usr/bin/systemctl stop bacula-dir';
+	const DEFAULT_ACTION_DIR_RESTART = '/usr/bin/systemctl restart bacula-dir';
+	const DEFAULT_ACTION_SD_START = '/usr/bin/systemctl start bacula-sd';
+	const DEFAULT_ACTION_SD_STOP = '/usr/bin/systemctl stop bacula-sd';
+	const DEFAULT_ACTION_SD_RESTART = '/usr/bin/systemctl restart bacula-sd';
+	const DEFAULT_ACTION_FD_START = '/usr/bin/systemctl start bacula-fd';
+	const DEFAULT_ACTION_FD_STOP = '/usr/bin/systemctl stop bacula-fd';
+	const DEFAULT_ACTION_FD_RESTART = '/usr/bin/systemctl restart bacula-fd';
+
 	public function onPreInit($param) {
 		parent::onPreInit($param);
 		if (isset($_SESSION['language'])) {
@@ -89,9 +99,21 @@ class APIInstallWizard extends BaculumAPIPage {
 				$this->FdCfgPath->Text = self::DEFAULT_FD_CONF;
 				$this->BBconsJSONPath->Text = self::DEFAULT_BBCONJSON_BIN;
 				$this->BconsCfgPath->Text = self::DEFAULT_BCONSOLE_CONF;
+
+				$this->DirStartAction->Text = self::DEFAULT_ACTION_DIR_START;
+				$this->DirStopAction->Text = self::DEFAULT_ACTION_DIR_STOP;
+				$this->DirRestartAction->Text = self::DEFAULT_ACTION_DIR_RESTART;
+				$this->SdStartAction->Text = self::DEFAULT_ACTION_SD_START;
+				$this->SdStopAction->Text = self::DEFAULT_ACTION_SD_STOP;
+				$this->SdRestartAction->Text = self::DEFAULT_ACTION_SD_RESTART;
+				$this->FdStartAction->Text = self::DEFAULT_ACTION_FD_START;
+				$this->FdStopAction->Text = self::DEFAULT_ACTION_FD_STOP;
+				$this->FdRestartAction->Text = self::DEFAULT_ACTION_FD_RESTART;
+
 				$this->DatabaseNo->Checked = true;
 				$this->ConsoleNo->Checked = true;
 				$this->ConfigNo->Checked = true;
+				$this->ActionsNo->Checked = true;
 			} else {
 				// Database param settings
 				if ($this->config['db']['enabled'] == 1) {
@@ -122,8 +144,10 @@ class APIInstallWizard extends BaculumAPIPage {
 				$this->BconsoleConfigPath->Text = $this->config['bconsole']['cfg_path'];
 				$this->UseSudo->Checked = $this->getPage()->config['bconsole']['use_sudo'] == 1;
 
+				$api_config = $this->getModule('api_config');
+
 				// JSONTools param settings
-				if ($this->config['jsontools']['enabled'] == 1) {
+				if ($api_config->isJSONToolsEnabled() === true) {
 					$this->ConfigYes->Checked = true;
 					$this->ConfigNo->Checked = false;
 				} else {
@@ -140,6 +164,41 @@ class APIInstallWizard extends BaculumAPIPage {
 				$this->FdCfgPath->Text = $this->config['jsontools']['fd_cfg_path'];
 				$this->BBconsJSONPath->Text = $this->config['jsontools']['bbconsjson_path'];
 				$this->BconsCfgPath->Text = $this->config['jsontools']['bcons_cfg_path'];
+
+				if ($api_config->isActionsConfigured()) {
+					// Action params
+					if ($api_config->isActionsEnabled() === true) {
+						$this->ActionsYes->Checked = true;
+						$this->ActionsNo->Checked = false;
+					} else {
+						$this->ActionsYes->Checked = false;
+						$this->ActionsNo->Checked = true;
+					}
+
+					$this->ActionsUseSudo->Checked = ($this->config['actions']['use_sudo'] == 1);
+					$this->DirStartAction->Text = $this->config['actions']['dir_start'];
+					$this->DirStopAction->Text = $this->config['actions']['dir_stop'];
+					$this->DirRestartAction->Text = $this->config['actions']['dir_restart'];
+					$this->SdStartAction->Text = $this->config['actions']['sd_start'];
+					$this->SdStopAction->Text = $this->config['actions']['sd_stop'];
+					$this->SdRestartAction->Text = $this->config['actions']['sd_restart'];
+					$this->FdStartAction->Text = $this->config['actions']['fd_start'];
+					$this->FdStopAction->Text = $this->config['actions']['fd_stop'];
+					$this->FdRestartAction->Text = $this->config['actions']['fd_restart'];
+				} else {
+					$this->ActionsYes->Checked = false;
+					$this->ActionsNo->Checked = true;
+					$this->ActionsUseSudo->Checked = false;
+					$this->DirStartAction->Text = self::DEFAULT_ACTION_DIR_START;
+					$this->DirStopAction->Text = self::DEFAULT_ACTION_DIR_STOP;
+					$this->DirRestartAction->Text = self::DEFAULT_ACTION_DIR_RESTART;
+					$this->SdStartAction->Text = self::DEFAULT_ACTION_SD_START;
+					$this->SdStopAction->Text = self::DEFAULT_ACTION_SD_STOP;
+					$this->SdRestartAction->Text = self::DEFAULT_ACTION_SD_RESTART;
+					$this->FdStartAction->Text = self::DEFAULT_ACTION_FD_START;
+					$this->FdStopAction->Text = self::DEFAULT_ACTION_FD_STOP;
+					$this->FdRestartAction->Text = self::DEFAULT_ACTION_FD_RESTART;
+				}
 
 				if ($this->config['api']['auth_type'] === 'basic') {
 					// API basic auth data
@@ -169,7 +228,8 @@ class APIInstallWizard extends BaculumAPIPage {
 			'api' => array(),
 			'db' => array(),
 			'bconsole' => array(),
-			'jsontools' => array()
+			'jsontools' => array(),
+			'actions' => array()
 		);
 		if ($this->AuthBasic->Checked) {
 			$cfg_data['api']['auth_type'] =  'basic';
@@ -201,6 +261,17 @@ class APIInstallWizard extends BaculumAPIPage {
 		$cfg_data['jsontools']['fd_cfg_path'] = $this->FdCfgPath->Text;
 		$cfg_data['jsontools']['bbconsjson_path'] = $this->BBconsJSONPath->Text;
 		$cfg_data['jsontools']['bcons_cfg_path'] = $this->BconsCfgPath->Text;
+		$cfg_data['actions']['enabled'] = (integer)($this->ActionsYes->Checked === true);
+		$cfg_data['actions']['use_sudo'] = (integer)($this->ActionsUseSudo->Checked === true);
+		$cfg_data['actions']['dir_start'] = $this->DirStartAction->Text;
+		$cfg_data['actions']['dir_stop'] = $this->DirStopAction->Text;
+		$cfg_data['actions']['dir_restart'] = $this->DirRestartAction->Text;
+		$cfg_data['actions']['sd_start'] = $this->SdStartAction->Text;
+		$cfg_data['actions']['sd_stop'] = $this->SdStopAction->Text;
+		$cfg_data['actions']['sd_restart'] = $this->SdRestartAction->Text;
+		$cfg_data['actions']['fd_start'] = $this->FdStartAction->Text;
+		$cfg_data['actions']['fd_stop'] = $this->FdStopAction->Text;
+		$cfg_data['actions']['fd_restart'] = $this->FdRestartAction->Text;
 
 		$ret = $this->getModule('api_config')->setConfig($cfg_data);
 		if ($ret) {
@@ -425,6 +496,24 @@ class APIInstallWizard extends BaculumAPIPage {
 			$this->BConfigDirTestErr->Display = 'Dynamic';
 		}
 		$param->setIsValid($valid);
+	}
+
+	public function testExecActionCommand($sender, $param) {
+		$action = $param->CommandParameter;
+		$cmd = '';
+		switch ($action) {
+			case 'dir_start': $cmd = $this->DirStartAction->Text; break;
+			case 'dir_stop': $cmd = $this->DirStopAction->Text; break;
+			case 'dir_restart': $cmd = $this->DirRestartAction->Text; break;
+			case 'sd_start': $cmd = $this->SdStartAction->Text; break;
+			case 'sd_stop': $cmd = $this->SdStopAction->Text; break;
+			case 'sd_restart': $cmd = $this->SdRestartAction->Text; break;
+			case 'fd_start': $cmd = $this->FdStartAction->Text; break;
+			case 'fd_stop': $cmd = $this->FdStopAction->Text; break;
+			case 'fd_restart': $cmd = $this->FdRestartAction->Text; break;
+		};
+		$result = $this->getModule('comp_actions')->execCommand($cmd, $this->ActionsUseSudo->Checked);
+		$this->getCallbackClient()->callClientFunction('set_action_command_output', array($action, (array)$result));
 	}
 }
 ?>

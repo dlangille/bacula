@@ -53,10 +53,10 @@ class BconsoleError extends GenericError {
 
 class AuthorizationError extends GenericError {
 
-	const ERROR_AUTHORIZATION_TO_API_PROBLEM = 6;
+	const ERROR_AUTHENTICATION_TO_API_PROBLEM = 6;
 	const ERROR_ACCESS_ATTEMPT_TO_NOT_ALLOWED_RESOURCE = 7;
 
-	const MSG_ERROR_AUTHORIZATION_TO_API_PROBLEM = 'Problem with authorization to Baculum API.';
+	const MSG_ERROR_AUTHENTICATION_TO_API_PROBLEM = 'Problem with authentication to Baculum API.';
 	const MSG_ERROR_ACCESS_ATTEMPT_TO_NOT_ALLOWED_RESOURCE = 'Access attempt to not allowed resource. Permission denied.';
 }
 
@@ -176,5 +176,19 @@ class ConnectionError extends GenericError {
 	const ERROR_CONNECTION_TO_HOST_PROBLEM = 100;
 
 	const MSG_ERROR_CONNECTION_TO_HOST_PROBLEM = 'Problem with connection to remote host.';
+}
+
+class ActionsError extends GenericError {
+
+	const ERROR_ACTIONS_ACTION_DOES_NOT_EXIST = 110;
+	const ERROR_ACTIONS_DISABLED = 111;
+	const ERROR_ACTIONS_WRONG_EXITCODE = 112;
+	const ERROR_ACTIONS_NOT_CONFIGURED = 113;
+
+
+	const MSG_ERROR_ACTIONS_ACTION_DOES_NOT_EXIST = 'Action does not exist.';
+	const MSG_ERROR_ACTIONS_DISABLED = 'Actions support is disabled.';
+	const MSG_ERROR_ACTIONS_WRONG_EXITCODE = 'Action command returned wrong exitcode.';
+	const MSG_ERROR_ACTIONS_NOT_CONFIGURED = 'Action is not configured.';
 }
 ?>

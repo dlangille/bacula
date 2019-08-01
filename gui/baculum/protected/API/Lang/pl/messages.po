@@ -194,17 +194,11 @@ msgstr "Config API"
 msgid "Error"
 msgstr "Błąd"
 
-msgid "Authorization"
-msgstr "Autoryzacja"
-
 msgid "Finish"
 msgstr "Koniec"
 
 msgid "Do you want to setup and share the Bacula configuration interface to configure Bacula components via this API instance?"
 msgstr "Czy chcesz skonfigurować i udostępnić interfejs konfiguracyjny Bacula do konfiguracji komponentów Bacula poprzez tą instancję API?"
-
-msgid "Step 5 - authorization to API"
-msgstr "Krok 5 - autoryzacja do API"
 
 msgid "Administration login:"
 msgstr "Login administratora:"
@@ -242,17 +236,11 @@ msgstr "Lokalizacja pliku DB (tylko SQLite):"
 msgid "Use sudo for bconsole requests:"
 msgstr "Użyj sudo dla zapytań bconsole:"
 
-msgid "Authorization to Baculum REST API"
-msgstr "Autoryzacja do Baculum REST API"
-
 msgid "Save"
 msgstr "Zapisz"
 
-msgid "Authorization type:"
-msgstr "Typ autoryzacji:"
-
-msgid "Step 6 - Finish"
-msgstr "Krok 6 - Koniec"
+msgid "Step 7 - Finish"
+msgstr "Krok 7 - Koniec"
 
 msgid "Use sudo for Bacula JSON tools:"
 msgstr "Użyj sudo dla narzędzi JSON Bacula."
@@ -439,3 +427,87 @@ msgstr "W tym katalogu Baculum API tymczasowo zapisuje pliki konfiguracyjne Bacu
 
 msgid "Version:"
 msgstr "Wersja:"
+
+msgid "Authentication"
+msgstr "Uwierzytelnianie"
+
+msgid "Authentication to Baculum REST API"
+msgstr "Uwierzytelnianie do Baculum REST API"
+
+msgid "Authentication type:"
+msgstr "Typ uwierzytelniania:"
+
+msgid "Step 6 - authentication to API"
+msgstr "Krok 6 - uwierzytelnianie do API"
+
+msgid "Actions"
+msgstr "Actions"
+
+msgid "Start"
+msgstr "Start"
+
+msgid "Stop"
+msgstr "Stop"
+
+msgid "Restart"
+msgstr "Restart"
+
+msgid "Director start command:"
+msgstr "Komenda uruchomenia Director:"
+
+msgid "Director stop command:"
+msgstr "Komenda zatrzymania Director:"
+
+msgid "Director restart command:"
+msgstr "Komenda restartu Director:"
+
+msgid "Storage Daemon start command:"
+msgstr "Komenda uruchomienia Storage Daemon:"
+
+msgid "Storage Daemon stop command:"
+msgstr "Komenda zatrzymania Storage Daemon:"
+
+msgid "Storage Daemon restart command:"
+msgstr "Komenda restartu Storage Daemon:"
+
+msgid "File Daemon/Client start command:"
+msgstr "Komenda uruchomienia klienta:"
+
+msgid "File Daemon/Client stop command:"
+msgstr "Komenda zatrzymania klienta:"
+
+msgid "File Daemon/Client restart command:"
+msgstr "Komenda restartu klienta:"
+
+msgid "Do you want to setup start, stop and restart actions for Bacula components? If you define them, there will be possible to call these actions via API interface and by Baculum Web as well."
+msgstr "Czy chcesz skonfigurować akcje uruchomienia, zatrzymania i restartu komponentów Bacula? Jeśli zdefiniujesz je, wtedy będzie możliwe wykonywanie tych akcji poprzez interfejs API i również przez Baculum Web."
+
+msgid "Sudo configuration"
+msgstr "Konfiguracja sudo"
+
+msgid "Example sudo configuration for Apache web server user (RHEL, CentOS and others):"
+msgstr "Przykładowa konfiguracja sudo dla użytkownika serwera web Apache (RHEL, CentOS i inne):"
+
+msgid "Example sudo configuration for Lighttpd web server user (RHEL, CentOS and others):"
+msgstr "Przykładowa konfiguracja sudo dla użytkownika serwera web Lighttpd (RHEL, CentOS i inne):"
+
+msgid "Example sudo configuration for Apache and Lighttpd web servers user (Debian, Ubuntu and others):"
+msgstr "Przykładowa konfiguracja sudo dla użytkownika serwerów web Apache i Lighttpd (Debian, Ubuntu i inne):"
+
+msgid "Get sudo configuration"
+msgstr "Weź konfigurację sudo"
+
+msgid "Please copy appropriate sudo configuration and put it to a new sudoers.d file for example /etc/sudoers.d/baculum-api"
+msgstr "Proszę skopiować odpowiednią konfigurację sudo i wpisać ją do nowego pliku sudoers.d na przykład /etc/sudoers.d/baculum-api"
+
+msgid "Step 5 - enable actions for components"
+msgstr "Krok 5 - włącz akcje dla komponentów"
+
+msgid "Directory path for new config files:"
+msgstr "Lokalizacja katalogu na nowe pliki konfiguracyjne:"
+
+msgid "Use sudo for actions:"
+msgstr "Użyj sudo dla akcji:"
+
+msgid "Actions setting:"
+msgstr "Ustawienie akcji:"

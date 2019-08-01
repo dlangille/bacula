@@ -26,9 +26,12 @@
 					<div><com:TTranslate Text="Config API" /></div>
 				</div>
 				<div class="step step-<%=($this->Parent->ActiveStepIndex === 4) ? 'active' : (($this->Parent->ActiveStepIndex === 5) ? 'prev-active' : 'normal')%>">
-					<div><com:TTranslate Text="Authorization" /></div>
+					<div><com:TTranslate Text="Actions" /></div>
 				</div>
-				<div class="step step-<%=($this->Parent->ActiveStepIndex === 5) ? 'last-active' : (($this->Parent->ActiveStepIndex === 6) ? 'last-prev-active' : 'last')%>">
+				<div class="step step-<%=($this->Parent->ActiveStepIndex === 5) ? 'active' : (($this->Parent->ActiveStepIndex === 6) ? 'prev-active' : 'normal')%>">
+					<div><com:TTranslate Text="Authentication" /></div>
+				</div>
+				<div class="step step-<%=($this->Parent->ActiveStepIndex === 6) ? 'last-active' : (($this->Parent->ActiveStepIndex === 7) ? 'last-prev-active' : 'last')%>">
 					<div><com:TTranslate Text="Finish" /></div>
 				</div>
 				<div id="title"><%=$this->Parent->ActiveStep->Title%><div>
@@ -425,7 +428,253 @@
 				</div>
 			</div>
 		</com:TWizardStep>
-		<com:TWizardStep ID="Step5" Title="<%[ Step 5 - authorization to API ]%>" StepType="Auto">
+		<com:TWizardStep ID="Step5" Title="<%[ Step 5 - enable actions for components ]%>" StepType="Auto">
+			<p><%[ Do you want to setup start, stop and restart actions for Bacula components? If you define them, there will be possible to call these actions via API interface and by Baculum Web as well. ]%></p>
+			<div class="line left">
+				<com:TRadioButton ID="ActionsNo" GroupName="SelectActions" Attributes.onclick="$('#configure_actions').hide();" /> <com:TLabel ForControl="ActionsNo" Text="<%[ No ]%>" />
+			</div>
+			<div class="line left">
+				<com:TRadioButton ID="ActionsYes" GroupName="SelectActions" Attributes.onclick="$('#configure_actions').show();" /> <com:TLabel ForControl="ActionsYes" Text="<%[ Yes ]%>" />
+			</div>
+			<div id="configure_actions" style="display: <%=($this->ActionsYes->Checked === true) ? 'block' : 'none';%>">
+				<div id="actions_fields">
+					<fieldset class="actions_field">
+						<legend><%[ General configuration ]%></legend>
+						<div class="actions_lines">
+							<div class="line left">
+								<div class="text"><com:TLabel ForControl="ActionsUseSudo" Text="<%[ Use sudo: ]%>" /></div>
+								<div class="field">
+									<com:TCheckBox ID="ActionsUseSudo" /> <a href="javascript:void(0)" onclick="get_sudo_config();"><%[ Get sudo configuration ]%></a>
+								</div>
+							</div>
+						</div>
+					</fieldset>
+					<fieldset class="actions_field">
+						<legend>Director</legend>
+						<div class="actions_lines">
+							<div class="line left">
+								<div class="text"><com:TLabel ForControl="DirStartAction" Text="<%[ Director start command: ]%>" /></div>
+								<div class="field">
+									<com:TTextBox ID="DirStartAction" CssClass="textbox" />
+								</div>
+								<div class="button">
+									<com:TActiveButton ID="TestDirStartActionCommand" ValidationGroup="ActionsGroup" Text="<%[ Start ]%>" OnCommand="testExecActionCommand" CommandParameter="dir_start">
+										<prop:ClientSide.OnLoading>
+											actions_hide_test_results('<%=$this->TestDirStartActionCommand->CommandParameter%>');
+											$('#actions_test_result_dir_start .action_test_loader').show();
+										</prop:ClientSide.OnLoading>
+										<prop:ClientSide.OnComplete>
+											$('#actions_test_result_dir_start .action_test_loader').hide();
+										</prop:ClientSide.OnComplete>
+									</com:TActiveButton>
+								</div>
+								<span id="actions_test_result_dir_start">
+									<span class="action_test_loader" style="display: none"><img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/ajax-loader.gif" alt="<%[ Loading... ]%>" /></span>
+									<span class="action_success" style="display: none"><img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/icon_ok.png" alt="<%[ OK ]%>" /> <%[ OK ]%></span>
+									<span class="action_error" style="display: none"><img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/icon_err.png" alt="<%[ Error ]%>" /> <%[ Error ]%></span>
+									<span class="action_result validator"></span>
+								</span>
+							</div>
+							<div class="line left">
+								<div class="text"><com:TLabel ForControl="DirStopAction" Text="<%[ Director stop command: ]%>" /></div>
+								<div class="field">
+									<com:TTextBox ID="DirStopAction" CssClass="textbox" />
+								</div>
+								<div class="button">
+									<com:TActiveButton ID="TestDirStopActionCommand" ValidationGroup="ActionsGroup" Text="<%[ Stop ]%>" OnCommand="testExecActionCommand" CommandParameter="dir_stop">
+										<prop:ClientSide.OnLoading>
+											actions_hide_test_results('<%=$this->TestDirStopActionCommand->CommandParameter%>');
+											$('#actions_test_result_dir_stop .action_test_loader').show();
+										</prop:ClientSide.OnLoading>
+										<prop:ClientSide.OnComplete>
+											$('#actions_test_result_dir_stop .action_test_loader').hide();
+										</prop:ClientSide.OnComplete>
+									</com:TActiveButton>
+								</div>
+								<span id="actions_test_result_dir_stop">
+									<span class="action_test_loader" style="display: none"><img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/ajax-loader.gif" alt="<%[ Loading... ]%>" /></span>
+									<span class="action_success" style="display: none"><img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/icon_ok.png" alt="<%[ OK ]%>" /> <%[ OK ]%></span>
+									<span class="action_error" style="display: none"><img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/icon_err.png" alt="<%[ Error ]%>" /> <%[ Error ]%></span>
+									<span class="action_result validator"></span>
+								</span>
+							</div>
+							<div class="line left">
+								<div class="text"><com:TLabel ForControl="DirRestartAction" Text="<%[ Director restart command: ]%>" /></div>
+								<div class="field">
+									<com:TTextBox ID="DirRestartAction" CssClass="textbox" />
+								</div>
+								<div class="button">
+									<com:TActiveButton ID="TestDirRestartActionCommand" ValidationGroup="ActionsGroup" Text="<%[ Restart ]%>" OnCommand="testExecActionCommand" CommandParameter="dir_restart">
+										<prop:ClientSide.OnLoading>
+											actions_hide_test_results('<%=$this->TestDirRestartActionCommand->CommandParameter%>');
+											$('#actions_test_result_dir_restart .action_test_loader').show();
+										</prop:ClientSide.OnLoading>
+										<prop:ClientSide.OnComplete>
+											$('#actions_test_result_dir_restart .action_test_loader').hide();
+										</prop:ClientSide.OnComplete>
+									</com:TActiveButton>
+								</div>
+								<span id="actions_test_result_dir_restart">
+									<span class="action_test_loader" style="display: none"><img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/ajax-loader.gif" alt="<%[ Loading... ]%>" /></span>
+									<span class="action_success" style="display: none"><img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/icon_ok.png" alt="<%[ OK ]%>" /> <%[ OK ]%></span>
+									<span class="action_error" style="display: none"><img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/icon_err.png" alt="<%[ Error ]%>" /> <%[ Error ]%></span>
+									<span class="action_result validator"></span>
+								</span>
+							</div>
+						</div>
+					</fieldset>
+					<fieldset class="actions_field">
+						<legend>Storage Daemon</legend>
+						<div class="actions_lines">
+							<div class="line left">
+								<div class="text"><com:TLabel ForControl="SdStartAction" Text="<%[ Storage Daemon start command: ]%>" /></div>
+								<div class="field">
+									<com:TTextBox ID="SdStartAction" CssClass="textbox" />
+								</div>
+								<div class="button">
+									<com:TActiveButton ID="TestSdStartActionCommand" ValidationGroup="ActionsGroup" Text="<%[ Start ]%>" OnCommand="testExecActionCommand" CommandParameter="sd_start">
+										<prop:ClientSide.OnLoading>
+											actions_hide_test_results('<%=$this->TestSdStartActionCommand->CommandParameter%>');
+											$('#actions_test_result_sd_start .action_test_loader').show();
+										</prop:ClientSide.OnLoading>
+										<prop:ClientSide.OnComplete>
+											$('#actions_test_result_sd_start .action_test_loader').hide();
+										</prop:ClientSide.OnComplete>
+									</com:TActiveButton>
+								</div>
+								<span id="actions_test_result_sd_start">
+									<span class="action_test_loader" style="display: none"><img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/ajax-loader.gif" alt="<%[ Loading... ]%>" /></span>
+									<span class="action_success" style="display: none"><img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/icon_ok.png" alt="<%[ OK ]%>" /> <%[ OK ]%></span>
+									<span class="action_error" style="display: none"><img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/icon_err.png" alt="<%[ Error ]%>" /> <%[ Error ]%></span>
+									<span class="action_result validator"></span>
+								</span>
+							</div>
+							<div class="line left">
+								<div class="text"><com:TLabel ForControl="SdStopAction" Text="<%[ Storage Daemon stop command: ]%>" /></div>
+								<div class="field">
+									<com:TTextBox ID="SdStopAction" CssClass="textbox" />
+								</div>
+								<div class="button">
+									<com:TActiveButton ID="TestSdStopActionCommand" ValidationGroup="ActionsGroup" Text="<%[ Stop ]%>" OnCommand="testExecActionCommand" CommandParameter="sd_stop">
+										<prop:ClientSide.OnLoading>
+											actions_hide_test_results('<%=$this->TestSdStopActionCommand->CommandParameter%>');
+											$('#actions_test_result_sd_stop .action_test_loader').show();
+										</prop:ClientSide.OnLoading>
+										<prop:ClientSide.OnComplete>
+											$('#actions_test_result_sd_stop .action_test_loader').hide();
+										</prop:ClientSide.OnComplete>
+									</com:TActiveButton>
+								</div>
+								<span id="actions_test_result_sd_stop">
+									<span class="action_test_loader" style="display: none"><img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/ajax-loader.gif" alt="<%[ Loading... ]%>" /></span>
+									<span class="action_success" style="display: none"><img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/icon_ok.png" alt="<%[ OK ]%>" /> <%[ OK ]%></span>
+									<span class="action_error" style="display: none"><img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/icon_err.png" alt="<%[ Error ]%>" /> <%[ Error ]%></span>
+									<span class="action_result validator"></span>
+								</span>
+							</div>
+							<div class="line left">
+								<div class="text"><com:TLabel ForControl="SdRestartAction" Text="<%[ Storage Daemon restart command: ]%>" /></div>
+								<div class="field">
+									<com:TTextBox ID="SdRestartAction" CssClass="textbox" />
+								</div>
+								<div class="button">
+									<com:TActiveButton ID="TestSdRestartActionCommand" ValidationGroup="ActionsGroup" Text="<%[ Restart ]%>" OnCommand="testExecActionCommand" CommandParameter="sd_restart">
+										<prop:ClientSide.OnLoading>
+											actions_hide_test_results('<%=$this->TestSdRestartActionCommand->CommandParameter%>');
+											$('#actions_test_result_sd_restart .action_test_loader').show();
+										</prop:ClientSide.OnLoading>
+										<prop:ClientSide.OnComplete>
+											$('#actions_test_result_sd_restart .action_test_loader').hide();
+										</prop:ClientSide.OnComplete>
+									</com:TActiveButton>
+								</div>
+								<span id="actions_test_result_sd_restart">
+									<span class="action_test_loader" style="display: none"><img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/ajax-loader.gif" alt="<%[ Loading... ]%>" /></span>
+									<span class="action_success" style="display: none"><img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/icon_ok.png" alt="<%[ OK ]%>" /> <%[ OK ]%></span>
+									<span class="action_error" style="display: none"><img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/icon_err.png" alt="<%[ Error ]%>" /> <%[ Error ]%></span>
+									<span class="action_result validator"></span>
+								</span>
+							</div>
+						</div>
+					</fieldset>
+					<fieldset class="actions_field">
+						<legend>File Daemon/Client</legend>
+						<div class="actions_lines">
+							<div class="line left">
+								<div class="text"><com:TLabel ForControl="FdStartAction" Text="<%[ File Daemon/Client start command: ]%>" /></div>
+								<div class="field">
+									<com:TTextBox ID="FdStartAction" CssClass="textbox" />
+								</div>
+								<div class="button">
+									<com:TActiveButton ID="TestFdStartActionCommand" ValidationGroup="ActionsGroup" Text="<%[ Start ]%>" OnCommand="testExecActionCommand" CommandParameter="fd_start">
+										<prop:ClientSide.OnLoading>
+											actions_hide_test_results('<%=$this->TestFdStartActionCommand->CommandParameter%>');
+											$('#actions_test_result_fd_start .action_test_loader').show();
+										</prop:ClientSide.OnLoading>
+										<prop:ClientSide.OnComplete>
+											$('#actions_test_result_fd_start .action_test_loader').hide();
+										</prop:ClientSide.OnComplete>
+									</com:TActiveButton>
+								</div>
+								<span id="actions_test_result_fd_start">
+									<span class="action_test_loader" style="display: none"><img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/ajax-loader.gif" alt="<%[ Loading... ]%>" /></span>
+									<span class="action_success" style="display: none"><img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/icon_ok.png" alt="<%[ OK ]%>" /> <%[ OK ]%></span>
+									<span class="action_error" style="display: none"><img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/icon_err.png" alt="<%[ Error ]%>" /> <%[ Error ]%></span>
+									<span class="action_result validator"></span>
+								</span>
+							</div>
+							<div class="line left">
+								<div class="text"><com:TLabel ForControl="FdStopAction" Text="<%[ File Daemon/Client stop command: ]%>" /></div>
+								<div class="field">
+									<com:TTextBox ID="FdStopAction" CssClass="textbox" />
+								</div>
+								<div class="button">
+									<com:TActiveButton ID="TestFdStopActionCommand" ValidationGroup="ActionsGroup" Text="<%[ Stop ]%>" OnCommand="testExecActionCommand" CommandParameter="fd_stop">
+										<prop:ClientSide.OnLoading>
+											actions_hide_test_results('<%=$this->TestFdStopActionCommand->CommandParameter%>');
+											$('#actions_test_result_fd_stop .action_test_loader').show();
+										</prop:ClientSide.OnLoading>
+										<prop:ClientSide.OnComplete>
+											$('#actions_test_result_fd_stop .action_test_loader').hide();
+										</prop:ClientSide.OnComplete>
+									</com:TActiveButton>
+								</div>
+								<span id="actions_test_result_fd_stop">
+									<span class="action_test_loader" style="display: none"><img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/ajax-loader.gif" alt="<%[ Loading... ]%>" /></span>
+									<span class="action_success" style="display: none"><img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/icon_ok.png" alt="<%[ OK ]%>" /> <%[ OK ]%></span>
+									<span class="action_error" style="display: none"><img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/icon_err.png" alt="<%[ Error ]%>" /> <%[ Error ]%></span>
+									<span class="action_result validator"></span>
+								</span>
+							</div>
+							<div class="line left">
+								<div class="text"><com:TLabel ForControl="FdRestartAction" Text="<%[ File Daemon/Client restart command: ]%>" /></div>
+								<div class="field">
+									<com:TTextBox ID="FdRestartAction" CssClass="textbox" />
+								</div>
+								<div class="button">
+									<com:TActiveButton ID="TestFdRestartActionCommand" ValidationGroup="ActionsGroup" Text="<%[ Restart ]%>" OnCommand="testExecActionCommand" CommandParameter="fd_restart">
+										<prop:ClientSide.OnLoading>
+											actions_hide_test_results('<%=$this->TestFdRestartActionCommand->CommandParameter%>');
+											$('#actions_test_result_fd_restart .action_test_loader').show();
+										</prop:ClientSide.OnLoading>
+										<prop:ClientSide.OnComplete>
+											$('#actions_test_result_fd_restart .action_test_loader').hide();
+										</prop:ClientSide.OnComplete>
+									</com:TActiveButton>
+								</div>
+								<span id="actions_test_result_fd_restart">
+									<span class="action_test_loader" style="display: none"><img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/ajax-loader.gif" alt="<%[ Loading... ]%>" /></span>
+									<span class="action_success" style="display: none"><img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/icon_ok.png" alt="<%[ OK ]%>" /> <%[ OK ]%></span>
+									<span class="action_error" style="display: none"><img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/icon_err.png" alt="<%[ Error ]%>" /> <%[ Error ]%></span>
+									<span class="action_result validator"></span>
+								</span>
+							</div>
+						</div>
+					</fieldset>
+				</div>
+			</div>
+		</com:TWizardStep>
+		<com:TWizardStep ID="Step6" Title="<%[ Step 6 - authentication to API ]%>" StepType="Auto">
 			<div class="line left" style="width:500px; margin: 0 auto">
 				<com:TActiveRadioButton
 					ID="AuthOAuth2"
@@ -687,7 +936,7 @@
 				}
 			</script>
 		</com:TWizardStep>
-		<com:TWizardStep ID="Step6" Title="<%[ Step 6 - Finish ]%>" StepType="Finish">
+		<com:TWizardStep ID="Step7" Title="<%[ Step 7 - Finish ]%>" StepType="Finish">
 			<fieldset>
 				<legend><%[ Catalog API ]%></legend>
 				<div style="display: <%=($this->DatabaseYes->Checked ? 'block' : 'none')%>">
@@ -802,9 +1051,60 @@
 				</div>
 			</fieldset>
 			<fieldset>
-				<legend><%[ Authorization to Baculum REST API ]%></legend>
+				<legend><%[ Actions ]%></legend>
+				<div style="display: <%=($this->ActionsYes->Checked ? 'block' : 'none')%>">
+					<div class="line">
+						<div class="text"><%[ Use sudo for actions: ]%></div>
+						<div class="field bold"><%=($this->ActionsUseSudo->Checked === true) ? 'yes' : 'no'%></div>
+					</div>
+					<div class="line">
+						<div class="text"><%[ Director start command: ]%></div>
+						<div class="field bold"><%=$this->DirStartAction->Text%></div>
+					</div>
+					<div class="line">
+						<div class="text"><%[ Director stop command: ]%></div>
+						<div class="field bold"><%=$this->DirStopAction->Text%></div>
+					</div>
+					<div class="line">
+						<div class="text"><%[ Director restart command: ]%></div>
+						<div class="field bold"><%=$this->DirRestartAction->Text%></div>
+					</div>
+					<div class="line">
+						<div class="text"><%[ Storage Daemon start command: ]%></div>
+						<div class="field bold"><%=$this->SdStartAction->Text%></div>
+					</div>
+					<div class="line">
+						<div class="text"><%[ Storage Daemon stop command: ]%></div>
+						<div class="field bold"><%=$this->SdStopAction->Text%></div>
+					</div>
+					<div class="line">
+						<div class="text"><%[ Storage Daemon restart command: ]%></div>
+						<div class="field bold"><%=$this->SdRestartAction->Text%></div>
+					</div>
+					<div class="line">
+						<div class="text"><%[ File Daemon/Client start command: ]%></div>
+						<div class="field bold"><%=$this->FdStartAction->Text%></div>
+					</div>
+					<div class="line">
+						<div class="text"><%[ File Daemon/Client stop command: ]%></div>
+						<div class="field bold"><%=$this->FdStopAction->Text%></div>
+					</div>
+					<div class="line">
+						<div class="text"><%[ File Daemon/Client restart command: ]%></div>
+						<div class="field bold"><%=$this->FdRestartAction->Text%></div>
+					</div>
+				</div>
+				<div style="display: <%=($this->ActionsNo->Checked ? 'block' : 'none')%>">
+					<div class="line">
+						<div class="text"><%[ Actions setting: ]%></div>
+						<div class="field bold"><%[ Disabled ]%></div>
+					</div>
+				</div>
+			</fieldset>
+			<fieldset>
+				<legend><%[ Authentication to Baculum REST API ]%></legend>
 				<div class="line">
-					<div class="text"><%[ Authorization type: ]%></div>
+					<div class="text"><%[ Authentication type: ]%></div>
 					<div class="field bold">
 						<%=$this->AuthBasic->Checked ? 'HTTP Basic' : ''%>
 						<%=$this->AuthOAuth2->Checked ? 'OAuth2' : ''%>
@@ -849,6 +1149,21 @@
 			</fieldset>
 		</com:TWizardStep>
 	</com:TWizard>
+<com:TJuiDialog
+	ID="SudoConfigPopup"
+	Options.title="<%[ Sudo configuration ]%>"
+	Options.autoOpen="false",
+	Options.minWidth="600"
+	Options.minHeight="200"
+>
+	<p><%[ Please copy appropriate sudo configuration and put it to a new sudoers.d file for example /etc/sudoers.d/baculum-api ]%></p>
+	<p><%[ Example sudo configuration for Apache web server user (RHEL, CentOS and others): ]%></p>
+	<pre id="sudo_config_apache"></pre>
+	<p><%[ Example sudo configuration for Lighttpd web server user (RHEL, CentOS and others): ]%></p>
+	<pre id="sudo_config_lighttpd"></pre>
+	<p><%[ Example sudo configuration for Apache and Lighttpd web servers user (Debian, Ubuntu and others): ]%></p>
+	<pre id="sudo_config_www_data"></pre>
+</com:TJuiDialog>
 <script type="text/javascript">
 var bjsontools_fields = {
 	General: {
@@ -931,5 +1246,57 @@ var bjsontools_hide_test_results = function(field_type) {
 		}
 	}
 };
+
+var set_action_command_output = function(action, result) {
+	var result_el = document.querySelector('#actions_test_result_' + action + ' .action_result');
+	if (result.error === 0) {
+		var success = document.querySelector('#actions_test_result_' + action + ' .action_success');
+		success.style.display = '';
+		result_el.textContent = '';
+	} else {
+		var error = document.querySelector('#actions_test_result_' + action + ' .action_error');
+		error.style.display = '';
+		result_el.innerHTML = '<br />' + result.output.join('<br />');
+	}
+};
+
+var actions_hide_test_results = function(action) {
+	var loader = document.querySelector('#actions_test_result_' + action + ' .action_test_loader');
+	var success = document.querySelector('#actions_test_result_' + action + ' .action_success');
+	var error = document.querySelector('#actions_test_result_' + action + ' .action_error');
+	var result = document.querySelector('#actions_test_result_' + action + ' .action_result');
+	loader.style.display = 'none';
+	success.style.display = 'none'
+	error.style.display = 'none';
+	result.textContent = '';
+};
+
+function get_sudo_config() {
+	var fields = [
+		'<%=$this->DirStartAction->ClientID%>',
+		'<%=$this->DirStopAction->ClientID%>',
+		'<%=$this->DirRestartAction->ClientID%>',
+		'<%=$this->SdStartAction->ClientID%>',
+		'<%=$this->SdStopAction->ClientID%>',
+		'<%=$this->SdRestartAction->ClientID%>',
+		'<%=$this->FdStartAction->ClientID%>',
+		'<%=$this->FdStopAction->ClientID%>',
+		'<%=$this->FdRestartAction->ClientID%>'
+	];
+	var val, pre;
+	var cfg = '';
+	var users = ['apache', 'lighttpd', 'www-data'];
+	for (var i = 0; i < users.length; i++) {
+		var pre = document.getElementById('sudo_config_' + users[i].replace(/-/g, '_'));
+		pre.textContent = 'Defaults:' + users[i] + ' !requiretty' + "\n";
+		for (var j = 0; j < fields.length; j++) {
+			val = document.getElementById(fields[j]).value.trim();
+			if (val) {
+				pre.textContent += users[i] + ' ALL = (root) NOPASSWD: ' + val + "\n";
+			}
+		}
+	}
+	$('#<%=$this->SudoConfigPopup->ClientID%>').dialog('open');
+}
 </script>
 </com:TContent>

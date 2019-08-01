@@ -87,10 +87,26 @@ class Miscellaneous extends TModule {
 	private $runningJobStates = array('C', 'R');
 
 	private $components = array(
-		'dir' => array('full_name' => 'Director', 'main_resource' => 'Director'),
-		'sd' => array('full_name' => 'Storage Daemon', 'main_resource' => 'Storage'),
-		'fd' => array('full_name' => 'File Daemon', 'main_resource' => 'FileDaemon'),
-		'bcons' => array('full_name' => 'Console', 'main_resource' => 'Director')
+		'dir' => array(
+			'full_name' => 'Director',
+			'url_name' => 'director',
+			'main_resource' => 'Director'
+		),
+		'sd' => array(
+			'full_name' => 'Storage Daemon',
+			'url_name' => 'storage',
+			'main_resource' => 'Storage'
+		),
+		'fd' => array(
+			'full_name' => 'File Daemon',
+			'url_name' => 'client',
+			'main_resource' => 'FileDaemon'
+		),
+		'bcons' => array(
+			'full_name' => 'Console',
+			'url_name' => 'console',
+			'main_resource' => 'Director'
+		)
 	);
 
 	private $replace_opts = array(
@@ -139,6 +155,14 @@ class Miscellaneous extends TModule {
 		$name = '';
 		if (array_key_exists($type, $this->components)) {
 			$name = $this->components[$type]['full_name'];
+		}
+		return $name;
+	}
+
+	public function getComponentUrlName($type) {
+		$name = '';
+		if (key_exists($type, $this->components)) {
+			$name = $this->components[$type]['url_name'];
 		}
 		return $name;
 	}

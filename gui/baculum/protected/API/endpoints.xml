@@ -91,6 +91,8 @@
 	<url ServiceParameter="API.Config" pattern="api/v1/config/{component_type}/{resource_type}/{resource_name}/" parameters.component_type="[a-z]+" parameters.resource_type="[a-zA-Z]+" parameters.resource_name="[a-zA-Z0-9:.\-_ ]+" />
 	<!-- component status endpoints -->
 	<url ServiceParameter="API.ComponentStatus" pattern="api/v1/status/{component}/" parameters.component="(director|storage|client)" />
+	<!-- actions endpoints -->
+	<url ServiceParameter="API.Actions" pattern="api/v1/actions/{component}/{action}/" parameters.component="(director|storage|client)" parameters.action="(start|stop|restart)" />
 
 
 

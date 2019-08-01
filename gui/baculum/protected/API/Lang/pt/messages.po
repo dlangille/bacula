@@ -194,17 +194,11 @@ msgstr "Configurar"
 msgid "Error"
 msgstr "Erro"
 
-msgid "Authorization"
-msgstr "Autorização"
-
 msgid "Finish"
 msgstr "Finalizar"
 
 msgid "Do you want to setup and share the Bacula configuration interface to configure Bacula components via this API instance?"
 msgstr "Deseja configurar e compartilhar a interface de configuração do Bacula para configurar os recursos através desta instância da API?"
-
-msgid "Step 5 - authorization to API"
-msgstr "Passo 5 - Autorização da API"
 
 msgid "Administration login:"
 msgstr "Usuário administrador:"
@@ -242,17 +236,11 @@ msgstr "Caminho para o banco de dados (SQLite somente):"
 msgid "Use sudo for bconsole requests:"
 msgstr "Utilizar sudo para executar bconsole:"
 
-msgid "Authorization to Baculum REST API"
-msgstr "Autorização para a API REST do Baculum"
-
 msgid "Save"
 msgstr "Salvar"
 
-msgid "Authorization type:"
-msgstr "Tipo de autorização:"
-
-msgid "Step 6 - Finish"
-msgstr "Passo 6 - Finalizar"
+msgid "Step 7 - Finish"
+msgstr "Passo 7 - Finalizar"
 
 msgid "Use sudo for Bacula JSON tools:"
 msgstr "Utilizar o sudo para os utilitários JSON:"
@@ -439,3 +427,87 @@ msgstr "In this directory Baculum API saves temporarily Bacula configuration fil
 
 msgid "Version:"
 msgstr "Version:"
+
+msgid "Authentication"
+msgstr "Authentication"
+
+msgid "Authentication to Baculum REST API"
+msgstr "Authentication to Baculum REST API"
+
+msgid "Authentication type:"
+msgstr "Authentication type:"
+
+msgid "Step 6 - authentication to API"
+msgstr "Step 6 - authentication to API"
+
+msgid "Actions"
+msgstr "Actions"
+
+msgid "Start"
+msgstr "Start"
+
+msgid "Stop"
+msgstr "Stop"
+
+msgid "Restart"
+msgstr "Restart"
+
+msgid "Director start command:"
+msgstr "Director start command:"
+
+msgid "Director stop command:"
+msgstr "Director stop command:"
+
+msgid "Director restart command:"
+msgstr "Director restart command:"
+
+msgid "Storage Daemon start command:"
+msgstr "Storage Daemon start command:"
+
+msgid "Storage Daemon stop command:"
+msgstr "Storage Daemon stop command:"
+
+msgid "Storage Daemon restart command:"
+msgstr "Storage Daemon restart command:"
+
+msgid "File Daemon/Client start command:"
+msgstr "File Daemon/Client start command:"
+
+msgid "File Daemon/Client stop command:"
+msgstr "File Daemon/Client stop command:"
+
+msgid "File Daemon/Client restart command:"
+msgstr "File Daemon/Client restart command:"
+
+msgid "Do you want to setup start, stop and restart actions for Bacula components? If you define them, there will be possible to call these actions via API interface and by Baculum Web as well."
+msgstr "Do you want to setup start, stop and restart actions for Bacula components? If you define them, there will be possible to call these actions via API interface and by Baculum Web as well."
+
+msgid "Sudo configuration"
+msgstr "Sudo configuration"
+
+msgid "Example sudo configuration for Apache web server user (RHEL, CentOS and others):"
+msgstr "Example sudo configuration for Apache web server user (RHEL, CentOS and others):"
+
+msgid "Example sudo configuration for Lighttpd web server user (RHEL, CentOS and others):"
+msgstr "Example sudo configuration for Lighttpd web server user (RHEL, CentOS and others):"
+
+msgid "Example sudo configuration for Apache and Lighttpd web servers user (Debian, Ubuntu and others):"
+msgstr "Example sudo configuration for Apache and Lighttpd web servers user (Debian, Ubuntu and others):"
+
+msgid "Get sudo configuration"
+msgstr "Get sudo configuration"
+
+msgid "Please copy appropriate sudo configuration and put it to a new sudoers.d file for example /etc/sudoers.d/baculum-api"
+msgstr "Please copy appropriate sudo configuration and put it to a new sudoers.d file for example /etc/sudoers.d/baculum-api"
+
+msgid "Step 5 - enable actions for components"
+msgstr "Step 5 - enable actions for components"
+
+msgid "Directory path for new config files:"
+msgstr "Directory path for new config files:"
+
+msgid "Use sudo for actions:"
+msgstr "Use sudo for actions:"
+
+msgid "Actions setting:"
+msgstr "Actions setting:"

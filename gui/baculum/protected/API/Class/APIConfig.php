@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2016 Kern Sibbald
+ * Copyright (C) 2013-2019 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -52,6 +52,19 @@ class APIConfig extends ConfigFileModule {
 	const JSON_TOOL_SD_TYPE = 'sd';
 	const JSON_TOOL_FD_TYPE = 'fd';
 	const JSON_TOOL_BCONS_TYPE = 'bcons';
+
+	/**
+	 * Action types
+	 */
+	const ACTION_DIR_START = 'dir_start';
+	const ACTION_DIR_STOP = 'dir_stop';
+	const ACTION_DIR_RESTART = 'dir_restart';
+	const ACTION_SD_START = 'sd_start';
+	const ACTION_SD_STOP = 'sd_stop';
+	const ACTION_SD_RESTART = 'sd_restart';
+	const ACTION_FD_START = 'fd_start';
+	const ACTION_FD_STOP = 'fd_stop';
+	const ACTION_FD_RESTART = 'fd_restart';
 
 	/**
 	 * These options are obligatory for API config.
@@ -107,18 +120,16 @@ class APIConfig extends ConfigFileModule {
 	 * @return boolean true if config valid, otherwise false
 	 */
 	private function validateConfig(array $config = array()) {
-		$is_valid = $this->isConfigValid($this->required_options, $config, self::CONFIG_FILE_FORMAT, self::CONFIG_FILE_PATH);
-		return $is_valid;
+		return $this->isConfigValid($this->required_options, $config, self::CONFIG_FILE_FORMAT, self::CONFIG_FILE_PATH);
 	}
 
 	private function getJSONToolTypes() {
-		$types = array(
+		return array(
 			self::JSON_TOOL_DIR_TYPE,
 			self::JSON_TOOL_SD_TYPE,
 			self::JSON_TOOL_FD_TYPE,
 			self::JSON_TOOL_BCONS_TYPE
 		);
-		return $types;
 	}
 
 	/**
@@ -267,5 +278,106 @@ class APIConfig extends ConfigFileModule {
 			}
 		}
 		return $tools;
+	}
+
+	/**
+	 * Get action types.
+	 *
+	 * @return array action types
+	 */
+	public function getActionTypes() {
+		return array(
+			self::ACTION_DIR_START,
+			self::ACTION_DIR_STOP,
+			self::ACTION_DIR_RESTART,
+			self::ACTION_SD_START,
+			self::ACTION_SD_STOP,
+			self::ACTION_SD_RESTART,
+			self::ACTION_FD_START,
+			self::ACTION_FD_STOP,
+			self::ACTION_FD_RESTART
+		);
+	}
+
+	/**
+	 * Check if Actions are configured for application.
+	 *
+	 * @return boolean true if Actions are configured, otherwise false
+	 */
+	public function isActionsConfigured() {
+		$config = $this->getConfig();
+		return key_exists('actions', $config);
+	}
+
+	/**
+	 * Check if single action is configured for application.
+	 *
+	 * @return boolean true if single action is configured, otherwise false
+	 */
+	public function isActionConfigured($action_type) {
+		$configured = false;
+		$config = $this->getActionsConfig();
+		return (key_exists($action_type, $config) && !empty($config[$action_type]));
+	}
+
+	/**
+	 * Check if Actions support is enabled.
+	 *
+	 * @return boolean true if Actions support is enabled, otherwise false
+	 */
+	public function isActionsEnabled() {
+		$enabled = false;
+		if ($this->isActionsConfigured() === true) {
+			$config = $this->getConfig();
+			$enabled = ($config['actions']['enabled'] == 1);
+		}
+		return $enabled;
+	}
+
+	/**
+	 * Get Actions config parameters.
+	 *
+	 * @return array Actions config parameters
+	 */
+	public function getActionsConfig() {
+		$cfg = array();
+		if ($this->isActionsConfigured() === true) {
+			$config = $this->getConfig();
+			$cfg = $config['actions'];
+		}
+		return $cfg;
+	}
+
+	/**
+	 * Get single action command and sudo option.
+	 *
+	 * @param string $action_type action type (dir_start, dir_stop ...etc.)
+	 * @return array command and sudo option state
+	 */
+	public function getActionConfig($action_type) {
+		$action = array('cmd' => '', 'use_sudo' => false);
+		$actions = $this->getSupportedActions();
+		$config = $this->getActionsConfig();
+		if (in_array($action_type, $actions) && $this->isActionConfigured($action_type) === true) {
+			$action['cmd'] = $config[$action_type];
+			$action['use_sudo'] = ($config['use_sudo'] == 1);
+		}
+		return $action;
+	}
+
+	/**
+	 * Get supported actions defined in API config.
+	 *
+	 * @return array supported actions
+	 */
+	public function getSupportedActions() {
+		$actions = array();
+		$types = $this->getActionTypes();
+		for ($i = 0; $i < count($types); $i++) {
+			if ($this->isActionConfigured($types[$i]) === true) {
+				array_push($actions, $types[$i]);
+			}
+		}
+		return $actions;
 	}
 }
