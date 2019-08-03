@@ -1,7 +1,7 @@
 <%@ MasterClass="Application.API.Layouts.Main" Theme="Baculum-v1"%>
 <com:TContent ID="Main">
 	<com:BClientScript ScriptUrl=<%~ ../../JavaScript/misc.js %> />
-	<h3 style="clear: left"><%[ Welcome on the Baculum API default page ]%> <input type="button" class="bbutton" onclick="window.location.href='<%=$this->getService()->constructUrl('Panel.APIInstallWizard')%>'" value="<%[ Go to configuration wizard ]%>" style="float: right" /></h3>
+	<h3 style="clear: left"><%[ Welcome on the Baculum API default page ]%> <input type="button" class="bbutton" onclick="window.location.href='<%=$this->getService()->constructUrl('APIInstallWizard')%>'" value="<%[ Go to configuration wizard ]%>" style="float: right" /></h3>
 	<div id="tabs">
 		<ul>
 			<li><a href="#tab1"><%[ Baculum API Client ]%></a></li>
@@ -305,7 +305,7 @@
 					return;
 				}
 				this.set_progress(1, 'Sending auth code request...');
-				var authorization_uri = document.location.origin + '/api/auth';
+				var authorization_uri = document.location.origin + '/oauth/authorize';
 				var auth_params = {
 					response_type: 'code',
 					client_id: this.baculum_auth.client_id,
@@ -329,7 +329,7 @@
 			},
 			send_token_request: function(code) {
 				this.set_progress(2, 'Sending token request...');
-				var uri = document.location.origin + '/api/token';
+				var uri = document.location.origin + '/oauth/token';
 				var auth_params = {
 					grant_type: 'authorization_code',
 					code: code,

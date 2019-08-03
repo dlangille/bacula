@@ -1,0 +1,5 @@
+<urls>
+	<!-- Pages -->
+	<url ServiceParameter="APIInstallWizard" pattern="panel/config/" />
+	<url ServiceParameter="APIHome" pattern="panel/" />
+</urls>

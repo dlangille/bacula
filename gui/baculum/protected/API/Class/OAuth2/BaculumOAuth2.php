@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2017 Kern Sibbald
+ * Copyright (C) 2013-2019 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -101,6 +101,7 @@ class BaculumOAuth2 extends OAuth2 {
 			$error['state'] = $state;
 		}
 
+		header('Content-Type: application/json');
 		header($header);
 		echo json_encode($error);
 		exit();

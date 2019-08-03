@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2018 Kern Sibbald
+ * Copyright (C) 2013-2019 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -50,8 +50,8 @@ class BaculumAPIClient extends WebModule {
 	/**
 	 * OAuth2 authorization endpoints
 	 */
-	const OAUTH2_AUTH_URL = 'api/auth/';
-	const OAUTH2_TOKEN_URL = 'api/token/';
+	const OAUTH2_AUTH_URL = 'oauth/authorize/';
+	const OAUTH2_TOKEN_URL = 'oauth/token/';
 
 	/**
 	 * API server version for current request.

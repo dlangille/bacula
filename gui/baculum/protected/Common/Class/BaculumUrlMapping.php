@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2016 Kern Sibbald
+ * Copyright (C) 2013-2019 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -33,7 +33,17 @@ class BaculumUrlMapping extends TUrlMapping {
 		'api' => array(
 			'url_manager' => 'Application.API.Class.APIUrlMapping',
 			'url_pattern' => '!^(/index\.php)?/api([/,].*)?$!',
-			'endpoints' => 'Application.API.endpoints'
+			'endpoints' => 'Application.API.Pages.API.endpoints'
+		),
+		'oauth' => array(
+			'url_manager' => 'Application.API.Class.OAuthUrlMapping',
+			'url_pattern' => '!^(/index\.php)?/oauth([/,].*)?$!',
+			'endpoints' => 'Application.API.Pages.OAuth2.endpoints'
+		),
+		'panel' => array(
+			'url_manager' => 'Application.API.Class.PanelUrlMapping',
+			'url_pattern' => '!^(/index\.php)?/panel([/,].*)?$!',
+			'endpoints' => 'Application.API.Pages.Panel.endpoints'
 		)
 	);
 

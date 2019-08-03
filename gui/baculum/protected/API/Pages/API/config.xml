@@ -1,9 +1,10 @@
 <configuration>
 	<paths>
-		<using namespace="System.I18N.*" />
 		<using namespace="Application.API.Class.BaculumAPIServer" />
 	</paths>
 	<modules>
+		<!-- auth modules -->
+		<module id="oauth2_token" class="Application.API.Class.OAuth2.TokenManager" />
 		<!-- database modules -->
 		<module id="db" class="Application.API.Class.Database" />
 		<module id="client" class="Application.API.Class.ClientManager" />
@@ -21,20 +22,10 @@
 		<module id="api_config" class="Application.API.Class.APIConfig" />
 		<module id="bacula_config" class="Application.API.Class.BaculaConfig" />
 		<module id="bacula_setting" class="Application.API.Class.BaculaSetting" />
-		<!-- internalization modules -->
-		<module id="globalization" class="TGlobalization">
-			<translation type="gettext" source="Application.API.Lang" marker="@@" autosave="false" cache="false" DefaultCulture="en" />
-		</module>
 		<!-- logging modules -->
 		<module id="log" class="System.Util.TLogRouter">
 			<route class="TFileLogRoute"  Categories="Execute, External, Application, General, Security" LogPath="Application.API.Logs" LogFile="baculum-api.log" MaxFileSize="1000" MaxLogFiles="5" />
 		</module>
-		<!-- auth modules -->
-		<module id="basic_apiuser" class="Application.API.Class.BasicAPIUserConfig" />
-		<module id="oauth2" class="Application.API.Class.OAuth2.BaculumOAuth2" />
-		<module id="oauth2_config" class="Application.API.Class.OAuth2.OAuth2Config" />
-		<module id="oauth2_authid" class="Application.API.Class.OAuth2.AuthIdManager" />
-		<module id="oauth2_token" class="Application.API.Class.OAuth2.TokenManager" />
 		<!-- component status modules -->
 		<module id="status_dir" class="Application.API.Class.StatusDirector" />
 		<module id="status_sd" class="Application.API.Class.StatusStorage" />

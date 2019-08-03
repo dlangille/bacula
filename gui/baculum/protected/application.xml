@@ -17,7 +17,10 @@
 		<module id="url_manager" class="Application.Common.Class.BaculumUrlMapping" EnableCustomUrl="true" />
 	</modules>
 	<services>
-		<service id="api" class="TPageService" BasePath="Application.API.Pages" DefaultPage="Panel.MainPage" />
+		<service id="page" class="TPageService" BasePath="Application.Common.Pages" DefaultPage="CommonPage" />
+		<service id="oauth" class="TPageService" BasePath="Application.API.Pages.OAuth2" DefaultPage="Authorize" />
+		<service id="api" class="TPageService" BasePath="Application.API.Pages.API" DefaultPage="Welcome" />
+		<service id="panel" class="TPageService" BasePath="Application.API.Pages.Panel" DefaultPage="APIHome" />
 		<service id="web" class="TPageService" BasePath="Application.Web.Pages" DefaultPage="Dashboard" />
 	</services>
 </application>
