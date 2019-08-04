@@ -34,7 +34,7 @@ class JobRunscriptRenderer extends DirectiveRenderer {
 
 	public function render($writer) {
 		if (self::$index % 7 === 0) {
-			$writer->write('<h3 class="options">Runscript #' . ((self::$index/7) + 1) . '</h3><hr />');
+			$writer->write('<h3 class="runscript_options">Runscript #' . ((self::$index/7) + 1) . '</h3><hr />');
 		}
 		self::$index++;
 
