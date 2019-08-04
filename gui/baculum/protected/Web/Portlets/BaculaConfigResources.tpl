@@ -37,7 +37,6 @@
 							Attributes.onclick="return BaculaConfig.unset_config_items(this.id);"
 							Text="<strong><%=$this->Data['resource_type']%></strong>: <%=$this->Data['resource_name']%>"
 							Style="text-decoration: none"
-							CommandParameter="show"
 						/>
 							<i class="fa fa-sync w3-spin" style="display: none"><i/>
 						</td>

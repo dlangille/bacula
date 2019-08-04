@@ -66,9 +66,22 @@ class DirectiveRenderer extends DirectiveListTemplate implements IDataRenderer {
 
 	public $resource_names = array();
 
+	private $item_loaded = false;
+
 	public function onLoad($param) {
 		parent::onLoad($param);
-		$this->createItemInternal();
+		if (!$this->item_loaded) {
+			$this->createItemInternal();
+			$this->item_loaded = true;
+		}
+	}
+
+	public function dataBind() {
+		if (!$this->item_loaded) {
+			$this->createItemInternal();
+			$this->item_loaded = true;
+		}
+		parent::dataBind();
 	}
 
 	public function createItemInternal() {
@@ -76,11 +89,12 @@ class DirectiveRenderer extends DirectiveListTemplate implements IDataRenderer {
 		$item = $this->createItem($data);
 
 		$this->addParsedObject($item);
+		$cmd = $item->getCmdParam();
 
 		if ($item instanceof DirectiveTemplate) {
 			$item->createDirective();
-		} elseif ($item instanceof DirectiveListTemplate) {
-			$item->loadConfig(null, null);
+		} elseif ($item instanceof DirectiveListTemplate && $cmd === '') {
+			$item->loadConfig();
 		}
 	}
 

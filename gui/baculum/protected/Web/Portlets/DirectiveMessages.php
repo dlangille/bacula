@@ -64,7 +64,7 @@ class DirectiveMessages extends DirectiveListTemplate {
 		'Volmgmt'
 	);
 
-	public function loadConfig($sender, $param) {
+	public function loadConfig() {
 		$load_values = $this->getLoadValues();
 		$destinations = (array)$this->getData();
 		if (array_key_exists('Type', $destinations)) {

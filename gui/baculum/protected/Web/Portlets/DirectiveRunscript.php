@@ -33,7 +33,7 @@ class DirectiveRunscript extends DirectiveListTemplate {
 		'DirectiveComboBox'
 	);
 
-	public function loadConfig($sender, $param) {
+	public function loadConfig() {
 		$load_values = $this->getLoadValues();
 		$host = $this->getHost();
 		$component_type = $this->getComponentType();

@@ -5,7 +5,7 @@
 			ID="RunscriptItem"
 			OnCommand="Parent.SourceTemplateControl.newScheduleDirective"
 			CommandParameter="save"
-			ClientSide.OnComplete="var el = $('#<%=$this->RunscriptItem->ClientID%>').parents('div').find('h2'); BaculaConfig.scroll_to_element(el[el.length-1]);"
+			ClientSide.OnComplete="var el = $('#<%=$this->RunscriptItem->ClientID%>').parents('div').find('h2.schedule_options'); BaculaConfig.scroll_to_element(el[el.length-1], -100);"
 			Text="Run"
 			Attributes.onclick="$(this).closest('div.config_new_schedule').hide();"
 			/>

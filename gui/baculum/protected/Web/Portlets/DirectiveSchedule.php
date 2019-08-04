@@ -80,7 +80,7 @@ class DirectiveSchedule extends DirectiveListTemplate {
 		'TimeMinHourly'
 	);
 
-	public function loadConfig($sender, $param) {
+	public function loadConfig() {
 		$load_values = $this->getLoadValues();
 		$directives = $this->getData();
 		$host = $this->getHost();

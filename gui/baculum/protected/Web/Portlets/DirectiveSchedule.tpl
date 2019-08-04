@@ -3,7 +3,7 @@
 <com:TActiveRepeater ID="RepeaterScheduleRuns" OnItemDataBound="createRunItem">
 	<prop:ItemTemplate>
 		<div class="w3-card-4 w3-padding w3-margin-bottom directive runscript">
-			<h2><%[ Run ]%> #<%=($this->ItemIndex+1)%></h2>
+			<h2 class="schedule_options"><%[ Run ]%> #<%=($this->ItemIndex+1)%></h2>
 			<com:Application.Web.Portlets.DirectiveComboBox
 				ID="Level"
 			/>
