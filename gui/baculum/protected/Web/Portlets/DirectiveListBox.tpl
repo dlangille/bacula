@@ -1,4 +1,4 @@
-<div class="w3-row w3-margin-bottom<%=!$this->display_directive ? ' hide' : '';%>">
+<div class="directive_field w3-row w3-margin-bottom<%=!$this->display_directive ? ' hide' : '';%>">
 	<div class="w3-col w3-quarter"><com:TActiveLabel ID="Label" ActiveControl.EnableUpdate="false" Visible="<%=$this->display_directive%>" />:</div>
 	<div class="w3-col w3-threequarter directive_value">
 		<com:TActiveListBox ID="Directive"

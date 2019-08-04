@@ -39,10 +39,9 @@ Prado::using('Application.Web.Portlets.DirectiveTimePeriod');
 Prado::using('Application.Web.Portlets.DirectiveRunscript');
 Prado::using('Application.Web.Portlets.DirectiveMessages');
 
-class DirectiveRenderer extends DirectiveListTemplate implements IItemDataRenderer {
+class DirectiveRenderer extends DirectiveListTemplate implements IDataRenderer {
 
 	const DATA = 'Data';
-	const ITEM_INDEX = 'ItemIndex';
 
 	private $directive_types = array(
 		'DirectiveCheckBox',
@@ -69,8 +68,20 @@ class DirectiveRenderer extends DirectiveListTemplate implements IItemDataRender
 
 	public function onLoad($param) {
 		parent::onLoad($param);
+		$this->createItemInternal();
+	}
+
+	public function createItemInternal() {
 		$data = $this->getData();
-		$this->createItem($data);
+		$item = $this->createItem($data);
+
+		$this->addParsedObject($item);
+
+		if ($item instanceof DirectiveTemplate) {
+			$item->createDirective();
+		} elseif ($item instanceof DirectiveListTemplate) {
+			$item->loadConfig(null, null);
+		}
 	}
 
 	public function createItem($data) {
@@ -96,8 +107,6 @@ class DirectiveRenderer extends DirectiveListTemplate implements IItemDataRender
 			$control->setGroupName($data['group_name']);
 			$control->setParentName($data['parent_name']);
 			$control->setResourceNames($this->SourceTemplateControl->getResourceNames());
-			$this->getControls()->add($control);
-			$control->createDirective();
 		} elseif (in_array($type, $this->directive_list_types)) {
 			$control->setHost($data['host']);
 			$control->setComponentType($data['component_type']);
@@ -112,29 +121,8 @@ class DirectiveRenderer extends DirectiveListTemplate implements IItemDataRender
 			$control->setShow($data['show']);
 			$control->setGroupName($data['group_name']);
 			$control->setResource($data['resource']);
-			$this->getControls()->add($control);
-			if (!$this->getPage()->IsCallBack || $this->getPage()->getCallbackEventParameter()  === 'show_all_directives' || $this->getCmdParam() === 'show') {
-				/*
-				 * List types should be loaded only by load request, not by callback request.
-				 * Otherwise OnLoad above is called during callback and overwrites data in controls.
-				 */
-				$control->raiseEvent('OnDirectiveListLoad', $this, null);
-			}
 		}
-	}
-
-	public function getItemIndex() {
-		return $this->getViewState(self::ITEM_INDEX, 0);
-	}
-
-	public function setItemIndex($item_index) {
-		$this->setViewState(self::ITEM_INDEX, $item_index);
-	}
-
-	public function getItemType() {
-	}
-
-	public function setItemType($item_type) {
+		return $control;
 	}
 
 	public function getData() {

@@ -39,8 +39,8 @@ class FileSetBrowser extends Portlets {
 		for ($i = 0; $i < count($clients); $i++) {
 			$client_list[$clients[$i]->clientid] = $clients[$i]->name;
 		}
-		asort($client_list);
-		$this->Client->dataSource = $client_list;
+		uksort($client_list, 'sort_client_list');
+		$this->Client->DataSource = $client_list;
 		$this->Client->dataBind();
 	}
 
@@ -97,6 +97,14 @@ class FileSetBrowser extends Portlets {
 
 	public function getPath() {
 		return $this->getViewState(self::PATH, '/');
+	}
+}
+
+function sort_client_list($a, $b) {
+	if ($a === 'none') {
+		return -1;
+	} else {
+		return strcmp($a, $b);
 	}
 }
 ?>

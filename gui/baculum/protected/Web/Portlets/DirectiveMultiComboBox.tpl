@@ -1,6 +1,6 @@
 <com:TActiveRepeater ID="MultiComboBoxRepeater" OnItemDataBound="createMultiComboBoxElement">
 	<prop:ItemTemplate>
-		<div class="w3-row w3-margin-bottom<%=!$this->Data['show'] ? ' hide' : '';%>">
+		<div class="directive_field w3-row w3-margin-bottom<%=!$this->Data['show'] ? ' hide' : '';%>">
 			<div class="w3-col w3-quarter"><com:TActiveLabel ID="Label" ActiveControl.EnableUpdate="false" />:</div>
 			<div class="w3-col w3-threequarter directive_value">
 				<com:TActiveDropDownList ID="Directive"

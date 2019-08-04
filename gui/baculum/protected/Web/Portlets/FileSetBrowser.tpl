@@ -1,5 +1,5 @@
 <div class="w3-container">
-	<div class="w3-container">
+	<div class="directive_field w3-container">
 		<div class="w3-third"><com:TLabel ForControl="Client" Text="<%[ Client: ]%>" /></div>
 		<div class="w3-third">
 			<com:TActiveDropDownList
@@ -76,7 +76,7 @@ var oFileSetBrowser = {
 		this.clear_content();
 		this.clear_includes();
 		this.path_field.value = '';
-		document.getElementById('<%=$this->Client->ClientID%>').value = '';
+		document.getElementById('<%=$this->Client->ClientID%>').value = 'none';
 	},
 	ls_items: function(path) {
 		var dpath;

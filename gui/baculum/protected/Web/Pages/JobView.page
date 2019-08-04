@@ -16,7 +16,6 @@
 			Text="<%[ Configure job ]%>"
 			Visible="<%=!empty($_SESSION['dir'])%>"
 			OnClick="loadJobConfig"
-			CommandParameter="show"
 		/>
 		<com:TActiveLinkButton
 			CssClass="w3-bar-item w3-button tab_btn"
@@ -24,7 +23,6 @@
 			Text="<%[ Configure fileset ]%>"
 			Visible="<%=!empty($_SESSION['dir'])%>"
 			OnClick="loadFileSetConfig"
-			CommandParameter="show"
 		/>
 		<com:TActiveLinkButton
 			CssClass="w3-bar-item w3-button tab_btn"
@@ -32,13 +30,11 @@
 			Text="<%[ Configure schedule ]%>"
 			Visible="<%=!empty($_SESSION['dir'])%>"
 			OnClick="loadScheduleConfig"
-			CommandParameter="show"
 		/>
 		<com:TActiveLinkButton
 			CssClass="w3-bar-item w3-button tab_btn"
 			Text="<%[ Job schedules ]%>"
 			OnCallback="loadSchedules"
-			CommandParameter="show"
 			Attributes.onclick="W3Tabs.open(this.id, 'job_schedules'); clear_node('#job_config div.directive_field'); clear_node('#fileset_config div.directive_field'); clear_node('#schedule_config  div.directive_field');"
 		/>
 	</div>
