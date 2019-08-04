@@ -3,8 +3,13 @@
 		<using namespace="Application.API.Class.BaculumAPIServer" />
 	</paths>
 	<modules>
-		<!-- auth modules -->
+		<!-- OAuth2 - only to be compatible with old OAuth2 endpoints -->
+		<!-- Remove it in the future but keep oauth2_token (it is used in this service to remove old tokens) -->
+		<module id="oauth2" class="Application.API.Class.OAuth2.BaculumOAuth2" />
+		<module id="oauth2_config" class="Application.API.Class.OAuth2.OAuth2Config" />
+		<module id="oauth2_authid" class="Application.API.Class.OAuth2.AuthIdManager" />
 		<module id="oauth2_token" class="Application.API.Class.OAuth2.TokenManager" />
+
 		<!-- database modules -->
 		<module id="db" class="Application.API.Class.Database" />
 		<module id="client" class="Application.API.Class.ClientManager" />
