@@ -24,6 +24,7 @@ Prado::using('System.Web.UI.ActiveControls.TActiveLabel');
 Prado::using('System.Web.UI.ActiveControls.TActiveLinkButton');
 Prado::using('System.Web.UI.ActiveControls.TActivePanel');
 Prado::using('System.Web.UI.ActiveControls.TActiveRepeater');
+Prado::using('System.Web.UI.WebControls.TItemDataRenderer');
 Prado::using('Application.Web.Portlets.DirectiveListTemplate');
 Prado::using('Application.Web.Portlets.DirectiveCheckBox');
 Prado::using('Application.Web.Portlets.DirectiveComboBox');
@@ -39,7 +40,7 @@ Prado::using('Application.Web.Portlets.DirectiveTimePeriod');
 Prado::using('Application.Web.Portlets.DirectiveRunscript');
 Prado::using('Application.Web.Portlets.DirectiveMessages');
 
-class DirectiveRenderer extends DirectiveListTemplate implements IDataRenderer {
+class DirectiveRenderer extends TItemDataRenderer {
 
 	const DATA = 'Data';
 
@@ -64,38 +65,15 @@ class DirectiveRenderer extends DirectiveListTemplate implements IDataRenderer {
 		'DirectiveMultiTextBox'
 	);
 
-	public $resource_names = array();
-
-	private $item_loaded = false;
-
-	public function onLoad($param) {
-		parent::onLoad($param);
-		if (!$this->item_loaded) {
-			$this->createItemInternal();
-			$this->item_loaded = true;
-		}
-	}
-
-	public function dataBind() {
-		if (!$this->item_loaded) {
-			$this->createItemInternal();
-			$this->item_loaded = true;
-		}
-		parent::dataBind();
+	public function loadState() {
+		parent::loadState();
+		$this->createItemInternal();
 	}
 
 	public function createItemInternal() {
 		$data = $this->getData();
 		$item = $this->createItem($data);
-
 		$this->addParsedObject($item);
-		$cmd = $item->getCmdParam();
-
-		if ($item instanceof DirectiveTemplate) {
-			$item->createDirective();
-		} elseif ($item instanceof DirectiveListTemplate && $cmd === '') {
-			$item->loadConfig();
-		}
 	}
 
 	public function createItem($data) {

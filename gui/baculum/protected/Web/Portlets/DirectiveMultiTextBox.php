@@ -27,11 +27,8 @@ Prado::using('Application.Web.Portlets.DirectiveListTemplate');
 
 class DirectiveMultiTextBox extends DirectiveListTemplate {
 
-	public function onLoad($param) {
-		parent::onLoad($param);
-		if ($this->getCmdParam() !== 'add_multitextbox') {
-			$this->loadConfig();
-		}
+	public function dataBind() {
+		$this->loadConfig();
 	}
 
 	public function getDirectiveValue() {
@@ -72,7 +69,6 @@ class DirectiveMultiTextBox extends DirectiveListTemplate {
 	public function createMultiTextBoxElement($sender, $param) {
 		$param->Item->Label->Text = $param->Item->Data['label'];
 		$param->Item->Directive->Text = $param->Item->Data['directive_value'];
-
 	}
 
 	public function addField($sender, $param) {

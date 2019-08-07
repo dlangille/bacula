@@ -84,6 +84,15 @@ class BaculaConfigDirectives extends DirectiveListTemplate {
 		}
 	}
 
+	public function onPreRender($param) {
+		/**
+		 * This method overwrites DirectiveListTemplate::onPreRender()
+		 * Not calling parent method is intentional here because this class
+		 * isn't typical control list class and calling parent::onPreRender()
+		 * causes error.
+		 */
+	}
+
 	private function getConfigData($host, array $parameters) {
 		$default_params = array('config');
 		$params = array_merge($default_params, $parameters);

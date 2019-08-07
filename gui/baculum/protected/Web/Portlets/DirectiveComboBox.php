@@ -26,10 +26,10 @@ Prado::using('Application.Web.Portlets.DirectiveTemplate');
 
 class DirectiveComboBox extends DirectiveTemplate {
 
-	public function onLoad($param) {
+	public function onPreRender($param) {
 		$this->createDirectiveInternal();
 		$this->saveDirective();
-		parent::onLoad($param);
+		parent::onPreRender($param);
 	}
 
 	public function saveDirective() {

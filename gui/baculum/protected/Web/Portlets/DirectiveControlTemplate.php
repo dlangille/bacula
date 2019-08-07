@@ -29,6 +29,8 @@ abstract class DirectiveControlTemplate extends TTemplateControl {
 		if ($this->getPage()->IsCallBack) {
 			if (method_exists($this->getPage()->CallBackEventTarget, 'getCommandParameter')) {
 				$command_param = $this->getPage()->CallBackEventTarget->getCommandParameter();
+			} else {
+				$command_param = $this->getPage()->getCallbackEventParameter();
 			}
 		} elseif ($this->getPage()->IsPostBack) {
 			if (method_exists($this->getPage()->PostBackEventTarget, 'getCommandParameter')) {

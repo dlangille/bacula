@@ -27,11 +27,8 @@ Prado::using('Application.Web.Portlets.DirectiveListTemplate');
 
 class DirectiveMultiComboBox extends DirectiveListTemplate {
 
-	public function onLoad($param) {
-		parent::onLoad($param);
-		if ($this->getCmdParam() !== 'add_multicombobox') {
-			$this->loadConfig();
-		}
+	public function dataBind() {
+		$this->loadConfig();
 	}
 
 	public function getDirectiveValue() {
