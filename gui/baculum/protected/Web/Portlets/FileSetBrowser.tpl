@@ -8,58 +8,58 @@
 				Width="350px"
 				CausesValidation="false"
 				OnSelectedIndexChanged="selectClient"
-				ClientSide.OnLoading="oFileSetBrowser.show_file_loader(true)"
-				ClientSide.OnComplete="oFileSetBrowser.show_file_loader(false)"
+				ClientSide.OnLoading="oFileSetBrowser<%=$this->ClientID%>.show_file_loader(true)"
+				ClientSide.OnComplete="oFileSetBrowser<%=$this->ClientID%>.show_file_loader(false)"
 				>
 			</com:TActiveDropDownList>
 		</div>
 	</div>
 	<p><%[ To browse Windows host please type in text field below drive letter as path, for example: C:/ ]%></p>
 	<div class="w3-section w3-half">
-		<input type="text" id="fileset_browser_path" class="w3-input w3-twothird w3-border" placeholder="<%[ Go to path ]%>" onkeypress="var k = event.which || event.keyCode; if (k == 13) { oFileSetBrowser.ls_items(document.getElementById('fileset_browser_path').value); }" />
-		<button type="button" class="w3-button w3-green" onclick="oFileSetBrowser.ls_items(document.getElementById('fileset_browser_path').value);"><i class="fa fa-check"></i> &nbsp;<%[ OK ]%></button>
-		<span id="fileset_browser_file_loader" style="display: none"><i class="fa fa-sync-alt w3-spin"></i></span>
+		<input type="text" id="<%=$this->ClientID%>fileset_browser_path" class="w3-input w3-twothird w3-border" placeholder="<%[ Go to path ]%>" onkeypress="var k = event.which || event.keyCode; if (k == 13) { oFileSetBrowser<%=$this->ClientID%>.ls_items(document.getElementById('<%=$this->ClientID%>fileset_browser_path').value); }" />
+		<button type="button" class="w3-button w3-green" onclick="oFileSetBrowser<%=$this->ClientID%>.ls_items(document.getElementById('<%=$this->ClientID%>fileset_browser_path').value);"><i class="fa fa-check"></i> &nbsp;<%[ OK ]%></button>
+		<span id="<%=$this->ClientID%>fileset_browser_file_loader" style="display: none"><i class="fa fa-sync-alt w3-spin"></i></span>
 	</div>
 	<div class="w3-section w3-half">
-		<input type="text" id="fileset_browser_add_include_path" class="w3-input w3-twothird w3-border w3-margin-left" placeholder="<%[ Add new include path ]%>" onkeypress="oFileSetBrowser.add_include_path_by_input(event);" autocomplete="off" />
-		<button type="button" class="w3-button w3-green" onclick="oFileSetBrowser.add_include_path();"><i class="fa fa-plus"></i> &nbsp;<%[ Add ]%></button>
+		<input type="text" id="<%=$this->ClientID%>fileset_browser_add_include_path" class="w3-input w3-twothird w3-border w3-margin-left" placeholder="<%[ Add new include path ]%>" onkeypress="oFileSetBrowser<%=$this->ClientID%>.add_include_path_by_input(event);" autocomplete="off" />
+		<button type="button" class="w3-button w3-green" onclick="oFileSetBrowser<%=$this->ClientID%>.add_include_path();"><i class="fa fa-plus"></i> &nbsp;<%[ Add ]%></button>
 	</div>
-	<div id="fileset_browser_file_container" class="w3-container w3-half w3-border"></div>
-	<div id="fileset_browser_include_container" class="w3-container w3-half w3-border"></div>
+	<div id="<%=$this->ClientID%>fileset_browser_file_container" class="w3-container w3-half w3-border fileset_browser_file_container"></div>
+	<div id="<%=$this->ClientID%>fileset_browser_include_container" class="w3-container w3-half w3-border fileset_browser_include_container"></div>
 	<div class="w3-section w3-half">
-		<input type="text" id="fileset_browser_add_exclude_path" class="w3-input w3-twothird w3-border w3-margin-left" placeholder="<%[ Add new global exclude path ]%>" onkeypress="oFileSetBrowser.add_exclude_path_by_input(event);" autocomplete="off" />
-		<button type="button" class="w3-button w3-green" onclick="oFileSetBrowser.add_exclude_path();"><i class="fa fa-plus"></i> &nbsp;<%[ Add ]%></button>
+		<input type="text" id="<%=$this->ClientID%>fileset_browser_add_exclude_path" class="w3-input w3-twothird w3-border w3-margin-left" placeholder="<%[ Add new global exclude path ]%>" onkeypress="oFileSetBrowser<%=$this->ClientID%>.add_exclude_path_by_input(event);" autocomplete="off" />
+		<button type="button" class="w3-button w3-green" onclick="oFileSetBrowser<%=$this->ClientID%>.add_exclude_path();"><i class="fa fa-plus"></i> &nbsp;<%[ Add ]%></button>
 	</div>
-	<div id="fileset_browser_exclude_container" class="w3-container w3-half w3-border"></div>
+	<div id="<%=$this->ClientID%>fileset_browser_exclude_container" class="w3-container w3-half w3-border fileset_browser_exclude_container"></div>
 	<com:TCallback
 		ID="FileSetBrowserFiles"
 		OnCallback="TemplateControl.getItems"
-		ClientSide.OnLoading="oFileSetBrowser.show_file_loader(true)"
-		ClientSide.OnComplete="oFileSetBrowser.show_file_loader(false)"
+		ClientSide.OnLoading="oFileSetBrowser<%=$this->ClientID%>.show_file_loader(true)"
+		ClientSide.OnComplete="oFileSetBrowser<%=$this->ClientID%>.show_file_loader(false)"
 	/>
 </div>
 <script type="text/javascript">
-var oFileSetBrowser = {
+var oFileSetBrowser<%=$this->ClientID%> = {
 	file_content: null,
 	include_content: null,
 	path_field: null,
 	path: [],
 	ids: {
-		file_container: 'fileset_browser_file_container',
-		include_container: 'fileset_browser_include_container',
-		exclude_container: 'fileset_browser_exclude_container',
-		path_field: 'fileset_browser_path',
-		add_include_path_field: 'fileset_browser_add_include_path',
-		add_exclude_path_field: 'fileset_browser_add_exclude_path',
-		file_loader: 'fileset_browser_file_loader'
+		file_container: '<%=$this->ClientID%>fileset_browser_file_container',
+		include_container: '<%=$this->ClientID%>fileset_browser_include_container',
+		exclude_container: '<%=$this->ClientID%>fileset_browser_exclude_container',
+		path_field: '<%=$this->ClientID%>fileset_browser_path',
+		add_include_path_field: '<%=$this->ClientID%>fileset_browser_add_include_path',
+		add_exclude_path_field: '<%=$this->ClientID%>fileset_browser_add_exclude_path',
+		file_loader: '<%=$this->ClientID%>fileset_browser_file_loader'
 	},
 	css: {
 		item: 'item',
-		item_included: 'item_included',
-		item_excluded: 'item_excluded',
-		item_inc_exc_btn: 'item_inc_exc_btn',
+		item_included: 'item_included w3-medium',
+		item_excluded: 'item_excluded w3-medium',
+		item_inc_exc_btn: 'item_inc_exc_btn w3-medium',
 		item_selected_del_btn: 'item_selected_del_btn',
-		item_name: 'item_name',
+		item_name: 'item_name w3-medium',
 		dir_img: 'dir_item_img',
 		file_img: 'file_item_img',
 		link_img: 'link_item_img'
@@ -228,7 +228,7 @@ var oFileSetBrowser = {
 	},
 	get_includes: function() {
 		var container = document.getElementById(this.ids.include_container);
-		var inc_elements = container.querySelectorAll('div.' + this.css.item_included);
+		var inc_elements = container.querySelectorAll('div.' + this.css.item_included.replace(/ /g, '.'));
 		var includes = [];
 		for (var i = 0; i < inc_elements.length; i++) {
 			includes.push(inc_elements[i].getAttribute('rel'));
@@ -237,7 +237,7 @@ var oFileSetBrowser = {
 	},
 	get_excludes: function() {
 		var container = document.getElementById(this.ids.exclude_container);
-		var exc_elements = container.querySelectorAll('div.' + this.css.item_excluded);
+		var exc_elements = container.querySelectorAll('div.' + this.css.item_excluded.replace(/ /g, '.'));
 		var excludes = [];
 		for (var i = 0; i < exc_elements.length; i++) {
 			excludes.push(exc_elements[i].getAttribute('rel'));
@@ -360,10 +360,10 @@ var oFileSetBrowser = {
 	}
 };
 
-function FileSetBrowser_set_content(content) {
-	oFileSetBrowser.set_content(content);
+function FileSetBrowser_set_content<%=$this->ClientID%>(content) {
+	oFileSetBrowser<%=$this->ClientID%>.set_content(content);
 }
 $(function() {
-	oFileSetBrowser.init();
+	oFileSetBrowser<%=$this->ClientID%>.init();
 });
 </script>

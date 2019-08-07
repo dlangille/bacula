@@ -13,7 +13,7 @@
 		</li>
 		<li><com:TLinkButton
 			ID="IncludeFileItemByBrowser"
-			Attributes.onclick="$(this).closest('div.config_new_fileset').hide(); oFileSetBrowser.reset(); $('#fileset_browser').show(); return false;"
+			Attributes.onclick="$(this).closest('div.config_new_fileset').hide(); oFileSetBrowser<%=$this->FileSetBrowserId%>.reset(); $('#<%=$this->FileSetBrowserId%>fileset_browser').show(); return false;"
 			>
 			<i class='fa fa-plus'></i> &nbsp;<%[ Add files by file browser ]%>
 		</com:TLinkButton>
@@ -32,7 +32,7 @@
 			ID="PluginsItem"
 			OnCommand="Parent.SourceTemplateControl.newIncludePlugin"
 			CommandParameter="save"
-			ClientSide.OnComplete="var el1 = $('#<%=$this->PluginsItem->ClientID%>').parents('div').find('div.include_plugin')[<%=$this->Parent->ItemIndex%>]; var el2 = $(el1).find('div'); BaculaConfig.scroll_to_element(el2[el2.length-1], -80); $(el2[el2.length-1]).find('input')[0].focus();"
+			ClientSide.OnComplete="var el1 = $('#<%=$this->PluginsItem->ClientID%>').parents('div').find('div.incexc')[<%=$this->Parent->ItemIndex%>]; var el2 = $(el1).find('div.directive_field'); BaculaConfig.scroll_to_element(el2[el2.length-1], -80); $(el2[el2.length-1]).find('input')[0].focus();"
 			Attributes.onclick="$(this).closest('div.config_new_fileset').hide();"
 			>
 			<i class='fa fa-plus'></i> &nbsp;<%[ Add plugin ]%>

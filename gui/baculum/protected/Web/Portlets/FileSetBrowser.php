@@ -25,7 +25,7 @@ Prado::using('Application.Web.Portlets.Portlets');
 
 class FileSetBrowser extends Portlets {
 
-	const CLIENT_ID = 'ClientId';
+	const BCLIENT_ID = 'BClientId';
 	const PATH = 'Path';
 
 	/**
@@ -54,7 +54,7 @@ class FileSetBrowser extends Portlets {
 	public function selectClient($sender, $param) {
 		$client_id = $this->Client->getSelectedValue();
 		if ($client_id !== 'none') {
-			$this->setClientId($client_id);
+			$this->setBClientId($client_id);
 			$this->goToPath();
 		}
 	}
@@ -68,7 +68,7 @@ class FileSetBrowser extends Portlets {
 	}
 
 	public function goToPath() {
-		$client_id = $this->getClientId();
+		$client_id = $this->getBClientId();
 		$query = '?path=' . rawurlencode($this->getPath());
 		$params = array(
 			'clients',
@@ -78,17 +78,17 @@ class FileSetBrowser extends Portlets {
 		);
 		$result = $this->getModule('api')->get($params);
 		$this->getPage()->getCallbackClient()->callClientFunction(
-			'FileSetBrowser_set_content',
+			'FileSetBrowser_set_content' . $this->ClientID,
 			json_encode($result->output)
 		);
 	}
 
-	public function setClientId($client_id) {
-		$this->setViewState(self::CLIENT_ID, $client_id);
+	public function setBClientId($bclient_id) {
+		$this->setViewState(self::BCLIENT_ID, $bclient_id);
 	}
 
-	public function getClientId() {
-		return $this->getViewState(self::CLIENT_ID);
+	public function getBClientId() {
+		return $this->getViewState(self::BCLIENT_ID);
 	}
 
 	public function setPath($path) {

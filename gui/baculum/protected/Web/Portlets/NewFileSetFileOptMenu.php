@@ -25,6 +25,7 @@ Prado::using('Application.Web.Portlets.DirectiveListTemplate');
 class NewFileSetFileOptMenu extends DirectiveListTemplate {
 
 	const ITEM_INDEX = 'ItemIndex';
+	const FS_BROWSER_ID = 'FsBrowserId';
 
 	public function setItemIndex($index) {
 		$this->setViewState(self::ITEM_INDEX, $index);
@@ -32,6 +33,14 @@ class NewFileSetFileOptMenu extends DirectiveListTemplate {
 
 	public function getItemIndex() {
 		return $this->getViewState(self::ITEM_INDEX);
+	}
+
+	public function setFileSetBrowserId($id) {
+		$this->setViewState(self::FS_BROWSER_ID, $id);
+	}
+
+	public function getFileSetBrowserId() {
+		return $this->getViewState(self::FS_BROWSER_ID);
 	}
 }
 ?>
