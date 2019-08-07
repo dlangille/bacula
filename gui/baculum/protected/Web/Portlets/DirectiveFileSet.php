@@ -101,6 +101,7 @@ class DirectiveFileSet extends DirectiveListTemplate {
 				$this->setFile($exclude, 'File', $subres['File']);
 			}
 		}
+
 		$this->RepeaterFileSetIncludes->DataSource = $includes;
 		$this->RepeaterFileSetIncludes->dataBind();
 		$this->RepeaterFileSetExclude->DataSource = $exclude;
@@ -379,6 +380,17 @@ class DirectiveFileSet extends DirectiveListTemplate {
 				array_push($directive_values['Exclude']['File'], $directive_value);
 			}
 		}
+		for ($i = 0; $i < count($directive_values['Include']); $i++) {
+			if (!is_array($directive_values['Include'][$i]) || !key_exists('Options', $directive_values['Include'][$i])) {
+				continue;
+			}
+			/**
+			 * Options $index can start from value greater than 0, so here reset indexes
+			 * to avoid undefined offset error.
+			 */
+			$directive_values['Include'][$i]['Options'] = array_values($directive_values['Include'][$i]['Options']);
+		}
+
 		return $directive_values;
 	}
 
