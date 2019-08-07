@@ -9,7 +9,8 @@
 					AutoTrim="true"
 				/> 	<com:TActiveLinkButton ID="AddFieldBtn"
 						OnCommand="SourceTemplateControl.addField"
-						CommandParameter="add_multitextbox"
+						CommandParameter="save"
+						ClientSide.OnComplete="var el = $('#<%=$this->SourceTemplateControl->MultiTextBoxRepeater->ClientID%>_Container').find('input[type=\'text\']'); el[el.length-1].focus();"
 					>
 					<prop:Text>
 						<i class="fa fa-plus" title="<%[ Add directive ]%>" alt="<%[ Add directive ]%>"></i>
