@@ -38,7 +38,7 @@
 							Text="<strong><%=$this->Data['resource_type']%></strong>: <%=$this->Data['resource_name']%>"
 							Style="text-decoration: none"
 						/>
-							<i class="fa fa-sync w3-spin" style="display: none"><i/>
+							<i class="fa fa-sync w3-spin" style="display: none"></i>
 						</td>
 						<td class="right" style="height: 26px; width: 20%;">
 							<com:TActiveLinkButton

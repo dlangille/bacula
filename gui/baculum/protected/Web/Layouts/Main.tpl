@@ -9,7 +9,7 @@
 		<com:TForm>
 			<com:TClientScript PradoScripts="ajax, effects" />
 			<com:BClientScript ScriptUrl=<%~ ../JavaScript/flotr2.js %> />
-			<com:BClientScript ScriptUrl=<%~ ../JavaScript/fontawesome-all.min.js %> />
+			<com:BClientScript ScriptUrl=<%~ ../JavaScript/fontawesome.min.js %> />
 			<com:BClientScript ScriptUrl=<%~ ../JavaScript/datatables.js %> />
 			<com:BClientScript ScriptUrl=<%~ ../JavaScript/dataTables.responsive.js %> />
 			<com:BClientScript ScriptUrl=<%~ ../JavaScript/responsive.jqueryui.js %> />

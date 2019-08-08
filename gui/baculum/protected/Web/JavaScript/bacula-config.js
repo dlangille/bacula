@@ -76,7 +76,7 @@ var BaculaConfigClass = jQuery.klass({
 		return send;
 	},
 	get_loader: function(id) {
-		var loader = $('#' + id).next('svg');
+		var loader = $('#' + id).next('I');
 		return loader;
 	},
 	loader_start: function(id) {

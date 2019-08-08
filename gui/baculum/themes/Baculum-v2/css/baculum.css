@@ -90,17 +90,17 @@ div.TDatePicker_default {
 	z-index: 10 !important;
 }
 
-svg.reset_btn, svg.remove_btn {
+i.reset_btn, i.remove_btn {
 	display: none;
 	cursor: pointer;
 	margin-left: 4px;
 }
 
-div.directive_value svg {
+div.directive_value i {
 	vertical-align: middle;
 }
 
-div.directive_value:hover svg.reset_btn, div.directive_value:hover svg.remove_btn {
+div.directive_value:hover i.reset_btn, div.directive_value:hover i.remove_btn {
 	display: inline;
 }
 
@@ -236,14 +236,12 @@ table.status_table td:nth-of-type(1) {
 	width: 35%;
 }
 
-table.status_table td, table.status_table td svg {
+table.status_table td, table.status_table td i {
 	vertical-align: middle;
 }
 
 .fa-ellipsis-v {
-	width: 43px !important;
-	height: 43px;
-	padding: 10px;
+	padding: 10px 15px;
 	border-radius: 50%;
 	background-color: transparent;
 }

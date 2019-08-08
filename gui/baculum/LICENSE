@@ -870,7 +870,25 @@ THE SOFTWARE.
 Baculum uses Font Awesome Free for icons.
 
 Files:
-  protected/Web/JavaScript/fontawesome-all.min.js
-  themes/Baculum-v2/css/fa-svg-with-js.min.css
+  protected/Web/JavaScript/fontawesome.min.js
+  themes/Baculum-v2/css/fontawesome-all.min.css
+  themes/Baculum-v2/webfonts/fa-brands-400.eot
+  themes/Baculum-v2/webfonts/fa-brands-400.svg
+  themes/Baculum-v2/webfonts/fa-brands-400.ttf
+  themes/Baculum-v2/webfonts/fa-brands-400.woff
+  themes/Baculum-v2/webfonts/fa-brands-400.woff2
+  themes/Baculum-v2/webfonts/fa-regular-400.eot
+  themes/Baculum-v2/webfonts/fa-regular-400.svg
+  themes/Baculum-v2/webfonts/fa-regular-400.ttf
+  themes/Baculum-v2/webfonts/fa-regular-400.woff
+  themes/Baculum-v2/webfonts/fa-regular-400.woff2
+  themes/Baculum-v2/webfonts/fa-solid-900.eot
+  themes/Baculum-v2/webfonts/fa-solid-900.svg
+  themes/Baculum-v2/webfonts/fa-solid-900.ttf
+  themes/Baculum-v2/webfonts/fa-solid-900.woff
+  themes/Baculum-v2/webfonts/fa-solid-900.woff2
 
-License - https://fontawesome.com/license - Icons: CC BY 4.0, Code: MIT License
+License - https://fontawesome.com/license/free
+
+Icons: CC BY 4.0 License, Code: MIT License, Fonts: SIL OFL 1.1 License
+
