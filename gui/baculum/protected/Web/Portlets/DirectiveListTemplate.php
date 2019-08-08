@@ -65,11 +65,16 @@ class DirectiveListTemplate extends ConfigListTemplate implements IActiveControl
 		$cmd = $this->getCmdParam();
 		if ($this->getPage()->IsCallBack && (!$cmd || $cmd === 'show_all_directives') && method_exists($this, 'loadConfig')) {
 			$this->loadConfig();
+		} elseif (!$this->getPage()->IsCallBack && !$this->getPage()->IsPostBack) {
+			$this->display_directive = $this->getShow();
 		}
-		if ($this->getPage()->IsCallBack || $this->getPage()->IsPostBack) {
-			return;
+	}
+
+	public function onLoad($param) {
+		parent::onLoad($param);
+		if (!$this->getPage()->IsCallBack && !$this->getPage()->IsPostBack && method_exists($this, 'loadConfig')) {
+			$this->loadConfig();
 		}
-		$this->display_directive = $this->getShow();
 	}
 
 	public function getHost() {
