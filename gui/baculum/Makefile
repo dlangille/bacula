@@ -59,8 +59,6 @@ datafilesrc = $(datadir)/application.xml
 webdatafilesrc = $(datadir)/$(webdir)/endpoints.xml \
 	$(datadir)/$(webdir)/Init.php
 
-apidatafilesrc = $(datadir)/$(apidir)/endpoints.xml
-
 miscfilesrc = index.php \
 	AUTHORS \
 	INSTALL \
@@ -103,7 +101,6 @@ prepare_data: prepare_build
 	cp -ra $(webdatadirsrc) $(DESTDIR)$(WWWDIR)/$(datadir)/$(webdir)
 	cp -a $(webdatafilesrc) $(DESTDIR)$(WWWDIR)/$(datadir)/$(webdir)
 	cp -ra $(apidatadirsrc) $(DESTDIR)$(WWWDIR)/$(datadir)/$(apidir)
-	cp -a $(apidatafilesrc) $(DESTDIR)$(WWWDIR)/$(datadir)/$(apidir)
 	cp -ra $(commondatadirsrc) $(DESTDIR)$(WWWDIR)/$(datadir)/$(commondir)
 	cp -a $(datafilesrc) $(DESTDIR)$(WWWDIR)/$(datadir)
 	cp -a $(miscfilesrc) $(DESTDIR)$(WWWDIR)/
