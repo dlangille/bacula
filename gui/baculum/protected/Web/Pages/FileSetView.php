@@ -42,7 +42,7 @@ class FileSetView extends BaculumWebPage {
 
 	public function onPreRender($param) {
 		parent::onPreRender($param);
-		if ($this->getPage()->IsCallBack || $this->getPage()->IsPostBack) {
+		if ($this->IsCallBack || $this->IsPostBack) {
 			return;
 		}
 		if (!empty($_SESSION['dir'])) {

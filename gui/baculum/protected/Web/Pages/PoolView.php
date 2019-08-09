@@ -63,6 +63,13 @@ class PoolView extends BaculumWebPage {
 		if ($poolshow->error === 0) {
 			$this->PoolLog->Text = implode(PHP_EOL, $poolshow->output);
 		}
+	}
+
+	public function onPreRender($param) {
+		parent::onPreRender($param);
+		if ($this->IsCallBack || $this->IsPostBack) {
+			return;
+		}
 		if (!empty($_SESSION['dir'])) {
 			$this->PoolConfig->setComponentName($_SESSION['dir']);
 			$this->PoolConfig->setResourceName($this->getPoolName());

@@ -38,6 +38,13 @@ class ScheduleView extends BaculumWebPage {
 		if ($this->Request->contains('schedule')) {
 			$this->setScheduleName($this->Request['schedule']);
 		}
+	}
+
+	public function onPreRender($param) {
+		parent::onPreRender($param);
+		if ($this->IsCallBack || $this->IsPostBack) {
+			return;
+		}
 		if (!empty($_SESSION['dir'])) {
 			$this->ScheduleConfig->setComponentName($_SESSION['dir']);
 			$this->ScheduleConfig->setResourceName($this->getScheduleName());

@@ -62,12 +62,19 @@ class ClientView extends BaculumWebPage {
 		);
 		if ($client->error === 0) {
 			$this->setClientName($client->output->name);
-			if (!empty($_SESSION['dir'])) {
-				$this->ClientConfig->setComponentName($_SESSION['dir']);
-				$this->ClientConfig->setResourceName($this->getClientName());
-				$this->ClientConfig->setLoadValues(true);
-				$this->ClientConfig->raiseEvent('OnDirectiveListLoad', $this, null);
-			}
+		}
+	}
+
+	public function onPreRender($param) {
+		parent::onPreRender($param);
+		if ($this->IsCallBack || $this->IsPostBack) {
+			return;
+		}
+		if (!empty($_SESSION['dir'])) {
+			$this->ClientConfig->setComponentName($_SESSION['dir']);
+			$this->ClientConfig->setResourceName($this->getClientName());
+			$this->ClientConfig->setLoadValues(true);
+			$this->ClientConfig->raiseEvent('OnDirectiveListLoad', $this, null);
 		}
 	}
 

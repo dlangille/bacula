@@ -31,8 +31,8 @@ class NewResource extends BaculumWebPage {
 	const COMPONENT_NAME = 'ComponentName';
 	const RESOURCE_TYPE = 'ResourceType';
 
-	public function onInit($param) {
-		parent::onInit($param);
+	public function onPreRender($param) {
+		parent::onPreRender($param);
 		if ($this->IsCallBack || $this->IsPostBack) {
 			return;
 		}
