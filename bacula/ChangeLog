@@ -155,7 +155,7 @@ Release 9.4.2
 29Jan19
  - Fix rwlock_test unittest bug #2449 Only call thr_setconcurrency if it's 
   available. Fix order of linking and installation.
- - FixFix spelling errors found by lintian by Carsten in bug #2436
+ - Fix spelling errors found by lintian by Carsten in bug #2436
  - Apply chmods from Carsten in bug #2445
 
 28Jan19
