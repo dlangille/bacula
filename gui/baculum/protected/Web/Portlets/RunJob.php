@@ -315,9 +315,9 @@ class RunJob extends Portlets {
 
 		if ($result->error === 0) {
 			$this->getPage()->getCallbackClient()->callClientFunction('set_loading_status', array('loading'));
-			$this->EstimationLog->Text = implode($result->output);
+			$this->RunJobLog->Text = implode('', $result->output);
 		} else {
-			$this->EstimationLog->Text = $result->output;
+			$this->RunJobLog->Text = $result->output;
 		}
 	}
 
@@ -334,7 +334,7 @@ class RunJob extends Portlets {
 
 		if ($result->error === 0) {
 			if (count($result->output) > 0) {
-				$this->EstimationLog->Text = implode($result->output);
+				$this->RunJobLog->Text = implode('', $result->output);
 				$this->getPage()->getCallbackClient()->callClientFunction(
 					'estimate_output_refresh',
 					array($out_id)
@@ -346,7 +346,7 @@ class RunJob extends Portlets {
 				);
 			}
 		} else {
-			$this->EstimationLog->Text = $result->output;
+			$this->RunJobLog->Text = $result->output;
 		}
 	}
 	public function runJobAgain($sender, $param) {
@@ -367,7 +367,7 @@ class RunJob extends Portlets {
 		$params['priority'] = $this->Priority->Text;
 		$params['accurate'] = (integer)$this->Accurate->Checked;
 
-		if (in_array($this->Level->SelectedItem->Value, $this->job_to_verify)) {
+		if (!empty($this->Level->SelectedItem) && in_array($this->Level->SelectedItem->Value, $this->job_to_verify)) {
 			$verifyVals = $this->getVerifyVals();
 			if ($this->JobToVerifyOptions->SelectedItem->Value == $verifyVals['jobname']) {
 				$params['verifyjob'] = $this->JobToVerifyJobName->SelectedValue;
@@ -375,10 +375,18 @@ class RunJob extends Portlets {
 				$params['jobid'] = $this->JobToVerifyJobId->Text;
 			}
 		}
-		$result = $this->getModule('api')->create(array('jobs', 'run'), $params)->output;
-		$started_jobid = $this->getModule('misc')->findJobIdStartedJob($result);
-		if (is_numeric($started_jobid)) {
-			$this->getPage()->goToPage('JobHistoryView', array('jobid' => $started_jobid));
+		$result = $this->getModule('api')->create(array('jobs', 'run'), $params);
+		if ($result->error === 0) {
+			$started_jobid = $this->getModule('misc')->findJobIdStartedJob($result->output);
+			if (is_numeric($started_jobid)) {
+				$this->getPage()->getCallbackClient()->callClientFunction('run_job_go_to_running_job', $started_jobid);
+			} else {
+				$this->RunJobLog->Text = implode('', $result->output);
+				$this->getPage()->getCallbackClient()->callClientFunction('show_job_log', true);
+			}
+		} else {
+			$this->RunJobLog->Text = $result->output;
+			$this->getPage()->getCallbackClient()->callClientFunction('show_job_log', true);
 		}
 	}
 }

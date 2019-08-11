@@ -131,7 +131,7 @@
 		</div>
 		<div id="run_job_log" class="w3-panel w3-card w3-light-grey" style="display: none; max-height: 200px; overflow-x: auto;">
 			<div class="w3-code notranslate">
-				<pre><com:TActiveLabel ID="EstimationLog" /></pre>
+				<pre><com:TActiveLabel ID="RunJobLog" /></pre>
 			</div>
 		</div>
 		<footer class="w3-container w3-center">
@@ -147,12 +147,11 @@
 				<prop:ClientSide.OnComplete>
 					$('#status_update_slots_loading').css('visibility', 'hidden');
 					document.getElementById('status_command_loading').style.visibility = 'hidden';
-					document.getElementById('run_job_log').style.display = '';
-					var logbox = document.getElementById('run_job_log');
-					logbox.scrollTo(0, logbox.scrollHeight);
+					show_job_log(true);
+					scroll_down_job_log();
 				</prop:ClientSide.OnComplete>
 			</com:TActiveButton>
-			<com:TButton
+			<com:TActiveButton
 				ID="Run"
 				Text="<%[ Run job ]%>"
 				ValidationGroup="JobGroup"
@@ -168,7 +167,12 @@
 					}
 					return send;
 				</prop:Attributes.onclick>
-			</com:TButton>
+			</com:TActiveButton>
+			<script>
+				var run_job_go_to_running_job = function(jobid) {
+					document.location.href = '/web/job/history/' + jobid + '/';
+				}
+			</script>
 			<i id="status_command_loading" class="fa fa-sync w3-spin" style="visibility: hidden;"></i>
 		</footer>
 	</div>
@@ -178,29 +182,42 @@
 >
 	<prop:ClientSide.OnLoading>
 		$('#status_command_loading').css('visibility', 'visible');
-		var logbox = document.getElementById('run_job_log');
-		if ((logbox.offsetHeight + logbox.scrollTop) === logbox.scrollHeight) {
-			command_logbox_scroll = true;
+		var joblog = document.getElementById('run_job_log');
+		if ((joblog.offsetHeight + joblog.scrollTop) === joblog.scrollHeight) {
+			command_joblog_scroll = true;
 		} else {
-			command_logbox_scroll = false;
+			command_joblog_scroll = false;
 		}
 	</prop:ClientSide.OnLoading>
 	<prop:ClientSide.OnComplete>
 		$('#status_command_loading').css('visibility', 'hidden');
-		if (command_logbox_scroll) {
-			var logbox = document.getElementById('run_job_log');
-			logbox.scrollTo(0, logbox.scrollHeight);
+		if (command_joblog_scroll) {
+			scroll_down_job_log();
 		}
 	</prop:ClientSide.OnComplete>
 </com:TCallback>
 <script type="text/javascript">
-var command_logbox_scroll = false;
+var command_joblog_scroll = false;
 function close_run_job_window() {
 	document.getElementById('run_job').style.display = 'none';
-	var joblog = document.getElementById('<%=$this->EstimationLog->ClientID%>');
-	joblog.innerHTML = '';
-	joblog.style.display = 'none';
+	show_job_log(false);
+	set_job_log('');
 	set_loading_status('start');
+}
+function set_job_log(log) {
+	document.getElementById('<%=$this->RunJobLog->ClientID%>').textContent = log;
+}
+function show_job_log(show) {
+	var joblog = document.getElementById('run_job_log');
+	if (show === true) {
+		joblog.style.display = '';
+	} else {
+		joblog.style.display = 'none';
+	}
+}
+function scroll_down_job_log() {
+	var joblog = document.getElementById('run_job_log');
+	joblog.scrollTo(0, joblog.scrollHeight);
 }
 function set_loading_status(status) {
 	var start = document.getElementById('command_status_start');
