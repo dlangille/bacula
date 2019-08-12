@@ -23,7 +23,7 @@
 Prado::using('Application.Common.Class.GeneralRequirements');
 
 /**
- * Web part requirements class.
+ * API part requirements class.
  */
 class Requirements extends GeneralRequirements {
 
@@ -36,19 +36,19 @@ class Requirements extends GeneralRequirements {
 	 */
 	private $req_exts = array(
 		array(
-			'ext' => 'curl',
-			'help_msg' => 'Please install <b>PHP cURL module</b>.'
+			'ext' => 'bcmath',
+			'help_msg' => 'Please install <b>PHP BCMath module</b>.'
 		)
 	);
 
 	public function __construct($app_dir, $base_dir) {
 		parent::__construct($app_dir, $base_dir);
 		$this->validateEnvironment();
-		parent::showResult('Baculum Web');
+		parent::showResult('Baculum API');
 	}
 
 	/**
-	 * Validate all Web environment depenencies.
+	 * Validate all API environment depenencies.
 	 *
 	 * @return none
 	 */
@@ -56,8 +56,6 @@ class Requirements extends GeneralRequirements {
 		parent::validateExtensions($this->req_exts);
 	}
 }
-
-// Check requirements and if are some needed then show requirements page
 $service_dir = dirname(__DIR__);
 new Requirements(APPLICATION_DIRECTORY, $service_dir);
 ?>

@@ -20,7 +20,6 @@ BuildRequires:	checkpolicy
 Requires:	php >= 5.3.4
 Requires:	php-bcmath
 Requires:	php-common
-Requires:	php-mbstring
 Requires:	php-mysqlnd
 Requires:	php-pdo
 Requires:	php-pgsql
@@ -69,7 +68,6 @@ Requires:		php >= 5.3.4
 Requires:		php-common
 Requires:		php-json
 Requires:		php-bcmath
-Requires:		php-mbstring
 Requires:		php-xml
 
 %description web

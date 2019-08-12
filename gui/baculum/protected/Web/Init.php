@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2016 Kern Sibbald
+ * Copyright (C) 2013-2019 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -40,10 +40,4 @@ if (!isset($_SERVER['PHP_AUTH_USER']) && !isset($_SERVER['PHP_AUTH_PW']) && isse
 	// initialize required auth superglobal $_SERVER array
 	list($_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW']) = explode(':', $decoded_credentials);
 }
-
-// Check requirements and if are some needed then show requirements page
-require_once('Pages/Requirements.php');
-$service_dir = __DIR__;
-new Requirements(APPLICATION_DIRECTORY, $service_dir);
-
 ?>
