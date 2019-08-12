@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2016 Kern Sibbald
+ * Copyright (C) 2013-2019 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -29,11 +29,13 @@ class DataDescription extends WebModule {
 	 */
 	const DATA_DESC_FILE = 'Application.Web.Data.data_desc';
 
-	private $data_desc;
+	private static $data_desc = null;
 
-	public function init($config) {
-		parent::init($config);
-		$this->data_desc = $this->loadDataDescription();
+	private function getDataDesc() {
+		if (is_null(self::$data_desc)) {
+			self::$data_desc = $this->loadDataDescription();
+		}
+		return self::$data_desc;
 	}
 
 	private function loadDataDescription() {
@@ -48,12 +50,14 @@ class DataDescription extends WebModule {
 
 	public function getDescription($component_type, $resource_type, $directive_name = null) {
 		$desc = null;
-		if (!is_null($directive_name) && isset($this->data_desc->{$component_type}->{$resource_type}->{$directive_name})) {
-			$desc = $this->data_desc->{$component_type}->{$resource_type}->{$directive_name};
-		} elseif (isset($this->data_desc->{$component_type}->{$resource_type})) {
-			$desc = (array)$this->data_desc->{$component_type}->{$resource_type};
+		$data_desc = $this->getDataDesc();
+		if (!is_null($directive_name) && isset($data_desc->{$component_type}->{$resource_type}->{$directive_name})) {
+			$desc = $data_desc->{$component_type}->{$resource_type}->{$directive_name};
+		} elseif (isset($data_desc->{$component_type}->{$resource_type})) {
+			$desc = (array)$data_desc->{$component_type}->{$resource_type};
 		}
 		return $desc;
 	}
+
 }
 ?>

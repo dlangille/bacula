@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2017 Kern Sibbald
+ * Copyright (C) 2013-2019 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -32,11 +32,13 @@ class DataDependencies extends WebModule {
 	 */
 	const DATA_DEPS_FILE = 'Application.Web.Data.data_deps';
 
-	private $data_deps;
+	private static $data_deps = null;
 
-	public function init($config) {
-		parent::init($config);
-		$this->data_deps = $this->loadDataDependencies();
+	private function getDataDeps() {
+		if (is_null(self::$data_deps)) {
+			self::$data_deps = $this->loadDataDependencies();
+		}
+		return self::$data_deps;
 	}
 
 	/**
@@ -72,8 +74,9 @@ class DataDependencies extends WebModule {
 	 */
 	private function getDependencies($component_type, $resource_type) {
 		$deps = null;
-		if (isset($this->data_deps->{$component_type}->{$resource_type})) {
-			$deps = (array)$this->data_deps->{$component_type}->{$resource_type};
+		$data_deps = $this->getDataDeps();
+		if (isset($data_deps->{$component_type}->{$resource_type})) {
+			$deps = (array)$data_deps->{$component_type}->{$resource_type};
 		}
 		return $deps;
 	}
