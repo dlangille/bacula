@@ -27,10 +27,15 @@ Prado::using('Application.Web.Portlets.DirectiveTemplate');
 
 class DirectiveSpeed extends DirectiveTemplate {
 
+	const ALLOW_REMOVE = 'AllowRemove';
 	const SPEED_FORMAT = 'SpeedFormat';
+	const UNIT_TYPE = 'UnitType';
 	const DEFAULT_SPEED_FORMAT = '';
 
-	private $speed_formats = array(
+	const DECIMAL_UNIT_TYPE = 'decimal';
+	const BINARY_UNIT_TYPE = 'binary';
+
+	private $units = array(
 		array('format' => '', 'value' => 1, 'label' => 'B/s'),
 		array('format' => 'kb/s', 'value' => 1000, 'label' => 'kB/s'),
 		array('format' => 'k/s', 'value' => 1024, 'label' => 'KiB/s'),
@@ -60,10 +65,38 @@ class DirectiveSpeed extends DirectiveTemplate {
 
 	public function getSpeedFormats() {
 		$speed_formats = array();
-		for ($i = 0; $i < count($this->speed_formats); $i++) {
-			$speed_formats[$this->speed_formats[$i]['format']] = $this->speed_formats[$i]['label'];
+		$units = $this->getUnits();
+		for ($i = 0; $i < count($units); $i++) {
+			$speed_formats[$units[$i]['format']] = $units[$i]['label'];
 		}
 		return $speed_formats;
+	}
+
+	/**
+	 * Get units basing on passed unit type.
+	 * If no unit type, all defined unit types are supported.
+	 * Use this method to get allowed units.
+	 *
+	 * @return array allowed units to use in control
+	 */
+	public function getUnits() {
+		$units = array();
+		$unit_type = $this->getUnitType();
+		if (empty($unit_type)) {
+			$units = $this->units;
+		} else {
+			for ($i = 0; $i < count($this->units); $i++) {
+				if ($i > 0) {
+					if ($unit_type === self::DECIMAL_UNIT_TYPE && $this->units[$i]['value'] % 1000 != 0) {
+						continue;
+					} elseif ($unit_type === self::BINARY_UNIT_TYPE && $this->units[$i]['value'] % 1024 != 0) {
+						continue;
+					}
+				}
+				$units[] = $this->units[$i];
+			}
+		}
+		return $units;
 	}
 
 	public function createDirective() {
@@ -101,12 +134,13 @@ class DirectiveSpeed extends DirectiveTemplate {
 	private function formatSpeed($speed_bytes, $format) {
 		$value = $speed_bytes;
 		if ($value > 0) {
-			for ($i = (count($this->speed_formats) - 1); $i >= 0; $i--) {
-				if ($this->speed_formats[$i]['format'] != $format) {
-					$remainder = $value % $this->speed_formats[$i]['value'];
+			$units = $this->getUnits();
+			for ($i = (count($units) - 1); $i >= 0; $i--) {
+				if ($units[$i]['format'] != $format) {
+					$remainder = $value % $units[$i]['value'];
 					if ($remainder == 0) {
-						$value /= $this->speed_formats[$i]['value'];
-						$format = $this->speed_formats[$i]['format'];
+						$value /= $units[$i]['value'];
+						$format = $units[$i]['format'];
 						break;
 					}
 				}
@@ -116,13 +150,68 @@ class DirectiveSpeed extends DirectiveTemplate {
 	}
 
 	private function getValueBytes($value, $speed_format) {
-		for ($i = 0; $i < count($this->speed_formats); $i++) {
-			if ($this->speed_formats[$i]['format'] === $speed_format) {
-				$value *= $this->speed_formats[$i]['value'];
+		$units = $this->getUnits();
+		for ($i = 0; $i < count($units); $i++) {
+			if ($units[$i]['format'] === $speed_format) {
+				$value *= $units[$i]['value'];
 				break;
 			}
 		}
 		return $value;
+	}
+
+	/**
+	 * Set allow remove option.
+	 * If set, it shows remoe button for control. Default is set.
+	 *
+	 * @param boolean $allow_remove allow remove state
+	 * @return none
+	 */
+	public function setAllowRemove($allow_remove) {
+		$allow_remove = TPropertyValue::ensureBoolean($allow_remove);
+		$this->setViewState(self::ALLOW_REMOVE, $allow_remove);
+	}
+
+	/**
+	 * Get allow remove state.
+	 * If not set, by default option value is true.
+	 *
+	 * @return boolean allow remove state
+	 */
+	public function getAllowRemove() {
+		return $this->getViewState(self::ALLOW_REMOVE, true);
+	}
+
+	/**
+	 * Set unit type to show in control.
+	 * Allowed values are: decemial or binary.
+	 * If not set, there supported are both decimal and binary.
+	 *
+	 * @param string $unit_type unit type value (decimal or binary)
+	 * @return none
+	 * @throw Exception if provided invalid unit type value
+	 */
+	public function setUnitType($unit_type) {
+		if ($unit_type === self::DECIMAL_UNIT_TYPE || $unit_type === self::BINARY_UNIT_TYPE) {
+			$this->setViewState(self::UNIT_TYPE, $unit_type);
+		} else {
+			$emsg = sprintf(
+				'Invalid control syntax: %s has no unit type "%s".',
+				__CLASS__,
+				$unit_type
+			);
+			throw new Exception($emsg);
+		}
+	}
+
+	/**
+	 * Get unit type to show in control.
+	 * If unit type is not set, returned is empty string that means both unit types are supported.
+	 *
+	 * @return none
+	 */
+	public function getUnitType() {
+		return $this->getViewState(self::UNIT_TYPE, '');
 	}
 }
 ?>
