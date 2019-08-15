@@ -58,6 +58,7 @@
 	<url ServiceParameter="JobResNames" pattern="api/v1/jobs/resnames/" />
 	<url ServiceParameter="JobsShow" pattern="api/v1/jobs/show/" />
 	<url ServiceParameter="JobShow" pattern="api/v1/jobs/{id}/show/" parameters.id="\d+" />
+	<url ServiceParameter="JobBandwidthLimit" pattern="api/v1/jobs/{id}/bandwidth/" parameters.id="\d+" />
 	<url ServiceParameter="JobsRecent" pattern="api/v1/jobs/recent/{name}/" parameters.name="[a-zA-Z0-9:.\-_ ]+" />
 	<url ServiceParameter="JobEstimate" pattern="api/v1/jobs/estimate/" />
 	<url ServiceParameter="JobRun" pattern="api/v1/jobs/run/" />
