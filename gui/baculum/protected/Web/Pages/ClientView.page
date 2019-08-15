@@ -21,7 +21,7 @@
 	<div class="w3-container tab_item" id="client_actions">
 		<com:TActiveLinkButton
 			ID="ClientStatusBtn"
-			OnClick="status"
+			OnCallback="status"
 			CssClass="w3-button w3-green w3-margin-bottom"
 			CausesValidation="false"
 			ClientSide.OnLoading="$('#status_client_loading').show();$('#status_client_error').hide();"
@@ -79,7 +79,7 @@
 							</tr>
 							<tr>
 								<td><%[ Bandwidth limit: ]%></td>
-								<td id="status_client_bwlimit"></td>
+								<td><span id="status_client_bwlimit"></span><com:Application.Web.Portlets.ClientBandwidthLimit ID="BWLimit" OnCallback="status" /></td>
 							</tr>
 							<tr>
 								<td><%[ Debug: ]%></td>
@@ -158,7 +158,7 @@ var oGraphicalClientStatus = {
 			var img = document.createElement('I');
 			img.className = 'fa';
 			if (value == 1) {
-				img.className += ' fa-check w3-text-green';
+				img.className += ' fa-check';
 			} else {
 				img.className += ' fa-times w3-text-red';
 			}

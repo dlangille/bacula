@@ -2321,3 +2321,21 @@ msgstr "Zatrzymanie komponentu zakończyło się pomyślnie."
 
 msgid "Component restart finished successfully."
 msgstr "Restart komponentu zakończył się pomyślnie."
+
+msgid "Set bandwidth"
+msgstr "Ustaw limit transferu"
+
+msgid "Set client bandwidth limit"
+msgstr "Ustaw limit transferu klienta"
+
+msgid "Here you can set bandwidth limit on client. This changes is applied on running client. There is no need to restart it."
+msgstr "Tutaj możesz ustawić limit transferu na kliencie. Ta zmiana is zastosowana na uruchomionym kliencie. Nie ma żadnej potrzeby restartowania go."
+
+msgid "Bandwidth limit"
+msgstr "Limit transferu"
+
+msgid "Here you can set bandwidth limit on client. This change is applied on running client. There is no need to restart it."
+msgstr "Tutaj możesz ustawić limit transferu dla klienta. Ta zmiana jest zastosowana na działającym kliencie. Nie ma żadnej potrzeby restartowania go."
+
+msgid "Setting 0 (zero) value disables bandwidth limitation."
+msgstr "Ustawienie wartości 0 (zero) wyłącza limitowanie transferu."

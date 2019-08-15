@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2018 Kern Sibbald
+ * Copyright (C) 2013-2019 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -85,6 +85,7 @@ class ClientView extends BaculumWebPage {
 	 */
 	public function setClientId($clientid) {
 		$clientid = intval($clientid);
+		$this->BWLimit->setClientId($clientid);
 		$this->setViewState(self::CLIENTID, $clientid, 0);
 	}
 
@@ -103,6 +104,7 @@ class ClientView extends BaculumWebPage {
 	 * @return none;
 	 */
 	public function setClientName($client_name) {
+		$this->BWLimit->setClientName($client_name);
 		$this->setViewState(self::CLIENT_NAME, $client_name);
 	}
 
@@ -132,6 +134,13 @@ class ClientView extends BaculumWebPage {
 		);
 		if ($graph_status->error === 0) {
 			$client_status['header'] = $graph_status->output;
+			if (!$this->BWLimit->BandwidthLimit->getDirectiveValue()) {
+				$this->BWLimit->setBandwidthLimit($client_status['header']->bwlimit);
+				$this->getCallbackClient()->callClientFunction(
+					'oClientBandwidthLimit.set_value',
+					array($client_status['header']->bwlimit)
+				);
+			}
 		}
 
 		$query_str = '?name=' . rawurlencode($this->getClientName()) . '&type=running';

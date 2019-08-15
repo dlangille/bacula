@@ -15,7 +15,7 @@ var Units = {
 		],
 		speed: [
 			{short: '',  long: 'B/s', value: 1},
-			{short: 'kb/s', long: 'KB/s', value: 1000},
+			{short: 'kb/s', long: 'kB/s', value: 1000},
 			{short: 'k/s', long: 'KiB/s', value: 1024},
 			{short: 'mb/s', long: 'MB/s', value: 1000},
 			{short: 'm/s', long: 'MiB/s', value: 1024}
@@ -132,7 +132,7 @@ var Units = {
 				if (decimal && [1, 1000].indexOf(this.units.speed[i].value) == -1) {
 					continue;
 				}
-				reminder = speed_bytes % this.units.speed[i].value
+				reminder = speed_bytes % this.units.speed[i].value;
 				if (reminder === 0 || (float_val && speed_bytes >= this.units.speed[i].value)) {
 					speed_bytes /= this.units.speed[i].value;
 					f = this.units.speed[i].long;
@@ -141,9 +141,18 @@ var Units = {
 				break;
 			}
 		}
-		var ret = {value: speed_bytes, format: f};
-		return ret;
+		return {value: speed_bytes, format: f};
 	},
+	get_short_unit_by_long: function(unit_type, unit_long) {
+		var unit_short = '';
+		for (var i = 0; i < this.units[unit_type].length; i++) {
+			if (this.units[unit_type][i].long === unit_long) {
+				unit_short = this.units[unit_type][i].short;
+				break;
+			}
+		}
+		return unit_short;
+	}
 }
 
 var Strings = {
@@ -884,6 +893,14 @@ function clear_node(selector) {
 		while (node[i].firstChild) {
 			node[i].removeChild(node[i].firstChild);
 		}
+	}
+}
+
+function show_element(element, show) {
+	if (show === true) {
+		$(element).show('fast');
+	} else {
+		$(element).hide('fast');
 	}
 }
 

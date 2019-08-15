@@ -2314,3 +2314,21 @@ msgstr "Component stop finished successfully."
 
 msgid "Component restart finished successfully."
 msgstr "Component restart finished successfully."
+
+msgid "Set bandwidth"
+msgstr "Set bandwidth"
+
+msgid "Set client bandwidth limit"
+msgstr "Set client bandwidth limit"
+
+msgid "Here you can set bandwidth limit on client. This changes is applied on running client. There is no need to restart it."
+msgstr "Here you can set bandwidth limit on client. This changes is applied on running client. There is no need to restart it."
+
+msgid "Bandwidth limit"
+msgstr "Bandwidth limit"
+
+msgid "Here you can set bandwidth limit on client. This change is applied on running client. There is no need to restart it."
+msgstr "Here you can set bandwidth limit on client. This change is applied on running client. There is no need to restart it."
+
+msgid "Setting 0 (zero) value disables bandwidth limitation."
+msgstr "Setting 0 (zero) value disables bandwidth limitation."
