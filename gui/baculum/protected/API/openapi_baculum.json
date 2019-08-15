@@ -332,7 +332,7 @@
 										"error": {
 											"type": "integer",
 											"description": "Error code",
-											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 1000]
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 11, 1000]
 										}
 									}
 								}
@@ -364,7 +364,7 @@
 										"error": {
 											"type": "integer",
 											"description": "Error code",
-											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 10, 1000]
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 10, 11, 1000]
 										}
 									}
 								}
@@ -454,7 +454,7 @@
 										"error": {
 											"type": "integer",
 											"description": "Error code",
-											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 10, 1000]
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 10, 11, 1000]
 										}
 									}
 								}
@@ -495,7 +495,7 @@
 										"error": {
 											"type": "integer",
 											"description": "Error code",
-											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 10, 1000]
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 10, 11, 1000]
 										}
 									}
 								}
@@ -527,7 +527,7 @@
 										"error": {
 											"type": "integer",
 											"description": "Error code",
-											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 1000]
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 11, 1000]
 										}
 									}
 								}
@@ -563,7 +563,7 @@
 										"error": {
 											"type": "integer",
 											"description": "Error code",
-											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 8, 10, 1000]
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 1000]
 										}
 									}
 								}
@@ -583,6 +583,54 @@
 						"schema": {
 							"type": "string",
 							"pattern": "[p{L}p{N}p{Z}[]()-+/:.#~_,{}!']{1,10000}"
+						}
+					}
+				]
+			}
+		},
+		"/api/v1/clients/{clientid}/bandwidth": {
+			"put": {
+				"tags": ["clients"],
+				"summary": "Set Client bandwidth limit",
+				"description": "Set Client bandwidth limit in bytesh",
+				"responses": {
+					"200": {
+						"description": "Set bandwidth limit output",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"type": "array",
+											"items": {
+												"type": "string",
+												"description": "Bandwidth limit setting output"
+											}
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 10, 11, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					{
+						"$ref": "#/components/parameters/ClientId"
+					},
+					{
+						"name": "limit",
+						"in": "body",
+						"required": false,
+						"default": 0,
+						"description": "Bandwidth limit in bytes",
+						"schema": {
+							"type": "integer"
 						}
 					}
 				]
@@ -611,7 +659,7 @@
 										"error": {
 											"type": "integer",
 											"description": "Error code",
-											"enum": [0, 1, 4, 5, 6, 7, 1000]
+											"enum": [0, 1, 4, 5, 6, 7, 11, 1000]
 										}
 									}
 								}
@@ -652,7 +700,7 @@
 										"error": {
 											"type": "integer",
 											"description": "Error code",
-											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 53, 1000]
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 11, 53, 1000]
 										}
 									}
 								}
@@ -741,7 +789,7 @@
 										"error": {
 											"type": "integer",
 											"description": "Error code",
-											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 50, 1000]
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 11, 50, 1000]
 										}
 									}
 								}
@@ -783,7 +831,7 @@
 										"error": {
 											"type": "integer",
 											"description": "Error code",
-											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 50, 1000]
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 11, 50, 1000]
 										}
 									}
 								}
@@ -828,7 +876,7 @@
 										"error": {
 											"type": "integer",
 											"description": "Error code",
-											"enum": [0, 1, 4, 5, 6, 7, 50, 1000]
+											"enum": [0, 1, 4, 5, 6, 7, 11, 50, 1000]
 										}
 									}
 								}
@@ -872,7 +920,7 @@
 										"error": {
 											"type": "integer",
 											"description": "Error code",
-											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 10, 1000]
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 10, 11, 1000]
 										}
 									}
 								}
@@ -916,7 +964,7 @@
 										"error": {
 											"type": "integer",
 											"description": "Error code",
-											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 1000]
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 11, 1000]
 										}
 									}
 								}
@@ -954,7 +1002,7 @@
 										"error": {
 											"type": "integer",
 											"description": "Error code",
-											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 50, 52, 53, 1000]
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 11, 50, 52, 53, 1000]
 										}
 									}
 								}
@@ -1078,7 +1126,7 @@
 										"error": {
 											"type": "integer",
 											"description": "Error code",
-											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 50, 51, 52, 53, 1000]
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 11, 50, 51, 52, 53, 1000]
 										}
 									}
 								}
@@ -1171,7 +1219,7 @@
 										"error": {
 											"type": "integer",
 											"description": "Error code",
-											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 50, 51, 52, 53, 1000]
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 11, 50, 51, 52, 53, 1000]
 										}
 									}
 								}
@@ -1338,7 +1386,7 @@
 										"error": {
 											"type": "integer",
 											"description": "Error code",
-											"enum": [0, 1, 4, 5, 6, 7, 1000]
+											"enum": [0, 1, 4, 5, 6, 7, 11, 1000]
 										}
 									}
 								}
@@ -1389,7 +1437,7 @@
 										"error": {
 											"type": "integer",
 											"description": "Error code",
-											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 1000]
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 11, 1000]
 										}
 									}
 								}
@@ -1423,7 +1471,7 @@
 										"error": {
 											"type": "integer",
 											"description": "Error code",
-											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 10, 56, 57, 58, 1000]
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 10, 11, 56, 57, 58, 1000]
 										}
 									}
 								}
@@ -1566,7 +1614,7 @@
 										"error": {
 											"type": "integer",
 											"description": "Error code",
-											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 1000]
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 11, 1000]
 										}
 									}
 								}
@@ -1598,7 +1646,7 @@
 										"error": {
 											"type": "integer",
 											"description": "Error code",
-											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 20, 1000]
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 11, 20, 1000]
 										}
 									}
 								}
@@ -1634,7 +1682,7 @@
 										"error": {
 											"type": "integer",
 											"description": "Error code",
-											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 20, 1000]
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 11, 20, 1000]
 										}
 									}
 								}
@@ -1670,7 +1718,7 @@
 										"error": {
 											"type": "integer",
 											"description": "Error code",
-											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 10, 1000]
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 10, 11, 1000]
 										}
 									}
 								}
@@ -1706,7 +1754,7 @@
 										"error": {
 											"type": "integer",
 											"description": "Error code",
-											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 20, 1000]
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 11, 20, 1000]
 										}
 									}
 								}
@@ -1753,7 +1801,7 @@
 										"error": {
 											"type": "integer",
 											"description": "Error code",
-											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 20, 1000]
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 11, 20, 1000]
 										}
 									}
 								}
@@ -1797,7 +1845,7 @@
 										"error": {
 											"type": "integer",
 											"description": "Error code",
-											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 20, 1000]
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 11, 20, 1000]
 										}
 									}
 								}
@@ -1841,7 +1889,7 @@
 										"error": {
 											"type": "integer",
 											"description": "Error code",
-											"enum": [0, 1, 4, 5, 6, 7, 1000]
+											"enum": [0, 1, 4, 5, 6, 7, 11, 1000]
 										}
 									}
 								}
@@ -1882,7 +1930,7 @@
 										"error": {
 											"type": "integer",
 											"description": "Error code",
-											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 40, 1000]
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 11, 40, 1000]
 										}
 									}
 								}
@@ -1914,7 +1962,7 @@
 										"error": {
 											"type": "integer",
 											"description": "Error code",
-											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 40, 1000]
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 11, 40, 1000]
 										}
 									}
 								}
@@ -1946,7 +1994,7 @@
 										"error": {
 											"type": "integer",
 											"description": "Error code",
-											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 40, 1000]
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 11, 40, 1000]
 										}
 									}
 								}
@@ -1982,7 +2030,7 @@
 										"error": {
 											"type": "integer",
 											"description": "Error code",
-											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 40, 1000]
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 11, 40, 1000]
 										}
 									}
 								}
@@ -2019,7 +2067,7 @@
 										"error": {
 											"type": "integer",
 											"description": "Error code",
-											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 40, 1000]
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 11, 40, 1000]
 										}
 									}
 								}
@@ -2056,7 +2104,7 @@
 										"error": {
 											"type": "integer",
 											"description": "Error code",
-											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 40, 41, 1000]
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 11, 40, 41, 1000]
 										}
 									}
 								}
@@ -2092,7 +2140,7 @@
 										"error": {
 											"type": "integer",
 											"description": "Error code",
-											"enum": [0, 1, 4, 5, 6, 7, 1000]
+											"enum": [0, 1, 4, 5, 6, 7, 11, 1000]
 										}
 									}
 								}
@@ -2133,7 +2181,7 @@
 										"error": {
 											"type": "integer",
 											"description": "Error code",
-											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 1000]
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 11, 1000]
 										}
 									}
 								}
@@ -2165,7 +2213,7 @@
 										"error": {
 											"type": "integer",
 											"description": "Error code",
-											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 30, 1000]
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 11, 30, 1000]
 										}
 									}
 								}
@@ -2200,7 +2248,7 @@
 										"error": {
 											"type": "integer",
 											"description": "Error code",
-											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 30, 1000]
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 11, 30, 1000]
 										}
 									}
 								}
@@ -2344,7 +2392,7 @@
 										"error": {
 											"type": "integer",
 											"description": "Error code",
-											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 30, 1000]
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 11, 30, 1000]
 										}
 									}
 								}
@@ -2383,7 +2431,7 @@
 										"error": {
 											"type": "integer",
 											"description": "Error code",
-											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 30, 1000]
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 11, 30, 1000]
 										}
 									}
 								}
@@ -2417,7 +2465,7 @@
 										"error": {
 											"type": "integer",
 											"description": "Error code",
-											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 1000]
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 11, 1000]
 										}
 									}
 								}
@@ -2471,7 +2519,7 @@
 										"error": {
 											"type": "integer",
 											"description": "Error code",
-											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 30, 1000]
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 11, 30, 1000]
 										}
 									}
 								}
@@ -3030,7 +3078,7 @@
 										"error": {
 											"type": "integer",
 											"description": "Error code",
-											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 60, 1000]
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 11, 60, 1000]
 										}
 									}
 								}
@@ -3062,7 +3110,7 @@
 										"error": {
 											"type": "integer",
 											"description": "Error code",
-											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 60, 1000]
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 11, 60, 1000]
 										}
 									}
 								}
@@ -3098,7 +3146,7 @@
 										"error": {
 											"type": "integer",
 											"description": "Error code",
-											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 1000]
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 11, 1000]
 										}
 									}
 								}
@@ -3131,7 +3179,7 @@
 										"error": {
 											"type": "integer",
 											"description": "Error code",
-											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 1000]
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 11, 1000]
 										}
 									}
 								}
@@ -3255,7 +3303,7 @@
 										"error": {
 											"type": "integer",
 											"description": "Error code",
-											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 73, 1000]
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 11, 73, 1000]
 										}
 									}
 								}
@@ -3288,7 +3336,7 @@
 										"error": {
 											"type": "integer",
 											"description": "Error code",
-											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 72, 73, 1000]
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 11, 72, 73, 1000]
 										}
 									}
 								}
@@ -3359,7 +3407,7 @@
 										"error": {
 											"type": "integer",
 											"description": "Error code",
-											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 72, 73, 1000]
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 11, 72, 73, 1000]
 										}
 									}
 								}
@@ -3430,7 +3478,7 @@
 										"error": {
 											"type": "integer",
 											"description": "Error code",
-											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 77, 1000]
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 11, 77, 1000]
 										}
 									}
 								}
@@ -3501,7 +3549,7 @@
 										"error": {
 											"type": "integer",
 											"description": "Error code",
-											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 78, 1000]
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 11, 78, 1000]
 										}
 									}
 								}
@@ -3546,7 +3594,7 @@
 										"error": {
 											"type": "integer",
 											"description": "Error code",
-											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 71, 73, 74, 75, 76, 1000]
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 11, 71, 73, 74, 75, 76, 1000]
 										}
 									}
 								}
@@ -3627,7 +3675,7 @@
 										"error": {
 											"type": "integer",
 											"description": "Error code",
-											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 1000]
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 11, 1000]
 										}
 									}
 								}
@@ -3661,7 +3709,7 @@
 										"error": {
 											"type": "integer",
 											"description": "Error code",
-											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 1000]
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 11, 1000]
 										}
 									}
 								}
@@ -3722,7 +3770,7 @@
 										"error": {
 											"type": "integer",
 											"description": "Error code",
-											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 80, 81, 82, 83, 84, 1000]
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 11, 80, 81, 82, 83, 84, 1000]
 										}
 									}
 								}
@@ -3755,7 +3803,7 @@
 										"error": {
 											"type": "integer",
 											"description": "Error code",
-											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 80, 81, 82, 83, 84, 1000]
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 11, 80, 81, 82, 83, 84, 1000]
 										}
 									}
 								}
@@ -3789,7 +3837,7 @@
 										"error": {
 											"type": "integer",
 											"description": "Error code",
-											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 80, 81, 82, 83, 84, 90, 91, 92, 93, 94, 1000]
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 11, 80, 81, 82, 83, 84, 90, 91, 92, 93, 94, 1000]
 										}
 									}
 								}
@@ -3836,7 +3884,7 @@
 										"error": {
 											"type": "integer",
 											"description": "Error code",
-											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 80, 81, 82, 83, 84, 1000]
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 11, 80, 81, 82, 83, 84, 1000]
 										}
 									}
 								}
@@ -3873,7 +3921,7 @@
 										"error": {
 											"type": "integer",
 											"description": "Error code",
-											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 80, 81, 82, 83, 84, 90, 91, 92, 93, 94, 1000]
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 11, 80, 81, 82, 83, 84, 90, 91, 92, 93, 94, 1000]
 										}
 									}
 								}
@@ -3923,7 +3971,7 @@
 										"error": {
 											"type": "integer",
 											"description": "Error code",
-											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 80, 81, 82, 83, 84, 1000]
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 11, 80, 81, 82, 83, 84, 1000]
 										}
 									}
 								}
@@ -3963,7 +4011,7 @@
 										"error": {
 											"type": "integer",
 											"description": "Error code",
-											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 80, 81, 82, 83, 84, 90, 91, 92, 93, 94, 1000]
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 11, 80, 81, 82, 83, 84, 90, 91, 92, 93, 94, 1000]
 										}
 									}
 								}
@@ -4016,7 +4064,7 @@
 										"error": {
 											"type": "integer",
 											"description": "Error code",
-											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 50, 1000]
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 11, 50, 1000]
 										}
 									}
 								}
@@ -4302,7 +4350,7 @@
 										"error": {
 											"type": "integer",
 											"description": "Error code",
-											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 1000]
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 11, 1000]
 										}
 									}
 								}
@@ -4672,7 +4720,7 @@
 										"error": {
 											"type": "integer",
 											"description": "Error code",
-											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 1000]
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 11, 1000]
 										}
 									}
 								}

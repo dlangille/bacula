@@ -23,6 +23,7 @@
 	<url ServiceParameter="ClientStatus" pattern="api/v1/clients/{id}/status/" parameters.id="\d+" />
 	<url ServiceParameter="JobsForClient" pattern="api/v1/clients/{id}/jobs/" parameters.id="\d+" />
 	<url ServiceParameter="ClientLs" pattern="api/v1/clients/{id}/ls/" parameters.id="\d+" />
+	<url ServiceParameter="ClientBandwidthLimit" pattern="api/v1/clients/{id}/bandwidth/" parameters.id="\d+" />
 	<!-- storages (storage daemons) endpoints -->
 	<url ServiceParameter="Storages" pattern="api/v1/storages/" />
 	<url ServiceParameter="Storage" pattern="api/v1/storages/{id}/" parameters.id="\d+" />

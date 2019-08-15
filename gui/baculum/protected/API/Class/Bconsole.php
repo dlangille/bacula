@@ -86,7 +86,8 @@ class Bconsole extends APIModule {
 		'.schedule',
 		'.api',
 		'.status',
-		'.ls'
+		'.ls',
+		'setbandwidth'
 	);
 
 	private $config;
