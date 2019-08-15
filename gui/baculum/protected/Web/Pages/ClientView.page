@@ -90,6 +90,14 @@
 						<h5 id="status_client_no_jobs_running" style="display: none"><%[ No jobs running ]%></h5>
 						<div id="status_client_running_jobs"></div>
 					</div>
+<com:Application.Web.Portlets.JobBandwidthLimit
+	ID="JobBandwidth"
+	OnCallback="status"
+/>
+<com:TCallback ID="JobBandwidthCb"
+	OnCallback="setBandwidthControl"
+	ClientSide.OnComplete="oJobBandwidthLimit.open_popup();"
+/>
 <script type="text/javascript">
 var oGraphicalClientStatus = {
 	data: {},
@@ -313,12 +321,31 @@ var oGraphicalClientStatus = {
 
 		// Bandwidth limit
 		var bwlimit = '<%[ No limit ]%>';
+		var span = document.createElement('SPAN');
 		var l = parseInt(job.bwlimit, 10);
 		if (l > 0) {
-			var fl = Units.format_speed(l, null, true, true);
+			fl = Units.format_speed(l, null, true, true);
 			bwlimit = fl.value.toFixed(2) + ' ' + fl.format;
 		}
-		this.add_job_row(table, '<%[ Bandwidth limit: ]%>', bwlimit);
+		var text = document.createTextNode(bwlimit + '\u00A0\u00A0');
+		span.appendChild(text);
+		var a = document.createElement('A');
+		a.className = 'w3-hover-opacity';
+		a.href = 'javascript:void(0)';
+		a.addEventListener('click', function(e) {
+			oJobBandwidthLimit.set_value(job.bwlimit);
+			var param = job.jobid + '|' + job.job;
+			var cb = <%=$this->JobBandwidthCb->ActiveControl->Javascript%>;
+			cb.setCallbackParameter(param);
+			cb.dispatch();
+		});
+		a.title = '<%[ Set job bandwidth limit ]%>';
+		var i = document.createElement('I');
+		i.className = 'fas fa-tachometer-alt w3-large';
+		a.appendChild(i);
+		span.appendChild(a);
+
+		this.add_job_row(table, '<%[ Bandwidth limit: ]%>', span);
 
 		var running_jobs_el = document.getElementById(this.ids.running_jobs);
 		if (full_refresh) {
@@ -369,7 +396,11 @@ var oGraphicalClientStatus = {
 		var tdl = document.createElement('TD');
 		var tdr = document.createElement('TD');
 		tdl.textContent = key;
-		tdr.innerHTML = value;
+		if (value instanceof HTMLElement) {
+			tdr.appendChild(value);
+		} else {
+			tdr.innerHTML = value;
+		}
 		tr.appendChild(tdl);
 		tr.appendChild(tdr);
 		table.appendChild(tr);

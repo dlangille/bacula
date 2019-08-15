@@ -22,6 +22,7 @@
 
 Prado::using('System.Web.UI.ActiveControls.TActiveLabel');
 Prado::using('System.Web.UI.ActiveControls.TActiveLinkButton');
+Prado::using('System.Web.UI.ActiveControls.TCallback');
 Prado::using('Application.Web.Class.BaculumWebPage'); 
 
 class ClientView extends BaculumWebPage {
@@ -160,6 +161,14 @@ class ClientView extends BaculumWebPage {
 		}
 
 		$this->getCallbackClient()->callClientFunction('init_graphical_client_status', array($client_status));
+	}
+
+	public function setBandwidthControl($sender, $param) {
+		if ($param instanceof Prado\Web\UI\ActiveControls\TCallbackEventParameter) {
+			list($jobid, $job_uname) = explode('|', $param->getCallbackParameter(), 2);
+			$this->JobBandwidth->setJobId($jobid);
+			$this->JobBandwidth->setJobUname($job_uname);
+		}
 	}
 
 	private function getClientVersion($output) {

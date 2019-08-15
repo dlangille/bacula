@@ -2339,3 +2339,9 @@ msgstr "Tutaj możesz ustawić limit transferu dla klienta. Ta zmiana jest zasto
 
 msgid "Setting 0 (zero) value disables bandwidth limitation."
 msgstr "Ustawienie wartości 0 (zero) wyłącza limitowanie transferu."
+
+msgid "Set job bandwidth limit"
+msgstr "Ustaw limit transferu dla zadania"
+
+msgid "Here you can set bandwidth limit for job. This change is applied on running job."
+msgstr "Tutaj możesz ustawić limit transferu dla zadania. Ta zmiana jest stosowana do uruchomionego zadania."

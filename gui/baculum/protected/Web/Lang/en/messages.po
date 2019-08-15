@@ -2332,3 +2332,9 @@ msgstr "Here you can set bandwidth limit on client. This change is applied on ru
 
 msgid "Setting 0 (zero) value disables bandwidth limitation."
 msgstr "Setting 0 (zero) value disables bandwidth limitation."
+
+msgid "Set job bandwidth limit"
+msgstr "Set job bandwidth limit"
+
+msgid "Here you can set bandwidth limit for job. This change is applied on running job."
+msgstr "Here you can set bandwidth limit for job. This change is applied on running job."
