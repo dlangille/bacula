@@ -135,13 +135,6 @@ class DirectiveRunscript extends DirectiveListTemplate {
 				$in_config = $controls[$j]->getInConfig();
 				$index = $controls[$j]->getGroupName();
 
-				if (!isset($directive_values['Runscript'])) {
-					$directive_values = array('Runscript' => array());
-				}
-				if (!isset($directive_values['Runscript'][$index])) {
-					$directive_values['Runscript'][$index] = new stdClass;
-				}
-
 				if (is_null($directive_value)) {
 					// skip not changed values that don't exist in config
 					continue;
@@ -153,6 +146,14 @@ class DirectiveRunscript extends DirectiveListTemplate {
 					// value the same as default value, skip it
 					continue;
 				}
+
+				if (!isset($directive_values['Runscript'])) {
+					$directive_values = array('Runscript' => array());
+				}
+				if (!isset($directive_values['Runscript'][$index])) {
+					$directive_values['Runscript'][$index] = new stdClass;
+				}
+
 				$directive_values['Runscript'][$index]->{$directive_name} = $directive_value;
 			}
 		}
