@@ -324,7 +324,11 @@ var oGraphicalClientStatus = {
 			bytes_progress.title = '<%[ Progress bar displays estimated values ]%>';
 			var bytes_label = document.createElement('DIV');
 			bytes_label.className = 'progressbar-label';
-			bytes_label.textContent =  Units.get_formatted_size(bytes) + ' / <%[ est. ]%> ' +  Units.get_formatted_size(est.est_bytes) + ' (' + ((100 * bytes) / est.est_bytes).toFixed(1) + '%' + ')';
+			var bytes_perc = ((100 * bytes) / est.est_bytes);
+			if (bytes_perc > 100) {
+				bytes_perc = 100;
+			}
+			bytes_label.textContent =  Units.get_formatted_size(bytes) + ' / <%[ est. ]%> ' +  Units.get_formatted_size(est.est_bytes) + ' (' + bytes_perc.toFixed(1) + '%' + ')';
 			bytes_progress.style.width = '70%';
 			bytes_progress.appendChild(bytes_label);
 			var bytes_bar = $(bytes_progress);
@@ -346,7 +350,11 @@ var oGraphicalClientStatus = {
 			files_progress.title = '<%[ Progress bar displays estimated values ]%>';
 			var files_label = document.createElement('DIV');
 			files_label.className = 'progressbar-label';
-			files_label.textContent =  files + ' / <%[ est. ]%> ' +  parseInt(est.est_files, 10) + ' (' + ((100 * files) / est.est_files).toFixed(1) + '%' + ')';
+			var files_perc = ((100 * files) / est.est_files);
+			if (files_perc > 100) {
+				files_perc = 100;
+			}
+			files_label.textContent =  files + ' / <%[ est. ]%> ' +  parseInt(est.est_files, 10) + ' (' + files_perc.toFixed(1) + '%' + ')';
 			files_progress.style.width = '70%';
 			files_progress.appendChild(files_label);
 			var files_bar = $(files_progress);

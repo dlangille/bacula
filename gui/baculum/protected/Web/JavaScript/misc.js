@@ -869,16 +869,31 @@ function estimate_job(jobs, job, level) {
 			counter++;
 		}
 	}
-	var bytes_slope = ((counter * bytes_xy) - (time * bytes)) / (counter * x2 - Math.pow(time, 2));
-	var files_slope = ((counter * files_xy) - (time * files)) / (counter * x2 - Math.pow(time, 2));
-	var bytes_intercept = (bytes / counter) - (bytes_slope * (time / counter));
-	var files_intercept = (files / counter) - (files_slope * (time / counter));
-	var est_bytes = bytes_intercept + (bytes_slope * parseInt((new Date).getTime() / 1000, 10));
-	var est_files = files_intercept + (files_slope * parseInt((new Date).getTime() / 1000, 10));
-	return {
-		est_bytes: est_bytes,
-		est_files: est_files
-	};
+	var est;
+	if (counter < 2) {
+		est = {
+			est_bytes: bytes,
+			est_files: files
+		};
+	} else if (counter === 2) {
+		est = {
+			est_bytes: (bytes / 2),
+			est_files: (files / 2)
+		}
+	} else {
+		var divisor = (counter * x2 - Math.pow(time, 2));
+		var bytes_slope = ((counter * bytes_xy) - (time * bytes)) / divisor;
+		var files_slope = ((counter * files_xy) - (time * files)) / divisor;
+		var bytes_intercept = (bytes / counter) - (bytes_slope * (time / counter));
+		var files_intercept = (files / counter) - (files_slope * (time / counter));
+		var est_bytes = bytes_intercept + (bytes_slope * parseInt((new Date).getTime() / 1000, 10));
+		var est_files = files_intercept + (files_slope * parseInt((new Date).getTime() / 1000, 10));
+		est = {
+			est_bytes: est_bytes,
+			est_files: est_files
+		};
+	}
+	return est;
 };
 
 function get_url_param (name) {
