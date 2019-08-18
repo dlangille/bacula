@@ -798,7 +798,7 @@
 				"ValueType": "migtype",
 				"DefaultValue": 0,
 				"FieldType": "ComboBox",
-				"Data": ["SmallestVolume", "OldestVolume", "Client", "Volume", "Job", "SQLQuery", "PoolOccupancy", "PoolTime", "PoolUncopiedJobs"]
+				"Data": ["SmallestVolume", "OldestVolume", "Client", "Volume", "Job", "SqlQuery", "PoolOccupancy", "PoolTime", "PoolUncopiedJobs"]
 			},
 			"Accurate": {
 				"Required": false,
