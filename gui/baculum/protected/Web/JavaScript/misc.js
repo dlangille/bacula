@@ -842,7 +842,44 @@ W3SubTabs = {
 	open: function(btn_id, item_id) {
 		W3TabsCommon.open.call(this, btn_id, item_id);
 	}
-}
+};
+
+function estimate_job(jobs, job, level) {
+	var bytes = 0;
+	var files = 0;
+	var time = 0;
+	var bytes_xy = 0;
+	var files_xy = 0;
+	var x2 = 0;
+	var counter = 0;
+	for (var i = 0; i < jobs.length; i++) {
+		if (jobs[i].name === job && jobs[i].level === level) {
+			if (jobs[i].jobbytes === 0 || jobs[i].jobfies === 0 || jobs[i].jobstatus !== 'T') {
+				continue;
+			}
+			if (counter === 20) {
+				break;
+			}
+			time += jobs[i].jobtdate;
+			bytes += jobs[i].jobbytes;
+			files += jobs[i].jobfiles;
+			bytes_xy += jobs[i].jobtdate * jobs[i].jobbytes;
+			files_xy += jobs[i].jobtdate * jobs[i].jobfiles;
+			x2 += Math.pow(jobs[i].jobtdate, 2);
+			counter++;
+		}
+	}
+	var bytes_slope = ((counter * bytes_xy) - (time * bytes)) / (counter * x2 - Math.pow(time, 2));
+	var files_slope = ((counter * files_xy) - (time * files)) / (counter * x2 - Math.pow(time, 2));
+	var bytes_intercept = (bytes / counter) - (bytes_slope * (time / counter));
+	var files_intercept = (files / counter) - (files_slope * (time / counter));
+	var est_bytes = bytes_intercept + (bytes_slope * parseInt((new Date).getTime() / 1000, 10));
+	var est_files = files_intercept + (files_slope * parseInt((new Date).getTime() / 1000, 10));
+	return {
+		est_bytes: est_bytes,
+		est_files: est_files
+	};
+};
 
 function get_url_param (name) {
 	var url = window.location.href;

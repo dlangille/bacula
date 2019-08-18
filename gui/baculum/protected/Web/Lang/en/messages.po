@@ -2228,8 +2228,8 @@ msgstr "Go to job %job"
 msgid "Graphical status"
 msgstr "Graphical status"
 
-msgid "Text status"
-msgstr "Text status"
+msgid "Raw status"
+msgstr "Raw status"
 
 msgid "Uname:"
 msgstr "Uname:"
@@ -2338,3 +2338,24 @@ msgstr "Set job bandwidth limit"
 
 msgid "Here you can set bandwidth limit for job. This change is applied on running job."
 msgstr "Here you can set bandwidth limit for job. This change is applied on running job."
+
+msgid "est."
+msgstr "est."
+
+msgid "Progress bar displays estimated values"
+msgstr "Progress bar displays estimated values"
+
+msgid "Byte progress bar:"
+msgstr "Byte progress bar:"
+
+msgid "File progress bar:"
+msgstr "File progress bar:"
+
+msgid "Running job status"
+msgstr "Running job status"
+
+msgid "Raw job log"
+msgstr "Raw job log"
+
+msgid "Not available"
+msgstr "Not available"

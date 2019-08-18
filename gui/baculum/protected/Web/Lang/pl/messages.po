@@ -2235,7 +2235,7 @@ msgstr "Przejdź do zadania %job"
 msgid "Graphical status"
 msgstr "Status graficzny"
 
-msgid "Text status"
+msgid "Raw status"
 msgstr "Status tekstowy"
 
 msgid "Uname:"
@@ -2345,3 +2345,24 @@ msgstr "Ustaw limit transferu dla zadania"
 
 msgid "Here you can set bandwidth limit for job. This change is applied on running job."
 msgstr "Tutaj możesz ustawić limit transferu dla zadania. Ta zmiana jest stosowana do uruchomionego zadania."
+
+msgid "est."
+msgstr "est."
+
+msgid "Progress bar displays estimated values"
+msgstr "Pasek postępu wyświetla szacunkowe wartości"
+
+msgid "Byte progress bar:"
+msgstr "Pasek postępu bajtów:"
+
+msgid "File progress bar:"
+msgstr "Pasek postępu plików:"
+
+msgid "Running job status"
+msgstr "Status uruchomionego zadania"
+
+msgid "Raw job log"
+msgstr "Surowy dziennik zadania"
+
+msgid "Not available"
+msgstr "Niedostępny"

@@ -249,3 +249,16 @@ table.status_table td, table.status_table td i {
 .fa-ellipsis-v:hover {
 	background-color: #efeff0;
 }
+
+.progressbar {
+	position: relative;
+}
+
+.progressbar-label {
+	position: absolute;
+	left: 50%;
+	transform: translateX(-50%);
+	top: 4px;
+	font-weight: bold;
+	text-shadow: 1px 1px 0 #fff;
+}

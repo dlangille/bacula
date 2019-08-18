@@ -23,6 +23,7 @@
 Prado::using('System.Web.UI.ActiveControls.TActiveLabel');
 Prado::using('System.Web.UI.ActiveControls.TActiveLinkButton');
 Prado::using('System.Web.UI.ActiveControls.TCallback');
+Prado::using('System.Web.UI.JuiControls.TJuiProgressbar');
 Prado::using('Application.Web.Class.BaculumWebPage'); 
 
 class ClientView extends BaculumWebPage {
@@ -135,7 +136,7 @@ class ClientView extends BaculumWebPage {
 		);
 		if ($graph_status->error === 0) {
 			$client_status['header'] = $graph_status->output;
-			if (!$this->BWLimit->BandwidthLimit->getDirectiveValue()) {
+			if (!$this->BWLimit->BandwidthLimit->getDirectiveValue() && is_object($client_status['header'])) {
 				$this->BWLimit->setBandwidthLimit($client_status['header']->bwlimit);
 				$this->getCallbackClient()->callClientFunction(
 					'oClientBandwidthLimit.set_value',

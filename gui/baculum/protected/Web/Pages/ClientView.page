@@ -46,7 +46,7 @@
 						<div id="status_client_subtab_graphical" class="subtab_btn w3-half w3-bottombar w3-hover-light-grey w3-border-red w3-padding"><%[ Graphical status ]%></div>
 					 </a>
 					<a href="javascript:void(0)" onclick="W3SubTabs.open('status_client_subtab_text', 'status_client_text_output');">
-						<div id="status_client_subtab_text" class="subtab_btn w3-half w3-bottombar w3-hover-light-grey w3-padding"><%[ Text status ]%></div>
+						<div id="status_client_subtab_text" class="subtab_btn w3-half w3-bottombar w3-hover-light-grey w3-padding"><%[ Raw status ]%></div>
 					</a>
 				</div>
 				<div id="status_client_graphical_output" class="subtab_item">
@@ -98,6 +98,7 @@
 	OnCallback="setBandwidthControl"
 	ClientSide.OnComplete="oJobBandwidthLimit.open_popup();"
 />
+<com:TJuiProgressbar Display="None" />
 <script type="text/javascript">
 var oGraphicalClientStatus = {
 	data: {},
@@ -308,6 +309,55 @@ var oGraphicalClientStatus = {
 			}
 			this.add_job_row(table, '<%[ Processing file: ]%>', processing_file.outerHTML);
 		}
+
+		var job_name = job.job.replace(/\.\d{4}-\d{2}-\d{2}_\d{2}.\d{2}.\d{2}_\d{2}$/, '');
+		var bytes = parseInt(job.jobbytes, 10);
+		var files = parseInt(job.jobfiles, 10);
+		files = files > 0 ? (files - 1) : 0;
+		var est = estimate_job(oData.jobs, job_name, job.level);
+
+		// Progress bar bytes
+		var bytes_progress;
+		if (job.type === 'B' && est.est_bytes > 0) {
+			bytes_progress = document.createElement('DIV');
+			bytes_progress.className = 'progressbar';
+			bytes_progress.title = '<%[ Progress bar displays estimated values ]%>';
+			var bytes_label = document.createElement('DIV');
+			bytes_label.className = 'progressbar-label';
+			bytes_label.textContent =  Units.get_formatted_size(bytes) + ' / <%[ est. ]%> ' +  Units.get_formatted_size(est.est_bytes) + ' (' + ((100 * bytes) / est.est_bytes).toFixed(1) + '%' + ')';
+			bytes_progress.style.width = '70%';
+			bytes_progress.appendChild(bytes_label);
+			var bytes_bar = $(bytes_progress);
+			bytes_bar.progressbar({
+				max: est.est_bytes,
+				value: bytes
+			});
+		} else {
+			bytes_progress = '<%[ Not available ]%>';
+		}
+		this.add_job_row(table, '<%[ Byte progress bar: ]%>', bytes_progress);
+
+
+		// Progress bar files
+		var files_progress;
+		if (job.type === 'B' && est.est_files > 0) {
+			files_progress = document.createElement('DIV');
+			files_progress.className = 'progressbar';
+			files_progress.title = '<%[ Progress bar displays estimated values ]%>';
+			var files_label = document.createElement('DIV');
+			files_label.className = 'progressbar-label';
+			files_label.textContent =  files + ' / <%[ est. ]%> ' +  parseInt(est.est_files, 10) + ' (' + ((100 * files) / est.est_files).toFixed(1) + '%' + ')';
+			files_progress.style.width = '70%';
+			files_progress.appendChild(files_label);
+			var files_bar = $(files_progress);
+			files_bar.progressbar({
+				max: est.est_files,
+				value: files
+			});
+		} else {
+			files_progress = '<%[ Not available ]%>';
+		}
+		this.add_job_row(table, '<%[ File progress bar: ]%>', files_progress);
 
 		// Job errors
 		this.add_job_row(table, '<%[ Job errors: ]%>', job.errors);
