@@ -84,9 +84,313 @@
 					<i class="fa fa-check"></i>
 				</com:TActiveLabel>
 			</h3>
-			<div class="w3-code notranslate">
-				<pre><com:TActiveLabel ID="JobLog" /></pre>
+			<com:TCallback
+				ID="RunningJobStatusCb"
+				OnCallback="runningJobStatus"
+				ClientSide.OnComplete="oRunningJobStatus.init_refresh();"
+			/>
+			<com:TConditional
+				ID="RunningJobStatus"
+				Condition="$this->allow_graph_mode"
+			>
+				<prop:TrueTemplate>
+			<div class="w3-row">
+				<a href="javascript:void(0)" onclick="W3SubTabs.open('status_running_job_subtab_graphical', 'status_running_job_graphical_output');">
+					<div id="status_running_job_subtab_graphical" class="subtab_btn w3-half w3-bottombar w3-hover-light-grey w3-border-red w3-padding"><%[ Running job status ]%></div>
+				 </a>
+				<a href="javascript:void(0)" onclick="W3SubTabs.open('joblog_subtab_text', 'joblog_text_output');">
+					<div id="joblog_subtab_text" class="subtab_btn w3-half w3-bottombar w3-hover-light-grey w3-padding"><%[ Raw job log ]%></div>
+				</a>
 			</div>
+			<div id="status_running_job_graphical_output" class="subtab_item">
+				<h4 id="status_running_job_status_not_supported" style="display: none"><%[ Graphical job status is supported for jobs running on Bacula clients version 9.0 and greater. ]%></h4>
+				<div id="status_running_job_graphical_container">
+					<div class="w3-right w3-margin-top w3-margin-right" title="<%[ To disable refreshing please type 0. ]%>">
+						<span style="line-height: 41px"><%[ Refresh interval (sec.): ]%></span> <input type="text" id="status_running_job_refresh_interval" class="w3-input w3-border w3-right w3-margin-left" value="5" style="width: 50px"/>
+					</div>
+					<div id="status_running_job"><table></table></div>
+					<com:Application.Web.Portlets.JobBandwidthLimit
+						ID="JobBandwidth"
+						OnCallback="runningJobStatus"
+						JobId="<%=$this->SourceTemplateControl->getJobId()%>"
+						JobUname="<%=$this->SourceTemplateControl->getJobUname()%>"
+					/>
+					<com:TJuiProgressbar Display="None" />
+				</div>
+				<script>
+var oRunningJobStatus = {
+	data: {},
+	refresh_timeout: null,
+	ids: {
+		running_job: 'status_running_job',
+		refresh_interval: 'status_running_job_refresh_interval',
+		status_not_supported: 'status_running_job_status_not_supported',
+		graphical_container: 'status_running_job_graphical_container',
+		header: {
+			version: 'status_client_version',
+			uname: 'status_client_uname',
+			started_epoch: 'status_client_started_time',
+			jobs_run: 'status_client_jobs_running',
+			plugins: 'status_client_plugins',
+			bwlimit: 'status_client_bwlimit',
+			debug: 'status_client_debug'
+		},
+		show: {
+			maxjobs: 'status_client_maxjobs',
+			enabled: 'status_client_enabled'
+		}
+	},
+	init: function() {
+		this.set_events();
+		this.init_refresh();
+	},
+	set_data: function(data) {
+		this.data = data;
+	},
+	set_events: function() {
+		var refresh_interval_el = document.getElementById(this.ids.refresh_interval);
+		refresh_interval_el.addEventListener('keyup', function(e) {
+			this.init_refresh();
+		}.bind(this));
+	},
+	init_refresh: function() {
+		var refresh_interval_el = document.getElementById(this.ids.refresh_interval);
+		var interval = refresh_interval_el.value;
+		this.set_refresh_timeout(interval);
+	},
+	set_refresh_timeout: function(timeout) {
+		if (!this.data.is_running) {
+			return;
+		}
+		timeout = parseInt(timeout, 10) * 1000;
+		if (isNaN(timeout)) {
+			return;
+		}
+		if (this.refresh_timeout !== null) {
+			clearTimeout(this.refresh_timeout);
+		}
+		if (timeout === 0) {
+			return;
+		}
+		this.refresh_timeout = setTimeout(function() {
+			this.refresh_status();
+		}.bind(this), timeout);
+	},
+	refresh_status: function() {
+		var cb = <%=$this->RunningJobStatusCb->ActiveControl->Javascript%>;
+		cb.dispatch();
+	},
+	update: function(data) {
+		this.set_data(data);
+		if (this.is_status_supported() === false) {
+			return;
+		}
+		var el, val;
+		if (this.data.is_running) {
+			if (this.data.job.status === 'R') {
+				this.add_running_job(this.data.job);
+			} else {
+				/**
+				 * Do nothing, just wait where jobstatus will change
+				 * from 'C' into 'R'. Jobs with 'C' jobstatus are not
+				 * visible in status client output.
+				 */
+			}
+		} else {
+			clear_node('#' + this.ids.running_job);
+			$('#' + this.ids.refresh_interval).parent().hide();
+			var graphical_container = document.getElementById(this.ids.graphical_container);
+			graphical_container.style.display = 'none';
+			W3SubTabs.open('joblog_subtab_text', 'joblog_text_output');
+		}
+	},
+	add_running_job: function(job, full_refresh) {
+		var table = document.createElement('TABLE');
+		table.className = 'w3-table w3-stripped w3-border status_table running_job_table';
+		table.setAttribute('rel', job.jobid);
+
+		// Type
+		var type = JobType.get_type(job.type);
+		this.add_job_row(table, '<%[ Type: ]%>', type);
+
+		// Level
+		var level = job.type === 'R' ? '-' : JobLevel.get_level(job.level);
+		this.add_job_row(table, '<%[ Level: ]%>', level);
+
+		// Job bytes
+		var jobbytes = Units.get_formatted_size(job.jobbytes);
+		this.add_job_row(table, '<%[ Job bytes: ]%>', jobbytes);
+
+		// Job files
+		this.add_job_row(table, '<%[ Job files: ]%>', job.jobfiles);
+
+		// Average job speed
+		var ave_speed = Units.format_speed(job.bytes_sec, null, true, true);
+		var ave_job_speed = ave_speed.value.toFixed(2) + ' ' + ave_speed.format;
+		this.add_job_row(table, '<%[ Average speed: ]%>', ave_job_speed);
+
+		// Processing file
+		if (job.hasOwnProperty('processing_file') && job.processing_file) {
+			var processing_file = document.createElement('SPAN');
+			processing_file.title = job.processing_file;
+			if (job.processing_file.length > 60) {
+				processing_file.textContent = job.processing_file.substr(0, 17) + ' (..) ' + job.processing_file.substr(-37);
+			} else {
+				processing_file.textContent = job.processing_file;
+			}
+			this.add_job_row(table, '<%[ Processing file: ]%>', processing_file.outerHTML);
+		}
+
+		var job_name = '<%=$this->getJobName()%>';
+		var bytes = parseInt(job.jobbytes, 10);
+		var files = parseInt(job.jobfiles, 10);
+		files = files > 0 ? (files - 1) : 0;
+		var est = estimate_job(oData.jobs, job_name, job.level);
+
+		// Progress bar bytes
+		var bytes_progress;
+		if (job.type === 'B' && est.est_bytes > 0) {
+			bytes_progress = document.createElement('DIV');
+			bytes_progress.className = 'progressbar';
+			bytes_progress.title = '<%[ Progress bar displays estimated values ]%>';
+			var bytes_label = document.createElement('DIV');
+			bytes_label.className = 'progressbar-label';
+			bytes_label.textContent =  Units.get_formatted_size(bytes) + ' / <%[ est. ]%> ' +  Units.get_formatted_size(est.est_bytes) + ' (' + ((100 * bytes) / est.est_bytes).toFixed(1) + '%' + ')';
+			bytes_progress.style.width = '70%';
+			bytes_progress.appendChild(bytes_label);
+			var bytes_bar = $(bytes_progress);
+			bytes_bar.progressbar({
+				max: est.est_bytes,
+				value: bytes
+			});
+		} else {
+			bytes_progress = '<%[ Not available ]%>';
+		}
+		this.add_job_row(table, '<%[ Byte progress bar: ]%>', bytes_progress);
+
+
+		// Progress bar files
+		var files_progress;
+		if (job.type === 'B' && est.est_files > 0) {
+			files_progress = document.createElement('DIV');
+			files_progress.className = 'progressbar';
+			files_progress.title = '<%[ Progress bar displays estimated values ]%>';
+			var files_label = document.createElement('DIV');
+			files_label.className = 'progressbar-label';
+			files_label.textContent =  files + ' / <%[ est. ]%> ' +  parseInt(est.est_files, 10) + ' (' + ((100 * files) / est.est_files).toFixed(1) + '%' + ')';
+			files_progress.style.width = '70%';
+			files_progress.appendChild(files_label);
+			var files_bar = $(files_progress);
+			files_bar.progressbar({
+				max: est.est_files,
+				value: files
+			});
+		} else {
+			files_progress = '<%[ Not available ]%>';
+		}
+		this.add_job_row(table, '<%[ File progress bar: ]%>', files_progress);
+
+		// Job errors
+		this.add_job_row(table, '<%[ Job errors: ]%>', job.errors);
+
+		// Read bytes
+		var read_bytes = Units.get_formatted_size(job.readbytes);
+		this.add_job_row(table, '<%[ Read bytes: ]%>', read_bytes);
+
+		// Examined files
+		this.add_job_row(table, '<%[ Examined files: ]%>', job.files_examined);
+
+		// Bandwidth limit
+		var bwlimit = '<%[ No limit ]%>';
+		var span = document.createElement('SPAN');
+		var l = parseInt(job.bwlimit, 10);
+		if (l > 0) {
+			fl = Units.format_speed(l, null, true, true);
+			bwlimit = fl.value.toFixed(2) + ' ' + fl.format;
+		}
+		var text = document.createTextNode(bwlimit + '\u00A0\u00A0');
+		span.appendChild(text);
+		var a = document.createElement('A');
+		a.className = 'w3-hover-opacity';
+		a.href = 'javascript:void(0)';
+		a.addEventListener('click', function(e) {
+			oJobBandwidthLimit.set_value(job.bwlimit);
+			oJobBandwidthLimit.open_popup();
+		});
+		a.title = '<%[ Set job bandwidth limit ]%>';
+		var i = document.createElement('I');
+		i.className = 'fas fa-tachometer-alt w3-large';
+		a.appendChild(i);
+		span.appendChild(a);
+
+		this.add_job_row(table, '<%[ Bandwidth limit: ]%>', span);
+
+		var running_job_el = document.getElementById(this.ids.running_job);
+		var t = running_job_el.querySelector('table');
+		running_job_el.replaceChild(table, t);
+	},
+	add_job_row: function(table, key, value) {
+		var tr = document.createElement('TR');
+		var tdl = document.createElement('TD');
+		var tdr = document.createElement('TD');
+		tdl.textContent = key;
+		if (value instanceof HTMLElement) {
+			tdr.appendChild(value);
+		} else {
+			tdr.innerHTML = value;
+		}
+		tr.appendChild(tdl);
+		tr.appendChild(tdr);
+		table.appendChild(tr);
+	},
+	is_status_supported: function() {
+		var supported = false;
+		var not_supported = document.getElementById(this.ids.status_not_supported);
+		var graphical_container = document.getElementById(this.ids.graphical_container);
+		if (this.data && this.data.hasOwnProperty('header') && this.data.header && this.data.header.hasOwnProperty('version')) {
+			var match = this.data.header.version.match(/^(\d+)\.(\d+)\.(\d+)\s+\(/);
+			if (match) {
+				var major = match[1];
+				var minor = match[2];
+				var release = match[3];
+				if (major >= 9 && minor >= 0 && release >= 0) {
+					supported = true;
+					not_supported.style.display = 'none';
+					graphical_container.style.display = '';
+				}
+			}
+		} else if (not_supported.style.display == 'none') {
+			not_supported.style.display = '';
+			graphical_container.style.display = 'none';
+			W3SubTabs.open('joblog_subtab_text', 'joblog_text_output');
+		}
+		return supported;
+	}
+}
+
+function init_graphical_running_job_status(data) {
+	oRunningJobStatus.update(data);
+}
+
+oRunningJobStatus.init();
+
+MonitorParams = ['jobs'];
+$(function() {
+	MonitorCalls.push(function() { oRunningJobStatus.refresh_status(); });
+});
+				</script>
+			</div>
+			<div id="joblog_text_output" class="subtab_item" style="display: none">
+				</prop:TrueTemplate>
+			</com:TConditional>
+				<div class="w3-code">
+					<pre><com:TActiveLabel ID="JobLog" /></pre>
+				</div>
+			<com:TConditional Condition="$this->allow_graph_mode">
+				<prop:TrueTemplate>
+			</div>
+				</prop:TrueTemplate>
+			</com:TConditional>
 		</div>
 		<com:TCallback
 			ID="RefreshJobLog"

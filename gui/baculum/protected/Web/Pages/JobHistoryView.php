@@ -23,6 +23,7 @@
 Prado::using('System.Web.UI.ActiveControls.TActiveLabel');
 Prado::using('System.Web.UI.ActiveControls.TActiveLinkButton');
 Prado::using('System.Web.UI.ActiveControls.TCallback');
+Prado::using('System.Web.UI.JuiControls.TJuiProgressbar');
 Prado::using('Application.Web.Class.BaculumWebPage'); 
 
 class JobHistoryView extends BaculumWebPage {
@@ -31,6 +32,7 @@ class JobHistoryView extends BaculumWebPage {
 	const JOBID = 'JobId';
 	const JOB_NAME = 'JobName';
 	const JOB_UNAME = 'JobUname';
+	const CLIENTID = 'ClientId';
 	const JOB_TYPE = 'JobType';
 
 	const USE_CACHE = true;
@@ -40,28 +42,33 @@ class JobHistoryView extends BaculumWebPage {
 
 	const RESOURCE_SHOW_PATTERN = '/^\s+--> %resource: name=(.+?(?=\s\S+\=.+)|.+$)/i';
 
-	private $jobdata;
 	public $is_running = false;
-	public $fileset;
-	public $schedule;
+	public $allow_graph_mode = false;
+	private $no_graph_mode_types = array('M', 'D', 'C', 'c', 'g');
 
-	public function onInit($param) {
-		parent::onInit($param);
+	public function onPreInit($param) {
+		parent::onPreInit($param);
 		$jobid = 0;
 		if ($this->Request->contains('jobid')) {
 			$jobid = intval($this->Request['jobid']);
-			$this->RunJobModal->setJobId($jobid);
 		}
 		$jobdata = $this->getModule('api')->get(
 			array('jobs', $jobid), null, true, self::USE_CACHE
 		);
-		$this->jobdata = $jobdata->error === 0 ? $jobdata->output : null;
-		$this->RunJobModal->setJobName($this->jobdata->name);
-		$this->setJobId($this->jobdata->jobid);
-		$this->setJobName($this->jobdata->name);
-		$this->setJobUname($this->jobdata->job);
-		$this->setJobType($this->jobdata->type);
-		$this->is_running = $this->getModule('misc')->isJobRunning($this->jobdata->jobstatus);
+		$jobdata = $jobdata->error === 0 ? $jobdata->output : null;
+		$this->setJobId($jobdata->jobid);
+		$this->setJobName($jobdata->name);
+		$this->setJobUname($jobdata->job);
+		$this->setJobType($jobdata->type);
+		$this->setClientId($jobdata->clientid);
+		$this->is_running = $this->getModule('misc')->isJobRunning($jobdata->jobstatus);
+		$this->allow_graph_mode = ($this->is_running && !in_array($jobdata->type, $this->no_graph_mode_types));
+	}
+
+	public function onInit($param) {
+		parent::onInit($param);
+		$this->RunJobModal->setJobId($this->getJobId());
+		$this->RunJobModal->setJobName($this->getJobName());
 	}
 
 	public function onLoad($param) {
@@ -72,10 +79,59 @@ class JobHistoryView extends BaculumWebPage {
 		$this->refreshJobLog(null, null);
 	}
 
+	public function runningJobStatus($sender, $param) {
+		$running_job_status = $this->getRunningJobStatus($this->getClientId());
+		$this->getCallbackClient()->callClientFunction('init_graphical_running_job_status', array($running_job_status));
+	}
+
+	public function getRunningJobStatus($clientid) {
+		$client_name = null;
+		$client = $this->getModule('api')->get(
+			array('clients', $clientid),
+		);
+		if ($client->error === 0) {
+			$client_name = $client->output->name;
+		}
+
+		$running_job_status = array(
+			'header' => array(),
+			'job' => array(),
+			'is_running' => $this->is_running
+		);
+		if (is_string($client_name)) {
+			$query_str = '?name=' . rawurlencode($client_name) . '&type=header';
+			$graph_status = $this->getModule('api')->get(
+				array('status', 'client', $query_str),
+			);
+
+			if ($graph_status->error === 0) {
+				$running_job_status['header'] = $graph_status->output;
+			}
+
+			$query_str = '?name=' . rawurlencode($client_name) . '&type=running';
+			$graph_status = $this->getModule('api')->get(
+				array('status', 'client', $query_str),
+			);
+			if ($graph_status->error === 0) {
+				$jobid = $this->getJobId();
+				for ($i = 0; $i < count($graph_status->output); $i++) {
+					foreach ($graph_status->output[$i] as $key => $val) {
+						$prop = strtolower($key);
+						if ($prop === 'jobid' && intval($val) == $jobid) {
+							$running_job_status['job'] = $graph_status->output[$i];
+							break 2;
+						}
+					}
+				}
+			}
+		}
+		return $running_job_status;
+	}
+
 	/**
 	 * Set jobid to run job again.
 	 *
-	 * @return none;
+	 * @return none
 	 */
 	public function setJobId($jobid) {
 		$jobid = intval($jobid);
@@ -89,6 +145,25 @@ class JobHistoryView extends BaculumWebPage {
 	 */
 	public function getJobId() {
 		return $this->getViewState(self::JOBID, 0);
+	}
+
+	/**
+	 * Set job clientid
+	 *
+	 * @return none
+	 */
+	public function setClientId($clientid) {
+		$clientid = intval($clientid);
+		$this->setViewState(self::CLIENTID, $clientid, 0);
+	}
+
+	/**
+	 * Get client jobid.
+	 *
+	 * @return integer clientid
+	 */
+	public function getClientId() {
+		return $this->getViewState(self::CLIENTID, 0);
 	}
 
 	/**
