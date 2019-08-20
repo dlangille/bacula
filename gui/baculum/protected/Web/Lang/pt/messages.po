@@ -2377,3 +2377,6 @@ msgstr "Not available"
 
 msgid "The storage has been selected basing on job configuration. This item may require adjusting before job run."
 msgstr "The storage has been selected basing on job configuration. This item may require adjusting before job run."
+
+msgid "Graphical job status is supported for jobs running on Bacula clients version 9.0 and greater."
+msgstr "Graphical job status is supported for jobs running on Bacula clients version 9.0 and greater."
