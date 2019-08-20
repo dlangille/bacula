@@ -2366,3 +2366,6 @@ msgstr "Surowy dziennik zadania"
 
 msgid "Not available"
 msgstr "Niedostępny"
+
+msgid "The storage has been selected basing on job configuration. This item may require adjusting before job run."
+msgstr "Wartość magazynu danych została wybrana, bazując na konfiguracji zadania. Ta opcja może wymagać dopasowania przed uruchomieniem zadania."

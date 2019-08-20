@@ -108,6 +108,9 @@
 				<div class="w3-half">
 					<com:TActiveDropDownList ID="Storage" AutoPostBack="false" CssClass="w3-select w3-border" />
 				</div>
+				<div id="run_job_storage_from_config_info" style="line-height: 39px; display: none;">
+					&nbsp;&nbsp;<i class="fas fa-info-circle" title="<%[ The storage has been selected basing on job configuration. This item may require adjusting before job run. ]%>"></i>
+				</div>
 			</div>
 			<div class="w3-row w3-section w3-text-teal">
 				<div class="w3-col w3-quarter"><i class="w3-xxlarge fa fa-sort-numeric-up"></i> &nbsp;<com:TLabel ForControl="Priority" Text="<%[ Priority: ]%>" CssClass="w3-xlarge" /></div>

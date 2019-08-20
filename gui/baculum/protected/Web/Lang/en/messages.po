@@ -2359,3 +2359,6 @@ msgstr "Raw job log"
 
 msgid "Not available"
 msgstr "Not available"
+
+msgid "The storage has been selected basing on job configuration. This item may require adjusting before job run."
+msgstr "The storage has been selected basing on job configuration. This item may require adjusting before job run."

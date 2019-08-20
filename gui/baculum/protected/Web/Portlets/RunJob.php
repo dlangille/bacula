@@ -54,6 +54,14 @@ class RunJob extends Portlets {
 		$jobdata = null;
 		if ($jobid > 0) {
 			$jobdata = $this->getModule('api')->get(array('jobs', $jobid), null, true, self::USE_CACHE)->output;
+			$job_show = $this->getModule('api')->get(
+				array('jobs', 'show', '?name='. rawurlencode($jobdata->name)),
+				null,
+				true,
+				self::USE_CACHE
+			)->output;
+			$jobdata->storage = $this->getResourceName('(?:storage|autochanger)', $job_show);
+			$this->getPage()->getCallbackClient()->show('run_job_storage_from_config_info');
 		} elseif (!empty($jobname)) {
 			$jobdata = new stdClass;
 			$job_show = $this->getModule('api')->get(
@@ -72,10 +80,7 @@ class RunJob extends Portlets {
 			$jobdata->client = $this->getResourceName('client', $job_show);
 			$jobdata->fileset = $this->getResourceName('fileset', $job_show);
 			$jobdata->pool = $this->getResourceName('pool', $job_show);
-			$jobdata->storage = $this->getResourceName('storage', $job_show);
-			if (empty($jobdata->storage)) {
-				$jobdata->storage = $this->getResourceName('autochanger', $job_show);
-			}
+			$jobdata->storage = $this->getResourceName('(?:storage|autochanger)', $job_show);
 			$jobdata->priorjobid = $job_attr['priority'];
 			$jobdata->accurate = (key_exists('accurate', $job_attr) && $job_attr['accurate'] == 1);
 		} else {
