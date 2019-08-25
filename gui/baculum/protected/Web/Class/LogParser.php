@@ -29,7 +29,7 @@ class LogParser extends WebModule {
 	const POOL_PATTERN = '/^\s+Pool\:\s+"?(?P<pool>[a-zA-Z0-9:.\-_ ]+)"?/i';
 	const READ_POOL_PATTERN = '/^\s+Read Pool\:\s+"?(?P<read_pool>[a-zA-Z0-9:.\-_ ]+)"?/i';
 	const WRITE_POOL_PATTERN = '/^\s+Write Pool\:\s+"?(?P<write_pool>[a-zA-Z0-9:.\-_ ]+)"?/i';
-	const STORAGE_PATTERN = '/^\s+Storage\:\s+"?(?P<storage>[a-zA-Z0-9:.\-_ ]+)"?/i';
+	const STORAGE_PATTERN = '/^\s{0,2}Storage\:\s+"?(?P<storage>[a-zA-Z0-9:.\-_ ]+)"?/i';
 	const READ_STORAGE_PATTERN = '/^\s+Read Storage\:\s+"?(?P<read_storage>[a-zA-Z0-9:.\-_ ]+)"?/i';
 	const WRITE_STORAGE_PATTERN = '/^\s+Write Storage\:\s+"?(?P<write_storage>[a-zA-Z0-9:.\-_ ]+)"?/i';
 	const FILESET_PATTERN = '/^\s+FileSet\:\s+"?(?P<fileset>[a-zA-Z0-9:.\-_ ]+)"?/i';
