@@ -35,7 +35,7 @@ class APIHome extends BaculumAPIPage {
 		$config = $this->getModule('api_config')->getConfig();
 		if(count($config) === 0) {
 			// Config doesn't exist, go to wizard
-			$this->goToPage('Panel.APIInstallWizard');
+			$this->goToPage('APIInstallWizard');
 			return;
 		} elseif (!$this->IsCallback) {
 			$this->loadBasicUsers(null, null);
