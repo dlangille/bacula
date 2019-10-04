@@ -174,7 +174,7 @@ var oGraphicalClientStatus = {
 			return img;
 		},
 		plugins: function(value) {
-			return (value ? value.replace(/-fd\.so/g, '').replace(/,/g, ', ') : '-');
+			return (value ? value.replace(/-fd\.so/g, '').replace(/-fd\.dll/g, '').replace(/,/g, ', ') : '-');
 		},
 		bwlimit: function(value) {
 			var limit = '<%[ No limit ]%>';
