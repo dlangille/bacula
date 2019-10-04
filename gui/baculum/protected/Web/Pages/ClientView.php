@@ -127,7 +127,7 @@ class ClientView extends BaculumWebPage {
 
 		$query_str = '?name=' . rawurlencode($this->getClientName()) . '&type=header';
 		$graph_status = $this->getModule('api')->get(
-			array('status', 'client', $query_str),
+			array('status', 'client', $query_str)
 		);
 		$client_status = array(
 			'header' => array(),
@@ -147,7 +147,7 @@ class ClientView extends BaculumWebPage {
 
 		$query_str = '?name=' . rawurlencode($this->getClientName()) . '&type=running';
 		$graph_status = $this->getModule('api')->get(
-			array('status', 'client', $query_str),
+			array('status', 'client', $query_str)
 		);
 		if ($graph_status->error === 0) {
 			$client_status['running'] = $graph_status->output;
@@ -155,7 +155,7 @@ class ClientView extends BaculumWebPage {
 
 		$query_str = '?output=json';
 		$show = $this->getModule('api')->get(
-			array('clients', $this->getClientId(), 'show', $query_str),
+			array('clients', $this->getClientId(), 'show', $query_str)
 		);
 		if ($show->error === 0) {
 			$client_status['show'] = $show->output;

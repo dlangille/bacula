@@ -87,7 +87,7 @@ class JobHistoryView extends BaculumWebPage {
 	public function getRunningJobStatus($clientid) {
 		$client_name = null;
 		$client = $this->getModule('api')->get(
-			array('clients', $clientid),
+			array('clients', $clientid)
 		);
 		if ($client->error === 0) {
 			$client_name = $client->output->name;
@@ -101,7 +101,7 @@ class JobHistoryView extends BaculumWebPage {
 		if (is_string($client_name)) {
 			$query_str = '?name=' . rawurlencode($client_name) . '&type=header';
 			$graph_status = $this->getModule('api')->get(
-				array('status', 'client', $query_str),
+				array('status', 'client', $query_str)
 			);
 
 			if ($graph_status->error === 0) {
@@ -110,7 +110,7 @@ class JobHistoryView extends BaculumWebPage {
 
 			$query_str = '?name=' . rawurlencode($client_name) . '&type=running';
 			$graph_status = $this->getModule('api')->get(
-				array('status', 'client', $query_str),
+				array('status', 'client', $query_str)
 			);
 			if ($graph_status->error === 0) {
 				$jobid = $this->getJobId();
