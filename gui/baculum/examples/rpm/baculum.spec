@@ -23,6 +23,7 @@ Requires:	php-common
 Requires:	php-mysqlnd
 Requires:	php-pdo
 Requires:	php-pgsql
+Requires:	php-json
 Requires:	php-xml
 BuildArch:	noarch
 
