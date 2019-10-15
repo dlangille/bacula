@@ -14,12 +14,15 @@ FDDIR=../../filed
 SRCDIR=../..
 LIBDIR=../../lib
 
+topdir = @BUILD_DIR@
+thisdir = src/plugins/fd
+
 .SUFFIXES:    .c .lo
 
 .c.lo:
 	$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) $(CPPFLAGS) -I${SRCDIR} -I${FDDIR} -DTEST_PROGRAM -c $<
 
-all: bpipe-fd.la test-plugin-fd.la test-deltaseq-fd.la
+all: bpipe-fd.la test-plugin-fd.la test-deltaseq-fd.la pluglib.lo
 
 example-plugin-fd.lo: example-plugin-fd.c ${FDDIR}/fd_plugins.h
 	$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) $(CPPFLAGS) $(CFLAGS) -I../.. -I${FDDIR} -c example-plugin-fd.c
@@ -56,6 +59,10 @@ install-test-plugin: all
 	$(RMF) $(DESTDIR)$(plugindir)/test-plugin-fd.la
 	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) test-deltaseq-fd.la $(DESTDIR)$(plugindir)
 	$(RMF) $(DESTDIR)$(plugindir)/test-deltaseq-fd.la
+
+Makefile: Makefile.in $(topdir)/config.status
+	cd $(topdir) \
+	  && CONFIG_FILES=$(thisdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
 
 libtool-clean:
 	@find . -name '*.lo' -print | xargs $(LIBTOOL_CLEAN) $(RMF)
