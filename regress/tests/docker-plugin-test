@@ -1,0 +1,826 @@
+#!/bin/bash
+#
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+
+#
+# Attempt to backup and restore Docker objects including containers and images using docker plugin
+#
+#  The test assumes at least 2 containers and 2 images already available
+#  It requires that at least one container has a name matching *container*
+#   and one image with tag: testimage:latest
+#
+# To prepare a Docker regression test envinroment you should execute a following tasks:
+#
+# 1. download sample images, i.e.
+# 	$ docker pull hello-world:latest
+#	$ docker pull postgres:latest
+#	$ docker pull httpd:latest
+# 	- you can find a list of publicity available images at: https://hub.docker.com/explore/
+# 2. import Bacula Archive docker image required for volume backup/restore
+# 3. create an image alias testimage:latest required in tests and make it single reference, i.e.
+#	$ docker tag hello-world:latest testimage:latest
+#	$ docker rmi hello-world:latest
+#	- this image should not be used to create/run any container
+# 3. create and/or run required containers, i.e.
+#	$ docker run -d --name container1 httpd:latest
+#	$ docker run -d postgres:latest
+#	- you can run any other containers if you wish (with an exception at step.2.)
+# 4. run regression tests
+
+TestName="docker-plugin-test"
+JobName="PluginDockerTest"
+FileSetName="TestPluginDockerSet"
+. scripts/functions
+DOCKER_CMD="/usr/bin/docker"
+
+echo "Preparing, please wait ... "
+mkdir -p ${tmp}
+# check requirements
+C1=`${DOCKER_CMD} ps -a --filter 'Name=container' --format {{.Names}} | wc -l`
+if [ $C1 -eq 0 ]
+then
+	echo "Docker containers with name: container* required!"
+	exit 1
+fi
+if [ "x${PLUGDOCKERHOST}" != "x" ]
+then
+	RC1=`${DOCKER_CMD} -H "${PLUGDOCKERHOST}" ps -a --filter 'Name=container' --format {{.Names}} | wc -l`
+	if [ $RC1 -eq 0 ]
+	then
+		echo "Docker containers with name: container* required!"
+		exit 1
+	fi
+fi
+
+I1=`${DOCKER_CMD} images --filter "reference=testimage:latest" | wc -l`
+if [ $I1 -eq 0 ]
+then
+	IN=`${DOCKER_CMD} images --filter "dangling=true" -q | head -1`
+	if [ "x$IN" != "x" ]
+	then
+		${DOCKER_CMD} image tag $IN "testimage:latest"
+	else
+		# cannot tag unnamed images
+		echo "Docker image with tag: testimage:latest* required!"
+		exit 1
+	fi
+fi
+if [ "x${PLUGDOCKERHOST}" != "x" ]
+then
+	RI1=`${DOCKER_CMD} -H "${PLUGDOCKERHOST}" images --filter "reference=testimage:latest" | wc -l`
+	if [ $RI1 -eq 0 ]
+	then
+		IN=`${DOCKER_CMD} -H "${PLUGDOCKERHOST}" images --filter "dangling=true" -q | head -1`
+		if [ "x$IN" != "x" ]
+		then
+			${DOCKER_CMD} -H "${PLUGDOCKERHOST}" image tag $IN "testimage:latest"
+		else
+			# cannot tag unnamed images
+			echo "Docker image with tag: testimage:latest* required!"
+			exit 1
+		fi
+	fi
+fi
+
+VOLUME1_NAME=`${DOCKER_CMD} volume ls --format "{{.Name}}" | head -1`
+export VOLUME1_NAME
+VOLUME2_NAME="testvolume"
+export VOLUME2_NAME
+
+# prepare a local volume for backup and restore
+mkdir -p ${tmp}/volproxy
+tar czf ${tmp}/volproxy/archive.tar.gz /usr/share 2> /dev/null
+VOLARCHIVE=`md5sum ${tmp}/volproxy/archive.tar.gz`
+${DOCKER_CMD} volume create ${VOLUME2_NAME} > /dev/null
+${DOCKER_CMD} run --rm -v ${VOLUME2_NAME}:/data -v ${tmp}/volproxy:/volproxy ubuntu sh -c "rm -rf /data/* && /bin/cp -R /volproxy/* /usr/share /data"
+RC=$?
+if [ $RC -ne 0 ]
+then
+	echo "Docker Volume preparation failed."
+	exit 1
+fi
+
+# prepare testcontainer with testvolume
+DT=`${DOCKER_CMD} ps -a --format "{{.ID}} {{.Names}}" | grep " testcontainer$" | awk '{print $1}'`
+DC=`echo $DT | wc -l`
+if [ $DC -ne 0 ]
+then
+	${DOCKER_CMD} rm testcontainer > /dev/null
+fi
+DV=`${DOCKER_CMD} run -d -v ${VOLUME2_NAME}:/data --name testcontainer ubuntu`
+
+VOLUME_CONTAINER=$DV
+export VOLUME_CONTAINER
+
+# Get two docker containers and two docker images and substitute it in bacula configs
+D1=`${DOCKER_CMD} ps -a --format '{{.ID}} {{.Names}}' | head -1`
+D2=`${DOCKER_CMD} ps -a --format '{{.ID}} {{.Names}}' | tail -1`
+CONTAINER1_ID=`echo $D1 | awk '{print $1}'`
+CONTAINER1_NAME=`echo $D1 | awk '{print $2}'`
+export CONTAINER1_ID
+export CONTAINER1_NAME
+CONTAINER2_ID=`echo $D2 | awk '{print $1}'`
+CONTAINER2_NAME=`echo $D2 | awk '{print $2}'`
+export CONTAINER2_ID
+export CONTAINER2_NAME
+if [ "x${PLUGDOCKERHOST}" != "x" ]
+then
+	RD1=`${DOCKER_CMD} -H "${PLUGDOCKERHOST}" ps -a --format '{{.ID}} {{.Names}}' | head -1`
+	RD2=`${DOCKER_CMD} -H "${PLUGDOCKERHOST}" ps -a --format '{{.ID}} {{.Names}}' | tail -1`
+	R_CONTAINER1_ID=`echo $RD1 | awk '{print $1}'`
+	R_CONTAINER1_NAME=`echo $RD1 | awk '{print $2}'`
+	export R_CONTAINER1_ID
+	export R_CONTAINER1_NAME
+	R_CONTAINER2_ID=`echo $RD2 | awk '{print $1}'`
+	R_CONTAINER2_NAME=`echo $RD2 | awk '{print $2}'`
+	export R_CONTAINER2_ID
+	export R_CONTAINER2_NAME
+fi
+
+I1=`${DOCKER_CMD} images --format '{{.ID}} {{.Repository}}:{{.Tag}}' | grep 'testimage:latest'`
+I2=`${DOCKER_CMD} images --format '{{.ID}} {{.Repository}}:{{.Tag}}' | grep -v 'testimage:latest' | head -1`
+IMAGE1_ID=`echo $I1 | awk '{print $1}'`
+IMAGE1_NAME=`echo $I1 | awk '{print $2}'`
+export IMAGE1_ID
+export IMAGE1_NAME
+IMAGE2_ID=`echo $I2 | awk '{print $1}'`
+IMAGE2_NAME=`echo $I2 | awk '{print $2}'`
+export IMAGE2_ID
+export IMAGE2_NAME
+if [ "x${PLUGDOCKERHOST}" != "x" ]
+then
+	RI1=`${DOCKER_CMD} -H "${PLUGDOCKERHOST}" images --format '{{.ID}} {{.Repository}}:{{.Tag}}' | grep 'testimage:latest'`
+	RI2=`${DOCKER_CMD} -H "${PLUGDOCKERHOST}" images --format '{{.ID}} {{.Repository}}:{{.Tag}}' | grep -v 'testimage:latest' | head -1`
+	R_IMAGE1_ID=`echo $RI1 | awk '{print $1}'`
+	R_IMAGE1_NAME=`echo $RI1 | awk '{print $2}'`
+	export R_IMAGE1_ID
+	export R_IMAGE1_NAME
+	R_IMAGE2_ID=`echo $RI2 | awk '{print $1}'`
+	R_IMAGE2_NAME=`echo $RI2 | awk '{print $2}'`
+	export R_IMAGE2_ID
+	export R_IMAGE2_NAME
+fi
+
+out_sed="${tmp}/sed_tmp"
+cp ${rscripts}/docker-plugin-test-bacula-dir.conf ${tmp}
+# local
+echo "s%@container1id@%${CONTAINER1_ID}%g" >${out_sed}
+echo "s%@container1name@%${CONTAINER1_NAME}%g" >>${out_sed}
+echo "s%@image1id@%${IMAGE1_ID}%g" >>${out_sed}
+echo "s%@image1name@%${IMAGE1_NAME}%g" >>${out_sed}
+echo "s%@container2id@%${CONTAINER2_ID}%g" >>${out_sed}
+echo "s%@container2name@%${CONTAINER2_NAME}%g" >>${out_sed}
+echo "s%@image2id@%${IMAGE2_ID}%g" >>${out_sed}
+echo "s%@image2name@%${IMAGE2_NAME}%g" >>${out_sed}
+echo "s%@volume1name@%${VOLUME1_NAME}%g" >>${out_sed}
+echo "s%@volume2name@%${VOLUME2_NAME}%g" >>${out_sed}
+echo "s%@volumecontainer@%${VOLUME_CONTAINER}%g" >>${out_sed}
+if [ "x${PLUGDOCKERHOST}" != "x" ]
+then
+	echo "s%@r_container1id@%${R_CONTAINER1_ID}%g" >>${out_sed}
+	echo "s%@r_container1name@%${R_CONTAINER1_NAME}%g" >>${out_sed}
+	echo "s%@r_image1id@%${R_IMAGE1_ID}%g" >>${out_sed}
+	echo "s%@r_image1name@%${R_IMAGE1_NAME}%g" >>${out_sed}
+	echo "s%@r_container2id@%${R_CONTAINER2_ID}%g" >>${out_sed}
+	echo "s%@r_container2name@%${R_CONTAINER2_NAME}%g" >>${out_sed}
+	echo "s%@r_image2id@%${R_IMAGE2_ID}%g" >>${out_sed}
+	echo "s%@r_image2name@%${R_IMAGE2_NAME}%g" >>${out_sed}
+fi
+sed -i -f ${out_sed} ${tmp}/docker-plugin-test-bacula-dir.conf
+mv ${tmp}/docker-plugin-test-bacula-dir.conf ${rscripts}/docker-plugin-test-bacula-dir.conf.current
+rm ${out_sed}
+
+start_test
+
+#export debug=1
+JOBID=1
+
+test_result()
+{
+if [ $1 -ne 0 ]
+then
+   echo "failed"
+else
+   echo "ok"
+fi
+}
+
+do_docker_backup_test()
+{
+ltest=$1
+printf "     backup test${ltest} ... "
+cat <<END_OF_DATA >${tmp}/bconcmds
+@output /dev/null
+messages
+@$out ${tmp}/blog${ltest}.out
+status client=$CLIENT
+setdebug level=500 client=$CLIENT trace=1
+run job=${JobName}${ltest} level=full storage=File1 yes
+wait
+status client=$CLIENT
+messages
+setdebug level=0 trace=0 client=$CLIENT
+llist jobid=${JOBID}
+list files jobid=${JOBID}
+quit
+END_OF_DATA
+run_bconsole
+JOBID=$((JOBID+1))
+}
+
+do_docker_estimate_test()
+{
+ltest=$1
+printf "     estimate test${ltest} ... "
+cat <<END_OF_DATA >${tmp}/bconcmds
+#@output /dev/null
+messages
+@$out ${tmp}/elog${ltest}.out
+setdebug level=150 client=$CLIENT trace=1
+estimate listing job=$JobName fileset=${FileSetName}${ltest} level=Full
+messages
+setdebug level=50 trace=0 client=$CLIENT
+quit
+END_OF_DATA
+run_bconsole
+}
+
+do_docker_listing_test()
+{
+ltest=$1
+lpath=$2
+lplug="docker:"
+if [ "x$3" != "x" ]
+then
+	lplug=$3
+fi
+printf "     listing test${ltest} ... "
+cat <<END_OF_DATA >${tmp}/bconcmds
+#@output /dev/null
+messages
+@$out ${tmp}/llog${ltest}.out
+setdebug level=150 client=$CLIENT tracee=1
+.ls client=${HOST}-fd plugin="$lplug" path=${lpath}
+setdebug level=50 trace=0 client=$CLIENT
+quit
+END_OF_DATA
+run_bconsole
+}
+
+do_docker_restore_test()
+{
+ltest=$1
+fs=$2
+where=$3
+file=$4
+cmd="restore fileset=${FileSetName}${fs} where=$3"
+if [ "x$file" != "x" ]
+then
+   cmd="${cmd} $file"
+fi
+cmd="${cmd} storage=File1 done"
+printf "     restore test${ltest} ... "
+cat <<END_OF_DATA >${tmp}/bconcmds
+messages
+@$out ${tmp}/rlog${ltest}.out
+setdebug level=500 client=$CLIENT trace=1
+${cmd}
+yes
+wait
+setdebug level=0 client=$CLIENT trace=0
+messages
+llist jobid=${JOBID}
+quit
+END_OF_DATA
+run_bconsole
+JOBID=$((JOBID+1))
+}
+
+check_docker_backup_statusT()
+{
+ltest=$1
+RET=`grep "jobstatus: " ${tmp}/blog${ltest}.out | awk '{print $2}'`
+ERRS=$((`grep "joberrors: " ${tmp}/blog${ltest}.out | awk '{print $2}'`+0))
+if [ "x$RET" != "xT" -o $ERRS -ne 0 ]
+then
+   bstat=$((bstat+1))
+   return 1
+else
+   return 0
+fi
+}
+
+check_docker_backup_statusW()
+{
+ltest=$1
+RET=`grep "jobstatus: " ${tmp}/blog${ltest}.out | awk '{print $2}'`
+ERRS=$((`grep "joberrors: " ${tmp}/blog${ltest}.out | awk '{print $2}'`+0))
+if [ "x$RET" != "xT" -o $ERRS -eq 0 ]
+then
+   bstat=$((bstat+1))
+   return 1
+else
+   return 0
+fi
+}
+
+check_docker_backup_statusE()
+{
+ltest=$1
+RET=`grep "jobstatus: " ${tmp}/blog${ltest}.out | awk '{print $2}'`
+if [ "x$RET" != "xf" -a "x$RET" != "xE" ]
+then
+   bstat=$((bstat+1))
+   return 1
+else
+   return 0
+fi
+}
+
+check_docker_restore_statusT()
+{
+ltest=$1
+RET=`grep "jobstatus: " ${tmp}/rlog${ltest}.out | awk '{print $2}'`
+ERRS=$((`grep "joberrors: " ${tmp}/rlog${ltest}.out | awk '{print $2}'`+0))
+if [ "x$RET" != "xT" -o $ERRS -ne 0 ]
+then
+   rstat=$((rstat+1))
+   return 1
+else
+   return 0
+fi
+}
+
+scripts/cleanup
+scripts/copy-docker-plugin-confs
+
+#prepare logs
+echo "image1: " $IMAGE1_NAME $IMAGE1_ID > ${tmp}/objinfo.out
+echo "image2: " $IMAGE2_NAME $IMAGE2_ID >> ${tmp}/objinfo.out
+echo "container1: " $CONTAINER1_NAME $CONTAINER1_ID >> ${tmp}/objinfo.out
+echo "container2: " $CONTAINER2_NAME $CONTAINER2_ID >> ${tmp}/objinfo.out
+echo "volume1: " $VOLUME1_NAME >> ${tmp}/objinfo.out
+echo "volume2: " $VOLUME2_NAME >> ${tmp}/objinfo.out
+echo "volumecontainer: " $VOLUME_CONTAINER >> ${tmp}/objinfo.out
+echo "volarchive: " $VOLARCHIVE > ${tmp}/volarchive.log
+if [ "x${PLUGDOCKERHOST}" != "x" ]
+then
+	echo "rimage1: " $R_IMAGE1_NAME $R_IMAGE1_ID >> ${tmp}/objinfo.out
+	echo "rimage2: " $R_IMAGE2_NAME $R_IMAGE2_ID >> ${tmp}/objinfo.out
+	echo "rcontainer1: " $R_CONTAINER1_NAME $R_CONTAINER1_ID >> ${tmp}/objinfo.out
+	echo "rcontainer2: " $R_CONTAINER2_NAME $R_CONTAINER2_ID >> ${tmp}/objinfo.out
+fi
+
+${DOCKER_CMD} ps -a --format '{{.ID}} {{.Names}}' > ${tmp}/allcontainers.log
+${DOCKER_CMD} images --format '{{.ID}} {{.Repository}}:{{.Tag}}' > ${tmp}/allimages.log
+${DOCKER_CMD} volume ls --format '{{.Name}}' > ${tmp}/allvolumes.log
+if [ "x${PLUGDOCKERHOST}" != "x" ]
+then
+	${DOCKER_CMD} -H "${PLUGDOCKERHOST}" ps -a --format '{{.ID}} {{.Names}}' > ${tmp}/rallcontainers.log
+	${DOCKER_CMD} -H "${PLUGDOCKERHOST}" images --format '{{.ID}} {{.Repository}}:{{.Tag}}' > ${tmp}/rallimages.log
+fi
+
+cat <<END_OF_DATA >${tmp}/bconcmds
+@output /dev/null
+messages
+@$out ${tmp}/log.out
+label storage=File1 pool=Default volume=TestVolume001
+@#setdebug dir level=500 trace=1
+quit
+END_OF_DATA
+
+run_bacula
+
+# special case for all objects
+do_docker_estimate_test
+F=0
+RET=`grep "/@docker/" ${tmp}/elog.out | grep "tar" | wc -l`
+RES=`cat ${tmp}/allcontainers.log ${tmp}/allimages.log ${tmp}/allvolumes.log | wc -l`
+echo "RET: $RET RES: $RES" >> ${tmp}/elog.out
+if [ $RET -ne $RES ]
+then
+   F=1
+   estat=$((estat+1))
+fi
+test_result ${F}
+
+if [ "x${PLUGDOCKERHOST}" != "x" ]
+then
+	# special case for all remote objects
+	TEST="remote"
+	do_docker_estimate_test ${TEST}
+	F=0
+	RET=`grep "/@docker/" ${tmp}/elog${TEST}.out | grep "tar" | wc -l`
+	RES=`cat ${tmp}/rallcontainers.log ${tmp}/rallimages.log | wc -l`
+	echo "RET: $RET RES: $RES" >> ${tmp}/elog${TEST}.out
+	if [ $RET -ne $RES ]
+	then
+	   F=1
+	   estat=$((estat+1))
+	fi
+	test_result ${F}
+fi
+
+test8nr=`${DOCKER_CMD} ps -a --filter 'Name=container' --format {{.Names}} | grep "^container.$" | wc -l`
+test9nr=`${DOCKER_CMD} ps -a --filter 'Name=container' --format {{.Names}} | grep -v "^test" | wc -l`
+test14nr=`${DOCKER_CMD} container inspect ${VOLUME_CONTAINER} --format "{{range .Mounts}}V {{end}}" | wc -w`
+estat=0
+RESULTS=(1 1 1 1 2 2 2 ${test8nr} ${test9nr} $((test9nr+1)) 1 2 2 $((test14nr+1)))
+echo ${RESULTS[*]} >> ${tmp}/results.out
+# then estimate with data
+for TEST in `seq 1 14`
+do
+do_docker_estimate_test ${TEST}
+F=0
+RET=`grep "/@docker/" ${tmp}/elog${TEST}.out | grep "tar" | wc -l`
+RES=${RESULTS[$((TEST-1))]}
+echo "RET: $RET RES: $RES" >> ${tmp}/elog${TEST}.out
+if [ $RET -ne $RES ]
+then
+   F=1
+   estat=$((estat+1))
+fi
+test_result ${F}
+done
+
+# estimate multiple contexts
+TEST=19
+do_docker_estimate_test ${TEST}
+F=0
+RET=`grep "/@docker/" ${tmp}/elog${TEST}.out | grep "tar" | wc -l`
+RES=6
+echo "RET: $RET RES: $RES" >> ${tmp}/elog${TEST}.out
+if [ $RET -ne $RES ]
+then
+   F=1
+   estat=$((estat+1))
+fi
+test_result ${F}
+
+if [ "x${PLUGDOCKERHOST}" != "x" ]
+then
+	rtest8nr=`${DOCKER_CMD} -H "${PLUGDOCKERHOST}" ps -a --filter 'Name=container' --format {{.Names}} | grep "^container.$" | wc -l`
+	rtest9nr=`${DOCKER_CMD} -H "${PLUGDOCKERHOST}" ps -a --filter 'Name=container' --format {{.Names}} | grep -v "^test" | wc -l`
+	rtest14nr=`${DOCKER_CMD} -H "${PLUGDOCKERHOST}" container inspect ${VOLUME_CONTAINER} --format "{{range .Mounts}}V {{end}}" | wc -w`
+	estat=0
+	RESULTS=(1 1 1 1 2 2 2 ${rtest8nr} ${rtest9nr} $((rtest9nr+1)) 1 2 2 $((rtest14nr+1)))
+	echo ${RESULTS[*]} >> ${tmp}/rresults.out
+	# then estimate with data
+	for TEST in `seq 101 110`
+	do
+	do_docker_estimate_test ${TEST}
+	F=0
+	RET=`grep "/@docker/" ${tmp}/elog${TEST}.out | grep "tar" | wc -l`
+	RES=${RESULTS[$((TEST-101))]}
+	echo "RET: $RET RES: $RES" >> ${tmp}/elog${TEST}.out
+	if [ $RET -ne $RES ]
+	then
+	   F=1
+	   estat=$((estat+1))
+	fi
+	test_result ${F}
+	done
+fi
+
+# listing tests goes to estimate tests
+TEST=1
+do_docker_listing_test ${TEST} "/"
+F=0
+RET=`grep "^drwxr-x---" ${tmp}/llog${TEST}.out | wc -l`
+echo "RET: $RET" >> ${tmp}/llog${TEST}.out
+if [ $RET -ne 3 ]
+then
+   F=1
+   estat=$((estat+1))
+fi
+test_result ${F}
+
+allcont=`cat ${tmp}/allcontainers.log | wc -l`
+TEST=$((TEST+1))
+do_docker_listing_test ${TEST} "container"
+F=0
+RET=`grep "^-rw-r-----" ${tmp}/llog${TEST}.out | wc -l`
+echo "RET: $RET ALLCONT: ${allcont}" >> ${tmp}/llog${TEST}.out
+if [ $RET -ne ${allcont} ]
+then
+   F=1
+   estat=$((estat+1))
+fi
+test_result ${F}
+
+allimgs=`cat ${tmp}/allimages.log | wc -l`
+TEST=$((TEST+1))
+do_docker_listing_test ${TEST} "image"
+F=0
+RET=`grep "^brw-r-----" ${tmp}/llog${TEST}.out | wc -l`
+echo "RET: $RET ALLIMGS: ${allimgs}" >> ${tmp}/llog${TEST}.out
+if [ $RET -ne ${allimgs} ]
+then
+   F=1
+   estat=$((estat+1))
+fi
+test_result ${F}
+
+allvols=`cat ${tmp}/allvolumes.log | wc -l`
+TEST=$((TEST+1))
+do_docker_listing_test ${TEST} "volume"
+F=0
+RET=`grep "^brw-r-----" ${tmp}/llog${TEST}.out | wc -l`
+echo "RET: $RET ALLVOLS: ${allvols}" >> ${tmp}/llog${TEST}.out
+if [ $RET -ne ${allvols} ]
+then
+   F=1
+   estat=$((estat+1))
+fi
+test_result ${F}
+
+if [ "x${PLUGDOCKERHOST}" != "x" ]
+then
+	TEST=100
+	do_docker_listing_test ${TEST} "/" "docker: docker_host=${PLUGDOCKERHOST}"
+	F=0
+	RET=`grep "^drwxr-x---" ${tmp}/llog${TEST}.out | wc -l`
+	echo "RET: $RET" >> ${tmp}/llog${TEST}.out
+	if [ $RET -ne 3 ]
+	then
+	   F=1
+	   estat=$((estat+1))
+	fi
+	test_result ${F}
+
+	allcont=`cat ${tmp}/rallcontainers.log | wc -l`
+	TEST=$((TEST+1))
+	do_docker_listing_test ${TEST} "container" "docker: docker_host=${PLUGDOCKERHOST}"
+	F=0
+	RET=`grep "^-rw-r-----" ${tmp}/llog${TEST}.out | wc -l`
+	echo "RET: $RET ALLCONT: ${allcont}" >> ${tmp}/llog${TEST}.out
+	if [ $RET -ne ${allcont} ]
+	then
+	   F=1
+	   estat=$((estat+1))
+	fi
+	test_result ${F}
+
+	allimgs=`cat ${tmp}/rallimages.log | wc -l`
+	TEST=$((TEST+1))
+	do_docker_listing_test ${TEST} "image" "docker: docker_host=${PLUGDOCKERHOST}"
+	F=0
+	RET=`grep "^brw-r-----" ${tmp}/llog${TEST}.out | wc -l`
+	echo "RET: $RET ALLIMGS: ${allimgs}" >> ${tmp}/llog${TEST}.out
+	if [ $RET -ne ${allimgs} ]
+	then
+	   F=1
+	   estat=$((estat+1))
+	fi
+	test_result ${F}
+fi
+
+#
+# now do backups
+#
+bstat=0
+# first backup with data
+for TEST in `seq 1 14` 19
+do
+do_docker_backup_test ${TEST}
+check_docker_backup_statusT ${TEST}
+F=$?
+test_result ${F}
+done
+
+# now, backup with warnings
+for TEST in `seq 21 24`
+do
+do_docker_backup_test ${TEST}
+check_docker_backup_statusW ${TEST}
+F=$?
+test_result ${F}
+done
+
+# now, backup failed to test
+for TEST in `seq 31 34`
+do
+do_docker_backup_test ${TEST}
+check_docker_backup_statusE ${TEST}
+F=$?
+test_result ${F}
+done
+
+if [ "x${PLUGDOCKERHOST}" != "x" ]
+then
+	for TEST in `seq 101 110`
+	do
+	do_docker_backup_test ${TEST}
+	check_docker_backup_statusT ${TEST}
+	F=$?
+	test_result ${F}
+	done
+fi
+
+#
+# now the restore tests
+#
+rstat=0
+dstat=0
+TEST=0
+
+# test restore container to Docker
+TEST=$((TEST+1))
+echo "TEST ${TEST} - restore container to Docker" > ${tmp}/rlog${TEST}.out
+do_docker_restore_test ${TEST} 1 "/" "select all"
+check_docker_restore_statusT ${TEST}
+F=$?
+## gather info from Docker service after restore
+JOBID=`grep "JobId=" ${tmp}/rlog${TEST}.out | awk '{print $3}'|cut -f 2 -d'='`
+rc=`grep "docker: Docker Container restore:" ${tmp}/rlog${TEST}.out|awk '{print $10}'`
+rdc=`${DOCKER_CMD} ps -a --format "{{.ID}} {{.Image}}" | grep "${rcontainer}/${JOBID}:restore" | wc -l`
+echo "RC: $rc RDC: $rdc" >> ${tmp}/rlog${TEST}.out
+if [ $rdc -ne 1 ]
+then
+   F=1
+   dstat=$((dstat+1))
+else
+   rrc=`${DOCKER_CMD} ps -a --format "{{.ID}} {{.Image}}" | grep "${rcontainer}/${JOBID}:restore" | awk '{print $1}'`
+   rri=`${DOCKER_CMD} images --format "{{.ID}} {{.Repository}}:{{.Tag}}" | grep "${rcontainer}/${JOBID}:restore" | awk '{print $1}'`
+   echo "RRC: $rrc RRI: $rri" >> ${tmp}/rlog${TEST}.out
+   if [ "x$rrc" != "x" ]
+   then
+	${DOCKER_CMD} rm $rrc > /dev/null
+   fi
+   if [ "x$rri" != "x" ]
+   then
+	${DOCKER_CMD} rmi $rri > /dev/null
+   fi
+fi
+test_result ${F}
+
+# test restore image to Docker
+# the Docker image restore is always as the same what was backup, so we need to prepare Docker
+TEST=$((TEST+1))
+echo "TEST ${TEST} - restore image to Docker" > ${tmp}/rlog${TEST}.out
+${DOCKER_CMD} rmi ${IMAGE1_ID} 2>&1 > ${tmp}/rlog${TEST}.rmi.out
+do_docker_restore_test ${TEST} 2 "/" "select all"
+check_docker_restore_statusT ${TEST}
+F=$?
+## gather info from Docker service after restore
+JOBID=`grep "JobId=" ${tmp}/rlog${TEST}.out | awk '{print $3}'|cut -f 2 -d'='`
+ri=`grep "docker: Docker Image restore:" ${tmp}/rlog${TEST}.out|awk '{print $10}'`
+rdi=`${DOCKER_CMD} images --format "{{.ID}} {{.Repository}}:{{.Tag}}" | grep "testimage:latest" | wc -l`
+echo "RI: $ri RDI: $rdi" >> ${tmp}/rlog${TEST}.out
+if [ $rdi -ne 1 ]
+then
+   F=1
+   dstat=$((dstat+1))
+fi
+test_result ${F}
+
+## test restore single volume to Docker
+TEST=$((TEST+1))
+echo "TEST ${TEST} - restore single volume to Docker" > ${tmp}/rlog${TEST}.out
+# prepare the docker
+DC=`${DOCKER_CMD} ps -a --format "{{.ID}} {{.Names}}" | grep " testcontainer$" | awk '{print $1}' | wc -l`
+echo "dc: $DC" >> ${tmp}/rlog${TEST}.out
+if [ $DC -ne 0 ]
+then
+	${DOCKER_CMD} rm testcontainer > /dev/null
+fi
+TV=`${DOCKER_CMD} volume inspect ${VOLUME2_NAME} 2> ${tmp}/rlog${TEST}.rmv.out | grep "\"Name\": \"${VOLUME2_NAME}\"" | wc -l`
+if [ $TV -ne 0 ]
+then
+	${DOCKER_CMD} volume rm ${VOLUME2_NAME} 2>&1 >> ${tmp}/rlog${TEST}.rmv.out
+fi
+# do test
+do_docker_restore_test ${TEST} 11 "/" "select all"
+check_docker_restore_statusT ${TEST}
+F=$?
+# check restored data
+rv=`${DOCKER_CMD} volume inspect ${VOLUME2_NAME} 2> ${tmp}/rlog${TEST}.vi.out | grep "\"Name\": \"${VOLUME2_NAME}\"" | wc -l`
+echo "rv: $rv" >> ${tmp}/rlog${TEST}.out
+if [ $rv -ne 1 ]
+then
+	F=1
+	dstat=$((dstat+1))
+else
+	mkdir -p ${tmp}/volproxy 
+	${DOCKER_CMD} run --rm -v ${VOLUME2_NAME}:/data -v ${tmp}/volproxy:/volproxy ubuntu sh -c "md5sum /data/archive.tar.gz > /volproxy/volarchive.out" >> ${tmp}/rlog${TEST}.out
+	rco=`cat ${tmp}/volarchive.log | awk '{print $2}'`
+	rcb=`cat ${tmp}/volproxy/volarchive.out | awk '{print $1}'`
+	echo "rco: $rco rcb: $rcb" >> ${tmp}/rlog${TEST}.out
+	if [ "x$rco" != "x$rcb" ]
+	then
+		F=1
+		dstat=$((dstat+1))
+	fi
+fi
+test_result ${F}
+
+## restore all volumes and container to Docker
+TEST=$((TEST+1))
+echo "TEST ${TEST} - restore all volumes and container to Docker" > ${tmp}/rlog${TEST}.out
+# prepare for test - as we restored a testvolume in previous test remove it again
+TV=`${DOCKER_CMD} volume inspect ${VOLUME2_NAME} 2> ${tmp}/rlog${TEST}.rmv.out | grep "\"Name\": \"${VOLUME2_NAME}\"" | wc -l`
+if [ $TV -ne 0 ]
+then
+	${DOCKER_CMD} volume rm ${VOLUME2_NAME} 2>&1 >> ${tmp}/rlog${TEST}.rmv.out
+fi
+# this test should restore both volume and container
+do_docker_restore_test ${TEST} 14 "/" "select all"
+check_docker_restore_statusT ${TEST}
+F=$?
+# check restored data
+JOBID=`grep "JobId=" ${tmp}/rlog${TEST}.out | awk '{print $3}'|cut -f 2 -d'='`
+DC=`${DOCKER_CMD} ps -a --format "{{.ID}} {{.Names}}" | grep " testcontainer_${JOBID}$" | awk '{print $1}' | wc -l`
+echo "dc: $DC" >> ${tmp}/rlog${TEST}.out
+if [ $DC -ne 1 ]
+then
+   F=1
+   dstat=$((dstat+1))
+else
+	${DOCKER_CMD} rm testcontainer_${JOBID} 2>&1 >> ${tmp}/rlog${TEST}.rmv.out
+fi
+rv=`${DOCKER_CMD} volume inspect ${VOLUME2_NAME} 2> ${tmp}/rlog${TEST}.vi.out | grep "\"Name\": \"${VOLUME2_NAME}\"" | wc -l`
+echo "rv: $rv" >> ${tmp}/rlog${TEST}.out
+if [ $rv -ne 1 ]
+then
+	F=1
+	dstat=$((dstat+1))
+else
+	mkdir -p ${tmp}/volproxy 
+	${DOCKER_CMD} run --rm -v ${VOLUME2_NAME}:/data -v ${tmp}/volproxy:/volproxy ubuntu sh -c "md5sum /data/archive.tar.gz > /volproxy/volarchive.out" >> ${tmp}/rlog${TEST}.out
+	rco=`cat ${tmp}/volarchive.log | awk '{print $2}'`
+	rcb=`cat ${tmp}/volproxy/volarchive.out | awk '{print $1}'`
+	echo "rco: $rco rcb: $rcb" >> ${tmp}/rlog${TEST}.out
+	if [ "x$rco" != "x$rcb" ]
+	then
+		F=1
+		dstat=$((dstat+1))
+	fi
+fi
+# clean temporary volume if success
+if [ ${F} -eq 0 ]
+then
+	rm -rf ${tmp}/volproxy
+fi
+test_result ${F}
+
+## restore single container to local filesystem
+TEST=$((TEST+1))
+echo "TEST ${TEST} - restore single container to local filesystem" > ${tmp}/rlog${TEST}.out
+# clean restore dir
+rm -rf ${tmp}/restored 2>> ${tmp}/rlog${TEST}.out
+do_docker_restore_test ${TEST} 1 "${tmp}/restored" "select all"
+check_docker_restore_statusT ${TEST}
+F=$?
+# check restored file
+RFILE=`grep "docker: Docker local restore:" ${tmp}/rlog${TEST}.out|awk '{print $10}'`
+RD=${tmp}/restored/${RFILE}
+echo "RD: $RD" >> ${tmp}/rlog${TEST}.out
+if [ ! -f ${RD}.tar ]
+then
+   F=1
+   dstat=$((dstat+1))
+fi
+test_result ${F}
+
+## restore single image to local filesystem
+TEST=$((TEST+1))
+echo "TEST ${TEST} - restore single image to local filesystem" > ${tmp}/rlog${TEST}.out
+# clean restore dir
+rm -rf ${tmp}/restored 2>> ${tmp}/rlog${TEST}.out
+do_docker_restore_test ${TEST} 2 "${tmp}/restored" "select all"
+check_docker_restore_statusT ${TEST}
+F=$?
+# check restored file
+RFILE=`grep "docker: Docker local restore:" ${tmp}/rlog${TEST}.out|awk '{print $10}'`
+RD=${tmp}/restored/$RFILE
+echo "RD: $RD" >> ${tmp}/rlog${TEST}.out
+if [ ! -f ${RD}.tar ]
+then
+   F=1
+   dstat=$((dstat+1))
+fi
+test_result ${F}
+
+## restore single volume to local filesystem
+TEST=$((TEST+1))
+echo "TEST ${TEST} - restore single volume to local filesystem" > ${tmp}/rlog${TEST}.out
+# clean restore dir
+rm -rf ${tmp}/restored 2>> ${tmp}/rlog${TEST}.out
+do_docker_restore_test ${TEST} 11 "${tmp}/restored" "select all"
+check_docker_restore_statusT ${TEST}
+F=$?
+# check restored file
+RFILE=`grep "docker: Docker local restore:" ${tmp}/rlog${TEST}.out|awk '{print $10}'`
+RD=${tmp}/restored/$RFILE
+echo "RD: $RD" >> ${tmp}/rlog${TEST}.out
+if [ ! -f ${RD}.tar ]
+then
+   F=1
+   dstat=$((dstat+1))
+fi
+test_result ${F}
+
+stop_bacula
+end_test

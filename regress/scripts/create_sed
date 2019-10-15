@@ -91,3 +91,4 @@ echo "s%@db_name@%${db_name}%g" >>${out}
 echo "s%@db_user@%${db_user}%g" >>${out}
 echo "s%@db_password@%${db_password}%g" >>${out}
 echo "s%@builddir@%${builddir}%g" >>${out}
+echo "s%@plugdockerhost@%${PLUGDOCKERHOST}%g" >>${out}

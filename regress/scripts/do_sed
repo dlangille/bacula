@@ -74,7 +74,7 @@ sed -f ${out} ${rscripts}/tls-bacula-fd.conf.in >${rscripts}/tls-bacula-fd.conf
 sed -f ${out} ${rscripts}/tls-crypto-bacula-fd.conf.in >${rscripts}/tls-crypto-bacula-fd.conf
 sed -f ${out} ${rscripts}/tls-bacula-sd.conf.in >${rscripts}/tls-bacula-sd.conf
 sed -f ${out} ${rscripts}/tls-bacula-dir.conf.in >${rscripts}/tls-bacula-dir.conf
-
+sed -f ${out} ${rscripts}/docker-plugin-test-bacula-dir.conf.in >${rscripts}/docker-plugin-test-bacula-dir.conf
 sed -f ${out} ${rscripts}/collect-bacula-dir.conf.in >${rscripts}/collect-bacula-dir.conf
 sed -f ${out} ${rscripts}/collect-bacula-sd.conf.in >${rscripts}/collect-bacula-sd.conf
 sed -f ${out} ${rscripts}/collect-bacula-fd.conf.in >${rscripts}/collect-bacula-fd.conf

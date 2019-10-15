@@ -1,0 +1,988 @@
+#
+# Default Bacula Director Configuration file
+#
+#  The only thing that MUST be changed is to add one or more
+#   file or directory names in the Include directive of the
+#   FileSet resource.
+#
+#  For Bacula release 1.39 or later
+#
+#  You might also want to change the default email address
+#   from root to your address.  See the "mail" and "operator"
+#   directives in the Messages resource.
+#
+
+Director {                            # define myself
+  Name = @hostname@-dir
+  DIRPort = @dirport@                # where we listen for UA connections
+  QueryFile = "@scriptdir@/query.sql"
+  WorkingDirectory = "@working_dir@"
+  PidDirectory = "@piddir@"
+  SubSysDirectory = "@subsysdir@"
+  PluginDirectory = "@sbindir@/plugins"
+  Maximum Concurrent Jobs = 4
+  Password = "pNvX1WiXnwv2C/F7E52LGvw6rKjbbPvu2kyuPa9pVaL3"         # Console password
+  Messages = Standard
+}
+
+JobDefs {
+  Name = "BackupJob"
+  Type = Backup
+  Pool = Default
+  Storage = File
+  Messages = Standard
+  Priority = 10
+  Client=@hostname@-fd 
+  Write Bootstrap = "@working_dir@/%n-%f.bsr"
+}
+
+# Standard Restore template, to be changed by Console program
+Job {
+  Name = "RestoreFiles"
+  Type = Restore
+  Client=@hostname@-fd 
+  FileSet="Full Set"
+  Storage = File
+  Messages = Standard
+  Pool = Default
+  Where = @tmpdir@/bacula-restores
+}
+
+
+# List of files to be backed up
+FileSet {
+  Name = "Full Set"
+  Include {  
+     Options { signature=MD5; sparse=yes }
+     File = /tmp
+  }
+}
+
+# this should be executed for estimation only
+Job {
+  Name = "PluginDockerTest"
+  JobDefs = "BackupJob"
+  FileSet="TestPluginDockerSet"
+}
+FileSet {
+  Name = "TestPluginDockerSet"
+  Include {
+    Options {
+      signature=MD5
+    }
+    Plugin = "docker:"
+  }
+}
+
+# Single Container backup by ID
+Job {
+  Name = "PluginDockerTest1"
+  JobDefs = "BackupJob"
+  FileSet="TestPluginDockerSet1"
+}
+FileSet {
+  Name = "TestPluginDockerSet1"
+  Include {
+    Options {
+      signature=MD5
+      compression=LZO
+    }
+    Plugin = "docker: container=@container1id@"
+  }
+}
+
+# Single Image backup by ID
+Job {
+  Name = "PluginDockerTest2"
+  JobDefs = "BackupJob"
+  FileSet="TestPluginDockerSet2"
+}
+FileSet {
+  Name = "TestPluginDockerSet2"
+  Include {
+    Options {
+      signature=MD5
+      compression=LZO
+    }
+    Plugin = "docker: image=@image1id@"
+  }
+}
+
+# Single Container backup by Name
+Job {
+  Name = "PluginDockerTest3"
+  JobDefs = "BackupJob"
+  FileSet="TestPluginDockerSet3"
+}
+FileSet {
+  Name = "TestPluginDockerSet3"
+  Include {
+    Options {
+      signature=MD5
+      compression=LZO
+    }
+    Plugin = "docker: container=@container2name@"
+  }
+}
+
+# Single Image backup by Name
+Job {
+  Name = "PluginDockerTest4"
+  JobDefs = "BackupJob"
+  FileSet="TestPluginDockerSet4"
+}
+FileSet {
+  Name = "TestPluginDockerSet4"
+  Include {
+    Options {
+      signature=MD5
+      compression=LZO
+    }
+    Plugin = "docker: image=@image2name@"
+  }
+}
+
+# Multiple Containers backup by ID and Name 
+Job {
+  Name = "PluginDockerTest5"
+  JobDefs = "BackupJob"
+  FileSet="TestPluginDockerSet5"
+}
+FileSet {
+  Name = "TestPluginDockerSet5"
+  Include {
+    Options {
+      signature=MD5
+      compression=LZO
+    }
+    Plugin = "docker: container=@container1id@ container=@container2name@"
+  }
+}
+
+# Multiple Images backup by ID and Name
+Job {
+  Name = "PluginDockerTest6"
+  JobDefs = "BackupJob"
+  FileSet="TestPluginDockerSet6"
+}
+FileSet {
+  Name = "TestPluginDockerSet6"
+  Include {
+    Options {
+      signature=MD5
+      compression=LZO
+    }
+    Plugin = "docker: image=@image1id@ image=@image2name@"
+  }
+}
+
+# Mixed single Conatiner and Image backup
+Job {
+  Name = "PluginDockerTest7"
+  JobDefs = "BackupJob"
+  FileSet="TestPluginDockerSet7"
+}
+FileSet {
+  Name = "TestPluginDockerSet7"
+  Include {
+    Options {
+      signature=MD5
+      compression=LZO
+    }
+    Plugin = "docker: container=@container1id@ image=@image2name@"
+  }
+}
+
+# Check include_container regex parameter
+Job {
+  Name = "PluginDockerTest8"
+  JobDefs = "BackupJob"
+  FileSet="TestPluginDockerSet8"
+}
+FileSet {
+  Name = "TestPluginDockerSet8"
+  Include {
+    Options {
+      signature=MD5
+      compression=LZO
+    }
+    Plugin = "docker: include_container=^container.$"
+  }
+}
+
+# Check exclude_container regex parameter
+Job {
+  Name = "PluginDockerTest9"
+  JobDefs = "BackupJob"
+  FileSet="TestPluginDockerSet9"
+}
+FileSet {
+  Name = "TestPluginDockerSet9"
+  Include {
+    Options {
+      signature=MD5
+      compression=LZO
+    }
+    Plugin = "docker: include_container=container exclude_container=^test"
+  }
+}
+
+# Check explicit container and regex container backup
+Job {
+  Name = "PluginDockerTest10"
+  JobDefs = "BackupJob"
+  FileSet="TestPluginDockerSet10"
+}
+FileSet {
+  Name = "TestPluginDockerSet10"
+  Include {
+    Options {
+      signature=MD5
+      compression=LZO
+    }
+    Plugin = "docker: container=@container2id@ include_container=container exclude_container=^test"
+  }
+}
+
+# Single Volume backup
+Job {
+  Name = "PluginDockerTest11"
+  JobDefs = "BackupJob"
+  FileSet="TestPluginDockerSet11"
+}
+FileSet {
+  Name = "TestPluginDockerSet11"
+  Include {
+    Options {
+      signature=MD5
+      compression=LZO
+    }
+    Plugin = "docker: volume=@volume2name@"
+  }
+}
+
+# Multiple Volume backup
+Job {
+  Name = "PluginDockerTest12"
+  JobDefs = "BackupJob"
+  FileSet="TestPluginDockerSet12"
+}
+FileSet {
+  Name = "TestPluginDockerSet12"
+  Include {
+    Options {
+      signature=MD5
+      compression=LZO
+    }
+    Plugin = "docker: volume=@volume1name@ volume=@volume2name@"
+  }
+}
+
+# Single Volume and single Container backup
+Job {
+  Name = "PluginDockerTest13"
+  JobDefs = "BackupJob"
+  FileSet="TestPluginDockerSet13"
+}
+FileSet {
+  Name = "TestPluginDockerSet13"
+  Include {
+    Options {
+      signature=MD5
+      compression=LZO
+    }
+    Plugin = "docker: container=@container2id@ volume=@volume1name@"
+  }
+}
+
+# Single Container with all volumes backup
+Job {
+  Name = "PluginDockerTest14"
+  JobDefs = "BackupJob"
+  FileSet="TestPluginDockerSet14"
+}
+FileSet {
+  Name = "TestPluginDockerSet14"
+  Include {
+    Options {
+      signature=MD5
+      compression=LZO
+    }
+    Plugin = "docker: container=@volumecontainer@ allvolumes"
+  }
+}
+
+# Multiple plugin contexts
+Job {
+  Name = "PluginDockerTest19"
+  JobDefs = "BackupJob"
+  FileSet="TestPluginDockerSet19"
+}
+FileSet {
+  Name = "TestPluginDockerSet19"
+  Include {
+    Options {
+      signature=MD5
+      compression=LZO
+    }
+    Plugin = "docker: container=@container1name@"
+    Plugin = "docker: container=@container2id@"
+    Plugin = "docker: image=@image1name@"
+    Plugin = "docker: image=@image2id@"
+    Plugin = "docker: volume=@volume1name@"
+    Plugin = "docker: volume=@volume2name@"
+  }
+}
+
+# Jobs with warnings tests started from 21
+# Single Container not found
+Job {
+  Name = "PluginDockerTest21"
+  JobDefs = "BackupJob"
+  FileSet="TestPluginDockerSet21"
+}
+FileSet {
+  Name = "TestPluginDockerSet21"
+  Include {
+    Options {
+      signature=MD5
+      compression=LZO
+    }
+    Plugin = "docker: container=xxxyyyzzz"
+  }
+}
+
+# Regex Container not found
+Job {
+  Name = "PluginDockerTest22"
+  JobDefs = "BackupJob"
+  FileSet="TestPluginDockerSet22"
+}
+FileSet {
+  Name = "TestPluginDockerSet22"
+  Include {
+    Options {
+      signature=MD5
+      compression=LZO
+    }
+    Plugin = "docker: include_container=xxxyyyzzz"
+  }
+}
+
+# Single Image not found
+Job {
+  Name = "PluginDockerTest23"
+  JobDefs = "BackupJob"
+  FileSet="TestPluginDockerSet23"
+}
+FileSet {
+  Name = "TestPluginDockerSet23"
+  Include {
+    Options {
+      signature=MD5
+      compression=LZO
+    }
+    Plugin = "docker: image=xxxyyyzzz"
+  }
+}
+
+# Regex Image not found
+Job {
+  Name = "PluginDockerTest24"
+  JobDefs = "BackupJob"
+  FileSet="TestPluginDockerSet24"
+}
+FileSet {
+  Name = "TestPluginDockerSet24"
+  Include {
+    Options {
+      signature=MD5
+      compression=LZO
+    }
+    Plugin = "docker: include_image=xxxyyyzzz"
+  }
+}
+
+# Jobs with fatal errors started from 31
+# Single Container not found and abort_on_error
+Job {
+  Name = "PluginDockerTest31"
+  JobDefs = "BackupJob"
+  FileSet="TestPluginDockerSet31"
+}
+FileSet {
+  Name = "TestPluginDockerSet31"
+  Include {
+    Options {
+      signature=MD5
+      compression=LZO
+    }
+    Plugin = "docker: container=xxxyyyzzz abort_on_error"
+  }
+}
+
+# Regex Container not found and abort_on_error
+Job {
+  Name = "PluginDockerTest32"
+  JobDefs = "BackupJob"
+  FileSet="TestPluginDockerSet32"
+}
+FileSet {
+  Name = "TestPluginDockerSet32"
+  Include {
+    Options {
+      signature=MD5
+      compression=LZO
+    }
+    Plugin = "docker: include_container=xxxyyyzzz abort_on_error"
+  }
+}
+
+# Single Image not found and abort_on_error
+Job {
+  Name = "PluginDockerTest33"
+  JobDefs = "BackupJob"
+  FileSet="TestPluginDockerSet33"
+}
+FileSet {
+  Name = "TestPluginDockerSet33"
+  Include {
+    Options {
+      signature=MD5
+      compression=LZO
+    }
+    Plugin = "docker: image=xxxyyyzzz abort_on_error"
+  }
+}
+
+# Regex Image not found and abort_on_error
+Job {
+  Name = "PluginDockerTest34"
+  JobDefs = "BackupJob"
+  FileSet="TestPluginDockerSet34"
+}
+FileSet {
+  Name = "TestPluginDockerSet34"
+  Include {
+    Options {
+      signature=MD5
+      compression=LZO
+    }
+    Plugin = "docker: include_image=xxxyyyzzz abort_on_error"
+  }
+}
+
+# REMOTE Docker FileSets
+Job {
+  Name = "PluginDockerTestremote"
+  JobDefs = "BackupJob"
+  FileSet="TestPluginDockerSetremote"
+}
+FileSet {
+  Name = "TestPluginDockerSetremote"
+  Include {
+    Options {
+      signature=MD5
+    }
+    Plugin = "docker: docker_host=\"@plugdockerhost@\""
+  }
+}
+
+# Single Container backup by ID
+Job {
+  Name = "PluginDockerTest101"
+  JobDefs = "BackupJob"
+  FileSet="TestPluginDockerSet101"
+}
+FileSet {
+  Name = "TestPluginDockerSet101"
+  Include {
+    Options {
+      signature=MD5
+      compression=LZO
+    }
+    Plugin = "docker: docker_host=\"@plugdockerhost@\" container=@container1id@"
+  }
+}
+
+# Single Image backup by ID
+Job {
+  Name = "PluginDockerTest102"
+  JobDefs = "BackupJob"
+  FileSet="TestPluginDockerSet102"
+}
+FileSet {
+  Name = "TestPluginDockerSet102"
+  Include {
+    Options {
+      signature=MD5
+      compression=LZO
+    }
+    Plugin = "docker: docker_host=\"@plugdockerhost@\" image=@image1id@"
+  }
+}
+
+# Single Container backup by Name
+Job {
+  Name = "PluginDockerTest103"
+  JobDefs = "BackupJob"
+  FileSet="TestPluginDockerSet103"
+}
+FileSet {
+  Name = "TestPluginDockerSet103"
+  Include {
+    Options {
+      signature=MD5
+      compression=LZO
+    }
+    Plugin = "docker: docker_host=\"@plugdockerhost@\" container=@container2name@"
+  }
+}
+
+# Single Image backup by Name
+Job {
+  Name = "PluginDockerTest104"
+  JobDefs = "BackupJob"
+  FileSet="TestPluginDockerSet104"
+}
+FileSet {
+  Name = "TestPluginDockerSet104"
+  Include {
+    Options {
+      signature=MD5
+      compression=LZO
+    }
+    Plugin = "docker: docker_host=\"@plugdockerhost@\" image=@image2name@"
+  }
+}
+
+# Multiple Containers backup by ID and Name 
+Job {
+  Name = "PluginDockerTest105"
+  JobDefs = "BackupJob"
+  FileSet="TestPluginDockerSet105"
+}
+FileSet {
+  Name = "TestPluginDockerSet105"
+  Include {
+    Options {
+      signature=MD5
+      compression=LZO
+    }
+    Plugin = "docker: docker_host=\"@plugdockerhost@\" container=@container1id@ container=@container2name@"
+  }
+}
+
+# Multiple Images backup by ID and Name
+Job {
+  Name = "PluginDockerTest106"
+  JobDefs = "BackupJob"
+  FileSet="TestPluginDockerSet106"
+}
+FileSet {
+  Name = "TestPluginDockerSet106"
+  Include {
+    Options {
+      signature=MD5
+      compression=LZO
+    }
+    Plugin = "docker: docker_host=\"@plugdockerhost@\" image=@image1id@ image=@image2name@"
+  }
+}
+
+# Mixed single Conatiner and Image backup
+Job {
+  Name = "PluginDockerTest107"
+  JobDefs = "BackupJob"
+  FileSet="TestPluginDockerSet107"
+}
+FileSet {
+  Name = "TestPluginDockerSet107"
+  Include {
+    Options {
+      signature=MD5
+      compression=LZO
+    }
+    Plugin = "docker: docker_host=\"@plugdockerhost@\" container=@container1id@ image=@image2name@"
+  }
+}
+
+# Check include_container regex parameter
+Job {
+  Name = "PluginDockerTest108"
+  JobDefs = "BackupJob"
+  FileSet="TestPluginDockerSet108"
+}
+FileSet {
+  Name = "TestPluginDockerSet108"
+  Include {
+    Options {
+      signature=MD5
+      compression=LZO
+    }
+    Plugin = "docker: docker_host=\"@plugdockerhost@\" include_container=^container.$"
+  }
+}
+
+# Check exclude_container regex parameter
+Job {
+  Name = "PluginDockerTest109"
+  JobDefs = "BackupJob"
+  FileSet="TestPluginDockerSet109"
+}
+FileSet {
+  Name = "TestPluginDockerSet109"
+  Include {
+    Options {
+      signature=MD5
+      compression=LZO
+    }
+    Plugin = "docker: docker_host=\"@plugdockerhost@\" include_container=container exclude_container=^test"
+  }
+}
+
+# Check explicit container and regex container backup
+Job {
+  Name = "PluginDockerTest110"
+  JobDefs = "BackupJob"
+  FileSet="TestPluginDockerSet110"
+}
+FileSet {
+  Name = "TestPluginDockerSet110"
+  Include {
+    Options {
+      signature=MD5
+      compression=LZO
+    }
+    Plugin = "docker: docker_host=\"@plugdockerhost@\" container=@container2id@ include_container=container exclude_container=^test"
+  }
+}
+
+# Single Volume backup
+Job {
+  Name = "PluginDockerTest111"
+  JobDefs = "BackupJob"
+  FileSet="TestPluginDockerSet111"
+}
+FileSet {
+  Name = "TestPluginDockerSet111"
+  Include {
+    Options {
+      signature=MD5
+      compression=LZO
+    }
+    Plugin = "docker: docker_host=\"@plugdockerhost@\" volume=@volume2name@"
+  }
+}
+
+# Multiple Volume backup
+Job {
+  Name = "PluginDockerTest112"
+  JobDefs = "BackupJob"
+  FileSet="TestPluginDockerSet112"
+}
+FileSet {
+  Name = "TestPluginDockerSet112"
+  Include {
+    Options {
+      signature=MD5
+      compression=LZO
+    }
+    Plugin = "docker: docker_host=\"@plugdockerhost@\" volume=@volume1name@ volume=@volume2name@"
+  }
+}
+
+# Single Container backup with single volume to check warning message
+Job {
+  Name = "PluginDockerTest113"
+  JobDefs = "BackupJob"
+  FileSet="TestPluginDockerSet113"
+}
+FileSet {
+  Name = "TestPluginDockerSet113"
+  Include {
+    Options {
+      signature=MD5
+      compression=LZO
+    }
+    Plugin = "docker: docker_host=\"@plugdockerhost@\" container=@container2id@ volume=@volume1name@"
+  }
+}
+
+# Single Container with all volumes backup to check warning message
+Job {
+  Name = "PluginDockerTest114"
+  JobDefs = "BackupJob"
+  FileSet="TestPluginDockerSet114"
+}
+FileSet {
+  Name = "TestPluginDockerSet114"
+  Include {
+    Options {
+      signature=MD5
+      compression=LZO
+    }
+    Plugin = "docker: docker_host=\"@plugdockerhost@\" container=@volumecontainer@ allvolumes"
+  }
+}
+
+# Multiple plugin contexts with mix local and remote
+Job {
+  Name = "PluginDockerTest119"
+  JobDefs = "BackupJob"
+  FileSet="TestPluginDockerSet119"
+}
+FileSet {
+  Name = "TestPluginDockerSet119"
+  Include {
+    Options {
+      signature=MD5
+      compression=LZO
+    }
+    Plugin = "docker: docker_host=\"@plugdockerhost@\" container=@container1name@"
+    Plugin = "docker: docker_host=\"@plugdockerhost@\" container=@container2id@"
+    Plugin = "docker: docker_host=\"@plugdockerhost@\" image=@image1name@"
+    Plugin = "docker: docker_host=\"@plugdockerhost@\" image=@image2id@"
+    Plugin = "docker: volume=@volume1name@"
+    Plugin = "docker: volume=@volume2name@"
+  }
+}
+
+# Jobs with remote warnings tests started from 121
+# Single Container not found
+Job {
+  Name = "PluginDockerTest121"
+  JobDefs = "BackupJob"
+  FileSet="TestPluginDockerSet121"
+}
+FileSet {
+  Name = "TestPluginDockerSet121"
+  Include {
+    Options {
+      signature=MD5
+      compression=LZO
+    }
+    Plugin = "docker: docker_host=\"@plugdockerhost@\" container=xxxyyyzzz"
+  }
+}
+
+# Regex Container not found
+Job {
+  Name = "PluginDockerTest122"
+  JobDefs = "BackupJob"
+  FileSet="TestPluginDockerSet122"
+}
+FileSet {
+  Name = "TestPluginDockerSet122"
+  Include {
+    Options {
+      signature=MD5
+      compression=LZO
+    }
+    Plugin = "docker: docker_host=\"@plugdockerhost@\" include_container=xxxyyyzzz"
+  }
+}
+
+# Single Image not found
+Job {
+  Name = "PluginDockerTest123"
+  JobDefs = "BackupJob"
+  FileSet="TestPluginDockerSet123"
+}
+FileSet {
+  Name = "TestPluginDockerSet123"
+  Include {
+    Options {
+      signature=MD5
+      compression=LZO
+    }
+    Plugin = "docker: docker_host=\"@plugdockerhost@\" image=xxxyyyzzz"
+  }
+}
+
+# Regex Image not found
+Job {
+  Name = "PluginDockerTest124"
+  JobDefs = "BackupJob"
+  FileSet="TestPluginDockerSet124"
+}
+FileSet {
+  Name = "TestPluginDockerSet124"
+  Include {
+    Options {
+      signature=MD5
+      compression=LZO
+    }
+    Plugin = "docker: docker_host=\"@plugdockerhost@\" include_image=xxxyyyzzz"
+  }
+}
+
+# Jobs with remote fatal errors started from 131
+# Single Container not found and abort_on_error
+Job {
+  Name = "PluginDockerTest131"
+  JobDefs = "BackupJob"
+  FileSet="TestPluginDockerSet131"
+}
+FileSet {
+  Name = "TestPluginDockerSet131"
+  Include {
+    Options {
+      signature=MD5
+      compression=LZO
+    }
+    Plugin = "docker: docker_host=\"@plugdockerhost@\" container=xxxyyyzzz abort_on_error"
+  }
+}
+
+# Regex Container not found and abort_on_error
+Job {
+  Name = "PluginDockerTest132"
+  JobDefs = "BackupJob"
+  FileSet="TestPluginDockerSet132"
+}
+FileSet {
+  Name = "TestPluginDockerSet132"
+  Include {
+    Options {
+      signature=MD5
+      compression=LZO
+    }
+    Plugin = "docker: docker_host=\"@plugdockerhost@\" include_container=xxxyyyzzz abort_on_error"
+  }
+}
+
+# Single Image not found and abort_on_error
+Job {
+  Name = "PluginDockerTest133"
+  JobDefs = "BackupJob"
+  FileSet="TestPluginDockerSet133"
+}
+FileSet {
+  Name = "TestPluginDockerSet133"
+  Include {
+    Options {
+      signature=MD5
+      compression=LZO
+    }
+    Plugin = "docker: docker_host=\"@plugdockerhost@\" image=xxxyyyzzz abort_on_error"
+  }
+}
+
+# Regex Image not found and abort_on_error
+Job {
+  Name = "PluginDockerTest134"
+  JobDefs = "BackupJob"
+  FileSet="TestPluginDockerSet134"
+}
+FileSet {
+  Name = "TestPluginDockerSet134"
+  Include {
+    Options {
+      signature=MD5
+      compression=LZO
+    }
+    Plugin = "docker: docker_host=\"@plugdockerhost@\" include_image=xxxyyyzzz abort_on_error"
+  }
+}
+
+#
+# When to do the backups, full backup on first sunday of the month,
+#  differential (i.e. incremental since full) every other sunday,
+#  and incremental backups other days
+Schedule {
+  Name = "WeeklyCycle"
+  Run = Level=Full 1st sun at 1:05
+  Run = Level=Differential 2nd-5th sun at 1:05
+  Run = Level=Incremental mon-sat at 1:05
+}
+
+# This schedule does the catalog. It starts after the WeeklyCycle
+Schedule {
+  Name = "WeeklyCycleAfterBackup"
+  Run = Level=Full sun-sat at 1:10
+}
+
+# Client (File Services) to backup
+Client {
+  Name = @hostname@-fd
+  Address = @hostname@
+  FDPort = @fdport@
+  Catalog = MyCatalog
+  Password = "xevrjURYoCHhn26RaJoWbeWXEY/a3VqGKp/37tgWiuHc"          # password for FileDaemon
+  File Retention = 30d                # 30 days
+  Job Retention = 180d                # six months
+  AutoPrune = yes                     # Prune expired Jobs/Files
+  Maximum Concurrent Jobs = 4
+}
+
+# Definiton of file storage device
+Storage {
+  Name = File
+  Address = @hostname@                # N.B. Use a fully qualified name here
+  SDPort = @sdport@
+  Password = "ccV3lVTsQRsdIUGyab0N4sMDavui2hOBkmpBU0aQKOr9"
+  Device = FileStorage
+  Media Type = File
+  Maximum Concurrent Jobs = 4
+}
+
+Storage {
+  Name = File1
+  Address = @hostname@                # N.B. Use a fully qualified name here
+  SDPort = @sdport@
+  Password = "ccV3lVTsQRsdIUGyab0N4sMDavui2hOBkmpBU0aQKOr9"
+  Device = FileStorage1
+  Media Type = File1
+  Maximum Concurrent Jobs = 4
+}
+
+# Generic catalog service
+Catalog {
+  Name = MyCatalog
+  @libdbi@
+  dbname = @db_name@; user = @db_user@; password = "@db_password@"
+}
+
+# Reasonable message delivery -- send most everything to email address
+#  and to the console
+Messages {
+  Name = Standard
+  mailcommand = "@sbindir@/bsmtp -h localhost -f \"\(Bacula regression\) %r\" -s \"Regression: %t %e of %c %l\" %r"
+  operatorcommand = "@sbindir@/bsmtp -h localhost -f \"\(Bacula regression\) %r\" -s \"Regression: Intervention needed for %j\" %r"
+# MailOnError = @job_email@ = all
+# operator = @job_email@ = mount
+  console = all, !skipped, !terminate, !restored
+#
+# WARNING! the following will create a file that you must cycle from
+#          time to time as it will grow indefinitely. However, it will
+#          also keep all your messages if the scroll off the console.
+#
+  append = "@working_dir@/log" = all, !skipped
+  catalog = all, !skipped
+}
+
+Messages {
+  Name = NoEmail
+  mailcommand = "@sbindir@/bsmtp -h localhost -f \"\(Bacula regression\) %r\" -s \"Regression: %t %e of %c %l\" %r"
+  console = all, !skipped, !terminate
+#
+# WARNING! the following will create a file that you must cycle from
+#          time to time as it will grow indefinitely. However, it will
+#          also keep all your messages if the scroll off the console.
+#
+  append = "@working_dir@/log" = all, !skipped
+  catalog = all, !skipped
+}
+
+    
+# Default pool definition
+Pool {
+  Name = Default
+  Pool Type = Backup
+  Recycle = yes                       # Bacula can automatically recycle Volumes
+  AutoPrune = yes                     # Prune expired volumes
+  Volume Retention = 365d             # one year
+# Label Format = "TEST-${Year}-${Month:p/2/0/r}-${Day:p/2/0/r}:${NumVols}"
+# Maximum Volume Jobs = 1
+}
