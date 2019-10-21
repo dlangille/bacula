@@ -3,15 +3,10 @@
 # Copyright (C) 2000-2015 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
-# Radosław Korzeniewski, MMXVIII
-# radoslaw@korzeniewski.net, radekk@inteos.pl
-# Inteos Sp. z o.o. http://www.inteos.pl/
+# Copyright (c) 2018 by Inteos sp. z o.o.
+# All rights reserved. IP transfered to Bacula Systems according to agreement.
 #
-# This is an ConfigFile/ini unit test
+# This is a collector unit test
 #
-TestName="collect_test"
-. scripts/functions
-make -C $src/src/lib $TestName
-
-$src/src/lib/$TestName
-exit $?
+. scripts/regress-utils.sh
+do_regress_unittest "collect_test" "src/lib"

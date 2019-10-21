@@ -8,9 +8,5 @@
 #
 # This is a crc32 unit test
 #
-TestName="crc32_test"
-. scripts/functions
-make -C $src/src/lib $TestName
-
-$src/src/lib/$TestName
-exit $?
+. scripts/regress-utils.sh
+do_regress_unittest "crc32_test" "src/lib"

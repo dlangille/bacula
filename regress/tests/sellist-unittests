@@ -8,9 +8,5 @@
 #
 # This is a sellist unit test
 #
-TestName="sellist_test"
-. scripts/functions
-make -C $src/src/lib $TestName
-
-$src/src/lib/$TestName
-exit $?
+. scripts/regress-utils.sh
+do_regress_unittest "sellist_test" "src/lib"

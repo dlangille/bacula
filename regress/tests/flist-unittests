@@ -8,9 +8,5 @@
 #
 # This is a flist unit test
 #
-TestName="flist_test"
-. scripts/functions
-make -C $src/src/lib $TestName
-
-$src/src/lib/$TestName
-exit $?
+. scripts/regress-utils.sh
+do_regress_unittest "flist_test" "src/lib"

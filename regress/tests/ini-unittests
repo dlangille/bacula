@@ -8,9 +8,5 @@
 #
 # This is an ConfigFile/ini unit test
 #
-TestName="ini_test"
-. scripts/functions
-make -C $src/src/lib $TestName
-
-$src/src/lib/$TestName
-exit $?
+. scripts/regress-utils.sh
+do_regress_unittest "ini_test" "src/lib"

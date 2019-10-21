@@ -8,15 +8,11 @@
 #
 # This is a BSOCK unit test
 #
-TestName="bsock_test"
 NC="/bin/netcat"
 if [ -f $NC ]
 then
-. scripts/functions
-make -C $src/src/lib $TestName
-
-$src/src/lib/$TestName
-exit $?
+. scripts/regress-utils.sh
+do_regress_unittest "bsock_test" "src/lib"
 else
 	echo "$0 requires $NC to complete"
 fi

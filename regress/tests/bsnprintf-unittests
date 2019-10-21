@@ -8,9 +8,5 @@
 #
 # This is an bsnprintf unit test
 #
-TestName="bsnprintf_test"
-. scripts/functions
-make -C $src/src/lib $TestName
-
-$src/src/lib/$TestName
-exit $?
+. scripts/regress-utils.sh
+do_regress_unittest "bsnprintf_test" "src/lib"
