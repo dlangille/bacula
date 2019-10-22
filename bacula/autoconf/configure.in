@@ -3021,11 +3021,13 @@ AC_CHECK_LIB(pthread, pthread_create, PTHREAD_LIB="-lpthread",
    ]
 )
 
+dnl
+dnl Enable/Disable plugin support
+dnl
+
 PLUGCONFILES=""
 
-dnl
-dnl Docker Plugin enable/disable
-dnl
+dnl Docker Plugin
 support_docker=auto
 AC_ARG_ENABLE(docker-plugin,
    AC_HELP_STRING([--disable-docker-plugin], [disable Docker plugin support @<:@default=auto@:>@]),
@@ -3038,8 +3040,9 @@ AC_ARG_ENABLE(docker-plugin,
    ]
 )
 if test x$support_docker = xyes -o x$support_docker = xauto; then
-   AC_PATH_PROG(docker_bin_path, "docker", "no")
-   if test x$docker_bin_path != xno; then
+   AC_CHECK_PROG(docker_bin, docker, yes, no, "/usr/bin/")
+   if test x$docker_bin = xyes; then
+      support_docker=yes
       FD_PLUGIN_DIR="$FD_PLUGIN_DIR src/plugins/fd/docker"
       PLUGCONFILES="${PLUGCONFILES} src/plugins/fd/docker/Makefile"
    else

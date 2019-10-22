@@ -649,7 +649,7 @@ DEBUG
 FDLIBS
 CAP_LIBS
 FD_PLUGIN_DIR
-docker_bin_path
+docker_bin
 XATTROBJS
 ACLOBJS
 LZO_LIBS
@@ -30853,6 +30853,7 @@ fi
 fi
 
 
+
 PLUGCONFILES=""
 
 support_docker=auto
@@ -30869,26 +30870,24 @@ if test "${enable_docker_plugin+set}" = set; then :
 fi
 
 if test x$support_docker = xyes -o x$support_docker = xauto; then
-   # Extract the first word of ""docker"", so it can be a program name with args.
-set dummy "docker"; ac_word=$2
+   # Extract the first word of "docker", so it can be a program name with args.
+set dummy docker; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_path_docker_bin_path+:} false; then :
+if ${ac_cv_prog_docker_bin+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  case $docker_bin_path in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_docker_bin_path="$docker_bin_path" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
+  if test -n "$docker_bin"; then
+  ac_cv_prog_docker_bin="$docker_bin" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in "/usr/bin/"
 do
   IFS=$as_save_IFS
   test -z "$as_dir" && as_dir=.
     for ac_exec_ext in '' $ac_executable_extensions; do
   if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_path_docker_bin_path="$as_dir/$ac_word$ac_exec_ext"
+    ac_cv_prog_docker_bin="yes"
     $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
     break 2
   fi
@@ -30896,21 +30895,21 @@ done
   done
 IFS=$as_save_IFS
 
-  test -z "$ac_cv_path_docker_bin_path" && ac_cv_path_docker_bin_path=""no""
-  ;;
-esac
+  test -z "$ac_cv_prog_docker_bin" && ac_cv_prog_docker_bin="no"
 fi
-docker_bin_path=$ac_cv_path_docker_bin_path
-if test -n "$docker_bin_path"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $docker_bin_path" >&5
-$as_echo "$docker_bin_path" >&6; }
+fi
+docker_bin=$ac_cv_prog_docker_bin
+if test -n "$docker_bin"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $docker_bin" >&5
+$as_echo "$docker_bin" >&6; }
 else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 fi
 
 
-   if test x$docker_bin_path != xno; then
+   if test x$docker_bin = xyes; then
+      support_docker=yes
       FD_PLUGIN_DIR="$FD_PLUGIN_DIR src/plugins/fd/docker"
       PLUGCONFILES="${PLUGCONFILES} src/plugins/fd/docker/Makefile"
    else
