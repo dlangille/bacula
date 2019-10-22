@@ -262,7 +262,14 @@ read_volume:
       if (!find_a_volume()) {
          goto mount_next_vol;
       }
-      dev->set_volcatinfo_from_dcr(this);
+      if (strcmp(dev->VolHdr.VolumeName, dcr->VolCatInfo.VolCatName) == 0) {
+         dev->set_volcatinfo_from_dcr(this);
+
+      } else {      /* We have a volume, but not the current one */
+         Dmsg2(5, "Will need to re-mount volumes %s %s\n",
+               dev->VolHdr.VolumeName, dcr->VolCatInfo.VolCatName);
+         goto mount_next_vol;
+      }
    }
 
    /*
