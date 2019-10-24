@@ -252,7 +252,7 @@ bool CONFIG::insert_res(int rindex, int size)
  * Initialize the static structure to zeros, then
  *  apply all the default values.
  */
-static void init_resource(CONFIG *config, int type, RES_ITEM *items, int pass)
+static void init_resource0(CONFIG *config, int type, RES_ITEM *items, int pass)
 {
    int i;
    int rindex = type - r_first;
@@ -295,7 +295,7 @@ static void init_resource(CONFIG *config, int type, RES_ITEM *items, int pass)
 }
 
 /* Initialize a resouce with default values */
-bool init_resource(CONFIG *config, uint32_t type, void *res)
+bool init_resource(CONFIG *config, uint32_t type, void *res, int size)
 {
    RES_ITEM *items;
    for (int i=0; resources[i].name; i++) {
@@ -304,8 +304,8 @@ bool init_resource(CONFIG *config, uint32_t type, void *res)
          if (!items) {
             return false;
          }
-         init_resource(config, type, items, 1);
-         memcpy(res, config->m_res_all, config->m_res_all_size);
+         init_resource0(config, type, items, 1);
+         memcpy(res, config->m_res_all, size);
          return true;
       }
    }
@@ -1107,7 +1107,7 @@ bool CONFIG::parse_config()
                   }
                   state = p_resource;
                   res_type = resources[i].rcode;
-                  init_resource(this, res_type, items, pass);
+                  init_resource0(this, res_type, items, pass);
                   break;
                }
             }

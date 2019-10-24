@@ -289,7 +289,7 @@ void b_UnlockRes(const char *file, int line);
 void dump_resource(int type, RES *res, void sendmsg(void *sock, const char *fmt, ...), void *sock);
 void dump_each_resource(int type, void sendmsg(void *sock, const char *fmt, ...), void *sock);
 void free_resource(RES *res, int type);
-bool init_resource(CONFIG *config, uint32_t type, void *res);
+bool init_resource(CONFIG *config, uint32_t type, void *res, int size);
 bool save_resource(CONFIG *config, int type, RES_ITEM *item, int pass);
 void unstrip_password(RES_TABLE *resources); /* Used for json stuff */
 void strip_password(RES_TABLE *resources);   /* Used for tray monitor */

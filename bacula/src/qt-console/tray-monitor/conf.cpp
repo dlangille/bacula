@@ -337,7 +337,7 @@ void Conf::addResource(RESMON *res, const char *title)
 void Conf::addRes(int type, const char *title)
 {
    RESMON *res = (RESMON *) malloc(sizeof(RESMON));
-   init_resource(config, type, res);
+   init_resource(config, type, res, sizeof(RESMON));
    res->type = type;            // Not sure it's set by init_resource
    res->new_resource = true;    // We want to free this resource with the ConfTab
    addResource(res, title);
