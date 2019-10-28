@@ -989,6 +989,96 @@
 				]
 			}
 		},
+		"/api/v1/jobs/{jobid}/files": {
+			"get": {
+				"tags": ["jobs"],
+				"summary": "Show job files and directories",
+				"description": "Get job file and directory list.",
+				"responses": {
+					"200": {
+						"description": "Show job files output list",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"type": "object",
+											"properties": {
+												"items": {
+													"type": "array",
+													"items": {
+														"type": "string",
+														"description": "Show job files output list"
+													}
+												},
+												"total": {
+													"type": "integer",
+													"description": "Total number of items"
+												}
+											}
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 11, 50, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					{
+						"name": "jobid",
+						"in": "path",
+						"description": "Job identifier",
+						"required":  true,
+						"schema": {
+							"type": "integer"
+						}
+					},
+					{
+						"name": "type",
+						"in": "query",
+						"description": "List item type",
+						"required":  false,
+						"schema": {
+							"type": "string",
+							"enum": ["deleted", "all"]
+						}
+					},
+					{
+						"name": "offset",
+						"in": "query",
+						"description": "Result items offset",
+						"required":  false,
+						"schema": {
+							"type": "integer"
+						}
+					},
+					{
+						"name": "limit",
+						"in": "query",
+						"description": "Result items limit",
+						"required":  false,
+						"schema": {
+							"type": "integer"
+						}
+					},
+					{
+						"name": "search",
+						"in": "query",
+						"description": "Search keyword in item list",
+						"required":  false,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
 		"/api/v1/jobs/resnames": {
 			"get": {
 				"tags": ["jobs"],

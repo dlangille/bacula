@@ -64,6 +64,7 @@
 	<url ServiceParameter="JobRun" pattern="api/v1/jobs/run/" />
 	<url ServiceParameter="JobCancel" pattern="api/v1/jobs/{id}/cancel/" parameters.id="\d+"/>
 	<url ServiceParameter="JobTotals" pattern="api/v1/jobs/totals/" />
+	<url ServiceParameter="JobFiles" pattern="api/v1/jobs/{id}/files/" parameters.id="\d+" />
 	<url ServiceParameter="RestoreRun" pattern="api/v1/jobs/restore/" />
 	<!-- bvfs endpoints-->
 	<url ServiceParameter="BVFSUpdate" pattern="api/v1/bvfs/update/" />

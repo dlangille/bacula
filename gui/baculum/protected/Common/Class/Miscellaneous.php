@@ -235,7 +235,7 @@ class Miscellaneous extends TModule {
 	}
 
 	public function isValidPath($path) {
-		return (preg_match('/^[\p{L}\p{N}\p{Z}\p{Sc}\[\]\-\'\/\\(){}:.#~_,+!$]{0,10000}$/u', $path) === 1);
+		return (preg_match('/^[\p{L}\p{N}\p{Z}\p{Sc}\p{Pd}\[\]\-\'\/\\(){}:.#~_,+!$]{0,10000}$/u', $path) === 1);
 	}
 
 	public function isValidReplace($replace) {
@@ -260,6 +260,10 @@ class Miscellaneous extends TModule {
 
 	public function isValidAlphaNumeric($str) {
 		return (preg_match('/^[a-zA-Z0-9]+$/', $str) === 1);
+	}
+
+	public function isValidListFilesType($type) {
+		return (preg_match('/^(all|deleted)$/', $type) === 1);
 	}
 
 	public function escapeCharsToConsole($path) {

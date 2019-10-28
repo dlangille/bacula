@@ -37,7 +37,8 @@
 		<module id="status_fd" class="Application.API.Class.StatusClient" />
 		<!-- component actions modules -->
 		<module id="comp_actions" class="Application.API.Class.ComponentActions" />
-		<!-- misc modules -->
+		<!-- bconsole command modules -->
 		<module id="ls" class="Application.API.Class.Ls" />
+		<module id="list" class="Application.API.Class.BList" />
 	</modules>
 </configuration>
