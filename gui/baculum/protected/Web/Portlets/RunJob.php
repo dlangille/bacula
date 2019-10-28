@@ -44,7 +44,7 @@ class RunJob extends Portlets {
 
 	const DEFAULT_JOB_PRIORITY = 10;
 
-	public $job_to_verify = array('C', 'O', 'd');
+	public $job_to_verify = array('C', 'O', 'd', 'A');
 
 	public $verify_options = array('jobname' => 'Verify by Job Name', 'jobid' => 'Verify by JobId');
 

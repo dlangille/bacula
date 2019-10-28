@@ -2365,3 +2365,30 @@ msgstr "The storage has been selected basing on job configuration. This item may
 
 msgid "Graphical job status is supported for jobs running on Bacula clients version 9.0 and greater."
 msgstr "Graphical job status is supported for jobs running on Bacula clients version 9.0 and greater."
+
+msgid "Offset:"
+msgstr "Offset:"
+
+msgid "List type:"
+msgstr "List type:"
+
+msgid "saved items"
+msgstr "saved items"
+
+msgid "deleted items"
+msgstr "deleted items"
+
+msgid "all"
+msgstr "all"
+
+msgid "Find file or directory"
+msgstr "Find file or directory"
+
+msgid "Find"
+msgstr "Find"
+
+msgid "Item count:"
+msgstr "Item count:"
+
+msgid "No item result"
+msgstr "No item result"

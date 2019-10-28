@@ -815,7 +815,7 @@ W3TabsCommon = {
 		for (var i = 0; i < tab_btns.length; i++) {
 			if (tab_btns[i].id === btn_id && !tab_btns[i].classList.contains(this.css.tab_item_hover)) {
 				tab_btns[i].classList.add(this.css.tab_item_hover);
-			} else if (tab_btns[i].classList.contains(this.css.tab_item_hover)) {
+			} else if (tab_btns[i].id !== btn_id && tab_btns[i].classList.contains(this.css.tab_item_hover)) {
 				tab_btns[i].classList.remove(this.css.tab_item_hover);
 			}
 		}

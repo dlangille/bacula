@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2018 Kern Sibbald
+ * Copyright (C) 2013-2019 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -32,8 +32,9 @@ class JobHistoryView extends BaculumWebPage {
 	const JOBID = 'JobId';
 	const JOB_NAME = 'JobName';
 	const JOB_UNAME = 'JobUname';
-	const CLIENTID = 'ClientId';
+	const JOB_LEVEL = 'JobLevel';
 	const JOB_TYPE = 'JobType';
+	const CLIENTID = 'ClientId';
 
 	const USE_CACHE = true;
 
@@ -44,7 +45,11 @@ class JobHistoryView extends BaculumWebPage {
 
 	public $is_running = false;
 	public $allow_graph_mode = false;
+	public $allow_list_files_mode = false;
 	private $no_graph_mode_types = array('M', 'D', 'C', 'c', 'g');
+	private $no_graph_mode_verify_levels = array('O');
+	private $list_files_types = array('B', 'C', 'V');
+	private $list_files_mode_verify_levels = array('V');
 
 	public function onPreInit($param) {
 		parent::onPreInit($param);
@@ -60,15 +65,27 @@ class JobHistoryView extends BaculumWebPage {
 		$this->setJobName($jobdata->name);
 		$this->setJobUname($jobdata->job);
 		$this->setJobType($jobdata->type);
+		$this->setJobLevel($jobdata->level);
 		$this->setClientId($jobdata->clientid);
 		$this->is_running = $this->getModule('misc')->isJobRunning($jobdata->jobstatus);
 		$this->allow_graph_mode = ($this->is_running && !in_array($jobdata->type, $this->no_graph_mode_types));
+		$this->allow_list_files_mode = (!$this->is_running && in_array($jobdata->type, $this->list_files_types));
+		if ($jobdata->type === 'V') {
+			// Verify job requires special treating here
+			if (in_array($jobdata->level, $this->no_graph_mode_verify_levels)) {
+				$this->allow_graph_mode = false;
+			}
+			if (!in_array($jobdata->level, $this->list_files_mode_verify_levels)) {
+				$this->allow_list_files_mode = false;
+			}
+		}
 	}
 
 	public function onInit($param) {
 		parent::onInit($param);
 		$this->RunJobModal->setJobId($this->getJobId());
 		$this->RunJobModal->setJobName($this->getJobName());
+		$this->FileList->setJobId($this->getJobId());
 	}
 
 	public function onLoad($param) {
@@ -81,7 +98,17 @@ class JobHistoryView extends BaculumWebPage {
 
 	public function runningJobStatus($sender, $param) {
 		$running_job_status = $this->getRunningJobStatus($this->getClientId());
-		$this->getCallbackClient()->callClientFunction('init_graphical_running_job_status', array($running_job_status));
+		$tabs = array(
+			'joblog_subtab_text' => true,
+			'status_running_job_subtab_graphical' => false,
+			'jobfiles_subtab_text' => false
+		);
+		if ($this->allow_graph_mode) {
+			$tabs['status_running_job_subtab_graphical'] = true;
+		} elseif ($this->allow_list_files_mode) {
+			$tabs['jobfiles_subtab_text'] = true;
+		}
+		$this->getCallbackClient()->callClientFunction('init_graphical_running_job_status', array($running_job_status, $tabs));
 	}
 
 	public function getRunningJobStatus($clientid) {
@@ -218,6 +245,24 @@ class JobHistoryView extends BaculumWebPage {
 	 */
 	public function getJobType() {
 		return $this->getViewState(self::JOB_TYPE);
+	}
+
+	/**
+	 * Set job level.
+	 *
+	 * @return none;
+	 */
+	public function setJobLevel($job_level) {
+		$this->setViewState(self::JOB_LEVEL, $job_level);
+	}
+
+	/**
+	 * Get job level.
+	 *
+	 * @return string job level
+	 */
+	public function getJobLevel() {
+		return $this->getViewState(self::JOB_LEVEL);
 	}
 
 	/**

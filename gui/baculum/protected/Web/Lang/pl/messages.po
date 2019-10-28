@@ -2372,3 +2372,30 @@ msgstr "Wartość magazynu danych została wybrana, bazując na konfiguracji zad
 
 msgid "Graphical job status is supported for jobs running on Bacula clients version 9.0 and greater."
 msgstr "Graficzny status zadania jest wspierany dla zadań uruchomionych na klientach Bacula w wersji 9.0 lub wyższych."
+
+msgid "Offset:"
+msgstr "Offset:"
+
+msgid "List type:"
+msgstr "Typ listy:"
+
+msgid "saved items"
+msgstr "zapisane elementy"
+
+msgid "deleted items"
+msgstr "skasowane elementy"
+
+msgid "all"
+msgstr "wszystko"
+
+msgid "Find file or directory"
+msgstr "Znajdź plik lub katalog"
+
+msgid "Find"
+msgstr "Znajdź"
+
+msgid "Item count:"
+msgstr "Ilość elementów:"
+
+msgid "No item result"
+msgstr "Brak wyniku"

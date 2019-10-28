@@ -89,20 +89,18 @@
 				OnCallback="runningJobStatus"
 				ClientSide.OnComplete="oRunningJobStatus.init_refresh();"
 			/>
-			<com:TConditional
-				ID="RunningJobStatus"
-				Condition="$this->allow_graph_mode"
-			>
-				<prop:TrueTemplate>
 			<div class="w3-row">
-				<a href="javascript:void(0)" onclick="W3SubTabs.open('status_running_job_subtab_graphical', 'status_running_job_graphical_output');">
+				<a href="javascript:void(0)" onclick="W3SubTabs.open('status_running_job_subtab_graphical', 'status_running_job_graphical_output');"<%=!$this->allow_graph_mode ? ' style="display: none"' : ''%>>
 					<div id="status_running_job_subtab_graphical" class="subtab_btn w3-half w3-bottombar w3-hover-light-grey w3-border-red w3-padding"><%[ Running job status ]%></div>
-				 </a>
+				</a>
 				<a href="javascript:void(0)" onclick="W3SubTabs.open('joblog_subtab_text', 'joblog_text_output');">
 					<div id="joblog_subtab_text" class="subtab_btn w3-half w3-bottombar w3-hover-light-grey w3-padding"><%[ Raw job log ]%></div>
 				</a>
+				<a href="javascript:void(0)" onclick="W3SubTabs.open('jobfiles_subtab_text', 'jobfiles_list'); load_job_list_files();"<%=!$this->allow_list_files_mode ? ' style="display: none"' : ''%>>
+					<div id="jobfiles_subtab_text" class="subtab_btn w3-half w3-bottombar w3-hover-light-grey w3-padding"><%[ Job files ]%></div>
+				</a>
 			</div>
-			<div id="status_running_job_graphical_output" class="subtab_item">
+			<div id="status_running_job_graphical_output" class="subtab_item" style="display: none">
 				<h4 id="status_running_job_status_not_supported" style="display: none"><%[ Graphical job status is supported for jobs running on Bacula clients version 9.0 and greater. ]%></h4>
 				<div id="status_running_job_graphical_container">
 					<div class="w3-right w3-margin-top w3-margin-right" title="<%[ To disable refreshing please type 0. ]%>">
@@ -201,7 +199,9 @@ var oRunningJobStatus = {
 			$('#' + this.ids.refresh_interval).parent().hide();
 			var graphical_container = document.getElementById(this.ids.graphical_container);
 			graphical_container.style.display = 'none';
-			W3SubTabs.open('joblog_subtab_text', 'joblog_text_output');
+			if (document.getElementById('jobfiles_list').style.display == 'none') {
+				W3SubTabs.open('joblog_subtab_text', 'joblog_text_output');
+			}
 		}
 	},
 	add_running_job: function(job, full_refresh) {
@@ -376,8 +376,15 @@ var oRunningJobStatus = {
 	}
 }
 
-function init_graphical_running_job_status(data) {
+function init_graphical_running_job_status(data, tab_data) {
 	oRunningJobStatus.update(data);
+	var tabs = Object.keys(tab_data);
+	for (var i = 0; i < tabs.length; i++) {
+		document.getElementById(tabs[i]).parentNode.style.display = (tab_data[tabs[i]] ? '' : 'none');
+	}
+	if (document.getElementById('status_running_job_subtab_graphical').classList.contains(W3SubTabs.css.tab_item_hover)) {
+		W3SubTabs.open('status_running_job_subtab_graphical', 'status_running_job_graphical_output');
+	}
 }
 
 oRunningJobStatus.init();
@@ -388,15 +395,36 @@ $(function() {
 });
 				</script>
 			</div>
-			<div id="joblog_text_output" class="subtab_item" style="display: none">
-				</prop:TrueTemplate>
+			<com:TConditional
+				Condition="$this->allow_graph_mode"
+			>
+				<prop:FalseTemplate>
+					<script>
+						$(function() {
+							W3SubTabs.open('joblog_subtab_text', 'joblog_text_output');
+						});
+					</script>
+				</prop:FalseTemplate>
 			</com:TConditional>
+			<div id="joblog_text_output" class="subtab_item" style="display: none">
 				<div class="w3-code">
 					<pre><com:TActiveLabel ID="JobLog" /></pre>
 				</div>
-			<com:TConditional Condition="$this->allow_graph_mode">
-				<prop:TrueTemplate>
 			</div>
+			<div id="jobfiles_list" class="subtab_item" style="display: none">
+				<com:Application.Web.Portlets.JobListFiles
+					ID="FileList"
+				/>
+			</div>
+			<com:TConditional
+				Condition="$this->allow_list_files_mode"
+			>
+				<prop:TrueTemplate>
+					<script>
+						$(function() {
+							W3SubTabs.open('joblog_subtab_text', 'joblog_text_output');
+						});
+					</script>
 				</prop:TrueTemplate>
 			</com:TConditional>
 		</div>
