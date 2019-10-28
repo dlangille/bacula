@@ -632,7 +632,7 @@ bool send_include_list(JCR *jcr)
 }
 
 /*
- * Send a include list with a plugin and listing=<path> parameter
+ * Send an include list with a plugin and listing=<path> parameter
  */
 bool send_ls_plugin_fileset(JCR *jcr, const char *plugin, const char *path)
 {
@@ -642,7 +642,7 @@ bool send_ls_plugin_fileset(JCR *jcr, const char *plugin, const char *path)
    fd->fsend("I\n");
    fd->fsend("O h\n");         /* is it required? */
    fd->fsend("N\n");
-   fd->fsend("P %s listing=%s\n", plugin, path);
+   fd->fsend("P %s%s listing=%s\n", plugin, strchr(plugin, ':') == NULL ? ":" : "", path);
    fd->fsend("N\n");
    fd->signal(BNET_EOD);              /* end of data */
 
