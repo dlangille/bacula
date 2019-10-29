@@ -9,18 +9,18 @@
 					var t = (event.target||event.srcElement);
 					var nn = t.nodeName.toUpperCase();
 					var res_id = '<%=$this->Resource->ClientID%>';
-					if (nn != 'SVG' && nn != 'PATH' && t.parentNode.id != res_id && t.id != res_id && !/^<%=$this->RemoveResource->ClientID%>/.test(t.id)) {
+					if (nn != 'I' && t.parentNode.id != res_id && t.id != res_id && !/^<%=$this->RemoveResource->ClientID%>/.test(t.id)) {
 						$('.validate, .validator').hide(); // hide validator messages
 						$('#' + res_id).trigger('click');
 					}
 				};
 				document.getElementById('<%=$this->RemoveResource->ClientID%>').onclick = function(event) {
-					var t = (event.target||event.srcElement);
+					var t = event.target || event.srcElement;
 					var nn = t.nodeName.toUpperCase();
 					var cmsg = '<%[ Are you sure that you want to remove %s resource "%s"? ]%>';
 					cmsg = cmsg.replace('%s', '<%=$this->Data['resource_type']%>');
 					cmsg = cmsg.replace('%s', '<%=$this->Data['resource_name']%>');
-					if ((/^<%=$this->RemoveResource->ClientID%>/.test(t.id) || nn == 'SVG' || nn == 'PATH') && confirm(cmsg)) {
+					if ((/^<%=$this->RemoveResource->ClientID%>/.test(t.id) || nn == 'I') && confirm(cmsg)) {
 						return true;
 					}
 					return false;

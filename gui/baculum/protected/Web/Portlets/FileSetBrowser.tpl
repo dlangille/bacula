@@ -250,10 +250,6 @@ var oFileSetBrowser<%=$this->ClientID%> = {
 		el.setAttribute('rel', item);
 		var name = document.createElement('DIV');
 		name.textContent = item;
-		/**
-		 * Container is needed, because <i> is replaced to SVG icon
-		 * and it is impossible to set click event.
-		 */
 		var del_btn_container = document.createElement('DIV');
 		var del_btn = document.createElement('I');
 		del_btn.className = 'fa fa-trash-alt item_selected_del_btn';
@@ -271,10 +267,6 @@ var oFileSetBrowser<%=$this->ClientID%> = {
 		el.setAttribute('rel', item);
 		var name = document.createElement('DIV');
 		name.textContent = item;
-		/**
-		 * Container is needed, because <i> is replaced to SVG icon
-		 * and it is impossible to set click event.
-		 */
 		var del_btn_container = document.createElement('DIV');
 		var del_btn = document.createElement('I');
 		del_btn.className = 'fa fa-trash-alt item_selected_del_btn';

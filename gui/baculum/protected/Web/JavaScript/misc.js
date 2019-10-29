@@ -494,11 +494,6 @@ var oLastJobsList = {
 	set_events: function() {
 		var self = this;
 		$('#' + this.ids.last_jobs_list + ' tbody').on('click', 'tr', function (e) {
-			var node_name = e.target.nodeName.toUpperCase();
-			if (node_name === 'BUTTON' || node_name === 'SVG' || node_name === 'PATH') {
-				// clicking on button doesn't cause directing to job details
-				return;
-			}
 			var data = self.last_jobs_table.row(this).data();
 			document.location.href = '/web/job/history/' + data.jobid + '/'
 		});
@@ -747,7 +742,7 @@ var Users = {
 	hide_loader: function() {
 		setTimeout(function() {
 			if (this.current_action === 'set_host') {
-				$('svg[rel=\'' + this.ids.set_host.rel_user_host + '\']').css({visibility: 'hidden'});
+				$('I[rel=\'' + this.ids.set_host.rel_user_host + '\']').css({visibility: 'hidden'});
 			}
 		}.bind(this), 300);
 
