@@ -20,11 +20,22 @@ class ComposerStaticInitce99a96f11b07d74c065123825cb4155
         ),
     );
 
+    public static $prefixesPsr0 = array (
+        'J' => 
+        array (
+            'JSMin\\' => 
+            array (
+                0 => __DIR__ . '/..' . '/mrclay/jsmin-php/src',
+            ),
+        ),
+    );
+
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
             $loader->prefixLengthsPsr4 = ComposerStaticInitce99a96f11b07d74c065123825cb4155::$prefixLengthsPsr4;
             $loader->prefixDirsPsr4 = ComposerStaticInitce99a96f11b07d74c065123825cb4155::$prefixDirsPsr4;
+            $loader->prefixesPsr0 = ComposerStaticInitce99a96f11b07d74c065123825cb4155::$prefixesPsr0;
 
         }, null, ClassLoader::class);
     }
