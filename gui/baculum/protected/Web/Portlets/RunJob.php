@@ -203,6 +203,11 @@ class RunJob extends Portlets {
 		$this->Priority->Text = $priority;
 	}
 
+	public function selectJobValues($sender, $param) {
+		$this->setJobName($sender->SelectedValue);
+		$this->loadData();
+	}
+
 	/**
 	 * set jobid to run job again.
 	 *

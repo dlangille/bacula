@@ -15,7 +15,11 @@
 			<com:TActivePanel ID="JobToRunLine" CssClass="w3-row w3-section w3-text-teal" Display="None">
 				<div class="w3-col w3-quarter"><i class="w3-xxlarge fa fa-tasks"></i> &nbsp;<com:TLabel ForControl="JobToRun" Text="<%[ Job to run: ]%>" CssClass="w3-xlarge" /></div>
 				<div class="w3-half">
-					<com:TActiveDropDownList ID="JobToRun" AutoPostBack="false" CssClass="w3-select w3-border" />
+					<com:TActiveDropDownList
+						ID="JobToRun"
+						CssClass="w3-select w3-border"
+						OnCallback="selectJobValues"
+					/>
 				</div>
 			</com:TActivePanel>
 			<div class="w3-row w3-section w3-text-teal">
