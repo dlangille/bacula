@@ -262,3 +262,7 @@ table.status_table td, table.status_table td i {
 	font-weight: bold;
 	text-shadow: 1px 1px 0 #fff;
 }
+
+.smallbox {
+	width: 160px;
+}

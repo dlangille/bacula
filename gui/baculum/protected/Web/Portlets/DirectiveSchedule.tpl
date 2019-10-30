@@ -68,6 +68,7 @@
 				Label="<%[ Month ]%>"
 				InConfig="true"
 				Show="true"
+				CssClass="smallbox"
 			/>
 		</div>
 		<div id="month_range<%=$this->MonthSingle->ClientID%>" class="w3-margin month<%=$this->MonthSingle->ClientID%>" style="display: <%=$this->MonthRange->Checked ? 'block' : 'none'%>">
@@ -76,12 +77,14 @@
 				Label="<%[ From month ]%>"
 				InConfig="true"
 				Show="true"
+				CssClass="smallbox"
 			/>
 			<com:Application.Web.Portlets.DirectiveComboBox
 				ID="MonthRangeTo"
 				Label="<%[ To month ]%>"
 				InConfig="true"
 				Show="true"
+				CssClass="smallbox"
 			/>
 		</div>
 		<hr />
@@ -110,6 +113,7 @@
 				Label="<%[ Week ]%>"
 				InConfig="true"
 				Show="true"
+				CssClass="smallbox"
 			/>
 		</div>
 		<div id="week_range<%=$this->WeekSingle->ClientID%>" class="w3-margin week<%=$this->WeekSingle->ClientID%>" style="display: <%=$this->WeekRange->Checked ? 'block' : 'none'%>">
@@ -118,12 +122,14 @@
 				Label="<%[ From week ]%>"
 				InConfig="true"
 				Show="true"
+				CssClass="smallbox"
 			/>
 			<com:Application.Web.Portlets.DirectiveComboBox
 				ID="WeekRangeTo"
 				Label="<%[ To week ]%>"
 				InConfig="true"
 				Show="true"
+				CssClass="smallbox"
 			/>
 		</div>
 
@@ -153,6 +159,7 @@
 				Label="<%[ Day ]%>"
 				InConfig="true"
 				Show="true"
+				CssClass="smallbox"
 			/>
 		</div>
 		<div id="day_range<%=$this->DaySingle->ClientID%>" class="w3-margin day<%=$this->DaySingle->ClientID%>" style="display: <%=$this->DayRange->Checked ? 'block' : 'none'%>">
@@ -161,12 +168,14 @@
 				Label="<%[ From day ]%>"
 				InConfig="true"
 				Show="true"
+				CssClass="smallbox"
 			/>
 			<com:Application.Web.Portlets.DirectiveComboBox
 				ID="DayRangeTo"
 				Label="<%[ To day ]%>"
 				InConfig="true"
 				Show="true"
+				CssClass="smallbox"
 			/>
 		</div>
 		<hr />
@@ -195,6 +204,7 @@
 				Label="<%[ Day of week ]%>"
 				InConfig="true"
 				Show="true"
+				CssClass="smallbox"
 			/>
 		</div>
 		<div id="day_range<%=$this->WdaySingle->ClientID%>" class="w3-margin day<%=$this->WdaySingle->ClientID%>" style="display: <%=$this->WdayRange->Checked ? 'block' : 'none'%>">
@@ -203,12 +213,14 @@
 				Label="<%[ From day of week ]%>"
 				InConfig="true"
 				Show="true"
+				CssClass="smallbox"
 			/>
 			<com:Application.Web.Portlets.DirectiveComboBox
 				ID="WdayRangeTo"
 				Label="<%[ To day of week ]%>"
 				InConfig="true"
 				Show="true"
+				CssClass="smallbox"
 			/>
 		</div>
 		<hr />
@@ -237,12 +249,14 @@
 				Label="<%[ Hour ]%>"
 				InConfig="true"
 				Show="true"
+				CssClass="smallbox"
 			/>
 			<com:Application.Web.Portlets.DirectiveTextBox
 				ID="TimeMinAt"
 				Label="<%[ Minute ]%>"
 				InConfig="true"
 				Show="true"
+				CssClass="smallbox"
 			/>
 		</div>
 		<div id="day_range<%=$this->TimeAt->ClientID%>" class="w3-margin day<%=$this->TimeAt->ClientID%>" style="display: <%=$this->TimeHourly->Checked ? 'block' : 'none'%>">
@@ -251,6 +265,7 @@
 				Label="<%[ Minute ]%>"
 				InConfig="true"
 				Show="true"
+				CssClass="smallbox"
 			/>
 		</div>
 	</div>

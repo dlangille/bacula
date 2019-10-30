@@ -82,6 +82,11 @@ class DirectiveComboBox extends DirectiveTemplate {
 		$this->Directive->dataBind();
 		$validate = $this->getRequired();
 		$this->DirectiveValidator->setVisible($validate);
+		$cssclass = $this->getCssClass();
+		if ($cssclass) {
+			$cssclass .= ' ' . $this->Directive->getCssClass();
+			$this->Directive->setCssClass($cssclass);
+		}
 	}
 }
 ?>

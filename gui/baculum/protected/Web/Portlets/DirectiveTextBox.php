@@ -48,6 +48,11 @@ class DirectiveTextBox extends DirectiveTemplate {
 		$this->Directive->setText($directive_value);
 		$validate = $this->getRequired();
 		$this->DirectiveValidator->setVisible($validate);
+		$cssclass = $this->getCssClass();
+		if ($cssclass) {
+			$cssclass .= ' ' . $this->Directive->getCssClass();
+			$this->Directive->setCssClass($cssclass);
+		}
 	}
 }
 ?>

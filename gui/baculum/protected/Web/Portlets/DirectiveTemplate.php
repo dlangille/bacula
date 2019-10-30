@@ -45,6 +45,7 @@ class DirectiveTemplate extends DirectiveControlTemplate implements IDirectiveFi
 	const GROUP_NAME = 'GroupName';
 	const IS_DIRECTIVE_CREATED = 'IsDirectiveCreated';
 	const VALIDATION_GROUP = 'ValidationGroup';
+	const CSSCLASS = 'CssClass';
 
 	public $display_directive;
 
@@ -252,6 +253,14 @@ class DirectiveTemplate extends DirectiveControlTemplate implements IDirectiveFi
 
 	public function setValidationGroup($validation_group) {
 		$this->setViewState(self::VALIDATION_GROUP, $validation_group);
+	}
+
+	public function getCssClass() {
+		return $this->getViewState(self::CSSCLASS);
+	}
+
+	public function setCssClass($cssclass) {
+		$this->setViewState(self::CSSCLASS, $cssclass);
 	}
 }
 ?>
