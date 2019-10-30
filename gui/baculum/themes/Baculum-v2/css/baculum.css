@@ -266,3 +266,7 @@ table.status_table td, table.status_table td i {
 .smallbox {
 	width: 160px;
 }
+
+a.raw {
+	text-decoration: none;
+}

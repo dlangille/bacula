@@ -2399,3 +2399,9 @@ msgstr "Ilość elementów:"
 
 msgid "No item result"
 msgstr "Brak wyniku"
+
+msgid "Refresh job log"
+msgstr "Odśwież dziennik zadania"
+
+msgid "Set job log order (ascending/descending)"
+msgstr "Ustaw kolejność dziennika zadania (rosnąco/malejąco)"

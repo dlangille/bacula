@@ -2478,3 +2478,9 @@ msgstr "Item count:"
 
 msgid "No item result"
 msgstr "No item result"
+
+msgid "Refresh job log"
+msgstr "Refresh job log"
+
+msgid "Set job log order (ascending/descending)"
+msgstr "Set job log order (ascending/descending)"
