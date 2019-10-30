@@ -29,7 +29,8 @@ const char *get_command(int index);
 
 class run_ctx {
 public:
-   char *job_name, *level_name, *jid, *store_name, *pool_name;
+   const char *level_name;
+   char *job_name, *jid, *store_name, *pool_name;
    char *where, *fileset_name, *client_name, *bootstrap, *regexwhere;
    char *restore_client_name, *comment, *media_type, *next_pool_name;
    const char *replace;
@@ -595,6 +596,8 @@ static bool get_jobid_from_list(UAContext *ua, sellist &sl, run_ctx &rc)
    }
    Dmsg3(100, "Job=%s JobId=%d JobStatus=%c\n", rc.jr.Name, rc.jr.JobId,
          rc.jr.JobStatus);
+
+   rc.level_name = level_to_static_str(rc.jr.JobLevel);
    rc.job_name = rc.jr.Name;
 
    if (!get_job(ua, rc)) {

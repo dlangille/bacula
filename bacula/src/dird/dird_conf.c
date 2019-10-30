@@ -811,6 +811,17 @@ char *CAT::display(POOLMEM *dst) {
    return dst;
 }
 
+const char *level_to_static_str(int level)
+{
+   char *ret = NULL;            /* If not found... */
+   for (int i=0; joblevels[i].level_name; i++) {
+      if (level == (int)joblevels[i].level) {
+         return joblevels[i].level_name;
+      }
+   }
+   return ret;
+}
+
 char *level_to_str(char *buf, int len, int level)
 {
    int i;

@@ -84,6 +84,7 @@ extern bool despool_attributes_from_file(JCR *jcr, const char *file);
 extern void remove_dummy_jobmedia_records(JCR *jcr);
 
 /* dird_conf.c */
+extern const char *level_to_static_str(int level);
 extern char *level_to_str(char *buf, int len, int level);
 extern "C" char *job_code_callback_director(JCR *jcr, const char*, char *, int);
 
