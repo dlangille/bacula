@@ -18,7 +18,7 @@
 */
 /*
  *   Bacula Director -- User Agent Collector Commands
- * 
+ *
  * Radosław Korzeniewski, MMXVIII
  * radoslaw@korzeniewski.net, radekk@inteos.pl
  * Inteos Sp. z o.o. http://www.inteos.pl/
@@ -64,6 +64,9 @@ void update_permanent_metric(BDB *db, int metric, const char *sql)
 bool update_permanent_stats(void *data)
 {
    CAT *catalog;
+   JCR *jcr;
+   int nrunning = 0;
+   int nqueued = 0;
 
    /* update memory statistics */
    statcollector->set_value_int64(dirstatmetrics.bacula_dir_memory_bufs, sm_buffers);
@@ -84,7 +87,7 @@ bool update_permanent_stats(void *data)
        * Make sure we can open catalog, otherwise print a warning
        * message because the server is probably not running.
        */
-      db = db_init_database(NULL, catalog->db_driver, catalog->db_name, 
+      db = db_init_database(NULL, catalog->db_driver, catalog->db_name,
               catalog->db_user,
               catalog->db_password, catalog->db_address,
               catalog->db_port, catalog->db_socket,
@@ -115,6 +118,42 @@ bool update_permanent_stats(void *data)
 
       if (db) db_close_database(NULL, db);
    };
+   /* handle queued and running jobs */
+   foreach_jcr(jcr) {
+      /* skip console jobs */
+      if (jcr->JobId == 0) {
+         continue;
+      }
+      switch(jcr->JobStatus){
+         case JS_Blocked:
+         case JS_Differences:
+         case JS_DataCommitting:
+         case JS_WaitMount:
+         case JS_Running:
+         case JS_WaitSD:
+         case JS_WaitFD:
+         case JS_AttrDespooling:
+         case JS_AttrInserting:
+         case JS_DataDespooling:
+         case JS_WaitMedia:
+         case JS_CloudUpload:
+         case JS_CloudDownload:
+            nrunning++;
+            break;
+         case JS_Created:
+         case JS_WaitMaxJobs:
+         case JS_WaitPriority:
+         case JS_WaitDevice:
+         case JS_WaitStartTime:
+            nqueued++;
+            break;
+         default:
+            break;
+      }
+   };
+   endeach_jcr(jcr);
+   statcollector->set_value_int64(dirstatmetrics.bacula_jobs_queued_all, nqueued);
+   statcollector->set_value_int64(dirstatmetrics.bacula_jobs_running_all, nrunning);
    return true;
 };
 
@@ -477,7 +516,6 @@ int collect_cmd(UAContext *ua, const char *cmd)
          Dmsg0(20, "statistics format Full\n");
          continue;
       }
-      
       if (strcasecmp(ua->argk[i], "json") == 0){
          format = COLLECT_JSON;
          Dmsg0(20, "statistics format JSON\n");
