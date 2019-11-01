@@ -5,12 +5,12 @@
 
 Summary:	Baculum WebGUI tool for Bacula Community program
 Name:		baculum
-Version:	9.4.3
+Version:	9.6.0
 Release:	1%{?dist}
 License:	AGPLv3
 Group:		Applications/Internet
 URL:		http://bacula.org/
-Source0:	bacula-gui-9.4.3.tar.gz
+Source0:	bacula-gui-9.6.0.tar.gz
 BuildRequires:	systemd-units
 BuildRequires:	selinux-policy
 BuildRequires:	selinux-policy-devel
@@ -23,7 +23,9 @@ Requires:	php-common
 Requires:	php-mysqlnd
 Requires:	php-pdo
 Requires:	php-pgsql
+Requires:	php-json
 Requires:	php-xml
+Requires:	policycoreutils-python-utils
 BuildArch:	noarch
 
 %description
@@ -47,11 +49,12 @@ Group:			Applications/Internet
 # Lower version of PHP ( < 5.3.4) does not provide php-mysqlnd db driver
 # and from this reason the lowest is 5.3.4
 Requires:		php >= 5.3.4
+Requires:		php-bcmath
 Requires:		php-common
-Requires:		php-json
 Requires:		php-mysqlnd
 Requires:		php-pdo
 Requires:		php-pgsql
+Requires:		php-json
 Requires:		php-xml
 
 %description api
@@ -67,7 +70,6 @@ Group:			Applications/Internet
 Requires:		php >= 5.3.4
 Requires:		php-common
 Requires:		php-json
-Requires:		php-bcmath
 Requires:		php-xml
 
 %description web
@@ -144,8 +146,8 @@ By using this module it is possible to run Baculum WebGUI in Lighttpd environmen
 Summary:                SELinux module for Baculum API
 Requires:               %name-api-selinux = %version-%release
 Group:                  Applications/Internet
-Requires(post):         policycoreutils-python
-Requires(preun):        policycoreutils-python
+Requires(post):         policycoreutils-python-utils
+Requires(preun):        policycoreutils-python-utils
 
 %description api-selinux
 This package provides the SELinux module for Baculum API.
@@ -156,8 +158,8 @@ can be run in enforcing mode.
 Summary:                SELinux module for Baculum Web
 Requires:               %name-web-selinux = %version-%release
 Group:                  Applications/Internet
-Requires(post):         policycoreutils-python
-Requires(preun):        policycoreutils-python
+Requires(post):         policycoreutils-python-utils
+Requires(preun):        policycoreutils-python-utils
 
 %description web-selinux
 This package provides the SELinux module for Baculum Web.
@@ -170,7 +172,7 @@ can be run in enforcing mode.
 %build
 # Execute files preparation in build directory by Makefile
 make build DESTDIR=%{destdir}
-# Compilation SELinuxu policies before loading them
+# Compilation SELinux policies before loading them
 make -C examples/selinux/ -f %{_datadir}/selinux/devel/Makefile %{name}-api.pp
 make -C examples/selinux/ -f %{_datadir}/selinux/devel/Makefile %{name}-web.pp
 # Remove these cache directories, because here will be symbolic links
@@ -473,3 +475,6 @@ done
 %changelog
  * Sat Dec 10 2016 Marcin Haba <marcin.haba@bacula.pl> - 7.5.0-0.1
  - Spec create
+ * Fri Oct 04 2019 Marcin Haba <marcin.haba@bacula.pl> - 9.6.0
+ - Add SELinux support
+
