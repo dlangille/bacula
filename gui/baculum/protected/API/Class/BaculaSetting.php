@@ -306,22 +306,29 @@ class BaculaSetting extends APIModule {
 								$overwrite_directive = implode(' ', array_filter($overwrite_directive));
 								$hour = $directive_value[$i]['Hour'][0];
 								$hourly = '';
-								if (count($directive_value[$i]['Hour']) === 24) {
-									$hourly = 'hourly';
-								}
+								$min = 0;
 								$minute = '00';
 								/**
 								 * Check if Minute key exists because of bug about missing Minute
 								 * @see http://bugs.bacula.org/view.php?id=2318
 								 */
 								if (array_key_exists('Minute', $directive_value[$i])) {
-									$minute = sprintf('%02d', $directive_value[$i]['Minute']);
+									$min = $directive_value[$i]['Minute'];
+									$minute = sprintf('%02d', $min);
 								}
 								$day = Params::getDaysConfig($directive_value[$i]['Day']);
 								$month = Params::getMonthsConfig($directive_value[$i]['Month']);
 								$week = Params::getWeeksConfig($directive_value[$i]['WeekOfMonth']);
 								$wday = Params::getWdaysConfig($directive_value[$i]['DayOfWeek']);
-								$value = array($overwrite_directive, $month, $week, $day, $wday, $hourly, 'at', "$hour:$minute");
+								$value = array($overwrite_directive, $month, $week, $day, $wday);
+								$hour_len = count($directive_value[$i]['Hour']);
+								if ($hour_len == 24 && $min != 0) {
+									$value[] = 'hourly';
+								}
+								if ($hour_len == 1 || ($hour_len == 24 && $min != 0)) {
+									$value[] = 'at';
+									$value[] = "$hour:$minute";
+								}
 								$value = array_filter($value);
 								if (!array_key_exists($directive_name, $resource[$resource_type])) {
 									$resource[$resource_type][$directive_name] = array();
@@ -587,7 +594,6 @@ function overwrite_directives_callback($directive_name, $directive_value) {
 		'Accurate',
 		'Priority',
 		'SpoolData',
-		'WritePartAfterJob',
 		'MaxRunSchedTime',
 		'NextPool'
 	);

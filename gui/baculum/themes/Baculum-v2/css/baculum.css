@@ -270,3 +270,7 @@ table.status_table td, table.status_table td i {
 a.raw {
 	text-decoration: none;
 }
+
+.option_cell {
+	width: 330px;
+}

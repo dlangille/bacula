@@ -46,7 +46,8 @@ class Params extends CommonModule {
 		'2nd' => 'second',
 		'3rd' => 'third',
 		'4th' => 'fourth',
-		'5th' => 'fifth'
+		'5th' => 'fifth',
+		'6th' => 'sixth'
 	);
 	public static $wdays = array(
 		'sun' => 'Sunday',
@@ -78,7 +79,7 @@ class Params extends CommonModule {
 		$week = '';
 		$week_count = count($weeks_cfg);
 		$weeks = array_keys(Params::$weeks);
-		if ($week_count < 5) {
+		if ($week_count < 6) {
 			if ($week_count > 1) {
 				$week_start = $weeks_cfg[0];
 				$week_end = $weeks_cfg[$week_count-1];
@@ -116,7 +117,7 @@ class Params extends CommonModule {
 		$days = '';
 		if (count($days_cfg) < 31) {
 			$days_map = array_map(array('Params', 'getDayByNo') , $days_cfg);
-			$days = 'on ' . implode(',', $days_map);
+			$days = implode(',', $days_map);
 		}
 		return $days;
 	}

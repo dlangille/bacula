@@ -37,18 +37,17 @@ class DirectiveSchedule extends DirectiveListTemplate {
 	);
 
 	private $overwrite_directives = array(
-		'Level',
 		'Pool',
+		'FullPool',
+		'IncrementalPool',
+		'DifferentialPool',
+		'Level',
 		'Storage',
 		'Messages',
-		'FullPool',
-		'DifferentialPool',
-		'IncrementalPool',
-		'Accurate',
 		'Priority',
 		'SpoolData',
-		'writepartafterjob',
 		'MaxRunSchedTime',
+		'Accurate',
 		'NextPool'
 	);
 
@@ -209,11 +208,9 @@ class DirectiveSchedule extends DirectiveListTemplate {
 
 		$directive = $param->Item->Data['time_directives']['Month']['directive_values'];
 
-		$months_long = array_values(Params::$months);
+		$months = array_keys(Params::$months);
 
-		$single_months = Params::$months;
-		$single_months['monthly'] = 'Monthly';
-		$param->Item->Month->setData($single_months);
+		$param->Item->Month->setData(Params::$months);
 		$param->Item->MonthRangeFrom->setData(Params::$months);
 		$param->Item->MonthRangeTo->setData(Params::$months);
 
@@ -222,15 +219,15 @@ class DirectiveSchedule extends DirectiveListTemplate {
 		$month_range_to = null;
 		$month_count = $load_values ? count($directive->Month) : 0;
 		if ($month_count === 12) {
-			$month_single = 'Monthly';
+			$param->Item->MonthDisable->Checked = true;
 		} elseif ($month_count == 1) {
-			$month_single = $months_long[$directive->Month[0]];
+			$month_single = $months[$directive->Month[0]];
 			$param->Item->MonthSingle->Checked = true;
 		} elseif ($month_count > 0 && $month_count < 12) {
 			$month_start = $directive->Month[0];
 			$month_end = $directive->Month[$month_count-1];
-			$month_range_from = $months_long[$month_start];
-			$month_range_to = $months_long[$month_end];
+			$month_range_from = $months[$month_start];
+			$month_range_to = $months[$month_end];
 			$param->Item->MonthRange->Checked = true;
 		}
 		$param->Item->Month->setDirectiveValue($month_single);
@@ -238,9 +235,7 @@ class DirectiveSchedule extends DirectiveListTemplate {
 		$param->Item->MonthRangeTo->setDirectiveValue($month_range_to);
 
 		$days = range(1, 31);
-		$single_days = $days;
-		$single_days['daily'] = 'Daily';
-		$param->Item->Day->setData($single_days);
+		$param->Item->Day->setData($days);
 		$param->Item->DayRangeFrom->setData($days);
 		$param->Item->DayRangeTo->setData($days);
 
@@ -249,49 +244,47 @@ class DirectiveSchedule extends DirectiveListTemplate {
 		$day_range_to = null;
 		$day_count = $load_values ? count($directive->Day) : 0;
 		if ($day_count === 31) {
-			$day_single = 'Daily';
+			$param->Item->DayDisable->Checked = true;
 		} elseif ($day_count === 1) {
 			$day_single = $days[$directive->Day[0]];
 			$param->Item->DaySingle->Checked = true;
 		} elseif ($day_count > 0 && $day_count < 31) {
 			$day_start = $directive->Day[0];
 			$day_end = $directive->Day[$day_count-1];
-			$day_range_from = $day_start;
-			$day_range_to = $day_end;
+			$day_range_from = $days[$day_start];
+			$day_range_to = $days[$day_end];
 			$param->Item->DayRange->Checked = true;
 		}
 		$param->Item->Day->setDirectiveValue($day_single);
 		$param->Item->DayRangeFrom->setDirectiveValue($day_range_from);
 		$param->Item->DayRangeTo->setDirectiveValue($day_range_to);
 
-		$weeks_long = array_values(Params::$weeks);
+		$weeks = array_keys(Params::$weeks);
 
-		$single_weeks = Params::$weeks;
-		$single_weeks['weekly'] = 'Weekly';
-		$param->Item->Week->setData($single_weeks);
+		$param->Item->Week->setData(Params::$weeks);
 		$param->Item->WeekRangeFrom->setData(Params::$weeks);
 		$param->Item->WeekRangeTo->setData(Params::$weeks);
 		$week_single = null;
 		$week_range_from = null;
 		$week_range_to = null;
 		$week_count = $load_values ? count($directive->WeekOfMonth) : 0;
-		if ($week_count === 5) {
-			$week_single = 'Weekly';
+		if ($week_count == 6) {
+			$param->Item->WeekDisable->Checked = true;
 		} elseif ($week_count == 1) {
-			$week_single = $weeks_long[$directive->WeekOfMonth[0]];
+			$week_single = $weeks[$directive->WeekOfMonth[0]];
 			$param->Item->WeekSingle->Checked = true;
-		} elseif ($week_count > 0 && $week_count < 5) {
+		} elseif ($week_count > 0 && $week_count < 6) {
 			$week_start = $directive->WeekOfMonth[0];
 			$week_end = $directive->WeekOfMonth[$week_count-1];
-			$week_range_from = $weeks_long[$week_start];
-			$week_range_to = $weeks_long[$week_end];
+			$week_range_from = $weeks[$week_start];
+			$week_range_to = $weeks[$week_end];
 			$param->Item->WeekRange->Checked = true;
 		}
 		$param->Item->Week->setDirectiveValue($week_single);
 		$param->Item->WeekRangeFrom->setDirectiveValue($week_range_from);
 		$param->Item->WeekRangeTo->setDirectiveValue($week_range_to);
 
-		$wdays_long = array_values(Params::$wdays);
+		$wdays = array_keys(Params::$wdays);
 		$param->Item->Wday->setData(Params::$wdays);
 		$param->Item->WdayRangeFrom->setData(Params::$wdays);
 		$param->Item->WdayRangeTo->setData(Params::$wdays);
@@ -303,13 +296,13 @@ class DirectiveSchedule extends DirectiveListTemplate {
 		if ($wday_count === 7) {
 			$wday_single = '';
 		} elseif ($wday_count === 1) {
-			$wday_single = $wdays_long[$directive->DayOfWeek[0]];
+			$wday_single = $wdays[$directive->DayOfWeek[0]];
 			$param->Item->WdaySingle->Checked = true;
 		} elseif ($wday_count > 0 && $wday_count < 7) {
 			$wday_start = $directive->DayOfWeek[0];
 			$wday_end = $directive->DayOfWeek[$wday_count-1];
-			$wday_range_from = $wdays_long[$wday_start];
-			$wday_range_to = $wdays_long[$wday_end];
+			$wday_range_from = $wdays[$wday_start];
+			$wday_range_to = $wdays[$wday_end];
 			$param->Item->WdayRange->Checked = true;
 		}
 		$param->Item->Wday->setDirectiveValue($wday_single);
@@ -326,10 +319,17 @@ class DirectiveSchedule extends DirectiveListTemplate {
 			 */
 			$minute = property_exists($directive, 'Minute') ? $directive->Minute : 0;
 		}
+		$param->Item->TimeHourAt->setDirectiveValue(0);
+		$param->Item->TimeMinAt->setDirectiveValue(0);
+		$param->Item->TimeMinHourly->setDirectiveValue(0);
 		if ($load_values) {
 			if (count($directive->Hour) == 24) {
-				$param->Item->TimeHourly->Checked = true;
-				$param->Item->TimeMinHourly->setDirectiveValue($minute);
+				if ($minute === 0) {
+					$param->Item->TimeDisable->Checked = true;
+				} else {
+					$param->Item->TimeHourly->Checked = true;
+					$param->Item->TimeMinHourly->setDirectiveValue($minute);
+				}
 			} elseif (count($directive->Hour) == 1) {
 				$param->Item->TimeAt->Checked = true;
 				$param->Item->TimeHourAt->setDirectiveValue($hour);
@@ -346,6 +346,16 @@ class DirectiveSchedule extends DirectiveListTemplate {
 			$control = $param->Item->{$this->time_directives[$i]};
 			$control->onLoad(null);
 			$control->createDirective();
+		}
+	}
+
+	public function removeSchedule($sender, $param) {
+		if ($param instanceof Prado\Web\UI\TCommandEventParameter) {
+			$idx = $param->getCommandName();
+			$data = $this->getDirectiveValue(true);
+			array_splice($data, $idx, 1);
+			$this->setData($data);
+			$this->loadConfig();
 		}
 	}
 
@@ -375,67 +385,71 @@ class DirectiveSchedule extends DirectiveListTemplate {
 					// value the same as default value, skip it
 					continue;
 				}
+				$obj->{$directive_name} = $directive_value;
 				if (get_class($control) === 'DirectiveCheckBox') {
 					$directive_value = Params::getBoolValue($directive_value);
 				}
 				$directive_values[] = "{$directive_name}=\"{$directive_value}\"";
-				$obj->{$directive_name} = $directive_value;
 			}
 
 			$obj->Month = range(0, 11);
-			$months_short = array_keys(Params::$months);
+			$months = array_keys(Params::$months);
 			if ($value->MonthSingle->Checked === true) {
-				$directive_values[] = $value->Month->getDirectiveValue();
-				$obj->Month = array(array_search($value->Month->getDirectiveValue(), $months_short));
+				$month_val = $value->Month->getDirectiveValue();
+				$directive_values[] = $month_val;
+				$obj->Month = array(array_search($month_val, $months));
 			} elseif ($value->MonthRange->Checked === true) {
 				$from = $value->MonthRangeFrom->getDirectiveValue();
 				$to = $value->MonthRangeTo->getDirectiveValue();
 				$directive_values[] = "{$from}-{$to}";
-				$f = array_search($from, $months_short);
-				$t = array_search($to, $months_short);
+				$f = array_search($from, $months);
+				$t = array_search($to, $months);
 				$obj->Month = range($f, $t);
 			}
 
-			$obj->WeekOfMonth = range(0, 6);
-			$weeks_short = array_keys(Params::$weeks);
+			$obj->WeekOfMonth = range(0, 5);
+			$weeks = array_keys(Params::$weeks);
 			if ($value->WeekSingle->Checked === true) {
-				$directive_values[] = $value->Week->getDirectiveValue();
-				$obj->WeekOfMonth = array(array_search($value->Week->getDirectiveValue(), $weeks_short));
+				$week_val = $value->Week->getDirectiveValue();
+				$directive_values[] = $week_val;
+				$obj->WeekOfMonth = array(array_search($week_val, $weeks));
 			} elseif ($value->WeekRange->Checked === true) {
 				$from = $value->WeekRangeFrom->getDirectiveValue();
 				$to = $value->WeekRangeTo->getDirectiveValue();
 				$directive_values[] = "{$from}-{$to}";
-				$f = array_search($from, $weeks_short);
-				$t = array_search($to, $weeks_short);
+				$f = array_search($from, $weeks);
+				$t = array_search($to, $weeks);
 				$obj->WeekOfMonth = range($f, $t);
 			}
 
 			$obj->Day = range(0, 30);
 			if ($value->DaySingle->Checked === true) {
-				$directive_values[] = $value->Day->getDirectiveValue();
-				$obj->Day = array($value->Day->getDirectiveValue());
+				$day = $value->Day->getDirectiveValue();
+				$directive_values[] = $day;
+				$obj->Day = array($day-1);
 			} elseif ($value->DayRange->Checked === true) {
-				$from = $value->DayRangeFrom->getDirectiveValue();
-				$to = $value->DayRangeTo->getDirectiveValue();
-				$directive_values[] = "{$from}-{$to}";
-				$obj->Day = range($from, $to);
+				$from = $value->DayRangeFrom->getDirectiveValue()-1;
+				$to = $value->DayRangeTo->getDirectiveValue()-1;
+				$day_range = range($from, $to);
+				$directive_values[] = Params::getDaysConfig($day_range);
+				$obj->Day = $day_range;
 			}
 
 			$obj->DayOfWeek = range(0, 6);
-			$wdays_short = array_values(Params::$wdays);
+			$wdays = array_keys(Params::$wdays);
 			if ($value->WdaySingle->Checked === true) {
 				$directive_values[] = $value->Wday->getDirectiveValue();
-				$obj->DayOfWeek = array(array_search($value->Wday->getDirectiveValue(), $wdays_short));
+				$obj->DayOfWeek = array(array_search($value->Wday->getDirectiveValue(), $wdays));
 			} elseif ($value->WdayRange->Checked === true) {
 				$from = $value->WdayRangeFrom->getDirectiveValue();
 				$to = $value->WdayRangeTo->getDirectiveValue();
 				$directive_values[] = "{$from}-{$to}";
-				$f = array_search($from, $wdays_short);
-				$t = array_search($to, $wdays_short);
+				$f = array_search($from, $wdays);
+				$t = array_search($to, $wdays);
 				$obj->DayOfWeek = range($f, $t);
 			}
 
-			$obj->Hour = array(0);
+			$obj->Hour = range(0, 23);
 			$obj->Minute = 0;
 			if ($value->TimeAt->Checked === true) {
 				$hour = $value->TimeHourAt->getDirectiveValue();
@@ -448,8 +462,8 @@ class DirectiveSchedule extends DirectiveListTemplate {
 				$hour = '00';
 				$minute = sprintf('%02d', $value->TimeMinHourly->getDirectiveValue());
 				$directive_values[] = "hourly at {$hour}:{$minute}";
-				$obj->Hour = array(0);
-				$obj->Minute = $minute;
+				$obj->Hour = range(0, 23);
+				$obj->Minute = $value->TimeMinHourly->getDirectiveValue();
 			}
 			$values['Run'][] = implode(' ', $directive_values);
 			$objs[] = $obj;
@@ -462,7 +476,7 @@ class DirectiveSchedule extends DirectiveListTemplate {
 	public function newScheduleDirective() {
 		$data = $this->getDirectiveValue(true);
 		$obj = new StdClass;
-		$obj->Hour = array(0);
+		$obj->Hour = range(0, 23);
 		$obj->Minute = 0;
 		$obj->Day = range(0, 30);
 		$obj->Month = range(0, 11);
@@ -477,7 +491,7 @@ class DirectiveSchedule extends DirectiveListTemplate {
 		}
 		$this->setData($data);
 		$this->SourceTemplateControl->setShowAllDirectives(true);
-		$this->loadConfig(null, null);
+		$this->loadConfig();
 	}
 }
 ?>

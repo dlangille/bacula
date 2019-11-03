@@ -158,9 +158,6 @@ msgstr "Are you sure that you want to remove %s resource \"%s\"?"
 msgid "Are you sure you want to remove this resource?"
 msgstr "Are you sure you want to remove this resource?"
 
-msgid "At HH:MM"
-msgstr "At HH:MM"
-
 msgid "Auth Type:"
 msgstr "Auth Type:"
 
@@ -399,12 +396,6 @@ msgstr "Day"
 msgid "Day of week"
 msgstr "Day of week"
 
-msgid "Day of week range"
-msgstr "Day of week range"
-
-msgid "Day range"
-msgstr "Day range"
-
 msgid "Days"
 msgstr "Days"
 
@@ -632,9 +623,6 @@ msgstr "Host:"
 
 msgid "Hour"
 msgstr "Hour"
-
-msgid "Hourly at"
-msgstr "Hourly at"
 
 msgid "Hours"
 msgstr "Hours"
@@ -978,9 +966,6 @@ msgstr "Minutes"
 
 msgid "Month"
 msgstr "Month"
-
-msgid "Month range"
-msgstr "Month range"
 
 msgid "More jobs"
 msgstr "ジョブ一覧"
@@ -1395,18 +1380,6 @@ msgstr "Show the resource raw config"
 msgid "Show/hide all resource directives"
 msgstr "Show/hide all resource directives"
 
-msgid "Single day"
-msgstr "Single day"
-
-msgid "Single day of week"
-msgstr "Single day of week"
-
-msgid "Single month"
-msgstr "Single month"
-
-msgid "Single week"
-msgstr "Single week"
-
 msgid "Size"
 msgstr "サイズ"
 
@@ -1783,9 +1756,6 @@ msgstr ""
 
 msgid "Week"
 msgstr "Week"
-
-msgid "Week range"
-msgstr "Week range"
 
 msgid "Welcome"
 msgstr "Welcome"
@@ -2484,3 +2454,88 @@ msgstr "Refresh job log"
 
 msgid "Set job log order (ascending/descending)"
 msgstr "Set job log order (ascending/descending)"
+
+msgid "Run every month"
+msgstr "Run every month"
+
+msgid "Run one month a year"
+msgstr "Run one month a year"
+
+msgid "Run from month to month a year (range)"
+msgstr "Run from month to month a year (range)"
+
+msgid "Run every week"
+msgstr "Run every week"
+
+msgid "Run one week a month"
+msgstr "Run one week a month"
+
+msgid "Run from week to week a month (range)"
+msgstr "Run from week to week a month (range)"
+
+msgid "Run every day"
+msgstr "Run every day"
+
+msgid "Run one day a month"
+msgstr "Run one day a month"
+
+msgid "Run from day to day a month (range)"
+msgstr "Run from day to day a month (range)"
+
+msgid "Run every day of week"
+msgstr "Run every day of week"
+
+msgid "Run one day of week"
+msgstr "Run one day of week"
+
+msgid "Run from day of week to day of week (range)"
+msgstr "Run from day of week to day of week (range)"
+
+msgid "Run every full hour"
+msgstr "Run every full hour"
+
+msgid "Run at hour and minute"
+msgstr "Run at hour and minute"
+
+msgid "Run hourly at minute"
+msgstr "Run hourly at minute"
+
+msgid "Hour and minute"
+msgstr "Hour and minute"
+
+msgid "Validation error"
+msgstr "Validation error"
+
+msgid "Please choose at least month or week or day of week or hour in Run block"
+msgstr "Please choose at least month or week or day of week or hour in Run block"
+
+msgid "Please select month in Run block"
+msgstr "Please select month in Run block"
+
+msgid "Please select month range in Run block"
+msgstr "Please select month range in Run block"
+
+msgid "Please select week in Run block"
+msgstr "Please select week in Run block"
+
+msgid "Please select week range in Run block"
+msgstr "Please select week range in Run block"
+
+msgid "Please select day in Run block"
+msgstr "Please select day in Run block"
+
+msgid "Please select day range in Run block"
+msgstr "Please select day range in Run block"
+
+msgid "Please select day of week in Run block"
+msgstr "Please select day of week in Run block"
+
+msgid "Please select day of week range in Run block"
+msgstr "Please select day of week range in Run block"
+
+msgid "Please select hour in Run block"
+msgstr "Please select hour in Run block"
+
+msgid "Please select hour and minute in Run block"
+msgstr "Please select hour and minute in Run block"
+

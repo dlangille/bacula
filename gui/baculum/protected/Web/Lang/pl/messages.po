@@ -1233,12 +1233,6 @@ msgstr "Krok 4 - Koniec"
 msgid "Disabled"
 msgstr "Wyłączony"
 
-msgid "Single month"
-msgstr "Pojedynczy miesiąc"
-
-msgid "Month range"
-msgstr "Zakres miesięcy"
-
 msgid "From month"
 msgstr "Od miesiąca"
 
@@ -1247,12 +1241,6 @@ msgstr "Do miesiąca"
 
 msgid "Month"
 msgstr "Miesiąc"
-
-msgid "Single day"
-msgstr "Pojedynczy dzień"
-
-msgid "Day range"
-msgstr "Zakres dni"
 
 msgid "From day"
 msgstr "Od dnia"
@@ -1263,14 +1251,8 @@ msgstr "Do dnia"
 msgid "Day"
 msgstr "Dzień"
 
-msgid "Single day of week"
-msgstr "Pojedynczy dzień tygodnia"
-
 msgid "Day of week"
 msgstr "Dzień tygodnia"
-
-msgid "Day of week range"
-msgstr "Zakres dni tygodnia"
 
 msgid "From day of week"
 msgstr "Od dnia tygodnia"
@@ -1278,23 +1260,11 @@ msgstr "Od dnia tygodnia"
 msgid "To day of week"
 msgstr "Do dnia tygodnia"
 
-msgid "At HH:MM"
-msgstr "O godz. HH:MM"
-
-msgid "Hourly at"
-msgstr "Co godzinę o"
-
 msgid "Hour"
 msgstr "Godzina"
 
 msgid "Minute"
 msgstr "Minuta"
-
-msgid "Single week"
-msgstr "Pojedynczy tydzień"
-
-msgid "Week range"
-msgstr "Zakres tygodni"
 
 msgid "From week"
 msgstr "Od tygodnia"
@@ -2405,3 +2375,88 @@ msgstr "Odśwież dziennik zadania"
 
 msgid "Set job log order (ascending/descending)"
 msgstr "Ustaw kolejność dziennika zadania (rosnąco/malejąco)"
+
+msgid "Run every month"
+msgstr "Uruchom każdego miesiąca"
+
+msgid "Run one month a year"
+msgstr "Uruchom jeden miesiąc w roku"
+
+msgid "Run from month to month a year (range)"
+msgstr "Uruchom od miesiąca do miesiąca w roku (zakres)"
+
+msgid "Run every week"
+msgstr "Uruchom każdego tygodnia"
+
+msgid "Run one week a month"
+msgstr "Uruchom jeden tydzień w miesiącu"
+
+msgid "Run from week to week a month (range)"
+msgstr "Uruchom od tygodnia do tygodnia w miesiącu (zakres)"
+
+msgid "Run every day"
+msgstr "Uruchom każdego dnia"
+
+msgid "Run one day a month"
+msgstr "Uruchom jeden dzień w miesiącu"
+
+msgid "Run from day to day a month (range)"
+msgstr "Uruchom od dnia do dnia w miesiącu (zakres)"
+
+msgid "Run every day of week"
+msgstr "Uruchom każdego dnia tygodnia"
+
+msgid "Run one day of week"
+msgstr "Uruchom jednego dnia tygodnia"
+
+msgid "Run from day of week to day of week (range)"
+msgstr "Uruchom od dnia tygodnia do dnia tygodnia (zakres)"
+
+msgid "Run every full hour"
+msgstr "Uruchom każdej pełnej godziny"
+
+msgid "Run at hour and minute"
+msgstr "Uruchom o godzinie i minucie"
+
+msgid "Run hourly at minute"
+msgstr "Uruchom co godzinę o minucie"
+
+msgid "Hour and minute"
+msgstr "Godzina i minuta"
+
+msgid "Validation error"
+msgstr "Błąd walidacji"
+
+msgid "Please choose at least month or week or day of week or hour in Run block"
+msgstr "Proszę wybrać co najmniej miesiąc lub tydzień lub dzień tygodnia lub godzinę w bloku Uruchom"
+
+msgid "Please select month in Run block"
+msgstr "Proszę wybrać miesiąc w bloku Uruchom"
+
+msgid "Please select month range in Run block"
+msgstr "Proszę wybrać zakres miesięcy w bloku Uruchom"
+
+msgid "Please select week in Run block"
+msgstr "Proszę wybrać tydzień w bloku Uruchom"
+
+msgid "Please select week range in Run block"
+msgstr "Proszę wybrać zakres tygodni w bloku Uruchom"
+
+msgid "Please select day in Run block"
+msgstr "Proszę wybrać dzień w bloku Uruchom"
+
+msgid "Please select day range in Run block"
+msgstr "Proszę wybrać zakres dni w bloku Uruchom"
+
+msgid "Please select day of week in Run block"
+msgstr "Proszę wybrać dzień tygodnia w bloku Uruchom"
+
+msgid "Please select day of week range in Run block"
+msgstr "Proszę wybrać zakres dni tygodnia w bloku Uruchom"
+
+msgid "Please select hour in Run block"
+msgstr "Proszę wybrać godzinę w bloku Uruchom"
+
+msgid "Please select hour and minute in Run block"
+msgstr "Proszę wybrać godzinę i minutę w bloku Uruchom"
+
