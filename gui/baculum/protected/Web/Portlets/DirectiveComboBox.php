@@ -64,8 +64,16 @@ class DirectiveComboBox extends DirectiveTemplate {
 				$items = $resource_names[$resource];
 			}
 		}
-		array_unshift($items, '');
-		$this->Directive->dataSource = array_combine($items, $items);
+		reset($items);
+		if (key($items) === 0) {
+			// indexed array as data source
+			array_unshift($items, '');
+			$items = array_combine($items, $items);
+		} elseif (is_string(key($items))) {
+			// associative array as data source
+			$items = array_merge(array('' => ''), $items);
+		}
+		$this->Directive->DataSource = $items;
 
 		$directive_value = $this->getDirectiveValue();
 		$default_value = $this->getDefaultValue();
