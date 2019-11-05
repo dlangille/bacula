@@ -9,7 +9,7 @@
 	<h3>[<%[ JobId ]%> <%=$this->getJobId()%>] <%[ Job: ]%> <%=$this->getJobName()%> &nbsp;</h3>
 	<div class="w3-bar w3-green w3-margin-bottom">
 		<a class="w3-bar-item w3-button tab_btn" href="<%=$this->Service->constructUrl('JobHistoryList')%>"><i class="fa fa-angle-left"></i></a>
-		<button id="btn_job_actions" type="button" class="w3-bar-item w3-button tab_btn w3-grey" onclick="W3Tabs.open(this.id, 'job_actions');"><%[ Actions ]%></button>
+		<button id="btn_job_actions" type="button" class="w3-bar-item w3-button tab_btn w3-grey" onclick="W3Tabs.open(this.id, 'job_actions'); job_callback_func(); oRunningJobStatus.init_refresh();"><%[ Actions ]%></button>
 		<com:TActiveLinkButton
 			CssClass="w3-bar-item w3-button tab_btn"
 			Attributes.onclick="W3Tabs.open(this.id, 'job_config'); clear_node('#fileset_config div.directive_field'); clear_node('#schedule_config div.directive_field');"
@@ -175,7 +175,9 @@ var oRunningJobStatus = {
 	},
 	refresh_status: function() {
 		var cb = <%=$this->RunningJobStatusCb->ActiveControl->Javascript%>;
-		cb.dispatch();
+		if (W3Tabs.is_open('job_actions')) {
+			cb.dispatch();
+		}
 	},
 	update: function(data) {
 		this.set_data(data);
@@ -452,7 +454,7 @@ $(function() {
 			var job_callback_func = function(force) {
 				var callback = <%=$this->RefreshJobLog->ActiveControl->Javascript%>;
 				var reload = document.getElementById('<%=$this->RunningIcon->ClientID%>').style.display != 'none';
-				if (reload || force) {
+				if ((reload && W3Tabs.is_open('job_actions')) || force) {
 					callback.dispatch();
 				}
 			}

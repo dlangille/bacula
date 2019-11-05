@@ -814,6 +814,10 @@ W3TabsCommon = {
 				tab_btns[i].classList.remove(this.css.tab_item_hover);
 			}
 		}
+	},
+	is_open: function(item_id) {
+		var display = document.getElementById(item_id).style.display;
+		return (display === 'block' || display === '');
 	}
 };
 
@@ -825,6 +829,9 @@ W3Tabs = {
 	},
 	open: function(btn_id, item_id) {
 		W3TabsCommon.open.call(this, btn_id, item_id);
+	},
+	is_open: function(item_id) {
+		return W3TabsCommon.is_open(item_id);
 	}
 };
 
