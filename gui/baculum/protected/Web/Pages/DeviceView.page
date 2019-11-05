@@ -64,7 +64,7 @@
 		<div class="w3-row">
 			<div class="w3-quarter w3-container">
 				<%[ Slot number: ]%>
-				<com:TActiveTextBox ID="Slot" AutoPostBack="false" Text="0" MaxLength="3" CssClass="w3-input" />
+				<com:TActiveTextBox ID="Slot" AutoPostBack="false" Text="0" MaxLength="3" CssClass="w3-input smallbox" />
 				<com:TDataTypeValidator ID="SlotValidator" ValidationGroup="AutoChangerGroup" ControlToValidate="Slot" ErrorMessage="<%[ Slot number must be integer. ]%>" Display="None" DataType="Integer" />
 			</div>
 		</div>

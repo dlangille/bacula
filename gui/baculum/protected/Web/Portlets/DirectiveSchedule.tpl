@@ -1,4 +1,4 @@
-<button type="button" class="w3-button w3-green" onmousedown="openElementOnCursor(event, '<%=$this->RunscriptMenu->ClientID%>_new_schedule', 0, 20);"><i class="fa fa-plus"></i> &nbsp;<%[ Add ]%></button>
+<button type="button" class="w3-button w3-green w3-margin-bottom" onmousedown="openElementOnCursor(event, '<%=$this->RunscriptMenu->ClientID%>_new_schedule', 0, 20);"><i class="fa fa-plus"></i> &nbsp;<%[ Add ]%></button>
 <com:Application.Web.Portlets.NewScheduleMenu ID="RunscriptMenu" />
 <com:TActiveRepeater ID="RepeaterScheduleRuns" OnItemDataBound="createRunItem">
 	<prop:ItemTemplate>

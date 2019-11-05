@@ -196,7 +196,7 @@
 		<div class="w3-row w3-section">
 			<div class="w3-col w3-quarter"><%[ Retention period (in hours): ]%></div>
 			<div class="w3-half">
-				<com:TActiveTextBox ID="RetentionPeriod" AutoPostBack="false" CssClass="w3-input w3-border" />
+				<com:TActiveTextBox ID="RetentionPeriod" AutoPostBack="false" CssClass="w3-input w3-border smallbox" />
 				<com:TDataTypeValidator
 					ValidationGroup="VolumeGroup"
 					ControlToValidate="RetentionPeriod"
@@ -215,7 +215,7 @@
 		<div class="w3-row w3-section">
 			<div class="w3-col w3-quarter"><%[ Vol. use duration (in hours): ]%></div>
 			<div class="w3-half">
-				<com:TActiveTextBox ID="UseDuration" AutoPostBack="false" CssClass="w3-input w3-border" />
+				<com:TActiveTextBox ID="UseDuration" AutoPostBack="false" CssClass="w3-input w3-border smallbox" />
 				<com:TDataTypeValidator
 					ValidationGroup="VolumeGroup"
 					ControlToValidate="UseDuration"
@@ -234,7 +234,7 @@
 		<div class="w3-row w3-section">
 			<div class="w3-col w3-quarter"><%[ Max. vol. jobs: ]%></div>
 			<div class="w3-half">
-				<com:TActiveTextBox ID="MaxVolJobs" AutoPostBack="false" CssClass="w3-input w3-border" />
+				<com:TActiveTextBox ID="MaxVolJobs" AutoPostBack="false" CssClass="w3-input w3-border smallbox" />
 				<com:TDataTypeValidator
 					ValidationGroup="VolumeGroup"
 					ControlToValidate="MaxVolJobs"
@@ -253,7 +253,7 @@
 		<div class="w3-row w3-section">
 			<div class="w3-col w3-quarter"><%[ Max. vol. files: ]%></div>
 			<div class="w3-half">
-				<com:TActiveTextBox ID="MaxVolFiles" AutoPostBack="false" CssClass="w3-input w3-border" />
+				<com:TActiveTextBox ID="MaxVolFiles" AutoPostBack="false" CssClass="w3-input w3-border smallbox" />
 				<com:TDataTypeValidator
 					ValidationGroup="VolumeGroup"
 					ControlToValidate="MaxVolFiles"
@@ -272,7 +272,7 @@
 		<div class="w3-row w3-section">
 			<div class="w3-col w3-quarter"><%[ Max. vol. bytes: ]%></div>
 			<div class="w3-half">
-				<com:TActiveTextBox ID="MaxVolBytes" AutoPostBack="false" CssClass="w3-input w3-border" />
+				<com:TActiveTextBox ID="MaxVolBytes" AutoPostBack="false" CssClass="w3-input w3-border smallbox" />
 				<com:TDataTypeValidator
 					ValidationGroup="VolumeGroup"
 					ControlToValidate="MaxVolBytes"
@@ -291,7 +291,7 @@
 		<div class="w3-row w3-section">
 			<div class="w3-col w3-quarter"><%[ Slot number: ]%></div>
 			<div class="w3-half">
-				<com:TActiveTextBox ID="Slot" AutoPostBack="false" CssClass="w3-input w3-border" />
+				<com:TActiveTextBox ID="Slot" AutoPostBack="false" CssClass="w3-input w3-border smallbox" />
 				<com:TDataTypeValidator
 					ValidationGroup="VolumeGroup"
 					ControlToValidate="Slot"

@@ -11,7 +11,7 @@
 			ItemRenderer="Application.Web.Portlets.FileSetOptionRenderer"
 		>
 			<prop:HeaderTemplate>
-				<div class="w3-card-4 w3-padding w3-margin-bottom directive">
+				<div class="w3-border w3-padding w3-margin-bottom directive">
 					<h2><%[ Options ]%></h2>
 			</prop:HeaderTemplate>
 			<prop:FooterTemplate>
@@ -20,7 +20,7 @@
 		</com:TActiveRepeater>
 		<com:TActiveRepeater ID="RepeaterFileSetInclude"  ItemRenderer="Application.Web.Portlets.DirectiveRenderer" CssClass="incexc_item">
 			<prop:HeaderTemplate>
-				<div class="w3-card-4 w3-padding w3-margin-bottom directive include_file">
+				<div class="w3-border w3-padding w3-margin-bottom directive include_file">
 					<h3><%[ Files ]%></h3>
 			</prop:HeaderTemplate>
 			<prop:FooterTemplate>
@@ -29,7 +29,7 @@
 		</com:TActiveRepeater>
 		<com:TActiveRepeater ID="RepeaterFileSetPlugin"  ItemRenderer="Application.Web.Portlets.DirectiveRenderer" CssClass="incexc_item">
 			<prop:HeaderTemplate>
-				<div class="w3-card-4 w3-padding w3-margin-bottom directive include_plugin">
+				<div class="w3-border w3-padding w3-margin-bottom directive include_plugin">
 					<h3><%[ Plugins ]%></h3>
 			</prop:HeaderTemplate>
 			<prop:FooterTemplate>
@@ -62,7 +62,7 @@
 		<h2><%[ Include files to FileSet]%></h2>
 		<com:Application.Web.Portlets.FileSetBrowser ID="FSBrowser" />
 		<com:TCallback ID="NewIncExcFile" OnCallback="newIncludeExcludeFile" />
-		<div class="w3-center">
+		<div class="w3-center w3-margin-top">
 			<button type="button" class="w3-button w3-red" onclick="document.getElementById('<%=$this->FSBrowser->ClientID%>fileset_browser').style.display = 'none'"><i class="fa fa-times"></i> &nbsp; <%[ Cancel ]%></button>
 			<a class="w3-button w3-green button_fixed" onclick="set_include_exclude<%=$this->FSBrowser->ClientID%>(); document.getElementById('<%=$this->FSBrowser->ClientID%>fileset_browser').style.display = 'none'">
 				<i class="fa fa-check"></i> &nbsp;<%[ Apply file selection ]%></a>
