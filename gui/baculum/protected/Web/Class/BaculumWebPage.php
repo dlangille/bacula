@@ -40,6 +40,7 @@ class BaculumWebPage extends BaculumPage {
 	public function onPreInit($param) {
 		parent::onPreInit($param);
 		$this->config = $this->getModule('web_config')->getConfig();
+		$this->Application->getGlobalization()->Culture = $this->getLanguage();
 		if (count($this->config) === 0) {
 			if (isset($_SERVER['PHP_AUTH_USER'])) {
 				if ($this->Service->getRequestedPagePath() != 'WebConfigWizard') {
@@ -52,7 +53,6 @@ class BaculumWebPage extends BaculumPage {
 			}
 		}
 		Logging::$debug_enabled = (isset($this->config['baculum']['debug']) && $this->config['baculum']['debug'] == 1);
-		$this->Application->getGlobalization()->Culture = $this->getLanguage();
 		if (!$this->IsPostBack && !$this->IsCallBack) {
 			$this->getModule('api')->initSessionCache(true);
 			$this->setSessionUserVars();
