@@ -274,3 +274,13 @@ a.raw {
 .option_cell {
 	width: 330px;
 }
+
+.resource:hover, .component:hover {
+	background-color: #faedd5;
+}
+
+table.component td:nth-of-type(1) {
+	line-height: 23px;
+	vertical-align: sub;
+	padding-top: 11px;
+}
