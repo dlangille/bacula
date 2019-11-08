@@ -760,8 +760,10 @@ var Users = {
 var W3SideBar = {
 	ids: {
 		sidebar: 'sidebar',
-		overlay_bg: 'overlay_bg',
-		page_main: 'page_main'
+		overlay_bg: 'overlay_bg'
+	},
+	css: {
+		page_main: '.page_main_el'
 	},
 	cookies: {
 		side_bar_hide: 'baculum_side_bar_hide'
@@ -769,7 +771,7 @@ var W3SideBar = {
 	init: function() {
 		this.sidebar = document.getElementById(this.ids.sidebar);
 		this.overlay_bg = document.getElementById(this.ids.overlay_bg);
-		this.page_main = document.getElementById(this.ids.page_main);
+		this.page_main = $(this.css.page_main);
 		var hide = Cookies.get_cookie(this.cookies.side_bar_hide);
 		if (hide == 1) {
 			this.close();
@@ -780,19 +782,19 @@ var W3SideBar = {
 			Cookies.set_cookie('baculum_side_bar_hide', 1);
 			this.sidebar.style.display = 'none';
 			this.overlay_bg.style.display = 'none';
-			this.page_main.style.marginLeft = 0;
+			this.page_main.css({'margin-left': '0', 'width': '100%'});
 		} else {
 			Cookies.set_cookie('baculum_side_bar_hide', 0);
 			this.sidebar.style.display = 'block';
 			this.overlay_bg.style.display = 'block';
-			this.page_main.style.marginLeft = '300px';
+			this.page_main.css({'margin-left': '300px', 'width': 'calc(100% - 300px)'});
 		}
 	},
 	close: function() {
 		Cookies.set_cookie('baculum_side_bar_hide', 1);
 		this.sidebar.style.display = 'none';
 		this.overlay_bg.style.display = 'none';
-		this.page_main.style.marginLeft = 0;
+		this.page_main.css({'margin-left': '0', 'width': '100%'});
 	}
 };
 

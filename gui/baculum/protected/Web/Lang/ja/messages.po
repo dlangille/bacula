@@ -1377,8 +1377,8 @@ msgstr "Baculum設定"
 msgid "Show the resource raw config"
 msgstr "Show the resource raw config"
 
-msgid "Show/hide all resource directives"
-msgstr "Show/hide all resource directives"
+msgid "Show/hide all directives"
+msgstr "Show/hide all directives"
 
 msgid "Size"
 msgstr "サイズ"

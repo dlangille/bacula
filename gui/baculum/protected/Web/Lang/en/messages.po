@@ -1142,8 +1142,8 @@ msgstr "Remove"
 msgid "Edit"
 msgstr "Edit"
 
-msgid "Show/hide all resource directives"
-msgstr "Show/hide all resource directives"
+msgid "Show/hide all directives"
+msgstr "Show/hide all directives"
 
 msgid "Show the resource raw config"
 msgstr "Show the resource raw config"

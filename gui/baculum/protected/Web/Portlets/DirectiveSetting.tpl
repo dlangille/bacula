@@ -1,5 +1,5 @@
 <com:TLabel ID="DirectiveOptions" CssClass="directive_setting">
-	<button type="button" class="w3-button w3-green w3-margin-bottom" rel="show_all_directives"><i class="fa fa-expand-arrows-alt"></i> &nbsp;<%[ Show/hide all resource directives ]%></button>
+	<button type="button" class="w3-button w3-green" rel="show_all_directives"><i class="fa fa-expand-arrows-alt"></i> &nbsp;<%[ Show/hide all directives ]%></button>
 	<!--li rel="show_raw_config"><%[ Show the resource raw config ]%></li>
 	<li rel="save_multiple_hosts"><%[ Save the resource on multiple hosts ]%></li>
 	<li rel="save_addition_path"><%[ Save the resource to additional path ]%></li>

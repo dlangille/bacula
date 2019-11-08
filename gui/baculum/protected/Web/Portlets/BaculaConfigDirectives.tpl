@@ -32,25 +32,25 @@
 	</div>
 </div>
 <com:TActivePanel ID="ConfigDirectives">
-	<com:Application.Web.Portlets.DirectiveSetting
-		ID="DirectiveSetting"
-		Resource="<%=$this->getResource()%>"
-		OnLoadDirectives="loadDirectives"
-		Visible="<%=$this->LoadValues%>"
-	/>
-	<com:TActiveLinkButton
-		CssClass="w3-button w3-green w3-margin-bottom"
-		Attributes.onclick="$(this).parent().prev('div.resource_remove_confirm').show();"
-		Visible="<%=$this->ShowRemoveButton && $this->LoadValues%>"
-	>
-		<prop:Text><i class="fa fa-trash-alt"></i> &nbsp;<%=Prado::localize('Remove resource')%></prop:Text>
-	</com:TActiveLinkButton>
 	<com:TActiveRepeater
 		ID="RepeaterDirectives"
 		ItemRenderer="Application.Web.Portlets.DirectiveRenderer"
 		>
 	</com:TActiveRepeater>
-	<div class="w3-row w3-center">
+	<div class="w3-row w3-center w3-border bottom_buttons page_main_el" style="margin-left: 300px">
+		<com:Application.Web.Portlets.DirectiveSetting
+			ID="DirectiveSetting"
+			Resource="<%=$this->getResource()%>"
+			OnLoadDirectives="loadDirectives"
+			Visible="<%=$this->LoadValues%>"
+		/>
+		<com:TActiveLinkButton
+			CssClass="w3-button w3-red w3-right"
+			Attributes.onclick="$(this).parent().parent().prev('div.resource_remove_confirm').show();"
+			Visible="<%=$this->ShowRemoveButton && $this->LoadValues%>"
+		>
+			<prop:Text><i class="fa fa-trash-alt"></i> &nbsp;<%=Prado::localize('Remove resource')%></prop:Text>
+		</com:TActiveLinkButton>
 		<com:TActiveLinkButton
 			ID="Cancel"
 			CssClass="w3-button w3-red"
@@ -74,26 +74,27 @@
 				<i class="fa fa-save"></i> &nbsp;<%=$this->getLoadValues() ? Prado::localize('Save') : Prado::localize('Create')%>
 			</prop:Text>
 			<prop:ClientSide.OnLoading>
-				$('.save_progress').show();
-				$('.save_done').hide();
+				$('.save_progress').css('visibility', 'visible');
+				$('.save_done').css('visibility', 'hidden');
 			</prop:ClientSide.OnLoading>
 			<prop:ClientSide.OnComplete>
-				$('.save_progress').hide();
-				$('.save_done').show();
+				$('.save_progress').css('visibility', 'hidden');
+				$('.save_done').css('visibility', 'visible');
 				var err_el = '<%=$this->SaveDirectiveError->ClientID%>';
 				if (document.getElementById(err_el).style.display == 'none') {
 					<%=$this->SaveDirectiveActionOk%>
 				}
 			</prop:ClientSide.OnComplete>
 			<prop:ClientSide.OnFailure>
-				$('.save_progress').hide();
-				$('.save_done').show();
+				$('.save_progress').css('visibility', 'hidden');
+				$('.save_done').css('visibility', 'visible');
 			</prop:ClientSide.OnFailure>
 		</com:TActiveLinkButton>
-		<i class="fa fa-sync-alt w3-spin save_progress" style="display: none"></i>
-		<com:TActiveLabel ID="SaveDirectiveOk" Display="None" CssClass="w3-text-green"><i class="fa fa-check save_done"></i> &nbsp;<%[ OK ]%></com:TActiveLabel>
-		<com:TActiveLabel ID="SaveDirectiveError" Display="None" CssClass="w3-text-red"><i class="fa fa-times-circle save_done"></i> &nbsp;<%[ Error ]%></com:TActiveLabel>
-		<br />
-		<com:TActiveLabel ID="SaveDirectiveErrMsg" Display="None" CssClass="w3-text-red" />
+		<span class="save_progress" style="width: 10px; visibility: hidden"><i class="fa fa-sync-alt w3-spin"></i></span>
+		<div class="save_done" style="display: inline-block; min-width: 70px;">
+			<com:TActiveLabel ID="SaveDirectiveOk" Display="None" CssClass="w3-text-green"><i class="fa fa-check save_done"></i> &nbsp;<%[ OK ]%></com:TActiveLabel>
+			<com:TActiveLabel ID="SaveDirectiveError" Display="None" CssClass="w3-text-red"><i class="fa fa-times-circle save_done"></i> &nbsp;<%[ Error ]%></com:TActiveLabel>
+			<com:TActiveLabel ID="SaveDirectiveErrMsg" Display="None" CssClass="w3-text-red" />
+		</div>
 	</div>
 </com:TActivePanel>

@@ -1160,7 +1160,7 @@ msgstr "Remover"
 msgid "Edit"
 msgstr "Editar"
 
-msgid "Show/hide all resource directives"
+msgid "Show/hide all directives"
 msgstr "Mostrar/ocultar todas as diretivas de recursos"
 
 msgid "Show the resource raw config"

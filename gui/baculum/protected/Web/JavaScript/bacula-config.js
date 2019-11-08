@@ -50,6 +50,12 @@ var BaculaConfigClass = jQuery.klass({
 		var show = !child_container.is(':visible');
 		this.show_item(child_container, show);
 		this.loader_stop(id);
+		/**
+		 * This initialization has to be here because on Configure page buttons to save/cancel/delete
+		 * resources are available after unfolding selected resource, not before.
+		 * It means that without it these buttons are not adjusted well to the page.
+		 */
+		W3SideBar.init();
 	},
 	unset_config_items: function(id) {
 		var child_container = this.get_child_container(id);
