@@ -11,6 +11,7 @@ License:	AGPLv3
 Group:		Applications/Internet
 URL:		http://bacula.org/
 Source0:	bacula-gui-9.6.0.tar.gz
+BuildRequires:	make
 BuildRequires:	systemd-units
 BuildRequires:	selinux-policy
 BuildRequires:	selinux-policy-devel
