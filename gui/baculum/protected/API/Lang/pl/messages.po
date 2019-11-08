@@ -511,3 +511,10 @@ msgstr "Użyj sudo dla akcji:"
 
 msgid "Actions setting:"
 msgstr "Ustawienie akcji:"
+
+msgid "Note"
+msgstr "Note"
+
+msgid "Please use visudo to add this configuration, otherwise please do remember to add empty line at the end of file."
+msgstr ""
+

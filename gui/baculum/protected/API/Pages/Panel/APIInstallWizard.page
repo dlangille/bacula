@@ -260,7 +260,8 @@
 				<div class="line">
 					<div class="text"><com:TLabel ForControl="UseSudo" Text="<%[ Use sudo: ]%>" /></div>
 					<div class="field">
-						<com:TCheckBox ID="UseSudo" />
+						<com:TCheckBox ID="UseSudo" /> <a href="javascript:void(0)" onclick="get_sudo_config('bconsole');"><%[ Get sudo configuration ]%></a>
+
 					</div>
 				</div>
 				<div class="line">
@@ -318,7 +319,8 @@
 							<div class="line left">
 								<div class="text"><com:TLabel ForControl="BJSONUseSudo" Text="<%[ Use sudo: ]%>" /></div>
 								<div class="field">
-									<com:TCheckBox ID="BJSONUseSudo" />
+									<com:TCheckBox ID="BJSONUseSudo" /> <a href="javascript:void(0)" onclick="get_sudo_config('config');"><%[ Get sudo configuration ]%></a>
+
 								</div>
 							</div>
 						</div>
@@ -444,7 +446,7 @@
 							<div class="line left">
 								<div class="text"><com:TLabel ForControl="ActionsUseSudo" Text="<%[ Use sudo: ]%>" /></div>
 								<div class="field">
-									<com:TCheckBox ID="ActionsUseSudo" /> <a href="javascript:void(0)" onclick="get_sudo_config();"><%[ Get sudo configuration ]%></a>
+									<com:TCheckBox ID="ActionsUseSudo" /> <a href="javascript:void(0)" onclick="get_sudo_config('actions');"><%[ Get sudo configuration ]%></a>
 								</div>
 							</div>
 						</div>
@@ -1157,6 +1159,7 @@
 	Options.minHeight="200"
 >
 	<p><%[ Please copy appropriate sudo configuration and put it to a new sudoers.d file for example /etc/sudoers.d/baculum-api ]%></p>
+	<p><strong><%[ Note ]%></strong> <%[ Please use visudo to add this configuration, otherwise please do remember to add empty line at the end of file. ]%>
 	<p><%[ Example sudo configuration for Apache web server user (RHEL, CentOS and others): ]%></p>
 	<pre id="sudo_config_apache"></pre>
 	<p><%[ Example sudo configuration for Lighttpd web server user (RHEL, CentOS and others): ]%></p>
@@ -1271,21 +1274,33 @@ var actions_hide_test_results = function(action) {
 	result.textContent = '';
 };
 
-function get_sudo_config() {
-	var fields = [
-		'<%=$this->DirStartAction->ClientID%>',
-		'<%=$this->DirStopAction->ClientID%>',
-		'<%=$this->DirRestartAction->ClientID%>',
-		'<%=$this->SdStartAction->ClientID%>',
-		'<%=$this->SdStopAction->ClientID%>',
-		'<%=$this->SdRestartAction->ClientID%>',
-		'<%=$this->FdStartAction->ClientID%>',
-		'<%=$this->FdStopAction->ClientID%>',
-		'<%=$this->FdRestartAction->ClientID%>'
-	];
+function get_sudo_config(type) {
+	var bin_fields = {
+		bconsole: [
+			'<%=$this->BconsolePath->ClientID%>'
+		],
+		config: [
+			'<%=$this->BDirJSONPath->ClientID%>',
+			'<%=$this->BSdJSONPath->ClientID%>',
+			'<%=$this->BFdJSONPath->ClientID%>',
+			'<%=$this->BBconsJSONPath->ClientID%>',
+		],
+		actions: [
+			'<%=$this->DirStartAction->ClientID%>',
+			'<%=$this->DirStopAction->ClientID%>',
+			'<%=$this->DirRestartAction->ClientID%>',
+			'<%=$this->SdStartAction->ClientID%>',
+			'<%=$this->SdStopAction->ClientID%>',
+			'<%=$this->SdRestartAction->ClientID%>',
+			'<%=$this->FdStartAction->ClientID%>',
+			'<%=$this->FdStopAction->ClientID%>',
+			'<%=$this->FdRestartAction->ClientID%>'
+		]
+	}
 	var val, pre;
 	var cfg = '';
 	var users = ['apache', 'lighttpd', 'www-data'];
+	var fields = bin_fields.hasOwnProperty(type) ? bin_fields[type] : [];
 	for (var i = 0; i < users.length; i++) {
 		var pre = document.getElementById('sudo_config_' + users[i].replace(/-/g, '_'));
 		pre.textContent = 'Defaults:' + users[i] + ' !requiretty' + "\n";
