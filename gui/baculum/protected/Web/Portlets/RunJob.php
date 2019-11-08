@@ -93,6 +93,12 @@ class RunJob extends Portlets {
 			$this->JobToRun->DataSource = array_combine($jobs, $jobs);
 			$this->JobToRun->dataBind();
 			$this->JobToRunLine->Display = 'Dynamic';
+			if (count($jobs) > 0) {
+				$this->setJobName($jobs[0]);
+				$this->loadData();
+				// set first job as selected and then load job config
+				return;
+			}
 		}
 		$this->Level->dataSource = $this->getModule('misc')->getJobLevels();
 		$is_verify_option = false;
