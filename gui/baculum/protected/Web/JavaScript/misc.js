@@ -977,7 +977,18 @@ function set_sbbr_compatibility() {
 	}
 }
 
+function set_icon_css() {
+	/**
+	 * Problem with shaking web font icons on Firefox.
+	 * Workaround to solve shaking effect in spinning elements on Firefox.
+	 * Note, both using w3-spin and fa-spin causes shaking, but only disabling
+	 * for a micro time this effect (css) solves this issue.
+	 */
+	$('.w3-spin').removeClass('w3-spin').addClass('fa-spin');
+}
+
 $(function() {
 	W3SideBar.init();
 	set_sbbr_compatibility();
+	set_icon_css();
 });
