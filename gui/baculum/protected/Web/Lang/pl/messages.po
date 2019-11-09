@@ -2460,3 +2460,5 @@ msgstr "Proszę wybrać godzinę w bloku Uruchom"
 msgid "Please select hour and minute in Run block"
 msgstr "Proszę wybrać godzinę i minutę w bloku Uruchom"
 
+msgid "Are you sure, you want to delete this job?"
+msgstr "Czy jesteś pewien, że chcesz skasować to zadanie?"

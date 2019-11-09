@@ -2468,3 +2468,5 @@ msgstr "Please select hour in Run block"
 msgid "Please select hour and minute in Run block"
 msgstr "Please select hour and minute in Run block"
 
+msgid "Are you sure, you want to delete this job?"
+msgstr "Are you sure, you want to delete this job?"

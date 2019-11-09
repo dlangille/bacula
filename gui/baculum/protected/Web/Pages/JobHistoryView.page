@@ -49,15 +49,9 @@
 		>
 			<prop:Text><%=Prado::localize('Run job again')%> &nbsp;<i class="fa fa-undo"></i></prop:Text>
 		</com:TActiveLinkButton>
-		<com:TActiveLinkButton
-			ID="DeleteBtn"
-			CssClass="w3-button w3-green w3-margin-bottom"
-			OnClick="delete"
-			Display="None"
-			ClientSide.OnSuccess="document.location.href='<%=$this->Service->constructUrl('JobHistoryList')%>';"
-		>
-			<prop:Text><%=Prado::localize('Delete')%> &nbsp;<i class="fa fa-trash-alt"></i></prop:Text>
-		</com:TActiveLinkButton>
+		<button id="btn_job_delete" type="button" class="w3-button w3-red w3-margin-bottom" onclick="$('#job_delete_confirm').show();">
+			<%[ Delete ]%> &nbsp;<i class="fa fa-trash-alt"></i>
+		</button>
 		<com:TActiveLinkButton
 			ID="RestoreBtn"
 			Attributes.onclick="document.location = '<%=$this->Service->constructUrl('RestoreWizard', array('jobid' => $this->getJobId()))%>';"
@@ -500,4 +494,23 @@ $(function() {
 			ShowCancelButton="false"
 		/>
 	</div>
+	<div id="job_delete_confirm" class="w3-modal" style="display: none">
+		<div class="w3-modal-content w3-card-4 w3-padding-large w3-animate-zoom" style="width:600px">
+			<span onclick="$('#job_delete_confirm').hide();" class="w3-button w3-xlarge w3-hover-red w3-display-topright">&times;</span>
+			<h2><%[ Delete job ]%></h2>
+			<p><%[ Are you sure, you want to delete this job? ]%></p>
+			<div class="w3-center">
+				<button type="button" class="w3-button w3-red" onclick="$('#job_delete_confirm').hide();"><i class="fa fa-times"></i> &nbsp;<%[ Cancel ]%></button>
+				<com:TActiveLinkButton
+					ID="DeleteBtn"
+					CssClass="w3-button w3-green"
+					OnClick="delete"
+					Display="None"
+					ClientSide.OnSuccess="document.location.href='<%=$this->Service->constructUrl('JobHistoryList')%>';"
+				>
+					<prop:Text><%=Prado::localize('Delete')%> &nbsp;<i class="fa fa-trash-alt"></i></prop:Text>
+				</com:TActiveLinkButton>
+			</div>
+		</div>
+</div>
 </com:TContent>
