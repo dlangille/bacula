@@ -31,6 +31,7 @@
 			Visible="<%=!empty($_SESSION['dir'])%>"
 			OnClick="loadScheduleConfig"
 		/>
+		<button id="btn_job_history" type="button" class="w3-bar-item w3-button tab_btn" onclick="W3Tabs.open(this.id, 'job_history'); oJobHistoryList.table.responsive.recalc();"><%[ Job history ]%></button>
 		<com:TActiveLinkButton
 			CssClass="w3-bar-item w3-button tab_btn"
 			Text="<%[ Job schedules ]%>"
@@ -73,6 +74,145 @@
 			ShowRemoveButton="false"
 			ShowCancelButton="false"
 		/>
+	</div>
+	<div class="w3-container tab_item" id="job_history" style="display: none">
+		<table id="job_history_list" class="w3-table w3-striped w3-hoverable w3-white w3-margin-bottom" style="width: 100%">
+			<thead>
+				<tr>
+					<th></th>
+					<th><%[ JobId ]%></th>
+					<th><%[ Name ]%></th>
+					<th><%[ Type ]%></th>
+					<th class="w3-center"><%[ Level ]%></th>
+					<th class="w3-center"><%[ Start time ]%></th>
+					<th class="w3-center"><%[ End time ]%></th>
+					<th class="w3-center"><%[ Job status ]%></th>
+					<th class="w3-center"><%[ Size ]%></th>
+					<th class="w3-center"><%[ Files ]%></th>
+					<th class="w3-center"><%[ Action ]%></th>
+				</tr>
+			</thead>
+			<tbody id="job_history_list_body">
+			</tbody>
+		</table>
+<script type="text/javascript">
+var oJobHistoryList = {
+	ids: {
+		job_list: 'job_history_list',
+		job_list_body: 'job_history_list_body'
+	},
+	job_name: '',
+	data: [],
+	table: null,
+	init: function(job_name) {
+		this.job_name = job_name;
+		this.prepare_data();
+		this.set_table();
+	},
+	prepare_data: function() {
+		for (var i = 0; i < oData.jobs.length; i++) {
+			if (oData.jobs[i].name == this.job_name) {
+				this.data.push(oData.jobs[i]);
+			}
+		}
+	},
+	set_table: function() {
+		this.table = $('#' + this.ids.job_list).DataTable({
+			data: this.data,
+			deferRender: true,
+			columns: [
+				{
+					className: 'details-control',
+					orderable: false,
+					data: null,
+					defaultContent: '<button type="button" class="w3-button w3-blue"><i class="fa fa-angle-down"></i></button>'
+				},
+				{data: 'jobid'},
+				{data: 'name'},
+				{
+					data: 'type',
+					render: function(data, type, row) {
+						return JobType.get_type(data);
+					}
+				},
+				{
+					data: 'level',
+					render: function(data, type, row) {
+						return JobLevel.get_level(data);
+					}
+				},
+				{data: 'starttime'},
+				{data: 'endtime'},
+				{
+					data: 'jobstatus',
+					render: function (data, type, row) {
+						var ret;
+						if (type == 'display') {
+							ret = JobStatus.get_icon(data).outerHTML;
+						} else {
+							ret = data;
+						}
+						return ret;
+					},
+					className: 'w3-center'
+				},
+				{
+					data: 'jobbytes',
+					render: function (data, type, row) {
+						var s;
+						if (type == 'display') {
+							s = Units.get_formatted_size(data)
+						} else {
+							s = data;
+						}
+						return s;
+					}
+				},
+				{data: 'jobfiles'},
+				{
+					data: 'jobid',
+					render: function (data, type, row) {
+						var btn = document.createElement('BUTTON');
+						btn.className = 'w3-button w3-green';
+						btn.type = 'button';
+						var i = document.createElement('I');
+						i.className = 'fa fa-list-ul';
+						var label = document.createTextNode(' <%[ Details ]%>');
+						btn.appendChild(i);
+						btn.innerHTML += '&nbsp';
+						btn.appendChild(label);
+						btn.setAttribute('onclick', "document.location.href = '/web/job/history/" + data + "/'");
+						return btn.outerHTML;
+					}
+				}
+			],
+			responsive: {
+				details: {
+					type: 'column'
+				}
+			},
+			columnDefs: [{
+				className: 'control',
+				orderable: false,
+				targets: 0
+			},
+			{
+				className: "dt-center",
+				targets: [ 1, 3, 4, 5, 6, 7, 9, 10 ]
+			},
+			{
+				className: "dt-body-right",
+				targets: [ 8 ]
+			}],
+			order: [1, 'desc']
+		});
+	}
+};
+MonitorParams = ['jobs'];
+$(function() {
+	MonitorCalls.push(function() { oJobHistoryList.init('<%=$this->getJobName()%>'); });
+});
+</script>
 	</div>
 	<div class="w3-container tab_item" id="job_schedules" style="display: none">
 		<com:Application.Web.Portlets.StatusSchedule
