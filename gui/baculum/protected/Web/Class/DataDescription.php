@@ -54,10 +54,33 @@ class DataDescription extends WebModule {
 		if (!is_null($directive_name) && isset($data_desc->{$component_type}->{$resource_type}->{$directive_name})) {
 			$desc = $data_desc->{$component_type}->{$resource_type}->{$directive_name};
 		} elseif (isset($data_desc->{$component_type}->{$resource_type})) {
-			$desc = (array)$data_desc->{$component_type}->{$resource_type};
+			$desc = $this->prepareDirectivesBySection($data_desc->{$component_type}->{$resource_type});
 		}
 		return $desc;
 	}
 
+	public function prepareDirectivesBySection($desc) {
+		$desc_by_sect = array();
+		$desc_sects = array('General' => array());
+		foreach ($desc as $directive_name => $directive_desc) {
+			if (property_exists($directive_desc, 'Section')) {
+				if (!key_exists($directive_desc->Section, $desc_sects)) {
+					$desc_sects[$directive_desc->Section] = array();
+				}
+			} else {
+				$directive_desc->Section = 'General';
+			}
+			$desc_sects[$directive_desc->Section][] = array(
+				'name' => $directive_name,
+				'desc' => $directive_desc
+			);
+		}
+		foreach ($desc_sects as $sect => $directives) {
+			for ($i = 0; $i < count($directives); $i++) {
+				$desc_by_sect[$directives[$i]['name']] = $directives[$i]['desc'];
+			}
+		}
+		return $desc_by_sect;
+	}
 }
 ?>

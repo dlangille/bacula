@@ -25,6 +25,8 @@ Prado::using('System.Web.UI.ActiveControls.TActiveLinkButton');
 Prado::using('System.Web.UI.ActiveControls.TActivePanel');
 Prado::using('System.Web.UI.ActiveControls.TActiveRepeater');
 Prado::using('System.Web.UI.WebControls.TItemDataRenderer');
+Prado::using('System.Web.UI.WebControls.THeader3');
+Prado::using('System.Web.UI.WebControls.TLiteral');
 Prado::using('Application.Web.Portlets.DirectiveListTemplate');
 Prado::using('Application.Web.Portlets.DirectiveCheckBox');
 Prado::using('Application.Web.Portlets.DirectiveComboBox');
@@ -65,6 +67,8 @@ class DirectiveRenderer extends TItemDataRenderer {
 		'DirectiveMultiTextBox'
 	);
 
+	private static $current_section = '';
+
 	public function loadState() {
 		parent::loadState();
 		$this->createItemInternal();
@@ -72,6 +76,11 @@ class DirectiveRenderer extends TItemDataRenderer {
 
 	public function createItemInternal() {
 		$data = $this->getData();
+
+		if (key_exists('section', $data)) {
+			$this->addSection($data['section']);
+		}
+
 		$item = $this->createItem($data);
 		$this->addParsedObject($item);
 	}
@@ -115,6 +124,21 @@ class DirectiveRenderer extends TItemDataRenderer {
 			$control->setResource($data['resource']);
 		}
 		return $control;
+	}
+
+	public function addSection($section) {
+		if ($section !== self::$current_section) {
+			self::$current_section = $section;
+			$h3 = new THeader3();
+			$h3->setCssClass('directive_section_header w3-border-bottom');
+			$h3->setStyle('display: none');
+			$h3->setAttribute('data-section', $section);
+			$text = new TLiteral();
+			$text->setText(Prado::localize($section));
+			$h3->addParsedObject($text);
+			$this->addParsedObject($h3);
+		}
+
 	}
 
 	public function getData() {

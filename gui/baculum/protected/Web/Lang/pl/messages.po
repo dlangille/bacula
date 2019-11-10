@@ -2462,3 +2462,57 @@ msgstr "Proszę wybrać godzinę i minutę w bloku Uruchom"
 
 msgid "Are you sure, you want to delete this job?"
 msgstr "Czy jesteś pewien, że chcesz skasować to zadanie?"
+
+msgid "Access-control list"
+msgstr "Lista kontroli dostępu"
+
+msgid "Communications encryption"
+msgstr "Szyfrowanie komunikacji"
+
+msgid "Copy and migration"
+msgstr "Kopia i migracja"
+
+msgid "CSV file"
+msgstr "Plik CSV"
+
+msgid "Data encryption"
+msgstr "Szyfrowanie danych"
+
+msgid "Deduplication optimized volumes"
+msgstr "Wolumeny zoptymalizowane pod deduplikację"
+
+msgid "Device"
+msgstr "Urządzenie"
+
+msgid "Disk"
+msgstr "Dysk"
+
+msgid "Duplicates and priorities"
+msgstr "Duplikaty i priorytety"
+
+msgid "Graphite"
+msgstr "Graphite"
+
+msgid "Limitations"
+msgstr "Limitacje"
+
+msgid "Networking"
+msgstr "Łączność sieciowa"
+
+msgid "Pruning"
+msgstr "Pruning"
+
+msgid "Spooling"
+msgstr "Spooling"
+
+msgid "Tape"
+msgstr "Taśma"
+
+msgid "Verify"
+msgstr "Weryfikacja"
+
+msgid "Virtual full backup"
+msgstr "Backup konsolidacyjny (Virtual Full)"
+
+msgid "Volume recycling"
+msgstr "Recykling wolumenów"

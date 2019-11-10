@@ -218,6 +218,7 @@ class BaculaConfigDirectives extends DirectiveListTemplate {
 					'in_config' => $in_config,
 					'parent_name' => null,
 					'group_name' => null,
+					'section' => $directive_desc->Section,
 					'show' => (($in_config || !$load_values) || $this->getShowAllDirectives())
 				);
 				array_push($directives, $directive);
@@ -242,6 +243,10 @@ class BaculaConfigDirectives extends DirectiveListTemplate {
 		$show_all_directives = !$this->getShowAllDirectives();
 		$this->setShowAllDirectives($show_all_directives);
 		$this->loadConfig();
+		$this->getPage()->getCallbackClient()->callClientFunction(
+			'oBaculaConfigSection.show_sections',
+			array($show_all_directives)
+		);
 	}
 
 	public function unloadDirectives() {

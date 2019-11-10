@@ -26,6 +26,7 @@ var BaculaConfigClass = jQuery.klass({
 		h2[0].textContent = text;
 		container.find('div.config_directives').show();
 		this.show_item(container, true);
+		oBaculaConfigSection.show_sections(true);
 		this.scroll_to_element(container);
 	},
 	scroll_to_element: function(selector, additional_offset) {
@@ -121,9 +122,6 @@ var BaculaConfigOptionsClass = jQuery.klass({
 			}.bind(this));
 		}
 	},
-	get_options: function() {
-		;
-	},
 	do_action: function(param) {
 		if (typeof(this.action_obj) === "object") {
 			this.action_obj.setCallbackParameter(param);
@@ -131,5 +129,52 @@ var BaculaConfigOptionsClass = jQuery.klass({
 		}
 	}
 });
+
+var oBaculaConfigSection = {
+	sections: [],
+	css: {
+		section: 'h3.directive_section_header',
+		directive_field: 'directive_field'
+	},
+	init: function() {
+		this.sections = document.querySelectorAll(this.css.section);
+	},
+	get_section_names: function() {
+		var sects = [];
+		for (var i = 0; i < this.sections.length; i++) {
+			sects.push(sections[i].getAttribute('data-section'));
+		}
+		return sects;
+	},
+	get_directives: function(section) {
+		var section, el;
+		var directives = [];
+		for (var i = 0; i < this.sections.length; i++) {
+			sect = this.sections[i].getAttribute('data-section');
+			if (sect !== section) {
+				continue;
+			}
+			el = this.sections[i].nextElementSibling;
+			while (el) {
+				if (!el.classList.contains(this.css.directive_field)) {
+					break;
+				}
+				directives.push(el);
+				el = el.nextElementSibling;
+			}
+		}
+		return directives;
+	},
+	show_sections: function(show) {
+		// this method has to be static
+		$(function() {
+			if (show) {
+				$(oBaculaConfigSection.css.section).show();
+			} else {
+				$(oBaculaConfigSection.css.section).hide();
+			}
+		});
+	}
+};
 
 var BaculaConfig = new BaculaConfigClass();
