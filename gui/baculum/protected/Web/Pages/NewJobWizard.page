@@ -5,6 +5,7 @@
 		StepStyle.CssClass="steps"
 		HeaderStyle.CssClass="wizard-body"
 		NavigationStyle.CssClass="navigation"
+		NavigationStyle.CustomStyle="margin-bottom: 55px"
 		UseDefaultLayout="false"
 		ShowSideBar="false"
 		OnPreviousButtonClick="wizardPrev"

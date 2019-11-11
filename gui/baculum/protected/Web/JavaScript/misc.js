@@ -776,13 +776,25 @@ var W3SideBar = {
 		if (hide == 1) {
 			this.close();
 		}
+		if (!this.sidebar) {
+			// on pages without sidebar always show page main elements with 100% width.
+			this.page_main.css({'margin-left': '0', 'width': '100%'});
+		}
+		this.set_events();
+	},
+	set_events: function() {
+		this.sidebar.addEventListener('touchstart', handle_touch_start);
+		this.sidebar.addEventListener('touchmove', function(e) {
+			handle_touch_move(e, {
+				'swipe_left': function() {
+					this.close();
+				}.bind(this)
+			});
+		}.bind(this));
 	},
 	open: function() {
 		if (this.sidebar.style.display === 'block' || this.sidebar.style.display === '') {
-			Cookies.set_cookie('baculum_side_bar_hide', 1);
-			this.sidebar.style.display = 'none';
-			this.overlay_bg.style.display = 'none';
-			this.page_main.css({'margin-left': '0', 'width': '100%'});
+			this.close();
 		} else {
 			Cookies.set_cookie('baculum_side_bar_hide', 0);
 			this.sidebar.style.display = 'block';
@@ -985,6 +997,51 @@ function set_icon_css() {
 	 * for a micro time this effect (css) solves this issue.
 	 */
 	$('.w3-spin').removeClass('w3-spin').addClass('fa-spin');
+}
+
+var touch_start_x = null;
+var touch_start_y = null;
+
+function handle_touch_start(e) {
+	// browser API or jQuery
+	var first_touch =  e.touches || e.originalEvent.touches
+	touch_start_x = first_touch[0].clientX;
+	touch_start_y = first_touch[0].clientY;
+}
+
+function handle_touch_move(e, callbacks) {
+	if (!touch_start_x || !touch_start_y || typeof(callbacks) !== 'object') {
+		// no touch type event or no callbacks
+		return;
+	}
+
+	var touch_end_x = e.touches[0].clientX;
+	var touch_end_y = e.touches[0].clientY;
+
+	var touch_diff_x = touch_start_x - touch_end_x;
+	var touch_diff_y = touch_start_y - touch_end_y;
+
+	if (Math.abs(touch_diff_x) > Math.abs(touch_diff_y)) {
+		if (touch_diff_x > 0 && callbacks.hasOwnProperty('swipe_left')) {
+			// left swipe
+			callbacks.swipe_left();
+		} else if (callbacks.hasOwnProperty('swipe_right')) {
+			// right swipe
+			callbacks.swipe_right();
+		}
+	} else {
+		if (touch_diff_y > 0 && callbacks.hasOwnProperty('swipe_up')) {
+			// up swipe
+			callbacks.swipe_up()
+		} else if (callbacks.hasOwnProperty('swipe_down')) {
+			// down swipe
+			callbacks.swipe_down()
+		}
+	}
+
+	// reset values
+	touch_start_x = null;
+	touch_start_y = null;
 }
 
 $(function() {
