@@ -66,29 +66,30 @@ class DirectiveMessages extends DirectiveListTemplate {
 
 	public function loadConfig() {
 		$load_values = $this->getLoadValues();
-		$destinations = (array)$this->getData();
-		if (array_key_exists('Type', $destinations)) {
-			$destinations = array($destinations);
+		$dests = $this->getData();
+		if (key_exists('Destinations', $dests)) {
+			$dests = $dests['Destinations'];
 		}
 		$directives = array();
-		for ($i = 0; $i < count($destinations); $i++) {
-			$is_address_type = in_array($destinations[$i]['Type'], $this->destination_address);
+		for ($i = 0; $i < count($dests); $i++) {
+			$dest = (array)$dests[$i];
+			$is_address_type = in_array($dest['Type'], $this->destination_address);
 			$directive_value = null;
-			if ($is_address_type && array_key_exists('Where', $destinations[$i])) {
-				$directive_value = implode(',', $destinations[$i]['Where']);
+			if ($is_address_type && key_exists('Where', $dest)) {
+				$directive_value = implode(',', $dest['Where']);
 			}
-			$this->setDirectiveName($destinations[$i]['Type']);
+			$this->setDirectiveName($dest['Type']);
 			$directives[$i] = array(
 				'host' => $this->getHost(),
 				'component_type' => $this->getComponentType(),
 				'component_name' => $this->getComponentName(),
 				'resource_type' => $this->getResourceType(),
 				'resource_name' => $this->getResourceName(),
-				'directive_name' => $destinations[$i]['Type'],
+				'directive_name' => $dest['Type'],
 				'directive_value' => $directive_value,
 				'default_value' => false,
 				'required' => false,
-				'label' => $destinations[$i]['Type'],
+				'label' => $dest['Type'],
 				'field_type' => 'TextBox',
 				'in_config' => true,
 				'show' => true,
@@ -98,8 +99,8 @@ class DirectiveMessages extends DirectiveListTemplate {
 			);
 			$value_all = $value_not = null;
 			for ($j = 0; $j < count($this->messages_types); $j++) {
-				$value_all = in_array('!' . $this->messages_types[$j], $destinations[$i]['MsgTypes']);
-				$value_not = in_array($this->messages_types[$j], $destinations[$i]['MsgTypes']);
+				$value_all = in_array('!' . $this->messages_types[$j], $dest['MsgTypes']);
+				$value_not = in_array($this->messages_types[$j], $dest['MsgTypes']);
 				$directives[$i]['messages_types'][] = array(
 					'host' => $this->getHost(),
 					'component_type' => $this->getComponentType(),
@@ -112,7 +113,7 @@ class DirectiveMessages extends DirectiveListTemplate {
 					'required' => false,
 					'label' => $this->messages_types[$j],
 					'field_type' => 'Messages',
-					'data' => $destinations[$i]['Type'],
+					'data' => $dest['Type'],
 					'in_config' => true,
 					'show' => true,
 					'parent_name' => __CLASS__
@@ -143,17 +144,12 @@ class DirectiveMessages extends DirectiveListTemplate {
 			if (count($directive_values) === 0) {
 				continue;
 			}
-			$values[$directive_name] = implode(' ', $directive_values);
+			if (!key_exists($directive_name, $values)) {
+				$values[$directive_name] = array();
+			}
+			$values[$directive_name][] = implode(' ', $directive_values);
 		}
-		$ret = null;
-		if (count($values) > 1) {
-			// multiple messages values
-			$ret = $values;
-		} else {
-			// single messages value
-			$ret = implode('', array_values($values));
-		}
-		return $ret;
+		return $values;
 	}
 
 	public function getDirectiveData() {
@@ -205,8 +201,18 @@ class DirectiveMessages extends DirectiveListTemplate {
 		$data = $this->getDirectiveData();
 		$msg_type = $sender->getID();
 		array_push($data, array('Type' => $msg_type, 'MsgTypes' => array()));
-		$data = (object)$data;
 		$this->setData($data);
-		$this->loadConfig(null, null);
+		$this->loadConfig();
 	}
+
+	public function removeMessages($sender, $param) {
+		if ($param instanceof Prado\Web\UI\TCommandEventParameter) {
+			$idx = $param->getCommandName();
+			$data = $this->getDirectiveData();
+			array_splice($data, $idx, 1);
+			$this->setData($data);
+			$this->loadConfig();
+		}
+	}
+
 }

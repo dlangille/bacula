@@ -182,7 +182,7 @@ class BaculaConfigDirectives extends DirectiveListTemplate {
 				$directive_value = (array)$directive_value;
 			}
 
-			if ($directive_name === 'Include' || $directive_name === 'Exclude' || $directive_name === 'Runscript') {
+			if ($directive_name === 'Include' || $directive_name === 'Exclude' || $directive_name === 'Runscript' || $directive_name === 'Destinations') {
 				// provide all include blocks at once
 				$directive_value = array(array(
 					$directive_name => $directive_value,

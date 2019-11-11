@@ -2516,3 +2516,6 @@ msgstr "Backup konsolidacyjny (Virtual Full)"
 
 msgid "Volume recycling"
 msgstr "Recykling wolumenów"
+
+msgid "Tip: checking 'All' message type causes, that rest checked message types are saved with negation ex. Catalog = All, !Debug, !Saved, !Skipped"
+msgstr "Porada: zaznaczenie typu wiadomości 'All' powoduje, że reszta zaznaczonych typów wiadomości jest zapisana z negacją np. Catalog = All, !Debug, !Saved, !Skipped"

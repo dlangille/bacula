@@ -2595,3 +2595,6 @@ msgstr "Virtual full backup"
 
 msgid "Volume recycling"
 msgstr "Volume recycling"
+
+msgid "Tip: checking 'All' message type causes, that rest checked message types are saved with negation ex. Catalog = All, !Debug, !Saved, !Skipped"
+msgstr "Tip: checking 'All' message type causes, that rest checked message types are saved with negation ex. Catalog = All, !Debug, !Saved, !Skipped"
