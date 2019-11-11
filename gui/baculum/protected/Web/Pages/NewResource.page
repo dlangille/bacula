@@ -94,4 +94,7 @@
 			ShowCancelButton="false"
 		/>
 	</div>
+	<script>
+		oBaculaConfigSection.show_sections(true);
+	</script>
 </com:TContent>
