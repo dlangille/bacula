@@ -964,7 +964,7 @@ char *escape_filename(const char *file_path)
    return escaped_path;
 }
 
-#if HAVE_BACKTRACE && HAVE_GCC
+#if HAVE_BACKTRACE && HAVE_GCC && HAVE_LINUX_OS
 /* if some names are not resolved you can try using : addr2line, like this
  * $ addr2line -e bin/bacula-sd -a 0x43cd11
  * OR
