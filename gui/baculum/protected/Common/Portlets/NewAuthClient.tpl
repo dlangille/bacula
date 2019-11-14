@@ -120,7 +120,7 @@
 					ID="APIOAuth2ClientSecret"
 					CssClass="textbox"
 					CausesValidation="false"
-					MaxLength="40"
+					MaxLength="50"
 				/>
 				<com:TRequiredFieldValidator
 					CssClass="validator-block"

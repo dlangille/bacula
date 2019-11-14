@@ -139,7 +139,7 @@
 					ID="APIOAuth2ClientSecret"
 					CssClass="w3-input w3-border"
 					CausesValidation="false"
-					MaxLength="40"
+					MaxLength="50"
 				/>
 				<com:TRequiredFieldValidator
 					CssClass="validator-block"
