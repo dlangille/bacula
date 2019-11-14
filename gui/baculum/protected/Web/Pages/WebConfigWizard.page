@@ -178,14 +178,14 @@
 					<div class="w3-third"><%[ IP Address/Hostname: ]%></div>
 					<div class="w3-third bold"><%=$this->AddNewHost->APIAddress->Text%></div>
 				</div>
+				<div class="w3-container w3-section">
+					<div class="w3-third"><%[ Port: ]%></div>
+					<div class="w3-third bold"><%=$this->AddNewHost->APIPort->Text%></div>
+				</div>
 				<div style="display: <%=$this->AddNewHost->AuthBasic->Checked ? 'block' : 'none'%>">
 					<div class="w3-container w3-section">
 						<div class="w3-third"><%[ Auth Type: ]%></div>
 						<div class="w3-third bold">HTTP Basic</div>
-					</div>
-					<div class="w3-container w3-section">
-						<div class="w3-third"><%[ Port: ]%></div>
-						<div class="w3-third bold"><%=$this->AddNewHost->APIPort->Text%></div>
 					</div>
 					<div class="w3-container w3-section">
 						<div class="w3-third"><%[ API Login: ]%></div>
