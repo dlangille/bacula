@@ -1,6 +1,16 @@
 <div class="w3-panel">
-	<button type="button" class="w3-button w3-dark-grey w3-right w3-margin-left" onclick="get_job_list_files(1);"><%[ Next ]%> &nbsp;<i class="fa fa-arrow-right"></i></button>
-	<button type="button" class="w3-button w3-dark-grey w3-right w3-margin-left" onclick="get_job_list_files(-1);"><i class="fa fa-arrow-left"></i> &nbsp;<%[ Previous ]%></button>
+	<div style="display: inline-block; clear: right; margin-right: 5px;" class="w3-left">
+		<com:TActiveTextBox
+			ID="FileListSearch"
+			CssClass="w3-input w3-border"
+			Style="width: 200px; display: inline-block;"
+			Attributes.placeholder="<%[ Find file or directory ]%>"
+			Attributes.onkeyup="var keycode = event.keyCode || event.which; if (keycode === 13) { find_job_list_items(); }"
+		/>
+		<button type="button" class="w3-button w3-dark-grey" onclick="find_job_list_items();"><i class="fas fa-search"></i> &nbsp;<%[ Find ]%></button>
+		<button type="button" class="w3-button w3-dark-grey" onclick="clear_job_list_items();" title="<%[ Clear ]%>"><i class="fas fa-times"></i></button>
+		<i id="jobfiles_loading" class="fa fa-sync w3-spin w3-margin-left" style="display: none;"></i>
+	</div>
 	<button type="button" class="w3-button w3-dark-grey w3-right" onclick="load_job_list_files();"><i class="fa fa-check"></i> &nbsp;<%[ Apply ]%></button>
 	<div style="display: inline-block;" class="w3-right w3-margin-right">
 		<span><%[ Offset: ]%></span> <com:TActiveTextBox ID="FileListOffset" Width="70px" CssClass="w3-input w3-border" Style="display: inline-block" />
@@ -13,18 +23,10 @@
 			<com:TListItem Value="all" Text="<%[ all ]%>" />
 		</com:TActiveDropDownList>
 	</div>
-	<div style="display: inline-block; margin-right: 5px;" class="w3-left">
-		<%[ Search: ]%> <com:TActiveTextBox
-			ID="FileListSearch"
-			CssClass="w3-input w3-border"
-			Style="width: 200px; display: inline-block;"
-			Attributes.placeholder="<%[ Find file or directory ]%>"
-			Attributes.onkeyup="var keycode = event.keyCode || event.which; if (keycode === 13) { find_job_list_items(); }"
-		/>
-		<button type="button" class="w3-button w3-dark-grey" onclick="find_job_list_items();"><i class="fas fa-search"></i> &nbsp;<%[ Find ]%></button>
-		<button type="button" class="w3-button w3-dark-grey" onclick="clear_job_list_items();" title="<%[ Clear ]%>"><i class="fas fa-times"></i></button>
-		<span class="w3-margin-left"><%[ Item count: ]%> <com:TActiveLabel ID="FileListCount" /></span>
-		<i id="jobfiles_loading" class="fa fa-sync w3-spin w3-margin-left" style="display: none;"></i>
+	<div class="w3-right w3-margin-top" style="width: 100%">
+		<button type="button" class="w3-button w3-dark-grey w3-right w3-margin-left" onclick="get_job_list_files(1);"><%[ Next ]%> &nbsp;<i class="fa fa-arrow-right"></i></button>
+		<button type="button" class="w3-button w3-dark-grey w3-right" onclick="get_job_list_files(-1);"><i class="fa fa-arrow-left"></i> &nbsp;<%[ Previous ]%></button>
+		<span class="w3-right w3-margin-right" style="line-height: 38px"><%[ Item count: ]%> <com:TActiveLabel ID="FileListCount" /></span>
 	</div>
 </div>
 <div class="w3-container">
