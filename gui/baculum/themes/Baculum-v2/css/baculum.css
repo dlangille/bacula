@@ -298,3 +298,13 @@ table.component td:nth-of-type(1) {
 .bottom_buttons a, .bottom_buttons button {
 	margin: 0 3px;
 }
+
+.usage_box {
+	height: 138px;
+	-webkit-transition: height 0.3s; /* For Safari 3.1 to 6.0 */
+	transition: height 0.3s;
+}
+
+.usage_box:hover {
+	height: 200px;
+}
