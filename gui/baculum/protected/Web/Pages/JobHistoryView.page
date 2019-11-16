@@ -62,8 +62,8 @@
 		</com:TActiveLinkButton>
 		<div class="w3-panel w3-card w3-light-grey">
 			<h3><%[ Job: ]%> <%=$this->getJobUname()%> &nbsp;
-				<com:TActiveLabel ID="RunningIcon">
-					<i class="fa fa-sync-alt w3-spin" Attributes.title="<%[ Job is running ]%>"></i>
+				<com:TActiveLabel ID="RunningIcon" Attributes.title="<%[ Job is running ]%>">
+					<i class="fa fa-sync-alt w3-spin"></i>
 				</com:TActiveLabel>
 				<com:TActiveLabel ID="FinishedIcon" Attributes.title="<%[ Job is finished ]%>">
 					<i class="fa fa-check"></i>
