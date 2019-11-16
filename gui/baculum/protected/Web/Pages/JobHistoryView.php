@@ -112,41 +112,44 @@ class JobHistoryView extends BaculumWebPage {
 	}
 
 	public function getRunningJobStatus($clientid) {
-		$client_name = null;
-		$client = $this->getModule('api')->get(
-			array('clients', $clientid)
-		);
-		if ($client->error === 0) {
-			$client_name = $client->output->name;
-		}
-
 		$running_job_status = array(
 			'header' => array(),
 			'job' => array(),
 			'is_running' => $this->is_running
 		);
-		if (is_string($client_name)) {
-			$query_str = '?name=' . rawurlencode($client_name) . '&type=header';
-			$graph_status = $this->getModule('api')->get(
-				array('status', 'client', $query_str)
+		if ($this->is_running) {
+			// Don't call client if job isn't running
+			$client_name = null;
+			$client = $this->getModule('api')->get(
+				array('clients', $clientid)
 			);
-
-			if ($graph_status->error === 0) {
-				$running_job_status['header'] = $graph_status->output;
+			if ($client->error === 0) {
+				$client_name = $client->output->name;
 			}
 
-			$query_str = '?name=' . rawurlencode($client_name) . '&type=running';
-			$graph_status = $this->getModule('api')->get(
-				array('status', 'client', $query_str)
-			);
-			if ($graph_status->error === 0) {
-				$jobid = $this->getJobId();
-				for ($i = 0; $i < count($graph_status->output); $i++) {
-					foreach ($graph_status->output[$i] as $key => $val) {
-						$prop = strtolower($key);
-						if ($prop === 'jobid' && intval($val) == $jobid) {
-							$running_job_status['job'] = $graph_status->output[$i];
-							break 2;
+			if (is_string($client_name)) {
+				$query_str = '?name=' . rawurlencode($client_name) . '&type=header';
+				$graph_status = $this->getModule('api')->get(
+					array('status', 'client', $query_str)
+				);
+
+				if ($graph_status->error === 0) {
+					$running_job_status['header'] = $graph_status->output;
+				}
+
+				$query_str = '?name=' . rawurlencode($client_name) . '&type=running';
+				$graph_status = $this->getModule('api')->get(
+					array('status', 'client', $query_str)
+				);
+				if ($graph_status->error === 0) {
+					$jobid = $this->getJobId();
+					for ($i = 0; $i < count($graph_status->output); $i++) {
+						foreach ($graph_status->output[$i] as $key => $val) {
+							$prop = strtolower($key);
+							if ($prop === 'jobid' && intval($val) == $jobid) {
+								$running_job_status['job'] = $graph_status->output[$i];
+								break 2;
+							}
 						}
 					}
 				}
