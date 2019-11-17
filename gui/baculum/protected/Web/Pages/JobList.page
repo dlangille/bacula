@@ -27,8 +27,15 @@
 					<th><%[ Actions ]%></th>
 				</tr>
 			</thead>
-			<tbody id="job_history_list_body">
-			</tbody>
+			<tbody id="job_history_list_body"></tbody>
+			<tfoot>
+				<tr>
+					<th></th>
+					<th><%[ Name ]%></th>
+					<th><%[ Director ]%></th>
+					<th><%[ Actions ]%></th>
+				</tr>
+			</tfoot>
 		</table>
 	</div>
 	<com:Application.Web.Portlets.RunJob ID="RunJobModal" />
@@ -85,7 +92,25 @@ var oJobHistoryList = {
 				className: "dt-center",
 				targets: [ 3 ]
 			}],
-			order: [1, 'asc']
+			order: [1, 'asc'],
+			initComplete: function () {
+				this.api().columns([1, 2]).every(function () {
+					var column = this;
+					var select = $('<select><option value=""></option></select>')
+					.appendTo($(column.footer()).empty())
+					.on('change', function () {
+						var val = $.fn.dataTable.util.escapeRegex(
+							$(this).val()
+						);
+						column
+						.search(val ? '^' + val + '$' : '', true, false)
+						.draw();
+					});
+					column.data().unique().sort().each(function (d, j) {
+						select.append('<option value="' + d + '">' + d + '</option>');
+					});
+				});
+			}
 		});
 	}
 };

@@ -92,8 +92,22 @@
 					<th class="w3-center"><%[ Action ]%></th>
 				</tr>
 			</thead>
-			<tbody id="job_history_list_body">
-			</tbody>
+			<tbody id="job_history_list_body"></tbody>
+			<tfoot>
+				<tr>
+					<th></th>
+					<th><%[ JobId ]%></th>
+					<th><%[ Name ]%></th>
+					<th><%[ Type ]%></th>
+					<th class="w3-center"><%[ Level ]%></th>
+					<th class="w3-center"><%[ Start time ]%></th>
+					<th class="w3-center"><%[ End time ]%></th>
+					<th class="w3-center"><%[ Job status ]%></th>
+					<th class="w3-center"><%[ Size ]%></th>
+					<th class="w3-center"><%[ Files ]%></th>
+					<th class="w3-center"><%[ Action ]%></th>
+				</tr>
+			</tfoot>
 		</table>
 <script type="text/javascript">
 var oJobHistoryList = {
@@ -204,7 +218,31 @@ var oJobHistoryList = {
 				className: "dt-body-right",
 				targets: [ 8 ]
 			}],
-			order: [1, 'desc']
+			order: [1, 'desc'],
+			initComplete: function () {
+				this.api().columns([3, 4, 7]).every(function () {
+					var column = this;
+					var select = $('<select><option value=""></option></select>')
+					.appendTo($(column.footer()).empty())
+					.on('change', function () {
+						var val = $.fn.dataTable.util.escapeRegex(
+							$(this).val()
+						);
+						column
+						.search(val ? '^' + val + '$' : '', true, false)
+						.draw();
+					});
+					if (column[0][0] == 7) {
+						column.data().unique().sort().each(function (d, j) {
+							select.append('<option value="' + d + '" title="' + JobStatus.get_desc(d) + '">' + d + '</option>');
+						});
+					} else {
+						column.cells('', column[0]).render('display').unique().sort().each(function(d, j) {
+							select.append('<option value="' + d + '">' + d + '</option>');
+						});
+					}
+				});
+			}
 		});
 	}
 };

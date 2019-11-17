@@ -159,19 +159,34 @@
 				<p><%[ Backup for restore: ]%></p>
 				<table id="job_to_restore_list" style="width: 100%">
 					<thead>
-						<th></th>
-						<th>JobId</th>
-						<th><%[ Job name ]%></th>
-						<th><%[ Type ]%></th>
-						<th><%[ Level ]%></th>
-						<th><%[ Job status ]%></th>
-						<th><%[ Size ]%></th>
-						<th><%[ Files ]%></th>
-						<th><%[ End time ]%></th>
-						<th><%[ Select ]%></th>
+						<tr>
+							<th></th>
+							<th>JobId</th>
+							<th><%[ Job name ]%></th>
+							<th><%[ Type ]%></th>
+							<th><%[ Level ]%></th>
+							<th><%[ Job status ]%></th>
+							<th><%[ Size ]%></th>
+							<th><%[ Files ]%></th>
+							<th><%[ End time ]%></th>
+							<th><%[ Select ]%></th>
+						</tr>
 					</thead>
-					<tbody id="job_to_restore_list_body">
-					</tbody>
+					<tbody id="job_to_restore_list_body"></tbody>
+					<tfoot>
+						<tr>
+							<th></th>
+							<th>JobId</th>
+							<th><%[ Job name ]%></th>
+							<th><%[ Type ]%></th>
+							<th><%[ Level ]%></th>
+							<th><%[ Job status ]%></th>
+							<th><%[ Size ]%></th>
+							<th><%[ Files ]%></th>
+							<th><%[ End time ]%></th>
+							<th><%[ Select ]%></th>
+						</tr>
+					</tfoot>
 				</table>
 <script type="text/javascript">
 var oJobsToRestoreList = {
@@ -210,13 +225,19 @@ var oJobsToRestoreList = {
 					data: 'name',
 					responsivePriority: 3,
 					render: function(data, type, row) {
-						var i = document.createElement('I');
-						i.className = 'fa fa-external-link-alt fa-xs';
-						var a = document.createElement('A');
-						a.href = '/web/job/' + encodeURIComponent(data) + '/';
-						a.appendChild(i);
-						a.title = '<%[ Go to job %job ]%>'.replace('%job', data);
-						return (data + ' ' + a.outerHTML);
+						var ret;
+						if (type == 'display') {
+							var i = document.createElement('I');
+							i.className = 'fa fa-external-link-alt fa-xs';
+							var a = document.createElement('A');
+							a.href = '/web/job/' + encodeURIComponent(data) + '/';
+							a.appendChild(i);
+							a.title = '<%[ Go to job %job ]%>'.replace('%job', data);
+							ret = (data + ' ' + a.outerHTML);
+						} else {
+							ret = data;
+						}
+						return ret;
 					}
 				},
 				{
@@ -304,7 +325,31 @@ var oJobsToRestoreList = {
 				className: "dt-body-right",
 				targets: [ 6 ]
 			}],
-			order: [1, 'desc']
+			order: [1, 'desc'],
+			initComplete: function () {
+				this.api().columns([2, 4, 5]).every(function () {
+					var column = this;
+					var select = $('<select><option value=""></option></select>')
+					.appendTo($(column.footer()).empty())
+					.on('change', function () {
+						var val = $.fn.dataTable.util.escapeRegex(
+							$(this).val()
+						);
+						column
+						.search(val ? '^' + val + '$' : '', true, false)
+						.draw();
+					});
+					if (column[0][0] === 2 || column[0][0] == 5) {
+						column.data().unique().sort().each(function (d, j) {
+							select.append('<option value="' + d + '" title="' + JobStatus.get_desc(d) + '">' + d + '</option>');
+						});
+					} else {
+						column.cells('', column[0]).render('display').unique().sort().each(function(d, j) {
+							select.append('<option value="' + d + '">' + d + '</option>');
+						});
+					}
+				});
+			}
 		});
 	}
 };

@@ -96,8 +96,20 @@
 				<th><%[ Schedule ]%></th>
 			</tr>
 		</thead>
-		<tbody id="schedule_list_body">
-		</tbody>
+		<tbody id="schedule_list_body"></tbody>
+		<tfoot>
+			<tr>
+				<th></th>
+				<th><%[ Level ]%></th>
+				<th><%[ Type ]%></th>
+				<th><%[ Priority ]%></th>
+				<th><%[ Scheduled ]%></th>
+				<%=empty($this->Job) ? '<th>' . Prado::localize('Job name') . '</th>': ''%>
+				<th><%[ Client ]%></th>
+				<th><%[ FileSet ]%></th>
+				<th><%[ Schedule ]%></th>
+			</tr>
+		</tfoot>
 	</table>
 </div>
 <script type="text/javascript">
@@ -191,7 +203,31 @@ var oJobScheduleList = {
 				responsivePriority: 5,
 				targets: 2
 			}],
-			order: [4, 'asc']
+			order: [4, 'asc'],
+			initComplete: function () {
+				this.api().columns().every(function () {
+					var column = this;
+					var select = $('<select><option value=""></option></select>')
+					.appendTo($(column.footer()).empty())
+					.on('change', function () {
+						var val = $.fn.dataTable.util.escapeRegex(
+							$(this).val()
+						);
+						column
+						.search(val ? '^' + val + '$' : '', true, false)
+						.draw();
+					});
+					if (column[0][0] == 3) {
+						column.cells('', column[0]).render('display').unique().sort(sort_natural).each(function(d, j) {
+							select.append('<option value="' + d + '">' + d + '</option>');
+						});
+					} else {
+						column.cells('', column[0]).render('display').unique().sort().each(function(d, j) {
+							select.append('<option value="' + d + '">' + d + '</option>');
+						});
+					}
+				});
+			}
 		});
 	}
 };

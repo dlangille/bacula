@@ -23,6 +23,10 @@ th, table.dataTable thead td {
 	border-bottom: none !important;
 }
 
+table.dataTable tbody td {
+	vertical-align: middle;
+}
+
 table.dataTable.no-footer {
 	border-bottom: none !important;
 }
@@ -48,11 +52,12 @@ table.dataTable.no-footer {
 }
 
 th.action_col, td.action_col {
-	width: 90px !important;
+	width: 110px !important;
 }
 
 td.action_col button {
-	margin-right: 3px;
+	display: inline-block;
+	margin: 0 auto;
 }
 
 .hide {

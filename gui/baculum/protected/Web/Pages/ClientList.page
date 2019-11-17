@@ -23,8 +23,19 @@
 					<th><%[ Actions ]%></th>
 				</tr>
 			</thead>
-			<tbody id="client_list_body">
-			</tbody>
+			<tbody id="client_list_body"></tbody>
+			<tfoot>
+				<tr>
+					<th></th>
+					<th>ClientId</th>
+					<th><%[ Name ]%></th>
+					<th><%[ Uname ]%></th>
+					<th><%[ AutoPrune ]%></th>
+					<th><%[ Job retention ]%></th>
+					<th><%[ File retention ]%></th>
+					<th><%[ Actions ]%></th>
+				</tr>
+			</tfoot>
 		</table>
 	</div>
 <script type="text/javascript">
@@ -60,7 +71,7 @@ var oClientList = {
 					data: 'jobretention',
 					render: function (data, type, row) {
 						var ret;
-						if (type == 'display') {
+						if (type == 'display' || type == 'filter') {
 							var time = Units.format_time_period(data);
 							ret = time.value + ' ' + time.format + ((time.value > 0) ? 's': '');
 						} else {
@@ -73,7 +84,7 @@ var oClientList = {
 					data: 'fileretention',
 					render: function (data, type, row) {
 						var ret;
-						if (type == 'display') {
+						if (type == 'display' || type == 'filter') {
 							var time = Units.format_time_period(data);
 							ret = time.value + ' ' + time.format + ((time.value > 0) ? 's': '');
 						} else {
@@ -113,7 +124,35 @@ var oClientList = {
 				className: "dt-center",
 				targets: [ 1, 4, 5, 6, 7 ]
 			}],
-			order: [2, 'asc']
+			order: [2, 'asc'],
+			initComplete: function () {
+				this.api().columns([2, 3, 4, 5, 6]).every(function () {
+					var column = this;
+					var select = $('<select><option value=""></option></select>')
+					.appendTo($(column.footer()).empty())
+					.on('change', function () {
+						var val = $.fn.dataTable.util.escapeRegex(
+							$(this).val()
+						);
+						column
+						.search(val ? '^' + val + '$' : '', true, false)
+						.draw();
+					});
+					if (column[0][0] == 5 || column[0][0] == 6) {
+						column.data().unique().sort(sort_natural).each(function (d, j) {
+							var time = Units.format_time_period(d);
+							var time_f = time.value + ' ' + time.format + ((time.value > 0) ? 's': '');
+							select.append('<option value="' + time_f + '">' + time_f + '</option>');
+						});
+					} else {
+						column.cells('', column[0]).render('display').unique().sort().each(function(d, j) {
+							if (d) {
+								select.append('<option value="' + d + '">' + d + '</option>');
+							}
+						});
+					}
+				});
+			}
 		});
 	}
 };

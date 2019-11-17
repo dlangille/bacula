@@ -1044,6 +1044,12 @@ function handle_touch_move(e, callbacks) {
 	touch_start_y = null;
 }
 
+function sort_natural(a, b) {
+	a = a.toString();
+	b = b.toString();
+	return a.localeCompare(b, undefined, {numeric: true});
+}
+
 $(function() {
 	W3SideBar.init();
 	set_sbbr_compatibility();

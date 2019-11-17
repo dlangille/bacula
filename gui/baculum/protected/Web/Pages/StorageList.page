@@ -22,8 +22,16 @@
 					<th class="w3-center"><%[ Actions ]%></th>
 				</tr>
 			</thead>
-			<tbody id="storage_list_body">
-			</tbody>
+			<tbody id="storage_list_body"></tbody>
+			<tfoot>
+				<tr>
+					<th></th>
+					<th>StorageId</th>
+					<th><%[ Name ]%></th>
+					<th><%[ Autochanger ]%></th>
+					<th class="w3-center"><%[ Actions ]%></th>
+				</tr>
+			</tfoot>
 		</table>
 	</div>
 <script type="text/javascript">
@@ -86,7 +94,25 @@ var oStorageList = {
 				className: "dt-center",
 				targets: [ 1, 3, 4 ]
 			}],
-			order: [1, 'asc']
+			order: [1, 'asc'],
+			initComplete: function () {
+				this.api().columns([2, 3]).every(function () {
+					var column = this;
+					var select = $('<select><option value=""></option></select>')
+					.appendTo($(column.footer()).empty())
+					.on('change', function () {
+						var val = $.fn.dataTable.util.escapeRegex(
+							$(this).val()
+						);
+						column
+						.search(val ? '^' + val + '$' : '', true, false)
+						.draw();
+					});
+					column.cells('', column[0]).render('display').unique().sort().each(function(d, j) {
+						select.append('<option value="' + d + '">' + d + '</option>');
+					});
+				});
+			}
 		});
 	}
 };

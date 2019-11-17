@@ -132,8 +132,22 @@
 					<th><%[ Actions ]%></th>
 				</tr>
 			</thead>
-			<tbody id="volume_list_body">
-			</tbody>
+			<tbody id="volume_list_body"></tbody>
+			<tfoot>
+				<tr>
+					<th></th>
+					<th>MediaId</th>
+					<th><%[ Name ]%></th>
+					<th><%[ Slot ]%></th>
+					<th>InChanger</th>
+					<th><%[ Vol. status ]%></th>
+					<th>MediaType</th>
+					<th><%[ Last written ]%></th>
+					<th><%[ Vol. jobs ]%></th>
+					<th><%[ Vol. bytes ]%></th>
+					<th><%[ Actions ]%></th>
+				</tr>
+			</tfoot>
 		</table>
 	</div>
 	<div class="w3-container tab_item" id="pool_config" style="display: none">
@@ -187,7 +201,7 @@ var oVolumeList = {
 					data: 'volbytes',
 					render: function (data, type, row) {
 						var s;
-						if (type == 'display') {
+						if (type == 'display' || type == 'filter') {
 							s = Units.get_formatted_size(data)
 						} else {
 							s = data;
@@ -230,7 +244,31 @@ var oVolumeList = {
 				className: "dt-body-right",
 				targets: [ 9 ]
 			}],
-			order: [3, 'asc']
+			order: [3, 'asc'],
+			initComplete: function () {
+				this.api().columns([2, 3, 4, 5, 6]).every(function () {
+					var column = this;
+					var select = $('<select><option value=""></option></select>')
+					.appendTo($(column.footer()).empty())
+					.on('change', function () {
+						var val = $.fn.dataTable.util.escapeRegex(
+							$(this).val()
+						);
+						column
+						.search(val ? '^' + val + '$' : '', true, false)
+						.draw();
+					});
+					if (column[0][0] == 3) {
+						column.cells('', column[0]).render('display').unique().sort(sort_natural).each(function(d, j) {
+							select.append('<option value="' + d + '">' + d + '</option>');
+						});
+					} else {
+						column.cells('', column[0]).render('display').unique().sort().each(function(d, j) {
+							select.append('<option value="' + d + '">' + d + '</option>');
+						});
+					}
+				});
+			}
 		});
 	}
 };

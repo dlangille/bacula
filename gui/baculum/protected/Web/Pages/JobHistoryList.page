@@ -34,8 +34,22 @@
 					<th class="w3-center"><%[ Action ]%></th>
 				</tr>
 			</thead>
-			<tbody id="job_list_body">
-			</tbody>
+			<tbody id="job_list_body"></tbody>
+			<tfoot>
+				<tr>
+					<th></th>
+					<th><%[ JobId ]%></th>
+					<th><%[ Name ]%></th>
+					<th><%[ Type ]%></th>
+					<th class="w3-center"><%[ Level ]%></th>
+					<th class="w3-center"><%[ Start time ]%></th>
+					<th class="w3-center"><%[ End time ]%></th>
+					<th class="w3-center"><%[ Job status ]%></th>
+					<th class="w3-center"><%[ Size ]%></th>
+					<th class="w3-center"><%[ Files ]%></th>
+					<th class="w3-center"><%[ Action ]%></th>
+				</tr>
+			</tfoot>
 		</table>
 	</div>
 	<com:Application.Web.Portlets.RunJob ID="RunJobModal" />
@@ -112,22 +126,11 @@ var oJobList = {
 					data: 'jobid',
 					render: function (data, type, row) {
 						var container = document.createElement('DIV');
-
-						// job details button
-						var btn = document.createElement('BUTTON');
-						btn.className = 'w3-button w3-green w3-right';
-						btn.type = 'button';
-						var i = document.createElement('I');
-						i.className = 'fa fa-list-ul';
-						btn.title = '<%[ Details ]%>';
-						btn.appendChild(i);
-						btn.innerHTML += '&nbsp';
-						btn.setAttribute('onclick', "document.location.href = '/web/job/history/" + data + "/'");
-						container.appendChild(btn);
+						var btn, i;
 						if (['C', 'R'].indexOf(row.jobstatus) === -1) {
 							// rerun job button
 							btn = document.createElement('BUTTON');
-							btn.className = 'w3-button w3-green w3-right';
+							btn.className = 'w3-button w3-green';
 							btn.type = 'button';
 							i = document.createElement('I');
 							btn.title = '<%[ Run job again ]%>';
@@ -137,7 +140,7 @@ var oJobList = {
 						} else {
 							// cancel job button
 							btn = document.createElement('BUTTON');
-							btn.className = 'w3-button w3-green w3-right';
+							btn.className = 'w3-button w3-green';
 							btn.type = 'button';
 							i = document.createElement('I');
 							btn.title = '<%[ Cancel job ]%>';
@@ -145,6 +148,20 @@ var oJobList = {
 							btn.appendChild(i);
 							btn.setAttribute('onclick', 'cancel_job_callback.setCallbackParameter(' + data + '); cancel_job_callback.dispatch();');
 						}
+						container.appendChild(btn);
+						var space = document.createTextNode(' ');
+						container.appendChild(space);
+
+						// job details button
+						btn = document.createElement('BUTTON');
+						btn.className = 'w3-button w3-green';
+						btn.type = 'button';
+						i = document.createElement('I');
+						i.className = 'fa fa-list-ul';
+						btn.title = '<%[ Details ]%>';
+						btn.appendChild(i);
+						btn.innerHTML += '&nbsp';
+						btn.setAttribute('onclick', "document.location.href = '/web/job/history/" + data + "/'");
 						container.appendChild(btn);
 						return container.outerHTML;
 					}
@@ -173,7 +190,31 @@ var oJobList = {
 				className: "dt-body-right",
 				targets: [ 8 ]
 			}],
-			order: [1, 'desc']
+			order: [1, 'desc'],
+			initComplete: function () {
+				this.api().columns([2, 3, 4, 7]).every(function () {
+					var column = this;
+					var select = $('<select><option value=""></option></select>')
+					.appendTo($(column.footer()).empty())
+					.on('change', function () {
+						var val = $.fn.dataTable.util.escapeRegex(
+							$(this).val()
+						);
+						column
+						.search(val ? '^' + val + '$' : '', true, false)
+						.draw();
+					});
+					if (column[0][0] == 7) {
+						column.data().unique().sort().each(function (d, j) {
+							select.append('<option value="' + d + '" title="' + JobStatus.get_desc(d) + '">' + d + '</option>');
+						});
+					} else {
+						column.cells('', column[0]).render('display').unique().sort().each(function(d, j) {
+							select.append('<option value="' + d + '">' + d + '</option>');
+						});
+					}
+				});
+			}
 		});
 	}
 };
