@@ -6,10 +6,10 @@
 			<b><i class="fa fa-database"></i> <%[ Storage list ]%></b>
 		</h5>
 	</header>
-	<div class="w3-margin-left w3-margin-bottom">
-		<button type="button" class="w3-button w3-green<%=empty($_SESSION['dir']) ? ' hide': ''%>" onclick="document.location.href='<%=$this->Service->constructUrl('NewResource', array('component_type' => 'dir', 'component_name' => $_SESSION['dir'], 'resource_type' => 'Storage'))%>';"><i class="fa fa-plus"></i> &nbsp;<%[ Add storage ]%></button>
-		<button type="button" class="w3-button w3-green<%=empty($_SESSION['sd']) ? ' hide': ''%>" onclick="document.location.href='<%=$this->Service->constructUrl('NewResource', array('component_type' => 'sd', 'component_name' => $_SESSION['sd'], 'resource_type' => 'Device'))%>';"><i class="fa fa-plus"></i> &nbsp;<%[ Add device ]%></button>
-		<button type="button" class="w3-button w3-green<%=empty($_SESSION['sd']) ? ' hide': ''%>" onclick="document.location.href='<%=$this->Service->constructUrl('NewResource', array('component_type' => 'sd', 'component_name' => $_SESSION['sd'], 'resource_type' => 'Autochanger'))%>';"><i class="fa fa-plus"></i> &nbsp;<%[ Add autochanger ]%></button>
+	<div class="w3-margin-left">
+		<button type="button" class="w3-button w3-margin-bottom w3-green<%=empty($_SESSION['dir']) ? ' hide': ''%>" onclick="document.location.href='<%=$this->Service->constructUrl('NewResource', array('component_type' => 'dir', 'component_name' => $_SESSION['dir'], 'resource_type' => 'Storage'))%>';"><i class="fa fa-plus"></i> &nbsp;<%[ Add storage ]%></button>
+		<button type="button" class="w3-button w3-margin-bottom w3-green<%=empty($_SESSION['sd']) ? ' hide': ''%>" onclick="document.location.href='<%=$this->Service->constructUrl('NewResource', array('component_type' => 'sd', 'component_name' => $_SESSION['sd'], 'resource_type' => 'Device'))%>';"><i class="fa fa-plus"></i> &nbsp;<%[ Add device ]%></button>
+		<button type="button" class="w3-button w3-margin-bottom w3-green<%=empty($_SESSION['sd']) ? ' hide': ''%>" onclick="document.location.href='<%=$this->Service->constructUrl('NewResource', array('component_type' => 'sd', 'component_name' => $_SESSION['sd'], 'resource_type' => 'Autochanger'))%>';"><i class="fa fa-plus"></i> &nbsp;<%[ Add autochanger ]%></button>
 	</div>
 	<div class="w3-container">
 		<table id="storage_list" class="w3-table w3-striped w3-hoverable w3-white w3-margin-bottom">

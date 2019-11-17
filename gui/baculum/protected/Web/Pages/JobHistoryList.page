@@ -6,11 +6,11 @@
 			<b><i class="fa fa-tasks"></i> <%[ Job history list ]%></b>
 		</h5>
 	</header>
-	<div class="w3-margin-left w3-margin-bottom">
-		<button type="button" class="w3-button w3-green<%=empty($_SESSION['dir']) ? ' hide': ''%>" onclick="document.location.href='<%=$this->Service->constructUrl('NewResource', array('component_type' => 'dir', 'component_name' => $_SESSION['dir'], 'resource_type' => 'Job'))%>';"><i class="fa fa-plus"></i> &nbsp;<%[ Add job ]%></button>
-		<button type="button" class="w3-button w3-green<%=empty($_SESSION['dir']) ? ' hide': ''%>" onclick="document.location.href='<%=$this->Service->constructUrl('NewJobWizard')%>';"><i class="fa fa-magic"></i> &nbsp;<%[ New job wizard ]%></button>
+	<div class="w3-margin-left">
+		<button type="button" class="w3-button w3-margin-bottom w3-green<%=empty($_SESSION['dir']) ? ' hide': ''%>" onclick="document.location.href='<%=$this->Service->constructUrl('NewResource', array('component_type' => 'dir', 'component_name' => $_SESSION['dir'], 'resource_type' => 'Job'))%>';"><i class="fa fa-plus"></i> &nbsp;<%[ Add job ]%></button>
+		<button type="button" class="w3-button w3-margin-bottom w3-green<%=empty($_SESSION['dir']) ? ' hide': ''%>" onclick="document.location.href='<%=$this->Service->constructUrl('NewJobWizard')%>';"><i class="fa fa-magic"></i> &nbsp;<%[ New job wizard ]%></button>
 		<com:TActiveLinkButton
-			CssClass="w3-button w3-green"
+			CssClass="w3-button w3-margin-bottom w3-green"
 			OnClick="loadRunJobModal"
 			Attributes.onclick="document.getElementById('run_job').style.display='block'"
 		>
