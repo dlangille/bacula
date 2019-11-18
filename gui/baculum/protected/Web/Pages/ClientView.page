@@ -362,6 +362,25 @@ var oGraphicalClientStatus = {
 				max: est.est_files,
 				value: files
 			});
+		} else if (job.type === 'R' && job.hasOwnProperty('expected_files') && job.expected_files > 0) {
+			files_progress = document.createElement('DIV');
+			files_progress.className = 'progressbar';
+			var files_label = document.createElement('DIV');
+			files_label.className = 'progressbar-label';
+			var fexamined = parseInt(job.files_examined, 10);
+			var fexpected = parseInt(job.expected_files, 10);
+			var files_perc = ((100 * fexamined) / fexpected);
+			if (files_perc > 100) {
+				files_perc = 100;
+			}
+			files_label.textContent =  fexamined + ' / ' +  fexpected + ' (' + files_perc.toFixed(1) + '%' + ')';
+			files_progress.style.width = '70%';
+			files_progress.appendChild(files_label);
+			var files_bar = $(files_progress);
+			files_bar.progressbar({
+				max: fexpected,
+				value: fexamined
+			});
 		} else {
 			files_progress = '<%[ Not available ]%>';
 		}
