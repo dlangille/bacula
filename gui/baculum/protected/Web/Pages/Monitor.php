@@ -46,10 +46,19 @@ class Monitor extends BaculumWebPage {
 
 		$error = null;
 		$params = $this->Request->contains('params') ? $this->Request['params'] : array();
-		if (in_array('jobs', $params)) {
+		if (is_array($params) && key_exists('jobs', $params)) {
 			$job_params = array('jobs');
+			$job_query = array();
+			if (is_array($params['jobs']) && key_exists('name', $params['jobs']) && is_array($params['jobs']['name'])) {
+				for ($i = 0; $i < count($params['jobs']['name']); $i++) {
+					$job_query['name'] = $params['jobs']['name'][$i];
+				}
+			}
 			if ($this->Request->contains('use_limit') && $this->Request['use_limit'] == 1) {
-				$job_params[] = '?limit=' . $job_limit;
+				$job_query['limit'] = $job_limit;
+			}
+			if (count($job_query) > 0) {
+				$job_params[] = '?' . http_build_query($job_query);
 			}
 			$result = $this->getModule('api')->get($job_params);
 			if ($result->error === 0) {
@@ -66,7 +75,7 @@ class Monitor extends BaculumWebPage {
 				$error = $result;
 			}
 		}
-		if (!$error && in_array('clients', $params)) {
+		if (!$error && key_exists('clients', $params)) {
 			$result = $this->getModule('api')->get(array('clients'));
 			if ($result->error === 0) {
 				$monitor_data['clients'] = $result->output;
@@ -74,7 +83,7 @@ class Monitor extends BaculumWebPage {
 				$error = $result;
 			}
 		}
-		if (!$error && in_array('pools', $params)) {
+		if (!$error && key_exists('pools', $params)) {
 			$result = $this->getModule('api')->get(array('pools'));
 			if ($result->error === 0) {
 				$monitor_data['pools'] = $result->output;
@@ -82,7 +91,7 @@ class Monitor extends BaculumWebPage {
 				$error = $result;
 			}
 		}
-		if (!$error && in_array('job_totals', $params)) {
+		if (!$error && key_exists('job_totals', $params)) {
 			$result = $this->getModule('api')->get(array('jobs', 'totals'));
 			if ($result->error === 0) {
 				$monitor_data['jobtotals'] = $result->output;
@@ -90,7 +99,7 @@ class Monitor extends BaculumWebPage {
 				$error = $result;
 			}
 		}
-		if (!$error && $_SESSION['admin'] && in_array('dbsize', $params)) {
+		if (!$error && $_SESSION['admin'] && key_exists('dbsize', $params)) {
 			$result = $this->getModule('api')->get(array('dbsize'));
 			if ($result->error === 0) {
 				$monitor_data['dbsize'] = $result->output;
@@ -101,7 +110,7 @@ class Monitor extends BaculumWebPage {
 
 		$running_job_states = $this->Application->getModule('misc')->getRunningJobStates();
 
-		if (in_array('jobs', $params)) {
+		if (key_exists('jobs', $params)) {
 			for ($i = 0; $i < count($monitor_data['jobs']); $i++) {
 				if (!in_array($monitor_data['jobs'][$i]->jobstatus, $running_job_states)) {
 					$monitor_data['terminated_jobs'][] = $monitor_data['jobs'][$i];

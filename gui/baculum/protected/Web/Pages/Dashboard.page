@@ -118,6 +118,12 @@
 		</div>
 	</div>
 <script type="text/javascript">
-MonitorParams = ['jobs', 'clients', 'pools', 'job_totals', 'dbsize'];
+MonitorParams = {
+	jobs: null,
+	clients: null,
+	pools: null,
+	job_totals: null,
+	dbsize: null
+};
 </script>
 </com:TContent>

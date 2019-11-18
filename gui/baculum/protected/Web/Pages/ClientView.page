@@ -681,7 +681,7 @@ var oJobForClientList = {
 		});
 	}
 };
-MonitorParams = ['jobs'];
+MonitorParams = {jobs: null};
 $(function() {
 	MonitorCalls.push(function() { oJobForClientList.init(<%=$this->getClientId()%>); });
 });

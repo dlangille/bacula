@@ -158,7 +158,7 @@ var oPoolList = {
 		});
 	}
 };
-MonitorParams = ['pools'];
+MonitorParams = {pools: null};
 $(function() {
 	MonitorCalls.push(function() { oPoolList.init(); });
 });

@@ -406,7 +406,11 @@ function init_graphical_running_job_status(data, tab_data) {
 
 oRunningJobStatus.init();
 
-MonitorParams = ['jobs'];
+MonitorParams = {
+	jobs: {
+		name: ['<%=$this->getJobName()%>']
+	}
+};
 $(function() {
 	MonitorCalls.push(function() { oRunningJobStatus.refresh_status(); });
 });

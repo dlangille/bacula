@@ -156,7 +156,7 @@ var oClientList = {
 		});
 	}
 };
-MonitorParams = ['clients'];
+MonitorParams = {clients: null};
 $(function() {
 	MonitorCalls.push(function() { oClientList.init(); });
 });

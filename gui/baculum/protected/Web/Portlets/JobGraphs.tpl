@@ -69,7 +69,7 @@
 <div id="legend_container" class="w3-margin-left"></div>
 <div id="graphs_container" style="height: 500px; margin-top: 60px;"></div>
 <script type="text/javascript">
-	MonitorParams = ['jobs'];
+	MonitorParams = {jobs: null};
 	var graph_lang = {
 		job_size: {
 			graph_title: '<%[ Graph: ]%> <%[ Job size / Time ]%>',

@@ -218,7 +218,7 @@ var oJobList = {
 		});
 	}
 };
-MonitorParams = ['jobs'];
+MonitorParams = {jobs: null};
 $(function() {
 	MonitorCalls.push(function() { oJobList.init(); });
 });

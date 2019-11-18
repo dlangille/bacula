@@ -246,7 +246,11 @@ var oJobHistoryList = {
 		});
 	}
 };
-MonitorParams = ['jobs'];
+MonitorParams = {
+	jobs: {
+		name: ['<%=$this->getJobName()%>']
+	}
+};
 $(function() {
 	MonitorCalls.push(function() { oJobHistoryList.init('<%=$this->getJobName()%>'); });
 });
