@@ -74,24 +74,24 @@
 				<i class="fa fa-save"></i> &nbsp;<%=$this->getLoadValues() ? Prado::localize('Save') : Prado::localize('Create')%>
 			</prop:Text>
 			<prop:ClientSide.OnLoading>
-				$('.save_progress').css('visibility', 'visible');
-				$('.save_done').css('visibility', 'hidden');
+				$('.save_progress').css({'visibility': '', 'display': 'inline-block'});
+				$('.save_done').css({'visibility': 'visible', 'display': 'none'});
 			</prop:ClientSide.OnLoading>
 			<prop:ClientSide.OnComplete>
-				$('.save_progress').css('visibility', 'hidden');
-				$('.save_done').css('visibility', 'visible');
+				$('.save_progress').css({'visibility': '',  'display': 'none'});
+				$('.save_done').css({'visibility': 'visible', 'display': 'inline-block'});
 				var err_el = '<%=$this->SaveDirectiveError->ClientID%>';
 				if (document.getElementById(err_el).style.display == 'none') {
 					<%=$this->SaveDirectiveActionOk%>
 				}
 			</prop:ClientSide.OnComplete>
 			<prop:ClientSide.OnFailure>
-				$('.save_progress').css('visibility', 'hidden');
-				$('.save_done').css('visibility', 'visible');
+				$('.save_progress').css({'visibility': '', 'display': 'none'});
+				$('.save_done').css({'visibility': 'visible', 'display': 'inline-block'});
 			</prop:ClientSide.OnFailure>
 		</com:TActiveLinkButton>
-		<span class="save_progress" style="width: 10px; visibility: hidden"><i class="fa fa-sync-alt w3-spin"></i></span>
-		<div class="save_done" style="display: inline-block; min-width: 70px;">
+		<span class="save_progress" style="width: 70px; visibility: hidden; display: inline-block;"><i class="fa fa-sync-alt w3-spin"></i></span>
+		<div class="save_done" style="display: none; min-width: 70px;">
 			<com:TActiveLabel ID="SaveDirectiveOk" Display="None" CssClass="w3-text-green"><i class="fa fa-check save_done"></i> &nbsp;<%[ OK ]%></com:TActiveLabel>
 			<com:TActiveLabel ID="SaveDirectiveError" Display="None" CssClass="w3-text-red"><i class="fa fa-times-circle save_done"></i> &nbsp;<%[ Error ]%></com:TActiveLabel>
 			<com:TActiveLabel ID="SaveDirectiveErrMsg" Display="None" CssClass="w3-text-red" />
