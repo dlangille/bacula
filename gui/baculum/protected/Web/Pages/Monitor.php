@@ -49,9 +49,16 @@ class Monitor extends BaculumWebPage {
 		if (is_array($params) && key_exists('jobs', $params)) {
 			$job_params = array('jobs');
 			$job_query = array();
-			if (is_array($params['jobs']) && key_exists('name', $params['jobs']) && is_array($params['jobs']['name'])) {
-				for ($i = 0; $i < count($params['jobs']['name']); $i++) {
-					$job_query['name'] = $params['jobs']['name'][$i];
+			if (is_array($params['jobs'])) {
+				if (key_exists('name', $params['jobs']) && is_array($params['jobs']['name'])) {
+					for ($i = 0; $i < count($params['jobs']['name']); $i++) {
+						$job_query['name'] = $params['jobs']['name'][$i];
+					}
+				}
+				if (key_exists('client', $params['jobs']) && is_array($params['jobs']['client'])) {
+					for ($i = 0; $i < count($params['jobs']['client']); $i++) {
+						$job_query['client'] = $params['jobs']['client'][$i];
+					}
 				}
 			}
 			if ($this->Request->contains('use_limit') && $this->Request['use_limit'] == 1) {

@@ -115,19 +115,14 @@ var oJobHistoryList = {
 		job_list: 'job_history_list',
 		job_list_body: 'job_history_list_body'
 	},
-	job_name: '',
 	data: [],
 	table: null,
-	init: function(job_name) {
-		this.job_name = job_name;
-		this.prepare_data();
-		this.set_table();
-	},
-	prepare_data: function() {
-		for (var i = 0; i < oData.jobs.length; i++) {
-			if (oData.jobs[i].name == this.job_name) {
-				this.data.push(oData.jobs[i]);
-			}
+	init: function() {
+		this.data = oData.jobs;
+		if (this.table) {
+			update_job_table(this.table, this.data);
+		} else {
+			this.set_table();
 		}
 	},
 	set_table: function() {
@@ -252,7 +247,7 @@ MonitorParams = {
 	}
 };
 $(function() {
-	MonitorCalls.push(function() { oJobHistoryList.init('<%=$this->getJobName()%>'); });
+	MonitorCallsInterval.push(function() { oJobHistoryList.init(); });
 });
 </script>
 	</div>

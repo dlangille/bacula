@@ -1050,6 +1050,61 @@ function sort_natural(a, b) {
 	return a.localeCompare(b, undefined, {numeric: true});
 }
 
+function update_job_table(table_obj, new_data) {
+	var rows = table_obj.rows();
+	var old_jobs = {};
+	table_obj.data().toArray().forEach(function(job) {
+		old_jobs[job.jobid] = job;
+	});
+	var new_jobs = {};
+	new_data.forEach(function(job) {
+		new_jobs[job.jobid] = job;
+	});
+
+	var job_add_mod = {};
+	for (var jobid in new_jobs) {
+		if (!old_jobs.hasOwnProperty(jobid) || new_jobs[jobid].jobstatus != old_jobs[jobid].jobstatus) {
+			job_add_mod[jobid] = new_jobs[jobid];
+		}
+	}
+	var job_rm = {};
+	for (var jobid in old_jobs) {
+		if (!new_jobs.hasOwnProperty(jobid)) {
+			job_rm[jobid] = old_jobs[jobid];
+		}
+	}
+
+	var rows_rm_idxs = [];
+	var rows_list = rows.toArray();
+	var jobid;
+	for (var i = 0; i < rows_list[0].length; i++) {
+		row = rows_list[0][i];
+		jobid = table_obj.row(row).data().jobid
+		if (job_add_mod.hasOwnProperty(jobid)) {
+			// update modified row
+			table_obj.row(row).data(job_add_mod[jobid]).draw();
+			// remove modified jobs from table
+			delete job_add_mod[jobid];
+			continue;
+		}
+		if (job_rm.hasOwnProperty(jobid)) {
+			// get rows to remove
+			rows_rm_idxs.push(row);
+			continue;
+		}
+	};
+
+	// remove old rows
+	if (rows_rm_idxs.length > 0) {
+		table_obj.rows(rows_rm_idxs).remove().draw();
+	}
+
+	// add new rows
+	for (var jobid in job_add_mod) {
+		table_obj.row.add(job_add_mod[jobid]).draw();
+	}
+}
+
 $(function() {
 	W3SideBar.init();
 	set_sbbr_compatibility();

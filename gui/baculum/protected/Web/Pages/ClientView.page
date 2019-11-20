@@ -569,19 +569,14 @@ var oJobForClientList = {
 		job_list: 'job_for_client_list',
 		job_list_body: 'job_for_client_list_body'
 	},
-	clientid: 0,
 	data: [],
 	table: null,
-	init: function(clientid) {
-		this.clientid = clientid;
-		this.prepare_data();
-		this.set_table();
-	},
-	prepare_data: function() {
-		for (var i = 0; i < oData.jobs.length; i++) {
-			if (oData.jobs[i].clientid == this.clientid) {
-				this.data.push(oData.jobs[i]);
-			}
+	init: function() {
+		this.data = oData.jobs;
+		if (this.table) {
+			update_job_table(this.table, this.data);
+		} else {
+			this.set_table();
 		}
 	},
 	set_table: function() {
@@ -700,9 +695,13 @@ var oJobForClientList = {
 		});
 	}
 };
-MonitorParams = {jobs: null};
+MonitorParams = {
+	jobs: {
+		client: ['<%=$this->getClientName()%>']
+	}
+};
 $(function() {
-	MonitorCalls.push(function() { oJobForClientList.init(<%=$this->getClientId()%>); });
+	MonitorCallsInterval.push(function() { oJobForClientList.init(); });
 });
 </script>
 	<div class="w3-container tab_item" id="client_config" style="display: none">

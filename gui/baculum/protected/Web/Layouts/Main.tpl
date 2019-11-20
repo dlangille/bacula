@@ -66,6 +66,7 @@ var last_callback_time = 0;
 var callback_time_offset = 0;
 var oData;
 var MonitorCalls = [];
+var MonitorCallsInterval = [];
 $(function() {
 	if (is_small) {
 		W3SideBar.close();
@@ -109,6 +110,10 @@ $(function() {
 				var calls_len = MonitorCalls.length;
 				for (var i = 0; i < calls_len; i++) {
 					MonitorCalls[i]();
+				}
+				var calls_interval_len = MonitorCallsInterval.length;
+				for (var i = 0; i < calls_interval_len; i++) {
+					MonitorCallsInterval[i]();
 				}
 				if (calls_len > 0) {
 					Formatters.set_formatters();

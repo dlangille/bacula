@@ -66,12 +66,19 @@ var oJobList = {
 		job_list: 'job_list',
 		job_list_body: 'job_list_body'
 	},
+	data: [],
+	table: null,
 	init: function() {
-		this.set_table();
+		this.data = oData.jobs;
+		if (this.table) {
+			update_job_table(this.table, this.data);
+		} else {
+			this.set_table();
+		}
 	},
 	set_table: function() {
-		var table = $('#' + this.ids.job_list).DataTable({
-			data: oData.jobs,
+		this.table = $('#' + this.ids.job_list).DataTable({
+			data: this.data,
 			deferRender: true,
 			columns: [
 				{
@@ -220,7 +227,7 @@ var oJobList = {
 };
 MonitorParams = {jobs: null};
 $(function() {
-	MonitorCalls.push(function() { oJobList.init(); });
+	MonitorCallsInterval.push(function() { oJobList.init(); });
 });
 </script>
 </com:TContent>
