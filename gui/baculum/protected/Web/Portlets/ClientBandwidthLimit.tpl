@@ -16,6 +16,7 @@
 					Show="true"
 					Label="<%[ Bandwidth limit ]%>"
 					UnitType="decimal"
+					Attributes.onkeyup="var kc = (event.which || event.keyCode); if (kc == 13) oClientBandwidthLimit.set_bandwidth(); if (kc == 27) oClientBandwidthLimit.close_popup();"
 				/>
 			</div>
 		</div>
@@ -51,6 +52,7 @@ var oClientBandwidthLimit = {
 	},
 	open_popup: function() {
 		document.getElementById(this.ids.popup).style.display = 'block';
+		document.getElementById('<%=$this->BandwidthLimit->Directive->ClientID%>').focus();
 	},
 	close_popup: function() {
 		document.getElementById(this.ids.popup).style.display = 'none';
@@ -66,6 +68,9 @@ var oClientBandwidthLimit = {
 		var val = Units.format_speed(value, null, false, true);
 		bwlimit_val.value = val.value;
 		bwlimit_unit.value = Units.get_short_unit_by_long('speed', val.format) || val.format;
+	},
+	set_bandwidth: function() {
+		$('#<%=$this->SetBandwidthLimit->ClientID%>').click();
 	}
 };
 </script>

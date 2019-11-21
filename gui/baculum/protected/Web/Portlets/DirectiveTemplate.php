@@ -74,6 +74,13 @@ class DirectiveTemplate extends DirectiveControlTemplate implements IDirectiveFi
 		}
 	}
 
+	public function copyAttributes() {
+		$control = $this->findControl('Directive');
+		if ($control instanceof \Prado\Web\UI\TControl) {
+			$control->getAttributes()->copyFrom($this->getAttributes());
+		}
+	}
+
 	public function saveValue($sender, $param) {
 		$command_param = $this->getCmdParam();
 		if ($command_param === 'save' && method_exists($this, 'getValue')) {
@@ -87,6 +94,7 @@ class DirectiveTemplate extends DirectiveControlTemplate implements IDirectiveFi
 		if (!$this->getIsDirectiveCreated()) {
 			$this->createDirective();
 			$this->setIsDirectiveCreated(true);
+			$this->copyAttributes();
 		}
 
 		// show directives existing in config or all
