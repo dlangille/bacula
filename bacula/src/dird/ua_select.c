@@ -1402,6 +1402,10 @@ int select_running_jobs(UAContext *ua, alist *jcrs, const char *reason)
             bsnprintf(nbuf, sizeof(nbuf),  _("Confirm %s of %d Job%s (yes/no): "),
                       reason, jcrs->size(), jcrs->size()>1?"s":"");
             if (!get_yesno(ua, nbuf) || ua->pint32_val == 0) {
+               foreach_alist(jcr, jcrs) {
+                  jcr->dec_use_count();
+               }
+               jcrs->destroy();
                goto bail_out;
             }
          }
