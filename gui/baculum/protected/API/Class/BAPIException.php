@@ -20,47 +20,17 @@
  * Bacula(R) is a registered trademark of Kern Sibbald.
  */
 
-/**
- * Common interfaces.
- *
- * @author Marcin Haba <marcin.haba@bacula.pl>
- */
+Prado::using('Application.Common.Class.BException');
 
-/**
- * Defines methods to work on config data.
- */
-interface ConfigFormat {
-
-	public function write($source, $config);
-
-	public function read($source);
-
-	public function prepareConfig($config);
+class BAPIException extends BException {
 }
 
-/**
- * Defines single session item.
- */
-interface SessionItem {
-
-	public static function getRecordId();
-
-	public static function getPrimaryKey();
-
-	public static function getSessionFile();
+class BCatalogException extends BAPIException {
 }
 
-/**
- * Defines auth module methods.
- */
-interface AuthModule {
+class BConsoleException extends BAPIException {
+}
 
-	public function getAuthType();
-
-	public function isAuthRequest();
-
-	public function validateRequestHeader($header);
-
-	public function getRequestHeaderValue($header);
+class BConfigException extends BAPIException {
 }
 ?>

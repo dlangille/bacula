@@ -21,7 +21,7 @@
  */
 
 Prado::using('Application.Common.Class.Errors');
-Prado::using('Application.API.Class.BException');
+Prado::using('Application.API.Class.BAPIException');
 Prado::using('Application.API.Class.APIModule');
 
 class Bconsole extends APIModule {
@@ -328,7 +328,7 @@ class Bconsole extends APIModule {
 		try {
 			$director = array_shift($this->getDirectors()->output);
 			$result = $this->bconsoleCommand($director, $command);
-		} catch (BException $e) {
+		} catch (BAPIException $e) {
 			$result = (object)array(
 				'output' => $e->getErrorMessage(),
 				'exitcode' => $e->getErrorCode()

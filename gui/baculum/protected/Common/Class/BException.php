@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2017 Kern Sibbald
+ * Copyright (C) 2013-2019 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -20,9 +20,9 @@
  * Bacula(R) is a registered trademark of Kern Sibbald.
  */
 
-Prado::using('System.Exceptions.TException');
+use Prado\Exceptions;
 
-class BException extends TException {
+class BException extends \Prado\Exceptions\TException {
 
 	private $error_code;
 	private $error_message;
@@ -50,16 +50,14 @@ class BException extends TException {
 	}
 
 	public function __toString() {
-		$msg = sprintf('Error: %d, Message: %s', $this->getErrorCode(), $this->getErrorMessage());
-		return $msg;
+		return sprintf(
+			'Error: %d, Message: %s',
+			$this->getErrorCode(),
+			$this->getErrorMessage()
+		);
 	}
 }
 
-class BCatalogException extends BException {
+class AuthException extends BException {
 }
-
-class BConsoleException extends BException {
-}
-
-class BConfigException extends BException {
-}
+?>

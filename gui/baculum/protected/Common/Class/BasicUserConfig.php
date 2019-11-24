@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2017 Kern Sibbald
+ * Copyright (C) 2013-2019 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -56,7 +56,7 @@ abstract class BasicUserConfig extends CommonModule {
 		}
 
 		$all_users = $this->getAllUsers();
-		$password = $this->getModule('misc')->getCryptedPassword($password);
+		$password = $this->getModule('misc')->getHashedPassword($password);
 
 		$userExists = array_key_exists($user, $all_users);
 

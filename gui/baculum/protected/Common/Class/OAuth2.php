@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2017 Kern Sibbald
+ * Copyright (C) 2013-2019 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -197,7 +197,7 @@ abstract class OAuth2 extends CommonModule {
 	 * @param string $token access token value
 	 * @return true if access token is valid, otherwise false
 	 */
-	final public function validateAccessToken($token) {
+	final public static function validateAccessToken($token) {
 		return (preg_match('/' . self::ACCESS_TOKEN_PATTERN . '/', $token) === 1);
 	}
 
@@ -208,7 +208,7 @@ abstract class OAuth2 extends CommonModule {
 	 * @param string $token refresh token value
 	 * @return true if refresh token is valid, otherwise false
 	 */
-	final public function validateRefreshToken($token) {
+	final public static function validateRefreshToken($token) {
 		return (preg_match('/' . self::REFRESH_TOKEN_PATTERN . '/', $token) === 1);
 	}
 

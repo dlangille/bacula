@@ -51,12 +51,17 @@ class BconsoleError extends GenericError {
 	const MSG_ERROR_BCONSOLE_DISABLED = 'Bconsole support is disabled.';
 }
 
-class AuthorizationError extends GenericError {
+class AuthenticationError extends GenericError {
 
 	const ERROR_AUTHENTICATION_TO_API_PROBLEM = 6;
-	const ERROR_ACCESS_ATTEMPT_TO_NOT_ALLOWED_RESOURCE = 7;
 
 	const MSG_ERROR_AUTHENTICATION_TO_API_PROBLEM = 'Problem with authentication to Baculum API.';
+}
+
+class AuthorizationError extends GenericError {
+
+	const ERROR_ACCESS_ATTEMPT_TO_NOT_ALLOWED_RESOURCE = 7;
+
 	const MSG_ERROR_ACCESS_ATTEMPT_TO_NOT_ALLOWED_RESOURCE = 'Access attempt to not allowed resource. Permission denied.';
 }
 

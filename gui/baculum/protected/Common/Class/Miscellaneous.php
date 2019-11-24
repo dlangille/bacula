@@ -432,15 +432,14 @@ class Miscellaneous extends TModule {
 	}
 
 	/**
-	 * Get encrypted password to use in HTTP Basic auth.
+	 * Get hashed password to use in web server auth.
 	 *
 	 * @access public
 	 * @param string $password plain text password
-	 * @return string encrypted password
+	 * @return string hashed password
 	 */
-	public function getCryptedPassword($password) {
-		$enc_pwd = crypt($password, base64_encode($password));
-		return $enc_pwd;
+	public function getHashedPassword($password) {
+		return crypt($password, base64_encode($password));
 	}
 }
 

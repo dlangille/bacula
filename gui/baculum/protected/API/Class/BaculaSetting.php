@@ -22,7 +22,7 @@
 
 Prado::using('Application.Common.Class.Params');
 Prado::using('Application.Common.Class.Errors');
-Prado::using('Application.API.Class.BException');
+Prado::using('Application.API.Class.BAPIException');
 Prado::using('Application.API.Class.APIModule');
 Prado::using('Application.API.Class.APIConfig');
 

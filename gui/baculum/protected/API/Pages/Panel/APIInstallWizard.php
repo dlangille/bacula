@@ -30,7 +30,7 @@ Prado::using('System.Web.UI.ActiveControls.TActiveRadioButton');
 Prado::using('System.Web.UI.ActiveControls.TActiveCustomValidator');
 Prado::using('Application.Common.Class.OAuth2');
 Prado::using('Application.API.Class.APIConfig');
-Prado::using('Application.API.Class.BException');
+Prado::using('Application.API.Class.BAPIException');
 Prado::using('Application.API.Class.BaculumAPIPage');
 Prado::using('Application.API.Class.Database');
 Prado::using('Application.API.Class.BasicAPIUserConfig');
@@ -409,12 +409,12 @@ class APIInstallWizard extends BaculumAPIPage {
 		if ($validation === true) {
 			try {
 				$is_validate = $this->getModule('db')->testDbConnection($db_params);
-			} catch (BException $e) {
+			} catch (BAPIException $e) {
 				$emsg = $e;
 			}
 		}
 		$this->DbTestResultOk->Display = ($is_validate === true) ? 'Dynamic' : 'None';
-		if ($emsg instanceof BException) {
+		if ($emsg instanceof BAPIException) {
 			$this->DbTestResultErr->Text = $emsg;
 		}
 		$this->DbTestResultErr->Display = ($is_validate === false) ? 'Dynamic' : 'None';

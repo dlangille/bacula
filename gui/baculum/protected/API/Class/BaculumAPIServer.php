@@ -25,7 +25,7 @@ Prado::using('System.Exceptions.TException');
 Prado::using('Application.Common.Class.Errors');
 Prado::using('Application.Common.Class.OAuth2');
 Prado::using('Application.Common.Class.Logging');
-Prado::using('Application.API.Class.BException');
+Prado::using('Application.API.Class.BAPIException');
 Prado::using('Application.API.Class.APIDbModule');
 Prado::using('Application.API.Class.Bconsole');
 Prado::using('Application.API.Class.OAuth2.TokenRecord');
@@ -65,6 +65,9 @@ abstract class BaculumAPIServer extends TPage {
 	 */
 	protected $user;
 
+	/**
+	 * Endpoints available for every authenticated client.
+	 */
 	private $public_endpoints = array('auth', 'token', 'welcome', 'catalog', 'dbsize', 'directors');
 
 	/**
@@ -84,6 +87,67 @@ abstract class BaculumAPIServer extends TPage {
 	const DELETE_METHOD = 'DELETE';
 
 	/**
+	 * API Server authentication.
+	 *
+	 * @return true if user is successfully authenticated, otherwise false
+	 */
+	private function authenticate() {
+		$is_auth = false;
+		$config = $this->getModule('api_config')->getConfig('api');
+		if ($config['auth_type'] === 'basic' && $this->getModule('auth_basic')->isAuthRequest()) {
+			$is_auth = true;
+		} elseif ($config['auth_type'] === 'oauth2' && $this->getModule('auth_oauth2')->isAuthRequest()) {
+			$is_auth = $this->authorize();
+		}
+		if (!$is_auth && is_null($this->error)) {
+			$this->output = AuthenticationError::MSG_ERROR_AUTHENTICATION_TO_API_PROBLEM;
+			$this->error = AuthenticationError::ERROR_AUTHENTICATION_TO_API_PROBLEM;
+		}
+		return $is_auth;
+	}
+
+	/**
+	 * API Server authorization.
+	 * Check if authenticated user is allowed to get requested API endpoint.
+	 *
+	 * @return true if user is successfully authorized, otherwise false
+	 */
+	private function authorize() {
+		$is_auth = false;
+		$is_token = false;
+
+		// deleting expired tokens
+		$this->getModule('oauth2_token')->deleteExpiredTokens();
+
+		$auth_oauth2 = $this->getModule('auth_oauth2');
+
+		// Check if token exists
+		$scopes = '';
+		$token = $auth_oauth2->getToken();
+		$auth = TokenRecord::findByPk($token);
+		if (is_array($auth)) {
+			// Token found
+			$scopes = $auth['scope'];
+			$is_token = true;
+		}
+
+		// Check if requested scope is valid according allowed scopes assigned to token
+		if ($is_token) {
+			$path = $this->getRequest()->getUrl()->getPath();
+			if ($auth_oauth2->isScopeValid($path, $scopes, $this->public_endpoints)) {
+				// Authorization valid
+				$is_auth = true;
+				$this->initAuthParams($auth);
+			} else {
+				// Scopes error. Access attempt to not allowed resource
+				$this->output = AuthorizationError::MSG_ERROR_ACCESS_ATTEMPT_TO_NOT_ALLOWED_RESOURCE .' Endpoint: ' .  $path;
+				$this->error = AuthorizationError::ERROR_ACCESS_ATTEMPT_TO_NOT_ALLOWED_RESOURCE;
+			}
+		}
+		return $is_auth;
+	}
+
+	/**
 	 * Get request, login user and do request action.
 	 *
 	 * @access public
@@ -92,55 +156,20 @@ abstract class BaculumAPIServer extends TPage {
 	 */
 	public function onInit($params) {
 		parent::onInit($params);
-		/*
-		 * Workaround to bug in PHP 5.6 by FastCGI that caused general protection error.
-		 * @TODO: Check on newer PHP if it is already fixed.
-		 */
-		// @TODO: Move it to API module.
-		//$db_params = $this->getModule('api_config')->getConfig('db');
-		//APIDbModule::getAPIDbConnection($db_params);
+		// Initialize auth modules
+		$this->getModule('auth_basic')->initialize($this->Request);
+		$this->getModule('auth_oauth2')->initialize($this->Request);
 
 		// set Director to bconsole execution
 		$this->director = $this->Request->contains('director') ? $this->Request['director'] : null;
 
-		$is_auth = false;
 		$config = $this->getModule('api_config')->getConfig('api');
-		Logging::$debug_enabled = (array_key_exists('debug', $config) && $config['debug'] == 1);
-		$headers = $this->getRequest()->getHeaders(CASE_LOWER);
-		if (array_key_exists('auth_type', $config) && array_key_exists('authorization', $headers) && preg_match('/^\w+ [\w=]+$/', $headers['authorization']) === 1) {
-			list($type, $token) = explode(' ', $headers['authorization'], 2);
-			if ($config['auth_type'] === 'oauth2' && $type === 'Bearer') {
-				// deleting expired tokens
-				$this->getModule('oauth2_token')->deleteExpiredTokens();
 
-				$auth = TokenRecord::findByPk($token);
-				if (is_array($auth)) {
-					if ($this->isScopeValid($auth['scope'])) {
-						// AUTH OK
-						$is_auth = true;
-						$this->init_auth($auth);
-					} else {
-						// Scopes error. Access to not allowed resource
-						header(OAuth2::HEADER_UNAUTHORIZED);
-						$url = $this->getRequest()->getUrl()->getPath();
-						$this->output = AuthorizationError::MSG_ERROR_ACCESS_ATTEMPT_TO_NOT_ALLOWED_RESOURCE .' Endpoint: ' .  $url;
-						$this->error = AuthorizationError::ERROR_ACCESS_ATTEMPT_TO_NOT_ALLOWED_RESOURCE;
-						return;
+		Logging::$debug_enabled = (key_exists('debug', $config) && $config['debug'] == 1);
 
-					}
-				}
-			} elseif ($config['auth_type'] === 'basic' && $type === 'Basic') {
-				// AUTH OK
-				$is_auth = true;
-			}
-
-		}
-
-		if ($is_auth === false) {
+		if ($this->authenticate() === false) {
 			// Authorization error.
 			header(OAuth2::HEADER_UNAUTHORIZED);
-			$this->output = AuthorizationError::MSG_ERROR_AUTHENTICATION_TO_API_PROBLEM;
-			$this->error = AuthorizationError::ERROR_AUTHENTICATION_TO_API_PROBLEM;
 			return;
 		}
 		try {
@@ -170,7 +199,7 @@ abstract class BaculumAPIServer extends TPage {
 				__FILE__,
 				__LINE__
 			);
-			if ($e instanceof BException) {
+			if ($e instanceof BAPIException) {
 				$this->output = $e->getErrorMessage();
 				$this->error = $e->getErrorCode();
 			} else {
@@ -186,7 +215,7 @@ abstract class BaculumAPIServer extends TPage {
 	 * @param array $auth token params stored in TokenRecord session
 	 * @return none
 	 */
-	private function init_auth(array $auth) {
+	private function initAuthParams(array $auth) {
 		// if client has own bconsole config, assign it here
 		if (array_key_exists('bconsole_cfg_path', $auth) && !empty($auth['bconsole_cfg_path'])) {
 			Bconsole::setCfgPath($auth['bconsole_cfg_path'], true);
@@ -312,38 +341,6 @@ abstract class BaculumAPIServer extends TPage {
 			$id = intval($this->Request['id']);
 		}
 		$this->remove($id);
-	}
-
-	/**
-	 * Check if request is allowed to access basing on OAuth2 scope.
-	 *
-	 * @access private
-	 * @param string scopes assigned with token
-	 * @return bool true if scope in url and from token are valid, otherwise false
-	 */
-	private function isScopeValid($scope) {
-		$is_valid = false;
-		$scopes = explode(' ', $scope);
-		$url = $this->getRequest()->getUrl()->getPath();
-		$params = explode('/', $url);
-		if (count($params) >= 3 && $params[1] === 'api') {
-			$endpoint = $params[2];
-			if (preg_match('/^v\d+$/', $params[2]) === 1 && count($params) >= 4) {
-				// for versioned API (v1, v2 ...etc.)
-				$endpoint = $params[3];
-			}
-			if (in_array($endpoint, $this->public_endpoints)) {
-				$is_valid = true;
-			} else {
-				for ($i = 0; $i < count($scopes); $i++) {
-					if ($endpoint === $scopes[$i]) {
-						$is_valid = true;
-						break;
-					}
-				}
-			}
-		}
-		return $is_valid;
 	}
 
 	/**
