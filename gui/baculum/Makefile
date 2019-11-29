@@ -3,7 +3,7 @@
 # usage: make DESTDIR=/some/runtime_dir
 
 NAME = baculum
-VERSION = 7.5.0
+VERSION = 9.6.0
 DEFTEMPLATE = rpm-template
 DEFHTTPDNAME = httpd
 DEFHTTPDSITECONF = conf.d
@@ -17,7 +17,7 @@ CONFDIR = $(SYSCONFDIR)/$(NAME)
 HTTPDCONFDIR = $(SYSCONFDIR)/$(HTTPDNAME)/$(HTTPDSITECONF)
 UNITDIR = $(SYSUSRDIR)/lib/systemd/system
 LOCALEDIR = $(SYSUSRDIR)/share/locale
-WWWDIR = $(SYSUSRDIR)/share/$(NAME)/htdocs
+WWWDIR ?= $(SYSUSRDIR)/share/$(NAME)/htdocs
 CACHEDIR = $(SYSVARDIR)/cache/$(NAME)
 LOGDIR = $(SYSVARDIR)/log
 HTTPDLOGS = $(LOGDIR)/$(HTTPDNAME)
@@ -32,8 +32,9 @@ frameworkdir = framework
 themesdir = themes
 cachedir = assets
 configdir = Config
+examples = examples
 configcachedir = $(datadir)/runtime
-samplesdir = examples/$(SAMPLETYPE)
+samplesdir = $(examples)/$(SAMPLETYPE)
 
 webdatadirsrc = $(datadir)/$(webdir)/Class \
 	$(datadir)/$(webdir)/Config \
@@ -140,7 +141,18 @@ prepare_samples:
 	# Default link apache config file
 	#ln -s $(DESTDIR)$(CONFDIR)/$(configdir)-api-apache $(DESTDIR)$(WWWDIR)/$(datadir)/$(configdir)
 
-setup: prepare_samples
+prepare_check_script:
+	install -m 700 $(examples)/$(NAME)-install-checker.sh $(DESTDIR)
+	sed -i -e "s#%NAME#$(NAME)#g" $(DESTDIR)/$(NAME)-install-checker.sh
+	sed -i -e "s#%SAMPLETYPE#$(SAMPLETYPE)#g" $(DESTDIR)/$(NAME)-install-checker.sh
+	sed -i -e "s#%CONFDIR#$(CONFDIR)#g" $(DESTDIR)/$(NAME)-install-checker.sh
+	sed -i -e "s#%HTTPDCONFDIR#$(HTTPDCONFDIR)#g" $(DESTDIR)/$(NAME)-install-checker.sh
+	sed -i -e "s#%WWWDIR#$(WWWDIR)#g" $(DESTDIR)/$(NAME)-install-checker.sh
+	sed -i -e "s#%CACHEDIR#$(CACHEDIR)#g" $(DESTDIR)/$(NAME)-install-checker.sh
+	sed -i -e "s#%HTTPDLOGS#$(HTTPDLOGS)#g" $(DESTDIR)/$(NAME)-install-checker.sh
+	sed -i -e "s#%LIGHTTPDLOGS#$(LIGHTTPDLOGS)#g" $(DESTDIR)/$(NAME)-install-checker.sh
+
+setup: prepare_samples prepare_check_script
 	sed -i -e "s#%DOCUMENTROOT#$(WWWDIR)#g" -e "s#%LOGDIR#$(HTTPDLOGS)#g" $(DESTDIR)$(HTTPDCONFDIR)/$(NAME)-api.conf
 	sed -i -e "s#%DOCUMENTROOT#$(WWWDIR)#g" -e "s#%LOGDIR#$(HTTPDLOGS)#g" $(DESTDIR)$(HTTPDCONFDIR)/$(NAME)-web.conf
 	sed -i -e "s#%DOCUMENTROOT#$(WWWDIR)#g" -e "s#%LOGDIR#$(LIGHTTPDLOGS)#g" $(DESTDIR)$(CONFDIR)/$(NAME)-api-lighttpd.conf
