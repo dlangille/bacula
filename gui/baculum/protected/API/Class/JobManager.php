@@ -142,7 +142,7 @@ class JobManager extends APIModule {
 	public function getJobidsToRestore($jobid) {
 		$jobids = [];
 		$bjob = JobRecord::finder()->findBySql(
-			"SELECT * FROM job WHERE jobid = '$jobid' AND jobstatus IN ('T', 'W') AND type IN ('B', 'C') AND level IN ('F', 'I', 'D')"
+			"SELECT * FROM Job WHERE jobid = '$jobid' AND jobstatus IN ('T', 'W') AND type IN ('B', 'C') AND level IN ('F', 'I', 'D')"
 		);
 		if (is_object($bjob)) {
 			if ($bjob->level != 'F') {
