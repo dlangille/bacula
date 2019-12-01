@@ -19,10 +19,15 @@
  *
  * Bacula(R) is a registered trademark of Kern Sibbald.
  */
-
 Prado::using('Application.Web.Class.BaculumWebPage');
 
-class Monitor extends BaculumWebPage {
+/**
+ * Monitor class.
+ *
+ * NOTE: It must inherit from BaculumPage, not from BaculumWebPage,
+ * because this way it has not any redundant API request from BaculumWebPage.
+ */
+class Monitor extends BaculumPage {
 
 	const DEFAULT_MAX_JOBS = 10000;
 
@@ -37,6 +42,9 @@ class Monitor extends BaculumWebPage {
 			'dbsize' => array(),
 			'error' => array('error' => 0, 'output' => '')
 		);
+
+		// Initialize session cache to have clear session for Monitor
+		$this->getModule('api')->initSessionCache(true);
 
 		$web_config = $this->getModule('web_config')->getConfig();
 		$job_limit = self::DEFAULT_MAX_JOBS;
