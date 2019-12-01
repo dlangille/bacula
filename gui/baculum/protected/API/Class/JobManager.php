@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2018 Kern Sibbald
+ * Copyright (C) 2013-2019 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -74,32 +74,101 @@ class JobManager extends APIModule {
 		return JobRecord::finder()->deleteByjobid($id);
 	}
 
-	public function getRecentJobids($jobname, $clientid, $filesetid) {
-		$sql = "name='$jobname' AND clientid='$clientid' AND filesetid='$filesetid' AND jobstatus IN ('T', 'W') AND level IN ('F', 'I', 'D')";
+	/**
+	 * Find all compojobs required to do full restore.
+	 *
+	 * @param array $jobs jobid to start searching for jobs
+	 * @return array compositional jobs regarding given jobid
+	 */
+	private function findCompositionalJobs(array $jobs) {
+		$jobids = [];
+		$wait_on_full = false;
+		foreach($jobs as $job) {
+			if($job->level == 'F') {
+				$jobids[] = $job->jobid;
+				break;
+			} elseif($job->level == 'D' && $wait_on_full === false) {
+				$jobids[] = $job->jobid;
+				$wait_on_full = true;
+			} elseif($job->level == 'I' && $wait_on_full === false) {
+				$jobids[] = $job->jobid;
+			}
+		}
+		return $jobids;
+	}
+
+	/**
+	 * Get latest recent compositional jobids to do restore.
+	 *
+	 * @param string $jobname job name
+	 * @param integer $clientid client identifier
+	 * @param integer $filesetid fileset identifier
+	 * @param boolean $inc_copy_job determine if include copy jobs to result
+	 * @return array list of jobids required to do restore
+	 */
+	public function getRecentJobids($jobname, $clientid, $filesetid, $inc_copy_job = false) {
+		$types = "('B')";
+		if ($inc_copy_job) {
+			$types = "('B', 'C')";
+		}
+		$sql = "name='$jobname' AND clientid='$clientid' AND filesetid='$filesetid' AND type IN $types AND jobstatus IN ('T', 'W') AND level IN ('F', 'I', 'D')";
 		$finder = JobRecord::finder();
 		$criteria = new TActiveRecordCriteria;
-		$order = 'EndTime';
+		$order1 = 'RealEndTime';
+		$order2 = 'JobId';
 		$db_params = $this->getModule('api_config')->getConfig('db');
 		if ($db_params['type'] === Database::PGSQL_TYPE) {
-		    $order = strtolower($order);
+		    $order1 = strtolower($order1);
+		    $order2 = strtolower($order2);
 		}
-		$criteria->OrdersBy[$order] = 'desc';
+		$criteria->OrdersBy[$order1] = 'desc';
+		$criteria->OrdersBy[$order2] = 'desc';
 		$criteria->Condition = $sql;
 		$jobs = $finder->findAll($criteria);
 
 		$jobids = array();
-		$waitForFull = false;
-		if(!is_null($jobs)) {
-			foreach($jobs as $job) {
-				if($job->level == 'F') {
-					$jobids[] = $job->jobid;
-					break;
-				} elseif($job->level == 'D' && $waitForFull === false) {
-					$jobids[] = $job->jobid;
-					$waitForFull = true;
-				} elseif($job->level == 'I' && $waitForFull === false) {
-					$jobids[] = $job->jobid;
+		if(is_array($jobs)) {
+			$jobids = $this->findCompositionalJobs($jobs);
+		}
+		return $jobids;
+	}
+
+	/**
+	 * Get compositional jobids to do restore starting from given job (full/incremental/differential).
+	 *
+	 * @param integer $jobid job identifier of last job to do restore
+	 * @return array list of jobids required to do restore
+	 */
+	public function getJobidsToRestore($jobid) {
+		$jobids = [];
+		$bjob = JobRecord::finder()->findBySql(
+			"SELECT * FROM job WHERE jobid = '$jobid' AND jobstatus IN ('T', 'W') AND type IN ('B', 'C') AND level IN ('F', 'I', 'D')"
+		);
+		if (is_object($bjob)) {
+			if ($bjob->level != 'F') {
+				$sql = "clientid=:clientid AND filesetid=:filesetid AND type IN ('B', 'C')" .
+					" AND jobstatus IN ('T', 'W') AND level IN ('F', 'I', 'D') " .
+					" AND starttime <= :starttime and jobid <= :jobid";
+				$finder = JobRecord::finder();
+				$criteria = new TActiveRecordCriteria;
+				$order1 = 'JobId';
+				$db_params = $this->getModule('api_config')->getConfig('db');
+				if ($db_params['type'] === Database::PGSQL_TYPE) {
+					$order1 = strtolower($order1);
 				}
+				$criteria->OrdersBy[$order1] = 'desc';
+				$criteria->Condition = $sql;
+				$criteria->Parameters[':clientid'] = $bjob->clientid;
+				$criteria->Parameters[':filesetid'] = $bjob->filesetid;
+				$criteria->Parameters[':starttime'] = $bjob->endtime;
+				$criteria->Parameters[':jobid'] = $bjob->jobid;
+				$jobs = $finder->findAll($criteria);
+
+				if(is_array($jobs)) {
+					$jobids = $this->findCompositionalJobs($jobs);
+				}
+			} else {
+				$jobids[] = $bjob->jobid;
 			}
 		}
 		return $jobids;

@@ -3660,6 +3660,16 @@
 						"schema": {
 							"type": "integer"
 						}
+					},
+					{
+						"name": "copies",
+						"in": "query",
+						"description": "If set to 1, lists copy job file versions together with backup job file versions",
+						"required": false,
+						"schema": {
+							"type": "integer",
+							"default": 0
+						}
 					}
 				]
 			}
