@@ -271,7 +271,7 @@ class RestoreWizard extends BaculumWebPage
 		$clientid = $this->getBackupClientId();
 		$jobs_for_client = $this->getModule('api')->get(array('clients', $clientid, 'jobs'))->output;
 		$jobs = $this->getModule('misc')->objectToArray($jobs_for_client);
-		$this->jobs_to_restore = array_filter($jobs, array($this, 'isBackupJobToRestore'));
+		$this->jobs_to_restore = array_filter($jobs, array($this, 'isJobToRestore'));
 	}
 
 	/**
@@ -280,8 +280,16 @@ class RestoreWizard extends BaculumWebPage
 	 * @param array $job job properties
 	 * @return true if job should be listed to restore, otherwise false
 	 */
-	private function isBackupJobToRestore($job) {
-		return ($job['type'] === 'B' && in_array($job['level'], $this->joblevel) && in_array($job['jobstatus'], $this->jobstatus));
+	private function isJobToRestore($job) {
+		$jobtype = array('B');
+		if ($this->EnableCopyJobRestore->Checked) {
+			$jobtype[] = 'C';
+		}
+		return (
+			in_array($job['type'], $jobtype) &&
+			in_array($job['level'], $this->joblevel) &&
+			in_array($job['jobstatus'], $this->jobstatus)
+		);
 	}
 
 	public function loadBackupSelection($sender, $param) {
@@ -342,7 +350,7 @@ class RestoreWizard extends BaculumWebPage
 		$job_group_list = array();
 		for ($i = 0; $i < count($jobs); $i++) {
 			$job = $this->getModule('misc')->objectToArray($jobs[$i]);
-			if ($this->isBackupJobToRestore($jobs[$i]) && $jobs[$i]['clientid'] === $clientid) {
+			if ($this->isJobToRestore($jobs[$i]) && $jobs[$i]['clientid'] === $clientid) {
 				$job_group_list[$jobs[$i]['name']] = $jobs[$i]['name'];
 			}
 		}
@@ -438,8 +446,15 @@ class RestoreWizard extends BaculumWebPage
 	private function getElementaryBackup() {
 		$jobids = '';
 		if ($this->OnlySelectedBackupSelection->Checked && isset($_SESSION['restore_single_jobid'])) {
+			$params = [
+				'jobid' => $_SESSION['restore_single_jobid']
+			];
+			if ($this->EnableCopyJobRestore->Checked) {
+				$params['inc_copy_job'] = 1;
+			}
+			$query = '?' . http_build_query($params);
 			$jobs = $this->getModule('api')->get(
-				array('bvfs', 'getjobids', '?jobid=' . rawurlencode($_SESSION['restore_single_jobid']))
+				array('bvfs', 'getjobids', $query)
 			);
 			$ids = is_object($jobs) ? $jobs->output : array();
 			foreach ($ids as $jobid) {
@@ -452,15 +467,20 @@ class RestoreWizard extends BaculumWebPage
 				$jobids = $_SESSION['restore_single_jobid'];
 			}
 		} else {
-			$query = '?client=' . rawurlencode($this->BackupClientName->SelectedValue);
-			$query .= '&filesetid=' . rawurlencode($this->GroupBackupFileSet->SelectedValue);
-			$params = array(
+			$params = [
+				'client' => $this->BackupClientName->SelectedValue,
+				'filesetid' => $this->GroupBackupFileSet->SelectedValue
+			];
+			if ($this->EnableCopyJobRestore->Checked) {
+				$params['inc_copy_job'] = 1;
+			}
+			$query = '?' . http_build_query($params);
+			$jobs_recent = $this->getModule('api')->get(array(
 				'jobs',
 				'recent',
 				$this->GroupBackupToRestore->SelectedValue,
 				$query
-			);
-			$jobs_recent = $this->getModule('api')->get($params);
+			));
 			if (count($jobs_recent->output) > 0) {
 				$ids = $jobs_recent->output;
 				$jobids = implode(',', $ids);
@@ -584,13 +604,16 @@ class RestoreWizard extends BaculumWebPage
 			return;
 		}
 		$clientname = $this->BackupClientName->SelectedValue;
-		$query = sprintf(
-			'?client=%s&jobid=%s&pathid=%s&filenameid=%s',
-			rawurlencode($clientname),
-			rawurlencode($jobid),
-			rawurlencode($pathid),
-			rawurlencode($filenameid)
-		);
+		$params = [
+			'client' => $clientname,
+			'jobid' => $jobid,
+			'pathid' => $pathid,
+			'filenameid' => $filenameid
+		];
+		if ($this->EnableCopyJobRestore->Checked) {
+			$params['copies'] = 1;
+		}
+		$query = '?' . http_build_query($params);
 		$versions = $this->getModule('api')->get(array('bvfs', 'versions', $query))->output;
 		$file_versions = $this->getModule('misc')->parseFileVersions($filename, $versions);
 		$file_versions = array_map(array('RestoreWizard', 'addUniqid'), $file_versions);

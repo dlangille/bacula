@@ -2512,3 +2512,6 @@ msgstr "Volume recycling"
 
 msgid "Tip: checking 'All' message type causes, that rest checked message types are saved with negation ex. Catalog = All, !Debug, !Saved, !Skipped"
 msgstr "Tip: checking 'All' message type causes, that rest checked message types are saved with negation ex. Catalog = All, !Debug, !Saved, !Skipped"
+
+msgid "Enable restore from copy jobs feature:"
+msgstr "Enable restore from copy jobs feature:"

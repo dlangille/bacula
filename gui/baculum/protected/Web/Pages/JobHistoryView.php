@@ -50,6 +50,7 @@ class JobHistoryView extends BaculumWebPage {
 	private $no_graph_mode_verify_levels = array('O');
 	private $list_files_types = array('B', 'C', 'V');
 	private $list_files_mode_verify_levels = array('V');
+	private $show_restore_types = array('B', 'C');
 
 	public function onPreInit($param) {
 		parent::onPreInit($param);
@@ -294,7 +295,7 @@ class JobHistoryView extends BaculumWebPage {
 			$this->RunningIcon->Display = 'None';
 			$this->CancelBtn->Display = 'None';
 			$this->DeleteBtn->Display = 'Dynamic';
-			$this->RestoreBtn->Display = $this->getJobType() == 'B' ? 'Dynamic' : 'None';
+			$this->RestoreBtn->Display =  $this->isShowRestoreBtn() ? 'Dynamic' : 'None';
 		}
 		if ($this->getJobLogOrder() === self::SORT_DESC) {
 			$joblog = array_reverse($joblog);
@@ -302,6 +303,11 @@ class JobHistoryView extends BaculumWebPage {
 		$joblog = $this->getModule('log_parser')->parse($joblog);
 
 		$this->JobLog->Text = implode(PHP_EOL, $joblog);
+	}
+
+	private function isShowRestoreBtn() {
+		$type = $this->getJobType();
+		return in_array($type, $this->show_restore_types);
 	}
 
 	public function loadRunJobModal($sender, $param) {

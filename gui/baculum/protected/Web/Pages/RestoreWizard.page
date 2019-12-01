@@ -130,6 +130,12 @@
 					<com:TDropDownList ID="BackupClientName" CssClass="w3-select w3-border" CausesValidation="false" />
 				</div>
 			</div>
+			<div class="w3-container w3-section">
+				<div class="w3-third"><com:TLabel ForControl="EnableCopyJobRestore" Text="<%[ Enable restore from copy jobs feature: ]%>" /></div>
+				<div class="w3-third">
+					<com:TCheckBox ID="EnableCopyJobRestore" CssClass="w3-check" CausesValidation="false" Checked="true" />
+				</div>
+			</div>
 		</com:TWizardStep>
 		<com:TWizardStep ID="Step2" Title="<%[ Step 2 - select backup to restore ]%>" StepType="Auto">
 			<p>
@@ -327,7 +333,7 @@ var oJobsToRestoreList = {
 			}],
 			order: [1, 'desc'],
 			initComplete: function () {
-				this.api().columns([2, 4, 5]).every(function () {
+				this.api().columns([2, 3, 4, 5]).every(function () {
 					var column = this;
 					var select = $('<select><option value=""></option></select>')
 					.appendTo($(column.footer()).empty())

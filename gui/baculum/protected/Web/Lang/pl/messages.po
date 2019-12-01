@@ -2519,3 +2519,6 @@ msgstr "Recykling wolumenów"
 
 msgid "Tip: checking 'All' message type causes, that rest checked message types are saved with negation ex. Catalog = All, !Debug, !Saved, !Skipped"
 msgstr "Porada: zaznaczenie typu wiadomości 'All' powoduje, że reszta zaznaczonych typów wiadomości jest zapisana z negacją np. Catalog = All, !Debug, !Saved, !Skipped"
+
+msgid "Enable restore from copy jobs feature:"
+msgstr "Włącz funkcję przywracania danych z kopii zadań:"
