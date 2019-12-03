@@ -90,6 +90,15 @@ class StorageView extends BaculumWebPage {
 	public function setDevices() {
 		$devices = array();
 		if ($this->getIsAutochanger() && !empty($_SESSION['sd'])) {
+			/**
+			 * NOTE: Here is called only Main API host. For storage daemons
+			 * on other hosts it can cause a problem. So far, there
+			 * is no 100% way to unambiguously determine basing on storage daemon
+			 * configuration if autochanger comes from Main or from other API host.
+			 * The problem will be if on Main host is defined autochanger
+			 * with the same name as autochanger from requested Storage here.
+			 * @TODO: Find a way to solve it.
+			 */
 			$result = $this->Application->getModule('api')->get(
 				array(
 					'config',
@@ -98,7 +107,7 @@ class StorageView extends BaculumWebPage {
 					$this->getDeviceName()
 				)
 			);
-			if ($result->error === 0) {
+			if ($result->error === 0 && is_object($result->output)) {
 				$devices = $result->output->Device;
 			}
 		} else {
