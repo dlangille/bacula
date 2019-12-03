@@ -320,6 +320,9 @@ msgstr "Przerwij"
 msgid "select pool"
 msgstr "wybierz pulę"
 
+msgid "Backup to restore:"
+msgstr "Kopia zapasowa do przywrócenia:"
+
 msgid "Step 1 - select source backup client"
 msgstr "Krok 1 - wybierz źródłowego klienta backupu"
 
@@ -335,14 +338,11 @@ msgstr "Nie ma żadnych backupów do przywrócenia. Proszę przejść do poprzed
 msgid "Backup selection method:"
 msgstr "Metoda wyboru backupu:"
 
-msgid "Only selected backup"
-msgstr "Tylko wybrany backup"
+msgid "Selected backup"
+msgstr "Wybrany backup"
 
 msgid "Group most recent backups"
 msgstr "Grupa najaktualniejszych backupów"
-
-msgid "Backup for restore:"
-msgstr "Backup do przywrócenia:"
 
 msgid "FileSet resource:"
 msgstr "Zasób FileSet:"
@@ -440,8 +440,8 @@ msgstr "Przywróć do lokalizacji:"
 msgid "Restore job options"
 msgstr "Opcje zadania przywracania"
 
-msgid "FileSet for restore:"
-msgstr "FIleSet dla przywracania"
+msgid "FileSet to restore:"
+msgstr "FileSet do przywrócenia"
 
 msgid "Director:"
 msgstr "Zarządca:"
@@ -1419,8 +1419,8 @@ msgstr "Ten konfigurator umożliwia wykonanie w łatwy sposób przywracania plik
 msgid "To start, please select backup Client which data you want to restore."
 msgstr "Aby zacząć, proszę wybrać Klienta kopii zapasowych, którego dane chcesz przywrócić."
 
-msgid "There are two ways to select backup to restore. Only selected backup way provides list of jobs from which there is possible to select one job. If you need the latest backups from the Client alternatively you can use Group most recent backups way which will select backups for you basing on backup job name and fileset resource."
-msgstr "Są dwa sposoby na wybranie kopii zapasowych do przywrócenia. Sposób 'Tylko wybrany backup' dostarcza listę zadań, z których możliwe jest wybranie jednej kopii zapasowej. Jeśli potrzebujesz przywrócić dane z najnowszych backupów alternatywnie możesz użyć opcję 'Grupa najaktualniejszych backupów', która będzie wybierać backupy za ciebie bazując na zadaniu kopii zapasowych i zasobie fileset."
+msgid "There are two ways to select backup to restore. The selected backup way provides list of jobs from which there is possible to select a job. If you need the latest backups from the Client alternatively you can use Group most recent backups way which will select backups for you basing on backup job name and fileset resource."
+msgstr "Są dwa sposoby na wybranie kopii zapasowych do przywrócenia. Sposób 'Wybrany backup' dostarcza listę zadań, z których możliwe jest wybranie kopii zapasowej. Jeśli potrzebujesz przywrócić dane z najnowszych backupów alternatywnie możesz użyć opcję 'Grupa najaktualniejszych backupów', która będzie wybierać backupy za ciebie bazując na zadaniu kopii zapasowych i zasobie fileset."
 
 msgid "Do not relocate files"
 msgstr "Nie relokuj plików"
@@ -2522,3 +2522,6 @@ msgstr "Porada: zaznaczenie typu wiadomości 'All' powoduje, że reszta zaznaczo
 
 msgid "Enable restore from copy jobs feature:"
 msgstr "Włącz funkcję przywracania danych z kopii zadań:"
+
+msgid "Note: if you select incremental or differential backup, on the next step will be also loaded all directories and files from older backups required to do the job restore. In other words, the selected backup determines time point from which will be loaded the selected backup and other older backups (incremental, differential) backups up till closest full backup."
+msgstr "Uwaga: jeśli wybierzesz kopię przyrostową lub różnicową, w następnym kroku będą również załadowane wszystkie pliki i katalogi ze starszych kopii wymaganych do przywrócenia zadania. Innymi słowy, wybrana kopia zapasowa określa punkt czasowy z którego będzie załadowana wybrana kopia i inne starsze kopie (przyrostowe, różnicowe) aż do najbliższej kopii pełnej."

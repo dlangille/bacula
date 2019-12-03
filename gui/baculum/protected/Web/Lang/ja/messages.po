@@ -191,9 +191,6 @@ msgstr "バックアップ"
 msgid "Backup data from client:"
 msgstr "リストア対象クライアント:"
 
-msgid "Backup for restore:"
-msgstr "リストア一覧:"
-
 msgid "Backup from client:"
 msgstr "リストア対象クライアント:"
 
@@ -534,8 +531,11 @@ msgstr "File retention value must be positive integer or zero."
 msgid "FileSet details"
 msgstr "FileSet details"
 
-msgid "FileSet for restore:"
-msgstr "FileSet for restore:"
+msgid "Backup to restore:"
+msgstr "Backup to restore:"
+
+msgid "FileSet to restore:"
+msgstr "FileSet to restore:"
 
 msgid "FileSet list"
 msgstr "FileSet list"
@@ -1036,8 +1036,8 @@ msgstr "OAuth2 scopes (space separated):"
 msgid "OK"
 msgstr "OK"
 
-msgid "Only selected backup"
-msgstr "手動でリストア対象を選択"
+msgid "Selected backup"
+msgstr "Selected backup"
 
 msgid "Operation is in progress"
 msgstr "Operation is in progress"
@@ -1513,17 +1513,17 @@ msgid "The most often used:"
 msgstr "The most often used:"
 
 msgid ""
-"There are two ways to select backup to restore. Only selected backup way "
-"provides list of jobs from which there is possible to select one job. If you "
+"There are two ways to select backup to restore. The selected backup way "
+"provides list of jobs from which there is possible to select a job. If you "
 "need the latest backups from the Client alternatively you can use Group most "
 "recent backups way which will select backups for you basing on backup job "
 "name and fileset resource."
 msgstr ""
-"リストア方法は2種類あります。"
-"手動でリアストア対象を選択するか、自動的に最近ファイルからリストアするか選択できます"
-""
-""
-""
+"There are two ways to select backup to restore. The selected backup way "
+"provides list of jobs from which there is possible to select a job. If you "
+"need the latest backups from the Client alternatively you can use Group most "
+"recent backups way which will select backups for you basing on backup job "
+"name and fileset resource."
 
 msgid ""
 "There is no backup for restore. Please go to previous step and select "
@@ -2601,3 +2601,6 @@ msgstr "Tip: checking 'All' message type causes, that rest checked message types
 
 msgid "Enable restore from copy jobs feature:"
 msgstr "Enable restore from copy jobs feature:"
+
+msgid "Note: if you select incremental or differential backup, on the next step will be also loaded all directories and files from older backups required to do the job restore. In other words, the selected backup determines time point from which will be loaded the selected backup and other older backups (incremental, differential) backups up till closest full backup."
+msgstr "Note: if you select incremental or differential backup, on the next step will be also loaded all directories and files from older backups required to do the job restore. In other words, the selected backup determines time point from which will be loaded the selected backup and other older backups (incremental, differential) backups up till closest full backup."

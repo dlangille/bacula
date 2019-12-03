@@ -425,8 +425,8 @@ msgstr "Backup from client:"
 msgid "Restore to client:"
 msgstr "Restore to client:"
 
-msgid "Backup for restore:"
-msgstr "Backup for restore:"
+msgid "Backup to restore:"
+msgstr "Backup to restore:"
 
 msgid "Step 1 - select source backup client"
 msgstr "Step 1 - select source backup client"
@@ -443,8 +443,8 @@ msgstr "Step 2 - select backup to restore"
 msgid "Backup selection method:"
 msgstr "Backup selection method:"
 
-msgid "Only selected backup"
-msgstr "Only selected backup"
+msgid "Selected backup"
+msgstr "Selected backup"
 
 msgid "FileSet resource:"
 msgstr "FileSet resource:"
@@ -512,8 +512,8 @@ msgstr "Source parameters"
 msgid "Backup data from client:"
 msgstr "Backup data from client:"
 
-msgid "FileSet for restore:"
-msgstr "FileSet for restore:"
+msgid "FileSet to restore:"
+msgstr "FileSet to restore:"
 
 msgid "Files for restore"
 msgstr "Files for restore"
@@ -1409,8 +1409,8 @@ msgstr "This wizard enables you to do in easy way restore files to destination B
 msgid "To start, please select backup Client which data you want to restore."
 msgstr "To start, please select backup Client which data you want to restore."
 
-msgid "There are two ways to select backup to restore. Only selected backup way provides list of jobs from which there is possible to select one job. If you need the latest backups from the Client alternatively you can use Group most recent backups way which will select backups for you basing on backup job name and fileset resource."
-msgstr "There are two ways to select backup to restore. Only selected backup way provides list of jobs from which there is possible to select one job. If you need the latest backups from the Client alternatively you can use Group most recent backups way which will select backups for you basing on backup job name and fileset resource."
+msgid "There are two ways to select backup to restore. The selected backup way provides list of jobs from which there is possible to select a job. If you need the latest backups from the Client alternatively you can use Group most recent backups way which will select backups for you basing on backup job name and fileset resource."
+msgstr "There are two ways to select backup to restore. The selected backup way provides list of jobs from which there is possible to select a job. If you need the latest backups from the Client alternatively you can use Group most recent backups way which will select backups for you basing on backup job name and fileset resource."
 
 msgid "Do not relocate files"
 msgstr "Do not relocate files"
@@ -2515,3 +2515,6 @@ msgstr "Tip: checking 'All' message type causes, that rest checked message types
 
 msgid "Enable restore from copy jobs feature:"
 msgstr "Enable restore from copy jobs feature:"
+
+msgid "Note: if you select incremental or differential backup, on the next step will be also loaded all directories and files from older backups required to do the job restore. In other words, the selected backup determines time point from which will be loaded the selected backup and other older backups (incremental, differential) backups up till closest full backup."
+msgstr "Note: if you select incremental or differential backup, on the next step will be also loaded all directories and files from older backups required to do the job restore. In other words, the selected backup determines time point from which will be loaded the selected backup and other older backups (incremental, differential) backups up till closest full backup."

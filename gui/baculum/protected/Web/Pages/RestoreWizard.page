@@ -139,7 +139,7 @@
 		</com:TWizardStep>
 		<com:TWizardStep ID="Step2" Title="<%[ Step 2 - select backup to restore ]%>" StepType="Auto">
 			<p>
-				<%[ There are two ways to select backup to restore. Only selected backup way provides list of jobs from which there is possible to select one job. If you need the latest backups from the Client alternatively you can use Group most recent backups way which will select backups for you basing on backup job name and fileset resource. ]%>
+				<%[ There are two ways to select backup to restore. The selected backup way provides list of jobs from which there is possible to select a job. If you need the latest backups from the Client alternatively you can use Group most recent backups way which will select backups for you basing on backup job name and fileset resource. ]%>
 			</p>
 			<div class="w3-container w3-padding-16">
 				<div class="w3-col w3-third"><com:TLabel Text="<%[ Backup selection method: ]%>" /></div>
@@ -151,7 +151,7 @@
 						Checked="true"
 						Attributes.onclick="$('#group_backup_to_restore_field').hide(); $('#backup_to_restore_field').show();"
 					/>
-					<com:TLabel ForControl="OnlySelectedBackupSelection" Text="<%[ Only selected backup ]%>" /> &nbsp;
+					<com:TLabel ForControl="OnlySelectedBackupSelection" Text="<%[ Selected backup ]%>" /> &nbsp;
 					<com:TRadioButton
 						ID="GroupBackupSelection"
 						GroupName="BackupSelection"
@@ -162,7 +162,7 @@
 			</div>
 			<com:TLabel Text="<%[ There is no backup for restore. Please go to previous step and select another client for restore or proceed backups for the client selected in previous step. ]%>" CssClass="w3-text-red" Visible="<%=(count($this->getPage()->jobs_to_restore) === 0 && $this->GroupBackupToRestore->ItemCount == 0)%>"/>
 			<div id="backup_to_restore_field" style="display: <%=!$this->OnlySelectedBackupSelection->Checked ? 'none' : 'block'%>">
-				<p><%[ Backup for restore: ]%></p>
+				<p><strong><%[ Note: if you select incremental or differential backup, on the next step will be also loaded all directories and files from older backups required to do the job restore. In other words, the selected backup determines time point from which will be loaded the selected backup and other older backups (incremental, differential) backups up till closest full backup. ]%></strong></p>
 				<table id="job_to_restore_list" style="width: 100%">
 					<thead>
 						<tr>
@@ -364,7 +364,7 @@ oJobsToRestoreList.init();
 			</div>
 			<div id="group_backup_to_restore_field" style="display: <%=!$this->GroupBackupSelection->Checked ? 'none' : 'block'%>">
 				<div class="w3-section w3-row">
-					<div class="w3-col w3-third"><com:TLabel ForControl="GroupBackupToRestore" Text="<%[ Backup for restore: ]%>" /></div>
+					<div class="w3-col w3-third"><com:TLabel ForControl="GroupBackupToRestore" Text="<%[ Backup to restore: ]%>" /></div>
 					<div class="w3-col w3-third">
 						<com:TDropDownList
 							ID="GroupBackupToRestore"
@@ -765,19 +765,17 @@ oJobsToRestoreList.init();
 				<div class="w3-section w3-row">
 					<div class="w3-col w3-third"><%[ Backup selection method: ]%></div>
 					<div class="w3-col w3-third bold">
-						<com:TLabel Text="<%[ Only selected backup ]%>" Visible="<%=$this->OnlySelectedBackupSelection->Checked%>" />
+						<com:TLabel Text="<%[ Selected backup ]%>" Visible="<%=$this->OnlySelectedBackupSelection->Checked%>" />
 						<com:TLabel Text="<%[ Group most recent backups ]%>" Visible="<%=$this->GroupBackupSelection->Checked%>" />
-					</div>
-				</div>
-				<div class="w3-section w3-row">
-					<div class="w3-col w3-third"><%[ Backup for restore: ]%></div>
-					<div class="w3-col w3-third bold">
-						<com:TLabel Text="<%=$this->GroupBackupToRestore->SelectedValue%>" Visible="<%=$this->GroupBackupSelection->Checked%>" />
 					</div>
 				</div>
 				<com:TPanel Visible="<%=$this->GroupBackupSelection->Checked%>">
 					<div class="w3-section w3-row">
-						<div class="w3-col w3-third"><%[ FileSet for restore: ]%></div>
+						<div class="w3-col w3-third"><%[ Backup to restore: ]%></div>
+						<div class="w3-col w3-third bold"><%=$this->GroupBackupToRestore->SelectedValue%></div>
+					</div>
+					<div class="w3-section w3-row">
+						<div class="w3-col w3-third"><%[ FileSet to restore: ]%></div>
 						<div class="w3-col w3-third bold"><%=$this->GroupBackupFileSet->SelectedItem->Text%></div>
 					</div>
 				</com:TPanel>
