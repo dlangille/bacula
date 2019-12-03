@@ -60,9 +60,9 @@ var oFileSetBrowser<%=$this->ClientID%> = {
 		item_inc_exc_btn: 'item_inc_exc_btn w3-medium',
 		item_selected_del_btn: 'item_selected_del_btn',
 		item_name: 'item_name w3-medium',
-		dir_img: 'dir_item_img',
-		file_img: 'file_item_img',
-		link_img: 'link_item_img'
+		dir_img: 'fas fa-folder w3-text-green item_icon',
+		file_img: 'fas fa-file-alt w3-text-gray item_icon',
+		link_img: 'fas fa-link w3-text-gray item_icon'
 	},
 	init: function() {
 		this.file_content = document.getElementById(this.ids.file_container);
@@ -153,7 +153,7 @@ var oFileSetBrowser<%=$this->ClientID%> = {
 		el.className = this.css.item;
 		el.setAttribute('rel', item.item);
 		var title = item_name;
-		var img = document.createElement('DIV');
+		var img = document.createElement('I');
 		if (item.type === 'd') {
 			img.className = this.css.dir_img;
 			el.addEventListener('click', function(e) {
@@ -208,7 +208,7 @@ var oFileSetBrowser<%=$this->ClientID%> = {
 		var el = document.createElement('DIV');
 		el.className = this.css.item;
 		el.setAttribute('rel', item_name);
-		var img = document.createElement('DIV');
+		var img = document.createElement('I');
 		img.className = this.css.dir_img;
 		var name = document.createElement('DIV');
 		name.className  = this.css.item_name;

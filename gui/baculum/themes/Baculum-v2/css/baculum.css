@@ -167,6 +167,10 @@ div.config_directives {
 	text-decoration: underline;
 }
 
+.item i {
+	float: left;
+}
+
 .item, .item_included, .item_excluded {
 	padding: 4px 0 4px 4px;
 	background-color: transparent;
@@ -200,23 +204,9 @@ div.config_directives {
 	padding-left: 5px;
 }
 
-.dir_item_img, .file_item_img, .link_item_img {
-	width: 30px;
-	height: 24px;
-	background-repeat: no-repeat;
-	float: left;
-}
-
-.dir_item_img {
-	background-image: url('/themes/Baculum-v2/directory-icon.png');
-}
-
-.file_item_img {
-	background-image: url('/themes/Baculum-v2/file-icon.png');
-}
-
-.link_item_img {
-	background-image: url('/themes/Baculum-v2/link-icon.png');
+.item_icon {
+	font-size: 24px;
+	vertical-align: bottom;
 }
 
 ul.new_element_menu {

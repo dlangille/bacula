@@ -432,7 +432,7 @@ oJobsToRestoreList.init();
 								<com:TActiveTemplateColumn>
 									<prop:ItemTemplate>
 										<com:TPanel ID="FileElementLeft" CssClass="draggable">
-											<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/<%=($this->getParent()->Data['type'] == 'dir' ? 'directory-icon' : 'file-icon')%>.png" alt="<%=$this->getParent()->Data['type'] == 'dir' ? 'directory' : 'file' %>" /> <%=($this->getParent()->Data['name'] != '/') ? preg_replace('/\/$/', '', $this->getParent()->Data['name']) : '/'%>
+											<i class="fas fa-<%=($this->getParent()->Data['type'] == 'dir' ? 'folder w3-text-green' : 'file-alt w3-text-gray')%> item_icon" alt="<%=$this->getParent()->Data['type'] == 'dir' ? 'directory' : 'file' %>"></i> <%=($this->getParent()->Data['name'] != '/') ? preg_replace('/\/$/', '', $this->getParent()->Data['name']) : '/'%>
 										<div class="restore-browser-element-size">
 											<com:TActiveLinkButton
 												CssClass="link"
@@ -504,7 +504,7 @@ oJobsToRestoreList.init();
 									<prop:ItemTemplate>
 										<com:TPanel ID="FileElementToRestore" CssClass="draggable" Style="height: 28px;">
 											<span class="w3-third">
-												<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/<%=($this->getParent()->Data['type'] == 'dir' ? 'directory-icon' : 'file-icon')%>.png" alt="<%=$this->getParent()->Data['type'] == 'dir' ? 'directory' : 'file'%>" />
+												<i class="fas fa-<%=($this->getParent()->Data['type'] == 'dir' ? 'folder w3-text-green' : 'file-alt w3-text-gray')%> item_icon" alt="<%=$this->getParent()->Data['type'] == 'dir' ? 'directory' : 'file'%>"></i>
 												 <%=$this->getParent()->Data['name']%>
 											</span>
 											<span class="w3-third">
@@ -579,7 +579,7 @@ oJobsToRestoreList.init();
 										<prop:ItemTemplate>
 												<com:TPanel ID="FileElement" Style="clear: both">
 													<span class="w3-third">
-														<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/<%=($this->getParent()->Data['type'] == 'dir' ? 'directory-icon' : 'file-icon')%>.png" alt="<%=$this->getParent()->Data['type'] == 'dir' ? 'directory' : 'file'%>" />
+														<i class="fas fa-<%=($this->getParent()->Data['type'] == 'dir' ? 'folder w3-text-green' : 'file-alt w3-text-gray')%> item_icon" title="<%=$this->getParent()->Data['type'] == 'dir' ? 'directory' : 'file'%>"></i>
 														<%=$this->getParent()->Data['name']%>
 													</span>
 													<span class="w3-third">
