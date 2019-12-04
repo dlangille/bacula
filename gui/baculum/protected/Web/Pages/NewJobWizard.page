@@ -191,7 +191,7 @@
 			</div>
 			<div id="fileset_save_ok" class="w3-panel w3-green w3-display-container" style="display: none">
 				<span onclick="this.parentElement.style.display='none'" class="w3-button w3-green w3-large w3-display-topright">x</span>
-				<p><%[ Resource has been saved successfully. ]%></p>
+				<p><%[ The resource has been created successfully. ]%></p>
 			</div>
 			<div id="job_wizard_new_fileset" class="w3-card-4 w3-padding w3-margin-top" style="display: none">
 				<h3><%[ New FileSet ]%></h3>
@@ -268,7 +268,7 @@
 			</div>
 			<div id="pool_save_ok" class="w3-panel w3-green w3-display-container" style="display: none">
 				<span onclick="this.parentElement.style.display='none'" class="w3-button w3-green w3-large w3-display-topright">x</span>
-				<p><%[ Resource has been saved successfully. ]%></p>
+				<p><%[ The resource has been created successfully. ]%></p>
 			</div>
 			<div id="job_wizard_new_pool" class="w3-card-4 w3-padding w3-margin-top" style="display: none">
 				<h3><%[ New Pool ]%></h3>
@@ -393,7 +393,7 @@
 			</div>
 			<div id="schedule_save_ok" class="w3-panel w3-green w3-display-container" style="display: none">
 				<span onclick="this.parentElement.style.display='none'" class="w3-button w3-green w3-large w3-display-topright">x</span>
-				<p><%[ Resource has been saved successfully. ]%></p>
+				<p><%[ The resource has been created successfully. ]%></p>
 			</div>
 			<div id="job_wizard_new_schedule" class="w3-card-4 w3-padding w3-margin-top" style="display: none">
 				<h3><%[ New Schedule ]%></h3>

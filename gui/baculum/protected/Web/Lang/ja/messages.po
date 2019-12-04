@@ -2604,3 +2604,9 @@ msgstr "Enable restore from copy jobs feature:"
 
 msgid "Note: if you select incremental or differential backup, on the next step will be also loaded all directories and files from older backups required to do the job restore. In other words, the selected backup determines time point from which will be loaded the selected backup and other older backups (incremental, differential) backups up till closest full backup."
 msgstr "Note: if you select incremental or differential backup, on the next step will be also loaded all directories and files from older backups required to do the job restore. In other words, the selected backup determines time point from which will be loaded the selected backup and other older backups (incremental, differential) backups up till closest full backup."
+
+msgid "Create new resource"
+msgstr "Create new resource"
+
+msgid "The resource has been created successfully."
+msgstr "The resource has been created successfully."

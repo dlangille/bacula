@@ -30,6 +30,7 @@ class NewResource extends BaculumWebPage {
 	const COMPONENT_TYPE = 'ComponentType';
 	const COMPONENT_NAME = 'ComponentName';
 	const RESOURCE_TYPE = 'ResourceType';
+	const ORIGIN_URL = 'OriginUrl';
 
 	public function onPreRender($param) {
 		parent::onPreRender($param);
@@ -62,6 +63,9 @@ class NewResource extends BaculumWebPage {
 			$this->NewResource->setLoadValues(false);
 			$this->NewResource->raiseEvent('OnDirectiveListLoad', $this, null);
 			$this->setHosts();
+		}
+		if (key_exists('HTTP_REFERER', $_SERVER)) {
+			$this->setOriginUrl($_SERVER['HTTP_REFERER']);
 		}
 	}
 
@@ -181,6 +185,14 @@ class NewResource extends BaculumWebPage {
 
 	public function setResourceType($type) {
 		$this->setViewState(self::RESOURCE_TYPE, $type);
+	}
+
+	public function getOriginUrl() {
+		return $this->getViewState(self::ORIGIN_URL);
+	}
+
+	public function setOriginUrl($url) {
+		$this->setViewState(self::ORIGIN_URL, $url);
 	}
 
 	public function createResource() {

@@ -2525,3 +2525,9 @@ msgstr "Włącz funkcję przywracania danych z kopii zadań:"
 
 msgid "Note: if you select incremental or differential backup, on the next step will be also loaded all directories and files from older backups required to do the job restore. In other words, the selected backup determines time point from which will be loaded the selected backup and other older backups (incremental, differential) backups up till closest full backup."
 msgstr "Uwaga: jeśli wybierzesz kopię przyrostową lub różnicową, w następnym kroku będą również załadowane wszystkie pliki i katalogi ze starszych kopii wymaganych do przywrócenia zadania. Innymi słowy, wybrana kopia zapasowa określa punkt czasowy z którego będzie załadowana wybrana kopia i inne starsze kopie (przyrostowe, różnicowe) aż do najbliższej kopii pełnej."
+
+msgid "Create new resource"
+msgstr "Tworzenie nowego zasobu"
+
+msgid "The resource has been created successfully."
+msgstr "Zasób został utworzony pomyślnie."

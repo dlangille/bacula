@@ -9,9 +9,19 @@
 	<button type="button" class="w3-button w3-green w3-margin-left w3-margin-bottom" onclick="document.getElementById('new_resource').style.display = 'block'">
 		<i class="fa fa-plus"></i> &nbsp;<%=Prado::localize('Add new resource')%>
 	</button>
-	<div id="resource_save_ok" class="w3-panel w3-green w3-display-container" style="display: none">
-		<span onclick="this.parentElement.style.display='none'" class="w3-button w3-green w3-large w3-display-topright">x</span>
-		<p><%[ Resource has been saved successfully. ]%></p>
+	<div id="resource_save_ok_box" class="w3-modal" style="display: none">
+		<div class="w3-modal-content w3-card-4 w3-animate-zoom" style="width: 600px">
+			<header class="w3-container w3-green">
+				<span onclick="$('#resource_save_ok_box').hide();" class="w3-button w3-display-topright">×</span>
+				<h2><%[ Create new resource ]%></h2>
+			</header>
+			<div class="w3-panel w3-padding">
+				<p><%[ The resource has been created successfully. ]%></p>
+			</div>
+			<footer class="w3-container w3-center w3-border-top">
+				<button type="button" class="w3-button w3-section w3-green" onclick="$('#resource_save_ok_box').hide(); save_directive_post_action();"><i class="fa fa-check"></i> &nbsp;<%[ OK ]%></button>
+			</footer>
+		</div>
 	</div>
 	<div id="new_resource" class="w3-modal">
 		<div class="w3-modal-content w3-animate-top w3-card-4 w3-padding">
@@ -89,12 +99,22 @@
 	<div id="resource_config" class="w3-container">
 		<com:Application.Web.Portlets.BaculaConfigDirectives
 			ID="NewResource"
-			SaveDirectiveActionOk="$('#resource_config').slideUp(); $('#resource_save_ok').show();"
+			SaveDirectiveActionOk="save_directive_action_ok();"
 			ShowRemoveButton="false"
 			ShowCancelButton="false"
 		/>
 	</div>
 	<script>
+		function save_directive_action_ok() {
+			$('#resource_config').slideUp();
+			$('#resource_save_ok_box').show();
+		}
+		function save_directive_post_action() {
+			var origin_url = '<%=$this->getOriginUrl()%>';
+			if (origin_url) {
+				document.location.href = origin_url;
+			}
+		}
 		oBaculaConfigSection.show_sections(true);
 	</script>
 </com:TContent>

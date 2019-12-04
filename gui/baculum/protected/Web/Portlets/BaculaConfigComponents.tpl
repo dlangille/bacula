@@ -29,9 +29,29 @@
 		</prop:ItemTemplate>
 	</com:TActiveRepeater>
 </div>
-	<com:TActiveLabel ID="ErrorMsg" Display="None" />
+<com:TActiveLabel ID="ErrorMsg" Display="None" />
 <div class="config_directives new_resource" rel="<%=$this->getHost()%>new_resource" style="display: none">
+	<!-- New resource -->
 	<h2 rel="<%[ Add new %resource_type resource on %component_name (%component_type) ]%>"></h2>
 	<hr />
-	<com:Application.Web.Portlets.BaculaConfigDirectives ID="NewResource" LoadValues="<%=false%>" />
+	<com:Application.Web.Portlets.BaculaConfigDirectives
+		ID="NewResource"
+		LoadValues="<%=false%>"
+		SaveDirectiveActionOk="$('#<%=$this->ResourceCreatedOk->ClientID%>').show();"
+	/>
 </div>
+<!-- Resource created successfully - confirm -->
+<com:TPanel ID="ResourceCreatedOk" CssClass="w3-modal" Style="display: none">
+	<div class="w3-modal-content w3-card-4 w3-animate-zoom" style="width: 600px">
+		<header class="w3-container w3-green">
+			<span onclick="$('#<%=$this->ResourceCreatedOk->ClientID%>').hide();" class="w3-button w3-display-topright">×</span>
+			<h2><%[ Create new resource ]%></h2>
+		</header>
+		<div class="w3-panel w3-padding">
+			<p><%[ The resource has been created successfully. ]%></p>
+		</div>
+		<footer class="w3-container w3-center w3-border-top">
+			<button type="button" class="w3-button w3-section w3-green" onclick="$('#<%=$this->ResourceCreatedOk->ClientID%>').hide(); $('#<%=$this->NewResource->Cancel->ClientID%>').click();"><i class="fa fa-check"></i> &nbsp;<%[ OK ]%></button>
+		</footer>
+	</div>
+</com:TPanel>
