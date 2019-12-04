@@ -56,8 +56,8 @@ class StatisticsView extends BaculumWebPage {
 		$this->setStatisticsName($this->Request['statistics']);
 	}
 
-	public function onLoad($param) {
-		parent::onLoad($param);
+	public function onPreRender($param) {
+		parent::onPreRender($param);
 		if ($this->IsCallBack || $this->IsPostBack) {
 			return;
 		}

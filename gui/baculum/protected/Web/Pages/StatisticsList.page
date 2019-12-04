@@ -75,7 +75,7 @@ var oStatisticsList = {
 			},
 			{
 				className: "dt-center",
-				targets: [ 2, 3 ]
+				targets: [ 2, 3, 4 ]
 			}],
 			order: [2, 'asc']
 		});
