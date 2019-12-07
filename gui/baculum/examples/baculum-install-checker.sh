@@ -184,7 +184,7 @@ check_apache_cfgs ()
 	fi
 
 	local own_req="root:root"
-	local perm_req="640"
+	local perm_req="644"
 	local file="${HTTPDCONFDIR}/${NAME}-api.conf"
 	local file_desc="Baculum API Apache config file"
 	if [ ! -e "$file" ]
@@ -246,8 +246,8 @@ check_apache_cfgs ()
 
 check_lighttpd_cfgs ()
 {
-	local own_req="`get_lighttpd_user_group`"
-	local perm_req="640"
+	local own_req="root:root"
+	local perm_req="644"
 	local file="${CONFDIR}/${NAME}-api-lighttpd.conf"
 	local file_desc="Baculum API Lighttpd config file"
 	if [ ! -e "$file" ]

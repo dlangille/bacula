@@ -89,7 +89,7 @@ prepare_build:
 	$(DESTDIR)$(LOCALEDIR) \
 	$(DESTDIR)$(WWWDIR)/$(cachedir) \
 	$(DESTDIR)$(WWWDIR)/$(configcachedir)
-	mkdir -m 700 -p $(DESTDIR)$(CONFDIR)/$(configdir)-api-apache \
+	mkdir -m 750 -p $(DESTDIR)$(CONFDIR)/$(configdir)-api-apache \
 	$(DESTDIR)$(CONFDIR)/$(configdir)-api-lighttpd \
 	$(DESTDIR)$(CONFDIR)/$(configdir)-web-apache \
 	$(DESTDIR)$(CONFDIR)/$(configdir)-web-lighttpd
@@ -128,12 +128,12 @@ prepare_locale: prepare_build
 	done
 
 prepare_samples:
-	install -m 640 $(samplesdir)/$(NAME)-api-lighttpd.conf $(DESTDIR)$(CONFDIR)
-	install -m 640 $(samplesdir)/$(NAME)-web-lighttpd.conf $(DESTDIR)$(CONFDIR)
+	install -m 644 $(samplesdir)/$(NAME)-api-lighttpd.conf $(DESTDIR)$(CONFDIR)
+	install -m 644 $(samplesdir)/$(NAME)-web-lighttpd.conf $(DESTDIR)$(CONFDIR)
 	install -m 644 $(samplesdir)/$(NAME)-api-lighttpd.service $(DESTDIR)$(UNITDIR)
 	install -m 644 $(samplesdir)/$(NAME)-web-lighttpd.service $(DESTDIR)$(UNITDIR)
-	install -m 640 $(samplesdir)/$(NAME)-api-apache.conf $(DESTDIR)$(HTTPDCONFDIR)/$(NAME)-api.conf
-	install -m 640 $(samplesdir)/$(NAME)-web-apache.conf $(DESTDIR)$(HTTPDCONFDIR)/$(NAME)-web.conf
+	install -m 644 $(samplesdir)/$(NAME)-api-apache.conf $(DESTDIR)$(HTTPDCONFDIR)/$(NAME)-api.conf
+	install -m 644 $(samplesdir)/$(NAME)-web-apache.conf $(DESTDIR)$(HTTPDCONFDIR)/$(NAME)-web.conf
 	install -m 600 $(samplesdir)/$(NAME).users $(DESTDIR)$(CONFDIR)/$(configdir)-api-lighttpd
 	install -m 600 $(samplesdir)/$(NAME).users $(DESTDIR)$(CONFDIR)/$(configdir)-api-apache
 	install -m 600 $(samplesdir)/$(NAME).users $(DESTDIR)$(CONFDIR)/$(configdir)-web-lighttpd

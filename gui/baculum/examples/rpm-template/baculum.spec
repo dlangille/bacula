@@ -430,7 +430,7 @@ done
 # Apache logs are stored in /var/log/httpd/
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/%{metaname}-api.conf
 %attr(755,apache,apache) %{_localstatedir}/cache/%{metaname}/
-%attr(700,apache,apache) %{_sysconfdir}/%{metaname}/Config-api-apache/
+%attr(750,apache,apache) %{_sysconfdir}/%{metaname}/Config-api-apache/
 %config(noreplace) %attr(600,apache,apache) %{_sysconfdir}/%{metaname}/Config-api-apache/%{metaname}.users
 %attr(755,apache,apache) %{_datadir}/%{metaname}/htdocs/protected/API/Logs
 
@@ -442,7 +442,7 @@ done
 # Apache logs are stored in /var/log/httpd/
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/%{metaname}-web.conf
 %attr(755,apache,apache) %{_localstatedir}/cache/%{metaname}/
-%attr(700,apache,apache) %{_sysconfdir}/%{metaname}/Config-web-apache/
+%attr(750,apache,apache) %{_sysconfdir}/%{metaname}/Config-web-apache/
 %config(noreplace) %attr(600,apache,apache) %{_sysconfdir}/%{metaname}/Config-web-apache/%{metaname}.users
 %attr(755,apache,apache) %{_datadir}/%{metaname}/htdocs/protected/Web/Logs
 
@@ -450,7 +450,7 @@ done
 %defattr(644,root,root)
 # Lighttpd logs are stored in /var/log/lighttpd
 %attr(755,lighttpd,lighttpd) %{_localstatedir}/cache/%{metaname}/
-%attr(700,lighttpd,lighttpd) %{_sysconfdir}/%{metaname}/Config-api-lighttpd/
+%attr(750,lighttpd,lighttpd) %{_sysconfdir}/%{metaname}/Config-api-lighttpd/
 %config(noreplace) %attr(600,lighttpd,lighttpd) %{_sysconfdir}/%{metaname}/Config-api-lighttpd/%{metaname}.users
 %attr(755,lighttpd,lighttpd) %{_datadir}/%{metaname}/htdocs/protected/API/Logs
 %{_unitdir}/%{metaname}-api-lighttpd.service
@@ -460,7 +460,7 @@ done
 %defattr(644,root,root)
 # Lighttpd logs are stored in /var/log/lighttpd
 %attr(755,lighttpd,lighttpd) %{_localstatedir}/cache/%{metaname}/
-%attr(700,lighttpd,lighttpd) %{_sysconfdir}/%{metaname}/Config-web-lighttpd/
+%attr(750,lighttpd,lighttpd) %{_sysconfdir}/%{metaname}/Config-web-lighttpd/
 %config(noreplace) %attr(600,lighttpd,lighttpd) %{_sysconfdir}/%{metaname}/Config-web-lighttpd/%{metaname}.users
 %attr(755,lighttpd,lighttpd) %{_datadir}/%{metaname}/htdocs/protected/Web/Logs
 %{_unitdir}/%{metaname}-web-lighttpd.service
