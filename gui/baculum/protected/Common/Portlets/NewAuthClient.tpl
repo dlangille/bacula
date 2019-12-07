@@ -30,6 +30,7 @@
 				<com:TActiveTextBox
 					ID="APIBasicPassword"
 					TextMode="Password"
+					MaxLength="60"
 					CssClass="textbox"
 					CausesValidation="false"
 					PersistPassword="true"
@@ -42,6 +43,15 @@
 					ValidationGroup="<%=$this->ClientID%>Basic"
 					Text="<%[ Please enter API password. ]%>"
 				/>
+				<com:TRegularExpressionValidator
+					CssClass="validator-block"
+					Display="Dynamic"
+					ControlCssClass="invalidate"
+					ControlToValidate="APIBasicPassword"
+					RegularExpression="[\S\s]{5,60}"
+					ValidationGroup="<%=$this->ClientID%>Basic"
+					Text="<%[ Password must be longer than 4 chars. ]%>"
+				/>
 			</div>
 		</div>
 		<div class="line">
@@ -51,7 +61,7 @@
 					ID="RetypeAPIBasicPassword"
 					CssClass="textbox"
 					TextMode="Password"
-					MaxLength="30"
+					MaxLength="60"
 					PersistPassword="true"
 				/>
 				<com:TRequiredFieldValidator
@@ -67,7 +77,7 @@
 					Display="Dynamic"
 					ControlCssClass="invalidate"
 					ControlToValidate="RetypeAPIBasicPassword"
-					RegularExpression="[\S\s]{5,30}"
+					RegularExpression="[\S\s]{5,60}"
 					ValidationGroup="<%=$this->ClientID%>Basic"
 					Text="<%[ Password must be longer than 4 chars. ]%>"
 				/>
