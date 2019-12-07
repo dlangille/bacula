@@ -145,7 +145,7 @@ By using this module it is possible to run Baculum WebGUI in Lighttpd environmen
 
 %package api-selinux
 Summary:                SELinux module for Baculum API
-Requires:               %name-api-selinux = %version-%release
+Requires:               %name-api = %version-%release
 Group:                  Applications/Internet
 Requires(post):         policycoreutils-python-utils
 Requires(preun):        policycoreutils-python-utils
@@ -157,7 +157,7 @@ can be run in enforcing mode.
 
 %package web-selinux
 Summary:                SELinux module for Baculum Web
-Requires:               %name-web-selinux = %version-%release
+Requires:               %name-web = %version-%release
 Group:                  Applications/Internet
 Requires(post):         policycoreutils-python-utils
 Requires(preun):        policycoreutils-python-utils
@@ -179,6 +179,7 @@ make -C examples/selinux/ -f %{_datadir}/selinux/devel/Makefile %{name}-web.pp
 # Remove these cache directories, because here will be symbolic links
 rmdir %{destdir}/%{_datadir}/%{metaname}/htdocs/assets
 rmdir %{destdir}/%{_datadir}/%{metaname}/htdocs/protected/runtime
+rm %{destdir}/%{metaname}-install-checker.sh
 for lang in  %{langs_api}; do
 	rm %{destdir}/%{_datadir}/%{metaname}/htdocs/protected/API/Lang/${lang}/messages.mo
 done
