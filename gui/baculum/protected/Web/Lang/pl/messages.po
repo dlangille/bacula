@@ -315,7 +315,7 @@ msgid "Delete job"
 msgstr "Usuń"
 
 msgid "Cancel job"
-msgstr "Przerwij"
+msgstr "Anuluj zadanie"
 
 msgid "select pool"
 msgstr "wybierz pulę"
@@ -600,7 +600,7 @@ msgid "Label format value must not be empty."
 msgstr "Format etykiety nie może być pusty."
 
 msgid "Level:"
-msgstr "Typ kopii:"
+msgstr "Poziom:"
 
 msgid "Client:"
 msgstr "Klient:"
@@ -609,7 +609,7 @@ msgid "FileSet:"
 msgstr "FileSet:"
 
 msgid "Storage:"
-msgstr "Magazyn składowania danych:"
+msgstr "Magazyn danych:"
 
 msgid "Priority:"
 msgstr "Priorytet:"
@@ -618,7 +618,7 @@ msgid "Priority value must be integer greather than 0."
 msgstr "Priorytet musi być liczbą większą niż 0."
 
 msgid "Accurate:"
-msgstr "Dokładna kopia (Accurate):"
+msgstr "Dokładna kopia:"
 
 msgid "Estimate job"
 msgstr "Estymacja zadania"
@@ -783,13 +783,13 @@ msgid "Job name"
 msgstr "Nazwa zadania"
 
 msgid "Type"
-msgstr "Typ zadania"
+msgstr "Typ"
 
 msgid "Level"
-msgstr "Typ kopii"
+msgstr "Poziom"
 
 msgid "End time"
-msgstr "Czas zakończenia"
+msgstr "Czas zak."
 
 msgid "Director"
 msgstr "Zarządca"
@@ -1015,7 +1015,7 @@ msgid "Restore Wizard"
 msgstr "Kreator przywracania danych"
 
 msgid "Perform restore"
-msgstr "Wykonaj przywracanie danych"
+msgstr "Przywracanie danych"
 
 msgid "Configuration Wizard"
 msgstr "Kreator Konfiguracji"
@@ -1285,10 +1285,10 @@ msgid "Remove directive"
 msgstr "Usuń dyrektywę"
 
 msgid "Add API host"
-msgstr "Dodaj host API"
+msgstr "Dodaj hosta API"
 
 msgid "Add host"
-msgstr "Dodaj host"
+msgstr "Dodaj hosta"
 
 msgid "Given host already exists in config file."
 msgstr "Podany host już istnieje w pliku konfiguracyjnym."
@@ -1411,7 +1411,7 @@ msgid "Path:"
 msgstr "Lokalizacja:"
 
 msgid "Restore wizard"
-msgstr "Konfigurator przywracania danych"
+msgstr "Przywracanie danych"
 
 msgid "This wizard enables you to do in easy way restore files to destination Bacula Client."
 msgstr "Ten konfigurator umożliwia wykonanie w łatwy sposób przywracania plików do docelowego Klienta Bacula."
@@ -1465,7 +1465,7 @@ msgid "Total bytes"
 msgstr "Ilość bajtów"
 
 msgid "Start time"
-msgstr "Czas rozpoczęcia"
+msgstr "Czas rozp."
 
 msgid "Name"
 msgstr "Nazwa"
@@ -1564,7 +1564,7 @@ msgid "Add job"
 msgstr "Dodaj zadanie"
 
 msgid "Job to run:"
-msgstr "Zadanie do uruchomienia:"
+msgstr "Zadanie:"
 
 msgid "Add storage"
 msgstr "Dodaj magazyn danych"
@@ -1612,16 +1612,16 @@ msgid "Max. vols"
 msgstr "Maks. wolumenów"
 
 msgid "Vol. retention"
-msgstr "Retencja vol."
+msgstr "Retencja wol."
 
 msgid "Max. vol. jobs"
-msgstr "Maks. zadań na vol."
+msgstr "Maks. zadań na wol."
 
 msgid "Max. vol. bytes"
-msgstr "Maks. bajtów na vol."
+msgstr "Maks. bajtów na wol."
 
 msgid "Max. vol. files"
-msgstr "Maks. plików. na vol."
+msgstr "Maks. plików. na wol."
 
 msgid "Recycle"
 msgstr "Recykling"
@@ -1747,7 +1747,7 @@ msgid "Add fileset"
 msgstr "Dodaj fileset"
 
 msgid "FileSet details"
-msgstr "FileSet details"
+msgstr "Szczegóły FileSet"
 
 msgid "Schedule list"
 msgstr "Lista harmonogramów zadań"
@@ -1756,7 +1756,7 @@ msgid "Add schedule"
 msgstr "Dodaj harmonogram zadań"
 
 msgid "Schedules"
-msgstr "Harmonogramy"
+msgstr "Harmonogramy zadań"
 
 msgid "Schedule:"
 msgstr "Harmonogram:"
@@ -2242,10 +2242,10 @@ msgid "Processing file:"
 msgstr "Przetwarzany plik:"
 
 msgid "Read bytes:"
-msgstr "Przeczytanych bajtów:"
+msgstr "Odczytanych bajtów:"
 
 msgid "Examined files:"
-msgstr "Przeczytanych plików:"
+msgstr "Odczytanych plików:"
 
 msgid "Running jobs"
 msgstr "Uruchomione zadania"
