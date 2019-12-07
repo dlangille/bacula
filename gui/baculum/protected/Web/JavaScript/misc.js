@@ -782,14 +782,16 @@ var W3SideBar = {
 		this.set_events();
 	},
 	set_events: function() {
-		this.sidebar.addEventListener('touchstart', handle_touch_start);
-		this.sidebar.addEventListener('touchmove', function(e) {
-			handle_touch_move(e, {
-				'swipe_left': function() {
-					this.close();
-				}.bind(this)
-			});
-		}.bind(this));
+		if (this.sidebar) {
+			this.sidebar.addEventListener('touchstart', handle_touch_start);
+			this.sidebar.addEventListener('touchmove', function(e) {
+				handle_touch_move(e, {
+					'swipe_left': function() {
+						this.close();
+					}.bind(this)
+				});
+			}.bind(this));
+		}
 	},
 	open: function() {
 		if (this.sidebar.style.display === 'block' || this.sidebar.style.display === '') {
