@@ -34,11 +34,13 @@ class FileSetBrowser extends Portlets {
 	 * @return none
 	 */
 	public function loadClients($sender, $param) {
-		$client_list = array('none' => Prado::localize('Please select Client'));
+		$client_list = array();
 		$clients = $this->getModule('api')->get(array('clients'))->output;
 		for ($i = 0; $i < count($clients); $i++) {
 			$client_list[$clients[$i]->clientid] = $clients[$i]->name;
 		}
+		arsort($client_list);
+		$client_list['none'] = Prado::localize('Please select Client');
 		uksort($client_list, 'sort_client_list');
 		$this->Client->DataSource = $client_list;
 		$this->Client->dataBind();
@@ -104,7 +106,7 @@ function sort_client_list($a, $b) {
 	if ($a === 'none') {
 		return -1;
 	} else {
-		return strcmp($a, $b);
+		return 1;
 	}
 }
 ?>
