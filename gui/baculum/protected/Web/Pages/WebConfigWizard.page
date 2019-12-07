@@ -152,17 +152,17 @@
 			<div class="w3-container w3-margin-bottom">
 				<div class="w3-third"><com:TLabel ForControl="WebPassword" Text="<%[ Administration password: ]%>" /></div>
 				<div class="w3-third">
-					<com:TTextBox ID="WebPassword" CssClass="w3-input w3-border" TextMode="Password" MaxLength="30" PersistPassword="true" />
+					<com:TTextBox ID="WebPassword" CssClass="w3-input w3-border" TextMode="Password" MaxLength="60" PersistPassword="true" />
 					<com:TRequiredFieldValidator CssClass="validator-block" Display="Dynamic" ControlCssClass="invalidate" ControlToValidate="WebPassword" Text="<%[ Please enter password. ]%>"/>
-					<com:TRegularExpressionValidator CssClass="validator-block" Display="Dynamic" ControlCssClass="invalidate" ControlToValidate="WebPassword" RegularExpression="[\S\s]{5,30}" Text="<%[ Password must be longer than 4 chars. ]%>" />
+					<com:TRegularExpressionValidator CssClass="validator-block" Display="Dynamic" ControlCssClass="invalidate" ControlToValidate="WebPassword" RegularExpression="[\S\s]{5,60}" Text="<%[ Password must be longer than 4 chars. ]%>" />
 				</div>
 			</div>
 			<div class="w3-container w3-margin-bottom">
 				<div class="w3-third"><com:TLabel ForControl="RetypeWebPassword" Text="<%[ Retype administration password: ]%>" /></div>
 				<div class="w3-third">
-					<com:TTextBox ID="RetypeWebPassword" CssClass="w3-input w3-border" TextMode="Password" MaxLength="30" PersistPassword="true" />
+					<com:TTextBox ID="RetypeWebPassword" CssClass="w3-input w3-border" TextMode="Password" MaxLength="60" PersistPassword="true" />
 					<com:TRequiredFieldValidator ID="RetypeWebPasswordRequireValidator" CssClass="validator-block" Display="Dynamic" ControlCssClass="invalidate" ControlToValidate="RetypeWebPassword" Text="<%[ Please enter retype password. ]%>"/>
-					<com:TRegularExpressionValidator ID="RetypeWebPasswordRegexpValidator" CssClass="validator-block" Display="Dynamic" ControlCssClass="invalidate" ControlToValidate="RetypeWebPassword" RegularExpression="[\S\s]{5,30}" Text="<%[ Password must be longer than 4 chars. ]%>" />
+					<com:TRegularExpressionValidator ID="RetypeWebPasswordRegexpValidator" CssClass="validator-block" Display="Dynamic" ControlCssClass="invalidate" ControlToValidate="RetypeWebPassword" RegularExpression="[\S\s]{5,60}" Text="<%[ Password must be longer than 4 chars. ]%>" />
 					<com:TCustomValidator ID="RetypeWebPasswordCustomValidator" CssClass="validator-block" Display="Dynamic" ControlCssClass="invalidate" ControlToValidate="RetypeWebPassword" OnServerValidate="validateAdministratorPassword" Text="<%[ Passwords must be the same. ]%>" />
 				</div>
 			</div>

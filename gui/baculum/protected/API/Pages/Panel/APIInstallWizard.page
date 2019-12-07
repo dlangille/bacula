@@ -736,7 +736,7 @@
 								ID="APIPassword"
 								CssClass="textbox"
 								TextMode="Password"
-								MaxLength="30"
+								MaxLength="60"
 								PersistPassword="true"
 							/>
 							<com:TRequiredFieldValidator
@@ -752,7 +752,7 @@
 								Display="Dynamic"
 								ControlCssClass="invalidate"
 								ControlToValidate="APIPassword"
-								RegularExpression="[\S\s]{5,30}"
+								RegularExpression="[\S\s]{5,60}"
 								ValidationGroup="Basic"
 								Text="<%[ Password must be longer than 4 chars. ]%>"
 							/>
@@ -765,7 +765,7 @@
 								ID="RetypeAPIPassword"
 								CssClass="textbox"
 								TextMode="Password"
-								MaxLength="30"
+								MaxLength="60"
 								PersistPassword="true"
 							/>
 							<com:TRequiredFieldValidator
@@ -783,7 +783,7 @@
 								Display="Dynamic"
 								ControlCssClass="invalidate"
 								ControlToValidate="RetypeAPIPassword"
-								RegularExpression="[\S\s]{5,30}"
+								RegularExpression="[\S\s]{5,60}"
 								ValidationGroup="Basic"
 								Text="<%[ Password must be longer than 4 chars. ]%>"
 							/>
