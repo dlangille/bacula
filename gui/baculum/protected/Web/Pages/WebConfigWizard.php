@@ -143,12 +143,8 @@ class WebConfigWizard extends BaculumWebPage
 					false,
 					$previous_user
 				);
-
-				// Automatic login after finish wizard.
-				$this->switchToUser($cfg_web['baculum']['login'], $this->WebPassword->Text);
-				// here is exit
-				exit();
 			}
+			$this->goToDefaultPage();
 		}
 	}
 

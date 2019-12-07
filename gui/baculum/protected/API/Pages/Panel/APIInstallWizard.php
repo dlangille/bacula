@@ -283,10 +283,6 @@ class APIInstallWizard extends BaculumAPIPage {
 					true,
 					$_SERVER['PHP_AUTH_USER']
 				);
-
-				// Automatic login after finish wizard.
-				$this->switchToUser($this->APILogin->Text, $this->APIPassword->Text);
-				// here is exit
 			}
 			if (($this->first_run || $this->add_auth_params) && $this->AuthOAuth2->Checked) {
 				// save OAuth2 auth user on first run or when no OAuth2 client defined
@@ -300,8 +296,8 @@ class APIInstallWizard extends BaculumAPIPage {
 				$oauth2_cfg[$this->APIOAuth2ClientId->Text]['name'] = $this->APIOAuth2Name->Text;
 				$this->getModule('oauth2_config')->setConfig($oauth2_cfg);
 			}
+			$this->goToDefaultPage();
 		}
-		$this->goToDefaultPage();
 
 	}
 
