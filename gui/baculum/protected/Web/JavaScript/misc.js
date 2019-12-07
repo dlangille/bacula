@@ -751,8 +751,7 @@ var Users = {
 		$('#' + this.ids.create_user.add_user).hide();
 	},
 	cancelChangePwd: function(el) {
-		$(el.parentNode).hide();
-		$(el.parentNode.previousElementSibling).show();
+		$(el.parentNode.parentNode).hide();
 	}
 
 };
