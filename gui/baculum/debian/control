@@ -18,7 +18,7 @@ Description: Baculum is web based tool to configure, manage, administer and moni
 Package: baculum-api
 Section: web
 Architecture: all
-Depends: ${misc:Depends}, php-cgi, php-mysql, php-pgsql, php-sqlite3, php-json, php-xml, baculum-common, bacula-console
+Depends: ${misc:Depends}, php-cgi, php-mysql, php-pgsql, php-sqlite3, php-json, php-xml, baculum-common
 Description: API for Baculum Web GUI
  This package provides the API files for Baculum.
  This module is a part of Baculum.
@@ -26,7 +26,7 @@ Description: API for Baculum Web GUI
 Package: baculum-web
 Section: web
 Architecture: all
-Depends: ${misc:Depends}, php-cgi, php-curl, php-json, php-xml, libjs-excanvas, baculum-common
+Depends: ${misc:Depends}, php-cgi, php-curl, php-json, php-xml, php-bcmath, libjs-excanvas, baculum-common
 Description: WebGUI tool for Bacula Community program
  This package provides the Web files for Baculum.
  This module is a part of Baculum.

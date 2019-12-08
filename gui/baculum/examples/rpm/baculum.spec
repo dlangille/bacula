@@ -16,9 +16,7 @@ BuildRequires:	systemd-units
 BuildRequires:	selinux-policy
 BuildRequires:	selinux-policy-devel
 BuildRequires:	checkpolicy
-# Lower version of PHP ( < 5.3.4) does not provide php-mysqlnd db driver
-# and from this reason the lowest is 5.3.4
-Requires:	php >= 5.3.4
+Requires:	php >= 5.4.0
 Requires:	php-bcmath
 Requires:	php-common
 Requires:	php-mysqlnd
@@ -47,9 +45,7 @@ This module is a part of Baculum.
 Summary:		Baculum API files
 Requires:		%name-common = %version-%release
 Group:			Applications/Internet
-# Lower version of PHP ( < 5.3.4) does not provide php-mysqlnd db driver
-# and from this reason the lowest is 5.3.4
-Requires:		php >= 5.3.4
+Requires:		php >= 5.4.0
 Requires:		php-bcmath
 Requires:		php-common
 Requires:		php-mysqlnd
@@ -66,9 +62,7 @@ This module is a part of Baculum.
 Summary:		Baculum API files
 Requires:		%name-common = %version-%release
 Group:			Applications/Internet
-# Lower version of PHP ( < 5.3.4) does not provide php-mysqlnd db driver
-# and from this reason the lowest is 5.3.4
-Requires:		php >= 5.3.4
+Requires:		php >= 5.4.0
 Requires:		php-common
 Requires:		php-json
 Requires:		php-xml

@@ -6,6 +6,7 @@ case "$1" in
     configure)
 	chown -R www-data:www-data /etc/baculum/Config-api-apache
 	chmod 750 /etc/baculum/Config-api-apache
+	chmod 600 /etc/baculum/Config-api-apache/baculum.users
     ;;
 esac
 

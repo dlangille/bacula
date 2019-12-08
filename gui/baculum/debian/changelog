@@ -1,23 +1,6 @@
-baculum (9.0.0) xenial; urgency=high
+baculum (9.4.4~stretch) stretch; urgency=low
 
   [ Marcin Haba ]
-  * new Baculum upstream (Web and API)
-  * split deb metafiles into baculum-api-(lighttpd|apache2),
-    baculum-web-(lighttpd|apache2) and baculum-common
+  * new upstream 9.4.4
 
- -- Marcin Haba <marcin.haba@bacula.pl>  Sat, 29 Apr 2017 23:35:01 +0200
-
-baculum (7.2.0ppa1~wily1) wily; urgency=medium
-
-  [ Marcin Haba ]
-  * rebuild upstream 7.2.0 for Ubuntu 15.10
-  * fix and recreate lost baculum.users file after upgrade
-  * do not remove baculum.users file during upgrade
-  * rename setting.conf to settings.conf.apache or settings.conf.lighttpd
-    when baculum-apache2 or baculum-lighttpd is removed
-  * remove debug files while remove baculum package
-  * add bacula-console to baculum dependencies
-  * add baculum package to baculum-lighttpd dependencies
-  * correct baculum-lighttpd short description
-
- -- Marcin Haba <marcin.haba@bacula.pl>  Wed, 14 Nov 2015 19:41:01 +0200
+ -- Marcin Haba <marcin.haba@bacula.pl>  Thu, 30 May 2019 06:08:21 +0200

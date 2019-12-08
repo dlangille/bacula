@@ -4,6 +4,6 @@ build/usr/share/baculum/htdocs/protected/API/Lang             /usr/share/baculum
 build/usr/share/baculum/htdocs/protected/API/Layouts          /usr/share/baculum/htdocs/protected/API/
 build/usr/share/baculum/htdocs/protected/API/Logs             /usr/share/baculum/htdocs/protected/API/
 build/usr/share/baculum/htdocs/protected/API/Pages            /usr/share/baculum/htdocs/protected/API/
-build/usr/share/baculum/htdocs/protected/API/endpoints.xml    /usr/share/baculum/htdocs/protected/API/
 build/usr/share/locale/en/LC_MESSAGES/baculum-api.mo          /usr/share/locale/en/LC_MESSAGES/
 build/usr/share/locale/pl/LC_MESSAGES/baculum-api.mo          /usr/share/locale/pl/LC_MESSAGES/
+build/usr/share/locale/pt/LC_MESSAGES/baculum-api.mo          /usr/share/locale/pt/LC_MESSAGES/
