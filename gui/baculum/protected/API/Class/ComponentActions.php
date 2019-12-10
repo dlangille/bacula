@@ -25,6 +25,10 @@ Prado::using('Application.Common.Class.Errors');
 
 /**
  * Module responsible for executing action commands.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Module
+ * @package Baculum API
  */
 class ComponentActions extends APIModule {
 

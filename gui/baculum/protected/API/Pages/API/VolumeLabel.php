@@ -22,6 +22,13 @@
 
 Prado::using('Application.API.Class.Bconsole');
 
+/**
+ * Label volume endpoint.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category API
+ * @package Baculum API
+ */
 class VolumeLabel extends BaculumAPIServer {
 
 	public function get() {

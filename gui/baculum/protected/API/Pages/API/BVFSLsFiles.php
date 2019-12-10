@@ -20,6 +20,13 @@
  * Bacula(R) is a registered trademark of Kern Sibbald.
  */
  
+/**
+ * BVFS list files.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category API
+ * @package Baculum API
+ */
 class BVFSLsFiles extends BaculumAPIServer {
 
 	private $jobids;

@@ -20,7 +20,6 @@
  * Bacula(R) is a registered trademark of Kern Sibbald.
  */
 
-
 Prado::using('System.Web.UI.ActiveControls.TActiveLabel');
 Prado::using('System.Web.UI.ActiveControls.TActiveTextBox');
 Prado::using('System.Web.UI.ActiveControls.TActiveDropDownList');
@@ -29,6 +28,13 @@ Prado::using('System.Web.UI.ActiveControls.TCallback');
 Prado::using('System.Web.UI.WebControls.TListItem');
 Prado::using('Application.Web.Portlets.Portlets');
 
+/**
+ * Job list files control.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Control
+ * @package Baculum Web
+ */
 class JobListFiles extends Portlets {
 
 	const JOBID = 'JobId';

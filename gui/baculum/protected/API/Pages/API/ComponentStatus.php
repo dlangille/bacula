@@ -24,6 +24,10 @@ Prado::using('Application.API.Class.Bconsole');
 
 /**
  * Component status module.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category API
+ * @package Baculum API
  */
 class ComponentStatus extends BaculumAPIServer {
 

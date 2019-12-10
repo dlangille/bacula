@@ -22,6 +22,13 @@
 
 Prado::using('System.Web.UI.TTemplateControl');
 
+/**
+ * Abstraction to directive control template.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Control
+ * @package Baculum Web
+ */
 abstract class DirectiveControlTemplate extends TTemplateControl {
 
 	public function getCmdParam() {

@@ -22,6 +22,13 @@
 
 Prado::using('Application.Web.Portlets.DirectiveListTemplate');
 
+/**
+ * New FileSet file options menu.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Control
+ * @package Baculum Web
+ */
 class NewFileSetFileOptMenu extends DirectiveListTemplate {
 
 	const ITEM_INDEX = 'ItemIndex';

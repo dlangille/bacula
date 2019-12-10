@@ -24,6 +24,10 @@ Prado::using('Application.API.Class.ComponentStatusModule');
 
 /**
  * Module used to get and parse client status output.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Status
+ * @package Baculum API
  */
 class StatusClient extends ComponentStatusModule {
 

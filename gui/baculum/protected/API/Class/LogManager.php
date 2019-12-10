@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2016 Kern Sibbald
+ * Copyright (C) 2013-2019 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -23,6 +23,13 @@
 Prado::using('Application.API.Class.APIModule');
 Prado::using('Application.API.Class.LogRecord');
 
+/**
+ * Log manager module.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Module
+ * @package Baculum API
+ */
 class LogManager extends APIModule {
 
 	public function getLogByJobId($jobid) {

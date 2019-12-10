@@ -31,6 +31,13 @@ Prado::using('System.Web.UI.ActiveControls.TActiveRepeater');
 Prado::using('System.Web.UI.ActiveControls.TCallback');
 Prado::using('System.Web.UI.ActiveControls.TActiveTextBox');
 
+/**
+ * Restore wizard page.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Page
+ * @package Baculum Web
+ */
 class RestoreWizard extends BaculumWebPage
 {
 	/**

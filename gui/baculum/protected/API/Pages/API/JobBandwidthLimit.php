@@ -20,6 +20,13 @@
  * Bacula(R) is a registered trademark of Kern Sibbald.
  */
 
+/**
+ * Job bandwidth limit endpoint.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category API
+ * @package Baculum API
+ */
 class JobBandwidthLimit extends BaculumAPIServer {
 
 	public function set($id, $params) {

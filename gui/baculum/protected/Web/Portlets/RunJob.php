@@ -20,7 +20,6 @@
  * Bacula(R) is a registered trademark of Kern Sibbald.
  */
 
-
 Prado::using('System.Web.UI.ActiveControls.TActiveDropDownList');
 Prado::using('System.Web.UI.ActiveControls.TActivePanel');
 Prado::using('System.Web.UI.ActiveControls.TActiveTextBox');
@@ -31,6 +30,13 @@ Prado::using('System.Web.UI.ActiveControls.TActiveLabel');
 Prado::using('System.Web.UI.ActiveControls.TActiveButton');
 Prado::using('Application.Web.Portlets.Portlets');
 
+/**
+ * Run job control.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Control
+ * @package Baculum Web
+ */
 class RunJob extends Portlets {
 
 	const JOBID = 'JobId';

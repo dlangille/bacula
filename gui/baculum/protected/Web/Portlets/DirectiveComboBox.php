@@ -24,6 +24,13 @@ Prado::using('System.Web.UI.ActiveControls.TActiveLabel');
 Prado::using('System.Web.UI.ActiveControls.TActiveDropDownList');
 Prado::using('Application.Web.Portlets.DirectiveTemplate');
 
+/**
+ * Combobox directive control.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Control
+ * @package Baculum Web
+ */
 class DirectiveComboBox extends DirectiveTemplate {
 
 	public function onPreRender($param) {

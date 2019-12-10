@@ -23,6 +23,13 @@
 
 Prado::using('Application.API.Class.APIModule');
 
+/**
+ * Ls command module.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Module
+ * @package Baculum API
+ */
 class Ls extends APIModule {
 	const LS_OUTPUT_PATTERN = '/^(?P<perm>[a-z\-\.]+)\s+(?P<nb_hardlink>\d+)\s+(?P<owner>\w+)\s+(?P<group>\w+)\s+(?P<size>\d+)\s+(?P<mtime>[\d\-]+\s+[\d:]+)\s+(?P<item>(?U:[\S\s]+))(?P<dest>(?(?=\s+\-\>\s+)[\S\s]*))$/i';
 

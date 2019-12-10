@@ -22,6 +22,13 @@
 
 Prado::using('Application.Web.Portlets.DirectiveListTemplate');
 
+/**
+ * New FileSet exclude menu.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Control
+ * @package Baculum Web
+ */
 class NewFileSetExcMenu extends DirectiveListTemplate {
 
 	const ITEM_INDEX = 'ItemIndex';

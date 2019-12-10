@@ -22,6 +22,13 @@
 
 Prado::using('System.Web.TUrlMapping');
 
+/**
+ * Extension default URL mapper for Panel.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category URL
+ * @package Baculum API
+ */
 class PanelUrlMapping extends TUrlMappingPattern {
 
 	const SERVICE_ID = 'panel';

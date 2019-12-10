@@ -24,6 +24,13 @@ Prado::using('Application.API.Class.APIModule');
 Prado::using('Application.API.Class.JobRecord');
 Prado::using('Application.API.Class.Database');
 
+/**
+ * Job manager module.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Module
+ * @package Baculum API
+ */
 class JobManager extends APIModule {
 
 	public function getJobs($limit, $params = array()) {

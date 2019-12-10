@@ -26,6 +26,8 @@ Prado::using('Application.Common.Class.CommonModule');
  * Manage basic auth method users.
  *
  * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Module
+ * @package Baculum Common
  */
 abstract class BasicUserConfig extends CommonModule {
 	

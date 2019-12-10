@@ -35,6 +35,8 @@ Prado::using('Application.API.Class.OAuth2.TokenRecord');
  * The module contains methods that are common for all API pages.
  *
  * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category API
+ * @package Baculum API
  */
 abstract class BaculumAPIServer extends TPage {
 

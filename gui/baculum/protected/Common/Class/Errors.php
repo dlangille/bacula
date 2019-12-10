@@ -20,6 +20,13 @@
  * Bacula(R) is a registered trademark of Kern Sibbald.
  */
  
+/**
+ * Error classes.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Errors
+ * @package Baculum Common
+ */
 class GenericError {
 	const ERROR_NO_ERRORS = 0;
 	const ERROR_INVALID_COMMAND = 1;

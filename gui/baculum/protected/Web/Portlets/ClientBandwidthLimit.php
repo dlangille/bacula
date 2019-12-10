@@ -28,6 +28,10 @@ Prado::using('Application.Web.Portlets.Portlets');
 
 /**
  * Set client bandwidth limit control.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Control
+ * @package Baculum Web
  */
 class ClientBandwidthLimit extends Portlets {
 

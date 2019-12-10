@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2017 Kern Sibbald
+ * Copyright (C) 2013-2019 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -22,6 +22,13 @@
 
 Prado::using('Application.Common.Class.Errors');
 
+/**
+ * Config endpoint.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category API
+ * @package Baculum API
+ */
 class Config extends BaculumAPIServer {
 	public function get() {
 		$component_type = $this->Request->contains('component_type') ? $this->Request['component_type'] : null;

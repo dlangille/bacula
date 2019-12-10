@@ -22,6 +22,13 @@
 
 Prado::using('Application.API.Class.Bconsole');
 
+/**
+ * Update slots command endpoint.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category API
+ * @package Baculum API
+ */
 class SlotsUpdate extends BaculumAPIServer {
 
 	public function get() {

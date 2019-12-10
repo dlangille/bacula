@@ -22,6 +22,10 @@
 
 /**
  * General requirement class with common dependencies both for API and Web.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Requirements
+ * @package Baculum Common
  */
 abstract class GeneralRequirements {
 

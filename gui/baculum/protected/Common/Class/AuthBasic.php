@@ -27,6 +27,8 @@ Prado::using('Application.Common.Class.Interfaces');
  * Basic authentication auth module.
  *
  * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Module
+ * @package Baculum Common
  */
 class AuthBasic extends AuthBase implements AuthModule {
 

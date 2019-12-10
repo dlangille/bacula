@@ -25,6 +25,10 @@ Prado::using('Application.API.Class.APIModule');
 /**
  * Base abstract class to inherit commonly used method
  * in work with component status.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Module
+ * @package Baculum API
  */
 abstract class ComponentStatusModule extends APIModule {
 

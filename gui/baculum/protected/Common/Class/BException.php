@@ -22,6 +22,13 @@
 
 use Prado\Exceptions;
 
+/**
+ * Main common Baculum exceptions class.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Exception
+ * @package Baculum Common
+ */
 class BException extends \Prado\Exceptions\TException {
 
 	private $error_code;

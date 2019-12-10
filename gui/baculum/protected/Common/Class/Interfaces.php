@@ -24,6 +24,8 @@
  * Common interfaces.
  *
  * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Interfaces
+ * @package Baculum Common
  */
 
 /**

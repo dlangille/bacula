@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2017 Kern Sibbald
+ * Copyright (C) 2013-2019 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -20,16 +20,16 @@
  * Bacula(R) is a registered trademark of Kern Sibbald.
  */
  
-/**
- * Store data in session.
- * 
- * @category Data
- * @package Baculum
- */
-
 Prado::using('Application.Common.Class.CommonModule');
 Prado::using('Application.Common.Class.Interfaces');
 
+/**
+ * Store data in session.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Module
+ * @package Baculum Common
+ */
 class SessionRecord extends CommonModule implements SessionItem {
 
 	private static $lock = false;

@@ -25,6 +25,10 @@ Prado::using('Application.API.Class.APIModule');
 
 /**
  * Tools used to show list files command output.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Module
+ * @package Baculum API
  */
 class BList extends APIModule {
 

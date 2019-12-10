@@ -25,6 +25,13 @@ Prado::using('Application.Web.Portlets.DirectiveCheckBox');
 Prado::using('Application.Web.Portlets.DirectiveTextBox');
 Prado::using('Application.Web.Portlets.DirectiveComboBox');
 
+/**
+ * Runscript directive control.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Control
+ * @package Baculum Web
+ */
 class DirectiveRunscript extends DirectiveListTemplate {
 
 	private $directive_types = array(

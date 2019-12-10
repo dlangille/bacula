@@ -24,6 +24,13 @@ Prado::using('System.Web.UI.ActiveControls.TActiveLabel');
 Prado::using('System.Web.UI.ActiveControls.TActiveTextBox');
 Prado::using('Application.Web.Portlets.DirectiveTemplate');
 
+/**
+ * TextBox directive control.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Control
+ * @package Baculum Web
+ */
 class DirectiveTextBox extends DirectiveTemplate {
 
 	public function getValue() {

@@ -25,7 +25,14 @@ session_start();
 Prado::using('Application.API.Pages.Requirements');
 Prado::using('Application.Common.Class.BaculumPage');
 Prado::using('Application.API.Class.APIConfig');
- 
+
+/**
+ * Main API pages class.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Page
+ * @package Baculum API
+ */
 class BaculumAPIPage extends BaculumPage {
 
 	public function onPreInit($param) {

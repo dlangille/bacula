@@ -24,6 +24,13 @@ Prado::using('Application.Web.Class.BaculumWebPage');
 Prado::using('System.Web.UI.ActiveControls.TActiveLabel');
 Prado::using('System.Web.UI.WebControls.TWizard');
 
+/**
+ * New job wizard page.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Page
+ * @package Baculum Web
+ */
 class NewJobWizard extends BaculumWebPage {
 
 	protected $admin = true;

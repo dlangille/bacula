@@ -20,6 +20,13 @@
  * Bacula(R) is a registered trademark of Kern Sibbald.
  */
  
+/**
+ * BVFS cleanup.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category API
+ * @package Baculum API
+ */
 class BVFSCleanUp extends BaculumAPIServer {
 
 	public function set($id, $params) {

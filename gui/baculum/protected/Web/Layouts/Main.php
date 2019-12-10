@@ -22,6 +22,13 @@
  
 Prado::using('Application.Common.Class.Params');
 
+/**
+ * Main layout class.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Layout
+ * @package Baculum Web
+ */
 class Main extends TTemplateControl {
 
 	public $web_config;

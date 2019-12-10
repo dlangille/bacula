@@ -20,6 +20,14 @@
  * Bacula(R) is a registered trademark of Kern Sibbald.
  */
 
+/**
+ * Initialization file.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Initialization
+ * @package Baculum Web
+ */
+
 $timezone = 'UTC';
 if (!ini_get('date.timezone')) {
 	date_default_timezone_set($timezone);

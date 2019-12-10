@@ -20,6 +20,13 @@
  * Bacula(R) is a registered trademark of Kern Sibbald.
  */
  
+/**
+ * Recent jobs endpoint.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category API
+ * @package Baculum API
+ */
 class JobsRecent extends BaculumAPIServer {
 	public function get() {
 		$jobname = $this->Request->contains('name') ? $this->Request['name'] : '';

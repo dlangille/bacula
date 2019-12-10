@@ -25,6 +25,10 @@ Prado::using('Application.API.Class.ComponentStatusModule');
 
 /**
  * Module used to parse and prepare director status output.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Status
+ * @package Baculum API
  */
 class StatusDirector extends ComponentStatusModule {
 

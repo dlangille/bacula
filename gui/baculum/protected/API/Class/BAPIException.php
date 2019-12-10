@@ -22,6 +22,13 @@
 
 Prado::using('Application.Common.Class.BException');
 
+/**
+ * API exceptions.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Exception
+ * @package Baculum API
+ */
 class BAPIException extends BException {
 }
 

@@ -24,6 +24,13 @@ Prado::using('System.Web.UI.ActiveControls.TActiveControlAdapter');
 Prado::using('Application.Web.Portlets.DirectiveControlTemplate');
 Prado::using('Application.Web.Portlets.IDirectiveField');
 
+/**
+ * Directive template control.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Control
+ * @package Baculum Web
+ */
 class DirectiveTemplate extends DirectiveControlTemplate implements IDirectiveField, IActiveControl {
 
 	const HOST = 'Host';

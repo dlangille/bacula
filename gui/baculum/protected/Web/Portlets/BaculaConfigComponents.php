@@ -26,6 +26,13 @@ Prado::using('Application.Web.Portlets.ComponentListTemplate');
 Prado::using('Application.Web.Portlets.NewResourceMenu');
 Prado::using('Application.Web.Class.Miscellaneous');
 
+/**
+ * Bacula config components control.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Control
+ * @package Baculum Web
+ */
 class BaculaConfigComponents extends ComponentListTemplate {
 
 	const CHILD_CONTROL = 'BaculaConfigResources';

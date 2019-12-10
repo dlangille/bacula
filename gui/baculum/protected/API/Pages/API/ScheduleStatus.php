@@ -22,6 +22,13 @@
 
 Prado::using('Application.API.Class.Bconsole');
 
+/**
+ * Status schedune endpoint.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category API
+ * @package Baculum API
+ */
 class ScheduleStatus extends BaculumAPIServer {
 
 	public function get() {

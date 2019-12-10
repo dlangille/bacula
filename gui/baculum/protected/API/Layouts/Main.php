@@ -22,6 +22,12 @@
  
 Prado::using('Application.Common.Class.Params');
 
+/**
+ * Main layout.
+ *
+ * @category Layout
+ * @package Baculum API
+ */
 class Main extends TTemplateControl {
 }
 ?>

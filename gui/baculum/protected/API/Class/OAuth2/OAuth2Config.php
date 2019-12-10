@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2017 Kern Sibbald
+ * Copyright (C) 2013-2019 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -27,6 +27,8 @@ Prado::using('Application.Common.Class.ConfigFileModule');
  * Module is responsible for get/set OAuth2 client config data.
  *
  * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Authorization
+ * @package Baculum API
  */
 class OAuth2Config extends ConfigFileModule {
 

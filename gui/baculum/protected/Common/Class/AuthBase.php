@@ -28,6 +28,8 @@ Prado::using('Application.Common.Class.CommonModule');
  * @see Application.Common.Class.Interfaces.AuthModule
  *
  * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Module
+ * @package Baculum Common
  */
 abstract class AuthBase extends CommonModule {
 

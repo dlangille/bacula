@@ -27,6 +27,13 @@ Prado::using('Application.Web.Portlets.DirectiveComboBox');
 Prado::using('Application.Web.Portlets.DirectiveTextBox');
 Prado::using('Application.Web.Portlets.DirectiveTimePeriod');
 
+/**
+ * Schedule directive control.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Control
+ * @package Baculum Web
+ */
 class DirectiveSchedule extends DirectiveListTemplate {
 
 	private $directive_types = array(

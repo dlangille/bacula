@@ -20,6 +20,13 @@
  * Bacula(R) is a registered trademark of Kern Sibbald.
  */
  
+/**
+ * Wizard layout.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Layout
+ * @package Baculum Web
+ */
 class Wizard extends TTemplateControl {
 
 	public $web_config;

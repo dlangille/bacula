@@ -35,6 +35,13 @@ Prado::using('Application.API.Class.BaculumAPIPage');
 Prado::using('Application.API.Class.Database');
 Prado::using('Application.API.Class.BasicAPIUserConfig');
 
+/**
+ * API install wizard.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Panel
+ * @package Baculum API
+ */
 class APIInstallWizard extends BaculumAPIPage {
 
 	public $first_run;

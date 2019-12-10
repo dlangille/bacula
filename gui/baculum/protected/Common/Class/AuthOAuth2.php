@@ -28,6 +28,8 @@ Prado::using('Application.Common.Class.OAuth2');
  * OAuth2 authorization auth module.
  *
  * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Module
+ * @package Baculum Common
  */
 class AuthOAuth2 extends AuthBase implements AuthModule {
 

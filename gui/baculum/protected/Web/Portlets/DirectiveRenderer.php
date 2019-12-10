@@ -42,6 +42,13 @@ Prado::using('Application.Web.Portlets.DirectiveTimePeriod');
 Prado::using('Application.Web.Portlets.DirectiveRunscript');
 Prado::using('Application.Web.Portlets.DirectiveMessages');
 
+/**
+ * Directive renderer control.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Control
+ * @package Baculum Web
+ */
 class DirectiveRenderer extends TItemDataRenderer {
 
 	const DATA = 'Data';

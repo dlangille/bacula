@@ -24,6 +24,13 @@ Prado::using('Application.Common.Class.Errors');
 Prado::using('Application.API.Class.BAPIException');
 Prado::using('Application.API.Class.APIModule');
 
+/**
+ * Execute bconsole module.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Bconsole
+ * @package Baculum API
+ */
 class Bconsole extends APIModule {
 
 	const SUDO = 'sudo';

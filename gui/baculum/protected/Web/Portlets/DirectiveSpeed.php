@@ -25,6 +25,13 @@ Prado::using('System.Web.UI.ActiveControls.TActiveTextBox');
 Prado::using('System.Web.UI.ActiveControls.TActiveDropDownList');
 Prado::using('Application.Web.Portlets.DirectiveTemplate');
 
+/**
+ * Speed directive control.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Control
+ * @package Baculum Web
+ */
 class DirectiveSpeed extends DirectiveTemplate {
 
 	const ALLOW_REMOVE = 'AllowRemove';

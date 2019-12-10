@@ -25,6 +25,13 @@ Prado::using('Application.API.Class.BAPIException');
 Prado::using('Application.API.Class.APIModule');
 Prado::using('Application.API.Class.APIDbModule');
 
+/**
+ * Database module.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Database
+ * @package Baculum API
+ */
 class Database extends APIModule {
 
 	public $ID;

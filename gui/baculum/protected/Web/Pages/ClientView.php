@@ -26,6 +26,13 @@ Prado::using('System.Web.UI.ActiveControls.TCallback');
 Prado::using('System.Web.UI.JuiControls.TJuiProgressbar');
 Prado::using('Application.Web.Class.BaculumWebPage'); 
 
+/**
+ * Client view page.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Page
+ * @package Baculum Web
+ */
 class ClientView extends BaculumWebPage {
 
 	const CLIENTID = 'ClientId';

@@ -24,6 +24,13 @@ Prado::using('System.Web.UI.JuiControls.TJuiDatePicker');
 Prado::using('System.Web.UI.ActiveControls.TActiveLinkButton');
 Prado::using('Application.Web.Portlets.Portlets');
 
+/**
+ * Schedule status control.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Control
+ * @package Baculum Web
+ */
 class StatusSchedule extends Portlets {
 
 	const JOB = 'Job';

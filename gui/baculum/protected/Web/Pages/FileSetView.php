@@ -22,6 +22,13 @@
 
 Prado::using('Application.Web.Class.BaculumWebPage'); 
 
+/**
+ * FileSet view page.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Page
+ * @package Baculum Web
+ */
 class FileSetView extends BaculumWebPage {
 
 	const USE_CACHE = true;

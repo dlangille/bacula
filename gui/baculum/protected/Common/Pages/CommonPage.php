@@ -22,6 +22,12 @@
 
 Prado::using('Application.Common.Class.BaculumPage');
 
+/**
+ * Common page class.
+ *
+ * @category Page
+ * @package Baculum Common
+ */
 class CommonPage extends BaculumPage {
 }
 ?>

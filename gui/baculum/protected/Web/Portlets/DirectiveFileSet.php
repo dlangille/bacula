@@ -30,6 +30,13 @@ Prado::using('Application.Web.Portlets.DirectiveComboBox');
 Prado::using('Application.Web.Portlets.DirectiveInteger');
 Prado::using('Application.Web.Portlets.FileSetOptionRenderer');
 
+/**
+ * FileSet directive template.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Control
+ * @package Baculum Web
+ */
 class DirectiveFileSet extends DirectiveListTemplate {
 
 	private $directive_types = array(

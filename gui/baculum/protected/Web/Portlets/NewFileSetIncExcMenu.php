@@ -22,6 +22,12 @@
 
 Prado::using('Application.Web.Portlets.DirectiveListTemplate');
 
+/**
+ * New FileSet include and exclude menu.
+ *
+ * @category Control
+ * @package Baculum Web
+ */
 class NewFileSetIncExcMenu extends DirectiveListTemplate {
 }
 ?>

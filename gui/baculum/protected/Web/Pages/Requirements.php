@@ -24,6 +24,10 @@ Prado::using('Application.Common.Class.GeneralRequirements');
 
 /**
  * Web part requirements class.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Page
+ * @package Baculum Web
  */
 class Requirements extends GeneralRequirements {
 

@@ -26,6 +26,13 @@ Prado::using('System.Web.UI.ActiveControls.TCallback');
 Prado::using('System.Web.UI.JuiControls.TJuiProgressbar');
 Prado::using('Application.Web.Class.BaculumWebPage'); 
 
+/**
+ * Job history view page.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Page
+ * @package Baculum Web
+ */
 class JobHistoryView extends BaculumWebPage {
 
 	const IS_RUNNING = 'IsRunning';

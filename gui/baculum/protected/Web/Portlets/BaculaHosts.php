@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2016 Kern Sibbald
+ * Copyright (C) 2013-2019 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -25,6 +25,13 @@ Prado::using('System.Web.UI.ActiveControls.TActiveRepeater');
 Prado::using('Application.Web.Class.HostConfig');
 Prado::using('Application.Web.Portlets.HostListTemplate');
 
+/**
+ * Bacula hosts control.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Control
+ * @package Baculum Web
+ */
 class BaculaHosts extends HostListTemplate {
 
 	const CHILD_CONTROL = 'BaculaConfigComponents';

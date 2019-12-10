@@ -23,6 +23,13 @@
 Prado::using('System.Web.UI.ActiveControls.TCallback');
 Prado::using('Application.Web.Portlets.Portlets');
 
+/**
+ * FileSet browser control.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Control
+ * @package Baculum Web
+ */
 class FileSetBrowser extends Portlets {
 
 	const BCLIENT_ID = 'BClientId';

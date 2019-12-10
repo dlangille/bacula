@@ -23,6 +23,13 @@
 Prado::using('System.Web.UI.ActiveControls.TActiveControlAdapter');
 Prado::using('Application.Web.Portlets.ConfigListTemplate');
 
+/**
+ * Directive list template.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Control
+ * @package Baculum Web
+ */
 class DirectiveListTemplate extends ConfigListTemplate implements IActiveControl, ICallbackEventHandler {
 
 	const HOST = 'Host';

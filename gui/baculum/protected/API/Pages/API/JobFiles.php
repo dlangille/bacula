@@ -22,6 +22,10 @@
 
 /**
  * List files from 'list files jobid=xx' bconsole command.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category API
+ * @package Baculum API
  */
 class JobFiles extends BaculumAPIServer {
 

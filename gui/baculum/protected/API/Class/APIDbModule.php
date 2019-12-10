@@ -20,19 +20,20 @@
  * Bacula(R) is a registered trademark of Kern Sibbald.
  */
 
-/**
- * Base API database module.
- * Every API module that use database connection should inherit this class.
- *
- * @author Marcin Haba <marcin.haba@bacula.pl>
- */
-
 Prado::using('Application.Common.Class.Errors');
 Prado::using('Application.API.Class.APIConfig');
 Prado::using('Application.API.Class.BAPIException');
 Prado::using('Application.API.Class.Database');
 Prado::using('System.Data.ActiveRecord.TActiveRecord');
 
+/**
+ * Base API database module.
+ * Every API module that use database connection should inherit this class.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Database
+ * @package Baculum API
+ */
 class APIDbModule extends TActiveRecord {
 
 	/**

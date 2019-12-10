@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2016 Kern Sibbald
+ * Copyright (C) 2013-2019 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -23,6 +23,13 @@
 Prado::using('Application.Common.Class.Interfaces');
 Prado::using('Application.Common.Class.SessionRecord');
 
+/**
+ * Host session record class.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Database
+ * @package Baculum Web
+ */
 class HostRecord extends SessionRecord implements SessionItem {
 
 	public $host;

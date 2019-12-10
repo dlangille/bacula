@@ -30,7 +30,9 @@ Prado::using('Application.Web.Class.HostRecord');
 /**
  * Internal API client module.
  *
- * @author Marcin Haba
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Module
+ * @package Baculum Web
  */
 class BaculumAPIClient extends WebModule {
 

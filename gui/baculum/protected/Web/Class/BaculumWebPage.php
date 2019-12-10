@@ -27,6 +27,13 @@ Prado::using('Application.Common.Class.BaculumPage');
 Prado::using('Application.Web.Init');
 Prado::using('Application.Web.Class.WebConfig');
 
+/**
+ * Baculum Web page module.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Module
+ * @package Baculum Web
+ */
 class BaculumWebPage extends BaculumPage {
 
 	/**

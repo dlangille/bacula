@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2016 Kern Sibbald
+ * Copyright (C) 2013-2019 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -28,6 +28,8 @@ Prado::using('Application.Common.Class.CommonModule');
  * Note: Only write config implemented. More info in read() method.
  *
  * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Module
+ * @package Baculum Common
  */
 class ConfigBacula extends CommonModule implements ConfigFormat {
 

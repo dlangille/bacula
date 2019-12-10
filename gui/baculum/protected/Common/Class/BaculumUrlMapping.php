@@ -22,6 +22,13 @@
 
 Prado::using('System.Web.TUrlMapping');
 
+/**
+ * Baculum URL mapping class.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category URL
+ * @package Baculum Common
+ */
 class BaculumUrlMapping extends TUrlMapping {
 
 	private $services = array(

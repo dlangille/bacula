@@ -25,6 +25,13 @@ Prado::using('System.Web.UI.ActiveControls.TActiveDropDownList');
 Prado::using('System.Web.UI.ActiveControls.TActiveLinkButton');
 Prado::using('Application.Web.Portlets.DirectiveListTemplate');
 
+/**
+ * Multi-combobox directive control.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Control
+ * @package Baculum Web
+ */
 class DirectiveMultiComboBox extends DirectiveListTemplate {
 
 	public function dataBind() {

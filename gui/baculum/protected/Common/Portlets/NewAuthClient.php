@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2017 Kern Sibbald
+ * Copyright (C) 2013-2019 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -27,6 +27,13 @@ Prado::using('System.Web.UI.TTemplateControl');
 Prado::using('Application.Common.Class.OAuth2');
 Prado::using('Application.Common.Portlets.PortletTemplate');
 
+/**
+ * New auth client control.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Control
+ * @package Baculum Common
+ */
 class NewAuthClient extends PortletTemplate {
 
 	private $show_buttons = true;

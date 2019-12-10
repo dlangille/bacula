@@ -26,6 +26,10 @@ Prado::using('Application.Web.Portlets.DirectiveListTemplate');
 /**
  * Component actions control responsible for start,
  * stop and restart components.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Control
+ * @package Baculum Web
  */
 class ComponentActionsMenu extends DirectiveListTemplate {
 

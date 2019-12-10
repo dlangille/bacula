@@ -22,6 +22,13 @@
 
 Prado::using('Application.Web.Portlets.DirectiveControlTemplate');
 
+/**
+ * Config list template control.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Control
+ * @package Baculum Web
+ */
 class ConfigListTemplate extends DirectiveControlTemplate {
 
 	public function getChildControl($parent, $type) {

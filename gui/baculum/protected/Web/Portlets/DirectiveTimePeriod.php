@@ -25,6 +25,13 @@ Prado::using('System.Web.UI.ActiveControls.TActiveTextBox');
 Prado::using('System.Web.UI.ActiveControls.TActiveDropDownList');
 Prado::using('Application.Web.Portlets.DirectiveTemplate');
 
+/**
+ * Time period directive control.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Control
+ * @package Baculum Web
+ */
 class DirectiveTimePeriod extends DirectiveTemplate {
 
 	const TIME_FORMAT = 'TimeFormat';

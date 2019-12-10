@@ -22,6 +22,13 @@
 
 Prado::using('Application.API.Class.Bconsole');
 
+/**
+ * Label barcodes command endpoint.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category API
+ * @package Baculum API
+ */
 class VolumeLabelBarcodes extends BaculumAPIServer {
 
 	public function get() {

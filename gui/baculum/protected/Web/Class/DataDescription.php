@@ -22,6 +22,13 @@
 
 Prado::using('Application.Web.Class.WebModule');
 
+/**
+ * Data description module.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Module
+ * @package Baculum Web
+ */
 class DataDescription extends WebModule {
 
 	/**

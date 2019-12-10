@@ -23,6 +23,12 @@
 Prado::using('System.Web.UI.ActiveControls.TActiveLinkButton');
 Prado::using('Application.Web.Portlets.DirectiveListTemplate');
 
+/**
+ * New schedule menu.
+ *
+ * @category Control
+ * @package Baculum Web
+ */
 class NewScheduleMenu extends DirectiveListTemplate {
 }
 ?>

@@ -22,6 +22,13 @@
 
 Prado::using('System.Web.TUrlMapping');
 
+/**
+ * Extension default URL mapper for OAuth2.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category URL
+ * @package Baculum API
+ */
 class OAuthUrlMapping extends TUrlMappingPattern {
 
 	const SERVICE_ID = 'oauth';

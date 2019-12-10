@@ -25,6 +25,13 @@ Prado::using('System.Web.UI.ActiveControls.TActiveLabel');
 Prado::using('System.Web.UI.ActiveControls.TActiveLinkButton');
 Prado::using('Application.Web.Class.BaculumWebPage'); 
 
+/**
+ * New resource page.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Page
+ * @package Baculum Web
+ */
 class NewResource extends BaculumWebPage {
 
 	const COMPONENT_TYPE = 'ComponentType';

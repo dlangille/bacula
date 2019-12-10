@@ -22,6 +22,13 @@
 
 Prado::using('Application.API.Class.ConsoleOutputPage');
 
+/**
+ * Client show command endpoint.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category API
+ * @package Baculum API
+ */
 class ClientShow extends ConsoleOutputPage {
 
 	public function get() {

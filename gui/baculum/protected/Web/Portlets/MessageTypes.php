@@ -20,11 +20,17 @@
  * Bacula(R) is a registered trademark of Kern Sibbald.
  */
 
-
 Prado::using('System.Web.Ui.ActiveControls.TActiveRepeater');
 Prado::using('Application.Web.Portlets.DirectiveListTemplate');
 Prado::using('Application.Web.Portlets.DirectiveCheckBox');
 
+/**
+ * Message types control.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Control
+ * @package Baculum Web
+ */
 class MessageTypes extends DirectiveListTemplate {
 
 	public function loadConfig() {

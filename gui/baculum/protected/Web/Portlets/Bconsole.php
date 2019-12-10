@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2016 Kern Sibbald
+ * Copyright (C) 2013-2019 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -25,6 +25,13 @@ Prado::using('System.Web.UI.ActiveControls.TActiveButton');
 Prado::using('System.Web.UI.ActiveControls.TActiveTextBox');
 Prado::using('Application.Web.Portlets.Portlets');
 
+/**
+ * Bconsole control.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Control
+ * @package Baculum Web
+ */
 class Bconsole extends Portlets {
 
 	const MAX_CONSOLE_OUTPUT_BATCH = -1000;

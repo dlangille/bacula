@@ -27,6 +27,8 @@ Prado::using('Application.Common.Class.ConfigFileModule');
  * Module is responsible for get/set API config data.
  *
  * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Config
+ * @package Baculum API
  */
 class APIConfig extends ConfigFileModule {
 

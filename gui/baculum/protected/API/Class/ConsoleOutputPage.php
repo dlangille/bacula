@@ -22,6 +22,10 @@
 
 /**
  * Get console output page.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category API
+ * @package Baculum API
  */
 abstract class ConsoleOutputPage extends BaculumAPIServer {
 

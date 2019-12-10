@@ -22,6 +22,12 @@
 
 Prado::using('Application.Web.Class.BaculumWebPage');
 
+/**
+ * Schedule status list.
+ *
+ * @category Page
+ * @package Baculum Web
+ */
 class ScheduleStatusList extends BaculumWebPage {
 }
 ?>

@@ -22,6 +22,13 @@
 
 Prado::using('Application.Web.Class.BaculumWebPage');
 
+/**
+ * Statistics view page.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Page
+ * @package Baculum Web
+ */
 class StatisticsView extends BaculumWebPage {
 
 	const COMPONENT_TYPE = 'ComponentType';

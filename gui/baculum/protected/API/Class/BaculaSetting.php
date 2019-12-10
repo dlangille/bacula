@@ -30,6 +30,8 @@ Prado::using('Application.API.Class.APIConfig');
  * Read/write Bacula configuration.
  *
  * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Config
+ * @package Baculum API
  */
 class BaculaSetting extends APIModule {
 

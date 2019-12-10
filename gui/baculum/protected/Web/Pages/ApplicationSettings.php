@@ -24,6 +24,13 @@ Prado::using('System.Web.UI.ActiveControls.TActiveLinkButton');
 Prado::using('Application.Web.Class.BaculumWebPage'); 
 Prado::using('Application.Web.Pages.Monitor');
 
+/**
+ * Application settings class.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Page
+ * @package Baculum Web
+ */
 class ApplicationSettings extends BaculumWebPage {
 
 	protected $admin = true;

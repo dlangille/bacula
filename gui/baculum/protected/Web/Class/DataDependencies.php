@@ -24,6 +24,10 @@ Prado::using('Application.:Web.Class.WebModule');
 
 /**
  * Module responsible for checking and keeping Bacula config dependencies.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Module
+ * @package Baculum Web
  */
 class DataDependencies extends WebModule {
 

@@ -22,6 +22,13 @@
 
 Prado::using('Application.Common.Class.CommonModule');
 
+/**
+ * Params class.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Module
+ * @package Baculum Common
+ */
 class Params extends CommonModule {
 
 	const BACULUM_VERSION = '9.6.0';

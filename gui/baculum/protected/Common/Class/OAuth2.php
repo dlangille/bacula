@@ -20,13 +20,15 @@
  * Bacula(R) is a registered trademark of Kern Sibbald.
  */
 
-/** 
- * @category Authorization
- * @package Baculum
- */
-
 Prado::using('Application.Common.Class.CommonModule');
 
+/**
+ * Generic OAuth2 abstraction.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Module
+ * @package Baculum Common
+ */
 abstract class OAuth2 extends CommonModule {
 
 	/**

@@ -20,7 +20,6 @@
  * Bacula(R) is a registered trademark of Kern Sibbald.
  */
 
-
 Prado::using('System.Web.UI.ActiveControls.TActiveLabel');
 Prado::using('System.Web.UI.ActiveControls.TActiveLinkButton');
 Prado::using('Application.Web.Portlets.DirectiveSpeed');
@@ -28,6 +27,10 @@ Prado::using('Application.Web.Portlets.Portlets');
 
 /**
  * Set job bandwidth limit control.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Control
+ * @package Baculum Web
  */
 class JobBandwidthLimit extends Portlets {
 

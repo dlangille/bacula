@@ -22,6 +22,13 @@
 
 Prado::using('Application.Web.Portlets.DirectiveRenderer');
 
+/**
+ * FileSet option renderer.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Control
+ * @package Baculum Web
+ */
 class FileSetOptionRenderer extends DirectiveRenderer {
 
 	private static $index = 0;

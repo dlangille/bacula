@@ -24,6 +24,13 @@ Prado::using('System.Web.UI.ActiveControls.TActiveLabel');
 Prado::using('System.Web.UI.ActiveControls.TActiveCheckBox');
 Prado::using('Application.Web.Portlets.DirectiveTemplate');
 
+/**
+ * Checkbox directive control.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Control
+ * @package Baculum Web
+ */
 class DirectiveCheckBox extends DirectiveTemplate {
 
 	public function getValue() {

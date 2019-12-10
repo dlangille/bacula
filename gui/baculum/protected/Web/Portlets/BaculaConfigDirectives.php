@@ -39,6 +39,13 @@ Prado::using('Application.Web.Portlets.DirectiveTimePeriod');
 Prado::using('Application.Web.Portlets.DirectiveRunscript');
 Prado::using('Application.Web.Portlets.DirectiveMessages');
 
+/**
+ * Bacula config directives control.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Control
+ * @package Baculum Web
+ */
 class BaculaConfigDirectives extends DirectiveListTemplate {
 
 	const SHOW_REMOVE_BUTTON = 'ShowRemoveButton';

@@ -22,6 +22,13 @@
 
 Prado::using('Application.API.Class.APIConfig');
  
+/**
+ * API actions support.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category API
+ * @package Baculum API
+ */
 class Actions extends BaculumAPIServer {
 
 	public function get() {

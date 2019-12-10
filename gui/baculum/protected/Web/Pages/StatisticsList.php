@@ -22,6 +22,13 @@
 
 Prado::using('Application.Web.Class.BaculumWebPage');
 
+/**
+ * Statistics list page.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Page
+ * @package Baculum Web
+ */
 class StatisticsList extends BaculumWebPage {
 
 	const USE_CACHE = true;

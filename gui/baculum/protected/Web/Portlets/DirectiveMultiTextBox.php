@@ -25,6 +25,13 @@ Prado::using('System.Web.UI.ActiveControls.TActiveTextBox');
 Prado::using('System.Web.UI.ActiveControls.TActiveLinkButton');
 Prado::using('Application.Web.Portlets.DirectiveListTemplate');
 
+/**
+ * Multi-textbox directive control.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Control
+ * @package Baculum Web
+ */
 class DirectiveMultiTextBox extends DirectiveListTemplate {
 
 	public function dataBind() {

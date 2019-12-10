@@ -22,6 +22,13 @@
 
 Prado::using('System.Web.UI.WebControls.TConditional');
 
+/**
+ * Baculum conditional control.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Control
+ * @package Baculum Web
+ */
 class BConditional extends TTemplateControl implements IDataRenderer, IActiveControl {
 
 	const BCONDITION = 'BCondition';

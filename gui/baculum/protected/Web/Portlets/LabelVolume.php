@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2018 Kern Sibbald
+ * Copyright (C) 2013-2019 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -20,7 +20,6 @@
  * Bacula(R) is a registered trademark of Kern Sibbald.
  */
 
-
 Prado::using('System.Web.UI.ActiveControls.TActiveCheckBox');
 Prado::using('System.Web.UI.ActiveControls.TActiveDropDownList');
 Prado::using('System.Web.UI.ActiveControls.TActiveLabel');
@@ -28,6 +27,13 @@ Prado::using('System.Web.UI.ActiveControls.TActivePanel');
 Prado::using('System.Web.UI.ActiveControls.TActiveTextBox');
 Prado::using('Application.Web.Portlets.Portlets');
 
+/**
+ * Label volume control.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Control
+ * @package Baculum Web
+ */
 class LabelVolume extends Portlets {
 
 	public function loadValues() {

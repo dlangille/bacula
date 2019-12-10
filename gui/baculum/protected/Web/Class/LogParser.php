@@ -22,6 +22,13 @@
 
 Prado::using('Application.Web.Class.WebModule');
 
+/**
+ * Bacula logs parser module.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Module
+ * @package Baculum Web
+ */
 class LogParser extends WebModule {
 
 	const CLIENT_PATTERN = '/^\s+Client\:\s+"?(?P<client>[a-zA-Z0-9:.\-_ ]+)"?/i';

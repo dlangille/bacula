@@ -23,6 +23,13 @@
 Prado::using('Application.Web.Portlets.DirectiveListTemplate');
 Prado::using('Application.Web.Portlets.DirectiveTextBox');
 
+/**
+ * Messages directive.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Control
+ * @package Baculum Web
+ */
 class DirectiveMessages extends DirectiveListTemplate {
 
 	private $directive_types = array(

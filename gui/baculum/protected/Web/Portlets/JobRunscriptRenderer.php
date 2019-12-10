@@ -22,6 +22,13 @@
 
 Prado::using('Application.Web.Portlets.DirectiveRenderer');
 
+/**
+ * Job runscript renderer.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category Control
+ * @package Baculum Web
+ */
 class JobRunscriptRenderer extends DirectiveRenderer {
 
 	private static $index = 0;

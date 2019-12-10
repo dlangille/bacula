@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2016 Kern Sibbald
+ * Copyright (C) 2013-2019 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -22,6 +22,13 @@
 
 Prado::using('System.Web.TUrlMapping');
 
+/**
+ * Web URL mapper class.
+ *
+ * @author Marcin Haba <marcin.haba@bacula.pl>
+ * @category URL
+ * @package Baculum Web
+ */
 class WebUrlMapping extends TUrlMappingPattern {
 
 	const SERVICE_ID = 'web';
