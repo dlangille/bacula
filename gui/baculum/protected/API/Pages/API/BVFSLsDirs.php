@@ -19,6 +19,8 @@
  *
  * Bacula(R) is a registered trademark of Kern Sibbald.
  */
+
+Prado::using('Application.API.Class.ConsoleOutputPage');
  
 /**
  * BVFS list directories.
@@ -27,10 +29,7 @@
  * @category API
  * @package Baculum API
  */
-class BVFSLsDirs extends BaculumAPIServer {
-
-	private $jobids;
-	private $path;
+class BVFSLsDirs extends ConsoleOutputPage {
 
 	public function get() {
 		$misc = $this->getModule('misc');
@@ -38,13 +37,7 @@ class BVFSLsDirs extends BaculumAPIServer {
 		$offset = $this->Request->contains('offset') ? intval($this->Request['offset']) : 0;
 		$jobids = $this->Request->contains('jobids') && $misc->isValidIdsList($this->Request['jobids']) ? $this->Request['jobids'] : null;
 		$path = $this->Request->contains('path') && $misc->isValidPath($this->Request['path']) ? $this->Request['path'] : null;
-		if (is_null($jobids) && !is_null($this->jobids)) {
-			$jobids = $this->jobids;
-		}
-
-		if (is_null($path) && !is_null($this->path)) {
-			$path = $this->path;
-		}
+		$out_format = $this->Request->contains('output') && $this->isOutputFormatValid($this->Request['output']) ? $this->Request['output'] : parent::OUTPUT_FORMAT_RAW;
 
 		if (is_null($jobids)) {
 			$this->output = BVFSError::MSG_ERROR_INVALID_JOBID_LIST;
@@ -58,17 +51,60 @@ class BVFSLsDirs extends BaculumAPIServer {
 			return;
 		}
 
-		$cmd = array('.bvfs_lsdirs', 'jobid="' . $jobids . '"', 'path="' . $path . '"');
+		$params = [
+			'jobids' => $jobids,
+			'path' => $path,
+			'offset' => $offset,
+			'limit' => $limit
+		];
+		$out = (object)['output' => [], 'exitcode' => 0];
+		if ($out_format === parent::OUTPUT_FORMAT_RAW) {
+			$out = $this->getRawOutput($params);
+		} elseif($out_format === parent::OUTPUT_FORMAT_JSON) {
+			$out = $this->getJSONOutput($params);
+		}
 
-		if ($offset > 0) {
-			array_push($cmd, 'offset="' .  $offset . '"');
+		$this->output = $out->output;
+		$this->error = $out->exitcode;
+	}
+
+	/**
+	 * Get BVFS list directories output from console in raw format.
+	 *
+	 * @param array $params command  parameters
+	 * @return StdClass object with output and exitcode
+	 */
+	protected function getRawOutput($params = []) {
+		$cmd = [
+			'.bvfs_lsdirs',
+			'jobid="' . $params['jobids'] . '"',
+			'path="' . $params['path'] . '"'
+		];
+
+		if ($params['offset'] > 0) {
+			array_push($cmd, 'offset="' .  $params['offset'] . '"');
 		}
-		if ($limit > 0) {
-			array_push($cmd, 'limit="' .  $limit . '"');
+		if ($params['limit'] > 0) {
+			array_push($cmd, 'limit="' .  $params['limit'] . '"');
 		}
-		$result = $this->getModule('bconsole')->bconsoleCommand($this->director, $cmd);
-		$this->output = $result->output;
-		$this->error = $result->exitcode;
+		return $this->getModule('bconsole')->bconsoleCommand($this->director, $cmd);
+	}
+
+	/**
+	 * Get BVFS list directories output in JSON format.
+	 *
+	 * @param array $params command  parameters
+	 * @return StdClass object with output and exitcode
+	 */
+	protected function getJSONOutput($params = []) {
+		$result = (object)['output' => [], 'exitcode' => 0];
+		$raw = $this->getRawOutput($params);
+		if ($raw->exitcode === 0) {
+			$result->output = $this->getModule('bvfs')->parseFileDirList($raw->output);
+		} else {
+			$result = $raw;
+		}
+		return $result;
 	}
 }
 ?>

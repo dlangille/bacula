@@ -395,18 +395,18 @@ class RestoreWizard extends BaculumWebPage
 			// generating Bvfs may take a moment
 			$this->generateBvfsCache($jobids);
 
-			// get directories list
-			$query = sprintf(
-				'?jobids=%s&path=%s',
-				rawurlencode($jobids),
-				rawurlencode(implode($_SESSION['restore_path']))
-			);
+			// get directory and file list
+			$query = '?' . http_build_query(array(
+				'jobids' => $jobids,
+				'path' => implode($_SESSION['restore_path']),
+				'output' => 'json'
+			));
 			$bvfs_dirs = $this->getModule('api')->get(
 				array('bvfs', 'lsdirs', $query)
 			);
 			$dirs = array();
 			if ($bvfs_dirs->error === 0) {
-				$dirs = $this->getModule('misc')->parseBvfsList($bvfs_dirs->output);
+				$dirs = json_decode(json_encode($bvfs_dirs->output), true);
 			}
 
 			// get files list
@@ -415,7 +415,7 @@ class RestoreWizard extends BaculumWebPage
 			);
 			$files = array();
 			if ($bvfs_files->error === 0) {
-				$files = $this->getModule('misc')->parseBvfsList($bvfs_files->output);
+				$files = json_decode(json_encode($bvfs_files->output), true);
 			}
 
 			$elements = array_merge($dirs, $files);
@@ -615,14 +615,28 @@ class RestoreWizard extends BaculumWebPage
 			'client' => $clientname,
 			'jobid' => $jobid,
 			'pathid' => $pathid,
-			'filenameid' => $filenameid
+			'filenameid' => $filenameid,
+			'output' => 'json'
 		];
 		if ($this->EnableCopyJobRestore->Checked) {
 			$params['copies'] = 1;
 		}
+
+		/**
+		 * Helper for adding filename to versions list.
+		 *
+		 * @param array $el version list element
+		 * @return return version list element
+		 */
+		$add_version_filename_func = function ($el) use ($filename) {
+			$el['name'] = $filename;
+			return $el;
+		};
+
 		$query = '?' . http_build_query($params);
 		$versions = $this->getModule('api')->get(array('bvfs', 'versions', $query))->output;
-		$file_versions = $this->getModule('misc')->parseFileVersions($filename, $versions);
+		$versions = json_decode(json_encode($versions), true);
+		$file_versions = array_map($add_version_filename_func, $versions);
 		$file_versions = array_map(array('RestoreWizard', 'addUniqid'), $file_versions);
 		$this->setFileVersions($file_versions);
 		$this->VersionsDataGrid->dataSource = $file_versions;

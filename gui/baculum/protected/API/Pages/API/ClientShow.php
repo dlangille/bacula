@@ -60,7 +60,13 @@ class ClientShow extends ConsoleOutputPage {
 		}
 	}
 
-	protected function getRawOutput($params = array()) {
+	/**
+	 * Get show client output from console in raw format.
+	 *
+	 * @param array $params command  parameters
+	 * @return StdClass object with output and exitcode
+	 */
+	protected function getRawOutput($params = []) {
 		$result = $this->getModule('bconsole')->bconsoleCommand(
 			$this->director,
 			array('show', 'client="' . $params['client'] . '"')
@@ -68,7 +74,13 @@ class ClientShow extends ConsoleOutputPage {
 		return $result;
 	}
 
-	protected function getJSONOutput($params = array()) {
+	/**
+	 * Get show client output in JSON format.
+	 *
+	 * @param array $params command  parameters
+	 * @return StdClass object with output and exitcode
+	 */
+	protected function getJSONOutput($params = []) {
 		$result = (object)array('output' => array(), 'exitcode' => 0);
 		$output = $this->getRawOutput($params);
 		if ($output->exitcode === 0) {

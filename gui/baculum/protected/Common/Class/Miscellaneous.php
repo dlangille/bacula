@@ -266,140 +266,16 @@ class Miscellaneous extends TModule {
 		return (preg_match('/^(all|deleted)$/', $type) === 1);
 	}
 
+	public function isValidOutput($type) {
+		return (preg_match('/^(raw|json)$/', $type) === 1);
+	}
+
 	public function escapeCharsToConsole($path) {
 		return preg_replace('/([$])/', '\\\${1}', $path);
 	}
 
 	public function objectToArray($data) {
 		return json_decode(json_encode($data), true);
-	}
-
-	public function decodeBaculaLStat($lstat) {
-		$base64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
-		$lstat = trim($lstat);
-		$lstat_fields = explode(' ', $lstat);
-		$lstat_len = count($lstat_fields);
-		if ($lstat_len < 16) {
-			// not known or empty lstat value
-			return;
-		} elseif ($lstat_len > 16) {
-			// cut off unknown fields
-			array_splice($lstat_fields, 16);
-		}
-
-		list(
-			$dev,
-			$inode,
-			$mode,
-			$nlink,
-			$uid,
-			$gid,
-			$rdev,
-			$size,
-			$blocksize,
-			$blocks,
-			$atime,
-			$mtime,
-			$ctime,
-			$linkfi,
-			$flags,
-			$data
-		) = $lstat_fields;
-		$encoded_values = array(
-			'dev' => $dev,
-			'inode' => $inode,
-			'mode' => $mode,
-			'nlink' => $nlink,
-			'uid' => $uid,
-			'gid' => $gid,
-			'rdev' => $rdev,
-			'size' => $size,
-			'blocksize' => $blocksize,
-			'blocks' => $blocks,
-			'atime' => $atime,
-			'mtime' => $mtime,
-			'ctime' => $ctime,
-			'linkfi' => $linkfi,
-			'flags' => $flags,
-			'data' => $data
-		);
-
-		$ret = array();
-		foreach($encoded_values as $key => $val) {
-			$result = 0;
-			$is_minus = false;
-			$start = 0;
-
-			if(substr($val, 0, 1) === '-') {
-				$is_minus = true;
-				$start++;
-			}
-
-			for($i = $start; $i < strlen($val); $i++) {
-				$result = bcmul($result, bcpow(2,6));
-				$result +=  strpos($base64, substr($val, $i , 1));
-			}
-			$ret[$key] = ($is_minus === true) ? -$result : $result;
-		}
-		return $ret;
-	}
-
-	public function parseBvfsList($list) {
-		$elements = array();
-		for($i = 0; $i < count($list); $i++) {
-			if(preg_match('/^(?P<pathid>\d+)\t(?P<filenameid>\d+)\t(?P<fileid>\d+)\t(?P<jobid>\d+)\t(?P<lstat>[a-zA-z0-9\+\/\ ]+)\t(?P<name>.*)\/$/', $list[$i], $match) == 1 || preg_match('/^(?P<pathid>\d+)\t(?P<filenameid>\d+)\t(?P<fileid>\d+)\t(?P<jobid>\d+)\t(?P<lstat>[a-zA-z0-9\+\/\ ]+)\t(?P<name>\.{2})$/', $list[$i], $match) == 1) {
-				if($match['name'] == '.') {
-					continue;
-				} elseif($match['name'] != '..') {
-					$match['name'] .= '/';
-				}
-				$elements[] = array(
-					'pathid' => $match['pathid'],
-					'filenameid' => $match['filenameid'],
-					'fileid' => $match['fileid'],
-					'jobid' => $match['jobid'],
-					'lstat' => $this->decodeBaculaLStat($match['lstat']),
-					'name' => $match['name'],
-					'type' => 'dir'
-				);
-			} elseif(preg_match('/^(?P<pathid>\d+)\t(?P<filenameid>\d+)\t(?P<fileid>\d+)\t(?P<jobid>\d+)\t(?P<lstat>[a-zA-z0-9\+\-\/\ ]+)\t(?P<name>[^\/]+)$/', $list[$i], $match) == 1) {
-				if($match['name'] == '.') {
-					continue;
-				}
-				$elements[] = array(
-					'pathid' => $match['pathid'],
-					'filenameid' => $match['filenameid'],
-					'fileid' => $match['fileid'],
-					'jobid' => $match['jobid'],
-					'lstat' => $this->decodeBaculaLStat($match['lstat']),
-					'name' => $match['name'],
-					'type' => 'file'
-				);
-			}
-		}
-		usort($elements, 'sortFilesListByName');
-		return $elements;
-	}
-
-	public function parseFileVersions($filename, $list) {
-		$elements = array();
-		for($i = 0; $i < count($list); $i++) {
-			if(preg_match('/^(?P<pathid>\d+)\t(?P<filenameid>\d+)\t(?P<fileid>\d+)\t(?P<jobid>\d+)\t(?P<lstat>[a-zA-Z0-9\+\/\ ]+)\t(?P<md5>.+)\t(?P<volname>.+)\t(?P<inchanger>\d+)$/', $list[$i], $match) == 1) {
-				$elements[$match['fileid']] = array(
-					'name' => $filename,
-					'pathid' => $match['pathid'],
-					'filenameid' => $match['filenameid'],
-					'fileid' => $match['fileid'],
-					'jobid' => $match['jobid'],
-					'lstat' => $this->decodeBaculaLStat($match['lstat']),
-					'md5' => $match['md5'],
-					'volname' => $match['volname'],
-					'inchanger' => $match['inchanger'],
-					'type' => 'file'
-				);
-			}
-		}
-		return $elements;
 	}
 
 	public function findJobIdStartedJob($output) {
@@ -483,21 +359,5 @@ class Miscellaneous extends TModule {
 		);
 		return sprintf('$apr1$%s$%s', $salt, $tmp);
 	}
-}
-
-/*
- * Small sorting callback function to sort files and directories by name.
- * Function keeps '.' and '..' names always in the beginning of array.
- * Used to sort files and directories from Bvfs.
- */
-function sortFilesListByName($a, $b) {
-	$firstLeft = substr($a['name'], 0, 1);
-	$firstRight = substr($b['name'], 0, 1);
-	if ($firstLeft == '.' && $firstRight != '.') {
-		return -1;
-	} else if ($firstRight == '.' && $firstLeft != '.') {
-		return 1;
-	}
-	return strcasecmp($a['name'], $b['name']);
 }
 ?>

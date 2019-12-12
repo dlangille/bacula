@@ -20,6 +20,8 @@
  * Bacula(R) is a registered trademark of Kern Sibbald.
  */
  
+Prado::using('Application.API.Class.ConsoleOutputPage');
+
 /**
  * BVFS versions.
  *
@@ -27,13 +29,14 @@
  * @category API
  * @package Baculum API
  */
-class BVFSVersions extends BaculumAPIServer {
+class BVFSVersions extends ConsoleOutputPage {
 
 	public function get() {
 		$jobid = $this->Request->contains('jobid') ? intval($this->Request['jobid']) : 0;
 		$pathid = $this->Request->contains('pathid') ? intval($this->Request['pathid']) : 0;
 		$filenameid = $this->Request->contains('filenameid') ? intval($this->Request['filenameid']) : 0;
 		$copies = $this->Request->contains('copies') ? intval($this->Request['copies']) : 0;
+		$out_format = $this->Request->contains('output') && $this->isOutputFormatValid($this->Request['output']) ? $this->Request['output'] : parent::OUTPUT_FORMAT_RAW;
 		$client = null;
 		if ($this->Request->contains('client') && $this->getModule('misc')->isValidName($this->Request['client'])) {
 			$client = $this->Request['client'];
@@ -44,20 +47,59 @@ class BVFSVersions extends BaculumAPIServer {
 			$this->error = BVFSError::ERROR_INVALID_CLIENT;
 			return;
 		}
+		$params = [
+			'client' => $client,
+			'jobid' => $jobid,
+			'pathid' => $pathid,
+			'filenameid' => $filenameid,
+			'copies' => $copies
+		];
+		$out = (object)['output' => [], 'exitcode' => 0];
+		if ($out_format === parent::OUTPUT_FORMAT_RAW) {
+			$out = $this->getRawOutput($params);
+		} elseif($out_format === parent::OUTPUT_FORMAT_JSON) {
+			$out = $this->getJSONOutput($params);
+		}
 
+		$this->output = $out->output;
+		$this->error = $out->exitcode;
+	}
+
+	/**
+	 * Get BVFS versions output from console in raw format.
+	 *
+	 * @param array $params command  parameters
+	 * @return StdClass object with output and exitcode
+	 */
+	protected function getRawOutput($params = []) {
 		$cmd = array(
 			'.bvfs_versions',
-			'client="' . $client . '"',
-			'jobid="' . $jobid . '"',
-			'pathid="' . $pathid . '"',
-			'fnid="' . $filenameid . '"'
+			'client="' . $params['client'] . '"',
+			'jobid="' . $params['jobid'] . '"',
+			'pathid="' . $params['pathid'] . '"',
+			'fnid="' . $params['filenameid'] . '"'
 		);
-		if ($copies == 1) {
+		if ($params['copies'] == 1) {
 			$cmd[] = 'copies';
 		}
-		$result = $this->getModule('bconsole')->bconsoleCommand($this->director, $cmd);
-		$this->output = $result->output;
-		$this->error = $result->exitcode;
+		return $this->getModule('bconsole')->bconsoleCommand($this->director, $cmd);
+	}
+
+	/**
+	 * Get BVFS versions output in JSON format.
+	 *
+	 * @param array $params command  parameters
+	 * @return StdClass object with output and exitcode
+	 */
+	protected function getJSONOutput($params = []) {
+		$result = (object)['output' => [], 'exitcode' => 0];
+		$raw = $this->getRawOutput($params);
+		if ($raw->exitcode === 0) {
+			$result->output = $this->getModule('bvfs')->parseFileVersions($raw->output);
+		} else {
+			$result = $raw;
+		}
+		return $result;
 	}
 }
 ?>

@@ -23,6 +23,8 @@
 		<!-- tools modules -->
 		<module id="bconsole" class="Application.API.Class.Bconsole" />
 		<module id="json_tools" class="Application.API.Class.JSONTools" />
+		<module id="bvfs" class="Application.API.Class.BVFS" />
+		<module id="blstat" class="Application.API.Class.BLStat" />
 		<!-- config modules -->
 		<module id="api_config" class="Application.API.Class.APIConfig" />
 		<module id="bacula_config" class="Application.API.Class.BaculaConfig" />

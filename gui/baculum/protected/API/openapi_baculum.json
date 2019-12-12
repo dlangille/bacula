@@ -3518,6 +3518,9 @@
 						"schema": {
 							"type": "string"
 						}
+					},
+					{
+						"$ref": "#/components/parameters/Output"
 					}
 				]
 			}
@@ -3589,6 +3592,9 @@
 						"schema": {
 							"type": "string"
 						}
+					},
+					{
+						"$ref": "#/components/parameters/Output"
 					}
 				]
 			}
@@ -3670,6 +3676,9 @@
 							"type": "integer",
 							"default": 0
 						}
+					},
+					{
+						"$ref": "#/components/parameters/Output"
 					}
 				]
 			}

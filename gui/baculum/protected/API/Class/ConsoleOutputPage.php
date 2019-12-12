@@ -38,12 +38,12 @@ abstract class ConsoleOutputPage extends BaculumAPIServer {
 	/**
 	 * Get raw output from console.
 	 */
-	abstract protected function getRawOutput($params = array());
+	abstract protected function getRawOutput($params = []);
 
 	/**
 	 * Get parsed JSON output from console.
 	 */
-	abstract protected function getJSONOutput($params = array());
+	abstract protected function getJSONOutput($params = []);
 
 	/**
 	 * Validate output format.
