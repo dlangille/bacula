@@ -54,6 +54,7 @@ kernssunproductionconfig
 kernswinconfig
 kernswinproductionconfig
 Makefile
+nbproject
 newdb
 newtape
 run_clean

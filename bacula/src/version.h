@@ -19,6 +19,7 @@
  */
 #define DEPKGS_QT_VERSION  "01Jan13"
 #define DEPKGS_VERSION     "10Oct18"
+#define DOCKER_TAR_IMAGE   "19Aug19"
 
 /*
    Bacula(R) - The Network Backup Solution

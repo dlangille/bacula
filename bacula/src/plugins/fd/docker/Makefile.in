@@ -1,0 +1,89 @@
+#
+# Simple Makefile for building test FD plugins for Bacula
+#
+# Copyright (C) 2000-2015 by Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+#
+@MCOMMON@
+
+# No optimization for now for easy debugging
+
+FDDIR=../../../filed
+SRCDIR=../../..
+LIBDIR=../../../lib
+FDPLUGDIR=..
+
+topdir = @BUILD_DIR@
+working_dir=@working_dir@
+thisdir = src/plugins/fd/docker
+
+DOCKERSRC = dkid.c dkinfo.c dkcommctx.c docker-fd.c
+DOCKERSRCH = dkid.h dkinfo.h dkcommctx.h docker-fd.h
+DOCKEROBJ = $(DOCKERSRC:.c=.lo)
+
+.SUFFIXES:    .c .lo
+
+all: docker-fd.la
+
+.c.lo:
+	@echo "Compiling $< ..."
+	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) $(CPPFLAGS) -I${SRCDIR} -I${FDDIR} -I${FDPLUGDIR} -DWORKDIR=\"$(DESTDIR)$(working_dir)\" -c $<
+
+%.lo: %.c %.h Makefile
+	@echo "Compiling $< ..."
+	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) $(CPPFLAGS) $(CFLAGS) -I${SRCDIR} -I${FDDIR} -I${FDPLUGDIR} -DWORKDIR=\"$(DESTDIR)$(working_dir)\" -c $(@:.lo=.c)
+
+$(FDPLUGDIR)/pluglib.lo:
+	$(MAKE) -C $(FDPLUGDIR) pluglib.lo
+
+docker-fd.la: Makefile $(DOCKEROBJ) $(FDPLUGDIR)/pluglib.lo $(DOCKERSRCH)
+	@echo "Linking $(@:.la=.so) ..."
+	$(NO_ECHO)$(LIBTOOL_LINK) --silent $(CXX) $(LDFLAGS) -shared $^ -o $@ -rpath $(plugindir) -module -export-dynamic -avoid-version
+
+$(LIBDIR)/unittests.o: $(LIBDIR)/unittests.c
+	$(MAKE) -C $(LIBDIR) unittests.o
+
+test_dkid: Makefile dkid.c $(LIBDIR)/unittests.o
+	$(RMF) dkid.o
+	$(CXX) -DTEST_PROGRAM $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(SRCDIR) -I$(LIBDIR) $(DINCLUDE) $(CFLAGS) dkid.c
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L$(LIBDIR) -o $@ dkid.o $(LIBDIR)/unittests.o $(DLIB) -lbac -lm $(LIBS) $(OPENSSL_LIBS)
+	$(RMF) dkid.o
+
+install: all
+	$(MKDIR) $(DESTDIR)$(plugindir)
+	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) docker-fd.la $(DESTDIR)$(plugindir)
+	$(NO_ECHO)$(RMF) $(DESTDIR)$(plugindir)/docker-fd.la
+
+install-test-plugin: all
+	$(MKDIR) $(DESTDIR)$(plugindir)
+	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) docker-fd.la $(DESTDIR)$(plugindir)
+	$(NO_ECHO)$(RMF) $(DESTDIR)$(plugindir)/docker-fd.la
+	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) test_docker $(DESTDIR)$(sbindir)
+
+Makefile: Makefile.in $(topdir)/config.status
+	cd $(topdir) \
+	  && CONFIG_FILES=$(thisdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
+
+libtool-clean:
+	@find . -name '*.lo' -print | xargs $(LIBTOOL_CLEAN) $(RMF)
+	@$(RMF) *.la
+	@$(RMF) -r .libs _libs
+
+test_docker-clean:
+	@$(RMF) test_docker
+
+clean:	libtool-clean test_docker-clean
+	@rm -f main *.so *.o
+
+distclean: clean
+	@rm -f Makefile *.la *.lo
+	@rm -rf .libs
+
+libtool-uninstall:
+	$(LIBTOOL_UNINSTALL) $(RMF) $(DESTDIR)$(plugindir)/docker-fd.so
+	$(LIBTOOL_UNINSTALL) $(RMF) $(DESTDIR)$(plugindir)/test_docker
+
+uninstall: @LIBTOOL_UNINSTALL_TARGET@
+
+depend:
