@@ -530,7 +530,7 @@ int main (int argc, char *argv[])
    ok(j == 1, "Check batch session records");
    j = 0;
    Mmsg(buf, "%lld", (uint64_t)jcr->JobId);
-   ok(db_get_file_list(jcr, jcr->db_batch, buf, false, false, list_files, &j),
+   ok(db_get_file_list(jcr, jcr->db_batch, buf, DBL_NONE, list_files, &j),
       "List files with db_get_file_list()");
    ok(j == 1, "Check db_get_file_list results");
    /* ---------------------------------------------------------------- */
