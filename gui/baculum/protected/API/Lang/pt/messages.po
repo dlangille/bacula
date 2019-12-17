@@ -1,15 +1,19 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2017-11-01 16:36-0200\n"
-"Project-Id-Version: \n"
+"PO-Revision-Date: 2019-12-17 17:21\n"
+"Project-Id-Version: b02f04a28aec0155df9503e3b78ae8cc\n"
 "POT-Creation-Date: \n"
 "Last-Translator: Wanderlei Hüttel <wanderlei.huttel@gmail.com>\n"
-"Language-Team: \n"
-"Language: pt\n"
+"Language-Team: Portuguese, Brazilian\n"
+"Language: pt_BR\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Poedit 2.0.4\n"
+"X-Generator: Poedit 1.5.4\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Crowdin-Project: b02f04a28aec0155df9503e3b78ae8cc\n"
+"X-Crowdin-Language: pt-BR\n"
+"X-Crowdin-File: /Baculum API/messages.po\n"
 
 msgid "Language:"
 msgstr "Idioma:"
@@ -21,10 +25,10 @@ msgid "select language"
 msgstr "selecione o idioma"
 
 msgid "English"
-msgstr "English"
+msgstr "Inglês"
 
 msgid "Polish"
-msgstr "Polish"
+msgstr "Polonês"
 
 msgid "Portuguese"
 msgstr "Português"
@@ -75,7 +79,7 @@ msgid "Login:"
 msgstr "Usuário:"
 
 msgid "Please enter login."
-msgstr "Infomr"
+msgstr "Infomar"
 
 msgid "Password:"
 msgstr "Senha:"
@@ -405,116 +409,116 @@ msgid "Basic auth ready..."
 msgstr "Autenticação básica pronta..."
 
 msgid "Name"
-msgstr "Name"
+msgstr "Nome"
 
 msgid "Short name:"
-msgstr "Short name:"
+msgstr "Apelido:"
 
 msgid "Edit"
-msgstr "Edit"
+msgstr "Editar"
 
 msgid "Edit OAuth2 client parameters"
-msgstr "Edit OAuth2 client parameters"
+msgstr "Editar parâmetros do cliente OAuth2"
 
 msgid "Select:"
-msgstr "Select:"
+msgstr "Selecionar:"
 
 msgid "Baculum working directory for Bacula config:"
-msgstr "Baculum working directory for Bacula config:"
+msgstr "Diretório de trabalho do Baculum para a configuração do Bacula:"
 
 msgid "In this directory Baculum API saves temporarily Bacula configuration files (mainly for validation purposes) just before they are written as real Bacula configuration files."
-msgstr "In this directory Baculum API saves temporarily Bacula configuration files (mainly for validation purposes) just before they are written as real Bacula configuration files."
+msgstr "Nesse diretório, a API do Baculum salva temporariamente os arquivos de configuração do Bacula (principalmente para fins de validação) antes de serem gravados como arquivos de configuração reais do Bacula."
 
 msgid "Version:"
-msgstr "Version:"
+msgstr "Versão:"
 
 msgid "Authentication"
-msgstr "Authentication"
+msgstr "Autenticação"
 
 msgid "Authentication to Baculum REST API"
-msgstr "Authentication to Baculum REST API"
+msgstr "Autenticação REST API do Baculum"
 
 msgid "Authentication type:"
-msgstr "Authentication type:"
+msgstr "Tipo de autenticação:"
 
 msgid "Step 6 - authentication to API"
-msgstr "Step 6 - authentication to API"
+msgstr "Passo 6 - Autenticação da API"
 
 msgid "Actions"
-msgstr "Actions"
+msgstr "Ações"
 
 msgid "Start"
-msgstr "Start"
+msgstr "Iniciar"
 
 msgid "Stop"
-msgstr "Stop"
+msgstr "Parar"
 
 msgid "Restart"
-msgstr "Restart"
+msgstr "Reiniciar"
 
 msgid "Director start command:"
-msgstr "Director start command:"
+msgstr "Comando para iniciar Director:"
 
 msgid "Director stop command:"
-msgstr "Director stop command:"
+msgstr "Comando para parar Director:"
 
 msgid "Director restart command:"
-msgstr "Director restart command:"
+msgstr "Comando para reiniciar Director:"
 
 msgid "Storage Daemon start command:"
-msgstr "Storage Daemon start command:"
+msgstr "Comando para iniciar Storage daemon:"
 
 msgid "Storage Daemon stop command:"
-msgstr "Storage Daemon stop command:"
+msgstr "Comando para parar Storage daemon:"
 
 msgid "Storage Daemon restart command:"
-msgstr "Storage Daemon restart command:"
+msgstr "Comando para reiniciar Storage daemon:"
 
 msgid "File Daemon/Client start command:"
-msgstr "File Daemon/Client start command:"
+msgstr "Comando para iniciar Client daemon:"
 
 msgid "File Daemon/Client stop command:"
-msgstr "File Daemon/Client stop command:"
+msgstr "Comando para parar Client daemon:"
 
 msgid "File Daemon/Client restart command:"
-msgstr "File Daemon/Client restart command:"
+msgstr "Comando para reiniciar Client daemon:"
 
 msgid "Do you want to setup start, stop and restart actions for Bacula components? If you define them, there will be possible to call these actions via API interface and by Baculum Web as well."
-msgstr "Do you want to setup start, stop and restart actions for Bacula components? If you define them, there will be possible to call these actions via API interface and by Baculum Web as well."
+msgstr "Deseja configurar ações de (iniciar, parar e reiniciar) para os componentes do Bacula? Se você defini-las, será possível chamar essas ações via interface da API e também pelo Baculum Web."
 
 msgid "Sudo configuration"
-msgstr "Sudo configuration"
+msgstr "Configuração do Sudo"
 
 msgid "Example sudo configuration for Apache web server user (RHEL, CentOS and others):"
-msgstr "Example sudo configuration for Apache web server user (RHEL, CentOS and others):"
+msgstr "Exemplo de configuração do sudo para servidor web Apache (RHEL, CentOS e outros):"
 
 msgid "Example sudo configuration for Lighttpd web server user (RHEL, CentOS and others):"
-msgstr "Example sudo configuration for Lighttpd web server user (RHEL, CentOS and others):"
+msgstr "Exemplo de configuração do sudo para servidor web Lighttpd (RHEL, CentOS e outros):"
 
 msgid "Example sudo configuration for Apache and Lighttpd web servers user (Debian, Ubuntu and others):"
-msgstr "Example sudo configuration for Apache and Lighttpd web servers user (Debian, Ubuntu and others):"
+msgstr "Exemplo de configuração do sudo para servidores web Apache e Lighttpd (Debian, Ubuntu e outros):"
 
 msgid "Get sudo configuration"
-msgstr "Get sudo configuration"
+msgstr "Obter configuração do sudo"
 
 msgid "Please copy appropriate sudo configuration and put it to a new sudoers.d file for example /etc/sudoers.d/baculum-api"
-msgstr "Please copy appropriate sudo configuration and put it to a new sudoers.d file for example /etc/sudoers.d/baculum-api"
+msgstr "Copie a configuração sudo apropriada e coloque-a em um novo arquivo sudoers.d, por exemplo /etc/sudoers.d/baculum-api"
 
 msgid "Step 5 - enable actions for components"
-msgstr "Step 5 - enable actions for components"
+msgstr "Passo 5 - Ativar ações para componentes"
 
 msgid "Directory path for new config files:"
-msgstr "Directory path for new config files:"
+msgstr "Caminho do diretório para novos arquivos de configuração:"
 
 msgid "Use sudo for actions:"
-msgstr "Use sudo for actions:"
+msgstr "Usar sudo para ações:"
 
 msgid "Actions setting:"
-msgstr "Actions setting:"
+msgstr "Configuração de ações:"
 
 msgid "Note"
-msgstr "Note"
+msgstr "Nota"
 
 msgid "Please use visudo to add this configuration, otherwise please do remember to add empty line at the end of file."
-msgstr "Please use visudo to add this configuration, otherwise please do remember to add empty line at the end of file."
+msgstr "Por favor, use o visudo para adicionar essa configuração, caso contrário, lembre-se de adicionar uma linha vazia no final do arquivo."
 
