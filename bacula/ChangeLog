@@ -1,8 +1,55 @@
-              Changelog on version 9.4.3
+              Changelog on version 9.4.4
 
+Release 9.4.4
+
+28May19
+ - rpm: Fix mysql dependency for bacula-postgresql
+
+26May19
+ - baculum: Fix #2477 escaping backslashes in config in text directive types
+
+24May19
+ - Fix bug 2476 -- copy/migration jobs fail when waiting for a new Volume
+ - Add copy-jobspan-label-wait-test to do_all
+ - Add two new regression tests submitted by Martin Simmons for bug 2476
+
+23May19
+ - baculum: Fix #2474 error 404 if document root path uses link with ending 
+  slash - fix suggested by vondi
+
+22May19
+ - Remove bacula32.def and bacula64.def.
+ - Add Michael Narigon as author for Mac heap implementation
+
+18May19
+ - baculum: Remove php database extensions dependency from web requirements
+
+17May19
+ - Add tests/restart-jobmedia-test to do_all
+
+15May19
+ - Allow to hangup/blowup inside a file for tests
+
+13May19
+ - baculum: Fix removing path items selected to restore in restore wizard
+ - baculum: Fix clearing restore path field after selecting backup in restore 
+  wizard
+
+02May19
+ - baculum: Fix TPhpFatalErrorException exception on job view page with PHP 
+  version lower than 5.5
+
+12Feb19
+ - Add db_get_jobmedia_record() function
+ - Check JobMedia validity after an incomplete job
+
+Bugs fixed/closed since last release:
+2474 2477
+
+
+
+===========================================================
 Release 9.4.3
-
-
 02May19
  - baculum: Add status schedule page
  - baculum: Add status schedule API endpoint
@@ -155,7 +202,7 @@ Release 9.4.2
 29Jan19
  - Fix rwlock_test unittest bug #2449 Only call thr_setconcurrency if it's 
   available. Fix order of linking and installation.
- - Fix spelling errors found by lintian by Carsten in bug #2436
+ - FixFix spelling errors found by lintian by Carsten in bug #2436
  - Apply chmods from Carsten in bug #2445
 
 28Jan19
