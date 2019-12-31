@@ -1,5 +1,380 @@
-              Changelog on version 9.4.4
+              Changelog on version 9.6.0
 
+
+
+31Dec19
+ - Get Branch-9.4 ReleaseNotes
+ - Update po POTFILES.in and version
+ - Get ChangeLog from Branch-9.4
+
+17Dec19
+ - baculum: Update Polish translations for API and Web
+ - baculum: Update Portuguese translations for API and Web
+
+16Dec19
+ - Fix cats-test.c compile
+
+14Dec19
+ - baculum: Upgrade W3.CSS from version 4.10 to 4.13
+ - Add Docker Plugin for FileDaemon.
+ - Add pluglib fd plugin support utilities.
+ - Redesigning PM management add missing files.
+
+12Dec19
+ - baculum: Fix delete job button visibility
+ - baculum: Add to BVFS lsdirs, lsfiles and versions endpoints new output=raw/json 
+  parameter
+
+08Dec19
+ - baculum: Update spec and deb files
+
+07Dec19
+ - baculum: Do not try to switch to new user in API and Web install wizards
+ - baculum: Improve Polish translations
+ - baculum: Fix maximum length for basic auth password fields
+ - baculum: Start storing basic auth passwords in APR MD5 format
+ - baculum: Fix button to reopen change user password setting
+ - baculum: Fix sorting clients in fileset browser window
+
+05Dec19
+ - baculum: Improve showing create new resource messages
+
+03Dec19
+ - baculum: Improve texts in restore wizard
+ - baculum: Use new icons in restore and fileset browsers
+ - baculum: Fix PHP error on storage view page with autochanger comming from 
+  host different than main (reported by Jose Alberto)
+
+01Dec19
+ - baculum: Fix internal error on restore page if MySQL catalog database is 
+  used
+ - baculum: Avoid doing redundant API calls by job monitor
+ - baculum: Add support to restore from copy jobs
+ - baculum: Add API changes to support restore from copy jobs
+
+29Nov19
+ - baculum: Add script for checking if Baculum files are installed correctly
+
+24Nov19
+ - baculum: Refactor authentication, authorization and exceptions
+
+22Nov19
+ - Fix #5708 about "cancel all" command issue
+
+21Nov19
+ - baculum: Bandwidth limit window improvements
+
+20Nov19
+ - baculum: Add auto-refreshing job tables
+
+18Nov19
+ - baculum: Add progress bar to restore jobs on status client
+ - baculum: Add job name parameter to monitor
+
+17Nov19
+ - baculum: Add table filters
+
+16Nov19
+ - baculum: Add restore progress bar
+ - baculum: In job status avoid calling client if job isn't running
+
+14Nov19
+ - Fix compilation on Solaris
+ - baculum: Extend max length for client secret field to maximum allowed secret 
+  size
+
+11Nov19
+ - baculum: Improvements to messages resource
+ - baculum: Implement swipe event and use it to hide main menu on mobile devices
+
+10Nov19
+ - baculum: Group directives into sections in config directive list
+
+09Nov19
+ - baculum: Fix problem with shaking spinning icons on Firefox
+ - baculum: Add confirm window to delete job action
+ - baculum: Add job history list on job page
+
+08Nov19
+ - baculum: Fix loading first job setting in run job window on window open
+ - baculum: Add in API wizard example sudo configuration for bconsole and JSON 
+  tools
+ - baculum: Make resource config page buttons always available
+
+06Nov19
+ - baculum: Fix language setting in config wizard during first run
+
+05Nov19
+ - baculum: Fix refreshing job status only when actions tab is open
+
+03Nov19
+ - baculum: Miscellaneous improvements to schedule configuration
+ - baculum: Extend combobox control to support associative arrays as data 
+  source
+
+01Nov19
+ - Fix for #0005391: show negative values.
+
+30Oct19
+ - Fix #5546 about incorrect level for job resumed
+ - baculum: Move refresh job button and log order button to job log tab
+
+29Oct19
+ - baculum: Set job values on job selection in run job window
+ - baculum: Turn application mode to normal
+ - baculum: Add jsmin-php as framework dependency
+ - baculum: Fix small issues with old not using svg icons
+
+28Oct19
+ - Fix error on .ls when plugin name without ':'
+ - baculum: Add list job files to job history view page
+ - baculum: Add list job files API endpoint
+
+24Oct19
+ - tray-monitor: fix potential memory corruption
+
+22Oct19
+ - Fix #5461 #5513 #4717 About WroteVol non-zero message
+ - Update Docker Plugin build procedure.
+
+21Oct19
+ - docker: Add Docker Plugin DKID unittest.
+
+15Oct19
+ - Add Docker Plugin regression tests - more files.
+ - Add Docker Plugin regression tests.
+ - build: Add Makefile update to fd plugin builds.
+
+04Oct19
+ - baculum: Fix PHP error on running job status page and client status page
+
+26Sep19
+ - baculum: Fix support for UTF-8 currency symbols in paths - reported by 
+  Frédéric F.
+
+30Aug19
+ - Fix running job count in status output
+
+25Aug19
+ - baculum: Fix directing to default API page when API settings has not been 
+  created yet
+
+20Aug19
+ - baculum: Set default refresh interval for status client
+ - baculum: Improve selecting storage value in run job window
+
+18Aug19
+ - baculum: Fix saving to config empty runscript subresources
+ - baculum: Add graphical running job status on running job page
+ - baculum: Add progress bars to backup jobs displaying on status client page
+ - baculum: Fix displaying SqlQuery value in selection type job directive
+
+15Aug19
+ - baculum: Add to client status modal window to set bandwidth limit for job
+ - baculum: Add API endpoint to set job bandwidth limit
+ - baculum: Add to client status modal window to set bandwidth limit for client
+ - baculum: Add API endpoint to set client bandwidth limit
+ - baculum: Add UnitType and AllowRemove parameters to speed type directive 
+  control
+
+12Aug19
+ - baculum: Don not use data description and data dependencies modules initialization
+ - baculum: Improve checking dependencies
+
+11Aug19
+ - baculum: Fix running job twice when job is running by run job window
+
+08Aug19
+ - baculum: Changes to proper working list type controls on page load
+ - baculum: Change Font Awesome SVG icons into web fonts icons
+ - Add new psk-enable-test
+
+07Aug19
+ - baculum: Fix removing fileset options subresources
+ - baculum: Make loading configuration controls easier
+ - baculum: Enable adding multiple file set file browser controls on the same 
+  page
+
+04Aug19
+ - baculum: Fix using nested directives in repeater control
+ - baculum: Misc changes to keep backward compatibility in API endpoints
+ - baculum: Fix scrolling to new runscript subresource on add new runscript 
+  action
+ - baculum: Change way of working directive renderer
+
+03Aug19
+ - baculum: Split API panel, oauth, api and page parts into separate services
+
+01Aug19
+ - baculum: Add component start/stop/restart actions to Web
+ - baculum: Update API SELinux module for new component action policies
+ - baculum: Implement component start/stop/restart actions in API
+
+29Jul19
+ - baculum: Show error message on status client request if client is not available
+
+28Jul19
+ - baculum: Implement graphical status client
+ - baculum: Update Font Awesome icons to version 5.9.0
+ - baculum: Add output=raw/json parameter to show client API endpoint
+ - baculum: Add status client API endpoint
+
+26Jul19
+ - baculum: Remove deprecated and not used directives
+
+25Jul19
+ - baculum: On restore wizard job list add link to job history for specific 
+  jobid
+ - baculum: Fix showing job size value on jobs on volume page
+ - baculum: Minor fixes and improvements in fileset file browser
+ - baculum: Allow dollar character in bconsole commands (used for paths)
+
+24Jul19
+ - baculum: Enable restoring data from locations included in paths defined in 
+  FileSet
+
+23Jul19
+ - baculum: Make 'Run job' and 'Perform restore' buttons clickable at whole 
+  theirs area
+
+21Jul19
+ - baculum: Miscellaneous improvements to use restore file browsers on different 
+  screen sizes and mobile devices
+ - baculum: Fix removing items from selected file browser in restore wizard
+ - baculum: Unify config module menus look
+ - baculum: Create multiple combobox control and use it in console ACL directives
+ - baculum: Add timeout to first refresh job log to have log output earlier
+
+20Jul19
+ - baculum: Do not show unknown job level for admin job type
+ - baculum: Add new directives and new resources support
+ - baculum: Fix setting selected items in list directive controls
+ - baculum: Add version number to API and Web - idea proposed by Wanderlei 
+  Huttel
+
+19Jul19
+ - baculum: Disable emulation prepared statements for MySQL to solve problem 
+  getting every value as string
+ - baculum: Apply framework patch that fixes SQL error when native MySQL prepare 
+  statements are used
+
+17Jul19
+ - baculum: Add new graph types
+
+07Jul19
+ - baculum: Add statistics resource support
+
+30Jun19
+ - baculum: Add option to show size unit values as decimal or binary bytes
+
+27Jun19
+ - Add a Bacula statistics collection routine.
+
+26Jun19
+ - Fix incorrect ASSERTD().
+
+23Jun19
+ - baculum: Fix showing unit for size and time period directive types
+
+22Jun19
+ - baculum: Add missing speed type control to support speed type directives - 
+  reported by Wanderlei Huttel
+
+16Jun19
+ - Fix comment
+
+26May19
+ - baculum: Fix #2477 escaping backslashes in config in text directive types
+
+24May19
+ - Fix bug 2476 -- copy/migration jobs fail when waiting for a new Volume
+ - Add copy-jobspan-label-wait-test to do_all
+ - Add two new regression tests submitted by Martin Simmons for bug 2476
+
+23May19
+ - Add bsmtp Message-Id/MIME-Version/Content-Type headers.
+ - baculum: Fix #2474 error 404 if document root path uses link with ending 
+  slash - fix suggested by vondi
+
+22May19
+ - Add Michael Narigon as author for Mac heap implementation
+ - Remove bacula32.def and bacula64.def.
+
+21May19
+ - Redesigning PM management and add support for macOS.
+ - baculum: Add password field control and use it for password directives
+
+19May19
+ - baculum: Add SELinux modules for Web and API
+
+18May19
+ - baculum: Remove php database extensions dependency from web requirements
+
+17May19
+ - Add tests/restart-jobmedia-test to do_all
+
+14May19
+ - baculum: Update API documentation to job estimate endpoint
+ - baculum: Use in run job window estimate command in background to avoid HTTP 
+  timeout
+ - baculum: Move running job estimation to background in API part
+ - baculum: Prevent selecting in restore file browser directories placed in 
+  locations that are outside paths defined in fileset - reported by Wanderlei 
+  Huttel
+
+13May19
+ - baculum: Fix removing path items selected to restore in restore wizard
+ - baculum: Fix clearing restore path field after selecting backup in restore 
+  wizard
+
+12May19
+ - baculum: Update API documentation
+ - baculum: Add API endpoints to update slots with and without barcodes and use 
+  them in on web interface side
+
+09May19
+ - baculum: Use on web interface side new API endpoints to label volume with and 
+  without barcodes
+ - baculum: Add API endpoints to label volume with and without barcodes
+
+08May19
+ - baculum: Update run job API endpoint in API documentation
+ - baculum: Request #2469 add start and cancel buttons on job history list 
+  page
+ - baculum: Add filesetid parameter to run job API endpoint
+
+07May19
+ - baculum: Set column visibility priorities for status schedule tables in 
+  responsive mode
+
+03May19
+ - baculum: Add status schedule endpoint to API documentation
+ - baculum: Fix showing graphs if exists finished job with empty start time 
+  value
+
+02May19
+ - baculum: Fix TPhpFatalErrorException exception on job view page with PHP 
+  version lower than 5.5
+ - baculum: Extend log parser to support restore client, job name and volume 
+  names
+
+01Apr19
+ - Rework fsync patch for win32
+ - Fix Windows SD compilation
+ - Add Cython detection
+
+29Mar19
+ - Add SyncOnClose Storage Device directive
+
+12Feb19
+ - Add db_get_jobmedia_record() function
+ - Check JobMedia validity after an incomplete job
+
+Bugs fixed/closed since last release:
+0005391 2469 2474 2477 5461 5546 5708
+
+
+======================================================================
 Release 9.4.4
 
 28May19
