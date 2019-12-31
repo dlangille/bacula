@@ -1,6 +1,38 @@
 
-               Release Notes for Bacula 9.4.3
+               Release Notes for Bacula 9.4.4
 
+Release 9.4.4
+
+This is a bug fix release to 9.4.3.  It includes some fixes that fix
+bad data records in Copy/Migration jobs or problems doing restores
+of Copy/Migration jobs.
+
+28May19
+ - rpm: Fix mysql dependency for bacula-postgresql
+ - Fix bug 2476 -- copy/migration jobs fail when waiting for a new Volume
+ - Add copy-jobspan-label-wait-test to do_all
+ - Add two new regression tests submitted by Martin Simmons for bug 2476
+ - Remove bacula32.def and bacula64.def.
+ - Add Michael Narigon as author for Mac heap implementation
+ - Add tests/restart-jobmedia-test to do_all
+ - Allow to hangup/blowup inside a file for tests
+   slash - fix suggested by vondi
+ - Add db_get_jobmedia_record() function
+ - Check JobMedia validity after an incomplete job
+ - baculum: Fix #2477 escaping backslashes in config in text directive types
+ - baculum: Fix #2474 error 404 if document root path uses link with ending 
+ - baculum: Remove php database extensions dependency from web requirements
+ - baculum: Fix removing path items selected to restore in restore wizard
+ - baculum: Fix clearing restore path field after selecting backup in restore 
+    wizard
+ - baculum: Fix TPhpFatalErrorException exception on job view page with PHP 
+    version lower than 5.5
+
+Bugs fixed/closed since last release:
+2474 2476 2477
+
+
+========================================================================
 Release 9.4.3
 
 This is a bug fix release for version 9.4.2.  It includes a number of bug
