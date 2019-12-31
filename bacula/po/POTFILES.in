@@ -42,6 +42,7 @@ src/filed/filed.h
 src/filed/filed_conf.h
 src/filed/protos.h
 src/filed/restore.h
+src/filed/suspend.h
 src/fileopts.h
 src/filetypes.h
 src/findlib/bfile.h
@@ -55,6 +56,7 @@ src/lib/address_conf.h
 src/lib/alist.h
 src/lib/attr.h
 src/lib/base64.h
+src/lib/bcollector.h
 src/lib/berrno.h
 src/lib/bget_msg.h
 src/lib/bits.h
@@ -65,10 +67,12 @@ src/lib/breg.h
 src/lib/bregex.h
 src/lib/bsock.h
 src/lib/bsockcore.h
+src/lib/bstat.h
 src/lib/btime.h
 src/lib/btimers.h
 src/lib/bwlimit.h
 src/lib/cmd_parser.h
+src/lib/collect.h
 src/lib/crypto.h
 src/lib/devlock.h
 src/lib/dlist.h
@@ -111,7 +115,12 @@ src/lib/waitq.h
 src/lib/watchdog.h
 src/lib/worker.h
 src/lib/workq.h
+src/plugins/fd/docker/dkcommctx.h
+src/plugins/fd/docker/dkid.h
+src/plugins/fd/docker/dkinfo.h
+src/plugins/fd/docker/docker-fd.h
 src/plugins/fd/fd_common.h
+src/plugins/fd/pluglib.h
 src/qt-console/bat.h
 src/qt-console/bat_conf.cpp
 src/qt-console/bat_conf.h
