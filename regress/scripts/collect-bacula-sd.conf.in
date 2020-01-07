@@ -154,7 +154,7 @@ Statistics {
   Type = graphite
   Prefix = "backup"
   Host = localhost
-  Port = 9223
+  Port = 9225
   Metrics = "bacula.storage.@hostname@-sd.config.devices"
 }
 

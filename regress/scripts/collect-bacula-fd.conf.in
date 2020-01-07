@@ -57,7 +57,7 @@ Statistics {
   Type = graphite
   Prefix = "backup"
   Host = localhost
-  Port = 9223
+  Port = 9224
   Metrics = "bacula.client.@hostname@-fd.memory.bufs"
 }
 

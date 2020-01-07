@@ -59,32 +59,8 @@ END_OF_DATA
 run_bconsole
 # start a Graphite simulator :)
 netcat -l -p 9223 -w 180 > ${cwd}/tmp/log7.out
-netcat -l -p 9223 -w 180 > ${cwd}/tmp/log8.out
-netcat -l -p 9223 -w 180 > ${cwd}/tmp/log9.out
-
-#cat <<END_OF_DATA >tmp/bconcmds
-#@# FD metrics
-#collect client all
-#@$out tmp/log3.out
-#@# SD metrics
-#collect storage all
-## now run some jobs
-#@$out tmp/log4.out
-#label storage=File1 volume=TestVolume001
-#run job=$JobName storage=File1 yes
-#wait
-#messages
-#@$out tmp/log5.out
-#@# Director metrics
-#collect all
-#@$out tmp/log6.out
-#@# FD metrics
-#collect client all
-#@$out tmp/log7.out
-#@# SD metrics
-#collect storage all
-#quit
-#END_OF_DATA
+netcat -l -p 9224 -w 180 > ${cwd}/tmp/log8.out
+netcat -l -p 9225 -w 180 > ${cwd}/tmp/log9.out
 
 check_for_zombie_jobs storage=File1
 stop_bacula
