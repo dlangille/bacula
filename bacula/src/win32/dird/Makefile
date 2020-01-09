@@ -57,6 +57,7 @@ DIRD_OBJS = \
 	$(OBJDIR)/ua_acl.o \
 	$(OBJDIR)/ua_cmds.o \
 	$(OBJDIR)/ua_dotcmds.o \
+	$(OBJDIR)/ua_collect.o \
 	$(OBJDIR)/ua_input.o \
 	$(OBJDIR)/ua_label.o \
 	$(OBJDIR)/ua_output.o \

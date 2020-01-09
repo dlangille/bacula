@@ -83,6 +83,7 @@ COMMON_OBJS = \
 
 # bacula-sd
 SD_OBJS = \
+	$(OBJDIR)/sdcollect.o \
 	$(OBJDIR)/stored.o \
 	$(OBJDIR)/append.o \
 	$(OBJDIR)/dircmd.o \

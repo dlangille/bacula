@@ -61,6 +61,9 @@ LIB_OBJS = \
 	$(OBJDIR)/bregex.o \
 	$(OBJDIR)/bsock.o \
 	$(OBJDIR)/bsockcore.o \
+	$(OBJDIR)/bstat.o \
+	$(OBJDIR)/bcollector.o \
+	$(OBJDIR)/collect.o \
 	$(OBJDIR)/bsnprintf.o \
 	$(OBJDIR)/bsys.o \
 	$(OBJDIR)/btime.o \

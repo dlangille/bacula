@@ -44,6 +44,7 @@ FILED_OBJS = \
 	$(OBJDIR)/authenticate.o \
 	$(OBJDIR)/backup.o \
 	$(OBJDIR)/crypto.o \
+	$(OBJDIR)/fdcollect.o \
 	$(OBJDIR)/win_efs.o \
 	$(OBJDIR)/estimate.o \
 	$(OBJDIR)/fd_plugins.o \
