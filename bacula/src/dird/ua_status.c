@@ -956,7 +956,15 @@ static void llist_scheduled_jobs(UAContext *ua)
                   break;
                }
             }
-
+            /* If a time= was set, we can skip schedule that are before the
+             * requested time
+             */
+            if (time_set) {
+               if (runtime < now) {
+                  next += 24 * 60 * 60;
+                  continue;
+               }
+            }
             level = job->JobLevel;
             if (run->level) {
                level = run->level;
@@ -975,14 +983,10 @@ static void llist_scheduled_jobs(UAContext *ua)
             list->insert(item, compare);
 
             next += 24 * 60 * 60;   /* Add one day */
-            num_jobs++;
-            if (limit > 0 && num_jobs >= limit) {
-               goto get_out;
-            }
          }
       } /* end loop over run pkts */
    } /* end for loop over resources */
-get_out:
+
    UnlockRes();
    prt_lrunhdr(ua);
    OutputWriter ow(ua->api_opts);
@@ -992,6 +996,12 @@ get_out:
    foreach_rblist(item, list) {
       char dt[MAX_TIME_LENGTH];
       const char *level_ptr;
+
+      num_jobs++;
+      if (limit > 0 && num_jobs > limit) {
+         break;
+      }
+
       bstrftime_dn(dt, sizeof(dt), item->time);
 
       switch (item->job->JobType) {
