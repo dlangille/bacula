@@ -110,7 +110,7 @@ foreach my $f (keys %src_attr)
 foreach my $f (keys %dst_attr)
 {
     $ret++;
-    print "diff.pl ERROR: Can't find $f in src\n";
+    print "diff.pl ERROR: Can't find $f in src src=$src dst=$dst\n";
 }
 
 if ($ret) {
