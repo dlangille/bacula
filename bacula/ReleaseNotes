@@ -7,13 +7,28 @@ This is a major new release with new features. The catalog datbase format
 remains unchanged from the 9.4.4 release
 
 New features:
-- Many new features for Baculum Web GUI
 - Docker plugin
 - Statistics Collector for Dir, FD, and SD (interface to Graphite)
   - New Statistics resource
 - Support for MacOS suspend in File daemon
 - SD SyncOnClose directive in Device resource
 
+Baculum New Features:
+ - SELinux support
+ - New graph types
+ - Graphical client status
+ - Graphical running job status
+ - Capability to start, stop and restart components
+ - Support for commands that can take a long time (label, estimate...)
+ - List job files tab on the job history page
+ - Bandwidth limit setting for client and for job
+ - New statistics configuration page
+ - Improvements to responsive interface
+ - Option to show size unit values as decimal or binary bytes
+ - Support for new directives
+ - New Web controls (password, speed, multiple textbox)
+ - New API functions
+ - Job history list on job page
 
 31Dec19
  - Get Branch-9.4 ReleaseNotes
