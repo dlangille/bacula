@@ -438,7 +438,7 @@ int32_t DKCOMMCTX::read_output(bpContext *ctx, POOL_MEM &out)
          continue;
       }
       /* it seems out buffer is too small for all data */
-      out.realloc_pm(rbytes + 1024);
+      out.check_size(rbytes + 1024);
    }
    return rbytes;
 }
