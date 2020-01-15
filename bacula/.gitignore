@@ -6,7 +6,7 @@
 # *.[oa]
 # *~
 
-# 
+#
 *.la
 *.a
 *.o
@@ -389,7 +389,7 @@ src/lib/libbaccfg.a
 src/lib/libbacpy.a
 
 # src/plugins/dir/
-src/plugins/dir/*.o   
+src/plugins/dir/*.o
 src/plugins/dir/*.so
 src/plugins/dir/main
 src/plugins/dir/Makefile
@@ -1305,3 +1305,6 @@ platforms/osx/dl
 platforms/osx/products
 platforms/osx/tools
 TAGS
+src/plugins/fd/docker/baculatar/baculatar-*.docker.tar
+
+.vscode

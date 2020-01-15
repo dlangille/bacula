@@ -54,7 +54,7 @@ static bRC startRestoreFile(bpContext *ctx, const char *cmd);
 static bRC endRestoreFile(bpContext *ctx);
 static bRC createFile(bpContext *ctx, struct restore_pkt *rp);
 static bRC setFileAttributes(bpContext *ctx, struct restore_pkt *rp);
-static bRC checkFile(bpContext *ctx, char *fname);
+// Not used! static bRC checkFile(bpContext *ctx, char *fname);
 static bRC handleXACLdata(bpContext *ctx, struct xacl_pkt *xacl);
 
 /* Pointers to Bacula functions */
@@ -78,7 +78,7 @@ static pFuncs pluginFuncs = {
    pluginIO,
    createFile,
    setFileAttributes,
-   checkFile,
+   NULL,
    handleXACLdata
 };
 
@@ -152,7 +152,7 @@ DOCKER::DOCKER(bpContext *bpctx) :
       accurate_warning(false),
       local_restore(false),
       backup_finish(false),
-      unsupportedfeature(false),
+      unsupportedlevel(false),
       param_notrunc(false),
       errortar(false),
       volumewarning(false),
@@ -534,7 +534,7 @@ bRC DOCKER::handlePluginEvent(bpContext *ctx, bEvent *event, void *value)
       /* the plugin support a FULL backup only as Docker does not support other levels */
       mode = DOCKER_BACKUP_FULL;
       if (lvl != 'F'){
-         unsupportedfeature = true;
+         unsupportedlevel = true;
       }
       break;
 
@@ -593,14 +593,27 @@ bRC DOCKER::handlePluginEvent(bpContext *ctx, bEvent *event, void *value)
 
    /* Plugin command e.g. plugin = <plugin-name>:parameters */
    case bEventPluginCommand:
-      // Check supported level
-      if (isourplugincommand(PLUGINPREFIX, (char*)value) && unsupportedfeature){
-         DMSG0(ctx, DERROR, "Unsupported backup level. Doing FULL backup.\n");
-         JMSG0(ctx, M_ERROR, "Unsupported backup level. Doing FULL backup.\n");
-         /* single error message is enough */
-         unsupportedfeature = false;
-      }
       DMSG_EVENT_STR(event, value);
+      if (isourplugincommand(PLUGINPREFIX, (char*)value)){
+         // Check supported level
+         if (unsupportedlevel){
+            DMSG0(ctx, DERROR, "Unsupported backup level. Doing FULL backup.\n");
+            JMSG0(ctx, M_ERROR, "Unsupported backup level. Doing FULL backup.\n");
+            /* single error message is enough */
+            unsupportedlevel = false;
+         }
+
+         // check accurate mode backup
+         int accurate;
+         getBaculaVar(bVarAccurate, &accurate);
+         DMSG(ctx, DINFO, "Accurate=%d\n", accurate);
+         if (accurate > 0 && !accurate_warning){
+            DMSG0(ctx, DERROR, "Accurate mode is not supported. Please disable Accurate mode for this job.\n");
+            JMSG0(ctx, M_WARNING, "Accurate mode is not supported. Please disable Accurate mode for this job.\n");
+            /* single error message is enough */
+            accurate_warning = true;
+         }
+      }
       break;
 
    case bEventOptionPlugin:
@@ -613,7 +626,7 @@ bRC DOCKER::handlePluginEvent(bpContext *ctx, bEvent *event, void *value)
                "... command into the Include {} block.\n");
          return bRC_Error;
       }
-      return bRC_OK;
+      break;
 
    case bEventEndFileSet:
       DMSG_EVENT_STR(event, value);
@@ -1810,6 +1823,7 @@ bRC DOCKER::setFileAttributes(bpContext *ctx, struct restore_pkt *rp)
    return bRC_OK;
 }
 
+#if 0
 /*
  * Unimplemented, always return bRC_Seen.
  */
@@ -1821,6 +1835,7 @@ bRC DOCKER::checkFile(bpContext *ctx, char *fname)
    }
    return bRC_Seen;
 }
+#endif
 
 /*
  * We will not generate any acl/xattr data, always return bRC_OK.
@@ -2008,6 +2023,7 @@ static bRC createFile(bpContext *ctx, struct restore_pkt *rp)
    return self->createFile(ctx, rp);
 }
 
+#if 0
 /*
  * checkFile used for accurate mode backup
  */
@@ -2019,6 +2035,7 @@ static bRC checkFile(bpContext *ctx, char *fname)
    DOCKER *self = pluginclass(ctx);
    return self->checkFile(ctx, fname);
 }
+#endif
 
 /*
  * Called after the file has been restored. This can be used to
