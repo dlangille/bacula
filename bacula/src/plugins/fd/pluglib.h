@@ -108,7 +108,25 @@ extern bInfo *binfo;
 const char *eventtype2str(bEvent *event);
 uint64_t pluglib_size_suffix(int disksize, char suff);
 uint64_t pluglib_size_suffix(double disksize, char suff);
-bool isourplugincommand(const char *pluginprefix, const char *command);
 bRC pluglib_mkpath(bpContext* ctx, char* path, bool isfatal);
+
+/*
+ * Checks if plugin command points to our Plugin
+ *
+ * in:
+ *    command - the plugin command used for backup/restore
+ * out:
+ *    True - if it is our plugin command
+ *    False - the other plugin command
+ */
+inline bool isourplugincommand(const char *pluginprefix, const char *command)
+{
+   /* check if it is our Plugin command */
+   if (strncmp(pluginprefix, command, strlen(pluginprefix)) == 0){
+      /* it is not our plugin prefix */
+      return true;
+   }
+   return false;
+}
 
 #endif                           /* _PLUGLIB_H_ */

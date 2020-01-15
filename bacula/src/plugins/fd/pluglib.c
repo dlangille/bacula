@@ -183,25 +183,6 @@ uint64_t pluglib_size_suffix(double disksize, char suff)
 }
 
 /*
- * Checks if plugin command points to our Plugin
- *
- * in:
- *    command - the plugin command used for backup/restore
- * out:
- *    True - if it is our plugin command
- *    False - the other plugin command
- */
-bool isourplugincommand(const char *pluginprefix, const char *command)
-{
-   /* check if it is our Plugin command */
-   if (strncmp(pluginprefix, command, strlen(pluginprefix)) == 0){
-      /* it is not our plugin prefix */
-      return true;
-   }
-   return false;
-}
-
-/*
  * Creates a path hierarchy on local FS.
  *  It is used for local restore mode to create a required directory.
  *  The functionality is similar to 'mkdir -p'.
