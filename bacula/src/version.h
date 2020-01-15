@@ -6,13 +6,13 @@
 
 /* Note: there can be only *one* VERSION in this file */
 #define VERSION "9.6.0"
-#define BDATE   "31 December 2019"
-#define LSMDATE "31Dec19"
+#define BDATE   "14 January 2020"
+#define LSMDATE "14Jan20"
 
 #define RELEASE 1   /* Use ONLY in rpms */
 
-#define PROG_COPYRIGHT "Copyright (C) %d-2019 Kern Sibbald.\n"
-#define BYEAR "2019"       /* year for copyright messages in progs */
+#define PROG_COPYRIGHT "Copyright (C) %d-2020 Kern Sibbald.\n"
+#define BYEAR "2020"       /* year for copyright messages in progs */
 
 /*
  * Versions of packages needed to build Bacula components
@@ -24,7 +24,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2019 Kern Sibbald
+   Copyright (C) 2000-2020 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
