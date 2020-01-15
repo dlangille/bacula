@@ -1,0 +1,63 @@
+#!/bin/sh
+#
+#   Bacula(R) - The Network Backup Solution
+#
+#   Copyright (C) 2000-2020 Kern Sibbald
+#
+#   The original author of Bacula is Kern Sibbald, with contributions
+#   from many others, a complete list can be found in the file AUTHORS.
+#
+#   You may use this file and others of this release according to the
+#   license defined in the LICENSE file, which includes the Affero General
+#   Public License, v3.0 ("AGPLv3") and some additional permissions and
+#   terms pursuant to its AGPLv3 Section 7.
+#
+#   This notice must be preserved when any source code is
+#   conveyed and/or propagated.
+#
+#   Bacula(R) is a registered trademark of Kern Sibbald.
+#
+# This is a Bacula archive tool for backup/restore files on Docker volumes.
+# Author: Radosław Korzeniewski, radekk@inteos.pl, Inteos Sp. z o.o.
+#
+#echo "EXEC:" $0
+#echo "ARGV:" $*
+
+if [ "x$0" == "x$1" ]
+then
+   shift 1
+fi
+ARGV="backup"
+if [ "x$1" != "x" ]
+then
+   ARGV=$1
+fi
+#echo "params:" $ARGV
+if [ $ARGV == "gimmetheshell" ]
+then
+   exec /bin/sh
+fi
+
+rm -f /logs/docker.err /logs/docker.log
+RC=0
+
+# this is an ack to plugin to confirm proper execution
+echo "200:OK"
+
+case $ARGV in
+   "backup")
+      /tar -cvvf /logs/fout -C /backup . 2> /logs/docker.err > /logs/docker.log
+      RC=$?
+      ;;
+   "restore")
+      /tar -xvvf /logs/fin -C /restore 2> /logs/docker.err > /logs/docker.log
+      RC=$?
+      ;;
+   "*")
+      echo "404:Invalid option!" > /logs/docker.err
+esac
+if [ $RC -ne 0 ]
+then
+   echo "500:exit status: $RC" >> /logs/docker.err
+fi
+exit 0

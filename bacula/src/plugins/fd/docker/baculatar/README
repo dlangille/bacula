@@ -1,0 +1,10 @@
+The Docker Plugin uses a static version of tar to backup/restore
+Docker external volumes.
+
+To doing so it needs 
+ - a full C building toolchain 
+ - the upx executable compression library
+
+A full Internet access for downloading required source code and dependencies.
+
+You should provide them for a successful build.
