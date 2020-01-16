@@ -485,10 +485,12 @@ err:
  */
 void free_tls_connection(TLS_CONNECTION *tls)
 {
-   pthread_mutex_destroy(&tls->rwlock);
-   pthread_mutex_destroy(&tls->wlock);
-   SSL_free(tls->openssl);
-   free(tls);
+   if (tls) {
+      pthread_mutex_destroy(&tls->rwlock);
+      pthread_mutex_destroy(&tls->wlock);
+      SSL_free(tls->openssl);
+      free(tls);
+   }
 }
 
 /* Does all the manual labor for tls_bsock_accept() and tls_bsock_connect() */
