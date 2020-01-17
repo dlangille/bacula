@@ -17,6 +17,7 @@
 # 	$ docker pull hello-world:latest
 #	$ docker pull postgres:latest
 #	$ docker pull httpd:latest
+#	$ docker pull ubuntu:latest
 # 	- you can find a list of publicity available images at: https://hub.docker.com/explore/
 # 2. import Bacula Archive docker image required for volume backup/restore
 # 3. create an image alias testimage:latest required in tests and make it single reference, i.e.
@@ -25,7 +26,7 @@
 #	- this image should not be used to create/run any container
 # 3. create and/or run required containers, i.e.
 #	$ docker run -d --name container1 httpd:latest
-#	$ docker run -d postgres:latest
+#	$ docker run -d --name container2 postgres:latest
 #	- you can run any other containers if you wish (with an exception at step.2.)
 # 4. run regression tests
 
@@ -33,12 +34,18 @@ TestName="docker-plugin-test"
 JobName="PluginDockerTest"
 FileSetName="TestPluginDockerSet"
 . scripts/functions
-DOCKER_CMD="/usr/bin/docker"
+. scripts/regress-utils.sh
 
 echo "Preparing, please wait ... "
+#set -x
+# export requires variables
+DOCKER_CMD="/usr/bin/docker"
+setup_plugin_param "docker:"
+
 mkdir -p ${tmp}
+
 # check requirements
-C1=`${DOCKER_CMD} ps -a --filter 'Name=container' --format {{.Names}} | wc -l`
+C1=`${DOCKER_CMD} ps -a --filter 'Name=container' -q | wc -l`
 if [ $C1 -eq 0 ]
 then
 	echo "Docker containers with name: container* required!"
@@ -46,7 +53,7 @@ then
 fi
 if [ "x${PLUGDOCKERHOST}" != "x" ]
 then
-	RC1=`${DOCKER_CMD} -H "${PLUGDOCKERHOST}" ps -a --filter 'Name=container' --format {{.Names}} | wc -l`
+	RC1=`${DOCKER_CMD} -H "${PLUGDOCKERHOST}" ps -a --filter 'Name=container' -q | wc -l`
 	if [ $RC1 -eq 0 ]
 	then
 		echo "Docker containers with name: container* required!"
@@ -54,7 +61,7 @@ then
 	fi
 fi
 
-I1=`${DOCKER_CMD} images --filter "reference=testimage:latest" | wc -l`
+I1=`${DOCKER_CMD} images --filter "reference=testimage:latest" -q | wc -l`
 if [ $I1 -eq 0 ]
 then
 	IN=`${DOCKER_CMD} images --filter "dangling=true" -q | head -1`
@@ -69,7 +76,7 @@ then
 fi
 if [ "x${PLUGDOCKERHOST}" != "x" ]
 then
-	RI1=`${DOCKER_CMD} -H "${PLUGDOCKERHOST}" images --filter "reference=testimage:latest" | wc -l`
+	RI1=`${DOCKER_CMD} -H "${PLUGDOCKERHOST}" images --filter "reference=testimage:latest" -q | wc -l`
 	if [ $RI1 -eq 0 ]
 	then
 		IN=`${DOCKER_CMD} -H "${PLUGDOCKERHOST}" images --filter "dangling=true" -q | head -1`
@@ -91,10 +98,10 @@ export VOLUME2_NAME
 
 # prepare a local volume for backup and restore
 mkdir -p ${tmp}/volproxy
-tar czf ${tmp}/volproxy/archive.tar.gz /usr/share 2> /dev/null
+tar czf ${tmp}/volproxy/archive.tar.gz /usr/include 2> /dev/null
 VOLARCHIVE=`md5sum ${tmp}/volproxy/archive.tar.gz`
 ${DOCKER_CMD} volume create ${VOLUME2_NAME} > /dev/null
-${DOCKER_CMD} run --rm -v ${VOLUME2_NAME}:/data -v ${tmp}/volproxy:/volproxy ubuntu sh -c "rm -rf /data/* && /bin/cp -R /volproxy/* /usr/share /data"
+${DOCKER_CMD} run --rm -v ${VOLUME2_NAME}:/data -v ${tmp}/volproxy:/volproxy ubuntu sh -c "rm -rf /data/* && /bin/cp -R /volproxy/* /usr/include /data"
 RC=$?
 if [ $RC -ne 0 ]
 then
@@ -197,162 +204,6 @@ start_test
 #export debug=1
 JOBID=1
 
-test_result()
-{
-if [ $1 -ne 0 ]
-then
-   echo "failed"
-else
-   echo "ok"
-fi
-}
-
-do_docker_backup_test()
-{
-ltest=$1
-printf "     backup test${ltest} ... "
-cat <<END_OF_DATA >${tmp}/bconcmds
-@output /dev/null
-messages
-@$out ${tmp}/blog${ltest}.out
-status client=$CLIENT
-setdebug level=500 client=$CLIENT trace=1
-run job=${JobName}${ltest} level=full storage=File1 yes
-wait
-status client=$CLIENT
-messages
-setdebug level=0 trace=0 client=$CLIENT
-llist jobid=${JOBID}
-list files jobid=${JOBID}
-quit
-END_OF_DATA
-run_bconsole
-JOBID=$((JOBID+1))
-}
-
-do_docker_estimate_test()
-{
-ltest=$1
-printf "     estimate test${ltest} ... "
-cat <<END_OF_DATA >${tmp}/bconcmds
-#@output /dev/null
-messages
-@$out ${tmp}/elog${ltest}.out
-setdebug level=150 client=$CLIENT trace=1
-estimate listing job=$JobName fileset=${FileSetName}${ltest} level=Full
-messages
-setdebug level=50 trace=0 client=$CLIENT
-quit
-END_OF_DATA
-run_bconsole
-}
-
-do_docker_listing_test()
-{
-ltest=$1
-lpath=$2
-lplug="docker:"
-if [ "x$3" != "x" ]
-then
-	lplug=$3
-fi
-printf "     listing test${ltest} ... "
-cat <<END_OF_DATA >${tmp}/bconcmds
-#@output /dev/null
-messages
-@$out ${tmp}/llog${ltest}.out
-setdebug level=150 client=$CLIENT tracee=1
-.ls client=${HOST}-fd plugin="$lplug" path=${lpath}
-setdebug level=50 trace=0 client=$CLIENT
-quit
-END_OF_DATA
-run_bconsole
-}
-
-do_docker_restore_test()
-{
-ltest=$1
-fs=$2
-where=$3
-file=$4
-cmd="restore fileset=${FileSetName}${fs} where=$3"
-if [ "x$file" != "x" ]
-then
-   cmd="${cmd} $file"
-fi
-cmd="${cmd} storage=File1 done"
-printf "     restore test${ltest} ... "
-cat <<END_OF_DATA >${tmp}/bconcmds
-messages
-@$out ${tmp}/rlog${ltest}.out
-setdebug level=500 client=$CLIENT trace=1
-${cmd}
-yes
-wait
-setdebug level=0 client=$CLIENT trace=0
-messages
-llist jobid=${JOBID}
-quit
-END_OF_DATA
-run_bconsole
-JOBID=$((JOBID+1))
-}
-
-check_docker_backup_statusT()
-{
-ltest=$1
-RET=`grep "jobstatus: " ${tmp}/blog${ltest}.out | awk '{print $2}'`
-ERRS=$((`grep "joberrors: " ${tmp}/blog${ltest}.out | awk '{print $2}'`+0))
-if [ "x$RET" != "xT" -o $ERRS -ne 0 ]
-then
-   bstat=$((bstat+1))
-   return 1
-else
-   return 0
-fi
-}
-
-check_docker_backup_statusW()
-{
-ltest=$1
-RET=`grep "jobstatus: " ${tmp}/blog${ltest}.out | awk '{print $2}'`
-ERRS=$((`grep "joberrors: " ${tmp}/blog${ltest}.out | awk '{print $2}'`+0))
-if [ "x$RET" != "xT" -o $ERRS -eq 0 ]
-then
-   bstat=$((bstat+1))
-   return 1
-else
-   return 0
-fi
-}
-
-check_docker_backup_statusE()
-{
-ltest=$1
-RET=`grep "jobstatus: " ${tmp}/blog${ltest}.out | awk '{print $2}'`
-if [ "x$RET" != "xf" -a "x$RET" != "xE" ]
-then
-   bstat=$((bstat+1))
-   return 1
-else
-   return 0
-fi
-}
-
-check_docker_restore_statusT()
-{
-ltest=$1
-RET=`grep "jobstatus: " ${tmp}/rlog${ltest}.out | awk '{print $2}'`
-ERRS=$((`grep "joberrors: " ${tmp}/rlog${ltest}.out | awk '{print $2}'`+0))
-if [ "x$RET" != "xT" -o $ERRS -ne 0 ]
-then
-   rstat=$((rstat+1))
-   return 1
-else
-   return 0
-fi
-}
-
 scripts/cleanup
 scripts/copy-docker-plugin-confs
 
@@ -394,7 +245,7 @@ END_OF_DATA
 run_bacula
 
 # special case for all objects
-do_docker_estimate_test
+do_regress_estimate_test
 F=0
 RET=`grep "/@docker/" ${tmp}/elog.out | grep "tar" | wc -l`
 RES=`cat ${tmp}/allcontainers.log ${tmp}/allimages.log ${tmp}/allvolumes.log | wc -l`
@@ -404,13 +255,13 @@ then
    F=1
    estat=$((estat+1))
 fi
-test_result ${F}
+regress_test_result ${F}
 
 if [ "x${PLUGDOCKERHOST}" != "x" ]
 then
 	# special case for all remote objects
 	TEST="remote"
-	do_docker_estimate_test ${TEST}
+	do_regress_estimate_test ${TEST}
 	F=0
 	RET=`grep "/@docker/" ${tmp}/elog${TEST}.out | grep "tar" | wc -l`
 	RES=`cat ${tmp}/rallcontainers.log ${tmp}/rallimages.log | wc -l`
@@ -420,7 +271,7 @@ then
 	   F=1
 	   estat=$((estat+1))
 	fi
-	test_result ${F}
+	regress_test_result ${F}
 fi
 
 test8nr=`${DOCKER_CMD} ps -a --filter 'Name=container' --format {{.Names}} | grep "^container.$" | wc -l`
@@ -432,7 +283,7 @@ echo ${RESULTS[*]} >> ${tmp}/results.out
 # then estimate with data
 for TEST in `seq 1 14`
 do
-do_docker_estimate_test ${TEST}
+do_regress_estimate_test ${TEST}
 F=0
 RET=`grep "/@docker/" ${tmp}/elog${TEST}.out | grep "tar" | wc -l`
 RES=${RESULTS[$((TEST-1))]}
@@ -442,12 +293,12 @@ then
    F=1
    estat=$((estat+1))
 fi
-test_result ${F}
+regress_test_result ${F}
 done
 
 # estimate multiple contexts
 TEST=19
-do_docker_estimate_test ${TEST}
+do_regress_estimate_test ${TEST}
 F=0
 RET=`grep "/@docker/" ${tmp}/elog${TEST}.out | grep "tar" | wc -l`
 RES=6
@@ -457,7 +308,7 @@ then
    F=1
    estat=$((estat+1))
 fi
-test_result ${F}
+regress_test_result ${F}
 
 if [ "x${PLUGDOCKERHOST}" != "x" ]
 then
@@ -470,7 +321,7 @@ then
 	# then estimate with data
 	for TEST in `seq 101 110`
 	do
-	do_docker_estimate_test ${TEST}
+	do_regress_estimate_test ${TEST}
 	F=0
 	RET=`grep "/@docker/" ${tmp}/elog${TEST}.out | grep "tar" | wc -l`
 	RES=${RESULTS[$((TEST-101))]}
@@ -480,13 +331,13 @@ then
 	   F=1
 	   estat=$((estat+1))
 	fi
-	test_result ${F}
+	regress_test_result ${F}
 	done
 fi
 
 # listing tests goes to estimate tests
 TEST=1
-do_docker_listing_test ${TEST} "/"
+do_regress_listing_test ${TEST} "/"
 F=0
 RET=`grep "^drwxr-x---" ${tmp}/llog${TEST}.out | wc -l`
 echo "RET: $RET" >> ${tmp}/llog${TEST}.out
@@ -495,11 +346,11 @@ then
    F=1
    estat=$((estat+1))
 fi
-test_result ${F}
+regress_test_result ${F}
 
 allcont=`cat ${tmp}/allcontainers.log | wc -l`
 TEST=$((TEST+1))
-do_docker_listing_test ${TEST} "container"
+do_regress_listing_test ${TEST} "container"
 F=0
 RET=`grep "^-rw-r-----" ${tmp}/llog${TEST}.out | wc -l`
 echo "RET: $RET ALLCONT: ${allcont}" >> ${tmp}/llog${TEST}.out
@@ -508,11 +359,11 @@ then
    F=1
    estat=$((estat+1))
 fi
-test_result ${F}
+regress_test_result ${F}
 
 allimgs=`cat ${tmp}/allimages.log | wc -l`
 TEST=$((TEST+1))
-do_docker_listing_test ${TEST} "image"
+do_regress_listing_test ${TEST} "image"
 F=0
 RET=`grep "^brw-r-----" ${tmp}/llog${TEST}.out | wc -l`
 echo "RET: $RET ALLIMGS: ${allimgs}" >> ${tmp}/llog${TEST}.out
@@ -521,11 +372,11 @@ then
    F=1
    estat=$((estat+1))
 fi
-test_result ${F}
+regress_test_result ${F}
 
 allvols=`cat ${tmp}/allvolumes.log | wc -l`
 TEST=$((TEST+1))
-do_docker_listing_test ${TEST} "volume"
+do_regress_listing_test ${TEST} "volume"
 F=0
 RET=`grep "^brw-r-----" ${tmp}/llog${TEST}.out | wc -l`
 echo "RET: $RET ALLVOLS: ${allvols}" >> ${tmp}/llog${TEST}.out
@@ -534,12 +385,12 @@ then
    F=1
    estat=$((estat+1))
 fi
-test_result ${F}
+regress_test_result ${F}
 
 if [ "x${PLUGDOCKERHOST}" != "x" ]
 then
 	TEST=100
-	do_docker_listing_test ${TEST} "/" "docker: docker_host=${PLUGDOCKERHOST}"
+	do_regress_listing_test ${TEST} "/" "docker: docker_host=${PLUGDOCKERHOST}"
 	F=0
 	RET=`grep "^drwxr-x---" ${tmp}/llog${TEST}.out | wc -l`
 	echo "RET: $RET" >> ${tmp}/llog${TEST}.out
@@ -548,11 +399,11 @@ then
 	   F=1
 	   estat=$((estat+1))
 	fi
-	test_result ${F}
+	regress_test_result ${F}
 
 	allcont=`cat ${tmp}/rallcontainers.log | wc -l`
 	TEST=$((TEST+1))
-	do_docker_listing_test ${TEST} "container" "docker: docker_host=${PLUGDOCKERHOST}"
+	do_regress_listing_test ${TEST} "container" "docker: docker_host=${PLUGDOCKERHOST}"
 	F=0
 	RET=`grep "^-rw-r-----" ${tmp}/llog${TEST}.out | wc -l`
 	echo "RET: $RET ALLCONT: ${allcont}" >> ${tmp}/llog${TEST}.out
@@ -561,11 +412,11 @@ then
 	   F=1
 	   estat=$((estat+1))
 	fi
-	test_result ${F}
+	regress_test_result ${F}
 
 	allimgs=`cat ${tmp}/rallimages.log | wc -l`
 	TEST=$((TEST+1))
-	do_docker_listing_test ${TEST} "image" "docker: docker_host=${PLUGDOCKERHOST}"
+	do_regress_listing_test ${TEST} "image" "docker: docker_host=${PLUGDOCKERHOST}"
 	F=0
 	RET=`grep "^brw-r-----" ${tmp}/llog${TEST}.out | wc -l`
 	echo "RET: $RET ALLIMGS: ${allimgs}" >> ${tmp}/llog${TEST}.out
@@ -574,7 +425,7 @@ then
 	   F=1
 	   estat=$((estat+1))
 	fi
-	test_result ${F}
+	regress_test_result ${F}
 fi
 
 #
@@ -584,40 +435,82 @@ bstat=0
 # first backup with data
 for TEST in `seq 1 14` 19
 do
-do_docker_backup_test ${TEST}
-check_docker_backup_statusT ${TEST}
+do_regress_backup_test ${TEST}
+check_regress_backup_statusT ${TEST}
 F=$?
-test_result ${F}
+regress_test_result ${F}
 done
 
 # now, backup with warnings
 for TEST in `seq 21 24`
 do
-do_docker_backup_test ${TEST}
-check_docker_backup_statusW ${TEST}
+do_regress_backup_test ${TEST}
+check_regress_backup_statusW ${TEST}
 F=$?
-test_result ${F}
+regress_test_result ${F}
 done
 
 # now, backup failed to test
 for TEST in `seq 31 34`
 do
-do_docker_backup_test ${TEST}
-check_docker_backup_statusE ${TEST}
+do_regress_backup_test ${TEST}
+check_regress_backup_statusE ${TEST}
 F=$?
-test_result ${F}
+regress_test_result ${F}
 done
 
 if [ "x${PLUGDOCKERHOST}" != "x" ]
 then
 	for TEST in `seq 101 110`
 	do
-	do_docker_backup_test ${TEST}
-	check_docker_backup_statusT ${TEST}
+	do_regress_backup_test ${TEST}
+	check_regress_backup_statusT ${TEST}
 	F=$?
-	test_result ${F}
+	regress_test_result ${F}
 	done
 fi
+
+# prepare issues jobs
+mkdir -p ${tmp}/btest
+echo "test" > ${tmp}/btest/test
+
+# check if plugin parasite standard job, first do a standard full level job
+do_regress_backup_test 150
+check_regress_backup_statusT 150
+F=$?
+regress_test_result ${F}
+mv ${tmp}/blog150.out ${tmp}/blog150F.out
+
+# now test an incremental level
+do_regress_backup_test 150 "incremental"
+check_regress_backup_statusT 150
+F=$?
+LE=`grep "docker: Unsupported backup level" ${tmp}/blog150.out | wc -l`
+AE=`grep "docker: Accurate mode is not supported. Please disable Accurate mode for this job" ${tmp}/blog150.out | wc -l`
+if [ $LE -ne 0 -o $AE -ne 0 ]
+then
+	F=1
+fi
+regress_test_result ${F}
+
+# check unsupported backup level and accurate warning, first do a standard full level job
+do_regress_backup_test 151
+check_regress_backup_statusT 151
+F=$?
+regress_test_result ${F}
+mv ${tmp}/blog151.out ${tmp}/blog151F.out
+
+# now do an incremental level
+do_regress_backup_test 151 "incremental"
+check_regress_backup_statusW 151
+F=$?
+LE=`grep "docker: Unsupported backup level." ${tmp}/blog151.out | wc -l`
+AE=`grep "docker: Accurate mode is not supported." ${tmp}/blog151.out | wc -l`
+if [ $LE -ne 1 -o $AE -ne 1 ]
+then
+	F=1
+fi
+regress_test_result ${F}
 
 #
 # now the restore tests
@@ -629,8 +522,8 @@ TEST=0
 # test restore container to Docker
 TEST=$((TEST+1))
 echo "TEST ${TEST} - restore container to Docker" > ${tmp}/rlog${TEST}.out
-do_docker_restore_test ${TEST} 1 "/" "select all"
-check_docker_restore_statusT ${TEST}
+do_regress_restore_test ${TEST} 1 "/" "select all"
+check_regress_restore_statusT ${TEST}
 F=$?
 ## gather info from Docker service after restore
 JOBID=`grep "JobId=" ${tmp}/rlog${TEST}.out | awk '{print $3}'|cut -f 2 -d'='`
@@ -654,15 +547,15 @@ else
 	${DOCKER_CMD} rmi $rri > /dev/null
    fi
 fi
-test_result ${F}
+regress_test_result ${F}
 
 # test restore image to Docker
 # the Docker image restore is always as the same what was backup, so we need to prepare Docker
 TEST=$((TEST+1))
 echo "TEST ${TEST} - restore image to Docker" > ${tmp}/rlog${TEST}.out
 ${DOCKER_CMD} rmi ${IMAGE1_ID} 2>&1 > ${tmp}/rlog${TEST}.rmi.out
-do_docker_restore_test ${TEST} 2 "/" "select all"
-check_docker_restore_statusT ${TEST}
+do_regress_restore_test ${TEST} 2 "/" "select all"
+check_regress_restore_statusT ${TEST}
 F=$?
 ## gather info from Docker service after restore
 JOBID=`grep "JobId=" ${tmp}/rlog${TEST}.out | awk '{print $3}'|cut -f 2 -d'='`
@@ -674,7 +567,7 @@ then
    F=1
    dstat=$((dstat+1))
 fi
-test_result ${F}
+regress_test_result ${F}
 
 ## test restore single volume to Docker
 TEST=$((TEST+1))
@@ -692,8 +585,8 @@ then
 	${DOCKER_CMD} volume rm ${VOLUME2_NAME} 2>&1 >> ${tmp}/rlog${TEST}.rmv.out
 fi
 # do test
-do_docker_restore_test ${TEST} 11 "/" "select all"
-check_docker_restore_statusT ${TEST}
+do_regress_restore_test ${TEST} 11 "/" "select all"
+check_regress_restore_statusT ${TEST}
 F=$?
 # check restored data
 rv=`${DOCKER_CMD} volume inspect ${VOLUME2_NAME} 2> ${tmp}/rlog${TEST}.vi.out | grep "\"Name\": \"${VOLUME2_NAME}\"" | wc -l`
@@ -714,7 +607,7 @@ else
 		dstat=$((dstat+1))
 	fi
 fi
-test_result ${F}
+regress_test_result ${F}
 
 ## restore all volumes and container to Docker
 TEST=$((TEST+1))
@@ -726,8 +619,8 @@ then
 	${DOCKER_CMD} volume rm ${VOLUME2_NAME} 2>&1 >> ${tmp}/rlog${TEST}.rmv.out
 fi
 # this test should restore both volume and container
-do_docker_restore_test ${TEST} 14 "/" "select all"
-check_docker_restore_statusT ${TEST}
+do_regress_restore_test ${TEST} 14 "/" "select all"
+check_regress_restore_statusT ${TEST}
 F=$?
 # check restored data
 JOBID=`grep "JobId=" ${tmp}/rlog${TEST}.out | awk '{print $3}'|cut -f 2 -d'='`
@@ -763,15 +656,15 @@ if [ ${F} -eq 0 ]
 then
 	rm -rf ${tmp}/volproxy
 fi
-test_result ${F}
+regress_test_result ${F}
 
 ## restore single container to local filesystem
 TEST=$((TEST+1))
 echo "TEST ${TEST} - restore single container to local filesystem" > ${tmp}/rlog${TEST}.out
 # clean restore dir
 rm -rf ${tmp}/restored 2>> ${tmp}/rlog${TEST}.out
-do_docker_restore_test ${TEST} 1 "${tmp}/restored" "select all"
-check_docker_restore_statusT ${TEST}
+do_regress_restore_test ${TEST} 1 "${tmp}/restored" "select all"
+check_regress_restore_statusT ${TEST}
 F=$?
 # check restored file
 RFILE=`grep "docker: Docker local restore:" ${tmp}/rlog${TEST}.out|awk '{print $10}'`
@@ -782,15 +675,15 @@ then
    F=1
    dstat=$((dstat+1))
 fi
-test_result ${F}
+regress_test_result ${F}
 
 ## restore single image to local filesystem
 TEST=$((TEST+1))
 echo "TEST ${TEST} - restore single image to local filesystem" > ${tmp}/rlog${TEST}.out
 # clean restore dir
 rm -rf ${tmp}/restored 2>> ${tmp}/rlog${TEST}.out
-do_docker_restore_test ${TEST} 2 "${tmp}/restored" "select all"
-check_docker_restore_statusT ${TEST}
+do_regress_restore_test ${TEST} 2 "${tmp}/restored" "select all"
+check_regress_restore_statusT ${TEST}
 F=$?
 # check restored file
 RFILE=`grep "docker: Docker local restore:" ${tmp}/rlog${TEST}.out|awk '{print $10}'`
@@ -801,15 +694,15 @@ then
    F=1
    dstat=$((dstat+1))
 fi
-test_result ${F}
+regress_test_result ${F}
 
 ## restore single volume to local filesystem
 TEST=$((TEST+1))
 echo "TEST ${TEST} - restore single volume to local filesystem" > ${tmp}/rlog${TEST}.out
 # clean restore dir
 rm -rf ${tmp}/restored 2>> ${tmp}/rlog${TEST}.out
-do_docker_restore_test ${TEST} 11 "${tmp}/restored" "select all"
-check_docker_restore_statusT ${TEST}
+do_regress_restore_test ${TEST} 11 "${tmp}/restored" "select all"
+check_regress_restore_statusT ${TEST}
 F=$?
 # check restored file
 RFILE=`grep "docker: Docker local restore:" ${tmp}/rlog${TEST}.out|awk '{print $10}'`
@@ -820,7 +713,7 @@ then
    F=1
    dstat=$((dstat+1))
 fi
-test_result ${F}
+regress_test_result ${F}
 
 stop_bacula
 end_test

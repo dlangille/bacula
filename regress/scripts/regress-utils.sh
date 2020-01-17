@@ -32,8 +32,8 @@
 # now check if we are running under a proper shell
 if test "x$SHELL" != "x/bin/bash"
 then
-  echo "Regression script must use BASH for this utilities!"
-  exit 1
+	echo "Regression script must use BASH for this utilities!"
+	exit 1
 fi
 
 #
@@ -44,7 +44,7 @@ setup_plugin_param()
 LPLUG=$1
 if [ "x$debug" != "x" ]
 then
-  LPLUG="$LPLUG debug=1"
+	LPLUG="$LPLUG debug=1"
 fi
 export LPLUG
 }
@@ -92,6 +92,11 @@ exit $?
 do_regress_backup_test()
 {
 ltest=$1
+blevel="full"
+if [ "x$2" != "x" ]
+then
+	blevel=$2
+fi
 printf "     backup test${ltest} ... "
 cat << END_OF_DATA >${tmp}/bconcmds
 @output /dev/null
@@ -99,7 +104,7 @@ messages
 @$out ${tmp}/blog${ltest}.out
 status client=${CLIENT}
 setdebug level=500 client=${CLIENT} trace=1
-run job=${JobName}${ltest} level=full storage=File1 yes
+run job=${JobName}${ltest} level=${blevel} storage=File1 yes
 wait
 status client=${CLIENT}
 messages

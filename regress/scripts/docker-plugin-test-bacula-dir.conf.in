@@ -54,7 +54,7 @@ FileSet {
   Name = "Full Set"
   Include {  
      Options { signature=MD5; sparse=yes }
-     File = /tmp
+     File = "@tmpdir@/btest"
   }
 }
 
@@ -883,6 +883,34 @@ FileSet {
       compression=LZO
     }
     Plugin = "docker: docker_host=\"@plugdockerhost@\" include_image=xxxyyyzzz abort_on_error"
+  }
+}
+
+# jobs for plugin issues start from 150
+Job {
+  Name = "PluginDockerTest150"
+  JobDefs = "BackupJob"
+  Level = Incremental
+  Accurate = Yes
+  FileSet = "Full Set"
+}
+
+# check invalid backup level and accurate backup
+Job {
+  Name = "PluginDockerTest151"
+  JobDefs = "BackupJob"
+  Level = Incremental
+  Accurate = Yes
+  FileSet = "TestPluginDockerSet151"
+}
+FileSet {
+  Name = "TestPluginDockerSet151"
+  Include {
+    Options {
+      signature=MD5
+      compression=LZO
+    }
+    Plugin = "docker: container=@container1id@"
   }
 }
 
