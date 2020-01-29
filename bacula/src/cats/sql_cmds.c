@@ -527,7 +527,7 @@ static const char *uap_upgrade_copies_oldest_job_default =
                   "SELECT PriorJobId "
                     "FROM Job "
                    "WHERE JobId IN (%s) "         /* JobId selection */
-                    " AND Type='B' "
+                    " AND Type='B' AND JobStatus IN ('T', 'W') "
                  ") "
               ") "
           "GROUP BY PriorJobId ";           /* one result per copy */
