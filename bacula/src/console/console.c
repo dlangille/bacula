@@ -659,7 +659,8 @@ static struct cpl_keywords_t cpl_keywords[] = {
    {"actiononpurge=", ".actiononpurge" },
    {"tags=",      ".tags"          },
    {"recylepool=", ".pool"         },
-   {"allfrompool=",".pool"         }
+   {"allfrompool=",".pool"         },
+   {"nextpool=",   ".pool"         }
 };
 #define key_size ((int)(sizeof(cpl_keywords)/sizeof(struct cpl_keywords_t)))
 
