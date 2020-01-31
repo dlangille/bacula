@@ -829,6 +829,7 @@ static void llist_scheduled_jobs(UAContext *ua)
    int level, num_jobs = 0;
    int priority;
    bool limit_set = false;
+   bool time_set = false;
    char sched_name[MAX_NAME_LENGTH] = {0}, edl[50];
    char *n, *p;
    SCHED *sched;
