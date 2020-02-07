@@ -409,6 +409,8 @@ static int tls_pem_callback(char *buf, int size, const void *userdata)
 #include "readline.h"
 #include "history.h"
 
+static int history_lines_added=0; /* Number of lines added to the history file */
+
 /* Get the first keyword of the line */
 static char *
 get_first_keyword()
@@ -789,6 +791,10 @@ get_cmd(FILE *input, const char *prompt, BSOCK *sock, int sec)
    if (!next) {
       if (do_history) {
         add_history(line);
+        /* Count the number of lines added, we use it to truncate the history 
+         * file correctly
+         */
+        history_lines_added++;
       }
       actuallyfree(line);       /* allocated by readline() malloc */
       line = NULL;
@@ -938,9 +944,10 @@ static int console_update_history(const char *histfile)
  * fails, the file is probably not present, and we
  * can use write_history to create it
  */
-
-   if (history_truncate_file(histfile, 100) == 0) {
-      ret = append_history(history_length, histfile);
+   int nlines = MAX(histfile_size - history_lines_added, 0);
+   if (history_truncate_file(histfile, nlines) == 0) {
+      nlines = MIN(histfile_size, history_lines_added);
+      ret = append_history(nlines, histfile);
    } else {
       ret = write_history(histfile);
    }
