@@ -1,6 +1,14 @@
-              Changelog on version 9.6.0
+              Changelog for version 9.6.0
 
 
+15Jan20
+ - docker: Replace realloc_pm() for check_size().
+ - Update pluglib.
+ - Fix Docker Plugin for accurate backup.
+ - Docker: add baculatar docker image.
+
+09Jan20
+ - Win32: update Windows build to including needed collector files
 
 31Dec19
  - Get Branch-9.4 ReleaseNotes

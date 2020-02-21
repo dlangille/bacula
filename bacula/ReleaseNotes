@@ -5,17 +5,10 @@ NOTE: THIS IS A BETA VERSION
 
 Release 9.6.0
 
-This is a major new release with new features. The catalog datbase format
-remains unchanged from the 9.4.4 release
+This is a minorr new release with several new features and a number of bug
+fixes.  The catalog datbase format remains unchanged from the 9.4.4 release
 
-New features:
-- Docker plugin
-- Statistics Collector for Dir, FD, and SD (interface to Graphite)
-  - New Statistics resource
-- Support for MacOS suspend in File daemon
-- SD SyncOnClose directive in Device resource
-
-Baculum New Features:
+Major Baculum New Features:
  - SELinux support
  - New graph types
  - Graphical client status
@@ -32,11 +25,25 @@ Baculum New Features:
  - New API functions
  - Job history list on job page
 
-31Dec19
+Bacula New features:
+- Docker plugin.  Documentation for this plugin is not yet ready,
+  but will be forthcoming within a few weeks.
+- Statistics Collector for Dir, FD, and SD (interface to Graphite)
+  - New Statistics resource
+  Documentation for this feature is in the New Features section of
+  the main manual
+- Support for MacOS suspend in File daemon
+- SD SyncOnClose directive in Device resource
+
+21Feb20
+ - docker: Replace realloc_pm() for check_size().
+ - Update pluglib.
+ - Fix Docker Plugin for accurate backup.
+ - Docker: add baculatar docker image.
+ - Win32: update Windows build to including needed collector files
  - Get Branch-9.4 ReleaseNotes
  - Update po POTFILES.in and version
  - Get ChangeLog from Branch-9.4
-z17Dec19
  - baculum: Update Polish translations for API and Web
  - baculum: Update Portuguese translations for API and Web
  - Fix cats-test.c compile
@@ -46,7 +53,7 @@ z17Dec19
  - Redesigning PM management add missing files.
  - baculum: Fix delete job button visibility
  - baculum: Add to BVFS lsdirs, lsfiles and versions endpoints new output=raw/json 
-  parameter
+   parameter
  - baculum: Update spec and deb files
  - baculum: Do not try to switch to new user in API and Web install wizards
  - baculum: Improve Polish translations
