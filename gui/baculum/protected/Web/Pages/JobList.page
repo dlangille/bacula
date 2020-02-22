@@ -52,6 +52,11 @@ var oJobHistoryList = {
 		var table = $('#' + this.ids.job_history_list).DataTable({
 			data: <%=json_encode($this->jobs)%>,
 			deferRender: true,
+			dom: 'lBfrtip',
+			stateSave: true,
+			buttons: [
+				'copy', 'csv', 'colvis'
+			],
 			columns: [
 				{
 					className: 'details-control',
@@ -99,7 +104,7 @@ var oJobHistoryList = {
 					var select = $('<select><option value=""></option></select>')
 					.appendTo($(column.footer()).empty())
 					.on('change', function () {
-						var val = $.fn.dataTable.util.escapeRegex(
+						var val = dtEscapeRegex(
 							$(this).val()
 						);
 						column
@@ -107,7 +112,11 @@ var oJobHistoryList = {
 						.draw();
 					});
 					column.data().unique().sort().each(function (d, j) {
-						select.append('<option value="' + d + '">' + d + '</option>');
+						if (column.search() == '^' + dtEscapeRegex(d) + '$') {
+							select.append('<option value="' + d + '" selected>' + d + '</option>');
+						} else {
+							select.append('<option value="' + d + '">' + d + '</option>');
+						}
 					});
 				});
 			}

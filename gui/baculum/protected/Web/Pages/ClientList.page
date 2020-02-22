@@ -51,6 +51,11 @@ var oClientList = {
 		var table = $('#' + this.ids.client_list).DataTable({
 			data: oData.clients,
 			deferRender: true,
+			dom: 'lBfrtip',
+			stateSave: true,
+			buttons: [
+				'copy', 'csv', 'colvis'
+			],
 			columns: [
 				{
 					className: 'details-control',
@@ -131,7 +136,7 @@ var oClientList = {
 					var select = $('<select><option value=""></option></select>')
 					.appendTo($(column.footer()).empty())
 					.on('change', function () {
-						var val = $.fn.dataTable.util.escapeRegex(
+						var val = dtEscapeRegex(
 							$(this).val()
 						);
 						column
@@ -142,12 +147,20 @@ var oClientList = {
 						column.data().unique().sort(sort_natural).each(function (d, j) {
 							var time = Units.format_time_period(d);
 							var time_f = time.value + ' ' + time.format + ((time.value > 0) ? 's': '');
-							select.append('<option value="' + time_f + '">' + time_f + '</option>');
+							if (column.search() == '^' + dtEscapeRegex(time_f) + '$') {
+								select.append('<option value="' + time_f + '" selected>' + time_f + '</option>');
+							} else {
+								select.append('<option value="' + time_f + '">' + time_f + '</option>');
+							}
 						});
 					} else {
 						column.cells('', column[0]).render('display').unique().sort().each(function(d, j) {
 							if (d) {
-								select.append('<option value="' + d + '">' + d + '</option>');
+								if (column.search() == '^' + dtEscapeRegex(d) + '$') {
+									select.append('<option value="' + d + '" selected>' + d + '</option>');
+								} else {
+									select.append('<option value="' + d + '">' + d + '</option>');
+								}
 							}
 						});
 					}

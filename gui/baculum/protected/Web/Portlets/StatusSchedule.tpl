@@ -134,6 +134,11 @@ var oJobScheduleList = {
 		this.table = $('#' + this.ids.schedule_list).DataTable({
 			data: this.get_data(),
 			deferRender: true,
+			dom: 'lBfrtip',
+			stateSave: true,
+			buttons: [
+				'copy', 'csv', 'colvis'
+			],
 			columns: [
 				{
 					className: 'details-control',
@@ -210,7 +215,7 @@ var oJobScheduleList = {
 					var select = $('<select><option value=""></option></select>')
 					.appendTo($(column.footer()).empty())
 					.on('change', function () {
-						var val = $.fn.dataTable.util.escapeRegex(
+						var val = dtEscapeRegex(
 							$(this).val()
 						);
 						column
@@ -219,11 +224,19 @@ var oJobScheduleList = {
 					});
 					if (column[0][0] == 3) {
 						column.cells('', column[0]).render('display').unique().sort(sort_natural).each(function(d, j) {
-							select.append('<option value="' + d + '">' + d + '</option>');
+							if (column.search() == '^' + dtEscapeRegex(d) + '$') {
+								select.append('<option value="' + d + '" selected>' + d + '</option>');
+							} else {
+								select.append('<option value="' + d + '">' + d + '</option>');
+							}
 						});
 					} else {
 						column.cells('', column[0]).render('display').unique().sort().each(function(d, j) {
-							select.append('<option value="' + d + '">' + d + '</option>');
+							if (column.search() == '^' + dtEscapeRegex(d) + '$') {
+								select.append('<option value="' + d + '" selected>' + d + '</option>');
+							} else {
+								select.append('<option value="' + d + '">' + d + '</option>');
+							}
 						});
 					}
 				});

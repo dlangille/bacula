@@ -12,7 +12,7 @@
 		<button type="button" class="w3-button w3-margin-bottom w3-green<%=empty($_SESSION['sd']) ? ' hide': ''%>" onclick="document.location.href='<%=$this->Service->constructUrl('NewResource', array('component_type' => 'sd', 'component_name' => $_SESSION['sd'], 'resource_type' => 'Autochanger'))%>';"><i class="fa fa-plus"></i> &nbsp;<%[ Add autochanger ]%></button>
 	</div>
 	<div class="w3-container">
-		<table id="storage_list" class="w3-table w3-striped w3-hoverable w3-white w3-margin-bottom">
+		<table id="storage_list" class="w3-table w3-striped w3-hoverable w3-white w3-margin-bottom" style="width: 100%">
 			<thead>
 				<tr>
 					<th></th>
@@ -47,6 +47,11 @@ var oStorageList = {
 		var table = $('#' + this.ids.storage_list).DataTable({
 			data: <%=json_encode($this->storages)%>,
 			deferRender: true,
+			dom: 'lBfrtip',
+			stateSave: true,
+			buttons: [
+				'copy', 'csv', 'colvis'
+			],
 			columns: [
 				{
 					className: 'details-control',
@@ -101,7 +106,7 @@ var oStorageList = {
 					var select = $('<select><option value=""></option></select>')
 					.appendTo($(column.footer()).empty())
 					.on('change', function () {
-						var val = $.fn.dataTable.util.escapeRegex(
+						var val = dtEscapeRegex(
 							$(this).val()
 						);
 						column
@@ -109,7 +114,11 @@ var oStorageList = {
 						.draw();
 					});
 					column.cells('', column[0]).render('display').unique().sort().each(function(d, j) {
-						select.append('<option value="' + d + '">' + d + '</option>');
+						if (column.search() == '^' + dtEscapeRegex(d) + '$') {
+							select.append('<option value="' + d + '" selected>' + d + '</option>');
+						} else {
+							select.append('<option value="' + d + '">' + d + '</option>');
+						}
 					});
 				});
 			}

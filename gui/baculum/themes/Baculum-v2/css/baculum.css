@@ -51,6 +51,10 @@ table.dataTable.no-footer {
 	box-shadow: none !important;
 }
 
+.dataTables_length {
+	margin-right: 5px;
+}
+
 th.action_col, td.action_col {
 	width: 110px !important;
 }

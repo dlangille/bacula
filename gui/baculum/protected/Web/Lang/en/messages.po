@@ -2524,3 +2524,93 @@ msgstr "Create new resource"
 
 msgid "The resource has been created successfully."
 msgstr "The resource has been created successfully."
+
+msgid "Scheduled time"
+msgstr "Scheduled time"
+
+msgid "Real end time"
+msgstr "Real end time"
+
+msgid "Read bytes"
+msgstr "Read bytes"
+
+msgid "Job errors"
+msgstr "Job errors"
+
+msgid "Job missing files"
+msgstr "Job missing files"
+
+msgid "Purged files"
+msgstr "Purged files"
+
+msgid "Has base"
+msgstr "Has base"
+
+msgid "Reviewed"
+msgstr "Reviewed"
+
+msgid "Comment"
+msgstr "Comment"
+
+msgid "File table"
+msgstr "File table"
+
+msgid "Label date"
+msgstr "Label date"
+
+msgid "Vol. blocks"
+msgstr "Vol. blocks"
+
+msgid "Vol. abytes"
+msgstr "Vol. abytes"
+
+msgid "Vol. apadding"
+msgstr "Vol. apadding"
+
+msgid "Vol. hole bytes"
+msgstr "Vol. hole bytes"
+
+msgid "Vol. holes"
+msgstr "Vol. holes"
+
+msgid "Vol. parts"
+msgstr "Vol. parts"
+
+msgid "Vol. writes"
+msgstr "Vol. writes"
+
+msgid "Vol. capacity bytes"
+msgstr "Vol. capacity bytes"
+
+msgid "Storage"
+msgstr "Storage"
+
+msgid "Media addressing"
+msgstr "Media addressing"
+
+msgid "Vol. read time"
+msgstr "Vol. read time"
+
+msgid "Vol. write time"
+msgstr "Vol. write time"
+
+msgid "End file"
+msgstr "End file"
+
+msgid "End block"
+msgstr "End block"
+
+msgid "Initial write"
+msgstr "Initial write"
+
+msgid "Vol. type"
+msgstr "Vol. type"
+
+msgid "Vol. cloud parts"
+msgstr "Vol. cloud parts"
+
+msgid "Last part bytes"
+msgstr "Last part bytes"
+
+msgid "Cache retention"
+msgstr "Cache retention"

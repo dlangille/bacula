@@ -1106,6 +1106,17 @@ function update_job_table(table_obj, new_data) {
 	}
 }
 
+/**
+ * Used to escape values before putting them into regular expression.
+ * Dedicated to use in table values.
+ */
+dtEscapeRegex = function(value) {
+	if (typeof(value) != 'string' && typeof(value.toString) == 'function') {
+		value = value.toString();
+	}
+	return $.fn.dataTable.util.escapeRegex(value);
+};
+
 $(function() {
 	W3SideBar.init();
 	set_sbbr_compatibility();

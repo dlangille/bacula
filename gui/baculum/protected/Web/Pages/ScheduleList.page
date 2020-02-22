@@ -20,6 +20,13 @@
 					</tr>
 				</thead>
 				<tbody id="schedule_list_body"></tbody>
+				<tfoot>
+					<tr>
+						<th></th>
+						<th><%[ Name ]%></th>
+						<th class="w3-center"><%[ Actions ]%></th>
+					</tr>
+				</tfoot>
 			</table>
 		</table>
 	</div>
@@ -36,6 +43,11 @@ var oScheduleList = {
 		var table = $('#' + this.ids.schedule_list).DataTable({
 			data: <%=json_encode($this->schedules)%>,
 			deferRender: true,
+			dom: 'lBfrtip',
+			stateSave: true,
+			buttons: [
+				'copy', 'csv', 'colvis'
+			],
 			columns: [
 				{
 					className: 'details-control',
@@ -75,7 +87,29 @@ var oScheduleList = {
 				className: "dt-center",
 				targets: [ 2 ]
 			}],
-			order: [1, 'asc']
+			order: [1, 'asc'],
+			initComplete: function () {
+				this.api().columns([1]).every(function () {
+					var column = this;
+					var select = $('<select><option value=""></option></select>')
+					.appendTo($(column.footer()).empty())
+					.on('change', function () {
+						var val = dtEscapeRegex(
+							$(this).val()
+						);
+						column
+						.search(val ? '^' + val + '$' : '', true, false)
+						.draw();
+					});
+					column.cells('', column[0]).render('display').unique().sort().each(function(d, j) {
+						if (column.search() == '^' + dtEscapeRegex(d) + '$') {
+							select.append('<option value="' + d + '" selected>' + d + '</option>');
+						} else {
+							select.append('<option value="' + d + '">' + d + '</option>');
+						}
+					});
+				});
+			}
 		});
 	}
 };
