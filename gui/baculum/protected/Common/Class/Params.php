@@ -31,7 +31,7 @@ Prado::using('Application.Common.Class.CommonModule');
  */
 class Params extends CommonModule {
 
-	const BACULUM_VERSION = '9.6.0';
+	const BACULUM_VERSION = '9.6.1';
 
 	public static $months = array(
 		'jan' => 'January',
