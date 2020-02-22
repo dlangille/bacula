@@ -1,11 +1,7 @@
 
-               Release Notes for Bacula BETA 9.6.0
+               Release Notes for Bacula 9.6.0
 
-NOTE: THIS IS A BETA VERSION
-
-Release 9.6.0
-
-This is a minorr new release with several new features and a number of bug
+This is a minor new release with several new features and a number of bug
 fixes.  The catalog datbase format remains unchanged from the 9.4.4 release
 
 Major Baculum New Features:
