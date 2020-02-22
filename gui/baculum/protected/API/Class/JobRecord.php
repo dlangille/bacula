@@ -61,6 +61,11 @@ class JobRecord extends APIDbModule {
 	public $comment;
 	public $filetable;
 
+	// Additional values (not from Job table)
+	public $client;
+	public $pool;
+	public $fileset;
+
 	public static function finder($className = __CLASS__) {
 		return parent::finder($className);
 	}

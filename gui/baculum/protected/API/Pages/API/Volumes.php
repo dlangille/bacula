@@ -30,7 +30,7 @@
 class Volumes extends BaculumAPIServer {
 	public function get() {
 		$limit = $this->Request->contains('limit') ? intval($this->Request['limit']) : 0;
-		$result = $this->getModule('volume')->getVolumes($limit);
+		$result = $this->getModule('volume')->getVolumes(array(), $limit);
 		$this->output = $result;
 		$this->error = VolumeError::ERROR_NO_ERRORS;
 	}

@@ -5320,6 +5320,18 @@
 				"filetable": {
 					"description": "File table",
 					"type": "string"
+				},
+				"client": {
+					"description": "Client name",
+					"type": "string"
+				},
+				"pool": {
+					"description": "Pool name",
+					"type": "string"
+				},
+				"fileset": {
+					"description": "FileSet name",
+					"type": "string"
 				}
 			}
 		},
@@ -5689,6 +5701,22 @@
 				"cacheretention": {
 					"description": "Cache retention time",
 					"type": "integer"
+				},
+				"storage": {
+					"description": "Storage name",
+					"type": "string"
+				},
+				"pool": {
+					"description": "Pool name",
+					"type": "string"
+				},
+				"scratchpool": {
+					"description": "Scratch pool name",
+					"type": "string"
+				},
+				"recyclepool": {
+					"description": "Recycle pool name",
+					"type": "string"
 				},
 				"whenexpire": {
 					"description": "Expiration date and time",

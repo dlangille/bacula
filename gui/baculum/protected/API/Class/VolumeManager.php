@@ -33,45 +33,88 @@ Prado::using('Application.API.Class.Database');
  */
 class VolumeManager extends APIModule {
 
-	public function getVolumes($limit) {
-		$criteria = new TActiveRecordCriteria;
-		$orderPool = 'PoolId';
-		$orderVolume = 'VolumeName';
+	public function getVolumes($criteria = array(), $limit_val = 0) {
+		$order_pool_id = 'PoolId';
+		$order_volume = 'VolumeName';
 		$db_params = $this->getModule('api_config')->getConfig('db');
 		if($db_params['type'] === Database::PGSQL_TYPE) {
-		    $orderPool = strtolower($orderPool);
-		    $orderVolume = strtolower($orderVolume);
+		    $order_pool_id = strtolower($order_pool_id);
+		    $order_volume = strtolower($order_volume);
 		}
-		$criteria->OrdersBy[$orderPool] = 'asc';
-		$criteria->OrdersBy[$orderVolume] = 'asc';
-		if(is_int($limit) && $limit > 0) {
-			$criteria->Limit = $limit;
+		$order = " ORDER BY $order_pool_id ASC, $order_volume ASC ";
+
+		$limit = '';
+		if(is_int($limit_val) && $limit_val > 0) {
+			$limit = " LIMIT $limit_val ";
 		}
-		$volumes = VolumeRecord::finder()->findAll($criteria);
+
+		$where = Database::getWhere($criteria);
+
+		$sql = 'SELECT Media.*, 
+pool1.Name as pool, 
+pool2.Name as scratchpool, 
+pool3.Name as recyclepool, 
+Storage.Name as storage 
+FROM Media 
+LEFT JOIN Pool AS pool1 USING (PoolId) 
+LEFT JOIN Pool AS pool2 ON Media.ScratchPoolId = pool2.PoolId 
+LEFT JOIN Pool AS pool3 ON Media.RecyclePoolId = pool3.PoolId 
+LEFT JOIN Storage USING (StorageId) 
+' . $where['where'] . $order . $limit;
+		$volumes = VolumeRecord::finder()->findAllBySql($sql, $where['params']);
 		$this->setExtraVariables($volumes);
 		return $volumes;
 	}
 
 	public function getVolumesByPoolId($poolid) {
-		$volumes = VolumeRecord::finder()->findAllBypoolid($poolid);
+		$volumes = $this->getVolumes(array(
+			'Media.PoolId' => array(
+				'vals' => array($poolid),
+				'operator' => 'AND'
+			)
+		));
 		$this->setExtraVariables($volumes);
 		return $volumes;
 	}
 
 	public function getVolumeByPoolId($poolid) {
-		$volume = VolumeRecord::finder()->findBypoolid($poolid);
+		$volume = $this->getVolumes(array(
+			'Media.PoolId' => array(
+				'vals' => array($poolid),
+				'operator' => 'AND'
+			)
+		), 1);
+		if (is_array($volume) && count($volume) > 0) {
+			$volume = array_shift($volume);
+		}
 		$this->setExtraVariables($volume);
 		return $volume;
 	}
 
-	public function getVolumeByName($volumeName) {
-		$volume = VolumeRecord::finder()->findByvolumename($volumeName);
+	public function getVolumeByName($volume_name) {
+		$volume = $this->getVolumes(array(
+			'Media.VolumeName' => array(
+				'vals' => array($volume_name),
+				'operator' => 'AND'
+			)
+		), 1);
+		if (is_array($volume) && count($volume) > 0) {
+			$volume = array_shift($volume);
+		}
 		$this->setExtraVariables($volume);
 		return $volume;
 	}
 
-	public function getVolumeById($volumeId) {
-		$volume = VolumeRecord::finder()->findBymediaid($volumeId);
+	public function getVolumeById($volume_id) {
+		$volume = $this->getVolumes(array(
+			'Media.MediaId' => array(
+				'vals' => array($volume_id),
+				'operator' => 'AND'
+			)
+		));
+		if (is_array($volume) && count($volume) > 0) {
+			$volume = array_shift($volume);
+		}
 		$this->setExtraVariables($volume);
 		return $volume;
 	}

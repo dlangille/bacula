@@ -84,6 +84,11 @@ class VolumeRecord extends APIDbModule {
 	public $lastpartbytes;
 	public $cacheretention;
 
+	// Additional values (not from Media table)
+	public $storage;
+	public $pool;
+	public $scratchpool;
+	public $recyclepool;
 	public $whenexpire;
 
 	public static function finder($className = __CLASS__) {

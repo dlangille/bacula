@@ -33,52 +33,44 @@ Prado::using('Application.API.Class.Database');
  */
 class JobManager extends APIModule {
 
-	public function getJobs($limit, $params = array()) {
-		$criteria = new TActiveRecordCriteria;
-		$order = 'JobId';
+	public function getJobs($criteria = array(), $limit_val) {
+		$sort_col = 'JobId';
 		$db_params = $this->getModule('api_config')->getConfig('db');
 		if ($db_params['type'] === Database::PGSQL_TYPE) {
-		    $order = strtolower($order);
+		    $sort_col = strtolower($sort_col);
 		}
-		$criteria->OrdersBy[$order] = 'desc';
-		if(is_int($limit) && $limit > 0) {
-			$criteria->Limit = $limit;
+		$order = ' ORDER BY ' . $sort_col . ' DESC';
+		$limit = '';
+		if(is_int($limit_val) && $limit_val > 0) {
+			$limit = ' LIMIT ' . $limit_val;
 		}
 
-		if (count($params) > 0) {
-			$condition = array();
-			foreach ($params as $key => $value) {
-				$cond = array();
-				$vals = array();
-				if (is_array($value['vals'])) {
-					for ($i = 0; $i < count($value['vals']); $i++) {
-						$cond[] = "{$key} = :{$key}{$i}";
-						$vals[":{$key}{$i}"] = $value['vals'][$i];
-					}
-				} else {
-					$cond[] = "$key = :$key";
-					$vals[":$key"] = $value['vals'];
-				}
-				$condition[] = implode(' ' . $value['operator'] . ' ', $cond);
-				foreach ($vals as $pkey => $pval) {
-					$criteria->Parameters[$pkey] = $pval;
-				}
-			}
-			$criteria->Condition = '(' . implode(') AND (' , $condition) . ')';
-		}
-		return JobRecord::finder()->findAll($criteria);
+		$where = Database::getWhere($criteria);
+
+		$sql = 'SELECT Job.*, 
+Client.Name as client, 
+Pool.Name as pool, 
+FileSet.FileSet as fileset 
+FROM Job 
+LEFT JOIN Client USING (ClientId) 
+LEFT JOIN Pool USING (PoolId) 
+LEFT JOIN FileSet USING (FilesetId)'
+. $where['where'] . $order . $limit;
+
+		return JobRecord::finder()->findAllBySql($sql, $where['params']);
 	}
 
-	public function getJobById($id) {
-		return JobRecord::finder()->findByjobid($id);
-	}
-
-	public function getJobByName($name) {
-		return JobRecord::finder()->findByname($name);
-	}
-
-	public function deleteJobById($id) {
-		return JobRecord::finder()->deleteByjobid($id);
+	public function getJobById($jobid) {
+		$job = $this->getJobs(array(
+			'Job.JobId' => array(
+				'vals' => array($jobid),
+				'operator' => 'AND'
+			)
+		), 1);
+		if (is_array($job) && count($job) > 0) {
+			$job = array_shift($job);
+		}
+		return $job;
 	}
 
 	/**
@@ -214,7 +206,16 @@ class JobManager extends APIModule {
 			$jobs_sql = implode("', '", $allowed_jobs);
 			$jobs_criteria = " AND Job.Name IN ('" . $jobs_sql . "')";
 		}
-		$sql = "SELECT DISTINCT Job.* FROM Job, JobMedia WHERE JobMedia.MediaId='$mediaid' AND JobMedia.JobId=Job.JobId $jobs_criteria";
+		$sql = "SELECT DISTINCT Job.*, 
+Client.Name as client, 
+Pool.Name as pool, 
+FileSet.FileSet as fileset 
+FROM Job 
+LEFT JOIN Client USING (ClientId) 
+LEFT JOIN Pool USING (PoolId) 
+LEFT JOIN FileSet USING (FilesetId) 
+LEFT JOIN JobMedia USING (JobId) 
+WHERE JobMedia.MediaId='$mediaid' $jobs_criteria";
 		return JobRecord::finder()->findAllBySql($sql);
 	}
 
@@ -231,7 +232,15 @@ class JobManager extends APIModule {
 			$jobs_sql = implode("', '", $allowed_jobs);
 			$jobs_criteria = " AND Job.Name IN ('" . $jobs_sql . "')";
 		}
-		$sql = "SELECT DISTINCT Job.* FROM Client, Job WHERE Client.ClientId='$clientid' AND Client.ClientId=Job.ClientId $jobs_criteria";
+		$sql = "SELECT DISTINCT Job.*, 
+Client.Name as client, 
+Pool.Name as pool, 
+FileSet.FileSet as fileset 
+FROM Job 
+LEFT JOIN Client USING (ClientId) 
+LEFT JOIN Pool USING (PoolId) 
+LEFT JOIN FileSet USING (FilesetId) 
+WHERE Client.ClientId='$clientid' $jobs_criteria";
 		return JobRecord::finder()->findAllBySql($sql);
 	}
 }

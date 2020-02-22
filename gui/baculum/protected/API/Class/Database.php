@@ -157,5 +157,33 @@ class Database extends APIModule {
 		$pdo = null;
 		return $dbsize;
 	}
+
+	public static function getWhere(array $params) {
+		$where = '';
+		$parameters = array();
+		if (count($params) > 0) {
+			$condition = array();
+			foreach ($params as $key => $value) {
+				$cond = array();
+				$vals = array();
+				$kval = str_replace('.', '_', $key);
+				if (is_array($value['vals'])) {
+					for ($i = 0; $i < count($value['vals']); $i++) {
+						$cond[] = "{$key} = :{$kval}{$i}";
+						$vals[":{$kval}{$i}"] = $value['vals'][$i];
+					}
+				} else {
+					$cond[] = "$key = :$kval";
+					$vals[":$kval"] = $value['vals'];
+				}
+				$condition[] = implode(' ' . $value['operator'] . ' ', $cond);
+				foreach ($vals as $pkey => $pval) {
+					$parameters[$pkey] = $pval;
+				}
+			}
+			$where = ' WHERE (' . implode(') AND (' , $condition) . ')';
+		}
+		return array('where' => $where, 'params' => $parameters);
+	}
 }
 ?>

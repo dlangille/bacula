@@ -36,35 +36,38 @@ class Jobs extends BaculumAPIServer {
 		$type = $this->Request->contains('type') && $misc->isValidJobType($this->Request['type']) ? $this->Request['type'] : '';
 		$jobname = $this->Request->contains('name') && $misc->isValidName($this->Request['name']) ? $this->Request['name'] : '';
 		$clientid = $this->Request->contains('clientid') ? $this->Request['clientid'] : '';
+
 		if (!empty($clientid) && !$misc->isValidId($clientid)) {
 			$this->output = JobError::MSG_ERROR_CLIENT_DOES_NOT_EXISTS;
 			$this->error = JobError::ERROR_CLIENT_DOES_NOT_EXISTS;
 			return;
 		}
+
 		$client = $this->Request->contains('client') ? $this->Request['client'] : '';
 		if (!empty($client) && !$misc->isValidName($client)) {
 			$this->output = JobError::MSG_ERROR_CLIENT_DOES_NOT_EXISTS;
 			$this->error = JobError::ERROR_CLIENT_DOES_NOT_EXISTS;
 			return;
 		}
+
 		$params = array();
 		$jobstatuses = array_keys($misc->getJobState());
 		$sts = str_split($jobstatus);
 		for ($i = 0; $i < count($sts); $i++) {
 			if (in_array($sts[$i], $jobstatuses)) {
-				if (!key_exists('jobstatus', $params)) {
-					$params['jobstatus'] = array('operator' => 'OR', 'vals' => array());
+				if (!key_exists('Job.JobStatus', $params)) {
+					$params['Job.JobStatus'] = array('operator' => 'OR', 'vals' => array());
 				}
-				$params['jobstatus']['vals'][] = $sts[$i];
+				$params['Job.JobStatus']['vals'][] = $sts[$i];
 			}
 		}
 		if (!empty($level)) {
-			$params['level']['operator'] = '';
-			$params['level']['vals'] = $level;
+			$params['Job.Level']['operator'] = '';
+			$params['Job.Level']['vals'] = $level;
 		}
 		if (!empty($type)) {
-			$params['type']['operator'] = '';
-			$params['type']['vals'] = $type;
+			$params['Job.Type']['operator'] = '';
+			$params['Job.Type']['vals'] = $type;
 		}
 		$allowed = array();
 		$result = $this->getModule('bconsole')->bconsoleCommand($this->director, array('.jobs'));
@@ -76,8 +79,8 @@ class Jobs extends BaculumAPIServer {
 			} else {
 				$vals = $result->output;
 			}
-			$params['name']['operator'] = 'OR';
-			$params['name']['vals'] = $vals;
+			$params['Job.Name']['operator'] = 'OR';
+			$params['Job.Name']['vals'] = $vals;
 
 			$error = false;
 			// Client name and clientid filter
@@ -92,8 +95,8 @@ class Jobs extends BaculumAPIServer {
 						$cli = $this->getModule('client')->getClientById($clientid);
 					}
 					if (is_object($cli) && in_array($cli->name, $result->output)) {
-						$params['clientid']['operator'] = 'AND';
-						$params['clientid']['vals'] = array($cli->clientid);
+						$params['Job.ClientId']['operator'] = 'AND';
+						$params['Job.ClientId']['vals'] = array($cli->clientid);
 					} else {
 						$error = true;
 						$this->output = JobError::MSG_ERROR_CLIENT_DOES_NOT_EXISTS;
@@ -107,7 +110,7 @@ class Jobs extends BaculumAPIServer {
 			}
 
 			if ($error === false) {
-				$jobs = $this->getModule('job')->getJobs($limit, $params);
+				$jobs = $this->getModule('job')->getJobs($params, $limit);
 				$this->output = $jobs;
 				$this->error = JobError::ERROR_NO_ERRORS;
 			}
