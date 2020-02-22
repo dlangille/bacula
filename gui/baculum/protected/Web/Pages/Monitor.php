@@ -42,6 +42,7 @@ class Monitor extends BaculumPage {
 			'running_jobs' => array(),
 			'terminated_jobs' => array(),
 			'pools' => array(),
+			'clients' => array(),
 			'jobtotals' => array(),
 			'dbsize' => array(),
 			'error' => array('error' => 0, 'output' => '')
