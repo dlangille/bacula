@@ -23,6 +23,7 @@ require {
 	class capability { audit_write sys_resource net_admin };
 	class service { start stop };
 	class unix_stream_socket { connectto };
+	class process { setrlimit };
 }
 
 #============= httpd_t ==============
@@ -39,6 +40,7 @@ allow httpd_t httpd_cache_t:dir { read create };
 allow httpd_t httpd_cache_t:file { read write create };
 allow httpd_t self:netlink_audit_socket { write nlmsg_relay create read };
 allow httpd_t self:capability { audit_write sys_resource net_admin };
+allow httpd_t self:process { setrlimit };
 allow httpd_t httpd_sys_rw_content_t:dir { read write };
 allow httpd_t httpd_sys_rw_content_t:file { create append };
 allow httpd_t shadow_t:file { open read };
