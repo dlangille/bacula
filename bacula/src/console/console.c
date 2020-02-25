@@ -935,6 +935,10 @@ void trapctlc()
    signal(SIGINT, sigintcatcher);
 }
 
+#ifdef HAVE_READLINE
+static int histfile_size=0;
+#endif
+
 static int console_update_history(const char *histfile)
 {
    int ret=0;
