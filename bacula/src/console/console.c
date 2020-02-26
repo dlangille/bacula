@@ -936,7 +936,7 @@ void trapctlc()
 }
 
 #ifdef HAVE_READLINE
-static int histfile_size=0;
+static int histfile_size = 100;
 #endif
 
 static int console_update_history(const char *histfile)
