@@ -1,5 +1,19 @@
-              Changelog for version 9.6.0
+              Changelog for version 9.6.2
 
+
+26Feb20
+ - Apply fix for history size from Martin Simmons
+
+25Feb20
+ - Fix missing part of patch 8135b9d21d -- readline truncate fix
+
+23Feb20
+ - baculum: Fix using bconsole with sudo on Fedora if SELinux is enabled
+
+22Feb20
+ - baculum: Add copy, CSV and column visibility buttons to tables
+ - baculum: Add buttons and colvis DataTables plugins
+ - baculum: Add additional values to job and volume API endpoints
 
 15Jan20
  - docker: Replace realloc_pm() for check_size().

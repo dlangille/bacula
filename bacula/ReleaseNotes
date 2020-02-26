@@ -1,8 +1,12 @@
 
-               Release Notes for Bacula 9.6.0
+               Release Notes for Bacula 9.6.2
 
 This is a minor new release with several new features and a number of bug
 fixes.  The catalog datbase format remains unchanged from the 9.4.4 release
+
+Note: Release-9.6.0 had a build error when using readline, and Release-9.6.1
+had an inappropriate file size for the readline history file, so both releases
+have been withdrawn.
 
 Major Baculum New Features:
  - SELinux support
@@ -31,7 +35,13 @@ Bacula New features:
 - Support for MacOS suspend in File daemon
 - SD SyncOnClose directive in Device resource
 
-21Feb20
+26Feb20
+ - Apply fix for history size from Martin Simmons
+ - Fix missing part of patch 8135b9d21d -- readline truncate fix
+ - baculum: Fix using bconsole with sudo on Fedora if SELinux is enabled
+ - baculum: Add copy, CSV and column visibility buttons to tables
+ - baculum: Add buttons and colvis DataTables plugins
+ - baculum: Add additional values to job and volume API endpoints
  - docker: Replace realloc_pm() for check_size().
  - Update pluglib.
  - Fix Docker Plugin for accurate backup.
