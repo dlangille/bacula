@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2019-12-17 17:21\n"
+"PO-Revision-Date: 2020-02-27 05:34\n"
 "Project-Id-Version: b02f04a28aec0155df9503e3b78ae8cc\n"
 "POT-Creation-Date: \n"
 "Last-Translator: Wanderlei Hüttel <wanderlei.huttel@gmail.com>\n"
@@ -1355,7 +1355,7 @@ msgid "OAuth2 Scope:"
 msgstr "Escopo OAuth2:"
 
 msgid "Restore job:"
-msgstr "Restaurar job:"
+msgstr "Job de restauração:"
 
 msgid "API host"
 msgstr "Endereço da API"
@@ -1397,7 +1397,7 @@ msgid "Volume:"
 msgstr "Volume:"
 
 msgid "InChanger:"
-msgstr "InChanger"
+msgstr "InChanger:"
 
 msgid "Sum:"
 msgstr "Total:"
@@ -2273,13 +2273,13 @@ msgid "Status request timed out. The most probably the Bacula client is not avai
 msgstr "A solicitação de status expirou. O mais provável é que o cliente Bacula não esteja disponível ou não esteja em execução."
 
 msgid "Start"
-msgstr "Start"
+msgstr "Iniciar"
 
 msgid "Stop"
-msgstr "Stop"
+msgstr "Parar"
 
 msgid "Restart"
-msgstr "Restart"
+msgstr "Reiniciar"
 
 msgid "Component action result"
 msgstr "Resultado da ação do componente"
@@ -2324,7 +2324,7 @@ msgid "Progress bar displays estimated values"
 msgstr "A barra de progresso exibe valores estimados"
 
 msgid "Byte progress bar:"
-msgstr "Barra de progresso de Byte:"
+msgstr "Barra de progresso de Bytes:"
 
 msgid "File progress bar:"
 msgstr "Barra de progresso do arquivo:"
@@ -2480,7 +2480,7 @@ msgid "Data encryption"
 msgstr "Criptografia de dados"
 
 msgid "Deduplication optimized volumes"
-msgstr "Volume otimizado para Deduplication"
+msgstr "Volume otimizado para Deduplicação"
 
 msgid "Device"
 msgstr "Device"
@@ -2534,40 +2534,40 @@ msgid "The resource has been created successfully."
 msgstr "O recurso foi criado com sucesso."
 
 msgid "Scheduled time"
-msgstr "Scheduled time"
+msgstr "Horário agendado"
 
 msgid "Real end time"
-msgstr "Real end time"
+msgstr "Hora final real"
 
 msgid "Read bytes"
-msgstr "Read bytes"
+msgstr "Bytes lidos"
 
 msgid "Job errors"
-msgstr "Job errors"
+msgstr "Erros do Job"
 
 msgid "Job missing files"
-msgstr "Job missing files"
+msgstr "Arquivos faltantes do Job"
 
 msgid "Purged files"
-msgstr "Purged files"
+msgstr "Arquivos excluídos"
 
 msgid "Has base"
-msgstr "Has base"
+msgstr "Tem base"
 
 msgid "Reviewed"
-msgstr "Reviewed"
+msgstr "Revisado"
 
 msgid "Comment"
-msgstr "Comment"
+msgstr "Comentário"
 
 msgid "File table"
-msgstr "File table"
+msgstr "Tabela de arquivo"
 
 msgid "Label date"
-msgstr "Label date"
+msgstr "Data do rótulo"
 
 msgid "Vol. blocks"
-msgstr "Vol. blocks"
+msgstr "Blocos volume"
 
 msgid "Vol. abytes"
 msgstr "Vol. abytes"
@@ -2582,43 +2582,44 @@ msgid "Vol. holes"
 msgstr "Vol. holes"
 
 msgid "Vol. parts"
-msgstr "Vol. parts"
+msgstr "Partes volume"
 
 msgid "Vol. writes"
-msgstr "Vol. writes"
+msgstr "Escritas volume"
 
 msgid "Vol. capacity bytes"
-msgstr "Vol. capacity bytes"
+msgstr "Capacidade volume"
 
 msgid "Storage"
 msgstr "Storage"
 
 msgid "Media addressing"
-msgstr "Media addressing"
+msgstr "Endereço de mídia"
 
 msgid "Vol. read time"
-msgstr "Vol. read time"
+msgstr "Tempo de leitura do volume"
 
 msgid "Vol. write time"
-msgstr "Vol. write time"
+msgstr "Tempo de escrita do volume"
 
 msgid "End file"
-msgstr "End file"
+msgstr "Fim do arquivo"
 
 msgid "End block"
-msgstr "End block"
+msgstr "Fim do bloco"
 
 msgid "Initial write"
-msgstr "Initial write"
+msgstr "Gravação inicial"
 
 msgid "Vol. type"
-msgstr "Vol. type"
+msgstr "Tipo do volume"
 
 msgid "Vol. cloud parts"
-msgstr "Vol. cloud parts"
+msgstr "Partes da nuvem do volume"
 
 msgid "Last part bytes"
-msgstr "Last part bytes"
+msgstr "Bytes da última parte"
 
 msgid "Cache retention"
-msgstr "Cache retention"
+msgstr "Retenção de cache"
+
