@@ -1,18 +1,21 @@
 #
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
 # Default Bacula Storage Daemon Configuration file
 #
 #  For Bacula release @VERSION@ (@DATE@) -- @DISTNAME@ @DISTVER@
 #
 # You may need to change the name of your tape drive
 #   on the "Archive Device" directive in the Device
-#   resource.  If you change the Name and/or the 
+#   resource.  If you change the Name and/or the
 #   "Media Type" in the Device resource, please ensure
 #   that bacula-dir.conf has corresponding changes.
 #
 
 Storage {                             # definition of myself
   Name = @storage_name@
-  SDPort = @storage_port@                  # Director's port      
+  SDPort = @storage_port@                  # Director's port
   WorkingDirectory = "@working_dir@"
   Pid Directory = "@working_dir@"
   Maximum Concurrent Jobs = @storage_maxjobs@
@@ -39,7 +42,7 @@ Director {
 #
 # Devices supported by this Storage daemon
 # To connect, the Director's bacula-dir.conf must have the
-#  same Name and MediaType. 
+#  same Name and MediaType.
 #
 
 Device {
@@ -94,7 +97,7 @@ Device {
 
 #
 #Device {
-#  Name = DDS-4                        # 
+#  Name = DDS-4                        #
 #  Media Type = DDS-4
 #  Device Type = Tape
 #  Archive Device = Tape0
@@ -105,8 +108,8 @@ Device {
 #  Alert Command = "tapeinfo -f %c | findstr TapeAlert"
 #}
 
-# 
-# Send all messages to the Director, 
+#
+# Send all messages to the Director,
 # mount messages also are sent to the email address
 #
 Messages {
