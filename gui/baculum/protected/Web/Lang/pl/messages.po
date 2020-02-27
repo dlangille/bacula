@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2019-12-09 06:55\n"
+"PO-Revision-Date: 2020-02-27 06:24\n"
 "Project-Id-Version: b02f04a28aec0155df9503e3b78ae8cc\n"
 "POT-Creation-Date: \n"
 "Last-Translator: Marcin Haba <marcin.haba@bacula.pl>\n"
@@ -2534,28 +2534,28 @@ msgid "The resource has been created successfully."
 msgstr "Zasób został utworzony pomyślnie."
 
 msgid "Scheduled time"
-msgstr "Scheduled time"
+msgstr "Zaplanowany czas"
 
 msgid "Real end time"
-msgstr "Real end time"
+msgstr "Rzeczywisty czas zakończenia"
 
 msgid "Read bytes"
-msgstr "Przeczyt. bajtów"
+msgstr "Odczytanych bajtów"
 
 msgid "Job errors"
 msgstr "Błędy zadania"
 
 msgid "Job missing files"
-msgstr "Brak. pliki zad."
+msgstr "Brakujące pliki zadania"
 
 msgid "Purged files"
-msgstr "Wyczy. plików"
+msgstr "Wyczyszczone pliki"
 
 msgid "Has base"
-msgstr "Ma bazę"
+msgstr "Posiada bazę"
 
 msgid "Reviewed"
-msgstr "Przejrzane"
+msgstr "Przejrzano"
 
 msgid "Comment"
 msgstr "Komentarz"
@@ -2570,37 +2570,37 @@ msgid "Vol. blocks"
 msgstr "Bloki wol."
 
 msgid "Vol. abytes"
-msgstr "abytes wol."
+msgstr "Abajty wol."
 
 msgid "Vol. apadding"
 msgstr "Apadding wol."
 
 msgid "Vol. hole bytes"
-msgstr "Bajtów dziur wol."
+msgstr "Bajty dziur wol."
 
 msgid "Vol. holes"
-msgstr "Dziur wol."
+msgstr "Dziury wol."
 
 msgid "Vol. parts"
 msgstr "Części wol."
 
 msgid "Vol. writes"
-msgstr "Zapisów wol."
+msgstr "Zapisy wol."
 
 msgid "Vol. capacity bytes"
-msgstr "Pojemność wol."
+msgstr "Pojemność wol. w bajtach"
 
 msgid "Storage"
-msgstr "Magazyn"
+msgstr "Magazyn danych"
 
 msgid "Media addressing"
-msgstr "Adresowanie mediów"
+msgstr "Adresy mediów"
 
 msgid "Vol. read time"
-msgstr "Czas czytania wol."
+msgstr "Czas odczytu wol."
 
 msgid "Vol. write time"
-msgstr "Czas zapisu na wol."
+msgstr "Czas zapisu wol."
 
 msgid "End file"
 msgstr "Koniec pliku"
@@ -2609,16 +2609,17 @@ msgid "End block"
 msgstr "Koniec bloku"
 
 msgid "Initial write"
-msgstr "Wstępny zapis"
+msgstr "Początkowy zapis"
 
 msgid "Vol. type"
 msgstr "Typ wol."
 
 msgid "Vol. cloud parts"
-msgstr "Części wol. cloud"
+msgstr "Części wol. chmury"
 
 msgid "Last part bytes"
-msgstr "Bajtów ostatniej części"
+msgstr "Ostatnia część w bajtach"
 
 msgid "Cache retention"
-msgstr "Retencja cache"
+msgstr "Retencja pamięci podręcznej"
+
