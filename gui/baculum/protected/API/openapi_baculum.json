@@ -5,7 +5,7 @@
 		"description": "This is the Baculum API documentation.",
 		"contact": {
 			"name": "Marcin Haba",
-			"url": "https://www.bacula.org/9.4.x-manuals/en/console/Baculum_API_Web_GUI_Tools.html",
+			"url": "https://www.bacula.org/9.6.x-manuals/en/console/Baculum_API_Web_GUI_Tools.html",
 			"email": "marcin.haba@bacula.pl"
 		},
 		"license": {
@@ -241,7 +241,7 @@
 		"description": "Bacula Client endpoints",
 		"externalDocs": {
 			"description": "Find out more",
-			"url": "https://www.bacula.org/9.4.x-manuals/en/main/Configuring_Director.html#SECTION0020130000000000000000"
+			"url": "https://www.bacula.org/9.6.x-manuals/en/main/Configuring_Director.html#SECTION0021130000000000000000"
 		}
 	},
 	{
@@ -249,7 +249,7 @@
 		"description": "Bacula Job endpoints",
 		"externalDocs": {
 			"description": "Find out more",
-			"url": "https://www.bacula.org/9.4.x-manuals/en/main/Configuring_Director.html#SECTION002030000000000000000"
+			"url": "https://www.bacula.org/9.6.x-manuals/en/main/Configuring_Director.html#SECTION002130000000000000000"
 		}
 	},
 	{
@@ -257,7 +257,7 @@
 		"description": "Bacula Storage endpoints",
 		"externalDocs": {
 			"description": "Find out more",
-			"url": "https://www.bacula.org/9.4.x-manuals/en/main/Configuring_Director.html#SECTION0020140000000000000000"
+			"url": "https://www.bacula.org/9.6.x-manuals/en/main/Configuring_Director.html#SECTION0021140000000000000000"
 		}
 	},
 	{
@@ -265,7 +265,7 @@
 		"description": "Bacula Pool endpoints",
 		"externalDocs": {
 			"description": "Find out more",
-			"url": "https://www.bacula.org/9.4.x-manuals/en/main/Configuring_Director.html#SECTION0020160000000000000000"
+			"url": "https://www.bacula.org/9.6.x-manuals/en/main/Configuring_Director.html#SECTION0021160000000000000000"
 		}
 	},
 	{
@@ -273,7 +273,7 @@
 		"description": "Bacula Volume endpoints",
 		"externalDocs": {
 			"description": "Find out more",
-			"url": "http://www.bacula.org/9.4.x-manuals/en/main/Basic_Volume_Management.html"
+			"url": "https://www.bacula.org/9.6.x-manuals/en/main/Basic_Volume_Management.html"
 		}
 	},
 	{
@@ -281,7 +281,7 @@
 		"description": "Bacula FileSet endpoints",
 		"externalDocs": {
 			"description": "Find out more",
-			"url": "https://www.bacula.org/9.4.x-manuals/en/main/Configuring_Director.html#SECTION002070000000000000000"
+			"url": "https://www.bacula.org/9.6.x-manuals/en/main/Configuring_Director.html#SECTION002170000000000000000"
 		}
 	},
 	{
@@ -289,7 +289,7 @@
 		"description": "Bacula Schedule endpoints",
 		"externalDocs": {
 			"description": "Find out more",
-			"url": "https://www.bacula.org/9.4.x-manuals/en/main/Configuring_Director.html#SECTION002050000000000000000"
+			"url": "https://www.bacula.org/9.6.x-manuals/en/main/Configuring_Director.html#SECTION002150000000000000000"
 		}
 	},
 	{
@@ -297,7 +297,7 @@
 		"description": "Bacula BVFS endpoints",
 		"externalDocs": {
 			"description": "Find out more",
-			"url": "https://www.bacula.org/9.4.x-manuals/en/main/New_Features_in_5_2_13.html#SECTION00914000000000000000"
+			"url": "https://www.bacula.org/9.6.x-manuals/en/main/New_Features_in_5_2_13.html#SECTION001014000000000000000"
 		}
 	},
 	{
