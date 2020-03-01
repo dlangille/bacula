@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2019 Kern Sibbald
+ * Copyright (C) 2013-2020 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -54,6 +54,54 @@ class VolumeList extends BaculumWebPage {
 			true,
 			self::USE_CACHE
 		)->output;
+	}
+
+	/**
+	 * Prune multiple volumes.
+	 * Used for bulk actions.
+	 *
+	 * @param TCallback $sender callback object
+	 * @param TCallbackEventPrameter $param event parameter
+	 * @return none
+	 */
+	public function pruneVolumes($sender, $param) {
+		$result = [];
+		$mediaids = explode('|', $param->getCallbackParameter());
+		for ($i = 0; $i < count($mediaids); $i++) {
+			$ret = $this->getModule('api')->set(
+				['volumes', intval($mediaids[$i]), 'prune']
+			);
+			if ($ret->error !== 0) {
+				$result[] = $ret->output;
+				break;
+			}
+			$result[] = implode(PHP_EOL, $ret->output);
+		}
+		$this->getCallbackClient()->update($this->BulkActions->BulkActionsOutput, implode(PHP_EOL, $result));
+	}
+
+	/**
+	 * Purge multiple volumes.
+	 * Used for bulk actions.
+	 *
+	 * @param TCallback $sender callback object
+	 * @param TCallbackEventPrameter $param event parameter
+	 * @return none
+	 */
+	public function purgeVolumes($sender, $param) {
+		$result = [];
+		$mediaids = explode('|', $param->getCallbackParameter());
+		for ($i = 0; $i < count($mediaids); $i++) {
+			$ret = $this->getModule('api')->set(
+				['volumes', intval($mediaids[$i]), 'purge']
+			);
+			if ($ret->error !== 0) {
+				$result[] = $ret->output;
+				break;
+			}
+			$result[] = implode(PHP_EOL, $ret->output);
+		}
+		$this->getCallbackClient()->update($this->BulkActions->BulkActionsOutput, implode(PHP_EOL, $result));
 	}
 }
 ?>

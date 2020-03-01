@@ -1052,6 +1052,9 @@ function sort_natural(a, b) {
 }
 
 function update_job_table(table_obj, new_data) {
+
+	var current_page = table_obj.page();
+
 	var rows = table_obj.rows();
 	var old_jobs = {};
 	table_obj.data().toArray().forEach(function(job) {
@@ -1104,6 +1107,8 @@ function update_job_table(table_obj, new_data) {
 	for (var jobid in job_add_mod) {
 		table_obj.row.add(job_add_mod[jobid]).draw();
 	}
+
+	table_obj.page(current_page).draw(false);
 }
 
 /**
@@ -1116,6 +1121,64 @@ dtEscapeRegex = function(value) {
 	}
 	return $.fn.dataTable.util.escapeRegex(value);
 };
+
+
+function get_table_toolbar(table, actions, txt) {
+	var table_toolbar = document.querySelector('div.table_toolbar');
+	table_toolbar.className += ' dt-buttons';
+	table_toolbar.style.display = 'none';
+	var title = document.createTextNode(txt.actions);
+	var select = document.createElement('SELECT');
+	var option = document.createElement('OPTION');
+	option.value = '';
+	select.appendChild(option);
+	var acts = {};
+	for (var i = 0; i < actions.length; i++) {
+		option = document.createElement('OPTION');
+		option.value = actions[i].action,
+		label = document.createTextNode(actions[i].label);
+		option.appendChild(label);
+		select.appendChild(option);
+		acts[actions[i].action] = actions[i];
+	}
+	var btn = document.createElement('BUTTON');
+	btn.type = 'button';
+	btn.className = 'dt-button';
+	btn.style.verticalAlign = 'top';
+	label = document.createTextNode(txt.ok);
+	btn.appendChild(label);
+	btn.addEventListener('click', function(e) {
+		if (!select.value) {
+			// no value, no action
+			return
+		}
+		var selected = [];
+		var sel_data = table.rows({selected: true}).data();
+		sel_data.each(function(v, k) {
+			selected.push(v[acts[select.value].value]);
+		});
+
+		// call validation if defined
+		if (acts[select.value].hasOwnProperty('validate') && typeof(acts[select.value].validate) == 'function') {
+			if (acts[select.value].validate(sel_data) === false) {
+				// validation error
+				return false;
+			}
+		}
+		// call pre-action before calling bulk action
+		if (acts[select.value].hasOwnProperty('before') && typeof(acts[select.value].before) == 'function') {
+			acts[select.value].before();
+		}
+		selected = selected.join('|');
+		acts[select.value].callback.options.RequestTimeOut = 60000; // Timeout set to 1 minute
+		acts[select.value].callback.setCallbackParameter(selected);
+		acts[select.value].callback.dispatch();
+	});
+	table_toolbar.appendChild(title);
+	table_toolbar.appendChild(select);
+	table_toolbar.appendChild(btn);
+	return table_toolbar;
+}
 
 $(function() {
 	W3SideBar.init();

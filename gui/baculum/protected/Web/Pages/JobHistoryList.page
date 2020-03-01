@@ -102,6 +102,43 @@ function refresh_job_history(jobid) {
 	document.location.href = '<%=$this->Service->constructUrl('JobHistoryList')%>';
 }
 var oJobList = {
+	table: null,
+	table_toolbar: null,
+	actions: [
+		{
+			action: 'cancel',
+			label: '<%[ Cancel ]%>',
+			value: 'jobid',
+			callback: <%=$this->CancelJobsAction->ActiveControl->Javascript%>,
+			before: function() {
+				oBulkActionsModal.show_output(true);
+			}
+		},
+		{
+			action: 'delete',
+			label: '<%[ Delete ]%>',
+			value: 'jobid',
+			callback: <%=$this->DeleteJobsAction->ActiveControl->Javascript%>,
+			before: function() {
+				oBulkActionsModal.show_output(true);
+			},
+			validate: function(selected) {
+				var running_jobs = [];
+				selected.each(function(v, k) {
+					if (JobStatus.is_running(v.jobstatus)) {
+						running_jobs.push(' - [' + v.jobid + '] ' + v.name);
+					}
+				});
+				if (running_jobs.length > 0) {
+					var emsg = '<%[ Following jobs are running and cannot be deleted: %running_jobs To delete them, please stop these jobs and try again. ]%>';
+					emsg = emsg.replace('%running_jobs', '<hr />' + running_jobs.join('<br />') + '<hr />');
+					oBulkActionsModal.set_error(emsg);
+					return false;
+				}
+				return true;
+			}
+		}
+	],
 	ids: {
 		job_list: 'job_list',
 		job_list_body: 'job_list_body'
@@ -114,13 +151,22 @@ var oJobList = {
 			update_job_table(this.table, this.data);
 		} else {
 			this.set_table();
+			this.set_bulk_actions();
+			this.set_events();
 		}
+	},
+	set_events: function() {
+		document.getElementById(this.ids.job_list).addEventListener('click', function(e) {
+			$(function() {
+				this.table_toolbar.style.display = this.table.rows({selected: true}).data().length > 0 ? '' : 'none';
+			}.bind(this));
+		}.bind(this));
 	},
 	set_table: function() {
 		this.table = $('#' + this.ids.job_list).DataTable({
 			data: this.data,
 			deferRender: true,
-			dom: 'lBfrtip',
+			dom: 'lB<"table_toolbar">frtip',
 			stateSave: true,
 			buttons: [
 				'copy', 'csv', 'colvis'
@@ -349,6 +395,11 @@ var oJobList = {
 				className: "dt-body-right",
 				targets: [ 15, 16 ]
 			}],
+			select: {
+				style:    'os',
+				selector: 'td:not(:last-child):not(:first-child)',
+				blurable: false
+			},
 			order: [1, 'desc'],
 			initComplete: function () {
 				this.api().columns([2, 3, 4, 5, 14]).every(function () {
@@ -383,11 +434,46 @@ var oJobList = {
 				});
 			}
 		});
+	},
+	set_bulk_actions: function() {
+		this.table_toolbar = get_table_toolbar(this.table, this.actions, {
+			actions: '<%[ Actions ]%>',
+			ok: '<%[ OK ]%>'
+		});
 	}
 };
 MonitorParams = {jobs: null};
 $(function() {
 	MonitorCallsInterval.push(function() { oJobList.init(); });
 });
+
+/**
+ * Defne bulk actions output id here because expression tags (< % = % >) cannot
+ * be defined in the TCallback ClientSide properties.
+ */
+var bulk_actions_output_id = '<%=$this->SourceTemplateControl->BulkActions->BulkActionsOutput->ClientID%>';
 </script>
+<com:TCallback ID="CancelJobsAction" OnCallback="cancelJobs">
+	<prop:ClientSide.OnLoading>
+		oBulkActionsModal.clear_output(bulk_actions_output_id);
+		oBulkActionsModal.show_loader(true);
+	</prop:ClientSide.OnLoading>
+	<prop:ClientSide.OnComplete>
+		oBulkActionsModal.show_loader(false);
+		// job status in the Catalog changes a little moment after finishing cancel command
+		setTimeout('oMonitor()', 5000);
+	</prop:ClientSide.OnComplete>
+</com:TCallback>
+<com:TCallback ID="DeleteJobsAction" OnCallback="deleteJobs">
+	<prop:ClientSide.OnLoading>
+		oBulkActionsModal.clear_output(bulk_actions_output_id);
+		oBulkActionsModal.show_loader(true);
+	</prop:ClientSide.OnLoading>
+	<prop:ClientSide.OnComplete>
+		oBulkActionsModal.show_loader(false);
+		oJobList.table_toolbar.style.display = 'none';
+		oMonitor();
+	</prop:ClientSide.OnComplete>
+</com:TCallback>
+<com:Application.Web.Portlets.BulkActionsModal ID="BulkActions" />
 </com:TContent>

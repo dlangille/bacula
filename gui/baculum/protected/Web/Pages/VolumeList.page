@@ -139,18 +139,49 @@
 	</div>
 <script type="text/javascript">
 var oVolumeList = {
+	table: null,
+	table_toolbar: null,
+	actions: [
+		{
+			action: 'prune',
+			label: '<%[ Prune ]%>',
+			value: 'mediaid',
+			callback: <%=$this->PruneVolumesAction->ActiveControl->Javascript%>,
+			before: function() {
+				oBulkActionsModal.show_output(true);
+			}
+		},
+		{
+			action: 'purge',
+			label: '<%[ Purge ]%>',
+			value: 'mediaid',
+			callback: <%=$this->PurgeVolumesAction->ActiveControl->Javascript%>,
+			before: function() {
+				oBulkActionsModal.show_output(true);
+			}
+		}
+	],
 	ids: {
 		volume_list: 'volume_list',
 		volume_list_body: 'volume_list_body'
 	},
 	init: function() {
 		this.set_table();
+		this.set_bulk_actions();
+		this.set_events();
+	},
+	set_events: function() {
+		document.getElementById(this.ids.volume_list).addEventListener('click', function(e) {
+			$(function() {
+				this.table_toolbar.style.display = this.table.rows({selected: true}).data().length > 0 ? '' : 'none';
+			}.bind(this));
+		}.bind(this));
 	},
 	set_table: function() {
-		var table = $('#' + this.ids.volume_list).DataTable({
+		this.table = $('#' + this.ids.volume_list).DataTable({
 			data: <%=json_encode($this->volumes)%>,
 			deferRender: true,
-			dom: 'lBfrtip',
+			dom: 'lB<"table_toolbar">frtip',
 			stateSave: true,
 			buttons: [
 				'copy', 'csv', 'colvis'
@@ -513,6 +544,11 @@ var oVolumeList = {
 				className: "dt-body-right",
 				targets: [ 18 ]
 			}],
+			select: {
+				style:    'os',
+				selector: 'td:not(:last-child):not(:first-child)',
+				blurable: false
+			},
 			order: [3, 'asc'],
 			initComplete: function () {
 				this.api().columns([2, 3, 6, 10, 13]).every(function () {
@@ -547,8 +583,41 @@ var oVolumeList = {
 				});
 			}
 		});
+	},
+	set_bulk_actions: function() {
+		this.table_toolbar = get_table_toolbar(this.table, this.actions, {
+			actions: '<%[ Actions ]%>',
+			ok: '<%[ OK ]%>'
+		});
 	}
 };
 oVolumeList.init();
+/**
+ * Defne bulk actions output id here because expression tags (< % = % >) cannot
+ * be defined in the TCallback ClientSide properties.
+ */
+var bulk_actions_output_id = '<%=$this->SourceTemplateControl->BulkActions->BulkActionsOutput->ClientID%>';
 </script>
+<com:TCallback ID="PruneVolumesAction" OnCallback="pruneVolumes">
+	<prop:ClientSide.OnLoading>
+		oBulkActionsModal.clear_output(bulk_actions_output_id);
+		oBulkActionsModal.show_loader(true);
+	</prop:ClientSide.OnLoading>
+	<prop:ClientSide.OnComplete>
+		oBulkActionsModal.show_loader(false);
+	</prop:ClientSide.OnComplete>
+</com:TCallback>
+<com:TCallback ID="PurgeVolumesAction" OnCallback="purgeVolumes">
+	<prop:ClientSide.OnLoading>
+		oBulkActionsModal.clear_output(bulk_actions_output_id);
+		oBulkActionsModal.show_loader(true);
+	</prop:ClientSide.OnLoading>
+	<prop:ClientSide.OnComplete>
+		oBulkActionsModal.show_loader(false);
+	</prop:ClientSide.OnComplete>
+</com:TCallback>
+<com:Application.Web.Portlets.BulkActionsModal
+	ID="BulkActions"
+	RefreshPageBtn="true"
+	/>
 </com:TContent>

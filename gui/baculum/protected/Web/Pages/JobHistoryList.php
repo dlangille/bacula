@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2019 Kern Sibbald
+ * Copyright (C) 2013-2020 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -97,5 +97,53 @@ class JobHistoryList extends BaculumWebPage {
 			array()
 		);
 		$this->getPage()->getCallbackClient()->callClientFunction('refresh_job_history');
+	}
+
+	/**
+	 * Cancel multiple jobs.
+	 * Used for bulk actions.
+	 *
+	 * @param TCallback $sender callback object
+	 * @param TCallbackEventPrameter $param event parameter
+	 * @return none
+	 */
+	public function cancelJobs($sender, $param) {
+		$result = [];
+		$jobids = explode('|', $param->getCallbackParameter());
+		for ($i = 0; $i < count($jobids); $i++) {
+			$ret = $this->getModule('api')->set(
+				['jobs', intval($jobids[$i]), 'cancel']
+			);
+			if ($ret->error !== 0) {
+				$result[] = $ret->output;
+				break;
+			}
+			$result[] = implode(PHP_EOL, $ret->output);
+		}
+		$this->getCallbackClient()->update($this->BulkActions->BulkActionsOutput, implode(PHP_EOL, $result));
+	}
+
+	/**
+	 * Delete multiple jobs.
+	 * Used for bulk actions.
+	 *
+	 * @param TCallback $sender callback object
+	 * @param TCallbackEventPrameter $param event parameter
+	 * @return none
+	 */
+	public function deleteJobs($sender, $param) {
+		$result = [];
+		$jobids = explode('|', $param->getCallbackParameter());
+		for ($i = 0; $i < count($jobids); $i++) {
+			$ret = $this->getModule('api')->remove(
+				['jobs', intval($jobids[$i])]
+			);
+			if ($ret->error !== 0) {
+				$result[] = $ret->output;
+				break;
+			}
+			$result[] = implode(PHP_EOL, $ret->output);
+		}
+		$this->getCallbackClient()->update($this->BulkActions->BulkActionsOutput, implode(PHP_EOL, $result));
 	}
 }

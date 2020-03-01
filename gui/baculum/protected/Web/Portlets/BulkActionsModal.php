@@ -20,27 +20,35 @@
  * Bacula(R) is a registered trademark of Kern Sibbald.
  */
 
-Prado::using('System.Web.UI.WebControls.TClientScript');
+Prado::using('System.Web.UI.ActiveControls.TActiveLabel');
+Prado::using('Application.Web.Portlets.Portlets');
 
 /**
- * Baculum client script class.
+ * Bulk actions modal control.
  *
  * @author Marcin Haba <marcin.haba@bacula.pl>
- * @category Client Script
- * @package Baculum Common
+ * @category Control
+ * @package Baculum Web
  */
-class BClientScript extends TClientScript {
+class BulkActionsModal extends Portlets {
 
-	const SCRIPTS_VERSION = 6;
+	const REFRESH_PAGE_BTN = 'RefreshPageBtn';
 
-	public function getScriptUrl()
-	{
-		$url = parent::getScriptUrl();
-		if (!empty($url)) {
-			$url .= '?ver=' . self::SCRIPTS_VERSION;
+	public function onLoad($param) {
+		parent::onLoad($param);
+
+		if ($this->getRefreshPageBtn()) {
+			$this->getPage()->getCallbackClient()->show('bulk_actions_refresh_page');
 		}
-		return $url;
 	}
 
+	public function setRefreshPageBtn($refresh_page_btn) {
+		$refresh_page_btn = TPropertyValue::ensureBoolean($refresh_page_btn);
+		$this->setViewState(self::REFRESH_PAGE_BTN, $refresh_page_btn);
+	}
+
+	public function getRefreshPageBtn() {
+		return $this->getViewState(self::REFRESH_PAGE_BTN);
+	}
 }
 ?>

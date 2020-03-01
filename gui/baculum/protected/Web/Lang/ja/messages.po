@@ -2700,3 +2700,12 @@ msgstr "Last part bytes"
 
 msgid "Cache retention"
 msgstr "Cache retention"
+
+msgid "Bulk action"
+msgstr "Bulk action"
+
+msgid "Following jobs are running and cannot be deleted: %running_jobs To delete them, please stop these jobs and try again."
+msgstr "Following jobs are running and cannot be deleted: %running_jobs To delete them, please stop these jobs and try again."
+
+msgid "Refresh page"
+msgstr "Refresh page"

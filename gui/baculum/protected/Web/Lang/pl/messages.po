@@ -2623,3 +2623,11 @@ msgstr "Ostatnia część w bajtach"
 msgid "Cache retention"
 msgstr "Retencja pamięci podręcznej"
 
+msgid "Bulk action"
+msgstr "Akcja zbiorowa"
+
+msgid "Following jobs are running and cannot be deleted: %running_jobs To delete them, please stop these jobs and try again."
+msgstr "Następujące zadania są uruchomione i nie mogą zostać usunięte: %running_jobs Aby je usunąć, proszę je zatrzymać i spróbować ponownie."
+
+msgid "Refresh page"
+msgstr "Odśwież stronę"

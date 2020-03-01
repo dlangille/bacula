@@ -13,14 +13,15 @@
 			<com:BClientScript ScriptUrl=<%~ ../JavaScript/datatables.js %> />
 			<com:BClientScript ScriptUrl=<%~ ../JavaScript/dataTables.responsive.js %> />
 			<com:BClientScript ScriptUrl=<%~ ../JavaScript/responsive.jqueryui.js %> />
+			<com:BClientScript ScriptUrl=<%~ ../JavaScript/dataTables.buttons.js %> />
+			<com:BClientScript ScriptUrl=<%~ ../JavaScript/buttons.html5.js %> />
+			<com:BClientScript ScriptUrl=<%~ ../JavaScript/buttons.colVis.js %> />
+			<com:BClientScript ScriptUrl=<%~ ../JavaScript/dataTables.select.js %> />
 			<com:BClientScript ScriptUrl=<%~ ../JavaScript/excanvas.js %> />
 			<com:BClientScript ScriptUrl=<%~ ../JavaScript/bacula-config.js %> />
 			<com:BClientScript ScriptUrl=<%~ ../JavaScript/misc.js %> />
 			<com:BClientScript ScriptUrl=<%~ ../JavaScript/graph.js %> />
 			<com:BClientScript ScriptUrl=<%~ ../JavaScript/statistics.js %> />
-			<com:BClientScript ScriptUrl=<%~ ../JavaScript/dataTables.buttons.js %> />
-			<com:BClientScript ScriptUrl=<%~ ../JavaScript/buttons.html5.js %> />
-			<com:BClientScript ScriptUrl=<%~ ../JavaScript/buttons.colVis.js %> />
 			<!-- Top container -->
 			<div class="w3-bar w3-top w3-black w3-large" style="z-index:4">
 				<button type="button" class="w3-bar-item w3-button w3-hover-none w3-hover-text-light-grey" onclick="W3SideBar.open();"><i class="fa fa-bars"></i>  Menu</button>
