@@ -334,7 +334,7 @@ class BaculumAPIClient extends WebModule {
 	 * @param bool $show_error if true then it shows error as HTML error page
 	 * @return object stdClass with request result as two properties: 'output' and 'error'
 	 */
-	public function set(array $params, array $options, $host = null, $show_error = true) {
+	public function set(array $params, array $options = array(), $host = null, $show_error = true) {
 		if (is_null($host)) {
 			if (isset($_SESSION['api_host'])) {
 				$host = $_SESSION['api_host'];
