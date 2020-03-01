@@ -841,12 +841,14 @@ Files:
   protected/Web/JavaScript/datatables.js
   protected/Web/JavaScript/dataTables.responsive.js
   protected/Web/JavaScript/dataTables.buttons.js
+  protected/Web/JavaScript/dataTables.select.js
   protected/Web/JavaScript/responsive.jqueryui.js
   protected/Web/JavaScript/buttons.colVis.js
   protected/Web/JavaScript/buttons.html5.js
   themes/Baculum-v2/css/datatables.css
   themes/Baculum-v2/css/responsive.dataTables.css
   themes/Baculum-v2/css/buttons.dataTables.css
+  themes/Baculum-v2/css/select.jqueryui.css
 
 Copyright (C) 2008-2020, SpryMedia Ltd.
 
