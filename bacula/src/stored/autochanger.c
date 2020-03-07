@@ -672,7 +672,7 @@ bool autochanger_cmd(DCR *dcr, BSOCK *dir, const char *cmd)
    dir->fsend(_("3306 Issuing autochanger \"%s\" command.\n"), cmd);
    bpipe = open_bpipe(changer, timeout, "r");
    if (!bpipe) {
-      dir->fsend(_("3996 Open bpipe failed.\n"));
+      dir->fsend(_("3996 Open bpipe to changer failed: %s.\n"), changer);
       goto bail_out;            /* TODO: check if we need to return false */
    }
    if (bstrcasecmp(cmd, "list") || bstrcasecmp(cmd, "listall")) {
