@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2020-02-27 06:24\n"
+"PO-Revision-Date: 2020-03-07 18:39\n"
 "Project-Id-Version: b02f04a28aec0155df9503e3b78ae8cc\n"
 "POT-Creation-Date: \n"
 "Last-Translator: Marcin Haba <marcin.haba@bacula.pl>\n"
@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: crowdin.com\n"
+"X-Generator: Poedit 1.5.4\n"
 "Plural-Forms: nplurals=4; plural=(n==1 ? 0 : (n%10>=2 && n%10<=4) && (n%100<12 || n%100>14) ? 1 : n!=1 && (n%10>=0 && n%10<=1) || (n%10>=5 && n%10<=9) || (n%100>=12 && n%100<=14) ? 2 : 3);\n"
 "X-Crowdin-Project: b02f04a28aec0155df9503e3b78ae8cc\n"
 "X-Crowdin-Language: pl\n"
@@ -670,7 +670,7 @@ msgid "Above administration login and administration password will be used for l
 msgstr "Powyższy login administratora i hasło administratora będą używane do logowania jako administrator Baculum WebGUI. To są Twoje dane autoryzacyjne HTTP Basic, przy pomocy których będziesz logować się do Baculum."
 
 msgid "If all above steps will not help or if during installation you made mistake in password in Initial Wizard, please remove settings file located in baculum/protected/Data/settings.conf and re-run Initial wizard."
-msgstr ""
+msgstr "Jeżeli wszystkie powyższe kroki nie pomogą lub jeżeli podczas instalacji popełniłeś błąd w haśle w kreatorze początkowym, to usuń plik ustawień znajdujący się w baculum/protected/Data/settings.conf i uruchom ponownie kreatora początkowego."
 
 msgid "Action:"
 msgstr "Akcja:"
@@ -962,7 +962,7 @@ msgid "Job status summary"
 msgstr "Podsumowanie statusu zadań"
 
 msgid "Quick job access"
-msgstr ""
+msgstr "Szybki dostęp do zadań"
 
 msgid "Finished jobs"
 msgstr "Zakończone zadania"
@@ -2624,10 +2624,11 @@ msgid "Cache retention"
 msgstr "Retencja pamięci podręcznej"
 
 msgid "Bulk action"
-msgstr "Akcja zbiorowa"
+msgstr "Akcja zbiorcza"
 
 msgid "Following jobs are running and cannot be deleted: %running_jobs To delete them, please stop these jobs and try again."
-msgstr "Następujące zadania są uruchomione i nie mogą zostać usunięte: %running_jobs Aby je usunąć, proszę je zatrzymać i spróbować ponownie."
+msgstr "Następujące zadania są uruchomione i nie mogą być usunięte %running_jobs Aby je usunąć, zatrzymaj je i spróbuj ponownie."
 
 msgid "Refresh page"
 msgstr "Odśwież stronę"
+
