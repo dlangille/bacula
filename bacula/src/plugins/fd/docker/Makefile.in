@@ -28,7 +28,7 @@ all: docker-fd.la
 
 .c.lo:
 	@echo "Compiling $< ..."
-	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) $(CPPFLAGS) -I${SRCDIR} -I${FDDIR} -I${FDPLUGDIR} -DWORKDIR=\"$(DESTDIR)$(working_dir)\" -c $<
+	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) $(CPPFLAGS) $(CFLAGS) -I${SRCDIR} -I${FDDIR} -I${FDPLUGDIR} -DWORKDIR=\"$(DESTDIR)$(working_dir)\" -c $<
 
 %.lo: %.c %.h Makefile
 	@echo "Compiling $< ..."

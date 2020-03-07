@@ -16,7 +16,7 @@ LIBDIR=../../lib
 .SUFFIXES:    .c .o .lo
 
 .c.lo:
-	$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) $(CPPFLAGS) -I${SRCDIR} -I${DIRDIR} -DTEST_PROGRAM -c $<
+	$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) $(CPPFLAGS) $(CFLAGS) -I${SRCDIR} -I${DIRDIR} -DTEST_PROGRAM -c $<
 
 all: example-plugin-dir.la
 

@@ -20,7 +20,7 @@ thisdir = src/plugins/fd
 .SUFFIXES:    .c .lo
 
 .c.lo:
-	$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) $(CPPFLAGS) -I${SRCDIR} -I${FDDIR} -DTEST_PROGRAM -c $<
+	$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) $(CPPFLAGS) $(CFLAGS) -I${SRCDIR} -I${FDDIR} -DTEST_PROGRAM -c $<
 
 all: bpipe-fd.la test-plugin-fd.la test-deltaseq-fd.la pluglib.lo
 
