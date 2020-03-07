@@ -1,20 +1,8 @@
 #!/bin/bash
 #
-#    Bacula® - The Network Backup Solution
 #
-#    Copyright (C) 2007-2017 Bacula Systems SA
-#    All rights reserved.
-#
-#    The main author of Bacula is Kern Sibbald, with contributions from many
-#    others, a complete list can be found in the file AUTHORS.
-#
-#    Licensees holding a valid Bacula Systems SA license may use this file
-#    and others of this release in accordance with the proprietary license
-#    agreement provided in the LICENSE file.  Redistribution of any part of
-#    this release is not permitted.
-#
-#    Bacula® is a registered trademark of Kern Sibbald.
-#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
 #
 # This is an Inteos regression tests support utilities.
 # Author: Radoslaw Korzeniewski, radekk@inteos.pl, Inteos Sp. z o.o.
@@ -32,8 +20,8 @@
 # now check if we are running under a proper shell
 if test "x$SHELL" != "x/bin/bash"
 then
-	echo "Regression script must use BASH for this utilities!"
-	exit 1
+        echo "Regression script must use BASH for this utilities!"
+        exit 1
 fi
 
 #
@@ -44,7 +32,7 @@ setup_plugin_param()
 LPLUG=$1
 if [ "x$debug" != "x" ]
 then
-	LPLUG="$LPLUG debug=1"
+        LPLUG="$LPLUG debug=1"
 fi
 export LPLUG
 }
@@ -87,7 +75,7 @@ exit $?
 #   generate ${tmp}/blog${ltest}.out job output messages logfile
 #
 # in:
-#	$1 - a test number to perform which means it execute a job=${JobName}${1}
+#       $1 - a test number to perform which means it execute a job=${JobName}${1}
 #
 do_regress_backup_test()
 {
@@ -95,7 +83,7 @@ ltest=$1
 blevel="full"
 if [ "x$2" != "x" ]
 then
-	blevel=$2
+        blevel=$2
 fi
 printf "     backup test${ltest} ... "
 cat << END_OF_DATA >${tmp}/bconcmds
@@ -157,7 +145,7 @@ lpath=$2
 lplug=$LPLUG
 if [ "x$3" != "x" ]
 then
-	lplug=$3
+        lplug=$3
 fi
 printf "     listing test${ltest} ... "
 cat << END_OF_DATA >${tmp}/bconcmds

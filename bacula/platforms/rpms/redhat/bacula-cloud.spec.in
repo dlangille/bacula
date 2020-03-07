@@ -1,6 +1,8 @@
 # Bacula RPM spec file
 #
-# Copyright (C) 2012-2017 Bacula Systems SA
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
 
 # Platform Build Configuration
 # TODO: merge all plugins into one spec file
@@ -138,7 +140,7 @@ cd ../bacula-%{_version}
         --with-mon-fd-password="XXX_REPLACE_WITH_CLIENT_MONITOR_PASSWORD_XXX" \
         --with-mon-sd-password="XXX_REPLACE_WITH_STORAGE_MONITOR_PASSWORD_XXX" \
         --with-openssl \
-	     --with-tcp-wrappers
+             --with-tcp-wrappers
 
 make
 

@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 #
-# Copyright (C) 2000-2015 Kern Sibbald
+# Copyright (C) 2000-2020 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
 use strict;
@@ -37,15 +37,10 @@ use strict;
 
 =head1 LICENSE
 
-   Copyright (C) 2008-2014 Bacula Systems SA
-
-   Bacula(R) is a registered trademark of Kern Sibbald.
-   The licensor of Bacula Enterprise is Bacula Systems SA,
-   Rue Galilee 5, 1400 Yverdon-les-Bains, Switzerland.
-
-  This file has been made available for your personal use in the
-  hopes that it will allow community users to make better use of
-  Bacula.
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
 
 =head1 VERSION
 
