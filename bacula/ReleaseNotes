@@ -1,5 +1,27 @@
 
-               Release Notes for Bacula 9.6.2
+               Release Notes for Bacula 9.6.3
+
+This is a minor bug fix (mostly fixing incorrect copyrights) to Release-9.6.2.
+
+07Mar20
+ - Clean up some incorrect copyrights
+ - Correct spelling errors in messages
+ - Add to plugins links
+ - baculum: Add bulk actions for job history and volume tables
+ - baculum: Update DataTables and its plugins
+ - docker: Update copyright headers.
+ - Update BSD copyright on *.conf.in files
+ - docker: Remove unneeded tar binary.
+ - Fix workaround for Sun C++ recommended by Phil Stracchino
+ - baculum: Update Polish translations
+ - baculum: Update Portuguese translations
+
+Bugs fixed/closed since last release:
+None
+
+====================================================
+
+Release 9.6.2
 
 This is a minor new release with several new features and a number of bug
 fixes.  The catalog datbase format remains unchanged from the 9.4.4 release
