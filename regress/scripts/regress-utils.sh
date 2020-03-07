@@ -1,6 +1,5 @@
 #!/bin/bash
 #
-#
 # Copyright (C) 2000-2020 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
