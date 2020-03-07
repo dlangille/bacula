@@ -1126,7 +1126,7 @@ void DEVICE::register_metrics(bstatcollect *collector)
    Mmsg(met, "bacula.storage.%s.device.%s.writetime", me->hdr.name, name());
    devstatmetrics.bacula_storage_device_writetime =
          devstatcollector->registration(met.c_str(), METRIC_INT, METRIC_UNIT_MSEC,
-            (char*)"Time spent writting to device.");
+            (char*)"Time spent writing to device.");
    /* total and free space metrics registration */
    Mmsg(met, "bacula.storage.%s.device.%s.freespace", me->hdr.name, name());
    devstatmetrics.bacula_storage_device_freespace =

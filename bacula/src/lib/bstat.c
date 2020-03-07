@@ -194,7 +194,7 @@ const char *bstatmetric::metric_unit_str()
       case METRIC_UNIT_SEC:
          return "Seconds";
       case METRIC_UNIT_MSEC:
-         return "miliSeconds";
+         return "milliseconds";
       case METRIC_UNIT_NUMBER:
          return "Number";
       case METRIC_UNIT_PERCENT:

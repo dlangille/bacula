@@ -8658,7 +8658,7 @@ msgstr ""
 
 #: src/stored/append.c:265 src/stored/btape.c:1976
 #, c-format
-msgid "Error writting end session label. ERR=%s\n"
+msgid "Error writing end session label. ERR=%s\n"
 msgstr ""
 
 #: src/stored/append.c:278
@@ -9783,7 +9783,7 @@ msgstr ""
 
 #: src/stored/btape.c:600
 msgid ""
-"Test writting larger and larger records.\n"
+"Test writing larger and larger records.\n"
 "This is a torture test for records.\n"
 "I am going to write\n"
 "larger and larger records. It will stop when the record size\n"
