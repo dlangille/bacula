@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2020-02-27 05:34\n"
+"PO-Revision-Date: 2020-03-07 18:44\n"
 "Project-Id-Version: b02f04a28aec0155df9503e3b78ae8cc\n"
 "POT-Creation-Date: \n"
 "Last-Translator: Wanderlei Hüttel <wanderlei.huttel@gmail.com>\n"
@@ -193,7 +193,7 @@ msgid "Step 7 - Finish"
 msgstr "Etapa 7 - Finalizar"
 
 msgid "Storage name:"
-msgstr "Nome do Storage:"
+msgstr "Nome do storage:"
 
 msgid "Console status"
 msgstr "Status do Console"
@@ -244,7 +244,7 @@ msgid "Apply"
 msgstr "Aplicar"
 
 msgid "Volume name:"
-msgstr "Nome do Volume:"
+msgstr "Nome do volume:"
 
 msgid "Client name:"
 msgstr "Nome do Cliente:"
@@ -424,7 +424,7 @@ msgid "Job to restore:"
 msgstr "Job para restaurar:"
 
 msgid "Backup from client:"
-msgstr "Backup a partir do cliente:"
+msgstr "Backup do cliente:"
 
 msgid "Restore to client:"
 msgstr "Restaurar para o cliente:"
@@ -908,7 +908,7 @@ msgid "Storage Daemons."
 msgstr "Storages."
 
 msgid "Vol. Use Duration (in sec.):"
-msgstr "Vol. Use Duration (in sec.):"
+msgstr "Vol. Use Duration (em seg.):"
 
 msgid "Yes"
 msgstr "Sim"
@@ -923,7 +923,7 @@ msgid "Job to Verify:"
 msgstr "Job para Verificar:"
 
 msgid "Verify by Job Name"
-msgstr "Verificar pelo Nome do Job"
+msgstr "Verificar pelo nome do job"
 
 msgid "Verify by JobId"
 msgstr "Verificar pelo JobId"
@@ -962,7 +962,7 @@ msgid "Job status summary"
 msgstr "Resumo dos jobs"
 
 msgid "Quick job access"
-msgstr "Quick job access"
+msgstr "Acesso rápido ao Job"
 
 msgid "Finished jobs"
 msgstr "Jobs Finalizados"
@@ -1421,7 +1421,7 @@ msgid "There are two ways to select backup to restore. The selected backup way p
 msgstr "Existem duas maneiras de selecionar um backup para restauração. A opção selecionada fornece a lista de Jobs individuais a partir dos quais é possível selecionar um backup. Se você precisa dos backups mais recentes do cliente, alternativamente, você pode usar a opção de backup mais mais recente, que irá selecionar backups para você baseando-se no nome do job e no fileset."
 
 msgid "Do not relocate files"
-msgstr "Não realoque arquivos"
+msgstr "Não realocar arquivos"
 
 msgid "Relocate files with prefix and/or suffix"
 msgstr "Realocar arquivos com prefixo e/ou sufixo"
@@ -1508,7 +1508,7 @@ msgid "Client list"
 msgstr "Lista de Clientes"
 
 msgid "Uname"
-msgstr "Uname"
+msgstr "Descrição"
 
 msgid "AutoPrune"
 msgstr "AutoPrune"
@@ -1646,13 +1646,13 @@ msgid "Vol. use duration"
 msgstr "Vol. use duration"
 
 msgid "Action on purge"
-msgstr "Action on purge"
+msgstr "Ação ao purgar"
 
 msgid "Recycle pool"
-msgstr "Recycle pool"
+msgstr "Pool de Reciclagem"
 
 msgid "Scratch pool"
-msgstr "Scratch pool"
+msgstr "Pool Scratch"
 
 msgid "Next pool"
 msgstr "Next pool"
@@ -1802,10 +1802,10 @@ msgid "Message:"
 msgstr "Mensagem:"
 
 msgid "Include"
-msgstr "Include"
+msgstr "Incluir"
 
 msgid "Exclude"
-msgstr "Exclude"
+msgstr "Excluir"
 
 msgid "Step 1 - select job type"
 msgstr "Etapa 1 - Selecione o tipo de Job"
@@ -2021,7 +2021,7 @@ msgid "Slots to update (ex. 4 or 1-5 or 2,4,6-10):"
 msgstr "Slots para atualizar (ex. 4 ou 1-5 ou 2,4,6-10):"
 
 msgid "Command status:"
-msgstr "Comando satatus:"
+msgstr "Comando status:"
 
 msgid "Ready"
 msgstr "Pronto"
@@ -2210,7 +2210,7 @@ msgid "Raw status"
 msgstr "Status"
 
 msgid "Uname:"
-msgstr "Uname:"
+msgstr "Descrição:"
 
 msgid "Started time:"
 msgstr "Hora de início:"
@@ -2546,7 +2546,7 @@ msgid "Job errors"
 msgstr "Erros do Job"
 
 msgid "Job missing files"
-msgstr "Arquivos faltantes do Job"
+msgstr "Arquivos faltantes"
 
 msgid "Purged files"
 msgstr "Arquivos excluídos"
@@ -2561,7 +2561,7 @@ msgid "Comment"
 msgstr "Comentário"
 
 msgid "File table"
-msgstr "Tabela de arquivo"
+msgstr "Tabela de arquivos"
 
 msgid "Label date"
 msgstr "Data do rótulo"
@@ -2624,10 +2624,11 @@ msgid "Cache retention"
 msgstr "Retenção de cache"
 
 msgid "Bulk action"
-msgstr "Bulk action"
+msgstr "Ação em massa"
 
 msgid "Following jobs are running and cannot be deleted: %running_jobs To delete them, please stop these jobs and try again."
-msgstr "Following jobs are running and cannot be deleted: %running_jobs To delete them, please stop these jobs and try again."
+msgstr "Os seguintes jobs estão em execução e não podem ser excluídos: %running_jobs. Para excluí-los, pare estes jobs e tente novamente."
 
 msgid "Refresh page"
-msgstr "Refresh page"
+msgstr "Atualizar página"
+
