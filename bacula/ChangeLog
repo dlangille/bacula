@@ -1,6 +1,17 @@
               Changelog for version 9.6.3
 
+
+
+08Mar20
+ - Fix logic error in clearing bit on Windows
+
 07Mar20
+ - baculum: Update Portuguese translations
+ - baculum: Update Polish translations
+ - baculum: Add patch to PRADO framework 4.0.1 for supporting PostgreSQL 12 
+  catalog database
+ - baculum: Add support for PostgreSQL 12 catalog database
+ - Enhance failed bpipe to changer error message
  - Clean up some incorrect copyrights
  - Correct spelling errors in messages
  - Add to plugins links
