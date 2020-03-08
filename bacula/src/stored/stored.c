@@ -643,7 +643,7 @@ void *device_initialization(void *arg)
 
 #ifdef HAVE_WIN32
       if (device->cap_bits & CAP_SYNCONCLOSE) {
-         device->cap_bits & ~CAP_SYNCONCLOSE; /* Not available on windows */
+         device->cap_bits &= ~CAP_SYNCONCLOSE; /* Clear bit not used on Windows */
       }
 #endif
       /*
