@@ -1,6 +1,8 @@
               Changelog for version 9.6.3
 
-
+09Mar20
+ - Eliminate false error when droping postgres table MAC
+ - Apply Carsten's character set fix for the docs. Many thanks!
 
 08Mar20
  - Fix logic error in clearing bit on Windows

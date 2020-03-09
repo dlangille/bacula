@@ -3,7 +3,9 @@
 
 This is a minor bug fix (mostly fixing incorrect copyrights) to Release-9.6.2.
 
-08Mar20
+09Mar20
+ - Eliminate false error when droping postgres table MAC
+ - Apply Carsten's character set fix for the docs. Many thanks!
  - Fix logic error in clearing bit on Windows
  - baculum: Update Portuguese translations
  - baculum: Update Polish translations
