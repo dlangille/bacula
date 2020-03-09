@@ -8,7 +8,7 @@
 bindir=@POSTGRESQL_BINDIR@
 db_name=@db_name@
 
-$bindir/psql -f - -d ${db_name} $* <<END-OF-DATA
+$bindir/psql -f - -d ${db_name} $* <<END-OF-DATA 1>/dev/null 2>/dev/null
 drop table if exists unsavedfiles;
 drop table if exists basefiles;
 drop table if exists jobmedia;
