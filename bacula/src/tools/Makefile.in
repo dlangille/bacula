@@ -94,6 +94,11 @@ timelimit: timelimit.o
 	${CC} ${DEFS} ${DEBUG} -pipe -DHAVE_ERRNO_H -DHAVE_SETITIMER -DHAVE_SIGACTION -c timelimit.c 
 	${CC} -o timelimit timelimit.o
 
+bpipe_test: bpipe_test.o ../lib/libbac$(DEFAULT_ARCHIVE_TYPE)
+	$(MAKE) -C ../lib alist_test
+	$(LIBTOOL_LINK) $(CXX) -g $(LDFLAGS) -L. -L../lib -L../findlib -o $@ bpipe_test.o ../lib/unittests.o \
+		$(DLIB) -lbac -lm $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
+
 testfind: Makefile ../lib/libbac$(DEFAULT_ARCHIVE_TYPE) ../lib/libbaccfg$(DEFAULT_ARCHIVE_TYPE) \
 	  ../findlib/libbacfind$(DEFAULT_ARCHIVE_TYPE) $(FINDOBJS)
 	$(LIBTOOL_LINK) $(CXX) -g $(LDFLAGS) -o $@ $(FINDOBJS) -L. -L../lib -L../findlib \
