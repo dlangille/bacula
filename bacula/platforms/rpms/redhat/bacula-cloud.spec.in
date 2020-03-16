@@ -13,7 +13,7 @@
 %define _lsm               @LSMDATE@
 %define depkgs_version @DEPKGS_VERSION@
 %define azure_version @AZURE_VERSION@
-%define _packager Kern Sibbald <kern@baculasystems.com>
+%define _packager Kern Sibbald <kern@sibbald.com>
 %define manpage_ext gz
 
 # Don't strip binaries
@@ -73,7 +73,7 @@ Prefix: %{_prefix}
 Distribution: Bacula Cloud Storage
 
 Source0: http://www.prdownloads.sourceforge.net/bacula/depkgs-%{depkgs_version}.tar.gz
-Source1: https://www.baculasystems.com/dl/download/bacula-%{_version}.tar.gz
+Source1: https://www.bacula.org/downloads/bacula-%{_version}.tar.gz
 
 Requires: bacula-sd, %{base_package_name}-libs = %{_version}, libcurl
 

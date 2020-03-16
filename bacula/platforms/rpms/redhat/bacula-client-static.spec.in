@@ -75,12 +75,12 @@ Release: %{_release}
 Group: System Environment/Daemons
 License: AGPLv3
 BuildRoot: %{_tmppath}/%{name}-root
-URL: http://www.baculasystems.com/
+URL: http://www.bacula.org/
 Vendor: Bacula Project
 Packager: %{_packager}
 Prefix: %{_prefix}
 Distribution: Bacula Static Client
-Source0: https://www.baculasystems.com/dl/download/bacula-%{_version}.tar.gz
+Source0: https://www.bacula.org/downloads/bacula-%{_version}.tar.gz
 
 %description
 %{blurb} This is Bacula static FD package.

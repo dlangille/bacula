@@ -12,7 +12,7 @@
 %define _version           @VERSION@
 %define product            bacula
 %define _lsm               @LSMDATE@
-%define _packager Kern Sibbald <kern@baculasystems.com>
+%define _packager Kern Sibbald <kern@bacula.org>
 %define manpage_ext gz
 
 # Don't strip binaries

@@ -1,6 +1,8 @@
 # Bacula RPM spec file
 #
-# Copyright (C) 2000-2020 Bacula Systems SA
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
 
 # Platform Build Configuration
 
@@ -42,16 +44,16 @@ Name: %{base_package_name}-docker-plugin
 Version: %{_version}
 Release: %{_release}
 Group: System Environment/Daemons
-License: Bacula Systems(R) SA. All rights reserved.
+License: AGPLv3
 BuildRoot: %{_tmppath}/%{name}-root
-URL: http://www.baculasystems.com/
-Vendor: Bacula Systems
+URL: http://www.bacula.org/
+Vendor: The Bacula Team
 Packager: %{_packager}
 Prefix: %{_prefix}
 Distribution: Bacula Docker
 Summary: Bacula Docker - The Network Backup Solution
 
-Source0: https://www.baculasystems.com/dl/download/bacula-%{_version}.tar.gz
+Source0: https://www.bacula.org/downloads/bacula-%{_version}.tar.gz
 
 %description
 Bacula Docker - The Network Backup Solution.
