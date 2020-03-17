@@ -305,6 +305,7 @@ static void *handle_director_request(BSOCK *dir)
    enable_backup_privileges(NULL, 1 /* ignore_errors */);
 
    for (quit=false; !quit;) {
+      jcr->buf_size = DEFAULT_NETWORK_BUFFER_SIZE;  /* overriden by some commands */
       if (!first) {      /* first call the read is done */
          /* Read command */
          if (dir->recv() < 0) {
