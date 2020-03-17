@@ -1,4 +1,4 @@
-module baculum-api 1.0.1;
+module baculum-api 1.0.2;
 
 require {
 	type init_t;
@@ -16,6 +16,9 @@ require {
 	type shadow_t;
 	type systemd_systemctl_exec_t;
 	type systemd_unit_file_t;
+	type admin_home_t;
+	type usr_t;
+	type postfix_etc_t;
 	class tcp_socket { name_bind name_connect };
 	class dir { search read write create };
 	class file { append read write create getattr open execute execute_no_trans };
@@ -43,7 +46,10 @@ allow httpd_t self:capability { audit_write sys_resource net_admin };
 allow httpd_t self:process { setrlimit };
 allow httpd_t httpd_sys_rw_content_t:dir { read write };
 allow httpd_t httpd_sys_rw_content_t:file { create append };
-allow httpd_t shadow_t:file { open read };
+allow httpd_t shadow_t:file { open read getattr };
 allow httpd_t systemd_systemctl_exec_t:file { getattr open read execute execute_no_trans };
 allow httpd_t systemd_unit_file_t:service { start stop };
 allow httpd_t init_t:unix_stream_socket connectto;
+allow httpd_t admin_home_t:file { getattr open read append write };
+allow httpd_t usr_t:file write;
+allow httpd_t postfix_etc_t:file read;
