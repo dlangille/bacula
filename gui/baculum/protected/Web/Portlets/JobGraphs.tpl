@@ -163,5 +163,5 @@
 		});
 	});
 </script>
-<p class="bold"><%[ Tip: to use zoom, please mark area on graph. ]%></p>
-<p class="bold"><%[ Tip 2: to exit zoom, please click somewhere on graph. ]%></p>
+<p class="info w3-hide-medium w3-hide-small"><%[ Tip: to use zoom, please mark area on graph. ]%></p>
+<p class="info w3-hide-medium w3-hide-small"><%[ Tip 2: to exit zoom, please click somewhere on graph. ]%></p>

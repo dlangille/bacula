@@ -2632,3 +2632,5 @@ msgstr "Następujące zadania są uruchomione i nie mogą być usunięte %runnin
 msgid "Refresh page"
 msgstr "Odśwież stronę"
 
+msgid "Tip: Use left-click to select table row. Use CTRL + left-click to multiple row selection. Use SHIFT + left-click to add a range of rows to selection."
+msgstr "Tip: Użyj lewego przycisku myszy, aby wybrać wiersz tabeli. Użyj CTRL + lewy przycisk myszy, aby zaznaczyć wiele wierszy. Użyj SHIFT + lewy przycisk myszy, aby dodać zakres wierszy do zaznaczenia."

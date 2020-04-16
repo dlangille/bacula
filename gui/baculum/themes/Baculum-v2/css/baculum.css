@@ -341,3 +341,7 @@ table.component td:nth-of-type(1) {
 .usage_box:hover {
 	height: 200px;
 }
+
+.info {
+	color: #333;
+}
