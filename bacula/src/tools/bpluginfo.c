@@ -1,18 +1,6 @@
-/*
- * Contributed in 2012 by Inteos sp. z o.o.
- *
- * Utility tool display various information about Bacula plugin,
- * including but not limited to:
- * - Name and Author of the plugin
- * - Plugin License
- * - Description
- * - API version
- * - Enabled functions, etc.
- */
-/*
+/* 
    Bacula(R) - The Network Backup Solution
-
-   Copyright (C) 2012-2016 Kern Sibbald
+   Copyright (C) 2000-2020 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -22,11 +10,22 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
 */
+
+/* Contributed in 2012 by Inteos sp. z o.o.
+ *
+ * Utility tool display various information about plugins
+ * including but not limited to:
+ * - Name and Author of the plugin
+ * - Plugin License
+ * - Description
+ * - API version
+ * - Enabled functions, etc.
+ */
 
 #ifdef working /* currently will not compile KES 21 Nov 2015 */
 
