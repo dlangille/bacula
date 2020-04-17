@@ -2,14 +2,9 @@
  *
  * Note: 25 May 2018. This code appears not to have a copyright, however,
  *   it appears to come from exactly the same code source as bsnprintf.c
- *   in the Bacula src/lib.  The code in that file has two licenses that
- * am adding here:
- */
+ *   in the Bacula(R) - The Network Backup Solution
 
-/*
-   Bacula(R) - The Network Backup Solution
-
-   Copyright (C) 2000-2019 Kern Sibbald
+   Copyright (C) 2000-2020 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
