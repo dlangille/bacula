@@ -4231,6 +4231,15 @@
 				},
 				"parameters": [{
 					"$ref": "#/components/parameters/JobId"
+				},{
+					"name": "show_time",
+					"in": "query",
+					"description": "Show time in job log.",
+					"required": false,
+					"default": 0,
+					"schema": {
+						"type": "bool"
+					}
 				}]
 			}
 		},

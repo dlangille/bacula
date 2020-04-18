@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2019 Kern Sibbald
+ * Copyright (C) 2013-2020 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -32,13 +32,23 @@ Prado::using('Application.API.Class.LogRecord');
  */
 class LogManager extends APIModule {
 
-	public function getLogByJobId($jobid) {
+	/**
+	 * Get job log by job identifier.
+	 *
+	 * @param integer $jobid job identifier
+	 * @param boolean $show_time show time in job log
+	 * @return array job log lines
+	 */
+	public function getLogByJobId($jobid, $show_time = false) {
 		$logs = LogRecord::finder()->findAllByjobid($jobid);
-		$joblog = null;
+		$joblog = [];
 		if(is_array($logs)) {
-			$joblog = array();
 			foreach($logs as $log) {
-				$joblog[] = $log->logtext;
+				if ($show_time) {
+					$joblog[] = $log->time . ' ' . $log->logtext;
+				} else {
+					$joblog[] = $log->logtext;
+				}
 			}
 		}
 		return $joblog;
