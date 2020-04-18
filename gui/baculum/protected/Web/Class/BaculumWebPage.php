@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2019 Kern Sibbald
+ * Copyright (C) 2013-2020 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -42,13 +42,13 @@ class BaculumWebPage extends BaculumPage {
 	 */
 	const DEFAULT_AUTH_USER = 'admin';
 
-	private $config = array();
+	protected $web_config = array();
 
 	public function onPreInit($param) {
 		parent::onPreInit($param);
-		$this->config = $this->getModule('web_config')->getConfig();
+		$this->web_config = $this->getModule('web_config')->getConfig();
 		$this->Application->getGlobalization()->Culture = $this->getLanguage();
-		if (count($this->config) === 0) {
+		if (count($this->web_config) === 0) {
 			if (isset($_SERVER['PHP_AUTH_USER'])) {
 				if ($this->Service->getRequestedPagePath() != 'WebConfigWizard') {
 					$this->goToPage('WebConfigWizard');
@@ -59,7 +59,7 @@ class BaculumWebPage extends BaculumPage {
 				self::accessDenied();
 			}
 		}
-		Logging::$debug_enabled = (isset($this->config['baculum']['debug']) && $this->config['baculum']['debug'] == 1);
+		Logging::$debug_enabled = (isset($this->web_config['baculum']['debug']) && $this->web_config['baculum']['debug'] == 1);
 		if (!$this->IsPostBack && !$this->IsCallBack) {
 			$this->getModule('api')->initSessionCache(true);
 			$this->setSessionUserVars();
@@ -82,8 +82,8 @@ class BaculumWebPage extends BaculumPage {
 		if (isset($_SESSION['language']) && !empty($_SESSION['language'])) {
 			$language =  $_SESSION['language'];
 		} else {
-			if (isset($this->config['baculum']) && key_exists('lang', $this->config['baculum'])) {
-				$language = $this->config['baculum']['lang'];
+			if (isset($this->web_config['baculum']) && key_exists('lang', $this->web_config['baculum'])) {
+				$language = $this->web_config['baculum']['lang'];
 			}
 			if (is_null($language)) {
 				$language = WebConfig::DEFAULT_LANGUAGE;
@@ -100,13 +100,13 @@ class BaculumWebPage extends BaculumPage {
 	 */
 	private function setSessionUserVars() {
 		// NOTE. For oauth2 callback, the PHP_AUTH_USER is empty because no user/pass.
-		if (count($this->config) > 0 && isset($_SERVER['PHP_AUTH_USER'])) {
+		if (count($this->web_config) > 0 && isset($_SERVER['PHP_AUTH_USER'])) {
 			// Set administrator role
-			$_SESSION['admin'] = ($_SERVER['PHP_AUTH_USER'] === $this->config['baculum']['login']);
+			$_SESSION['admin'] = ($_SERVER['PHP_AUTH_USER'] === $this->web_config['baculum']['login']);
 
 			// Set api host for normal user
-			if (!$_SESSION['admin'] && key_exists('users', $this->config) && array_key_exists($_SERVER['PHP_AUTH_USER'], $this->config['users'])) {
-				$_SESSION['api_host'] = $this->config['users'][$_SERVER['PHP_AUTH_USER']];
+			if (!$_SESSION['admin'] && key_exists('users', $this->web_config) && array_key_exists($_SERVER['PHP_AUTH_USER'], $this->web_config['users'])) {
+				$_SESSION['api_host'] = $this->web_config['users'][$_SERVER['PHP_AUTH_USER']];
 			} elseif ($_SESSION['admin']) {
 				$_SESSION['api_host'] = 'Main';
 			}

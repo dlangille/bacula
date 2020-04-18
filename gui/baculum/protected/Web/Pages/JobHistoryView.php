@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2019 Kern Sibbald
+ * Copyright (C) 2013-2020 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -283,7 +283,17 @@ class JobHistoryView extends BaculumWebPage {
 	 * @param $param TCallbackParameter parameter object
 	 */
 	public function refreshJobLog($sender, $param) {
-		$log = $this->getModule('api')->get(array('joblog', $this->getJobId()));
+		$params = ['joblog', $this->getJobId()];
+
+		// add time to log if defiend in configuration
+		if (key_exists('time_in_job_log', $this->web_config['baculum'])) {
+			$query_params = [
+				'show_time' => $this->web_config['baculum']['time_in_job_log']
+			];
+			$params[] = '?' . http_build_query($query_params);
+		}
+		$log = $this->getModule('api')->get($params);
+
 		if (!is_array($log->output) || count($log->output) == 0) {
 			$msg = Prado::localize("Output for selected job is not available yet or you do not have enabled logging job logs to the catalog database.\n\nTo watch job log you need to add to the job Messages resource the following directive:\n\nCatalog = all, !debug, !skipped, !saved");
 			$joblog = array($msg);

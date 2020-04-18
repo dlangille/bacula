@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2019 Kern Sibbald
+ * Copyright (C) 2013-2020 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -20,8 +20,6 @@
  * Bacula(R) is a registered trademark of Kern Sibbald.
  */
 
-// @TODO: move this page to API part before any release.
- 
 Prado::using('Application.Web.Class.BaculumWebPage'); 
 Prado::using('Application.Web.Class.HostConfig');
 Prado::using('Application.Web.Class.BasicWebUserConfig'); 
@@ -40,14 +38,11 @@ class WebConfigWizard extends BaculumWebPage
 	protected $admin = false;
 
 	public $first_run;
-	public $web_config;
 	public $host_config;
 
 	public function onInit($param) {
 		parent::onInit($param);
 		$this->Lang->SelectedValue = $this->getLanguage();
-		$config = $this->getModule('web_config');
-		$this->web_config = $config->getConfig();
 		$this->host_config = $this->getModule('host_config')->getConfig();
 		$this->first_run = (count($this->host_config) == 0 || !key_exists(HostConfig::MAIN_CATALOG_HOST, $this->host_config));
 		Logging::$debug_enabled = Logging::$debug_enabled ?: $this->first_run;
@@ -129,10 +124,9 @@ class WebConfigWizard extends BaculumWebPage
 		$host_config[$host] = $cfg_host;
 		$ret = $this->getModule('host_config')->setConfig($host_config);
 		if($ret === true) {
-			$web_config = $this->getModule('web_config')->getConfig();
 			$cfg_web = array('baculum' => array(), 'users' => array());
-			if (count($web_config) > 0) {
-				$cfg_web = $web_config;
+			if (count($this->web_config) > 0) {
+				$cfg_web = $this->web_config;
 			}
 			$cfg_web['baculum']['login'] = $this->WebLogin->Text;
 			$cfg_web['baculum']['debug'] = 0;

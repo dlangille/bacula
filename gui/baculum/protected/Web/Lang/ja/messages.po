@@ -2712,3 +2712,6 @@ msgstr "Refresh page"
 
 msgid "Tip: Use left-click to select table row. Use CTRL + left-click to multiple row selection. Use SHIFT + left-click to add a range of rows to selection."
 msgstr "Tip: Use left-click to select table row. Use CTRL + left-click to multiple row selection. Use SHIFT + left-click to add a range of rows to selection."
+
+msgid "Show time in job log:"
+msgstr "Show time in job log:"

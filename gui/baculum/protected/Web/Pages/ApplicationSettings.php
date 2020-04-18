@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2019 Kern Sibbald
+ * Copyright (C) 2013-2020 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -35,11 +35,8 @@ class ApplicationSettings extends BaculumWebPage {
 
 	protected $admin = true;
 
-	public $web_config;
-
 	public function onInit($param) {
 		parent::onInit($param);
-		$this->web_config = $this->getModule('web_config')->getConfig();
 		$this->DecimalBytes->Checked = true;
 		if(count($this->web_config) > 0) {
 			$this->Debug->Checked = ($this->web_config['baculum']['debug'] == 1);
@@ -47,6 +44,9 @@ class ApplicationSettings extends BaculumWebPage {
 			if (key_exists('size_values_unit', $this->web_config['baculum'])) {
 				$this->DecimalBytes->Checked = ($this->web_config['baculum']['size_values_unit'] === 'decimal');
 				$this->BinaryBytes->Checked = ($this->web_config['baculum']['size_values_unit'] === 'binary');
+			}
+			if (key_exists('time_in_job_log', $this->web_config['baculum'])) {
+				$this->TimeInJobLog->Checked = ($this->web_config['baculum']['time_in_job_log'] == 1);
 			}
 		}
 	}
@@ -58,6 +58,7 @@ class ApplicationSettings extends BaculumWebPage {
 			$max_jobs = intval($this->MaxJobs->Text);
 			$this->web_config['baculum']['max_jobs'] = $max_jobs;
 			$this->web_config['baculum']['size_values_unit'] = $this->BinaryBytes->Checked ? 'binary' : 'decimal';
+			$this->web_config['baculum']['time_in_job_log'] = ($this->TimeInJobLog->Checked === true) ? 1 : 0;
 			$this->getModule('web_config')->setConfig($this->web_config);
 		}
 	}

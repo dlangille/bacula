@@ -57,6 +57,15 @@
 			/> <com:TLabel ForControl="BinaryBytes"><%[ Binary Bytes (1 mebi = 2<sup>20</sup>) ]%></com:TLabel></p>
 		</div>
 	</div>
+	<div class="w3-container w3-row w3-padding">
+		<div class="w3-third w3-col"><%[ Show time in job log: ]%></div>
+		<div class="w3-third w3-col">
+			<com:TCheckBox
+				ID="TimeInJobLog"
+				CssClass="w3-check"
+			/>
+		</div>
+	</div>
 	<div class="w3-center">
 		<com:TActiveLinkButton
 			CssClass="w3-button w3-green"
