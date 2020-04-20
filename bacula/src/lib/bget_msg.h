@@ -22,6 +22,8 @@
 
 #include "bacula.h"
 
+struct DEV_RECORD;
+
 typedef uint64_t blockaddr;
 typedef int64_t  blockidx;
 
@@ -32,6 +34,12 @@ typedef int64_t  blockidx;
 #define GETMSG_MAX_MSG_SIZE      (GETMSG_MAX_BLOCK_SIZE+GETMSG_MAX_HASH_SIZE+sizeof(uint32_t)+OFFSET_FADDR_SIZE+100)
 #endif
 
+
+/*
+ * class bmessage and class GetMsg are used by client side rehydartion
+ * to control latency
+ *
+ */
 
 class bmessage: public SMARTALLOC
 {
@@ -47,6 +55,15 @@ public:
    int ret;         // return value from bget_msg()
    int jobbytes;    // must be added to jcr->JobBytes if block is downloaded
 
+   unsigned char *hash; // point to an offset of msg, the hash
+   char *eraw;          // point to an offset of msg, lz4encoded raw data
+   blockaddr *paddr;      // point to an offset of msg
+   blockaddr addr;        // the block address
+   int32_t dedup_size;   // block size from reference
+   bool is_sparse;  // is a SPARSE stream
+   bool is_header;  // is a header record
+   bool is_dedup;   // is a dedup reference
+   bool do_flowcontrol;
    bmessage(int bufsize);
    virtual ~bmessage();
    void swap(BSOCK *sock);
@@ -91,6 +108,14 @@ public:
    virtual bool is_error(){ return (m_is_error!=false); };
 
    bmessage *new_msg() { return New(bmessage(bufsize)); };
+
+   /* used by inherited classes to commit any pending operations at the end */
+   virtual int commit(POOLMEM *&/*errmsg*/, uint32_t /*jobid*/) { return 0; };
+
+   /* used by classes to commit any pending operations at the end */
+   virtual bool dedup_store_chunk(DEV_RECORD */*rec*/, const char */*rbuf*/, int /*rbuflen*/,
+                                  char */*dedup_ref_buf*/, char */*wdedup_ref_buf*/, POOLMEM *&/*errmsg*/)
+      { return true; /* OK */ };
 
 };
 
