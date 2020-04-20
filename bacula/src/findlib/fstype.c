@@ -103,7 +103,9 @@ bool fstype(FF_PKT *ff_pkt, char *fs, int fslen)
 {
    char *fname = ff_pkt->fname;
    struct statfs st;
- 
+   if (!fname) {
+      return false;
+   }
    if (statfs(fname, &st) == 0) {
       bstrncpy(fs, st.f_fstypename, fslen);
       return true;
@@ -124,6 +126,9 @@ bool fstype(FF_PKT *ff_pkt, char *fs, int fslen)
 {
    char *fname = ff_pkt->fname;
    struct statvfs st;
+   if (fname) {
+      return false;
+   }
    if (statvfs(fname, &st) == 0) {
       bstrncpy(fs, st.f_fstypename, fslen);
       return true;
@@ -141,6 +146,9 @@ bool fstype(FF_PKT *ff_pkt, char *fs, int fslen)
 {
    char *fname = ff_pkt->fname;
    struct statvfs st;
+   if (!fname) {
+      return false;
+   }
    if (statvfs(fname, &st) == 0) {
       bstrncpy(fs, st.f_basetype, fslen);
       return true;
@@ -161,10 +169,12 @@ bool fstype(FF_PKT *ff_pkt, char *fs, int fslen)
  */
 bool fstype(FF_PKT *ff_pkt, char *fs, int fslen)
 {
-   char *fname = ff_pkt->fname;
+   char *fname = ff_pkt->fname; /* fname is a better here than snap_fname */
    struct statfs st;
    const char *fstype;
-
+   if (!fname) {
+      return false;
+   }
    if (statfs(fname, &st) == 0) {
       mtab_item *item, search_item;
       if (*ff_pkt->last_fstypename && ff_pkt->last_fstype == (uint64_t)st.f_type) {
@@ -205,6 +215,7 @@ bool fstype(FF_PKT *ff_pkt, char *fs, int fslen)
       case 0xadff:         fstype = "affs"; break;          /* AFFS_SUPER_MAGIC */
       case 0x42465331:     fstype = "befs"; break;          /* BEFS_SUPER_MAGIC */
       case 0xFF534D42:     fstype = "cifs"; break;          /* CIFS_MAGIC_NUMBER */
+      case 0xfe534d42:     fstype = "cifs2"; break;         /* CIFS2_MAGIC_NUMBER */
       case 0x73757245:     fstype = "coda"; break;          /* CODA_SUPER_MAGIC */
       case 0x012ff7b7:     fstype = "coherent"; break;      /* COH_SUPER_MAGIC */
       case 0x28cd3d45:     fstype = "cramfs"; break;        /* CRAMFS_MAGIC */
@@ -295,7 +306,6 @@ bool fstype(FF_PKT *ff_pkt, char *fs, int fslen)
 /* Tru64 */
 #include <sys/stat.h>
 #include <sys/mount.h>
-#include <sys/mnttab.h>
 
 bool fstype(FF_PKT *ff_pkt, char *fs, int fslen)
 {
