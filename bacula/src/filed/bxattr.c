@@ -232,7 +232,7 @@ bRC_BXATTR BXATTR::check_dev (JCR *jcr){
          break;
    }
 
-   check_dev(jcr, st.st_dev);
+   check_dev(jcr, jcr->ff, st.st_dev);
 
    return bRC_BXATTR_ok;
 };
@@ -245,7 +245,7 @@ bRC_BXATTR BXATTR::check_dev (JCR *jcr){
  * out:
  *    internal flags status set
  */
-void BXATTR::check_dev (JCR *jcr, uint32_t dev){
+void BXATTR::check_dev (JCR *jcr, FF_PKT *ff, uint32_t dev){
 
    /* sanity check of input variables */
    if (jcr == NULL || jcr->last_fname == NULL){
@@ -256,6 +256,10 @@ void BXATTR::check_dev (JCR *jcr, uint32_t dev){
       flags = BXATTR_FLAG_NONE;
       set_flag(BXATTR_FLAG_NATIVE);
       current_dev = dev;
+      /* We can check for some specific ACLs depending on the FS type */
+      if (!fstype(ff, current_fs, sizeof(current_fs))) {
+         current_fs[0] = 0;     /* Not so critical */
+      }
    }
 };
 
@@ -353,7 +357,7 @@ bRC_BXATTR BXATTR::backup_xattr (JCR *jcr, FF_PKT *ff_pkt){
             return bRC_BXATTR_ok;
          }
 
-         check_dev(jcr, ff_pkt->statp.st_dev);
+         check_dev(jcr, ff_pkt, ff_pkt->statp.st_dev);
 
          if (flags & BXATTR_FLAG_NATIVE){
             Dmsg0(400, "make Native XATTR call\n");
@@ -939,7 +943,7 @@ void *new_bxattr()
 #elif defined(HAVE_HURD_OS)
    return new BXATTR_Hurd();
 #elif defined(HAVE_AIX_OS)
-   return new BXATTR_AIX();
+   return NULL; /* new BXATTR_AIX(); */
 #elif defined(HAVE_IRIX_OS)
    return new BXATTR_IRIX();
 #elif defined(HAVE_OSF1_OS)
