@@ -20,6 +20,7 @@
  *  Bacula File Daemon  restore.c Restorefiles.
  *
  *    Kern Sibbald, November MM
+ *
  */
 
 #include "bacula.h"
@@ -110,7 +111,7 @@ static bool restore_finderinfo(JCR *jcr, POOLMEM *buf, int32_t buflen)
 {
    struct attrlist attrList;
 
-   memset(&attrList, 0, sizeof(attrList));
+   bmemset(&attrList, 0, sizeof(attrList));
    attrList.bitmapcount = ATTR_BIT_MAP_COUNT;
    attrList.commonattr = ATTR_CMN_FNDRINFO;
 
@@ -283,7 +284,7 @@ static inline bool pop_delayed_data_streams(r_ctx &rctx)
     * - *_XATTR_*
     */
    foreach_alist(rds, rctx.delayed_streams) {
-      Dmsg1(0, "Delayed Stream=%d\n", rds->stream);
+      Dmsg1(10, "Delayed Stream=%d\n", rds->stream);
       switch (rds->stream) {
       case STREAM_UNIX_ACCESS_ACL:
       case STREAM_UNIX_DEFAULT_ACL:
@@ -366,7 +367,7 @@ void do_restore(JCR *jcr)
    /* ***FIXME*** make configurable */
    crypto_digest_t signing_algorithm = have_sha2 ?
                                        CRYPTO_DIGEST_SHA256 : CRYPTO_DIGEST_SHA1;
-   memset(&rctx, 0, sizeof(rctx));
+   bmemset(&rctx, 0, sizeof(rctx));
    rctx.jcr = jcr;
 
    /* The following variables keep track of "known unknowns" */
@@ -403,8 +404,7 @@ void do_restore(JCR *jcr)
       jcr->compress_buf_size = compress_buf_size;
    }
 
-   GetMsg *fdmsg;
-   fdmsg = New(GetMsg(jcr, sd, rec_header, GETMSG_MAX_MSG_SIZE));
+   GetMsg *fdmsg = get_msg_buffer(jcr, sd, rec_header);
 
    fdmsg->start_read_sock();
    bmessage *bmsg = fdmsg->new_msg(); /* get a message, to exchange with fdmsg */
@@ -486,6 +486,8 @@ void do_restore(JCR *jcr)
       }
       /* Strip off new stream high bits */
       rctx.stream = rctx.full_stream & STREAMMASK_TYPE;
+      Dmsg5(DT_DEDUP|600, "Got hdr: Files=%d FilInx=%d size=%d Stream=%d, %s.\n",
+            jcr->JobFiles, file_index, rctx.size, rctx.stream, stream_to_ascii(rctx.stream));
 
       /* Now we expect the Stream Data */
       if ((bget_ret = fdmsg->bget_msg(&bmsg)) < 0) {
@@ -503,6 +505,8 @@ void do_restore(JCR *jcr)
                bmsg->origlen, rctx.size);
          goto get_out;
       }
+      Dmsg3(DT_DEDUP|620, "Got stream: %s len=%d extract=%d\n", stream_to_ascii(rctx.stream),
+            bmsg->msglen, rctx.extract);
 
       /* If we change streams, close and reset alternate data streams */
       if (rctx.prev_stream != rctx.stream) {
@@ -584,7 +588,7 @@ void do_restore(JCR *jcr)
          pm_strcpy(jcr->last_fname, attr->ofname);
          jcr->last_type = attr->type;
          jcr->unlock();
-         Dmsg2(130, "Outfile=%s create_file stat=%d\n", attr->ofname, stat);
+         Dmsg4(130, "Outfile=%s create_file stat=%d type=%ld rdev=%d\n", attr->ofname, stat, attr->type, attr->statp.st_rdev);
          switch (stat) {
          case CF_ERROR:
          case CF_SKIP:
@@ -592,6 +596,14 @@ void do_restore(JCR *jcr)
             break;
          case CF_EXTRACT:      /* File created and we expect file data */
             rctx.extract = true;
+#ifdef HAVE_WIN32
+            if (attr->type==FT_DIREND && attr->statp.st_rdev==WIN32_MOUNT_POINT) {
+               /* this is a directory that is a mount point,
+                * don't restore the mount point, only the directory */
+               Dmsg1(50, "Don't restore mount point information Outfile=%s\n", attr->ofname);
+               rctx.extract = false;
+            }
+#endif
             /* FALLTHROUGH WANTED */
          case CF_CREATED:      /* File created, but there is no content */
             /* File created, but there is no content */
@@ -723,11 +735,20 @@ void do_restore(JCR *jcr)
                          || rctx.prev_stream == STREAM_ENCRYPTED_SESSION_DATA)) {
             rctx.flags = 0;
 
+            if (rctx.full_stream & STREAM_BIT_DEDUPLICATION_DATA){
+               rctx.flags |= FO_DEDUPLICATION;
+               Dmsg0(DT_DEDUP|645, "REHYDRATION client side\n");
+            }
+
             if (rctx.stream == STREAM_SPARSE_DATA
                   || rctx.stream == STREAM_SPARSE_COMPRESSED_DATA
                   || rctx.stream == STREAM_SPARSE_GZIP_DATA)
             {
                rctx.flags |= FO_SPARSE;
+            }
+
+            if (rctx.full_stream & STREAM_BIT_OFFSETS) {
+               rctx.flags |= FO_OFFSETS;
             }
 
             if (rctx.stream == STREAM_GZIP_DATA
@@ -877,10 +898,12 @@ void do_restore(JCR *jcr)
           * Do not restore ACLs when
           * a) The current file is not extracted
           * b)     and it is not a directory (they are never "extracted")
-          * c) or the file name is empty
+          * c)     and it is not a symlink (they are never "extracted")
+          * d) or the file name is empty
           */
          if ((!rctx.extract &&
-               jcr->last_type != FT_DIREND) ||
+              jcr->last_type != FT_DIREND &&
+              jcr->last_type != FT_LNK) ||
              (*jcr->last_fname == 0)) {
             break;
          }
@@ -916,10 +939,12 @@ void do_restore(JCR *jcr)
           * Do not restore Extended Attributes when
           * a) The current file is not extracted
           * b)     and it is not a directory (they are never "extracted")
-          * c) or the file name is empty
+          * c)     and it is not a symlink (they are never "extracted")
+          * d) or the file name is empty
           */
          if ((!rctx.extract &&
-               jcr->last_type != FT_DIREND) ||
+              jcr->last_type != FT_DIREND &&
+              jcr->last_type != FT_LNK) ||
              (*jcr->last_fname == 0)) {
             break;
          }
@@ -1039,6 +1064,7 @@ get_out:
 
 ok_out:
    Dsm_check(200);
+   Dmsg0(DT_DEDUP|215, "wait BufferedMsg\n");
    fdmsg->wait_read_sock(jcr->is_job_canceled());
    delete bmsg;
    free_GetMsg(fdmsg);
@@ -1567,6 +1593,8 @@ static bool close_previous_stream(r_ctx &rctx)
       Jmsg0(rctx.jcr, M_ERROR, 0, _("Logic error: output file should not be open\n"));
       Pmsg0(000, "=== logic error !open\n");
       bclose(&rctx.bfd);
+   } else {
+      rtn = pop_delayed_data_streams(rctx);
    }
 
    return rtn;
@@ -1762,7 +1790,7 @@ static bool verify_signature(r_ctx &rctx)
              * Make sure we don't modify JobBytes by saving and
              *  restoring it */
             saved_bytes = jcr->JobBytes;
-            if (find_one_file(jcr, jcr->ff, do_file_digest, jcr->last_fname, (dev_t)-1, 1) != 0) {
+            if (find_one_file(jcr, jcr->ff, do_file_digest, jcr->last_fname, jcr->last_fname, (dev_t)-1, 1) != 0) {
                Jmsg(jcr, M_ERROR, 0, _("Digest one file failed for file: %s\n"),
                     jcr->last_fname);
                jcr->JobBytes = saved_bytes;
