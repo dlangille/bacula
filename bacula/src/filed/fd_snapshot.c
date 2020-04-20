@@ -15,11 +15,11 @@
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
-
-   Written by Eric Bollengier, 2015
 */
 
 /*
+   Written by Eric Bollengier, 2015
+
            Documentation about snapshot backend
 ----------------------------------------------------------------
 
@@ -404,6 +404,7 @@ public:
 
    /* Get subvolumes for a specific device */
    bool get_subvolumes(uint32_t dev, alist *items, FF_PKT *ff) {
+      int l, l2;
       fs_device *elt, *elt2;
       elt = (fs_device *)entries->search((void*)(intptr_t)dev, search_entry);
       if (!elt) {
@@ -414,10 +415,14 @@ public:
          if (elt2->dev == elt->dev) {
             continue;
          }
-         if (strncmp(elt2->mountpoint, elt->mountpoint, strlen(elt->mountpoint)) == 0) {
-            /* the mount point is included in the volume */
+         l = strlen(elt->mountpoint);
+         if (strncmp(elt2->mountpoint, elt->mountpoint, l) == 0) {
+            l2 = strlen(elt2->mountpoint);
+            if (l2 > l && !IsPathSeparator(elt2->mountpoint[l])) {
+               Dmsg1(DT_SNAPSHOT|50, "Not subvolume %s\n", elt2->mountpoint);
 
-            if (file_is_excluded(ff, elt2->mountpoint)) {
+            } else if (file_is_excluded(ff, elt2->mountpoint)) {
+            /* the mount point is included in the volume */
                Dmsg1(DT_SNAPSHOT|50, "Looks to be excluded %s\n", elt2->mountpoint);
 
             } else {
@@ -591,7 +596,6 @@ public:
 
       pm_strcat(ff->snap_top_fname, ff->top_fname + mp_first);
       ff->top_fname = ff->snap_top_fname;
-      ff->strip_snap_path = true;
       Dmsg1(DT_SNAPSHOT|50, "top_fname=%s\n", ff->top_fname);
       return true;
    };
@@ -714,7 +718,7 @@ public:
 
       if (chk_dbglvl(DT_SNAPSHOT|10)) {
          POOL_MEM tmp;
-         Mmsg(tmp, " -d %d -o /tmp/bsnapshot.log ", debug_level);
+         Mmsg(tmp, " -d %d -o %s/bsnapshot.log ", debug_level, working_directory);
          pm_strcat(omsg, tmp.c_str());
       }
 
@@ -828,6 +832,7 @@ public:
 
          } else if (strcasecmp(cmd->argk[i], "SnapDirectory") == 0 && cmd->argv[i]) {
             pm_strcpy(SnapDirectory, cmd->argv[i]);
+            strip_trailing_slashes(SnapDirectory);
 
          } else if (strcasecmp(cmd->argk[i], "status") == 0 && cmd->argv[i]) {
             status = str_to_int64(cmd->argv[i]);
@@ -1485,7 +1490,7 @@ bool snapshot_manager::create_snapshots()
                /* Set the Exclude context */
                set_incexe(jcr, exclude);
             }
-            Mmsg(t, "%s/.snapshots", elt->snap->SnapMountPoint);
+            Mmsg(t, "%s", elt->snap->SnapDirectory);
             Dmsg1(DT_SNAPSHOT|10, "Excluding %s\n", t.c_str());
             add_file_to_fileset(jcr, t.c_str(), true);
          }
@@ -1626,7 +1631,9 @@ bool snapshot_manager::scan_mtab()
 }
 
 
-/* Scan the fileset to select partitions to snapshot */
+/* Scan the fileset to select the volumes to snapshot (and subvolumes when
+ * FO_MULTIFS is used) but also extend the FileSet to walk these subvolumes
+ * that are not anymore in the same tree as their parent */
 bool snapshot_manager::scan_fileset()
 {
    if (!jcr->ff || !jcr->ff->fileset) {
@@ -1646,6 +1653,7 @@ bool snapshot_manager::scan_fileset()
       /* look through all files */
       foreach_dlist(node, &incexe->name_list) {
          char *fname = node->c_str();
+         Dmsg1(DT_SNAPSHOT|20, "Inspect %s for sub volume to mark for the snapshot\n", fname);
          if (mount_list->add_in_snapshot_set(fname, &incexe->name_list, node)) {
             /* When all volumes are selected, we can stop */
             Dmsg0(DT_SNAPSHOT, "All Volumes are marked, stopping the loop here\n");
@@ -1677,8 +1685,10 @@ all_included:
             }
 
             /* TODO: See how to avoid having two entries for the same directory */
-            /* Add the directory explicitely in the fileset */
+            /* Add the directory explicitly in the fileset (elt->include is a */
+            /* pointer to the FileSet->include_list->name_list) */
             elt->include->insert_after(new_dlistString(elt2->mountpoint), elt->node);
+            Dmsg1(DT_SNAPSHOT|20, "Add a sub volume to the FileSet: %s\n", elt2->mountpoint);
 
             if (mount_list->add_in_snapshot_set(elt2, elt->include, elt->node)) {
                /* When all volumes are selected, we can stop */
@@ -1783,11 +1793,91 @@ bail_out:
    return ret;
 }
 
+
+#ifdef HAVE_WIN32
+BOOL VSSPathConvertW(const wchar_t *szFilePath, wchar_t *szShadowPath, int nBuflen);
+
+/* This function is called by find_files(), once for every "Include" entries
+ * in the FileSet.
+ * This function must redirect "ff->top_fname" to its snapshot version if it
+ * exists
+ */
+bool snapshot_convert_path(JCR *jcr, FF_PKT *ff, dlist *filelist, dlistString *node)
+{
+   Dmsg1(DT_SNAPSHOT, "snapshot_convert_path(%s)\n", ff->top_fname);
+   // FYI jcr->snap_mgr==NULL because Win32 use VSSClient instead
+
+   /* Convert the filename to the original path */
+   /* get the path of "ff->top_fname" inside the snapshots */
+   // convert to Windows wchar_t path
+   POOL_MEM wpath(PM_FNAME);
+   POOL_MEM wsnap(PM_FNAME);
+   make_win32_path_UTF8_2_wchar(&wpath.addr(), ff->top_fname);
+   wchar_t *p = (wchar_t *)wpath.c_str();
+   Dmsg2(10, "ASX Convert wchart %s => %ls\n", ff->top_fname, p);
+   DWORD len = wcslen(p);
+#if 0
+   // remove any trailing '/' or '\\'
+      while (IsWPathSeparator(p[len-1])) {
+         len--;
+         p[len]=L'\0';
+      }
+      Dmsg2(10, "ASX Convert wchart %s => %ls\n", ff->top_fname, p);
+#endif
+   // get the snapshot path
+   len+=MAX_PATH; // allocate enough space for "GLOBALROOT\Device\HarddiskVolumeShadowCopyXXX"
+   wsnap.check_size(2*len);
+   BOOL vss_exist=VSSPathConvertW((wchar_t *)&wpath.c_str()[8], (wchar_t *)wsnap.c_str(), len); // 8 == skip r"\\?\" prefix
+   if (!vss_exist) {
+      return true;
+   }
+   // Their is a snapshot for this path, I'll need some buffers
+   if (!ff->snap_top_fname) {
+      ff->snap_top_fname = get_pool_memory(PM_FNAME);
+   }
+   // convert back to utf8
+   wchar_path_2_wutf8(&ff->snap_top_fname, (wchar_t *)wsnap.c_str());
+   // end convert Windows '\' into posix '/'
+   char *q=ff->snap_top_fname;
+   while (*q) {
+      if (*q=='\\') {
+         *q='/';
+      }
+      q++;
+   }
+   ff->root_of_volume = false;
+   // add a trailing '\' to snap_top_fname if it is the root of the snapshot volume.
+   // "None" of the Windows API can deal with this kind of path without the trailing '\'
+   if (strncmp(ff->snap_top_fname, "//?/GLOBALROOT/Device/HarddiskVolumeShadowCopy", 46) == 0) {
+      q=&ff->snap_top_fname[46];
+      while (*q!='\0' && isdigit(*q)) q++;
+      if ((*q=='\0' || (*q=='/' && q[1]=='\0')) && ff->statp.st_rdev==WIN32_REPARSE_NONE) {
+         ff->root_of_volume = true;
+      }
+      if (*q=='\0') {
+         pm_strcat(ff->snap_top_fname, "/"); // of course this is posix, then use '/'
+      }
+   }
+
+   // ff->volume_path && ff->snapshot_path are just pointer without any allocated
+   // space, then they must point to some other pointer, snapshot::convert_path()
+   // does the same
+   ff->volume_path = ff->top_fname;    /* c:\tmp */
+   ff->top_fname_save = ff->top_fname;
+
+   ff->snapshot_path = ff->snap_top_fname;
+
+   ff->top_fname = ff->snap_top_fname;
+
+   Dmsg2(20, "ASX SnapConPath top_fname=%s snapshot_path=%s\n", ff->top_fname, ff->snapshot_path);
+
+   return true;
+}
+#else
 bool snapshot_convert_path(JCR *jcr, FF_PKT *ff, dlist *filelist, dlistString *node)
 {
    Dmsg1(DT_SNAPSHOT, "snapshot_convert_path(%s)\n", ff->top_fname);
    snapshot_manager *snapmgr = jcr->snap_mgr;
-   ff->strip_snap_path = false;
 
    if (!snapmgr) {
       return true;
@@ -1798,9 +1888,6 @@ bool snapshot_convert_path(JCR *jcr, FF_PKT *ff, dlist *filelist, dlistString *n
       return true;              /* not found */
    }
 
-   if (!ff->snap_fname) {
-      ff->snap_fname = get_pool_memory(PM_FNAME);
-   }
 
    /* Convert the filename to the original path */
    if (!elt->snap->convert_path(ff)) {
@@ -1810,6 +1897,7 @@ bool snapshot_convert_path(JCR *jcr, FF_PKT *ff, dlist *filelist, dlistString *n
    }
    return true;
 }
+#endif
 
 /* ListSnap[] = "CatReq Job=%s list_snapshot name=%s volume=%s device=%s tdate=%d type=%s before=%s after=%s expired=%d"; */
 
