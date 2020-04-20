@@ -23,6 +23,7 @@
  *    Kern Sibbald, July MMII
  *
  *  Data verification added by Eric Bollengier
+ *
  */
 
 #include "bacula.h"
@@ -289,9 +290,7 @@ void do_verify_volume(JCR *jcr)
       jcr->compress_buf_size = compress_buf_size;
    }
 
-   GetMsg *fdmsg;
-   fdmsg = New(GetMsg(jcr, sd, rec_header, GETMSG_MAX_MSG_SIZE));
-
+   GetMsg *fdmsg = get_msg_buffer(jcr, sd, rec_header);
    fdmsg->start_read_sock();
    bmessage *bmsg = fdmsg->new_msg(); /* get a message, to exchange with fdmsg */
 
@@ -571,6 +570,7 @@ bail_out:
    jcr->setJobStatus(JS_ErrorTerminated);
 
 ok_out:
+   Dmsg0(DT_DEDUP|215, "wait BufferedMsg\n");
    fdmsg->wait_read_sock(jcr->is_job_canceled());
    delete bmsg;
    free_GetMsg(fdmsg);
