@@ -21,7 +21,6 @@
  *   to the Storage daemon.
  *
  *    Kern Sibbald, March MM
- *
  */
 
 #include "bacula.h"
@@ -162,11 +161,16 @@ bool blast_data_to_storage_daemon(JCR *jcr, char *addr)
    jcr->bxattr = (BXATTR*)new_bxattr();
 #endif
 
-   /* Subroutine save_file() is called for each file */
+   if (!dedup_init_storage_bsock(jcr, sd)) {
+      return false;
+   }
+
+   /** Subroutine save_file() is called for each file */
    if (!find_files(jcr, (FF_PKT *)jcr->ff, save_file, plugin_save)) {
       ok = false;                     /* error */
       jcr->setJobStatus(JS_ErrorTerminated);
    }
+
 #ifdef HAVE_ACL
    if (jcr->bacl && jcr->bacl->get_acl_nr_errors() > 0) {
       Jmsg(jcr, M_WARNING, 0, _("Had %ld acl errors while doing backup\n"),
@@ -179,15 +183,15 @@ bool blast_data_to_storage_daemon(JCR *jcr, char *addr)
          jcr->bxattr->get_xattr_nr_errors());
    }
 #endif
-
    /* Delete or keep snapshots */
    close_snapshot_backup_session(jcr);
    close_vss_backup_session(jcr);
 
    accurate_finish(jcr);              /* send deleted or base file list to SD */
 
-   stop_heartbeat_monitor(jcr);
+   dedup_release_storage_bsock(jcr, sd);
 
+   stop_heartbeat_monitor(jcr);
    sd->signal(BNET_EOD);            /* end of sending data */
 
 #ifdef HAVE_ACL
@@ -391,9 +395,6 @@ int save_file(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
 
    /** Initialize the file descriptor we use for data and other streams. */
    binit(&ff_pkt->bfd);
-   if (ff_pkt->flags & FO_PORTABLE) {
-      set_portable_backup(&ff_pkt->bfd); /* disable Win32 BackupRead() */
-   }
 
    if (ff_pkt->cmd_plugin) {
       do_plugin_set = true;
@@ -419,6 +420,10 @@ int save_file(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
       }
    }
 
+   if (ff_pkt->flags & FO_PORTABLE) {
+      set_portable_backup(&ff_pkt->bfd); /* disable Win32 BackupRead() */
+   }
+
    if (do_plugin_set) {
       /* Tell bfile that it needs to call plugin */
       if (!set_cmd_plugin(&ff_pkt->bfd, jcr)) {
@@ -428,7 +433,10 @@ int save_file(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
       plugin_started = true;
    }
 
-   /** Send attributes -- must be done after binit() */
+   /*
+    * Send attributes -- must be done after binit()
+    *  Note: this subroutine also defines bctx.stream
+    */
    if (!encode_and_send_attributes(bctx)) {
       goto bail_out;
    }
@@ -482,10 +490,10 @@ int save_file(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
       ff_pkt->bfd.reparse_point = (ff_pkt->type == FT_REPARSE ||
                                    ff_pkt->type == FT_JUNCTION);
       set_fattrs(&ff_pkt->bfd, &ff_pkt->statp);
-      if (bopen(&ff_pkt->bfd, ff_pkt->fname, O_RDONLY | O_BINARY | noatime, 0) < 0) {
+      if (bopen(&ff_pkt->bfd, ff_pkt->snap_fname, O_RDONLY | O_BINARY | noatime, 0) < 0) {
          ff_pkt->ff_errno = errno;
          berrno be;
-         Jmsg(jcr, M_NOTSAVED, 0, _("     Cannot open \"%s\": ERR=%s.\n"), ff_pkt->fname,
+         Jmsg(jcr, M_NOTSAVED, 0, _("     Cannot open \"%s\": ERR=%s.\n"), ff_pkt->snap_fname,
               be.bstrerror());
          jcr->JobErrors++;
          if (tid) {
@@ -596,7 +604,37 @@ static int send_data(bctx_t &bctx, int stream)
       return false;
    }
 
-   /**
+   if (bctx.ff_pkt->flags & FO_DEDUPLICATION) {
+      if (jcr->sd_dedup == 0 ) {
+         /* the SD (the device) cannot do dedup then ignore the directive */
+      } else if (bctx.ff_pkt->Dedup_level == 2) { // 2 == BothSides
+         if (is_deduplicable_stream(stream) &&
+             (bctx.ff_pkt->statp.st_size >= jcr->min_dedup_block_size || bctx.ff_pkt->statp.st_size == 0)) {
+           /* plugins often wrongly use -1, for a unsigned this is a big number that
+            * must satisfy the first test, 0 can be accepted too, because if this is
+            * a true 0 then no blocks should come else this go into the dedupengine */
+            Dmsg1(DT_DEDUP|425, "Do client side dedup on stream 0x%x\n", stream);
+            stream |= STREAM_BIT_DEDUPLICATION_DATA;
+            bctx.dedup_client_side = true;
+         } else {
+            // Don't do dedup on this unfriendly dedup stream
+            Dmsg2(DT_DEDUP|425, "No dedup on unfriendly dedup stream 0x%x or file too small %lld\n", stream, bctx.ff_pkt->statp.st_size);
+         }
+      } else if (bctx.ff_pkt->Dedup_level == 0) { // 0 == none
+         // Deny dedup on that stream
+         stream |= STREAM_BIT_NO_DEDUPLICATION;
+         Dmsg1(DT_DEDUP|425, "Deny dedup on this stream 0x%x\n", stream);
+      } else { // bctx.ff_pkt->Dedup_level == 1 let the SD do dedup
+
+      }
+   }
+
+   /* Check if we want to send the offset information with each block */
+   if (bctx.ff_pkt->flags & FO_OFFSETS) {
+      stream |= STREAM_BIT_OFFSETS;
+   }
+
+   /*
     * Send Data header to Storage daemon
     *    <file-index> <stream> <expected stream length>
     */
@@ -616,7 +654,17 @@ static int send_data(bctx_t &bctx, int stream)
     */
    if ((bctx.ff_pkt->flags & FO_SPARSE) || (bctx.ff_pkt->flags & FO_OFFSETS)) {
       bctx.rbuf += OFFSET_FADDR_SIZE;
-      bctx.rsize -= OFFSET_FADDR_SIZE;
+      /* With FO_OFFSET we want to send 64K buffers + the pointer to the current
+       * offset inside the current file. It is important for Aligned volumes.
+       *
+       * With SPARSE or Dedup+FO_OFFSET, we can continue with data that is
+       * slightly smaller. (To keep aligned/dedup chunk identical with the ones
+       * stored by previous releases we must must decrease rsize)
+       */
+      if (bctx.ff_pkt->flags & FO_SPARSE || jcr->sd_dedup) {
+         bctx.rsize -= OFFSET_FADDR_SIZE;
+      }
+
 #if defined(HAVE_FREEBSD_OS) || defined(__FreeBSD_kernel__)
       /**
        * To read FreeBSD partitions, the read size must be
@@ -662,7 +710,7 @@ finish_sending:
    if (sd->msglen < 0) {                 /* error */
       berrno be;
       Jmsg(jcr, M_ERROR, 0, _("Read error on file %s. ERR=%s\n"),
-         bctx.ff_pkt->fname, be.bstrerror(bctx.ff_pkt->bfd.berrno));
+         bctx.ff_pkt->snap_fname, be.bstrerror(bctx.ff_pkt->bfd.berrno));
       if (jcr->JobErrors++ > 1000) {       /* insanity check */
          Jmsg(jcr, M_FATAL, 0, _("Too many errors. JobErrors=%d.\n"), jcr->JobErrors);
       }
@@ -695,6 +743,7 @@ finish_sending:
       }
    }
 
+   jcr->dedup->TransferJobBytes(&jcr->JobBytes); // transfer byte from
 
    if (!sd->signal(BNET_EOD)) {        /* indicate end of file data */
       if (!jcr->is_job_canceled()) {
@@ -728,8 +777,14 @@ err:
  */
 bool process_and_send_data(bctx_t &bctx)
 {
+   bool  ret = false;
    BSOCK *sd = bctx.sd;
    JCR *jcr = bctx.jcr;
+
+   Dmsg5(DT_DEDUP|620, "bread msglen=%5d data=0x%08x flags=0x%x sparse=%d compress=%d\n",
+         sd->msglen, hash2int(bctx.rbuf), bctx.ff_pkt->flags,
+         (bctx.ff_pkt->flags & FO_SPARSE)?1:0,
+         (bctx.ff_pkt->flags & FO_COMPRESS)?1:0);
 
    /** Check for sparse blocks */
    if (bctx.ff_pkt->flags & FO_SPARSE) {
@@ -749,7 +804,8 @@ bool process_and_send_data(bctx_t &bctx)
       bctx.fileAddr += sd->msglen;      /* update file address */
       /** Skip block of all zeros */
       if (allZeros) {
-         return true;                 /* skip block of zeros */
+         ret = true;
+         goto err;               /* skip block of zeros */
       }
    } else if (bctx.ff_pkt->flags & FO_OFFSETS) {
       ser_declare;
@@ -825,7 +881,8 @@ bool process_and_send_data(bctx_t &bctx)
           (uint8_t *)&jcr->crypto.crypto_buf[initial_len], &bctx.encrypted_len)) {
          if ((initial_len + bctx.encrypted_len) == 0) {
             /** No full block of data available, read more data */
-            return true;
+            ret = true;
+            goto err;
          }
          Dmsg2(400, "encrypted len=%d unencrypted len=%d\n", bctx.encrypted_len,
                sd->msglen);
@@ -833,6 +890,12 @@ bool process_and_send_data(bctx_t &bctx)
       } else {
          /** Encryption failed. Shouldn't happen. */
          Jmsg(jcr, M_FATAL, 0, _("Encryption error\n"));
+         goto err;
+      }
+   }
+
+   if (bctx.dedup_client_side) {
+      if (!do_dedup_client_side(bctx)) {
          goto err;
       }
    }
@@ -853,10 +916,10 @@ bool process_and_send_data(bctx_t &bctx)
    /*          #endif */
    jcr->JobBytes += sd->msglen;      /* count bytes saved possibly compressed/encrypted */
    sd->msg = bctx.msgsave;                /* restore read buffer */
-   return true;
+   ret = true;
 
 err:
-   return false;
+   return ret;
 }
 
 bool encode_and_send_attributes(bctx_t &bctx)
@@ -870,8 +933,6 @@ bool encode_and_send_attributes(bctx_t &bctx)
    int attr_stream;
    int comp_len;
    bool stat;
-   int hangup = get_hangup();
-   int blowup = get_blowup();
 #ifdef FD_NO_SEND_TEST
    return true;
 #endif
@@ -911,33 +972,25 @@ bool encode_and_send_attributes(bctx_t &bctx)
       print_ls_output(jcr, &attr, M_SAVED);
    }
 
-   /* Debug code: check if we must hangup */
-   if (hangup > 0 && (jcr->JobFiles > (uint32_t)hangup)) {
-      jcr->setJobStatus(JS_Incomplete);
-      Jmsg1(jcr, M_FATAL, 0, "Debug hangup requested after %d files.\n", hangup);
-      set_hangup(0);
+   /* Debug code: check if we must hangup or blowup */
+   if (handle_hangup_blowup(jcr, jcr->JobFiles, 0)) {
       return false;
    }
 
-   if (blowup > 0 && (jcr->JobFiles > (uint32_t)blowup)) {
-      Jmsg1(jcr, M_ABORT, 0, "Debug blowup requested after %d files.\n", blowup);
-      return false;
-   }
-
-   /**
+   /*
     * Send Attributes header to Storage daemon
     *    <file-index> <stream> <info>
     */
    if (!sd->fsend("%ld %d 0", jcr->JobFiles, attr_stream)) {
       if (!jcr->is_canceled() && !jcr->is_incomplete()) {
-         Jmsg2(jcr, M_FATAL, 0, _("Network send error to SD. Data=%s ERR=%s\n"),
-               sd->msg, sd->bstrerror());
+         Jmsg1(jcr, M_FATAL, 0, _("Network send error to SD. ERR=%s\n"),
+               sd->bstrerror());
       }
       return false;
    }
    Dmsg1(300, ">stored: attrhdr %s\n", sd->msg);
 
-   /**
+   /*
     * Send file attributes to Storage daemon
     *   File_index
     *   File type
@@ -1004,7 +1057,7 @@ bool encode_and_send_attributes(bctx_t &bctx)
                         ff_pkt->fname, 0, ff_pkt->object_name, 0);
       sd->msg = check_pool_memory_size(sd->msg, sd->msglen + comp_len + 2);
       memcpy(sd->msg + sd->msglen, ff_pkt->object, comp_len);
-      /* Note we send one extra byte so Dir can store zero after object */
+      /* Note send an extra byte so the SD can store zero after object */
       sd->msglen += comp_len + 1;
       stat = sd->send();
       if (ff_pkt->object_compression) {
@@ -1248,59 +1301,6 @@ static bool do_lzo_compression(bctx_t &bctx)
 /*
  * Do in place strip of path
  */
-static bool do_snap_strip(FF_PKT *ff)
-{
-   /* if the string starts with the snapshot path name, we can replace
-    * by the volume name. The volume_path is smaller than the snapshot_path
-    * snapshot_path = volume_path + /.snapshots/job-xxxx
-    */
-   ASSERT(strlen(ff->snapshot_path) > strlen(ff->volume_path));
-   int sp_first = strlen(ff->snapshot_path); /* point after snapshot_path in fname */
-   if (strncmp(ff->fname, ff->snapshot_path, sp_first) == 0) {
-      int last = pm_strcpy(ff->snap_fname, ff->volume_path);
-      last = MAX(last - 1, 0);
-
-      if (ff->snap_fname[last] == '/') {
-         if (ff->fname[sp_first] == '/') { /* compare with the first character of the string (sp_first not sp_first-1) */
-            ff->snap_fname[last] = 0;
-         }
-      } else {
-         if (ff->fname[sp_first] != '/') {
-            pm_strcat(ff->snap_fname, "/");
-         }
-      }
-
-      pm_strcat(ff->snap_fname, ff->fname + sp_first);
-      ASSERT(strlen(ff->fname) > strlen(ff->snap_fname));
-      strcpy(ff->fname, ff->snap_fname);
-      Dmsg2(DT_SNAPSHOT|20, "%s -> %s\n", ff->fname_save, ff->fname);
-   }
-   if (strncmp(ff->link, ff->snapshot_path, sp_first) == 0) {
-      int last = pm_strcpy(ff->snap_fname, ff->volume_path);
-      last = MAX(last - 1, 0);
-
-      if (ff->snap_fname[last] == '/') {
-         if (ff->link[sp_first] == '/') { /* compare with the first character of the string (sp_first not sp_first-1) */
-            ff->snap_fname[last] = 0;
-         }
-      } else {
-         if (ff->link[sp_first] != '/') {
-            pm_strcat(ff->snap_fname, "/");
-         }
-      }
-
-      pm_strcat(ff->snap_fname, ff->link + sp_first);
-      ASSERT(strlen(ff->link) > strlen(ff->snap_fname));
-      strcpy(ff->link, ff->snap_fname);
-      Dmsg2(DT_SNAPSHOT|20, "%s -> %s\n", ff->link_save, ff->link);
-   }
-
-   return true;
-}
-
-/*
- * Do in place strip of path
- */
 static bool do_strip(int count, char *in)
 {
    char *out = in;
@@ -1343,16 +1343,17 @@ static bool do_strip(int count, char *in)
  *   for dealing with snapshots, by removing the snapshot directory, or
  *   in handling vendor migrations where files have been restored with
  *   a vendor product into a subdirectory.
- *
- *   When we are using snapshots, we might need to convert the path
- *   back to the original one using the strip_snap_path option.
  */
 void strip_path(FF_PKT *ff_pkt)
 {
-   if (!ff_pkt->strip_snap_path        &&
-       (!(ff_pkt->flags & FO_STRIPPATH) || ff_pkt->strip_path <= 0))
+   if (!(ff_pkt->flags & FO_STRIPPATH) || ff_pkt->strip_path <= 0)
    {
       Dmsg1(200, "No strip for %s\n", ff_pkt->fname);
+      if (ff_pkt->snapshot_convert_fct) {
+         // regress test expect this message
+         Dmsg3(10, "fname=%s snap=%s link=%s\n", ff_pkt->fname, ff_pkt->snap_fname,
+               ff_pkt->link);
+      }
       return;
    }
    /* shared part between strip and snapshot */
@@ -1367,14 +1368,6 @@ void strip_path(FF_PKT *ff_pkt)
       Dmsg2(500, "strcpy link_save=%d link=%d\n", strlen(ff_pkt->link_save),
          strlen(ff_pkt->link));
       Dsm_check(200);
-   }
-
-   if (ff_pkt->strip_snap_path) {
-      if (!do_snap_strip(ff_pkt)) {
-         Dmsg1(0, "Something wrong with do_snap_strip(%s)\n", ff_pkt->fname);
-         unstrip_path(ff_pkt);
-         goto rtn;
-      }
    }
 
    /* See if we want also to strip the path */
@@ -1408,20 +1401,20 @@ rtn:
 
 void unstrip_path(FF_PKT *ff_pkt)
 {
-   if (!ff_pkt->strip_snap_path &&
-       (!(ff_pkt->flags & FO_STRIPPATH) || ff_pkt->strip_path <= 0))
+   if (!(ff_pkt->flags & FO_STRIPPATH) || ff_pkt->strip_path <= 0)
    {
       return;
    }
 
-   strcpy(ff_pkt->fname, ff_pkt->fname_save);
-   if (ff_pkt->type != FT_LNK && ff_pkt->fname != ff_pkt->link) {
-      Dmsg2(10, "strcpy link=%s link_save=%s\n", ff_pkt->link,
-          ff_pkt->link_save);
-      strcpy(ff_pkt->link, ff_pkt->link_save);
-      Dmsg2(10, "strcpy link=%d link_save=%d\n", strlen(ff_pkt->link),
-          strlen(ff_pkt->link_save));
-      Dsm_check(200);
+   /* ff_pkt->fname can come from different places and should not be reallocated */
+   if (ff_pkt->fname != ff_pkt->fname_save) {
+      strcpy(ff_pkt->fname, ff_pkt->fname_save);
+   }
+
+   if (ff_pkt->link != ff_pkt->link_save) {
+      if (ff_pkt->type != FT_LNK && ff_pkt->fname != ff_pkt->link) {
+         strcpy(ff_pkt->link, ff_pkt->link_save);
+      }
    }
 }
 
