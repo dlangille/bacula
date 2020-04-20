@@ -66,7 +66,7 @@ match_files(JCR *jcr, FF_PKT *ff, int file_save(JCR *, FF_PKT *ff_pkt, bool))
       bstrncat(ff->VerifyOpts, inc->VerifyOpts, sizeof(ff->VerifyOpts));
       Dmsg1(100, "find_files: file=%s\n", inc->fname);
       if (!file_is_excluded(ff, inc->fname)) {
-         if (find_one_file(jcr, ff, file_save, inc->fname, (dev_t)-1, 1) ==0) {
+         if (find_one_file(jcr, ff, file_save, inc->fname, inc->fname, (dev_t)-1, 1) ==0) {
             return 0;                  /* error return */
          }
       }
@@ -191,6 +191,12 @@ void add_fname_to_include_list(FF_PKT *ff, int prefixed, const char *fname)
             }
             Dmsg2(200, "Compression alg=%d level=%d\n", inc->algo, inc->Compress_level);
             break;
+         case 'd':                 /* Deduplication 0=none 1=Global 2=Local */
+            rp++;                  /* Skip z */
+            if (*rp >= '0' && *rp <= '2') {
+               inc->Dedup_level = *rp - '0';
+            }
+            break;
          case 'K':
             inc->options |= FO_NOATIME;
             break;
@@ -305,6 +311,7 @@ struct s_included_file *get_next_included_file(FF_PKT *ff, struct s_included_fil
       ff->flags = inc->options;
       ff->Compress_algo = inc->algo;
       ff->Compress_level = inc->Compress_level;
+      ff->Dedup_level = inc->Dedup_level;
    }
    return inc;
 }
