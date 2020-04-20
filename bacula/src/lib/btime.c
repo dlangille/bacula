@@ -41,6 +41,18 @@
 #include "bacula.h"
 #include <math.h>
 
+/* Formatted time for catalog: yyymmddhhmmss */
+char *bstrftime_c(char *dt, int maxlen, utime_t utime)
+{
+   time_t time = (time_t)utime;
+   struct tm tm;
+
+   /* ***FIXME**** the format and localtime_r() should be user configurable */
+   (void)localtime_r(&time, &tm);
+   strftime(dt, maxlen, "%Y%m%d%H%m%S", &tm);
+   return dt;
+}
+
 /* Formatted time for user display: dd-Mon-yyyy hh:mm */
 char *bstrftime(char *dt, int maxlen, utime_t utime)
 {

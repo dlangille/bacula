@@ -41,6 +41,7 @@ char *bstrftimes(char *dt, int maxlen, utime_t tim);
 char *bstrftime_ny(char *dt, int maxlen, utime_t tim);
 char *bstrftime_nc(char *dt, int maxlen, utime_t tim);
 char *bstrftime_dn(char *dt, int maxlen, utime_t tim);
+char *bstrftime_c(char *dt, int maxlen, utime_t utime);
 utime_t str_to_utime(char *str);
 
 
