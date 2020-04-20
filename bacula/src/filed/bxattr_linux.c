@@ -78,6 +78,9 @@ bRC_BXATTR BXATTR_Linux::os_restore_xattr (JCR *jcr, int stream, char *content, 
    return generic_restore_xattr(jcr, stream);
 };
 
+#define CIFS_XATTR "system.cifs_acl"
+#define CIFS_XATTR_LEN 15
+
 /*
  * Return a list of xattr names in newly allocated pool memory and a length of the allocated buffer.
  * It allocates a memory with poolmem subroutines every time a function is called, so it must be freed
@@ -87,12 +90,20 @@ bRC_BXATTR BXATTR_Linux::os_restore_xattr (JCR *jcr, int stream, char *content, 
  */
 bRC_BXATTR BXATTR_Linux::os_get_xattr_names (JCR *jcr, POOLMEM ** pxlist, uint32_t * xlen){
 
-   int len;
+   int len, len2;
    POOLMEM * list;
+   bool append_cifs=false;
 
    /* check input data */
    if (jcr == NULL || xlen == NULL || pxlist == NULL){
       return bRC_BXATTR_inval;
+   }
+
+   /* With CIFS and CIFS2, the system.cifs_acl attribute holds the BackupRead
+    * information, but it is not listed by llistxattr
+    */
+   if (strncmp(get_current_fs(), "cifs", 4) == 0) {
+      append_cifs = true;
    }
 
    /* get the length of the extended attributes */
@@ -118,8 +129,12 @@ bRC_BXATTR BXATTR_Linux::os_get_xattr_names (JCR *jcr, POOLMEM ** pxlist, uint32
          break;
       }
       case 0:
-         /* xattr available but empty, skip it */
-         return bRC_BXATTR_skip;
+         if (append_cifs) {     /* We have nothing, but the cifs attribute can be hidden */
+            len += CIFS_XATTR_LEN + 1;
+         } else {
+            /* xattr available but empty, skip it */
+            return bRC_BXATTR_skip;
+         }
       default:
          break;
    }
@@ -135,8 +150,8 @@ bRC_BXATTR BXATTR_Linux::os_get_xattr_names (JCR *jcr, POOLMEM ** pxlist, uint32
    memset(list, 0, len + 1);
 
    /* get the list of extended attributes names for a file */
-   len = llistxattr(jcr->last_fname, list, len);
-   switch (len){
+   len2 = llistxattr(jcr->last_fname, list, len);
+   switch (len2){
    case -1: {
       berrno be;
 
@@ -157,10 +172,13 @@ bRC_BXATTR BXATTR_Linux::os_get_xattr_names (JCR *jcr, POOLMEM ** pxlist, uint32
       break;
    }
    /* ensure a list is nul terminated */
-   list[len] = '\0';
+   list[len2] = '\0';
+   if (append_cifs) {
+      len2 = xattr_list_append(list, len2, CIFS_XATTR, CIFS_XATTR_LEN);
+   }
    /* setup return data */
    *pxlist = list;
-   *xlen = len;
+   *xlen = len2;
    return bRC_BXATTR_ok;
 };
 
