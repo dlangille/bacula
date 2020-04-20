@@ -71,11 +71,15 @@ static const bool have_lzo = true;
 static const bool have_lzo = false;
 #endif
 
+/* from filed_conf.c */
+extern s_ct ciphertypes[];
+extern s_ct digesttypes[];
 
 static void api_list_status_header(STATUS_PKT *sp)
 {
    char *p;
    char buf[300];
+   const char *cipher=NULL, *digest=NULL;
    OutputWriter wt(sp->api_opts);
    *buf = 0;
 
@@ -84,7 +88,22 @@ static void api_list_status_header(STATUS_PKT *sp)
       *buf = 0;
    }
 #endif
-
+   /* Display the keyword instead of the index */
+   if (me->pki_encrypt || me->pki_sign) {
+      for (int i = 0; ciphertypes[i].type_name ; i++) {
+         if (me->pki_cipher == ciphertypes[i].type_value) {
+            cipher = ciphertypes[i].type_name;
+            break;
+         }
+      }
+      for (int i = 0; digesttypes[i].type_name ; i++) {
+         if (me->pki_digest == digesttypes[i].type_value) {
+            digest = digesttypes[i].type_name;
+            break;
+         }
+      }
+   }
+   
    wt.start_group("header");
    wt.get_output(
       OT_STRING, "name",        my_name,
@@ -99,6 +118,12 @@ static void api_list_status_header(STATUS_PKT *sp)
       OT_INT,    "trace",       get_trace(),
       OT_INT64,  "bwlimit",     me->max_bandwidth_per_job,
       OT_PLUGINS, "plugins",    b_plugin_list,
+      OT_INT,     "pkiencryption", (int)me->pki_encrypt,
+      OT_INT,     "pkisignature", (int)me->pki_sign,
+      OT_STRING,     "pkicipher",  NPRTB(cipher),
+      OT_STRING,     "pkidigest",  NPRTB(digest),
+      OT_INT32,   "fips",       crypto_get_fips(),
+      OT_STRING,  "crypto",     crypto_get_version(),
       OT_END);
    p = wt.end_group();
    sendit(p, strlen(p), sp);
@@ -179,10 +204,17 @@ static void  list_status_header(STATUS_PKT *sp)
                  p_GetVolumePathNameW?"":"!",
                  p_GetVolumeNameForVolumeMountPointW?"":"!",
                  have_lzo?"":"!",
-                 "!");
+                 (BEEF>0)?"":"!");
       sendit(msg.c_str(), len, sp);
    }
 #endif
+
+   if (debug_level > 0) {
+      int64_t nofile_l = 1000;
+      int64_t memlock_l=0;
+      list_resource_limits(sp, nofile_l, memlock_l);
+   }
+
    len = Mmsg(msg, _(" Heap: heap=%s smbytes=%s max_bytes=%s bufs=%s max_bufs=%s\n"),
          edit_uint64_with_commas(memused, b1),
          edit_uint64_with_commas(sm_bytes, b2),
@@ -193,12 +225,17 @@ static void  list_status_header(STATUS_PKT *sp)
    len = Mmsg(msg, _(" Sizes: boffset_t=%d size_t=%d debug=%s trace=%d "
                      "mode=%d,%d bwlimit=%skB/s\n"),
               sizeof(boffset_t), sizeof(size_t),
-              edit_uint64(debug_level, b2), get_trace(), (int)DEVELOPER_MODE, 0,
-              edit_uint64_with_commas(me->max_bandwidth_per_job/1024, b1));
+              edit_uint64(debug_level, b2), get_trace(), (int)DEVELOPER_MODE, (int)BEEF,
+              edit_uint64_with_commas(me->max_bandwidth_per_job/1024, b1)
+      );
    sendit(msg.c_str(), len, sp);
+
+   len = Mmsg(msg, " Crypto: fips=%s crypto=%s\n", crypto_get_fips_enabled(), crypto_get_version());
+   sendit(msg.c_str(), len, sp);
+
    if (b_plugin_list && b_plugin_list->size() > 0) {
       Plugin *plugin;
-      int len;
+      int len, maxlen=80;
       pm_strcpy(msg, " Plugin: ");
       foreach_alist(plugin, b_plugin_list) {
          len = pm_strcat(msg, plugin->file);
@@ -209,7 +246,8 @@ static void  list_status_header(STATUS_PKT *sp)
             pm_strcat(msg, NPRT(info->plugin_version));
             len = pm_strcat(msg, ")");
          }
-         if (len > 80) {
+         if (len > maxlen) {
+            maxlen = maxlen * 2; /* Let's display an other 80c line */
             pm_strcat(msg, "\n   ");
          } else {
             pm_strcat(msg, " ");
@@ -354,7 +392,7 @@ static void  list_running_jobs_plain(STATUS_PKT *sp)
 static void  list_running_jobs_api(STATUS_PKT *sp)
 {
    OutputWriter ow(sp->api_opts);
-   int sec, bps;
+   int sec, bps, brps;
    char *p;
    JCR *njcr;
 
@@ -371,7 +409,7 @@ static void  list_running_jobs_api(STATUS_PKT *sp)
 
       if (njcr->JobId == 0) {
          int val = (njcr->dir_bsock && njcr->dir_bsock->tls)?1:0;
-         ow.get_output(OT_UTIME, "DirectorConnected", njcr->start_time,
+         ow.get_output(OT_UTIME, "DirectorConnected", (utime_t)njcr->start_time,
                        OT_INT, "DirTLS", val,
                        OT_END);
       } else {
@@ -381,7 +419,7 @@ static void  list_running_jobs_api(STATUS_PKT *sp)
                        OT_JOBLEVEL,"Level", njcr->getJobLevel(),
                        OT_JOBTYPE, "Type",  njcr->getJobType(),
                        OT_JOBSTATUS, "Status", njcr->getJobStatus(),
-                       OT_UTIME,   "StartTime", njcr->start_time,
+                       OT_UTIME,   "StartTime", (utime_t)njcr->start_time,
                        OT_END);
 
       }
@@ -394,13 +432,15 @@ static void  list_running_jobs_api(STATUS_PKT *sp)
          sec = 1;
       }
       bps = (int)(njcr->JobBytes / sec);
+      brps = (int)(njcr->ReadBytes / sec);
       ow.get_output(OT_CLEAR,
                     OT_INT32,   "JobFiles",  njcr->JobFiles,
                     OT_SIZE,    "JobBytes",  njcr->JobBytes,
                     OT_INT,     "Bytes/sec", bps,
-                    OT_INT,     "Errors",    njcr->JobErrors,
+                    OT_INT32,   "Errors",    njcr->JobErrors,
                     OT_INT64,   "Bwlimit",   njcr->max_bandwidth,
                     OT_SIZE,    "ReadBytes", njcr->ReadBytes,
+                    OT_INT,     "ReadBytes/sec", brps,
                     OT_END);
 
       ow.get_output(OT_INT32,  "Files Examined",  njcr->num_files_examined, OT_END);
