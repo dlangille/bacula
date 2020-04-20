@@ -59,7 +59,6 @@ int num_execvp_errors = (int)(sizeof(execvp_errors)/sizeof(int));
 
 #if !defined(HAVE_WIN32)
 static void build_argc_argv(char *cmd, int *bargc, char *bargv[], int max_arg);
-static void set_keepalive(int sockfd);
 
 void build_sh_argc_argv(char *cmd, int *bargc, char *bargv[], int max_arg)
 {
@@ -241,17 +240,14 @@ BPIPE *open_bpipe(char *prog, int wait, const char *mode, char *envp[])
    free_pool_memory(tprog);
    if (mode_map & MODE_READ) {
       close(readp[1]);                /* close unused parent fds */
-      set_keepalive(readp[0]);
       bpipe->rfd = fdopen(readp[0], "r"); /* open file descriptor */
    }
    if (mode_map & MODE_STDERR) {
       close(errp[1]);                /* close unused parent fds */
-      set_keepalive(errp[0]);
       bpipe->efd = fdopen(errp[0], "r"); /* open file descriptor */
    }
    if (mode_map & MODE_WRITE) {
       close(writep[0]);
-      set_keepalive(writep[1]);
       bpipe->wfd = fdopen(writep[1], "w");
    }
    bpipe->worker_stime = time(NULL);
@@ -424,22 +420,6 @@ static void build_argc_argv(char *cmd, int *bargc, char *bargv[], int max_argv)
    }
    *bargc = argc;
 }
-
-#
-static void set_keepalive(int sockfd)
-{
-   /*
-    * Keep socket from timing out from inactivity
-    *  Ignore all errors
-    */
-   int turnon = 1;
-   setsockopt(sockfd, SOL_SOCKET, SO_KEEPALIVE, (sockopt_val_t)&turnon, sizeof(turnon));
-#if defined(TCP_KEEPIDLE)
-   int opt = 240 /* 2 minuites in half-second intervals recommended by IBM */
-   setsockopt(sockfd, SOL_TCP, TCP_KEEPIDLE, (sockopt_val_t)&opt, sizeof(opt));
-#endif
-}
-
 #endif /* HAVE_WIN32 */
 
 /*
