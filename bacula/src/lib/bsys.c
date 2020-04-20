@@ -52,7 +52,7 @@ char *ucfirst(char *dst, const char *src, int len)
 /*
  * Quote a string
  */
-POOLMEM *quote_string(POOLMEM *snew, const char *old)
+POOLMEM *quote_string(POOLMEM *&snew, const char *old)
 {
    char *n;
    int i;
@@ -61,6 +61,7 @@ POOLMEM *quote_string(POOLMEM *snew, const char *old)
       strcpy(snew, "null");
       return snew;
    }
+   snew = check_pool_memory_size(snew, strlen(old)*2+2+1);
    n = snew;
    *n++ = '"';
    for (i=0; old[i]; i++) {
@@ -94,7 +95,7 @@ POOLMEM *quote_string(POOLMEM *snew, const char *old)
 /*
  * Quote a where (list of addresses separated by spaces)
  */
-POOLMEM *quote_where(POOLMEM *snew, const char *old)
+POOLMEM *quote_where(POOLMEM *&snew, const char *old)
 {
    char *n;
    int i;
@@ -103,6 +104,7 @@ POOLMEM *quote_where(POOLMEM *snew, const char *old)
       strcpy(snew, "null");
       return snew;
    }
+   snew = check_pool_memory_size(snew, strlen(old)*3+2+1);
    n = snew;
    *n++ = '"';
    for (i=0; old[i]; i++) {
@@ -979,23 +981,30 @@ void stack_trace()
    size_t stack_depth;
    void *stack_addrs[max_depth];
    char **stack_strings;
+   char syscom[512];
+   BPIPE *bpipe;
+   bool ok;
 
    stack_depth = backtrace(stack_addrs, max_depth);
    stack_strings = backtrace_symbols(stack_addrs, stack_depth);
 
    for (size_t i = 3; i < stack_depth; i++) {
       size_t sz = 200; /* just a guess, template names will go much wider */
-      char *function = (char *)actuallymalloc(sz);
-      char *begin = 0, *end = 0;
+      char *begin = 0, *end = 0, *final = 0;
       /* find the parentheses and address offset surrounding the mangled name */
       for (char *j = stack_strings[i]; *j; ++j) {
          if (*j == '(') {
             begin = j;
          } else if (*j == '+') {
             end = j;
+         } else if (*j == ')') {
+            final = j;
          }
       }
-      if (begin && end) {
+      ok = false;
+      if (begin && end && end>(begin+1)) {
+         /* /home/bac/workspace2/bee/regress/bin/bacula-dir(+0x3c400) */
+         char *function = (char *)actuallymalloc(sz);
          *begin++ = '\0';
          *end = '\0';
          /* found our mangled name, now in [begin, end] */
@@ -1012,17 +1021,147 @@ void stack_trace()
             function[sz-1] = '\0';
          }
          Pmsg2(000, "    %s:%s\n", stack_strings[i], function);
-
-      } else {
+         actuallyfree(function);
+         ok = true;
+      } else if (begin) {
+         /* .../regress/bin/bacula-dir(+0x3c400) */
+         /* demangle cannot work on an empty function name, use addr2line() */
+         // this should work, but it don't
+         // sprintf(syscom, "addr2line %p -e %.*s", stack_addrs[i], (int)(begin-stack_strings[i]), stack_strings[i]);
+         // use the "+0x3c400" above for the address
+         if (end && final) {
+            snprintf(syscom, sizeof(syscom), "addr2line %.*s -e %.*s", (int)(final-end)-1, end+1, (int)(begin-stack_strings[i]), stack_strings[i]);
+            bpipe = open_bpipe(syscom, 0, "r");
+            if (bpipe) {
+               char buf[1000];
+               *buf = '\0';
+               while (fgets(buf, sizeof(buf), bpipe->rfd)) {
+                  Pmsg1(000, "    %s\n", buf);
+               }
+               if (close_bpipe(bpipe) == 0) {
+                  ok = true;
+               }
+            }
+         }
+      }
+      if (!ok) {
          /* didn't find the mangled name, just print the whole line */
          Pmsg1(000, "    %s\n", stack_strings[i]);
       }
-      actuallyfree(function);
    }
    actuallyfree(stack_strings); /* malloc()ed by backtrace_symbols */
 }
+#include <sys/types.h>
+#include <sys/syscall.h>
+
+int gdb_get_threadid(char *name_buf, int len)
+{
+   int thread_num = -1;
+   char syscom[1024];
+   BPIPE *bpipe;
+
+   int systag = syscall(__NR_gettid);
+
+   name_buf[readlink("/proc/self/exe", name_buf, len-1)]=0;
+   snprintf(syscom, sizeof(syscom), "gdb --batch -n -ex \"thread find %d\" %s %d", systag, name_buf, getpid());
+   bpipe = open_bpipe(syscom, 0, "r");
+   if (bpipe) {
+      char buf[1000];
+      while (fgets(buf, sizeof(buf), bpipe->rfd)) {
+         // thread find 241041
+         // Thread 7 has target id 'Thread 0x7f8c62ffd700 (LWP 241041)'
+         int tn;
+         if (scan_string(buf, "Thread %d", &tn)==1) {
+            thread_num = tn;
+         }
+      }
+      if (close_bpipe(bpipe) !=0) {
+         return -1;
+      }
+   } else {
+      return -1;
+   }
+   return thread_num;
+}
+
+void gdb_stack_trace()
+{
+   char name_buf[512];
+   char syscom[1024];
+   BPIPE *bpipe;
+
+   int thread_num = gdb_get_threadid(name_buf, sizeof(name_buf));
+   if (thread_num < 0) {
+      return;
+   }
+   snprintf(syscom, sizeof(syscom), "gdb --batch -n -ex \"thread apply %d bt\" %s %d", thread_num, name_buf, getpid());
+   bpipe = open_bpipe(syscom, 0, "r");
+   if (bpipe) {
+      bool ok = false;
+      char buf[1000];
+      while (fgets(buf, sizeof(buf), bpipe->rfd)) {
+         if (!ok) {
+            // Skip the "header" up to the caller of gdb_stack_trace()
+            ok = strstr(buf, "in gdb_stack_trace")!=NULL;
+         } else {
+            Pmsg1(000, "    %s", buf);
+         }
+      }
+      if (close_bpipe(bpipe) !=0) {
+         return;
+      }
+   }
+}
+
+void gdb_print_local(int level)
+{
+   char name_buf[512];
+   char syscom[1024];
+   char fname[64];
+   int fd;
+   FILE *fp;
+   BPIPE *bpipe = NULL;
+   int thread_num = gdb_get_threadid(name_buf, sizeof(name_buf));
+   if (thread_num < 0) {
+      return;
+   }
+   bstrncpy(fname, "/tmp/traces.XXXXXX", sizeof(fname));
+   fd = mkstemp(fname);
+   if (fd < 0) {
+      return;
+   }
+   fp = fdopen(fd, "w");
+   if (!fp) {
+      goto bail_out;
+   }
+   fprintf(fp, "thread %d\nf %d\nprint \":here:\"\ninfo locals\ndetach\nquit\n", thread_num, level + 5);
+   fclose(fp);
+   snprintf(syscom, sizeof(syscom), "gdb -quiet --batch -x %s %s %d", fname, name_buf, getpid());
+   bpipe = open_bpipe(syscom, 0, "r");
+   if (bpipe) {
+      bool ok = false;
+      char buf[1000];
+      while (fgets(buf, sizeof(buf), bpipe->rfd)) {
+         if (!ok) {
+            // Skip the "header" up to the caller of gdb_stack_trace()
+            ok = strstr(buf, ":here:")!=NULL;
+         } else {
+            Pmsg1(000, "    %s", buf);
+         }
+      }
+   }
+bail_out:
+   unlink(fname);
+   if (bpipe) {
+      close_bpipe(bpipe);
+   }
+
+}
+
 #else /* HAVE_BACKTRACE && HAVE_GCC */
 void stack_trace() {}
+void gdb_stack_trace() {}
+void gdb_print_local() {}
 #endif /* HAVE_BACKTRACE && HAVE_GCC */
 
 #ifdef HAVE_SYS_STATVFS_H
@@ -1079,6 +1218,7 @@ void setup_env(char *envp[])
 /* Small function to copy a file somewhere else,
  * for debug purpose.
  */
+#ifndef HAVE_WIN32
 int copyfile(const char *src, const char *dst)
 {
    int     fd_src=-1, fd_dst=-1;
@@ -1125,6 +1265,19 @@ bail_out:
     close(fd_dst);
     return -1;
 }
+#else
+
+int copyfile(const char *src, const char *dst)
+{
+    if (CopyFile((LPCSTR) src, (LPCSTR) dst, false)) {
+       return 0;
+    }
+
+    return -1;
+}
+
+#endif
+
 
 /* The poll() code is currently disabled */
 #ifdef HAVE_POLL
@@ -1246,6 +1399,111 @@ int baccept(int sockfd, struct sockaddr *addr, socklen_t *addrlen)
    return fd;
 }
 
+/* Return the memory available on this system, 0 if not implemented */
+/* See https://github.com/ganglia/monitor-core/tree/master/libmetrics to have
+ * an implementation for all kind of systems (from windows, solaris, aix...)
+ * mem_free_func()
+ */
+uint64_t bget_os_memory()
+{
+   POOLMEM *buf=NULL;
+   uint64_t ret = 0;
+
+#ifdef HAVE_LINUX_OS
+   bool ok=true;
+   const char *keyword="MemTotal:";
+   static int len=strlen(keyword);
+   FILE *fp = bfopen("/proc/meminfo", "r");
+
+   if (!fp) {
+      berrno be;
+      Dmsg1(10, "Unable to open /proc/meminfo. ERR=%s\n", be.bstrerror());
+      goto bail_out;
+   }
+
+   buf = get_pool_memory(PM_FNAME);
+   while (ok && bfgets(buf, fp)) {
+      if (strcmp(buf, keyword) > 0) {
+         if (!size_to_uint64(buf+len, strlen(buf+len), &ret)) {
+            ret = 0;
+         }
+         ok=false;
+      }
+   }
+   fclose(fp);
+
+bail_out:
+#endif  /* TODO: Implement more systems as needed */
+
+   free_and_null_pool_memory(buf);
+   return ret;
+}
+
+/* Determine the amount of mlock memory we can allocate on the current
+ * system. If the value is < 0, this is the memory to keep for the os.
+ */
+uint64_t bget_max_mlock(int64_t value)
+{
+   uint64_t sys, val;
+
+   sys = bget_os_memory();
+   if (sys == 0) {
+      Dmsg0(50, "Unable to determine the memory for mlock_max\n");
+      if (value < 0) {          /* We cannot compute the number  */
+         return 0;
+      }
+      return value;             /* We can't say our word... */
+   }
+
+   if (value == 0) {
+      Dmsg0(50, "Limit not set, use the maximum for mlock_max\n");
+      value = sys;              /* Limit automatically to the maximum */
+   }
+
+   /* When the value is negative, this is the amount in bytes to keep for the
+    * system.
+    */
+   if (value < 0) {
+      value = sys + value;
+      if (value < 0) {
+         Dmsg0(50, "Limit incorrect set, use the maximum for mlock_max\n");
+         /* Request to keep 2GB, we have only 1GB, something is incorrect, so
+          * we take the maximum 
+          */
+         value = sys;
+      }
+   }
+
+   /*
+    * Min     Max  | Allowed
+    *--------------+------------
+    * 0    -> 2GB  | 0   -> 1GB
+    * 2GB  -> 10GB | 1GB -> 9GB
+    * 10GB -> 60GB | 9GB -> 54GB
+    * 60GB -> ...  | 54GB ...
+    *
+    */
+   val = value;
+   if (sys < 2*1024*1024*1024LL) {
+      /* If we have less than 2GB of ram, we can allow up to 50% */
+      val = MIN(sys * 0.5, val);
+
+   } else if (sys < 10*1024*1024*1024LL) {
+      /* If we have a lot of memory, keep at least 1G for the system */
+      val = MIN(sys - 1*1024*1024*1024LL, val);
+
+   } else if (sys < 60*1024*1024*1024LL) {
+      /* Below 60GB of ram, keep 10% for the system */
+      val = MIN(sys * 0.9, val);
+
+   } else {
+      /* For very large systems, keep 6G of ram */
+      val = MIN(sys - 6*1024*1024*1024LL, val);
+   }
+   Dmsg2(50, "Requested %lld can %lld\n", value, val);
+   return val;
+}
+
 #undef fopen
 FILE *bfopen(const char *path, const char *mode)
 {
@@ -1276,7 +1534,182 @@ FILE *bfopen(const char *path, const char *mode)
    return fp;
 }
 
+/* Used to test the program */
+static int init_size=1024;
+static int dbglevel=500;
+
+/* alist(100, owned_by_alist) */
+/* return 0: ok, -1: error, 1: not found 
+ * Will return a list of users for a group. We look for /etc/groups
+ * and in /etc/passwd
+ */
+int get_group_members(const char *name, alist *users)
+{
+   int ret = -1;
+   /* Need to create implementation for other OSes */
+#ifdef HAVE_LINUX_OS
+#ifndef __ANDROID__
+   static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+   struct group grp, *pgrp;
+   struct passwd pw, *ppw;
+   char *buf = NULL;
+   int size = init_size;
+   gid_t gid = 0;
+   bool loop;
+
+again:
+   buf = (char *) realloc(buf, size);
+   errno = 0;
+   ret = getgrnam_r(name, &grp, buf, size, &pgrp);
+   if (ret == ERANGE) {
+      if (size > 1000000) {
+         ret = -1;
+         goto bail_out;
+      }
+      Dmsg2(DT_MEMORY|dbglevel, "realloc from %d to %d\n", size, 2*size);
+      size = 2*size;
+      goto again;
+
+   } else if (ret == EINTR) {
+      goto again;
+      
+   } else if (ret != 0) {
+      berrno be;
+      Dmsg1(dbglevel, "Got error for getgrnam_r %s\n", be.bstrerror(ret));
+      ret = -1;
+      goto bail_out;
+
+   } else if (pgrp == NULL) {   /* Not found */
+      Dmsg1(dbglevel, "group %s not found\n", name);
+      ret = 1;
+      goto bail_out;
+
+   } else {
+      Dmsg1(dbglevel, "Got group definition for %s\n", name);
+   }
+
+   gid = grp.gr_gid;
+   for (char **p = grp.gr_mem; p && *p ; p++) {
+      Dmsg1(dbglevel, "Group Member is: %s\n", *p);
+      users->append(bstrdup(*p));
+   }
+
+   P(mutex);
+   setpwent();
+   do {
+      loop=false;
+      errno = 0;
+      ret = getpwent_r(&pw, buf, size, &ppw);
+      if (ret == ERANGE) {
+         if (size > 1000000) {
+            ret = -1;
+            endpwent();
+            V(mutex);
+            goto bail_out;
+         }
+         Dmsg2(DT_MEMORY|dbglevel, "realloc from %d to %d\n", size, 2*size);
+         size = 2*size;
+         buf = (char *)realloc(buf, size);
+         loop=true;
+
+      } else if (ret == ENOENT) {
+         Dmsg0(dbglevel, "End of loop\n");
+         ppw = NULL;
+         ret = 0;
+
+      } else if (ret != 0) {
+         berrno be;
+         Dmsg2(dbglevel, "Got error for getpwent_r %d ERR=%s\n", ret, be.bstrerror());
+         ret = -1;
+         ppw = NULL;
+
+      } else {
+         Dmsg1(dbglevel, "Got user %s\n", ppw->pw_name);
+         if (ppw->pw_gid == gid) {
+            Dmsg1(dbglevel, "Add %s\n", ppw->pw_name);
+            users->append(bstrdup(ppw->pw_name));
+         }
+      }
+   } while (ppw || loop);
+   endpwent();
+   V(mutex);
+
+bail_out:
+   if (buf) {
+      free(buf);
+   }
+#endif // __ANDROID__
+#endif // HAVE_LINUX_OS
+   return ret;
+}
+
+/* Get the home directory for a user
+ * TODO: Need a Windows implementation
+ */
+int get_user_home_directory(const char *user, POOLMEM *&home)
+{
+   int ret=-1;
+
+#ifdef HAVE_LINUX_OS
+   struct passwd pw, *ppw;
+   int size = init_size;
+   char *buf = (char *)malloc(size);
+   
+again:
+   errno = 0;
+   ret =  getpwnam_r(user, &pw, buf, size, &ppw);
+   if (ret == ERANGE) {
+      if (size > 1000000) {
+         ret = -1;
+         goto bail_out;
+      }
+      Dmsg2(DT_MEMORY|dbglevel, "realloc from %d to %d\n", size, 2*size);
+      size = 2*size;
+      buf = (char *)realloc(buf, size);
+      goto again;
+   } else if (ret == EINTR) {
+      goto again;
+   } else if (ret != 0) {
+      berrno be;
+      Dmsg1(dbglevel, "Got error for getpwnam_r %s\n", be.bstrerror(ret));
+      ret = -1;
+   } else if (ppw == NULL) {
+      Dmsg0(dbglevel, "User not found\n");
+      ret = -1;
+   }  else {
+      Dmsg0(dbglevel, "Got user\n");
+      pm_strcpy(home, ppw->pw_dir);
+   }
+bail_out:
+   if (buf) {
+      free(buf);
+   }
+#endif // HAVE_LINUX_OS
+   return ret;
+}
+
+/* Get the list of the home directories for a given unix group */
+int get_home_directories(const char *grpname, alist *dirs)
+{
+   char *name;
+   POOL_MEM dir;
+   alist users(100, owned_by_alist);
+   if (get_group_members(grpname, &users) == 0) {
+      Dmsg1(dbglevel, "get_group_members() = %d\n", users.size());
+      foreach_alist(name, &users) {
+         Dmsg1(dbglevel, "Get home directory for %s\n", name);
+         if (get_user_home_directory(name, dir.addr()) == 0) {
+            dirs->append(bstrdup(dir.c_str()));
+         }
+      }
+   }
+   return (dirs->size() > 0) ? 0 : -1;
+}
+
 #ifdef TEST_PROGRAM
+
+#include "unittests.h"
+
 /* The main idea of the test is pretty simple, we have a writer and a reader, and
  * they wait a little bit to read or send data over the fifo.
  * So, for the first packets, the writer will wait, then the reader will wait
@@ -1414,12 +1847,19 @@ void *th2(void *a)
 
 int main(int argc, char **argv)
 {
+   Unittests u("bsys", true);
    job pthread_list[10000];
    int j = (argc >= 2) ? atoi(argv[1]) : 1;
    int maxfd = (argc == 3) ? atoi(argv[2]) : 0;
+   uint64_t mem = bget_os_memory();
+   Dmsg1(0, "mem:  %lld\n", mem);
+   Dmsg1(0, "max1: %lld\n", bget_max_mlock(mem));
+   Dmsg1(0, "max2: %lld\n", bget_max_mlock(-mem));
+   Dmsg1(0, "max3: %lld\n", bget_max_mlock(-100000));
+   Dmsg1(0, "max4: %lld\n", bget_max_mlock(mem+10000));
+   Dmsg1(0, "max5: %lld\n", bget_max_mlock(mem-10000));
 
    j = MIN(10000, j);
-
    lmgr_init_thread();
    set_debug_flags((char *)"h");
 
@@ -1450,6 +1890,34 @@ int main(int argc, char **argv)
    for (int i=3; i < maxfd; i++) {
       close(i);
    }
-   return 0;
+
+   /* Start with a small buffer to test if we increase it */
+   init_size=20;
+   dbglevel=0;
+   debug_level=DT_MEMORY;
+   alist a(100, owned_by_alist);
+   POOL_MEM home;
+   char *name;
+   int ret;
+   
+   ret = get_group_members("bin", &a);
+   ok(ret == 0, "get_group_members()");
+   ok(a.size() > 0, "get_group_members() size");
+
+   foreach_alist(name, &a) {
+      Pmsg1(0, "%s\n", name);
+   }
+   a.destroy();
+
+   ret = get_home_directories("bin", &a);
+   ok(ret == 0, "get_home_directories()");
+   ok(a.size() > 0, "get_home_directories(users)");
+   foreach_alist(name, &a) {
+      Pmsg1(0, "%s\n", name);
+   }
+
+   ok(get_user_home_directory("root", home.addr()) == 0, "get_user_home_directory()");
+ 
+   return report();
 }
 #endif
