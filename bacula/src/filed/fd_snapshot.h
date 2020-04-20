@@ -15,9 +15,11 @@
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
-
-   Written by Eric Bollengier 2015
 */
+
+/*
+ *    Written by Eric Bollengier, 2015
+ */
 
 #ifndef FD_SNAPSHOT_H
 #define FD_SNAPSHOT_H
