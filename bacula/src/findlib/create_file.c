@@ -365,6 +365,13 @@ int create_file(JCR *jcr, ATTR *attr, BFILE *bfd, int replace)
    case FT_DIRBEGIN:
    case FT_DIREND:
       Dmsg2(200, "Make dir mode=%o dir=%s\n", new_mode, attr->ofname);
+      if (is_win32_stream(attr->data_stream) && attr->statp.st_rdev == WIN32_ROOT_POINT) {
+         /* this is a root directory like C:\ or C:\anymountpoint,
+          * don't restore HIDDEN and SYSTEM attributes
+          */
+         new_mode &= ~S_ISVTX; // remove FILE_ATTRIBUTE_HIDDEN
+         new_mode |= S_IRWXO;  // remove FILE_ATTRIBUTE_SYSTEM
+      }
       if (!makepath(attr, attr->ofname, new_mode, parent_mode, uid, gid, 0)) {
          return CF_ERROR;
       }
