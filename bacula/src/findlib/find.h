@@ -64,6 +64,7 @@ struct s_included_file {
    struct s_included_file *next;
    uint64_t options;                  /* backup options */
    uint32_t algo;                     /* compression algorithm. 4 letters stored as an interger */
+   int Dedup_level;                   /* Dedup level */
    int Compress_level;                /* compression level */
    int len;                           /* length of fname */
    int pattern;                       /* set if wild card pattern */
@@ -97,6 +98,7 @@ struct findFOPTS {
    uint64_t flags;                    /* options in bits */
    uint32_t Compress_algo;            /* compression algorithm. 4 letters stored as an interger */
    int Compress_level;                /* compression level */
+   int Dedup_level;                   /* dedup level 0=None, 1=Global, 2=Client */
    int strip_path;                    /* strip path count */
    char VerifyOpts[MAX_FOPTS];        /* verify options */
    char AccurateOpts[MAX_FOPTS];      /* accurate mode options */
@@ -122,6 +124,7 @@ struct findINCEXE {
    dlist name_list;                   /* filename list -- holds dlistString */
    dlist plugin_list;                 /* plugin list -- holds dlistString */
    char *ignoredir;                   /* ignore directories with this file */
+   bool  list_drives;                 /* list drives on win32 (File=/) */
 };
 
 /*
@@ -148,6 +151,7 @@ struct HFSPLUS_INFO {
 struct FF_PKT {
    char *top_fname;                   /* full filename before descending */
    char *fname;                       /* full filename */
+   char *snap_fname;                  /* the path on the snapshot or fname */
    char *link;                        /* link if file linked */
    char *object_name;                 /* Object name */
    char *object;                      /* restore object */
@@ -157,12 +161,10 @@ struct FF_PKT {
    char *volume_path;                 /* volume path */
    char *snapshot_path;               /* snapshot path */
    char *top_fname_save;
-   POOLMEM *snap_fname;               /* buffer used when stripping path */
    POOLMEM *snap_top_fname;
-   bool strip_snap_path;              /* convert snapshot path or not */
    bool (*snapshot_convert_fct)(JCR *jcr, FF_PKT *ff, dlist *filelist, dlistString *node);
+   bool root_of_volume;               /* the root of a volume, like C:\ or C:\mount_point\ssd */
 
-   POOLMEM *sys_fname;                /* system filename */
    POOLMEM *fname_save;               /* save when stripping path */
    POOLMEM *link_save;                /* save when stripping path */
    POOLMEM *ignoredir_fname;          /* used to ignore directories */
@@ -201,6 +203,7 @@ struct FF_PKT {
    uint64_t flags;                    /* backup options */
    uint32_t Compress_algo;            /* compression algorithm. 4 letters stored as an interger */
    int Compress_level;                /* compression level */
+   int Dedup_level;                   /* dedup level 0=None, 1=Global, 2=Client */
    int strip_path;                    /* strip path count */
    bool cmd_plugin;                   /* set if we have a command plugin */
    bool opt_plugin;                   /* set if we have an option plugin */
