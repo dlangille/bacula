@@ -22,7 +22,7 @@
  *  Radosław Korzeniewski, MMXVI
  *  radoslaw@korzeniewski.net, radekk@inteos.pl
  *  Inteos Sp. z o.o. http://www.inteos.pl/
- *
+ * 
  */
 
 #include "bacula.h"
