@@ -44,12 +44,13 @@
 #define ENODATA  EPIPE
 #endif
 
+#if 0 /* used by commented out BSOCK::authenticated_director() */
 /* Commands sent to Director */
 static char hello[]    = "Hello %s calling\n";
 
 /* Response from Director */
 static char OKhello[]   = "1000 OK:";
-
+#endif
 
 /*
  * BSOCK default constructor - initializes object.
@@ -113,6 +114,9 @@ void BSOCK::_destroy()
    }
 };
 
+#if 0
+// This function holds some authentication code that need to be updated
+// to support TLS-PSK
 /*
  * Authenticate Director
  */
@@ -205,6 +209,7 @@ bail_out:
              dir->host(), dir->port());
    return false;
 }
+#endif
 
 /*
  * Send a message over the network. Everything is sent in one
@@ -369,7 +374,10 @@ bool BSOCK::send(int aflags)
    if (chk_dbglvl(DT_NETWORK|1900)) dump_bsock_msg(m_fd, *pout_msg_no, "SEND", rc, msglen, m_flags, save_msg, save_msglen);
    timer_start = 0;         /* clear timer */
    if (rc != pktsiz) {
-      errors++;
+      if (!is_spooling()) {
+         /* After this point, nothing will be sent to the other side */
+         errors++; /* Very likely some I/O error with the disk (like ESPACE), not a real socket error */
+      }
       if (errno == 0) {
          b_errno = EIO;
       } else {
@@ -799,7 +807,7 @@ bool BSOCK::comm_compress()
  */
 void BSOCK::close()
 {
-   Dmsg0(BSOCK_DEBUG_LVL, "BSOCK::close()\n");
+   Dmsg1(BSOCK_DEBUG_LVL, "0x%p BSOCK::close()\n", this);
    BSOCKCORE::close();
    return;
 }
