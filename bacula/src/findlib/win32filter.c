@@ -17,13 +17,15 @@
    Bacula(R) is a registered trademark of Kern Sibbald.
 */
 
+/* Written by Alain Spineux */
+
 #include "win32filter.h"
 
 #define WIN32_STREAM_HEADER_SIZE 20 /* the size of the WIN32_STREAM_ID header without the name */
 
 /* search in a record of a STREAM_WIN32_DATA for the true data
- * when found: return true, '*raw' is set at the beginning of the data
- * and *use_len is the length of data to read.
+ * when found: return have_data() true, '*raw' is set at the beginning of the
+ * data inside the record and *use_len is the length of data to read.
  * *raw_len is decremented and contains the amount of data that as not
  * been filtered yet.
  * For this STREAM_WIN32_DATA, you can call have_data() only one
@@ -37,8 +39,8 @@ bool Win32Filter::have_data(char **raw, int64_t *raw_len, int64_t *use_len)
    int64_t size;
    char *orig=*raw;
    initialized = true;
-   Dmsg1(100, "have_data(%lld)\n", *raw_len);
-   while (*raw_len > 0) {
+   Dmsg2(100, "have_data(%lld) error=%d\n", *raw_len, error);
+   while (!error && *raw_len > 0) {
       /* In this rec, we could have multiple streams of data and headers
        * to handle before to reach the data, then we must iterate
        */
@@ -69,6 +71,10 @@ bool Win32Filter::have_data(char **raw, int64_t *raw_len, int64_t *use_len)
          if (header_pos == WIN32_STREAM_HEADER_SIZE) {
             Dmsg5(100, "header pos=%d size=%lld name_size=%d len=%lld StreamId=0x%x\n", header_pos, size,
                   header.dwStreamNameSize, header.Size, header.dwStreamId);
+            if (header.dwStreamNameSize < 0 || header.Size < 0) {
+               error = true;
+               break;
+            }
             header_pos = 0;
             skip_size = header.dwStreamNameSize; /* skip the name of the stream */
             if (header.dwStreamId == WIN32_BACKUP_DATA) {
@@ -92,6 +98,8 @@ bool Win32Filter::have_data(char **raw, int64_t *raw_len, int64_t *use_len)
          return true;
       }
    }
-
+   if (error) {
+      *raw_len = 0;
+   }
    return false;
 }
