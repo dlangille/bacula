@@ -67,7 +67,7 @@ void pause_msg(const char *file, const char *func, int line, const char *msg)
 
 bool is_win32_stream(int stream)
 {
-   switch (stream) {
+   switch (stream & STREAMMASK_TYPE) {
    case STREAM_WIN32_DATA:
    case STREAM_WIN32_GZIP_DATA:
    case STREAM_WIN32_COMPRESSED_DATA:
@@ -504,7 +504,6 @@ static int encrypt_bclose(BFILE *bfd)
 /* Windows */
 int bopen(BFILE *bfd, const char *fname, uint64_t flags, mode_t mode)
 {
-   POOLMEM *win32_fname;
    POOLMEM *win32_fname_wchar;
 
    DWORD dwaccess, dwflags, dwshare;
@@ -514,10 +513,7 @@ int bopen(BFILE *bfd, const char *fname, uint64_t flags, mode_t mode)
    }
 
    /* Convert to Windows path format */
-   win32_fname = get_pool_memory(PM_FNAME);
    win32_fname_wchar = get_pool_memory(PM_FNAME);
-
-   unix_name_to_win32(&win32_fname, (char *)fname);
 
    if (bfd->cmd_plugin && plugin_bopen) {
       int rtnstat;
@@ -536,10 +532,9 @@ int bopen(BFILE *bfd, const char *fname, uint64_t flags, mode_t mode)
       } else {
          bfd->mode = BF_CLOSED;
          bfd->fid = -1;
-         Dmsg1(000, "==== plugin_bopen returned bad status=%d\n", rtnstat);
+         Dmsg1(10, "==== plugin_bopen returned bad status=%d\n", rtnstat);
       }
       free_pool_memory(win32_fname_wchar);
-      free_pool_memory(win32_fname);
       return bfd->mode == BF_CLOSED ? -1 : 1;
    }
    Dmsg0(100, "=== NO plugin\n");
@@ -562,35 +557,32 @@ int bopen(BFILE *bfd, const char *fname, uint64_t flags, mode_t mode)
          dwflags = 0;
       }
 
-      if (p_CreateFileW && p_MultiByteToWideChar) {
-         // unicode open for create write
-         Dmsg1(100, "Create CreateFileW=%ls\n", win32_fname_wchar);
-         bfd->fh = p_CreateFileW((LPCWSTR)win32_fname_wchar,
-                dwaccess,                /* Requested access */
-                0,                       /* Shared mode */
-                NULL,                    /* SecurityAttributes */
-                CREATE_ALWAYS,           /* CreationDisposition */
-                dwflags,                 /* Flags and attributes */
-                NULL);                   /* TemplateFile */
-      } else {
-         // ascii open
-         Dmsg1(100, "Create CreateFileA=%s\n", win32_fname);
-         bfd->fh = p_CreateFileA(win32_fname,
-                dwaccess,                /* Requested access */
-                0,                       /* Shared mode */
-                NULL,                    /* SecurityAttributes */
-                CREATE_ALWAYS,           /* CreationDisposition */
-                dwflags,                 /* Flags and attributes */
-                NULL);                   /* TemplateFile */
-      }
+      // unicode open for create write
+      Dmsg1(100, "Create CreateFileW=%ls\n", win32_fname_wchar);
+      bfd->fh = p_CreateFileW((LPCWSTR)win32_fname_wchar,
+             dwaccess,                /* Requested access */
+             0,                       /* Shared mode */
+             NULL,                    /* SecurityAttributes */
+             CREATE_ALWAYS,           /* CreationDisposition */
+             dwflags,                 /* Flags and attributes */
+             NULL);                   /* TemplateFile */
 
       bfd->mode = BF_WRITE;
 
    } else if (flags & O_WRONLY) {     /* Open existing for write */
       if (bfd->use_backup_api) {
          dwaccess = GENERIC_READ|GENERIC_WRITE|WRITE_OWNER|WRITE_DAC;
-         /* If deduped we do not want to open the reparse point */
-         if (bfd->fattrs & FILE_ATTRIBUTE_DEDUP) {
+
+         if (bfd->fattrs & FILE_ATTRIBUTE_DIRECTORY) {
+            /* Avoid issues with directories
+             * ERR=The process cannot access the file because it is being used by another
+             */
+            dwshare = FILE_SHARE_READ|FILE_SHARE_WRITE|FILE_SHARE_DELETE;
+         } else {
+            dwshare = 0;
+         }
+         /* If deduped, we do not want to open the reparse point */
+         if (bfd->fattrs & FILE_ATTRIBUTE_DEDUP) { /* Maybe check for bfd->reparse_point */
             dwflags = FILE_FLAG_BACKUP_SEMANTICS;
          } else {
             dwflags = FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT;
@@ -598,30 +590,18 @@ int bopen(BFILE *bfd, const char *fname, uint64_t flags, mode_t mode)
       } else {
          dwaccess = GENERIC_READ|GENERIC_WRITE;
          dwflags = 0;
+         dwshare = 0;
       }
 
-      if (p_CreateFileW && p_MultiByteToWideChar) {
-         // unicode open for open existing write
-         Dmsg1(100, "Write only CreateFileW=%s\n", win32_fname);
-         bfd->fh = p_CreateFileW((LPCWSTR)win32_fname_wchar,
-                dwaccess,                /* Requested access */
-                0,                       /* Shared mode */
-                NULL,                    /* SecurityAttributes */
-                OPEN_EXISTING,           /* CreationDisposition */
-                dwflags,                 /* Flags and attributes */
-                NULL);                   /* TemplateFile */
-      } else {
-         // ascii open
-         Dmsg1(100, "Write only CreateFileA=%s\n", win32_fname);
-         bfd->fh = p_CreateFileA(win32_fname,
-                dwaccess,                /* Requested access */
-                0,                       /* Shared mode */
-                NULL,                    /* SecurityAttributes */
-                OPEN_EXISTING,           /* CreationDisposition */
-                dwflags,                 /* Flags and attributes */
-                NULL);                   /* TemplateFile */
-
-      }
+      // unicode open for open existing write
+      Dmsg1(100, "Write only CreateFileW=%ls\n", win32_fname_wchar);
+      bfd->fh = p_CreateFileW((LPCWSTR)win32_fname_wchar,
+             dwaccess,                /* Requested access */
+             dwshare,                 /* Shared mode */
+             NULL,                    /* SecurityAttributes */
+             OPEN_EXISTING,           /* CreationDisposition */
+             dwflags,                 /* Flags and attributes */
+             NULL);                   /* TemplateFile */
 
       bfd->mode = BF_WRITE;
 
@@ -637,27 +617,15 @@ int bopen(BFILE *bfd, const char *fname, uint64_t flags, mode_t mode)
          dwshare = FILE_SHARE_READ|FILE_SHARE_WRITE;
       }
 
-      if (p_CreateFileW && p_MultiByteToWideChar) {
-         // unicode open for open existing read
-         Dmsg1(100, "Read CreateFileW=%ls\n", win32_fname_wchar);
-         bfd->fh = p_CreateFileW((LPCWSTR)win32_fname_wchar,
-                dwaccess,                /* Requested access */
-                dwshare,                 /* Share modes */
-                NULL,                    /* SecurityAttributes */
-                OPEN_EXISTING,           /* CreationDisposition */
-                dwflags,                 /* Flags and attributes */
-                NULL);                   /* TemplateFile */
-      } else {
-         // ascii open
-         Dmsg1(100, "Read CreateFileA=%s\n", win32_fname);
-         bfd->fh = p_CreateFileA(win32_fname,
-                dwaccess,                /* Requested access */
-                dwshare,                 /* Share modes */
-                NULL,                    /* SecurityAttributes */
-                OPEN_EXISTING,           /* CreationDisposition */
-                dwflags,                 /* Flags and attributes */
-                NULL);                   /* TemplateFile */
-      }
+      // unicode open for open existing read
+      Dmsg1(100, "Read CreateFileW=%ls\n", win32_fname_wchar);
+      bfd->fh = p_CreateFileW((LPCWSTR)win32_fname_wchar,
+             dwaccess,                /* Requested access */
+             dwshare,                 /* Share modes */
+             NULL,                    /* SecurityAttributes */
+             OPEN_EXISTING,           /* CreationDisposition */
+             dwflags,                 /* Flags and attributes */
+             NULL);                   /* TemplateFile */
 
       bfd->mode = BF_READ;
    }
@@ -676,7 +644,6 @@ int bopen(BFILE *bfd, const char *fname, uint64_t flags, mode_t mode)
    bfd->lpContext = NULL;
    bfd->win32filter.init();
    free_pool_memory(win32_fname_wchar);
-   free_pool_memory(win32_fname);
    bfd->fid = (bfd->mode == BF_CLOSED) ? -1 : 0;
    return bfd->mode == BF_CLOSED ? -1 : 1;
 }
@@ -880,7 +847,7 @@ boffset_t blseek(BFILE *bfd, boffset_t offset, int whence)
 /* Unix */
 void binit(BFILE *bfd)
 {
-   memset(bfd, 0, sizeof(BFILE));
+   bmemset(bfd, 0, sizeof(BFILE));
    bfd->fid = -1;
 }
 
