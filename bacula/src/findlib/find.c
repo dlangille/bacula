@@ -52,9 +52,7 @@ FF_PKT *init_find_files()
   FF_PKT *ff;
 
   ff = (FF_PKT *)bmalloc(sizeof(FF_PKT));
-  memset(ff, 0, sizeof(FF_PKT));
-
-  ff->sys_fname = get_pool_memory(PM_FNAME);
+  bmemset(ff, 0, sizeof(FF_PKT));
 
    /* Get system path and filename maximum lengths */
    path_max = pathconf(".", _PC_PATH_MAX);
@@ -143,7 +141,9 @@ find_files(JCR *jcr, FF_PKT *ff, int file_save(JCR *jcr, FF_PKT *ff_pkt, bool to
             findFOPTS *fo = (findFOPTS *)incexe->opts_list.get(j);
             /* TODO options are "simply" reset by Options block that come next
              * For example :
+             * Options { Dedup = storage }
              * Options { IgnoreCase = yes }
+             * at the end the "Dedup = storage" is ignored
              * ATTN: some plugins use AddOptions() that create extra Option block
              * Also see accept_file() below that could suffer of the same problem
              */
@@ -154,6 +154,10 @@ find_files(JCR *jcr, FF_PKT *ff, int file_save(JCR *jcr, FF_PKT *ff_pkt, bool to
             if ((ff->flags & FO_COMPRESS) && fo->Compress_algo != 0) {
                ff->Compress_algo = fo->Compress_algo;
                ff->Compress_level = fo->Compress_level;
+            }
+            if (fo->flags & FO_DEDUPLICATION) {
+               /* fix #2334 but see TODO above*/
+               ff->Dedup_level = fo->Dedup_level;
             }
             ff->strip_path = fo->strip_path;
             ff->fstypes = fo->fstype;
@@ -174,16 +178,19 @@ find_files(JCR *jcr, FF_PKT *ff, int file_save(JCR *jcr, FF_PKT *ff_pkt, bool to
                ff->VerifyOpts, ff->AccurateOpts, ff->BaseJobOpts, ff->flags);
          dlistString *node;
          foreach_dlist(node, &incexe->name_list) {
-            char *fname = node->c_str();
-            Dmsg1(dbglvl, "F %s\n", fname);
-
-            ff->top_fname = fname;
+            POOL_MEM fname(PM_FNAME);
+            fname.strcpy(node->c_str());
+#ifdef HAVE_WIN32
+            win32_normalize_fileset_path(fname.addr());
+#endif
+            Dmsg1(dbglvl, "F %s\n", fname.c_str());
+            ff->top_fname = fname.c_str();
             /* Convert the filename if needed */
             if (ff->snapshot_convert_fct) {
                ff->snapshot_convert_fct(jcr, ff, &incexe->name_list, node);
             }
 
-            if (find_one_file(jcr, ff, our_callback, ff->top_fname, (dev_t)-1, true) == 0) {
+            if (find_one_file(jcr, ff, our_callback, fname.c_str(), ff->top_fname, (dev_t)-1, true) == 0) {
                return 0;                  /* error return */
             }
 
@@ -284,6 +291,10 @@ bool accept_file(FF_PKT *ff)
       ff->flags = fo->flags;
       ff->Compress_algo = fo->Compress_algo;
       ff->Compress_level = fo->Compress_level;
+      if (fo->flags & FO_DEDUPLICATION) {
+         /* fix #2334 but see TODO in find_file() above */
+         ff->Dedup_level = fo->Dedup_level;
+      }
       ff->fstypes = fo->fstype;
       ff->drivetypes = fo->drivetype;
 
@@ -383,6 +394,7 @@ bool accept_file(FF_PKT *ff)
    /* Now apply the Exclude { } directive */
    for (i=0; i<fileset->exclude_list.size(); i++) {
       findINCEXE *incexe = (findINCEXE *)fileset->exclude_list.get(i);
+      /* FIXME: I don't think we can have wild exclusion inside a Exclude {} */
       for (j=0; j<incexe->opts_list.size(); j++) {
          findFOPTS *fo = (findFOPTS *)incexe->opts_list.get(j);
          fnm_flags = (fo->flags & FO_IGNORECASE) ? FNM_CASEFOLD : 0;
@@ -393,6 +405,11 @@ bool accept_file(FF_PKT *ff)
             }
          }
       }
+      /* FIXME: I don't think we can set Options{} inside an Exclude{}, so it is
+       * not possible to have the IGNORECASE flag. The Exclude must match the case.
+       * One solution would be to look the Include flag for the current file. A very
+       * old version of the code was using FNM_CASEFOLD by default.
+       */
       fnm_flags = (incexe->current_opts != NULL && incexe->current_opts->flags & FO_IGNORECASE)
              ? FNM_CASEFOLD : 0;
       dlistString *node;
@@ -466,7 +483,6 @@ term_find_files(FF_PKT *ff)
 {
    int hard_links;
 
-   free_pool_memory(ff->sys_fname);
    if (ff->fname_save) {
       free_pool_memory(ff->fname_save);
    }
@@ -475,9 +491,6 @@ term_find_files(FF_PKT *ff)
    }
    if (ff->ignoredir_fname) {
       free_pool_memory(ff->ignoredir_fname);
-   }
-   if (ff->snap_fname) {
-      free_pool_memory(ff->snap_fname);
    }
    if (ff->snap_top_fname) {
       free_pool_memory(ff->snap_top_fname);
