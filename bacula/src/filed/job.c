@@ -20,28 +20,32 @@
  *  Bacula File Daemon Job processing
  *
  *    Written by Kern Sibbald, October MM
+ *
  */
 
 #include "bacula.h"
 #include "filed.h"
 #include "ch.h"
+#include "lib/cmd_parser.h"
 #ifdef WIN32_VSS
 #include "vss.h"
 static pthread_mutex_t vss_mutex = PTHREAD_MUTEX_INITIALIZER;
 #endif
 
 /* Globals */
+extern int beef;
 bool win32decomp = false;
 bool no_win32_write_errors = false;
 
 /* Static variables */
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
+
 #ifdef HAVE_WIN32
 const bool have_win32 = true;
 #else
 const bool have_win32 = false;
-#endif
+#endif 
 
 #ifdef HAVE_ACL
 const bool have_acl = true;
@@ -90,10 +94,14 @@ static int set_options(findFOPTS *fo, const char *opts);
 static void set_storage_auth_key(JCR *jcr, char *key);
 static int sm_dump_cmd(JCR *jcr);
 static int proxy_cmd(JCR *jcr);
+static int caps_cmd(JCR *jcr);
 static int fd_testnetwork_cmd(JCR *jcr);
+static int pluginfeatures_cmd(JCR *jcr);
+static int restorefilelist_cmd(JCR *jcr);
 #ifdef DEVELOPER
 static int exit_cmd(JCR *jcr);
 #endif
+static int query_cmd(JCR *jcr);
 
 /* Exported functions */
 
@@ -131,8 +139,15 @@ struct s_cmds cmds[] = {
    {"sm_dump",      sm_dump_cmd, 0},
    {"stop",         cancel_cmd,  ACCESS_REMOTE},
    {"proxy",        proxy_cmd,   ACCESS_REMOTE},
+   {"caps",         caps_cmd,    ACCESS_MONITOR|ACCESS_REMOTE},
    {"testnetwork",  fd_testnetwork_cmd, 0},
+#if BEEF
+   {"setperm",      setperm_cmd, 0},            /* ***BEEF*** */
+#endif
+   {"PluginFeatures", pluginfeatures_cmd, 0},
+   {"restorefilelist", restorefilelist_cmd, 0},
    {"statistics",   collect_cmd, 0},
+   {"query",        query_cmd,   0},
 #ifdef DEVELOPER
    {"exit",         exit_cmd, 0},
 #endif
@@ -232,6 +247,45 @@ static bool access_ok(struct s_cmds *cmd, DIRRES* dir)
    return false;
 }
 
+JCR *new_fd_jcr()
+{
+   JCR *jcr;
+   const char jobname[12] = "*Director*";
+   jcr = new_jcr(sizeof(JCR), filed_free_jcr); /* create JCR */
+#ifdef DEVELOPER
+   /* TODO remove the ifdef as soon as the feature has been well tested */
+   jcr->set_killable(true);
+#endif /*DEVELOPER*/
+   jcr->sd_calls_client_bsock = NULL;
+   jcr->sd_calls_client = false;
+   jcr->ff = init_find_files();
+   jcr->start_time = time(NULL);
+   jcr->RunScripts = New(alist(10, not_owned_by_alist));
+   jcr->last_fname = get_pool_memory(PM_FNAME);
+   jcr->last_fname[0] = 0;
+   jcr->client_name = get_memory(strlen(my_name) + 1);
+   pm_strcpy(jcr->client_name, my_name);
+   bstrncpy(jcr->Job, jobname, sizeof(jobname));  /* dummy */
+   jcr->crypto.pki_sign = me->pki_sign;
+   jcr->crypto.pki_encrypt = me->pki_encrypt;
+   jcr->crypto.pki_keypair = me->pki_keypair;
+   jcr->crypto.pki_signers = me->pki_signers;
+   jcr->crypto.pki_recipients = me->pki_recipients;
+
+   /* Initialize dedup variables */
+   dedup_init_jcr(jcr);
+
+   /* Initialize SD start condition variable */
+   int errstat = pthread_cond_init(&jcr->job_start_wait, NULL);
+   if (errstat != 0) {
+      berrno be;
+      Jmsg1(jcr, M_FATAL, 0, _("Unable to init job cond variable: ERR=%s\n"), be.bstrerror(errstat));
+      free_jcr(jcr);
+      jcr = NULL;
+   }
+   return jcr;
+}
+
 /*
  * Accept requests from a Director
  *
@@ -271,37 +325,15 @@ static void *handle_director_request(BSOCK *dir)
    bool found, quit;
    bool first = true;
    JCR *jcr;
-   const char jobname[12] = "*Director*";
    suspendres_t suspend;
-
    prevent_os_suspensions(suspend);   /* do not suspend during backup/restore */
-   jcr = new_jcr(sizeof(JCR), filed_free_jcr); /* create JCR */
-   jcr->sd_calls_client_bsock = NULL;
-   jcr->sd_calls_client = false;
-   jcr->dir_bsock = dir;
-   jcr->ff = init_find_files();
-   jcr->start_time = time(NULL);
-   jcr->RunScripts = New(alist(10, not_owned_by_alist));
-   jcr->last_fname = get_pool_memory(PM_FNAME);
-   jcr->last_fname[0] = 0;
-   jcr->client_name = get_memory(strlen(my_name) + 1);
-   pm_strcpy(jcr->client_name, my_name);
-   bstrncpy(jcr->Job, jobname, sizeof(jobname));  /* dummy */
-   jcr->crypto.pki_sign = me->pki_sign;
-   jcr->crypto.pki_encrypt = me->pki_encrypt;
-   jcr->crypto.pki_keypair = me->pki_keypair;
-   jcr->crypto.pki_signers = me->pki_signers;
-   jcr->crypto.pki_recipients = me->pki_recipients;
 
-   dir->set_jcr(jcr);
-   jcr->set_killable(true);    /* allow dir to kill/cancel job */
-   /* Initialize SD start condition variable */
-   int errstat = pthread_cond_init(&jcr->job_start_wait, NULL);
-   if (errstat != 0) {
-      berrno be;
-      Jmsg1(jcr, M_FATAL, 0, _("Unable to init job cond variable: ERR=%s\n"), be.bstrerror(errstat));
+   jcr = new_fd_jcr();
+   if (!jcr) {
       goto bail_out;
    }
+   jcr->dir_bsock = dir;
+   dir->set_jcr(jcr);
    enable_backup_privileges(NULL, 1 /* ignore_errors */);
 
    for (quit=false; !quit;) {
@@ -340,10 +372,10 @@ static void *handle_director_request(BSOCK *dir)
                 quit = true;
                 break;
             }
-            Dmsg2(100, "Executing %s Dir %s command.\n", cmds[i].cmd, dir->msg);
+            Dmsg1(100, "Executing Dir %s command.\n", dir->msg);
             if (!cmds[i].func(jcr)) {         /* do command */
                quit = true;         /* error or fully terminated, get out */
-               Dmsg1(100, "Quit command loop. Canceled=%d\n", job_canceled(jcr));
+               Dmsg2(100, "Quit command loop. Canceled=%d fct=%d\n", job_canceled(jcr), i);
             }
             break;
          }
@@ -514,74 +546,206 @@ bail_out:
    return NULL;
 }
 
+/*
+ * Test the Network between FD/SD
+ */
+static int fd_testnetwork(JCR *jcr, BSOCK *bs, int64_t bytes, int64_t nbrtt,
+                          btime_t *avgrtt, int64_t *wspeed, int64_t *rspeed)
+{
+   bool can_compress;
+   BSOCK *sd = jcr->store_bsock;
+   int64_t nb2=0, rtt=0, minrtt=0, maxrtt=0;
+   int32_t ok=1;
+   char ed1[50];
+   btime_t start, end, srtt, ertt, trtt;
+
+   if (!sd) {
+      return false;
+   }
+
+   /* We disable the comline compression, else all numbers will be wrong */
+   can_compress = sd->can_compress();
+
+   sd->fsend("testnetwork bytes=%lld rtt=%lld bw=%lld\n", bytes, nbrtt, sd->get_bandwidth());
+   sd->clear_compress();
+
+   if (bytes) {
+      /* In the first step, we send X bytes to the SD */
+      memset(sd->msg, 0xAA, sizeof_pool_memory(sd->msg));
+      sd->msglen = sizeof_pool_memory(sd->msg);
+
+      start = get_current_btime();
+      for (nb2 = bytes ; nb2 > 0 && ok > 0 ; nb2 -= sd->msglen) {
+         if (nb2 < sd->msglen) {
+            sd->msglen = nb2;
+         }
+         ok = sd->send();
+      }
+      sd->signal(BNET_EOD);
+      end = get_current_btime() + 1;
+
+      if (ok <= 0) {
+         goto bail_out;
+      }
+
+      *wspeed = bytes * 1000000 / (end - start);
+
+      if (bs) {
+         bs->fsend("2000 OK bytes=%lld duration=%lldms write_speed=%sB/s\n",
+                   bytes, end/1000 - start/1000,
+                   edit_uint64_with_suffix(*wspeed, ed1));
+      }
+
+      /* Now we receive X bytes from the SD */
+      start = get_current_btime();
+      for (nb2 = 0; sd->recv() > 0; nb2 += sd->msglen) { }
+      end = get_current_btime() + 1;
+
+      *rspeed = nb2 * 1000000 / (end - start);
+
+      if (bs) {
+         bs->fsend("2000 OK bytes=%lld duration=%lldms read_speed=%sB/s\n",
+                   nb2, end/1000 - start/1000,
+                   edit_uint64_with_suffix(*rspeed, ed1));
+      }
+   }
+
+   if (nbrtt > 0) {
+      /* In the 2rd step, we send few bytes to the SD and we wait for the return
+       * We do this a couple of times and we determine the latency
+       */
+      memset(sd->msg, 0xAA, 8);
+      sd->msglen = 8;
+
+      start = get_current_btime();
+      for (nb2 = nbrtt ; nb2 > 0 && ok > 0; nb2--) {
+         srtt = get_current_btime();
+         ok = sd->send();
+         if (ok > 0) {
+            ok = sd->recv();
+
+            /* Compute RTT */
+            ertt = get_current_btime();
+            trtt = ertt - srtt; /* Current RTT */
+            rtt += trtt;        /* Total AVG RTT */
+            maxrtt = MAX(trtt, maxrtt); /* Max */
+            if (minrtt == 0) {          /* Min */
+               minrtt = trtt;
+            } else {
+               minrtt = MIN(trtt, minrtt);
+            }
+         }
+      }
+      end = get_current_btime() + 1;
+      sd->signal(BNET_EOD);
+
+      *avgrtt = rtt / nbrtt;
+      if (bs) {
+         bs->fsend("2000 OK packets=%lld duration=%lldms rtt=%.2fms min=%.2fms max=%.2fms\n",
+                   nbrtt, end/1000 - start/1000,
+                   (float)*avgrtt / 1000, /* Average */
+                   (float)minrtt  / 1000,
+                   (float)maxrtt  / 1000
+            );
+      }
+   }
+   if (bs) {
+      bs->signal(BNET_CMD_OK);
+   }
+
+bail_out:
+   if (can_compress) {
+      sd->set_compress();
+   }
+   if (ok <= 0 && bs) {
+      bs->fsend("2999 network test failed ERR=%s\n", sd->errmsg);
+      bs->signal(BNET_CMD_FAILED);
+   }
+
+   return ok > 0;
+}
 
 /*
  * Test the Network between FD/SD
  */
 static int fd_testnetwork_cmd(JCR *jcr)
 {
-   bool can_compress, ok=true;
    BSOCK *sd = jcr->store_bsock;
-   int64_t nb=0, nb2=0;
-   char ed1[50];
-   btime_t start, end;
+   btime_t avgrtt=0;
+   int64_t nb=0, nbrtt=0, wspeed=0, rspeed=0;
 
    if (!sd || !jcr->dir_bsock) {
       return 1;
    }
-   if (sscanf(jcr->dir_bsock->msg, "testnetwork bytes=%lld", &nb) != 1 || nb <= 0) {
-      sd->fsend("2999 testnetwork command error\n");
+
+   if (scan_string(jcr->dir_bsock->msg, "testnetwork bytes=%lld rtt=%lld", &nb, &nbrtt) != 2) {
+      if (scan_string(jcr->dir_bsock->msg, "testnetwork bytes=%lld", &nb) != 1) {
+         sd->fsend("2999 testnetwork command error\n");
+         return 1;
+      }
+   }
+
+   fd_testnetwork(jcr, jcr->dir_bsock, nb, nbrtt, &avgrtt, &wspeed, &rspeed);
+   return 1;
+}
+
+static int caps_cmd(JCR *jcr)
+{
+   send_fdcaps(jcr, jcr->dir_bsock);
+   jcr->dir_bsock->signal(BNET_CMD_OK);
+   return 1;
+}
+
+/* Read the files to restore up to EOD */
+static int restorefilelist_cmd(JCR *jcr)
+{
+   BSOCK *dir = jcr->dir_bsock;
+   int lstat_pos, chksum_pos, pidx;
+   uint16_t delta_seq=0;
+   char plugin[128];
+
+   if (!dir) {
       return 1;
    }
+   if (sscanf(dir->msg, "restorefilelist plugin=%127s", plugin) != 1) {
+      dir->fsend("2999 restorefilelist command error\n");
+      return 1;
+   }
+   /* TODO: Get the plugin where to send the information */
+   pidx = plugin_get_idx(jcr, plugin);
+   while (dir->recv() > 0) {
+      lstat_pos = strlen(dir->msg) + 1;
+      if (lstat_pos < dir->msglen) {
+         chksum_pos = lstat_pos + strlen(dir->msg + lstat_pos) + 1;
 
-   /* We disable the comline compression, else all numbers will be wrong */
-   can_compress = sd->can_compress();
-
-   sd->fsend("testnetwork bytes=%lld\n", nb);
-   sd->clear_compress();
-
-   /* In the first step, we send X bytes to the SD */
-   memset(sd->msg, 0xAA, sizeof_pool_memory(sd->msg));
-   sd->msglen = sizeof_pool_memory(sd->msg);
-
-   start = get_current_btime();
-   for (nb2 = nb ; nb2 > 0 && ok ; nb2 -= sd->msglen) {
-      if (nb2 < sd->msglen) {
-         sd->msglen = nb2;
+         if (chksum_pos >= dir->msglen) {
+            chksum_pos = lstat_pos - 1;    /* tweak: no checksum, point to the last \0 */
+            delta_seq = str_to_int32(dir->msg +
+                                     chksum_pos +
+                                     strlen(dir->msg + chksum_pos) + 1);
+         }
+         plugin_send_restorefilelist(jcr, pidx,
+                                     dir->msg,               /* Path */
+                                     dir->msg + lstat_pos,   /* LStat */
+                                     dir->msg + chksum_pos,  /* CheckSum */
+                                     delta_seq);             /* Delta Sequence */
       }
-      ok = sd->send();
    }
-   sd->signal(BNET_EOD);
-   end = get_current_btime() + 1;
+   /* Last call */
+   plugin_send_restorefilelist(jcr, pidx, NULL,NULL,NULL,0);
+   return 1;
+}
 
-   if (!ok) {
-      goto bail_out;
+static int pluginfeatures_cmd(JCR *jcr)
+{
+   bFeature *f;
+   alist lst(10, owned_by_alist);
+
+   plugin_get_features(jcr, &lst);
+   foreach_alist(f, &lst) {
+      jcr->dir_bsock->fsend("2000 plugin=%s features=%s\n", f->plugin, f->features);
    }
-
-   jcr->dir_bsock->fsend("2000 OK bytes=%lld duration=%lldms write_speed=%sB/s\n",
-                         nb, end/1000 - start/1000,
-                         edit_uint64_with_suffix(nb * 1000000 / (end - start), ed1));
-
-   /* Now we receive X bytes from the SD */
-   start = get_current_btime();
-   for (nb2 = 0; sd->recv() > 0; nb2 += sd->msglen) { }
-   end = get_current_btime() + 1;
-
-   jcr->dir_bsock->fsend("2000 OK bytes=%lld duration=%lldms read_speed=%sB/s\n",
-                         nb2, end/1000 - start/1000,
-                         edit_uint64_with_suffix(nb2 * 1000000 / (end - start), ed1));
-
-   jcr->dir_bsock->signal(BNET_CMD_OK);
-
-bail_out:
-   if (can_compress) {
-      sd->set_compress();
-   }
-   if (!ok) {
-      jcr->dir_bsock->fsend("2999 network test failed ERR=%s\n", sd->errmsg);
-      jcr->dir_bsock->signal(BNET_CMD_FAILED);
-   }
-
+   jcr->dir_bsock->signal(BNET_EOD);
    return 1;
 }
 
@@ -589,16 +753,26 @@ static int proxy_cmd(JCR *jcr)
 {
    bool OK=true, fdcalled = false;
    BSOCK *cons_bsock;
-   CONSRES *cons = jcr->director->console;
    int v, maxfd;
    fd_set fdset;
+   const char *name;
    struct timeval tv;
 
+   /* TODO: Check what is used and when */
+   DIRINFO *dir;
+   CONSRES *cons = jcr->director->console;
    if (!cons) {
       cons = (CONSRES *)GetNextRes(R_CONSOLE, NULL);
    }
+   if (!cons) {
+      dir = &jcr->director->dirinfo;
+      name = jcr->director->hdr.name;
+   } else {
+      dir = &cons->dirinfo;
+      name = cons->hdr.name;
+   }
    /* Here, dir_bsock is not really the director, this is a console */
-   cons_bsock = connect_director(jcr, cons);
+   cons_bsock = connect_director(jcr, name, dir, CONNECT_CONSOLE_MODE);
    if (!cons_bsock) {
       jcr->dir_bsock->signal(BNET_ERROR_MSG);
       jcr->dir_bsock->fsend("2999 proxy error. ERR=%s\n", jcr->errmsg);
@@ -630,15 +804,20 @@ static int proxy_cmd(JCR *jcr)
       case -1:
          Dmsg1(0, "Bad call to select ERR=%d\n", errno);
          OK = false;
+         break;
       default:
 #ifdef HAVE_TLS
-         if (cons_bsock->tls && !tls_bsock_probe(cons_bsock)) {
-            /* maybe a session key negotiation waked up the socket */
-            FD_CLR(cons_bsock->m_fd, &fdset);
+         if (FD_ISSET(cons_bsock->m_fd, &fdset)) {
+            if (cons_bsock->tls && !tls_bsock_probe(cons_bsock)) {
+               /* maybe a session key negotiation waked up the socket */
+               FD_CLR(cons_bsock->m_fd, &fdset);
+            }
          }
-         if (jcr->dir_bsock->tls && !tls_bsock_probe(jcr->dir_bsock)) {
-            /* maybe a session key negotiation waked up the socket */
-            FD_CLR(jcr->dir_bsock->m_fd, &fdset);
+         if (FD_ISSET(jcr->dir_bsock->m_fd, &fdset)) {
+            if (jcr->dir_bsock->tls && !tls_bsock_probe(jcr->dir_bsock)) {
+               /* maybe a session key negotiation waked up the socket */
+               FD_CLR(jcr->dir_bsock->m_fd, &fdset);
+            }
          }
 #endif
          break;
@@ -707,18 +886,20 @@ static int exit_cmd(JCR *jcr)
    return 0;
 }
 #endif
-
-/*
+ 
+/**
  * Hello from Director he must identify himself and provide his
  *  password.
  */
 static int hello_cmd(JCR *jcr)
 {
    Dmsg0(120, "Calling Authenticate\n");
-   if (!validate_dir_hello(jcr)) {
+
+   FDAuthenticateDIR auth(jcr);
+   if (!auth.validate_dir_hello()) {
       return 0;
    }
-   if (!authenticate_director(jcr)) {
+   if (!auth.authenticate_director()) {
       return 0;
    }
    Dmsg0(120, "OK Authenticate\n");
@@ -880,25 +1061,6 @@ static int setdebug_cmd(JCR *jcr)
              get_blowup(), options, tags);
 }
 
-
-static int estimate_cmd(JCR *jcr)
-{
-   BSOCK *dir = jcr->dir_bsock;
-   char ed1[50], ed2[50];
-
-   if (sscanf(dir->msg, estimatecmd, &jcr->listing) != 1) {
-      pm_strcpy(jcr->errmsg, dir->msg);
-      Jmsg(jcr, M_FATAL, 0, _("Bad estimate command: %s"), jcr->errmsg);
-      dir->fsend(_("2992 Bad estimate command.\n"));
-      return 0;
-   }
-   make_estimate(jcr);
-   dir->fsend(OKest, edit_uint64_with_commas(jcr->num_files_examined, ed1),
-      edit_uint64_with_commas(jcr->JobBytes, ed2));
-   dir->signal(BNET_EOD);
-   return 1;
-}
-
 /**
  * Get JobId and Storage Daemon Authorization key from Director
  */
@@ -925,7 +1087,7 @@ static int job_cmd(JCR *jcr)
 #ifdef HAVE_WIN32
    return dir->fsend(OKjob, VERSION, LSMDATE, win_os, DISTNAME, DISTVER);
 #else
-    return dir->fsend(OKjob, VERSION, LSMDATE, HOST_OS, DISTNAME, DISTVER);
+   return dir->fsend(OKjob, VERSION, LSMDATE, HOST_OS, DISTNAME, DISTVER);
 #endif
 }
 
@@ -1072,7 +1234,7 @@ static int restore_object_cmd(JCR *jcr)
    int32_t FileIndex;
    restore_object_pkt rop;
 
-   memset(&rop, 0, sizeof(rop));
+   bmemset(&rop, 0, sizeof(rop));
    rop.pkt_size = sizeof(rop);
    rop.pkt_end = sizeof(rop);
 
@@ -1181,7 +1343,7 @@ static bool init_fileset(JCR *jcr)
       return false;
    }
    fileset = (findFILESET *)malloc(sizeof(findFILESET));
-   memset(fileset, 0, sizeof(findFILESET));
+   bmemset(fileset, 0, sizeof(findFILESET));
    ff->fileset = fileset;
    fileset->state = state_none;
    fileset->include_list.init(1, true);
@@ -1198,7 +1360,7 @@ static void append_file(JCR *jcr, findINCEXE *incexe,
        * user is requesting to include all local drives
        */
       if (strcmp(buf, "/") == 0) {
-         //list_drives(&incexe->name_list);
+         incexe->list_drives = true;
 
       } else {
          incexe->name_list.append(new_dlistString(buf));
@@ -1210,6 +1372,7 @@ static void append_file(JCR *jcr, findINCEXE *incexe,
    } else if (me->plugin_directory) {
       generate_plugin_event(jcr, bEventPluginCommand, (void *)buf);
       incexe->plugin_list.append(new_dlistString(buf));
+
    } else {
       Jmsg(jcr, M_FATAL, 0,
            _("Plugin Directory not defined. Cannot use plugin: \"%s\"\n"),
@@ -1308,7 +1471,7 @@ findINCEXE *new_exclude(JCR *jcr)
 
    /* New exclude */
    fileset->incexe = (findINCEXE *)malloc(sizeof(findINCEXE));
-   memset(fileset->incexe, 0, sizeof(findINCEXE));
+   bmemset(fileset->incexe, 0, sizeof(findINCEXE));
    fileset->incexe->opts_list.init(1, true);
    fileset->incexe->name_list.init();
    fileset->incexe->plugin_list.init();
@@ -1325,7 +1488,7 @@ findINCEXE *new_include(JCR *jcr)
 
    /* New include */
    fileset->incexe = (findINCEXE *)malloc(sizeof(findINCEXE));
-   memset(fileset->incexe, 0, sizeof(findINCEXE));
+   bmemset(fileset->incexe, 0, sizeof(findINCEXE));
    fileset->incexe->opts_list.init(1, true);
    fileset->incexe->name_list.init(); /* for dlist;  was 1,true for alist */
    fileset->incexe->plugin_list.init();
@@ -1344,7 +1507,7 @@ findINCEXE *new_preinclude(JCR *jcr)
 
    /* New pre-include */
    fileset->incexe = (findINCEXE *)malloc(sizeof(findINCEXE));
-   memset(fileset->incexe, 0, sizeof(findINCEXE));
+   bmemset(fileset->incexe, 0, sizeof(findINCEXE));
    fileset->incexe->opts_list.init(1, true);
    fileset->incexe->name_list.init(); /* for dlist;  was 1,true for alist */
    fileset->incexe->plugin_list.init();
@@ -1360,7 +1523,7 @@ static findFOPTS *start_options(FF_PKT *ff)
    if (state != state_options) {
       ff->fileset->state = state_options;
       findFOPTS *fo = (findFOPTS *)malloc(sizeof(findFOPTS));
-      memset(fo, 0, sizeof(findFOPTS));
+      bmemset(fo, 0, sizeof(findFOPTS));
       fo->regex.init(1, true);
       fo->regexdir.init(1, true);
       fo->regexfile.init(1, true);
@@ -1386,7 +1549,7 @@ void new_options(JCR *jcr, findINCEXE *incexe)
       incexe = jcr->ff->fileset->incexe;
    }
    findFOPTS *fo = (findFOPTS *)malloc(sizeof(findFOPTS));
-   memset(fo, 0, sizeof(findFOPTS));
+   bmemset(fo, 0, sizeof(findFOPTS));
    fo->regex.init(1, true);
    fo->regexdir.init(1, true);
    fo->regexfile.init(1, true);
@@ -1464,6 +1627,7 @@ int add_wild_to_fileset(JCR *jcr, const char *item, int type)
  */
 int add_options_to_fileset(JCR *jcr, const char *item)
 {
+   /* TODO: We probably want to add the option to the current Options block */
    findFOPTS *current_opts = start_options(jcr->ff);
 
    set_options(current_opts, item);
@@ -1696,6 +1860,9 @@ static int set_options(findFOPTS *fo, const char *opts)
    char strip[100];
 
 // Commented out as it is not backward compatible - KES
+#ifdef HAVE_WIN32
+//   fo->flags |= FO_IGNORECASE; /* always ignorecase under windows */
+#endif
 
    for (p=opts; *p; p++) {
       switch (*p) {
@@ -1835,6 +2002,14 @@ static int set_options(findFOPTS *fo, const char *opts)
             fo->Compress_level = 1; /* not used with LZO */
          }
          break;
+      case 'd':                 /* Deduplication 0=none 1=Storage 2=Local */
+         p++;                   /* skip d */
+         if (*p >= '0' && *p <= '9') {
+            fo->flags |= FO_DEDUPLICATION; // fo->Dedup_level has been initialized
+            fo->Dedup_level = *p - '0';
+            Dmsg1(DT_DEDUP|310, "set_options fo->flags |= FO_DEDUPLICATION level=%d\n", fo->Dedup_level);
+         }
+         break;
       case 'K':
          fo->flags |= FO_NOATIME;
          break;
@@ -1855,6 +2030,388 @@ static int set_options(findFOPTS *fo, const char *opts)
    return state_options;
 }
 
+
+#ifdef HAVE_WIN32
+
+/* TODO: merge find.c ? */
+static bool is_excluded(findFILESET *fileset, char *path)
+{
+   int fnm_flags=FNM_CASEFOLD;  /* FIXME: Not exactly accurate, the IGNORECASE option is not available... */
+   int fnmode=0;
+
+   /* Now apply the Exclude { } directive */
+   for (int i=0; i<fileset->exclude_list.size(); i++) {
+      findINCEXE *incexe = (findINCEXE *)fileset->exclude_list.get(i);
+      dlistString *node;
+
+      foreach_dlist(node, &incexe->name_list) {
+         char *fname = node->c_str();
+         Dmsg2(DT_VOLUME|50, "Testing %s against %s\n", path, fname);
+         if (fnmatch(fname, path, fnmode|fnm_flags) == 0) {
+            Dmsg1(050, "Reject wild2: %s\n", path);
+            return true;
+         }
+         /* On windows, the path separator is a bit complex to handle. For
+          * example, in fnmatch(), \ is written as \\\\ in the config file / is
+          * different from \ So we have our own little strcmp for filenames
+          */
+         char *p;
+         bool same=true;
+         for (p = path; *p && *fname && same ; p++, fname++) {
+            if (!((IsPathSeparator(*p) && IsPathSeparator(*fname)) ||
+                  (tolower(*p) == tolower(*fname)))) {
+               same = false;           /* Stop after the first one */
+            }
+         }
+
+         if (*p == 0 && *fname == 0 && same) {
+            /* End of the for loop, strings looks to be identical */
+            Dmsg1(DT_VOLUME|50, "Reject: %s\n", path);
+            return true;
+         }
+
+         /* Looks to be the same string, but with a trailing slash */
+         if (fname[0] && IsPathSeparator(fname[0]) && fname[1] == '\0'
+             && p[0] == '\0')
+         {
+            Dmsg1(DT_VOLUME|50, "Reject: %s\n", path);
+            return true;
+         }
+      }
+   }
+   return false;
+}
+
+/* TODO: merge find.c ? */
+static findINCEXE *is_included(findFILESET *fileset, char *path)
+{
+   int fnm_flags=FNM_CASEFOLD;  /* FIXME: Not exactly accurate on windows */
+   int fnmode=0;
+
+   /* Now apply the Exclude { } directive */
+   for (int i=0; i<fileset->include_list.size(); i++) {
+      findINCEXE *incexe = (findINCEXE *)fileset->include_list.get(i);
+      dlistString *node;
+      foreach_dlist(node, &incexe->name_list) {
+         char *fname = node->c_str();
+         Dmsg2(DT_VOLUME|50, "Testing %s against %s\n", path, fname);
+         if (fnmatch(fname, path, fnmode|fnm_flags) == 0) {
+            Dmsg1(050, "Found wild2: %s\n", path);
+            return incexe;
+         }
+         /* On windows, the path separator is a bit complex to handle. For
+          * example, in fnmatch(), \ is written as \\\\ in the config file / is
+          * different from \ So we have our own little strcmp for filenames
+          */
+         char *p;
+         bool same=true;
+         for (p = path; *p && *fname && same ; p++, fname++) {
+            if (!((IsPathSeparator(*p) && IsPathSeparator(*fname)) ||
+                  (tolower(*p) == tolower(*fname)))) {
+               same = false;           /* Stop after the first one */
+            }
+         }
+
+         if (*p == 0 && *fname == 0 && same) {
+            /* End of the for loop, strings looks to be identical */
+            Dmsg1(DT_VOLUME|50, "Found: %s\n", path);
+            return incexe;
+         }
+
+         /* Looks to be the same string, but with a trailing slash */
+         if (fname[0] && IsPathSeparator(fname[0]) && fname[1] == '\0'
+             && p[0] == '\0')
+         {
+            Dmsg1(DT_VOLUME|50, "Found: %s\n", path);
+            return incexe;
+         }
+      }
+   }
+   return NULL;
+}
+
+/* Here we include all drives that are listed in your mtab structure
+ * "/" backs up everyting with a drive letter.
+ * "OneFS = No" would then go down mounted file systems.
+ */
+static void list_drives(findFILESET *fileset, dlist *name_list, MTab *mtab)
+{
+   POOLMEM   *buf;
+   MTabEntry *elt;
+
+   buf = get_pool_memory(PM_FNAME);
+
+   foreach_rblist(elt, mtab->entries) {
+      /* Find if the entry is directly mounted as a drive letter */
+      /* Discard network map and cdrom */
+      if (elt->getDriveType() != DRIVE_FIXED) {
+         continue;
+      }
+
+      WCHAR *dir;
+      /* We determine the drive letter of the volume if any */
+      for (dir = elt->first(); dir ; dir = elt->next(dir)) {
+         if (wcslen(dir) == 3 && dir[1] == L':') {
+            break;
+         }
+      }
+      if (dir && wchar_path_2_wutf8(&buf, dir) > 0) {
+
+         /* Path from MTAb are using \ and the catalog
+          * contains c:\subdir\path/ instead of c:/subdir/path/
+          * so we do a quick fix...
+          */
+         for(char *p = buf; *p ; p++) {
+            if (*p == '\\') {
+               *p = '/';
+            }
+         }
+         if (!is_excluded(fileset, buf)) {
+            Dmsg1(DT_VOLUME|50,"Adding drive in include list %s\n",buf);
+            name_list->append(new_dlistString(buf));
+         }
+      }
+   }
+   free_pool_memory(buf);
+}
+#endif
+
+/*
+ * For VSS we need to know which windows drives
+ * are used, because we create a snapshot of all used
+ * drives before operation
+ *
+ */
+static int
+get_win32_driveletters(JCR *jcr, FF_PKT *ff, char* szDrives)
+{
+   int nCount = 0;
+
+#ifdef HAVE_WIN32
+   findFILESET *fileset = ff->fileset;
+   findINCEXE *alldrives = NULL, *inc = NULL;
+   uint64_t    flags = 0;
+   char drive[4];
+
+   MTab mtab;
+   mtab.get();                  /* read the disk structure */
+
+   /* We check if we need to complete the fileset with File=/ */
+   if (fileset) {
+      for (int i=0; i<fileset->include_list.size(); i++) {
+         findFOPTS  *fo;
+         findINCEXE *incexe = (findINCEXE *)fileset->include_list.get(i);
+         foreach_alist(fo, &incexe->opts_list) {
+            flags |= fo->flags; /* We are looking for FO_MULTIFS, list drives and recurse */
+         }
+         if (incexe->list_drives) {
+            /* the fileset will be populated with all fixed drives,
+             * sub volumes are added in the second part if needed
+             */
+            alldrives = incexe; /* Keep it if MULTIFS is set */
+            list_drives(fileset, &incexe->name_list, &mtab);
+         }
+      }
+   }
+
+   if (szDrives != NULL) {
+      /* Keep this part for compatibility reasons */
+      strcpy(drive, "c:\\");
+      for (int i=0; szDrives[i] ; i++) {
+         drive[0] = szDrives[i];
+         if (mtab.addInSnapshotSet(drive)) { /* When all volumes are selected, we can stop */
+            Dmsg0(DT_VOLUME|50, "All Volumes are marked, stopping the loop here\n");
+            goto all_included;
+         }
+      }
+   }
+
+   if (fileset) {
+      dlistString *node;
+
+      for (int i=0; i<fileset->include_list.size(); i++) {
+         findINCEXE *incexe = (findINCEXE *)fileset->include_list.get(i);
+
+         /* look through all files */
+         foreach_dlist(node, &incexe->name_list) {
+            char *fname = node->c_str();
+            if (mtab.addInSnapshotSet(fname)) {
+               /* When all volumes are selected, we can stop */
+               Dmsg0(DT_VOLUME|50, "All Volumes are marked, stopping the loop here\n");
+               goto all_included;
+            }
+         }
+      }
+
+      /* TODO: it needs to be done Include by Include, but in the worst case,
+       * we take too much snapshots...
+       */
+      if (flags & FO_MULTIFS) {
+         /* Need to add subdirectories */
+         POOLMEM   *fn = get_pool_memory(PM_FNAME);
+         MTabEntry *elt, *elt2;
+         int len;
+
+         Dmsg0(DT_VOLUME|50, "OneFS is set, looking for remaining volumes\n");
+
+         foreach_rblist(elt, mtab.entries) {
+            if (elt->in_SnapshotSet) {
+               continue;         /* Already in */
+            }
+            /* A volume can have multiple mount points */
+            for (wchar_t *p = elt->first() ; p && *p ; p = elt->next(p)) {
+               wchar_path_2_wutf8(&fn, p);
+
+               Dmsg1(DT_VOLUME|50, "Looking for path %s\n", fn);
+
+               /* First case, root drive (c:/, e:/, d:/), not a submount point */
+               len = strlen(fn);
+               if (len <= 3) {
+                  Dmsg1(DT_VOLUME|50, "Skiping %s\n", fn);
+                  continue;
+               }
+
+               /* First thing is to look in the exclude list to see if this directory
+                * is explicitly excluded
+                */
+               if (is_excluded(fileset, fn)) {
+                  Dmsg1(DT_VOLUME|50, "Looks to be excluded %s\n", fn);
+                  continue;
+               }
+
+               /* c:/vol/vol2/vol3
+                * will look c:/, then c:/vol/, then c:/vol2/ and if one of them
+                * is selected, the sub volume will be directly marked.
+                */
+               for (char *p1 = fn ; *p1 && !elt->in_SnapshotSet ; p1++) {
+                  if (IsPathSeparator(*p1)) {
+                     bool to_add=false; /* Add this volume to the FileSet ? */
+                     char c = *(p1 + 1);
+                     *(p1 + 1) = 0;
+
+                     /* We look for the previous directory, and if marked, we mark
+                      * the current one as well
+                      */
+                     Dmsg1(DT_VOLUME|50, "Looking for %s\n", fn);
+                     elt2 = mtab.search(fn);
+                     if (elt2 && elt2->in_SnapshotSet) {
+                        Dmsg0(DT_VOLUME|50, "Put volume in SnapshotSet\n");
+                        elt->setInSnapshotSet();
+                        to_add = true;
+                     }
+
+                     /* Find where to add the new volume, normally near the
+                      * root volume, or if we are using /
+                      */
+                     if (alldrives) {
+                        inc = alldrives;
+                     } else {
+                        inc = is_included(fileset, fn);
+                        Dmsg2(DT_VOLUME|50, "Adding volume in fileset 0x%p %s\n", inc, fn);
+                     }
+
+                     *(p1 + 1) = c; /* restore path separator */
+
+                     /* We can add the current volume to the FileSet */
+                     if (to_add && inc != NULL) {
+                        /* Convert the path to /xxx/xxx */
+                        dlistString *tmp = new_dlistString(fn);
+                        for(char *p = tmp->c_str(); *p ; p++) {
+                           if (*p == '\\') {
+                              *p = '/';
+                           }
+                        }
+                        inc->name_list.append(tmp);
+                        Dmsg1(DT_VOLUME|50,"Adding volume in file list %s\n",tmp->c_str());
+                     }
+                  }
+               }
+            }
+         }
+         free_pool_memory(fn);
+      }
+   all_included:
+      /* Now, we look the volume list to know which one to include */
+      MTabEntry *elt;
+      foreach_rblist(elt, mtab.entries) {
+         if (elt->in_SnapshotSet) {
+            Dmsg1(DT_VOLUME|50,"Adding volume in mount_points list %ls\n",elt->volumeName);
+            nCount++;
+            ff->mount_points.append(bwcsdup(elt->volumeName));
+         }
+      }
+   }
+
+#endif  /* HAVE_WIN32 */
+   return nCount;
+}
+
+static int estimate_cmd(JCR *jcr)
+{
+   BSOCK *dir = jcr->dir_bsock;
+   char ed1[50], ed2[50];
+
+   if (sscanf(dir->msg, estimatecmd, &jcr->listing) != 1) {
+      pm_strcpy(jcr->errmsg, dir->msg);
+      Jmsg(jcr, M_FATAL, 0, _("Bad estimate command: %s"), jcr->errmsg);
+      dir->fsend(_("2992 Bad estimate command.\n"));
+      return 0;
+   }
+
+   /* On windows, the fileset can be completed by this function (File=/ => File=C:/ + File=E:/) */
+   get_win32_driveletters(jcr, jcr->ff, NULL);
+
+   make_estimate(jcr);
+   dir->fsend(OKest, edit_uint64_with_commas(jcr->num_files_examined, ed1),
+      edit_uint64_with_commas(jcr->JobBytes, ed2));
+   dir->signal(BNET_EOD);
+   return 1;
+}
+
+static void sendit(JCR *jcr, const char *str)
+{
+   jcr->dir_bsock->fsend("%s", NPRTB(str));
+}
+
+/*
+ * Query plugin parameter interface 
+ *
+ */
+static int query_cmd(JCR *jcr)
+{
+   int i;
+   BSOCK *dir = jcr->dir_bsock;
+   char *param=NULL, *command=NULL;
+   cmd_parser cmd(false);
+   cmd.parse_cmd(dir->msg);
+
+   if ((i = cmd.find_arg_with_value("parameter")) > 0) {
+      param = cmd.argv[i];
+
+   } else {
+      dir->fsend(_("2992 Bad query command\n"));
+      return 0;
+   }
+
+   if ((i = cmd.find_arg_with_value("plugin")) > 0) {
+      command = cmd.argv[i];
+
+   } else {
+      dir->fsend(_("2992 Bad query command\n"));
+      return 0;
+   }
+
+   Dmsg3(100, "cmd=%s parameter=%s plugin=%s\n", dir->msg, param, command);
+
+   if (plugin_query_parameter(jcr, param, command, sendit)) {
+      dir->signal(BNET_EOD);
+
+   } else {
+      dir->fsend(_("2992 Bad query command\n"));
+      return 0;
+   }
+   return 1;
+}
 
 /**
  * Director is passing his Fileset
@@ -2195,15 +2752,37 @@ static int storage_cmd(JCR *jcr)
    }
    jcr->store_bsock->set_bwlimit(jcr->max_bandwidth);
 
-   if (!send_hello_sd(jcr, jcr->Job)) {
-      goto bail_out;
-   }
+   {
+      FDAuthenticateSD auth(jcr);
+      if (!send_hello_sd(jcr, jcr->Job, jcr->store_bsock->tlspsk_local)) {
+         goto bail_out;
+      }
 
-   if (!authenticate_storagedaemon(jcr)) {
-      goto bail_out;
+      /* Receive and send capabilities */
+      if (!recv_sdcaps(jcr) || !send_fdcaps(jcr, jcr->store_bsock)) {
+         return false;
+      }
+
+      if (!auth.authenticate_storagedaemon()) {
+         goto bail_out;
+      }
    }
    memset(jcr->sd_auth_key, 0, strlen(jcr->sd_auth_key));
    Dmsg0(110, "Authenticated with SD.\n");
+
+#if 0
+   /* Currently disabled
+    * If we have a high bandwidth (more than 100MB/s), we need to check the
+    * latency to configure correctly the socket buffers.
+    */
+   if (jcr->store_bsock->get_bandwidth() > BSOCK_RCVSND_BUF_TRIGGER) {
+      btime_t rtt=0;
+      if (fd_testnetwork(jcr, NULL, 0, 10, &rtt, NULL, NULL)) {
+         Dmsg1(0, "The RTT with the Storage Daemon is %.3f\n", (float)rtt/1000);
+         jcr->store_bsock->set_rtt(rtt);
+      }
+   }
+#endif
 
    /* Send OK to Director */
    return dir->fsend(OKstore);
@@ -2213,187 +2792,7 @@ bail_out:
    return 0;
 }
 
-#ifdef HAVE_WIN32
-/* TODO: merge find.c ? */
-static bool is_excluded(findFILESET *fileset, char *path)
-{
-   int fnm_flags=FNM_CASEFOLD;
-   int fnmode=0;
-
-   /* Now apply the Exclude { } directive */
-   for (int i=0; i<fileset->exclude_list.size(); i++) {
-      findINCEXE *incexe = (findINCEXE *)fileset->exclude_list.get(i);
-      dlistString *node;
-
-      foreach_dlist(node, &incexe->name_list) {
-         char *fname = node->c_str();
-         Dmsg2(DT_VOLUME|50, "Testing %s against %s\n", path, fname);
-         if (fnmatch(fname, path, fnmode|fnm_flags) == 0) {
-            Dmsg1(050, "Reject wild2: %s\n", path);
-            return true;
-         }
-         /* On windows, the path separator is a bit complex to handle. For
-          * example, in fnmatch(), \ is written as \\\\ in the config file / is
-          * different from \ So we have our own little strcmp for filenames
-          */
-         char *p;
-         bool same=true;
-         for (p = path; *p && *fname && same ; p++, fname++) {
-            if (!((IsPathSeparator(*p) && IsPathSeparator(*fname)) ||
-                  (tolower(*p) == tolower(*fname)))) {
-               same = false;           /* Stop after the first one */
-            }
-         }
-
-         if (same) {
-            /* End of the for loop, strings looks to be identical */
-            Dmsg1(DT_VOLUME|50, "Reject: %s\n", path);
-            return true;
-         }
-
-         /* Looks to be the same string, but with a trailing slash */
-         if (fname[0] && IsPathSeparator(fname[0]) && fname[1] == '\0'
-             && p[0] == '\0')
-         {
-            Dmsg1(DT_VOLUME|50, "Reject: %s\n", path);
-            return true;
-         }
-      }
-   }
-   return false;
-}
-
-/*
- * For VSS we need to know which windows drives
- * are used, because we create a snapshot of all used
- * drives before operation
- *
- */
-static int
-get_win32_driveletters(JCR *jcr, FF_PKT *ff, char* szDrives)
-{
-   int nCount = 0;
-
-   findFILESET *fileset = ff->fileset;
-   int  flags = 0;
-   char drive[4];
-
-   MTab mtab;
-   mtab.get();                  /* read the disk structure */
-
-   /* Keep this part for compatibility reasons */
-   strcpy(drive, "c:\\");
-   for (int i=0; szDrives[i] ; i++) {
-      drive[0] = szDrives[i];
-      if (mtab.addInSnapshotSet(drive)) { /* When all volumes are selected, we can stop */
-         Dmsg0(DT_VOLUME|50, "All Volumes are marked, stopping the loop here\n");
-         goto all_included;
-      }
-   }
-
-   if (fileset) {
-      dlistString *node;
-
-      for (int i=0; i<fileset->include_list.size(); i++) {
-
-         findFOPTS  *fo;
-         findINCEXE *incexe = (findINCEXE *)fileset->include_list.get(i);
-
-         /* look through all files */
-         foreach_dlist(node, &incexe->name_list) {
-            char *fname = node->c_str();
-            if (mtab.addInSnapshotSet(fname)) {
-               /* When all volumes are selected, we can stop */
-               Dmsg0(DT_VOLUME|50, "All Volumes are marked, stopping the loop here\n");
-               goto all_included;
-            }
-         }
-
-         foreach_alist(fo, &incexe->opts_list) {
-            flags |= fo->flags; /* We are looking for FO_MULTIFS and recurse */
-         }
-      }
-
-      /* TODO: it needs to be done Include by Include, but in the worst case,
-       * we take too much snapshots...
-       */
-      if (flags & FO_MULTIFS) {
-         /* Need to add subdirectories */
-         POOLMEM   *fn = get_pool_memory(PM_FNAME);
-         MTabEntry *elt, *elt2;
-         int len;
-
-         Dmsg0(DT_VOLUME|50, "OneFS is set, looking for remaining volumes\n");
-
-         foreach_rblist(elt, mtab.entries) {
-            if (elt->in_SnapshotSet) {
-               continue;         /* Already in */
-            }
-            /* A volume can have multiple mount points */
-            for (wchar_t *p = elt->first() ; p && *p ; p = elt->next(p)) {
-               wchar_2_UTF8(&fn, p);
-
-               Dmsg1(DT_VOLUME|50, "Looking for path %s\n", fn);
-
-               /* First case, root drive (c:/, e:/, d:/), not a submount point */
-               len = strlen(fn);
-               if (len <= 3) {
-                  Dmsg1(DT_VOLUME|50, "Skiping %s\n", fn);
-                  continue;
-               }
-
-               /* First thing is to look in the exclude list to see if this directory
-                * is explicitely excluded
-                */
-               if (is_excluded(fileset, fn)) {
-                  Dmsg1(DT_VOLUME|50, "Looks to be excluded %s\n", fn);
-                  continue;
-               }
-
-               /* c:/vol/vol2/vol3
-                * will look c:/, then c:/vol/, then c:/vol2/ and if one of them
-                * is selected, the sub volume will be directly marked.
-                */
-               for (char *p1 = fn ; *p1 && !elt->in_SnapshotSet ; p1++) {
-                  if (IsPathSeparator(*p1)) {
-
-                     char c = *(p1 + 1);
-                     *(p1 + 1) = 0;
-
-                     /* We look for the previous directory, and if marked, we mark
-                      * the current one as well
-                      */
-                     Dmsg1(DT_VOLUME|50, "Looking for %s\n", fn);
-                     elt2 = mtab.search(fn);
-                     if (elt2 && elt2->in_SnapshotSet) {
-                        Dmsg0(DT_VOLUME|50, "Put volume in SnapshotSet\n");
-                        elt->setInSnapshotSet();
-                     }
-
-                     *(p1 + 1) = c; /* restore path separator */
-                  }
-               }
-            }
-         }
-         free_pool_memory(fn);
-      }
-   all_included:
-      /* Now, we look the volume list to know which one to include */
-      MTabEntry *elt;
-      foreach_rblist(elt, mtab.entries) {
-         if (elt->in_SnapshotSet) {
-            Dmsg1(DT_VOLUME|50,"Adding volume in mount_points list %ls\n",elt->volumeName);
-            nCount++;
-            ff->mount_points.append(bwcsdup(elt->volumeName));
-         }
-      }
-   }
-
-   return nCount;
-}
-#endif  /* HAVE_WIN32 */
-
-/*
+/**
  * Do a backup.
  */
 static int backup_cmd(JCR *jcr)
@@ -2512,11 +2911,18 @@ static int backup_cmd(JCR *jcr)
       /* TODO: See if we abort the job */
       jcr->Snapshot = open_snapshot_backup_session(jcr);
 #endif
+
+   } else {                     /* No snapshot */
+      /* On windows, the FileSet might be adjusted with the options that are used (File=/ => File=C:/, File=E:/) */
+      get_win32_driveletters(jcr, jcr->ff, NULL);
    }
    /* Call RunScript just after the Snapshot creation, usually, we restart services */
    run_scripts(jcr, jcr->RunScripts, "ClientAfterVSS");
 
-   /*
+   /* common code */
+   jcr->dedup = New(DedupFiledInterface(jcr, DEDUP_CLIENT_REC_BUF_SIZE, DEDUP_MAX_MSG_SIZE));
+
+   /**
     * Send Files to Storage daemon
     */
    Dmsg1(110, "begin blast ff=%p\n", (FF_PKT *)jcr->ff);
@@ -2579,6 +2985,9 @@ cleanup:
       }
    }
 #endif
+   delete jcr->dedup;
+   jcr->dedup = NULL;
+
    generate_plugin_event(jcr, bEventEndBackupJob);
    return 0;                          /* return and stop command loop */
 }
@@ -2661,7 +3070,26 @@ static int verify_cmd(JCR *jcr)
    return 0;                          /* return and terminate command loop */
 }
 
-/*
+#if 0
+#ifdef WIN32_VSS
+static bool vss_restore_init_callback(JCR *jcr, int init_type)
+{
+   switch (init_type) {
+   case VSS_INIT_RESTORE_AFTER_INIT:
+      generate_plugin_event(jcr, bEventVssRestoreLoadComponentMetadata);
+      return true;
+   case VSS_INIT_RESTORE_AFTER_GATHER:
+      generate_plugin_event(jcr, bEventVssRestoreSetComponentsSelected);
+      return true;
+   default:
+      return false;
+      break;
+   }
+}
+#endif
+#endif
+
+/**
  * Do a Restore for Director
  *
  */
@@ -2802,9 +3230,13 @@ static int restore_cmd(JCR *jcr)
    }
 #endif
 
+   set_job_user(jcr);
+
    if (!jcr->is_canceled()) {
       do_restore(jcr);
    }
+
+   reset_job_user(jcr);
 
    stop_dir_heartbeat(jcr);
 
@@ -2982,6 +3414,14 @@ void filed_free_jcr(JCR *jcr)
 
    if (jcr->JobId != 0) {
       write_state_file(me->working_directory, "bacula-fd", get_first_port_host_order(me->FDaddrs));
+   }
+   if (jcr->dedup) { /* probably useless because already done at the end of backup_cmd() */
+      delete jcr->dedup;
+      jcr->dedup = NULL;
+   }
+   if (jcr->ff) {
+      term_find_files(jcr->ff);
+      jcr->ff = NULL;
    }
    return;
 }
