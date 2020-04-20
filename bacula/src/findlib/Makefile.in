@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2000-2015 Kern Sibbald
+# Copyright (C) 2000-2020 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
 #  Find files library Makefile
@@ -18,6 +18,7 @@ topdir = ../..
 thisdir = src/findlib
 
 DEBUG=@DEBUG@
+EXTRA_SRCS=@EXTRA_FINDLIB_SRCS@
 
 first_rule: all
 dummy:
@@ -30,7 +31,7 @@ INCLUDE_FILES = bfile.h find.h protos.h win32filter.h
 #
 LIBBACFIND_SRCS = find.c match.c find_one.c attribs.c create_file.c \
 		  bfile.c drivetype.c enable_priv.c fstype.c mkpath.c \
-		  savecwd.c namedpipe.c win32filter.c
+		  savecwd.c namedpipe.c win32filter.c $(EXTRA_SRCS)
 LIBBACFIND_OBJS = $(LIBBACFIND_SRCS:.c=.o)
 LIBBACFIND_LOBJS = $(LIBBACFIND_SRCS:.c=.lo)
 
