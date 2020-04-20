@@ -57,7 +57,8 @@ static pthread_mutex_t ip_mutex = PTHREAD_MUTEX_INITIALIZER;
  *           false on failure
  */
 #ifdef HAVE_TLS
-bool bnet_tls_server(TLS_CONTEXT *ctx, BSOCK * bsock, alist *verify_list)
+bool bnet_tls_server(TLS_CONTEXT *ctx, BSOCK * bsock, alist *verify_list,
+      const char *psk_shared_key)
 {
    TLS_CONNECTION *tls;
    JCR *jcr = bsock->jcr();
@@ -68,6 +69,13 @@ bool bnet_tls_server(TLS_CONTEXT *ctx, BSOCK * bsock, alist *verify_list)
       return false;
    }
 
+   if (get_tls_psk_context(ctx)) {
+      if (!psk_shared_key || !psk_set_shared_key(tls, psk_shared_key)) {
+         Dmsg0(0, "Cannot setup TLS-PSK shared key\n");
+         return false;
+      }
+   }
+
    bsock->tls = tls;
 
    /* Initiate TLS Negotiation */
@@ -75,13 +83,14 @@ bool bnet_tls_server(TLS_CONTEXT *ctx, BSOCK * bsock, alist *verify_list)
       Qmsg0(bsock->jcr(), M_FATAL, 0, _("TLS Negotiation failed.\n"));
       goto err;
    }
-
-   if (verify_list) {
-      if (!tls_postconnect_verify_cn(jcr, tls, verify_list)) {
-         Qmsg1(bsock->jcr(), M_FATAL, 0, _("TLS certificate verification failed."
-                                         " Peer certificate did not match a required commonName\n"),
-                                         bsock->host());
-         goto err;
+   if (!get_tls_psk_context(ctx)) {
+      if (verify_list) {
+         if (!tls_postconnect_verify_cn(jcr, tls, verify_list)) {
+            Qmsg1(bsock->jcr(), M_FATAL, 0, _("TLS certificate verification failed."
+                                            " Peer certificate did not match a required commonName\n"),
+                                            bsock->host());
+            goto err;
+         }
       }
    }
    Dmsg0(50, "TLS server negotiation established.\n");
@@ -98,7 +107,8 @@ err:
  * Returns: true  on success
  *          false on failure
  */
-bool bnet_tls_client(TLS_CONTEXT *ctx, BSOCK *bsock, alist *verify_list)
+bool bnet_tls_client(TLS_CONTEXT *ctx, BSOCK *bsock, alist *verify_list,
+      const char *psk_shared_key)
 {
    TLS_CONNECTION *tls;
    JCR *jcr = bsock->jcr();
@@ -109,29 +119,37 @@ bool bnet_tls_client(TLS_CONTEXT *ctx, BSOCK *bsock, alist *verify_list)
       return false;
    }
 
+   if (get_tls_psk_context(ctx)) {
+      if (!psk_shared_key || !psk_set_shared_key(tls, psk_shared_key)) {
+         Dmsg0(0, "Cannot setup TLS-PSK shared key\n");
+         return false;
+      }
+   }
+
    bsock->tls = tls;
 
    /* Initiate TLS Negotiation */
    if (!tls_bsock_connect(bsock)) {
       goto err;
    }
-
-   /* If there's an Allowed CN verify list, use that to validate the remote
-    * certificate's CN. Otherwise, we use standard host/CN matching. */
-   if (verify_list) {
-      if (!tls_postconnect_verify_cn(jcr, tls, verify_list)) {
-         Qmsg1(bsock->jcr(), M_FATAL, 0, _("TLS certificate verification failed."
-                                         " Peer certificate did not match a required commonName\n"),
-                                         bsock->host());
-         goto err;
-      }
-   } else if (!tls_postconnect_verify_host(jcr, tls, bsock->host())) {
-      /* If host is 127.0.0.1, try localhost */
-      if (strcmp(bsock->host(), "127.0.0.1") != 0 ||
-             !tls_postconnect_verify_host(jcr, tls, "localhost")) {
-         Qmsg1(bsock->jcr(), M_FATAL, 0, _("TLS host certificate verification failed. Host name \"%s\" did not match presented certificate\n"),
-               bsock->host());
-         goto err;
+   if (!get_tls_psk_context(ctx)) {
+      /* If there's an Allowed CN verify list, use that to validate the remote
+       * certificate's CN. Otherwise, we use standard host/CN matching. */
+      if (verify_list) {
+         if (!tls_postconnect_verify_cn(jcr, tls, verify_list)) {
+            Qmsg1(bsock->jcr(), M_FATAL, 0, _("TLS certificate verification failed."
+                                            " Peer certificate did not match a required commonName\n"),
+                                            bsock->host());
+            goto err;
+         }
+      } else if (!tls_postconnect_verify_host(jcr, tls, bsock->host())) {
+         /* If host is 127.0.0.1, try localhost */
+         if (strcmp(bsock->host(), "127.0.0.1") != 0 ||
+                !tls_postconnect_verify_host(jcr, tls, "localhost")) {
+            Qmsg1(bsock->jcr(), M_FATAL, 0, _("TLS host certificate verification failed. Host name \"%s\" did not match presented certificate\n"),
+                  bsock->host());
+            goto err;
+         }
       }
    }
    Dmsg0(50, "TLS client negotiation established.\n");
@@ -144,13 +162,15 @@ err:
 }
 #else
 
-bool bnet_tls_server(TLS_CONTEXT *ctx, BSOCK * bsock, alist *verify_list)
+bool bnet_tls_server(TLS_CONTEXT *ctx, BSOCK * bsock, alist *verify_list,
+      const char *psk_shared_key)
 {
    Jmsg(bsock->jcr(), M_ABORT, 0, _("TLS enabled but not configured.\n"));
    return false;
 }
 
-bool bnet_tls_client(TLS_CONTEXT *ctx, BSOCK * bsock, alist *verify_list)
+bool bnet_tls_client(TLS_CONTEXT *ctx, BSOCK * bsock, alist *verify_list,
+      const char *psk_shared_key)
 {
    Jmsg(bsock->jcr(), M_ABORT, 0, _("TLS enable but not configured.\n"));
    return false;
@@ -491,4 +511,23 @@ int set_socket_errno(int sockstat)
    }
 #endif
    return sockstat;
+}
+
+
+const char * const bnet_cmd_name[] = {
+   "INVALID",             // 0
+   "BNET_CMD_ACK_HASH",   // 1
+   "BNET_CMD_UNK_HASH",   // 2
+   "BNET_CMD_GET_HASH",   // 3
+   "BNET_CMD_STO_BLOCK",  // 4
+   "BNET_CMD_REC_ACK",    // 5
+   "BNET_CMD_STP_THREAD", // 6
+   "BNET_CMD_STP_FLOWCTRL", // 7
+   NULL
+};
+
+const char *bnet_cmd_to_name(int val)
+{
+   if (val<0 || val>=(int)(sizeof(bnet_cmd_name)/sizeof(char*))) return bnet_cmd_name[0];
+   return bnet_cmd_name[val];
 }
