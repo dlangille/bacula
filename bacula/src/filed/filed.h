@@ -20,6 +20,7 @@
  * Bacula File Daemon specific configuration and defines
  *
  *     Kern Sibbald, Jan MMI
+ *
  */
 
 //#define TEST_WORKER
@@ -36,6 +37,11 @@
 
 #define FILE_DAEMON 1
 #include  "lib/htable.h"
+#if BEEF
+#include  "bee_filed_dedup.h"
+#else
+#include  "org_filed_dedup.h"
+#endif
 #include  "filed_conf.h"
 #include  "fd_plugins.h"
 #include  "fd_snapshot.h"
@@ -85,3 +91,4 @@ bool update_permanent_stats(void *data);
 
 extern bstatcollect *statcollector;
 extern fdstatmetrics_t fdstatmetrics;
+
