@@ -66,7 +66,11 @@ void bnet_thread_server(dlist *addrs, int max_clients,
 {
    int newsockfd, stat;
    socklen_t clilen;
+#ifdef HAVE_SOCKADDR_STORAGE
    struct sockaddr_storage clientaddr;   /* client's address */
+#else
+   struct sockaddr clientaddr;   /* client's address */
+#endif
    int tlog;
    int turnon = 1;
 #ifdef HAVE_LIBWRAP
@@ -154,6 +158,9 @@ void bnet_thread_server(dlist *addrs, int max_clients,
    /*
     * Wait for a connection from the client process.
     */
+   /* TODO: Rewrite select() to use poll(). Not critical right now, it's unlikely that
+    *       we will reach the 1024 limit at this place in the code.
+    */
    for (; !quit;) {
       unsigned int maxfd = 0;
       fd_set sockset;
@@ -184,6 +191,7 @@ void bnet_thread_server(dlist *addrs, int max_clients,
                Dmsg2(20, "Accept=%d errno=%d\n", newsockfd, errno);
                continue;
             }
+
 #ifdef HAVE_LIBWRAP
             P(mutex);              /* hosts_access is not thread safe */
             request_init(&request, RQ_DAEMON, my_name, RQ_FILE, newsockfd, 0);
@@ -216,12 +224,16 @@ void bnet_thread_server(dlist *addrs, int max_clients,
             sockaddr_to_ascii((struct sockaddr *)&clientaddr, sizeof(clientaddr), buf, sizeof(buf));
             V(mutex);
             BSOCK *bs;
-            bs = init_bsock(NULL, newsockfd, "client", buf,
-                    sockaddr_get_port((struct sockaddr *)&clientaddr),
+            bs = init_bsock(NULL, newsockfd, "client", buf, ntohs(fd_ptr->port),
                     (struct sockaddr *)&clientaddr);
             if (bs == NULL) {
                Qmsg0(NULL, M_ABORT, 0, _("Could not create client BSOCK.\n"));
             }
+
+#ifdef INET6_ADDRSTRLEN
+            char info[2*INET6_ADDRSTRLEN+20];
+            Dmsg1(50, "Accept socket=%s\n", bs->get_info(info, sizeof(info)));
+#endif
 
             /* Queue client to be served */
             if ((stat = workq_add(client_wq, (void *)bs, NULL, 0)) != 0) {
