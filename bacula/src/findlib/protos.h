@@ -23,7 +23,7 @@
 
 /* from attribs.c */
 bool check_directory_acl(char **last_dir, alist *dir_acl, const char *path);
-
+bool has_access(alist *uid, alist *gid, struct stat *statp);
 void    encode_stat       (char *buf, struct stat *statp, int stat_size, int32_t LinkFI, int data_stream);
 int     decode_stat       (char *buf, struct stat *statp, int stat_size, int32_t *LinkFI);
 int32_t decode_LinkFI     (char *buf, struct stat *statp, int stat_size);
@@ -60,7 +60,7 @@ struct s_included_file *get_next_included_file(FF_PKT *ff,
 /* From find_one.c */
 int   find_one_file(JCR *jcr, FF_PKT *ff,
                int handle_file(JCR *jcr, FF_PKT *ff_pkt, bool top_level),
-               char *p, dev_t parent_device, bool top_level);
+               char *fname, char *snap_fname, dev_t parent_device, bool top_level);
 int   term_find_one(FF_PKT *ff);
 bool  has_file_changed(JCR *jcr, FF_PKT *ff_pkt);
 bool check_changes(JCR *jcr, FF_PKT *ff_pkt);
@@ -89,3 +89,4 @@ bool drivetype(const char *fname, char *fs, int fslen);
 
 /* from bfile.c -- see bfile.h */
 /* from namedpipe.c -- see namedpipe.h */
+
