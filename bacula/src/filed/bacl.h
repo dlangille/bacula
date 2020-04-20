@@ -78,9 +78,9 @@ typedef enum {
 /*
  * Basic ACL class which is a foundation for any other OS specific implementation.
  *
- * This class cannot be used directly as it is an abstraction class with a lot
- * of virtual methods laying around. As a basic class it has all public API
- * available for backup and restore functionality. As a bonus it handles all
+ * This class cannot be used directly as it is an abstraction class with a lot 
+ * of virtual methods laying around. As a basic class it has all public API 
+ * available for backup and restore functionality. As a bonus it handles all 
  * ACL generic functions and OS independent API, i.e. for AFS ACL or Plugins ACL
  * (future functionality).
  */
@@ -149,7 +149,7 @@ private:
 
    void inc_acl_errors(){ acl_nr_errors++;};
    bRC_BACL check_dev (JCR *jcr);
-   void check_dev (JCR *jcr, uint32_t dev);
+   void check_dev (JCR *jcr, FF_PKT *ff, uint32_t dev);
 
 public:
    BACL ();
