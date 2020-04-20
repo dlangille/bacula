@@ -36,6 +36,9 @@ struct bctx_t {
    int32_t rsize;
    POOLMEM *msgsave;
 
+   /* Dedup variables */
+   bool dedup_client_side;
+
    /* Crypto variables */
    DIGEST *digest;
    DIGEST *signing_digest;
@@ -82,5 +85,9 @@ bool process_and_send_data(bctx_t &bctx);
 #ifdef HAVE_WIN32
 DWORD WINAPI read_efs_data_cb(PBYTE pbData, PVOID pvCallbackContext, ULONG ulLength);
 #endif
+
+bool do_dedup_client_side(bctx_t &bctx);
+bool dedup_init_storage_bsock(JCR *jcr, BSOCK *sd);
+void dedup_release_storage_bsock(JCR *jcr, BSOCK *sd);
 
 #endif
