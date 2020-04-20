@@ -124,6 +124,13 @@ void bwlimit::control_bwlimit(int bytes)
       int64_t usec_sleep = (int64_t)(-m_nb_bytes /((double)m_bwlimit / ONE_SEC));
       if (usec_sleep > 100) {
          pthread_mutex_unlock(&m_bw_mutex);
+         if (usec_sleep > 60 * ONE_SEC) {
+            /* when the bw is far away of the real speed, the delay can be immoderate
+             * for example 500b/s when the speed is 100MB/s the ratio is 200000
+             * having a sleep of > 10000s is not surprising
+             */
+            usec_sleep = 60 * ONE_SEC;
+         }
          bmicrosleep(usec_sleep / ONE_SEC, usec_sleep % ONE_SEC);
          pthread_mutex_lock(&m_bw_mutex);
       }
