@@ -20,109 +20,20 @@
  * Authenticate Director who is attempting to connect.
  *
  *   Kern Sibbald, October 2000
+ *
  */
 
 #include "bacula.h"
 #include "filed.h"
 
 extern CLIENT *me;                 /* my resource */
+extern int beef;
 
 const int dbglvl = 50;
 
-/* FD_VERSION history
- *   None prior to 10Mar08
- *   1 10Mar08
- *   2 13Mar09 - added the ability to restore from multiple storages
- *   3 03Sep10 - added the restore object command for vss plugin 4.0
- *   4 25Nov10 - added bandwidth command 5.1
- *   5 24Nov11 - added new restore object command format (pluginname) 6.0
- *   6 15Feb12 - added Component selection information list
- *   7 19Feb12 - added Expected files to restore
- *   8 22Mar13 - added restore options + version for SD
- *   9 06Aug13 - skipped
- *  10 01Jan14 - added SD Calls Client and api version to status command
- *  11 O4May14 - skipped
- *  12 22Jun14 - skipped
- * 213 04Feb15 - added snapshot protocol with the DIR
- * 214 20Mar17 - added comm line compression
- */
-
-#define FD_VERSION 214  /* FD version */
-
-static char hello_sd[]  = "Hello Bacula SD: Start Job %s %d\n";
+static char hello_sd[]  = "Hello Bacula SD: Start Job %s %d tlspsk=%d\n";
 static char hello_dir[] = "2000 OK Hello %d\n";
 static char sorry_dir[] = "2999 Authentication failed.\n";
-
-static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-
-/*********************************************************************
- *
- * Validate hello from the Director
- *
- * Returns: true  if Hello is good.
- *          false if Hello is bad.
- */
-bool validate_dir_hello(JCR *jcr)
-{
-   POOLMEM *dirname;
-   DIRRES *director = NULL;
-   int dir_version = 0;
-   BSOCK *dir = jcr->dir_bsock;
-   bool auth_success = false;
-
-   if (dir->msglen < 25 || dir->msglen > 500) {
-      Dmsg2(dbglvl, "Bad Hello command from Director at %s. Len=%d.\n",
-            dir->who(), dir->msglen);
-      Jmsg2(jcr, M_FATAL, 0, _("Bad Hello command from Director at %s. Len=%d.\n"),
-            dir->who(), dir->msglen);
-      return false;
-   }
-   dirname = get_pool_memory(PM_MESSAGE);
-   dirname = check_pool_memory_size(dirname, dir->msglen);
-
-   if (sscanf(dir->msg, "Hello Director %127s calling %d", dirname, &dir_version) != 2 &&
-       sscanf(dir->msg, "Hello Director %127s calling", dirname) != 1 && 
-       sscanf(dir->msg, "Hello %127s calling %d", dirname, &dir_version) != 2 ) {
-      char addr[64];
-      char *who = dir->get_peer(addr, sizeof(addr)) ? dir->who() : addr;
-      dir->msg[100] = 0;
-      Dmsg2(dbglvl, "Bad Hello command from Director at %s: %s\n",
-            dir->who(), dir->msg);
-      Jmsg2(jcr, M_FATAL, 0, _("Bad Hello command from Director at %s: %s\n"),
-            who, dir->msg);
-      goto auth_fatal;
-   }
-   if (dir_version >= 1 && me->comm_compression) {
-      dir->set_compress();
-   } else {
-      dir->clear_compress();
-      Dmsg0(050, "*** No FD compression to DIR\n");
-   }
-   unbash_spaces(dirname);
-   foreach_res(director, R_DIRECTOR) {
-      if (strcmp(director->hdr.name, dirname) == 0)
-         break;
-   }
-   if (!director) {
-      char addr[64];
-      char *who = dir->get_peer(addr, sizeof(addr)) ? dir->who() : addr;
-      Jmsg2(jcr, M_FATAL, 0, _("Connection from unknown Director %s at %s rejected.\n"),
-            dirname, who);
-      goto auth_fatal;
-   }
-   auth_success = true;
-
-auth_fatal:
-   free_pool_memory(dirname);
-   jcr->director = director;
-   /* Single thread all failures to avoid DOS */
-   if (!auth_success) {
-      P(mutex);
-      bmicrosleep(6, 0);
-      V(mutex);
-   }
-   return auth_success;
-}
 
 /*
  * Note, we handle the initial connection request here.
@@ -138,6 +49,7 @@ void *handle_storage_connection(BSOCK *sd)
    int sd_version = 0;
    JCR *jcr;
 
+   // Don't expect a TLS-PSK header in this "dummy" hello
    if (sscanf(sd->msg, "Hello FD: Bacula Storage calling Start Job %127s %d",
        job_name, &sd_version) != 2) {
       Jmsg(NULL, M_FATAL, 0, _("SD connect failed: Bad Hello command\n"));
@@ -145,7 +57,7 @@ void *handle_storage_connection(BSOCK *sd)
    }
    Dmsg1(110, "Got a SD connection at %s\n", bstrftimes(tbuf, sizeof(tbuf),
          (utime_t)time(NULL)));
-   Dmsg1(50, "%s", sd->msg);
+   Dmsg1(50, "authenticate storage: %s", sd->msg);
 
    if (!(jcr=get_jcr_by_full_name(job_name))) {
       Jmsg1(NULL, M_FATAL, 0, _("SD connect failed: Job name not found: %s\n"), job_name);
@@ -194,7 +106,7 @@ void *handle_storage_connection(BSOCK *sd)
    }
    sd->set_bwlimit(jcr->max_bandwidth);
 
-   Dmsg1(200, "sd_version=%ld\n", sd_version);
+   Dmsg2(200, "beef=%ld sd_version=%ld\n", beef, sd_version);
 
    pthread_cond_signal(&jcr->job_start_wait); /* wake waiting job */
    free_jcr(jcr);
@@ -218,13 +130,13 @@ bool send_sorry(BSOCK *bs)
 /*
  * Send Hello to SD
  */
-bool send_hello_sd(JCR *jcr, char *Job)
+bool send_hello_sd(JCR *jcr, char *Job, int tlspsk)
 {
    bool rtn;
    BSOCK *sd = jcr->store_bsock;
 
    bash_spaces(Job);
-   rtn = sd->fsend(hello_sd, Job, FD_VERSION);
+   rtn = sd->fsend(hello_sd, Job, FD_VERSION, tlspsk);
    unbash_spaces(Job);
    Dmsg1(100, "Send to SD: %s\n", sd->msg);
    return rtn;
@@ -232,34 +144,150 @@ bool send_hello_sd(JCR *jcr, char *Job)
 
 /* ======================== */
 
-bool send_fdcaps(JCR *jcr, BSOCK *sd) { return false; }
-bool recv_sdcaps(JCR *jcr) { return false; }
+/*
+ */
+bool send_fdcaps(JCR *jcr, BSOCK *sd)
+{
+   int rehydration = 0; /* 0 : the SD do rehydration */
+   if (jcr->dedup_use_cache) {
+      rehydration = 1; /* 1 : the FD do rehydration */
+   }
+   Dmsg1(200, "Send caps to SD dedup=1 rehydration=%d\n", rehydration);
+   return sd->fsend("fdcaps: dedup=1 rehydration=%d proxy=%d\n", rehydration, jcr->director->remote);
+}
+
+bool recv_sdcaps(JCR *jcr)
+{
+   int stat;
+   int32_t dedup = (jcr->dedup != NULL);
+   int32_t hash = 0;
+   uint32_t block_size = 0;
+   uint32_t min_block_size = 0;
+   uint32_t max_block_size = 0;
+   BSOCK *sd = jcr->store_bsock;
+
+   Dmsg0(200, "Recv caps from SD.\n");
+   stat = sd->recv();
+   if (stat <= 0) {
+      berrno be;
+      Jmsg1(jcr, M_FATAL, 0, _("Recv caps from SD failed. ERR=%s\n"),
+         be.bstrerror());
+      Dmsg1(050, _("Recv caps from SD failed. ERR=%s\n"), be.bstrerror());
+      return false;
+   }
+   Dmsg1(200, ">stored: %s\n", sd->msg);
+   if (sscanf(sd->msg, "sdcaps: dedup=%ld hash=%ld dedup_block=%lu min_dedup_block=%lu max_dedup_block=%lu",
+        &dedup, &hash, &block_size, &min_block_size, &max_block_size) != 5) {
+      Jmsg1(jcr, M_FATAL, 0, _("Bad caps from SD: %s.\n"), sd->msg);
+      Dmsg1(050, _("Bad caps from SD: %s\n"), sd->msg);
+      return false;
+   }
+#if BEEF
+   Dmsg5(200, "Recv sdcaps: dedup=%ld hash=%ld dedup_block=%lu min_dedup_block=%lu max_dedup_block=%lu\n",
+        dedup, hash, block_size, min_block_size, max_block_size);
+   jcr->sd_dedup = dedup;
+   jcr->sd_hash = hash;
+   jcr->sd_hash_size = bhash_info(jcr->sd_hash, NULL);
+   jcr->dedup_block_size = block_size;
+   jcr->min_dedup_block_size = min_block_size;
+   jcr->max_dedup_block_size = max_block_size;
+#endif
+   return true;
+}
 
 /* Commands sent to Director */
-static char hello[]    = "Hello %s calling %d\n";
+static char hello[]    = "Hello %s calling %d tlspsk=%d\n";
+
+/* fdcallsdir */
+static char hello_fdcallsdir[]    = "Hello %s fdcallsdir %d tlspsk=%d\n";
 
 /* Response from Director */
 static char DirOKhello[] = "1000 OK: %d";
 #define UA_VERSION 1
 
-BSOCK *connect_director(JCR *jcr, CONSRES *dir)
+class FDUAAuthenticateDir: public AuthenticateBase
 {
-   int tls_local_need = BNET_TLS_NONE;
-   int tls_remote_need = BNET_TLS_NONE;
-   bool tls_authenticate;
-   int compatible = true;
+public:
+   FDUAAuthenticateDir(JCR *jcr, BSOCK *UA_sock):
+   AuthenticateBase(jcr, UA_sock, dtCli, dcFD, dcDIR) {
+   }
+   virtual ~FDUAAuthenticateDir() {};
+
+   void TLSFailed() {
+      Mmsg(jcr->errmsg, _("TLS negotiation failed\n"));
+   }
+   bool authenticate_director(const char *name, DIRINFO *dir, connect_dir_mode_t mode);
+};
+
+bool FDUAAuthenticateDir::authenticate_director(const char *name, DIRINFO *dir, connect_dir_mode_t mode)
+{
+   BSOCK *UA_sock = bsock;
    int dir_version = 0;
    char bashed_name[MAX_NAME_LENGTH];
-   char *password;
-   TLS_CONTEXT *tls_ctx = NULL;
+   char *hello_cmd = hello;
+
+   /*
+    * Send my name to the Director then do authentication
+    */
+   bstrncpy(bashed_name, name, sizeof(bashed_name));
+   bash_spaces(bashed_name);
+
+   /* TLS Requirement */
+   CalcLocalTLSNeedFromRes(dir->tls_enable, dir->tls_require,
+         dir->tls_authenticate, false, NULL, dir->tls_ctx,
+         dir->tls_psk_enable, dir->psk_ctx, dir->password);
+
+   /* Timeout Hello after 15 secs */
+   StartAuthTimeout(15);
+   if (mode == CONNECT_FDCALLSDIR_MODE) {
+      hello_cmd = hello_fdcallsdir;
+   }
+   UA_sock->fsend(hello_cmd, bashed_name, UA_VERSION, tlspsk_local_need);
+
+   if (!ClientCramMD5Authenticate(dir->password)) {
+      return false;
+   }
+
+   if (!HandleTLS()) {
+      return false;
+   }
+
+   /*
+    * It's possible that the TLS connection will
+    * be dropped here if an invalid client certificate was presented
+    */
+   Dmsg1(dbglvl, ">dird: %s", UA_sock->msg);
+   if (UA_sock->recv() <= 0) {
+      Mmsg(jcr->errmsg, _("Bad response to Hello command: ERR=%s\n"),
+                         UA_sock->bstrerror());
+      return false;
+   }
+
+   Dmsg1(dbglvl, "<dird: %s", UA_sock->msg);
+   if (strncmp(UA_sock->msg, DirOKhello, sizeof(DirOKhello)-3) == 0) {
+      sscanf(UA_sock->msg, DirOKhello, &dir_version);
+   } else {
+      Mmsg(jcr->errmsg, _("Director rejected Hello command\n"));
+      return false;
+   }
+   /* Turn on compression for newer Directors */
+   if (dir_version >= 1 && (!dir || dir->comm_compression)) {
+      UA_sock->set_compress();
+   } else {
+      UA_sock->clear_compress();
+   }
+   return true;
+
+}
+
+BSOCK *connect_director(JCR *jcr, const char *name, DIRINFO *dir, connect_dir_mode_t mode)
+{
    BSOCK *UA_sock = NULL;
    int heart_beat;
 
-   if (!dir) {
-      return 0;
+   if (!dir || !dir->password || !dir->address) {
+      return NULL;
    }
-
-   Dmsg2(0, "Connecting to Director %s:%d\n", dir->address, dir->DIRport);
 
    if (dir) {
       heart_beat = dir->heartbeat_interval;
@@ -273,93 +301,11 @@ BSOCK *connect_director(JCR *jcr, CONSRES *dir)
       return NULL;
    }
 
-   /*
-    * Send my name to the Director then do authentication
-    */
-   bstrncpy(bashed_name, dir->hdr.name, sizeof(bashed_name));
-   bash_spaces(bashed_name);
-   password = dir->password;
-   /* TLS Requirement */
-   if (dir->tls_enable) {
-      if (dir->tls_require) {
-         tls_local_need = BNET_TLS_REQUIRED;
-      } else {
-         tls_local_need = BNET_TLS_OK;
-      }
-   }
-   if (dir->tls_authenticate) {
-      tls_local_need = BNET_TLS_REQUIRED;
-   }
-   tls_authenticate = dir->tls_authenticate;
-   tls_ctx = dir->tls_ctx;
-
-   /* Timeout Hello after 15 secs */
-   btimer_t *tid = start_bsock_timer(UA_sock, 15);
-   UA_sock->fsend(hello, bashed_name, UA_VERSION);
-
-   if (!cram_md5_respond(UA_sock, password, &tls_remote_need, &compatible) ||
-       !cram_md5_challenge(UA_sock, password, tls_local_need, compatible)) {
-      goto bail_out;
+   if (FDUAAuthenticateDir(jcr, UA_sock).authenticate_director(name, dir, mode)) {
+      return UA_sock;
    }
 
-   /* Verify that the remote host is willing to meet our TLS requirements */
-   if (tls_remote_need < tls_local_need && tls_local_need != BNET_TLS_OK && tls_remote_need != BNET_TLS_OK) {
-      Mmsg(jcr->errmsg, _("Authorization problem:"
-             " Remote server did not advertise required TLS support.\n"));
-      goto bail_out;
-   }
-
-   /* Verify that we are willing to meet the remote host's requirements */
-   if (tls_remote_need > tls_local_need && tls_local_need != BNET_TLS_OK && tls_remote_need != BNET_TLS_OK) {
-      Mmsg(jcr->errmsg, _("Authorization problem:"
-             " Remote server requires TLS.\n"));
-      goto bail_out;
-   }
-
-   /* Is TLS Enabled? */
-   if (tls_local_need >= BNET_TLS_OK && tls_remote_need >= BNET_TLS_OK) {
-      /* Engage TLS! Full Speed Ahead! */
-      if (!bnet_tls_client(tls_ctx, UA_sock, NULL)) {
-         Mmsg(jcr->errmsg, _("TLS negotiation failed\n"));
-         goto bail_out;
-      }
-      if (tls_authenticate) {           /* Authenticate only? */
-         UA_sock->free_tls();           /* yes, shutdown tls */
-      }
-   }
-
-   /*
-    * It's possible that the TLS connection will
-    * be dropped here if an invalid client certificate was presented
-    */
-   Dmsg1(6, ">dird: %s", UA_sock->msg);
-   if (UA_sock->recv() <= 0) {
-      Mmsg(jcr->errmsg, _("Bad response to Hello command: ERR=%s\n"),
-                         UA_sock->bstrerror());
-      goto bail_out;
-   }
-
-   Dmsg1(10, "<dird: %s", UA_sock->msg);
-   if (strncmp(UA_sock->msg, DirOKhello, sizeof(DirOKhello)-3) == 0) {
-      sscanf(UA_sock->msg, DirOKhello, &dir_version);
-      Dmsg1(0, "%s\n", UA_sock->msg);
-
-   } else {
-      Mmsg(jcr->errmsg, _("Director rejected Hello command\n"));
-      goto bail_out;
-   }
-   /* Turn on compression for newer Directors */
-   if (dir_version >= 1 && (!dir || dir->comm_compression)) {
-      UA_sock->set_compress();
-   } else {
-      UA_sock->clear_compress();
-   }
-   stop_bsock_timer(tid);
-   return UA_sock;
-
-bail_out:
    free_bsock(UA_sock);
-   stop_bsock_timer(tid);
    Mmsg(jcr->errmsg,
         ( _("Director authorization problem.\n"
             "Most likely the passwords do not agree.\n"
