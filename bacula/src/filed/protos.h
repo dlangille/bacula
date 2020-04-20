@@ -18,27 +18,58 @@
 */
 /*
  * Written by Kern Sibbald, MM
+ *
  */
+
+#ifndef FILED_PROTO_H
+#define FILED_PROTO_H
 
 extern bool blast_data_to_storage_daemon(JCR *jcr, char *addr);
 extern void do_verify_volume(JCR *jcr);
 extern void do_restore(JCR *jcr);
 extern int make_estimate(JCR *jcr);
 
+/* From fdcallsdir.c */
+void fdcallsdir_start_server(int max_clients, void *handle_client_request(void *bsock));
+void fdcallsdir_stop_server();
+void store_runres(LEX *lc, RES_ITEM *item, int index, int pass);
+
 /* From restore.c */
 bool decompress_data(JCR *jcr, int32_t stream, char **data, uint32_t *length);
 
 /* From authenticate.c */
-bool authenticate_director(JCR *jcr);
-bool authenticate_storagedaemon(JCR *jcr);
+class FDAuthenticateDIR: public AuthenticateBase
+{
+public:
+   FDAuthenticateDIR(JCR *jcr);
+   virtual ~FDAuthenticateDIR() {};
+   bool validate_dir_hello();
+   bool authenticate_director();
+};
+
+class FDAuthenticateSD: public AuthenticateBase
+{
+public:
+   FDAuthenticateSD(JCR *jcr);
+   virtual ~FDAuthenticateSD() {};
+   bool authenticate_storagedaemon();
+};
 
 /* From hello.c */
 bool validate_dir_hello(JCR *jcr);
 bool send_hello_ok(BSOCK *bs);
 bool send_sorry(BSOCK *bs);
-bool send_hello_sd(JCR *jcr, char *Job);
+bool send_hello_sd(JCR *jcr, char *Job, int tlspsk);
 void *handle_storage_connection(BSOCK *sd);
-BSOCK *connect_director(JCR *jcr, CONSRES *dir);
+bool send_fdcaps(JCR *jcr, BSOCK *sd);
+bool recv_sdcaps(JCR *jcr);
+
+typedef enum {
+   CONNECT_CONSOLE_MODE = 0,
+   CONNECT_FDCALLSDIR_MODE = 1,
+} connect_dir_mode_t;
+
+BSOCK *connect_director(JCR *jcr, const char *name, DIRINFO *dir, connect_dir_mode_t mode /* console or fdcallsdir */);
 
 /* From verify.c */
 int digest_file(JCR *jcr, FF_PKT *ff_pkt, DIGEST *digest);
@@ -73,6 +104,7 @@ int add_wild_to_fileset(JCR *jcr, const char *item, int type);
 int add_regex_to_fileset(JCR *jcr, const char *item, int type);
 findINCEXE *new_include(JCR *jcr);
 void filed_free_jcr(JCR *jcr);
+JCR *new_fd_jcr();
 
 /* from snapshot.c */
 int snapshot_cmd(JCR *jcr);
@@ -82,12 +114,26 @@ void VSSCleanup(VSSClient *c);
 VSSClient *VSSInit();
 #endif
 
+/* Definition for encyption cipher/digest type  */
+void store_cipher_type(LEX *lc, RES_ITEM *item, int index, int pass);
+void store_digest_type(LEX *lc, RES_ITEM *item, int index, int pass);
+
 /* from fdcollect.c */
 bool update_permanent_stats(void *data);
 void initialize_statcollector();
 void start_collector_threads();
 void terminate_collector_threads();
 
-/* Definition for encyption cipher/digest type  */
-void store_cipher_type(LEX *lc, RES_ITEM *item, int index, int pass);
-void store_digest_type(LEX *lc, RES_ITEM *item, int index, int pass);
+/* from org_filed_dedup.c.c or bee_filed_dedup.c */
+bool is_dedup_enabled(JCR *jcr, FF_PKT *ff_pkt);
+GetMsg *get_msg_buffer(JCR *jcr, BSOCK *sd, const char *rec_header);
+void dedup_init_jcr(JCR *jcr);
+
+/* BEEF functions defined */
+#if BEEF
+#include "bee_filed_uid.h"
+#else
+#include "org_filed_uid.h"
+#endif
+
+#endif
