@@ -44,5 +44,5 @@ FileDaemon {                          # this is me
 # Send all messages except skipped files back to Director
 Messages {
   Name = Standard
-  director = @basename@-dir = all, !skipped, !restored
+  director = @basename@-dir = all, !skipped, !restored, !saved
 }
