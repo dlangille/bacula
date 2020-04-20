@@ -59,6 +59,7 @@ extern s_kw msg_types[];
 extern s_ct ciphertypes[];
 extern s_ct digesttypes[];
 extern RES_TABLE resources[];
+extern s_kw ConnectFields[];
 
 #define CONFIG_FILE "bacula-fd.conf" /* default config file */
 
@@ -81,7 +82,7 @@ PROG_COPYRIGHT
 "        -t          test configuration file and exit\n"
 "        -v          verbose user messages\n"
 "        -?          print this message.\n"
-"\n"), 2012, "", VERSION, BDATE);
+"\n"), 2012, BDEMO, VERSION, BDATE);
 
    exit(1);
 }
@@ -275,6 +276,86 @@ void terminate_filed(int sig)
    exit(sig);
 }
 
+
+static void display_runres(HPKT &hpkt)
+{
+   int i;
+   RUNRES **prun = (RUNRES **)hpkt.ritem->value;
+   RUNRES *run = *prun;
+   bool first = true;
+   bool first_run = true;
+
+   sendit(NULL, "\n    \"%s\": [\n", hpkt.ritem->name);
+   for ( ; run; run=run->next) {
+      if (!first_run) sendit(NULL, ",\n");
+      first_run = false;
+      first = true;
+      sendit(NULL, "     {\n");
+      /* First do override fields */
+      for (i=0; ConnectFields[i].name; i++) {
+         switch (ConnectFields[i].token) {
+         case 'm':  /* MaxConnectTime */
+            if (run->MaxConnectTime_set) {
+               if (!first) sendit(NULL, ",\n");
+               sendit(NULL, "      \"%s\": %lld", ConnectFields[i].name,
+                     run->MaxConnectTime);
+               first = false;
+            }
+            break;
+         default:
+            break;
+         }
+      } /* End all ConnectFields (overrides) */
+      /* Now handle timing */
+      if (byte_is_set(run->hour, sizeof(run->hour))) {
+         if (!first) sendit(NULL, ",\n");
+         sendit(NULL, "      \"Hour\":");
+         display_bit_array(run->hour, 24);
+         sendit(NULL, ",\n      \"Minute\": %d", run->minute);
+         first = false;
+      }
+      /* bit 32 is used to store the keyword LastDay, so we look up to 0-31 */
+      if (byte_is_set(run->mday, sizeof(run->mday))) {
+         if (!first) sendit(NULL, ",\n");
+         sendit(NULL, "      \"Day\":");
+         display_bit_array(run->mday, 31);
+         first = false;
+      }
+      if (run->last_day_set) {
+         if (!first) sendit(NULL, ",\n");
+         sendit(NULL, "      \"LastDay\": 1");
+         first = false;
+      }
+      if (byte_is_set(run->month, sizeof(run->month))) {
+         if (!first) sendit(NULL, ",\n");
+         sendit(NULL, "      \"Month\":");
+         display_bit_array(run->month, 12);
+         first = false;
+      }
+      if (byte_is_set(run->wday, sizeof(run->wday))) {
+         if (!first) sendit(NULL, ",\n");
+         sendit(NULL, "      \"DayOfWeek\":");
+         display_bit_array(run->wday, 7);
+         first = false;
+      }
+      if (byte_is_set(run->wom, sizeof(run->wom))) {
+         if (!first) sendit(NULL, ",\n");
+         sendit(NULL, "      \"WeekOfMonth\":");
+         display_bit_array(run->wom, 6);
+         first = false;
+      }
+      if (byte_is_set(run->woy, sizeof(run->woy))) {
+         if (!first) sendit(NULL, ",\n");
+         sendit(NULL, "      \"WeekOfYear\":");
+         display_bit_array(run->woy, 54);
+         first = false;
+      }
+      sendit(NULL, "\n     }");
+
+   } /* End this Run directive */
+   sendit(NULL, "\n    ]");
+}
+
 /*
  * Dump out all resources in json format.
  * Note!!!! This routine must be in this file rather
@@ -283,7 +364,7 @@ void terminate_filed(int sig)
  */
 static void dump_json(display_filter *filter)
 {
-   int resinx, item, directives, first_directive;
+   int resinx, item, directives, first_directive, sz;
    bool first_res;
    RES_ITEM *items;
    RES *res;
@@ -332,8 +413,15 @@ static void dump_json(display_filter *filter)
          if (!items) {
             break;
          }
+
+         sz = get_resource_size(resinx + r_first);
+         if (sz < 0) {
+            Dmsg1(0, "Unknown resource type %d\n", resinx);
+            continue;
+         }
+
          /* Copy the resource into res_all */
-         memcpy(&res_all, res, sizeof(res_all));
+         memcpy(&res_all, res, sz);
 
          if (filter->resource_name) {
             bool skip=true;
@@ -415,6 +503,8 @@ static void dump_json(display_filter *filter)
                   display_digest(hpkt);
                } else if (items[item].handler == store_coll_type) {
                   display_collector_types(hpkt);
+               } else if (items[item].handler == store_runres) {
+                  display_runres(hpkt);
                } else {
                   printf("\n    \"%s\": null", items[item].name);
                }
@@ -520,7 +610,9 @@ static bool check_resources()
          Jmsg(NULL, M_FATAL, 0, _("TLS required but not configured in Bacula.\n"));
          OK = false;
 #else
-         me->tls_enable = true;
+         if (me->tls_ca_certfile || me->tls_ca_certdir || me->tls_certfile || me->tls_keyfile) {
+            me->tls_enable = true;
+         }
 #endif
       }
       need_tls = me->tls_enable || me->tls_authenticate;
@@ -558,30 +650,32 @@ static bool check_resources()
 
    foreach_res(director, R_DIRECTOR) {
       /* tls_require implies tls_enable */
-      if (director->tls_require) {
+      if (director->dirinfo.tls_require) {
 #ifndef HAVE_TLS
          Jmsg(NULL, M_FATAL, 0, _("TLS required but not configured in Bacula.\n"));
          OK = false;
          continue;
 #else
-         director->tls_enable = true;
+         if (director->dirinfo.tls_certfile || director->dirinfo.tls_keyfile) {
+            director->dirinfo.tls_enable = true;
+         }
 #endif
       }
-      need_tls = director->tls_enable || director->tls_authenticate;
+      need_tls = director->dirinfo.tls_enable || director->dirinfo.tls_authenticate;
 
-      if (!director->tls_certfile && need_tls) {
+      if (!director->dirinfo.tls_certfile && need_tls) {
          Emsg2(M_FATAL, 0, _("\"TLS Certificate\" file not defined for Director \"%s\" in %s.\n"),
                director->hdr.name, configfile);
          OK = false;
       }
 
-      if (!director->tls_keyfile && need_tls) {
+      if (!director->dirinfo.tls_keyfile && need_tls) {
          Emsg2(M_FATAL, 0, _("\"TLS Key\" file not defined for Director \"%s\" in %s.\n"),
                director->hdr.name, configfile);
          OK = false;
       }
 
-      if ((!director->tls_ca_certfile && !director->tls_ca_certdir) && need_tls && director->tls_verify_peer) {
+      if ((!director->dirinfo.tls_ca_certfile && !director->dirinfo.tls_ca_certdir) && need_tls && director->dirinfo.tls_verify_peer) {
          Emsg2(M_FATAL, 0, _("Neither \"TLS CA Certificate\""
                              " or \"TLS CA Certificate Dir\" are defined for Director \"%s\" in %s."
                              " At least one CA certificate store is required"
@@ -593,30 +687,32 @@ static bool check_resources()
 
    foreach_res(cons, R_CONSOLE) {
       /* tls_require implies tls_enable */
-      if (cons->tls_require) {
+      if (cons->dirinfo.tls_require) {
 #ifndef HAVE_TLS
          Jmsg(NULL, M_FATAL, 0, _("TLS required but not configured in Bacula.\n"));
          OK = false;
          continue;
 #else
-         cons->tls_enable = true;
+         if (cons->dirinfo.tls_certfile || cons->dirinfo.tls_keyfile) {
+            me->tls_enable = true;
+         }
 #endif
       }
-      need_tls = cons->tls_enable || cons->tls_authenticate;
+      need_tls = cons->dirinfo.tls_enable || cons->dirinfo.tls_authenticate;
 
-      if (!cons->tls_certfile && need_tls) {
+      if (!cons->dirinfo.tls_certfile && need_tls) {
          Emsg2(M_FATAL, 0, _("\"TLS Certificate\" file not defined for Console \"%s\" in %s.\n"),
                cons->hdr.name, configfile);
          OK = false;
       }
 
-      if (!cons->tls_keyfile && need_tls) {
+      if (!cons->dirinfo.tls_keyfile && need_tls) {
          Emsg2(M_FATAL, 0, _("\"TLS Key\" file not defined for Console \"%s\" in %s.\n"),
                cons->hdr.name, configfile);
          OK = false;
       }
 
-      if ((!cons->tls_ca_certfile && !cons->tls_ca_certdir) && need_tls && cons->tls_verify_peer) {
+      if ((!cons->dirinfo.tls_ca_certfile && !cons->dirinfo.tls_ca_certdir) && need_tls && cons->dirinfo.tls_verify_peer) {
          Emsg2(M_FATAL, 0, _("Neither \"TLS CA Certificate\""
                              " or \"TLS CA Certificate Dir\" are defined for Console \"%s\" in %s."
                              " At least one CA certificate store is required"
