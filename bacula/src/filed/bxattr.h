@@ -89,6 +89,7 @@ private:
    bool xattr_ena;
    uint32_t flags;
    uint32_t current_dev;
+   char current_fs[256];
    POOLMEM *content;
    uint32_t content_len;
    uint32_t xattr_nr_errors;
@@ -181,7 +182,7 @@ private:
 
    void inc_xattr_errors(){ xattr_nr_errors++;};
    bRC_BXATTR check_dev (JCR *jcr);
-   void check_dev (JCR *jcr, uint32_t dev);
+   void check_dev (JCR *jcr, FF_PKT *pkt, uint32_t dev);
 
 public:
    BXATTR ();
@@ -198,6 +199,8 @@ public:
    bRC_BXATTR restore_xattr (JCR *jcr, int stream, char *content, uint32_t content_length);
 
    /* utility functions */
+   const char *get_current_fs() { return current_fs; };
+   void set_current_fs(const char *fs) { bstrncpy(current_fs, NPRTB(fs), sizeof(current_fs)); };
    inline uint32_t get_xattr_nr_errors(){ return xattr_nr_errors;};
    void set_xattr_streams (const int *pxattr);
    void set_xattr_skiplists (const char **pxattr, const char **pxattr_acl);
