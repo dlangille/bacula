@@ -20,6 +20,9 @@
 #ifndef __RESTORE_H
 #define __RESTORE_H
 
+/*
+ * Used for delayed streams
+ */
 struct RESTORE_DATA_STREAM {
    int32_t stream;                     /* stream less new bits */
    char *content;                      /* stream data */
@@ -35,13 +38,16 @@ struct RESTORE_CIPHER_CTX {
    int32_t packet_len;                 /* Total bytes in packet */
 };
 
+/*
+ * Restore context
+ */
 struct r_ctx {
    JCR *jcr;
-   int32_t stream;                     /* stream less new bits */
+   int32_t stream;                     /* stream less special meaning bits */
    int32_t prev_stream;                /* previous stream */
    int32_t full_stream;                /* full stream including new bits */
    int32_t comp_stream;                /* last compressed stream found. needed only to restore encrypted compressed backup */
-   BFILE bfd;                          /* File content */
+   BFILE bfd;                          /* Content/data file descriptor */
    uint64_t fileAddr;                  /* file write address */
    uint32_t size;                      /* Size of file */
    int flags;                          /* Options for extract_data() */
