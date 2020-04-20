@@ -381,6 +381,8 @@ bool accurate_check_file(JCR *jcr, FF_PKT *ff_pkt)
    /*
     * Loop over options supplied by user and verify the
     * fields he requests.
+    *
+    * If an option is added, make sure to update dird/inc_conf.c and BWeb as well.
     */
    for (char *p=opts; !stat && *p; p++) {
       char ed1[30], ed2[30];
@@ -502,7 +504,7 @@ bool accurate_check_file(JCR *jcr, FF_PKT *ff_pkt)
              * to NULL and not used.
              */
             if (ff_pkt->flags & FO_MD5) {
-               digest = crypto_digest_new(jcr, CRYPTO_DIGEST_MD5);
+               digest = crypto_digest_new(jcr, CRYPTO_DIGEST_MD5); /* TODO: With FIPS, MD5 is disabled */
                digest_stream = STREAM_MD5_DIGEST;
 
             } else if (ff_pkt->flags & FO_SHA1) {
