@@ -36,6 +36,7 @@
  *      for the resource records.
  *
  *     Kern Sibbald, September MM
+ *
  */
 
 #include "bacula.h"
@@ -92,6 +93,9 @@ static RES_ITEM cli_items[] = {
    {"SdConnectTimeout", store_time,ITEM(res_client.SDConnectTimeout), 0, ITEM_DEFAULT, 60 * 30},
    {"HeartbeatInterval", store_time, ITEM(res_client.heartbeat_interval), 0, ITEM_DEFAULT, 5 * 60},
    {"MaximumNetworkBufferSize", store_pint32, ITEM(res_client.max_network_buffer_size), 0, 0, 0},
+#if BEEF
+   {"FipsRequire", store_bool, ITEM(res_client.require_fips), 0, 0, 0},
+#endif
 #ifdef DATA_ENCRYPTION
    {"PkiSignatures",         store_bool,    ITEM(res_client.pki_sign), 0, ITEM_DEFAULT, 0},
    {"PkiEncryption",         store_bool,    ITEM(res_client.pki_encrypt), 0, ITEM_DEFAULT, 0},
@@ -103,6 +107,7 @@ static RES_ITEM cli_items[] = {
 #endif
    {"TlsAuthenticate",       store_bool,    ITEM(res_client.tls_authenticate),  0, 0, 0},
    {"TlsEnable",             store_bool,    ITEM(res_client.tls_enable),  0, 0, 0},
+   {"TlsPskEnable",          store_bool,    ITEM(res_client.tls_psk_enable),  0, ITEM_DEFAULT, tls_psk_default},
    {"TlsRequire",            store_bool,    ITEM(res_client.tls_require), 0, 0, 0},
    {"TlsCaCertificateFile",  store_dir,     ITEM(res_client.tls_ca_certfile), 0, 0, 0},
    {"TlsCaCertificateDir",   store_dir,     ITEM(res_client.tls_ca_certdir), 0, 0, 0},
@@ -112,6 +117,10 @@ static RES_ITEM cli_items[] = {
    {"MaximumBandwidthPerJob",store_speed,   ITEM(res_client.max_bandwidth_per_job), 0, 0, 0},
    {"CommCompression",       store_bool,    ITEM(res_client.comm_compression), 0, ITEM_DEFAULT, true},
    {"DisableCommand",        store_alist_str, ITEM(res_client.disable_cmds), 0, 0, 0},
+#if BEEF
+   {"DedupIndexDirectory",   store_dir,    ITEM(res_client.dedup_index_dir), 0, 0, 0}, /* deprecated */
+   {"EnableClientRehydration", store_bool,    ITEM(res_client.allow_dedup_cache), 0, ITEM_DEFAULT, false},
+#endif
    {NULL, NULL, {0}, 0, 0, 0}
 };
 
@@ -119,23 +128,30 @@ static RES_ITEM cli_items[] = {
 static RES_ITEM dir_items[] = {
    {"Name",        store_name,     ITEM(res_dir.hdr.name),  0, ITEM_REQUIRED, 0},
    {"Description", store_str,      ITEM(res_dir.hdr.desc),  0, 0, 0},
-   {"Password",    store_password, ITEM(res_dir.password),  0, ITEM_REQUIRED, 0},
-   {"Address",     store_str,      ITEM(res_dir.address),   0, 0, 0},
+   {"Password",    store_password, ITEM(res_dir.dirinfo.password),  0, ITEM_REQUIRED, 0},
+   /* ***BEE*** In BWeb/BConfig, the store_str is replaced by
+   store_addresses_address to check more carefully user inputs */
+   {"Address",     store_str,      ITEM(res_dir.dirinfo.address),   0, 0, 0},
+   {"DirPort",     store_pint32,    ITEM(res_dir.dirinfo.DIRport),  0, ITEM_DEFAULT, 9101},
    {"Monitor",     store_bool,   ITEM(res_dir.monitor),   0, ITEM_DEFAULT, 0},
    {"Remote",      store_bool,   ITEM(res_dir.remote),   0, ITEM_DEFAULT, 0},
-   {"TlsAuthenticate",      store_bool,    ITEM(res_dir.tls_authenticate), 0, 0, 0},
-   {"TlsEnable",            store_bool,    ITEM(res_dir.tls_enable), 0, 0, 0},
-   {"TlsRequire",           store_bool,    ITEM(res_dir.tls_require), 0, 0, 0},
-   {"TlsVerifyPeer",        store_bool,    ITEM(res_dir.tls_verify_peer), 0, ITEM_DEFAULT, 1},
-   {"TlsCaCertificateFile", store_dir,       ITEM(res_dir.tls_ca_certfile), 0, 0, 0},
-   {"TlsCaCertificateDir",  store_dir,       ITEM(res_dir.tls_ca_certdir), 0, 0, 0},
-   {"TlsCertificate",       store_dir,       ITEM(res_dir.tls_certfile), 0, 0, 0},
-   {"TlsKey",               store_dir,       ITEM(res_dir.tls_keyfile), 0, 0, 0},
-   {"TlsDhFile",            store_dir,       ITEM(res_dir.tls_dhfile), 0, 0, 0},
-   {"TlsAllowedCn",         store_alist_str, ITEM(res_dir.tls_allowed_cns), 0, 0, 0},
+   {"TlsAuthenticate",      store_bool,    ITEM(res_dir.dirinfo.tls_authenticate), 0, 0, 0},
+   {"TlsEnable",            store_bool,    ITEM(res_dir.dirinfo.tls_enable), 0, 0, 0},
+   {"TlsPskEnable",         store_bool,    ITEM(res_dir.dirinfo.tls_psk_enable), 0, ITEM_DEFAULT, tls_psk_default},
+   {"TlsRequire",           store_bool,    ITEM(res_dir.dirinfo.tls_require), 0, 0, 0},
+   {"TlsVerifyPeer",        store_bool,    ITEM(res_dir.dirinfo.tls_verify_peer), 0, ITEM_DEFAULT, 1},
+   {"TlsCaCertificateFile", store_dir,       ITEM(res_dir.dirinfo.tls_ca_certfile), 0, 0, 0},
+   {"TlsCaCertificateDir",  store_dir,       ITEM(res_dir.dirinfo.tls_ca_certdir), 0, 0, 0},
+   {"TlsCertificate",       store_dir,       ITEM(res_dir.dirinfo.tls_certfile), 0, 0, 0},
+   {"TlsKey",               store_dir,       ITEM(res_dir.dirinfo.tls_keyfile), 0, 0, 0},
+   {"TlsDhFile",            store_dir,       ITEM(res_dir.dirinfo.tls_dhfile), 0, 0, 0},
+   {"TlsAllowedCn",         store_alist_str, ITEM(res_dir.dirinfo.tls_allowed_cns), 0, 0, 0},
    {"MaximumBandwidthPerJob", store_speed,     ITEM(res_dir.max_bandwidth_per_job), 0, 0, 0},
    {"DisableCommand",        store_alist_str, ITEM(res_dir.disable_cmds), 0, 0, 0},
    {"Console",              store_res, ITEM(res_dir.console),  R_CONSOLE, 0, 0},
+   {"ConnectToDirector",    store_bool,     ITEM(res_dir.connect_to_dir), 0, 0, 0},
+   {"Schedule", store_res, ITEM(res_dir.schedule), R_SCHEDULE, 0, 0},
+   {"ReconnectionTime", store_time,ITEM(res_dir.reconnection_time), 0, ITEM_DEFAULT, 60 * 45},
    {NULL, NULL, {0}, 0, 0, 0}
 };
 
@@ -143,19 +159,22 @@ static RES_ITEM dir_items[] = {
 static RES_ITEM cons_items[] = {
    {"Name",        store_name,     ITEM(res_cons.hdr.name),  0, ITEM_REQUIRED, 0},
    {"Description", store_str,      ITEM(res_cons.hdr.desc),  0, 0, 0},
-   {"Password",    store_password, ITEM(res_cons.password),  0, ITEM_REQUIRED, 0},
-   {"Address",     store_str,      ITEM(res_cons.address),   0, 0, 0},
-   {"DirPort",        store_pint32,    ITEM(res_cons.DIRport),  0, ITEM_DEFAULT, 9101},
-   {"TlsAuthenticate",      store_bool,    ITEM(res_cons.tls_authenticate), 0, 0, 0},
-   {"TlsEnable",            store_bool,    ITEM(res_cons.tls_enable), 0, 0, 0},
-   {"TlsRequire",           store_bool,    ITEM(res_cons.tls_require), 0, 0, 0},
-   {"TlsVerifyPeer",        store_bool,    ITEM(res_cons.tls_verify_peer), 0, ITEM_DEFAULT, 1},
-   {"TlsCaCertificateFile", store_dir,       ITEM(res_cons.tls_ca_certfile), 0, 0, 0},
-   {"TlsCaCertificateDir",  store_dir,       ITEM(res_cons.tls_ca_certdir), 0, 0, 0},
-   {"TlsCertificate",       store_dir,       ITEM(res_cons.tls_certfile), 0, 0, 0},
-   {"TlsKey",               store_dir,       ITEM(res_cons.tls_keyfile), 0, 0, 0},
-   {"TlsDhFile",            store_dir,       ITEM(res_cons.tls_dhfile), 0, 0, 0},
-   {"TlsAllowedCn",         store_alist_str, ITEM(res_cons.tls_allowed_cns), 0, 0, 0},
+   {"Password",    store_password, ITEM(res_cons.dirinfo.password),  0, ITEM_REQUIRED, 0},
+   /* ***BEE*** In BWeb/BConfig, the store_str is replaced by
+   store_addresses_address to check more carefully user inputs */
+   {"Address",     store_str,      ITEM(res_cons.dirinfo.address),   0, 0, 0},
+   {"DirPort",        store_pint32,    ITEM(res_cons.dirinfo.DIRport),  0, ITEM_DEFAULT, 9101},
+   {"TlsAuthenticate",      store_bool,    ITEM(res_cons.dirinfo.tls_authenticate), 0, 0, 0},
+   {"TlsEnable",            store_bool,    ITEM(res_cons.dirinfo.tls_enable), 0, 0, 0},
+   {"TlsPskEnable",         store_bool,    ITEM(res_cons.dirinfo.tls_psk_enable), 0, ITEM_DEFAULT, tls_psk_default},
+   {"TlsRequire",           store_bool,    ITEM(res_cons.dirinfo.tls_require), 0, 0, 0},
+   {"TlsVerifyPeer",        store_bool,    ITEM(res_cons.dirinfo.tls_verify_peer), 0, ITEM_DEFAULT, 1},
+   {"TlsCaCertificateFile", store_dir,       ITEM(res_cons.dirinfo.tls_ca_certfile), 0, 0, 0},
+   {"TlsCaCertificateDir",  store_dir,       ITEM(res_cons.dirinfo.tls_ca_certdir), 0, 0, 0},
+   {"TlsCertificate",       store_dir,       ITEM(res_cons.dirinfo.tls_certfile), 0, 0, 0},
+   {"TlsKey",               store_dir,       ITEM(res_cons.dirinfo.tls_keyfile), 0, 0, 0},
+   {"TlsDhFile",            store_dir,       ITEM(res_cons.dirinfo.tls_dhfile), 0, 0, 0},
+   {"TlsAllowedCn",         store_alist_str, ITEM(res_cons.dirinfo.tls_allowed_cns), 0, 0, 0},
    {NULL, NULL, {0}, 0, 0, 0}
 };
 
@@ -165,6 +184,18 @@ extern RES_ITEM msgs_items[];
 /* Statistics resource */
 extern RES_ITEM collector_items[];
 
+/*
+ * Statistics resource directives
+ *
+ *  name         handler      value       code   flags  default_value
+ */
+RES_ITEM sched_items[] = {
+   {"Name",        store_name,  ITEM(res_sched.hdr.name),          0, ITEM_REQUIRED, 0},
+   {"Description", store_str,   ITEM(res_sched.hdr.desc),          0, 0, 0},
+   {"Enabled",     store_bool,  ITEM(res_sched.Enabled),  0, ITEM_DEFAULT, true},
+   {"Connect",     store_runres, ITEM(res_sched.run),      0, 0, 0},
+   {NULL,               NULL,             {0},                                   0, 0, 0}
+};
 
 /*
  * This is the master resource definition.
@@ -176,7 +207,8 @@ RES_TABLE resources[] = {
    {"Messages",      msgs_items,       R_MSGS},
    {"Console",       cons_items,       R_CONSOLE},
    {"Statistics",    collector_items,  R_COLLECTOR},
-   {"Client",        cli_items,        R_CLIENT},     /* alias for filedaemon */
+   {"Schedule",      sched_items,      R_SCHEDULE},
+   {"Client",        cli_items,        R_CLIENT},     /* keep last, alias for filedaemon */
    {NULL,            NULL,             0}
 };
 
@@ -261,11 +293,11 @@ void dump_resource(int type, RES *ares, void sendit(void *sock, const char *fmt,
    switch (type) {
    case R_CONSOLE:
       sendit(sock, "Console: name=%s password=%s\n", ares->name,
-             res->res_cons.password);
+             res->res_cons.dirinfo.password);
       break;
    case R_DIRECTOR:
       sendit(sock, "Director: name=%s password=%s\n", ares->name,
-              res->res_dir.password);
+              res->res_dir.dirinfo.password);
       break;
    case R_CLIENT:
       sendit(sock, "Client: name=%s FDport=%d\n", ares->name,
@@ -281,6 +313,85 @@ void dump_resource(int type, RES *ares, void sendit(void *sock, const char *fmt,
    case R_COLLECTOR:
       dump_collector_resource(res->res_collector, sendit, sock);
       break;
+   case R_SCHEDULE:
+      if (res->res_sched.run) {
+         int i;
+         RUNRES *run = res->res_sched.run;
+         char buf[1000], num[30];
+         sendit(sock, _("Schedule: Name=%s Enabled=%d\n"), 
+            res->res_sched.hdr.name, res->res_sched.is_enabled());
+         if (!run) {
+            break;
+         }
+next_run:
+         if (run->MaxConnectTime) {
+            sendit(sock, _("      MaxConnectTime=%u\n"), run->MaxConnectTime);
+         }
+         bstrncpy(buf, _("      hour="), sizeof(buf));
+         for (i=0; i<24; i++) {
+            if (bit_is_set(i, run->hour)) {
+               bsnprintf(num, sizeof(num), "%d ", i);
+               bstrncat(buf, num, sizeof(buf));
+            }
+         }
+         bstrncat(buf, "\n", sizeof(buf));
+         sendit(sock, buf);
+         bstrncpy(buf, _("      mday="), sizeof(buf));
+         for (i=0; i<32; i++) {
+            if (bit_is_set(i, run->mday)) {
+               bsnprintf(num, sizeof(num), "%d ", i);
+               bstrncat(buf, num, sizeof(buf));
+            }
+         }
+         bstrncat(buf, "\n", sizeof(buf));
+         sendit(sock, buf);
+         bstrncpy(buf, _("      month="), sizeof(buf));
+         for (i=0; i<12; i++) {
+            if (bit_is_set(i, run->month)) {
+               bsnprintf(num, sizeof(num), "%d ", i);
+               bstrncat(buf, num, sizeof(buf));
+            }
+         }
+         bstrncat(buf, "\n", sizeof(buf));
+         sendit(sock, buf);
+         bstrncpy(buf, _("      wday="), sizeof(buf));
+         for (i=0; i<7; i++) {
+            if (bit_is_set(i, run->wday)) {
+               bsnprintf(num, sizeof(num), "%d ", i);
+               bstrncat(buf, num, sizeof(buf));
+            }
+         }
+         bstrncat(buf, "\n", sizeof(buf));
+         sendit(sock, buf);
+         bstrncpy(buf, _("      wom="), sizeof(buf));
+         for (i=0; i<6; i++) {
+            if (bit_is_set(i, run->wom)) {
+               bsnprintf(num, sizeof(num), "%d ", i);
+               bstrncat(buf, num, sizeof(buf));
+            }
+         }
+         bstrncat(buf, "\n", sizeof(buf));
+         sendit(sock, buf);
+         bstrncpy(buf, _("      woy="), sizeof(buf));
+         for (i=0; i<54; i++) {
+            if (bit_is_set(i, run->woy)) {
+               bsnprintf(num, sizeof(num), "%d ", i);
+               bstrncat(buf, num, sizeof(buf));
+            }
+         }
+         bstrncat(buf, "\n", sizeof(buf));
+         sendit(sock, buf);
+         sendit(sock, _("      mins=%d\n"), run->minute);
+         /* If another Run record is chained in, go print it */
+         if (run->next) {
+            run = run->next;
+            goto next_run;
+         }
+      } else {
+         sendit(sock, _("Schedule: name=%s\n"), res->res_sched.hdr.name);
+      }
+      break;
+
    default:
       sendit(sock, "Unknown resource type %d\n", type);
    }
@@ -315,32 +426,35 @@ void free_resource(RES *sres, int type)
    }
    switch (type) {
    case R_DIRECTOR:
-      if (res->res_dir.password) {
-         free(res->res_dir.password);
+      if (res->res_dir.dirinfo.password) {
+         free(res->res_dir.dirinfo.password);
       }
-      if (res->res_dir.address) {
-         free(res->res_dir.address);
+      if (res->res_dir.dirinfo.address) {
+         free(res->res_dir.dirinfo.address);
       }
-      if (res->res_dir.tls_ctx) {
-         free_tls_context(res->res_dir.tls_ctx);
+      if (res->res_dir.dirinfo.tls_ctx) {
+         free_tls_context(res->res_dir.dirinfo.tls_ctx);
       }
-      if (res->res_dir.tls_ca_certfile) {
-         free(res->res_dir.tls_ca_certfile);
+      if (res->res_dir.dirinfo.psk_ctx) {
+         free_psk_context(res->res_dir.dirinfo.psk_ctx);
       }
-      if (res->res_dir.tls_ca_certdir) {
-         free(res->res_dir.tls_ca_certdir);
+      if (res->res_dir.dirinfo.tls_ca_certfile) {
+         free(res->res_dir.dirinfo.tls_ca_certfile);
       }
-      if (res->res_dir.tls_certfile) {
-         free(res->res_dir.tls_certfile);
+      if (res->res_dir.dirinfo.tls_ca_certdir) {
+         free(res->res_dir.dirinfo.tls_ca_certdir);
       }
-      if (res->res_dir.tls_keyfile) {
-         free(res->res_dir.tls_keyfile);
+      if (res->res_dir.dirinfo.tls_certfile) {
+         free(res->res_dir.dirinfo.tls_certfile);
       }
-      if (res->res_dir.tls_dhfile) {
-         free(res->res_dir.tls_dhfile);
+      if (res->res_dir.dirinfo.tls_keyfile) {
+         free(res->res_dir.dirinfo.tls_keyfile);
       }
-      if (res->res_dir.tls_allowed_cns) {
-         delete res->res_dir.tls_allowed_cns;
+      if (res->res_dir.dirinfo.tls_dhfile) {
+         free(res->res_dir.dirinfo.tls_dhfile);
+      }
+      if (res->res_dir.dirinfo.tls_allowed_cns) {
+         delete res->res_dir.dirinfo.tls_allowed_cns;
       }
       if (res->res_dir.disable_cmds) {
          delete res->res_dir.disable_cmds;
@@ -350,32 +464,35 @@ void free_resource(RES *sres, int type)
       }
       break;
    case R_CONSOLE:
-      if (res->res_cons.password) {
-         free(res->res_cons.password);
+      if (res->res_cons.dirinfo.password) {
+         free(res->res_cons.dirinfo.password);
       }
-      if (res->res_cons.address) {
-         free(res->res_cons.address);
+      if (res->res_cons.dirinfo.address) {
+         free(res->res_cons.dirinfo.address);
       }
-      if (res->res_cons.tls_ctx) {
-         free_tls_context(res->res_cons.tls_ctx);
+      if (res->res_cons.dirinfo.tls_ctx) {
+         free_tls_context(res->res_cons.dirinfo.tls_ctx);
       }
-      if (res->res_cons.tls_ca_certfile) {
-         free(res->res_cons.tls_ca_certfile);
+      if (res->res_cons.dirinfo.psk_ctx) {
+         free_psk_context(res->res_cons.dirinfo.psk_ctx);
       }
-      if (res->res_cons.tls_ca_certdir) {
-         free(res->res_cons.tls_ca_certdir);
+      if (res->res_cons.dirinfo.tls_ca_certfile) {
+         free(res->res_cons.dirinfo.tls_ca_certfile);
       }
-      if (res->res_cons.tls_certfile) {
-         free(res->res_cons.tls_certfile);
+      if (res->res_cons.dirinfo.tls_ca_certdir) {
+         free(res->res_cons.dirinfo.tls_ca_certdir);
       }
-      if (res->res_cons.tls_keyfile) {
-         free(res->res_cons.tls_keyfile);
+      if (res->res_cons.dirinfo.tls_certfile) {
+         free(res->res_cons.dirinfo.tls_certfile);
       }
-      if (res->res_cons.tls_dhfile) {
-         free(res->res_cons.tls_dhfile);
+      if (res->res_cons.dirinfo.tls_keyfile) {
+         free(res->res_cons.dirinfo.tls_keyfile);
       }
-      if (res->res_cons.tls_allowed_cns) {
-         delete res->res_cons.tls_allowed_cns;
+      if (res->res_cons.dirinfo.tls_dhfile) {
+         free(res->res_cons.dirinfo.tls_dhfile);
+      }
+      if (res->res_cons.dirinfo.tls_allowed_cns) {
+         delete res->res_cons.dirinfo.tls_allowed_cns;
       }
       break;
     case R_CLIENT:
@@ -393,6 +510,9 @@ void free_resource(RES *sres, int type)
       }
       if (res->res_client.plugin_directory) {
          free(res->res_client.plugin_directory);
+      }
+      if (res->res_client.dedup_index_dir) {
+         free(res->res_client.dedup_index_dir);
       }
       if (res->res_client.FDaddrs) {
          free_addresses(res->res_client.FDaddrs);
@@ -436,6 +556,9 @@ void free_resource(RES *sres, int type)
       if (res->res_client.tls_ctx) {
          free_tls_context(res->res_client.tls_ctx);
       }
+      if (res->res_client.psk_ctx) {
+         free_psk_context(res->res_client.psk_ctx);
+      }
       if (res->res_client.tls_ca_certfile) {
          free(res->res_client.tls_ca_certfile);
       }
@@ -471,6 +594,17 @@ void free_resource(RES *sres, int type)
    case R_COLLECTOR:
       free_collector_resource(res->res_collector);
       break;
+   case R_SCHEDULE:
+      if (res->res_sched.run) {
+         RUNRES *nrun, *next;
+         nrun = res->res_sched.run;
+         while (nrun) {
+            next = nrun->next;
+            free(nrun);
+            nrun = next;
+         }
+      }
+      break;
    default:
       printf(_("Unknown resource type %d\n"), type);
    }
@@ -480,6 +614,35 @@ void free_resource(RES *sres, int type)
    }
 }
 
+/* Get the size of a resource object */
+int get_resource_size(int type)
+{
+   int size = -1;
+   switch (type) {
+      case R_DIRECTOR:
+         size = sizeof(DIRRES);
+         break;
+      case R_CONSOLE:
+         size = sizeof(CONSRES);
+         break;
+      case R_CLIENT:
+         size = sizeof(CLIENT);
+         break;
+      case R_MSGS:
+         size = sizeof(MSGS);
+         break;
+      case R_COLLECTOR:
+         size = sizeof(COLLECTOR);
+         break;
+      case R_SCHEDULE:
+         size = sizeof(SCHEDRES);
+         break;
+      default:
+         break;
+   }
+   return size;
+}
+
 /* Save the new resource by chaining it into the head list for
  * the resource. If this is pass 2, we update any resource
  * pointers (currently only in the Job resource).
@@ -487,7 +650,6 @@ void free_resource(RES *sres, int type)
 bool save_resource(CONFIG *config, int type, RES_ITEM *items, int pass)
 {
    URES *res;
-   CONSRES *cons;
    int rindex = type - r_first;
    int i, size;
    int error = 0;
@@ -515,6 +677,19 @@ bool save_resource(CONFIG *config, int type, RES_ITEM *items, int pass)
          /* Resources not containing a resource */
          case R_MSGS:
             break;
+         case R_SCHEDULE:
+            /*
+             * Schedule is a bit different in that it contains a RUN record
+             * chain which isn't a "named" resource. This chain was linked
+             * in by run_conf.c during pass 2, so here we jam the pointer
+             * into the Schedule resource.
+             */
+            if ((res = (URES *)GetResWithName(R_SCHEDULE, res_all.res_sched.name())) == NULL) {
+               Mmsg(config->m_errmsg, _("Cannot find Schedule resource %s\n"), res_all.res_sched.name());
+               return false;
+            }
+            res->res_sched.run = res_all.res_sched.run;
+            break;
 
          /* Resources containing another resource */
          case R_DIRECTOR:
@@ -522,16 +697,10 @@ bool save_resource(CONFIG *config, int type, RES_ITEM *items, int pass)
                Mmsg(config->m_errmsg, _("Cannot find Director resource %s\n"), res_all.res_dir.hdr.name);
                return false;
             }
-            res->res_dir.tls_allowed_cns = res_all.res_dir.tls_allowed_cns;
+            res->res_dir.dirinfo.tls_allowed_cns = res_all.res_dir.dirinfo.tls_allowed_cns;
             res->res_dir.disable_cmds = res_all.res_dir.disable_cmds;
             res->res_dir.console = res_all.res_dir.console;
-            if (res_all.res_dir.remote && !res_all.res_dir.console) {
-               if ((cons = (CONSRES *)GetNextRes(R_CONSOLE, NULL)) == NULL) {
-                  Mmsg(config->m_errmsg, _("Cannot find any Console resource for remote access\n"));
-                  return false;
-               }
-               res->res_dir.console = cons;
-            }
+            res->res_dir.schedule = res_all.res_dir.schedule;
             break;
          /* Resources containing another resource */
          case R_CONSOLE:
@@ -578,28 +747,13 @@ bool save_resource(CONFIG *config, int type, RES_ITEM *items, int pass)
    }
 
    /* The following code is only executed on pass 1 */
-   switch (type) {
-      case R_DIRECTOR:
-         size = sizeof(DIRRES);
-         break;
-      case R_CONSOLE:
-         size = sizeof(CONSRES);
-         break;
-      case R_CLIENT:
-         size = sizeof(CLIENT);
-         break;
-      case R_MSGS:
-         size = sizeof(MSGS);
-         break;
-      case R_COLLECTOR:
-         size = sizeof(COLLECTOR);
-         break;
-      default:
-         printf(_("Unknown resource type %d\n"), type);
-         error = 1;
-         size = 1;
-         break;
+   size = get_resource_size(type);
+
+   if (size < 0) {
+      printf(_("Unknown resource type %d\n"), type);
+      error = 1;
    }
+
    /* Common */
    if (!error) {
       if (!config->insert_res(rindex, size)) {
