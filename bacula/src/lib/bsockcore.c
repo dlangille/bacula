@@ -23,7 +23,7 @@
  *
  * Major refactoring of BSOCK code written by:
  *
- * Radosław Korzeniewski, MMXVIII
+ * Radoslaw Korzeniewski, MMXVIII
  * radoslaw@korzeniewski.net, radekk@inteos.pl
  * Inteos Sp. z o.o. http://www.inteos.pl/
  *
@@ -43,11 +43,11 @@
 
 #if !defined(ENODATA)              /* not defined on BSD systems */
 #define ENODATA  EPIPE
-#endif
-
+#endif 
+ 
 #if !defined(SOL_TCP)              /* Not defined on some systems */
 #define SOL_TCP  IPPROTO_TCP
-#endif
+#endif 
 
 #ifdef HAVE_WIN32
 #include <mswsock.h>
@@ -60,21 +60,76 @@ static void win_close_wait(int fd);
 /*
  * make a nice dump of a message
  */
-void dump_bsock_msg(int sock, uint32_t msgno, const char *what, uint32_t rc, int32_t pktsize, uint32_t flags,
-                     POOLMEM *msg, int32_t msglen)
+void BSOCKCORE::dump_bsock_msg(int sock, uint32_t msgno, const char *what, uint32_t rc, int32_t pktsize, uint32_t flags,
+                               POOLMEM *msg, int32_t msglen)
 {
    char buf[54];
    bool is_ascii;
-   int dbglvl = DT_ASX;
+   int dbglvl = DT_NETWORK;
 
    if (msglen<0) {
-      Dmsg4(dbglvl, "%s %d:%d SIGNAL=%s\n", what, sock, msgno, bnet_sig_to_ascii(msglen));
+      Dmsg5(dbglvl, "0x%p: %s %d:%d SIGNAL=%s\n", this, what, sock, msgno, bnet_sig_to_ascii(msglen));
+   } else if (flags & BNET_IS_CMD) {
+      /* this is a command */
+      int32_t command;
+      int32_t capacity;
+      int64_t counter;
+      int size;
+      char *hash;
+      char *block;
+      int hash_size;
+      unser_declare;
+      unser_begin(msg, msglen);
+      unser_int32(command);
+      switch (command) {
+      case BNET_CMD_GET_HASH:
+      case BNET_CMD_ACK_HASH:
+      case BNET_CMD_UNK_HASH:
+         unser_assign(hash, sizeof(int)); /* I use only 4 bytes of the hash */
+         unser_end(msg, msglen);
+         Dmsg6(dbglvl, "%s %d:%d %s len=%ld #%08x\n", what, sock, msgno, bnet_cmd_to_name(command), msglen, hash2int(hash));
+         break;
+      case BNET_CMD_STO_BLOCK:
+         /* unfortunately we don't know the hash size and don't know the offset
+          * of the data, we'll bet this is the default size and check to not
+          * access mem after the end
+          */
+         hash_size=bhash_info(DEDUP_DEFAULT_HASH_ID, NULL);
+         unser_assign(hash, hash_size); /* I only display the 4 first byte of the hash */
+         size=msglen-(BNET_CMD_SIZE+hash_size);
+         if (size>0) {
+            unser_assign(block, size);
+            unser_end(msg, msglen);
+            smartdump(block, size, buf, sizeof(buf)-9, &is_ascii);
+         } else {
+            buf[0] = '\0';
+            is_ascii = false;
+         }
+         if (is_ascii) {
+            Dmsg7(dbglvl, "%s %d:%d %s size=%d #%08x \"%s\"\n", what, sock, msgno, bnet_cmd_to_name(command), size, hash2int(hash), buf);
+         } else {
+            Dmsg7(dbglvl, "%s %d:%d %s size=%d #%08x %s\n", what, sock, msgno, bnet_cmd_to_name(command), size, hash2int(hash), buf);
+         }
+         break;
+      case BNET_CMD_REC_ACK:
+         unser_int32(capacity);
+         unser_int64(counter);
+         unser_end(msg, msglen);
+         Dmsg6(dbglvl, "%s %d:%d %s cnt=%lld cap=%ld\n", what, sock, msgno, bnet_cmd_to_name(command), counter, capacity);
+         break;
+      case BNET_CMD_NONE:
+      case BNET_CMD_STP_THREAD:
+      default:
+         Dmsg5(dbglvl, "%s %d:%d %s len=%ld\n", what, sock, msgno, bnet_cmd_to_name(command), msglen);
+         break;
+      }
+   } else {
       // data
       smartdump(msg, msglen, buf, sizeof(buf)-9, &is_ascii);
       if (is_ascii) {
-         Dmsg5(dbglvl, "%s %d:%d len=%d \"%s\"\n", what, sock, msgno, msglen, buf);
+         Dmsg6(dbglvl, "0x%p: %s %d:%d len=%d \"%s\"\n", this, what, sock, msgno, msglen, buf);
       } else {
-         Dmsg5(dbglvl, "%s %d:%d len=%d %s\n", what, sock, msgno, msglen, buf);
+         Dmsg6(dbglvl, "0x%p: %s %d:%d len=%d %s\n", this, what, sock, msgno, msglen, buf);
       }
    }
 }
@@ -124,8 +179,10 @@ BSOCKCORE::BSOCKCORE() :
    m_duped(false),
    m_use_locking(false),
    m_bwlimit(0),
+   m_bandwidth(0),
    m_nb_bytes(0),
-   m_last_tick(0)
+   m_last_tick(0),
+   m_rtt(0)
 {
    pthread_mutex_init(&m_rmutex, NULL);
    pthread_mutex_init(&m_wmutex, NULL);
@@ -407,9 +464,11 @@ bool BSOCKCORE::open(JCR *jcr, const char *name, char *host, char *service,
    errors = 0;
    m_blocking = 0;
 
-   Dmsg3(50, "OK connected to server  %s %s:%d.\n",
-         name, host, port);
-
+#ifdef INET6_ADDRSTRLEN
+   char info[2*INET6_ADDRSTRLEN+20];
+   Dmsg4(50, "OK connected to server  %s %s:%d. socket=%s\n",
+         name, host, port, get_info(info, sizeof(info)));
+#endif
    return true;
 }
 
@@ -462,7 +521,7 @@ void BSOCKCORE::clear_locking()
 
 /*
  * Send a message over the network. Everything is sent in one write request.
- *
+ *    
  * Returns: false on failure
  *          true  on success
  */
@@ -592,7 +651,7 @@ bool BSOCKCORE::fsend(const char *fmt, ...)
  */
 int32_t BSOCKCORE::recvn(int len)
 {
-   /* The method has to be redesigned from scratch */
+   /* The method has to be redesigned from scratch */ 
    int32_t nbytes;
    bool locked = false;
 
@@ -676,7 +735,7 @@ const char *BSOCKCORE::bstrerror()
 
 int BSOCKCORE::get_peer(char *buf, socklen_t buflen)
 {
-#if !defined(HAVE_WIN32)
+#if defined(HAVE_INET_NTOP)
     if (peer_addr.sin_family == 0) {
         socklen_t salen = sizeof(peer_addr);
         int rval = (getpeername)(m_fd, (struct sockaddr *)&peer_addr, &salen);
@@ -691,6 +750,58 @@ int BSOCKCORE::get_peer(char *buf, socklen_t buflen)
 #endif
 }
 
+/* return the address and port of the source and the destination of a socket
+ * in the format S.S.S.S.port_S:D.D.D.D.port_D
+ */
+char* BSOCKCORE::get_info(char *buf, int buflen)
+{
+#ifndef HAVE_WIN32
+#ifdef  INET6_ADDRSTRLEN
+   socklen_t len;
+   struct sockaddr_storage addr;
+   char ipstr_s[INET6_ADDRSTRLEN], ipstr_d[INET6_ADDRSTRLEN];
+   int port_s, port_d;
+
+   len = sizeof addr;
+   if (getsockname(m_fd, (struct sockaddr*)&addr, &len) != 0) {
+      goto error;
+   }
+
+   // source address, deal with both IPv4 and IPv6:
+   if (addr.ss_family == AF_INET) {
+      struct sockaddr_in *s = (struct sockaddr_in *)&addr;
+      port_s = ntohs(s->sin_port);
+      inet_ntop(AF_INET, &s->sin_addr, ipstr_s, sizeof ipstr_s);
+   } else { // AF_INET6
+      struct sockaddr_in6 *s = (struct sockaddr_in6 *)&addr;
+      port_s = ntohs(s->sin6_port);
+      inet_ntop(AF_INET6, &s->sin6_addr, ipstr_s, sizeof ipstr_s);
+   }
+
+   len = sizeof addr;
+   if (getpeername(m_fd, (struct sockaddr*)&addr, &len) != 0) {
+      goto error;
+   }
+
+   // destination address, deal with both IPv4 and IPv6:
+   if (addr.ss_family == AF_INET) {
+      struct sockaddr_in *s = (struct sockaddr_in *)&addr;
+      port_d = ntohs(s->sin_port);
+      inet_ntop(AF_INET, &s->sin_addr, ipstr_d, sizeof ipstr_s);
+   } else { // AF_INET6
+      struct sockaddr_in6 *s = (struct sockaddr_in6 *)&addr;
+      port_d = ntohs(s->sin6_port);
+      inet_ntop(AF_INET6, &s->sin6_addr, ipstr_d, sizeof ipstr_s);
+   }
+
+   bsnprintf(buf, buflen, "%s.%d:%s.%d s=0x%p", ipstr_s, port_s, ipstr_d, port_d, this);
+   return buf;
+error:
+#endif  /* INET6 */
+#endif  /* !WIN32 */
+   buf[0]='\0';
+   return buf;
+}
 /*
  * Set the network buffer size, suggested size is in size.
  *  Actual size obtained is returned in bs->msglen
@@ -942,7 +1053,6 @@ void BSOCKCORE::close()
          free_tls_connection(bsock->tls);
          bsock->tls = NULL;
       }
-
 #ifdef HAVE_WIN32
       if (!bsock->is_timed_out()) {
          win_close_wait(bsock->m_fd);  /* Ensure that data is not discarded */
