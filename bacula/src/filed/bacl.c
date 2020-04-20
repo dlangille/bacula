@@ -213,7 +213,7 @@ bRC_BACL BACL::check_dev (JCR *jcr){
          break;
    }
 
-   check_dev(jcr, st.st_dev);
+   check_dev(jcr, jcr->ff, st.st_dev);
 
    return bRC_BACL_ok;
 };
@@ -226,7 +226,7 @@ bRC_BACL BACL::check_dev (JCR *jcr){
  * out:
  *    internal flags status set
  */
-void BACL::check_dev (JCR *jcr, uint32_t dev){
+void BACL::check_dev (JCR *jcr, FF_PKT *ff, uint32_t dev){
 
    /* sanity check of input variables */
    if (jcr == NULL || jcr->last_fname == NULL){
@@ -344,7 +344,7 @@ bRC_BACL BACL::backup_acl (JCR *jcr, FF_PKT *ff_pkt)
             return bRC_BACL_ok;
          }
 
-         check_dev(jcr, ff_pkt->statp.st_dev);
+         check_dev(jcr, ff_pkt, ff_pkt->statp.st_dev);
 
 #if defined(HAVE_AFS_ACL)
          if (flags & BACL_FLAG_AFS){
@@ -762,7 +762,7 @@ void *new_bacl()
 #elif defined(HAVE_HURD_OS)
    return new BACL_Hurd();
 #elif defined(HAVE_AIX_OS)
-   return new BACL_AIX();
+   return NULL; /* new BACL_AIX(); */
 #elif defined(HAVE_IRIX_OS)
    return new BACL_IRIX();
 #elif defined(HAVE_OSF1_OS)
