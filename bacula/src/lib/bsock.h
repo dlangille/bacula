@@ -28,7 +28,7 @@
  *
  * Major refactoring of BSOCK code written by:
  *
- * Radosław Korzeniewski, MMXVIII
+ * Radoslaw Korzeniewski, MMXVIII
  * radoslaw@korzeniewski.net, radekk@inteos.pl
  * Inteos Sp. z o.o. http://www.inteos.pl/
  *
@@ -48,6 +48,9 @@ class BSOCK: public BSOCKCORE {
 public:
    FILE *m_spool_fd;                  /* spooling file */
    POOLMEM *cmsg;                     /* Compress buffer */
+                                      /* tlspsk_XX are not always used */
+   int tlspsk_local;                  /* the "tlspsk=%d" to send via the hello */
+   int tlspsk_remote;                 /* the "tlspsk=%d" received from the hello */
 
 private:
    boffset_t m_data_end;              /* offset of data written */
@@ -70,7 +73,7 @@ public:
    BSOCK();
    BSOCK(int sockfd);
    ~BSOCK();
-  // int32_t recv(int /*len*/) { return recv(); };
+   int32_t recv(int) { return recv(); };
    int32_t recv();
    bool send() { return send(0); };
    bool send(int flags);
@@ -78,8 +81,10 @@ public:
    void close();              /* close connection and destroy packet */
    bool comm_compress();               /* in bsock.c */
    bool despool(void update_attr_spool_size(ssize_t size), ssize_t tsize);
+#if 0
    bool authenticate_director(const char *name, const char *password,
            TLS_CONTEXT *tls_ctx, char *response, int response_len);
+#endif
 
    /* Inline functions */
    bool is_spooling() const { return m_spool; };
@@ -141,7 +146,8 @@ enum {
    BNET_TEXT_INPUT     = -28,         /* Get text input from user */
    BNET_EXT_TERMINATE  = -29,         /* A Terminate condition has been met and
                                          already reported somewhere else */
-   BNET_FDCALLED       = -30          /* The FD should keep the connection for a new job */
+   BNET_FDCALLED       = -30,         /* The FD should keep the connection for a new job */
+   BNET_ISALIVE        = -31          /* Test if the connection is UP */
 };
 
 /*
