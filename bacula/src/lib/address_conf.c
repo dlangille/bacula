@@ -452,7 +452,11 @@ void store_addresses(LEX * lc, RES_ITEM * item, int index, int pass)
          scan_err1(lc, _("Expected a string but got: %s"), lc->str);
       }
       if (strcasecmp("ip", lc->str) == 0) {
+#ifdef HAVE_IPV6
          family = AF_INET6;
+#else
+         family = AF_INET;
+#endif
       } else if (strcasecmp("ipv4", lc->str) == 0) {
          family = AF_INET;
       }
