@@ -192,11 +192,11 @@ void crypto_session_end(JCR *jcr)
 bool crypto_session_send(JCR *jcr, BSOCK *sd)
 {
    POOLMEM *msgsave;
+   int32_t stream = STREAM_ENCRYPTED_SESSION_DATA;
 
    /** Send our header */
    Dmsg2(100, "Send hdr fi=%ld stream=%d\n", jcr->JobFiles, STREAM_ENCRYPTED_SESSION_DATA);
-   sd->fsend("%ld %d %lld", jcr->JobFiles, STREAM_ENCRYPTED_SESSION_DATA,
-      (int64_t)jcr->ff->statp.st_size);
+   sd->fsend("%ld %d %lld", jcr->JobFiles, stream, (int64_t)jcr->ff->statp.st_size);
    msgsave = sd->msg;
    sd->msg = jcr->crypto.pki_session_encoded;
    sd->msglen = jcr->crypto.pki_session_encoded_size;
@@ -214,6 +214,7 @@ bool crypto_terminate_digests(bctx_t &bctx)
    JCR *jcr;
    BSOCK *sd;
    FF_PKT *ff_pkt;
+   int32_t stream = STREAM_SIGNED_DIGEST;
 
    jcr = bctx.jcr;
    sd = bctx.sd;
@@ -244,8 +245,8 @@ bool crypto_terminate_digests(bctx_t &bctx)
          sd->msg = realloc_pool_memory(sd->msg, size);
       }
 
-      /** Send our header */
-      sd->fsend("%ld %ld 0", jcr->JobFiles, STREAM_SIGNED_DIGEST);
+      /* Send our header */
+      sd->fsend("%ld %ld 0", jcr->JobFiles, stream);
       Dmsg1(300, "bfiled>stored:header %s\n", sd->msg);
 
       /** Encode signature data */
