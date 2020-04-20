@@ -23,7 +23,7 @@
  *
  * Major refactoring of BSOCK code written by:
  *
- * Radosław Korzeniewski, MMXVIII
+ * Radoslaw Korzeniewski, MMXVIII
  * radoslaw@korzeniewski.net, radekk@inteos.pl
  * Inteos Sp. z o.o. http://www.inteos.pl/
  *
@@ -43,8 +43,6 @@ struct btimer_t;                      /* forward reference */
 class BSOCKCORE;
 btimer_t *start_bsock_timer(BSOCKCORE *bs, uint32_t wait);
 void stop_bsock_timer(btimer_t *wid);
-void dump_bsock_msg(int sock, uint32_t msgno, const char *what, uint32_t rc, int32_t pktsize, uint32_t flags,
-                     POOLMEM *msg, int32_t msglen);
 
 class BSOCKCallback {
 public:
@@ -114,8 +112,10 @@ protected:
    bool m_use_locking;                /* set to use locking (out of a bitfield */
                                       /* to avoid race conditions) */
    int64_t m_bwlimit;                 /* set to limit bandwidth */
+   int64_t m_bandwidth;               /* Bandwidth available */
    int64_t m_nb_bytes;                /* bytes sent/recv since the last tick */
    btime_t m_last_tick;               /* last tick used by bwlimit */
+   btime_t m_rtt;                     /* Average RTT with the other side */
 
    void fin_init(JCR * jcr, int sockfd, const char *who, const char *host, int port,
                struct sockaddr *lclient_addr);
@@ -124,7 +124,7 @@ protected:
    void master_lock() const { if (m_use_locking) pP((&m_mmutex)); };
    void master_unlock() const { if (m_use_locking) pV((&m_mmutex)); };
    virtual void init();
-   void _destroy();                   /* called by destroy() */
+   virtual void _destroy();                   /* called by destroy() */
    virtual int32_t write_nbytes(char *ptr, int32_t nbytes);
    virtual int32_t read_nbytes(char *ptr, int32_t nbytes);
 
@@ -137,13 +137,14 @@ public:
    bool connect(JCR * jcr, int retry_interval, utime_t max_retry_time,
                 utime_t heart_beat, const char *name, char *host,
                 char *service, int port, int verbose);
-  virtual int32_t recvn(int /*len*/);
+   virtual int32_t recvn(int /*len*/);
    virtual bool send();
    bool fsend(const char*, ...);
-   void close();              /* close connection and destroy packet */
+   virtual void close();              /* close connection and destroy packet */
    void destroy();                    /* destroy socket packet */
    const char *bstrerror();           /* last error on socket */
    int get_peer(char *buf, socklen_t buflen);
+   char* get_info(char *buf, int buflen);
    bool set_buffer_size(uint32_t size, int rw);
    int set_nonblocking();
    int set_blocking();
@@ -174,15 +175,22 @@ public:
    bool is_open() const { return !m_closed; };
    bool is_stop() const { return errors || is_terminated() || is_closed(); };
    bool is_error() { errno = b_errno; return errors; };
-   void set_bwlimit(int64_t maxspeed) { m_bwlimit = maxspeed; };
+   void set_bwlimit(int64_t maxspeed) { m_bwlimit = m_bandwidth = maxspeed; };
    bool use_bwlimit() { return m_bwlimit > 0;};
+   void set_bandwidth(int64_t maxspeed) { m_bandwidth = maxspeed; };
+   int64_t get_bwlimit() { return m_bwlimit; };
+   int64_t get_bandwidth() { return m_bandwidth; };
+   int64_t get_socket_buffer_size() { return get_bandwidth() * get_rtt() / 1000L ; };
+   void set_rtt(btime_t rtt) { m_rtt = rtt; };
+   btime_t get_rtt() { return m_rtt; };
+
    void set_duped() { m_duped = true; };
-   void set_master(BSOCKCORE *master) {
-            master_lock();
-            m_master = master;
-            m_next = master->m_next;
-            master->m_next = this;
-            master_unlock();
+   void set_master(BSOCKCORE *master) { 
+            master_lock(); 
+            m_master = master; 
+            m_next = master->m_next; 
+            master->m_next = this; 
+            master_unlock(); 
         };
    void set_timed_out() { m_timed_out = true; };
    void clear_timed_out() { m_timed_out = false; };
@@ -196,7 +204,7 @@ public:
    void cancel(); /* call it when JCR is canceled */
 #ifdef HAVE_WIN32
    int socketRead(int fd, void *buf, size_t len) { return ::recv(fd, (char *)buf, len, 0); };
-   int socketWrite(int fd, void *buf, size_t len) { return ::send(fd, (const char*)buf, len, 0); };
+   int socketWrite(int fd, void *buf, size_t len) { return ::send(fd, (char *)buf, len, 0); };
    int socketClose(int fd) { return ::closesocket(fd); };
 #else
    int socketRead(int fd, void *buf, size_t len) { return ::read(fd, buf, len); };
@@ -204,6 +212,8 @@ public:
    int socketClose(int fd) { return ::close(fd); };
 #endif
    void dump();
+   void dump_bsock_msg(int sock, uint32_t msgno, const char *what, uint32_t rc, int32_t pktsize, uint32_t flags,
+                       POOLMEM *msg, int32_t msglen);
 };
 
 /*
