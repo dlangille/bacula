@@ -33,8 +33,8 @@
 #define R_MSGS                        1003
 #define R_CONSOLE                     1004
 #define R_COLLECTOR                   1005
-
-#define R_LAST                        R_COLLECTOR
+#define R_SCHEDULE                    1006
+#define R_LAST                        R_SCHEDULE
 
 /*
  * Some resource attributes
@@ -50,9 +50,8 @@ struct s_ct {
    int32_t type_value;
 };
 
-/* Definition of the contents of each Resource */
-struct CONSRES {
-   RES   hdr;
+struct DIRINFO
+{
    char *password;                    /* Director password */
    char *address;                     /* Director address or zero */
    int   heartbeat_interval;
@@ -60,6 +59,7 @@ struct CONSRES {
    int32_t DIRport;
    bool tls_authenticate;             /* Authenticate with TSL */
    bool tls_enable;                   /* Enable TLS */
+   bool tls_psk_enable;               /* Enable TLS-PSK */
    bool tls_require;                  /* Require TLS */
    bool tls_verify_peer;              /* TLS Verify Client Certificate */
    char *tls_ca_certfile;             /* TLS CA Certificate File */
@@ -69,30 +69,54 @@ struct CONSRES {
    char *tls_dhfile;                  /* TLS Diffie-Hellman Parameters */
    alist *tls_allowed_cns;            /* TLS Allowed Clients */
    TLS_CONTEXT *tls_ctx;              /* Shared TLS Context */
+   TLS_CONTEXT *psk_ctx;              /* Shared TLS-PSK Context */
+};
+
+/* Definition of the contents of each Resource */
+struct CONSRES {
+   RES   hdr;
+   DIRINFO dirinfo;
+};
+
+/* Run structure contained in Schedule Resource */
+class RUNRES: public RUNBASE {
+public:
+   RUNRES *next;                     /* points to next run record */
+   utime_t MaxConnectTime;           /* max connect time in sec from Sched time */
+   bool MaxConnectTime_set;          /* MaxConnectTime given */
+
+   void copyall(RUNRES *src);
+   void clearall();
+};
+
+/*
+ *   Schedule Resource
+ */
+class SCHEDRES {
+public:
+   RES   hdr;
+   RUNRES *run;
+   bool Enabled;                      /* set if enabled */
+
+   /* Methods */
+   char *name() const { return hdr.name; };
+   bool is_enabled() { return Enabled;};
+   void setEnabled(bool val) { Enabled = val;};
 };
 
 /* Definition of the contents of each Resource */
 struct DIRRES {
    RES   hdr;
-   char *password;                    /* Director password */
-   char *address;                     /* Director address or zero */
+   DIRINFO dirinfo;
    bool monitor;                      /* Have only access to status and .status functions */
    bool remote;                       /* Remote console, can run and control jobs */
-   bool tls_authenticate;             /* Authenticate with TSL */
-   bool tls_enable;                   /* Enable TLS */
-   bool tls_require;                  /* Require TLS */
-   bool tls_verify_peer;              /* TLS Verify Client Certificate */
-   char *tls_ca_certfile;             /* TLS CA Certificate File */
-   char *tls_ca_certdir;              /* TLS CA Certificate Directory */
-   char *tls_certfile;                /* TLS Server Certificate File */
-   char *tls_keyfile;                 /* TLS Server Key File */
-   char *tls_dhfile;                  /* TLS Diffie-Hellman Parameters */
-   alist *tls_allowed_cns;            /* TLS Allowed Clients */
+   bool connect_to_dir;               /* Connect the Director to get jobs */
    uint64_t max_bandwidth_per_job;    /* Bandwidth limitation (per director) */
-   TLS_CONTEXT *tls_ctx;              /* Shared TLS Context */
    alist *disable_cmds;               /* Commands to disable */
    bool *disabled_cmds_array;         /* Disabled commands array */
    CONSRES *console;
+   SCHEDRES *schedule;                /* Know when to connect the Director */
+   int reconnection_time;             /* Reconnect after a given time */
 };
 
 struct CLIENT {
@@ -105,6 +129,7 @@ struct CLIENT {
    char *plugin_directory;            /* Plugin directory */
    char *scripts_directory;
    char *snapshot_command;
+   char *dedup_index_dir;             /* Directory for local dedup cache (deprecated) */
    MSGS *messages;                    /* daemon message handler */
    uint32_t MaxConcurrentJobs;
    utime_t SDConnectTimeout;          /* timeout in seconds */
@@ -113,13 +138,15 @@ struct CLIENT {
    bool comm_compression;             /* Enable comm line compression */
    bool pki_sign;                     /* Enable Data Integrity Verification via Digital Signatures */
    bool pki_encrypt;                  /* Enable Data Encryption */
+   bool local_dedup;                  /* Enable Client (local) deduplication */
    char *pki_keypair_file;            /* PKI Key Pair File */
    alist *pki_signing_key_files;      /* PKI Signing Key Files */
    alist *pki_master_key_files;       /* PKI Master Key Files */
-   uint32_t pki_cipher;               /* PKI Cipher type */
-   uint32_t pki_digest;               /* PKI Digest type */
+   int32_t pki_cipher;               /* PKI Cipher type */
+   int32_t pki_digest;               /* PKI Digest type */
    bool tls_authenticate;             /* Authenticate with TLS */
    bool tls_enable;                   /* Enable TLS */
+   bool tls_psk_enable;               /* Enable TLS-PSK */
    bool tls_require;                  /* Require TLS */
    char *tls_ca_certfile;             /* TLS CA Certificate File */
    char *tls_ca_certdir;              /* TLS CA Certificate Directory */
@@ -130,13 +157,17 @@ struct CLIENT {
    alist *pki_signers;                /* Shared PKI Trusted Signers */
    alist *pki_recipients;             /* Shared PKI Recipients */
    TLS_CONTEXT *tls_ctx;              /* Shared TLS Context */
+   TLS_CONTEXT *psk_ctx;              /* Shared TLS-PSK Context */
    char *verid;                       /* Custom Id to print in version command */
    uint64_t max_bandwidth_per_job;    /* Bandwidth limitation (global) */
+   bool require_fips;                  /* Check for FIPS module */
+   bool allow_dedup_cache;            /* allow the use of dedup cache for rehydration */
    alist *disable_cmds;               /* Commands to disable */
    bool *disabled_cmds_array;         /* Disabled commands array */
 };
 
-
+/* Get the size of a resource object */
+int get_resource_size(int type);
 
 /* Define the Union of all the above
  * resource structure definitions.
@@ -148,4 +179,5 @@ union URES {
    CONSRES      res_cons;
    RES          hdr;
    COLLECTOR    res_collector;
+   SCHEDRES     res_sched;
 };
