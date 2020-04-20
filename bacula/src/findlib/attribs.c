@@ -39,9 +39,8 @@ static bool uid_set = false;
 #ifdef HAVE_WIN32
 /* Forward referenced Windows subroutines */
 static bool set_win32_attributes(JCR *jcr, ATTR *attr, BFILE *ofd);
-void unix_name_to_win32(POOLMEM **win32_name, const char *name);
-void win_error(JCR *jcr, int type, const char *prefix, POOLMEM *ofile);
-void win_error(JCR *jcr, const char *prefix, POOLMEM *ofile);
+void win_error(JCR *jcr, int type, const char *prefix, const char *ofile);
+void win_error(JCR *jcr, const char *prefix, const char *ofile);
 HANDLE bget_handle(BFILE *bfd);
 #endif /* HAVE_WIN32 */
 
@@ -76,6 +75,7 @@ HANDLE bget_handle(BFILE *bfd);
  */
 #define print_error(jcr) (chk_dbglvl(100) || (my_uid == 0 && (!jcr || jcr->job_uid == 0)))
 
+
 /*
  * Restore the owner and permissions (mode) of a Directory.
  *  See attribs.c for the equivalent for files.
@@ -103,6 +103,8 @@ bool set_mod_own_time(JCR *jcr, BFILE *ofd, ATTR *attr)
 {
    bool ok = true;
    struct utimbuf ut;
+
+   ASSERTD(attr->type != FT_LNK, "function set_mod_own_time() not designed to handle SYMLINK");
 
    /* Do not try to set rights with f functions when using a plugin */
    if (is_bopen(ofd) && !ofd->cmd_plugin) { /* TODO: Look with opt_plugin */
@@ -189,7 +191,8 @@ int select_data_stream(FF_PKT *ff_pkt)
    /* This is a plugin special restore object */
    if (ff_pkt->type == FT_RESTORE_FIRST) {
       ff_pkt->flags = 0;
-      return STREAM_FILE_DATA;
+      stream = STREAM_FILE_DATA;
+      goto get_out;
    }
 
    /*
@@ -208,9 +211,6 @@ int select_data_stream(FF_PKT *ff_pkt)
       stream = STREAM_SPARSE_DATA;
    } else {
       stream = STREAM_FILE_DATA;
-   }
-   if (ff_pkt->flags & FO_OFFSETS) {
-      stream = STREAM_SPARSE_DATA;
    }
 
    /* Encryption is only supported for file data */
@@ -247,7 +247,8 @@ int select_data_stream(FF_PKT *ff_pkt)
                 * FO_COMPRESS above, and this code block should be unreachable.
                 */
                ASSERT(!(ff_pkt->flags & FO_COMPRESS));
-               return STREAM_NONE;
+               stream = STREAM_NONE;
+               goto get_out;
             }
          }
       #endif
@@ -269,7 +270,8 @@ int select_data_stream(FF_PKT *ff_pkt)
                 * FO_COMPRESS above, and this code block should be unreachable.
                 */
                ASSERT(!(ff_pkt->flags & FO_COMPRESS));
-               return STREAM_NONE;
+               stream = STREAM_NONE;
+               goto get_out;
             }
          }
       #endif
@@ -300,10 +302,13 @@ int select_data_stream(FF_PKT *ff_pkt)
          /* All stream types that do not support encryption should clear out
           * FO_ENCRYPT above, and this code block should be unreachable. */
          ASSERT(!(ff_pkt->flags & FO_ENCRYPT));
-         return STREAM_NONE;
+         stream = STREAM_NONE;
+         goto get_out;
       }
    }
 #endif
+
+get_out:
 
    return stream;
 }
@@ -386,6 +391,7 @@ void encode_stat(char *buf, struct stat *statp, int stat_size, int32_t LinkFI, i
    return;
 }
 
+
 /* Do casting according to unknown type to keep compiler happy */
 #ifdef HAVE_TYPEOF
   #define plug(st, val) st = (typeof st)val
@@ -401,7 +407,6 @@ void encode_stat(char *buf, struct stat *statp, int stat_size, int32_t LinkFI, i
       { st = static_cast<T>(val); }
   #endif
 #endif
-
 
 /*
  * Decode a stat packet from base64 characters
@@ -631,8 +636,8 @@ bool set_attributes(JCR *jcr, ATTR *attr, BFILE *ofd)
     *   try to do a chmod as that will update the file behind it.
     */
    if (attr->type == FT_LNK) {
-#ifdef HAVE_LCHOWN
       /* Change owner of link, not of real file */
+#ifdef HAVE_LCHOWN
       if (lchown(attr->ofname, attr->statp.st_uid, attr->statp.st_gid) < 0 && print_error(jcr)) {
          berrno be;
          Jmsg2(jcr, M_ERROR, 0, _("Unable to set file owner %s: ERR=%s\n"),
@@ -751,31 +756,17 @@ int encode_attribsEx(JCR *jcr, char *attribsEx, FF_PKT *ff_pkt)
       return STREAM_UNIX_ATTRIBUTES;
    }
 
-   unix_name_to_win32(&ff_pkt->sys_fname, ff_pkt->fname);
-
    /* try unicode version */
-   if (p_GetFileAttributesExW)  {
-      POOLMEM* pwszBuf = get_pool_memory(PM_FNAME);
-      make_win32_path_UTF8_2_wchar(&pwszBuf, ff_pkt->fname);
+   POOLMEM* pwszBuf = get_pool_memory(PM_FNAME);
+   make_win32_path_UTF8_2_wchar(&pwszBuf, ff_pkt->snap_fname);
 
-      BOOL b=p_GetFileAttributesExW((LPCWSTR)pwszBuf, GetFileExInfoStandard,
-                                    (LPVOID)&atts);
-      free_pool_memory(pwszBuf);
+   BOOL b=p_GetFileAttributesExW((LPCWSTR)pwszBuf, GetFileExInfoStandard,
+                                 (LPVOID)&atts);
+   free_pool_memory(pwszBuf);
 
-      if (!b) {
-         win_error(jcr, "GetFileAttributesExW:", ff_pkt->sys_fname);
-         return STREAM_UNIX_ATTRIBUTES;
-      }
-   }
-   else {
-      if (!p_GetFileAttributesExA)
-         return STREAM_UNIX_ATTRIBUTES;
-
-      if (!p_GetFileAttributesExA(ff_pkt->sys_fname, GetFileExInfoStandard,
-                              (LPVOID)&atts)) {
-         win_error(jcr, "GetFileAttributesExA:", ff_pkt->sys_fname);
-         return STREAM_UNIX_ATTRIBUTES;
-      }
+   if (!b) {
+      win_error(jcr, "GetFileAttributesExW:", ff_pkt->fname);
+      return STREAM_UNIX_ATTRIBUTES;
    }
 
    p += to_base64((uint64_t)atts.dwFileAttributes, p);
@@ -825,7 +816,6 @@ static bool set_win32_attributes(JCR *jcr, ATTR *attr, BFILE *ofd)
    int64_t val;
    WIN32_FILE_ATTRIBUTE_DATA atts;
    ULARGE_INTEGER li;
-   POOLMEM *win32_ofile;
 
    /* if we have neither Win ansi nor wchar API, get out */
    if (!(p_SetFileAttributesW || p_SetFileAttributesA)) {
@@ -866,10 +856,6 @@ static bool set_win32_attributes(JCR *jcr, ATTR *attr, BFILE *ofd)
    p += from_base64(&val, p);
    plug(atts.nFileSizeLow, val);
 
-   /* Convert to Windows path format */
-   win32_ofile = get_pool_memory(PM_FNAME);
-   unix_name_to_win32(&win32_ofile, attr->ofname);
-
    /* At this point, we have reconstructed the WIN32_FILE_ATTRIBUTE_DATA pkt */
 
    if (!is_bopen(ofd)) {
@@ -883,7 +869,7 @@ static bool set_win32_attributes(JCR *jcr, ATTR *attr, BFILE *ofd)
                          &atts.ftCreationTime,
                          &atts.ftLastAccessTime,
                          &atts.ftLastWriteTime)) {
-         win_error(jcr, M_WARNING, "SetFileTime:", win32_ofile);
+         win_error(jcr, M_WARNING, "SetFileTime:", attr->ofname);
       }
 
       /*
@@ -897,7 +883,7 @@ static bool set_win32_attributes(JCR *jcr, ATTR *attr, BFILE *ofd)
                               NULL, 0, NULL, 0, &bytesReturned, NULL))
          {
             /* Not sure we really want to have a Warning for such attribute  */
-            win_error(jcr, M_WARNING, "set SPARSE_FILE:", win32_ofile);
+            win_error(jcr, M_WARNING, "set SPARSE_FILE:", attr->ofname);
          }
       }
 
@@ -913,7 +899,7 @@ static bool set_win32_attributes(JCR *jcr, ATTR *attr, BFILE *ofd)
                              &fmt, sizeof(fmt), NULL, 0, &bytesReturned, NULL))
          {
             /* Not sure we really want to have a Warning for such attribute  */
-            win_error(jcr, M_WARNING, "set COMPRESSED:", win32_ofile);
+            win_error(jcr, M_WARNING, "set COMPRESSED:", attr->ofname);
          }
       }
 
@@ -922,27 +908,19 @@ static bool set_win32_attributes(JCR *jcr, ATTR *attr, BFILE *ofd)
 
    Dmsg1(100, "SetFileAtts %s\n", attr->ofname);
    if (!(atts.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
-      if (p_SetFileAttributesW) {
-         POOLMEM* pwszBuf = get_pool_memory(PM_FNAME);
-         make_win32_path_UTF8_2_wchar(&pwszBuf, attr->ofname);
+      POOLMEM* pwszBuf = get_pool_memory(PM_FNAME);
+      make_win32_path_UTF8_2_wchar(&pwszBuf, attr->ofname);
 
-         BOOL b=p_SetFileAttributesW((LPCWSTR)pwszBuf, atts.dwFileAttributes & SET_ATTRS);
-         free_pool_memory(pwszBuf);
+      BOOL b=p_SetFileAttributesW((LPCWSTR)pwszBuf, atts.dwFileAttributes & SET_ATTRS);
+      free_pool_memory(pwszBuf);
 
-         if (!b)
-            win_error(jcr, M_WARNING, "SetFileAttributesW:", win32_ofile);
-      }
-      else {
-         if (!p_SetFileAttributesA(win32_ofile, atts.dwFileAttributes & SET_ATTRS)) {
-            win_error(jcr, M_WARNING, "SetFileAttributesA:", win32_ofile);
-         }
-      }
+      if (!b)
+         win_error(jcr, M_WARNING, "SetFileAttributesW:", attr->ofname);
    }
-   free_pool_memory(win32_ofile);
    return true;
 }
 
-void win_error(JCR *jcr, int type, const char *prefix, POOLMEM *win32_ofile)
+void win_error(JCR *jcr, int type, const char *prefix, const char *win32_ofile)
 {
    DWORD lerror = GetLastError();
    LPTSTR msg;
@@ -960,7 +938,7 @@ void win_error(JCR *jcr, int type, const char *prefix, POOLMEM *win32_ofile)
    LocalFree(msg);
 }
 
-void win_error(JCR *jcr, const char *prefix, POOLMEM *win32_ofile)
+void win_error(JCR *jcr, const char *prefix, const char *win32_ofile)
 {
    win_error(jcr, M_ERROR, prefix, win32_ofile);
 }
@@ -979,8 +957,14 @@ void win_error(JCR *jcr, const char *prefix, DWORD lerror)
    strip_trailing_junk(msg);
    if (jcr) {
       Jmsg2(jcr, M_ERROR, 0, _("Error in %s: ERR=%s\n"), prefix, msg);
+   } else {
+      MessageBox(NULL, msg, prefix, MB_OK);
    }
-   MessageBox(NULL, msg, prefix, MB_OK);
    LocalFree(msg);
 }
 #endif /* HAVE_WIN32 */
+
+#ifndef BEEF
+bool check_directory_acl(char **, alist *, const char *) { return true;}
+bool has_access(alist *, alist *, struct stat *) { return true;}
+#endif
