@@ -60,7 +60,7 @@ struct BXATTR_Solaris_Cache {
 
 /*
  * This is a Solaris specific XATTR implementation.
- *
+ * 
  * Solaris extended attributes were introduced in Solaris 9
  * by PSARC 1999/209
  *
