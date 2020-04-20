@@ -87,23 +87,19 @@ static FF_PKT *new_dir_ff_pkt(FF_PKT *ff_pkt)
 {
    FF_PKT *dir_ff_pkt = (FF_PKT *)bmalloc(sizeof(FF_PKT));
    memcpy(dir_ff_pkt, ff_pkt, sizeof(FF_PKT));
+
+   /* Do not duplicate pointers */
    dir_ff_pkt->fname = bstrdup(ff_pkt->fname);
+   dir_ff_pkt->snap_fname = bstrdup(ff_pkt->snap_fname);
    dir_ff_pkt->link = bstrdup(ff_pkt->link);
-   dir_ff_pkt->sys_fname = get_pool_memory(PM_FNAME);
 
-   if (ff_pkt->strip_snap_path) {
+   if (ff_pkt->fname_save) {
       dir_ff_pkt->fname_save = get_pool_memory(PM_FNAME);
-      dir_ff_pkt->link_save = get_pool_memory(PM_FNAME);
       pm_strcpy(dir_ff_pkt->fname_save, ff_pkt->fname_save);
+   }
+   if (ff_pkt->link_save) {
+      dir_ff_pkt->link_save = get_pool_memory(PM_FNAME);
       pm_strcpy(dir_ff_pkt->link_save, ff_pkt->link_save);
-
-      // need its own "working" buffers, some pm_strcat or pm_strcopy
-      // will realloc these ones, no need to copy the current values
-      dir_ff_pkt->snap_top_fname = get_pool_memory(PM_FNAME);
-      dir_ff_pkt->snap_fname = get_pool_memory(PM_FNAME);
-   } else {
-      dir_ff_pkt->fname_save = NULL;
-      dir_ff_pkt->link_save = NULL;
    }
 
    dir_ff_pkt->included_files_list = NULL;
@@ -120,17 +116,13 @@ static FF_PKT *new_dir_ff_pkt(FF_PKT *ff_pkt)
 static void free_dir_ff_pkt(FF_PKT *dir_ff_pkt)
 {
    free(dir_ff_pkt->fname);
+   free(dir_ff_pkt->snap_fname);
    free(dir_ff_pkt->link);
-   free_pool_memory(dir_ff_pkt->sys_fname);
    if (dir_ff_pkt->fname_save) {
       free_pool_memory(dir_ff_pkt->fname_save);
    }
    if (dir_ff_pkt->link_save) {
       free_pool_memory(dir_ff_pkt->link_save);
-   }
-   if (dir_ff_pkt->snap_top_fname) {
-      free_pool_memory(dir_ff_pkt->snap_top_fname);
-      free_pool_memory(dir_ff_pkt->snap_fname);
    }
    free(dir_ff_pkt);
 }
@@ -174,6 +166,7 @@ static int accept_drivetype(FF_PKT *ff, void *dummy) {
 
    if (ff->drivetypes.size()) {
       accept = false;
+      /* fname is a better choice here than snap_fname */
       if (!drivetype(ff->fname, dt, sizeof(dt))) {
          Dmsg1(50, "Cannot determine drive type for \"%s\"\n", ff->fname);
       } else {
@@ -246,11 +239,18 @@ bool has_file_changed(JCR *jcr, FF_PKT *ff_pkt)
    struct stat statp;
    Dmsg1(500, "has_file_changed fname=%s\n",ff_pkt->fname);
 
+   if (ff_pkt->snapshot_convert_fct) {
+      /* their is no reason to check for a file change inside a snapshot */
+      /* but this has already highlighted some bugs in the past */
+      /* if you want to optimize, uncomment the "return below" */
+      // return false;
+   }
+
    if (ff_pkt->type != FT_REG) { /* not a regular file */
       return false;
    }
 
-   if (lstat(ff_pkt->fname, &statp) != 0) {
+   if (lstat(ff_pkt->snap_fname, &statp) != 0) {
       berrno be;
       Jmsg(jcr, M_WARNING, 0,
            _("Cannot stat file %s: ERR=%s\n"),ff_pkt->fname,be.bstrerror());
@@ -283,7 +283,7 @@ bool has_file_changed(JCR *jcr, FF_PKT *ff_pkt)
 }
 
 /*
- * For incremental/diffential or accurate backups, we
+ * For incremental/differential or accurate backups, we
  *   determine if the current file has changed.
  */
 bool check_changes(JCR *jcr, FF_PKT *ff_pkt)
@@ -361,15 +361,16 @@ ff_pkt_set_link_digest(FF_PKT *ff_pkt,
 int
 find_one_file(JCR *jcr, FF_PKT *ff_pkt,
                int handle_file(JCR *jcr, FF_PKT *ff, bool top_level),
-               char *fname, dev_t parent_device, bool top_level)
+               char *fname, char *snap_fname, dev_t parent_device, bool top_level)
 {
    struct utimbuf restore_times;
    int rtn_stat;
    int len;
 
    ff_pkt->fname = ff_pkt->link = fname;
+   ff_pkt->snap_fname = snap_fname;
 
-   if (lstat(fname, &ff_pkt->statp) != 0) {
+   if (lstat(snap_fname, &ff_pkt->statp) != 0) {
        /* Cannot stat file */
        ff_pkt->type = FT_NOSTAT;
        ff_pkt->ff_errno = errno;
@@ -390,8 +391,8 @@ find_one_file(JCR *jcr, FF_PKT *ff_pkt,
    if (top_level) {
       if (!accept_fstype(ff_pkt, NULL)) {
          ff_pkt->type = FT_INVALIDFS;
-         if (ff_pkt->flags & FO_KEEPATIME) {
-            utime(fname, &restore_times);
+         if (ff_pkt->flags & FO_KEEPATIME && !ff_pkt->snapshot_convert_fct) {
+            utime(snap_fname, &restore_times);  /* snap_fname == fname */
          }
 
          char fs[100];
@@ -405,8 +406,8 @@ find_one_file(JCR *jcr, FF_PKT *ff_pkt,
       }
       if (!accept_drivetype(ff_pkt, NULL)) {
          ff_pkt->type = FT_INVALIDDT;
-         if (ff_pkt->flags & FO_KEEPATIME) {
-            utime(fname, &restore_times);
+         if (ff_pkt->flags & FO_KEEPATIME && !ff_pkt->snapshot_convert_fct) {
+            utime(snap_fname, &restore_times); /* snap_fname == fname */
          }
 
          char dt[100];
@@ -418,7 +419,7 @@ find_one_file(JCR *jcr, FF_PKT *ff_pkt,
          Jmsg(jcr, M_INFO, 0, _("Top level directory \"%s\" has an unlisted drive type \"%s\"\n"), fname, dt);
          return 1;      /* Just ignore this error - or the whole backup is cancelled */
       }
-      ff_pkt->volhas_attrlist = volume_has_attrlist(fname);
+      ff_pkt->volhas_attrlist = volume_has_attrlist(snap_fname);
    }
 
    /*
@@ -452,7 +453,7 @@ find_one_file(JCR *jcr, FF_PKT *ff_pkt,
        attrList.bitmapcount = ATTR_BIT_MAP_COUNT;
        attrList.commonattr = ATTR_CMN_FNDRINFO;
        attrList.fileattr = ATTR_FILE_RSRCLENGTH;
-       if (getattrlist(fname, &attrList, &ff_pkt->hfsinfo,
+       if (getattrlist(snap_fname, &attrList, &ff_pkt->hfsinfo,
                 sizeof(ff_pkt->hfsinfo), FSOPT_NOFOLLOW) != 0) {
           ff_pkt->type = FT_NOSTAT;
           ff_pkt->ff_errno = errno;
@@ -545,8 +546,8 @@ find_one_file(JCR *jcr, FF_PKT *ff_pkt,
       }
       Dmsg3(400, "FT_REG FI=%d linked=%d file=%s\n", ff_pkt->FileIndex,
          ff_pkt->linked ? 1 : 0, fname);
-      if (ff_pkt->flags & FO_KEEPATIME) {
-         utime(fname, &restore_times);
+      if (ff_pkt->flags & FO_KEEPATIME && !ff_pkt->snapshot_convert_fct) {
+         utime(snap_fname, &restore_times); /* snap_fname == fname */
       }
       return rtn_stat;
 
@@ -555,7 +556,7 @@ find_one_file(JCR *jcr, FF_PKT *ff_pkt,
       int size;
       char *buffer = (char *)alloca(path_max + name_max + 102);
 
-      size = readlink(fname, buffer, path_max + name_max + 101);
+      size = readlink(snap_fname, buffer, path_max + name_max + 101);
       if (size < 0) {
          /* Could not follow link */
          ff_pkt->type = FT_NOFOLLOW;
@@ -636,7 +637,9 @@ find_one_file(JCR *jcr, FF_PKT *ff_pkt,
        */
       if (ff_pkt->statp.st_rdev == WIN32_REPARSE_POINT) {
          ff_pkt->type = FT_REPARSE;
-      } else if (ff_pkt->statp.st_rdev == WIN32_JUNCTION_POINT) {
+      } else if (ff_pkt->statp.st_rdev == WIN32_JUNCTION_POINT ||
+            (ff_pkt->statp.st_rdev == WIN32_SYMLINK_POINT && S_ISDIR(ff_pkt->statp.st_mode))) {
+         // Handle SYMLINK DIRECTORY like a Junction, BackupRead() does all the work
          ff_pkt->type = FT_JUNCTION;
       }
 #endif
@@ -669,6 +672,16 @@ find_one_file(JCR *jcr, FF_PKT *ff_pkt,
        */
       Dmsg1(300, "Create temp ff packet for dir: %s\n", ff_pkt->fname);
       FF_PKT *dir_ff_pkt = new_dir_ff_pkt(ff_pkt);
+#if defined(HAVE_WIN32)
+      if (dir_ff_pkt->root_of_volume || (ff_pkt->fname[3]=='\0' && ff_pkt->fname[1]==':')) {
+         /* tell "restore" that this is a root directory and that it should not
+          * restore the Windows hidden and system attribute
+          */
+         dir_ff_pkt->statp.st_rdev = WIN32_ROOT_POINT;
+         // don't "propagate" the "root_of_volume" property to sub-directories
+         ff_pkt->root_of_volume = false;
+      }
+#endif
 
       /*
        * Do not descend into subdirectories (recurse) if the
@@ -685,16 +698,30 @@ find_one_file(JCR *jcr, FF_PKT *ff_pkt,
       if (!top_level && ff_pkt->flags & FO_NO_RECURSION) {
          ff_pkt->type = FT_NORECURSE;
          recurse = false;
-      } else if (!top_level && (parent_device != ff_pkt->statp.st_dev ||
-                 is_win32_mount_point)) {
-         if(!(ff_pkt->flags & FO_MULTIFS)) {
+      } else if (!top_level &&
+            (parent_device != ff_pkt->statp.st_dev || is_win32_mount_point)) {
+            /* Nested mountpoint in a Windows snapshot works like the original
+             * mountpoint and redirect to the Live filesystem (not a snapshot)
+             *
+             * In Linux the directory is not a mountpoint anymore and we backup
+             * the content of the directory that is normally empty.
+             */
+         if (is_win32_mount_point && ff_pkt->flags & FO_MULTIFS) {
+            return 1;           /* Ignore this dir, it will backed up later */
+
+         } else if (is_win32_mount_point) {
+            recurse = false;    /* We backup the mount point itself, but nothing more */
+
+         } else if(!(ff_pkt->flags & FO_MULTIFS)) {
             ff_pkt->type = FT_NOFSCHG;
             recurse = false;
+
          } else if (!accept_fstype(ff_pkt, NULL)) {
             ff_pkt->type = FT_INVALIDFS;
             recurse = false;
+
          } else {
-            ff_pkt->volhas_attrlist = volume_has_attrlist(fname);
+            ff_pkt->volhas_attrlist = volume_has_attrlist(snap_fname);
          }
       }
       /* If not recursing, just backup dir and return */
@@ -706,8 +733,8 @@ find_one_file(JCR *jcr, FF_PKT *ff_pkt,
          free(link);
          free_dir_ff_pkt(dir_ff_pkt);
          ff_pkt->link = ff_pkt->fname;     /* reset "link" */
-         if (ff_pkt->flags & FO_KEEPATIME) {
-            utime(fname, &restore_times);
+         if (ff_pkt->flags & FO_KEEPATIME && !ff_pkt->snapshot_convert_fct) {
+            utime(snap_fname, &restore_times); /* snap_fname==fname */
          }
          return rtn_stat;
       }
@@ -719,7 +746,7 @@ find_one_file(JCR *jcr, FF_PKT *ff_pkt,
        *   all the files in it.
        */
       errno = 0;
-      if ((directory = opendir(fname)) == NULL) {
+      if ((directory = opendir(snap_fname)) == NULL) {
          ff_pkt->type = FT_NOOPEN;
          ff_pkt->ff_errno = errno;
          rtn_stat = handle_file(jcr, ff_pkt, top_level);
@@ -731,6 +758,18 @@ find_one_file(JCR *jcr, FF_PKT *ff_pkt,
          return rtn_stat;
       }
 
+      /* Build a canonical directory name of the file inside the snapshot,
+       * with a trailing slash in link var */
+      int slen = strlen(snap_fname);
+      int snap_len = slen + 200;
+      char *snap_link = (char *)bmalloc(snap_len + 2);
+      bstrncpy(snap_link, snap_fname, snap_len);
+      /* Strip all trailing slashes */
+      while (slen >= 1 && IsPathSeparator(snap_link[slen - 1]))
+        slen--;
+      snap_link[slen++] = '/';             /* add back one */
+      snap_link[slen] = 0;
+
       /*
        * Process all files in this directory entry (recursing).
        *    This would possibly run faster if we chdir to the directory
@@ -738,7 +777,7 @@ find_one_file(JCR *jcr, FF_PKT *ff_pkt,
        */
       rtn_stat = 1;
       while (!job_canceled(jcr)) {
-         char *p, *q;
+         char *p, *q, *s;
          int l;
          int i;
 
@@ -759,20 +798,28 @@ find_one_file(JCR *jcr, FF_PKT *ff_pkt,
              link_len = len + l + 1;
              link = (char *)brealloc(link, link_len + 1);
          }
-         q = link + len;
-         for (i=0; i < l; i++) {
-            *q++ = *p++;
+         if (l + slen >= snap_len) {
+             snap_len = slen + l + 1;
+             snap_link = (char *)brealloc(snap_link, snap_len + 1);
          }
-         *q = 0;
+
+         q = link + len;
+         s = snap_link + slen;
+         for (i=0; i < l; i++) {
+            *q++ = *s++ =*p++;
+         }
+         *q = *s = 0;
          if (!file_is_excluded(ff_pkt, link)) {
-            rtn_stat = find_one_file(jcr, ff_pkt, handle_file, link, our_device, false);
+            rtn_stat = find_one_file(jcr, ff_pkt, handle_file, link, snap_link, our_device, false);
             if (ff_pkt->linked) {
                ff_pkt->linked->FileIndex = ff_pkt->FileIndex;
             }
          }
+
       }
       closedir(directory);
       free(link);
+      free(snap_link);
 
       /*
        * Now that we have recursed through all the files in the
@@ -787,8 +834,8 @@ find_one_file(JCR *jcr, FF_PKT *ff_pkt,
       }
       free_dir_ff_pkt(dir_ff_pkt);
 
-      if (ff_pkt->flags & FO_KEEPATIME) {
-         utime(fname, &restore_times);
+      if (ff_pkt->flags & FO_KEEPATIME && !ff_pkt->snapshot_convert_fct) {
+         utime(snap_fname, &restore_times);
       }
       ff_pkt->volhas_attrlist = volhas_attrlist;      /* Restore value in case it changed. */
       return rtn_stat;
