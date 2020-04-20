@@ -15,6 +15,7 @@
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
+   The licensor of Bacula is Kern Sibbald.
 */
 /*
  *
