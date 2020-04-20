@@ -1,7 +1,7 @@
 #
 # Bacula Makefile for the File daemon
 #
-# Copyright (C) 2000-2016 Kern Sibbald
+# Copyright (C) 2000-2020 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
 @MCOMMON@
@@ -28,6 +28,8 @@ AFS_LIBS = @AFS_LIBS@
 ACLOBJS = @ACLOBJS@
 XATTROBJS = @XATTROBJS@
 IOKITLIBS = @IOKITLIBS@
+EXTRA_SRCS = @EXTRA_FILED_SRCS@
+
 
 first_rule: all
 dummy:
@@ -36,13 +38,13 @@ dummy:
 SVRSRCS = filed.c authenticate.c backup.c crypto.c \
 	  win_efs.c estimate.c fdcollect.c \
 	  fd_plugins.c accurate.c \
-	  filed_conf.c heartbeat.c hello.c job.c fd_snapshot.c \
-	  restore.c status.c suspend.c verify.c verify_vol.c \
+	  filed_conf.c runres_conf.c heartbeat.c hello.c job.c fd_snapshot.c \
+	  restore.c status.c verify.c verify_vol.c fdcallsdir.c suspend.c $(EXTRA_SRCS) \
 	  $(ACLOBJS) $(XATTROBJS)
 
 SVROBJS = $(SVRSRCS:.c=.o)
 
-JSONOBJS = bfdjson.o filed_conf.o
+JSONOBJS = bfdjson.o filed_conf.o runres_conf.o
 
 # these are the objects that are changed by the .configure process
 EXTRAOBJS = @OBJLIST@
@@ -113,7 +115,7 @@ bfdjson:  Makefile $(JSONOBJS) ../findlib/libbacfind$(DEFAULT_ARCHIVE_TYPE) ../l
 	  $(WIN32LIBS) $(FDLIBS) $(ZLIBS) -lbacfind -lbaccfg -lbac -lm $(LIBS) \
 	  $(DLIB) $(WRAPLIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS) $(CAP_LIBS) $(AFS_LIBS) $(LZO_LIBS)
 
-static-bacula-fd: Makefile $(SVROBJS) ../findlib/libbacfind.a ../lib/libbaccfg$(DEFAULT_ARCHIVE_TYPE) ../lib/libbac$(DEFAULT_ARCHIVE_TYPE) @WIN32@
+static-bacula-fd: Makefile $(SVROBJS) ../findlib/libbacfind$(DEFAULT_ARCHIVE_TYPE) ../lib/libbaccfg$(DEFAULT_ARCHIVE_TYPE) ../lib/libbac$(DEFAULT_ARCHIVE_TYPE) @WIN32@
 	$(LIBTOOL_LINK) $(CXX) $(WLDFLAGS) $(LDFLAGS) -static -L../lib -L../findlib -o $@ $(SVROBJS) \
 	   $(WIN32LIBS) $(FDLIBS) $(ZLIBS) -lbacfind -lbaccfg -lbac -lm $(LIBS) \
 	   $(DLIB) $(WRAPLIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS) $(CAP_LIBS) $(AFS_LIBS) $(LZO_LIBS)
