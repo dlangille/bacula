@@ -25,7 +25,7 @@
 #include "bacula.h"
 
 /* this should physically correspond to WIN32_STREAM_ID
- * from winbase.h on Win32. We didn't inlcude cStreamName
+ * from winbase.h on Win32. We didn't include cStreamName
  * as we don't use it and don't need it for a correct struct size.
  */
 
@@ -41,6 +41,7 @@ typedef struct _BWIN32_STREAM_ID {
 class Win32Filter
 {
 public:
+   bool    error;       /* set when an error is detected */
    bool    initialized;
    int64_t skip_size;   /* how many bytes we have to skip before next header */
    int64_t data_size;   /* how many data are expected in the stream */
@@ -53,6 +54,7 @@ public:
    };
    
    void init() {
+      error = false;
       initialized = false;
       skip_size = 0;
       data_size = 0;
