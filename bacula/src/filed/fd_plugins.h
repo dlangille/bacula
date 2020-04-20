@@ -97,6 +97,8 @@ struct stream_pkt {
 struct save_pkt {
    int32_t pkt_size;                  /* size of this packet */
    char *fname;                       /* Full path and filename */
+   char *snap_fname;                  /* Name inside the Snapshot */
+   bplugin_mode_t plugin_mode;        /* Not used anymore, don't remove */
    char *link;                        /* Link name if any */
    struct stat statp;                 /* System stat() packet for file */
    int32_t type;                      /* FT_xx for this file */
@@ -104,6 +106,7 @@ struct save_pkt {
    bool no_read;                      /* During the save, the file should not be saved */
    bool portable;                     /* set if data format is portable */
    bool accurate_found;               /* Found in accurate list (valid after check_changes()) */
+   bool do_dedup;                     /* True if we deal with a dedup storage system */
    char *cmd;                         /* command */
    uint32_t delta_seq;                /* Delta sequence number */
    char *object_name;                 /* Object name to create */
@@ -119,6 +122,7 @@ struct save_pkt {
 */
 struct restore_pkt {
    int32_t pkt_size;                  /* size of this packet */
+   bplugin_mode_t plugin_mode;        /* Not used anymore, don't remove */
    int32_t stream;                    /* attribute stream id */
    int32_t data_stream;               /* id of data stream to follow */
    int32_t type;                      /* file type FT */
@@ -142,6 +146,7 @@ struct restore_pkt {
 */
 struct restore_filelist_pkt {
    int32_t pkt_size;                  /* size of this packet */
+   bplugin_mode_t plugin_mode;        /* Not used anymore, don't remove */
    int32_t file_index;                /* file index */
    int32_t LinkFI;                    /* file index to data if hard link */
    struct stat statp;                 /* decoded stat packet */
@@ -218,12 +223,13 @@ typedef enum {
   bVarExePath               = 16,
   bVarVersion               = 17,
   bVarDistName              = 18,
-  bVarxxx                   = 19,
-  bVarPrevJobName           = 20,
-  bVarPrefixLinks           = 21,
-  bVarInteractiveSession    = 22,
-  bVarFileIndex             = 23,
-  bVarReplace               = 24
+  bVarPrevJobName           = 19,
+  bVarPrefixLinks           = 20,
+  bVarInteractiveSession    = 21,
+  bVarFileIndex             = 22,
+  bVarReplace               = 23,
+  bVarMaxDedupBlockSize     = 24,
+  bVarMinDedupBlockSize     = 25
 } bVariable;
 
 /* Events that are passed to plugin */
@@ -271,7 +277,7 @@ typedef struct s_baculaInfo {
    uint32_t version;
 } bInfo;
 
-/* Bacula Core Routines -- not used within a plugin */
+/* Bacula Core Routines to call a plugin -- do not use within a plugin */
 #ifdef FILE_DAEMON
 struct BFILE;                   /* forward referenced */
 struct FF_PKT;
@@ -303,6 +309,7 @@ bool plugin_restore_acl(JCR *jcr, char *data, uint32_t length);
 int plugin_backup_xattr(JCR *jcr, FF_PKT *ff_pkt, char **data);
 bool plugin_restore_xattr(JCR *jcr, char *data, uint32_t length);
 bool plugin_check_stream(JCR *jcr, int32_t &stream);
+bool plugin_query_parameter(JCR *jcr, char *command, char *param, void sendit(JCR *jcr, const char *str));
 #endif
 
 #ifdef __cplusplus
@@ -354,7 +361,7 @@ typedef enum {
 
 #define FD_PLUGIN_MAGIC  "*FDPluginData*"
 
-#define FD_PLUGIN_INTERFACE_VERSION  ( 14 )
+#define FD_PLUGIN_INTERFACE_VERSION  ( 21 )
 
 typedef struct s_pluginInfo {
    uint32_t size;
@@ -366,6 +373,16 @@ typedef struct s_pluginInfo {
    const char *plugin_version;
    const char *plugin_description;
 } pInfo;
+
+
+struct query_pkt {
+   int32_t pkt_size;                  /* Size of this packet */
+   char *parameter;
+   char *command;
+   char *api_opts;
+   char *result;
+   int32_t pkt_end;                   /* end packet sentinel */
+};
 
 /*
  * This is a set of function pointers that Bacula can call
@@ -388,7 +405,9 @@ typedef struct s_pluginFuncs {
    bRC (*setFileAttributes)(bpContext *ctx, struct restore_pkt *rp);
    bRC (*checkFile)(bpContext *ctx, char *fname);
    bRC (*handleXACLdata)(bpContext *ctx, struct xacl_pkt *xacl);
+   bRC (*restoreFileList)(bpContext *ctx, struct restore_filelist_pkt *rp);
    bRC (*checkStream)(bpContext *ctx, struct stream_pkt *sp);
+   bRC (*queryParameter)(bpContext *ctx, struct query_pkt *qp);
 } pFuncs;
 
 #define plug_func(plugin) ((pFuncs *)(plugin->pfuncs))
