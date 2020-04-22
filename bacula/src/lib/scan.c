@@ -530,6 +530,35 @@ int scan_string(const char *buf, const char *fmt, ...)
 //       Dmsg1(000, "Got %% nxt=%c\n", *fmt);
 switch_top:
          switch (*fmt++) {
+         case 'x':
+            value = 0;
+            if (buf[0] != '0' || buf[1] != 'x') {
+               error = true;
+               break;
+            }
+            buf++;              /* skip 0 */
+            buf++;              /* skip x */
+            while (B_ISXDIGIT(*buf)) {
+               if (B_ISDIGIT(*buf)) {
+                  value = (value) * 16 + *buf++ - '0';
+               } else {
+                  value = (value) * 16 + toupper(*buf++) - 'A' + 10;
+               }
+            }
+            vp = (void *)va_arg(ap, void *);
+//          Dmsg2(000, "val=%lld at 0x%lx\n", value, (long unsigned)vp);
+            if (l == 0) {
+               *((int *)vp) = (int)value;
+            } else if (l == 1) {
+               *((uint32_t *)vp) = (uint32_t)value;
+//             Dmsg0(000, "Store 32 bit int\n");
+            } else {
+               *((uint64_t *)vp) = (uint64_t)value;
+//             Dmsg0(000, "Store 64 bit int\n");
+            }
+            count++;
+            l = 0;
+            break;
          case 'u':
             value = 0;
             if (!B_ISDIGIT(*buf)) {
@@ -592,10 +621,10 @@ switch_top:
                l++;
                fmt++;
             }
-            if (*fmt == 'd' || *fmt == 'u') {
+            if (*fmt == 'd' || *fmt == 'u' || *fmt == 'x') {
                goto switch_top;
             }
-//          Dmsg1(000, "fmt=%c !=d,u\n", *fmt);
+//          Dmsg1(000, "fmt=%c !=d,u,x\n", *fmt);
             error = true;
             break;
          case 'q':
