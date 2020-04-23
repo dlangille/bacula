@@ -57,11 +57,13 @@ struct dlink {
    void *prev;
 };
 
+
 class dlist : public SMARTALLOC {
    void *head;
    void *tail;
    int16_t loffset;
    uint32_t num_items;
+   void  (*free_method)(void *);
 public:
    dlist(void *item, dlink *link);
    dlist(void);
@@ -88,6 +90,7 @@ public:
    void destroy();
    void *first() const;
    void *last() const;
+   void set_delete(void (*fun)(void *));
 };
 
 
@@ -98,6 +101,7 @@ public:
  */
 inline void dlist::init(void *item, dlink *link)
 {
+   free_method = NULL;
    head = tail = NULL;
    loffset = (int)((char *)link - (char *)item);
    if (loffset < 0 || loffset > 5000) {
@@ -108,6 +112,7 @@ inline void dlist::init(void *item, dlink *link)
 
 inline void dlist::init()
 {
+   free_method = NULL;
    head = tail = NULL;
    loffset = 0;
    num_items = 0;
@@ -128,7 +133,7 @@ inline dlist::dlist(void *item, dlink *link)
 }
 
 /* Constructor with link at head of item */
-inline dlist::dlist(void) : head(0), tail(0), loffset(0), num_items(0)
+inline dlist::dlist(void) : head(0), tail(0), loffset(0), num_items(0), free_method(NULL)
 {
 }
 
@@ -180,6 +185,11 @@ inline void * dlist::first() const
 inline void * dlist::last() const
 {
    return tail;
+}
+
+inline void dlist::set_delete(void (*fun)(void *))
+{
+   free_method = fun;
 }
 
 /*
