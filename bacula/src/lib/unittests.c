@@ -51,37 +51,142 @@ int main()
 
 #include <stdio.h>
 #include "bacula.h"
+#include "unittests.h"
 
 static int err=0;
 static int nb=0;
 static bool lmgrinit = false;
+static bool quiet = false;
+static bool print_var = false;
+
+Unittests::Unittests(const char *name, bool lmgr/*=false*/, bool motd/*=true*/)
+{
+   if (getenv("UNITTEST_PRINT_VAR")) {
+      print_var = true;
+   }
+   prolog(name, lmgr, motd);
+};
+
+void configure_test(uint64_t options)
+{
+   if (options & TEST_QUIET) {
+      quiet = true;
+   }
+   if (options & TEST_PRINT_LOCAL) {
+      print_var = true;
+   }
+}
 
 /*
  * Test success if value is not zero.
  */
-void _ok(const char *file, int l, const char *op, int value, const char *label)
+bool _ok(const char *file, int l, const char *op, int value, const char *label)
 {
    nb++;
    if (!value) {
       err++;
       Pmsg4(-1, "ERR %.80s %s:%i on %s\n", label, file, l, op);
-   } else {
+      if (print_var) {
+         gdb_print_local(1);
+      }
+   } else if (!quiet) {
       Pmsg1(-1, "OK  %.80s\n", label);
    }
+   return value;
 }
 
 /*
  * Test success if value is zero.
  */
-void _nok(const char *file, int l, const char *op, int value, const char *label)
+bool _nok(const char *file, int l, const char *op, int value, const char *label)
 {
    nb++;
    if (value) {
       err++;
       Pmsg4(-1, "ERR %.80s %s:%i on !%s\n", label, file, l, op);
-   } else {
+      if (print_var) {
+         gdb_print_local(1);
+      }
+   } else if (!quiet) {
       Pmsg1(-1, "OK  %.80s\n", label);
    }
+   return !value;
+}
+
+/*
+ * Test success if value is different
+ */
+bool _is(const char *file, int l, const char *op, const char *str, const char *str2, const char *label)
+{
+   nb++;
+   bool value = (strcmp(str, str2) == 0);
+   if (!value) {
+      err++;
+      Pmsg6(-1, "ERR %.80s %s:%i on %s %s == %s\n", label, file, l, op, str, str2);
+      if (print_var) {
+         gdb_print_local(1);
+      }
+   } else if (!quiet) {
+      Pmsg1(-1, "OK  %.80s\n", label);
+   }
+   return value;
+}
+
+/*
+ * Test success if value is different
+ */
+bool _is(const char *file, int l, const char *op, int64_t v, int64_t v2, const char *label)
+{
+   nb++;
+   bool value = (v == v2);
+   if (!value) {
+      err++;
+      Pmsg6(-1, "ERR %.80s %s:%i on %s %lld == %lld\n", label, file, l, op, v, v2);
+      if (print_var) {
+         gdb_print_local(1);
+      }
+   } else if (!quiet) {
+      Pmsg1(-1, "OK  %.80s\n", label);
+   }
+   return value;
+}
+
+/*
+ * Test success if value is different
+ */
+bool _isnt(const char *file, int l, const char *op, const char *str, const char *str2, const char *label)
+{
+   nb++;
+   bool value = (strcmp(str, str2) != 0);
+   if (!value) {
+      err++;
+      Pmsg6(-1, "ERR %.80s %s:%i on %s %s == %s\n", label, file, l, op, str, str2);
+      if (print_var) {
+         gdb_print_local(1);
+      }
+   } else if (!quiet) {
+      Pmsg1(-1, "OK  %.80s\n", label);
+   }
+   return value;
+}
+
+/*
+ * Test success if value is different
+ */
+bool _isnt(const char *file, int l, const char *op, int64_t v, int64_t v2, const char *label)
+{
+   nb++;
+   bool value = (v != v2);
+   if (!value) {
+      err++;
+      Pmsg6(-1, "ERR %.80s %s:%i on %s == %lld\n", label, file, l, op, v, v2);
+      if (print_var) {
+         gdb_print_local(1);
+      }
+   } else if (!quiet) {
+      Pmsg1(-1, "OK  %.80s\n", label);
+   }
+   return value;
 }
 
 /*
@@ -99,12 +204,21 @@ void terminate(int sig) {};
 /*
  * Initializes the application env, including lockmanager.
  */
-void prolog(const char *name, bool lmgr=false, bool motd=true)
+void prolog(const char *name, bool lmgr, bool motd)
 {
-   if (motd)
+   if (motd) {
       Pmsg1(-1, "==== Starting %s ... ====\n", name);
+   }
    my_name_is(0, NULL, name);
    init_signals(terminate);
+
+#ifdef HAVE_WIN32
+   InitWinAPIWrapper();
+   WSA_Init();
+#endif
+
+   init_stack_dump();
+
    if (lmgr){
       lmgr_init_thread();     /* initialize the lockmanager stack */
       lmgrinit = true;
@@ -118,7 +232,7 @@ void epilog()
 {
    Pmsg0(-1, "\n");
    stop_watchdog();
-   if (lmgrinit){
+   if (lmgrinit) {
       lmgr_cleanup_main();
    }
    close_memory_pool();
