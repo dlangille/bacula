@@ -41,4 +41,6 @@ void             openssl_post_errors     (int code, const char *errstring);
 void             openssl_post_errors     (JCR *jcr, int code, const char *errstring);
 #endif /* HAVE_OPENSSL */
 
+#define NO_FIPS 0
+
 #endif /* __OPENSSL_H_ */
