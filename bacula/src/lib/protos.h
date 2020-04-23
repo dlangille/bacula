@@ -67,18 +67,22 @@ bool display_global_item(HPKT &hpkt);
 void display_collector_types(HPKT &hpkt);
 
 /* bsys.c */
+int get_user_home_directory(const char *user, POOLMEM *&home);
+int get_home_directories(const char *grpname, alist *dirs);
 char *ucfirst(char *dest, const char *src, int len);
 typedef enum {
    WAIT_READ  = 1,
    WAIT_WRITE = 2
 } fd_wait_mode;
+uint64_t bget_os_memory();
+uint64_t bget_max_mlock(int64_t value);
 int fd_wait_data(int fd, fd_wait_mode mode, int sec, int msec);
 FILE *bfopen(const char *path, const char *mode);
 int baccept(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
 int copyfile(const char *src, const char *dst);
 void setup_env(char *envp[]);
-POOLMEM  *quote_string           (POOLMEM *snew, const char *old);
-POOLMEM  *quote_where            (POOLMEM *snew, const char *old);
+POOLMEM  *quote_string           (POOLMEM *&snew, const char *old);
+POOLMEM  *quote_where            (POOLMEM *&snew, const char *old);
 char     *bstrncpy               (char *dest, const char *src, int maxlen);
 char     *bstrncpy               (char *dest, POOL_MEM &src, int maxlen);
 char     *bstrncat               (char *dest, const char *src, int maxlen);
@@ -116,14 +120,17 @@ char     *escape_filename(const char *file_path);
 int       Zdeflate(char *in, int in_len, char *out, int &out_len);
 int       Zinflate(char *in, int in_len, char *out, int &out_len);
 void      stack_trace();
+void      gdb_stack_trace();
+void      gdb_print_local(int level);
+
 int       safer_unlink(const char *pathname, const char *regex);
 int fs_get_free_space(const char *path, int64_t *freeval, int64_t *totalval);
 
 /* bnet.c */
 bool       bnet_tls_server       (TLS_CONTEXT *ctx, BSOCK *bsock,
-                                  alist *verify_list);
+                                  alist *verify_list, const char *psk_shard_key);
 bool       bnet_tls_client       (TLS_CONTEXT *ctx, BSOCK *bsock,
-                                  alist *verify_list);
+                                  alist *verify_list, const char *psk_shard_key);
 BSOCK *    init_bsock            (JCR *jcr, int sockfd, const char *who, const char *ip,
                                   int port, struct sockaddr *client_addr);
 #ifdef HAVE_WIN32
@@ -150,18 +157,27 @@ int              close_epipe(BPIPE *bpipe);
 int              close_bpipe(BPIPE *bpipe);
 
 /* cram-md5.c */
-bool cram_md5_respond(BSOCK *bs, const char *password, int *tls_remote_need, int *compatible);
+bool cram_md5_respond(BSOCK *bs, const char *password, int *tls_remote_need, int *compatible, bool use_bs_msg=false);
 bool cram_md5_challenge(BSOCK *bs, const char *password, int tls_local_need, int compatible);
 void hmac_md5(uint8_t* text, int text_len, uint8_t* key, int key_len, uint8_t *hmac);
 
 /* crc32.c */
 
 uint32_t bcrc32(unsigned char *buf, int len);
+uint32_t bcrc32_bad(unsigned char *buf, int len);
 
+
+/* openssl.c */
+const char *crypto_get_version();
 
 /* crypto.c */
-int                init_crypto                 (void);
+bool               crypto_check_digest(JCR *jcr, crypto_digest_t type);
+bool               crypto_get_fips();         /* true/false */
+const char        *crypto_get_fips_enabled(); /* yes/no */
+void               crypto_use_fips(bool fips);
+int                init_crypto                 ();
 int                cleanup_crypto              (void);
+int                crypto_check_fips(bool enabled);
 DIGEST *           crypto_digest_new           (JCR *jcr, crypto_digest_t type);
 bool               crypto_digest_update        (DIGEST *digest, const uint8_t *data, uint32_t length);
 bool               crypto_digest_finalize      (DIGEST *digest, uint8_t *dest, uint32_t *length);
@@ -214,7 +230,11 @@ char             *edit_utime             (utime_t val, char *buf, int buf_len);
 bool             is_a_number             (const char *num);
 bool             is_a_number_list        (const char *n);
 bool             is_an_integer           (const char *n);
+
+#define EXTRA_VALID_RESOURCE_CHAR ":.-_ "
+#define EXTRA_VALID_RESOURCE_CHAR_GLOB  EXTRA_VALID_RESOURCE_CHAR "[]*?"
 bool             is_name_valid           (const char *name, POOLMEM **msg);
+bool             is_name_valid           (const char *name, POOLMEM **msg, const char *accept);
 
 /* jcr.c (most definitions are in src/jcr.h) */
 void     init_last_jobs_list();
@@ -319,6 +339,7 @@ int              parse_args_only(POOLMEM *cmd, POOLMEM **args, int *argc,
 void            split_path_and_filename(const char *fname, POOLMEM **path,
                         int *pnl, POOLMEM **file, int *fnl);
 int             bsscanf(const char *buf, const char *fmt, ...);
+int             scan_string(const char *buf, const char *fmt, ...);
 
 
 /* tls.c */
@@ -331,6 +352,9 @@ TLS_CONTEXT      *new_tls_context        (const char *ca_certfile,
                                           const char *dhfile,
                                           bool verify_peer);
 void             free_tls_context        (TLS_CONTEXT *ctx);
+TLS_CONTEXT      *new_psk_context        (const char *shared_key);
+bool             psk_set_shared_key      (TLS_CONNECTION *tls, const char *shared_key);
+void             free_psk_context        (TLS_CONTEXT *ctx);
 #ifdef HAVE_TLS
 bool             tls_postconnect_verify_host(JCR *jcr, TLS_CONNECTION *tls,
                                                const char *host);
@@ -347,6 +371,7 @@ void             tls_bsock_shutdown      (BSOCKCORE *bsock);
 void             free_tls_connection     (TLS_CONNECTION *tls);
 bool             get_tls_require         (TLS_CONTEXT *ctx);
 bool             get_tls_enable          (TLS_CONTEXT *ctx);
+bool             get_tls_psk_context     (TLS_CONTEXT *ctx);
 
 
 /* util.c */
@@ -377,9 +402,12 @@ const char *     volume_status_to_str    (const char *status);
 void             make_session_key        (char *key, char *seed, int mode);
 void             encode_session_key      (char *encode, char *session, char *key, int maxlen);
 void             decode_session_key      (char *decode, char *session, char *key, int maxlen);
-POOLMEM *        edit_job_codes          (JCR *jcr, char *omsg, char *imsg, const char *to, job_code_callback_t job_code_callback = NULL);
+POOLMEM *        edit_job_codes          (JCR *jcr, POOLMEM *&omsg, char *imsg, const char *to, job_code_callback_t job_code_callback = NULL);
 void             set_working_directory   (char *wd);
 const char *     last_path_separator     (const char *str);
+int xattr_list_append(POOLMEM *&list, int len, const char *str, int str_len);
+bool is_offset_stream(int stream);
+
 
 /* watchdog.c */
 int start_watchdog(void);
