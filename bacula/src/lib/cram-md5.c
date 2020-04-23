@@ -29,7 +29,6 @@
 
 const int dbglvl = 50;
 
-
 /* Authorize other end
  * Codes that tls_local_need and tls_remote_need can take:
  *   BNET_TLS_NONE     I cannot do tls
@@ -110,7 +109,7 @@ bool cram_md5_challenge(BSOCK *bs, const char *password, int tls_local_need, int
 }
 
 /* Respond to challenge from other end */
-bool cram_md5_respond(BSOCK *bs, const char *password, int *tls_remote_need, int *compatible)
+bool cram_md5_respond(BSOCK *bs, const char *password, int *tls_remote_need, int *compatible, bool skip_recv)
 {
    char chal[MAXSTRING];
    uint8_t hmac[20];
@@ -121,7 +120,7 @@ bool cram_md5_respond(BSOCK *bs, const char *password, int *tls_remote_need, int
    }
 
    *compatible = false;
-   if (bs->recv() <= 0) {
+   if (!skip_recv && bs->recv() <= 0) {
       bmicrosleep(5, 0);
       return false;
    }
