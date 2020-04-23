@@ -259,7 +259,9 @@ static bool get_modifier(char *str, char *num, int num_len, char *mod, int mod_l
 /*
  * Convert a string duration to utime_t (64 bit seconds)
  * Returns false: if error
-           true:  if OK, and value stored in value
+ *          true:  if OK, and value stored in value
+ *
+ * *** The str argument is modified by this function ***
  */
 bool duration_to_utime(char *str, utime_t *value)
 {
@@ -485,10 +487,22 @@ bool is_an_integer(const char *n)
  */
 bool is_name_valid(const char *name, POOLMEM **msg)
 {
+   /* Special characters to accept */
+   const char *accept = EXTRA_VALID_RESOURCE_CHAR;
+   return is_name_valid(name, msg, accept);
+}
+
+/*
+ * Check if Bacula Resoure Name is valid
+ */
+/*
+ * Check if the Volume name has legal characters
+ * If ua is non-NULL send the message
+ */
+bool is_name_valid(const char *name, POOLMEM **msg, const char *accept)
+{
    int len;
    const char *p;
-   /* Special characters to accept */
-   const char *accept = ":.-_ ";
 
    /* No name is invalid */
    if (!name) {
