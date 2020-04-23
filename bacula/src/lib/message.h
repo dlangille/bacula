@@ -159,10 +159,11 @@ struct MQUEUE_ITEM {
 #define    DT_MEMORY     (1<<24)                /* memory  */
 #define    DT_SCHEDULER  (1<<23)                /* scheduler */
 #define    DT_PROTOCOL   (1<<22)                /* protocol */
-#define    DT_xxxxx      (1<<21)                /* reserved BEE */
-#define    DT_xxx        (1<<20)                /* reserved BEE */
+#define    DT_DEDUP      (1<<21)                /* BEEF deduplication */
+#define    DT_DDE        (1<<20)                /* BEEF dedup engine */
 #define    DT_SNAPSHOT   (1<<19)                /* Snapshot */
 #define    DT_RECORD     (1<<18)                /* Record/block */
+#define    DT_CLOUD      (1<<17)                /* cloud   */
 #define    DT_ASX        (1<<16)                /* used by Alain for personal debugging */
 #define    DT_ALL        (0x7FFF0000)           /* all (up to debug_level 65635, 15 flags available) */
 
@@ -198,6 +199,6 @@ extern DLL_IMP_EXP char          my_name[];
 extern DLL_IMP_EXP const char *  working_directory;
 extern DLL_IMP_EXP utime_t       daemon_start_time;
 
-extern DLL_IMP_EXP bool          console_msg_pending;
+extern DLL_IMP_EXP int           console_msg_pending;
 extern DLL_IMP_EXP FILE *        con_fd;                 /* Console file descriptor */
 extern DLL_IMP_EXP brwlock_t     con_lock;               /* Console lock structure */
