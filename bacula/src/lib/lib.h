@@ -50,6 +50,7 @@
 #include "address_conf.h"
 #include "bsockcore.h"
 #include "bsock.h"
+#include "bsock_meeting.h"
 #include "workq.h"
 #ifndef HAVE_FNMATCH
 #include "fnmatch.h"
@@ -69,6 +70,11 @@
 #include "output.h"
 #include "protos.h"
 #include "bget_msg.h"
+#if BEEF
+#include "bee_lib_dedup.h"
+#else
+#include "org_lib_dedup.h"
+#endif
 #include "bstat.h"
 #include "collect.h"
-
+#include "authenticatebase.h"
