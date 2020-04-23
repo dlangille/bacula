@@ -228,7 +228,7 @@ int worker::stop()
    pthread_cond_signal(&empty_wait);
 
    if (!pthread_equal(worker_id, pthread_self())) {
-      pthread_cancel(worker_id);
+		pthread_kill(worker_id, SIGUSR2);
       pthread_join(worker_id, NULL);
    }
    return 0;
