@@ -862,7 +862,7 @@ void decode_session_key(char *decode, char *session, char *key, int maxlen)
  *  to = recepients list
  *
  */
-POOLMEM *edit_job_codes(JCR *jcr, char *omsg, char *imsg, const char *to, job_code_callback_t callback)
+POOLMEM *edit_job_codes(JCR *jcr, POOLMEM *&omsg, char *imsg, const char *to, job_code_callback_t callback)
 {
    char *p, *q;
    const char *str;
@@ -999,7 +999,7 @@ POOLMEM *edit_job_codes(JCR *jcr, char *omsg, char *imsg, const char *to, job_co
          str = add;
       }
       Dmsg1(1200, "add_str %s\n", str);
-      pm_strcat(&omsg, str);
+      pm_strcat(omsg, str);
       Dmsg1(1200, "omsg=%s\n", omsg);
    }
    return omsg;
@@ -1033,4 +1033,67 @@ const char *last_path_separator(const char *str)
       }
    }
    return NULL;
+}
+
+/* Append a string to a xattr list returned by listxattr()
+ * The list is composed attr1\0attr2\0attr3\0
+ * We must lookup the list and append the attribute if
+ * it is not already here.
+ * Tested with tools/xattr_append_test
+ */
+int xattr_list_append(POOLMEM *&list, int len, const char *str, int str_len)
+{
+   /* 0  1  2  3  4  5  6
+    * f  o  o \0
+    *
+    *  len = 3, need to append at 4
+    *  len = 0, need to append at 0
+    */
+   int pos = (len > 0) ? len + 1 : 0;
+   bool found=false;
+
+   if (len > 0) {               /* Do the search only if it's needed */
+      char *end;
+      char *begin=list;
+
+      /* Look up to the last \0 */
+      for (int i = 0;  i < len + 1; i++) {
+         /* The string can contain \0 and we just skip them */
+         if (list[i] == '\0') {
+            end = list + i;
+            Dmsg1(100, "found <%s>\n", begin);
+            if ((end - begin) == str_len) {
+               if (strncmp(begin, str, str_len) == 0) {
+                  found=true;
+                  break;
+               }
+            }
+            /* Point after current position */
+            begin = list + i + 1;
+         }
+      }
+   }
+
+   if (!found) {
+      /* The size can be different since the query... */
+      list = check_pool_memory_size(list, len + str_len + 2);
+      bstrncpy(list+pos, str, str_len+1);
+      len += str_len + 1;
+   }
+
+   return len;
+}
+
+bool is_offset_stream(int stream)
+{ // Does the rec of this stream have an OFFSET of OFFSET_FADDR_SIZE at the beginning
+   switch (stream & STREAMMASK_TYPE) {
+   case STREAM_SPARSE_DATA:
+   case STREAM_SPARSE_GZIP_DATA:
+   case STREAM_SPARSE_COMPRESSED_DATA:
+      return true;
+   }
+   if (stream & STREAM_BIT_OFFSETS) {
+      return true;
+   }
+   return false;
 }
