@@ -130,7 +130,7 @@ bool load_plugins(void *binfo, void *bfuncs, const char *plugin_dir,
       len = strlen(dname.c_str());
       type_len = strlen(type);
       if (len < type_len+1 || strcmp(&dname.c_str()[len-type_len], type) != 0) {
-         Dmsg3(dbglvl, "Rejected plugin: want=%s name=%s len=%d\n", type, dname.c_str(), len);
+         Dmsg3(dbglvl, "Rejected plugin: want=*%s got name=%s len=%d\n", type, dname.c_str(), len);
          continue;
       }
       Dmsg2(dbglvl, "Found plugin: name=%s len=%d\n", dname.c_str(), len);
@@ -253,8 +253,8 @@ void dbg_print_plugin(FILE *fp)
    foreach_alist(plugin, b_plugin_list) {
       for(int i=0; i < dbg_plugin_hook_count; i++) {
 //       dbg_plugin_hook_t *fct = dbg_plugin_hooks[i];
-         fprintf(fp, "Plugin %p name=\"%s\" disabled=%d\n",
-                 plugin, plugin->file, plugin->disabled);
+         fprintf(fp, "Plugin %p name=\"%s\"\n",
+                 plugin, plugin->file);
 //       fct(plugin, fp);
       }
    }
