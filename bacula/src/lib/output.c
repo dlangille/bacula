@@ -31,6 +31,9 @@ void OutputWriter::parse_options(const char *options)
 {
    int nb=0;
    const char *p = options;
+   if (!p) {
+      return;
+   }
    while (*p) {
       nb=0;
 
@@ -205,7 +208,8 @@ char *OutputWriter::get_output(va_list ap, POOLMEM **out, OutputType first)
    POOLMEM   *tmp2 = get_pool_memory(PM_FNAME);
    POOLMEM   *tmp = get_pool_memory(PM_FNAME);
    OutputType val = first;
-         
+   *tmp2 = *tmp = 0;
+
    while (val != OT_END) {
 
       *tmp = 0;
@@ -271,7 +275,10 @@ char *OutputWriter::get_output(va_list ap, POOLMEM **out, OutputType first)
          d = va_arg(ap, double);
          Mmsg(tmp, "%s=%.2f%c", k, d, separator);
          break;
-
+      case OT_BOOL:
+         i = va_arg(ap, int);
+         Mmsg(tmp, "%s=%s%c", k, i?"true":"false", separator);
+         break;
       case OT_STRING:
          s = va_arg(ap, char *);
          Mmsg(tmp, "%s=%s%c", k, NPRTB(s), separator) ;
