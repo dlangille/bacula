@@ -17,6 +17,8 @@
    Bacula(R) is a registered trademark of Kern Sibbald.
 */
 
+/* Written by Eric Bollengier December 2008 */
+
 #ifndef LOCKMGR_H
 #define LOCKMGR_H 1
 
@@ -34,7 +36,7 @@ void lmgr_v(pthread_mutex_t *m);
  */
 intptr_t bthread_get_thread_id();
 
-/* 
+/*
  * Set the Thread Id of the current thread to limit I/O operations
  */
 int bthread_change_uid(uid_t uid, gid_t gid);
