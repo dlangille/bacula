@@ -65,6 +65,19 @@ void openssl_post_errors(JCR *jcr, int code, const char *errstring)
       /* Acquire the human readable string */
       ERR_error_string_n(sslerr, buf, sizeof(buf));
       Dmsg3(50, "jcr=%p %s: ERR=%s\n", jcr, errstring, buf);
+#if (OPENSSL_VERSION_NUMBER > 0x10101000L) && defined(SSL_R_APPLICATION_DATA_AFTER_CLOSE_NOTIFY)
+      if (ERR_GET_REASON(sslerr) == SSL_R_APPLICATION_DATA_AFTER_CLOSE_NOTIFY) {
+       /* Ignore this error that is SSL_shutdown() specific and is new to TLS 1.3
+        * error:14094123:SSL routines:ssl3_read_bytes:application data after close notify
+        *
+        * This happens when there is still something to read in the socket
+        * while we are doing the TLS shutdown.  This can happens at multiple
+        * place but the message appears only on the DIR because at that time
+        * the connection with the DIR is often "terminated"
+        */
+         continue;
+      }
+#endif
       Qmsg2(jcr, M_ERROR, 0, "%s: ERR=%s\n", errstring, buf);
    }
 }
@@ -234,13 +247,16 @@ static int openssl_seed_prng (void)
    // Win32 Support
    // Read saved entropy?
 
+#ifdef HAVE_WIN32
+   return 1;
+#endif
+
    for (i = 0; names[i]; i++) {
       if (RAND_load_file(names[i], 1024) != -1) {
          /* Success */
          return 1;
       }
    }
-
    /* Fail */
    return 0;
 }
@@ -332,10 +348,29 @@ int cleanup_crypto (void)
    return 0;
 }
 
+const char *crypto_get_version()
+{
+#ifdef HAVE_OPENSSL_VERSION_TEXT
+   return OPENSSL_VERSION_TEXT;
+#else
+   return "OpenSSL";
+#endif
+}
+
 #else
 
 /* Dummy routines */
-int init_crypto (void) { return 0; }
-int cleanup_crypto (void) { return 0; }
+int init_crypto (void) {
+   return 0;
+}
+
+int cleanup_crypto (void) {
+   return 0;
+}
+
+const char *crypto_get_version()
+{
+   return "*None*";
+}
 
 #endif /* HAVE_OPENSSL */
