@@ -1,7 +1,8 @@
 #ifndef __OPENSSL_COPMAT__H__
 #define __OPENSSL_COPMAT__H__
 
-#if (OPENSSL_VERSION_NUMBER < 0x10100000L)
+#if (OPENSSL_VERSION_NUMBER < 0x10100000L) || \
+    (defined(LIBRESSL_VERSION_NUMBER) && LIBRESSL_VERSION_NUMBER < 0x2070000fL)
 static inline int EVP_PKEY_up_ref(EVP_PKEY *pkey)
 {
 	CRYPTO_add(&pkey->references, 1, CRYPTO_LOCK_EVP_PKEY);
