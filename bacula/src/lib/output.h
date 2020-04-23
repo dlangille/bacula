@@ -41,6 +41,7 @@ enum _OutputType {
    OT_PLUGINS,                  /* Plugin alist */
    OT_RATIO,                    /* Double %.2f format */
    OT_ALIST_STR,
+   OT_BOOL,                     /* boolean */
 
    OT_END,                      /* Last operator (no extra arg) */
    OT_START_OBJ,                /* Skip a line to start a new object (no extra arg) */
