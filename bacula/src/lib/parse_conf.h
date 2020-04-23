@@ -21,7 +21,9 @@
  *     Kern Sibbald, January MM
  *
  */
-#pragma once
+#ifndef PARSE_CONF_H
+#define PARSE_CONF_H
+
 /* Used for certain keyword tables */
 struct s_kw {
    const char *name;
@@ -154,6 +156,43 @@ struct RES_TABLE {
    uint32_t rcode;                    /* code if needed */
 };
 
+/* Job Level keyword structure */
+struct s_jl {
+   const char *level_name;                 /* level keyword */
+   int32_t  level;                         /* level */
+   int32_t  job_type;                      /* JobType permitting this level */
+};
+
+/* Run structure contained in Schedule Resource */
+class RUNBASE {
+public:
+   uint32_t minute;                   /* minute to run job */
+   time_t last_run;                   /* last time run */
+   time_t next_run;                   /* next time to run */
+   bool last_day_set;                 /* set if last_day is used */
+   char hour[nbytes_for_bits(24)];    /* bit set for each hour */
+   char mday[nbytes_for_bits(32)];    /* bit set for each day of month */
+   char month[nbytes_for_bits(12)];   /* bit set for each month */
+   char wday[nbytes_for_bits(7)];     /* bit set for each day of the week */
+   char wom[nbytes_for_bits(6)];      /* week of month */
+   char woy[nbytes_for_bits(54)];     /* week of year */
+
+   void clear() {
+      minute = 0;
+      last_run = next_run = 0;
+      last_day_set = false;
+      memset(hour, 0, sizeof(hour));
+      memset(mday, 0, sizeof(mday));
+      memset(month, 0, sizeof(month));
+      memset(wday, 0, sizeof(wday));
+      memset(wom, 0, sizeof(wom));
+      memset(woy, 0, sizeof(woy));
+   };
+
+   void copy(RUNBASE *src);
+   void store_runbase(LEX *lc, int token);
+};
+
 /* Common Resource definitions */
 
 #define MAX_RES_NAME_LENGTH MAX_NAME_LENGTH-1       /* maximum resource name length */
@@ -274,6 +313,7 @@ public:
    bool parse_config();
    void free_all_resources();
    bool insert_res(int rindex, int size);
+   bool insert_res(int rindex, RES *res);
    RES_HEAD **save_resources();
    RES_HEAD **new_res_head();
    void init_res_head(RES_HEAD ***rhead, int32_t first, int32_t last);
@@ -338,3 +378,5 @@ extern int32_t r_last;
 extern RES_TABLE resources[];
 extern RES_HEAD **res_head;
 extern int32_t res_all_size;
+
+#endif
