@@ -57,6 +57,7 @@ struct TLS_Context {
    const void *pem_userdata;
    bool tls_enable;
    bool tls_require;
+   bool tls_psk_context; /* true if this context is used for TLS-PSK */
 };
 
 struct TLS_Connection {
@@ -82,7 +83,7 @@ static int openssl_verify_peer(int ok, X509_STORE_CTX *store)
       if (err == X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT ||
           err == X509_V_ERR_SELF_SIGNED_CERT_IN_CHAIN)
       {
-         /* It seems that the error can be also
+         /* It seems that the error can be also 
           * 24 X509_V_ERR_INVALID_CA: invalid CA certificate
           * But it's not very specific...
           */
@@ -106,6 +107,140 @@ static int tls_pem_callback_dispatch (char *buf, int size, int rwflag, void *use
    TLS_CONTEXT *ctx = (TLS_CONTEXT *)userdata;
    return (ctx->pem_callback(buf, size, ctx->pem_userdata));
 }
+
+#ifdef HAVE_TLS_PSK
+static const char *psk_cipher = "PSK-AES256-CBC-SHA";
+
+static unsigned int psk_server_cb(SSL * ssl, const char *identity,
+         unsigned char *psk, unsigned int max_psk_len)
+{
+   int ret;
+
+   (void)(ssl); // unused; prevent gcc warning;
+   if (!identity){
+      return 0; // Client didn't send any identity
+   } else {
+      // Dmsg1(10, "Received identity '%s'\n", identity);
+   }
+
+#if 0
+   /* if we want to check the identity */
+   char *psk_identity="expected identity";
+   if (strcmp(identity, psk_identity) != 0) {
+      Dmsg2(0, "Psk identity error, got '%s' expected'%s'\n", identity, psk_identity);
+     return 0;
+   }
+#endif
+
+   const char *shared_key=(char *)SSL_get_ex_data(ssl, 1);
+   if (shared_key == NULL) {
+      Dmsg0(0, "ERROR psk_key not set!\n");
+      ret = 0;
+   } else {
+      strncpy((char*)psk, shared_key, max_psk_len);
+      if (strlen(shared_key)+1>=max_psk_len){
+         Dmsg0(0, "Error, psk_key too long, truncate\n");
+      }
+      ret = MIN(max_psk_len, strlen(shared_key));
+      // Dmsg2(10, "TLSPSK server SHARED-KEY  len=%d key=\"%s\"\n", ret, shared_key);
+   }
+   return ret;
+}
+
+#if (OPENSSL_VERSION_NUMBER >= 0x10101000L)
+const unsigned char tls13_aes128gcmsha256_id[] = { 0x13, 0x01 };
+const unsigned char tls13_aes256gcmsha384_id[] = { 0x13, 0x02 };
+
+static int psk_session_cb(SSL *ssl, const EVP_MD *md,
+                          const unsigned char **id, size_t *idlen,
+                          SSL_SESSION **sess)
+{
+    SSL_SESSION *usesess = NULL;
+    const SSL_CIPHER *cipher = NULL;
+
+    const char *shared_key=(char *)SSL_get_ex_data(ssl, 1);
+    if (shared_key == NULL) {
+       Dmsg0(0, "ERROR psk_key not set!\n");
+       return 0;
+    }
+
+     /* We default to SHA-256 */
+     cipher = SSL_CIPHER_find(ssl, tls13_aes128gcmsha256_id);
+     if (cipher == NULL) {
+        return 0;
+     }
+
+     usesess = SSL_SESSION_new();
+     if (usesess == NULL
+         || !SSL_SESSION_set1_master_key(usesess, (const unsigned char*)shared_key, strlen(shared_key))
+             || !SSL_SESSION_set_cipher(usesess, cipher)
+             || !SSL_SESSION_set_protocol_version(usesess, TLS1_3_VERSION)) {
+        SSL_SESSION_free(usesess);
+        return 0;
+     }
+
+    cipher = SSL_SESSION_get0_cipher(usesess);
+    if (cipher == NULL) {
+       Dmsg0(0, "cipher is null\n");
+       goto err;
+    }
+    if (md != NULL && SSL_CIPHER_get_handshake_digest(cipher) != md) {
+        /* PSK not usable, ignore it */
+        *id = NULL;
+        *idlen = 0;
+        *sess = NULL;
+        SSL_SESSION_free(usesess);
+    } else {
+       /* HINT not used */
+        *sess = usesess;
+        *id = (const unsigned char *)"Client_identity"; //NULL;
+        *idlen = strlen((const char *)*id);
+    }
+    return 1;
+
+ err:
+    SSL_SESSION_free(usesess);
+    return 0;
+}
+#endif  /* (OPENSSL_VERSION_NUMBER >= 0x10101000L) */
+
+static unsigned int psk_client_cb(SSL *ssl, const char *hint, char *identity,
+    unsigned int max_identity_len, unsigned char *psk, unsigned int max_psk_len)
+{
+   int ret;
+
+   (void)(ssl); // unused; prevent gcc warning;
+   if (!hint){
+      // Didn't get any PSK identity hint
+   } else {
+      // Got a PSK identity hint (not used by Bacula yet)
+   }
+
+#if 0
+   /* if we want to send an identity */
+   char *psk_identity="expected identity";
+   ret = snprintf(identity, max_identity_len, "%s", psk_identity);
+   if (ret < 0 || (unsigned int)ret > max_identity_len){
+      Dmsg0(0, "Error, psk_identify too long\n");
+     return 0;
+   }
+#endif
+
+   const char *shared_key=(char *)SSL_get_ex_data(ssl, 1);
+   if (shared_key == NULL) {
+      Dmsg0(0, "ERROR psk_key not set!\n");
+      ret = 0;
+   } else {
+      strncpy((char*)psk, shared_key, max_psk_len);
+      if (strlen(shared_key)+1>=max_psk_len){
+         Dmsg0(0, "Error, psk_key too long, truncate\n");
+      }
+      ret = MIN(max_psk_len, strlen(shared_key));
+      // Dmsg2(10, "TLSPSK client SHARED-KEY len=%d key=\"%s\"\n", ret, shared_key);
+   }
+   return ret;
+}
+#endif  /* HAVE_TLS_PSK */
 
 /*
  * Create a new TLS_CONTEXT instance.
@@ -136,7 +271,7 @@ TLS_CONTEXT *new_tls_context(const char *ca_certfile, const char *ca_certdir,
 #endif
 
    /* Use SSL_OP_ALL to turn on all "rather harmless" workarounds that
-    * OpenSSL offers
+    * OpenSSL offers 
     */
    SSL_CTX_set_options(ctx->openssl, SSL_OP_ALL);
 
@@ -246,6 +381,86 @@ void free_tls_context(TLS_CONTEXT *ctx)
 {
    SSL_CTX_free(ctx->openssl);
    free(ctx);
+}
+
+TLS_CONTEXT *new_psk_context(const char *unused_shared_key)
+{
+#ifdef HAVE_TLS_PSK
+   TLS_CONTEXT *ctx = NULL;
+   ctx = (TLS_CONTEXT *)malloc(sizeof(TLS_CONTEXT));
+   /* Allocate our OpenSSL TLS Context */
+#if (OPENSSL_VERSION_NUMBER >= 0x10100000L)
+   /* Allows SSLv3, TLSv1, TLSv1.1 and TLSv1.2 protocols */
+   ctx->openssl = SSL_CTX_new(TLS_method());
+
+#else
+   /* Allows most all protocols */
+   ctx->openssl = SSL_CTX_new(SSLv23_method());
+
+#endif
+
+   /* Use SSL_OP_ALL to turn on all "rather harmless" workarounds that
+    * OpenSSL offers
+    */
+   SSL_CTX_set_options(ctx->openssl, SSL_OP_ALL);
+
+   /* Now disable old broken SSLv3 and SSLv2 protocols */
+   SSL_CTX_set_options(ctx->openssl, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
+
+   if (!ctx->openssl) {
+      openssl_post_errors(M_FATAL, _("Error initializing SSL context"));
+      goto err;
+   }
+
+   /* NO pem encryption callback for TLS-PSK */
+   ctx->pem_callback = NULL;
+   ctx->pem_userdata = NULL;
+
+   ctx->tls_psk_context=true;
+
+   // This CONTEXT can be used for a server or a client
+   SSL_CTX_set_psk_client_callback(ctx->openssl, psk_client_cb);
+   SSL_CTX_set_psk_server_callback(ctx->openssl, psk_server_cb);
+#if (OPENSSL_VERSION_NUMBER >= 0x10101000L)
+   SSL_CTX_set_psk_use_session_callback(ctx->openssl, psk_session_cb);
+#endif
+//   SSL_CTX_set_quiet_shutdown(ctx->openssl, 1);
+   if (!SSL_CTX_set_cipher_list(ctx->openssl, psk_cipher)) {
+      Dmsg0(0, "Error setting cipher list, no valid ciphers available\n");
+      Jmsg0(NULL, M_ERROR, 0,
+             _("Error setting cipher list, no valid ciphers available\n"));
+      goto err;
+   }
+   return ctx;
+
+err:
+   /* Clean up after ourselves */
+   if(ctx->openssl) {
+      SSL_CTX_free(ctx->openssl);
+   }
+   free(ctx);
+#endif  /* HAVE_TLS_PSK */
+   return NULL;
+}
+
+bool psk_set_shared_key(TLS_CONNECTION *tls, const char *shared_key)
+{
+   int r=SSL_set_ex_data(tls->openssl, 1, (void*)shared_key);
+   return r==1;
+}
+
+/*
+ * Free TLS_PSK_CONTEXT instance
+ */
+void free_psk_context(TLS_CONTEXT *ctx)
+{
+   SSL_CTX_free(ctx->openssl);
+   free(ctx);
+}
+
+bool get_tls_psk_context(TLS_CONTEXT *ctx)
+{
+   return ctx->tls_psk_context;
 }
 
 bool get_tls_require(TLS_CONTEXT *ctx)
@@ -706,6 +921,10 @@ static inline int openssl_bsock_readwrite(BSOCK *bsock, char *ptr, int nbytes, b
          goto cleanup;
       }
 
+      if (write && bsock->use_bwlimit()) {
+         bsock->control_bwlimit(nwritten);
+      }
+
       /* Everything done? */
       if (nleft == 0) {
          goto cleanup;
@@ -745,7 +964,19 @@ int tls_bsock_readn(BSOCK *bsock, char *ptr, int32_t nbytes)
 bool tls_bsock_probe(BSOCKCORE *bsock)
 {
    int32_t pktsiz;
-   return SSL_peek(bsock->tls->openssl, &pktsiz, sizeof(pktsiz))==sizeof(pktsiz);
+   int ret = SSL_peek(bsock->tls->openssl, &pktsiz, sizeof(pktsiz));
+   
+   if (ret == sizeof(pktsiz)) {
+      return true;
+   } else if (ret <= 0) {
+      switch (SSL_get_error(bsock->tls->openssl, ret)) {
+      case SSL_ERROR_ZERO_RETURN:
+         return true;           /* EOF */
+      default:
+         break;
+      }
+   }
+   return false;
 }
 
 #else /* HAVE_OPENSSL */
@@ -781,4 +1012,13 @@ bool get_tls_enable(TLS_CONTEXT *ctx)
    return false;
 }
 
+TLS_CONTEXT *new_psk_context(const char *unused_shared_key)
+{
+   (void)unused_shared_key;
+   return NULL;
+}
+void free_psk_context(TLS_CONTEXT *ctx)
+{
+   (void)ctx;
+}
 #endif /* HAVE_TLS */
