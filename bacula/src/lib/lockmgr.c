@@ -16,6 +16,9 @@
 
    Bacula(R) is a registered trademark of Kern Sibbald.
 */
+
+/* Written by Eric Bollengier December 2008 */
+
 /*
   How to use mutex with bad order usage detection
  ------------------------------------------------
@@ -815,7 +818,11 @@ bool lmgr_thread_is_initialized()
 intptr_t bthread_get_thread_id()
 {
    lmgr_thread_t *self = lmgr_get_thread_info();
-   return self->int_thread_id;
+   if (self) {
+      return self->int_thread_id;
+   } else {
+      return 0;
+   }
 }
 
 /*
@@ -1265,6 +1272,12 @@ int bthread_change_uid(uid_t uid, gid_t gid)
 #include "bacula.h"
 #include "unittests.h"
 #include "lockmgr.h"
+
+/* TODO: Detect the need of this object in the Makefile */
+#if BEEF
+#include "bee_lib_uid.h"
+#endif
+
 #undef P
 #undef V
 #define P(x) bthread_mutex_lock_p(&(x), __FILE__, __LINE__)
@@ -1637,6 +1650,14 @@ int main(int argc, char **argv)
    V(mutex_p1);
    V(mutex_p2);
 
+   /* To fix at some point? */
+   lmgr_pre_lock(&wr, wr.priority, __FILE__, __LINE__);
+   rwl_writelock(&wr);
+   ok(lmgr_detect_deadlock(), "Simulate a signal inside a rwlock");
+   rwl_writeunlock(&wr);
+   lmgr_post_lock();
+
+   
    Pmsg0(0, "Start lmgr_add_even tests\n");
    for (int i=0; i < 10000; i++) {
       if ((i % 7) == 0) {
