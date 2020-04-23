@@ -380,7 +380,6 @@ void init_signals(void terminate(int sig))
    sigfillset(&sigdefault.sa_mask);
 
 
-   sigaction(SIGPIPE,   &sigignore, NULL);
    sigaction(SIGCHLD,   &sighandle, NULL);
    sigaction(SIGCONT,   &sigignore, NULL);
    sigaction(SIGPROF,   &sigignore, NULL);
@@ -393,35 +392,26 @@ void init_signals(void terminate(int sig))
 
    sigaction(SIGHUP,    &sigignore, NULL);
    sigaction(SIGQUIT,   &sighandle, NULL);
-   sigaction(SIGILL,    &sighandle, NULL);
    sigaction(SIGTRAP,   &sighandle, NULL);
-   sigaction(SIGABRT,   &sighandle, NULL);
 #ifdef SIGEMT
    sigaction(SIGEMT,    &sighandle, NULL);
 #endif
 #ifdef SIGIOT
    sigaction(SIGIOT,    &sighandle, NULL);
 #endif
-   sigaction(SIGBUS,    &sighandle, NULL);
-   sigaction(SIGFPE,    &sighandle, NULL);
 /* sigaction(SIGKILL,   &sighandle, NULL);  cannot be trapped */
    sigaction(SIGUSR1,   &sighandle, NULL);
-   sigaction(SIGSEGV,   &sighandle, NULL);
    sigaction(SIGUSR2,   &sighandle, NULL);
    sigaction(SIGALRM,   &sighandle, NULL);
    sigaction(SIGTERM,   &sighandle, NULL);
-#ifdef SIGSTKFLT
-   sigaction(SIGSTKFLT, &sighandle, NULL);
-#endif
+
 /* sigaction(SIGSTOP,   &sighandle, NULL); cannot be trapped */
    sigaction(SIGTSTP,   &sighandle, NULL);
    sigaction(SIGTTIN,   &sighandle, NULL);
    sigaction(SIGTTOU,   &sighandle, NULL);
    sigaction(SIGURG,    &sighandle, NULL);
    sigaction(SIGVTALRM, &sighandle, NULL);
-#ifdef SIGPWR
-   sigaction(SIGPWR,    &sighandle, NULL);
-#endif
+
 #ifdef SIGWAITING
    sigaction(SIGWAITING,&sighandle, NULL);
 #endif
@@ -440,5 +430,28 @@ void init_signals(void terminate(int sig))
 #ifdef SIGLOST
    sigaction(SIGLOST,   &sighandle, NULL);
 #endif
+
+/*
+   The Android OS uses the signals below to produce a backtrace in the logs.
+   We should be able to override Android signal handlers and call them manually,
+   but so far this strategy has not worked.   
+
+   For more information, check:
+   https://programming.vip/docs/android-debuggerd-source-code-analysis.html
+   https://stackoverflow.com/questions/1083154/how-can-i-catch-sigsegv-segmentation-fault-and-get-a-stack-trace-under-jni-on
+*/
+#ifndef __ANDROID_API__
+sigaction(SIGILL,    &sighandle, NULL);
+sigaction(SIGBUS,    &sighandle, NULL);
+sigaction(SIGFPE,    &sighandle, NULL);
+sigaction(SIGSEGV,   &sighandle, NULL);
+sigaction(SIGPIPE,   &sigignore, NULL);
+sigaction(SIGABRT,   &sighandle, NULL);
+
+#ifdef SIGSTKFLT
+   sigaction(SIGSTKFLT, &sighandle, NULL);
+#endif
+#endif
+
 }
 #endif
