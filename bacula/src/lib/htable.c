@@ -83,7 +83,7 @@ void htable::hash_big_free()
 #endif
 
 /*
- * Normal hash malloc routine that gets a
+ * Normal hash malloc routine that gets a 
  *  "small" buffer from the big buffer
  */
 char *htable::hash_malloc(int size)
@@ -105,7 +105,7 @@ char *htable::hash_malloc(int size)
    buf = mem_block->mem;
    mem_block->mem += asize;
    return buf;
-#else
+#else 
    total_size += size;
    blocks++;
    return (char *)malloc(size);
@@ -113,7 +113,7 @@ char *htable::hash_malloc(int size)
 }
 
 
-
+ 
 
 /*
  * Create hash of key, stored in hash then
@@ -128,16 +128,16 @@ void htable::hash_index(char *key)
    /* Multiply by large prime number, take top bits, mask for remainder */
    index = ((hash * 1103515249LL) >> rshift) & mask;
    Dmsg2(dbglvl, "Leave hash_index hash=0x%x index=%d\n", hash, index);
-}
-
+} 
+ 
 void htable::hash_index(uint64_t ikey)
-{
+{ 
    hash = ikey;           /* already have starting binary hash */
    /* Same algorithm as for char * */
    index = ((hash * 1103515249LL) >> rshift) & mask;
    Dmsg2(dbglvl, "Leave hash_index hash=0x%x index=%d\n", hash, index);
-}
-
+} 
+ 
 /*
  * tsize is the estimated number of entries in the hash table
  */
@@ -177,7 +177,7 @@ uint32_t htable::size()
 
 /*
  * Take each hash link and walk down the chain of items
- *  that hash there counting them (i.e. the hits),
+ *  that hash there counting them (i.e. the hits), 
  *  then report that number.
  * Obiously, the more hits in a chain, the more time
  *  it takes to reference them. Empty chains are not so
@@ -215,9 +215,7 @@ void htable::stats()
    printf("buckets=%d num_items=%d max_items=%d\n", buckets, num_items, max_items);
    printf("max hits in a bucket = %d\n", max);
 #ifdef BIG_MALLOC
-   char ed1[100];
-   edit_uint64(total_size, ed1);
-   printf("total bytes malloced = %s\n", ed1);
+   printf("total bytes malloced = %lld\n", (lli)total_size);
    printf("total blocks malloced = %d\n", blocks);
 #endif
 }
@@ -257,7 +255,7 @@ void htable::grow_table()
       } else {
          Dmsg1(100, "Grow insert: %s\n", hp->key.key);
          big->insert(hp->key.key, item);
-      }
+      }  
       if (ni) {
          item = (void *)((char *)ni-loffset);
       } else {
@@ -303,59 +301,59 @@ bool htable::insert(char *key, void *item)
 }
 
 void *htable::lookup(char *key)
-{
-   hash_index(key);
-   for (hlink *hp=table[index]; hp; hp=(hlink *)hp->next) {
+{ 
+   hash_index(key); 
+   for (hlink *hp=table[index]; hp; hp=(hlink *)hp->next) { 
 //    Dmsg2(100, "hp=%p key=%s\n", hp, hp->key.key);
       if (hash == hp->hash && strcmp(key, hp->key.key) == 0) {
-         Dmsg1(dbglvl, "lookup return %p\n", ((char *)hp)-loffset);
-         return ((char *)hp)-loffset;
-      }
-   }
-   return NULL;
-}
-
+         Dmsg1(dbglvl, "lookup return %p\n", ((char *)hp)-loffset); 
+         return ((char *)hp)-loffset; 
+      } 
+   } 
+   return NULL; 
+} 
+ 
 bool htable::insert(uint64_t ikey, void *item)
-{
-   hlink *hp;
+{ 
+   hlink *hp; 
    if (lookup(ikey)) {
       return false;                  /* already exists */
-   }
-   ASSERT(index < buckets);
-   Dmsg2(dbglvl, "Insert: hash=%p index=%d\n", hash, index);
-   hp = (hlink *)(((char *)item)+loffset);
-   Dmsg4(dbglvl, "Insert hp=%p index=%d item=%p offset=%u\n", hp, index,
+   } 
+   ASSERT(index < buckets); 
+   Dmsg2(dbglvl, "Insert: hash=%p index=%d\n", hash, index); 
+   hp = (hlink *)(((char *)item)+loffset); 
+   Dmsg4(dbglvl, "Insert hp=%p index=%d item=%p offset=%u\n", hp, index, 
      item, loffset);
-   hp->next = table[index];
-   hp->hash = hash;
+   hp->next = table[index]; 
+   hp->hash = hash; 
    hp->key.ikey = ikey;
    hp->is_ikey = true;
-   table[index] = hp;
-   Dmsg3(dbglvl, "Insert hp->next=%p hp->hash=0x%x hp->ikey=%lld\n", hp->next,
+   table[index] = hp; 
+   Dmsg3(dbglvl, "Insert hp->next=%p hp->hash=0x%x hp->ikey=%lld\n", hp->next, 
       hp->hash, hp->key.ikey);
-
-   if (++num_items >= max_items) {
-      Dmsg2(dbglvl, "num_items=%d max_items=%d\n", num_items, max_items);
-      grow_table();
-   }
+ 
+   if (++num_items >= max_items) { 
+      Dmsg2(dbglvl, "num_items=%d max_items=%d\n", num_items, max_items); 
+      grow_table(); 
+   } 
    Dmsg3(dbglvl, "Leave insert index=%d num_items=%d key=%lld\n",
       index, num_items, ikey);
-   return true;
-}
-
+   return true;  
+} 
+ 
 void *htable::lookup(uint64_t ikey)
-{
+{ 
    hash_index(ikey);
-   for (hlink *hp=table[index]; hp; hp=(hlink *)hp->next) {
+   for (hlink *hp=table[index]; hp; hp=(hlink *)hp->next) { 
 //    Dmsg2(100, "hp=%p key=%lld\n", hp, hp->key.ikey);
       if (hash == hp->hash && ikey == hp->key.ikey) {
-         Dmsg1(dbglvl, "lookup return %p\n", ((char *)hp)-loffset);
-         return ((char *)hp)-loffset;
-      }
-   }
-   return NULL;
-}
-
+         Dmsg1(dbglvl, "lookup return %p\n", ((char *)hp)-loffset); 
+         return ((char *)hp)-loffset; 
+      } 
+   } 
+   return NULL; 
+} 
+ 
 void *htable::next()
 {
    Dmsg1(dbglvl, "Enter next: walkptr=%p\n", walkptr);
