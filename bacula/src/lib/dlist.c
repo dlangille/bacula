@@ -328,7 +328,11 @@ void dlist::destroy()
 {
    for (void *n=head; n; ) {
       void *ni = get_next(n);
-      free(n);
+      if (free_method) {
+         free_method(n);
+      } else {
+         free(n);
+      }
       n = ni;
    }
    num_items = 0;
@@ -352,6 +356,22 @@ dlistString *new_dlistString(const char *str, int len)
 
 #ifdef TEST_PROGRAM
 
+static bool delete_done=false;
+
+class MYCLASS
+{
+public:
+   dlink link;
+   MYCLASS() {  delete_done = false; };
+   ~MYCLASS() { delete_done = true; };
+};
+
+static void delete_myclass(void *obj)
+{
+   MYCLASS *a = (MYCLASS *)obj;
+   delete a;
+}
+
 struct MYJCR {
    char *buf;
    dlink link;
@@ -368,20 +388,33 @@ static int my_compare(void *item1, void *item2)
    return comp;
 }
 
+#include "unittests.h"
+
 int main()
 {
    char buf[30];
-   dlist *jcr_chain;
+   dlist *jcr_chain, *class_chain;
    MYJCR *jcr = NULL;
    MYJCR *jcr1;
    MYJCR *save_jcr = NULL;
    MYJCR *next_jcr;
    int count;
+   MYCLASS *class1;
+   Unittests("dlist_test");
+   
+   class1 = new MYCLASS();
+
+   class_chain = New(dlist(class1, &class1->link));
+   class_chain->set_delete(delete_myclass);
+   class_chain->append(class1);
+
+   delete class_chain;
+   ok(delete_done, "Delete of MYCLASS was done in delete");
 
    jcr_chain = (dlist *)malloc(sizeof(dlist));
    jcr_chain->init(jcr, &jcr->link);
 
-   printf("Prepend 20 items 0-19\n");
+   log("Prepend 20 items 0-19\n");
    for (int i=0; i<20; i++) {
       sprintf(buf, "This is dlist item %d", i);
       jcr = (MYJCR *)malloc(sizeof(MYJCR));
@@ -393,18 +426,18 @@ int main()
    }
 
    next_jcr = (MYJCR *)jcr_chain->next(save_jcr);
-   printf("11th item=%s\n", next_jcr->buf);
+   log("11th item=%s\n", next_jcr->buf);
    jcr1 = (MYJCR *)malloc(sizeof(MYJCR));
    jcr1->buf = save_jcr->buf;
-   printf("Remove 10th item\n");
+   log("Remove 10th item\n");
    jcr_chain->remove(save_jcr);
    free(save_jcr);
-   printf("Re-insert 10th item\n");
+   log("Re-insert 10th item\n");
    jcr_chain->insert_before(jcr1, next_jcr);
 
-   printf("Print remaining list.\n");
+   log("Print remaining list.\n");
    foreach_dlist(jcr, jcr_chain) {
-      printf("Dlist item = %s\n", jcr->buf);
+      log("Dlist item = %s\n", jcr->buf);
       free(jcr->buf);
    }
    jcr_chain->destroy();
@@ -415,7 +448,7 @@ int main()
     *  that points to a malloced string containing data
     */
    jcr_chain = New(dlist(jcr, &jcr->link));
-   printf("append 20 items 0-19\n");
+   log("append 20 items 0-19\n");
    for (int i=0; i<20; i++) {
       sprintf(buf, "This is dlist item %d", i);
       jcr = (MYJCR *)malloc(sizeof(MYJCR));
@@ -427,18 +460,18 @@ int main()
    }
 
    next_jcr = (MYJCR *)jcr_chain->next(save_jcr);
-   printf("11th item=%s\n", next_jcr->buf);
+   log("11th item=%s\n", next_jcr->buf);
    jcr = (MYJCR *)malloc(sizeof(MYJCR));
    jcr->buf = save_jcr->buf;
-   printf("Remove 10th item\n");
+   log("Remove 10th item\n");
    jcr_chain->remove(save_jcr);
    free(save_jcr);
-   printf("Re-insert 10th item\n");
+   log("Re-insert 10th item\n");
    jcr_chain->insert_before(jcr, next_jcr);
 
-   printf("Print remaining list.\n");
+   log("Print remaining list.\n");
    foreach_dlist (jcr, jcr_chain) {
-      printf("Dlist item = %s\n", jcr->buf);
+      log("Dlist item = %s\n", jcr->buf);
       free(jcr->buf);
    }
 
@@ -448,7 +481,7 @@ int main()
    /* Now do a binary insert for the list */
    jcr_chain = New(dlist(jcr, &jcr->link));
 #define CNT 26
-   printf("append %d items\n", CNT*CNT*CNT);
+   log("append %d items\n", CNT*CNT*CNT);
    strcpy(buf, "ZZZ");
    count = 0;
    for (int i=0; i<CNT; i++) {
@@ -461,6 +494,7 @@ int main()
             jcr = (MYJCR *)malloc(sizeof(MYJCR));
             jcr->buf = bstrdup(buf);
             jcr1 = (MYJCR *)jcr_chain->binary_insert(jcr, my_compare);
+            ok(jcr == jcr1, "Insert with no duplicate");
             if (jcr != jcr1) {
                Dmsg2(000, "Insert of %s vs %s failed.\n", jcr->buf, jcr1->buf);
             }
@@ -476,30 +510,22 @@ int main()
    jcr = (MYJCR *)malloc(sizeof(MYJCR));
    strcpy(buf, "a");
    jcr->buf = bstrdup(buf);
-   if (jcr_chain->binary_search(jcr, my_compare)) {
-      printf("One less failed!!!!\n");
-   } else {
-      printf("One less: OK\n");
-   }
+   ok(jcr_chain->binary_search(jcr, my_compare) == NULL, "One less");
    free(jcr->buf);
    strcpy(buf, "ZZZZZZZZZZZZZZZZ");
    jcr->buf = bstrdup(buf);
-   if (jcr_chain->binary_search(jcr, my_compare)) {
-      printf("One greater failed!!!!\n");
-   } else {
-      printf("One greater: OK\n");
-   }
+   ok(jcr_chain->binary_search(jcr, my_compare) == NULL, "One greater");
    free(jcr->buf);
    free(jcr);
 
 
-   printf("Find each of %d items in list.\n", count);
+   log("Find each of %d items in list.\n", count);
    foreach_dlist (jcr, jcr_chain) {
       if (!jcr_chain->binary_search(jcr, my_compare)) {
-         printf("Dlist binary_search item not found = %s\n", jcr->buf);
+         log("Dlist binary_search item not found = %s\n", jcr->buf);
       }
    }
-   printf("Free each of %d items in list.\n", count);
+   log("Free each of %d items in list.\n", count);
    foreach_dlist (jcr, jcr_chain) {
       free(jcr->buf);
       jcr->buf = NULL;
@@ -513,7 +539,7 @@ int main()
    dlist chain;
    chain.append(new_dlistString("This is a long test line"));
 #define CNT 26
-   printf("append %d dlistString items\n", CNT*CNT*CNT);
+   log("append %d dlistString items\n", CNT*CNT*CNT);
    strcpy(buf, "ZZZ");
    count = 0;
    for (int i=0; i<CNT; i++) {
@@ -532,15 +558,15 @@ int main()
       buf[2] = 'Z';
       buf[0]--;
    }
-   printf("dlistString items appended, walking chain\n");
+   log("dlistString items appended, walking chain\n");
    dlistString *node;
    foreach_dlist(node, &chain) {
       printf("%s\n", node->c_str());
    }
-   printf("destroy dlistString chain\n");
+   log("destroy dlistString chain\n");
    chain.destroy();
 
    sm_dump(false);    /* unit test */
-
+   return report();
 }
 #endif
