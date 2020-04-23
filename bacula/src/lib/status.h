@@ -198,6 +198,73 @@ static void list_terminated_jobs(STATUS_PKT *sp)
    }
 }
 
+/* common to SD/FD/DIR */
+static void list_resource_limits(STATUS_PKT *sp, int64_t l_nofile, int64_t l_memlock)
+{
+#ifdef HAVE_GETRLIMIT
+   OutputWriter ow(sp->api_opts);
+   POOL_MEM msg(PM_MESSAGE), msg_status(PM_MESSAGE);
+   struct rlimit rlim;
+   int64_t nofile=-1, memlock=-1;
+   char nofile_s[128], memlock_s[128];
+   *nofile_s = *memlock_s = '\0';
+
+   msg_status.strcpy("");
+#ifdef RLIMIT_NOFILE
+   if (getrlimit(RLIMIT_NOFILE, &rlim)==0) {
+      if (rlim.rlim_cur == RLIM_INFINITY) {
+         nofile=-1;
+         bstrncpy(nofile_s, "unlimited", sizeof(nofile_s));
+      } else {
+         nofile=rlim.rlim_cur;
+         edit_int64(nofile, nofile_s);
+         if (l_nofile > 0 && nofile<l_nofile) {
+            msg_status.strcat("nofile ");
+         }
+      }
+   }
+#endif
+#ifdef RLIMIT_MEMLOCK
+   if (getrlimit(RLIMIT_MEMLOCK, &rlim)==0) {
+      if (rlim.rlim_cur == RLIM_INFINITY) {
+         memlock=-1;
+         bstrncpy(memlock_s, "unlimited", sizeof(memlock_s));
+      } else {
+         memlock=rlim.rlim_cur;
+         edit_int64(memlock, memlock_s);
+         if (l_memlock > 0 && memlock<l_memlock) {
+            msg_status.strcat("memlock ");
+         }
+      }
+   }
+#endif
+
+   if (strlen(msg_status.c_str())>0) {
+      strip_trailing_junk(msg_status.c_str());
+   } else {
+      msg_status.strcpy("ok");
+   }
+
+   if (sp->api > 1) {
+      OutputWriter ow(sp->api_opts);
+      char *p;
+      ow.start_group("ulimit");
+      ow.get_output(    OT_START_OBJ,
+                        OT_INT64,   "nofile",   nofile,
+                        OT_INT64,   "memlock",  memlock,
+                        OT_STRING,  "status",   msg_status.c_str(),
+                        OT_END_OBJ,
+                        OT_END);
+      p = ow.end_group(); // dedupengine
+      sendit(p, strlen(p), sp);
+   } else {
+      int len = Mmsg(msg, _(" Ulimits: nofile=%s memlock=%s status=%s\n"),
+            nofile_s, memlock_s, msg_status.c_str());
+      sendit(msg.c_str(), len, sp);
+   }
+#endif
+}
+
 #if defined(HAVE_WIN32)
 int bacstat = 0;
 
