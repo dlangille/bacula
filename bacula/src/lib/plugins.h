@@ -57,6 +57,12 @@ struct bpContext {
   void *pContext;                        /* Plugin private context */
 };
 
+/* Not used anymore, do not remove for compatibility */
+#define bplugin_mode_t int32_t
+
+/* default plugin license */
+#define BPLUGIN_LICENSE "AGPLv3"
+
 extern "C" {
 typedef bRC (*t_loadPlugin)(void *binfo, void *bfuncs, void **pinfo, void **pfuncs);
 typedef bRC (*t_unloadPlugin)(void);
@@ -70,9 +76,6 @@ public:
    void *pinfo;
    void *pfuncs;
    void *pHandle;
-   bool disabled;
-   bool restoreFileStarted;
-   bool createFileCalled;
 };
 
 /* Functions */
@@ -86,5 +89,9 @@ extern void unload_plugins();
  */
 typedef void (dbg_plugin_hook_t)(Plugin *plug, FILE *fp);
 extern void dbg_plugin_add_hook(dbg_plugin_hook_t *fct);
+
+#if BEEF
+#include "bee_lib_plugins.h"
+#endif
 
 #endif /* __PLUGINS_H */
