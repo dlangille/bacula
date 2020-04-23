@@ -28,6 +28,9 @@
 // Test success if value x is zero
 #define nok(x, label) _nok(__FILE__, __LINE__, #x, (x), label)
 
+#define is(x, y, label) _is(__FILE__, __LINE__, #x, (x), (y), label)
+#define isnt(x, y, label) _isnt(__FILE__, __LINE__, #x, (x), (y), label)
+
 /* TODO: log() ported from BEE it should be updated. */
 #ifdef RTEST_LOG_THREADID
 #define log(format, ...)  do { \
@@ -41,8 +44,19 @@
  } while (0)
 #endif
 
-void _ok(const char *file, int l, const char *op, int value, const char *label);
-void _nok(const char *file, int l, const char *op, int value, const char *label);
+enum {
+   TEST_VERBOSE = 1,
+   TEST_QUIET   = 2,
+   TEST_END     = 4,
+   TEST_PRINT_LOCAL = 8
+};
+void configure_test(uint64_t options);
+bool _ok(const char *file, int l, const char *op, int value, const char *label);
+bool _nok(const char *file, int l, const char *op, int value, const char *label);
+bool _is(const char *file, int l, const char *op, const char *str, const char *str2, const char *label);
+bool _isnt(const char *file, int l, const char *op, const char *str, const char *str2, const char *label);
+bool _is(const char *file, int l, const char *op, int64_t nb, int64_t nb2, const char *label);
+bool _isnt(const char *file, int l, const char *op, int64_t nb, int64_t nb2, const char *label);
 int report();
 void terminate(int sig);
 void prolog(const char *name, bool lmgr=false, bool motd=true);
@@ -52,11 +66,9 @@ void epilog();
 class Unittests
 {
 public:
-   Unittests(const char *name, bool lmgr=false, bool motd=true)
-   {
-      prolog(name, lmgr, motd);
-   };
+   Unittests(const char *name, bool lmgr=false, bool motd=true);
    ~Unittests() { epilog(); };
+   void configure(uint64_t v) { configure_test(v); };
 };
 
 #endif /* _UNITTESTS_H_ */
