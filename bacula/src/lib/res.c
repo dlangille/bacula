@@ -52,11 +52,11 @@ void b_LockRes(const char *file, int line)
           pthread_self());
      }
 #endif
-   if ((errstat=rwl_writelock(&res_lock)) != 0) {
-      Emsg3(M_ABORT, 0, _("rwl_writelock failure at %s:%d:  ERR=%s\n"),
-           file, line, strerror(errstat));
-   }
-   res_locked++;
+    if ((errstat=rwl_writelock_p(&res_lock, file, line)) != 0) {
+       Emsg3(M_ABORT, 0, _("rwl_writelock failure at %s:%d:  ERR=%s\n"),
+             file, line, strerror(errstat));
+    }
+    res_locked++;
 }
 
 void b_UnlockRes(const char *file, int line)
