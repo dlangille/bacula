@@ -463,6 +463,8 @@ static void free_common_jcr(JCR *jcr)
    free_and_null_pool_memory(jcr->VolumeName);
    free_and_null_pool_memory(jcr->errmsg);
    free_and_null_pool_memory(jcr->StatusErrMsg);
+   bfree_and_null(jcr->job_user);
+   bfree_and_null(jcr->job_group);
 
    if (jcr->sd_auth_key) {
       free(jcr->sd_auth_key);
