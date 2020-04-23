@@ -58,7 +58,8 @@ int verbose = 0;                      /* increase User messages */
 int64_t debug_level = 0;              /* debug level */
 int64_t debug_level_tags = 0;         /* debug tags */
 int32_t debug_flags = 0;              /* debug flags */
-bool console_msg_pending = false;
+int beef = BEEF;
+int console_msg_pending = false;
 utime_t daemon_start_time = 0;        /* Daemon start time */
 FILE *con_fd = NULL;                  /* Console file descriptor */
 brwlock_t con_lock;                   /* Console lock structure */
@@ -83,6 +84,9 @@ static MSGS *daemon_msgs;              /* global messages */
 static void (*message_callback)(int type, char *msg) = NULL;
 static FILE *trace_fd = NULL;
 #if defined(HAVE_WIN32)
+static bool trace = true;
+#elif defined(Q_OS_ANDROID)
+
 static bool trace = true;
 #else
 static bool trace = false;
@@ -443,7 +447,7 @@ void init_console_msg(const char *wd)
           con_fname, be.bstrerror());
    }
    if (lseek(fd, 0, SEEK_END) > 0) {
-      console_msg_pending = true;
+      console_msg_pending = 1;
    }
    close(fd);
    con_fd = bfopen(con_fname, "a+b");
@@ -477,7 +481,7 @@ void add_msg_dest(MSGS *msg, int dest_code, int msg_type, char *where, char *mai
     */
    for (d=msg->dest_chain; d; d=d->next) {
       if (dest_code == d->dest_code && ((where == NULL && d->where == NULL) ||
-                     bstrcmp(where, d->where))) {
+                     (strcmp(where, d->where) == 0))) {
          Dmsg4(850, "Add to existing d=%p msgtype=%d destcode=%d where=%s\n",
              d, msg_type, dest_code, NPRT(where));
          set_bit(msg_type, d->msg_types);
@@ -887,7 +891,6 @@ void dispatch_message(JCR *jcr, int type, utime_t mtime, char *msg)
        return;
     }
 
-
     for (d=msgs->dest_chain; d; d=d->next) {
        if (bit_is_set(type, d->msg_types)) {
           bool ok;
@@ -1129,6 +1132,10 @@ vd_msg(const char *file, int line, int64_t level, const char *fmt, va_list arg_p
     int       len = 0; /* space used in buf */
     bool      details = true;
     utime_t   mtime;
+
+#ifdef xxxBEEF_DEMO
+    return;
+#endif
 
     if (level < 0) {
        details = false;
@@ -1740,6 +1747,11 @@ void Qmsg(JCR *jcr, int type, utime_t mtime, const char *fmt,...)
       jcr->setJobStatus(JS_FatalError);
     }
 
+   /* Display the message in trace if it's important, we may not
+    * have the director connection for a long time
+    */
+   Dmsg1((type == M_ERROR || type == M_FATAL) ? 0 : 50, "%s", item->msg);
+
    /* If no jcr or no queue or dequeuing send to syslog */
    if (!jcr || !jcr->msg_queue || jcr->dequeuing_msgs) {
       syslog(LOG_DAEMON|LOG_ERR, "%s", item->msg);
@@ -1880,6 +1892,7 @@ struct debugtags {
 
 /* setdebug tag=all,-plugin */
 static struct debugtags debug_tags[] = {
+ { NT_("cloud"),       DT_CLOUD,    _("Debug cloud information")},
  { NT_("lock"),        DT_LOCK,     _("Debug lock information")},
  { NT_("network"),     DT_NETWORK,  _("Debug network information")},
  { NT_("plugin"),      DT_PLUGIN,   _("Debug plugin information")},
@@ -1891,7 +1904,11 @@ static struct debugtags debug_tags[] = {
  { NT_("protocol"),    DT_PROTOCOL, _("Debug protocol information")},
  { NT_("snapshot"),    DT_SNAPSHOT, _("Debug snapshots")},
  { NT_("record"),      DT_RECORD,   _("Debug records")},
+#ifndef COMMUNITY
+ { NT_("dedup"),       DT_DEDUP,    _("Debug dedup information")},
+ { NT_("dde"),         DT_DDE,      _("Debug dedup engine")},
  { NT_("asx"),         DT_ASX,      _("ASX personal's debugging")},
+#endif
  { NT_("all"),         DT_ALL,      _("Debug all information")},
  { NULL,               0,   NULL}
 };
