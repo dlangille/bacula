@@ -17,11 +17,13 @@
    Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
+ *
  *   Bacula Director -- User Agent Database File tree for Restore
  *      command. This file interacts with the user implementing the
  *      UA tree commands.
  *
  *     Kern Sibbald, July MMII
+ *
  */
 
 #include "bacula.h"
@@ -160,6 +162,14 @@ bool user_select_files_from_tree(TREE_CTX *tree)
    return stat;
 }
 
+#if COMMUNITY
+bool check_tree_access(TREE_CTX *a, char *b, struct stat *c, int d, bool *e)
+{
+   *e = true;
+   return true;
+}
+#endif
+
 /*
  * This callback routine is responsible for inserting the
  *  items it gets into the directory tree. For each JobId selected
@@ -177,7 +187,7 @@ int insert_tree_handler(void *ctx, int num_fields, char **row)
    TREE_CTX *tree = (TREE_CTX *)ctx;
    TREE_NODE *node;
    int type;
-   bool hard_link, ok;
+   bool hard_link, ok, can_access=false;
    int FileIndex;
    int32_t delta_seq;
    JobId_t JobId;
@@ -196,6 +206,10 @@ int insert_tree_handler(void *ctx, int num_fields, char **row)
       type = TN_FILE;
    }
    decode_stat(row[4], &statp, sizeof(statp), &LinkFI);
+
+   if (!check_tree_access(tree, row[0], &statp, type, &can_access)) {
+      return 0;
+   }
 
    hard_link = (LinkFI != 0);
    node = insert_tree_node(row[0], row[1], type, tree->root, NULL);
@@ -250,8 +264,11 @@ int insert_tree_handler(void *ctx, int num_fields, char **row)
       node->type = type;
       node->soft_link = S_ISLNK(statp.st_mode) != 0;
       node->delta_seq = delta_seq;
-      node->can_access = true;
-      if (tree->all) {
+      node->can_access = can_access;
+      if (!can_access) {
+         mark_access_denied(node);
+
+      } else if (tree->all) {
          node->extract = true;          /* extract all by default */
          if (type == TN_DIR || type == TN_DIR_NLS) {
             node->extract_dir = true;   /* if dir, extract it */
@@ -299,6 +316,11 @@ static int set_extract(UAContext *ua, TREE_NODE *node, TREE_CTX *tree, bool extr
 {
    TREE_NODE *n;
    int count = 0;
+
+   /* The node is not accessible, just stop here */
+   if (!node->can_access) {
+      return 0;
+   }
 
    node->extract = extract;
    if (node->type == TN_DIR || node->type == TN_DIR_NLS) {
