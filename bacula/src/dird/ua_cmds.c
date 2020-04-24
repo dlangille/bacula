@@ -17,9 +17,11 @@
    Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
+ *
  *   Bacula Director -- User Agent Commands
  *
  *     Kern Sibbald, September MM
+ *
  */
 
 #include "bacula.h"
@@ -96,6 +98,13 @@ struct cmdstruct {
    const char *usage;           /* all arguments to build usage */
    const bool use_in_rs;        /* Can use it in Console RunScript */
 };
+
+#if BEEF
+# include "bee_dird_dde.h"
+#else
+# define DEDUP_KW
+#endif
+
 static struct cmdstruct commands[] = {                                      /* Can use it in Console RunScript*/
  { NT_("add"),        add_cmd,     _("Add media to a pool"),   NT_("pool=<pool-name> storage=<storage> jobid=<JobId>"),  false},
  { NT_("autodisplay"), autodisplay_cmd,_("Autodisplay console messages"), NT_("on | off"),    false},
@@ -114,24 +123,24 @@ static struct cmdstruct commands[] = {                                      /* C
  { NT_("exit"),       quit_cmd,      _("Terminate Bconsole session"), NT_(""),         false},
  { NT_("gui"),        gui_cmd,       _("Non-interactive gui mode"),   NT_("on | off"), false},
  { NT_("help"),       help_cmd,      _("Print help on specific command"),
-   NT_("add autodisplay automount cancel create delete disable\n\tenable estimate exit gui label list llist"
-       "\n\tmessages memory mount prune purge quit query\n\trestore relabel release reload run status statistics"
+   NT_("add autodisplay automount cancel collect create delete disable\n\tenable estimate exit gui label list llist"
+       "\n\tmessages memory mount prune purge quit query\n\trestore relabel release reload run status"
        "\n\tsetbandwidth setdebug setip show sqlquery time trace unmount\n\tumount update use var version wait"
-       "\n\tsnapshot"),         false},
+       "\n\tsnapshot cloud " DEDUP_KW),         false},
 
  { NT_("label"),      label_cmd,     _("Label a tape"), NT_("storage=<storage> volume=<vol> pool=<pool> slot=<slot> drive=<nb> barcodes"), false},
  { NT_("list"),       list_cmd,      _("List objects from catalog"),
-   NT_("jobs [client=<cli>] [jobid=<nn>] [ujobid=<name>] [job=<name>] [joberrors] [jobstatus=<s>] [level=<l>] [jobtype=<t>] [limit=<n>]|\n"
+   NT_("jobs [client=<cli>] [jobid=<nn>] [ujobid=<name>] [job=<name>] [joberrors] [jobstatus=<s>] [level=<l>] [jobtype=<t>] [limit=<n>] [order=<asc|desc>]|\n"
        "\tjobtotals | pools | volume | media <pool=pool-name> | files [type=<deleted|all>] jobid=<nn> | copies jobid=<nn> |\n"
        "\tjoblog jobid=<nn> | pluginrestoreconf jobid=<nn> restoreobjectid=<nn> | snapshot | \n"
-       "\tfileindex=<mm> | clients\n"
+       "\tfilemedia jobid=<nn> fileindex=<mm> | clients\n"
       ), false},
 
  { NT_("llist"),      llist_cmd,     _("Full or long list like list command"),
    NT_("jobs [client=<cli>] [jobid=<nn>] [ujobid=<name>] [job=<name>] [joberrors] [jobstatus=<s>] [level=<l>] [jobtype=<t>] [order=<asc/desc>] [limit=<n>]|\n"
        "\tjobtotals | pools | volume | media <pool=pool-name> | files jobid=<nn> | copies jobid=<nn> |\n"
        "\tjoblog jobid=<nn> | pluginrestoreconf jobid=<nn> restoreobjectid=<nn> | snapshot |\n"
-       "\tjobid=<nn> fileindex=<mm> | clients\n"), false},
+       "\tfilemedia jobid=<nn> fileindex=<mm> | clients\n"), false},
 
  { NT_("messages"),   messagescmd,   _("Display pending messages"),   NT_(""),    false},
  { NT_("memory"),     memory_cmd,    _("Print current memory usage"), NT_(""),    true},
@@ -146,6 +155,9 @@ static struct cmdstruct commands[] = {                                      /* C
  { NT_("purge"),      purge_cmd,     _("Purge records from catalog"), NT_("files jobs volume=<vol> [mediatype=<type> pool=<pool> allpools storage=<st> drive=<num>]"),  true},
  { NT_("quit"),       quit_cmd,      _("Terminate Bconsole session"), NT_(""),              false},
  { NT_("query"),      query_cmd,     _("Query catalog"), NT_("[<query-item-number>]"),      false},
+#if BEEF
+ { NT_(DEDUP_KW),     dedupcmd,      _("Manage Global Deduplication Engine"), NT_(DEDUP_USAGE), true},
+#endif
  { NT_("restore"),    restore_cmd,   _("Restore files"),
    NT_("where=</path> client=<client> storage=<storage> bootstrap=<file> "
        "restorejob=<job> restoreclient=<cli> noautoparent"
@@ -166,18 +178,18 @@ static struct cmdstruct commands[] = {                                      /* C
        "when=<universal-time-specification>\n\tcomment=<text> spooldata=<bool> jobid=<jobid>"), false},
 
  { NT_("resume"),    restart_cmd,   _("Resume a job"),
-   NT_("incomplete job=<job-name> client=<client-name>\n\tfileset=<FileSet-name> level=<level-keyword>\n\tstorage=<storage-name>"
+   NT_("[incomplete|canceled|failed] job=<job-name> client=<client-name>\n\tfileset=<FileSet-name> level=<level-keyword>\n\tstorage=<storage-name>"
        "when=<universal-time-specification>\n\tcomment=<text> spooldata=<bool> jobid=<jobid>"), false},
 
  { NT_("status"),     status_cmd,    _("Report status"),
-   NT_("all | network [bytes=<nn-b>] | dir=<dir-name> | director | client=<client-name> |\n"
+   NT_("all | network [bytes=<nn-b> rtt=<nb-p>] | dir=<dir-name> | director | client=<client-name> |\n"
        "\tstorage=<storage-name> slots |\n"
        "\tschedule [job=<job-name>] [client=<cli-name>] [schedule=<sched-name>] [days=<nn>] [limit=<nn>]\n"
-       "\t\t[time=<universal-time-specification>]"), true},
+       "\t\t[time] [time=<universal-time-specification>]"), true},
 
  { NT_("stop"),       cancel_cmd,    _("Stop a job"), NT_("jobid=<number-list> job=<job-name> ujobid=<unique-jobid> all"), false},
  { NT_("setdebug"),   setdebug_cmd,  _("Sets debug level"),
-   NT_("level=<nn> tags=<tags> trace=0/1 options=<0tTc> tags=<tags> | client=<client-name> | dir | storage=<storage-name> | all"), true},
+   NT_("level=<nn> trace=0/1 options=<0tTc> tags=<tags> | client=<client-name> | dir | storage=<storage-name> | all"), true},
 
  { NT_("setbandwidth"),   setbwlimit_cmd,  _("Sets bandwidth"),
    NT_("limit=<speed> client=<client-name> jobid=<number> job=<job-name> ujobid=<unique-jobid>"), true},
@@ -201,13 +213,15 @@ static struct cmdstruct commands[] = {                                      /* C
  { NT_("umount"),     unmount_cmd,   _("Umount - for old-time Unix guys, see unmount"),
    NT_("storage=<storage-name> [ drive=<num> ] [ device=<dev-name> ]| jobid=<id> | job=<job-name>"), false},
 
- { NT_("update"),     update_cmd,    _("Update volume, pool or stats"),
-   NT_("stats\n\tsnapshot\n\tpool=<poolname>\n\tslots storage=<storage> scan"
-       "\n\tvolume=<volname> volstatus=<status> volretention=<time-def> cacheretention=<time-def>"
+ { NT_("update"),     update_cmd,    _("Update volume, pool, job or stats"),
+   NT_("stats\n\tsnapshot\n\tpool=<poolname>\n\tslots storage=<storage> [scan]"
+       "\nvolume=<volname> volstatus=<status> volretention=<time-def> cacheretention=<time-def>"
        "\n\t pool=<pool> recycle=<yes/no> slot=<number>\n\t inchanger=<yes/no>"
        "\n\t maxvolbytes=<size> maxvolfiles=<nb> maxvoljobs=<nb>"
        "\n\t enabled=<yes/no> recyclepool=<pool> actiononpurge=<action>"
-       "\n\t allfrompool=<pool> fromallpools frompool"),true},
+       "\n\t allfrompool=<pool> fromallpools frompool"
+       "\njobid=<id> [client=<client> | starttime=<universal-time-specification> | priority=<int> |"
+       "\n\t pool=<pool> | comment=<str> | reviewed=<int>"),true},
  { NT_("use"),        use_cmd,       _("Use catalog xxx"), NT_("catalog=<catalog>"),     false},
  { NT_("var"),        var_cmd,       _("Does variable expansion"), NT_(""),  false},
  { NT_("version"),    version_cmd,   _("Print Director version"),  NT_(""),  true},
@@ -314,7 +328,7 @@ static int add_cmd(UAContext *ua, const char *cmd)
       return 1;
    }
 
-   memset(&pr, 0, sizeof(pr));
+   bmemset(&pr, 0, sizeof(pr));
 
    if (!get_pool_dbr(ua, &pr)) {
       return 1;
@@ -533,9 +547,11 @@ void set_pooldbr_from_poolres(POOL_DBR *pr, POOL *pool, e_pool_op op)
    pr->MaxVolJobs = pool->MaxVolJobs;
    pr->MaxVolFiles = pool->MaxVolFiles;
    pr->MaxVolBytes = pool->MaxVolBytes;
+   pr->MaxPoolBytes = pool->MaxPoolBytes;
    pr->AutoPrune = pool->AutoPrune;
    pr->ActionOnPurge = pool->action_on_purge;
    pr->Recycle = pool->Recycle;
+   pr->MaxPoolBytes = pool->MaxPoolBytes;
    if (pool->label_format) {
       bstrncpy(pr->LabelFormat, pool->label_format, sizeof(pr->LabelFormat));
    } else {
@@ -559,7 +575,7 @@ int update_pool_references(JCR *jcr, BDB *db, POOL *pool)
       return 1;
    }
 
-   memset(&pr, 0, sizeof(POOL_DBR));
+   bmemset(&pr, 0, sizeof(POOL_DBR));
    bstrncpy(pr.Name, pool->name(), sizeof(pr.Name));
 
    /* Don't compute NumVols here */
@@ -589,7 +605,7 @@ bool set_pooldbr_references(JCR *jcr, BDB *db, POOL_DBR *pr, POOL *pool)
    bool ret = true;
 
    if (pool->RecyclePool) {
-      memset(&rpool, 0, sizeof(POOL_DBR));
+      bmemset(&rpool, 0, sizeof(POOL_DBR));
 
       bstrncpy(rpool.Name, pool->RecyclePool->name(), sizeof(rpool.Name));
       if (db_get_pool_record(jcr, db, &rpool)) {
@@ -607,7 +623,7 @@ bool set_pooldbr_references(JCR *jcr, BDB *db, POOL_DBR *pr, POOL *pool)
    }
 
    if (pool->ScratchPool) {
-      memset(&rpool, 0, sizeof(POOL_DBR));
+      bmemset(&rpool, 0, sizeof(POOL_DBR));
 
       bstrncpy(rpool.Name, pool->ScratchPool->name(), sizeof(rpool.Name));
       if (db_get_pool_record(jcr, db, &rpool)) {
@@ -638,7 +654,7 @@ bool set_pooldbr_references(JCR *jcr, BDB *db, POOL_DBR *pr, POOL *pool)
 int create_pool(JCR *jcr, BDB *db, POOL *pool, e_pool_op op)
 {
    POOL_DBR  pr;
-   memset(&pr, 0, sizeof(POOL_DBR));
+   bmemset(&pr, 0, sizeof(POOL_DBR));
    bstrncpy(pr.Name, pool->name(), sizeof(pr.Name));
 
    if (db_get_pool_record(jcr, db, &pr)) {
@@ -716,7 +732,7 @@ static int setbwlimit_client(UAContext *ua, CLIENT *client, char *Job, int64_t l
 
    /* Try to connect for 15 seconds */
    ua->send_msg(_("Connecting to Client %s at %s:%d\n"),
-                client->name(), client->address(buf.addr()), client->FDport);
+                client->name(), get_client_address(ua->jcr, client, buf.addr()), client->FDport);
    if (!connect_to_file_daemon(ua->jcr, 1, 15, 0)) {
       ua->error_msg(_("Failed to connect to Client.\n"));
       goto bail_out;
@@ -825,7 +841,7 @@ static int setip_cmd(UAContext *ua, const char *cmd)
                      sizeof(ua->UA_sock->client_addr), addr, sizeof(addr));
    client->setAddress(addr);
    ua->send_msg(_("Client \"%s\" address set to %s\n"),
-            client->name(), addr);
+                client->name(), addr);
 get_out:
    UnlockRes();
    return 1;
@@ -1006,7 +1022,7 @@ static void do_client_setdebug(UAContext *ua, CLIENT *client,
    ua->jcr->client = client;
    /* Try to connect for 15 seconds */
    ua->send_msg(_("Connecting to Client %s at %s:%d\n"),
-                client->name(), client->address(buf.addr()), client->FDport);
+                client->name(), get_client_address(ua->jcr, client, buf.addr()), client->FDport);
 
    if (!connect_to_file_daemon(ua->jcr, 1, 15, 0)) {
       ua->error_msg(_("Failed to connect to Client.\n"));
@@ -1459,7 +1475,7 @@ static int estimate_cmd(UAContext *ua, const char *cmd)
    get_level_since_time(ua->jcr, since, sizeof(since));
 
    ua->send_msg(_("Connecting to Client %s at %s:%d\n"),
-                jcr->client->name(), jcr->client->address(buf.addr()), jcr->client->FDport);
+                jcr->client->name(), get_client_address(jcr, jcr->client, buf.addr()), jcr->client->FDport);
    if (!connect_to_file_daemon(jcr, 1, 15, 0)) {
       ua->error_msg(_("Failed to connect to Client.\n"));
       return 1;
@@ -1659,27 +1675,24 @@ static void do_job_delete(UAContext *ua, JobId_t JobId)
    ua->send_msg(_("JobId=%s and associated records deleted from the catalog.\n"), ed1);
 }
 
+
 /*
  * Delete media records from database -- dangerous
  */
-static int delete_volume(UAContext *ua)
+static int delete_a_volume(UAContext *ua, MEDIA_DBR *mr)
 {
-   MEDIA_DBR mr;
    char buf[1000];
    db_list_ctx lst;
 
-   if (!select_media_dbr(ua, &mr)) {
-      return 1;
-   }
    ua->warning_msg(_("\nThis command will delete volume %s\n"
       "and all Jobs saved on that volume from the Catalog\n"),
-      mr.VolumeName);
+      mr->VolumeName);
 
    if (find_arg(ua, "yes") >= 0) {
       ua->pint32_val = 1; /* Have "yes" on command line already" */
    } else {
       bsnprintf(buf, sizeof(buf), _("Are you sure you want to delete Volume \"%s\"? (yes/no): "),
-         mr.VolumeName);
+         mr->VolumeName);
       if (!get_yesno(ua, buf)) {
          return 1;
       }
@@ -1689,8 +1702,8 @@ static int delete_volume(UAContext *ua)
    }
 
    /* If not purged, do it */
-   if (strcmp(mr.VolStatus, "Purged") != 0) {
-      if (!db_get_volume_jobids(ua->jcr, ua->db, &mr, &lst)) {
+   if (strcmp(mr->VolStatus, "Purged") != 0) {
+      if (!db_get_volume_jobids(ua->jcr, ua->db, mr, &lst)) {
          ua->error_msg(_("Can't list jobs on this volume\n"));
          return 1;
       }
@@ -1699,8 +1712,20 @@ static int delete_volume(UAContext *ua)
       }
    }
 
-   db_delete_media_record(ua->jcr, ua->db, &mr);
+   db_delete_media_record(ua->jcr, ua->db, mr);
    return 1;
+}
+
+/*
+ * Delete media records from database -- dangerous
+ */
+static int delete_volume(UAContext *ua)
+{
+   MEDIA_DBR mr;
+   if (!select_media_dbr(ua, &mr)) {
+      return 1;
+   }
+   return delete_a_volume(ua, &mr);
 }
 
 /*
@@ -1710,20 +1735,73 @@ static int delete_volume(UAContext *ua)
 static int delete_pool(UAContext *ua)
 {
    POOL_DBR  pr;
+   POOL *pool;
    char buf[200];
-
-   memset(&pr, 0, sizeof(pr));
+   bmemset(&pr, 0, sizeof(pr));
 
    if (!get_pool_dbr(ua, &pr)) {
       return 1;
    }
-   bsnprintf(buf, sizeof(buf), _("Are you sure you want to delete Pool \"%s\"? (yes/no): "),
-      pr.Name);
+
+   pool = (POOL*) GetResWithName(R_POOL, pr.Name);
+
+   if (pool) {
+      ua->error_msg(_("Unable to delete Pool \"%s\", the resource is still defined in the configuration.\n"), pr.Name);
+      return 1;
+   }
+
+   if (pr.NumVols > 0) {
+      bsnprintf(buf, sizeof(buf), _("Are you sure you want to delete Pool \"%s\" and delete %d volume(s)? (yes/no): "),
+                pr.Name, pr.NumVols);
+   } else {
+      bsnprintf(buf, sizeof(buf), _("Are you sure you want to delete Pool \"%s\"? (yes/no): "),
+                pr.Name);
+   }
    if (!get_yesno(ua, buf)) {
       return 1;
    }
    if (ua->pint32_val) {
-      db_delete_pool_record(ua->jcr, ua->db, &pr);
+      if (pr.NumVols > 0) {
+         int num_ids=0;
+         uint32_t *ids=NULL;
+         MEDIA_DBR mr, mr2;       /* Automatically memset() */
+         mr.PoolId = pr.PoolId;
+         mr.Enabled=-1;
+         mr.Recycle=-1;
+         /* Find each volumes from the pool and purge it */
+         if (!db_get_media_ids(ua->jcr, ua->jcr->db, &mr, &num_ids, &ids)) {
+            ua->error_msg(_("Unable to list volumes that belong to Pool \"%s\"\n"), pr.Name);
+            return 1;
+         }
+         for (int i = 0 ; i < num_ids ; i++) {
+            mr2.clear();
+            mr2.MediaId = ids[i];
+            if (db_get_media_record(ua->jcr, ua->jcr->db, &mr2)) {
+               delete_a_volume(ua, &mr2);
+
+            } else {
+               ua->error_msg(_("Unable to get catalog record for volume \"MediaId=%ld\" in the Pool \"%s\"\n"),
+                             mr2.MediaId, pr.Name);
+               if (ids) {
+                  free(ids);
+               }
+               return 1;
+            }
+         }
+         if (ids) {
+            free(ids);
+         }
+      }
+      if (!get_pool_dbr(ua, &pr)) {
+         return 1;
+      }
+      if (pr.NumVols == 0) {
+         db_delete_pool_record(ua->jcr, ua->db, &pr);
+      } else {
+         ua->error_msg(_("Unable to delete Pool catalog record \"%s\". Pool still have %d volume(s).\n"),
+                       pr.Name, pr.NumVols);
+         return 1;
+      }
    }
    return 1;
 }
@@ -1738,7 +1816,7 @@ static int delete_client(UAContext *ua)
    char buf[200];
    db_list_ctx lst;
 
-   memset(&cr, 0, sizeof(cr));
+   bmemset(&cr, 0, sizeof(cr));
 
    if (!get_client_dbr(ua, &cr, 0)) {
       return 1;
@@ -1812,8 +1890,8 @@ static void do_storage_cmd(UAContext *ua, const char *command)
    drive = get_storage_drive(ua, store.store);
    /* For the disable/enable/unmount commands, the slot is not mandatory */
    if (strcasecmp(command, "disable") == 0 ||
-        strcasecmp(command, "enable") == 0 ||
-        strcasecmp(command, "unmount")  == 0) {
+       strcasecmp(command, "enable")  == 0 ||
+       strcasecmp(command, "unmount")  == 0) {
       slot = 0;
    } else {
       slot = get_storage_slot(ua, store.store);
@@ -1892,8 +1970,9 @@ int cloud_volumes_cmd(UAContext *ua, const char *cmd, const char *mode)
    POOL_DBR pr;
    BSOCK *sd = NULL;
    char storage[MAX_NAME_LENGTH];
+   char truncate_option[MAX_NAME_LENGTH];
    const char *action = mode;
-   memset(&pr, 0, sizeof(pr));
+   bmemset(&pr, 0, sizeof(pr));
 
    /*
     * Look for all volumes that are enabled and
@@ -1910,6 +1989,10 @@ int cloud_volumes_cmd(UAContext *ua, const char *cmd, const char *mode)
                          &drive, &mr, &pr, NULL, storage,
                          &nb, &results))
    {
+      goto bail_out;
+   }
+
+   if (!scan_truncate_cmd(ua, cmd, truncate_option)) {
       goto bail_out;
    }
 
@@ -1934,16 +2017,18 @@ int cloud_volumes_cmd(UAContext *ua, const char *cmd, const char *mode)
       bash_spaces(mr.MediaType);
       bash_spaces(pr.Name);
       bash_spaces(storage);
+      bash_spaces(truncate_option);
 
       sd->fsend("%s Storage=%s Volume=%s PoolName=%s MediaType=%s "
-                "Slot=%d drive=%d CacheRetention=%lld\n",
+                "Slot=%d drive=%d truncate=%s CacheRetention=%lld\n",
                 action, storage, mr.VolumeName, pr.Name, mr.MediaType,
-                mr.Slot, drive, mr.CacheRetention);
+                mr.Slot, drive, truncate_option, mr.CacheRetention);
 
       unbash_spaces(mr.VolumeName);
       unbash_spaces(mr.MediaType);
       unbash_spaces(pr.Name);
       unbash_spaces(storage);
+      unbash_spaces(truncate_option);
 
       /* Check for valid response */
       while (bget_dirmsg(sd) >= 0) {
@@ -1994,8 +2079,8 @@ static int cloud_list_cmd(UAContext *ua, const char *cmd)
    bool first=true;
    uint32_t maxpart=0, part;
    uint64_t maxpart_size=0;
-   memset(&pr, 0, sizeof(pr));
-   memset(&mr, 0, sizeof(mr));
+   bmemset(&pr, 0, sizeof(pr));
+   bmemset(&mr, 0, sizeof(mr));
 
    /* Look at arguments */
    for (int i=1; i<ua->argc; i++) {
@@ -2070,9 +2155,9 @@ static int cloud_list_cmd(UAContext *ua, const char *cmd)
             pm_strcpy(errmsg, tmpmsg.c_str());
          }
          if (mr.VolCloudParts != maxpart) {
-            Mmsg(tmpmsg, "Error on volume \"%s\". Catalog VolCloudParts mismatch %ld != %ld\n",
+            /* The VolCloudParts is not yet fully synchronized with the catalog */
+            Dmsg3(500, "Issue on volume \"%s\". Catalog VolCloudParts mismatch %ld != %ld\n",
                  mr.VolumeName, mr.VolCloudParts, maxpart);
-            pm_strcpy(errmsg, tmpmsg.c_str());
          }
          if (strlen(errmsg.c_str()) > 0) {
             ua->error_msg("\n%s", errmsg.c_str());
@@ -2094,7 +2179,7 @@ static int cloud_list_cmd(UAContext *ua, const char *cmd)
          mr.MediaId = 0;
 
          if (mr.VolumeName[0] && db_get_media_record(ua->jcr, ua->db, &mr)) {
-            memset(&pr, 0, sizeof(POOL_DBR));
+            bmemset(&pr, 0, sizeof(POOL_DBR));
             pr.PoolId = mr.PoolId;
             if (!db_get_pool_record(ua->jcr, ua->db, &pr)) {
                strcpy(pr.Name, "?");
@@ -2124,6 +2209,8 @@ bail_out:
 }
 
 /* Ask client to create/prune/delete a snapshot via the command line */
+/* allow multiple commands b.e. : "cloud upload truncate" */
+/* will upload to the cloud then truncate the cache */
 static int cloud_cmd(UAContext *ua, const char *cmd)
 {
    for (int i=0; i<ua->argc; i++) {
