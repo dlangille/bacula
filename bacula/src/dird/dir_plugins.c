@@ -205,7 +205,7 @@ static bool is_plugin_compatible(Plugin *plugin)
    }
    if (strcmp(info->plugin_license, "Bacula AGPLv3") != 0 &&
        strcmp(info->plugin_license, "AGPLv3") != 0 &&
-       strcmp(info->plugin_license, "Bacula") != 0) {
+       strcmp(info->plugin_license, BPLUGIN_LICENSE) != 0) {
       Jmsg(NULL, M_ERROR, 0, _("Plugin license incompatible. Plugin=%s license=%s\n"),
            plugin->file, info->plugin_license);
       Dmsg2(50, "Plugin license incompatible. Plugin=%s license=%s\n",
@@ -336,7 +336,6 @@ static bRC baculaGetValue(bpContext *ctx, brDirVariable var, void *value)
       Dmsg1(dbglvl, "Bacula: return bDirVarClient=%s\n", jcr->client->hdr.name);
       break;
    case bDirVarNumVols:
-      bmemset(&pr, 0, sizeof(pr));
       bstrncpy(pr.Name, jcr->pool->hdr.name, sizeof(pr.Name));
       if (!db_get_pool_numvols(jcr, jcr->db, &pr)) {
          ret=bRC_Error;
