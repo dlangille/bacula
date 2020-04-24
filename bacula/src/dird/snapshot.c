@@ -179,7 +179,7 @@ int delete_snapshot(UAContext *ua)
 
    /* Try to connect for 15 seconds */
    ua->send_msg(_("Connecting to Client %s at %s:%d\n"),
-                client->name(), client->address(buf.addr()), client->FDport);
+                client->name(), get_client_address(ua->jcr, client, buf.addr()), client->FDport);
    if (!connect_to_file_daemon(ua->jcr, 1, 15, 0)) {
       ua->error_msg(_("Failed to connect to Client.\n"));
       ua->jcr->client = NULL;
@@ -227,7 +227,7 @@ int list_snapshot(UAContext *ua, alist *snap_list)
 
    /* Try to connect for 15 seconds */
    ua->send_msg(_("Connecting to Client %s at %s:%d\n"),
-                client->name(), client->address(tmp.addr()), client->FDport);
+                client->name(), get_client_address(ua->jcr, client, tmp.addr()), client->FDport);
 
    if (!connect_to_file_daemon(ua->jcr, 1, 15, 0)) {
       ua->error_msg(_("Failed to connect to Client.\n"));
@@ -322,7 +322,7 @@ int prune_snapshot(UAContext *ua)
 
             /* Try to connect for 15 seconds */
             ua->send_msg(_("Connecting to Client %s at %s:%d\n"),
-                         client->name(), client->address(tmp.addr()), client->FDport);
+                         client->name(), get_client_address(ua->jcr, client, tmp.addr()), client->FDport);
             if (!connect_to_file_daemon(ua->jcr, 1, 15, 0)) {
                ua->error_msg(_("Failed to connect to Client.\n"));
                free_bsock(ua->jcr->file_bsock);
