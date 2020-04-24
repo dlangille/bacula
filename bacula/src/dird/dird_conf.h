@@ -20,6 +20,7 @@
  * Director specific configuration and defines
  *
  *     Kern Sibbald, Feb MM
+ *
  */
 
 /* NOTE:  #includes at the end of this file */
@@ -65,13 +66,6 @@ struct s_fs_opt {
    const char *name;
    int keyword;
    const char *option;
-};
-
-/* Job Level keyword structure */
-struct s_jl {
-   const char *level_name;                 /* level keyword */
-   int32_t  level;                         /* level */
-   int32_t  job_type;                      /* JobType permitting this level */
 };
 
 /* Job Type keyword structure */
@@ -121,10 +115,14 @@ public:
    char *tls_dhfile;                  /* TLS Diffie-Hellman Parameters */
    alist *tls_allowed_cns;            /* TLS Allowed Clients */
    TLS_CONTEXT *tls_ctx;              /* Shared TLS Context */
+   TLS_CONTEXT *psk_ctx;              /* Shared TLS-PSK Context */
    utime_t stats_retention;           /* Stats retention period in seconds */
    bool comm_compression;             /* Enable comm line compression */
+   bool AutoPrune;                    /* Global autoprune flag */
+   bool require_fips;                  /* Check for FIPS module */
    bool tls_authenticate;             /* Authenticated with TLS */
    bool tls_enable;                   /* Enable TLS */
+   bool tls_psk_enable;               /* Enable TLS-PSK */
    bool tls_require;                  /* Require TLS */
    bool tls_verify_peer;              /* TLS Verify Client Certificate */
    char *verid;                       /* Custom Id to print in version command */
@@ -186,6 +184,7 @@ enum {
    PluginOptions_ACL,
    RestoreClient_ACL,
    BackupClient_ACL,
+   UserId_ACL,                  /* List of users/uid that can access to a file in the restore tree */
    Directory_ACL,               /* List of directories that can be accessed in the restore tree */
    Num_ACL                      /* keep last */
 };
@@ -205,8 +204,10 @@ public:
    char *tls_dhfile;                  /* TLS Diffie-Hellman Parameters */
    alist *tls_allowed_cns;            /* TLS Allowed Clients */
    TLS_CONTEXT *tls_ctx;              /* Shared TLS Context */
+   TLS_CONTEXT *psk_ctx;              /* Shared TLS-PSK Context */
    bool tls_authenticate;             /* Authenticated with TLS */
    bool tls_enable;                   /* Enable TLS */
+   bool tls_psk_enable;               /* Enable TLS-PSK */
    bool tls_require;                  /* Require TLS */
    bool tls_verify_peer;              /* TLS Verify Client Certificate */
 
@@ -255,6 +256,7 @@ public:
    int32_t NumConcurrentJobs;         /* number of concurrent jobs running */
    char *SetIPaddress;                /* address from SetIP command */
    int enabled;                       /* -1: not set, 0 disabled, 1 enabled */
+   BsockMeeting *socket;              /* existing socket, NULL if not enabled */
 };
 
 /*
@@ -281,13 +283,17 @@ public:
    char *tls_keyfile;                 /* TLS Client Key File */
    alist *tls_allowed_cns;            /* TLS Allowed Clients */
    TLS_CONTEXT *tls_ctx;              /* Shared TLS Context */
+   TLS_CONTEXT *psk_ctx;              /* Shared TLS-PSK Context */
    bool tls_authenticate;             /* Authenticated with TLS */
    bool tls_enable;                   /* Enable TLS */
+   bool tls_psk_enable;               /* Enable TLS-PSK */
    bool tls_require;                  /* Require TLS */
+   bool tls_verify_peer;              /* TLS Verify Client Certificate */
    bool Enabled;                      /* Set if client enabled */
    bool AutoPrune;                    /* Do automatic pruning? */
    bool sd_calls_client;              /* SD calls the client */
    int64_t max_bandwidth;             /* Limit speed on this client */
+   bool allow_fd_connections;         /* FD calls the director */
 
    /* Methods */
    char *name() const;
@@ -298,6 +304,9 @@ public:
    void setAddress(char *addr);
    bool is_enabled();
    void setEnabled(bool val);
+   BSOCK *getBSOCK(int timeout);
+   bool getBSOCK_state(POOLMEM *&buf);
+   void setBSOCK(BSOCK *socket);
 };
 
 inline char *CLIENT::name() const { return hdr.name; }
@@ -335,8 +344,10 @@ public:
    char *tls_certfile;                /* TLS Client Certificate File */
    char *tls_keyfile;                 /* TLS Client Key File */
    TLS_CONTEXT *tls_ctx;              /* Shared TLS Context */
+   TLS_CONTEXT *psk_ctx;              /* Shared TLS-PSK Context */
    bool tls_authenticate;             /* Authenticated with TLS */
    bool tls_enable;                   /* Enable TLS */
+   bool tls_psk_enable;               /* Enable TLS-PSK */
    bool tls_require;                  /* Require TLS */
    bool Enabled;                      /* Set if device is enabled */
    bool AllowCompress;                /* set if this Storage should allow jobs to enable compression */
@@ -457,6 +468,7 @@ public:
    uint32_t MaxSpawnedJobs;           /* Max Jobs that can be started by Migration/Copy */
    uint32_t BackupsToKeep;            /* Number of backups to keep in Virtual Full */
    bool allow_mixed_priority;         /* Allow jobs with higher priority concurrently with this */
+   bool allow_incomplete_jobs;        /* Allow incomplete jobs */
 
    MSGS      *messages;               /* How and where to send messages */
    SCHED     *schedule;               /* When -- Automatic schedule */
@@ -723,7 +735,7 @@ union URES {
 
 
 /* Run structure contained in Schedule Resource */
-class RUN {
+class RUN: public RUNBASE {
 public:
    RUN *next;                         /* points to next run record */
    uint32_t level;                    /* level override */
@@ -749,17 +761,9 @@ public:
    STORE *storage;                    /* Storage override */
    MSGS *msgs;                        /* Messages override */
    char *since;
-   uint32_t level_no;
-   uint32_t minute;                   /* minute to run job */
-   time_t last_run;                   /* last time run */
-   time_t next_run;                   /* next time to run */
-   bool last_day_set;                 /* set if last_day is used */
-   char hour[nbytes_for_bits(24)];    /* bit set for each hour */
-   char mday[nbytes_for_bits(32)];    /* bit set for each day of month */
-   char month[nbytes_for_bits(12)];   /* bit set for each month */
-   char wday[nbytes_for_bits(7)];     /* bit set for each day of the week */
-   char wom[nbytes_for_bits(6)];      /* week of month */
-   char woy[nbytes_for_bits(54)];     /* week of year */
+
+   void copyall(RUN *src);
+   void clearall();
 };
 
 #define GetPoolResWithName(x) ((POOL *)GetResWithName(R_POOL, (x)))
@@ -790,3 +794,4 @@ void store_base(LEX *lc, RES_ITEM *item, int index, int pass);
 void store_plugin(LEX *lc, RES_ITEM *item, int index, int pass);
 void store_run(LEX *lc, RES_ITEM *item, int index, int pass);
 void store_runscript(LEX *lc, RES_ITEM *item, int index, int pass);
+int get_resource_size(int type);
