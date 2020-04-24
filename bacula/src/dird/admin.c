@@ -50,7 +50,9 @@ bool do_admin(JCR *jcr)
 
    jcr->jr.JobId = jcr->JobId;
 
-   jcr->fname = (char *)get_pool_memory(PM_FNAME);
+   if (!jcr->fname) {
+      jcr->fname = get_pool_memory(PM_FNAME);
+   }
 
    /* Print Job Start message */
    Jmsg(jcr, M_INFO, 0, _("Start Admin JobId %d, Job=%s\n"),
