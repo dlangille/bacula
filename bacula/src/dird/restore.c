@@ -488,6 +488,9 @@ bool restore_bootstrap(JCR *jcr)
       /* Only pass "global" commands to the FD once */
       if (first_time) {
          first_time = false;
+         if (!send_job_permissions(jcr)) {
+            goto bail_out;
+         }
          if (!send_runscripts_commands(jcr)) {
             goto bail_out;
          }
@@ -497,6 +500,9 @@ bool restore_bootstrap(JCR *jcr)
          }
          if (!send_restore_objects(jcr)) {
             Pmsg0(000, "FAIL: Send restore objects\n");
+            goto bail_out;
+         }
+         if (!send_restore_file_list(jcr)) {
             goto bail_out;
          }
       }
@@ -634,7 +640,7 @@ void restore_cleanup(JCR *jcr, int TermCode)
 {
    POOL_MEM where;
    char creplace;
-   const char *replace;
+   const char *replace = NULL;
    char sdt[MAX_TIME_LENGTH], edt[MAX_TIME_LENGTH];
    char ec1[30], ec2[30], ec3[30], ec4[30], elapsed[50];
    char term_code[100], fd_term_msg[100], sd_term_msg[100];
@@ -671,7 +677,7 @@ void restore_cleanup(JCR *jcr, int TermCode)
 
       } else if (jcr->JobErrors > 0 || jcr->SDErrors > 0) {
          term_msg = _("Restore OK -- with errors");
-
+         
       } else {
          term_msg = _("Restore OK");
       }
@@ -711,7 +717,6 @@ void restore_cleanup(JCR *jcr, int TermCode)
 
    get_restore_params(jcr, where, &creplace, NULL);
 
-   replace = ReplaceOptions[0].name;     /* default */
    for (int i=0; ReplaceOptions[i].name; i++) {
       if (ReplaceOptions[i].token == (int)creplace) {
          replace = ReplaceOptions[i].name;
