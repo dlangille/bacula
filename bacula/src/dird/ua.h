@@ -20,6 +20,7 @@
  * Includes specific to the Director User Agent Server
  *
  *     Kern Sibbald, August MMI
+ *
  */
 
 #ifndef __UA_H_
@@ -61,6 +62,9 @@ public:
    int32_t  int32_val;                /* positive/negative */
    int64_t  int64_val;                /* big int */
 
+   /* Can be used to restrict the view, not used by bvfs itself */
+   uid_t uid;                         /* used by the .setuid command */
+   gid_t gid;                         /* used by the .setuid command */
    void *bvfs;                        /* used in some bvfs queries */
 
    void signal(int sig) { UA_sock->signal(sig); };
@@ -122,6 +126,9 @@ struct RESTORE_CTX {
    char *RegexWhere;
    char *replace;
    char *fileregex;
+
+   char *job_user;                    /* used in the restore menu */
+   char *job_group;                   /* used in the restore menu */
 
    char *when;
    rblist *bsr_list;
