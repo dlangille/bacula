@@ -75,6 +75,7 @@ void add_findex_all(rblist *bsr_list, uint32_t JobId, const char *fileregex);
 RBSR_FINDEX *new_findex();
 void make_unique_restore_filename(UAContext *ua, POOLMEM **fname);
 void print_bsr(UAContext *ua, RESTORE_CTX &rx);
+void scan_bsr(JCR *jcr);
 
 
 /* catreq.c */
@@ -87,10 +88,10 @@ extern void remove_dummy_jobmedia_records(JCR *jcr);
 extern const char *level_to_static_str(int level);
 extern char *level_to_str(char *buf, int len, int level);
 extern "C" char *job_code_callback_director(JCR *jcr, const char*, char *, int);
+extern char *get_client_address(JCR *jcr, CLIENT *client, POOLMEM *&buf);
 
 /* expand.c */
 int variable_expansion(JCR *jcr, char *inp, POOLMEM **exp);
-
 
 /* fd_cmds.c */
 extern int connect_to_file_daemon(JCR *jcr, int retry_interval,
@@ -101,6 +102,7 @@ extern bool send_include_list(JCR *jcr);
 extern bool send_exclude_list(JCR *jcr);
 extern bool send_level_command(JCR *jcr);
 extern bool send_bwlimit(JCR *jcr, const char *Job);
+extern bool send_restore_file_list(JCR *jcr);
 extern int get_attributes_and_put_in_catalog(JCR *jcr);
 extern void get_attributes_and_compare_to_catalog(JCR *jcr, JobId_t JobId);
 extern int put_file_into_catalog(JCR *jcr, long file_index, char *fname,
@@ -183,9 +185,14 @@ extern void wait_for_storage_daemon_termination(JCR *jcr);
 extern bool send_bootstrap_file(JCR *jcr, BSOCK *sd);
 
 /* next_vol.c */
+bool check_max_pool_bytes(POOL_DBR *pr);
+bool use_max_pool_bytes(JCR *jcr);
+bool has_quota_reached(JCR *jcr, POOL_DBR *pr);
+bool has_quota_reached(JCR *jcr, MEDIA_DBR *mr);
+bool has_quota_reached(JCR *jcr);
+void set_storageid_in_mr(STORE *store, MEDIA_DBR *mr);
 int find_next_volume_for_append(JCR *jcr, MEDIA_DBR *mr, int index,
                                 bool create, bool purge, POOL_MEM &errmsg);
-void set_storageid_in_mr(STORE *store, MEDIA_DBR *mr);
 bool has_volume_expired(JCR *jcr, MEDIA_DBR *mr);
 void check_if_volume_valid_or_recyclable(JCR *jcr, MEDIA_DBR *mr, const char **reason);
 bool get_scratch_volume(JCR *jcr, bool InChanger, MEDIA_DBR *mr,
@@ -205,6 +212,7 @@ bool acl_access_ok(UAContext *ua, int acl, const char *item);
 bool acl_access_ok(UAContext *ua, int acl, const char *item, int len);
 bool have_restricted_acl(UAContext *ua, int acl);
 bool acl_access_client_ok(UAContext *ua, const char *name, int32_t jobtype);
+bool acl_access_console_ok(UAContext *ua, const char *name);
 
 /* ua_cmds.c */
 bool get_uid_gid_from_acl(UAContext *ua, alist **uid, alist **gid, alist **dir);
@@ -306,12 +314,14 @@ int confirm_retention(UAContext *ua, utime_t *ret, const char *msg);
 int confirm_retention_yesno(UAContext *ua, utime_t ret, const char *msg);
 bool get_level_from_name(JCR *jcr, const char *level_name);
 int get_level_code_from_name(const char *level_name);
+
 int scan_storage_cmd(UAContext *ua, const char *cmd,
                      bool allfrompool,
                      int *drive, MEDIA_DBR *mr, POOL_DBR *pr,
                      const char **action, char *storage, int *nb, uint32_t **results);
 
-
+int scan_truncate_cmd(UAContext *ua, const char *cmd,
+                     char *truncate_opt);
 /* ua_status.c */
 void list_dir_status_header(UAContext *ua);
 
@@ -368,3 +378,15 @@ void initialize_statcollector();
 void start_collector_threads();
 void terminate_collector_threads();
 void update_config_stats();
+
+bool catreq_get_pool_info(JCR *jcr, BSOCK *bs);
+
+#if BEEF
+# include "bee_dird_uid.h"
+#else
+# define send_job_permissions(x) true
+# define mark_access_denied(a)
+#endif
+
+/* dedup_util.c */
+bool is_dedup_ref(DEV_RECORD *rec, bool lazy);
