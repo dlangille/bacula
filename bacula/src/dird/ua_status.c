@@ -17,9 +17,11 @@
    Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
+ *
  *   Bacula Director -- User Agent Status Command
  *
  *     Kern Sibbald, August MMI
+ *
  */
 
 
@@ -127,6 +129,7 @@ static int do_network_status(UAContext *ua)
    char *store_address, ed1[50];
    uint32_t store_port;
    uint64_t nb = 50 * 1024 * 1024;
+   uint64_t nbrtt=10;
    POOL_MEM buf;
 
    int i = find_arg_with_value(ua, "bytes");
@@ -135,7 +138,11 @@ static int do_network_status(UAContext *ua)
          return 1;
       }
    }
-   
+   i = find_arg_with_value(ua, "rtt");
+   if (i > 0) {
+      nbrtt = str_to_uint64(ua->argv[i]);
+   }
+
    client = get_client_resource(ua, JT_BACKUP_RESTORE);
    if (!client) {
       return 1;
@@ -175,7 +182,7 @@ static int do_network_status(UAContext *ua)
 
    if (!ua->api) {
       ua->send_msg(_("Connecting to Client %s at %s:%d\n"),
-                   client->name(), client->address(buf.addr()), client->FDport);
+                   client->name(), get_client_address(jcr, client, buf.addr()), client->FDport);
    }
 
    if (!connect_to_file_daemon(jcr, 1, 15, 0)) {
@@ -224,7 +231,7 @@ static int do_network_status(UAContext *ua)
                    client->name(), store.store->name(), edit_uint64_with_suffix(nb, ed1));
    }
 
-   if (!jcr->file_bsock->fsend("testnetwork bytes=%lld\n", nb)) {
+   if (!jcr->file_bsock->fsend("testnetwork bytes=%llu rtt=%llu\n", nb, nbrtt)) {
       goto bail_out;
    }
 
@@ -236,10 +243,8 @@ bail_out:
    if (jcr->file_bsock) {
       jcr->file_bsock->signal(BNET_TERMINATE);
    }
-   if (jcr->store_bsock) {
-      jcr->store_bsock->signal(BNET_TERMINATE);
-   }
-   wait_for_storage_daemon_termination(jcr);
+
+   terminate_sd_msg_chan_thread(jcr);
 
    free_bsock(jcr->file_bsock);
    free_bsock(jcr->store_bsock);
@@ -450,6 +455,8 @@ static void api_list_dir_status_header(UAContext *ua)
       OT_INT,    "nfset",       ((rblist *)res_head[R_FILESET-r_first]->res_list)->size(),
       OT_INT,    "nscheds",     ((rblist *)res_head[R_SCHEDULE-r_first]->res_list)->size(),
       OT_PLUGINS,"plugins",     b_plugin_list,
+      OT_INT32,  "fips",        crypto_get_fips(),
+      OT_STRING, "crypto",      crypto_get_version(),
       OT_END);
 
    ua->send_msg("%s", wt.end_group());
@@ -466,12 +473,21 @@ void list_dir_status_header(UAContext *ua)
    }
 
    ua->send_msg(_("%s %sVersion: %s (%s) %s %s %s\n"), my_name,
-            "", VERSION, BDATE, HOST_OS, DISTNAME, DISTVER);
+            BDEMO, VERSION, BDATE, HOST_OS, DISTNAME, DISTVER);
    bstrftime_nc(dt, sizeof(dt), daemon_start_time);
    bstrftimes(dt1, sizeof(dt1), last_reload_time);
    ua->send_msg(_("Daemon started %s, conf reloaded %s\n"), dt, dt1);
    ua->send_msg(_(" Jobs: run=%d, running=%d mode=%d,%d\n"),
-      num_jobs_run, job_count(), (int)DEVELOPER_MODE, 0);
+                num_jobs_run, job_count(), (int)DEVELOPER_MODE, (int)BEEF);
+   
+/* TODO
+   int64_t nofile_l = 1000 + 5 * director->MaxConcurrentJobs;
+   int64_t memlock_l = 0;
+
+   list_resource_limits(sp, nofile_l, memlock_l);
+*/
+   ua->send_msg(_(" Crypto: fips=%s crypto=%s\n"), crypto_get_fips_enabled(), crypto_get_version());
+
    ua->send_msg(_(" Heap: heap=%s smbytes=%s max_bytes=%s bufs=%s max_bufs=%s\n"),
       edit_uint64_with_commas((char *)sbrk(0)-(char *)start_heap, b1),
       edit_uint64_with_commas(sm_bytes, b2),
@@ -630,7 +646,7 @@ static void do_client_status(UAContext *ua, CLIENT *client, char *cmd)
 
    /* Try to connect for 15 seconds */
    if (!ua->api) ua->send_msg(_("Connecting to Client %s at %s:%d\n"),
-                              client->name(), client->address(buf.addr()), client->FDport);
+                              client->name(), get_client_address(ua->jcr, client, buf.addr()), client->FDport);
    if (!connect_to_file_daemon(ua->jcr, 1, 15, 0)) {
       ua->send_msg(_("Failed to connect to Client %s.\n====\n"),
          client->name());
@@ -833,9 +849,9 @@ static void llist_scheduled_jobs(UAContext *ua)
    char sched_name[MAX_NAME_LENGTH] = {0}, edl[50];
    char *n, *p;
    SCHED *sched;
-   int days=10, limit=30;
+   int days=10, limit=100;
    time_t now = time(NULL);
-   time_t next;
+   time_t next, tmp_time;
    rblist *list;
    alist clients(10, not_owned_by_alist);
    alist jobs(10, not_owned_by_alist);
@@ -844,7 +860,38 @@ static void llist_scheduled_jobs(UAContext *ua)
    Dmsg0(200, "enter list_sched_jobs()\n");
 
    for (int i=0; i < ua->argc ; i++) {
-      if (strcmp(ua->argk[i], NT_("limit")) == 0) {
+      /* in "status schedule limit=10" we don't have a schedule parameter, but it's ok */
+      if (strcmp(ua->argk[i], NT_("schedule")) == 0 && ua->argv[i]) {
+         bstrncpy(sched_name, ua->argv[i], sizeof(sched_name));
+
+      } else if (strcmp(ua->argk[i], NT_("time")) == 0) {
+         if (strcmp(NPRTB(ua->argv[i]), "") == 0 || strcasecmp(ua->argv[i], NT_("now")) == 0) {
+            tmp_time = now;     /* now is a special keyword, just keep the current time */
+
+         } else {
+            tmp_time = str_to_utime(ua->argv[i]); /* Try to convert it */
+         }
+
+         if (tmp_time == 0) {
+            ua->send_msg(_("Ignoring invalid time.\n"));
+
+         } else {
+            now = tmp_time;
+            time_set = true;    /* If time= was used, we display jobs only after this date */
+         }
+
+      /* all other keywords expect a parameter */
+      } else if (ua->argv[i] == NULL) {
+         /* Incorrect parameter... */
+         if (strcmp(ua->argk[i], NT_("limit")) == 0 ||
+             strcmp(ua->argk[i], NT_("days")) == 0  ||
+             strcmp(ua->argk[i], NT_("job")) == 0 ||
+             strcmp(ua->argk[i], NT_("client")) == 0)
+         {
+            ua->error_msg(_("Expecting argument for keyword \"%s\".\n"), ua->argk[i]);
+         }
+
+      } else if (strcmp(ua->argk[i], NT_("limit")) == 0) {
          limit = atoi(ua->argv[i]);
          if (((limit < 0) || (limit > 2000)) && !ua->api) {
             ua->send_msg(_("Ignoring invalid value for limit. Max is 2000.\n"));
@@ -861,16 +908,6 @@ static void llist_scheduled_jobs(UAContext *ua)
          if (!limit_set) {
             limit = 0;              /* Disable limit if not set explicitely */
          }
-
-      } else if (strcmp(ua->argk[i], NT_("time")) == 0) {
-         now = str_to_utime(ua->argv[i]);
-         if (now == 0) {
-            ua->send_msg(_("Ignoring invalid time.\n"));
-            now = time(NULL);
-         }
-
-      } else if (strcmp(ua->argk[i], NT_("schedule")) == 0 && ua->argv[i]) {
-         bstrncpy(sched_name, ua->argv[i], sizeof(sched_name));
 
       } else if (strcmp(ua->argk[i], NT_("job")) == 0) {
          p = ua->argv[i];
@@ -974,7 +1011,6 @@ static void llist_scheduled_jobs(UAContext *ua)
             if (run->Priority) {
                priority = run->Priority;
             }
-
             item = (schedule *) malloc(sizeof(schedule));
             item->time = runtime;
             item->prio = priority;
@@ -1047,7 +1083,7 @@ static void llist_scheduled_jobs(UAContext *ua)
       }
    }
    if (ua->api > 1) {
-      ua->send_msg("%s", ow.end_group());
+      ua->send_msg("%s", ow.end_group(false));
    }
    delete list;
 
@@ -1057,6 +1093,7 @@ static void llist_scheduled_jobs(UAContext *ua)
    if (!ua->api) ua->send_msg("====\n");
    Dmsg0(200, "Leave ;list_sched_jobs_runs()\n");
 }
+
 
 /*
  * Sort items by runtime, priority
@@ -1367,6 +1404,12 @@ static void list_running_jobs(UAContext *ua)
       case JS_AttrInserting:
          msg = _("Dir inserting Attributes");
          break;
+      case JS_CloudDownload:
+         msg = _("SD Downloading from Cloud");
+         break;
+      case JS_CloudUpload:
+         msg = _("SD Uploading to Cloud");
+         break;
       }
       if (msg != msgdir) {
          status = jcr->SDJobStatus;
@@ -1463,7 +1506,7 @@ static void list_terminated_jobs(UAContext *ua)
    struct s_last_job *je;
    if (!ua->api) {
       ua->send_msg(_("\nTerminated Jobs:\n"));
-      ua->send_msg(_(" JobId  Level      Files    Bytes   Status   Finished        Name \n"));
+      ua->send_msg(_(" JobId  Level    Files      Bytes   Status   Finished        Name \n"));
       ua->send_msg(_("====================================================================\n"));
    } else if (ua->api > 1) {
       ua->send_msg(ow.start_group("terminated"));
@@ -1552,7 +1595,7 @@ static void list_terminated_jobs(UAContext *ua)
                                     OT_END));
 
       } else {
-         ua->send_msg(_("%6d  %-7s %8s %10s  %-7s  %-8s %s\n"),
+         ua->send_msg(_("%6d  %-6s %8s %10s  %-7s  %-8s %s\n"),
             je->JobId,
             level,
             edit_uint64_with_commas(je->JobFiles, b1),
