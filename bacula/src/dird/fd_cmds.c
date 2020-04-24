@@ -66,6 +66,12 @@ extern int FDConnectTimeout;
 #define INC_LIST 0
 #define EXC_LIST 1
 
+static void delete_bsock_end_cb(JCR *jcr, void *ctx)
+{
+   BSOCK *socket = (BSOCK *)ctx;
+   free_bsock(socket);
+}
+
 /*
  * Open connection with File daemon.
  * Try connecting every retry_interval (default 10 sec), and
@@ -95,25 +101,52 @@ int connect_to_file_daemon(JCR *jcr, int retry_interval, int max_retry_time,
       char name[MAX_NAME_LENGTH + 100];
       POOL_MEM buf;
 
-      if (!fd) {
-         fd = jcr->file_bsock = new_bsock();
-      }
       bstrncpy(name, _("Client: "), sizeof(name));
       bstrncat(name, jcr->client->name(), sizeof(name));
 
-      fd->set_source_address(director->DIRsrc_addr);
-      if (!fd->connect(jcr,retry_interval,
-                       max_retry_time,
-                       heart_beat, name,
-                       jcr->client->address(buf.addr()),
-                       NULL,
-                       jcr->client->FDport,
-                       verbose)) {
-         fd->close();
-         jcr->setJobStatus(JS_ErrorTerminated);
-         return 0;
+      if (jcr->client->allow_fd_connections) {
+         Dmsg0(DT_NETWORK, "Try to use the existing socket if any\n");
+         fd = jcr->client->getBSOCK(max_retry_time);
+         /* Need to free the previous bsock, but without creating a race
+          * condition. We will replace the BSOCK
+          */
+         if (fd && jcr->file_bsock) {
+            Dmsg0(DT_NETWORK, "Found a socket, keep it!\n");
+            job_end_push(jcr, delete_bsock_end_cb, (void *)jcr->file_bsock);
+         }
+
+         /* if address == NULL  forget it */
+         if (!fd) {
+            Dmsg0(DT_NETWORK, "No socket in client \n");
+            jcr->setJobStatus(JS_ErrorTerminated);
+            return 0;
+         }
+         jcr->file_bsock = fd;
+         fd->set_jcr(jcr);
+         /* TODO: Need to set TLS down  */
+         if (fd->tls) {
+            fd->free_tls();
+         }
+      } else {
+
+         if (!fd) {
+            fd = jcr->file_bsock = new_bsock();
+         }
+
+         fd->set_source_address(director->DIRsrc_addr);
+         if (!fd->connect(jcr,retry_interval,
+                          max_retry_time,
+                          heart_beat, name,
+                          get_client_address(jcr, jcr->client, buf.addr()),
+                          NULL,
+                          jcr->client->FDport,
+                          verbose)) {
+            fd->close();
+            jcr->setJobStatus(JS_ErrorTerminated);
+            return 0;
+         }
+         Dmsg0(10, "Opened connection with File daemon\n");
       }
-      Dmsg0(10, "Opened connection with File daemon\n");
    }
    fd->res = (RES *)jcr->client;      /* save resource in BSOCK */
    jcr->setJobStatus(JS_Running);
@@ -179,10 +212,13 @@ void get_level_since_time(JCR *jcr, char *since, int since_len)
    bool do_full = false;
    bool do_vfull = false;
    bool do_diff = false;
+   bool print_reason2 = false;
    utime_t now;
    utime_t last_full_time = 0;
    utime_t last_diff_time;
    char prev_job[MAX_NAME_LENGTH], edl[50];
+   const char *reason = "";
+   POOL_MEM reason2;
 
    since[0] = 0;
    /* If job cloned and a since time already given, use it */
@@ -213,6 +249,7 @@ void get_level_since_time(JCR *jcr, char *since, int since_len)
        */
       if (!db_find_job_start_time(jcr, jcr->db, &jcr->jr, &jcr->stime, jcr->PrevJob)) {
          do_full = true;
+         reason = _("No prior or suitable Full backup found in catalog. ");
       }
       have_full = db_find_last_job_start_time(jcr, jcr->db, &jcr->jr,
                                               &stime, prev_job, L_FULL);
@@ -220,6 +257,25 @@ void get_level_since_time(JCR *jcr, char *since, int since_len)
          last_full_time = str_to_utime(stime);
       } else {
          do_full = true;               /* No full, upgrade to one */
+
+         /* We try to determine if we have a previous Full backup with an other FileSetId */
+         DBId_t id = jcr->jr.FileSetId;
+         jcr->jr.FileSetId = 0;
+         if (db_find_last_job_start_time(jcr, jcr->db, &jcr->jr, &stime, prev_job, L_FULL)) {
+            FILESET_DBR fs;
+            memset(&fs, 0, sizeof(fs));
+            fs.FileSetId = id;
+            /* Print more information about the last fileset */
+            if (db_get_fileset_record(jcr, jcr->db, &fs)) {
+               Mmsg(reason2, _("The FileSet \"%s\" was modified on %s, this is after the last successful backup on %s."),
+                    fs.FileSet, fs.cCreateTime, stime);
+               print_reason2=true;
+            }
+            reason = _("No prior or suitable Full backup found in catalog for the current FileSet. ");
+         } else {
+            reason = _("No prior or suitable Full backup found in catalog. ");
+         }
+         jcr->jr.FileSetId = id;
       }
       Dmsg4(50, "have_full=%d do_full=%d now=%lld full_time=%lld\n", have_full,
             do_full, now, last_full_time);
@@ -241,11 +297,17 @@ void get_level_since_time(JCR *jcr, char *since, int since_len)
             Dmsg1(50, "No last_diff_time setting to full_time=%lld\n", last_full_time);
          }
          do_diff = ((now - last_diff_time) >= jcr->job->MaxDiffInterval);
+         if (do_diff) {
+            reason = _("Max Diff Interval exceeded. ");
+         }
          Dmsg2(50, "do_diff=%d diffInter=%lld\n", do_diff, jcr->job->MaxDiffInterval);
       }
       /* Note, do_full takes precedence over do_vfull and do_diff */
       if (have_full && jcr->job->MaxFullInterval > 0) {
          do_full = ((now - last_full_time) >= jcr->job->MaxFullInterval);
+         if (do_full) {
+            reason = _("Max Full Interval exceeded. ");
+         }
       }
       else
       if (have_full && jcr->job->MaxVirtualFullInterval > 0) {
@@ -256,23 +318,25 @@ void get_level_since_time(JCR *jcr, char *since, int since_len)
 
       if (do_full) {
          /* No recent Full job found, so upgrade this one to Full */
-         Jmsg(jcr, M_INFO, 0, "%s", db_strerror(jcr->db));
-         Jmsg(jcr, M_INFO, 0, _("No prior or suitable Full backup found in catalog. Doing FULL backup.\n"));
+         if (print_reason2) {
+            Jmsg(jcr, M_INFO, 0, "%s\n", reason2.c_str());
+         }
+         Jmsg(jcr, M_INFO, 0, _("%sDoing FULL backup.\n"), reason);
          bsnprintf(since, since_len, _(" (upgraded from %s)"),
-            level_to_str(edl, sizeof(edl), jcr->getJobLevel()));
+                   level_to_str(edl , sizeof(edl), jcr->getJobLevel()));
          jcr->setJobLevel(jcr->jr.JobLevel = L_FULL);
       } else if (do_vfull) {
          /* No recent Full job found, and MaxVirtualFull is set so upgrade this one to Virtual Full */
          Jmsg(jcr, M_INFO, 0, "%s", db_strerror(jcr->db));
          Jmsg(jcr, M_INFO, 0, _("No prior or suitable Full backup found in catalog. Doing Virtual FULL backup.\n"));
          bsnprintf(since, since_len, _(" (upgraded from %s)"),
-            level_to_str(edl, sizeof(edl), jcr->getJobLevel()));
+                   level_to_str(edl, sizeof(edl), jcr->getJobLevel()));
          jcr->setJobLevel(jcr->jr.JobLevel = L_VIRTUAL_FULL);
       } else if (do_diff) {
          /* No recent diff job found, so upgrade this one to Diff */
-         Jmsg(jcr, M_INFO, 0, _("No prior or suitable Differential backup found in catalog. Doing Differential backup.\n"));
+         Jmsg(jcr, M_INFO, 0, _("%sDoing Differential backup.\n"), reason);
          bsnprintf(since, since_len, _(" (upgraded from %s)"),
-            level_to_str(edl, sizeof(edl), jcr->getJobLevel()));
+                   level_to_str(edl, sizeof(edl), jcr->getJobLevel()));
          jcr->setJobLevel(jcr->jr.JobLevel = L_DIFFERENTIAL);
       } else {
          if (jcr->job->rerun_failed_levels) {
@@ -293,9 +357,9 @@ void get_level_since_time(JCR *jcr, char *since, int since_len)
                  if ((jcr->getJobLevel() == L_INCREMENTAL) || 
                      ((jcr->getJobLevel() == L_DIFFERENTIAL) && (JobLevel == L_FULL))) {
                     Jmsg(jcr, M_INFO, 0, _("Prior failed job found in catalog. Upgrading to %s.\n"),
-                       level_to_str(edl, sizeof(edl), JobLevel));
+                         level_to_str(edl, sizeof(edl), JobLevel));
                     bsnprintf(since, since_len, _(" (upgraded from %s)"),
-                             level_to_str(edl, sizeof(edl), jcr->getJobLevel()));
+                              level_to_str(edl, sizeof(edl), jcr->getJobLevel()));
                     jcr->setJobLevel(jcr->jr.JobLevel = JobLevel);
                     jcr->jr.JobId = jcr->JobId;
                     break;
@@ -632,7 +696,7 @@ bool send_include_list(JCR *jcr)
 }
 
 /*
- * Send an include list with a plugin and listing=<path> parameter
+ * Send a include list with a plugin and listing=<path> parameter
  */
 bool send_ls_plugin_fileset(JCR *jcr, const char *plugin, const char *path)
 {
@@ -672,6 +736,7 @@ bool send_ls_fileset(JCR *jcr, const char *path)
    }
    return true;
 }
+
 
 /*
  * Send exclude list to File daemon
@@ -841,6 +906,137 @@ static int restore_object_handler(void *ctx, int num_fields, char **row)
    return 0;
 }
 
+/* Send the restore file list to the plugin */
+void feature_send_restorefilelist(JCR *jcr, const char *plugin)
+{
+   if (!jcr->bsr_list) {
+      Dmsg0(10, "Unable to send restore file list\n");
+      return;
+   }
+   jcr->file_bsock->fsend("restorefilelist plugin=%s\n", plugin);
+   scan_bsr(jcr);
+   jcr->file_bsock->signal(BNET_EOD);
+}
+
+typedef struct {
+   const char *name;         /* Name of the feature */
+   alist      *plugins;      /* List of the plugins that can use the feature */
+   void (*handler)(JCR *, const char *plugin); /* handler for the feature */
+} PluginFeatures;
+
+/* List of all the supported features. This table is global and 
+ * each job should do a copy.
+ */
+const static PluginFeatures plugin_features[] = {
+   /* name                             plugins  handler */
+   {PLUGIN_FEATURE_RESTORELISTFILES,   NULL,    feature_send_restorefilelist},
+   {NULL,                              NULL,    NULL}
+};
+
+#define NB_FEATURES (sizeof(plugin_features) / sizeof(PluginFeatures))
+
+/* Take a plugin and a feature name, and fill the Feature list */
+static void fill_feature_list(JCR *jcr, PluginFeatures *features, char *plugin, char *name)
+{
+   for (int i=0; features[i].name != NULL ; i++) {
+      if (strcasecmp(features[i].name, name) == 0) {
+         if (features[i].plugins == NULL) {
+            features[i].plugins = New(alist(10, owned_by_alist));
+         }
+         Dmsg2(10, "plugin=%s match feature %s\n", plugin, name);
+         features[i].plugins->append(bstrdup(plugin));
+         break;
+      }
+   }
+}
+
+/* Free the memory allocated by get_plugin_features() */
+static void free_plugin_features(PluginFeatures *features)
+{
+   if (!features) {
+      return;
+   }
+   for (int i=0; features[i].name != NULL ; i++) {
+      if (features[i].plugins != NULL) {
+         delete features[i].plugins;
+      }
+   }
+   free(features);
+}
+
+/* Can be used in Backup or Restore jobs to know what a plugin can do
+ * Need to call free_plugin_features() to release the PluginFeatures argument
+ */
+static bool get_plugin_features(JCR *jcr, PluginFeatures **ret)
+{
+   POOL_MEM buf;
+   char ed1[128];
+   BSOCK *fd = jcr->file_bsock;
+   PluginFeatures *features;
+   char *p, *start;
+
+   *ret = NULL;
+
+   if (jcr->FDVersion < 14 || jcr->FDVersion == 213 || jcr->FDVersion == 214) {
+      return false;              /* File Daemon too old or not compatible */
+   }
+
+   /* Copy the features table */
+   features = (PluginFeatures *)malloc(sizeof(PluginFeatures) * NB_FEATURES);
+   memcpy(features, plugin_features, sizeof(plugin_features));
+
+   /* Get the list of the features that the plugins can request
+    * ex: plugin=ndmp features=files,feature1,feature2
+    */
+   fd->fsend("PluginFeatures\n");
+
+   while (bget_dirmsg(fd) > 0) {
+      buf.check_size(fd->msglen+1);
+      if (sscanf(fd->msg, "2000 plugin=%127s features=%s", ed1, buf.c_str()) == 2) {
+         /* We have buf=feature1,feature2,feature3 */
+         start = buf.c_str();
+         while ((p = next_name(&start)) != NULL) {
+            fill_feature_list(jcr, features, ed1, p);
+         }
+      } else {
+         Dmsg1(10, "Something wrong with the protocol %s\n", fd->msg);
+         free_plugin_features(features);
+         return false;
+      }
+   }
+   *ret = features;
+   return true;
+}
+
+/* See with the FD if we need to send the list of all the files
+ * to be restored before the start of the job
+ */
+bool send_restore_file_list(JCR *jcr)
+{
+   PluginFeatures *features=NULL;
+
+   /* TODO: If we have more features, we can store the features list in the JCR */
+   if (!get_plugin_features(jcr, &features)) {
+      return true;              /* Not handled by FD */
+   }
+
+   /* Now, we can deal with what the plugins want */
+   for (int i=0; features[i].name != NULL ; i++) {
+      if (strcmp(features[i].name, PLUGIN_FEATURE_RESTORELISTFILES) == 0) {
+         if (features[i].plugins != NULL) {
+            char *plug;
+            foreach_alist(plug, features[i].plugins) {
+               features[i].handler(jcr, plug);
+            }
+         }
+         break;
+      }
+   }
+
+   free_plugin_features(features);
+   return true;
+}
+
 /*
  * Send the plugin Restore Objects, which allow the
  *  plugin to get information early in the restore
@@ -1002,7 +1198,7 @@ int get_attributes_and_put_in_catalog(JCR *jcr)
          ar->JobId = jcr->JobId;
          ar->ClientId = jcr->ClientId;
          ar->PathId = 0;
-         ar->FilenameId = 0;
+         ar->Filename = NULL;
          ar->Digest = NULL;
          ar->DigestType = CRYPTO_DIGEST_NONE;
          ar->DeltaSeq = 0;
