@@ -17,9 +17,11 @@
    Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
+ *
  *   Bacula Director -- Run Command
  *
  *     Kern Sibbald, December MMI
+ *
  */
 
 #include "bacula.h"
@@ -33,6 +35,7 @@ public:
    char *job_name, *jid, *store_name, *pool_name;
    char *where, *fileset_name, *client_name, *bootstrap, *regexwhere;
    char *restore_client_name, *comment, *media_type, *next_pool_name;
+   char *job_user, *job_group;
    const char *replace;
    char *when, *verify_job_name, *catalog_name;
    char *previous_job_name;
@@ -151,7 +154,11 @@ int run_cmd(UAContext *ua, const char *cmd)
          jcr->plugin_config = ua->jcr->plugin_config;
          ua->jcr->plugin_config = NULL;
       }
-
+      /* Transfer the BSR memory structure */
+      if (ua->jcr->bsr_list) {
+         jcr->bsr_list = ua->jcr->bsr_list;
+         ua->jcr->bsr_list = NULL;
+      }
       if (!set_run_context_in_jcr(ua, jcr, rc)) {
          break; /* error get out of while loop */
       }
@@ -658,29 +665,36 @@ int restart_cmd(UAContext *ua, const char *cmd)
    }
 
    rc.jr.JobStatus = 0;
-   for (i=1; i<ua->argc; i++) {
-      for (j=0; kw[j].status_name; j++) {
-         if (strcasecmp(ua->argk[i], kw[j].status_name) == 0) {
-            rc.jr.JobStatus = kw[j].job_status;
-            got_kw = true;
-            break;
+
+   /* Users can set the jobid list in command line */
+   if ((i = find_arg_with_value(ua, "jobid")) >= 0) {
+      Dmsg1(100, "Will resume jobid=%s\n", ua->argv[i]);
+
+   } else {
+      for (i=1; i<ua->argc; i++) {
+         for (j=0; kw[j].status_name; j++) {
+            if (strcasecmp(ua->argk[i], kw[j].status_name) == 0) {
+               rc.jr.JobStatus = kw[j].job_status;
+               got_kw = true;
+               break;
+            }
          }
       }
-   }
-   if (!got_kw) {  /* Must prompt user */
-      start_prompt(ua, _("You have the following choices:\n"));
-      for (i=0; kw[i].status_name; i++) {
-         add_prompt(ua, kw[i].status_name);
-      }
-      i = do_prompt(ua, NULL, _("Select termination code: "), NULL, 0);
-      if (i < 0) {
-         return 0;
-      }
-      rc.jr.JobStatus = kw[i].job_status;
-   }
 
-   /* type now has what job termination code we want to look at */
-   Dmsg1(100, "Termination code=%c\n", rc.jr.JobStatus);
+      if (!got_kw) {  /* Must prompt user */
+         start_prompt(ua, _("You have the following choices:\n"));
+         for (i=0; kw[i].status_name; i++) {
+            add_prompt(ua, kw[i].status_name);
+         }
+         i = do_prompt(ua, NULL, _("Select termination code: "), NULL, 0);
+         if (i < 0) {
+            return 0;
+         }
+         rc.jr.JobStatus = kw[i].job_status;
+      }
+      /* type now has what job termination code we want to look at */
+      Dmsg1(100, "Termination code=%c\n", rc.jr.JobStatus);
+   }
 
    /* Get a list of JobIds to restore */
    if (!get_jobid_list(ua, sl, rc)) {
@@ -872,7 +886,7 @@ static int plugin_display_options(UAContext *ua, JCR *jcr, ConfigFile *ini)
 
 configure_again:
    ua->send_msg(_("Plugin Restore Options\n"));
-
+   ua->send_msg(_("Option               Current Value        Default Value\n"));
    for (nb=0; ini->items[nb].name; nb++) {
 
       if (ini->items[nb].found) {
@@ -1359,6 +1373,13 @@ bool check_pool(int32_t JobType, int32_t JobLevel, POOL *pool, POOL *next_pool,
 static bool set_run_context_in_jcr(UAContext *ua, JCR *jcr, run_ctx &rc)
 {
    int i;
+
+   if (rc.job_user) {
+      jcr->job_user = bstrdup(rc.job_user);
+   }
+   if (rc.job_group) {
+      jcr->job_group = bstrdup(rc.job_group);
+   }
 
    jcr->verify_job = rc.verify_job;
    jcr->previous_job = rc.previous_job;
@@ -2115,7 +2136,7 @@ static bool display_job_parameters(UAContext *ua, JCR *jcr, JOB *job, const char
       break;
    case JT_COPY:
    case JT_MIGRATE:
-      const char *prt_type;
+      char *prt_type;
       jcr->setJobLevel(L_FULL);      /* default level */
       if (ua->api) {
          ua->signal(BNET_RUN_CMD);
@@ -2233,6 +2254,8 @@ static bool scan_run_command_line_arguments(UAContext *ua, run_ctx &rc)
       "nextpool",                     /* 32 override next pool name */
       "fdcalled",                     /* 33 */
 
+      "jobuser",                      /* 34 */
+      "jobgroup",                     /* 35 */
       NULL};
 
 #define YES_POS 14
@@ -2252,6 +2275,8 @@ static bool scan_run_command_line_arguments(UAContext *ua, run_ctx &rc)
    rc.spool_data_set = false;
    rc.ignoreduplicatecheck = false;
    rc.comment = NULL;
+   rc.job_group = NULL;
+   rc.job_user = NULL;
    free_plugin_config_items(rc.plugin_config);
 
    for (i=1; i<ua->argc; i++) {
@@ -2514,6 +2539,22 @@ static bool scan_run_command_line_arguments(UAContext *ua, run_ctx &rc)
                kw_ok = true;
                break;
             case 33:            /* fdcalled */
+               kw_ok = true;
+               break;
+            case 34:            /* job user */
+               if (rc.job_user) {
+                  ua->send_msg(_("JobUser specified twice.\n"));
+                  return false;
+               }
+               rc.job_user = ua->argv[i];
+               kw_ok = true;
+               break;
+            case 35:            /* job group */
+               if (rc.job_group) {
+                  ua->send_msg(_("JobGroup specified twice.\n"));
+                  return false;
+               }
+               rc.job_group = ua->argv[i];
                kw_ok = true;
                break;
             default:
