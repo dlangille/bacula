@@ -17,10 +17,12 @@
    Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
+ *
  *   Bacula Director -- User Agent Database prune Command
  *      Applies retention periods
  *
  *     Kern Sibbald, February MMII
+ *
  */
 
 #include "bacula.h"
@@ -176,6 +178,7 @@ int prunecmd(UAContext *ua, const char *cmd)
    DIRRES *dir;
    CLIENT *client;
    POOL *pool;
+   POOL_DBR pr;
    MEDIA_DBR mr;
    utime_t retention;
    int kw;
@@ -738,6 +741,7 @@ static bool prune_selected_volumes(UAContext *ua)
          ua->error_msg(_("Cannot prune Volume \"%s\" because the volume status is \"%s\" and should be Full or Used.\n"), mr.VolumeName, mr.VolStatus);
          continue;
       }
+
       Mmsg(tmp, "Volume \"%s\"", mr.VolumeName);
       if (!confirm_retention(ua, &mr.VolRetention, tmp.c_str())) {
          goto bail_out;
@@ -769,7 +773,7 @@ static bool prune_expired_volumes(UAContext *ua)
    /* We can restrict to a specific pool */
    if ((i = find_arg_with_value(ua, "pool")) >= 0) {
       POOL_DBR pdbr;
-      memset(&pdbr, 0, sizeof(pdbr));
+      bmemset(&pdbr, 0, sizeof(pdbr));
       bstrncpy(pdbr.Name, ua->argv[i], sizeof(pdbr.Name));
       if (!db_get_pool_record(ua->jcr, ua->db, &pdbr)) {
          ua->error_msg("%s", db_strerror(ua->db));
@@ -808,7 +812,7 @@ static bool prune_expired_volumes(UAContext *ua)
 
    foreach_alist(val, lst) {
       nb++;
-      memset(&mr, 0, sizeof(mr));
+      bmemset(&mr, 0, sizeof(mr));
       bstrncpy(mr.VolumeName, val, sizeof(mr.VolumeName));
       db_get_media_record(ua->jcr, ua->db, &mr);
       Mmsg(query, _("Volume \"%s\""), val);
@@ -864,6 +868,9 @@ bool prune_volume(UAContext *ua, MEDIA_DBR *mr)
                       mr->VolumeName);
       }
       ok = is_volume_purged(ua, mr);
+
+   } else {
+      ua->info_msg(_("Volume \"%s\" has VolStatus \"%s\" and cannot be pruned.\n"), mr->VolumeName, mr->VolStatus);
    }
 
    db_unlock(ua->db);
@@ -885,6 +892,13 @@ int get_prune_list_for_volume(UAContext *ua, MEDIA_DBR *mr, del_ctx *del)
 
    if (mr->Enabled == 2) {
       return 0;                    /* cannot prune Archived volumes */
+   }
+
+   /* Will not prune volume based on the VolRetention, it was
+    * disabled explicitely by the user
+    */
+   if (mr->VolRetention == 0) {
+      return 0;
    }
 
    /*
