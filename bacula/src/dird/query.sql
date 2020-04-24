@@ -1,7 +1,7 @@
 #
-# See the file <bacula-source>/examples/sample-query.sql
+# See the file <bacula-source>/examples/sample-query.sql or /opt/bacula/scripts/sample-query.sql
 #  for some sample queries. 
 #
 # 1
-:The default file is empty, see sample-query.sql (in /opt/bacula/scripts or <bacula-source>/examples) for samples
-SELECT 'See sample-query.sql (in /opt/bacula/scripts or <bacula-source>/examples) for samples' AS Info;
+:The default file is empty, see /opt/bacula/scripts/sample-query.sql for samples
+SELECT 'See /opt/bacula/scripts/sample-query.sql for samples' AS Info;
