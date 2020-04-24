@@ -19,7 +19,7 @@
 /*
  *   Bacula Director -- User Agent Collector Commands
  *
- * Radosław Korzeniewski, MMXVIII
+ * Radoslaw Korzeniewski, MMXVIII
  * radoslaw@korzeniewski.net, radekk@inteos.pl
  * Inteos Sp. z o.o. http://www.inteos.pl/
  *
@@ -371,7 +371,7 @@ void do_collect_client(UAContext *ua, CLIENT *client, bool doall, display_format
 
    /* Try to connect for 15 seconds */
    if (!ua->api) ua->send_msg(_("Connecting to Client %s at %s:%d\n"),
-                              client->name(), client->address(buf.addr()), client->FDport);
+                              client->name(), get_client_address(ua->jcr, client, buf.addr()), client->FDport);
    if (!connect_to_file_daemon(ua->jcr, 1, 15, 0)) {
       ua->send_msg(_("Failed to connect to Client %s.\n====\n"),
          client->name());
@@ -516,6 +516,7 @@ int collect_cmd(UAContext *ua, const char *cmd)
          Dmsg0(20, "statistics format Full\n");
          continue;
       }
+
       if (strcasecmp(ua->argk[i], "json") == 0){
          format = COLLECT_JSON;
          Dmsg0(20, "statistics format JSON\n");
