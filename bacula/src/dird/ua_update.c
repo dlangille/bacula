@@ -46,6 +46,8 @@ static bool update_stats(UAContext *ua);
  *         updates autochanger slots
  *    update stats [days=...]
  *         updates long term statistics
+ *    update jobid [starttime=...]
+ *         updates job record
  */
 int update_cmd(UAContext *ua, const char *cmd)
 {
@@ -302,7 +304,7 @@ static void update_volslot(UAContext *ua, char *val, MEDIA_DBR *mr)
 {
    POOL_DBR pr;
 
-   memset(&pr, 0, sizeof(POOL_DBR));
+   bmemset(&pr, 0, sizeof(POOL_DBR));
    pr.PoolId = mr->PoolId;
    if (!db_get_pool_numvols(ua->jcr, ua->db, &pr)) {
       ua->error_msg("%s", db_strerror(ua->db));
@@ -331,7 +333,7 @@ void update_vol_pool(UAContext *ua, char *val, MEDIA_DBR *mr, POOL_DBR *opr)
    POOL_MEM query(PM_MESSAGE);
    char ed1[50], ed2[50];
 
-   memset(&pr, 0, sizeof(pr));
+   bmemset(&pr, 0, sizeof(pr));
    bstrncpy(pr.Name, val, sizeof(pr.Name));
    if (!get_pool_dbr(ua, &pr)) {
       return;
@@ -363,12 +365,11 @@ void update_vol_recyclepool(UAContext *ua, char *val, MEDIA_DBR *mr)
 {
    POOL_DBR pr;
    POOL_MEM query(PM_MESSAGE);
-   char ed1[50], ed2[50];
-   const char *poolname;
+   char ed1[50], ed2[50], *poolname;
 
    if(val && *val) { /* update volume recyclepool="Scratch" */
      /* If a pool name is given, look up the PoolId */
-     memset(&pr, 0, sizeof(pr));
+     bmemset(&pr, 0, sizeof(pr));
      bstrncpy(pr.Name, val, sizeof(pr.Name));
      if (!get_pool_dbr(ua, &pr, NT_("recyclepool"))) {
         return;
@@ -401,7 +402,7 @@ static void update_vol_from_pool(UAContext *ua, MEDIA_DBR *mr)
 {
    POOL_DBR pr;
 
-   memset(&pr, 0, sizeof(pr));
+   bmemset(&pr, 0, sizeof(pr));
    pr.PoolId = mr->PoolId;
    if (!db_get_pool_numvols(ua->jcr, ua->db, &pr) ||
        !acl_access_ok(ua, Pool_ACL, pr.Name)) {
@@ -425,7 +426,7 @@ static void update_all_vols_from_pool(UAContext *ua, const char *pool_name)
    POOL_DBR pr;
    MEDIA_DBR mr;
 
-   memset(&pr, 0, sizeof(pr));
+   bmemset(&pr, 0, sizeof(pr));
 
    bstrncpy(pr.Name, pool_name, sizeof(pr.Name));
    if (!get_pool_dbr(ua, &pr)) {
@@ -448,7 +449,7 @@ static void update_all_vols(UAContext *ua)
    POOL_DBR pr;
    MEDIA_DBR mr;
 
-   memset(&pr, 0, sizeof(pr));
+   bmemset(&pr, 0, sizeof(pr));
 
    if (!db_get_pool_ids(ua->jcr, ua->db, &num_pools, &ids)) {
       ua->error_msg(_("Error obtaining pool ids. ERR=%s\n"), db_strerror(ua->db));
@@ -595,7 +596,7 @@ static int update_volume(UAContext *ua)
             update_volslot(ua, ua->argv[j], &mr);
             break;
          case 9:
-            memset(&pr, 0, sizeof(POOL_DBR));
+            bmemset(&pr, 0, sizeof(POOL_DBR));
             pr.PoolId = mr.PoolId;
             if (!db_get_pool_numvols(ua->jcr, ua->db, &pr)) {
                ua->error_msg("%s", db_strerror(ua->db));
@@ -788,7 +789,7 @@ static int update_volume(UAContext *ua)
          break;
 
       case 10:                        /* Volume's Pool */
-         memset(&pr, 0, sizeof(POOL_DBR));
+         bmemset(&pr, 0, sizeof(POOL_DBR));
          pr.PoolId = mr.PoolId;
          if (!db_get_pool_numvols(ua->jcr, ua->db, &pr)) {
             ua->error_msg("%s", db_strerror(ua->db));
@@ -824,7 +825,7 @@ static int update_volume(UAContext *ua)
          break;
 
       case 15:
-         memset(&pr, 0, sizeof(POOL_DBR));
+         bmemset(&pr, 0, sizeof(POOL_DBR));
          pr.PoolId = mr.RecyclePoolId;
          if (db_get_pool_numvols(ua->jcr, ua->db, &pr)) {
             ua->info_msg(_("Current RecyclePool is: %s\n"), pr.Name);
@@ -900,7 +901,7 @@ static bool update_pool(UAContext *ua)
       return false;
    }
 
-   memset(&pr, 0, sizeof(pr));
+   bmemset(&pr, 0, sizeof(pr));
    bstrncpy(pr.Name, pool->name(), sizeof(pr.Name));
    if (!get_pool_dbr(ua, &pr)) {
       return false;
@@ -931,7 +932,7 @@ static bool update_job(UAContext *ua)
 {
    int i, priority=0;
    char ed1[50], ed2[50], ed3[50], ed4[50];
-   POOL_MEM cmd(PM_MESSAGE);
+   POOL_MEM cmd(PM_MESSAGE), tmp(PM_MESSAGE);
    JOB_DBR jr;
    CLIENT_DBR cr;
    POOL_DBR pr;
@@ -940,11 +941,15 @@ static bool update_job(UAContext *ua)
    char *client_name = NULL;
    char *start_time = NULL;
    char *pool_name = NULL;
+   char *comment = NULL;
+   int reviewed=-1;
    const char *kw[] = {
       NT_("starttime"),                   /* 0 */
       NT_("client"),                      /* 1 */
       NT_("priority"),                    /* 2 */
       NT_("pool"),                        /* 3 */
+      NT_("comment"),                     /* 4 */
+      NT_("reviewed"),                    /* 5 */
       NULL };
 
    Dmsg1(200, "cmd=%s\n", ua->cmd);
@@ -984,11 +989,17 @@ static bool update_job(UAContext *ua)
          case 3:                         /* Change Pool */
             pool_name = ua->argv[j];
             break;
+         case 4:
+            comment = ua->argv[j];
+            break;
+         case 5:                /* Reviewed */
+            reviewed = str_to_int64(ua->argv[j]);
+            break;
          }
       }
    }
-   if (!client_name && !start_time && !priority && !pool_name) {
-      ua->error_msg(_("Neither Client, StartTime, Pool or Priority specified.\n"));
+   if (!client_name && !start_time && !priority && !pool_name && !comment && reviewed < 0) {
+      ua->error_msg(_("Neither Client, StartTime, Pool, Comment, Reviewed or Priority specified.\n"));
       return 0;
    }
    if (priority > 0) {
@@ -1035,7 +1046,7 @@ static bool update_job(UAContext *ua)
       MEDIA_DBR mr;
       dbid_list lst;
 
-      memset(&pr, 0, sizeof(POOL_DBR));
+      bmemset(&pr, 0, sizeof(POOL_DBR));
       bstrncpy(pr.Name, pool_name, sizeof(pr.Name));
       /* Get the list of all volumes and update the pool */
       if (!db_get_pool_record(ua->jcr, ua->db, &pr)) {
@@ -1056,14 +1067,26 @@ static bool update_job(UAContext *ua)
          update_vol_pool(ua, pool_name, &mr, &pr);
       }
    }
+   if (comment) {
+      int len = strlen(comment);
+      cmd.check_size(len*2+1);
+      db_escape_string(ua->jcr, ua->db, cmd.c_str(), comment, len);
+      Mmsg(tmp, ", Comment='%s' ", cmd.c_str());
+      comment = tmp.c_str();
+   }
+   if (reviewed >= 0) {
+      jr.Reviewed = reviewed;
+   }
    Mmsg(cmd, "UPDATE Job SET ClientId=%s,StartTime='%s',SchedTime='%s',"
-             "EndTime='%s',JobTDate=%s, PoolId=%s WHERE JobId=%s",
+             "EndTime='%s',JobTDate=%s, PoolId=%s, Reviewed=%d %s WHERE JobId=%s",
              edit_int64(jr.ClientId, ed1),
              jr.cStartTime,
              jr.cSchedTime,
              jr.cEndTime,
              edit_uint64(jr.JobTDate, ed2),
              edit_uint64(jr.PoolId, ed3),
+             jr.Reviewed,
+             NPRTB(comment),
              edit_uint64(jr.JobId, ed4));
    if (!db_sql_query(ua->db, cmd.c_str(), NULL, NULL)) {
       ua->error_msg("%s", db_strerror(ua->db));
