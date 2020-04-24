@@ -17,9 +17,11 @@
    Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
+ *
  *   Bacula Director -- Tape labeling commands
  *
  *     Kern Sibbald, April MMIII
+ *
  */
 
 #include "bacula.h"
@@ -325,7 +327,7 @@ static int do_label(UAContext *ua, const char *cmd, int relabel)
    POOL_DBR pr;
    bool print_reminder = true;
    bool label_barcodes = false;
-   bool ok = false;
+   int ok = FALSE;
    int i, j;
    int drive;
    bool media_record_exists = false;
@@ -335,7 +337,7 @@ static int do_label(UAContext *ua, const char *cmd, int relabel)
       NULL};
 
 
-   memset(&pr, 0, sizeof(pr));
+   bmemset(&pr, 0, sizeof(pr));
    if (!open_client_db(ua)) {
       return 1;
    }
@@ -444,7 +446,7 @@ checkName:
 
    /* Must select Pool if not already done */
    if (pr.PoolId == 0) {
-      memset(&pr, 0, sizeof(pr));
+      bmemset(&pr, 0, sizeof(pr));
       if (!select_pool_dbr(ua, &pr)) {
          return 1;
       }
@@ -547,7 +549,7 @@ static void label_from_barcodes(UAContext *ua, int drive)
       goto bail_out;
    }
    /* Select a pool */
-   memset(&pr, 0, sizeof(pr));
+   bmemset(&pr, 0, sizeof(pr));
    if (!select_pool_dbr(ua, &pr)) {
       goto bail_out;
    }
@@ -611,11 +613,9 @@ static void label_from_barcodes(UAContext *ua, int drive)
          }
          continue;                    /* done, go handle next volume */
       }
-
-      /* Not a cleaning tape */
       bstrncpy(mr.MediaType, store->media_type, sizeof(mr.MediaType));
-      mr.Slot = vl->Slot;
 
+      mr.Slot = vl->Slot;
       send_label_request(ua, &mr, &omr, &pr, 0, media_record_exists, drive);
    }
 
@@ -1005,10 +1005,7 @@ static bool is_cleaning_tape(UAContext *ua, MEDIA_DBR *mr, POOL_DBR *pr)
                   strlen(ua->jcr->pool->cleaning_prefix)) == 0;
 }
 
-/*
- * Send Volume info to caller in API format
- */
-static void send_volume_info(UAContext *ua, char type, int Slot, char *vol_name)
+static void content_send_info(UAContext *ua, char type, int Slot, char *vol_name)
 {
    char ed1[50], ed2[50], ed3[50];
    POOL_DBR pr;
@@ -1020,7 +1017,7 @@ static void send_volume_info(UAContext *ua, char type, int Slot, char *vol_name)
    if (is_volume_name_legal(NULL, vol_name)) {
       bstrncpy(mr.VolumeName, vol_name, sizeof(mr.VolumeName));
       if (db_get_media_record(ua->jcr, ua->db, &mr)) {
-         memset(&pr, 0, sizeof(POOL_DBR));
+         bmemset(&pr, 0, sizeof(POOL_DBR));
          pr.PoolId = mr.PoolId;
          if (!db_get_pool_record(ua->jcr, ua->db, &pr)) {
             strcpy(pr.Name, "?");
@@ -1132,7 +1129,7 @@ void status_content(UAContext *ua, STORE *store)
          ua->send_msg("D|%d||\n", Drive);
 
       } else if (sscanf(sd->msg, "%c:%d:F:%127s", &type, &Slot, vol_name)== 3) {
-         send_volume_info(ua, type, Slot, vol_name);
+         content_send_info(ua, type, Slot, vol_name);
 
       } else if (sscanf(sd->msg, "%c:%d:E", &type, &Slot) == 2) {
          /* type can be S (slot) or I (Import/Export slot) */
@@ -1153,7 +1150,7 @@ void status_content(UAContext *ua, STORE *store)
             }
             prev = vl;
          }
-         send_volume_info(ua, type, Slot, vol_name);
+         content_send_info(ua, type, Slot, vol_name);
 
       } else {
          Dmsg1(10, "Discarding msg=%s\n", sd->msg);
@@ -1175,7 +1172,7 @@ void status_slots(UAContext *ua, STORE *store_r)
    int max_slots;
    int i=1;
    /* Slot | Volume | Status | MediaType | Pool */
-   const char *slot_hformat="| %4i%c| %-20s | %-9s | %-15s | %-18s |\n";
+   const char *slot_hformat=" %4i%c| %16s | %9s | %20s | %18s |\n";
 
    if (ua->api) {
       status_content(ua, store_r);
@@ -1209,9 +1206,8 @@ void status_slots(UAContext *ua, STORE *store_r)
       ua->warning_msg(_("No Volumes found, or no barcodes.\n"));
       goto bail_out;
    }
-   ua->send_msg(_("+------+----------------------+-----------+-----------------+--------------------+\n"));
-   ua->send_msg(_("| Slot | Volume Name          | Status    | Media Type      | Pool               |\n"));
-   ua->send_msg(_("+------+----------------------+-----------+-----------------+--------------------+\n"));
+   ua->send_msg(_(" Slot |   Volume Name    |   Status  |     Media Type       |      Pool          |\n"));
+   ua->send_msg(_("------+------------------+-----------+----------------------+--------------------|\n"));
 
    /* Walk through the list getting the media records */
    for (vl=vol_list; vl; vl=vl->next) {
@@ -1244,13 +1240,12 @@ void status_slots(UAContext *ua, STORE *store_r)
             slot_list[i]=0;
          }
       }
-   ua->send_msg(_("+------+----------------------+-----------+-----------------+--------------------+\n"));
 
-      memset(&mr, 0, sizeof(MEDIA_DBR));
+      bmemset(&mr, 0, sizeof(MEDIA_DBR));
       bstrncpy(mr.VolumeName, vl->VolName, sizeof(mr.VolumeName));
 
       if (mr.VolumeName[0] && db_get_media_record(ua->jcr, ua->db, &mr)) {
-         memset(&pr, 0, sizeof(POOL_DBR));
+         bmemset(&pr, 0, sizeof(POOL_DBR));
          pr.PoolId = mr.PoolId;
          if (!db_get_pool_record(ua->jcr, ua->db, &pr)) {
             strcpy(pr.Name, "?");
