@@ -94,6 +94,7 @@ RES_ITEM2 newinc_items[] = {
  */
 RES_ITEM options_items[] = {
    {"Compression",     store_opts,    {0},   0, INC_KW_COMPRESSION,  0},
+   {"Dedup",           store_opts,    {0},   0, INC_KW_DEDUP,        1}, /* default 1=Storage */
    {"Signature",       store_opts,    {0},   0, INC_KW_DIGEST,       0},
    {"OneFs",           store_opts,    {0},   0, INC_KW_ONEFS,        0},
    {"Recurse",         store_opts,    {0},   0, INC_KW_RECURSE,      0},
@@ -140,6 +141,7 @@ RES_ITEM options_items[] = {
  */
 s_kw FS_option_kw[] = {
    {"Compression", INC_KW_COMPRESSION},
+   {"Dedup",       INC_KW_DEDUP},
    {"Signature",   INC_KW_DIGEST},
    {"Encryption",  INC_KW_ENCRYPTION},
    {"Verify",      INC_KW_VERIFY},
@@ -202,6 +204,9 @@ struct s_fs_opt FS_options[] = {
    {"Lzo",      INC_KW_COMPRESSION,  "Zo"},
    {"blowfish", INC_KW_ENCRYPTION,    "B"},   /* ***FIXME*** not implemented */
    {"3des",     INC_KW_ENCRYPTION,    "3"},   /* ***FIXME*** not implemented */
+   {"Storage",  INC_KW_DEDUP,        "d1"},
+   {"BothSides",INC_KW_DEDUP,        "d2"},
+   {"None",     INC_KW_DEDUP,        "d0"},
    {"No",       INC_KW_ONEFS,         "f"},
    {"Yes",      INC_KW_ONEFS,         "0"},
    {"No",       INC_KW_RECURSE,       "h"},
@@ -258,11 +263,42 @@ static void scan_include_options(LEX *lc, int keyword, char *opts, int optlen)
    int i;
    char option[3];
    int lcopts = lc->options;
+   const char *fs_options=NULL;
 
    option[0] = 0;                     /* default option = none */
    option[2] = 0;                     /* terminate options */
    lc->options |= LOPT_STRING;        /* force string */
    lex_get_token(lc, T_STRING);       /* expect at least one option */
+
+   /* Check if the options are correct */
+   switch(keyword) {
+   case INC_KW_VERIFY:
+      fs_options = "ipnugsamcd51:V"; /* From dird/verify.c */
+      break;
+   case INC_KW_BASEJOB:
+   case INC_KW_ACCURATE:
+      fs_options = "ipnugsamMcdA51:JC"; /* From filed/accurate.c accurate_check_file() */
+      break;
+   default:
+      break;
+   }
+
+   if (fs_options) {
+      for (char *p = lc->str; *p ; p++) {
+         if (!strchr(fs_options, *p)) {
+            /* Determine the name of the directive (Verify, BaseJob or Accurate) */
+            const char *directive = NULL;
+            for(int i=0; FS_option_kw[i].name ; i++) {
+               if (FS_option_kw[i].token == keyword) {
+                  directive = FS_option_kw[i].name;
+                  break;
+               }
+            }
+            scan_err3(lc, _("Expected a valid %s option. Got unknown option '%c' from \"%s\""), directive, *p, lc->str);
+         }
+      }
+   }
+
    /*
     * ***FIXME**** ensure these are in permitted set
     */
