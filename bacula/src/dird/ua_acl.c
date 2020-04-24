@@ -17,9 +17,11 @@
    Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
+ *
  *   Bacula Director -- User Agent Access Control List (ACL) handling
  *
  *     Kern Sibbald, January MMIV
+ *
  */
 
 #include "bacula.h"
@@ -54,13 +56,25 @@ bool acl_access_client_ok(UAContext *ua, const char *name, int32_t jobtype)
    return false;
 }
 
-
+bool acl_access_console_ok(UAContext *ua, const char *name)
+{
+   /* If no console resource => default console and all is permitted */
+   if (!ua || !ua->cons) {
+      Dmsg0(1400, "Root cons access OK.\n");
+      return true;                    /* No cons resource -> root console OK for everything */
+   }
+   /* allow access to its own console resource only */
+   if (strcmp(ua->cons->name(), name)==0) {
+      return true;
+   }
+   return false;
+}
 
 /* This version expects the length of the item which we must check. */
 bool acl_access_ok(UAContext *ua, int acl, const char *item, int len)
 {
    /* The resource name contains nasty characters */
-   if (acl != Where_ACL && !is_name_valid(item, NULL)) {
+   if (acl != Where_ACL && !is_name_valid(item, NULL, EXTRA_VALID_RESOURCE_CHAR_GLOB)) {
       Dmsg1(1400, "Access denied for item=%s\n", item);
       return false;
    }
@@ -86,7 +100,7 @@ bool acl_access_ok(UAContext *ua, int acl, const char *item, int len)
 
    /* Search list for item */
    for (int i=0; i<list->size(); i++) {
-      if (strcasecmp(item, (char *)list->get(i)) == 0) {
+      if (fnmatch((char *)list->get(i), item, 0) == 0) {
          Dmsg3(1400, "ACL found %s in %d %s\n", item, acl, (char *)list->get(i));
          return true;
       }
