@@ -36,6 +36,7 @@
  *      for the resource records.
  *
  *     Kern Sibbald, January MM
+ *
  */
 
 
@@ -123,11 +124,50 @@ void CLIENT::setNumConcurrentJobs(int32_t num)
       num, globals->name);
 }
 
+BSOCK *CLIENT::getBSOCK(int timeout)
+{
+   P(globals_mutex);
+   if (!globals) {
+      create_client_globals();
+   }
+   if (!globals->socket) {
+      globals->socket = New(BsockMeeting());
+   }
+   V(globals_mutex);
+   return globals->socket->get(timeout);
+}
+
+bool CLIENT::getBSOCK_state(POOLMEM *&buf)
+{
+   P(globals_mutex);
+   if (!globals) {
+      create_client_globals();
+   }
+   if (!globals->socket) {
+      globals->socket = New(BsockMeeting());
+   }
+   V(globals_mutex);
+   return globals->socket->is_set(buf);
+}
+
+void CLIENT::setBSOCK(BSOCK *sock)
+{
+   P(globals_mutex);
+   if (!globals) {
+      create_client_globals();
+   }
+   if (!globals->socket) {
+      globals->socket = New(BsockMeeting());
+   }
+   V(globals_mutex);
+   globals->socket->set(sock);
+}
+
 char *CLIENT::address(POOLMEM *&buf)
 {
    P(globals_mutex);
    if (!globals || !globals->SetIPaddress) {
-      pm_strcpy(buf, client_address);
+      pm_strcpy(buf, NPRTB(client_address));
 
    } else {
       pm_strcpy(buf, globals->SetIPaddress);
@@ -351,8 +391,13 @@ static RES_ITEM dir_items[] = {
    {"FdConnectTimeout", store_time,ITEM(res_dir.FDConnectTimeout), 0, ITEM_DEFAULT, 3 * 60},
    {"SdConnectTimeout", store_time,ITEM(res_dir.SDConnectTimeout), 0, ITEM_DEFAULT, 30 * 60},
    {"HeartbeatInterval", store_time, ITEM(res_dir.heartbeat_interval), 0, ITEM_DEFAULT, 5 * 60},
+   {"AutoPrune", store_bool, ITEM(res_dir.AutoPrune), 0, ITEM_DEFAULT, true},
+#if BEEF
+   {"FipsRequire", store_bool, ITEM(res_dir.require_fips), 0, 0, 0},
+#endif
    {"TlsAuthenticate",      store_bool,      ITEM(res_dir.tls_authenticate), 0, 0, 0},
    {"TlsEnable",            store_bool,      ITEM(res_dir.tls_enable), 0, 0, 0},
+   {"TlsPskEnable",         store_bool,      ITEM(res_dir.tls_psk_enable), 0, ITEM_DEFAULT, tls_psk_default},
    {"TlsRequire",           store_bool,      ITEM(res_dir.tls_require), 0, 0, 0},
    {"TlsVerifyPeer",        store_bool,      ITEM(res_dir.tls_verify_peer), 0, ITEM_DEFAULT, true},
    {"TlsCaCertificateFile", store_dir,       ITEM(res_dir.tls_ca_certfile), 0, 0, 0},
@@ -389,9 +434,13 @@ static RES_ITEM con_items[] = {
    {"RestoreClientAcl", store_acl, ITEM(res_con.ACL_lists), RestoreClient_ACL, 0, 0},
    {"BackupClientAcl",  store_acl, ITEM(res_con.ACL_lists), BackupClient_ACL, 0, 0},
    {"PluginOptionsAcl", store_acl, ITEM(res_con.ACL_lists), PluginOptions_ACL, 0, 0},
-   {"DirectoryAcl",     store_acl, ITEM(res_con.ACL_lists), Directory_ACL, 0, 0},
+#if BEEF
+   {"UserIdAcl",   store_acl,      ITEM(res_con.ACL_lists), UserId_ACL, 0, 0},
+#endif
+   {"DirectoryAcl",store_acl,      ITEM(res_con.ACL_lists), Directory_ACL, 0, 0},
    {"TlsAuthenticate",      store_bool,      ITEM(res_con.tls_authenticate), 0, 0, 0},
    {"TlsEnable",            store_bool,      ITEM(res_con.tls_enable), 0, 0, 0},
+   {"TlsPskEnable",         store_bool,      ITEM(res_con.tls_psk_enable), 0, ITEM_DEFAULT, tls_psk_default},
    {"TlsRequire",           store_bool,      ITEM(res_con.tls_require), 0, 0, 0},
    {"TlsVerifyPeer",        store_bool,      ITEM(res_con.tls_verify_peer), 0, ITEM_DEFAULT, true},
    {"TlsCaCertificateFile", store_dir,       ITEM(res_con.tls_ca_certfile), 0, 0, 0},
@@ -413,11 +462,17 @@ static RES_ITEM con_items[] = {
 static RES_ITEM cli_items[] = {
    {"Name",     store_name,       ITEM(res_client.hdr.name), 0, ITEM_REQUIRED, 0},
    {"Description", store_str,     ITEM(res_client.hdr.desc), 0, 0, 0},
+   /* ***BEE*** In BWeb/BConfig, the store_str is replaced by
+      store_addresses_address to check more carefully user inputs */
    {"fdaddress",  store_str,      ITEM(res_client.client_address),  0, 0, 0},
-   {"Address",  store_str,        ITEM(res_client.client_address),  0, ITEM_REQUIRED, 0},
+   /* ***BEE*** In BWeb/BConfig, the store_str is replaced by
+      store_addresses_address to check more carefully user inputs */
+   {"Address",  store_str,        ITEM(res_client.client_address),  0, 0, 0},
    {"FdPort",   store_pint32,     ITEM(res_client.FDport),   0, ITEM_DEFAULT, 9102},
    {"fdpassword", store_password, ITEM(res_client.password), 0, 0, 0},
    {"Password", store_password,   ITEM(res_client.password), 0, ITEM_REQUIRED, 0},
+   /* ***BEE*** In BWeb/BConfig, the store_str is replaced by
+      store_addresses_address to check more carefully user inputs */
    {"FdStorageAddress", store_str, ITEM(res_client.fd_storage_address), 0, 0, 0},
    {"Catalog",  store_res,        ITEM(res_client.catalog),  R_CATALOG, ITEM_REQUIRED, 0},
    {"FileRetention", store_time,  ITEM(res_client.FileRetention), 0, ITEM_DEFAULT, 60*60*24*60},
@@ -425,16 +480,19 @@ static RES_ITEM cli_items[] = {
    {"HeartbeatInterval",    store_time, ITEM(res_client.heartbeat_interval), 0, ITEM_DEFAULT, 5 * 60},
    {"AutoPrune",            store_bool, ITEM(res_client.AutoPrune), 0, ITEM_DEFAULT, true},
    {"SDCallsClient",        store_bool, ITEM(res_client.sd_calls_client), 0, ITEM_DEFAULT, false},
+   {"AllowFDConnections",    store_bool, ITEM(res_client.allow_fd_connections), 0, ITEM_DEFAULT, false},
    {"SnapshotRetention",  store_time,  ITEM(res_client.SnapRetention),  0, ITEM_DEFAULT, 0},
    {"MaximumConcurrentJobs", store_pint32,   ITEM(res_client.MaxConcurrentJobs), 0, ITEM_DEFAULT, 1},
    {"TlsAuthenticate",      store_bool,      ITEM(res_client.tls_authenticate), 0, 0, 0},
    {"TlsEnable",            store_bool,      ITEM(res_client.tls_enable), 0, 0, 0},
+   {"TlsPskEnable",         store_bool,      ITEM(res_client.tls_psk_enable), 0, ITEM_DEFAULT, tls_psk_default},
    {"TlsRequire",           store_bool,      ITEM(res_client.tls_require), 0, 0, 0},
    {"TlsCaCertificateFile", store_dir,       ITEM(res_client.tls_ca_certfile), 0, 0, 0},
    {"TlsCaCertificateDir",  store_dir,       ITEM(res_client.tls_ca_certdir), 0, 0, 0},
    {"TlsCertificate",       store_dir,       ITEM(res_client.tls_certfile), 0, 0, 0},
    {"TlsKey",               store_dir,       ITEM(res_client.tls_keyfile), 0, 0, 0},
    {"TlsAllowedCn",         store_alist_str, ITEM(res_client.tls_allowed_cns), 0, 0, 0},
+   {"TlsVerifyPeer",        store_bool,      ITEM(res_client.tls_verify_peer), 0, ITEM_DEFAULT, true},
    {"MaximumBandwidthPerJob", store_speed, ITEM(res_client.max_bandwidth), 0, 0, 0},
    {"Enabled",     store_bool, ITEM(res_client.Enabled), 0, ITEM_DEFAULT, true},
    {NULL, NULL, {0}, 0, 0, 0}
@@ -448,8 +506,14 @@ static RES_ITEM store_items[] = {
    {"Name",        store_name,     ITEM(res_store.hdr.name),   0, ITEM_REQUIRED, 0},
    {"Description", store_str,      ITEM(res_store.hdr.desc),   0, 0, 0},
    {"SdPort",      store_pint32,   ITEM(res_store.SDport),     0, ITEM_DEFAULT, 9103},
+   /* ***BEE*** In BWeb/BConfig, the store_str is replaced by
+      store_addresses_address to check more carefully user inputs */
    {"sdaddress",   store_str,      ITEM(res_store.address),    0, 0, 0},
+   /* ***BEE*** In BWeb/BConfig, the store_str is replaced by
+      store_addresses_address to check more carefully user inputs */
    {"Address",     store_str,      ITEM(res_store.address),    0, ITEM_REQUIRED, 0},
+   /* ***BEE*** In BWeb/BConfig, the store_str is replaced by
+      store_addresses_address to check more carefully user inputs */
    {"FdStorageAddress", store_str, ITEM(res_store.fd_storage_address), 0, 0, 0},
    {"sdpassword",  store_password, ITEM(res_store.password),   0, 0, 0},
    {"Password",    store_password, ITEM(res_store.password),   0, ITEM_REQUIRED, 0},
@@ -470,6 +534,7 @@ static RES_ITEM store_items[] = {
    {"sddport", store_pint32, ITEM(res_store.SDDport), 0, 0, 0}, /* deprecated */
    {"TlsAuthenticate",      store_bool,      ITEM(res_store.tls_authenticate), 0, 0, 0},
    {"TlsEnable",            store_bool,      ITEM(res_store.tls_enable), 0, 0, 0},
+   {"TlsPskEnable",         store_bool,      ITEM(res_store.tls_psk_enable), 0, ITEM_DEFAULT, tls_psk_default},
    {"TlsRequire",           store_bool,      ITEM(res_store.tls_require), 0, 0, 0},
    {"TlsCaCertificateFile", store_dir,       ITEM(res_store.tls_ca_certfile), 0, 0, 0},
    {"TlsCaCertificateDir",  store_dir,       ITEM(res_store.tls_ca_certdir), 0, 0, 0},
@@ -487,6 +552,8 @@ static RES_ITEM cat_items[] = {
    {"Name",     store_name,     ITEM(res_cat.hdr.name),    0, ITEM_REQUIRED, 0},
    {"Description", store_str,   ITEM(res_cat.hdr.desc),    0, 0, 0},
    {"dbaddress", store_str,     ITEM(res_cat.db_address),  0, 0, 0},
+   /* ***BEE*** In BWeb/BConfig, the store_str is replaced by
+      store_addresses_address to check more carefully user inputs */
    {"Address",  store_str,      ITEM(res_cat.db_address),  0, 0, 0},
    {"DbPort",   store_pint32,   ITEM(res_cat.db_port),      0, 0, 0},
    /* keep this password as store_str for the moment */
@@ -502,7 +569,8 @@ static RES_ITEM cat_items[] = {
    {"dbsslcert", store_str,     ITEM(res_cat.db_ssl_cert),  0, 0, 0},
    {"dbsslca", store_str,       ITEM(res_cat.db_ssl_ca),  0, 0, 0},
    {"dbsslcapath", store_str,   ITEM(res_cat.db_ssl_capath),  0, 0, 0},
-   {"DbSocket", store_str,      ITEM(res_cat.db_socket),   0, 0, 0},
+   {"dbsocket", store_str,      ITEM(res_cat.db_socket),   0, 0, 0},
+
    /* Turned off for the moment */
    {"MultipleConnections", store_bit, ITEM(res_cat.mult_db_connections), 0, 0, 0},
    {"DisableBatchInsert", store_bool, ITEM(res_cat.disable_batch_insert), 0, ITEM_DEFAULT, false},
@@ -524,7 +592,9 @@ RES_ITEM job_items[] = {
    {"Pool",      store_res,     ITEM(res_job.pool),      R_POOL, ITEM_REQUIRED, 0},
    {"NextPool",  store_res,     ITEM(res_job.next_pool), R_POOL, 0, 0},
    {"FullBackupPool",  store_res, ITEM(res_job.full_pool),   R_POOL, 0, 0},
+#ifdef COMMUNITY
    {"VirtualFullBackupPool", store_res, ITEM(res_job.vfull_pool), R_POOL, 0, 0},
+#endif
    {"IncrementalBackupPool",  store_res, ITEM(res_job.inc_pool), R_POOL, 0, 0},
    {"DifferentialBackupPool", store_res, ITEM(res_job.diff_pool), R_POOL, 0, 0},
    {"Client",    store_res,     ITEM(res_job.client),   R_CLIENT, ITEM_REQUIRED, 0},
@@ -560,7 +630,9 @@ RES_ITEM job_items[] = {
    {"MaxWaitTime",  store_time, ITEM(res_job.MaxWaitTime), 0, 0, 0},
    {"MaxStartDelay",store_time, ITEM(res_job.MaxStartDelay), 0, 0, 0},
    {"MaxFullInterval",  store_time, ITEM(res_job.MaxFullInterval), 0, 0, 0},
+#ifdef COMMUNITY
    {"MaxVirtualFullInterval",  store_time, ITEM(res_job.MaxVirtualFullInterval), 0, 0, 0},
+#endif
    {"MaxDiffInterval",  store_time, ITEM(res_job.MaxDiffInterval), 0, 0, 0},
    {"PrefixLinks", store_bool, ITEM(res_job.PrefixLinks), 0, ITEM_DEFAULT, false},
    {"PruneJobs",   store_bool, ITEM(res_job.PruneJobs), 0, ITEM_DEFAULT, false},
@@ -595,6 +667,7 @@ RES_ITEM job_items[] = {
    {"Priority",           store_pint32, ITEM(res_job.Priority), 0, ITEM_DEFAULT, 10},
    {"BackupsToKeep",      store_pint32, ITEM(res_job.BackupsToKeep), 0, ITEM_DEFAULT, 0},
    {"AllowMixedPriority", store_bool, ITEM(res_job.allow_mixed_priority), 0, ITEM_DEFAULT, false},
+   {"AllowIncompleteJobs", store_bool, ITEM(res_job.allow_incomplete_jobs), 0, ITEM_DEFAULT, true},
    {"WritePartAfterJob",  store_bool, ITEM(res_job.write_part_after_job), 0, ITEM_DEFAULT, true},
    {"SelectionPattern",   store_str, ITEM(res_job.selection_pattern), 0, 0, 0},
    {"SelectionType",      store_migtype, ITEM(res_job.selection_type), 0, 0, 0},
@@ -659,6 +732,9 @@ static RES_ITEM pool_items[] = {
    {"MaximumVolumeJobs", store_pint32,  ITEM(res_pool.MaxVolJobs),    0, 0,       0},
    {"MaximumVolumeFiles", store_pint32, ITEM(res_pool.MaxVolFiles),   0, 0,       0},
    {"MaximumVolumeBytes", store_size64, ITEM(res_pool.MaxVolBytes),   0, 0,       0},
+#if BEEF
+   {"MaximumPoolBytes", store_size64,   ITEM(res_pool.MaxPoolBytes),  0, 0,       0},
+#endif
    {"CatalogFiles",    store_bool,    ITEM(res_pool.catalog_files),  0, ITEM_DEFAULT, true},
    {"CacheRetention", store_time,    ITEM(res_pool.CacheRetention),   0, 0, 0},
    {"VolumeRetention", store_time,    ITEM(res_pool.VolRetention),   0, ITEM_DEFAULT, 60*60*24*365},
@@ -856,10 +932,11 @@ void dump_resource(int type, RES *ares, void sendit(void *sock, const char *fmt,
    }
    switch (type) {
    case R_DIRECTOR:
-      sendit(sock, _("Director: name=%s MaxJobs=%d FDtimeout=%s SDtimeout=%s\n"),
+      sendit(sock, _("Director: name=%s MaxJobs=%d FDtimeout=%s SDtimeout=%s AutoPrune=%d\n"),
          ares->name, res->res_dir.MaxConcurrentJobs,
          edit_uint64(res->res_dir.FDConnectTimeout, ed1),
-         edit_uint64(res->res_dir.SDConnectTimeout, ed2));
+         edit_uint64(res->res_dir.SDConnectTimeout, ed2),
+         res->res_dir.AutoPrune);
       if (res->res_dir.query_file) {
          sendit(sock, _("   query_file=%s\n"), res->res_dir.query_file);
       }
@@ -869,8 +946,34 @@ void dump_resource(int type, RES *ares, void sendit(void *sock, const char *fmt,
       }
       break;
    case R_CONSOLE:
-      sendit(sock, _("Console: name=%s SSL=%d\n"),
-         res->res_con.hdr.name, res->res_con.tls_enable);
+      if (!acl_access_console_ok(ua, res->res_con.name())) {
+         break;
+      }
+      sendit(sock, _("Console: name=%s SSL=%d PSK=%d\n"),
+         res->res_con.hdr.name, res->res_con.tls_enable, res->res_con.tls_psk_enable);
+      for (int acl=0; acl<Num_ACL; acl++) {
+         if (res->res_con.ACL_lists[acl]==NULL) {
+            continue;
+         }
+         // get the name of the ACL from con_items
+         for (RES_ITEM *item=con_items; item->name!=NULL; item++) {
+            if (item->handler==store_acl && item->code==acl) {
+               sendit(sock, _("      %s="), item->name);
+               char *acl_item;
+               bool first=true;
+               foreach_alist(acl_item, res->res_con.ACL_lists[acl]) {
+                  if (!first) {
+                     sendit(sock, _(", "));
+                  } else {
+                     first=false;
+                  }
+                  sendit(sock, _("%s"), acl_item);
+               }
+               sendit(sock, _("\n"));
+               break;
+            }
+         }
+      }
       break;
    case R_COUNTER:
       if (res->res_counter.WrapCounter) {
@@ -898,22 +1001,29 @@ void dump_resource(int type, RES *ares, void sendit(void *sock, const char *fmt,
          res->res_client.name(), res->res_client.is_enabled(),
          res->res_client.address(buf), res->res_client.FDport,
          res->res_client.MaxConcurrentJobs, res->res_client.getNumConcurrentJobs());
-      free_pool_memory(buf);
-      sendit(sock, _("      JobRetention=%s FileRetention=%s AutoPrune=%d\n"),
+      sendit(sock, _("       JobRetention=%s FileRetention=%s AutoPrune=%d\n"),
          edit_utime(res->res_client.JobRetention, ed1, sizeof(ed1)),
          edit_utime(res->res_client.FileRetention, ed2, sizeof(ed2)),
          res->res_client.AutoPrune);
       if (res->res_client.fd_storage_address) {
-         sendit(sock, "      FDStorageAddress=%s\n", res->res_client.fd_storage_address);
+         sendit(sock, "         FDStorageAddress=%s\n", res->res_client.fd_storage_address);
       }
       if (res->res_client.max_bandwidth) {
-         sendit(sock, _("     MaximumBandwidth=%lld\n"),
+         sendit(sock, _("       MaximumBandwidth=%lld\n"),
                 res->res_client.max_bandwidth);
+      }
+      if (res->res_client.allow_fd_connections) {
+         res->res_client.getBSOCK_state(buf);
+         if (*buf == 0) {
+            pm_strcpy(buf, "*None*");
+         }
+         sendit(sock, _("       AllowFDConnections=%s\n"), buf);
       }
       if (res->res_client.catalog) {
          sendit(sock, _("  --> "));
          dump_resource(-R_CATALOG, (RES *)res->res_client.catalog, sendit, sock);
       }
+      free_pool_memory(buf);
       break;
 
    case R_DEVICE:
@@ -937,7 +1047,7 @@ void dump_resource(int type, RES *ares, void sendit(void *sock, const char *fmt,
       sendit(sock, _("%s: name=%s address=%s SDport=%d MaxJobs=%u NumJobs=%u\n"
 "      DeviceName=%s MediaType=%s StorageId=%s Autochanger=%d\n"),
          res->res_store.changer == &res->res_store ? "Autochanger" : "Storage",
-         res->res_store.hdr.name, res->res_store.address, res->res_store.SDport,
+         res->res_store.hdr.name, NPRTB(res->res_store.address), res->res_store.SDport,
          res->res_store.MaxConcurrentJobs,
          res->res_store.getNumConcurrentJobs(),
          res->res_store.dev_name(),
@@ -955,6 +1065,11 @@ void dump_resource(int type, RES *ares, void sendit(void *sock, const char *fmt,
       if (res->res_store.changer && res->res_store.changer != &res->res_store) {
          sendit(sock, _("   Parent --> "));
          dump_resource(-R_STORAGE, (RES *)res->res_store.changer, sendit, sock);
+      }
+      if (recurse && res->res_store.shared_storage &&
+          res->res_store.shared_storage != &res->res_store) {
+         sendit(sock, _("   Shared --> "));
+         dump_resource(-R_STORAGE, (RES *)res->res_store.shared_storage, sendit, sock);
       }
       break;
 
@@ -1318,7 +1433,7 @@ next_run:
               res->res_pool.catalog_files);
       sendit(sock, _("      max_vols=%d auto_prune=%d VolRetention=%s\n"),
               res->res_pool.max_volumes, res->res_pool.AutoPrune,
-              edit_utime(res->res_pool.VolRetention, ed1, sizeof(ed1)));
+             edit_utime(res->res_pool.VolRetention, ed1, sizeof(ed1)));
       sendit(sock, _("      VolUse=%s recycle=%d LabelFormat=%s\n"),
               edit_utime(res->res_pool.VolUseDuration, ed1, sizeof(ed1)),
               res->res_pool.Recycle,
@@ -1333,6 +1448,7 @@ next_run:
               res->res_pool.MaxVolJobs,
               res->res_pool.MaxVolFiles,
               edit_uint64(res->res_pool.MaxVolBytes, ed1));
+      sendit(sock, _("      MaxPoolBytes=%lld\n"), res->res_pool.MaxPoolBytes);
       sendit(sock, _("      MigTime=%s MigHiBytes=%s MigLoBytes=%s\n"),
               edit_utime(res->res_pool.MigrationTime, ed1, sizeof(ed1)),
               edit_uint64(res->res_pool.MigrationHighBytes, ed2),
@@ -1491,6 +1607,9 @@ void free_resource(RES *rres, int type)
       if (res->res_dir.tls_ctx) {
          free_tls_context(res->res_dir.tls_ctx);
       }
+      if (res->res_dir.psk_ctx) {
+         free_psk_context(res->res_dir.psk_ctx);
+      }
       if (res->res_dir.tls_ca_certfile) {
          free(res->res_dir.tls_ca_certfile);
       }
@@ -1522,6 +1641,9 @@ void free_resource(RES *rres, int type)
       }
       if (res->res_con.tls_ctx) {
          free_tls_context(res->res_con.tls_ctx);
+      }
+      if (res->res_con.psk_ctx) {
+         free_psk_context(res->res_con.psk_ctx);
       }
       if (res->res_con.tls_ca_certfile) {
          free(res->res_con.tls_ca_certfile);
@@ -1561,6 +1683,9 @@ void free_resource(RES *rres, int type)
       if (res->res_client.tls_ctx) {
          free_tls_context(res->res_client.tls_ctx);
       }
+      if (res->res_client.psk_ctx) {
+         free_psk_context(res->res_client.psk_ctx);
+      }
       if (res->res_client.tls_ca_certfile) {
          free(res->res_client.tls_ca_certfile);
       }
@@ -1599,6 +1724,9 @@ void free_resource(RES *rres, int type)
       }
       if (res->res_store.tls_ctx) {
          free_tls_context(res->res_store.tls_ctx);
+      }
+      if (res->res_store.psk_ctx) {
+         free_psk_context(res->res_store.psk_ctx);
       }
       if (res->res_store.tls_ca_certfile) {
          free(res->res_store.tls_ca_certfile);
@@ -1758,6 +1886,61 @@ void free_resource(RES *rres, int type)
    if (res) {
       free(res);
    }
+}
+
+/* Get the resource object size */
+int get_resource_size(int type)
+{
+   int size=-1;
+   /*
+    * The following code is only executed during pass 1
+    */
+   switch (type) {
+   case R_DIRECTOR:
+      size = sizeof(DIRRES);
+      break;
+   case R_CONSOLE:
+      size = sizeof(CONRES);
+      break;
+   case R_CLIENT:
+      size =sizeof(CLIENT);
+      break;
+   case R_STORAGE:
+      size = sizeof(STORE);
+      break;
+   case R_CATALOG:
+      size = sizeof(CAT);
+      break;
+   case R_JOB:
+   case R_JOBDEFS:
+      size = sizeof(JOB);
+      break;
+   case R_FILESET:
+      size = sizeof(FILESET);
+      break;
+   case R_SCHEDULE:
+      size = sizeof(SCHED);
+      break;
+   case R_POOL:
+      size = sizeof(POOL);
+      break;
+   case R_MSGS:
+      size = sizeof(MSGS);
+      break;
+   case R_COLLECTOR:
+      size = sizeof(COLLECTOR);
+      break;
+   case R_COUNTER:
+      size = sizeof(COUNTER);
+      break;
+   case R_DEVICE:
+      /* error */
+      break;
+   default:
+      /* error */
+      break;
+   }
+   return size;
 }
 
 /*
@@ -1998,52 +2181,12 @@ bool save_resource(CONFIG *config, int type, RES_ITEM *items, int pass)
    /*
     * The following code is only executed during pass 1
     */
-   switch (type) {
-   case R_DIRECTOR:
-      size = sizeof(DIRRES);
-      break;
-   case R_CONSOLE:
-      size = sizeof(CONRES);
-      break;
-   case R_CLIENT:
-      size =sizeof(CLIENT);
-      break;
-   case R_STORAGE:
-      size = sizeof(STORE);
-      break;
-   case R_CATALOG:
-      size = sizeof(CAT);
-      break;
-   case R_JOB:
-   case R_JOBDEFS:
-      size = sizeof(JOB);
-      break;
-   case R_FILESET:
-      size = sizeof(FILESET);
-      break;
-   case R_SCHEDULE:
-      size = sizeof(SCHED);
-      break;
-   case R_POOL:
-      size = sizeof(POOL);
-      break;
-   case R_MSGS:
-      size = sizeof(MSGS);
-      break;
-   case R_COLLECTOR:
-      size = sizeof(COLLECTOR);
-      break;
-   case R_COUNTER:
-      size = sizeof(COUNTER);
-      break;
-   case R_DEVICE:
-      error = true;
-      break;
-   default:
+   size = get_resource_size(type);
+   if (size < 0) {
       printf(_("Unknown resource type %d in save_resource.\n"), type);
       error = true;
-      break;
    }
+
    /* Common */
    if (!error) {
       if (!config->insert_res(rindex, size)) {
@@ -2547,18 +2690,55 @@ void store_runscript(LEX *lc, RES_ITEM *item, int index, int pass)
    set_bit(index, res_all.hdr.item_present);
 }
 
+char *get_client_address(JCR *jcr, CLIENT *client, POOLMEM *&buf)
+{
+   client->address(buf);
+   if (buf[0] == '|') {
+      POOL_MEM tmp;
+      BPIPE *bpipe;
+      int stat;
+      edit_job_codes(jcr, tmp.addr(), buf+1, "", job_code_callback_director);
+      bpipe = open_bpipe(tmp.c_str(), 0, "r");
+      if (!bpipe) {
+         berrno be;
+         Jmsg(jcr, M_FATAL, 0, _("Cannot run program to determine the client address: %s. ERR=%s\n"),
+              tmp.addr(), be.bstrerror());
+         pm_strcpy(buf, "**invalid address**"); /* used when we cannot use the |command as address */
+         goto bail_out;
+      }
+      fgets(buf, sizeof_pool_memory(buf), bpipe->rfd);
+      strip_trailing_junk(buf);
+      if ((stat=close_bpipe(bpipe)) != 0) {
+         berrno be;
+         Jmsg(jcr, M_FATAL, 0, _("Error running program to determine the client address: %s. stat=%d: ERR=%s\n"),
+              tmp.c_str(), be.code(stat), be.bstrerror(stat));
+         if (buf[0] == 0) {
+            pm_strcpy(buf, "**invalid address**"); /* used when we cannot use the |command as address */
+         }
+         goto bail_out;
+      }
+      for(char *p = buf ; *p ; p++) {
+         /* TODO: names are unicode now, so we need to extend this check */
+         if (!(B_ISALPHA(*p) || B_ISDIGIT(*p) || *p=='.' || *p=='-' || *p=='_')) {
+            Jmsg(jcr, M_FATAL, 0, _("Error running program \"%s\" to determine client address. "
+                                    "ERR=Invalid character found %c\n"), tmp.c_str(), *p);
+            pm_strcpy(buf, "**invalid command**");            /* We cannot use the |command as address */
+            goto bail_out;
+         }
+      }
+   }
+bail_out:
+   return buf;
+}
+
 /* callback function for edit_job_codes */
 /* See ../lib/util.c, function edit_job_codes, for more remaining codes */
 extern "C" char *job_code_callback_director(JCR *jcr, const char* param, char *buf, int buflen)
 {
    static char yes[] = "yes";
    static char no[] = "no";
-   static char nothing[] = "";
-
-   if (jcr == NULL) {
-      return nothing;
-   }
    ASSERTD(buflen > 255, "buflen must be long enough to hold an ip address");
+
    switch (param[0]) {
       case 'f':
          if (jcr->fileset) {
@@ -2568,9 +2748,8 @@ extern "C" char *job_code_callback_director(JCR *jcr, const char* param, char *b
       case 'h':
          if (jcr->client) {
             POOL_MEM tmp;
-            jcr->client->address(tmp.addr());
-            bstrncpy(buf, tmp.c_str(), buflen);
-            return buf;
+            get_client_address(jcr, jcr->client, tmp.addr());
+            return bstrncpy(buf, tmp.c_str(), buflen);
          }
          break;
       case 'p':
@@ -2600,7 +2779,7 @@ extern "C" char *job_code_callback_director(JCR *jcr, const char* param, char *b
             }
          }
    }
-   return nothing;
+   return NULL;
 }
 
 bool parse_dir_config(CONFIG *config, const char *configfile, int exit_code)
