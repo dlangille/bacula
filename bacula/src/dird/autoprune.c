@@ -41,6 +41,11 @@ void do_autoprune(JCR *jcr)
    POOL *pool;
    bool pruned;
 
+   if (!director->AutoPrune) {
+      Dmsg0(100, "AutoPrune globally switched off\n");
+      return;
+   }
+
    if (!jcr->client) {                /* temp -- remove me */
       return;
    }
@@ -86,9 +91,14 @@ void prune_volumes(JCR *jcr, bool InChanger, MEDIA_DBR *mr,
 
    POOL_DBR spr;
 
+   if (!director->AutoPrune) {
+      Dmsg0(100, "AutoPrune globally switched off\n");
+      return;
+   }
+
    Dmsg1(100, "Prune volumes PoolId=%d\n", jcr->jr.PoolId);
    if (!jcr->job->PruneVolumes && !jcr->pool->AutoPrune) {
-      Dmsg0(100, "AutoPrune not set in Pool.\n");
+      Dmsg0(100, "AutoPrune not set in Pool or Job.\n");
       return;
    }
 
