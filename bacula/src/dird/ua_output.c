@@ -17,6 +17,7 @@
    Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
+ *
  *   Bacula Director -- User Agent Output Commands
  *     I.e. messages, listing database, showing resources, ...
  *
@@ -122,7 +123,7 @@ static struct showstruct reses[] = {
    {NT_("pools"),      R_POOL},
    {NT_("messages"),   R_MSGS},
    {NT_("statistics"), R_COLLECTOR},
-// {NT_("consoles"),   R_CONSOLE},
+   {NT_("consoles"),   R_CONSOLE},
 // {NT_("jobdefs"),    R_JOBDEFS},
 // {NT_{"autochangers"), R_AUTOCHANGER},
    {NT_("all"),        -1},
@@ -281,7 +282,7 @@ bool acl_access_jobid_ok(UAContext *ua, const char *jobids)
    p = tmp = bstrdup(jobids);
 
    while (get_next_jobid_from_list(&p, &jid) > 0) {
-      memset(&jr, 0, sizeof(jr));
+      bmemset(&jr, 0, sizeof(jr));
       jr.JobId = jid;
 
       if (db_get_job_record(ua->jcr, ua->db, &jr)) {
@@ -326,6 +327,7 @@ bail_out:
  *  list nextvolume job=xx - same as above.
  *  list copies jobid=x,y,z
  *  list pluginrestoreconf jobid=x,y,z [id=k]
+ *  list filemedia jobid=x fileindex=z
  *
  *  Note: keyword "long" is before the first command on the command 
  *    line results in doing a llist (long listing).
@@ -359,8 +361,8 @@ static int do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
    if (!open_new_client_db(ua))
       return 1;
 
-   memset(&jr, 0, sizeof(jr));
-   memset(&pr, 0, sizeof(pr));
+   bmemset(&jr, 0, sizeof(jr));
+   bmemset(&pr, 0, sizeof(pr));
 
    Dmsg1(20, "list: %s\n", cmd);
 
@@ -373,13 +375,15 @@ static int do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
          jr.JobErrors = 1;
       } else if (!ua->argv[j]) {
          /* skip */
-      } else if (strcasecmp(ua->argk[j], NT_("order")) == 0) {
-         if ((strcasecmp(ua->argv[j], NT_("desc")) == 0) ||
-            strcasecmp(ua->argv[j], NT_("descending")) == 0) {
-            jr.order = 1;
-         } else if ((strcasecmp(ua->argv[j], NT_("asc")) == 0) ||
-            strcasecmp(ua->argv[j], NT_("ascending")) == 0) {
+       } else if (strcasecmp(ua->argk[j], NT_("order")) == 0) {
+         if (strcasecmp(ua->argv[j], NT_("desc")) == 0 ||
+             strcasecmp(ua->argv[j], NT_("descending")) == 0) {
+             jr.order = 1;
+
+         } else if (strcasecmp(ua->argv[j], NT_("asc")) == 0 ||
+                    strcasecmp(ua->argv[j], NT_("ascending")) == 0) {
             jr.order = 0;
+
          } else {
             ua->error_msg(_("Unknown order type %s\n"), ua->argv[j]);
             return 1;
@@ -408,7 +412,7 @@ static int do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
       } else if (strcasecmp(ua->argk[j], NT_("client")) == 0) {
          if (is_name_valid(ua->argv[j], NULL)) {
             CLIENT_DBR cr;
-            memset(&cr, 0, sizeof(cr));
+            bmemset(&cr, 0, sizeof(cr));
             /* Both Backup & Restore wants to list jobs for this client */
             if(get_client_dbr(ua, &cr, JT_BACKUP_RESTORE)) {
                jr.ClientId = cr.ClientId;
@@ -519,6 +523,25 @@ static int do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
             db_list_jobmedia_records(ua->jcr, ua->db, 0, prtit, ua, llist);
          }
 
+      /* list filemedia */
+      } else if (strcasecmp(ua->argk[i], NT_("filemedia")) == 0) {
+         int32_t findex=0;
+         for (j=i+1; j<ua->argc; j++) {
+            if (strcasecmp(ua->argk[j], NT_("jobid")) == 0 && ua->argv[j]) {
+               jobid = str_to_int64(ua->argv[j]);
+
+            } else if (strcasecmp(ua->argk[j], NT_("fileindex")) == 0 && ua->argv[j]) {
+               findex = str_to_int64(ua->argv[i]);
+
+            } else {
+               continue;
+            }
+         }
+         if (jobid) {
+            db_list_filemedia_records(ua->jcr, ua->db, jobid, findex, prtit, ua, llist);
+         }
+         return 1;
+
       /* List JOBLOG */
       } else if (strcasecmp(ua->argk[i], NT_("joblog")) == 0) {
          bool done = false;
@@ -546,7 +569,7 @@ static int do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
       } else if (strcasecmp(ua->argk[i], NT_("pool")) == 0 ||
                  strcasecmp(ua->argk[i], NT_("pools")) == 0) {
          POOL_DBR pr;
-         memset(&pr, 0, sizeof(pr));
+         bmemset(&pr, 0, sizeof(pr));
          if (ua->argv[i]) {
             bstrncpy(pr.Name, ua->argv[i], sizeof(pr.Name));
          }
@@ -555,9 +578,11 @@ static int do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
       } else if (strcasecmp(ua->argk[i], NT_("clients")) == 0) {
          db_list_client_records(ua->jcr, ua->db, prtit, ua, llist);
 
-      } else if (strcasecmp(ua->argk[i], NT_("pluginrestoreconf")) == 0) {
+      } else if (strcasecmp(ua->argk[i], NT_("pluginrestoreconf")) == 0 ||
+                 strcasecmp(ua->argk[i], NT_("restoreobjects")) == 0)
+      {
          ROBJECT_DBR rr;
-         memset(&rr, 0, sizeof(rr));
+         bmemset(&rr, 0, sizeof(rr));
          rr.FileType = FT_PLUGIN_CONFIG;
 
          for (j=i+1; j<ua->argc; j++) {
@@ -602,6 +627,9 @@ static int do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
                } else if (strcasecmp(ua->argv[j], NT_("ALL")) == 0) {
                   rr.FileType = 0;
 
+               } else if (is_a_number(ua->argv[j])) {
+                  rr.FileType = str_to_uint64(ua->argv[j]);
+                  
                } else {
                   ua->error_msg(_("Unknown ObjectType %s\n"), ua->argv[j]);
                   return 1;
@@ -798,12 +826,13 @@ static bool list_nextvol(UAContext *ua, int ndays)
       set_storageid_in_mr(store.store, &mr);
       /* no need to set ScratchPoolId, since we use fnv_no_create_vol */
       if (!find_next_volume_for_append(jcr, &mr, 1, fnv_no_create_vol, fnv_prune, errmsg)) {
-         ua->error_msg(_("Could not find next Volume for Job %s (Pool=%s, Level=%s). %s\n"),
-            job->name(), pr.Name, level_to_str(edl, sizeof(edl), run->level), errmsg.c_str());
+         ua->error_msg(_("Could not find next Volume for Job %s (Pool=%s, Level=%s).%s\n"),
+                       job->name(), pr.Name, level_to_str(edl, sizeof(edl), run->level), errmsg.c_str());
       } else {
          ua->send_msg(
             _("The next Volume to be used by Job \"%s\" (Pool=%s, Level=%s) will be %s\n"),
-            job->name(), pr.Name, level_to_str(edl, sizeof(edl), run->level), mr.VolumeName);
+            job->name(), pr.Name, level_to_str(edl, sizeof(edl), run->level),
+            mr.VolumeName);
          found = true;
       }
    }
@@ -1006,8 +1035,8 @@ void do_messages(UAContext *ua, const char *cmd)
    if (do_truncate) {
       (void)ftruncate(fileno(con_fd), 0L);
    }
-   console_msg_pending = false;
-   ua->user_notified_msg_pending = false;
+   console_msg_pending = FALSE;
+   ua->user_notified_msg_pending = FALSE;
    pthread_cleanup_pop(0);
    Vw(con_lock);
 }
