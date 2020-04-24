@@ -17,6 +17,7 @@
    Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
+ *
  *   Bacula Director -- msgchan.c -- handles the message channel
  *    to the Storage daemon and the File daemon.
  *
@@ -29,6 +30,7 @@
  *      to authenticate ourself and to pass the JobId.
  *    Create a thread to interact with the Storage daemon
  *      who returns a job status and requests Catalog services, etc.
+ *
  */
 
 #include "bacula.h"
@@ -53,7 +55,8 @@ static char OK_device[]  = "3000 OK use device device=%s\n";
 
 /* Storage Daemon requests */
 static char Job_start[]  = "3010 Job %127s start\n";
-static char Job_end[]    =
+
+static char Job_end[] =
    "3099 Job %127s end JobStatus=%d JobFiles=%d JobBytes=%lld JobErrors=%u ErrMsg=%256s\n";
 
 /* Forward referenced functions */
@@ -442,7 +445,8 @@ extern "C" void *msg_thread(void *arg)
          continue;
       }
       if (sscanf(sd->msg, Job_end, Job, &JobStatus, &JobFiles,
-                 &JobBytes, &JobErrors, ErrMsg) == 6) {
+                 &JobBytes, &JobErrors, ErrMsg) == 6)
+      {
          jcr->SDJobStatus = JobStatus; /* termination status */
          jcr->SDJobFiles = JobFiles;
          jcr->SDJobBytes = JobBytes;
@@ -521,7 +525,7 @@ void terminate_sd_msg_chan_thread(JCR *jcr)
             gettimeofday(&tv, &tz);
             timeout.tv_nsec = 0;
             timeout.tv_sec = tv.tv_sec + 5; /* wait 5 seconds */
-            Dmsg0(00, "I'm waiting for message thread termination.\n");
+            Dmsg0(10, "I'm waiting for message thread termination.\n");
             P(mutex);
             pthread_cond_timedwait(&jcr->term_wait, &mutex, &timeout);
             V(mutex);
