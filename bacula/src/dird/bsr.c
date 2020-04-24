@@ -604,7 +604,6 @@ void add_findex_all(rblist *bsr_list, uint32_t JobId, const char *fileregex)
    return;
 }
 
-#ifdef needed
 /* Foreach files in currrent list, send "/path/fname\0LStat\0MD5\0Delta" to FD
  *      row[0]=Path, row[1]=Filename, row[2]=FileIndex
  *      row[3]=JobId row[4]=LStat row[5]=DeltaSeq row[6]=MD5
@@ -634,7 +633,6 @@ static int sendit(void *arg, int num_fields, char **row)
    }
    return 0;
 }
-#endif
 
 /* We list all files for a given FI structure */
 static void scan_findex(JCR *jcr, RBSR *bsr,
@@ -686,12 +684,12 @@ static void scan_findex(JCR *jcr, RBSR *bsr,
          if (findex != lastFileIndex || bsr->JobId != lastJobId) {
             /* Not the same file, or not the same job */
             fdbr.FileIndex = findex;
-            //dolist = true;
+            dolist = true;
 
          } else if (findex2 != lastFileIndex) {
             /* We are in the same job, and the first index was already generated */
             fdbr.FileIndex = findex + 1;
-            //dolist = true;
+            dolist = true;
          }
 
          /* Keep the current values for the next loop */
@@ -702,8 +700,7 @@ static void scan_findex(JCR *jcr, RBSR *bsr,
          if (dolist) {
             fdbr.FileIndex2 = findex2;
             fdbr.JobId = bsr->JobId;
-            /* New code not working */
-            //db_list_files(jcr, jcr->db, &fdbr, sendit, jcr);
+            db_list_files(jcr, jcr->db, &fdbr, sendit, jcr);
          }
       }
    }
