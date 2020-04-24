@@ -38,7 +38,7 @@
  */
 
 /* Requests from the Storage daemon */
-static char Find_media[] = "CatReq JobId=%ld FindMedia=%d pool_name=%127s media_type=%127s vol_type=%d\n";
+static char Find_media[] = "CatReq JobId=%ld FindMedia=%d pool_name=%127s media_type=%127s vol_type=%d create=%d\n";
 static char Get_Vol_Info[] = "CatReq JobId=%ld GetVolInfo VolName=%127s write=%d\n";
 
 static char Update_media[] = "CatReq JobId=%ld UpdateMedia VolName=%s"
@@ -51,6 +51,9 @@ static char Update_media[] = "CatReq JobId=%ld UpdateMedia VolName=%s"
 
 static char Create_jobmedia[] = "CatReq JobId=%ld CreateJobMedia\n";
 
+static char Create_filemedia[] = "CatReq JobId=%ld CreateFileMedia\n";
+static char OK_create_filemedia[] = "1000 OK CreateFileMedia\n";
+
 /* Responses  sent to Storage daemon */
 static char OK_media[] = "1000 OK VolName=%s VolJobs=%u VolFiles=%u"
    " VolBlocks=%u VolBytes=%s VolABytes=%s VolHoleBytes=%s VolHoles=%u"
@@ -59,10 +62,9 @@ static char OK_media[] = "1000 OK VolName=%s VolJobs=%u VolFiles=%u"
    " MaxVolJobs=%u MaxVolFiles=%u InChanger=%d VolReadTime=%s"
    " VolWriteTime=%s EndFile=%u EndBlock=%u VolType=%u LabelType=%d"
    " MediaId=%s ScratchPoolId=%s VolParts=%d VolCloudParts=%d"
-   " LastPartBytes=%lld Enabled=%d Recycle=%d\n";
+   " LastPartBytes=%lld Enabled=%d MaxPoolBytes=%s PoolBytes=%s Recycle=%d\n";
 
 static char OK_create[] = "1000 OK CreateJobMedia\n";
-
 
 void remove_dummy_jobmedia_records(JCR *jcr)
 {
@@ -81,7 +83,11 @@ static int send_volume_info_to_storage_daemon(JCR *jcr, BSOCK *sd, MEDIA_DBR *mr
 {
    int stat;
    char ed1[50], ed2[50], ed3[50], ed4[50], ed5[50], ed6[50], ed7[50], ed8[50],
-        ed9[50], ed10[50];
+      ed9[50], ed10[50], ed11[50], ed12[50];
+
+   POOL_DBR pr;
+   pr.PoolId = mr->PoolId;
+   has_quota_reached(jcr, &pr); /* Fill MaxPoolBytes and PoolBytes if needed */
 
    jcr->MediaId = mr->MediaId;
    pm_strcpy(jcr->VolumeName, mr->VolumeName);
@@ -107,6 +113,8 @@ static int send_volume_info_to_storage_daemon(JCR *jcr, BSOCK *sd, MEDIA_DBR *mr
       mr->VolCloudParts,
       mr->LastPartBytes,
       mr->Enabled,
+      edit_uint64(pr.MaxPoolBytes, ed11),
+      edit_uint64(pr.PoolBytes, ed12),
       mr->Recycle);
    unbash_spaces(mr->VolumeName);
    Dmsg2(100, "Vol Info for %s: %s", jcr->Job, sd->msg);
@@ -120,6 +128,7 @@ void catalog_request(JCR *jcr, BSOCK *bs)
 {
    MEDIA_DBR mr, sdmr;
    JOBMEDIA_DBR jm;
+   FILEMEDIA_DBR fm;
    char pool_name[MAX_NAME_LENGTH];
    int index, ok, label, writing;
    POOLMEM *omsg;
@@ -127,11 +136,13 @@ void catalog_request(JCR *jcr, BSOCK *bs)
    utime_t VolFirstWritten;
    utime_t VolLastWritten;
    int n;
+   int can_create=0;
    int Enabled, Recycle;
    JobId_t JobId = 0;
 
    bmemset(&sdmr, 0, sizeof(sdmr));
    bmemset(&jm, 0, sizeof(jm));
+   bmemset(&fm, 0, sizeof(fm));
    Dsm_check(100);
 
    /*
@@ -149,11 +160,10 @@ void catalog_request(JCR *jcr, BSOCK *bs)
    /*
     * Find next appendable medium for SD
     */
-   n = sscanf(bs->msg, Find_media, &JobId, &index, &pool_name, &mr.MediaType, &mr.VolType);
-   if (n == 5) {
+   n = sscanf(bs->msg, Find_media, &JobId, &index, &pool_name, &mr.MediaType, &mr.VolType, &can_create);
+   if (n == 6) {
       POOL_MEM errmsg;
       POOL_DBR pr;
-      bmemset(&pr, 0, sizeof(pr));
       bstrncpy(pr.Name, pool_name, sizeof(pr.Name));
       unbash_spaces(pr.Name);
       ok = db_get_pool_record(jcr, jcr->db, &pr);
@@ -161,7 +171,9 @@ void catalog_request(JCR *jcr, BSOCK *bs)
          mr.PoolId = pr.PoolId;
          set_storageid_in_mr(jcr->wstore, &mr);
          mr.ScratchPoolId = pr.ScratchPoolId;
-         ok = find_next_volume_for_append(jcr, &mr, index, fnv_create_vol, fnv_prune, errmsg);
+         ok = find_next_volume_for_append(jcr, &mr, index,
+                                          can_create?fnv_create_vol : fnv_no_create_vol,
+                                          fnv_prune, errmsg);
          Dmsg3(050, "find_media ok=%d idx=%d vol=%s\n", ok, index, mr.VolumeName);
       } else {
          /* Report problem finding pool */
@@ -408,7 +420,55 @@ void catalog_request(JCR *jcr, BSOCK *bs)
          goto ok_out;
       }
       Dmsg0(400, "JobMedia record created\n");
+
       bs->fsend(OK_create);
+      goto ok_out;
+   }
+
+   /*
+    * Request to create a FileMedia record
+    */
+   if (sscanf(bs->msg, Create_filemedia, &JobId) == 1) {
+      if (jcr->wjcr) {
+         jm.JobId = jcr->wjcr->JobId;
+      } else {
+         jm.JobId = jcr->JobId;
+      }
+      ok = true;
+      db_lock(jcr->db);
+      db_start_transaction(jcr, jcr->db);
+      while (bs->recv() >= 0) {
+         if (ok && sscanf(bs->msg, "%llu %lu %llu %lu %llu\n",
+                          &MediaId, &fm.FileIndex,
+                          &fm.BlockAddress, &fm.RecordNo,
+                          &fm.FileOffset) != 5)
+         {
+            ok = false;
+            continue;
+         }
+         if (ok) {
+            fm.MediaId = MediaId;
+            fm.JobId = jcr->JobId;
+            Dmsg6(50, "create_filemedia JobId=%lu MediaId=%lu FI=%lu address=%llu:%u offset=%llu\n",
+                  fm.JobId, fm.MediaId, fm.FileIndex, fm.BlockAddress, fm.RecordNo, fm.FileOffset);
+            ok = db_create_filemedia_record(jcr, jcr->db, &fm);
+         }
+      }
+      db_end_transaction(jcr, jcr->db);
+      if (!ok) {
+         Jmsg(jcr, M_FATAL, 0, _("Catalog error creating FileMedia record. %s"),
+            db_strerror(jcr->db));
+         db_unlock(jcr->db);
+         bs->fsend(_("1992 Create FileMedia error\n"));
+         goto ok_out;
+      }
+      db_unlock(jcr->db);
+      Dmsg0(400, "FileMedia record created\n");
+      bs->fsend(OK_create_filemedia);
+      goto ok_out;
+   }
+
+   if (catreq_get_pool_info(jcr, bs)) {
       goto ok_out;
    }
 
@@ -613,46 +673,49 @@ static void update_attribute(JCR *jcr, char *msg, int32_t msglen)
 
    } else if (crypto_digest_stream_type(Stream) != CRYPTO_DIGEST_NONE) {
       fname = p;
+      char digestbuf[BASE64_SIZE(CRYPTO_DIGEST_MAX_SIZE)];
+      int len = 0;
+      int type = CRYPTO_DIGEST_NONE;
       if (ar->FileIndex < 0) FileIndex = -FileIndex;
+
+      switch(Stream) {
+      case STREAM_MD5_DIGEST:
+         len = CRYPTO_DIGEST_MD5_SIZE;
+         type = CRYPTO_DIGEST_MD5;
+         break;
+      case STREAM_SHA1_DIGEST:
+         len = CRYPTO_DIGEST_SHA1_SIZE;
+         type = CRYPTO_DIGEST_SHA1;
+         break;
+      case STREAM_SHA256_DIGEST:
+         len = CRYPTO_DIGEST_SHA256_SIZE;
+         type = CRYPTO_DIGEST_SHA256;
+         break;
+      case STREAM_SHA512_DIGEST:
+         len = CRYPTO_DIGEST_SHA512_SIZE;
+         type = CRYPTO_DIGEST_SHA512;
+         break;
+      default:
+         /* Never reached ... */
+         Jmsg(jcr, M_ERROR, 0, _("Catalog error updating file digest. Unsupported digest stream type: %d"),
+              Stream);
+      }
+
+      if (len != 0) {
+         bin_to_base64(digestbuf, sizeof(digestbuf), fname, len, true);
+         Dmsg3(400, "DigestLen=%d Digest=%s type=%d\n", strlen(digestbuf),
+               digestbuf, Stream);
+      } else {
+         digestbuf[0] = 0;
+      }
+
       if (ar->FileIndex != FileIndex) {
-         Jmsg3(jcr, M_WARNING, 0, _("%s not same FileIndex=%d as attributes FI=%d\n"),
+         Jmsg(jcr, M_FATAL, 0, _("%s not same FileIndex=%d as attributes FI=%d\n"),
             stream_to_ascii(Stream), FileIndex, ar->FileIndex);
+         Jmsg(jcr, M_FATAL, 0, _("Error detected between digest[%d]=\"%s\" and name[%d]=\"%s\"\n"),
+            FileIndex, digestbuf, ar->FileIndex, ar->fname);
       } else {
          /* Update digest in catalog */
-         char digestbuf[BASE64_SIZE(CRYPTO_DIGEST_MAX_SIZE)];
-         int len = 0;
-         int type = CRYPTO_DIGEST_NONE;
-
-         switch(Stream) {
-         case STREAM_MD5_DIGEST:
-            len = CRYPTO_DIGEST_MD5_SIZE;
-            type = CRYPTO_DIGEST_MD5;
-            break;
-         case STREAM_SHA1_DIGEST:
-            len = CRYPTO_DIGEST_SHA1_SIZE;
-            type = CRYPTO_DIGEST_SHA1;
-            break;
-         case STREAM_SHA256_DIGEST:
-            len = CRYPTO_DIGEST_SHA256_SIZE;
-            type = CRYPTO_DIGEST_SHA256;
-            break;
-         case STREAM_SHA512_DIGEST:
-            len = CRYPTO_DIGEST_SHA512_SIZE;
-            type = CRYPTO_DIGEST_SHA512;
-            break;
-         default:
-            /* Never reached ... */
-            Jmsg(jcr, M_ERROR, 0, _("Catalog error updating file digest. Unsupported digest stream type: %d"),
-                 Stream);
-         }
-
-         if (len != 0) {
-            bin_to_base64(digestbuf, sizeof(digestbuf), fname, len, true);
-            Dmsg3(400, "DigestLen=%d Digest=%s type=%d\n", strlen(digestbuf),
-                  digestbuf, Stream);
-         } else {
-            digestbuf[0] = 0;
-         }
          if (jcr->cached_attribute) {
             ar->Digest = digestbuf;
             ar->DigestType = type;
@@ -665,14 +728,11 @@ static void update_attribute(JCR *jcr, char *msg, int32_t msglen)
                         db_strerror(jcr->db));
             }
             jcr->cached_attribute = false;
-         } else if (ar->FileId != 0) {
+         } else {
             if (!db_add_digest_to_file_record(jcr, jcr->db, ar->FileId, digestbuf, type)) {
                Jmsg(jcr, M_ERROR, 0, _("Catalog error updating file digest. %s"),
                   db_strerror(jcr->db));
             }
-         } else { /* Something is wrong FileId == 0 */
-            Jmsg(jcr, M_WARNING, 0, "Illegal FileId in update attribute: FileId=0 Stream=%d fname=%s\n",
-                 ar->Stream, ar->fname);
          }
       }
    }
@@ -716,12 +776,11 @@ bool despool_attributes_from_file(JCR *jcr, const char *file)
 {
    bool ret=false;
    int32_t pktsiz;
-   ssize_t nbytes;
+   size_t nbytes;
    ssize_t size = 0;
    int32_t msglen;                    /* message length */
    POOLMEM *msg = get_pool_memory(PM_MESSAGE);
    FILE *spool_fd=NULL;
-   int32_t recnum = 0;
 
    Dmsg1(100, "Begin despool_attributes_from_file\n", file);
 
@@ -730,7 +789,6 @@ bool despool_attributes_from_file(JCR *jcr, const char *file)
    }
 
    spool_fd = bfopen(file, "rb");
-   //Dmsg1(000, "Open attr read file=%s\n", file);
    if (!spool_fd) {
       Dmsg0(100, "cancel despool_attributes_from_file\n");
       /* send an error message */
@@ -747,15 +805,8 @@ bool despool_attributes_from_file(JCR *jcr, const char *file)
     * 1. 4 bytes representing the record length
     * 2. An attribute  string starting with: UpdCat Job=nnn FileAttributes ...
     */
-   for ( ;; ) {
-      nbytes = fread((char *)&pktsiz, 1, sizeof(int32_t), spool_fd);
-      if (nbytes == 0) {   /* EOF */
-         break;
-      }
-      if (nbytes != sizeof(int32_t)) {
-         Dmsg2(000, "Error: attr read status=%lld addr=%lld\n", nbytes, ftello(spool_fd));
-         break;
-      }
+   while (fread((char *)&pktsiz, 1, sizeof(int32_t), spool_fd) ==
+          sizeof(int32_t)) {
       size += sizeof(int32_t);
       msglen = ntohl(pktsiz);
       if (msglen > 10000000) {
@@ -763,21 +814,15 @@ bool despool_attributes_from_file(JCR *jcr, const char *file)
          goto bail_out;
       }
       if (msglen > 0) {
-         if (msglen > (int32_t)sizeof_pool_memory(msg)) {
+         if (msglen > (int32_t) sizeof_pool_memory(msg)) {
             msg = realloc_pool_memory(msg, msglen + 1);
          }
          nbytes = fread(msg, 1, msglen, spool_fd);
-         recnum++;
-         if (nbytes > 0 && strncmp(msg, "UpdCat Job", 10) != 0) {
-            Dmsg3(000, "Error: recnum=%ld nbytes=%lld msg=%s\n", recnum, nbytes, msg);
-         }
-         if (nbytes != (ssize_t)msglen) {
+         if (nbytes != (size_t) msglen) {
             berrno be;
-            boffset_t size;
-            size = ftello(spool_fd);
-            Dmsg4(000, "Error at size=%lld record %ld: got nbytes=%lld, want msglen=%ld\n", size, recnum, (int32_t)nbytes, msglen);
-            Qmsg3(jcr, M_FATAL, 0, _("fread attr spool error. Wanted %ld bytes but got %lld ERR=%s\n"),
-                  msglen, nbytes, be.bstrerror());
+            Dmsg2(400, "nbytes=%d msglen=%d\n", nbytes, msglen);
+            Qmsg1(jcr, M_FATAL, 0, _("fread attr spool error. ERR=%s\n"),
+                  be.bstrerror());
             goto bail_out;
          }
          size += nbytes;
@@ -800,7 +845,6 @@ bool despool_attributes_from_file(JCR *jcr, const char *file)
 
 bail_out:
    if (spool_fd) {
-      //Dmsg1(000, "Close attr read file=%s\n", file);
       fclose(spool_fd);
    }
 
