@@ -53,6 +53,7 @@ bool newVolume(JCR *jcr, MEDIA_DBR *mr, STORE *store, POOL_MEM &errmsg)
    /* See if we can create a new Volume */
    db_lock(jcr->db);
    pr.PoolId = mr->PoolId;
+   pr.PoolBytes = 1;            /* Get the size of the pool */
 
    if (!db_get_pool_numvols(jcr, jcr->db, &pr)) {
       goto bail_out;
@@ -61,6 +62,12 @@ bool newVolume(JCR *jcr, MEDIA_DBR *mr, STORE *store, POOL_MEM &errmsg)
    if (pr.MaxVols > 0 && pr.NumVols >= pr.MaxVols) {
       Mmsg(errmsg, "Maximum Volumes exceeded for Pool %s", pr.Name);
       Dmsg1(90, "Too many volumes for Pool %s\n", pr.Name);
+      goto bail_out;
+   }
+
+   if (check_max_pool_bytes(&pr)) {
+      Mmsg(errmsg, "Maximum Pool Bytes exceeded for Pool %s", pr.Name);
+      Dmsg1(90, "Too much bytes for Pool %s\n", pr.Name);
       goto bail_out;
    }
 
