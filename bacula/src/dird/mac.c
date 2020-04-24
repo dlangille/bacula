@@ -17,6 +17,7 @@
    Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
+ *
  *   Bacula Director -- mac.c -- responsible for doing
  *     migration and copy jobs.
  *
@@ -30,6 +31,7 @@
  *     Open connection with Storage daemon and pass him commands
  *       to do the backup.
  *     When the Storage daemon finishes the job, update the DB.
+ *
  */
 
 #include "bacula.h"

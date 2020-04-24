@@ -20,6 +20,7 @@
  * Interface definition for Bacula Plugins
  *
  * Kern Sibbald, October 2007
+ *
  */
 
 #ifndef __DIR_PLUGINS_H
