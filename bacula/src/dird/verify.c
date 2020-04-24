@@ -17,6 +17,7 @@
    Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
+ *
  *   Bacula Director -- verify.c -- responsible for running file verification
  *
  *     Kern Sibbald, October MM
@@ -27,6 +28,7 @@
  *       to do the verify.
  *     When the File daemon sends the attributes, compare them to
  *       what is in the DB.
+ *
  */
 
 
@@ -240,7 +242,8 @@ bool do_verify(JCR *jcr)
 
    /* Print Job Start message */
    Jmsg(jcr, M_INFO, 0, _("Start Verify JobId=%s Level=%s Job=%s\n"),
-      edit_uint64(jcr->JobId, ed1), level_to_str(edl, sizeof(edl), jcr->getJobLevel()), jcr->Job);
+        edit_uint64(jcr->JobId, ed1),
+        level_to_str(edl, sizeof(edl), jcr->getJobLevel()), jcr->Job);
 
    if (jcr->getJobLevel() == L_VERIFY_VOLUME_TO_CATALOG ||
        jcr->getJobLevel() == L_VERIFY_DATA)
@@ -309,7 +312,7 @@ bool do_verify(JCR *jcr)
       break;
    case L_VERIFY_DATA:
       send_accurate_current_files(jcr);
-      /* Fall-through wanted */
+      /* Wanted */
    case L_VERIFY_VOLUME_TO_CATALOG:
       if (jcr->sd_calls_client) {
          if (jcr->FDVersion < 10) {
@@ -448,6 +451,8 @@ void verify_cleanup(JCR *jcr, int TermCode)
       jcr->ExpectedFiles, jcr->JobFiles);
    if ((jcr->getJobLevel() == L_VERIFY_VOLUME_TO_CATALOG || jcr->getJobLevel() == L_VERIFY_DATA) &&
        jcr->ExpectedFiles != jcr->JobFiles) {
+      Jmsg(jcr, M_ERROR, 0, _("The Verify Job has analyzed %d file(s) but it was expecting %d file(s)\n"),
+           jcr->JobFiles, jcr->ExpectedFiles);
       TermCode = JS_ErrorTerminated;
    }
 
@@ -700,6 +705,8 @@ void get_attributes_and_compare_to_catalog(JCR *jcr, JobId_t JobId)
          /*
           * Loop over options supplied by user and verify the
           * fields he requests.
+          *
+          * Keep this list synchronized with the configuration parser in inc_conf.c and in BWeb
           */
          for (p=Opts_Digest; *p; p++) {
             char ed1[30], ed2[30];
@@ -839,11 +846,10 @@ void get_attributes_and_compare_to_catalog(JCR *jcr, JobId_t JobId)
     */
    jcr->fn_printed = false;
    bsnprintf(buf, sizeof(buf),
-    "SELECT Path.Path,Filename.Name FROM File,Path,Filename "
-    "WHERE File.JobId=%d AND File.FileIndex > 0 "
-    "AND File.MarkId!=%d AND File.PathId=Path.PathId "
-    "AND File.FilenameId=Filename.FilenameId",
-       JobId, jcr->JobId);
+      "SELECT Path.Path,File.Filename FROM File,Path "
+       "WHERE File.JobId=%d AND File.FileIndex > 0 "
+         "AND File.MarkId!=%d AND File.PathId=Path.PathId ",
+         JobId, jcr->JobId);
    /* missing_handler is called for each file found */
    db_sql_query(jcr->db, buf, missing_handler, (void *)jcr);
    if (jcr->fn_printed) {
