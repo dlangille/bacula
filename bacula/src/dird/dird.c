@@ -17,9 +17,11 @@
    Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
+ *
  *   Bacula Director daemon -- this is the main program
  *
  *     Kern Sibbald, March MM
+ *
  */
 
 #include "bacula.h"
@@ -136,7 +138,7 @@ static void usage()
       "     -u               userid\n"
       "     -v               verbose user messages\n"
       "     -?               print this message.\n"
-      "\n"), 2000, "", VERSION, BDATE);
+      "\n"), 2000, BDEMO, VERSION, BDATE);
 
    exit(1);
 }
@@ -166,10 +168,36 @@ static void dir_debug_print(JCR *jcr, FILE *fp)
 extern void (*MA1512_reload_job_end_cb)(JCR *,void *);
 static void reload_job_end_cb(JCR *jcr, void *ctx);
 
+/* We use a dedicated thread to find the next jobs to run
+ * in order to avoid issues with a HUP signal that might
+ * come inside the wait_for_next_job() loop
+ */
+static void *run_jobs_thread(void *arg)
+{
+   JCR *jcr;
+   Dmsg0(200, "wait for next job\n");
+   /* Main loop -- call scheduler to get next job to run */
+   while ( (jcr = wait_for_next_job(runjob)) ) {
+      run_job(jcr);                   /* run job */
+      free_jcr(jcr);                  /* release jcr */
+      set_jcr_in_tsd(INVALID_JCR);
+      if (runjob) {                   /* command line, run a single job? */
+         break;                       /* yes, terminate */
+      }
+   }
+   return NULL;
+}
+
+static void run_jobs()
+{
+   pthread_t run_id;
+   pthread_create(&run_id, NULL, run_jobs_thread, NULL);
+   pthread_join(run_id, NULL);
+}
+
 int main (int argc, char *argv[])
 {
    int ch;
-   JCR *jcr;
    bool no_signals = false;
    char *uid = NULL;
    char *gid = NULL;
@@ -301,6 +329,7 @@ int main (int argc, char *argv[])
    config = New(CONFIG());
    parse_dir_config(config, configfile, M_ERROR_TERM);
 
+   /* If the director variable is not set, check_resources() will stop the process */
    if (init_crypto() != 0) {
       Jmsg((JCR *)NULL, M_ERROR_TERM, 0, _("Cryptography library initialization failed.\n"));
    }
@@ -311,6 +340,10 @@ int main (int argc, char *argv[])
 
    /* The configuration is correct */
    director = (DIRRES *)GetNextRes(R_DIRECTOR, NULL);
+
+   if (crypto_check_fips(director->require_fips) < 0) {
+      Jmsg((JCR *)NULL, M_ERROR_TERM, 0, _("Unable to set FIPS mode\n"));
+   }
 
    if (!test_config) {
       /* Create pid must come after we are a daemon -- so we have our final pid */
@@ -382,19 +415,10 @@ int main (int argc, char *argv[])
 
 //   init_device_resources();
 
-   Dmsg0(200, "wait for next job\n");
-   /* Main loop -- call scheduler to get next job to run */
-   while ( (jcr = wait_for_next_job(runjob)) ) {
-      run_job(jcr);                   /* run job */
-      free_jcr(jcr);                  /* release jcr */
-      set_jcr_in_tsd(INVALID_JCR);
-      if (runjob) {                   /* command line, run a single job? */
-         break;                       /* yes, terminate */
-      }
-   }
+   /* Process jobs in the queue */
+   run_jobs();
 
    terminate_dird(0);
-
    return 0;
 }
 
@@ -726,9 +750,7 @@ void terminate_dird(int sig)
    stop_UA_server();
    term_msg();                        /* terminate message handler */
    cleanup_crypto();
-
    free_daemon_message_queue();
-
    if (reload_table) {
       free(reload_table);
    }
@@ -743,26 +765,25 @@ void terminate_dird(int sig)
       if (cg->SetIPaddress) {
          free(cg->SetIPaddress);
       }
+      if(cg->socket) {
+         delete cg->socket;
+      }
    }
    client_globals.destroy();
-
    STORE_GLOBALS *sg;
    foreach_dlist(sg, &store_globals) {
       free(sg->name);
    }
    store_globals.destroy();
-
    JOB_GLOBALS *jg;
    foreach_dlist(jg, &job_globals) {
       free(jg->name);
    }
    job_globals.destroy();
-
    if (statcollector){
       // statcollector->dump();
       delete(statcollector);
    }
-
    close_memory_pool();               /* release free memory in pool */
    lmgr_cleanup_main();
    sm_dump(false);
@@ -808,7 +829,9 @@ static bool check_resources()
       /* tls_require implies tls_enable */
       if (newDirector->tls_require) {
          if (have_tls) {
-            newDirector->tls_enable = true;
+            if (newDirector->tls_certfile || newDirector->tls_keyfile) {
+               newDirector->tls_enable = true;
+            }
          } else {
             Jmsg(NULL, M_FATAL, 0, _("TLS required but not configured in Bacula.\n"));
             OK = false;
@@ -840,7 +863,7 @@ static bool check_resources()
       }
 
       /* If everything is well, attempt to initialize our per-resource TLS context */
-      if (OK && (need_tls || newDirector->tls_require)) {
+      if (OK && need_tls) {
          /* Initialize TLS context:
           * Args: CA certfile, CA certdir, Certfile, Keyfile,
           * Keyfile PEM Callback, Keyfile CB Userdata, DHfile, Verify Peer */
@@ -852,6 +875,16 @@ static bool check_resources()
          if (!newDirector->tls_ctx) {
             Jmsg(NULL, M_FATAL, 0, _("Failed to initialize TLS context for Director \"%s\" in %s.\n"),
                  newDirector->name(), configfile);
+            OK = false;
+         }
+      }
+      /* Initialize a TLS-PSK context (even if a TLS context already exists) */
+      newDirector->psk_ctx = new_psk_context(newDirector->password);
+      /* In this case, we have TLS Require=Yes and TLS not setup and no PSK */
+      if (OK && (need_tls == false && newDirector->tls_require)) {
+         if (!newDirector->psk_ctx) {
+            Jmsg(NULL, M_FATAL, 0, _("Failed to initialize TLS PSK context for Director \"%s\" in %s.\n"),
+                 newDirector->hdr.name, configfile);
             OK = false;
          }
       }
@@ -1026,7 +1059,9 @@ static bool check_resources()
       /* tls_require implies tls_enable */
       if (cons->tls_require) {
          if (have_tls) {
-            cons->tls_enable = true;
+            if (cons->tls_certfile || cons->tls_keyfile) {
+               cons->tls_enable = true;
+            }
          } else {
             Jmsg(NULL, M_FATAL, 0, _("TLS required but not configured in Bacula.\n"));
             OK = false;
@@ -1058,7 +1093,7 @@ static bool check_resources()
          OK = false;
       }
       /* If everything is well, attempt to initialize our per-resource TLS context */
-      if (OK && (need_tls || cons->tls_require)) {
+      if (OK && need_tls) {
          /* Initialize TLS context:
           * Args: CA certfile, CA certdir, Certfile, Keyfile,
           * Keyfile PEM Callback, Keyfile CB Userdata, DHfile, Verify Peer */
@@ -1073,15 +1108,32 @@ static bool check_resources()
          }
       }
 
+      /* Initialize a TLS-PSK context (even if a TLS context already exists) */
+      cons->psk_ctx = new_psk_context(cons->password);
+      /* In this case, we have TLS Require=Yes and TLS not setup and no PSK */
+      if (OK && (need_tls == false && cons->tls_require)) {
+         if (!cons->psk_ctx) {
+            Jmsg(NULL, M_FATAL, 0, _("Failed to initialize TLS PSK context for Console \"%s\" in %s.\n"),
+                 cons->hdr.name, configfile);
+            OK = false;
+         }
+      }
    }
 
    /* Loop over Clients */
    CLIENT *client;
    foreach_res(client, R_CLIENT) {
+      if (!client->client_address && !client->allow_fd_connections) {
+         Jmsg(NULL, M_FATAL, 0, _("Config error: Address directive is required in Client resource \"%s\", but not found.\n"), client->hdr.name);
+         OK = false;
+         continue;
+      }
       /* tls_require implies tls_enable */
       if (client->tls_require) {
          if (have_tls) {
-            client->tls_enable = true;
+            if (client->tls_ca_certfile || client->tls_ca_certdir) {
+               client->tls_enable = true;
+            }
          } else {
             Jmsg(NULL, M_FATAL, 0, _("TLS required but not configured in Bacula.\n"));
             OK = false;
@@ -1097,7 +1149,7 @@ static bool check_resources()
       }
 
       /* If everything is well, attempt to initialize our per-resource TLS context */
-      if (OK && (need_tls || client->tls_require)) {
+      if (OK && need_tls) {
          /* Initialize TLS context:
           * Args: CA certfile, CA certdir, Certfile, Keyfile,
           * Keyfile PEM Callback, Keyfile CB Userdata, DHfile, Verify Peer */
@@ -1109,6 +1161,15 @@ static bool check_resources()
          if (!client->tls_ctx) {
             Jmsg(NULL, M_FATAL, 0, _("Failed to initialize TLS context for File daemon \"%s\" in %s.\n"),
                client->name(), configfile);
+            OK = false;
+         }
+      }
+      client->psk_ctx = new_psk_context(client->password);
+      /* In this case, we have TLS Require=Yes and TLS not setup and no PSK */
+      if (OK && need_tls == false && client->tls_require) {
+         if (!client->psk_ctx) {
+            Jmsg(NULL, M_FATAL, 0, _("Failed to initialize TLS PSK context for Client \"%s\" in %s.\n"),
+                 client->hdr.name, configfile);
             OK = false;
          }
       }
@@ -1205,8 +1266,8 @@ static bool check_catalog(cat_op mode)
               catalog->db_port, catalog->db_socket,
               catalog->db_ssl_mode, catalog->db_ssl_key,
               catalog->db_ssl_cert, catalog->db_ssl_ca,
-              catalog->db_ssl_capath, catalog->db_ssl_cipher,
-              catalog->mult_db_connections,
+              catalog->db_ssl_capath, catalog->db_ssl_cipher,           
+              true /* mult_db_connections */,     /* Avoid issue with counters during a reload */
               catalog->disable_batch_insert);
 
       /*  To fill appropriate "dbdriver" field into "CAT" catalog resource class */
@@ -1338,6 +1399,7 @@ static bool check_catalog(cat_op mode)
          cr.FileRetention = client->FileRetention;
          cr.JobRetention = client->JobRetention;
 
+         /* The record can be created or retrieved */
          db_create_client_record(NULL, db, &cr);
 
          /* If the record doesn't reflect the current settings
@@ -1387,7 +1449,9 @@ static bool check_catalog(cat_op mode)
          /* tls_require implies tls_enable */
          if (store->tls_require) {
             if (have_tls) {
-               store->tls_enable = true;
+               if (store->tls_ca_certfile || store->tls_ca_certdir) {
+                  store->tls_enable = true;
+               }
             } else {
                Jmsg(NULL, M_FATAL, 0, _("TLS required but not configured in Bacula.\n"));
                OK = false;
@@ -1404,7 +1468,7 @@ static bool check_catalog(cat_op mode)
          }
 
          /* If everything is well, attempt to initialize our per-resource TLS context */
-         if (OK && (need_tls || store->tls_require)) {
+         if (OK && need_tls) {
            /* Initialize TLS context:
             * Args: CA certfile, CA certdir, Certfile, Keyfile,
             * Keyfile PEM Callback, Keyfile CB Userdata, DHfile, Verify Peer */
@@ -1415,6 +1479,15 @@ static bool check_catalog(cat_op mode)
             if (!store->tls_ctx) {
                Jmsg(NULL, M_FATAL, 0, _("Failed to initialize TLS context for Storage \"%s\" in %s.\n"),
                     store->name(), configfile);
+               OK = false;
+            }
+         }
+         store->psk_ctx = new_psk_context(store->password);
+         /* In this case, we have TLS Require=Yes and TLS not setup and no PSK */
+         if (OK && (need_tls == false && store->tls_require)) {
+            if (!store->psk_ctx) {
+               Jmsg(NULL, M_FATAL, 0, _("Failed to initialize TLS PSK context for Storage \"%s\" in %s.\n"),
+                    store->hdr.name, configfile);
                OK = false;
             }
          }
@@ -1504,7 +1577,6 @@ static void cleanup_old_files()
    char prbuf[500];
    const int nmatch = 30;
    regmatch_t pmatch[nmatch];
-   berrno be;
 
    /* Exclude spaces and look for .mail, .tmp or .restore.xx.bsr files */
    const char *pat1 = "^[^ ]+\\.(restore\\.[^ ]+\\.bsr|mail|tmp)$";
