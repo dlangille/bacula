@@ -139,6 +139,12 @@ static void *handle_UA_client_request(void *arg)
       goto getout;
    }
 
+   /* If network connection, display it */
+   ua->send_events("DC0015",
+                   EVENTS_TYPE_CONNECTION,
+                   "Connection from %s:%d",
+                   user->host(), user->port());
+
    while (!ua->quit) {
       if (ua->api) user->signal(BNET_MAIN_PROMPT);
       stat = user->recv();
@@ -178,6 +184,12 @@ static void *handle_UA_client_request(void *arg)
       ua->db = ua->shared_db;
    }
 
+   /* If network connection, display it */
+   ua->send_events("DC0016",
+                   EVENTS_TYPE_CONNECTION,
+                   "Disconnection from %s:%d",
+                   user->host(), user->port());
+
 getout:
    close_db(ua);
    free_ua_context(ua);
@@ -206,6 +218,7 @@ UAContext *new_ua_context(JCR *jcr)
    ua->errmsg = get_pool_memory(PM_FNAME);
    ua->verbose = true;
    ua->automount = true;
+   bstrncpy(ua->name, "*Console*", sizeof(ua->name));
    return ua;
 }
 

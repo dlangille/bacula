@@ -101,21 +101,74 @@ static bool check_catalog(cat_op mode);
 
 #define CONFIG_FILE "bacula-dir.conf" /* default configuration file */
 
-static bool dir_sql_query(JCR *jcr, const char *cmd) 
-{ 
-   if (jcr && jcr->db && jcr->db->is_connected()) {
-      return db_sql_query(jcr->db, cmd, NULL, NULL);
-   } 
-   return false; 
+static BDB *dir_get_db(JCR *jcr)
+{
+   BDB *db = (jcr == NULL)? NULL : jcr->db;
+   if (!db) {
+      Dmsg0(50, "Open Catalog for message\n");
+      CAT *catalog = director->catalog;
+      /*
+       * Make sure we can open catalog, otherwise print a warning
+       * message because the server is probably not running.
+       */
+      db = db_init_database(NULL, catalog->db_driver, catalog->db_name,
+                                 catalog->db_user,
+                                 catalog->db_password, catalog->db_address,
+                                 catalog->db_port, catalog->db_socket,
+                                 catalog->db_ssl_mode, catalog->db_ssl_key,
+                                 catalog->db_ssl_cert, catalog->db_ssl_ca,
+                                 catalog->db_ssl_capath, catalog->db_ssl_cipher,
+                                 true /* mult_db_connections */, /* Avoid issue with counters during a reload */
+                                 catalog->disable_batch_insert);
+
+      if (!db || !db_open_database(NULL, db)) {
+         if (db) {
+            db_close_database(jcr, db);
+         }
+         return NULL;
+      }
+   }
+   return db;
+}
+
+static bool dir_sql_log(JCR *jcr, JobId_t jobid, utime_t mtime, char *msg) 
+{
+   bool ret;
+   BDB *db = dir_get_db(jcr);
+   if (!db) {
+      return false;
+   }
+
+   ret = db_create_log_record(jcr, db, jobid, mtime, msg);
+
+   if (!jcr || !jcr->db) {
+      db_close_database(jcr, db);             /* It was open just for us */
+   }
+   return ret;
 } 
 
-static bool dir_sql_escape(JCR *jcr, BDB *mdb, char *snew, char *sold, int len) 
-{ 
-   if (jcr && jcr->db && jcr->db->is_connected()) { 
-      db_escape_string(jcr, mdb, snew, sold, len);
-      return true;
-   } 
-   return false; 
+static bool dir_sql_event(JCR *jcr, utime_t mtime, char *line)
+{
+   bool ret=false;
+   EVENTS_DBR event;
+   BDB *db = dir_get_db(jcr);
+   if (!db) {
+      Dmsg0(10, "unable to open the database\n");
+      return false;
+   }
+   event.EventsTime = mtime;
+   if (!event.scan_line(line)) {
+      goto bail_out;
+   }
+   ret = db_create_events_record(jcr, db, &event);
+   if (!ret) {
+      Dmsg1(10, "unable to insert the event %s\n", db->errmsg);
+   }
+bail_out:
+   if (!jcr || !jcr->db) {
+      db_close_database(jcr, db);             /* It was open just for us */
+   }
+   return ret; 
 } 
 
 static void usage()
@@ -385,8 +438,8 @@ int main (int argc, char *argv[])
    cleanup_old_files();
 
    /* Plug database interface for library routines */
-   p_sql_query = (sql_query_call)dir_sql_query;
-   p_sql_escape = (sql_escape_call)dir_sql_escape;
+   p_sql_log = (sql_insert_log)dir_sql_log;
+   p_sql_event = (sql_insert_event)dir_sql_event;
 
    FDConnectTimeout = (int)director->FDConnectTimeout;
    SDConnectTimeout = (int)director->SDConnectTimeout;
@@ -412,6 +465,12 @@ int main (int argc, char *argv[])
    dbg_jcr_add_hook(bdb_debug_print);     /* used to debug B_DB connection after fatal signal */
 
    start_collector_threads();    /* start collector thread for every Collector resource */
+
+   events_send_msg(NULL,
+                   "DD0001",
+                   EVENTS_TYPE_DAEMON,
+                   "*Director*",
+                   (intptr_t)get_first_port_host_order(director->DIRaddrs), "Director startup");
 
 //   init_device_resources();
 
@@ -722,6 +781,11 @@ void terminate_dird(int sig)
    }
    already_here = true;
    debug_level = 0;                   /* turn off debug */
+   if (!test_config) {
+      events_send_msg(NULL, "DD0002",
+                      EVENTS_TYPE_DAEMON, "*Director*",
+                      (intptr_t)get_first_port_host_order(director->DIRaddrs), "Director shutdown");
+   }
    stop_watchdog();
    terminate_collector_threads();
    generate_daemon_event(NULL, "Exit");
@@ -820,6 +884,9 @@ static bool check_resources()
             Jmsg(NULL, M_FATAL, 0, _("No Messages resource defined in %s\n"), configfile);
             OK = false;
          }
+      }
+      if (!newDirector->catalog) { /* If catalog message resource not specified */
+         newDirector->catalog = (CAT *)GetNextRes(R_CATALOG, NULL);
       }
       if (GetNextRes(R_DIRECTOR, (RES *)newDirector) != NULL) {
          Jmsg(NULL, M_FATAL, 0, _("Only one Director resource permitted in %s\n"),

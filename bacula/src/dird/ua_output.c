@@ -753,6 +753,37 @@ static int do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
             }
          }
          db_list_copies_records(ua->jcr,ua->db,limit,jobids,prtit,ua,llist);
+
+      } else if (strcasecmp(ua->argk[i], NT_("events")) == 0) {
+         EVENTS_DBR event;
+         time_t stime;
+         struct tm tm;
+
+         for (j=i+1; j<ua->argc; j++) {
+            if (strcasecmp(ua->argk[j], NT_("type")) == 0 && ua->argv[j]) {
+               bstrncpy(event.EventsType, ua->argv[j], sizeof(event.EventsType));
+
+            } else if (strcasecmp(ua->argk[j], NT_("limit")) == 0 && ua->argv[j]) {
+               event.limit = atoi(ua->argv[j]);
+
+            } else if (strcasecmp(ua->argk[j], NT_("order")) == 0 && ua->argv[j]) {
+               /* Other order are tested before */
+               event.order = bstrcasecmp(ua->argv[j], "DESC") == 0;
+
+            } else if (strcasecmp(ua->argk[j], NT_("days")) == 0 && ua->argv[j]) {
+               stime = time(NULL) - atoi(ua->argv[j]) * 24*60*60;
+               (void)localtime_r(&stime, &tm);
+               strftime(event.start, sizeof(event.start), "%Y-%m-%d %H:%M:%S", &tm);
+
+            } else if (strcasecmp(ua->argk[j], NT_("start")) == 0 && ua->argv[j]) {
+               bstrncpy(event.start, ua->argv[j], sizeof(event.start)); /* TODO: check format */
+
+            } else if (strcasecmp(ua->argk[j], NT_("end")) == 0 && ua->argv[j]) {
+               bstrncpy(event.end, ua->argv[j], sizeof(event.end)); /* TODO: check format */
+            }
+         }
+         db_list_events_records(ua->jcr,ua->db, &event, prtit, ua, llist);
+
       } else if (strcasecmp(ua->argk[i], NT_("limit")) == 0
                  || strcasecmp(ua->argk[i], NT_("days")) == 0
                  || strcasecmp(ua->argk[i], NT_("joberrors")) == 0
@@ -763,6 +794,8 @@ static int do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
                  || strcasecmp(ua->argk[i], NT_("level")) == 0
                  || strcasecmp(ua->argk[i], NT_("jobtype")) == 0
                  || strcasecmp(ua->argk[i], NT_("long")) == 0
+                 || strcasecmp(ua->argk[i], NT_("start")) == 0
+                 || strcasecmp(ua->argk[i], NT_("end")) == 0
          ) {
          /* Ignore it */
       } else if (strcasecmp(ua->argk[i], NT_("snapshot")) == 0 ||
@@ -1163,6 +1196,22 @@ void bsendmsg(void *ctx, const char *fmt, ...)
  * The following UA methods are mainly intended for GUI
  * programs
  */
+
+/* 
+ * This is an event message that will go to a log or the catalog
+ */
+
+void UAContext::send_events(const char *code, const char *type, const char *fmt, ...)
+{
+   POOL_MEM tmp(PM_MESSAGE);
+   va_list arg_ptr;
+   va_start(arg_ptr, fmt);
+   bvsnprintf(tmp.c_str(), tmp.size(), fmt, arg_ptr);
+   va_end(arg_ptr);
+
+   events_send_msg(this->jcr, code, type, this->name, (intptr_t)this, "%s", tmp.c_str());
+}
+
 /*
  * This is a message that should be displayed on the user's
  *  console.
@@ -1174,7 +1223,6 @@ void UAContext::send_msg(const char *fmt, ...)
    bmsg(this, fmt, arg_ptr);
    va_end(arg_ptr);
 }
-
 
 /*
  * This is an error condition with a command. The gui should put

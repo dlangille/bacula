@@ -87,7 +87,7 @@ static bool is_plugin_disabled(JCR *jcr)
 /*
  * Create a plugin event
  */
-int generate_plugin_event(JCR *jcr, bDirEventType eventType, void *value)
+int generate_plugin_event(JCR *jcr, bDirEventsType eventType, void *value)
 {
    bpContext *plugin_ctx;
    bDirEvent event;

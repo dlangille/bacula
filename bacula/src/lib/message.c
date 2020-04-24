@@ -31,8 +31,8 @@
 #include "bacula.h"
 #include "jcr.h"
 
-sql_query_call  p_sql_query = NULL;
-sql_escape_call p_sql_escape = NULL;
+sql_insert_log p_sql_log = NULL;
+sql_insert_event p_sql_event = NULL;
 
 #define FULL_LOCATION 1               /* set for file:line in Debug messages */
 
@@ -418,6 +418,8 @@ init_msg(JCR *jcr, MSGS *msg, job_code_callback_t job_code_callback)
       memset(jcr->jcr_msgs, 0, sizeof(MSGS));
       jcr->jcr_msgs->dest_chain = temp_chain;
       memcpy(jcr->jcr_msgs->send_msg, msg->send_msg, sizeof(msg->send_msg));
+      custom_type_copy(jcr->jcr_msgs, msg);
+
    } else {
       /* If we have default values, release them now */
       if (daemon_msgs) {
@@ -427,6 +429,7 @@ init_msg(JCR *jcr, MSGS *msg, job_code_callback_t job_code_callback)
       memset(daemon_msgs, 0, sizeof(MSGS));
       daemon_msgs->dest_chain = temp_chain;
       memcpy(daemon_msgs->send_msg, msg->send_msg, sizeof(msg->send_msg));
+      custom_type_copy(daemon_msgs, msg);
    }
 
    Dmsg2(250, "Copy message resource %p to %p\n", msg, temp_chain);
@@ -731,6 +734,11 @@ void free_msgs_res(MSGS *msgs)
       free(old);                      /* free the destination item */
    }
    msgs->dest_chain = NULL;
+
+   /* Free custom message type if any */
+   if (msgs->custom_type) {
+      delete msgs->custom_type;
+   }
    free(msgs);                        /* free the head */
 }
 
@@ -893,31 +901,17 @@ void dispatch_message(JCR *jcr, int type, utime_t mtime, char *msg)
 
     for (d=msgs->dest_chain; d; d=d->next) {
        if (bit_is_set(type, d->msg_types)) {
-          bool ok;
           switch (d->dest_code) {
              case MD_CATALOG:
-                char ed1[50];
-                if (!jcr || !jcr->db) {
-                   break;
-                }
-                if (p_sql_query && p_sql_escape) {
-                   POOLMEM *cmd = get_pool_memory(PM_MESSAGE);
-                   POOLMEM *esc_msg = get_pool_memory(PM_MESSAGE);
-
-                   int len = strlen(msg) + 1;
-                   esc_msg = check_pool_memory_size(esc_msg, len*2+1);
-                   ok = p_sql_escape(jcr, jcr->db, esc_msg, msg, len);
-                   if (ok) {
-                      bstrutime(dt, sizeof(dt), mtime);
-                      Mmsg(cmd, "INSERT INTO Log (JobId, Time, LogText) VALUES (%s,'%s','%s')",
-                           edit_int64(jcr->JobId, ed1), dt, esc_msg);
-                      ok = p_sql_query(jcr, cmd);
+                if ((type == M_EVENTS || msgs->is_custom_type(type)) &&  p_sql_event) {
+                   if (!p_sql_event(jcr, mtime, msg)) {
+                      delivery_error(_("Message delivery error: Unable to store events in database.\n"));
                    }
-                   if (!ok) {
+
+                } else if (jcr && p_sql_log) {
+                   if (!p_sql_log(jcr, jcr->JobId, mtime, msg)) {
                       delivery_error(_("Message delivery error: Unable to store data in database.\n"));
                    }
-                   free_pool_memory(cmd);
-                   free_pool_memory(esc_msg);
                 }
                 break;
              case MD_CONSOLE:
@@ -1444,6 +1438,22 @@ bool is_message_type_set(JCR *jcr, int type)
    return true;
 }
 
+/* Get the current MESSAGES resource for the context */
+MSGS *get_current_MSGS(JCR *jcr)
+{
+   MSGS *msgs = NULL;
+   if (!jcr) {
+       jcr = get_jcr_from_tsd();
+    }
+    if (jcr) {
+       msgs = jcr->jcr_msgs;
+    }
+    if (!msgs) {
+       msgs = daemon_msgs;            /* if no jcr, we use daemon handler */
+    }
+    return msgs;
+}
+
 /* *********************************************************
  *
  * Generate a Job message
@@ -1487,8 +1497,7 @@ Jmsg(JCR *jcr, int type, utime_t mtime, const char *fmt,...)
        return;
     }
 
-    msgs = NULL;
-    if (!jcr) {
+   if (!jcr) {
        jcr = get_jcr_from_tsd();
     }
     if (jcr) {
@@ -1496,12 +1505,9 @@ Jmsg(JCR *jcr, int type, utime_t mtime, const char *fmt,...)
           /* Dequeue messages to keep the original order  */
           dequeue_messages(jcr);
        }
-       msgs = jcr->jcr_msgs;
-       JobId = jcr->JobId;
     }
-    if (!msgs) {
-       msgs = daemon_msgs;            /* if no jcr, we use daemon handler */
-    }
+
+    msgs = get_current_MSGS(jcr);
 
     /*
      * Check if we have a message destination defined.
@@ -1543,8 +1549,17 @@ Jmsg(JCR *jcr, int type, utime_t mtime, const char *fmt,...)
        len = bsnprintf(rbuf, sizeof(rbuf), _("%s JobId %u: Security Alert: "),
                my_name, JobId);
        break;
+    case M_EVENTS:
+       len = bsnprintf(rbuf, sizeof(rbuf), ""); /* Do not change the format of the line */
+       break;
+
     default:
-       len = bsnprintf(rbuf, sizeof(rbuf), "%s JobId %u: ", my_name, JobId);
+       if (msgs->is_custom_type(type)) {
+          len = bsnprintf(rbuf, sizeof(rbuf), ""); /* Do not change the format of the line */
+
+       } else {
+          len = bsnprintf(rbuf, sizeof(rbuf), "%s JobId %u: ", my_name, JobId);
+       }
        break;
     }
 

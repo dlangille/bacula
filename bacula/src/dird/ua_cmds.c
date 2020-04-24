@@ -134,6 +134,7 @@ static struct cmdstruct commands[] = {                                      /* C
        "\tjobtotals | pools | volume | media <pool=pool-name> | files [type=<deleted|all>] jobid=<nn> | copies jobid=<nn> |\n"
        "\tjoblog jobid=<nn> | pluginrestoreconf jobid=<nn> restoreobjectid=<nn> | snapshot | \n"
        "\tfilemedia jobid=<nn> fileindex=<mm> | clients\n"
+       "\tevents [type=<str> | limit=<int> | order=<asc|desc> | days=<int> | start=<time-specification> | end=<time-specification> ]\n"
       ), false},
 
  { NT_("llist"),      llist_cmd,     _("Full or long list like list command"),
@@ -859,6 +860,8 @@ static void do_enable_disable_cmd(UAContext *ua, bool setting)
    int i;
 
    if (find_arg(ua, NT_("batch")) > 0) {
+      /* Keep track of this important event */
+      ua->send_events("DC0006", EVENTS_TYPE_COMMAND, "%sable batch", setting?"en":"dis");
       ua->send_msg(_("Job Attributes Insertion %sabled\n"), setting?"en":"dis");
       db_disable_batch_insert(setting);
       return;
@@ -889,6 +892,8 @@ static void do_enable_disable_cmd(UAContext *ua, bool setting)
          ua->error_msg(_("Unauthorized command from this console.\n"));
          return;
       }
+      /* Keep track of this important event */
+      ua->send_events("DC0007", EVENTS_TYPE_COMMAND, "%sable job=%s", setting?"en":"dis", job->name());
       job->setEnabled(setting);
       ua->send_msg(_("Job \"%s\" %sabled\n"), job->name(), setting?"en":"dis");
    }
@@ -911,6 +916,10 @@ static void do_enable_disable_cmd(UAContext *ua, bool setting)
          ua->error_msg(_("Unauthorized command from this console.\n"));
          return;
       }
+      /* Keep track of this important event */
+      ua->send_events("DC0008", EVENTS_TYPE_COMMAND,
+                      "%sable client=%s", setting?"en":"dis", client->name());
+
       client->setEnabled(setting);
       ua->send_msg(_("Client \"%s\" %sabled\n"), client->name(), setting?"en":"dis");
    }
@@ -933,6 +942,10 @@ static void do_enable_disable_cmd(UAContext *ua, bool setting)
          ua->error_msg(_("Unauthorized command from this console.\n"));
          return;
       }
+      /* Keep track of this important event */
+      ua->send_events("DC0009", EVENTS_TYPE_COMMAND, "%sable schedule=%s",
+                      setting?"en":"dis", sched->name());
+
       sched->setEnabled(setting);
       ua->send_msg(_("Schedule \"%s\" %sabled\n"), sched->name(), setting?"en":"dis");
    }
@@ -1701,6 +1714,9 @@ static int delete_a_volume(UAContext *ua, MEDIA_DBR *mr)
       return 1;
    }
 
+   /* Keep track of this important event */
+   ua->send_events("DC0010", EVENTS_TYPE_COMMAND, "delete volume=%s", mr->VolumeName);
+
    /* If not purged, do it */
    if (strcmp(mr->VolStatus, "Purged") != 0) {
       if (!db_get_volume_jobids(ua->jcr, ua->db, mr, &lst)) {
@@ -1711,7 +1727,6 @@ static int delete_a_volume(UAContext *ua, MEDIA_DBR *mr)
          purge_jobs_from_catalog(ua, lst.list);
       }
    }
-
    db_delete_media_record(ua->jcr, ua->db, mr);
    return 1;
 }
@@ -1796,6 +1811,8 @@ static int delete_pool(UAContext *ua)
          return 1;
       }
       if (pr.NumVols == 0) {
+         /* Keep track of this important event */
+         ua->send_events("DC0011", EVENTS_TYPE_COMMAND, "delete pool=%s", pr.Name);
          db_delete_pool_record(ua->jcr, ua->db, &pr);
       } else {
          ua->error_msg(_("Unable to delete Pool catalog record \"%s\". Pool still have %d volume(s).\n"),
@@ -1849,6 +1866,9 @@ static int delete_client(UAContext *ua)
    }
 
    if (ua->pint32_val) {
+      /* Keep track of this important event */
+      ua->send_events("DC0012", EVENTS_TYPE_COMMAND, "delete client=%s", cr.Name);
+
       if (lst.count) {
          ua->send_msg(_("Purging %d job(s).\n"), lst.count);
          purge_jobs_from_catalog(ua, lst.list);
@@ -1919,6 +1939,11 @@ static void do_storage_cmd(UAContext *ua, const char *command)
       ua->error_msg(_("Failed to connect to Storage daemon.\n"));
       return;
    }
+
+   /* Keep track of this important event */
+   ua->send_events("DC0013", EVENTS_TYPE_COMMAND, "%s storage=%s dev=%s",
+                  command, store.store->name(), dev_name);
+
    sd = jcr->store_bsock;
    bash_spaces(dev_name);
    sd->fsend("%s %s drive=%d slot=%d\n", command, dev_name, drive, slot);
@@ -2011,6 +2036,10 @@ int cloud_volumes_cmd(UAContext *ua, const char *cmd, const char *mode)
       if (!db_get_media_record(ua->jcr, ua->db, &mr)) {
          goto bail_out;
       }
+
+      /* Keep track of this important event */
+      ua->send_events("DC0014", EVENTS_TYPE_COMMAND,
+                      "%s storage=%s volume=%s", action, storage, mr.VolumeName);
 
       /* Protect us from spaces */
       bash_spaces(mr.VolumeName);

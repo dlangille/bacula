@@ -106,7 +106,7 @@ typedef enum {
   bDirEventVolumeFull    = 8,
   bDirEventRecyle        = 9,
   bDirEventGetScratch    = 10
-} bDirEventType;
+} bDirEventsType;
 
 typedef struct s_bDirEvent {
    uint32_t eventType;
@@ -135,7 +135,7 @@ typedef struct s_dirbaculaFuncs {
 void load_dir_plugins(const char *plugin_dir);
 void new_plugins(JCR *jcr);
 void free_plugins(JCR *jcr);
-int generate_plugin_event(JCR *jcr, bDirEventType event, void *value=NULL);
+int generate_plugin_event(JCR *jcr, bDirEventsType event, void *value=NULL);
 #endif
 
 

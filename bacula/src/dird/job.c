@@ -177,6 +177,13 @@ bool setup_job(JCR *jcr)
    new_plugins(jcr);                  /* instantiate plugins for this jcr */
    generate_plugin_event(jcr, bDirEventJobStart);
 
+   /* Keep track of important events */
+   events_send_msg(jcr,
+                   "DJ0001",
+                   EVENTS_TYPE_JOB, "*Director*", (intptr_t)jcr,
+                   "Job Creation jobid=%d name=%s type=%c level=%c",
+                   jcr->JobId, jcr->Job, jcr->jr.JobType, jcr->jr.JobLevel);
+
    if (job_canceled(jcr)) {
       goto bail_out;
    }
@@ -503,6 +510,13 @@ static void *job_thread(void *arg)
 
    generate_daemon_event(jcr, "JobEnd");
    generate_plugin_event(jcr, bDirEventJobEnd);
+
+   /* Keep track of important events */
+   events_send_msg(jcr,
+                   "DJ0002",
+                   EVENTS_TYPE_JOB, "*Director*", (intptr_t)jcr,
+                   "Job End jobid=%d stat=%c", jcr->JobId, jcr->JobStatus);
+
    Dmsg1(50, "======== End Job stat=%c ==========\n", jcr->JobStatus);
    dequeue_daemon_messages(jcr);
    Dsm_check(100);
@@ -686,6 +700,13 @@ cancel_job(UAContext *ua, JCR *jcr, int wait,  bool cancel)
    int status;
    const char *reason, *cmd;
 
+   /* Keep track of this important event */
+   ua->send_events("DC0005",
+                   EVENTS_TYPE_COMMAND,
+                   "%s jobid=%s job=%s",
+                   cancel?"cancel":"stop",
+                   edit_uint64(jcr->JobId, ed1), jcr->Job);
+   
    if (!cancel) {               /* stop the job */
       if (!jcr->can_be_stopped()) {
          ua->error_msg(_("Cannot stop JobId %s, Job %s is not a regular Backup Job\n"),

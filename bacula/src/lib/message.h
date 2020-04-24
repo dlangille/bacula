@@ -38,6 +38,7 @@
 #undef  M_SECURITY
 #undef  M_ALERT
 #undef  M_VOLMGMT
+#undef  M_EVENTS
 
 /*
  * Most of these message levels are more or less obvious.
@@ -70,7 +71,9 @@
  *
  *  M_VOLMGMT     Volume Management message
  *
- * M_DEBUG and M_SAVED are excluded from M_ALL by default
+ *  M_EVENTS      EVENT information (such as connection, commands, etc...)
+ *
+ *  M_DEBUG and M_SAVED are excluded from M_ALL by default
  */
 
 enum {
@@ -90,10 +93,14 @@ enum {
    M_RESTORED,                        /* ls -l of restored files */
    M_SECURITY,                        /* security violation */
    M_ALERT,                           /* tape alert messages */
-   M_VOLMGMT                          /* Volume management messages */
+   M_VOLMGMT,                         /* Volume management messages */
+   M_EVENTS                           /* Event messages use event_send_msg() */
 };
 
-#define M_MAX      M_VOLMGMT          /* keep this updated ! */
+#define M_MAX      M_EVENTS           /* keep this updated ! */
+
+/* We cannot store more than this amount of custom events */
+#define M_EVENTS_LIMIT    (sizeof(int)*8) /* 8 bit per bytes => 18 to 31 event type */
 
 /* Define message destination structure */
 /* *** FIXME **** where should be extended to handle multiple values */
@@ -102,7 +109,7 @@ typedef struct s_dest {
    int dest_code;                     /* destination (one of the MD_ codes) */
    int max_len;                       /* max mail line length */
    FILE *fd;                          /* file descriptor */
-   char msg_types[nbytes_for_bits(M_MAX+1)]; /* message type mask */
+   char msg_types[MAX_BITS_FOR_INT];  /* message type mask */
    char *where;                       /* filename/program name */
    char *mail_cmd;                    /* mail command */
    POOLMEM *mail_filename;            /* unique mail filename */
@@ -121,7 +128,9 @@ enum {
    MD_CONSOLE,                        /* send msg to UserAgent or console */
    MD_MAIL_ON_ERROR,                  /* email messages if job errors */
    MD_MAIL_ON_SUCCESS,                /* email messages if job succeeds */
-   MD_CATALOG                         /* sent to catalog Log table */
+   MD_CATALOG,                        /* sent to catalog Log table */
+
+   MD_MAX                             /* Internal use, keep it at the end */
 };
 
 /* Queued message item */
@@ -171,7 +180,8 @@ const char *debug_get_tag(uint32_t pos, const char **desc);
 bool debug_find_tag(const char *tagname, bool add, int64_t *current_level);
 bool debug_parse_tags(const char *options, int64_t *current_level);
 
-
+class MSGS;
+MSGS *get_current_MSGS(JCR *jcr);
 void d_msg(const char *file, int line, int64_t level, const char *fmt,...) CHECK_FORMAT(printf, 4, 5);
 void e_msg(const char *file, int line, int type, int level, const char *fmt,...) CHECK_FORMAT(printf, 5, 6);;
 void Jmsg(JCR *jcr, int type, utime_t mtime, const char *fmt,...) CHECK_FORMAT(printf, 4, 5);
@@ -183,11 +193,11 @@ bool is_message_type_set(JCR *jcr, int type);
 void set_trace_for_tools(FILE *new_trace_fd); // called by Bacula's tools only
 
 class BDB;                                              /* define forward reference */
-typedef bool (*sql_query_call)(JCR *jcr, const char *cmd);
-typedef bool (*sql_escape_call)(JCR *jcr, BDB *db, char *snew, char *sold, int len);
+typedef bool (*sql_insert_log)(JCR *jcr, JobId_t jobid, utime_t mtime, char *msg);
+typedef bool (*sql_insert_event)(JCR *jcr, utime_t mtime, const char *line);
 
-extern DLL_IMP_EXP sql_query_call  p_sql_query;
-extern DLL_IMP_EXP sql_escape_call p_sql_escape;
+extern DLL_IMP_EXP sql_insert_log  p_sql_log;
+extern DLL_IMP_EXP sql_insert_event p_sql_event;
 
 extern DLL_IMP_EXP int64_t       debug_level;
 extern DLL_IMP_EXP int64_t       debug_level_tags;

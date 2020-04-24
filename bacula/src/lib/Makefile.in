@@ -45,7 +45,7 @@ INCLUDE_FILES = ../baconfig.h ../bacula.h ../bc_types.h \
       waitq.h watchdog.h workq.h \
       parse_conf.h ini.h \
       worker.h lockmgr.h devlock.h output.h bwlimit.h \
-      collect.h
+      collect.h event.h
 
 #
 # libbac
@@ -62,7 +62,7 @@ LIBBAC_SRCS = attr.c base64.c berrno.c bsys.c binflate.c bget_msg.c \
       util.c var.c watchdog.c workq.c btimers.c \
       worker.c flist.c bcollector.c collect.c \
       address_conf.c breg.c htable.c lockmgr.c devlock.c output.c bwlimit.c \
-      bsock_meeting.c $(EXTRA_SRCS)
+      bsock_meeting.c bcrc32.c events.c $(EXTRA_SRCS)
 
 LIBBAC_OBJS_TMP = $(LIBBAC_SRCS:.c=.o)
 LIBBAC_OBJS = $(LIBBAC_OBJS_TMP:.cc=.o)

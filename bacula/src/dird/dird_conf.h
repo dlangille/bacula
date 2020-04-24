@@ -83,6 +83,7 @@ class POOL;
 class RUN;
 class DEVICE;
 class RUNSCRIPT;
+class CAT;
 
 /*
  *   Director Resource
@@ -101,6 +102,8 @@ public:
    char *pid_directory;               /* PidDirectory */
    char *subsys_directory;            /* SubsysDirectory */
    MSGS *messages;                    /* Daemon message handler */
+   utime_t events_retention;          /* Event Retention time */
+   CAT *catalog;                      /* Catalog resource used for Daemon messages */
    uint32_t MaxConcurrentJobs;        /* Max concurrent jobs for whole director */
    uint32_t MaxSpawnedJobs;           /* Max Jobs that can be started by Migration/Copy */
    uint32_t MaxConsoleConnect;        /* Max concurrent console session */

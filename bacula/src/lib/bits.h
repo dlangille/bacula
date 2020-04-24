@@ -56,4 +56,7 @@
       clear_bit(i, var); \
 }
 
+#define MAX_BITS_FOR_INT   nbytes_for_bits(sizeof(int)*8)
+#define MAX_BITS_FOR_INT64 nbytes_for_bits(sizeof(int64_t)*8)
+
 #endif /* __BITS_H_ */

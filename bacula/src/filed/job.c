@@ -419,6 +419,10 @@ static void *handle_director_request(BSOCK *dir)
    generate_daemon_event(jcr, "JobEnd");
    generate_plugin_event(jcr, bEventJobEnd);
 
+   /* Keep track of the important events */
+   events_send_msg(jcr, "FC0001", EVENTS_TYPE_CONNECTION, jcr->director->hdr.name, (intptr_t)jcr,
+                   "Director disconnection");
+
 bail_out:
    dequeue_messages(jcr);  /* send any queued messages, will no longer impact
                             * the job status... */
@@ -905,6 +909,10 @@ static int hello_cmd(JCR *jcr)
    Dmsg0(120, "OK Authenticate\n");
    jcr->authenticated = true;
 
+   /* Keep track of the important events */
+   events_send_msg(jcr, "FC0002", EVENTS_TYPE_CONNECTION,
+                   jcr->director->hdr.name, (intptr_t)jcr, "Director connection");
+
    dequeue_messages(jcr);     /* dequeue any daemon messages */
    return 1;
 }
@@ -933,6 +941,10 @@ static int cancel_cmd(JCR *jcr)
    if (!(cjcr=get_jcr_by_full_name(Job))) {
       dir->fsend(_("2901 Job %s not found.\n"), Job);
    } else {
+      /* Keep track of the important events */
+      events_send_msg(jcr, "FC0003", EVENTS_TYPE_COMMAND, jcr->director->hdr.name, (intptr_t)jcr,
+                      "Cancel jobid=%d job=%s", cjcr->JobId, Job);
+
       generate_plugin_event(cjcr, bEventCancelCommand, NULL);
       cjcr->setJobStatus(status);
       if (cjcr->store_bsock) {
@@ -2866,6 +2878,10 @@ static int backup_cmd(JCR *jcr)
       goto cleanup;
    }
 
+   /* Keep track of important events */
+   events_send_msg(jcr, "FJ0001", EVENTS_TYPE_JOB, jcr->director->hdr.name, (intptr_t)jcr,
+                   "Job Start jobid=%d job=%s", jcr->JobId, jcr->Job);
+
    generate_daemon_event(jcr, "JobStart");
    generate_plugin_event(jcr, bEventStartBackupJob);
 
@@ -2987,6 +3003,10 @@ cleanup:
 #endif
    delete jcr->dedup;
    jcr->dedup = NULL;
+
+   /* Keep track of important events */
+   events_send_msg(jcr, "FJ0002", EVENTS_TYPE_JOB, jcr->director->hdr.name, (intptr_t)jcr,
+                   "Job End jobid=%d job=%s", jcr->JobId, jcr->Job);
 
    generate_plugin_event(jcr, bEventEndBackupJob);
    return 0;                          /* return and stop command loop */

@@ -278,11 +278,27 @@ static JobId_t start_job(UAContext *ua, JCR *jcr, run_ctx &rc)
       jcr->file_bsock = ua->UA_sock;
       jcr->file_bsock->set_jcr(jcr);
    }
+
    if (rc.jr.JobStatus == JS_Incomplete) {
       Dmsg1(100, "Ressuming JobId=%d\n", rc.jr.JobId);
+
+      /* Keep track of the important events */
+      ua->send_events("DJ0003",
+                      EVENTS_TYPE_COMMAND,
+                      "resume jobid=%d job=%s fileset=%s client=%s",
+                      rc.jr.JobId, jcr->job->name(), jcr->fileset->name(), jcr->client->name());
+
       JobId = resume_job(jcr, &rc.jr);
+
    } else {
       Dmsg1(100, "Starting JobId=%d\n", rc.jr.JobId);
+
+      /* Keep track of the important events */
+      ua->send_events("DJ0004",
+                      EVENTS_TYPE_COMMAND,
+                      "run job=%s fileset=%s client=%s",
+                      jcr->job->name(), jcr->fileset->name(), jcr->client->name());
+
       JobId = run_job(jcr);
    }
    Dmsg4(100, "JobId=%u NewJobId=%d pool=%s priority=%d\n", (int)jcr->JobId,

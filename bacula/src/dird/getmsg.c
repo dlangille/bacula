@@ -200,13 +200,21 @@ int bget_dirmsg(BSOCK *bs)
        *  a message to dispatch, or a catalog request.
        *  Try to fulfill it.
        */
+      /* Events comming from an other daemon */
+      if (bs->msg[0] == 'E') {
+         EVENTS_DBR ev;
+         if (ev.scan_line(bs->msg)) {
+            events_send_msg(jcr, &ev);
+            continue;
+         }
+      }
       if ((sscanf(bs->msg, "%020s JobId=%ld ", MsgType, &JobId) != 2) &&
           (sscanf(bs->msg, "%020s Job=%127s ", MsgType, Job) != 2) &&
           (sscanf(bs->msg, "%020s Job=x", MsgType) != 1)) {
          if (jcr->JobId == 0 || is_msgid(strchr(bs->msg, '['))) {
             return n;
          }
-         Jmsg1(jcr, M_ERROR, 0, _("Malformed message: %s\n"), bs->msg);
+         Jmsg1(jcr, M_ERROR, 0, _("Malformed message: [%s]\n"), bs->msg);
          continue;
       }
 

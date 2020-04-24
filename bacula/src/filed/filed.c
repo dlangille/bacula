@@ -277,6 +277,11 @@ int main (int argc, char *argv[])
 
    start_collector_threads();    /* start collector thread for every Collector resource */
 
+   /* Keep track of the important events */
+   events_send_msg(NULL, "FD0001",
+                   EVENTS_TYPE_DAEMON, "*Daemon*",
+                   (intptr_t)get_first_port_host_order(me->FDaddrs), "Filed startup");
+
    server_tid = pthread_self();
 
    /* Become server, and handle requests */
@@ -319,6 +324,9 @@ void terminate_filed(int sig)
          delete_pid_file(me->pid_directory,
                          "bacula-fd", get_first_port_host_order(me->FDaddrs));
       }
+      /* Keep track of the important events */
+      events_send_msg(NULL, "FD0002", EVENTS_TYPE_DAEMON,
+                      "*Daemon*", (intptr_t)get_first_port_host_order(me->FDaddrs), "Filed shutdown");
    }
 
    if (configfile != NULL) {

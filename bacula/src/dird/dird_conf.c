@@ -373,7 +373,9 @@ void SCHED::setEnabled(bool val)
 static RES_ITEM dir_items[] = {
    {"Name",        store_name,     ITEM(res_dir.hdr.name), 0, ITEM_REQUIRED, 0},
    {"Description", store_str,      ITEM(res_dir.hdr.desc), 0, 0, 0},
+   {"EventsRetention", store_time, ITEM(res_dir.events_retention), 0, ITEM_DEFAULT, 30*24*60*60},
    {"Messages",    store_res,      ITEM(res_dir.messages), R_MSGS, 0, 0},
+   {"Catalog",     store_res,      ITEM(res_dir.catalog),  R_CATALOG, 0, 0},
    {"DirPort",     store_addresses_port,    ITEM(res_dir.DIRaddrs),  0, ITEM_DEFAULT, 9101},
    {"DirAddress",  store_addresses_address, ITEM(res_dir.DIRaddrs),  0, ITEM_DEFAULT, 9101},
    {"DirAddresses",store_addresses,         ITEM(res_dir.DIRaddrs),  0, ITEM_DEFAULT, 9101},

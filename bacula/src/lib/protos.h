@@ -301,6 +301,8 @@ void       register_message_callback(void msg_callback(int type, char *msg));
 void       setup_daemon_message_queue();
 void       free_daemon_message_queue();
 
+#include "events.h"
+
 /* bnet_server.c */
 void       bnet_thread_server(dlist *addr_list, int max_clients,
               workq_t *client_wq, void *handle_client_request(void *bsock));

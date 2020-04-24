@@ -261,14 +261,14 @@ int UAAuthenticate::authenticate_user_agent()
       sleep(5);
       return 0;
    }
-
    Dmsg1(dbglvl, "authenticate user agent: %s", ua->msg);
    if (scan_string(ua->msg, "Hello %127s fdcallsdir %d tlspsk=%d", name, &ua_version, &tlspsk_remote) == 3 ||
        scan_string(ua->msg, "Hello %127s fdcallsdir %d", name, &ua_version) == 2) {
       fdcallsdir = true;
    } else if (scan_string(ua->msg, "Hello %127s calling %d tlspsk=%d", name, &ua_version, &tlspsk_remote) != 3 &&
        scan_string(ua->msg, "Hello %127s calling %d", name, &ua_version) != 2 &&
-       scan_string(ua->msg, "Hello %127s calling", name) != 1) {
+       scan_string(ua->msg, "Hello %127s calling", name) != 1)
+   {
       ua->msg[100] = 0;               /* terminate string */
       Qmsg3(NULL, M_SECURITY, 0, _("UA Hello from %s:%s is invalid. Got: %s\n"), ua->who(),
             ua->host(), ua->msg);
@@ -329,6 +329,7 @@ int UAAuthenticate::authenticate_user_agent()
 
    if (cons) {
       uac->cons = cons;         /* save console resource pointer */
+      bstrncpy(uac->name, uac->cons->hdr.name, sizeof(uac->name));
    }
 
    this->auth_success = HandleTLS();

@@ -135,7 +135,7 @@ void edit_msg_types(HPKT &hpkt, DEST *dest)
    bool found;
 
    pm_strcpy(hpkt.edbuf, "[");
-   for (i=1; i<M_MAX; i++) {
+   for (i=1; i<=M_MAX; i++) {
       if (bit_is_set(i, dest->msg_types)) {
          found = false;
          if (!first_type) pm_strcat(hpkt.edbuf, ",");
@@ -162,7 +162,7 @@ void edit_msg_types(HPKT &hpkt, DEST *dest)
     */
    if (count > M_MAX/2) {
       pm_strcpy(hpkt.edbuf, "[\"All\"");
-      for (i=1; i<M_MAX; i++) {
+      for (i=1; i<=M_MAX; i++) {
          if (!bit_is_set(i, dest->msg_types)) {
             found = false;
             pm_strcat(hpkt.edbuf, ",");
@@ -183,9 +183,17 @@ void edit_msg_types(HPKT &hpkt, DEST *dest)
              * on the configuration line
              */
             pm_strcat(hpkt.edbuf, ",\"Saved\"");
+
+         } else if (i == M_EVENTS) {
+            /* Events is not set by default, users must explicitly use it
+             * on the configuration line
+             */
+            pm_strcat(hpkt.edbuf, ",\"Events\"");
          }
       }
    }
+   /* Now handle custom type */
+   edit_custom_type(&hpkt.edbuf, (MSGS *)hpkt.ritem->value, dest->dest_code);
    pm_strcat(hpkt.edbuf, "]");
 }
 

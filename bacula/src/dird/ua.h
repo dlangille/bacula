@@ -39,6 +39,7 @@ public:
    POOLMEM *cmd;                      /* return command/name buffer */
    POOLMEM *args;                     /* command line arguments */
    POOLMEM *errmsg;                   /* store error message */
+   char name[MAX_NAME_LENGTH];        /* Name of the console bashed */
    char *argk[MAX_CMD_ARGS];          /* argument keywords */
    char *argv[MAX_CMD_ARGS];          /* argument values */
    int argc;                          /* number of arguments */
@@ -74,6 +75,7 @@ public:
    void error_msg(const char *fmt, ...);
    void warning_msg(const char *fmt, ...);
    void info_msg(const char *fmt, ...);
+   void send_events(const char *code, const char *type, const char *fmt, ...);
 };
 
 /* Context for insert_tree_handler() */

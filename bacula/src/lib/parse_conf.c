@@ -138,6 +138,7 @@ RES_ITEM collector_items[] = {
 s_kw msg_types[] = {
    {"Debug",         M_DEBUG},  /* Keep 1st place */
    {"Saved",         M_SAVED},  /* Keep 2nd place */
+   {"Events",        M_EVENTS}, /* Keep 3rd place */
    {"Abort",         M_ABORT},
    {"Fatal",         M_FATAL},
    {"Error",         M_ERROR},
@@ -450,13 +451,24 @@ static void scan_types(LEX *lc, MSGS *msg, int dest_code, char *where, char *cmd
             break;
          }
       }
+      /* Custom event, we add it to the list for this Message */
+      if (!found && strncmp(str, "events.", 6) == 0) {
+         msg_type = msg->add_custom_type(is_not, str+7, dest_code); /* We can ignore completely if we want */
+         Dmsg2(50, "Add events %s => %d\n", str, msg_type);
+         if (msg_type < 0) {
+            scan_err2(lc, _("message type: Unable to add %s message type. %s"), str,
+                      (msg_type == -1) ? "Too much custom type" : "Invalid format");
+            return;
+         }
+         found = true;
+      }
       if (!found) {
          scan_err1(lc, _("message type: %s not found"), str);
          return;
       }
 
       if (msg_type == M_MAX+1) {         /* all? */
-         for (i=2; i<=M_MAX; i++) {      /* yes set all types except Debug and Saved */
+         for (i=3; i<=M_MAX; i++) {      /* yes set all types except Debug, Saved and Events */
             add_msg_dest(msg, dest_code, msg_types[i].token, where, cmd);
          }
       } else if (is_not) {

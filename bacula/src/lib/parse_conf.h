@@ -211,7 +211,10 @@ public:
    char *mail_cmd;                    /* mail command */
    char *operator_cmd;                /* Operator command */
    DEST *dest_chain;                  /* chain of destinations */
-   char send_msg[nbytes_for_bits(M_MAX+1)];  /* bit array of types */
+   char  send_msg[MAX_BITS_FOR_INT];  /* bit array of types */
+
+   int32_t  custom_type_current_index; /* current index for custom index */
+   rblist  *custom_type;               /* custom type */
 
 private:
    bool m_in_use;                     /* set when using to send a message */
@@ -230,6 +233,10 @@ public:
    void wait_not_in_use();            /* in message.c */
    void lock();                       /* in message.c */
    void unlock();                     /* in message.c */
+
+   int get_custom_type(char *name);
+   int add_custom_type(bool is_not, char *name, int destcode);
+   bool is_custom_type(int type) { return type > M_MAX && type <= custom_type_current_index; };
 };
 
 inline char *MSGS::name() const { return hdr.name; }

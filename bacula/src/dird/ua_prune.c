@@ -165,6 +165,46 @@ static int prune_all_clients_and_pools(UAContext *ua, int kw)
    return true;
 }
 
+int do_prune_events(JCR *jcr, BDB *db, int retention)
+{
+   char ed1[50];
+   POOL_MEM query(PM_MESSAGE);
+   utime_t now = (utime_t)time(NULL);
+
+   db_lock(db);
+   Mmsg(query, "DELETE FROM Events WHERE EventsTime < '%s'",
+        bstrutime(ed1, sizeof(ed1), now - retention));
+   db_sql_query(db, query.c_str(), NULL, NULL);
+   db_unlock(db);
+   return 0;
+}
+
+/* Prune Events records from the database.
+ * We cannot change the retention time, only a modification
+ * of the configuration can do that.
+ */
+static int prune_events(UAContext *ua, int retention)
+{
+   char ed1[50];
+   ua->info_msg(_("The current Events retention period is: %s\n"),
+                edit_utime(retention, ed1, sizeof(ed1)));
+
+   if (find_arg(ua, _("yes")) < 0) {
+      if (!get_yesno(ua, _("Continue? (yes/no): "))) {
+         return 0;
+      }
+
+      if (ua->pint32_val != 1) {
+         return 0;
+      }
+   }
+
+   do_prune_events(ua->jcr, ua->db, retention);
+   ua->info_msg(_("Pruned Events from catalog.\n"));
+
+   return true;
+}
+
 /*
  *   Prune records from database
  *
@@ -189,6 +229,7 @@ int prunecmd(UAContext *ua, const char *cmd)
       NT_("Volume"),
       NT_("Stats"),
       NT_("Snapshots"),
+      NT_("Events"),
       NULL};
 
    if (!open_new_client_db(ua)) {
@@ -197,7 +238,7 @@ int prunecmd(UAContext *ua, const char *cmd)
 
    /* First search args */
    kw = find_arg_keyword(ua, keywords);
-   if (kw < 0 || kw > 4) {
+   if (kw < 0 || kw > 5) {
       /* no args, so ask user */
       kw = do_keyword_prompt(ua, _("Choose item to prune"), keywords);
    }
@@ -272,6 +313,14 @@ int prunecmd(UAContext *ua, const char *cmd)
       return true;
    case 4:  /* prune snapshots */
       prune_snapshot(ua);
+      return true;
+   case 5:  /* prune events */
+      dir = (DIRRES *)GetNextRes(R_DIRECTOR, NULL);
+      if (!dir->stats_retention) {
+         return false;
+      }
+      retention = dir->events_retention;
+      prune_events(ua, retention);
       return true;
    default:
       break;

@@ -205,6 +205,8 @@ static int purge_files_from_client(UAContext *ua, CLIENT *client)
    del.max_ids = 1000;
    del.JobId = (JobId_t *)malloc(sizeof(JobId_t) * del.max_ids);
 
+   /* Keep track of this important event */
+   ua->send_events("DC0001", EVENTS_TYPE_COMMAND, "purge files client=%s", cr.Name);
    ua->info_msg(_("Begin purging files for Client \"%s\"\n"), cr.Name);
 
    Mmsg(query, select_jobsfiles_from_client, edit_int64(cr.ClientId, ed1));
@@ -425,6 +427,8 @@ void upgrade_copies(UAContext *ua, char *jobs)
 void purge_jobs_from_catalog(UAContext *ua, char *jobs)
 {
    POOL_MEM query(PM_MESSAGE);
+   /* Keep track of this important event */
+   ua->send_events("DC0002", EVENTS_TYPE_COMMAND, "purge jobid=%s", jobs);
 
    /* Delete (or purge) records associated with the job */
    purge_files_from_jobs(ua, jobs);
@@ -455,7 +459,7 @@ void purge_jobs_from_catalog(UAContext *ua, char *jobs)
    /* Now remove the Job record itself */
    Mmsg(query, "DELETE FROM Job WHERE JobId IN (%s)", jobs);
    db_sql_query(ua->db, query.c_str(), NULL, (void *)NULL);
-
+   
    Dmsg1(050, "Delete Job sql=%s\n", query.c_str());
 }
 
@@ -516,6 +520,9 @@ bool purge_jobs_from_volume(UAContext *ua, MEDIA_DBR *mr, bool force)
    }
 
    if (*jobids) {
+      /* Keep track of this important event */
+      ua->send_events("DC0003", EVENTS_TYPE_COMMAND, "purge volume=%s", mr->VolumeName);
+
       purge_jobs_from_catalog(ua, jobids);
       ua->info_msg(_("%d Job%s on Volume \"%s\" purged from catalog.\n"),
                    lst.count, lst.count<=1?"":"s", mr->VolumeName);
@@ -655,6 +662,8 @@ static void truncate_volume(UAContext *ua, MEDIA_DBR *mr,
                mr->VolumeName);
             ok = false;
          }
+         /* Keep track of this important event */
+         ua->send_events("DC0004", EVENTS_TYPE_COMMAND, "truncate volume=%s", mr->VolumeName);
          ua->send_msg(_("The volume \"%s\" has been truncated\n"), mr->VolumeName);
       }
    }

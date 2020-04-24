@@ -92,6 +92,7 @@ static bool api_cmd(UAContext *ua, const char *cmd);
 static bool sql_cmd(UAContext *ua, const char *cmd);
 static bool dot_quit_cmd(UAContext *ua, const char *cmd);
 static bool dot_help_cmd(UAContext *ua, const char *cmd);
+static bool dot_add_events(UAContext *ua, const char *cmd);
 static int one_handler(void *ctx, int num_field, char **row);
 
 struct cmdstruct { const char *key; bool (*func)(UAContext *ua, const char *cmd); const char *help;const bool use_in_rs;};
@@ -104,6 +105,7 @@ static struct cmdstruct commands[] = { /* help */  /* can be used in runscript *
  { NT_(".die"),        admin_cmds,               NULL,       false},
  { NT_(".dump"),       admin_cmds,               NULL,       false},
  { NT_(".exit"),       admin_cmds,               NULL,       false},
+ { NT_(".events"),     dot_add_events,           NULL,       false},
  { NT_(".filesets"),   filesetscmd,              NULL,       false},
  { NT_(".help"),       dot_help_cmd,             NULL,       false},
  { NT_(".jobs"),       jobscmd,                  NULL,       true},
@@ -1710,7 +1712,8 @@ bail_out:
 }
 
 /*
-/* .estimate command */
+ * .estimate command 
+ */
 static bool dotestimatecmd(UAContext *ua, const char *cmd)
 {
    JOB *jres;
@@ -2447,3 +2450,45 @@ static bool defaultscmd(UAContext *ua, const char *cmd)
 #if !BEEF
 bool get_uid_gid_from_acl(UAContext *ua, alist **uid, alist **gid, alist **dir) { return true;}
 #endif
+
+/* Store the current uid/gid restriction */
+static bool dot_add_events(UAContext *ua, const char *cmd)
+{
+   POOL_MEM source, type, text, tmp;
+   bool source_set=false, type_set=false, text_set=false;
+   for(int i=0; i < ua->argc ; i++) {
+      if (strcasecmp(ua->argk[i], NT_("source")) == 0) {
+         if (is_name_valid(ua->argv[i], tmp.handle(), ".:-_@+= ")) {
+            Mmsg(source, "**%s**", ua->argv[i]);
+            source_set=true;
+         } else {
+            ua->error_msg("source format is invalid. %s\n", tmp.c_str());
+            goto bail_out;
+         }
+      }
+      if (strcasecmp(ua->argk[i], NT_("type")) == 0) {
+         if (is_name_valid(ua->argv[i], tmp.handle(), "")) {
+            pm_strcpy(type, ua->argv[i]);
+            type_set=true;
+         } else {
+            ua->error_msg("type format is invalid. %s\n", tmp.c_str());
+            goto bail_out;
+         }
+      }
+      if (strcasecmp(ua->argk[i], NT_("text")) == 0) {
+         text_set=true;
+         pm_strcpy(text, ua->argv[i]);
+      }
+   }
+   if (text_set && source_set && type_set) {
+      events_send_msg(ua->jcr, "DC0017",
+                      type.c_str(),
+                      source.c_str(),
+                      (intptr_t)ua,
+                      "%s", text.c_str());
+   } else {
+      ua->error_msg("Unable to send events, source, type or text parameter are missing\n");
+   }
+bail_out:
+   return true;
+}
