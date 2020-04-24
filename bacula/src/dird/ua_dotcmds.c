@@ -17,6 +17,7 @@
    Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
+ *
  *   Bacula Director -- User Agent Commands
  *     These are "dot" commands, i.e. commands preceded
  *        by a period. These commands are meant to be used
@@ -24,6 +25,7 @@
  *        returned results are (supposed to be) predictable.
  *
  *     Kern Sibbald, April MMII
+ *
  */
 
 #include "bacula.h"
@@ -40,7 +42,7 @@ extern void do_messages(UAContext *ua, const char *cmd);
 extern int quit_cmd(UAContext *ua, const char *cmd);
 extern int qhelp_cmd(UAContext *ua, const char *cmd);
 extern bool dot_status_cmd(UAContext *ua, const char *cmd);
-
+extern void bvfs_set_acl(UAContext *ua, Bvfs *bvfs);
 
 /* Forward referenced functions */
 static bool admin_cmds(UAContext *ua, const char *cmd);
@@ -79,9 +81,12 @@ static bool dot_bvfs_update_fv(UAContext *ua, const char *cmd);
 static bool dot_bvfs_get_volumes(UAContext *ua, const char *cmd);
 static bool dot_bvfs_get_jobs(UAContext *ua, const char *cmd);
 static bool dot_bvfs_get_bootstrap(UAContext *ua, const char *cmd);
+static bool dot_bvfs_get_fileindex(UAContext *ua, const char *cmd);
 static bool dot_bvfs_get_delta(UAContext *ua, const char *cmd);
+static bool dot_bvfs_delete_fileid(UAContext *ua, const char *cmd);
 static void bvfs_get_filter(UAContext *ua, POOL_MEM &where, char *limit, int len);
-
+static bool dot_setuid(UAContext *ua, const char *cmd);
+static bool dot_querycmd(UAContext *ua, const char *cmd);
 static bool putfile_cmd(UAContext *ua, const char *cmd);
 static bool api_cmd(UAContext *ua, const char *cmd);
 static bool sql_cmd(UAContext *ua, const char *cmd);
@@ -125,6 +130,7 @@ static struct cmdstruct commands[] = { /* help */  /* can be used in runscript *
  { NT_(".bvfs_get_jobids"), dot_bvfs_get_jobids, NULL,       true},
  { NT_(".bvfs_get_jobs"), dot_bvfs_get_jobs,     NULL,       true},
  { NT_(".bvfs_get_bootstrap"), dot_bvfs_get_bootstrap,NULL,  true},
+ { NT_(".bvfs_get_fileindex"), dot_bvfs_get_fileindex,NULL,  true},
  { NT_(".bvfs_versions"), dot_bvfs_versions,     NULL,       true},
  { NT_(".bvfs_get_delta"), dot_bvfs_get_delta,   NULL,       true},
  { NT_(".bvfs_restore"),  dot_bvfs_restore,      NULL,       true},
@@ -132,8 +138,11 @@ static struct cmdstruct commands[] = { /* help */  /* can be used in runscript *
  { NT_(".bvfs_decode_lstat"),dot_bvfs_decode_lstat,NULL,     true},
  { NT_(".bvfs_clear_cache"),dot_bvfs_clear_cache,NULL,       false},
  { NT_(".bvfs_update_fv"),dot_bvfs_update_fv,    NULL,       true},
+ { NT_(".bvfs_delete_fileid"),dot_bvfs_delete_fileid,  NULL, false},
+ { NT_(".setuid"), dot_setuid,                   NULL,       false},
  { NT_(".ls"), dot_ls_cmd,                       NULL,       false},
  { NT_(".types"),      typescmd,                 NULL,       false},
+ { NT_(".query"),     dot_querycmd,              NULL,       false},
  { NT_(".tags"),      tagscmd,                   NULL,       false}
 };
 #define comsize ((int)(sizeof(commands)/sizeof(struct cmdstruct)))
@@ -149,7 +158,7 @@ bool do_a_dot_command(UAContext *ua)
    bool found = false;
 
    Dmsg1(1400, "Dot command: %s\n", ua->UA_sock?ua->UA_sock->msg:"");
-   if (ua->argc == 0 || !ua->UA_sock) {
+   if (ua->argc == 0) {
       return false;
    }
 
@@ -180,8 +189,10 @@ bool do_a_dot_command(UAContext *ua)
          ok = (*commands[i].func)(ua, ua->cmd);   /* go execute command */
          if (ua->api) ua->signal(ok?BNET_CMD_OK:BNET_CMD_FAILED);
          ua->gui = gui;
-         if (ua->UA_sock) {
-            found = ua->UA_sock->is_stop() ? false : true;
+         if (ua->UA_sock && ua->UA_sock->is_stop()) {
+            found = false;
+         } else {
+            found = true;
          }
          break;
       }
@@ -191,6 +202,29 @@ bool do_a_dot_command(UAContext *ua)
       ok = false;
    }
    return ok;
+}
+
+/* Store the current uid/gid restriction */
+static bool dot_setuid(UAContext *ua, const char *cmd)
+{
+   ua->uid = 0;
+   ua->gid = 0;
+
+   /* TODO: See if we check the UserIdACL to specify a uid/gid */
+   for(int i=0; i < ua->argc ; i++) {
+      if (strcasecmp(ua->argk[i], NT_("uid")) == 0) {
+         if (is_a_number(ua->argv[i])) {
+            ua->uid = str_to_int64(ua->argv[i]);
+         }
+      }
+
+      if (strcasecmp(ua->argk[i], NT_("gid")) == 0) {
+         if (is_a_number(ua->argv[i])) {
+            ua->gid = str_to_int64(ua->argv[i]);
+         }
+      }
+   }
+   return true;
 }
 
 /*
@@ -245,7 +279,8 @@ static bool dot_ls_cmd(UAContext *ua, const char *cmd)
    init_jcr_job_record(jcr);           // need job
 
    ua->send_msg(_("Connecting to Client %s at %s:%d\n"),
-                jcr->client->name(), jcr->client->address(buf.addr()), jcr->client->FDport);
+                jcr->client->name(), get_client_address(jcr, jcr->client, buf.addr()),
+                jcr->client->FDport);
 
    if (!connect_to_file_daemon(jcr, 1, 15, 0)) {
       ua->error_msg(_("Failed to connect to Client.\n"));
@@ -278,21 +313,11 @@ bail_out:
    return true;
 }
 
-static void bvfs_set_acl(UAContext *ua, Bvfs *bvfs)
+#ifdef COMMUNITY
+void bvfs_set_acl(UAContext *ua, Bvfs *bvfs)
 {
-   if (!ua) {
-      return;
-   }
-
-   /* If no console resource => default console and all is permitted */
-   if (!ua->cons) {
-      return;
-   }
-   bvfs->set_job_acl(ua->cons->ACL_lists[Job_ACL]);
-   bvfs->set_client_acl(ua->cons->ACL_lists[Client_ACL]);
-   bvfs->set_fileset_acl(ua->cons->ACL_lists[FileSet_ACL]);
-   bvfs->set_pool_acl(ua->cons->ACL_lists[Pool_ACL]);
 }
+#endif
 
 static bool dot_bvfs_decode_lstat(UAContext *ua, const char *cmd)
 {
@@ -376,6 +401,41 @@ static bool dot_bvfs_update_fv(UAContext *ua, const char *cmd)
    return true;
 }
 
+static bool dot_bvfs_delete_fileid(UAContext *ua, const char *cmd)
+{
+   char *jobid, *fileid;
+   int pos = find_arg_with_value(ua, "jobid");
+
+   if (pos == -1 || !is_a_number_list(ua->argv[pos])) {
+      ua->error_msg("Expecting to find jobid=1,2,3 argument\n");
+      return 1;
+   }
+   jobid = ua->argv[pos];
+
+   pos = find_arg_with_value(ua, "fileid");
+   if (pos == -1 || !is_a_number_list(ua->argv[pos])) {
+      ua->error_msg("Expecting to find fileid=1,2,3 argument\n");
+      return 1;
+   }
+   fileid = ua->argv[pos];
+
+   if (!open_new_client_db(ua)) {
+      return 1;
+   }
+
+   Bvfs fs(ua->jcr, ua->db);
+   bvfs_set_acl(ua, &fs);
+   fs.set_jobids(jobid);
+   ua->bvfs = &fs;
+
+   if (fs.delete_fileid(fileid)) {
+      ua->info_msg("OK\n");
+   } else {
+      ua->error_msg("Unable to delete fileid=%s\n", fileid);
+   }
+   return true;
+}
+
 static bool dot_bvfs_clear_cache(UAContext *ua, const char *cmd)
 {
    if (!open_client_db(ua)) {
@@ -399,6 +459,7 @@ static int bvfs_result_handler(void *ctx, int fields, char **row)
    UAContext *ua = (UAContext *)ctx;
    struct stat statp;
    int32_t LinkFI;
+   Bvfs *fs = (Bvfs*) ua->bvfs;
    char *fileid=row[BVFS_FileId];
    char *lstat=row[BVFS_LStat];
    char *jobid=row[BVFS_JobId];
@@ -415,6 +476,11 @@ static int bvfs_result_handler(void *ctx, int fields, char **row)
 
    memset(&statp, 0, sizeof(struct stat));
    decode_stat(lstat, &statp, sizeof(statp), &LinkFI);
+   if (!fs->can_access(&statp)) {
+      Dmsg5(100, "Access denied for %d:%d (%d:%d) st_mode=%d\n",
+            (int)ua->uid, (int)ua->gid, (int)statp.st_uid, (int)statp.st_gid, (int)statp.st_mode);
+      return 0;
+   }
    Dmsg1(100, "type=%s\n", row[0]);
    if (bvfs_is_dir(row)) {
       char *path = bvfs_basename_dir(row[BVFS_Name]);
@@ -470,6 +536,7 @@ static bool bvfs_parse_arg_version(UAContext *ua,
                                    bool *versions,
                                    bool *copies)
 {
+   bool fnid_found=false;
    *fnid=0;
    *client=NULL;
    *versions=false;
@@ -478,6 +545,7 @@ static bool bvfs_parse_arg_version(UAContext *ua,
    for (int i=1; i<ua->argc; i++) {
       if (fnid && strcasecmp(ua->argk[i], NT_("fnid")) == 0) {
          if (is_a_number(ua->argv[i])) {
+            fnid_found = true;
             *fnid = str_to_int64(ua->argv[i]);
          }
       }
@@ -502,7 +570,7 @@ static bool bvfs_parse_arg_version(UAContext *ua,
          *versions = true;
       }
    }
-   return ((*client || (clients && clients->size() > 0)) && *fnid > 0);
+   return ((*client || (clients && clients->size() > 0)) && fnid_found);
 }
 
 static bool bvfs_parse_arg(UAContext *ua,
@@ -586,6 +654,47 @@ static bool bvfs_parse_arg(UAContext *ua,
    return true;
 }
 
+static int get_client_jobids(UAContext *ua, Bvfs *fs)
+{
+   POOL_MEM where;
+   char limit[50];
+   alist clients(10, owned_by_alist);
+   db_list_ctx jobids;
+   bool ret;
+
+   int pos = find_arg_with_value(ua, "client");
+   if (pos < 0) {
+      pos = find_arg_with_value(ua, "clients");
+   }
+   if (pos < 0) {
+      Dmsg0(50, "client not found on command line\n");
+      return -1;
+   }
+   /* Turn client1,client2,client3 to a alist of clients */
+   parse_list(ua->argv[pos], &clients);
+
+   db_lock(ua->db);
+   bvfs_get_filter(ua, where, limit, sizeof(limit));
+   Mmsg(ua->db->cmd,
+      "SELECT JobId "
+        "FROM Job JOIN Client USING (ClientId) "
+         "WHERE Client.Name IN (%s) "
+           "AND Job.Type = 'B' AND Job.JobStatus IN ('T', 'W') %s "
+         "ORDER By JobTDate ASC %s",
+           fs->escape_list(&clients),
+           where.c_str(), limit);
+   ret = db_sql_query(ua->db, ua->db->cmd, db_list_handler, &jobids);
+   db_unlock(ua->db);
+
+   if (!ret) {
+      ua->error_msg(_("Unable to get last Job record for Client=%s\n"),
+                    ua->argv[pos]);
+      return -1;
+   }
+   Dmsg2(50, "jobid for %s is %s\n", ua->argv[pos], jobids.list);
+   return fs->set_jobids(jobids.list);
+}
+
 /* .bvfs_cleanup path=b2XXXXX
  */
 static bool dot_bvfs_cleanup(UAContext *ua, const char *cmd)
@@ -601,7 +710,7 @@ static bool dot_bvfs_cleanup(UAContext *ua, const char *cmd)
    return true;
 }
 
-/* .bvfs_restore path=b2XXXXX jobid=1,2 fileid=1,2 dirid=1,2 hardlink=1,2,3,4
+/* .bvfs_restore path=b2XXXXX jobid=1,2 fileid=1,2 dirid=1,2
  */
 static bool dot_bvfs_restore(UAContext *ua, const char *cmd)
 {
@@ -609,9 +718,8 @@ static bool dot_bvfs_restore(UAContext *ua, const char *cmd)
    int limit=2000, offset=0, i;
    char *path=NULL, *jobid=NULL, *username=NULL;
    char *empty = (char *)"";
-   char *fileid, *dirid, *hardlink;
-
-   fileid = dirid = hardlink = empty;
+   char *fileid, *dirid;
+   fileid = dirid = empty;
 
    if (!bvfs_parse_arg(ua, &pathid, &path, &jobid, &username,
                        &limit, &offset) || !path)
@@ -635,16 +743,13 @@ static bool dot_bvfs_restore(UAContext *ua, const char *cmd)
    if ((i = find_arg_with_value(ua, "dirid")) >= 0) {
       dirid = ua->argv[i];
    }
-   if ((i = find_arg_with_value(ua, "hardlink")) >= 0) {
-      hardlink = ua->argv[i];
-   }
    if ((i = find_arg(ua, "nodelta")) >= 0) {
       fs.set_compute_delta(false);
    }
-   if (fs.compute_restore_list(fileid, dirid, hardlink, path)) {
+   if (fs.compute_restore_list(fileid, dirid, path)) {
       ua->send_msg("OK\n");
    } else {
-      ua->error_msg("Cannot create restore list.\n");
+      ua->error_msg("Can't create restore list\n");
    }
 
    return true;
@@ -707,6 +812,73 @@ bail_out:
    }
    free_pool_memory(buf);
    free_rx(&rx);
+   return true;
+}
+
+/* List FileMedia index for a given File
+ * .bvfs_get_fileindex fileid=10 jobid=5
+ */
+static bool dot_bvfs_get_fileindex(UAContext *ua, const char *cmd)
+{
+   POOLMEM *buf = get_pool_memory(PM_MESSAGE);
+   int pos;
+   int64_t fileid=0;
+   DBId_t fileindex=0;
+   DBId_t jobid=0;
+   JOB_DBR jr;
+   memset(&jr, 0, sizeof(jr));
+
+   if (!open_new_client_db(ua)) {
+      ua->error_msg("ERROR: Unable to open database\n");
+      goto bail_out;
+   }
+   if ((pos = find_arg_with_value(ua, "fileindex")) > 0) {
+      fileindex = str_to_int64(ua->argv[pos]);
+   }
+
+   if ((pos = find_arg_with_value(ua, "fileid")) > 0) {
+      fileid = str_to_int64(ua->argv[pos]);
+   }
+
+   if ((pos = find_arg_with_value(ua, "jobid")) > 0) {
+      jobid = str_to_int64(ua->argv[pos]);
+   }
+
+   if (!jobid || (!fileid && !fileindex)) {
+      ua->error_msg("ERROR: Unable to get jobid, fileid or fileindex arguments\n");
+      goto bail_out;
+   }
+
+   jr.JobId = jobid;
+   if (!db_get_job_record(ua->jcr, ua->db, &jr)) {
+      ua->error_msg("ERROR: Unable to get Job record\n");
+      goto bail_out;
+   }
+   if (!acl_access_ok(ua, Job_ACL, jr.Name)) {
+      ua->error_msg("ERROR: Job unauthorized\n");
+      goto bail_out;
+   }
+
+   if (fileid && !fileindex) {
+      FILE_DBR fr;
+      memset(&fr, 0, sizeof(fr));
+      fr.FileId = fileid;
+      fr.JobId = jobid;
+      if (!db_get_file_record(ua->jcr, ua->db, &jr, &fr)) {
+         ua->error_msg("ERROR: Unable to get File record\n");
+         goto bail_out;
+      }
+      if (!fr.FileIndex) {
+         ua->error_msg("ERROR: Unable to get File record\n");
+         goto bail_out;
+      }
+      fileindex = fr.FileIndex;
+   }
+
+   db_list_filemedia_records(ua->jcr, ua->db, jobid, fileindex, prtit, ua, ARG_LIST);
+
+bail_out:
+   free_pool_memory(buf);
    return true;
 }
 
@@ -797,10 +969,15 @@ static bool dot_bvfs_lsfiles(UAContext *ua, const char *cmd)
    Bvfs fs(ua->jcr, ua->db);
    bvfs_set_acl(ua, &fs);
    fs.set_username(username);
-   fs.set_jobids(jobid);
+   if (str_to_int64(jobid) == 0) {
+      if (get_client_jobids(ua, &fs) <= 0) {
+         goto bail_out;
+      }
+   } else {
+      fs.set_jobids(jobid);
+   }
    fs.set_handler(bvfs_result_handler, ua);
    fs.set_limit(limit);
-   fs.set_offset(offset);
    ua->bvfs = &fs;
    if (pattern) {
       fs.set_pattern(pattern);
@@ -817,6 +994,7 @@ static bool dot_bvfs_lsfiles(UAContext *ua, const char *cmd)
       goto bail_out;
    }
 
+   fs.set_offset(offset);
    fs.ls_files();
 
 bail_out:
@@ -859,10 +1037,15 @@ static bool dot_bvfs_lsdirs(UAContext *ua, const char *cmd)
    Bvfs fs(ua->jcr, ua->db);
    bvfs_set_acl(ua, &fs);
    fs.set_username(username);
-   fs.set_jobids(jobid);
+   if (str_to_int64(jobid) == 0) {
+      if (get_client_jobids(ua, &fs) <= 0) {
+         goto bail_out;
+      }
+   } else {
+      fs.set_jobids(jobid);
+   }
    fs.set_limit(limit);
    fs.set_handler(bvfs_result_handler, ua);
-   fs.set_offset(offset);
    ua->bvfs = &fs;
 
    if (pattern) {
@@ -879,6 +1062,7 @@ static bool dot_bvfs_lsdirs(UAContext *ua, const char *cmd)
       goto bail_out;
    }
 
+   fs.set_offset(offset);
    fs.ls_special_dirs();
 
    if (dironly < 0) {
@@ -924,17 +1108,19 @@ static bool dot_bvfs_get_delta(UAContext *ua, const char *cmd)
 }
 
 /*
- * .bvfs_versions fnid=10 pathid=10 client=xxx copies versions
+ * .bvfs_versions fnid=10 pathid=10 [client=xxx | clients=xxx,yyy] copies versions
  *
  */
 static bool dot_bvfs_versions(UAContext *ua, const char *cmd)
 {
+   int i;
    DBId_t pathid=0;
    FileId_t fnid=0;
    int limit=2000, offset=0;
-   char *path=NULL, *client=NULL, *username=NULL;
+   char *path=NULL, *client=NULL, *username=NULL, *filename=NULL;
    bool copies=false, versions=false;
    alist clients(10, owned_by_alist);
+
    if (!bvfs_parse_arg(ua, &pathid, &path, NULL, &username,
                        &limit, &offset))
    {
@@ -948,6 +1134,10 @@ static bool dot_bvfs_versions(UAContext *ua, const char *cmd)
       return true;              /* not enough param */
    }
 
+   if ((i = find_arg_with_value(ua, "filename")) >= 0) {
+      filename = ua->argv[i];
+   }
+
    if (!open_new_client_db(ua)) {
       return 1;
    }
@@ -958,11 +1148,22 @@ static bool dot_bvfs_versions(UAContext *ua, const char *cmd)
    fs.set_see_all_versions(versions);
    fs.set_see_copies(copies);
    fs.set_handler(bvfs_result_handler, ua);
-   fs.set_offset(offset);
+
+   if (filename) {
+      fs.set_filename(filename);
+      if (path) {
+         if (!fs.ch_dir(path)) {
+            goto bail_out;
+         }
+         pathid = fs.get_pwd();
+      }
+   }
    ua->bvfs = &fs;
 
+   fs.set_offset(offset);
    fs.get_all_file_versions(pathid, fnid, &clients);
 
+bail_out:
    ua->bvfs = NULL;
    return true;
 }
@@ -1051,41 +1252,16 @@ static bool dot_bvfs_get_jobids(UAContext *ua, const char *cmd)
    /* Return all backup jobid for a client list */
    } else if ((pos = find_arg_with_value(ua, "client")) >= 0 ||
               (pos = find_arg_with_value(ua, "clients")) >= 0) {
-      POOL_MEM where;
-      char limit[50];
-      bool ret;
-      int  nbjobs;
-      alist clients(10, owned_by_alist);
 
-      /* Turn client1,client2,client3 to a alist of clients */
-      parse_list(ua->argv[pos], &clients);
+      int nbjobs = get_client_jobids(ua, &fs);
+      if (nbjobs >= 0) {
+         /* Apply the ACL filter on JobIds */
+         if (find_arg(ua, "count") >= 0) {
+            ua->send_msg("%d\n", nbjobs);
 
-      db_lock(ua->db);
-      bvfs_get_filter(ua, where, limit, sizeof(limit));
-      Mmsg(ua->db->cmd,
-      "SELECT JobId "
-        "FROM Job JOIN Client USING (ClientId) "
-         "WHERE Client.Name IN (%s) "
-           "AND Job.Type = 'B' AND Job.JobStatus IN ('T', 'W') %s "
-         "ORDER By JobTDate ASC %s",
-           fs.escape_list(&clients),
-           where.c_str(), limit);
-      ret = db_sql_query(ua->db, ua->db->cmd, db_list_handler, &jobids);
-      db_unlock(ua->db);
-
-      if (!ret) {
-         ua->error_msg(_("Unable to get last Job record for Client=%s\n"),
-                       ua->argv[pos]);
-      }
-
-      nbjobs = fs.set_jobids(jobids.list);
-
-      /* Apply the ACL filter on JobIds */
-      if (find_arg(ua, "count") >= 0) {
-         ua->send_msg("%d\n", nbjobs);
-
-      } else {
-         ua->send_msg("%s\n", fs.get_jobids());
+         } else {
+            ua->send_msg("%s\n", fs.get_jobids());
+         }
       }
       return true;
    }
@@ -1165,7 +1341,7 @@ static char *get_argument(UAContext *ua, const char *arg, char *esc, bool conver
    if (convert) {
       for (int i=0; esc[i] ; i++) {
          if (esc[i] == '*') {
-            esc[i] = '%';
+            esc[i] = '%';       /* TODO: Need to escape _ as well */
          }
       }
    }
@@ -1188,8 +1364,11 @@ static void bvfs_get_filter(UAContext *ua, POOL_MEM &where, char *limit, int len
    }
 
    if (get_argument(ua, "jobid", esc_name, false) != NULL) {
-      Mmsg(tmp, "AND Job.JobId = '%s' ", esc_name);
-      pm_strcat(where, tmp.c_str());
+      /* 0 is a special value, means everything */
+      if (strcmp(esc_name, "0") != 0) {
+         Mmsg(tmp, "AND Job.JobId = '%s' ", esc_name);
+         pm_strcat(where, tmp.c_str());
+      }
    }
 
    if (get_argument(ua, "ujobid", esc_name, false) != NULL) {
@@ -1316,7 +1495,7 @@ static void do_client_cmd(UAContext *ua, CLIENT *client, const char *cmd)
    ua->jcr->client = client;
    /* Try to connect for 15 seconds */
    ua->send_msg(_("Connecting to Client %s at %s:%d\n"),
-                client->name(), client->address(buf.addr()), client->FDport);
+                client->name(), get_client_address(ua->jcr, client, buf.addr()), client->FDport);
    if (!connect_to_file_daemon(ua->jcr, 1, 15, 0)) {
       ua->error_msg(_("Failed to connect to Client.\n"));
       return;
@@ -1530,6 +1709,7 @@ bail_out:
    return true;
 }
 
+/*
 /* .estimate command */
 static bool dotestimatecmd(UAContext *ua, const char *cmd)
 {
@@ -1717,7 +1897,7 @@ static bool clientscmd(UAContext *ua, const char *cmd)
    foreach_res(client, R_CLIENT) {
       if (acl_access_client_ok(ua, client->name(), JT_BACKUP_RESTORE)) {
          if (ip) {
-            elt = new TmpClient(client->name(), client->address(buf.addr()));
+            elt = new TmpClient(client->name(), get_client_address(ua->jcr, client, buf.addr()));
             clientlist->append(elt);
 
          } else {
@@ -1867,6 +2047,89 @@ static bool typescmd(UAContext *ua, const char *cmd)
    ua->send_msg("Verify\n");
    ua->send_msg("Migrate\n");
    ua->send_msg("Copy\n");
+   return true;
+}
+
+static bool dot_querycmd(UAContext *ua, const char *cmd)
+{
+   POOL_MEM buf;
+   CLIENT *client = NULL;
+   char *param = NULL;
+   char *plugin = NULL;
+   char *value = NULL;
+   POOL_MEM esc1, esc2, esc3;
+   JCR *jcr = ua->jcr;
+   int i;
+
+   Dmsg0(200, "dot_querycmd()\n");
+   
+   jcr->setJobLevel(L_FULL);
+   i = find_arg_with_value(ua, NT_("client"));
+   if (i > 0) {
+      client = GetClientResWithName(ua->argv[i]);
+      if (!client) {
+         ua->error_msg(_("error=Client \"%s\" not found.\n"), ua->argv[i]);
+         return false;
+      }
+      if (!acl_access_client_ok(ua, client->name(), JT_BACKUP)) {
+         ua->error_msg(_("error=No authorization for Client \"%s\"\n"), client->name());
+         return false;
+      }
+
+   } else {
+      ua->error_msg(_("error=Client name missing.\n"));
+      return false;
+   }
+
+   i = find_arg_with_value(ua, NT_("parameter"));
+   if (i > 0) {
+      param = ua->argv[i];
+
+   } else {
+      ua->error_msg(_("error=parameter missing.\n"));
+      return false;
+   }
+
+   /* plugin=... parameter */
+   i = find_arg_with_value(ua, NT_("plugin"));
+   if (i > 0) {
+      plugin = ua->argv[i];
+   }
+
+   /* value=... parameter */
+   i = find_arg_with_value(ua, NT_("value"));
+   if (i > 0) {
+      value = ua->argv[i];
+   }
+
+   jcr->client = client;
+
+   jcr->setJobType(JT_BACKUP);
+   jcr->start_time = time(NULL);
+   init_jcr_job_record(jcr);           // need job
+
+   if (!connect_to_file_daemon(jcr, 1, 15, 0)) {
+      ua->error_msg(_("error=Failed to connect to Client.\n"));
+      return false;
+   }
+
+   if (!jcr->file_bsock->fsend("query parameter=%s plugin=%s value=%s\n",
+                               quote_string(esc1.addr(), param),
+                               quote_string(esc2.addr(), NPRTB(plugin)),
+                               quote_string(esc3.addr(), NPRTB(value)))) {
+      ua->error_msg(_("error=Failed to send plugin command to Client.\n"));
+      goto bail_out;
+   }
+
+   while (jcr->file_bsock->recv() >= 0) {
+      ua->send_msg("%s", jcr->file_bsock->msg);
+   }
+
+bail_out:
+   if (jcr->file_bsock) {
+      jcr->file_bsock->signal(BNET_TERMINATE);
+      free_bsock(ua->jcr->file_bsock);
+   }
    return true;
 }
 
@@ -2067,11 +2330,13 @@ static bool levelscmd(UAContext *ua, const char *cmd)
 static bool volstatuscmd(UAContext *ua, const char *cmd)
 {
    ua->send_msg("Append\n");
+   ua->send_msg("Archived\n");
+   ua->send_msg("Disabled\n");
    ua->send_msg("Full\n");
    ua->send_msg("Used\n");
-   ua->send_msg("Recycle\n");
-   ua->send_msg("Purged\n");
    ua->send_msg("Cleaning\n");
+   ua->send_msg("Recycle\n");
+   ua->send_msg("Read-Only\n");
    ua->send_msg("Error\n");
    return true;
 }
@@ -2102,12 +2367,13 @@ static bool defaultscmd(UAContext *ua, const char *cmd)
          get_job_storage(&store, job, NULL);
          ua->send_msg("storage=%s", store.store->name());
          ua->send_msg("where=%s", job->RestoreWhere?job->RestoreWhere:"");
-         ua->send_msg("level=%s", level_to_str(edl, sizeof(edl), job->JobLevel));
+         ua->send_msg("level=%s", level_to_str(edl, sizeof(edl),job->JobLevel));
          ua->send_msg("type=%s", job_type_to_str(job->JobType));
          ua->send_msg("fileset=%s", job->fileset->name());
          ua->send_msg("enabled=%d", job->is_enabled());
          ua->send_msg("catalog=%s", job->client?job->client->catalog->name():_("*None*"));
          ua->send_msg("priority=%d", job->Priority);
+         ua->send_msg("replace=%s", job->replace);
       }
    }
    /* Send Pool defaults */
@@ -2167,7 +2433,7 @@ static bool defaultscmd(UAContext *ua, const char *cmd)
       if (client) {
          POOL_MEM buf;
          ua->send_msg("client=%s", client->name());
-         ua->send_msg("address=%s", client->address(buf.addr()));
+         ua->send_msg("address=%s", get_client_address(ua->jcr, client, buf.addr()));
          ua->send_msg("fdport=%d", client->FDport);
          ua->send_msg("file_retention=%s", edit_uint64(client->FileRetention, ed1));
          ua->send_msg("job_retention=%s", edit_uint64(client->JobRetention, ed1));
@@ -2177,3 +2443,7 @@ static bool defaultscmd(UAContext *ua, const char *cmd)
    }
    return true;
 }
+
+#if !BEEF
+bool get_uid_gid_from_acl(UAContext *ua, alist **uid, alist **gid, alist **dir) { return true;}
+#endif
