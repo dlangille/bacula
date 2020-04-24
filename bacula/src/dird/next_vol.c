@@ -17,18 +17,19 @@
    Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
+ *
  *   Bacula Director -- next_vol -- handles finding the next
  *    volume for append.  Split out of catreq.c August MMIII
  *    catalog request from the Storage daemon.
- *
+
  *     Kern Sibbald, March MMI
+ *
  */
 
 #include "bacula.h"
 #include "dird.h"
 
 static int const dbglvl = 50;   /* debug level */
-
 /*
  * We setup the StorageId or StorageId group if it is
  *  an autochanger from the Storage and put it in
@@ -310,6 +311,20 @@ bool has_volume_expired(JCR *jcr, MEDIA_DBR *mr)
          }
       }
    }
+
+   /* Check if the Pool quota is respected */
+   if (!expired && use_max_pool_bytes(jcr)) {
+      POOL_DBR pr;
+      bstrncpy(pr.Name, jcr->pool->name(), sizeof(pr.Name));
+      if (has_quota_reached(jcr, &pr)) { /* We can reuse the current value */
+         Jmsg(jcr, M_INFO, 0, _("Max Pool Bytes %sB exceeded. "
+               "Marking Volume \"%s\" as Used.\n"),
+              edit_uint64_with_suffix(pr.MaxPoolBytes, ed1), mr->VolumeName);
+         bstrncpy(mr->VolStatus, "Used", sizeof(mr->VolStatus));
+         expired = true;
+      }
+   }
+
    if (expired) {
       /* Need to update media */
       Dmsg1(dbglvl, "Vol=%s has expired update media record\n", mr->VolumeName);
@@ -385,9 +400,11 @@ void check_if_volume_valid_or_recyclable(JCR *jcr, MEDIA_DBR *mr, const char **r
     * Check retention period from last written, but recycle to within
     *   a minute to try to catch close calls ...
     */
-   if ((mr->LastWritten + mr->VolRetention - 60) < (utime_t)time(NULL)
-         && jcr->pool->recycle_current_volume
-         && (strcmp(mr->VolStatus, "Full") == 0 ||
+   if (mr->LastWritten > 0
+       && mr->VolRetention > 0
+       && (mr->LastWritten + mr->VolRetention - 60) < (utime_t)time(NULL)
+       && jcr->pool->recycle_current_volume
+       && (strcmp(mr->VolStatus, "Full") == 0 ||
             strcmp(mr->VolStatus, "Used") == 0)) {
       /*
        * Attempt prune of current volume to see if we can
@@ -425,6 +442,7 @@ bool get_scratch_volume(JCR *jcr, bool InChanger, MEDIA_DBR *mr,
    POOL_DBR spr;
    bool ok = false;
    bool found = false;
+   char ed1[50];
 
    /* Only one thread at a time can pull from the scratch pool */
    P(mutex);
@@ -466,8 +484,10 @@ bool get_scratch_volume(JCR *jcr, bool InChanger, MEDIA_DBR *mr,
           * Get pool record where the Scratch Volume will go to ensure
           * that we can add a Volume.
           */
-         bmemset(&pr, 0, sizeof(pr));
          bstrncpy(pr.Name, jcr->pool->name(), sizeof(pr.Name));
+         if (use_max_pool_bytes(jcr)) {
+            pr.PoolBytes = 1;
+         }
 
          if (!db_get_pool_numvols(jcr, jcr->db, &pr)) {
             Jmsg(jcr, M_WARNING, 0, _("Unable to get Pool record: ERR=%s"),
@@ -479,6 +499,13 @@ bool get_scratch_volume(JCR *jcr, bool InChanger, MEDIA_DBR *mr,
          if (pr.MaxVols > 0 && pr.NumVols >= pr.MaxVols) {
             Jmsg(jcr, M_WARNING, 0, _("Unable add Scratch Volume, Pool \"%s\" full MaxVols=%d\n"),
                  jcr->pool->name(), pr.MaxVols);
+            goto bail_out;
+         }
+
+         /* Make sure there is room for another volume */
+         if (check_max_pool_bytes(&pr)) {
+            Jmsg(jcr, M_WARNING, 0, _("Unable add Scratch Volume, Pool \"%s\" full MaxBytes=%sB\n"),
+                 jcr->pool->name(), edit_uint64_with_suffix(pr.MaxPoolBytes, ed1));
             goto bail_out;
          }
 
