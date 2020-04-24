@@ -157,7 +157,7 @@ static const char *sql_jobids_of_pool_uncopied_jobs =
    "SELECT DISTINCT Job.JobId,Job.StartTime FROM Job,Pool"
    " WHERE Pool.Name = '%s' AND Pool.PoolId = Job.PoolId"
    " AND Job.Type = 'B' AND Job.JobStatus IN ('T','W')"
-   " AND Job.jobBytes > 0"
+   " AND Job.JobBytes > 0"
    " AND Job.JobId NOT IN"
    " (SELECT PriorJobId FROM Job WHERE"
    " Type IN ('B','C') AND Job.JobStatus IN ('T','W')"
@@ -382,7 +382,7 @@ int getJob_to_migrate(JCR *jcr)
       Dmsg2(dbglevel, "Before loop count=%d ids=%s\n", ids.count, ids.list);
       /*
        * Note: to not over load the system, limit the number
-       *  of new jobs started to Maximum Spawned Jobs
+       *  of new jobs started to 100 (see limit above)
        */
       for (int i=1; i < (int)ids.count; i++) {
          JobId = 0;
