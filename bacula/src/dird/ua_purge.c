@@ -292,6 +292,10 @@ void purge_files_from_jobs(UAContext *ua, char *jobs)
    db_sql_query(ua->db, query.c_str(), NULL, (void *)NULL);
    Dmsg1(050, "Delete File sql=%s\n", query.c_str());
 
+   Mmsg(query, "DELETE FROM FileMedia WHERE JobId IN (%s)", jobs);
+   db_sql_query(ua->db, query.c_str(), NULL, (void *)NULL);
+   Dmsg1(050, "Delete FileMedia sql=%s\n", query.c_str());
+
    Mmsg(query, "DELETE FROM BaseFiles WHERE JobId IN (%s)", jobs);
    db_sql_query(ua->db, query.c_str(), NULL, (void *)NULL);
    Dmsg1(050, "Delete BaseFiles sql=%s\n", query.c_str());
@@ -319,6 +323,8 @@ void purge_job_list_from_catalog(UAContext *ua, del_ctx &del)
 {
    POOL_MEM jobids(PM_MESSAGE);
    char ed1[50];
+
+   exclude_running_jobs_from_list(&del);
 
    for (int i=0; del.num_ids; ) {
       Dmsg1(150, "num_ids=%d\n", del.num_ids);
@@ -427,6 +433,10 @@ void purge_jobs_from_catalog(UAContext *ua, char *jobs)
    db_sql_query(ua->db, query.c_str(), NULL, (void *)NULL);
    Dmsg1(050, "Delete JobMedia sql=%s\n", query.c_str());
 
+   Mmsg(query, "DELETE FROM FileMedia WHERE JobId IN (%s)", jobs);
+   db_sql_query(ua->db, query.c_str(), NULL, (void *)NULL);
+   Dmsg1(050, "Delete JobMedia sql=%s\n", query.c_str());
+
    Mmsg(query, "DELETE FROM Log WHERE JobId IN (%s)", jobs);
    db_sql_query(ua->db, query.c_str(), NULL, (void *)NULL);
    Dmsg1(050, "Delete Log sql=%s\n", query.c_str());
@@ -442,7 +452,6 @@ void purge_jobs_from_catalog(UAContext *ua, char *jobs)
    db_sql_query(ua->db, query.c_str(), NULL, (void *)NULL);
 
    upgrade_copies(ua, jobs);
-
    /* Now remove the Job record itself */
    Mmsg(query, "DELETE FROM Job WHERE JobId IN (%s)", jobs);
    db_sql_query(ua->db, query.c_str(), NULL, (void *)NULL);
@@ -684,8 +693,8 @@ int truncate_cmd(UAContext *ua, const char *cmd)
    if (find_arg(ua, "cache") > 0) {
       return cloud_volumes_cmd(ua, cmd, "truncate cache");
    }
-
-   memset(&pr, 0, sizeof(pr));
+   
+   bmemset(&pr, 0, sizeof(pr));
 
    /*
     * Look for all Purged volumes that can be recycled, are enabled and
@@ -773,8 +782,8 @@ bool mark_media_purged(UAContext *ua, MEDIA_DBR *mr)
        */
       if (mr->RecyclePoolId && mr->RecyclePoolId != mr->PoolId) {
          POOL_DBR oldpr, newpr;
-         memset(&oldpr, 0, sizeof(POOL_DBR));
-         memset(&newpr, 0, sizeof(POOL_DBR));
+         bmemset(&oldpr, 0, sizeof(POOL_DBR));
+         bmemset(&newpr, 0, sizeof(POOL_DBR));
          newpr.PoolId = mr->RecyclePoolId;
          oldpr.PoolId = mr->PoolId;
          if (   db_get_pool_numvols(jcr, ua->db, &oldpr)
