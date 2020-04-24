@@ -82,7 +82,7 @@ PROG_COPYRIGHT
 "       -s          output in show text format\n"
 "       -v          verbose user messages\n"
 "       -?          print this message.\n"
-"\n"), 2012, "", VERSION, BDATE);
+"\n"), 2012, BDEMO, VERSION, BDATE);
 
    exit(1);
 }
@@ -659,7 +659,7 @@ static bool display_runscript(HPKT &hpkt)
          sendit(NULL, ",\n      {\n");
       }
       if (script->when == SCRIPT_Any) {
-         sendit(NULL, "        \"RunsWhen\": \"Any\",\n");
+         sendit(NULL, "        \"RunsWhen\": \"Always\",\n");
 
       } else if (script->when == SCRIPT_After) {
          sendit(NULL, "        \"RunsWhen\": \"After\",\n");
@@ -764,7 +764,6 @@ static void display_run(HPKT &hpkt)
                      sendit(NULL, "      \"%s\": \"%s\"", RunFields[i].name,
                         joblevels[j].level_name);
                      first = false;
-                     break;
                   }
                }
             //}
@@ -898,7 +897,7 @@ static void display_run(HPKT &hpkt)
  */
 static void dump_json(display_filter *filter)
 {
-   int resinx, item, first_directive, name_pos=0;
+   int resinx, item, first_directive, name_pos=0, sz;
    bool first_res;
    RES_ITEM *items;
    RES *res;
@@ -942,8 +941,14 @@ static void dump_json(display_filter *filter)
             continue;
          }
 
+         sz = get_resource_size(resinx + r_first);
+         if (sz < 0) {
+            Dmsg1(0, "Unknown resource type %d\n", resinx);
+            continue;
+         }
+
          /* Copy the resource into res_all */
-         memcpy(&res_all, res, sizeof(res_all));
+         memcpy(&res_all, res, sz);
 
          /* If needed, skip this resource type */
          if (filter->resource_name) {
@@ -1186,7 +1191,9 @@ static bool check_resources(bool apply_jobdefs)
       /* tls_require implies tls_enable */
       if (director->tls_require) {
          if (have_tls) {
-            director->tls_enable = true;
+            if (director->tls_certfile || director->tls_keyfile) {
+               director->tls_enable = true;
+            }
          } else {
             Jmsg(NULL, M_FATAL, 0, _("TLS required but not configured in Bacula.\n"));
             OK = false;
@@ -1224,7 +1231,9 @@ static bool check_resources(bool apply_jobdefs)
       /* tls_require implies tls_enable */
       if (cons->tls_require) {
          if (have_tls) {
-            cons->tls_enable = true;
+            if (cons->tls_certfile || cons->tls_keyfile) {
+               cons->tls_enable = true;
+            }
          } else {
             Jmsg(NULL, M_FATAL, 0, _("TLS required but not configured in Bacula.\n"));
             OK = false;
@@ -1256,7 +1265,7 @@ static bool check_resources(bool apply_jobdefs)
          OK = false;
       }
       /* If everything is well, attempt to initialize our per-resource TLS context */
-      if (OK && (need_tls || cons->tls_require)) {
+      if (OK && need_tls) {
          /* Initialize TLS context:
           * Args: CA certfile, CA certdir, Certfile, Keyfile,
           * Keyfile PEM Callback, Keyfile CB Userdata, DHfile, Verify Peer */
@@ -1270,16 +1279,22 @@ static bool check_resources(bool apply_jobdefs)
             OK = false;
          }
       }
-
    }
 
    /* Loop over Clients */
    CLIENT *client;
    foreach_res(client, R_CLIENT) {
+      if (!client->client_address && !client->allow_fd_connections) {
+         Jmsg(NULL, M_FATAL, 0, _("Config error: Address directive is required in Client resource \"%s\", but not found.\n"), client->hdr.name);
+         OK = false;
+         continue;
+      }
       /* tls_require implies tls_enable */
       if (client->tls_require) {
          if (have_tls) {
-            client->tls_enable = true;
+            if (client->tls_ca_certfile || client->tls_ca_certdir) {
+               client->tls_enable = true;
+            }
          } else {
             Jmsg(NULL, M_FATAL, 0, _("TLS required but not configured in Bacula.\n"));
             OK = false;
@@ -1382,20 +1397,20 @@ static bool check_resources(bool apply_jobdefs)
 
                   def_avalue = (alist **)((char *)(job->jobdefs) + offset);
                   avalue = (alist **)((char *)job + offset);
-
+                  
                   *avalue = New(alist(10, owned_by_alist));
 
                   foreach_alist(elt, (*def_avalue)) {
                      (*avalue)->append(bstrdup(elt));
                   }
                   set_bit(i, job->hdr.item_present);
-
+                  
                } else if (job_items[i].handler == store_alist_res) {
                   void *elt;
 
                   def_avalue = (alist **)((char *)(job->jobdefs) + offset);
                   avalue = (alist **)((char *)job + offset);
-
+                  
                   *avalue = New(alist(10, not_owned_by_alist));
 
                   foreach_alist(elt, (*def_avalue)) {
@@ -1442,6 +1457,9 @@ static bool check_resources(bool apply_jobdefs)
                   bvalue = (bool *)((char *)job + offset);
                   *bvalue = *def_bvalue;
                   set_bit(i, job->hdr.item_present);
+
+               } else if (job_items[i].handler == store_runscript) {
+                  /* nothing special to do, already handled */
 
                } else {
                   Dmsg1(10, "Handler missing for job_items[%d]\n", i);
