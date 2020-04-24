@@ -17,9 +17,11 @@
    Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
+ *
  *   Bacula Director Job processing routines
  *
  *     Kern Sibbald, October MM
+ *
  */
 
 #include "bacula.h"
@@ -33,7 +35,7 @@ static bool job_check_maxwaittime(JCR *jcr);
 static bool job_check_maxruntime(JCR *jcr);
 static bool job_check_maxrunschedtime(JCR *jcr);
 
-/* Imported subroutines */
+/* Imported subroutines and variables */
 extern void term_scheduler();
 extern void term_ua_server();
 
@@ -114,14 +116,16 @@ bool setup_job(JCR *jcr)
     */
    Dmsg0(100, "Open database\n");
    jcr->db = db_init_database(jcr, jcr->catalog->db_driver, jcr->catalog->db_name,
-                jcr->catalog->db_user, jcr->catalog->db_password,
-                jcr->catalog->db_address, jcr->catalog->db_port,
-                jcr->catalog->db_socket, jcr->catalog->db_ssl_mode,
-                jcr->catalog->db_ssl_key, jcr->catalog->db_ssl_cert,
-                jcr->catalog->db_ssl_ca, jcr->catalog->db_ssl_capath, 
-                jcr->catalog->db_ssl_cipher,
-                jcr->catalog->mult_db_connections,
-                jcr->catalog->disable_batch_insert);
+                              jcr->catalog->db_user, jcr->catalog->db_password,
+                              jcr->catalog->db_address, jcr->catalog->db_port,
+                              jcr->catalog->db_socket,
+                              jcr->catalog->db_ssl_mode,
+                              jcr->catalog->db_ssl_key, jcr->catalog->db_ssl_cert,
+                              jcr->catalog->db_ssl_ca, jcr->catalog->db_ssl_capath, 
+                              jcr->catalog->db_ssl_cipher,
+                              jcr->catalog->mult_db_connections,
+                              jcr->catalog->disable_batch_insert);
+
    if (!jcr->db || !db_open_database(jcr, jcr->db)) {
       Jmsg(jcr, M_FATAL, 0, _("Could not open database \"%s\".\n"),
                  jcr->catalog->db_name);
@@ -268,7 +272,8 @@ static bool setup_resume_job(JCR *jcr, JOB_DBR *jr)
    jcr->db = db_init_database(jcr, jcr->catalog->db_driver, jcr->catalog->db_name,
                               jcr->catalog->db_user, jcr->catalog->db_password,
                               jcr->catalog->db_address, jcr->catalog->db_port,
-                              jcr->catalog->db_socket, jcr->catalog->db_ssl_mode,
+                              jcr->catalog->db_socket,
+                              jcr->catalog->db_ssl_mode,
                               jcr->catalog->db_ssl_key, jcr->catalog->db_ssl_cert,
                               jcr->catalog->db_ssl_ca, jcr->catalog->db_ssl_capath, 
                               jcr->catalog->db_ssl_cipher,
@@ -688,7 +693,7 @@ cancel_job(UAContext *ua, JCR *jcr, int wait,  bool cancel)
          return true;
       }
    }
-   
+
    if (cancel) {
       status = JS_Canceled;
       reason = _("canceled");
@@ -1004,13 +1009,18 @@ DBId_t get_or_create_pool_record(JCR *jcr, char *pool_name)
 {
    POOL_DBR pr;
 
-   memset(&pr, 0, sizeof(pr));
+   bmemset(&pr, 0, sizeof(pr));
    bstrncpy(pr.Name, pool_name, sizeof(pr.Name));
    Dmsg1(110, "get_or_create_pool=%s\n", pool_name);
 
    while (!db_get_pool_record(jcr, jcr->db, &pr)) { /* get by Name */
       /* Try to create the pool */
-      if (create_pool(jcr, jcr->db, jcr->pool, POOL_OP_CREATE) < 0) {
+      POOL *pool = GetPoolResWithName(pool_name);
+      if (!pool) {
+         Jmsg(jcr, M_FATAL, 0, _("Cannot find pool \"%s\" in configuration."), pr.Name);
+         return 0;
+      }
+      if (create_pool(jcr, jcr->db, pool, POOL_OP_CREATE) < 0) {
          Jmsg(jcr, M_FATAL, 0, _("Cannot create pool \"%s\" in database. ERR=%s"), pr.Name,
             db_strerror(jcr->db));
          return 0;
@@ -1632,11 +1642,13 @@ void set_jcr_defaults(JCR *jcr, JOB *job)
    jcr->spool_size = job->spool_size;
    jcr->write_part_after_job = job->write_part_after_job;
    jcr->MaxRunSchedTime = job->MaxRunSchedTime;
+
    /* This can be overridden by Console program */
    bfree_and_null(jcr->RestoreBootstrap);
    if (job->RestoreBootstrap) {
       jcr->RestoreBootstrap = bstrdup(job->RestoreBootstrap);
    }
+
    /* This can be overridden by Console program */
    jcr->verify_job = job->verify_job;
    /* If no default level given, set one */
