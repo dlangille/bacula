@@ -17,6 +17,7 @@
    Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
+ *
  *   Bacula Director -- backup.c -- responsible for doing backup jobs
  *
  *     Kern Sibbald, March MM
@@ -27,11 +28,13 @@
  *     Open connection with File daemon and pass him commands
  *       to do the backup.
  *     When the File daemon finishes the job, update the DB.
+ *
  */
 
 #include "bacula.h"
 #include "dird.h"
 #include "ua.h"
+
 
 /* Commands sent to File daemon */
 static char backupcmd[] = "backup FileIndex=%ld\n";
@@ -68,19 +71,19 @@ bool do_backup_init(JCR *jcr)
    /* Make local copy */
    jcr->RescheduleIncompleteJobs = jcr->job->RescheduleIncompleteJobs;
 
-   if (jcr->is_JobLevel(L_VIRTUAL_FULL)) {
-      return do_vbackup_init(jcr);
-   }
-   free_rstorage(jcr);                   /* we don't read so release */
-
    if (!get_or_create_fileset_record(jcr)) {
+      Dmsg1(100, "JobId=%d no FileSet\n", (int)jcr->JobId);
       return false;
    }
 
    /*
     * Get definitive Job level and since time
+    * unless it's a virtual full.  In that case
+    * it is not needed.
     */
-   get_level_since_time(jcr, jcr->since, sizeof(jcr->since));
+   if (!jcr->is_JobLevel(L_VIRTUAL_FULL)) {
+      get_level_since_time(jcr, jcr->since, sizeof(jcr->since));
+   }
 
    apply_pool_overrides(jcr);
 
@@ -90,8 +93,21 @@ bool do_backup_init(JCR *jcr)
 
    jcr->jr.PoolId = get_or_create_pool_record(jcr, jcr->pool->name());
    if (jcr->jr.PoolId == 0) {
+      Dmsg1(100, "JobId=%d no PoolId\n", (int)jcr->JobId);
+      Jmsg(jcr, M_FATAL, 0, _("Could not get or create a Pool record.\n"));
       return false;
    }
+
+   /*
+    * If we are a virtual full job or got upgraded to one
+    * then we divert at this point and call the virtual full 
+    * backup init method
+    */ 
+   if (jcr->is_JobLevel(L_VIRTUAL_FULL)) {
+     return do_vbackup_init(jcr);
+   }
+
+   free_rstorage(jcr);                   /* we don't read so release */
 
    /* If pool storage specified, use it instead of job storage */
    copy_wstorage(jcr, jcr->pool->storage, _("Pool resource"));
@@ -367,10 +383,11 @@ bool send_client_addr_to_sd(JCR *jcr)
          tls_need = BNET_TLS_OK;
       }
    }
+   /* ATTN tls_need is not used on the other side !!!!!!!!! */
    /*
     * Send Client address to the SD
     */
-   sd->fsend(clientaddr, jcr->client->address(buf.addr()), jcr->client->FDport, tls_need);
+   sd->fsend(clientaddr, get_client_address(jcr, jcr->client, buf.addr()), jcr->client->FDport, tls_need);
    if (!response(jcr, sd, OKclient, "Client", DISPLAY_ERROR)) {
       return false;
    }
@@ -439,7 +456,8 @@ bool do_backup(JCR *jcr)
    char *store_address;
    uint32_t store_port;
    char ed1[100];
-   db_int64_ctx job;
+   db_int64_ctx job, first, last;
+   int64_t val=0;
    POOL_MEM buf;
 
    if (jcr->is_JobLevel(L_VIRTUAL_FULL)) {
@@ -473,7 +491,21 @@ bool do_backup(JCR *jcr)
          Jmsg(jcr, M_FATAL, 0, "%s", db_strerror(jcr->db));
          return false;
       }
-      jcr->JobFiles = job.value;
+      Mmsg(buf, "SELECT max(LastIndex) FROM JobMedia WHERE JobId=%s", ed1);
+      if (!db_sql_query(jcr->db, buf.c_str(), db_int64_handler, &last)) {
+         Jmsg(jcr, M_FATAL, 0, "%s", db_strerror(jcr->db));
+         return false;
+      }
+      Mmsg(buf, "SELECT max(FirstIndex) FROM JobMedia WHERE JobId=%s", ed1);
+      if (!db_sql_query(jcr->db, buf.c_str(), db_int64_handler, &first)) {
+         Jmsg(jcr, M_FATAL, 0, "%s", db_strerror(jcr->db));
+         return false;
+      }
+      /* We skip the last FileIndex (MAX) and the one after (MAX+1), can be
+       * already referenced in JobMedia or a Volume
+       */
+      val = MAX(job.value, MAX(first.value, last.value));
+      jcr->JobFiles = val + 2;
       Dmsg1(100, "==== FI=%ld\n", jcr->JobFiles);
       Mmsg(buf, "SELECT VolSessionId FROM Job WHERE JobId=%s", ed1);
       if (!db_sql_query(jcr->db, buf.c_str(), db_int64_handler, &job)) {
@@ -918,6 +950,10 @@ void backup_cleanup(JCR *jcr, int TermCode)
 
    update_bootstrap_file(jcr);
 
+   if (jcr->is_incomplete() && !jcr->job->allow_incomplete_jobs) {
+      jcr->forceJobStatus(JS_FatalError);
+   }
+
    switch (jcr->JobStatus) {
       case JS_Terminated:
          if (jcr->JobErrors || jcr->SDErrors) {
@@ -1137,7 +1173,8 @@ void update_bootstrap_file(JCR *jcr)
          /* Start output with when and who wrote it */
          bstrftimes(edt, sizeof(edt), time(NULL));
          fprintf(fd, "# %s - %s - %s%s\n", edt, jcr->jr.Job,
-                 level_to_str(edl, sizeof(edl), jcr->getJobLevel()), jcr->since);
+                 level_to_str(edl, sizeof(edl), jcr->getJobLevel()),
+                 jcr->since);
          for (int i=0; i < VolCount; i++) {
             /* Write the record */
             fprintf(fd, "Volume=\"%s\"\n", VolParams[i].VolumeName);
