@@ -17,6 +17,7 @@
    Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
+ *
  *   Bacula Director -- User Agent Database restore Command
  *      Creates a bootstrap file for restoring files and
  *      starts the restore job.
@@ -56,6 +57,13 @@ static int get_restore_client_name(UAContext *ua, RESTORE_CTX &rx, char * Restor
 static bool get_date(UAContext *ua, char *date, int date_len);
 static int restore_count_handler(void *ctx, int num_fields, char **row);
 static void get_and_display_basejobs(UAContext *ua, RESTORE_CTX *rx);
+static bool write_component_file(UAContext *ua, RESTORE_CTX *rx, char *fname);
+
+#if BEEF
+bool get_pluginrestoreconf(UAContext *ua, char *cmd);
+#else
+static bool get_pluginrestoreconf(UAContext *ua, char *cmd) { return false; }
+#endif
 
 void new_rx(RESTORE_CTX *rx)
 {
@@ -83,6 +91,37 @@ void new_rx(RESTORE_CTX *rx)
    rx->hardlinks_in_mem = true;
 }
 
+/* TODO: merge with ua_label.c:is_volume_name_legal() */
+static int is_username(UAContext *ua, const char *name)
+{
+   int len;
+   const char *p;
+   const char *accept = ".-_";
+
+   for (p=name; *p; p++) {
+      if (B_ISALPHA(*p) || B_ISDIGIT(*p) || strchr(accept, (int)(*p))) {
+         continue;
+      }
+      if (ua) {
+         ua->error_msg(_("Illegal character \"%c\" in a user name.\n"), *p);
+      }
+      return 0;
+   }
+   len = strlen(name);
+   if (len >= MAX_NAME_LENGTH) {
+      if (ua) {
+         ua->error_msg(_("Name too long.\n"));
+      }
+      return 0;
+   }
+   if (len == 0) {
+      if (ua) {
+         ua->error_msg(_("Name must be at least one character long.\n"));
+      }
+      return 0;
+   }
+   return 1;
+}
 
 /*
  *   Restore files
@@ -122,6 +161,11 @@ int restore_cmd(UAContext *ua, const char *cmd)
             goto bail_out;
          }
 
+      } else if (strcasecmp(ua->argk[i], "pluginrestoreconf") == 0) {
+         if (!get_pluginrestoreconf(ua, ua->argv[i])) {
+            goto bail_out;
+         }
+
       } else if (strcasecmp(ua->argk[i], "where") == 0) {
          rx.where = ua->argv[i];
 
@@ -148,7 +192,19 @@ int restore_cmd(UAContext *ua, const char *cmd)
              strcasecmp(ua->argv[i], "false")) {
             rx.hardlinks_in_mem = false;
          }
-     }
+
+      } else if (strcasecmp(ua->argk[i], "jobuser") == 0) {
+         if (!is_username(ua, ua->argv[i])) {
+            goto bail_out;
+         }
+         rx.job_user = ua->argv[i];
+
+      } else if (strcasecmp(ua->argk[i], "jobgroup") == 0) {
+         if (!is_username(ua, ua->argv[i])) {
+            goto bail_out;
+         }
+         rx.job_group = ua->argv[i];
+      }
    }
 
    if (strip_prefix || add_suffix || add_prefix) {
@@ -302,6 +358,16 @@ int restore_cmd(UAContext *ua, const char *cmd)
       pm_strcat(ua->cmd, buf);
    }
 
+   if (rx.job_user) {
+      Mmsg(buf, " jobuser=\"%s\"", rx.job_user);
+      pm_strcat(ua->cmd, buf);
+   }
+
+   if (rx.job_group) {
+      Mmsg(buf, " jobgroup=\"%s\"", rx.job_group);
+      pm_strcat(ua->cmd, buf);
+   }
+
    if (escaped_bsr_name != NULL) {
       bfree(escaped_bsr_name);
    }
@@ -334,6 +400,9 @@ int restore_cmd(UAContext *ua, const char *cmd)
    rx.component_fname = NULL;
    jcr->component_fd = rx.component_fd;
    rx.component_fd = NULL;
+   /* The Client might request the file list */
+   jcr->bsr_list = rx.bsr_list;
+   rx.bsr_list = NULL;
    parse_ua_args(ua);
    run_cmd(ua, ua->cmd);
    free_rx(&rx);
@@ -387,8 +456,11 @@ static void get_and_display_basejobs(UAContext *ua, RESTORE_CTX *rx)
 
 void free_rx(RESTORE_CTX *rx)
 {
-   free_bsr(rx->bsr_list);
-   rx->bsr_list = NULL;
+   if (rx->bsr_list) {
+      free_bsr(rx->bsr_list);
+      rx->bsr_list = NULL;
+   }
+
    free_and_null_pool_memory(rx->JobIds);
    free_and_null_pool_memory(rx->BaseJobIds);
    free_and_null_pool_memory(rx->fname);
@@ -540,10 +612,13 @@ static int user_select_jobids_or_files(UAContext *ua, RESTORE_CTX *rx)
       "comment",       /* 21 */
       "restorejob",    /* 22 */
       "replace",       /* 23 */
-      "xxxxxxxxx",     /* 24 */
+      "pluginrestoreconf", /* 24 */
       "fdcalled",      /* 25 */
       "when",          /* 26 */
       "noautoparent",  /* 27 */
+
+      "jobuser",       /* 28 */
+      "jobgroup",      /* 29 */
       NULL
    };
 
@@ -1054,16 +1129,32 @@ static bool insert_dir_into_findex_list(UAContext *ua, RESTORE_CTX *rx, char *di
    return true;
 }
 
+struct component_file_ctx
+{
+   RESTORE_CTX *rx;
+   UAContext   *ua;
+};
+
+static int component_file_handler(void *ctx, int num_fields, char **row)
+{
+   POOL_MEM tmp;
+   component_file_ctx *c = (component_file_ctx *) ctx;
+   Mmsg(tmp, "%s%s", row[0], row[1]);
+   write_component_file(c->ua, c->rx, tmp.c_str()); /* Errors reported here */
+   return 0;
+}
+
 /*
  * Get the JobId and FileIndexes of all files in the specified table
  */
 bool insert_table_into_findex_list(UAContext *ua, RESTORE_CTX *rx, char *table)
 {
+   component_file_ctx ctx;
    strip_trailing_junk(table);
    Mmsg(rx->query, uar_jobid_fileindex_from_table, table);
 
    rx->found = false;
-   /* Find and insert jobid and File Index */
+   /* Find and insert jobid and File Index. The JobIds are stored in rx->JobIds */
    if (!db_sql_query(ua->db, rx->query, jobid_fileindex_handler, (void *)rx)) {
       ua->error_msg(_("Query failed: %s. ERR=%s\n"),
          rx->query, db_strerror(ua->db));
@@ -1071,6 +1162,24 @@ bool insert_table_into_findex_list(UAContext *ua, RESTORE_CTX *rx, char *table)
    if (!rx->found) {
       ua->error_msg(_("No table found: %s\n"), table);
       return true;
+   }
+   /* Get all :component_info_xxx files, note that the query can be very slow if
+    * we don't have a filter on File index, here, we can use JobId.
+    * TODO: We might check if we have a RestoreObject associated with the job to
+    * compute or not the list.
+    */
+   Mmsg(rx->query,
+        "SELECT Path.Path, File.Filename "
+        "FROM File JOIN Path USING (PathId) "
+        "JOIN %s AS T ON (File.JobId = T.JobId AND File.FileIndex = T.FileIndex) "
+        "WHERE File.Filename LIKE ':component_info_%%' AND File.JobId IN (%s)",
+        table, rx->JobIds);
+   Dmsg1(100, "query=%s\n", rx->query);
+   ctx.ua = ua;
+   ctx.rx = rx;
+   if (!db_sql_query(ua->db, rx->query, component_file_handler, (void *)&ctx)) {
+      ua->error_msg(_("Query failed: %s. ERR=%s\n"),
+         rx->query, db_strerror(ua->db));
    }
    return true;
 }
@@ -1132,6 +1241,7 @@ static bool can_restore_all_files(UAContext *ua)
       if (!lst || strcasecmp((char*)lst->get(0), "*all*") != 0) {
          return false;
       }
+      lst = ua->cons->ACL_lists[UserId_ACL];
       if (!lst || strcasecmp((char *)lst->get(0), "*all*") != 0) {
          return false;
       }
@@ -1234,10 +1344,10 @@ static bool write_component_file(UAContext *ua, RESTORE_CTX *rx, char *fname)
    fprintf(rx->component_fd, "%s\n", fname);
    if (ferror(rx->component_fd)) {
       ua->error_msg(_("Error writing component file.\n"));
-     fclose(rx->component_fd);
-     unlink(rx->component_fname);
-     rx->component_fd = NULL;
-     return false;
+      fclose(rx->component_fd);
+      unlink(rx->component_fname);
+      rx->component_fd = NULL;
+      return false;
    }
    return true;
 }
@@ -1260,6 +1370,7 @@ static bool build_directory_tree(UAContext *ua, RESTORE_CTX *rx)
    tree.hardlinks_in_mem = rx->hardlinks_in_mem;
    tree.no_auto_parent = rx->no_auto_parent;
    last_JobId = 0;
+   get_uid_gid_from_acl(ua, &tree.uid_acl, &tree.gid_acl, &tree.dir_acl);
    tree.last_dir_acl = NULL;
    /*
     * For display purposes, the same JobId, with different volumes may
@@ -1477,7 +1588,7 @@ static bool select_backups_before_date(UAContext *ua, RESTORE_CTX *rx, char *dat
    pool_select[0] = 0;
    if (rx->pool) {
       POOL_DBR pr;
-      memset(&pr, 0, sizeof(pr));
+      bmemset(&pr, 0, sizeof(pr));
       bstrncpy(pr.Name, rx->pool->name(), sizeof(pr.Name));
       if (db_get_pool_record(ua->jcr, ua->db, &pr)) {
          bsnprintf(pool_select, sizeof(pool_select), "AND Media.PoolId=%s ",
