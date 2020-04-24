@@ -653,7 +653,7 @@ bool select_pool_dbr(UAContext *ua, POOL_DBR *pr, const char *argk)
       return false;
    }
 
-   memset(&opr, 0, sizeof(opr));
+   bmemset(&opr, 0, sizeof(opr));
    /* *None* is only returned when selecting a recyclepool, and in that case
     * the calling code is only interested in opr.Name, so then we can leave
     * pr as all zero.
@@ -680,7 +680,7 @@ int select_pool_and_media_dbr(UAContext *ua, POOL_DBR *pr, MEDIA_DBR *mr)
    if (!select_media_dbr(ua, mr)) {
       return 0;
    }
-   memset(pr, 0, sizeof(POOL_DBR));
+   bmemset(pr, 0, sizeof(POOL_DBR));
    pr->PoolId = mr->PoolId;
    if (!db_get_pool_record(ua->jcr, ua->db, pr)) {
       ua->error_msg("%s", db_strerror(ua->db));
@@ -712,7 +712,7 @@ int select_media_dbr(UAContext *ua, MEDIA_DBR *mr)
    }
    if (mr->VolumeName[0] == 0) {
       POOL_DBR pr;
-      memset(&pr, 0, sizeof(pr));
+      bmemset(&pr, 0, sizeof(pr));
       /* Get the pool from pool=<pool-name> */
       if (!get_pool_dbr(ua, &pr)) {
          goto bail_out;
@@ -1640,9 +1640,6 @@ int scan_storage_cmd(UAContext *ua, const char *cmd,
          Dmsg0(100, "No results from db_get_media_ids\n");
          goto bail_out;
       }
-      *nb = 1;
-      *results = (uint32_t *) malloc(1 * sizeof(uint32_t));
-      *results[0] = mr2.MediaId;
    }
 
    if (*nb == 0) {
@@ -1663,4 +1660,20 @@ bail_out:
    }
    *nb = 0;
    return 0;
+}
+
+/* Small helper to scan storage daemon commands and search for volumes */
+int scan_truncate_cmd(UAContext *ua, const char *cmd,
+                     char *truncate_opt) /* truncate option, must be MAX_NAME_LENGTH long */
+{
+   *truncate_opt = 0;
+
+   /* Look at arguments */
+   for (int i=1; i<ua->argc; i++) {
+      if (strcasecmp(ua->argk[i], NT_("truncate")) == 0
+                 && is_name_valid(ua->argv[i], NULL)) {
+         bstrncpy(truncate_opt, ua->argv[i], MAX_NAME_LENGTH);
+      }
+   }
+   return 1;
 }
