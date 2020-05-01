@@ -308,6 +308,7 @@ bstat_test: Makefile libbac.la bstat.c unittests.o
 	$(RMF) bstat.o
 	$(CXX) -DTEST_PROGRAM $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE)  $(CFLAGS) bstat.c
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -o $@ bstat.o unittests.o $(DLIB) -lbac -lm $(LIBS)
+	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) $@ $(DESTDIR)$(sbindir)/
 	$(RMF) bstat.o
 	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) bstat.c
 
