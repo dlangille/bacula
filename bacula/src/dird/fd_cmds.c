@@ -1133,7 +1133,7 @@ int get_attributes_and_put_in_catalog(JCR *jcr)
    BSOCK   *fd;
    int n = 0;
    ATTR_DBR *ar = NULL;
-   char digest[MAXSTRING];
+   char digest[2*(MAXSTRING+1)+1];  /* escaped version of Digest */
 
    fd = jcr->file_bsock;
    jcr->jr.FirstIndex = 1;
@@ -1148,7 +1148,7 @@ int get_attributes_and_put_in_catalog(JCR *jcr)
       int32_t file_index;
       int stream, len;
       char *p, *fn;
-      char Digest[MAXSTRING];      /* either Verify opts or MD5/SHA1 digest */
+      char Digest[MAXSTRING+1];      /* either Verify opts or MD5/SHA1 digest */
 
       /* Stop here if canceled */
       if (jcr->is_job_canceled()) {
@@ -1156,7 +1156,7 @@ int get_attributes_and_put_in_catalog(JCR *jcr)
          return 0;
       }
 
-      if ((len = sscanf(fd->msg, "%ld %d %s", &file_index, &stream, Digest)) != 3) {
+      if ((len = sscanf(fd->msg, "%ld %d %500s", &file_index, &stream, Digest)) != 3) { /* MAXSTRING */
          Jmsg(jcr, M_FATAL, 0, _("<filed: bad attributes, expected 3 fields got %d\n"
 "msglen=%d msg=%s\n"), len, fd->msglen, fd->msg);
          jcr->setJobStatus(JS_ErrorTerminated);
