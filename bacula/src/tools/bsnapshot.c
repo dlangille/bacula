@@ -586,7 +586,7 @@ public:
 
          /* Each line is supposed to start with "ID", and end with "path" */
          bool ok = false;
-         if (sscanf(p, "ID %50s ", id) == 1) {              /* We found ID, look for path */
+         if (sscanf(p, "ID %49s ", id) == 1) {              /* We found ID, look for path */
             p2 = strstr(p, "path ");
             if (p2) {
                path = p2 + strlen("path ");
@@ -597,7 +597,7 @@ public:
                strcpy(v->path, path);
 
                p2 = strstr(p, "otime");
-               if (p2 && sscanf(p2, "otime %50s %50s", day, hour) == 2) {
+               if (p2 && sscanf(p2, "otime %49s %49s", day, hour) == 2) {
                   bsnprintf(v->otime, sizeof(v->otime), "%s %s", day, hour);
                }
 
@@ -671,7 +671,7 @@ public:
          }
 
          /* Each line is supposed to start with "ID", and end with "path" */
-         ok = (sscanf(p, "ID %50s ", id) == 1);
+         ok = (sscanf(p, "ID %49s ", id) == 1);
          if (ok) {              /* We found ID, look for path */
             p = strstr(p, "path ");
             if (p) {
@@ -940,7 +940,7 @@ public:
             /* Flush the current one */
             if (!arg->device || strcmp(arg->device, buf[0]) == 0) {
 
-               if (sscanf(buf[3], "%s %s %d %d:%d %d",
+               if (sscanf(buf[3], "%49s %49s %d %d:%d %d",
                           DayW, Month, &Day, &Hour, &Min, &Year) == 6)
                {
                   /* Get a clean iso format */

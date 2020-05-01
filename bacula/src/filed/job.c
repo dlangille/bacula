@@ -2533,7 +2533,7 @@ static int level_cmd(JCR *jcr)
          if (dir->recv() <= 0) {      /* get response */
             goto bail_out;
          }
-         if (sscanf(dir->msg, "btime %s", buf) != 1) {
+         if (sscanf(dir->msg, "btime %50s", buf) != 1) {
             goto bail_out;
          }
          his_time = str_to_uint64(buf);

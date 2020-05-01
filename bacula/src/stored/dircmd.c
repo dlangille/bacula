@@ -309,7 +309,7 @@ static bool client_cmd(JCR *jcr)
 
    Dmsg1(100, "ClientCmd: %s", dir->msg);
    jcr->sd_calls_client = true;
-   if (sscanf(dir->msg, "client address=%s port=%d ssl=%d", &jcr->client_addr, &client_port,
+   if (sscanf(dir->msg, "client address=%127s port=%d ssl=%d", jcr->client_addr, &client_port,
               &enable_ssl) != 3) {
       pm_strcpy(jcr->errmsg, dir->msg);
       Jmsg(jcr, M_FATAL, 0, _("[SF0101] Bad client command: %s"), jcr->errmsg);
