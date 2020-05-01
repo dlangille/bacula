@@ -1794,6 +1794,7 @@ static bool verify_signature(r_ctx &rctx)
                Jmsg(jcr, M_ERROR, 0, _("Digest one file failed for file: %s\n"),
                     jcr->last_fname);
                jcr->JobBytes = saved_bytes;
+               jcr->crypto.digest = NULL;
                goto get_out;
             }
             jcr->JobBytes = saved_bytes;
@@ -1803,6 +1804,7 @@ static bool verify_signature(r_ctx &rctx)
                Dmsg1(50, "Bad signature on %s\n", jcr->last_fname);
                Jmsg2(jcr, M_ERROR, 0, _("Signature validation failed for file %s: ERR=%s\n"),
                      jcr->last_fname, crypto_strerror(err));
+               jcr->crypto.digest = NULL;
                goto get_out;
             }
             jcr->crypto.digest = NULL;
