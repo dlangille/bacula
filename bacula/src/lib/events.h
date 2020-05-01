@@ -24,10 +24,10 @@
 /* Events record -- same format as database */
 class EVENTS_DBR: public SMARTALLOC {
 public:
-   EVENTS_DBR(): EventsId(0), EventsTime(0), EventsRef(0), EventsDaemon(""), EventsType(""),
-                 EventsSource(""), EventsCode(""), EventsText(NULL), limit(100), order(0),
-                 start(""), end("")
-      {};
+   EVENTS_DBR(): EventsId(0), EventsTime(0), EventsRef(0), EventsText(NULL), limit(100), order(0)
+      {
+         *EventsDaemon = *EventsType = *EventsSource = *EventsCode = *start = *end = 0;
+      };
 
    ~EVENTS_DBR() { bfree_and_null(EventsText); };
    bool scan_line(const char *line);
