@@ -104,7 +104,6 @@ PROG_COPYRIGHT
 "       -d <nn>         set debug level to <nn>\n"
 "       -dt             print a timestamp in debug output\n"
 "       -f              fix inconsistencies\n"
-"       -t              test if client library is thread-safe\n"
 "       -v              verbose\n"
 "       -?              print this message\n"
 "\n", 2002, "", VERSION, BDATE);
