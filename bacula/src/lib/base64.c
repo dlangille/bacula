@@ -405,6 +405,38 @@ int main()
       fprintf(stderr, "%c", rnddata[a]);
    }
 */
+
+   /* test vectors from https://www.base64encode.org/ */
+   const char * testdata1 = "Man is distinguished, not only by his reason, but ...";
+   const char * testvect1 = "TWFuIGlzIGRpc3Rpbmd1aXNoZWQsIG5vdCBvbmx5IGJ5IGhpcyByZWFzb24sIGJ1dCAuLi4=";
+   // const char * filltest1  = "a";
+   // const char * fillres1   = "YQ==";
+   // const char * filltest2  = "ab";
+   // const char * fillres2   = "YWI=";
+   // const char * filltest3  = "abc";
+   // const char * fillres3   = "YWJj";
+   // const char * filltest4  = "abcd";
+   // const char * fillres4   = "YWJjZA==";
+   // const char * filltest5  = "abcde";
+   // const char * fillres5   = "YWJjZGU=";
+   // const char * filltest6  = "abcdef";
+   // const char * fillres6   = "YWJjZGVm";
+
+   char * vdata1 = (char*)malloc(strlen(testdata1) + 10);
+   char * vvect1 = (char*)malloc(strlen(testvect1) + 10);
+
+   len = bin_to_base64(vvect1, strlen(testvect1) + 10, (char*)testdata1, strlen(testdata1), true);
+   ok(len == strlen(testvect1), "test bin_to_base64");
+   ok(strcmp(testvect1, vvect1) == 0, "test bin_to_base64 content");
+
+   len = base64_to_bin(vdata1, strlen(testdata1) + 10, (char*)testvect1, strlen(testvect1));
+   ok(len = strlen(testdata1), "test base64_to_bin");
+   vdata1[len] = 0;
+   ok(strcmp(testdata1, vdata1) == 0, "test base64_to_bin content");
+
+   free(vdata1);
+   free(vvect1);
+
    /* encode reference binary data to base64 */
    len = bin_to_base64(buf, 30, (char*)rnddata, 16, true);
    ok(len == strlen(resb16), "Checking bin_to_base64 encoded length");
