@@ -5,13 +5,6 @@
 			<h2><%[ Run job ]%><%=$this->getJobName() ? ' - ' . $this->getJobName() : ''%></h2>
 		</header>
 		<div class="w3-container w3-margin-left w3-margin-right">
-			<com:TValidationSummary
-				ID="ValidationSummary"
-				CssClass="validation-error-summary"
-				ValidationGroup="JobGroup"
-				AutoUpdate="true"
-				Display="Dynamic"
-				/>
 			<com:TActivePanel ID="JobToRunLine" CssClass="w3-row w3-section w3-text-teal" Display="None">
 				<div class="w3-col w3-third"><i class="w3-xxlarge fa fa-tasks"></i> &nbsp;<com:TLabel ForControl="JobToRun" Text="<%[ Job to run: ]%>" CssClass="w3-xlarge" /></div>
 				<div class="w3-half">
@@ -86,7 +79,32 @@
 				<div class="w3-col w3-third"><i class="w3-xxlarge fa fa-file-alt"></i> &nbsp;<com:TLabel ForControl="JobToVerifyJobId" Text="<%[ JobId to Verify: ]%>" CssClass="w3-xlarge" /></div>
 				<div class="w3-half">
 					<com:TActiveTextBox ID="JobToVerifyJobId" CssClass="w3-input w3-border" AutoPostBack="false" />
-					<com:TDataTypeValidator ID="JobToVerifyJobIdValidator" ValidationGroup="JobGroup" ControlToValidate="JobToVerifyJobId" ErrorMessage="<%[ JobId to Verify value must be integer greather than 0. ]%>" ControlCssClass="validation-error" Display="None" DataType="Integer" />
+					<com:TRequiredFieldValidator
+						ValidationGroup="JobGroup"
+						ControlToValidate="JobToVerifyJobId"
+						ErrorMessage="<%[ JobId to Verify value must be integer greather than 0. ]%>"
+						ControlCssClass="validation-error"
+						Display="Dynamic"
+					>
+						<prop:ClientSide.OnValidate>
+							var verify_opts = document.getElementById('<%=$this->JobToVerifyOptions->ClientID%>');
+							sender.enabled = (verify_opts.value === 'jobid');
+						</prop:ClientSide.OnValidate>
+					</com:TRequiredFieldValidator>
+					<com:TDataTypeValidator
+						ID="JobToVerifyJobIdValidator"
+						ValidationGroup="JobGroup"
+						ControlToValidate="JobToVerifyJobId"
+						ErrorMessage="<%[ JobId to Verify value must be integer greather than 0. ]%>"
+						ControlCssClass="validation-error"
+						Display="Dynamic"
+						DataType="Integer"
+					>
+						<prop:ClientSide.OnValidate>
+							var verify_opts = document.getElementById('<%=$this->JobToVerifyOptions->ClientID%>');
+							sender.enabled = (verify_opts.value === 'jobid');
+						</prop:ClientSide.OnValidate>
+					</com:TDataTypeValidator>
 				</div>
 			</com:TActivePanel>
 			<div class="w3-row w3-section w3-text-teal">
@@ -120,7 +138,22 @@
 				<div class="w3-col w3-third"><i class="w3-xxlarge fa fa-sort-numeric-up"></i> &nbsp;<com:TLabel ForControl="Priority" Text="<%[ Priority: ]%>" CssClass="w3-xlarge" /></div>
 				<div class="w3-half">
 					<com:TActiveTextBox ID="Priority" CssClass="w3-input w3-border" AutoPostBack="false" />
-					<com:TDataTypeValidator ID="PriorityValidator" ValidationGroup="JobGroup" ControlToValidate="Priority" ErrorMessage="<%[ Priority value must be integer greather than 0. ]%>" ControlCssClass="validation-error" Display="None" DataType="Integer" />
+					<com:TRequiredFieldValidator
+						ValidationGroup="JobGroup"
+						ControlToValidate="Priority"
+						ErrorMessage="<%[ Priority value must be integer greather than 0. ]%>"
+						ControlCssClass="validation-error"
+						Display="Dynamic"
+					/>
+					<com:TDataTypeValidator
+						ID="PriorityValidator"
+						ValidationGroup="JobGroup"
+						ControlToValidate="Priority"
+						ErrorMessage="<%[ Priority value must be integer greather than 0. ]%>"
+						ControlCssClass="validation-error"
+						Display="Dynamic"
+						DataType="Integer"
+					/>
 				</div>
 			</div>
 			<com:TActivePanel ID="AccurateLine" CssClass="w3-row w3-section w3-text-teal">
@@ -142,12 +175,16 @@
 			</div>
 		</div>
 		<footer class="w3-container w3-center">
-			<com:TActiveButton
+			<com:TActiveLinkButton
 				ID="Estimate"
 				Text="<%[ Estimate job ]%>"
 				OnClick="estimate"
 				CssClass="w3-button w3-section w3-teal w3-padding"
 			>
+				<prop:Attributes.onclick>
+					var mainForm = Prado.Validation.getForm();
+					return Prado.Validation.validate(mainForm, 'JobGroup');
+				</prop:Attributes.onclick>
 				<prop:ClientSide.OnLoading>
 					document.getElementById('status_command_loading').style.visibility = 'visible';
 				</prop:ClientSide.OnLoading>
@@ -157,8 +194,8 @@
 					show_job_log(true);
 					scroll_down_job_log();
 				</prop:ClientSide.OnComplete>
-			</com:TActiveButton>
-			<com:TActiveButton
+			</com:TActiveLinkButton>
+			<com:TActiveLinkButton
 				ID="Run"
 				Text="<%[ Run job ]%>"
 				ValidationGroup="JobGroup"
@@ -168,17 +205,13 @@
 			>
 				<prop:Attributes.onclick>
 					var mainForm = Prado.Validation.getForm();
-					var send = false;
-					if (Prado.Validation.managers[mainForm].getValidatorsWithError('JobGroup').length == 0) {
-						send = true;
-					}
-					return send;
+					return Prado.Validation.validate(mainForm, 'JobGroup');
 				</prop:Attributes.onclick>
-			</com:TActiveButton>
+			</com:TActiveLinkButton>
 			<script>
 				var run_job_go_to_running_job = function(jobid) {
 					document.location.href = '/web/job/history/' + jobid + '/';
-				}
+				};
 			</script>
 			<i id="status_command_loading" class="fa fa-sync w3-spin" style="visibility: hidden;"></i>
 		</footer>
