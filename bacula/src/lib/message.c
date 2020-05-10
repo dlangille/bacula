@@ -1375,7 +1375,7 @@ e_msg(const char *file, int line, int type, int level, const char *fmt,...)
     }
     switch (type) {
     case M_ABORT:
-       len = bsnprintf(buf, sizeof(buf), _("%s: ABORTING due to ERROR in %s:%d\n"),
+       len = bsnprintf(buf, sizeof(buf), _("%s: ABORTING via segfault due to ERROR in %s:%d\n"),
                my_name, get_basename(file), line);
        break;
     case M_ERROR_TERM:
@@ -1519,7 +1519,7 @@ Jmsg(JCR *jcr, int type, utime_t mtime, const char *fmt,...)
     }
     switch (type) {
     case M_ABORT:
-       len = bsnprintf(rbuf, sizeof(rbuf), _("%s ABORTING due to ERROR\n"), my_name);
+       len = bsnprintf(rbuf, sizeof(rbuf), _("%s ABORTING via segfault due to ERROR\n"), my_name);
        break;
     case M_ERROR_TERM:
        len = bsnprintf(rbuf, sizeof(rbuf), _("%s ERROR TERMINATION\n"), my_name);
