@@ -140,13 +140,15 @@ utime_t str_to_utime(char *str)
    struct tm tm;
    time_t time;
 
-   /* Check for bad argument */
-   if (!str || *str == 0) {
+   /* Minimal check for bad argument */
+   if (!str || *str == 0 || (strlen(str) != 19) ||
+       (str[4] != '-') || (str[7] != '-') ||
+       (str[13] != ':') || (str[16] != ':')) {
       return 0;
    }
 
-   if (sscanf(str, "%d-%d-%d %d:%d:%d", &tm.tm_year, &tm.tm_mon, &tm.tm_mday,
-                                        &tm.tm_hour, &tm.tm_min, &tm.tm_sec) != 6) {
+   if (sscanf(str, "%d-%d-%d %d:%d:%d", &tm.tm_year,
+       &tm.tm_mon, &tm.tm_mday, &tm.tm_hour, &tm.tm_min, &tm.tm_sec) != 6) {
       return 0;
    }
    if (tm.tm_mon > 0) {
