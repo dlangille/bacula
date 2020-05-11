@@ -33,10 +33,13 @@
 #if HAVE_SQLITE3  
  
 #include "cats.h" 
-#include <sqlite3.h> 
+#include <sqlite3.h>
 #define __BDB_SQLITE_H_ 1 
-#include "bdb_sqlite.h" 
- 
+#include "bdb_sqlite.h"
+#include "lib/bregex.h"
+
+static int b_sqlite3_extension_init(sqlite3 *db);
+
 /* ----------------------------------------------------------------------- 
  * 
  *    SQLite dependent defines and subroutines 
@@ -48,7 +51,7 @@
 static dlist *db_list = NULL; 
  
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER; 
- 
+
 /* 
  * When using mult_db_connections 
  *   sqlite can be BUSY. We just need sleep a little in this case. 
@@ -59,7 +62,7 @@ static int my_sqlite_busy_handler(void *arg, int calls)
    return 1; 
 }  
  
-BDB_SQLITE::BDB_SQLITE() 
+BDB_SQLITE::BDB_SQLITE() : BDB()
 {  
    BDB_SQLITE *mdb = this; 
  
@@ -99,12 +102,15 @@ BDB_SQLITE::~BDB_SQLITE()
  * Initialize database data structure. In principal this should 
  * never have errors, or it is really fatal. 
  */ 
-BDB *db_init_database(JCR *jcr, const char *db_driver, const char *db_name, const char *db_user, 
-                       const char *db_password, const char *db_address, int db_port, const char *db_socket, 
+BDB *db_init_database(JCR *jcr, const char *db_driver, const char *db_name, 
+                       const char *db_user, const char *db_password, 
+                       const char *db_address, int db_port, 
+                       const char *db_socket,
                        const char *db_ssl_mode, const char *db_ssl_key, 
                        const char *db_ssl_cert, const char *db_ssl_ca,
                        const char *db_ssl_capath, const char *db_ssl_cipher,
-                       bool mult_db_connections, bool disable_batch_insert) 
+                       bool mult_db_connections, 
+                       bool disable_batch_insert) 
 {  
    BDB_SQLITE *mdb = NULL; 
  
@@ -170,6 +176,7 @@ bool BDB_SQLITE::bdb_open_database(JCR *jcr)
    int ret; 
    int errstat; 
    int retry = 0; 
+   int64_t starttime; 
    BDB_SQLITE *mdb = this; 
  
    P(mutex); 
@@ -221,7 +228,7 @@ bool BDB_SQLITE::bdb_open_database(JCR *jcr)
          db_file, mdb->m_sqlite_errmsg ? mdb->m_sqlite_errmsg : _("unknown")); 
       free(db_file); 
       goto bail_out; 
-   } 
+   }
    mdb->m_connected = true; 
    free(db_file); 
  
@@ -233,11 +240,22 @@ bool BDB_SQLITE::bdb_open_database(JCR *jcr)
 #if defined(SQLITE3_INIT_QUERY) 
    sql_query(SQLITE3_INIT_QUERY); 
 #endif 
- 
+
+#if 0
+   /* Allow large queries */
+   sqlite3_limit(mdb->m_db_handle, SQLITE_LIMIT_SQL_LENGTH, 1073741824);
+#endif
+
    if (!bdb_check_version(jcr)) { 
       goto bail_out; 
    } 
  
+   if (!bdb_check_settings(jcr, &starttime, 30*60*60*24, 0)) {
+      goto bail_out; 
+   }
+
+   b_sqlite3_extension_init(mdb->m_db_handle);
+
    retval = true; 
  
 bail_out: 
@@ -359,9 +377,9 @@ void BDB_SQLITE::bdb_unescape_object(JCR *jcr, char *from, int32_t expected_len,
       *dest_len = 0; 
       return; 
    } 
-   *dest = check_pool_memory_size(*dest, expected_len+1); 
-   base64_to_bin(*dest, expected_len+1, from, strlen(from)); 
-   *dest_len = expected_len; 
+   *dest = check_pool_memory_size(*dest, strlen(from)+1); // don't use expected_len here
+   base64_to_bin(*dest, sizeof_pool_memory(*dest), from, strlen(from));
+   *dest_len = expected_len; // we could also use the value returned above that should be the same
    (*dest)[expected_len] = 0; 
 }  
  
@@ -377,7 +395,7 @@ void BDB_SQLITE::bdb_start_transaction(JCR *jcr)
       jcr->attr = get_pool_memory(PM_FNAME); 
    } 
    if (!jcr->ar) { 
-      jcr->ar = (ATTR_DBR *)malloc(sizeof(ATTR_DBR)); 
+      jcr->ar = (ATTR_DBR *)malloc(sizeof(ATTR_DBR));
       memset(jcr->ar, 0, sizeof(ATTR_DBR));
    } 
  
@@ -725,6 +743,41 @@ bool BDB_SQLITE::sql_batch_insert(JCR *jcr, ATTR_DBR *ar)
  
    return sql_query(mdb->cmd); 
 }  
- 
- 
+
+/* Implementation of the REGEXP function for SQLite3 */
+static void b_sqlite_regexp(sqlite3_context *ctx, int argc, sqlite3_value **argv)
+{
+   const char *re, *str;
+   int rc;
+   regex_t reg;
+
+   re = (const char *) sqlite3_value_text(argv[0]);
+   if (!re) {
+      sqlite3_result_error(ctx, "no regexp", -1);
+      return;
+   }
+
+   str = (const char *) sqlite3_value_text(argv[1]);
+   if (!str) {
+      sqlite3_result_error(ctx, "no string", -1);
+      return;
+   }
+
+   if (regcomp(&reg, re, 0) < 0) {
+      sqlite3_result_error(ctx, "regexp compilation error", -1);
+      return;
+   }
+   
+   rc = regexec(&reg, str, 0, NULL, 0); 
+   sqlite3_result_int(ctx, rc == 0);
+   regfree(&reg);
+   return;
+}
+
+static int b_sqlite3_extension_init(sqlite3 *db)
+{
+   /* TODO: May implement a regex cache */
+   return sqlite3_create_function(db, "REGEXP", 2, SQLITE_UTF8, NULL, b_sqlite_regexp, NULL, NULL);
+}
+
 #endif /* HAVE_SQLITE3 */ 
