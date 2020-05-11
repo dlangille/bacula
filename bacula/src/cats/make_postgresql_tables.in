@@ -2,7 +2,7 @@
 #
 # shell script to create Bacula PostgreSQL tables
 #
-# Copyright (C) 2000-2017 Kern Sibbald
+# Copyright (C) 2000-2020 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
 # Important note: 
@@ -15,15 +15,20 @@ db_name=${db_name:-@db_name@}
 
 psql -f - -d ${db_name} $* <<END-OF-DATA
 
-CREATE TABLE Filename
+CREATE TABLE Events
 (
-    FilenameId	      serial	  not null,
-    Name	      text	  not null,
-    primary key (FilenameId)
+    EventsId          serial	  not null,
+    EventsCode        text        not null,
+    EventsType	      text	  not null,
+    EventsTime	      timestamp   without time zone,
+    EventsInsertTime  timestamp   without time zone DEFAULT NOW(),
+    EventsDaemon        text        default '',
+    EventsSource      text        default '',
+    EventsRef         text        default '',
+    EventsText	      text	  not null,
+    primary key (EventsId)
 );
-
-ALTER TABLE Filename ALTER COLUMN Name SET STATISTICS 1000;
-CREATE UNIQUE INDEX filename_name_idx on Filename (Name text_pattern_ops);
+create index events_time_idx on Events (EventsTime);
 
 CREATE TABLE Path
 (
@@ -48,14 +53,14 @@ CREATE UNIQUE INDEX path_name_idx on Path (Path text_pattern_ops);
 
 -- In File table
 -- FileIndex can be 0 for FT_DELETED files
--- FileNameId can link to Filename.Name='' for directories
+-- FileName can be '' for directories
 CREATE TABLE File
 (
     FileId	      bigserial   not null,
     FileIndex	      integer	  not null  default 0,
     JobId	      integer	  not null,
     PathId	      integer	  not null,
-    FilenameId	      integer	  not null,
+    Filename	      text	  not null  default '',
     DeltaSeq	      smallint	  not null  default 0,
     MarkId	      integer	  not null  default 0,
     LStat	      text	  not null,
@@ -63,8 +68,7 @@ CREATE TABLE File
     primary key (FileId)
 );
 
-CREATE INDEX file_jpfid_idx on File (JobId, PathId, FilenameId);
-CREATE INDEX file_jobid_idx on File (JobId);
+CREATE INDEX file_jpfid_idx on File (JobId, PathId, Filename text_pattern_ops);
 
 --
 -- Add this if you have a good number of job
@@ -76,8 +80,8 @@ CREATE INDEX file_jobid_idx on File (JobId);
 --  if your Verifies are too slow, but they can slow down
 --  backups.
 --
--- CREATE INDEX file_pathid_idx on file(pathid);
--- CREATE INDEX file_filenameid_idx on file(filenameid);
+-- CREATE INDEX file_pathid_idx on file(PathId);
+-- CREATE INDEX file_filename_idx on file(Filename);
 
 CREATE TABLE RestoreObject (
    RestoreObjectId SERIAL NOT NULL,
@@ -120,6 +124,7 @@ CREATE TABLE Job
     PoolId	      integer	  default 0,
     FilesetId	      integer	  default 0,
     PriorJobid	      integer	  default 0,
+    PriorJob          text        default '',
     PurgedFiles       smallint	  default 0,
     HasBase	      smallint	  default 0,
     HasCache	      smallint	  default 0,
@@ -130,7 +135,6 @@ CREATE TABLE Job
 );
 
 CREATE INDEX job_name_idx on job (name text_pattern_ops);
-CREATE INDEX job_jobtdate_idx on job (jobtdate);
 
 -- Create a table like Job for long term statistics 
 CREATE TABLE JobHisto (LIKE Job);
@@ -174,6 +178,17 @@ CREATE TABLE jobmedia
 
 CREATE INDEX job_media_job_id_media_id_idx on jobmedia (jobid, mediaid);
 
+CREATE TABLE FileMedia
+(
+    JobId	      integer	  not null,
+    FileIndex	      integer	  not null,
+    MediaId	      integer	  not null,
+    BlockAddress      bigint	  default 0,
+    RecordNo	      integer	  default 0,
+    FileOffset	      bigint	  default 0
+);
+CREATE INDEX file_media_idx on FileMedia (JobId, FileIndex);
+
 CREATE TABLE media
 (
     mediaid	      serial	  not null,
@@ -209,7 +224,7 @@ CREATE TABLE media
     enabled	      smallint	  default 1,
     recycle	      smallint	  default 0,
     ActionOnPurge     smallint	  default 0,
-    cacheretention    bigint	  default 0,
+    cacheretention    bigint      default 0,
     volretention      bigint	  default 0,
     voluseduration    bigint	  default 0,
     maxvoljobs	      integer	  default 0,
@@ -279,12 +294,13 @@ CREATE TABLE pool
     useonce	      smallint	  default 0,
     usecatalog	      smallint	  default 0,
     acceptanyvolume   smallint	  default 0,
-    cacheretention    bigint	  default 0,
     volretention      bigint	  default 0,
+    cacheretention    bigint	  default 0,
     voluseduration    bigint	  default 0,
     maxvoljobs	      integer	  default 0,
     maxvolfiles       integer	  default 0,
     maxvolbytes       bigint	  default 0,
+    maxpoolbytes      bigint      default 0,
     autoprune	      smallint	  default 0,
     recycle	      smallint	  default 0,
     ActionOnPurge     smallint	  default 0,
@@ -357,7 +373,7 @@ CREATE TABLE counters
 
 CREATE TABLE basefiles
 (
-    baseid	      bigserial 	    not null,
+    baseid	      bigserial		    not null,
     jobid	      integer		    not null,
     fileid	      bigint		    not null,
     fileindex	      integer		   default 0,
@@ -372,7 +388,7 @@ CREATE TABLE unsavedfiles
     UnsavedId	      integer		    not null,
     jobid	      integer		    not null,
     pathid	      integer		    not null,
-    filenameid	      integer		    not null,
+    filename	      text		    not null,
     primary key (UnsavedId)
 );
 
@@ -482,7 +498,7 @@ CREATE UNIQUE INDEX snapshot_idx ON Snapshot (Device text_pattern_ops,
 					      Volume text_pattern_ops,
 					      Name text_pattern_ops);
 
-INSERT INTO Version (VersionId) VALUES (16);
+INSERT INTO Version (VersionId) VALUES (1022);
 
 -- Make sure we have appropriate permissions
 
