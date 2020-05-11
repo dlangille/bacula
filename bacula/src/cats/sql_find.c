@@ -94,6 +94,8 @@ bail_out:
 /*
  * Find job start time if JobId specified, otherwise
  * find last Job start time Incremental and Differential saves.
+ * If FileSetId is 0, the FileSet is not used to retrieve the job
+ * information.
  *
  *  StartTime is returned in stime
  *  Job name is returned in job (MAX_NAME_LENGTH)
@@ -106,21 +108,27 @@ bool BDB::bdb_find_job_start_time(JCR *jcr, JOB_DBR *jr, POOLMEM **stime, char *
    SQL_ROW row;
    char ed1[50], ed2[50];
    char esc_name[MAX_ESCAPE_NAME_LENGTH];
+   char fileset[MAX_ESCAPE_NAME_LENGTH];
 
    bdb_lock();
    bdb_escape_string(jcr, esc_name, jr->Name, strlen(jr->Name));
    pm_strcpy(stime, "0000-00-00 00:00:00");   /* default */
    job[0] = 0;
+   fileset[0] = 0;
+
+   if (jr->FileSetId) {
+      bsnprintf(fileset, sizeof(fileset), " AND FileSetId=%s ", edit_int64(jr->FileSetId, ed2));
+   }
 
    /* If no Id given, we must find corresponding job */
    if (jr->JobId == 0) {
       /* Differential is since last Full backup */
       Mmsg(cmd,
-"SELECT StartTime, Job FROM Job WHERE JobStatus IN ('T','W') AND Type='%c' AND "
-"Level='%c' AND Name='%s' AND ClientId=%s AND FileSetId=%s "
+"SELECT StartTime, Job, PriorJob FROM Job WHERE JobStatus IN ('T','W') AND Type='%c' AND "
+"Level='%c' AND Name='%s' AND ClientId=%s %s "
 "ORDER BY StartTime DESC LIMIT 1",
            jr->JobType, L_FULL, esc_name,
-           edit_int64(jr->ClientId, ed1), edit_int64(jr->FileSetId, ed2));
+           edit_int64(jr->ClientId, ed1), fileset);
 
       if (jr->JobLevel == L_DIFFERENTIAL) {
          /* SQL cmd for Differential backup already edited above */
@@ -146,18 +154,18 @@ bool BDB::bdb_find_job_start_time(JCR *jcr, JOB_DBR *jr, POOLMEM **stime, char *
          sql_free_result();
          /* Now edit SQL command for Incremental Job */
          Mmsg(cmd,
-"SELECT StartTime, Job FROM Job WHERE JobStatus IN ('T','W') AND Type='%c' AND "
+"SELECT StartTime, Job, PriorJob FROM Job WHERE JobStatus IN ('T','W') AND Type='%c' AND "
 "Level IN ('%c','%c','%c') AND Name='%s' AND ClientId=%s "
-"AND FileSetId=%s ORDER BY StartTime DESC LIMIT 1",
+"%s ORDER BY StartTime DESC LIMIT 1",
             jr->JobType, L_INCREMENTAL, L_DIFFERENTIAL, L_FULL, esc_name,
-            edit_int64(jr->ClientId, ed1), edit_int64(jr->FileSetId, ed2));
+            edit_int64(jr->ClientId, ed1), fileset);
       } else {
          Mmsg1(errmsg, _("Unknown level=%d\n"), jr->JobLevel);
          goto bail_out;
       }
    } else {
       Dmsg1(100, "Submitting: %s\n", cmd);
-      Mmsg(cmd, "SELECT StartTime, Job FROM Job WHERE Job.JobId=%s",
+      Mmsg(cmd, "SELECT StartTime, Job, PriorJob FROM Job WHERE Job.JobId=%s",
            edit_int64(jr->JobId, ed1));
    }
 
@@ -176,7 +184,22 @@ bool BDB::bdb_find_job_start_time(JCR *jcr, JOB_DBR *jr, POOLMEM **stime, char *
    }
    Dmsg2(100, "Got start time: %s, job: %s\n", row[0], row[1]);
    pm_strcpy(stime, row[0]);
-   bstrncpy(job, row[1], MAX_NAME_LENGTH);
+
+   /* If we have a PriorJob name in the Job record, we can use it It should
+    * make plugins using the job name compatible with Copy/Migration.
+    *
+    * The name of the previous job in the incremental/differential backup chain
+    * can be used by Plugins for some operations. For example, we can create a
+    * snapshot that uses the current Job name, and the next incremental may
+    * use the previous job name to make a diff between the current snapshot and
+    * the previous one for example. This is also useful to "validate" that the
+    * previous job ran OK.
+    */
+   if (row[2] && row[2][0]) { 
+      bstrncpy(job, row[2], MAX_NAME_LENGTH);
+   } else {
+      bstrncpy(job, row[1], MAX_NAME_LENGTH);
+   }
 
    sql_free_result();
 
@@ -195,6 +218,8 @@ bail_out:
  *  StartTime is returned in stime
  *  Job name is returned in job (MAX_NAME_LENGTH)
  *
+ * If FileSetId is 0, then the FileSet is not used to get the job record  
+ *
  * Returns: false on failure
  *          true  on success, jr is unchanged, but stime and job are set
  */
@@ -204,6 +229,12 @@ bool BDB::bdb_find_last_job_start_time(JCR *jcr, JOB_DBR *jr,
    SQL_ROW row;
    char ed1[50], ed2[50];
    char esc_name[MAX_ESCAPE_NAME_LENGTH];
+   char fileset[MAX_ESCAPE_NAME_LENGTH];
+   fileset[0] = 0;
+
+   if (jr->FileSetId) {
+      bsnprintf(fileset, sizeof(fileset), " AND FileSetId=%s ", edit_int64(jr->FileSetId, ed2));
+   }
 
    bdb_lock();
    bdb_escape_string(jcr, esc_name, jr->Name, strlen(jr->Name));
@@ -211,11 +242,11 @@ bool BDB::bdb_find_last_job_start_time(JCR *jcr, JOB_DBR *jr,
    job[0] = 0;
 
    Mmsg(cmd,
-"SELECT StartTime, Job FROM Job WHERE JobStatus IN ('T','W') AND Type='%c' AND "
-"Level='%c' AND Name='%s' AND ClientId=%s AND FileSetId=%s "
+"SELECT StartTime, Job, PriorJob FROM Job WHERE JobStatus IN ('T','W') AND Type='%c' AND "
+"Level='%c' AND Name='%s' AND ClientId=%s %s "
 "ORDER BY StartTime DESC LIMIT 1",
       jr->JobType, JobLevel, esc_name,
-      edit_int64(jr->ClientId, ed1), edit_int64(jr->FileSetId, ed2));
+      edit_int64(jr->ClientId, ed1), fileset);
    if (!QueryDB(jcr, cmd)) {
       Mmsg2(&errmsg, _("Query error for start time request: ERR=%s\nCMD=%s\n"),
          sql_strerror(), cmd);
@@ -228,7 +259,15 @@ bool BDB::bdb_find_last_job_start_time(JCR *jcr, JOB_DBR *jr,
    }
    Dmsg1(100, "Got start time: %s\n", row[0]);
    pm_strcpy(stime, row[0]);
-   bstrncpy(job, row[1], MAX_NAME_LENGTH);
+
+   /* If we have a PriorJob name, we can return it
+    * see bdb_find_job_start_time() comments for more information
+    */
+   if (row[2] && row[2][0]) {
+      bstrncpy(job, row[2], MAX_NAME_LENGTH);
+   } else {
+      bstrncpy(job, row[1], MAX_NAME_LENGTH);
+   }
 
    sql_free_result();
    bdb_unlock();
@@ -429,6 +468,11 @@ int BDB::bdb_find_next_volume(JCR *jcr, int item, bool InChanger, MEDIA_DBR *mr)
       }
       if (mr->VolType == 0) {
          Mmsg(voltype, "");
+
+      } else if (mr->VolType == B_DEDUP_DEV) {
+         /* Special tweak for Dedup, it has two types */
+         Mmsg(voltype, "AND VolType IN (0,%d,%d)", B_DEDUP_DEV, B_DEDUP_OLD_DEV);
+
       } else {
          Mmsg(voltype, "AND VolType IN (0,%d)", mr->VolType);
       }
