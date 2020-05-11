@@ -76,11 +76,11 @@ BDB *db_init_database(JCR *jcr, const char *db_driver, const char *db_name,
 #define db_start_transaction(jcr, mdb) \
            mdb->bdb_start_transaction(jcr)
 #define db_end_transaction(jcr, mdb) \
-           if (mdb) mdb->bdb_end_transaction(jcr)
+        if (mdb) mdb->bdb_end_transaction(jcr)
 #define db_sql_query(mdb, query, result_handler, ctx) \
            mdb->bdb_sql_query(query, result_handler, ctx)
 #define db_thread_cleanup(mdb) \
-           if (mdb) mdb->bdb_thread_cleanup()
+        if (mdb)  mdb->bdb_thread_cleanup()
 
 /* sql.c */
 int db_int64_handler(void *ctx, int num_fields, char **row);
@@ -110,6 +110,10 @@ void bdb_free_restoreobject_record(JCR *jcr, ROBJECT_DBR *rr);
    mdb->bdb_get_client_pool(jcr, results)
 
 /* sql_create.c */
+#define db_create_log_record(jcr, mdb, jobid, mtime, msg)        \
+           mdb->bdb_create_log_record(jcr, jobid, mtime, msg)
+#define db_create_events_record(jcr, mdb, rec) \
+           mdb->bdb_create_events_record(jcr, rec)
 #define db_create_path_record(jcr, mdb, ar) \
            mdb->bdb_create_path_record(jcr, ar)
 #define db_create_file_attributes_record(jcr, mdb, ar) \
@@ -126,6 +130,8 @@ void bdb_free_restoreobject_record(JCR *jcr, ROBJECT_DBR *rr);
            mdb->bdb_create_pool_record(jcr, pool_dbr)
 #define db_create_jobmedia_record(jcr, mdb, jr) \
            mdb->bdb_create_jobmedia_record(jcr, jr)
+#define db_create_filemedia_record(jcr, mdb, fr) \
+           mdb->bdb_create_filemedia_record(jcr, fr)
 #define db_create_counter_record(jcr, mdb, cr) \
            mdb->bdb_create_counter_record(jcr, cr)
 #define db_create_device_record(jcr, mdb, dr) \
@@ -150,8 +156,7 @@ void bdb_free_restoreobject_record(JCR *jcr, ROBJECT_DBR *rr);
            bdb_disable_batch_insert(disable)
 #define db_create_snapshot_record(jcr, mdb, sr) \
            mdb->bdb_create_snapshot_record(jcr, sr)
-#define db_get_job_statistics(jcr, mdb, jr)      \
-           mdb->bdb_get_job_statistics(jcr, jr)
+
 
 /* sql_delete.c */
 #define db_delete_pool_record(jcr, mdb, pool_dbr) \
@@ -181,11 +186,13 @@ void bdb_free_restoreobject_record(JCR *jcr, ROBJECT_DBR *rr);
            mdb->bdb_find_failed_job_since(jcr, jr, stime, JobLevel)
 
 /* sql_get.c */
+#define db_get_file_record(jcr, mdb, jr, fr) \
+           mdb->bdb_get_file_record(jcr, jr, fr)
 #define db_get_volume_jobids(jcr, mdb, mr, lst) \
            mdb->bdb_get_volume_jobids(jcr, mr, lst)
 #define db_get_client_jobids(jcr, mdb, cr, lst) \
            mdb->bdb_get_client_jobids(jcr, cr, lst)
-#define db_get_base_file_list(jcr, mdb, use_md5, result_handler, ctx) \
+#define db_get_base_file_list(jcr, mdb, use_md5, result_handler, ctx)   \
            mdb->bdb_get_base_file_list(jcr, use_md5, result_handler, ctx)
 #define db_get_path_record(jcr, mdb) \
            mdb->bdb_get_path_record(jcr)
@@ -233,13 +240,16 @@ void bdb_free_restoreobject_record(JCR *jcr, ROBJECT_DBR *rr);
            mdb->bdb_get_used_base_jobids(jcr, jobids, result)
 #define db_get_restoreobject_record(jcr, mdb, rr) \
            mdb->bdb_get_restoreobject_record(jcr, rr)
+#define db_get_num_restoreobject_records(jcr, mdb, rr) \
+           mdb->bdb_get_num_restoreobject_records(jcr, rr)
 #define db_get_type_index(mdb) \
            mdb->bdb_get_type_index()
 #define db_get_engine_name(mdb) \
            mdb->bdb_get_engine_name()
 #define db_get_snapshot_record(jcr, mdb, sr) \
            mdb->bdb_get_snapshot_record(jcr, sr)
-
+#define db_get_job_statistics(jcr, mdb, jr)      \
+           mdb->bdb_get_job_statistics(jcr, jr)
 /* sql_list.c */
 #define db_list_pool_records(jcr, mdb, pr, sendit, ctx, type) \
            mdb->bdb_list_pool_records(jcr, pr, sendit, ctx, type)
@@ -253,7 +263,9 @@ void bdb_free_restoreobject_record(JCR *jcr, ROBJECT_DBR *rr);
            mdb->bdb_list_media_records(jcr, mdbr, sendit, ctx, type)
 #define db_list_jobmedia_records(jcr, mdb, JobId, sendit, ctx, type) \
            mdb->bdb_list_jobmedia_records(jcr, JobId, sendit, ctx, type)
-#define db_list_joblog_records(jcr, mdb, JobId, sendit, ctx, type) \
+#define db_list_filemedia_records(jcr, mdb, JobId, FI, sendit, ctx, type) \
+           mdb->bdb_list_filemedia_records(jcr, JobId, FI, sendit, ctx, type)
+#define db_list_joblog_records(jcr, mdb, JobId, sendit, ctx, type)      \
            mdb->bdb_list_joblog_records(jcr, JobId, sendit, ctx, type)
 #define db_list_sql_query(jcr, mdb, query, sendit, ctx, verbose, type) \
            mdb->bdb_list_sql_query(jcr, query, sendit, ctx, verbose, type)
@@ -261,14 +273,16 @@ void bdb_free_restoreobject_record(JCR *jcr, ROBJECT_DBR *rr);
            mdb->bdb_list_client_records(jcr, sendit, ctx, type)
 #define db_list_copies_records(jcr, mdb, limit, jobids, sendit, ctx, type) \
            mdb->bdb_list_copies_records(jcr, limit, jobids, sendit, ctx, type)
+#define db_list_events_records(jcr, mdb, rec, sendit, ctx, type) \
+           mdb->bdb_list_events_records(jcr, rec, sendit, ctx, type)
 #define db_list_base_files_for_job(jcr, mdb, jobid, sendit, ctx) \
            mdb->bdb_list_base_files_for_job(jcr, jobid, sendit, ctx)
 #define db_list_restore_objects(jcr, mdb, rr, sendit, ctx, type) \
            mdb->bdb_list_restore_objects(jcr, rr, sendit, ctx, type)
 #define db_list_snapshot_records(jcr, mdb, snapdbr, sendit, ua, llist) \
            mdb->bdb_list_snapshot_records(jcr, snapdbr, sendit, ua, llist)
-
-
+#define db_list_files(jcr, mdb, filedbr, sendit, ua) \
+           mdb->bdb_list_files(jcr, filedbr, sendit, ua);
 
 /* sql_update.c */
 #define db_update_job_start_record(jcr, mdb, jr) \
