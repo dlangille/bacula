@@ -2,12 +2,13 @@
 #
 # shell script to create Bacula MySQL tables
 #
-# Copyright (C) 2000-2017 Kern Sibbald
+# Copyright (C) 2000-2020 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
-# Important note:
-# You won't get any support for performance issue if you changed the
-#   default # schema.
+# Important note: 
+#   We cannot provide support for performance issues 
+#    if you changed the default schema.  In partcular
+#    if you change any of the indexes.
 #
 # Useful commands:
 #   mysql -u root
@@ -30,12 +31,21 @@ USE ${db_name};
 --  sensitive in sorts, which is what we want, and TEXT
 --  is case insensitive.
 --
-CREATE TABLE Filename (
-  FilenameId INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
-  Name BLOB NOT NULL,
-  PRIMARY KEY(FilenameId),
-  INDEX (Name(255))
-  );
+
+CREATE TABLE Events
+(
+    EventsId          BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    EventsCode        TINYBLOB NOT NULL,
+    EventsType        TINYBLOB NOT NULL,
+    EventsTime        DATETIME,
+    EventsInsertTime  DATETIME DEFAULT NOW(),
+    EventsDaemon        TINYBLOB NOT NULL,
+    EventsSource      TINYBLOB NOT NULL,
+    EventsRef         TINYBLOB NOT NULL,
+    EventsText        BLOB NOT NULL,
+    primary key (EventsId)
+);
+create index events_time_idx on Events (EventsTime);
 
 CREATE TABLE Path (
    PathId INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -53,24 +63,24 @@ CREATE TABLE Path (
 -- configuration parameters concerning sorting, joining and global
 -- memory.  By default, sort and join parameters are very small
 -- (sometimes 8Kb), and having sufficient memory specified by those
--- parameters is extremely important to run fast.
+-- parameters is extremely important to run fast.  
 
 -- In File table
 -- FileIndex can be 0 for FT_DELETED files
--- FileNameId can link to Filename.Name='' for directories
+-- FileName can link '' for directories
 CREATE TABLE File (
    FileId BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
    FileIndex INTEGER DEFAULT 0,
    JobId INTEGER UNSIGNED NOT NULL REFERENCES Job,
    PathId INTEGER UNSIGNED NOT NULL REFERENCES Path,
-   FilenameId INTEGER UNSIGNED NOT NULL REFERENCES Filename,
+   Filename BLOB NOT NULL,
    DeltaSeq SMALLINT UNSIGNED DEFAULT 0,
    MarkId INTEGER UNSIGNED DEFAULT 0,
    LStat TINYBLOB NOT NULL,
    MD5 TINYBLOB,
    PRIMARY KEY(FileId),
    INDEX (JobId),
-   INDEX (JobId, PathId, FilenameId)
+   INDEX (JobId, PathId, Filename(255))
    );
 
 CREATE TABLE RestoreObject (
@@ -96,7 +106,7 @@ CREATE TABLE RestoreObject (
 #  too slow, but they can slow down backups.
 #
 #  INDEX (PathId),
-#  INDEX (FilenameId),
+#  INDEX (Filename),
 #
 
 CREATE TABLE MediaType (
@@ -127,7 +137,7 @@ CREATE TABLE Device (
    DevWriteTime BIGINT UNSIGNED DEFAULT 0,
    DevReadTimeSinceCleaning BIGINT UNSIGNED DEFAULT 0,
    DevWriteTimeSinceCleaning BIGINT UNSIGNED DEFAULT 0,
-   CleaningDate DATETIME DEFAULT NULL,
+   CleaningDate DATETIME,
    CleaningPeriod BIGINT UNSIGNED DEFAULT 0,
    PRIMARY KEY(DeviceId)
    );
@@ -141,10 +151,10 @@ CREATE TABLE Job (
    Level BINARY(1) NOT NULL,
    ClientId INTEGER DEFAULT 0 REFERENCES Client,
    JobStatus BINARY(1) NOT NULL,
-   SchedTime DATETIME DEFAULT NULL,
-   StartTime DATETIME DEFAULT NULL,
-   EndTime DATETIME DEFAULT NULL,
-   RealEndTime DATETIME DEFAULT NULL,
+   SchedTime DATETIME,
+   StartTime DATETIME,
+   EndTime DATETIME,
+   RealEndTime DATETIME,
    JobTDate BIGINT UNSIGNED DEFAULT 0,
    VolSessionId INTEGER UNSIGNED DEFAULT 0,
    VolSessionTime INTEGER UNSIGNED DEFAULT 0,
@@ -156,6 +166,7 @@ CREATE TABLE Job (
    PoolId INTEGER UNSIGNED DEFAULT 0 REFERENCES Pool,
    FileSetId INTEGER UNSIGNED DEFAULT 0 REFERENCES FileSet,
    PriorJobId INTEGER UNSIGNED DEFAULT 0 REFERENCES Job,
+   PriorJob TINYBLOB,
    PurgedFiles TINYINT DEFAULT 0,
    HasBase TINYINT DEFAULT 0,
    HasCache TINYINT DEFAULT 0,
@@ -163,12 +174,10 @@ CREATE TABLE Job (
    Comment BLOB,
    FileTable CHAR(20) DEFAULT 'File',
    PRIMARY KEY(JobId),
-   INDEX (Name(128)),
-   INDEX (JobTDate)
+   INDEX (Name(128))
    );
 
-
--- Create a table like Job for long term statistics
+-- Create a table like Job for long term statistics 
 CREATE TABLE JobHisto (
    JobId INTEGER UNSIGNED NOT NULL,
    Job TINYBLOB NOT NULL,
@@ -177,10 +186,10 @@ CREATE TABLE JobHisto (
    Level BINARY(1) NOT NULL,
    ClientId INTEGER DEFAULT 0,
    JobStatus BINARY(1) NOT NULL,
-   SchedTime DATETIME DEFAULT NULL,
-   StartTime DATETIME DEFAULT NULL,
-   EndTime DATETIME DEFAULT NULL,
-   RealEndTime DATETIME DEFAULT NULL,
+   SchedTime DATETIME,
+   StartTime DATETIME,
+   EndTime DATETIME,
+   RealEndTime DATETIME,
    JobTDate BIGINT UNSIGNED DEFAULT 0,
    VolSessionId INTEGER UNSIGNED DEFAULT 0,
    VolSessionTime INTEGER UNSIGNED DEFAULT 0,
@@ -192,6 +201,7 @@ CREATE TABLE JobHisto (
    PoolId INTEGER UNSIGNED DEFAULT 0,
    FileSetId INTEGER UNSIGNED DEFAULT 0,
    PriorJobId INTEGER UNSIGNED DEFAULT 0,
+   PriorJob TINYBLOB,
    PurgedFiles TINYINT DEFAULT 0,
    HasBase TINYINT DEFAULT 0,
    HasCache TINYINT DEFAULT 0,
@@ -213,7 +223,7 @@ CREATE TABLE Location (
 
 CREATE TABLE LocationLog (
    LocLogId INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
-   Date DATETIME DEFAULT NULL,
+   Date DATETIME,
    Comment BLOB NOT NULL,
    MediaId INTEGER UNSIGNED DEFAULT 0 REFERENCES Media,
    LocationId INTEGER UNSIGNED DEFAULT 0 REFERENCES Location,
@@ -224,12 +234,12 @@ CREATE TABLE LocationLog (
 );
 
 
-#
+# 
 CREATE TABLE FileSet (
    FileSetId INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
    FileSet TINYBLOB NOT NULL,
    MD5 TINYBLOB,
-   CreateTime DATETIME DEFAULT NULL,
+   CreateTime DATETIME,
    PRIMARY KEY(FileSetId)
    );
 
@@ -248,6 +258,16 @@ CREATE TABLE JobMedia (
    INDEX (JobId, MediaId)
    );
 
+CREATE TABLE FileMedia
+(
+    JobId	      integer	UNSIGNED  not null,
+    FileIndex	      integer	UNSIGNED  not null,
+    MediaId	      integer	UNSIGNED  not null,
+    BlockAddress      bigint	UNSIGNED  default 0,
+    RecordNo	      integer	UNSIGNED  default 0,
+    FileOffset	      bigint	UNSIGNED  default 0,
+    INDEX (JobId, FileIndex)
+);
 
 CREATE TABLE Media (
    MediaId INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -257,9 +277,9 @@ CREATE TABLE Media (
    MediaType TINYBLOB NOT NULL,
    MediaTypeId INTEGER UNSIGNED DEFAULT 0 REFERENCES MediaType,
    LabelType TINYINT DEFAULT 0,
-   FirstWritten DATETIME DEFAULT NULL,
-   LastWritten DATETIME DEFAULT NULL,
-   LabelDate DATETIME DEFAULT NULL,
+   FirstWritten DATETIME,
+   LastWritten DATETIME,
+   LabelDate DATETIME,
    VolJobs INTEGER UNSIGNED DEFAULT 0,
    VolFiles INTEGER UNSIGNED DEFAULT 0,
    VolBlocks INTEGER UNSIGNED DEFAULT 0,
@@ -297,7 +317,7 @@ CREATE TABLE Media (
    EndBlock INTEGER UNSIGNED DEFAULT 0,
    LocationId INTEGER UNSIGNED DEFAULT 0 REFERENCES Location,
    RecycleCount INTEGER UNSIGNED DEFAULT 0,
-   InitialWrite DATETIME DEFAULT NULL,
+   InitialWrite DATETIME,
    ScratchPoolId INTEGER UNSIGNED DEFAULT 0 REFERENCES Pool,
    RecyclePoolId INTEGER UNSIGNED DEFAULT 0 REFERENCES Pool,
    Comment BLOB,
@@ -315,12 +335,13 @@ CREATE TABLE Pool (
    UseOnce TINYINT DEFAULT 0,
    UseCatalog TINYINT DEFAULT 0,
    AcceptAnyVolume TINYINT DEFAULT 0,
-   CacheRetention BIGINT UNSIGNED DEFAULT 0,
    VolRetention BIGINT UNSIGNED DEFAULT 0,
+   CacheRetention BIGINT UNSIGNED DEFAULT 0,
    VolUseDuration BIGINT UNSIGNED DEFAULT 0,
    MaxVolJobs INTEGER UNSIGNED DEFAULT 0,
    MaxVolFiles INTEGER UNSIGNED DEFAULT 0,
    MaxVolBytes BIGINT UNSIGNED DEFAULT 0,
+   MaxPoolBytes BIGINT UNSIGNED DEFAULT 0,
    AutoPrune TINYINT DEFAULT 0,
    Recycle TINYINT DEFAULT 0,
    ActionOnPurge     TINYINT	DEFAULT 0,
@@ -353,7 +374,7 @@ CREATE TABLE Client (
 CREATE TABLE Log (
    LogId INTEGER UNSIGNED AUTO_INCREMENT,
    JobId INTEGER UNSIGNED DEFAULT 0 REFERENCES Job,
-   Time DATETIME DEFAULT NULL,
+   Time DATETIME,
    LogText BLOB NOT NULL,
    PRIMARY KEY(LogId),
    INDEX (JobId)
@@ -361,7 +382,7 @@ CREATE TABLE Log (
 
 
 CREATE TABLE BaseFiles (
-   BaseId BIGINT UNSIGNED AUTO_INCREMENT,
+   BaseId BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
    BaseJobId INTEGER UNSIGNED NOT NULL REFERENCES Job,
    JobId INTEGER UNSIGNED NOT NULL REFERENCES Job,
    FileId BIGINT UNSIGNED NOT NULL REFERENCES File,
@@ -375,7 +396,7 @@ CREATE TABLE UnsavedFiles (
    UnsavedId INTEGER UNSIGNED AUTO_INCREMENT,
    JobId INTEGER UNSIGNED NOT NULL REFERENCES Job,
    PathId INTEGER UNSIGNED NOT NULL REFERENCES Path,
-   FilenameId INTEGER UNSIGNED NOT NULL REFERENCES Filename,
+   Filename BLOB NOT NULL,
    PRIMARY KEY (UnsavedId)
    );
 
@@ -392,7 +413,7 @@ CREATE TABLE Counters (
 
 CREATE TABLE CDImages (
    MediaId INTEGER UNSIGNED NOT NULL,
-   LastBurn DATETIME DEFAULT NULL,
+   LastBurn DATETIME,
    PRIMARY KEY (MediaId)
    );
 
@@ -434,13 +455,13 @@ CREATE TABLE PathHierarchy
      CONSTRAINT pathhierarchy_pkey PRIMARY KEY (PathId)
 );
 
-CREATE INDEX pathhierarchy_ppathid
+CREATE INDEX pathhierarchy_ppathid 
 	  ON PathHierarchy (PPathId);
 
 CREATE TABLE PathVisibility
 (
       PathId integer NOT NULL,
-      JobId integer UNSIGNED NOT NULL,
+      JobId integer NOT NULL,
       Size int8 DEFAULT 0,
       Files int4 DEFAULT 0,
       CONSTRAINT pathvisibility_pkey PRIMARY KEY (JobId, PathId)
@@ -452,11 +473,11 @@ CREATE INDEX pathvisibility_jobid
 CREATE TABLE Snapshot (
   SnapshotId	  INTEGER UNSIGNED AUTO_INCREMENT,
   Name		  TINYBLOB NOT NULL,
-  JobId 	  INTEGER UNSIGNED DEFAULT 0,
-  FileSetId	  INTEGER UNSIGNED DEFAULT 0,
+  JobId 	  INTEGER  DEFAULT 0,
+  FileSetId	  INTEGER DEFAULT 0,
   CreateTDate	  BIGINT   NOT NULL,
   CreateDate	  DATETIME NOT NULL,
-  ClientId	  INTEGER UNSIGNED DEFAULT 0,
+  ClientId	  INTEGER DEFAULT 0,
   Volume	  TINYBLOB NOT NULL,
   Device	  TINYBLOB NOT NULL,
   Type		  TINYBLOB NOT NULL,
@@ -465,18 +486,18 @@ CREATE TABLE Snapshot (
   primary key (SnapshotId)
 );
 
-CREATE UNIQUE INDEX snapshot_idx ON Snapshot (Device(255),
+CREATE UNIQUE INDEX snapshot_idx ON Snapshot (Device(255), 
 					      Volume(255),
 					      Name(255));
 
 
 
 CREATE TABLE Version (
-   VersionId INTEGER UNSIGNED NOT NULL
+   VersionId INTEGER UNSIGNED NOT NULL 
    );
 
 -- Initialize Version
-INSERT INTO Version (VersionId) VALUES (16);
+INSERT INTO Version (VersionId) VALUES (1022);
 
 END-OF-DATA
 then
