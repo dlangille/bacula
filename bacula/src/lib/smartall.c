@@ -256,9 +256,13 @@ void *sm_malloc(const char *fname, int lineno, unsigned int nbytes)
 
       /* To catch sloppy code that assumes  buffers  obtained  from
          malloc()  are  zeroed,  we  preset  the buffer contents to
-         "designer garbage" consisting of alternating bits.  */
+         "designer garbage" consisting of alternating bits.
 
-      memset(buf, 0x55, (int) nbytes);
+          Removed 10 May 2020 KES
+
+          memset(buf, 0x55, (int) nbytes);
+       */
+      memset(buf, 0, (int) nbytes);      /* clear the memory */
    } else {
       Emsg0(M_ABORT, 0, _("Out of memory\n"));
    }
@@ -329,7 +333,12 @@ void *sm_realloc(const char *fname, int lineno, void *ptr, unsigned int size)
       /* If the new buffer is larger than the old, fill the balance
          of it with "designer garbage". */
       if (size > osize) {
-         memset(((char *) buf) + osize, 0x55, (int) (size - osize));
+         /*
+            Removed 10 May 2020 KES
+            memset(((char *) buf) + osize, 0x55, (int) (size - osize));
+         */
+
+         memset(((char *) buf) + osize, 0, (int) (size - osize));
       }
 
       /* All done.  Free and dechain the original buffer. */
