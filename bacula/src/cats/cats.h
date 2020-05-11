@@ -48,7 +48,7 @@
  */
 
 /* Current database version number for all drivers */
-#define BDB_VERSION 16
+#define BDB_VERSION 1022
 
 typedef void (DB_LIST_HANDLER)(void *, const char *);
 typedef int (DB_RESULT_HANDLER)(void *, int, char **);
@@ -65,7 +65,8 @@ typedef enum {
 typedef enum {
    SQL_DRIVER_TYPE_MYSQL      = 0,
    SQL_DRIVER_TYPE_POSTGRESQL = 1,
-   SQL_DRIVER_TYPE_SQLITE3    = 2
+   SQL_DRIVER_TYPE_SQLITE3    = 2,
+   SQL_DRIVER_TYPE_DBI        = 3
 } SQL_DRIVER;
 
 
@@ -122,6 +123,7 @@ struct JOB_DBR {
    char Job[MAX_NAME_LENGTH];         /* Job unique name */
    char Name[MAX_NAME_LENGTH];        /* Job base name */
    char PriorJob[MAX_NAME_LENGTH];    /* PriorJob name if any */
+   char Comment[MAX_NAME_LENGTH];     /* Comment */
    int JobType;                       /* actually char(1) */
    int JobLevel;                      /* actually char(1) */
    int JobStatus;                     /* actually char(1) */
@@ -143,6 +145,7 @@ struct JOB_DBR {
    uint64_t ReadBytes;
    int PurgedFiles;
    int HasBase;
+   int Reviewed;
 
    /* Note, FirstIndex, LastIndex, Start/End File and Block
     * are only used in the JobMedia record.
@@ -187,6 +190,18 @@ struct JOBMEDIA_DBR {
 };
 
 
+/* File Media information used to create the file media records
+ * for each file indexed in a volume
+ */
+struct FILEMEDIA_DBR {
+   JobId_t  JobId;                    /* JobId */
+   DBId_t MediaId;                    /* MediaId */
+   uint32_t FileIndex;                /* File index in the job */
+   uint32_t RecordNo;                 /* Record number in the block */
+   uint64_t BlockAddress;             /* Address of the block on the volume */
+   uint64_t FileOffset;               /* Offset in the file */
+};
+
 /* Volume Parameter structure */
 struct VOL_PARAMS {
    char VolumeName[MAX_NAME_LENGTH];  /* Volume name */
@@ -217,7 +232,7 @@ struct ATTR_DBR {
    JobId_t  JobId;
    DBId_t ClientId;
    DBId_t PathId;
-   DBId_t FilenameId;
+   char *Filename;
    FileId_t FileId;
    char *Digest;
    int DigestType;
@@ -237,6 +252,8 @@ struct ROBJECT_DBR {
    uint32_t FileType;
    JobId_t  JobId;
    DBId_t RestoreObjectId;
+
+   int limit;                   /* Needed to restrict a search */
 };
 
 
@@ -246,7 +263,7 @@ struct FILE_DBR {
    int32_t FileIndex;
    int32_t FileIndex2;
    JobId_t  JobId;
-   DBId_t FilenameId;
+   char *Filename;              /* Need external storage, should be escaped */
    DBId_t PathId;
    JobId_t  MarkId;
    uint32_t DeltaSeq;
@@ -258,12 +275,9 @@ struct FILE_DBR {
 /* Pool record -- same format as database */
 class POOL_DBR {
 public:
-   /*
-    * Do not turn on constructor until all bmemset on POOL_DBR removed
-    *
-    * POOL_DBR() { bmemset(this, 0, sizeof(POOL_DBR)); };
-    * ~POOL_DBR() {  };
-    */
+   POOL_DBR() { bmemset(this, 0, sizeof(POOL_DBR)); };
+   ~POOL_DBR() {  };
+
    DBId_t PoolId;
    char Name[MAX_NAME_LENGTH];        /* Pool name */
    uint32_t NumVols;                  /* total number of volumes */
@@ -281,12 +295,14 @@ public:
    uint32_t MaxVolJobs;               /* Max Jobs on Volume */
    uint32_t MaxVolFiles;              /* Max files on Volume */
    uint64_t MaxVolBytes;              /* Max bytes on Volume */
+   uint64_t MaxPoolBytes;             /* Maximum Pool size */
    DBId_t RecyclePoolId;              /* RecyclePool destination when media is purged */
    DBId_t ScratchPoolId;              /* ScratchPool source when media is needed */
    char PoolType[MAX_NAME_LENGTH];
    char LabelFormat[MAX_NAME_LENGTH];
    /* Extra stuff not in DB */
    faddr_t rec_addr;
+   uint64_t PoolBytes;            /* Updated after db_get_pool_numvols() */
 };
 
 class DEVICE_DBR {
@@ -613,6 +629,7 @@ public:
       mdb = m;
    }
 };
+
 
 /* Functions exported by sql.c for use within the cats directory. */
 int list_result(void *vctx, int cols, char **row);
