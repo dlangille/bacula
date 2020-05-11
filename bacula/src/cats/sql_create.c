@@ -20,11 +20,12 @@
  * Bacula Catalog Database Create record interface routines
  *
  *    Written by Kern Sibbald, March 2000
+ *
  */
 
 #include  "bacula.h"
 
-static const int dbglevel = 160;
+static const int dbglevel = 100;
 
 #if HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL
  
@@ -107,6 +108,7 @@ bool BDB::bdb_create_jobmedia_record(JCR *jcr, JOBMEDIA_DBR *jm)
    Mmsg(cmd, "SELECT MAX(VolIndex) from JobMedia WHERE JobId=%s",
         edit_int64(jm->JobId, ed1));
    count = get_sql_record_max(jcr, this);
+
    if (count < 0) {
       count = 0;
    }
@@ -142,6 +144,37 @@ bool BDB::bdb_create_jobmedia_record(JCR *jcr, JOBMEDIA_DBR *jm)
    return ok;
 }
 
+
+/** Create a fileMedia record for File index
+ *  Returns: false on failure
+ *          true  on success
+ */
+bool BDB::bdb_create_filemedia_record(JCR *jcr, FILEMEDIA_DBR *fm)
+{
+   bool ok = true;
+   char ed1[50], ed2[50];
+
+   bdb_lock();
+
+   Mmsg(cmd,
+        "INSERT INTO FileMedia (JobId,MediaId,FileIndex,BlockAddress,RecordNo,"
+        "FileOffset) "
+        "VALUES (%s,%s,%u,%lld,%u,%lld)",
+        edit_int64(fm->JobId, ed1),
+        edit_int64(fm->MediaId, ed2),
+        fm->FileIndex, fm->BlockAddress,
+        fm->RecordNo, fm->FileOffset);
+
+   Dmsg0(300, cmd);
+   if (!InsertDB(jcr, cmd)) {
+      Mmsg2(&errmsg, _("Create FileMedia record %s failed: ERR=%s\n"), cmd,
+         sql_strerror());
+      ok = false;
+   }
+   bdb_unlock();
+   return ok;
+}
+
 /** Create Unique Pool record
  *  Returns: false on failure
  *          true  on success
@@ -149,9 +182,15 @@ bool BDB::bdb_create_jobmedia_record(JCR *jcr, JOBMEDIA_DBR *jm)
 bool BDB::bdb_create_pool_record(JCR *jcr, POOL_DBR *pr)
 {
    bool stat;
-   char ed1[30], ed2[30], ed3[50], ed4[50], ed5[50], ed6[50];
+   char ed1[30], ed2[30], ed3[50], ed4[50], ed5[50], ed6[50], ed7[50];
    char esc_name[MAX_ESCAPE_NAME_LENGTH];
    char esc_lf[MAX_ESCAPE_NAME_LENGTH];
+   char esc_type[MAX_ESCAPE_NAME_LENGTH];
+
+   /* The pooltype should match the case when we insert it to the catalog 
+    *  backup -> Backup, BACKUP -> Backup
+    */
+   ucfirst(esc_type, pr->PoolType, sizeof(esc_type));
 
    Dmsg0(200, "In create pool\n");
    bdb_lock();
@@ -176,8 +215,8 @@ bool BDB::bdb_create_pool_record(JCR *jcr, POOL_DBR *pr)
 "INSERT INTO Pool (Name,NumVols,MaxVols,UseOnce,UseCatalog,"
 "AcceptAnyVolume,AutoPrune,Recycle,VolRetention,VolUseDuration,"
 "MaxVolJobs,MaxVolFiles,MaxVolBytes,PoolType,LabelType,LabelFormat,"
-"RecyclePoolId,ScratchPoolId,ActionOnPurge,CacheRetention) "
-"VALUES ('%s',%u,%u,%d,%d,%d,%d,%d,%s,%s,%u,%u,%s,'%s',%d,'%s',%s,%s,%d,%s)",
+"RecyclePoolId,ScratchPoolId,ActionOnPurge,CacheRetention,MaxPoolBytes) "
+"VALUES ('%s',%u,%u,%d,%d,%d,%d,%d,%s,%s,%u,%u,%s,'%s',%d,'%s',%s,%s,%d,%s,%s)",
                   esc_name,
                   pr->NumVols, pr->MaxVols,
                   pr->UseOnce, pr->UseCatalog,
@@ -187,11 +226,12 @@ bool BDB::bdb_create_pool_record(JCR *jcr, POOL_DBR *pr)
                   edit_uint64(pr->VolUseDuration, ed2),
                   pr->MaxVolJobs, pr->MaxVolFiles,
                   edit_uint64(pr->MaxVolBytes, ed3),
-                  pr->PoolType, pr->LabelType, esc_lf,
+                  esc_type, pr->LabelType, esc_lf,
                   edit_int64(pr->RecyclePoolId,ed4),
                   edit_int64(pr->ScratchPoolId,ed5),
                   pr->ActionOnPurge,
-                  edit_uint64(pr->CacheRetention, ed6)
+                  edit_uint64(pr->CacheRetention, ed6),
+                  edit_int64(pr->MaxPoolBytes, ed7)
       );
    Dmsg1(200, "Create Pool: %s\n", cmd);
    if ((pr->PoolId = sql_insert_autokey_record(cmd, NT_("Pool"))) == 0) {
@@ -433,6 +473,7 @@ int BDB::bdb_create_media_record(JCR *jcr, MEDIA_DBR *mr)
           edit_uint64(mr->CacheRetention, ed14)
           );
 
+
    Dmsg1(500, "Create Volume: %s\n", cmd);
    if ((mr->MediaId = sql_insert_autokey_record(cmd, NT_("Media"))) == 0) {
       Mmsg2(&errmsg, _("Create DB Media record %s failed. ERR=%s\n"),
@@ -614,17 +655,46 @@ int BDB::bdb_create_counter_record(JCR *jcr, COUNTER_DBR *cr)
    char esc[MAX_ESCAPE_NAME_LENGTH];
    COUNTER_DBR mcr;
    int stat;
-
    bdb_lock();
    memset(&mcr, 0, sizeof(mcr));
    bstrncpy(mcr.Counter, cr->Counter, sizeof(mcr.Counter));
    if (bdb_get_counter_record(jcr, &mcr)) {
-      memcpy(cr, &mcr, sizeof(COUNTER_DBR));
+      /* If the counter definition changed, we must update the record
+       */
+      if (mcr.MinValue != cr->MinValue ||
+          mcr.MaxValue != cr->MaxValue ||
+          strcmp(mcr.WrapCounter, cr->WrapCounter) != 0)
+      {
+         /* With the update, the current value can be wrong, we need
+          * to adjust it
+          */
+         if (mcr.CurrentValue > 0) {
+            if (cr->MinValue > mcr.CurrentValue) {
+               cr->CurrentValue = cr->MinValue;
+
+            } else if (cr->MaxValue < mcr.CurrentValue) {
+               cr->CurrentValue = cr->MaxValue;
+
+            } else {
+               cr->CurrentValue = mcr.CurrentValue;
+            }
+         }
+         Dmsg3(dbglevel, "org: MinValue=%ld MaxValue=%ld CurrentValue=%ld\n",
+               mcr.MinValue, mcr.MaxValue, mcr.CurrentValue);
+         Dmsg3(dbglevel, "new: MinValue=%ld MaxValue=%ld CurrentValue=%ld\n",
+               cr->MinValue, cr->MaxValue, cr->CurrentValue);
+         stat = bdb_update_counter_record(jcr, cr);
+
+      } else {
+         memcpy(cr, &mcr, sizeof(COUNTER_DBR));
+         stat = 1;
+      }
       bdb_unlock();
-      return 1;
+      return stat;
    }
+
    bdb_escape_string(jcr, esc, cr->Counter, strlen(cr->Counter));
- 
+
    /* Must create it */
    Mmsg(cmd, insert_counter_values[bdb_get_type_index()],
         esc, cr->MinValue, cr->MaxValue, cr->CurrentValue,
@@ -749,10 +819,9 @@ void bdb_disable_batch_insert(bool enabled)
  *
  *  To sum up :
  *   - bulk load a temp table
- *   - insert missing filenames into filename with a single query (lock filenames 
  *   - table before that to avoid possible duplicate inserts with concurrent update)
  *   - insert missing paths into path with another single query
- *   - then insert the join between the temp, filename and path tables into file.
+ *   - then insert the join between the temp and path tables into file.
  */
 
 /*
@@ -812,31 +881,11 @@ bool bdb_write_batch_file_records(JCR *jcr)
       goto bail_out; 
    }
 
-   /* We have to lock tables */
-   if (!db_sql_query(jcr->db_batch, batch_lock_filename_query[db_get_type_index(jcr->db_batch)], NULL, NULL)) { 
-      Jmsg1(jcr, M_FATAL, 0, "Lock Filename table %s\n", jcr->db_batch->errmsg);
-      goto bail_out; 
-   }
-   
-   if (!db_sql_query(jcr->db_batch, batch_fill_filename_query[db_get_type_index(jcr->db_batch)], NULL, NULL)) { 
-      Jmsg1(jcr,M_FATAL,0,"Fill Filename table %s\n",jcr->db_batch->errmsg);
-      db_sql_query(jcr->db_batch, batch_unlock_tables_query[db_get_type_index(jcr->db_batch)], NULL, NULL); 
-      goto bail_out; 
-   }
-
-   if (!db_sql_query(jcr->db_batch, batch_unlock_tables_query[db_get_type_index(jcr->db_batch)], NULL, NULL)) { 
-      Jmsg1(jcr, M_FATAL, 0, "Unlock Filename table %s\n", jcr->db_batch->errmsg);
-      goto bail_out; 
-   }
-   
-   if (!db_sql_query(jcr->db_batch, 
-"INSERT INTO File (FileIndex, JobId, PathId, FilenameId, LStat, MD5, DeltaSeq) "
+   if (!jcr->db_batch->bdb_sql_query(
+"INSERT INTO File (FileIndex, JobId, PathId, Filename, LStat, MD5, DeltaSeq) "
     "SELECT batch.FileIndex, batch.JobId, Path.PathId, "
-           "Filename.FilenameId,batch.LStat, batch.MD5, batch.DeltaSeq "
-      "FROM batch "
-      "JOIN Path ON (batch.Path = Path.Path) "
-      "JOIN Filename ON (batch.Name = Filename.Name)",
-         NULL, NULL))
+           "batch.Name, batch.LStat, batch.MD5, batch.DeltaSeq "
+      "FROM batch JOIN Path ON (batch.Path = Path.Path) ", NULL, NULL))
    {
       Jmsg1(jcr, M_FATAL, 0, "Fill File table %s\n", jcr->db_batch->errmsg);
       goto bail_out; 
@@ -852,14 +901,13 @@ bail_out:
    return retval; 
 }
 
-/*
+/**
  * Create File record in BDB
  *
- *  In order to reduce database size, we store the File attributes,
- *  the FileName, and the Path separately.  In principle, there
- *  is a single FileName record and a single Path record, no matter
- *  how many times it occurs.  This is this subroutine, we separate
- *  the file and the path and fill temporary tables with this three records.
+ *  In order to reduce database size, we store the File attributes, the Path
+ *  separately.  In principle, there is a single Path record, no matter how
+ *  many times it occurs.  This is this subroutine, we separate the file and
+ *  the path and fill temporary tables with this three records.
  *
  *  Note: all routines that call this expect to be able to call
  *    db_strerror(mdb) to get the error message, so the error message
@@ -898,11 +946,10 @@ bool BDB::bdb_create_batch_file_attributes_record(JCR *jcr, ATTR_DBR *ar)
 /**
  * Create File record in BDB
  *
- *  In order to reduce database size, we store the File attributes,
- *  the FileName, and the Path separately.  In principle, there
- *  is a single FileName record and a single Path record, no matter
- *  how many times it occurs.  This is this subroutine, we separate
- *  the file and the path and create three database records.
+ *  In order to reduce database size, we store the File attributes and the Path
+ *  separately.  In principle, there is a single Path record, no matter how
+ *  many times it occurs.  This is this subroutine, we separate the file and
+ *  the path and create two database records.
  */
 bool BDB::bdb_create_file_attributes_record(JCR *jcr, ATTR_DBR *ar)
 {
@@ -912,16 +959,14 @@ bool BDB::bdb_create_file_attributes_record(JCR *jcr, ATTR_DBR *ar)
 
    split_path_and_file(jcr, this, ar->fname);
 
-   if (!bdb_create_filename_record(jcr, ar)) {
-      goto bail_out;
-   }
-   Dmsg1(dbglevel, "bdb_create_filename_record: %s\n", esc_name);
-
-
    if (!bdb_create_path_record(jcr, ar)) {
-      goto bail_out;
+      goto bail_out; 
    }
-   Dmsg1(dbglevel, "bdb_create_path_record: %s\n", esc_name);
+   Dmsg1(dbglevel, "db_create_path_record: %s\n", esc_name);
+
+   esc_name = check_pool_memory_size(esc_name, 2*fnl+2);
+   bdb_escape_string(jcr, esc_name, fname, fnl);
+   ar->Filename = esc_name;
 
    /* Now create master File record */
    if (!bdb_create_file_record(jcr, ar)) {
@@ -929,7 +974,7 @@ bool BDB::bdb_create_file_attributes_record(JCR *jcr, ATTR_DBR *ar)
    }
    Dmsg0(dbglevel, "db_create_file_record OK\n");
 
-   Dmsg3(dbglevel, "CreateAttributes Path=%s File=%s FilenameId=%d\n", path, fname, ar->FilenameId);
+   Dmsg3(dbglevel, "CreateAttributes Path=%s File=%s Filename=%s\n", path, fname, ar->Filename);
    bdb_unlock();
    return true;
 
@@ -949,7 +994,7 @@ int BDB::bdb_create_file_record(JCR *jcr, ATTR_DBR *ar)
 
    ASSERT(ar->JobId);
    ASSERT(ar->PathId);
-   ASSERT(ar->FilenameId);
+   ASSERT(ar->Filename != NULL);
 
    if (ar->Digest == NULL || ar->Digest[0] == 0) {
       digest = no_digest;
@@ -959,9 +1004,9 @@ int BDB::bdb_create_file_record(JCR *jcr, ATTR_DBR *ar)
 
    /* Must create it */
    Mmsg(cmd,
-        "INSERT INTO File (FileIndex,JobId,PathId,FilenameId,"
-        "LStat,MD5,DeltaSeq) VALUES (%d,%u,%u,%u,'%s','%s',%u)",
-        ar->FileIndex, ar->JobId, ar->PathId, ar->FilenameId,
+        "INSERT INTO File (FileIndex,JobId,PathId,Filename,"
+        "LStat,MD5,DeltaSeq) VALUES (%d,%u,%u,'%s','%s','%s',%u)",
+        ar->FileIndex, ar->JobId, ar->PathId, ar->Filename,
         ar->attr, digest, ar->DeltaSeq);
 
    if ((ar->FileId = sql_insert_autokey_record(cmd, NT_("File"))) == 0) {
@@ -975,51 +1020,7 @@ int BDB::bdb_create_file_record(JCR *jcr, ATTR_DBR *ar)
    return stat;
 }
 
-/** Create a Unique record for the filename -- no duplicates */
-int BDB::bdb_create_filename_record(JCR *jcr, ATTR_DBR *ar)
-{
-   SQL_ROW row;
-
-   errmsg[0] = 0;
-   esc_name = check_pool_memory_size(esc_name, 2*fnl+2);
-   bdb_escape_string(jcr, esc_name, fname, fnl);
-   
-   Mmsg(cmd, "SELECT FilenameId FROM Filename WHERE Name='%s'", esc_name);
-
-   if (QueryDB(jcr, cmd)) {
-      if (sql_num_rows() > 1) {
-         char ed1[30];
-         Mmsg2(&errmsg, _("More than one Filename! %s for file: %s\n"),
-            edit_uint64(sql_num_rows(), ed1), fname);
-         Jmsg(jcr, M_WARNING, 0, "%s", errmsg);
-      }
-      if (sql_num_rows() >= 1) {
-         if ((row = sql_fetch_row()) == NULL) {
-            Mmsg2(&errmsg, _("Error fetching row for file=%s: ERR=%s\n"),
-                fname, sql_strerror());
-            Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
-            ar->FilenameId = 0;
-         } else {
-            ar->FilenameId = str_to_int64(row[0]);
-         }
-         sql_free_result();
-         return ar->FilenameId > 0;
-      }
-      sql_free_result();
-   }
-
-   Mmsg(cmd, "INSERT INTO Filename (Name) VALUES ('%s')", esc_name);
-
-   ar->FilenameId = sql_insert_autokey_record(cmd, NT_("Filename"));
-   if (ar->FilenameId == 0) { 
-      Mmsg2(&errmsg, _("Create db Filename record %s failed. ERR=%s\n"),
-            cmd, sql_strerror());
-      Jmsg(jcr, M_FATAL, 0, "%s", errmsg);
-   }
-   return ar->FilenameId > 0;
-}
-
-/* 
+/**
  * Create file attributes record, or base file attributes record
  */
 bool BDB::bdb_create_attributes_record(JCR *jcr, ATTR_DBR *ar)
@@ -1284,5 +1285,83 @@ bool BDB::bdb_create_snapshot_record(JCR *jcr, SNAPSHOT_DBR *snap)
 
    return status;
 }
+
+int BDB::bdb_create_events_record(JCR *jcr, EVENTS_DBR *event)
+{
+   bool status = false;
+   int len;
+   POOL_MEM tmp, type, from, source, time, text;
+   char dt[MAX_TIME_LENGTH];
+
+   bdb_lock();
+   if (!is_name_valid(event->EventsCode, tmp.handle(), "")) {
+      Mmsg(errmsg, "Invalid EventsCode %s", tmp.c_str());
+      goto bail_out;
+   }
+
+   if (!is_name_valid(event->EventsType, tmp.handle(), "")) {
+      Mmsg(errmsg, "Invalid EventsType %s", tmp.c_str());
+      goto bail_out;
+   }
+   len = strlen(event->EventsType);
+   type.check_size(len*2+1);
+   db_escape_string(jcr, this, type.c_str(), event->EventsType, len);
+
+   if (!is_name_valid(event->EventsSource, tmp.handle(), "*-")) { /* Add *None* */
+      Mmsg(errmsg, "Invalid EventsSource %s", tmp.c_str());
+      goto bail_out;
+   }
+   len = strlen(event->EventsSource);
+   source.check_size(len*2+1);
+   db_escape_string(jcr, this, source.c_str(), event->EventsSource, len);
+
+   if (!is_name_valid(event->EventsDaemon, tmp.handle())) {
+      Mmsg(errmsg, "Invalid EventsDaemon %s", tmp.c_str());
+      goto bail_out;
+   }
+   len = strlen(event->EventsDaemon);
+   from.check_size(len*2+1);
+   db_escape_string(jcr, this, from.c_str(), event->EventsDaemon, len);
+
+   len = strlen(event->EventsText);
+   text.check_size(len*2+1);
+   db_escape_string(jcr, this, text.c_str(), event->EventsText, len);
+
+   bstrutime(dt, sizeof(dt), event->EventsTime);
+   Mmsg(cmd, "INSERT INTO Events "
+        "(EventsDaemon, EventsCode, EventsType, EventsSource, EventsRef, EventsTime, EventsText) "
+        "VALUES ('%s', '%s', '%s', '%s', '0x%p', '%s', '%s')", from.c_str(), event->EventsCode,
+        type.c_str(), source.c_str(), event->EventsRef, dt, text.c_str());
+
+   if (bdb_sql_query(cmd, NULL, NULL)) {
+      status = true;
+   }
+
+bail_out:
+   bdb_unlock();
+   return status;
+}
+
+
+bool BDB::bdb_create_log_record(JCR *jcr, JobId_t jobid, utime_t mtime, char *msg) 
+{
+   bool ret;
+   POOLMEM *cmd = get_pool_memory(PM_MESSAGE);
+   POOLMEM *esc_msg = get_pool_memory(PM_MESSAGE);
+   char dt[MAX_TIME_LENGTH], ed1[50];
+   int len = strlen(msg) + 1;
+
+   esc_msg = check_pool_memory_size(esc_msg, len*2+1);
+   bdb_escape_string(jcr, esc_msg, msg, len);
+   bstrutime(dt, sizeof(dt), mtime);
+   Mmsg(cmd, "INSERT INTO Log (JobId, Time, LogText) VALUES (%s,'%s','%s')",
+        edit_int64(jcr->JobId, ed1), dt, esc_msg);
+
+   ret = bdb_sql_query(cmd, NULL, NULL);
+
+   free_pool_memory(cmd);
+   free_pool_memory(esc_msg);
+   return ret; 
+} 
 
 #endif /* HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL */
