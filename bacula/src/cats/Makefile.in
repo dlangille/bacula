@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2000-2015 Kern Sibbald
+# Copyright (C) 2000-2020 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
 @MCOMMON@
@@ -53,10 +53,11 @@ SQLITE_LOBJS = $(SQLITE_SRCS:.c=.lo)
 #DBI_LOBJS = $(DBI_SRCS:.c=.lo)
 
 DB_LIBS=@DB_LIBS@
+EXTRA_SRCS = @EXTRA_CATS_SRCS@
 
 CATS_SRCS  = mysql.c postgresql.c sqlite.c
 LIBBACSQL_SRCS = bvfs.c cats.c sql.c sql_cmds.c sql_create.c sql_delete.c \
-		 sql_find.c sql_get.c sql_list.c sql_update.c
+		 sql_find.c sql_get.c sql_list.c sql_update.c $(EXTRA_SRCS)
 LIBBACSQL_OBJS = $(LIBBACSQL_SRCS:.c=.o)
 LIBBACCATS_OBJS = $(CATS_SRCS:.c=.o)
 LIBBACSQL_LOBJS = $(LIBBACSQL_SRCS:.c=.lo)
