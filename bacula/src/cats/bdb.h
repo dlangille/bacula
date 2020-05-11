@@ -20,6 +20,7 @@
  *  Catalog DB Interface class
  *
  *  Written by Kern E. Sibbald
+ *
  */
 
 #ifndef __BDB_H_
@@ -151,12 +152,12 @@ public:
    void  free_acl();             /* Used internally, free acls tab */
    void  init_acl();             /* Used internally, initialize acls tab */
    /* Take a alist of strings and turn it to an escaped sql IN () list  */
-   char *escape_acl_list(JCR *jcr, POOLMEM **escape_list, alist *lst);
+   char *escape_acl_list(JCR *jcr, const char *key, POOLMEM **escape_list, alist *lst);
 
    /* Used during the initialization, the UA code can call this function
     * foreach kind of ACL
     */
-   void  set_acl(JCR *jcr, DB_ACL_t type, alist *lst, alist *lst2=NULL); 
+   void  set_acl(JCR *jcr, DB_ACL_t type, alist *l, alist *l2=NULL); 
 
    /* Get the SQL string that corresponds to the Console ACL for Pool, Job,
     * Client, ... 
@@ -185,6 +186,8 @@ public:
    bool bdb_find_failed_job_since(JCR *jcr, JOB_DBR *jr, POOLMEM *stime, int &JobLevel);
    
    /* sql_create.c */
+   bool bdb_create_log_record(JCR *jcr, JobId_t jobid, utime_t mtime, char *msg);
+   int bdb_create_events_record(JCR *jcr, EVENTS_DBR *rec);
    int bdb_create_path_record(JCR *jcr, ATTR_DBR *ar);
    bool bdb_create_file_attributes_record(JCR *jcr, ATTR_DBR *ar);
    bool bdb_create_job_record(JCR *jcr, JOB_DBR *jr);
@@ -193,6 +196,7 @@ public:
    bool bdb_create_fileset_record(JCR *jcr, FILESET_DBR *fsr);
    bool bdb_create_pool_record(JCR *jcr, POOL_DBR *pool_dbr);
    bool bdb_create_jobmedia_record(JCR *jcr, JOBMEDIA_DBR *jr);
+   bool bdb_create_filemedia_record(JCR *jcr, FILEMEDIA_DBR *fr);
    int bdb_create_counter_record(JCR *jcr, COUNTER_DBR *cr);
    bool bdb_create_device_record(JCR *jcr, DEVICE_DBR *dr);
    bool bdb_create_storage_record(JCR *jcr, STORAGE_DBR *sr);
@@ -204,7 +208,6 @@ public:
    bool bdb_create_base_file_list(JCR *jcr, char *jobids);
    bool bdb_create_snapshot_record(JCR *jcr, SNAPSHOT_DBR *snap);
    int bdb_create_file_record(JCR *jcr, ATTR_DBR *ar);
-   int bdb_create_filename_record(JCR *jcr, ATTR_DBR *ar);
    bool bdb_create_batch_file_attributes_record(JCR *jcr, ATTR_DBR *ar);
 
    /* sql_get.c */
@@ -216,7 +219,6 @@ public:
             CLIENT_DBR *cr, db_list_ctx *lst);
    bool bdb_get_base_file_list(JCR *jcr, bool use_md5,
             DB_RESULT_HANDLER *result_handler,void *ctx);
-   int bdb_get_filename_record(JCR *jcr);
    int bdb_get_path_record(JCR *jcr);
    bool bdb_get_pool_record(JCR *jcr, POOL_DBR *pdbr);
    bool bdb_get_pool_numvols(JCR *jcr, POOL_DBR *pdbr);
@@ -253,16 +255,17 @@ public:
    void bdb_list_files_for_job(JCR *jcr, uint32_t jobid, int deleted, DB_LIST_HANDLER sendit, void *ctx);
    void bdb_list_media_records(JCR *jcr, MEDIA_DBR *mdbr, DB_LIST_HANDLER *sendit, void *ctx, e_list_type type);
    void bdb_list_jobmedia_records(JCR *jcr, JobId_t JobId, DB_LIST_HANDLER *sendit, void *ctx, e_list_type type);
+   void bdb_list_filemedia_records(JCR *jcr, JobId_t JobId, uint32_t FileIndex, DB_LIST_HANDLER *sendit, void *ctx, e_list_type type);
    void bdb_list_joblog_records(JCR *jcr, JobId_t JobId, DB_LIST_HANDLER *sendit, void *ctx, e_list_type type);
    int  bdb_list_sql_query(JCR *jcr, const char *query, DB_LIST_HANDLER *sendit, void *ctx, int verbose, e_list_type type);
    void bdb_list_client_records(JCR *jcr, DB_LIST_HANDLER *sendit, void *ctx, e_list_type type);
    void bdb_list_copies_records(JCR *jcr, uint32_t limit, char *jobids, DB_LIST_HANDLER *sendit, void *ctx, e_list_type type);
+   void bdb_list_events_records(JCR *jcr, EVENTS_DBR *rec, DB_LIST_HANDLER *sendit, void *ctx, e_list_type type);
    void bdb_list_base_files_for_job(JCR *jcr, JobId_t jobid, DB_LIST_HANDLER *sendit, void *ctx);
    void bdb_list_restore_objects(JCR *jcr, ROBJECT_DBR *rr, DB_LIST_HANDLER *sendit, void *ctx, e_list_type type);
    void bdb_list_snapshot_records(JCR *jcr, SNAPSHOT_DBR *sdbr,
               DB_LIST_HANDLER *sendit, void *ctx, e_list_type type);
    void bdb_list_files(JCR *jcr, FILE_DBR *fr, DB_RESULT_HANDLER *sendit, void *ctx);
-
 
    /* sql_update.c */
    bool bdb_update_job_start_record(JCR *jcr, JOB_DBR *jr);
