@@ -2,11 +2,12 @@
 #
 # shell script to grant privileges to the bacula database
 #
-# Copyright (C) 2000-2017 Kern Sibbald
+# Copyright (C) 2000-2020 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
 db_user=${db_user:-@db_user@}
 bindir=@POSTGRESQL_BINDIR@
+PATH="$PATH:$bindir"
 db_name=${db_name:-@db_name@}
 db_password=@db_password@
 if [ "$db_password" != "" ]; then
@@ -14,7 +15,7 @@ if [ "$db_password" != "" ]; then
 fi
 
 
-$bindir/psql -f - -d ${db_name} $* <<END-OF-DATA
+psql -f - -d ${db_name} $* <<END-OF-DATA
 
 create user ${db_user} ${pass};
 
@@ -22,9 +23,11 @@ create user ${db_user} ${pass};
 alter database ${db_name} owner to ${db_user} ;
 
 -- for tables
+grant all on Events        to ${db_user};
 grant all on unsavedfiles to ${db_user};
 grant all on basefiles	  to ${db_user};
 grant all on jobmedia	  to ${db_user};
+grant all on filemedia	  to ${db_user};
 grant all on file	  to ${db_user};
 grant all on job	  to ${db_user};
 grant all on media	  to ${db_user};
@@ -32,7 +35,6 @@ grant all on client	  to ${db_user};
 grant all on pool	  to ${db_user};
 grant all on fileset	  to ${db_user};
 grant all on path	  to ${db_user};
-grant all on filename	  to ${db_user};
 grant all on counters	  to ${db_user};
 grant all on version	  to ${db_user};
 grant all on cdimages	  to ${db_user};
@@ -50,7 +52,7 @@ grant all on RestoreObject to ${db_user};
 grant all on Snapshot to ${db_user};
 -- for sequences on those tables
 
-grant select, update on filename_filenameid_seq    to ${db_user};
+grant select, update on events_eventsid_seq 	   to ${db_user};
 grant select, update on path_pathid_seq 	   to ${db_user};
 grant select, update on fileset_filesetid_seq	   to ${db_user};
 grant select, update on pool_poolid_seq 	   to ${db_user};
