@@ -49,7 +49,7 @@
 #include  "pg_config_manual.h"   /* get NAMEDATALEN on version 8.3 or later */
 #include  "pg_config.h"          /* for PG_VERSION_NUM */
 #define __BDB_POSTGRESQL_H_ 1
-#include  "bdb_postgresql.h"
+#include "bdb_postgresql.h"
 
 #define dbglvl_dbg   DT_SQL|100
 #define dbglvl_info  DT_SQL|50
@@ -107,11 +107,13 @@ BDB_POSTGRESQL::~BDB_POSTGRESQL()
  * Initialize database data structure. In principal this should
  * never have errors, or it is really fatal.
  */
-BDB *db_init_database(JCR *jcr, const char *db_driver, const char *db_name, const char *db_user, 
-                       const char *db_password, const char *db_address, int db_port, const char *db_socket, 
+BDB *db_init_database(JCR *jcr, const char *db_driver, const char *db_name,
+                       const char *db_user, const char *db_password,
+                       const char *db_address, int db_port,
+                       const char *db_socket,
                        const char *db_ssl_mode, const char *db_ssl_key, const char *db_ssl_cert,
                        const char *db_ssl_ca, const char *db_ssl_capath, const char *db_ssl_cipher,
-                       bool mult_db_connections, bool disable_batch_insert) 
+                       bool mult_db_connections, bool disable_batch_insert)
 {
    BDB_POSTGRESQL *mdb = NULL;
 
@@ -137,7 +139,9 @@ BDB *db_init_database(JCR *jcr, const char *db_driver, const char *db_name, cons
    mdb = New(BDB_POSTGRESQL());
    if (!mdb) goto get_out;
 
-   /* Initialize the parent class members. */
+   /*
+    * Initialize the parent class members.
+    */
    mdb->m_db_name = bstrdup(db_name);
    mdb->m_db_user = bstrdup(db_user);
    if (db_password) {
@@ -185,7 +189,7 @@ BDB *db_init_database(JCR *jcr, const char *db_driver, const char *db_name, cons
 #endif /* USE_BATCH_FILE_INSERT */ 
    } 
    mdb->m_allow_transactions = mult_db_connections;
- 
+
    /* At this time, when mult_db_connections == true, this is for
     * specific console command such as bvfs or batch mode, and we don't
     * want to share a batch mode or bvfs. In the future, we can change
@@ -270,10 +274,9 @@ bool BDB_POSTGRESQL::bdb_open_database(JCR *jcr)
 
    /* If connection fails, try at 5 sec intervals for 30 seconds. */
    for (int retry=0; retry < 6; retry++) {
-      /* connect to the database */
 
 #if PG_VERSION_NUM < 90000
-
+      /* connect to the database */
       /* Old "depreciated" connection call */
       mdb->m_db_handle = PQsetdbLogin(
            mdb->m_db_address,         /* default = localhost */
@@ -325,7 +328,7 @@ bool BDB_POSTGRESQL::bdb_open_database(JCR *jcr)
       Dmsg0(dbglvl_info, "SSL not in use\n");
    }
 #endif
-
+   
    if (PQstatus(mdb->m_db_handle) != CONNECTION_OK) {
       Mmsg2(&mdb->errmsg, _("Unable to connect to PostgreSQL server. Database=%s User=%s\n"
          "Possible causes: SQL server not running; password incorrect; max_connections exceeded.\n"),
@@ -373,7 +376,7 @@ void BDB_POSTGRESQL::bdb_close_database(JCR *jcr)
       db_list->remove(mdb);
       if (mdb->m_connected && mdb->m_db_handle) {
          PQfinish(mdb->m_db_handle);
-      } 
+      }
       if (is_rwl_valid(&mdb->m_lock)) {
          rwl_destroy(&mdb->m_lock);
       } 
@@ -517,7 +520,7 @@ void BDB_POSTGRESQL::bdb_start_transaction(JCR *jcr)
       jcr->attr = get_pool_memory(PM_FNAME); 
    }
    if (!jcr->ar) { 
-      jcr->ar = (ATTR_DBR *)malloc(sizeof(ATTR_DBR)); 
+      jcr->ar = (ATTR_DBR *)malloc(sizeof(ATTR_DBR));
       memset(jcr->ar, 0, sizeof(ATTR_DBR));
    }
 
@@ -741,7 +744,7 @@ get_out:
 ok_out: 
    return retval; 
 }  
- 
+
 void BDB_POSTGRESQL::sql_free_result(void)
 {
    BDB_POSTGRESQL *mdb = this;
@@ -806,10 +809,10 @@ SQL_ROW BDB_POSTGRESQL::sql_fetch_row(void)
    Dmsg1(dbglvl_info, "sql_fetch_row finishes returning %p\n", row);
  
    return row; 
-} 
+}
 
 const char *BDB_POSTGRESQL::sql_strerror(void)
-{   
+{
    BDB_POSTGRESQL *mdb = this;
    return PQerrorMessage(mdb->m_db_handle);
 } 
