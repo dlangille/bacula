@@ -1,4 +1,4 @@
-/*
+/* 
    Bacula(R) - The Network Backup Solution
 
    Copyright (C) 2000-2020 Kern Sibbald
@@ -14,8 +14,8 @@
    This notice must be preserved when any source code is
    conveyed and/or propagated.
 
-   Bacula(R) is a registered trademark of Kern Sibbald.
-*/
+   Bacula(R) is a registered trademark of Kern Sibbald. 
+*/ 
 /* 
  * Bacula Catalog Database interface routines 
  * 
@@ -267,6 +267,9 @@ const char *BDB::get_acl(DB_ACL_t type, bool where /* display WHERE or AND */)
 /* Keep UAContext ACLs in our structure for further SQL queries */
 void BDB::set_acl(JCR *jcr, DB_ACL_t type, alist *list, alist *list2)
 {
+   const char *key=NULL;
+   const char *keyid=NULL;
+
    /* If the list is present, but we authorize everything */
    if (list && list->size() == 1 && strcasecmp((char*)list->get(0), "*all*") == 0) {
       return;
@@ -283,49 +286,74 @@ void BDB::set_acl(JCR *jcr, DB_ACL_t type, alist *list, alist *list2)
    *where = 0;
    *tmp = 0;
 
-   /* For clients, we can have up to 2 lists */
-   escape_acl_list(jcr, &tmp, list);
-   escape_acl_list(jcr, &tmp, list2);
-
    switch(type) {
    case DB_ACL_JOB:
-      Mmsg(where, "   AND  Job.Name IN (%s) ", tmp);
+      key = "Job.Name";
       break;
-   case DB_ACL_CLIENT:
-      Mmsg(where, "   AND  Client.Name IN (%s) ", tmp);
-      break;
+
    case DB_ACL_BCLIENT:
-      Mmsg(where, "   AND  Client.Name IN (%s) ", tmp);
-      break;
+   case DB_ACL_CLIENT:
    case DB_ACL_RCLIENT:
-      Mmsg(where, "   AND  Client.Name IN (%s) ", tmp);
+      key = "Client.Name";
       break;
+
    case  DB_ACL_FILESET:
-      Mmsg(where, "   AND  (FileSetId = 0 OR FileSet.FileSet IN (%s)) ", tmp);
+      key = "FileSet.FileSet";
+      keyid = "FileSet.FileSetId";
       break;
+
    case DB_ACL_POOL:
-      Mmsg(where, "   AND  (PoolId = 0 OR Pool.Name IN (%s)) ", tmp);
+      key = "Pool.Name";
+      keyid = "Pool.PoolId";
       break;
+
    default:
       break;
    }
+
+   /* For clients, we can have up to 2 lists */
+   char *elt;
+   alist *merged_list = New(alist(5, not_owned_by_alist));
+   if (list) {
+      foreach_alist(elt, list) {
+         merged_list->append(elt);
+      }
+   }
+   if (list2) {
+      foreach_alist(elt, list2) {
+         merged_list->append(elt);
+      }
+   }
+   escape_acl_list(jcr, key, &tmp, merged_list);
+   delete merged_list;
+
+   if (keyid) {
+      Mmsg(where, "   AND  (%s IS NULL OR %s) ", keyid, tmp);
+   } else {
+      Mmsg(where, "   AND  %s ", tmp);
+   }
+
    acls[type] = where;
+   Dmsg1(50|DT_SQL, "%s\n", where);
    free_pool_memory(tmp);
 }
 
-/* Convert a ACL list to a SQL IN() list */
-char *BDB::escape_acl_list(JCR *jcr, POOLMEM **escaped_list, alist *lst)
+/* Convert a ACL list to a SQL IN() / regexp list 
+ * key=Client.Name  + (test1, test2)
+ *   => (Client.Name IN ('test1', 'test2'))
+ * key=Client.Name + (test1, test2*)
+ *   => (Client.Name IN ('test1') OR (Client.Name ~ 'test2.*'))
+ */
+char *BDB::escape_acl_list(JCR *jcr, const char *key, POOLMEM **escaped_list, alist *lst)
 {
-   char *elt;
+   char *elt, *p, *dst;
    int len;
-   POOL_MEM tmp;
+   bool have_in=false, have_reg=false;
+   POOL_MEM tmp, tmp2, reg, in;
 
-   if (!lst) {
-      return *escaped_list;     /* TODO: check how we handle the empty list */
-
-   /* List is empty, reject everything */
-   } else if (lst->size() == 0) {
-      Mmsg(escaped_list, "''");
+   if (lst==NULL || lst->size() == 0) {
+      Mmsg(tmp, "(%s IN (''))", key);
+      pm_strcat(escaped_list, tmp.c_str());
       return *escaped_list;
    }
 
@@ -333,21 +361,74 @@ char *BDB::escape_acl_list(JCR *jcr, POOLMEM **escaped_list, alist *lst)
       if (elt && *elt) {
          len = strlen(elt);
          /* Escape + ' ' */
-         tmp.check_size(2 * len + 2 + 2);
+         tmp.check_size(4 * len + 2 + 2);
+         tmp2.check_size(4 * len + 2 + 2);
 
-         pm_strcpy(tmp, "'");
-         bdb_lock();
-         bdb_escape_string(jcr, tmp.c_str() + 1 , elt, len);
-         bdb_unlock();
-         pm_strcat(tmp, "'");
+         if (strchr(elt, '*') != NULL || strchr(elt, '[') != NULL) {
+            /* Replace all * by .* */
+            dst = tmp2.c_str();
+            for (p = elt; *p ; p++) {
+               if (*p == '*') {
+                  *dst++ = '.';
+                  *dst = '*';
+               /* Escape regular */
+               } else if (*p == '.' || *p == '$' || *p == '^' || *p == '+' || *p == '(' || *p == ')' || *p == '|') {
+                  *dst++ = '\\';
+                  *dst = *p;
 
-         if (*escaped_list[0]) {
-            pm_strcat(escaped_list, ",");
+               } else {
+                  *dst = *p;
+               }
+               dst++;
+            }
+            *dst = '\0';
+
+            /* Escape the expression, the result is now in "tmp" */
+            bdb_lock();
+            bdb_escape_string(jcr, tmp.c_str(), tmp2.c_str(), strlen(tmp2.c_str()));
+            bdb_unlock();
+
+            /* Build the SQL part */
+            Mmsg(tmp2, "(%s %s '%s')", key, regexp_value[bdb_get_type_index()], tmp.c_str());
+
+            /* Append the expression to the existing one if any */
+            if (have_reg) {
+               pm_strcat(reg, " OR ");
+            }
+            pm_strcat(reg, tmp2.c_str());
+            have_reg = true;
+
+         } else {
+
+            /* Escape the string between '' */
+            pm_strcpy(tmp, "'");
+
+            bdb_lock();
+            bdb_escape_string(jcr, tmp.c_str() + 1 , elt, len);
+            bdb_unlock();
+
+            pm_strcat(tmp, "'");
+            if (have_in) {
+               pm_strcat(in, ",");
+            }
+            pm_strcat(in, tmp.c_str());
+            have_in = true;
          }
-
-         pm_strcat(escaped_list, tmp.c_str());
       }
    }
+   /* Check if we have  */
+   pm_strcat(escaped_list, "(");
+   if (have_in) {
+      Mmsg(tmp, "%s IN (%s)", key, in.c_str());
+      pm_strcat(escaped_list, tmp.c_str());
+   }
+   if (have_reg) {
+      if (have_in) {
+         pm_strcat(escaped_list, " OR ");
+      }
+      pm_strcat(escaped_list, reg.c_str());
+   }
+   pm_strcat(escaped_list, ")");
    return *escaped_list;
 }
 
@@ -357,7 +438,7 @@ char *BDB::escape_acl_list(JCR *jcr, POOLMEM **escaped_list, alist *lst)
 bool BDB::bdb_check_max_connections(JCR *jcr, uint32_t max_concurrent_jobs) 
 { 
    struct max_connections_context context; 
-   
+
    /* Without Batch insert, no need to verify max_connections */ 
    if (!batch_insert_available()) 
       return true; 
@@ -978,10 +1059,13 @@ void bdb_debug_print(JCR *jcr, FILE *fp)
    fprintf(fp, "\tcmd=\"%s\" changes=%i\n", NPRTB(mdb->cmd), mdb->changes); 
    mdb->print_lock_info(fp); 
 } 
- 
+
+#ifdef COMMUNITY
 bool BDB::bdb_check_settings(JCR *jcr, int64_t *starttime, int val, int64_t val2) 
-{ 
+{
+   /* Implement checks for tuning hints */
    return true; 
 } 
+#endif 
  
 #endif /* HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL */ 
