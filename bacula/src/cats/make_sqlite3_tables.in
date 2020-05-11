@@ -2,7 +2,7 @@
 #
 # shell script to create Bacula SQLite tables
 #
-# Copyright (C) 2000-2017 Kern Sibbald
+# Copyright (C) 2000-2020 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
 
@@ -12,13 +12,20 @@ cd @working_dir@
 db_name=@db_name@
 
 sqlite3 $* ${db_name}.db <<END-OF-DATA
-CREATE TABLE Filename (
-  FilenameId INTEGER,
-  Name TEXT DEFAULT '',
-  PRIMARY KEY(FilenameId) 
-  );
-
-CREATE INDEX inx1 ON Filename (Name);
+CREATE TABLE Events
+(
+    EventsId          INTEGER,
+    EventsCode        text        not null,
+    EventsType	      text	  not null,
+    EventsTime	      DATETIME,
+    EventsInsertTime  DATETIME DEFAULT current_timestamp,
+    EventsDaemon        text        default '',
+    EventsSource      text        default '',
+    EventsRef         text        default '',
+    EventsText	      text	  not null,
+    primary key (EventsId)
+);
+create index events_time_idx on Events (EventsTime);
 
 CREATE TABLE Path (
    PathId INTEGER,
@@ -30,13 +37,13 @@ CREATE INDEX inx2 ON Path (Path);
 
 -- In File table
 -- FileIndex can be 0 for FT_DELETED files
--- FileNameId can link to Filename.Name='' for directories
+-- FileName can be '' for directories
 CREATE TABLE File (
    FileId INTEGER,
    FileIndex INTEGER DEFAULT 0,
    JobId INTEGER UNSIGNED REFERENCES Job NOT NULL,
    PathId INTEGER UNSIGNED REFERENCES Path NOT NULL,
-   FilenameId INTEGER UNSIGNED REFERENCES Filename NOT NULL,
+   Filename TEXT NOT NULL DEFAULT '',
    DeltaSeq SMALLINT UNSIGNED DEFAULT 0,
    MarkId INTEGER UNSIGNED DEFAULT 0,
    LStat VARCHAR(255) NOT NULL,
@@ -44,13 +51,13 @@ CREATE TABLE File (
    PRIMARY KEY(FileId) 
    );
 CREATE INDEX inx3 ON File (JobId);
-CREATE INDEX file_jpf_idx ON File (JobId, PathId, FilenameId);
+CREATE INDEX file_jpf_idx ON File (JobId, PathId, Filename);
 --
 -- Possibly add one or more of the following indexes
 --  if your Verifies are too slow.
 --
 -- CREATE INDEX inx4 ON File (PathId);
--- CREATE INDEX inx5 ON File (FileNameId);
+-- CREATE INDEX inx5 ON File (FileName);
 
 
 CREATE TABLE RestoreObject (
@@ -93,6 +100,7 @@ CREATE TABLE Job (
    PoolId INTEGER UNSIGNED REFERENCES Pool DEFAULT 0,
    FileSetId INTEGER UNSIGNED REFERENCES FileSet DEFAULT 0,
    PriorJobId INTEGER UNSIGNED REFERENCES Job DEFAULT 0,
+   PriorJob VARCHAR(128) DEFAULT '',
    PurgedFiles TINYINT DEFAULT 0,
    HasBase TINYINT DEFAULT 0,
    HasCache TINYINT DEFAULT 0,
@@ -102,7 +110,6 @@ CREATE TABLE Job (
    PRIMARY KEY(JobId) 
    );
 CREATE INDEX inx6 ON Job (Name);
-CREATE INDEX job_jobtdate_inx ON Job (JobTDate);
 
 -- Create a table like Job for long term statistics 
 CREATE TABLE JobHisto (
@@ -128,6 +135,7 @@ CREATE TABLE JobHisto (
    PoolId INTEGER UNSIGNED DEFAULT 0,
    FileSetId INTEGER UNSIGNED DEFAULT 0,
    PriorJobId INTEGER UNSIGNED DEFAULT 0,
+   PriorJob VARCHAR(128) DEFAULT '',
    PurgedFiles TINYINT DEFAULT 0,
    HasBase TINYINT DEFAULT 0,
    HasCache TINYINT DEFAULT 0,
@@ -175,8 +183,6 @@ CREATE TABLE FileSet (
    PRIMARY KEY(FileSetId)
    );
 
-CREATE INDEX fileset_name_idx on FileSet (FileSet);
-
 CREATE TABLE JobMedia (
    JobMediaId INTEGER,
    JobId INTEGER UNSIGNED REFERENCES Job NOT NULL,
@@ -193,6 +199,16 @@ CREATE TABLE JobMedia (
 
 CREATE INDEX inx7 ON JobMedia (JobId, MediaId);
 
+CREATE TABLE FileMedia
+(
+    JobId	      integer	  not null,
+    FileIndex	      integer	  not null,
+    MediaId	      integer	  not null,
+    BlockAddress      bigint	  default 0,
+    RecordNo	      integer	  default 0,
+    FileOffset	      bigint	  default 0
+);
+CREATE INDEX file_media_idx on FileMedia (JobId, FileIndex);
 
 CREATE TABLE Media (
    MediaId INTEGER,
@@ -248,7 +264,6 @@ CREATE TABLE Media (
    PRIMARY KEY(MediaId)
    );
 
-CREATE UNIQUE INDEX Media_Volumename_Id ON Media (VolumeName);
 CREATE INDEX inx8 ON Media (PoolId);
 CREATE INDEX inx9 ON Media (StorageId);
 
@@ -295,12 +310,13 @@ CREATE TABLE Pool (
    UseOnce TINYINT DEFAULT 0,
    UseCatalog TINYINT DEFAULT 1,
    AcceptAnyVolume TINYINT DEFAULT 0,
-   CacheRetention BIGINT UNSIGNED DEFAULT 0,
    VolRetention BIGINT UNSIGNED DEFAULT 0,
+   CacheRetention BIGINT UNSIGNED DEFAULT 0,
    VolUseDuration BIGINT UNSIGNED DEFAULT 0,
    MaxVolJobs INTEGER UNSIGNED DEFAULT 0,
    MaxVolFiles INTEGER UNSIGNED DEFAULT 0,
    MaxVolBytes BIGINT UNSIGNED DEFAULT 0,
+   MaxPoolBytes BIGINT UNSIGNED DEFAULT 0,
    AutoPrune TINYINT DEFAULT 0,
    Recycle TINYINT DEFAULT 0,
    ActionOnPurge     TINYINT	DEFAULT 0,
@@ -318,7 +334,6 @@ CREATE TABLE Pool (
    PRIMARY KEY (PoolId)
    );
 
-CREATE INDEX pool_name_idx on Pool (Name);
 
 CREATE TABLE Client (
    ClientId INTEGER,
@@ -330,8 +345,6 @@ CREATE TABLE Client (
    UNIQUE (Name),
    PRIMARY KEY(ClientId)
    );
-
-CREATE UNIQUE INDEX client_name_idx on Client (Name);
 
 CREATE TABLE BaseFiles (
    BaseId BIGINT,
@@ -348,10 +361,21 @@ CREATE TABLE UnsavedFiles (
    UnsavedId INTEGER,
    JobId INTEGER UNSIGNED REFERENCES Job NOT NULL,
    PathId INTEGER UNSIGNED REFERENCES Path NOT NULL,
-   FilenameId INTEGER UNSIGNED REFERENCES Filename NOT NULL,
+   Filename TEXT NOT NULL,
    PRIMARY KEY (UnsavedId)
    );
 
+
+CREATE TABLE NextId (
+   id INTEGER UNSIGNED DEFAULT 0,
+   TableName TEXT NOT NULL,
+   PRIMARY KEY (TableName)
+   );
+
+
+
+-- Initialize JobId to start at 1
+INSERT INTO NextId (id, TableName) VALUES (1, 'Job');
 
 CREATE TABLE Version (
    VersionId INTEGER UNSIGNED NOT NULL 
@@ -467,7 +491,7 @@ INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
    ('I', 'Incomplete Job',25);
 
 -- Initialize Version		 
-INSERT INTO Version (VersionId) VALUES (16);
+INSERT INTO Version (VersionId) VALUES (1022);
 
 PRAGMA default_cache_size = 100000;
 PRAGMA synchronous = NORMAL;
