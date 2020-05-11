@@ -14,7 +14,7 @@
    This notice must be preserved when any source code is
    conveyed and/or propagated.
 
-   Bacula(R) is a registered trademark of Kern Sibbald.
+   Bacula(R) is a registered trademark of Kern Sibbald. 
 */ 
 /* 
  * Bacula Catalog Database routines specific to MySQL 
@@ -28,6 +28,7 @@
  *  change for a C++ programmer, nothing substantial was done, yet all the  
  *  code was recommitted under this programmer's name.  Consequently, we  
  *  undo those changes here.  
+ * 
  */ 
  
 #include "bacula.h" 
@@ -36,7 +37,7 @@
  
 #include "cats.h" 
 #include <mysql.h> 
-#define  __BDB_MYSQL_H_ 1 
+#define __BDB_MYSQL_H_ 1 
 #include "bdb_mysql.h" 
  
 /* ----------------------------------------------------------------------- 
@@ -81,7 +82,7 @@ BDB_MYSQL::BDB_MYSQL(): BDB()
    db_list->append(this); 
 } 
  
-BDB_MYSQL::~BDB_MYSQL()
+BDB_MYSQL::~BDB_MYSQL() 
 { 
 } 
  
@@ -90,7 +91,7 @@ BDB_MYSQL::~BDB_MYSQL()
  * never have errors, or it is really fatal. 
  */ 
 BDB *db_init_database(JCR *jcr, const char *db_driver, const char *db_name, const char *db_user, 
-                       const char *db_password, const char *db_address, int db_port, const char *db_socket, 
+                       const char *db_password, const char *db_address, int db_port, const char *db_socket,
                        const char *db_ssl_mode, const char *db_ssl_key, 
                        const char *db_ssl_cert, const char *db_ssl_ca,
                        const char *db_ssl_capath, const char *db_ssl_cipher,
@@ -131,9 +132,9 @@ BDB *db_init_database(JCR *jcr, const char *db_driver, const char *db_name, cons
    if (db_address) { 
       mdb->m_db_address = bstrdup(db_address); 
    } 
-   if (db_socket) {
+   if (db_socket) { 
       mdb->m_db_socket = bstrdup(db_socket); 
-   } 
+   }
    if (db_ssl_mode) {
       mdb->m_db_ssl_mode = bstrdup(db_ssl_mode);
    } else {
@@ -154,6 +155,7 @@ BDB *db_init_database(JCR *jcr, const char *db_driver, const char *db_name, cons
    if (db_ssl_cipher) {
       mdb->m_db_ssl_cipher = bstrdup(db_ssl_cipher);
    }
+
    mdb->m_db_port = db_port; 
  
    if (disable_batch_insert) { 
@@ -198,8 +200,8 @@ bool BDB_MYSQL::bdb_open_database(JCR *jcr)
    BDB_MYSQL *mdb = this; 
    bool retval = false; 
    int errstat; 
-   bool reconnect = true;
- 
+   bool reconnect = 1;
+
    P(mutex); 
    if (mdb->m_connected) { 
       retval = true; 
@@ -222,7 +224,6 @@ bool BDB_MYSQL::bdb_open_database(JCR *jcr)
    mysql_init(&mdb->m_instance); 
  
    Dmsg0(50, "mysql_init done\n"); 
-
    /*
    * Sets the appropriate certificate options for
    * establishing secure connection using SSL to the database.
@@ -258,12 +259,17 @@ bool BDB_MYSQL::bdb_open_database(JCR *jcr)
       } 
       bmicrosleep(5,0); 
    } 
- 
-   mysql_options(&mdb->m_instance, MYSQL_OPT_RECONNECT, &reconnect); /* so connection does not timeout */ 
-   Dmsg0(50, "mysql_real_connect done\n"); 
+
+#if MYSQL_VERSION_ID <= 50117
+   mysql_options(&mdb->m_instance, MYSQL_OPT_RECONNECT, (char*)&reconnect); /* so connection does not timeout */
+#else
+   mysql_options(&mdb->m_instance, MYSQL_OPT_RECONNECT, &reconnect); /* so connection does not timeout */
+#endif
+
+   Dmsg0(50, "mysql_real_connect done\n");
    Dmsg3(50, "db_user=%s db_name=%s db_password=%s\n", mdb->m_db_user, mdb->m_db_name, 
         (mdb->m_db_password == NULL) ? "(NULL)" : mdb->m_db_password); 
-
+ 
    if (mdb->m_db_handle == NULL) { 
       Mmsg2(&mdb->errmsg, _("Unable to connect to MySQL server.\n" 
 "Database=%s User=%s\n" 
@@ -279,7 +285,6 @@ bool BDB_MYSQL::bdb_open_database(JCR *jcr)
 #endif 
       goto get_out; 
    } 
- 
    /* get the current cipher used for SSL connection */
    if (mdb->m_db_ssl_key) {
       const char *cipher;
