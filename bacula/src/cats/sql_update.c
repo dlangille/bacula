@@ -20,6 +20,7 @@
  * Bacula Catalog Database Update record interface routines
  *
  *    Written by Kern Sibbald, March 2000
+ *
  */
 
 #include  "bacula.h"
@@ -179,12 +180,12 @@ int BDB::bdb_update_job_end_record(JCR *jcr, JOB_DBR *jr)
       "UPDATE Job SET JobStatus='%c',EndTime='%s',"
 "ClientId=%u,JobBytes=%s,ReadBytes=%s,JobFiles=%u,JobErrors=%u,VolSessionId=%u,"
 "VolSessionTime=%u,PoolId=%u,FileSetId=%u,JobTDate=%s,"
-"RealEndTime='%s',PriorJobId=%s,HasBase=%u,PurgedFiles=%u WHERE JobId=%s",
+"RealEndTime='%s',PriorJobId=%s,HasBase=%u,PurgedFiles=%u,PriorJob='%s' WHERE JobId=%s",
       (char)(jr->JobStatus), dt, jr->ClientId, edit_uint64(jr->JobBytes, ed1),
       edit_uint64(jr->ReadBytes, ed4),
       jr->JobFiles, jr->JobErrors, jr->VolSessionId, jr->VolSessionTime,
       jr->PoolId, jr->FileSetId, edit_uint64(JobTDate, ed2),
-      rdt, PriorJobId, jr->HasBase, jr->PurgedFiles,
+      rdt, PriorJobId, jr->HasBase, jr->PurgedFiles, jr->PriorJob,
       edit_int64(jr->JobId, ed3));
 
    stat = UpdateDB(jcr, cmd, false);
@@ -253,7 +254,7 @@ int BDB::bdb_update_counter_record(JCR *jcr, COUNTER_DBR *cr)
 int BDB::bdb_update_pool_record(JCR *jcr, POOL_DBR *pr)
 {
    int stat;
-   char ed1[50], ed2[50], ed3[50], ed4[50], ed5[50], ed6[50], ed7[50];
+   char ed1[50], ed2[50], ed3[50], ed4[50], ed5[50], ed6[50], ed7[50], ed8[50];
    char esc[MAX_ESCAPE_NAME_LENGTH];
 
    bdb_lock();
@@ -269,7 +270,7 @@ int BDB::bdb_update_pool_record(JCR *jcr, POOL_DBR *pr)
 "AcceptAnyVolume=%d,VolRetention='%s',VolUseDuration='%s',"
 "MaxVolJobs=%u,MaxVolFiles=%u,MaxVolBytes=%s,Recycle=%d,"
 "AutoPrune=%d,LabelType=%d,LabelFormat='%s',RecyclePoolId=%s,"
-"ScratchPoolId=%s,ActionOnPurge=%d,CacheRetention='%s' WHERE PoolId=%s",
+"ScratchPoolId=%s,ActionOnPurge=%d,CacheRetention='%s',MaxPoolBytes='%s' WHERE PoolId=%s",
       pr->NumVols, pr->MaxVols, pr->UseOnce, pr->UseCatalog,
       pr->AcceptAnyVolume, edit_uint64(pr->VolRetention, ed1),
       edit_uint64(pr->VolUseDuration, ed2),
@@ -280,6 +281,7 @@ int BDB::bdb_update_pool_record(JCR *jcr, POOL_DBR *pr)
       edit_int64(pr->ScratchPoolId,ed6),
       pr->ActionOnPurge,
       edit_uint64(pr->CacheRetention, ed7),
+      edit_uint64(pr->MaxPoolBytes, ed8),
       ed4);
    stat = UpdateDB(jcr, cmd, false);
    bdb_unlock();
