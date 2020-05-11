@@ -20,6 +20,7 @@
  * Bacula Catalog Database Delete record interface routines
  *
  *    Written by Kern Sibbald, December 2000-2014
+ *
  */
 
 #include  "bacula.h"
@@ -35,13 +36,13 @@
  */
 
 /*
- * Delete Pool record, must also delete all associated
- *  Media records.
+ * Delete Pool record, must all associated
+ *  Media records are left untouched. The uppper
+ *  level should empty the pool first.
  *
  *  Returns: 0 on error
  *           1 on success
  *           PoolId = number of Pools deleted (should be 1)
- *           NumVols = number of Media records deleted
  */
 int BDB::bdb_delete_pool_record(JCR *jcr, POOL_DBR *pr)
 {
@@ -76,13 +77,6 @@ int BDB::bdb_delete_pool_record(JCR *jcr, POOL_DBR *pr)
       pr->PoolId = str_to_int64(row[0]);
       sql_free_result();
    }
-
-   /* Delete Media owned by this pool */
-   Mmsg(cmd,
-"DELETE FROM Media WHERE Media.PoolId = %d", pr->PoolId);
-
-   pr->NumVols = DeleteDB(jcr, cmd);
-   Dmsg1(200, "Deleted %d Media records\n", pr->NumVols);
 
    /* Delete Pool */
    Mmsg(cmd,
@@ -165,6 +159,8 @@ static int do_media_purge(BDB *mdb, MEDIA_DBR *mr)
       Mmsg(query, "DELETE FROM File WHERE JobId=%s", edit_int64(del.JobId[i], ed1));
       mdb->bdb_sql_query(query, NULL, (void *)NULL);
       Mmsg(query, "DELETE FROM JobMedia WHERE JobId=%s", edit_int64(del.JobId[i], ed1));
+      mdb->bdb_sql_query(query, NULL, (void *)NULL);
+      Mmsg(query, "DELETE FROM FileMedia WHERE JobId=%s", edit_int64(del.JobId[i], ed1));
       mdb->bdb_sql_query(query, NULL, (void *)NULL);
    }
    free(del.JobId);
