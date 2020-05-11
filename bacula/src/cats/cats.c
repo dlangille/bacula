@@ -14,7 +14,7 @@
    This notice must be preserved when any source code is
    conveyed and/or propagated.
 
-   Bacula(R) is a registered trademark of Kern Sibbald.
+   Bacula(R) is a registered trademark of Kern Sibbald. 
 */ 
 /* 
  * Generic catalog class methods. 
@@ -69,7 +69,7 @@ BDB *BDB::bdb_clone_database_connection(JCR *jcr, bool mult_db_connections)
     * A bit more to do here just open a new session to the database. 
     */ 
    return db_init_database(jcr, mdb->m_db_driver, mdb->m_db_name, 
-             mdb->m_db_user, mdb->m_db_password, mdb->m_db_address, 
+             mdb->m_db_user, mdb->m_db_password, mdb->m_db_address,
              mdb->m_db_port, mdb->m_db_socket,
              mdb->m_db_ssl_mode, mdb->m_db_ssl_key,
              mdb->m_db_ssl_cert, mdb->m_db_ssl_ca,
