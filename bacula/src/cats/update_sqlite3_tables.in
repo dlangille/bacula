@@ -1,33 +1,34 @@
 #!/bin/sh
 #
-# Copyright (C) 2000-2017 Kern Sibbald
+# Copyright (C) 2000-2020 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
-# Shell script to update SQLite tables from Bacula Community version 
-#  5.0.x, 5.2.x, 7.0.x, 7.2.x, 7.4.x
+# Shell script to update SQLite3 tables from Bacula Enterprise version from 4.0.x to 12.4.x
 #
 echo " "
-echo "This script will update a Bacula SQLite database from version 12-15 to 16"
-echo " "
-echo "Depending on the current version of your catalog,"
-echo "you may have to run this script multiple times"
+echo "This script will update a Bacula SQLite3 database from version 12-14,1021 to 1022"
+echo "	which is needed to convert from Bacula Enterprise version 4.0.x to 12.4.x"
+echo "	or Bacula Community version 5.0.x, 5.2.x, 6.0.x to 10.0.x"
 echo " "
 
 bindir=@SQLITE_BINDIR@
 PATH="$bindir:$PATH"
 cd @working_dir@
 db_name=@db_name@
+
 DBVERSION=`sqlite3 ${db_name}.db <<END
 SELECT VersionId FROM Version LIMIT 1;
 END
 `
-if [ "$DBVERSION" -lt 12 -o "$DBVERSION" -gt 15 ] ; then
+if [ "$DBVERSION" -ne 1022 ] ; then
+  if [ "$DBVERSION" -lt 12 -o "$DBVERSION" -gt 14 ] ; then
     echo " "
     echo "The existing database is version $DBVERSION !!"
-    echo "This script can only update an existing version 12, 13, 14 or 15 database to version 16."
-    echo "Error. Cannot upgrade this database, which has version $DBVERSION.."
+    echo "This script can only update an existing version 12, 13, 14 or 1014-1021 database to version 1022."
+    echo "Error. Cannot upgrade this database."
     echo " "
     exit 1
+  fi
 fi
 
 if [ "$DBVERSION" = 12 ] ; then
@@ -75,98 +76,92 @@ fi
 
 if [ "$DBVERSION" = 14 ] ; then
     sqlite3 $* ${db_name}.db  <<END-OF-DATA
-BEGIN;
-
 INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
    ('I', 'Incomplete Job',25);
-
-CREATE TABLE new_Media (
-   MediaId INTEGER,
-   VolumeName VARCHAR(128) NOT NULL,
-   Slot INTEGER DEFAULT 0,
-   PoolId INTEGER UNSIGNED REFERENCES Pool DEFAULT 0,
-   MediaType VARCHAR(128) NOT NULL,
-   MediaTypeId INTEGER UNSIGNED REFERENCES MediaType DEFAULT 0,
-   LabelType TINYINT DEFAULT 0,
-   FirstWritten DATETIME DEFAULT 0,
-   LastWritten DATETIME DEFAULT 0,
-   LabelDate DATETIME DEFAULT 0,
-   VolJobs INTEGER UNSIGNED DEFAULT 0,
-   VolFiles INTEGER UNSIGNED DEFAULT 0,
-   VolBlocks INTEGER UNSIGNED DEFAULT 0,
-   VolMounts INTEGER UNSIGNED DEFAULT 0,
-   VolBytes BIGINT UNSIGNED DEFAULT 0,
-   VolParts INTEGER UNSIGNED DEFAULT 0,
-   VolErrors INTEGER UNSIGNED DEFAULT 0,
-   VolWrites BIGINT UNSIGNED DEFAULT 0,
-   VolCapacityBytes BIGINT UNSIGNED DEFAULT 0,
-   VolStatus VARCHAR(20) NOT NULL,
-   Enabled TINYINT DEFAULT 1,
-   Recycle TINYINT DEFAULT 0,
-   ActionOnPurge     TINYINT	DEFAULT 0,
-   VolRetention BIGINT UNSIGNED DEFAULT 0,
-   VolUseDuration BIGINT UNSIGNED DEFAULT 0,
-   MaxVolJobs INTEGER UNSIGNED DEFAULT 0,
-   MaxVolFiles INTEGER UNSIGNED DEFAULT 0,
-   MaxVolBytes BIGINT UNSIGNED DEFAULT 0,
-   InChanger TINYINT DEFAULT 0,
-   StorageId INTEGER UNSIGNED REFERENCES Storage DEFAULT 0,
-   DeviceId INTEGER UNSIGNED REFERENCES Device DEFAULT 0,
-   MediaAddressing TINYINT DEFAULT 0,
-   VolReadTime BIGINT UNSIGNED DEFAULT 0,
-   VolWriteTime BIGINT UNSIGNED DEFAULT 0,
-   EndFile INTEGER UNSIGNED DEFAULT 0,
-   EndBlock INTEGER UNSIGNED DEFAULT 0,
-   LocationId INTEGER UNSIGNED REFERENCES Location DEFAULT 0,
-   RecycleCount INTEGER UNSIGNED DEFAULT 0,
-   InitialWrite DATETIME DEFAULT 0,
-   ScratchPoolId INTEGER UNSIGNED REFERENCES Pool DEFAULT 0,
-   RecyclePoolId INTEGER UNSIGNED REFERENCES Pool DEFAULT 0,
-   Comment TEXT,
-   VolABytes BIGINT UNSIGNED DEFAULT 0,
-   VolAPadding BIGINT UNSIGNED DEFAULT 0,
-   VolHoleBytes BIGINT UNSIGNED DEFAULT 0,
-   VolHoles INTEGER UNSIGNED DEFAULT 0,
-   PRIMARY KEY(MediaId)
-   );
-INSERT INTO new_Media (MediaId, VolumeName, Slot, PoolId, MediaType, MediaTypeId, LabelType, FirstWritten, LastWritten, LabelDate, VolJobs, VolFiles, VolBlocks, VolMounts, VolBytes, VolParts, VolErrors, VolWrites, VolCapacityBytes, VolStatus, Enabled, Recycle, ActionOnPurge, VolRetention, VolUseDuration, MaxVolJobs, MaxVolFiles, MaxVolBytes, InChanger, StorageId, DeviceId, MediaAddressing, VolReadTime, VolWriteTime, EndFile, EndBlock, LocationId, RecycleCount, InitialWrite, ScratchPoolId, RecyclePoolId, Comment) SELECT MediaId, VolumeName, Slot, PoolId, MediaType, MediaTypeId, LabelType, FirstWritten, LastWritten, LabelDate, VolJobs, VolFiles, VolBlocks, VolMounts, VolBytes, VolParts, VolErrors, VolWrites, VolCapacityBytes, VolStatus, Enabled, Recycle, ActionOnPurge, VolRetention, VolUseDuration, MaxVolJobs, MaxVolFiles, MaxVolBytes, InChanger, StorageId, DeviceId, MediaAddressing, VolReadTime, VolWriteTime, EndFile, EndBlock, LocationId, RecycleCount, InitialWrite, ScratchPoolId, RecyclePoolId, Comment FROM Media;
-DROP TABLE Media;
-ALTER TABLE new_Media RENAME TO Media;
-CREATE INDEX inx8 ON Media (PoolId);
-
-CREATE TABLE Snapshot (
-  SnapshotId	  INTEGER UNSIGNED AUTO_INCREMENT,
-  Name		  TINYBLOB NOT NULL,
-  JobId 	  INTEGER UNSIGNED DEFAULT 0,
-  FileSetId INTEGER UNSIGNED DEFAULT 0,
-  CreateTDate	  BIGINT   NOT NULL,
-  CreateDate	  DATETIME NOT NULL,
-  ClientId	  INTEGER DEFAULT 0,
-  Volume	  TINYBLOB NOT NULL,
-  Device	  TINYBLOB NOT NULL,
-  Type		  TINYBLOB NOT NULL,
-  Retention	  INTEGER DEFAULT 0,
-  Comment	  BLOB,
-  primary key (SnapshotId)
-);
-
-CREATE UNIQUE INDEX snapshot_idx ON Snapshot (Device, Volume, Name);
-
-CREATE INDEX jobtdate_idx on JobHisto (JobTDate);
-
-UPDATE Version SET VersionId=15;
-COMMIT;
-
+UPDATE Version SET VersionId=1014;
 END-OF-DATA
-
-DBVERSION=15
-
+DBVERSION=1014
 fi
 
-if [ "$DBVERSION" -eq 15 ] ; then
+if [ "$DBVERSION" = 1014 ] ; then
     sqlite3 $* ${db_name}.db  <<END-OF-DATA
-    
-BEGIN;
+ALTER TABLE Media ADD COLUMN VolABytes BIGINT UNSIGNED DEFAULT 0;
+ALTER TABLE Media ADD COLUMN VolAPadding BIGINT UNSIGNED DEFAULT 0;
+ALTER TABLE Media ADD COLUMN VolHoleBytes BIGINT UNSIGNED DEFAULT 0;
+ALTER TABLE Media ADD COLUMN VolHoles INTEGER UNSIGNED DEFAULT 0;
+UPDATE Version SET VersionId=1015;
+END-OF-DATA
+DBVERSION=1015
+fi
+
+if [ "$DBVERSION" = 1015 ] ; then
+    sqlite3 $* ${db_name}.db  <<END-OF-DATA
+
+begin;
+CREATE TABLE file_temp (
+   FileId INTEGER,
+   FileIndex INTEGER UNSIGNED NOT NULL,
+   JobId INTEGER UNSIGNED REFERENCES Job NOT NULL,
+   PathId INTEGER UNSIGNED REFERENCES Path NOT NULL,
+   Filename TEXT NOT NULL DEFAULT '',
+   DeltaSeq SMALLINT UNSIGNED DEFAULT 0,
+   MarkId INTEGER UNSIGNED DEFAULT 0,
+   LStat VARCHAR(255) NOT NULL,
+   MD5 VARCHAR(255) NOT NULL,
+   PRIMARY KEY(FileId) 
+   );
+
+INSERT INTO file_temp (FileId, FileIndex, JobId, PathId, Filename, DeltaSeq,
+		       MarkId, LStat, Md5, llll)
+   SELECT FileId, FileIndex, JobId, PathId, Filename.Name, DeltaSeq, 
+	  MarkId, LStat, Md5
+    FROM File JOIN Filename USING (FilenameId);
+
+DROP TABLE File;
+DROP TABLE Filename;
+
+ALTER TABLE file_temp RENAME TO File;
+
+CREATE INDEX inx3 ON File (JobId);
+CREATE INDEX file_jpf_idx ON File (JobId, PathId, Filename);
+
+ALTER TABLE Job ADD COLUMN FileTable text default 'File';
+ALTER TABLE JobHisto ADD COLUMN FileTable text default 'File';
+UPDATE Version SET VersionId = 1016;
+commit;
+END-OF-DATA
+DBVERSION=1016
+fi
+
+if [ "$DBVERSION" = 1016 ] ; then
+    sqlite3 $* ${db_name}.db  <<END-OF-DATA
+ALTER TABLE Snapshot ADD COLUMN JobId integer default 0;
+ALTER TABLE Snapshot ADD COLUMN FileSetId integer default 0;
+UPDATE Version SET VersionId=1017;
+END-OF-DATA
+DBVERSION=1017
+fi
+
+if [ "$DBVERSION" = 1017 ] ; then
+    sqlite3 $* ${db_name}.db  <<END-OF-DATA
+CREATE TABLE FileMedia
+(
+    JobId	      integer	  not null,
+    FileIndex	      integer	  not null,
+    MediaId	      integer	  not null,
+    BlockAddress      bigint	  default 0,
+    RecordNo	      integer	  default 0,
+    FileOffset	      bigint	  default 0
+);
+CREATE INDEX file_media_idx on FileMedia (JobId, FileIndex);
+UPDATE Version SET VersionId=1018;
+END-OF-DATA
+DBVERSION=1018
+fi
+
+if [ "$DBVERSION" -eq 1018 ] ; then
+    if sqlite3 -f - -d ${db_name} $* <<END-OF-DATA
+begin;
 CREATE TABLE basefiles_temp (
    BaseId BIGINT,
    BaseJobId INTEGER UNSIGNED REFERENCES Job NOT NULL,
@@ -181,90 +176,89 @@ INSERT INTO basefiles_temp (BaseId, BaseJobId, JobId,
    SELECT BaseId, BaseJobId, JobId, FileId, FileIndex
     FROM BaseFiles;
 
-CREATE TABLE new_Media (
-   MediaId INTEGER,
-   VolumeName VARCHAR(128) NOT NULL,
-   Slot INTEGER DEFAULT 0,
-   PoolId INTEGER UNSIGNED REFERENCES Pool DEFAULT 0,
-   MediaType VARCHAR(128) NOT NULL,
-   MediaTypeId INTEGER UNSIGNED REFERENCES MediaType DEFAULT 0,
-   LabelType TINYINT DEFAULT 0,
-   FirstWritten DATETIME DEFAULT 0,
-   LastWritten DATETIME DEFAULT 0,
-   LabelDate DATETIME DEFAULT 0,
-   VolJobs INTEGER UNSIGNED DEFAULT 0,
-   VolFiles INTEGER UNSIGNED DEFAULT 0,
-   VolBlocks INTEGER UNSIGNED DEFAULT 0,
-   LastPartBytes BIGINT UNSIGNED DEFAULT 0,
-   VolMounts INTEGER UNSIGNED DEFAULT 0,
-   VolBytes BIGINT UNSIGNED DEFAULT 0,
-   VolABytes BIGINT UNSIGNED DEFAULT 0,
-   VolAPadding BIGINT UNSIGNED DEFAULT 0,
-   VolHoleBytes BIGINT UNSIGNED DEFAULT 0,
-   VolHoles INTEGER UNSIGNED DEFAULT 0,
-   VolType INTEGER UNSIGNED DEFAULT 0,
-   VolParts INTEGER UNSIGNED DEFAULT 0,
-   VolCloudParts INTEGER UNSIGNED DEFAULT 0,
-   VolErrors INTEGER UNSIGNED DEFAULT 0,
-   VolWrites BIGINT UNSIGNED DEFAULT 0,
-   VolCapacityBytes BIGINT UNSIGNED DEFAULT 0,
-   VolStatus VARCHAR(20) NOT NULL,
-   Enabled TINYINT DEFAULT 1,
-   Recycle TINYINT DEFAULT 0,
-   ActionOnPurge     TINYINT	DEFAULT 0,
-   CacheRetention BIGINT UNSIGNED DEFAULT 0,
-   VolRetention BIGINT UNSIGNED DEFAULT 0,
-   VolUseDuration BIGINT UNSIGNED DEFAULT 0,
-   MaxVolJobs INTEGER UNSIGNED DEFAULT 0,
-   MaxVolFiles INTEGER UNSIGNED DEFAULT 0,
-   MaxVolBytes BIGINT UNSIGNED DEFAULT 0,
-   InChanger TINYINT DEFAULT 0,
-   StorageId INTEGER UNSIGNED REFERENCES Storage DEFAULT 0,
-   DeviceId INTEGER UNSIGNED REFERENCES Device DEFAULT 0,
-   MediaAddressing TINYINT DEFAULT 0,
-   VolReadTime BIGINT UNSIGNED DEFAULT 0,
-   VolWriteTime BIGINT UNSIGNED DEFAULT 0,
-   EndFile INTEGER UNSIGNED DEFAULT 0,
-   EndBlock INTEGER UNSIGNED DEFAULT 0,
-   LocationId INTEGER UNSIGNED REFERENCES Location DEFAULT 0,
-   RecycleCount INTEGER UNSIGNED DEFAULT 0,
-   InitialWrite DATETIME DEFAULT 0,
-   ScratchPoolId INTEGER UNSIGNED REFERENCES Pool DEFAULT 0,
-   RecyclePoolId INTEGER UNSIGNED REFERENCES Pool DEFAULT 0,
-   Comment TEXT,
-   PRIMARY KEY(MediaId)
-   );
-
-INSERT INTO new_Media (MediaId, VolumeName, Slot, PoolId, MediaType, MediaTypeId, LabelType, FirstWritten, LastWritten, LabelDate, VolJobs, VolFiles, VolBlocks, VolMounts, VolBytes, VolType, VolErrors, VolWrites, VolCapacityBytes, VolStatus, Enabled, Recycle, ActionOnPurge, VolRetention, VolUseDuration, MaxVolJobs, MaxVolFiles, MaxVolBytes, InChanger, StorageId, DeviceId, MediaAddressing, VolReadTime, VolWriteTime, EndFile, EndBlock, LocationId, RecycleCount, InitialWrite, ScratchPoolId, RecyclePoolId, Comment) SELECT MediaId, VolumeName, Slot, PoolId, MediaType, MediaTypeId, LabelType, FirstWritten, LastWritten, LabelDate, VolJobs, VolFiles, VolBlocks, VolMounts, VolBytes, VolParts, VolErrors, VolWrites, VolCapacityBytes, VolStatus, Enabled, Recycle, ActionOnPurge, VolRetention, VolUseDuration, MaxVolJobs, MaxVolFiles, MaxVolBytes, InChanger, StorageId, DeviceId, MediaAddressing, VolReadTime, VolWriteTime, EndFile, EndBlock, LocationId, RecycleCount, InitialWrite, ScratchPoolId, RecyclePoolId, Comment FROM Media;
-DROP TABLE Media;
-ALTER TABLE new_Media RENAME TO Media;
-CREATE INDEX inx8 ON Media (PoolId);
-
-CREATE UNIQUE INDEX Media_Volumename_Id ON Media (VolumeName);
-
-
 DROP TABLE BaseFiles;
 ALTER TABLE basefiles_temp RENAME TO BaseFiles;
 
-CREATE INDEX job_jobtdate_inx ON job (JobTDate);
-ALTER TABLE Pool	  ADD COLUMN CacheRetention BIGINT DEFAULT 0;
+ALTER TABLE Media RENAME COLUMN VolParts TO VolType;
+ALTER TABLE Media ADD COLUMN VolParts INTEGER DEFAULT 0;
+ALTER TABLE Media ADD COLUMN LastPartBytes BIGINT DEFAULT 0;
+ALTER TABLE Media ADD COLUMN CacheRetention BIGINT DEFAULT 0;
+ALTER TABLE Pool ADD COLUMN CacheRetention BIGINT DEFAULT 0;
+
+UPDATE Version SET VersionId=1019;
+commit;
+END-OF-DATA
+    then
+	echo "Update of Bacula SQLite3 tables 1018 to 1019 succeeded."
+	getVersion
+    else
+	echo "Update of Bacula SQLite3 tables 1018 to 1019 failed."
+	exit 1
+    fi
+fi
+
+if [ "$DBVERSION" -eq 1019 ] ; then
+    if sqlite3 -f - -d ${db_name} $* <<END-OF-DATA
+begin;
+ALTER TABLE Pool ADD COLUMN MaxPoolBytes BIGINT DEFAULT 0;
+ALTER TABLE Job ADD COLUMN PriorJob VARCHAR(128) DEFAULT '';
+ALTER TABLE JobHisto ADD COLUMN PriorJob VARCHAR(128) DEFAULT '';
+UPDATE Version SET VersionId=1020;
+commit;
+END-OF-DATA
+    then
+	echo "Update of Bacula SQLite3 tables 1019 to 1020 succeeded."
+	getVersion
+    else
+	echo "Update of Bacula SQLite3 tables 1019 to 1020 failed."
+	exit 1
+    fi
+fi
+
+if [ "$DBVERSION" -eq 1020 ] ; then
+    if sqlite3 -f - -d ${db_name} $* <<END-OF-DATA
+begin;
 ALTER TABLE File	  MODIFY FileIndex INTEGER DEFAULT 0;
 ALTER TABLE RestoreObject MODIFY FileIndex INTEGER DEFAULT 0;
 ALTER TABLE BaseFiles	  MODIFY FileIndex INTEGER DEFAULT 0;
-
-
-UPDATE Version SET VersionId=16;
-COMMIT;
-
+UPDATE Version SET VersionId=1021;
+commit;
 END-OF-DATA
-
-DBVERSION=16
-
+    then
+	echo "Update of Bacula SQLite3 tables 1020 to 1021 succeeded."
+	getVersion
+    else
+	echo "Update of Bacula SQLite3 tables 1020 to 1021 failed."
+	exit 1
+    fi
 fi
 
-echo ""
+if [ "$DBVERSION" -eq 1021 ] ; then
+    if sqlite3 -f - -d ${db_name} $* <<END-OF-DATA
+begin;
+CREATE TABLE Events
+(
+    EventsId          INTEGER,
+    EventsCode        text        not null,
+    EventsType	      text	  not null,
+    EventsTime	      DATETIME,
+    EventsInsertTime  DATETIME DEFAULT current_timestamp,
+    EventsDaemon        text        default '',
+    EventsSource      text        default '',
+    EventsRef         text        default '',
+    EventsText	      text	  not null,
+    primary key (EventsId)
+);
+create index events_time_idx on Events (EventsTime);
 
-echo "WARNING: !!!! SQLite3 is no longer supported. !!!!"
-echo "WARNING: !!!! Please switch to MySQL or PostgreSQL !!!!"
-echo "WARNING: !!!!  as soon as possible. !!!!"
-echo ""
+UPDATE Version SET VersionId=1022;
+commit;
+END-OF-DATA
+    then
+	echo "Update of Bacula SQLite3 tables 1020 to 1021 succeeded."
+	getVersion
+    else
+	echo "Update of Bacula SQLite3 tables 1020 to 1021 failed."
+	exit 1
+    fi
+fi
