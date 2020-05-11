@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 #
-# Author: Eric Bollengier, Copyright, 2006-2017
+# Author: Eric Bollengier, Copyright, 2006-2018
 # License: BSD 2-Clause; see file LICENSE-FOSS
 
 use strict;
@@ -12,19 +12,19 @@ use strict;
 
 =head1 USAGE
 
-    make_catalog_backup.pl [-m] MyCatalog
+    make_catalog_backup.pl [-m|--maintenance-only] MyCatalog
 
 =head1 LICENSE
    Author: Eric Bollengier, 2010
    License: BSD 2-Clause; see file LICENSE-FOSS
 =cut
 
-my $cat = shift or die "Usage: $0 [-m] catalogname";
+my $cat = shift or die "Usage: $0 [-m|--maintenance-only] catalogname";
 my $mode = "dump";
 
-if ($cat eq '-m') {
+if ($cat eq '-m' || $cat eq '--maintenance-only') {
     $mode = "analyse";
-    $cat = shift or die "Usage: $0 [-m] catalogname";
+    $cat = shift or die "Usage: $0 [-m|--maintenance-only] catalogname";
 }
 
 my $dir_conf='@sbindir@/dbcheck -B -c @sysconfdir@/bacula-dir.conf';
@@ -47,19 +47,19 @@ sub setup_env_pgsql
     umask(0077);
 
     if ($args{db_address}) {
-        $ENV{PGHOST}=$args{db_address};
+	$ENV{PGHOST}=$args{db_address};
     }
     if ($args{db_socket}) {
-        $ENV{PGHOST}=$args{db_socket};
+	$ENV{PGHOST}=$args{db_socket};
     }
     if ($args{db_port}) {
-        $ENV{PGPORT}=$args{db_port};
+	$ENV{PGPORT}=$args{db_port};
     }
     if ($args{db_user}) {
-        $ENV{PGUSER}=$args{db_user};
+	$ENV{PGUSER}=$args{db_user};
     }
     if ($args{db_password}) {
-        $ENV{PGPASSWORD}=$args{db_password};
+	$ENV{PGPASSWORD}=$args{db_password};
     }
     $ENV{PGDATABASE}=$args{db_name};
     system("echo '\\q' | HOME='$wd' psql") == 0 or die "$username doesn't have access to the catalog database\n";
@@ -71,7 +71,7 @@ sub dump_pgsql
     setup_env_pgsql(%args);
     exec("HOME='$wd' pg_dump -c > '$wd/$args{db_name}.sql'");
     print "Error while executing postgres dump $!\n";
-    return 1;               # in case of error
+    return 1;		    # in case of error
 }
 
 sub analyse_pgsql
@@ -82,7 +82,7 @@ sub analyse_pgsql
     my $exitcode = $? >> 8;
     print grep { !/^WARNING:\s+skipping\s\"(pg_|sql_)/ } @output;
     if ($exitcode != 0) {
-        print "Error while executing postgres analyse. Exitcode=$exitcode\n";
+	print "Error while executing postgres analyse. Exitcode=$exitcode\n";
     }
     return $exitcode;
 }
@@ -93,12 +93,12 @@ sub setup_env_mysql
     umask(0077);
     unlink("$wd/.my.cnf");
     open(MY, ">$wd/.my.cnf") 
-        or die "Can't open $wd/.my.cnf for writing $@";
+	or die "Can't open $wd/.my.cnf for writing $@";
 
     $args{db_address} = $args{db_address} || "localhost";
     my $addr = "host=$args{db_address}";
-    if ($args{db_socket}) {     # unix socket is fastest than net socket
-        $addr = "socket=\"$args{db_socket}\"";
+    if ($args{db_socket}) {	# unix socket is fastest than net socket
+	$addr = "socket=\"$args{db_socket}\"";
     }
     my $mode = $args{mode} || 'client';
     print MY "[$mode]
@@ -138,26 +138,26 @@ sub handle_catalog
 {
     my ($mode, %args) = @_;
     if ($args{db_type} eq 'SQLite3') {
-        $ENV{PATH}="@SQLITE_BINDIR@:$ENV{PATH}";
-        if ($mode eq 'dump') {
-            dump_sqlite3(%args);
-        }
+	$ENV{PATH}="@SQLITE_BINDIR@:$ENV{PATH}";
+	if ($mode eq 'dump') {
+	    dump_sqlite3(%args);
+	}
     } elsif ($args{db_type} eq 'PostgreSQL') {
-        $ENV{PATH}="@POSTGRESQL_BINDIR@:$ENV{PATH}";
-        if ($mode eq 'dump') {
-            dump_pgsql(%args);
-        } else {
-            analyse_pgsql(%args);
-        }
+	$ENV{PATH}="@POSTGRESQL_BINDIR@:$ENV{PATH}";
+	if ($mode eq 'dump') {
+	    dump_pgsql(%args);
+	} else {
+	    analyse_pgsql(%args);
+	}
     } elsif ($args{db_type} eq 'MySQL') {
-        $ENV{PATH}="@MYSQL_BINDIR@:$ENV{PATH}";
-        if ($mode eq 'dump') {
-            dump_mysql(%args);
-        } else {
-            analyse_mysql(%args);
-        }
+	$ENV{PATH}="@MYSQL_BINDIR@:$ENV{PATH}";
+	if ($mode eq 'dump') {
+	    dump_mysql(%args);
+	} else {
+	    analyse_mysql(%args);
+	}
     } else {
-        die "This database type isn't supported";
+	die "This database type isn't supported";
     }
 }
 
@@ -176,14 +176,14 @@ my %cfg;
 while(my $l = <FP>)
 {
     if ($l =~ /catalog=(.+)/) {
-        if (exists $cfg{catalog} and $cfg{catalog} eq $cat) {
-            exit handle_catalog($mode, %cfg);
-        }
-        %cfg = ();              # reset
+	if (exists $cfg{catalog} and $cfg{catalog} eq $cat) {
+	    exit handle_catalog($mode, %cfg);
+	}
+	%cfg = ();		# reset
     }
 
     if ($l =~ /(\w+)=(.+)/) {
-        $cfg{$1}=$2;
+	$cfg{$1}=$2;
     }
 }
 
