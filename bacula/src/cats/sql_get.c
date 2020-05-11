@@ -23,6 +23,7 @@
  *        should be in find.c
  *
  *    Written by Kern Sibbald, March 2000
+ *
  */
 
 #include  "bacula.h"
@@ -52,12 +53,14 @@ bool BDB::bdb_get_file_attributes_record(JCR *jcr, char *afname, JOB_DBR *jr, FI
    Dmsg1(500, "db_get_file_att_record fname=%s \n", afname);
 
    bdb_lock();
-
    split_path_and_file(jcr, this, afname);
 
-   fdbr->FilenameId = bdb_get_filename_record(jcr);
-
    fdbr->PathId = bdb_get_path_record(jcr);
+
+   esc_name = check_pool_memory_size(esc_name, 2*fnl+2);
+   bdb_escape_string(jcr, esc_name, fname, fnl);
+   fdbr->Filename = esc_name;
+
 
    ok = bdb_get_file_record(jcr, jr, fdbr);
 
@@ -67,7 +70,7 @@ bool BDB::bdb_get_file_attributes_record(JCR *jcr, char *afname, JOB_DBR *jr, FI
 }
 
 
-/*
+/**
  * Get a File record
  *
  *  DO NOT use Jmsg in this routine.
@@ -101,35 +104,44 @@ bool BDB::bdb_get_file_record(JCR *jcr, JOB_DBR *jr, FILE_DBR *fdbr)
    switch (jcr->getJobLevel()) {
    case L_VERIFY_VOLUME_TO_CATALOG:
       Mmsg(cmd,
-"SELECT FileId, LStat, MD5 FROM File WHERE File.JobId=%s AND File.PathId=%s AND "
-"File.FilenameId=%s AND File.FileIndex=%d",
+"SELECT FileId, LStat, MD5, FileIndex FROM File WHERE File.JobId=%s AND File.PathId=%s AND "
+"File.Filename='%s' AND File.FileIndex=%d",
       edit_int64(fdbr->JobId, ed1),
       edit_int64(fdbr->PathId, ed2),
-      edit_int64(fdbr->FilenameId,ed3),
+      fdbr->Filename,
       jr->FileIndex);
       break;
    case L_VERIFY_DISK_TO_CATALOG:
       Mmsg(cmd,
-"SELECT FileId, LStat, MD5 FROM File,Job WHERE "
+"SELECT FileId, LStat, MD5, FileIndex FROM File,Job WHERE "
 "File.JobId=Job.JobId AND File.PathId=%s AND "
-"File.FilenameId=%s AND Job.Type='B' AND Job.JobStatus IN ('T','W') AND "
+"File.Filename='%s' AND Job.Type='B' AND Job.JobStatus IN ('T','W') AND "
 "ClientId=%s ORDER BY StartTime DESC LIMIT 1",
-      edit_int64(fdbr->PathId, ed1), 
-      edit_int64(fdbr->FilenameId, ed2), 
+      edit_int64(fdbr->PathId, ed1),
+      fdbr->Filename,
       edit_int64(jr->ClientId,ed3));
       break;
    default:
-      Mmsg(cmd,
-"SELECT FileId, LStat, MD5 FROM File WHERE File.JobId=%s AND File.PathId=%s AND "
-"File.FilenameId=%s",
-      edit_int64(fdbr->JobId, ed1),
-      edit_int64(fdbr->PathId, ed2),
-      edit_int64(fdbr->FilenameId,ed3));
+      if (fdbr->PathId && fdbr->Filename) {
+         Mmsg(cmd,
+              "SELECT FileId, LStat, MD5, FileIndex FROM File WHERE File.JobId=%s AND File.PathId=%s AND "
+              "File.Filename='%s'",
+              edit_int64(fdbr->JobId, ed1),
+              edit_int64(fdbr->PathId, ed2),
+              fdbr->Filename);
+      } else if (fdbr->FileId) {
+         Mmsg(cmd,
+              "SELECT FileId, LStat, MD5, FileIndex FROM File WHERE File.JobId=%s AND File.FileId=%s",
+              edit_int64(fdbr->JobId, ed1),
+              edit_int64(fdbr->FileId, ed2));
+      } else {
+         Dmsg0(100, "Wrong arguments\n");
+         return ok;             /* Arguments missing */
+      }
       break;
    }
-
-   Dmsg3(450, "Get_file_record JobId=%u FilenameId=%u PathId=%u\n",
-      fdbr->JobId, fdbr->FilenameId, fdbr->PathId);
+   Dmsg3(450, "Get_file_record JobId=%u Filename=%s PathId=%u\n",
+      fdbr->JobId, fdbr->Filename, fdbr->PathId);
 
    Dmsg1(100, "Query=%s\n", cmd);
 
@@ -142,69 +154,28 @@ bool BDB::bdb_get_file_record(JCR *jcr, JOB_DBR *jr, FILE_DBR *fdbr)
             fdbr->FileId = (FileId_t)str_to_int64(row[0]);
             bstrncpy(fdbr->LStat, row[1], sizeof(fdbr->LStat));
             bstrncpy(fdbr->Digest, row[2], sizeof(fdbr->Digest));
+            fdbr->FileIndex = (DBId_t)str_to_int64(row[3]);
             ok = true;
             if (sql_num_rows() > 1) {
-               Mmsg3(errmsg, _("get_file_record want 1 got rows=%d PathId=%s FilenameId=%s\n"),
-                  sql_num_rows(), 
-                  edit_int64(fdbr->PathId, ed1), 
-                  edit_int64(fdbr->FilenameId, ed2));
+               Mmsg3(errmsg, _("get_file_record want 1 got rows=%d PathId=%s Filename=%s\n"),
+                  sql_num_rows(),
+                  edit_int64(fdbr->PathId, ed1),
+                  fdbr->Filename);
                Dmsg1(000, "=== Problem!  %s", errmsg);
             }
          }
       } else {
-         Mmsg2(errmsg, _("File record for PathId=%s FilenameId=%s not found.\n"),
-            edit_int64(fdbr->PathId, ed1), 
-            edit_int64(fdbr->FilenameId, ed2));
+         Mmsg3(errmsg, _("File record for PathId=%s FileId=%s Filename=%s not found.\n"),
+               edit_int64(fdbr->PathId, ed1),
+               edit_int64(fdbr->FileId, ed2),
+               NPRTB(fdbr->Filename));
       }
       sql_free_result();
    } else {
       Mmsg(errmsg, _("File record not found in Catalog.\n"));
    }
    return ok;
-}
 
-/*
- * Get Filename record
- * Returns: 0 on failure
- *          FilenameId on success
- *
- *   DO NOT use Jmsg in this routine (see notes for get_file_record)
- */
-int BDB::bdb_get_filename_record(JCR *jcr)
-{
-   SQL_ROW row;
-   int FilenameId = 0;
-
-   esc_name = check_pool_memory_size(esc_name, 2*fnl+2);
-   bdb_escape_string(jcr, esc_name, fname, fnl);
-
-   Mmsg(cmd, "SELECT FilenameId FROM Filename WHERE Name='%s'", esc_name);
-   if (QueryDB(jcr, cmd)) {
-      char ed1[30];
-      if (sql_num_rows() > 1) { 
-         Mmsg2(errmsg, _("More than one Filename!: %s for file: %s\n"),
-            edit_uint64(sql_num_rows(), ed1), fname);
-         Jmsg(jcr, M_WARNING, 0, "%s", errmsg);
-      }
-      if (sql_num_rows() >= 1) { 
-         if ((row = sql_fetch_row()) == NULL) {
-            Mmsg1(errmsg, _("error fetching row: %s\n"), sql_strerror());
-         } else {
-            FilenameId = str_to_int64(row[0]);
-            if (FilenameId <= 0) {
-               Mmsg2(errmsg, _("Get DB Filename record %s found bad record: %d\n"),
-                  cmd, FilenameId);
-               FilenameId = 0;
-            }
-         }
-      } else {
-         Mmsg1(errmsg, _("Filename record: %s not found.\n"), fname);
-      }
-      sql_free_result();
-   } else {
-      Mmsg(errmsg, _("Filename record: %s not found in Catalog.\n"), fname);
-   }
-   return FilenameId;
 }
 
 /**
@@ -283,13 +254,13 @@ bool BDB::bdb_get_job_record(JCR *jcr, JOB_DBR *jr)
       Mmsg(cmd, "SELECT VolSessionId,VolSessionTime,"
 "PoolId,StartTime,EndTime,JobFiles,JobBytes,JobTDate,Job,JobStatus,"
 "Type,Level,ClientId,Name,PriorJobId,RealEndTime,JobId,FileSetId,"
-"SchedTime,RealEndTime,ReadBytes,HasBase,PurgedFiles "
+"SchedTime,RealEndTime,ReadBytes,HasBase,PurgedFiles,PriorJob,Comment,Reviewed "
 "FROM Job WHERE Job='%s'", esc);
     } else {
       Mmsg(cmd, "SELECT VolSessionId,VolSessionTime,"
 "PoolId,StartTime,EndTime,JobFiles,JobBytes,JobTDate,Job,JobStatus,"
 "Type,Level,ClientId,Name,PriorJobId,RealEndTime,JobId,FileSetId,"
-"SchedTime,RealEndTime,ReadBytes,HasBase,PurgedFiles "
+"SchedTime,RealEndTime,ReadBytes,HasBase,PurgedFiles,PriorJob,Comment,Reviewed "
 "FROM Job WHERE JobId=%s",
           edit_int64(jr->JobId, ed1));
     }
@@ -334,6 +305,9 @@ bool BDB::bdb_get_job_record(JCR *jcr, JOB_DBR *jr)
    jr->RealEndTime = str_to_utime(jr->cRealEndTime);
    jr->HasBase = str_to_int64(row[21]);
    jr->PurgedFiles = str_to_int64(row[22]);
+   bstrncpy(jr->PriorJob, NPRTB(row[23]), sizeof(jr->PriorJob));
+   bstrncpy(jr->Comment, NPRTB(row[24]), sizeof(jr->Comment));
+   jr->Reviewed = str_to_int64(row[25]);
    sql_free_result();
 
    bdb_unlock();
@@ -645,7 +619,7 @@ bool BDB::bdb_get_pool_record(JCR *jcr, POOL_DBR *pdbr)
 "SELECT PoolId,Name,NumVols,MaxVols,UseOnce,UseCatalog,AcceptAnyVolume,"
 "AutoPrune,Recycle,VolRetention,VolUseDuration,MaxVolJobs,MaxVolFiles,"
 "MaxVolBytes,PoolType,LabelType,LabelFormat,RecyclePoolId,ScratchPoolId,"
-"ActionOnPurge,CacheRetention FROM Pool WHERE Pool.PoolId=%s",
+"ActionOnPurge,CacheRetention,MaxPoolBytes FROM Pool WHERE Pool.PoolId=%s",
          edit_int64(pdbr->PoolId, ed1));
    } else {                           /* find by name */
       bdb_escape_string(jcr, esc, pdbr->Name, strlen(pdbr->Name));
@@ -653,7 +627,7 @@ bool BDB::bdb_get_pool_record(JCR *jcr, POOL_DBR *pdbr)
 "SELECT PoolId,Name,NumVols,MaxVols,UseOnce,UseCatalog,AcceptAnyVolume,"
 "AutoPrune,Recycle,VolRetention,VolUseDuration,MaxVolJobs,MaxVolFiles,"
 "MaxVolBytes,PoolType,LabelType,LabelFormat,RecyclePoolId,ScratchPoolId,"
-"ActionOnPurge,CacheRetention FROM Pool WHERE Pool.Name='%s'", esc);
+"ActionOnPurge,CacheRetention,MaxPoolBytes FROM Pool WHERE Pool.Name='%s'", esc);
    }
    if (QueryDB(jcr, cmd)) {
       if (sql_num_rows() > 1) {
@@ -687,6 +661,7 @@ bool BDB::bdb_get_pool_record(JCR *jcr, POOL_DBR *pdbr)
             pdbr->ScratchPoolId = str_to_int64(row[18]);
             pdbr->ActionOnPurge = str_to_int32(row[19]);
             pdbr->CacheRetention = str_to_int64(row[20]);
+            pdbr->MaxPoolBytes  = str_to_int64(row[21]);
             ok = true;
          }
       }
@@ -695,6 +670,8 @@ bool BDB::bdb_get_pool_record(JCR *jcr, POOL_DBR *pdbr)
    bdb_unlock();
    return ok;
 }
+
+#ifdef COMMUNITY
 /**
  * Get Pool numvols
  * If the PoolId is non-zero, we get its record,
@@ -707,17 +684,32 @@ bool BDB::bdb_get_pool_numvols(JCR *jcr, POOL_DBR *pdbr)
 {
    bool ok;
    char ed1[50];
+   SQL_ROW row;
 
    ok = db_get_pool_record(jcr, this, pdbr);
 
    bdb_lock();
    if (ok) {
-      uint32_t NumVols;
+      uint32_t NumVols=0;
+      /* It is not necessary to compute the PoolBytes that can be expensive */
       Mmsg(cmd, "SELECT count(*) from Media WHERE PoolId=%s",
-         edit_int64(pdbr->PoolId, ed1));
-      NumVols = get_sql_record_max(jcr, this);
+           edit_int64(pdbr->PoolId, ed1));
+
+      if (QueryDB(jcr, cmd)) {
+         if ((row = sql_fetch_row()) == NULL) {
+            Mmsg1(&errmsg, _("error fetching row: %s\n"), sql_strerror());
+            ok = false;
+         } else {
+            NumVols = str_to_int64(row[0]);
+         }
+         sql_free_result();
+      } else {
+         Mmsg1(&errmsg, _("error fetching row: %s\n"), sql_strerror());
+         ok = false;
+      }
+
       Dmsg2(400, "Actual NumVols=%d Pool NumVols=%d\n", NumVols, pdbr->NumVols);
-      if (NumVols != pdbr->NumVols) {
+      if (ok && NumVols != pdbr->NumVols) {
          pdbr->NumVols = NumVols;
          db_update_pool_record(jcr, this, pdbr);
       }
@@ -727,6 +719,7 @@ bool BDB::bdb_get_pool_numvols(JCR *jcr, POOL_DBR *pdbr)
    bdb_unlock();
    return ok;
 }
+#endif
 
 /*
  * Free restoreobject record (some fields are allocated through malloc)
@@ -1018,6 +1011,71 @@ int BDB::bdb_get_num_media_records(JCR *jcr)
 }
 
 /**
+ * Get the number of Restore Object for a given jobid list
+ */
+int BDB::bdb_get_num_restoreobject_records(JCR *jcr, ROBJECT_DBR *rr)
+{
+   int ret = 0;
+   char ed1[50];
+   POOL_MEM filter, tmp;
+   SQL_ROW row;
+
+   /* Using the JobId permits to check the Job name against ACLs and
+    * make sure that the current user is authorized to see the Restore object
+    */
+   if (rr->JobId) {
+      Mmsg(filter, " JobId=%s", edit_int64(rr->JobId, ed1));
+
+   } else if (rr->JobIds && is_a_number_list(rr->JobIds)) {
+      Mmsg(filter, " JobId IN (%s) ", rr->JobIds);
+
+   } else {
+      return 0;
+   }
+
+   if (rr->FileType) {
+      Mmsg(tmp, " AND ObjectType=%s ", edit_uint64(rr->FileType, ed1));
+      pm_strcat(filter, tmp.c_str());
+   }
+
+   if (rr->object_name) {
+      Mmsg(tmp, " AND ObjectName='%s' ", rr->object_name);
+      pm_strcat(filter, tmp.c_str());
+   }
+
+   if (rr->plugin_name) {
+      Mmsg(tmp, " AND PluginName='%s' ", rr->plugin_name);
+      pm_strcat(filter, tmp.c_str());
+   }
+
+   bdb_lock();
+   Mmsg(cmd, "SELECT COUNT(1) FROM RestoreObject WHERE %s", filter.c_str());
+
+   if (rr->limit) {
+      Mmsg(tmp, " LIMIT %d", rr->limit);
+      pm_strcat(cmd, tmp.c_str());
+   }
+
+   if (QueryDB(jcr, cmd)) {
+      if (sql_num_rows() > 1) {
+         char ed1[30];
+         Mmsg1(errmsg, _("Error got %s RestoreObjects count but expected only one!\n"),
+            edit_uint64(sql_num_rows(), ed1));
+         goto bail_out;
+      }
+      if ((row = sql_fetch_row()) == NULL) {
+         Mmsg0(errmsg, _("No RestoreObject record found.\n"));
+      } else {
+         ret = str_to_int64(row[0]);
+      }
+   }
+
+bail_out:
+   bdb_unlock();
+   return ret;
+}
+
+/**
  * This function returns a list of all the Media record ids for
  *     the current Pool, the correct Media Type, Recyle, Enabled, StorageId, VolBytes
  *     VolumeName if specified
@@ -1039,8 +1097,13 @@ bool BDB::bdb_get_media_ids(JCR *jcr, MEDIA_DBR *mr, int *num_ids, uint32_t *ids
    bdb_lock();
    *ids = NULL;
 
-   Mmsg(cmd, "SELECT DISTINCT MediaId FROM Media WHERE Enabled=%d ",
-        mr->Enabled);
+   if (mr->Enabled >= 0) {      /* Enabled is valid */
+      Mmsg(cmd, "SELECT DISTINCT MediaId FROM Media WHERE Enabled=%d ",
+           mr->Enabled);
+
+   } else {                     /* We look for all Enabled (0, 1, 2) */
+      Mmsg(cmd, "SELECT DISTINCT MediaId FROM Media WHERE Enabled >= 0 ");
+   }
 
    if (mr->Recycle >= 0) {
       bsnprintf(buf, sizeof(buf), "AND Recycle=%d ", mr->Recycle);
@@ -1056,6 +1119,7 @@ bool BDB::bdb_get_media_ids(JCR *jcr, MEDIA_DBR *mr, int *num_ids, uint32_t *ids
    if (mr->sid_group) {
       bsnprintf(buf, sizeof(buf), "AND StorageId IN (%s) ", mr->sid_group);
       pm_strcat(cmd, buf);
+
    } else if (mr->StorageId) {
       bsnprintf(buf, sizeof(buf), "AND StorageId=%s ", edit_uint64(mr->StorageId, ed1));
       pm_strcat(cmd, buf);
@@ -1074,6 +1138,11 @@ bool BDB::bdb_get_media_ids(JCR *jcr, MEDIA_DBR *mr, int *num_ids, uint32_t *ids
    if (*mr->VolumeName) {
       bdb_escape_string(jcr, esc, mr->VolumeName, strlen(mr->VolumeName));
       bsnprintf(buf, sizeof(buf), "AND VolumeName = '%s' ", esc);
+      pm_strcat(cmd, buf);
+   }
+
+   if (mr->MediaId) {
+      bsnprintf(buf, sizeof(buf), "AND MediaId = %lld ", (int64_t)mr->MediaId);
       pm_strcat(cmd, buf);
    }
 
@@ -1110,6 +1179,7 @@ bool BDB::bdb_get_media_ids(JCR *jcr, MEDIA_DBR *mr, int *num_ids, uint32_t *ids
    bdb_unlock();
    return ok;
 }
+
 
 /**
  * This function returns a list of all the DBIds that are returned
@@ -1205,6 +1275,7 @@ bool BDB::bdb_get_media_record(JCR *jcr, MEDIA_DBR *mr)
             Mmsg1(errmsg, _("error fetching row: %s\n"), sql_strerror());
             Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
          } else {
+            /* return values */
             mr->MediaId = str_to_int64(row[0]);
             bstrncpy(mr->VolumeName, row[1]!=NULL?row[1]:"", sizeof(mr->VolumeName));
             mr->VolJobs = str_to_int64(row[2]);
@@ -1335,9 +1406,8 @@ bool BDB::bdb_get_file_list(JCR *jcr, char *jobids, int opts,
     * or Migration
     */
    Mmsg(buf,
-"SELECT Path.Path, Filename.Name, T1.FileIndex, T1.JobId, LStat, DeltaSeq, MD5 "
+"SELECT Path.Path, T1.Filename, T1.FileIndex, T1.JobId, LStat, DeltaSeq, MD5 "
  "FROM ( %s ) AS T1 "
- "JOIN Filename ON (Filename.FilenameId = T1.FilenameId) "
  "JOIN Path ON (Path.PathId = T1.PathId) %s "
 "ORDER BY T1.JobTDate, FileIndex ASC",/* Return sorted by JobTDate */
                                       /* FileIndex for restore code */
