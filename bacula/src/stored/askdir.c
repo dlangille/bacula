@@ -29,7 +29,7 @@
 static const int dbglvl = 200;
 
 /* Requests sent to the Director */
-static char Find_media[]   = "CatReq JobId=%ld FindMedia=%d pool_name=%s media_type=%s vol_type=%d\n";
+static char Find_media[]   = "CatReq JobId=%ld FindMedia=%d pool_name=%s media_type=%s vol_type=%d create=%d\n";
 static char Get_Vol_Info[] = "CatReq JobId=%ld GetVolInfo VolName=%s write=%d\n";
 static char Update_media[] = "CatReq JobId=%ld UpdateMedia VolName=%s"
    " VolJobs=%u VolFiles=%u VolBlocks=%u VolBytes=%s VolABytes=%s"
@@ -50,8 +50,7 @@ static char OK_media[] = "1000 OK VolName=%127s VolJobs=%u VolFiles=%lu"
    " Slot=%ld MaxVolJobs=%lu MaxVolFiles=%lu InChanger=%ld"
    " VolReadTime=%lld VolWriteTime=%lld EndFile=%lu EndBlock=%lu"
    " VolType=%lu LabelType=%ld MediaId=%lld ScratchPoolId=%lld"
-   " VolParts=%d VolCloudParts=%d LastPartBytes=%lld Enabled=%d"
-   " Recycle=%d\n";
+   " VolParts=%d VolCloudParts=%d LastPartBytes=%lld Enabled=%d MaxPoolBytes=%lld PoolBytes=%lld Recycle=%d\n";
 
 
 static char OK_create[] = "1000 OK CreateJobMedia\n";
@@ -144,6 +143,11 @@ bool dir_update_changer(JCR *jcr, AUTOCHANGER *changer)
 
 static AskDirHandler *askdir_handler = NULL; /* must be true when inside a "btools" */
 
+AskDirHandler *get_askdir_handler()
+{
+   return askdir_handler;
+}
+
 /*
  * btools must call this function, to modify behavior of some functions here
  */
@@ -229,9 +233,9 @@ static bool do_get_volume_info(DCR *dcr)
                &vol.EndFile, &vol.EndBlock, &vol.VolCatType,
                &vol.LabelType, &vol.VolMediaId, &vol.VolScratchPoolId,
                &vol.VolCatParts, &vol.VolCatCloudParts,
-               &vol.VolLastPartBytes, &Enabled, &Recycle);
+               &vol.VolLastPartBytes, &Enabled, &vol.MaxPoolBytes, &vol.PoolBytes, &Recycle);
     Dmsg2(dbglvl, "<dird n=%d %s", n, dir->msg);
-    if (n != 31) {
+    if (n != 33) {
        Dmsg1(dbglvl, "get_volume_info failed: ERR=%s", dir->msg);
        /*
         * Note, we can get an error here either because there is
@@ -319,13 +323,12 @@ bool dir_find_next_appendable_volume(DCR *dcr)
     BSOCK *dir = jcr->dir_bsock;
     bool rtn;
     char lastVolume[MAX_NAME_LENGTH];
-    int nb_retry;
 
-    /*
-     * Calculate the number of possible drives + 30 for the size of the
-     *  Volume list to consider.
+    /* We may retrieve N volumes that are all busy if we have N busy devices
+     * on the system
      */
-    nb_retry = ((rblist *)res_head[R_DEVICE-r_first]->res_list)->size() + 30;
+    int nb_retry=((rblist *)res_head[R_DEVICE-r_first]->res_list)->size() + 30;
+
     Dmsg2(dbglvl, "dir_find_next_appendable_volume: reserved=%d Vol=%s\n",
        dcr->is_reserved(), dcr->VolumeName);
     Mmsg(jcr->errmsg, "Unknown error\n");
@@ -340,10 +343,12 @@ bool dir_find_next_appendable_volume(DCR *dcr)
     dcr->clear_found_in_use();
     lastVolume[0] = 0;
     for (int vol_index=1;  vol_index < nb_retry; vol_index++) {
+       /* Have we still some space to create a new volume? */
+       bool can_create = dcr->dev->is_nospace()==false;
        bash_spaces(dcr->media_type);
        bash_spaces(dcr->pool_name);
        dir->fsend(Find_media, jcr->JobId, vol_index, dcr->pool_name, dcr->media_type,
-                  dcr->dev->dev_type);
+                  dcr->dev->dev_type, can_create);
        unbash_spaces(dcr->media_type);
        unbash_spaces(dcr->pool_name);
        Dmsg1(dbglvl, ">dird %s", dir->msg);
@@ -367,6 +372,14 @@ bool dir_find_next_appendable_volume(DCR *dcr)
               (dcr->dev->dev_type == B_FILE_DEV || dcr->dev->dev_type == B_ALIGNED_DEV ||
                dcr->dev->dev_type == B_CLOUD_DEV) &&
                dcr->dev->dev_type != (int)dcr->VolCatInfo.VolCatType) {
+             Dmsg2(000, "Skip vol. Wanted VolType=%d Got=%d\n", dcr->dev->dev_type, dcr->VolCatInfo.VolCatType);
+             continue;
+          }
+          /* Dedup devices is a bit special, we have two kind of device type so we accept both */
+          if (dcr->VolCatInfo.VolCatType != 0 && dcr->dev->dev_type == B_DEDUP_DEV &&
+              (B_DEDUP_DEV != (int)dcr->VolCatInfo.VolCatType &&
+               B_DEDUP_OLD_DEV != (int)dcr->VolCatInfo.VolCatType))
+          {
              Dmsg2(000, "Skip vol. Wanted VolType=%d Got=%d\n", dcr->dev->dev_type, dcr->VolCatInfo.VolCatType);
              continue;
           }
@@ -456,6 +469,8 @@ bool dir_update_volume_info(DCR *dcr, bool label, bool update_LastWritten,
          dev->setVolCatStatus("Append");
       }
       vol = dev->VolCatInfo;        /* structure assignment */
+      /* Reset the number of bytes written since the last update */
+      dev->VolCatInfo.BytesWritten = 0;
    }
 
    /* This happens when nothing to update after fixup_device ... */
@@ -546,6 +561,7 @@ bool dir_update_volume_info(DCR *dcr, bool label, bool update_LastWritten,
          dev->VolCatInfo.VolEnabled = dcr->VolCatInfo.VolEnabled;
          dev->VolCatInfo.VolCatMaxBytes = dcr->VolCatInfo.VolCatMaxBytes;
          dev->VolCatInfo.VolRecycle = dcr->VolCatInfo.VolRecycle;
+         dev->VolCatInfo.BytesWritten = 0;
       }
       ok = true;
    }
@@ -573,7 +589,11 @@ void create_jobmedia_queue(JCR *jcr)
 {
    JOBMEDIA_ITEM *item = NULL;
    jcr->jobmedia_queue = New(dlist(item, &item->link));
+
+   FILEMEDIA_ITEM *fm = NULL;
+   jcr->filemedia_queue = New(dlist(fm, &fm->link));
 }
+
 
 bool flush_jobmedia_queue(JCR *jcr)
 {
@@ -584,6 +604,10 @@ bool flush_jobmedia_queue(JCR *jcr)
    JOBMEDIA_ITEM *item;
    BSOCK *dir = jcr->dir_bsock;
    bool ok;
+
+   if (!flush_filemedia_queue(jcr)) {
+      return false;             /* already in FATAL */
+   }
 
    if (!jcr->jobmedia_queue || jcr->jobmedia_queue->size() == 0) {
       return true;     /* should never happen */
@@ -626,7 +650,6 @@ bool flush_jobmedia_queue(JCR *jcr)
    }
    return true;
 }
-
 
 /*
  * After writing a Volume, create the JobMedia record.
@@ -718,7 +741,7 @@ bool dir_create_jobmedia_record(DCR *dcr, bool zero)
    return ok;
 }
 
-/*
+/**
  * Update File Attribute data
  * We do the following:
  *  1. expand the bsock buffer to be large enough
@@ -866,12 +889,13 @@ bool dir_ask_sysop_to_create_appendable_volume(DCR *dcr)
    }
 
 get_out:
+   dev->poll = false;
    jcr->sendJobStatus(JS_Running);
    Dmsg0(dbglvl, "leave dir_ask_sysop_to_create_appendable_volume\n");
    return true;
 }
 
-/*
+/**
  *   Request to mount specific Volume
  *
  *   Entered with device blocked and dcr->VolumeName is desired
@@ -908,13 +932,12 @@ bool dir_ask_sysop_to_mount_volume(DCR *dcr, bool write_access)
 
    for ( ;; ) {
       if (job_canceled(jcr)) {
-         Mmsg(dev->errmsg,
-              _("Job %s canceled while waiting for mount on Storage Device \"%s\".\n"),
+         Mmsg(dev->errmsg, _("Job %s canceled while waiting for mount on Storage Device %s.\n"),
               jcr->Job, dev->print_name());
-         Jmsg(jcr, M_INFO, 0, "%s", dev->errmsg);
          dev->poll = false;
          return false;
       }
+
       /*
        * If we are not polling, and the wait timeout or the
        *   user explicitly did a mount, send him the message.
