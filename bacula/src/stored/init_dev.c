@@ -79,7 +79,7 @@ static driver_item driver_tab[] = {
    {"none",    NULL, NULL,    true,  true}, /* deprecated B_VALIGNED_DEV */
    {"none",    NULL, NULL,    true,  true}, /* deprecated B_VDEDUP_DEV */
    {"cloud",   NULL, NULL,    false, false},
-   {"none",    NULL, NULL,    false, false},
+   {"dedup",   NULL, NULL,    false, false},
    {NULL,      NULL, NULL,    false, false}
 };
 
@@ -220,7 +220,9 @@ DEVICE *init_dev(JCR *jcr, DEVRES *device, bool adata, bstatcollect *statcollect
    dev->device_generic_init(jcr, device);
 
    /* Do device specific initialization */
-   dev->device_specific_init(jcr, device);
+   if (dev->device_specific_init(jcr, device)) {
+      goto bailout;
+   }
 
    /* ***FIXME*** move to fifo driver */
    if (dev->is_fifo()) {
@@ -230,6 +232,12 @@ DEVICE *init_dev(JCR *jcr, DEVRES *device, bool adata, bstatcollect *statcollect
    dev->register_metrics(statcollector);
 
    return dev;
+bailout:
+   if (dev != NULL) {
+      dev->term(NULL);
+      dev = NULL;
+   }
+   return NULL;
 }
 
 /*
@@ -283,6 +291,9 @@ void DEVICE::device_generic_init(JCR *jcr, DEVRES *device)
    }
 
    if (!device->dev) {
+      /* The first time we create a DEVICE from the DEVRES, we keep a pointer
+       * to the DEVICE accessible from the DEVRES.
+       */
       device->dev = dev;
    }
 
@@ -303,7 +314,6 @@ void DEVICE::device_generic_init(JCR *jcr, DEVRES *device)
       }
    }
 
-
    /* Sanity check */
    if (dev->max_block_size == 0) {
       max_bs = DEFAULT_BLOCK_SIZE;
@@ -314,10 +324,10 @@ void DEVICE::device_generic_init(JCR *jcr, DEVRES *device)
       Jmsg(jcr, M_ERROR_TERM, 0, _("[SA0005] Min block size > max on device %s\n"),
            dev->print_name());
    }
-   if (dev->max_block_size > MAX_BLOCK_SIZE) {
+   if (dev->max_block_size > MAX_BLOCK_LENGTH) {
       Jmsg3(jcr, M_ERROR, 0, _("[SA0006] Block size %u on device %s is too large, using default %u\n"),
          dev->max_block_size, dev->print_name(), DEFAULT_BLOCK_SIZE);
-      dev->max_block_size = DEFAULT_BLOCK_SIZE ;
+      dev->max_block_size = DEFAULT_BLOCK_SIZE;
    }
    if (dev->max_block_size % TAPE_BSIZE != 0) {
       Jmsg3(jcr, M_WARNING, 0, _("[SW0007] Max block size %u not multiple of device %s block size=%d.\n"),
@@ -460,7 +470,7 @@ static DEVICE *load_driver(JCR *jcr, DEVRES *device)
          const char *error = dlerror();
          Jmsg3(jcr, M_FATAL, 0, _("[SF0020] dlopen of SD driver=%s at %s failed: ERR=%s\n"),
               drv->name, fname.c_str(), NPRT(error));
-         Dmsg2(000, "dlopen plugin %s failed: ERR=%s\n", fname.c_str(),
+         Dmsg2(0, "dlopen plugin %s failed: ERR=%s\n", fname.c_str(),
                NPRT(error));
          V(mutex);
          return NULL;
