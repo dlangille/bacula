@@ -164,6 +164,10 @@ bool job_cmd(JCR *jcr)
    new_plugins(jcr);            /* instantiate the plugins */
    generate_daemon_event(jcr, "JobStart");
    generate_plugin_event(jcr, bsdEventJobStart, (void *)"JobStart");
+
+   /* Keep track of the important events */
+   events_send_msg(jcr, "SJ0001", EVENTS_TYPE_JOB, jcr->director->hdr.name, (intptr_t)jcr,
+                   "Job Start jobid=%d job=%s", jcr->JobId, jcr->Job);
    return true;
 }
 
@@ -177,10 +181,7 @@ bool run_cmd(JCR *jcr)
    Dsm_check(200);
    Dmsg1(200, "Run_cmd: %s\n", jcr->dir_bsock->msg);
 
-   /*
-    * If we do not need the FD,
-    *  we are doing a migration, copy, or virtual backup.
-    */
+   /* If we do not need the FD, we are doing a virtual backup. */
    if (jcr->no_client_used()) {
       do_vbackup(jcr);
       return false;
@@ -236,7 +237,7 @@ bool run_cmd(JCR *jcr)
    memset(jcr->sd_auth_key, 0, strlen(jcr->sd_auth_key));
 
    if (jcr->authenticated && !job_canceled(jcr)) {
-      Dmsg2(050, "Running jid=%d %p\n", jcr->JobId, jcr);
+      Dmsg2(800, "Running jid=%d %p\n", jcr->JobId, jcr);
       run_job(jcr);                   /* Run the job */
    }
    Dmsg2(800, "Done jid=%d %p\n", jcr->JobId, jcr);
@@ -328,17 +329,13 @@ void stored_free_jcr(JCR *jcr)
       flush_jobmedia_queue(jcr);
       delete jcr->jobmedia_queue;
       jcr->jobmedia_queue = NULL;
-   }
 
-   if (jcr->dir_bsock) {
-      Dmsg2(800, "Send terminate jid=%d %p\n", jcr->JobId, jcr);
-      jcr->dir_bsock->signal(BNET_EOD);
-      jcr->dir_bsock->signal(BNET_TERMINATE);
-      jcr->dir_bsock->destroy();
+      /* ***BEEF*** */
+      delete jcr->filemedia_queue;
+      jcr->filemedia_queue = NULL;
    }
-   if (jcr->file_bsock) {
-      jcr->file_bsock->destroy();
-   }
+   free_bsock(jcr->file_bsock);
+   free_bsock(jcr->dir_bsock);
    if (jcr->job_name) {
       free_pool_memory(jcr->job_name);
    }
@@ -360,8 +357,7 @@ void stored_free_jcr(JCR *jcr)
    free_restore_volume_list(jcr);
    if (jcr->RestoreBootstrap) {
       unlink(jcr->RestoreBootstrap);
-      free_pool_memory(jcr->RestoreBootstrap);
-      jcr->RestoreBootstrap = NULL;
+      bfree_and_null(jcr->RestoreBootstrap);
    }
    if (jcr->next_dev || jcr->prev_dev) {
       Qmsg0(NULL, M_FATAL, 0, _("In free_jcr(), but still attached to device!!!!\n"));
