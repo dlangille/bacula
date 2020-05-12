@@ -4,7 +4,7 @@
 /* ------------------------------------------------------------------------- */
 
 /*
- * Copyright (C) 2000-2015 Kern Sibbald
+ * Copyright (C) 2000-2020 Kern Sibbald
  * License: BSD 2-Clause; see file LICENSE-FOSS
  */
    
@@ -178,6 +178,8 @@
 
 #undef HAVE_SOCKLEN_T
 
+#undef HAVE_SOCKADDR_STORAGE
+
 #undef HAVE_OLD_SOCKOPT
 #undef USE_THR_SETCONCURRENCY
  
@@ -192,6 +194,12 @@
 
 /* Define if OPENSSL is available */
 #undef HAVE_OPENSSL
+
+/* Define if OPENSSL_VERSION_TEXT is available */
+#undef HAVE_OPENSSL_VERSION_TEXT
+
+/* Define if FIPS is available */
+#undef HAVE_FIPS
 
 /* Define if comm encryption should be enabled */
 #undef HAVE_TLS
@@ -208,6 +216,9 @@
 /* Define if building universal (internal helper macro) */
 #undef AC_APPLE_UNIVERSAL_BUILD
 
+/* Set if ***BEEF*** DEMO code enabled */
+#undef BEEF_DEMO_ENABLED
+
 /* Define to 1 if the `closedir' function returns void instead of `int'. */
 #undef CLOSEDIR_VOID
 
@@ -218,6 +229,9 @@
 
 /* Define to 1 if using `alloca.c'. */
 #undef C_ALLOCA
+
+/* Set to enable general deduplication */
+#undef DEDUP_SUPPORT
 
 /* Define to 1 if translation of program messages to the user's native
    language is requested. */
@@ -240,6 +254,9 @@
 
 /* Defines if your system have the ACL_TYPE_NFS4 acl type */
 #undef HAVE_ACL_TYPE_NFS4
+
+/* Define to 1 if you have ACSLS library toolkit */
+#undef HAVE_ACSLS
 
 /* Define to 1 if you have the 'add_proplist_entry' function. */
 #undef HAVE_ADD_PROPLIST_ENTRY
@@ -290,7 +307,7 @@
 /* Define to 1 if you have the `backtrace' function. */
 #undef HAVE_BACKTRACE
 
-/* Set if Bacula bat Qt4/5 GUI support enabled */
+/* Set if Bacula bat Qt4 GUI support enabled */
 #undef HAVE_BAT
 
 /* Define to 1 if you have the `be64toh' function. */
@@ -421,6 +438,12 @@
 /* Extended acl support */
 #undef HAVE_EXTENDED_ACL
 
+/* Define to 1 if you have the `fallocate' function. */
+#undef HAVE_FALLOCATE
+
+/* Set if you have 'FALLOC_FL_PUNCH_HOLE' fallocate option */
+#undef HAVE_FALLOC_FL_PUNCH_HOLE
+
 /* Define to 1 if you have the `fchdir' function. */
 #undef HAVE_FCHDIR
 
@@ -462,6 +485,9 @@
 
 /* Define to 1 if you have the 'gai_strerror' function. */
 #undef HAVE_GAI_STRERROR
+
+/* Define to 1 if you have generic cloud */
+#undef HAVE_GENERIC_CLOUD
 
 /* Define to 1 if getaddrinfo exists and works */
 #undef HAVE_GETADDRINFO
@@ -611,8 +637,14 @@
 /* Define to 1 if you have the `sun' library (-lsun). */
 #undef HAVE_LIBSUN
 
+/* Define to 1 if you have the `tokyocabinet' library (-ltokyocabinet). */
+#undef HAVE_LIBTOKYOCABINET
+
 /* Defines if your system have the libutil.h header file */
 #undef HAVE_LIBUTIL_H
+
+/* Define to 1 if you have libazurestorage */
+#undef HAVE_LIBWAS
 
 /* Set to enable libwraper support */
 #undef HAVE_LIBWRAP
@@ -722,6 +754,9 @@
 /* Set if have OpenSSL version 1.x */
 #undef HAVE_OPENSSLv1
 
+/* Define to 1 if you have the `poll' function. */
+#undef HAVE_POLL
+
 /* Define to 1 if you have the `posix_fadvise' function. */
 #undef HAVE_POSIX_FADVISE
 
@@ -746,6 +781,9 @@
 /* Define to 1 if you have the `prctl' function. */
 #undef HAVE_PRCTL
 
+/* Define if you have pthread_setugid_np */
+#undef HAVE_PTHREAD_SETUGID_NP
+
 /* Define to 1 if you have the `putenv' function. */
 #undef HAVE_PUTENV
 
@@ -764,6 +802,9 @@
 /* Define to 1 if you have the <regex.h> header file. */
 #undef HAVE_REGEX_H
 
+/* Define if RSYNC library is available */
+#undef HAVE_RSYNC
+
 /* Define if sa_len field exists in struct sockaddr */
 #undef HAVE_SA_LEN
 
@@ -775,6 +816,12 @@
 
 /* Define to 1 if you have the `setenv' function. */
 #undef HAVE_SETENV
+
+/* Define to 1 if you have the `setfsgid' function. */
+#undef HAVE_SETFSGID
+
+/* Define to 1 if you have the `setfsuid' function. */
+#undef HAVE_SETFSUID
 
 /* Define to 1 if you have the `setlocale' function. */
 #undef HAVE_SETLOCALE
@@ -849,7 +896,7 @@
 /* Define to 1 if you have the `strdup' function. */
 #undef HAVE_STRDUP
 
-/* Defined to 0 if not provided */
+/* "Defined to 1 if any XXX_CLOEXEC is provided for files and sockets" */
 #undef HAVE_STREAM_CLOEXEC
 
 /* Define to 1 if you have the `strerror' function. */
@@ -931,6 +978,9 @@
 /* Defines if your system have the sys/extattr.h header file */
 #undef HAVE_SYS_EXTATTR_H
 
+/* Define to 1 if you have the <sys/fsuid.h> header file. */
+#undef HAVE_SYS_FSUID_H
+
 /* Define to 1 if you have the <sys/ioctl.h> header file. */
 #undef HAVE_SYS_IOCTL_H
 
@@ -998,9 +1048,15 @@
 /* Define if TLS support should be enabled */
 #undef HAVE_TLS
 
+/* Define if TLS PSK support should be enabled */
+#undef HAVE_TLS_PSK
+
 /* Define to 1 if your `struct tm' has `tm_zone'. Deprecated, use
    `HAVE_STRUCT_TM_TM_ZONE' instead. */
 #undef HAVE_TM_ZONE
+
+/* Define if Tokyo Cabinet library is available */
+#undef HAVE_TOKYOCABINET
 
 /* Define to 1 if you have the `tsearch' function. */
 #undef HAVE_TSEARCH
@@ -1123,6 +1179,9 @@
 /* Define as the return type of signal handlers (`int' or `void'). */
 #undef RETSIGTYPE
 
+/* Set to enable deduplication on the storage */
+#undef SD_DEDUP_SUPPORT
+
 /* Define to 1 if the `setpgrp' function takes no argument. */
 #undef SETPGRP_VOID
 
@@ -1176,6 +1235,9 @@
 
 /* Define to 1 if your <sys/time.h> declares `struct tm'. */
 #undef TM_IN_SYS_TIME
+
+/* Set if ***BEEF*** USEA code enabled */
+#undef USEA_ENABLED
 
 /* Set if DB batch insert code enabled */
 #undef USE_BATCH_FILE_INSERT
@@ -1286,3 +1348,5 @@
 /* Define to the type of an unsigned integer type wide enough to hold a
    pointer, if such a type exists, and if the system does not define it. */
 #undef uintptr_t
+
+#undef COMMUNITY
