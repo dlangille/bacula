@@ -20,6 +20,7 @@
  * Bacula conf to json
  *
  *  Kern Sibbald, MMXII
+ *
  */
 
 #include "bacula.h"
@@ -40,10 +41,12 @@ extern s_kw msg_types[];
 extern s_kw dev_types[];
 extern s_kw tapelabels[];
 extern s_kw cloud_drivers[];
+extern s_kw dedup_drivers[];
 extern s_kw trunc_opts[];
 extern s_kw upload_opts[];
 extern s_kw proto_opts[];
 extern s_kw uri_opts[];
+extern s_kw restore_prio_opts[];
 
 extern RES_TABLE resources[];
 
@@ -90,7 +93,7 @@ PROG_COPYRIGHT
 "        -t          test - read config and exit\n"
 "        -v          verbose user messages\n"
 "        -?          print this message.\n"
-"\n"), 2012, "", VERSION, BDATE);
+"\n"), 2012, BDEMO, VERSION, BDATE);
 
    exit(1);
 }
@@ -260,12 +263,26 @@ static void display_cloud_driver(HPKT &hpkt)
    int i;
    for (i=0; cloud_drivers[i].name; i++) {
       if (*(int32_t *)(hpkt.ritem->value) == cloud_drivers[i].token) {
-         sendit(NULL, "\n      \"%s\": \"%s\"", hpkt.ritem->name,
+         sendit(NULL, "\n    \"%s\": \"%s\"", hpkt.ritem->name,
                 cloud_drivers[i].name);
          return;
       }
    }
 }
+
+#ifdef SD_DEDUP_SUPPORT
+static void display_dedup_driver(HPKT &hpkt)
+{
+   int i;
+   for (i=0; dedup_drivers[i].name; i++) {
+      if (*(int32_t *)(hpkt.ritem->value) == dedup_drivers[i].token) {
+         sendit(NULL, "\n      \"%s\": \"%s\"", hpkt.ritem->name,
+                dedup_drivers[i].name);
+         return;
+      }
+   }
+}
+#endif
 
 static void display_protocol(HPKT &hpkt)
 {
@@ -315,6 +332,18 @@ static void display_upload(HPKT &hpkt)
    }
 }
 
+
+static void display_transfer_priority(HPKT &hpkt)
+{
+   int i;
+   for (i=0; restore_prio_opts[i].name; i++) {
+      if (*(int32_t *)(hpkt.ritem->value) == restore_prio_opts[i].token) {
+         sendit(NULL, "\n    \"%s\": \"%s\"", hpkt.ritem->name,
+                restore_prio_opts[i].name);
+         return;
+      }
+   }
+}
 /*
  * Dump out all resources in json format.
  * Note!!!! This routine must be in this file rather
@@ -446,6 +475,10 @@ static void dump_json(display_filter *filter)
                   display_label(hpkt);
                } else if (items[item].handler == store_cloud_driver) {
                   display_cloud_driver(hpkt);
+#ifdef SD_DEDUP_SUPPORT
+               } else if (items[item].handler == store_dedup_driver) {
+                  display_dedup_driver(hpkt);
+#endif
                } else if (items[item].handler == store_protocol) {
                   display_protocol(hpkt);
                } else if (items[item].handler == store_uri_style) {
@@ -456,6 +489,8 @@ static void dump_json(display_filter *filter)
                   display_upload(hpkt);
                } else if (items[item].handler == store_coll_type) {
                   display_collector_types(hpkt);
+               } else if (items[item].handler == store_transfer_priority) {
+                  display_transfer_priority(hpkt);
                } else {
                   printf("\n      \"%s\": \"null\"", items[item].name);
                }
@@ -569,7 +604,9 @@ static int check_resources()
       /* tls_require implies tls_enable */
       if (store->tls_require) {
          if (have_tls) {
-            store->tls_enable = true;
+            if (store->tls_certfile || store->tls_keyfile) {
+               store->tls_enable = true;
+            }
          } else {
             Jmsg(NULL, M_FATAL, 0, _("TLS required but not configured in Bacula.\n"));
             OK = false;
@@ -604,7 +641,9 @@ static int check_resources()
    foreach_res(director, R_DIRECTOR) {
       /* tls_require implies tls_enable */
       if (director->tls_require) {
-         director->tls_enable = true;
+         if (director->tls_certfile || director->tls_keyfile) {
+            director->tls_enable = true;
+         }
       }
 
       tls_needed = director->tls_enable || director->tls_authenticate;
@@ -631,6 +670,50 @@ static int check_resources()
       }
    }
 
+   CLOUD *cloud;
+   /* TODO: Can use a table */
+   foreach_res(cloud, R_CLOUD) {
+      if (cloud->driver_type == C_S3_DRIVER  ||
+          cloud->driver_type == C_FILE_DRIVER)
+      {
+         if (cloud->host_name == NULL) {
+            Jmsg(NULL, M_FATAL, 0,
+                 _("Failed to initialize Cloud. Hostname not defined for Cloud \"%s\"\n"),
+                 cloud->hdr.name);
+            OK = false;
+         }
+      }
+      if (cloud->driver_type == C_WAS_DRIVER ||
+          cloud->driver_type == C_S3_DRIVER)
+      {
+         if (cloud->access_key == NULL) {
+            Jmsg(NULL, M_FATAL, 0,
+                 _("Failed to initialize Cloud. AccessKey not set for Cloud \"%s\"\n"),
+                 cloud->hdr.name);
+            OK = false;
+         }
+         if (cloud->secret_key == NULL) {
+            Jmsg(NULL, M_FATAL, 0,
+                 _("Failed to initialize Cloud. SecretKey not set for Cloud \"%s\"\n"),
+                 cloud->hdr.name);
+            OK = false;
+         }
+      }
+   }
+#ifdef SD_DEDUP_SUPPORT
+   DEDUPRES *dedup;
+   foreach_res(dedup, R_DEDUP) {
+      if (dedup->driver_type == D_LEGACY_DRIVER)
+      {
+         if (dedup->dedup_dir == NULL) {
+            Jmsg(NULL, M_FATAL, 0,
+                 _("Failed to initialize Dedup. DedupDirectory not defined for Dedup \"%s\"\n"),
+                 dedup->hdr.name);
+            OK = false;
+         }
+      }
+   }
+#endif
    foreach_res(changer, R_AUTOCHANGER) {
       foreach_alist(device, changer->device) {
          device->cap_bits |= CAP_AUTOCHANGER;
