@@ -121,6 +121,9 @@ void dump_block(DEVICE *dev, DEV_BLOCK *b, const char *msg, bool force)
          unser_uint32(reclen);
          unser_int32(Stream);
          p += WRITE_ADATA_RECHDR_LENGTH;
+         if (Stream & STREAM_BIT_OFFSETS) {
+            p += OFFSET_FADDR_SIZE;
+         }
       } else {
          reclen = 0;
          p += data_len + rhl;
@@ -165,6 +168,7 @@ DEV_BLOCK *DEVICE::new_block(DCR *dcr, int size)
    block->rechdr_items = 0;
    Dmsg2(510, "Rechdr len=%d max_items=%d\n", sizeof_pool_memory(block->rechdr_queue),
       sizeof_pool_memory(block->rechdr_queue)/WRITE_ADATA_RECHDR_LENGTH);
+   block->filemedia = New(alist(1, owned_by_alist));
    empty_block(block);
    block->BlockVer = BLOCK_VER;       /* default write version */
    Dmsg3(150, "New block adata=%d len=%d block=%p\n", block->adata, len, block);
@@ -187,6 +191,15 @@ DEV_BLOCK *dup_block(DEV_BLOCK *eblock)
 
    block->rechdr_queue = get_memory(rechdr_len);
    memcpy(block->rechdr_queue, eblock->rechdr_queue, rechdr_len);
+
+   FILEMEDIA_ITEM *fm;
+   block->filemedia = New(alist(1, owned_by_alist));
+   foreach_alist(fm, eblock->filemedia) {
+      FILEMEDIA_ITEM *fm2 = (FILEMEDIA_ITEM *) malloc(sizeof(FILEMEDIA_ITEM));
+      memcpy(fm2, fm, sizeof(FILEMEDIA_ITEM));
+      block->filemedia->append(fm2);
+   }
+
 
    /* bufp might point inside buf */
    if (eblock->bufp &&
@@ -234,6 +247,36 @@ void print_block_read_errors(JCR *jcr, DEV_BLOCK *block)
    }
 }
 
+/* We had a problem on some solaris platforms with the CRC32 library, some
+ * 8.4.x jobs uses a bad crc32 algorithm. We just try one then the
+ * other to not create false problems
+ */
+uint32_t DCR::crc32(unsigned char *buf, int len, uint32_t expected_crc)
+{
+#if BEEF && defined(HAVE_SUN_OS) && defined(HAVE_LITTLE_ENDIAN)
+   uint32_t crc = 0;
+   if (crc32_type) {
+      crc = bcrc32_bad(buf, len);
+
+   } else {
+      crc = bcrc32(buf, len);
+   }
+   if (expected_crc != crc) {
+      crc32_type = !crc32_type; /* Next time, do it well right away */
+
+      if (crc32_type) {
+         crc = bcrc32_bad(buf, len);
+
+      } else {
+         crc = bcrc32(buf, len);
+      }
+   }
+   return crc;
+#else
+   return bcrc32(buf, len);
+#endif
+}
+
 void DEVICE::free_dcr_blocks(DCR *dcr)
 {
    if (dcr->block == dcr->ameta_block) {
@@ -258,6 +301,7 @@ void free_block(DEV_BLOCK *block)
       if (block->rechdr_queue) {
          free_memory(block->rechdr_queue);
       }
+      delete block->filemedia;
       Dmsg1(999, "=== free_block block %p\n", block);
       free_memory((POOLMEM *)block);
    }
@@ -292,6 +336,8 @@ void empty_block(DEV_BLOCK *block)
    block->FirstIndex = block->LastIndex = 0;
    block->RecNum = 0;
    block->BlockAddr = 0;
+   block->filemedia->destroy();
+   block->extra_bytes = 0;
 }
 
 /*
@@ -305,6 +351,7 @@ uint32_t ser_block_header(DEV_BLOCK *block, bool do_checksum)
    uint32_t block_len = block->binbuf;
 
    block->CheckSum = 0;
+   /* ***BEEF*** */
    if (block->adata) {
       /* Checksum whole block */
       if (do_checksum) {
@@ -355,7 +402,7 @@ bool unser_block_header(DCR *dcr, DEVICE *dev, DEV_BLOCK *block)
    if (block->adata) {
       /* Checksum the whole block */
       if (block->block_len <= block->read_len && dev->do_checksum()) {
-         BlockCheckSum = bcrc32((uint8_t *)block->buf, block->block_len);
+         BlockCheckSum = dcr->crc32((uint8_t *)block->buf, block->block_len, block->CheckSum);
          if (BlockCheckSum != block->CheckSum) {
             dev->dev_errno = EIO;
             Mmsg5(dev->errmsg, _("Volume data error at %lld!\n"
@@ -394,7 +441,9 @@ bool unser_block_header(DCR *dcr, DEVICE *dev, DEV_BLOCK *block)
       if (strncmp(Id, BLKHDR1_ID, BLKHDR_ID_LENGTH) != 0) {
          dev->dev_errno = EIO;
          Mmsg4(dev->errmsg, _("Volume data error at %u:%u! Wanted ID: \"%s\", got \"%s\". Buffer discarded.\n"),
-            dev->file, dev->block_num, BLKHDR1_ID, Id);
+               dev->get_hi_addr(block->BlockAddr),
+               dev->get_low_addr(block->BlockAddr),
+               BLKHDR1_ID, Id);
          if (block->read_errors == 0 || verbose >= 2) {
             Jmsg(jcr, M_ERROR, 0, "%s", dev->errmsg);
          }
@@ -412,7 +461,9 @@ bool unser_block_header(DCR *dcr, DEVICE *dev, DEV_BLOCK *block)
       if (strncmp(Id, BLKHDR2_ID, BLKHDR_ID_LENGTH) != 0) {
          dev->dev_errno = EIO;
          Mmsg4(dev->errmsg, _("Volume data error at %u:%u! Wanted ID: \"%s\", got \"%s\". Buffer discarded.\n"),
-            dev->file, dev->block_num, BLKHDR2_ID, Id);
+               dev->get_hi_addr(block->BlockAddr),
+               dev->get_low_addr(block->BlockAddr),
+               BLKHDR2_ID, Id);
          if (block->read_errors == 0 || verbose >= 2) {
             Jmsg(jcr, M_ERROR, 0, "%s", dev->errmsg);
          }
@@ -421,8 +472,10 @@ bool unser_block_header(DCR *dcr, DEVICE *dev, DEV_BLOCK *block)
       }
    } else {
       dev->dev_errno = EIO;
-      Mmsg4(dev->errmsg, _("Volume data error at %u:%u! Wanted ID: \"%s\", got \"%s\". Buffer discarded.\n"),
-          dev->file, dev->block_num, BLKHDR2_ID, Id);
+      Mmsg4(dev->errmsg, _("Volume data error at %d:%d! Wanted ID: \"%s\", got \"%s\". Buffer discarded.\n"),
+            dev->get_hi_addr(block->BlockAddr),
+            dev->get_low_addr(block->BlockAddr),
+            BLKHDR2_ID, Id);
       Dmsg1(50, "%s", dev->errmsg);
       if (block->read_errors == 0 || verbose >= 2) {
          Jmsg(jcr, M_FATAL, 0, "%s", dev->errmsg);
@@ -434,7 +487,7 @@ bool unser_block_header(DCR *dcr, DEVICE *dev, DEV_BLOCK *block)
    }
 
    /* Sanity check */
-   if (block_len > MAX_BLOCK_SIZE) {
+   if (block_len > MAX_BLOCK_LENGTH) {
       dev->dev_errno = EIO;
       Mmsg3(dev->errmsg,  _("Volume data error at %u:%u! Block length %u is insane (too large), probably due to a bad archive.\n"),
          dev->file, dev->block_num, block_len);
@@ -459,8 +512,9 @@ bool unser_block_header(DCR *dcr, DEVICE *dev, DEV_BLOCK *block)
    Dmsg3(390, "Read binbuf = %d %d block_len=%d\n", block->binbuf,
       bhl, block_len);
    if (block_len <= block->read_len && dev->do_checksum()) {
-      BlockCheckSum = bcrc32((uint8_t *)block->buf+BLKHDR_CS_LENGTH,
-                                 block_len-BLKHDR_CS_LENGTH);
+      BlockCheckSum = dcr->crc32((uint8_t *)block->buf+BLKHDR_CS_LENGTH,
+                                 block_len-BLKHDR_CS_LENGTH,
+                                 block->CheckSum);
 
       if (BlockCheckSum != block->CheckSum) {
          dev->dev_errno = EIO;
@@ -569,6 +623,9 @@ bool is_user_volume_size_reached(DCR *dcr, bool quiet)
          "Marking Volume \"%s\" as Full.\n",
          edit_uint64_with_commas(max_size, ed1), dev->getVolCatName(),
          dev->print_name(), dev->getVolCatName());
+      rtn = true;
+
+   } else if (is_pool_size_reached(dcr, quiet)) {
       rtn = true;
    }
    Dmsg1(dbglvl, "Return from is_user_volume_size_reached=%d\n", rtn);
