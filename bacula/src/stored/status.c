@@ -171,6 +171,33 @@ static find_device(char *devname)
 }
 #endif
 
+static void list_shared_storage(STATUS_PKT *sp, const char *cmd)
+{
+   POOL_MEM msg(PM_MESSAGE);
+   char list_cmd[100];
+   char device[128];
+   int len;
+
+   Dmsg0(100, "in shared storage\n");
+   if (sscanf(cmd, ".status shstore %99s %127s", list_cmd, device) != 2) {
+      len = Mmsg(msg, _("3900 missing args in .status command: %s\n"), cmd);
+      sendit(msg, len, sp);
+      return;
+   }
+   unbash_spaces(device);
+   len = Mmsg(msg, _("\nSD Shared Storage:\n"));
+   if (!sp->api) sendit(msg, len, sp);
+   len = Mmsg(msg, "cmd=%s device=\"%s\"\n", list_cmd, device);
+   sendit(msg, len, sp);
+   if (!sp->api) sendit("====\n\n", 6, sp);
+}
+
+#ifdef COMMUNITY
+bool send_shstore_blocked_status(DEVICE *dev, POOLMEM **msg, int *len) {return false;}
+void list_shstore(DEVICE *dev, OutputWriter *ow) {}
+bool list_shstore(DEVICE *dev, POOLMEM **msg, int *len) { return false;}
+#endif
+
 static void api_list_one_device(char *name, DEVICE *dev, STATUS_PKT *sp)
 {
    OutputWriter ow(sp->api_opts);
@@ -189,6 +216,7 @@ static void api_list_one_device(char *name, DEVICE *dev, STATUS_PKT *sp)
                  OT_STRING, "name", dev->device->hdr.name,
                  OT_STRING, "archive_device", dev->archive_name(),
                  OT_STRING, "type", dev->print_type(),
+                 OT_STRING, "driver", dev->print_driver_type(),
                  OT_STRING, "media_type", dev->device->media_type,
                  OT_INT,    "open", (int)dev->is_open(),
                  OT_INT,    "writers",      dev->num_writers,
@@ -278,6 +306,8 @@ static void api_list_one_device(char *name, DEVICE *dev, STATUS_PKT *sp)
                     OT_END);
    }
 
+   list_shstore(dev, &ow);
+
    p = ow.get_output(OT_END_OBJ, OT_END);
    sendit(p, strlen(p), sp);
 }
@@ -309,7 +339,8 @@ static void list_one_device(char *name, DEVICE *dev, STATUS_PKT *sp)
                            "    Volume:      %s\n"
                            "    Pool:        %s\n"
                            "    Media type:  %s\n"),
-            dev->print_type(), dev->print_name(),
+            dev->print_full_type(),
+            dev->print_name(),
             dev->blocked()?_("waiting for"):_("mounted with"),
             dev->VolHdr.VolumeName,
             dev->pool_name[0]?dev->pool_name:_("*unknown*"),
@@ -317,7 +348,7 @@ static void list_one_device(char *name, DEVICE *dev, STATUS_PKT *sp)
          sendit(msg, len, sp);
       } else {
          len = Mmsg(msg, _("\nDevice %s: %s open but no Bacula volume is currently mounted.\n"),
-            dev->print_type(), dev->print_name());
+            dev->print_full_type(), dev->print_name());
          sendit(msg, len, sp);
       }
       if (dev->can_append()) {
@@ -353,7 +384,7 @@ static void list_one_device(char *name, DEVICE *dev, STATUS_PKT *sp)
       sendit(msg, len, sp);
    } else {
       len = Mmsg(msg, _("\nDevice %s: %s is not open.\n"),
-                 dev->print_type(), dev->print_name());
+                 dev->print_full_type(), dev->print_name());
       sendit(msg, len, sp);
    }
    send_blocked_status(dev, sp);
@@ -371,6 +402,10 @@ static void list_one_device(char *name, DEVICE *dev, STATUS_PKT *sp)
                     edit_uint64_with_suffix(f, ed1));
          sendit(msg, len, sp);
       }
+   }
+
+   if (list_shstore(dev, msg.handle(), &len)) {
+      sendit(msg, len, sp);
    }
 
    dev->show_tape_alerts((DCR *)sp, list_short, list_all, status_alert_callback);
@@ -463,32 +498,46 @@ static void list_devices(STATUS_PKT *sp, char *name)
 
 static void list_cloud_transfers(STATUS_PKT *sp, bool verbose)
 {
-   bool first=true;
-   int len;
-   DEVRES *device;
-   POOL_MEM msg(PM_MESSAGE);
+   if (sp->api) {
+      DEVRES *device;
+      foreach_res(device, R_DEVICE) {
+         if (device->dev && device->dev->is_cloud()) {
+            cloud_dev *cdev = (cloud_dev*)device->dev;
+            OutputWriter ow(sp->api_opts);
+            ow.start_group(device->hdr.name);
+            cdev->get_api_cloud_upload_transfer_status(ow, verbose);
+            cdev->get_api_cloud_download_transfer_status(ow, verbose);
+            ow.end_group();
+            char *p = ow.get_output(OT_END_OBJ, OT_END);
+            sendit(p, strlen(p), sp);
+         }
+      }
+   } else {
+      bool first=true;
+      int len;
+      DEVRES *device;
+      POOL_MEM msg(PM_MESSAGE);
 
-   foreach_res(device, R_DEVICE) {
-      if (device->dev && device->dev->is_cloud()) {
+      foreach_res(device, R_DEVICE) {
+         if (device->dev && device->dev->is_cloud()) {
 
-         if (first) {
-            if (!sp->api) {
+            if (first) {
                len = Mmsg(msg, _("Cloud transfer status:\n"));
                sendit(msg, len, sp);
+               first = false;
             }
-            first = false;
+
+            cloud_dev *cdev = (cloud_dev*)device->dev;
+            len = cdev->get_cloud_upload_transfer_status(msg, verbose);
+            sendit(msg, len, sp);
+            len = cdev->get_cloud_download_transfer_status(msg, verbose);
+            sendit(msg, len, sp);
+            break; /* only once, transfer mgr are shared */
          }
-
-         cloud_dev *cdev = (cloud_dev*)device->dev;
-         len = cdev->get_cloud_upload_transfer_status(msg, verbose);
-         sendit(msg, len, sp);
-         len = cdev->get_cloud_download_transfer_status(msg, verbose);
-         sendit(msg, len, sp);
-         break; /* only once, transfer mgr are shared */
       }
-   }
 
-   if (!first && !sp->api) sendit("====\n\n", 6, sp);
+      if (!first) sendit("====\n\n", 6, sp);
+   }
 }
 
 static void api_list_sd_status_header(STATUS_PKT *sp)
@@ -511,6 +560,8 @@ static void api_list_sd_status_header(STATUS_PKT *sp)
       OT_INT,    "nautochgr",   ((rblist *)res_head[R_AUTOCHANGER-r_first]->res_list)->size(),
       OT_PLUGINS,"plugins",     b_plugin_list,
       OT_ALIST_STR, "drivers",  &drivers,
+      OT_INT32,   "fips",       (int32_t)crypto_get_fips(),
+      OT_STRING,   "openssl",   crypto_get_version(),
       OT_END);
    p = wt.end_group();
    sendit(p, strlen(p), sp);
@@ -529,7 +580,7 @@ static void list_status_header(STATUS_PKT *sp)
    }
 
    len = Mmsg(msg, _("%s %sVersion: %s (%s) %s %s %s\n"),
-              my_name, "", VERSION, BDATE, HOST_OS, DISTNAME, DISTVER);
+              my_name, BDEMO, VERSION, BDATE, HOST_OS, DISTNAME, DISTVER);
    sendit(msg, len, sp);
 
    bstrftime_nc(dt, sizeof(dt), daemon_start_time);
@@ -538,6 +589,14 @@ static void list_status_header(STATUS_PKT *sp)
    len = Mmsg(msg, _("Daemon started %s. Jobs: run=%d, running=%d.\n"),
         dt, num_jobs_run, job_count());
    sendit(msg, len, sp);
+
+   int64_t nofile_l = 1000 + 5 * me->max_concurrent_jobs;
+   int64_t memlock_l = 0;
+
+   dedup_get_limits(&nofile_l, &memlock_l);
+
+   list_resource_limits(sp, nofile_l, memlock_l);
+
    len = Mmsg(msg, _(" Heap: heap=%s smbytes=%s max_bytes=%s bufs=%s max_bufs=%s\n"),
          edit_uint64_with_commas((char *)sbrk(0)-(char *)start_heap, b1),
          edit_uint64_with_commas(sm_bytes, b2),
@@ -548,7 +607,9 @@ static void list_status_header(STATUS_PKT *sp)
    len = Mmsg(msg, " Sizes: boffset_t=%d size_t=%d int32_t=%d int64_t=%d "
               "mode=%d,%d newbsr=%d\n",
               (int)sizeof(boffset_t), (int)sizeof(size_t), (int)sizeof(int32_t),
-              (int)sizeof(int64_t), (int)DEVELOPER_MODE, 0, use_new_match_all);
+              (int)sizeof(int64_t), (int)DEVELOPER_MODE, (int)BEEF, use_new_match_all);
+   sendit(msg, len, sp);
+   len = Mmsg(msg, " Crypto: fips=%s crypto=%s\n", crypto_get_fips_enabled(), crypto_get_version());
    sendit(msg, len, sp);
    len = Mmsg(msg, _(" Res: ndevices=%d nautochgr=%d\n"),
       ((rblist *)res_head[R_DEVICE-r_first]->res_list)->size(),
@@ -567,6 +628,11 @@ static void send_blocked_status(DEVICE *dev, STATUS_PKT *sp)
       sendit(msg, len, sp);
       return;
    }
+
+   if (send_shstore_blocked_status(dev, msg.handle(), &len)) {
+      sendit(msg, len, sp);
+   }
+
    if (!dev->enabled) {
       len = Mmsg(msg, _("   Device is disabled. User command.\n"));
       sendit(msg, len, sp);
@@ -648,7 +714,7 @@ void send_device_status(DEVICE *dev, STATUS_PKT *sp)
    DCR *dcr = NULL;
    bool found = false;
    char b1[35];
-   
+
 
    if (chk_dbglvl(5)) {
       len = Mmsg(msg, _("Configured device capabilities:\n"));
@@ -736,6 +802,15 @@ static void api_list_running_jobs(STATUS_PKT *sp)
    time_t now = time(NULL);
 
    foreach_jcr(jcr) {
+      if (jcr->JobId == 0 && jcr->dir_bsock) {
+         int val = (jcr->dir_bsock && jcr->dir_bsock->tls)?1:0;
+         p1 = ow.get_output(OT_CLEAR,
+                            OT_UTIME, "DirectorConnected", (utime_t)jcr->start_time,
+                            OT_INT, "DirTLS", val,
+                            OT_END);
+         sendit(p1, strlen(p1), sp);
+         continue;
+      }
       if (jcr->getJobType() == JT_SYSTEM) {
          continue;
       }
@@ -942,7 +1017,14 @@ static void list_running_jobs(STATUS_PKT *sp)
             sendit(msg, len, sp);
          }
 #endif
+      } else if (jcr->JobId == 0 && jcr->dir_bsock) {
+         char dt[MAX_TIME_LENGTH];
+         bstrftime_nc(dt, sizeof(dt), jcr->start_time);
+         len = Mmsg(msg, _("Director connected %sat: %s\n"),
+                    (jcr->dir_bsock && jcr->dir_bsock->tls)?_("using TLS "):"", dt);
+         sendit(msg, len, sp);
       }
+
    }
    endeach_jcr(jcr);
 
@@ -1065,7 +1147,7 @@ bool qstatus_cmd(JCR *jcr)
          unbash_spaces(collname);
 
       } else if (!strcmp(argk[i], "api_opts") && argv[i]) {
-         strncpy(sp.api_opts, argv[i], sizeof(sp.api_opts));
+         bstrncpy(sp.api_opts, argv[i], sizeof(sp.api_opts));
       }
    }
 
@@ -1109,7 +1191,15 @@ bool qstatus_cmd(JCR *jcr)
    } else if (strcasecmp(cmd, "resources") == 0) {
        sp.api = api;
        list_resources(&sp);
+   /* ***BEEF*** */
+   } else if (strcasecmp(cmd, "dedupengine") == 0 ||
+              strcasecmp(cmd, "dedupengineandzerostats") == 0) {
+      sp.api = api;
+      list_dedupengines(cmd, &sp);
+   } else if (strcasecmp(cmd, "shstore") == 0) {
+      list_shared_storage(&sp, dir->msg);
    } else if (strcasecmp(cmd, "cloud") == 0) {
+      sp.api = api;
       list_cloud_transfers(&sp, true);
    } else if (strcasecmp(cmd, "statistics") == 0) {
       sp.api = api;
