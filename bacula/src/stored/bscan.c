@@ -35,9 +35,7 @@ extern bool parse_sd_config(CONFIG *config, const char *configfile, int exit_cod
 /* Forward referenced functions */
 static void do_scan(void);
 static bool record_cb(DCR *dcr, DEV_RECORD *rec);
-static int  create_file_attributes_record(BDB *db, JCR *mjcr,
-                               char *fname, char *lname, int type,
-                               char *ap, DEV_RECORD *rec);
+static int  create_file_attributes_record(BDB *db, JCR *mjcr, ATTR *attrs, DEV_RECORD *rec);
 static int  create_media_record(BDB *db, MEDIA_DBR *mr, VOLUME_LABEL *vl);
 static bool update_media_record(BDB *db, MEDIA_DBR *mr);
 static int  create_pool_record(BDB *db, POOL_DBR *pr);
@@ -126,7 +124,7 @@ PROG_COPYRIGHT
 "       -V <Volumes>      specify Volume names (separated by |)\n"
 "       -w <dir>          specify working directory (default from conf file)\n"
 "       -?                print this message\n\n"),
-      2001, "", VERSION, BDATE);
+      2001, BDEMO, VERSION, BDATE);
    exit(1);
 }
 
@@ -149,7 +147,7 @@ int main (int argc, char *argv[])
 
    OSDependentInit();
 
-   while ((ch = getopt(argc, argv, "b:c:d:D:h:o:k:e:a:p:mn:pP:rsSt:u:vV:w:?")) != -1) {
+   while ((ch = getopt(argc, argv, "b:c:d:D:h:o:k:e:a:mn:pP:rsSt:u:vV:w:?")) != -1) {
       switch (ch) {
       case 'S' :
          showProgress = true;
@@ -173,9 +171,17 @@ int main (int argc, char *argv[])
          if (*optarg == 't') {
             dbg_timestamp = true;
          } else {
+            char *p;
+            /* We probably find a tag list -d 10,sql,bvfs */
+            if ((p = strchr(optarg, ',')) != NULL) {
+               *p = 0;
+            }
             debug_level = atoi(optarg);
             if (debug_level <= 0) {
                debug_level = 1;
+            }
+            if (p) {
+               debug_parse_tags(p+1, &debug_level_tags);
             }
          }
          break;
@@ -332,7 +338,10 @@ int main (int argc, char *argv[])
          num_media, num_pools, num_jobs, num_files);
    }
 
+   bjcr->read_dcr->dev->free_dedup_rehydration_interface(bjcr->read_dcr);
    free_jcr(bjcr);
+   // Notice that one jcr remains 'open' for every SOS_LABEL that don't have a
+   // matching EOS_LABEL (jcr created by create_job_record())
    dev->term(NULL);
    return 0;
 }
@@ -437,9 +446,15 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
    }
 
    if (list_records) {
-      Pmsg5(000, _("Record: SessId=%u SessTim=%u FileIndex=%d Stream=%d len=%u\n"),
-            rec->VolSessionId, rec->VolSessionTime, rec->FileIndex,
-            rec->Stream, rec->data_len);
+      if (is_offset_stream(rec->Stream)) {
+         Pmsg7(000, _("Record: SessId=%u SessTim=%u FileIndex=%d Stream=%d len=%u offset=%lld num=%d\n"),
+               rec->VolSessionId, rec->VolSessionTime, rec->FileIndex,
+               rec->Stream, rec->data_len, rec->FileOffset, rec->RecNum);
+      } else {
+         Pmsg5(000, _("Record: SessId=%u SessTim=%u FileIndex=%d Stream=%d len=%u\n"),
+               rec->VolSessionId, rec->VolSessionTime, rec->FileIndex,
+               rec->Stream, rec->data_len);
+      }
    }
    /*
     * Check for Start or End of Session Record
@@ -494,6 +509,18 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
             /* Clear out some volume statistics that will be updated */
             mr.VolJobs = mr.VolFiles = mr.VolBlocks = 0;
             mr.VolBytes = rec->data_len + 20;
+            /* If the volume is Purged or Recycled and we create JobMedia, the
+             * catalog will contain incorrect information after the recycling
+             */
+            if (strcmp(mr.VolStatus, "Purged") == 0
+                || strcmp(mr.VolStatus, "Recycled") == 0)
+            {
+               bstrncpy(mr.VolStatus, "Archive", sizeof(mr.VolStatus));
+               if (verbose) {
+                  Pmsg1(000, _("Media Status record for %s updated to Archive.\n"), mr.VolumeName);
+               }
+            }
+            mr.VolRetention = MAX(mr.VolRetention, 365 * 3600 * 24); /* 1 year at least */
          } else {
             if (!update_db) {
                Pmsg1(000, _("VOL_LABEL: Media record not found for Volume: %s\n"),
@@ -671,7 +698,6 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
          break;
       case STREAM_PLUGIN_NAME:
          break;
-
       default:
          break;
       } /* end switch */
@@ -717,9 +743,7 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
                      edit_uint64_with_commas(rec->Addr, ed2),
                      edit_uint64_with_commas(mr.VolBytes, ed3));
       }
-      create_file_attributes_record(db, mjcr, attr->fname, attr->lname,
-            attr->type, attr->attr, rec);
-      free_jcr(mjcr);
+      create_file_attributes_record(db, mjcr, attr, rec);
       break;
 
    case STREAM_RESTORE_OBJECT:
@@ -744,7 +768,6 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
          mjcr->JobBytes -= sizeof(uint64_t);
       }
 
-      free_jcr(mjcr);                 /* done using JCR */
       break;
 
    case STREAM_GZIP_DATA:
@@ -757,20 +780,17 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
          done using JCR
       */
       mjcr->JobBytes += rec->data_len;
-      free_jcr(mjcr);
       break;
 
    case STREAM_SPARSE_GZIP_DATA:
    case STREAM_SPARSE_COMPRESSED_DATA:
       mjcr->JobBytes += rec->data_len - sizeof(uint64_t); /* No correct, we should expand it */
-      free_jcr(mjcr);                 /* done using JCR */
       break;
 
    /* Win32 GZIP stream */
    case STREAM_WIN32_GZIP_DATA:
    case STREAM_WIN32_COMPRESSED_DATA:
       mjcr->JobBytes += rec->data_len;
-      free_jcr(mjcr);                 /* done using JCR */
       break;
 
    case STREAM_MD5_DIGEST:
@@ -871,10 +891,14 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
       /* Ignore Unix Extended attributes */
       break;
 
+   case STREAM_PLUGIN_NAME:
+      break;
+
    default:
       Pmsg2(0, _("Unknown stream type!!! stream=%d len=%i\n"), rec->Stream, rec->data_len);
       break;
    }
+   free_jcr(mjcr);                 /* got from get_jcr_by_session() above */
    return true;
 }
 
@@ -907,22 +931,21 @@ static void bscan_free_jcr(JCR *jcr)
  * We got a File Attributes record on the tape.  Now, lookup the Job
  *   record, and then create the attributes record.
  */
-static int create_file_attributes_record(BDB *db, JCR *mjcr,
-                               char *fname, char *lname, int type,
-                               char *ap, DEV_RECORD *rec)
+static int create_file_attributes_record(BDB *db, JCR *mjcr, ATTR *attrs, DEV_RECORD *rec)
 {
    DCR *dcr = mjcr->read_dcr;
-   ar.fname = fname;
-   ar.link = lname;
+   ar.fname = attrs->fname;
+   ar.link = attrs->lname;
    ar.ClientId = mjcr->ClientId;
    ar.JobId = mjcr->JobId;
    ar.Stream = rec->Stream;
-   if (type == FT_DELETED) {
+   ar.DeltaSeq = attrs->delta_seq;
+   if (attrs->type == FT_DELETED) {
       ar.FileIndex = 0;
    } else {
       ar.FileIndex = rec->FileIndex;
    }
-   ar.attr = ap;
+   ar.attr = attrs->attr;
    if (dcr->VolFirstIndex == 0) {
       dcr->VolFirstIndex = rec->FileIndex;
    }
@@ -940,7 +963,7 @@ static int create_file_attributes_record(BDB *db, JCR *mjcr,
    mjcr->FileId = ar.FileId;
 
    if (verbose > 1) {
-      Pmsg1(000, _("Created File record: %s\n"), fname);
+      Pmsg1(000, _("Created File record: %s\n"), attrs->fname);
    }
    return 1;
 }
