@@ -268,6 +268,10 @@ void    release_reserve_messages(JCR *jcr);
 extern int reservations_lock_count;
 
 /* From status.c */
+bool send_shstore_blocked_status(DEVICE *dev, POOLMEM **msg, int *len);
+void list_shstore(DEVICE *dev, OutputWriter *ow);
+bool list_shstore(DEVICE *dev, POOLMEM **msg, int *len);
+
 void    _dbg_list_one_device(DEVICE *dev, const char *f, int l);
 #define dbg_list_one_device(x, dev) if (chk_dbglvl(x))     \
         _dbg_list_one_device(dev, __FILE__, __LINE__)
