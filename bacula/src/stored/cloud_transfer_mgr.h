@@ -38,9 +38,6 @@ class DCR;
 class transfer;
 class cloud_proxy;
 
-typedef void *(transfer_engine)(transfer *);
-
-
 /* possible states of a transfer object */
 typedef enum {
 /* initial state */
@@ -60,6 +57,10 @@ typedef enum {
    NUM_TRANS_STATE
 } transfer_state;
 
+
+typedef transfer_state (transfer_engine)(transfer *);
+
+
 /* each cloud transfer (download, upload, etc.)
   is wrapped into a transfer object */
 class transfer : public SMARTALLOC
@@ -72,12 +73,16 @@ public:
    pthread_mutex_t      m_stat_mutex;
    /* size of the transfer: should be filled asap */
    uint64_t             m_stat_size;
+   /* size processed so far : filled by the processor (driver) */
+   uint64_t             m_stat_processed_size;
    /* time when process started */
-   utime_t              m_stat_start;
+   btime_t              m_stat_start;
    /* duration of the transfer : automatically filled when transfer is completed*/
-   utime_t              m_stat_duration;
+   btime_t              m_stat_duration;
    /* estimate time to arrival : predictive guest approximation of transfer time*/
-   utime_t              m_stat_eta;
+   btime_t              m_stat_eta;
+   /* computed bytes/sec transfer rate */
+   uint64_t             m_stat_average_rate;
 
 /* status variables :*/
    /* protect status changes*/
@@ -95,6 +100,16 @@ public:
    /* the function processed by this transfer: contrary to the workq, it can be different for each transfer */
    transfer_engine     *m_funct;
 
+   /* current waiting time for observer.
+    * if  != 0, the transfer is supposed to be in QUEUED state
+    * and is reported as Waiting in statistics.
+    */
+   int                  m_wait_timeout_inc_insec;
+   /* next wait timeout */
+   btime_t              m_wait_timeout;
+   /* used for file_driver glacier simulation */
+   bool                 m_debug_retry;
+
    /* variables */
    const char          *m_cache_fname;
    const char          *m_volume_name;
@@ -106,12 +121,16 @@ public:
    uint64_t             m_res_size;
    /* last modification time of the transfer result : filled by the processor (driver) */
    utime_t              m_res_mtime;
-
+   /* SHA512 checksum of the part */
+   unsigned char        m_hash64[64];
    /* the associated workq element */
    workq_ele_t         *m_workq_elem;
 
    /* reference counter */
    int                  m_use_count;
+
+   /* Number of retry for this tranfer */
+   int32_t              m_retry;
 
    /* cancel flag */
    bool                 m_cancel;
@@ -159,12 +178,25 @@ public:
    bool cancel();
 
    /* callback fct that checks if transfer has been cancelled */
-   bool is_cancelled() const;
+   bool is_canceled() const;
 
    /* append a status message into msg*/
    uint32_t append_status(POOL_MEM& msgs);
+   void append_api_status(OutputWriter &ow);
 
    void set_do_cache_truncate(bool do_cache_truncate);
+
+   /* reset processed size */
+   void reset_processed_size();
+
+   /* set processed size absolute value */
+   void set_processed_size(uint64_t size);
+
+   /* add increment to the current processed size */
+   void increment_processed_size(uint64_t increment);
+
+   /* Increment the retry count for this transfer */
+   void                 inc_retry();
 
 protected:
 friend class transfer_manager;
@@ -196,6 +228,8 @@ public:
    uint32_t             m_stat_nb_workers;
    /* current number of transfers in TRANS_STATE_QUEUED state in this manager*/
    uint64_t             m_stat_nb_transfer_queued;
+   /* current number of requeued transfers in TRANS_STATE_QUEUED state in this manager*/
+   uint64_t             m_stat_nb_transfer_waiting;
    /* current number of transfers in TRANS_STATE_PROCESSED state in this manager*/
    uint64_t             m_stat_nb_transfer_processed;
    /* current number of transfers in TRANS_STATE_DONE state in this manager*/
@@ -205,6 +239,8 @@ public:
 
    /* size in bytes of transfers in TRANS_STATE_QUEUED state in this manager*/
    uint64_t             m_stat_size_queued;
+   /* size in bytes of requeued transfers in TRANS_STATE_QUEUED state in this manager*/
+   uint64_t             m_stat_size_waiting;   
    /* size in bytes of transfers in TRANS_STATE_PROCESSED state in this manager*/
    uint64_t             m_stat_size_processed;
    /* size in bytes of transfers in TRANS_STATE_DONE state in this manager*/
@@ -212,11 +248,11 @@ public:
    /* size in bytes of transfers in TRANS_STATE_ERROR state in this manager*/
    uint64_t             m_stat_size_error;
    /* duration of transfers in TRANS_STATE_DONE state in this manager*/
-   utime_t              m_stat_duration_done;
+   btime_t              m_stat_duration_done;
    /* computed bytes/sec transfer rate */
    uint64_t             m_stat_average_rate;
    /* computed Estimate Time to Arrival */
-   utime_t              m_stat_eta;
+   btime_t              m_stat_eta;
 
 
 /* status variables global for this manager: */
@@ -237,7 +273,8 @@ public:
 /* methods */
 
    /* constructor */
-   transfer_manager(uint32_t n);
+   /*  nb_workers: maximum number of workers allowed for this manager */
+   transfer_manager(uint32_t nb_worker);
 
    /* destructor */
    ~transfer_manager();
@@ -283,6 +320,7 @@ public:
 
    /* append a status message into msg*/
    uint32_t append_status(POOL_MEM& msg, bool verbose);
+   void append_api_status(OutputWriter &ow, bool verbose);
 
 protected:
 friend class transfer;
