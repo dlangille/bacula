@@ -16,9 +16,10 @@
 
    Bacula(R) is a registered trademark of Kern Sibbald.
 */
-/*
+/**
  * General header file configurations that apply to
  * all daemons.  System dependent stuff goes here.
+ *
  */
 
 
@@ -33,9 +34,15 @@
 #define FALSE 0
 
 #ifdef HAVE_TLS
-#define have_tls 1
+ #define have_tls 1
+ #ifdef HAVE_TLS_PSK
+   #define tls_psk_default 1
+ #else
+  #define tls_psk_default 0
+ #endif
 #else
-#define have_tls 0
+ #define have_tls 0
+ #define tls_psk_default 0
 #endif
 
 #ifndef ETIME
@@ -58,17 +65,17 @@
 
 #ifdef DEBUG
 #define ASSERT(x) if (!(x)) { \
-   char *tjcr = NULL; \
+   char *jcr = NULL; \
    Emsg1(M_ERROR, 0, _("Failed ASSERT: %s\n"), #x); \
    Pmsg1(000, _("Failed ASSERT: %s\n"), #x); \
-   tjcr[0] = 0; }
+   jcr[0] = 0; }
 
 #define ASSERT2(x,y) if (!(x)) { \
    set_assert_msg(__FILE__, __LINE__, y); \
    Emsg1(M_ERROR, 0, _("Failed ASSERT: %s\n"), #x); \
    Pmsg1(000, _("Failed ASSERT: %s\n"), #x); \
-   char *tjcr = NULL; \
-   tjcr[0] = 0; }
+   char *jcr = NULL; \
+   jcr[0] = 0; }
 #else
 #define ASSERT(x)
 #define ASSERT2(x, y)
@@ -85,15 +92,27 @@
 #define ASSERTD(x, y)
 #endif
 
+/* Until DDE has its own logging, use Tmsg, with following debug levels */
+#define DDE_MSG 0
+#define VACUUM_MSG 0
+#define DDEERR_MSG 0
+#define VACERR_MSG 0
+#define SCRUB_MSG 0
+#define SCRUBERR_MSG 0
+
 /* Allow printing of NULL pointers */
 #define NPRT(x) (x)?(x):_("*None*")
 #define NPRTB(x) (x)?(x):""
 
-#if defined(HAVE_WIN32)
-
-#define WIN32_REPARSE_POINT  1   /* Can be any number of "funny" directories except the next two */
+/* stored in statp.st_rdev */
+#define WIN32_REPARSE_NONE   0   /* Not a reparse point */
+#define WIN32_REPARSE_POINT  1   /* Can be any reparse point except one of the following */
 #define WIN32_MOUNT_POINT    2   /* Directory link to Volume */
 #define WIN32_JUNCTION_POINT 3   /* Directory link to a directory */
+#define WIN32_SYMLINK_POINT  4   /* A Symlink to a file OR a directory */
+#define WIN32_ROOT_POINT     5   /* Root of a volume, like C: */
+
+#if defined(HAVE_WIN32)
 
 /* Reduce compiler warnings from Windows vss code */
 #define uuid(x)
@@ -236,10 +255,12 @@ enum {
    B_VTL_DEV =  7,                    /* Virtual tape library device */
    B_ADATA_DEV = 8,                   /* Aligned data Data file */
    B_ALIGNED_DEV = 9,                 /* Aligned data Meta file */
+   B_DEDUP_OLD_DEV = 10,              /* Old Deduplication device */
    B_NULL_DEV  = 11,                  /* /dev/null for testing */
    B_VALIGNED_DEV = 12,               /* Virtual for Aligned device (not stored) */
    B_VDEDUP_DEV = 13,                 /* Virtual for Dedup device (not stored) */
-   B_CLOUD_DEV  = 14                  /* New Cloud device type (available in 8.8) */
+   B_CLOUD_DEV  = 14,                 /* New Cloud device type (available in 8.8) */
+   B_DEDUP_DEV  = 15                  /* New Deduplication Device (do not split ref records) */
 };
 
 /**
@@ -582,7 +603,8 @@ void t_msg(const char *file, int line, int64_t level, const char *fmt,...);
 #endif
 
 /** Macro to simplify free/reset pointers */
-#define bfree_and_null(a) do{if(a){free(a); (a)=NULL;}} while(0)
+#define bfree_and_null(a) do{if(a){bfree(a); (a)=NULL;}} while(0)
+#define bdelete_and_null(a) do{if(a){delete a; (a)=NULL;}} while(0)
 
 /**
  * Replace codes needed in both file routines and non-file routines
@@ -625,6 +647,7 @@ void t_msg(const char *file, int line, int64_t level, const char *fmt,...);
 #define PathSeparatorCur ".\\"
 
 inline bool IsPathSeparator(int ch) { return ch == '/' || ch == '\\'; }
+inline bool IsWPathSeparator(wchar_t ch) { return ch == L'/' || ch == L'\\'; }
 inline char *first_path_separator(char *path) { return strpbrk(path, "/\\"); }
 inline const char *first_path_separator(const char *path) { return strpbrk(path, "/\\"); }
 
@@ -748,5 +771,15 @@ static inline bool bigendian() { return htonl(1) == 1L; }
 #else
 # define CHECK_FORMAT(fun, f, a)
 #endif
+
+/* error_t is a type that can be used for the return value of functions to tell
+ * the developer how to handle the result
+ * value == 0 : means no error
+ * value > 0 : are for expected or controlled conditions, like to notify that
+ *             the end of file is reached or that the last element has been processed
+ * value < 0 : are for exceptional or unexpected errors like memory allocation
+ *             failures or failing open("/dev/null"), ....
+ */
+typedef int error_t;
 
 #endif /* _BACONFIG_H */
