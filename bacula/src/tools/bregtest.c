@@ -113,6 +113,8 @@ int main(int argc, char *const *argv)
 
    OSDependentInit();
 
+   struct stat sp;
+   stat("/etc/passwd", &sp);
    alist *list;
    char *p;
    
@@ -123,7 +125,7 @@ int main(int argc, char *const *argv)
       exit (1);
    }
 
-   fd = fopen(fname, "r");
+   fd = bfopen(fname, "r");
    if (!fd) {
       printf(_("Could not open data file: %s\n"), fname);
       exit(1);
@@ -131,7 +133,7 @@ int main(int argc, char *const *argv)
 
    while (fgets(data, sizeof(data)-1, fd)) {
       strip_trailing_newline(data);
-      apply_bregexps(data, list, &p);
+      apply_bregexps(data, NULL, list, &p);
       if (sed) {
          printf("%s\n", p);
       } else {
