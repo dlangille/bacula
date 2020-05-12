@@ -20,6 +20,7 @@
  * Routines for managing Volumes contains and comparing parts
  *
  * Written by Norbert Bizet, May MMXVI
+ *
  */
 #ifndef _CLOUD_PARTS_H_
 #define _CLOUD_PARTS_H_
@@ -33,6 +34,7 @@ struct cloud_part
    uint32_t    index;
    utime_t     mtime;
    uint64_t    size;
+   unsigned char hash64[64];
 };
 
 /* equality operators for cloud_part structure */
@@ -76,10 +78,10 @@ class cloud_proxy : public SMARTALLOC
 private:
    htable *m_hash;               /* the root htable */
    bool m_owns;                  /* determines if ilist own the cloud_parts */
-   pthread_mutex_t m_mutex;      /* protect access*/   
+   pthread_mutex_t m_mutex;      /* protect access*/
    static cloud_proxy *m_pinstance; /* singleton instance */
    static uint64_t m_count;      /* static refcount */
-   
+
    ~cloud_proxy();
 
 public:
@@ -92,7 +94,7 @@ public:
    /* either using a part ptr (part can be disposed afterward)... */
    bool set(const char *volume, cloud_part *part);
    /* ...or by passing basic part parameters (part is constructed internally) */
-   bool set(const char *volume, uint32_t index, utime_t mtime, uint64_t size);
+   bool set(const char *volume, uint32_t index, utime_t mtime, uint64_t size, unsigned char *hash64);
 
    /* one can retrieve the proxied cloud_part using the get method */
    cloud_part *get(const char *volume, uint32_t part_idx);
@@ -101,7 +103,7 @@ public:
 
    /* Check if the volume entry exists and return true if it's the case */
    bool volume_lookup(const char *volume);
-   
+
    /* reset the volume list content with the content of part_list */
    bool reset(const char *volume, ilist *part_list);
 
