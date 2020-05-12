@@ -34,26 +34,37 @@ extern STORES *me;               /* our Global resource */
 
 const int dbglvl = 50;
 
-/*
- * SD_VERSION history
- * Note: Enterprise versions now numbered in 30000
- *       and community is at SD version 3
- *     None prior to 06Aug13
- *      1         - Skipped
- *      2          - Skipped
- *      3 22Feb14 - Added SD->SD with SD_Calls_Client
- *      4 22Jun14 - Skipped
- *    305 04Jun15 - Added JobMedia queueing
- *    306 20Mar15 - Added comm line compression
- */
-
-#define SD_VERSION 306     /* Community SD version */
-#define FD_VERSION 214     /* Community FD version */
-
-static char hello_sd[]  = "Hello Bacula SD: Start Job %s %d %d\n";
+static char hello_sd[]  = "Hello Bacula SD: Start Job %s %d %d tlspsk=%d\n";
 
 static char Sorry[]     = "3999 No go\n";
 static char OK_hello[]  = "3000 OK Hello %d\n";
+
+/* We store caps in a special structure to update JCR
+ * only after the auth phase
+ */
+class caps_fd {
+public:
+   int32_t  fd_dedup;
+   int32_t  fd_rehydration;
+   caps_fd() :
+      fd_dedup(0),
+      fd_rehydration(0)
+      {};
+   bool scan(const char *msg) {
+      return sscanf(msg, "fdcaps: dedup=%ld rehydration=%ld",
+                    &fd_dedup, &fd_rehydration) == 2;
+   }
+   /* Set variable that we got in JCR */
+   void set(JCR *jcr) {
+      jcr->fd_dedup = fd_dedup;
+      jcr->fd_rehydration = fd_rehydration;
+   };
+};
+
+static bool recv_fdcaps(JCR *jcr, BSOCK *cl, caps_fd *caps);
+static bool send_sdcaps(JCR *jcr, BSOCK *cl);
+static bool recv_sdcaps(JCR *jcr, BSOCK *cl);
+static bool send_fdcaps(JCR *jcr, BSOCK *cl);
 
 
 /*********************************************************************
@@ -80,10 +91,12 @@ bool validate_dir_hello(JCR* jcr)
    }
    dirname = get_pool_memory(PM_MESSAGE);
    dirname = check_pool_memory_size(dirname, dir->msglen);
-
-   if (sscanf(dir->msg, "Hello SD: Bacula Director %127s calling %d",
+   dir->tlspsk_remote = 0;
+   if (scan_string(dir->msg, "Hello SD: Bacula Director %127s calling %d tlspsk=%d",
+         dirname, &dir_version, &dir->tlspsk_remote) != 3 &&
+       scan_string(dir->msg, "Hello SD: Bacula Director %127s calling %d",
           dirname, &dir_version) != 2 &&
-       sscanf(dir->msg, "Hello SD: Bacula Director %127s calling",
+       scan_string(dir->msg, "Hello SD: Bacula Director %127s calling",
           dirname) != 1) {
       dir->msg[100] = 0;
       Dmsg2(dbglvl, "Bad Hello command from Director at %s: %s\n",
@@ -133,6 +146,7 @@ void handle_client_connection(BSOCK *fd)
    int fd_version = 0;
    int sd_version = 0;
    char job_name[500];
+   caps_fd fdcaps;
    /*
     * Do a sanity check on the message received
     */
@@ -144,14 +158,18 @@ void handle_client_connection(BSOCK *fd)
       return;
    }
 
-   Dmsg1(100, "Conn: %s", fd->msg);
+   Dmsg1(dbglvl, "authenticate: %s", fd->msg);
    /*
     * See if this is a File daemon connection. If so
     *   call FD handler.
     */
-   if (sscanf(fd->msg, "Hello Bacula SD: Start Job %127s %d %d", job_name, &fd_version, &sd_version) != 3 &&
-       sscanf(fd->msg, "Hello FD: Bacula Storage calling Start Job %127s %d", job_name, &sd_version) != 2 &&
-       sscanf(fd->msg, "Hello Start Job %127s", job_name) != 1) {
+   fd->tlspsk_remote = 0;
+   if (scan_string(fd->msg, "Hello Bacula SD: Start Job %127s %d %d tlspsk=%d", job_name, &fd_version, &sd_version, &fd->tlspsk_remote) != 4 &&
+       scan_string(fd->msg, "Hello Bacula SD: Start Job %127s %d %d", job_name, &fd_version, &sd_version) != 3 &&
+       scan_string(fd->msg, "Hello Bacula SD: Start Job %127s %d tlspsk=%d", job_name, &fd_version, &fd->tlspsk_remote) != 3 &&
+       scan_string(fd->msg, "Hello Bacula SD: Start Job %127s %d", job_name, &fd_version) != 2 &&
+       scan_string(fd->msg, "Hello FD: Bacula Storage calling Start Job %127s %d", job_name, &sd_version) != 2 &&
+       scan_string(fd->msg, "Hello Start Job %127s", job_name) != 1) {
       Qmsg2(NULL, M_SECURITY, 0, _("Invalid Hello from %s. Len=%d\n"), fd->who(), fd->msglen);
       sleep(5);
       fd->destroy();
@@ -180,12 +198,23 @@ void handle_client_connection(BSOCK *fd)
    fd->set_jcr(jcr);
    Dmsg2(050, "fd_version=%d sd_version=%d\n", fd_version, sd_version);
 
-   /* Turn on compression for newer FDs */
-   if (fd_version >= 214 || sd_version >= 306) {
+   /* Turn on compression for newer FDs, except for community version */
+   if ((fd_version >= 9 || sd_version >= 1) && fd_version != 213 && me->comm_compression) {
       fd->set_compress();             /* set compression allowed */
    } else {
       fd->clear_compress();
       Dmsg0(050, "*** No SD compression to FD\n");
+   }
+
+   /* The community version 213 doesn't send caps, the 215 version might do it  */
+   if (fd_version >= 12 && fd_version != 213 && fd_version != 214) {
+      /* Send and get capabilities */
+      if (!send_sdcaps(jcr, fd)) {
+         goto bail_out;
+      }
+      if (!recv_fdcaps(jcr, fd, &fdcaps)) {
+         goto bail_out;
+      }
    }
 
    /*
@@ -207,6 +236,7 @@ void handle_client_connection(BSOCK *fd)
       jcr->file_bsock = fd;
       jcr->FDVersion = fd_version;
       jcr->SDVersion = sd_version;
+      fdcaps.set(jcr);
       jcr->authenticated = true;
 
       if (sd_version > 0) {
@@ -239,9 +269,9 @@ bail_out:
 bool is_client_connection(BSOCK *bs)
 {
    return
-      sscanf(bs->msg, "Hello Bacula SD: Start Job ") == 0 ||
-      sscanf(bs->msg, "Hello FD: Bacula Storage calling Start Job ") == 0 ||
-      sscanf(bs->msg, "Hello Start Job ") == 0;
+      scan_string(bs->msg, "Hello Bacula SD: Start Job ") == 0 ||
+      scan_string(bs->msg, "Hello FD: Bacula Storage calling Start Job ") == 0 ||
+      scan_string(bs->msg, "Hello Start Job ") == 0;
 }
 
 /*
@@ -256,6 +286,7 @@ bool read_client_hello(JCR *jcr)
    int sd_version = 0;
    BSOCK *cl = jcr->file_bsock;
    char job_name[500];
+   caps_fd fdcaps;
 
    /* We connected to Client, so finish work */
    if (!cl) {
@@ -280,24 +311,40 @@ bool read_client_hello(JCR *jcr)
       Dmsg1(050, _("Recv request to Client failed. ERR=%s\n"), be.bstrerror());
       return false;
    }
-   Dmsg1(050, ">filed: %s\n", cl->msg);
-   if (sscanf(cl->msg, "Hello Bacula SD: Start Job %127s %d %d", job_name, &fd_version, &sd_version) != 3) {
+   Dmsg1(dbglvl, "authenticate: %s", cl->msg);
+   cl->tlspsk_remote = 0;
+   if (scan_string(cl->msg, "Hello Bacula SD: Start Job %127s %d %d tlspsk=%d", job_name, &fd_version, &sd_version, &cl->tlspsk_remote) != 4 &&
+       scan_string(cl->msg, "Hello Bacula SD: Start Job %127s %d tlspsk=%d", job_name, &fd_version, &cl->tlspsk_remote) != 3 &&
+       scan_string(cl->msg, "Hello Bacula SD: Start Job %127s %d %d", job_name, &fd_version, &sd_version) != 3 &&
+       scan_string(cl->msg, "Hello Bacula SD: Start Job %127s %d", job_name, &fd_version) != 2) {
       Jmsg1(jcr, M_FATAL, 0, _("Bad Hello from Client: %s.\n"), cl->msg);
       Dmsg1(050, _("Bad Hello from Client: %s.\n"), cl->msg);
       return false;
    }
+
    unbash_spaces(job_name);
    jcr->FDVersion = fd_version;
    jcr->SDVersion = sd_version;
    Dmsg1(050, "FDVersion=%d\n", fd_version);
    /* Turn on compression for newer FDs, except for Community version */
-   if (jcr->FDVersion >= 214 && me->comm_compression) {
+   if (jcr->FDVersion >= 9 && jcr->FDVersion != 213 && me->comm_compression) {
       cl->set_compress();             /* set compression allowed */
    } else {
       cl->clear_compress();
       Dmsg0(050, "*** No SD compression to FD\n");
    }
 
+   /* The community version 213 doesn't have caps */
+   if (fd_version >= 12 && fd_version != 213 && fd_version != 214) {
+      /* Send and get capabilities */
+      if (!send_sdcaps(jcr, cl)) {
+         return false;
+      }
+      if (!recv_fdcaps(jcr, cl, &fdcaps)) {
+         return false;
+      }
+      fdcaps.set(jcr);
+   }
    return true;
 }
 
@@ -317,18 +364,28 @@ bool send_sorry(BSOCK *bs)
 /*
  * We are acting as a client, so send Hello to the SD.
  */
-bool send_hello_sd(JCR *jcr, char *Job)
+bool send_hello_sd(JCR *jcr, char *Job, int tlspsk)
 {
    bool rtn;
    BSOCK *sd = jcr->store_bsock;
 
    bash_spaces(Job);
-   rtn = sd->fsend(hello_sd, Job, FD_VERSION, SD_VERSION);
+   rtn = sd->fsend(hello_sd, Job, FD_VERSION, SD_VERSION, tlspsk);
    unbash_spaces(Job);
    Dmsg1(100, "Send to SD: %s\n", sd->msg);
    if (!rtn) {
       return false;
    }
+
+#ifndef COMMUNITY
+   /* Receive and send capabilities */
+   if (!recv_sdcaps(jcr, sd)) {
+      return false;
+   }
+   if (!send_fdcaps(jcr, sd)) {
+      return false;
+   }
+#endif
    return true;
 }
 
@@ -342,6 +399,8 @@ bool send_hello_client(JCR *jcr, char *Job)
    BSOCK *cl = jcr->file_bsock;
 
    bash_spaces(Job);
+   // This is a "dummy" hello, just to connect to the waiting FD job
+   // No need of a TLS-PSK field here, the FD will send the "real" TLS-PSK field
    rtn = cl->fsend("Hello FD: Bacula Storage calling Start Job %s %d\n", Job, SD_VERSION);
    unbash_spaces(Job);
    if (!rtn) {
@@ -349,3 +408,114 @@ bool send_hello_client(JCR *jcr, char *Job)
    }
    return rtn;
 }
+
+#ifdef COMMUNITY
+
+static bool send_sdcaps(JCR *jcr, BSOCK *cl) { return false; }
+static bool recv_fdcaps(JCR *jcr, BSOCK *cl, caps_fd *caps) { return false; }
+static bool send_fdcaps(JCR *jcr, BSOCK *cl) { return false; }
+static bool recv_sdcaps(JCR *jcr, BSOCK *cl) { return false; }
+
+#else
+
+/*
+ * Capabilities Exchange
+ *
+ * Immediately after the Hello is sent/received by the SD, the SD sends
+ *  its capabilities to the client (FD), and the client responds by
+ *  sending its capabilities.
+ */
+static bool send_sdcaps(JCR *jcr, BSOCK *cl)
+{
+   int stat;
+   int32_t dedup = 0;
+   int32_t hash = DEDUP_DEFAULT_HASH_ID;
+   uint32_t block_size = DEDUP_IDEAL_BLOCK_SIZE;
+   uint32_t min_block_size = DEDUP_MIN_BLOCK_SIZE;
+   uint32_t max_block_size = DEDUP_MAX_BLOCK_SIZE;
+
+   /* Set dedup, if SD is dedup enabled and device is dedup type */
+   if (jcr->dcr) {
+      dedup = jcr->dcr->dev->dev_type==B_DEDUP_DEV;
+   }
+   Dmsg5(200, ">Send sdcaps: dedup=%ld hash=%ld dedup_block=%lu min_dedup_block=%lu max_dedup_block=%lu\n",
+        dedup, hash, block_size, min_block_size, max_block_size);
+   stat = cl->fsend("sdcaps: dedup=%ld hash=%ld dedup_block=%lu min_dedup_block=%lu max_dedup_block=%lu\n",
+      dedup, hash, block_size, min_block_size, max_block_size);
+   if (!stat) {
+      berrno be;
+      Jmsg1(jcr, M_FATAL, 0, _("Send caps to Client failed. ERR=%s\n"),
+         be.bstrerror());
+      Dmsg1(050, _("Send caps to Client failed. ERR=%s\n"), be.bstrerror());
+      return false;
+   }
+   return true;
+}
+
+static bool recv_fdcaps(JCR *jcr, BSOCK *cl, caps_fd *caps)
+{
+   int stat;
+
+   stat = cl->recv();
+   if (stat <= 0) {
+      berrno be;
+      Jmsg1(jcr, M_FATAL, 0, _("Recv caps from Client failed. ERR=%s\n"),
+         be.bstrerror());
+      Dmsg1(050, _("Recv caps from Client failed. ERR=%s\n"), be.bstrerror());
+      return false;
+   }
+   if (!caps->scan(cl->msg)) {
+      Jmsg1(jcr, M_FATAL, 0, _("Recv bad caps from Client: %s.\n"), cl->msg);
+      Dmsg1(050, _("Recv bad caps from Client %s\n"), cl->msg);
+      return false;
+   }
+   return true;
+}
+
+/* ======================== */
+
+
+/*
+ * Note: for the following two subroutines, during copy/migration
+ *  jobs, we are acting as a File daemon.
+ */
+static bool send_fdcaps(JCR *jcr, BSOCK *sd)
+{
+   int dedup = 0;
+   if (jcr->dcr->device->dev_type == B_DEDUP_DEV) {
+      dedup = 1;
+   }
+   return sd->fsend("fdcaps: dedup=%d rehydration=%d\n", dedup, dedup);
+}
+
+/* Result not used */
+static bool recv_sdcaps(JCR *jcr, BSOCK *sd)
+{
+   int stat;
+   int32_t dedup = 0;
+   int32_t hash = 0;
+   int32_t block_size = 0;
+   int32_t min_block_size = 0;
+   int32_t max_block_size = 0;
+
+
+   stat = sd->recv();
+   if (stat <= 0) {
+      berrno be;
+      Jmsg1(jcr, M_FATAL, 0, _("Recv caps from SD failed. ERR=%s\n"),
+         be.bstrerror());
+      Dmsg1(050, _("Recv caps from SD failed. ERR=%s\n"), be.bstrerror());
+      return false;
+   }
+
+   if (sscanf(sd->msg, "sdcaps: dedup=%ld hash=%ld dedup_block=%ld min_dedup_block=%ld max_dedup_block=%ld",
+        &dedup, &hash, &block_size, &min_block_size, &max_block_size) != 5) {
+      Jmsg1(jcr, M_FATAL, 0, _("Bad caps from SD: %s.\n"), sd->msg);
+      Dmsg1(050, _("Bad caps from SD: %s\n"), sd->msg);
+      return false;
+   }
+   Dmsg5(200, "sdcaps: dedup=%ld hash=%ld dedup_block=%ld min_dedup_block=%ld max_dedup_block=%ld\n",
+        dedup, hash, block_size, min_block_size, max_block_size);
+   return true;
+}
+#endif
