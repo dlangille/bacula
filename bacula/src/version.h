@@ -141,6 +141,7 @@
 /* #define DEBUG_BLOCK_CHECKSUM 1 */
 
 #define BDEMO ""
+#define BEEF  0
 
 /*
  * Set SMALLOC_SANITY_CHECK to zero to turn off, otherwise
