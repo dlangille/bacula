@@ -302,13 +302,8 @@ bool DCR::write_block_to_dev()
       if (dev->dev_errno == ENOSPC) {
          dev->update_freespace();
          if (dev->is_freespace_ok() && dev->free_space < dev->min_free_space) {
-            int mtype = M_FATAL;
             dev->set_nospace();
-            if (dev->is_removable()) {
-               mtype = M_INFO;
-            }
-            Jmsg(jcr, mtype, 0, _("%s Out of freespace caused End of Volume \"%s\" at %s on device %s. Write of %u bytes got %d.\n"),
-               mtype==M_FATAL?"[SF0209]":"[SI0201]",
+            Jmsg(jcr, M_WARNING, 0, _("[SW0201] Out of freespace caused End of Volume \"%s\" at %s on device %s. Write of %u bytes got %d.\n"),
                dev->getVolCatName(),
                dev->print_addr(ed1, sizeof(ed1)), dev->print_name(), wlen, stat);
          } else {
@@ -341,6 +336,7 @@ bool DCR::write_block_to_dev()
       Dmsg3(200, "AmetaBytes=%lld AdataBytes=%lld Bytes=%lld\n",
          dev->VolCatInfo.VolCatAmetaBytes, dev->VolCatInfo.VolCatAdataBytes, dev->VolCatInfo.VolCatBytes);
    }
+   dev->updateVolCatExtraBytes(block->extra_bytes); /* Count bytes stored outside volumes */
    dev->updateVolCatBlocks(1);
    dev->LastBlock = block->BlockNumber;
    block->BlockNumber++;
@@ -390,6 +386,9 @@ bool DCR::write_block_to_dev()
          dcr->VolLastIndex = block->LastIndex;
       }
       dcr->WroteVol = true;
+
+      /* Update FileMedia records with the block offset, we do it before the BlockAddr update */
+      dir_create_filemedia_record(dcr);
    }
 
    dev->file_addr += wlen;            /* update file address */
@@ -450,6 +449,7 @@ bool DCR::read_block_from_dev(bool check_block_numbers)
    ssize_t stat;
    int looping;
    int retry;
+   int status;
    DCR *dcr = this;
    boffset_t pos;
    char ed1[50];
@@ -534,8 +534,9 @@ reread:
             dev->clrerror(-1);
          }
          stat = dev->read(block->buf + data_len, (size_t)(block->buf_len - data_len));
-         if (stat > 0)
+         if (stat > 0) {
             data_len += stat;
+         }
 
       } while (stat == -1 && (errno == EBUSY || errno == EINTR || errno == EIO) && retry++ < 3);
 
@@ -614,19 +615,27 @@ reread:
 
       if (block->read_len < BLKHDR2_LENGTH) {
          dev->dev_errno = EIO;
-         Mmsg3(dev->errmsg, _("[SE0205] Volume data error at %s! Very short block of %d bytes on device %s discarded.\n"),
+         Mmsg3(dev->errmsg, _("[SE0205] Volume data error at %s! Short block of %d bytes on device %s discarded.\n"),
             dev->print_addr(ed1, sizeof(ed1)), block->read_len, dev->print_name());
-         Jmsg(jcr, M_ERROR, 0, "%s", dev->errmsg);
+         Jmsg(jcr, M_WARNING, 0, "%s", dev->errmsg);  /* discard block, but continue */
          dev->set_short_block();
          block->read_len = block->binbuf = 0;
          Dmsg2(50, "set block=%p binbuf=%d\n", block, block->binbuf);
          return false;             /* return error */
       }
 
+      status = jcr->getJobStatus();
       if (!unser_block_header(this, dev, block)) {
          if (forge_on) {
-            dev->file_addr += block->read_len;
-            dev->file_size += block->read_len;
+            /* Skip the current byte to find a valid block */
+            dev->file_addr += 1;
+            dev->file_size += 1;
+            /* Can be canceled at this point... */
+            if (jcr->is_canceled()) {
+               jcr->forceJobStatus(status);
+            }
+            set_block_position(dcr, dev, block);
+            dev->lseek(dcr, dcr->block->BlockAddr, SEEK_SET);
             goto reread;
          }
          return false;
@@ -680,7 +689,7 @@ reread:
       dev->dev_errno = EIO;
       Mmsg4(dev->errmsg, _("[SE0208] Volume data error at %u:%u! Short block of %d bytes on device %s discarded.\n"),
          dev->file, dev->block_num, block->read_len, dev->print_name());
-      Jmsg(jcr, M_ERROR, 0, "%s", dev->errmsg);
+      Jmsg(jcr, M_WARNING, 0, "%s", dev->errmsg);  /* discard block, but continue */
       dev->set_short_block();
       block->read_len = block->binbuf = 0;
       return false;             /* return error */
