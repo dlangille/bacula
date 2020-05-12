@@ -32,6 +32,7 @@ const char *plugin_type = "-sd.so";
 
 /* Forward referenced functions */
 static bRC baculaGetValue(bpContext *ctx, bsdrVariable var, void *value);
+static bRC baculaGetGlobal(bsdrGlobalVariable var, void *value);
 static bRC baculaSetValue(bpContext *ctx, bsdwVariable var, void *value);
 static bRC baculaRegisterEvents(bpContext *ctx, ...);
 static bRC baculaJobMsg(bpContext *ctx, const char *file, int line,
@@ -59,6 +60,7 @@ static bsdFuncs bfuncs = {
    baculaJobMsg,
    baculaDebugMsg,
    baculaEditDeviceCodes,
+   baculaGetGlobal
 };
 
 /*
@@ -254,7 +256,7 @@ static bool is_plugin_compatible(Plugin *plugin)
    }
    if (strcmp(info->plugin_license, "Bacula AGPLv3") != 0 &&
        strcmp(info->plugin_license, "AGPLv3") != 0 &&
-       strcmp(info->plugin_license, "Bacula") != 0) {
+       strcmp(info->plugin_license, BPLUGIN_LICENSE) != 0) {
       Jmsg(NULL, M_ERROR, 0, _("Plugin license incompatible. Plugin=%s license=%s\n"),
            plugin->file, info->plugin_license);
       Dmsg2(000, "Plugin license incompatible. Plugin=%s license=%s\n",
@@ -349,6 +351,24 @@ void free_plugins(JCR *jcr)
  *
  * ==============================================================
  */
+
+/* Get a global. No job context */
+static bRC baculaGetGlobal(bsdrGlobalVariable var, void *value)
+{
+   if (!value) {
+      return bRC_Error;
+   }
+   switch (var) {
+#if 0
+   case bsdVarDevTypes:
+      *((s_kw **)value) = dev_types;
+#endif
+   default:
+      break;
+   }
+   return bRC_OK;
+}
+
 
 static bRC baculaGetValue(bpContext *ctx, bsdrVariable var, void *value)
 {
