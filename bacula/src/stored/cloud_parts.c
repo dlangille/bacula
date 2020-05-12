@@ -20,6 +20,7 @@
  * Routines for writing Cloud drivers
  *
  * Written by Kern Sibbald, May MMXVI
+ *
  */
 
 #include "cloud_parts.h"
@@ -28,7 +29,9 @@ bool operator==(const cloud_part& lhs, const cloud_part& rhs)
 {
    return (lhs.index == rhs.index &&
            lhs.mtime == rhs.mtime &&
-           lhs.size  == rhs.size);
+           lhs.size  == rhs.size
+           /*not just yet */
+           /*&& (strcmp(reinterpret_cast<const char*>(lhs.hash64), reinterpret_cast<const char*>(rhs.hash64)) == 0)*/ );
 }
 
 bool operator!=(const cloud_part& lhs, const cloud_part& rhs)
@@ -162,12 +165,12 @@ cloud_proxy::~cloud_proxy()
 bool cloud_proxy::set(const char *volume, cloud_part *part)
 {
    if (part) {
-      return set(volume, part->index, part->mtime, part->size);
+      return set(volume, part->index, part->mtime, part->size, part->hash64);
    }
    return false;
 }
 
-bool cloud_proxy::set(const char *volume, uint32_t index, utime_t mtime, uint64_t size)
+bool cloud_proxy::set(const char *volume, uint32_t index, utime_t mtime, uint64_t size, unsigned char* hash64)
 {
    if (!volume || index < 1) {
       return false;
@@ -179,7 +182,12 @@ bool cloud_proxy::set(const char *volume, uint32_t index, utime_t mtime, uint64_
    part->index = index;
    part->mtime = mtime;
    part->size = size;
-
+   if (hash64) {
+      memcpy(part->hash64, hash64, 64);
+   } else {
+      bmemzero(part->hash64, 64);
+   }
+   
    VolHashItem *hitem = (VolHashItem*)m_hash->lookup(const_cast<char*>(volume));
    if (hitem) { /* when the node already exist, put the cloud_part into the vol list */
       /* free the existing part */
