@@ -910,7 +910,7 @@ int vtape::d_open(const char *pathname, int uflags)
       Dmsg1(dbglevel, "Can't stat on %s\n", pathname);
       if (uflags & O_NONBLOCK) {
          online = false;
-         fd = ::open("/dev/null", O_RDWR | O_LARGEFILE, 0600);
+         fd = ::open("/dev/null", O_RDWR | O_LARGEFILE | O_CLOEXEC, 0600);
       }
    } else {
       fd = ::open(pathname, O_RDWR | O_LARGEFILE | O_CLOEXEC, 0600);
@@ -1011,4 +1011,4 @@ const char *vtape::print_type()
    return "Vtape";
 }
 
-#endif  /* ! USE_VTAPE */
+#endif  /* !USE_VTAPE */
