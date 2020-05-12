@@ -41,10 +41,25 @@
 #include "lib/fnmatch.h"
 #endif
 
-/* Temp code to test the new match_all code */
+const int dbglevel = 200;
+
+#if BEEF
+int new_match_all(BSR *bsr, DEV_RECORD *rec, VOLUME_LABEL *volrec,
+                  SESSION_LABEL *sessrec, bool done, JCR *jcr);
+
+/* Code to test the new match_all code. Can be disabled with a setdebug command */
+int use_new_match_all = 1;
+
+/* Make all functions non static for linking with bee module */
+#define static 
+
+#else
+
+#define new_match_all match_all
+/* Code to test the new match_all code. Can be disabled with a setdebug command */
 int use_new_match_all = 0;
 
-const int dbglevel = 200;
+#endif
 
 /* Forward references */
 static int match_volume(BSR *bsr, BSR_VOLUME *volume, VOLUME_LABEL *volrec, bool done);
@@ -63,9 +78,6 @@ static int match_block_sesstime(BSR *bsr, BSR_SESSTIME *sesstime, DEV_BLOCK *blo
 static int match_block_sessid(BSR *bsr, BSR_SESSID *sessid, DEV_BLOCK *block);
 static BSR *find_smallest_volfile(BSR *fbsr, BSR *bsr);
 
-/* Temp function to test the new code */
-static int new_match_all(BSR *bsr, DEV_RECORD *rec, VOLUME_LABEL *volrec,
-                         SESSION_LABEL *sessrec, bool done, JCR *jcr);
 
 /*********************************************************************
  *
@@ -182,7 +194,7 @@ int match_bsr(BSR *bsr, DEV_RECORD *rec, VOLUME_LABEL *volrec, SESSION_LABEL *se
     *   In this case, we can probably reposition the
     *   tape to the next available bsr position.
     */
-   if (jcr->use_new_match_all) { /* TODO: Remove the if when the new code is tested */
+   if (jcr->use_new_match_all) {
       if (bsr->cur_bsr) {
          bsr = bsr->cur_bsr;
       }
@@ -357,135 +369,6 @@ bool is_this_bsr_done(JCR *jcr, BSR *bsr, DEV_RECORD *rec)
    return false;
 }
 
-
-static int new_match_all(BSR *bsr, DEV_RECORD *rec, VOLUME_LABEL *volrec,
-                         SESSION_LABEL *sessrec, bool done, JCR *jcr)
-{
-   Dmsg0(dbglevel, "Enter match_all\n");
-   for ( ; bsr; ) {
-      if (bsr->done) {
-         goto no_match;
-      }
-      if (!match_volume(bsr, bsr->volume, volrec, 1)) {
-         Dmsg2(dbglevel, "bsr fail bsr_vol=%s != rec read_vol=%s\n", bsr->volume->VolumeName,
-               volrec->VolumeName);
-         goto no_match;
-      }
-
-      if (!match_voladdr(bsr, bsr->voladdr, rec, 1)) {
-         if (bsr->voladdr) {
-            Dmsg3(dbglevel, "Fail on Addr=%llu. bsr=%llu,%llu\n",
-                  get_record_address(rec), bsr->voladdr->saddr, bsr->voladdr->eaddr);
-         }
-         goto no_match;
-      }
-
-      if (!match_sesstime(bsr, bsr->sesstime, rec, 1)) {
-         Dmsg2(dbglevel, "Fail on sesstime. bsr=%u rec=%u\n",
-            bsr->sesstime->sesstime, rec->VolSessionTime);
-         goto no_match;
-      }
-
-      /* NOTE!! This test MUST come after the sesstime test */
-      if (!match_sessid(bsr, bsr->sessid, rec)) {
-         Dmsg2(dbglevel, "Fail on sessid. bsr=%u rec=%u\n",
-            bsr->sessid->sessid, rec->VolSessionId);
-         goto no_match;
-      }
-
-      /* NOTE!! This test MUST come after sesstime and sessid tests */
-      if (!match_findex(bsr, rec, 1)) {
-         Dmsg3(dbglevel, "Fail on recFI=%d. bsrFI=%d,%d\n",
-            rec->FileIndex, bsr->FileIndex->findex, bsr->FileIndex->findex2);
-         goto no_match;
-      }
-      if (bsr->FileIndex) {
-         Dmsg3(dbglevel, "match on findex=%d. bsrFI=%d,%d\n",
-               rec->FileIndex, bsr->FileIndex->findex, bsr->FileIndex->findex2);
-      }
-
-      if (!match_fileregex(bsr, rec, jcr)) {
-        Dmsg1(dbglevel, "Fail on fileregex='%s'\n", NPRT(bsr->fileregex));
-        goto no_match;
-      }
-
-      /* This flag is set by match_fileregex (and perhaps other tests) */
-      if (bsr->skip_file) {
-         Dmsg1(dbglevel, "Skipping findex=%d\n", rec->FileIndex);
-         goto no_match;
-      }
-
-      /*
-       * If a count was specified and we have a FileIndex, assume
-       *   it is a Bacula created bsr (or the equivalent). We
-       *   then save the bsr where the match occurred so that
-       *   after processing the record or records, we can update
-       *   the found count. I.e. rec->bsr points to the bsr that
-       *   satisfied the match.
-       */
-      if (bsr->count && bsr->FileIndex) {
-         rec->bsr = bsr;
-         if (bsr->next && rec->FileIndex != bsr->LastFI) {
-            bsr->LastFI = rec->FileIndex;
-         }
-         Dmsg1(dbglevel, "Leave match_all 1 found=%d\n", bsr->found);
-         return 1;                       /* this is a complete match */
-      }
-
-      /*
-       * The selections below are not used by Bacula's
-       *   restore command, and don't work because of
-       *   the rec->bsr = bsr optimization above.
-       */
-      if (sessrec) {
-         if (!match_jobid(bsr, bsr->JobId, sessrec, 1)) {
-            Dmsg0(dbglevel, "fail on JobId\n");
-            goto no_match;
-         }
-         if (!match_job(bsr, bsr->job, sessrec, 1)) {
-            Dmsg0(dbglevel, "fail on Job\n");
-            goto no_match;
-         }
-         if (!match_client(bsr, bsr->client, sessrec, 1)) {
-            Dmsg0(dbglevel, "fail on Client\n");
-            goto no_match;
-         }
-         if (!match_job_type(bsr, bsr->JobType, sessrec, 1)) {
-            Dmsg0(dbglevel, "fail on Job type\n");
-            goto no_match;
-         }
-         if (!match_job_level(bsr, bsr->JobLevel, sessrec, 1)) {
-            Dmsg0(dbglevel, "fail on Job level\n");
-            goto no_match;
-         }
-         if (!match_stream(bsr, bsr->stream, rec, 1)) {
-            Dmsg0(dbglevel, "fail on stream\n");
-            goto no_match;
-         }
-      }
-      return 1;
-
-no_match:
-      if (bsr->count && bsr->found >= bsr->count) {
-         bsr->done = true;
-         if (bsr->next) bsr->root->cur_bsr = bsr->next;
-         Dmsg1(dbglevel, "bsr done: Volume=%s\n", bsr->volume->VolumeName);
-      }
-      if (bsr->next) {
-         done = bsr->done && done;
-         bsr = bsr->next;
-         continue;
-      }
-      if (bsr->done && done) {
-         Dmsg0(dbglevel, "Leave match all -1\n");
-         return -1;
-      }
-      Dmsg1(dbglevel, "Leave match all 0, repos=%d\n", bsr->reposition);
-      return 0;
-   }
-   return 0;
-}
-
 /*
  * Match all the components of current record
  *   returns  1 on match
@@ -615,9 +498,10 @@ static int match_volume(BSR *bsr, BSR_VOLUME *volume, VOLUME_LABEL *volrec, bool
       return 0;                       /* Volume must match */
    }
    if (strcmp(volume->VolumeName, volrec->VolumeName) == 0) {
-      Dmsg1(dbglevel, "OK match_volume=%s\n", volrec->VolumeName);
+      Dmsg2(dbglevel, "OK match volume=%s volrec=%s\n", volume->VolumeName, volrec->VolumeName);
       return 1;
    }
+   Dmsg3(dbglevel, "NO match volume=%s volrec=%s next=%p\n", volume->VolumeName, volrec->VolumeName, volume->next);
    if (volume->next) {
       return match_volume(bsr, volume->next, volrec, 1);
    }
@@ -747,22 +631,15 @@ static int match_stream(BSR *bsr, BSR_STREAM *stream, DEV_RECORD *rec, bool done
 
 static int match_sesstime(BSR *bsr, BSR_SESSTIME *sesstime, DEV_RECORD *rec, bool done)
 {
+   /* ATTN: incomplete jobs can make sesstime goes backward inside a volume */
    if (!sesstime) {
       return 1;                       /* no specification matches all */
    }
    if (sesstime->sesstime == rec->VolSessionTime) {
       return 1;
    }
-   if (rec->VolSessionTime > sesstime->sesstime) {
-      sesstime->done = true;
-   }
    if (sesstime->next) {
-      return match_sesstime(bsr, sesstime->next, rec, sesstime->done && done);
-   }
-   if (sesstime->done && done) {
-      bsr->done = true;
-      bsr->root->reposition = true;
-      Dmsg0(dbglevel, "bsr done from sesstime\n");
+      return match_sesstime(bsr, sesstime->next, rec, done);
    }
    return 0;
 }
