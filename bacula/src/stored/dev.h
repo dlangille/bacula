@@ -81,6 +81,14 @@ enum alert_list_which {
    list_all  = 2
 };
 
+/* To open device readonly when appropriate, like for bls for dedup devices */
+enum default_open_mode_for_device {
+   omd_none = 0,
+   omd_write = 1,
+   omd_rdonly = 2
+};
+extern int device_default_open_mode;
+
 typedef void (alert_cb)(void *alert_ctx, const char *short_msg,
    const char *long_msg, char *Volume, int severity,
    int flags, int alert, utime_t alert_time);
@@ -217,6 +225,10 @@ struct VOLUME_CAT_INFO {
    btime_t  VolWriteTime;             /* time spent writing this Volume */
    int64_t  VolMediaId;               /* MediaId */
    int64_t  VolScratchPoolId;         /* ScratchPoolId */
+   int64_t  MaxPoolBytes;             /* Maximum Pool Bytes */
+   int64_t  PoolBytes;                /* Current Pool Bytes */
+   int64_t  BytesWritten;             /* Bytes written since last update */
+   int64_t  ABytesWritten;            /* Bytes written to Adata since last update */
    utime_t  VolFirstWritten;          /* Time of first write */
    utime_t  VolLastWritten;           /* Time of last write */
    bool     InChanger;                /* Set if vol in current magazine */
@@ -230,7 +242,7 @@ struct VOLUME_CAT_INFO {
 class DEVRES;                         /* Device resource defined in stored_conf.h */
 class DCR;                            /* forward reference */
 class VOLRES;                         /* forward reference */
-
+class STATUS_PKT;                     /* forward reference */
 /*
  * Device structure definition. There is one of these for
  *  each physical device. Everything here is "global" to
@@ -379,10 +391,11 @@ public:
    int is_removable() const { return capabilities & CAP_REM; }
    bool is_tape() const { return (dev_type == B_TAPE_DEV ||
                                  dev_type == B_VTAPE_DEV); }
-   bool is_file() const { return (dev_type == B_FILE_DEV) || is_aligned() || is_cloud(); }
+   bool is_file() const { return (dev_type == B_FILE_DEV) || is_aligned() || is_dedup() || is_cloud(); }
    bool is_cloud() const { return dev_type == B_CLOUD_DEV; }
    bool is_adata() const { return dev_type == B_ADATA_DEV; }
    bool is_aligned() const { return dev_type == B_ALIGNED_DEV; }
+   bool is_dedup() const { return dev_type == B_DEDUP_DEV; }
    bool is_null() const { return dev_type == B_NULL_DEV; }
    bool is_fifo() const { return dev_type == B_FIFO_DEV; }
    bool is_vtl() const  { return dev_type == B_VTL_DEV; }
@@ -518,6 +531,7 @@ public:
    virtual void new_dcr_blocks(DCR *dcr);         /* in block_util.c */
    virtual boffset_t get_adata_size(DCR *dcr) { return (boffset_t)0; };
    virtual void updateVolCatBytes(uint64_t);      /* in dev.c */
+   virtual void updateVolCatExtraBytes(uint64_t); /* in dev.c */
    virtual void updateVolCatBlocks(uint32_t);     /* in dev.c */
    virtual void updateVolCatWrites(uint32_t);     /* in dev.c */
    virtual void updateVolCatReads(uint32_t);      /* in dev.c */
@@ -534,8 +548,10 @@ public:
    virtual void clear_nospace();         /* in dev.c */
    virtual void clear_append();          /* in dev.c */
    virtual void clear_read();            /* in dev.c */
-   virtual void device_specific_init(JCR *jcr, DEVRES *device);
+   virtual int device_specific_init(JCR *jcr, DEVRES *device);
    virtual void device_specific_open(DCR *dcr) { return; };
+   virtual int  device_specific_close(DCR *dcr);
+
    virtual int d_ioctl(int fd, ioctl_req_t request, char *mt_com=NULL);
    virtual int d_open(const char *pathname, int flags);
    virtual int d_close(int fd);
@@ -545,12 +561,14 @@ public:
    virtual bool update_pos(DCR *dcr);
    virtual bool rewind(DCR *dcr);
    virtual bool truncate(DCR *dcr);
-   virtual int  truncate_cache(DCR *dcr, const char *VolName, int64_t *size) { return 0; };
+   virtual int  truncate_cache(DCR *dcr, const char *VolName, int64_t *size, POOLMEM *&msg) { return 0; };
    virtual bool get_cloud_volumes_list(DCR* dcr, alist *volumes, POOLMEM *&err) { pm_strcpy(err, "Not implemented"); return false;};
    virtual bool get_cloud_volume_parts_list(DCR *dcr, const char *VolumeName, ilist *parts, POOLMEM *&err) { pm_strcpy(err, "Not implemented"); return false; };
    virtual uint32_t get_cloud_upload_transfer_status(POOL_MEM &msg, bool verbose) { pm_strcpy(msg, "Not implemented"); return 0; };
+   virtual void get_api_cloud_upload_transfer_status(OutputWriter &, bool) {};
    virtual uint32_t get_cloud_download_transfer_status(POOL_MEM &msg, bool verbose) { pm_strcpy(msg, "Not implemented"); return 0; };
-   virtual bool upload_cache(DCR *dcr, const char *VolName, POOLMEM *&err) { return true; };
+   virtual void get_api_cloud_download_transfer_status(OutputWriter &, bool) {};
+   virtual bool upload_cache(DCR *dcr, const char *VolName, uint32_t truncate, POOLMEM *&err) {return true; };
    virtual bool open_device(DCR *dcr, int omode) = 0;
    virtual bool open_next_part(DCR *dcr);
    virtual bool close(DCR *dcr);                /* in dev.c */
@@ -574,10 +592,12 @@ public:
    virtual bool weof(DCR *dcr, int num);        /* in dev.c */
    virtual bool end_of_volume(DCR *dcr) { return true; };
    virtual bool start_of_job(DCR *dcr) {return true; };
-   virtual bool end_of_job(DCR *dcr) {return true; };
+   virtual bool end_of_job(DCR *dcr, uint32_t truncate) {return true; };
    virtual bool is_indexed() { return true; };
    virtual void set_ateof();                    /* in dev.c */
    virtual const char *print_type() = 0;        /* in dev.c */
+   virtual const char *print_driver_type() { return "";};
+   virtual const char *print_full_type() { return print_type();};
    virtual DEVICE *get_dev(DCR *dcr);           /* in dev.c */
    virtual uint32_t get_hi_addr();              /* in dev.c */
    virtual uint32_t get_low_addr();             /* in dev.c */
@@ -611,7 +631,7 @@ public:
              int32_t  FileIndex, int32_t  Stream, uint32_t VolSessionId)
              { return false; };
    virtual bool read_adata_record_header(DCR *dcr, DEV_BLOCK *block,
-            DEV_RECORD *rec) { return false; };
+                                         DEV_RECORD *rec, bool *firstcall) { return false; };
    virtual void read_adata_block_header(DCR *dcr) { return; };
    virtual int read_adata(DCR *dcr, DEV_RECORD *rec) { return -1; };
    virtual void select_data_stream(DCR *dcr, DEV_RECORD *rec) { return; };
@@ -619,6 +639,7 @@ public:
    virtual bool do_pre_write_checks(DCR *dcr, DEV_RECORD *rec) { return true; };
    virtual void register_metrics(bstatcollect *collector);
 
+   virtual void dbg_print(FILE *fp) { return; };
    /*
     * Locking and blocking calls
     */
@@ -675,6 +696,14 @@ public:
    void open_tape_device(DCR *dcr, int omode);   /* in dev.c */
    void open_file_device(DCR *dcr, int omode);   /* in dev.c */
 
+   virtual bool setup_dedup_rehydration_interface(DCR *dcr) { return false; };
+   virtual void free_dedup_rehydration_interface(DCR *dcr) { };
+   virtual GetMsg *get_msg_queue(JCR *jcr, BSOCK *sock, int32_t bufsize)
+         { return New(GetMsg(jcr, sock, NULL, bufsize)); };
+   virtual void *dedup_get_dedupengine() { return NULL; };
+   virtual void dedup_get_status(STATUS_PKT *sp, int options) { };
+   virtual bool dedup_cmd(JCR *jcr) { return false; };
+   virtual const char *dedup_get_dedupengine_name() { return "not_a_dedupengine"; };
 private:
    bool mount_tape(int mount, int dotimeout); /* in dev.c */
 protected:
@@ -720,6 +749,7 @@ public:
    DEV_BLOCK *ameta_block;            /* aligned meta data block */
    DEV_RECORD *rec;                   /* pointer to record */
 
+   BSR      *dest_position;           /* BSR used with do_interactive_reposition */
    VOL_LIST *CurrentVol;              /* From JCR::VolList, freed at the end, passed to records */
 
    alist *uploads;                    /* Current upload transfers to the cloud */
@@ -745,6 +775,13 @@ public:
    bool reading_label;                /* Reading volume label */
    bool discard_invalid_records;      /* we should not try to assemble invalid records */
    bool force_update_volume_info;     /* update the volume information, no matter the job type */
+   bool session_interactive;          /* set if we allow to seek in the restore stream */
+   bool do_interactive_reposition;    /* Set if we want to seek */
+   int32_t FileMedia_FI;              /* Last File Index used to generate a FileMedia record */
+   uint64_t FileMedia_Off;            /* Last File Offset used to generate a FileMedia record */
+   uint64_t max_index_size;           /* Max amount of data between two indexes */
+   uint64_t index_size;               /* Amount of data without index */
+
 
    uint32_t VolFirstIndex;            /* First file index this Volume */
    uint32_t VolLastIndex;             /* Last file index this Volume */
@@ -762,6 +799,13 @@ public:
    int Copy;                          /* identical copy number */
    int Stripe;                        /* RAIT stripe */
    VOLUME_CAT_INFO VolCatInfo;        /* Catalog info for desired volume */
+   uint32_t crc32(unsigned char *buf, int len, uint32_t expected_crc);
+
+   /* *** SIR *** */
+   bool need_to_reposition();
+   void set_interactive_reposition(BSR *);
+   BSR *clear_interactive_reposition();
+   void set_session_interactive();
 
    /* Methods */
    void set_no_mount_request() { no_mount_request = true; }; /* Just fail in case of mount request */
@@ -820,7 +864,6 @@ public:
    bool mount_next_write_volume();
    bool mount_next_read_volume();
    void mark_volume_in_error();
-   void mark_volume_read_only();
    void mark_volume_not_inchanger();
    int try_autolabel(bool opened);
    bool find_a_volume();
@@ -837,7 +880,6 @@ public:
    bool write_block_to_dev();
    bool read_block_from_device(bool check_block_numbers);
    bool read_block_from_dev(bool check_block_numbers);
-
 
 };
 
