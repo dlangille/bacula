@@ -31,3 +31,4 @@ const char *null_dev::print_type()
 {
    return "Null";
 }
+
