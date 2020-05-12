@@ -22,7 +22,12 @@
 
 #ifdef HAVE_SUN_OS
 #include <sys/types.h>
-#include <sys/mkdev.h>          /* Define major() and minor() */
+#endif
+
+#ifdef MAJOR_IN_MKDEV
+#include <sys/mkdev.h>
+#elif defined MAJOR_IN_SYSMACROS
+#include <sys/sysmacros.h>
 #endif
 
 #define Dmsg(level,  ...) do { \
@@ -38,6 +43,30 @@
       fprintf(stderr, __VA_ARGS__ );                   \
    }  \
  } while (0)
+
+/* Use our own implementation of MmsgDX */
+#undef MmsgD0
+#undef MmsgD1
+#undef MmsgD2
+#undef MmsgD3
+#undef MmsgD4
+#undef MmsgD5
+#undef MmsgD6
+
+#define MmsgD0(level, msgbuf, fmt) \
+   { Mmsg(msgbuf, fmt); Dmsg(level, "%s\n", msgbuf); }
+#define MmsgD1(level, msgbuf, fmt, a1) \
+   { Mmsg(msgbuf, fmt, a1); Dmsg(level, "%s\n", msgbuf); }
+#define MmsgD2(level, msgbuf, fmt, a1, a2) \
+   { Mmsg(msgbuf, fmt, a1, a2); Dmsg(level, "%s\n", msgbuf); }
+#define MmsgD3(level, msgbuf, fmt, a1, a2, a3) \
+   { Mmsg(msgbuf, fmt, a1, a2, a3); Dmsg(level, "%s\n", msgbuf); }
+#define MmsgD4(level, msgbuf, fmt, a1, a2, a3, a4) \
+   { Mmsg(msgbuf, fmt, a1, a2, a3, a4); Dmsg(level, "%s\n", msgbuf); }
+#define MmsgD5(level, msgbuf, fmt, a1, a2, a3, a4, a5) \
+   { Mmsg(msgbuf, fmt, a1, a2, a3, a4, a5); Dmsg(level, "%s\n", msgbuf); }
+#define MmsgD6(level, msgbuf, fmt, a1, a2, a3, a4, a5, a6) \
+   { Mmsg(msgbuf, fmt, a1, a2, a3, a4, a5, a6); Dmsg(level, "%s\n", msgbuf); }
 
 #define BSNAPSHOT_CONF SYSCONFDIR "/bsnapshot.conf"
 
@@ -129,6 +158,8 @@ static void set_trace_file(const char *path)
       Dmsg(10, "Starting bsnapshot %s\n",  
            bstrftime(dt, MAX_TIME_LENGTH, time(NULL)));
    }
+   // redirect Dmsg() emitted by Bacula's libraries code
+   set_trace_for_tools(debug);
 }
 
 /* Small function to avoid double // in path name */
@@ -177,6 +208,7 @@ static struct ini_items bsnap_cfg[] = {
  { "skip_volume",       ini_store_alist_str,"",      0,        NULL},
  { "snapshot_dir",      ini_store_str,      "",      0,        NULL},
  { "fail_job_on_error", ini_store_bool,     "",      0,        "yes"},
+ { "mountopts",         ini_store_alist_str, "",     0,        NULL},
  { NULL,                NULL,             NULL,      0,        NULL}
 };
 
@@ -279,6 +311,7 @@ public:
    POOLMEM    *path;            /* buffer to edit volume path */
    POOLMEM    *fname;           /* used for split_path_and_filename */
    POOLMEM    *errmsg;          /* buffer to edit error message */
+   POOLMEM    *mountopts;       /* mount options for the current FS */
    arguments  *arg;             /* program argument */
    int         pnl;             /* path length */
    int         fnl;             /* fname length */
@@ -289,10 +322,12 @@ public:
       path(get_pool_memory(PM_NAME)),
       fname(get_pool_memory(PM_NAME)),
       errmsg(get_pool_memory(PM_NAME)),
+      mountopts(get_pool_memory(PM_FNAME)),
       arg(a),
       pnl(0),
       fnl(0)
    {
+      cmd[0] = path[0] = fname[0] = errmsg[0] = mountopts[0] = '\0';
    };
 
    virtual ~snapshot() {
@@ -300,6 +335,45 @@ public:
       free_pool_memory(path);
       free_pool_memory(fname);
       free_pool_memory(errmsg);
+      free_pool_memory(mountopts);
+   };
+
+   /* Get mount options, look in config file if needed */
+   char *get_mountopts(char *dev, POOLMEM *&output) {
+      char *tmp, *defs=NULL;
+      alist *lst;
+      int pos = arg->ini.get_item("mountopts");
+      pm_strcpy(output, " -o ro ");
+
+      if (!arg->ini.items[pos].found) {
+         return output;
+      }
+
+      lst = arg->ini.items[pos].val.alistval;
+      if (lst) {
+         /* /dev/ubuntu-vg/root:uid=eric
+          * /dev/ubuntu-vg/home:nouuid,uid=eric
+          * uid=eric,
+          */
+         foreach_alist(tmp, lst) {
+            char *p = strchr(tmp, ':');
+
+            if (tmp[0] != '/' || !p) {
+               defs = tmp;      /* will be the default */
+               continue;
+            }
+            /* Check the device name */
+            if (strncmp(tmp, dev, p - tmp) != 0) {
+               continue;
+            }
+            Mmsg(output, " -o \"ro,%s\" ", p+1);
+            return output;
+         }
+         if (defs) {
+            Mmsg(output, " -o \"ro,%s\" ", defs);
+         }
+      }
+      return output;
    };
 
    /* Basically, we check parameters here that are
@@ -458,7 +532,7 @@ public:
       }
       /* If the fstype is btrfs, snapshots are supported */
 /*
-      Mmsg(cmd, "%sbtrfs filesystem label \"%s\"", arg->sudo, arg->mountpoint);
+      MmsgD2(10, cmd, "%sbtrfs filesystem label \"%s\"", arg->sudo, arg->mountpoint);
       if (run_program(cmd, 60, errmsg)) {
          printf("status=0 type=btrfs\n");
          return 0;
@@ -496,8 +570,8 @@ public:
       Dmsg(10, "path=%s\n", path);
 
       /* Create the actual btrfs snapshot */
-      Mmsg(cmd, "%sbtrfs subvolume snapshot -r \"%s\" \"%s\"", 
-           arg->sudo, arg->mountpoint, path);
+      MmsgD3(10, cmd, "%sbtrfs subvolume snapshot -r \"%s\" \"%s\"", 
+             arg->sudo, arg->mountpoint, path);
 
       if (run_program(cmd, 60, errmsg)) {
          Dmsg(10, "Unable to create snapshot %s %s\n", arg->mountpoint, errmsg);
@@ -509,7 +583,7 @@ public:
       }
 
       /* On SLES12 btrfs 3.16, commands on "/" returns "doesn't belong to btrfs mount point" */
-      Mmsg(cmd, "%sbtrfs subvolume show \"%s\"", arg->sudo, path);
+      MmsgD2(10, cmd, "%sbtrfs subvolume show \"%s\"", arg->sudo, path);
       if (run_program_full_output(cmd, 60, errmsg)) {
          Dmsg(10, "Unable to display snapshot stats %s %s\n", arg->mountpoint, errmsg);
 
@@ -539,7 +613,7 @@ public:
          return 0;
       }
 
-      Mmsg(cmd, "%sbtrfs subvolume delete \"%s\"", arg->sudo, arg->volume);
+      MmsgD2(10, cmd, "%sbtrfs subvolume delete \"%s\"", arg->sudo, arg->volume);
       if (run_program(cmd, 300, errmsg)) {
          Dmsg(10, "Unable to delete snapshot %s\n", errmsg);
          strip_quotes(errmsg);
@@ -562,7 +636,7 @@ public:
       if (!snapshot::list()) {
          return 0;
       }
-      Mmsg(cmd, "%sbtrfs subvolume list -u -q -o -s \"%s\"", arg->sudo, arg->mountpoint);
+      MmsgD2(10, cmd, "%sbtrfs subvolume list -u -q -o -s \"%s\"", arg->sudo, arg->mountpoint);
       if (run_program_full_output(cmd, 300, errmsg)) {
          Dmsg(10, "Unable to list snapshot %s\n", errmsg);
          strip_quotes(errmsg);
@@ -710,7 +784,7 @@ public:
       struct vols *elt1 = NULL;
       char   ed1[50];
 
-      Mmsg(cmd, "%sbtrfs subvolume show \"%s\"", arg->sudo, arg->mountpoint);
+      MmsgD2(10, cmd, "%sbtrfs subvolume show \"%s\"", arg->sudo, arg->mountpoint);
       if (run_program_full_output(cmd, 300, errmsg)) {
          Dmsg(10, "Unable to get information %s\n", errmsg);
          strip_quotes(errmsg);
@@ -724,7 +798,7 @@ public:
          return 0;
       }
       
-      Mmsg(cmd, "%sbtrfs subvolume list -s \"%s\"", arg->sudo, arg->mountpoint);
+      MmsgD2(10, cmd, "%sbtrfs subvolume list -s \"%s\"", arg->sudo, arg->mountpoint);
       if (run_program_full_output(cmd, 300, errmsg)) {
          Dmsg(10, "Unable to list snapshot snapshot %s\n", errmsg);
          strip_quotes(errmsg);
@@ -735,7 +809,7 @@ public:
       lst = New(rblist(elt1, &elt1->link));
       scan_subvolumes(errmsg, lst);
 
-      Mmsg(cmd, "%sbtrfs subvolume list \"%s\"", arg->sudo, arg->mountpoint);
+      MmsgD2(10, cmd, "%sbtrfs subvolume list \"%s\"", arg->sudo, arg->mountpoint);
       if (run_program_full_output(cmd, 300, errmsg)) {
          Dmsg(10, "Unable to list subvolume %s\n", errmsg);
          strip_quotes(errmsg);
@@ -794,7 +868,7 @@ public:
 
       if (stat(path, &sp) != 0) {
          /* See if we can change the snapdir attribute */
-         Mmsg(cmd, "%szfs set snapdir=visible \"%s\"", arg->sudo, arg->device);
+         MmsgD2(10, cmd, "%szfs set snapdir=visible \"%s\"", arg->sudo, arg->device);
          if (run_program(cmd, 60, errmsg)) {
             Dmsg(10, "Unable to change the snapdir attribute %s %s\n", arg->device, errmsg);
             strip_quotes(errmsg);
@@ -810,7 +884,8 @@ public:
       }
 #if 0                           /* On linux, this function is broken for now */
       makedir(path);
-      Mmsg(cmd, "%smount -t %s \"%s\" \"%s\"", arg->sudo, arg->fstype, arg->volume, path);
+      MmsgD4(10, cmd, "%smount %s -t %s \"%s\" \"%s\"", arg->sudo, get_mountopts(arg->device, mountopts),
+             arg->fstype, arg->volume, path);
       if (run_program(cmd, 60, errmsg)) {
          Dmsg(10, "Unable to create mount snapshot %s %s\n", arg->volume, errmsg);
          strip_quotes(errmsg);
@@ -834,7 +909,7 @@ public:
       if (!snapshot::support()) {
          return 0;
       }
-      Mmsg(cmd, "%szfs list -H -o name \"%s\"", arg->sudo, arg->mountpoint);
+      MmsgD2(10, cmd, "%szfs list -H -o name \"%s\"", arg->sudo, arg->mountpoint);
       if (run_program(cmd, 60, errmsg)) {
          Dmsg(10, "Unable to get device %s %s\n", arg->mountpoint, errmsg);
          strip_quotes(errmsg);
@@ -857,7 +932,7 @@ public:
       Mmsg(path, "%s@%s", arg->device, arg->name);
 
       /* Create the actual zfs snapshot */
-      Mmsg(cmd, "%szfs snapshot \"%s\"", arg->sudo, path);
+      MmsgD2(10, cmd, "%szfs snapshot \"%s\"", arg->sudo, path);
 
       if (run_program(cmd, 60, errmsg)) {
          Dmsg(10, "Unable to create snapshot %s %s\n", arg->device, errmsg);
@@ -868,7 +943,7 @@ public:
          return 0;
       }
 
-      Mmsg(cmd, "%szfs get -p creation \"%s\"", arg->sudo, path);
+      MmsgD2(10, cmd, "%szfs get -p creation \"%s\"", arg->sudo, path);
       if (run_program_full_output(cmd, 60, errmsg)) {
          Dmsg(10, "Unable to display snapshot stats %s %s\n", arg->device, errmsg);
          strip_quotes(errmsg);
@@ -897,7 +972,7 @@ public:
          return 0;
       }
 
-      Mmsg(cmd, "%szfs destroy \"%s\"", arg->sudo, arg->volume);
+      MmsgD2(10, cmd, "%szfs destroy \"%s\"", arg->sudo, arg->volume);
       if (run_program(cmd, 300, errmsg)) {
          Dmsg(10, "Unable to delete snapshot %s\n", errmsg);
          strip_quotes(errmsg);
@@ -920,7 +995,7 @@ public:
          return 0;
       }
 
-      Mmsg(cmd, "%szfs list -t snapshot -H -o name,used,creation", arg->sudo);
+      MmsgD1(10, cmd, "%szfs list -t snapshot -H -o name,used,creation", arg->sudo);
       /* rpool@basezone_snap00   0       Fri Mar  6  9:55 2015  */
       if (run_program_full_output(cmd, 60, errmsg)) {
          Dmsg(10, "Unable to list snapshot %s\n", errmsg);
@@ -930,7 +1005,7 @@ public:
       }
 
       int  i = 1, Day, Year, Hour, Min;
-      char DayW[50], Month[50], CreateDate[50];
+      char DayW[50], Month[50], CreateDate[250];
       const char *buf[4];
 
       buf[0] = errmsg;
@@ -946,11 +1021,11 @@ public:
                   /* Get a clean iso format */
                   for (int j=1; j <= 12 ; j++) {
                      if (strcmp(Month, Months[j]) == 0) {
-                        snprintf(Month, sizeof(Month), "%02d", j);
+                        bsnprintf(Month, sizeof(Month), "%02d", j);
                      }
                   }
-                  snprintf(CreateDate, sizeof(CreateDate), "%d-%s-%02d %02d:%02d:00",
-                           Year, Month, Day, Hour, Min);
+                  bsnprintf(CreateDate, sizeof(CreateDate), "%d-%s-%02d %02d:%02d:00",
+                            Year, Month, Day, Hour, Min);
                   buf[3] = CreateDate;
                }
                printf("volume=\"%s@%s\" name=\"%s\" device=\"%s\" size=\"%s\" "
@@ -994,7 +1069,8 @@ static Header lvs_header[] = {
    {"Origin",-1},
    {"OSize", -1},
    {"Snap%", -1},
-   {"Time",  -1},        /* Creation date  */
+   {"Time",  -1},        /* Creation date (Keep it above CTime) */
+   {"CTime", -2},        /* Creation date (Keep it below Time) */
    {NULL,    -1}
 };
 
@@ -1030,7 +1106,7 @@ public:
          /* cleanup at the end */
          foreach_alist(current, lst) {
             for (int j=0; j < nbelt ; j++) {
-               Dmsg(50, "current[%d] = %s\n", j, current[j]);
+               Dmsg(150, "current[%d] = %s\n", j, current[j]);
                free(current[j]);
             }
             free(current);
@@ -1102,16 +1178,16 @@ public:
          return NULL;
       }
 
-      Mmsg(cmd, "%sdmsetup ls", arg->sudo);
+      MmsgD1(10, cmd, "%sdmsetup ls", arg->sudo);
       if (run_program_full_output(cmd, 60, errmsg)) {
          Dmsg(10, "Unable to query dmsetup %s\n", errmsg);
          return NULL;
       }
-      /* vg_ssd-pacman-real     (254:1)
-       * vg_ssd-pacman  (254:0)
+      /* vg_ssd-pacman-real	(254:1)
+       * vg_ssd-pacman	(254:0)
        * or
-       * vg_ssd-pacman-real     (254, 1)
-       * vg_ssd-pacman-real     (254, 1)
+       * vg_ssd-pacman-real	(254, 1)
+       * vg_ssd-pacman-real	(254, 1)
        */
       *ret = check_pool_memory_size(*ret, strlen(errmsg)+1);
       for (start = p = errmsg; *p ; p++) {
@@ -1262,7 +1338,7 @@ public:
    };
 
    /* Get snapshot size, look in config file if needed */
-   int get_lvm_snapshot_size(char *lv) {
+   int64_t get_lvm_snapshot_size(char *lv) {
       char *tmp, **elt;
       uint64_t s, size;
       int    sp;
@@ -1296,7 +1372,7 @@ public:
                sp = get_value_pos(lvs_header, "LSize");
                elt = get_lv(lv);
                size = str_to_int64(elt[sp]);
-               return size * (s / 100);
+               return s * size / 100;
             }
 
             /* It might be a size */
@@ -1375,7 +1451,7 @@ public:
       /* TODO: Need to get the volume name and add the snapshot
        * name at the end 
        */
-      Mmsg(cmd, "%slvcreate -s -n \"%s_%s\" -L %lldb \"%s\"", 
+      MmsgD5(10, cmd, "%slvcreate -s -n \"%s_%s\" -L %lldb \"%s\"", 
            arg->sudo, name, arg->name, size, arg->device);
       if (run_program(cmd, 60, errmsg)) {
          Dmsg(10, "Unable to create snapshot %s %s\n", arg->name, errmsg);
@@ -1407,7 +1483,7 @@ public:
       if (!snapshot::del()) {
          return 0;
       }
-      Mmsg(cmd, "%slvremove -f \"%s\"", 
+      MmsgD2(10, cmd, "%slvremove -f \"%s\"", 
            arg->sudo, arg->volume);
 
       if (run_program(cmd, 60, errmsg)) {
@@ -1428,6 +1504,7 @@ public:
       parse_vgs_output();
       for (int i = 0; vgs_header[i].name ; i++) {
          if (vgs_header[i].pos == -1) {
+            Dmsg(10, "Unable to use the output of the vgs command. %s is missing\n", vgs_header[i].name);
             printf("status=0 error=\"Unable to use output of vgs command."
                    " %s is missing.\"\n", 
                    vgs_header[i].name);
@@ -1437,7 +1514,12 @@ public:
 
       parse_lvs_output();
       for (int i = 0; lvs_header[i].name ; i++) {
+         /* Copy CTime to Time if any */
+         if (strcmp(lvs_header[i].name, "Time") == 0 && lvs_header[i].pos < 0) {
+            lvs_header[i].pos = lvs_header[i+1].pos;
+         }
          if (lvs_header[i].pos == -1) {
+            Dmsg(10, "Unable to use the output of the lvs command. %s is missing\n", lvs_header[i].name);
             printf("status=0 error=\"Unable to use output of lvs command."
                    " %s is missing.\"\n",
                    lvs_header[i].name);
@@ -1474,7 +1556,8 @@ public:
          return 0;
       }
 
-      Mmsg(cmd, "%smount -o ro \"%s\" \"%s\"", arg->sudo, arg->volume, path);
+      MmsgD4(10, cmd, "%smount %s \"%s\" \"%s\"", arg->sudo, get_mountopts(arg->device, mountopts),
+             arg->volume, path);
       if (run_program(cmd, 60, errmsg) != 0) {
          Dmsg(10, "Unable to mount volume. ERR=%s\n", errmsg);
          strip_quotes(errmsg);
@@ -1496,7 +1579,7 @@ public:
          return 0;
       }
 
-      Mmsg(cmd, "%sumount \"%s\"", arg->sudo, arg->snapmountpoint);
+      MmsgD2(10, cmd, "%sumount \"%s\"", arg->sudo, arg->snapmountpoint);
       do {
          ret = run_program(cmd, 60, errmsg);
          if (ret != 0) {
@@ -1581,7 +1664,7 @@ public:
    };
 
    bool parse_vgs_output() {
-      Mmsg(cmd, "%svgs -o vg_all --separator=; --units b --nosuffix", arg->sudo);
+      MmsgD1(10, cmd, "%svgs -o vg_all --separator=; --units b --nosuffix", arg->sudo);
       if (vgs) {
          free_header(vgs, vgs_nbelt);
          vgs_nbelt=0;
@@ -1594,7 +1677,7 @@ public:
    };
 
    bool parse_lvs_output() {
-      Mmsg(cmd, "%slvs -o lv_all --separator=; --units b --nosuffix", arg->sudo);
+      MmsgD1(10, cmd, "%slvs -o lv_all --separator=; --units b --nosuffix", arg->sudo);
       if (lvs) {
          free_header(lvs, lvs_nbelt);
          lvs_nbelt=0;
@@ -1624,9 +1707,10 @@ public:
       char **current = NULL;
 
       for (p = errmsg; *p ; p++) {
-         if (*p == ';') {        /* We have a separator, handle current value */
+         if (*p == ';' || *p == '\n') {        /* We have a separator, handle current value */
             buf[i]=0;
             if (!header_done) {
+               Dmsg(150, "header=%s\n", buf);
                nbelt++; /* Keep the number of element in the line */
 
                /* Find if we need this value, and where to store it */
@@ -1647,13 +1731,13 @@ public:
                /* Keep the current value */
                current[pos] = bstrdup(buf);
             }
-            pos++;
             i = 0;
-         } else if (*p == '\n') {
-            /* We deal with a new line, so the header is done (if in) */
-            header_done = true;
-            i = 0;
-            pos = 0;
+            if (*p == '\n') {
+               pos = 0;
+               header_done = true;
+            } else {
+               pos++;
+            }
 
          } else if (i < (int)sizeof(buf)) {
             buf[i++] = *p;
@@ -1786,7 +1870,7 @@ public:
       Mmsg(path, "%s/%s", arg->mountpoint, arg->snapdir);
       makedir(path);
       now = time(NULL);
-      Mmsg(cmd, "ln -vsf \"%s\" \"%s\"", arg->mountpoint, path);
+      MmsgD2(10, cmd, "ln -vsf \"%s\" \"%s\"", arg->mountpoint, path);
       if (run_program(cmd, 60, errmsg)) {
          Dmsg(10, "Unable to create symlink. ERR=%s\n", errmsg);
          strip_quotes(errmsg);
@@ -1935,7 +2019,7 @@ int main(int argc, char **argv)
    snap = detect_snapshot_backend(&arg);
 
    if (!snap) {
-      printf("status=0 error=\"Unable to detect snapshot backend\"");
+      printf("status=0 error=\"Unable to detect snapshot backend\"\n");
       exit(0);
    }
 
