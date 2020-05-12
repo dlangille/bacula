@@ -35,7 +35,6 @@
 #include "stored.h"
 
 /* Forward referenced functions */
-static BSR *position_to_first_file(JCR *jcr, DCR *dcr, BSR *bsr);
 static void handle_session_record(DEVICE *dev, DEV_RECORD *rec, SESSION_LABEL *sessrec);
 static bool try_repositioning(JCR *jcr, DEV_RECORD *rec, DCR *dcr);
 #ifdef DEBUG
@@ -44,7 +43,7 @@ static char *rec_state_bits_to_str(DEV_RECORD *rec);
 
 static const int dbglvl = 150;
 static const int no_FileIndex = -999999;
-static bool mount_next_vol(JCR *jcr, DCR *dcr, BSR *bsr,
+bool mount_next_vol(JCR *jcr, DCR *dcr, BSR *bsr,
                            SESSION_LABEL *sessrec, bool *should_stop,
                            bool record_cb(DCR *dcr, DEV_RECORD *rec),
                            bool mount_cb(DCR *dcr))
@@ -117,12 +116,12 @@ bool read_records(DCR *dcr,
    dlist *recs;                         /* linked list of rec packets open */
    char ed1[50];
    bool first_block = true;
+   int ret;
 
    recs = New(dlist(rec, &rec->link));
-   /* We go to the first_file unless we need to reposition during an
-    * interactive restore session (the reposition will be done with a different
-    * BSR in the for loop */
-   position_to_first_file(jcr, dcr, jcr->bsr);
+
+   sir_init(dcr);
+
    jcr->mount_next_volume = false;
 
    for ( ; ok && !done; ) {
@@ -132,6 +131,13 @@ bool read_records(DCR *dcr,
       }
       ASSERT2(!dcr->dev->adata, "Called with adata block. Wrong!");
 
+      ret = sir_init_loop(dcr, &dev, &block, record_cb, mount_cb);
+      if (ret == SIR_CONTINUE) {
+         continue;
+
+      } else if (ret == SIR_BREAK) {
+         break;
+      }
 
       if (! first_block || dev->dev_type != B_FIFO_DEV ) {
          if (dev->at_eot() || !dcr->read_block_from_device(CHECK_BLOCK_NUMBERS)) {
@@ -200,8 +206,9 @@ bool read_records(DCR *dcr,
                    &&
                    rec->BlockNumber != block->BlockNumber)
                {
-                  Dmsg3(0, "invalid: rec=%ld block=%ld state=%s\n",
-                        rec->BlockNumber, block->BlockNumber, rec_state_bits_to_str(rec));
+                  Dmsg6(10, "invalid: rec=%ld block=%ld state=%s in %s VolSessionId=%ld VolSessionTime=%ld\n",
+                        rec->BlockNumber, block->BlockNumber, rec_state_bits_to_str(rec),
+                        dcr->VolumeName, block->VolSessionId, block->VolSessionTime);
                   rec->invalid = true;
                   /* We can discard the current data if needed. The code is very
                    * tricky in the read_records loop, so it's better to not
@@ -231,6 +238,13 @@ bool read_records(DCR *dcr,
       lastFileIndex = no_FileIndex;
       Dmsg1(dbglvl, "Block %s empty\n", is_block_marked_empty(rec)?"is":"NOT");
       for (rec->state_bits=0; ok && !is_block_marked_empty(rec); ) {
+         /* Stop to read records if we need to seek */
+         if (dcr->need_to_reposition()) {
+            Dmsg3(200, "!read-break. state_bits=%s blk=%d rem=%d\n",
+                  rec_state_bits_to_str(rec),
+                  block->BlockNumber, rec->remainder);
+            break;
+         }
          if (!read_record_from_block(dcr, rec)) {
             Dmsg3(200, "!read-break. state_bits=%s blk=%d rem=%d\n", rec_state_bits_to_str(rec),
                   block->BlockNumber, rec->remainder);
@@ -427,7 +441,7 @@ static bool try_repositioning(JCR *jcr, DEV_RECORD *rec, DCR *dcr)
 /*
  * Position to the first file on this volume
  */
-static BSR *position_to_first_file(JCR *jcr, DCR *dcr, BSR *bsr)
+BSR *position_to_first_file(JCR *jcr, DCR *dcr, BSR *bsr)
 {
    DEVICE *dev = dcr->dev;
    uint64_t bsr_addr;
@@ -494,7 +508,7 @@ static void handle_session_record(DEVICE *dev, DEV_RECORD *rec, SESSION_LABEL *s
 static char *rec_state_bits_to_str(DEV_RECORD *rec)
 {
    static char buf[200];
-   buf[0] = 0;
+   bsnprintf(buf, sizeof(buf), "%d ", rec->state_bits);
    if (rec->state_bits & REC_NO_HEADER) {
       bstrncat(buf, "Nohdr,", sizeof(buf));
    }
