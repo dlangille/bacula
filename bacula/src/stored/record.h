@@ -43,16 +43,16 @@ enum {
 };
 
 enum rec_state {
-   st_none,                               /* No state */
-   st_header,                             /* Write header */
-   st_cont_header,                        /* Write continuation header */
-   st_data,                               /* Write data record */
-   st_adata_blkhdr,                       /* Adata block header */
-   st_adata_rechdr,                       /* Adata record header */
-   st_cont_adata_rechdr,                  /* Adata continuation rechdr */
-   st_adata,                              /* Write aligned data */
-   st_cont_adata,                         /* Write more aligned data */
-   st_adata_label                         /* Writing adata vol label */
+   st_none,                               /* 0 No state */
+   st_header,                             /* 1 Write header */
+   st_cont_header,                        /* 2 Write continuation header */
+   st_data,                               /* 3 Write data record */
+   st_adata_blkhdr,                       /* 4 Adata block header */
+   st_adata_rechdr,                       /* 5 Adata record header */
+   st_cont_adata_rechdr,                  /* 6 Adata continuation rechdr */
+   st_adata,                              /* 7 Write aligned data */
+   st_cont_adata,                         /* 8 Write more aligned data */
+   st_adata_label                         /* 9 Writing adata vol label */
 };
 
 
@@ -82,7 +82,7 @@ enum rec_state {
 #define REC_NO_MATCH         (1<<3)   /* No match on continuation data */
 #define REC_CONTINUATION     (1<<4)   /* Continuation record found */
 #define REC_ISTAPE           (1<<5)   /* Set if device is tape */
-#define REC_ADATA_EMPTY      (1<<6)   /* Not endough adata in block */
+#define REC_ADATA_EMPTY      (1<<6)   /* Not enough adata in block */
 #define REC_NO_SPLIT         (1<<7)   /* Do not split this record */
 
 #define is_partial_record(r) ((r)->state_bits & REC_PARTIAL_RECORD)
@@ -117,6 +117,7 @@ struct DEV_RECORD {
    uint32_t adata_remainder;          /* remaining adata bytes to read/write */
    uint32_t remlen;                   /* temp remainder bytes */
    uint32_t data_bytes;               /* data_bytes */
+   uint32_t extra_bytes;              /* the extra size that must be accounted in VolABytes */
    uint32_t state_bits;               /* state bits */
    uint32_t RecNum;                   /* Record number in the block */
    uint32_t BlockNumber;              /* Block number for this record (used in read_records()) */
