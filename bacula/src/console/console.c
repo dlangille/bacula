@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2018 Kern Sibbald
+   Copyright (C) 2000-2020 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -42,6 +42,8 @@ void trapctlc();
 void clrbrk();
 int usrbrk();
 static int brkflg = 0;              /* set on user break */
+
+static int require_fips = 0;
 
 #if defined(HAVE_WIN32)
 #define isatty(fd) (fd==0)
@@ -100,6 +102,7 @@ static int timecmd(FILE *input, BSOCK *UA_sock);
 static int sleepcmd(FILE *input, BSOCK *UA_sock);
 static int execcmd(FILE *input, BSOCK *UA_sock);
 static int putfilecmd(FILE *input, BSOCK *UA_sock);
+static int encodecmd(FILE *input, BSOCK *UA_sock);
 
 #ifdef HAVE_READLINE
 static int eolcmd(FILE *input, BSOCK *UA_sock);
@@ -182,6 +185,7 @@ static struct cmdstruct commands[] = {
  { N_("time"),       timecmd,      _("print current time")},
  { N_("version"),    versioncmd,   _("print Console's version")},
  { N_("echo"),       echocmd,      _("echo command string")},
+ { N_("encode"),     encodecmd,    _("encode command string")},
  { N_("exec"),       execcmd,      _("execute an external command")},
  { N_("exit"),       quitcmd,      _("exit = quit")},
  { N_("putfile"),    putfilecmd,   _("send a file to the director")},
@@ -489,7 +493,7 @@ void init_items()
 {
    if (!items) {
       items = (ItemList*) malloc(sizeof(ItemList));
-      memset(items, 0, sizeof(ItemList));
+      bmemset(items, 0, sizeof(ItemList));
 
    } else {
       items->list.destroy();
@@ -961,18 +965,19 @@ static int console_update_history(const char *histfile)
    return ret;
 }
 
-static int console_init_history(const char *histfile)
+static int console_init_history(const char *histfile, int size)
 {
    int ret=0;
 
 #ifdef HAVE_READLINE
+   histfile_size = size;
    using_history();
    ret = read_history(histfile);
    /* Tell the completer that we want a complete . */
    rl_completion_entry_function = dummy_completion_function;
    rl_attempted_completion_function = readline_completion;
    rl_filename_completion_desired = 0;
-   stifle_history(100);
+   stifle_history(histfile_size);
 #endif
 
    return ret;
@@ -1114,7 +1119,6 @@ int main(int argc, char *argv[])
    bool list_directors=false, list_consoles=false;
    bool no_signals = false;
    bool test_config = false;
-   JCR jcr;
    utime_t heart_beat;
 
    setlocale(LC_ALL, "");
@@ -1226,12 +1230,17 @@ int main(int argc, char *argv[])
    config = New(CONFIG());
    parse_cons_config(config, configfile, M_ERROR_TERM);
 
+   /* TODO: Get the FIPS settings from the configuration file */
    if (init_crypto() != 0) {
       Emsg0(M_ERROR_TERM, 0, _("Cryptography library initialization failed.\n"));
    }
 
    if (!check_resources()) {
       Emsg1(M_ERROR_TERM, 0, _("Please correct configuration file: %s\n"), configfile);
+   }
+
+   if (crypto_check_fips(require_fips) < 0) {
+      Emsg0(M_ERROR_TERM, 0, _("Enable to set FIPS mode\n"));
    }
 
    if (!no_conio) {
@@ -1259,8 +1268,6 @@ int main(int argc, char *argv[])
       exit(0);
    }
 
-   memset(&jcr, 0, sizeof(jcr));
-
    (void)WSA_Init();                        /* Initialize Windows sockets */
 
    start_watchdog();                        /* Start socket watchdog */
@@ -1274,7 +1281,7 @@ int main(int argc, char *argv[])
 
    char buf[1024];
    /* Initialize Console TLS context */
-   if (cons && (cons->tls_enable || cons->tls_require)) {
+   if (cons && cons->tls_enable) {
       /* Generate passphrase prompt */
       bsnprintf(buf, sizeof(buf), "Passphrase for Console \"%s\" TLS private key: ", cons->hdr.name);
 
@@ -1288,14 +1295,25 @@ int main(int argc, char *argv[])
 
       if (!cons->tls_ctx) {
          senditf(_("Failed to initialize TLS context for Console \"%s\".\n"),
-            dir->hdr.name);
+            cons->hdr.name);
+         terminate_console(0);
+         return 1;
+      }
+   }
+   /* Initialize a TLS-PSK context (even if a TLS context already exists) */
+   if (cons) {
+      cons->psk_ctx = new_psk_context(cons->password);
+      /* In this case, we have TLS Require=Yes and TLS not setup and no PSK */
+      if (cons->tls_enable == false && cons->tls_require && cons->psk_ctx == NULL) {
+         senditf(_("Failed to initialize TLS PSK context for Console \"%s\".\n"),
+                 cons->hdr.name);
          terminate_console(0);
          return 1;
       }
    }
 
    /* Initialize Director TLS context */
-   if (dir->tls_enable || dir->tls_require) {
+   if (dir->tls_enable) {
       /* Generate passphrase prompt */
       bsnprintf(buf, sizeof(buf), "Passphrase for Director \"%s\" TLS private key: ", dir->hdr.name);
 
@@ -1304,6 +1322,7 @@ int main(int argc, char *argv[])
        * Keyfile PEM Callback, Keyfile CB Userdata, DHfile, Verify Peer */
       dir->tls_ctx = new_tls_context(dir->tls_ca_certfile,
          dir->tls_ca_certdir, dir->tls_certfile,
+
          dir->tls_keyfile, tls_pem_callback, &buf, NULL, true);
 
       if (!dir->tls_ctx) {
@@ -1313,7 +1332,16 @@ int main(int argc, char *argv[])
          return 1;
       }
    }
-
+   /* Initialize a TLS-PSK context (even if a TLS context already exists) */
+   dir->psk_ctx = new_psk_context(dir->password);
+   /* In this case, we have TLS Require=Yes and TLS not setup and no PSK */
+   if (dir->tls_enable == false && dir->tls_require && dir->psk_ctx == NULL) {
+      senditf(_("Failed to initialize TLS PSK context for Director \"%s\".\n"),
+              dir->hdr.name);
+      terminate_console(0);
+      return 1;
+   }
+ 
    if (dir->heartbeat_interval) {
       heart_beat = dir->heartbeat_interval;
    } else if (cons) {
@@ -1331,7 +1359,6 @@ int main(int argc, char *argv[])
       terminate_console(0);
       return 1;
    }
-   jcr.dir_bsock = UA_sock;
 
    /* If cons==NULL, default console will be used */
    if (!authenticate_director(UA_sock, dir, cons)) {
@@ -1345,6 +1372,7 @@ int main(int argc, char *argv[])
 
    /* Read/Update history file if HOME exists */
    POOL_MEM history_file;
+   int hist_file_size=0;
 
    /* Run commands in ~/.bconsolerc if any */
    char *env = getenv("HOME");
@@ -1358,9 +1386,17 @@ int main(int argc, char *argv[])
          fclose(fd);
       }
 
+   }
+
+   hist_file_size = dir->hist_file_size;
+   if (dir->hist_file) {
+      pm_strcpy(history_file, dir->hist_file);
+      console_init_history(history_file.c_str(), hist_file_size);
+
+   } else if (env) {
       pm_strcpy(history_file, env);
       pm_strcat(history_file, "/.bconsole_history");
-      console_init_history(history_file.c_str());
+      console_init_history(history_file.c_str(), hist_file_size);
    }
 
    read_and_process_input(stdin, UA_sock);
@@ -1431,7 +1467,9 @@ static int check_resources()
       /* tls_require implies tls_enable */
       if (director->tls_require) {
          if (have_tls) {
-            director->tls_enable = true;
+            if (director->tls_ca_certfile || director->tls_ca_certdir) {
+               director->tls_enable = true;
+            }
          } else {
             Jmsg(NULL, M_FATAL, 0, _("TLS required but not configured in Bacula.\n"));
             OK = false;
@@ -1447,6 +1485,9 @@ static int check_resources()
                              director->hdr.name, configfile);
          OK = false;
       }
+      if (director->require_fips) {
+         require_fips = 1;
+      }
    }
 
    if (numdir == 0) {
@@ -1461,7 +1502,9 @@ static int check_resources()
       /* tls_require implies tls_enable */
       if (cons->tls_require) {
          if (have_tls) {
-            cons->tls_enable = true;
+            if (cons->tls_ca_certfile || cons->tls_ca_certdir) {
+               cons->tls_enable = true;
+            }
          } else {
             Jmsg(NULL, M_FATAL, 0, _("TLS required but not configured in Bacula.\n"));
             OK = false;
@@ -1475,6 +1518,9 @@ static int check_resources()
                              cons->hdr.name, configfile);
          OK = false;
       }
+      if (cons->require_fips) {
+         require_fips = 1;
+      }
    }
 
    UnlockRes();
@@ -1485,8 +1531,11 @@ static int check_resources()
 /* @version */
 static int versioncmd(FILE *input, BSOCK *UA_sock)
 {
-   senditf("Version: " VERSION " (" BDATE ") %s %s %s\n",
-      HOST_OS, DISTNAME, DISTVER);
+   senditf("Version: " VERSION " (" BDATE ") %s %s %s\n", /* TODO: Add FIPS setting here */
+           HOST_OS, DISTNAME, DISTVER);
+   if (crypto_get_fips()) {
+      senditf("Crypto: fips=%s crypto=%s\n", crypto_get_fips_enabled(), crypto_get_version());
+   }
    return 1;
 }
 
@@ -1624,6 +1673,57 @@ static int execcmd(FILE *input, BSOCK *UA_sock)
       be.set_errno(stat);
       senditf(_("@exec error: ERR=%s\n"), be.bstrerror());
    }
+   return 1;
+}
+
+/* Encode a string with a simple algorithm */
+static int encodecmd(FILE *input, BSOCK *UA_sock)
+{
+   int   len;
+   int   salt;
+   char  pepper;
+
+   if (argc == 2) {
+      POOLMEM *buf = get_pool_memory(PM_NAME);
+      POOLMEM *buf2 = get_pool_memory(PM_NAME);
+      char *str = argk[1];
+
+      salt = rand() % 1000;    /* Display max 3 digits */
+      pepper = salt % 256;     /* salt for password itself */
+
+      if (argv[1]) {
+         if (strcmp(argk[1], "string") == 0) {
+            str = argv[1];
+         } else {
+            senditf("Unable to encode the given string \"%s\". Try to use @encode string=\"yourstring\"\n", argk[1]);
+            return 1;
+         }
+      }
+
+      len = strlen(str);
+
+      if (len > MAX_NAME_LENGTH) {
+         sendit(_("The String to encode is too long\n"));
+         return 1;
+      }
+
+      Mmsg(buf, "%03d:%03d:%s", salt, len ^ salt, str);
+
+      for(char *p = buf + 8 ; *p ; p++) {
+         *p = *p ^ pepper;
+      }
+
+      buf2 = check_pool_memory_size(buf2, len*3);
+      bin_to_base64(buf2, sizeof_pool_memory(buf2),
+                    buf, 8 + len + 1, 1);
+
+      sendit(buf2);
+
+      free_pool_memory(buf);
+      free_pool_memory(buf2);
+      sendit("\n");
+   }
+
    return 1;
 }
 
