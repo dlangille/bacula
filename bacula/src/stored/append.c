@@ -23,14 +23,12 @@
 
 #include "bacula.h"
 #include "stored.h"
+#include "prepare.h"
 
 
 /* Responses sent to the File daemon */
 static char OK_data[]    = "3000 OK data\n";
 static char OK_append[]  = "3000 OK append data\n";
-
-/* Forward referenced functions */
-
 
 /*
  * Check if we can mark this job incomplete
@@ -69,11 +67,11 @@ bool do_append_data(JCR *jcr)
    BSOCK *fd = jcr->file_bsock;
    bool ok = true;
    DEV_RECORD rec;
+   prepare_ctx pctx;
    char buf1[100], buf2[100];
    DCR *dcr = jcr->dcr;
    DEVICE *dev;
    char ec[50];
-   POOLMEM *eblock = NULL;
    POOL_MEM errmsg(PM_EMSG);
 
    if (!dcr) {
@@ -150,12 +148,15 @@ bool do_append_data(JCR *jcr)
    dcr->VolFirstIndex = dcr->VolLastIndex = 0;
    jcr->run_time = time(NULL);              /* start counting time for rates */
 
-   GetMsg *qfd;
+   GetMsg *qfd = dcr->dev->get_msg_queue(jcr, fd, DEDUP_MAX_MSG_SIZE);
 
-   qfd = New(GetMsg(jcr, fd, NULL, GETMSG_MAX_MSG_SIZE));
    qfd->start_read_sock();
 
    for (last_file_index = 0; ok && !jcr->is_job_canceled(); ) {
+      /* assume no server side deduplication at first */
+      bool dedup_srv_side = false;
+      /* used to store references and hash in the volume */
+      char dedup_ref_buf[DEDUP_MAX_REF_SIZE+OFFSET_FADDR_SIZE+100];
 
       /* Read Stream header from the File daemon.
        *  The stream header consists of the following:
@@ -216,41 +217,97 @@ fi_checked:
          last_file_index = file_index;
       }
 
+      dedup_srv_side = is_dedup_server_side(dev, stream, stream_len);
+
       /* Read data stream from the File daemon.
        *  The data stream is just raw bytes
        */
       while ((n=qfd->bget_msg(NULL)) > 0 && !jcr->is_job_canceled()) {
-
          rec.VolSessionId = jcr->VolSessionId;
          rec.VolSessionTime = jcr->VolSessionTime;
          rec.FileIndex = file_index;
-         rec.Stream = stream;
+         rec.Stream = stream | (dedup_srv_side ? STREAM_BIT_DEDUPLICATION_DATA : 0);
          rec.StreamLen = stream_len;
          rec.maskedStream = stream & STREAMMASK_TYPE;   /* strip high bits */
          rec.data_len = qfd->msglen;
          rec.data = qfd->msg;            /* use message buffer */
+         rec.extra_bytes = 0;
 
          /* Debug code: check if we must hangup or blowup */
          if (handle_hangup_blowup(jcr, jcr->JobFiles, jcr->JobBytes)) {
             return false;
          }
-         Dmsg4(850, "before writ_rec FI=%d SessId=%d Strm=%s len=%d\n",
+         Dmsg4(850, "before write_rec FI=%d SessId=%d Strm=%s len=%d\n",
             rec.FileIndex, rec.VolSessionId,
             stream_to_ascii(buf1, rec.Stream,rec.FileIndex),
             rec.data_len);
-         ok = dcr->write_record(&rec);
-         if (!ok) {
-            Dmsg2(90, "Got write_block_to_dev error on device %s. %s\n",
-                  dcr->dev->print_name(), dcr->dev->bstrerror());
-            break;
-         }
-         jcr->JobBytes += rec.data_len;   /* increment bytes this job */
-         jcr->JobBytes += qfd->bmsg->jobbytes; // if the block as been downloaded, count it
-         Dmsg4(850, "write_record FI=%s SessId=%d Strm=%s len=%d\n",
-            FI_to_ascii(buf1, rec.FileIndex), rec.VolSessionId,
-            stream_to_ascii(buf2, rec.Stream, rec.FileIndex), rec.data_len);
+         /*
+          * Check for any last minute Storage daemon preparation
+          *   of the files being backed up proir to doing so.  E.g.
+          *   we might do a Percona prepare or a virus check.
+          */
+         if (prepare(jcr, pctx, rec)) {
+            /* All done in prepare */
+         } else {
+            /* Normal non "prepare" backup */
 
-         send_attrs_to_dir(jcr, &rec);
+            char *rbuf = qfd->msg;
+            char *wdedup_ref_buf = dedup_ref_buf;
+            int rbuflen = qfd->msglen;
+            if (is_offset_stream(stream)) {
+               if (stream & STREAM_BIT_OFFSETS) {
+                  /* Prepare to update the index */
+                  unser_declare;
+                  unser_begin(rbuf, 0);
+                  unser_uint64(rec.FileOffset);
+               }
+               rbuf += OFFSET_FADDR_SIZE;
+               rbuflen -= OFFSET_FADDR_SIZE;
+               if (dedup_srv_side) {
+                  wdedup_ref_buf += OFFSET_FADDR_SIZE;
+                  memcpy(dedup_ref_buf, qfd->msg, OFFSET_FADDR_SIZE);
+               }
+            }
+
+            if (dedup_srv_side) {
+               /* if dedup is in use then store and replace the chunk by its ref */
+               ok = qfd->dedup_store_chunk(&rec, rbuf, rbuflen, dedup_ref_buf, wdedup_ref_buf, errmsg.addr());
+               if (!ok) {
+                  // TODO ASX, I have used successfully a Jmsg and no break from the beginning
+                  // a Dmsg and a break looks more appropriate, hope this works
+                  Jmsg1(jcr, M_FATAL, 0, "%s", errmsg.c_str());
+                  break;
+               }
+            } else {
+               if (stream & STREAM_BIT_DEDUPLICATION_DATA) {
+                  /* do accounting for VolABytes */
+                  rec.extra_bytes = qfd->bmsg->dedup_size;
+               } else {
+                  rec.extra_bytes = 0;
+               }
+            }
+
+            Dmsg4(850, "before write_rec FI=%d SessId=%d Strm=%s len=%d\n",
+                  rec.FileIndex, rec.VolSessionId,
+                  stream_to_ascii(buf1, rec.Stream,rec.FileIndex),
+                  rec.data_len);
+            /* Do the detection here because references are also created by the FD when dedup=bothside */
+            rec.state_bits |= is_dedup_ref(&rec, true) ? REC_NO_SPLIT : 0;
+            ok = dcr->write_record(&rec);
+            if (!ok) {
+               Dmsg2(90, "Got write_block_to_dev error on device %s. %s\n",
+                     dcr->dev->print_name(), dcr->dev->bstrerror());
+               break;
+            }
+
+            jcr->JobBytes += rec.data_len;   /* increment bytes this job */
+            jcr->JobBytes += qfd->bmsg->jobbytes; // if the block as been downloaded, count it
+            Dmsg4(850, "write_record FI=%s SessId=%d Strm=%s len=%d\n",
+                  FI_to_ascii(buf1, rec.FileIndex), rec.VolSessionId,
+                  stream_to_ascii(buf2, rec.Stream, rec.FileIndex), rec.data_len);
+
+            send_attrs_to_dir(jcr, &rec);
+         }
          Dmsg0(650, "Enter bnet_get\n");
       }
       Dmsg2(650, "End read loop with FD. JobFiles=%d Stat=%d\n", jcr->JobFiles, n);
@@ -267,11 +324,14 @@ fi_checked:
       }
    }
 
+   /* stop local and remote dedup  */
+   Dmsg2(DT_DEDUP|215, "Wait for deduplication quarantine: emergency_exit=%d device=%s\n", ok?0:1, dev->print_name());
    qfd->wait_read_sock((ok == false) || jcr->is_job_canceled());
-   free_GetMsg(qfd);
 
-   if (eblock != NULL) {
-      free_pool_memory(eblock);
+   if (qfd->commit(errmsg.addr(), jcr->JobId)) {
+      ok = false;
+      Jmsg1(jcr, M_ERROR, 0, _("DDE commit failed. ERR=%s\n"),
+            errmsg.c_str());
    }
 
    /* Create Job status for end of session label */
@@ -284,6 +344,8 @@ fi_checked:
    } else {
       fd->fsend("3999 Failed append\n");
    }
+
+   prepare_sd_end(jcr, pctx, rec);
 
    Dmsg1(200, "Write EOS label JobStatus=%c\n", jcr->JobStatus);
 
@@ -314,7 +376,7 @@ fi_checked:
          jcr->setJobStatus(JS_ErrorTerminated);
          ok = false;
       }
-      /* Flush out final partial block of this session */
+      /* Flush out final partial ameta block of this session */
       Dmsg1(200, "=== Flush adata=%d last block.\n", dcr->block->adata);
       ASSERT(!dcr->block->adata);
       if (!dcr->write_final_block_to_device()) {
@@ -329,6 +391,10 @@ fi_checked:
          ok = false;
       }
    }
+   /* Must keep the dedup connection alive (and the "last" hashes buffer)
+    * until the last block has been written into the volume for the vacuum */
+   free_GetMsg(qfd);
+
    flush_jobmedia_queue(jcr);
    if (!ok && !jcr->is_JobStatus(JS_Incomplete)) {
       discard_data_spool(dcr);
