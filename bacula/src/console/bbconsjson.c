@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2018 Kern Sibbald
+   Copyright (C) 2000-2020 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,10 +11,13 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
+   The licensor of Bacula is the Free Software Foundation Europe
+   (FSFE), Fiduciary Program, Sumatrastrasse 25, 8006 Zürich,
+   Switzerland, email:ftf@fsfeurope.org.
 */
 /*
  *
@@ -118,8 +121,8 @@ int main(int argc, char *argv[])
    if (init_crypto() != 0) {
       Emsg0(M_ERROR_TERM, 0, _("Cryptography library initialization failed.\n"));
    }
-
    init_stack_dump();
+   init_signals(terminate_console);
    lmgr_init_thread();
    my_name_is(argc, argv, "bconsole");
    init_msg(NULL, NULL);
@@ -263,7 +266,7 @@ static void terminate_console(int sig)
  */
 static void dump_json(display_filter *filter)
 {
-   int resinx, item;
+   int resinx, item, sz;
    int directives;
    bool first_res;
    bool first_directive;
@@ -307,8 +310,14 @@ static void dump_json(display_filter *filter)
             break;
          }
 
+         sz = get_resource_size(resinx + r_first);
+         if (sz < 0) {
+            Dmsg1(0, "Unknown resource type %d\n", resinx);
+            continue;
+         }
+
          /* Copy the resource into res_all */
-         memcpy(&res_all, res, sizeof(res_all));
+         memcpy(&res_all, res, sz);
 
          if (filter->resource_name) {
             bool skip=true;
@@ -431,7 +440,9 @@ static int check_resources()
       /* tls_require implies tls_enable */
       if (director->tls_require) {
          if (have_tls) {
-            director->tls_enable = true;
+            if (director->tls_ca_certfile || director->tls_ca_certdir) {
+               director->tls_enable = true;
+            }
          } else {
             Jmsg(NULL, M_FATAL, 0, _("TLS required but not configured in Bacula.\n"));
             OK = false;
