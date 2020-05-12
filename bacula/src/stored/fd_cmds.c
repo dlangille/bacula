@@ -26,6 +26,8 @@
  *  then when the Storage daemon receives a proper connection from
  *  the File daemon, control is passed here to handle the
  *  subsequent File daemon commands.
+ *
+ *
  */
 
 #include "bacula.h"
@@ -141,14 +143,13 @@ void run_job(JCR *jcr)
       append_end_session(jcr);
    } else if (jcr->is_JobType(JT_MIGRATE) || jcr->is_JobType(JT_COPY)) {
       jcr->session_opened = true;
-      /*
-       * Send "3000 OK data" now to avoid a dead lock, the other side is also
-       * waiting for one. The old code was reading the "3000 OK" reply
+      /* send "3000 OK data" now to avoid a dead lock, the other side is also
+       * waiting for one. The old peace of code was reading the "3000 OK" reply
        * at the end of the backup (not really appropriate).
-       * dedup needs duplex communication with the other side and needs the
-       * "3000 OK" to be read, which is handled here by the code below.
-       */
-      Dmsg0(215, "send OK_data\n");
+       * dedup need duplex communication with the other side and need the
+       * "3000 OK" to be out of the socket, and be handle here by the right
+       * peace of code */
+      Dmsg0(DT_DEDUP|215, "send OK_data\n");
       jcr->file_bsock->fsend(OK_data);
       jcr->is_ok_data_sent = true;
       Dmsg1(050, "Do: read_data_cmd file_bsock=%p\n", jcr->file_bsock);
@@ -171,6 +172,13 @@ bail_out:
    flush_jobmedia_queue(jcr);
    dequeue_messages(jcr);             /* send any queued messages */
    jcr->setJobStatus(JS_Terminated);
+
+   /* Keep track of the important events */
+   events_send_msg(jcr, "SJ0002",
+                      EVENTS_TYPE_JOB, jcr->director->hdr.name, (intptr_t)jcr,
+                      "Job End jobid=%i job=%s status=%c",
+                      jcr->JobId, jcr->Job, jcr->JobStatus);
+
    generate_daemon_event(jcr, "JobEnd");
    generate_plugin_event(jcr, bsdEventJobEnd);
    bash_spaces(jcr->StatusErrMsg);
@@ -292,31 +300,58 @@ static bool append_end_session(JCR *jcr)
 static bool sd_testnetwork_cmd(JCR *jcr)
 {
    BSOCK *fd = jcr->file_bsock;
-   int64_t nb=0;
-   bool can_compress, ok=true;
+   int64_t nb=0, nbrtt=0, rtt=0, bandwidth=0;
+   int32_t ok=1;
+   bool can_compress;
+   btime_t start, end;
 
-   if (sscanf(fd->msg, "testnetwork bytes=%lld", &nb) != 1) {
-      return false;
+   if (scan_string(fd->msg, "testnetwork bytes=%lld rtt=%lld bw=%lld", &nb, &nbrtt, &bandwidth) != 3) {
+      if (scan_string(fd->msg, "testnetwork bytes=%lld", &nb) != 1) {
+         Dmsg1(0, "Invalid command %s\n", fd->msg);
+         return false;
+      }
    }
+
    /* We disable the comline compression for this test */
    can_compress = fd->can_compress();
    fd->clear_compress();
 
-   /* First, get data from the FD */
-   while (fd->recv() > 0) { }
+   if (nb > 0) {
+      /* First, get data from the FD */
+      while (fd->recv() > 0) { }
 
-   /* Then, send back data to the FD */
-   memset(fd->msg, 0xBB, sizeof_pool_memory(fd->msg));
-   fd->msglen = sizeof_pool_memory(fd->msg);
+      /* Then, send back data to the FD */
+      memset(fd->msg, 0xBB, sizeof_pool_memory(fd->msg));
+      fd->msglen = sizeof_pool_memory(fd->msg);
 
-   while(nb > 0 && ok) {
-      if (nb < fd->msglen) {
-         fd->msglen = nb;
+      while(nb > 0 && ok > 0) {
+         if (nb < fd->msglen) {
+            fd->msglen = nb;
+         }
+         ok = fd->send();
+         nb -= fd->msglen;
       }
-      ok = fd->send();
-      nb -= fd->msglen;
+      fd->signal(BNET_EOD);
    }
-   fd->signal(BNET_EOD);
+
+   /* Compute RTT */
+   ok = 1;
+   if (nbrtt > 0) {
+      while (ok > 0) {
+         start = get_current_btime();
+         ok = fd->recv();
+         if (ok > 0) {
+            ok = fd->send();
+            end = get_current_btime() + 1;
+            rtt += end - start;
+         }
+      }
+
+      if (nbrtt) {
+         fd->set_bandwidth(bandwidth);
+         fd->set_rtt(rtt / nbrtt);
+      }
+   }
 
    if (can_compress) {
       fd->set_compress();
