@@ -20,13 +20,14 @@
  * Block definitions for Bacula media data format.
  *
  *    Kern Sibbald, MM
+ *
  */
 
 
 #ifndef __BLOCK_H
 #define __BLOCK_H 1
 
-#define MAX_BLOCK_SIZE  20000000        /* this is a sort of sanity check */
+#define MAX_BLOCK_LENGTH  20000000      /* this is a sort of sanity check */
 #define DEFAULT_BLOCK_SIZE (512 * 126)  /* 64,512 N.B. do not use 65,636 here */
 #define MIN_DEDUP_BLOCK_SIZE (512 * 2)  /* Minimum block (bucket) size */
 
@@ -52,7 +53,6 @@
  *  int32_t FileIndex
  *  int32_t Stream
  *  uint32_t data_length
- *  uint64_t FileOffset (if offset_stream)
  */
 #define RECHDR2_LENGTH  (3*sizeof(int32_t))
 #define WRITE_RECHDR_LENGTH RECHDR2_LENGTH
@@ -64,8 +64,10 @@
  *  uint32_t data_length
  *  uint32_t block length (binbuf to that point in time)
  *  int32_t Stream (original stream)
+ *  uint64_t FileOffset (if offset_stream)
  */
-#define WRITE_ADATA_RECHDR_LENGTH  (5*sizeof(int32_t))
+#define WRITE_ADATA_RECHDR_LENGTH      (5*sizeof(int32_t))
+#define WRITE_ADATA_RECHDR_LENGTH_MAX  (WRITE_ADATA_RECHDR_LENGTH + sizeof(uint64_t))
 
 /* Tape label and version definitions */
 #define BaculaId         "Bacula 1.0 immortal\n"
@@ -148,6 +150,7 @@ struct DEV_BLOCK {
    uint32_t read_errors;              /* block errors (checksum, header, ...) */
    uint32_t CheckSum;                 /* Block checksum */
    uint32_t RecNum;                   /* Number of records read from the current block */
+   uint32_t extra_bytes;              /* the extra size that must be accounted in VolABytes */
    int      BlockVer;                 /* block version 1 or 2 */
    bool     write_failed;             /* set if write failed */
    bool     block_read;               /* set when block read */
@@ -162,8 +165,19 @@ struct DEV_BLOCK {
    char     ser_buf[BLKHDR2_LENGTH];  /* Serial buffer for adata */
    POOLMEM *rechdr_queue;             /* record header queue */
    POOLMEM *buf;                      /* actual data buffer */
+   alist   *filemedia;                /* Filemedia attached to the current block */
 };
 
 #define block_is_empty(block) ((block)->read_len == 0)
+
+/* Information associated with a file OFFSET */
+struct FILEMEDIA_ITEM {
+   dlink link;
+   uint32_t RecordNo;
+   uint32_t FileIndex;
+   uint64_t BlockAddr;
+   uint64_t FileOffset;
+   int64_t  VolMediaId;
+};
 
 #endif
