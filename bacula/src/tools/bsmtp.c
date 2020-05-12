@@ -34,12 +34,13 @@
    Kern Sibbald, July 2001
 
      Note, the original W.Z. Venema smtp.c had no license and no
-     copyright.  See:
+     copyright.  
+     See:
         http://archives.neohapsis.com/archives/postfix/2000-05/1520.html
 
-    In previous versions, I believed that this code cam from
+    In previous versions, I mistakenly believed that this code came from
      Ralf S. Engelshall's smtpclient_main.c, but in fact 99% was
-     Wietse Venema's code.
+     Wietse Venema's code, and the rest was mine.
  */
 
 #include "bacula.h"
@@ -69,12 +70,14 @@ static char *subject = NULL;
 static char *err_addr = NULL;
 static const char *mailhost = NULL;
 static char *reply_addr = NULL;
+static char *sender_addr = NULL;
+static char *custom_headers[10];
 static int mailport = 25;
 static char my_hostname[MAXSTRING];
 static bool content_utf8 = false;
 static resolv_type default_resolv_type = RESOLV_PROTO_IPV4;
 
-/*
+/* 
  * Take input that may have names and other stuff and strip
  *  it down to the mail box address ... i.e. what is enclosed
  *  in < >.  Otherwise add < >.
@@ -177,6 +180,8 @@ _("\n"
 "       -h          use mailhost:port as the SMTP server\n"
 "       -s          set the Subject: field\n"
 "       -r          set the Reply-To: field\n"
+"       -S          set the Sender: field\n"
+"       -H          add a custom line to the mail header\n"
 "       -l          set the maximum number of lines to send (default: unlimited)\n"
 "       -?          print this message.\n"
 "\n"), MY_NAME);
@@ -262,10 +267,13 @@ int main (int argc, char *argv[])
    struct sockaddr_in sin;
 #endif
 #ifdef HAVE_IPV6
-   const char *options = "468ac:d:f:h:r:s:l:?";
+   const char *options = "468ac:d:f:h:r:s:l:S:H:?";
 #else
-   const char *options = "48ac:d:f:h:r:s:l:?";
+   const char *options = "48ac:d:f:h:r:s:l:S:H:?";
 #endif
+    
+   int custom_header_count = 0;
+   int custom_header_max = (sizeof(custom_headers) / sizeof(char *));
 
    setlocale(LC_ALL, "en_US");
    bindtextdomain("bacula", LOCALEDIR);
@@ -332,6 +340,18 @@ int main (int argc, char *argv[])
 
       case 'r':                    /* reply address */
          reply_addr = optarg;
+         break;
+
+      case 'S':                    /* sender address */
+         sender_addr = optarg;
+         break;
+
+      case 'H':                    /* custom header "XXXX: YYYYYYY" */
+         if (custom_header_count<custom_header_max) {
+            custom_headers[custom_header_count++] = optarg;
+         } else {
+            fprintf(stderr, "Too many custom header, ignored\n");
+         }
          break;
 
       case 'l':
@@ -567,7 +587,7 @@ lookup_host:
    get_response(); /* banner */
    chat("HELO %s\r\n", my_hostname);
    chat("MAIL FROM:%s\r\n", cleanup_addr(from_addr, buf, sizeof(buf)));
-
+   
    for (i = 0; i < argc; i++) {
       Dmsg1(20, "rcpt to: %s\n", argv[i]);
       chat("RCPT TO:%s\r\n", cleanup_addr(argv[i], buf, sizeof(buf)));
@@ -597,26 +617,36 @@ lookup_host:
       Dmsg1(10, "Errors-To: %s\r\n", err_addr);
    }
 
-#if defined(HAVE_WIN32)
-   DWORD dwSize = UNLEN + 1;
-   LPSTR lpszBuffer = (LPSTR)alloca(dwSize);
+   if (sender_addr) {
+      fprintf(sfp, "Sender: %s\r\n", sender_addr);
+      Dmsg1(10, "Sender: %s\r\n", sender_addr);
+   } else {
 
-   if (GetUserName(lpszBuffer, &dwSize)) {
-      fprintf(sfp, "Sender: %s@%s\r\n", lpszBuffer, my_hostname);
-      Dmsg2(10, "Sender: %s@%s\r\n", lpszBuffer, my_hostname);
-   } else {
-      fprintf(sfp, "Sender: unknown-user@%s\r\n", my_hostname);
-      Dmsg1(10, "Sender: unknown-user@%s\r\n", my_hostname);
-   }
+#if defined(HAVE_WIN32)
+      DWORD dwSize = UNLEN + 1;
+      LPSTR lpszBuffer = (LPSTR)alloca(dwSize);
+
+      if (GetUserName(lpszBuffer, &dwSize)) {
+         fprintf(sfp, "Sender: %s@%s\r\n", lpszBuffer, my_hostname);
+         Dmsg2(10, "Sender: %s@%s\r\n", lpszBuffer, my_hostname);
+      } else {
+         fprintf(sfp, "Sender: unknown-user@%s\r\n", my_hostname);
+         Dmsg1(10, "Sender: unknown-user@%s\r\n", my_hostname);
+      }
 #else
-   if ((pwd = getpwuid(getuid())) == 0) {
-      fprintf(sfp, "Sender: userid-%d@%s\r\n", (int)getuid(), my_hostname);
-      Dmsg2(10, "Sender: userid-%d@%s\r\n", (int)getuid(), my_hostname);
-   } else {
-      fprintf(sfp, "Sender: %s@%s\r\n", pwd->pw_name, my_hostname);
-      Dmsg2(10, "Sender: %s@%s\r\n", pwd->pw_name, my_hostname);
-   }
+      if ((pwd = getpwuid(getuid())) == 0) {
+         fprintf(sfp, "Sender: userid-%d@%s\r\n", (int)getuid(), my_hostname);
+         Dmsg2(10, "Sender: userid-%d@%s\r\n", (int)getuid(), my_hostname);
+      } else {
+         fprintf(sfp, "Sender: %s@%s\r\n", pwd->pw_name, my_hostname);
+         Dmsg2(10, "Sender: %s@%s\r\n", pwd->pw_name, my_hostname);
+      }
 #endif
+   }
+   /* Add custom header, if any */
+   for (i=0; i<custom_header_count; i++) {
+      fprintf(sfp, "%s\n", custom_headers[i]);
+   }
 
    fprintf(sfp, "To: %s", argv[0]);
    Dmsg1(10, "To: %s", argv[0]);
@@ -632,18 +662,10 @@ lookup_host:
       Dmsg1(10, "Cc: %s\r\n", cc_addr);
    }
 
-   fprintf(sfp, "MIME-Version: 1.0\r\n");
-   Dmsg0(10, "MIME-Version: 1.0\r\n");
    if (content_utf8) {
       fprintf(sfp, "Content-Type: text/plain; charset=UTF-8\r\n");
       Dmsg0(10, "Content-Type: text/plain; charset=UTF-8\r\n");
-   } else {
-     fprintf(sfp, "Content-Type: text/plain\r\n");
-     Dmsg0(10, "Content-Type: text/plain\r\n");
    }
-
-   fprintf(sfp, "Message-Id: <%d-%ld@%s>\r\n", getpid(), time(NULL), my_hostname);
-   Dmsg3(10, "Message-Id: <%d-%ld@%s>\r\n", getpid(), time(NULL), my_hostname);
 
    get_date_string(buf, sizeof(buf));
    fprintf(sfp, "Date: %s\r\n", buf);
