@@ -117,7 +117,7 @@ public:
    int d_close(int) { return -1; }
    int d_ioctl(int fd, ioctl_req_t request, char *mt=NULL) { return -1; }
    boffset_t lseek(DCR *dcr, off_t offset, int whence) { return -1; }
-   bool open_device(DCR *dcr, int omode) { return true; } 
+   bool open_device(DCR *dcr, int omode) { return true; }
    const char *print_type();
 };
 
