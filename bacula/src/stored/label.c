@@ -144,6 +144,7 @@ int DEVICE::read_dev_volume_label(DCR *dcr)
               strcmp(VolHdr.Id, OldBaculaId) != 0 &&
               strcmp(VolHdr.Id, BaculaMetaDataId) != 0 &&
               strcmp(VolHdr.Id, BaculaAlignedDataId) != 0 &&
+              strcmp(VolHdr.Id, BaculaDedupMetaDataId) != 0 &&
               strcmp(VolHdr.Id, BaculaS3CloudId) != 0) {
       Mmsg(jcr->errmsg, _("Volume Header Id bad: %s\n"), VolHdr.Id);
       Dmsg1(dbglvl, "%s", jcr->errmsg);
@@ -179,6 +180,7 @@ int DEVICE::read_dev_volume_label(DCR *dcr)
     */
    if (VolHdr.VerNum != BaculaTapeVersion &&
        VolHdr.VerNum != BaculaMetaDataVersion &&
+       VolHdr.VerNum != BaculaDedupMetaDataVersion &&
        VolHdr.VerNum != BaculaS3CloudVersion &&
        VolHdr.VerNum != OldCompatibleBaculaTapeVersion1 &&
        VolHdr.VerNum != OldCompatibleBaculaTapeVersion2) {
@@ -227,6 +229,14 @@ int DEVICE::read_dev_volume_label(DCR *dcr)
 
    /* Compare VolType to Device Type */
    switch (dev_type) {
+   case B_DEDUP_DEV:
+      if (strcmp(VolHdr.Id, BaculaDedupMetaDataId) != 0) {
+         Mmsg(jcr->errmsg, _("Wrong Volume Type. Wanted a Dedup Volume %s on device %s, but got: %s\n"),
+            VolHdr.VolumeName, print_name(), VolHdr.Id);
+         stat = VOL_TYPE_ERROR;
+         goto bail_out;
+      }
+      break;
    case B_FILE_DEV:
       if (strcmp(VolHdr.Id, BaculaId) != 0) {
          Mmsg(jcr->errmsg, _("Wrong Volume Type. Wanted a File or Tape Volume %s on device %s, but got: %s\n"),
@@ -789,6 +799,10 @@ void create_volume_header(DEVICE *dev, const char *VolName,
       dev->VolHdr.FileAlignment = dev->file_alignment;
       dev->VolHdr.PaddingSize = dev->padding_size;
       dev->VolHdr.BlockSize = dev->adata_size;
+   } else if (dev->is_dedup()) {
+      bstrncpy(dev->VolHdr.Id, BaculaDedupMetaDataId, sizeof(dev->VolHdr.Id));
+      dev->VolHdr.VerNum = BaculaDedupMetaDataVersion;
+      dev->VolHdr.BlockSize = dev->max_block_size;
    } else if (dev->is_cloud()) {
       bstrncpy(dev->VolHdr.Id, BaculaS3CloudId, sizeof(dev->VolHdr.Id));
       dev->VolHdr.VerNum = BaculaS3CloudVersion;
