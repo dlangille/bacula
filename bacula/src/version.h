@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -24,9 +24,9 @@
 #define COMMUNITY 1      /* Define to create a Windows community binary */
 
 /* Note: there can be only *one* VERSION in this file */
-#define VERSION "9.6.3"
-#define BDATE   "09 March 2020"
-#define LSMDATE "09Mar20"
+#define VERSION "9.6.6"
+#define BDATE   "11 May 2020"
+#define LSMDATE "11May20"
 
 #define RELEASE 1   /* Use ONLY in rpms */
 
@@ -36,9 +36,24 @@
 /*
  * Versions of packages needed to build Bacula components
  */
-#define DEPKGS_QT_VERSION  "01Jan13"
-#define DEPKGS_VERSION     "10Oct18"
+#define DEPKGS_QT_VERSION  "30Nov17"
+#define DEPKGS_VERSION     "16Oct19"
+#define BQT4_VERSION       "5.9.3"
+#define VIX_VERSION        "30Apr20"
+#define JAVA_VERSION       "19Mar20"
+#define NDMP_VERSION       "20Apr20"
+#define EXTRAJS_VERSION    "20Apr20"
+#define EXPAT_VERSION      "1.95.8"
+#define ACSLS_VERSION      "20Mar18"
+
+/* Normally included in the base depkgs */
+#define LIBRSYNC_VERSION   "0.9.7b"
+#define LIBLZO_VERSION     "2.06"
+#define TOKYOCABINET_VERSION "1.4.48a"
+#define MSSQL_VERSION      "18Sep19"
 #define DOCKER_TAR_IMAGE   "19Aug19"
+#define KUBERNETES_IMAGE_VERSION "29Oct19"
+#define HADOOP_VERSION "07Feb20"
 
 /* Debug flags */
 #undef  DEBUG
@@ -46,6 +61,7 @@
 #define TRACEBACK 1
 #define TRACE_FILE 1
 #define ENTER_LEAVE 1
+//#define FORCE_ALIGNED 1
 
 /* If this is set stdout will not be closed on startup */
 /* #define DEVELOPER 1 */
@@ -71,9 +87,9 @@
  *   it can always be turned on, but we advise to use it only
  *   for debug
  */
-# ifndef _USE_LOCKMGR
-#  define _USE_LOCKMGR
-# endif /* _USE_LOCKMGR */
+# ifndef USE_LOCKMGR
+#  define USE_LOCKMGR
+# endif /* USE_LOCKMGR */
 /*
  * Enable priority management with the lock manager
  *
@@ -90,10 +106,10 @@
  * Note, this extra check have a high cost when using
  * dozens of thread, so turn this only for debugging.
  */
-/* #define USE_LOCKMGR_SAFEKILL */
+#define USE_LOCKMGR_SAFEKILL
 
 #if !HAVE_LINUX_OS && !HAVE_SUN_OS && !HAVE_DARWIN_OS && !HAVE_FREEBSD_OS && !HAVE_KFREEBSD_OS
-# undef _USE_LOCKMGR
+# undef USE_LOCKMGR
 #endif
 
 /*
@@ -118,7 +134,7 @@
  * for more safety, but is 30 times slower than above
  */
 #define SQLITE3_INIT_QUERY "PRAGMA synchronous = NORMAL"
-   
+
 /*
  * This should always be on. It enables data encryption code
  *  providing it is configured.
@@ -140,8 +156,61 @@
 /* #define DEBUG_MUTEX 1 */
 /* #define DEBUG_BLOCK_CHECKSUM 1 */
 
+#define BEEF 0
 #define BDEMO ""
-#define BEEF  0
+
+/*
+ * SD_VERSION history Enterprise
+ * Note: Enterprise versions now numbered in 30000
+ *       and community is at SD version 3
+ *     None prior to 06Aug13
+ *      1 06Aug13 - added comm line compression
+ *      2 13Dec13 - added api version to status command
+ *      3 22Feb14 - Added SD->SD with SD_Calls_Client
+ *      4 22Jun14 - Added capabilities comm protocol
+ *  30005 04Jun15 - Added JobMedia queueing
+ *  30006 11Apr17 - Added PoolBytes, MaxPoolBytes and Recycle
+ *  30007 06Feb20 - Added can_create to the Find media request
+ *
+ * Community:
+ *    305 04Jun15 - Added JobMedia queueing
+ *    306 20Mar15 - Added comm line compression
+ *    307 06Feb20 - Added can_create to the Find media request
+ */
+
+#ifdef COMMUNITY
+#define SD_VERSION 307     /* Community SD version */
+#else
+#define SD_VERSION 30007   /* Enterprise SD version */
+#endif
+
+/* FD_VERSION history Enterprise
+ *   None prior to 10Mar08
+ *   1 10Mar08
+ *   2 13Mar09 - added the ability to restore from multiple storages
+ *   3 03Sep10 - added the restore object command for vss plugin 4.0
+ *   4 25Nov10 - added bandwidth command 5.1
+ *   5 24Nov11 - added new restore object command format (pluginname) 6.0
+ *   6 15Feb12 - added Component selection information list
+ *   7 19Feb12 - added Expected files to restore
+ *   8 22Mar13 - added restore options + version for SD
+ *   9 06Aug13 - added comm line compression
+ *  10 01Jan14 - added SD Calls Client and api version to status command
+ *  11 O4May14 - added dedup aware FD
+ *  12 22Jun14 - added new capabilities comm protocol with the SD
+ *  13 04Feb15 - added snapshot protocol with the DIR
+ *  14 06Sep17 - added send file list during restore
+ *
+ *  Community:
+ * 213 04Feb15 - added snapshot protocol with the DIR
+ * 214 20Mar17 - added comm line compression
+ */
+
+#ifdef COMMUNITY
+#define FD_VERSION 214  /* make same as community Linux FD */
+#else
+#define FD_VERSION 14 /* Enterprise FD version */
+#endif
 
 /*
  * Set SMALLOC_SANITY_CHECK to zero to turn off, otherwise
@@ -191,5 +260,9 @@
  *  eliminate the comm time sending to the SD.
  */
 /* #define FD_NO_SEND_TEST 1 */
+
+#ifndef COMMUNITY
+#include "bee_version.h"
+#endif
 
 #endif  /* VERSION_H */
