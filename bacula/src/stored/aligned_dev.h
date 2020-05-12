@@ -29,6 +29,8 @@ public:
    aligned_dev();
    ~aligned_dev();
 
+   aligned_dev *paired_dev;                /* Paired meta data or aligned data device */
+
    boffset_t get_adata_size(DCR *dcr);
    boffset_t align_adata_addr(DCR *dcr, boffset_t addr);
    boffset_t get_adata_addr(DCR *dcr);
@@ -58,7 +60,8 @@ public:
    void clear_nospace();
    void clear_append();
    void clear_read();
-   void device_specific_init(JCR *jcr, DEVRES *device);
+   int device_specific_init(JCR *jcr, DEVRES *device);
+   int device_specific_close(DCR *dcr);
    int d_close(int fd);
    int d_open(const char *pathname, int flags);
    int d_ioctl(int fd, ioctl_req_t request, char *mt_com);
@@ -91,7 +94,7 @@ public:
    void write_adata(DCR *dcr, DEV_RECORD *rec);
    void write_cont_adata(DCR *dcr, DEV_RECORD *rec);
    int  write_adata_rechdr(DCR *dcr, DEV_RECORD *rec);
-   bool read_adata_record_header(DCR *dcr, DEV_BLOCK *block, DEV_RECORD *rec);
+   bool read_adata_record_header(DCR *dcr, DEV_BLOCK *block, DEV_RECORD *rec, bool *firstcall);
    void read_adata_block_header(DCR *dcr);
    int read_adata(DCR *dcr, DEV_RECORD *rec);
    bool have_adata_header(DCR *dcr, DEV_RECORD *rec, int32_t  FileIndex,
