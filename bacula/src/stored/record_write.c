@@ -78,6 +78,9 @@ static bool write_header_to_block(DCR *dcr, DEV_BLOCK *block, DEV_RECORD *rec)
    block->bufp += WRITE_RECHDR_LENGTH;
    block->binbuf += WRITE_RECHDR_LENGTH;
 
+   /* See if we create a FileMedia record for this record */
+   create_filemedia(dcr, block, rec);
+
    block->RecNum++;
    rec->remlen -= WRITE_RECHDR_LENGTH;
    rec->remainder = rec->data_len;
@@ -90,6 +93,7 @@ static bool write_header_to_block(DCR *dcr, DEV_BLOCK *block, DEV_RECORD *rec)
       }
       block->LastIndex = rec->FileIndex;
    }
+   block->extra_bytes += rec->extra_bytes;
 
    //dump_block(dcr->dev, block, "Add header");
    return true;
@@ -168,6 +172,7 @@ static void write_continue_header_to_block(DCR *dcr, DEV_BLOCK *block, DEV_RECOR
          block->buf, block->bufp-block->buf);
    }
    block->RecNum++;
+   block->extra_bytes += rec->extra_bytes; /* ***BEEF*** */
    //dump_block(dcr->dev, block, "Add cont header");
 }
 
@@ -278,7 +283,7 @@ bool write_record_to_block(DCR *dcr, DEV_RECORD *rec)
    }
 
    for ( ;; ) {
-      Dmsg0(dbgep, "=== wpath 37 top of for loop\n");
+      Dmsg1(dbgep, "=== wpath 37 top of for loop wstate=%d\n", rec->wstate);
       ASSERT(dcr->block->binbuf == (uint32_t) (dcr->block->bufp - dcr->block->buf));
       ASSERT(dcr->block->buf_len >= dcr->block->binbuf);
 
