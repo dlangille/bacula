@@ -54,6 +54,10 @@ void    create_jobmedia_queue(JCR *jcr);
 bool    flush_jobmedia_queue(JCR *jcr);
 bool    dir_update_device(JCR *jcr, DEVICE *dev);
 bool    dir_update_changer(JCR *jcr, AUTOCHANGER *changer);
+bool    dir_create_filemedia_record(DCR *dcr);
+bool dir_get_pool_info(DCR *dcr, VOLUME_CAT_INFO *volcatinfo);
+
+bool flush_filemedia_queue(JCR*);
 
 /* class AskDirHandler allows btool's utilities to overwrite the functions above
  * and even to overwrite the functions in their own sub-class like in btape
@@ -67,6 +71,7 @@ public:
    virtual bool dir_find_next_appendable_volume(DCR *dcr) { return 1;}
    virtual bool dir_update_volume_info(DCR *dcr, bool relabel, bool update_LastWritten, bool use_dcr) { return 1; }
    virtual bool dir_create_jobmedia_record(DCR *dcr, bool zero) { return 1; }
+   virtual bool dir_create_filemedia_record(DCR *dcr) { return 1; }
    virtual bool flush_jobmedia_queue(JCR *jcr) { return true; }
    virtual bool dir_ask_sysop_to_create_appendable_volume(DCR *dcr) { return 1; }
    virtual bool dir_update_file_attributes(DCR *dcr, DEV_RECORD *rec) { return 1;}
@@ -86,10 +91,20 @@ public:
 /* activate the functions provided by the btool's handler */
 AskDirHandler *init_askdir_handler(AskDirHandler *new_askdir_handler);
 
+/* Get the current handler defined */
+AskDirHandler *get_askdir_handler();
+
 /* authenticate.c */
-bool    authenticate_director(JCR *jcr);
+class SDAuthenticateDIR: public AuthenticateBase
+{
+public:
+   SDAuthenticateDIR(JCR *jcr);
+   virtual ~SDAuthenticateDIR() {};
+   bool authenticate_director();
+};
 int     authenticate_filed(JCR *jcr, BSOCK *fd, int FDVersion);
-bool    authenticate_storagedaemon(JCR *jcr);
+bool    send_hello_and_authenticate_sd(JCR *jcr, char *Job);
+
 
 /* From autochanger.c */
 bool     init_autochangers();
@@ -118,6 +133,7 @@ bool    check_for_newvol_or_newfile(DCR *dcr);
 bool    do_new_file_bookkeeping(DCR *dcr);
 void    reread_last_block(DCR *dcr);
 
+bool is_pool_size_reached(DCR *dcr, bool quiet);
 
 /* From butil.c -- utilities for SD tool programs */
 void    setup_me();
@@ -165,7 +181,7 @@ void     stored_free_jcr(JCR *jcr);
 bool     validate_dir_hello(JCR* jcr);
 bool     send_hello_ok(BSOCK *bs);
 bool     send_sorry(BSOCK *bs);
-bool     send_hello_sd(JCR *jcr, char *Job);
+bool     send_hello_sd(JCR *jcr, char *Job, int tlspsk);
 bool     send_hello_client(JCR *jcr, char *Job);
 bool     read_client_hello(JCR *jcr);
 bool     is_client_connection(BSOCK *bs);
@@ -213,6 +229,7 @@ void     free_restore_volume_list(JCR *jcr);
 void     create_restore_volume_list(JCR *jcr, bool add_to_read_list);
 
 /* From record.c */
+void create_filemedia(DCR *dcr, DEV_BLOCK *block, DEV_RECORD *rec);
 const char *FI_to_ascii(char *buf, int fi);
 const char *stream_to_ascii(char *buf, int stream, int fi);
 const char *stream_to_ascii_ex(char *buf, int stream, int fi);
@@ -230,6 +247,12 @@ bool        flush_adata_to_device(DCR *dcr);
 void dump_record(DEV_RECORD *rec);
 
 /* From read_record.c */
+bool mount_next_vol(JCR *jcr, DCR *dcr, BSR *bsr,
+                    SESSION_LABEL *sessrec, bool *should_stop,
+                    bool record_cb(DCR *dcr, DEV_RECORD *rec),
+                    bool mount_cb(DCR *dcr));
+
+BSR *position_to_first_file(JCR *jcr, DCR *dcr, BSR *bsr);
 bool read_records(DCR *dcr,
        bool record_cb(DCR *dcr, DEV_RECORD *rec),
        bool mount_cb(DCR *dcr));
@@ -292,13 +315,35 @@ bool wait_for_device(DCR *dcr, int &retries);
 void store_protocol(LEX *lc, RES_ITEM *item, int index, int pass);
 void store_uri_style(LEX *lc, RES_ITEM *item, int index, int pass);
 void store_truncate(LEX *lc, RES_ITEM *item, int index, int pass);
+bool find_truncate_option(const char* truncate, uint32_t& truncate_option);
 void store_upload(LEX *lc, RES_ITEM *item, int index, int pass);
 void store_devtype(LEX *lc, RES_ITEM *item, int index, int pass);
 void store_cloud_driver(LEX *lc, RES_ITEM *item, int index, int pass);
 void store_maxblocksize(LEX *lc, RES_ITEM *item, int index, int pass);
+void store_transfer_priority(LEX *lc, RES_ITEM *item, int index, int pass);
 
 /* from sdcollect.c */
 bool update_permanent_stats(void *data);
 void initialize_statcollector();
 void start_collector_threads();
 void terminate_collector_threads();
+
+#define SIR_OK       0
+#define SIR_BREAK    1
+#define SIR_CONTINUE 2
+
+int sir_init_loop(DCR *dcr,
+                  DEVICE **dev, DEV_BLOCK **block,
+                  bool record_cb(DCR *dcr, DEV_RECORD *rec),
+                  bool mount_cb(DCR *dcr));
+
+void sir_init(DCR *dcr);
+
+/* from BEE */
+#if BEEF
+void store_dedup_driver(LEX *lc, RES_ITEM *item, int index, int pass);
+void bee_setdebug_cmd_parse_options(JCR *, char *);
+void reset_bsr(BSR *root);
+#else
+#define bee_setdebug_cmd_parse_options(a, b)
+#endif
