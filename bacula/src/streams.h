@@ -20,6 +20,7 @@
  * Stream definitions.  Split from baconfig.h Nov 2010
  *
  *  Kern Sibbald, MM
+ *
  */
 
 #ifndef __BSTREAMS_H
@@ -32,11 +33,14 @@
 #define STREAM_BIT_DELTA              (1<<27)    /* Stream contains delta data */
 #define STREAM_BIT_OFFSETS            (1<<26)    /* Stream has data offset */
 #define STREAM_BIT_PORTABLE_DATA      (1<<25)    /* Data is portable */
+#define STREAM_BIT_DEDUPLICATION_DATA (1<<24)    /* Stream contains dedup refs */
+#define STREAM_BIT_NO_DEDUPLICATION   (1<<23)    /* Stream that must no be deduped */
+#define STREAM_BIT_PREPARE            (1<<22)    /* Percona SD prepare */
 
 /* TYPE represents our current (old) stream types -- e.g. values 0 - 2047 */
 #define STREAMBASE_TYPE                0         /* base for types */
 #define STREAMBITS_TYPE               11         /* type bit size */
-#define STREAMMASK_TYPE               (~((~0u)<< STREAMBITS_TYPE) << STREAMBASE_TYPE)
+#define STREAMMASK_TYPE               (~((~0uL)<< STREAMBITS_TYPE) << STREAMBASE_TYPE)
 /*
  * Note additional base, bits, and masks can be defined for new     
  *  ranges or subranges of stream attributes.
@@ -59,7 +63,6 @@
 #define STREAM_NONE                         0    /* Reserved Non-Stream */
 #define STREAM_UNIX_ATTRIBUTES              1    /* Generic Unix attributes */
 #define STREAM_FILE_DATA                    2    /* Standard uncompressed data */
-#define STREAM_MD5_SIGNATURE                3    /* deprecated */
 #define STREAM_MD5_DIGEST                   3    /* MD5 digest for the file */
 #define STREAM_GZIP_DATA                    4    /* GZip compressed file data */
 #define STREAM_UNIX_ATTRIBUTES_EX           5    /* Extended Unix attr for Win32 EX - Deprecated */
