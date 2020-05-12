@@ -1,7 +1,7 @@
 /*
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2017 Kern Sibbald
+   Copyright (C) 2000-2020 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -11,7 +11,7 @@
    Public License, v3.0 ("AGPLv3") and some additional permissions and
    terms pursuant to its AGPLv3 Section 7.
 
-   This notice must be preserved when any source code is 
+   This notice must be preserved when any source code is
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
@@ -76,10 +76,11 @@ static RES_ITEM cons_items[] = {
    {"Name",           store_name,     ITEM(res_cons.hdr.name), 0, ITEM_REQUIRED, 0},
    {"Description",    store_str,      ITEM(res_cons.hdr.desc), 0, 0, 0},
    {"RCFile",         store_dir,      ITEM(res_cons.rc_file), 0, 0, 0},
-   {"HistoryFile",    store_dir,      ITEM(res_cons.hist_file), 0, 0, 0},
    {"Password",       store_password, ITEM(res_cons.password), 0, ITEM_REQUIRED, 0},
+   {"FipsRequire",     store_bool,    ITEM(res_cons.require_fips), 0, 0, 0},
    {"TlsAuthenticate",store_bool,    ITEM(res_cons.tls_authenticate), 0, 0, 0},
    {"TlsEnable",      store_bool,    ITEM(res_cons.tls_enable), 0, 0, 0},
+   {"TlsPskEnable",   store_bool,    ITEM(res_cons.tls_psk_enable), 0, ITEM_DEFAULT, tls_psk_default},
    {"TlsRequire",     store_bool,    ITEM(res_cons.tls_require), 0, 0, 0},
    {"TlsCaCertificateFile", store_dir, ITEM(res_cons.tls_ca_certfile), 0, 0, 0},
    {"TlsCaCertificateDir", store_dir,  ITEM(res_cons.tls_ca_certdir), 0, 0, 0},
@@ -97,16 +98,22 @@ static RES_ITEM dir_items[] = {
    {"Name",           store_name,      ITEM(res_dir.hdr.name), 0, ITEM_REQUIRED, 0},
    {"Description",    store_str,       ITEM(res_dir.hdr.desc), 0, 0, 0},
    {"DirPort",        store_pint32,    ITEM(res_dir.DIRport),  0, ITEM_DEFAULT, 9101},
-   {"Address",        store_str,       ITEM(res_dir.address),  0, 0, 0},
+   /* ***BEE*** In BWeb/BConfig, the store_str is replaced by
+   store_addresses_address to check more carefully user inputs */
+   {"Address",        store_str,       ITEM(res_dir.address),  0, ITEM_REQUIRED, 0},
    {"Password",       store_password,  ITEM(res_dir.password), 0, ITEM_REQUIRED, 0},
-   {"TlsAuthenticate",store_bool,    ITEM(res_dir.tls_enable), 0, 0, 0},
+   {"FipsRequire",     store_bool,    ITEM(res_dir.require_fips), 0, 0, 0},
+   {"TlsAuthenticate",store_bool,    ITEM(res_dir.tls_authenticate), 0, 0, 0},
    {"TlsEnable",      store_bool,    ITEM(res_dir.tls_enable), 0, 0, 0},
+   {"TlsPskEnable",   store_bool,    ITEM(res_dir.tls_psk_enable), 0, ITEM_DEFAULT, tls_psk_default},
    {"TlsRequire",     store_bool,    ITEM(res_dir.tls_require), 0, 0, 0},
    {"TlsCaCertificateFile", store_dir, ITEM(res_dir.tls_ca_certfile), 0, 0, 0},
    {"TlsCaCertificateDir", store_dir,  ITEM(res_dir.tls_ca_certdir), 0, 0, 0},
    {"TlsCertificate", store_dir,       ITEM(res_dir.tls_certfile), 0, 0, 0},
    {"TlsKey",         store_dir,       ITEM(res_dir.tls_keyfile), 0, 0, 0},
    {"HeartbeatInterval", store_time, ITEM(res_dir.heartbeat_interval), 0, ITEM_DEFAULT, 5 * 60},
+   {"HistoryFile",    store_dir,      ITEM(res_dir.hist_file), 0, 0, 0},
+   {"HistoryFileSize",store_int32,    ITEM(res_dir.hist_file_size), 0, ITEM_DEFAULT, 100},
    {NULL, NULL, {0}, 0, 0, 0}
 };
 
@@ -138,12 +145,11 @@ void dump_resource(int type, RES *rres, void sendit(void *sock, const char *fmt,
    }
    switch (type) {
    case R_CONSOLE:
-      printf(_("Console: name=%s rcfile=%s histfile=%s\n"), rres->name,
-             res->res_cons.rc_file, res->res_cons.hist_file);
+      printf(_("Console: name=%s rcfile=%s\n"), rres->name, res->res_cons.rc_file);
       break;
    case R_DIRECTOR:
-      printf(_("Director: name=%s address=%s DIRport=%d\n"), rres->name,
-              res->res_dir.address, res->res_dir.DIRport);
+      printf(_("Director: name=%s address=%s DIRport=%d histfile=%s\n"), rres->name,
+             res->res_dir.address, res->res_dir.DIRport, NPRTB(res->res_dir.hist_file));
       break;
    default:
       printf(_("Unknown resource type %d\n"), type);
@@ -183,11 +189,11 @@ void free_resource(RES *rres, int type)
       if (res->res_cons.rc_file) {
          free(res->res_cons.rc_file);
       }
-      if (res->res_cons.hist_file) {
-         free(res->res_cons.hist_file);
-      }
       if (res->res_cons.tls_ctx) {
          free_tls_context(res->res_cons.tls_ctx);
+      }
+      if (res->res_cons.psk_ctx) {
+         free_psk_context(res->res_cons.psk_ctx);
       }
       if (res->res_cons.tls_ca_certfile) {
          free(res->res_cons.tls_ca_certfile);
@@ -209,11 +215,17 @@ void free_resource(RES *rres, int type)
       }
       break;
    case R_DIRECTOR:
+      if (res->res_dir.hist_file) {
+         free(res->res_dir.hist_file);
+      }
       if (res->res_dir.address) {
          free(res->res_dir.address);
       }
       if (res->res_dir.tls_ctx) {
          free_tls_context(res->res_dir.tls_ctx);
+      }
+      if (res->res_dir.psk_ctx) {
+         free_psk_context(res->res_dir.psk_ctx);
       }
       if (res->res_dir.tls_ca_certfile) {
          free(res->res_dir.tls_ca_certfile);
@@ -236,6 +248,23 @@ void free_resource(RES *rres, int type)
    }
    /* Common stuff again -- free the resource, recurse to next one */
    free(res);
+}
+
+/* Get the size of the resource object */
+int get_resource_size(int type)
+{
+   int size = -1;
+   switch (type) {
+   case R_CONSOLE:
+      size = sizeof(CONRES);
+      break;
+   case R_DIRECTOR:
+      size = sizeof(DIRRES);
+      break;
+   default:
+      break;
+   }
+   return size;
 }
 
 /* Save the new resource by chaining it into the head list for
@@ -293,18 +322,10 @@ bool save_resource(CONFIG *config, int type, RES_ITEM *items, int pass)
    }
 
    /* The following code is only executed during pass 1 */
-   switch (type) {
-   case R_CONSOLE:
-      size = sizeof(CONRES);
-      break;
-   case R_DIRECTOR:
-      size = sizeof(DIRRES);
-      break;
-   default:
+   size = get_resource_size(type);
+   if (size < 0) {
       printf(_("Unknown resource type %d\n"), type);
       error = 1;
-      size = 1;
-      break;
    }
    /* Common */
    if (!error) {
