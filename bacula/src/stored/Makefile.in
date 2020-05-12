@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2000-2018 Kern Sibbald
+# Copyright (C) 2000-2020 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
 @MCOMMON@
@@ -21,13 +21,27 @@ DEBUG=@DEBUG@
 
 GETTEXT_LIBS = @LIBINTL@
 
+CLOUD_DRIVERS=@CLOUD_DRIVERS@
+CLOUD_INSTALL_TARGETS=@CLOUD_INSTALL_TARGETS@
+
 S3_LIBS=@S3_LIBS@
 S3_INC=@S3_INC@
 
 DB_LIBS=@DB_LIBS@
+ACSLS_LIBDIR=@ACSLS_LIBDIR@
+ACSLS_OS_DEFINE=@ACSLS_OS_DEFINE@
 
 first_rule: all
 dummy:
+
+EXTRA_STORED_SRCS=@EXTRA_STORED_SRCS@
+EXTRA_STORED_OBJS = $(EXTRA_STORED_SRCS:.c=.o)
+
+EXTRA_LIBSD_SRCS=@EXTRA_LIBSD_SRCS@
+EXTRA_LIBSD_OBJS = $(EXTRA_LIBSD_SRCS:.c=.o)
+
+EXTRA_BLS_SRCS=@EXTRA_BLS_SRCS@
+EXTRA_BLS_OBJS = $(EXTRA_BLS_SRCS:.c=.o)
 
 # Bacula SD core objects needed by all executables
 SDCORE_OBJS = \
@@ -36,8 +50,8 @@ SDCORE_OBJS = \
 # bacula-sd
 SDOBJS = \
    stored.o append.o authenticate.o dircmd.o fd_cmds.o job.o \
-   hello.o status.o vbackup.o sdcollect.o \
-   $(SDCORE_OBJS)
+   hello.o status.o vbackup.o \
+   sdcollect.o $(SDCORE_OBJS)  $(EXTRA_STORED_OBJS)
 
 JSONOBJS = bsdjson.o stored_conf.o
 
@@ -45,7 +59,7 @@ JSONOBJS = bsdjson.o stored_conf.o
 TAPEOBJS = btape.o $(SDCORE_OBJS)
 
 # bls
-BLSOBJS = bls.o $(SDCORE_OBJS)
+BLSOBJS = bls.o $(SDCORE_OBJS) $(EXTRA_BLS_OBJS)
 
 # bextract
 BEXTOBJS = bextract.o $(SDCORE_OBJS)
@@ -62,14 +76,52 @@ ALIGNED_SRCS = \
 ALIGNED_OBJS = $(ALIGNED_SRCS:.c=.o)
 ALIGNED_LOBJS = $(ALIGNED_SRCS:.c=.lo)
 
-CLOUD_SRCS = \
-   cloud_dev.c cloud_parts.c cloud_transfer_mgr.c s3_driver.c file_driver.c
+CLOUD_COMMON_SRCS = \
+   cloud_parts.c cloud_transfer_mgr.c
 
-CLOUD_OBJS = $(CLOUD_SRCS:.c=.o)
-CLOUD_LOBJS = $(CLOUD_SRCS:.c=.lo)
+CLOUD_S3_SRCS = \
+   $(CLOUD_COMMON_SRCS) s3_driver.c
+
+CLOUD_S3_OBJS = $(CLOUD_S3_SRCS:.c=.o)
+CLOUD_S3_LOBJS = $(CLOUD_S3_SRCS:.c=.lo)
+
+CLOUD_S3_GLACIER_SRCS = \
+   $(CLOUD_COMMON_SRCS) bee_s3_cloud_glacier.c
+
+CLOUD_S3_GLACIER_OBJS = $(CLOUD_S3_GLACIER_SRCS:.c=.o)
+CLOUD_S3_GLACIER_LOBJS = $(CLOUD_S3_GLACIER_SRCS:.c=.lo)
+
+CLOUD_GENERIC_SRCS = \
+   $(CLOUD_COMMON_SRCS) generic_driver.c
+
+CLOUD_GENERIC_OBJS = $(CLOUD_GENERIC_SRCS:.c=.o)
+CLOUD_GENERIC_LOBJS = $(CLOUD_GENERIC_SRCS:.c=.lo)
+
+CLOUD_ALL_SRCS = \
+   $(CLOUD_COMMON_SRCS) cloud_dev.c file_driver.c
+
+CLOUD_ALL_OBJS = $(CLOUD_ALL_SRCS:.c=.o)
+CLOUD_ALL_LOBJS = $(CLOUD_ALL_SRCS:.c=.lo)
 
 # cloud_test
 CLOUDTESTOBJS = cloud_test.o $(SDCORE_OBJS)
+
+# cloud_cli
+CLOUDCLIOBJS = bcloud.o $(SDCORE_OBJS) $(CLOUD_ALL_LOBJS)
+
+DEDUP_SRCS = \
+   bitarray.c dde_cmd.c dde_status.c dde_vacuum.c \
+   dedupstored.c dedupengine.c dde_scrub.c \
+   dedup_dev.c
+
+DEDUP_OBJS = $(DEDUP_SRCS:.c=.o)
+DEDUP_LOBJS = $(DEDUP_SRCS:.c=.lo)
+# ACSLS changer objects
+ACSLSAPILIB = $(ACSLS_LIBDIR)/lib/libapi.a
+ACSLSIPCLIB = $(ACSLS_LIBDIR)/lib/libipc.a
+ACSLSUTLLIB = $(ACSLS_LIBDIR)/lib/libutl.a
+ACSLSCLLIB = $(ACSLS_LIBDIR)/lib/libcl.a
+ACSLSCHGOBJS = acsls-changer.o $(ACSLSAPILIB) $(ACSLSUTLLIB) $(ACSLSIPCLIB) $(ACSLSCLLIB) $(ACSLSAPILIB)
 
 # libbacsd objects
 LIBBACSD_SRCS = \
@@ -78,12 +130,16 @@ LIBBACSD_SRCS = \
    init_dev.c label.c lock.c match_bsr.c mount.c \
    null_dev.c os.c parse_bsr.c read.c read_records.c \
    record_read.c record_util.c record_write.c reserve.c \
-   scan.c sd_plugins.c spool.c tape_alert.c tape_worm.c vol_mgr.c wait.c \
-   fifo_dev.c file_dev.c tape_dev.c vtape_dev.c
+   scan.c sd_plugins.c spool.c tape_alert.c vol_mgr.c wait.c \
+   tape_worm.c fifo_dev.c file_dev.c tape_dev.c vtape_dev.c \
+   $(EXTRA_LIBSD_SRCS)
 
 LIBBACSD_OBJS = $(LIBBACSD_SRCS:.c=.o)
 LIBBACSD_LOBJS = $(LIBBACSD_SRCS:.c=.lo)
 LIBBACSD_LT_RELEASE = @LIBBAC_LT_RELEASE@
+
+
+TUNEDDEOBJS = bitarray.o dedupengine.o dde_scrub.o tune-dde.o
 
 
 # these are the objects that are changed by the .configure process
@@ -93,8 +149,10 @@ CAP_LIBS = @CAP_LIBS@
 ZLIBS=@ZLIBS@
 LZO_LIBS= @LZO_LIBS@
 LZO_INC= @LZO_INC@
+TOKYOCABINET_LIBS = @TOKYOCABINET_LIBS@
+TOKYOCABINET_INC = @TOKYOCABINET_INC@
 
-SD_LIBS = -lbacsd -lbaccfg -lbac
+SD_LIBS = -lbacsd -lbaccfg -lbac -lbacfind
 
 
 .SUFFIXES:	.c .o .lo
@@ -104,7 +162,7 @@ SD_LIBS = -lbacsd -lbaccfg -lbac
 # inference rules
 .c.o:
 	@echo "Compiling $<"
-	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) $<
+	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) $(TOKYOCABINET_INC) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) $<
 
 .c.lo:
 	@echo "LT Compiling $<"
@@ -115,15 +173,17 @@ SD_LIBS = -lbacsd -lbaccfg -lbac
 
 all: Makefile libbacsd.la drivers bacula-sd @STATIC_SD@ \
 	   bls bextract bscan bcopy \
-	   bsdjson btape
+	   bsdjson btape @ACSLS_BUILD_TARGET@
 	@echo "===== Make of stored is good ===="
 	@echo " "
 
 bacula-sd: Makefile libbacsd.la $(SDOBJS) \
 	../lib/libbaccfg$(DEFAULT_ARCHIVE_TYPE) \
-	../lib/libbac$(DEFAULT_ARCHIVE_TYPE)
+	../lib/libbac$(DEFAULT_ARCHIVE_TYPE) \
+	../findlib/libbacfind$(DEFAULT_ARCHIVE_TYPE)
 	@echo "Linking $@ ..."
-	$(LIBTOOL_LINK) $(CXX) $(WLDFLAGS) $(LDFLAGS) -L. -L../lib -o $@ $(SDOBJS) $(ZLIBS) \
+	$(LIBTOOL_LINK) $(CXX) $(WLDFLAGS) $(LDFLAGS) -L. -L../lib -L../findlib \
+	   -o $@ $(SDOBJS) $(ZLIBS) \
 	   $(SD_LIBS) -lm $(DLIB) $(LIBS) $(WRAPLIBS) \
 	   $(GETTEXT_LIBS) $(OPENSSL_LIBS) $(CAP_LIBS)
 
@@ -135,17 +195,56 @@ libbacsd.a: $(LIBBACSD_OBJS)
 libbacsd.la: Makefile $(LIBBACSD_LOBJS)
 	@echo "Making $@ ..."
 	$(LIBTOOL_LINK) $(CXX) $(DEFS) $(DEBUG) $(LDFLAGS) -o $@ \
-	  $(TOKYOCABINET_LIBS) $(LIBBACSD_LOBJS) \
+	  $(LIBBACSD_LOBJS) \
 	  -export-dynamic -rpath $(libdir) -release $(LIBBACSD_LT_RELEASE)
 
 #
 # Loadable driver
 #
-drivers: bacula-sd-cloud-driver.la bacula-sd-aligned-driver.la
 
-bacula-sd-cloud-driver.la: Makefile $(CLOUD_LOBJS)
-	 $(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -shared $(CLOUD_LOBJS) -o $@ $(S3_LIBS) -rpath $(libdir) -module -export-dynamic -release $(LIBBACSD_LT_RELEASE)
+drivers: bacula-sd-cloud-driver.la ${CLOUD_DRIVERS}
 
+s3-driver: bacula-sd-cloud-s3-driver.la bacula-sd-cloud-glacier-s3-driver.la
+
+generic-driver: bacula-sd-cloud-generic-driver.la
+
+oci-driver: bacula-sd-cloud-oci-driver.la
+
+gs-driver: bacula-sd-cloud-gs-driver.la
+
+swift-driver: bacula-sd-cloud-swift-driver.la
+
+dedup2: Makefile
+	(cd dedup2 && make DESTDIR=$(DESTDIR) || exit 1)
+
+bacula-sd-cloud-driver.la: Makefile $(CLOUD_ALL_LOBJS)
+	 $(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -shared $(CLOUD_ALL_LOBJS) -o $@ -R $(libdir) -rpath $(libdir) -module -export-dynamic -release $(LIBBACSD_LT_RELEASE)
+
+bacula-sd-cloud-was-driver.la: Makefile $(CLOUD_GENERIC_LOBJS)
+	 $(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -shared $(CLOUD_GENERIC_LOBJS) -o $@ -R $(libdir) -rpath $(libdir) -module -export-dynamic -release $(LIBBACSD_LT_RELEASE)
+
+bacula-sd-cloud-s3-driver.la: Makefile $(CLOUD_S3_LOBJS)
+	 $(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -shared $(CLOUD_S3_LOBJS) -o $@ $(S3_LIBS) -R $(libdir) -rpath $(libdir) -module -export-dynamic -release $(LIBBACSD_LT_RELEASE)
+
+bacula-sd-cloud-glacier-s3-driver.la: Makefile $(CLOUD_S3_GLACIER_LOBJS)
+	 $(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -shared $(CLOUD_S3_GLACIER_LOBJS) -o $@ $(S3_LIBS) -R $(libdir) -rpath $(libdir) -module -export-dynamic -release $(LIBBACSD_LT_RELEASE)
+
+bacula-sd-cloud-generic-driver.la: Makefile $(CLOUD_GENERIC_LOBJS)
+	 $(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -shared $(CLOUD_GENERIC_LOBJS) -o $@ -R $(libdir) -rpath $(libdir) -module -export-dynamic -release $(LIBBACSD_LT_RELEASE)
+
+bacula-sd-cloud-oci-driver.la: Makefile $(CLOUD_GENERIC_LOBJS)
+	 $(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -shared $(CLOUD_GENERIC_LOBJS) -o $@ -R $(libdir) -rpath $(libdir) -module -export-dynamic -release $(LIBBACSD_LT_RELEASE)
+
+bacula-sd-cloud-gs-driver.la: Makefile $(CLOUD_GENERIC_LOBJS)
+	 $(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -shared $(CLOUD_GENERIC_LOBJS) -o $@ -R $(libdir) -rpath $(libdir) -module -export-dynamic -release $(LIBBACSD_LT_RELEASE)
+
+bacula-sd-cloud-swift-driver.la: Makefile $(CLOUD_GENERIC_LOBJS)
+	 $(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -shared $(CLOUD_GENERIC_LOBJS) -o $@ -R $(libdir) -rpath $(libdir) -module -export-dynamic -release $(LIBBACSD_LT_RELEASE)
+
+bacula-sd-dedup-driver.la: Makefile $(DEDUP_LOBJS)
+	 $(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -shared $(DEDUP_LOBJS) -o $@ -rpath $(libdir) -module -export-dynamic -release $(LIBBACSD_LT_RELEASE) \
+	  $(TOKYOCABINET_LIBS)
+  
 bacula-sd-aligned-driver.la: Makefile $(ALIGNED_LOBJS)
 	 $(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -shared $(ALIGNED_LOBJS) -o $@ -rpath $(plugindir) \
 	     -module -export-dynamic -release $(LIBBACSD_LT_RELEASE)
@@ -169,18 +268,27 @@ btape.o: btape.c
 	   -I$(basedir) $(DINCLUDE) $(CFLAGS) $<
 
 btape: Makefile  $(TAPEOBJS) libbacsd.la drivers ../lib/libbac$(DEFAULT_ARCHIVE_TYPE) ../lib/libbaccfg$(DEFAULT_ARCHIVE_TYPE)
-	$(LIBTOOL_LINK) $(CXX) $(TTOOL_LDFLAGS) $(LDFLAGS) -L../lib -o $@ $(TAPEOBJS) \
+	$(LIBTOOL_LINK) $(CXX) $(TTOOL_LDFLAGS) $(LDFLAGS) -L../lib -L../findlib -o $@ $(TAPEOBJS) \
 	  $(SD_LIBS) $(DLIB) -lm $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
 
 
 cloud_test.o: cloud_test.c
 	@echo "Compiling $<"
 	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) \
-	   -I$(basedir) $(DINCLUDE) $(CFLAGS) $<
+           -I$(basedir) $(DINCLUDE) $(CFLAGS) $<
 
-cloud_test: Makefile cloud_test.o ../lib/libbac$(DEFAULT_ARCHIVE_TYPE)	$(BLSOBJS)  libbacsd.la drivers
+cloud_test: Makefile cloud_test.o ../lib/libbac$(DEFAULT_ARCHIVE_TYPE)  $(BLSOBJS)  libbacsd.la drivers
 	$(LIBTOOL_LINK) $(CXX) $(TTOOL_LDFLAGS) $(LDFLAGS) -L../lib -L../findlib -o $@ $(CLOUDTESTOBJS) $(DLIB) \
-	   $(SD_LIBS) -lm $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
+           $(SD_LIBS) -lm $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
+
+bcloud.o: bcloud.c
+	@echo "Compiling $<"
+	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) \
+           -I$(basedir) $(DINCLUDE) $(S3_INC) $(CFLAGS) $<
+
+bcloud: Makefile bcloud.o ../lib/libbac$(DEFAULT_ARCHIVE_TYPE)  $(BLSOBJS)  libbacsd.la drivers
+	$(LIBTOOL_LINK) $(CXX) $(TTOOL_LDFLAGS) $(LDFLAGS) -L../lib -L../findlib -o $@ $(CLOUDCLIOBJS) $(DLIB) \
+           $(SD_LIBS) -lm $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS) $(S3_LIBS)
 
 bls.o:	bls.c
 	@echo "Compiling $<"
@@ -190,7 +298,7 @@ bls.o:	bls.c
 bls:	Makefile $(BLSOBJS) libbacsd.la drivers  ../findlib/libbacfind$(DEFAULT_ARCHIVE_TYPE) ../lib/libbaccfg$(DEFAULT_ARCHIVE_TYPE) ../lib/libbac$(DEFAULT_ARCHIVE_TYPE)
 	@echo "Compiling $<"
 	$(LIBTOOL_LINK) $(CXX) $(TTOOL_LDFLAGS) $(LDFLAGS) -L../lib -L../findlib -o $@ $(BLSOBJS) $(DLIB) \
-	   $(SD_LIBS) -lbacfind -lm $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
+	   $(SD_LIBS) -lm $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
 
 bextract.o: bextract.c
 	@echo "Compiling $<"
@@ -200,7 +308,7 @@ bextract.o: bextract.c
 bextract: Makefile $(BEXTOBJS) libbacsd.la drivers ../findlib/libbacfind$(DEFAULT_ARCHIVE_TYPE) ../lib/libbaccfg$(DEFAULT_ARCHIVE_TYPE) ../lib/libbac$(DEFAULT_ARCHIVE_TYPE)
 	@echo "Compiling $<"
 	$(LIBTOOL_LINK) $(CXX) $(TTOOL_LDFLAGS) $(LDFLAGS) -L../lib -L../findlib -o $@ $(BEXTOBJS) $(DLIB) $(ZLIBS) $(LZO_LIBS) \
-	   $(SD_LIBS) -lbacfind -lm $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
+	   $(SD_LIBS) -lm $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
 
 bscan.o: bscan.c
 	@echo "Compiling $<"
@@ -218,8 +326,14 @@ bcopy.o: bcopy.c
 	   -I$(basedir) $(DINCLUDE) $(CFLAGS) $<
 
 bcopy:	Makefile $(COPYOBJS) libbacsd.la drivers ../findlib/libbacfind$(DEFAULT_ARCHIVE_TYPE) ../lib/libbaccfg$(DEFAULT_ARCHIVE_TYPE) ../lib/libbac$(DEFAULT_ARCHIVE_TYPE)
-	$(LIBTOOL_LINK) $(CXX) $(TTOOL_LDFLAGS) $(LDFLAGS) -L../lib -o $@ $(COPYOBJS) \
+	$(LIBTOOL_LINK) $(CXX) $(TTOOL_LDFLAGS) $(LDFLAGS) -L../lib -L../findlib -o $@ $(COPYOBJS) \
 	   $(SD_LIBS) -lm $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
+
+tune-dde: Makefile $(TUNEDDEOBJS) ../lib/libbac$(DEFAULT_ARCHIVE_TYPE)
+	@echo "Linking $@ ..."
+	$(LIBTOOL_LINK) $(CXX) $(WLDFLAGS) $(LDFLAGS) -L../lib -o $@ $(TUNEDDEOBJS) $(ZLIBS) \
+	   -lbac -lm $(DLIB) $(LIBS) $(TOKYOCABINET_LIBS) \
+	$(GETTEXT_LIBS)
 
 cloud_parts_test: Makefile cloud_parts.c
 	$(RMF) cloud_parts.o
@@ -228,6 +342,25 @@ cloud_parts_test: Makefile cloud_parts.c
 	rm -f cloud_parts.o
 	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) cloud_parts.c
 
+generic_driver_test: Makefile generic_driver.c
+	$(RMF) generic_driver.o
+	$(CXX) -DTEST_PROGRAM $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE)  $(CFLAGS) generic_driver.c
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L../lib -o $@ generic_driver.o $(DLIB) -lbac -lm cloud_transfer_mgr.lo cloud_parts.lo $(LIBS) $(OPENSSL_LIBS)
+	rm -f generic_driver.o
+	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) generic_driver.c
+
+acsls-changer.o: acsls-changer.c
+	@echo "Compiling $<"
+	$(CXX) $(ACSLS_OS_DEFINE) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) -I$(ACSLS_LIBDIR)/src/h $<
+
+# this is a dirty fix for linking problem of the ACSLS static libraries. ACSLS libs are not compatible
+# with libtool.
+#
+# libdir points to /opt/bacula/lib, but libtools decides to store libraries to
+# /opt/bacula/lib64 on some platforms. We can add the two directories in rpath
+# to workaround the problem.
+acsls-changer: Makefile $(ACSLSCHGOBJS) 
+	$(CXX) $(TTOOL_LDFLAGS) $(LDFLAGS) -L../lib/.libs $(ACSLSCHGOBJS) -L../lib -lbac $(LIBS) $(GETTEXT_LIBS) -Wl,-rpath $(libdir) -o $@
 
 Makefile: $(srcdir)/Makefile.in $(topdir)/config.status
 	cd $(topdir) \
@@ -241,7 +374,10 @@ libtool-install: all
 libtool-uninstall:
 	$(LIBTOOL_UNINSTALL) $(RMF) $(DESTDIR)$(libdir)/libbacsd.la
 
-install: all @LIBTOOL_INSTALL_TARGET@
+install-tune-dde: tune-dde
+	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) tune-dde $(DESTDIR)$(sbindir)/tune-dde
+
+install: all @LIBTOOL_INSTALL_TARGET@ $(CLOUD_INSTALL_TARGETS)
 	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bacula-sd $(DESTDIR)$(sbindir)/bacula-sd
 	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bsdjson $(DESTDIR)$(sbindir)/bsdjson
 	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bls $(DESTDIR)$(sbindir)/bls
@@ -265,15 +401,73 @@ install: all @LIBTOOL_INSTALL_TARGET@
 	   chgrp -f ${sd_group} ${DESTDIR}${sysconfdir}/$$destconf; \
 	fi
 
+install-acsls-changer: acsls-changer
+	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) acsls-changer $(DESTDIR)$(sbindir)/acsls-changer
+	@srcconf=acsls-changer.conf; \
+	if  test -f ${DESTDIR}${sysconfdir}/$$srcconf; then \
+	   destconf=$$srcconf.new; \
+	   echo "  ==> Found existing $$srcconf, installing new conf file as $$destconf"; \
+	else \
+	   destconf=$$srcconf; \
+	fi; \
+	echo "${INSTALL_CONFIG} $$srcconf ${DESTDIR}${sysconfdir}/$$destconf"; \
+	${INSTALL_CONFIG} $$srcconf ${DESTDIR}${sysconfdir}/$$destconf
+	@if test "x${sd_group}" != "x" -a "x${DESTDIR}" = "x" ; then \
+	   chgrp -f ${sd_group} ${DESTDIR}${sysconfdir}/$$destconf; \
+	fi
+
+install-bcloud: bcloud
+	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bcloud $(DESTDIR)$(sbindir)/bcloud
+
 install-cloud: bacula-sd-cloud-driver.la
 	$(MKDIR) $(DESTDIR)$(plugindir)
 	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bacula-sd-cloud-driver$(DEFAULT_SHARED_OBJECT_TYPE) $(DESTDIR)$(plugindir)
 	$(RMF) $(DESTDIR)$(plugindir)/bacula-sd-cloud-driver.la
 
+install-was-cloud: bacula-sd-cloud-was-driver.la
+	$(MKDIR) $(DESTDIR)$(plugindir)
+	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bacula-sd-cloud-was-driver$(DEFAULT_SHARED_OBJECT_TYPE) $(DESTDIR)$(plugindir)
+	$(RMF) $(DESTDIR)$(plugindir)/bacula-sd-cloud-was-driver.la
+
+install-s3-cloud: bacula-sd-cloud-s3-driver.la
+	$(MKDIR) $(DESTDIR)$(plugindir)
+	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bacula-sd-cloud-s3-driver$(DEFAULT_SHARED_OBJECT_TYPE) $(DESTDIR)$(plugindir)
+	$(RMF) $(DESTDIR)$(plugindir)/bacula-sd-cloud-s3-driver.la
+
+install-s3-glacier-cloud: bacula-sd-cloud-glacier-s3-driver.la
+	$(MKDIR) $(DESTDIR)$(plugindir)
+	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bacula-sd-cloud-glacier-s3-driver$(DEFAULT_SHARED_OBJECT_TYPE) $(DESTDIR)$(plugindir)
+	$(RMF) $(DESTDIR)$(plugindir)/bacula-sd-cloud-glacier-s3-driver.la
+
+install-generic-cloud: bacula-sd-cloud-generic-driver.la
+	$(MKDIR) $(DESTDIR)$(plugindir)
+	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bacula-sd-cloud-generic-driver$(DEFAULT_SHARED_OBJECT_TYPE) $(DESTDIR)$(plugindir)
+	$(RMF) $(DESTDIR)$(plugindir)/bacula-sd-cloud-generic-driver.la
+
+install-gs-cloud: bacula-sd-cloud-gs-driver.la
+	$(MKDIR) $(DESTDIR)$(plugindir)
+	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bacula-sd-cloud-gs-driver$(DEFAULT_SHARED_OBJECT_TYPE) $(DESTDIR)$(plugindir)
+	$(RMF) $(DESTDIR)$(plugindir)/bacula-sd-cloud-gs-driver.la
+
+install-oci-cloud: bacula-sd-cloud-oci-driver.la
+	$(MKDIR) $(DESTDIR)$(plugindir)
+	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bacula-sd-cloud-oci-driver$(DEFAULT_SHARED_OBJECT_TYPE) $(DESTDIR)$(plugindir)
+	$(RMF) $(DESTDIR)$(plugindir)/bacula-sd-cloud-oci-driver.la
+
+install-swift-cloud: bacula-sd-cloud-swift-driver.la
+	$(MKDIR) $(DESTDIR)$(plugindir)
+	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bacula-sd-cloud-swift-driver$(DEFAULT_SHARED_OBJECT_TYPE) $(DESTDIR)$(plugindir)
+	$(RMF) $(DESTDIR)$(plugindir)/bacula-sd-cloud-swift-driver.la
+
 install-aligned:  bacula-sd-aligned-driver.la 
 	$(MKDIR) $(DESTDIR)$(plugindir)
 	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bacula-sd-aligned-driver$(DEFAULT_SHARED_OBJECT_TYPE) $(DESTDIR)$(plugindir)
 	$(RMF) $(DESTDIR)$(plugindir)/bacula-sd-aligned-driver.la
+
+install-dedup: bacula-sd-dedup-driver.la 
+	$(MKDIR) $(DESTDIR)$(plugindir)
+	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bacula-sd-dedup-driver$(DEFAULT_SHARED_OBJECT_TYPE) $(DESTDIR)$(plugindir)
+	$(RMF) $(DESTDIR)$(plugindir)/bacula-sd-dedup-driver.la
 
 uninstall:
 	(cd $(DESTDIR)$(sbindir); $(RMF) bacula-sd bsdjson)
@@ -282,7 +476,9 @@ uninstall:
 	(cd $(DESTDIR)$(sbindir); $(RMF) bcopy)
 	(cd $(DESTDIR)$(sbindir); $(RMF) bscan)
 	(cd $(DESTDIR)$(sbindir); $(RMF) btape)
+	(cd $(DESTDIR)$(sbindir); $(RMF) acsls-changer)
 	(cd $(DESTDIR)$(sysconfdir); $(RMF) bacula-sd.conf bacula-sd.conf.new)
+	(cd $(DESTDIR)$(sysconfdir); $(RMF) acsls-changer.conf acsls-changer.conf.new)
 
 libtool-clean:
 	@find . -name '*.lo' -print | xargs $(LIBTOOL_CLEAN) $(RMF)
@@ -291,10 +487,10 @@ libtool-clean:
 
 clean:	libtool-clean
 	@$(RMF) bacula-sd stored bls bextract bpool btape shmfree core core.* a.out *.o *.bak *~ *.intpro *.extpro 1 2 3
-	@$(RMF) bscan bsdjson bcopy static-bacula-sd
+	@$(RMF) bscan bsdjson bcopy static-bacula-sd acsls-changer
 
 realclean: clean
-	@$(RMF) tags bacula-sd.conf
+	@$(RMF) tags bacula-sd.conf acsls-changer.conf
 
 distclean: realclean
 	if test $(srcdir) = .; then $(MAKE) realclean; fi
@@ -313,7 +509,8 @@ depend:
 	@$(MV) Makefile Makefile.bak
 	@$(SED) "/^# DO NOT DELETE:/,$$ d" Makefile.bak > Makefile
 	@$(ECHO) "# DO NOT DELETE: nice dependency list follows" >> Makefile
-	@$(CXX) -S -M $(CPPFLAGS) $(XINC) $(S3_INC) $(TOKYOCABINET_INC) -I$(srcdir) -I$(basedir) *.c >> Makefile
+	@$(CXX) -S -M $(CPPFLAGS) $(XINC) $(S3_INC) $(TOKYOCABINET_INC) -I$(srcdir) -I$(basedir) -I$(ACSLS_LIBDIR)/src/h *.c >> Makefile
+	@$(CXX) -S -M $(CPPFLAGS) $(XINC) $(S3_INC) $(TOKYOCABINET_INC) -I$(srcdir) -I$(basedir) -std=c++11 *.cpp >> Makefile || true
 	@if test -f Makefile ; then \
 	    $(RMF) Makefile.bak; \
 	else \
