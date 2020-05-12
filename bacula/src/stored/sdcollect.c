@@ -17,9 +17,6 @@
    Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
- * Radosław Korzeniewski, MMXVIII
- * radoslaw@korzeniewski.net, radekk@inteos.pl
- * Inteos Sp. z o.o. http://www.inteos.pl/
  *
  * This is a Bacula statistics Storage Daemon collector routines.
  * Author: Radosław Korzeniewski, radekk@inteos.pl, Inteos Sp. z o.o.
