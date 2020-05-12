@@ -567,6 +567,8 @@ int  m_msg(const char *file, int line, POOLMEM **msgbuf, const char *fmt,...);
 int  m_msg(const char *file, int line, POOLMEM *&pool_buf, const char *fmt, ...);
 void t_msg(const char *file, int line, int64_t level, const char *fmt,...);
 
+/* Use bstrncpy instead of strncpy because it ensures last char is a 0 */
+#define strncpy bad_call_on_strncpy_use_bstrncpy
 
 /** Use our strdup with smartalloc */
 #ifndef HAVE_WXCONSOLE

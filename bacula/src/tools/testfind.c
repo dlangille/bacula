@@ -378,7 +378,7 @@ static void count_files(FF_PKT *ar)
       trunc_fname++;
    }
    if (fnl > 0) {
-      strncpy(file, l, fnl);          /* copy filename */
+      bstrncpy(file, l, fnl);          /* copy filename */
       file[fnl] = 0;
    } else {
       file[0] = ' ';                  /* blank filename */
@@ -394,7 +394,7 @@ static void count_files(FF_PKT *ar)
       pnl = 255;
       trunc_path++;
    }
-   strncpy(spath, ar->fname, pnl);
+   bstrncpy(spath, ar->fname, pnl);
    spath[pnl] = 0;
    if (pnl == 0) {
       spath[0] = ' ';
@@ -419,8 +419,7 @@ static bool copy_fileset(FF_PKT *ff, JCR *jcr)
    findFILESET *fileset;
    findFOPTS *current_opts;
 
-   fileset = (findFILESET *)malloc(sizeof(findFILESET));
-   memset(fileset, 0, sizeof(findFILESET));
+   fileset = (findFILESET *)bmalloc(sizeof(findFILESET));
    ff->fileset = fileset;
 
    fileset->state = state_none;
@@ -441,8 +440,7 @@ static bool copy_fileset(FF_PKT *ff, JCR *jcr)
             ie = jcr_fileset->include_items[i];
 
             /* New include */
-            fileset->incexe = (findINCEXE *)malloc(sizeof(findINCEXE));
-            memset(fileset->incexe, 0, sizeof(findINCEXE));
+            fileset->incexe = (findINCEXE *)bmalloc(sizeof(findINCEXE));
             fileset->incexe->opts_list.init(1, true);
             fileset->incexe->name_list.init(0, 0);
             fileset->include_list.append(fileset->incexe);
@@ -450,8 +448,7 @@ static bool copy_fileset(FF_PKT *ff, JCR *jcr)
             ie = jcr_fileset->exclude_items[i];
 
             /* New exclude */
-            fileset->incexe = (findINCEXE *)malloc(sizeof(findINCEXE));
-            memset(fileset->incexe, 0, sizeof(findINCEXE));
+            fileset->incexe = (findINCEXE *)bmalloc(sizeof(findINCEXE));
             fileset->incexe->opts_list.init(1, true);
             fileset->incexe->name_list.init(0, 0);
             fileset->exclude_list.append(fileset->incexe);
@@ -460,8 +457,7 @@ static bool copy_fileset(FF_PKT *ff, JCR *jcr)
          for (j=0; j<ie->num_opts; j++) {
             FOPTS *fo = ie->opts_list[j];
 
-            current_opts = (findFOPTS *)malloc(sizeof(findFOPTS));
-            memset(current_opts, 0, sizeof(findFOPTS));
+            current_opts = (findFOPTS *)bmalloc(sizeof(findFOPTS));
             fileset->incexe->current_opts = current_opts;
             fileset->incexe->opts_list.append(current_opts);
 

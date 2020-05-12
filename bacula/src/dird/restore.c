@@ -147,7 +147,7 @@ static bool open_bootstrap_file(JCR *jcr, bootstrap_info &info)
    if (!jcr->RestoreBootstrap) {
       return false;
    }
-   strncpy(info.storage, jcr->rstore->name(), MAX_NAME_LENGTH);
+   bstrncpy(info.storage, jcr->rstore->name(), MAX_NAME_LENGTH);
 
    bs = bfopen(jcr->RestoreBootstrap, "rb");
    if (!bs) {
@@ -166,7 +166,7 @@ static bool open_bootstrap_file(JCR *jcr, bootstrap_info &info)
          continue;
       }
       if (!strcasecmp(ua->argk[0], "Storage")) {
-         strncpy(info.storage, ua->argv[0], MAX_NAME_LENGTH);
+         bstrncpy(info.storage, ua->argv[0], MAX_NAME_LENGTH);
          break;
       }
    }
@@ -236,7 +236,7 @@ static bool check_for_new_storage(JCR *jcr, bootstrap_info &info)
          return false;
       }
       /* note the next storage name */
-      strncpy(info.storage, ua->argv[0], MAX_NAME_LENGTH);
+      bstrncpy(info.storage, ua->argv[0], MAX_NAME_LENGTH);
       Dmsg1(5, "Change storage to %s\n", info.storage);
       return true;
    }

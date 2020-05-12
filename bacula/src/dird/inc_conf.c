@@ -423,7 +423,7 @@ static void store_newinc(LEX *lc, RES_ITEM *item, int index, int pass)
    }
    if (pass == 1) {
       incexe = (INCEXE *)malloc(sizeof(INCEXE));
-      memcpy(incexe, &res_incexe, sizeof(INCEXE));
+      memcpy((void *)incexe, (void *)&res_incexe, sizeof(INCEXE));
       bmemset(&res_incexe, 0, sizeof(INCEXE));
       if (item->code == 0) { /* include */
          if (res_all.res_fs.num_includes == 0) {

@@ -532,7 +532,7 @@ bool ini_store_name(LEX *lc, ConfigFile *inifile, ini_items *item)
       return false;
    }
    Dmsg1(dbglevel, "ini_store_name: %s\n", lc->str);
-   strncpy(item->val.nameval, lc->str, sizeof(item->val.nameval));
+   bstrncpy(item->val.nameval, lc->str, sizeof(item->val.nameval));
    scan_to_eol(lc);
    return true;
 }

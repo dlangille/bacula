@@ -220,6 +220,9 @@ int bmicrosleep(int32_t sec, int32_t usec)
    return stat;
 }
 
+/* allow using strncpy in this file */
+#undef strncpy
+
 /*
  * Guarantee that the string is properly terminated */
 char *bstrncpy(char *dest, const char *src, int maxlen)

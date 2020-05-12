@@ -148,7 +148,7 @@ int main (int argc, char *const *argv)
    }
    for (i = 0; i < argc; --argc, ++argv) {
       FF_PKT ff_pkt;
-      memset(&ff_pkt, 0, sizeof(ff_pkt));
+      memset((void *)&ff_pkt, 0, sizeof(ff_pkt));
       ff_pkt.fname = ff_pkt.link = *argv;
       if (lstat(ff_pkt.fname, &ff_pkt.statp) != 0) {
          fprintf(stderr, "lstat of %s failed.\n", ff_pkt.fname);

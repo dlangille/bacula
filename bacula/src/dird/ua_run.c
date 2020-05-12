@@ -1018,8 +1018,7 @@ configure_again:
       } else if (h == ini_store_name) {
          found = ini->items[i].found = get_cmd(ua, prompt.c_str());
          if (found) {
-            strncpy(ini->items[i].val.nameval, ua->cmd, MAX_NAME_LENGTH -1);
-            ini->items[i].val.nameval[MAX_NAME_LENGTH - 1] = 0;
+            bstrncpy(ini->items[i].val.nameval, ua->cmd, MAX_NAME_LENGTH);
          }
 
       } else if (h == ini_store_str) {

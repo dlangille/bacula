@@ -1393,7 +1393,7 @@ static bool check_catalog(cat_op mode)
            /* To copy dbdriver field into "CAT" catalog resource class (local)
             * from dbdriver in "BDB" catalog DB Interface class (global)
             */
-            strncpy(catalog->db_driver, BDB_db_driver, db_driver_len);
+            bstrncpy(catalog->db_driver, BDB_db_driver, db_driver_len);
          }
       }
 

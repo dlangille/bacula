@@ -675,7 +675,7 @@ static bRC createFile(bpContext *ctx, struct restore_pkt *rp)
    if (strlen(rp->where) > 990) {
       printf("Restore target dir too long. Restricting to first 990 bytes.\n");
    }
-   strncpy(pctx->where, rp->where, sizeof(pctx->where));
+   bstrncpy(pctx->where, rp->where, sizeof(pctx->where));
    pctx->replace = rp->replace;
    rp->create_status = CF_CORE;
    return bRC_OK;

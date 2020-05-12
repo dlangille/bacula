@@ -620,7 +620,7 @@ static bRC createFile(bpContext *ctx, struct restore_pkt *rp)
    if (strlen(rp->where) > 512) {
       printf("Restore target dir too long. Restricting to first 512 bytes.\n");
    }
-   strncpy(((struct plugin_ctx *)ctx->pContext)->where, rp->where, 512);
+   bstrncpy(((struct plugin_ctx *)ctx->pContext)->where, rp->where, 512);
    ((struct plugin_ctx *)ctx->pContext)->replace = rp->replace;
    rp->create_status = CF_EXTRACT;
    return bRC_OK;

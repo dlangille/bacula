@@ -51,8 +51,8 @@ FF_PKT *init_find_files()
 {
   FF_PKT *ff;
 
+  /* bmalloc returns zeroed buffer */
   ff = (FF_PKT *)bmalloc(sizeof(FF_PKT));
-  bmemset(ff, 0, sizeof(FF_PKT));
 
    /* Get system path and filename maximum lengths */
    path_max = pathconf(".", _PC_PATH_MAX);

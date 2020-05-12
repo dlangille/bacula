@@ -225,7 +225,7 @@ void htable::grow_table()
    Dmsg1(100, "Grow called old size = %d\n", buckets);
    /* Setup a bigger table */
    htable *big = (htable *)malloc(sizeof(htable));
-   memcpy(big, this, sizeof(htable));  /* start with original class data */
+   memcpy((void *)big, (void *)this, sizeof(htable));  /* start with original class data */
    big->loffset = loffset;
    big->mask = mask<<1 | 1;
    big->rshift = rshift - 1;

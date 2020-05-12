@@ -278,7 +278,7 @@ void my_name_is(int argc, char *argv[], const char *name)
 #endif
       if (!respath){
          /* no resolved_path available in cargv0, so populate it */
-         strncpy(cargv0, argv[0], path_max);
+         bstrncpy(cargv0, argv[0], path_max);
       }
       /* strip trailing filename and save exepath */
       for (l=p=cargv0; *p; p++) {
@@ -831,7 +831,7 @@ static void send_to_syslog(int mode, const char *msg)
 
    while (*p && ((p2 = strchr(p, '\n')) != NULL)) {
       len = MIN((int)sizeof(buf) - 1, p2 - p + 1); /* Add 1 to keep \n */
-      strncpy(buf, p, len);
+      bstrncpy(buf, p, len);
       buf[len] = 0;
       syslog(mode, "%s", buf);
       p = p2+1;                 /* skip \n */
