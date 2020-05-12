@@ -403,8 +403,8 @@ static bool use_device_cmd(JCR *jcr)
           * This can happen if one job reserves a drive or finishes using
           * a drive at the same time a second job wants it.
           */
-         if (repeat++ < 20) {             /* try sleeping 20 times */
-            bmicrosleep(30, 0);           /* wait 30 secs */
+         if (repeat++ > 1) {              /* try algorithm 3 times */
+            bmicrosleep(30, 0);           /* wait a bit */
             Dmsg1(dbglvl, "repeat reserve algorithm JobId=%d\n", jcr->JobId);
          } else if (!rctx.suitable_device || !wait_for_any_device(jcr, wait_for_device_retries)) {
             Dmsg0(dbglvl, "Fail. !suitable_device || !wait_for_device\n");
@@ -598,9 +598,13 @@ int search_res_for_device(RCTX &rctx)
             if (rctx.store->append && rctx.device->read_only) {
                continue;
             }
+            if (!rctx.device->dev) {
+               Dmsg1(dbglvl, "Device %s not initialized correctly\n", rctx.device->hdr.name);
+               continue;
+            }
             if (!rctx.device->autoselect) {
                Dmsg1(dbglvl, "Device %s not autoselect skipped.\n",
-               rctx.device->hdr.name);
+                     rctx.device->hdr.name);
                continue;              /* device is not available */
             }
             if (rctx.try_low_use_drive) {
@@ -653,7 +657,7 @@ int search_res_for_device(RCTX &rctx)
                      rctx.jcr->JobId, rctx.device->hdr.name, rctx.jcr->read_dcr->dev->num_reserved());
                }
             } else {
-               Dmsg2(dbglvl, "Reserve for %s failed for JobId=%d.\n", 
+               Dmsg2(dbglvl, "Reserve for %s failed for JobId=%d.\n",
                   rctx.store->append ? "append" : "read", rctx.jcr->JobId);
             }
             return stat;
@@ -1027,7 +1031,7 @@ static bool is_max_jobs_ok(DCR *dcr)
       Dmsg1(dbglvl, "reserve dev failed: %s", jcr->errmsg);
       return false;                /* wait */
    }
-      
+
    if (dcr->VolCatInfo.VolCatMaxJobs > 0 && (int)dcr->VolCatInfo.VolCatMaxJobs <=
         (dev->num_writers + dev->num_reserved())) {
       /* Max Job Vols depassed or already reserved */
