@@ -17,8 +17,7 @@
    Bacula(R) is a registered trademark of Kern Sibbald.
 */
 /*
- * Storage daemon -- vbackup.c --  responsible for doing a backup that
- *  does not require a Client -- migration, copy, or virtual backup.
+ * SD -- vbackup.c --  responsible for doing virtual backup jobs.
  *
  *     Kern Sibbald, January MMVI
  *
@@ -113,6 +112,11 @@ bail_out:
    ok = false;
 
 ok_out:
+   if (jcr->dedup) {
+      /* was create in record_cb() to do rehydration */
+      delete jcr->dedup;
+      jcr->dedup = NULL;
+   }
    if (jcr->dcr) {
       jcr->dcr->set_ameta();
       dev = jcr->dcr->dev;
@@ -122,7 +126,6 @@ ok_out:
             Jmsg2(jcr, M_FATAL, 0, _("Fatal append error on device %s: ERR=%s\n"),
                   dev->print_name(), dev->bstrerror());
             Dmsg0(100, _("Set ok=FALSE after write_block_to_device.\n"));
-            //possible_incomplete_job(jcr, last_file_index);
             ok = false;
          }
          /* Flush out final ameta partial block of this session */
@@ -249,6 +252,33 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
     * this option.
     */
 
+   /* Do rehydration if the write device doesn't support deduplication */
+   if (jcr->dcr->device->dev_type != B_DEDUP_DEV &&
+       rec->Stream & STREAM_BIT_DEDUPLICATION_DATA) {
+      if (!jcr->read_dcr->dev->setup_dedup_rehydration_interface(jcr->read_dcr)) {
+         Jmsg0(jcr, M_FATAL, 0, _("Cannot do rehydration, device is not dedup aware\n"));
+         goto bail_out;
+      }
+      bool despite_of_error = false; /* don't try to cheat for now */
+      int size;
+      int err = jcr->dedup->record_rehydration(dcr, rec, jcr->dedup->get_msgbuf(), jcr->errmsg, despite_of_error, &size);
+      if (err < 0) {
+         /* cannot read data from DSE */
+         Jmsg(jcr, M_FATAL, 0, "%s", jcr->errmsg);
+         goto bail_out;
+      }
+
+      /* Keep old pointers and restore them when at the end,
+       * after this point, we need to use goto bail_out
+       */
+      orgdata = rec->data;
+      orgdata_len = rec->data_len;
+      restoredatap = true;
+
+      rec->data = jcr->dedup->get_msgbuf();
+      rec->data_len = size;
+   }
+
    /*
     * Modify record SessionId and SessionTime to correspond to
     * output.
@@ -260,6 +290,7 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
       FI_to_ascii(buf1, rec->FileIndex), rec->VolSessionId,
       stream_to_ascii(buf2, rec->Stream, rec->FileIndex), rec->data_len);
 
+   rec->state_bits |= is_dedup_ref(rec, true) ? REC_NO_SPLIT : 0;
    if (!jcr->dcr->write_record(rec)) {
       Jmsg2(jcr, M_FATAL, 0, _("Fatal append error on device %s: ERR=%s\n"),
             dev->print_name(), dev->bstrerror());
