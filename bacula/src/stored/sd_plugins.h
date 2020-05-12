@@ -86,6 +86,13 @@ typedef enum {
 } bsdrVariable;
 
 typedef enum {
+#if 0
+   bsdVarDevTypes    = 1
+#endif
+} bsdrGlobalVariable;
+
+
+typedef enum {
   bsdwVarJobReport  = 1,
   bsdwVarVolumeName = 2,
   bsdwVarPriority   = 3,
@@ -102,6 +109,7 @@ typedef enum {
   bsdEventDeviceClose    = 6
 } bsdEventType;
 
+/* ***BEEF*** */
 typedef enum {
   bsdGlobalEventDeviceInit = 1
 } bsdGlobalEventType;
@@ -129,6 +137,7 @@ typedef struct s_sdbaculaFuncs {
        int level, const char *fmt, ...);
    char *(*EditDeviceCodes)(DCR *dcr, char *omsg,
        const char *imsg, const char *cmd);
+   bRC (*getBaculaGlobal)(bsdrGlobalVariable var, void *value); /* ***BEEF*** */
 } bsdFuncs;
 
 /* Bacula Subroutines */
@@ -136,6 +145,7 @@ void load_sd_plugins(const char *plugin_dir);
 void new_plugins(JCR *jcr);
 void free_plugins(JCR *jcr);
 int generate_plugin_event(JCR *jcr, bsdEventType event, void *value=NULL);
+/* ***BEEF*** */
 int generate_global_plugin_event(bsdGlobalEventType event, void *value=NULL);
 
 
@@ -153,7 +163,7 @@ typedef enum {
 
 #define SD_PLUGIN_MAGIC  "*BaculaSDPluginData*"
 
-#define SD_PLUGIN_INTERFACE_VERSION  ( 12 )
+#define SD_PLUGIN_INTERFACE_VERSION  ( 13 )
 
 typedef struct s_sdpluginInfo {
    uint32_t size;
