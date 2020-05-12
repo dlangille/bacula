@@ -168,8 +168,19 @@ extern "C" {
 #include "baconfig.h"
 #include "lib/lib.h"
 
+/* disable the buffereing of the network packet at restore time, that is required
+ *   to do async rehydration and speedup the restore.
+ *  #define DEDUP_UNBUFERED_REHYDRATION 
+ */
+
+#define DEDUP_CLIENT_REC_BUF_SIZE 64
+
 /* manually enable feature that you want to test in DEVELOPER mode*/
 #ifdef DEVELOPER
+   /* this force the local cache to randomly fail and ask the block to the SD */
+//#  define DEDUP_CLIENT_RANDOM_CACHE 1
+   /* this force some extra check in the DDE/DEDUP, like check if the hash match */
+//#  define DDE_EXTRA_CHECKS 1
 #endif
 
 #ifdef DDE_EXTRA_CHECKS
