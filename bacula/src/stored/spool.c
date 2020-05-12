@@ -36,6 +36,7 @@ static bool open_attr_spool_file(JCR *jcr, BSOCK *bs);
 static bool close_attr_spool_file(JCR *jcr, BSOCK *bs);
 static ssize_t write_spool_header(DCR *dcr, ssize_t *expected);
 static ssize_t write_spool_data(DCR *dcr, ssize_t *expected);
+static ssize_t write_spool_filemedia(DCR *dcr, ssize_t *expected);
 static bool write_spool_block(DCR *dcr);
 
 struct spool_stats_t {
@@ -58,6 +59,7 @@ struct spool_hdr {
    int32_t  FirstIndex;               /* FirstIndex for buffer */
    int32_t  LastIndex;                /* LastIndex for buffer */
    uint32_t len;                      /* length of next buffer */
+   uint32_t nbFileMedia;              /* Number of File Media after the block */
 };
 
 enum {
@@ -95,7 +97,7 @@ void list_spool_stats(void sendit(const char *msg, int len, void *sarg), void *a
 bool begin_data_spool(DCR *dcr)
 {
    bool stat = true;
-   if (dcr->dev->is_aligned()) {
+   if (dcr->dev->is_aligned() || dcr->dev->is_dedup()) {
       dcr->jcr->spool_data = false;
    }
    if (dcr->jcr->spool_data) {
@@ -395,6 +397,19 @@ static int read_block_from_spool_file(DCR *dcr)
    block->VolSessionId = dcr->jcr->VolSessionId;
    block->VolSessionTime = dcr->jcr->VolSessionTime;
 
+   /* Now, check if we have FileMedia records associated */
+   for (uint32_t i = 0; i < hdr.nbFileMedia ; i++) {
+      FILEMEDIA_ITEM *fm = (FILEMEDIA_ITEM *) malloc(sizeof(FILEMEDIA_ITEM));
+      stat = read(dcr->spool_fd, fm, sizeof(FILEMEDIA_ITEM));
+      if (stat != sizeof(FILEMEDIA_ITEM)) {
+         Pmsg2(000, _("Spool data read error. Wanted %u bytes, got %d\n"), sizeof(FILEMEDIA_ITEM), stat);
+         Jmsg2(dcr->jcr, M_FATAL, 0, _("Spool data read error. Wanted %u bytes, got %d\n"), sizeof(FILEMEDIA_ITEM), stat);
+         jcr->forceJobStatus(JS_FatalError);  /* override any Incomplete */
+         free(fm);
+         return RB_ERROR;
+      }
+      block->filemedia->append(fm);
+   }
    Dmsg2(800, "Read block FI=%d LI=%d\n", block->FirstIndex, block->LastIndex);
    return RB_OK;
 }
@@ -534,6 +549,17 @@ static bool write_spool_block(DCR *dcr)
          continue;
       }
 
+      ret = write_spool_filemedia(dcr, &expected);
+      if (ret == -1) {
+         goto bail_out;
+
+      } else {
+         size += ret;
+      }
+
+      if (ret != expected) {
+         continue;
+      }
       return true;
    }
 
@@ -553,12 +579,33 @@ static ssize_t write_spool_header(DCR *dcr, ssize_t *expected)
    hdr.FirstIndex = block->FirstIndex;
    hdr.LastIndex = block->LastIndex;
    hdr.len = block->binbuf;
+   hdr.nbFileMedia = block->filemedia->size();
    *expected = sizeof(hdr);
 
    /* Write header */
    return write(dcr->spool_fd, (char*)&hdr, sizeof(hdr));
 }
 
+static ssize_t write_spool_filemedia(DCR *dcr, ssize_t *expected)
+{
+   FILEMEDIA_ITEM *hdr;
+   ssize_t    stat, sum=0;
+   DEV_BLOCK *block = dcr->block;
+   *expected = sizeof(FILEMEDIA_ITEM) * block->filemedia->size();
+
+   foreach_alist(hdr, block->filemedia) {
+      /* Write header */
+      stat = write(dcr->spool_fd, (char*)hdr, sizeof(*hdr));
+      if (stat == -1) {
+         return stat;
+      }
+      sum += stat;
+      if (stat != (ssize_t)sizeof(*hdr)) {
+         return sum;
+      }
+   }
+   return sum;
+}
 
 static ssize_t write_spool_data(DCR *dcr, ssize_t *expected)
 {
