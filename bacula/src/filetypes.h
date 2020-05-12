@@ -20,6 +20,7 @@
  * Stream definitions.  Split from baconfig.h Nov 2010
  *
  *  Kern Sibbald, MM
+ *
  */
 
 #ifndef __BFILETYPES_H
@@ -61,11 +62,12 @@
 #define FT_INVALIDFS 19               /* File system not allowed for */
 #define FT_INVALIDDT 20               /* Drive type not allowed for */
 #define FT_REPARSE   21               /* Win NTFS reparse point */
+/* A FILE Symlink is a reparse point but it is handle as a FT_REG file */
 #define FT_PLUGIN    22               /* Plugin generated filename */
 #define FT_DELETED   23               /* Deleted file entry */
 #define FT_BASE      24               /* Duplicate base file entry */
 #define FT_RESTORE_FIRST 25           /* Restore this "object" first */
-#define FT_JUNCTION  26               /* Win32 Junction point */
+#define FT_JUNCTION  26               /* Win32 Junction point or Symlink to a dir */
 #define FT_PLUGIN_CONFIG 27           /* Object for Plugin configuration */
 #define FT_PLUGIN_CONFIG_FILLED 28    /* Object for Plugin configuration filled by Director */
 
