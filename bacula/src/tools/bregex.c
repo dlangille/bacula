@@ -139,7 +139,7 @@ int main(int argc, char *const *argv)
          printf("Regex compile error: %s\n", prbuf);
          continue;
       }
-      fd = fopen(fname, "r");
+      fd = bfopen(fname, "r");
       if (!fd) {
          printf(_("Could not open data file: %s\n"), fname);
          exit(1);
