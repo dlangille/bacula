@@ -85,11 +85,25 @@ extern uint32_t status_dev(DEVICE *dev);
 const char *mode_to_str(int mode);
 DEVICE *m_init_dev(JCR *jcr, DEVRES *device, bool adata);
 
+/* To open device readonly when appropriate, like for bls for dedup devices */
+int device_default_open_mode = omd_rdonly;
+
 /*
  * Device specific initialization.
  */
-void DEVICE::device_specific_init(JCR *jcr, DEVRES *device)
+int DEVICE::device_specific_init(JCR *jcr, DEVRES *device)
 {
+   return 0; // OK
+}
+
+int DEVICE::device_specific_close(DCR *dcr)
+{
+   int ret = 0;
+   if (m_fd >= 0) {
+      ret = d_close(m_fd) ;
+      clear_opened();
+   }
+   return ret;
 }
 
 /*
@@ -118,8 +132,7 @@ bool DEVICE::open_device(DCR *dcr, int omode)
          return true;
       } else {
          Dmsg1(200, "Close fd=%d for mode change in open().\n", m_fd);
-         d_close(m_fd);
-         clear_opened();
+         device_specific_close(dcr);
          preserve = state & (ST_LABEL|ST_APPEND|ST_READ);
       }
    }
@@ -328,6 +341,16 @@ bool DEVICE::close(DCR *dcr)
 
    /* Clean up device packet so it can be reused */
    clear_opened();
+
+   /*
+    * Only when SAN shared storage configured,
+    *   when the device is unloaded, the slot information
+    *   can be incorrect, so clear the slot.
+    */
+   /* ***BEEF ***/
+   if (is_tape() && device->lock_command && device->control_name) {
+      clear_slot();
+   }
 
    state &= ~(ST_LABEL|ST_READ|ST_APPEND|ST_EOT|ST_WEOT|ST_EOF|
               ST_NOSPACE|ST_MOUNTED|ST_MEDIA|ST_SHORT);
@@ -706,10 +729,23 @@ void DEVICE::updateVolCatBytes(uint64_t bytes)
    Lock_VolCatInfo();
    VolCatInfo.VolCatAmetaBytes += bytes;
    VolCatInfo.VolCatBytes += bytes;
+   VolCatInfo.BytesWritten += bytes; /* We keep the count of written bytes since the last catalog update */
    setVolCatInfo(false);
    Unlock_VolCatInfo();
 }
 
+/* Used by subclass like dedup to take account of bytes going into dedup.
+ * The accounting is expected to be done in VolCatAdataBytes & VolCatBytes
+ */
+void DEVICE::updateVolCatExtraBytes(uint64_t bytes)
+{
+}
+
+/*
+ * Note, for us a hole is bytes skipped. The OS
+ *  may have a different idea of a hole due to
+ *  the filesystem block size.
+ */
 void DEVICE::updateVolCatHoleBytes(uint64_t hole)
 {
    return;
@@ -1035,8 +1071,14 @@ bool DEVICE::do_size_checks(DCR *dcr, DEV_BLOCK *block)
 {
    JCR *jcr = dcr->jcr;
 
+   if (is_pool_size_reached(dcr, true)) {
+      if (!dir_get_pool_info(dcr, &VolCatInfo)) {
+         Dmsg0(50, "Error updating volume info.\n");
+      }
+   }
+
    if (is_user_volume_size_reached(dcr, true)) {
-      Dmsg0(40, "Calling terminate_writing_volume\n");
+      Dmsg0(50, "Calling terminate_writing_volume\n");
       terminate_writing_volume(dcr);
       reread_last_block(dcr);   /* Only used on tapes */
       dev_errno = ENOSPC;
@@ -1137,7 +1179,6 @@ void DEVICE::register_metrics(bstatcollect *collector)
          devstatcollector->registration(met.c_str(), METRIC_INT, METRIC_UNIT_BYTE,
             (char*)"The size of the disk storage for device (could be shared).");
 };
-
 bool DEVICE::get_tape_worm(DCR *dcr)
 {
    return false;
