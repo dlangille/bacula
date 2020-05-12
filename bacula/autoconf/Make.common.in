@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2000-2018 Kern Sibbald
+# Copyright (C) 2000-2020 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
 # This file is pulled in by all the Unix Bacula Makefiles
@@ -97,6 +97,16 @@ DLLIBS = @LIBADD_DLOPEN@
 # Windows (cygwin) flags 
 WCFLAGS = @WCFLAGS@
 WLDFLAGS = @WLDFLAGS@
+
+# BEE/COMMUNITY ONLY source files
+EXTRA_FILED_SRCS = @EXTRA_FILED_SRCS@
+EXTRA_LIB_SRCS = @EXTRA_LIB_SRCS@
+EXTRA_DIRD_SRCS = @EXTRA_DIRD_SRCS@
+EXTRA_CATS_SRCS= @EXTRA_CATS_SRCS@
+EXTRA_STORED_SRCS= @EXTRA_STORED_SRCS@
+EXTRA_LIBSD_SRCS= @EXTRA_LIBSD_SRCS@
+EXTRA_FINDLIB_SRCS= @EXTRA_FINDLIB_SRCS@
+EXTRA_BLS_SRCS= @EXTRA_BLS_SRCS@
 
 # End of common section of the Makefile
 #-------------------------------------------------------------------------
