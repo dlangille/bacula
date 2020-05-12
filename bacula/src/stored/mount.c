@@ -182,7 +182,9 @@ mount_next_vol:
       dev->VolHdr.VolumeName, dev->print_name());
 
    if (dev->poll && dev->has_cap(CAP_CLOSEONPOLL)) {
-      dev->close(this);
+      if (!dev->close(this)) {
+         Jmsg(jcr, M_ERROR, 0, "%s", dev->errmsg);
+      }
       free_volume(dev);
    }
 
@@ -541,7 +543,9 @@ int DCR::check_volume_label(bool &ask, bool &autochanger)
       ask = true;
       /* Needed, so the medium can be changed */
       if (dev->requires_mount()) {
-         dev->close(this);
+         if (!dev->close(this)) {
+            Jmsg(jcr, M_ERROR, 0, "%s", dev->errmsg);
+         }
          free_volume(dev);
       }
       goto check_next_volume;
@@ -790,7 +794,9 @@ void DCR::release_volume()
 
    if (dev->is_open() && (!dev->is_tape() || !dev->has_cap(CAP_ALWAYSOPEN))) {
       generate_plugin_event(jcr, bsdEventDeviceClose, this);
-      dev->close(this);
+      if (!dev->close(this)) {
+         Jmsg(jcr, M_ERROR, 0, "%s", dev->errmsg);
+      }
    }
 
    /* If we have not closed the device, then at least rewind the tape */
@@ -870,7 +876,9 @@ bool mount_next_read_volume(DCR *dcr)
     */
    if (jcr->NumReadVolumes > 1 && jcr->CurReadVolume < jcr->NumReadVolumes) {
       dev->Lock();
-      dev->close(dcr);
+      if (!dev->close(dcr)) {
+         Jmsg(jcr, M_ERROR, 0, "%s", dev->errmsg);
+      }
       dev->set_read();
       dcr->set_reserved_for_read();
       dev->Unlock();

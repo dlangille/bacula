@@ -864,6 +864,7 @@ public:
    bool mount_next_write_volume();
    bool mount_next_read_volume();
    void mark_volume_in_error();
+   void mark_volume_read_only();
    void mark_volume_not_inchanger();
    int try_autolabel(bool opened);
    bool find_a_volume();
