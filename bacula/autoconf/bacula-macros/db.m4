@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2000-2016 Kern Sibbald
+# Copyright (C) 2000-2020 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
 AC_DEFUN([BA_CHECK_DBI_DB],
@@ -830,7 +830,7 @@ AC_HELP_STRING([--with-sqlite3@<:@=DIR@:>@], [Include SQLite3 support. DIR is th
      if test "x$support_batch_insert" = "xyes"; then
          dnl For sqlite checking
          saved_LDFLAGS="${LDFLAGS}"
-         LDFLAGS="${saved_LDFLAGS} -lpthread -L$SQLITE_LIBDIR"
+         LDFLAGS="${saved_LDFLAGS} -lpthread -lm -L$SQLITE_LIBDIR"
 
          AC_CHECK_LIB(sqlite3, sqlite3_threadsafe, AC_DEFINE(HAVE_SQLITE3_THREADSAFE, 1, [Set if have sqlite3_threadsafe]))
          if test "x$ac_cv_lib_sqlite3_sqlite3_threadsafe" = "xyes"; then
