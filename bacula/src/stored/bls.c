@@ -21,10 +21,12 @@
  *  Dumb program to do an "ls" of a Bacula 1.0 mortal file.
  *
  *  Kern Sibbald, MM
+ *
  */
 
 #include "bacula.h"
 #include "stored.h"
+#include "dedupstored.h"
 #include "findlib/find.h"
 #include "lib/cmd_parser.h"
 
@@ -49,6 +51,9 @@ static uint32_t num_files = 0;
 static ATTR *attr;
 static CONFIG *config;
 
+static bool filter = false;                  /* any filter set ? */
+static bool dedup = false;                   /* decode dedup reference */
+
 void *start_heap;
 #define CONFIG_FILE "bacula-sd.conf"
 char *configfile = NULL;
@@ -58,6 +63,11 @@ int  errors = 0;
 static FF_PKT *ff;
 
 static BSR *bsr = NULL;
+
+#ifdef COMMUNITY
+bool dedup_parse_filter(char *fltr) { return false; }
+void dedup_filter_record(int verbose, DCR *dcr, DEV_RECORD *rec, char *dedup_msg, int len) {}
+#endif
 
 static void usage()
 {
@@ -79,7 +89,9 @@ PROG_COPYRIGHT
 "     -V                 specify Volume names (separated by |)\n"
 "     -E                 Check records to detect errors\n"
 "     -v                 be verbose\n"
-"     -?                 print this message\n\n"), 2000, "", VERSION, BDATE);
+"     -D                 Display dedup reference (to use with -v)\n"
+"     -F <key=value,>    Filter regarding some key, value (to use with -D)\n"
+"     -?                 print this message\n\n"), 2000, BDEMO, VERSION, BDATE);
    exit(1);
 }
 
@@ -200,6 +212,18 @@ int main (int argc, char *argv[])
          VolumeName = optarg;
          break;
 
+      case 'D':
+         dedup = true;
+         break;
+
+      case 'F':
+         filter = true;
+         if (!dedup_parse_filter(optarg)) {
+            Pmsg1(0, _("Error parsing filter: %s\n"), optarg);
+            exit(1);
+         }
+         break;
+
       case '?':
       default:
          usage();
@@ -282,7 +306,6 @@ static void do_close(JCR *jcr)
    free_jcr(jcr);
    dev->term(NULL);
 }
-
 
 /* List just block information */
 static void do_blocks(char *infname)
@@ -384,16 +407,18 @@ static void do_ls(char *infname)
    printf("%u files found.\n", num_files);
 }
 
-
 /*
  * Called here for each record from read_records()
  */
 static bool record_cb(DCR *dcr, DEV_RECORD *rec)
 {
+   char dedup_msg[200];
    if (verbose && rec->FileIndex < 0) {
       dump_label_record(dcr->dev, rec, verbose, false);
       return true;
    }
+
+   dedup_filter_record(verbose, dcr, rec, dedup_msg, sizeof(dedup_msg));
 
    /* File Attributes stream */
    if (rec->maskedStream == STREAM_UNIX_ATTRIBUTES ||
@@ -413,8 +438,8 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
 
       if (file_is_included(ff, attr->fname) && !file_is_excluded(ff, attr->fname)) {
          if (verbose) {
-            Pmsg5(000, _("FileIndex=%d VolSessionId=%d VolSessionTime=%d Stream=%d DataLen=%d\n"),
-                  rec->FileIndex, rec->VolSessionId, rec->VolSessionTime, rec->Stream, rec->data_len);
+            Pmsg6(000, _("FileIndex=%d VolSessionId=%d VolSessionTime=%d Stream=%d DataLen=%d %s\n"),
+                  rec->FileIndex, rec->VolSessionId, rec->VolSessionTime, rec->Stream, rec->data_len, dedup_msg);
          }
          print_ls_output(jcr, attr);
          num_files++;
