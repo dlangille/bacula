@@ -41,7 +41,13 @@ const int sd_dbglvl = 300;
 const int sd_dbglvl = 300;
 #endif
 
+#ifdef COMMUNITY
 #undef SD_DEDUP_SUPPORT
+#endif
+
+#ifdef HAVE_WIN32
+#undef SD_DEDUP_SUPPORT
+#endif
 
 #ifdef HAVE_MTIO_H
 #include <mtio.h>
@@ -67,6 +73,7 @@ const int sd_dbglvl = 300;
 #include "vol_mgr.h"
 #include "reserve.h"
 #include "protos.h"
+#include "dedupstored.h"
 #ifdef HAVE_LIBZ
 #include <zlib.h>                     /* compression headers */
 #else
@@ -88,9 +95,14 @@ const int sd_dbglvl = 300;
 #include "vtape_dev.h"
 #include "cloud_dev.h"
 #include "aligned_dev.h"
+#ifdef SD_DEDUP_SUPPORT
+#include "dedup_dev.h"
+#endif
 #include "win_file_dev.h"
 #include "win_tape_dev.h"
 #include "sd_plugins.h"
+
+int breaddir(DIR *dirp, POOLMEM *&d_name);
 
 typedef struct {
    int bacula_storage_config_devices;
@@ -101,8 +113,6 @@ typedef struct {
    int bacula_storage_memory_maxbytes;
    int bacula_storage_memory_smbytes;
 } sdstatmetrics_t;
-
-int breaddir(DIR *dirp, POOLMEM *&d_name);
 
 /* Daemon globals from stored.c */
 extern STORES *me;                    /* "Global" daemon resource */
