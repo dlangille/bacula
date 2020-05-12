@@ -223,11 +223,8 @@ void DEVICE::dbg_rLock(const char *file, int line, bool locked)
       num_waiting++;             /* indicate that I am waiting */
       while (blocked()) {
          int stat;
-#ifndef HAVE_WIN32
-         /* thread id on Win32 may be a struct */
          Dmsg5(sd_dbglvl, "Blocked by %d %s in rLock blked=%s no_wait=%p me=%p\n",
-            blocked_by, device->hdr.name, print_blocked(), no_wait_id, pthread_self());
-#endif
+               blocked_by, device->hdr.name, print_blocked(), no_wait_id, bthread_get_thread_id());
          if ((stat = bthread_cond_wait_p(&this->wait, &m_mutex, file, line)) != 0) {
             berrno be;
             this->dbg_Unlock(file, line);
@@ -251,11 +248,8 @@ void DEVICE::rLock(bool locked)
       num_waiting++;             /* indicate that I am waiting */
       while (blocked()) {
          int stat;
-#ifndef HAVE_WIN32
-         /* thread id on Win32 may be a struct */
          Dmsg5(sd_dbglvl, "Blocked by %d rLock %s blked=%s no_wait=%p me=%p\n",
-            blocked_by, device->hdr.name, print_blocked(), no_wait_id, pthread_self());
-#endif
+            blocked_by, device->hdr.name, print_blocked(), no_wait_id, bthread_get_thread_id());
          if ((stat = pthread_cond_wait(&this->wait, &m_mutex)) != 0) {
             berrno be;
             this->Unlock();
@@ -458,7 +452,7 @@ bool DEVICE::_obtain_device_block(const char *file, int line,
    Dmsg4(sd_dbglvl, "Steal lock %s old=%s from %s:%d\n",
       device->hdr.name, print_blocked(), file, line);
 
-   if (!can_obtain_block() && !pthread_equal(no_wait_id, pthread_self())) { 
+   if (!can_obtain_block() && !pthread_equal(no_wait_id, pthread_self())) {
       V(block_mutex);
       return false;
    }
