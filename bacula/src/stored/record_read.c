@@ -119,13 +119,12 @@ static bool read_header(DCR *dcr, DEV_BLOCK *block, DEV_RECORD *rec)
             return false;             /* This is from some other Session */
          }
          rec->Stream = -Stream;       /* set correct Stream */
-         rec->maskedStream = rec->Stream & STREAMMASK_TYPE;
       } else {                        /* Regular record */
          Dmsg0(dbgep, "=== rpath 8 normal stream\n");
          rec->Stream = Stream;
-         rec->maskedStream = rec->Stream & STREAMMASK_TYPE;
          rec->data_len = 0;           /* transfer to beginning of data */
       }
+      rec->maskedStream = rec->Stream & STREAMMASK_TYPE;
       rec->VolSessionId = VolSessionId;
       rec->VolSessionTime = VolSessionTime;
       rec->FileIndex = FileIndex;
@@ -159,7 +158,7 @@ static bool read_header(DCR *dcr, DEV_BLOCK *block, DEV_RECORD *rec)
    }
 
    /* Sanity check */
-   if (rec->data_bytes >= MAX_BLOCK_SIZE) {
+   if (rec->data_bytes >= MAX_BLOCK_LENGTH) {
       Dmsg0(dbgep, "=== rpath 11b maxlen too big\n");
       /*
        * Something is wrong, force read of next block, abort
@@ -168,7 +167,7 @@ static bool read_header(DCR *dcr, DEV_BLOCK *block, DEV_RECORD *rec)
       rec->state_bits |= (REC_NO_HEADER | REC_BLOCK_EMPTY);
       empty_block(block);
       Jmsg2(dcr->jcr, M_WARNING, 0, _("Sanity check failed. maxlen=%d datalen=%d. Block discarded.\n"),
-         MAX_BLOCK_SIZE, rec->data_bytes);
+         MAX_BLOCK_LENGTH, rec->data_bytes);
       return false;
    }
 
@@ -187,7 +186,7 @@ static void read_data(DEV_BLOCK *block, DEV_RECORD *rec)
 {
    char buf1[100], buf2[100];
 
-   Dmsg0(dbgep, "=== rpath 22 read_data\n");
+   Dmsg2(dbgep, "=== rpath 22 read_data remlen=%ld data_bytes=%ld\n", rec->remlen, rec->data_bytes);
    ASSERT2(!block->adata, "Block is adata. Wrong!");
    /*
     * At this point, we have read the header, now we
@@ -235,6 +234,7 @@ bool read_record_from_block(DCR *dcr,  DEV_RECORD *rec)
 {
    bool save_adata = dcr->dev->adata;
    bool rtn;
+   bool firstcall=true;
 
    Dmsg0(dbgep, "=== rpath 1 Enter read_record_from block\n");
 
@@ -277,8 +277,8 @@ bool read_record_from_block(DCR *dcr,  DEV_RECORD *rec)
          continue;
 
       case st_adata_rechdr:
-         Dmsg0(dbgep, "=== rpath 35 st_adata_rechdr\n");
-         if (!dcr->dev->read_adata_record_header(dcr, dcr->block, rec)) {  /* sets state */
+         Dmsg1(dbgep, "=== rpath 35 st_adata_rechdr RecNum=%d\n", dcr->block->RecNum);
+         if (!dcr->dev->read_adata_record_header(dcr, dcr->block, rec, &firstcall)) {  /* sets state */
             Dmsg0(dbgep, "=== rpath 36 failed read_adata rechdr\n");
             Dmsg0(100, "read_link returned EOF.\n");
             goto fail_out;
