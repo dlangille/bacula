@@ -1,10 +1,13 @@
 #
-# Copyright (C) 2000-2015 Kern Sibbald
+# Copyright (C) 2000-2020 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
 # Bacula Tools Makefile
 #
 @MCOMMON@
+
+TOKYOCABINET_INC  = @TOKYOCABINET_INC@
+TOKYOCABINET_LIBS = @TOKYOCABINET_LIBS@
 
 srcdir =	.
 VPATH = 	.
@@ -19,7 +22,6 @@ thisdir = src/tools
 
 DEBUG=@DEBUG@
 
-ZLIBS=@ZLIBS@
 DB_LIBS=@DB_LIBS@
 
 first_rule: all
@@ -43,6 +45,7 @@ TOOLS = $(@DIR_TOOLS@)
 INSNODIRTOOLS = bsmtp
 INSDIRTOOLS = bsmtp dbcheck bwild bregex
 INSTOOLS = $(INS@DIR_TOOLS@)
+INSTTESTS = breaddir_test bpipe_test tags_test xattr_append_test
 
 .SUFFIXES:	.c .o
 .PHONY:
@@ -51,11 +54,33 @@ INSTOOLS = $(INS@DIR_TOOLS@)
 # inference rules
 .c.o:
 	@echo "Compiling $<"
-	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) $<
+	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) $(TOKYOCABINET_INC) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) $<
 #-------------------------------------------------------------------------
 all: Makefile $(TOOLS) gigaslam grow
 	@echo "==== Make of tools is good ===="
 	@echo " "
+
+fs-io-error: fs-io-error.c
+	$(CXX) -Wall fs-io-error.c -D_FILE_OFFSET_BITS=64 -lfuse  -o fs-io-error
+
+breaddir_test: breaddir.o ../lib/unittests.o
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS)  -L../lib -o $@ breaddir.o ../lib/unittests.o -lbac $(DLIB) $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
+
+joblist_test: joblist.o
+	make -C ../lib/ alist_test
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS)  -L../lib -L../findlib -o $@ joblist.o ../lib/unittests.o -lbac -lbacfind $(DLIB) $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
+
+bsock_meeting_test: bsock_meeting_test.o ../lib/unittests.o
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS)  -L../lib -o $@ bsock_meeting_test.o ../lib/unittests.o -lbac $(DLIB) $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
+
+xattr_append_test: xattr_append_test.o ../lib/unittests.o
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS)  -L../lib -o $@ xattr_append_test.o ../lib/unittests.o -lbac $(DLIB) $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
+
+bpipe_test: bpipe-test.o ../lib/unittests.o
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS)  -L../lib -o $@ bpipe-test.o ../lib/unittests.o -lbac $(DLIB) $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
+
+bsparse: bsparse.c
+	$(CXX) -Wall -o $@ bsparse.c
 
 bsmtp: Makefile bsmtp.o ../lib/libbac$(DEFAULT_ARCHIVE_TYPE)	    
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L../lib -o $@ bsmtp.o -lbac -lm $(DLIB) $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
@@ -67,15 +92,28 @@ bsnapshot: Makefile bsnapshot.o ../lib/libbac$(DEFAULT_ARCHIVE_TYPE)
 bregtest: Makefile bregtest.o ../lib/libbac$(DEFAULT_ARCHIVE_TYPE)	   
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L../lib -o $@ bregtest.o -lbac -lm $(DLIB) $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
 
+hdtest: Makefile hdtest.o ../lib/libbac$(DEFAULT_ARCHIVE_TYPE)	   
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L../lib -o $@ hdtest.o -lbac -lm $(DLIB) $(LIBS)
+
+thread: Makefile thread.o 
+	$(CXX) $(LDFLAGS) -o $@ thread.o -lpthread
+
 dbcheck: Makefile dbcheck.o ../lib/libbac$(DEFAULT_ARCHIVE_TYPE) ../lib/libbaccfg$(DEFAULT_ARCHIVE_TYPE) \
-	 ../cats/libbacsql$(DEFAULT_ARCHIVE_TYPE) ../cats/libbaccats$(DEFAULT_ARCHIVE_TYPE) $(DIRCONFOBJS) \
-	 ../findlib/libbacfind$(DEFAULT_ARCHIVE_TYPE)
-	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -L../lib -L../findlib -L../cats -o $@ dbcheck.o $(DIRCONFOBJS) \
-	  $(DLIB) -lbaccats -lbacsql -lbacfind -lbaccfg -lbac -lm $(DB_LIBS) $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
+	 ../cats/libbacsql$(DEFAULT_ARCHIVE_TYPE) ../cats/libbaccats$(DEFAULT_ARCHIVE_TYPE) $(DIRCONFOBJS)
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L../lib -L../cats -L../findlib -o $@ dbcheck.o $(DIRCONFOBJS) \
+	  -lbaccats -lbacsql -lbacfind -lbaccfg -lbac -lm $(DB_LIBS) $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
 
 fstype: Makefile fstype.o ../lib/libbac$(DEFAULT_ARCHIVE_TYPE) ../findlib/libbacfind$(DEFAULT_ARCHIVE_TYPE)
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L../lib -L../findlib -o $@ fstype.o -lbacfind -lbac -lm \
 	  $(DLIB) $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
+
+bnet_test: Makefile bnet_test.o ../lib/libbac$(DEFAULT_ARCHIVE_TYPE) ../findlib/libbacfind$(DEFAULT_ARCHIVE_TYPE)
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L../lib -L../findlib -o $@ bnet_test.o -lbacfind -lbac -lm \
+	  $(DLIB) $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
+
+tags_test: Makefile test_tags.o ../lib/libbac$(DEFAULT_ARCHIVE_TYPE) ../lib/unittests.o
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L../lib -o $@ test_tags.o ../lib/unittests.o -lbac \
+	  $(DLIB) $(LIBS)
 
 drivetype: Makefile drivetype.o ../lib/libbac$(DEFAULT_ARCHIVE_TYPE) ../findlib/libbacfind$(DEFAULT_ARCHIVE_TYPE)
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L../lib -L../findlib -o $@ drivetype.o -lbacfind -lbac -lm \
@@ -93,11 +131,6 @@ inc_conf.o: ../dird/inc_conf.c
 timelimit: timelimit.o
 	${CC} ${DEFS} ${DEBUG} -pipe -DHAVE_ERRNO_H -DHAVE_SETITIMER -DHAVE_SIGACTION -c timelimit.c 
 	${CC} -o timelimit timelimit.o
-
-bpipe_test: bpipe_test.o ../lib/libbac$(DEFAULT_ARCHIVE_TYPE)
-	$(MAKE) -C ../lib alist_test
-	$(LIBTOOL_LINK) $(CXX) -g $(LDFLAGS) -L. -L../lib -L../findlib -o $@ bpipe_test.o ../lib/unittests.o \
-		$(DLIB) -lbac -lm $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
 
 testfind: Makefile ../lib/libbac$(DEFAULT_ARCHIVE_TYPE) ../lib/libbaccfg$(DEFAULT_ARCHIVE_TYPE) \
 	  ../findlib/libbacfind$(DEFAULT_ARCHIVE_TYPE) $(FINDOBJS)
@@ -117,22 +150,23 @@ bwild:	Makefile ../lib/libbac$(DEFAULT_ARCHIVE_TYPE) bwild.o
 	  $(DLIB) -lbac -lm $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
 
 bbatch: Makefile ../lib/libbac$(DEFAULT_ARCHIVE_TYPE) ../cats/libbacsql$(DEFAULT_ARCHIVE_TYPE) \
-	../cats/libbaccats$(DEFAULT_ARCHIVE_TYPE) ../findlib/libbacfind$(DEFAULT_ARCHIVE_TYPE) bbatch.o
+	../cats/libbaccats$(DEFAULT_ARCHIVE_TYPE) bbatch.o
 	$(LIBTOOL_LINK) $(CXX) -g $(LDFLAGS) -L../cats -L. -L../lib -L../findlib -o $@ bbatch.o \
-	  $(DLIB) -lbaccats -lbacsql -lbacfind -lbac -lm $(ZLIBS) $(DB_LIBS) $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
+	  -lbaccats -lbacsql -lbacfind -lbac -lm $(DB_LIBS) $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
 
 bvfs_test: Makefile ../findlib/libbacfind$(DEFAULT_ARCHIVE_TYPE) ../lib/libbac$(DEFAULT_ARCHIVE_TYPE) \
 	   ../cats/libbacsql$(DEFAULT_ARCHIVE_TYPE) ../cats/libbaccats$(DEFAULT_ARCHIVE_TYPE) bvfs_test.o
 	$(LIBTOOL_LINK) $(CXX) -g $(LDFLAGS) -L../cats -L. -L../lib -L../findlib -o $@ bvfs_test.o  \
-	  -lbaccats -lbacsql -lbacfind -lbac -lm $(ZLIBS) $(DB_LIBS) $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
-
-cats_test.o: cats_test.c
-	echo "Compiling $<"
-	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) $<
-
-cats_test: Makefile ../findlib/libbacfind$(DEFAULT_ARCHIVE_TYPE) ../lib/libbac$(DEFAULT_ARCHIVE_TYPE) ../cats/libbacsql$(DEFAULT_ARCHIVE_TYPE) cats_test.o
-	$(LIBTOOL_LINK) $(CXX) -g $(LDFLAGS) -L../cats -L. -L../lib -L../findlib -o $@ cats_test.o  \
 	  -lbaccats -lbacsql -lbacfind -lbac -lm $(DB_LIBS) $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
+
+# Turn on cats_test when it builds correctly
+#cats_test.o: cats_test.c
+#	 echo "Compiling $<"
+#	 $(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) $<
+
+#cats_test: Makefile ../findlib/libbacfind$(DEFAULT_ARCHIVE_TYPE) ../lib/libbac$(DEFAULT_ARCHIVE_TYPE) ../cats/libbacsql$(DEFAULT_ARCHIVE_TYPE) cats_test.o
+#	 $(LIBTOOL_LINK) $(CXX) -g $(LDFLAGS) -L../cats -L. -L../lib -L../findlib -o $@ cats_test.o  \
+#	   -lbaccats -lbacsql -lbacfind -lbac -lm $(DB_LIBS) $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
 
 gigaslam.o: gigaslam.c
 	$(CXX) $(CFLAGS) -c $(CPPFLAGS) $<
@@ -149,6 +183,17 @@ bpluginfo.o: bpluginfo.c
 bpluginfo: Makefile bpluginfo.o
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L../lib -o $@ bpluginfo.o -lbac $(DLIB) $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
 
+TESTDEDUPOBJS = ../stored/bitarray.o ../stored/dedupengine.o test-dedup.o
+
+test-dedup.o: test-dedup.c
+	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) $(TOKYOCABINET_INC) -I$(srcdir) -I$(basedir) -I../stored -I../lib $(DINCLUDE) $(CFLAGS) $<
+
+test-dedup: Makefile $(TESTDEDUPOBJS) ../lib/libbaccfg$(DEFAULT_ARCHIVE_TYPE) ../lib/libbac$(DEFAULT_ARCHIVE_TYPE)
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -static -L../lib -o $@ $(TESTDEDUPOBJS) $(ZLIBS) \
+	   -lbaccfg -lbac -lm $(TOKYOCABINET_LIBS) $(DLIB) $(LIBS) $(WRAPLIBS) \
+	$(GETTEXT_LIBS) $(OPENSSL_LIBS) $(CAP_LIBS)
+
+
 Makefile: $(srcdir)/Makefile.in $(topdir)/config.status
 	cd $(topdir) \
 	  && CONFIG_FILES=$(thisdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
@@ -157,8 +202,8 @@ libtool-clean:
 	@$(RMF) -r .libs _libs
 
 clean:	libtool-clean
-	@$(RMF) core core.* a.out *.o *.bak *~ *.intpro *.extpro 1 2 3
-	@$(RMF) $(DIRTOOLS) gigaslam grow
+	@$(RMF) core core.* a.out *.o *.bak *~ *.intpro *.extpro 1 2 3 fs-io-error
+	@$(RMF) $(DIRTOOLS)
 
 realclean: clean
 	@$(RMF) tags
@@ -170,6 +215,9 @@ distclean: realclean
 devclean: realclean
 	if test $(srcdir) = .; then $(MAKE) realclean; fi
 	(cd $(srcdir); $(RMF) Makefile)
+
+install-fs-io-error: fs-io-error
+	$(INSTALL_PROGRAM) fs-io-error $(DESTDIR)$(sbindir)/fs-io-error
 
 install-bsnapshot: bsnapshot
 	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bsnapshot $(DESTDIR)$(sbindir)/bsnapshot
@@ -189,8 +237,13 @@ install: $(INSTOOLS)
 #	chattr +i $(DESTDIR)$(sbindir)/bsmtp
 #	chmod 755 $(DESTDIR)$(sbindir)/bsmtp
 
+install-unittests: $(INSTTESTS)
+	@for tool in ${INSTTESTS} ; do \
+	   $(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) $$tool $(DESTDIR)$(sbindir)/$$tool ; \
+	done
+
 uninstall:
-	@for tool in ${INSTOOLS} ; do \
+	@for tool in ${INSTOOLS} ${INSTTESTS} ; do \
 	   $(RMF) $(DESTDIR)$(sbindir)/$$tool ; \
 	done
 
@@ -205,7 +258,7 @@ depend:
 	@$(MV) Makefile Makefile.bak
 	@$(SED) "/^# DO NOT DELETE:/,$$ d" Makefile.bak > Makefile
 	@$(ECHO) "# DO NOT DELETE: nice dependency list follows" >> Makefile
-	@$(CXX) -S -M $(CPPFLAGS) -I$(srcdir) -I$(basedir) *.c >> Makefile
+	@$(CXX) -S -M $(CPPFLAGS) $(TOKYOCABINET_INC) -I$(srcdir) -I$(basedir) -I../stored *.c >> Makefile
 	@if test -f Makefile ; then \
 	    $(RMF) Makefile.bak; \
 	else \
