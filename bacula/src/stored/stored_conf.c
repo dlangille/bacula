@@ -24,7 +24,6 @@
 
 #include "bacula.h"
 #include "stored.h"
-#include "cloud_driver.h"
 
 /* First and last resource ids */
 int32_t r_first = R_FIRST;
@@ -41,6 +40,13 @@ extern "C" { // work around visual compiler mangling variables
 URES res_all;
 #endif
 int32_t res_all_size = sizeof(res_all);
+
+#ifdef SD_DEDUP_SUPPORT
+# include "bee_libsd_dedup.h"
+#else
+#define dedup_check_storage_resource(a) true
+#endif
+
 
 /* Definition of records permitted within each
  * resource with the routine to process the record
@@ -63,11 +69,14 @@ static RES_ITEM store_items[] = {
    {"SubsysDirectory",       store_dir,  ITEM(res_store.subsys_directory), 0, 0, 0},
    {"PluginDirectory",       store_dir,  ITEM(res_store.plugin_directory), 0, 0, 0},
    {"ScriptsDirectory",      store_dir,  ITEM(res_store.scripts_directory), 0, 0, 0},
+   {"SsdDirectory",          store_dir,  ITEM(res_store.ssd_directory), 0, 0, 0},
    {"MaximumConcurrentJobs", store_pint32, ITEM(res_store.max_concurrent_jobs), 0, ITEM_DEFAULT, 20},
    {"ClientConnectTimeout",  store_time, ITEM(res_store.ClientConnectTimeout), 0, ITEM_DEFAULT, 60 * 30},
    {"HeartbeatInterval",     store_time, ITEM(res_store.heartbeat_interval), 0, ITEM_DEFAULT, 5 * 60},
+   {"FipsRequire",            store_bool, ITEM(res_store.require_fips), 0, 0, 0},
    {"TlsAuthenticate",       store_bool,    ITEM(res_store.tls_authenticate), 0, 0, 0},
    {"TlsEnable",             store_bool,    ITEM(res_store.tls_enable), 0, 0, 0},
+   {"TlsPskEnable",          store_bool,    ITEM(res_store.tls_psk_enable), 0, ITEM_DEFAULT, tls_psk_default},
    {"TlsRequire",            store_bool,    ITEM(res_store.tls_require), 0, 0, 0},
    {"TlsVerifyPeer",         store_bool,    ITEM(res_store.tls_verify_peer), 1, ITEM_DEFAULT, 1},
    {"TlsCaCertificateFile",  store_dir,       ITEM(res_store.tls_ca_certfile), 0, 0, 0},
@@ -79,6 +88,13 @@ static RES_ITEM store_items[] = {
    {"ClientConnectWait",     store_time,  ITEM(res_store.client_wait), 0, ITEM_DEFAULT, 30 * 60},
    {"VerId",                 store_str,   ITEM(res_store.verid), 0, 0, 0},
    {"CommCompression",       store_bool,  ITEM(res_store.comm_compression), 0, ITEM_DEFAULT, true},
+#ifdef SD_DEDUP_SUPPORT
+   {"DedupDirectory",        store_dir,   ITEM(res_store.dedup_dir),  0, 0, 0},
+   {"DedupIndexDirectory",   store_dir,   ITEM(res_store.dedup_index_dir),  0, 0, 0},
+   {"DedupCheckHash",        store_bool,   ITEM(res_store.dedup_check_hash),  0, 0, 0},
+   {"DedupScrubMaximumBandwidth", store_speed, ITEM(res_store.dedup_scrub_max_bandwidth), 0, ITEM_DEFAULT, 15*1024*1024},
+   {"MaximumContainerSize",  store_size64, ITEM(res_store.max_container_size), 0, 0, 0},
+#endif
    {NULL, NULL, {0}, 0, 0, 0}
 };
 
@@ -91,6 +107,7 @@ static RES_ITEM dir_items[] = {
    {"Monitor",     store_bool,     ITEM(res_dir.monitor),    0, 0, 0},
    {"TlsAuthenticate",      store_bool,    ITEM(res_dir.tls_authenticate), 0, 0, 0},
    {"TlsEnable",            store_bool,    ITEM(res_dir.tls_enable), 0, 0, 0},
+   {"TlsPskEnable",         store_bool,    ITEM(res_dir.tls_psk_enable), 0, ITEM_DEFAULT, tls_psk_default},
    {"TlsRequire",           store_bool,    ITEM(res_dir.tls_require), 0, 0, 0},
    {"TlsVerifyPeer",        store_bool,    ITEM(res_dir.tls_verify_peer), 1, ITEM_DEFAULT, 1},
    {"TlsCaCertificateFile", store_dir,       ITEM(res_dir.tls_ca_certfile), 0, 0, 0},
@@ -153,6 +170,7 @@ static RES_ITEM dev_items[] = {
    {"MinimumAlignedSize",    store_size32, ITEM(res_dev.min_aligned_size), 0, ITEM_DEFAULT, 4096},
    {"MaximumVolumeSize",     store_size64, ITEM(res_dev.max_volume_size), 0, 0, 0},
    {"MaximumFileSize",       store_size64, ITEM(res_dev.max_file_size), 0, ITEM_DEFAULT, 1000000000},
+   {"MaximumFileIndex",      store_size64, ITEM(res_dev.max_file_index), 0, ITEM_DEFAULT, 100000000}, /* ***BEEF*** */
    {"VolumeCapacity",        store_size64, ITEM(res_dev.volume_capacity), 0, 0, 0},
    {"MinimumFeeSpace",       store_size64, ITEM(res_dev.min_free_space), 0, ITEM_DEFAULT, 5000000},
    {"MaximumConcurrentJobs", store_pint32, ITEM(res_dev.max_concurrent_jobs), 0, 0, 0},
@@ -168,6 +186,9 @@ static RES_ITEM dev_items[] = {
    {"FreeSpaceCommand",      store_strname,ITEM(res_dev.free_space_command), 0, 0, 0},
    {"LabelType",             store_label,  ITEM(res_dev.label_type), 0, 0, 0},
    {"Cloud",                 store_res,    ITEM(res_dev.cloud), R_CLOUD, 0, 0},
+#ifdef SD_DEDUP_SUPPORT
+   {"Dedupengine",           store_res,    ITEM(res_dev.dedup), R_DEDUP, 0, 0},
+#endif
    {"SyncOnClose",           store_bit,    ITEM(res_dev.cap_bits), CAP_SYNCONCLOSE, ITEM_DEFAULT, 0},
    {NULL, NULL, {0}, 0, 0, 0}
 };
@@ -188,22 +209,31 @@ static RES_ITEM cloud_items[] = {
    {"Name",              store_name,      ITEM(res_cloud.hdr.name),        0, ITEM_REQUIRED, 0},
    {"Description",       store_str,       ITEM(res_cloud.hdr.desc),        0, 0, 0},
    {"Driver",            store_cloud_driver, ITEM(res_cloud.driver_type), 0, ITEM_REQUIRED, 0},
-   {"HostName",          store_strname,ITEM(res_cloud.host_name), 0, ITEM_REQUIRED, 0},
+   {"HostName",          store_strname,ITEM(res_cloud.host_name), 0, 0, 0},
    {"BucketName",        store_strname,ITEM(res_cloud.bucket_name), 0, ITEM_REQUIRED, 0},
    {"Region",            store_strname,ITEM(res_cloud.region), 0, 0, 0},
-   {"AccessKey",         store_strname,ITEM(res_cloud.access_key), 0, ITEM_REQUIRED, 0},
-   {"SecretKey",         store_strname,ITEM(res_cloud.secret_key), 0, ITEM_REQUIRED, 0},
-   {"Protocol",          store_protocol, ITEM(res_cloud.protocol), 0, ITEM_DEFAULT, 0},   /* HTTPS */
+   {"AccessKey",         store_strname,ITEM(res_cloud.access_key), 0, 0, 0},
+   {"SecretKey",         store_strname,ITEM(res_cloud.secret_key), 0, 0, 0},
+   {"Protocol",          store_protocol,ITEM(res_cloud.protocol), 0, ITEM_DEFAULT, 0},   /* HTTPS */
+   {"BlobEndpoint",      store_strname,ITEM(res_cloud.blob_endpoint), 0, 0, 0},
+   {"FileEndpoint",      store_strname,ITEM(res_cloud.file_endpoint), 0, 0, 0},
+   {"QueueEndpoint",     store_strname,ITEM(res_cloud.queue_endpoint), 0, 0, 0},
+   {"TableEndpoint",     store_strname,ITEM(res_cloud.table_endpoint), 0, 0, 0},
+   {"EndpointSuffix",    store_strname,ITEM(res_cloud.endpoint_suffix), 0, 0, 0},
    {"UriStyle",          store_uri_style, ITEM(res_cloud.uri_style), 0, ITEM_DEFAULT, 0}, /* VirtualHost */
    {"TruncateCache",     store_truncate, ITEM(res_cloud.trunc_opt), 0, ITEM_DEFAULT, TRUNC_NO},
    {"Upload",            store_upload,   ITEM(res_cloud.upload_opt), 0, ITEM_DEFAULT, UPLOAD_NO},
-   {"MaximumConcurrentUploads", store_pint32, ITEM(res_cloud.max_concurrent_uploads), 0, ITEM_DEFAULT, 0},
-   {"MaximumConcurrentDownloads", store_pint32, ITEM(res_cloud.max_concurrent_downloads), 0, ITEM_DEFAULT, 0},
+   {"MaximumConcurrentUploads", store_pint32, ITEM(res_cloud.max_concurrent_uploads), 0, ITEM_DEFAULT, 3},
+   {"MaximumConcurrentDownloads", store_pint32, ITEM(res_cloud.max_concurrent_downloads), 0, ITEM_DEFAULT, 3},
    {"MaximumUploadBandwidth", store_speed, ITEM(res_cloud.upload_limit), 0, 0, 0},
    {"MaximumDownloadBandwidth", store_speed, ITEM(res_cloud.download_limit), 0, 0, 0},
+#if BEEF
+   {"DriverCommand",     store_strname, ITEM(res_cloud.driver_command), 0, 0, 0},
+   {"TransferPriority",  store_transfer_priority, ITEM(res_cloud.transfer_priority), 0, ITEM_DEFAULT, 0},
+   {"TransferRetention", store_time, ITEM(res_cloud.transfer_retention), 0, ITEM_DEFAULT, 5 * 3600 * 24},
+#endif
    {NULL, NULL, {0}, 0, 0, 0}
 };
-
 
 /* Message resource */
 extern RES_ITEM msgs_items[];
@@ -213,6 +243,7 @@ extern RES_ITEM collector_items[];
 
 
 /* This is the master resource definition */
+/* ATTN the order of the items must match the R_FIRST->R_LAST list in stored_conf.h !!! */
 RES_TABLE resources[] = {
    {"Director",      dir_items,        R_DIRECTOR},
    {"Storage",       store_items,      R_STORAGE},
@@ -221,6 +252,9 @@ RES_TABLE resources[] = {
    {"Autochanger",   changer_items,    R_AUTOCHANGER},
    {"Cloud",         cloud_items,      R_CLOUD},
    {"Statistics",    collector_items,  R_COLLECTOR},
+#ifdef SD_DEDUP_SUPPORT
+   {"Dedupengine",   dedup_items,      R_DEDUP},
+#endif
    {NULL,            NULL,             0}
 };
 
@@ -236,6 +270,9 @@ s_kw dev_types[] = {
    {"VTape",         B_VTAPE_DEV},
    {"Vtl",           B_VTL_DEV},
    {"Aligned",       B_ALIGNED_DEV},
+#ifdef SD_DEDUP_SUPPORT
+   {"Dedup",         B_DEDUP_DEV},
+#endif
    {"Null",          B_NULL_DEV},
    {"Cloud",         B_CLOUD_DEV},
    {NULL,            0}
@@ -274,6 +311,11 @@ void store_devtype(LEX *lc, RES_ITEM *item, int index, int pass)
 s_kw cloud_drivers[] = {
    {"S3",           C_S3_DRIVER},
    {"File",         C_FILE_DRIVER},
+   {"Azure",        C_WAS_DRIVER},
+   {"Google",       C_GOOGLE_DRIVER},
+   {"Oracle",       C_ORACLE_DRIVER},
+   {"Generic",      C_GEN_DRIVER},
+   {"Swift",        C_SWIFT_DRIVER},
    {NULL,           0}
 };
 
@@ -310,6 +352,7 @@ s_kw trunc_opts[] = {
    {"No",           TRUNC_NO},
    {"AfterUpload",  TRUNC_AFTER_UPLOAD},
    {"AtEndOfJob",   TRUNC_AT_ENDOFJOB},
+   {"ConfDefault",  TRUNC_CONF_DEFAULT}, /* only use as a parameter */
    {NULL,            0}
 };
 
@@ -338,12 +381,29 @@ void store_truncate(LEX *lc, RES_ITEM *item, int index, int pass)
 }
 
 /*
+ * convert string to truncate option
+ * Return true if option matches one of trunc_opts (case insensitive)
+ *
+ */
+bool find_truncate_option(const char* truncate, uint32_t& truncate_option)
+{
+   for (int i=0; trunc_opts[i].name; i++) {
+      if (strcasecmp(truncate, trunc_opts[i].name) == 0) {
+         truncate_option = trunc_opts[i].token;
+         return true;
+      }
+   }
+   return false;
+}
+
+/*
  * Cloud Upload options
  *
  *   Option         option code = token
  */
 s_kw upload_opts[] = {
-   {"No",            UPLOAD_NO},
+   {"No",        UPLOAD_NO},
+   {"Manual",        UPLOAD_NO}, /*identical and preferable to No, No is kept for backward compatibility */
    {"EachPart",      UPLOAD_EACHPART},
    {"AtEndOfJob",    UPLOAD_AT_ENDOFJOB},
    {NULL,            0}
@@ -443,18 +503,52 @@ void store_uri_style(LEX *lc, RES_ITEM *item, int index, int pass)
    set_bit(index, res_all.hdr.item_present);
 }
 
-
 /*
- * Store Maximum Block Size, and check it is not greater than MAX_BLOCK_SIZE
+ * Store Maximum Block Size, and check it is not greater than MAX_BLOCK_LENGTH
  *
  */
 void store_maxblocksize(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    store_size32(lc, item, index, pass);
-   if (*(uint32_t *)(item->value) > MAX_BLOCK_SIZE) {
+   if (*(uint32_t *)(item->value) > MAX_BLOCK_LENGTH) {
       scan_err2(lc, _("Maximum Block Size configured value %u is greater than allowed maximum: %u"),
-         *(uint32_t *)(item->value), MAX_BLOCK_SIZE );
+         *(uint32_t *)(item->value), MAX_BLOCK_LENGTH );
    }
+}
+
+/*
+ * Cloud Glacier restore priority level
+ *
+ *   Option       option code = token
+ */
+s_kw restore_prio_opts[] = {
+   {"High",       CLOUD_RESTORE_PRIO_HIGH},
+   {"Medium",     CLOUD_RESTORE_PRIO_MEDIUM},
+   {"Low",        CLOUD_RESTORE_PRIO_LOW},
+   {NULL, 0}
+};
+
+/*
+ * Store Cloud restoration priority 
+ */
+void store_transfer_priority(LEX *lc, RES_ITEM *item, int index, int pass)
+{
+   bool found = false;
+
+   lex_get_token(lc, T_NAME);
+   /* Store the label pass 2 so that type is defined */
+   for (int i=0; restore_prio_opts[i].name; i++) {
+      if (strcasecmp(lc->str, restore_prio_opts[i].name) == 0) {
+         *(uint32_t *)(item->value) = restore_prio_opts[i].token;
+         found = true;
+         break;
+      }
+   }
+   if (!found) {
+      scan_err1(lc, _("Expected a Cloud Restore Priority Style option keyword (High, Medium, Low), got: %s"), lc->str);
+   }
+   scan_to_eol(lc);
+   set_bit(index, res_all.hdr.item_present);
 }
 
 /* Dump contents of resource */
@@ -495,6 +589,12 @@ void dump_resource(int type, RES *rres, void sendit(void *sock, const char *fmt,
             sendit(sock, "        SDDaddr=%s SDDport=%d\n",
                    p->get_address(buf, sizeof(buf)), p->get_port_host_order());
          }
+      }
+      if (res->res_store.dedup_dir){
+         sendit(sock, "        Dedup Directory: %s\n", res->res_store.dedup_dir );
+      }
+      if (res->res_store.dedup_index_dir){
+         sendit(sock, "        Dedup Index Directory: %s\n", res->res_store.dedup_index_dir );
       }
       break;
    case R_DEVICE:
@@ -587,6 +687,12 @@ void dump_resource(int type, RES *rres, void sendit(void *sock, const char *fmt,
          res->res_cloud.region,
          res->res_cloud.protocol, res->res_cloud.uri_style);
       break;
+   case R_DEDUP:
+      sendit(sock, "Dedup: name=%s Driver=%d\n"
+         "      DedupDirectory=%s\n",
+         res->res_dedup.hdr.name, res->res_dedup.driver_type,
+         res->res_dedup.dedup_dir);
+      break;
    case R_AUTOCHANGER:
       DEVRES *dev;
       sendit(sock, "Changer: name=%s Changer_devname=%s\n      Changer_cmd=%s\n",
@@ -649,6 +755,9 @@ void free_resource(RES *sres, int type)
       if (res->res_dir.tls_ctx) {
          free_tls_context(res->res_dir.tls_ctx);
       }
+      if (res->res_dir.psk_ctx) {
+         free_psk_context(res->res_dir.psk_ctx);
+      }
       if (res->res_dir.tls_ca_certfile) {
          free(res->res_dir.tls_ca_certfile);
       }
@@ -708,6 +817,9 @@ void free_resource(RES *sres, int type)
       if (res->res_store.tls_ctx) {
          free_tls_context(res->res_store.tls_ctx);
       }
+      if (res->res_store.psk_ctx) {
+         free_psk_context(res->res_store.psk_ctx);
+      }
       if (res->res_store.tls_ca_certfile) {
          free(res->res_store.tls_ca_certfile);
       }
@@ -729,6 +841,12 @@ void free_resource(RES *sres, int type)
       if (res->res_store.verid) {
          free(res->res_store.verid);
       }
+      if (res->res_store.dedup_dir) {
+         free(res->res_store.dedup_dir);
+      }
+      if (res->res_store.dedup_index_dir) {
+         free(res->res_store.dedup_index_dir);
+      }
       break;
    case R_CLOUD:
       if (res->res_cloud.host_name) {
@@ -745,6 +863,35 @@ void free_resource(RES *sres, int type)
       }
       if (res->res_cloud.region) {
          free(res->res_cloud.region);
+      }
+      if (res->res_cloud.blob_endpoint) {
+         free(res->res_cloud.blob_endpoint);
+      }
+      if (res->res_cloud.file_endpoint) {
+         free(res->res_cloud.file_endpoint);
+      }
+      if (res->res_cloud.queue_endpoint) {
+         free(res->res_cloud.queue_endpoint);
+      }
+      if (res->res_cloud.table_endpoint) {
+         free(res->res_cloud.table_endpoint);
+      }
+      if (res->res_cloud.endpoint_suffix) {
+         free(res->res_cloud.endpoint_suffix);
+      }
+      if (res->res_cloud.driver_command) {
+         free(res->res_cloud.driver_command);
+      }
+      break;
+   case R_DEDUP:
+      if (res->res_dedup.dedup_dir) {
+         free(res->res_dedup.dedup_dir);
+      }
+      if (res->res_dedup.dedup_index_dir) {
+         free(res->res_dedup.dedup_index_dir);
+      }
+      if (res->res_dedup.dedup_err_msg) {
+         free(res->res_dedup.dedup_err_msg);
       }
       break;
    case R_DEVICE:
@@ -817,6 +964,41 @@ void free_resource(RES *sres, int type)
    }
 }
 
+/* Get the size of a resource object */
+int get_resource_size(int type)
+{
+   int size = -1;
+   switch (type) {
+      case R_DIRECTOR:
+         size = sizeof(DIRRES);
+         break;
+      case R_STORAGE:
+         size = sizeof(STORES);
+         break;
+      case R_DEVICE:
+         size = sizeof(DEVRES);
+         break;
+      case R_MSGS:
+         size = sizeof(MSGS);
+         break;
+      case R_AUTOCHANGER:
+         size = sizeof(AUTOCHANGER);
+         break;
+      case R_CLOUD:
+         size = sizeof(CLOUD);
+         break;
+      case R_DEDUP:
+         size = sizeof(DEDUPRES);
+         break;
+      case R_COLLECTOR:
+         size = sizeof(COLLECTOR);
+         break;
+      default:
+         break;
+   }
+   return size;
+}
+
 /* Save the new resource by chaining it into the head list for
  * the resource. If this is pass 2, we update any resource
  * or alist pointers.
@@ -858,6 +1040,7 @@ bool save_resource(CONFIG *config, int type, RES_ITEM *items, int pass)
       /* Resources not containing a resource */
       case R_MSGS:
       case R_CLOUD:
+      case R_DEDUP:
          break;
 
       /* Resources containing a resource or an alist */
@@ -904,6 +1087,20 @@ bool save_resource(CONFIG *config, int type, RES_ITEM *items, int pass)
             return false;
          }
          res->res_dev.cloud = res_all.res_dev.cloud;
+#ifdef SD_DEDUP_SUPPORT
+         res->res_dev.dedup = res_all.res_dev.dedup;
+         /* If a dedupengine is required but not defined, look for the
+          * "default_legacy_dedupengine" aka the DDE defined in storage
+          */
+         if (res->res_dev.dev_type == B_DEDUP_DEV && res->res_dev.dedup == NULL) {
+            URES *dedup;
+            if ((dedup = (URES *)GetResWithName(R_DEDUP, default_legacy_dedupengine)) == NULL) {
+               Mmsg(config->m_errmsg,  _("Cannot find dedupengine for device %s\n"), res_all.res_dir.hdr.name);
+               return false;
+            }
+            res->res_dev.dedup = &dedup->res_dedup;
+         }
+#endif
          break;
       case R_COLLECTOR:
          if ((res = (URES *)GetResWithName(R_COLLECTOR, res_all.res_collector.hdr.name)) == NULL) {
@@ -919,7 +1116,6 @@ bool save_resource(CONFIG *config, int type, RES_ITEM *items, int pass)
          break;
       }
 
-
       if (res_all.res_dir.hdr.name) {
          free(res_all.res_dir.hdr.name);
          res_all.res_dir.hdr.name = NULL;
@@ -932,37 +1128,19 @@ bool save_resource(CONFIG *config, int type, RES_ITEM *items, int pass)
    }
 
    /* The following code is only executed on pass 1 */
-   switch (type) {
-      case R_DIRECTOR:
-         size = sizeof(DIRRES);
-         break;
-      case R_STORAGE:
-         size = sizeof(STORES);
-         break;
-      case R_DEVICE:
-         size = sizeof(DEVRES);
-         break;
-      case R_MSGS:
-         size = sizeof(MSGS);
-         break;
-      case R_AUTOCHANGER:
-         size = sizeof(AUTOCHANGER);
-         break;
-      case R_CLOUD:
-         size = sizeof(CLOUD);
-         break;
-      case R_COLLECTOR:
-         size = sizeof(COLLECTOR);
-         break;
-      default:
-         printf(_("Unknown resource type %d\n"), type);
-         error = 1;
-         size = 1;
-         break;
+   size = get_resource_size(type);
+   if (size < 0) {
+      printf(_("Unknown resource type %d\n"), type);
+      error = 1;
    }
    /* Common */
    if (!error) {
       if (!config->insert_res(rindex, size)) {
+         return false;
+      }
+   }
+   if (pass == 1 && type == R_STORAGE) {
+      if (!dedup_check_storage_resource(config)) {
          return false;
       }
    }
