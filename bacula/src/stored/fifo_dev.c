@@ -49,3 +49,4 @@ const char *fifo_dev::print_type()
 {
    return "FIFO";
 }
+
