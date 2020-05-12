@@ -596,7 +596,7 @@ bool release_device(DCR *dcr)
       dev->Unlock();
    }
 
-   dev->end_of_job(dcr);
+   dev->end_of_job(dcr, TRUNC_CONF_DEFAULT);
 
    if (dcr->keep_dcr) {
       dev->detach_dcr_from_dev(dcr);
