@@ -148,6 +148,10 @@ struct ATTR_DBR;
 class Plugin;
 struct save_pkt;
 struct bpContext;
+class HashBlockDict;
+class HashList;
+class DedupFiledInterface;
+class DedupStoredInterfaceBase;
 
 
 #ifdef FILE_DAEMON
@@ -270,8 +274,8 @@ public:
    time_t job_started_time;           /* Time when the MaxRunTime start to count */
    POOLMEM *client_name;              /* client name */
    POOLMEM *JobIds;                   /* User entered string of JobIds */
-   POOLMEM *RestoreBootstrap;         /* Bootstrap file to restore */
    POOLMEM *stime;                    /* start time for incremental/differential */
+   char *RestoreBootstrap;            /* Bootstrap file to restore */
    char *sd_auth_key;                 /* SD auth key */
    MSGS *jcr_msgs;                    /* Copy of message resource -- actually used */
    uint32_t ClientId;                 /* Client associated with Job */
@@ -380,7 +384,7 @@ public:
    POOLMEM *catalog_source;           /* Where catalog came from */
    POOLMEM *next_vol_list;            /* Volumes previously requested */
    rblist  *bsr_list;                 /* Bootstrap that can be needed during restore */
-   int32_t replace;                   /* Replace option */
+   uint32_t replace;                  /* Replace option */
    int32_t NumVols;                   /* Number of Volume used in pool */
    int32_t reschedule_count;          /* Number of times rescheduled */
    int32_t FDVersion;                 /* File daemon version number */
@@ -450,6 +454,12 @@ public:
    uint32_t EndFile;
    uint32_t StartBlock;
    uint32_t EndBlock;
+   int32_t sd_dedup;                  /* set if SD has dedup */
+   int32_t sd_hash;                   /* SD hash type */
+   int32_t sd_hash_size;              /* SD hash size */
+   uint32_t dedup_block_size;         /* Default dedup block size */
+   uint32_t min_dedup_block_size;     /* Minimum desired dedup block size */
+   uint32_t max_dedup_block_size;     /* TODO, above this size send raw data */
    pthread_t heartbeat_id;            /* id of heartbeat thread */
    volatile bool hb_started;          /* heartbeat running */
    BSOCK *hb_bsock;                   /* duped SD socket */
@@ -465,6 +475,8 @@ public:
    uint64_t base_size;                /* compute space saved with base job */
    utime_t snapshot_retention;        /* Snapshot retention (from director) */
    snapshot_manager *snap_mgr;        /* Snapshot manager */
+   DedupFiledInterface *dedup;        /* help the FD to do deduplication */
+   bool dedup_use_cache;              /* use client cache */
    VSSClient *pVSSClient;             /* VSS handler */
 #endif /* FILE_DAEMON */
 
@@ -473,7 +485,8 @@ public:
    /* Storage Daemon specific part of JCR */
    JCR *next_dev;                     /* next JCR attached to device */
    JCR *prev_dev;                     /* previous JCR attached to device */
-   dlist *jobmedia_queue;             /* JobMedia queue */
+   dlist *jobmedia_queue;             /* JobMedia queue ***BEEF*** */
+   dlist *filemedia_queue;            /* FileMedia queue ***BEEF*** */
    char *dir_auth_key;                /* Dir auth key */
    pthread_cond_t job_start_wait;     /* Wait for FD to start Job */
    int32_t type;
@@ -514,6 +527,9 @@ public:
    bool sd_client;                    /* Set if acting as client */
    bool use_new_match_all;            /* TODO: Remove when the match_bsr() will be well tested */
 
+   int32_t fd_dedup;                  /* fdcaps dedup */
+   int32_t fd_rehydration;            /* fdcaps rehydration */
+
    /* Parmaters for Open Read Session */
    BSR *bsr;                          /* Bootstrap record -- has everything */
    bool mount_next_volume;            /* set to cause next volume mount */
@@ -530,6 +546,7 @@ public:
    int32_t wait_sec;
    int32_t rem_wait_sec;
    int32_t num_wait;
+   DedupStoredInterfaceBase *dedup;       /*used by dedup for rehydration, not for backup*/
 #endif /* STORAGE_DAEMON */
 
 };
