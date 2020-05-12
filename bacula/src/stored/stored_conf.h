@@ -52,8 +52,9 @@ enum {
    R_AUTOCHANGER = 3005,
    R_CLOUD       = 3006,
    R_COLLECTOR   = 3007,
+   R_DEDUP       = 3008,
    R_FIRST = R_DIRECTOR,
-   R_LAST  = R_COLLECTOR                  /* keep this updated */
+   R_LAST  = R_DEDUP                  /* keep this updated */
 };
 
 enum {
@@ -70,6 +71,12 @@ enum {
 /*
  * Cloud drivers
  */
+enum {
+   CLOUD_RESTORE_PRIO_HIGH = 0,
+   CLOUD_RESTORE_PRIO_MEDIUM,
+   CLOUD_RESTORE_PRIO_LOW
+};
+
 class CLOUD {
 public:
    RES   hdr;
@@ -92,6 +99,27 @@ public:
    uint32_t max_concurrent_downloads;
    uint64_t upload_limit;
    uint64_t download_limit;
+   char *driver_command;
+   int32_t transfer_priority;
+   utime_t transfer_retention;
+};
+
+/*
+ * Dedup drivers
+ */
+class DedupEngine;
+class DEDUPRES {
+public:
+   RES   hdr;
+   char *dedup_dir;                   /* DEDUP directory */
+   char *dedup_index_dir;             /* Directory for index (db) file */
+   int64_t max_container_size;        /* Maximum container size then split */
+   bool  dedup_check_hash;            /* Check Hash of each chunk after rehydration */
+   int64_t dedup_scrub_max_bandwidth; /* Maximum disk bandwidth usable for scrub */
+   uint32_t driver_type;              /* dedup driver type */
+   DedupEngine *dedupengine;
+   int dedupengine_use_count;
+   char *dedup_err_msg;                     /* is set for any error status */
 };
 
 /*
@@ -106,6 +134,7 @@ public:
    bool monitor;                      /* Have only access to status and .status functions */
    bool tls_authenticate;             /* Authenticate with TLS */
    bool tls_enable;                   /* Enable TLS */
+   bool tls_psk_enable;               /* Enable TLS-PSK */
    bool tls_require;                  /* Require TLS */
    bool tls_verify_peer;              /* TLS Verify Client Certificate */
    char *tls_ca_certfile;             /* TLS CA Certificate File */
@@ -116,6 +145,7 @@ public:
    alist *tls_allowed_cns;            /* TLS Allowed Clients */
 
    TLS_CONTEXT *tls_ctx;              /* Shared TLS Context */
+   TLS_CONTEXT *psk_ctx;              /* Shared TLS-PSK Context */
 };
 
 
@@ -131,14 +161,17 @@ public:
    char *subsys_directory;
    char *plugin_directory;            /* Plugin directory */
    char *scripts_directory;
+   char *ssd_directory;
    uint32_t max_concurrent_jobs;      /* maximum concurrent jobs to run */
    MSGS *messages;                    /* Daemon message handler */
    utime_t ClientConnectTimeout;      /* Max time to wait to connect client */
    utime_t heartbeat_interval;        /* Interval to send hb to FD */
    utime_t client_wait;               /* Time to wait for FD to connect */
    bool comm_compression;             /* Set to allow comm line compression */
+   bool require_fips;                  /* Check for FIPS module */
    bool tls_authenticate;             /* Authenticate with TLS */
    bool tls_enable;                   /* Enable TLS */
+   bool tls_psk_enable;               /* Enable TLS-PSK */
    bool tls_require;                  /* Require TLS */
    bool tls_verify_peer;              /* TLS Verify Client Certificate */
    char *tls_ca_certfile;             /* TLS CA Certificate File */
@@ -149,7 +182,13 @@ public:
    alist *tls_allowed_cns;            /* TLS Allowed Clients */
    char *verid;                       /* Custom Id to print in version command */
    TLS_CONTEXT *tls_ctx;              /* Shared TLS Context */
+   TLS_CONTEXT *psk_ctx;              /* Shared TLS-PSK Context */
 
+   char *dedup_dir;                   /* DEDUP directory */
+   char *dedup_index_dir;             /* Directory for index (db) file */
+   int64_t max_container_size;        /* Maximum container size then split */
+   bool  dedup_check_hash;            /* Check Hash of each chunk after rehydration */
+   int64_t dedup_scrub_max_bandwidth; /* Maximum disk bandwidth usable for scrub */
 };
 typedef class s_res_store STORES;
 
@@ -200,6 +239,7 @@ public:
    int64_t max_volume_files;          /* max files to put on one volume */
    int64_t max_volume_size;           /* max bytes to put on one volume */
    int64_t max_file_size;             /* max file size in bytes */
+   int64_t max_file_index;            /* max file size between two FileMedia in bytes */ /* ***BEEF*** */
    int64_t volume_capacity;           /* advisory capacity */
    int64_t min_free_space;            /* Minimum disk free space */
    int64_t max_spool_size;            /* Max spool size for all jobs */
@@ -212,6 +252,7 @@ public:
    char *write_part_command;          /* Write part command */
    char *free_space_command;          /* Free space command */
    CLOUD *cloud;                      /* pointer to cloud resource */
+   DEDUPRES *dedup;                   /* pointer to dedup resource */
 
    /* The following are set at runtime */
    DEVICE *dev;                       /* Pointer to phyical dev -- set at runtime */
@@ -225,6 +266,10 @@ union URES {
    MSGS        res_msgs;
    AUTOCHANGER res_changer;
    CLOUD       res_cloud;
+   DEDUPRES    res_dedup;
    RES         hdr;
    COLLECTOR   res_collector;
 };
+
+/* Get the size of a give resource */
+int get_resource_size(int type);
