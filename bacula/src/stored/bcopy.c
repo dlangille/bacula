@@ -21,6 +21,7 @@
  *  Program to copy a Bacula from one volume to another.
  *
  *   Kern E. Sibbald, October 2002
+ *
  */
 
 #include "bacula.h"
@@ -67,7 +68,7 @@ PROG_COPYRIGHT
 "       -p                proceed inspite of errors\n"
 "       -v                verbose\n"
 "       -w <dir>          specify working directory (default /tmp)\n"
-"       -?                print this message\n\n"), 2002, "", VERSION, BDATE);
+"       -?                print this message\n\n"), 2002, BDEMO, VERSION, BDATE);
    exit(1);
 }
 
@@ -346,3 +347,4 @@ static void get_session_record(DEVICE *dev, DEV_RECORD *rec, SESSION_LABEL *sess
             rtype, rec->VolSessionId, rec->VolSessionTime, rec->Stream, rec->data_len);
    }
 }
+
