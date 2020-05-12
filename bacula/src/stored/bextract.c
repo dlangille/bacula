@@ -21,6 +21,7 @@
  *  Dumb program to extract files from a Bacula backup.
  *
  *   Kern E. Sibbald, MM
+ *
  */
 
 #include "bacula.h"
@@ -87,7 +88,7 @@ PROG_COPYRIGHT
 "       -t              read data from volume, do not write anything\n"
 "       -v              verbose\n"
 "       -V <volumes>    specify Volume names (separated by |)\n"
-"       -?              print this message\n\n"), 2000, "", VERSION, BDATE);
+"       -?              print this message\n\n"), 2000, BDEMO, VERSION, BDATE);
    exit(1);
 }
 
@@ -280,6 +281,11 @@ static void do_extract(char *devname)
    curr_fname = get_pool_memory(PM_FNAME);
    *curr_fname = 0;
 
+   if (jcr->dedup &&  skip_extract) {
+      /* We want to force the checksum verification for blocks that come from DDE */
+      jcr->dedup->set_checksum_after_rehydration(true);
+   }
+
    read_records(dcr, record_cb, mount_next_read_volume);
    /* If output file is still open, it was the last one in the
     * archive since we just hit an end of file, so close the file.
@@ -335,6 +341,39 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
 
    if (rec->FileIndex < 0) {
       return true;                    /* we don't want labels */
+   }
+
+   /* Do rehydration */
+   if (rec->Stream & STREAM_BIT_DEDUPLICATION_DATA) {
+      if (!jcr->read_dcr->dev->setup_dedup_rehydration_interface(jcr->read_dcr)) {
+         Jmsg0(jcr, M_FATAL, 0, _("Cannot do rehydration, device is not dedup aware\n"));
+         return false;
+      }
+      int size;
+      bool despite_of_error = forge_on;
+      int err = jcr->dedup->record_rehydration(dcr, rec, jcr->dedup->get_msgbuf(), jcr->errmsg, despite_of_error, &size);
+      if (err) {
+         Jmsg(jcr, M_ERROR, 0, _("Got rehydration error at file=%d record=%s fname=%s volsessionid=%d volsessiontime=%d Msg=%s"),
+               num_files, edit_uint64(num_records, ed1), curr_fname, rec->VolSessionId, rec->VolSessionTime, jcr->errmsg);
+         if (err == -1) {
+            /* cannot read data from DDE */
+            Jmsg(jcr, M_FATAL, 0, "%s", jcr->errmsg);
+            return false;
+         } else {
+            jcr->JobStatus = JS_Running; /* We want to continue */
+            num_errors++;
+         }
+      }
+
+      /* Keep old pointers and restore them when at the end,
+       * after this point, we need to use goto bail_out
+       */
+      orgdata = rec->data;
+      orgdata_len = rec->data_len;
+      restoredatap = true;
+
+      rec->data = jcr->dedup->get_msgbuf();
+      rec->data_len = size;
    }
 
    /* In this mode, we do not create any file on disk, just read
@@ -441,7 +480,7 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
    case STREAM_SPARSE_DATA:
    case STREAM_WIN32_DATA:
       if (extract) {
-         if (rec->maskedStream == STREAM_SPARSE_DATA) {
+         if (is_offset_stream(rec->Stream)) {
             ser_declare;
             uint64_t faddr;
             wbuf = rec->data + OFFSET_FADDR_SIZE;
@@ -477,7 +516,7 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
          uLong compress_len = compress_buf_size;
          int stat = Z_BUF_ERROR;
 
-         if (rec->maskedStream == STREAM_SPARSE_DATA) {
+         if (is_offset_stream(rec->Stream)) {
             ser_declare;
             uint64_t faddr;
             char ec1[50];
@@ -542,7 +581,7 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
          int r, real_compress_len;
 #endif
 
-         if (rec->maskedStream == STREAM_SPARSE_DATA) {
+         if (is_offset_stream(rec->Stream)) {
             ser_declare;
             uint64_t faddr;
             char ec1[50];
