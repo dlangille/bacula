@@ -838,6 +838,10 @@ bool DEVICE::bsr(int num)
 void tape_dev::lock_door()
 {
 #ifdef MTLOCK
+   /* ***BEEF ***/
+   if (device->lock_command && device->control_name) {
+      return;    /* Locked using SCSI persistent locks */
+   }
    struct mtop mt_com;
    if (!is_tape()) return;
    mt_com.mt_op = MTLOCK;
@@ -849,6 +853,10 @@ void tape_dev::lock_door()
 void tape_dev::unlock_door()
 {
 #ifdef MTUNLOCK
+   /* ***BEEF ***/
+   if (device->lock_command && device->control_name) {
+      return;    /* Locked using SCSI persistent locks */
+   }
    struct mtop mt_com;
    if (!is_tape()) return;
    mt_com.mt_op = MTUNLOCK;
