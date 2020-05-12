@@ -236,8 +236,23 @@ const char *stream_to_ascii_ex(char *buf, int stream, int fi)
    if (fi < 0) {
       return stream_to_ascii(buf, stream, fi);
    }
+   int ustream = (stream>=0)?stream:-stream;
    const char *p = stream_to_ascii(buf, stream, fi);
-   return p;
+   if (ustream & (STREAM_BIT_DEDUPLICATION_DATA|STREAM_BIT_NO_DEDUPLICATION)) {
+      if (p!=buf) {
+         strcpy(buf, p);
+      }
+      strcat(buf, "-");
+      if (ustream & STREAM_BIT_DEDUPLICATION_DATA) {
+         strcat(buf, "D");
+      }
+      if (ustream & STREAM_BIT_NO_DEDUPLICATION) {
+         strcat(buf, "d");
+      }
+      return buf;
+   } else {
+      return p;
+   }
 }
 /*
  * Return a new record entity
