@@ -1,20 +1,18 @@
 /*
-   Bacula(R) - The Network Backup Solution
+   Bacula® - The Network Backup Solution
 
-   Copyright (C) 2000-2020 Kern Sibbald
+   Copyright (C) 2001-2014 Bacula Systems SA
+   All rights reserved.
 
-   The original author of Bacula is Kern Sibbald, with contributions
-   from many others, a complete list can be found in the file AUTHORS.
+   The main author of Bacula is Kern Sibbald, with contributions from many
+   others, a complete list can be found in the file AUTHORS.
 
-   You may use this file and others of this release according to the
-   license defined in the LICENSE file, which includes the Affero General
-   Public License, v3.0 ("AGPLv3") and some additional permissions and
-   terms pursuant to its AGPLv3 Section 7.
+   Licensees holding a valid Bacula Systems SA license may use this file
+   and others of this release in accordance with the proprietary license
+   agreement provided in the LICENSE file.  Redistribution of any part of
+   this release is not permitted.
 
-   This notice must be preserved when any source code is
-   conveyed and/or propagated.
-
-   Bacula(R) is a registered trademark of Kern Sibbald.
+   Bacula® is a registered trademark of Kern Sibbald.
 */
 /*
  * File types 
@@ -22,6 +20,7 @@
  *     Kern Sibbald MMI
  *
  *  Extracted from findlib/find.h Nov 2010
+ *
  */
 
 #ifndef __BFILEOPTS_H
@@ -62,5 +61,6 @@
 #define FO_DELTA         (1<<28)      /* Delta data -- i.e. all copies returned on restore */
 #define FO_PLUGIN        (1<<29)      /* Plugin data stream -- return to plugin on restore */
 #define FO_OFFSETS       (1<<30)      /* Keep I/O file offsets */
+#define FO_DEDUPLICATION (1ULL<<31)   /* Do deduplication */
 
 #endif /* __BFILEOPTSS_H */
