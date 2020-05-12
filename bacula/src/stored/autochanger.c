@@ -21,6 +21,7 @@
  *  Routines for handling the autochanger.
  *
  *   Written by Kern Sibbald, August MMII
+ *
  */
 
 #include "bacula.h"                   /* pull in global headers */
@@ -51,13 +52,16 @@ bool init_autochangers()
       foreach_alist(device, changer->device) {
          /*
           * If the device does not have a changer name or changer command
-          *   defined, use the one from the Autochanger resource
+          *   defined, used the one from the Autochanger resource
           */
          if (!device->changer_name && changer->changer_name) {
             device->changer_name = bstrdup(changer->changer_name);
          }
          if (!device->changer_command && changer->changer_command) {
             device->changer_command = bstrdup(changer->changer_command);
+         }
+         if (!device->lock_command && changer->lock_command) {
+            device->lock_command = bstrdup(changer->lock_command);
          }
          if (!device->changer_name) {
             Jmsg(NULL, M_ERROR, 0,
@@ -152,7 +156,7 @@ int autoload_device(DCR *dcr, bool writing, BSOCK *dir)
   } else if (!dcr->device->changer_command) {
       /* Suppress info when polling */
       if (!dev->poll) {
-         Jmsg(jcr, M_INFO, 0, _("No \"Changer Command\" for %s. Manual load of Volume may be requird.\n"),
+         Jmsg(jcr, M_INFO, 0, _("No \"Changer Command\" for %s. Manual load of Volume may be required.\n"),
               dev->print_name());
       }
       rtn_stat = 0;
