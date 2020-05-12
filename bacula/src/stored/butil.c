@@ -26,6 +26,7 @@
  *  Normally nothing in this file is called by the Storage
  *    daemon because we interact more directly with the user
  *    i.e. printf, ...
+ *
  */
 
 #include "bacula.h"
@@ -193,6 +194,10 @@ static DCR *setup_to_access_device(JCR *jcr, char *dev_name,
          return NULL;
       }
       jcr->read_dcr = dcr;
+      if (read_dedup_data) {
+         Dmsg0(DT_DEDUP|215, "Initialize dedup interface\n");
+         jcr->read_dcr->dev->setup_dedup_rehydration_interface(jcr->read_dcr);
+      }
    } else {
       if (!first_open_device(dcr)) {
          Jmsg1(jcr, M_FATAL, 0, _("Cannot open %s\n"), dev->print_name());
