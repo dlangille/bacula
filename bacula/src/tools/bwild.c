@@ -108,7 +108,7 @@ int main(int argc, char *const *argv)
       if (pat[0] == 0) {
          exit(0);
       }
-      fd = fopen(fname, "r");
+      fd = bfopen(fname, "r");
       if (!fd) {
          printf(_("Could not open data file: %s\n"), fname);
          exit(1);
