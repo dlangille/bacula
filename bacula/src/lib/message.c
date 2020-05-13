@@ -1535,6 +1535,7 @@ Jmsg(JCR *jcr, int type, utime_t mtime, const char *fmt,...)
           /* Dequeue messages to keep the original order  */
           dequeue_messages(jcr);
        }
+       JobId = jcr->JobId;
     }
 
     msgs = get_current_MSGS(jcr);
