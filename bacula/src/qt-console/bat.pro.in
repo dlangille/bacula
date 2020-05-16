@@ -8,9 +8,9 @@
 #
 CONFIG += qt debug @QWT@
 
-
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
+datarootdir = @datarootdir@
 bins.path = /$(DESTDIR)@sbindir@
 bins.files = bat
 confs.path = /$(DESTDIR)@sysconfdir@
@@ -18,7 +18,6 @@ confs.commands = ./install_conf_file
 help.path = /$(DESTDIR)@docdir@
 help.files = help/*.html images/status.png images/mail-message-new.png
 
-datarootdir  = @datarootdir@
 TEMPLATE     = app
 TARGET       = bat
 DEPENDPATH  += .
@@ -71,6 +70,15 @@ qwt {
 # Main directory
 HEADERS += mainwin.h bat.h bat_conf.h qstd.h pages.h
 SOURCES += main.cpp bat_conf.cpp mainwin.cpp qstd.cpp pages.cpp
+
+# include authenticatebase.cpp that is already in libbac because
+# libbac is compiled with -no-rtti while qt-console use RTTI by
+# default. Inherited sub-class with virtual method in shared lib 
+# using a diffferent RTTI model dont work well, see this error a
+# link time: "... DirCommAuthenticate ... undefined reference to
+# typeinfo for AuthenticateBase"
+HEADERS += ../lib/authenticatebase.h
+SOURCES += ../lib/authenticatebase.cc
 
 # bcomm
 HEADERS += bcomm/dircomm.h
