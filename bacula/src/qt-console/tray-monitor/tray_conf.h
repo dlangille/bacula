@@ -86,17 +86,20 @@ class worker;
 struct RESMON {
    RES      hdr;                   /* Keep First */
    uint32_t type;                  /* Keep 2nd R_CLIENT, R_DIRECTOR, R_STORAGE */
+   rescode  code;                  /* R_CLIENT, R_DIRECTOR, R_STORAGE */
+   bool     managed;               /* Managed (started, destroyed, etc...) by the Tray Monitor */
 
    uint32_t port;                  /* UA server port */
    char    *address;               /* UA server address */
    utime_t  connect_timeout;       /* timeout for connect in seconds */
    char    *password;
-   
+
    bool  use_remote;                /* Use Client Initiated backup feature */
    bool  use_monitor;               /* update the status icon with this resource */
    bool  use_setip;                 /* Send setip command before a job */
 
    bool  tls_enable;               /* Enable TLS on all connections */
+   bool  tls_psk_enable;           /* Enable TLS-PSK on all connections */
    char *tls_ca_certfile;          /* TLS CA Certificate File */
    char *tls_ca_certdir;           /* TLS CA Certificate Directory */
    char *tls_certfile;             /* TLS Client Certificate File */
@@ -104,6 +107,7 @@ struct RESMON {
 
    /* ------------------------------------------------------------ */
    TLS_CONTEXT *tls_ctx;           /* Shared TLS Context */
+   TLS_CONTEXT *psk_ctx;           /* Shared TLS-PSK Context */
    worker *wrk;                    /* worker that will handle async op */
 
    QMutex *mutex;
