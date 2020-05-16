@@ -76,6 +76,7 @@ static RES_ITEM dir_items[] = {
    {"password",    store_password, ITEM(dir_res.password), 0, 0, 0},
    {"tlsauthenticate",store_bool,    ITEM(dir_res.tls_authenticate), 0, 0, 0},
    {"tlsenable",      store_bool,    ITEM(dir_res.tls_enable), 0, 0, 0},
+   {"tlspskenable",   store_bool,    ITEM(dir_res.tls_psk_enable), 0, ITEM_DEFAULT, true},
    {"tlsrequire",     store_bool,    ITEM(dir_res.tls_require), 0, 0, 0},
    {"tlscacertificatefile", store_dir, ITEM(dir_res.tls_ca_certfile), 0, 0, 0},
    {"tlscacertificatedir", store_dir,  ITEM(dir_res.tls_ca_certdir), 0, 0, 0},
@@ -91,6 +92,7 @@ static RES_ITEM con_items[] = {
    {"password",    store_password, ITEM(con_res.password), 0, ITEM_REQUIRED, 0},
    {"tlsauthenticate",store_bool,    ITEM(con_res.tls_authenticate), 0, 0, 0},
    {"tlsenable",      store_bool,    ITEM(con_res.tls_enable), 0, 0, 0},
+   {"tlspskenable",   store_bool,    ITEM(con_res.tls_psk_enable), 0, ITEM_DEFAULT, true},
    {"tlsrequire",     store_bool,    ITEM(con_res.tls_require), 0, 0, 0},
    {"tlscacertificatefile", store_dir, ITEM(con_res.tls_ca_certfile), 0, 0, 0},
    {"tlscacertificatedir", store_dir,  ITEM(con_res.tls_ca_certdir), 0, 0, 0},
@@ -190,6 +192,9 @@ void free_resource(RES *sres, int type)
       if (res->dir_res.tls_ctx) { 
          free_tls_context(res->dir_res.tls_ctx);
       }
+      if (res->dir_res.psk_ctx) {
+         free_psk_context(res->dir_res.psk_ctx);
+      }
       if (res->dir_res.tls_ca_certfile) {
          free(res->dir_res.tls_ca_certfile);
       }
@@ -209,6 +214,9 @@ void free_resource(RES *sres, int type)
       }
       if (res->con_res.tls_ctx) { 
          free_tls_context(res->con_res.tls_ctx);
+      }
+      if (res->con_res.psk_ctx) {
+         free_psk_context(res->con_res.psk_ctx);
       }
       if (res->con_res.tls_ca_certfile) {
          free(res->con_res.tls_ca_certfile);
