@@ -25,6 +25,10 @@
 #include <QStandardItemModel>
 #include "tray_conf.h"
 
+#ifdef Q_OS_ANDROID
+#include "config-storage.h"
+#endif
+
 enum {
    TASK_NONE,
    TASK_STATUS,
@@ -74,6 +78,7 @@ public:
        QString dirIds;
        QString hardlinks;
        QString client;
+       QString restoreclient;
        QString where;
        QString replace;
        QString comment;
