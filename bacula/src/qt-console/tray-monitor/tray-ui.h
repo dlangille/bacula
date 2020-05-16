@@ -50,6 +50,9 @@
 #include "conf.h"
 #include "runjob.h"
 #include "restorewizard.h"
+#include "desktop-gui/cdp-main-ui.h"
+#include "backupservice.h"
+#include "cdp.h"
 
 void display_error(const char *fmt, ...);
 
@@ -70,6 +73,12 @@ public:
     bool    have_systray;
     RestoreWizard *restorewiz;
 
+    POOLMEM *spool_dir;
+    POOLMEM *journal_path;
+    Journal *journal;
+    BackupService *bservice;
+    CdpUi *cdpUi;
+
     TrayUI():
     QMainWindow(),
        tabWidget(NULL),
@@ -84,6 +93,7 @@ public:
 
     ~TrayUI() {
     }
+
     void addTab(RESMON *r)
     {
        QWidget *tab;
@@ -104,6 +114,9 @@ public:
           if (!r->tls_ctx) {
              display_error(_("Failed to initialize TLS context for \"%s\".\n"), r->hdr.name);
           }
+       }
+       if (r->tls_psk_enable) {
+          r->psk_ctx = new_psk_context(NULL /*r->password*/);
        }
        switch(r->type) {
        case R_CLIENT:
@@ -147,12 +160,13 @@ public:
         timer = NULL;
         if (TrayMonitor->objectName().isEmpty())
             TrayMonitor->setObjectName(QString::fromUtf8("TrayMonitor"));
-        TrayMonitor->setWindowIcon(QIcon(":/images/cartridge1.png")); 
+        TrayMonitor->setWindowIcon(QIcon(":/images/tray-monitor-logo.png")); 
         TrayMonitor->resize(789, 595);
         centralwidget = new QWidget(TrayMonitor);
         centralwidget->setObjectName(QString::fromUtf8("centralwidget"));
         QVBoxLayout *verticalLayout = new QVBoxLayout(centralwidget);
         verticalLayout->setObjectName(QString::fromUtf8("verticalLayout"));
+
         tabWidget = new QTabWidget(centralwidget);
         tabWidget->setObjectName(QString::fromUtf8("tabWidget"));
         tabWidget->setTabPosition(QTabWidget::North);
@@ -209,6 +223,8 @@ public:
                                "Run...", 0),TrayMonitor);
         QAction* actRes = new QAction(QApplication::translate("TrayMonitor",
                               "Restore...", 0),TrayMonitor);
+        QAction* actCDP = new QAction(QApplication::translate("TrayMonitor",
+                               "Watch...", 0),TrayMonitor);
 
         QAction* actConf = new QAction(QApplication::translate("TrayMonitor",
                                "Configure...", 0),TrayMonitor);
@@ -226,8 +242,11 @@ public:
                                "Run...",
                                 0, QApplication::UnicodeUTF8),TrayMonitor);
         QAction* actRes = new QAction(QApplication::translate("TrayMonitor",
-                              "Restore...",
-                               0, QApplication::UnicodeUTF8),TrayMonitor);
+                               "Restore...",
+                                0, QApplication::UnicodeUTF8),TrayMonitor);
+        QAction* actCDP = new QAction(QApplication::translate("TrayMonitor",
+                               "Watch...",
+                                0, QApplication::UnicodeUTF8),TrayMonitor);
 
         QAction* actConf = new QAction(QApplication::translate("TrayMonitor",
                                "Configure...",
@@ -236,6 +255,7 @@ public:
         stmenu->addAction(actShow);
         stmenu->addAction(actRun);
         stmenu->addAction(actRes);
+        stmenu->addAction(actCDP);
         stmenu->addSeparator();
         stmenu->addAction(actConf);
         stmenu->addSeparator();
@@ -247,6 +267,7 @@ public:
         connect(actShow, SIGNAL(triggered()), this, SLOT(cb_show()));
         connect(actConf, SIGNAL(triggered()), this, SLOT(cb_conf()));
         connect(actRes, SIGNAL(triggered()), this, SLOT(cb_restore()));
+        connect(actCDP, SIGNAL(triggered()), this, SLOT(cb_cdp()));
         connect(actQuit, SIGNAL(triggered()), this, SLOT(cb_quit()));
         connect(actAbout, SIGNAL(triggered()), this, SLOT(cb_about()));
         connect(spinRefresh, SIGNAL(valueChanged(int)), this, SLOT(cb_refresh(int)));
@@ -254,7 +275,7 @@ public:
                 this, SLOT(cb_trayIconActivated(QSystemTrayIcon::ActivationReason)));
         tray->setContextMenu(stmenu);
 
-        QIcon icon(":/images/cartridge1.png");
+        QIcon icon(":/images/tray-monitor-logo.png");
         tray->setIcon(icon);
         tray->setToolTip(QString("Bacula Tray Monitor"));
         tray->show();
@@ -268,6 +289,15 @@ public:
            menubp->setMenu(stmenu);
            TrayMonitor->show();
         }
+
+        spool_dir = CDP::spoolDir();
+        mkdir(spool_dir, 0750);
+        journal_path = CDP::journalPath(JOURNAL_CLI_FNAME);
+        journal = new Journal();
+        bservice = new BackupService();
+        journal->setJournalPath(journal_path, spool_dir);
+        bservice->start(spool_dir, journal);
+        cdpUi = new CdpUi(bservice);
     } // setupUi
 
     void retranslateUi(QMainWindow *TrayMonitor)
@@ -294,8 +324,7 @@ private slots:
     void cb_about() {
        QMessageBox::about(this, "Bacula Tray Monitor", "Bacula Tray Monitor\n"
                           "For more information, see: www.bacula.org\n"
-                          "Copyright (C) 2000-2018, Kern Sibbald\n"
-                          "License: AGPLv3");
+                          "Copyright (C) 1999-2020, AGPLv3 Kern Sibbald.\n");
     }
     RESMON *get_director() {
        QStringList dirs;
@@ -354,6 +383,11 @@ private slots:
        t->init(dir, TASK_RESOURCES);
        dir->wrk->queue(t);
     }
+
+    void cb_cdp() {
+        cdpUi->show();
+    }
+
     void refresh_item() {
        /* Probably do only the first one */
        int oldnbjobs = 0;
