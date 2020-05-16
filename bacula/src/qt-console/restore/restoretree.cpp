@@ -70,7 +70,6 @@ restoreTree::restoreTree() : Pages()
    daysCheckBox->setCheckState(mainWin->m_daysLimitCheck ? Qt::Checked : Qt::Unchecked);
    daysSpinBox->setValue(mainWin->m_daysLimitVal);
    readSettings();
-   m_nullFileNameId = -1;
    dockPage();
    setCurrent();
 }
@@ -196,34 +195,12 @@ void restoreTree::populateDirectoryTree()
    if (mainWin->m_rtPopDirDebug) Pmsg0(000, "Repopulating from checks in Job Table\n");
 
    if (m_checkedJobs != "") {
-      /* First get the filenameid of where the nae is null.  These will be the directories
-       * This could be done in a subquery but postgres's query analyzer won't do the right
-       * thing like I want */
-      if (m_nullFileNameId == -1) {
-         QString cmd = "SELECT FilenameId FROM Filename WHERE name=''";
-         if (mainWin->m_sqlDebug)
-            Pmsg1(000, "Query cmd : %s\n", cmd.toUtf8().data());
-         QStringList qres;
-         if (m_console->sql_cmd(cmd, qres)) {
-            if (qres.count()) {
-               QStringList fieldlist = qres[0].split("\t");
-               QString field = fieldlist[0];
-               bool ok;
-               int val = field.toInt(&ok, 10);
-               if (ok) m_nullFileNameId = val;
-            }
-         }
-      }
       /* now create the query to get the list of paths */
       QString cmd =
          "SELECT DISTINCT Path.Path AS Path, File.PathId AS PathId"
          " FROM File"
-         " INNER JOIN Path ON (File.PathId=Path.PathId)";
-      if (m_nullFileNameId != -1)
-         cmd += " WHERE File.FilenameId=" + QString("%1").arg(m_nullFileNameId);
-      else
-         cmd += " WHERE File.FilenameId IN (SELECT FilenameId FROM Filename WHERE Name='')";
-      cmd += " AND File.Jobid IN (" + m_checkedJobs + ")";
+         " INNER JOIN Path ON (File.PathId=Path.PathId)"
+         " WHERE File.Filename='' AND File.Jobid IN (" + m_checkedJobs + ")";
       if (mainWin->m_sqlDebug)
          Pmsg1(000, "Query cmd : %s\n", cmd.toUtf8().data());
       prBar1->setValue(ontask++);
@@ -422,13 +399,12 @@ void restoreTree::directoryCurrentItemChanged(QTreeWidgetItem *item, QTreeWidget
    int pathid = m_directoryPathIdHash.value(directory, -1);
    if (pathid != -1) {
       QString cmd =
-         "SELECT DISTINCT Filename.Name AS FileName, Filename.FilenameId AS FilenameId"
+         "SELECT DISTINCT File.Filename AS FileName, File.FileId AS FilenameId"
          " FROM File "
-         " INNER JOIN Filename on (Filename.FilenameId=File.FilenameId)"
          " WHERE File.PathId=" + QString("%1").arg(pathid) +
          " AND File.Jobid IN (" + m_checkedJobs + ")"
-         " AND Filename.Name!=''"
-         " ORDER BY FileName";
+         " AND File.Filename!=''"
+         " ORDER BY File.FileName";
       if (mainWin->m_sqlDebug) Pmsg1(000, "Query cmd : %s\n", cmd.toUtf8().data());
 
       QStringList results;
@@ -465,6 +441,7 @@ void restoreTree::directoryCurrentItemChanged(QTreeWidgetItem *item, QTreeWidget
                   Qt::ItemFlags flag = Qt::ItemIsEnabled;
                   tableItem->setFlags(flag);
                   bool ok;
+                  // We use FileId instead of the old FilenameId
                   int filenameid = field.toInt(&ok, 10);
                   if (!ok) filenameid = -1;
                   tableItem->setData(Qt::UserRole, QVariant(filenameid));
@@ -526,12 +503,11 @@ void restoreTree::fileCurrentItemChanged(QTableWidgetItem *currentFileTableItem,
            " File.FileId AS FileId, Job.Type AS JobType,"
            " (SELECT Media.VolumeName FROM JobMedia JOIN Media ON JobMedia.MediaId=Media.MediaId WHERE JobMedia.JobId=Job.JobId ORDER BY JobMediaId LIMIT 1) AS FirstVolume"
          " FROM File"
-         " INNER JOIN Filename on (Filename.FilenameId=File.FilenameId)"
          " INNER JOIN Path ON (Path.PathId=File.PathId)"
          " INNER JOIN Job ON (File.JobId=Job.JobId)"
          " WHERE Path.PathId=" + QString("%1").arg(pathid) +
          //" AND Filename.Name='" + file + "'"
-         " AND Filename.FilenameId=" + QString("%1").arg(fileNameId) +
+         " AND File.Filename = (SELECT Filename FROM File AS F1 WHERE FileId = " + QString("%1").arg(fileNameId) + ") " +
          " AND Job.Jobid IN (" + m_checkedJobs + ")"
          " ORDER BY Job.EndTime DESC";
    
@@ -1466,19 +1442,17 @@ void restoreTree::restoreButtonPushed()
          /* With a checked directory, query for the files in the directory */
    
          QString cmd =
-            "SELECT Filename.Name AS Filename, t1.JobId AS JobId, File.FileIndex AS FileIndex"
+            "SELECT File.Filename AS Filename, t1.JobId AS JobId, File.FileIndex AS FileIndex"
             " FROM"
-            " ( SELECT File.FilenameId AS FilenameId, MAX(Job.JobId) AS JobId"
+            " ( SELECT File.Filename AS Filename, MAX(Job.JobId) AS JobId"
               " FROM File"
               " INNER JOIN Job ON (Job.JobId=File.JobId)"
               " WHERE File.PathId=" + QString("%1").arg(pathid) +
               " AND Job.Jobid IN (" + m_checkedJobs + ")"
-              " GROUP BY File.FilenameId"
+              " GROUP BY File.Filename"
             ") t1, File "
-              " INNER JOIN Filename on (Filename.FilenameId=File.FilenameId)"
               " INNER JOIN Job ON (Job.JobId=File.JobId)"
               " WHERE File.PathId=" + QString("%1").arg(pathid) +
-              " AND File.FilenameId=t1.FilenameId"
               " AND Job.Jobid=t1.JobId"
             " ORDER BY Filename";
    
@@ -1670,13 +1644,11 @@ int restoreTree::mostRecentVersionfromFullPath(QString &fullPath)
          QString cmd =
             "SELECT MAX(Job.JobId)"
             " FROM File "
-            " INNER JOIN Filename on (Filename.FilenameId=File.FilenameId)"
             " INNER JOIN Job ON (File.JobId=Job.JobId)"
             " WHERE File.PathId=" + QString("%1").arg(pathid) +
             " AND Job.Jobid IN (" + m_checkedJobs + ")"
-            " AND Filename.Name='" + fileName + "'"
-            " AND File.FilenameId!=" + QString("%1").arg(m_nullFileNameId) +
-            " GROUP BY Filename.Name";
+            " AND File.Filename='" + fileName + "'"
+            " GROUP BY File.Filename";
     
          if (mainWin->m_sqlDebug) Pmsg1(000, "Query cmd : %s\n", cmd.toUtf8().data());
          QStringList results;
@@ -1725,10 +1697,9 @@ int restoreTree::queryFileIndex(QString &fullPath, int jobId)
             "SELECT"
              " File.FileIndex"
             " FROM File"
-             " INNER JOIN Filename on (Filename.FilenameId=File.FilenameId)"
              " INNER JOIN Job ON (File.JobId=Job.JobId)"
             " WHERE File.PathId=" + QString("%1").arg(pathid) +
-             " AND Filename.Name='" + fileName + "'"
+             " AND File.Filename='" + fileName + "'"
              " AND Job.Jobid='" + QString("%1").arg(jobId) + "'"
             " GROUP BY File.FileIndex";
          if (mainWin->m_sqlDebug) Pmsg1(000, "Query cmd : %s\n", cmd.toUtf8().data());
