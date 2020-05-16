@@ -100,6 +100,8 @@ bool RestoreOptionsWizardPage::validatePage()
     t->restore_field.hardlinks = field("hardlinks").toString();
     int idx = field("currentClient").toInt();
     t->restore_field.client = QString((char*)res->clients->get(idx));
+    idx = field("restoreClient").toInt();
+    t->restore_field.restoreclient = QString((char*)res->clients->get(idx));
     t->restore_field.where = field("restoreWhere").toString();
     t->restore_field.replace = ui->replaceComboBox->currentText();
     t->restore_field.comment = field("restoreComment").toString();
