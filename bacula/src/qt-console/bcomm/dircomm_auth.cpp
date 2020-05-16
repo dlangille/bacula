@@ -16,6 +16,7 @@
 
    Bacula(R) is a registered trademark of Kern Sibbald.
 */
+
 /*
  *
  *   Bacula UA authentication. Provides authentication with
@@ -37,30 +38,72 @@
 
 
 /* Commands sent to Director */
-static char hello[]    = "Hello %s calling %d\n";
+static char hello[]    = "Hello %s calling %d tlspsk=%d\n";
 
 /* Response from Director */
 static char oldOKhello[]   = "1000 OK:";
 static char newOKhello[]   = "1000 OK: %d";
 static char FDOKhello[]   = "2000 OK Hello %d";
+class AuthenticateBase;
 
-/* Forward referenced functions */
 
-/*
- * Authenticate Director
- */
-bool DirComm::authenticate_director(JCR *jcr, DIRRES *director, CONRES *cons, 
-                char *errmsg, int errmsg_len) 
+class DirCommAuthenticate: public AuthenticateBase
 {
-   BSOCK *dir = jcr->dir_bsock;
-   int tls_local_need = BNET_TLS_NONE;
-   int tls_remote_need = BNET_TLS_NONE;
+   char *errmsg;
+   int errmsg_len;
+
+public:
+   DirCommAuthenticate(BSOCK *bsock, char *a_errmsg, int a_errmsg_len);
+   ~DirCommAuthenticate();
+   virtual void TLSFailure();
+   virtual bool CheckTLSRequirement();
+   bool authenticate_director(DIRRES *director, CONRES *cons, bool dump_ok);
+};
+
+DirCommAuthenticate::DirCommAuthenticate(BSOCK *bsock, char *a_errmsg, int a_errmsg_len):
+AuthenticateBase(NULL, bsock, dtCli, dcCON, dcDIR),
+errmsg(a_errmsg),
+errmsg_len(a_errmsg_len)
+{
+}
+
+DirCommAuthenticate::~DirCommAuthenticate()
+{
+};
+
+void DirCommAuthenticate::TLSFailure()
+{
+   bsnprintf(errmsg, errmsg_len,
+      _("TLS negotiation failed with Director at \"%s:%d\"\n"),
+      bsock->host(), bsock->port());
+}
+
+bool DirCommAuthenticate::CheckTLSRequirement()
+{
+   /* Verify that the connection is willing to meet our TLS requirements */
+   switch (TestTLSRequirement()) {
+   case TLS_REQ_ERR_LOCAL:
+     bsnprintf(errmsg, errmsg_len, _("Authorization problem with Director at \"%s:%d\":"
+                     " Remote server requires TLS.\n"),
+            bsock->host(), bsock->port());
+     return false;
+
+   case TLS_REQ_ERR_REMOTE:
+      bsnprintf(errmsg, errmsg_len, _("Authorization problem:"
+             " Remote server at \"%s:%d\" did not advertise required TLS support.\n"),
+             bsock->host(), bsock->port());
+      return false;
+   case TLS_REQ_OK:
+      break;
+   }
+   return true;
+}
+
+bool DirCommAuthenticate::authenticate_director(DIRRES *director, CONRES *cons, bool dump_ok)
+{
+   BSOCK *dir = bsock;
    int dir_version = 0;
-   bool tls_authenticate;
-   int compatible = true;
    char bashed_name[MAX_NAME_LENGTH];
-   char *password;
-   TLS_CONTEXT *tls_ctx = NULL;
 
    errmsg[0] = 0;
    /*
@@ -69,77 +112,27 @@ bool DirComm::authenticate_director(JCR *jcr, DIRRES *director, CONRES *cons,
    if (cons) {
       bstrncpy(bashed_name, cons->hdr.name, sizeof(bashed_name));
       bash_spaces(bashed_name);
-      password = cons->password;
-      /* TLS Requirement */
-      if (cons->tls_enable) {
-         if (cons->tls_require) {
-            tls_local_need = BNET_TLS_REQUIRED;
-         } else {
-            tls_local_need = BNET_TLS_OK;
-         }
-      }
-      tls_authenticate = cons->tls_authenticate;
-      tls_ctx = cons->tls_ctx;
+      CalcLocalTLSNeedFromRes(cons->tls_enable, cons->tls_require,
+                  cons->tls_authenticate, false, NULL, cons->tls_ctx,
+                  cons->tls_psk_enable, cons->psk_ctx, cons->password);
+
    } else {
       bstrncpy(bashed_name, "*UserAgent*", sizeof(bashed_name));
-      password = director->password;
-      /* TLS Requirement */
-      if (director->tls_enable) {
-         if (director->tls_require) {
-            tls_local_need = BNET_TLS_REQUIRED;
-         } else {
-            tls_local_need = BNET_TLS_OK;
-         }
-      }
-
-      tls_authenticate = director->tls_authenticate;
-      tls_ctx = director->tls_ctx;
-   }
-   if (tls_authenticate) {
-      tls_local_need = BNET_TLS_REQUIRED;
+      CalcLocalTLSNeedFromRes(director->tls_enable, director->tls_require,
+            director->tls_authenticate, false, NULL, director->tls_ctx,
+            director->tls_psk_enable, director->psk_ctx, director->password);
    }
 
    /* Timeout Hello after 15 secs */
-   dir->start_timer(15);
-   dir->fsend(hello, bashed_name, BAT_VERSION);
+   StartAuthTimeout(15);
+   dir->fsend(hello, bashed_name, BAT_VERSION, tlspsk_local_need);
 
-   /* respond to Dir challenge */
-   if (!cram_md5_respond(dir, password, &tls_remote_need, &compatible) ||
-       /* Now challenge dir */
-       !cram_md5_challenge(dir, password, tls_local_need, compatible)) {
-      bsnprintf(errmsg, errmsg_len, _("Director authorization problem at \"%s:%d\"\n"),
-         dir->host(), dir->port());
+   if (!ClientCramMD5Authenticate(password)) {
       goto bail_out;
    }
 
-   /* Verify that the remote host is willing to meet our TLS requirements */
-   if (tls_remote_need < tls_local_need && tls_local_need != BNET_TLS_OK && tls_remote_need != BNET_TLS_OK) {
-      bsnprintf(errmsg, errmsg_len, _("Authorization problem:"
-             " Remote server at \"%s:%d\" did not advertise required TLS support.\n"),
-             dir->host(), dir->port());
-      goto bail_out;
-   }
-
-   /* Verify that we are willing to meet the remote host's requirements */
-   if (tls_remote_need > tls_local_need && tls_local_need != BNET_TLS_OK && tls_remote_need != BNET_TLS_OK) {
-      bsnprintf(errmsg, errmsg_len, _("Authorization problem with Director at \"%s:%d\":"
-                     " Remote server requires TLS.\n"),
-                     dir->host(), dir->port());
-
-      goto bail_out;
-   }
-
-   /* Is TLS Enabled? */
-   if (tls_local_need >= BNET_TLS_OK && tls_remote_need >= BNET_TLS_OK) {
-      /* Engage TLS! Full Speed Ahead! */
-      if (!bnet_tls_client(tls_ctx, dir, NULL)) {
-         bsnprintf(errmsg, errmsg_len, _("TLS negotiation failed with Director at \"%s:%d\"\n"),
-            dir->host(), dir->port());
-         goto bail_out;
-      }
-      if (tls_authenticate) {               /* authenticate only? */
-         dir->free_tls();                   /* Yes, shutdown tls */
-      }
+   if (!HandleTLS()) {
+      return false;
    }
 
    Dmsg1(6, ">dird: %s", dir->msg);
@@ -151,7 +144,6 @@ bool DirComm::authenticate_director(JCR *jcr, DIRRES *director, CONRES *cons,
       return false;
    }
 
-   dir->stop_timer();
    Dmsg1(10, "<dird: %s", dir->msg);
    if (strncmp(dir->msg, oldOKhello, sizeof(oldOKhello)-1) == 0) {
       /* If Dir version exists, get it */
@@ -166,19 +158,18 @@ bool DirComm::authenticate_director(JCR *jcr, DIRRES *director, CONRES *cons,
                 dir->host(), dir->port());
       return false;
    }
-   
+
    /* Turn on compression for newer Directors */
    if (dir_version >= 1 && (!cons || cons->comm_compression)) {
       dir->set_compress();
    }
 
-   if (m_conn == 0) { 
+   if (dump_ok) {
       bsnprintf(errmsg, errmsg_len, "%s", dir->msg);
    }
    return true;
 
 bail_out:
-   dir->stop_timer();
    bsnprintf(errmsg, errmsg_len, _("Authorization problem with Director at \"%s:%d\"\n"
              "Most likely the passwords do not agree.\n"
              "If you are using TLS, there may have been a certificate validation error during the TLS handshake.\n"
@@ -186,3 +177,14 @@ bail_out:
              dir->host(), dir->port());
    return false;
 }
+
+/*
+ * Authenticate Director
+ */
+bool DirComm::authenticate_director(JCR *jcr, DIRRES *director, CONRES *cons,
+                                    char *errmsg, int errmsg_len)
+{
+   DirCommAuthenticate auth(jcr->dir_bsock, errmsg, errmsg_len);
+   return auth.authenticate_director(director, cons, m_conn == 0);
+}
+
