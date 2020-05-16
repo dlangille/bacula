@@ -3,9 +3,46 @@
 #  Used to build the Win32/Win64 version of bat
 #
 #
-# Copyright (C) 2000-2018 Kern Sibbald
+# Copyright (C) 2000-2020 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
+
+
+prepare_regw_build()
+{
+    local version=$1
+    local dpkgs_mingw
+    if test -d ../win32/release${version}; then
+      if [ ${version} -eq 32 ]
+      then
+        depkgs_mingw='depkgs-mingw32'
+
+      elif [ ${version} -eq 64 ]
+      then
+        depkgs_mingw='depkgs-mingw-w64'
+      else
+        echo "wrong version - '${version}'."
+        exit 1
+      fi
+
+      cd RegistrationWizard
+      qmake -spec $PWD/../win32 -unix -o Makefile.mingw${version} "CONFIG += mingw${version}" RegistrationWizard.pro
+
+      # Don't know why this libGL is added
+      sed -i s/-lGL// Makefile.mingw${version}
+      # Linux headers are also added automatically
+      perl -plne  "s:-I/usr/[^ ]+::g" Makefile.mingw${version} > 1
+      perl -plne  "s:-L/usr/[^ ]+::g" 1 > Makefile.mingw${version}
+
+      echo "Make Windows RegistrationWizard"
+      make -j3 -f Makefile.mingw${version} $2
+      if test -f RegistrationWizard.exe; then
+          cp -f RegistrationWizard.exe ../../win32/release${version}
+      fi
+      rm -f RegistrationWizard.exe
+    fi
+    cd ..
+}
 
 prepare_bat_build ()
 {
@@ -26,22 +63,40 @@ prepare_bat_build ()
         exit 1
       fi
 
-      cp -f ${DEPKGS}/${depkgs_mingw}/lib/qt/QtGui4.dll ../win32/release${version}
-      cp -f ${DEPKGS}/${depkgs_mingw}/lib/qt/QtCore4.dll ../win32/release${version}
+      cp -f ${DEPKGS}/${depkgs_mingw}/bin/Qt5Gui.dll ../win32/release${version}
+      cp -f ${DEPKGS}/${depkgs_mingw}/bin/Qt5Core.dll ../win32/release${version}
+      cp -f ${DEPKGS}/${depkgs_mingw}/bin/Qt5Network.dll ../win32/release${version}
+      cp -f ${DEPKGS}/${depkgs_mingw}/bin/Qt5Widgets.dll ../win32/release${version}
+      cp -f ${DEPKGS}/${depkgs_mingw}/lib/libQt5Gui.a ../win32/release${version}
+      cp -f ${DEPKGS}/${depkgs_mingw}/lib/libQt5Core.a ../win32/release${version}
+      cp -f ${DEPKGS}/${depkgs_mingw}/lib/libQt5Network.a ../win32/release${version}
+      cp -f ${DEPKGS}/${depkgs_mingw}/lib/libQt5Widgets.a ../win32/release${version}
+      cp -f ${DEPKGS}/${depkgs_mingw}/lib/libqtmain.a ../win32/release${version}
+      cp -f ${DEPKGS}/${depkgs_mingw}/bin/platforms/qwindows.dll ../win32/release${version}/
 
       rm -rf ../win32/release${version}/help
       mkdir ../win32/release${version}/help
       cp -f help/*.html ../win32/release${version}/help/
       cp -f images/status.png ../win32/release${version}/help/
       cp -f images/mail-message-new.png ../win32/release${version}/help/
-      qmake -spec win32 -unix -o Makefile.mingw${version} bat.pro.mingw${version}
+      qmake -spec $PWD/win32 -unix -o Makefile.mingw${version} bat.pro.mingw${version}
+
+      # Don't know why this libGL is added
+      sed -i s/-lGL// Makefile.mingw${version}
+      # Linux headers are also added automatically
+      perl -plne  "s:-I/usr/[^ ]+::g" Makefile.mingw${version} > 1
+      perl -plne  "s:-L/usr/[^ ]+::g" 1 > Makefile.mingw${version}
+
       echo "Make Windows bat"
       make -j3 -f Makefile.mingw${version} $2
-      if test -f release/bat.exe; then
+      if test -f bat.exe; then
+                cp -f bat.exe ../win32/release${version}
+      elif test -f release/bat.exe; then
          cp -f release/bat.exe ../win32/release${version}
       else
          cp -f debug/bat.exe ../win32/release${version}
       fi
+      rm -f bat.exe release/bat.exe debug/bat.exe
    fi
 }
 
@@ -50,18 +105,29 @@ prepare_tray_monitor_build ()
     local version=$1
     cd tray-monitor
     qmake -spec ../win32 -unix -o Makefile.mingw${version} tray-monitor.pro.mingw${version}
+
+    # Don't know why this libGL is added
+    sed -i s/-lGL// Makefile.mingw${version}
+    # Linux headers are also added automatically
+    perl -plne  "s:-I/usr/[^ ]+::g" Makefile.mingw${version} > 1
+    perl -plne  "s:-L/usr/[^ ]+::g" 1 > Makefile.mingw${version}
+
     echo "Make Windows tray-monitor"
     make -j3 -f Makefile.mingw${version} $2
-    if test -f release/bacula-tray-monitor.exe; then
+    if test -f bacula-tray-monitor.exe; then
+        cp -f bacula-tray-monitor.exe ../../win32/release${version}
+    elif test -f release/bacula-tray-monitor.exe; then
        cp -f release/bacula-tray-monitor.exe ../../win32/release${version}
     else
        cp -f debug/bacula-tray-monitor.exe ../../win32/release${version}
     fi
-    rm -f release/bacula-tray-monitor.exe debug/bacula-tray-monitor.exe
+    rm -f bacula-tray-monitor.exe release/bacula-tray-monitor.exe debug/bacula-tray-monitor.exe
     cd ..
 }
 
 readonly BUILD_ARCH="$1"
+
+prepare_regw_build ${BUILD_ARCH:-64}
 
 rm -f debug/bat.exe
 if test -f ../config.h ; then
