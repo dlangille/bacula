@@ -7,6 +7,7 @@
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #    
 CONFIG += qt cross-win32
+QT += core gui widgets
 # CONFIG += debug 
 
 bins.path = ./
@@ -21,7 +22,7 @@ INCLUDEPATH += .. . ./console ./restore ./select
 
 cross-win32 {
 #  LIBS       +=  ../win32/dll/bacula.a
-  LIBS       +=  -mwindows -L../win32/release32 -lbacula
+  LIBS       +=  -mwindows -L../win32/release32 -lbacula -lwinpthread
 }
 !cross-win32 {
   LIBS        += -L../lib -lbac -L../findlib -lbacfind @OPENSSL_LIBS@
@@ -38,9 +39,9 @@ OBJECTS_DIR             = obj32
 UI_DIR                  = ui32
 QMAKE_CC                = i686-w64-mingw32-gcc
 QMAKE_CXX               = i686-w64-mingw32-g++
-QMAKE_INCDIR            = $(DEPKGS)/depkgs-mingw32/include/pthreads $(DEPKGS)/depkgs-mingw32/include/ ../win32/compat 
-QMAKE_INCDIR_QT         = $(DEPKGS)/depkgs-mingw32/include/qt
-QMAKE_LIBDIR_QT         = $(DEPKGS)/depkgs-mingw32/lib/qt
+QMAKE_INCDIR            = $(DEPKGS)/depkgs-mingw32/include/ ../win32/compat $(DEPKGS)/depkgs-mingw32/include/QtGui $(DEPKGS)/depkgs-mingw32/include/QtCore $(DEPKGS)/depkgs-mingw32/include/QtWidgets ui32/
+QMAKE_INCDIR_QT         = 
+QMAKE_LIBDIR_QT         = $(DEPKGS)/depkgs-mingw32/lib
 QMAKE_LINK              = i686-w64-mingw32-g++
 QMAKE_LFLAGS            = -mthreads -Wl,-enable-stdcall-fixup -Wl,-enable-auto-import  -m32 -fno-strict-aliasing -Wl,-enable-runtime-pseudo-reloc
 QMAKE_LIB               = i686-w64-mingw32-ar -ru
@@ -72,6 +73,15 @@ qwt {
 # Main directory
 HEADERS += mainwin.h bat.h bat_conf.h qstd.h pages.h
 SOURCES += main.cpp bat_conf.cpp mainwin.cpp qstd.cpp pages.cpp
+
+# include authenticatebase.cpp that is already in libbac because
+# libbac is compiled with -no-rtti while qt-console use RTTI by
+# default. Inherited sub-class with virtual method in shared lib 
+# using a diffferent RTTI model dont work well, see this error a
+# link time: "... DirCommAuthenticate ... undefined reference to
+# typeinfo for AuthenticateBase"
+HEADERS += ../lib/authenticatebase.h
+SOURCES += ../lib/authenticatebase.cc
 
 # bcomm
 HEADERS += bcomm/dircomm.h
