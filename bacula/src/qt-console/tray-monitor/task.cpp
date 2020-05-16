@@ -163,8 +163,15 @@ bool task::connect_bacula()
    memset(&jcr, 0, sizeof(jcr));
    curend = curline = NULL;
 
+#ifdef Q_OS_ANDROID
+   ConfigStorage * config = &ConfigStorage::getInstance();
+   RESMON *r = get_res();
+   r->psk_ctx = new_psk_context(NULL /*r->password*/);
+   MONITOR *monitor = config->getMonitor();
+#else
    RESMON *r = get_res();
    MONITOR *monitor = (MONITOR*)GetNextRes(R_MONITOR, NULL);
+#endif
 
    if (r->type == R_CLIENT) {
       r->proxy_sent = false;
@@ -1256,7 +1263,7 @@ bool task::run_restore()
         Dmsg2(dbglvl, "<- %d %s\n", res->bs->msglen, curline);
     }
 
-    q = QString("restore client=%1").arg(restore_field.client);
+    q = QString("restore client=\"%1\" restoreclient=\"%2\"").arg(restore_field.client, restore_field.restoreclient);
 
     if (!restore_field.where.isEmpty()) {
         restore_field.where.replace("\"", "");
@@ -1279,7 +1286,6 @@ bool task::run_restore()
         // FIXME : report a signal to have a progress feedback
         Dmsg2(dbglvl, "<- %d %s\n", res->bs->msglen, curline);
     }
-
     // Close the socket, it's over or we don't want to reuse it
     disconnect_bacula();
 
@@ -1617,3 +1623,4 @@ void worker_stop(worker *w)
       delete w;
    }
 }
+
