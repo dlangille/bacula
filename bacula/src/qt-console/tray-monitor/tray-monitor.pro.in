@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2000-2018 Kern Sibbald
+# Copyright (C) 2000-2020 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
 ######################################################################
@@ -34,7 +34,8 @@ TEMPLATE     = app
 TARGET       = bacula-tray-monitor
 QMAKE_EXTRA_TARGETS += depend
 DEPENDPATH  += .
-INCLUDEPATH += ../.. . 
+INCLUDEPATH += ../.. .
+QMAKE_CC = $(CXX) 
 LIBTOOL_LINK = @QMAKE_LIBTOOL@ --silent --tag=CXX --mode=link
 LIBTOOL_INSTALL = @QMAKE_LIBTOOL@ --silent --mode=install
 QMAKE_LINK   = $${LIBTOOL_LINK} $(CXX)
@@ -51,8 +52,20 @@ OBJECTS_DIR  = obj
 UI_DIR       = ui
 
 # Main directory
-HEADERS += tray-monitor.h tray_conf.h tray-ui.h fdstatus.h task.h ../util/fmtwidgetitem.h dirstatus.h conf.h sdstatus.h runjob.h status.h restorewizard.h filesmodel.h clientselectwizardpage.h jobselectwizardpage.h fileselectwizardpage.h restoreoptionswizardpage.h pluginwizardpage.h
-SOURCES +=  tray-monitor.cpp tray_conf.cpp fdstatus.cpp task.cpp authenticate.cpp ../util/fmtwidgetitem.cpp dirstatus.cpp sdstatus.cpp conf.cpp runjob.cpp status.cpp restorewizard.cpp clientselectwizardpage.cpp jobselectwizardpage.cpp fileselectwizardpage.cpp restoreoptionswizardpage.cpp pluginwizardpage.cpp
+HEADERS += tray-monitor.h tray_conf.h ../../lib/authenticatebase.h tray-ui.h fdstatus.h task.h ../util/fmtwidgetitem.h dirstatus.h conf.h sdstatus.h runjob.h status.h restorewizard.h filesmodel.h clientselectwizardpage.h jobselectwizardpage.h fileselectwizardpage.h restoreoptionswizardpage.h pluginwizardpage.h
+SOURCES +=  tray-monitor.cpp tray_conf.cpp ../../lib/authenticatebase.cc fdstatus.cpp task.cpp authenticate.cpp ../util/fmtwidgetitem.cpp dirstatus.cpp sdstatus.cpp conf.cpp runjob.cpp status.cpp restorewizard.cpp clientselectwizardpage.cpp jobselectwizardpage.cpp fileselectwizardpage.cpp restoreoptionswizardpage.cpp pluginwizardpage.cpp
 FORMS += fd-monitor.ui dir-monitor.ui sd-monitor.ui main-conf.ui res-conf.ui run.ui restorewizard.ui clientselectwizardpage.ui jobselectwizardpage.ui fileselectwizardpage.ui restoreoptionswizardpage.ui pluginwizardpage.ui
+
+# CDP Client
+CDP_DIR = ../../tools/cdp-client
+HEADERS += $$CDP_DIR/backupservice.h $$CDP_DIR/folderwatcher.h desktop-gui/cdp-main-ui.h $$CDP_DIR/cdp.h
+SOURCES += $$CDP_DIR/backupservice.cpp $$CDP_DIR/folderwatcher.cpp
+INCLUDEPATH += $$CDP_DIR
+
+# Journal
+JOURNAL_DIR = ../../plugins/fd
+HEADERS += $$JOURNAL_DIR/journal.h $$JOURNAL_DIR/file-record.h $$JOURNAL_DIR/folder-record.h $$JOURNAL_DIR/settings-record.h
+SOURCES += $$JOURNAL_DIR/journal.c
+INCLUDEPATH += $$JOURNAL_DIR
 
 TRANSLATIONS += ts/tm_fr.ts ts/tm_de.ts ts/tm_ja.ts
