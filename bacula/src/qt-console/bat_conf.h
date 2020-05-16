@@ -58,6 +58,7 @@ public:
    char *password;                    /* UA server password */
    bool tls_authenticate;             /* Authenticate with tls */
    bool tls_enable;                   /* Enable TLS */
+   bool tls_psk_enable;               /* Enable TLS-PSK */
    bool tls_require;                  /* Require TLS */
    char *tls_ca_certfile;             /* TLS CA Certificate File */
    char *tls_ca_certdir;              /* TLS CA Certificate Directory */
@@ -66,6 +67,7 @@ public:
    utime_t heartbeat_interval;        /* Dir heartbeat interval */
 
    TLS_CONTEXT *tls_ctx;              /* Shared TLS Context */
+   TLS_CONTEXT *psk_ctx;              /* Shared TLS-PSK Context */
 
    /* Methods */
    char *name() const;
@@ -86,6 +88,7 @@ public:
    bool comm_compression;             /* Enable comm line compression */
    bool tls_authenticate;             /* Authenticate with tls */
    bool tls_enable;                   /* Enable TLS on all connections */
+   bool tls_psk_enable;               /* Enable TLS-PSK on all connections */
    bool tls_require;                  /* Require TLS on all connections */
    char *tls_ca_certfile;             /* TLS CA Certificate File */
    char *tls_ca_certdir;              /* TLS CA Certificate Directory */
@@ -95,6 +98,7 @@ public:
    utime_t heartbeat_interval;        /* Cons heartbeat interval */
 
    TLS_CONTEXT *tls_ctx;              /* Shared TLS Context */
+   TLS_CONTEXT *psk_ctx;          /* Shared TLS Context */
 
    /* Methods */
    char *name() const;
