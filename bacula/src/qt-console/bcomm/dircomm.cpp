@@ -158,7 +158,9 @@ bool DirComm::connect_dir()
          goto bail_out;
       }
    }
-
+   if (cons && !cons->psk_ctx && cons->tls_psk_enable) {
+      cons->psk_ctx = new_psk_context(NULL /* cons->password */);
+   }
    /* Initialize Director TLS context once */
    if (!m_console->m_dir->tls_ctx && (m_console->m_dir->tls_enable || m_console->m_dir->tls_require)) {
       /* Generate passphrase prompt */
@@ -181,6 +183,9 @@ bool DirComm::connect_dir()
          }
          goto bail_out;
       }
+   }
+   if (!m_console->m_dir->psk_ctx && m_console->m_dir->tls_psk_enable) {
+      m_console->m_dir->psk_ctx = new_psk_context(NULL /*m_console->m_dir->password*/);
    }
 
    if (m_console->m_dir->heartbeat_interval) {
