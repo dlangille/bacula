@@ -696,7 +696,7 @@ bool send_include_list(JCR *jcr)
 }
 
 /*
- * Send a include list with a plugin and listing=<path> parameter
+ * Send an include list with a plugin and listing=<path> parameter
  */
 bool send_ls_plugin_fileset(JCR *jcr, const char *plugin, const char *path)
 {
