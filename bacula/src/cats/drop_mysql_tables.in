@@ -10,6 +10,11 @@ db_name=@db_name@
 
 if $bindir/mysql $* <<END-OF-DATA
 USE ${db_name};
+DROP TABLE IF EXISTS TagJob;
+DROP TABLE IF EXISTS TagClient;
+DROP TABLE IF EXISTS TagMedia;
+DROP TABLE IF EXISTS TagObject;
+DROP TABLE IF EXISTS Object;
 DROP TABLE IF EXISTS Events;
 DROP TABLE IF EXISTS Filename;
 DROP TABLE IF EXISTS Path;

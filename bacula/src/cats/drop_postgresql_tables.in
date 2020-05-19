@@ -9,6 +9,11 @@ bindir=@POSTGRESQL_BINDIR@
 db_name=@db_name@
 
 $bindir/psql -f - -d ${db_name} $* <<END-OF-DATA 1>/dev/null 2>/dev/null
+drop table if exists TagJob;
+drop table if exists TagClient;
+drop table if exists TagMedia;
+drop table if exists TagObject;
+drop table if exists Object;
 drop table if exists Events;
 drop table if exists unsavedfiles;
 drop table if exists basefiles;

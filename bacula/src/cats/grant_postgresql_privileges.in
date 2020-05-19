@@ -23,7 +23,12 @@ create user ${db_user} ${pass};
 alter database ${db_name} owner to ${db_user} ;
 
 -- for tables
-grant all on Events        to ${db_user};
+grant all on TagJob       to ${db_user};
+grant all on TagClient    to ${db_user};
+grant all on TagMedia     to ${db_user};
+grant all on TagObject    to ${db_user};
+grant all on Object       to ${db_user};
+grant all on Events       to ${db_user};
 grant all on unsavedfiles to ${db_user};
 grant all on basefiles	  to ${db_user};
 grant all on jobmedia	  to ${db_user};
