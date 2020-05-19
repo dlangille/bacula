@@ -47,8 +47,6 @@ class Console;
 
 class Pages : public QWidget
 {
-   Q_OBJECT
-
 public:
    /* methods */
    Pages();
