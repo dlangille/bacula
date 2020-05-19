@@ -485,6 +485,55 @@ fi
 if [ "$DBVERSION" -eq 1021 ] ; then
     if psql -f - -d ${db_name} $* <<END-OF-DATA
 begin;
+
+CREATE TABLE TagJob
+(
+   JobId integer not null,
+   Tag   text    not null,
+   primary key (JobId, Tag)
+);
+
+CREATE TABLE TagClient
+(
+   ClientId integer not null,
+   Tag      text    not null,
+   primary key (ClientId, Tag)
+);
+
+CREATE TABLE TagMedia
+{
+   MediaId integer not null,
+   Tag      text    not null,
+   primary key (MediaId, Tag)
+};
+
+CREATE TABLE TagObject
+(
+   ObjectId integer not null,
+   Tag      text    not null,
+   primary key (ObjectId, Tag)
+);
+
+CREATE TABLE Object
+(
+   ObjectId     serial   not null,
+
+   JobId        integer  not null,
+   Path         text     not null,
+   Filename     text     not null,
+   PluginName   text     not null,
+
+   ObjectType   text     not null,
+   ObjectName   text     not null,
+   ObjectSource text     not null,
+   primary key (ObjectId)
+);
+
+create index object_jobid_idx on Object (JobId);
+create index object_type_idx on Object  (ObjectType);
+create index object_name_idx on Object  (ObjectName);
+create index object_source_idx on Object  (ObjectSource);
+
 CREATE TABLE Events
 (
     EventsId           serial	  not null,

@@ -32,6 +32,54 @@ USE ${db_name};
 --  is case insensitive.
 --
 
+CREATE TABLE TagJob
+(
+   JobId integer not null,
+   Tag   TINYBLOB    not null,
+   primary key (JobId, Tag(255))
+);
+
+CREATE TABLE TagClient
+(
+   ClientId integer not null,
+   Tag      TINYBLOB    not null,
+   primary key (ClientId, Tag(255))
+);
+
+CREATE TABLE TagMedia
+(
+   MediaId integer not null,
+   Tag      TINYBLOB   not null,
+   primary key (MediaId, Tag(255))
+);
+
+CREATE TABLE TagObject
+(
+   ObjectId integer not null,
+   Tag      TINYBLOB    not null,
+   primary key (ObjectId, Tag(255))
+);
+
+CREATE TABLE Object
+(
+   ObjectId     BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+
+   JobId        integer  not null,
+   Path         BLOB NOT NULL,
+   Filename     BLOB NOT NULL,
+   PluginName   TINYBLOB NOT NULL,
+
+   ObjectType   TINYBLOB     NOT NULL,
+   ObjectName   TINYBLOB     NOT NULL,
+   ObjectSource TINYBLOB     NOT NULL,
+   primary key (ObjectId)
+);
+
+create index object_jobid_idx on Object (JobId);
+create index object_type_idx on Object  (ObjectType(255));
+create index object_name_idx on Object  (ObjectName(255));
+create index object_source_idx on Object  (ObjectSource(255));
+
 CREATE TABLE Events
 (
     EventsId          BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
