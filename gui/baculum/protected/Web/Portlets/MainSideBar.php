@@ -41,7 +41,8 @@ class MainSideBar extends Portlets {
 		parent::onInit($param);
 		if ($this->getModule('web_config')->isAuthMethodBasic()) {
 			$fake_pwd = $this->getModule('crypto')->getRandomString();
-			$user = $_SERVER['PHP_AUTH_USER'] . '1'; // must be different than currently logged in Basic user
+			// must be different than currently logged in Basic user
+			$user = (isset($_SERVER['PHP_AUTH_USER']) ? $_SERVER['PHP_AUTH_USER'] : '') . '1';
 
 			// do a login try with different user and password to logout current user
 			$this->reload_url = $this->getPage()->getFullLoginUrl($user, $fake_pwd);
