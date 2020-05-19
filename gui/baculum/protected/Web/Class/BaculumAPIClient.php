@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2019 Kern Sibbald
+ * Copyright (C) 2013-2020 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -291,11 +291,7 @@ class BaculumAPIClient extends WebModule {
 		$cached = null;
 		$ret = null;
 		if (is_null($host)) {
-			if (isset($_SESSION['api_host'])) {
-				$host = $_SESSION['api_host'];
-			} else {
-				$host = HostConfig::MAIN_CATALOG_HOST;
-			}
+			$host = $this->User->getAPIHosts();
 		}
 		if ($use_cache === true) {
 			$cached = $this->getSessionCache($host, $params);
@@ -336,11 +332,7 @@ class BaculumAPIClient extends WebModule {
 	 */
 	public function set(array $params, array $options = array(), $host = null, $show_error = true) {
 		if (is_null($host)) {
-			if (isset($_SESSION['api_host'])) {
-				$host = $_SESSION['api_host'];
-			} else {
-				$host = HostConfig::MAIN_CATALOG_HOST;
-			}
+			$host = $this->User->getAPIHosts();
 		}
 		$host_cfg = $this->getHostParams($host);
 		$uri = $this->getURIResource($host, $params);
@@ -377,11 +369,7 @@ class BaculumAPIClient extends WebModule {
 	 */
 	public function create(array $params, array $options, $host = null, $show_error = true) {
 		if (is_null($host)) {
-			if (isset($_SESSION['api_host'])) {
-				$host = $_SESSION['api_host'];
-			} else {
-				$host = HostConfig::MAIN_CATALOG_HOST;
-			}
+			$host = $this->User->getAPIHosts();
 		}
 		$host_cfg = $this->getHostParams($host);
 		$uri = $this->getURIResource($host, $params);
@@ -413,11 +401,7 @@ class BaculumAPIClient extends WebModule {
 	 */
 	public function remove(array $params, $host = null, $show_error = true) {
 		if (is_null($host)) {
-			if (isset($_SESSION['api_host'])) {
-				$host = $_SESSION['api_host'];
-			} else {
-				$host = HostConfig::MAIN_CATALOG_HOST;
-			}
+			$host = $this->User->getAPIHosts();
 		}
 		$host_cfg = $this->getHostParams($host);
 		$uri = $this->getURIResource($host, $params);
@@ -579,7 +563,7 @@ class BaculumAPIClient extends WebModule {
 
 	private function authToHost($host, $host_cfg) {
 		if (count($host_cfg) > 0 && $host_cfg['auth_type'] === 'oauth2') {
-			$state = $this->getModule('misc')->getRandomString(16);
+			$state = $this->getModule('crypto')->getRandomString(16);
 			$params = array(
 				'response_type' => 'code',
 				'client_id' => $host_cfg['client_id'],

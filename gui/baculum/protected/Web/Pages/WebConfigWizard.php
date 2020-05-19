@@ -34,21 +34,14 @@ Prado::using('System.Web.UI.ActiveControls.TActiveDropDownList');
  */
 class WebConfigWizard extends BaculumWebPage
 {
-
-	protected $admin = false;
-
 	public $first_run;
 	public $host_config;
 
 	public function onInit($param) {
 		parent::onInit($param);
-		$this->Lang->SelectedValue = $this->getLanguage();
 		$this->host_config = $this->getModule('host_config')->getConfig();
 		$this->first_run = (count($this->host_config) == 0 || !key_exists(HostConfig::MAIN_CATALOG_HOST, $this->host_config));
 		Logging::$debug_enabled = Logging::$debug_enabled ?: $this->first_run;
-		if($this->first_run === false && !$_SESSION['admin']) {
-			parent::accessDenied();
-		}
 	}
 
 	public function onLoad($param) {
@@ -75,7 +68,6 @@ class WebConfigWizard extends BaculumWebPage
 				$this->AddNewHost->APIOAuth2RedirectURI->Text = $this->host_config[$host]['redirect_uri'];
 				$this->AddNewHost->APIOAuth2Scope->Text = $this->host_config[$host]['scope'];
 			}
-			$this->WebLogin->Text = $this->web_config['baculum']['login'];
 		} else {
 			$this->AddNewHost->APIProtocol->SelectedValue = 'http';
 			$this->AddNewHost->APIAddress->Text = 'localhost';
@@ -84,10 +76,21 @@ class WebConfigWizard extends BaculumWebPage
 		}
 	}
 
-	public function NextStep($sender, $param) {
+	public function onPreRender($param) {
+		parent::onPreRender($param);
+		if($this->IsPostBack || $this->IsCallBack) {
+			return;
+		}
+		$this->Lang->SelectedValue = $this->getModule('web_config')->getLanguage();
+	}
+
+	public function nextStep($sender, $param) {
+		if ($param->CurrentStepIndex === 1 && !$this->first_run) {
+			$this->InstallWizard->ActiveStepIndex = 3;
+		}
 	}
 	
-	public function PreviousStep($sender, $param) {
+	public function previousStep($sender, $param) {
 	}
 
 	public function wizardStop($sender, $param) {
@@ -124,28 +127,70 @@ class WebConfigWizard extends BaculumWebPage
 		$host_config[$host] = $cfg_host;
 		$ret = $this->getModule('host_config')->setConfig($host_config);
 		if($ret === true) {
-			$cfg_web = array('baculum' => array(), 'users' => array());
-			if (count($this->web_config) > 0) {
-				$cfg_web = $this->web_config;
-			}
-			$cfg_web['baculum']['login'] = $this->WebLogin->Text;
-			$cfg_web['baculum']['debug'] = 0;
-			$cfg_web['baculum']['lang'] = $this->Lang->SelectedValue;
-			if (array_key_exists('users', $cfg_web) && array_key_exists($this->WebLogin->Text, $cfg_web)) {
-				// Admin shoudn't be added to users section, only regular users
-				unset($cfg_web['users'][$this->WebLogin->Text]);
-			}
-			$ret = $this->getModule('web_config')->setConfig($cfg_web);
-			if($ret && $this->getModule('basic_webuser')->isUsersConfig() === true) {
-				$previous_user = $this->first_run ? parent::DEFAULT_AUTH_USER : $this->web_config['baculum']['login'];
-				$this->getModule('basic_webuser')->setUsersConfig(
-					$cfg_web['baculum']['login'],
+			// complete new Baculum main settings
+			$web_config = $this->getModule('web_config');
+			$ret = $web_config->setDefConfigOpts([
+				'baculum' => [
+					'lang' => $this->Lang->SelectedValue
+				]
+			]);
+
+			$basic_webuser = $this->getModule('basic_webuser');
+			if($this->first_run && $ret && $web_config->isAuthMethodBasic()) {
+				// set new user on first wizard run
+				$previous_user = parent::DEFAULT_AUTH_USER;
+				$ret = $basic_webuser->setUsersConfig(
+					$this->WebLogin->Text,
 					$this->WebPassword->Text,
 					false,
 					$previous_user
 				);
+			} else {
+				$emsg = 'Error while saving basic user config.';
+				$this->getModule('logging')->log(
+					__FUNCTION__,
+					$emsg,
+					Logging::CATEGORY_APPLICATION,
+					__FILE__,
+					__LINE__
+				);
 			}
+
+			if ($this->first_run && $ret) {
+				// create new Baculum user on first wizard run
+				$user_config = $this->getModule('user_config');
+				$new_user_prop = $user_config->getUserConfigProps([
+					'username' => $this->WebLogin->Text,
+					'roles' => WebUserRoles::ADMIN,
+					'enabled' => 1
+				]);
+				$ret = $user_config->setUserConfig($this->WebLogin->Text, $new_user_prop);
+				if (!$ret) {
+					$emsg = 'Error while saving user config.';
+					$this->getModule('logging')->log(
+						__FUNCTION__,
+						$emsg,
+						Logging::CATEGORY_APPLICATION,
+						__FILE__,
+						__LINE__
+					);
+				}
+
+				// Login user with new parameters
+				$this->getModule('auth')->login($this->WebLogin->Text, $this->WebPassword->Text);
+			}
+
+			// Go to default user page
 			$this->goToDefaultPage();
+		} else {
+			$emsg = 'Error while saving auth host config.';
+			$this->getModule('logging')->log(
+				__FUNCTION__,
+				$emsg,
+				Logging::CATEGORY_APPLICATION,
+				__FILE__,
+				__LINE__
+			);
 		}
 	}
 
@@ -158,7 +203,7 @@ class WebConfigWizard extends BaculumWebPage
 	}
 
 	public function setLang($sender, $param) {
-		$_SESSION['language'] = $sender->SelectedValue;
+		$this->getModule('web_config')->setLanguage($sender->SelectedValue);
 	}
 
 	public function validateAdministratorPassword($sender, $param) {

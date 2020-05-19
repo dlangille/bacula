@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2019 Kern Sibbald
+ * Copyright (C) 2013-2020 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -32,6 +32,13 @@ $timezone = 'UTC';
 if (!ini_get('date.timezone')) {
 	date_default_timezone_set($timezone);
 }
+
+/**
+ * Set time limit to 60 seconds.
+ * Please note that async requests default times out after 30 seconds
+ * if not set other value.
+ */
+set_time_limit(60);
 
 /*
  * Support for web servers (for example Lighttpd) which do not provide direct

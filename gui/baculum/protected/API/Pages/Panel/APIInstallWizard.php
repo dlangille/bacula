@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2019 Kern Sibbald
+ * Copyright (C) 2013-2020 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -244,7 +244,7 @@ class APIInstallWizard extends BaculumAPIPage {
 			$cfg_data['api']['auth_type'] =  'oauth2';
 		}
 		$cfg_data['api']['debug'] = isset($this->config['api']['debug']) ? $this->config['api']['debug'] : "0";
-		$cfg_data['api']['lang'] = isset($_SESSION['language']) ? $_SESSION['language'] : APIConfig::DEFAULT_LANGUAGE;
+		$cfg_data['api']['lang'] = isset($_SESSION['language']) ? $_SESSION['language'] : APIConfig::DEF_LANG;
 		$cfg_data['db']['enabled'] = (integer)($this->DatabaseYes->Checked === true);
 		$cfg_data['db']['type'] = $this->DBType->SelectedValue;
 		$cfg_data['db']['name'] = $this->DBName->Text;

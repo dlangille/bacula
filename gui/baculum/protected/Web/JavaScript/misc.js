@@ -630,132 +630,6 @@ var Dashboard = {
 	}
 }
 
-var Users = {
-	ids: {
-		create_user: {
-			add_user: 'add_user',
-			add_user_btn: 'add_user_btn',
-			newuser: 'newuser',
-			newpwd: 'newpwd'
-		},
-		change_pwd: {
-			rel_chpwd: 'chpwd',
-			rel_chpwd_btn: 'chpwd_btn'
-		},
-		set_host: {
-			rel_user_host: 'user_host_img'
-		}
-	},
-	validators: {
-		user_pattern: null
-	},
-	current_action: null,
-	init: function() {
-		this.setEvents();
-	},
-	setEvents: function() {
-		document.getElementById(this.ids.create_user.add_user_btn).addEventListener('click', function(e) {
-			$('#' + this.ids.create_user.add_user).show();
-			$('#' + this.ids.create_user.newuser).focus();
-		}.bind(this));
-		document.getElementById(this.ids.create_user.newuser).addEventListener('keydown', function(e) {
-			var target = e.target || e.srcElement;
-			if (e.keyCode == 13) {
-				this.addUser();
-			} else if (e.keyCode == 27) {
-				this.cancelAddUser();
-			}
-			return false;
-		}.bind(this));
-		document.getElementById(this.ids.create_user.newpwd).addEventListener('keydown', function(e) {
-			var target = e.target || e.srcElement;
-			if (e.keyCode == 13) {
-				this.addUser();
-			} else if (e.keyCode == 27) {
-				this.cancelAddUser();
-			}
-			return false;
-		}.bind(this));
-	},
-	userValidator: function(user) {
-		user = user.replace(/\s/g, '');
-		if (user == '') {
-			alert(this.txt.enter_login);
-			return false;
-		}
-		var valid = this.validators.user_pattern.test(user);
-		if (valid === false) {
-			alert(this.txt.invalid_login);
-			return false;
-		}
-		return true;
-	},
-	pwdValidator: function(pwd) {
-		var valid = pwd.length > 4;
-		if (valid === false) {
-			alert(this.txt.invalid_pwd);
-		}
-		return valid;
-	},
-	addUser: function() {
-		var user = document.getElementById(this.ids.create_user.newuser);
-		var pwd = document.getElementById(this.ids.create_user.newpwd);
-		if (this.userValidator(user.value) === false) {
-			return false;
-		}
-		if (this.pwdValidator(pwd.value) === false) {
-			return false;
-		}
-
-		$('#' + this.ids.create_user.add_user).hide();
-		this.action_callback('newuser', user.value, pwd.value);
-		user.value = '';
-		pwd.value = '';
-		return true;
-	},
-	rmUser: function(user) {
-		this.action_callback('rmuser', user);
-	},
-	showChangePwd: function(el) {
-		$('a[rel=\'' + this.ids.change_pwd.rel_chpwd_btn + '\']').show();
-		$('#' + el).hide();
-		$('span[rel=\'' + this.ids.change_pwd.rel_chpwd + '\']').hide();
-		$(el.nextElementSibling).show();
-		$(el.nextElementSibling).find('input')[0].focus();
-	},
-	changePwd: function(el, user) {
-		var pwd = el.value;
-
-		if (this.pwdValidator(pwd) === false) {
-			return false;
-		}
-
-		$(el.parentNode).hide();
-		$(el.parentNode.previousElementSibling).show();
-		this.action_callback('chpwd', user, pwd);
-		return true;
-	},
-	set_host: function(user, select) {
-		select.nextElementSibling.style.visibility = 'visible';
-		this.action_callback('set_host', user, select.value);
-	},
-	hide_loader: function() {
-		setTimeout(function() {
-			if (this.current_action === 'set_host') {
-				$('I[rel=\'' + this.ids.set_host.rel_user_host + '\']').css({visibility: 'hidden'});
-			}
-		}.bind(this), 300);
-
-	},
-	cancelAddUser: function() {
-		$('#' + this.ids.create_user.add_user).hide();
-	},
-	cancelChangePwd: function(el) {
-		$(el.parentNode.parentNode).hide();
-	}
-
-};
-
 var W3SideBar = {
 	ids: {
 		sidebar: 'sidebar',
@@ -1122,9 +996,26 @@ dtEscapeRegex = function(value) {
 	return $.fn.dataTable.util.escapeRegex(value);
 };
 
+/**
+ * Do validation comma separated list basing on regular expression
+ * for particular values.
+ */
+function validate_comma_separated_list(value, regex) {
+	var valid = true;
+	var vals = value.split(',');
+	var val;
+	for (var i = 0; i < vals.length; i++) {
+		val = vals[i].trim();
+		if (!val || (regex && !regex.test(val))) {
+			valid = false;
+			break;
+		}
+	}
+	return valid;
+}
 
 function get_table_toolbar(table, actions, txt) {
-	var table_toolbar = document.querySelector('div.table_toolbar');
+	var table_toolbar = document.querySelector('#' + table.table().node().id + '_wrapper div.table_toolbar');
 	table_toolbar.className += ' dt-buttons';
 	table_toolbar.style.display = 'none';
 	var title = document.createTextNode(txt.actions);
@@ -1140,6 +1031,9 @@ function get_table_toolbar(table, actions, txt) {
 		option.appendChild(label);
 		select.appendChild(option);
 		acts[actions[i].action] = actions[i];
+	}
+	if (actions.length == 1) {
+		select.selectedIndex = 1;
 	}
 	var btn = document.createElement('BUTTON');
 	btn.type = 'button';

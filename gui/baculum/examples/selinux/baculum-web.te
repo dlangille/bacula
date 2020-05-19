@@ -1,9 +1,10 @@
-module baculum-web 1.0.0;
+module baculum-web 1.0.1;
 
 require {
 	type httpd_t;
 	type unreserved_port_t;
 	type httpd_cache_t;
+	type ldap_port_t;
 	class tcp_socket { name_bind name_connect };
 	class dir { search read write create getattr };
 	class file { read write create };
@@ -12,5 +13,6 @@ require {
 #============= httpd_t ==============
 
 allow httpd_t unreserved_port_t:tcp_socket { name_bind name_connect };
+allow httpd_t ldap_port_t:tcp_socket { name_connect };
 allow httpd_t httpd_cache_t:dir { read create };
 allow httpd_t httpd_cache_t:file { read write create };

@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2019 Kern Sibbald
+ * Copyright (C) 2013-2020 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -32,6 +32,8 @@ Prado::using('Application.Common.Class.Interfaces');
  */
 class SessionRecord extends CommonModule implements SessionItem {
 
+	const SESS_FILE_PERM = 0600;
+
 	private static $lock = false;
 	private static $queue = 0;
 
@@ -46,8 +48,18 @@ class SessionRecord extends CommonModule implements SessionItem {
 	private static function store($wouldblock = true) {
 		$c = get_called_class();
 		$sessfile = $c::getSessionFile();
-		if (array_key_exists('sess', $GLOBALS)) {
+		if (key_exists('sess', $GLOBALS)) {
 			$content = serialize($GLOBALS['sess']);
+			if (file_exists($sessfile)) {
+				$perm = (fileperms($sessfile) & 0777);
+				if ($perm !== self::SESS_FILE_PERM) {
+					// Correct permissions to more restrictive if needed
+					chmod($sessfile, self::SESS_FILE_PERM);
+				}
+			}
+			$old_umask = umask(0);
+			$new_umask = (~(self::SESS_FILE_PERM) & 0777);
+			umask($new_umask);
 			$fp = fopen($sessfile, 'w');
 			if (flock($fp, LOCK_EX, $wouldblock)) {
 				fwrite($fp, $content);
@@ -65,6 +77,7 @@ class SessionRecord extends CommonModule implements SessionItem {
 				);
 			}
 			fclose($fp);
+			umask($old_umask);
 		}
 	}
 

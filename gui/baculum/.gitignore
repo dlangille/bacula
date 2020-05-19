@@ -3,6 +3,8 @@ protected/runtime/*
 protected/Web/Logs/*
 protected/Web/Config/baculum.users
 protected/Web/Config/hosts.conf
+protected/Web/Config/users.conf
+protected/Web/Config/roles.conf
 protected/Web/Config/settings.conf
 protected/Web/Config/session.dump
 protected/API/Config/baculum.users

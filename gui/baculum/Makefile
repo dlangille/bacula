@@ -70,7 +70,8 @@ localeweblang = en pl pt ja
 localeapilang = en pl pt
 localewebdirsrc = $(datadir)/$(webdir)/Lang
 localeapidirsrc = $(datadir)/$(apidir)/Lang
-localefile = messages.mo
+localemofile = messages.mo
+localepofile = messages.po
 
 excluded_dirs = '.*/\(3rdParty\|tinymce-405\).*'
 excluded_files = '.*\(\.htaccess\)$$'
@@ -117,14 +118,14 @@ prepare_locale: prepare_build
 	for lang in $(localeweblang) ; do \
 		mkdir -p $(DESTDIR)$(LOCALEDIR)/$$lang/LC_MESSAGES ; \
 		mkdir -p $(DESTDIR)$(WWWDIR)/$(localewebdirsrc)/$$lang ; \
-		install -m 644 $(localewebdirsrc)/$$lang/$(localefile) $(DESTDIR)$(LOCALEDIR)/$$lang/LC_MESSAGES/$(NAME)-web.mo ; \
-		ln -s $(DESTDIR)$(LOCALEDIR)/$$lang/LC_MESSAGES/$(NAME)-web.mo $(DESTDIR)$(WWWDIR)/$(localewebdirsrc)/$$lang/$(localefile) ; \
+		install -m 644 $(localewebdirsrc)/$$lang/$(localemofile) $(DESTDIR)$(LOCALEDIR)/$$lang/LC_MESSAGES/$(NAME)-web.mo ; \
+		ln -s $(DESTDIR)$(LOCALEDIR)/$$lang/LC_MESSAGES/$(NAME)-web.mo $(DESTDIR)$(WWWDIR)/$(localewebdirsrc)/$$lang/$(localemofile) ; \
 	done
 	for lang in $(localeapilang) ; do \
 		mkdir -p $(DESTDIR)$(LOCALEDIR)/$$lang/LC_MESSAGES ; \
 		mkdir -p $(DESTDIR)$(WWWDIR)/$(localeapidirsrc)/$$lang ; \
-		install -m 644 $(localeapidirsrc)/$$lang/$(localefile) $(DESTDIR)$(LOCALEDIR)/$$lang/LC_MESSAGES/$(NAME)-api.mo ; \
-		ln -s $(DESTDIR)$(LOCALEDIR)/$$lang/LC_MESSAGES/$(NAME)-api.mo $(DESTDIR)$(WWWDIR)/$(localeapidirsrc)/$$lang/$(localefile) ; \
+		install -m 644 $(localeapidirsrc)/$$lang/$(localemofile) $(DESTDIR)$(LOCALEDIR)/$$lang/LC_MESSAGES/$(NAME)-api.mo ; \
+		ln -s $(DESTDIR)$(LOCALEDIR)/$$lang/LC_MESSAGES/$(NAME)-api.mo $(DESTDIR)$(WWWDIR)/$(localeapidirsrc)/$$lang/$(localemofile) ; \
 	done
 
 prepare_samples:
@@ -160,3 +161,11 @@ setup: prepare_samples prepare_check_script
 	sed -i -e "s#%CONFDIR#$(CONFDIR)#g" $(DESTDIR)$(UNITDIR)/$(NAME)-api-lighttpd.service
 	sed -i -e "s#%CONFDIR#$(CONFDIR)#g" $(DESTDIR)$(UNITDIR)/$(NAME)-web-lighttpd.service
 	find $(DESTDIR)/ -type f -name .gitignore -exec rm -f {} \;
+
+lang_mo:
+	for lang in $(localeapilang) ; do \
+		msgfmt -o $(localeapidirsrc)/$$lang/$(localemofile) $(localeapidirsrc)/$$lang/$(localepofile); \
+	done
+	for lang in $(localeweblang) ; do \
+		msgfmt -o $(localewebdirsrc)/$$lang/$(localemofile) $(localewebdirsrc)/$$lang/$(localepofile); \
+	done

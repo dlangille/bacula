@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2019 Kern Sibbald
+ * Copyright (C) 2013-2020 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -38,12 +38,16 @@ class Requirements extends GeneralRequirements {
 	 * translation engine initialization. From this reason all messages are not
 	 * translated.
 	 */
-	private $req_exts = array(
-		array(
+	private $req_exts = [
+		[
 			'ext' => 'curl',
 			'help_msg' => 'Please install <b>PHP cURL module</b>.'
-		)
-	);
+		],
+		[
+			'ext' => 'ldap',
+			'help_msg' => 'Please install <b>PHP LDAP module</b>.'
+		]
+	];
 
 	public function __construct($app_dir, $base_dir) {
 		parent::__construct($app_dir, $base_dir);

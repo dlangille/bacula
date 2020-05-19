@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2019 Kern Sibbald
+ * Copyright (C) 2013-2020 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -37,8 +37,6 @@ class PoolView extends BaculumWebPage {
 
 	const POOLID = 'PoolId';
 	const POOL_NAME = 'PoolName';
-
-	protected $admin = true;
 
 	public $volumes_in_pool;
 

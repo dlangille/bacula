@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2019 Kern Sibbald
+ * Copyright (C) 2013-2020 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -60,10 +60,8 @@ class NewResource extends BaculumWebPage {
 			$this->setComponentType($component_type);
 			$this->setComponentName($component_name);
 			$this->setResourceType($resource_type);
-			if (!$_SESSION['admin']) {
-				// Non-admin can configure only host assigned to him
-				$this->NewResource->setHost($_SESSION['api_host']);
-			}
+			// Non-admin can configure only host assigned to him
+			$this->NewResource->setHost($this->User->getAPIHosts());
 			$this->NewResource->setComponentType($component_type);
 			$this->NewResource->setComponentName($component_name);
 			$this->NewResource->setResourceType($resource_type);
@@ -80,7 +78,7 @@ class NewResource extends BaculumWebPage {
 		$config = $this->getModule('host_config')->getConfig();
 		$hosts = array('' => Prado::localize('Please select host'));
 		foreach ($config as $host => $vals) {
-			if (!$_SESSION['admin'] && $host !== $_SESSION['api_host']) {
+			if ($host !== $this->User->getAPIHosts()) {
 				continue;
 			}
 			$item = "Host: $host, Address: {$vals['address']}, Port: {$vals['port']}";

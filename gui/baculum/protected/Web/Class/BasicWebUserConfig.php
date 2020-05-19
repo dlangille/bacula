@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2019 Kern Sibbald
+ * Copyright (C) 2013-2020 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -37,7 +37,9 @@ class BasicWebUserConfig extends BasicUserConfig {
 	const USERS_FILE_NAME = 'Application.Web.Config.baculum';
 	const USERS_FILE_EXTENSION = '.users';
 
-	protected function getConfigPath() {
-		return Prado::getPathOfNamespace(self::USERS_FILE_NAME, self::USERS_FILE_EXTENSION);
+	public function getConfigPath() {
+		// First check if custom config path is set, if not, then use default users file
+		return parent::getConfigPath() ?: Prado::getPathOfNamespace(self::USERS_FILE_NAME, self::USERS_FILE_EXTENSION);
 	}
 }
+?>

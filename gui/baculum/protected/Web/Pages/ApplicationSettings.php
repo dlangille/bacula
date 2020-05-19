@@ -33,8 +33,6 @@ Prado::using('Application.Web.Pages.Monitor');
  */
 class ApplicationSettings extends BaculumWebPage {
 
-	protected $admin = true;
-
 	public function onInit($param) {
 		parent::onInit($param);
 		$this->DecimalBytes->Checked = true;

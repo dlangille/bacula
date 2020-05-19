@@ -1216,12 +1216,6 @@ msgstr "Suportado"
 msgid "Not supported"
 msgstr "Não suportado"
 
-msgid "Authorization to Baculum API"
-msgstr "Autorização para a API do Baculum"
-
-msgid "Authorization to Baculum Web"
-msgstr "Autorização para o Baculum Web"
-
 msgid "Step 3 - authentication params to Baculum Web panel"
 msgstr "Etapa 3 - Parâmetros de autenticação para o painel Web do Baculum"
 
@@ -1452,9 +1446,6 @@ msgstr "Volume"
 
 msgid "During restore there will be used following volumes:"
 msgstr "Durante a restauração, serão utilizados os seguintes volumes:"
-
-msgid "Use Ctrl + Mouse Click to change selection"
-msgstr "Use Ctrl + Mouse Click para alterar a seleção"
 
 msgid "Go back"
 msgstr "Voltar"
@@ -2637,3 +2628,306 @@ msgstr "Tip: Use left-click to select table row. Use CTRL + left-click to multip
 
 msgid "Show time in job log:"
 msgstr "Show time in job log:"
+
+msgid "Security"
+msgstr "Security"
+
+msgid "Roles"
+msgstr "Roles"
+
+msgid "Long name"
+msgstr "Long name"
+
+msgid "Edit user"
+msgstr "Edit user"
+
+msgid "Long name:"
+msgstr "Long name:"
+
+msgid "Description:"
+msgstr "Description:"
+
+msgid "E-mail:"
+msgstr "E-mail:"
+
+msgid "Roles:"
+msgstr "Roles:"
+
+msgid "Invalid e-mail address value."
+msgstr "Invalid e-mail address value."
+
+msgid "Invalid username value."
+msgstr "Invalid username value."
+
+msgid "Username"
+msgstr "Username"
+
+msgid "E-mail"
+msgstr "E-mail"
+
+msgid "Description"
+msgstr "Description"
+
+msgid "Add user"
+msgstr "Add user"
+
+msgid "Username field cannot be empty."
+msgstr "Username field cannot be empty."
+
+msgid "At least one role must be selected."
+msgstr "At least one role must be selected."
+
+msgid "Username with the given name already exists."
+msgstr "Username with the given name already exists."
+
+msgid "Edit role"
+msgstr "Edit role"
+
+msgid "Role with limitted access"
+msgstr "Role with limitted access"
+
+msgid "Role with full access"
+msgstr "Role with full access"
+
+msgid "Role:"
+msgstr "Role:"
+
+msgid "Resources:"
+msgstr "Resources:"
+
+msgid "Role name"
+msgstr "Role name"
+
+msgid "Resources"
+msgstr "Resources"
+
+msgid "Add new role"
+msgstr "Add new role"
+
+msgid "Role field cannot be empty."
+msgstr "Role field cannot be empty."
+
+msgid "At least one resource must be selected."
+msgstr "At least one resource must be selected."
+
+msgid "Role with the given name already exists."
+msgstr "Role with the given name already exists."
+
+msgid "This is native predefined role, that cannot be changed. For having custom roles please use the button to add new role."
+msgstr "This is native predefined role, that cannot be changed. For having custom roles please use the button to add new role."
+
+msgid "The following roles are predefined and cannot be removed: %predefined_roles"
+msgstr "The following roles are predefined and cannot be removed: %predefined_roles"
+
+msgid "The following roles are using by users and cannot be removed: %used_roles To remove them, please unassign all users from these roles."
+msgstr "The following roles are using by users and cannot be removed: %used_roles To remove them, please unassign all users from these roles."
+
+msgid "Add role"
+msgstr "Add role"
+
+msgid "Authentication method"
+msgstr "Authentication method"
+
+msgid "HTTP Basic authentication"
+msgstr "HTTP Basic authentication"
+
+msgid "LDAP authentication"
+msgstr "LDAP authentication"
+
+msgid "LDAP server options"
+msgstr "LDAP server options"
+
+msgid "SSL encryption (LDAPS):"
+msgstr "SSL encryption (LDAPS):"
+
+msgid "Protocol version:"
+msgstr "Protocol version:"
+
+msgid "LDAP version"
+msgstr "LDAP version"
+
+msgid "LDAP authentication method"
+msgstr "LDAP authentication method"
+
+msgid "Anonymous authentication"
+msgstr "Anonymous authentication"
+
+msgid "Simple authentication"
+msgstr "Simple authentication"
+
+msgid "Base DN:"
+msgstr "Base DN:"
+
+msgid "Attributes"
+msgstr "Attributes"
+
+msgid "Please enter port."
+msgstr "Please enter port."
+
+msgid "Please enter username."
+msgstr "Please enter username."
+
+msgid "Manager DN:"
+msgstr "Manager DN:"
+
+msgid "Please enter IP Address/Hostname."
+msgstr "Please enter IP Address/Hostname."
+
+msgid "Please enter username attribute."
+msgstr "Please enter username attribute."
+
+msgid "Test LDAP connection"
+msgstr "Test LDAP connection"
+
+msgid "Manage LDAP users"
+msgstr "Manage LDAP users"
+
+msgid "Please enter Base DN."
+msgstr "Please enter Base DN."
+
+msgid "LDAP user list"
+msgstr "LDAP user list"
+
+msgid "Import users"
+msgstr "Import users"
+
+msgid "Import all users"
+msgstr "Import all users"
+
+msgid "Import selected users"
+msgstr "Import selected users"
+
+msgid "Import users whose fulfill criteria"
+msgstr "Import users whose fulfill criteria"
+
+msgid "Import options:"
+msgstr "Import options:"
+
+msgid "Criteria filter:"
+msgstr "Criteria filter:"
+
+msgid "contains:"
+msgstr "contains:"
+
+msgid "Reload"
+msgstr "Reload"
+
+msgid "Please select users in table to import."
+msgstr "Please select users in table to import."
+
+msgid "Do not overwrite existing Baculum Web users, if they have the same username"
+msgstr "Do not overwrite existing Baculum Web users, if they have the same username"
+
+msgid "Default role for imported users:"
+msgstr "Default role for imported users:"
+
+msgid "Advanced options"
+msgstr "Advanced options"
+
+msgid "Default API host for imported users:"
+msgstr "Default API host for imported users:"
+
+msgid "Log in"
+msgstr "Log in"
+
+msgid "Invalid username or password"
+msgstr "Invalid username or password"
+
+msgid "IP address restrictions"
+msgstr "IP address restrictions"
+
+msgid "IP address restrictions:"
+msgstr "IP address restrictions:"
+
+msgid "Use CTRL + left-click to multiple item selection"
+msgstr "Use CTRL + left-click to multiple item selection"
+
+msgid "Comma separated IP addresses. Using asterisk character, there is also possible to provide subnet, for example: 192.168.1.*"
+msgstr "Comma separated IP addresses. Using asterisk character, there is also possible to provide subnet, for example: 192.168.1.*"
+
+msgid "Default IP address restrictions for imported users:"
+msgstr "Default IP address restrictions for imported users:"
+
+msgid "Set your IP address"
+msgstr "Set your IP address"
+
+msgid "Invalid IP address restrictions value. This field can have comma separated IP addresses only or subnet addresses like 192.168.1.*"
+msgstr "Invalid IP address restrictions value. This field can have comma separated IP addresses only or subnet addresses like 192.168.1.*"
+
+msgid "This type of authentication is realized by web server. To use it, the basic authentication has to be enabled in the Baculum Web web server configuration."
+msgstr "This type of authentication is realized by web server. To use it, the basic authentication has to be enabled in the Baculum Web web server configuration."
+
+msgid "General settings"
+msgstr "General settings"
+
+msgid "Default access setting for logged in users not defined in Baculum Web:"
+msgstr "Default access setting for logged in users not defined in Baculum Web:"
+
+msgid "No access"
+msgstr "No access"
+
+msgid "Access with default settings"
+msgstr "Access with default settings"
+
+msgid "Default role:"
+msgstr "Default role:"
+
+msgid "Default API host:"
+msgstr "Default API host:"
+
+msgid "Users file path:"
+msgstr "Users file path:"
+
+msgid "Hash algorithm:"
+msgstr "Hash algorithm:"
+
+msgid "Please enter users file path value."
+msgstr "Please enter users file path value."
+
+msgid "Test"
+msgstr "Test"
+
+msgid "The user file is not accessible."
+msgstr "The user file is not accessible."
+
+msgid "The user file is not readable by web server user."
+msgstr "The user file is not readable by web server user."
+
+msgid "The user file is readable but not writeable by web server user."
+msgstr "The user file is readable but not writeable by web server user."
+
+msgid "Allow Baculum Web to manage the Basic authentication users (add/remove users and change their passwords)"
+msgstr "Allow Baculum Web to manage the Basic authentication users (add/remove users and change their passwords)"
+
+msgid "Authorization failed. Please contact the Baculum administrator to grant permissions."
+msgstr "Authorization failed. Please contact the Baculum administrator to grant permissions."
+
+msgid "Try again"
+msgstr "Try again"
+
+msgid "Manage Basic users"
+msgstr "Manage Basic users"
+
+msgid "Empty user list"
+msgstr "Empty user list"
+
+msgid "Basic user list"
+msgstr "Basic user list"
+
+msgid "Access to Baculum API"
+msgstr "Access to Baculum API"
+
+msgid "Access to Baculum Web"
+msgstr "Access to Baculum Web"
+
+msgid "Requried support from web server side - e.g. %supported_web_server_list"
+msgstr "Requried support from web server side - e.g. %supported_web_server_list"
+
+msgid "Apache 2.4 with apr-util 1.5+"
+msgstr "Apache 2.4 with apr-util 1.5+"
+
+msgid "Apache, Lighttpd and Nginx on most UNIX platforms"
+msgstr "Apache, Lighttpd and Nginx on most UNIX platforms"
+
+msgid "Nginx on most UNIX platforms"
+msgstr "Nginx on most UNIX platforms"

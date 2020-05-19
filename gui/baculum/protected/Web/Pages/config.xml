@@ -6,6 +6,8 @@
 		<!-- config modules -->
 		<module id="web_config" class="Application.Web.Class.WebConfig" />
 		<module id="host_config" class="Application.Web.Class.HostConfig" />
+		<module id="user_config" class="Application.Web.Class.WebUserConfig" />
+		<module id="role_config" class="Application.Web.Class.WebRoleConfig" />
 		<!-- data modules -->
 		<module id="api" class="Application.Web.Class.BaculumAPIClient" />
 		<module id="data_desc" class="Application.Web.Class.DataDescription" />
@@ -19,5 +21,9 @@
 		<module id="log_parser" class="Application.Web.Class.LogParser" />
 		<!-- auth modules -->
 		<module id="basic_webuser" class="Application.Web.Class.BasicWebUserConfig" />
+		<module id="page_category" class="Application.Web.Class.PageCategory" />
+		<module id="user_role" class="Application.Web.Class.WebUserRoles" />
+		<module id="auth" class="System.Security.TAuthManager" UserManager="users" LoginPage="LoginPage" />
+		<module id="users" class="Application.Web.Class.WebUserManager" UserClass="Application.Web.Class.WebUser" />
 	</modules>
 </configuration>

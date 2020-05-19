@@ -20,12 +20,11 @@
  * Bacula(R) is a registered trademark of Kern Sibbald.
  */
 
-session_start();
-
 Prado::using('Application.Web.Pages.Requirements');
 Prado::using('Application.Common.Class.BaculumPage');
 Prado::using('Application.Web.Init');
 Prado::using('Application.Web.Class.WebConfig');
+Prado::using('Application.Web.Class.PageCategory');
 
 /**
  * Baculum Web page module.
@@ -47,50 +46,19 @@ class BaculumWebPage extends BaculumPage {
 	public function onPreInit($param) {
 		parent::onPreInit($param);
 		$this->web_config = $this->getModule('web_config')->getConfig();
-		$this->Application->getGlobalization()->Culture = $this->getLanguage();
 		if (count($this->web_config) === 0) {
-			if (isset($_SERVER['PHP_AUTH_USER'])) {
-				if ($this->Service->getRequestedPagePath() != 'WebConfigWizard') {
-					$this->goToPage('WebConfigWizard');
-				}
-				// without config there is no way to call api below
-				return;
-			} else {
-				self::accessDenied();
+			if ($this->Service->getRequestedPagePath() != 'WebConfigWizard') {
+				$this->goToPage('WebConfigWizard');
 			}
+			// without config there is no way to call api below
+			return;
 		}
 		Logging::$debug_enabled = (isset($this->web_config['baculum']['debug']) && $this->web_config['baculum']['debug'] == 1);
 		if (!$this->IsPostBack && !$this->IsCallBack) {
+			$this->postInitActions();
 			$this->getModule('api')->initSessionCache(true);
 			$this->setSessionUserVars();
 		}
-		$this->checkPrivileges();
-	}
-
-	/**
-	 * Get curently set language short name (for example: en, pl).
-	 * If language short name is not set in session then the language value
-	 * is taken from Baculum config file, saved in session and returned.
-	 * If the language setting is set in session, then the value from
-	 * session is returned.
-	 *
-	 * @access public
-	 * @return string currently set language short name
-	 */
-	public function getLanguage() {
-		$language = null;
-		if (isset($_SESSION['language']) && !empty($_SESSION['language'])) {
-			$language =  $_SESSION['language'];
-		} else {
-			if (isset($this->web_config['baculum']) && key_exists('lang', $this->web_config['baculum'])) {
-				$language = $this->web_config['baculum']['lang'];
-			}
-			if (is_null($language)) {
-				$language = WebConfig::DEFAULT_LANGUAGE;
-			}
-			$_SESSION['language'] = $language;
-		}
-		return $language;
 	}
 
 	/**
@@ -99,24 +67,10 @@ class BaculumWebPage extends BaculumPage {
 	 * @return none
 	 */
 	private function setSessionUserVars() {
-		// NOTE. For oauth2 callback, the PHP_AUTH_USER is empty because no user/pass.
-		if (count($this->web_config) > 0 && isset($_SERVER['PHP_AUTH_USER'])) {
-			// Set administrator role
-			$_SESSION['admin'] = ($_SERVER['PHP_AUTH_USER'] === $this->web_config['baculum']['login']);
-
-			// Set api host for normal user
-			if (!$_SESSION['admin'] && key_exists('users', $this->web_config) && array_key_exists($_SERVER['PHP_AUTH_USER'], $this->web_config['users'])) {
-				$_SESSION['api_host'] = $this->web_config['users'][$_SERVER['PHP_AUTH_USER']];
-			} elseif ($_SESSION['admin']) {
-				$_SESSION['api_host'] = 'Main';
-			}
-		} else {
-			$_SESSION['admin'] = false;
-		}
-
 		// Set director
 		$directors = $this->getModule('api')->get(array('directors'), null, false);
-		if ($directors->error === 0 && count($directors->output) > 0 && (!key_exists('director', $_SESSION) || $directors->output[0] != $_SESSION['director'])) {
+		if ($directors->error === 0 && count($directors->output) > 0 &&
+		       (!key_exists('director', $_SESSION) || $directors->output[0] != $_SESSION['director'])) {
 			$_SESSION['director'] = $directors->output[0];
 		}
 
@@ -133,14 +87,72 @@ class BaculumWebPage extends BaculumPage {
 		}
 	}
 
-	private function checkPrivileges() {
-		if (property_exists($this, 'admin') && $this->admin === true && !$_SESSION['admin']) {
-			self::accessDenied();
+	/**
+	 * Redirection to default page defined in application config.
+	 *
+	 * @access public
+	 * @param array $params HTTP GET method parameters in associative array
+	 * @return none
+	 */
+	public function goToDefaultPage($params = null) {
+		$def_page = $this->Service->DefaultPage;
+		$manager = $this->getModule('users');
+		if (!$manager->isPageAllowed($this->User, $this->Service->DefaultPage)) {
+			// User hasn't access to default service page. Get first allowed page.
+			$def_page = $this->findDefaultPageForUser();
+
+			/**
+			 * If page different than default for service, reset params because
+			 * they will not work with different page.
+			 */
+			$params = null;
 		}
+		if (!is_string($def_page)) {
+			$def_page = $this->getModule('auth')->getLoginPage();
+		}
+		$this->goToPage($def_page, $params);
 	}
 
-	public static function accessDenied() {
-		die('Access denied');
+	/**
+	 * Find default page for an user.
+	 * Useful to determine on which page direct user. It takes first one found
+	 * that can be accessible by the user.
+	 *
+	 * @return mixed page path or null if no page for user found
+	 */
+	private function findDefaultPageForUser() {
+		$manager = $this->getModule('users');
+		$user_role = $this->getModule('user_role');
+		$roles = $this->User->getRoles();
+		$pages = [];
+		for ($i = 0; $i < count($roles); $i++) {
+			$rpages = $user_role->getPagesByRole($roles[$i]);
+			for ($j = 0; $j < count($rpages); $j++) {
+				if (!in_array($rpages[$i], $pages) && $manager->isPageAllowed($this->User, $rpages[$i])) {
+					$pages[] = $rpages[$i];
+				}
+			}
+		}
+		return array_shift($pages);
+	}
+
+	/**
+	 * Common actions which has to be done for each web page just after
+	 * page pre-loading.
+	 *
+	 * @return none
+	 */
+	private function postInitActions() {
+		/**
+		 * If users config file doesn't exist, create it and populate
+		 * using basic users file.
+		 * Basic auth method is the main Baculum Web auth method. Before introducing
+		 * users.conf file, it was the only one supported method.
+		 */
+		$result = $this->getModule('user_config')->importUsers();
+		if ($result) {
+			$this->goToDefaultPage();
+		}
 	}
 }
 ?>

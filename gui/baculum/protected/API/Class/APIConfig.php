@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2019 Kern Sibbald
+ * Copyright (C) 2013-2020 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -35,7 +35,7 @@ class APIConfig extends ConfigFileModule {
 	/**
 	 * Default application language
 	 */
-	const DEFAULT_LANGUAGE = 'en';
+	const DEF_LANG = 'en';
 
 	/**
 	 * API config file path

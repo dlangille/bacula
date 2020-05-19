@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2019 Kern Sibbald
+ * Copyright (C) 2013-2020 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -57,6 +57,20 @@ class BaculumUrlMapping extends TUrlMapping {
 	public function __construct() {
 		parent::__construct();
 		$this->setServiceUrlManager();
+	}
+
+	/**
+	 * Get all pages for current service.
+	 * Pages are taken directly from configuration file.
+	 *
+	 * @return array all pages for service.
+	 */
+	public function getPages() {
+		$pages = [];
+		foreach ($this->_patterns as $pattern) {
+			$pages[] = $pattern->getServiceParameter();
+		}
+		return $pages;
 	}
 
 	private function getServiceID() {

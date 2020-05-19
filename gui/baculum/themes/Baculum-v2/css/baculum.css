@@ -345,3 +345,23 @@ table.component td:nth-of-type(1) {
 .info {
 	color: #333;
 }
+
+.error {
+	color: red;
+}
+
+/* Option row */
+.opt_row {
+	line-height: 36px;
+}
+
+/* Required option */
+.opt_req {
+	line-height: 40px;
+	display: inline;
+	margin-left: 2px;
+}
+
+.field_invalid {
+	border: 1px solid red !important;
+}

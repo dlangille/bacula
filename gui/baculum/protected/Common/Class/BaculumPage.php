@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2019 Kern Sibbald
+ * Copyright (C) 2013-2020 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -129,27 +129,29 @@ class BaculumPage extends TPage {
 	}
 
 	/**
-	 * Log in as specific user.
+	 * Get full main URL to log in with user and password.
+	 * It is useful to work with Basic authentication (login or logout for example).
 	 *
-	 * Note, usually after this method call there required is using exit() just
-	 * after method execution. Otherwise the HTTP redirection may be canceled on some
-	 * web servers.
-	 *
-	 * @access public
 	 * @param string $user user name to log in
-	 * @param string $string plain text user's password
-	 * @return none
+	 * @param string $password plain text user's password
+	 * @return string full login URL
 	 */
-	public function switchToUser($user, $password) {
-		$http_protocol = isset($_SERVER['HTTPS']) && !empty($_SERVER['HTTPS']) ? 'https' : 'http';
+	public function getFullLoginUrl($user, $password) {
+		$protocol = isset($_SERVER['HTTPS']) && !empty($_SERVER['HTTPS']) ? 'https' : 'http';
 		$host = $_SERVER['SERVER_NAME'];
 		$port = $_SERVER['SERVER_PORT'];
-		$url_prefix = $this->Application->getModule('url_manager')->getUrlPrefix();
+		$url_prefix = $this->getModule('url_manager')->getUrlPrefix();
 		$url_prefix = str_replace('/index.php', '', $url_prefix);
-		$location = sprintf("%s://%s:%s@%s:%d%s", $http_protocol, $user, $password, $host, $port, $url_prefix);
-
-		// Log in by header
-		header("Location: $location");
+		$location = sprintf(
+			'%s://%s:%s@%s:%d%s',
+			$protocol,
+			$user,
+			$password,
+			$host,
+			$port,
+			$url_prefix
+		);
+		return $location;
 	}
 
 	public function setStyleSheetFiles(){

@@ -7,32 +7,34 @@
 		NavigationStyle.CssClass="navigation"
 		UseDefaultLayout="false"
 		ShowSideBar="false"
+		OnPreviousButtonClick="previousStep"
+		OnNextButtonClick="nextStep"
 		OnCancelButtonClick="wizardStop"
 		OnCompleteButtonClick="wizardCompleted"
 		>
 		<prop:HeaderTemplate>
-			<div class="w3-quarter w3-padding-16">
+			<div class="<%=$this->SourceTemplateControl->first_run ? 'w3-quarter' : 'w3-third'%> w3-padding-16">
 				<div class="step w3-padding w3-text-white w3-margin-right <%=($this->Parent->ActiveStepIndex === 0 ? 'w3-light-green' : 'w3-green')%>">
 					<div class="w3-left"><i class="fa fa-language w3-xxxlarge"></i></div>
 					<div class="w3-clear"></div>
 					<h4><com:TTranslate Text="Language" /></h4>
 				</div>
 			</div>
-			<div class="w3-quarter w3-padding-16">
+			<div class="<%=$this->SourceTemplateControl->first_run ? 'w3-quarter' : 'w3-third'%> w3-padding-16">
 				<div class="step w3-padding w3-text-white w3-margin-right <%=($this->Parent->ActiveStepIndex === 1 ? 'w3-light-green' : 'w3-green')%>">
 					<div class="w3-left"><i class="fa fa-plus-square w3-xxxlarge"></i></div>
 					<div class="w3-clear"></div>
 					<h4><com:TTranslate Text="Add APIs" /></h4>
 				</div>
 			</div>
-			<div class="w3-quarter w3-padding-16">
+			<div class="<%=$this->SourceTemplateControl->first_run ? 'w3-quarter' : 'w3-third'%> w3-padding-16"<%=!$this->SourceTemplateControl->first_run ? ' style="display: none"' : ''%>>
 				<div class="step w3-padding w3-text-white w3-margin-right <%=($this->Parent->ActiveStepIndex === 2 ? 'w3-light-green' : 'w3-green')%>">
 					<div class="w3-left"><i class="fa fa-key w3-xxxlarge"></i></div>
 					<div class="w3-clear"></div>
 					<h4><com:TTranslate Text="Authentication" /></h4>
 				</div>
 			</div>
-			<div class="w3-quarter w3-padding-16">
+			<div class="<%=$this->SourceTemplateControl->first_run ? 'w3-quarter' : 'w3-third'%> w3-padding-16">
 				<div class="step w3-padding w3-text-white w3-margin-right <%=($this->Parent->ActiveStepIndex === 3 ? 'w3-light-green' : 'w3-green')%>">
 					<div class="w3-left"><i class="fa fa-check-square w3-xxxlarge"></i></div>
 					<div class="w3-clear"></div>
@@ -169,7 +171,7 @@
 		</com:TWizardStep>
 		<com:TWizardStep ID="Step4" Title="<%[ Step 4 - Finish ]%>" StepType="Finish">
 			<fieldset>
-				<legend><%[ Authorization to Baculum API ]%></legend>
+				<legend><%[ Access to Baculum API ]%></legend>
 				<div class="w3-container w3-section">
 					<div class="w3-third"><%[ Protocol: ]%></div>
 					<div class="w3-third bold"><%=$this->AddNewHost->APIProtocol->SelectedValue%></div>
@@ -219,8 +221,8 @@
 					</div>
 				</div>
 			</fieldset>
-			<fieldset>
-				<legend><%[ Authorization to Baculum Web ]%></legend>
+			<fieldset<%=!$this->SourceTemplateControl->first_run ? ' style="display: none"' : ''%>>
+				<legend><%[ Access to Baculum Web ]%></legend>
 				<div class="w3-container w3-section">
 					<div class="w3-third"><%[ Administration login: ]%></div>
 					<div class="w3-third bold"><%=$this->WebLogin->Text%></div>

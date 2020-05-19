@@ -1216,12 +1216,6 @@ msgstr "Wspierane"
 msgid "Not supported"
 msgstr "Nie wspierane"
 
-msgid "Authorization to Baculum API"
-msgstr "Autoryzacja do Baculum API"
-
-msgid "Authorization to Baculum Web"
-msgstr "Autoryzacja do Baculum Web"
-
 msgid "Step 3 - authentication params to Baculum Web panel"
 msgstr "Step 3 - parametry autentykacji do panelu Baculum Web"
 
@@ -1452,9 +1446,6 @@ msgstr "Wolumen"
 
 msgid "During restore there will be used following volumes:"
 msgstr "Podczas zadania przywracania danych potrzebne będą następujące wolumeny:"
-
-msgid "Use Ctrl + Mouse Click to change selection"
-msgstr "Aby zmienić wybór, użyj Ctrl + klik myszy"
 
 msgid "Go back"
 msgstr "Powrót"
@@ -2637,3 +2628,306 @@ msgstr "Tip: Użyj lewego przycisku myszy, aby wybrać wiersz tabeli. Użyj CTRL
 
 msgid "Show time in job log:"
 msgstr "Pokaż czas w dzienniku zadania:"
+
+msgid "Security"
+msgstr "Bezpieczeństwo"
+
+msgid "Roles"
+msgstr "Role"
+
+msgid "Long name"
+msgstr "Długa nazwa"
+
+msgid "Edit user"
+msgstr "Edytuj użytkownika"
+
+msgid "Long name:"
+msgstr "Długa nazwa:"
+
+msgid "Description:"
+msgstr "Opis:"
+
+msgid "E-mail:"
+msgstr "E-mail:"
+
+msgid "Roles:"
+msgstr "Roles:"
+
+msgid "Invalid e-mail address value."
+msgstr "Niepoprawna wartość adresu e-mail."
+
+msgid "Invalid username value."
+msgstr "Niepoprawna nazwa użytkownika."
+
+msgid "Username"
+msgstr "Użytkownik"
+
+msgid "E-mail"
+msgstr "E-mail"
+
+msgid "Description"
+msgstr "Opis"
+
+msgid "Add user"
+msgstr "Dodaj użytkownika"
+
+msgid "Username field cannot be empty."
+msgstr "Pole użytkownika nie może być puste."
+
+msgid "At least one role must be selected."
+msgstr "Co najmniej jednak rola musi być wybrana."
+
+msgid "Username with the given name already exists."
+msgstr "Użytkownik z podaną nazwą już istnieje."
+
+msgid "Edit role"
+msgstr "Edytuj rolę"
+
+msgid "Role with limitted access"
+msgstr "Rola z ograniczonym dostępem"
+
+msgid "Role with full access"
+msgstr "Rola z pełnym dostępem"
+
+msgid "Role:"
+msgstr "Rola:"
+
+msgid "Resources:"
+msgstr "Zasoby:"
+
+msgid "Role name"
+msgstr "Rola"
+
+msgid "Resources"
+msgstr "Zasoby"
+
+msgid "Add new role"
+msgstr "Dodaj nową rolę"
+
+msgid "Role field cannot be empty."
+msgstr "Pole roli nie może być puste."
+
+msgid "At least one resource must be selected."
+msgstr "Musisz wybrać co najmniej jeden zasób."
+
+msgid "Role with the given name already exists."
+msgstr "Rola z podaną nazwą już istnieje."
+
+msgid "This is native predefined role, that cannot be changed. For having custom roles, please use the button to add new role."
+msgstr "To jest natywna predefiniowana rola, która nie może zostać zmieniona. Aby mieć własne niestandardowe role, proszę użyć przycisku do dodawania nowej roli."
+
+msgid "The following roles are predefined and cannot be removed: %predefined_roles"
+msgstr "Następujące role są natywne predefiniowane i nie mogą zostać usunięte: %predefined_roles"
+
+msgid "The following roles are using by users and cannot be removed: %used_roles To remove them, please unassign all users from these roles."
+msgstr "Następujące role są używane przez użytkowników i nie mogą zostać usunięte: %used_roles Aby je usunąć, wypisz wszystkich"
+
+msgid "Add role"
+msgstr "Add role"
+
+msgid "Authentication method"
+msgstr "Metoda uwierzytelniania"
+
+msgid "HTTP Basic authentication"
+msgstr "Uwierzytelnianie HTTP Basic"
+
+msgid "LDAP authentication"
+msgstr "Uwierzytelnianie LDAP"
+
+msgid "LDAP server options"
+msgstr "Opcje serwera LDAP"
+
+msgid "SSL encryption (LDAPS):"
+msgstr "Szyfrowanie SSL (LDAPS):"
+
+msgid "Protocol version:"
+msgstr "Wersja protokołu:"
+
+msgid "LDAP version"
+msgstr "LDAP wersja"
+
+msgid "LDAP authentication method"
+msgstr "Metoda uwierzytelniania LDAP"
+
+msgid "Anonymous authentication"
+msgstr "Uwierzytelnianie anonimowe"
+
+msgid "Simple authentication"
+msgstr "Proste uwierzytelnianie"
+
+msgid "Base DN:"
+msgstr "Bazowy DN:"
+
+msgid "Attributes"
+msgstr "Atrybuty"
+
+msgid "Please enter port."
+msgstr "Proszę wprowadzić port."
+
+msgid "Please enter username."
+msgstr "Proszę wprowadzić nazwę użytkownika."
+
+msgid "Manager DN:"
+msgstr "DN konta administratora:"
+
+msgid "Please enter IP Address/Hostname."
+msgstr "Proszę wprowadzić adres IP/nazwę hosta."
+
+msgid "Please enter username attribute."
+msgstr "Proszę wprowadzić atrybut użytkownika."
+
+msgid "Test LDAP connection"
+msgstr "Test połączenia LDAP"
+
+msgid "Manage LDAP users"
+msgstr "Zarządzaj użytkowników LDAP"
+
+msgid "Please enter Base DN."
+msgstr "Proszę wprowadzić Bazowy DN."
+
+msgid "LDAP user list"
+msgstr "Lista użytkowników LDAP"
+
+msgid "Import users"
+msgstr "Importuj użytkowników"
+
+msgid "Import all users"
+msgstr "Importuj wszystkich użytkowników"
+
+msgid "Import selected users"
+msgstr "Importuj wybranych użytkowników"
+
+msgid "Import users whose fulfill criteria"
+msgstr "Importuj użytkowników spełniających kryteria"
+
+msgid "Import options:"
+msgstr "Opcje importu:"
+
+msgid "Criteria filter:"
+msgstr "Filtr kryteriów:"
+
+msgid "contains:"
+msgstr "zawiera:"
+
+msgid "Reload"
+msgstr "Przeładuj"
+
+msgid "Please select users in table to import."
+msgstr "Proszę wybrać użytkowników w tabeli do zaimportowania."
+
+msgid "Do not overwrite existing Baculum Web users, if they have the same username"
+msgstr "Nie nadpisuj istniejących użytkowników Baculum Web, jeśli mają tą samą nazwę"
+
+msgid "Default role for imported users:"
+msgstr "Domyślna rola dla zaimportowanych użytkowników:"
+
+msgid "Advanced options"
+msgstr "Opcje zaawansowane"
+
+msgid "Default API host for imported users:"
+msgstr "Domyślny host API dla zaimportowanych użytkowników:"
+
+msgid "Log in"
+msgstr "Zaloguj"
+
+msgid "Invalid username or password"
+msgstr "Niepoprawna nazwa użytkownika lub hasło"
+
+msgid "IP address restrictions"
+msgstr "IP address restrictions"
+
+msgid "IP address restrictions:"
+msgstr "IP address restrictions:"
+
+msgid "Use CTRL + left-click to multiple item selection"
+msgstr "Aby zaznaczyć wiele elementów, użyj CTRL + lewy przycisk myszy"
+
+msgid "Comma separated IP addresses. Using asterisk character, there is also possible to provide subnet, for example: 192.168.1.*"
+msgstr "Adresy IP oddzielone przecinkami. Używając znaku gwiazdki, jest również możliwe d"
+
+msgid "Default IP address restrictions for imported users:"
+msgstr "Domyślne restrykcje adresu IP dla zaimportowanych użytkowników:"
+
+msgid "Set your IP address"
+msgstr "Ustaw twój adres IP"
+
+msgid "Invalid IP address restrictions value. This field can have comma separated IP addresses only or subnet addresses like 192.168.1.*"
+msgstr "Nieprawidłowa wartość restrykcji adresów IP. To pole może mieć tylko oddzielone przecinkami adresy IP lub adresy podsieci, takie jak 192.168.1.*"
+
+msgid "This type of authentication is realized by web server. To use it, the basic authentication has to be enabled in the Baculum Web web server configuration."
+msgstr "Ten typ uwierzytelniania jest realizowany przez serwer WWW. Aby z niego skorzystać, uwierzytelnianie 'basic' musi być włączone w konfiguracji serwera WWW."
+
+msgid "General settings"
+msgstr "Ustawienia ogólne"
+
+msgid "Default access setting for logged in users not defined in Baculum Web:"
+msgstr "Domyślne ustawienie dostępu dla zalogowanych użytkowników nie zdefiniowanych w Baculum Web:"
+
+msgid "No access"
+msgstr "Brak dostępu"
+
+msgid "Access with default settings"
+msgstr "Dostęp z domyślnymi ustawieniami"
+
+msgid "Default role:"
+msgstr "Domyślna rola:"
+
+msgid "Default API host:"
+msgstr "Domyślny host API:"
+
+msgid "Users file path:"
+msgstr "Lokalizacja pliku użytkowników:"
+
+msgid "Hash algorithm:"
+msgstr "Funkcja skrótu:"
+
+msgid "Please enter users file path value."
+msgstr "Proszę wprowadzić lokalizację pliku użytkowników."
+
+msgid "Test"
+msgstr "Test"
+
+msgid "The user file is not accessible."
+msgstr "Plik użytkownika nie jest dostępny."
+
+msgid "The user file is not readable by web server user."
+msgstr "Plik użytkowników nie jest możliwy do odczytania przez użytkownika serwera WWW."
+
+msgid "The user file is readable but not writeable by web server user."
+msgstr "Plik użytkowników jest możliwy do odczytania, ale nie jest możliwy do zapisania przez użytkownika serwera WWW."
+
+msgid "Allow Baculum Web to manage the Basic authentication users (add/remove users and change their passwords)"
+msgstr "Allow Baculum Web to manage the Basic authentication users (add/remove users and change their passwords)"
+
+msgid "Authorization failed. Please contact the Baculum administrator to grant permissions."
+msgstr "Błąd autoryzacji. Proszę skontaktować się administratorem Baculum w celu nadania uprawnień."
+
+msgid "Try again"
+msgstr "Spróbuj ponownie"
+
+msgid "Manage Basic users"
+msgstr "Zarządzaj użytkownikami Basic"
+
+msgid "Empty user list"
+msgstr "Pusta lista użytkowników"
+
+msgid "Basic user list"
+msgstr "Lista użytkowników Basic"
+
+msgid "Access to Baculum API"
+msgstr "Dostęp do Baculum API"
+
+msgid "Access to Baculum Web"
+msgstr "Dostęp do Baculum Web"
+
+msgid "Requried support from web server side - e.g. %supported_web_server_list"
+msgstr "Wymagane wsparcie ze strony serwera WWW - m.in. %supported_web_server_list"
+
+msgid "Apache 2.4 with apr-util 1.5+"
+msgstr "Apache 2.4 z apr-util 1.5+"
+
+msgid "Apache, Lighttpd and Nginx on most UNIX platforms"
+msgstr "Apache, Lighttpd i Nginx na większości platform UNIXowych"
+
+msgid "Nginx on most UNIX platforms"
+msgstr "Nginx na większości platform UNIXowych"

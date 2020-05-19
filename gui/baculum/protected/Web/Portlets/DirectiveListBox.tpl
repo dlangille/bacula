@@ -20,6 +20,6 @@
 			Text="Field required."
 			Enabled="<%=$this->getRequired() && $this->getShow()%>"
 		/>
-		<p class="w3-row w3-padding"><%[ Use Ctrl + Mouse Click to change selection ]%></p>
+		<p class="w3-row w3-padding"><%[ Use CTRL + left-click to multiple item selection ]%></p>
 	</div>
 </div>

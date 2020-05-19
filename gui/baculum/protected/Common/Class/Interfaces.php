@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2019 Kern Sibbald
+ * Copyright (C) 2013-2020 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -64,5 +64,15 @@ interface AuthModule {
 	public function validateRequestHeader($header);
 
 	public function getRequestHeaderValue($header);
+}
+
+/**
+ * Defined user manager methods.
+ */
+interface UserManager {
+
+	public function init($config);
+
+	public function validateUser($username, $password);
 }
 ?>

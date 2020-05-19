@@ -33,8 +33,6 @@ class VolumeList extends BaculumWebPage {
 
 	const USE_CACHE = true;
 
-	protected $admin = true;
-
 	public $volumes;
 
 	public function onInit($param) {
@@ -42,9 +40,7 @@ class VolumeList extends BaculumWebPage {
 		if ($this->IsPostBack || $this->IsCallBack) {
 			return;
 		}
-		if ($_SESSION['admin']) {
-			$this->setVolumes();
-		}
+		$this->setVolumes();
 	}
 
 	public function setVolumes() {

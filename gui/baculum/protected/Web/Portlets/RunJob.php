@@ -213,6 +213,7 @@ class RunJob extends Portlets {
 			$priority = $jobdata->priorjobid;
 		}
 		$this->Priority->Text = $priority;
+		$this->Estimate->Enabled = false;
 	}
 
 	public function selectJobValues($sender, $param) {

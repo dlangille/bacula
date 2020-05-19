@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2019 Kern Sibbald
+ * Copyright (C) 2013-2020 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -32,8 +32,6 @@ Prado::using('System.Web.UI.WebControls.TWizard');
  * @package Baculum Web
  */
 class NewJobWizard extends BaculumWebPage {
-
-	protected $admin = true;
 
 	const PREV_STEP = 'PrevStep';
 	const JOBDEFS = 'JobDefs';

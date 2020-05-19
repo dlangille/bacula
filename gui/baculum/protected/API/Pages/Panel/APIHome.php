@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2019 Kern Sibbald
+ * Copyright (C) 2013-2020 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -107,7 +107,7 @@ class APIHome extends BaculumAPIPage {
 				$values[] = "{$oauth2_cfg[$ids[$i]]['client_id']} ({$oauth2_cfg[$ids[$i]]['name']})";
 			}
 		} elseif ($config['api']['auth_type'] === 'basic') {
-			$api_user_cfg = $this->getModule('basic_apiuser')->getAllUsers();
+			$api_user_cfg = $this->getModule('basic_apiuser')->getUsers();
 			$values = $ids = array_keys($api_user_cfg);
 		}
 		$this->AuthParamsCombo->DataSource = array_combine($ids, $values);
@@ -116,7 +116,7 @@ class APIHome extends BaculumAPIPage {
 
 	private function getBasicUsers() {
 		$basic_users = array();
-		$basic_cfg = $this->getModule('basic_apiuser')->getAllUsers();
+		$basic_cfg = $this->getModule('basic_apiuser')->getUsers();
 		foreach($basic_cfg as $user => $pwd) {
 			$basic_users[] = array('username' => $user);
 		}

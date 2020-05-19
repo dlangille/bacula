@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2019 Kern Sibbald
+ * Copyright (C) 2013-2020 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -119,7 +119,7 @@ class Monitor extends BaculumPage {
 				$error = $result;
 			}
 		}
-		if (!$error && $_SESSION['admin'] && key_exists('dbsize', $params)) {
+		if (!$error && key_exists('dbsize', $params)) {
 			$result = $this->getModule('api')->get(array('dbsize'));
 			if ($result->error === 0) {
 				$monitor_data['dbsize'] = $result->output;

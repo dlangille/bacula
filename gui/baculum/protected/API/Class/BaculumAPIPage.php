@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2019 Kern Sibbald
+ * Copyright (C) 2013-2020 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -38,7 +38,7 @@ class BaculumAPIPage extends BaculumPage {
 	public function onPreInit($param) {
 		parent::onPreInit($param);
 		$config = $this->getModule('api_config')->getConfig('api');
-		$lang = array_key_exists('lang', $config) ? $config['lang'] : APIConfig::DEFAULT_LANGUAGE;
+		$lang = array_key_exists('lang', $config) ? $config['lang'] : APIConfig::DEF_LANG;
 		$this->Application->getGlobalization()->Culture = $lang;
 	}
 }

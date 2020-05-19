@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2019 Kern Sibbald
+ * Copyright (C) 2013-2020 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -34,8 +34,6 @@ class ScheduleView extends BaculumWebPage {
 	const USE_CACHE = true;
 
 	const SCHEDULE_NAME = 'ScheduleName';
-
-	protected $admin = true;
 
 	public function onInit($param) {
 		parent::onInit($param);

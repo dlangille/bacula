@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2019 Kern Sibbald
+ * Copyright (C) 2013-2020 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -51,7 +51,7 @@ class NewAuthClient extends PortletTemplate {
 		$exists = false;
 		$config = $this->getModule('api_config')->getConfig();
 		if ($this->getAuthType() === 'basic') {
-			$users = $this->getModule('basic_apiuser')->getAllUsers();
+			$users = $this->getModule('basic_apiuser')->getUsers();
 			if (!key_exists($this->APIBasicLogin->Text, $users)) {
 				$result = $this->getModule('basic_apiuser')->setUsersConfig(
 					$this->APIBasicLogin->Text,

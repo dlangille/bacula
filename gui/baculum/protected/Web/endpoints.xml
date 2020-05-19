@@ -1,6 +1,7 @@
 <urls>
 	<!-- webGUI endpoints -->
 	<url ServiceParameter="Dashboard" pattern="web/" />
+	<url ServiceParameter="LoginPage" pattern="web/login/" />
 	<url ServiceParameter="JobHistoryList" pattern="web/job/history/" />
 	<url ServiceParameter="JobHistoryView" pattern="web/job/history/{jobid}/" parameters.jobid="\d+" />
 	<url ServiceParameter="JobList" pattern="web/job/" />
@@ -29,7 +30,7 @@
 	<url ServiceParameter="Graphs" pattern="web/graphs/" />
 	<url ServiceParameter="Console" pattern="web/console/" />
 	<url ServiceParameter="ApplicationSettings" pattern="web/settings/" />
-	<url ServiceParameter="Users" pattern="web/users/" />
+	<url ServiceParameter="Security" pattern="web/security/" />
 	<url ServiceParameter="ConfigureHosts" pattern="web/configure/" />
 	<url ServiceParameter="NewResource" pattern="web/new/{component_type}/{component_name}/{resource_type}/" parameters.component_type="\w+" parameters.component_name="[a-zA-Z0-9:.\-_ ]+" parameters.resource_type="\w+" />
 	<url ServiceParameter="NewResource" pattern="web/new/{host}/{component_type}/{component_name}/{resource_type}/" parameters.host="[a-zA-Z0-9:.\-_ ]+" parameters.component_type="\w+" parameters.component_name="[a-zA-Z0-9:.\-_ ]+" parameters.resource_type="\w+" />
