@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2020-03-07 18:44\n"
+"PO-Revision-Date: 2020-05-21 19:10\n"
 "Project-Id-Version: b02f04a28aec0155df9503e3b78ae8cc\n"
 "POT-Creation-Date: \n"
 "Last-Translator: Wanderlei Hüttel <wanderlei.huttel@gmail.com>\n"
@@ -2624,310 +2624,311 @@ msgid "Refresh page"
 msgstr "Atualizar página"
 
 msgid "Tip: Use left-click to select table row. Use CTRL + left-click to multiple row selection. Use SHIFT + left-click to add a range of rows to selection."
-msgstr "Tip: Use left-click to select table row. Use CTRL + left-click to multiple row selection. Use SHIFT + left-click to add a range of rows to selection."
+msgstr "Dica: Use o botão esquerdo do mouse para selecionar a linha da tabela. Use CTRL + clique com o botão esquerdo para selecionar várias linhas. Use SHIFT + clique com o botão esquerdo para adicionar um intervalo de linhas à seleção."
 
 msgid "Show time in job log:"
-msgstr "Show time in job log:"
+msgstr "Mostrar data/hora no log do job:"
 
 msgid "Security"
-msgstr "Security"
+msgstr "Segurança"
 
 msgid "Roles"
-msgstr "Roles"
+msgstr "Funções"
 
 msgid "Long name"
-msgstr "Long name"
+msgstr "Nome longo"
 
 msgid "Edit user"
-msgstr "Edit user"
+msgstr "Editar usuário"
 
 msgid "Long name:"
-msgstr "Long name:"
+msgstr "Nome longo:"
 
 msgid "Description:"
-msgstr "Description:"
+msgstr "Descrição:"
 
 msgid "E-mail:"
-msgstr "E-mail:"
+msgstr "Email:"
 
 msgid "Roles:"
-msgstr "Roles:"
+msgstr "Funções:"
 
 msgid "Invalid e-mail address value."
-msgstr "Invalid e-mail address value."
+msgstr "Endereço de email inválido."
 
 msgid "Invalid username value."
-msgstr "Invalid username value."
+msgstr "Nome de usuário inválido."
 
 msgid "Username"
-msgstr "Username"
+msgstr "Usuário"
 
 msgid "E-mail"
-msgstr "E-mail"
+msgstr "Email"
 
 msgid "Description"
-msgstr "Description"
+msgstr "Descrição"
 
 msgid "Add user"
-msgstr "Add user"
+msgstr "Adicionar usuário"
 
 msgid "Username field cannot be empty."
-msgstr "Username field cannot be empty."
+msgstr "O nome de usuário não pode estar vazio."
 
 msgid "At least one role must be selected."
-msgstr "At least one role must be selected."
+msgstr "Pelo menos uma função deve ser selecionada."
 
 msgid "Username with the given name already exists."
-msgstr "Username with the given name already exists."
+msgstr "Este nome de usuário já existe."
 
 msgid "Edit role"
-msgstr "Edit role"
+msgstr "Editar função"
 
 msgid "Role with limitted access"
-msgstr "Role with limitted access"
+msgstr "Função com acesso limitado"
 
 msgid "Role with full access"
-msgstr "Role with full access"
+msgstr "Função com acesso total"
 
 msgid "Role:"
-msgstr "Role:"
+msgstr "Tipo:"
 
 msgid "Resources:"
-msgstr "Resources:"
+msgstr "Recursos:"
 
 msgid "Role name"
-msgstr "Role name"
+msgstr "Nome da função"
 
 msgid "Resources"
-msgstr "Resources"
+msgstr "Recursos"
 
 msgid "Add new role"
-msgstr "Add new role"
+msgstr "Adicionar nova função"
 
 msgid "Role field cannot be empty."
-msgstr "Role field cannot be empty."
+msgstr "O campo função não pode ser vazio."
 
 msgid "At least one resource must be selected."
-msgstr "At least one resource must be selected."
+msgstr "Pelo menos um recurso deve ser selecionado."
 
 msgid "Role with the given name already exists."
-msgstr "Role with the given name already exists."
+msgstr "Função com este nome já existe."
 
 msgid "This is native predefined role, that cannot be changed. For having custom roles please use the button to add new role."
-msgstr "This is native predefined role, that cannot be changed. For having custom roles please use the button to add new role."
+msgstr "Essa é uma função predefinida que não pode ser alterada. Para criar funções personalizadas, use o botão para adicionar uma nova função."
 
 msgid "The following roles are predefined and cannot be removed: %predefined_roles"
-msgstr "The following roles are predefined and cannot be removed: %predefined_roles"
+msgstr "As seguintes funções são predefinidas e não podem ser removidas: %predefined_roles"
 
 msgid "The following roles are using by users and cannot be removed: %used_roles To remove them, please unassign all users from these roles."
-msgstr "The following roles are using by users and cannot be removed: %used_roles To remove them, please unassign all users from these roles."
+msgstr "As seguintes funções estão sendo usadas pelos usuários e não podem ser removidas: %used_roles. Para removê-las, cancele a atribuição de todos os usuários dessas funções."
 
 msgid "Add role"
-msgstr "Add role"
+msgstr "Adicionar função"
 
 msgid "Authentication method"
-msgstr "Authentication method"
+msgstr "Método de autenticação"
 
 msgid "HTTP Basic authentication"
-msgstr "HTTP Basic authentication"
+msgstr "Autenticação básica HTTP"
 
 msgid "LDAP authentication"
-msgstr "LDAP authentication"
+msgstr "Autenticação LDAP"
 
 msgid "LDAP server options"
-msgstr "LDAP server options"
+msgstr "Opções do servidor LDAP"
 
 msgid "SSL encryption (LDAPS):"
-msgstr "SSL encryption (LDAPS):"
+msgstr "Criptografia SSL (LDAPS):"
 
 msgid "Protocol version:"
-msgstr "Protocol version:"
+msgstr "Versão do protocolo:"
 
 msgid "LDAP version"
-msgstr "LDAP version"
+msgstr "Versão LDAP"
 
 msgid "LDAP authentication method"
-msgstr "LDAP authentication method"
+msgstr "Método de autenticação LDAP"
 
 msgid "Anonymous authentication"
-msgstr "Anonymous authentication"
+msgstr "Autenticação anônima"
 
 msgid "Simple authentication"
-msgstr "Simple authentication"
+msgstr "Autenticação simples"
 
 msgid "Base DN:"
 msgstr "Base DN:"
 
 msgid "Attributes"
-msgstr "Attributes"
+msgstr "Atributos"
 
 msgid "Please enter port."
-msgstr "Please enter port."
+msgstr "Por favor informe a porta."
 
 msgid "Please enter username."
-msgstr "Please enter username."
+msgstr "Por favor insira o nome do usuário."
 
 msgid "Manager DN:"
 msgstr "Manager DN:"
 
 msgid "Please enter IP Address/Hostname."
-msgstr "Please enter IP Address/Hostname."
+msgstr "Insira o endereço IP/Nome do hostname."
 
 msgid "Please enter username attribute."
-msgstr "Please enter username attribute."
+msgstr "Por favor informe o atributo do usuário."
 
 msgid "Test LDAP connection"
-msgstr "Test LDAP connection"
+msgstr "Testar conexão LDAP"
 
 msgid "Manage LDAP users"
-msgstr "Manage LDAP users"
+msgstr "Gerenciar usuários LDAP"
 
 msgid "Please enter Base DN."
-msgstr "Please enter Base DN."
+msgstr "Por favor, insira Base DN."
 
 msgid "LDAP user list"
-msgstr "LDAP user list"
+msgstr "Lista de usuário LDAP"
 
 msgid "Import users"
-msgstr "Import users"
+msgstr "Importar usuários"
 
 msgid "Import all users"
-msgstr "Import all users"
+msgstr "Importar todos os usuários"
 
 msgid "Import selected users"
-msgstr "Import selected users"
+msgstr "Importar usuários selecionados"
 
 msgid "Import users whose fulfill criteria"
-msgstr "Import users whose fulfill criteria"
+msgstr "Importar usuários por critérios de atendimento"
 
 msgid "Import options:"
-msgstr "Import options:"
+msgstr "Opções de importação:"
 
 msgid "Criteria filter:"
-msgstr "Criteria filter:"
+msgstr "Filtro de critérios:"
 
 msgid "contains:"
-msgstr "contains:"
+msgstr "contém:"
 
 msgid "Reload"
-msgstr "Reload"
+msgstr "Recarregar"
 
 msgid "Please select users in table to import."
-msgstr "Please select users in table to import."
+msgstr "Por favor, selecione os usuários na tabela para importar."
 
 msgid "Do not overwrite existing Baculum Web users, if they have the same username"
-msgstr "Do not overwrite existing Baculum Web users, if they have the same username"
+msgstr "Não substitua os usuários existentes do Baculum se eles tiverem o mesmo nome de usuário"
 
 msgid "Default role for imported users:"
-msgstr "Default role for imported users:"
+msgstr "Função padrão para usuários importados:"
 
 msgid "Advanced options"
-msgstr "Advanced options"
+msgstr "Opções avançadas"
 
 msgid "Default API host for imported users:"
-msgstr "Default API host for imported users:"
+msgstr "Host API padrão para usuários importados:"
 
 msgid "Log in"
-msgstr "Log in"
+msgstr "Efetuar Login"
 
 msgid "Invalid username or password"
-msgstr "Invalid username or password"
+msgstr "Usuário ou senha inválidos"
 
 msgid "IP address restrictions"
-msgstr "IP address restrictions"
+msgstr "Restrições de endereço IP"
 
 msgid "IP address restrictions:"
-msgstr "IP address restrictions:"
+msgstr "Restrições de endereço IP:"
 
 msgid "Use CTRL + left-click to multiple item selection"
-msgstr "Use CTRL + left-click to multiple item selection"
+msgstr "Use CTRL + botão esquerdo do mouse para seleção múltipla"
 
 msgid "Comma separated IP addresses. Using asterisk character, there is also possible to provide subnet, for example: 192.168.1.*"
-msgstr "Comma separated IP addresses. Using asterisk character, there is also possible to provide subnet, for example: 192.168.1.*"
+msgstr "Endereços IP separados por vírgula. Usando o caractere asterisco, também é possível fornecer sub-rede, por exemplo: 192.168.1. *"
 
 msgid "Default IP address restrictions for imported users:"
-msgstr "Default IP address restrictions for imported users:"
+msgstr "Restrições de endereço IP padrão para usuários importados:"
 
 msgid "Set your IP address"
-msgstr "Set your IP address"
+msgstr "Defina seu endereço IP"
 
 msgid "Invalid IP address restrictions value. This field can have comma separated IP addresses only or subnet addresses like 192.168.1.*"
-msgstr "Invalid IP address restrictions value. This field can have comma separated IP addresses only or subnet addresses like 192.168.1.*"
+msgstr "Valor de restrições de endereço IP inválido. Este campo pode ter endereços IP separados por vírgula apenas ou endereços de sub-rede como 192.168.1.*"
 
 msgid "This type of authentication is realized by web server. To use it, the basic authentication has to be enabled in the Baculum Web web server configuration."
-msgstr "This type of authentication is realized by web server. To use it, the basic authentication has to be enabled in the Baculum Web web server configuration."
+msgstr "Esse tipo de autenticação é realizado pelo servidor web. Para usá-lo, a autenticação básica tem que ser habilitada na configuração do servidor Web do Baculum."
 
 msgid "General settings"
-msgstr "General settings"
+msgstr "Configurações gerais"
 
 msgid "Default access setting for logged in users not defined in Baculum Web:"
-msgstr "Default access setting for logged in users not defined in Baculum Web:"
+msgstr "Configuração de acesso padrão para usuários logados não definido no Baculum:"
 
 msgid "No access"
-msgstr "No access"
+msgstr "Sem acesso"
 
 msgid "Access with default settings"
-msgstr "Access with default settings"
+msgstr "Acesso com configurações padrão"
 
 msgid "Default role:"
-msgstr "Default role:"
+msgstr "Papel padrão:"
 
 msgid "Default API host:"
-msgstr "Default API host:"
+msgstr "Host padrão da API:"
 
 msgid "Users file path:"
-msgstr "Users file path:"
+msgstr "Caminho do arquivo de usuários:"
 
 msgid "Hash algorithm:"
-msgstr "Hash algorithm:"
+msgstr "Algoritmo de hash:"
 
 msgid "Please enter users file path value."
-msgstr "Please enter users file path value."
+msgstr "Insira o valor do caminho do arquivo."
 
 msgid "Test"
-msgstr "Test"
+msgstr "Testar"
 
 msgid "The user file is not accessible."
-msgstr "The user file is not accessible."
+msgstr "O arquivo do usuário não está acessível."
 
 msgid "The user file is not readable by web server user."
-msgstr "The user file is not readable by web server user."
+msgstr "O arquivo do usuário não pode ser lido pelo usuário do servidor da web."
 
 msgid "The user file is readable but not writeable by web server user."
-msgstr "The user file is readable but not writeable by web server user."
+msgstr "O arquivo do usuário pode ser lido, mas não pode ser gravado pelo usuário do servidor da web."
 
 msgid "Allow Baculum Web to manage the Basic authentication users (add/remove users and change their passwords)"
-msgstr "Allow Baculum Web to manage the Basic authentication users (add/remove users and change their passwords)"
+msgstr "Permitir que o Baculum gerencie os usuários de autenticação básica (adicionar/remover usuários e alterar suas senhas)"
 
 msgid "Authorization failed. Please contact the Baculum administrator to grant permissions."
-msgstr "Authorization failed. Please contact the Baculum administrator to grant permissions."
+msgstr "Falha na autorização. Por favor, contate o administrador do Baculum para conceder permissões."
 
 msgid "Try again"
-msgstr "Try again"
+msgstr "Tentar novamente"
 
 msgid "Manage Basic users"
-msgstr "Manage Basic users"
+msgstr "Gerenciar usuários básicos"
 
 msgid "Empty user list"
-msgstr "Empty user list"
+msgstr "Lista de usuários vazia"
 
 msgid "Basic user list"
-msgstr "Basic user list"
+msgstr "Lista básica de usuários"
 
 msgid "Access to Baculum API"
-msgstr "Access to Baculum API"
+msgstr "Acesso à API do Baculum"
 
 msgid "Access to Baculum Web"
-msgstr "Access to Baculum Web"
+msgstr "Acesso ao Baculum Web"
 
 msgid "Requried support from web server side - e.g. %supported_web_server_list"
-msgstr "Requried support from web server side - e.g. %supported_web_server_list"
+msgstr "É requerido suporte do lado do servidor web - por exemplo %supported_web_server_list"
 
 msgid "Apache 2.4 with apr-util 1.5+"
-msgstr "Apache 2.4 with apr-util 1.5+"
+msgstr "Apache 2.4 com apr-util 1.5+"
 
 msgid "Apache, Lighttpd and Nginx on most UNIX platforms"
-msgstr "Apache, Lighttpd and Nginx on most UNIX platforms"
+msgstr "Apache, Lighttpd e Nginx na maioria das plataformas UNIX"
 
 msgid "Nginx on most UNIX platforms"
-msgstr "Nginx on most UNIX platforms"
+msgstr "Nginx na maioria das plataformas UNIX"
+
