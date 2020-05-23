@@ -19,6 +19,7 @@ UNITDIR = $(SYSUSRDIR)/lib/systemd/system
 LOCALEDIR = $(SYSUSRDIR)/share/locale
 WWWDIR ?= $(SYSUSRDIR)/share/$(NAME)/htdocs
 CACHEDIR = $(SYSVARDIR)/cache/$(NAME)
+VARLIBDIR = $(SYSVARDIR)/lib/$(NAME)
 LOGDIR = $(SYSVARDIR)/log
 HTTPDLOGS = $(LOGDIR)/$(HTTPDNAME)
 LIGHTTPDLOGS = $(LOGDIR)/lighttpd
@@ -85,15 +86,16 @@ prepare_build:
 	$(DESTDIR)$(CONFDIR) \
 	$(DESTDIR)$(HTTPDCONFDIR) \
 	$(DESTDIR)$(UNITDIR) \
-	$(DESTDIR)$(WWWDIR) \
-	$(DESTDIR)$(CACHEDIR) \
 	$(DESTDIR)$(LOCALEDIR) \
-	$(DESTDIR)$(WWWDIR)/$(cachedir) \
-	$(DESTDIR)$(WWWDIR)/$(configcachedir)
+	$(DESTDIR)$(WWWDIR) \
+	$(DESTDIR)$(WWWDIR)/$(cachedir)
 	mkdir -m 750 -p $(DESTDIR)$(CONFDIR)/$(configdir)-api-apache \
 	$(DESTDIR)$(CONFDIR)/$(configdir)-api-lighttpd \
 	$(DESTDIR)$(CONFDIR)/$(configdir)-web-apache \
-	$(DESTDIR)$(CONFDIR)/$(configdir)-web-lighttpd
+	$(DESTDIR)$(CONFDIR)/$(configdir)-web-lighttpd \
+	$(DESTDIR)$(WWWDIR)/$(configcachedir) \
+	$(DESTDIR)$(CACHEDIR) \
+	$(DESTDIR)$(VARLIBDIR)
 
 prepare_data: prepare_build
 	mkdir -p $(DESTDIR)$(WWWDIR)/$(datadir) \
@@ -149,7 +151,6 @@ prepare_check_script:
 	sed -i -e "s#%CONFDIR#$(CONFDIR)#g" $(DESTDIR)/$(NAME)-install-checker.sh
 	sed -i -e "s#%HTTPDCONFDIR#$(HTTPDCONFDIR)#g" $(DESTDIR)/$(NAME)-install-checker.sh
 	sed -i -e "s#%WWWDIR#$(WWWDIR)#g" $(DESTDIR)/$(NAME)-install-checker.sh
-	sed -i -e "s#%CACHEDIR#$(CACHEDIR)#g" $(DESTDIR)/$(NAME)-install-checker.sh
 	sed -i -e "s#%HTTPDLOGS#$(HTTPDLOGS)#g" $(DESTDIR)/$(NAME)-install-checker.sh
 	sed -i -e "s#%LIGHTTPDLOGS#$(LIGHTTPDLOGS)#g" $(DESTDIR)/$(NAME)-install-checker.sh
 

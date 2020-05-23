@@ -41,7 +41,6 @@ SAMPLETYPE=%SAMPLETYPE
 CONFDIR=%CONFDIR
 HTTPDCONFDIR=%HTTPDCONFDIR
 WWWDIR=%WWWDIR
-CACHEDIR=%CACHEDIR
 HTTPDLOGS=%HTTPDLOGS
 LIGHTTPDLOGS=%LIGHTTPDLOGS
 
@@ -420,7 +419,7 @@ check_baculum_files ()
 {
 	local -r own_req="$1"
 
-	perm_req="755"
+	perm_req="750"
 	dir="${WWWDIR}/${cachedir}"
 	dir_desc="Baculum cache directory"
 	if [ -h "$dir" ]
@@ -453,7 +452,7 @@ check_baculum_files ()
 	dir_desc="Baculum API log directory"
 	if [ ! -d "$dir" ]
 	then
-		log 1 "$dir_desc does not exist: ${CACHEDIR}"
+		log 1 "$dir_desc does not exist: $dir"
 	else
 		check_ownership "$dir" "$own_req" "$dir_desc"
 		check_perms "$dir" "$perm_req" "$dir_desc"
@@ -463,7 +462,7 @@ check_baculum_files ()
 	dir_desc="Baculum Web log directory"
 	if [ ! -d "$dir" ]
 	then
-		log 1 "$dir_desc does not exist: ${CACHEDIR}"
+		log 1 "$dir_desc does not exist: $dir"
 	else
 		check_ownership "$dir" "$own_req" "$dir_desc"
 		check_perms "$dir" "$perm_req" "$dir_desc"
