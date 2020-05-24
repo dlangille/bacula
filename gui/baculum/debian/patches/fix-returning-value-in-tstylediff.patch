@@ -1,0 +1,13 @@
+diff --git a/gui/baculum/framework/pradosoft/prado/framework/Web/UI/ActiveControls/TStyleDiff.php b/gui/baculum/framework/pradosoft/prado/framework/Web/UI/ActiveControls/TStyleDiff.php
+index 9b57d31845..8519e5bb36 100644
+--- a/gui/baculum/framework/pradosoft/prado/framework/Web/UI/ActiveControls/TStyleDiff.php
++++ b/gui/baculum/framework/pradosoft/prado/framework/Web/UI/ActiveControls/TStyleDiff.php
+@@ -100,7 +100,7 @@ class TStyleDiff extends TViewStateDiff
+ 			if (($css !== null) || ($style !== null)) {
+ 				return ['CssClass' => $css, 'Style' => $style];
+ 			} else {
+-				$this->_null;
++				return $this->_null;
+ 			}
+ 		}
+ 	}
