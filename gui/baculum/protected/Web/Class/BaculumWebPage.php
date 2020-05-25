@@ -151,6 +151,12 @@ class BaculumWebPage extends BaculumPage {
 		 */
 		$result = $this->getModule('user_config')->importUsers();
 		if ($result) {
+			/**
+			 * User must be logged out because after upgrade to first version
+			 * which supports new users management and first page load
+			 * roles are not saved in config yet. Hence they are not set for the user.
+			 */
+			$this->getModule('auth')->logout();
 			$this->goToDefaultPage();
 		}
 	}
