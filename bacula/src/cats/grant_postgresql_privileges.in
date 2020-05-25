@@ -74,6 +74,7 @@ grant select, update on location_locationid_seq    to ${db_user};
 grant select, update on locationlog_loclogid_seq   to ${db_user};
 grant select, update on log_logid_seq		   to ${db_user};
 grant select, update on restoreobject_restoreobjectid_seq to ${db_user};
+grant select, update on object_objectid_seq to ${db_user};
 grant select, update on snapshot_snapshotid_seq to ${db_user};
 END-OF-DATA
 if [ $? -eq 0 ]
