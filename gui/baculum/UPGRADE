@@ -1,0 +1,15 @@
+
+===== Baculum upgrade notes =====
+
+- Upgrade from 9.x to 9.6.3.1
+
+[Baculum Web]
+There has been introduced new way of managing users. If you use default Basic
+authetication - no additional change is required. If you use custom auth method
+realized by web server - no additional change is requred. If it is LDAP auth
+please consider switching to new LDAP auth method in Baculum Web.
+
+Import users
+Importing Basic users from default user file to Baculum Web is done automatically.
+If you would like to import LDAP users to Baculum Web, you can use import option
+available on the Security page.
