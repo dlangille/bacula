@@ -1,7 +1,7 @@
 
 ===== Baculum upgrade notes =====
 
-- Upgrade from 9.x to 9.6.3.1
+- Upgrade from 9.x to 9.6.4
 
 [Baculum Web]
 There has been introduced new way of managing users. If you use default Basic
