@@ -501,11 +501,11 @@ CREATE TABLE TagClient
 );
 
 CREATE TABLE TagMedia
-{
+(
    MediaId integer not null,
    Tag      text    not null,
    primary key (MediaId, Tag)
-};
+);
 
 CREATE TABLE TagObject
 (
