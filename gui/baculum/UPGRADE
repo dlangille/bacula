@@ -13,3 +13,10 @@ Import users
 Importing Basic users from default user file to Baculum Web is done automatically.
 If you would like to import LDAP users to Baculum Web, you can use import option
 available on the Security page.
+
+New dependency
+There has been added a new dependency. It is PHP LDAP module. There is required to
+install this module (php-ldap package) after upgrade. Appropriate information
+about this dependency is displayed on the Baculum Web page. If you install Baculum
+using binary packages, no additional action is needed because this dependency will
+be installed automatically.
