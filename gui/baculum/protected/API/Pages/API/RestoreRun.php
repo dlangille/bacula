@@ -33,6 +33,7 @@ class RestoreRun extends BaculumAPIServer {
 
 	public function create($params) {
 		$misc = $this->getModule('misc');
+		$jobid = property_exists($params, 'id') && $misc->isValidInteger($params->id) ? intval($params->id) : null;
 		$client = null;
 		if (property_exists($params, 'clientid')) {
 			$clientid = intval($params->clientid);
@@ -42,8 +43,17 @@ class RestoreRun extends BaculumAPIServer {
 			$client = $params->client;
 		}
 
+		$fileset = null;
+		if (property_exists($params, 'filesetid')) {
+			$filesetid = intval($params->filesetid);
+			$fileset_row = $this->getModule('fileset')->getFileSetById($filesetid);
+			$fileset = is_object($fileset_row) ? $fileset_row->fileset : null;
+		} elseif (property_exists($params, 'fileset') && $misc->isValidName($params->fileset)) {
+			$fileset = $params->fileset;
+		}
+
 		$rfile = property_exists($params, 'rpath') ? $params->rpath : null;
-		$priority = property_exists($params, 'priority') ? intval($params->priority) : 10; // default priority is set to 10
+		$full = property_exists($params, 'full') && $misc->isValidInteger($params->full) ? (bool)$params->full : null;
 		$where = property_exists($params, 'where') ? $params->where : null;
 		$replace = property_exists($params, 'replace') ? $params->replace : null;
 
@@ -74,7 +84,7 @@ class RestoreRun extends BaculumAPIServer {
 			return;
 		}
 
-		if(preg_match($misc::RPATH_PATTERN, $rfile) !== 1) {
+		if(!is_null($rfile) && preg_match($misc::RPATH_PATTERN, $rfile) !== 1) {
 			$this->output = JobError::MSG_ERROR_INVALID_RPATH;
 			$this->error = JobError::ERROR_INVALID_RPATH;
 			return;
@@ -92,15 +102,22 @@ class RestoreRun extends BaculumAPIServer {
 		}
 
 		$command = array('restore',
-			'file="?' . $rfile . '"',
 			'client="' . $client . '"'
 		);
+		if (is_string($rfile)) {
+			// Restore using Bvfs
+			$command[] = 'file="?' . $rfile . '"';
+		} elseif ($full === true && is_int($jobid) && $jobid > 0 && is_string($fileset)) {
+			// Full restore all files
+			$command[] = 'jobid="' . $jobid . '"';
+			$command[] = 'fileset="' . $fileset . '"';
+			$command[] = 'select';
+			$command[] = 'all';
+			$command[] = 'done';
+		}
 
 		if (is_string($replace)) {
 			$command[] = 'replace="' . $replace . '"';
-		}
-		if (is_int($priority)) {
-			$command[] = 'priority="' . $priority . '"';
 		}
 		if (is_string($restorejob)) {
 			$command[] = 'restorejob="' . $restorejob . '"';

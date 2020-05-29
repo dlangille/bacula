@@ -1621,20 +1621,10 @@
 					{
 						"name": "create[id]",
 						"in": "body",
-						"description": "Job identifier",
-						"required": true,
+						"description": "Job identifier (for full restore)",
+						"required": false,
 						"schema": {
 							"type": "integer"
-						}
-					},
-					{
-						"name": "create[name]",
-						"in": "body",
-						"description": "Job name (can be used instead id)",
-						"required": true,
-						"schema": {
-							"type": "string",
-							"pattern": "[a-zA-Z0-9:.-_ ]+"
 						}
 					},
 					{
@@ -1657,16 +1647,6 @@
 						}
 					},
 					{
-						"name": "create[rpath]",
-						"in": "body",
-						"description": "Rpath (restore path)",
-						"required": true,
-						"schema": {
-							"type": "string",
-							"pattern": "b2[0-9]+"
-						}
-					},
-					{
 						"name": "create[where]",
 						"in": "body",
 						"description": "Where to restore files",
@@ -1676,12 +1656,40 @@
 						}
 					},
 					{
-						"name": "create[priority]",
+						"name": "create[rpath]",
 						"in": "body",
-						"description": "Job priority",
+						"description": "Rpath (restore path)",
+						"required": false,
+						"schema": {
+							"type": "string",
+							"pattern": "b2[0-9]+"
+						}
+					},
+					{
+						"name": "create[full]",
+						"in": "body",
+						"description": "Full restore all files",
 						"required":  false,
 						"schema": {
-							"type": "integer"
+							"type": "boolean"
+						}
+					},
+					{
+						"name": "create[filesetid]",
+						"in": "body",
+						"description": "FileSet identifier (for full restore)",
+						"required":  false,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"name": "create[fileset]",
+						"in": "body",
+						"description": "FileSet (can be used instead of filesetid) (for full restore)",
+						"required":  false,
+						"schema": {
+							"type": "string"
 						}
 					},
 					{

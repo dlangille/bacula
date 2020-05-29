@@ -2932,3 +2932,5 @@ msgstr "Apache, Lighttpd i Nginx na większości platform UNIX-owych"
 msgid "Nginx on most UNIX platforms"
 msgstr "Nginx na większości platform UNIXowych"
 
+msgid "No file found for selected backup. It can mean file records for this backup are pruned. Restoring selected files is not available but if you continue, there will be performed full restore all backup files."
+msgstr "Nie znaleziono żadnego pliku dla wybranej kopii zapasowej. Może to oznaczać, że rekordy plików dla tej kopii są wyczyszczone. Przywracanie wybranych plików nie jest dostępne, ale jeżeli kontynuujesz, to zostanie wykonane pełne przywrócenie wszystkich plików kopii zapasowej."

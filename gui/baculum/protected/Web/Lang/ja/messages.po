@@ -3009,3 +3009,6 @@ msgstr "Apache, Lighttpd and Nginx on most UNIX platforms"
 
 msgid "Nginx on most UNIX platforms"
 msgstr "Nginx on most UNIX platforms"
+
+msgid "No file found for selected backup. It can mean file records for this backup are pruned. Restoring selected files is not available but if you continue, there will be performed full restore all backup files."
+msgstr "No file found for selected backup. It can mean file records for this backup are pruned. Restoring selected files is not available but if you continue, there will be performed full restore all backup files."

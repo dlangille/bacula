@@ -386,6 +386,9 @@ oJobsToRestoreList.init();
 			</div>
 		</com:TWizardStep>
 		<com:TWizardStep ID="Step3" Title="<%[ Step 3 - select files to restore ]%>" StepType="Auto">
+			<com:TPanel ID="NoFileFound" Style="height: 38px" Display="None">
+					<%[ No file found for selected backup. It can mean file records for this backup are pruned. Restoring selected files is not available but if you continue, there will be performed full restore all backup files. ]%>
+			</com:TPanel>
 			<div class="w3-row">
 				<div class="w3-col" style="width: 15%;"><%[ Path: ]%></div>
 				<div class="w3-col" style="width: 85%;">
@@ -686,12 +689,6 @@ oJobsToRestoreList.init();
 					</com:TDropDownList>
 				</div>
 			</div>
-			<div class="w3-section w3-row">
-				<div class="w3-col w3-third"><com:TLabel ForControl="RestoreJobPriority" Text="<%[ Restore job priority: ]%>" /></div>
-				<div class="w3-col w3-third">
-					<com:TTextBox ID="RestoreJobPriority" CssClass="w3-input w3-border" CausesValidation="false" MaxLength="5" Text="10" />
-				</div>
-			</div>
 			<div class="w3-section w3-row w3-margin-bottom">
 				<div class="w3-col w3-third"><%[ File relocation option:  ]%></div>
 				<div class="w3-col w3-third">
@@ -816,10 +813,6 @@ oJobsToRestoreList.init();
 						<com:TLabel Visible="<%=$this->ReplaceFiles->SelectedValue == 'ifnewer'%>" Text="<%[ if files from restore are newer]%>"/>
 						<com:TLabel Visible="<%=$this->ReplaceFiles->SelectedValue == 'always'%>" Text="<%[ always replace files ]%>"/>
 					</div>
-				</div>
-				<div class="w3-section w3-row">
-					<div class="w3-col w3-third"><%[ Restore job priority: ]%></div>
-					<div class="w3-col w3-third bold"><%=$this->RestoreJobPriority->Text%></div>
 				</div>
 				<div class="w3-section w3-row">
 					<div class="w3-col w3-third"><%[ File relocation option: ]%></div>

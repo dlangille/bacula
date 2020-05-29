@@ -113,7 +113,6 @@ class RestoreWizard extends BaculumWebPage
 	 * @return none
 	 */
 	public function setPreDefinedJobIdToRestore() {
-		$jobid = 0;
 		if ($this->Request->contains('jobid')) {
 			$jobid = intval($this->Request['jobid']);
 			$this->setRestoreByJobId($jobid);
@@ -423,6 +422,11 @@ class RestoreWizard extends BaculumWebPage
 			if (count($_SESSION['restore_path']) > 0) {
 				array_unshift($elements, $this->browser_root_dir);
 			}
+		}
+		if (count($elements) > 0) {
+			$this->NoFileFound->Display = 'None';
+		} elseif (isset($_SESSION['restore_single_jobid'])) {
+			$this->NoFileFound->Display = 'Dynamic';
 		}
 		$this->loadBrowserFiles($elements);
 	}
@@ -857,37 +861,48 @@ class RestoreWizard extends BaculumWebPage
 		}
 
 		$jobid = null;
+		$ret = new stdClass;
+		$restore_props = [];
+		$restore_props['client'] = $this->RestoreClient->SelectedValue;
+		if ($_SESSION['file_relocation'] == 2) {
+			if (!empty($this->RestoreStripPrefix->Text)) {
+				$restore_props['strip_prefix'] = $this->RestoreStripPrefix->Text;
+			}
+			if (!empty($this->RestoreAddPrefix->Text)) {
+				$restore_props['add_prefix'] = $this->RestoreAddPrefix->Text;
+			}
+			if (!empty($this->RestoreAddSuffix->Text)) {
+				$restore_props['add_suffix'] = $this->RestoreAddSuffix->Text;
+			}
+		} elseif ($_SESSION['file_relocation'] == 3) {
+			if (!empty($this->RestoreRegexWhere->Text)) {
+				$restore_props['regex_where'] = $this->RestoreRegexWhere->Text;
+			}
+		}
+		if (!key_exists('add_prefix', $restore_props)) {
+			$restore_props['where'] =  $this->RestorePath->Text;
+		}
+		$restore_props['replace'] = $this->ReplaceFiles->SelectedValue;
+		$restore_props['restorejob'] = $this->RestoreJob->SelectedValue;
 		if ($is_element) {
 			$this->getModule('api')->create(array('bvfs', 'restore'), $cmd_props);
-			$restore_props = array();
 			$restore_props['rpath'] = $path;
-			$restore_props['client'] = $this->RestoreClient->SelectedValue;
-			$restore_props['priority'] = intval($this->RestoreJobPriority->Text);
-			if ($_SESSION['file_relocation'] == 2) {
-				if (!empty($this->RestoreStripPrefix->Text)) {
-					$restore_props['strip_prefix'] = $this->RestoreStripPrefix->Text;
-				}
-				if (!empty($this->RestoreAddPrefix->Text)) {
-					$restore_props['add_prefix'] = $this->RestoreAddPrefix->Text;
-				}
-				if (!empty($this->RestoreAddSuffix->Text)) {
-					$restore_props['add_suffix'] = $this->RestoreAddSuffix->Text;
-				}
-			} elseif ($_SESSION['file_relocation'] == 3) {
-				if (!empty($this->RestoreRegexWhere->Text)) {
-					$restore_props['regex_where'] = $this->RestoreRegexWhere->Text;
-				}
-			}
-			if (!key_exists('add_prefix', $restore_props)) {
-				$restore_props['where'] =  $this->RestorePath->Text;
-			}
-			$restore_props['replace'] = $this->ReplaceFiles->SelectedValue;
-			$restore_props['restorejob'] = $this->RestoreJob->SelectedValue;
 
 			$ret = $this->getModule('api')->create(array('jobs', 'restore'), $restore_props);
 			$jobid = $this->getModule('misc')->findJobIdStartedJob($ret->output);
 			// Remove temporary BVFS table
 			$this->getModule('api')->set(array('bvfs', 'cleanup'), array('path' => $path));
+		} elseif (count($_SESSION['files_browser']) === 0 && isset($_SESSION['restore_single_jobid'])) {
+			$restore_props['full'] = 1;
+			$restore_props['id'] = $_SESSION['restore_single_jobid'];
+			$job = $this->getModule('api')->get(array('jobs', $_SESSION['restore_single_jobid']))->output;
+			if (is_object($job)) {
+				$restore_props['fileset'] = $job->fileset;
+			}
+			$ret = $this->getModule('api')->create(array('jobs', 'restore'), $restore_props);
+			$jobid = $this->getModule('misc')->findJobIdStartedJob($ret->output);
+		} else {
+			$ret->output = ['No file to restore found'];
 		}
 		$url_params = array();
 		if (is_numeric($jobid)) {
