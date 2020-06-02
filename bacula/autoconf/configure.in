@@ -3508,6 +3508,7 @@ AC_CONFIG_FILES([
    src/qt-console/tray-monitor/tray-monitor.pro \
    src/qt-console/tray-monitor/tray-monitor.pro.mingw32 \
    src/qt-console/tray-monitor/tray-monitor.pro.mingw64 \
+   src/qt-console/tray-monitor/install_conf_file \
    src/dird/Makefile \
    src/dird/bacula-dir.conf \
    src/lib/Makefile \
@@ -3613,6 +3614,8 @@ if test X"$GCC" = "Xyes" ; then
 fi
 
 cd src/qt-console
+chmod 755 install_conf_file build-depkgs-qt-console
+cd tray-monitor
 chmod 755 install_conf_file build-depkgs-qt-console
 cd ${BUILD_DIR}
 
