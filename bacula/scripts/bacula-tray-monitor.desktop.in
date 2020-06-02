@@ -1,8 +1,8 @@
 [Desktop Entry]
 Name=Bacula Monitor
 Comment=Notification Tray Monitor
-Icon=/usr/share/pixmaps/bacula-tray-monitor.xpm
-Exec=@sbindir@/bacula-tray-monitor -c @sysconfdir@/tray-monitor.conf
+Icon=bacula-tray-monitor
+Exec=@sbindir@/bacula-tray-monitor -c @sysconfdir@/bacula-tray-monitor.conf
 Terminal=false
 Type=Application
 Encoding=UTF-8
