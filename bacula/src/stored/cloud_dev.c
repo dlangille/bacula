@@ -2548,6 +2548,9 @@ bool cloud_dev::get_cloud_volumes_list(DCR* dcr, alist *volumes, POOLMEM *&err)
    cancel_callback cancel_cb;
    cancel_cb.fct = DCR_cancel_cb;
    cancel_cb.arg = dcr;
+   if (!driver) {
+      return false;
+   }
    return driver->get_cloud_volumes_list(volumes, &cancel_cb, err);
 }
 
@@ -2557,6 +2560,9 @@ bool cloud_dev::get_cloud_volume_parts_list(DCR *dcr, const char *VolumeName, il
    cancel_callback cancel_cb;
    cancel_cb.fct = DCR_cancel_cb;
    cancel_cb.arg = dcr;
+   if (!driver) {
+      return false;
+   }
    return driver->get_cloud_volume_parts_list(VolumeName, parts,  &cancel_cb, err);
 }
 
