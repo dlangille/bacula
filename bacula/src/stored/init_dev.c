@@ -85,6 +85,8 @@ static driver_item driver_tab[] = {
 
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
+static pthread_mutex_t mutex_dev_init = PTHREAD_MUTEX_INITIALIZER;
+
 /* The alist should be created with not_owned_by_alist argument */
 void sd_list_loaded_drivers(alist *list)
 {
@@ -112,6 +114,23 @@ DEVICE *init_dev(JCR *jcr, DEVRES *device, bool adata, bstatcollect *statcollect
    DEVICE *dev = NULL;
    uint32_t n_drivers;
 
+   /* Try to avoid concurrent initialization of the same device.
+    * The initial initialization is sequential then no worry here, but if
+    * it failed, any later use of the device trigger a new initialization attempt
+    * that could be concurrent with each other
+    */
+   P(mutex_dev_init);
+   if (device->init_state != 0) {
+      /* It looks like the device is already initialized or being initialized */
+      V(mutex_dev_init);
+      /* The initialization failed, return NULL, maybe device->dev != NULL now
+       * but let the caller check for that and call init_dev() again if needed
+       */
+      return NULL;
+   }
+   device->init_state = 'B'; // busy initializing
+   V(mutex_dev_init);
+
    generate_global_plugin_event(bsdGlobalEventDeviceInit, device);
    Dmsg1(150, "init_dev dev_type=%d\n", device->dev_type);
    /* If no device type specified, try to guess */
@@ -121,7 +140,7 @@ DEVICE *init_dev(JCR *jcr, DEVRES *device, bool adata, bstatcollect *statcollect
          berrno be;
          Jmsg3(jcr, M_ERROR, 0, _("[SE0001] Unable to stat device %s at %s: ERR=%s\n"),
             device->hdr.name, device->device_name, be.bstrerror());
-         return NULL;
+         goto try_again_later;
       }
       if (S_ISDIR(statp.st_mode)) {
          device->dev_type = B_FILE_DEV;
@@ -140,7 +159,7 @@ DEVICE *init_dev(JCR *jcr, DEVRES *device, bool adata, bstatcollect *statcollect
          Jmsg2(jcr, M_ERROR, 0, _("[SE0002] %s is an unknown device type. Must be tape or directory."
                " st_mode=%x\n"),
             device->device_name, statp.st_mode);
-         return NULL;
+         goto try_again_later;
       }
       if (strcmp(device->device_name, "/dev/null") == 0) {
          device->dev_type = B_NULL_DEV;
@@ -155,7 +174,7 @@ DEVICE *init_dev(JCR *jcr, DEVRES *device, bool adata, bstatcollect *statcollect
    if (device->dev_type < 0 || device->dev_type > n_drivers) {
       Jmsg2(jcr, M_FATAL, 0, _("[SF0001] Invalid device type=%d name=\"%s\"\n"),
          device->dev_type, device->hdr.name);
-      return NULL;
+      goto never_try_again;
    }
    Dmsg5(100, "loadable=%d type=%d loaded=%d name=%s handle=%p\n",
       !driver_tab[device->dev_type-1].builtin,
@@ -200,14 +219,14 @@ DEVICE *init_dev(JCR *jcr, DEVRES *device, bool adata, bstatcollect *statcollect
       default:
          Jmsg2(jcr, M_FATAL, 0, _("[SF0002] Unknown device type=%d device=\"%s\"\n"),
             device->dev_type, device->hdr.name);
-         return NULL;
+         goto never_try_again;
       }
    } else {
       /* Loadable driver */
       dev = load_driver(jcr, device);
    }
    if (!dev) {
-      return NULL;
+      goto try_again_later;
    }
    Dmsg1(100, "init_dev allocated: %p\n", dev);
    dev->adata = adata;
@@ -231,12 +250,24 @@ DEVICE *init_dev(JCR *jcr, DEVRES *device, bool adata, bstatcollect *statcollect
 
    dev->register_metrics(statcollector);
 
+   P(mutex_dev_init);
+   device->init_state = 'R'; // The device is ready
+   V(mutex_dev_init);
    return dev;
+
 bailout:
    if (dev != NULL) {
       dev->term(NULL);
       dev = NULL;
    }
+
+never_try_again:
+   // This should never happens, no need to make a special case, just report
+   // the problem and let it try again anyway
+try_again_later:
+   P(mutex_dev_init);
+   device->init_state = 0; // The initialization failed, try again later
+   V(mutex_dev_init);
    return NULL;
 }
 

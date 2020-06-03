@@ -257,6 +257,8 @@ public:
    /* The following are set at runtime */
    DEVICE *dev;                       /* Pointer to phyical dev -- set at runtime */
    AUTOCHANGER *changer_res;          /* pointer to changer res if any */
+
+   int init_state;                    /* 0 -> 'B'uzy -> ( 'R'eady  |  0 (retry) ) */
 };
 
 union URES {
