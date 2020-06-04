@@ -1227,7 +1227,6 @@ bool task::prepare_restore()
 bool task::run_restore()
 {
     bool ret = false;
-    uint timeout = 1000;
     btimer_t *tid = NULL;
     QString q;
 
