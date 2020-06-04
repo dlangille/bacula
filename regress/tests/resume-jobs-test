@@ -1,0 +1,95 @@
+#!/bin/sh
+#
+# Run different backups and restart them in the same command
+#
+TestName="resume-jobs-test"
+JobName=RestartJob
+. scripts/functions
+
+scripts/cleanup
+scripts/copy-test-confs
+
+setup_shstore # simulate shared storage if enabled
+
+echo "${cwd}/build" >${cwd}/tmp/file-list
+
+change_jobname NightlySave $JobName
+start_test
+
+$bperl -e "add_attribute('$conf/bacula-dir.conf', 'AllowIncompleteJobs', 'yes', 'Job')"
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "RescheduleOnError", "no", "Job")'
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "RescheduleIncompleteJobs", "no", "Job")'
+
+
+cat <<EOF >> $conf/bacula-dir.conf
+Pool {
+  Name = PoolA
+  Pool Type = Backup
+  Recycle = yes                       # Bacula can automatically recycle Volumes
+  AutoPrune = yes                     # Prune expired volumes
+  Volume Retention = 365d             # one year
+  Label Format = "Vol"
+  Maximum Volume Bytes = 30MB
+}
+FileSet {
+  Name = A
+  Include {
+    File = $cwd/build
+  }
+}
+FileSet {
+  Name = B
+  Include {
+    File = $cwd/build
+  }
+}
+FileSet {
+  Name = C
+  Include {
+    File = $cwd/build
+  }
+}
+EOF
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@output /dev/null
+messages
+@$out ${cwd}/tmp/log1.out
+setdebug level=0 trace=0 hangup=596 client
+@#setdebug level=20 dir
+run job=$JobName fileset=A yes pool=PoolA
+wait
+setdebug level=0 trace=0 hangup=596 client
+run job=$JobName fileset=B yes pool=PoolA
+wait
+setdebug level=0 trace=0 hangup=596 client
+run job=$JobName fileset=C yes pool=PoolA
+wait
+resume incomplete jobid=1,2,3
+wait
+messages
+quit
+END_OF_DATA
+
+run_bacula  
+
+stop_bacula
+
+nb=`grep "FileSet:" $tmp/log1.out | grep '"A"' | wc -l`
+if [ $nb != 2 ]; then
+    print_debug "ERROR: Should find two times the FileSet A"
+    estat=1
+fi
+
+nb=`grep "FileSet:" $tmp/log1.out | grep '"B"' | wc -l`
+if [ $nb != 2 ]; then
+    print_debug "ERROR: Should find two times the FileSet B"
+    estat=1
+fi
+
+nb=`grep "FileSet:" $tmp/log1.out | grep '"C"' | wc -l`
+if [ $nb != 2 ]; then
+    print_debug "ERROR: Should find two times the FileSet C"
+    estat=1
+fi
+end_test
