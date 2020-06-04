@@ -1413,21 +1413,25 @@ bool Bvfs::insert_hardlinks(char *output_table)
    }
 
    Dmsg1(dbglevel, "Inserting %d hardlink records\n", missing_hardlinks->size());
+   Mmsg(query, "CREATE TEMPORARY TABLE h%s (JobId integer, FileIndex integer)", output_table);
+   Dmsg1(dbglevel, "q=%s\n", query.c_str());
+   if (!db->bdb_sql_query(query.c_str(), NULL, NULL)) {
+      Dmsg1(dbglevel, "Can't execute query=%s\n", query.c_str());
+      goto bail_out; 
+   }
    foreach_alist(hl, missing_hardlinks) {
       if (first) {
          first=false;
       } else {
-         pm_strcat(tmp2, " OR ");
+         pm_strcat(tmp2, ",");
       }
-      Mmsg(tmp1, "(File.JobId=%ld AND File.FileIndex=%ld)", hl->jobid, hl->fileindex);
+      Mmsg(tmp1, "(%ld, %ld)", hl->jobid, hl->fileindex);
       pm_strcat(tmp2, tmp1.c_str());
 
       if (nb++ >= 500) {
-         /* flush the current querry */
+         /* flush the current query */
          Dmsg1(dbglevel, "  Inserting %d hardlinks\n", nb - 1);
-         Mmsg(query, "INSERT INTO %s (JobId, FileIndex, FileId) "
-              "SELECT JobId, FileIndex, FileId FROM File WHERE %s",
-              output_table, tmp2.c_str());
+         Mmsg(query, "INSERT INTO h%s (JobId, FileIndex) VALUES %s", output_table, tmp2.c_str());
 
          if (!db->bdb_sql_query(query.c_str(), NULL, NULL)) {
             Dmsg1(dbglevel, "Can't execute query=%s\n", query.c_str());
@@ -1439,15 +1443,25 @@ bool Bvfs::insert_hardlinks(char *output_table)
          nb=0;
       }
    }
-   if (first) {
-      ret = true;
-      goto bail_out;
+   if (!first) {
+      /* To the last round of the insertion */
+      Mmsg(query, "INSERT INTO h%s (JobId, FileIndex) VALUES %s", output_table, tmp2.c_str());
+      if (!db->bdb_sql_query(query.c_str(), NULL, NULL)) {
+         Dmsg1(dbglevel, "Can't execute query=%s\n", query.c_str());
+         goto bail_out; 
+      }
    }
-   /* To the last round of the insertion */
+   Dmsg0(dbglevel, "  Finishing hardlink insertion\n");
    Mmsg(query, "INSERT INTO %s (JobId, FileIndex, FileId) "
-        "SELECT JobId, FileIndex, FileId FROM File WHERE %s",
-        output_table, tmp2.c_str());
+        "SELECT File.JobId, File.FileIndex, File.FileId FROM File JOIN h%s AS T ON (T.JobId = File.JobId AND T.FileIndex = File.FileIndex)",
+        output_table, output_table);
 
+   if (!db->bdb_sql_query(query.c_str(), NULL, NULL)) {
+      Dmsg1(dbglevel, "Can't execute query=%s\n", query.c_str());
+      goto bail_out; 
+   }
+
+   Mmsg(query, "DROP TABLE h%s", output_table);
    if (!db->bdb_sql_query(query.c_str(), NULL, NULL)) {
       Dmsg1(dbglevel, "Can't execute query=%s\n", query.c_str());
       goto bail_out; 
