@@ -260,7 +260,7 @@ void RunJob::jobInfo(task *t)
    } else {
       QString t;
       edit_uint64_with_suffix(res->infos.JobBytes, ed1);
-      strncat(ed1, "B", sizeof(ed1));
+      bstrncat(ed1, "B", sizeof(ed1));
       ui.labelJobBytes->setText(QString(ed1));
       ui.labelJobFiles->setText(QString(edit_uint64_with_commas(res->infos.JobFiles, ed1)));
       ui.labelJobLevel->setText(QString(job_level_to_str(res->infos.JobLevel)));

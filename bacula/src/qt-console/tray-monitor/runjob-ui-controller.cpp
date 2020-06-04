@@ -57,7 +57,7 @@ void RunJobUiController::jobInfoCallback(task *t)
    RESMON *dir = m_rJobModel->getDirector();
    char buf[50];
    edit_uint64_with_suffix(dir->infos.JobBytes, buf);
-   strncat(buf, "B", sizeof(buf));
+   bstrncat(buf, "B", sizeof(buf));
    setFilesDescription(
             QString("%1 Files (%2)")
             .arg(dir->infos.JobFiles)

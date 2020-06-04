@@ -1016,9 +1016,8 @@ void stack_trace()
             function = ret;
          } else {
             /* demangling failed, just pretend it's a C function with no args */
-            strncpy(function, begin, sz);
-            strncat(function, "()", sz);
-            function[sz-1] = '\0';
+            bstrncpy(function, begin, sz);
+            bstrncat(function, "()", sz);
          }
          Pmsg2(000, "    %s:%s\n", stack_strings[i], function);
          actuallyfree(function);
