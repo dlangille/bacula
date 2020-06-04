@@ -602,6 +602,9 @@ static bool get_jobid_list(UAContext *ua, sellist &sl, run_ctx &rc)
 static bool get_jobid_from_list(UAContext *ua, sellist &sl, run_ctx &rc)
 {
    int JobId;
+   CLIENT_DBR cr;
+   FILESET_DBR fr;
+      
    if (rc.done) {
       return false;
    }
@@ -610,6 +613,7 @@ static bool get_jobid_from_list(UAContext *ua, sellist &sl, run_ctx &rc)
       rc.done = true;
       return false;
    }
+   bmemset(&rc.jr, 0, sizeof(rc.jr));
    rc.jr.JobId = rc.JobId = JobId;
    Dmsg1(100, "Next JobId=%d\n", rc.JobId);
    if (!db_get_job_record(ua->jcr, ua->db, &rc.jr)) {
@@ -626,6 +630,7 @@ static bool get_jobid_from_list(UAContext *ua, sellist &sl, run_ctx &rc)
    if (!get_job(ua, rc)) {
       return false;
    }
+   bmemset(&rc.pr, 0, sizeof(rc.pr));
    rc.pr.PoolId = rc.jr.PoolId;
    if (!db_get_pool_record(ua->jcr, ua->db, &rc.pr)) {
       ua->error_msg(_("Could not get pool record for selected JobId=%d. ERR=%s"),
@@ -637,10 +642,27 @@ static bool get_jobid_from_list(UAContext *ua, sellist &sl, run_ctx &rc)
       return false;
    }
    get_job_storage(rc.store, rc.job, NULL);
-   rc.client_name = rc.job->client->hdr.name;
+
+   bmemset(&cr, 0, sizeof(cr));
+   cr.ClientId = rc.jr.ClientId;
+   if (!db_get_client_record(ua->jcr, ua->db, &cr)) {
+      ua->error_msg(_("Could not get client record for selected JobId=%d. ERR=%s"),
+                    rc.JobId, db_strerror(ua->db));
+      return false;
+   }
+   rc.client_name = cr.Name;
    if (!get_client(ua, rc)) {
       return false;
    }
+
+   bmemset(&fr, 0, sizeof(fr));
+   fr.FileSetId = rc.jr.FileSetId;
+   if (!db_get_fileset_record(ua->jcr, ua->db, &fr)) {
+      ua->error_msg(_("Could not get fileset record for selected JobId=%d. ERR=%s"),
+                    rc.JobId, db_strerror(ua->db));
+      return false;
+   }
+   rc.fileset_name = fr.FileSet;
    if (!get_fileset(ua, rc)) {
       return false;
    }
