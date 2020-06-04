@@ -934,11 +934,9 @@ cloud_dev::cloud_dev(JCR *jcr, DEVRES *device)
    /* Initialize Cloud driver */
    if (!driver) {
       switch (device->cloud->driver_type) {
-#ifdef HAVE_LIBS3
       case C_S3_DRIVER:
          driver = load_driver(jcr, C_S3_DRIVER);
          break;
-#endif
       case C_WAS_DRIVER:
       {
          if (!device->cloud->driver_command) {
