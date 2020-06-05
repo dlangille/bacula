@@ -1416,6 +1416,7 @@ bool Bvfs::insert_hardlinks(char *output_table)
 
    hardlinks = New(htable(hl, &hl->lnk));
    missing_hardlinks = New(alist(100, not_owned_by_alist));
+   Dmsg0(dbglevel, "Inserting hardlinks method=standard\n");
 
    Mmsg(query, "SELECT T.FileId, T.JobId, File.LStat FROM %s AS T JOIN File USING (FileId) WHERE Filename <> '' ORDER By T.JobId, T.FileIndex ASC", output_table);
    if (!db->bdb_sql_query(query.c_str(), checkhardlinks_handler, this)) {
