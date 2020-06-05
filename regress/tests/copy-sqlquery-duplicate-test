@@ -1,0 +1,95 @@
+#!/bin/sh
+#
+# Run a simple backup of the Bacula build directory then copy it
+#   to another device.
+#
+# This script uses the virtual disk autochanger
+#
+TestName="copy-sqlquery-duplicate-test"
+JobName=CopyJobSave
+. scripts/functions
+
+
+scripts/cleanup
+scripts/copy-migration-confs
+echo "${cwd}/build" >${cwd}/tmp/file-list
+sed 's/migrate/copy/g' ${cwd}/bin/bacula-dir.conf > ${cwd}/tmp/1
+sed 's/Migrate/Copy/g' ${cwd}/tmp/1 > ${cwd}/bin/bacula-dir.conf
+
+change_jobname NightlySave $JobName
+
+$bperl -e "add_attribute('$conf/bacula-dir.conf', 'AllowDuplicateJobs', 'no', 'Job', 'copy-sqlquery')"
+$bperl -e "add_attribute('$conf/bacula-dir.conf', 'AllowDuplicateJobs', 'no', 'Job', '$JobName')"
+$bperl -e "add_attribute('$conf/bacula-dir.conf', 'RunBeforeJob', 'sleep 10', 'Job', '$JobName')"
+$bperl -e "add_attribute('$conf/bacula-dir.conf', 'RunBeforeJob', 'sleep 5', 'Job', '$JobName')"
+
+
+start_test
+
+#
+# Note, we first backup into Pool Default, 
+#          then Copy into Pool Full. 
+#              Pool Default uses Storage=File
+#              Pool Full    uses Storage=DiskChanger
+
+# Write out bconsole commands
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@output /dev/null
+messages
+@$out ${cwd}/tmp/log1.out
+@# setdebug level=100 storage=File
+label storage=File volume=FileVolume001 Pool=Default
+label storage=DiskChanger volume=ChangerVolume001 slot=1 Pool=Full drive=0
+label storage=DiskChanger volume=ChangerVolume002 slot=2 Pool=Full drive=0
+@# run two jobs (both will be copied)
+run job=$JobName level=full yes comment="T"
+run job=$JobName level=full yes comment="A"
+wait
+run job=$JobName level=full yes comment="T"
+@sleep 2
+run job=copy-sqlquery yes comment="T"
+run job=copy-sqlquery yes comment="A"
+wait
+messages
+@$out ${cwd}/tmp/log3.out
+@#
+@# Now do another backup, but level Incremental
+@#
+run job=$JobName level=Incremental yes comment="T"
+wait
+messages
+@$out ${cwd}/tmp/log2.out
+restore where=${cwd}/tmp/bacula-restores select comment="T"
+unmark *
+mark *
+done
+yes
+wait
+messages
+@$out $tmp/log4.out
+sql
+SELECT 'ERR', JobId, JobStatus, Comment FROM Job WHERE  Comment <> '' and JobStatus != Comment;
+
+quit
+END_OF_DATA
+
+run_bacula
+check_for_zombie_jobs storage=File
+stop_bacula
+
+check_two_logs
+check_restore_diff
+
+grep 'Backup Level:' tmp/log3.out  | grep Incremental > /dev/null
+if [ $? != 0 ]; then
+    bstat=2
+    print_debug "The incremental job must use copied jobs"
+fi
+
+grep ' ERR ' tmp/log4.out  > /dev/null
+if [ $? = 0 ]; then
+    estat=2
+    print_debug "Job status with Allow duplicate is not correct in $tmp/log4.out"
+fi
+
+end_test
