@@ -90,10 +90,6 @@ bool do_mac_init(JCR *jcr)
 
    apply_pool_overrides(jcr);
 
-   if (!allow_duplicate_job(jcr)) {
-      return false;
-   }
-
    jcr->jr.PoolId = get_or_create_pool_record(jcr, jcr->pool->name());
    if (jcr->jr.PoolId == 0) {
       Dmsg1(dbglevel, "JobId=%d no PoolId\n", (int)jcr->JobId);
@@ -113,6 +109,10 @@ bool do_mac_init(JCR *jcr)
    if (!get_or_create_fileset_record(jcr)) {
       Dmsg1(dbglevel, "JobId=%d no FileSet\n", (int)jcr->JobId);
       Jmsg(jcr, M_FATAL, 0, _("Could not get or create the FileSet record.\n"));
+      return false;
+   }
+
+   if (!allow_duplicate_job(jcr)) {
       return false;
    }
 

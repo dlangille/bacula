@@ -1170,7 +1170,11 @@ bool allow_duplicate_job(JCR *jcr)
    }
    endeach_jcr(djcr);
 
-   return true;
+   if (jcr->is_canceled()) {
+      return false;             /* stop the job */
+   } else {
+      return true;              /* Keep going */
+   }
 }
 
 /*
