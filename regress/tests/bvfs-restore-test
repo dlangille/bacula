@@ -1,0 +1,106 @@
+#!/bin/sh
+#
+# Run a simple backup of the Bacula build directory then create some           
+#   new files, do an Incremental and restore those two files.
+# test the bvfs interface
+#
+TestName="bvfs-restore-test"
+JobName=Incremental 
+. scripts/functions
+
+${rscripts}/cleanup
+${rscripts}/copy-test-confs
+echo "${tmpsrc}" >${tmp}/file-list
+echo "$tmp/hl" >>${tmp}/file-list
+
+mkdir -p $tmpsrc $tmp/hl
+cp -p $src/src/dird/*.c $tmpsrc
+cd $tmpsrc
+for i in *.c
+do
+    for j in `seq 1 100`; do
+        ln $i $tmp/hl/$i.hl.$j
+    done
+done
+cd $cwd
+
+change_jobname CompressedTest $JobName
+start_test
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out /dev/null
+messages
+@$out ${tmp}/log1.out
+label storage=File volume=TestVolume001
+run job=$JobName yes
+wait
+@sleep 1
+@exec "touch $tmpsrc/dird.c"
+run job=$JobName yes
+wait
+@sleep 1
+@exec "touch $tmpsrc/ua_cmds.c"
+run job=$JobName yes
+wait
+@sleep 1
+@exec "touch $tmpsrc/ua_dotcmds.c"
+run job=$JobName yes
+wait
+messages
+.bvfs_update
+quit
+END_OF_DATA
+
+run_bacula
+
+cat <<EOF >$tmp/bconcmds
+@$out /dev/null
+@$out $tmp/log0.out
+.bvfs_lsdirs jobid=1,2,3,4 path=
+@$out $tmp/log3.out
+.bvfs_lsfiles jobid=1,2,3,4 path=$tmp/hl/ pattern=verify.c
+quit
+EOF
+
+run_bconsole
+
+dirid=`awk '/\/$/ { print $1 }' $tmp/log0.out`
+fid=`awk '/^1/ { m=(m>$2)?m:$2 } END { print m }' $tmp/log3.out`
+
+cat <<EOF >$tmp/bconcmds
+@$out $tmp/log2.out
+setdebug level=15 tags=bvfs,sql trace=1 dir
+.bvfs_cleanup path=b21$$
+.bvfs_restore path=b21$$ fileid= dirid=$dirid hardlink= jobid=1,2,3,4
+restore file=?b21$$ where=$tmp/bacula-restore yes
+wait
+.bvfs_cleanup path=b211$$
+.bvfs_restore path=b211$$ fileid=$fid dirid= hardlink= jobid=1,2,3,4
+restore file=?b211$$ where=$tmp/bacula-restore2 yes
+wait
+messages
+quit
+EOF
+
+run_bconsole
+
+stop_bacula
+touch $tmp/log2.out
+check_two_logs
+
+$rscripts/diff.pl -s $tmp/bacula-restore/$tmpsrc -d $tmpsrc
+if [ $? != 0 ]; then
+    print_debug "ERROR: found difference after restore"
+    estat=1
+fi
+
+nb=`find $tmp/bacula-restore2/ -type f | wc -l`
+if [ $nb != 2 ]; then
+    print_debug "ERROR: found difference after restore of a hardlink"
+    estat=1
+fi
+
+mode=`awk -F= '/Inserting hardlinks method=/ { print $2 ; exit}' $cwd/working/*trace`
+print_debug "INFO: Was using $mode method"
+
+end_test
