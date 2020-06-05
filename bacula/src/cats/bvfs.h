@@ -255,6 +255,12 @@ public:
    /* Handle hardlinks if any */
    bool insert_hardlinks(char *output_table);
 
+   /* Handle hardlinks if any */
+   bool insert_hardlinks_fast(char *output_table);
+
+   /* Check if this function can be used */
+   bool can_use_insert_hardlinks_fast();
+
    /* Get a list of volumes */
    void get_volumes(FileId_t fileid);
 

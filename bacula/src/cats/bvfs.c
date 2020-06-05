@@ -1395,6 +1395,17 @@ int Bvfs::checkhardlinks_cb(int fields, char **row)
    return 0;
 }
 
+#ifdef COMMUNITY
+bool Bvfs::can_use_insert_hardlinks_fast()
+{
+   return false;
+}
+bool Bvfs::insert_hardlinks_fast(char *output_table)
+{
+   return insert_hardlinks(output_table);
+}
+#endif
+
 bool Bvfs::insert_hardlinks(char *output_table)
 {
    /* Check hardlinks. We get LStat fields, and we check if we need to add a FileIndex */
@@ -1485,6 +1496,8 @@ bool Bvfs::compute_restore_list(char *fileid, char *dirid, char *output_table)
    int num;
    bool init=false;
    bool ret=false;
+   bool use_insert_hardlinks_fast = false;
+
    /* check args */
    if ((*fileid   && !is_a_number_list(fileid))  ||
        (*dirid    && !is_a_number_list(dirid))   ||
@@ -1498,6 +1511,10 @@ bool Bvfs::compute_restore_list(char *fileid, char *dirid, char *output_table)
    }
 
    db->bdb_lock();
+
+   if (can_use_insert_hardlinks_fast()) {
+      use_insert_hardlinks_fast = true;
+   }
 
    /* Cleanup old tables first */
    Mmsg(query, "DROP TABLE btemp%s", output_table);
@@ -1668,8 +1685,15 @@ bool Bvfs::compute_restore_list(char *fileid, char *dirid, char *output_table)
       }
    }
 
-   if (!insert_hardlinks(output_table)) {
-      goto bail_out;
+   if (use_insert_hardlinks_fast) {
+      if (!insert_hardlinks_fast(output_table)) {
+         goto bail_out;
+      }
+
+   } else {
+      if (!insert_hardlinks(output_table)) {
+         goto bail_out;
+      }
    }
 
    if (!check_permissions(output_table)) {
