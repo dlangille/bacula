@@ -2173,7 +2173,9 @@ bool cloud_dev::is_eod_valid(DCR *dcr)
    if (VolCatInfo.VolCatCloudParts != max_cloud_part) {
       Mmsg(tmp, "Number of Cloud Parts do not match! Volume=%ld Catalog=%ld.\n",
            max_cloud_part, VolCatInfo.VolCatCloudParts);
-      VolCatInfo.VolCatCloudParts = max_cloud_part;
+      /* FIXME: The VolCatCloudParts is not used in the code and the value is not correct
+       * VolCatInfo.VolCatCloudParts = max_cloud_part;
+       */
       pm_strcat(err, tmp.c_str());
       do_update = true;
    }
