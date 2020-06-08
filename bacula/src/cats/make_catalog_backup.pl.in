@@ -137,6 +137,9 @@ sub analyse_mysql
 sub handle_catalog
 {
     my ($mode, %args) = @_;
+    if (exists $args{working_dir} and $wd ne $args{working_dir}) {
+	$wd = $args{working_dir};
+    }
     if ($args{db_type} eq 'SQLite3') {
 	$ENV{PATH}="@SQLITE_BINDIR@:$ENV{PATH}";
 	if ($mode eq 'dump') {
