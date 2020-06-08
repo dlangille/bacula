@@ -70,6 +70,23 @@ Job {
 }
 
 Job {
+  Name = "migrate-sqlquery"
+  Type = Migrate
+  Level = Full
+  Client=@hostname@-fd 
+  FileSet="Full Set"
+  Messages = Standard
+  Storage = DiskChanger
+  Write Bootstrap = "@working_dir@/migratejob.bsr"
+  Pool = Default
+  Maximum Concurrent Jobs = 4
+  Selection Type = SqlQuery
+  # FIXME: works only on postgresql
+  SelectionPattern = "SELECT DISTINCT ON ( Name, ClientId) JobId, Name, EndTime,Level, Type FROM Job WHERE PriorJobId = 0 AND JobStatus IN ('T','W') AND Type = 'B' AND PoolId = 1 ORDER BY Name, ClientId, EndTime DESC ;"
+# Allow Duplicate Jobs = No
+}
+
+Job {
   Name = "migrate-volume"
   Type = Migrate
   Level = Full
