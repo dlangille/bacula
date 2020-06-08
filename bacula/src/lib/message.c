@@ -799,6 +799,22 @@ static void send_to_syslog(int mode, const char *msg)
    const char *p2;
    const char *p = msg;
 
+   switch (mode) {
+   case M_ERROR_TERM:
+   case M_ABORT:
+      mode = LOG_DAEMON|LOG_ERR;
+      break;
+   case M_FATAL:
+   case M_ERROR:
+   case M_WARNING:
+   case M_SECURITY:
+      mode = LOG_DAEMON|LOG_NOTICE;
+      break;
+   default:
+      mode = LOG_DAEMON|LOG_INFO;
+      break;
+   }
+
    while (*p && ((p2 = strchr(p, '\n')) != NULL)) {
       len = MIN((int)sizeof(buf) - 1, p2 - p + 1); /* Add 1 to keep \n */
       strncpy(buf, p, len);
@@ -945,7 +961,7 @@ void dispatch_message(JCR *jcr, int type, utime_t mtime, char *msg)
                 /*
                  * We really should do an openlog() here.
                  */
-                send_to_syslog(LOG_DAEMON|LOG_ERR, msg);
+                send_to_syslog(type, msg);
                 break;
              case MD_OPERATOR:
                 Dmsg1(850, "OPERATOR for following msg: %s\n", msg);
