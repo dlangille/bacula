@@ -281,6 +281,7 @@ uint32_t cloud_proxy::last_index(const char *volume)
 
 ilist *cloud_proxy::exclude(const char *volume, ilist *exclusion_lst)
 {
+   lock_guard lg(m_mutex);
    if (volume && exclusion_lst) {
       VolHashItem *hitem = (VolHashItem*)m_hash->lookup(const_cast<char*>(volume));
       if (hitem) {
@@ -292,8 +293,12 @@ ilist *cloud_proxy::exclude(const char *volume, ilist *exclusion_lst)
    }
    return NULL;
 }
+
+static pthread_mutex_t singleton_mutex = PTHREAD_MUTEX_INITIALIZER;
+
 cloud_proxy *cloud_proxy::get_instance()
 {
+   lock_guard lg(singleton_mutex);
    if (!m_pinstance) {
       m_pinstance = New(cloud_proxy());
    }
@@ -303,6 +308,7 @@ cloud_proxy *cloud_proxy::get_instance()
 
 void cloud_proxy::release()
 {
+   lock_guard lg(singleton_mutex);
    if (--m_count == 0) {
       delete m_pinstance;
       m_pinstance = NULL;
