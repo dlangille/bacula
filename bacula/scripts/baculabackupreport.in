@@ -44,17 +44,17 @@
 # ----------------
 server="@hostname@"
 admin="@job_email@"
-bcbin="/opt/bacula/bin/bconsole"
+bcbin="@sbindir@/bconsole"
 sendmail="/usr/sbin/sendmail"
-bcconfig="/opt/bacula/etc/bconsole.conf"
+bcconfig="@sysconfdir@/bconsole.conf"
 
 # Database variables
 # ------------------
-dbtype="pgsql"                          # Supported options are pgsql, mysql, mariadb
-db="bacula"
-dbuser="bacula"
-dbbin="/usr/bin/psql"
-# dbpass="-pPassword"   # Uncomment and set db password if one is used
+dbtype="@DEFAULT_DB_TYPE@"                          # Supported options are pgsql/postgresql, mysql, mariadb
+db="@db_name@"
+dbuser="@db_user@"
+dbbindir="/usr/bin"
+# dbpass="-p@db_password@"   # Uncomment and set db password if one is used
 
 # Formatting variables
 # --------------------
@@ -133,17 +133,17 @@ case ${dbtype} in
                 FROM Job \
                 WHERE (RealEndTime >= DATE_ADD(NOW(), INTERVAL -${hist} HOUR) OR JobStatus='R') \
                 ORDER BY ${sortfield} ${sortorder};" \
-                | ${dbbin} -u ${dbuser} ${dbpass} ${db} \
+                | ${dbbindir}/mysql -u ${dbuser} ${dbpass} ${db} \
                 | sed '/^JobId/d' )
                 ;;
 
-        pgsql )
+        pgsql|postgresql )
                 queryresult=$(echo "SELECT JobId, Name, StartTime, EndTime, Type, Level, JobStatus, JobFiles, JobBytes, \
                 AGE(EndTime, StartTime) as RunTime, JobErrors \
                 FROM Job \
                 WHERE (RealEndTime >= CURRENT_TIMESTAMP(2) - cast('${hist} HOUR' as INTERVAL) OR JobStatus='R') \
                 ORDER BY ${sortfield} ${sortorder};" \
-                | ${dbbin} -U ${dbuser} ${dbpass} ${db} -0t \
+                | ${dbbindir}/psql -U ${dbuser} ${dbpass} ${db} -0t \
                 | sed -e 's/|//g' -e '/^$/d' )
                 ;;
 
@@ -153,7 +153,7 @@ case ${dbtype} in
                 FROM Job \
                 WHERE (RealEndTime >= DATE_ADD(NOW(), INTERVAL -${hist} HOUR) OR JobStatus='R') \
                 ORDER BY ${sortfield} ${sortorder};" \
-                | ${dbbin} -u ${dbuser} -p${dbpass} ${db} -s -N )
+                | ${dbbindir}/mysql -u ${dbuser} -p${dbpass} ${db} -s -N )
                 ;;
 
         * )
