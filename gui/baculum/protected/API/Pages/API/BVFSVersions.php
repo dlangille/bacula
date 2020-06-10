@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2019 Kern Sibbald
+ * Copyright (C) 2013-2020 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -40,6 +40,12 @@ class BVFSVersions extends ConsoleOutputPage {
 		$client = null;
 		if ($this->Request->contains('client') && $this->getModule('misc')->isValidName($this->Request['client'])) {
 			$client = $this->Request['client'];
+		} elseif ($this->Request->contains('clientid')) {
+			$clientid = intval($this->Request['clientid']);
+			$client_row = $this->getModule('client')->getClientById($clientid);
+			if (is_object($client_row)) {
+				$client = $client_row->name;
+			}
 		}
 
 		if (is_null($client)) {

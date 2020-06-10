@@ -643,6 +643,10 @@ var W3SideBar = {
 	},
 	init: function() {
 		this.sidebar = document.getElementById(this.ids.sidebar);
+		if (!this.sidebar) {
+			// don't initialize for pages without sidebar
+			return;
+		}
 		this.overlay_bg = document.getElementById(this.ids.overlay_bg);
 		this.page_main = $(this.css.page_main);
 		var hide = Cookies.get_cookie(this.cookies.side_bar_hide);

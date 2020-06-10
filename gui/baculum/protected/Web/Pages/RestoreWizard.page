@@ -125,9 +125,9 @@
 				<%[ To start, please select backup Client which data you want to restore. ]%>
 			</p>
 			<div class="w3-container">
-				<div class="w3-third"><com:TLabel ForControl="BackupClientName" Text="<%[ Backup from client: ]%>" /></div>
+				<div class="w3-third"><com:TLabel ForControl="BackupClient" Text="<%[ Backup from client: ]%>" /></div>
 				<div class="w3-third">
-					<com:TDropDownList ID="BackupClientName" CssClass="w3-select w3-border" CausesValidation="false" />
+					<com:TDropDownList ID="BackupClient" CssClass="w3-select w3-border" CausesValidation="false" />
 				</div>
 			</div>
 			<div class="w3-container w3-section">
@@ -207,6 +207,7 @@ var oJobsToRestoreList = {
 		var table = $('#' + this.ids.job_list).DataTable({
 			data: <%=json_encode(array_values($this->getPage()->jobs_to_restore))%>,
 			deferRender: true,
+			stateSave: true,
 			columns: [
 				{
 					className: 'details-control',
@@ -304,6 +305,9 @@ var oJobsToRestoreList = {
 							radio.name = 'backup_to_restore';
 							radio.value = data;
 							radio.className = 'w3-radio';
+							if ('<%=$this->Session->contains('restore_jobid') ? $this->Session['restore_jobid'] : ''%>' == data) {
+								radio.setAttribute('checked', 'checked');
+							}
 							ret = radio.outerHTML;
 						} else {
 							ret = data;
@@ -407,7 +411,7 @@ oJobsToRestoreList.init();
 						</prop:ClientSide.OnLoading>
 						<prop:ClientSide.OnComplete>
 							document.getElementById('restore-browser-files-loading').style.display = 'none';
-							make_draggable('<%=$this->getPage()->DataGridFiles->ClientID%>');
+							make_draggable('restore-browser-files-content');
 						</prop:ClientSide.OnComplete>
 						<i class="fa fa-check"></i> &nbsp;<%[ OK ]%>
 					</com:TActiveLinkButton>
@@ -418,66 +422,155 @@ oJobsToRestoreList.init();
 					<td rowspan="2" style="height: 100%">
 						<div id="restore-browser-files-loading" style="display: none"></div>
 						<div id="restore-browser-files" class="w3-border">
-						<com:TActiveDataGrid
-							ID="DataGridFiles"
-							AutoGenerateColumns="false"
-							CellPadding="2px"
-							ShowHeader="false"
-							CssClass="file-browser-detail"
-							ItemStyle.CssClass="file-browser-element"
-							DataKeyField="uniqid"
-							>
-								<prop:EmptyTemplate>
-									<div class="file-browser-watermark">
-										<%[ It seems that there is no files for choosing or file records in database for this job has been purged (file retention period expired) ]%>
-									</div>
-								</prop:EmptyTemplate>
-								<com:TActiveTemplateColumn>
-									<prop:ItemTemplate>
-										<com:TPanel ID="FileElementLeft" CssClass="draggable">
-											<i class="fas fa-<%=($this->getParent()->Data['type'] == 'dir' ? 'folder w3-text-green' : 'file-alt w3-text-gray')%> item_icon" alt="<%=$this->getParent()->Data['type'] == 'dir' ? 'directory' : 'file' %>"></i> <%=($this->getParent()->Data['name'] != '/') ? preg_replace('/\/$/', '', $this->getParent()->Data['name']) : '/'%>
-										<div class="restore-browser-element-size">
-											<com:TActiveLinkButton
-												CssClass="link"
-												Style="float: right;"
-												OnCallback="Page.addFileToRestore"
-												ActiveControl.CallbackParameter="<%=$this->getParent()->Data['uniqid']%>"
-												ActiveControl.EnableUpdate="false"
-												Visible="<%=!in_array($this->getParent()->Data['name'], $this->getPage()->excluded_elements_from_add)%>"
-												ClientSide.OnComplete="Formatters.set_formatters();"
-												Text="<%[ Add ]%>"
-											/>
-											<span class="size" style=""><%=isset($this->getParent()->Data['lstat']['size']) ? $this->getParent()->Data['lstat']['size'] : '0'%></span>
-										</div>
-										</com:TPanel>
-										<script type="text/javascript">
-											document.getElementById('<%=$this->FileElementLeft->ClientID%>').addEventListener('click', function(event) {
-												var el = event.target || event.srcElement;
-												if (el.className == 'link') {
-													// 'Add' link doesn't cause sending request
-													return;
-												}
-												var vposition = el.style.left;
-												if(vposition == null || vposition == '0px'){
-													event.stop();
-												} else {
-													var cbp = "<%=$this->getParent()->Data['name']%>|<%=@$this->getParent()->Data['pathid']%>|<%=@$this->getParent()->Data['filenameid']%>|<%=@$this->getParent()->Data['jobid']%>";
-													var request = <%=$this->getPage()->FileElementCall->ActiveControl->Javascript %>;
-													request.setCallbackParameter(cbp);
-													var ocf = request.options.onComplete;
-													request.options.onComplete = function() {
-														ocf();
-														Formatters.set_formatters();
-														make_draggable();
-													};
-													request.dispatch();
-												}
-											});
-										</script>
-									</prop:ItemTemplate>
-								</com:TActiveTemplateColumn>
-						</com:TActiveDataGrid>
-						<com:TCallback ID="FileElementCall" OnCallback="Page.getVersions">
+							<div id="restore-browser-files-content"></div>
+						</div>
+<script>
+var oRestoreBrowserFiles = {
+	ids: {
+		content: 'restore-browser-files-content'
+	},
+	cls: {
+		draggable: 'draggable',
+		watermark: 'file-browser-watermark',
+		folder: 'fas fa-folder',
+		file: 'fas fa-file-alt',
+		item_icon: 'item_icon',
+		green: 'w3-text-green',
+		gray: 'w3-text-gray',
+		item: 'file-browser-element',
+		item_right: 'restore-browser-element-right',
+		link: 'link',
+		size: 'size'
+	},
+	txts: {
+		no_files: '<%[ It seems that there is no files for choosing or file records in database for this job has been purged (file retention period expired) ]%>',
+		add: '<%[ Add ]%>'
+	},
+	types: {
+		directory: 'dir',
+		file: 'file',
+	},
+	excluded_items: ['.', '..'],
+	init: function(items) {
+		this.load_items();
+	},
+	load_items: function() {
+		var cb = <%=$this->SetBrowserFiles->ActiveControl->Javascript%>;
+		cb.dispatch();
+	},
+	populate: function(items) {
+		oRestoreBrowserFiles.clear_browser();
+		if (!Array.isArray(items) || items.length === 0) {
+			oRestoreBrowserFiles.add_empty_item();
+		} else {
+			for (var i = 0; i < items.length; i++) {
+				oRestoreBrowserFiles.add_item(items[i]);
+			}
+		}
+		make_draggable();
+	},
+	add_empty_item: function() {
+		var container = document.getElementById(this.ids.content);
+		var div = document.createElement('DIV');
+		div.className = this.cls.watermark;
+		div.textContent = this.txts.no_files;
+		container.appendChild(div);
+	},
+	add_item: function(item) {
+		var container = document.getElementById(this.ids.content);
+		var div = document.createElement('DIV');
+		div.className = [
+			this.cls.item,
+			this.cls.draggable
+		].join(' ');
+		div.setAttribute('data-source', 'file_browser');
+		div.setAttribute('data-uniqid', item.uniqid);
+		div.addEventListener('click', function(e) {
+			var el = event.target || event.srcElement;
+			if (el.className == this.cls.link) {
+				// 'Add' link doesn't cause sending request
+				return;
+			}
+			var vposition = el.style.left;
+			if(vposition == null || vposition == '0px'){
+				event.stop();
+			} else {
+				var cbp = [item.name, item.pathid, item.filenameid, item.jobid].join('|');
+				var request = <%=$this->getPage()->GetVersions->ActiveControl->Javascript%>;
+				request.setCallbackParameter(cbp);
+				var ocf = request.options.onComplete;
+				request.options.onComplete = function() {
+					ocf();
+					Formatters.set_formatters();
+					make_draggable();
+				};
+				request.dispatch();
+			}
+		}.bind(this));
+		var i = document.createElement('I');
+		if (item.type === this.types.directory) {
+			i.className = [
+				this.cls.folder,
+				this.cls.green,
+				this.cls.item_icon
+			].join(' ');
+		} else if (item.type === this.types.file) {
+			i.className = [
+				this.cls.file,
+				this.cls.gray,
+				this.cls.item_icon
+			].join(' ');
+		}
+		var txt = item.name;
+		if (txt != '/') {
+			txt = txt.replace(/\/$/, '');
+		}
+		txt = document.createTextNode(' ' + txt);
+		var right = document.createElement('DIV');
+		right.className = this.cls.item_right;
+		if (this.excluded_items.indexOf(item.name) === -1) {
+			var link = document.createElement('A');
+			link.href = 'javascript:void(0)';
+			link.className = 'link';
+			var link_label = document.createTextNode(this.txts.add);
+			link.appendChild(link_label);
+			link.style.float = 'right';
+			right.appendChild(link);
+			link.addEventListener('click', function(e) {
+				var cb = <%=$this->AddFileToRestore->ActiveControl->Javascript%>;
+				var param = ['file_browser', item.uniqid].join('|');
+				cb.setCallbackParameter(param);
+				cb.dispatch();
+			});
+		}
+		var size = document.createElement('SPAN');
+		size.className = this.cls.size;
+		var lss = item.lstat ? item.lstat.size : 0;
+		size.textContent = lss;
+		right.appendChild(size);
+		div.appendChild(i);
+		div.appendChild(txt);
+		div.appendChild(right);
+		container.appendChild(div);
+	},
+	clear_browser: function() {
+		var container = document.getElementById(this.ids.content);
+		while (container.firstChild) {
+			container.removeChild(container.firstChild);
+		}
+	}
+};
+$(function() {
+	oRestoreBrowserFiles.init();
+});
+</script>
+						<com:TCallback ID="SetBrowserFiles" OnCallback="Page.loadBrowserFiles" />
+						<com:TCallback ID="AddFileToRestore" OnCallback="Page.addFileToRestore">
+							<prop:ClientSide.OnComplete>
+								Formatters.set_formatters();
+							</prop:ClientSide.OnComplete>
+						</com:TCallback>
+						<com:TCallback ID="GetVersions" OnCallback="Page.getVersions">
 							<prop:ClientSide.OnLoading>
 								document.getElementById('restore-browser-files-loading').style.display = 'block';
 							</prop:ClientSide.OnLoading>
@@ -485,63 +578,155 @@ oJobsToRestoreList.init();
 								document.getElementById('restore-browser-files-loading').style.display = 'none';
 							</prop:ClientSide.OnComplete>
 						</com:TCallback>
-						</div>
 					</td>
 					<td style="height: 50%">
 						<div id="restore-browser-versions" class="w3-border" style="position: relative">
-							<com:TActiveDataGrid
-								ID="VersionsDataGrid"
-								ShowHeader="false"
-								AutoGenerateColumns="false"
-								CellPadding="2px"
-								CssClass="file-browser-detail"
-								ItemStyle.CssClass="file-browser-element"
-								DataKeyField="uniqid"
-							>
-								<prop:EmptyTemplate>
-									<div class="file-browser-watermark">
-										<%[ To see file versions please click a file on the left files browser. ]%>
-									</div>
-								</prop:EmptyTemplate>
-								<com:TActiveTemplateColumn>
-									<prop:ItemTemplate>
-										<com:TPanel ID="FileElementToRestore" CssClass="draggable" Style="height: 28px;">
-											<span class="w3-third">
-												<i class="fas fa-<%=($this->getParent()->Data['type'] == 'dir' ? 'folder w3-text-green' : 'file-alt w3-text-gray')%> item_icon" alt="<%=$this->getParent()->Data['type'] == 'dir' ? 'directory' : 'file'%>"></i>
-												 <%=$this->getParent()->Data['name']%>
-											</span>
-											<span class="w3-third">
-												MTIME:<%=date("Y-m-d H:i:s", $this->getParent()->Data['lstat']['mtime'])%>
-											</span>
-											<span class="w3-third">
-												<%[ Size: ]%>
-												<span class="size"><%=$this->getParent()->Data['lstat']['size']%></span>
-											<com:TActiveLinkButton
-												CssClass="link"
-												Style="float: right;"
-												OnCallback="Page.addFileToRestore"
-												ActiveControl.CallbackParameter="<%=$this->getParent()->Data['uniqid']%>"
-												ActiveControl.EnableUpdate="false"
-												ClientSide.OnComplete="Formatters.set_formatters();"
-												Text="<%[ Add ]%>"
-											/>
-											</span>
-										</com:TPanel>
-										<script type="text/javascript">
-											document.getElementById('<%=$this->FileElementToRestore->ClientID%>').addEventListener('mouseover', function(event) {
-												var tip_fields = [
-													'<%[ JobId: ]%> <%=$this->getParent()->Data['jobid']%>',
-													'<%[ Volume: ]%> <%=$this->getParent()->Data['volname']%>',
-													'<%[ InChanger: ]%> <%=$this->getParent()->Data['inchanger'] ? Prado::localize('Yes') : Prado::localize('No')%>',
-													'<%[ Sum: ]%> <%=$this->getParent()->Data['md5']%>'
-												];
-												showTip(this, '<%=$this->getParent()->Data['name']%>', tip_fields.join('<br />'));
-											});
-										</script>
-									</prop:ItemTemplate>
-								</com:TActiveTemplateColumn>
-							</com:TActiveDataGrid>
-							</div>
+							<div id="restore-browser-versions-content" class="file-browser-detail"></div>
+						</div>
+<script>
+var oRestoreBrowserVersions = {
+	ids: {
+		content: 'restore-browser-versions-content'
+	},
+	cls: {
+		draggable: 'draggable',
+		watermark: 'file-browser-watermark',
+		file: 'fas fa-file-alt',
+		item_icon: 'item_icon',
+		gray: 'w3-text-gray',
+		third: 'w3-third',
+		item: 'file-browser-element',
+		item_right: 'restore-browser-element-right',
+		size: 'size',
+		link: 'link'
+	},
+	txts: {
+		no_files: '<%[ To see file versions please click a file on the left files browser. ]%>',
+		add: '<%[ Add ]%>',
+		jobid: '<%[ JobId: ]%>',
+		volume: '<%[ Volume: ]%>',
+		inchanger: '<%[ InChanger: ]%>',
+		sum: '<%[ Sum: ]%>',
+		yes: '<%[ Yes ]%>',
+		no: '<%[ No ]%>'
+	},
+	types: {
+		file: 'file'
+	},
+	init: function() {
+		this.load_items();
+	},
+	load_items: function() {
+		var cb = <%=$this->SetFileVersions->ActiveControl->Javascript%>;
+		cb.dispatch();
+	},
+	populate: function(items) {
+		oRestoreBrowserVersions.clear_browser();
+		if (!Array.isArray(items) || items.length === 0) {
+			oRestoreBrowserVersions.add_empty_item();
+		} else {
+			for (var i = 0; i < items.length; i++) {
+				oRestoreBrowserVersions.add_item(items[i]);
+			}
+		}
+		make_draggable();
+	},
+	add_empty_item: function() {
+		var container = document.getElementById(this.ids.content);
+		var div = document.createElement('DIV');
+		div.className = this.cls.watermark;
+		div.textContent = this.txts.no_files;
+		container.appendChild(div);
+	},
+	add_item: function(item) {
+		var container = document.getElementById(this.ids.content);
+		var div = document.createElement('DIV');
+		div.className = [
+			this.cls.item,
+			this.cls.draggable
+		].join(' ');
+		div.style.height = '32px';
+		div.setAttribute('data-source', 'version_browser');
+		div.setAttribute('data-uniqid', item.uniqid);
+
+		// file name
+		var span_name = document.createElement('SPAN');
+		span_name.className = this.cls.third;
+		span_name.style.wordBreak = 'break-all';
+		var i = document.createElement('I');
+		if (item.type === this.types.file) {
+			i.className = [
+				this.cls.file,
+				this.cls.gray,
+				this.cls.item_icon
+			].join(' ');
+		}
+		var name = (item.name.length > 60) ? item.name.substr(0, 57) + '...' : item.name;
+		span_name.setAttribute('title', item.name);
+		name = document.createTextNode(' ' + name);
+		span_name.appendChild(i);
+		span_name.appendChild(name);
+
+		// file mtime
+		var span_mtime = document.createElement('SPAN');
+		span_mtime.className = this.cls.third;
+		var mtime = 'MTIME: ' + (item.lstat ? Units.format_date(item.lstat.mtime) : 0);
+		mtime = document.createTextNode(mtime);
+		span_mtime.appendChild(mtime);
+
+		// file size and add button
+		var span_size = document.createElement('SPAN');
+		span_size.className = this.cls.third;
+		var span_size_cont = document.createElement('SPAN');
+		span_size_cont.className = this.cls.size;
+		var size_label = document.createTextNode('<%[ Size: ]%> ');
+		var lsize = item.lstat ? item.lstat.size : 0;
+		var size = document.createTextNode(lsize);
+		span_size_cont.appendChild(size);
+		span_size.appendChild(size_label);
+		span_size.appendChild(span_size_cont);
+
+		var link = document.createElement('A');
+		link.href = 'javascript:void(0)';
+		link.className = this.cls.link;
+		link.style.float = 'right';
+		var link_label = document.createTextNode(this.txts.add);
+		link.appendChild(link_label);
+		span_size.appendChild(link);
+		link.addEventListener('click', function(e) {
+			var cb = <%=$this->AddFileToRestore->ActiveControl->Javascript%>;
+			var param = ['version_browser', item.uniqid].join('|');
+			cb.setCallbackParameter(param);
+			cb.dispatch();
+		});
+
+		div.addEventListener('mouseover', function() {
+			var tip_fields = [
+				this.txts.jobid + ' ' + item.jobid,
+				this.txts.volume + ' ' + item.volname,
+				this.txts.inchanger + ' ' + (item.inchanger === '1' ? this.txts.yes : this.txts.no),
+				this.txts.sum + ' ' + item.md5
+			];
+			showTip(div, item.name, tip_fields.join('<br />'));
+		}.bind(this));
+
+		div.appendChild(span_name);
+		div.appendChild(span_mtime);
+		div.appendChild(span_size);
+		container.appendChild(div);
+	},
+	clear_browser: function() {
+		var container = document.getElementById(this.ids.content);
+		while (container.firstChild) {
+			container.removeChild(container.firstChild);
+		}
+	}
+};
+$(function() {
+	oRestoreBrowserVersions.init();
+});
+</script>
+						<com:TCallback ID="SetFileVersions" OnCallback="Page.loadFileVersions" />
 					</td>
 				</tr>
 				<tr>
@@ -552,51 +737,163 @@ oJobsToRestoreList.init();
 								OnCallback="removeSelectedFile"
 								ClientSide.OnComplete="set_formatters();"
 							/>
-							<script type="text/javascript">
-								function remove_selected_item(uniqid) {
-									var cb = <%=$this->RemoveSelectedItem->ActiveControl->Javascript%>;
-									cb.setCallbackParameter(uniqid);
-									cb.dispatch();
-								}
-							</script>
-							<com:TJuiDroppable ID="SelectedVersionsDropper" Height="100%" Width="100%"
-								Options.accept=".draggable"
-								OnDrop="addFileToRestore"
-								OnDeactivate="callFormatters"
-								>
-									<com:TActiveDataGrid
-										ID="SelectedVersionsDataGrid"
-										ShowHeader="false"
-										AutoGenerateColumns="false"
-										CellPadding="2px"
-										CssClass="file-browser-detail"
-										ItemStyle.CssClass="file-browser-element"
-										DataKeyField="uniqid"
-									>
-									<prop:EmptyTemplate>
-										<div class="file-browser-watermark">
-											<%[ To add a file to restore please click 'Add' link or please drag here the file from the top frame or from the frame on the left. ]%>
-										</div>
-									</prop:EmptyTemplate>
-									<com:TActiveTemplateColumn>
-										<prop:ItemTemplate>
-												<com:TPanel ID="FileElement" Style="clear: both">
-													<span class="w3-third">
-														<i class="fas fa-<%=($this->getParent()->Data['type'] == 'dir' ? 'folder w3-text-green' : 'file-alt w3-text-gray')%> item_icon" title="<%=$this->getParent()->Data['type'] == 'dir' ? 'directory' : 'file'%>"></i>
-														<%=$this->getParent()->Data['name']%>
-													</span>
-													<span class="w3-third">
-														MTIME:<%=is_array($this->getParent()->Data['lstat']) ? date("Y-m-d H:i:s", $this->getParent()->Data['lstat']['mtime']) : '-'%>
-													</span>
-													<span class="w3-third">
-														<%[ Size: ]%><span class="size"><%=is_array($this->getParent()->Data['lstat']) ? $this->getParent()->Data['lstat']['size'] : '0'%></span>
-														<a href="javascript:void(0)" class="w3-right remove_selected_item" onclick="remove_selected_item('<%=$this->getParent()->Data['uniqid']%>'); return false;"><i class="fa fa-trash-alt item_selected_del_btn"></i></a>
-													</span>
-												</com:TPanel>
-										</prop:ItemTemplate>
-									</com:TActiveTemplateColumn>
-									</com:TActiveDataGrid>
-								</com:TJuiDroppable>
+							<div id="restore-browser-selected-files" class="file-browser-detail" style="width: 100%; height: 100%; position: relative;"></div>
+<script>
+var oRestoreBrowserSelectedFiles = {
+	ids: {
+		content: 'restore-browser-selected-files'
+	},
+	cls: {
+		watermark: 'file-browser-watermark',
+		folder: 'fas fa-folder',
+		file: 'fas fa-file-alt',
+		trash: 'fa fa-trash-alt',
+		gray: 'w3-text-gray',
+		green: 'w3-text-green',
+		third: 'w3-third',
+		right: 'w3-right',
+		item: 'file-browser-element',
+		item_icon: 'item_icon',
+		size: 'size',
+		link: 'link',
+		rm_sel_item: 'remove_selected_item',
+		item_sel_btn: 'item_selected_del_btn'
+	},
+	txts: {
+		no_files: "<%[ To add a file to restore please click 'Add' link or please drag here the file from the top frame or from the frame on the left. ]%>"
+	},
+	types: {
+		directory: 'dir',
+		file: 'file'
+	},
+	init: function() {
+		this.load_items();
+		this.init_browser();
+	},
+	init_browser: function() {
+		$('#' + this.ids.content).droppable({
+			accept: '.draggable',
+			drop: function(e, ui) {
+				var source = ui.draggable.attr('data-source');
+				var uniqid = ui.draggable.attr('data-uniqid');
+				var param = [source, uniqid].join('|');
+				var selected_versions_cb = <%=$this->AddFileToRestore->ActiveControl->Javascript%>;
+				selected_versions_cb.setCallbackParameter(param);
+				selected_versions_cb.dispatch();
+			}
+		});
+	},
+	load_items: function() {
+		var cb = <%=$this->SetBrowserSelectedFiles->ActiveControl->Javascript%>;
+		cb.dispatch();
+	},
+	add_empty_item: function() {
+		var container = document.getElementById(this.ids.content);
+		var div = document.createElement('DIV');
+		div.className = this.cls.watermark;
+		div.textContent = this.txts.no_files;
+		container.appendChild(div);
+	},
+	populate: function(items) {
+		oRestoreBrowserSelectedFiles.clear_browser();
+		if (!Array.isArray(items) || items.length === 0) {
+			oRestoreBrowserSelectedFiles.add_empty_item();
+		} else {
+			for (var i = 0; i < items.length; i++) {
+				oRestoreBrowserSelectedFiles.add_item(items[i]);
+			}
+		}
+	},
+	add_item: function(item) {
+		var container = document.getElementById(this.ids.content);
+		var div = document.createElement('DIV');
+		div.className = this.cls.item;
+		div.style.height = '32px';
+		div.setAttribute('data-uniqid', item.uniqid);
+
+		// file name
+		var span_name = document.createElement('SPAN');
+		span_name.className = this.cls.third;
+		span_name.style.wordBreak = 'break-all';
+		var i = document.createElement('I');
+		if (item.type === this.types.file) {
+			i.className = [
+				this.cls.file,
+				this.cls.gray,
+				this.cls.item_icon
+			].join(' ');
+		} else if (item.type === this.types.directory) {
+			i.className = [
+				this.cls.folder,
+				this.cls.green,
+				this.cls.item_icon
+			].join(' ');
+		}
+		var txt = item.name;
+		if (txt != '/') {
+			txt = txt.replace(/\/$/, '');
+		}
+		var name = (txt.length > 60) ? txt.substr(0, 57) + '...' : txt;
+		span_name.setAttribute('title', txt);
+		name = document.createTextNode(' ' + name);
+		span_name.appendChild(i);
+		span_name.appendChild(name);
+
+		// file mtime
+		var span_mtime = document.createElement('SPAN');
+		span_mtime.className = this.cls.third;
+		var mtime = 'MTIME: ' + (item.lstat ? Units.format_date(item.lstat.mtime) : 0);
+		mtime = document.createTextNode(mtime);
+		span_mtime.appendChild(mtime);
+
+		// file size and add button
+		var span_size = document.createElement('SPAN');
+		span_size.className = this.cls.third;
+		var span_size_cont = document.createElement('SPAN');
+		span_size_cont.className = this.cls.size;
+		var size_label = document.createTextNode('<%[ Size: ]%> ');
+		var lsize = item.lstat ? item.lstat.size : 0;
+		var size = document.createTextNode(lsize);
+		span_size_cont.appendChild(size);
+		span_size.appendChild(size_label);
+		span_size.appendChild(span_size_cont);
+
+		var link = document.createElement('A');
+		link.href = 'javascript:void(0)';
+		link.className = [
+			this.cls.link,
+			this.cls.right
+		].join(' ');
+		i  = document.createElement('I');
+		i.className = [
+			this.cls.trash,
+			this.cls.item_sel_btn
+		].join(' ');
+		link.appendChild(i);
+		span_size.appendChild(link);
+		link.addEventListener('click', function(e) {
+			var cb = <%=$this->RemoveSelectedItem->ActiveControl->Javascript%>;
+			cb.setCallbackParameter(item.uniqid);
+			cb.dispatch();
+		});
+
+		div.appendChild(span_name);
+		div.appendChild(span_mtime);
+		div.appendChild(span_size);
+		container.appendChild(div);
+	},
+	clear_browser: function() {
+		var container = document.getElementById(this.ids.content);
+		while (container.firstChild) {
+			container.removeChild(container.firstChild);
+		}
+	}
+};
+$(function() {
+	oRestoreBrowserSelectedFiles.init();
+});
+</script>
+						<com:TCallback ID="SetBrowserSelectedFiles" OnCallback="Page.loadSelectedFiles" />
 						</div>
 					</td>
 				</tr>
@@ -633,7 +930,7 @@ oJobsToRestoreList.init();
 					set_browser_sizes();
 				});
 				set_browser_sizes();
-				make_draggable('<%=$this->getPage()->DataGridFiles->ClientID%>');
+				make_draggable('restore-browser-files-content');
 				Formatters.set_formatters();
 			</script>
 		</com:TWizardStep>
@@ -757,7 +1054,7 @@ oJobsToRestoreList.init();
 				<legend><%[ Source parameters ]%></legend>
 				<div class="w3-section w3-row">
 					<div class="w3-col w3-third"><%[ Backup data from client: ]%></div>
-					<div class="w3-col w3-third bold"><%=$this->BackupClientName->SelectedValue%></div>
+					<div class="w3-col w3-third bold"><%=$this->BackupClient->SelectedItem->Text%></div>
 				</div>
 				<div class="w3-section w3-row">
 					<div class="w3-col w3-third"><%[ Backup selection method: ]%></div>
@@ -792,7 +1089,7 @@ oJobsToRestoreList.init();
 				<legend><%[ Destination parameters ]%></legend>
 				<div class="w3-section w3-row">
 					<div class="w3-col w3-third"><%[ Restore to client: ]%></div>
-					<div class="w3-col w3-third bold"><%=$this->RestoreClient->SelectedValue%></div>
+					<div class="w3-col w3-third bold"><%=$this->RestoreClient->SelectedItem->Text%></div>
 				</div>
 				<div class="w3-section w3-row">
 					<div class="w3-col w3-third"><%[ Restore to path: ]%></div>

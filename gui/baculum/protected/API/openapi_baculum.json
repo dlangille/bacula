@@ -3640,9 +3640,18 @@
 				},
 				"parameters": [
 					{
+						"name": "clientid",
+						"in": "query",
+						"description": "Client identifier (can be used instead of client value)",
+						"required": true,
+						"schema": {
+							"type": "integer"
+						}
+					},
+					{
 						"name": "client",
 						"in": "query",
-						"description": "Client name",
+						"description": "Client name (can be used instead clientid)",
 						"required": true,
 						"schema": {
 							"type": "string"
