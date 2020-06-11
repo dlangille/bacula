@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (C) 2000-2018 Kern Sibbald
+# Copyright (C) 2000-2020 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
 # This script is used to make a Bacula release
@@ -98,6 +98,11 @@ tar xfz $base_pkg-$ver.tar.gz
 cd $base_pkg-$ver/bacula
 cp -fp ReleaseNotes ChangeLog src/version.h ${cwd}/
 cp -fp LICENSE* ${cwd}/
+grep -R -a --exclude-dir=testprogs "Copyright.*Bacula Systems" *
+if [ $? = 0 ] ; then
+  echo "fatal: !!!!! Bacula Systems Copyrights detected !!!!!"
+  exit
+fi
 
 cd ${cwd}/$base_pkg-$ver
 # Move directories to release names including version
