@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (C) 2000-2019 Kern Sibbald
+# Copyright (C) 2000-2020 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
 # Upload to File Release System on serfullver
@@ -25,9 +25,9 @@ for i in bacula-$ver* bacula-*-$ver*; do \
 done
 
 # Upload release notes
-echo "Upload ReleaseNotes to ${where}:/home/src/$ver"
+echo "Uploade ReleaseNotes to ${where}:/home/src/$ver"
 $RSYNC ReleaseNotes ${where}:/home/src/$ver/
-echo "Upload ChangeLog to ${where}:/home/src/$ver"
+echo "Uplod ChangeLog to ${where}:/home/src/$ver"
 $RSYNC ChangeLog ${where}:/home/src/$ver/
 $RSYNC LICENSE* ${where}:/home/src/$ver/
 
