@@ -98,9 +98,9 @@ tar xfz $base_pkg-$ver.tar.gz
 cd $base_pkg-$ver/bacula
 cp -fp ReleaseNotes ChangeLog src/version.h ${cwd}/
 cp -fp LICENSE* ${cwd}/
-grep -R -a --exclude-dir=testprogs "Copyright.*Bacula Systems" *
-if [ $? != 1 ] ; then
-  echo "fatal: !!!!! Bacula Systems Copyrights detected !!!!!"
+grep -R -a "Copyright.*Bacula Systems" *
+if [ $? != 0 ] ; then
+  echo "error: !!!!! Bacula Systems Copyrights detected !!!!!"
   exit
 fi
 
