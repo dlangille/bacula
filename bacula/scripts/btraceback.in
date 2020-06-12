@@ -29,6 +29,11 @@
 #
 PNAME=`basename $1`
 WD="$3"
+# When parsing the configuration, the working directory is not
+# yet initialized
+if [ "$WD" = "" ]; then
+    WD=/tmp
+fi
 case `uname -s` in
 SunOS)
    #
