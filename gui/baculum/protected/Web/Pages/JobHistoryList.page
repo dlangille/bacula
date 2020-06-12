@@ -18,7 +18,7 @@
 		</com:TActiveLinkButton>
 	</div>
 	<div class="w3-container">
-		<table id="job_list" class="w3-table w3-striped w3-hoverable w3-white w3-margin-bottom" style="width: 100%">
+		<table id="job_list" class="w3-table w3-striped w3-hoverable w3-white w3-margin-bottom selectable" style="width: 100%">
 			<thead>
 				<tr>
 					<th></th>

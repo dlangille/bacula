@@ -68,6 +68,10 @@ div.dt-button-collection button[data-cv-idx="0"] {
 	display: none;
 }
 
+table.selectable tr {
+	cursor: pointer;
+}
+
 div.table_toolbar {
 	display: inline-block;
 	margin-left: 10px;

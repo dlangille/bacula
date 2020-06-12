@@ -11,7 +11,7 @@
 			<com:Application.Web.Portlets.LabelVolume />
 			<com:Application.Web.Portlets.UpdateSlots />
 		</div>
-		<table id="volume_list" class="w3-table w3-striped w3-hoverable w3-white w3-margin-bottom" style="width: 100%">
+		<table id="volume_list" class="w3-table w3-striped w3-hoverable w3-white w3-margin-bottom selectable" style="width: 100%">
 			<thead>
 				<tr>
 					<th></th>
