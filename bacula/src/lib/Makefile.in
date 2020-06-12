@@ -136,6 +136,12 @@ wait_test: Makefile bsys.c
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -L../findlib -o $@ bsys.o $(DLIB) -lbac -lbacfind -lm $(LIBS) $(OPENSSL_LIBS)
 	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) $@ $(DESTDIR)$(sbindir)/
 
+bitmap_test: Makefile bitmap.c unittests.o bitmap.h
+	$(RMF) bsys.o
+	$(CXX) -DTEST_PROGRAM $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) bitmap.c
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -o $@ bitmap.o unittests.o $(DLIB) -lbac -lm $(LIBS) $(OPENSSL_LIBS)
+	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) $@ $(DESTDIR)$(sbindir)/
+
 output_test: Makefile libbac.la output.c unittests.o
 	$(RMF) output.o
 	$(CXX) -DTEST_PROGRAM $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) output.c
