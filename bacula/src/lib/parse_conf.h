@@ -235,7 +235,7 @@ public:
    void unlock();                     /* in message.c */
 
    int get_custom_type(char *name);
-   int add_custom_type(bool is_not, char *name, int destcode);
+   int add_custom_type(bool is_not, char *name);
    bool is_custom_type(int type) { return type > M_MAX && type <= custom_type_current_index; };
 };
 

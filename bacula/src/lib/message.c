@@ -466,6 +466,20 @@ void init_console_msg(const char *wd)
    }
 }
 
+/* When we have the M_EVENTS code, we set all bits to 1 after M_ALL */
+static void set_msg_and_dest_bits(int code, char *msg_types, char *msg_types2)
+{
+   set_bit(code, msg_types);
+   set_bit(code, msg_types2);
+
+   if (code == M_EVENTS) {
+      for (uint32_t i = M_ALL + 1 ; i < M_EVENTS_LIMIT ; i++) {
+         set_bit(i, msg_types);
+         set_bit(i, msg_types2); /* set msg_type bit in our local */
+      }
+   }
+}
+
 /*
  * Called only during parsing of the config file.
  *
@@ -484,11 +498,11 @@ void add_msg_dest(MSGS *msg, int dest_code, int msg_type, char *where, char *mai
     */
    for (d=msg->dest_chain; d; d=d->next) {
       if (dest_code == d->dest_code && ((where == NULL && d->where == NULL) ||
-                     (strcmp(where, d->where) == 0))) {
+                                        (strcmp(NPRTB(where), NPRTB(d->where)) == 0)))
+      {
          Dmsg4(850, "Add to existing d=%p msgtype=%d destcode=%d where=%s\n",
              d, msg_type, dest_code, NPRT(where));
-         set_bit(msg_type, d->msg_types);
-         set_bit(msg_type, msg->send_msg);  /* set msg_type bit in our local */
+         set_msg_and_dest_bits(msg_type, msg->send_msg, d->msg_types);
          return;
       }
    }
@@ -497,8 +511,8 @@ void add_msg_dest(MSGS *msg, int dest_code, int msg_type, char *where, char *mai
    memset(d, 0, sizeof(DEST));
    d->next = msg->dest_chain;
    d->dest_code = dest_code;
-   set_bit(msg_type, d->msg_types);      /* set type bit in structure */
-   set_bit(msg_type, msg->send_msg);     /* set type bit in our local */
+   set_msg_and_dest_bits(msg_type, msg->send_msg, d->msg_types);
+
    if (where) {
       d->where = bstrdup(where);
    }
@@ -523,7 +537,7 @@ void rem_msg_dest(MSGS *msg, int dest_code, int msg_type, char *where)
       Dmsg2(850, "Remove_msg_dest d=%p where=%s\n", d, NPRT(d->where));
       if (bit_is_set(msg_type, d->msg_types) && (dest_code == d->dest_code) &&
           ((where == NULL && d->where == NULL) ||
-                     (strcmp(where, d->where) == 0))) {
+           (strcmp(NPRTB(where), NPRTB(d->where)) == 0))) {
          Dmsg3(850, "Found for remove d=%p msgtype=%d destcode=%d\n",
                d, msg_type, dest_code);
          clear_bit(msg_type, d->msg_types);

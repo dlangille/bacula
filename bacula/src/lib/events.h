@@ -52,7 +52,9 @@ public:
 };
 
 void custom_type_copy(MSGS *dest, MSGS *src);
-void edit_custom_type(POOLMEM **edbuf, MSGS *msgs, int dest);
+
+/* Get JSON array for custom types */
+void edit_custom_type(POOLMEM **edbuf, MSGS *msgs, char *msg_types);
 
 /* Event structure */
 #define EVENTS_TYPE_SECURITY   "security"

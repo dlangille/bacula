@@ -165,12 +165,18 @@ void edit_msg_types(HPKT &hpkt, DEST *dest)
       for (i=1; i<=M_MAX; i++) {
          if (!bit_is_set(i, dest->msg_types)) {
             found = false;
-            pm_strcat(hpkt.edbuf, ",");
             for (j=0; msg_types[j].name; j++) {
                if ((int)msg_types[j].token == i) {
-                  pm_strcat(hpkt.edbuf, "\"!");
-                  pm_strcat(hpkt.edbuf, msg_types[j].name);
-                  pm_strcat(hpkt.edbuf, "\"");
+                  /* Do not display them, they are included in All */
+                  if (msg_types[j].token != M_DEBUG &&
+                      msg_types[j].token != M_EVENTS &&
+                      msg_types[j].token != M_SAVED)
+                  {
+                     pm_strcat(hpkt.edbuf, ",");
+                     pm_strcat(hpkt.edbuf, "\"!");
+                     pm_strcat(hpkt.edbuf, msg_types[j].name);
+                     pm_strcat(hpkt.edbuf, "\"");
+                  }
                   found = true;
                   break;
                }
@@ -193,7 +199,7 @@ void edit_msg_types(HPKT &hpkt, DEST *dest)
       }
    }
    /* Now handle custom type */
-   edit_custom_type(&hpkt.edbuf, (MSGS *)hpkt.ritem->value, dest->dest_code);
+   edit_custom_type(&hpkt.edbuf, (MSGS *)hpkt.ritem->value, dest->msg_types);
    pm_strcat(hpkt.edbuf, "]");
 }
 

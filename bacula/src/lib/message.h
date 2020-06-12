@@ -98,6 +98,7 @@ enum {
 };
 
 #define M_MAX      M_EVENTS           /* keep this updated ! */
+#define M_ALL      M_MAX+1
 
 /* We cannot store more than this amount of custom events */
 #define M_EVENTS_LIMIT    (sizeof(int)*8) /* 8 bit per bytes => 18 to 31 event type */

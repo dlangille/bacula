@@ -115,8 +115,6 @@ bool EVENTS_DBR::scan_line(const char *line)
 struct CUSTOM_TYPE {
    rblink link;
    int    code;
-   /* We keep where this custom type was used for JSON tools */
-   char   send_msg[nbytes_for_bits(MD_MAX)];  /* bit array of types */
    char   kw[1];
 };
 
@@ -162,7 +160,7 @@ void custom_type_copy(MSGS *dest, MSGS *src)
  * -2      => incorrect format
  * -1      => too much element
  */
-int MSGS::add_custom_type(bool is_not, char *type, int destcode)
+int MSGS::add_custom_type(bool is_not, char *type)
 {
    CUSTOM_TYPE *t = NULL;
    if (!type || *type == 0) {
@@ -180,20 +178,15 @@ int MSGS::add_custom_type(bool is_not, char *type, int destcode)
    int len = strlen(type);
    t = (CUSTOM_TYPE*) malloc(sizeof(CUSTOM_TYPE)+len+1);
    bstrncpy(t->kw, type, len+1);
-   set_bit(destcode, t->send_msg);
    CUSTOM_TYPE *t2 = (CUSTOM_TYPE*) custom_type->insert(t, custom_type_insert);
    if (t2 == t) {
-      if (is_not) {             /* the event is discarded. We can also completely ignore it */
-         t->code = M_DEBUG;
-
-      } else {
-         custom_type_current_index = MAX(M_MAX, custom_type_current_index);
-         t->code = ++custom_type_current_index;
-      }
+      custom_type_current_index = MAX(M_ALL, custom_type_current_index);
+      t2->code = ++custom_type_current_index;
+      Dmsg2(50, "Add custom type [Events.%s] = %d\n", t2->kw, t2->code);
    } else {
-      free(t2);                 /* Already in */
+      free(t);                 /* Already in */
    }
-   return t->code;
+   return t2->code;
 }
 
 /* Get an existing custom event name */
@@ -210,24 +203,37 @@ int MSGS::get_custom_type(char *type)
    return -1;
 }
 
-void edit_custom_type(POOLMEM **edbuf, MSGS *msgs, int dest)
+void edit_custom_type(POOLMEM **edbuf, MSGS *msgs, char *msg_types)
 {
    CUSTOM_TYPE *elt;
-   bool first_time = (*edbuf[0] == '\0');
+   bool first_time = (*edbuf)[0] == '\0' || ((*edbuf)[0] == '[' && (*edbuf)[1] == '\0');
+
    if (msgs->custom_type == NULL) {
       return;
    }
    foreach_rblist(elt, msgs->custom_type) {
-      if (bit_is_set(dest, elt->send_msg)) {
+      if (bit_is_set(M_EVENTS, msg_types) == 0 &&
+          bit_is_set(elt->code, msg_types))
+      {
          if (!first_time) {
             pm_strcat(edbuf, ",");
-         }
-         if (elt->code > M_MAX) {
-            pm_strcat(edbuf, "\"Events.");
 
          } else {
-            pm_strcat(edbuf, "\"!Events.");
+            first_time = false;
          }
+         pm_strcat(edbuf, "\"Events.");
+         pm_strcat(edbuf, elt->kw);
+         pm_strcat(edbuf, "\"");
+
+      } else if (bit_is_set(M_EVENTS, msg_types) &&
+                 bit_is_set(elt->code, msg_types) == 0)
+      {
+         if (!first_time) {
+            pm_strcat(edbuf, ",");
+         } else {
+            first_time = false;
+         }
+         pm_strcat(edbuf, "\"!Events.");
          pm_strcat(edbuf, elt->kw);
          pm_strcat(edbuf, "\"");
       }

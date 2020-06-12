@@ -452,8 +452,8 @@ static void scan_types(LEX *lc, MSGS *msg, int dest_code, char *where, char *cmd
          }
       }
       /* Custom event, we add it to the list for this Message */
-      if (!found && strncmp(str, "events.", 6) == 0) {
-         msg_type = msg->add_custom_type(is_not, str+7, dest_code); /* We can ignore completely if we want */
+      if (!found && strncasecmp(str, "events.", 6) == 0) {
+         msg_type = msg->add_custom_type(is_not, str+7); /* We can ignore completely if we want */
          Dmsg2(50, "Add events %s => %d\n", str, msg_type);
          if (msg_type < 0) {
             scan_err2(lc, _("message type: Unable to add %s message type. %s"), str,
