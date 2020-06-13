@@ -678,7 +678,7 @@ var W3SideBar = {
 			Cookies.set_cookie('baculum_side_bar_hide', 0);
 			this.sidebar.style.display = 'block';
 			this.overlay_bg.style.display = 'block';
-			this.page_main.css({'margin-left': '300px', 'width': 'calc(100% - 300px)'});
+			this.page_main.css({'margin-left': '250px', 'width': 'calc(100% - 250px)'});
 		}
 	},
 	close: function() {

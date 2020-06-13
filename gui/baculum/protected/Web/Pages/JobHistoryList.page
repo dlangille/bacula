@@ -94,14 +94,61 @@
 		<p class="info w3-hide-medium w3-hide-small"><%[ Tip: Use left-click to select table row. Use CTRL + left-click to multiple row selection. Use SHIFT + left-click to add a range of rows to selection. ]%></p>
 	</div>
 	<com:Application.Web.Portlets.RunJob ID="RunJobModal" />
-	<com:TCallback ID="RunJobCb" OnCallback="runJobAgain" />
-	<com:TCallback ID="CancelJobCb" OnCallback="cancelJob" />
+	<com:TCallback ID="RunJobCb" OnCallback="runJobAgain">
+		<prop:ClientSide.OnLoading>
+			show_btn_loader(sender.options.CallbackParameter);
+		</prop:ClientSide.OnLoading>
+		<prop:ClientSide.OnComplete>
+			hide_btn_loader(sender.options.CallbackParameter);
+			oMonitor();
+		</prop:ClientSide.OnComplete>
+	</com:TCallback>
+	<com:TCallback ID="CancelJobCb" OnCallback="cancelJob">
+		<prop:ClientSide.OnLoading>
+			show_btn_loader(sender.options.CallbackParameter);
+		</prop:ClientSide.OnLoading>
+		<prop:ClientSide.OnComplete>
+			hide_btn_loader(sender.options.CallbackParameter);
+			oMonitor();
+		</prop:ClientSide.OnComplete>
+	</com:TCallback>
 <script type="text/javascript">
-var run_job_callback = <%=$this->RunJobCb->ActiveControl->Javascript%>;
-var cancel_job_callback = <%=$this->CancelJobCb->ActiveControl->Javascript%>;
-function refresh_job_history(jobid) {
-	document.location.href = '<%=$this->Service->constructUrl('JobHistoryList')%>';
+function get_run_job_callback() {
+	return <%=$this->RunJobCb->ActiveControl->Javascript%>;
 }
+function get_cancel_job_callback() {
+	return <%=$this->CancelJobCb->ActiveControl->Javascript%>;
+}
+function show_btn_loader(jobid) {
+	var btns = document.querySelectorAll('button[data-btn-id="' + jobid + '"]');
+	var loader;
+	for (var i = 0; i < btns.length; i++) {
+		loader = document.createElement('IMG');
+		loader.setAttribute('data-loader-id', jobid);
+		loader.src = '<%=$this->getPage()->getTheme()->getBaseUrl()%>/loader-small.gif';
+		loader.style.display = 'none';
+		loader.className = 'btn_loader';
+		btns[i].parentNode.insertBefore(loader, btns[i]);
+		btns[i].style.display = 'none';
+		loader.style.display = '';
+	}
+}
+
+function hide_btn_loader(jobid) {
+	var btns = document.querySelectorAll('button[data-btn-id="' + jobid + '"]');
+	var loaders = document.querySelectorAll('img[data-loader-id="' + jobid + '"]');
+	var loader_list = Array.prototype.slice.call(loaders);
+
+	// Note, there can be more loaders with the same loader-id in small width view.
+	for (var i = (loader_list.length-1); i >= 0; i--) {
+		loader_list[i].parentNode.removeChild(loader_list[i]);
+	}
+
+	for (var i = 0; i < btns.length; i++) {
+		btns[i].style.display = 'inline-block';
+	}
+}
+
 var oJobList = {
 	table: null,
 	table_toolbar: null,
@@ -162,6 +209,13 @@ var oJobList = {
 				this.table_toolbar.style.display = this.table.rows({selected: true}).data().length > 0 ? '' : 'none';
 			}.bind(this));
 		}.bind(this));
+		var el = $('#' + this.ids.job_list);
+		el.on('page.dt', function () {
+			el.find('img.btn_loader').each(function(idx, el) {
+				var jobid = el.getAttribute('data-loader-id');
+				hide_btn_loader(jobid);
+			});
+		});
 	},
 	set_table: function() {
 		this.table = $('#' + this.ids.job_list).DataTable({
@@ -336,23 +390,25 @@ var oJobList = {
 						if (['C', 'R'].indexOf(row.jobstatus) === -1) {
 							// rerun job button
 							btn = document.createElement('BUTTON');
-							btn.className = 'w3-button w3-green';
+							btn.className = 'w3-button w3-tiny w3-green';
 							btn.type = 'button';
 							i = document.createElement('I');
 							btn.title = '<%[ Run job again ]%>';
 							i.className = 'fa fa-play';
 							btn.appendChild(i);
-							btn.setAttribute('onclick', 'run_job_callback.setCallbackParameter(' + data + '); run_job_callback.dispatch();');
+							btn.setAttribute('data-btn-id', data);
+							btn.setAttribute('onclick', 'var rjc = get_run_job_callback(); rjc.setCallbackParameter(' + data + '); rjc.dispatch();');
 						} else {
 							// cancel job button
 							btn = document.createElement('BUTTON');
-							btn.className = 'w3-button w3-green';
+							btn.className = 'w3-button w3-tiny w3-green';
 							btn.type = 'button';
 							i = document.createElement('I');
 							btn.title = '<%[ Cancel job ]%>';
 							i.className = 'fa fa-stop';
 							btn.appendChild(i);
-							btn.setAttribute('onclick', 'cancel_job_callback.setCallbackParameter(' + data + '); cancel_job_callback.dispatch();');
+							btn.setAttribute('data-btn-id', data);
+							btn.setAttribute('onclick', 'var cjc = get_cancel_job_callback(); cjc.setCallbackParameter(' + data + '); cjc.dispatch();');
 						}
 						container.appendChild(btn);
 						var space = document.createTextNode(' ');
@@ -360,7 +416,7 @@ var oJobList = {
 
 						// job details button
 						btn = document.createElement('BUTTON');
-						btn.className = 'w3-button w3-green';
+						btn.className = 'w3-button w3-tiny w3-green';
 						btn.type = 'button';
 						i = document.createElement('I');
 						i.className = 'fa fa-list-ul';

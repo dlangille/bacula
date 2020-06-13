@@ -1,7 +1,7 @@
 <%@ MasterClass="Application.Web.Layouts.Main" Theme="Baculum-v2"%>
 <com:TContent ID="Main">
 	<!-- Header -->
-	<header class="w3-container">
+	<header class="w3-container w3-show-block">
 		<h5>
 			<b><i class="fa fa-chart-pie"></i> <%[ Graphs ]%></b>
 		</h5>

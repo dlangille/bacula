@@ -31,7 +31,7 @@
 			</div>
 			<com:Application.Web.Portlets.MainSideBar />
 			<!-- !PAGE CONTENT! -->
-			<div class="w3-main page_main_el" id="page_main" style="margin-left:300px; margin-top:43px;">
+			<div class="w3-main page_main_el" id="page_main" style="margin-left: 250px; margin-top: 43px;">
 				<span class="w3-tag w3-large w3-purple w3-right w3-padding-small w3-margin-top w3-margin-right">
 					<i class="fa fa-cogs w3-large"></i> <%[ Running jobs: ]%> <span id="running_jobs"></span>
 				</span>

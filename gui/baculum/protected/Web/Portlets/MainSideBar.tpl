@@ -1,10 +1,10 @@
 <!-- Sidebar/menu -->
-<nav class="w3-sidebar w3-white w3-animate-left w3-margin-bottom" style="z-index:3;width:300px;" id="sidebar"><br />
-	<div class="w3-container w3-row">
-		<div class="w3-col s4">
-			<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/avatar2.png" class="w3-circle w3-margin-right" style="width:46px" />
+<nav class="w3-sidebar w3-white w3-animate-left w3-margin-bottom" style="z-index:3;width:250px;" id="sidebar"><br />
+	<div class="w3-container w3-row" style="margin-bottom: 8px">
+		<div class="w3-col s3">
+			<img src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/avatar2.png" class="w3-circle w3-margin-right" style="width: 33px" />
 		</div>
-		<div class="w3-col s8 w3-bar">
+		<div class="w3-col s9 w3-bar">
 			<span><%[ Welcome ]%>, <strong><%=$this->User->getUsername()%></strong></span><br>
 			<script>var main_side_bar_reload_url = '<%=$this->reload_url%>';</script>
 			<com:TActiveLinkButton
@@ -27,7 +27,6 @@
 			<a href="<%=$this->Service->constructUrl('ApplicationSettings')%>" class="w3-bar-item w3-button<%=$this->getModule('users')->isPageAllowed($this->User, 'ApplicationSettings') ? '' : ' hide'%>" title="<%[ Application settings ]%>"><i class="fa fa-cog"></i></a>
 		</div>
 	</div>
-	<hr />
 	<div class="w3-container w3-black">
 		<h5>Baculum Menu</h5>
 	</div>

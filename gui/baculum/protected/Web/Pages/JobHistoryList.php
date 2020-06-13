@@ -78,9 +78,7 @@ class JobHistoryList extends BaculumWebPage {
 			$result = $this->getModule('api')->create(array('jobs', 'run'), $params);
 			if ($result->error === 0) {
 				$started_jobid = $this->getModule('misc')->findJobIdStartedJob($result->output);
-				if (is_numeric($started_jobid)) {
-					$this->getPage()->getCallbackClient()->callClientFunction('refresh_job_history');
-				} else {
+				if (!is_numeric($started_jobid)) {
 					$errmsg = implode('<br />', $result->output);
 					$this->getPage()->getCallbackClient()->callClientFunction('show_error', array($errmsg, $result->error));
 				}
@@ -96,7 +94,6 @@ class JobHistoryList extends BaculumWebPage {
 			array('jobs', $jobid, 'cancel'),
 			array()
 		);
-		$this->getPage()->getCallbackClient()->callClientFunction('refresh_job_history');
 	}
 
 	/**

@@ -37,7 +37,7 @@
 		ItemRenderer="Application.Web.Portlets.DirectiveRenderer"
 		>
 	</com:TActiveRepeater>
-	<div class="w3-row w3-center w3-border bottom_buttons page_main_el" style="margin-left: 300px">
+	<div class="w3-row w3-center w3-border bottom_buttons page_main_el" style="margin-left: 250px">
 		<com:Application.Web.Portlets.DirectiveSetting
 			ID="DirectiveSetting"
 			Resource="<%=$this->getResource()%>"
