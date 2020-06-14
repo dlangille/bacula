@@ -257,25 +257,25 @@ var oJobList = {
 				},
 				{
 					data: 'schedtime',
+					render: render_date,
 					visible: false
 				},
-				{data: 'starttime'},
-				{data: 'endtime'},
+				{
+					data: 'starttime',
+					render: render_date
+				},
+				{
+					data: 'endtime',
+					render: render_date
+				},
 				{
 					data: 'realendtime',
+					render: render_date,
 					visible: false
 				},
 				{
 					data: 'jobtdate',
-					render: function (data, type, row) {
-						var t;
-						if (type == 'display') {
-							t = Units.format_date(data)
-						} else {
-							t = data;
-						}
-						return t;
-					},
+					render: render_date_ts,
 					visible: false
 				},
 				{
@@ -284,53 +284,21 @@ var oJobList = {
 				},
 				{
 					data: 'volsessiontime',
-					render: function (data, type, row) {
-						var t;
-						if (type == 'display') {
-							t = Units.format_date(data)
-						} else {
-							t = data;
-						}
-						return t;
-					},
+					render: render_date_ts,
 					visible: false
 				},
 				{
 					data: 'jobstatus',
-					render: function (data, type, row) {
-						var ret;
-						if (type == 'display') {
-							ret = JobStatus.get_icon(data).outerHTML;
-						} else {
-							ret = data;
-						}
-						return ret;
-					},
+					render: render_jobstatus,
 					className: 'w3-center'
 				},
 				{
 					data: 'jobbytes',
-					render: function (data, type, row) {
-						var s;
-						if (type == 'display') {
-							s = Units.get_formatted_size(data)
-						} else {
-							s = data;
-						}
-						return s;
-					}
+					render: render_bytes
 				},
 				{
 					data: 'readbytes',
-					render: function (data, type, row) {
-						var s;
-						if (type == 'display') {
-							s = Units.get_formatted_size(data)
-						} else {
-							s = data;
-						}
-						return s;
-					},
+					render: render_bytes,
 					visible: false
 				},
 				{data: 'jobfiles'},

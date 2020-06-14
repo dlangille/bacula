@@ -120,9 +120,79 @@ var Units = {
 			timestamp *= 1000;
 		}
 		var d = new Date(timestamp);
-		var date = [d.getFullYear(), ('0' + (d.getMonth()+1)).slice(-2), ('0' + d.getDate()).slice(-2)].join('-');
-		var time = [d.getHours(), ('0' + d.getMinutes()).slice(-2), ('0' + d.getSeconds()).slice(-2)].join(':');
-		return (date + ' ' + time);
+		var dt = DATE_TIME_FORMAT;
+		if (dt.indexOf('Y') !== -1) { // full 4 digits year, ex. 2021
+			dt = dt.replace(/Y/g, d.getFullYear());
+		}
+		if (dt.indexOf('y') !== -1) { // 2 digits year, ex, 21
+			dt = dt.replace(/y/g, ('0' + d.getFullYear()).slice(-2));
+		}
+		if (dt.indexOf('M') !== -1) { // 2 digits month 01..12
+			dt = dt.replace(/M/g, ('0' + (d.getMonth() + 1)).slice(-2));
+		}
+		if (dt.indexOf('m') !== -1) { // 1-2 digits month 1..12
+			dt = dt.replace(/m/g, (d.getMonth() + 1));
+		}
+		if (dt.indexOf('D') !== -1) { // 2 digits day 01..31
+			dt = dt.replace(/D/g, ('0' + d.getDate()).slice(-2));
+		}
+		if (dt.indexOf('d') !== -1) { // 1-2 digits day 1..31
+			dt = dt.replace(/d/g, d.getDate());
+		}
+		if (dt.indexOf('H') !== -1) { // 2 digits 24-hour format hour 00..23
+			dt = dt.replace(/H/g, ('0' + d.getHours()).slice(-2));
+		}
+		if (dt.indexOf('h') !== -1) { // 1-2 digits 24-hour format hour 0..23
+			dt = dt.replace(/h/g, d.getHours());
+		}
+		if (dt.indexOf('G') !== -1) { // 2 digits 12-hour format hour value 01..12
+			var hours = d.getHours() % 12;
+			hours = hours ? hours : 12;
+			dt = dt.replace(/G/g, ('0' + hours).slice(-2));
+		}
+		if (dt.indexOf('g') !== -1) { // 1-2 digits 12-hour format hour value 1..12
+			var hours = d.getHours() % 12;
+			hours = hours ? hours : 12;
+			dt = dt.replace(/g/g, hours);
+		}
+		if (dt.indexOf('I') !== -1) { // 2 digits minutes 00..59
+			dt = dt.replace(/I/g, ('0' + d.getMinutes()).slice(-2));
+		}
+		if (dt.indexOf('i') !== -1) { // 1-2 digits minutes 0..59
+			dt = dt.replace(/i/g, d.getMinutes());
+		}
+		if (dt.indexOf('S') !== -1) { // 2 digits seconds 00..23
+			dt = dt.replace(/S/g, ('0' + d.getSeconds()).slice(-2));
+		}
+		if (dt.indexOf('s') !== -1) { // 1-2 digits seconds 0..23
+			dt = dt.replace(/s/g, d.getSeconds());
+		}
+		if (dt.indexOf('p') !== -1) { // AM/PM value
+			var am_pm = d.getHours() >= 12 ? 'PM' : 'AM';
+			dt = dt.replace(/p/g, am_pm);
+		}
+		if (dt.indexOf('R') !== -1) { // 24-hours format time value 17:22:41
+			var minutes = ('0' + d.getMinutes()).slice(-2);
+			var seconds = ('0' + d.getSeconds()).slice(-2);
+			dt = dt.replace(/R/g, d.getHours() + ':' + minutes + ':' + seconds);
+		}
+		if (dt.indexOf('r') !== -1) { // time in digits 12-hours format 11:05:12 AM
+			var am_pm = d.getHours() >= 12 ? 'PM' : 'AM';
+			var hours = d.getHours() % 12;
+			hours = hours ? hours : 12;
+			var minutes = ('0' + d.getMinutes()).slice(-2);
+			var seconds = ('0' + d.getSeconds()).slice(-2);
+			dt = dt.replace(/r/g, hours + ':' + minutes + ':' + seconds + ' ' + am_pm);
+		}
+		return dt;
+	},
+	format_date_str: function(date) {
+		var d;
+		if (date && date != 'no date') {
+			var t = (new Date(date)).getTime();
+			d = Units.format_date(t);
+		}
+		return d;
 	},
 	format_speed: function(speed_bytes, format, float_val, decimal) {
 		var reminder;
@@ -187,7 +257,8 @@ var PieGraph  = {
 var Formatters = {
 	formatter: [
 		{css_class: 'size', format_func: function(val) { return Units.get_formatted_size(val); }},
-		{css_class: 'time', format_func: function(val) { return Units.format_time_period(val); }}
+		{css_class: 'time', format_func: function(val) { return Units.format_time_period(val); }},
+		{css_class: 'datetime', format_func: function(val) { return Units.format_date_str(val); }}
 	],
 	set_formatters: function() {
 		var elements, formatter, txt, val;
@@ -207,6 +278,85 @@ var Formatters = {
 			}
 		}
 	}
+}
+
+
+/** Data tables formatters **/
+
+function render_date(data, type, row) {
+	var t = data;
+	if (t) {
+		var d = (new Date(t)).getTime();
+		if (type == 'display') {
+			t = Units.format_date(d);
+		} else {
+			t = d;
+		}
+	}
+	return t;
+}
+
+function render_date_ts(data, type, row) {
+	var t;
+	if (type == 'display') {
+		t = Units.format_date(data)
+	} else {
+		t = data;
+	}
+	return t;
+}
+
+function render_date_ex(data, type, row) {
+	var t = data;
+	if (t && t != 'no date') {
+		var d = (new Date(t)).getTime();
+		if (type == 'display') {
+			t = Units.format_date(d);
+		} else {
+			t = d;
+		}
+	}
+	return t;
+}
+
+function render_jobstatus(data, type, row) {
+	var ret;
+	if (type == 'display') {
+		ret = JobStatus.get_icon(data).outerHTML;
+	} else {
+		ret = data;
+	}
+	return ret;
+}
+
+function render_bytes(data, type, row) {
+	var s;
+	if (type == 'display') {
+		s = Units.get_formatted_size(data)
+	} else {
+		s = data;
+	}
+	return s;
+}
+function render_level(data, type, row) {
+	var ret;
+	if (!data) {
+		ret = '-';
+	} else {
+		ret = JobLevel.get_level(data);
+	}
+	return ret;
+}
+
+function render_time_period(data, type, row) {
+	var ret;
+	if (type == 'display' || type == 'filter') {
+		var time = Units.format_time_period(data);
+		ret = time.value + ' ' + time.format + ((time.value > 0) ? 's': '');
+	} else {
+		ret = data;
+	}
+	return ret;
 }
 
 function set_formatters() {
@@ -457,19 +607,12 @@ var oLastJobsList = {
 				},
 				{
 					data: 'starttime',
+					render: render_date,
 					responsivePriority: 5
 				},
 				{
 					data: 'jobstatus',
-					render: function (data, type, row) {
-						var ret;
-						if (type == 'display') {
-							ret = JobStatus.get_icon(data).outerHTML;
-						} else {
-							ret = data;
-						}
-						return ret;
-					},
+					render: render_jobstatus,
 					responsivePriority: 4
 				}
 			],

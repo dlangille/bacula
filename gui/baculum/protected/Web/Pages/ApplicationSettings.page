@@ -1,5 +1,7 @@
 <%@ MasterClass="Application.Web.Layouts.Main" Theme="Baculum-v2"%>
 <com:TContent ID="Main">
+	<com:BClientScript ScriptUrl=<%~ ../JavaScript/opentip.js %> />
+	<com:BClientScript ScriptUrl=<%~ ../JavaScript/tooltip.js %> />
 	<!-- Header -->
 	<header class="w3-container">
 		<h5>
@@ -21,9 +23,11 @@
 		<div class="w3-third w3-col">
 			<com:TTextBox
 				ID="MaxJobs"
-				CssClass="w3-input w3-border"
+				CssClass="w3-input w3-border w3-show-inline-block"
 				ValidationGroup="AppSetting"
+				Width="120px"
 			/>
+			<i class="fa fa-asterisk w3-text-red"></i>
 			<com:TRequiredFieldValidator
 				ID="MaxJobsRequiredValidator"
 				ValidationGroup="AppSetting"
@@ -65,6 +69,49 @@
 				CssClass="w3-check"
 			/>
 		</div>
+	</div>
+	<div class="w3-container w3-row w3-padding">
+		<div class="w3-third w3-col"><%[ Date and time format: ]%></div>
+		<div class="w3-third w3-col">
+			<com:TTextBox
+				ID="DateTimeFormat"
+				CssClass="w3-input w3-border w3-show-inline-block"
+				ValidationGroup="AppSetting"
+				Width="120px"
+			/>
+			<i class="fa fa-asterisk w3-text-red"></i>
+			<com:TRequiredFieldValidator
+				ValidationGroup="AppSetting"
+				ControlToValidate="DateTimeFormat"
+				ErrorMessage="<%[ Field required. ]%>"
+				Display="Dynamic"
+			/>
+		</div>
+		<script>
+			var dt = document.getElementById('<%=$this->DateTimeFormat->ClientID%>');
+			dt.addEventListener('mouseover', function() {
+				var tip_fields = [
+					'Y - <%[ full 4 digits year, ex. 2021 ]%>',
+					'y - <%[ 2 digits year, ex, 21 ]%>',
+					'M - <%[ 2 digits month 01..12 ]%>',
+					'm - <%[ 1-2 digits month 1..12 ]%>',
+					'D - <%[ 2 digits day 01..31 ]%>',
+					'd - <%[ 1-2 digits day 1..31 ]%>',
+					'H - <%[ 2 digits 24-hour format hour 00..23 ]%>',
+					'h - <%[ 1-2 digits 24-hour format hour 0..23 ]%>',
+					'G - <%[ 2 digits 12-hour format hour 01..12 ]%>',
+					'g - <%[ 1-2 digits 12-hour format hour 1..12 ]%>',
+					'I - <%[ 2 digits minutes 00..59 ]%>',
+					'i - <%[ 1-2 digits minutes 0..59 ]%>',
+					'S - <%[ 2 digits seconds 00..59 ]%>',
+					's - <%[ 1-2 digits seconds 0..59 ]%>',
+					'p - <%[ AM/PM value ]%>',
+					'R - <%[ 24-hours format time 17:22:41 ]%>',
+					'r - <%[ 12-hours format time 5:22:41 PM ]%>'
+				];
+				showTip(dt, '<%[ Available formats: ]%>', tip_fields.join('<br />'));
+			});
+		</script>
 	</div>
 	<div class="w3-center">
 		<com:TActiveLinkButton

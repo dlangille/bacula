@@ -63,6 +63,12 @@ class WebConfig extends ConfigFileModule {
 	 */
 	const DEF_TIME_IN_JOB_LOG = 0;
 
+
+	/**
+	 * Default date and time format.
+	 */
+	const DEF_DATE_TIME_FORMAT = 'Y-M-D R';
+
 	/**
 	 * Supported authentication methods.
 	 */
@@ -171,7 +177,8 @@ class WebConfig extends ConfigFileModule {
 			'lang' => self::DEF_LANG,
 			'max_jobs' => self::DEF_MAX_JOBS,
 			'size_values_unit' => self::DEF_SIZE_VAL_UNIT,
-			'time_in_job_log' => self::DEF_TIME_IN_JOB_LOG
+			'time_in_job_log' => self::DEF_TIME_IN_JOB_LOG,
+			'date_time_format' => self::DEF_DATE_TIME_FORMAT
 		];
 		if (key_exists('baculum', $config)) {
 			$config['baculum'] = array_merge($baculum, $config['baculum']);

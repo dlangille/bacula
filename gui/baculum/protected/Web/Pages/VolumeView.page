@@ -120,11 +120,11 @@
 					</tr>
 					<tr>
 						<td><%[ First written ]%></td>
-						<td><strong><com:TActiveLabel ID="OFirstWritten" /></strong></td>
+						<td><strong><com:TActiveLabel CssClass="datetime" ID="OFirstWritten" /></strong></td>
 					</tr>
 					<tr>
 						<td><%[ Last written ]%></td>
-						<td><strong><com:TActiveLabel ID="OLastWritten" /></strong></td>
+						<td><strong><com:TActiveLabel CssClass="datetime" ID="OLastWritten" /></strong></td>
 					</tr>
 				</table>
 			</div>
@@ -145,7 +145,7 @@
 					</tr>
 					<tr>
 						<td><%[ When expire ]%></td>
-						<td><strong><com:TActiveLabel ID="OWhenExpire" /></strong></td>
+						<td><strong><com:TActiveLabel CssClass="datetime" ID="OWhenExpire" /></strong></td>
 					</tr>
 				</table>
 			</div>
@@ -454,25 +454,25 @@ var oJobsOnVolumeList = {
 				},
 				{
 					data: 'schedtime',
+					render: render_date,
 					visible: false
 				},
-				{data: 'starttime'},
-				{data: 'endtime'},
+				{
+					data: 'starttime',
+					render: render_date
+				},
+				{
+					data: 'endtime',
+					render: render_date
+				},
 				{
 					data: 'realendtime',
+					render: render_date,
 					visible: false
 				},
 				{
 					data: 'jobtdate',
-					render: function (data, type, row) {
-						var t;
-						if (type == 'display') {
-							t = Units.format_date(data)
-						} else {
-							t = data;
-						}
-						return t;
-					},
+					render: render_date_ts,
 					visible: false
 				},
 				{
@@ -481,53 +481,21 @@ var oJobsOnVolumeList = {
 				},
 				{
 					data: 'volsessiontime',
-					render: function (data, type, row) {
-						var t;
-						if (type == 'display') {
-							t = Units.format_date(data)
-						} else {
-							t = data;
-						}
-						return t;
-					},
+					render: render_date_ts,
 					visible: false
 				},
 				{
 					data: 'jobstatus',
-					render: function (data, type, row) {
-						var ret;
-						if (type == 'display') {
-							ret = JobStatus.get_icon(data).outerHTML;
-						} else {
-							ret = data;
-						}
-						return ret;
-					},
+					render: render_jobstatus,
 					className: 'w3-center'
 				},
 				{
 					data: 'jobbytes',
-					render: function (data, type, row) {
-						var s;
-						if (type == 'display') {
-							s = Units.get_formatted_size(data)
-						} else {
-							s = data;
-						}
-						return s;
-					}
+					render: render_bytes
 				},
 				{
 					data: 'readbytes',
-					render: function (data, type, row) {
-						var s;
-						if (type == 'display') {
-							s = Units.get_formatted_size(data)
-						} else {
-							s = data;
-						}
-						return s;
-					},
+					render: render_bytes,
 					visible: false
 				},
 				{data: 'jobfiles'},
@@ -608,11 +576,11 @@ var oJobsOnVolumeList = {
 			},
 			{
 				className: "dt-center",
-				targets: [ 1, 3, 4, 5, 7, 9, 10 ]
+				targets: [ 1, 3, 4, 5, 7, 8, 9, 10 ]
 			},
 			{
 				className: "dt-body-right",
-				targets: [ 8 ]
+				targets: [ 15 ]
 			}],
 			order: [1, 'desc'],
 			initComplete: function () {

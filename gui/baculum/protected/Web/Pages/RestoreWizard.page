@@ -263,28 +263,12 @@ var oJobsToRestoreList = {
 				},
 				{
 					data: 'jobstatus',
-					render: function (data, type, row) {
-						var ret;
-						if (type == 'display') {
-							ret = JobStatus.get_icon(data).outerHTML;
-						} else {
-							ret = data;
-						}
-						return ret;
-					},
+					render: render_jobstatus,
 					aresponsivePriority: 6
 				},
 				{
 					data: 'jobbytes',
-					render: function (data, type, row) {
-						var s;
-						if (type == 'display') {
-							s = Units.get_formatted_size(data)
-						} else {
-							s = data;
-						}
-						return s;
-					},
+					render: render_bytes,
 					responsivePriority: 7
 				},
 				{
@@ -293,6 +277,7 @@ var oJobsToRestoreList = {
 				},
 				{
 					data: 'endtime',
+					render: render_date,
 					responsivePriority: 9
 				},
 				{

@@ -148,15 +148,7 @@ var oJobScheduleList = {
 				},
 				{
 					data: 'level',
-					render: function(data, type, row) {
-						var ret;
-						if (!data) {
-							ret = '-';
-						} else {
-							ret = JobLevel.get_level(data);
-						}
-						return ret;
-					}
+					render: render_level
 				},
 				{
 					data: 'type',
@@ -167,9 +159,7 @@ var oJobScheduleList = {
 				{data: 'priority'},
 				{
 					data: 'schedtime_epoch',
-					render: function(data, type, row) {
-						return Units.format_date(data);
-					}
+					render: render_date_ts
 				},
 				<%=empty($this->Job) ? '{data: "name"},' : ''%>
 				{data: 'client'},

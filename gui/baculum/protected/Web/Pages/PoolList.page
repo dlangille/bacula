@@ -75,16 +75,7 @@ var oPoolList = {
 				},
 				{
 					data: 'volretention',
-					render: function (data, type, row) {
-						var ret;
-						if (type == 'display' || type == 'filter') {
-							var time = Units.format_time_period(data);
-							ret = time.value + ' ' + time.format + ((time.value > 0) ? 's': '');
-						} else {
-							ret = data;
-						}
-						return ret;
-					}
+					render: render_time_period
 				},
 				{
 					data: 'autoprune',

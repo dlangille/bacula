@@ -249,32 +249,20 @@ var oVolumeList = {
 				},
 				{
 					data: 'firstwritten',
+					render: render_date,
 					visible: false
 				},
-				{data: 'lastwritten'},
+				{
+					data: 'lastwritten',
+					render: render_date
+				},
 				{
 					data: 'volbytes',
-					render: function (data, type, row) {
-						var s;
-						if (type == 'display') {
-							s = Units.get_formatted_size(data)
-						} else {
-							s = data;
-						}
-						return s;
-					}
+					render: render_bytes
 				},
 				{
 					data: 'maxvolbytes',
-					render: function (data, type, row) {
-						var s;
-						if (type == 'display') {
-							s = Units.get_formatted_size(data)
-						} else {
-							s = data;
-						}
-						return s;
-					},
+					render: render_bytes,
 					visible: false
 				},
 				{
@@ -287,28 +275,12 @@ var oVolumeList = {
 				},
 				{
 					data: 'volcapacitybytes',
-					render: function (data, type, row) {
-						var s;
-						if (type == 'display') {
-							s = Units.get_formatted_size(data)
-						} else {
-							s = data;
-						}
-						return s;
-					},
+					render: render_bytes,
 					visible: false
 				},
 				{
 					data: 'volabytes',
-					render: function (data, type, row) {
-						var s;
-						if (type == 'display') {
-							s = Units.get_formatted_size(data)
-						} else {
-							s = data;
-						}
-						return s;
-					},
+					render: render_bytes,
 					visible: false
 				},
 				{
@@ -317,15 +289,7 @@ var oVolumeList = {
 				},
 				{
 					data: 'volholebytes',
-					render: function (data, type, row) {
-						var s;
-						if (type == 'display') {
-							s = Units.get_formatted_size(data)
-						} else {
-							s = data;
-						}
-						return s;
-					},
+					render: render_bytes,
 					visible: false
 				},
 				{
@@ -346,6 +310,7 @@ var oVolumeList = {
 				},
 				{
 					data: 'labeldate',
+					render: render_date,
 					visible: false
 				},
 				{
@@ -373,44 +338,17 @@ var oVolumeList = {
 				},
 				{
 					data: 'volretention',
-					render: function(data, type, row) {
-						var t;
-						if (type == 'display') {
-							var ret = Units.format_time_period(data);
-							t = ret.value + ' ' + ret.format;
-						} else {
-							t = data;
-						}
-						return t;
-					},
+					render: render_time_period,
 					visible: false
 				},
 				{
 					data: 'cacheretention',
-					render: function(data, type, row) {
-						var t;
-						if (type == 'display') {
-							var ret = Units.format_time_period(data);
-							t = ret.value + ' ' + ret.format;
-						} else {
-							t = data;
-						}
-						return t;
-					},
+					render: render_time_period,
 					visible: false
 				},
 				{
 					data: 'voluseduration',
-					render: function(data, type, row) {
-						var t;
-						if (type == 'display') {
-							var ret = Units.format_time_period(data);
-							t = ret.value + ' ' + ret.format;
-						} else {
-							t = data;
-						}
-						return t;
-					},
+					render: render_time_period,
 					visible: false
 				},
 				{
@@ -419,30 +357,12 @@ var oVolumeList = {
 				},
 				{
 					data: 'volreadtime',
-					render: function(data, type, row) {
-						var t;
-						if (type == 'display') {
-							var ret = Units.format_time_period(data);
-							t = ret.value + ' ' + ret.format;
-						} else {
-							t = data;
-						}
-						return t;
-					},
+					render: render_time_period,
 					visible: false
 				},
 				{
 					data: 'volwritetime',
-					render: function(data, type, row) {
-						var t;
-						if (type == 'display') {
-							var ret = Units.format_time_period(data);
-							t = ret.value + ' ' + ret.format;
-						} else {
-							t = data;
-						}
-						return t;
-					},
+					render: render_time_period,
 					visible: false
 				},
 				{
@@ -455,15 +375,7 @@ var oVolumeList = {
 				},
 				{
 					data: 'lastpartbytes',
-					render: function (data, type, row) {
-						var s;
-						if (type == 'display') {
-							s = Units.get_formatted_size(data)
-						} else {
-							s = data;
-						}
-						return s;
-					},
+					render: render_bytes,
 					visible: false
 				},
 				{
@@ -508,6 +420,7 @@ var oVolumeList = {
 				},
 				{
 					data: 'whenexpire',
+					render: render_date_ex,
 					visible: false
 				},
 				{

@@ -2934,3 +2934,60 @@ msgstr "Nginx na większości platform UNIXowych"
 
 msgid "No file found for selected backup. It can mean file records for this backup are pruned. Restoring selected files is not available but if you continue, there will be performed full restore all backup files."
 msgstr "Nie znaleziono żadnego pliku dla wybranej kopii zapasowej. Może to oznaczać, że rekordy plików dla tej kopii są wyczyszczone. Przywracanie wybranych plików nie jest dostępne, ale jeżeli kontynuujesz, to zostanie wykonane pełne przywrócenie wszystkich plików kopii zapasowej."
+
+msgid "Date and time format:"
+msgstr "Format daty i czasu:"
+
+msgid "Available formats:"
+msgstr "Dostępne formaty:"
+
+msgid "full 4 digits year, ex. 2021"
+msgstr "pełne 4 cyfry roku, np. 2021"
+
+msgid "2 digits year, ex, 21"
+msgstr "dwie cyfry roku, np. 21"
+
+msgid "2 digits month 01..12"
+msgstr "dwie cyfry miesiąca 01..12"
+
+msgid "1-2 digits month 1..12"
+msgstr "1-2 cyfry miesiąca 1..12"
+
+msgid "2 digits day 01..31"
+msgstr "dwie cyfry dnia 01..31"
+
+msgid "1-2 digits day 1..31"
+msgstr "1-2 cyfry dnia 1..31"
+
+msgid "2 digits 24-hour format hour 00..23"
+msgstr "2 cyfry 24-godzinnego formatu godziny 00..23"
+
+msgid "1-2 digits 24-hour format hour 0..23"
+msgstr "1-2 cyfry 24-godzinnego formatu godziny 0..23"
+
+msgid "2 digits 12-hour format hour 01..12"
+msgstr "2 cyfry 12-godzinnego formatu godziny 01..12"
+
+msgid "1-2 digits 12-hour format hour 1..12"
+msgstr "1-2 cyfry 12-godzinnego formatu godziny 1..12"
+
+msgid "2 digits minutes 00..59"
+msgstr "2 cyfry minuty 00..59"
+
+msgid "1-2 digits minutes 0..59"
+msgstr "1-2 cyfry minuty 0..59"
+
+msgid "2 digits seconds 00..59"
+msgstr "2 cyfry sekundy 00..59"
+
+msgid "1-2 digits seconds 0..59"
+msgstr "1-2 cyfry sekundy 0..59"
+
+msgid "AM/PM value"
+msgstr "Wartość AM/PM"
+
+msgid "24-hours format time 17:22:41"
+msgstr "24-godzinny format czasu 17:22:41"
+
+msgid "12-hours format time 5:22:41 PM"
+msgstr "12-godzinny format czasu 5:22:41 PM"
