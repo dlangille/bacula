@@ -163,6 +163,9 @@ public slots:
     void startFileDaemon();
     void stopFileDaemon();
 
+    // Send FD Trace to a Mail App
+    void composeTraceMail();
+
     // Reads and returns the contents of a file in the device
     QString fetchFile(QString fpath);
 

@@ -114,6 +114,25 @@ Page {
       }
    }
 
+   Button {
+      id: reportButton
+      text: "Report"
+      anchors.verticalCenter: fdLogLevel.verticalCenter
+      anchors.right: parent.right
+      anchors.rightMargin: 12
+      onClicked: controller.composeTraceMail()
+
+      contentItem: Text {
+         text: reportButton.text
+         font.pixelSize: 18
+         color: reportButton.down ? "#ef9a9a" : "#d32f2f"
+      }
+
+      background: Rectangle {
+         color: "white"
+      }
+   }
+
    Rectangle {
       id: divider2
       width: parent.width

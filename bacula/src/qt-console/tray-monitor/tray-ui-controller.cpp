@@ -32,7 +32,6 @@ TrayUiController::TrayUiController(QObject *parent):
     m_config->dump_storage();
     m_traceWatcher = new QFileSystemWatcher(this);
     connect(m_traceWatcher, SIGNAL(fileChanged(QString)), this, SLOT(handleFdTraceChange(QString)), Qt::QueuedConnection);
-    fclose(fopen(AndroidFD::tracePath().toLatin1().constData(), "ab+"));
     m_traceWatcher->addPath(AndroidFD::tracePath());
     MONITOR *mon = m_config->getMonitor();
     m_monitorName = QString(mon->hdr.name);
@@ -111,6 +110,9 @@ void TrayUiController::stopFileDaemon() {
     AndroidFD::stop();
 }
 
+void TrayUiController::composeTraceMail() {
+    AndroidFD::composeTraceMail();
+}
 
 QString TrayUiController::getMonitorName() {
     return m_monitorName;
