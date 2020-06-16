@@ -223,6 +223,8 @@ int main(int argc, char *argv[])
    bool test_config = false, display_cfg = false;
 
 #ifdef Q_OS_ANDROID
+   QFont font("Roboto");
+   QGuiApplication::setFont(font);
    QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
    QGuiApplication app(argc, argv);
    QQmlApplicationEngine engine;
