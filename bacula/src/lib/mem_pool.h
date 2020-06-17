@@ -78,26 +78,6 @@ extern void garbage_collect_memory();
 #define PM_BSOCK   5                  /* BSOCK buffer */
 #define PM_MAX     PM_BSOCK           /* Number of types */
 
-class POOL_MEM {
-   char *mem;
-public:
-   POOL_MEM() { mem = get_pool_memory(PM_NAME); *mem = 0; }
-   POOL_MEM(int pool) { mem = get_pool_memory(pool); *mem = 0; }
-   ~POOL_MEM() { free_pool_memory(mem); mem = NULL; }
-   char *c_str() const { return mem; }
-   POOLMEM *&addr() { return mem; }
-   POOLMEM **handle() { return &mem; }
-   int size() const { return sizeof_pool_memory(mem); }
-   char *check_size(int32_t size) {
-      mem = check_pool_memory_size(mem, size);
-      return mem;
-   }
-   int32_t max_size();
-   void realloc_pm(int32_t size);
-   int strcpy(const char *str);
-   int strcat(const char *str);
-};
-
 int pm_strcat(POOLMEM **pm, const char *str);
 int pm_strcat(POOLMEM *&pm, const char *str);
 int pm_strcat(POOL_MEM &pm, const char *str);
@@ -113,5 +93,30 @@ int pm_memcpy(POOLMEM **pm, const char *data, int32_t n);
 int pm_memcpy(POOLMEM *&pm, const char *data, int32_t n);
 int pm_memcpy(POOL_MEM &pm, const char *data, int32_t n);
 int pm_memcpy(POOLMEM *&pm, POOL_MEM &data, int32_t n);
+
+class POOL_MEM {
+   char *mem;
+public:
+   POOL_MEM() { mem = get_pool_memory(PM_NAME); *mem = 0; }
+   POOL_MEM(int pool) { mem = get_pool_memory(pool); *mem = 0; }
+   POOL_MEM(POOL_MEM &pm) : mem(get_pool_memory(PM_NAME)) { check_size(pm.size()); memcpy(mem, pm.mem, size()); };
+   POOL_MEM(const char * str) : mem(get_pool_memory(PM_NAME)) { pm_strcpy(*this, str); };
+   ~POOL_MEM() { free_pool_memory(mem); mem = NULL; }
+   char *c_str() const { return mem; }
+   POOLMEM *&addr() { return mem; }
+   POOLMEM **handle() { return &mem; }
+   int size() const { return sizeof_pool_memory(mem); }
+   char *check_size(int32_t size) {
+      mem = check_pool_memory_size(mem, size);
+      return mem;
+   }
+   int32_t max_size();
+   void realloc_pm(int32_t size);
+   int strcpy(const char *str);
+   int strcat(const char *str);
+   /* Copy operator with reference and pointers */
+   POOL_MEM &operator=(POOL_MEM &pm) { pm_memcpy(*this, pm.mem, pm.size()); return *this; };
+   POOL_MEM &operator=(POOL_MEM *pm) { pm_memcpy(*this, pm->mem, pm->size()); return *this; };
+};
 
 #endif
