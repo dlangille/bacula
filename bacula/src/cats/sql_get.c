@@ -99,7 +99,7 @@ bool BDB::bdb_get_file_record(JCR *jcr, JOB_DBR *jr, FILE_DBR *fdbr)
 {
    SQL_ROW row;
    bool ok = false;
-   char ed1[50], ed2[50], ed3[50];
+   char ed1[50], ed2[50], ed3[50], ed4[50];
 
    switch (jcr->getJobLevel()) {
    case L_VERIFY_VOLUME_TO_CATALOG:
@@ -116,10 +116,11 @@ bool BDB::bdb_get_file_record(JCR *jcr, JOB_DBR *jr, FILE_DBR *fdbr)
 "SELECT FileId, LStat, MD5, FileIndex FROM File,Job WHERE "
 "File.JobId=Job.JobId AND File.PathId=%s AND "
 "File.Filename='%s' AND Job.Type='B' AND Job.JobStatus IN ('T','W') AND "
-"ClientId=%s ORDER BY StartTime DESC LIMIT 1",
+"ClientId=%s AND Job.JobId=%s ORDER BY StartTime DESC LIMIT 1",
       edit_int64(fdbr->PathId, ed1),
       fdbr->Filename,
-      edit_int64(jr->ClientId,ed3));
+      edit_int64(jr->ClientId,ed3),
+      edit_uint64(jr->JobId, ed4));
       break;
    default:
       if (fdbr->PathId && fdbr->Filename) {
