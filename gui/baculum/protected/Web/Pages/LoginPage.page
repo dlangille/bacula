@@ -25,8 +25,8 @@
 					OnClick="logout"
 				>
 					<prop:ClientSide.OnComplete>
-						if (!window.chrome || window.navigator.webdriver)  {
-							window.location.href = main_side_bar_reload_url;
+						if (login_form_reload_url && (!window.chrome || window.navigator.webdriver))  {
+							window.location.href = login_form_reload_url;
 						} else if (window.chrome) {
 							// For chrome this reload is required to show login Basic auth prompt
 							window.location.reload();

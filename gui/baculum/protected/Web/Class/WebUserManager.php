@@ -202,6 +202,9 @@ class WebUserManager extends WebModule implements IUserManager {
 		$auth_method = $this->getModule('web_config')->getAuthMethod();
 
 		switch ($auth_method) {
+			case WebConfig::AUTH_METHOD_LOCAL:
+				$cls = 'Application.Web.Class.WebLocalUserManager';
+				break;
 			case WebConfig::AUTH_METHOD_BASIC:
 				$cls = 'Application.Web.Class.WebBasicUserManager';
 				break;

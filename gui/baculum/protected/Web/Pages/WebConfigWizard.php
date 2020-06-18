@@ -136,7 +136,7 @@ class WebConfigWizard extends BaculumWebPage
 			]);
 
 			$basic_webuser = $this->getModule('basic_webuser');
-			if($this->first_run && $ret && $web_config->isAuthMethodBasic()) {
+			if ($this->first_run && $ret && $web_config->isAuthMethodBasic()) {
 				// set new user on first wizard run
 				$previous_user = parent::DEFAULT_AUTH_USER;
 				$ret = $basic_webuser->setUsersConfig(

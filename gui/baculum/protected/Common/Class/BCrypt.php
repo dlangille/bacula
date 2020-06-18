@@ -32,6 +32,12 @@ Prado::using('Application.Common.Class.CommonModule');
  */
 class BCrypt extends CommonModule {
 
+	// BCrypt hash prefix
+	const HASH_PREFIX = '$2y';
+
+	// Salt length
+	const DEF_SALT_LEN = 22;
+
 	// bcrypt uses not standard base64 alphabet
 	const BCRYPT_BASE64_CODE = './ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 
@@ -42,21 +48,43 @@ class BCrypt extends CommonModule {
 	 * Get hashed password using BCrypt algorithm and salt.
 	 *
 	 * @param string $password plain text password
+	 * @param string $salt cryptographic salt
 	 * @return string hashed password
 	 */
-	public function crypt($password) {
-		// Suffle string
-		$rand_string = str_shuffle(self::BCRYPT_BASE64_CODE);
+	public function crypt($password, $salt = null) {
+		if (is_null($salt)) {
+			// Suffle string
+			$rand_string = str_shuffle(self::BCRYPT_BASE64_CODE);
 
-		// BCrypt salt - 22 characters
-		$salt_str = substr($rand_string, 0, 22);
+			// BCrypt salt
+			$salt = substr($rand_string, 0, self::DEF_SALT_LEN);
+		}
 
-		$salt = sprintf(
-			'$2y$%d$%s$',
+		$salt_val = sprintf(
+			'%s$%d$%s$',
+			self::HASH_PREFIX,
 			self::BCRYPT_COST,
-			$salt_str
+			$salt
 		);
-		return crypt($password, $salt);
+		return crypt($password, $salt_val);
+	}
+
+	/**
+	 * Verify if for given hash given password is valid.
+	 *
+	 * @param string $password password to check
+	 * @param string $hash hash to check
+	 * @return boolean true if password and hash are match, otherwise false
+	 */
+	public function verify($password, $hash) {
+		$valid = false;
+		$parts = explode('$', $hash, 4);
+		if (count($parts) === 4) {
+			$salt = substr($parts[3], 0, self::DEF_SALT_LEN);
+			$hash2 = $this->crypt($password, $salt);
+			$valid = ($hash === $hash2);
+		}
+		return $valid;
 	}
 }
 ?>

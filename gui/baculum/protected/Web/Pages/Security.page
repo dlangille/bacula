@@ -72,6 +72,20 @@
 		<div class="w3-container w3-row w3-padding opt_row">
 			<div class="w3-col" style="width: 40px">
 				<com:TRadioButton
+					ID="LocalAuth"
+					GroupName="AuthMethod"
+					CssClass="w3-radio"
+					Attributes.onclick="oUserSecurity.select_auth_method('local');"
+				/>
+			</div>
+			<label for="<%=$this->LocalAuth->ClientID%>"><%[ Local user authentication method  ]%></label>
+		</div>
+		<div id="authentication_method_local" class="w3-container" style="display: none">
+			<%[ This type of authentication is fully realized by Baculum Web. To authenticate it uses the Baculum Web login form. The web server basic authentication can be disabled in this method. ]%>
+		</div>
+		<div class="w3-container w3-row w3-padding opt_row">
+			<div class="w3-col" style="width: 40px">
+				<com:TRadioButton
 					ID="BasicAuth"
 					GroupName="AuthMethod"
 					CssClass="w3-radio"
@@ -240,6 +254,7 @@
 			<label for="<%=$this->LdapAuth->ClientID%>"><%[ LDAP authentication ]%></label>
 		</div>
 		<div id="authentication_method_ldap" class="w3-container w3-half w3-margin-left" style="display: none">
+			<%[ This type of authentication is realized by an external directory service. To authenticate it uses the Baculum Web login form. The web server basic authentication can be disabled in this method. ]%>
 			<h5><%[ LDAP server options ]%></h5>
 			<div class="w3-container w3-row w3-padding">
 				<div class="w3-third w3-col">
@@ -737,6 +752,7 @@
 <script>
 var oUserSecurity = {
 	ids: {
+		auth_method_local: 'authentication_method_local',
 		auth_method_basic: 'authentication_method_basic',
 		auth_method_ldap: 'authentication_method_ldap',
 		get_users: 'get_users_table',
@@ -764,15 +780,21 @@ var oUserSecurity = {
 		this.set_events();
 	},
 	select_auth_method: function(auth) {
+		var auth_local = document.getElementById(this.ids.auth_method_local);
 		var auth_basic = document.getElementById(this.ids.auth_method_basic);
 		var auth_ldap = document.getElementById(this.ids.auth_method_ldap);
 
 		// hide all auth containers
-		[auth_basic, auth_ldap].forEach(function(el) {
+		[auth_local, auth_basic, auth_ldap].forEach(function(el) {
 			el.style.display = 'none';
 		});
 
 		switch (auth) {
+			case 'local': {
+				auth_local.style.display = 'block';
+				this.user_obj = oLocalUserSecurity;
+				break;
+			}
 			case 'basic': {
 				auth_basic.style.display = 'block';
 				this.user_obj = oBasicUserSecurity;
@@ -895,6 +917,23 @@ var oUserSecurity = {
 		}
 	}
 };
+
+var oLocalUserSecurity = {
+	ids: {},
+	name: 'local',
+	table_title: '',
+	supported_fields: [],
+	enabled: <%=$this->LocalAuth->Checked ? 'true' : 'false'%>,
+	init: function() {
+		jQuery.extend(this.ids, oUserSecurity.ids);
+		if (this.enabled) {
+			oUserSecurity.select_auth_method(this.name);
+		}
+	},
+	show_user_modal: function() {
+	}
+};
+
 var oBasicUserSecurity = {
 	ids: {},
 	name: 'basic',
@@ -945,6 +984,7 @@ function validate_ips(sender, parameter) {
 	return validate_comma_separated_list(parameter);
 }
 oUserSecurity.init();
+oLocalUserSecurity.init();
 oBasicUserSecurity.init();
 oLdapUserSecurity.init();
 </script>

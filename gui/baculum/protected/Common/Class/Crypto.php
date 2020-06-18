@@ -60,15 +60,12 @@ class Crypto extends CommonModule {
 	}
 
 	/**
-	 * Get hashed password to use in web server auth.
-	 * If no hash algorithm given, use APR1-MD5.
+	 * Get hash algorithm module instance by hash algorithm name.
 	 *
-	 * @access public
-	 * @param string $password plain text password
-	 * @param string $hash_alg hash algorithm (apr1-md5|sha1)
-	 * @return string hashed password
+	 * @param string $hash_alg hash algorithm
+	 * @return object hash algorithm module instance
 	 */
-	public function getHashedPassword($password, $hash_alg = null) {
+	private function getModuleByHashAlg($hash_alg) {
 		$mod = '';
 		switch ($hash_alg) {
 			case self::HASH_ALG_BCRYPT: {
@@ -99,7 +96,59 @@ class Crypto extends CommonModule {
 				$mod = 'apr1md5';
 			}
 		}
-		return $this->getModule($mod)->crypt($password);
+		return $this->getModule($mod);
+	}
+
+	/**
+	 * Get hashed password to use in web server auth.
+	 * If no hash algorithm given, use APR1-MD5.
+	 *
+	 * @access public
+	 * @param string $password plain text password
+	 * @param string $hash_alg hash algorithm
+	 * @return string hashed password
+	 */
+	public function getHashedPassword($password, $hash_alg = null) {
+		if (is_null($hash_alg)) {
+			$hash_alg = self::HASH_ALG_APR1_MD5;
+		}
+		return $this->getModuleByHashAlg($hash_alg)->crypt($password);
+	}
+
+	/*
+	 * Get all supported hash algorithms.
+	 * It bases on HASH_ALG_ constants definition.
+	 *
+	 * @return array supported hash algorithms
+	 */
+	private function getSupportedHashAlgs() {
+		$hash_algs = [];
+		$ocls = new ReflectionClass(__CLASS__);
+		foreach ($ocls->getConstants() as $const => $hash_alg) {
+			if (strpos($const, 'HASH_ALG_') !== 0) {
+				continue;
+			}
+			$hash_algs[$const] = $hash_alg;
+		}
+		return $hash_algs;
+	}
+
+	/**
+	 * Get module corresponding a hash string.
+	 *
+	 * @param string $hash hash string to check
+	 * @return object|null module object on true, false if hash algorithm not recognized
+	 */
+	public function getModuleByHash($hash) {
+		$module = null;
+		foreach ($this->getSupportedHashAlgs() as $const => $hash_alg) {
+			$mod = $this->getModuleByHashAlg($hash_alg);
+			if (strpos($hash, $mod::HASH_PREFIX) === 0) {
+				$module = $mod;
+				break;
+			}
+		}
+		return $module;
 	}
 }
 ?>

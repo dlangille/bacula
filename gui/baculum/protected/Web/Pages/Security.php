@@ -36,6 +36,7 @@ Prado::using('System.Web.UI.WebControls.TRadioButton');
 Prado::using('System.Web.UI.WebControls.TRegularExpressionValidator');
 Prado::using('System.Web.UI.WebControls.TRequiredFieldValidator');
 Prado::using('System.Web.UI.WebControls.TValidationSummary');
+Prado::using('Application.Common.Class.Crypto');
 Prado::using('Application.Common.Class.Ldap');
 Prado::using('Application.Web.Class.BaculumWebPage');
 
@@ -132,7 +133,9 @@ class Security extends BaculumWebPage {
 	 */
 	public function initAuthForm() {
 		if (isset($this->web_config['security']['auth_method'])) {
-			if ($this->web_config['security']['auth_method'] ===  WebConfig::AUTH_METHOD_BASIC) {
+			if ($this->web_config['security']['auth_method'] ===  WebConfig::AUTH_METHOD_LOCAL) {
+				$this->LocalAuth->Checked = true;
+			} elseif ($this->web_config['security']['auth_method'] ===  WebConfig::AUTH_METHOD_BASIC) {
 				$this->BasicAuth->Checked = true;
 			} elseif ($this->web_config['security']['auth_method'] ===  WebConfig::AUTH_METHOD_LDAP) {
 				$this->LdapAuth->Checked = true;
@@ -322,9 +325,14 @@ class Security extends BaculumWebPage {
 
 		// Set password if auth method supports it
 		if ($result === true && !empty($this->UserPassword->Text) && $this->isManageUsersAvail()) {
-			// Set Basic auth users password
-			if ($this->getModule('web_config')->isAuthMethodBasic() &&
-				isset($this->web_config['auth_basic']['user_file'])) {
+			$basic = $this->getModule('basic_webuser');
+			if ($this->getModule('web_config')->isAuthMethodLocal()) {
+				$basic->setUsersConfig(
+					$username,
+					$this->UserPassword->Text
+				);
+			} elseif ($this->getModule('web_config')->isAuthMethodBasic() &&
+				isset($this->web_config['auth_basic']['user_file'])) { // Set Basic auth users password
 
 				$opts = [];
 				if (isset($this->web_config['auth_basic']['hash_alg'])) {
@@ -332,7 +340,6 @@ class Security extends BaculumWebPage {
 				}
 
 				// Setting basic users works both for adding and editing users
-				$basic = $this->getModule('basic_webuser');
 				$basic->setUsersConfig(
 					$username,
 					$this->UserPassword->Text,
@@ -367,9 +374,10 @@ class Security extends BaculumWebPage {
 		}
 		$result = $this->getModule('user_config')->setConfig($config);
 
-		if ($result === true && $this->isManageUsersAvail() &&
-			$this->getModule('web_config')->isAuthMethodBasic() &&
-			isset($this->web_config['auth_basic']['user_file'])) {
+		$wcm = $this->getModule('web_config');
+		if ($result === true &&
+			(($this->isManageUsersAvail() && $wcm->isAuthMethodBasic() && isset($this->web_config['auth_basic']['user_file'])) ||
+			$wcm->isAuthMethodLocal())) {
 			// Remove basic auth users too
 			$basic = $this->getModule('basic_webuser');
 			$basic->removeUsers($usernames);
@@ -558,7 +566,8 @@ class Security extends BaculumWebPage {
 	 * @return none
 	 */
 	private function setBasicAuthConfig() {
-		if ($this->isManageUsersAvail() && isset($this->web_config['auth_basic']['user_file'])) {
+		$is_basic = $this->getModule('web_config')->isAuthMethodBasic();
+		if ($is_basic && $this->isManageUsersAvail() && isset($this->web_config['auth_basic']['user_file'])) {
 			$this->getModule('basic_webuser')->setConfigPath($this->web_config['auth_basic']['user_file']);
 		}
 	}
@@ -1128,7 +1137,9 @@ class Security extends BaculumWebPage {
 			$config['security']['def_role'] = $this->GeneralDefaultAccessRole->SelectedValue;
 			$config['security']['def_api_host'] = $this->GeneralDefaultAccessAPIHost->SelectedValue;
 		}
-		if ($this->BasicAuth->Checked) {
+		if ($this->LocalAuth->Checked) {
+			$config['security']['auth_method'] = WebConfig::AUTH_METHOD_LOCAL;
+		} elseif ($this->BasicAuth->Checked) {
 			$config['security']['auth_method'] = WebConfig::AUTH_METHOD_BASIC;
 			$config['auth_basic'] = $this->getBasicParams();
 		} else if ($this->LdapAuth->Checked) {
@@ -1152,10 +1163,11 @@ class Security extends BaculumWebPage {
 	 * @return boolean true if managing users is enabled, otherwise false
 	 */
 	private function isManageUsersAvail() {
+		$is_local = $this->getModule('web_config')->isAuthMethodLocal();
 		$is_basic = $this->getModule('web_config')->isAuthMethodBasic();
 		$allow_manage_users = (isset($this->web_config['auth_basic']['allow_manage_users']) &&
 			$this->web_config['auth_basic']['allow_manage_users'] == 1);
-		return ($is_basic && $allow_manage_users);
+		return (($is_basic && $allow_manage_users) || $is_local);
 	}
 
 	/**

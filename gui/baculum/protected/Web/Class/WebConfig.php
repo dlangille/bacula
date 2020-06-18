@@ -72,6 +72,7 @@ class WebConfig extends ConfigFileModule {
 	/**
 	 * Supported authentication methods.
 	 */
+	const AUTH_METHOD_LOCAL = 'local';
 	const AUTH_METHOD_BASIC = 'basic';
 	const AUTH_METHOD_LDAP = 'ldap';
 
@@ -262,6 +263,15 @@ class WebConfig extends ConfigFileModule {
 	 */
 	public function isAuthMethodLdap() {
 		return ($this->getAuthMethod() === self::AUTH_METHOD_LDAP);
+	}
+
+	/**
+	 * Check if current authentication method is set to Local.
+	 *
+	 * @return boolean true if is set local auth, otherwise false
+	 */
+	public function isAuthMethodLocal() {
+		return ($this->getAuthMethod() === self::AUTH_METHOD_LOCAL);
 	}
 
 	/**

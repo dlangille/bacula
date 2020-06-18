@@ -130,6 +130,24 @@ class BasicUserConfig extends CommonModule {
 	}
 
 	/**
+	 * Get user and password hash from config.
+	 *
+	 * @param string $user username
+	 * @return array username and password hash or empty array if user not found
+	 */
+	public function getUserCfg($username) {
+		$user = [];
+		$u = $this->getUsers($username);
+		if (count($u) == 1) {
+			$user = [
+				'username' => $username,
+				'pwd_hash' => $u[$username]
+			];
+		}
+		return $user;
+	}
+
+	/**
 	 * Save HTTP Basic users file.
 	 * Given parameter is associative array with usernames as keys
 	 * and encrypted passwords as values.

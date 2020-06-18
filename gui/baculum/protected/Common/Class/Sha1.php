@@ -32,6 +32,9 @@ Prado::using('Application.Common.Class.CommonModule');
  */
 class Sha1 extends CommonModule {
 
+	// SHA-1 hash prefix
+	const HASH_PREFIX = '{SHA}';
+
 	/**
 	 * Get hashed password using SHA-1 algorithm.
 	 *
@@ -41,9 +44,20 @@ class Sha1 extends CommonModule {
 	public function crypt($password) {
 		$hash = sha1($password, true);
 		$bh = base64_encode($hash);
-		$ret = '{SHA}' . $bh;
+		$ret = self::HASH_PREFIX . $bh;
 		return $ret;
 	}
 
+	/**
+	 * Verify if for given hash given password is valid.
+	 *
+	 * @param string $password password to check
+	 * @param string $hash hash to check
+	 * @return boolean true if password and hash are match, otherwise false
+	 */
+	public function verify($password, $hash) {
+		$hash2 = $this->crypt($password);
+		return ($hash === $hash2);
+	}
 }
 ?>

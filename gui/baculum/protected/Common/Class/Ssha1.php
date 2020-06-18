@@ -33,6 +33,12 @@ Prado::using('Application.Common.Class.CommonModule');
  */
 class Ssha1 extends CommonModule {
 
+	// Salted SHA-1 hash prefix
+	const HASH_PREFIX = '{SSHA}';
+
+	// Salt length
+	const DEF_SALT_LEN = 4;
+
 	/**
 	 * Get hashed password using SHA-1 algorithm and salt.
 	 *
@@ -40,15 +46,30 @@ class Ssha1 extends CommonModule {
 	 * @param string $salt cryptographic salt
 	 * @return string hashed password
 	 */
-	public function crypt($password) {
-		// Salt string  - 16 characters for SHA-256
-		$salt = $this->getModule('crypto')->getRandomString(4);
-
+	public function crypt($password, $salt = null) {
+		if (is_null($salt)) {
+			$salt = $this->getModule('crypto')->getRandomString(self::DEF_SALT_LEN);
+		}
 		$hash = sha1($password . $salt, true);
 		$bh = base64_encode($hash . $salt);
-		$ret = '{SSHA}' . $bh;
+		$ret = self::HASH_PREFIX . $bh;
 		return $ret;
 	}
 
+	/**
+	 * Verify if for given hash given password is valid.
+	 *
+	 * @param string $password password to check
+	 * @param string $hash hash to check
+	 * @return boolean true if password and hash are match, otherwise false
+	 */
+	public function verify($password, $hash) {
+		$pos = strlen(self::HASH_PREFIX) - 1;
+		$bh = substr($hash, $pos);
+		$h = base64_decode($bh);
+		$salt = substr($h, -(self::DEF_SALT_LEN));
+		$hash2 = $this->crypt($password, $salt);
+		return ($hash === $hash2);
+	}
 }
 ?>

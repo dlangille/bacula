@@ -31,6 +31,12 @@ Prado::using('Application.Common.Class.CommonModule');
  */
 class Apr1Md5 extends CommonModule {
 
+	// APR-MD5 hash prefix
+	const HASH_PREFIX = '$apr1';
+
+	// Salt length
+	const DEF_SALT_LEN = 8;
+
 	/**
 	 * Get hashed password using APR1-MD5 algorithm.
 	 * This function is based on common sample using PHP implementation APR1-MD5.
@@ -38,10 +44,13 @@ class Apr1Md5 extends CommonModule {
 	 * @see https://stackoverflow.com/questions/1038791/how-to-programmatically-build-an-apr1-md5-using-php
 	 *
 	 * @param string $password plain text password
+	 * @param string $salt cryptographic salt
 	 * @return string hashed password
 	 */
-	public function crypt($password) {
-		$salt = $this->getModule('crypto')->getRandomString(8);
+	public function crypt($password, $salt = null) {
+		if (is_null($salt)) {
+			$salt = $this->getModule('crypto')->getRandomString(self::DEF_SALT_LEN);
+		}
 		$len = strlen($password);
 		$text = sprintf('%s$apr1$%s', $password, $salt);
 		$bin = pack('H32', md5($password . $salt . $password));
@@ -79,7 +88,25 @@ class Apr1Md5 extends CommonModule {
 			'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/',
 			'./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
 		);
-		return sprintf('$apr1$%s$%s', $salt, $tmp);
+		return sprintf('%s$%s$%s', self::HASH_PREFIX, $salt, $tmp);
+	}
+
+	/**
+	 * Verify if for given hash given password is valid.
+	 *
+	 * @param string $password password to check
+	 * @param string $hash hash to check
+	 * @return boolean true if password and hash are match, otherwise false
+	 */
+	public function verify($password, $hash) {
+		$valid = false;
+		$parts = explode('$', $hash, 4);
+		if (count($parts) === 4) {
+			$salt = $parts[2];
+			$hash2 = $this->crypt($password, $salt);
+			$valid = ($hash === $hash2);
+		}
+		return $valid;
 	}
 }
 ?>

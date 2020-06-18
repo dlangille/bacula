@@ -32,24 +32,52 @@ Prado::using('Application.Common.Class.CommonModule');
  */
 class Sha256 extends CommonModule {
 
+	// SHA-256 hash prefix
+	const HASH_PREFIX = '$5';
+
+	// Salt length
+	const DEF_SALT_LEN = 16;
+
 	const SHA256_ROUNDS = 10000;
 
 	/**
 	 * Get hashed password using SHA-256 algorithm and salt.
 	 *
 	 * @param string $password plain text password
+	 * @param string $salt cryptographic salt
 	 * @return string hashed password
 	 */
-	public function crypt($password) {
-		// Salt string  - 16 characters for SHA-256
-		$salt_str = $this->getModule('crypto')->getRandomString(16);
+	public function crypt($password, $salt = null) {
+		if (is_null($salt)) {
+			// Salt string  - 16 characters for SHA-256
+			$salt = $this->getModule('crypto')->getRandomString(self::DEF_SALT_LEN);
+		}
 
-		$salt = sprintf(
-			'$5$rounds=%d$%s$',
+		$salt_val = sprintf(
+			'%s$rounds=%d$%s$',
+			self::HASH_PREFIX,
 			self::SHA256_ROUNDS,
-			$salt_str
+			$salt
 		);
-		return crypt($password, $salt);
+		return crypt($password, $salt_val);
+	}
+
+	/**
+	 * Verify if for given hash given password is valid.
+	 *
+	 * @param string $password password to check
+	 * @param string $hash hash to check
+	 * @return boolean true if password and hash are match, otherwise false
+	 */
+	public function verify($password, $hash) {
+		$valid = false;
+		$parts = explode('$', $hash, 5);
+		if (count($parts) === 5) {
+			$salt = $parts[3];
+			$hash2 = $this->crypt($password, $salt);
+			$valid = ($hash === $hash2);
+		}
+		return $valid;
 	}
 }
 ?>

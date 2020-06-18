@@ -31,9 +31,22 @@ Prado::using('Application.Web.Class.WebModule');
  */
 class WebBasicUserManager extends WebModule implements UserManager {
 
+	/**
+	 * Module initialization.
+	 *
+	 * @param TXmlElement $config module configuration
+	 */
 	public function init($config) {
 	}
 
+	/**
+	 * Validate username and password.
+	 * Used during logging in process.
+	 *
+	 * @param string $username username
+	 * @param string $password password
+	 * @return boolean true if user and password valid, otherwise false
+	 */
 	public function validateUser($username, $password) {
 		/**
 		 * Basic auth is realized by web server, so validating

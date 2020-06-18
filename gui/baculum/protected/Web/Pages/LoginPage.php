@@ -72,8 +72,8 @@ class LoginPage extends BaculumWebPage {
 					$this->LoginForm->Display = 'None';
 					$this->AuthorizationError->Display = 'Dynamic';
 				}
-			} else if ($web_config->isAuthMethodLdap() && !$authorized) {
-				// Ldap - user authenticated but not authorized
+			} else if (($web_config->isAuthMethodLdap() || $web_config->isAuthMethodLocal()) && !$authorized) {
+				// Ldap and Local - user authenticated but not authorized
 				$this->LoginForm->Display = 'None';
 				$this->AuthorizationError->Display = 'Dynamic';
 			}
