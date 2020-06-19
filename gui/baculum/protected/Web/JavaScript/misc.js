@@ -1221,8 +1221,21 @@ function get_table_toolbar(table, actions, txt) {
 	return table_toolbar;
 }
 
+function set_global_listeners() {
+	document.addEventListener('keydown', function(e) {
+		var key_code = e.keyCode || e.which;
+		switch (key_code) {
+			case 27: { // escape
+				$('.w3-modal').filter(':visible').hide(); // hide modals
+				break;
+			}
+		}
+	});
+}
+
 $(function() {
 	W3SideBar.init();
 	set_sbbr_compatibility();
 	set_icon_css();
+	set_global_listeners();
 });
