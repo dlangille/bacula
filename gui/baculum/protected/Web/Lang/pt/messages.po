@@ -2992,8 +2992,8 @@ msgstr "24-hours format time 17:22:41"
 msgid "12-hours format time 5:22:41 PM"
 msgstr "12-hours format time 5:22:41 PM"
 
-msgid "Local user authentication method"
-msgstr "Local user authentication method"
+msgid "Local user authentication"
+msgstr "Local user authentication"
 
 msgid "This type of authentication is fully realized by Baculum Web. To authenticate it uses the Baculum Web login form. The web server basic authentication can be disabled in this method."
 msgstr "This type of authentication is fully realized by Baculum Web. To authenticate it uses the Baculum Web login form. The web server basic authentication can be disabled in this method."
