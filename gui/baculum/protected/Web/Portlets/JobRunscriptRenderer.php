@@ -20,6 +20,7 @@
  * Bacula(R) is a registered trademark of Kern Sibbald.
  */
 
+Prado::using('System.Web.UI.ActiveControls.TActiveLinkButton');
 Prado::using('Application.Web.Portlets.DirectiveRenderer');
 
 /**
@@ -31,8 +32,23 @@ Prado::using('Application.Web.Portlets.DirectiveRenderer');
  */
 class JobRunscriptRenderer extends DirectiveRenderer {
 
-	private static $index = 0;
+	const DIRECTIVE_COUNT = 7;
+
+	private static $render_index = 0;
 	private $item_count;
+
+	public function onInit($param) {
+		parent::onInit($param);
+		if ($this->ItemIndex % self::DIRECTIVE_COUNT === 0) {
+			$alb = new TActiveLinkButton;
+			$alb->CssClass = 'w3-button w3-green w3-right';
+			$alb->OnCommand = 'SourceTemplateControl.removeRunscript';
+			$alb->CommandName = $this->ItemIndex / self::DIRECTIVE_COUNT;
+			$alb->CommandParameter = 'save';
+			$alb->Text = '<i class="fa fa-trash-alt"></i> &nbsp;' . Prado::localize('Remove');
+			$this->addParsedObject($alb);
+		}
+	}
 
 	public function onPreRender($param) {
 		parent::onPreRender($param);
@@ -40,19 +56,19 @@ class JobRunscriptRenderer extends DirectiveRenderer {
 	}
 
 	public function render($writer) {
-		if (self::$index % 7 === 0) {
-			$writer->write('<h3 class="runscript_options">Runscript #' . ((self::$index/7) + 1) . '</h3><hr />');
+		if (self::$render_index % self::DIRECTIVE_COUNT === 0) {
+			$writer->write('<h3 class="w3-left runscript_options">Runscript #' . ((self::$render_index / self::DIRECTIVE_COUNT) + 1) . '</h3><hr />');
 		}
-		self::$index++;
+		self::$render_index++;
 
-		if (self::$index === $this->item_count) {
-			$this->resetIndex();
+		if (self::$render_index === $this->item_count) {
+			$this->resetRenderIndex();
 		}
 		parent::render($writer);
 	}
 
-	public static function resetIndex() {
-		self::$index = 0;
+	public static function resetRenderIndex() {
+		self::$render_index = 0;
 	}
 }
 ?>

@@ -124,7 +124,7 @@ class DirectiveRunscript extends DirectiveListTemplate {
 		$this->RepeaterRunscriptOptions->dataBind();
 	}
 
-	public function getDirectiveValue($allow_empty = false) {
+	public function getDirectiveValue() {
 		$directive_values = null;
 		$component_type = $this->getComponentType();
 		$resource_type = $this->getResourceType();
@@ -167,6 +167,18 @@ class DirectiveRunscript extends DirectiveListTemplate {
 		return $directive_values;
 	}
 
+	public function removeRunscript($sender, $param) {
+		if ($param instanceof Prado\Web\UI\TCommandEventParameter) {
+			$idx = $param->getCommandName();
+			$data = $this->getDirectiveValue();
+			if (is_array($data)) {
+				array_splice($data['Runscript'], $idx, 1);
+				$this->setData($data);
+				$this->loadConfig();
+			}
+		}
+	}
+
 	public function newRunscriptDirective() {
 		$data = $this->getDirectiveValue(true);
 		if (is_array($data) && key_exists('Runscript', $data) && is_array($data['Runscript'])) {
@@ -176,6 +188,6 @@ class DirectiveRunscript extends DirectiveListTemplate {
 		}
 		$this->setData($data);
 		$this->SourceTemplateControl->setShowAllDirectives(true);
-		$this->loadConfig(null, null);
+		$this->loadConfig();
 	}
 }
