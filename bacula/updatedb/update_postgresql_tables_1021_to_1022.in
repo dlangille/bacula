@@ -64,6 +64,8 @@ CREATE TABLE Object
    ObjectType   text     not null,
    ObjectName   text     not null,
    ObjectSource text     not null,
+   ObjectUUID   text     not null,
+   ObjectSize   bigint   not null,
    primary key (ObjectId)
 );
 

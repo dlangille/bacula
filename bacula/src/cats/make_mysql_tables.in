@@ -72,6 +72,8 @@ CREATE TABLE Object
    ObjectType   TINYBLOB     NOT NULL,
    ObjectName   TINYBLOB     NOT NULL,
    ObjectSource TINYBLOB     NOT NULL,
+   ObjectUUID   TINYBLOB     NOT NULL,
+   ObjectSize   bigint       NOT NULL,
    primary key (ObjectId)
 );
 
