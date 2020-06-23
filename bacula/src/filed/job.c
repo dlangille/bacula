@@ -420,8 +420,9 @@ static void *handle_director_request(BSOCK *dir)
    generate_plugin_event(jcr, bEventJobEnd);
 
    /* Keep track of the important events */
-   events_send_msg(jcr, "FC0001", EVENTS_TYPE_CONNECTION, jcr->director->hdr.name, (intptr_t)jcr,
-                   "Director disconnection");
+   events_send_msg(jcr, "FC0001", EVENTS_TYPE_CONNECTION,
+                   jcr->director?jcr->director->hdr.name:"",
+                   (intptr_t)jcr, "Director disconnection");
 
 bail_out:
    dequeue_messages(jcr);  /* send any queued messages, will no longer impact
