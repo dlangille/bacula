@@ -446,6 +446,20 @@ stop_bacula()
    if [ "$FORCE_CLOUD" = yes ]; then
       $bperl -e 'check_parts()'
       if [ $? -ne 0 ]; then
+	      print_debug "ERROR: FORCE_CLOUD check_parts"
+         estat=1
+      fi
+   fi
+   if [ "$FORCE_COLLECTOR" = yes ]; then
+      if ! [ -s $tmp/sd.csv -a -s $tmp/fd.csv -a -s $tmp/dir.csv ]; then
+        print_debug "ERROR: One or more collector CSV file are empty"
+        estat=1
+      fi
+   fi
+   if [ "$FORCE_EVENT" = yes ]; then
+      $bperl -e 'check_events()'
+      if [ $? -ne 0 ]; then
+         print_debug "ERROR: FORCE_EVENT check_events"
          estat=1
       fi
    fi
@@ -530,13 +544,13 @@ check_two_logs()
    fi
    grep "Orphaned buffer" ${tmp}/log1.out ${tmp}/log2.out
    if test $? -eq 0; then
-      print_debug "Found orphaned buffers"
+      print_debug "ERROR: Found orphaned buffers in log1.out or log2.out"
       estat=1
    fi
    if [ x$REGRESS_CHECK_CORRUPTION = xyes ]; then
        perl -Mscripts::functions -e "check_volumes('$tmp/log1.out', '$tmp/log2.out')" 2>&1 >/dev/null
        if test $? -ne 0; then
-           print_debug "Found volume corruption"
+           print_debug "ERROR: Found volume corruption"
            estat=1
        fi
    fi
