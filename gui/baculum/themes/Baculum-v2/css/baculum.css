@@ -27,6 +27,20 @@ pre {
 table.dataTable {
 	font-size: 14px;
 	line-height: 1.2;
+	border: 1px solid #c1c1c1;
+}
+
+table.dataTable tfoot th, table.dataTable tfoot td {
+	border-top: 1px solid #c1c1c1;
+}
+
+table.dataTable thead th, table.dataTable thead td {
+	border-bottom: 1px solid #c1c1c1;
+}
+
+table.dataTable thead tr {
+	background-color: #4c4b4b;
+	color: white;
 }
 
 th, table.dataTable thead td {
@@ -38,7 +52,7 @@ table.dataTable tbody td {
 }
 
 table.dataTable.no-footer {
-	border-bottom: none !important;
+	border-bottom: 1px solid #c1c1c1;
 }
 
 .dataTables_wrapper .dataTables_paginate .paginate_button {
