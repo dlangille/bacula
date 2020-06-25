@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2020-05-21 19:33\n"
+"PO-Revision-Date: 2020-06-25 17:11\n"
 "Project-Id-Version: b02f04a28aec0155df9503e3b78ae8cc\n"
 "POT-Creation-Date: \n"
 "Last-Translator: Marcin Haba <marcin.haba@bacula.pl>\n"
@@ -12,8 +12,10 @@ msgstr ""
 "X-Generator: Poedit 1.5.4\n"
 "Plural-Forms: nplurals=4; plural=(n==1 ? 0 : (n%10>=2 && n%10<=4) && (n%100<12 || n%100>14) ? 1 : n!=1 && (n%10>=0 && n%10<=1) || (n%10>=5 && n%10<=9) || (n%100>=12 && n%100<=14) ? 2 : 3);\n"
 "X-Crowdin-Project: b02f04a28aec0155df9503e3b78ae8cc\n"
+"X-Crowdin-Project-ID: 1\n"
 "X-Crowdin-Language: pl\n"
 "X-Crowdin-File: /Baculum Web/messages.po\n"
+"X-Crowdin-File-ID: 53\n"
 
 msgid "Language:"
 msgstr "Język:"
@@ -2936,7 +2938,7 @@ msgid "No file found for selected backup. It can mean file records for this back
 msgstr "Nie znaleziono żadnego pliku dla wybranej kopii zapasowej. Może to oznaczać, że rekordy plików dla tej kopii są wyczyszczone. Przywracanie wybranych plików nie jest dostępne, ale jeżeli kontynuujesz, to zostanie wykonane pełne przywrócenie wszystkich plików kopii zapasowej."
 
 msgid "Date and time format:"
-msgstr "Format daty i czasu:"
+msgstr "Format daty i godziny:"
 
 msgid "Available formats:"
 msgstr "Dostępne formaty:"
@@ -3000,3 +3002,4 @@ msgstr "Ten typ uwierzytelniania jest w pełni realizowany Baculum Web. Do uwier
 
 msgid "This type of authentication is realized by an external directory service. To authenticate it uses the Baculum Web login form. The web server basic authentication can be disabled in this method."
 msgstr "Ten typ uwierzytelniania jest realizowany przez zewnętrzną usługę katalogową. Do uwierzytelniania używa formularza logowania Baculum Web. Uwierzytelnianie basic serwera WWW może być wyłączone w tej metodzie."
+
