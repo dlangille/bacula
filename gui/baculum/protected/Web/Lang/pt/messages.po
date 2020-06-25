@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2020-05-21 19:10\n"
+"PO-Revision-Date: 2020-06-25 17:10\n"
 "Project-Id-Version: b02f04a28aec0155df9503e3b78ae8cc\n"
 "POT-Creation-Date: \n"
 "Last-Translator: Wanderlei Hüttel <wanderlei.huttel@gmail.com>\n"
@@ -12,8 +12,10 @@ msgstr ""
 "X-Generator: Poedit 1.5.4\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "X-Crowdin-Project: b02f04a28aec0155df9503e3b78ae8cc\n"
+"X-Crowdin-Project-ID: 1\n"
 "X-Crowdin-Language: pt-BR\n"
 "X-Crowdin-File: /Baculum Web/messages.po\n"
+"X-Crowdin-File-ID: 53\n"
 
 msgid "Language:"
 msgstr "Idioma:"
@@ -2933,70 +2935,71 @@ msgid "Nginx on most UNIX platforms"
 msgstr "Nginx na maioria das plataformas UNIX"
 
 msgid "No file found for selected backup. It can mean file records for this backup are pruned. Restoring selected files is not available but if you continue, there will be performed full restore all backup files."
-msgstr "No file found for selected backup. It can mean file records for this backup are pruned. Restoring selected files is not available but if you continue, there will be performed full restore all backup files."
+msgstr "Nenhum arquivo foi encontrado para o backup selecionado. Isso pode significar que os registros de arquivos foram removidos. A seleção de arquivos para restauração não está disponível, mas se você continuar, será executada a restauração completa de todos os arquivos do backup."
 
 msgid "Date and time format:"
-msgstr "Date and time format:"
+msgstr "Formato de data/hora:"
 
 msgid "Available formats:"
-msgstr "Available formats:"
+msgstr "Formatos disponíveis:"
 
 msgid "full 4 digits year, ex. 2021"
-msgstr "full 4 digits year, ex. 2021"
+msgstr "ano completo 4 dígitos, exemplo 2021"
 
 msgid "2 digits year, ex, 21"
-msgstr "2 digits year, ex, 21"
+msgstr "ano 2 dígitos (21)"
 
 msgid "2 digits month 01..12"
-msgstr "2 digits month 01..12"
+msgstr "mês 2 dígitos (01-12)"
 
 msgid "1-2 digits month 1..12"
-msgstr "1-2 digits month 1..12"
+msgstr "mês 1 ou 2 dígitos (1-12)"
 
 msgid "2 digits day 01..31"
-msgstr "2 digits day 01..31"
+msgstr "dia 2 dígitos (01-31)"
 
 msgid "1-2 digits day 1..31"
-msgstr "1-2 digits day 1..31"
+msgstr "dia 1 ou 2 dígitos (1-31)"
 
 msgid "2 digits 24-hour format hour 00..23"
-msgstr "2 digits 24-hour format hour 00..23"
+msgstr "hora 24 horas 2 dígitos (00-23)"
 
 msgid "1-2 digits 24-hour format hour 0..23"
-msgstr "1-2 digits 24-hour format hour 0..23"
+msgstr "hora 24 horas 1 ou 2 dígitos (0-23)"
 
 msgid "2 digits 12-hour format hour 01..12"
-msgstr "2 digits 12-hour format hour 01..12"
+msgstr "hora 12 horas 2 dígitos (00-12)"
 
 msgid "1-2 digits 12-hour format hour 1..12"
-msgstr "1-2 digits 12-hour format hour 1..12"
+msgstr "hora 12 horas 1 ou 2 dígitos (1-12)"
 
 msgid "2 digits minutes 00..59"
-msgstr "2 digits minutes 00..59"
+msgstr "minutos 2 dígitos (00-59)"
 
 msgid "1-2 digits minutes 0..59"
-msgstr "1-2 digits minutes 0..59"
+msgstr "minutos 1 ou 2 dígitos (0-59)"
 
 msgid "2 digits seconds 00..59"
-msgstr "2 digits seconds 00..59"
+msgstr "segundos 2 dígitos (00-59)"
 
 msgid "1-2 digits seconds 0..59"
-msgstr "1-2 digits seconds 0..59"
+msgstr "segundos 1 ou 2 dígitos (0-59)"
 
 msgid "AM/PM value"
-msgstr "AM/PM value"
+msgstr "AM/PM"
 
 msgid "24-hours format time 17:22:41"
-msgstr "24-hours format time 17:22:41"
+msgstr "Hora formato 24 horas (17:22:41)"
 
 msgid "12-hours format time 5:22:41 PM"
-msgstr "12-hours format time 5:22:41 PM"
+msgstr "Hora formato 12 horas (05:22:41 PM)"
 
 msgid "Local user authentication"
-msgstr "Local user authentication"
+msgstr "Autenticação de usuário local"
 
 msgid "This type of authentication is fully realized by Baculum Web. To authenticate it uses the Baculum Web login form. The web server basic authentication can be disabled in this method."
-msgstr "This type of authentication is fully realized by Baculum Web. To authenticate it uses the Baculum Web login form. The web server basic authentication can be disabled in this method."
+msgstr "Esse tipo de autenticação é totalmente realizado pelo Baculum Web. Para autenticar, use o formulário de login do Baculum. A autenticação básica do servidor da web pode ser desativada nesse método."
 
 msgid "This type of authentication is realized by an external directory service. To authenticate it uses the Baculum Web login form. The web server basic authentication can be disabled in this method."
-msgstr "This type of authentication is realized by an external directory service. To authenticate it uses the Baculum Web login form. The web server basic authentication can be disabled in this method."
+msgstr "Esse tipo de autenticação é realizado por um serviço de diretório externo. Para autenticar, use o formulário de login do Baculum. A autenticação básica do servidor da web pode ser desativada nesse método."
+
