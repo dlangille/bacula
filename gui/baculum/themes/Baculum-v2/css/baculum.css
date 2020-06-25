@@ -91,6 +91,10 @@ table.dataTable tbody th, table.dataTable tbody td {
 	padding: 8px 7px;
 }
 
+table.dataTable tfoot th:nth-of-type(2), table.dataTable tfoot td:nth-of-type(2) {
+	padding: 10px 0 6px 6px !important;
+}
+
 table.dataTable tfoot th, table.dataTable tfoot td {
 	padding: 10px 0 6px 0 !important;
 }
