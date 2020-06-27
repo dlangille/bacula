@@ -18,8 +18,8 @@
 					var t = event.target || event.srcElement;
 					var nn = t.nodeName.toUpperCase();
 					var cmsg = '<%[ Are you sure that you want to remove %s resource "%s"? ]%>';
-					cmsg = cmsg.replace('%s', '<%=$this->Data['resource_type']%>');
-					cmsg = cmsg.replace('%s', '<%=$this->Data['resource_name']%>');
+					cmsg = cmsg.replace('%s', '<%#$this->Data['resource_type']%>');
+					cmsg = cmsg.replace('%s', '<%#$this->Data['resource_name']%>');
 					if ((/^<%=$this->RemoveResource->ClientID%>/.test(t.id) || nn == 'I') && confirm(cmsg)) {
 						return true;
 					}
@@ -35,7 +35,7 @@
 							ClientSide.OnLoading="BaculaConfig.loader_start(sender.options.ID);"
 							ClientSide.OnComplete="BaculaConfig.set_config_items(sender.options.ID);"
 							Attributes.onclick="return BaculaConfig.unset_config_items(this.id);"
-							Text="<strong><%=$this->Data['resource_type']%></strong>: <%=$this->Data['resource_name']%>"
+							Text="<strong><%#$this->Data['resource_type']%></strong>: <%#$this->Data['resource_name']%>"
 							Style="text-decoration: none"
 						/>
 							<i class="fa fa-sync w3-spin" style="display: none"></i>

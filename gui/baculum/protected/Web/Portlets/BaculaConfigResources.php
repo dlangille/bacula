@@ -75,6 +75,10 @@ class BaculaConfigResources extends ResourceListTemplate {
 	}
 
 	public function createResourceListElement($sender, $param) {
+		if (!is_array($param->Item->Data)) {
+			// skip parent repeater items
+			return;
+		}
 		$control = $this->getChildControl($param->Item, self::CHILD_CONTROL);
 		if (is_object($control)) {
 			$control->setHost($param->Item->Data['host']);

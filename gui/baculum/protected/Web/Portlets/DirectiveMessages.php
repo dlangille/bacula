@@ -177,6 +177,10 @@ class DirectiveMessages extends DirectiveListTemplate {
 	}
 
 	public function createDirectiveListElement($sender, $param) {
+		if (!is_array($param->Item->Data)) {
+			// skip parent repeater items
+			return;
+		}
 		for ($i = 0; $i < count($this->directive_types); $i++) {
 			$control = $this->getChildControl($param->Item, $this->directive_types[$i]);
 			if (is_object($control)) {

@@ -12,7 +12,7 @@
 			>
 				<i class="fa fa-trash-alt"></i> &nbsp;<%[ Remove ]%>
 			</com:TActiveLinkButton>
-			<h2><%=$this->Data['directive_name']%></h2>
+			<h2><%#$this->Data['directive_name']%></h2>
 			<com:Application.Web.Portlets.DirectiveTextBox />
 			<com:Application.Web.Portlets.MessageTypes ID="Types" />
 		</div>

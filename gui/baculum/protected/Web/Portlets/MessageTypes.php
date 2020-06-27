@@ -58,6 +58,10 @@ class MessageTypes extends DirectiveListTemplate {
 	}
 
 	public function createTypeListElement($sender, $param) {
+		if (!is_array($param->Item->Data)) {
+			// skip parent repeater items
+			return;
+		}
 		$control = $this->getChildControl($param->Item, 'DirectiveCheckBox');
 		if (is_object($control)) {
 			$control->setHost($param->Item->Data['host']);

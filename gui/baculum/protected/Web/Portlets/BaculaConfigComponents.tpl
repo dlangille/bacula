@@ -12,7 +12,7 @@
 							ClientSide.OnLoading="BaculaConfig.loader_start(sender.options.ID);"
 							ClientSide.OnComplete="BaculaConfig.set_config_items(sender.options.ID);"
 							Attributes.onclick="return BaculaConfig.unset_config_items(this.id);"
-							Text="<strong><%=$this->Data['label']%></strong>: <%=$this->Data['component_name']%>"
+							Text="<strong><%#$this->Data['label']%></strong>: <%#$this->Data['component_name']%>"
 							Style="text-decoration: none"
 						/>
 							<i class="fa fa-sync w3-spin" style="display: none"><i/>

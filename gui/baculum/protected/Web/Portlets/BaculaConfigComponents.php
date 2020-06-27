@@ -72,6 +72,10 @@ class BaculaConfigComponents extends ComponentListTemplate {
 	}
 
 	public function createComponentListElement($sender, $param) {
+		if (!is_array($param->Item->Data)) {
+			// skip parent repeater items
+			return;
+		}
 		$conts = array(self::MENU_CONTROL, self::ACTIONS_CONTROL);
 		for ($i = 0; $i < count($conts); $i++) {
 			$controls = array(self::CHILD_CONTROL, $conts[$i]);
