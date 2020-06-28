@@ -1,0 +1,22 @@
+
+               Release Notes for Baculum 9.6.5.1
+
+This is a minor new feature and bug fix release. Main change is a new local user
+authentication method support.
+
+New changes and fixes:
+
+ - Request #2504 add local user authentication method support
+ - Add date and time formatters - idea proposed by Wanderlei Huttel
+ - Add remove runscript button
+ - Enable re-running jobs in async way and visual improvements
+ - Fix logout button on authorization failed page
+ - Fix date formatter to work with PHP 7.4
+ - Fix configure Bacula hosts page to work with PHP 7.4
+ - Close modal windows on pressing ESC key
+ - Update Portuguese translations
+ - Change colours in table headers and borders
+ - Change cursor over selectable table
+
+Bugs fixed/closed since last release:
+2504
