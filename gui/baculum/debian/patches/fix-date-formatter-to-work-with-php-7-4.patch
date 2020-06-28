@@ -1,0 +1,55 @@
+diff --git a/gui/baculum/framework/pradosoft/prado/framework/Util/TSimpleDateFormatter.php b/gui/baculum/framework/pradosoft/prado/framework/Util/TSimpleDateFormatter.php
+index f85879c9e0..00fc12770b 100644
+--- a/gui/baculum/framework/pradosoft/prado/framework/Util/TSimpleDateFormatter.php
++++ b/gui/baculum/framework/pradosoft/prado/framework/Util/TSimpleDateFormatter.php
+@@ -244,16 +244,9 @@ class TSimpleDateFormatter
+ 		$x = null;
+ 		$y = null;
+ 
+-
+-		if ($defaultToCurrentTime) {
+-			$year = "{$date['year']}";
+-			$month = $date['mon'];
+-			$day = $date['mday'];
+-		} else {
+-			$year = null;
+-			$month = null;
+-			$day = null;
+-		}
++		$year = null;
++		$month = null;
++		$day = null;
+ 
+ 		while ($i_format < $pattern_length) {
+ 			$c = $this->charAt($pattern, $i_format);
+@@ -332,21 +325,17 @@ class TSimpleDateFormatter
+ 		if ($i_val != $this->length($value)) {
+ 			return null;
+ 		}
+-		//throw new TInvalidDataValueException("Pattern '{$this->pattern}' mismatch", $value);
+-		if (!$defaultToCurrentTime && ($month === null || $day === null || $year === null)) {
+-			return null;
+-		} else {
+-			if (empty($year)) {
+-				$year = date('Y');
+-			}
+-			$day = (int) $day <= 0 ? 1 : (int) $day;
+-			$month = (int) $month <= 0 ? 1 : (int) $month;
+ 
+-			$s = new \DateTime;
+-			$s->setDate($year, $month, $day);
+-			$s->setTime(0, 0, 0);
+-			return $s->getTimeStamp();
++		if (empty($year)) {
++			$year = date('Y');
+ 		}
++		$day = (int) $day <= 0 ? 1 : (int) $day;
++		$month = (int) $month <= 0 ? 1 : (int) $month;
++
++		$s = new \DateTime;
++		$s->setDate($year, $month, $day);
++		$s->setTime(0, 0, 0);
++		return $s->getTimeStamp();
+ 	}
+ 
+ 	/**
