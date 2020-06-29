@@ -1307,7 +1307,7 @@ int BDB::bdb_create_events_record(JCR *jcr, EVENTS_DBR *event)
    type.check_size(len*2+1);
    db_escape_string(jcr, this, type.c_str(), event->EventsType, len);
 
-   if (!is_name_valid(event->EventsSource, tmp.handle(), "*-")) { /* Add *None* */
+   if (!is_name_valid(event->EventsSource, tmp.handle(), "*-.,:")) { /* Add *None* */
       Mmsg(errmsg, "Invalid EventsSource %s", tmp.c_str());
       goto bail_out;
    }
