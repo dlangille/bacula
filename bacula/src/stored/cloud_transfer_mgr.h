@@ -111,8 +111,8 @@ public:
    bool                 m_debug_retry;
 
    /* variables */
-   const char          *m_cache_fname;
-   const char          *m_volume_name;
+   char                *m_cache_fname;
+   char                *m_volume_name;
    uint32_t             m_part;
    cloud_driver        *m_driver;
    DCR                 *m_dcr;
