@@ -917,7 +917,9 @@ bool prune_volume(UAContext *ua, MEDIA_DBR *mr)
                       mr->VolumeName);
       }
       ok = is_volume_purged(ua, mr);
-
+      if (ok) {
+         ua->send_events("DV0001", EVENTS_TYPE_VOLUME, "volume \"%s\" was purged", mr->VolumeName);
+      }
    } else {
       ua->info_msg(_("Volume \"%s\" has VolStatus \"%s\" and cannot be pruned.\n"), mr->VolumeName, mr->VolStatus);
    }

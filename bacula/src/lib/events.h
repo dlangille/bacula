@@ -62,6 +62,7 @@ void edit_custom_type(POOLMEM **edbuf, MSGS *msgs, char *msg_types);
 #define EVENTS_TYPE_COMMAND    "command"
 #define EVENTS_TYPE_DAEMON     "daemon"
 #define EVENTS_TYPE_JOB        "job"
+#define EVENTS_TYPE_VOLUME     "volume"
 
 void events_send_msg(JCR *jcr, const char *code, const char *type, const char *source, intptr_t ref, const char *fmt, ...);
 void events_send_msg(JCR *jcr, EVENTS_DBR *ev);
