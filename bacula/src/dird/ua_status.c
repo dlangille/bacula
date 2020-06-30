@@ -754,17 +754,19 @@ static void prt_runtime(UAContext *ua, sched_pkt *sp, OutputWriter *ow)
          sp->job->name(), mr.VolumeName);
 
    } else if (ua->api > 1) {
+      POOL  *p = jcr->pool;
+      STORE *s = jcr->wstore;
       ua->send_msg("%s",
                    ow->get_output(OT_CLEAR,
                       OT_START_OBJ,
-                      OT_STRING,    "name",     sp->job->name(),
+                      OT_STRING,    "name",    sp->job->name(),
                       OT_JOBLEVEL,  "level",   sp->level,
                       OT_JOBTYPE,   "type",    sp->job->JobType,
                       OT_INT,       "priority",sp->priority,
                       OT_UTIME,     "schedtime", sp->runtime,
                       OT_STRING,    "volume",  mr.VolumeName,
-                      OT_STRING,    "pool",    jcr->pool?jcr->pool->name():"",
-                      OT_STRING,    "storage", jcr->wstore?jcr->wstore->name():"",
+                      OT_STRING,    "pool",    p?p->name():"",
+                      OT_STRING,    "storage", s?s->name():"",
                       OT_END_OBJ,
                       OT_END));
 
@@ -1055,8 +1057,8 @@ static void llist_scheduled_jobs(UAContext *ua)
 
       if (ua->api > 1) {
          bool use_client =
-            item->job->JobType == JT_BACKUP ||
-            item->job->JobType == JT_RESTORE;
+            (item->job->JobType == JT_BACKUP || item->job->JobType == JT_RESTORE)
+            && (item->job->client != NULL);
 
          ua->send_msg("%s", ow.get_output(OT_CLEAR,
                          OT_START_OBJ,
@@ -1064,7 +1066,7 @@ static void llist_scheduled_jobs(UAContext *ua)
                          OT_JOBTYPE, "type",      item->job->JobType,
                          OT_STRING,  "name",       item->job->name(),
                          OT_STRING, "client", use_client?item->job->client->name() : "",
-                         OT_STRING,  "fileset",   item->job->fileset->name(),
+                         OT_STRING,  "fileset",   item->job->fileset?item->job->fileset->name():"",
                          OT_UTIME,   "schedtime", item->time,
                          OT_INT32,   "priority",  item->prio,
                          OT_STRING,  "schedule", item->sched->name(),
@@ -1434,6 +1436,11 @@ static void list_running_jobs(UAContext *ua)
          unbash_spaces(jcr->comment);
 
       } else if (ua->api > 1) {
+         CLIENT   *c = jcr->client;
+         FILESET  *f = jcr->fileset;
+         STORE    *w = jcr->wstore;
+         STORE    *r = jcr->rstore;
+         JOB      *j = jcr->job;
          ua->send_msg("%s", ow.get_output(OT_CLEAR,
                          OT_START_OBJ,
                          OT_INT32,   "jobid",     jcr->JobId,
@@ -1445,11 +1452,11 @@ static void list_running_jobs(UAContext *ua)
                          OT_SIZE,    "jobbytes",  jcr->JobBytes,
                          OT_INT32,   "jobfiles",  jcr->JobFiles,
                          OT_STRING,  "job",       jcr->Job,
-                         OT_STRING,  "name",      jcr->job->name(),
-                         OT_STRING,  "clientname",jcr->client?jcr->client->name():"",
-                         OT_STRING,  "fileset",   jcr->fileset?jcr->fileset->name():"",
-                         OT_STRING,  "storage",   jcr->wstore?jcr->wstore->name():"",
-                         OT_STRING,  "rstorage",  jcr->rstore?jcr->rstore->name():"",
+                         OT_STRING,  "name",      j?j->name():"",
+                         OT_STRING,  "clientname",c?c->name():"",
+                         OT_STRING,  "fileset",   f?f->name():"",
+                         OT_STRING,  "storage",   w?w->name():"",
+                         OT_STRING,  "rstorage",  r?r->name():"",
                          OT_UTIME,   "schedtime", jcr->sched_time,
                          OT_UTIME,   "starttime", jcr->start_time,
                          OT_INT32,   "priority",  jcr->JobPriority,
