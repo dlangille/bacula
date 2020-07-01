@@ -142,7 +142,7 @@ int main (int argc, char *argv[])
       case 'l':
          /* Might use something like -l '^(Name|Description)$' */
          filter.do_list = true;
-         if (regcomp(&filter.directive_reg, optarg, REG_EXTENDED) != 0) {
+         if (regcomp(&filter.directive_reg, optarg, REG_EXTENDED|REG_ICASE) != 0) {
             Jmsg((JCR *)NULL, M_ERROR_TERM, 0,
                  _("Please use valid -l argument: %s\n"), optarg);
          }
