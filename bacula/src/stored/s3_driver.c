@@ -839,26 +839,6 @@ bool s3_driver::init(CLOUD *cloud, POOLMEM *&err)
    s3ctx.accessKeyId = cloud->access_key;
    s3ctx.secretAccessKey = cloud->secret_key;
    s3ctx.authRegion = cloud->region;
-   switch( cloud->transfer_priority) {
-      case CLOUD_RESTORE_PRIO_HIGH:
-         transfer_priority = S3RestoreTierExpedited;
-         break;
-      case CLOUD_RESTORE_PRIO_MEDIUM:
-         transfer_priority = S3RestoreTierStandard;
-         break;
-      case CLOUD_RESTORE_PRIO_LOW:
-         transfer_priority = S3RestoreTierBulk;
-         break;
-      default:
-         transfer_priority = S3RestoreTierExpedited;
-         break;
-   };
-
-   transfer_retention_days = cloud->transfer_retention / (3600 * 24);
-   /* at least 1 day retention period */
-   if (transfer_retention_days <= 0) {
-      transfer_retention_days = 1;
-   }
 
    if ((status = S3_initialize("s3", S3_INIT_ALL, s3ctx.hostName)) != S3StatusOK) {
       Mmsg1(err, "Failed to initialize S3 lib. ERR=%s\n", S3_get_status_name(status));
@@ -868,6 +848,22 @@ bool s3_driver::init(CLOUD *cloud, POOLMEM *&err)
    /*load glacier */
    if (me) {
       load_glacier_driver(me->plugin_directory);
+      if (glacier_item.ptr) {
+         s3_cloud_glacier_ctx glacier_ctx;
+         glacier_ctx.host_name = cloud->host_name;
+         glacier_ctx.bucket_name = cloud->bucket_name;
+         glacier_ctx.protocol = (S3Protocol)cloud->protocol;
+         glacier_ctx.uri_style = (S3UriStyle)cloud->uri_style;
+         glacier_ctx.access_key = cloud->access_key;
+         glacier_ctx.secret_key = cloud->secret_key;
+         glacier_ctx.region = cloud->region;
+         glacier_ctx.transfer_priority = cloud->transfer_priority;
+         glacier_ctx.transfer_retention = cloud->transfer_retention;
+
+         if (!glacier_item.ptr->init(&glacier_ctx, err)) {
+            return false;
+         }
+      }
    }
 
    return true;

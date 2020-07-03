@@ -31,12 +31,19 @@
 #ifndef _CLOUD_GLACIER_H_
 #define _CLOUD_GLACIER_H_
 
+typedef struct cloud_glacier_cgc
+{
+   const char *host_name;
+   const char *bucket_name;
+}  cloud_glacier_ctx;
+
 /* Abstract class cannot be instantiated */
 class cloud_glacier: public SMARTALLOC {
 public:
    cloud_glacier() {};
    virtual ~cloud_glacier() {};
-
+   
+   virtual bool init(cloud_glacier_ctx *ctx, POOLMEM *&err) = 0;
    virtual bool restore_cloud_object(transfer *xfer, const char *cloud_fname) = 0;
    virtual bool is_waiting_on_server(transfer *xfer, const char *cloud_fname) = 0;
 };
@@ -44,6 +51,11 @@ public:
 class dummy_glacier: public cloud_glacier {
 public:
    dummy_glacier() {};
+   bool init (cloud_glacier_ctx *ctx, POOLMEM *&err)
+   {
+      Mmsg(err, "Cloud glacier not properly loaded");
+      return false;
+   }
    bool restore_cloud_object(transfer *xfer, const char *cloud_fname)
    {
       Mmsg(xfer->m_message, "Cloud glacier not properly loaded");
