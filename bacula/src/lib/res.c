@@ -56,7 +56,7 @@ void b_LockRes(const char *file, int line)
        Emsg3(M_ABORT, 0, _("rwl_writelock failure at %s:%d:  ERR=%s\n"),
              file, line, strerror(errstat));
     }
-    res_locked++;
+    res_locked++; /* for debug only */
 }
 
 void b_UnlockRes(const char *file, int line)
@@ -66,7 +66,7 @@ void b_UnlockRes(const char *file, int line)
       Emsg3(M_ABORT, 0, _("rwl_writeunlock failure at %s:%d:. ERR=%s\n"),
            file, line, strerror(errstat));
    }
-   res_locked--;
+   res_locked--;  /* for debug only */
 #ifdef TRACE_RES
    Pmsg4(000, "UnLockRes locked=%d wactive=%d at %s:%d\n",
          res_locked, res_lock.w_active, file, line);

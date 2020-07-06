@@ -269,7 +269,7 @@ public:
 class CLIENT {
 public:
    RES hdr;
-   CLIENT_GLOBALS *globals;           /* global variables */
+   CLIENT_GLOBALS *globals;           /* data shared by all version of the res */
    uint32_t FDport;                   /* Where File daemon listens */
    utime_t FileRetention;             /* file retention period in seconds */
    utime_t JobRetention;              /* job retention period in seconds */
@@ -302,7 +302,7 @@ public:
    char *name() const;
    void create_client_globals();
    int32_t getNumConcurrentJobs();
-   void setNumConcurrentJobs(int32_t num);
+   int32_t incNumConcurrentJobs(int32_t inc);
    char *address(POOLMEM *&buf);
    void setAddress(char *addr);
    bool is_enabled();
@@ -332,7 +332,7 @@ public:
 class STORE {
 public:
    RES   hdr;
-   STORE_GLOBALS *globals;            /* global variables */
+   STORE_GLOBALS *globals;            /* data shared by all version of the res */
    uint32_t SDport;                   /* port where Directors connect */
    uint32_t SDDport;                  /* data port for File daemon */
    char *address;
@@ -368,8 +368,8 @@ public:
    void create_store_globals();
    int32_t getNumConcurrentJobs();
    int32_t getNumConcurrentReadJobs();
-   void setNumConcurrentJobs(int32_t num);
-   void setNumConcurrentReadJobs(int32_t num);
+   int32_t incNumConcurrentJobs(int32_t inc);
+   int32_t incNumConcurrentReadJobs(int32_t inc);
    bool is_enabled();
    void setEnabled(bool val);
 };
@@ -431,7 +431,7 @@ public:
 class JOB {
 public:
    RES   hdr;
-   JOB_GLOBALS *globals;              /* global variables */
+   JOB_GLOBALS *globals;              /* data shared by all version of the res */
    uint32_t JobType;                  /* job type (backup, verify, restore */
    uint32_t JobLevel;                 /* default backup/verify level */
    uint32_t RestoreJobId;             /* What -- JobId to restore */
@@ -521,7 +521,7 @@ public:
    char *name() const;
    void create_job_globals();
    int32_t getNumConcurrentJobs();
-   void setNumConcurrentJobs(int32_t num);
+   int32_t incNumConcurrentJobs(int32_t inc);
    bool is_enabled();
    void setEnabled(bool val);
 };

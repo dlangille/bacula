@@ -220,6 +220,7 @@ static void dir_debug_print(JCR *jcr, FILE *fp)
 /* DELETE ME when bugs in MA1512, MA1632 MA1639 are fixed */
 extern void (*MA1512_reload_job_end_cb)(JCR *,void *);
 static void reload_job_end_cb(JCR *jcr, void *ctx);
+static void connect_and_init_globals();
 
 /* We use a dedicated thread to find the next jobs to run
  * in order to avoid issues with a HUP signal that might
@@ -381,6 +382,7 @@ int main (int argc, char *argv[])
 
    config = New(CONFIG());
    parse_dir_config(config, configfile, M_ERROR_TERM);
+   connect_and_init_globals();
 
    /* If the director variable is not set, check_resources() will stop the process */
    if (init_crypto() != 0) {
@@ -579,6 +581,80 @@ static int find_free_reload_table_entry()
 
 static pthread_mutex_t reload_mutex = PTHREAD_MUTEX_INITIALIZER;
 
+
+/*
+ * Walk through "globals" tables and plug them into the matching resource
+ * After a reload_config() we need to connect the existing "globals" to
+ * the new version of the resources, or create new globals for brand
+ * new resources.
+ * "globals" are first created when loading the resources for the first time
+ */
+static void connect_and_init_globals()
+{
+   CLIENT_GLOBALS *cg;
+   CLIENT *client;
+   foreach_dlist(cg, &client_globals) {
+      client = GetClientResWithName(cg->name);
+      if (!client) {
+         Dmsg1(50, _("Client=%s not found. Assuming it was removed!!!\n"), cg->name);
+      } else {
+         client->globals = cg;      /* Set globals pointer */
+      }
+   }
+   foreach_res(client, R_CLIENT) {
+      if (client->globals == NULL) {
+         client->create_client_globals(); /* if no globals exist, then create it */
+      }
+   }
+   STORE_GLOBALS *sg;
+   STORE *store;
+   foreach_dlist(sg, &store_globals) {
+      store = GetStoreResWithName(sg->name);
+      if (!store) {
+         Dmsg1(50, _("Storage=%s not found. Assuming it was removed!!!\n"), sg->name);
+      } else {
+         store->globals = sg;       /* set globals pointer */
+         Dmsg2(200, "Reload found numConcurrent=%ld for Store %s\n",
+            sg->NumConcurrentJobs, sg->name);
+      }
+   }
+   foreach_res(store, R_STORAGE) {
+      if (store->globals == NULL) {
+         store->create_store_globals(); /* if no globals exist, then create it */
+      }
+   }
+   JOB_GLOBALS *jg;
+   JOB *job;
+   foreach_dlist(jg, &job_globals) {
+      job = GetJobResWithName(jg->name);
+      if (!job) {
+         Dmsg1(50, _("Job=%s not found. Assuming it was removed!!!\n"), jg->name);
+      } else {
+         job->globals = jg;         /* Set globals pointer */
+      }
+   }
+   foreach_res(job, R_JOB) {
+      if (job->globals == NULL) {
+         job->create_job_globals(); /* if no globals exist, then create it */
+      }
+   }
+   SCHED_GLOBALS *schg;
+   SCHED *sched;
+   foreach_dlist(schg, &sched_globals) {
+      sched = GetSchedResWithName(schg->name);
+      if (!sched) {
+         Dmsg1(50, _("Schedule=%s not found. Assuming it was removed!!!\n"), schg->name);
+      } else {
+         sched->globals = schg;     /* Set globals pointer */
+      }
+   }
+   foreach_res(sched, R_SCHEDULE) {
+      if (sched->globals == NULL) {
+         sched->create_sched_globals(); /* if no globals exist, then create it */
+      }
+   }
+}
+
 /*
  * If we get here, we have received a SIGHUP, which means to
  *    reread our configuration file.
@@ -696,52 +772,7 @@ void reload_config(int sig)
          }
       }
       endeach_jcr(jcr);
-      /*
-       * Now walk through globals tables and plug them into the
-       * new resources.
-       */
-      CLIENT_GLOBALS *cg;
-      foreach_dlist(cg, &client_globals) {
-         CLIENT *client;
-         client = GetClientResWithName(cg->name);
-         if (!client) {
-            Qmsg(NULL, M_INFO, 0, _("Client=%s not found. Assuming it was removed!!!\n"), cg->name);
-         } else {
-            client->globals = cg;      /* Set globals pointer */
-         }
-      }
-      STORE_GLOBALS *sg;
-      foreach_dlist(sg, &store_globals) {
-         STORE *store;
-         store = GetStoreResWithName(sg->name);
-         if (!store) {
-            Qmsg(NULL, M_INFO, 0, _("Storage=%s not found. Assuming it was removed!!!\n"), sg->name);
-         } else {
-            store->globals = sg;       /* set globals pointer */
-            Dmsg2(200, "Reload found numConcurrent=%ld for Store %s\n",
-               sg->NumConcurrentJobs, sg->name);
-         }
-      }
-      JOB_GLOBALS *jg;
-      foreach_dlist(jg, &job_globals) {
-         JOB *job;
-         job = GetJobResWithName(jg->name);
-         if (!job) {
-            Qmsg(NULL, M_INFO, 0, _("Job=%s not found. Assuming it was removed!!!\n"), jg->name);
-         } else {
-            job->globals = jg;         /* Set globals pointer */
-         }
-      }
-      SCHED_GLOBALS *schg;
-      foreach_dlist(schg, &sched_globals) {
-         SCHED *sched;
-         sched = GetSchedResWithName(schg->name);
-         if (!sched) {
-            Qmsg(NULL, M_INFO, 0, _("Schedule=%s not found. Assuming it was removed!!!\n"), schg->name);
-         } else {
-            sched->globals = schg;     /* Set globals pointer */
-         }
-      };
+      connect_and_init_globals();
    }
 
    /* Reset other globals */

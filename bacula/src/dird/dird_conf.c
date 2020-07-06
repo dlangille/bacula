@@ -105,31 +105,24 @@ void CLIENT::create_client_globals()
 
 int32_t CLIENT::getNumConcurrentJobs()
 {
-   if (!globals) {
-      return 0;
-   }
+   LOCK_GUARD(globals_mutex);
    return globals->NumConcurrentJobs;
 }
 
-void CLIENT::setNumConcurrentJobs(int32_t num)
+int32_t CLIENT::incNumConcurrentJobs(int32_t inc)
 {
-   P(globals_mutex);
-   if (!globals) {
-      create_client_globals();
-   }
-   globals->NumConcurrentJobs = num;
+   P(globals_mutex); // be sure globals is initialized
+   int32_t num = globals->NumConcurrentJobs += inc;
    V(globals_mutex);
    ASSERT(num >= 0);
    Dmsg2(200, "Set NumConcurrentJobs=%ld for Client %s\n",
-      num, globals->name);
+         num, globals->name);
+   return num;
 }
 
 BSOCK *CLIENT::getBSOCK(int timeout)
 {
    P(globals_mutex);
-   if (!globals) {
-      create_client_globals();
-   }
    if (!globals->socket) {
       globals->socket = New(BsockMeeting());
    }
@@ -140,9 +133,6 @@ BSOCK *CLIENT::getBSOCK(int timeout)
 bool CLIENT::getBSOCK_state(POOLMEM *&buf)
 {
    P(globals_mutex);
-   if (!globals) {
-      create_client_globals();
-   }
    if (!globals->socket) {
       globals->socket = New(BsockMeeting());
    }
@@ -153,9 +143,6 @@ bool CLIENT::getBSOCK_state(POOLMEM *&buf)
 void CLIENT::setBSOCK(BSOCK *sock)
 {
    P(globals_mutex);
-   if (!globals) {
-      create_client_globals();
-   }
    if (!globals->socket) {
       globals->socket = New(BsockMeeting());
    }
@@ -179,9 +166,6 @@ char *CLIENT::address(POOLMEM *&buf)
 void CLIENT::setAddress(char *addr)
 {
    P(globals_mutex);
-   if (!globals) {
-      create_client_globals();
-   }
    if (globals->SetIPaddress) {
       free(globals->SetIPaddress);
    }
@@ -191,7 +175,8 @@ void CLIENT::setAddress(char *addr)
 
 bool CLIENT::is_enabled()
 {
-   if (!globals || globals->enabled < 0) {
+   LOCK_GUARD(globals_mutex);
+   if (globals->enabled < 0) { /* not yet modified, use default from resource */
       return Enabled;
    }
    return globals->enabled;
@@ -200,9 +185,6 @@ bool CLIENT::is_enabled()
 void CLIENT::setEnabled(bool val)
 {
    P(globals_mutex);
-   if (!globals) {
-      create_client_globals();
-   }
    /* TODO: We probably need to set -1 (not set) when we are back to the default value */
    globals->enabled = val? 1 : 0;
    V(globals_mutex);
@@ -221,28 +203,25 @@ void JOB::create_job_globals()
 
 int32_t JOB::getNumConcurrentJobs()
 {
-   if (!globals) {
-      return 0;
-   }
+   LOCK_GUARD(globals_mutex);
    return globals->NumConcurrentJobs;
 }
 
-void JOB::setNumConcurrentJobs(int32_t num)
+int32_t JOB::incNumConcurrentJobs(int32_t inc)
 {
    P(globals_mutex);
-   if (!globals) {
-      create_job_globals();
-   }
-   globals->NumConcurrentJobs = num;
+   int32_t num = globals->NumConcurrentJobs += inc;
    V(globals_mutex);
    ASSERT(num >= 0);
    Dmsg2(200, "Set NumConcurrentJobs=%ld for Job %s\n",
       num, globals->name);
+   return num;
 }
 
 bool JOB::is_enabled()
 {
-   if (!globals || globals->enabled < 0) {
+   LOCK_GUARD(globals_mutex);
+   if (globals->enabled < 0) { /* not yet modified, use default from resource */
       return Enabled;
    }
    return globals->enabled;
@@ -251,9 +230,6 @@ bool JOB::is_enabled()
 void JOB::setEnabled(bool val)
 {
    P(globals_mutex);
-   if (!globals) {
-      create_job_globals();
-   }
    globals->enabled = val ? 1 : 0;
    V(globals_mutex);
    Dmsg2(200, "Set Enabled=%d for Job %s\n",
@@ -271,49 +247,42 @@ void STORE::create_store_globals()
 
 int32_t STORE::getNumConcurrentReadJobs()
 {
-   if (!globals) {
-      return 0;
-   }
+   LOCK_GUARD(globals_mutex);
    return globals->NumConcurrentReadJobs;
 }
 
-void STORE::setNumConcurrentReadJobs(int32_t num)
+int32_t STORE::incNumConcurrentReadJobs(int32_t inc)
 {
    P(globals_mutex);
-   if (!globals) {
-      create_store_globals();
-   }
-   globals->NumConcurrentReadJobs = num;
+   int32_t num = globals->NumConcurrentReadJobs += inc;
    V(globals_mutex);
    Dmsg2(200, "Set NumConcurrentReadJobs=%ld for Store %s\n",
       num, globals->name);
    ASSERT(num >= 0);
+   return num;
 }
 
 int32_t STORE::getNumConcurrentJobs()
 {
-   if (!globals) {
-      return 0;
-   }
+   LOCK_GUARD(globals_mutex);
    return globals->NumConcurrentJobs;
 }
 
-void STORE::setNumConcurrentJobs(int32_t num)
+int32_t STORE::incNumConcurrentJobs(int32_t inc)
 {
    P(globals_mutex);
-   if (!globals) {
-      create_store_globals();
-   }
-   globals->NumConcurrentJobs = num;
+   int32_t num = globals->NumConcurrentJobs += inc;
    V(globals_mutex);
    Dmsg2(200, "Set numconcurrentJobs=%ld for Store %s\n",
       num, globals->name);
    ASSERT(num >= 0);
+   return num;
 }
 
 bool STORE::is_enabled()
 {
-   if (!globals || globals->enabled < 0) {
+   LOCK_GUARD(globals_mutex);
+   if (globals->enabled < 0) { /* not yet modified, use default from resource */
       return Enabled;
    }
    return globals->enabled;
@@ -322,9 +291,6 @@ bool STORE::is_enabled()
 void STORE::setEnabled(bool val)
 {
    P(globals_mutex);
-   if (!globals) {
-      create_store_globals();
-   }
    globals->enabled = val ? 1 : 0;
    V(globals_mutex);
    Dmsg2(200, "Set Enabled=%d for Storage %s\n",
@@ -342,7 +308,8 @@ void SCHED::create_sched_globals()
 
 bool SCHED::is_enabled()
 {
-   if (!globals || globals->enabled < 0) {
+   LOCK_GUARD(globals_mutex);
+   if (globals->enabled < 0) { /* not yet modified, use default from resource */
       return Enabled;
    }
    return globals->enabled;
@@ -351,9 +318,6 @@ bool SCHED::is_enabled()
 void SCHED::setEnabled(bool val)
 {
    P(globals_mutex);
-   if (!globals) {
-      create_sched_globals();
-   }
    globals->enabled = val ? 1 : 0;
    V(globals_mutex);
    Dmsg2(200, "Set Enabled=%d for Schedule %s\n",
