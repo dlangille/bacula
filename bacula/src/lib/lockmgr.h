@@ -283,18 +283,53 @@ int bthread_kill(pthread_t thread, int sig,
 class lock_guard
 {
 public:
-   
-   pthread_mutex_t &m_mutex; /* the class keeps a reference on the mutex*/
 
-   explicit lock_guard(pthread_mutex_t &mutex) : m_mutex(mutex)
+   pthread_mutex_t &m_mutex; /* the class keeps a reference on the mutex*/
+   const char *file;
+   int line;
+
+   explicit lock_guard(pthread_mutex_t &mutex) : m_mutex(mutex),
+         file(NULL), line(0)
    {
       P(m_mutex); /* constructor locks the mutex*/
    }
-   
+
+   explicit lock_guard(pthread_mutex_t &mutex, const char *file, int line) :
+         m_mutex(mutex), file(file), line(line)
+   {
+      #ifdef LOCKMGR_COMPLIANT
+         lmgr_p(&m_mutex);
+      #else
+         bthread_mutex_lock_p(&mutex, file, line);
+      #endif
+   }
+
    ~lock_guard()
    {
-      V(m_mutex); /* destructor unlocks the mutex*/
+      #ifdef LOCKMGR_COMPLIANT
+         lmgr_v(&m_mutex);
+      #else
+         if (file != NULL) {
+            bthread_mutex_unlock_p(&m_mutex, file, line);
+         } else {
+            bthread_mutex_unlock_p(&m_mutex, __FILE__, __LINE__);
+         }
+      #endif
    }
 };
+
+// Do magic! Creates a unique name using the line number, this need two level
+#define _DO_JOIN( symbol1, symbol2 ) _DO_JOIN2( symbol1, symbol2 )
+#define _DO_JOIN2( symbol1, symbol2 ) symbol1##symbol2
+
+/* You can check it by creating a variable with the expected name and see if the
+ * compiler complain, for example
+ * > LOCK_GUARD(mutex);  // this is line 123
+ * > lock_guard lock_guard_123(mutex);
+ */
+
+#define LOCK_GUARD(mutex) lock_guard _DO_JOIN(lock_guard_, __LINE__) (mutex, __FILE__, __LINE__)
+// If you have collision anyway, use the "postfix" version with a name you have chosen
+#define LOCK_GUARD_POSTFIX(mutex, postfix) lock_guard _DO_JOIN2(lock_guard_, postfix) (mutex, __FILE__, __LINE__)
 
 #endif  /* LOCKMGR_H */
