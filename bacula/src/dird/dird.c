@@ -848,6 +848,11 @@ void terminate_dird(int sig)
       // statcollector->dump();
       delete(statcollector);
    }
+   SCHED_GLOBALS *schg;
+   foreach_dlist(schg, &sched_globals) {
+      free(schg->name);
+   }
+   sched_globals.destroy();
    close_memory_pool();               /* release free memory in pool */
    lmgr_cleanup_main();
    sm_dump(false);
