@@ -72,7 +72,7 @@ static struct ini_items plugin_items_dump[] = {
    {"container_run",             ini_store_bool,     "Run container on restore",                         0, "*No*"},
    {"container_imageid",         ini_store_bool,     "Use Image Id for container creation/start",        0, "*No*"},
    {"container_defaultnames",    ini_store_bool,     "Use default docker Names on container creation",   0, "*No*"},
-   {"docker_host",               ini_store_str,      "Use defined docker host to restore",               0, "*local*"},
+   {"docker_host",               ini_store_str,      "Use defined docker host to restore",                0, "*local*"},
    {"timeout",                   ini_store_int32,    "Timeout connecting to volume container",           0, "*30*"},
    {NULL, NULL, NULL, 0, NULL}
 };

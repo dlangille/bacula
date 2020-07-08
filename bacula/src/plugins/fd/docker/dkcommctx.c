@@ -867,9 +867,9 @@ bool DKCOMMCTX::parse_param(bpContext *ctx, POOLMEM **param, const char *pname, 
    if (bstrcasecmp(name, pname)){
       if (!*param){
          *param = get_pool_memory(PM_NAME);
+         pm_strcpy(param, value);
+         DMSG2(ctx, DDEBUG, "add param: %s=%s\n", name, value);
       }
-      pm_strcpy(param, value);
-      DMSG2(ctx, DDEBUG, "add param: %s=%s\n", name, value);
       return true;
    }
    return false;
