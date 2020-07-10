@@ -19,8 +19,8 @@
 # now check if we are running under a proper shell
 if test "x$SHELL" != "x/bin/bash"
 then
-        echo "Regression script must use BASH for this utilities!"
-        exit 1
+   echo "Regression script must use BASH for this utilities!"
+   exit 1
 fi
 
 #
@@ -31,7 +31,7 @@ setup_plugin_param()
 LPLUG=$1
 if [ "x$debug" != "x" ]
 then
-        LPLUG="$LPLUG debug=1"
+   LPLUG="$LPLUG debug=1"
 fi
 export LPLUG
 }
@@ -61,14 +61,14 @@ fi
 #
 do_regress_unittest()
 {
-. scripts/functions
-tname=$1
-tdirloc=$2
-make -C ${src}/${tdirloc} ${tname}
-if test $? -eq 0; then
-   ${src}/${tdirloc}/${tname}
-fi
-exit $?
+   . scripts/functions
+   tname=$1
+   tdirloc=$2
+   make -C ${src}/${tdirloc} ${tname}
+   if test $? -eq 0; then
+      ${src}/${tdirloc}/${tname}
+   fi
+   exit $?
 }
 
 #
@@ -282,4 +282,95 @@ then
 else
    return 0
 fi
+}
+
+#
+# This is a simple common function which start a fresh, new local slapd
+# available on ldap://localhost:3890
+#
+# On ubuntu
+# sudo apparmor_parser -R /etc/apparmor.d/usr.sbin.slapd
+#
+start_local_slapd()
+{
+if [ "x${SLAPD_DAEMON}" == "x" ]
+then
+   S1=`which slapd | wc -l`
+   if [ $S1 -eq 0 ]
+   then
+      echo "slapd not found! required!"
+      exit 1
+   fi
+   SLAPD_DAEMON="slapd"
+fi
+
+rm -rf ${tmp}/ldap
+mkdir ${tmp}/ldap
+
+db_name="database$$"
+echo ${db_name} > ${tmp}/ldap_db_name
+
+ldaphome=/etc/openldap
+if [ -d /etc/ldap ]
+then
+    ldaphome=/etc/ldap
+fi
+
+cat << END_OF_DATA > ${tmp}/ldap/slapd.conf
+include        ${ldaphome}/schema/core.schema
+pidfile         ${tmp}/slapd.pid
+argsfile        ${tmp}/slapd.args
+
+moduleload back_bdb.la
+database bdb
+suffix "dc=${db_name},dc=bacula,dc=com"
+directory ${tmp}/ldap
+rootdn "cn=root,dc=${db_name},dc=bacula,dc=com"
+rootpw rootroot
+
+index cn,sn,uid pres,eq,approx,sub
+index objectClass eq
+
+END_OF_DATA
+
+printf "Starting local slapd ... "
+${SLAPD_DAEMON} -f ${tmp}/ldap/slapd.conf -h ldap://localhost:3890 -d0 &
+SLAPD=$!
+trap "kill $SLAPD" EXIT
+sleep 5
+
+cat << END_OF_DATA > ${tmp}/entries.ldif
+dn: dc=$db_name,dc=bacula,dc=com
+objectClass: dcObject
+objectClass: organization
+dc: $db_name
+o: Example Corporation
+description: The Example Corporation $db_name
+
+# Organizational Role for Directory Manager
+dn: cn=root,dc=$db_name,dc=bacula,dc=com
+objectClass: organizationalRole
+cn: root
+description: Directory Manager
+END_OF_DATA
+
+ldapadd -f $tmp/entries.ldif -x -D "cn=root,dc=$db_name,dc=bacula,dc=com" -w rootroot -H ldap://localhost:3890 2>&1 > ${tmp}/ldap.add.log
+
+if [ $? -ne 0 ]; then
+    print_debug "ERROR: Need to setup ldap access correctly"
+    kill -INT `cat $tmp/slapd.pid`
+    exit 1;
+fi
+
+echo "done"
+}
+
+#
+# simply stops a background slapd daemon
+#
+stop_local_slapd()
+{
+   trap - EXIT
+   kill -INT `cat ${tmp}/slapd.pid`
+   sleep 5
 }
