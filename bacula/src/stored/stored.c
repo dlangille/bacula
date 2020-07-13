@@ -711,7 +711,7 @@ void *device_initialization(void *arg)
 
       /* Keep track of important events */
       events_send_msg(jcr, "SD0002", EVENTS_TYPE_DAEMON, "*Daemon*",
-                      get_first_port_host_order(me->sdaddrs),
+                      (intptr_t)get_first_port_host_order(me->sdaddrs),
                       "Device initialization %s", device->hdr.name);
 
       if (device->control_name && stat(device->control_name, &statp) < 0) {

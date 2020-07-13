@@ -48,7 +48,7 @@ extern bool init_done;
 
 /* Static variables */
 static char derrmsg[]     = "3900 Invalid command:";
-static char OKsetdebug[]  = "3000 OK setdebug=%ld trace=%ld options=%s tags=%s\n";
+static char OKsetdebug[]  = "3000 OK setdebug=%lld trace=%d options=%s tags=%s\n";
 static char invalid_cmd[] = "3997 Invalid command for a Director with Monitor directive enabled.\n";
 static char OK_bootstrap[]    = "3000 OK bootstrap\n";
 static char ERROR_bootstrap[] = "3904 Error bootstrap\n";
@@ -480,6 +480,8 @@ static bool setdebug_cmd(JCR *jcr)
 
    bee_setdebug_cmd_parse_options(jcr, options);
 
+   Dmsg6(150, "Level=%lld trace=%d hangup=%d blowup=%d options=%s tags=%s\n",
+         lvl, get_trace(), get_hangup(), get_blowup(), options, tags);
    return dir->fsend(OKsetdebug, lvl, trace_flag, options, tags);
 }
 
