@@ -297,24 +297,12 @@ public:
    explicit lock_guard(pthread_mutex_t &mutex, const char *file, int line) :
          m_mutex(mutex), file(file), line(line)
    {
-      #ifdef LOCKMGR_COMPLIANT
-         lmgr_p(&m_mutex);
-      #else
-         bthread_mutex_lock_p(&mutex, file, line);
-      #endif
+      P(m_mutex); /* constructor locks the mutex*/
    }
 
    ~lock_guard()
    {
-      #ifdef LOCKMGR_COMPLIANT
-         lmgr_v(&m_mutex);
-      #else
-         if (file != NULL) {
-            bthread_mutex_unlock_p(&m_mutex, file, line);
-         } else {
-            bthread_mutex_unlock_p(&m_mutex, __FILE__, __LINE__);
-         }
-      #endif
+      V(m_mutex); /* destructor unlocks the mutex*/
    }
 };
 
