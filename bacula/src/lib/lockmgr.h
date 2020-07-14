@@ -319,8 +319,8 @@ public:
 };
 
 // Do magic! Creates a unique name using the line number, this need two level
-#define _DO_JOIN( symbol1, symbol2 ) _DO_JOIN2( symbol1, symbol2 )
-#define _DO_JOIN2( symbol1, symbol2 ) symbol1##symbol2
+//#define _DO_JOIN( symbol1, symbol2 ) _DO_JOIN2( symbol1, symbol2 )
+//#define _DO_JOIN2( symbol1, symbol2 ) symbol1##symbol2
 
 /* You can check it by creating a variable with the expected name and see if the
  * compiler complain, for example
@@ -328,8 +328,12 @@ public:
  * > lock_guard lock_guard_123(mutex);
  */
 
-#define LOCK_GUARD(mutex) lock_guard _DO_JOIN(lock_guard_, __LINE__) (mutex, __FILE__, __LINE__)
+//FIXME: It creates a loop
+//#define LOCK_GUARD(mutex) lock_guard _DO_JOIN(lock_guard_, __LINE__) (mutex, __FILE__, __LINE__)
+
+#define LOCK_GUARD(mutex) lock_guard b_lg_mutex(mutex)
+
 // If you have collision anyway, use the "postfix" version with a name you have chosen
-#define LOCK_GUARD_POSTFIX(mutex, postfix) lock_guard _DO_JOIN2(lock_guard_, postfix) (mutex, __FILE__, __LINE__)
+//#define LOCK_GUARD_POSTFIX(mutex, postfix) lock_guard _DO_JOIN2(lock_guard_, postfix) (mutex, __FILE__, __LINE__)
 
 #endif  /* LOCKMGR_H */
