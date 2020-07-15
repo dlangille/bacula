@@ -1,0 +1,71 @@
+#!/bin/sh
+#
+# Check if proper message is displayed after setting debug options
+#
+
+TestName="debug-settings-test"
+log_setdebug=${cwd}/tmp/log_setdebug.out
+
+. scripts/functions
+
+scripts/cleanup
+scripts/copy-plugin-confs
+
+start_test
+
+# Director
+daemon=Director
+set_debugsettings "100" "1" "t" $daemon "cloud,network"
+run_bacula
+grep -E '1000 OK.*setdebug=100.*trace=1.*options=t.*tags=cloud,network' $log_setdebug > /dev/null
+if [ $? -ne 0 ]; then
+    print_debug "Wrong setdebug message for $daemon daemon!"
+    estat=1
+fi
+
+# Client daemon
+daemon=Client
+set_debugsettings "100" "1" "t" $daemon "cloud,network"
+run_bconsole
+grep -E '2000 OK.*setdebug=100.*trace=1.*options=t.*tags=cloud,network' $log_setdebug > /dev/null
+if [ $? -ne 0 ]; then
+    print_debug "Wrong setdebug message for $daemon daemon!"
+    estat=1
+fi
+
+# Storage daemon
+daemon=Storage
+set_debugsettings "100" "1" "t" $daemon "cloud,network"
+run_bconsole
+grep -E '3000 OK.*setdebug=100.*trace=1.*options=t.*tags=cloud,network' $log_setdebug > /dev/null
+if [ $? -ne 0 ]; then
+    print_debug "Wrong setdebug message for $daemon daemon!"
+    estat=1
+fi
+
+# All daemons at once
+daemon=""
+set_debugsettings "100" "1" "t" "$daemon" "cloud,network"
+run_bconsole
+grep -E '1000 OK.*setdebug=100.*trace=1.*options=t.*tags=cloud,network' $log_setdebug > /dev/null
+if [ $? -ne 0 ]; then
+    print_debug "Wrong setdebug message for Director when setting for all dameons at once!"
+    estat=1
+fi
+grep -E '2000 OK.*setdebug=100.*trace=1.*options=t.*tags=cloud,network' $log_setdebug > /dev/null
+if [ $? -ne 0 ]; then
+    print_debug "Wrong setdebug message for Client daemon when setting for all dameons at once!"
+    estat=1
+fi
+grep -E '3000 OK.*setdebug=100.*trace=1.*options=t.*tags=cloud,network' $log_setdebug > /dev/null
+if [ $? -ne 0 ]; then
+    print_debug "Wrong setdebug message for Storage daemon when setting for all dameons at once!"
+    estat=1
+fi
+
+bstat=0
+rstat=0
+
+stop_bacula
+
+end_test

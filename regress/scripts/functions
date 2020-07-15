@@ -99,6 +99,61 @@ start_test()
        set | awk '/^FORCE_/ { print $0 }'
        exit 1
    fi
+   if [ x$FORCE_SPOOL_ATTRIBUTES = xyes ]; then
+       $bperl -e 'add_attribute("$conf/bacula-dir.conf", "SpoolAttributes", "No", "Job")'
+       variant_name="${variant_name} NoSpoolAttributes"
+   fi
+   if [ x$FORCE_ENCRYPTION = xyes ]; then
+       $bperl -e 'setup_fd_encryption()'
+       variant_name="${variant_name} Encryption"
+   fi
+   if [ x$FORCE_TLS = xyes ]; then
+      local h=`hostname`
+      local file
+      for file in $conf/bacula-fd.conf $conf/bacula-dir.conf $conf/bacula-sd.conf $conf/bconsole.conf
+      do
+        sed "s/${h}-dir/localhost-dir/g" "$file" | sed "s/${h}-sd/localhost-sd/g" | sed "s/${h}-fd/localhost-fd/g" | sed "s/Address = ${h}/Address = localhost/ig"  > $tmp/1
+        mv $tmp/1 "$file"
+      done
+      $bperl -e 'setup_fd_tls("$conf/bacula-fd.conf")'
+      $bperl -e 'setup_sd_tls("$conf/bacula-sd.conf")'
+      $bperl -e 'setup_dir_tls("$conf/bacula-dir.conf")'
+      $bperl -e 'setup_cons_tls("$conf/bconsole.conf")'
+      variant_name="${variant_name} TLS"
+   fi
+   if [ x$FORCE_FDCALLS = xyes ]; then
+       $bperl -e 'setup_fdcallsdir()'
+       variant_name="${variant_name} FDcall"
+   fi
+   if [ x$FORCE_COLLECTOR = xyes ]; then
+       $bperl -e 'setup_collector("$conf/bacula-dir.conf", "dir")'
+       $bperl -e 'setup_collector("$conf/bacula-fd.conf", "fd")'
+       $bperl -e 'setup_collector("$conf/bacula-sd.conf", "sd")'
+       variant_name="${variant_name} Collector"
+   fi
+   if [ x$FORCE_EVENTS = xyes ]; then
+      $bperl -e "add_attribute('$conf/bacula-dir.conf', 'catalog', 'all,events', 'Messages')"
+      $bperl -e "add_attribute('$conf/bacula-dir.conf', 'append', '\"$working/bacula.log\" = all, !skipped,events', 'Messages')"
+   fi
+   reset_test
+}
+
+set_debugsettings()
+{
+   if [ -f $log_setdebug ]; then rm $log_setdebug; fi
+   if [ -z "$4" ]; then daemon_type=4; else daemon_type=""; fi
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+   @output /tmp/tempi
+   @$out $log_setdebug
+   setdebug level=$1 trace=$2 options=$3 $4 tags=$5
+   $daemon_type
+   quit
+END_OF_DATA
+}
+
+reset_test()
+{
+   variant_name="${variant_name}"
    ./test_starttime
    echo " "
    echo " "
