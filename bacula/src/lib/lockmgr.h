@@ -212,11 +212,15 @@ int bthread_kill(pthread_t thread, int sig,
 # define pP(x) lmgr_p(x)
 # define V(x)  lmgr_v(&(x))
 # define pV(x) lmgr_v(x)
+# define PFL(x, file, line)  lmgr_p(&(x))
+# define VFL(x, file, line)  lmgr_v(&(x))
 #else
 # define P(x)  bthread_mutex_lock_p(&(x), __FILE__, __LINE__)
 # define pP(x) bthread_mutex_lock_p((x), __FILE__, __LINE__)
 # define V(x)  bthread_mutex_unlock_p(&(x), __FILE__, __LINE__)
 # define pV(x) bthread_mutex_unlock_p((x), __FILE__, __LINE__)
+# define PFL(x, file, line)  bthread_mutex_lock_p(&(x), file, line)
+# define VFL(x, file, line)  bthread_mutex_unlock_p(&(x), file, line)
 # define pthread_create(a, b, c, d)      lmgr_thread_create(a,b,c,d)
 # define pthread_mutex_lock(x)           bthread_mutex_lock(x)
 # define pthread_mutex_unlock(x)         bthread_mutex_unlock(x)
@@ -254,6 +258,8 @@ int bthread_kill(pthread_t thread, int sig,
 # define pP(x) lmgr_p((x))
 # define V(x)  lmgr_v(&(x))
 # define pV(x) lmgr_v((x))
+# define PFL(x, file, line)  lmgr_p(&(x))
+# define VFL(x, file, line)  lmgr_v(&(x))
 # define BTHREAD_MUTEX_PRIORITY(p)      PTHREAD_MUTEX_INITIALIZER
 # define BTHREAD_MUTEX_NO_PRIORITY      PTHREAD_MUTEX_INITIALIZER
 # define BTHREAD_MUTEX_INITIALIZER      PTHREAD_MUTEX_INITIALIZER
@@ -297,18 +303,22 @@ public:
    explicit lock_guard(pthread_mutex_t &mutex, const char *file, int line) :
          m_mutex(mutex), file(file), line(line)
    {
-      P(m_mutex); /* constructor locks the mutex*/
+      PFL(m_mutex, file, line); /* constructor locks the mutex*/
    }
 
    ~lock_guard()
    {
-      V(m_mutex); /* destructor unlocks the mutex*/
+      if (file != NULL) {
+         VFL(m_mutex, file, line); /* file & line of where the mutex was locked */
+      } else {
+         V(m_mutex);
+      }
    }
 };
 
 // Do magic! Creates a unique name using the line number, this need two level
-//#define _DO_JOIN( symbol1, symbol2 ) _DO_JOIN2( symbol1, symbol2 )
-//#define _DO_JOIN2( symbol1, symbol2 ) symbol1##symbol2
+#define _DO_JOIN( symbol1, symbol2 ) _DO_JOIN2( symbol1, symbol2 )
+#define _DO_JOIN2( symbol1, symbol2 ) symbol1##symbol2
 
 /* You can check it by creating a variable with the expected name and see if the
  * compiler complain, for example
@@ -316,12 +326,11 @@ public:
  * > lock_guard lock_guard_123(mutex);
  */
 
-//FIXME: It creates a loop
-//#define LOCK_GUARD(mutex) lock_guard _DO_JOIN(lock_guard_, __LINE__) (mutex, __FILE__, __LINE__)
+#define LOCK_GUARD(mutex) lock_guard _DO_JOIN(lock_guard_, __LINE__) (mutex, __FILE__, __LINE__)
 
-#define LOCK_GUARD(mutex) lock_guard b_lg_mutex(mutex)
-
-// If you have collision anyway, use the "postfix" version with a name you have chosen
-//#define LOCK_GUARD_POSTFIX(mutex, postfix) lock_guard _DO_JOIN2(lock_guard_, postfix) (mutex, __FILE__, __LINE__)
+/* If you have a variable collision anyway, use the "postfix" version
+ * with a posfix name you have chosen
+ */
+#define LOCK_GUARD_POSTFIX(mutex, postfix) lock_guard _DO_JOIN2(lock_guard_, postfix) (mutex, __FILE__, __LINE__)
 
 #endif  /* LOCKMGR_H */
