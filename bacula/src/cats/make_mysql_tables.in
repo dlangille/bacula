@@ -88,7 +88,7 @@ CREATE TABLE Events
     EventsCode        TINYBLOB NOT NULL,
     EventsType        TINYBLOB NOT NULL,
     EventsTime        DATETIME,
-    EventsInsertTime  DATETIME DEFAULT NOW(),
+    EventsInsertTime  DATETIME,
     EventsDaemon        TINYBLOB NOT NULL,
     EventsSource      TINYBLOB NOT NULL,
     EventsRef         TINYBLOB NOT NULL,
