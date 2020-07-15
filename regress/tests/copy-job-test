@@ -8,6 +8,18 @@
 #
 # This script uses the virtual disk autochanger
 #
+# XPARAM SPOOLDATA_JOB=(default|yes|no)
+# enable SpoolData into the Job definition or let the default (aka
+# no SpoolData in the Job)
+# XPARAM SPOOLDATA_RUN=(default|yes|no)
+# enable spooldata=(yes|no) in the run command or let the default,
+# don't specify the spooldata option in the run command
+#
+# use it this way
+# ( for run in default no yes ; do for job in default no yes ; do SPOOLDATA_RUN=$run \
+# SPOOLDATA_JOB=$job REGRESS_DEBUG=1 tests/copy-job-test ; done ; done ) | \
+# egrep "SETUP|JobId 9: Spooling data"
+#
 TestName="copy-job-test"
 JobName=CopyJobSave
 . scripts/functions
@@ -18,9 +30,29 @@ scripts/copy-migration-confs
 echo "${cwd}/build" >${cwd}/tmp/file-list
 sed 's/migrate/copy/g' ${cwd}/bin/bacula-dir.conf > ${cwd}/tmp/1
 sed 's/Migrate/Copy/g' ${cwd}/tmp/1 > ${cwd}/bin/bacula-dir.conf
-
-
 change_jobname NightlySave $JobName
+
+SPOOLDATA_JOB=${SPOOLDATA_JOB:-default}
+if [ "$SPOOLDATA_JOB" = "yes" ] ; then
+   $bperl -e "add_attribute('$conf/bacula-dir.conf', 'SpoolData', 'yes', 'Job', 'copy-job')"
+elif [ "$SPOOLDATA_JOB" = "no" ] ; then
+   $bperl -e "add_attribute('$conf/bacula-dir.conf', 'SpoolData', 'no', 'Job', 'copy-job')"
+else
+   /bin/true # don't set the SpoolData directive
+fi
+
+SPOOLDATA_RUN=${SPOOLDATA_RUN:-default}
+if [ "$SPOOLDATA_RUN" = "yes" ] ; then
+   run_spooldata="spooldata=yes"
+   $bperl -e "add_attribute('$conf/bacula-dir.conf', 'SpoolData', 'yes', 'Job', 'copy-job')"
+elif [ "$SPOOLDATA_RUN" = "no" ] ; then
+   run_spooldata="spooldata=no"
+else
+   run_spooldata=""
+fi
+
+echo === SETUP === SPOOLDATA_JOB=$SPOOLDATA_JOB SPOOLDATA_RUN=$SPOOLDATA_RUN
+
 start_test
 
 #
@@ -49,7 +81,7 @@ list volumes
 @# should copy two jobs
 @#setdebug level=51 storage=DiskChanger
 @#setdebug level=100 storage=File tags=dedup,asx,network options=h
-run job=copy-job yes
+run job=copy-job $run_spooldata yes
 wait
 messages
 @#purge volume=FileVolume001
