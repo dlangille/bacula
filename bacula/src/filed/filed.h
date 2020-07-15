@@ -46,6 +46,7 @@
 #include  "fd_plugins.h"
 #include  "fd_snapshot.h"
 #include  "findlib/find.h"
+#include  "bacgpfs.h"
 #include  "bacl.h"
 #include  "bxattr.h"
 #include  "jcr.h"

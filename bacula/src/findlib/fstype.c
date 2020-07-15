@@ -30,6 +30,13 @@
 #include "find.h"
 #include <sys/types.h>
 #include <sys/stat.h>
+#if defined(HAVE_LINUX_OS) || defined(HAVE_FREEBSD_OS) || defined(HAVE_AIX_OS)
+  #include <paths.h>
+#endif
+#ifdef HAVE_DARWIN_OS
+  #include <sys/paths.h>
+#endif
+
 #ifdef HAVE_SUN_OS
   #include <sys/mnttab.h>
 #endif
@@ -85,7 +92,6 @@ void add_mtab_item(void *user_ctx, struct stat *st, const char *fstype,
    }
 }
 
-
 /*
  * These functions should be implemented for each OS
  *
@@ -98,6 +104,19 @@ void add_mtab_item(void *user_ctx, struct stat *st, const char *fstype,
 
 #include <sys/param.h>
 #include <sys/mount.h>
+
+/*
+ * simple return fs type magic number or zero when error
+ */
+uint32_t fstypeid(char *fname, FF_PKT *ff_pkt)
+{
+   struct statfs st;
+
+   if (statfs(fname, &st) == 0) {
+      return st.f_type;
+   }
+   return 0;
+}
 
 bool fstype(FF_PKT *ff_pkt, char *fs, int fslen)
 {
@@ -122,6 +141,19 @@ bool fstype(FF_PKT *ff_pkt, char *fs, int fslen)
 #define statvfs statfs
 #endif
 
+/*
+ * simple return fs type magic number or zero when error
+ */
+uint32_t fstypeid(char *fname, FF_PKT *ff_pkt)
+{
+   struct statvfs st;
+
+   if (statvfs(fname, &st) == 0) {
+      return st.f_type;
+   }
+   return 0;
+}
+
 bool fstype(FF_PKT *ff_pkt, char *fs, int fslen)
 {
    char *fname = ff_pkt->fname;
@@ -141,6 +173,23 @@ bool fstype(FF_PKT *ff_pkt, char *fs, int fslen)
 
 #include <sys/types.h>
 #include <sys/statvfs.h>
+
+/*
+ * TODO: RPK: is HP-UX version really working as I cannot find required API in HP-UX docs.
+ */
+
+/*
+ * simple return fs type magic number or zero when error
+ */
+uint32_t fstypeid(char *fname, FF_PKT *ff_pkt)
+{
+   struct statfs st;
+
+   if (statfs(fname, &st) == 0) {
+      return st.f_fsid;
+   }
+   return 0;
+}
 
 bool fstype(FF_PKT *ff_pkt, char *fs, int fslen)
 {
@@ -162,14 +211,27 @@ bool fstype(FF_PKT *ff_pkt, char *fs, int fslen)
 #include <sys/vfs.h>
 #include <mntent.h>
 
+
+/*
+ * simple return fs type magic number or zero when error
+ */
+uint32_t fstypeid(char *fname, FF_PKT *ff_pkt)
+{
+   struct statfs st;
+
+   if (statfs(fname, &st) == 0) {
+      return st.f_type;
+   }
+   return 0;
+}
+
 /*
  * Linux statfs() does not return the filesystem name type.  It
  *  only returns a binary fstype, so we must look up the type name
  *  in mtab.
  */
-bool fstype(FF_PKT *ff_pkt, char *fs, int fslen)
+bool fstype(char *fname, FF_PKT *ff_pkt, char *fs, int fslen)
 {
-   char *fname = ff_pkt->fname; /* fname is a better here than snap_fname */
    struct statfs st;
    const char *fstype;
    if (!fname) {
@@ -295,6 +357,19 @@ bool fstype(FF_PKT *ff_pkt, char *fs, int fslen)
 #include <sys/types.h>
 #include <sys/stat.h>
 
+/*
+ * simple return fs type magic number
+ */
+uint32_t fstypeid(char *fname, FF_PKT *ff_pkt)
+{
+   struct statvfs st;
+
+   if (statvfs(fname, &st) == 0) {
+      return st.f_fsid;
+   }
+   return 0;
+}
+
 bool fstype(FF_PKT *ff_pkt, char *fs, int fslen)
 {
    /* Solaris has the filesystem type name in the lstat packet */
@@ -307,11 +382,28 @@ bool fstype(FF_PKT *ff_pkt, char *fs, int fslen)
 #include <sys/stat.h>
 #include <sys/mount.h>
 
+/*
+ * TODO: RPK: Tru64 is already dead!
+ */
+
+/*
+ * simple return fs type magic number
+ */
+uint32_t fstypeid(char *fname, FF_PKT *ff_pkt)
+{
+   struct statfs st;
+
+   if (statfs((char *)fname, &st) == 0){
+      return st.f_type;
+   }
+   return 0;
+}
+
 bool fstype(FF_PKT *ff_pkt, char *fs, int fslen)
 {
    char *fname = ff_pkt->fname;
    struct statfs st;
-   if (statfs((char *)fname, &st) == 0) {
+   if (statfs((char *)fname, &st) == 0){
       switch (st.f_type) {
       /* Known good values */
       case 0xa:         bstrncpy(fs, "advfs", fslen); return true;        /* Tru64 AdvFS */
@@ -358,9 +450,14 @@ bool fstype(FF_PKT *ff_pkt, char *fs, int fslen)
 
 #else    /* No recognised OS */
 
+uint32_t fstypeid(char *fname, FF_PKT *ff_pkt)
+{
+   Dmsg0(10, "!!! fstypeid() not implemented for this OS. !!!\n");
+   return 0;
+}
+
 bool fstype(FF_PKT *ff_pkt, char *fs, int fslen)
 {
-   char *fname = ff_pkt->fname;
    Dmsg0(10, "!!! fstype() not implemented for this OS. !!!\n");
    return false;
 }
@@ -460,6 +557,51 @@ bool read_mtab(mtab_handler_t *mtab_handler, void *user_ctx)
 #endif /* HAVE_GETMNTINFO */
    return true;
 } 
+
+/*
+ * Parameter wrapper for fstype
+ */
+bool fstype(FF_PKT *ff_pkt, char *fs, int fslen)
+{
+   return fstype(ff_pkt->fname, ff_pkt, fs, fslen);
+}
+
+/*
+ * compares current fstype from FF_PKT for required fstype_name
+ */
+bool check_current_fs(char *fname, FF_PKT *ff, const char *fstype_name)
+{
+   if (fstype_name != NULL){
+      // read current fs name and compare it to required
+      char fsname[NAME_MAX];
+      if (fstype(fname, ff, fsname, NAME_MAX)){
+         return bstrcmp(fsname, fstype_name);
+      }
+   }
+   return false;
+};
+
+/*
+ * compares current fstype from FF_PKT for required fstype_magic
+ */
+bool check_current_fs(char *fname, FF_PKT *ff, uint32_t fstype_magic)
+{
+   uint32_t fsid;
+
+   if (fstype_magic > 0){
+      // get fsid for file
+      if (ff->last_fstype != 0){
+         fsid = ff->last_fstype;
+      } else {
+         fsid = fstypeid(fname, ff);
+         ff->last_fstype = fsid;
+      }
+      if (fsid != 0){
+         return fsid == fstype_magic;
+      }
+   }
+   return false;
+}
 
 #ifdef TEST_PROGRAM
 int main(int argc, char **argv)

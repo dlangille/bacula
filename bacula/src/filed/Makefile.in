@@ -25,6 +25,7 @@ GETTEXT_LIBS = @LIBINTL@
 
 AFS_CFLAGS = @AFS_CFLAGS@
 AFS_LIBS = @AFS_LIBS@
+GPFS_CFLAGS = @GPFS_CFLAGS@
 ACLOBJS = @ACLOBJS@
 XATTROBJS = @XATTROBJS@
 IOKITLIBS = @IOKITLIBS@
@@ -37,7 +38,7 @@ dummy:
 #
 SVRSRCS = filed.c authenticate.c backup.c crypto.c \
 	  win_efs.c estimate.c fdcollect.c \
-	  fd_plugins.c accurate.c \
+	  fd_plugins.c accurate.c bacgpfs.c \
 	  filed_conf.c runres_conf.c heartbeat.c hello.c job.c fd_snapshot.c \
 	  restore.c status.c verify.c verify_vol.c fdcallsdir.c suspend.c $(EXTRA_SRCS) \
 	  $(ACLOBJS) $(XATTROBJS)
@@ -50,7 +51,7 @@ JSONOBJS = bfdjson.o filed_conf.o runres_conf.o
 EXTRAOBJS = @OBJLIST@
 
 CAP_LIBS = @CAP_LIBS@
-FDLIBS = @FDLIBS@		  # extra libs for File daemon
+FDLIBS = @FDLIBS@	     # extra libs for File daemon
 ZLIBS = @ZLIBS@
 LZO_LIBS = @LZO_LIBS@
 LZO_INC= @LZO_INC@
@@ -74,9 +75,17 @@ all: Makefile @WIN32@ bacula-fd @STATIC_FD@ bfdjson
 	@echo "==== Make of filed is good ===="
 	@echo " "
 
-bacl.o: bacl.c
+bacgpfs.o: bacgpfs.c bacgpfs.h
 	@echo "Compiling $<"
-	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) $(LZO_INC) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) $(AFS_CFLAGS) $<
+	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) $(LZO_INC) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) $(AFS_CFLAGS) $(GPFS_CFLAGS) $<
+
+bacl.o: bacl.c bacgpfs.o
+	@echo "Compiling $<"
+	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) $(LZO_INC) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) $(AFS_CFLAGS)$<
+
+bxattr.o: bxattr.c bacgpfs.o
+	@echo "Compiling $<"
+	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) $(LZO_INC) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS)$<
 
 win32/winlib.a:
 	@if test -f win32/Makefile -a "${GMAKE}" != "none"; then \

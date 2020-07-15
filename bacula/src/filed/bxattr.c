@@ -102,6 +102,17 @@
 /* check if XATTR support is enabled */
 #if defined(HAVE_XATTR)
 
+#if defined(HAVE_GPFS_XATTR)
+   #include <gpfs.h>
+   static const bool have_gpfs_xattr_flag = true;
+#else
+   static const bool have_gpfs_xattr_flag = false;
+#endif
+
+#ifndef GPFS_SUPER_MAGIC
+#define GPFS_SUPER_MAGIC     0x47504653
+#endif
+
 /*
  * This is a constructor of the base BXATTR class which is OS independent
  *
@@ -204,7 +215,8 @@ POOLMEM * BXATTR::set_content(char *data, int len){
  *    bRC_BXATTR_skip - cannot verify device - no file found
  *    bRC_BXATTR_inval - invalid input data
  */
-bRC_BXATTR BXATTR::check_dev (JCR *jcr){
+bRC_BXATTR BXATTR::check_dev (JCR *jcr)
+{
 
    int lst;
    struct stat st;
@@ -245,7 +257,14 @@ bRC_BXATTR BXATTR::check_dev (JCR *jcr){
  * out:
  *    internal flags status set
  */
-void BXATTR::check_dev (JCR *jcr, FF_PKT *ff, uint32_t dev){
+void BXATTR::check_dev (JCR *jcr, FF_PKT *ff, uint32_t dev)
+{
+
+#if defined(HAVE_GPFS_XATTR)
+   static const bool have_gpfs_xattr_flag = true;
+#else
+   static const bool have_gpfs_xattr_flag = false;
+#endif
 
    /* sanity check of input variables */
    if (jcr == NULL || jcr->last_fname == NULL){
@@ -254,7 +273,12 @@ void BXATTR::check_dev (JCR *jcr, FF_PKT *ff, uint32_t dev){
 
    if (current_dev != dev){
       flags = BXATTR_FLAG_NONE;
-      set_flag(BXATTR_FLAG_NATIVE);
+      jcr->ff->last_fstype = 0;
+      if (have_gpfs_xattr_flag && check_current_fs(jcr->last_fname, jcr->ff, GPFS_SUPER_MAGIC)){
+         set_flag(BXATTR_FLAG_GPFS);
+      } else {
+         set_flag(BXATTR_FLAG_NATIVE);
+      }
       current_dev = dev;
       /* We can check for some specific ACLs depending on the FS type */
       if (!fstype(ff, current_fs, sizeof(current_fs))) {
@@ -275,8 +299,8 @@ void BXATTR::check_dev (JCR *jcr, FF_PKT *ff, uint32_t dev){
  *    bRC_BXATTR_fatal - when we can't send data to the SD
  *    bRC_BXATTR_ok - send finish without errors
  */
-bRC_BXATTR BXATTR::send_xattr_stream(JCR *jcr, int stream){
-
+bRC_BXATTR BXATTR::send_xattr_stream(JCR *jcr, int stream)
+{
    BSOCK * sd;
    POOLMEM * msgsave;
 #ifdef FD_NO_SEND_TEST
@@ -300,11 +324,6 @@ bRC_BXATTR BXATTR::send_xattr_stream(JCR *jcr, int stream){
 
    /* send the buffer to the storage daemon */
    Dmsg1(400, "Backing up XATTR: %i\n", content_len);
-#if 0
-   POOL_MEM tmp(PM_FNAME);
-   pm_memcpy(tmp, content, content_len);
-   Dmsg2(400, "Backing up XATTR: (%i) <%s>\n", strlen(tmp.addr()), tmp.c_str());
-#endif
    msgsave = sd->msg;
    sd->msg = content;
    sd->msglen = content_len;
@@ -336,9 +355,9 @@ bRC_BXATTR BXATTR::send_xattr_stream(JCR *jcr, int stream){
  *    bRC_BXATTR_ok - backup finish without problems
  *    bRC_BXATTR_error - when you can't backup xattr data because some error
  */
-bRC_BXATTR BXATTR::backup_xattr (JCR *jcr, FF_PKT *ff_pkt){
-
-#if !defined(HAVE_XATTR)
+bRC_BXATTR BXATTR::backup_xattr (JCR *jcr, FF_PKT *ff_pkt)
+{
+#if !defined(HAVE_XATTR) && !defined(HAVE_GPFS_XATTR)
    Jmsg(jcr, M_FATAL, 0, "XATTR backup requested but not configured in Bacula.\n");
    return bRC_BXATTR_fatal;
 #else
@@ -359,6 +378,15 @@ bRC_BXATTR BXATTR::backup_xattr (JCR *jcr, FF_PKT *ff_pkt){
 
          check_dev(jcr, ff_pkt, ff_pkt->statp.st_dev);
 
+#if defined(HAVE_GPFS_XATTR)
+         if (flags & BXATTR_FLAG_GPFS){
+            Dmsg0(400, "make GPFS XATTR call\n");
+            rc = gpfs_backup_xattr(jcr, ff_pkt);
+            goto bail_out;
+         }
+#endif
+
+#if defined(HAVE_XATTR)
          if (flags & BXATTR_FLAG_NATIVE){
             Dmsg0(400, "make Native XATTR call\n");
             rc = os_backup_xattr(jcr, ff_pkt);
@@ -366,8 +394,12 @@ bRC_BXATTR BXATTR::backup_xattr (JCR *jcr, FF_PKT *ff_pkt){
             /* skip xattr backup */
             return bRC_BXATTR_ok;
          }
-
+#endif
       }
+
+#ifdef HAVE_GPFS_XATTR
+   bail_out:
+#endif
 
       if (rc == bRC_BXATTR_error){
          if (xattr_nr_errors < XATTR_MAX_ERROR_PRINT_PER_JOB){
@@ -431,6 +463,12 @@ bRC_BXATTR BXATTR::restore_xattr (JCR *jcr, int stream, char *data, uint32_t len
       switch (stream){
          case STREAM_XACL_PLUGIN_XATTR:
             return restore_plugin_xattr(jcr);
+
+#if defined(HAVE_GPFS_XATTR)
+         case STREAM_XACL_GPFS_XATTR:
+            return gpfs_restore_xattr(jcr, stream);
+#endif
+
          default:
             if (flags & BXATTR_FLAG_NATIVE){
                for (a = 0; xattr_streams[a] > 0; a++){
@@ -440,6 +478,9 @@ bRC_BXATTR BXATTR::restore_xattr (JCR *jcr, int stream, char *data, uint32_t len
                   }
                }
             } else {
+               /*
+                * Increment error count but don't log an error again for the same filesystem.
+                */
                inc_xattr_errors();
                return bRC_BXATTR_ok;
             }
@@ -512,8 +553,8 @@ bool BXATTR::check_xattr_skiplists (JCR *jcr, FF_PKT *ff_pkt, char * name){
  *    bRC_BXATTR_error/fatal - an error or fatal error occurred
  *    bRC_BXATTR_inval - input variables was invalid
  */
-bRC_BXATTR BXATTR::generic_backup_xattr (JCR *jcr, FF_PKT *ff_pkt){
-
+bRC_BXATTR BXATTR::generic_backup_xattr (JCR *jcr, FF_PKT *ff_pkt)
+{
    bRC_BXATTR rc;
    POOLMEM *xlist;
    uint32_t xlen;
@@ -629,6 +670,22 @@ bailout:
 };
 
 /*
+ * Performs GPFS XATTR backup using FS specific API.
+ *
+ * in:
+ *    jcr - Job Control Record
+ *    ff_pkt - file to backup control package
+ * out:
+ *    bRC_BXATTR_ok - xattr backup ok or no xattr to backup found
+ *    bRC_BXATTR_error/fatal - an error or fatal error occurred
+ *    bRC_BXATTR_inval - input variables was invalid
+ */
+bRC_BXATTR BXATTR::gpfs_backup_xattr (JCR *jcr, FF_PKT *ff_pkt)
+{
+   return bRC_BXATTR_error;
+}
+
+/*
  * Performs a generic XATTR restore using OS specific methods for
  * setting XATTR data on file.
  *
@@ -641,8 +698,8 @@ bailout:
  *    bRC_BXATTR_fatal - was a fatal error during xattr restore
  *    bRC_BXATTR_inval - input variables was invalid
  */
-bRC_BXATTR BXATTR::generic_restore_xattr (JCR *jcr, int stream){
-
+bRC_BXATTR BXATTR::generic_restore_xattr (JCR *jcr, int stream)
+{
    bRC_BXATTR rc = bRC_BXATTR_ok;
    alist *xattr_list;
    BXATTR_xattr *xattr;
@@ -686,6 +743,24 @@ bailout:
    }
    return rc;
 };
+
+/*
+ * Performs a GPFS XATTR restore using FS specific API.
+ *
+ * in:
+ *    jcr - Job Control Record
+ *    stream - a stream number to restore
+ * out:
+ *    bRC_BXATTR_ok - restore of acl's was successful
+ *    bRC_BXATTR_error - was an error during xattr restore
+ *    bRC_BXATTR_fatal - was a fatal error during xattr restore
+ *    bRC_BXATTR_inval - input variables was invalid
+ */
+bRC_BXATTR BXATTR::gpfs_restore_xattr (JCR *jcr, int stream)
+{
+
+   return bRC_BXATTR_error;
+}
 
 /*
  * Perform a generic XATTR backup using a plugin. It calls the plugin API to

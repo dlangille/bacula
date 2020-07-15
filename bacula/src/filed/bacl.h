@@ -25,8 +25,8 @@
  *
  */
 
-#ifndef __BACL_H_
-#define __BACL_H_
+#ifndef _BACL_H_
+#define _BACL_H_
 
 /* check if ACL support is enabled */
 #if defined(HAVE_ACL)
@@ -67,6 +67,7 @@ typedef enum {
 #define BACL_FLAG_NATIVE      0x01
 #define BACL_FLAG_AFS         0x02
 #define BACL_FLAG_PLUGIN      0x04
+#define BACL_FLAG_GPFS        0x08
 
 /*
  * Ensure we have none
@@ -78,9 +79,9 @@ typedef enum {
 /*
  * Basic ACL class which is a foundation for any other OS specific implementation.
  *
- * This class cannot be used directly as it is an abstraction class with a lot 
- * of virtual methods laying around. As a basic class it has all public API 
- * available for backup and restore functionality. As a bonus it handles all 
+ * This class cannot be used directly as it is an abstraction class with a lot
+ * of virtual methods laying around. As a basic class it has all public API
+ * available for backup and restore functionality. As a bonus it handles all
  * ACL generic functions and OS independent API, i.e. for AFS ACL or Plugins ACL
  * (future functionality).
  */
@@ -108,7 +109,7 @@ private:
     *    bRC_BACL_ok - backup performed without problems
     *    any other - some error occurred
     */
-   virtual bRC_BACL os_backup_acl (JCR *jcr, FF_PKT *ff_pkt){return bRC_BACL_fatal;};
+   virtual bRC_BACL os_backup_acl (JCR *jcr, FF_PKT *ff_pkt) { return bRC_BACL_fatal; };
 
    /**
     * Perform OS specific ACL restore. Runtime is called only when stream is supported by OS.
@@ -119,7 +120,7 @@ private:
     *    bRC_BACL_ok - backup performed without problems
     *    any other - some error occurred
     */
-   virtual bRC_BACL os_restore_acl (JCR *jcr, int stream, char *content, uint32_t length){return bRC_BACL_fatal;};
+   virtual bRC_BACL os_restore_acl (JCR *jcr, int stream, char *content, uint32_t length) { return bRC_BACL_fatal; };
 
    /**
     * Low level OS specific runtime to get ACL data from file. The ACL data is set in internal content buffer.
@@ -131,7 +132,7 @@ private:
     *    bRC_BACL_ok -
     *    bRC_BACL_error/fatal - an error or fatal error occurred
     */
-   virtual bRC_BACL os_get_acl (JCR *jcr, BACL_type bacltype){return bRC_BACL_fatal;};
+   virtual bRC_BACL os_get_acl (JCR *jcr, BACL_type bacltype) { return bRC_BACL_fatal; };
 
    /**
     * Low level OS specific runtime to set ACL data on file.
@@ -145,11 +146,12 @@ private:
     *    bRC_BACL_ok -
     *    bRC_BACL_error/fatal - an error or fatal error occurred
     */
-   virtual bRC_BACL os_set_acl (JCR *jcr, BACL_type bacltype, char *content, uint32_t length){return bRC_BACL_fatal;};
+   virtual bRC_BACL os_set_acl (JCR *jcr, BACL_type bacltype, char *content, uint32_t length) { return bRC_BACL_fatal; };
 
    void inc_acl_errors(){ acl_nr_errors++;};
    bRC_BACL check_dev (JCR *jcr);
    void check_dev (JCR *jcr, FF_PKT *ff, uint32_t dev);
+   // bRC_BACL gpfs_backup_acl_data(JCR *jcr, FF_PKT *ff_pkt, unsigned char acl_type);
 
 public:
    BACL ();
@@ -186,10 +188,12 @@ public:
    bRC_BACL afs_restore_acl (JCR *jcr, int stream);
    bRC_BACL backup_plugin_acl (JCR *jcr, FF_PKT *ff_pkt);
    bRC_BACL restore_plugin_acl (JCR *jcr);
+   bRC_BACL gpfs_backup_acl (JCR *jcr, FF_PKT *ff_pkt);
+   bRC_BACL gpfs_restore_acl (JCR *jcr, int stream);
 };
 
 void *new_bacl();
 
 #endif /* HAVE_ACL */
 
-#endif /* __BACL_H_ */
+#endif /* _BACL_H_ */

@@ -25,8 +25,8 @@
  *
  */
 
-#ifndef __BXATTR_H_
-#define __BXATTR_H_
+#ifndef _BXATTR_H_
+#define _BXATTR_H_
 
 /* check if XATTR support is enabled */
 #if defined(HAVE_XATTR)
@@ -45,23 +45,24 @@
  * (greater or equal to zero).
  */
 enum bRC_BXATTR {
-   bRC_BXATTR_inval = -3,       // input data invalid
-   bRC_BXATTR_fatal = -2,       // a fatal error
-   bRC_BXATTR_error = -1,       // standard error
-   bRC_BXATTR_ok    = 0,        // success
-   bRC_BXATTR_skip  = 1,        // processing should skip current runtime
-   bRC_BXATTR_cont  = 2         // processing should skip current element
-                                // and continue with next one
+   bRC_BXATTR_inval           = -3, // input data invalid
+   bRC_BXATTR_fatal           = -2, // a fatal error
+   bRC_BXATTR_error           = -1, // standard error
+   bRC_BXATTR_ok              = 0,  // success
+   bRC_BXATTR_skip            = 1,  // processing should skip current runtime
+   bRC_BXATTR_cont            = 2   // processing should skip current element
+                                    // and continue with next one
 };
 
 /*
  * Flags which control what XATTR engine
  * to use for backup/restore
  */
-#define BXATTR_FLAG_NONE        0
-#define BXATTR_FLAG_NATIVE      0x01
-#define BXATTR_FLAG_AFS         0x02
-#define BXATTR_FLAG_PLUGIN      0x04
+#define BXATTR_FLAG_NONE         0
+#define BXATTR_FLAG_NATIVE       0x01
+#define BXATTR_FLAG_AFS          0x02
+#define BXATTR_FLAG_PLUGIN       0x04
+#define BXATTR_FLAG_GPFS         0x08
 
 /*
  * Extended attribute (xattr) list element.
@@ -225,10 +226,12 @@ public:
    bRC_BXATTR generic_restore_xattr (JCR *jcr, int stream);
    bRC_BXATTR backup_plugin_xattr (JCR *jcr, FF_PKT *ff_pkt);
    bRC_BXATTR restore_plugin_xattr (JCR *jcr);
+   bRC_BXATTR gpfs_backup_xattr (JCR *jcr, FF_PKT *ff_pkt);
+   bRC_BXATTR gpfs_restore_xattr (JCR *jcr, int stream);
 };
 
 void *new_bxattr();
 
 #endif /* HAVE_XATTR */
 
-#endif /* __BXATTR_H_ */
+#endif /* _BXATTR_H_ */

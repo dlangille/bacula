@@ -81,9 +81,22 @@
 #include "bacula.h"
 #include "filed.h"
 #include "fd_plugins.h"
+#include "bacgpfs.h"
 
 /* check if ACL support is enabled */
 #if defined(HAVE_ACL)
+
+#if defined(HAVE_AFS_ACL)
+   static const bool have_afs_acl_flag = true;
+#else
+   static const bool have_afs_acl_flag = false;
+#endif
+
+#if defined(HAVE_GPFS_ACL)
+   static const bool have_gpfs_acl_flag = true;
+#else
+   static const bool have_gpfs_acl_flag = false;
+#endif
 
 /*
  * This is a constructor of the base BACL class which is OS independent
@@ -226,8 +239,8 @@ bRC_BACL BACL::check_dev (JCR *jcr){
  * out:
  *    internal flags status set
  */
-void BACL::check_dev (JCR *jcr, FF_PKT *ff, uint32_t dev){
-
+void BACL::check_dev (JCR *jcr, FF_PKT *ff, uint32_t dev)
+{
    /* sanity check of input variables */
    if (jcr == NULL || jcr->last_fname == NULL){
       return;
@@ -235,16 +248,13 @@ void BACL::check_dev (JCR *jcr, FF_PKT *ff, uint32_t dev){
 
    if (current_dev != dev){
       flags = BACL_FLAG_NONE;
-#if defined(HAVE_AFS_ACL)
-      /* handle special fs: AFS */
-      if (fstype_equals(jcr->last_fname, "afs")){
+      if (have_afs_acl_flag && check_current_fs(jcr->last_fname, jcr->ff, "afs")){
          set_flag(BACL_FLAG_AFS);
+      } else if (have_gpfs_acl_flag && check_current_fs(jcr->last_fname, jcr->ff, GPFS_SUPER_MAGIC)){
+         set_flag(BACL_FLAG_GPFS);
       } else {
          set_flag(BACL_FLAG_NATIVE);
       }
-#else
-      set_flag(BACL_FLAG_NATIVE);
-#endif
       current_dev = dev;
    }
 };
@@ -285,7 +295,7 @@ bRC_BACL BACL::send_acl_stream(JCR *jcr, int stream){
    }
 
    /* send the buffer to the storage daemon */
-   Dmsg1(400, "Backing up ACL: %i\n", content_len);
+   Dmsg1(400, "Backing up ACL size: %i\n", content_len);
 #if 0
    POOL_MEM tmp(PM_FNAME);
    pm_memcpy(tmp, content, content_len);
@@ -308,7 +318,7 @@ bRC_BACL BACL::send_acl_stream(JCR *jcr, int stream){
       return bRC_BACL_fatal;
    }
 
-   Dmsg1(200, "ACL of file: %s successfully backed up!\n", jcr->last_fname);
+   Dmsg1(200, "ACL of: %s successfully backed up!\n", jcr->last_fname);
    return bRC_BACL_ok;
 };
 
@@ -325,14 +335,10 @@ bRC_BACL BACL::send_acl_stream(JCR *jcr, int stream){
  */
 bRC_BACL BACL::backup_acl (JCR *jcr, FF_PKT *ff_pkt)
 {
-#if !defined(HAVE_ACL) && !defined(HAVE_AFS_ACL)
-   Jmsg(jcr, M_FATAL, 0, "ACL backup requested but not configured in Bacula.\n");
-   return bRC_BACL_fatal;
-#else
    /* sanity check of input variables and verify if engine is enabled */
    if (acl_ena && jcr != NULL && ff_pkt != NULL){
       /* acl engine enabled, proceed */
-      bRC_BACL rc;
+      bRC_BACL rc = bRC_BACL_ok;
 
       jcr->errmsg[0] = 0;
       /* check if we have a plugin generated backup */
@@ -354,7 +360,14 @@ bRC_BACL BACL::backup_acl (JCR *jcr, FF_PKT *ff_pkt)
          }
 #endif
 
-#if defined(HAVE_ACL)
+#if defined(HAVE_GPFS_ACL)
+         if (flags & BACL_FLAG_GPFS){
+            Dmsg0(400, "make GPFS ACL call\n");
+            rc = gpfs_backup_acl(jcr, ff_pkt);
+            goto bail_out;
+         }
+#endif
+
          if (flags & BACL_FLAG_NATIVE){
             Dmsg0(400, "make Native ACL call\n");
             rc = os_backup_acl(jcr, ff_pkt);
@@ -362,12 +375,13 @@ bRC_BACL BACL::backup_acl (JCR *jcr, FF_PKT *ff_pkt)
             /* skip acl backup */
             return bRC_BACL_ok;
          }
-#endif
       }
-#if defined(HAVE_AFS_ACL)
+#if defined(HAVE_AFS_ACL) || defined(HAVE_GPFS_ACL)
    bail_out:
 #endif
-      if (rc == bRC_BACL_error){
+
+      // TODO: This routine should be optimized
+      if (rc != bRC_BACL_ok){
          if (acl_nr_errors < ACL_MAX_ERROR_PRINT_PER_JOB){
             if (!jcr->errmsg[0]){
                Jmsg(jcr, M_WARNING, 0, "No OS ACL configured.\n");
@@ -380,8 +394,8 @@ bRC_BACL BACL::backup_acl (JCR *jcr, FF_PKT *ff_pkt)
       }
       return rc;
    }
+
    return bRC_BACL_ok;
-#endif
 };
 
 /*
@@ -399,10 +413,6 @@ bRC_BACL BACL::backup_acl (JCR *jcr, FF_PKT *ff_pkt)
  */
 bRC_BACL BACL::restore_acl (JCR *jcr, int stream, char *data, uint32_t length)
 {
-#if !defined(HAVE_ACL) && !defined(HAVE_AFS_ACL)
-   Jmsg(jcr, M_FATAL, 0, "ACL restore requested but not configured in Bacula.\n");
-   return bRC_BACL_fatal;
-#else
    /* sanity check of input variables and verify if engine is enabled */
    if (acl_ena && jcr != NULL && data != NULL){
       /* acl engine enabled, proceed */
@@ -427,8 +437,11 @@ bRC_BACL BACL::restore_acl (JCR *jcr, int stream, char *data, uint32_t length)
       set_content(data, length);
 
       switch (stream){
+         case STREAM_XACL_PLUGIN_ACL:
+            return restore_plugin_acl(jcr);
+
 #if defined(HAVE_AFS_ACL)
-         case STREAM_BACL_AFS_TEXT:
+         case STREAM_XACL_AFS_TEXT:
             if (flags & BACL_FLAG_AFS){
                return afs_restore_acl(jcr, stream);
             } else {
@@ -439,18 +452,33 @@ bRC_BACL BACL::restore_acl (JCR *jcr, int stream, char *data, uint32_t length)
                return bRC_BACL_ok;
             }
 #endif
-#if defined(HAVE_ACL)
+
+#if defined(HAVE_GPFS_ACL)
+         case STREAM_XACL_GPFS_ACL_ACCESS:
+         case STREAM_XACL_GPFS_ACL_DEFAULT:
+            if (flags & BACL_FLAG_GPFS){
+               return gpfs_restore_acl(jcr, stream);
+            } else {
+               /*
+                * Increment error count but don't log an error again for the same filesystem.
+                */
+               inc_acl_errors();
+               return bRC_BACL_ok;
+            }
+#endif
+
          case STREAM_UNIX_ACCESS_ACL:
          case STREAM_UNIX_DEFAULT_ACL:
             if (flags & BACL_FLAG_NATIVE){
                return os_restore_acl(jcr, stream, content, content_len);
             } else {
+               /*
+                * Increment error count but don't log an error again for the same filesystem.
+                */
                inc_acl_errors();
                return bRC_BACL_ok;
             }
             break;
-         case STREAM_XACL_PLUGIN_ACL:
-            return restore_plugin_acl(jcr);
          default:
             if (flags & BACL_FLAG_NATIVE){
                Dmsg0(400, "make Native ACL call\n");
@@ -465,21 +493,20 @@ bRC_BACL BACL::restore_acl (JCR *jcr, int stream, char *data, uint32_t length)
                   }
                }
             } else {
+               /*
+                * Increment error count but don't log an error again for the same filesystem.
+                */
                inc_acl_errors();
                return bRC_BACL_ok;
             }
             break;
-#else
-         default:
-            break;
-#endif
       }
       /* cannot find a valid stream to support */
       Qmsg2(jcr, M_WARNING, 0, _("Can't restore ACLs of %s - incompatible acl stream encountered - %d\n"), jcr->last_fname, stream);
       return bRC_BACL_error;
    }
+
    return bRC_BACL_ok;
-#endif
 };
 
 /*
@@ -525,6 +552,48 @@ bRC_BACL BACL::generic_backup_acl (JCR *jcr, FF_PKT *ff_pkt)
 };
 
 /*
+ * Performs a GPFS ACL backup using FS specific API.
+ *
+ * in:
+ *    jcr - Job Control Record
+ *    ff_pkt - file to backup control package
+ * out:
+ *    bRC_BACL_ok - backup of acl's was successful
+ *    bRC_BACL_fatal - was an error during acl backup
+ */
+bRC_BACL BACL::gpfs_backup_acl (JCR *jcr, FF_PKT *ff_pkt)
+{
+   /* sanity check of input variables */
+   if (jcr == NULL || ff_pkt == NULL){
+      return bRC_BACL_inval;
+   }
+
+   if (GPFSLIB::gpfs_backup_acl_data(jcr, ff_pkt, GPFS_ACL_TYPE_ACCESS, content, content_len) == bRC_GPFSLIB_fatal){
+      return bRC_BACL_fatal;
+   }
+
+   if (content_len > 0){
+      if (send_acl_stream(jcr, STREAM_XACL_GPFS_ACL_ACCESS) == bRC_BACL_fatal){
+         return bRC_BACL_fatal;
+      }
+   }
+
+   if (ff_pkt->type == FT_DIREND){
+      if (GPFSLIB::gpfs_backup_acl_data(jcr, ff_pkt, GPFS_ACL_TYPE_DEFAULT, content, content_len) == bRC_GPFSLIB_fatal){
+         return bRC_BACL_fatal;
+      }
+      if (content_len > 0){
+         if (send_acl_stream(jcr, STREAM_XACL_GPFS_ACL_DEFAULT) == bRC_BACL_fatal){
+            return bRC_BACL_fatal;
+         }
+      }
+   }
+
+   return bRC_BACL_error;
+};
+
+
+/*
  * Performs a generic ACL restore using OS specific methods for
  * setting acl data on file.
  *
@@ -537,8 +606,8 @@ bRC_BACL BACL::generic_backup_acl (JCR *jcr, FF_PKT *ff_pkt)
  *    bRC_BACL_fatal - was a fatal error during acl restore or input data
  *                     is invalid
  */
-bRC_BACL BACL::generic_restore_acl (JCR *jcr, int stream){
-
+bRC_BACL BACL::generic_restore_acl (JCR *jcr, int stream)
+{
    unsigned int count;
 
    /* sanity check of input variables */
@@ -566,6 +635,78 @@ bRC_BACL BACL::generic_restore_acl (JCR *jcr, int stream){
    }
    return bRC_BACL_error;
 };
+
+#if defined(HAVE_GPFS_ACL)
+/*
+ * Performs a GPFS ACL backup using FS specific API.
+ *
+ * in:
+ *    jcr - Job Control Record
+ *    ff_pkt - file to backup control package
+ * out:
+ *    bRC_BACL_ok - backup of acl's was successful
+ *    bRC_BACL_fatal - was an error during acl backup
+ */
+bRC_BACL BACL::gpfs_backup_acl (JCR *jcr, FF_PKT *ff_pkt)
+{
+   /* sanity check of input variables */
+   if (jcr == NULL || ff_pkt == NULL){
+      return bRC_BACL_inval;
+   }
+
+   if (GPFSLIB::gpfs_backup_acl_data(jcr, ff_pkt, GPFS_ACL_TYPE_ACCESS, content, content_len) != bRC_GPFSLIB_ok){
+      return bRC_BACL_fatal;
+   }
+
+   if (content_len > 0){
+      if (send_acl_stream(jcr, STREAM_XACL_GPFS_ACL_ACCESS) == bRC_BACL_fatal){
+         return bRC_BACL_fatal;
+      }
+   }
+
+   if (ff_pkt->type == FT_DIREND){
+      if (GPFSLIB::gpfs_backup_acl_data(jcr, ff_pkt, GPFS_ACL_TYPE_DEFAULT, content, content_len) != bRC_GPFSLIB_ok){
+         return bRC_BACL_fatal;
+      }
+
+      if (content_len > 0){
+         if (send_acl_stream(jcr, STREAM_XACL_GPFS_ACL_DEFAULT) == bRC_BACL_fatal){
+            return bRC_BACL_fatal;
+         }
+      }
+   }
+
+   return bRC_BACL_ok;
+};
+
+/*
+ * Performs a GPFS ACL restore using FS specific API.
+ *
+ * in:
+ *    jcr - Job Control Record
+ *    stream - a stream number to restore
+ * out:
+ *    bRC_BACL_ok - restore of acl's was successful
+ *    bRC_BACL_error - was an error during acl restore
+ *    bRC_BACL_fatal - was a fatal error during acl restore or input data
+ *                     is invalid
+ */
+bRC_BACL BACL::gpfs_restore_acl (JCR *jcr, int stream)
+{
+   /* sanity check of input variables */
+   if (jcr == NULL){
+      return bRC_BACL_inval;
+   }
+
+   if (GPFSLIB::gpfs_restore_acl_data(jcr, stream, content, content_len) != bRC_GPFSLIB_ok){
+      /* error */
+      return bRC_BACL_error;
+   }
+
+   return bRC_BACL_ok;
+};
+#endif
+
 
 /*
  * Perform a generic ACL backup using a plugin. It calls the plugin API to
@@ -672,8 +813,8 @@ long pioctl(char *pathp, long opcode, struct ViceIoctl *blobp, int follow);
  *    bRC_BACL_ok - backup finish without problems
  *    bRC_BACL_error - when you can't backup acl data because some error
  */
-bRC_BACL BACL::afs_backup_acl (JCR *jcr, FF_PKT *ff_pkt){
-
+bRC_BACL BACL::afs_backup_acl (JCR *jcr, FF_PKT *ff_pkt)
+{
    int rc;
    struct ViceIoctl vip;
    char data[BUFSIZ];
@@ -715,8 +856,8 @@ bRC_BACL BACL::afs_backup_acl (JCR *jcr, FF_PKT *ff_pkt){
  *    bRC_BACL_ok - backup finish without problems
  *    bRC_BACL_error - when you can't backup acl data because some error
  */
-bRC_BACL BACL::afs_restore_acl (JCR *jcr, int stream){
-
+bRC_BACL BACL::afs_restore_acl (JCR *jcr, int stream)
+{
    int rc;
    struct ViceIoctl vip;
 

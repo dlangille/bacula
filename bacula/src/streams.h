@@ -42,7 +42,7 @@
 #define STREAMBITS_TYPE               11         /* type bit size */
 #define STREAMMASK_TYPE               (~((~0uL)<< STREAMBITS_TYPE) << STREAMBASE_TYPE)
 /*
- * Note additional base, bits, and masks can be defined for new     
+ * Note additional base, bits, and masks can be defined for new
  *  ranges or subranges of stream attributes.
  */
 
@@ -91,9 +91,9 @@
 #define STREAM_PLUGIN_DATA                 27    /* Plugin specific data */
 #define STREAM_RESTORE_OBJECT              28    /* Plugin restore object */
 /*
- * Non-gzip compressed streams. Those streams can handle arbitrary 
- *  compression algorithm data as an additional header is stored 
- *  at the beginning of the stream. See comp_stream_header definition 
+ * Non-gzip compressed streams. Those streams can handle arbitrary
+ *  compression algorithm data as an additional header is stored
+ *  at the beginning of the stream. See comp_stream_header definition
  *  in ch.h for more details.
  */
 #define STREAM_COMPRESSED_DATA                 29    /* Compressed file data */
@@ -140,6 +140,9 @@
 #define STREAM_XACL_HURD_DEFAULT      1018    /* GNU HURD acl_t string of acl_to_text (POSIX acl) for default acls */
 #define STREAM_XACL_HURD_ACCESS       1019    /* GNU HURD acl_t string of acl_to_text (POSIX acl) for access acls */
 #define STREAM_XACL_PLUGIN_ACL        1020    /* Plugin ACL data for plugin specific acls */
+#define STREAM_XACL_GPFS_ACL_DEFAULT  1021    /* GPFS Default ACL data using gpfs_getacl()/gpfs_putacl() */
+#define STREAM_XACL_GPFS_ACL_ACCESS   1022    /* GPFS Access ACL data using gpfs_getacl()/gpfs_putacl() */
+#define STREAM_XACL_GPFS_XATTR        1987    /* GPFS XATTR data using gpfs_fgetattrs()/gpfs_fputattrs() */
 #define STREAM_XACL_PLUGIN_XATTR      1988    /* Plugin XATTR data for plugin specific xattrs */
 #define STREAM_XACL_HURD_XATTR        1989    /* GNU HURD extended attributes */
 #define STREAM_XACL_IRIX_XATTR        1990    /* IRIX extended attributes */

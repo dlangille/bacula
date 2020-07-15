@@ -309,6 +309,8 @@ static inline bool pop_delayed_data_streams(r_ctx &rctx)
       case STREAM_XACL_HURD_DEFAULT:
       case STREAM_XACL_HURD_ACCESS:
       case STREAM_XACL_PLUGIN_ACL:
+      case STREAM_XACL_GPFS_ACL_DEFAULT:
+      case STREAM_XACL_GPFS_ACL_ACCESS:
          if (!do_restore_acl(jcr, rds->stream, rds->content, rds->content_length)) {
             goto get_out;
          }
@@ -894,6 +896,8 @@ void do_restore(JCR *jcr)
       case STREAM_XACL_HURD_DEFAULT:
       case STREAM_XACL_HURD_ACCESS:
       case STREAM_XACL_PLUGIN_ACL:
+      case STREAM_XACL_GPFS_ACL_DEFAULT:
+      case STREAM_XACL_GPFS_ACL_ACCESS:
          /*
           * Do not restore ACLs when
           * a) The current file is not extracted
