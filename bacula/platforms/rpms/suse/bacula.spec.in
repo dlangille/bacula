@@ -676,7 +676,8 @@ export BACULA="Bacula"
         --with-mon-dir-password="XXX_REPLACE_WITH_DIRECTOR_MONITOR_PASSWORD_XXX" \
         --with-mon-fd-password="XXX_REPLACE_WITH_CLIENT_MONITOR_PASSWORD_XXX" \
         --with-mon-sd-password="XXX_REPLACE_WITH_STORAGE_MONITOR_PASSWORD_XXX" \
-        --with-openssl
+        --with-openssl \
+        --with-gpfsdir=${cwd}/%{depkgs}/gpfs/include
 
 make -j3
 
