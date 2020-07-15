@@ -1349,4 +1349,15 @@
    pointer, if such a type exists, and if the system does not define it. */
 #undef uintptr_t
 
+#undef HAVE_GPFS
+
+/* GPFS ACL support */
+#undef HAVE_GPFS_ACL
+
+/* GPFS XATTR support */
+#undef HAVE_GPFS_XATTR
+
+/* GPFSLIB custom path */
+#undef GPFSLIB_CUSTOM_PATH
+
 #undef COMMUNITY
