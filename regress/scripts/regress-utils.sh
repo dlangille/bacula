@@ -65,7 +65,9 @@ do_regress_unittest()
 tname=$1
 tdirloc=$2
 make -C ${src}/${tdirloc} ${tname}
-${src}/${tdirloc}/${tname}
+if test $? -eq 0; then
+   ${src}/${tdirloc}/${tname}
+fi
 exit $?
 }
 
@@ -82,7 +84,7 @@ ltest=$1
 blevel="full"
 if [ "x$2" != "x" ]
 then
-        blevel=$2
+   blevel=$2
 fi
 printf "     backup test${ltest} ... "
 cat << END_OF_DATA >${tmp}/bconcmds
@@ -144,7 +146,7 @@ lpath=$2
 lplug=$LPLUG
 if [ "x$3" != "x" ]
 then
-        lplug=$3
+   lplug=$3
 fi
 printf "     listing test${ltest} ... "
 cat << END_OF_DATA >${tmp}/bconcmds

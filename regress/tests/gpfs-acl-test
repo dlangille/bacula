@@ -1,0 +1,164 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+
+#
+# Run a backup of the GPFS directory with some acls then restore it.
+# The test requires $GPFSDIR env variable set which will points to gpfs mounted filesystem
+#
+TestName="gpfs-acl-test"
+JobName=backup
+. scripts/functions
+
+#
+# See if the right software is installed.
+#
+if test x$GPFSDIR = x; then
+   echo "$TestName skipped: \$GPFSDIR not set but required"
+   exit 0
+fi
+
+if test x`uname -s` != xLinux; then
+   echo "$TestName skipped: test is supported on Linux only"
+   exit 0
+fi
+
+mmgetacl $GPFSDIR 2>&1 >/dev/null
+if test  $? -ne 0; then
+   echo "$TestName skipped: mmgetacl not installed"
+   exit 0
+fi
+
+scripts/cleanup
+scripts/gpfs-copy-confs
+
+d=$GPFSDIR/acl
+rm -rf $d
+mkdir -p $d
+mkdir -p $d/acl-dir
+cp ${cwd}/bin/bconsole $d/bconsole
+cp ${cwd}/bin/bconsole $d/other
+
+cat > $d/acl.param.acl << EOD
+#owner:root
+#group:root
+user::rwxc
+group::rwx-
+other::--x-
+mask::rwxc
+user:bacula:r-xc
+group:sys:rwx-
+group:adm:rw--
+EOD
+
+cat > $d/acl.param.nfs4 << EOD
+#NFSv4 ACL
+#owner:root
+#group:root
+special:owner@:rwxc:allow
+ (X)READ/LIST (X)WRITE/CREATE (X)APPEND/MKDIR (X)SYNCHRONIZE (X)READ_ACL  (X)READ_ATTR  (X)READ_NAMED
+ (-)DELETE    (-)DELETE_CHILD (X)CHOWN        (X)EXEC/SEARCH (X)WRITE_ACL (X)WRITE_ATTR (X)WRITE_NAMED
+
+user:bacula:-w--:deny
+ (-)READ/LIST (X)WRITE/CREATE (X)APPEND/MKDIR (-)SYNCHRONIZE (-)READ_ACL  (-)READ_ATTR  (-)READ_NAMED
+ (-)DELETE    (X)DELETE_CHILD (-)CHOWN        (-)EXEC/SEARCH (-)WRITE_ACL (X)WRITE_ATTR (-)WRITE_NAMED
+
+user:bacula:r-xc:allow
+ (X)READ/LIST (-)WRITE/CREATE (-)APPEND/MKDIR (X)SYNCHRONIZE (X)READ_ACL  (X)READ_ATTR  (X)READ_NAMED
+ (-)DELETE    (-)DELETE_CHILD (-)CHOWN        (X)EXEC/SEARCH (X)WRITE_ACL (-)WRITE_ATTR (-)WRITE_NAMED
+
+special:group@:rwx-:allow
+ (X)READ/LIST (X)WRITE/CREATE (X)APPEND/MKDIR (X)SYNCHRONIZE (X)READ_ACL  (X)READ_ATTR  (X)READ_NAMED
+ (-)DELETE    (-)DELETE_CHILD (-)CHOWN        (X)EXEC/SEARCH (-)WRITE_ACL (-)WRITE_ATTR (-)WRITE_NAMED
+
+group:sys:rwx-:allow
+ (X)READ/LIST (X)WRITE/CREATE (X)APPEND/MKDIR (X)SYNCHRONIZE (X)READ_ACL  (X)READ_ATTR  (X)READ_NAMED
+ (-)DELETE    (-)DELETE_CHILD (-)CHOWN        (X)EXEC/SEARCH (-)WRITE_ACL (-)WRITE_ATTR (-)WRITE_NAMED
+
+group:adm:rw--:allow
+ (X)READ/LIST (X)WRITE/CREATE (X)APPEND/MKDIR (X)SYNCHRONIZE (X)READ_ACL  (X)READ_ATTR  (X)READ_NAMED
+ (-)DELETE    (-)DELETE_CHILD (-)CHOWN        (-)EXEC/SEARCH (-)WRITE_ACL (-)WRITE_ATTR (-)WRITE_NAMED
+
+group:adm:--xc:deny
+ (-)READ/LIST (-)WRITE/CREATE (-)APPEND/MKDIR (-)SYNCHRONIZE (-)READ_ACL  (-)READ_ATTR  (-)READ_NAMED
+ (-)DELETE    (X)DELETE_CHILD (-)CHOWN        (X)EXEC/SEARCH (X)WRITE_ACL (X)WRITE_ATTR (-)WRITE_NAMED
+
+special:everyone@:--x-:allow
+ (-)READ/LIST (-)WRITE/CREATE (-)APPEND/MKDIR (X)SYNCHRONIZE (X)READ_ACL  (X)READ_ATTR  (X)READ_NAMED
+ (-)DELETE    (-)DELETE_CHILD (-)CHOWN        (X)EXEC/SEARCH (-)WRITE_ACL (-)WRITE_ATTR (-)WRITE_NAMED
+
+EOD
+
+mmputacl -d -i $d/acl.param.acl $d/acl-dir 2>/dev/null 1>/dev/null
+mmputacl -i $d/acl.param.acl $d/bconsole 2>/dev/null 1>/dev/null
+mmputacl -i $d/acl.param.nfs4 $d/other 2>/dev/null 1>/dev/null
+
+cp ${cwd}/bin/bconsole $d/acl-dir/bconsole
+
+cat > ${tmp}/file-list << EOD
+$d/acl-dir
+$d/bconsole
+$d/other
+EOD
+
+change_jobname backup $JobName
+start_test
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@output /dev/null
+messages
+@$out ${cwd}/tmp/log1.out
+label volume=TestVolume001 storage=File1 pool=File slot=1 drive=0
+setdebug level=500 trace=1 client
+setdebug level=500 trace=1 director
+@#setdebug level=300 trace=1 storage=File1
+run job=$JobName yes
+wait
+messages
+@#
+@# now do a restore
+@#
+@$out ${cwd}/tmp/log2.out
+restore where=${d}/bacula-restores select all done
+yes
+wait
+messages
+quit
+END_OF_DATA
+
+# create a file list for backup
+
+run_bacula
+check_for_zombie_jobs storage=File1
+stop_bacula
+
+# now get restored acls
+mmgetacl -d $d/acl-dir -o ${tmp}/acl-dir.default.acl 2>/dev/null 1>/dev/null
+mmgetacl $d/bconsole -o ${tmp}/bconsole.access.acl 2>/dev/null 1>/dev/null
+mmgetacl $d/other -o ${tmp}/other.access.nfs4 2>/dev/null 1>/dev/null
+
+diff -u ${tmp}/acl-dir.default.acl $d/acl.param.acl
+if [ $? -ne 0 ]; then
+   rstat=1
+fi
+
+diff -u ${tmp}/bconsole.access.acl $d/acl.param.acl
+if [ $? -ne 0 ]; then
+   rstat=1
+fi
+
+diff -u ${tmp}/other.access.nfs4 $d/acl.param.nfs4
+if [ $? -ne 0 ]; then
+   rstat=1
+fi
+
+check_two_logs
+# check_restore_diff
+
+if [ x$REGRESS_DEBUG != x ]; then
+  rm -rf $d
+fi
+
+end_test
