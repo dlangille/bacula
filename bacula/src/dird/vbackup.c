@@ -222,7 +222,10 @@ _("This Job is not an Accurate backup so is not equivalent to a Full backup.\n")
          Jmsg(jcr, M_INFO, 0, _("Only one Job found in argument. Consolidation forced.\n"));
 
       } else {
-         Jmsg(jcr, M_WARNING, 0, _("Only one Job found. Consolidation not needed.\n"));
+         Jmsg(jcr, M_WARNING, 0, _("BackupsToKeep is set to %u, "
+                                   "and only %d Incremental/Differential jobs exits. "
+                                   "Consolidation not needed.\n"),
+                                    jcr->job->BackupsToKeep, jobids.count);
          return false;
       }
    }
