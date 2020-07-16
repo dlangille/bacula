@@ -106,6 +106,10 @@ void CLIENT::create_client_globals()
 int32_t CLIENT::getNumConcurrentJobs()
 {
    LOCK_GUARD(globals_mutex);
+   if (globals == NULL) {
+      /* globals can be NULL when called from dump_each_resource() in parse_config() */
+      return 0;
+   }
    return globals->NumConcurrentJobs;
 }
 
@@ -176,7 +180,9 @@ void CLIENT::setAddress(char *addr)
 bool CLIENT::is_enabled()
 {
    LOCK_GUARD(globals_mutex);
-   if (globals->enabled < 0) { /* not yet modified, use default from resource */
+   if (globals == NULL || globals->enabled < 0) {
+      /* not yet modified, use default from resource */
+      /* globals can be NULL when called from dump_each_resource() in parse_config() */
       return Enabled;
    }
    return globals->enabled;
@@ -204,6 +210,10 @@ void JOB::create_job_globals()
 int32_t JOB::getNumConcurrentJobs()
 {
    LOCK_GUARD(globals_mutex);
+   if (globals == NULL) {
+      /* globals can be NULL when called from dump_each_resource() in parse_config() */
+      return 0;
+   }
    return globals->NumConcurrentJobs;
 }
 
@@ -221,7 +231,9 @@ int32_t JOB::incNumConcurrentJobs(int32_t inc)
 bool JOB::is_enabled()
 {
    LOCK_GUARD(globals_mutex);
-   if (globals->enabled < 0) { /* not yet modified, use default from resource */
+   if (globals == NULL || globals->enabled < 0) {
+      /* not yet modified, use default from resource */
+      /* globals can be NULL when called from dump_each_resource() in parse_config() */
       return Enabled;
    }
    return globals->enabled;
@@ -248,6 +260,10 @@ void STORE::create_store_globals()
 int32_t STORE::getNumConcurrentReadJobs()
 {
    LOCK_GUARD(globals_mutex);
+   if (globals == NULL) {
+      /* globals can be NULL when called from dump_each_resource() in parse_config() */
+      return 0;
+   }
    return globals->NumConcurrentReadJobs;
 }
 
@@ -265,6 +281,10 @@ int32_t STORE::incNumConcurrentReadJobs(int32_t inc)
 int32_t STORE::getNumConcurrentJobs()
 {
    LOCK_GUARD(globals_mutex);
+   if (globals == NULL) {
+      /* globals can be NULL when called from dump_each_resource() in parse_config() */
+      return 0;
+   }
    return globals->NumConcurrentJobs;
 }
 
@@ -282,7 +302,9 @@ int32_t STORE::incNumConcurrentJobs(int32_t inc)
 bool STORE::is_enabled()
 {
    LOCK_GUARD(globals_mutex);
-   if (globals->enabled < 0) { /* not yet modified, use default from resource */
+   if (globals == NULL || globals->enabled < 0) {
+      /* not yet modified, use default from resource */
+      /* globals can be NULL when called from dump_each_resource() in parse_config() */
       return Enabled;
    }
    return globals->enabled;
@@ -309,7 +331,9 @@ void SCHED::create_sched_globals()
 bool SCHED::is_enabled()
 {
    LOCK_GUARD(globals_mutex);
-   if (globals->enabled < 0) { /* not yet modified, use default from resource */
+   if (globals == NULL || globals->enabled < 0) {
+      /* not yet modified, use default from resource */
+      /* globals can be NULL when called from dump_each_resource() in parse_config() */
       return Enabled;
    }
    return globals->enabled;
