@@ -208,7 +208,7 @@ bool do_mac_init(JCR *jcr)
    wjcr->sd_client = true;
    //wjcr->setJobType(jcr->getJobType());
    wjcr->setJobLevel(jcr->getJobLevel());
-   wjcr->spool_data = job->spool_data;     /* turn on spooling if requested in job */
+   wjcr->spool_data = jcr->spool_data; /* turn on spooling if requested in job or by run command */
    wjcr->spool_size = jcr->spool_size;
    jcr->spool_size = 0;
 
