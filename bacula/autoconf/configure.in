@@ -3166,33 +3166,18 @@ else
 
       AC_CHECK_HEADER(gpfs.h,
       [
-         AC_CHECK_LIB(gpfs, gpfs_getacl,
-         [
-            have_gpfs=yes
-         ])
+        have_gpfs=yes
       ])
 
       if test x$with_gpfsdir != x; then
          CFLAGS="${saved_CFLAGS}"
          CPPFLAGS="${saved_CPPFLAGS}"
-         LDFLAGS="${saved_LDFLAGS}"
-         if test x$have_gpfs = xyes; then
-            if test -f ${with_gpfsdir}/lib/libgpfs.so; then
-               GPFSLIB=`realpath ${with_gpfsdir}/lib/libgpfs.so`
-               AC_DEFINE_UNQUOTED(GPFSLIB_CUSTOM_PATH, ["${GPFSLIB}"], [GPFSLIB custom path])
-            fi
-         fi
       fi
 
-      if test x$support_gpfs = xyes -a $have_gpfs != yes; then
-         AC_MSG_ERROR([GPFS support explicitly enabled but no supported gpfs libraries found,
-         please either load the gpfs libraries or rerun configure without --enable-gpfs])
-      else
-         if test $have_gpfs = yes; then
+      if test $have_gpfs = yes; then
             AC_DEFINE(HAVE_GPFS, 1, [Define to 1 if your system has GPFS support])
             AC_DEFINE(HAVE_GPFS_ACL, 1, [GPFS ACL support])
             AC_DEFINE(HAVE_GPFS_XATTR, 1, [GPFS XATTR support])
-         fi
       fi
    fi
    AC_SUBST(GPFS_CFLAGS)
