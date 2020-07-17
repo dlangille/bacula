@@ -44,7 +44,6 @@ fi
 SPOOLDATA_RUN=${SPOOLDATA_RUN:-default}
 if [ "$SPOOLDATA_RUN" = "yes" ] ; then
    run_spooldata="spooldata=yes"
-   $bperl -e "add_attribute('$conf/bacula-dir.conf', 'SpoolData', 'yes', 'Job', 'copy-job')"
 elif [ "$SPOOLDATA_RUN" = "no" ] ; then
    run_spooldata="spooldata=no"
 else
