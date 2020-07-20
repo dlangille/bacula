@@ -343,6 +343,7 @@ bool BDB_POSTGRESQL::bdb_open_database(JCR *jcr)
 
    sql_query("SET datestyle TO 'ISO, YMD'"); 
    sql_query("SET cursor_tuple_fraction=1");
+   sql_query("SET client_min_messages TO WARNING");
 
    /* 
     * Tell PostgreSQL we are using standard conforming strings and avoid warnings such as:
