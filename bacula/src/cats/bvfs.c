@@ -1341,7 +1341,7 @@ bool Bvfs::drop_restore_list(char *output_table)
 {
    POOL_MEM query;
    if (check_temp(output_table)) {
-      Mmsg(query, "DROP TABLE %s", output_table);
+      Mmsg(query, "DROP TABLE IF EXISTS %s", output_table);
       db->bdb_sql_query(query.c_str(), NULL, NULL);
       return true;
    }
@@ -1473,7 +1473,7 @@ bool Bvfs::insert_hardlinks(char *output_table)
       goto bail_out; 
    }
 
-   Mmsg(query, "DROP TABLE h%s", output_table);
+   Mmsg(query, "DROP TABLE IF EXISTS h%s", output_table);
    if (!db->bdb_sql_query(query.c_str(), NULL, NULL)) {
       Dmsg1(dbglevel, "Can't execute query=%s\n", query.c_str());
       goto bail_out; 
@@ -1518,10 +1518,10 @@ bool Bvfs::compute_restore_list(char *fileid, char *dirid, char *output_table)
    }
 
    /* Cleanup old tables first */
-   Mmsg(query, "DROP TABLE btemp%s", output_table);
+   Mmsg(query, "DROP TABLE IF EXISTS btemp%s", output_table);
    db->bdb_sql_query(query.c_str());
 
-   Mmsg(query, "DROP TABLE %s", output_table);
+   Mmsg(query, "DROP TABLE IF EXISTS %s", output_table);
    db->bdb_sql_query(query.c_str());
 
    /* Now start the transaction to protect ourself from other commands */
@@ -1713,10 +1713,10 @@ bool Bvfs::compute_restore_list(char *fileid, char *dirid, char *output_table)
 
 bail_out:
    if (!ret) {
-      Mmsg(query, "DROP TABLE %s", output_table);
+      Mmsg(query, "DROP TABLE IF EXISTS %s", output_table);
       db->bdb_sql_query(query.c_str());
    }
-   Mmsg(query, "DROP TABLE btemp%s", output_table);
+   Mmsg(query, "DROP TABLE IF EXISTS btemp%s", output_table);
    db->bdb_sql_query(query.c_str());
    db->bdb_end_transaction(jcr); /* the destination table might be visible now */
    db->bdb_unlock();

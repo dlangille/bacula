@@ -1554,7 +1554,7 @@ bool BDB::bdb_get_accurate_jobids(JCR *jcr,
    ret = true;
 
 bail_out:
-   Mmsg(query, "DROP TABLE btemp3%s", jobid);
+   Mmsg(query, "DROP TABLE IF EXISTS btemp3%s", jobid);
    bdb_sql_query(query.c_str(), NULL, NULL);
 
    return ret;

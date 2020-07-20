@@ -895,7 +895,7 @@ bool bdb_write_batch_file_records(JCR *jcr)
    retval = true; 
  
 bail_out: 
-   jcr->db_batch->bdb_sql_query("DROP TABLE batch", NULL,NULL);
+   jcr->db_batch->bdb_sql_query("DROP TABLE IF EXISTS batch", NULL,NULL);
    jcr->batch_started = false;
 
    return retval; 
@@ -1093,10 +1093,10 @@ bool BDB::bdb_create_base_file_attributes_record(JCR *jcr, ATTR_DBR *ar)
 static void db_cleanup_base_file(JCR *jcr, BDB *mdb)
 {
    POOL_MEM buf(PM_MESSAGE);
-   Mmsg(buf, "DROP TABLE new_basefile%lld", (uint64_t) jcr->JobId);
+   Mmsg(buf, "DROP TABLE IF EXISTS new_basefile%lld", (uint64_t) jcr->JobId);
    mdb->bdb_sql_query(buf.c_str(), NULL, NULL);
 
-   Mmsg(buf, "DROP TABLE basefile%lld", (uint64_t) jcr->JobId);
+   Mmsg(buf, "DROP TABLE IF EXISTS basefile%lld", (uint64_t) jcr->JobId);
    mdb->bdb_sql_query(buf.c_str(), NULL, NULL);
 }
 

@@ -91,7 +91,7 @@ const char *sel_JobMedia =
 
 /* Delete temp tables and indexes  */
 const char *drop_deltabs[] = {
-   "DROP TABLE DelCandidates",
+   "DROP TABLE IF EXISTS DelCandidates",
    NULL};
 
 const char *create_delindex = "CREATE INDEX DelInx1 ON DelCandidates (JobId)";
@@ -122,8 +122,8 @@ const char *uar_sel_files =
      "FROM File JOIN Path USING (PathId) "
     "WHERE File.JobId IN (%s)";
 
-const char *uar_del_temp  = "DROP TABLE temp";
-const char *uar_del_temp1 = "DROP TABLE temp1";
+const char *uar_del_temp  = "DROP TABLE IF EXISTS temp";
+const char *uar_del_temp1 = "DROP TABLE IF EXISTS temp1";
 
 const char *uar_last_full =
    "INSERT INTO temp1 SELECT Job.JobId,JobTdate "
@@ -410,7 +410,7 @@ const char *select_recent_version[] =
     MyISAM 5.0 and 5.1 are unable to run further queries in this mode
  */
 static const char *create_temp_accurate_jobids_default = 
- "CREATE TABLE btemp3%s AS "
+ "CREATE TABLE btemp3%s AS ("
     "SELECT JobId, StartTime, EndTime, JobTDate, PurgedFiles "
       "FROM Job JOIN FileSet USING (FileSetId) "
      "WHERE ClientId = %s "
@@ -418,7 +418,7 @@ static const char *create_temp_accurate_jobids_default =
        "AND StartTime<'%s' "
        "AND FileSet.FileSet=(SELECT FileSet FROM FileSet WHERE FileSetId = %s) "
        " %s "                   /* Any filter */
-     "ORDER BY Job.JobTDate DESC LIMIT 1";
+     "ORDER BY Job.JobTDate DESC LIMIT 1)";
  
 const char *create_temp_accurate_jobids[] =
 {
@@ -435,7 +435,7 @@ const char *create_temp_basefile[] =
    /* MySQL */
    "CREATE TEMPORARY TABLE basefile%lld"
    "(Path BLOB NOT NULL, Name BLOB NOT NULL,"
-   " INDEX (Path(255), Name(255)))",
+   " PRIMARY (Path(255), Name(255)))",
    /* PostgreSQL */
    "CREATE TEMPORARY TABLE basefile%lld"
    "(Path TEXT, Name TEXT)",
@@ -573,6 +573,7 @@ const char *uar_create_temp[] =
 {
    /* MySQL */
    "CREATE TEMPORARY TABLE temp ("
+   "PKEY INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,"
    "JobId INTEGER UNSIGNED NOT NULL,"
    "JobTDate BIGINT UNSIGNED,"
    "ClientId INTEGER UNSIGNED,"
@@ -583,7 +584,7 @@ const char *uar_create_temp[] =
    "VolumeName TEXT,"
    "StartFile INTEGER UNSIGNED,"
    "VolSessionId INTEGER UNSIGNED,"
-   "VolSessionTime INTEGER UNSIGNED)",
+   "VolSessionTime INTEGER UNSIGNED) PRIMARY KEY (PKEY)",
  
    /* PostgreSQL */
    "CREATE TEMPORARY TABLE temp ("
