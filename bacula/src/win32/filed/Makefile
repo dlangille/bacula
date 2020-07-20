@@ -75,6 +75,8 @@ FILED_OBJS = \
 	$(OBJDIR)/bxattr_linux.o \
 	$(OBJDIR)/bxattr_solaris.o \
 	$(OBJDIR)/suspend.o \
+	$(OBJDIR)/bacgpfs.o \
+	$(EXTRA_FILED_OBJS) \
 	$(OBJDIR)/bacula.res
 
 #	$(OBJDIR)/trayMonitor.o \

@@ -206,7 +206,6 @@ static void  list_status_header(STATUS_PKT *sp)
                  p_GetVolumeNameForVolumeMountPointW?"":"!",
                  have_lzo?"":"!",
                  (BEEF>0)?"":"!");
-         );
       sendit(msg.c_str(), len, sp);
    }
 #endif
