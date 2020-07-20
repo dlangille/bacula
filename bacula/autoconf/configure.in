@@ -3144,6 +3144,8 @@ dnl
 dnl Check if ACL engine enabled
 dnl
 have_gpfs=no
+have_gpfslib=no
+GPFSLIB=""
 if test x$have_acl = xno -a x$have_xattr = xno; then
    if test x$support_gpfs = xyes; then
       AC_MSG_WARN(ACL and XATTR engine disabled - disable dependent GPFS support.)
@@ -3157,11 +3159,13 @@ else
 
       saved_CFLAGS="${CFLAGS}"
       saved_CPPFLAGS="${CPPFLAGS}"
+      saved_LDFLAGS="${LDFLAGS}"
 
       if test x$with_gpfsdir != x; then
          GPFS_CFLAGS="-I${with_gpfsdir}/include"
          CFLAGS="${GPFS_CFLAGS} ${saved_CFLAGS}"
          CPPFLAGS="${GPFS_CFLAGS} ${saved_CPPFLAGS}"
+         LDFLAGS="-L${with_gpfsdir}/lib  ${saved_LDFLAGS}"
       fi
 
       AC_CHECK_HEADER(gpfs.h,
@@ -3169,12 +3173,23 @@ else
         have_gpfs=yes
       ])
 
+      AC_CHECK_LIB(gpfs, gpfs_getacl,
+      [
+        have_gpfslib=yes
+      ])
+
       if test x$with_gpfsdir != x; then
          CFLAGS="${saved_CFLAGS}"
          CPPFLAGS="${saved_CPPFLAGS}"
+         LDFLAGS="${saved_LDFLAGS}"
       fi
-
-      if test $have_gpfs = yes; then
+      if test x$have_gpfslib = xyes; then
+         if test -f ${with_gpfsdir}/lib/libgpfs.so; then
+            GPFSLIB=`realpath ${with_gpfsdir}/lib/libgpfs.so`
+            AC_DEFINE_UNQUOTED(GPFSLIB_CUSTOM_PATH, ["${GPFSLIB}"], [GPFSLIB custom path])
+         fi
+      fi
+      if test x$have_gpfs = xyes; then
             AC_DEFINE(HAVE_GPFS, 1, [Define to 1 if your system has GPFS support])
             AC_DEFINE(HAVE_GPFS_ACL, 1, [GPFS ACL support])
             AC_DEFINE(HAVE_GPFS_XATTR, 1, [GPFS XATTR support])
@@ -3914,7 +3929,7 @@ Configuration on `date`:
    AFS support:               ${have_afs}
    ACL support:               ${have_acl}
    XATTR support:             ${have_xattr}
-   GPFS support:              ${have_gpfs}
+   GPFS support:              ${have_gpfs} ${GPFSLIB}
    systemd support:           ${support_systemd} ${SYSTEMD_UNITDIR}
    Batch insert enabled:      ${batch_insert_db_backends}
 
