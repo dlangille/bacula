@@ -89,7 +89,13 @@ class GPFSLIB : public SMARTALLOC
    bRC_GPFSLIB _gpfs_backup_acl_data(JCR *jcr, FF_PKT *ff_pkt, unsigned char acl_type, POOLMEM *content, uint32_t &content_len);
    bRC_GPFSLIB _gpfs_restore_acl_data(JCR *jcr, int stream, POOLMEM *content, uint32_t content_len);
 
+
 public:
+
+   /* Check if the library is loaded */
+   static bool enabled() {
+      return Get()._gpfs_getacl != NULL;
+   };
 
    /**
     * @brief Destroy the GPFSLIB object

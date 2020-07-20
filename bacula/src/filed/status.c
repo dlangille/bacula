@@ -124,6 +124,7 @@ static void api_list_status_header(STATUS_PKT *sp)
       OT_STRING,     "pkidigest",  NPRTB(digest),
       OT_INT32,   "fips",       crypto_get_fips(),
       OT_STRING,  "crypto",     crypto_get_version(),
+      OT_BOOL,    "gpfs",       GPFSLIB::enabled(),
       OT_END);
    p = wt.end_group();
    sendit(p, strlen(p), sp);
@@ -205,6 +206,7 @@ static void  list_status_header(STATUS_PKT *sp)
                  p_GetVolumeNameForVolumeMountPointW?"":"!",
                  have_lzo?"":"!",
                  (BEEF>0)?"":"!");
+         );
       sendit(msg.c_str(), len, sp);
    }
 #endif
@@ -232,6 +234,11 @@ static void  list_status_header(STATUS_PKT *sp)
 
    len = Mmsg(msg, " Crypto: fips=%s crypto=%s\n", crypto_get_fips_enabled(), crypto_get_version());
    sendit(msg.c_str(), len, sp);
+
+   if (chk_dbglvl(1)) {
+      len = Mmsg(msg, " APIs: %sGPFS\n", GPFSLIB::enabled()?"":"!");
+      sendit(msg.c_str(), len, sp);
+   }
 
    if (b_plugin_list && b_plugin_list->size() > 0) {
       Plugin *plugin;

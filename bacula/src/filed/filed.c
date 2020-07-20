@@ -281,6 +281,8 @@ int main (int argc, char *argv[])
    events_send_msg(NULL, "FD0001",
                    EVENTS_TYPE_DAEMON, "*Daemon*",
                    (intptr_t)get_first_port_host_order(me->FDaddrs), "Filed startup");
+
+   /* Load the GPFS library if installed */
    GPFSLIB::Init();
 
    server_tid = pthread_self();
