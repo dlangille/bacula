@@ -22,7 +22,13 @@
  */
 
 #include "bacula.h"
+
+#if defined(HAVE_GPFS_ACL)
+   #include <gpfs.h>
+#endif
+
 #include "filed.h"
+
 #ifdef HAVE_SYS_TYPES_H
    #include <sys/types.h>
 #endif

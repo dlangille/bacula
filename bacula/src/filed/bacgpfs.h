@@ -24,10 +24,7 @@
 #ifndef _BAC_GPFS_H_
 #define _BAC_GPFS_H_
 
-#if defined(HAVE_GPFS_ACL)
-   #include <gpfs.h>
-#endif
-
+/* Coming from gpfs.h */
 #ifndef GPFS_ACL_TYPE_ACCESS
 #define GPFS_ACL_TYPE_ACCESS     1
 #endif
