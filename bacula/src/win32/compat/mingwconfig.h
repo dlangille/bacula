@@ -26,6 +26,12 @@
 # define __MIDL_user_allocate_free_DEFINED__
 #endif
 
+#ifndef NAME_MAX
+#define NAME_MAX MAX_PATH
+#endif
+
+#define HAVE_TLS_PSK
+
 #define HAVE_SHA2
 
 #undef USE_LOCKMGR

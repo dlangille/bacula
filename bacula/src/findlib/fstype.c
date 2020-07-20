@@ -352,6 +352,14 @@ bool fstype(char *fname, FF_PKT *ff_pkt, char *fs, int fslen)
    return false;
 }
 
+/*
+ * Parameter wrapper for fstype
+ */
+bool fstype(FF_PKT *ff_pkt, char *fs, int fslen)
+{
+   return fstype(ff_pkt->fname, ff_pkt, fs, fslen);
+}
+
 #elif defined(HAVE_SUN_OS)
 
 #include <sys/types.h>
@@ -421,9 +429,8 @@ bool fstype(FF_PKT *ff_pkt, char *fs, int fslen)
 
 #elif defined (HAVE_WIN32)
 /* Windows */
-bool fstype(FF_PKT *ff_pkt, char *fs, int fslen)
+bool fstype(char *fname, FF_PKT *ff_pkt, char *fs, int fslen)
 {
-   char *fname = ff_pkt->fname;
    DWORD componentlength;
    DWORD fsflags;
    CHAR rootpath[4];
@@ -446,6 +453,21 @@ bool fstype(FF_PKT *ff_pkt, char *fs, int fslen)
    }
    return result != 0;
 }
+
+/*
+ * Parameter wrapper for fstype
+ */
+bool fstype(FF_PKT *ff_pkt, char *fs, int fslen)
+{
+   return fstype(ff_pkt->fname, ff_pkt, fs, fslen);
+}
+
+/* Not implemented for windows, used in ACL code */
+uint32_t fstypeid(char *fname, FF_PKT *ff_pkt)
+{
+   return 0;
+}
+
 /* Windows */
 
 #else    /* No recognised OS */
@@ -557,14 +579,6 @@ bool read_mtab(mtab_handler_t *mtab_handler, void *user_ctx)
 #endif /* HAVE_GETMNTINFO */
    return true;
 } 
-
-/*
- * Parameter wrapper for fstype
- */
-bool fstype(FF_PKT *ff_pkt, char *fs, int fslen)
-{
-   return fstype(ff_pkt->fname, ff_pkt, fs, fslen);
-}
 
 /*
  * compares current fstype from FF_PKT for required fstype_name

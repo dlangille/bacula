@@ -552,48 +552,6 @@ bRC_BACL BACL::generic_backup_acl (JCR *jcr, FF_PKT *ff_pkt)
 };
 
 /*
- * Performs a GPFS ACL backup using FS specific API.
- *
- * in:
- *    jcr - Job Control Record
- *    ff_pkt - file to backup control package
- * out:
- *    bRC_BACL_ok - backup of acl's was successful
- *    bRC_BACL_fatal - was an error during acl backup
- */
-bRC_BACL BACL::gpfs_backup_acl (JCR *jcr, FF_PKT *ff_pkt)
-{
-   /* sanity check of input variables */
-   if (jcr == NULL || ff_pkt == NULL){
-      return bRC_BACL_inval;
-   }
-
-   if (GPFSLIB::gpfs_backup_acl_data(jcr, ff_pkt, GPFS_ACL_TYPE_ACCESS, content, content_len) == bRC_GPFSLIB_fatal){
-      return bRC_BACL_fatal;
-   }
-
-   if (content_len > 0){
-      if (send_acl_stream(jcr, STREAM_XACL_GPFS_ACL_ACCESS) == bRC_BACL_fatal){
-         return bRC_BACL_fatal;
-      }
-   }
-
-   if (ff_pkt->type == FT_DIREND){
-      if (GPFSLIB::gpfs_backup_acl_data(jcr, ff_pkt, GPFS_ACL_TYPE_DEFAULT, content, content_len) == bRC_GPFSLIB_fatal){
-         return bRC_BACL_fatal;
-      }
-      if (content_len > 0){
-         if (send_acl_stream(jcr, STREAM_XACL_GPFS_ACL_DEFAULT) == bRC_BACL_fatal){
-            return bRC_BACL_fatal;
-         }
-      }
-   }
-
-   return bRC_BACL_error;
-};
-
-
-/*
  * Performs a generic ACL restore using OS specific methods for
  * setting acl data on file.
  *
