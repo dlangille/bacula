@@ -3914,11 +3914,13 @@ Configuration on `date`:
    AFS support:               ${have_afs}
    ACL support:               ${have_acl}
    XATTR support:             ${have_xattr}
+   GPFS support:              ${have_gpfs}
    systemd support:           ${support_systemd} ${SYSTEMD_UNITDIR}
    Batch insert enabled:      ${batch_insert_db_backends}
 
    Plugins:
    - Docker:                  ${support_docker}
+
   " > config.out
 
 # create a small shell script useful for support with
