@@ -1529,13 +1529,15 @@ static bool select_backups_before_date(UAContext *ua, RESTORE_CTX *rx, char *dat
    int i;
 
    /* Create temp tables */
-  db_sql_query(ua->db, uar_del_temp, NULL, NULL);
-  db_sql_query(ua->db, uar_del_temp1, NULL, NULL);
+   db_sql_query(ua->db, uar_del_temp, NULL, NULL);
+   db_sql_query(ua->db, uar_del_temp1, NULL, NULL);
    if (!db_sql_query(ua->db, uar_create_temp[db_get_type_index(ua->db)], NULL, NULL)) {
       ua->error_msg("%s\n", db_strerror(ua->db));
+      goto bail_out;
    }
    if (!db_sql_query(ua->db, uar_create_temp1[db_get_type_index(ua->db)], NULL, NULL)) {
       ua->error_msg("%s\n", db_strerror(ua->db));
+      goto bail_out;
    }
    /*
     * Select Client from the Catalog
@@ -1561,6 +1563,7 @@ static bool select_backups_before_date(UAContext *ua, RESTORE_CTX *rx, char *dat
       }
    } else if (i >= 0) {         /* name is invalid */
       ua->error_msg(_("FileSet argument: %s\n"), ua->errmsg);
+      goto bail_out;
    }
 
    if (i < 0) {                       /* fileset not found */
@@ -1569,6 +1572,7 @@ static bool select_backups_before_date(UAContext *ua, RESTORE_CTX *rx, char *dat
       start_prompt(ua, _("The defined FileSet resources are:\n"));
       if (!db_sql_query(ua->db, rx->query, fileset_handler, (void *)ua)) {
          ua->error_msg("%s\n", db_strerror(ua->db));
+         goto bail_out;
       }
       if (do_prompt(ua, _("FileSet"), _("Select FileSet resource"),
                  fileset_name, sizeof(fileset_name)) < 0) {
