@@ -103,7 +103,6 @@
 #if defined(HAVE_XATTR)
 
 #if defined(HAVE_GPFS_XATTR)
-   #include <gpfs.h>
    static const bool have_gpfs_xattr_flag = true;
 #else
    static const bool have_gpfs_xattr_flag = false;
