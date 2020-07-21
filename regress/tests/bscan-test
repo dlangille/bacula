@@ -1,9 +1,7 @@
 #!/bin/sh
 #
-# Copyright (C) 2000-2015 Kern Sibbald
+# Copyright (C) 2000-2020 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
-#
-
 #
 # Run a simple backup of the Bacula build directory but 
 #   split the archive into two volumes then bscan it

@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (C) 2000-2017 Kern Sibbald
+# Copyright (C) 2000-2020 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
 # Run a simple backup of the Bacula build directory then create some           
@@ -18,6 +18,8 @@ echo "${cwd}/build" >> ${tmp}/file-list
 
 mkdir -p ${tmpsrc}
 cp -p ${src}/src/dird/*.c ${tmpsrc}
+mkdir $tmpsrc/directory
+echo test > $tmpsrc/directory/1
 cd ${tmp}
 echo "${tmpsrc}/ficheriro1.txt" >restore-list
 echo "${tmpsrc}/ficheriro2.txt" >>restore-list
@@ -85,14 +87,23 @@ cd ${tmpsrc}
 cp -f ficheriro2.txt 1
 sed "s%a%b%g" 1 >ficheriro2.txt
 rm -f 1
+rm -rf directory
 cd ${cwd}
 cat <<END_OF_DATA >${tmp}/bconcmds
 @$out /dev/null
 messages
 @$out ${tmp}/log1.out
-run level=Differential job=$JobName yes
+run level=Differential accurate=yes job=$JobName yes
 wait
 messages
+@$out $tmp/log35.out
+.bvfs_update jobid=1,2,3,4
+.bvfs_lsdir jobid=1,2,3 path=$tmp/build/
+.bvfs_lsdir jobid=1,4 path=$tmp/build/
+@$out $tmp/log36.out
+sql
+SELECT * FROM PathVisibility JOIN Path USING (PathId) WHERE JobId=4;
+
 quit
 END_OF_DATA
 
@@ -148,6 +159,18 @@ rm -f ${tmpsrc}/dird_conf.c
 touch ${tmpsrc}/ficheriro2.txt
 ln ${tmpsrc}/ficheriro2.txt ${tmpsrc}/hardlink2
 
+# A linux system has 2000 symlinks
+for i in `seq 1 4000`
+do
+    cat /etc/hosts > ${tmpsrc}/file$i.txt
+    ln ${tmpsrc}/file$i.txt ${tmpsrc}/hl.$i
+done
+
+for i in `seq 1 50`
+do
+    ln ${tmpsrc}/file$i.txt ${tmpsrc}/hl2.$i
+done
+
 cat <<END_OF_DATA >${tmp}/bconcmds
 @$out /dev/null
 messages
@@ -159,9 +182,9 @@ messages
 @$out ${tmp}/log3.out
 .bvfs_update
 .bvfs_lsdir path=$tmpsrc/ jobid=1,2,3,4,5,6,7,8
-.bvfs_lsfile path=$tmpsrc/ jobid=1,2,3,4,5,6,7,8
+.bvfs_lsfile path=$tmpsrc/ jobid=1,2,3,4,5,6,7,8 limit=5000
 @$out ${tmp}/log31.out
-.bvfs_lsfile path=$tmpsrc/ jobid=1,2,3,4,5,6,7
+.bvfs_lsfile path=$tmpsrc/ jobid=1,2,3,4,5,6,7 limit=5000
 @$out ${tmp}/log32.out
 .bvfs_lsfile path=$tmpsrc/ jobid=1,2,3,4,5,6,7,8 filename=ficheriro1.txt
 quit
@@ -238,14 +261,13 @@ cat <<END_OF_DATA >${tmp}/bconcmds
 .bvfs_cleanup path=b21
 END_OF_DATA
 
-jidx=`awk -F '\t' '/ficheriro2.txt|hardlinks2/ { lstat=$5  } 
-   END { print ".bvfs_decode_lstat lstat=\"" lstat "\"" 
-} ' $tmp/log3.out | $bin/bconsole -c $conf/bconsole.conf | awk -F= '/LinkFI/ { print $2 } '`
+# We get the last of ficheriro2.txt and hardlink2 to get the LinkFI
+jidx=`awk -F '\t' '/ficheriro2.txt|hardlink2/ { print "@echo fileid=" $3; print ".bvfs_decode_lstat lstat=\"" $5 "\"" } ' $tmp/log3.out | $bin/bconsole -c $conf/bconsole.conf | awk -F= '/LinkFI=[1-9][0-9]*/ { print $2 } '`
 
-awk '/ficheriro2.txt/ { if (!id) { id=$3 } } /hardlink2/ { if (!id) { id=$3 } }
-  END {
-    print ".bvfs_restore jobid=1,2,3,4,5,6,7,8 hardlink=8,'$jidx' fileid=" id " path=b21"
-  } ' $tmp/log3.out >> $tmp/bconcmds
+fileid=`awk -F '\t' '/ficheriro2.txt|hardlink2/ { print "@echo fileid=" $3; print ".bvfs_decode_lstat lstat=\"" $5 "\"" } ' $tmp/log3.out | $bin/bconsole -c $conf/bconsole.conf | awk -F= '/fileid=/ { fileid=$2 } /LinkFI=[1-9][0-9]*/ { print fileid } '`
+
+# We take the last between ficheriro2.txt and hardlink2, and we restore both via the hardlink command
+echo ".bvfs_restore jobid=1,2,3,4,5,6,7,8 hardlink=8,$jidx fileid=$fileid path=b21" >> $tmp/bconcmds
 
 cat <<END_OF_DATA >>${tmp}/bconcmds
 @$out $tmp/log2.out
@@ -295,6 +317,17 @@ if [ $? != 0 ]; then
     estat=1
 fi
 
+nb=`grep directory/ $tmp/log35.out | wc -l`
+if [ $nb != 1 ]; then
+    print_debug "ERROR: Should find only one time directory/ in $tmp/log35.out"
+    estat=1
+fi
+
+nb=`grep directory/ $tmp/log36.out | wc -l`
+if [ $nb != 0 ]; then
+    print_debug "ERROR: Should not find directory/ in $tmp/log36.out"
+    estat=1
+fi
 
 #
 # Delete .c files because we will only restored the txt files

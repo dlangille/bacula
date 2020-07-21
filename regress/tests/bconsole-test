@@ -1,9 +1,7 @@
 #!/bin/sh
 #
-# Copyright (C) 2000-2015 Kern Sibbald
+# Copyright (C) 2000-2020 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
-#
-
 #
 # Run a couple of tests with bconsole
 #
@@ -62,11 +60,17 @@ if [ $? -ne 0 ]; then
     estat=5
 fi
 
-perl -Mscripts::functions \
+$bperl \
     -e "extract_resource('$conf/bconsole.conf', 'Director', '$HOST-dir')" \
     > $tmp/1
 
 sed "s/$HOST-dir/bconsole-test-dir/" $tmp/1 >> $conf/bconsole.conf
+
+$bperl \
+     -e "add_attribute('$conf/bconsole.conf', 'HistoryFile', '$tmp/histfile', 'Director', 'bconsole-test-dir')"
+
+$bperl \
+    -e "add_attribute('$conf/bconsole.conf', 'HistoryFileSize', '200', 'Director', 'bconsole-test-dir')" \
 
 $bin/bconsole -t -c $conf/bconsole.conf > $tmp/1 < /dev/null
 if [ $? -ne 0 ]; then
@@ -116,8 +120,13 @@ if [ $? -ne 0 ]; then
     estat=13
 fi
 
+if [ ! -f $tmp/histfile ]; then
+    print_debug "bconsole history file not found"
+    estat=14
+fi
+
 # Do not try to check jobmedia with this test
 export CHECK_JOBMEDIA=0
-
+export CHECK_OPENFILE=0
 stop_bacula
 end_test

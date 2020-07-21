@@ -1,8 +1,7 @@
 #!/bin/sh
 #
-# Copyright (C) 2000-2017 Kern Sibbald
+# Copyright (C) 2000-2020 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
-#
 #
 # Attempt to backup and restore a file with the bpipe plugin
 #
@@ -25,7 +24,6 @@ messages
 @$out ${cwd}/tmp/log1.out
 label storage=File1 volume=TestVolume001
 estimate job=$JobName level=Full
-setdebug level=100 client=$CLIENT
 @#setdebug level=50 traclient=$CLIENT
 run job=$JobName storage=File1 yes
 wait
@@ -72,6 +70,23 @@ if [ $nb -ne 1 ]; then
     bstat=1
 fi
 
+nb=`grep $file $tmp/list | wc -l`
+if [ $nb -ne 1 ]; then
+    print_debug "ERROR: Should find the RestoreObject for $file in $tmp/list"
+    bstat=1
+fi
+
+nb=`grep Makefile $tmp/list | wc -l`
+if [ $nb -ne 1 ]; then
+    print_debug "ERROR: Should find the RestoreObject for Makefile in $tmp/list"
+    bstat=1
+fi
+
+nb=`grep restore_command $tmp/conf | wc -l`
+if [ $nb -ne 2 ]; then
+    print_debug "ERROR: Should find the RestoreObject for Makefile and $file in $tmp/conf"
+    bstat=1
+fi
 
 cat <<EOF >$tmp/obj
 restore_command="cat >$tmp/Makefile.bak"
@@ -85,7 +100,7 @@ messages
 @$out ${cwd}/tmp/log3.out
 setdebug level=50 client=$CLIENT trace=1
 @putfile obj1 $tmp/obj
-restore where=${cwd}/tmp  select all storage=File1 done
+restore pluginrestoreconf="2:obj1" where=${cwd}/tmp  select all storage=File1 done
 yes
 wait
 setdebug level=0 client=$CLIENT trace=0
@@ -98,15 +113,16 @@ run_bconsole
 #
 # Remove plugin so we can try the restore without the plugin
 #
-mv -f ${cwd}/bin/plugins/bpipe-fd.so ${cwd}/bin/plugins/bpipe-fd.sox
+mkdir -p $tmp/empty
+$bperl -e 'add_attribute("$conf/bacula-fd.conf", "Plugin Directory", "$tmp/empty", "FileDaemon")'
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
 @$out ${cwd}/tmp/log2.out
 @# 
 @# now do a restore without the plugin
 @#
-@$out ${cwd}/tmp/log2.out
 @#setdebug level=50 client=$CLIENT
+status client
 restore where=${cwd}/tmp  select all storage=File1 done
 yes
 wait
@@ -123,12 +139,24 @@ stop_bacula
 #
 # Restore plugin
 #
-mv -f ${cwd}/bin/plugins/bpipe-fd.sox ${cwd}/bin/plugins/bpipe-fd.so
+#$bperl -e 'add_attribute("$conf/bacula-fd.conf", "Plugin Directory", "$plugin", "FileDaemon")'
+
+grep "bpipe-fd" $tmp/log2.out > /dev/null
+if [ $? = 0 ]; then
+    print_debug "ERROR: Should not find plugin in client status output ($tmp/log2.out)"
+    estat=1
+fi
 
 check_two_logs
 #
 # ****FIXME**** test that all three files are restored correctly
 #
+diff ${cwd}/Makefile ${cwd}/tmp/Makefile.bak
+dstat=$?
+
+diff ${cwd}/${file} ${cwd}/tmp/${file}
+dstat=$(($dstat + $?))
+
 diff ${cwd}/tmp/@bpipe@/${file} ${cwd}/${file}
 dstat=$(($dstat + $?))
 

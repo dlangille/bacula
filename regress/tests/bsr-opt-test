@@ -1,9 +1,7 @@
 #!/bin/sh
 #
-# Copyright (C) 2000-2018 Kern Sibbald
+# Copyright (C) 2000-2020 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
-#
-
 #
 # Run a simple backup of the Bacula build directory but 
 #   split the archive into two volumes, then restore
@@ -23,6 +21,9 @@ change_jobname NightlySave $JobName
 start_test
 
 MaxVolBytes=3000000
+if test x$FORCE_DEDUP = xyes; then
+   MaxVolBytes=60000
+fi
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
 @$out /dev/null
 messages
@@ -81,7 +82,7 @@ if [ $? != 0 -o $bsrstat != 0 -o $bstat != 0 -o $rstat != 0 ] ; then
    echo " "
    exit 1
 else
-   echo "  ===== End bsr-opt-test OK `date +%R:%S` ===== "
-   echo "  ===== End bsr-opt-test OK `date +%R:%S` ===== " >>test.out
+   echo "  ===== bsr-opt-test Bacula source OK `date +%R:%S` ===== "
+   echo "  ===== bsr-opt-test OK `date +%R:%S` ===== " >>test.out
    scripts/cleanup
 fi

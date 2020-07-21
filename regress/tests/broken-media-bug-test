@@ -1,12 +1,7 @@
 #!/bin/sh
 #
-# Copyright (C) 2000-2017 Kern Sibbald
+# Copyright (C) 2000-2020 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
-#
-# Copyright (C) 2000-2015 Kern Sibbald
-# License: BSD 2-Clause; see file LICENSE-FOSS
-#
-
 #
 # Show the broken media bug. Test by Graham Keeling.
 #

@@ -1,0 +1,124 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Run a simple backup of the Bacula build directory then create some           
+#   new files, do an Incremental and restore those two files.
+#
+TestName="bug-7640"
+JobName=bug-7640 
+. scripts/functions
+
+${rscripts}/cleanup
+${rscripts}/copy-test-confs
+echo $tmp/big >${tmp}/file-list
+echo $cwd/build/po >>${tmp}/file-list
+
+dd if=/dev/zero of=$tmp/big seek=1000000 count=1
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "SpoolData", "No", "Job")'
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "ClientRunBeforeJob", "\"sleep 30\"", "Job", "NightlySave")'
+$bperl -e 'add_attribute("$conf/bacula-sd.conf", "MaximumConcurrentJobs", "10", "Device")'
+sed -i 's/sparse=yes;//' $conf/bacula-dir.conf
+
+change_jobname NightlySave $JobName
+start_test
+
+cat <<END_OF_DATA >${tmp}/bconcmds
+@output /dev/null
+messages
+@$out ${tmp}/log1.out
+label storage=File volume=TestVolume000
+label storage=File volume=TestVolume001
+label storage=File volume=TestVolume002
+setdebug level=10 storage
+@# With VolUse=15s nothing restored for JobId 2
+@#update volume=TestVolume000 VolUse=15s
+@# With VolUse=20s both JobId 2 and 3 restore wrong size
+update volume=TestVolume000 VolUse=20s
+update volume=TestVolume001 maxvolbytes=100MB
+sql
+select VolumeName, MediaId FROM Media;
+
+run job=$JobName level=full yes
+@sleep 15
+setbandwidth limit="5000 kb/s" client=$CLIENT
+run job=$JobName level=full yes
+run job=$JobName level=full yes
+@sleep 20
+run job=$JobName level=full yes
+@sleep 10
+@#status client
+@#status dir
+@#status storage
+@sleep 10
+setbandwidth limit=0 client=$CLIENT
+wait
+messages
+sql
+select jobid, mediaid, firstindex,lastindex,volindex from JobMedia order by jobid,volindex;
+select * from JobMedia order by jobid,volindex;                                                  
+
+@$out $tmp/jobmedia2
+list jobmedia jobid=2
+@$out $tmp/jobmedia3
+list jobmedia jobid=3
+quit
+END_OF_DATA
+
+run_bacula
+check_for_zombie_jobs storage=File
+
+cat <<END_OF_DATA >${tmp}/bconcmds
+@# 
+@# now do a restore that will fail (JobId 2)
+@#
+@$out ${tmp}/log2.out
+setdebug level=10 storage=File
+@# Select by JobId 2
+restore where=${tmp}/bacula-restores storage=File
+3
+2
+cd $tmp
+m big
+done
+yes
+wait
+@# Select by JobId 3
+restore where=${tmp}/bacula-restores2 storage=File
+3
+3
+cd $tmp
+m big
+done
+yes
+wait
+@#status client
+@#status storage=File
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+check_for_zombie_jobs storage=File
+stop_bacula
+
+grep -q TestVolume000 $tmp/jobmedia2 && grep -q TestVolume001 $tmp/jobmedia2 && grep -q TestVolume002 $tmp/jobmedia2
+
+if [ $? -ne 0 ]; then
+    print_debug "ERROR: should find TestVolume{000, 001 and 002} volumes for JobId 2"
+    estat=1
+fi
+
+grep -q TestVolume001 $tmp/jobmedia3 && grep -q TestVolume002 $tmp/jobmedia3
+
+if [ $? -ne 0 ]; then
+    print_debug "ERROR: should find TestVolume{001 and 002} for JobId 3"
+    estat=1
+fi
+
+$bin/bls -c $conf/bacula-sd.conf -j -V 'TestVolume000|TestVolume001|TestVolume002' FileStorage > $tmp/bls.jobs
+$bin/bls -c $conf/bacula-sd.conf -V 'TestVolume000|TestVolume001|TestVolume002' FileStorage > $tmp/bls.files
+
+check_two_logs
+end_test

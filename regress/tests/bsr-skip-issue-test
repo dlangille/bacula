@@ -1,0 +1,110 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Run a simple backup of the Bacula build directory
+# then restore it.
+# Full Pool1   FileVolume001
+# Incr Pool1   FileVolume002 -> FileVolume001
+# Incr Pool1 - FileVolume001
+#
+# The 2nd incremental will spread data on a new volume
+# and on the previous volume.
+#
+#   Volume                SessTime/SessId    FI   New FI
+# rt-incr-disk1-10915     1563431298/23607   13 = 45
+# rt-incr-disk1-3547      1565527787/4       2  = 46
+# rt-incr-disk1-3547      1565527787/4       5  = 47
+# rt-incr-disk1-3547      1565527787/4       9  = 48
+# rt-incr-disk1-3547      1565527787/4      13  = 49
+# rt-incr-disk1-3547      1565527787/1151    2  = 50
+# rt-incr-disk1-10915     1565527787/1151    4  = 51
+# rt-incr-disk1-10915     1565527787/1151   10  = 52
+
+TestName="bsr-skip-issue-test"
+JobName=Vbackup
+. scripts/functions
+
+
+scripts/cleanup
+scripts/copy-migration-confs
+echo "${cwd}/build" >${cwd}/tmp/file-list
+
+$bperl -e "add_attribute('$conf/bacula-dir.conf', 'Accurate', 'yes', 'Job')"
+$bperl -e "add_attribute('$conf/bacula-dir.conf', 'SpoolData', 'no', 'Job')"
+$bperl -e "add_attribute('$conf/bacula-sd.conf', 'MaximumFileSize', '1MB', 'Device')"
+
+rm -f $cwd/build/inc1 $cwd/build/inc2 $cwd/build/diff1
+
+change_jobname NightlySave $JobName
+start_test
+
+# Write out bconsole commands
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@output /dev/null
+messages
+@$out ${cwd}/tmp/log1.out
+@#setdebug level=100 storage=File
+label storage=File volume=FileVolume001 Pool=Special
+label storage=File volume=FileVolume002 Pool=Special
+update volume=FileVolume002 maxvolbytes=1MB
+label storage=DiskChanger volume=ChangerVolume001 slot=1 Pool=Full drive=0
+@# run several jobs
+@exec "sh -c 'date > ${cwd}/build/date'"
+run job=$JobName level=Full pool=Special yes
+wait
+update volume=FileVolume001 volstatus=Used
+messages
+list jobs
+END_OF_DATA
+
+run_bacula
+
+$cwd/bin/bacula-ctl-sd restart
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@$out ${cwd}/tmp/log1.out
+@exec "touch  $cwd/build/po/fr.po"
+@exec "sh -c 'cp $cwd/build/po/fr.po $cwd/build/inc1'"
+@exec "sh -c 'cp $cwd/build/po/fr.po $cwd/build/inc3'"
+run job=$JobName level=Incremental pool=Special yes
+wait mount
+update volume=FileVolume001 volstatus=Append
+mount storage=File drive=0 slot=0
+wait
+messages
+list jobs
+@exec "touch  $cwd/build/po/de.po"
+@exec "sh -c 'cp $cwd/build/po/de.po $cwd/build/inc2'"
+run job=$JobName level=Incremental pool=Special yes
+wait
+messages
+@# should Consolidate Full, Incremental
+run job=$JobName level=VirtualFull yes
+wait
+messages
+list jobs
+@# 
+@# now do a restore of the consolidated Full
+@#
+@$out $tmp/log2.out
+@#delete jobid=1,2,3 yes
+restore where=${cwd}/tmp/restore1 select all done yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+check_for_zombie_jobs storage=File
+stop_bacula
+
+#
+# We only used one log so copy it to the second log
+#  so that any restore errors will be picked up
+#
+check_two_logs
+check_restore_diff
+
+end_test

@@ -4,9 +4,12 @@
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
 # Run a simple backup of the Bacula build directory
-#   then restore it. Used to generate BSR files.
+# and test the cancel all command
 #
-TestName="bsr-test"
+# We test "cancel all" => no/. nothing canceled, restore possible
+# We test "cancel all" => yes and "cancel all yes", two canceled jobs
+#
+TestName="cancel-all-test"
 JobName=backup
 . scripts/functions
 
@@ -19,30 +22,51 @@ scripts/copy-confs
 #
 outf="$tmp/sed_tmp"
 echo "s%  Schedule =%# Schedule =%g" >${outf}
-echo "s%  Write Bootstrap%# Write Bootstrap%g" >> ${outf}
 cp $scripts/bacula-dir.conf $tmp/1
 sed -f ${outf} $tmp/1 >$scripts/bacula-dir.conf
-
-$bperl -e "add_attribute('$conf/bacula-sd.conf', 'MaximumFileSize', '1MB', 'Device')"
 
 change_jobname BackupClient1 $JobName
 start_test
 
 cat <<END_OF_DATA >$tmp/bconcmds
-@$out /dev/null
+@output /dev/null
 messages
 @$out $tmp/log1.out
 label volume=TestVolume001 storage=File1 pool=File slot=1 drive=0
+setbandwidth limit=2MB/s client
 run job=$JobName yes
+@sleep 2
+cancel all
+no
+cancel all
+.
+setbandwidth limit=100MB/s client
 wait
 messages
 @# 
 @# now do a restore
 @#
-@$out $tmp/log2.out
+@$out $tmp/log2.out  
+setdebug level=4 storage=File1
 restore where=$tmp/bacula-restores select all done
-@exec "sh -c 'cp $working/*.bsr $tmp/1.bsr'"
 yes
+wait
+messages
+@$out $tmp/log3.out
+setbandwidth limit=2MB/s client
+run job=$JobName level=full yes
+@sleep 2
+cancel all
+yes
+setbandwidth limit=100MB/s client
+wait
+messages
+@$out $tmp/log3.out
+setbandwidth limit=2MB/s client
+run job=$JobName level=full yes
+@sleep 2
+cancel all yes
+setbandwidth limit=100MB/s client
 wait
 messages
 quit
@@ -52,10 +76,12 @@ run_bacula
 check_for_zombie_jobs storage=File1
 stop_bacula
 
+nb=`grep "Backup Canceled" $tmp/log3.out | wc -l`
+if [ $nb != 2 ]; then
+    print_debug "ERROR: Should find two jobs canceled in $tmp/log3.out"
+    estat=1
+fi
+
 check_two_logs
 check_restore_diff
-
-# here we can add checks on the BSR file
-awk '/Volume=/ { nbvol++ } /FileIndex=/ { nbfdx++ } END { print "Found Volumes=" nbvol " FileIndexes=" nbfdx }' $tmp/1.bsr
-
 end_test

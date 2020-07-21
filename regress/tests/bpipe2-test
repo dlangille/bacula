@@ -1,0 +1,121 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Attempt to backup and restore a file with the bpipe plugin and
+# play with stdout/stderr
+#
+TestName="bpipe2-test"
+JobName=pluginTest
+. scripts/functions
+
+scripts/cleanup
+scripts/copy-plugin-confs
+
+file=bpipe.sh
+rm -rf ${cwd}/tmp/*
+echo "${cwd}/README" >${cwd}/tmp/file-list
+
+start_test
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@output /dev/null
+messages
+@$out ${cwd}/tmp/log1.out
+label storage=File1 volume=TestVolume001
+run job=$JobName fileset=bpipe storage=File1 yes
+wait
+status client=$CLIENT
+messages
+@$out ${cwd}/tmp/log3.out
+restore comment="Should finish in error" select all done yes
+wait
+messages
+quit
+END_OF_DATA
+
+# make check_two_logs happy
+touch $tmp/log2.out
+
+run_bacula
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@$out $tmp/files
+list files jobid=1
+END_OF_DATA
+
+run_bconsole
+
+if ! test -f $tmp/bpipe.sh
+then
+    print_debug "ERROR: Unable to find $tmp/bpipe.sh"
+    estat=1
+fi
+
+$rscripts/bpipe.sh > $tmp/1 2> /dev/null
+
+if ! diff $tmp/bpipe.sh $tmp/1
+then
+    print_debug "ERROR: Found a difference in $tmp/bpipe.sh and $tmp/1"
+    estat=1
+fi
+
+str="This is a message for Bacula"
+grep "$str" $tmp/log1.out > /dev/null
+if [ $? -ne 0 ]
+then
+    print_debug "ERROR: Should find string in job log $tmp/log1.out"
+    estat=1
+fi
+
+str="This is an error message"
+grep "$str" $tmp/log3.out > /dev/null
+if [ $? -ne 0 ]
+then
+    print_debug "ERROR: Should find '$str' in $tmp/log3.out"
+    estat=1
+fi
+
+str="An other line for Bacula"
+grep "$str" $tmp/log1.out > /dev/null
+if [ $? -ne 0 ]
+then
+    print_debug "ERROR: Should find '$str' in $tmp/log1.out"
+    estat=1
+fi
+
+str="This is an error message"
+grep "$str" $tmp/log3.out > /dev/null
+if [ $? -ne 0 ]
+then
+    print_debug "ERROR: Should find '$str' in $tmp/log3.out"
+    estat=1
+fi
+
+str="Last line for Bacula"
+grep "$str" $tmp/log3.out > /dev/null
+if [ $? -ne 0 ]
+then
+    print_debug "ERROR: Should find '$str' in $tmp/log3.out"
+    estat=1
+fi
+
+str="Error closing for file /@bpipe@/bpipe-error-restore.sh"
+grep "$str" $tmp/log3.out > /dev/null
+if [ $? -ne 0 ]
+then
+    print_debug "ERROR: Should find '$str' in $tmp/log3.out"
+    estat=1
+fi
+
+str="Error closing for file /@bpipe@/error"
+grep "$str" $tmp/log1.out > /dev/null
+if [ $? -ne 0 ]
+then
+    print_debug "ERROR: Should find '$str' in $tmp/log1.out"
+    estat=1
+fi
+
+stop_bacula
+end_test

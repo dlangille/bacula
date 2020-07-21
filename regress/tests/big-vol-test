@@ -1,9 +1,7 @@
 #!/bin/sh
 #
-# Copyright (C) 2000-2015 Kern Sibbald
+# Copyright (C) 2000-2020 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
-#
-
 #
 # Create a big Volume > 5 GB and backup to it to test disk
 #   seeking on big volumes.  We cheat and artifically grow 
@@ -13,11 +11,7 @@ TestName="big-vol-test"
 JobName=bigvol
 . scripts/functions
 
-if test x$FORCE_CLOUD = xyes ; then
-  echo "\n=== Test $TestName skipped not compatible with Cloud  ==="
-  exit 0
-fi
-
+unset FORCE_CLOUD
 
 scripts/cleanup
 scripts/copy-test-confs

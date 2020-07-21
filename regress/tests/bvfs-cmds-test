@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (C) 2000-2017 Kern Sibbald
+# Copyright (C) 2000-2020 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
 # Run a simple backup of the Bacula build directory then create some           
@@ -21,7 +21,7 @@ cp -p $src/src/dird/*.c $tmpsrc
 change_jobname CompressedTest $JobName
 start_test
 
-$bperl -e 'add_attribute("$conf/bacula-dir.conf", "ClientRunBeforeJob", "sleep 2", "Job")'
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "ClientRunAfterJob", "sleep 2", "Job")'
 
 cat <<END_OF_DATA >$tmp/bconcmds
 @$out /dev/null
@@ -88,7 +88,7 @@ grep '^2$' $tmp/log5.out        >/dev/null # with a limit
 estat=`expr $estat + $?`
 grep '^3$' $tmp/log6.out        >/dev/null # with a filter on the date
 estat=`expr $estat + $?`
-grep '^2$' $tmp/log7.out        >/dev/null # with a filter on the date
+grep '^1$' $tmp/log7.out        >/dev/null # with a filter on the date
 estat=`expr $estat + $?`
 
 stop_bacula

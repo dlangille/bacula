@@ -1,9 +1,7 @@
 #!/bin/sh
 #
-# Copyright (C) 2000-2015 Kern Sibbald
+# Copyright (C) 2000-2020 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
-#
-
 #
 # Show the broken media bug(s) again. Test by Graham Keeling.
 #
@@ -43,9 +41,9 @@ echo "${cwd}/build" >${cwd}/tmp/file-list
 
 start_test
 
-echo "Creating huge ${hugefilesize}M file..."
-dd if=/dev/urandom of="$hugefile" bs=1M count="$hugefilesize"
-echo "Done"
+#echo "Creating huge ${hugefilesize}M file..."
+dd if=/dev/urandom of="$hugefile" bs=1M count="$hugefilesize" >/dev/null 2>&1
+#echo "Done"
 
 cat >tmp/bconcmds <<END_OF_DATA
 @$out /dev/null
