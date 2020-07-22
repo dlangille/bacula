@@ -435,7 +435,7 @@ const char *create_temp_basefile[] =
    /* MySQL */
    "CREATE TEMPORARY TABLE basefile%lld"
    "(Path BLOB NOT NULL, Name BLOB NOT NULL,"
-   " PRIMARY (Path(255), Name(255)))",
+   " INDEX (Path(255), Name(255)))",
    /* PostgreSQL */
    "CREATE TEMPORARY TABLE basefile%lld"
    "(Path TEXT, Name TEXT)",
@@ -573,7 +573,6 @@ const char *uar_create_temp[] =
 {
    /* MySQL */
    "CREATE TEMPORARY TABLE temp ("
-   "PKEY INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,"
    "JobId INTEGER UNSIGNED NOT NULL,"
    "JobTDate BIGINT UNSIGNED,"
    "ClientId INTEGER UNSIGNED,"
@@ -584,7 +583,7 @@ const char *uar_create_temp[] =
    "VolumeName TEXT,"
    "StartFile INTEGER UNSIGNED,"
    "VolSessionId INTEGER UNSIGNED,"
-   "VolSessionTime INTEGER UNSIGNED) PRIMARY KEY (PKEY)",
+   "VolSessionTime INTEGER UNSIGNED)",
  
    /* PostgreSQL */
    "CREATE TEMPORARY TABLE temp ("
