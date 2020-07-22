@@ -192,6 +192,7 @@ void set_debug_flags(char *options);
 const char *get_basename(const char *pathname);
 bool is_message_type_set(JCR *jcr, int type);
 void set_trace_for_tools(FILE *new_trace_fd); // called by Bacula's tools only
+void update_trace_file_location(bool safe);
 
 class BDB;                                              /* define forward reference */
 typedef bool (*sql_insert_log)(JCR *jcr, JobId_t jobid, utime_t mtime, char *msg);

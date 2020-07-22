@@ -436,7 +436,8 @@ int main (int argc, char *argv[])
    update_permanent_stats(NULL);
 
    my_name_is(0, NULL, director->name());    /* set user defined name */
-
+   /* relocate trace file if needed, must be run after check_resources() and my_name_is() */
+   update_trace_file_location(false);
    cleanup_old_files();
 
    /* Plug database interface for library routines */

@@ -82,7 +82,10 @@ void create_jcr_key();
 static pthread_mutex_t fides_mutex = PTHREAD_MUTEX_INITIALIZER;
 static MSGS *daemon_msgs;              /* global messages */
 static void (*message_callback)(int type, char *msg) = NULL;
+#define MAX_TRACE_PATH  200
 static FILE *trace_fd = NULL;
+static char trace_path[MAX_TRACE_PATH] = {0};
+
 #if defined(HAVE_WIN32)
 static bool trace = true;
 #elif defined(Q_OS_ANDROID)
@@ -1109,6 +1112,42 @@ const char *get_basename(const char *pathname)
    return basename;
 }
 
+/* open trace file in working directory if not already open */
+static inline void open_trace_file()
+{
+   if (!trace_fd) {
+      bsnprintf(trace_path, sizeof(trace_path), "%s/%s.trace", working_directory ? working_directory : ".", my_name);
+      trace_fd = bfopen(trace_path, "a+b");
+   }
+}
+
+/* If the working directory or my_name has changed then close the trace file.
+ * Next write will reopen it at the new location
+ * use safe = true for reload when the daemon is multi threaded,
+ * but use safe = false when the daemon is still single thread just after the
+ * load of the config file
+ */
+void update_trace_file_location(bool safe)
+{
+   if (trace_fd) {
+      char fn[MAX_TRACE_PATH];
+      bsnprintf(fn, sizeof(fn), "%s/%s.trace", working_directory ? working_directory : ".", my_name);
+      if (strcmp(trace_path, fn) != 0) {
+         /* the trace file must be reopen at its new location */
+         if (safe) {
+            /* cheap safety, TODO use mutex instead */
+            FILE *ltrace_fd = trace_fd;
+            trace_fd = NULL;
+            bmicrosleep(0, 100000);         /* yield to prevent seg faults */
+            fclose(ltrace_fd);
+         } else {
+            fclose(trace_fd);
+            trace_fd = NULL;
+         }
+      }
+   }
+}
+
 /*
  * print or write output to trace file
  */
@@ -1119,11 +1158,7 @@ static void pt_out(char *buf)
      *  output to the trace file.  "trace off" will close the file.
      */
     if (trace) {
-       if (!trace_fd) {
-          char fn[200];
-          bsnprintf(fn, sizeof(fn), "%s/%s.trace", working_directory ? working_directory : "./", my_name);
-          trace_fd = bfopen(fn, "a+b");
-       }
+       open_trace_file();
        if (trace_fd) {
           fputs(buf, trace_fd);
           fflush(trace_fd);
@@ -1359,10 +1394,7 @@ t_msg(const char *file, int line, int64_t level, const char *fmt,...)
     }
 
     if (level <= debug_level) {
-       if (!trace_fd) {
-          bsnprintf(buf, sizeof(buf), "%s/%s.trace", working_directory ? working_directory : ".", my_name);
-          trace_fd = bfopen(buf, "a+b");
-       }
+       open_trace_file();
 
 #ifdef FULL_LOCATION
        if (details) {

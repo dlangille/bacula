@@ -238,6 +238,9 @@ int main (int argc, char *argv[])
    if (test_config) {
       terminate_filed(0);
    }
+   /* relocate trace file if needed, must be run after set_working_directory()
+    * and my_name_is() */
+   update_trace_file_location(false);
 
    set_thread_concurrency(me->MaxConcurrentJobs + 10);
    lmgr_init_thread(); /* initialize the lockmanager stack */

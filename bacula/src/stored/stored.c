@@ -281,6 +281,9 @@ int main (int argc, char *argv[])
    }
 
    my_name_is(0, (char **)NULL, me->hdr.name);     /* Set our real name */
+   /* relocate trace file if needed, must be run after set_working_directory()
+    * and my_name_is() */
+   update_trace_file_location(false);
 
    if (make_pid_file) {
       create_pid_file(me->pid_directory, "bacula-sd",
