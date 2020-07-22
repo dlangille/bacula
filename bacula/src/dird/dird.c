@@ -778,6 +778,9 @@ void reload_config(int sig)
 
    /* Reset other globals */
    set_working_directory(director->working_directory);
+   /* relocate trace file if needed, must be run after check_resources() and my_name_is() */
+   update_trace_file_location(false);
+
    FDConnectTimeout = director->FDConnectTimeout;
    SDConnectTimeout = director->SDConnectTimeout;
    Dmsg0(10, "Director's configuration file reread.\n");
