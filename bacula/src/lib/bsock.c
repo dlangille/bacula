@@ -391,9 +391,11 @@ bool BSOCK::send(int aflags)
                   m_host, m_port, this->bstrerror());
          }
       } else {
-         Qmsg5(m_jcr, M_ERROR, 0,
-               _("Wrote %d bytes to %s:%s:%d, but only %d accepted.\n"),
-               pktsiz, m_who, m_host, m_port, rc);
+         if (!m_suppress_error_msgs) {
+            Qmsg5(m_jcr, M_ERROR, 0,
+                  _("Wrote %d bytes to %s:%s:%d, but only %d accepted.\n"),
+                  pktsiz, m_who, m_host, m_port, rc);
+         }
       }
       ok = false;
    }
