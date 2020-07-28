@@ -410,7 +410,7 @@ const char *select_recent_version[] =
     MyISAM 5.0 and 5.1 are unable to run further queries in this mode
  */
 static const char *create_temp_accurate_jobids_default = 
- "CREATE TABLE btemp3%s AS ("
+ "CREATE TABLE btemp3%s AS "
     "SELECT JobId, StartTime, EndTime, JobTDate, PurgedFiles "
       "FROM Job JOIN FileSet USING (FileSetId) "
      "WHERE ClientId = %s "
@@ -418,7 +418,7 @@ static const char *create_temp_accurate_jobids_default =
        "AND StartTime<'%s' "
        "AND FileSet.FileSet=(SELECT FileSet FROM FileSet WHERE FileSetId = %s) "
        " %s "                   /* Any filter */
-     "ORDER BY Job.JobTDate DESC LIMIT 1)";
+     "ORDER BY Job.JobTDate DESC LIMIT 1";
  
 const char *create_temp_accurate_jobids[] =
 {
