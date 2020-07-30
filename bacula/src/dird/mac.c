@@ -48,7 +48,6 @@ extern bool regex_find_jobids(JCR *jcr, idpkt *ids, const char *query1,
                  const char *query2, const char *type);
 extern bool find_mediaid_then_jobids(JCR *jcr, idpkt *ids, const char *query1,
                  const char *type);
-extern bool find_jobids_of_pool_uncopied_jobs(JCR *jcr, idpkt *ids);
 
 static bool set_mac_next_pool(JCR *jcr, POOL **pool);
 
