@@ -334,8 +334,6 @@ static bool setup_resume_job(JCR *jcr, JOB_DBR *jr)
       goto bail_out;
    }
    bstrncpy(jcr->Job, jcr->jr.Job, sizeof(jcr->Job));
-   jcr->setJobType(jcr->jr.JobType);
-   jcr->setJobLevel(jcr->jr.JobLevel);
 
    generate_daemon_event(jcr, "JobStart");
    new_plugins(jcr);                  /* instantiate plugins for this jcr */
