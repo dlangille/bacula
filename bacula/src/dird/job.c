@@ -490,10 +490,10 @@ static void *job_thread(void *arg)
       break;
    case JT_COPY:
    case JT_MIGRATE:
-      if (!job_canceled(jcr) && do_mac(jcr)) {
-         do_autoprune(jcr);
-      } else {
+      if (job_canceled(jcr)) {
          mac_cleanup(jcr, JS_ErrorTerminated, JS_ErrorTerminated);
+      } else  if (do_mac(jcr)) {
+         do_autoprune(jcr);
       }
       break;
    default:
