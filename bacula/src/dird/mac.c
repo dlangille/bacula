@@ -85,7 +85,8 @@ bool do_mac_init(JCR *jcr)
    JOB *job, *prev_job;
    JCR *wjcr;                     /* jcr of writing job */
    int count;
-
+   CLIENT_DBR cr;
+   FILESET_DBR fr;
 
    apply_pool_overrides(jcr);
 
@@ -181,6 +182,46 @@ bool do_mac_init(JCR *jcr)
     *   the previous backup job "prev_job".
     */
    set_jcr_defaults(wjcr, prev_job);
+   /*
+   * It is important to load wjcr with the right setup, because these data
+   * goes to the SD and in the volume (like in BOS and EOS label)
+   * Some fields from of the job that is being copied are in the JOB_DBR
+   * wjcr->previous_jr and must be used instead of the Job Resource in prev_job
+   * because some of them can be overwritten in the run command or by the
+   * scheduler
+    */
+   wjcr->setJobLevel(wjcr->previous_jr.JobLevel);
+   // Look for the Client from the Job Record
+   bmemset(&cr, 0, sizeof(cr));
+   cr.ClientId = wjcr->previous_jr.ClientId;
+   if (!db_get_client_record(jcr, jcr->db, &cr)) {
+      Jmsg(jcr, M_FATAL, 0, _("Could not get the client record for clientId %d.\n"),
+            (int)wjcr->previous_jr.ClientId);
+      return false;
+   }
+   if (!wjcr->client_name) {
+      wjcr->client_name = get_pool_memory(PM_NAME);
+   }
+   pm_strcpy(wjcr->client_name, cr.Name);
+   wjcr->client = GetClientResWithName(cr.Name);
+   if (!wjcr->client) {
+      Jmsg(jcr, M_FATAL, 0, _("Client resource not found for \"%s\".\n"), cr.Name);
+      return false;
+   }
+   // Look for the FileSet from the Job Record
+   bmemset(&fr, 0, sizeof(fr));
+   fr.FileSetId = wjcr->previous_jr.FileSetId;
+   if (!db_get_fileset_record(jcr, jcr->db, &fr)) {
+      Jmsg(jcr, M_FATAL, 0, _("Could not get the FileSet record for FileSetId %d.\n"),
+            (int)wjcr->previous_jr.FileSetId);
+      return false;
+   }
+   wjcr->fileset = GetFileSetResWithName(fr.FileSet);
+   if (!wjcr->fileset) {
+      Jmsg(jcr, M_FATAL, 0, _("FileSet resource not found for \"%s\".\n"), fr.FileSet);
+      return false;
+   }
+
    /* fix MA 987 cannot copy/migrate jobs with a Level=VF in the job resource
     * If the prev_job level definition is VirtualFull,
     * change it to Incremental, otherwise the writing SD would do a VF
@@ -205,8 +246,6 @@ bool do_mac_init(JCR *jcr)
    wjcr->jr.PoolId = jcr->jr.PoolId;
    wjcr->jr.JobId = wjcr->JobId;
    wjcr->sd_client = true;
-   //wjcr->setJobType(jcr->getJobType());
-   wjcr->setJobLevel(jcr->getJobLevel());
    wjcr->spool_data = jcr->spool_data; /* turn on spooling if requested in job or by run command */
    wjcr->spool_size = jcr->spool_size;
    jcr->spool_size = 0;
