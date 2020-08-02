@@ -1425,7 +1425,8 @@ bool Bvfs::insert_hardlinks(char *output_table)
    }
 
    Dmsg1(dbglevel, "Inserting %d hardlink records\n", missing_hardlinks->size());
-   Mmsg(query, "CREATE TEMPORARY TABLE h%s (JobId integer, FileIndex integer)", output_table);
+   Mmsg(query, "CREATE TEMPORARY TABLE h%s (JobId INTEGER, FileIndex INTEGER"
+               "/*PKEY, DummyPkey INTEGER AUTO_INCREMENT PRIMARY KEY*/)", output_table);
    Dmsg1(dbglevel, "q=%s\n", query.c_str());
    if (!db->bdb_sql_query(query.c_str(), NULL, NULL)) {
       Dmsg1(dbglevel, "Can't execute query=%s\n", query.c_str());
@@ -1527,7 +1528,7 @@ bool Bvfs::compute_restore_list(char *fileid, char *dirid, char *output_table)
    /* Now start the transaction to protect ourself from other commands */
    db->bdb_start_transaction(jcr);
 
-   Mmsg(query, "CREATE TABLE btemp%s AS ", output_table);
+   Mmsg(query, "CREATE TABLE btemp%s /*PKEY (DummyPkey INTEGER AUTO_INCREMENT PRIMARY KEY)*/ AS ", output_table);
 
    if (*fileid) {               /* Select files with their direct id */
       init=true;

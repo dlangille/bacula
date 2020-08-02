@@ -126,7 +126,7 @@ const char *uar_del_temp  = "DROP TABLE IF EXISTS temp";
 const char *uar_del_temp1 = "DROP TABLE IF EXISTS temp1";
 
 const char *uar_last_full =
-   "INSERT INTO temp1 SELECT Job.JobId,JobTdate "
+   "INSERT INTO temp1(JobId,JobTDate) SELECT Job.JobId,JobTdate "
    "FROM Client,Job,JobMedia,Media,FileSet WHERE Client.ClientId=%s "
    "AND Job.ClientId=%s "
    "AND Job.StartTime < '%s' "
@@ -140,7 +140,9 @@ const char *uar_last_full =
    "ORDER BY Job.JobTDate DESC LIMIT 1";
 
 const char *uar_full =
-   "INSERT INTO temp SELECT Job.JobId,Job.JobTDate,"
+   "INSERT INTO temp (JobId,JobTDate,ClientId,Level,JobFiles,JobBytes,StartTime,VolumeName,StartFile,VolSessionId,VolSessionTime) "
+
+   "SELECT Job.JobId,Job.JobTDate,"
    "Job.ClientId,Job.Level,Job.JobFiles,Job.JobBytes,"
    "StartTime,VolumeName,JobMedia.StartFile,VolSessionId,VolSessionTime "
    "FROM temp1,Job,JobMedia,Media WHERE temp1.JobId=Job.JobId "
@@ -150,7 +152,8 @@ const char *uar_full =
    "AND JobMedia.MediaId=Media.MediaId";
 
 const char *uar_dif =
-   "INSERT INTO temp SELECT Job.JobId,Job.JobTDate,Job.ClientId,"
+   "INSERT INTO temp (JobId,JobTDate,ClientId,Level,JobFiles,JobBytes,StartTime,VolumeName,StartFile,VolSessionId,VolSessionTime) "
+   "SELECT Job.JobId,Job.JobTDate,Job.ClientId,"
    "Job.Level,Job.JobFiles,Job.JobBytes,"
    "Job.StartTime,Media.VolumeName,JobMedia.StartFile,"
    "Job.VolSessionId,Job.VolSessionTime "
@@ -167,7 +170,8 @@ const char *uar_dif =
    "ORDER BY Job.JobTDate DESC LIMIT 1";
 
 const char *uar_inc =
-   "INSERT INTO temp SELECT Job.JobId,Job.JobTDate,Job.ClientId,"
+   "INSERT INTO temp (JobId,JobTDate,ClientId,Level,JobFiles,JobBytes,StartTime,VolumeName,StartFile,VolSessionId,VolSessionTime) "
+   "SELECT Job.JobId,Job.JobTDate,Job.ClientId,"
    "Job.Level,Job.JobFiles,Job.JobBytes,"
    "Job.StartTime,Media.VolumeName,JobMedia.StartFile,"
    "Job.VolSessionId,Job.VolSessionTime "
@@ -409,9 +413,9 @@ const char *select_recent_version[] =
 /* We don't create this table as TEMPORARY because MySQL 
     MyISAM 5.0 and 5.1 are unable to run further queries in this mode
  */
-static const char *create_temp_accurate_jobids_default = 
- "CREATE TABLE btemp3%s AS "
-    "SELECT JobId, StartTime, EndTime, JobTDate, PurgedFiles "
+static const char *create_temp_accurate_jobids_default =
+    "CREATE TABLE btemp3%s AS "
+    "SELECT JobId, StartTime, EndTime, JobTDate, PurgedFiles, FileSetId "
       "FROM Job JOIN FileSet USING (FileSetId) "
      "WHERE ClientId = %s "
        "AND Level='F' AND JobStatus IN ('T','W') AND Type='B' "
@@ -419,23 +423,35 @@ static const char *create_temp_accurate_jobids_default =
        "AND FileSet.FileSet=(SELECT FileSet FROM FileSet WHERE FileSetId = %s) "
        " %s "                   /* Any filter */
      "ORDER BY Job.JobTDate DESC LIMIT 1";
- 
+
+static const char *create_temp_accurate_jobids_mysql =
+    "CREATE TABLE btemp3%s /*PKEY (DummyPkey INTEGER AUTO_INCREMENT PRIMARY KEY)*/ AS ("
+    "SELECT JobId, StartTime, EndTime, JobTDate, PurgedFiles, FileSetId "
+      "FROM Job JOIN FileSet USING (FileSetId) "
+     "WHERE ClientId = %s "
+       "AND Level='F' AND JobStatus IN ('T','W') AND Type='B' "
+       "AND StartTime<'%s' "
+       "AND FileSet.FileSet=(SELECT FileSet FROM FileSet WHERE FileSetId = %s) "
+       " %s "                   /* Any filter */
+     "ORDER BY Job.JobTDate DESC LIMIT 1)";
+
 const char *create_temp_accurate_jobids[] =
 {
    /* MySQL */
-   create_temp_accurate_jobids_default, 
+   create_temp_accurate_jobids_mysql,
    /* PostgreSQL */
-   create_temp_accurate_jobids_default, 
+   create_temp_accurate_jobids_default,
    /* SQLite */
    create_temp_accurate_jobids_default
-}; 
+};
  
 const char *create_temp_basefile[] =
 {
    /* MySQL */
    "CREATE TEMPORARY TABLE basefile%lld"
-   "(Path BLOB NOT NULL, Name BLOB NOT NULL,"
-   " INDEX (Path(255), Name(255)))",
+   "(Path BLOB NOT NULL, Name BLOB NOT NULL, "
+   "INDEX (Path(255), Name(255))"
+   "/*PKEY, DummyPkey INTEGER AUTO_INCREMENT PRIMARY KEY*/)",
    /* PostgreSQL */
    "CREATE TEMPORARY TABLE basefile%lld"
    "(Path TEXT, Name TEXT)",
@@ -447,7 +463,7 @@ const char *create_temp_basefile[] =
 const char *create_temp_new_basefile[] =
 {
    /* MySQL */
-   "CREATE TEMPORARY TABLE new_basefile%lld AS  "
+   "CREATE TEMPORARY TABLE new_basefile%lld /*PKEY(DummyPkey INTEGER AUTO_INCREMENT PRIMARY KEY)*/ AS "
    "SELECT Path.Path AS Path, Temp.Filename AS Name, Temp.FileIndex AS FileIndex,"
    " Temp.JobId AS JobId, Temp.LStat AS LStat, Temp.FileId AS FileId,"
    " Temp.MD5 AS MD5"
@@ -485,7 +501,8 @@ const char *create_deltabs[] =
    "PurgedFiles TINYINT, "
    "FileSetId INTEGER UNSIGNED, "
    "JobFiles INTEGER UNSIGNED, "
-   "JobStatus BINARY(1))",
+   "JobStatus BINARY(1)"
+   "/*PKEY, DummyPkey INTEGER AUTO_INCREMENT PRIMARY KEY*/)",
  
    /* PostgreSQL */
    "CREATE TEMPORARY TABLE DelCandidates ( "
@@ -509,7 +526,7 @@ const char *create_deltabs[] =
  *   to a Backup job when the original backup job is expired.
  */
 static const char *uap_upgrade_copies_oldest_job_default = 
-"CREATE TEMPORARY TABLE cpy_tmp AS "
+    "CREATE TEMPORARY TABLE cpy_tmp /*PKEY (DummyPkey INTEGER PRIMARY KEY DEFAULT 1)*/ AS "
        "SELECT MIN(JobId) AS JobId FROM Job "     /* Choose the oldest job */
         "WHERE Type='%c' "                        /* JT_JOB_COPY */
           "AND ( PriorJobId IN (%s) "             /* JobId selection */
@@ -583,7 +600,8 @@ const char *uar_create_temp[] =
    "VolumeName TEXT,"
    "StartFile INTEGER UNSIGNED,"
    "VolSessionId INTEGER UNSIGNED,"
-   "VolSessionTime INTEGER UNSIGNED)",
+   "VolSessionTime INTEGER UNSIGNED"
+   "/*PKEY, DummyPKey INTEGER AUTO_INCREMENT PRIMARY KEY*/)",
  
    /* PostgreSQL */
    "CREATE TEMPORARY TABLE temp ("
@@ -619,7 +637,8 @@ const char *uar_create_temp1[] =
    /* MySQL */
    "CREATE TEMPORARY TABLE temp1 ("
    "JobId INTEGER UNSIGNED NOT NULL,"
-   "JobTDate BIGINT UNSIGNED)",
+   "JobTDate BIGINT UNSIGNED"
+   "/*PKEY, DummyPKey INTEGER AUTO_INCREMENT PRIMARY KEY*/)",
    /* PostgreSQL */
    "CREATE TEMPORARY TABLE temp1 ("
    "JobId INTEGER NOT NULL,"
@@ -694,7 +713,21 @@ const char *sql_get_max_connections[] =
  *  version of a file in the same dataset.
  */
 const char *default_sql_bvfs_select =
-"CREATE TABLE %s AS "
+"CREATE TABLE %s AS"
+"SELECT File.JobId, File.FileIndex, File.FileId "
+"FROM Job, File, ( "
+    "SELECT MAX(JobTDate) AS JobTDate, PathId, Filename "
+       "FROM btemp%s GROUP BY PathId, Filename "
+    ") AS T1 "
+"WHERE T1.JobTDate = Job.JobTDate "
+  "AND Job.JobId = File.JobId "
+  "AND T1.PathId = File.PathId "
+  "AND T1.Filename = File.Filename "
+  "AND File.FileIndex > 0 "
+  "AND Job.JobId IN (SELECT DISTINCT JobId FROM btemp%s) ";
+
+const char *default_sql_bvfs_select_mysql =
+"CREATE TABLE %s /*PKEY (DummyPkey INTEGER AUTO_INCREMENT PRIMARY KEY)*/ AS "
 "SELECT File.JobId, File.FileIndex, File.FileId "
 "FROM Job, File, ( "
     "SELECT MAX(JobTDate) AS JobTDate, PathId, Filename "
@@ -710,7 +743,7 @@ const char *default_sql_bvfs_select =
 const char *sql_bvfs_select[] =
 {
    /* MySQL */
-   default_sql_bvfs_select,
+   default_sql_bvfs_select_mysql,
    /* PostgreSQL */
    "CREATE TABLE %s AS ( "
         "SELECT JobId, FileIndex, FileId "

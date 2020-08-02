@@ -631,7 +631,7 @@ int prune_jobs(UAContext *ua, CLIENT *client, POOL *pool, int JobType)
     *  and add them into the "DeletionCandidates" table.
     */
    Mmsg(query,
-        "INSERT INTO DelCandidates "
+        "INSERT INTO DelCandidates(JobId, PurgedFiles, FileSetId, JobFiles, JobStatus) "
           "SELECT JobId,PurgedFiles,FileSetId,JobFiles,JobStatus "
             "FROM Job %s "      /* JOIN Pool/Client */
            "WHERE Type IN ('B', 'C', 'M', 'V',  'D', 'R', 'c', 'm', 'g') "

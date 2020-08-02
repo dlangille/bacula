@@ -187,7 +187,22 @@ get_out:
    V(mutex); 
    return mdb; 
 } 
- 
+
+bool BDB_MYSQL::is_pkey_required()
+{
+   int ret = mysql_query(m_db_handle, "show variables like 'sql_require_primary_key'"); 
+   bool req_pkey = false;
+   if (!ret) {
+      if ((m_result = mysql_use_result(m_db_handle)) != NULL) { 
+         SQL_ROW row;
+         while ((row = mysql_fetch_row(m_result))) { 
+            req_pkey = !strncmp(row[1], "ON", 2);
+         }
+         sql_free_result();
+      } 
+   }
+   return req_pkey;
+}
  
 /* 
  * Now actually open the database.  This can generate errors, 
@@ -302,6 +317,13 @@ bool BDB_MYSQL::bdb_open_database(JCR *jcr)
    if (!bdb_check_version(jcr)) { 
       goto get_out; 
    } 
+
+   /* Check if all tables created must have a Primary Key */
+   if (is_pkey_required()) {
+     m_pkey_query_buffer = get_pool_memory(PM_FNAME);
+   } else {
+     m_pkey_query_buffer = NULL;
+   } 
  
    Dmsg3(100, "opendb ref=%d connected=%d db=%p\n", mdb->m_ref_count, mdb->m_connected, mdb->m_db_handle); 
  
@@ -348,6 +370,9 @@ void BDB_MYSQL::bdb_close_database(JCR *jcr)
       free_pool_memory(mdb->esc_name); 
       free_pool_memory(mdb->esc_path); 
       free_pool_memory(mdb->esc_obj); 
+      if (mdb->m_pkey_query_buffer) {
+         free_pool_memory(mdb->m_pkey_query_buffer);
+      }
       if (mdb->m_db_driver) { 
          free(mdb->m_db_driver); 
       } 
@@ -464,7 +489,24 @@ void BDB_MYSQL::bdb_start_transaction(JCR *jcr)
 void BDB_MYSQL::bdb_end_transaction(JCR *jcr) 
 { 
 } 
- 
+
+/* 
+ * Helper function to dynamically add Primary Keys to the tables being created.
+ */
+const char* BDB_MYSQL::enable_pkey(const char *query)
+{
+   if (!m_pkey_query_buffer) return query; 
+   const char *tag = strstr(query, "/*PKEY");
+   if (!tag) return query;
+   
+   pm_strcpy(m_pkey_query_buffer, query);
+   char *pos = strstr(m_pkey_query_buffer, "/*PKEY");
+   for (int i=0; i<6; i++) *pos++=' ';
+   pos = strstr(pos, "*/");
+   for (int i=0; i<2; i++) *pos++=' ';
+   return m_pkey_query_buffer;
+}
+
 /* 
  * Submit a general SQL command (cmd), and for each row returned, 
  * the result_handler is called with the ctx. 
@@ -481,10 +523,12 @@ bool BDB_MYSQL::bdb_sql_query(const char *query, DB_RESULT_HANDLER *result_handl
  
    bdb_lock(); 
    errmsg[0] = 0; 
+
+   query = enable_pkey(query);
    ret = mysql_query(m_db_handle, query); 
    if (ret != 0) { 
       Mmsg(mdb->errmsg, _("Query failed: %s: ERR=%s\n"), query, sql_strerror()); 
-      Dmsg0(500, "db_sql_query failed\n"); 
+      Dmsg0(500, "db_sql_query failed\n");
       goto get_out; 
    } 
  
@@ -519,7 +563,7 @@ get_out:
    bdb_unlock(); 
    return retval; 
 } 
- 
+
 bool BDB_MYSQL::sql_query(const char *query, int flags) 
 { 
    int ret; 
@@ -539,6 +583,7 @@ bool BDB_MYSQL::sql_query(const char *query, int flags)
       mdb->m_result = NULL; 
    } 
  
+   query = enable_pkey(query);
    ret = mysql_query(mdb->m_db_handle, query); 
    if (ret == 0) { 
       Dmsg0(500, "we have a result\n"); 
@@ -687,13 +732,14 @@ bool BDB_MYSQL::sql_batch_start(JCR *jcr)
  
    bdb_lock(); 
    retval = sql_query("CREATE TEMPORARY TABLE batch (" 
-                      "FileIndex integer," 
-                      "JobId integer," 
+                      "FileIndex integer not null," 
+                      "JobId integer not null," 
                       "Path blob," 
                       "Name blob," 
                       "LStat tinyblob," 
                       "MD5 tinyblob," 
-                      "DeltaSeq integer)"); 
+                      "DeltaSeq integer"
+                      "/*PKEY, DummyPkey INTEGER AUTO_INCREMENT PRIMARY KEY*/)");
    bdb_unlock(); 
  
    /* 
@@ -751,7 +797,7 @@ bool BDB_MYSQL::sql_batch_insert(JCR *jcr, ATTR_DBR *ar)
     * Try to batch up multiple inserts using multi-row inserts. 
     */ 
    if (mdb->changes == 0) { 
-      Mmsg(cmd, "INSERT INTO batch VALUES " 
+      Mmsg(cmd, "INSERT INTO batch(FileIndex, JobId, Path, Name, LStat, MD5, DeltaSeq) VALUES " 
            "(%d,%s,'%s','%s','%s','%s',%u)", 
            ar->FileIndex, edit_int64(ar->JobId,ed1), mdb->esc_path, 
            mdb->esc_name, ar->attr, digest, ar->DeltaSeq); 

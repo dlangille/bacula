@@ -33,6 +33,10 @@ private:
    MYSQL *m_db_handle;
    MYSQL m_instance;
    MYSQL_RES *m_result;
+   POOLMEM *m_pkey_query_buffer;
+
+   bool is_pkey_required();
+   const char* enable_pkey(const char *query);
 
 public:
    BDB_MYSQL();
