@@ -390,6 +390,9 @@ bool BSOCKCORE::open(JCR *jcr, const char *name, char *host, char *service,
 
       /* Bind to the source address if it is set */
       if (src_addr) {
+         /* It is not required to use SO_REUSEADDR here as DirSourceAddress &
+          * FdSourceAddress don't force the port of the source, only the address
+          */
          if (bind(sockfd, src_addr->get_sockaddr(), src_addr->get_sockaddr_len()) < 0) {
             berrno be;
             save_errno = errno;
