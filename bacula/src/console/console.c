@@ -1266,8 +1266,6 @@ int main(int argc, char *argv[])
       exit(0);
    }
 
-   memset((void *)&jcr, 0, sizeof(jcr));
-
    (void)WSA_Init();                        /* Initialize Windows sockets */
 
    start_watchdog();                        /* Start socket watchdog */
