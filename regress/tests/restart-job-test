@@ -1,9 +1,7 @@
 #!/bin/sh
 #
-# Copyright (C) 2000-2015 Kern Sibbald
+# Copyright (C) 2000-2020 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
-#
-
 #
 # Run a backup of the build directory but force it to have
 #   a comm error, and check that it restarts correctly.
@@ -15,11 +13,14 @@ JobName=RestartJob
 scripts/cleanup
 scripts/copy-test-confs
 
+setup_shstore # simulate shared storage if enabled
 
 echo "${cwd}/build" >${cwd}/tmp/file-list
 
 change_jobname NightlySave $JobName
 start_test
+
+$bperl -e "add_attribute('$conf/bacula-dir.conf', 'AllowIncompleteJobs', 'yes', 'Job')"
 
 cat <<EOF >> $conf/bacula-dir.conf
 Pool {
