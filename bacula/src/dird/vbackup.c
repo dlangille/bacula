@@ -138,7 +138,11 @@ _("This Job is not an Accurate backup so is not equivalent to a Full backup.\n")
               jr.cStartTime);
 
          jr.JobLevel = L_INCREMENTAL; /* Take Full+Diff+Incr */
-         db_get_accurate_jobids(jcr, jcr->db, &jr, &jobids);
+         if (!db_get_accurate_jobids(jcr, jcr->db, &jr, &jobids)) {
+            Jmsg(jcr, M_ERROR, 0,
+                 _("Unable to get accurate job IDs. ERR=%s\n"), db_strerror(jcr->db));
+            return false;
+         }
 
          if (jobids.count == 1) {
             /* It's better to keep the input, we might already have copy/vf jobs */
@@ -162,8 +166,13 @@ _("This Job is not an Accurate backup so is not equivalent to a Full backup.\n")
                  jcr->job->name(),
                  sel.get_expanded_list());
 
-            db_sql_query(jcr->db, query.c_str(),  db_list_handler, &jobids);
+            if(!db_sql_query(jcr->db, query.c_str(), db_list_handler, &jobids)) {
+               Jmsg(jcr, M_ERROR, 0,
+                    _("Unable to filter job name. ERR=%s\n"), db_strerror(jcr->db));
+               return false;
+            }
          }
+      }
 
          if (jobids.count == 0) {
             Jmsg(jcr, M_FATAL, 0, _("No valid Jobs found from user selection.\n"));
@@ -181,7 +190,11 @@ _("This Job is not an Accurate backup so is not equivalent to a Full backup.\n")
               jobids.list);
 
          /* Will produce something like F,D,I or F,I */
-         db_sql_query(jcr->db, query.c_str(),  db_list_handler, &status);
+         if (!db_sql_query(jcr->db, query.c_str(), db_list_handler, &status)) {
+            Jmsg(jcr, M_ERROR, 0,
+                 _("Unable to get job level. ERR=%s\n"), db_strerror(jcr->db));
+            return false;
+         }
 
          /* If no full found in the list, we build a "virtualdiff" or
           * a "virtualinc".
@@ -198,13 +211,18 @@ _("This Job is not an Accurate backup so is not equivalent to a Full backup.\n")
                                       "using Incremental level\n"));
             }
          }
-      }
 
    } else {                     /* No argument provided */
       jcr->jr.JobLevel = L_VIRTUAL_FULL;
       /* We restrict the search of the JobIds to the current job */
       bstrncpy(jcr->jr.Name, jcr->job->name(), sizeof(jcr->jr.Name));
-      db_get_accurate_jobids(jcr, jcr->db, &jcr->jr, &jobids);
+      if (!db_get_accurate_jobids(jcr, jcr->db, &jcr->jr, &jobids)) {
+         Jmsg(jcr, M_ERROR, 0,
+              _("Unable to get accurate job IDs. ERR=%s\n"), db_strerror(jcr->db));
+         return false;
+      }
+
+
       Dmsg1(10, "Accurate jobids=%s\n", jobids.list);
    }
 
@@ -341,7 +359,11 @@ _("This Job is not an Accurate backup so is not equivalent to a Full backup.\n")
    /* Note, the SD stores in jcr->JobFiles/ReadBytes/JobBytes/JobErrors */
    wait_for_storage_daemon_termination(jcr);
    jcr->setJobStatus(jcr->SDJobStatus);
-   flush_file_records(jcr);     /* cached attribute + batch insert */
+   if (!flush_file_records(jcr)) {     /* cached attribute + batch insert */
+      Jmsg(jcr, M_ERROR, 0,
+           _("Unable to flush file records!\n"));
+      return false;
+   }
 
    if (jcr->JobStatus != JS_Terminated) {
       return false;
