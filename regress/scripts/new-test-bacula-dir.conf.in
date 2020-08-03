@@ -106,7 +106,18 @@ Job {
   SpoolData=yes
 }
 
-
+Job {
+  Name = "VerifyDiskToCatalog"
+  Type = Verify
+  VerifyJob = MonsterSave
+  Level = DiskToCatalog
+  Client=@hostname@-fd 
+  FileSet="Full Set"
+  Storage = File
+  Messages = Standard
+  Pool = Default
+  Write Bootstrap = "@working_dir@/NightlySave.bsr"
+}
 
 Job {
   Name = "VerifyVolume"
@@ -401,7 +412,7 @@ FileSet {
 
 FileSet {
   Name = "FS5nocheck"
-  Include  { Options { verify="nog"; signature=MD5 }
+  Include  { Options { verify="ng"; signature=MD5 }
     File = <@tmpdir@/file-list
   }
   Include  { Options { signature=MD5; sparse=yes }
