@@ -1,9 +1,7 @@
 #!/bin/sh
 #
-# Copyright (C) 2000-2015 Kern Sibbald
+# Copyright (C) 2000-2020 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
-#
-
 #
 # Author: Kern Sibbald, 2006
 # License: AGPLv3
@@ -63,17 +61,17 @@ messages
 @$out ${cwd}/tmp/log3.out
 @# They should all have a MD5
 sql
-SELECT Name, Md5
-  FROM File JOIN Filename USING (FilenameId)
- WHERE Name LIKE 'hard%' OR Name = 'normalfile';
+SELECT Filename, Md5
+  FROM File
+ WHERE Filename LIKE 'hard%' OR Filename = 'normalfile';
 
 @$out ${cwd}/tmp/log4.out
 sql
 SELECT count(1), Md5
-  FROM File JOIN Filename USING (FilenameId)
- WHERE Name = 'hardlink-to-normalfile' 
-    OR Name = 'normalfile'
-    OR Name = 'another-hardlink-to-normalfile'
+  FROM File
+ WHERE Filename = 'hardlink-to-normalfile' 
+    OR Filename = 'normalfile'
+    OR Filename = 'another-hardlink-to-normalfile'
  GROUP By Md5;
 
 quit
