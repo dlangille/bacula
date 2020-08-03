@@ -5,7 +5,7 @@ use strict;
 
    Bacula(R) - The Network Backup Solution
 
-   Copyright (C) 2000-2018 Kern Sibbald
+   Copyright (C) 2000-2020 Kern Sibbald
 
    The original author of Bacula is Kern Sibbald, with contributions
    from many others, a complete list can be found in the file AUTHORS.
@@ -32,8 +32,8 @@ our @ISA = qw(Exporter);
 our @EXPORT = qw(update_some_files create_many_files check_multiple_copies
                   update_client $HOST $BASEPORT add_to_backup_list
                   run_bconsole run_bacula start_test end_test create_bconcmds
-                  create_many_dirs cleanup start_bacula
-                  get_dirname check_jobmedia_content setup_collector
+                  create_many_dirs cleanup start_bacula $FORCE_DEDUP $DEDUP_FD_CACHE
+                  $DEDUP_FS_OPTION get_dirname check_jobmedia_content
                   stop_bacula get_resource set_maximum_concurrent_jobs get_time
                   add_attribute check_prune_list check_min_volume_size
                   init_delta update_delta check_max_backup_size comment_out
@@ -42,11 +42,16 @@ our @EXPORT = qw(update_some_files create_many_files check_multiple_copies
                   $scripts $conf $rscripts $tmp $working $dstat extract_resource
                   $db_name $db_user $db_password $src $tmpsrc $out $CLIENT docmd
                   set_global_maximum_concurrent_jobs check_volumes update_some_files_rep
-                  remote_init remote_config remote_stop remote_diff remote_check
-                  get_field_size get_field_ratio create_binfile get_bytes get_mbytes
+                  remote_init remote_config remote_stop remote_diff remote_check check_vacuum_badref
+                  get_field_size get_field_ratio create_binfile get_bytes get_mbytes get_mbytes_md5
                   create_rconsole check_parts create_scratch_pool create_counter 
                   check_maxpoolbytes check_maxpoolbytes_from_file check_json_tools
                   check_aligned_volumes check_aligned_data  check_tcp check_tcp_loop
+                  setup_fd_encryption check_encryption setup_collector get_attribute
+                  setup_fdcallsdir setup_tls setup_fd_tls setup_sd_tls setup_dir_tls setup_cons_tls
+                  check_openfile check_cloud_hash check_bscan add_log_message compare_backup_content
+                  check_tls_traces println add_virtual_changer check_events check_events_json
+                  create_many_hardlinks check_dot_status parse_fuse_trace generate_random_seek
 );
 
 
@@ -54,7 +59,7 @@ use File::Copy qw/copy/;
 
 our ($cwd, $bin, $scripts, $conf, $rscripts, $tmp, $working, $estat, $dstat,
      $plugins, $bstat, $zstat, $rstat, $debug, $out, $TestName, $FORCE_ALIGNED,
-     $PREBUILT, $FORCE_CLOUD,
+     $PREBUILT, $FORCE_CLOUD, $FORCE_DEDUP, $DEDUP_FD_CACHE, $DEDUP_FS_OPTION,
      $REMOTE_CLIENT, $REMOTE_ADDR, $REMOTE_FILE, $REMOTE_PORT, $REMOTE_PASSWORD,
      $REMOTE_STORE_ADDR, $REGRESS_DEBUG, $REMOTE_USER, $start_time, $end_time,
      $db_name, $db_user, $db_password, $src, $tmpsrc, $HOST, $BASEPORT, $CLIENT);
@@ -111,21 +116,29 @@ BEGIN {
     $ENV{REMOTE_USER}   = $REMOTE_USER   = $ENV{REMOTE_USER}   || undef;
     $ENV{FORCE_ALIGNED} = $FORCE_ALIGNED = $ENV{FORCE_ALIGNED} || 'no';
     $ENV{FORCE_CLOUD}   = $FORCE_CLOUD = $ENV{FORCE_CLOUD} || 'no';
+    $ENV{FORCE_DEDUP}     = $FORCE_DEDUP = $ENV{FORCE_DEDUP} || 'no';
     $ENV{PREBUILT}      = $PREBUILT = $ENV{PREBUILT} || 'no';
+    $ENV{DEDUP_FD_CACHE}  = $DEDUP_FD_CACHE = $ENV{DEDUP_FD_CACHE} || 'no';
+    $ENV{DEDUP_FS_OPTION} = $DEDUP_FS_OPTION = $ENV{DEDUP_FS_OPTION} || 'bothsides';
     $ENV{CLIENT}        = $CLIENT        = $ENV{CLIENT}        || "$HOST-fd";
     $ENV{LANG} = 'C';
     $out = ($debug) ? '@tee' : '@out';
 
-    $TestName = basename($0);
+    $TestName = $ENV{TestName} || basename($0);
 
     $dstat = $estat = $rstat = $bstat = $zstat = 0;
 }
 
+my $run_bconsole_silent=0;
 # execute bconsole session
 sub run_bconsole
 {
     my $script = shift || "$tmp/bconcmds";
-    return docmd("cat $script | $bin/bconsole -c $conf/bconsole.conf");
+    my $silent="";
+    if ($run_bconsole_silent) {
+        $silent = "2> /dev/null 1> /dev/null";
+    }
+    return docmd("cat $script | $bin/bconsole -c $conf/bconsole.conf $silent");
 }
 
 # create a file-list for many tests using
@@ -160,6 +173,18 @@ sub start_test
     }
     if ($FORCE_CLOUD eq "yes") {
         add_attribute("$conf/bacula-sd.conf", "Device Type", "Cloud", "Device");
+    }
+    if ($FORCE_DEDUP eq "yes") {
+        if ($PREBUILT ne "yes") {
+           system("make -C $cwd/build/src/plugins/sd install-dedup-plugin > /dev/null");
+        }
+        add_attribute("$conf/bacula-sd.conf", "Device Type", "Dedup", "Device");
+        add_attribute("$conf/bacula-sd.conf", "Plugin Directory", "$plugins", "Storage");
+        add_attribute("$conf/bacula-sd.conf", "DedupDirectory", "${working}", "Storage");
+        add_attribute("$conf/bacula-dir.conf", "Dedup", "$DEDUP_FS_OPTION", "Options");
+        if ($DEDUP_FD_CACHE eq "yes") {
+            add_attribute("$conf/bacula-fd.conf", "DedupIndexDirectory", "$working", "FileDaemon");
+        }
     }
 
     $start_time = time();
@@ -261,6 +286,29 @@ sub get_resource
     return $ret;
 }
 
+sub get_attribute
+{
+    my ($file, $type, $name, $att) = @_;
+    my $ret;
+    open(FP, $file) or die "Can't open $file";
+    my $content = join("", <FP>);
+
+    if ($type eq 'FileSet') {
+        if ($content =~ m/^$type \{[^}]+?Name\s*=\s*"?$name"?.+?$att\s*=\s*"?([^"^\s]+)"?[^}]+?^\}/ms) {
+            $ret = $1;
+        }
+    } else {
+        if ($content =~ m/^$type \{[^}]+?Name\s*=\s*"?$name"?[^}]+?$att\s*=\s*"?([^"^\s]+)"?[^}]+?^\}/ms) {
+            $ret = $1;
+        }
+    }
+
+    close(FP);
+    if ($ret) {
+        print $ret, "\n";
+    }
+}
+
 sub extract_resource
 {
     my $ret = get_resource(@_);
@@ -314,6 +362,34 @@ sub get_field_ratio
     $ratio =~ s/,//g;
 
     print $ratio."\n";
+}
+
+# Check the vacuum trace file for badrefs, automatically discard jobs in error
+# in the catalog
+sub check_vacuum_badref
+{
+    #           SELECT SessionId, SessionTime FROM Job WHERE JobStatus <> 'T'
+    my ($trace, $errors) = @_;
+    my %jobs;
+    open(FP, $errors) or die "ERROR: Can't open $errors $!";
+    while (my $line = <FP>) {
+        $line =~ s/,//g;
+        if ($line =~ /^\s*\|\s*(\d+)\s*\|\s*(\d+)/) {
+            $jobs{"$1:$2"} = 1;
+        }
+    }
+    close(FP);
+
+    open(FP, $trace) or die "ERROR: Can't open $trace $!";
+    while (my $line = <FP>) {
+        if ($line =~ /VacuumBadRef OrphanRef FI=\d+ SessId=(\d+) SessTime=(\d+)/) {
+            if (!$jobs{"$1:$2"}) {
+                $estat=1;
+                print $line;
+            }
+        }
+    }
+    close(FP);
 }
 
 sub check_max_backup_size
@@ -408,29 +484,42 @@ sub check_parts
     print FP "sql\n";
     print FP "SELECT 'Name', VolumeName, Storage.Name FROM Media JOIN Storage USING (StorageId) WHERE VolType = 14;\n";
     close(FP);
-
-    unlink("$tmp/check_parts.out");
-    open(CMD, ">$tmp/bconsole.cmd");
-    print CMD "\@output $tmp/check_parts.out\n";
+    $run_bconsole_silent = 1;
     open(FP, $tempfile);
     while (my $l = <FP>) {
         $l =~ s/,//g;           # Default bacula output is putting , every 1000
         $l =~ s/\|/!/g;         # | is a special char in regexp
         if ($l =~ /!\s*Name\s*!\s*([\w\d-]+)\s*!\s*([\w\d-]+)\s*/) {
+
+            unlink("$tmp/bconsole.cmd");
+            open(CMD, ">$tmp/bconsole.cmd");
+            print CMD "\@output $tmp/check_parts.out\n";
             print CMD "cloud list volume=$1 storage=$2\n";
+            close(CMD);
+            unlink("$tmp/check_parts.out");
+            run_bconsole("$tmp/bconsole.cmd");
+            open(OUT, "$tmp/check_parts.out");
+            my @parts = ();
+            while (my $l = <OUT>) {
+                if ($l =~ /Error/) {
+                    $estat=1;
+                }
+                if ($l =~ /\|\s*([\d]+)\s*\|\s*[\w\d\s\.]+\s*\|\s*[\w\d\s\-\:]+\s*\|/) {
+                    push(@parts, $1);
+                }
+            }
+            my $previous = 0;
+            foreach (sort { $a <=> $b } @parts) {
+                if ($previous != $_-1) {
+                    print "ERR: volume $1. Dicontinuity in parts part.$previous-part.$_\n";
+                    $estat=1;
+                }
+                $previous = $_;
+            }
+            close(OUT);
         }
     }
     close(FP);
-    close(CMD);
-    run_bconsole("$tmp/bconsole.cmd");
-    open(OUT, "$tmp/check_parts.out");
-    while (my $l = <OUT>) {
-        if ($l =~ /Error/) {
-            print $l;
-            $estat=1;
-        }
-    }
-    close(OUT);
 }
 
 # This test is supposed to detect JobMedia corruption for all jobs
@@ -478,7 +567,7 @@ sub check_jobmedia
             my ($jobid, $first, $last) = ($1, $2, $3);
 
             # incomplete tests are creating gaps in the FileIndex, no need to report these errors
-            next if ($TestName =~ /(restart|incomplete)[0-9]?-/);
+            next if ($TestName =~ /(restart|incomplete|resume)[0-9]?-/);
 
             # Skip dummy records
             next if ($first == 0 && $last == 0);
@@ -674,7 +763,7 @@ sub create_many_files
     my $dir=$dest;
     $nb = $nb / 2;              # We create 2 files per loop
     $nb = $nb || 750000;
-    $sparse_size = $sparse_size | 0;
+    $sparse_size = $sparse_size || 0;
     mkdir $dest;
     $base = chr($nb % 26 + 65); # We use a base directory A-Z
 
@@ -713,6 +802,47 @@ sub create_many_files
             $dir = "$dest/$base/$base$i$base";
             mkdir $dir;
         }
+        print "." if (!($i % 10000));
+    }
+    print "\n";
+}
+
+# create big number of files in a given directory
+# Inputs: dest  destination directory
+#         nb    number of file to create
+# Example:
+# perl -Mscripts::functions -e 'create_many_hardlinks("$cwd/files", 100000)'
+# perl -Mscripts::functions -e 'create_many_hardlinks("$cwd/files", 100000, 32000)'
+sub create_many_hardlinks
+{
+    my ($dest, $nb, $sparse_size) = @_;
+    create_many_files($dest, $nb, $sparse_size);
+
+    my $base;
+    my $dir=$dest;
+    $nb = $nb / 2;              # We create 2 files per loop
+    $nb = $nb || 750000;
+
+    mkdir $dest;
+    $base = chr($nb % 26 + 65); # We use a base directory A-Z
+
+    # already done
+    if (-f "$dest/$base$base/h-a${base}a${nb}aaa${base}") {
+        debug("Files already created\n");
+        return;
+    }
+
+    # auto flush stdout for dots
+    $| = 1;
+    print "Create ", $nb * 2, " dirs into $dest\n";
+    for(my $i=0; $i < 26; $i++) {
+        $base = chr($i + 65);
+        mkdir("$dest/$base$base") if (! -d "$dest/$base$base");
+    }
+    for(my $i=0; $i<=$nb; $i++) {
+        $base = chr($i % 26 + 65);
+        link("$dest/$base/a${base}a${i}aaa$base", "$dest/$base$base/h-a${base}a${i}aaa$base") or die "$dest/$base $!";
+        
         print "." if (!($i % 10000));
     }
     print "\n";
@@ -886,6 +1016,9 @@ sub add_attribute
     my ($file, $attr, $value, $obj, $name) = @_;
     my ($cur_obj, $cur_name, $done);
 
+    my $attr_ws=$attr;
+    $attr_ws =~ s/\s+//g;
+    
     my $is_options = $obj && $obj eq 'Options';
     if ($value =~ /\s/ && $value !~ m:[/"]:) { # exclude speed from the escape
         $value = "\"$value\"";
@@ -904,7 +1037,7 @@ sub add_attribute
             $done=0;
         }
 
-        if ($l =~ /^\s*\Q$attr\E/i) {
+        if ($l =~ /^\s*\Q$attr\E/i || $l =~ /^\s*\Q$attr_ws\E/i) {
             if (!$obj || $cur_obj eq $obj) {
                 if (!$name || $cur_name eq $name) {
                     $l =~ s/\Q$attr\E\s*=\s*.+/$attr = $value/ig;
@@ -956,7 +1089,7 @@ sub check_prune_list
     my $in_list_jobs=0;
     my $nb_list_job=0;
     my $nb_pruned=0;
-    my $fromallpools=0;
+    my $all=0;
     my $nb = scalar(@_);
     open(FP, $f) or die "Can't open $f $!";
     while (my $l = <FP>)          # read all files to check
@@ -978,19 +1111,19 @@ sub check_prune_list
         if ($nb_list_job == 0) {
             next;
         }
-        if ($l =~ /prune (jobs|files) fromallpools/) {
-            $fromallpools=1;
+        if ($l =~ /prune (jobs|files) all/) {
+            $all=1;
         }
         if ($l =~ /Pruned (\d+) Jobs? for client/i) {
             $nb_pruned += $1;
-            if (!$fromallpools && $1 != $nb) {
+            if (!$all && $1 != $nb) {
                 print "ERROR: in $f, Prune command returns $1 jobs, want $nb\n";
                 exit 1;
             }
         }
 
         if ($l =~ /No Jobs found to prune/) {
-           if (!$fromallpools && $nb != 0) {
+           if (!$all && $nb != 0) {
                 print "ERROR: in $f, Prune command returns 0 job, want $nb\n";
                 exit 1;
             }            
@@ -1007,7 +1140,7 @@ sub check_prune_list
         }
     }
     close(FP);
-    if ($fromallpools && $nb_pruned != $nb) {
+    if ($all && $nb_pruned != $nb) {
         print "ERROR: in $f, Prune command returns $nb_pruned job, want $nb\n";
         exit 1;
     }
@@ -1241,6 +1374,32 @@ sub remote_init
     system("ssh $REMOTE_USER$REMOTE_ADDR 'cd $REMOTE_FILE && PERL5LIB=$REMOTE_FILE perl -Mscripts::functions -e remote_check'");
 }
 
+sub get_mbytes_md5
+{
+    use Digest::MD5 qw/md5_hex/;
+    my ($source, $cmd) = @_;
+    my $buf;
+    if (!open(FP1, $cmd)) {
+        print "ERR\nCan't open $cmd $@\n";
+        exit 1;
+    }
+    if (!open(FP, $source)) {
+        print "ERR\nCan't open $source $@\n";
+        exit 1;
+    }
+    while (my $l = <FP1>) {
+        if ($l =~ /^(\d+):(\d+)/) {
+            print "New chunk is $1:$2\n";
+            seek(FP, $1, 0);
+            my $nb=sysread(FP, $buf, $2);
+            print $nb, ":", md5_hex($buf), "\n";
+            print "WARNING: Unable to read $2, got $nb\n" if ($nb != $2);
+        }
+    }
+    close(FP);
+    close(FP1);
+}
+
 sub get_mbytes
 {
     my ($source, $cmd, $binonly) = @_;
@@ -1287,7 +1446,7 @@ sub get_bytes
 sub create_binfile
 {
     my ($file, $nb) = @_;
-    $nb |= 10;
+    $nb ||= 10;
 
     if (!open(FP, ">$file")) {
         print "ERR\nCan't create txt $file $@\n";
@@ -1328,8 +1487,11 @@ sub init_delta
     close(FP);
 
     open(FP, ">sparse.dat") or return "ERR\nCan't create sparse $@\n";
-    seek(FP, $sparse_size, 0);
-    print FP $l;
+    print FP $l x 40000;
+    for (my $i = 0; $i < $sparse_size ; $i=$i+4096*1024) {
+        seek(FP, $i, 0);
+        print FP $l;
+    }
     close(FP);
 }
 
@@ -1364,8 +1526,12 @@ sub update_delta
     chomp($c);
 
     open(FP, "+<sparse.dat") or return "ERR\nCan't update the sparse file $@\n";
-    seek(FP, int(rand(-s "sparse.dat")), 0);
-    print FP $c x 400;
+    for (my $i=0; $i < 5 ; $i++) {
+        seek(FP, int(rand(-s "sparse.dat")), 0);
+        print FP $c x 400;
+        seek(FP, int(rand(-s "sparse.dat")), 0);
+        print FP $c x 8000000;
+    }
     seek(FP, 0, 2);
     print FP $c x 4000;
     close(FP);
@@ -1536,7 +1702,9 @@ sub check_maxpoolbytes_from_file
     my %p;
     my $ret = 2;
     my $delta = 0;
-    if ($FORCE_ALIGNED eq 'yes') {
+    if ($FORCE_DEDUP eq 'yes') {
+        $delta = 50000000;
+    } elsif ($FORCE_ALIGNED eq 'yes') {
         $delta = 50000000;
     }
     open(FP, $file) or die "ERROR: Unable to open $tmp/out.$$";
@@ -1605,30 +1773,17 @@ sub check_json_tools
     }
 }
 
-sub setup_collector
+sub wait_for_async_requests
 {
-    my ($conf, $name, $type, $interval) = @_;
-    my $file='';
-
-    $name = $name || "collector1";
-    $type = $type || "csv";
-    $interval = $interval || 60;
-
-    if ($type eq 'csv') {
-        $file = "File = \"$tmp/$name.csv\"";
-    } else {
-        $file = "Host = localhost\nPort = 9223\n";
+    my $driver = shift;
+    my $count = 0;
+    while ($count < 30) {
+        if ($driver->get_eval('window.jQuery.active') == 0) {
+            last;
+        }
+        $count++;
+        sleep(1);
     }
-    open(FP, ">>$conf") or die "Error: Unable to open $conf $@";
-    print FP "
-Statistics {
-  Name = $name
-  Interval = 60
-  Type = $type
-  $file
-}
-";
-    close(FP);
 }
 
 use Fcntl 'SEEK_SET';
@@ -1665,11 +1820,11 @@ sub check_aligned_data
                 if ($line ne $linev) {
                     print "ERROR: Found a difference between the source and the volume at $offset\norg=";
                     foreach(split(//, $line)){
-                       printf("0x%02x ",ord($_));
+		       printf("0x%02x ",ord($_));
                     }
                     print " len=", length($line), "\nvol=";
                     foreach(split(//, $linev)){
-                       printf("0x%02x ",ord($_));
+		       printf("0x%02x ",ord($_));
                     }
                     print " len=", length($linev), "\n";
                     $estat=1;
@@ -1705,7 +1860,6 @@ sub check_aligned_volumes
     print FP "llist volume\n";
     print FP "quit\n";
     close(FP);
-
     run_bconsole("$tmp/cmd.$$");
     open(FP, "$tmp/out.$$") or die "ERROR: Unable to open $tmp/out.$$";
     while (my $line = <FP>) {
@@ -1719,7 +1873,7 @@ sub check_aligned_volumes
         if ($line =~ /^\s*(\w+):\s*(.+)/) {
             my ($k, $v) = ($1, $2);
             $v =~ s/,//g;       # remove , from numbers
-            $p{lc($k)} = $v; 
+            $p{lc($k)} = $v;
         }
     }
     if ($p{volumename}) {
@@ -1736,6 +1890,86 @@ sub check_aligned_volumes
             $estat++;
         }
     }
+}
+
+sub check_encryption
+{
+    my ($log) = @_;
+    my $found=0;
+    my $job=0;
+    open(FP, $log) or die "ERROR: Unable to open $log $@";
+    while (my $line = <FP>) {
+        if ($line =~ /JobId:\s(\d+)/) {
+            $job=$1;
+        }
+        if ($line =~ /Encryption:\s*(yes|no)/) {
+            if ($1 eq "yes") {
+                $found=1;
+            } else {
+                print "ERROR: Found job $job with Encryption off in $log\n";
+                $estat=1;
+            }
+        }
+    }
+    close(FP);
+    if (!$found) {
+        print "ERROR: No information about Encryption in $log\n";
+        $estat=1;
+    }
+}
+
+sub setup_fd_encryption
+{
+    my %opt = (
+        signatures => 'yes',
+        cipher => 'aes256',
+        digest => 'sha256',
+        keypair => "$conf/cryptokeypair.pem",
+        masterkey => "$conf/master2048.cert",
+        fdconf => "$conf/bacula-fd.conf",
+        encryption => 'yes');
+
+    %opt = (@_, %opt);
+
+    my $fdconf = $opt{fdconf};
+    delete $opt{fdconf};
+    
+    for my $i (keys %opt) {
+        add_attribute($fdconf, "PKI $i", "\"$opt{$i}\"", "FileDaemon");
+    }
+
+    if (! -f $opt{keypair}) {
+        copy("$rscripts/cryptokeypair.pem", $opt{keypair});
+    }
+    if (! -f $opt{masterkey}) {
+        copy("$rscripts/master2048.cert", $opt{masterkey});
+    }
+}
+
+sub setup_collector
+{
+    my ($conf, $name, $type, $interval) = @_;
+    my $file='';
+
+    $name = $name || "collector1";
+    $type = $type || "csv";
+    $interval = $interval || 60;
+
+    if ($type eq 'csv') {
+        $file = "File = \"$tmp/$name.csv\"";
+    } else {
+        $file = "Host = localhost\nPort = 2003\n";
+    }
+    open(FP, ">>$conf") or die "Error: Unable to open $conf $@";
+    print FP "
+Statistics {
+  Name = $name
+  Interval = 60
+  Type = $type
+  $file
+}
+";
+    close(FP);
 }
 
 use IO::Socket::INET;
@@ -1776,5 +2010,500 @@ sub check_tcp_loop
     return $count;
 }
 
-1;
+sub setup_fdcallsdir
+{
+    my $out = `$bin/bfdjson -r director -l Name -D | grep Name | head -1`;
+    $out =~ /"Name":\s*"(.+)"/;
+    my $name = $1;
+    # TODO: Need to drop this line
+    add_attribute("$conf/bacula-dir.conf", "Address", "1.1.1.1", "Client");
+    add_attribute("$conf/bacula-dir.conf", "AllowFDConnections", "yes", "Client");
+    add_attribute("$conf/bacula-fd.conf", "ConnectToDirector", "yes", "Director", $name);
+    add_attribute("$conf/bacula-fd.conf", "Address", "127.0.0.1", "Director", $name);
+    add_attribute("$conf/bacula-fd.conf", "DirPort", "$BASEPORT", "Director", $name);
+}
 
+sub setup_tls
+{
+    my ($file, $res, $name) = @_;
+    if (! -f "$conf/tls-cert.pem") {
+        copy("$rscripts/tls-cert.pem", $conf);
+        copy("$rscripts/tls-CA.pem", $conf);
+    }
+    add_attribute($file, "TLS Require", "yes", $res, $name);
+    add_attribute($file, "TLS Certificate", "$conf/tls-cert.pem", $res, $name);
+    add_attribute($file, "TLS Key", "$conf/tls-cert.pem", $res, $name);
+    add_attribute($file, "TLS CA Certificate File", "$conf/tls-CA.pem", $res, $name);
+}
+
+sub setup_fd_tls
+{
+    my ($file) = @_;
+    setup_tls($file, "Director");
+    setup_tls($file, "FileDaemon");
+    setup_tls($file, "Console");
+}
+
+sub setup_dir_tls
+{
+    my ($file) = @_;
+    setup_tls($file, "Director");
+    setup_tls($file, "Client");
+    setup_tls($file, "Storage");
+    setup_tls($file, "Autochanger");
+    setup_tls($file, "Console");
+}
+
+sub setup_sd_tls
+{
+    my ($file) = @_;
+    setup_tls($file, "Storage");
+    setup_tls($file, "Director");
+}
+
+sub setup_cons_tls
+{
+    my ($file) = @_;
+    setup_tls($file, "Director");
+}
+
+sub check_openfile
+{
+    my ($dir, $limit, $name) = @_;
+    my $msg = "";
+
+    $limit = $limit || 10;
+    $name = $name || "Vol";
+
+    if (!open(FP, "ls -l $dir|")) {
+        print "Unable to open $dir $@\n";
+        return 0;
+    }
+    my $count = 0;
+    while (my $line = <FP>) {
+        # lrwx------ 1 eric users 64 Jan 25 19:10 0 -> /dev/pts/9
+        # lrwx------ 1 eric users 64 Jan 25 19:10 1 -> /dev/pts/9
+        # lrwx------ 1 eric users 64 Jan 25 19:10 2 -> /dev/pts/9
+        if ($line =~ m: (\d+)\s+->\s+(/.+):) {
+            my ($fileno, $file) = ($1, $2);
+            if ($file =~ m:/dde[0-9]?/:) {
+                next;
+            }
+            $count++;
+            if ($file =~ /$name/) {
+                $estat=1;
+                print "ERROR: Found volume still open at the end of the test $fileno -> $file\n";
+            }
+        }
+    }
+    close(FP);
+    if ($count > $limit) {
+        system("ls -l $dir");
+        print "ERROR: Found more than $limit files unexpectedly open ($count)";
+        $estat=1;
+    }
+    return $estat;
+}
+
+sub check_cloud_hash
+{
+    my (@files) = @_;
+    my $error=0;
+    my $jobs;
+    my $vols;
+    foreach my $file (@files) {
+        open(FP, $file) or die "Unable to open $file";
+        while (my $line = <FP>) {
+            if ($line =~ /JobId (\d+): Cloud Download transfers:/) {
+                $jobs->{$1} = 'R';
+            }
+            if ($line =~ /JobId (\d+): Cloud Upload transfers:/) {
+                $jobs->{$1} = 'B';
+            }
+            # JobId 2: TestVolume001/part.2     state=done    size=451.5 KB duration=2s hash=078aa1778f54d814
+            if ($line =~ /JobId (\d+): ([\w\d_-]+\/part.\d+)\s+state=(\w+)\s+size=.+? duration=.+? hash=([\w\d]+)/) {
+                if ($3 ne 'done') {
+                    print "ERROR: $2 state is $3\n";
+                    $error++;
+                }
+                if ($jobs->{$1} eq 'R') {
+                    if (!$vols->{$2}) {
+                        print "ERROR: $2 not found in backup\n";
+                        $error++;
+                    } elsif ($vols->{$2} ne $4) {
+                        print "ERROR: hash for $2 missmatch\n";
+                        $error++;
+                    }
+                }
+                $vols->{$2} = $4;
+            }
+        }
+        close(FP);
+    }
+    exit $error;
+}
+
+sub add_log_message
+{
+    my (@files) = @_;
+    foreach my $file (@files) {
+        $file =~ m:/([^/]+)$: or die "ERROR: Unable to find the filename";
+        my $trace=$1;
+        open(FP, $file) or die "Unable to open $file";
+        open(FP2, ">$tmp/1.$$") or die "Unable to open temporary file $tmp/1.$$";
+        while (my $line = <FP>) {
+            if ($line =~ /Messages \{/) {
+                print FP2 $line;
+                print FP2 "append = \"$working/$trace.log\" = all, !skipped\n";
+            } else {
+                print FP2 $line;
+            }
+        }
+        close(FP2);
+        close(FP);
+        unlink($file);
+        rename("$tmp/1.$$", $file);
+    }
+}
+
+# Check a bscan -r output to see if we have potential issues
+# (like mixed records, missing fileindex, ...)
+sub check_bscan
+{
+    my ($file) = @_;
+    my %job;
+    my %lines;
+    my $curvol="";
+    my $nl=0;
+    my $nls;
+    open(FP, $file) or die "Cannot open $file. $@";
+    while (my $line = <FP>)
+    {
+        $nl++;
+        $nls = sprintf("%08d", $nl);
+        chomp($line);
+        # From this debug line, we can determine the volume name (in the cloud debug=10,cloud
+        if ($line =~ /open mode=OPEN_READ_ONLY open\((.+?),/) {
+            $curvol = $1;
+
+        } elsif ($line =~ /Record: SessId=(\d+) SessTim=(\d+) FileIndex=(\d+) Stream=(\d+) len=(\d+)/) {
+            my $j = "$1-$2";    # sessid-sesstime
+            my $FI = $3;        # FileIndex
+            next if ($FI <= 0); # Skip LABELs (can be also deleted files FIXME)
+
+            # Backup not yet seen
+            if (not exists $job{$j}) {
+                # We start at more than 1, maybe the previous volume was not bscanned ?
+                if ($FI > 1) {
+                    $estat++;
+                    print "Suspicious line-$nls: (first FI too high $FI)\n";
+                    print "$line\n";
+                }
+            # We have a previous job record, but the Fileindex is not the one we expect
+            } elsif ($job{$j} > 1 && $FI > 1 && ($job{$j} != $FI) && ($job{$j} + 1) != $FI) {
+                $estat++;
+                print "Suspicious line-$nls: FI-1=$job{$j} FI=$FI vol=$curvol\n";
+                print "  $lines{$j}\n";
+                print "  $nls $line $curvol\n";
+
+            }
+            $job{$j} = $FI;
+            $lines{$j} = "$nls $line $curvol";
+        }
+    }
+    close(FP);
+}
+
+# This function takes log files with job status, estimate, and list files
+# output. Estimate must match what the backup is doing
+sub compare_backup_content
+{
+    my ($joblog, $files, $estimate) = @_;
+    open(FP, $files) or die "Unable to open $files $@";
+    my %content;
+    my $header=0;
+    my $nb=0;
+    while (my $line = <FP>) {
+        if ($line =~ /\+------/) {
+            $header++;
+            next;
+        }
+        # +----------------------------------+
+        # | filename                         |
+        # +----------------------------------+
+        # | c:/tmp/                          |
+        # +----------------------------------+
+        if ($header == 2) {
+            if ($line =~ /\|\s+(.+?)\s*\|/) {
+                $content{$1} = 1;
+                #print "   Add [$1]\n";
+            }
+        }
+    }
+    close(FP);
+    open(FP, $estimate) or die "Unable to open $estimate $@";
+    while (my $line = <FP>) {
+        last if ($nb > 10);
+        chomp($line);
+        #-rwxrwxrwx   1 0        0                        22 2019-12-19 00:53:13  c:/tmp/hello.txt
+        my ($type, $nlinks, $u, $g, $s, $y, $h, $f) = split(/ +/, $line, 8);
+        if (!$f) {
+            next;               # Not the correct line
+        }
+        if ($type =~ /^d/ && $f !~ m:/$:) {
+            $f = $f . "/";
+        }
+        #print "Checking: [$f]\n";
+        if (exists $content{$f}) {
+            $content{$f} = 0;
+        } else {
+            print "ERROR: [$f] not found in job log\n";
+            $estat=1;
+            $nb++;
+        }
+    }
+    foreach my $f (keys %content) {
+        next if ($f =~ /pagefile.sys/); # Skip swap file, not always in estimate...
+        last if ($nb > 10);
+        if ($content{$f} == 1) {
+            print "ERROR: [$f] not found in estimate\n";
+            $estat=1;
+            $nb++;
+        }
+    }
+    close(FP);
+}
+
+#
+# This function takes a trace file and checks if the TLS setup is properly done
+#
+sub check_tls_traces
+{
+    my ($tracefile, $type) = @_;
+    my $localneed;
+    my $remoteneed;
+    my $finaltype;
+    my $count=0;
+
+    if (open(FP, $tracefile)) {
+        while (my $line = <FP>) {
+            if ($line =~ /TLSPSK Local need (\d+)/) {
+                $localneed = $1;
+            }
+            if ($line =~ /TLSPSK Remote need (\d+)/) {
+                $remoteneed = $1;
+            }
+            if ($line =~ /TLSPSK Start (\w+)/) {
+                $count++;
+                $finaltype = $1;
+                if ($type && $type ne $finaltype) {
+                    print "ERROR: Must find $type connection, found $finaltype in $tracefile\n";
+                    $estat=1;
+                }
+
+                my $localtlsneed = $localneed / 100;
+                my $localpskneed = $localneed % 100;
+                my $remotetlsneed = $remoteneed / 100;
+                my $remotepskneed = $remoteneed % 100;
+                # None 0, OK 1, Require 2
+            }
+        }
+        close(FP);
+    }
+    if ($count == 0) {
+        print "ERROR: Must find at least one connection in $tracefile\n";
+        $estat=1;
+    }
+}
+
+#
+# Check if we have basic events
+#
+sub check_events
+{
+    my $ret=1;
+    open(FP, "|$bin/bconsole -c $conf/bconsole.conf >$tmp/check_events.$$");
+    print FP "\@echo File generated by scripts::function::check_events()\n";
+    print FP "list events\n";
+    print FP "quit\n";
+    close(FP);
+
+    my $tempfile = "$tmp/check_events.$$";
+    open(FP, $tempfile);
+    while (my $l = <FP>) {
+        $l =~ s/\|/!/g;         # | is a special char in regexp
+        if ($l =~ /Director startup/) {
+            $ret = 0;
+        }
+    }
+    close(FP);
+    if ($ret) {
+        print "ERROR: Found errors while checking Event records, look the file $tmp/check_events.$$\n";
+        $estat=1;
+    }
+}
+
+sub check_events_json
+{
+    my ($name, $dest, $event) = @_;
+    my $test_json;
+    eval 'use JSON qw/decode_json/; $test_json = JSON->new;';
+    if ($@) {
+        print "ERROR: json test skipped\n";
+        return;
+    }
+
+    system("$bin/bdirjson -c $conf/bacula-dir.conf -r messages -n '$name' > $tmp/json.1");
+    if ($? != 0) {
+        print "ERROR: bdirjson exit code is incorrect $?\n";
+        $estat=1;
+        return;
+    }
+
+    open(FP, "$tmp/json.1");
+    my $lines = join("", <FP>);
+    close(FP);
+    my $obj = $test_json->decode($lines);
+    if (!$obj) {
+        print "ERROR: unable to parse json output\n";
+        $estat=1;
+        return;
+    }
+
+    #use Data::Dumper qw/Dumper/;
+    #print Dumper($obj->[0]->{Messages}->{Destinations}->[0]->{MsgTypes});
+    #print Dumper($obj);
+
+    my $ok=0;
+    foreach my $destinations (@{$obj->{Destinations}}) {
+        next if ($destinations->{Type} ne $dest);
+        if (grep(/^$event$/, @{$destinations->{MsgTypes}})) {
+            $ok = 1;
+        }
+    }
+
+    if (!$ok) {
+        print "ERROR: event not found in Resource $name/$dest\n";
+        $estat=1;
+        return;
+    }
+}
+
+# print + \n
+sub println
+{
+    print "\n", @_, "\n";
+}
+
+sub add_virtual_changer
+{
+    my ($name, $nb_drives) = @_;
+    if (!open(FP, ">>$conf/bacula-sd.conf")) {
+        print "ERROR: Unable to open $conf/bacula-sd.conf $@\n";
+        $estat=1;
+        return;
+    }
+
+    $nb_drives--;               # Let's start at 0
+
+    my $devices = join(",", map { "Drive-$_" } 0..$nb_drives);
+    print FP "
+Autochanger {
+  Name = $name
+  Changer Device = /dev/null
+  Changer Command = /dev/null
+  Device = $devices
+}
+";
+
+    for my $nb (0..$nb_drives) {
+        print FP "
+Device {
+  Name = Drive-$nb
+  Device Type = File
+  Media Type = ${name}Type
+  Archive Device = $tmp
+  AutomaticMount = yes;               # when device opened, read it
+  Autochanger = yes
+  Drive Index = $nb
+  AlwaysOpen = yes;
+  RemovableMedia = yes;
+}
+";
+    }
+    close(FP);
+    my $config = `$bin/bdirjson -c $conf/bacula-dir.conf -r storage`;
+    if ($config !~ m/"Name": "([\w\d]+)"/) {
+        print "ERROR: Unable to find an existing storage resource in $conf/bacula-dir.conf\n";
+        $estat=1;
+        return;
+    }
+    $config = get_resource("$conf/bacula-dir.conf", "Storage", $1);
+    if (!$config) {
+        $config = get_resource("$conf/bacula-dir.conf", "Autochanger", $1);
+        $config =~ s/Autochanger/Storage/g;
+    }
+    open(FP, ">$tmp/1");
+    print FP $config;
+    close(FP);
+
+    add_attribute("$tmp/1", "Name", $name, "Storage");
+    add_attribute("$tmp/1", "Device", $name, "Storage");
+    add_attribute("$tmp/1", "Maximum Concurrent Jobs", 1, "Storage", $name);
+    add_attribute("$tmp/1", "Media Type", "${name}Type", "Storage");
+    system("cat $tmp/1 >> $conf/bacula-dir.conf");
+}
+
+sub check_dot_status
+{
+    my ($file, $command) = @_;
+
+    $file ||= "$tmp/check_dot_status.ctrl";
+    $command ||= "\@output $tmp/check_dot_status.out\nreload\n.api 2\n.status dir running\n";
+
+    system("touch $file");
+    open(FP, ">$tmp/check_dot_status.cmd");
+    print FP $command;
+    close(FP);
+    while ( -f $file) {
+        run_bconsole("$tmp/check_dot_status.cmd");
+    }
+}
+
+sub parse_fuse_trace
+{
+    my ($file) = @_;
+    open(FP, $file);
+    while (my $line = <FP>) {
+    # 02-Jul-2020 17:45:21 bacula-fused[5]: bfuse_daemon.c:1341-0 Call 2048 = read(/MyCatalog/test-fd/382/@vsphere/vm-547/0.bvmdk, size=2048, offset=24) crc=473e001 ctx=0x7f7714015e80
+        if ($line =~ m:Call \d+ = read\(/.+?/(\d+).bvmdk, size=(\d+), offset=(\d+)\) :) {
+            print "$3:$2\n";
+        }
+    }
+    close(FP);
+}
+
+sub generate_random_seek
+{
+    use bigint;
+    my ($file, $nb, $readsize) = @_;
+    my $size = -s $file;
+    $nb ||= 10000;
+    $readsize ||= 0;
+    for my $i (1..$nb) {
+        my $sz=65635;
+        my $pos = int(rand($size));
+        if (($i % 5) == 0) {
+            $pos = $pos / 512;
+        }
+        if (($i % 7) == 0) {
+            $pos = $pos / 1024;
+        }
+        if ($readsize == 0) {
+            $sz = int(rand($sz));
+        }
+        print "$pos:$sz\n";
+    }
+}
+
+1;
