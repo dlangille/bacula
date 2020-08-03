@@ -104,6 +104,9 @@ bool MTabEntry::isSuitableForSnapshot()
       if (!_wcsicmp(fstype, L"refs")) {
          can_Snapshot = true;
       }
+      if (!_wcsicmp(fstype, L"csvfs")) {
+         can_Snapshot = true;
+      }
    }
 bail_out:
    Dmsg2(dbglvl_snap, "%ls is %s suitable for VSS snapshot\n", root, can_Snapshot?"":"not");
