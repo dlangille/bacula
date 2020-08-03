@@ -1,9 +1,7 @@
 #!/bin/sh
 #
-# Copyright (C) 2000-2015 Kern Sibbald
+# Copyright (C) 2000-2020 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
-#
-
 #
 #  Test MaxWaitTime, MaxRunTime and MaxStartDelay
 #
@@ -20,6 +18,10 @@ cp -f ${cwd}/scripts/bacula-dir.conf.maxtime ${cwd}/bin/bacula-dir.conf
 WHEN=`date '+%Y-%m-%d %H:%M:%S'`
 
 echo "${cwd}/build/po" >${cwd}/tmp/file-list
+
+if [ "$FORCE_DEDUP" = yes ]; then
+    $bperl -e 'add_attribute("$conf/bacula-dir.conf", "Maximum Volume Bytes", 5000, "Pool", "Default");'
+fi
 
 start_test
 
@@ -92,7 +94,7 @@ then
     [ "$debug" = 1 ] && echo MAXSTARTDELAY ok
 else
    echo "MAXSTARTDELAY in error"
-   bstat=2
+   bstat=1
 fi
 
 grep -e '4: Fatal error: Max run time exceeded. Job canceled.' ${cwd}/tmp/RUN_MAXTIME.log >/dev/null 
@@ -101,18 +103,16 @@ then
     [ "$debug" = 1 ] && echo MAXRUNTIME ok
 else
    echo "MAXRUNTIME in error"
-   echo "${cwd}/tmp/RUN_MAXTIME.log"
-   cat ${cwd}/tmp/RUN_MAXTIME.log
-   bstat=3
+   bstat=1
 fi
 
-grep -e 'Termination: *Backup OK' ${cwd}/tmp/RUN_MAXTIME.log >/dev/null
+grep 'Termination: *Backup OK' ${cwd}/tmp/RUN_MAXTIME.log >/dev/null
 if [ $? -eq 0 ]
 then
     [ "$debug" = 1 ] && echo MAXRUNTIME2 ok
 else
    echo "MAXRUNTIME2 in error"
-   bstat=4
+   bstat=1
 fi
 
 

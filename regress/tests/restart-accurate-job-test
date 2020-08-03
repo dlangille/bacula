@@ -1,9 +1,7 @@
 #!/bin/sh
 #
-# Copyright (C) 2000-2015 Kern Sibbald
+# Copyright (C) 2000-2020 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
-#
-
 #
 # Run a backup of the build directory but force it to have
 #   a comm error, and check that it restarts correctly.
@@ -15,12 +13,15 @@ JobName=RestartJob
 scripts/cleanup
 scripts/copy-test-confs
 
+setup_shstore # simulate shared storage if enabled
 
-echo "${cwd}/build" >${cwd}/tmp/file-list
+echo "$cwd/build/po"  > $tmp/file-list
+echo "$cwd/build/src" >> $tmp/file-list
 
 change_jobname NightlySave $JobName
 
 $bperl -e "add_attribute('$conf/bacula-dir.conf', 'Accurate', 'yes', 'Job', 'RestartJob')"
+$bperl -e "add_attribute('$conf/bacula-dir.conf', 'AllowIncompleteJobs', 'yes', 'Job', 'RestartJob')"
 start_test
 touch $cwd/build/po/testfile
 
@@ -29,7 +30,7 @@ cat <<END_OF_DATA >${cwd}/tmp/bconcmds
 messages
 @$out ${cwd}/tmp/log1.out
 label storage=File volume=TestVolume001
-setdebug level=0 trace=0 hangup=100 client
+setdebug options=c level=100 trace=1 hangup=100 client
 @#setdebug level=20 dir
 run job=$JobName yes
 wait
@@ -47,7 +48,7 @@ scripts/check_for_zombie_jobs storage=File
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
 @output /dev/null
 @$out ${cwd}/tmp/log1.out
-setdebug level=0 trace=0 hangup=50 client
+setdebug level=100 trace=1 hangup=50 client
 @exec "sh -c 'touch $cwd/build/po/*'"
 @exec "sh -c 'touch $cwd/build/src/dird/*'"
 @exec "rm $cwd/build/po/testfile"
@@ -60,6 +61,7 @@ select * from JobMedia;
 @# 
 @# now do a restore
 @#
+setdebug level=0 trace=1 client
 @$out ${cwd}/tmp/log2.out
 restore where=$tmp/bacula-restores storage=File select all done
 yes
@@ -75,7 +77,17 @@ scripts/check_for_zombie_jobs storage=File
 stop_bacula
 
 check_two_logs
-check_restore_diff
+$rscripts/diff.pl -s $tmp/bacula-restores/$cwd/build/po -d $cwd/build/po
+if [ $? -ne 0 ]; then
+    print_debug "ERROR: Found difference after restore"
+    estat=1
+fi
+
+$rscripts/diff.pl -s $tmp/bacula-restores/$cwd/build/src -d $cwd/build/src
+if [ $? -ne 0 ]; then
+    print_debug "ERROR: Found difference after restore"
+    estat=2
+fi
 
 nb_F=`awk -F '|' '/RestartJob.+F/ { gsub(/,/, ""); print $7}' $tmp/log3.out`
 nb_I=`awk -F '|' '/RestartJob.+I/ { gsub(/,/, ""); print $7}' $tmp/log3.out`
