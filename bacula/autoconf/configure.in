@@ -891,6 +891,13 @@ AC_ARG_WITH(tcp-wrappers,
    ]
 )
 
+TOKYOCABINET_LIBS=
+TOKYOCABINET_INC=
+
+AC_SUBST(TOKYOCABINET_LIBS)
+AC_SUBST(TOKYOCABINET_INC)
+
+
 dnl -----------------------------------------------------------
 dnl Check whether OpenSSL is available
 dnl -----------------------------------------------------------
@@ -1684,6 +1691,51 @@ AC_SUBST(SHARED_CATALOG_TARGETS)
 
 AC_DEFINE(PROTOTYPES)
 
+support_bee=no
+extra_prefix=org
+nb=`ls src/*/bee_* 2>/dev/null| wc -l`
+if test $nb -gt 1; then
+   support_bee=yes
+   extra_prefix=bee
+fi
+
+AC_ARG_ENABLE(bee,
+   AC_HELP_STRING([--disable-bee], [disable BEE support @<:@default=auto@:>@]),
+   [
+       if test x$enableval = xyes; then
+         support_bee=yes
+          extra_prefix=bee
+       elif test x$enableval = xno; then
+         support_bee=no
+          extra_prefix=org
+       fi
+   ]
+)
+
+if test $support_bee = no
+then
+    AC_DEFINE(COMMUNITY, 1, [Set if COMMUNITY exists])
+fi
+
+dnl BEE source files
+EXTRA_CATS_SRCS=`cd src/cats ; ls ${extra_prefix}_*.c      2> /dev/null | xargs echo`
+EXTRA_FILED_SRCS=`cd src/filed ; ls ${extra_prefix}_*.c    2> /dev/null | xargs echo`
+EXTRA_LIB_SRCS=`cd src/lib ; ls ${extra_prefix}_*.c        2> /dev/null | xargs echo`
+EXTRA_DIRD_SRCS=`cd src/dird ; ls ${extra_prefix}_*.c      2> /dev/null | xargs echo`
+EXTRA_STORED_SRCS=`cd src/stored ; ls ${extra_prefix}_stored_*.c  2> /dev/null | xargs echo`
+EXTRA_BLS_SRCS=`cd src/stored ; ls ${extra_prefix}_bls_*.c  2> /dev/null | xargs echo`
+EXTRA_LIBSD_SRCS=`cd src/stored ; ls ${extra_prefix}_lib*.c  2> /dev/null | xargs echo`
+EXTRA_FINDLIB_SRCS=`cd src/findlib ; ls ${extra_prefix}_*.c  2> /dev/null | xargs echo`
+
+AC_SUBST(EXTRA_CATS_SRCS)
+AC_SUBST(EXTRA_FILED_SRCS)
+AC_SUBST(EXTRA_LIB_SRCS)
+AC_SUBST(EXTRA_DIRD_SRCS)
+AC_SUBST(EXTRA_STORED_SRCS)
+AC_SUBST(EXTRA_BLS_SRCS)
+AC_SUBST(EXTRA_FINDLIB_SRCS)
+AC_SUBST(EXTRA_LIBSD_SRCS)
+
 dnl --------------------------------------------------------------------------
 dnl Supply default CFLAGS, if not specified by `CFLAGS=flags ./configure'
 dnl
@@ -1938,6 +1990,12 @@ AC_DEFINE_UNQUOTED([STREAM_CLOEXEC], "$ac_cv_feature_stream_cloexec_flag", [fope
 
 AC_CHECK_FUNC(accept4, [AC_DEFINE(HAVE_ACCEPT4, 1, [Define to 1 if you have the 'accept4' function.])])
 
+CLOUD_DRIVERS=
+AC_SUBST(CLOUD_DRIVERS)
+
+CLOUD_INSTALL_TARGETS=
+AC_SUBST(CLOUD_INSTALL_TARGETS)
+
 dnl ---------------------------------------------------
 dnl Check for S3 support/directory (default on)
 dnl ---------------------------------------------------
@@ -1979,6 +2037,8 @@ if test x$support_s3 = xyes; then
 		    AC_DEFINE(HAVE_LIBS3, 1, [Define to 1 if you have libs3])
 		    S3_LIBS="${S3_LDFLAGS} -ls3"
 		    have_libs3="yes"
+                    CLOUD_DRIVERS="${CLOUD_DRIVERS} s3-driver"
+                    CLOUD_INSTALL_TARGETS="${CLOUD_INSTALL_TARGETS} install-s3-cloud"
 		], [
 		    echo " "
 		    echo "libs3.h not found. s3 turned off ..."
@@ -1995,6 +2055,8 @@ if test x$support_s3 = xyes; then
 	      S3_LIBS="-ls3"
 	      AC_DEFINE(HAVE_LIBS3,1,[Define to 1 if you have libs3])
 	      have_libs3=yes
+              CLOUD_DRIVERS="${CLOUD_DRIVERS} s3-driver"
+              CLOUD_INSTALL_TARGETS="${CLOUD_INSTALL_TARGETS} install-s3-cloud"
 	   ])
 	 ])
       ])
@@ -2645,6 +2707,14 @@ fi
 
 AC_SUBST(LZO_INC)
 AC_SUBST(LZO_LIBS)
+
+ACSLS_LIBDIR=
+ACSLS_OS_DEFINE=
+ACSLS_BUILD_TARGET=
+
+AC_SUBST(ACSLS_LIBDIR)
+AC_SUBST(ACSLS_OS_DEFINE)
+AC_SUBST(ACSLS_BUILD_TARGET)
 
 
 dnl
