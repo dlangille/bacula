@@ -15,6 +15,7 @@
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
+
 */
 /*
  * Windows APIs that are different for each system.
@@ -49,6 +50,8 @@ typedef char POOLMEM;
 
 int wchar_2_UTF8(POOLMEM **pszUTF, const wchar_t *pszUCS);
 int wchar_2_UTF8(char *pszUTF, const WCHAR *pszUCS, int cchChar = MAX_PATH_UTF8);
+int wchar_path_2_wutf8(POOLMEM **pszUTF, const wchar_t *pszUCS);
+int wutf8_path_2_wchar(POOLMEM **ppszUCS, const char *pszUTF);
 int UTF8_2_wchar(POOLMEM **pszUCS, const char *pszUTF);
 int make_win32_path_UTF8_2_wchar(POOLMEM **pszUCS, const char *pszUTF, BOOL* pBIsRawPath = NULL);
 
