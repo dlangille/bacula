@@ -30,6 +30,14 @@ DEFINES = \
 
 #	-DHAVE_TRAY_MONITOR \
 
+EXTRA_LIBSD_OBJS_ORG = $(EXTRA_LIBSD_SRCS:.c=.o) $(EXTRA_LIBSD_SRCS:.c=.o)
+EXTRA_LIBSD_OBJS = $(addprefix $(OBJDIR)/, $(EXTRA_LIBSD_OBJS_ORG))
+
+EXTRA_STORED_OBJS_ORG = $(EXTRA_STORED_SRCS:.c=.o) $(EXTRA_LIBSD_SRCS:.c=.o)
+EXTRA_STORED_OBJS = $(addprefix $(OBJDIR)/, $(EXTRA_STORED_OBJS_ORG))
+
+EXTRA_BLS_OBJS_ORG = $(EXTRA_BLS_SRCS:.c=.o)
+EXTRA_BLS_OBJS = $(addprefix $(OBJDIR)/, $(EXTRA_BLS_OBJS_ORG))
 
 vpath %.c $(MAINDIR)/src/stored $(BUILDDIR)/libwin32
 vpath %.cpp $(MAINDIR)/src/stored $(BUILDDIR)/libwin32
@@ -39,8 +47,8 @@ vpath %.cpp $(MAINDIR)/src/stored $(BUILDDIR)/libwin32
 COMMON_OBJS = \
 	$(OBJDIR)/askdir.o \
 	$(OBJDIR)/tape_alert.o \
-	$(OBJDIR)/tape_worm.o \
 	$(OBJDIR)/vtape_dev.o \
+	$(OBJDIR)/tape_worm.o \
 	$(OBJDIR)/tape_dev.o \
 	$(OBJDIR)/init_dev.o \
 	$(OBJDIR)/global.o \
@@ -75,8 +83,8 @@ COMMON_OBJS = \
 	$(OBJDIR)/wait.o \
 	$(OBJDIR)/file_dev.o \
 	$(OBJDIR)/sd_plugins.o \
-	$(OBJDIR)/os.o
-
+	$(OBJDIR)/os.o \
+	$(EXTRA_LIBSD_OBJS)
 
 
 #	 $(OBJDIR)/mtops.o
@@ -91,7 +99,8 @@ SD_OBJS = \
 	$(OBJDIR)/job.o \
 	$(OBJDIR)/read.o \
 	$(OBJDIR)/vbackup.o \
-	$(OBJDIR)/status.o
+	$(OBJDIR)/status.o \
+	$(EXTRA_STORED_OBJS)
 
 # bextract
 BEXTRACT_OBJS = \
@@ -158,7 +167,7 @@ $(BINDIR)/bacula-sd.exe: $(SD_OBJS) $(COMMON_OBJS) $(OBJS_WIN) $(LIBS_BACULA)
 $(BINDIR)/btape.exe: $(OBJDIR)/btape.o $(COMMON_OBJS) $(LIBS_BACULA)
 	$(call link_conapp,$(LIBS_STORED))
 
-$(BINDIR)/bls.exe: $(OBJDIR)/bls.o $(COMMON_OBJS) $(LIBS_BACULA)
+$(BINDIR)/bls.exe: $(OBJDIR)/bls.o $(EXTRA_BLS_OBJS) $(COMMON_OBJS) $(LIBS_BACULA)
 	$(call link_conapp,$(LIBS_STORED))
 
 $(BINDIR)/bextract.exe: $(BEXTRACT_OBJS) $(COMMON_OBJS) $(LIBS_BACULA) $(LIBS_LZO)
