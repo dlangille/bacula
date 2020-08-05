@@ -21,20 +21,23 @@ DEFINES = \
 
 LDFLAGS:=$(LDFLAGS) -lstdc++
 
-vpath %.c $(MAINDIR)/src/tools $(MAINDIR)/src/dird
-vpath %.cpp $(MAINDIR)/src/tools $(MAINDIR)/src/dird
+vpath %.c $(MAINDIR)/src/tools $(MAINDIR)/src/dird $(MAINDIR)/src/plugins/fd
+vpath %.cpp $(MAINDIR)/src/tools $(MAINDIR)/src/dird $(MAINDIR)/src/tools/cdp-client
 
 ##########################################################################
 
 DIRCONF_OBJS = \
 	$(OBJDIR)/dird_conf.o \
 	$(OBJDIR)/run_conf.o \
+	$(OBJDIR)/ua_acl.o  \
 	$(OBJDIR)/inc_conf.o
 
+CDP_OBJS= $(OBJDIR)/backupservice.o  $(OBJDIR)/cdp-client.o  $(OBJDIR)/folderwatcher.o $(OBJDIR)/journal.o
+
 ALL_OBJS = \
+	$(CDP_OBJS) \
 	$(DIRCONF_OBJS) \
 	$(OBJDIR)/bsmtp.o \
-	$(OBJDIR)/dbcheck.o \
 	$(OBJDIR)/scsilist.o \
 	$(OBJDIR)/ScsiDeviceList.o \
 	$(OBJDIR)/fstype.o \
@@ -51,9 +54,9 @@ ALL_OBJS = \
 .PHONY: all clean bsmtp
 
 all: \
-	$(BINDIR)/bsmtp.exe $(BINDIR)/dbcheck.exe  $(BINDIR)/scsilist.exe \
+	$(BINDIR)/bsmtp.exe $(BINDIR)/scsilist.exe \
 	$(BINDIR)/drivetype.exe $(BINDIR)/fstype.exe \
-	$(BINDIR)/testfind.exe $(BINDIR)/testls.exe \
+	$(BINDIR)/testfind.exe $(BINDIR)/testls.exe $(BINDIR)/cdp-client.exe \
 	$(BINDIR)/bregex.exe $(BINDIR)/bwild.exe
 
 bsmtp: \
@@ -71,7 +74,13 @@ clean:
 	$(call clean_exe,$(BINDIR)/testls.exe)
 	$(call clean_exe,$(BINDIR)/bregex.exe)
 	$(call clean_exe,$(BINDIR)/bwild.exe)
+	$(call clean_exe,$(BINDIR)/bsock_meeting_test.exe)
+	$(call clean_exe,$(BINDIR)/thread.exe)
+	$(call clean_exe,$(BINDIR)/cdp-client.exe)
 	$(ECHO_CMD)rm -rf $(OBJDIRS)
+
+tests: $(BINDIR)/bsock_meeting_test.exe $(BINDIR)/thread.exe
+
 
 #
 # Rules
@@ -104,4 +113,25 @@ $(BINDIR)/bregex.exe: $(OBJDIR)/bregex.o $(LIBS_BACULA)
 $(BINDIR)/bwild.exe: $(OBJDIR)/bwild.o $(LIBS_BACULA)
 	$(call link_conapp,)
 
+$(BINDIR)/thread.exe: $(OBJDIR)/thread.o
+	$(call link_conapp,$(LIBS_PTHREADS))
+
 include ../Makefile.rules
+
+TEST_LIBS = \
+	$(LIBS_PTHREADS) \
+	$(LIBS_ZLIB) \
+	$(LIBS_LZO) \
+	$(LIBS_NETWORK) \
+	-lole32 \
+	-loleaut32 \
+	-luuid \
+	-lcomctl32
+
+$(BINDIR)/bsock_meeting_test.exe: $(OBJDIR)/bsock_meeting_test.o $(OBJDIR)/unittests.o $(LIBS_BACULA)
+	$(call link_conapp,$(TEST_LIBS))
+
+$(BINDIR)/cdp-client.exe: $(OBJDIR)/cdp-client.o $(OBJDIR)/backupservice.o $(OBJDIR)/folderwatcher.o $(OBJDIR)/journal.o $(LIBS_BACULA)
+	$(call link_conapp,$(LIBS_PTHREADS))
+
+cdp-client: $(BINDIR)/cdp-client.exe
