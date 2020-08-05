@@ -20,7 +20,6 @@
  *
  * Kern Sibbald, August 2007
  *
- *
 */
 
 #include "bacula.h"
