@@ -30,4 +30,4 @@
 #define terminate_app(x) terminate_dird(x)
 extern void terminate_dird(int sig);
 
-#define VSSInit()
+#define VSSInit() NULL
