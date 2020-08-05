@@ -47,6 +47,10 @@
 #define __STDC__ 1
 #endif
 
+#ifndef POOLMEM
+typedef char POOLMEM;
+#endif
+
 #include <malloc.h>
 
 #ifdef HAVE_MINGW_W64
@@ -212,6 +216,9 @@ struct stat
     uint64_t    st_blocks;
     uint32_t    st_fattrs;  /* Windows file attributes */
 };
+#ifndef SHUT_RDWR
+#define SHUT_RDWR SD_BOTH
+#endif
 
 #ifndef SOCK_CLOEXEC
 #define SOCK_CLOEXEC 0x00000000
@@ -291,6 +298,15 @@ int chmod(const char *, mode_t mode);
 int fcntl(int fd, int cmd, long arg);
 int fstat(intptr_t fd, struct stat *sb);
 
+
+/* Operations for the `flock' call.  */
+#define	LOCK_SH	1	/* Shared lock.  */
+#define	LOCK_EX	2 	/* Exclusive lock.  */
+#define	LOCK_UN	8	/* Unlock.  */
+/* Can be OR'd in to one of the above.  */
+#define	LOCK_NB	4	/* Don't block when locking.  */
+int flock (int fd, int operation);
+
 int inet_aton(const char *cp, struct in_addr *inp);
 int binet_pton(int af, const char *src, void *dst);
 int kill(pid_t pid, int signo);
@@ -336,15 +352,20 @@ DIR *opendir(const char *name);
 int closedir(DIR *dir);
 
 struct passwd {
-    char *foo;
+   char *foo;
+   uid_t pw_uid;
 };
 
 struct group {
-    char *foo;
+   char *foo;
+   gid_t gr_gid;
 };
 
 struct passwd *getpwuid(uid_t);
 struct group *getgrgid(uid_t);
+#define getgrnam(x) NULL
+#define getpwnam(x) NULL
+
 
 #ifdef xxx_needed
 struct sigaction {
@@ -457,6 +478,7 @@ int mkstemp(char *t);
 
 void malloc_trim(int);
 uint64_t get_memory_info(char *buf, int buflen);
+void win32_normalize_fileset_path(POOLMEM *&fname);
 
 #undef ftruncate
 #define ftruncate win32_ftruncate
