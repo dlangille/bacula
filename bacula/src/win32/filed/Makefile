@@ -2,6 +2,7 @@
 # Makefile for win32 bacula executables
 # Using MinGW cross-compiler on GNU/Linux
 #
+#
 # Author: Robert Nelson
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
@@ -12,7 +13,6 @@
 # Change the following depending on where this directory is located
 #  in the Bacula tree.	It should point to the src/win32 directory.
 BUILDDIR = ..
-
 
 include $(BUILDDIR)/Makefile.inc
 
@@ -38,6 +38,10 @@ vpath %.c $(MAINDIR)/src/filed $(BUILDDIR)/libwin32
 vpath %.cpp $(MAINDIR)/src/filed $(BUILDDIR)/libwin32
 
 ##########################################################################
+
+EXTRA_FILED_OBJS_ORG = $(EXTRA_FILED_SRCS:.c=.o)
+
+EXTRA_FILED_OBJS = $(addprefix $(OBJDIR)/, $(EXTRA_FILED_OBJS_ORG))
 
 FILED_OBJS = \
 	$(OBJDIR)/accurate.o \
@@ -74,6 +78,8 @@ FILED_OBJS = \
 	$(OBJDIR)/bxattr.o \
 	$(OBJDIR)/bxattr_linux.o \
 	$(OBJDIR)/bxattr_solaris.o \
+	$(OBJDIR)/fdcallsdir.o \
+	$(OBJDIR)/runres_conf.o \
 	$(OBJDIR)/suspend.o \
 	$(OBJDIR)/bacgpfs.o \
 	$(EXTRA_FILED_OBJS) \
