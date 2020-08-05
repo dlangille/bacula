@@ -485,14 +485,15 @@ bool VSSClientGeneric::CreateSnapshots(alist *mount_points)
    for (int i=0; i < mount_points->size(); i++) {
       wchar_t *p = (wchar_t *)mount_points->get(i);
       // store uniquevolumname
-      if (SUCCEEDED(pVssObj->AddToSnapshotSet(p, GUID_NULL, &pid))) {
+      int hresult = pVssObj->AddToSnapshotSet(p, GUID_NULL, &pid);
+      if (SUCCEEDED(hresult)) {
          MTabEntry *elt = (MTabEntry*)m_VolumeList->entries->search(p, volume_cmp);
          ASSERT2(elt, "Should find the volume in the list");
          Jmsg(m_jcr, M_INFO, 0, "    Snapshot mount point: %ls\n", elt->first());
          Dmsg1(50, "AddToSnapshot OK for Vol: %ls\n", p);
       } else {
          //Dmsg1(50, "AddToSnapshot() failed for Vol: %ls\n", (LPWSTR)volume.c_str());
-         //Dmsg1(50, "AddToSnapshot() failed for path: %s\n", p);
+         Dmsg2(50, "AddToSnapshot() failed for path: %ls hresult=0x%x\n", p, hresult);
       }
    }
 
