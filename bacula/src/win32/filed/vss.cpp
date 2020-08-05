@@ -118,7 +118,7 @@ MTabEntry *MTab::search(char *p)
    wstring rootPath;
 
    POOLMEM* pwszBuf = get_pool_memory(PM_FNAME);
-   UTF8_2_wchar(&pwszBuf, p);
+   wutf8_path_2_wchar(&pwszBuf, p);
    path.assign((wchar_t *)pwszBuf);
    volume = GetUniqueVolumeNameForPath(path, rootPath);
 
@@ -197,6 +197,8 @@ bool MTab::get()
          break;
       }
 
+      // VolumeName='\\\\?\\Volume{086fc09e-7781-4076-9b2e-a4ff5c6b52c7}\\'
+      // DeviceName='\\Device\\HarddiskVolume2'
       MTabEntry *entry = New(MTabEntry(DeviceName, VolumeName));
       entries->insert(entry, volume_cmp);
 
@@ -279,7 +281,7 @@ VSSCleanup(VSSClient *pVSSClient)
 {
    store_vssclient_in_tsd(NULL);
    if (pVSSClient) {
-      delete (pVSSClient);
+      delete pVSSClient;
    }
 }
 
@@ -455,7 +457,7 @@ bool VSSClient::GetShadowPath(const char *szFilePath, char *szShadowPath, int nB
    wstring path, rootPath, volume;
    POOLMEM* pwszBuf = get_pool_memory(PM_FNAME);
 
-   UTF8_2_wchar(&pwszBuf, szFilePath);
+   wutf8_path_2_wchar(&pwszBuf, szFilePath);
    path.assign((wchar_t *)pwszBuf);
 
    /* TODO: Have some cache here? */
@@ -496,6 +498,7 @@ bool VSSClient::GetShadowPath(const char *szFilePath, char *szShadowPath, int nB
 
 /*
  * c:/tmp   ->   \\?\GLOBALROOT\Device\HarddiskVolumeShadowCopy15\tmp
+ * c:/      ->   \\?\GLOBALROOT\Device\HarddiskVolumeShadowCopy15
  */
 bool VSSClient::GetShadowPathW(const wchar_t *szFilePath, wchar_t *szShadowPath, int nBuflen)
 {
@@ -512,26 +515,35 @@ bool VSSClient::GetShadowPathW(const wchar_t *szFilePath, wchar_t *szShadowPath,
    wstring path, rootPath, volume;
    path.assign((wchar_t *)szFilePath);
    /* TODO: Have some cache here? */
+   /* In  : path = c:\tmp
+    * Out : rootPath = c:\
+    * Out : volume = \\?\Volume{33502cbb-c037-4bb7-80a2-8d40a4753bbd}\
+    */
    volume = GetUniqueVolumeNameForPath(path, rootPath);
    MTabEntry *vol = (MTabEntry *)m_VolumeList->entries->search(&volume,volume_search);
-
+   /* Out shadowCopyName=\\?\GLOBALROOT\Device\HarddiskVolumeShadowCopy4 */
    if (vol && vol->shadowCopyName) {
       Dmsg5(dbglvl_snap, "szFilePath=%ls rootPath=%ls len(rootPath)=%d nBuflen=%d shadowCopyName=%ls\n",
             szFilePath, rootPath.c_str(), rootPath.length(), nBuflen, vol->shadowCopyName);
 
+Dmsg3(20, "ASX GetShadowPathW(%ls) volume=%ls vol->shadowCopyName=%ls\n", szFilePath, volume.c_str(), vol->shadowCopyName);
+Dmsg5(20, "ASX szFilePath=%ls rootPath=%ls len(rootPath)=%d nBuflen=%d shadowCopyName=%ls\n",
+      szFilePath, rootPath.c_str(), rootPath.length(), nBuflen, vol->shadowCopyName);
+
       wcsncpy(szShadowPath, vol->shadowCopyName, nBuflen);
       nBuflen -= (int)wcslen(vol->shadowCopyName);
 
-      wcsncat(szShadowPath, L"\\", nBuflen);
-      nBuflen -= 1;
-
-      //Dmsg4(200, "szFilePath=%ls rootPath=%ls len(rootPath)=%d nBuflen=%d\n",
-      //      szFilePath, rootPath.c_str(), rootPath.length(), nBuflen);
+      //Dmsg4(200, "szFilePath=%ls rootPath=%ls len(rootPath)=%d nBuflen=%d shadowCopyName=%ls\n",
+      //      szFilePath, rootPath.c_str(), rootPath.length(), nBuflen, vol->shadowCopyName);
 
       if (wcslen(szFilePath) > rootPath.length()) {
-         /* here we skip C:, we skip volume root */
+         wcsncat(szShadowPath, L"\\", nBuflen);
+         nBuflen -= 1;
+         // Append the right part of szFilePath that is on the right of rootPath
+         // aka "tmp" in c:/tmp
          wcsncat(szShadowPath, szFilePath+rootPath.length(), nBuflen);
       }
+Dmsg2(20, "ASX GetShadowPathW(%ls) ==> %ls\n", szFilePath, szShadowPath);
       Dmsg2(dbglvl_snap, "GetShadowPathW(%ls) -> %ls\n", szFilePath, szShadowPath);
       return true;
    }
