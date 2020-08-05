@@ -19,6 +19,8 @@
 /*
  * Kern Sibbald, August 2007
  *
+ * Version $Id$
+ *
  */
 
 #include "who.h"
