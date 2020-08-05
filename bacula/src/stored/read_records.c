@@ -120,7 +120,13 @@ bool read_records(DCR *dcr,
 
    recs = New(dlist(rec, &rec->link));
 
-   sir_init(dcr);
+   if (!sir_init(dcr)) {
+      /* We go to the first_file unless we need to reposition during an
+       * interactive restore session (the reposition will be done with a different
+       * BSR in the for loop 
+       */
+      position_to_first_file(jcr, dcr, jcr->bsr);
+   }
 
    jcr->mount_next_volume = false;
 

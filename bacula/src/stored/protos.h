@@ -341,7 +341,7 @@ int sir_init_loop(DCR *dcr,
                   bool record_cb(DCR *dcr, DEV_RECORD *rec),
                   bool mount_cb(DCR *dcr));
 
-void sir_init(DCR *dcr);
+bool sir_init(DCR *dcr);
 
 /* from BEE */
 #if BEEF

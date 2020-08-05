@@ -20,8 +20,9 @@
 #include "bacula.h"
 #include "stored.h"
 
-void sir_init(DCR *dcr)
+bool sir_init(DCR *dcr)
 {
+   return false;
 }
 
 /* Return: SIR_OK       nothing to do
