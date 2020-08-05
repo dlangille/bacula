@@ -28,6 +28,9 @@ DEFINES = \
 vpath %.c $(MAINDIR)/src/dird $(BUILDDIR)/libwin32
 vpath %.cpp $(MAINDIR)/src/dird $(BUILDDIR)/libwin32
 
+EXTRA_DIRD_OBJS_ORG = $(EXTRA_DIRD_SRCS:.c=.o)
+EXTRA_DIRD_OBJS = $(addprefix $(OBJDIR)/, $(EXTRA_DIRD_OBJS_ORG))
+
 ##########################################################################
 
 DIRD_OBJS = \
@@ -78,6 +81,7 @@ DIRD_OBJS = \
 	$(OBJDIR)/mac_sql.o \
 	$(OBJDIR)/mac.o \
 	$(OBJDIR)/main.o \
+	$(EXTRA_DIRD_OBJS) \
 	$(OBJDIR)/bacula.res
 
 ALL_OBJS = $(DIRD_OBJS)
