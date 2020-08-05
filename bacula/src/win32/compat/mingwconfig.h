@@ -34,7 +34,7 @@
 
 #define HAVE_SHA2
 
-#undef USE_LOCKMGR
+#define USE_LOCKMGR 
 
 /* Define if you want SmartAlloc debug code enabled */
 #define SMARTALLOC 1
