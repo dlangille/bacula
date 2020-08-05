@@ -44,6 +44,7 @@
 struct IVssAsync;
 
 #define bwcsdup(str) wcscpy((WCHAR *)bmalloc((wcslen(str)+1)*sizeof(WCHAR)),(str))
+#define safe_bfree(buf) if (buf) { bfree(buf); buf = NULL; }
 
 /* The MTabEntry class is representing a mounted volume,
  * it associates a volume name with mount paths and a device name
@@ -74,7 +75,7 @@ public:
       if (VolumeName[last - 1] == L'\\') {
          volumeName = bwcsdup(VolumeName);
       } else {                         /* \\ + \0 */
-         volumeName = (WCHAR *)bmalloc(last+2*sizeof(WCHAR));
+         volumeName = (WCHAR *)bmalloc((last+1)*sizeof(WCHAR));
          wcscpy(volumeName, VolumeName);
          volumeName[last] = L'\\';
          volumeName[last+1] = L'\0';
@@ -93,22 +94,10 @@ public:
    };
 
    void destroy() {
-      if (mountPaths) {
-         free(mountPaths);
-         mountPaths = NULL;
-      }
-      if (volumeName) {
-         free(volumeName);
-         volumeName = NULL;
-      }
-      if (deviceName) {
-         free(deviceName);
-         deviceName = NULL;
-      }
-      if (shadowCopyName) {
-         free(shadowCopyName);
-         shadowCopyName = NULL;
-      }
+      safe_bfree(mountPaths);
+      safe_bfree(volumeName);
+      safe_bfree(deviceName);
+      safe_bfree(shadowCopyName);
    };
 
    /* Return  the drive type (cdrom, fixed, network, ...) */
