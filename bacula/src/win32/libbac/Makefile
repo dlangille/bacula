@@ -1,4 +1,7 @@
 #
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
 # Makefile for win32 bacula executables
 # Using MinGW cross-compiler on GNU/Linux
 #  
@@ -40,7 +43,6 @@ LIB_OBJS = \
 	$(OBJDIR)/bshm.o \
 	$(OBJDIR)/bsnprintf.o \
 	$(OBJDIR)/bsock.o \
-	$(OBJDIR)/bsockcore.o \
 	$(OBJDIR)/bsys.o \
 	$(OBJDIR)/btime.o \
 	$(OBJDIR)/btimers.o \
