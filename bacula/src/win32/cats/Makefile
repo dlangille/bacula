@@ -24,6 +24,8 @@ DEFINES = \
 vpath %.c $(MAINDIR)/src/cats
 vpath %.cpp $(MAINDIR)/src/cats
 
+EXTRA_CATS_OBJS = $(EXTRA_CATS_SRCS:.c=.o)
+
 ######################################################################
 
 # Files files in src/lib
@@ -39,7 +41,8 @@ SQL_OBJS = \
 	sql_list.o \
 	sql_update.o \
 	cats.o \
-	bvfs.o
+	bvfs.o \
+        $(EXTRA_CATS_OBJS)
 
 LIBS_DLL = \
 	$(LIBS_BACULA)
