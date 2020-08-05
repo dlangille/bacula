@@ -23,9 +23,11 @@
  *   to define the names of the daemon that is being built.
  */
 
-#define APP_NAME "Bacula-sd" 
+#define APP_NAME "Bacula-sd"
 #define LC_APP_NAME "bacula-sd"
 #define APP_DESC "Bacula Storage Service"
 
 #define terminate_app(x) terminate_stored(x)
 extern void terminate_stored(int sig);
+
+#define VSSInit() NULL
