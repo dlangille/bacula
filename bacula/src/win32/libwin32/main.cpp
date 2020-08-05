@@ -15,7 +15,8 @@
    conveyed and/or propagated.
 
    Bacula(R) is a registered trademark of Kern Sibbald.
-*/
+ */
+
 /* 
  * 
  *  Kern Sibbald, August 2007
@@ -327,7 +328,6 @@ void *Main_Msg_Loop(LPVOID lpwThreadParam)
    kill(main_pid, SIGTERM);           /* kill main thread */
    _exit(0);
 }
- 
 
 /*
  * This is the main routine for Bacula when running as an application,
@@ -339,13 +339,13 @@ int BaculaAppMain()
    DWORD dwCharsWritten;
 
    OSDependentInit();
-
    /* If no arguments were given then just run */
    if (p_AttachConsole == NULL || !p_AttachConsole(ATTACH_PARENT_PROCESS)) {
       if (opt_debug) {
          AllocConsole();
       }
    }
+
    WriteConsole(GetStdHandle(STD_OUTPUT_HANDLE), "\r\n", 2, &dwCharsWritten, NULL);
 
    /* Startup networking */
