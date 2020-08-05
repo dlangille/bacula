@@ -1,8 +1,4 @@
 #
-# Copyright (C) 2000-2018 Kern Sibbald
-# License: BSD 2-Clause; see file LICENSE-FOSS
-#
-#
 # Makefile for win32 bacula executables
 # Using MinGW cross-compiler on GNU/Linux
 #
@@ -22,8 +18,15 @@ DEFINES = \
 
 vpath %.c $(BUILDDIR)/compat $(MAINDIR)/src/findlib $(MAINDIR)/src/lib
 vpath %.cpp $(BUILDDIR)/compat $(MAINDIR)/src/findlib $(MAINDIR)/src/lib
+vpath %.cc $(BUILDDIR)/compat $(MAINDIR)/src/findlib $(MAINDIR)/src/lib
 
 ######################################################################
+
+EXTRA_FINDLIB_OBJS_ORG = $(EXTRA_FINDLIB_SRCS:.c=.o)
+EXTRA_FINDLIB_OBJS = $(addprefix $(OBJDIR)/, $(EXTRA_FINDLIB_OBJS_ORG))
+
+EXTRA_LIB_OBJS_ORG = $(EXTRA_LIB_SRCS:.c=.o)
+EXTRA_LIB_OBJS = $(addprefix $(OBJDIR)/, $(EXTRA_LIB_OBJS_ORG))
 
 # Files files in src/lib
 
@@ -45,7 +48,8 @@ FIND_OBJS = \
 	$(OBJDIR)/find_one.o \
 	$(OBJDIR)/fstype.o \
 	$(OBJDIR)/mkpath.o \
-	$(OBJDIR)/match.o
+	$(OBJDIR)/match.o \
+	$(EXTRA_FINDLIB_OBJS)
 
 LIB_OBJS = \
 	$(OBJDIR)/address_conf.o \
@@ -69,7 +73,6 @@ LIB_OBJS = \
 	$(OBJDIR)/btime.o \
 	$(OBJDIR)/btimers.o \
 	$(OBJDIR)/cram-md5.o \
-	$(OBJDIR)/crc32.o \
 	$(OBJDIR)/crypto.o \
 	$(OBJDIR)/daemon.o \
 	$(OBJDIR)/dlist.o \
@@ -108,7 +111,12 @@ LIB_OBJS = \
 	$(OBJDIR)/sellist.o \
 	$(OBJDIR)/lockmgr.o \
 	$(OBJDIR)/worker.o \
-	$(OBJDIR)/flist.o
+	$(OBJDIR)/bsock_meeting.o \
+	$(OBJDIR)/authenticatebase.o \
+	$(OBJDIR)/flist.o \
+	$(OBJDIR)/bcrc32.o \
+	$(OBJDIR)/events.o \
+	$(EXTRA_LIB_OBJS)
 
 DLL_OBJS = \
 	$(COMPAT_OBJS) $(FIND_OBJS) $(LIB_OBJS)
@@ -148,6 +156,8 @@ clean:
 	$(ECHO_CMD)rm -f $(OBJDIR)/bacula.a $(LIBDIR)/libbacula.a
 	$(ECHO_CMD)rm -rf $(OBJDIRS)
 
+tests: $(BINDIR)/bsock_meeting_test
+
 #
 # Rules for generating from ../lib
 #
@@ -180,6 +190,11 @@ $(OBJDIR)/%.o: %.c
 	$(ECHO_CMD)$(CXX) -D$(DLL_DEFINE) $(CFLAGS) -c $< -o $@
 
 $(OBJDIR)/%.o: %.cpp
+	@echo "Compiling $<"
+	$(call checkdir,$@)
+	$(ECHO_CMD)$(CXX) -D$(DLL_DEFINE) $(CFLAGS) -c $< -o $@
+
+$(OBJDIR)/%.o: %.cc
 	@echo "Compiling $<"
 	$(call checkdir,$@)
 	$(ECHO_CMD)$(CXX) -D$(DLL_DEFINE) $(CFLAGS) -c $< -o $@
