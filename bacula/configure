@@ -650,6 +650,7 @@ FDLIBS
 CAP_LIBS
 FD_PLUGIN_DIR
 docker_bin
+GPFS_CFLAGS
 XATTROBJS
 ACLOBJS
 ACSLS_BUILD_TARGET
@@ -657,6 +658,10 @@ ACSLS_OS_DEFINE
 ACSLS_LIBDIR
 LZO_LIBS
 LZO_INC
+ANDROID_API
+ANDROID_QT_BUILD_LIBS
+ANDROID_QT_APK_MAKE
+ANDROID_QT_QMAKE
 AFS_LIBS
 AFS_CFLAGS
 ZLIBS
@@ -1042,8 +1047,11 @@ enable_afs
 with_afsdir
 enable_lzo
 with_lzo
+enable_acsls
 enable_acl
 enable_xattr
+enable_gpfs
+with_gpfsdir
 enable_docker_plugin
 with_systemd
 '
@@ -1708,8 +1716,10 @@ Optional Features:
   --disable-s3            disable S3 support [default=yes]
   --disable-afs           disable afs support [default=auto]
   --disable-lzo           disable lzo support [default=yes]
+  --disable-acsls         disable ACSLS support [default=yes]
   --disable-acl           disable acl support [default=auto]
   --disable-xattr         disable xattr support [default=auto]
+  --disable-gpfs          disable gpfs support [default=auto]
   --disable-docker-plugin disable Docker plugin support [default=auto]
 
 Optional Packages:
@@ -1788,6 +1798,7 @@ Optional Packages:
   --with-s3[=DIR]         specify s3 library directory
   --with-afsdir[=DIR]     Directory holding AFS includes/libs
   --with-lzo[=DIR]        specify lzo library directory
+  --with-gpfsdir[=DIR]    Directory holding GPFS includes/libs
   --with-systemd[=UNITDIR]
                           Include systemd support. UNITDIR is where systemd
                           system .service files are located, default is to ask
@@ -29888,6 +29899,11 @@ fi
 
 
 
+
+
+
+
+
 # Check whether --enable-lzo was given.
 if test "${enable_lzo+set}" = set; then :
   enableval=$enable_lzo;
@@ -30013,6 +30029,19 @@ fi
 fi
 
 
+
+
+acsls_support=yes
+have_acsls="no"
+# Check whether --enable-acsls was given.
+if test "${enable_acsls+set}" = set; then :
+  enableval=$enable_acsls;
+      if test x$enableval = xno; then
+         acsls_support=no
+      fi
+
+
+fi
 
 
 ACSLS_LIBDIR=
@@ -30816,6 +30845,151 @@ $as_echo "#define HAVE_XATTR 1" >>confdefs.h
       fi
    fi
 fi
+
+
+AFS_CFLAGS=""
+AFS_LIBS=""
+support_afs=auto
+# Check whether --enable-afs was given.
+if test "${enable_afs+set}" = set; then :
+  enableval=$enable_afs;
+       if test x$enableval = xyes; then
+     support_afs=yes
+       elif test x$enableval = xno; then
+     support_afs=no
+       fi
+
+
+fi
+
+
+GPFS_CFLAGS=""
+GPFS_LDFLAGS=""
+support_gpfs=auto
+# Check whether --enable-gpfs was given.
+if test "${enable_gpfs+set}" = set; then :
+  enableval=$enable_gpfs;
+      if test x$enableval = xyes; then
+         support_gpfs=yes
+      elif test x$enableval = xno; then
+         support_gpfs=no
+      fi
+
+
+fi
+
+
+have_gpfs=no
+have_gpfslib=no
+GPFSLIB=""
+if test x$have_acl = xno -a x$have_xattr = xno; then
+   if test x$support_gpfs = xyes; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: ACL and XATTR engine disabled - disable dependent GPFS support." >&5
+$as_echo "$as_me: WARNING: ACL and XATTR engine disabled - disable dependent GPFS support." >&2;}
+   fi
+else
+   if test x$support_gpfs = xyes -o x$support_gpfs = xauto; then
+
+# Check whether --with-gpfsdir was given.
+if test "${with_gpfsdir+set}" = set; then :
+  withval=$with_gpfsdir; with_gpfsdir=$withval
+
+fi
+
+
+      saved_CFLAGS="${CFLAGS}"
+      saved_CPPFLAGS="${CPPFLAGS}"
+      saved_LDFLAGS="${LDFLAGS}"
+
+      if test x$with_gpfsdir != x; then
+         GPFS_CFLAGS="-I${with_gpfsdir}/include"
+         CFLAGS="${GPFS_CFLAGS} ${saved_CFLAGS}"
+         CPPFLAGS="${GPFS_CFLAGS} ${saved_CPPFLAGS}"
+         LDFLAGS="-L${with_gpfsdir}/lib  ${saved_LDFLAGS}"
+      fi
+
+      ac_fn_c_check_header_mongrel "$LINENO" "gpfs.h" "ac_cv_header_gpfs_h" "$ac_includes_default"
+if test "x$ac_cv_header_gpfs_h" = xyes; then :
+
+        have_gpfs=yes
+
+fi
+
+
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for gpfs_getacl in -lgpfs" >&5
+$as_echo_n "checking for gpfs_getacl in -lgpfs... " >&6; }
+if ${ac_cv_lib_gpfs_gpfs_getacl+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lgpfs  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char gpfs_getacl ();
+int
+main ()
+{
+return gpfs_getacl ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_gpfs_gpfs_getacl=yes
+else
+  ac_cv_lib_gpfs_gpfs_getacl=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_gpfs_gpfs_getacl" >&5
+$as_echo "$ac_cv_lib_gpfs_gpfs_getacl" >&6; }
+if test "x$ac_cv_lib_gpfs_gpfs_getacl" = xyes; then :
+
+        have_gpfslib=yes
+
+fi
+
+
+      if test x$with_gpfsdir != x; then
+         CFLAGS="${saved_CFLAGS}"
+         CPPFLAGS="${saved_CPPFLAGS}"
+         LDFLAGS="${saved_LDFLAGS}"
+      fi
+      if test x$have_gpfslib = xyes; then
+         if test -f ${with_gpfsdir}/lib/libgpfs.so; then
+            GPFSLIB=`realpath ${with_gpfsdir}/lib/libgpfs.so`
+
+cat >>confdefs.h <<_ACEOF
+#define GPFSLIB_CUSTOM_PATH "${GPFSLIB}"
+_ACEOF
+
+         fi
+      fi
+      if test x$have_gpfs = xyes; then
+
+$as_echo "#define HAVE_GPFS 1" >>confdefs.h
+
+
+$as_echo "#define HAVE_GPFS_ACL 1" >>confdefs.h
+
+
+$as_echo "#define HAVE_GPFS_XATTR 1" >>confdefs.h
+
+      fi
+   fi
+
+fi
+
 
 
 PTHREAD_LIB=""
@@ -34394,11 +34568,13 @@ Configuration on `date`:
    AFS support:               ${have_afs}
    ACL support:               ${have_acl}
    XATTR support:             ${have_xattr}
+   GPFS support:              ${have_gpfs} ${GPFSLIB}
    systemd support:           ${support_systemd} ${SYSTEMD_UNITDIR}
    Batch insert enabled:      ${batch_insert_db_backends}
 
    Plugins:
    - Docker:                  ${support_docker}
+
   " > config.out
 
 # create a small shell script useful for support with
