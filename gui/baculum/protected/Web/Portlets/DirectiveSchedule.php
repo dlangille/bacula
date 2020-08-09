@@ -432,13 +432,13 @@ class DirectiveSchedule extends DirectiveListTemplate {
 			$obj->Day = range(0, 30);
 			if ($value->DaySingle->Checked === true) {
 				$day = $value->Day->getDirectiveValue();
-				$directive_values[] = $day;
+				$directive_values[] = 'on ' . $day;
 				$obj->Day = array($day-1);
 			} elseif ($value->DayRange->Checked === true) {
 				$from = $value->DayRangeFrom->getDirectiveValue()-1;
 				$to = $value->DayRangeTo->getDirectiveValue()-1;
 				$day_range = range($from, $to);
-				$directive_values[] = Params::getDaysConfig($day_range);
+				$directive_values[] = 'on ' . Params::getDaysConfig($day_range);
 				$obj->Day = $day_range;
 			}
 
