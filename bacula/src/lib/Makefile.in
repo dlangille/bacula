@@ -264,7 +264,7 @@ bcrc32sum: Makefile bcrc32.o
 
 xml_test: Makefile libbac.la xml.c
 	$(RMF) xml.o
-	$(CXX) -DTEST_PROG $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE)  $(CFLAGS) xml.c
+	$(CXX) -DTEST_PROGRAM $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE)  $(CFLAGS) xml.c
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -o $@ xml.o $(DLIB) -lbac -lm $(LIBS) $(OPENSSL_LIBS)
 	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) $@ $(DESTDIR)$(sbindir)/
 	$(RMF) xml.o
