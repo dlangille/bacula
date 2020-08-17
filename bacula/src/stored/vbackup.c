@@ -68,8 +68,12 @@ bool do_vbackup(JCR *jcr)
 
    Dmsg1(20, "Start read data. newbsr=%d\n", jcr->use_new_match_all);
 
-   if (!jcr->read_dcr || !jcr->dcr) {
-      Jmsg(jcr, M_FATAL, 0, _("Read and write devices not properly initialized.\n"));
+   if (!jcr->read_dcr) {
+      Jmsg(jcr, M_FATAL, 0, _("Read device not initialized or defined for this job.\n"));
+      goto bail_out;
+   }
+   if (!jcr->dcr) {
+      Jmsg(jcr, M_FATAL, 0, _("Write device not initialized or defined for this job.\n"));
       goto bail_out;
    }
    Dmsg2(100, "read_dcr=%p write_dcr=%p\n", jcr->read_dcr, jcr->dcr);
