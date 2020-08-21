@@ -243,7 +243,12 @@ const char *build_addresses_str(dlist *addrs, char *buf, int blen)
 
 const char *get_first_address(dlist *addrs, char *outputbuf, int outlen)
 {
-   return ((IPADDR *)(addrs->first()))->get_address(outputbuf, outlen);
+   IPADDR *addr = (IPADDR *)(addrs->first());
+   if (addr) {
+      return addr->get_address(outputbuf, outlen);
+   } else {
+      return _("N/A");
+   }
 }
 
 int get_first_port_net_order(dlist *addrs)
@@ -251,7 +256,12 @@ int get_first_port_net_order(dlist *addrs)
    if (!addrs) {
       return 0;
    } else {
-      return ((IPADDR *)(addrs->first()))->get_port_net_order();
+      IPADDR *addr = (IPADDR *)(addrs->first());
+      if (addr) {
+         return addr->get_port_net_order();
+      } else {
+         return 0;
+      }
    }
 }
 
@@ -260,7 +270,12 @@ int get_first_port_host_order(dlist *addrs)
    if (!addrs) {
       return 0;
    } else {
-      return ((IPADDR *)(addrs->first()))->get_port_host_order();
+      IPADDR *addr = (IPADDR *)(addrs->first());
+      if (addr) {
+         return addr->get_port_host_order();
+      } else {
+         return 0;
+      }
    }
 }
 
