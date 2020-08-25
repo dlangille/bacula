@@ -1833,24 +1833,26 @@ void Qmsg(JCR *jcr, int type, utime_t mtime, const char *fmt,...)
    /* If no jcr or no queue or dequeuing send to syslog */
    if (!jcr || !jcr->msg_queue || jcr->dequeuing_msgs) {
       syslog(LOG_DAEMON|LOG_ERR, "%s", item->msg);
-      P(daemon_msg_queue_mutex);
-      if (daemon_msg_queue) {
-         if (item->type == M_SECURITY) {  /* can be repeated */
-            /* Keep repeat count of identical messages */
-            last_item = (MQUEUE_ITEM *)daemon_msg_queue->last();
-            if (last_item) {
-               if (strcmp(last_item->msg, item->msg) == 0) {
-                  last_item->repeat++;
-                  free(item);
-                  item = NULL;
+      if (!dequeuing_daemon_msgs) { /* Avoid recursion with self generated network errors */
+         P(daemon_msg_queue_mutex);
+         if (daemon_msg_queue) {
+            if (item->type == M_SECURITY) {  /* can be repeated */
+               /* Keep repeat count of identical messages */
+               last_item = (MQUEUE_ITEM *)daemon_msg_queue->last();
+               if (last_item) {
+                  if (strcmp(last_item->msg, item->msg) == 0) {
+                     last_item->repeat++;
+                     free(item);
+                     item = NULL;
+                  }
                }
             }
+            if (item) {
+               daemon_msg_queue->append(item);
+            }
          }
-         if (item) {
-            daemon_msg_queue->append(item);
-         }
+         V(daemon_msg_queue_mutex);
       }
-      V(daemon_msg_queue_mutex);
    } else {
       /* Queue message for later sending */
       P(jcr->msg_queue_mutex);
