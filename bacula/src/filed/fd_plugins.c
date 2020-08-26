@@ -122,6 +122,7 @@ struct bacula_ctx {
    bool disabled;                        /* set if plugin disabled */
    bool restoreFileStarted;
    bool createFileCalled;
+   bool cancelCalled;                    /* true if the plugin got the cancel event */
    findINCEXE *exclude;                  /* pointer to exclude files */
    findINCEXE *include;                  /* pointer to include/exclude files */
 };
@@ -231,6 +232,9 @@ void generate_plugin_event(JCR *jcr, bEventType eventType, void *value)
    case bEventEndRestoreJob:
       call_if_canceled = true; /* plugin *must* see this call */
       break;
+   case bEventCancelCommand:
+      call_if_canceled = true;  /* plugin *must* see this call */
+      break;
    default:
       break;
    }
@@ -266,6 +270,12 @@ void generate_plugin_event(JCR *jcr, bEventType eventType, void *value)
       if (is_plugin_disabled(plugin_ctx)) {
          Dmsg1(50, "Plugin %s disabled\n", plugin->file);
          continue;
+      }
+      if (eventType == bEventCancelCommand) {
+         if (bac_ctx->cancelCalled) {
+            continue;
+         }
+         bac_ctx->cancelCalled = true;
       }
       if (eventType == bEventEndRestoreJob) {
          Dmsg0(50, "eventType==bEventEndRestoreJob\n");
@@ -1745,6 +1755,10 @@ static int my_plugin_bclose(BFILE *bfd)
    if (!plugin || !jcr->plugin_ctx) {
       return 0;
    }
+   /* We can be canceled after a network error, we need to notify the plugin */
+   if (jcr->is_canceled()) {
+      generate_plugin_event(jcr, bEventCancelCommand);
+   }
    io.pkt_size = sizeof(io);
    io.pkt_end = sizeof(io);
    io.func = IO_CLOSE;
@@ -1909,6 +1923,10 @@ static bRC baculaGetValue(bpContext *ctx, bVariable var, void *value)
    }
 
    switch (var) {
+   case bVarIsCanceled:
+      *((int *)value) = jcr->is_canceled();
+      Dmsg1(dbglvl, "Bacula: return bVarIsCanceled=%d\n", jcr->is_canceled());
+      break;
    case bVarJobId:
       *((int *)value) = jcr->JobId;
       Dmsg1(dbglvl, "Bacula: return bVarJobId=%d\n", jcr->JobId);

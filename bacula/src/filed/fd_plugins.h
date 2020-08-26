@@ -229,7 +229,8 @@ typedef enum {
   bVarFileIndex             = 22,
   bVarReplace               = 23,
   bVarMaxDedupBlockSize     = 24,
-  bVarMinDedupBlockSize     = 25
+  bVarMinDedupBlockSize     = 25,
+  bVarIsCanceled            = 26
 } bVariable;
 
 /* Events that are passed to plugin */
