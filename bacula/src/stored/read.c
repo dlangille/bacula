@@ -219,6 +219,7 @@ static bool read_record_cb(DCR *dcr, DEV_RECORD *rec)
 
    /* Debug code: check if we must hangup or blowup */
    if (handle_hangup_blowup(jcr, jcr->JobFiles, jcr->JobBytes)) {
+      fd->close();
       return false;
    }
 

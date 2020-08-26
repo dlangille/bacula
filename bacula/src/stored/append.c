@@ -235,6 +235,7 @@ fi_checked:
 
          /* Debug code: check if we must hangup or blowup */
          if (handle_hangup_blowup(jcr, jcr->JobFiles, jcr->JobBytes)) {
+            fd->close();
             return false;
          }
          Dmsg4(850, "before write_rec FI=%d SessId=%d Strm=%s len=%d\n",

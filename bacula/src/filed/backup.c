@@ -817,6 +817,7 @@ bool process_and_send_data(bctx_t &bctx)
 
    /* Debug code: check if we must hangup or blowup */
    if (handle_hangup_blowup(jcr, 0, jcr->ReadBytes)) {
+      sd->close();
       goto err;
    }
 
