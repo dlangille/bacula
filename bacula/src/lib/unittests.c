@@ -85,7 +85,11 @@ bool _ok(const char *file, int l, const char *op, int value, const char *label)
    nb++;
    if (!value) {
       err++;
-      Pmsg4(-1, "ERR %.80s %s:%i on %s\n", label, file, l, op);
+      if (err < 1000) {
+         Pmsg4(-1, "ERR %.80s %s:%i on %s\n", label, file, l, op);
+      } else if (err == 1000) {
+         Pmsg0(-1, "ERR Too much errors\n");
+      }
       if (print_var) {
          gdb_print_local(1);
       }
@@ -103,7 +107,11 @@ bool _nok(const char *file, int l, const char *op, int value, const char *label)
    nb++;
    if (value) {
       err++;
-      Pmsg4(-1, "ERR %.80s %s:%i on !%s\n", label, file, l, op);
+      if (err < 1000) {
+         Pmsg4(-1, "ERR %.80s %s:%i on !%s\n", label, file, l, op);
+      } else if (err == 1000) {
+         Pmsg0(-1, "ERR Too much errors\n");
+      }
       if (print_var) {
          gdb_print_local(1);
       }
@@ -122,7 +130,11 @@ bool _is(const char *file, int l, const char *op, const char *str, const char *s
    bool value = (strcmp(str, str2) == 0);
    if (!value) {
       err++;
-      Pmsg6(-1, "ERR %.80s %s:%i on %s %s == %s\n", label, file, l, op, str, str2);
+      if (err < 1000) {
+         Pmsg6(-1, "ERR %.80s %s:%i on %s %s == %s\n", label, file, l, op, str, str2);
+      } else if (err == 1000) {
+         Pmsg0(-1, "ERR Too much errors\n");
+      }
       if (print_var) {
          gdb_print_local(1);
       }
@@ -141,7 +153,11 @@ bool _is(const char *file, int l, const char *op, int64_t v, int64_t v2, const c
    bool value = (v == v2);
    if (!value) {
       err++;
-      Pmsg6(-1, "ERR %.80s %s:%i on %s %lld == %lld\n", label, file, l, op, v, v2);
+      if (err < 1000) {
+         Pmsg6(-1, "ERR %.80s %s:%i on %s %lld == %lld\n", label, file, l, op, v, v2);
+      } else if (err == 1000) {
+         Pmsg0(-1, "ERR Too much errors\n");
+      }
       if (print_var) {
          gdb_print_local(1);
       }
@@ -160,7 +176,11 @@ bool _isnt(const char *file, int l, const char *op, const char *str, const char 
    bool value = (strcmp(str, str2) != 0);
    if (!value) {
       err++;
-      Pmsg6(-1, "ERR %.80s %s:%i on %s %s == %s\n", label, file, l, op, str, str2);
+      if (err < 1000) {
+         Pmsg6(-1, "ERR %.80s %s:%i on %s %s == %s\n", label, file, l, op, str, str2);
+      } else if (err == 1000) {
+         Pmsg0(-1, "ERR Too much errors\n");
+      }
       if (print_var) {
          gdb_print_local(1);
       }
@@ -179,7 +199,11 @@ bool _isnt(const char *file, int l, const char *op, int64_t v, int64_t v2, const
    bool value = (v != v2);
    if (!value) {
       err++;
-      Pmsg6(-1, "ERR %.80s %s:%i on %s == %lld\n", label, file, l, op, v, v2);
+      if (err < 1000) {
+         Pmsg6(-1, "ERR %.80s %s:%i on %s == %lld\n", label, file, l, op, v, v2);
+      } else if (err == 1000) {
+         Pmsg0(-1, "ERR Too much errors\n");
+      }
       if (print_var) {
          gdb_print_local(1);
       }
