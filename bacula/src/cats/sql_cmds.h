@@ -33,6 +33,7 @@ extern const char CATS_IMP_EXP *batch_lock_filename_query[];
 extern const char CATS_IMP_EXP *batch_lock_path_query[];
 extern const char CATS_IMP_EXP *batch_unlock_tables_query[];
 extern const char CATS_IMP_EXP *bvfs_select_delta_version_with_basejob_and_delta[];
+extern const char CATS_IMP_EXP *get_created_running_job;
 extern const char CATS_IMP_EXP *cleanup_created_job;
 extern const char CATS_IMP_EXP *cleanup_running_job;
 extern const char CATS_IMP_EXP *client_backups;

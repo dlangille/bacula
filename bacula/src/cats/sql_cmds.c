@@ -39,7 +39,8 @@ const char *get_restore_objects =
    "WHERE JobId IN (%s) "
      "AND ObjectType = %d "
    "ORDER BY ObjectIndex ASC";
-
+const char *get_created_running_job =
+   "SELECT JobId, Job, JobStatus FROM Job WHERE JobStatus IN ('C', 'R')";
 const char *cleanup_created_job =
    "UPDATE Job SET JobStatus='f', StartTime=SchedTime, EndTime=SchedTime "
    "WHERE JobStatus = 'C'";

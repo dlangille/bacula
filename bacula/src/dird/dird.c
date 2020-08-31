@@ -422,6 +422,13 @@ int main (int argc, char *argv[])
    /* initialize a statistics collector */
    initialize_statcollector();
 
+   /* The check_catalog() can send events */
+   if (!test_config) {
+      /* Plug database interface for library routines */
+      p_sql_log = (sql_insert_log)dir_sql_log;
+      p_sql_event = (sql_insert_event)dir_sql_event;
+   }
+
    /* If we are in testing mode, we don't try to fix the catalog */
    cat_op mode=(test_config)?CHECK_CONNECTION:UPDATE_AND_FIX;
 
@@ -439,10 +446,6 @@ int main (int argc, char *argv[])
    /* relocate trace file if needed, must be run after check_resources() and my_name_is() */
    update_trace_file_location(false);
    cleanup_old_files();
-
-   /* Plug database interface for library routines */
-   p_sql_log = (sql_insert_log)dir_sql_log;
-   p_sql_event = (sql_insert_event)dir_sql_event;
 
    FDConnectTimeout = (int)director->FDConnectTimeout;
    SDConnectTimeout = (int)director->SDConnectTimeout;
@@ -1342,6 +1345,20 @@ static bool check_resources()
    return OK;
 }
 
+
+/* Take note of all jobs to be canceled when we start the director 
+ * We don't send events directly here because the events might also
+ * be sent to the Catalog. Better to return a list of message.
+ */
+static int log_cleanup(void *ctx, int count, char **row)
+{
+   char buf[512];               /* 77 + 50 + 128 + 1 < 512 */
+   alist *events = (alist *)ctx;
+   bsnprintf(buf, sizeof(buf), "Cleanup Job %s \"%s\" JobStatus from %s to f (failed) during Director startup", row[0], row[1], row[2]);
+   events->append(bstrdup(buf));
+   return 0;
+}
+
 /*
  * In this routine,
  *  - we can check the connection (mode=CHECK_CONNECTION)
@@ -1660,8 +1677,17 @@ static bool check_catalog(cat_op mode)
       }
       /* cleanup old job records */
       if (mode == UPDATE_AND_FIX) {
+         alist events(100, not_owned_by_alist);
+         char *p;
+         db_sql_query(db, get_created_running_job, log_cleanup, &events);
          db_sql_query(db, cleanup_created_job, NULL, NULL);
          db_sql_query(db, cleanup_running_job, NULL, NULL);
+         foreach_alist(p, &events) {
+            events_send_msg(NULL, "DD0003", EVENTS_TYPE_DAEMON, "*Director*",
+                            (intptr_t)get_first_port_host_order(director->DIRaddrs),
+                            p);
+            free(p);
+         }
       }
 
       /* Set SQL engine name in global for debugging */
