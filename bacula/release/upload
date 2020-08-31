@@ -25,9 +25,9 @@ for i in bacula-$ver* bacula-*-$ver*; do \
 done
 
 # Upload release notes
-echo "Uploade ReleaseNotes to ${where}:/home/src/$ver"
+echo "Upload ReleaseNotes to ${where}:/home/src/$ver"
 $RSYNC ReleaseNotes ${where}:/home/src/$ver/
-echo "Uplod ChangeLog to ${where}:/home/src/$ver"
+echo "Upload ChangeLog to ${where}:/home/src/$ver"
 $RSYNC ChangeLog ${where}:/home/src/$ver/
 $RSYNC LICENSE* ${where}:/home/src/$ver/
 
