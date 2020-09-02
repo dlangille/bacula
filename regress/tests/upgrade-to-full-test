@@ -1,0 +1,87 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Run a simple backup of the Bacula build directory
+#   then do a couple of new jobs to see what bacula prints
+#   when upgrading a job
+#
+TestName="upgrade-test"
+JobName=backup
+. scripts/functions
+
+scripts/cleanup
+scripts/copy-confs
+
+#
+# Zap out any schedule in default conf file so that
+#  it doesn't start during our test
+#
+outf="$tmp/sed_tmp"
+echo "s%  Schedule =%# Schedule =%g" >${outf}
+cp $scripts/bacula-dir.conf $tmp/1
+sed -f ${outf} $tmp/1 >$scripts/bacula-dir.conf
+
+change_jobname BackupClient1 $JobName
+start_test
+
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@output /dev/null
+messages
+@$out $tmp/log1.out
+setdebug level=4 storage=File1
+label volume=TestVolume001 storage=File1 pool=File slot=1 drive=0
+run job=$JobName yes
+wait
+messages
+@$out $tmp/log2.out
+@# Modify the fileset, should display a message with the fileset
+@exec "sed -i s:build:build/po: $conf/bacula-dir.conf"
+reload
+run job=$JobName yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bacula
+check_for_zombie_jobs storage=File1
+
+$bperl -e "add_attribute('$conf/bacula-dir.conf', 'MaxFullInterval', '2s', 'Job')"
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out $tmp/log3.out
+reload
+@sleep 3
+run job=$JobName yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+
+stop_bacula
+
+grep "No prior or suitable Full backup found in catalog." $tmp/log1.out > /dev/null
+if [ $? != 0 ]; then
+    print_debug "ERROR: The first job should display a message in $tmp/log1.out"
+    estat=1
+fi
+
+grep "No prior or suitable Full backup found in catalog for the current FileSet." $tmp/log2.out > /dev/null
+if [ $? != 0 ]; then
+    print_debug "ERROR: After the fileset modification, the message should be clear in $tmp/log2.out"
+    estat=2
+fi
+
+grep "Max Full Interval" $tmp/log3.out > /dev/null
+if [ $? != 0 ]; then
+    print_debug "ERROR: After Max Full Interval in $tmp/log3.out"
+    estat=3
+fi
+
+
+end_test
