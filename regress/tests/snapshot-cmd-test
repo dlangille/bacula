@@ -1,0 +1,98 @@
+#!/bin/bash
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# create btrfs volume and play with snapshots commands
+#
+TestName="snapshot-cmd-test"
+JobName=Incremental
+. scripts/functions
+
+${rscripts}/cleanup
+${rscripts}/copy-test-confs
+
+USE_SUDO=${USE_SUDO:-sudo}
+
+if [ "$USE_SUDO" = sudo ]; then
+    echo sudo=yes > $conf/bsnapshot.conf
+fi
+
+fdir=$cwd/btrfs
+touch $tmp/log2.out
+
+rm -f $fdir.img
+
+dd of=$fdir.img if=/dev/zero seek=300 count=1 bs=1MB
+$USE_SUDO mkfs.btrfs $fdir.img
+
+mkdir -p $fdir
+$USE_SUDO mount -o loop $fdir.img $fdir
+if [ $? -ne 0 ]; then
+    print_debug "ERROR: Unable to mount btrfs image"
+    exit 1
+fi
+
+GID=`id -g`
+$USE_SUDO chown $USER:$GID $fdir
+
+trap "$USE_SUDO umount $fdir" EXIT 
+
+echo "$fdir" >${tmp}/file-list
+cp -p ${src}/src/dird/*.c $fdir
+
+make -C $cwd/build/src/tools installall
+
+change_jobname CompressedTest $JobName
+start_test
+
+$bperl -e 'add_attribute("$conf/bacula-sd.conf", "MaximumConcurrentJobs", "10", "Device")'
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "SnapshotRetention", "30", "Client")'
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "SnapshotRetention", "60", "Job", "MonsterSave")'
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "Enable Snapshot", "yes", "FileSet")'
+
+cat <<END_OF_DATA >${tmp}/bconcmds
+@output /dev/null
+messages
+@$out ${tmp}/log1.out
+setdebug level=20 tags=snapshot fd trace=1
+label storage=File volume=TestVolume001
+label storage=File1 volume=TestVolume002
+run job=$JobName yes
+run job=MonsterSave yes
+@sleep 2
+status client
+wait
+messages
+@output ${tmp}/list1
+list files jobid=1
+END_OF_DATA
+
+run_bacula
+check_for_zombie_jobs storage=File
+
+$USE_SUDO btrfs subvolume snapshot $fdir $fdir/.snapshots/MySnap
+
+cat <<END_OF_DATA >${tmp}/bconcmds
+@$out ${tmp}/log3.out
+setdebug level=20 tags=snapshot fd trace=1
+list snapshot
+llist snapshot
+snapshot list
+@sleep 30
+@$out ${tmp}/log3.out
+snapshot prune
+list snapshot
+snapshot list
+quit
+END_OF_DATA
+
+run_bconsole
+
+$USE_SUDO btrfs subvolume delete $fdir/.snapshots/MySnap
+
+stop_bacula
+
+check_two_logs
+
+end_test
