@@ -1,0 +1,68 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Run a simple backup of the Bacula build directory using the compressed option
+#   then restore it.
+#
+
+TestName="restore-replace-ifnewer-test"
+JobName=restore-replace-ifnewer
+. scripts/functions
+
+scripts/cleanup
+scripts/copy-test-confs
+
+mkdir -p ${cwd}/tmp/dir/dir1
+
+# use non usual rights to compare
+chmod 711 ${cwd}/tmp/dir/dir1
+GRP=`id -G`                     # should display the group list
+set $GRP                        # affect $1, $2 to this list
+chgrp $2 ${cwd}/tmp/dir/dir1    # the first one is the default, choose the 2nd
+
+touch ${cwd}/tmp/dir/dir1/file1
+touch ${cwd}/tmp/dir/dir1/file2
+echo ${cwd}/tmp/dir >${cwd}/tmp/file-list
+
+change_jobname CompressedTest $JobName
+start_test
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@output /dev/null
+messages
+setdebug level=50 trace=1 client
+@$out ${cwd}/tmp/log1.out
+label storage=File volume=TestVolume001
+run job=$JobName yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bacula
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@output /dev/null
+messages
+@$out ${cwd}/tmp/log2.out
+restore where=$cwd/tmp storage=File replace=ifnewer select all done yes
+@#restore storage=File select all done yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+
+check_for_zombie_jobs storage=File
+stop_bacula
+
+check_two_logs
+
+scripts/diff.pl -s ${cwd}/tmp/dir -d ${cwd}/tmp/$cwd/tmp/dir
+if [ $? != 0 ]; then
+  dstat=1
+fi
+end_test
