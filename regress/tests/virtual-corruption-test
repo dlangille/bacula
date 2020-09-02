@@ -1,0 +1,140 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Run a backup of the Bacula build directory then do a 
+#   Virtual Full backup to another device.
+#
+TestName="virtual-corruption-test"
+JobName=Vbackup
+. scripts/functions
+
+
+scripts/cleanup
+scripts/copy-test-confs
+cp -f scripts/vf-bug-bacula-dir.conf $conf/bacula-dir.conf
+cp -f scripts/vf-bug-bacula-sd.conf $conf/bacula-sd.conf
+
+$bperl -e "create_many_files_size('$tmp/build', 50000)"
+echo "${cwd}/tmp/build" >${cwd}/tmp/file-list
+
+
+change_jobname NightlySave $JobName
+start_test
+
+#
+# Note, we first backup into Pool Default, 
+#          then Migrate into Pool Full. 
+#              Pool Default uses Storage=disk
+#              Pool Full    uses Storage=disk2
+
+# Write out bconsole commands
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@output /dev/null
+messages
+@$out $tmp/log1.out
+@# run several jobs
+@exec "sh -c 'date > ${cwd}/build/date'"
+run client=client1-fd job=$JobName level=Full yes
+run client=client2-fd job=$JobName level=Full yes
+run client=client3-fd job=$JobName level=Full yes
+run client=client4-fd job=$JobName level=Full yes
+run client=client5-fd job=$JobName level=Full yes
+run client=client6-fd job=$JobName level=Full yes
+run client=client7-fd job=$JobName level=Full yes
+run client=client8-fd job=$JobName level=Full yes
+wait
+messages
+list jobs
+@exec "sh -c 'touch ${cwd}/tmp/build/A/*'"
+run client=client1-fd job=$JobName level=Incremental yes
+run client=client2-fd job=$JobName level=Incremental yes
+run client=client3-fd job=$JobName level=Incremental yes
+run client=client4-fd job=$JobName level=Incremental yes
+run client=client5-fd job=$JobName level=Incremental yes
+run client=client6-fd job=$JobName level=Incremental yes
+run client=client7-fd job=$JobName level=Incremental yes
+run client=client8-fd job=$JobName level=Incremental yes
+wait
+messages
+list jobs
+@exec "sh -c 'touch ${cwd}/tmp/build/B/*'"
+run client=client1-fd job=$JobName level=Differential yes
+run client=client2-fd job=$JobName level=Differential yes
+run client=client3-fd job=$JobName level=Differential yes
+run client=client4-fd job=$JobName level=Differential yes
+run client=client5-fd job=$JobName level=Differential yes
+run client=client6-fd job=$JobName level=Differential yes
+run client=client7-fd job=$JobName level=Differential yes
+run client=client8-fd job=$JobName level=Differential yes
+wait
+messages
+list jobs
+@exec "sh -c 'touch ${cwd}/tmp/build/C/*'"
+run client=client1-fd job=$JobName level=Incremental yes
+run client=client2-fd job=$JobName level=Incremental yes
+run client=client3-fd job=$JobName level=Incremental yes
+run client=client4-fd job=$JobName level=Incremental yes
+run client=client5-fd job=$JobName level=Incremental yes
+run client=client6-fd job=$JobName level=Incremental yes
+run client=client7-fd job=$JobName level=Incremental yes
+run client=client8-fd job=$JobName level=Incremental yes
+wait
+messages
+list jobs
+list volumes
+@# 
+@# now do a normal restore of normal backups
+@#
+setdebug level=10 dir trace=1
+restore where=${cwd}/tmp/bacula-restores client=client1-fd select
+unmark *
+mark *
+done
+yes
+list volumes
+@# should Consolidate Full, Differential and Incremental
+setdebug level=150 storage=disk2 trace=1
+setdebug level=100 dir trace=1
+run client=client1-fd job=$JobName level=VirtualFull yes
+run client=client2-fd job=$JobName level=VirtualFull yes
+run client=client3-fd job=$JobName level=VirtualFull yes
+run client=client4-fd job=$JobName level=VirtualFull yes
+run client=client5-fd job=$JobName level=VirtualFull yes
+run client=client6-fd job=$JobName level=VirtualFull yes
+run client=client7-fd job=$JobName level=VirtualFull yes
+run client=client8-fd job=$JobName level=VirtualFull yes
+wait
+messages
+list volumes
+list jobs
+@$out $tmp/log2.out
+@# 
+@# now do a restore of the consolidated Full
+@#
+restore where=${cwd}/tmp/bacula-restores client=client1-fd select storage=disk2
+unmark *
+mark *
+done
+yes
+wait
+list volumes
+list jobs
+st client=client1-fd
+messages
+quit
+END_OF_DATA
+
+run_bacula
+check_for_zombie_jobs storage=disk
+stop_bacula
+
+#
+# We only used one log so copy it to the second log
+#  so that any restore errors will be picked up
+#
+cp -f ${cwd}/tmp/log1.out ${cwd}/tmp/log2.out
+check_two_logs
+src=$cwd/tmp/build check_restore_diff
+end_test
