@@ -1,0 +1,134 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Run 4 jobs at the same time
+# Backups are OK but Restore fails with error: XXXX
+# Use azure cloud resource with:
+#
+# TruncateCache = AtEndOfJob
+# Upload = EachPart
+
+TestName="cloud-MT4857-test"
+JobName=concurrent-jobs
+. scripts/functions
+
+copy_test_confs
+
+echo "${cwd}/tmp/largefile" >${cwd}/tmp/file-list
+if test -c /dev/urandom ; then
+# Create 56MB file with random data
+#  echo "Creating a 56MB file with random data ..."
+   dd if=/dev/urandom of=${cwd}/tmp/largefile bs=1024 count=150000 2>&1 1>/dev/null
+else
+#  echo "Creating a 56MB file with bacula-dir data ..."
+   dd if=$bin/bacula-dir of=${cwd}/tmp/1 bs=2048 count=1000 2>&1 1>/dev/null
+   cat ${cwd}/tmp/1 ${cwd}/tmp/1 ${cwd}/tmp/1 ${cwd}/tmp/1 ${cwd}/tmp/1 ${cwd}/tmp/1 ${cwd}/tmp/1 ${cwd}/tmp/1 ${cwd}/tmp/1 ${cwd}/tmp/1 >${cwd}/tmp/2
+   rm -f ${cwd}/tmp/1
+   cat ${cwd}/tmp/2 ${cwd}/tmp/2 ${cwd}/tmp/2 ${cwd}/tmp/2 ${cwd}/tmp/2 ${cwd}/tmp/2 ${cwd}/tmp/2 ${cwd}/tmp/2 ${cwd}/tmp/2 ${cwd}/tmp/2 >${cwd}/tmp/3
+   rm -f ${cwd}/tmp/2
+   cat ${cwd}/tmp/3 ${cwd}/tmp/3 ${cwd}/tmp/3 ${cwd}/tmp/3 ${cwd}/tmp/3 ${cwd}/tmp/3 ${cwd}/tmp/3 ${cwd}/tmp/3 ${cwd}/tmp/3 ${cwd}/tmp/3  >${cwd}/tmp/4
+   rm -f ${cwd}/tmp/3
+   cat ${cwd}/tmp/4 ${cwd}/tmp/4 ${cwd}/tmp/4 ${cwd}/tmp/4 ${cwd}/tmp/4 ${cwd}/tmp/4 ${cwd}/tmp/4 ${cwd}/tmp/4 ${cwd}/tmp/4 ${cwd}/tmp/4 >${cwd}/tmp/largefile
+   rm -f ${cwd}/tmp/4
+fi 
+
+#echo "largefile created"
+
+change_jobname CompressedTest $JobName
+start_test
+
+# TruncateCache = AtEndOfJob
+# Upload = EachPart
+$bperl -e "add_attribute('$conf/bacula-sd.conf', 'TruncateCache', 'AtEndOfJob', 'Cloud')"
+$bperl -e "add_attribute('$conf/bacula-sd.conf', 'Upload', 'EachPart', 'Cloud')"
+$bperl -e "add_attribute('$conf/bacula-sd.conf', 'MaximumUploadBandwidth', '128kb/s', 'Cloud')"
+$bperl -e "add_attribute('$conf/bacula-sd.conf', 'MaximumDownloadBandwidth', '128kb/s', 'Cloud')"
+
+
+$bperl -e "add_attribute('$conf/bacula-sd.conf', 'MaximumFileSize', '500kB', 'Device')"
+$bperl -e "add_attribute('$conf/bacula-sd.conf', 'MaximumPartSize', '500kB', 'Device')"
+$bperl -e "add_attribute('$conf/bacula-sd.conf', 'MaximumConcurrentJobs', '10', 'Device')"
+$bperl -e "add_attribute('$conf/bacula-sd.conf', 'MaximumVolumeJobs', 1, 'Pool')"
+#$bperl -e "add_attribute('$conf/bacula-sd.conf', 'MaximumVolumeSize', '2MB', 'Device')"
+$bperl -e "add_attribute('$conf/bacula-dir.conf', 'SpoolData', 'no', 'Job')"
+$bperl -e "add_attribute('$conf/bacula-sd.conf', 'LabelMedia', 'yes', 'Device')"
+$bperl -e "add_attribute('$conf/bacula-dir.conf', 'LabelFormat', 'Vol', 'Pool')"
+
+export GENERATE_CLOUD_HASH="YES"
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@output /dev/null
+messages
+@$out  ${cwd}/tmp/log1.out
+@#setdebug level=500 storage
+label storage=File volume=TestVolume001
+run job=$JobName level=Full yes
+run job=$JobName level=Full yes
+run job=$JobName level=Full yes
+run job=$JobName level=Full yes
+wait
+messages
+END_OF_DATA
+
+run_bacula
+
+echo "============CACHE=================="
+ls -la ${cwd}/tmp/TestVolume001
+echo "=============================="
+
+echo "============CLOUD=================="
+ls -la /tmp/cloud/TestVolume001
+echo "=============================="
+
+read a
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@# 
+@# now do a restore
+@#
+@$out   ${cwd}/tmp/log2.out
+@#setdebug level=500 storage
+restore where=${cwd}/tmp/bacula-restores select storage=File
+unmark *
+mark *
+done
+yes
+wait
+messages
+END_OF_DATA
+
+run_bconsole
+echo "============CACHE AFTER RESTORE 1================="
+ls -la ${cwd}/tmp/TestVolume001
+echo "=============================="
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@# 
+@# now do another restore
+@#
+@$out   ${cwd}/tmp/log3.out
+restore where=${cwd}/tmp/bacula-restores-bis select storage=File
+unmark *
+mark *
+done
+yes
+wait
+messages
+@output
+quit
+END_OF_DATA
+
+run_bconsole
+echo "============CACHE AFTER RESTORE 2================="
+ls -la ${cwd}/tmp/TestVolume001
+echo "=============================="
+
+
+check_for_zombie_jobs storage=File
+stop_bacula
+
+check_two_logs
+diff ${cwd}/tmp/largefile  ${cwd}/tmp/bacula-restores${cwd}/tmp/largefile 2>&1 >/dev/null
+dstat=$?
+end_test
