@@ -1,0 +1,99 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Test aligned data volumes 
+# A non-aligned backup is run on the same Volume at the same time.
+#
+#  This currently produces corrupted data volumes
+#
+TestName="aligned-and-normal-test"
+JobName=NightlySave
+. scripts/functions
+
+if test x$FORCE_CLOUD = xyes ; then
+   echo "\n=== Test $TestName skipped not compatible with Cloud  ==="
+   exit 0
+fi
+
+scripts/cleanup
+scripts/copy-test-confs
+cp scripts/aligned-bacula-sd.conf bin/bacula-sd.conf
+# uncomment for a big fileset
+#cp scripts/aligned-bacula-dir.conf bin/bacula-dir.conf
+
+# install the aligned volume plugin
+#make -C build/src/plugins/sd install-aligned-plugin >/dev/null
+
+echo "${cwd}/build" >${cwd}/tmp/file-list
+
+start_test
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@output /dev/null
+messages
+@$out ${cwd}/tmp/log1.out
+label storage=File volume=Vol1
+label storage=File2 volume=Vol2
+@#label storage=File volume=Vol3
+@#setdebug level=100 storage=File
+@# Note, Create an aligned volume
+@#  Run Job 1 aligned job
+@#  Run Job 2 non-aligned job
+@#  Run Job 3 aligned jobs
+@#  Run Job 4 non-aligned job
+run job=$JobName level=Full yes
+run job=$JobName Storage=File2 level=Full yes
+run job=$JobName level=Full yes
+run job=$JobName Storage=File2 level=Full yes
+wait
+list volumes
+sql
+select * from JobMedia;
+
+messages
+END_OF_DATA
+
+run_bacula
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@# 
+@# now restore last Job run
+@#
+@$out ${cwd}/tmp/log2.out
+@# setdebug level=0 fd
+restore where=${cwd}/tmp/bacula-restores
+5
+mark *
+done
+yes
+wait
+messages
+@# Now restore JobId=1
+restore where=${cwd}/tmp/bacula-restores
+3
+1
+mark *
+done
+yes
+wait
+@# Now restore JobId=2
+restore where=${cwd}/tmp/bacula-restores
+3
+2
+mark *
+done
+yes
+wait
+END_OF_DATA
+
+run_bconsole
+
+sleep 2
+check_for_zombie_jobs storage=File 
+stop_bacula
+
+check_two_logs
+check_restore_diff
+end_test
