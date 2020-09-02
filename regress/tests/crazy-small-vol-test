@@ -1,0 +1,108 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# A shell and stripped down version version of the crazy-small-volume-test.py
+#
+#
+TestName="crazy-small-vol-test"
+JobName=Simple
+. scripts/functions
+
+${rscripts}/cleanup
+${rscripts}/copy-test-confs
+mkdir -p ${tmpsrc}
+dd if=/dev/urandom of=${tmpsrc}/the_file bs=1M count=20
+the_file_md5=`md5sum ${tmpsrc}/the_file | cut -d " " -f 1`
+echo $the_file_md5
+cd ${cwd}
+
+echo ${tmpsrc}/the_file>${cwd}/tmp/file-list
+
+$bperl -e "set_global_maximum_concurrent_jobs(10)"
+
+start_test
+
+
+cat <<END_OF_DATA >${tmp}/bconcmds
+@output /dev/null
+messages
+@#setdebug level=15 storage=File
+@#setdebug level=200 client
+@#setdebug level=100 director
+
+END_OF_DATA
+
+# Note: for debugging, mediaid will be same as volume number
+i=1
+while [ $i -le 220 ] ; do
+   cat <<END_OF_DATA >>${tmp}/bconcmds
+label storage=File volume=TestVolume$i
+update volume=TestVolume$i MaxVolBytes=2097152
+END_OF_DATA
+   i=$(($i + 1))
+done
+
+cat <<END_OF_DATA >>${tmp}/bconcmds
+@# Define "overflow" volume in case not enough volumes
+@#  it has no max size
+label storage=File volume=TestVolume1000
+@$out ${tmp}/log1.out
+setdebug level=150 trace=1 storage=File
+END_OF_DATA
+
+i=0
+while [ $i -lt 20 ] ; do
+   cat <<END_OF_DATA >>${tmp}/bconcmds
+run job=Simple yes
+END_OF_DATA
+   i=$(($i + 1))
+done
+
+cat <<END_OF_DATA >>${tmp}/bconcmds
+wait
+messages
+END_OF_DATA
+
+cat ${tmp}/bconcmds
+
+run_bacula
+check_for_zombie_jobs storage=File
+
+
+my_error=0
+i=0
+while [ $i -lt 20 ] ; do
+   rm -rf ${tmp}/bacula-restores
+   mkdir -p ${tmp}/bacula-restores
+   i=$(($i + 1))
+   cat <<END_OF_DATA >${tmp}/bconcmds
+@output /dev/null
+messages
+@$out ${tmp}/log2.out
+list joblog jobid=$i
+sql
+select mediaid,jobid,startblock,endblock,volindex from JobMedia WHERE JobId=$i;
+
+restore jobid=$i where=${tmp}/bacula-restores all storage=File done yes
+wait
+messages
+END_OF_DATA
+   run_bconsole
+   ls -l ${tmp}/bacula-restores/${tmpsrc}/the_file
+   md5=`md5sum ${tmp}/bacula-restores/${tmpsrc}/the_file | cut -d " " -f 1`
+   if [ ${the_file_md5} != $md5 ] ; then
+      echo ERROR ERROR ERROR ERROR ERROR job $i
+      my_error=1
+   fi
+done
+grep "Termination:.*Restore Error" ${tmp}/log2.out
+
+check_for_zombie_jobs storage=File
+stop_bacula
+
+check_two_logs
+end_test
+
+exit $my_error
