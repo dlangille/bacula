@@ -1,0 +1,91 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+#
+TestName="reload-test"
+. scripts/functions
+JobName=reload
+
+scripts/cleanup
+scripts/copy-confs
+
+#
+# Zap out any schedule in default conf file so that
+#  it doesn't start during our test
+#
+outf="$tmp/sed_tmp"
+echo "s%  Schedule =%# Schedule =%g" >${outf}
+cp $scripts/bacula-dir.conf $tmp/1
+sed -f ${outf} $tmp/1 >$scripts/bacula-dir.conf
+
+# create a bad bconsole configuration file
+sed 's/Password = "../Password = "/' $conf/bconsole.conf > $conf/bconsole.conf.new
+
+start_test
+
+do_bad_connect()
+{
+    for i in `seq 1 50`; do
+        $bin/bconsole -c $conf/bconsole.conf.new
+    done
+}
+
+do_reload()
+{
+    cat <<EOF > $tmp/2
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+EOF
+    for i in `seq 1 1000`; do
+        run_bconsole $tmp/2
+    done
+}
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@output /dev/null
+messages
+@$out $tmp/log1.out
+label volume=TestVolume001 storage=File pool=File
+run job=BackupClient1 yes
+quit
+END_OF_DATA
+
+run_bacula
+
+do_bad_connect &
+
+do_reload &
+
+wait
+wait
+
+stop_bacula
+end_test
