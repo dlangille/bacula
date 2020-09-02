@@ -1,0 +1,107 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# By setting VolUse duration small and switching Volume
+#  we create bad JobMedia records.  EndBlock < StartBlock.
+#
+#
+TestName="maxuseduration-jobmedia-bug-test"
+JobName=jobmedia-bug
+. scripts/functions
+
+${rscripts}/cleanup
+${rscripts}/copy-test-confs
+echo $tmp/big >${tmp}/file-list
+echo $cwd/build/po >>${tmp}/file-list
+
+dd if=/dev/zero of=$tmp/big seek=1000000 count=1
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "SpoolData", "No", "Job")'
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "ClientRunBeforeJob", "\"sleep 30\"", "Job", "NightlySave")'
+$bperl -e 'add_attribute("$conf/bacula-sd.conf", "MaximumConcurrentJobs", "10", "Device")'
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "VolumeUseDuration", "20", "Pool")'
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "Label Format", "vol-", "Pool")'
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "CommCompression", "no", "Director")'
+$bperl -e 'add_attribute("$conf/bacula-sd.conf", "CommCompression", "no", "Storage")'
+$bperl -e 'add_attribute("$conf/bacula-fd.conf", "CommCompression", "no", "FileDaemon")'
+sed -i 's/sparse=yes;//' $conf/bacula-dir.conf
+sed -i 's/Recycle = yes/recycle = no/' $conf/bacula-dir.conf
+
+change_jobname NightlySave $JobName
+start_test
+
+cat <<END_OF_DATA >${tmp}/bconcmds
+@output /dev/null
+messages
+@$out ${tmp}/log1.out
+@#setdebug level=100 storage=File
+run job=$JobName level=full yes
+@sleep 15
+setbandwidth limit="5000 kb/s" client=$CLIENT
+run job=$JobName level=full yes
+run job=$JobName level=full yes
+@sleep 20
+run job=$JobName level=full yes
+@sleep 20
+run job=$JobName level=full yes
+run job=$JobName level=full yes
+@sleep 20
+run job=$JobName level=full yes
+@sleep 10
+setbandwidth limit=0 client=$CLIENT
+wait
+messages
+quit
+END_OF_DATA
+
+run_bacula
+check_for_zombie_jobs storage=File
+
+${rscripts}/find_bad_jobmedia.pl -u $db_user -d $db_name
+
+cat <<END_OF_DATA >${tmp}/bconcmds
+@# 
+@# now do a restore that will fail (JobId 2)
+@#
+@$out ${tmp}/log2.out
+@#setdebug level=10 storage=File
+@# Select by JobId to restore JobId 1
+restore where=${tmp}/bacula-restores storage=File
+3
+1
+cd $tmp
+m big
+done
+yes
+wait
+@# Select by JobId to restore JobId 2
+restore where=${tmp}/bacula-restores storage=File
+3
+2
+cd $tmp
+m big
+done
+yes
+wait
+@# Select by JobId to restore JobId 3
+restore where=${tmp}/bacula-restores2 storage=File
+3
+3
+cd $tmp
+m big
+done
+yes
+wait
+@#status client
+@#status storage=File
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+check_for_zombie_jobs storage=File
+stop_bacula
+
+check_two_logs
+end_test
