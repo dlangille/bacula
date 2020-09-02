@@ -1,0 +1,118 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2018 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Run a simple backup of the Bacula build directory
+#   then restore it. We disable the batch mode
+#
+TestName="without-batch-insert-test"
+JobName=backup
+. scripts/functions
+
+scripts/cleanup
+scripts/copy-confs
+
+#
+# Zap out any schedule in default conf file so that
+#  it doesn't start during our test
+#
+outf="$tmp/sed_tmp"
+echo "s%  Schedule =%# Schedule =%g" >${outf}
+cp $scripts/bacula-dir.conf $tmp/1
+sed -f ${outf} $tmp/1 >$scripts/bacula-dir.conf
+
+change_jobname BackupClient1 $JobName
+start_test
+
+$bperl -e "add_attribute('$conf/bacula-dir.conf', 'DisableBatchInsert', 'yes', 'Catalog')"
+
+$bperl -e "add_attribute('$conf/bacula-dir.conf', 'SpoolAttributes', 'no', 'Job')"
+$bperl -e "add_attribute('$conf/bacula-dir.conf', 'MaximumVolumeBytes', '10MB', 'Pool')"
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@output /dev/null
+messages
+@$out $tmp/log1.out
+setdebug level=4 storage=File1
+run job=$JobName yes
+wait
+messages
+@# 
+@# now do a restore
+@#
+@$out $tmp/log2.out  
+setdebug level=4 storage=File1
+restore where=$tmp/bacula-restores select all done
+yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bacula
+check_for_zombie_jobs storage=File1
+
+$rscripts/diff.pl -s $cwd/build -d $tmp/bacula-restores/$cwd/build
+if [ $? -ne 0 ]; then
+    print_debug "ERROR: Found difference after restore"
+    rstat=1
+fi
+
+# Try with Attribute Spooling turned on
+$bperl -e "add_attribute('$conf/bacula-dir.conf', 'SpoolAttributes', 'yes', 'Job')"
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out /dev/null
+messages
+@$out $tmp/log1.out
+reload
+setdebug level=4 storage=File1
+run job=$JobName yes
+wait
+messages
+@# 
+@# now do a restore
+@#
+@$out $tmp/log2.out  
+#setbandwidth client=$CLIENT limit="100 kb/s"
+setdebug level=4 storage=File1
+restore where=$tmp/bacula-restores2 select all done
+yes
+wait
+messages
+run job=$JobName yes level=full
+wait
+messages
+restore where=$tmp/bacula-restores3 select all done
+yes
+wait
+messages
+quit
+END_OF_DATA
+
+#
+# Now do a second backup after making a few changes
+#
+touch ${cwd}/build/src/dird/*.o
+echo "test test" > ${cwd}/build/src/dird/xxx
+#
+
+run_bconsole
+check_for_zombie_jobs storage=File1
+stop_bacula
+
+$rscripts/diff.pl -s $cwd/build -d $tmp/bacula-restores2/$cwd/build
+if [ $? -ne 0 ]; then
+    print_debug "ERROR: Found difference after 2nd restore"
+    rstat=1
+fi
+
+$rscripts/diff.pl -s $cwd/build -d $tmp/bacula-restores3/$cwd/build
+if [ $? -ne 0 ]; then
+    print_debug "ERROR: Found difference after 3rd restore"
+    rstat=1
+fi
+
+check_two_logs
+end_test
