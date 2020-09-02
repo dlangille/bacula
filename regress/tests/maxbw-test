@@ -10,10 +10,10 @@ TestName="maxbw-test"
 JobName=NightlySave
 . scripts/functions
 
-#
-# This test does not work
-#
-exit 0   
+if [ x$FORCE_DEDUP = xyes ]; then
+    print "Test disabled with Dedup"
+    exit 0
+fi
 
 scripts/cleanup
 scripts/copy-test-confs
@@ -56,15 +56,15 @@ run_bconsole
 
 stop_bacula
 
-awk '/Rate:/ { if ($2 > 2500 && $2 < 3500) { print "OK" } 
-               else { print "ERROR " $0 "(> 2500 && < 3500)" }}' $tmp/log1.out > $tmp/res
+awk '/Rate:/ { if ($2 > 2000 && $2 < 3500) { print "OK" } 
+               else { print "ERROR " $0 "(> 2000 && < 3500)" }}' $tmp/log1.out > $tmp/res
 
-awk '/Rate:/ { if ($2 > 2500 && $2 < 3500) { print "OK" } 
-               else { print "ERROR" $0 "(> 2500 && < 3500)" }}' $tmp/log2.out >> $tmp/res
+awk '/Rate:/ { if ($2 > 2000 && $2 < 3500) { print "OK" } 
+               else { print "ERROR" $0 "(> 2000 && < 3500)" }}' $tmp/log2.out >> $tmp/res
 
 a=`grep OK $tmp/res | wc -l`
 if [ $a -ne 2 ]; then
-    print_debug "ERROR: problem with backup or restore speed on bacula-fd.conf"
+    print_debug "ERROR: Problem with backup or restore speed on bacula-fd.conf"
     cat $tmp/res
     estat=1
 fi
@@ -73,6 +73,9 @@ sed 's/MaximumBandwidth.*//g' $conf/bacula-fd.conf >$conf/bacula-fd.conf.tmp
 mv -f $conf/bacula-fd.conf.tmp $conf/bacula-fd.conf
 
 $bperl -e 'add_attribute("$conf/bacula-dir.conf", "MaximumBandwidth", "3MB/s", "Job", "$JobName")'
+
+# This one doesn't work right now, we need code in the restore.c file
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "MaximumBandwidth", "3MB/s", "Job", "RestoreFiles")'
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
 @output /dev/null
@@ -104,15 +107,16 @@ stop_bacula
 
 check_two_logs
 
-awk '/Rate:/ { if ($2 > 2500 && $2 < 3500) { print "OK" } 
-               else { print "ERROR" $0 "(> 2500 && < 3500)" }}' $tmp/log1.out > $tmp/res
+awk '/Rate:/ { if ($2 > 2000 && $2 < 3500) { print "OK" } 
+               else { print "ERROR" $0 "(> 2000 && < 3500)" }}' $tmp/log1.out > $tmp/res
 
-awk '/Rate:/ { if ($2 > 2500 && $2 < 3500) { print "OK" } 
-               else { print "ERROR" $0 "(>2500 && < 3500)" }}' $tmp/log2.out >> $tmp/res
+# The restore bandwidth limit is not implemented with Job directive
+#awk '/Rate:/ { if ($2 > 2000 && $2 < 3500) { print "OK" } 
+#               else { print "ERROR" $0 "(>2000 && < 3500)" }}' $tmp/log2.out >> $tmp/res
 
 a=`grep OK $tmp/res | wc -l`
-if [ $a -ne 3 ]; then
-    print_debug "ERROR: problem with backup or restore speed on bacula-dir.conf"
+if [ $a -ne 2 ]; then
+    print_debug "ERROR: Problem with backup speed on bacula-dir.conf"
     cat $tmp/res
     estat=2
 fi
