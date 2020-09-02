@@ -1,0 +1,600 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Run a couple of tests with bconsole and console ACL
+#
+TestName="console-acl-test"
+JobName=backup
+. scripts/functions
+
+scripts/cleanup
+scripts/copy-test-confs
+
+#
+# Zap out any schedule in default conf file so that
+#  it doesn't start during our test
+#
+outf="$tmp/sed_tmp"
+echo "s%  Schedule =%# Schedule =%g" >${outf}
+cp $scripts/bacula-dir.conf $tmp/1
+sed -f ${outf} $tmp/1 >$scripts/bacula-dir.conf
+
+echo "$cwd/build/po" > $tmp/file-list
+
+change_jobname NightlySave $JobName
+
+perl -Mscripts::functions \
+    -e "extract_resource('$conf/bacula-dir.conf', 'Client', '$HOST-fd')" \
+    > $tmp/1
+
+sed "s/$HOST-fd/test1-fd/" $tmp/1 >> $conf/bacula-dir.conf
+sed "s/$HOST-fd/test2-fd/" $tmp/1 >> $conf/bacula-dir.conf
+sed "s/$HOST-fd/test-rst-fd/" $tmp/1 >> $conf/bacula-dir.conf
+sed "s/$HOST-fd/test-bkp-fd/" $tmp/1 >> $conf/bacula-dir.conf
+
+cat <<EOF >> $conf/bacula-dir.conf
+Pool {
+  Name = Test
+  Pool Type = Backup
+  Recycle = yes                       # Bacula can automatically recycle Volumes
+  AutoPrune = yes                     # Prune expired volumes
+  Volume Retention = 365d             # one year
+}
+Console {
+  Name = restricted
+  Password = xxx
+  JobAcl    = *all*
+  ClientAcl = test1-fd, test2-fd
+  RestoreClientAcl = test-rst-fd
+  BackupClientAcl = test-bkp-fd  
+  PoolAcl   = *all*
+  CatalogAcl  = *all*
+  FileSetAcl  = *all*
+  CommandAcl  = *all*
+  StorageAcl  = *all*
+  WhereAcl = $tmp/test-bkp-fd-restore, $tmp/test1-fd-restore, $tmp/test-rst-fd-restore-1, $tmp/test-rst-fd-restore-2
+  DirectoryAcl = *all*
+  UserIdAcl = *all*
+}
+Console {
+  Name = restricted-bvfs1
+  Password = xxx
+  JobAcl    = *all*
+  ClientAcl = test1-fd, test2-fd
+  RestoreClientAcl = test-rst-fd
+  PoolAcl   = *all*
+  CatalogAcl  = *all*
+  FileSetAcl  = *all*
+  CommandAcl  = *all*
+  StorageAcl  = *all*
+  WhereAcl = $tmp/test-bkp-fd-restore, $tmp/test1-fd-restore, $tmp/test-rst-fd-restore-1, $tmp/test-rst-fd-restore-2
+  DirectoryAcl = *all*
+  UserIdAcl = *all*
+}
+Console {
+  Name = restricted-bvfs2
+  Password = xxx
+  JobAcl    = *all*
+  RestoreClientAcl = test-rst-fd
+  PoolAcl   = *all*
+  CatalogAcl  = *all*
+  FileSetAcl  = *all*
+  CommandAcl  = *all*
+  StorageAcl  = *all*
+  WhereAcl = $tmp/test-bkp-fd-restore, $tmp/test1-fd-restore, $tmp/test-rst-fd-restore-1, $tmp/test-rst-fd-restore-2
+  DirectoryAcl = *all*
+  UserIdAcl = *all*
+}
+Console {
+  Name = restricted-job
+  Password = xxx
+  JobAcl    = $JobName
+  ClientAcl = *all*
+  PoolAcl   = *all*
+  CatalogAcl  = *all*
+  FileSetAcl  = *all*
+  CommandAcl  = *all*
+  StorageAcl  = *all*
+  WhereAcl = *all*
+  DirectoryAcl = *all*
+  UserIdAcl = *all*
+}
+Console {
+  Name = restricted-client
+  Password = xxx
+  JobAcl    = *all*
+  ClientAcl = $HOST-fd
+  PoolAcl   = *all*
+  CatalogAcl  = *all*
+  FileSetAcl  = *all*
+  CommandAcl  = *all*
+  StorageAcl  = *all*
+  WhereAcl = *all*
+  DirectoryAcl = *all*
+  UserIdAcl = *all*
+}
+Console {
+  Name = restricted-clients
+  Password = xxx
+  JobAcl    = *all*
+  ClientAcl = $HOST-fd, test1-fd
+  PoolAcl   = *all*
+  CatalogAcl  = *all*
+  FileSetAcl  = *all*
+  CommandAcl  = *all*
+  StorageAcl  = *all*
+  WhereAcl = *all*
+  DirectoryAcl = *all*
+  UserIdAcl = *all*
+}
+Console {
+  Name = restricted-pool
+  Password = xxx
+  JobAcl    = *all*
+  ClientAcl = *all*
+  PoolAcl   = Test
+  CatalogAcl  = *all*
+  FileSetAcl  = *all*
+  CommandAcl  = *all*
+  StorageAcl  = *all*
+  WhereAcl = *all*
+  DirectoryAcl = *all*
+  UserIdAcl = *all*
+}
+Console {
+  Name = restricted-fileset
+  Password = xxx
+  JobAcl    = *all*
+  ClientAcl = *all*
+  PoolAcl   = *all*
+  CatalogAcl  = *all*
+  FileSetAcl  = "Full Set"
+  CommandAcl  = *all*
+  StorageAcl  = *all*
+  WhereAcl = *all*
+  DirectoryAcl = *all*
+  UserIdAcl = *all*
+}
+EOF
+
+cat <<EOF >> $tmp/bconsole.conf2
+Console {
+  Name = restricted
+  Password = xxx
+}
+EOF
+
+start_test
+
+cat <<EOF > $tmp/bconcmds
+@output /dev/null
+messages
+@$out $tmp/log1.out
+label volume=TestVolume001 pool=Default storage=File
+label volume=TestVolume002 pool=Test storage=File
+run job=Simple level=full pool=Test client=$HOST-fd yes
+run job=$JobName level=full client=$CLIENT yes
+wait
+messages
+EOF
+
+sed 's/Password.*/Password = xxx/' $conf/bconsole.conf >> $tmp/bconsole.conf2
+
+for i in job pool client clients fileset bvfs1 bvfs2
+do
+    sed "s/restricted/restricted-$i/" $tmp/bconsole.conf2 > $tmp/bconsole.conf.$i
+done
+
+# start the director
+run_bacula
+
+mv $conf/bconsole.conf $conf/bconsole.conf.old
+mv $tmp/bconsole.conf2  $conf/bconsole.conf
+
+cat <<EOF > $tmp/bconcmds
+@##############################################
+@$out $tmp/test1-fd.out
+run job=$JobName level=full client=test1-fd yes
+@sleep 2
+status client=test1-fd
+wait
+messages
+run job=$JobName level=full client=test1-fd yes
+wait
+messages
+restore select all done yes where=$tmp/test1-fd-restore client=test1-fd
+wait
+messages
+@$out $tmp/test-bkp-fd.out
+@##############################################
+run job=$JobName level=full client=test-bkp-fd yes
+@sleep 2
+status client=test-bkp-fd
+wait
+messages
+run job=$JobName level=full client=test-bkp-fd yes
+wait
+messages
+restore select all done yes where=$tmp/test-bkp-fd-restore client=test-bkp-fd
+wait
+@$out $tmp/test-rst-fd.out
+@##############################################
+run job=$JobName level=full client=test-rst-fd yes
+wait
+restore select all done yes client=test-bkp-fd restoreclient=test-rst-fd where=$tmp/test-rst-fd-restore-1
+wait
+restore select all done yes client=test1-fd restoreclient=test-rst-fd where=$tmp/test-rst-fd-restore-2
+wait
+messages
+@$out $tmp/whereacl.out
+@##############################################
+restore select all done yes client=test-bkp-fd restoreclient=test-rst-fd where=$tmp
+wait
+restore select all done yes client=test1-fd restoreclient=test-rst-fd add_suffix=.old
+wait
+restore select all done client=test-bkp-fd restoreclient=test-rst-fd
+mod
+9
+/tmp
+yes
+wait
+restore select all done client=test-bkp-fd restoreclient=test-rst-fd
+mod
+10
+2
+.old
+6
+yes
+messages
+EOF
+run_bconsole
+
+nb=`grep "specification not authorized" $tmp/whereacl.out | wc -l`
+if [ $nb != 4 ]; then
+    print_debug "ERROR: Should find 4 Where not authorized in $tmp/whereacl.out"
+    estat=2
+fi
+
+nb=`grep "Backup OK" $tmp/test1-fd.out | wc -l`
+if [ $nb != 2 ]; then
+    print_debug "ERROR: Should find 2 backups in $tmp/test1-fd.out"
+    estat=1
+fi
+
+nb=`grep "Restore OK" $tmp/test1-fd.out | wc -l`
+if [ $nb != 1 ]; then
+    print_debug "ERROR: Should find 1 restore in $tmp/test1-fd.out"
+    estat=1
+fi
+
+nb=`grep "Backup OK" $tmp/test-bkp-fd.out | wc -l`
+if [ $nb != 2 ]; then
+    print_debug "ERROR: Should find 2 backups in $tmp/test-bkp-fd.out"
+    estat=1
+fi
+
+nb=`grep "Restore OK" $tmp/test-bkp-fd.out | wc -l`
+if [ $nb != 0 ]; then
+    print_debug "ERROR: Should not find a restore in $tmp/test-bkp-fd.out"
+    estat=1
+fi
+
+nb=`grep "Backup OK" $tmp/test-rst-fd.out | wc -l`
+if [ $nb != 0 ]; then
+    print_debug "ERROR: Should not find backups in $tmp/test-rst-fd.out"
+    estat=1
+fi
+
+nb=`grep "Restore OK" $tmp/test-rst-fd.out | wc -l`
+if [ $nb != 2 ]; then
+    print_debug "ERROR: Should find two restores in $tmp/test-rst-fd.out"
+    estat=1
+fi
+
+
+# We need to test almost all kind of queries
+for i in job client clients pool fileset
+do
+    cat <<EOF > $tmp/bconcmds
+@$out $tmp/list-$i-job.out
+list jobs
+@$out $tmp/llist-$i-job.out
+llist jobs
+@$out $tmp/list-$i-joblog.out
+list joblog jobid=1
+list joblog jobid=2
+list joblog jobid=3
+@$out $tmp/llist-$i-joblog.out
+llist joblog jobid=1
+llist joblog jobid=2
+llist joblog jobid=3
+@$out $tmp/list-$i-client.out
+list clients
+@$out $tmp/llist-$i-client.out
+llist clients
+@$out $tmp/list-$i-pools.out
+list pools
+@$out $tmp/llist-$i-pools.out
+llist pools
+@$out $tmp/list-$i-pool.out
+list pool=Default
+@$out $tmp/llist-$i-pool.out
+llist pool=Default
+@$out $tmp/list-$i-media.out
+list media
+@$out $tmp/llist-$i-media.out
+llist media
+@$out $tmp/list-$i-volume.out
+list volume=TestVolume001
+@$out $tmp/llist-$i-volume.out
+llist volume=TestVolume001
+@$out $tmp/list-$i-jobmedia.out
+list jobmedia
+@$out $tmp/llist-$i-jobmedia.out
+llist jobmedia
+@$out $tmp/list-$i-jobmedia1.out
+list jobmedia jobid=1
+@$out $tmp/llist-$i-jobmedia1.out
+llist jobmedia jobid=1
+@$out $tmp/list-$i-files.out
+list files jobid=1
+@$out $tmp/llist-$i-files.out
+llist files jobid=1
+@$out $tmp/bvfs-$i-get_jobids.out
+.bvfs_get_jobids jobid=3
+messages
+EOF
+    $bin/bconsole -c $tmp/bconsole.conf.$i < $tmp/bconcmds
+done
+
+################################################################
+# We write here what we expect from the various tests.
+#
+# For each kind of ACL, we have the output of some commands
+# in $tmp/list-<type>-*.out
+#
+# We will do some checks with AWK to count records, and we
+# will compare with what we are supposed to found.
+#
+# We do tests with all kind of arguments to test a large variety
+# of SQL queries
+################################################################
+i=job
+mkdir $tmp/$i-target
+# all clients are defined
+echo 5 > $tmp/$i-target/nb-list-client.out
+echo 5 > $tmp/$i-target/nb-llist-client.out
+
+# for job restriction, we expect to see two jobs with client $HOST-fd
+echo 5 > $tmp/$i-target/nb-list-job.out
+echo 5 > $tmp/$i-target/nb-llist-job.out
+echo 2 > $tmp/$i-target/nb-list-joblog.out
+echo 2 > $tmp/$i-target/nb-llist-joblog.out
+echo 5 > $tmp/$i-target/nb-list-jobmedia.out
+echo 5 > $tmp/$i-target/nb-llist-jobmedia.out
+echo   > $tmp/$i-target/nb-list-jobmedia1.out
+echo   > $tmp/$i-target/nb-llist-jobmedia1.out
+echo   > $tmp/$i-target/nb-list-files.out
+echo   > $tmp/$i-target/nb-llist-files.out
+
+# Job 3 is accessible
+echo 1 > $tmp/$i-target/nb-bvfs-get_jobids.out
+
+# all pools are defined
+echo 2 > $tmp/$i-target/nb-list-media.out
+echo 2 > $tmp/$i-target/nb-llist-media.out
+echo 1 > $tmp/$i-target/nb-list-pool.out
+echo 1 > $tmp/$i-target/nb-llist-pool.out
+echo 2 > $tmp/$i-target/nb-list-pools.out
+echo 2 > $tmp/$i-target/nb-llist-pools.out
+
+################################################################
+i=client
+mkdir $tmp/$i-target
+# all clients are defined
+echo 1 > $tmp/$i-target/nb-list-client.out
+echo 1 > $tmp/$i-target/nb-llist-client.out
+
+echo 2 > $tmp/$i-target/nb-list-job.out
+echo 2 > $tmp/$i-target/nb-llist-job.out
+echo 2 > $tmp/$i-target/nb-list-joblog.out
+echo 2 > $tmp/$i-target/nb-llist-joblog.out
+echo 2 > $tmp/$i-target/nb-list-jobmedia.out
+echo 2 > $tmp/$i-target/nb-llist-jobmedia.out
+echo 2 > $tmp/$i-target/nb-list-jobmedia1.out
+echo 2 > $tmp/$i-target/nb-llist-jobmedia1.out
+echo 1 > $tmp/$i-target/nb-list-files.out
+echo 1 > $tmp/$i-target/nb-llist-files.out
+
+# Job 3 is not accessible
+echo   > $tmp/$i-target/nb-bvfs-get_jobids.out
+
+# all pools are defined
+echo 2 > $tmp/$i-target/nb-list-media.out
+echo 2 > $tmp/$i-target/nb-llist-media.out
+echo 1 > $tmp/$i-target/nb-list-pool.out
+echo 1 > $tmp/$i-target/nb-llist-pool.out
+echo 2 > $tmp/$i-target/nb-list-pools.out
+echo 2 > $tmp/$i-target/nb-llist-pools.out
+
+################################################################
+i=pool
+mkdir $tmp/$i-target
+# all clients are defined
+echo 5 > $tmp/$i-target/nb-list-client.out
+echo 5 > $tmp/$i-target/nb-llist-client.out
+
+echo 9 > $tmp/$i-target/nb-list-job.out
+echo 9 > $tmp/$i-target/nb-llist-job.out
+echo 3 > $tmp/$i-target/nb-list-joblog.out
+echo 3 > $tmp/$i-target/nb-llist-joblog.out
+echo 6 > $tmp/$i-target/nb-list-jobmedia.out
+echo 6 > $tmp/$i-target/nb-llist-jobmedia.out
+echo 2 > $tmp/$i-target/nb-list-jobmedia1.out
+echo 2 > $tmp/$i-target/nb-llist-jobmedia1.out
+echo 1 > $tmp/$i-target/nb-list-files.out
+echo 1 > $tmp/$i-target/nb-llist-files.out
+
+# Job 3 is not accessible
+echo   > $tmp/$i-target/nb-bvfs-get_jobids.out
+
+echo 1 > $tmp/$i-target/nb-list-media.out
+echo 1 > $tmp/$i-target/nb-llist-media.out
+echo   > $tmp/$i-target/nb-list-pool.out
+echo   > $tmp/$i-target/nb-llist-pool.out
+echo 1 > $tmp/$i-target/nb-list-pools.out
+echo 1 > $tmp/$i-target/nb-llist-pools.out
+
+################################################################
+i=clients
+mkdir $tmp/$i-target
+echo 2 > $tmp/$i-target/nb-list-client.out
+echo 2 > $tmp/$i-target/nb-llist-client.out
+
+echo 5 > $tmp/$i-target/nb-list-job.out
+echo 5 > $tmp/$i-target/nb-llist-job.out
+echo 3 > $tmp/$i-target/nb-list-joblog.out
+echo 3 > $tmp/$i-target/nb-llist-joblog.out
+echo 4 > $tmp/$i-target/nb-list-jobmedia.out
+echo 4 > $tmp/$i-target/nb-llist-jobmedia.out
+echo 2 > $tmp/$i-target/nb-list-jobmedia1.out
+echo 2 > $tmp/$i-target/nb-llist-jobmedia1.out
+echo 1 > $tmp/$i-target/nb-list-files.out
+echo 1 > $tmp/$i-target/nb-llist-files.out
+
+# Job 3 is accessible
+echo 1 > $tmp/$i-target/nb-bvfs-get_jobids.out
+
+echo 2 > $tmp/$i-target/nb-list-media.out
+echo 2 > $tmp/$i-target/nb-llist-media.out
+echo 1 > $tmp/$i-target/nb-list-pool.out
+echo 1 > $tmp/$i-target/nb-llist-pool.out
+echo 2 > $tmp/$i-target/nb-list-pools.out
+echo 2 > $tmp/$i-target/nb-llist-pools.out
+
+################################################################
+i=fileset
+mkdir $tmp/$i-target
+# all clients are defined
+echo 5 > $tmp/$i-target/nb-list-client.out
+echo 5 > $tmp/$i-target/nb-llist-client.out
+
+echo 8 > $tmp/$i-target/nb-list-job.out
+echo 8 > $tmp/$i-target/nb-llist-job.out
+echo 2 > $tmp/$i-target/nb-list-joblog.out
+echo 2 > $tmp/$i-target/nb-llist-joblog.out
+echo 5 > $tmp/$i-target/nb-list-jobmedia.out
+echo 5 > $tmp/$i-target/nb-llist-jobmedia.out
+echo   > $tmp/$i-target/nb-list-jobmedia1.out
+echo   > $tmp/$i-target/nb-llist-jobmedia1.out
+echo   > $tmp/$i-target/nb-list-files.out
+echo   > $tmp/$i-target/nb-llist-files.out
+
+# Job 3 is accessible
+echo 1 > $tmp/$i-target/nb-bvfs-get_jobids.out
+
+# all pools are defined
+echo 2 > $tmp/$i-target/nb-list-media.out
+echo 2 > $tmp/$i-target/nb-llist-media.out
+echo 1 > $tmp/$i-target/nb-list-pool.out
+echo 1 > $tmp/$i-target/nb-llist-pool.out
+echo 2 > $tmp/$i-target/nb-list-pools.out
+echo 2 > $tmp/$i-target/nb-llist-pools.out
+
+# Here we generate some basic metrics for all tests,
+# we mostly count lines in various files and we compare
+# what we found with what we expect
+for i in job client pool clients fileset
+do
+    mkdir -p $tmp/$i
+
+    awk '/^\| +[0-9]/ {total++} END {print total}' $tmp/list-$i-client.out > $tmp/$i/nb-list-client.out
+    awk 'tolower($1) ~ /clientid/ {total++} END {print total}' $tmp/llist-$i-client.out > $tmp/$i/nb-llist-client.out
+
+    awk '/^\| +[0-9]/ {total++} END {print total}' $tmp/list-$i-job.out > $tmp/$i/nb-list-job.out
+    awk 'tolower($1) ~ /^jobid/ {total++} END {print total}' $tmp/llist-$i-job.out > $tmp/$i/nb-llist-job.out
+
+    awk '/Start Backup/ {total++} END {print total}' $tmp/list-$i-joblog.out > $tmp/$i/nb-list-joblog.out
+    awk '/Start Backup/ {total++} END {print total}' $tmp/llist-$i-joblog.out > $tmp/$i/nb-llist-joblog.out
+
+    # The list jobmedia jobid=x return also the job records, so we need to count +1
+    awk '/^\| +[0-9]/ {total++} END {print total}' $tmp/list-$i-jobmedia.out > $tmp/$i/nb-list-jobmedia.out
+    awk 'tolower($1) ~ /^jobid/ {total++} END {print total}' $tmp/llist-$i-jobmedia.out > $tmp/$i/nb-llist-jobmedia.out
+
+    awk '/^\| +[0-9]/ {total++} END {print total}' $tmp/list-$i-jobmedia1.out > $tmp/$i/nb-list-jobmedia1.out
+    awk 'tolower($1) ~ /^jobid/ {total++} END {print total}' $tmp/llist-$i-jobmedia1.out > $tmp/$i/nb-llist-jobmedia1.out
+
+    awk '/^\| +[0-9]/ {total++} END {print total}' $tmp/list-$i-media.out > $tmp/$i/nb-list-media.out
+    awk 'tolower($1) ~ /mediaid/ {total++} END {print total}' $tmp/llist-$i-media.out > $tmp/$i/nb-llist-media.out
+
+    awk '/^\| +[0-9]/ {total++} END {print total}' $tmp/list-$i-pool.out > $tmp/$i/nb-list-pool.out
+    awk 'tolower($1) ~ /^poolid:/ {total++} END {print total}' $tmp/llist-$i-pool.out > $tmp/$i/nb-llist-pool.out
+
+    awk '/^\| +[0-9]/ {total++} END {print total}' $tmp/list-$i-pools.out > $tmp/$i/nb-list-pools.out
+    awk 'tolower($1) ~ /^poolid:/ {total++} END {print total}' $tmp/llist-$i-pools.out > $tmp/$i/nb-llist-pools.out
+
+    awk '/fr.po/ {total++} END {print total}' $tmp/list-$i-files.out > $tmp/$i/nb-list-files.out
+    awk '/fr.po/ {total++} END {print total}' $tmp/llist-$i-files.out > $tmp/$i/nb-llist-files.out
+
+    awk '/^3$/ {total++} END {print total}' $tmp/bvfs-$i-get_jobids.out > $tmp/$i/nb-bvfs-get_jobids.out
+    
+    diff -Naur $tmp/$i-target $tmp/$i
+    if [ $? -ne 0 ]; then
+        print_debug "ERROR: Found differences between $tmp/$i-target and $tmp/$i"
+        estat=1
+    fi
+done
+
+
+cat <<EOF > $tmp/bconcmds
+@##############################################
+@$out $tmp/bvfs1-1.out
+list jobs client=test1-fd
+.bvfs_get_jobs client=test1-fd
+messages
+@$out $tmp/bvfs1-2.out
+list jobs
+.bvfs_get_jobs client=test-bkp-fd
+messages
+EOF
+
+$bin/bconsole -c $tmp/bconsole.conf.bvfs1 < $tmp/bconcmds
+
+sed -i 's/bvfs1/bvfs2/' $tmp/bconcmds
+$bin/bconsole -c $tmp/bconsole.conf.bvfs2 < $tmp/bconcmds
+
+nb=`awk '/^[0-9] [0-9]+/ { total++ } END { print total }' $tmp/bvfs1-1.out`
+if [ "$nb" != 2 ]; then
+    print_debug "ERROR: Should find two jobs in $tmp/bvfs1-1.out"
+    estat=1
+fi
+
+nb=`awk 'BEGIN { total=0 } /^[0-9] [0-9]+/ { total++ } END { print total }' $tmp/bvfs1-2.out`
+if [ "$nb" != 0 ]; then
+    print_debug "ERROR: Should find 0 job in $tmp/bvfs1-2.out"
+    estat=1
+fi
+
+nb=`awk 'BEGIN { total=0 } /^[0-9] [0-9]+/ { total++ } END { print total }' $tmp/bvfs2-1.out`
+if [ "$nb" != 0 ]; then
+    print_debug "ERROR: Should find 0 job in $tmp/bvfs2-1.out"
+    estat=1
+fi
+
+nb=`awk 'BEGIN { total=0 } /^[0-9] [0-9]+/ { total++ } END { print total }' $tmp/bvfs2-2.out`
+if [ "$nb" != 0 ]; then
+    print_debug "ERROR: Should find 0 job in $tmp/bvfs2-2.out"
+    estat=1
+fi
+
+grep -i "error" $tmp/bvfs*out > /dev/null
+if [ $? = 0 ]; then
+    print_debug "ERROR: Should not find errors in $tmp/bvfs*.out"
+    estat=1
+fi
+
+
+stop_bacula
+end_test
