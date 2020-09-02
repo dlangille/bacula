@@ -3,7 +3,6 @@
 # Copyright (C) 2000-2020 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
-#
 # Run a simple backup of the Bacula build directory
 #   then verify the data on the volume.           
 #
@@ -16,16 +15,16 @@ require_linux
 cwd=`pwd`
 scripts/cleanup
 scripts/copy-test-confs
-echo "${cwd}/tmp/files" >$tmp/file-list
-echo "${cwd}/build/src/dird"      >>$tmp/file-list
+echo "${cwd}/build/src/dird"      >$tmp/file-list
 echo "${cwd}/build/src/filed"     >>$tmp/file-list
+#echo "${cwd}/tmp/files" >>$tmp/file-list
 
 #
 # Add this back when verify can handle sparse files
 #  the same way that backup does
 #
-mkdir -p $tmp/files
-dd if=${cwd}/build/configure of=$tmp/files/sparsefile bs=1 count=1 seek=10M > /dev/null
+#mkdir -p $tmp/files
+#dd if=${cwd}/build/configure of=$tmp/files/sparsefile bs=1 count=1 seek=10M > /dev/null
 
 change_jobname NightlySave $JobName
 start_test
@@ -50,6 +49,10 @@ run job=VerifyData jobid=1 yes
 run job=VerifyData jobid=2 yes
 run job=VerifyData jobid=3 yes
 run job=VerifyData jobid=4 yes
+run job=VerifyData jobid=1 accurate=yes yes
+run job=VerifyData jobid=2 accurate=yes yes
+run job=VerifyData jobid=3 accurate=yes yes
+run job=VerifyData jobid=4 accurate=yes yes
 wait
 messages
 quit
@@ -57,7 +60,18 @@ END_OF_DATA
 
 run_bacula
 
-sleep 2
+cat <<END_OF_DATA >tmp/bconcmds
+@$out $tmp/log4.out
+sql
+UPDATE File SET Md5='xxx' WHERE JobId=2 and Filename='heartbeat.o';
+
+run job=VerifyData jobid=2 accurate=yes yes
+wait
+messages
+END_OF_DATA
+
+run_bconsole
+
 check_for_zombie_jobs storage=File 
 stop_bacula
 
@@ -110,7 +124,7 @@ if [ $nb -ne 4 ]; then
     bstat=1
 fi
 nb=`grep "^  Termination: *Verify OK" tmp/log2.out | wc -l`
-if [ $nb -ne 4 ]; then
+if [ $nb -ne 8 ]; then
     vstat=1
 fi
 nb=`grep "^  Termination: *Verify OK" tmp/log3.out | wc -l`
@@ -119,6 +133,10 @@ if [ $nb -ne $nbok ]; then
     echo "tmp/log3.out"
     cat tmp/log3.out
     vstat=2
+fi
+nb=`grep "^  Termination: *Verify Dif" tmp/log4.out | wc -l`
+if [ $nb -ne 1 ]; then
+    vstat=3
 fi
 dstat=0
 end_test
