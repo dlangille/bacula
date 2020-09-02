@@ -1,0 +1,247 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+#
+TestName="volume-not-found-bug"
+JobName=Virtual
+export FORCE_DEDUP=yes
+export DEDUP_FS_OPTION=storage
+
+. scripts/functions
+${rscripts}/cleanup
+cp -f ${rscripts}/bacula-dir-2media-virtual.conf ${conf}/bacula-dir.conf
+cp -f ${rscripts}/bacula-sd-2media-virtual.conf ${conf}/bacula-sd.conf
+cp -f ${rscripts}/test-bacula-fd.conf ${conf}/bacula-fd.conf
+cp -f ${rscripts}/test-console.conf ${conf}/bconsole.conf
+
+echo "$cwd/build/src/dird" >${cwd}/tmp/file-list
+
+# To create mount volume request, turn on volume pruning
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "AutoPrune", "no", "Client")'
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "AutoPrune", "no", "Pool")'
+
+# To reproduce this issue, we need only one job per device and per volume
+$bperl -e 'add_attribute("$conf/bacula-sd.conf", "Maximum Concurrent Jobs", "1", "Device")'
+$bperl -e 'add_attribute("$conf/bacula-sd.conf", "Label Media", "Yes", "Device")'
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "Max Wait Time", "5mins", "Job")'
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "Maximum Concurrent Jobs", "10", "Job", "RestoreFiles")'
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "PreferMountedVolumes", "no", "Job")'
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "Maximum Volume Jobs", "1", "Pool")'
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "Label Format", "Vol-", "Pool")'
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "Comm Compression", "no", "Director")'
+$bperl -e 'add_attribute("$conf/bacula-sd.conf", "Comm Compression", "no", "Storage")'
+$bperl -e 'add_attribute("$conf/bacula-fd.conf", "Comm Compression", "no", "FileDaemon")'
+$bperl -e 'add_attribute("$conf/bacula-sd.conf", "RemovableMedia", "no", "Device")'
+$bperl -e 'add_attribute("$conf/bacula-sd.conf", "DeviceType", "Dedup", "Device")'
+
+# create where the SD is putting volumes
+mkdir -p $tmp/disk
+
+# The 3rd drive doesn't have the right type
+sed  's/disk1/disk/' $conf/bacula-sd.conf > 1
+cp -f 1 $conf/bacula-sd.conf
+
+when=`perl -MPOSIX -e "print strftime('%F %T', localtime(time+45))"`
+
+start_test
+
+cat <<END_OF_DATA >${tmp}/bconcmds
+@output /dev/null
+messages
+@$out ${cwd}/tmp/log1.out
+setdebug level=150 trace=1 options=t storage=Virtual
+setdebug level=50 trace=1 options=t dir
+run job=$JobName level=Full storage=Virtual yes
+wait
+run job=$JobName level=Incremental storage=Virtual when="$when" yes
+run job=$JobName level=Incremental storage=Virtual when="$when" yes
+run job=$JobName level=Full storage=Virtual when="$when" yes
+run job=$JobName level=Full storage=Virtual when="$when" yes
+run job=$JobName level=Full storage=Virtual when="$when" yes
+run job=$JobName level=Full storage=Virtual when="$when" yes
+run job=$JobName level=Full storage=Virtual when="$when" yes
+run job=$JobName level=Full storage=Virtual when="$when" yes
+run job=$JobName level=Full storage=Virtual when="$when" yes
+run job=$JobName level=Full storage=Virtual when="$when" yes
+run job=$JobName level=Full storage=Virtual when="$when" yes
+run job=$JobName level=Full storage=Virtual when="$when" yes
+run job=$JobName level=Full storage=Virtual when="$when" yes
+run job=$JobName level=Full storage=Virtual when="$when" yes
+run job=$JobName level=Full storage=Virtual when="$when" yes
+run job=$JobName level=Full storage=Virtual when="$when" yes
+run job=$JobName level=Full storage=Virtual when="$when" yes
+run job=$JobName level=Full storage=Virtual when="$when" yes
+run job=$JobName level=Full storage=Virtual when="$when" yes
+run job=$JobName level=Full storage=Virtual when="$when" yes
+run job=$JobName level=Full storage=Virtual when="$when" yes
+run job=$JobName level=Full storage=Virtual when="$when" yes
+run job=$JobName level=Full storage=Virtual when="$when" yes
+run job=$JobName level=Full storage=Virtual when="$when" yes
+run job=$JobName level=Full storage=Virtual when="$when" yes
+run job=$JobName level=Full storage=Virtual when="$when" yes
+run job=$JobName level=Full storage=Virtual when="$when" yes
+run job=$JobName level=Full storage=Virtual when="$when" yes
+run job=$JobName level=Full storage=Virtual when="$when" yes
+run job=$JobName level=Full storage=Virtual when="$when" yes
+run job=$JobName level=Full storage=Virtual when="$when" yes
+run job=$JobName level=Full storage=Virtual when="$when" yes
+run job=$JobName level=Full storage=Virtual when="$when" yes
+run job=$JobName level=Full storage=Virtual when="$when" yes
+run job=$JobName level=Full storage=Virtual when="$when" yes
+run job=$JobName level=Full storage=Virtual when="$when" yes
+run job=$JobName level=Full storage=Virtual when="$when" yes
+run job=$JobName level=Full storage=Virtual when="$when" yes
+run job=$JobName level=Full storage=Virtual when="$when" yes
+run job=$JobName level=Full storage=Virtual when="$when" yes
+run job=$JobName level=Full storage=Virtual when="$when" yes
+run job=$JobName level=Full storage=Virtual when="$when" yes
+run job=$JobName level=Full storage=Virtual when="$when" yes
+run job=$JobName level=Incremental storage=Virtual when="$when" yes
+run job=$JobName level=Incremental storage=Virtual when="$when" yes
+run job=$JobName level=Incremental storage=Virtual when="$when" yes
+run job=$JobName level=Incremental storage=Virtual when="$when" yes
+run job=$JobName level=Incremental storage=Virtual when="$when" yes
+run job=$JobName level=Incremental storage=Virtual when="$when" yes
+run job=$JobName level=Incremental storage=Virtual when="$when" yes
+run job=$JobName level=Incremental storage=Virtual when="$when" yes
+run job=$JobName level=Incremental storage=Virtual when="$when" yes
+run job=$JobName level=Incremental storage=Virtual when="$when" yes
+run job=$JobName level=Incremental storage=Virtual when="$when" yes
+run job=$JobName level=Incremental storage=Virtual when="$when" yes
+run job=$JobName level=Incremental storage=Virtual when="$when" yes
+run job=$JobName level=Incremental storage=Virtual when="$when" yes
+run job=$JobName level=Incremental storage=Virtual when="$when" yes
+run job=$JobName level=Full storage=Virtual when="$when" yes
+run job=$JobName level=Full storage=Virtual when="$when" yes
+run job=$JobName level=Full storage=Virtual when="$when" yes
+run job=$JobName level=Full storage=Virtual when="$when" yes
+run job=$JobName level=Full storage=Virtual when="$when" yes
+run job=$JobName level=Full storage=Virtual when="$when" yes
+run job=$JobName level=Full storage=Virtual when="$when" yes
+run job=$JobName level=Full storage=Virtual when="$when" yes
+run job=$JobName level=Full storage=Virtual when="$when" yes
+run job=$JobName level=Full storage=Virtual when="$when" yes
+run job=$JobName level=Full storage=Virtual when="$when" yes
+run job=$JobName level=Full storage=Virtual when="$when" yes
+run job=$JobName level=Full storage=Virtual when="$when" yes
+run job=$JobName level=Full storage=Virtual when="$when" yes
+run job=$JobName level=Full storage=Virtual when="$when" yes
+run job=$JobName level=Full storage=Virtual when="$when" yes
+run job=$JobName level=Full storage=Virtual when="$when" yes
+run job=$JobName level=Full storage=Virtual when="$when" yes
+run job=$JobName level=Full storage=Virtual when="$when" yes
+run job=$JobName level=Full storage=Virtual when="$when" yes
+run job=$JobName level=Full storage=Virtual when="$when" yes
+run job=$JobName level=Full storage=Virtual when="$when" yes
+run job=$JobName level=Full storage=Virtual when="$when" yes
+run job=$JobName level=Full storage=Virtual when="$when" yes
+run job=$JobName level=Full storage=Virtual when="$when" yes
+run job=$JobName level=Full storage=Virtual when="$when" yes
+run job=$JobName level=Full storage=Virtual when="$when" yes
+run job=$JobName level=Full storage=Virtual when="$when" yes
+run job=$JobName level=Full storage=Virtual when="$when" yes
+run job=$JobName level=Full storage=Virtual when="$when" yes
+run job=$JobName level=Full storage=Virtual when="$when" yes
+run job=$JobName level=Full storage=Virtual when="$when" yes
+status dir
+@sleep 30
+messages
+@sleep 5
+messages
+@sleep 5
+messages
+@sleep 5
+messages
+@sleep 5
+messages
+@sleep 5
+messages
+@sleep 5
+messages
+@sleep 30
+status dir
+status storage
+wait
+messages
+@$out $tmp/log2.out
+list media
+@$out $tmp/log3.out
+sql
+SELECT 'FOUND empty volume', VolumeName, VolBytes from Media WHERE VolBytes = 0;
+
+status dir
+@$out $tmp/log4.out
+list jobs
+@sleep 2
+quit
+END_OF_DATA
+
+run_bacula
+check_for_zombie_jobs storage=Virtual
+
+# look each full jobs
+for i in `awk -F '|' '/B +\| +F/ { print $2 }' $tmp/log4.out`
+do
+    cat <<END_OF_DATA >$tmp/bconcmds
+@$out $tmp/log2.out
+restore where=$tmp/bacula-restore-$i
+3
+$i
+m *
+done
+yes
+END_OF_DATA
+    run_bconsole
+done
+
+cat <<EOF > $tmp/bconcmds
+@$out $tmp/log2.out
+wait
+messages
+EOF
+
+run_bconsole
+
+for i in `awk -F '|' '/B +\| +F/ { print $2 }' $tmp/log4.out`
+do
+    $rscripts/diff.pl -s $cwd/build/src/dird -d $tmp/bacula-restore-$i/$cwd/build/src/dird
+    if [ $? -ne 0 ]; then
+        print_debug "ERROR: Unable to restore jobid $i"
+        rstat=1
+    fi
+done
+
+stop_bacula
+
+grep -i error ${cwd}/tmp/log2.out
+if [ $? = 2 ]; then
+   print_debug "ERROR: File ${cwd}/tmp/log2.out missing!!!!!"
+   estat=1
+else
+   if [ $? = 0 ]; then
+       print_debug "ERROR: Found Volume(s) in Error in list media output ($tmp/log2.out)"
+       estat=1
+   fi
+
+   grep -i warning ${cwd}/tmp/log1.out
+   if [ $? = 0 ]; then
+       print_debug "ERROR: Found Warning(s) in Job output (${cwd}/tmp/log1.out). We probably had mounting errors"
+       estat=1
+   fi
+fi
+
+grep 'Please use the "label" command to create a new Volume for:' $tmp/log1.out
+if [ $? -eq 0 ]; then
+    print_debug "ERROR: Found mount requests"
+    estat=1
+fi
+
+grep '| +FOUND' $tmp/log3.out
+if [ $? -eq 0 ]; then
+    print_debug "ERROR: Found volumes with VolBytes=0 in catalog"
+    estat=1
+fi
+
+end_test
