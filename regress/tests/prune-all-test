@@ -1,10 +1,13 @@
 #!/bin/sh
 #
-# This script will test prune algo with fromallpools option
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# This script will test prune algo with "all" option
 #
 . scripts/functions
 
-TestName="prune-fromallpools-test"
+TestName="prune-all-test"
 JobName=NightlySave
 
 scripts/cleanup
@@ -18,6 +21,15 @@ dircfg=$conf/bacula-dir.conf
 
 # copy the Default pool to Special pool
 cat >> $dircfg <<EOF
+Pool {
+  Name = NoVolRetention
+  Pool Type = Backup
+  Recycle = yes                       # Bacula can automatically recycle Volumes
+  AutoPrune = no                     # Prune expired volumes
+  Volume Retention = 0 # never
+  Job Retention = 1s
+  File Retention = 1s
+}
 Pool {
   Name = Special
   Pool Type = Backup
@@ -36,6 +48,15 @@ Pool {
   Job Retention = 1s
   File Retention = 1s
 }
+Pool {
+  Name = Special3
+  Pool Type = Backup
+  Recycle = yes                       # Bacula can automatically recycle Volumes
+  AutoPrune = yes                     # Prune expired volumes
+  Volume Retention = 365d             # one year
+  Job Retention = 1s
+  File Retention = 1s
+}
 Job {
   Name = "prune"
   Type = Admin
@@ -43,7 +64,8 @@ Job {
   Client = $HOST-fd
   FileSet = "Full Set"
   RunScript {
-    Console = "prune jobs fromallpools yes"
+    Console = "prune jobs all yes"
+    Console = "prune volume allfrompool allpools yes"
     RunsWhen = Before
     failjobonerror = no
     runsonclient = no
@@ -62,6 +84,9 @@ messages
 label storage=File pool=Default volume=TestVolume001
 label storage=File pool=Special volume=TestVolume002
 label storage=File pool=Special2 volume=TestVolume003
+label storage=File pool=Special3 volume=TestVolume004
+label storage=File pool=NoVolRetention volume=TestVolume005
+label storage=File pool=NoVolRetention volume=TestVolume006
 run job=$JobName pool=Default level=full yes
 run job=$JobName pool=Default level=full client=$HOST-fd2 yes
 wait
@@ -92,7 +117,7 @@ list jobs
 @################################################################
 @$out $tmp/log4.out
 list jobs
-prune jobs fromallpools yes
+prune jobs all yes
 list jobs
 run job=$JobName pool=Default level=Differential yes
 wait
@@ -100,7 +125,7 @@ messages
 @################################################################
 @$out $tmp/log5.out
 list jobs
-prune jobs fromallpools yes
+prune jobs all yes
 list jobs
 @################################################################
 @$out $tmp/log6.out
@@ -118,11 +143,14 @@ run job=$JobName pool=Default level=Incremental yes
 wait
 run job=$JobName pool=Default level=Differential yes
 wait
+@exec "touch $cwd/build/po/pl.po"
+run job=$JobName pool=Special3 level=Incremental yes
+wait
 messages
 @################################################################
 @$out $tmp/log7.out
 list jobs
-prune jobs fromallpools yes
+prune jobs all yes
 list jobs
 @################################################################
 @$out $tmp/log8.out
@@ -130,6 +158,7 @@ run job=$JobName pool=Default level=Differential yes
 wait
 messages
 list jobs
+update volume=TestVolume004 volstatus=Used
 run job=prune yes
 wait
 messages
@@ -140,6 +169,44 @@ restore where=${cwd}/tmp/bacula-restores client=$HOST-fd select all storage=File
 yes
 wait
 messages
+@################################################################
+@$out $tmp/log10.out
+update volume=TestVolume003 volstatus=Used
+prune volume allfrompool allpools yes
+run job=$JobName pool=Special2 level=Full yes
+wait
+messages
+@################################################################
+@$out $tmp/log11.out
+delete jobid=1-100 yes
+prune volume allfrompool allpools yes
+run job=$JobName pool=NoVolRetention level=Full yes
+wait
+@exec "touch $cwd/build/po/pl.po"
+run job=$JobName pool=NoVolRetention level=Incremental yes
+wait
+@exec "touch $cwd/build/po/fr.po"
+run job=$JobName pool=NoVolRetention level=Differential yes
+wait
+@exec "touch $cwd/build/po/de.po"
+run job=$JobName pool=NoVolRetention level=Incremental yes
+wait
+messages
+update volume=TestVolume005 volstatus=Used
+list jobs
+prune jobs all yes
+prune volume allfrompool allpools yes
+list jobs
+@################################################################
+@$out $tmp/log12.out
+run job=$JobName pool=NoVolRetention level=Full yes
+wait
+update volume=TestVolume006 volstatus=Used
+list jobs
+prune jobs all yes
+prune volume allfrompool allpools yes
+list jobs
+list volumes
 quit
 EOF
 
@@ -201,7 +268,33 @@ estat=$(($estat + $?))
 # Pool   S D  D
 # Level  F D  D
 # Result   x
-$bperl -e "check_prune_list('$tmp/log8.out', 15)"
+$bperl -e "check_prune_list('$tmp/log8.out', 15, 16)"
 estat=$(($estat + $?))
+
+grep TestVolume004 $tmp/log8.out | grep purged > /dev/null
+if [ $? != 0 ]; then
+    print_debug "ERROR: TestVolume004 must be purged automatically"
+    estat=$(($estat + $?))
+fi
+
+# Id     21 22 23 24
+# Pool   N   N  N  N
+# Level  F   I  D  I
+# Result     x
+$bperl -e "check_prune_list('$tmp/log11.out', 22)"
+estat=$(($estat + $?))
+
+# Id     21 23 24 25
+# Pool   N   N  N  N
+# Level  F   D  I  F
+# Result x   x  x
+$bperl -e "check_prune_list('$tmp/log12.out', 21, 23, 24)"
+estat=$(($estat + $?))
+
+grep TestVolume005 $tmp/log12.out | grep Purged > /dev/null
+if [ $? != 0 ]; then
+    print_debug "ERROR: The TestVolume005 should be pruned"
+    estat=1
+fi
 
 end_test
