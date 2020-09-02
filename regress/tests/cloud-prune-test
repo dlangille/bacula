@@ -1,0 +1,105 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Play with the cloud cache pruning functions
+#
+TestName="cloud-prune-test"
+JobName=NightlySave
+. scripts/functions
+
+require_cloud
+
+#config is required for cloud cleanup
+scripts/copy-test-confs
+scripts/cleanup
+
+if test x$FORCE_FILE_SET = x; then
+   echo "${cwd}/build" >${cwd}/tmp/file-list
+   #echo "${cwd}/build/src/Makefile" >${cwd}/tmp/file-list
+   #echo "${cwd}/build/src/Makefile.in" >>${cwd}/tmp/file-list
+   #echo "${cwd}/build/src/testprogs.tar.gz" >>${cwd}/tmp/file-list
+   #echo "${cwd}/build/src/dummy" >>${cwd}/tmp/file-list
+   #echo "${cwd}/build/src/stored" >>${cwd}/tmp/file-list
+   #echo "${cwd}/build/src/dird" >>${cwd}/tmp/file-list
+   #echo "${cwd}/build/src/filed" >>${cwd}/tmp/file-list
+   #echo "${cwd}/build/src/console" >>${cwd}/tmp/file-list
+   #echo "${cwd}/build/src/qt-console" >>${cwd}/tmp/file-list
+   #echo "${cwd}/build/src/cats" >>${cwd}/tmp/file-list
+else
+   echo "$FORCE_FILE_SET" >${cwd}/tmp/file-list
+fi
+
+start_test
+
+$bperl -e 'add_attribute("$conf/bacula-sd.conf", "MaximumPartSize", "10000000", "Device")'
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "MaximumVolumeJobs", "1", "Pool")'
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "MaximumConcurrentJobs", "1", "Device")'
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "CacheRetention", "5s", "Pool")'
+
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@output /dev/null
+messages
+@$out ${cwd}/tmp/log1.out
+label storage=File volume=Vol1
+label storage=File volume=Vol2
+label storage=File volume=Vol3
+label storage=File volume=Vol4
+label storage=File volume=Vol5
+update volume=Vol2 cacheretention=15s
+update volume=Vol5 cacheretention=5mins
+END_OF_DATA
+
+# do label
+run_bacula
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@output /dev/null
+messages
+@$out ${cwd}/tmp/log1.out
+@#setdebug level=500 storage
+run job=$JobName level=Full yes
+run job=$JobName level=Full yes
+run job=$JobName level=Full yes
+run job=$JobName level=Full yes
+run job=$JobName level=Full yes
+wait
+list volumes
+messages
+@sleep 5
+truncate cache volume=Vol1 storage=File
+cloud truncate volume=Vol1 storage=File
+cloud prune allfrompool storage=File pool=Default
+cloud prune volume=Vol5 storage=File
+messages
+END_OF_DATA
+
+run_bconsole
+
+
+if ! test -f $tmp/Vol5/part.3; then
+    print_debug "ERROR: The Vol5 should not be pruned"
+    estat=1
+fi
+
+if test -f $tmp/Vol1/part.3; then
+    print_debug "ERROR: The Vol1 should be pruned"
+    estat=1
+fi
+
+
+if test -f $tmp/Vol3/part.3; then
+    print_debug "ERROR: The Vol3 should be pruned"
+    estat=1
+fi
+
+check_for_zombie_jobs storage=File 
+stop_bacula
+
+touch $tmp/log2.out
+
+check_two_logs
+
+end_test
