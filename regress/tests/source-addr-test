@@ -61,6 +61,10 @@ SDPORT=$(($BASEPORT + 2))
 change_jobname BackupClient1 $JobName
 start_test
 
+$bperl -e "add_attribute('$conf/bacula-sd.conf',  'CommCompression', 'no', 'Storage')"
+$bperl -e "add_attribute('$conf/bacula-dir.conf', 'CommCompression', 'no', 'Director')"
+$bperl -e "add_attribute('$conf/bacula-fd.conf',  'CommCompression', 'no', 'FileDaemon')"
+
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
 @output /dev/null
 messages
@@ -76,7 +80,6 @@ END_OF_DATA
 
 run_bacula
 
-sleep 5
 print_debug "Detecting connections to SD sourced from ${IP}"
 netstat -tan | grep -E "127\.0\.0\.1(.|:)$SDPORT .* ${IP}" > $tmp/log3.out
 if [ $? -ne 0 ]; then
