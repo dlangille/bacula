@@ -3,8 +3,6 @@
 # Copyright (C) 2000-2020 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
-
-#
 # TODO:
 #  - test bextract
 #  - with strip path 
@@ -172,6 +170,17 @@ rm -rf ${cwd}/tmp/bacula-restores
 p Check with bls
 ################################################################
 
+#
+# When FORCE_DEDUP is set, bls cannot work when the SD is running so skip this test
+if test x$FORCE_DEDUP != xyes; then
+   $bin/bls -c $conf/bacula-sd.conf -V 'TestVolume001' FileStorage > $tmp/bls.out
+   grep -- '----' $tmp/bls.out | grep xxx > /dev/null
+   if [ $? != 0 ] ; then
+      print_debug "ERROR: Could not find deleted files in $tmp/bls.out"
+      cat $tmp/bls.out
+      bstat=2
+   fi
+fi
 
 ################################################################
 p Now do a backup after making few changes
@@ -281,11 +290,11 @@ stop_bacula
 p Check with bscan -- this takes some time
 ################################################################
 
-cd $bin
+cd $cwd/bin
   ./drop_bacula_tables      >/dev/null 2>&1
   ./make_bacula_tables      >/dev/null 2>&1
   ./grant_bacula_privileges >/dev/null 2>&1
-cd ..
+cd $cwd
 
 echo "volume=TestVolume001" >tmp/bscan.bsr
 
