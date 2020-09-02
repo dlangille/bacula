@@ -1,0 +1,114 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Test fileset options
+#
+TestName="fileset-kw-test"
+JobName=backup
+. scripts/functions
+
+scripts/cleanup
+scripts/copy-confs
+
+start_test
+
+cat <<EOF >> $conf/bacula-dir.conf
+@$tmp/conf
+EOF
+
+cat <<EOF > $tmp/conf
+FileSet {
+ Name = test1
+ Include {
+   Options {
+     Accurate = yes
+   }
+  File = /etc
+ }
+}
+EOF
+
+if $bin/bacula-dir -t -c $conf/bacula-dir.conf >> $tmp/log1.out
+then
+    print_debug "ERROR: Should report an error on Accurate option"
+    estat=1
+fi
+
+cat <<EOF > $tmp/conf
+FileSet {
+ Name = test1
+ Include {
+   Options {
+     Verify = yes
+   }
+  File = /etc
+ }
+}
+EOF
+
+if $bin/bacula-dir -t -c $conf/bacula-dir.conf >> $tmp/log1.out
+then
+    print_debug "ERROR: Should report an error on Verify option"
+    estat=1
+fi
+
+cat <<EOF > $tmp/conf
+FileSet {
+ Name = test1
+ Include {
+   Options {
+     BaseJob = yes
+   }
+  File = /etc
+ }
+}
+EOF
+
+if $bin/bacula-dir -t -c $conf/bacula-dir.conf >> $tmp/log1.out
+then
+    print_debug "ERROR: Should report an error on BaseJob option"
+    estat=1
+fi
+
+cat <<EOF > $tmp/conf
+FileSet {
+ Name = test1
+ Include {
+   Options {
+     BaseJob = ipnugsamMcdA51
+     Accurate = ipnugsamMcdA51
+     Verify = ipnugsamcd51
+   }
+  File = /etc
+ }
+}
+EOF
+
+if ! $bin/bacula-dir -t -c $conf/bacula-dir.conf >> $tmp/log1.out
+then
+    print_debug "ERROR: Should not report an error on BaseJob option"
+    estat=1
+fi
+
+cat <<EOF > $tmp/conf
+FileSet {
+ Name = test1
+ Include {
+   Options {
+     Verify = pins5
+   }
+  File = /etc
+ }
+}
+EOF
+
+if ! $bin/bacula-dir -t -c $conf/bacula-dir.conf >> $tmp/log1.out
+then
+    print_debug "ERROR: Should not report an error on Verify option"
+    estat=1
+fi
+
+
+end_test
