@@ -1,0 +1,168 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Test for a bug that causes sively parallel irtual full jobs to
+#  deadlock.  First create a lot of backups, then run
+#  virtual fulls on them.
+#
+TestName="virtualfull-concurrency-bug-test"
+. scripts/functions
+
+# Setup conf files
+scripts/cleanup
+scripts/copy-test-confs
+cp scripts/migrate-bacula-dir.conf bin/bacula-dir.conf
+cp scripts/migrate-bacula-sd.conf bin/bacula-sd.conf
+
+# Backup Bacula stored+objects directory
+# Backup director
+rm -rf ${tmpsrc}
+mkdir ${tmpsrc}
+echo "${tmpsrc}" >${tmp}/file-list
+ls ${src}/src/stored/* >${tmp}/restore-list
+# restore file list
+for i in `cat ${tmp}/restore-list` ; do
+  cp -p $i ${tmpsrc}
+done
+# Get path to temp source files to restore
+ls ${tmpsrc}/* >${tmp}/restore-list
+
+start_test
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@output /dev/null
+messages
+@$out ${cwd}/tmp/log1.out
+@# No prelabeled volumes needed since they are automatically created
+@#label storage=File slot=0 drive=0 Pool=Heise1 volume=Vol1
+@#list volumes
+END_OF_DATA
+
+# Start Bacula and do label
+run_bacula
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@output /dev/null
+messages
+@$out ${cwd}/tmp/log0.out
+run job=HeiseV01 level=Full yes
+run job=HeiseV02 level=Full yes
+run job=HeiseV03 level=Full yes
+run job=HeiseV04 level=Full yes
+run job=HeiseV05 level=Full yes
+run job=HeiseV06 level=Full yes
+run job=HeiseV07 level=Full yes
+run job=HeiseV08 level=Full yes
+run job=HeiseV09 level=Full yes
+run job=HeiseV10 level=Full yes
+run job=HeiseV11 level=Full yes
+run job=HeiseV12 level=Full yes
+run job=HeiseV13 level=Full yes
+run job=HeiseV14 level=Full yes
+run job=HeiseV15 level=Full yes
+run job=HeiseV16 level=Full yes
+run job=HeiseV17 level=Full yes
+run job=HeiseV18 level=Full yes
+run job=HeiseV19 level=Full yes
+run job=HeiseV20 level=Full yes
+wait
+list volumes
+messages
+END_OF_DATA
+
+run_bconsole
+
+# add more files to backup source, so following incremental
+# has something to back up
+ls ${src}/src/filed/* >>${tmp}/restore-list
+for i in `ls ${src}/src/filed/*` ; do
+  cp -p "$i" ${tmpsrc}
+done
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@output /dev/null
+messages
+@$out ${cwd}/tmp/log1.out
+run job=HeiseV01 level=Incremental yes
+run job=HeiseV02 level=Incremental yes
+run job=HeiseV03 level=Incremental yes
+run job=HeiseV04 level=Incremental yes
+run job=HeiseV05 level=Incremental yes
+run job=HeiseV06 level=Incremental yes
+run job=HeiseV07 level=Incremental yes
+run job=HeiseV08 level=Incremental yes
+run job=HeiseV09 level=Incremental yes
+run job=HeiseV10 level=Incremental yes
+run job=HeiseV11 level=Incremental yes
+run job=HeiseV12 level=Incremental yes
+run job=HeiseV13 level=Incremental yes
+run job=HeiseV14 level=Incremental yes
+run job=HeiseV15 level=Incremental yes
+run job=HeiseV16 level=Incremental yes
+run job=HeiseV17 level=Incremental yes
+run job=HeiseV18 level=Incremental yes
+run job=HeiseV19 level=Incremental yes
+run job=HeiseV20 level=Incremental yes
+wait
+list volumes
+messages
+END_OF_DATA
+
+# Run Backup Jobs
+run_bconsole
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@output /dev/null
+messages
+@$out ${cwd}/tmp/log1.out
+@#setdebug level=100 storage
+run job=HeiseV01 level=VirtualFull yes
+run job=HeiseV02 level=VirtualFull yes
+run job=HeiseV03 level=VirtualFull yes
+run job=HeiseV04 level=VirtualFull yes
+run job=HeiseV05 level=VirtualFull yes
+run job=HeiseV06 level=VirtualFull yes
+run job=HeiseV07 level=VirtualFull yes
+run job=HeiseV08 level=VirtualFull yes
+run job=HeiseV09 level=VirtualFull yes
+run job=HeiseV10 level=VirtualFull yes
+run job=HeiseV11 level=VirtualFull yes
+run job=HeiseV12 level=VirtualFull yes
+run job=HeiseV13 level=VirtualFull yes
+run job=HeiseV14 level=VirtualFull yes
+run job=HeiseV15 level=VirtualFull yes
+run job=HeiseV16 level=VirtualFull yes
+run job=HeiseV17 level=VirtualFull yes
+run job=HeiseV18 level=VirtualFull yes
+run job=HeiseV19 level=VirtualFull yes
+run job=HeiseV20 level=VirtualFull yes
+wait
+sql
+select pool.name as poolname,volumename,volstatus,volbytes,voljobs,lastwritten from Pool,Media where Pool.PoolId=Media.MediaId order by poolname,volumename;
+
+list jobs
+messages
+END_OF_DATA
+
+# Run Virtual Full Jobs
+run_bconsole
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@output /dev/null
+messages
+@$out ${cwd}/tmp/log2.out
+restore client=HeiseV20-fd where=$tmp/bacula-restores select all done yes
+wait
+messages
+END_OF_DATA
+
+# Do restore
+run_bconsole
+sleep 2
+stop_bacula
+
+check_two_logs
+check_restore_tmp_build_diff
+end_test
