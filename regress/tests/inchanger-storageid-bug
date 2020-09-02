@@ -1,0 +1,99 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Run backups with dummy tape driver
+# This test setups an Autochanger with 80 slots
+# and 5 drives (3 LTO3 and 2 LTO1)
+#
+# USE_VTAPE=yes
+ 
+
+TestName="inchanger-storageid-bug"
+JobName=backup
+. scripts/functions
+
+require_vtape
+
+scripts/cleanup
+scripts/copy-tape-confs
+cp $rscripts/bacula-dir-vtape2.conf $conf/bacula-dir.conf
+cp $rscripts/bacula-sd-vtape.conf $conf/bacula-sd.conf
+scripts/prepare-fake-autochanger
+
+echo "${cwd}/build/po" >${cwd}/tmp/file-list
+
+$bperl -e "add_attribute('$conf/bacula-dir.conf', 'MaxWaitTime', '10sec', 'Job')"
+
+start_test
+
+clientname=`awk '/Name = .*-fd/ { if (!ok) { print $3 ; ok=1 } }' bin/bacula-dir.conf`
+
+# Catalog record for cleaning tape "CLN01" successfully created.
+# CLN01      | Cleaning
+
+# Write out bconsole commands
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@$out /dev/null
+setdebug level=50 dir trace=1
+messages
+@$out $tmp/log6.out
+label barcodes pool=Scratch slots=1-4 storage=LTO3 drive=0
+yes
+messages
+list volumes
+@$out ${cwd}/tmp/log1.out
+run storage=LTO3_0 job=NightlySave  pool=Inc     yes
+run storage=LTO3_0 job=NightlySave2 pool=Full    yes
+run storage=LTO3_0 job=NightlySave1 pool=Default yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bacula
+
+# test update slots
+# remove volume vol1 from autochanger
+grep -v vol1 $working/ach/barcodes > $tmp/1
+cp $tmp/1 $working/ach/barcodes
+mv $working/ach/slot1 $working/ach/slot1.dis
+
+# With SharedStorage=yes it will use vol4, with SharedStorage=no, it will ask
+# to load vol1 and fail
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@$out $tmp/log3.out
+update slots=1-4 storage=LTO3 drive=0
+llist volumes=vol1
+@$out $tmp/log4.out
+@# Using the last drive used, it will work
+update slots=1-4 storage=LTO3_0 drive=0
+llist volumes=vol1
+quit
+END_OF_DATA
+
+touch $tmp/log2.out
+
+run_bconsole
+check_for_zombie_jobs storage=LTO3 client=$clientname
+
+stop_bacula
+
+check_two_logs
+
+
+grep "inchanger: 0" $tmp/log3.out > /dev/null
+if [ $? != 0 ]; then
+    print_debug "ERROR bad inchanger status after update slots in $tmp/log3.out"
+    estat=1
+fi
+
+grep "inchanger: 0" $tmp/log4.out > /dev/null
+if [ $? != 0 ]; then
+    print_debug "ERROR bad inchanger status after update slots"
+    estat=1
+fi
+
+end_test
