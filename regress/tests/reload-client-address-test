@@ -1,5 +1,8 @@
 #!/bin/sh
 #
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
 TestName="reload-client-address-test"
 JobName=backup
 . scripts/functions
