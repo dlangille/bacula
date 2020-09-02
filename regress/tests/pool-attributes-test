@@ -45,7 +45,7 @@ run_bacula
 
 $bperl -e "add_attribute('$conf/bacula-dir.conf', 'CacheRetention', '30', 'Pool', 'File')"
 $bperl -e "add_attribute('$conf/bacula-dir.conf', 'CacheRetention', '40', 'Pool', 'Default')"
-$bperl -e "add_attribute('$conf/bacula-sd.conf', 'AutoLabel', 'yes', 'Device')"
+$bperl -e "add_attribute('$conf/bacula-sd.conf', 'LabelMedia', 'yes', 'Device')"
 
 
 cat <<END_OF_DATA >$tmp/bconcmds
