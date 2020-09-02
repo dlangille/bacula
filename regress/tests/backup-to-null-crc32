@@ -1,0 +1,96 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Run a simple backup of the Bacula build directory 
+#   to /dev/null Of course, it's not possible to restore ;-)
+#
+# Can be monitored with "perf top"
+# 
+TestName="backup-to-null-crc32"
+JobName=backuptonull
+
+
+. scripts/functions
+
+# Not compatible with a backup to /dev/null
+unset FORCE_DEDUP
+unset FORCE_ALIGNED
+export REGRESS_CHECK_CORRUPTION=no
+export CHECK_JOBMEDIA=0
+
+scripts/cleanup
+scripts/copy-fifo-confs
+
+echo "${cwd}/tmp/bigsparse" >${cwd}/tmp/file-list
+dd if=/dev/zero of=${cwd}/tmp/bigsparse count=1 bs=1024 seek=32914560
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "LabelFormat", "vol", "Pool")'
+$bperl -e 'add_attribute("$conf/bacula-fd.conf", "CommCompression", "no", "FileDaemon")'
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "SpoolData", "no", "Job")'
+
+# cut off MD5 signature, limiting factor on the FD
+sed -i s/signature=MD5// $conf/bacula-dir.conf
+
+change_jobname NightlySave $JobName
+rm -f ${cwd}/tmp/log1.out ${cwd}/tmp/log2.out
+start_test
+
+# Write out bconsole commands
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@$out /dev/null
+messages
+@$out ${cwd}/tmp/log.out
+run level=full job=$JobName yes
+@sleep 5
+status storage=Dummy
+@sleep 5
+status client
+@sleep 5
+status client
+@sleep 5
+status client
+@sleep 5
+status client
+@sleep 5
+status client
+@sleep 5
+status client
+@sleep 5
+status client
+wait
+messages
+quit
+END_OF_DATA
+
+run_bacula
+check_for_zombie_jobs storage=Dummy
+stop_bacula
+
+mv $tmp/log.out $tmp/log1.out
+
+$bperl -e 'add_attribute("$conf/bacula-sd.conf", "BlockChecksum", "no", "Device")'
+
+run_bacula
+check_for_zombie_jobs storage=Dummy
+stop_bacula
+
+mv $tmp/log.out $tmp/log2.out
+
+grep "^  Termination: *Backup OK" ${cwd}/tmp/log1.out 2>&1 >/dev/null
+bstat=$?
+grep "^  Termination: *Backup OK" ${cwd}/tmp/log2.out 2>&1 >/dev/null
+estat=$?
+
+echo "With crc32"
+grep "Rate:" ${cwd}/tmp/log1.out
+echo "Without crc32"
+grep "Rate:" ${cwd}/tmp/log2.out
+
+# not yet implemented
+dstat=0
+rstat=0
+zstat=0
+estat=0
+
+end_test
