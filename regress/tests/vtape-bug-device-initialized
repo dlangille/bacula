@@ -1,0 +1,89 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Run backups with dummy tape driver
+# Try to reproduce a bug where the device stays "being initialized"
+#
+# TAPE_DRIVE="$cwd/working/ach/drive0"
+# TAPE_DRIVE1="$cwd/working/ach/drive0"
+# AUTOCHANGER="$cwd/working/ach/conf"
+# USE_VTAPE=yes
+# AUTOCHANGER_SCRIPT=disk-changer
+# 
+
+TestName="vtape-bug-device-initialized"
+JobName=backup
+. scripts/functions
+
+require_vtape
+
+scripts/cleanup
+scripts/copy-tape-confs
+cp $rscripts/bacula-dir-vtape.conf $conf/bacula-dir.conf
+cp $rscripts/bacula-sd-vtape.conf $conf/bacula-sd.conf
+scripts/prepare-fake-autochanger
+
+echo "${cwd}/build/po" >${cwd}/tmp/file-list
+
+start_test
+
+clientname=`awk '/Name = .*-fd/ { if (!ok) { print $3 ; ok=1 } }' bin/bacula-dir.conf`
+
+# Catalog record for cleaning tape "CLN01" successfully created.
+# CLN01      | Cleaning
+
+# Write out bconsole commands
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@$out /dev/null
+messages
+@$out ${cwd}/tmp/log3.out
+label barcodes pool=Inc slots=1 storage=LTO3 drive=0
+yes
+messages
+list volumes
+@$out ${cwd}/tmp/log1.out
+run storage=LTO3 level=full job=NightlySave  pool=Inc     yes
+wait
+messages
+update volume=vol1 pool=Full
+status storage
+setdebug level=400 trace=1 storage
+run storage=LTO3 level=full job=NightlySave  pool=Inc     yes
+@sleep 5
+status storage
+messages
+wait
+messages
+quit
+END_OF_DATA
+
+run_bacula
+
+touch ${cwd}/build/po/*.po
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@$out ${cwd}/tmp/log1.out
+run storage=LTO3 job=NightlySave pool=Inc  yes
+wait
+messages
+@$out ${cwd}/tmp/log2.out  
+@# 
+@# now do a restore
+@#
+restore client=$clientname where=${cwd}/tmp/bacula-restores select all done
+yes
+wait
+messages
+wait
+messages
+END_OF_DATA
+
+run_bconsole
+
+stop_bacula
+
+check_two_logs
+
+end_test
