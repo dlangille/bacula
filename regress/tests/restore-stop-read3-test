@@ -1,0 +1,133 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Run two simple backups of the Bacula build directory
+#   then restore the first one and see if we read too much
+#   data
+# 1) run a full backup
+# 2) run a 2nd full backup on the same volume
+# 3) run an incremental backup on the same volume
+# 4) run a 3rd full backup on the same volume
+# 5) run an incremental backup on a new volume
+# 6) run a 4th full backup on the same new volume
+# 7) restore the first full backup
+# 8) see in traces if we stopped at the end of the first backup
+#
+TestName="restore-stop-read3-test"
+JobName=backup
+. scripts/functions
+
+scripts/cleanup
+scripts/copy-confs
+
+require_disk
+
+#
+# Zap out any schedule in default conf file so that
+#  it doesn't start during our test
+#
+outf="$tmp/sed_tmp"
+echo "s%  Schedule =%# Schedule =%g" >${outf}
+cp $scripts/bacula-dir.conf $tmp/1
+sed -f ${outf} $tmp/1 >$scripts/bacula-dir.conf
+
+$bperl -e "add_attribute('$conf/bacula-sd.conf', 'MaximumFileSize', '10MB', 'Device')"
+
+change_jobname BackupClient1 $JobName
+start_test
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out /dev/null
+messages
+@$out $tmp/log1.out
+label volume=TestVolume001 storage=File1 pool=File slot=1 drive=0
+run job=$JobName level=full yes
+wait
+messages
+run job=$JobName level=full yes
+wait
+messages
+delete jobid=2
+@exec "touch $cwd/build/po/fi.po"
+@exec "touch $cwd/build/po/nl.po"
+run job=$JobName yes
+wait
+messages
+run job=$JobName level=full yes
+wait
+messages
+delete jobid=4
+update volume=TestVolume001 volstatus=Used
+label volume=TestVolume002 storage=File1 pool=File slot=2 drive=0
+@exec "touch $cwd/build/po/fr.po"
+@exec "touch $cwd/build/po/de.po"
+run job=$JobName yes
+wait
+messages
+run job=$JobName level=full yes
+wait
+messages
+run job=$JobName level=full yes
+wait
+messages
+delete jobid=6,7
+END_OF_DATA
+
+run_bacula
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out $tmp/log2.out  
+@# 
+@# now do a restore
+@#
+setdebug level=500 trace=1 storage=File1
+restore where=$tmp/bacula-restores fileset="Full Set" select all done yes
+wait
+messages
+setdebug level=0 trace=0 storage=File1
+quit
+END_OF_DATA
+
+run_bconsole
+
+check_for_zombie_jobs storage=File1
+stop_bacula
+
+# looking for zog8-sd: dircmd.c:1243-3 VolAddr=99993804-100365372
+eaddr=`awk -F '-' '/Volume="TestVolume001"/ { take=1 } /Volume="TestVolume002"/ { take=0 } /VolAddr=/ { if (take) { ret=$4 } } END { print ret }' $working/*trace`
+
+# zog8-sd: match_bsr.c:674-3 match_voladdr: saddr=99993804 eaddr=100365372 recaddr=200358958 sfile=0 efile=0 recfile=0
+eaddrseen=`awk '/match_volume=TestVolume001/ { take=1 } /match_volume=TestVolume002/ { take=0 } /match_voladdr: saddr=/ { gsub(/recaddr=/, "", $6); if (take) { ret=$6 } } END { print ret}' $working/*trace` 
+
+eaddrmax=$(($eaddr + $eaddr/2))
+
+print_debug "eaddr=$eaddr eaddrseen=$eaddrseen"
+
+if [ "$eaddrseen" -gt "$eaddrmax" ]; then
+    print_debug "ERROR: The restore process read too much data should stop at eaddr=$eaddr, read eaddrseen=$eaddrseen on TestVolume001"
+    estat=1
+fi
+
+# same thing for volume002
+
+# looking for zog8-sd: dircmd.c:1243-3 VolAddr=99993804-100365372
+eaddr=`awk -F '-' '/Volume="TestVolume002"/ { take=1 } /VolAddr=/ { if (take) { ret=$4 } } END { print ret }' $working/*trace`
+
+# zog8-sd: match_bsr.c:674-3 match_voladdr: saddr=99993804 eaddr=100365372 recaddr=200358958 sfile=0 efile=0 recfile=0
+eaddrseen=`awk '/match_volume=TestVolume002/ { take=1 } /match_voladdr: saddr=/ { gsub(/recaddr=/, "", $6); if (take) { ret=$6 } } END { print ret}' $working/*trace` 
+
+eaddrmax=$(($eaddr + $eaddr/2))
+
+print_debug "eaddr=$eaddr eaddrseen=$eaddrseen"
+
+if [ "$eaddrseen" -gt "$eaddrmax" ]; then
+    print_debug "ERROR: The restore process read too much data should stop at eaddr=$eaddr, read eaddrseen=$eaddrseen on TestVolume002"
+    estat=1
+fi
+
+
+
+check_two_logs
+end_test
