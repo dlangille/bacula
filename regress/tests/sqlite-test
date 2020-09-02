@@ -1,0 +1,111 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# The test will test the usea module with the catalog restrictions.
+# The source code must be compiled with the --enable-usea and the license-key
+# code.
+#
+TestName="sqlite-test"
+JobName=backup
+. scripts/functions
+
+if [ x$WHICHDB != x"--with-sqlite3" ]; then
+    exit 0
+fi
+
+if [ x$USEA != x"--enable-usea" ]; then
+    exit 0
+fi
+
+scripts/cleanup
+scripts/copy-confs
+
+#
+# Zap out any schedule in default conf file so that
+#  it doesn't start during our test
+#
+outf="$tmp/sed_tmp"
+echo "s%  Schedule =%# Schedule =%g" >${outf}
+cp $scripts/bacula-dir.conf $tmp/1
+sed -f ${outf} $tmp/1 >$scripts/bacula-dir.conf
+
+T=`expr 35*60*60*24`
+change_jobname BackupClient1 $JobName
+start_test
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@output /dev/null
+messages
+@$out $tmp/log1.out
+setdebug level=100 storage=File1
+label volume=TestVolume001 storage=File1 pool=File drive=0 slot=0
+run job=$JobName yes
+wait
+messages
+@# 
+@# now do a restore
+@#
+@$out $tmp/log2.out  
+restore where=$tmp/bacula-restores select all done
+yes
+wait
+messages
+@exec "cp $working/log $working/log.old"
+@$out $tmp/tmp3.out
+sql
+UPDATE Job set JobTDate=JobTDate - $T;
+
+@exec "$bin/bacula-dir -t $conf/bacula-dir.conf"
+@$out $tmp/tmp4.out
+sql
+UPDATE Job set JobTDate=JobTDate + $T;
+
+@exec "$bin/bacula-dir -t $conf/bacula-dir.conf"
+@$out $tmp/tmp5.out
+sql
+UPDATE Media set LastWritten='2010-01-01 01:02:00';
+
+@exec "$bin/bacula-dir -t $conf/bacula-dir.conf"
+@$out $tmp/tmp6.out
+sql
+UPDATE Media set LastWritten=FirstWritten;
+
+@exec "$bin/bacula-dir -t $conf/bacula-dir.conf"
+quit
+END_OF_DATA
+
+run_bacula
+check_for_zombie_jobs storage=File1
+stop_bacula
+
+
+grep "Could not open Catalog" $tmp/tmp3.out > /dev/null
+if [ $? != 0 ]; then
+    print_debug "ERROR: Can't find error in $tmp/tmp3.out"
+    estat=1
+fi
+
+grep "Could not open Catalog" $tmp/tmp4.out > /dev/null
+if [ $? = 0 ]; then
+    print_debug "ERROR: Should not find error in $tmp/tmp4.out"
+    estat=1
+fi
+
+grep "Could not open Catalog" $tmp/tmp5.out > /dev/null
+if [ $? != 0 ]; then
+    print_debug "ERROR: Can't find error in $tmp/tmp5.out"
+    estat=1
+fi
+
+grep "Could not open Catalog" $tmp/tmp6.out > /dev/null
+if [ $? = 0 ]; then
+    print_debug "ERROR: Should not find error in $tmp/tmp6.out"
+    estat=1
+fi
+
+cp -f $working/log.old $working/log
+check_two_logs
+check_restore_diff
+end_test
