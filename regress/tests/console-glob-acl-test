@@ -1,0 +1,389 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Run a couple of tests with bconsole and console extended ACL
+#
+TestName="console-glob-acl-test"
+JobName=backup
+. scripts/functions
+
+scripts/cleanup
+scripts/copy-test-confs
+
+#
+# Zap out any schedule in default conf file so that
+#  it doesn't start during our test
+#
+outf="$tmp/sed_tmp"
+echo "s%  Schedule =%# Schedule =%g" >${outf}
+cp $scripts/bacula-dir.conf $tmp/1
+sed -f ${outf} $tmp/1 >$scripts/bacula-dir.conf
+
+echo "$cwd/build/po" > $tmp/file-list
+
+change_jobname NightlySave $JobName
+
+$bperl \
+    -e "extract_resource('$conf/bacula-dir.conf', 'Client', '$HOST-fd')" \
+    > $tmp/1
+
+sed "s/$HOST-fd/C_1_client1-fd/" $tmp/1 >> $conf/bacula-dir.conf
+sed "s/$HOST-fd/C_1_client2-fd/" $tmp/1 >> $conf/bacula-dir.conf
+sed "s/$HOST-fd/C_1_client3-fd/" $tmp/1 >> $conf/bacula-dir.conf
+sed "s/$HOST-fd/Cx1xclient2-fd/" $tmp/1 >> $conf/bacula-dir.conf
+sed "s/$HOST-fd/C_2_client1-fd/" $tmp/1 >> $conf/bacula-dir.conf
+sed "s/$HOST-fd/C_2_client2-fd/" $tmp/1 >> $conf/bacula-dir.conf
+sed "s/$HOST-fd/C_2_client3-fd/" $tmp/1 >> $conf/bacula-dir.conf
+sed "s/$HOST-fd/C_3_client1-fd/" $tmp/1 >> $conf/bacula-dir.conf
+sed "s/$HOST-fd/C_3_client2-fd/" $tmp/1 >> $conf/bacula-dir.conf
+sed "s/$HOST-fd/C_3_client3-fd/" $tmp/1 >> $conf/bacula-dir.conf
+
+$bperl \
+    -e "extract_resource('$conf/bacula-dir.conf', 'Job', '$JobName')" \
+    > $tmp/1
+
+sed "s/$JobName/J_1_10/" $tmp/1 >> $conf/bacula-dir.conf
+sed "s/$JobName/J_1_11/" $tmp/1 >> $conf/bacula-dir.conf
+sed "s/$JobName/J_2_10/" $tmp/1 >> $conf/bacula-dir.conf
+sed "s/$JobName/J_2_11/" $tmp/1 >> $conf/bacula-dir.conf
+sed "s/$JobName/J_3_10/" $tmp/1 >> $conf/bacula-dir.conf
+sed "s/$JobName/J_3_11/" $tmp/1 >> $conf/bacula-dir.conf
+
+cat <<EOF >> $conf/bacula-dir.conf
+Pool {
+  Name = Test
+  Pool Type = Backup
+  Recycle = yes                       # Bacula can automatically recycle Volumes
+  AutoPrune = yes                     # Prune expired volumes
+  Volume Retention = 365d             # one year
+  Label Format = Test
+}
+Pool {
+  Name = P_1
+  Pool Type = Backup
+  Recycle = yes                       # Bacula can automatically recycle Volumes
+  AutoPrune = yes                     # Prune expired volumes
+  Volume Retention = 365d             # one year
+  Label Format = P_1
+}
+Pool {
+  Name = P_2
+  Pool Type = Backup
+  Recycle = yes                       # Bacula can automatically recycle Volumes
+  AutoPrune = yes                     # Prune expired volumes
+  Volume Retention = 365d             # one year
+  Label Format = P_2
+}
+Pool {
+  Name = P_3
+  Pool Type = Backup
+  Recycle = yes                       # Bacula can automatically recycle Volumes
+  AutoPrune = yes                     # Prune expired volumes
+  Volume Retention = 365d             # one year
+  Label Format = P_3
+}
+Console {
+  Name = cons1
+  Password = xxx
+  JobAcl    = J_1_*, RestoreFiles
+  ClientAcl = C_1_*
+  RestoreClientAcl = test-rst-fd
+  BackupClientAcl = test-bkp-fd  
+  PoolAcl   = P_1
+  CatalogAcl  = *all*
+  FileSetAcl  = *all*
+  CommandAcl  = *all*
+  StorageAcl  = *all*
+  WhereAcl = $tmp/test-bkp-fd-restore, $tmp/test1-fd-restore, $tmp/test-rst-fd-restore-1, $tmp/test-rst-fd-restore-2
+  DirectoryAcl = *all*
+  UserIdAcl = *all*
+}
+Console {
+  Name = cons2
+  Password = xxx
+  JobAcl    = J_2_*, RestoreFiles
+  ClientAcl = C_2_*
+  PoolAcl   = P_2
+  CatalogAcl  = *all*
+  FileSetAcl  = *all*
+  CommandAcl  = *all*
+  StorageAcl  = *all*
+  WhereAcl = *all*
+  DirectoryAcl = *all*
+  UserIdAcl = *all*
+}
+Console {
+  Name = cons3
+  Password = xxx
+  JobAcl    = J_[12]_*, RestoreFiles
+  ClientAcl = C_[12]_*
+  PoolAcl   = P_[12]
+  CatalogAcl  = *all*
+  FileSetAcl  = *all*
+  CommandAcl  = *all*
+  StorageAcl  = *all*
+  WhereAcl = *all*
+  DirectoryAcl = *all*
+  UserIdAcl = *all*
+}
+Console {
+  Name = cons1-all
+  Password = xxx
+  JobAcl    = *all*
+  ClientAcl = C_1_*
+  PoolAcl   = P_[12]
+  CatalogAcl  = *all*
+  FileSetAcl  = *all*
+  CommandAcl  = *all*
+  StorageAcl  = *all*
+  WhereAcl = *all*
+  DirectoryAcl = *all*
+  UserIdAcl = *all*
+}
+EOF
+
+cat <<EOF >> $tmp/bconsole.conf2
+Console {
+  Name = restricted
+  Password = xxx
+}
+EOF
+
+start_test
+
+cat <<EOF > $tmp/bconcmds
+@output /dev/null
+messages
+@$out $tmp/log1.out
+label volume=TestVolume001 pool=Default storage=File
+label volume=TestVolume002 pool=Test storage=File
+run job=Simple level=full pool=Test client=$HOST-fd yes
+run job=$JobName level=full client=$CLIENT yes
+wait
+messages
+EOF
+
+sed 's/Password.*/Password = xxx/' $conf/bconsole.conf >> $tmp/bconsole.conf2
+
+for i in 1 2 3 1-all
+do
+    sed "s/restricted/cons$i/" $tmp/bconsole.conf2 > $tmp/bconsole.conf.$i
+done
+
+# start the director
+run_bacula
+
+for i in 1 2
+do
+    cat <<EOF > $tmp/bconcmds
+@##############################################
+@$out $tmp/log1.out
+run job=J_${i}_10 level=full pool=P_${i} client=C_${i}_client1-fd yes
+@sleep 2
+status client=C_${i}_client${i}-fd
+wait   
+messages
+run job=J_${i}_11 level=full pool=P_${i} client=C_${i}_client2-fd yes
+wait
+messages
+restore select all done yes where=$tmp/test${i}-fd-restore client=C_${i}_client1-fd
+wait
+messages
+@output $tmp/list.${i}.jobs
+list jobs
+@output $tmp/list.${i}.clients
+list clients
+@output $tmp/list.${i}.pools
+list pools
+@output $tmp/list.${i}.dotjobs
+.jobs
+@output $tmp/list.${i}.dotclients
+.clients
+@output $tmp/list.${i}.dotpools
+.pools
+@output $tmp/list.${i}.bvfs_get_jobids_client1-fd
+.bvfs_get_jobids client=C_1_client1-fd
+@output $tmp/list.${i}.bvfs_get_jobs_client1-fd
+.bvfs_get_jobs client=C_1_client1-fd
+@output $tmp/list.${i}.bvfs_get_jobs_client1-fd
+.bvfs_get_jobs client=C_1_client1-fd
+@output $tmp/list.${i}.bvfs_get_jobids_client2-fd
+.bvfs_get_jobids client=C_2_client2-fd
+@output $tmp/list.${i}.bvfs_get_jobs_client1-fd
+.bvfs_get_jobs client=C_2_client2-fd
+@output $tmp/list.${i}.bvfs_get_jobs_client1-fd
+.bvfs_get_jobs client=C_2_client2-fd
+quit
+EOF
+    $bin/bconsole -c $tmp/bconsole.conf.$i < $tmp/bconcmds
+done
+
+cat <<EOF > $tmp/bconcmds
+@##############################################
+@$out $tmp/log1.out
+run job=J_1_10 level=full pool=P_1 client=C_1_client1-fd yes
+@sleep 2
+status client=C_2_client1-fd
+wait   
+messages
+run job=J_2_10 level=full pool=P_2 client=C_2_client2-fd yes
+wait
+messages
+restore select all done yes where=$tmp/bacula-restore client=C_1_client1-fd
+wait
+messages
+@output $tmp/list.3.jobs
+list jobs
+@output $tmp/list.3.clients
+list clients
+@output $tmp/list.3.pools
+list pools
+@output $tmp/list.3.dotjobs
+.jobs
+@output $tmp/list.3.dotclients
+.clients
+@output $tmp/list.3.dotpools
+.pools
+@output $tmp/list.3.bvfs_get_jobids_client1-fd
+.bvfs_get_jobids client=C_1_client1-fd
+@output $tmp/list.3.bvfs_get_jobs_client1-fd
+.bvfs_get_jobs client=C_1_client1-fd
+@output $tmp/list.3.bvfs_get_jobs_client1-fd
+.bvfs_get_jobs client=C_1_client1-fd
+@output $tmp/list.3.bvfs_get_jobids_client2-fd
+.bvfs_get_jobids client=C_2_client2-fd
+@output $tmp/list.3.bvfs_get_jobs_client2-fd
+.bvfs_get_jobs client=C_2_client2-fd
+@output $tmp/list.3.bvfs_get_jobs_client2-fd
+.bvfs_get_jobs client=C_2_client2-fd
+quit
+EOF
+$bin/bconsole -c $tmp/bconsole.conf.3 < $tmp/bconcmds
+
+cat <<EOF > $tmp/bconcmds
+@##############################################
+@output $tmp/list.1-all.jobs
+list jobs
+@output $tmp/list.1-all.clients
+list clients
+@output $tmp/list.1-all.pools
+list pools
+@output $tmp/list.1-all.dotjobs
+.jobs
+@output $tmp/list.1-all.dotclients
+.clients
+@output $tmp/list.1-all.dotpools
+.pools
+@output $tmp/list.1-all.bvfs_get_jobids_client1-fd
+.bvfs_get_jobids client=C_1_client1-fd
+@output $tmp/list.1-all.bvfs_get_jobs_client1-fd
+.bvfs_get_jobs client=C_1_client1-fd
+@output $tmp/list.1-all.bvfs_get_jobs_client1-fd
+.bvfs_get_jobs client=C_1_client1-fd
+@output $tmp/list.1-all.bvfs_get_jobids_client2-fd
+.bvfs_get_jobids client=C_2_client2-fd
+@output $tmp/list.1-all.bvfs_get_jobs_client2-fd
+.bvfs_get_jobs client=C_2_client2-fd
+@output $tmp/list.1-all.bvfs_get_jobs_client2-fd
+.bvfs_get_jobs client=C_2_client2-fd
+quit
+EOF
+$bin/bconsole -c $tmp/bconsole.conf.1-all < $tmp/bconcmds
+
+if grep Cx1xclient2-fd $tmp/list.1.clients > /dev/null;
+then
+    print_debug "ERROR: Should not find Cx1xclient2-fd in $tmp/list.1.clients"
+    estat=1
+fi
+
+for i in 1 2
+do
+    mkdir -p $tmp/tmp-$i
+    awk '/^\| +[0-9]/ {total++} END {print total}' $tmp/list.$i.clients > $tmp/tmp-$i/nb-list-clients
+    nb=`cat $tmp/tmp-$i/nb-list-clients`
+    if [ "$nb" != 3 ]; then
+        print_debug "ERROR: Should find 2 entries in $tmp/list.$i.clients"
+        estat=1
+    fi
+
+    awk '/^\| +[0-9]/ {total++} END {print total}' $tmp/list.$i.pools > $tmp/tmp-$i/nb-list-pools
+    nb=`cat $tmp/tmp-$i/nb-list-pools`
+    if [ "$nb" != 1 ]; then
+        print_debug "ERROR: Should find 1 entry in $tmp/list.$i.pools"
+        estat=1
+    fi
+
+    awk '/^\| +[0-9]/ {total++} END {print total}' $tmp/list.$i.jobs > $tmp/tmp-$i/nb-list-jobs
+    nb=`cat $tmp/tmp-$i/nb-list-jobs`
+    if [ "$nb" != 2 ]; then
+        print_debug "ERROR: Should find 2 entries in $tmp/list.$i.jobs"
+        estat=1
+    fi
+done
+
+# Console 1 has access to the client 1
+awk '/^[0-9]/ {total++} END {print total}' $tmp/list.1.bvfs_get_jobids_client1-fd > $tmp/tmp-1/nb-bvfs_get_jobids_client1-fd
+nb=`cat $tmp/tmp-1/nb-bvfs_get_jobids_client1-fd`
+if [ "$nb" != 1 ]; then
+    print_debug "ERROR: Should find 1 entry in $tmp/list.1.bvfs_get_jobids_client1-fd (not $nb)"
+    estat=1
+fi
+
+awk '/^[0-9]/ {total++} END {print total}' $tmp/list.1.bvfs_get_jobids_client2-fd > $tmp/tmp-1/nb-bvfs_get_jobids_client2-fd
+nb=`cat $tmp/tmp-1/nb-bvfs_get_jobids_client2-fd`
+if [ "$nb" != "" ]; then
+    print_debug "ERROR: Should find 0 entry in $tmp/list.1.bvfs_get_jobids_client2-fd (not $nb)"
+    estat=1
+fi
+
+# Console 2 has access to the client 2
+awk '/^[0-9]/ {total++} END {print total}' $tmp/list.2.bvfs_get_jobids_client1-fd > $tmp/tmp-2/nb-bvfs_get_jobids_client1-fd
+nb=`cat $tmp/tmp-2/nb-bvfs_get_jobids_client1-fd`
+if [ "$nb" != "" ]; then
+    print_debug "ERROR: Should find 0 entry in $tmp/list.2.bvfs_get_jobids_client1-fd (not $nb)"
+    estat=1
+fi
+
+awk '/^[0-9]/ {total++} END {print total}' $tmp/list.2.bvfs_get_jobids_client2-fd > $tmp/tmp-2/nb-bvfs_get_jobids_client2-fd
+nb=`cat $tmp/tmp-2/nb-bvfs_get_jobids_client2-fd`
+if [ "$nb" != 1 ]; then
+    print_debug "ERROR: Should find 1 entry in $tmp/list.2.bvfs_get_jobids_client2-fd (not $nb)"
+    estat=1
+fi
+
+mkdir -p $tmp/tmp-3
+# Console 3 has access to the two clients
+awk '/^[0-9]/ {total++} END {print total}' $tmp/list.3.bvfs_get_jobids_client1-fd > $tmp/tmp-3/nb-bvfs_get_jobids_client1-fd
+nb=`cat $tmp/tmp-3/nb-bvfs_get_jobids_client1-fd`
+if [ "$nb" != 1 ]; then
+    print_debug "ERROR: Should find 1 entry in $tmp/list.3.bvfs_get_jobids_client1-fd (not $nb)"
+    estat=1
+fi
+
+awk '/^[0-9]/ {total++} END {print total}' $tmp/list.3.bvfs_get_jobids_client2-fd > $tmp/tmp-3/nb-bvfs_get_jobids_client2-fd
+nb=`cat $tmp/tmp-3/nb-bvfs_get_jobids_client2-fd`
+if [ "$nb" != 1 ]; then
+    print_debug "ERROR: Should find 1 entry in $tmp/list.3.bvfs_get_jobids_client2-fd (not $nb)"
+    estat=1
+fi
+
+mkdir -p $tmp/tmp-1-all
+# Console 1-all has access to the client 1
+awk '/^[0-9]/ {total++} END {print total}' $tmp/list.1-all.bvfs_get_jobids_client1-fd > $tmp/tmp-1-all/nb-bvfs_get_jobids_client1-fd
+nb=`cat $tmp/tmp-1-all/nb-bvfs_get_jobids_client1-fd`
+if [ "$nb" != 1 ]; then
+    print_debug "ERROR: Should find 1 entry in $tmp/list.1-all.bvfs_get_jobids_client1-fd (not $nb)"
+    estat=1
+fi
+
+awk '/^[0-9]/ {total++} END {print total}' $tmp/list.1-all.bvfs_get_jobids_client2-fd > $tmp/tmp-1-all/nb-bvfs_get_jobids_client2-fd
+nb=`cat $tmp/tmp-1-all/nb-bvfs_get_jobids_client2-fd`
+if [ "$nb" != "" ]; then
+    print_debug "ERROR: Should find 0 entry in $tmp/list.1-all.bvfs_get_jobids_client2-fd (not $nb)"
+    estat=1
+fi
+
+stop_bacula
+end_test
