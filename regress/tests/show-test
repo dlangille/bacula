@@ -1,0 +1,143 @@
+#!/bin/bash
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+# Test to compare .jobs and show jobs
+TestName="show-test"
+. scripts/functions
+
+scripts/cleanup
+scripts/copy-test-confs
+cp scripts/win32-bacula-dir.conf bin/bacula-dir.conf
+
+start_test
+
+# Create dummy records to have a large number of resources to test 
+for i in `seq 1 100`; do
+    cat <<EOF >> $conf/bacula-dir.conf
+Console {
+  Name = Console$i
+  Password = xxx
+}
+Client {
+  Name = client$i-fd
+  Address = 127.0.0.1
+  Catalog = MyCatalog
+  Password = "xxx"
+}
+JobDefs {
+  Name = JobDefs$i
+  Type = backup
+}
+Messages {
+  Name = Messages$i
+}
+Job {
+  Name = Job$i
+  Type = backup
+  Level = Incremental
+  Client = client$i-fd
+  FileSet = "FileSet$i"
+  Storage = Storage$i
+  Messages = Messages$i
+  Pool = Pool$i
+}
+Schedule {
+  Name = "Schedule$i"
+  Run = Full 1st sun at 1:05
+}
+Pool {
+  Name = Pool$i
+  Pool Type = Backup
+  Volume Retention = 365d             # one year
+}
+Storage {
+  Name = Storage$i
+  Address = 127.0.0.1
+  SDPort = 8103
+  Password = "xxx"
+  Device = FileStorage
+  Media Type = File
+  Maximum Concurrent Jobs = 4
+}
+FileSet {
+  Name = FileSet$i
+  Include {
+   File = /
+  }
+}
+EOF
+done
+
+touch $tmp/bconcmds
+run_bacula
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@output /dev/null
+gui on
+@$out $tmp/log-all.out
+show all
+quit
+END_OF_DATA
+
+run_bconsole
+
+# .message and .schedule, .consoleare missing, 
+# show console, jobdefs are missing too
+for i in job fileset client pool storage messages schedule; do
+
+    cat <<END_OF_DATA >$tmp/bconcmds
+gui on
+@$out $tmp/log-$i-1.out
+.$i
+@$out $tmp/log-$i-2.out
+show $i
+quit
+END_OF_DATA
+
+    run_bconsole
+    
+    # Number of object defined in the configuration
+    NBOBJ=`grep -i "$i {" $conf/bacula-dir.conf | wc -l`
+
+    # Storage: name=Storage98 address=127.0....
+    NBSHOW=`grep -i "^$i:" $tmp/log-$i-2.out | wc -l`
+
+    # Storage: name=Storage98 address=127.0....
+    NBSHOWALL=`grep -i -E "^$i:" $tmp/log-all.out | wc -l`
+
+    # .jobs
+    NBLIST=`wc -l $tmp/log-$i-1.out | awk '{ print $1}'`
+    NBLIST=`expr $NBLIST - 2`      # remove .jobs and @out
+
+    # json output
+    NBJSON=`$bin/bdirjson -c $conf/bacula-dir.conf -r $i  | grep Name | wc -l`
+
+    if [ $NBOBJ != $NBSHOW ]; then
+        print_debug "ERROR: '$i {' ($NBOBJ) and show $i ($NBSHOW) differ"
+        estat=1
+    fi
+
+    if [ $NBOBJ != $NBSHOWALL ]; then
+        print_debug "ERROR: '$i {' ($NBOBJ) and show all ($NBSHOWALL) differ"
+        estat=1
+    fi
+
+    # .messages and .schedule are not implemented
+    if [ $i != "schedule" -a $i != "messages" -a $i != "console" ]; then
+        if [ $NBLIST != $NBSHOW ]; then
+            print_debug "ERROR: .$i ($NBLIST) and show $i ($NBSHOW) differ"
+            estat=1
+        fi
+    fi
+
+    if [ $NBJSON != $NBSHOW ]; then
+        print_debug "ERROR: bdirjson ($NBJSON) and show $i ($NBSHOW) differ"
+        estat=1
+    fi
+done
+
+
+stop_bacula
+
+end_test
