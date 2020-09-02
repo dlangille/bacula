@@ -1,9 +1,7 @@
-#!/bin/sh
+#!/bin/bash
 #
 # Copyright (C) 2000-2020 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
-#
-
 #
 # Run a simple backup of the Bacula build directory
 #   then restore it.
@@ -28,7 +26,7 @@ change_jobname BackupClient1 $JobName
 start_test
 
 cat <<END_OF_DATA >$tmp/bconcmds
-@$out /dev/null
+@output /dev/null
 messages
 @$out $tmp/log1.out
 setdebug level=4 storage=File1
@@ -84,7 +82,7 @@ messages
 @# now do a restore
 @#
 @$out $tmp/log2.out  
-#setbandwidth client=$CLIENT limit=100
+#setbandwidth client=$CLIENT limit="100 kb/s"
 setdebug level=4 storage=File1
 restore where=$tmp/bacula-restores select all done
 yes
