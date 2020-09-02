@@ -1,0 +1,169 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Do a good number of reload and test MaximumReloadRequests
+#
+TestName="reload-many-test"
+JobName=backup
+. scripts/functions
+
+scripts/cleanup
+scripts/copy-confs
+
+#
+# Zap out any schedule in default conf file so that
+#  it doesn't start during our test
+#
+outf="$tmp/sed_tmp"
+echo "s%  Schedule =%# Schedule =%g" >${outf}
+cp $scripts/bacula-dir.conf $tmp/1
+sed -f ${outf} $tmp/1 >$scripts/bacula-dir.conf
+
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "MaximumReloadRequests", "40", "Director")'
+
+change_jobname BackupClient1 $JobName
+start_test
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out /dev/null
+messages
+@$out $tmp/log1.out
+setdebug level=100 trace=1 dir
+label volume=TestVolume001 storage=File1 pool=File slot=1 drive=0
+setbandwidth limit="100 kb/s" client
+run job=$JobName yes
+@sleep 1
+reload
+reload
+reload
+reload
+run job=$JobName yes
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+run job=$JobName yes
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+run job=$JobName yes
+reload
+reload
+reload
+reload
+reload
+reload
+run job=$JobName yes
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+run job=$JobName yes
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+messages
+@# Should print errros after 40 reload
+@$out $tmp/log2.out
+@exec "sh -c 'cat $tmp/log >> $tmp/log1.out'"
+@exec "cp /dev/null $tmp/log"
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+setbandwidth limit="100000 kb/s" client
+wait
+messages
+@exec "sh -c 'cat $tmp/log >> $tmp/log2.out'"
+@exec "cp /dev/null $tmp/log"
+END_OF_DATA
+
+run_bacula
+
+cat <<END_OF_DATA >$tmp/bconcmds.1
+@sleep 3
+@$out $tmp/log3.out
+status dir
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+messages
+quit
+END_OF_DATA
+
+sed 's/log3.out/log4.out/' $tmp/bconcmds.1 > $tmp/bconcmds.2
+sed 's/log3.out/log5.out/' $tmp/bconcmds.1 > $tmp/bconcmds.3
+
+run_bconsole $tmp/bconcmds.1 &
+run_bconsole $tmp/bconcmds.2 &
+run_bconsole $tmp/bconcmds.3
+
+wait        # wait for first run_bconsole
+wait        # wait for the second run_bconsole
+
+check_for_zombie_jobs storage=File1
+stop_bacula
+
+touch $tmp/log2.out
+
+grep 'Too many .* open reload requests' $tmp/log1.out > /dev/null
+if [ $? = 0 ]; then
+    print_debug "ERROR: should NOT find error on reload request in $tmp/log1.out"
+    estat=1
+fi
+
+grep 'Too many .* open reload requests' $tmp/log2.out > /dev/null
+if [ $? != 0 ]; then
+    print_debug "ERROR: should find error on reload request in $tmp/log2.out"
+    estat=1
+fi
+
+grep 'Too many .* open reload requests' $tmp/log3.out > /dev/null
+if [ $? = 0 ]; then
+    print_debug "ERROR: should NOT find error on reload request after the end of the job $tmp/log3.out"
+    estat=1
+fi
+
+# This part looks to be hard to trig
+# grep 'Already doing a reload request' $tmp/log3.out $tmp/log4.out $tmp/log > /dev/null
+# if [ $? != 0 ]; then
+#     print_debug "ERROR: should find a message about reload conflict"
+#     estat=1
+# fi
+
+end_test
