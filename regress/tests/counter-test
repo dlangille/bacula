@@ -1,0 +1,127 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Do some tests with counters
+#
+#
+TestName="counter-test"
+JobName=counter
+. scripts/functions
+
+scripts/cleanup
+scripts/copy-test-confs
+echo "$cwd/build/po" >${cwd}/tmp/file-list
+
+$bperl -e 'create_counter("$conf/bacula-dir.conf", "MyCounter", Minimum => 10, Maximum => 100)'
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "LabelFormat", "\"Vol\${MyCounter+}\"", "Pool")'
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "MaximumVolumeBytes", "1MB", "Pool")'
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "MaximumReloadRequests", 20000, "Director")'
+
+change_jobname NightlySave $JobName
+start_test
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@output   ${cwd}/tmp/log2.out
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+reload
+END_OF_DATA
+
+run_bacula
+
+cat <<END_OF_DATA >$tmp/bconcmds.1
+@output /dev/null
+messages
+@$out   ${cwd}/tmp/log1.out
+run job=$JobName level=Full Storage=File1 comment="T" spooldata=no yes
+wait
+messages
+@exec "touch $tmp/stop"
+quit
+END_OF_DATA
+
+(
+while ! test -f $tmp/stop
+do
+    run_bconsole > /dev/null
+done
+) &
+
+trap "touch $tmp/stop" EXIT
+
+run_bconsole $tmp/bconcmds.1
+
+wait
+
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "Minimum", 20, "Counter")'
+cat <<END_OF_DATA >$tmp/bconcmds
+@output /dev/null
+messages
+@$out   $tmp/log5.out
+sql
+SELECT * FROM Counters;
+SELECT 'ERR' FROM Counters WHERE MinValue <> 10;
+
+reload
+sql
+SELECT * FROM Counters;
+SELECT 'ERR' FROM Counters WHERE MinValue <> 20 OR CurrentValue <> 20;
+
+run job=$JobName level=Full Storage=File1 comment="T" spooldata=no yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "Minimum", 1, "Counter")'
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "Maximum", 20, "Counter")'
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@output /dev/null
+messages
+@$out   $tmp/log5.out
+sql
+SELECT * FROM Counters;
+SELECT 'ERR',* FROM Counters WHERE MinValue <> 20;
+
+reload
+sql
+SELECT * FROM Counters;
+SELECT 'ERR',* FROM Counters WHERE MinValue <> 1 OR MaxValue <> 20 OR CurrentValue <> 20;
+
+run job=$JobName level=Full Storage=File1 comment="T" spooldata=no yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+
+grep '| *ERR' $tmp/log5.out
+if [ $? -eq 0 ]; then
+    print_debug "ERROR: Found incorrect value for counters after reload"
+    estat=1
+fi
+
+check_for_zombie_jobs storage=File1
+
+stop_bacula
+end_test
