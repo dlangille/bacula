@@ -1,0 +1,89 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Run 4 jobs at the same time
+# Backups are OK but Restore fails with error: Command error with FD msg="rechdr 33 1553787322 111062 2 65536", SD hanging up
+# Use cloud resource with:
+#
+# TruncateCache = AtEndOfJob
+# Upload = EachPart
+
+TestName="cloud-truncate-many-parts-test"
+JobName=concurrent-jobs
+. scripts/functions
+
+copy_test_confs
+
+echo "${cwd}/tmp/largefile" >${cwd}/tmp/file-list
+if test -c /dev/urandom ; then
+# Create 56MB file with random data
+#  echo "Creating a 56MB file with random data ..."
+   dd if=/dev/urandom of=${cwd}/tmp/largefile bs=1024 count=55000 2>&1 1>/dev/null
+else
+#  echo "Creating a 56MB file with bacula-dir data ..."
+   dd if=$bin/bacula-dir of=${cwd}/tmp/1 bs=1024 count=1000 2>&1 1>/dev/null
+   cat ${cwd}/tmp/1 ${cwd}/tmp/1 ${cwd}/tmp/1 ${cwd}/tmp/1 ${cwd}/tmp/1 >${cwd}/tmp/2
+   rm -f ${cwd}/tmp/1
+   cat ${cwd}/tmp/2 ${cwd}/tmp/2 ${cwd}/tmp/2 ${cwd}/tmp/2 ${cwd}/tmp/2 >>${cwd}/tmp/3
+   rm -f ${cwd}/tmp/2
+   cat ${cwd}/tmp/3 ${cwd}/tmp/3 ${cwd}/tmp/3 ${cwd}/tmp/3 ${cwd}/tmp/3 >${cwd}/tmp/largefile
+   rm -f ${cwd}/tmp/3
+fi 
+
+#echo "largefile created"
+
+change_jobname CompressedTest $JobName
+start_test
+
+# TruncateCache = AtEndOfJob
+# Upload = EachPart
+$bperl -e "add_attribute('$conf/bacula-sd.conf', 'TruncateCache', 'AtEndOfJob', 'Cloud')"
+$bperl -e "add_attribute('$conf/bacula-sd.conf', 'Upload', 'EachPart', 'Cloud')"
+$bperl -e "add_attribute('$conf/bacula-sd.conf', 'MaximumDownloadBandwidth', '1Mb/s', 'Cloud')"
+
+
+$bperl -e "add_attribute('$conf/bacula-sd.conf', 'MaximumFileSize', '2MB', 'Device')"
+$bperl -e "add_attribute('$conf/bacula-sd.conf', 'MaximumPartSize', '2MB', 'Device')"
+$bperl -e "add_attribute('$conf/bacula-sd.conf', 'MaximumConcurrentJobs', '10', 'Device')"
+$bperl -e "add_attribute('$conf/bacula-sd.conf', 'MaximumVolumeJobs', 1, 'Pool')"
+#$bperl -e "add_attribute('$conf/bacula-sd.conf', 'MaximumVolumeSize', '2MB', 'Device')"
+$bperl -e "add_attribute('$conf/bacula-dir.conf', 'SpoolData', 'no', 'Job')"
+$bperl -e "add_attribute('$conf/bacula-sd.conf', 'LabelMedia', 'yes', 'Device')"
+$bperl -e "add_attribute('$conf/bacula-dir.conf', 'LabelFormat', 'Vol', 'Pool')"
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@output /dev/null
+messages
+@$out  ${cwd}/tmp/log1.out
+label storage=File volume=TestVolume001
+run job=$JobName level=Full yes
+run job=$JobName level=Full yes
+run job=$JobName level=Full yes
+run job=$JobName level=Full yes
+wait
+messages
+@# 
+@# now do a restore
+@#
+@$out   ${cwd}/tmp/log2.out
+restore where=${cwd}/tmp/bacula-restores select storage=File
+unmark *
+mark *
+done
+yes
+wait
+messages
+@output
+quit
+END_OF_DATA
+
+run_bacula
+check_for_zombie_jobs storage=File
+stop_bacula
+
+check_two_logs
+diff ${cwd}/tmp/largefile  ${cwd}/tmp/bacula-restores${cwd}/tmp/largefile 2>&1 >/dev/null
+dstat=$?
+end_test
