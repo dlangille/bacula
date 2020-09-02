@@ -1,0 +1,78 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Try to reproduce #2012 about reloading the director while a backup is in
+# progress causing duplicate jobs
+#
+TestName="reload-duplicate-test"
+. scripts/functions
+
+require_linux
+scripts/cleanup
+scripts/copy-confs
+
+start_test
+
+# time in one minutes
+WHEN=`date --date="1 min" +%H:%M`
+# nb of secs to wait for the start time
+SLEEP=`date --date="$WHEN:00" +%s`
+NOW=`date +%s`
+
+SLEEP=`expr $SLEEP - $NOW + 10`
+
+print_debug "Will start job at $WHEN, will sleep $SLEEP secs"
+print_debug ""
+
+cat <<EOF >> $conf/bacula-dir.conf
+Schedule {
+  Name = Test
+  Run = Level="Full"  at $WHEN
+}
+EOF
+
+$bperl -e 'set_global_maximum_concurrent_jobs(10)'
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "Schedule", "Test", "Job", "BackupClient1")'
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "MaximumBandwidth", "700kb/s", "Job", "BackupClient1")'
+
+cat <<EOF > $tmp/bconcmds
+@out /dev/null
+message
+EOF
+
+run_bacula
+
+# Do something to reload slowly
+echo '@|"sleep 5"' >> $conf/bacula-dir.conf
+
+sleep $SLEEP
+
+cat <<EOF > $tmp/bconcmds
+@$out $tmp/log1.out
+.status dir running
+@exec date
+@exec "killall -HUP bacula-dir"
+@#reload
+message
+@sleep 20
+message
+.status dir running
+wait
+@$out $tmp/log2.out
+llist jobs
+EOF
+
+run_bconsole
+
+stop_bacula
+
+nb=`grep -i ' jobid:' $tmp/log2.out | wc -l`
+
+if [ "$nb" -ne 1 ]; then
+    print_debug "ERROR: found $nb jobs in the job list instead of 1"
+    estat=1
+fi
+
+end_test
