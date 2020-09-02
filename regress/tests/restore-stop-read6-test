@@ -1,0 +1,118 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Run a simple backup of the Bacula build directory
+#   then restore one file and see if we read too much
+#   data
+#
+# This time, we need to stop after a BSR and seek to the next done
+#
+TestName="restore-stop-read6-test"
+JobName=backup
+. scripts/functions
+
+scripts/cleanup
+scripts/copy-confs
+
+require_disk
+
+#
+# Zap out any schedule in default conf file so that
+#  it doesn't start during our test
+#
+outf="$tmp/sed_tmp"
+echo "s%  Schedule =%# Schedule =%g" >${outf}
+cp $scripts/bacula-dir.conf $tmp/1
+sed -f ${outf} $tmp/1 >$scripts/bacula-dir.conf
+
+$bperl -e "add_attribute('$conf/bacula-sd.conf', 'MaximumFileSize', '10MB', 'Device')"
+$bperl -e "add_attribute('$conf/bacula-dir.conf', 'MaximumVolumeBytes', '500MB', 'Pool')"
+$bperl -e "add_attribute('$conf/bacula-dir.conf', 'Label Format', 'Vol2-', 'Pool', 'Default')"
+$bperl -e "add_attribute('$conf/bacula-dir.conf', 'FileSet', 'FewFiles', 'Job', 'BackupClient1')"
+
+cat >> $conf/bacula-dir.conf <<EOF
+FileSet {
+  Name = "FewFiles"
+  Include {
+    File = "$cwd/build/0.dat"
+    File = "$cwd/build/1.dat"
+    File = "$cwd/build/11.dat"
+    File = "$cwd/build/12.dat"
+    File = "$cwd/build/13.dat"
+    File = "$cwd/build/14.dat"
+    File = "$cwd/build/2.dat"
+    File = "$cwd/build/3.dat"
+    File = "$cwd/build/4.dat"
+    File = "$cwd/build/po"
+    File = "$cwd/build/5.dat"
+    File = "$cwd/build/src"
+  }
+}
+EOF
+director=`$bperl -e "get_dirname()"`
+
+(
+dd if=/dev/zero of=$cwd/build/0.dat count=1 seek=500
+dd if=/dev/zero of=$cwd/build/1.dat count=1 seek=50000
+dd if=/dev/zero of=$cwd/build/11.dat count=1 seek=500
+dd if=/dev/zero of=$cwd/build/12.dat count=1 seek=500
+dd if=/dev/zero of=$cwd/build/13.dat count=1 seek=500
+dd if=/dev/zero of=$cwd/build/14.dat count=1 seek=500
+dd if=/dev/zero of=$cwd/build/2.dat count=1 seek=150000
+dd if=/dev/zero of=$cwd/build/3.dat count=1 seek=50000
+dd if=/dev/zero of=$cwd/build/4.dat count=1 seek=150000
+dd if=/dev/zero of=$cwd/build/5.dat count=1 seek=50000
+) 2> /dev/null
+trap "rm -f $cwd/build/*.dat" EXIT
+
+change_jobname BackupClient1 $JobName
+start_test
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out /dev/null
+messages
+@$out $tmp/log1.out
+run job=$JobName storage=File1 yes
+wait
+messages
+END_OF_DATA
+
+run_bacula
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out $tmp/log2.out  
+@# 
+@# now do a restore
+@#
+setdebug level=500 trace=1 storage=File1
+restore where=$tmp/bacula-restores
+5
+cd "$cwd/build"
+mark "0.dat"
+mark "13.dat"
+mark "14.dat"
+cd "$cwd/build/po"
+mark fr.po
+mark es.po
+cd "$cwd/build"
+mark "5.dat"
+done
+@sleep 2
+@exec "cp $working/$director.restore.1.bsr $working/restore1.bsr"
+yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+
+check_for_zombie_jobs storage=File1
+stop_bacula
+
+check_two_logs
+
+
+end_test
