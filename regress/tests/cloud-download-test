@@ -1,0 +1,102 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Cloud test. Run a backup and restore, then compare the timestamps of the
+# files in the cache directory.
+#
+TestName="cloud-download-test"
+JobName=NightlySave
+. scripts/functions
+
+require_cloud
+
+#config is required for cloud cleanup
+scripts/copy-test-confs
+scripts/cleanup
+
+if test x$FORCE_FILE_SET = x; then
+   echo "${cwd}/build" >${cwd}/tmp/file-list
+   #echo "${cwd}/build/src/Makefile" >${cwd}/tmp/file-list
+   #echo "${cwd}/build/src/Makefile.in" >>${cwd}/tmp/file-list
+   #echo "${cwd}/build/src/testprogs.tar.gz" >>${cwd}/tmp/file-list
+   #echo "${cwd}/build/src/dummy" >>${cwd}/tmp/file-list
+   #echo "${cwd}/build/src/stored" >>${cwd}/tmp/file-list
+   #echo "${cwd}/build/src/dird" >>${cwd}/tmp/file-list
+   #echo "${cwd}/build/src/filed" >>${cwd}/tmp/file-list
+   #echo "${cwd}/build/src/console" >>${cwd}/tmp/file-list
+   #echo "${cwd}/build/src/qt-console" >>${cwd}/tmp/file-list
+   #echo "${cwd}/build/src/cats" >>${cwd}/tmp/file-list
+else
+   echo "$FORCE_FILE_SET" >${cwd}/tmp/file-list
+fi
+
+start_test
+
+$bperl -e 'add_attribute("$conf/bacula-sd.conf", "MaximumPartSize", "10MB", "Device")'
+
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@output /dev/null
+messages
+@$out $tmp/log1.out
+label storage=File volume=Vol1
+END_OF_DATA
+
+# do label
+run_bacula
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@output /dev/null
+messages
+@$out $tmp/log1.out
+@#setdebug level=500 storage
+run job=$JobName level=Full yes
+wait
+cloud list volume=Vol1 storage=File
+messages
+END_OF_DATA
+
+run_bconsole
+
+ls -il $tmp/Vol1 | sort > $tmp/part-list-after-backup
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@$out $tmp/log2.out
+@#setdebug level=500 storage
+restore select all done yes where=$tmp/bacula-restores
+wait
+messages
+END_OF_DATA
+
+run_bconsole
+
+
+ls -il $tmp/Vol1 | sort > $tmp/part-list-after-restore
+
+check_for_zombie_jobs storage=File 
+stop_bacula
+
+$bin/bls -c $conf/bacula-sd.conf -V Vol1 FileStorage | grep "End of Volume"
+if [ $? != 0 ]; then
+    print_debug "ERROR: bls output is incorrect"
+    estat=1
+fi
+
+ls -il $tmp/Vol1 | sort > $tmp/part-list-after-bls
+
+if ! diff $tmp/part-list-after-backup $tmp/part-list-after-restore; then
+    print_debug "ERROR: the part list changed after the restore $tmp/part-list-after-restore $tmp/part-list-after-backup"
+    estat=1
+fi
+
+if ! diff $tmp/part-list-after-backup $tmp/part-list-after-bls; then
+    print_debug "ERROR: the part list changed after the bls $tmp/part-list-after-bls $tmp/part-list-after-backup"
+    estat=1
+fi
+
+check_two_logs
+check_restore_diff
+
+end_test
