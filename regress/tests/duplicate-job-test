@@ -3,8 +3,6 @@
 # Copyright (C) 2000-2020 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
-
-#
 #
 TestName="duplicate-job-test"
 . scripts/functions
@@ -12,6 +10,7 @@ TestName="duplicate-job-test"
 scripts/cleanup
 scripts/copy-test-confs
 
+setup_shstore # simulate shared storage if enabled
 
 echo "${cwd}/build/ChangeLog" >${cwd}/tmp/file-list
 
@@ -57,6 +56,7 @@ messages
 @$out ${cwd}/tmp/log1.out
 messages
 label storage=File volume=TestVolume001 slot=1 drive=0
+setdebug level=50 trace=1 dir
 @#setdebug level=100 storage=File
 @##############################################
 @# AllowDuplicates = Yes, both jobs should work
@@ -136,6 +136,34 @@ run comment="Should work" level=Full job=CancelRunningDuplicatesNo yes
 run comment="Should fail" level=Full job=CancelRunningDuplicatesNo yes
 wait
 messages
+quit
+END_OF_DATA
+
+run_bacula
+
+perl -Mscripts::functions -e 'add_attribute("$conf/bacula-dir.conf","MaximumConcurrentJobs", "1", "Job")'
+perl -Mscripts::functions -e 'add_attribute("$conf/bacula-dir.conf","MaximumConcurrentJobs", "1", "Storage")'
+perl -Mscripts::functions -e 'add_attribute("$conf/bacula-dir.conf","MaximumConcurrentJobs", "1", "Client")'
+
+cat <<EOF > $tmp/bconcmds
+reload
+EOF
+
+run_bconsole
+
+cat <<EOF > $tmp/bconcmds
+@$out $tmp/log10.out
+@####################################################
+@# The second job will stay in the jobq and won't run
+@####################################################
+show job=CancelQueueDuplicatesYes
+run comment="Should work" level=Full job=CancelQueueDuplicatesYes yes
+@sleep 2
+run comment="Should fail" level=Full job=CancelQueueDuplicatesYes yes
+run comment="Should fail" level=Full job=CancelQueueDuplicatesYes when="$when" yes
+wait
+messages
+
 @$out $tmp/log7.out
 sql
 SELECT JobId, Name, Level, Comment, JobStatus from Job 
@@ -151,9 +179,9 @@ sql
 SELECT JobId, Name, Level, Comment, JobStatus from Job order by JobId;
 
 quit
-END_OF_DATA
+EOF
 
-run_bacula
+run_bconsole
 check_for_zombie_jobs storage=File
 stop_bacula
 
