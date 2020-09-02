@@ -23,9 +23,8 @@ echo "${cwd}/build" >>${cwd}/tmp/file-list
 change_jobname NightlySave $JobName
 start_test
 
-# Remove last / and convert first / to "cd /"
-CD=`echo $tmp | sed 's:/$::' | sed 's:^/:cd /:'`
-echo "CD=${CD}"
+# Remove last / and convert all / to cd commands
+CD=`echo $tmp | sed 's:/$::' | sed 's:/:\ncd :g'`
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
 @output /dev/null
@@ -48,7 +47,7 @@ messages
 @$out ${cwd}/tmp/log2.out
 restore where=$tmp/bacula-restores select storage=File1
 unmark *
-${CD}
+$CD
 mark big
 done
 yes
