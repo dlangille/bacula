@@ -17,6 +17,7 @@ echo "${cwd}/build" >${cwd}/tmp/file-list
 
 change_jobname NightlySave $JobName
 $bperl -e 'add_attribute("$conf/bacula-fd.conf", "MaximumBandwidthPerJob", "100 kB/s", "FileDaemon")'
+$bperl -e "add_attribute('$conf/bacula-dir.conf', 'AllowIncompleteJobs', 'yes', 'Job')"
 
 start_test
 
