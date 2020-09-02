@@ -1,0 +1,104 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Run a simple backup of the Bacula build directory
+#   then restore it.
+#
+TestName="hdfull-test"
+JobName=backup
+. scripts/functions
+
+scripts/cleanup
+scripts/copy-confs
+
+#
+# Zap out any schedule in default conf file so that
+#  it doesn't start during our test
+#
+outf="$tmp/sed_tmp"
+echo "s%  Schedule =%# Schedule =%g" >${outf}
+cp $scripts/bacula-dir.conf $tmp/1
+sed -f ${outf} $tmp/1 >$scripts/bacula-dir.conf
+
+mkdir -p $tmp/data
+dd if=/dev/urandom of=$tmp/data/dat1 count=50000
+cp $tmp/data/dat1 $tmp/data/dat2
+cp $tmp/data/dat1 $tmp/data/dat3
+cp $tmp/data/dat1 $tmp/data/dat4
+
+sudo umount $tmp/device 2> /dev/null
+rmdir $tmp/device 2> /dev/null
+
+dd if=/dev/zero of=$tmp/disk1 seek=300000 count=1
+
+mkfs.ext2 -F $tmp/disk1 
+mkdir $tmp/device
+sudo mount -o loop $tmp/disk1 $tmp/device
+
+if [ $? -ne 0 ]; then
+    print_debug "ERROR: Unable to mount the disk"
+    exit 1
+fi
+
+$bperl -e 'add_attribute("$conf/bacula-sd.conf", "Archive Device", "$tmp/device", "Device")'
+sed -i "s:$cwd/build:$cwd/tmp/data:" $conf/bacula-dir.conf
+
+change_jobname BackupClient1 $JobName
+start_test
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out /dev/null
+messages
+@$out $tmp/log1.out
+setdebug level=100 trace=1 storage=File1
+run job=$JobName yes
+wait
+messages
+run job=$JobName level=full yes
+@sleep 10
+messages
+@exec "mv $tmp/device/Vol-0001 $tmp"
+mount storage=File1 slot=0 drive=0
+wait
+@# ensure that jobid 1 will not be used of the restore
+delete jobid=1
+@# 
+@# now do a restore
+@#
+@$out $tmp/log2.out  
+restore where=$tmp/bacula-restores select all done yes
+@sleep 10
+@exec "mv $tmp/device/Vol-0002 $tmp"
+@exec "mv $tmp/Vol-0001 $tmp/device"
+mount storage=File1 slot=0 drive=0
+@sleep 10
+@exec "mv $tmp/device/Vol-0001 $tmp"
+@exec "mv $tmp/Vol-0002 $tmp/device"
+mount storage=File1 slot=0 drive=0
+wait
+messages
+quit
+END_OF_DATA
+
+run_bacula
+check_for_zombie_jobs storage=File
+stop_bacula
+
+grep 'Please mount read Volume "Vol-0002"' $tmp/log2.out > /dev/null
+if [ $? -ne 0 ]; then
+    print_debug "ERROR: Should find a mount request  for Vol-0002 in $tmp/log2.out"
+    rstat=1
+fi
+
+grep 'Please mount read Volume "Vol-0001"' $tmp/log2.out > /dev/null
+if [ $? -ne 0 ]; then
+    print_debug "ERROR: Should find a mount request for Vol-0001 in $tmp/log2.out"
+    rstat=1
+fi
+
+sudo umount $tmp/device 2> /dev/null
+rmdir $tmp/device
+
+end_test
