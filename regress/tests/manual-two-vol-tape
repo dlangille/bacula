@@ -1,9 +1,7 @@
 #!/bin/sh
 #
-# Copyright (C) 2000-2015 Kern Sibbald
+# Copyright (C) 2000-2020 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
-#
-
 #
 # Run a job with a limited tape size so that the tape fills up.
 #  Then manually unload the tape and load a new one, label
@@ -85,7 +83,7 @@ load_other_slot $slot
 cat <<END_OF_DATA >tmp/bconcmds
 @$out tmp/log1.out
 wait mount timeout=180
-setdebug level=200 storage=tape
+@#setdebug level=200 storage=tape
 mount storage=tape
 @# backup should continue
 wait
