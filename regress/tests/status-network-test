@@ -1,0 +1,53 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Test the "status network" command
+#
+TestName="status-network-test"
+JobName=backup
+. scripts/functions
+
+scripts/cleanup
+scripts/copy-confs
+
+if [ x$FORCE_SDCALLS = xyes ]; then
+    echo "Test disabled with SDCalls"
+    exit 0
+fi
+
+#
+# Zap out any schedule in default conf file so that
+#  it doesn't start during our test
+#
+outf="$tmp/sed_tmp"
+echo "s%  Schedule =%# Schedule =%g" >${outf}
+cp $scripts/bacula-dir.conf $tmp/1
+sed -f ${outf} $tmp/1 >$scripts/bacula-dir.conf
+
+change_jobname BackupClient1 $JobName
+start_test
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out /dev/null
+messages
+@$out $tmp/log1.out
+status network
+status network bytes=1G
+status network client=$CLIENT storage=File2
+status
+5
+quit
+END_OF_DATA
+
+run_bacula
+stop_bacula
+
+nb=`grep "2000 OK" $tmp/log1.out | wc -l`
+if [ $nb -ne 12 ]; then
+    print_debug "ERROR: Should find 12 lines with network speed in $tmp/log1.out"
+    estat=1
+fi
+
+end_test
