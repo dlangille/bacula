@@ -3,10 +3,10 @@
 # Copyright (C) 2000-2020 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
-
-#
-# Run a simple backup of the Bacula build directory
-#   then restore it.
+# Check that messed up hard and soft links will be correctly restored.
+# Make a copy of directory "weird-files", delete a hard and a soft link,
+# replace them with 2 soft links to a non existing file, restore and compare
+# weird-files2-test use testls instead of diff.pl like in weird-files2-test
 #
 TestName="weird-files2-test"
 JobName=weird-files2
@@ -31,7 +31,7 @@ change_jobname NightlySave $JobName
 start_test
 
 #bin/testls weird-files2 | grep -v sock-file >${cwd}/tmp/original
-bin/testls weird-files2 >${cwd}/tmp/original
+bin/testls weird-files2 | sort -k 8 >${cwd}/tmp/original
 
 cat <<END_OF_DATA >tmp/bconcmds
 @output /dev/null
@@ -73,12 +73,12 @@ wait
 messages
 quit
 END_OF_DATA
-
+ls -la weird-files2/
 run_bconsole
 check_for_zombie_jobs storage=File 
 stop_bacula
 
-bin/testls weird-files2 >${cwd}/tmp/restored
+bin/testls weird-files2 | sort -k 8 >${cwd}/tmp/restored
 
 check_two_logs
 diff -u ${cwd}/tmp/original ${cwd}/tmp/restored 2>&1 >/dev/null
