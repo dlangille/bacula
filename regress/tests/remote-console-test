@@ -12,10 +12,10 @@ JobName=backup
 scripts/cleanup
 scripts/copy-confs
 
-change_jobname BackupClient1 $JobName
-start_test
-
-$bperl -e 'add_attribute("$conf/bacula-dir.conf", "Address", "0.0.0.0", "Client")'
+if [ x$FORCE_TLS != xyes ]; then
+    # The certificate must match the address
+    $bperl -e 'add_attribute("$conf/bacula-dir.conf", "Address", "0.0.0.0", "Client")'
+fi
 $bperl -e 'add_attribute("$conf/bacula-dir.conf", "MaximumBandwidthPerJob", "1mb/s", "Client")'
 $bperl -e 'extract_resource("$conf/bconsole.conf", "Director")' | sed 's/Director/Console/' > $tmp/1
 cat $tmp/1 >> $conf/bacula-fd.conf
@@ -63,6 +63,13 @@ Console {
   Password = "oi3deith3peeGho4"
 }
 EOF
+
+change_jobname BackupClient1 $JobName
+start_test
+
+if [ x$FORCE_TLS = xyes ]; then
+    $bperl -e "setup_cons_tls('$tmp/bconsole-remote.conf')"
+fi
 
 cat <<END_OF_DATA >$tmp/bconcmds
 @$out /dev/null
