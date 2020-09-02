@@ -1,0 +1,104 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Run a couple of tests with bconsole and delete command
+#
+TestName="console-delete-test"
+JobName=backup
+. scripts/functions
+
+scripts/cleanup
+scripts/copy-test-confs
+
+#
+# Zap out any schedule in default conf file so that
+#  it doesn't start during our test
+#
+outf="$tmp/sed_tmp"
+echo "s%  Schedule =%# Schedule =%g" >${outf}
+cp $scripts/bacula-dir.conf $tmp/1
+sed -f ${outf} $tmp/1 >$scripts/bacula-dir.conf
+
+echo "$cwd/build/po" > $tmp/file-list
+
+change_jobname NightlySave $JobName
+
+perl -Mscripts::functions \
+    -e "extract_resource('$conf/bacula-dir.conf', 'Client', '$HOST-fd')" \
+    > $tmp/1
+
+OUT=$conf/bacula-dir.conf
+sed "s/$HOST-fd/test-1-fd/" $tmp/1   | sed "s/Address.*/Address = 127.0.0.2/" >> $OUT
+sed "s/$HOST-fd/test-2-fd/" $tmp/1   | sed "s/Address.*/Address = 127.0.2.2/" >> $OUT
+sed "s/$HOST-fd/test-rst-fd/" $tmp/1 | sed "s/Address.*/Address = 127.0.3.2/" >> $OUT
+
+start_test
+
+# We create hundred of clients in this test, the director startup can be long
+# specially on MySQL and Ubuntu
+touch $tmp/bconcmds
+run_bacula
+
+ok=1
+retry=0
+
+while [ $ok -ne 0 -a $retry -lt 5 ]; do
+    echo quit | $bin/bconsole -c $conf/bconsole.conf | grep quit
+    ok=$?
+    retry=`expr $retry + 1`
+done
+    
+cat <<EOF > $tmp/bconcmds
+@output /dev/null
+messages
+@$out $tmp/log1.out
+label volume=TestVolume001 storage=File pool=Default
+run job=$JobName client=test-1-fd yes
+wait
+messages
+@$out $tmp/log2.out
+delete client=test-1-fd yes
+@$out $tmp/log3.out
+.client
+@$out $tmp/log5.out
+list jobs
+quit
+EOF
+
+run_bconsole
+
+cp -f $conf/bacula-dir.conf $tmp/1
+sed 's/test-1-fd/anothername/' $tmp/1 > $tmp/2
+sed 's/test-2-fd/anothername2/' $tmp/2 > $conf/bacula-dir.conf
+
+cat <<EOF > $tmp/bconcmds
+@$out $tmp/log4.out
+reload
+delete client=test-1-fd
+yes
+delete client=test-2-fd yes
+@$out $tmp/log3.out
+.client
+@$out $tmp/log6.out
+list jobs
+quit
+EOF
+
+run_bconsole
+
+nb=`grep test-1-fd $tmp/log3.out | wc -l`
+if [ $nb != 1 ]; then
+    print_debug "ERROR: Should find the client test-1-fd in the $tmp/log3.out only one time"
+    estat=1
+fi
+
+nb=`grep $JobName $tmp/log5.out $tmp/log6.out | wc -l`
+if [ $nb != 1 ]; then
+    print_debug "ERROR: Should find the job for test-1-fd only in the $tmp/log5.out"
+    estat=1
+fi
+
+stop_bacula
+end_test
