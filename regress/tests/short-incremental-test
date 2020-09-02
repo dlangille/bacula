@@ -3,8 +3,6 @@
 # Copyright (C) 2000-2020 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
-
-#
 # Run a simple backup of the Bacula build directory then create some           
 #   new files, do an Incremental and restore those two files.
 #
@@ -23,27 +21,28 @@ echo "${tmpsrc}/ficheriro2.txt" >>restore-list
 cd ${cwd}
 
 change_jobname CompressedTest $JobName
+
+#To remove GZIP of the equation uncomment the line below
+#sed -i 's/compression=GZIP//' $conf/bacula-dir.conf
+
 start_test
 
 cat <<END_OF_DATA >${tmp}/bconcmds
 @output /dev/null
 messages
 @$out ${tmp}/log1.out
-@#setdebug level=500 dir
-@#setdebug level=200 storage=File
+setdebug level=15 storage=File
 @#setdebug level=200 client
 @#setdebug level=100 director
+setdebug level=200 storage
 label storage=File volume=TestVolume001
 label storage=File volume=TestVolume002
-label storage=File volume=TestVolume003
-label storage=File volume=TestVolume004
 run job=$JobName yes
 status client
 wait
 messages
 quit
 END_OF_DATA
-
 
 run_bacula
 check_for_zombie_jobs storage=File
@@ -53,9 +52,6 @@ check_for_zombie_jobs storage=File
 sleep 1
 echo "ficheriro1.txt" >${tmpsrc}/ficheriro1.txt
 cp -f ${tmpsrc}/dird.c ${tmpsrc}/ficheriro2.txt
-# set Volumes as read-only
-chmod -w $tmp/TestVolume001
-chmod -w $tmp/TestVolume002
 
 cat <<END_OF_DATA >${tmp}/bconcmds
 @output /dev/null
@@ -63,7 +59,7 @@ messages
 @$out ${tmp}/log1.out
 @# Force Incremental on the second Volume
 @#update volume=TestVolume001 VolStatus=Used
-setdebug level=4 storage=File
+setdebug level=200 storage=File
 setdebug level=4 client
 run level=Differential job=$JobName yes
 wait
@@ -77,21 +73,18 @@ cat <<END_OF_DATA >${tmp}/bconcmds
 @output /dev/null
 messages
 @$out ${tmp}/log1.out
-setdebug level=4 storage=File
+setdebug level=200 storage=File
 run level=Incremental job=$JobName yes
-wait
-llist volumes
 wait
 messages
 @# 
 @# now do a restore
 @#
 @$out ${tmp}/log2.out
-setdebug level=10 storage=File
+setdebug level=200 storage=File
 restore where=${tmp}/bacula-restores storage=File file=<${tmp}/restore-list
 yes
 wait
-status dir
 status client
 status storage=File
 messages
