@@ -1,0 +1,143 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Run a backup of the build directory but force it to have
+#   a comm error, and check that it restarts correctly and
+#   how it deals with deleted files
+#
+TestName="restart-sessiontime-test"
+JobName=RestartJob
+. scripts/functions
+
+scripts/cleanup
+scripts/copy-test-confs
+
+setup_shstore # simulate shared storage if enabled
+
+cp -r $cwd/build/po $tmp/
+cp -r $cwd/build/src/dird $tmp/
+mkdir $tmp/files
+$bperl -e "create_binfile('$tmp/files/big1', 300)"
+$bperl -e "create_binfile('$tmp/files/big2', 300)"
+
+
+echo "$tmp/po"  > $tmp/file-list
+echo "$tmp/files" >> $tmp/file-list
+echo "$tmp/dird" >> $tmp/file-list
+
+$bperl -e "set_global_maximum_concurrent_jobs(10)"
+$bperl -e "add_attribute('$conf/bacula-sd.conf', 'MaximumFileSize', '2MB', 'Device')"
+$bperl -e "add_attribute('$conf/bacula-dir.conf', 'LabelFormat', 'Vol', 'Pool')"
+$bperl -e "add_attribute('$conf/bacula-dir.conf', 'NextPool', 'VF', 'Pool')"
+
+cat <<EOF >> $conf/bacula-dir.conf
+Job {
+ Name = copy
+ Type = Copy
+ Selection Type = Job
+ Selection Pattern = $JobName
+ Client = $HOST-fd
+ Fileset = "Full Set"
+ JobDefs = BackupJob
+}
+Job {
+ Name = verify
+ Type = Verify
+ Client = $HOST-fd
+ Fileset = "Full Set"
+ JobDefs = BackupJob
+ Level = data
+}
+Pool {
+ Name = VF
+ Pool Type = backup
+ Storage = File1
+ LabelFormat = "VF"
+}
+EOF
+
+change_jobname NightlySave $JobName
+
+start_test
+touch $cwd/build/po/testfile
+
+# TODO: Need to cut the line in big1
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@output /dev/null
+messages
+@$out ${cwd}/tmp/log1.out
+setdebug options=c level=100 trace=1 hangup=-15000 client
+@#setdebug level=20 dir
+run job=$JobName spooldata=no yes
+@sleep 5
+setbandwidth limit=300k/s client
+END_OF_DATA
+
+run_bacula
+
+$bin/bacula-ctl-sd restart
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@$out ${cwd}/tmp/log1.out
+list files jobid=1
+list jobmedia jobid=1
+run job=$JobName spooldata=no yes level=full
+wait
+messages
+list files jobid=1
+list jobmedia jobid=1
+quit
+END_OF_DATA
+
+run_bconsole
+
+scripts/check_for_zombie_jobs storage=File
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@# 
+@# now do a restore
+@#
+setdebug level=0 trace=1 client
+@$out ${cwd}/tmp/log2.out
+restore where=$tmp/bacula-restores storage=File replace=always
+3
+1
+m *
+done
+yes
+wait
+messages
+run job=copy jobid=1 yes
+wait
+messages
+run job=verify jobid=1 level=data yes
+wait
+messages
+run job=verify jobid=2 level=data yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+scripts/check_for_zombie_jobs storage=File
+stop_bacula
+
+check_two_logs
+
+$rscripts/diff.pl -s $tmp/bacula-restores/$tmp/dird -d $tmp/dird
+if [ $? -ne 0 ]; then
+    print_debug "ERROR: Found difference after restore"
+    estat=2
+fi
+
+$rscripts/diff.pl -s $tmp/bacula-restores/$tmp/po -d $tmp/po
+if [ $? -ne 0 ]; then
+    print_debug "ERROR: Found difference after restore"
+    estat=2
+fi
+
+end_test
