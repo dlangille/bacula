@@ -1,0 +1,106 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Run a simple backup of the Bacula build directory
+#   then restore it with the noautoparent option.
+#   rights on the parent directory must not match.
+#
+TestName="noautoparent-test"
+JobName=backup
+. scripts/functions
+
+scripts/cleanup
+scripts/copy-confs
+
+#
+# Zap out any schedule in default conf file so that
+#  it doesn't start during our test
+#
+outf="$tmp/sed_tmp"
+echo "s%  Schedule =%# Schedule =%g" >${outf}
+cp $scripts/bacula-dir.conf $tmp/1
+sed -f ${outf} $tmp/1 >$scripts/bacula-dir.conf
+
+change_jobname BackupClient1 $JobName
+start_test
+
+# Modify the FileSet to backup $cwd/tmp/build
+sed "s:$cwd/build:$tmp/build:" $conf/bacula-dir.conf > $tmp/1
+mv $tmp/1 $conf/bacula-dir.conf
+
+mkdir $tmp/build
+chmod 711 $tmp/build
+
+cp -r $cwd/build/po $tmp/build/
+chmod 775 $tmp/build/po
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@output /dev/null
+messages
+@$out $tmp/log1.out
+label volume=TestVolume001 storage=File1 pool=File slot=1 drive=0
+run job=$JobName yes
+wait
+messages
+@# 
+@# now do a restore with the option noautoparent
+@# the parent directory should not be selected, and at the restore
+@# time, attributes will not the same
+@#
+@$out $tmp/log2.out  
+restore where=$tmp/bacula-restores noautoparent select
+cd $tmp/build
+m po
+done
+yes
+@# 
+@# now do a 2nd restore without the option
+@#
+@$out $tmp/log2.out  
+restore where=$tmp/bacula-restores2 select
+cd $tmp/build
+m po
+done
+yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bacula
+check_for_zombie_jobs storage=File1
+stop_bacula
+
+check_two_logs
+
+$rscripts/diff.pl -s $tmp/build/po -d $tmp/bacula-restores/$tmp/build/po
+if [ $? != 0 ]; then
+    print_debug "ERROR: Found difference in the 1st restore"
+    rstat=1
+fi
+
+$rscripts/diff.pl -s $tmp/build/po -d $tmp/bacula-restores2/$tmp/build/po
+if [ $? != 0 ]; then
+    print_debug "ERROR: Found difference in the 2nd restore"
+    rstat=1
+fi
+
+stat $tmp/build | grep Uid > $tmp/ref
+stat $tmp/bacula-restores/$tmp/build | grep Uid > $tmp/with
+stat $tmp/bacula-restores2/$tmp/build | grep Uid > $tmp/without
+
+if ! diff $tmp/ref $tmp/without > /dev/null
+then
+    print_debug "ERROR: Should not find difference between source and restore without the option"
+    estat=1
+fi
+
+if diff $tmp/ref $tmp/with > /dev/null
+then
+    print_debug "ERROR: Should find a difference between source and restore with the option"
+    estat=1
+fi
+
+end_test
