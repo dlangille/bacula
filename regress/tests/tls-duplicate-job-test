@@ -3,8 +3,6 @@
 # Copyright (C) 2000-2020 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
-
-#
 #
 TestName="tls-duplicate-job-test"
 . scripts/functions
@@ -13,16 +11,18 @@ scripts/cleanup
 scripts/copy-tls-confs
 echo "${cwd}/build/ChangeLog" >${cwd}/tmp/file-list
 
+# With dedup, we need to force the dedup fileset option
+DEDUP_FS_OPTION=storage
+
 # increase the maximum concurrent jobs for FD, SD and DIR
-perl -Mscripts::functions -e 'set_maximum_concurrent_jobs("$conf/bacula-dir.conf",100)'
-perl -Mscripts::functions -e 'set_maximum_concurrent_jobs("$conf/bacula-sd.conf",100)'
-perl -Mscripts::functions -e 'set_maximum_concurrent_jobs("$conf/bacula-fd.conf",100)'
+$bperl -e 'set_maximum_concurrent_jobs("$conf/bacula-dir.conf",100)'
+$bperl -e 'set_maximum_concurrent_jobs("$conf/bacula-sd.conf",100)'
+$bperl -e 'set_maximum_concurrent_jobs("$conf/bacula-fd.conf",100)'
 
 # extract a Job and add a runscript on it
-perl -Mscripts::functions \
+$bperl \
     -e "extract_resource('$conf/bacula-dir.conf', 'Job', 'CompressedTest')" \
     | sed 's%Standard%Standard; ClientRunBeforeJob="sleep 6"%' > $tmp/1
-
 
 outf="$tmp/sed_tmp"
 echo 's%CompressedTest%AllowDuplicateYes%' > $outf
