@@ -1,0 +1,177 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Run a simple backup of the Bacula build directory then create some           
+#   new files, do an Incremental and restore those two files.
+#
+TestName="hardlink-vf-test"
+JobName=Incremental 
+. scripts/functions
+
+${rscripts}/cleanup
+${rscripts}/copy-test-confs
+
+
+cat <<EOF >> $conf/bacula-dir.conf
+# Full pool definition
+Pool {
+  Name = Full
+  Pool Type = Backup
+  Recycle = yes                       # Bacula can automatically recycle Volumes
+  AutoPrune = yes                     # Prune expired volumes
+  Volume Retention = 365d             # one year
+  Storage = File1
+}
+EOF
+
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "NextPool", "Full", "Pool", "Default")'
+
+echo "${tmpsrc}" >${tmp}/file-list
+mkdir -p ${tmpsrc}
+cp -p ${src}/src/dird/*.c ${tmpsrc}
+mkdir ${tmpsrc}/sub ${tmpsrc}/sub2
+ln ${tmpsrc}/admin.c ${tmpsrc}/sub/
+ln ${tmpsrc}/admin.c ${tmpsrc}/sub2/
+
+change_jobname HardlinkTest $JobName
+start_test
+
+cat <<END_OF_DATA >${tmp}/bconcmds
+@output /dev/null
+messages
+@$out ${tmp}/log1.out
+setdebug level=4 storage=File
+label storage=File  pool=Default volume=TestVolume001
+label storage=File1 pool=Full volume=TestVolume002
+run job=$JobName yes
+status client
+wait
+messages
+@output $tmp/file
+sql
+select Path.Path, FileIndex FROM File JOIN Path USING (PathId) WHERE Filename = 'admin.c' AND JobId=1 ORDER BY FileId ASC LIMIT 1;
+
+@output $tmp/lstat
+sql
+select LStat FROM File WHERE Filename = 'admin.c' AND JobId=1 ORDER BY FileId;
+
+quit
+END_OF_DATA
+
+run_bacula
+check_for_zombie_jobs storage=File
+#
+# Now create two new files to be restored later
+#
+sleep 1
+echo "ficheriro1.txt" >${tmpsrc}/ficheriro1.txt
+cp -f ${tmpsrc}/dird.c ${tmpsrc}/ficheriro2.txt
+
+# remove the first reference of the hardlink
+d=`awk '/build/ { print $2 }' $tmp/file`
+rm -f "${d}/admin.c"
+echo "Remove $d/admin.c"
+
+cat <<END_OF_DATA >${tmp}/bconcmds
+@output /dev/null
+messages
+@$out ${tmp}/log1.out
+setdebug level=4 storage=File
+run level=Incremental job=$JobName yes
+wait
+messages
+@output $tmp/fileI
+sql
+select Path.Path, FileIndex FROM File JOIN Path USING (PathId) WHERE Filename = 'admin.c' AND JobId=2 ORDER BY FileId ASC LIMIT 1;
+
+@output $tmp/lstatI
+sql
+select LStat FROM File WHERE Filename = 'admin.c' AND JobId=2 ORDER BY FileId;
+
+quit
+END_OF_DATA
+
+run_bconsole
+
+cat <<END_OF_DATA >${tmp}/bconcmds
+@output /dev/null
+messages
+@$out ${tmp}/log1.out
+setdebug level=4 storage=File
+run level=VirtualFull job=$JobName yes
+wait
+messages
+@output $tmp/fileV
+sql
+select Path.Path, FileIndex FROM File JOIN Path USING (PathId) WHERE Filename = 'admin.c' AND JobId=3 ORDER BY FileId ASC LIMIT 1;
+
+@output $tmp/lstatV
+sql
+select LStat FROM File WHERE Filename = 'admin.c' AND JobId=3 ORDER BY FileId;
+
+@output $tmp/restoreV
+sql
+select Path.Path FROM File JOIN Path USING (PathId) WHERE Filename = 'admin.c' AND JobId=3 ORDER BY FileId ASC LIMIT 1 OFFSET 1;
+
+quit
+END_OF_DATA
+
+run_bconsole
+
+# select the second reference of the hardlink, the LinkFI should point to the
+# original FileIndex and the new FileIndex is unlikely to be the same
+d=`awk '/build/ { print $2 }' $tmp/restoreV`
+
+cat <<END_OF_DATA >${tmp}/bconcmds
+@output /dev/null
+messages
+@# 
+@# now do a restore
+@#
+@$out ${tmp}/log2.out
+setdebug level=10 storage=File
+restore where=${tmp}/bacula-restores
+5
+cd $d
+m admin.c
+done
+yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+
+if [ ! -f ${tmp}/bacula-restores/$d/admin.c ]; then
+    print_debug "ERROR: Unable to find the file ${tmp}/bacula-restores/$d/admin.c"
+    rstat=1
+fi
+
+# Decode some LStat information in $tmp/1, we can see LinkFI and FileIndex for each hardlink
+echo "@out ${tmp}/1" > $tmp/cmd
+F=
+echo "@exec \"cat $tmp/file$F\"" >> $tmp/cmd
+echo "@echo LStat from lstat$F" >> $tmp/cmd
+awk '/\| +([a-zA-Z0-9]+ [a-zA-Z0-9]+ )/ { gsub(/ *\| */, ""); print ".bvfs_decode_lstat lstat=\"" $0 "\"" }' tmp/lstat$F  >> $tmp/cmd
+
+F=I
+echo "@exec \"cat $tmp/file$F\"" >> $tmp/cmd
+echo "@echo LStat from lstat$F" >> $tmp/cmd
+awk '/\| +([a-zA-Z0-9]+ [a-zA-Z0-9]+ )/ { gsub(/ *\| */, ""); print ".bvfs_decode_lstat lstat=\"" $0 "\"" }' tmp/lstat$F  >> $tmp/cmd
+
+F=V
+echo "@exec \"cat $tmp/file$F\"" >> $tmp/cmd
+echo "@echo LStat from lstat$F" >> $tmp/cmd
+awk '/\| +([a-zA-Z0-9]+ [a-zA-Z0-9]+ )/ { gsub(/ *\| */, ""); print ".bvfs_decode_lstat lstat=\"" $0 "\"" }' tmp/lstat$F  >> $tmp/cmd
+
+run_bconsole $tmp/cmd
+
+check_for_zombie_jobs storage=File
+stop_bacula
+
+check_two_logs
+
+end_test
