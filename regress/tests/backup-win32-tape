@@ -1,9 +1,7 @@
 #!/bin/sh
 #
-# Copyright (C) 2000-2015 Kern Sibbald
+# Copyright (C) 2000-2020 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
-#
-
 #
 # Run a simple backup of the Bacula build directory 
 #   to a tape then restore it, we do that twice to ensure that
@@ -47,7 +45,7 @@ messages
 END_OF_DATA
 
 run_bacula
-check_for_zombie_jobs storage=tape
+check_for_zombie_jobs storage=tape client=$WIN32_CLIENT
 stop_bacula
 
 check_two_logs
