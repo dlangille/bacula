@@ -1,0 +1,98 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Run a simple backup of the Bacula build directory on a FS that will simulate a problem
+#
+TestName="fs-error-test"
+JobName=backup
+. scripts/functions
+
+scripts/cleanup
+scripts/copy-confs
+
+#
+# Zap out any schedule in default conf file so that
+#  it doesn't start during our test
+#
+outf="$tmp/sed_tmp"
+echo "s%  Schedule =%# Schedule =%g" >${outf}
+cp $scripts/bacula-dir.conf $tmp/1
+sed -f ${outf} $tmp/1 >$scripts/bacula-dir.conf
+
+# move the volume in a specific directory
+$bperl -e 'add_attribute("$conf/bacula-sd.conf", "Archive Device", "$tmp/mnt", "Device")'
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "MaxWaitTime", "10s", "Job")'
+$bperl -e 'set_global_maximum_concurrent_jobs(10)'
+
+mkdir $tmp/mnt $tmp/base
+trap "fusermount -u $tmp/mnt" EXIT
+
+make -C $cwd/build/src/tools install-fs-io-error
+$bin/fs-io-error -? 2> /dev/null > /dev/null
+if [ $? != 1 ]; then
+    print_debug "ERROR: Fuse system not installed"
+    exit 0
+fi
+
+size=`du -sb $cwd/build | awk '{print $1 }'`
+$bin/fs-io-error -b $tmp/base -e $size -d 50 -p '*/TestVolume001' -- fs-io-error -f $tmp/mnt > $tmp/fs-io-error.log 2>&1 &
+
+change_jobname BackupClient1 $JobName
+start_test
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@output /dev/null
+messages
+@$out $tmp/log1.out
+setbandwidth limit=4MB/s client
+setdebug level=200 trace=1 storage=File1
+label volume=TestVolume001 storage=File1 pool=File slot=1 drive=0
+run job=$JobName level=full yes
+run job=$JobName level=full yes
+@sleep 5
+status dir
+wait
+messages
+@$out $tmp/log3.out
+llist jobid=1
+@$out $tmp/log4.out
+llist jobid=2
+@# 
+@# now do a verify
+@#
+@$out $tmp/log5.out  
+setdebug level=4 storage=File1
+restore where=$tmp/bacula-restores1 jobid=1 all done yes
+restore where=$tmp/bacula-restores2 jobid=2 all done yes
+wait    
+messages
+quit
+END_OF_DATA
+
+run_bacula
+check_for_zombie_jobs storage=File1
+stop_bacula
+
+# The restore is in error for sure
+touch $tmp/log2.out
+#check_two_logs
+
+job1=`awk 'BEGIN { IGNORECASE=1 } /joberrors:/ { print $2 }' $tmp/log3.out`
+job2=`awk 'BEGIN { IGNORECASE=1 } /joberrors:/ { print $2 }' $tmp/log4.out`
+
+$rscripts/diff.pl -s $cwd/build -d $tmp/bacula-restores1/$cwd/build > /dev/null
+if [ $? != 0 -a "$job1" = 0 ]; then
+    print_debug "ERROR: The first job should notify a problem"
+    estat=1
+fi
+
+$rscripts/diff.pl -s $cwd/build -d $tmp/bacula-restores2/$cwd/build > /dev/null
+if [ $? != 0 -a "$job2" = 0 ]; then
+    print_debug "ERROR: The second job should notify a problem"
+    estat=1
+fi
+
+#check_restore_diff
+end_test
