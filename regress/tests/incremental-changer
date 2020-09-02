@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (C) 2000-2015 Kern Sibbald
+# Copyright (C) 2000-2018 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
 
@@ -21,6 +21,7 @@ scripts/cleanup
 scripts/copy-2tape-confs
 scripts/prepare-two-tapes
 
+# I really do not understand why this is here: kes 1 Oct 2018
 exit
 
 echo "${cwd}/tmp/build" >${cwd}/tmp/file-list
@@ -40,8 +41,11 @@ cat <<END_OF_DATA >${cwd}/tmp/bconcmds
 @$out /dev/null
 messages
 @$out ${cwd}/tmp/log1.out
+setdebug storage=tape level=150
 label storage=tape volume=TestVolume001 slot=$SLOT1 Pool=Default drive=$DRIVE1
+status storage=tape
 label storage=tape volume=TestVolume002 slot=$SLOT2 Pool=Default drive=$DRIVE1
+status storage=tape
 run job=NightlySave yes
 wait
 messages
