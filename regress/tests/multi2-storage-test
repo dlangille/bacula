@@ -3,8 +3,6 @@
 # Copyright (C) 2000-2020 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
-
-#
 # This script uses the virtual disk autochanger
 #
 TestName="multi-storage-test"
@@ -55,14 +53,14 @@ start_test
 
 # Stop SDs
 for sd in 2 3 4; do
-  $tmp/bacula-ctl-sd$sd stop &> /dev/null
+  $tmp/bacula-ctl-sd$sd stop > /dev/null 2> /dev/null
 done
 
 sleep 2
 
 # Start SDs
 for sd in 2 3 4; do
-  $tmp/bacula-ctl-sd$sd start &> /dev/null
+  $tmp/bacula-ctl-sd$sd start > /dev/null 2> /dev/null
 done
 
 # Write out bconsole commands
@@ -184,7 +182,7 @@ check_for_zombie_jobs storage=tape
 
 stop_bacula
 for sd in 2 3 4; do
-  $tmp/bacula-ctl-sd$sd stop &> /dev/null
+  $tmp/bacula-ctl-sd$sd stop > /dev/null 2> /dev/null
 done
 
 # we have two restore to test
