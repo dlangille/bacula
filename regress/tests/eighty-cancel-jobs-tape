@@ -1,0 +1,934 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Run eighty jobs at the same time
+#
+TestName="eighty-simultaneous-jobs-tape"
+JobName=EightySimultaneousJobs
+. scripts/functions
+
+require_tape_drive
+
+scripts/cleanup-tape
+scripts/copy-tape-confs
+
+echo "${cwd}/build" >${cwd}/tmp/file-list
+
+change_jobname $JobName
+start_test
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@$out /dev/null
+messages
+@$out ${cwd}/tmp/log1.out
+label storage=tape volume=TestVolume001 slot=0 pool=Default
+@#setdebug level=60 Storage=tape
+@#setdebug level=60 client
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+run job=$JobName level=Full Storage=tape yes
+@sleep 7
+status dir
+messages
+Cancel jobid=1
+Cancel jobid=1
+Cancel jobid=1
+Cancel jobid=1
+Cancel jobid=1
+Cancel jobid=1
+Cancel jobid=1
+Cancel jobid=1
+Cancel jobid=1
+Cancel jobid=1
+Cancel jobid=2
+Cancel jobid=2
+Cancel jobid=2
+Cancel jobid=2
+Cancel jobid=2
+Cancel jobid=2
+Cancel jobid=2
+Cancel jobid=2
+Cancel jobid=2
+Cancel jobid=2
+Cancel jobid=3
+Cancel jobid=3
+Cancel jobid=3
+Cancel jobid=3
+Cancel jobid=3
+Cancel jobid=3
+Cancel jobid=3
+Cancel jobid=3
+Cancel jobid=3
+Cancel jobid=3
+Cancel jobid=4
+Cancel jobid=4
+Cancel jobid=4
+Cancel jobid=4
+Cancel jobid=4
+Cancel jobid=4
+Cancel jobid=4
+Cancel jobid=4
+Cancel jobid=4
+Cancel jobid=4
+Cancel jobid=5
+Cancel jobid=5
+Cancel jobid=5
+Cancel jobid=5
+Cancel jobid=5
+Cancel jobid=5
+Cancel jobid=5
+Cancel jobid=5
+Cancel jobid=5
+Cancel jobid=5
+Cancel jobid=6
+Cancel jobid=6
+Cancel jobid=6
+Cancel jobid=6
+Cancel jobid=6
+Cancel jobid=6
+Cancel jobid=6
+Cancel jobid=6
+Cancel jobid=6
+Cancel jobid=6
+Cancel jobid=7
+Cancel jobid=7
+Cancel jobid=7
+Cancel jobid=7
+Cancel jobid=7
+Cancel jobid=7
+Cancel jobid=7
+Cancel jobid=7
+Cancel jobid=7
+Cancel jobid=7
+Cancel jobid=8
+Cancel jobid=8
+Cancel jobid=8
+Cancel jobid=8
+Cancel jobid=8
+Cancel jobid=8
+Cancel jobid=8
+Cancel jobid=8
+Cancel jobid=8
+Cancel jobid=8
+Cancel jobid=9
+Cancel jobid=9
+Cancel jobid=9
+Cancel jobid=9
+Cancel jobid=9
+Cancel jobid=9
+Cancel jobid=9
+Cancel jobid=9
+Cancel jobid=9
+Cancel jobid=9
+Cancel jobid=10
+Cancel jobid=10
+Cancel jobid=10
+Cancel jobid=10
+Cancel jobid=10
+Cancel jobid=10
+Cancel jobid=10
+Cancel jobid=10
+Cancel jobid=10
+Cancel jobid=10
+Cancel jobid=11
+Cancel jobid=11
+Cancel jobid=11
+Cancel jobid=11
+Cancel jobid=11
+Cancel jobid=11
+Cancel jobid=11
+Cancel jobid=11
+Cancel jobid=11
+Cancel jobid=11
+Cancel jobid=12
+Cancel jobid=12
+Cancel jobid=12
+Cancel jobid=12
+Cancel jobid=12
+Cancel jobid=12
+Cancel jobid=12
+Cancel jobid=12
+Cancel jobid=12
+Cancel jobid=12
+Cancel jobid=13
+Cancel jobid=13
+Cancel jobid=13
+Cancel jobid=13
+Cancel jobid=13
+Cancel jobid=13
+Cancel jobid=13
+Cancel jobid=13
+Cancel jobid=13
+Cancel jobid=13
+Cancel jobid=14
+Cancel jobid=14
+Cancel jobid=14
+Cancel jobid=14
+Cancel jobid=14
+Cancel jobid=14
+Cancel jobid=14
+Cancel jobid=14
+Cancel jobid=14
+Cancel jobid=14
+Cancel jobid=15
+Cancel jobid=15
+Cancel jobid=15
+Cancel jobid=15
+Cancel jobid=15
+Cancel jobid=15
+Cancel jobid=15
+Cancel jobid=15
+Cancel jobid=15
+Cancel jobid=15
+Cancel jobid=16
+Cancel jobid=16
+Cancel jobid=16
+Cancel jobid=16
+Cancel jobid=16
+Cancel jobid=16
+Cancel jobid=16
+Cancel jobid=16
+Cancel jobid=16
+Cancel jobid=16
+Cancel jobid=17
+Cancel jobid=17
+Cancel jobid=17
+Cancel jobid=17
+Cancel jobid=17
+Cancel jobid=17
+Cancel jobid=17
+Cancel jobid=17
+Cancel jobid=17
+Cancel jobid=17
+Cancel jobid=18
+Cancel jobid=18
+Cancel jobid=18
+Cancel jobid=18
+Cancel jobid=18
+Cancel jobid=18
+Cancel jobid=18
+Cancel jobid=18
+Cancel jobid=18
+Cancel jobid=18
+Cancel jobid=19
+Cancel jobid=19
+Cancel jobid=19
+Cancel jobid=19
+Cancel jobid=19
+Cancel jobid=19
+Cancel jobid=19
+Cancel jobid=19
+Cancel jobid=19
+Cancel jobid=19
+Cancel jobid=20
+Cancel jobid=20
+Cancel jobid=20
+Cancel jobid=20
+Cancel jobid=20
+Cancel jobid=20
+Cancel jobid=20
+Cancel jobid=20
+Cancel jobid=20
+Cancel jobid=20
+Cancel jobid=21
+Cancel jobid=21
+Cancel jobid=21
+Cancel jobid=21
+Cancel jobid=21
+Cancel jobid=21
+Cancel jobid=21
+Cancel jobid=21
+Cancel jobid=21
+Cancel jobid=21
+Cancel jobid=22
+Cancel jobid=22
+Cancel jobid=22
+Cancel jobid=22
+Cancel jobid=22
+Cancel jobid=22
+Cancel jobid=22
+Cancel jobid=22
+Cancel jobid=22
+Cancel jobid=22
+Cancel jobid=23
+Cancel jobid=23
+Cancel jobid=23
+Cancel jobid=23
+Cancel jobid=23
+Cancel jobid=23
+Cancel jobid=23
+Cancel jobid=23
+Cancel jobid=23
+Cancel jobid=23
+Cancel jobid=24
+Cancel jobid=24
+Cancel jobid=24
+Cancel jobid=24
+Cancel jobid=24
+Cancel jobid=24
+Cancel jobid=24
+Cancel jobid=24
+Cancel jobid=24
+Cancel jobid=24
+Cancel jobid=25
+Cancel jobid=25
+Cancel jobid=25
+Cancel jobid=25
+Cancel jobid=25
+Cancel jobid=25
+Cancel jobid=25
+Cancel jobid=25
+Cancel jobid=25
+Cancel jobid=25
+Cancel jobid=26
+Cancel jobid=26
+Cancel jobid=26
+Cancel jobid=26
+Cancel jobid=26
+Cancel jobid=26
+Cancel jobid=26
+Cancel jobid=26
+Cancel jobid=26
+Cancel jobid=26
+Cancel jobid=27
+Cancel jobid=27
+Cancel jobid=27
+Cancel jobid=27
+Cancel jobid=27
+Cancel jobid=27
+Cancel jobid=27
+Cancel jobid=27
+Cancel jobid=27
+Cancel jobid=27
+Cancel jobid=28
+Cancel jobid=28
+Cancel jobid=28
+Cancel jobid=28
+Cancel jobid=28
+Cancel jobid=28
+Cancel jobid=28
+Cancel jobid=28
+Cancel jobid=28
+Cancel jobid=28
+Cancel jobid=29
+Cancel jobid=29
+Cancel jobid=29
+Cancel jobid=29
+Cancel jobid=29
+Cancel jobid=29
+Cancel jobid=29
+Cancel jobid=29
+Cancel jobid=29
+Cancel jobid=29
+Cancel jobid=30
+Cancel jobid=30
+Cancel jobid=30
+Cancel jobid=30
+Cancel jobid=30
+Cancel jobid=30
+Cancel jobid=30
+Cancel jobid=30
+Cancel jobid=30
+Cancel jobid=30
+Cancel jobid=31
+Cancel jobid=31
+Cancel jobid=31
+Cancel jobid=31
+Cancel jobid=31
+Cancel jobid=31
+Cancel jobid=31
+Cancel jobid=31
+Cancel jobid=31
+Cancel jobid=31
+Cancel jobid=32
+Cancel jobid=32
+Cancel jobid=32
+Cancel jobid=32
+Cancel jobid=32
+Cancel jobid=32
+Cancel jobid=32
+Cancel jobid=32
+Cancel jobid=32
+Cancel jobid=32
+Cancel jobid=33
+Cancel jobid=33
+Cancel jobid=33
+Cancel jobid=33
+Cancel jobid=33
+Cancel jobid=33
+Cancel jobid=33
+Cancel jobid=33
+Cancel jobid=33
+Cancel jobid=33
+Cancel jobid=34
+Cancel jobid=34
+Cancel jobid=34
+Cancel jobid=34
+Cancel jobid=34
+Cancel jobid=34
+Cancel jobid=34
+Cancel jobid=34
+Cancel jobid=34
+Cancel jobid=34
+Cancel jobid=35
+Cancel jobid=35
+Cancel jobid=35
+Cancel jobid=35
+Cancel jobid=35
+Cancel jobid=35
+Cancel jobid=35
+Cancel jobid=35
+Cancel jobid=35
+Cancel jobid=35
+Cancel jobid=36
+Cancel jobid=36
+Cancel jobid=36
+Cancel jobid=36
+Cancel jobid=36
+Cancel jobid=36
+Cancel jobid=36
+Cancel jobid=36
+Cancel jobid=36
+Cancel jobid=36
+Cancel jobid=37
+Cancel jobid=37
+Cancel jobid=37
+Cancel jobid=37
+Cancel jobid=37
+Cancel jobid=37
+Cancel jobid=37
+Cancel jobid=37
+Cancel jobid=37
+Cancel jobid=37
+Cancel jobid=38
+Cancel jobid=38
+Cancel jobid=38
+Cancel jobid=38
+Cancel jobid=38
+Cancel jobid=38
+Cancel jobid=38
+Cancel jobid=38
+Cancel jobid=38
+Cancel jobid=38
+Cancel jobid=39
+Cancel jobid=39
+Cancel jobid=39
+Cancel jobid=39
+Cancel jobid=39
+Cancel jobid=39
+Cancel jobid=39
+Cancel jobid=39
+Cancel jobid=39
+Cancel jobid=39
+Cancel jobid=40
+Cancel jobid=40
+Cancel jobid=40
+Cancel jobid=40
+Cancel jobid=40
+Cancel jobid=40
+Cancel jobid=40
+Cancel jobid=40
+Cancel jobid=40
+Cancel jobid=40
+Cancel jobid=41
+Cancel jobid=41
+Cancel jobid=41
+Cancel jobid=41
+Cancel jobid=41
+Cancel jobid=41
+Cancel jobid=41
+Cancel jobid=41
+Cancel jobid=41
+Cancel jobid=41
+Cancel jobid=42
+Cancel jobid=42
+Cancel jobid=42
+Cancel jobid=42
+Cancel jobid=42
+Cancel jobid=42
+Cancel jobid=42
+Cancel jobid=42
+Cancel jobid=42
+Cancel jobid=42
+Cancel jobid=43
+Cancel jobid=43
+Cancel jobid=43
+Cancel jobid=43
+Cancel jobid=43
+Cancel jobid=43
+Cancel jobid=43
+Cancel jobid=43
+Cancel jobid=43
+Cancel jobid=43
+Cancel jobid=44
+Cancel jobid=44
+Cancel jobid=44
+Cancel jobid=44
+Cancel jobid=44
+Cancel jobid=44
+Cancel jobid=44
+Cancel jobid=44
+Cancel jobid=44
+Cancel jobid=44
+Cancel jobid=45
+Cancel jobid=45
+Cancel jobid=45
+Cancel jobid=45
+Cancel jobid=45
+Cancel jobid=45
+Cancel jobid=45
+Cancel jobid=45
+Cancel jobid=45
+Cancel jobid=45
+Cancel jobid=46
+Cancel jobid=46
+Cancel jobid=46
+Cancel jobid=46
+Cancel jobid=46
+Cancel jobid=46
+Cancel jobid=46
+Cancel jobid=46
+Cancel jobid=46
+Cancel jobid=46
+Cancel jobid=47
+Cancel jobid=47
+Cancel jobid=47
+Cancel jobid=47
+Cancel jobid=47
+Cancel jobid=47
+Cancel jobid=47
+Cancel jobid=47
+Cancel jobid=47
+Cancel jobid=47
+Cancel jobid=48
+Cancel jobid=48
+Cancel jobid=48
+Cancel jobid=48
+Cancel jobid=48
+Cancel jobid=48
+Cancel jobid=48
+Cancel jobid=48
+Cancel jobid=48
+Cancel jobid=48
+Cancel jobid=49
+Cancel jobid=49
+Cancel jobid=49
+Cancel jobid=49
+Cancel jobid=49
+Cancel jobid=49
+Cancel jobid=49
+Cancel jobid=49
+Cancel jobid=49
+Cancel jobid=49
+Cancel jobid=50
+Cancel jobid=50
+Cancel jobid=50
+Cancel jobid=50
+Cancel jobid=50
+Cancel jobid=50
+Cancel jobid=50
+Cancel jobid=50
+Cancel jobid=50
+Cancel jobid=50
+Cancel jobid=51
+Cancel jobid=51
+Cancel jobid=51
+Cancel jobid=51
+Cancel jobid=51
+Cancel jobid=51
+Cancel jobid=51
+Cancel jobid=51
+Cancel jobid=51
+Cancel jobid=51
+Cancel jobid=52
+Cancel jobid=52
+Cancel jobid=52
+Cancel jobid=52
+Cancel jobid=52
+Cancel jobid=52
+Cancel jobid=52
+Cancel jobid=52
+Cancel jobid=52
+Cancel jobid=52
+Cancel jobid=53
+Cancel jobid=53
+Cancel jobid=53
+Cancel jobid=53
+Cancel jobid=53
+Cancel jobid=53
+Cancel jobid=53
+Cancel jobid=53
+Cancel jobid=53
+Cancel jobid=53
+Cancel jobid=54
+Cancel jobid=54
+Cancel jobid=54
+Cancel jobid=54
+Cancel jobid=54
+Cancel jobid=54
+Cancel jobid=54
+Cancel jobid=54
+Cancel jobid=54
+Cancel jobid=54
+Cancel jobid=55
+Cancel jobid=55
+Cancel jobid=55
+Cancel jobid=55
+Cancel jobid=55
+Cancel jobid=55
+Cancel jobid=55
+Cancel jobid=55
+Cancel jobid=55
+Cancel jobid=55
+Cancel jobid=56
+Cancel jobid=56
+Cancel jobid=56
+Cancel jobid=56
+Cancel jobid=56
+Cancel jobid=56
+Cancel jobid=56
+Cancel jobid=56
+Cancel jobid=56
+Cancel jobid=56
+Cancel jobid=57
+Cancel jobid=57
+Cancel jobid=57
+Cancel jobid=57
+Cancel jobid=57
+Cancel jobid=57
+Cancel jobid=57
+Cancel jobid=57
+Cancel jobid=57
+Cancel jobid=57
+Cancel jobid=58
+Cancel jobid=58
+Cancel jobid=58
+Cancel jobid=58
+Cancel jobid=58
+Cancel jobid=58
+Cancel jobid=58
+Cancel jobid=58
+Cancel jobid=58
+Cancel jobid=58
+Cancel jobid=59
+Cancel jobid=59
+Cancel jobid=59
+Cancel jobid=59
+Cancel jobid=59
+Cancel jobid=59
+Cancel jobid=59
+Cancel jobid=59
+Cancel jobid=59
+Cancel jobid=59
+Cancel jobid=60
+Cancel jobid=60
+Cancel jobid=60
+Cancel jobid=60
+Cancel jobid=60
+Cancel jobid=60
+Cancel jobid=60
+Cancel jobid=60
+Cancel jobid=60
+Cancel jobid=60
+Cancel jobid=61
+Cancel jobid=61
+Cancel jobid=61
+Cancel jobid=61
+Cancel jobid=61
+Cancel jobid=61
+Cancel jobid=61
+Cancel jobid=61
+Cancel jobid=61
+Cancel jobid=61
+Cancel jobid=62
+Cancel jobid=62
+Cancel jobid=62
+Cancel jobid=62
+Cancel jobid=62
+Cancel jobid=62
+Cancel jobid=62
+Cancel jobid=62
+Cancel jobid=62
+Cancel jobid=62
+Cancel jobid=63
+Cancel jobid=63
+Cancel jobid=63
+Cancel jobid=63
+Cancel jobid=63
+Cancel jobid=63
+Cancel jobid=63
+Cancel jobid=63
+Cancel jobid=63
+Cancel jobid=63
+Cancel jobid=64
+Cancel jobid=64
+Cancel jobid=64
+Cancel jobid=64
+Cancel jobid=64
+Cancel jobid=64
+Cancel jobid=64
+Cancel jobid=64
+Cancel jobid=64
+Cancel jobid=64
+Cancel jobid=65
+Cancel jobid=65
+Cancel jobid=65
+Cancel jobid=65
+Cancel jobid=65
+Cancel jobid=65
+Cancel jobid=65
+Cancel jobid=65
+Cancel jobid=65
+Cancel jobid=65
+Cancel jobid=66
+Cancel jobid=66
+Cancel jobid=66
+Cancel jobid=66
+Cancel jobid=66
+Cancel jobid=66
+Cancel jobid=66
+Cancel jobid=66
+Cancel jobid=66
+Cancel jobid=66
+Cancel jobid=67
+Cancel jobid=67
+Cancel jobid=67
+Cancel jobid=67
+Cancel jobid=67
+Cancel jobid=67
+Cancel jobid=67
+Cancel jobid=67
+Cancel jobid=67
+Cancel jobid=67
+Cancel jobid=68
+Cancel jobid=68
+Cancel jobid=68
+Cancel jobid=68
+Cancel jobid=68
+Cancel jobid=68
+Cancel jobid=68
+Cancel jobid=68
+Cancel jobid=68
+Cancel jobid=68
+Cancel jobid=69
+Cancel jobid=69
+Cancel jobid=69
+Cancel jobid=69
+Cancel jobid=69
+Cancel jobid=69
+Cancel jobid=69
+Cancel jobid=69
+Cancel jobid=69
+Cancel jobid=69
+Cancel jobid=70
+Cancel jobid=70
+Cancel jobid=70
+Cancel jobid=70
+Cancel jobid=70
+Cancel jobid=70
+Cancel jobid=70
+Cancel jobid=70
+Cancel jobid=70
+Cancel jobid=70
+Cancel jobid=71
+Cancel jobid=71
+Cancel jobid=71
+Cancel jobid=71
+Cancel jobid=71
+Cancel jobid=71
+Cancel jobid=71
+Cancel jobid=71
+Cancel jobid=71
+Cancel jobid=71
+Cancel jobid=72
+Cancel jobid=72
+Cancel jobid=72
+Cancel jobid=72
+Cancel jobid=72
+Cancel jobid=72
+Cancel jobid=72
+Cancel jobid=72
+Cancel jobid=72
+Cancel jobid=72
+Cancel jobid=73
+Cancel jobid=73
+Cancel jobid=73
+Cancel jobid=73
+Cancel jobid=73
+Cancel jobid=73
+Cancel jobid=73
+Cancel jobid=73
+Cancel jobid=73
+Cancel jobid=73
+Cancel jobid=74
+Cancel jobid=74
+Cancel jobid=74
+Cancel jobid=74
+Cancel jobid=74
+Cancel jobid=74
+Cancel jobid=74
+Cancel jobid=74
+Cancel jobid=74
+Cancel jobid=74
+Cancel jobid=75
+Cancel jobid=75
+Cancel jobid=75
+Cancel jobid=75
+Cancel jobid=75
+Cancel jobid=75
+Cancel jobid=75
+Cancel jobid=75
+Cancel jobid=75
+Cancel jobid=75
+Cancel jobid=76
+Cancel jobid=76
+Cancel jobid=76
+Cancel jobid=76
+Cancel jobid=76
+Cancel jobid=76
+Cancel jobid=76
+Cancel jobid=76
+Cancel jobid=76
+Cancel jobid=76
+Cancel jobid=77
+Cancel jobid=77
+Cancel jobid=77
+Cancel jobid=77
+Cancel jobid=77
+Cancel jobid=77
+Cancel jobid=77
+Cancel jobid=77
+Cancel jobid=77
+Cancel jobid=77
+Cancel jobid=78
+Cancel jobid=78
+Cancel jobid=78
+Cancel jobid=78
+Cancel jobid=78
+Cancel jobid=78
+Cancel jobid=78
+Cancel jobid=78
+Cancel jobid=78
+Cancel jobid=78
+Cancel jobid=79
+Cancel jobid=79
+Cancel jobid=79
+Cancel jobid=79
+Cancel jobid=79
+Cancel jobid=79
+Cancel jobid=79
+Cancel jobid=79
+Cancel jobid=79
+Cancel jobid=79
+Cancel jobid=80
+Cancel jobid=80
+Cancel jobid=80
+Cancel jobid=80
+Cancel jobid=80
+Cancel jobid=80
+Cancel jobid=80
+Cancel jobid=80
+Cancel jobid=80
+Cancel jobid=80
+wait
+messages
+@# 
+@# now do a restore
+@#
+@$out ${cwd}/tmp/log2.out
+restore where=${cwd}/tmp/bacula-restores select storage=tape
+unmark *
+mark *
+done
+yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bacula
+check_for_zombie_jobs storage=tape
+stop_bacula
+
+check_two_logs
+check_restore_diff
+end_test
