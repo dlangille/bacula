@@ -3,8 +3,6 @@
 # Copyright (C) 2000-2020 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
-
-#
 # Create a 60MB file with random bytes. Back it up to 6 Volumes
 #   each constrained to 10MB using the automatic labeling feature.
 #
@@ -24,9 +22,9 @@ scripts/copy-testa-confs
 
 echo "${cwd}/tmp/largefile" >${cwd}/tmp/file-list
 # Create 56MB file with random data
-echo "Creating a 56MB file with random data ..."
+#echo "Creating a 56MB file with random data ..."
 dd if=/dev/urandom of=${cwd}/tmp/largefile bs=1024 count=55000 >/dev/null 2>&1
-echo "largefile created"
+#echo "largefile created"
 
 change_jobname MultiVol $JobName
 start_test
@@ -35,7 +33,7 @@ cat <<END_OF_DATA >${cwd}/tmp/bconcmds
 @output /dev/null
 messages
 @$out ${cwd}/tmp/log1.out
-setdebug level=50 storage=File
+setdebug level=200 storage=File trace=1
 run job=$JobName storage=File yes
 run job=$JobName storage=File yes
 run job=$JobName storage=File yes
@@ -52,7 +50,7 @@ sql
 select * from JobMedia where JobId=4;
 select * from JobMedia where JobId=5;
 
-setdebug level=50 storage=File
+setdebug level=200 storage=File trace=1
 restore where=${cwd}/tmp/bacula-restores select storage=File
 unmark *
 mark *
