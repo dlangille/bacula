@@ -1,0 +1,71 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Run a cloud backup of the Bacula build directory
+# with a very high number of parts and try to restore it
+#
+# The test should reproduce the issue #5373. It was a string
+# edition problem, and we force it with a very long JobId
+# and a large number or parts.
+#
+TestName="cloud-xfer-test"
+JobName=backup
+. scripts/functions
+
+require_cloud
+
+scripts/cleanup
+scripts/copy-confs
+
+#
+# Zap out any schedule in default conf file so that
+#  it doesn't start during our test
+#
+outf="$tmp/sed_tmp"
+echo "s%  Schedule =%# Schedule =%g" >${outf}
+cp $scripts/bacula-dir.conf $tmp/1
+sed -f ${outf} $tmp/1 >$scripts/bacula-dir.conf
+
+change_jobname BackupClient1 $JobName
+start_test
+
+$bperl -e 'add_attribute("$conf/bacula-sd.conf", "MaximumPartSize", "1000", "Device")'
+
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@output /dev/null
+messages
+@$out $tmp/log1.out
+sql
+SELECT pg_catalog.setval('public.job_jobid_seq', 1000000000, true);
+
+label volume=TestVolume001 storage=File1 pool=File slot=1 drive=0
+run job=$JobName yes
+run job=$JobName yes
+wait
+run job=$JobName yes
+wait
+messages
+@# 
+@# now do a restore and truncate the volume first
+@#
+@$out $tmp/log2.out  
+setdebug level=50 tags=cloud trace=1 storage=File1
+cloud truncate storage=File1 volume=TestVolume001
+@exec "ls -1 $tmp/TestVolume001"
+restore where=$tmp/bacula-restores select all done
+yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bacula
+check_for_zombie_jobs storage=File1
+stop_bacula
+
+check_two_logs
+check_restore_diff
+end_test
