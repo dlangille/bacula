@@ -1,0 +1,81 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2015 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+
+#
+# Attempt to backup and restore a file with the bpipe plugin
+#
+TestName="plugin-handleXACL-test"
+JobName=TestPluginHandleXACLTest
+. scripts/functions
+
+scripts/cleanup
+scripts/copy-plugin-handleXACL-confs
+make -C $src/src/plugins/fd install-test-plugin
+
+start_test
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@output /dev/null
+messages
+@$out ${cwd}/tmp/log1.out
+label storage=File1 volume=TestVolume001
+setdebug level=150 client=$CLIENT
+estimate job=$JobName level=Full
+setdebug level=50 client=$CLIENT
+run job=$JobName storage=File1 yes
+wait
+status client=$CLIENT
+messages
+setdebug level=50 trace=0 client=$CLIENT
+quit
+END_OF_DATA
+
+run_bacula
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@$out $tmp/list
+llist pluginrestoreconf jobid=2
+@$out $tmp/conf
+llist pluginrestoreconf jobid=2 id=2
+END_OF_DATA
+
+run_bconsole
+
+grep string1 $tmp/conf
+
+cat <<EOF >$tmp/obj
+string1="My string"
+string2="My other string"
+ok=no
+EOF
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+messages
+@# 
+@# now do a restore
+@#
+@$out ${cwd}/tmp/log2.out
+setdebug level=50 client=$CLIENT
+restore fileset=TestPluginHandleXACLSet where=${cwd}/tmp select all storage=File1 done
+yes
+wait
+setdebug level=0 client=$CLIENT
+messages
+llist job=RestoreFiles
+quit
+END_OF_DATA
+
+run_bconsole
+
+stop_bacula
+
+RET=`grep -i "jobstatus:" ${cwd}/tmp/log2.out | awk '{print $2}'`
+if [ "x$RET" != "xT" ]
+then
+   rstat=1
+fi
+
+end_test
