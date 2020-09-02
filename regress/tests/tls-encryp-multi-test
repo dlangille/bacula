@@ -1,0 +1,65 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Run a simple backup of the Bacula build directory with TLS
+#   communications code enabled then restore it.
+#
+TestName="tls-encrypt-multi-test"
+JobName=TlsCrypto
+. scripts/functions
+
+scripts/cleanup
+scripts/copy-tls-crypto-confs
+echo "${tmpsrc}" >${tmp}/file-list
+mkdir -p ${tmpsrc}
+echo "${tmpsrc}" 
+cp -a "${cwd}/build" ${tmpsrc}
+dd if=/dev/urandom of=${tmpsrc}/big bs=1M count=200 2> /dev/null
+echo Hello > ${tmpsrc}/sparse
+truncate -s 200M ${tmpsrc}/sparse
+echo Salut >> ${tmpsrc}/sparse
+
+$bperl -e 'add_attribute("$conf/bacula-fd.conf", "Pki Cipher", "aes256", "FileDaemon")'
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "SpoolData", "no", "Job", $JobName )'
+
+change_jobname NightlySave $JobName
+start_test
+      
+cat <<END_OF_DATA >tmp/bconcmds
+messages
+@$out tmp/log1.out
+status all
+status all
+messages
+label storage=File volume=TestVolume001 pool=Default
+run job=$JobName storage=File yes
+run job=$JobName storage=File yes level=Full
+run job=$JobName storage=File yes level=Full
+run job=$JobName storage=File yes level=Full
+wait
+messages
+@# 
+@# now do a restore
+@#
+@$out tmp/log2.out
+@#setdebug level=120 storage=File tags=dedup,asx options=h
+@#setdebug level=120 client tags=dedup,asx options=h
+restore where=${cwd}/tmp/bacula-restores select storage=File
+unmark *
+mark *
+done
+yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bacula
+check_for_zombie_jobs storage=File
+stop_bacula
+
+check_two_logs
+check_restore_tmp_build_diff
+end_test
