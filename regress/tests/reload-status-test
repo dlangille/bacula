@@ -1,0 +1,77 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+# Do a reload while a job is running and test the status storage command
+TestName="reload-status-test"
+JobName=backup
+. scripts/functions
+
+scripts/cleanup
+scripts/copy-confs
+
+#
+# Zap out any schedule in default conf file so that
+#  it doesn't start during our test
+#
+outf="$tmp/sed_tmp"
+echo "s%  Schedule =%# Schedule =%g" >${outf}
+cp $scripts/bacula-dir.conf $tmp/1
+sed -f ${outf} $tmp/1 >$scripts/bacula-dir.conf
+
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "MaximumReloadRequests", "40", "Director")'
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "CommCompression", "no", "Director")'
+$bperl -e 'add_attribute("$conf/bacula-fd.conf", "CommCompression", "no", "FileDaemon")'
+
+echo "echo setbandwidth limit=10mb/s client | $bin/bconsole"  > $tmp/cmd
+echo "echo wait | $bin/bconsole"  >> $tmp/cmd
+chmod +x $tmp/cmd
+
+change_jobname BackupClient1 $JobName
+start_test
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out /dev/null
+messages
+@$out $tmp/log1.out
+setdebug level=100 trace=1 options=t dir
+label volume=TestVolume001 storage=File1 pool=File slot=1 drive=0
+setbandwidth limit="3000kb/s" client
+run job=$JobName yes
+@sleep 2
+reload
+quit
+END_OF_DATA
+
+run_bacula
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out $tmp/log1.out
+status storage jobid=1
+status storage=File1
+status storage select
+1
+status storage job=$JobName
+@sleep 2
+@exec "sh $tmp/cmd"
+@sleep 5
+status dir
+wait
+messages
+END_OF_DATA
+
+run_bconsole
+
+check_for_zombie_jobs storage=File1
+stop_bacula
+
+nb=`grep "Writing: Full Backup job backup JobId=1" $tmp/log1.out | wc -l`
+if [ $nb != 4 ]; then
+    print_debug "ERROR: Got a problem with a status storage command"
+    estat=1
+fi
+
+touch $tmp/log2.out
+check_two_logs
+
+end_test
