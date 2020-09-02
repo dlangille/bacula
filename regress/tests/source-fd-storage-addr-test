@@ -1,0 +1,140 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Run a simple backup of the Bacula build directory
+#   then restore it.
+#
+TestName="source-fd-storage-addr-test"
+JobName=backup
+. scripts/functions
+
+scripts/cleanup
+scripts/copy-confs
+
+#
+# Zap out any schedule in default conf file so that
+#  it doesn't start during our test
+#
+outf="tmp/sed_tmp"
+echo "s%  Schedule =%# Schedule =%g" >${outf}
+cp $scripts/bacula-dir.conf $tmp/1
+sed -f ${outf} $tmp/1 >$scripts/bacula-dir.conf
+
+PATH=$PATH:/sbin:/usr/sbin
+#
+# Deduce a primary IP address by examining
+#  the interface defined by INTERFACE=
+#
+os=`uname`
+INTERFACE=lo
+if [ $os = 'FreeBSD' ]; then
+   INTERFACE=bge0
+   IP=`ifconfig ${INTERFACE} | perl -ne '/inet (.+?) / && print $1'`
+elif [ $os = 'Linux' ]; then
+   INTERFACE=eth0
+   IP=`ifconfig ${INTERFACE} | perl -ne '/inet (addr:)?(.+?) / && print $2'`
+fi
+
+if [ "$IP" = '' ]; then
+    echo "Can't detect ip address"
+    exit 0
+fi
+
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "FDStorageAddress", "'$IP'", "Storage")'
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "Address", "127.0.0.1", "Storage")'
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "FDStorageAddress", "'$IP'", "Autochanger")'
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "Address", "127.0.0.1", "Autochanger")'
+
+
+change_jobname BackupClient1 $JobName
+start_test
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@output /dev/null
+messages
+@$out ${cwd}/tmp/log1.out
+@#label volume=TestVolume001 storage=File1 pool=File slot=1 drive=0
+@#setdebug level=100 storage=File1
+setbandwidth client limit="2000 kb/s"
+setdebug level=10 trace=1 dir 
+run job=$JobName yes
+@sleep 3
+messages
+quit
+END_OF_DATA
+
+run_bacula
+
+DIRPORT=$BASEPORT
+FDPORT=$(($BASEPORT + 1))
+SDPORT=$(($BASEPORT + 2))
+
+sleep 5
+print_debug "Detecting connections to SD sourced from ${IP}"
+netstat -tan | grep -E "$IP(.|:)$SDPORT *ESTABLISHED" > $tmp/log3.out
+if [ $? -ne 0 ]; then
+   stat=2
+   print_debug "Couldn't detect a connection to the SD using FDStorageAddress ${IP}" 
+fi
+
+if [ "$stat" = 2 ] ; then
+   netstat -tan
+fi
+
+if [ "$debug" = 1 ] ; then
+    cat $tmp/log3.out
+fi
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@$out ${cwd}/tmp/log1.out
+setbandwidth client limit="100000 kb/s"
+wait
+messages
+@# 
+@# now do a restore
+@#
+@$out ${cwd}/tmp/log2.out
+setbandwidth client limit="2000 kb/s"
+restore where=${cwd}/tmp/bacula-restores select all done yes
+@sleep 3
+END_OF_DATA
+
+run_bconsole
+
+print_debug "Detecting connections to SD sourced from ${IP}"
+netstat -tan | grep -E "$IP(.|:)$SDPORT *ESTABLISHED" > $tmp/log3.out
+if [ $? -ne 0 ]; then
+   stat=2
+   print_debug "Couldn't detect a connection to the SD using FDStorageAddress ${IP}" 
+fi
+
+if [ "$stat" = 2 ] ; then
+   netstat -tan
+fi
+
+if [ "$debug" = 1 ] ; then
+    cat $tmp/log3.out
+fi
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@$out ${cwd}/tmp/log2.out  
+setbandwidth client limit="100000 kb/s"
+wait
+messages
+END_OF_DATA
+
+run_bconsole
+
+check_for_zombie_jobs storage=File1
+stop_bacula
+check_two_logs
+check_restore_diff
+
+if [ "$stat" = 2 ]; then
+    print_debug `cat $tmp/log3.out`
+    bstat=$stat
+fi
+
+end_test
