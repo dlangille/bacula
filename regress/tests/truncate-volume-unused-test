@@ -1,0 +1,101 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Test truncate command. Reproduce a bug when a volume is used in two different
+# devices
+#
+# We run a job on a device, then we truncate the volume and we run
+# a new job more or less at the same time.
+#
+#
+TestName="truncate-volume-unused-test"
+JobName=NightlySave
+. scripts/functions
+
+cwd=`pwd`
+scripts/cleanup
+scripts/copy-2disk-virtual-confs
+
+echo $src > $tmp/file-list
+
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "ActionOnPurge", "Truncate", "Pool")'
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "SpoolData", "No", "Job")'
+$bperl -e 'add_attribute("$conf/bacula-sd.conf", "Maximum Volume Size", "500M", "Device")'
+start_test
+
+WHEN=`date --date="15 sec" "+%Y-%m-%d %H:%M:%S"`
+
+cat >$tmp/bconcmds <<END_OF_DATA
+@$out /dev/null
+messages
+@$out $tmp/log1.out
+label storage=Virtual volume=TestVolume001 drive=0 slot=0 pool=Default
+@########################################################
+@# Run a first job on TestVolume001
+@########################################################
+run level=full job=$JobName storage=Virtual yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bacula
+
+cat >$tmp/bconcmds <<END_OF_DATA
+@$out $tmp/log1.out
+purge volume=TestVolume001
+setdebug level=100 tags=volume storage
+@# start a job 15secs after the truncate command (that takes 30s)
+truncate volume=TestVolume001 storage=Virtual allpools
+status storage=Virtual
+list volumes
+setdebug level=0 tags= storage
+messages
+@sleep 5
+status storage=Virtual
+setbandwidth limit="100000 kb/s" client
+quit
+END_OF_DATA
+
+run_bconsole &
+
+sleep 5
+
+cat >$tmp/bconcmds2 <<END_OF_DATA
+@$out $tmp/log1.out
+setbandwidth limit="1000 kb/s" client
+run level=full job=$JobName storage=Virtual yes
+wait
+messages
+@$out $tmp/log2.out
+restore select all done yes where=$tmp/bacula-restores
+wait
+status storage=Virtual
+messages
+quit
+END_OF_DATA
+
+run_bconsole $tmp/bconcmds2
+
+check_for_zombie_jobs storage=File
+
+wait
+
+stop_bacula
+
+
+grep -4 "Used Volume status:" $tmp/log1.out > $tmp/log
+grep TestVolume001 $tmp/log > /dev/null
+
+if [ $? -ne 0 ]; then
+    print_error "ERROR: Unable to find TestVolume001 in the Used Volume status log (in $tmp/log)"
+    cat $tmp/log
+fi
+
+check_two_logs
+
+check_restore_diff
+
+end_test
