@@ -1,0 +1,119 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Run a couple of tests with bconsole for ACL
+#
+TestName="show-acl-test"
+JobName=backup
+. scripts/functions
+
+scripts/cleanup
+scripts/copy-test-confs
+
+#
+# Zap out any schedule in default conf file so that
+#  it doesn't start during our test
+#
+outf="$tmp/sed_tmp"
+echo "s%  Schedule =%# Schedule =%g" >${outf}
+cp $conf/bacula-dir.conf $tmp/1
+sed -f ${outf} $tmp/1 >$conf/bacula-dir.conf
+
+change_jobname BackupClient1 $JobName
+start_test
+
+cat <<EOF > $tmp/bconcmds
+@$out $tmp/log1.out
+show all
+@$out $tmp/objs1.lst
+.jobs
+.client
+.pool
+.storage
+.fileset
+EOF
+
+run_bacula
+
+# For job, we want two items in the list
+job1=`awk    '{ if (n && (++n == 4)) { print $0 }} /.jobs/ { n++ } '  $tmp/objs1.lst`
+job2=`awk    '{ if (n && (++n == 5)) { print $0 }} /.jobs/ { n++ } '  $tmp/objs1.lst`
+job3=`awk    '{ if (n && (++n == 2)) { print $0 }} /.jobs/ { n++ } '  $tmp/objs1.lst`
+pool=`awk    '{ if (n && ++n == 2) { print $0; exit }} /.pool/ { n++ } '  $tmp/objs1.lst`
+client=`awk  '{ if (n && ++n == 2) { print $0; exit }} /.client/ { n++ } '  $tmp/objs1.lst`
+storage=`awk '{ if (n && ++n == 3) { print $0; exit }} /.storage/ { n++ } '  $tmp/objs1.lst`
+fileset=`awk '{ if (n && ++n == 6) { print $0; exit }} /.fileset/ { n++ } '  $tmp/objs1.lst`
+
+echo $job $pool $client $storage $fileset
+
+cat <<EOF >> $conf/bacula-dir.conf
+Console {
+  Name = restricted-user
+  Password = "xxx"
+  JobACL = $job1,$job2
+  ClientACL = $client
+  StorageACL = $storage
+  ScheduleACL = None
+  PoolACL = $pool
+  FileSetACL = "$fileset"
+  CatalogACL = *all*
+  CommandACL = show, .jobs, messages, .pool, .storage, .client, .fileset
+  WhereACL = "/"
+}
+EOF
+
+cat <<EOF > $tmp/bconcmds.1
+reload
+EOF
+
+run_bconsole $tmp/bconcmds.1
+
+cat <<EOF >> $conf/bconsole.conf
+Console {
+  Name = restricted-user
+  Password = "xxx"
+}
+EOF
+
+mv $tmp/objs1.lst $tmp/objs2.lst
+mv $tmp/log1.out $tmp/log2.out
+
+run_bconsole
+
+cat <<EOF > $tmp/objs3.lst
+.jobs
+$job1
+$job2
+.client
+$client
+.pool
+$pool
+.storage
+$storage
+.fileset
+$fileset
+EOF
+
+diff -Naur $tmp/objs3.lst $tmp/objs1.lst
+if [ $? != 0 ]; then
+    print_debug "ERROR: $tmp/objs1.lst is not as expected"
+    estat=1
+fi
+
+grep name=$job3 $tmp/log2.out > /dev/null
+if [ $? != 0 ]; then
+    print_debug "ERROR: should find job definition for $job3 in $tmp/log2.out"
+    estat=2
+fi
+
+grep name=$job3 $tmp/log1.out > /dev/null
+if [ $? == 0 ]; then
+    print_debug "ERROR: should NOT find job definition for $job3 in $tmp/log1.out"
+    estat=3
+fi
+
+
+stop_bacula
+end_test
