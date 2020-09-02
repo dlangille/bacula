@@ -1,5 +1,8 @@
 #!/bin/sh
 #
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
 # Run different backups and restart them in the same command
 #
 TestName="resume-jobs-test"
