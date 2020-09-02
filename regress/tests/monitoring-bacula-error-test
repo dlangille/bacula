@@ -1,5 +1,8 @@
 #!/bin/sh
 #
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
 # Run a simple backup of the Bacula build directory and simulate network probes
 # from a "check_tcp" like tool. It should not be in the job log. (Waiting
 # to store security messages at a proper place)
