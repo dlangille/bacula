@@ -1,0 +1,193 @@
+#!/bin/bash
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# create LVM volume and play with snapshots. We check if mountopts is respected
+#
+TestName="snapshot-mountopts-test"
+JobName=Incremental
+. scripts/functions
+
+${rscripts}/cleanup
+${rscripts}/copy-test-confs
+
+USE_SUDO=${USE_SUDO:-sudo}
+
+if [ "$USE_SUDO" = sudo ]; then
+    echo sudo=yes > $conf/bsnapshot.conf
+fi
+
+mkdir -p $cwd/lvm $cwd/lvmA
+
+loop_dev="" # no loop used
+vg=`$USE_SUDO vgs | awk '{if (FNR == 2) { print $1; exit }}'`
+if [ -z $vg ] ; then
+    # create a 4GB loop device for LVM
+    lvm_img=$tmp/lvm0.img
+    cleanup_lvmloop()
+    {
+       $USE_SUDO vgremove $vg
+       $USE_SUDO losetup -d $loop_dev
+       # rm -f $lvm_img
+    }
+    trap cleanup_lvmloop EXIT
+    $USE_SUDO dd if=/dev/zero of=$lvm_img bs=1M count=4096
+    loop_dev=`$USE_SUDO losetup --show -f $lvm_img`
+    $USE_SUDO vgcreate regress$$ $loop_dev
+    vg=`$USE_SUDO vgs | awk '{if (FNR == 2) { print $1; exit }}'`
+fi
+
+$USE_SUDO lvcreate -L512M -n test$$ $vg
+if [ $? != 0 ]; then
+    print_debug "ERROR: unable to create lv directory"
+    exit 1
+fi
+
+trap "$USE_SUDO umount $cwd/lvm ; $USE_SUDO umount $cwd/lvmA ; $USE_SUDO lvremove -f /dev/$vg/test$$ ; $USE_SUDO lvremove -f /dev/$vg/testA$$ ; [ -z $loop_dev ] || cleanup_lvmloop" EXIT
+
+$USE_SUDO mkfs.ext4 -F /dev/$vg/test$$
+
+$USE_SUDO mount /dev/$vg/test$$ $cwd/lvm
+if [ $? != 0 ]; then
+    print_debug "ERROR: unable to mount lv directory"
+    exit 1
+fi
+
+$USE_SUDO lvcreate -L512M -n testA$$ $vg
+if [ $? != 0 ]; then
+    print_debug "ERROR: unable to create lv directory"
+    exit 1
+fi
+
+$USE_SUDO mkfs.ext4 -F /dev/$vg/testA$$
+
+$USE_SUDO mount /dev/$vg/testA$$ $cwd/lvmA
+if [ $? != 0 ]; then
+    print_debug "ERROR: unable to mount lv directory"
+    exit 1
+fi
+
+cat <<EOF >> $conf/bsnapshot.conf
+mountopts=nodev
+mountopts=/dev/$vg/test$$:noexec
+trace=$tmp/bsnapshot.log
+debug=50
+EOF
+
+GID=`id -g`
+$USE_SUDO chown -R $USER:$GID $cwd/lvm $cwd/lvmA
+
+cp $cwd/build/src/dird/*.c $cwd/build/po/*.po $cwd/lvm/
+cp $cwd/build/src/dird/*.c $cwd/build/po/*.po $cwd/lvmA/
+
+echo "$cwd/lvm/" >${tmp}/file-list
+echo "$cwd/lvmA/" >>${tmp}/file-list
+
+make -C $cwd/build/src/tools install-bsnapshot
+
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "Enable Snapshot", "yes", "FileSet")'
+
+change_jobname CompressedTest $JobName
+start_test
+
+cat <<END_OF_DATA >${tmp}/bconcmds
+@output /dev/null
+messages
+@$out ${tmp}/log1.out
+setdebug level=30 tags=snapshot fd trace=1
+label storage=File volume=TestVolume001
+run job=$JobName yes
+status client
+wait
+messages
+@output ${tmp}/list1
+list files jobid=1
+END_OF_DATA
+
+run_bacula
+check_for_zombie_jobs storage=File
+
+cat <<END_OF_DATA >${tmp}/bconcmds
+@# 
+@# now do a restore
+@#
+@$out ${tmp}/log2.out
+restore where=${tmp}/bacula-restores storage=File select all yes done
+wait
+status client
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+
+rmdir $cwd/lvm/.snapshots
+rmdir $cwd/lvmA/.snapshots
+
+$rscripts/diff.pl -s $cwd/lvm -d $tmp/bacula-restores/$cwd/lvm
+if [ $? -ne 0 ]; then
+    print_debug "ERROR: Found differences"
+    estat=1
+fi
+
+$rscripts/diff.pl -s $cwd/lvmA -d $tmp/bacula-restores/$cwd/lvmA
+
+if [ $? -ne 0 ]; then
+    print_debug "ERROR: Found differences"
+    estat=1
+fi
+
+grep .snapshots $tmp/list1
+if [ $? -eq 0 ]; then
+    print_debug "ERROR: Should not find .snapshots directory"
+    estat=1
+fi
+
+f=`ls $working/*-fd.trace`
+cp $f $working/job1.trace
+cp /dev/null $f
+
+grep -E "Adding $cwd/lvm dev=[0-9]+ snap.=1 to the mount list" $working/job1.trace > /dev/null
+if [ $? -ne 0 ]; then
+    print_debug "ERROR: Should find $cwd/lvm in the FD $working/job1.trace file"
+    estat=1
+fi
+
+grep "Create Snapshot of /dev/$vg/test$$ $JobName" $working/job1.trace > /dev/null
+if [ $? -ne 0 ]; then
+    print_debug "ERROR: Should find snapshot creation in FD $working/job1.trace file"
+    estat=1
+fi
+
+grep "Create Snapshot of /dev/$vg/testA$$ $JobName" $working/job1.trace > /dev/null
+if [ $? -ne 0 ]; then
+    print_debug "ERROR: Should find snapshot creation in FD $working/job1.trace file"
+    estat=1
+fi
+
+
+grep "fname=$cwd/lvm/fr.po snap=$cwd/lvm/.snapshots/Incremental.*/fr.po link=$cwd/lvm/fr.po" $working/job1.trace > /dev/null
+if [ $? -ne 0 ]; then
+    print_debug "ERROR: Should find original and snapshot path in FD $working/job1.trace trace file"
+    estat=1
+fi
+
+grep "mount  -o \"ro,nodev\"  \"/dev/$vg/testA$$" $tmp/bsnapshot.log > /dev/null
+if [ $? -ne 0 ]; then
+    print_debug "ERROR: Should find nodev option in mount command in $tmp/bsnapshot.log"
+    estat=1
+fi
+
+grep "mount  -o \"ro,noexec\"  \"/dev/$vg/test$$" $tmp/bsnapshot.log > /dev/null
+if [ $? -ne 0 ]; then
+    print_debug "ERROR: Should find noexec option in mount command in $tmp/bsnapshot.log"
+    estat=1
+fi
+
+
+stop_bacula
+
+check_two_logs
+
+end_test
