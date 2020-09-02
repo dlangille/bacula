@@ -1,0 +1,72 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+#  Short elementary Volume span test case for debugging.
+#  Here we create at least two volumes and the data spans the volume.
+#
+
+TestName="short-auto-label-test"
+JobName=AutoLabel
+. scripts/functions
+
+copy_test_confs
+
+file="config.status"
+echo "${cwd}/build/$file" >${cwd}/tmp/file-list
+
+cp ${cwd}/bin/bacula-dir.conf ${cwd}/tmp/1
+sed "s%# Simple Label Format%  Label Format%" ${cwd}/tmp/1 >${cwd}/bin/bacula-dir.conf
+cp ${cwd}/bin/bacula-dir.conf ${cwd}/tmp/1
+sed "s%# Maximum Volume Bytes = .*$%  Maximum Volume Bytes = 65000%g" ${cwd}/tmp/1 >${cwd}/bin/bacula-dir.conf
+
+change_jobname Simple $JobName
+start_test
+
+cat <<END_OF_SCRIPT >${cwd}/tmp/bconcmds
+@$out /dev/null
+messages
+@$out ${cwd}/tmp/log1.out
+status all
+list pools
+messages
+@#setdebug level=110 storage=File
+run job=$JobName level=Full storage=File yes
+wait
+list volumes
+sql
+select * from JobMedia;
+
+@exec "sh -c 'ls -l ${cwd}/tmp/Backup*'"
+messages
+@# 
+@# now do a restore
+@#
+@$out ${cwd}/tmp/log2.out
+setdebug level=500 storage=File
+restore where=${cwd}/tmp/bacula-restores select storage=File
+unmark *
+mark *
+pwd
+done
+yes
+wait
+messages
+quit
+END_OF_SCRIPT
+
+ls -l tmp/Backup*
+
+run_bacula
+check_for_zombie_jobs storage=File
+stop_bacula
+
+check_two_logs
+# Check single file
+diff -ur ${cwd}/build/$file ${tmp}/bacula-restores${src}
+if test $? -ne 0; then
+   dstat=1
+fi
+#check_restore_diff
+end_test
