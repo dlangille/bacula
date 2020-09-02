@@ -1,0 +1,105 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Test the FDCallsDir scheduler feature
+#
+TestName="fdcallsdir-sched-test"
+JobName=backup
+. scripts/functions
+
+scripts/cleanup
+scripts/copy-confs
+
+#
+# Zap out any schedule in default director conf file so that
+#  it doesn't start during our test
+#
+outf="$tmp/sed_tmp"
+echo "s%  Schedule =%# Schedule =%g" >${outf}
+cp $scripts/bacula-dir.conf $tmp/1
+sed -f ${outf} $tmp/1 >$scripts/bacula-dir.conf
+
+
+# Setup console on FD
+[ x$FORCE_FDCALLS = x ] && $bperl -e 'setup_fdcallsdir()'
+
+w=`perl -MPOSIX -e "print strftime('%H:%M', localtime(time()+90))"`
+
+$bperl -e 'add_attribute("$conf/bacula-fd.conf", "Schedule", "Sched1", "Director")'
+cat <<EOF >> $conf/bacula-fd.conf
+Schedule {
+  Name = Sched1
+#  Connect = MaxConnectTime=30s at $w
+}
+EOF
+
+change_jobname BackupClient1 $JobName
+start_test
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@output /dev/null
+messages
+@$out $tmp/log3.out
+@# The connection will fail
+status client
+quit
+END_OF_DATA
+
+run_bacula
+
+date
+echo "The job will start at $w"
+
+# It's after 30s
+sed -i "s/#  Connect/  Connect/" $conf/bacula-fd.conf
+$bin/bacula-ctl-fd restart -d50,network
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@output /dev/null
+messages
+@$out $tmp/log1.out
+label volume=TestVolume001 storage=File1 pool=File slot=1 drive=0
+run job=$JobName yes
+wait
+messages
+@# 
+@# now do a restore
+@#
+@$out $tmp/log2.out  
+restore where=$tmp/bacula-restores select all done
+yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+
+echo "Need to wait few seconds for the scheduler to stop calling the director"
+sleep 35
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@output /dev/null
+messages
+@$out $tmp/log3.out
+@# The connection will fail
+status client
+quit
+END_OF_DATA
+
+run_bconsole
+
+stop_bacula
+
+grep "Daemon started" $tmp/log3.out > /dev/null
+if [ $? = 0 ]; then
+    print_debug "ERROR: Should not be able to connect the FD in $tmp/log3.out"
+    estat=1
+fi
+
+check_two_logs
+check_restore_diff
+
+end_test
