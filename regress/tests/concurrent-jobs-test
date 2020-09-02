@@ -34,7 +34,7 @@ change_jobname CompressedTest $JobName
 start_test
      
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
-@$out /dev/null
+@output /dev/null
 messages
 @$out  ${cwd}/tmp/log1.out
 label storage=File volume=TestVolume001
