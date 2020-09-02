@@ -1,0 +1,79 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Run a simple backup of the Bacula build directory multiple times
+#  in // over multiple volumes, and run a restore for each Job.
+#
+TestName="many-volumes-test"
+JobName=SpanVol
+. scripts/functions
+
+scripts/cleanup
+scripts/copy-test-confs
+echo "${cwd}/build" >${cwd}/tmp/file-list
+
+$bperl -e 'add_attribute("$conf/bacula-sd.conf", "Maximum Concurrent Jobs", "1", "Device")'
+$bperl -e 'add_attribute("$conf/bacula-sd.conf", "Maximum Concurrent Jobs", "50", "Storage")'
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "Maximum Concurrent Jobs", "50", "Storage")'
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "Maximum Concurrent Jobs", "50", "Director")'
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "Maximum Concurrent Jobs", "50", "Client")'
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "SpoolData", "no", "Job")'
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "Maximum Volumes", "350", "Pool")'
+
+sed -i -e 's/# Simple/ /' $conf/bacula-dir.conf
+sed -i -e 's/# Maximum Volume Bytes = 1500000/  Maximum Volume Bytes = 1500000/' $conf/bacula-dir.conf
+
+# install the aligned volume plugin
+make -C build/src/plugins/sd install-aligned-plugin >/dev/null
+
+change_jobname CompressedTest $JobName
+start_test
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@output /dev/null
+messages
+@$out ${cwd}/tmp/log1.out
+setdebug level=0 storage
+run level=full job=$JobName yes
+@#run level=full job=$JobName yes
+@#run level=full job=$JobName yes
+@#run level=full job=$JobName yes
+@#run level=full job=$JobName yes
+@#run level=full job=$JobName yes
+wait
+messages
+@# 
+@# now do a restore
+@#
+@$out ${cwd}/tmp/log2.out
+setdebug level=0 storage=File
+setdebug level=0 dir
+@# Restore JobId=1
+restore where=${cwd}/tmp/bacula-restores storage=File
+3
+1
+mark *
+done
+yes
+wait
+@# Restore JobId=2
+restore where=${cwd}/tmp/bacula-restores storage=File
+3
+2
+mark *
+done
+yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bacula
+check_for_zombie_jobs storage=File
+stop_bacula
+
+check_two_logs
+check_restore_diff
+end_test
