@@ -1,0 +1,118 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Run multiple jobs at the same time, try to recreate cloud issue
+# seen in #5373
+
+TestName="cloud-concurrent-jobs-test"
+JobName=concurrent-jobs
+. scripts/functions
+
+require_cloud
+copy_test_confs
+
+echo "${cwd}/tmp/largefile" >${cwd}/tmp/file-list
+echo "${cwd}/build" >>${cwd}/tmp/file-list
+
+if test -c /dev/urandom ; then
+# Create 56MB file with random data
+#  echo "Creating a 56MB file with random data ..."
+   dd if=/dev/urandom of=${cwd}/tmp/largefile bs=1024 count=55000 2>&1 1>/dev/null
+else
+#  echo "Creating a 56MB file with bacula-dir data ..."
+   dd if=$bin/bacula-dir of=${cwd}/tmp/1 bs=1024 count=1000 2>&1 1>/dev/null
+   cat ${cwd}/tmp/1 ${cwd}/tmp/1 ${cwd}/tmp/1 ${cwd}/tmp/1 ${cwd}/tmp/1 >${cwd}/tmp/2
+   rm -f ${cwd}/tmp/1
+   cat ${cwd}/tmp/2 ${cwd}/tmp/2 ${cwd}/tmp/2 ${cwd}/tmp/2 ${cwd}/tmp/2 >>${cwd}/tmp/3
+   rm -f ${cwd}/tmp/2
+   cat ${cwd}/tmp/3 ${cwd}/tmp/3 ${cwd}/tmp/3 ${cwd}/tmp/3 ${cwd}/tmp/3 >${cwd}/tmp/largefile
+   rm -f ${cwd}/tmp/3
+fi 
+
+#echo "largefile created"
+
+$bperl -e "set_global_maximum_concurrent_jobs(100)"
+$bperl -e "setup_fd_encryption()"
+$bperl -e "add_attribute('$conf/bacula-sd.conf', 'MaximumPartSize', '256K', 'Device')"
+$bperl -e "add_attribute('$conf/bacula-dir.conf', 'SpoolData', 'no', 'Job')"
+$bperl -e "add_attribute('$conf/bacula-sd.conf', 'MaximumFileSize', '4MB', 'Device')"
+
+change_jobname CompressedTest $JobName
+start_test
+     
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@output /dev/null
+messages
+@$out  ${cwd}/tmp/log1.out
+label storage=File volume=TestVolume001
+run job=$JobName level=Full yes
+@sleep 4
+run job=$JobName level=Full yes
+@sleep 4
+run job=$JobName level=Full yes
+@sleep 4
+run job=$JobName level=Full yes
+wait
+restore jobid=1 where=$tmp/bacula-restores-0 storage=File all done yes
+wait
+messages
+run job=$JobName level=Full yes
+@sleep 4
+run job=$JobName level=Full yes
+@sleep 4
+run job=$JobName level=Full yes
+@sleep 4
+run job=$JobName level=Full yes
+wait
+messages
+@# 
+@# now do a restore
+@#
+@$out   ${cwd}/tmp/log2.out
+cloud truncate storage=File volume=TestVolume001
+@exec "ls $tmp/TestVolume001/"
+restore jobid=1 where=$tmp/bacula-restores-1 storage=File all done yes
+restore jobid=2 where=$tmp/bacula-restores-2 storage=File all done yes
+restore jobid=3 where=$tmp/bacula-restores-3 storage=File all done yes
+restore jobid=4 where=$tmp/bacula-restores-4 storage=File all done yes
+@# 5 was a restore
+restore jobid=6 where=$tmp/bacula-restores-6 storage=File all done yes
+restore jobid=7 where=$tmp/bacula-restores-7 storage=File all done yes
+restore jobid=8 where=$tmp/bacula-restores-8 storage=File all done yes
+restore jobid=9 where=$tmp/bacula-restores-9 storage=File all done yes
+wait
+messages
+@output
+quit
+END_OF_DATA
+
+run_bacula
+check_for_zombie_jobs storage=File
+stop_bacula
+
+for i in 1 2 3 4 6 7 8 9
+do
+    diff $tmp/bacula-restores-$i/${cwd}/tmp/largefile  ${cwd}/tmp/largefile > /dev/null
+    if [ $? -ne 0 ]; then
+        print_debug "ERROR: Found difference"
+        estat=1
+    fi
+    $rscripts/diff.pl -d $tmp/bacula-restores-$i/$cwd/build -s $cwd/build
+    if [ $? -ne 0 ]; then
+        print_debug "ERROR: Found difference $i"
+        estat=1
+    fi
+done
+
+$bin/bscan -d10,cloud -r $tmp/TestVolume001 > $tmp/bscan.log
+$bperl -e "check_bscan('$tmp/bscan.log')"
+if [ $? -ne 0 ]; then
+     print_debug "ERROR: Found issues in the bscan log"
+     estat=1
+fi
+
+check_two_logs
+dstat=$?
+end_test
