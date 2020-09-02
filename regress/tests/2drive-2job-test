@@ -1,9 +1,7 @@
 #!/bin/sh
 #
-# Copyright (C) 2000-2015 Kern Sibbald
+# Copyright (C) 2000-2020 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
-#
-
 #
 # Set prefer mounted volumes to no to try to force use of
 #   the drive swap code.
@@ -45,7 +43,7 @@ status storage=tape
 @#mount storage=tape slot=2 drive=0
 @#mount storage=tape slot=1 drive=1
 status storage=tape
-setdebug level=120 storage=tape
+setdebug level=120 trace=1 storage=tape
 run job=$JobName level=Full yes
 @sleep 2
 run job=$JobName level=Full yes

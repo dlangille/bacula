@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (C) 2000-2017 Kern Sibbald
+# Copyright (C) 2000-2020 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
 # Test running a Virtual disk changer with two Media Types
@@ -17,6 +17,7 @@ ${rscripts}/cleanup
 cp -f ${rscripts}/bacula-dir-2media-virtual.conf ${conf}/bacula-dir.conf
 cp -f ${rscripts}/bacula-sd-2media-virtual.conf ${conf}/bacula-sd.conf
 cp -f ${rscripts}/test-bacula-fd.conf ${conf}/bacula-fd.conf
+cp -f ${rscripts}/test-console.conf ${conf}/bconsole.conf
 rm -rf ${tmp}/disk ${tmp}/disk1
 mkdir -p ${tmp}/disk ${tmp}/disk1
 
@@ -32,8 +33,8 @@ messages
 @#setdebug level=15 storage=Virtual
 @#setdebug level=200 client
 @#setdebug level=100 director
-label storage=Virtual pool=Default volume=TestVolume001 drive=0 slot=0
-label Storage=vDrive-3 pool=Default volume=TestVolume002 drive=2 slot=0
+label storage=Virtual volume=TestVolume001 pool=Default drive=0 slot=0
+label Storage=vDrive-3 volume=TestVolume002 pool=Default drive=2 slot=0
 run job=$JobName level=Full storage=Virtual yes
 wait
 update volume=TestVolume001 volstatus=Used actiononpurge=truncate
@@ -45,8 +46,8 @@ llist volume=TestVolume001
 purge volume=TestVolume001
 update volume=TestVolume002 volstatus=Used actiononpurge=truncate
 purge volume=TestVolume002
-purge volume action=truncate pool=Default storage=Virtual drive=0
-purge volume action=truncate pool=Default storage=Virtual drive=2
+purge volume action=truncate storage=Virtual drive=0 pool=Default
+purge volume action=truncate storage=Virtual drive=2 pool=Default
 list volumes
 quit
 END_OF_DATA

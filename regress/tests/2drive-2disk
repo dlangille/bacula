@@ -1,9 +1,7 @@
 #!/bin/sh
 #
-# Copyright (C) 2000-2015 Kern Sibbald
+# Copyright (C) 2000-2020 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
-#
-
 #
 # Run a simple backup of the Bacula build directory then create some           
 #   new files, do an Incremental and restore those two files.
@@ -38,13 +36,13 @@ cat <<END_OF_DATA >${cwd}/tmp/bconcmds
 @$out /dev/null
 messages
 @$out ${cwd}/tmp/log1.out
-setdebug level=3 dir
-setdebug level=3 storage=tape
-setdebug level=3 client=$CLIENT
+setdebug level=3 dir trace=1
+setdebug level=3 storage=tape trace=1
+setdebug level=3 client=$CLIENT trace=1
 label storage=tape volume=TestVolume001 slot=1 Pool=Default drive=1
 # label storage=tape volume=TestVolume002 slot=2 Pool=Default drive=1
 status storage=tape
-setdebug level=120 storage=tape
+setdebug level=120 storage=tape trace=1
 run job=NightlySave level=Full yes
 @sleep 1
 run job=NightlySave level=Full yes
