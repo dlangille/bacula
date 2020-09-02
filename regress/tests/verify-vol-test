@@ -3,8 +3,6 @@
 # Copyright (C) 2000-2020 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
-
-#
 # Run a simple backup of the Bacula build directory
 #   then verify the catalog.           
 #
@@ -26,27 +24,35 @@ rm -f ${cwd}/build/sparsefile
 change_jobname NightlySave $JobName
 start_test
 
+#$bperl -e "add_attribute('$conf/bacula-dir.conf', 'VerifyJob', '$JobName', 'Job', 'VerifyVolume')"
+
 cat <<END_OF_DATA >tmp/bconcmds
 @output /dev/null
 messages
 @$out tmp/log1.out
-setdebug level=1 storage=File sd
+setdebug level=1 storage=File sd trace=1
 label storage=File volume=TestVolume001
 run job=$JobName yes
+wait
+messages
+run job=MonsterSave storage=File yes
 wait
 messages
 @# 
 @# now do a verify volume
 @#
 @$out ${cwd}/tmp/log2.out
-setdebug level=12 dir
-run job=VerifyVolume
-yes
+setdebug level=200 dir tags=sql trace=1
+run job=VerifyVolume yes
 wait
 messages
 @$out ${cwd}/tmp/log3.out
-run job=VerifyVolume level=DiskToCatalog
+run job=VerifyVolume level=DiskToCatalog jobid=1
 yes
+wait
+messages
+@$out ${cwd}/tmp/log4.out
+run job=VerifyDiskToCatalog yes
 wait
 messages
 quit
@@ -73,6 +79,11 @@ rstat=$?
 if test $rstat=0; then
    grep "^  Termination: *Verify OK" tmp/log3.out 2>&1 >/dev/null
    rstat=$?
+fi
+grep "^  Termination: *Verify OK" tmp/log4.out 2>&1 >/dev/null
+if [ $? != 0 ]; then
+    print_debug "ERROR: Verify job in error in $tmp/log4.out"
+    rstat=1
 fi
 dstat=0
 end_test
