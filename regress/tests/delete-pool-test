@@ -1,0 +1,106 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# This script will test pool deletion
+#
+. scripts/functions
+
+TestName="delete-pool-test"
+JobName=NightlySave
+
+scripts/cleanup
+scripts/copy-test-confs
+
+start_test
+
+echo $PWD/build/po > tmp/file-list
+
+$bperl -e "add_attribute('$conf/bacula-dir.conf', 'MaximumVolumeJobs', '1', 'Pool')"
+$bperl -e "add_attribute('$conf/bacula-dir.conf', 'LabelFormat', 'Vol', 'Pool')"
+$bperl -e "add_attribute('$conf/bacula-dir.conf', 'SpoolData', 'no', 'Job')"
+$bperl -e "add_attribute('$conf/bacula-dir.conf', 'Autoprune', 'no', 'Director')"
+
+cat <<EOF >> $conf/bacula-dir.conf
+Pool {
+ Name = Test1
+ Pool Type = Backup
+ LabelFormat = Vol
+ VolumeRetention = 1d
+ MaximumVolumeJobs = 1
+}
+EOF
+
+cat <<EOF > ${cwd}/tmp/bconcmds
+@output /dev/null
+messages
+@$out $tmp/log1.out
+run job=$JobName level=full pool=Test1 yes
+wait
+messages
+@exec "touch $cwd/build/po/fr.po"
+run job=$JobName level=incremental pool=Test1 yes
+wait
+messages
+@exec "touch $cwd/build/po/de.po"
+run job=$JobName level=incremental pool=Test1 yes
+wait
+messages
+@out $tmp/log2.out
+@exec "sed -i s/Test1/Test2/ $conf/bacula-dir.conf"
+reload
+@$out $tmp/log3.out
+delete pool=Default yes
+@$out $tmp/log4.out
+delete pool=Test2 yes
+@$out $tmp/log5.out
+delete pool=Test1
+yes
+yes
+yes
+yes
+@$out $tmp/log6.out
+list pools
+list volumes
+@$out $tmp/log61.out
+@exec "rm -f $tmp/Vol0001"
+@exec "rm -f $tmp/Vol0002"
+@exec "rm -f $tmp/Vol0003"
+@$out $tmp/log7.out
+run job=$JobName pool=Test2 yes
+wait
+messages
+@exec "sed -i s/Test2/Test3/ $conf/bacula-dir.conf"
+reload
+delete pool=Test2 yes
+yes
+@$out $tmp/log8.out
+list pools
+list volumes
+quit
+EOF
+
+run_bacula
+stop_bacula
+
+grep Test1 $tmp/log6.out
+if [ $? = 0 ]; then
+    print_debug "ERROR: Should not find Test1 in $tmp/log6.out"
+    estat=1
+fi
+
+grep Vol00 $tmp/log6.out $tmp/log8.out
+if [ $? = 0 ]; then
+    print_debug "ERROR: Should not find Volumes in $tmp/log8.out or $tmp/log6.out"
+    estat=1
+fi
+
+grep Test2 $tmp/log8.out
+if [ $? = 0 ]; then
+    print_debug "ERROR: Should not find Test2 in $tmp/log8.out"
+    estat=1
+fi
+
+
+end_test
