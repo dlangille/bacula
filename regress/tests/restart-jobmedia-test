@@ -9,7 +9,7 @@
 # We generate a Jobmedia just before the issue, so inside the
 # catalog we may have duplicate entries for the fileindex
 #
-TestName="restart-jobmedia-test"
+TestName="restart-job-test"
 JobName=RestartJob
 . scripts/functions
 
@@ -37,21 +37,11 @@ $bperl -e "add_attribute('$conf/bacula-sd.conf', 'MaximumFileSize', '2MB', 'Devi
 $bperl -e "add_attribute('$conf/bacula-sd.conf', 'MaximumSpoolSize', '2MB', 'Device')"
 $bperl -e "add_attribute('$conf/bacula-dir.conf', 'LabelFormat', 'Vol', 'Pool')"
 $bperl -e "add_attribute('$conf/bacula-dir.conf', 'NextPool', 'VF', 'Pool')"
-$bperl -e "add_attribute('$conf/bacula-dir.conf', 'MaximumVolumeBytes', '7MB', 'Pool')"
 
 cat <<EOF >> $conf/bacula-dir.conf
 Job {
  Name = migrate
  Type = Migrate
- Selection Type = Job
- Selection Pattern = $JobName
- Client = $HOST-fd
- Fileset = "Full Set"
- JobDefs = BackupJob
-}
-Job {
- Name = copy
- Type = Copy
  Selection Type = Job
  Selection Pattern = $JobName
  Client = $HOST-fd
@@ -68,7 +58,7 @@ Job {
 }
 Pool {
  Name = VF
- Pool Type = Backup
+ Pool Type = backup
  Storage = File1
  LabelFormat = "VF"
 }
@@ -88,13 +78,13 @@ run job=$JobName spooldata=no yes
 messages
 sql
 select * from JobMedia;
-select FileId, FileIndex, Path.Path, Filename.Name from File JOIN Path USING (PathId) JOIN Filename USING (FilenameId);
+select FileId, FileIndex, Path.Path, Filename from File JOIN Path USING (PathId);
 
 wait
 messages
 sql
 select * from JobMedia;
-select FileId, FileIndex, Path.Path, Filename.Name from File JOIN Path USING (PathId) JOIN Filename USING (FilenameId);
+select FileId, FileIndex, Path.Path, Filename from File JOIN Path USING (PathId);
 
 quit
 END_OF_DATA
@@ -115,18 +105,12 @@ yes
 wait
 messages
 @$out ${cwd}/tmp/log3.out
-run job=copy jobid=1 yes
+run job=migrate yes
 wait
 messages
 run job=verify jobid=4 yes
 wait
 messages
-@#run job=migrate yes
-@#wait
-@#messages
-@#run job=verify jobid=7 yes
-@#wait
-@#messages
 restore where=$tmp/bacula-restores2 jobid=4 all done
 yes
 wait
@@ -150,11 +134,11 @@ if [ $? != 0 ]; then
     estat=1
 fi
 
-#grep "Migration OK" $tmp/log3.out > /dev/null
-#if [ $? != 0 ]; then
-#    print_debug "ERROR: Found error with migration in $tmp/log3.out"
-#    estat=1
-#fi
+grep "Migration OK" $tmp/log3.out > /dev/null
+if [ $? != 0 ]; then
+    print_debug "ERROR: Found error with migration in $tmp/log3.out"
+    estat=1
+fi
 
 grep "Verify OK" $tmp/log3.out > /dev/null
 if [ $? != 0 ]; then
