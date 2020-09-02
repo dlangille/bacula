@@ -3,8 +3,8 @@
 # Copyright (C) 2000-2020 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
-# Run a simple backup of the Bacula build directory and see
-# if bacula is respecting the maximum concurrent job (MJC)
+# Run a simple backup of the Bacula build directory and see if bacula is
+# respecting the maximum concurrent job (MJC) and the enabled flag
 #
 TestName="mjc-test"
 JobName=backup
@@ -62,6 +62,20 @@ restore where=$tmp/bacula-restores select all done
 yes
 wait
 messages
+@$out $tmp/log4.out
+@# ################################################################
+@# Test the enable flag now
+@# ################################################################
+disable client
+disable job=$JobName
+show client
+show job=$JobName
+@# do the reload now and check the Enabled=0 again
+reload
+show client
+show job=$JobName
+disable job
+.
 quit
 END_OF_DATA
 
@@ -75,6 +89,12 @@ check_restore_diff
 nb=$(grep "is waiting" $tmp/log3.out | wc -l)
 if [ $nb -ne 2 ]; then
     print_debug "ERROR: Should find two jobs in $tmp/log3.out waiting for Maximum Concurrent Jobs, got $nb"
+    estat=1
+fi
+
+nb=$(awk "/^(Job|Client): .+ Enabled=0/ { print $1 }" $tmp/log4.out | wc -l)
+if [ $nb -ne 4 ]; then
+    print_debug "ERROR: Should find both Client and Job with Enabled=0 before and after the reload in $tmp/log4.out"
     estat=1
 fi
 
