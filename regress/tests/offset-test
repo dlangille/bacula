@@ -1,0 +1,135 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Attempt to backup and restore a file with the test-bpipe plugin
+# to test the FO_OFFSETS feature
+#
+TestName="offset-test"
+JobName=pluginTest
+. scripts/functions
+
+scripts/cleanup
+scripts/copy-plugin-confs
+
+file=encrypt-bug.jpg
+rm -rf ${cwd}/tmp/*
+echo "${cwd}/README" >${cwd}/tmp/file-list
+
+make -C $cwd/build/src/plugins/fd install-test-plugin
+
+# We try to find a file inside the aligned volume, and
+# when it is compressed, we cannot find it
+if [ x$FORCE_ALIGNED = xyes ]; then
+    sed s/compression=GZIP1// $bin/bacula-dir.conf > $tmp/1
+    mv $tmp/1 $bin/bacula-dir.conf
+fi
+
+start_test
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@output /dev/null
+messages
+@$out ${cwd}/tmp/log1.out
+label storage=File1 volume=TestVolume001
+estimate job=$JobName level=Full
+@#setdebug level=50 traclient=$CLIENT
+run job=$JobName fileset=TestOffset storage=File1 yes
+wait
+@#setdebug level=50 client=$CLIENT
+run job=$JobName fileset=TestOffset storage=File1 yes
+wait
+status client=$CLIENT
+messages
+@output $tmp/filemedia.log
+list filemedia jobid=1
+quit
+END_OF_DATA
+
+
+run_bacula
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@$out $tmp/files
+list files jobid=1
+list files jobid=2
+@$out $tmp/list
+llist pluginrestoreconf jobid=1
+llist pluginrestoreconf jobid=2
+@$out $tmp/conf
+llist pluginrestoreconf jobid=1 id=1
+llist pluginrestoreconf jobid=1 id=2
+END_OF_DATA
+
+run_bconsole
+
+nb=`grep configure $tmp/files | wc -l`
+if [ $nb -ne 2 ]; then
+    print_debug "ERROR: Should have two times configure in job files $tmp/files"
+    bstat=1
+fi
+
+nb=`grep restore_command $tmp/conf | wc -l`
+if [ $nb -ne 2 ]; then
+    print_debug "ERROR: Should find the RestoreObject for Makefile and $file in $tmp/conf"
+    bstat=1
+fi
+
+cat <<EOF >$tmp/obj
+restore_command="cat >$tmp/configure.bak"
+EOF
+
+cat <<END_OF_DATA >$tmp/bconcmds
+messages
+@# 
+@# now do a restore
+@#
+@$out ${cwd}/tmp/log2.out
+setdebug level=50 client=$CLIENT trace=1
+restore where=${cwd}/tmp storage=File1 select all done yes
+wait
+messages
+@putfile obj1 $tmp/obj
+restore pluginrestoreconf="2:obj1" where=${cwd}/tmp storage=File1
+5
+cd @bpipe@
+ls
+m configure
+done
+yes
+wait
+setdebug level=0 client=$CLIENT trace=0
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+
+stop_bacula
+
+check_two_logs
+#
+# ****FIXME**** test that all three files are restored correctly
+#
+diff $cwd/build/configure $tmp/configure.bak
+dstat=$?
+
+diff ${cwd}/build/configure ${cwd}/tmp/configure
+dstat=$(($dstat + $?))
+
+diff ${cwd}/${file} ${cwd}/tmp/${file}
+dstat=$(($dstat + $?))
+
+if [ x$FORCE_ALIGNED = xyes ]; then
+   $bperl -e "check_aligned_data('tmp/TestVolume001.add','build/configure')"
+   estat=$?
+fi
+
+nb=`grep TestVolume001 $tmp/filemedia.log | wc -l`
+if [ "$nb" -eq 0 ]; then
+    print_debug "ERROR: Should find filemedia in $tmp/filemedia.log"
+    estat=1
+fi
+
+end_test
