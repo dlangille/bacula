@@ -1,0 +1,84 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Test the "status" command
+#
+TestName="status-test"
+JobName=backup
+. scripts/functions
+
+scripts/cleanup
+scripts/copy-confs
+
+if [ x$FORCE_SDCALLS = xyes ]; then
+    echo "Test disabled with SDCalls"
+    exit 0
+fi
+
+#
+# Zap out any schedule in default conf file so that
+#  it doesn't start during our test
+#
+outf="$tmp/sed_tmp"
+echo "s%  Schedule =%# Schedule =%g" >${outf}
+cp $scripts/bacula-dir.conf $tmp/1
+sed -f ${outf} $tmp/1 >$scripts/bacula-dir.conf
+
+change_jobname BackupClient1 $JobName
+start_test
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out /dev/null
+messages
+@$out $tmp/log1.out
+status client
+@$out $tmp/log2.out
+status storage
+@$out $tmp/log3.out
+status dir
+.api 2
+@$out $tmp/log4.out
+.status client running
+@$out $tmp/log5.out
+.status storage running
+@$out $tmp/log6.out
+.status dir running
+quit
+END_OF_DATA
+
+run_bacula
+stop_bacula
+
+grep "Director connected" $tmp/log1.out > /dev/null
+if [ $? -ne 0 ]; then
+    print_debug "ERROR: should find director connection in $tmp/log1.out"
+    estat=1
+fi
+
+grep "Director connected" $tmp/log2.out > /dev/null
+if [ $? -ne 0 ]; then
+    print_debug "ERROR: should find director connection in $tmp/log2.out"
+    estat=1
+fi
+
+grep "Console connected" $tmp/log3.out > /dev/null
+if [ $? -ne 0 ]; then
+    print_debug "ERROR: should find console connection in $tmp/log3.out"
+    estat=1
+fi
+
+grep "DirectorConnected" $tmp/log4.out > /dev/null
+if [ $? -ne 0 ]; then
+    print_debug "ERROR: should find director connection in $tmp/log4.out"
+    estat=1
+fi
+
+grep "DirectorConnected" $tmp/log5.out > /dev/null
+if [ $? -ne 0 ]; then
+    print_debug "ERROR: should find director connection in $tmp/log5.out"
+    estat=1
+fi
+
+end_test
