@@ -1,0 +1,711 @@
+#!/usr/bin/perl -w
+#
+# Bacula(R) - The Network Backup Solution
+
+   Copyright (C) 2000-2020 Kern Sibbald
+
+   The original author of Bacula is Kern Sibbald, with contributions
+   from many others, a complete list can be found in the file AUTHORS.
+
+   You may use this file and others of this release according to the
+   license defined in the LICENSE file, which includes the Affero General
+   Public License, v3.0 ("AGPLv3") and some additional permissions and
+   terms pursuant to its AGPLv3 Section 7.
+
+   This notice must be preserved when any source code is
+   conveyed and/or propagated.
+
+   Bacula(R) is a registered trademark of Kern Sibbald.
+#
+
+# This script is used to check the output of "show schedule" and "status schedule"
+# The schedule configuration is added to the default bacula-dir.conf and the
+# configuration is at the end of this file, after the __END__ keyword
+#
+# Need to test the following
+# x hour (24, am, pm) (12am + 12pm + 24)
+# x mins (60)
+# x Level
+# x wday (sun, mon, tue, ...) (7)
+# x long wday (sunday, monday, tuesday, ...) (7)
+# x wday list (sun-sat, mon-tue, ...)
+# x wom (1st, 2nd, 3rd, 4th, 5th) (5)
+# x wom list (1st-2nd)
+# x lastday keyword
+# x month (Feb, May, Sep) (12)
+# x long month (January, February, ...) (12)
+# - hourly keyword
+# - daily keyword
+# - woy (w00, w01, w52, w53)
+
+use strict;
+use lib '.';
+use scripts::functions;
+use Test::More tests => 531;
+
+my $run = undef;
+my $sched = undef;
+
+my %nb = ('hour' => 24,
+          'month' => 12,
+          'mins' => 60,
+          'wday' => 7,
+          'wom' => 6,
+          'mday' => 31,
+          'woy' => 53);
+my $q = join('|', keys %nb);
+
+sub check_run
+{
+    my $obj = shift;
+    
+    if ($obj->{Name} eq 'mdaymix2') {
+        # Specific range of days
+        my $m = "0 1 2 3 4 5 6 7 8 9 11 12 13";
+        my $nb = 0;
+        foreach my $r (@{$sched->{Run}}) {
+            ok($r->{mday} eq $m, "$m match $obj->{Name}");
+            $nb++;
+        }
+        ok ($nb == 1, "Got 1 line");
+
+    } elsif ($obj->{Name} =~ /^($q)(long|AMPM)?$/) {
+        # We test long, short names  and AM/PM notation
+        my $item = $1;
+        my $max = $nb{$item};
+        if ($obj->{Name} eq 'mday') {
+            $max++;             # One more day for mday test (lastday)
+        }
+        my $h = 0;
+        foreach my $r (@{$sched->{Run}}) {
+            if ($obj->{Name} =~ /hour/) {
+                ok($r->{Level} eq 'Full', "Check level");
+            } elsif ($obj->{Name} eq 'mins') {
+                ok($r->{Level} eq 'Differential', "Check level");
+            }
+            ok($r->{$item} eq "$h", "$h match $r->{$item} $obj->{Name}");
+            $h++;
+        }
+        ok ($h == $max, "Got $max lines");
+
+    } elsif ($obj->{Name} =~ /^($q)mix$/) {
+        # We test range of dates
+        my $item = $1;
+        my $w = "0";
+        my $n = 0;
+        foreach my $r (@{$sched->{Run}}) {
+            ok($r->{$item} eq $w, "$w match $r->{$item} $obj->{Name}");
+            $n++;
+            $w .= " $n";
+        }
+        ok ($n == $nb{$item}, "Got $n lines");
+
+    } elsif ($obj->{Name} eq 'hourly') {
+        # Specific hourly keyword
+        my $nb=0;
+        my $m = "0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23";
+        foreach my $r (@{$sched->{Run}}) {
+            ok($r->{hour} eq "$m", "$m match hourly");
+            $nb++;
+        }
+        ok ($nb == 1, "Got 1 line");
+
+    } elsif ($obj->{Name} eq 'lastday') {
+        # Specific lastday
+        my $nb=0;
+        my $m = "31";
+        foreach my $r (@{$sched->{Run}}) {
+            ok($r->{mday} eq "$m", "$m match mday");
+            $nb++;
+        }
+        ok ($nb == 1, "Got 1 line");
+
+    } else {
+        print "Not handled $obj->{Name}\n";
+    }
+}
+
+start_test();
+cleanup();
+
+# Setup the configuration file
+system("scripts/copy-confs");
+
+# We append the schedule configuration at the end of bacula-dir.conf
+open(FP, ">>$conf/bacula-dir.conf") or die "Unable to open $conf/bacula-dir.conf $@";
+open(FP2, $0) or die "Unable to open $0 $@";
+my $ok = 0;
+while (my $line = <FP2>) {
+    if ($ok) {
+        print FP $line;
+    }   
+    if ($line =~ /^__END__$/) { # The configuration is after the __END__ keyword
+        $ok = 1;
+    }
+}
+close(FP2);
+close(FP);
+
+# Run bacula and show the configuration
+start_bacula();
+
+my $when = get_time(3600);
+create_bconcmds(
+    "\@output $tmp/log1.out",
+    "show schedule",
+    ".api 2",
+    "\@output $tmp/log2.out",
+    "status schedule days=2",
+    "\@output $tmp/log22.out",
+    "status schedule days=3",
+    "\@output $tmp/log3.out",
+    "status schedule limit=4",
+    "\@output $tmp/log4.out",
+    "status schedule time",
+    "\@output $tmp/log44.out",
+    "status schedule time=\"$when\"",
+    );
+run_bconsole();
+stop_bacula();
+
+open(FP, "$tmp/log1.out") or die "Unable to open $tmp/log1.out $@";
+while (my $line = <FP>)
+{
+    if ($line =~ /Schedule: Name=([\w\d\-]+)/) {
+        if ($run) {
+            push @{$sched->{Run}}, $run;
+        }
+        if ($sched) {
+            check_run($sched);
+        }
+        $sched = { Name => $1, Run => [] };
+        $run = undef;
+
+    } elsif ($line =~ /--> Run Level=(\w+)/) {
+        if ($run) {
+            push @{$sched->{Run}}, $run;
+        }
+        $run = {Level => $1};
+        
+    } elsif ($line =~ /(hour|mins|mday|month|wday|wom|woy)=([\d\s]+?)\s*$/) {
+        my ($k, $v) = ($1, $2);
+        $run->{$k} = $v;
+    }
+}
+
+close(FP);
+
+if ($run && $sched) {
+    push @{$sched->{Run}}, $run;
+}
+
+if ($sched) {
+    check_run($sched);
+}
+
+# days= starts from midnight
+my $max = (time() / (24*60*60)) * (24*60*60) + (24*60*60) * 2; # now + 2 days (starting at 00:00)
+my $max3 = (time() / (24*60*60)) * (24*60*60) + (24*60*60) * 3; # now + 3 days
+my $job;
+
+# test the days= parameter
+open(FP, "$tmp/log2.out") or die "Unable to open $tmp/log2.out $@";
+while (my $line = <FP>)
+{
+    if ($line =~ /schedtime_epoch=(\d+)/) {
+        ok($1 < $max, "$1 < $max for $job (days=2)");
+    } elsif ($line =~ /name=(.+)/) {
+        $job = $1;
+    }
+}
+close(FP);
+
+open(FP, "$tmp/log22.out") or die "Unable to open $tmp/log22.out $@";
+while (my $line = <FP>)
+{
+    if ($line =~ /schedtime_epoch=(\d+)/) {
+        ok($1 < $max3, "$1 < $max3 for $job (days=3)");
+        if ($1 > $max && $1 < $max3) {
+            ok($1 > $max && $1 < $max3, "$1 > $max && $1 < $max3");
+        }
+    } elsif ($line =~ /name=(.+)/) {
+        $job = $1;
+    }
+}
+close(FP);
+
+# Test the limit= argument
+my $nb=0;
+$job="";
+open(FP, "$tmp/log3.out") or die "Unable to open $tmp/log3.out $@";
+while (my $line = <FP>)
+{
+    if ($line =~ /schedtime_epoch=(\d+)/) {
+        $nb++;
+
+    } elsif ($line =~ /name=(.+)/) {
+        if ($job) {
+            ok($job ne $1, "Check if we see all jobs ($job ne $1)");
+        }
+        $job = $1;
+    }
+}
+close(FP);
+
+ok($nb == 4, "Check that we have found the right number of jobs ($nb == 4)");
+
+# test the time parameter
+my $now = time();
+open(FP, "$tmp/log4.out") or die "Unable to open $tmp/log3.out $@";
+while (my $line = <FP>)
+{
+    if ($line =~ /schedtime_epoch=(\d+)/) {
+        ok($1 >= $now, "$1 >= $now (time parameter)");
+
+    } elsif ($line =~ /name=(.+)/) {
+        $job = $1;
+    }
+}
+close(FP);
+
+# test the time= parameter
+$now = time() + 3600;
+open(FP, "$tmp/log44.out") or die "Unable to open $tmp/log3.out $@";
+while (my $line = <FP>)
+{
+    if ($line =~ /schedtime_epoch=(\d+)/) {
+        ok($1 >= $now, "$1 >= $now (time parameter)");
+
+    } elsif ($line =~ /name=(.+)/) {
+        $job = $1;
+    }
+}
+close(FP);
+
+done_testing();
+
+end_test();
+
+__END__
+
+Schedule {
+    Name = "lastday"
+    Run = Full lastday at 00:00
+}
+
+Schedule {
+  Name = "wom"
+  Run = Full 1st  at 00:00
+  Run = Full 2nd  at 01:00
+  Run = Full 3rd  at 02:00
+  Run = Full 4th  at 03:00
+  Run = Full 5th  at 04:00
+  Run = Full 6th  at 05:00
+}
+
+Schedule {
+  Name = "month"
+  Run = Full Jan  at 00:00
+  Run = Full Feb  at 01:00
+  Run = Full Mar  at 02:00
+  Run = Full Apr  at 03:00
+  Run = Full May  at 04:00
+  Run = Full Jun  at 05:00
+  Run = Full Jul  at 05:00
+  Run = Full Aug  at 05:00
+  Run = Full Sep  at 05:00
+  Run = Full Oct  at 05:00
+  Run = Full Nov  at 05:00
+  Run = Full Dec  at 05:00
+}
+
+Schedule {
+  Name = "monthlong"
+  Run = Full January  at 00:00
+  Run = Full February  at 01:00
+  Run = Full March  at 02:00
+  Run = Full April  at 03:00
+  Run = Full May  at 04:00
+  Run = Full June  at 05:00
+  Run = Full July  at 05:00
+  Run = Full August  at 05:00
+  Run = Full September  at 05:00
+  Run = Full October  at 05:00
+  Run = Full November  at 05:00
+  Run = Full December  at 05:00
+}
+
+Schedule {
+  Name = "monthmix"
+  Run = Full Jan  at 00:00
+  Run = Full Jan-February  at 01:00
+  Run = Full Jan-March  at 02:00
+  Run = Full Jan-April  at 03:00
+  Run = Full Jan-May  at 04:00
+  Run = Full Jan-June  at 05:00
+  Run = Full Jan-July  at 05:00
+  Run = Full Jan-August  at 05:00
+  Run = Full Jan-September  at 05:00
+  Run = Full Jan-October  at 05:00
+  Run = Full Jan-November  at 05:00
+  Run = Full Jan-December  at 05:00
+}
+
+Schedule {
+    Name = "hourly"
+    Run = Full Jan  hourly at 0:05
+}
+
+Schedule {
+  Name = "wommix"
+  Run = Full 1st  at 00:00
+  Run = Full 1st-2nd  at 00:00
+  Run = Full 1st-3rd  at 01:00
+  Run = Full 1st-4th  at 02:00
+  Run = Full 1st-5th  at 04:00
+  Run = Full 1st-6th  at 05:00
+}
+
+Schedule {
+  Name = "mday"
+  Run = Full  on 1  at 00:00
+  Run = Full  on 2  at 00:00
+  Run = Full  on 3  at 01:00
+  Run = Full  on 4  at 02:00
+  Run = Full  on 5  at 04:00
+  Run = Full  on 6  at 05:00
+  Run = Full  on 7  at 05:00
+  Run = Full  on 8  at 05:00
+  Run = Full  on 9  at 05:00
+  Run = Full  on 10  at 05:00
+  Run = Full  on 11  at 05:00
+  Run = Full  on 12  at 05:00
+  Run = Full  on 13  at 05:00
+  Run = Full  on 14  at 05:00
+  Run = Full  on 15  at 05:00
+  Run = Full  on 16  at 05:00
+  Run = Full  on 17  at 05:00
+  Run = Full  on 18  at 05:00
+  Run = Full  on 19  at 05:00
+  Run = Full  on 20  at 05:00
+  Run = Full  on 21  at 05:00
+  Run = Full  on 22  at 05:00
+  Run = Full  on 23  at 05:00
+  Run = Full  on 24  at 05:00
+  Run = Full  on 25  at 05:00
+  Run = Full  on 26  at 05:00
+  Run = Full  on 27  at 05:00
+  Run = Full  on 28  at 05:00
+  Run = Full  on 29  at 05:00
+  Run = Full  on 30  at 05:00
+  Run = Full  on 31  at 05:00
+  Run = Full  on lastday  at 05:00
+}
+
+Schedule {
+  Name = "mdaymix"
+  Run = Full  on 1  at 00:00
+  Run = Full  on 1-2  at 00:00
+  Run = Full  on 1-3  at 01:00
+  Run = Full  on 1-4  at 02:00
+  Run = Full  on 1-5  at 04:00
+  Run = Full  on 1-6  at 05:00
+  Run = Full  on 1-7  at 05:00
+  Run = Full  on 1-8  at 05:00
+  Run = Full  on 1-9  at 05:00
+  Run = Full  on 1-10  at 05:00
+  Run = Full  on 1-11  at 05:00
+  Run = Full  on 1-12  at 05:00
+  Run = Full  on 1-13  at 05:00
+  Run = Full  on 1-14  at 05:00
+  Run = Full  on 1-15  at 05:00
+  Run = Full  on 1-16  at 05:00
+  Run = Full  on 1-17  at 05:00
+  Run = Full  on 1-18  at 05:00
+  Run = Full  on 1-19  at 05:00
+  Run = Full  on 1-20  at 05:00
+  Run = Full  on 1-21  at 05:00
+  Run = Full  on 1-22  at 05:00
+  Run = Full  on 1-23  at 05:00
+  Run = Full  on 1-24  at 05:00
+  Run = Full  on 1-25  at 05:00
+  Run = Full  on 1-26  at 05:00
+  Run = Full  on 1-27  at 05:00
+  Run = Full  on 1-28  at 05:00
+  Run = Full  on 1-29  at 05:00
+  Run = Full  on 1-30  at 05:00
+  Run = Full  on 1-31  at 05:00
+}
+
+Schedule {
+  Name = "mdaymix2"
+  Run = Full  on 1-10,12-14  at 00:00
+}
+
+Schedule {
+  Name = "hour"
+  Run = Full 1st  at 00:00
+  Run = Full 1st  at 01:00
+  Run = Full 1st  at 02:00
+  Run = Full 1st  at 03:00
+  Run = Full 1st  at 04:00
+  Run = Full 1st  at 05:00
+  Run = Full 1st  at 06:00
+  Run = Full 1st  at 07:00
+  Run = Full 1st  at 08:00
+  Run = Full 1st  at 09:00
+  Run = Full 1st  at 10:00
+  Run = Full 1st  at 11:00
+  Run = Full 1st  at 12:00
+  Run = Full 1st  at 13:00
+  Run = Full 1st  at 14:00
+  Run = Full 1st  at 15:00
+  Run = Full 1st  at 16:00
+  Run = Full 1st  at 17:00
+  Run = Full 1st  at 18:00
+  Run = Full 1st  at 19:00
+  Run = Full 1st  at 20:00
+  Run = Full 1st  at 21:00
+  Run = Full 1st  at 22:00
+  Run = Full 1st  at 23:00
+}
+
+Schedule {
+  Name = "wday"
+  Run = Full sun  at 00:00
+  Run = Full mon  at 00:00
+  Run = Full tue  at 00:00
+  Run = Full wed  at 00:00
+  Run = Full thu  at 00:00
+  Run = Full fri  at 00:00
+  Run = Full sat  at 00:00
+}
+
+Schedule {
+  Name = "wdaylong"
+  Run = Full sunday  at 00:00
+  Run = Full monday  at 00:00
+  Run = Full tuesday  at 00:00
+  Run = Full wednesday  at 00:00
+  Run = Full thursday  at 00:00
+  Run = Full friday  at 00:00
+  Run = Full saturday  at 00:00
+}
+
+Schedule {
+  Name = "wdaymix"
+  Run = Full sun  at 00:00
+  Run = Full sun-mon  at 00:00
+  Run = Full sun-tue  at 00:00
+  Run = Full sun-wed  at 00:00
+  Run = Full sun-thu  at 00:00
+  Run = Full sun-fri  at 00:00
+  Run = Full sun-sat  at 00:00
+}
+
+Schedule {
+  Name = "hourAMPM"
+  Run = Full 1st  at 00:00am
+  Run = Full 1st  at 01:00am
+  Run = Full 1st  at 02:00am
+  Run = Full 1st  at 03:00am
+  Run = Full 1st  at 04:00am
+  Run = Full 1st  at 05:00am
+  Run = Full 1st  at 06:00am
+  Run = Full 1st  at 07:00am
+  Run = Full 1st  at 08:00am
+  Run = Full 1st  at 09:00am
+  Run = Full 1st  at 10:00am
+  Run = Full 1st  at 11:00am
+  Run = Full 1st  at 12:00pm
+  Run = Full 1st  at 1:00pm
+  Run = Full 1st  at 2:00pm
+  Run = Full 1st  at 3:00pm
+  Run = Full 1st  at 4:00pm
+  Run = Full 1st  at 5:00pm
+  Run = Full 1st  at 6:00pm
+  Run = Full 1st  at 7:00pm
+  Run = Full 1st  at 8:00pm
+  Run = Full 1st  at 9:00pm
+  Run = Full 1st  at 10:00pm
+  Run = Full 1st  at 11:00pm
+
+}
+
+Schedule {
+  Name = "mins"
+  Run = Differential 1st sun at 00:00
+  Run = Differential 1st sun at 00:01
+  Run = Differential 1st sun at 00:02
+  Run = Differential 1st sun at 00:03
+  Run = Differential 1st sun at 00:04
+  Run = Differential 1st sun at 00:05
+  Run = Differential 1st sun at 00:06
+  Run = Differential 1st sun at 00:07
+  Run = Differential 1st sun at 00:08
+  Run = Differential 1st sun at 00:09
+  Run = Differential 1st sun at 00:10
+  Run = Differential 1st sun at 00:11
+  Run = Differential 1st sun at 00:12
+  Run = Differential 1st sun at 00:13
+  Run = Differential 1st sun at 00:14
+  Run = Differential 1st sun at 00:15
+  Run = Differential 1st sun at 00:16
+  Run = Differential 1st sun at 00:17
+  Run = Differential 1st sun at 00:18
+  Run = Differential 1st sun at 00:19
+  Run = Differential 1st sun at 00:20
+  Run = Differential 1st sun at 00:21
+  Run = Differential 1st sun at 00:22
+  Run = Differential 1st sun at 00:23
+  Run = Differential 1st sun at 00:24
+  Run = Differential 1st sun at 00:25
+  Run = Differential 1st sun at 00:26
+  Run = Differential 1st sun at 00:27
+  Run = Differential 1st sun at 00:28
+  Run = Differential 1st sun at 00:29
+  Run = Differential 1st sun at 00:30
+  Run = Differential 1st sun at 00:31
+  Run = Differential 1st sun at 00:32
+  Run = Differential 1st sun at 00:33
+  Run = Differential 1st sun at 00:34
+  Run = Differential 1st sun at 00:35
+  Run = Differential 1st sun at 00:36
+  Run = Differential 1st sun at 00:37
+  Run = Differential 1st sun at 00:38
+  Run = Differential 1st sun at 00:39
+  Run = Differential 1st sun at 00:40
+  Run = Differential 1st sun at 00:41
+  Run = Differential 1st sun at 00:42
+  Run = Differential 1st sun at 00:43
+  Run = Differential 1st sun at 00:44
+  Run = Differential 1st sun at 00:45
+  Run = Differential 1st sun at 00:46
+  Run = Differential 1st sun at 00:47
+  Run = Differential 1st sun at 00:48
+  Run = Differential 1st sun at 00:49
+  Run = Differential 1st sun at 00:50
+  Run = Differential 1st sun at 00:51
+  Run = Differential 1st sun at 00:52
+  Run = Differential 1st sun at 00:53
+  Run = Differential 1st sun at 00:54
+  Run = Differential 1st sun at 00:55
+  Run = Differential 1st sun at 00:56
+  Run = Differential 1st sun at 00:57
+  Run = Differential 1st sun at 00:58
+  Run = Differential 1st sun at 00:59
+}
+
+Schedule {
+  Name = "woy"
+   Run = Full w00  at 05:00
+   Run = Full w01  at 05:00
+   Run = Full w02  at 05:00
+   Run = Full w03  at 05:00
+   Run = Full w04  at 05:00
+   Run = Full w05  at 05:00
+   Run = Full w06  at 05:00
+   Run = Full w07  at 05:00
+   Run = Full w08  at 05:00
+   Run = Full w09  at 05:00
+   Run = Full w10  at 05:00
+   Run = Full w11  at 05:00
+   Run = Full w12  at 05:00
+   Run = Full w13  at 05:00
+   Run = Full w14  at 05:00
+   Run = Full w15  at 05:00
+   Run = Full w16  at 05:00
+   Run = Full w17  at 05:00
+   Run = Full w18  at 05:00
+   Run = Full w19  at 05:00
+   Run = Full w20  at 05:00
+   Run = Full w21  at 05:00
+   Run = Full w22  at 05:00
+   Run = Full w23  at 05:00
+   Run = Full w24  at 05:00
+   Run = Full w25  at 05:00
+   Run = Full w26  at 05:00
+   Run = Full w27  at 05:00
+   Run = Full w28  at 05:00
+   Run = Full w29  at 05:00
+   Run = Full w30  at 05:00
+   Run = Full w31  at 05:00
+   Run = Full w32  at 05:00
+   Run = Full w33  at 05:00
+   Run = Full w34  at 05:00
+   Run = Full w35  at 05:00
+   Run = Full w36  at 05:00
+   Run = Full w37  at 05:00
+   Run = Full w38  at 05:00
+   Run = Full w39  at 05:00
+   Run = Full w40  at 05:00
+   Run = Full w41  at 05:00
+   Run = Full w42  at 05:00
+   Run = Full w43  at 05:00
+   Run = Full w44  at 05:00
+   Run = Full w45  at 05:00
+   Run = Full w46  at 05:00
+   Run = Full w47  at 05:00
+   Run = Full w48  at 05:00
+   Run = Full w49  at 05:00
+   Run = Full w50  at 05:00
+   Run = Full w51  at 05:00
+   Run = Full w52  at 05:00
+}
+
+Schedule {
+  Name = "woymix"
+   Run = Full w00  at 05:00
+   Run = Full w00-w01  at 05:00
+   Run = Full w00-w02  at 05:00
+   Run = Full w00-w03  at 05:00
+   Run = Full w00-w04  at 05:00
+   Run = Full w00-w05  at 05:00
+   Run = Full w00-w06  at 05:00
+   Run = Full w00-w07  at 05:00
+   Run = Full w00-w08  at 05:00
+   Run = Full w00-w09  at 05:00
+   Run = Full w00-w10  at 05:00
+   Run = Full w00-w11  at 05:00
+   Run = Full w00-w12  at 05:00
+   Run = Full w00-w13  at 05:00
+   Run = Full w00-w14  at 05:00
+   Run = Full w00-w15  at 05:00
+   Run = Full w00-w16  at 05:00
+   Run = Full w00-w17  at 05:00
+   Run = Full w00-w18  at 05:00
+   Run = Full w00-w19  at 05:00
+   Run = Full w00-w20  at 05:00
+   Run = Full w00-w21  at 05:00
+   Run = Full w00-w22  at 05:00
+   Run = Full w00-w23  at 05:00
+   Run = Full w00-w24  at 05:00
+   Run = Full w00-w25  at 05:00
+   Run = Full w00-w26  at 05:00
+   Run = Full w00-w27  at 05:00
+   Run = Full w00-w28  at 05:00
+   Run = Full w00-w29  at 05:00
+   Run = Full w00-w30  at 05:00
+   Run = Full w00-w31  at 05:00
+   Run = Full w00-w32  at 05:00
+   Run = Full w00-w33  at 05:00
+   Run = Full w00-w34  at 05:00
+   Run = Full w00-w35  at 05:00
+   Run = Full w00-w36  at 05:00
+   Run = Full w00-w37  at 05:00
+   Run = Full w00-w38  at 05:00
+   Run = Full w00-w39  at 05:00
+   Run = Full w00-w40  at 05:00
+   Run = Full w00-w41  at 05:00
+   Run = Full w00-w42  at 05:00
+   Run = Full w00-w43  at 05:00
+   Run = Full w00-w44  at 05:00
+   Run = Full w00-w45  at 05:00
+   Run = Full w00-w46  at 05:00
+   Run = Full w00-w47  at 05:00
+   Run = Full w00-w48  at 05:00
+   Run = Full w00-w49  at 05:00
+   Run = Full w00-w50  at 05:00
+   Run = Full w00-w51  at 05:00
+   Run = Full w00-w52  at 05:00
+}
