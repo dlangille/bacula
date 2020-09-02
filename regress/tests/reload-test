@@ -3,8 +3,6 @@
 # Copyright (C) 2000-2020 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
-
-#
 # test the reload and test command
 #
 TestName="reload-test"
@@ -57,7 +55,7 @@ if [ $? != 0 ]; then
     print_debug "ERROR: Error on bacula-dir.conf"
 fi
 
-$bin/bacula-ctl-dir start >/dev/null
+$scripts/bacula-ctl-dir start >/dev/null
 pid=`cat $working/bacula-dir.$BASEPORT.pid`
 
 echo "bacula-dir pid is $pid"
@@ -125,6 +123,6 @@ EOF
 detect_error
 do_reload
 
-$bin/bacula-ctl-dir stop >/dev/null
+$scripts/bacula-ctl-dir stop >/dev/null
 
 end_test
