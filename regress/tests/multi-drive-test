@@ -1,14 +1,12 @@
 #!/bin/sh
 #
-# Copyright (C) 2000-2020 Kern Sibbald
+# Copyright (C) 2000-2017 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
-#
-
 #
 # This script is used to test multiple devices grouped in
 # the director configuration
 #
-TestName="multi-drive1-test"
+TestName="multi-drive-test"
 JobName=backup
 . scripts/functions
 
