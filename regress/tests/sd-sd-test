@@ -18,28 +18,50 @@ scripts/copy-migration-confs
 scripts/prepare-disk-changer
 echo "${cwd}/build" >${cwd}/tmp/file-list
 
+# Find a free port to run the second SD
+for i in `seq 10 100`
+do
+    PORT=`expr $BASEPORT + $i`
+    if ! netstat -an | grep " $PORT " 2> /dev/null > /dev/null
+    then
+        break
+    fi
+done
 sed -e "s:$cwd/working:$cwd/working2:   " \
     -e "s:$cwd/tmp:$cwd/tmp2:" $conf/bacula-sd.conf > $conf/bacula-sd2.conf
 
 $bperl -e "add_attribute('$conf/bacula-sd2.conf', 'Name', 'sd2', 'Storage')"
-$bperl -e "add_attribute('$conf/bacula-sd2.conf', 'SDPort', $BASEPORT + 10, 'Storage')"
+$bperl -e "add_attribute('$conf/bacula-sd2.conf', 'SDPort', '$PORT', 'Storage')"
 $bperl -e "add_attribute('$conf/bacula-sd2.conf', 'Media Type', 'DiskChangerMedia2', 'Device', 'Drive-0')"
 $bperl -e "add_attribute('$conf/bacula-sd2.conf', 'Media Type', 'File2', 'Device', 'FileStorage')"
 if [ x$FORCE_DEDUP = xyes ]; then
    DEDUP_FS_OPTION=${DEDUP_FS_OPTION:-bothsides}
    $bperl -e 'add_attribute("$conf/bacula-sd2.conf", "Plugin Directory", "$plugins", "Storage")'
    $bperl -e 'add_attribute("$conf/bacula-sd2.conf", "Device Type", "Dedup", "Device")'
-   $bperl -e 'add_attribute("$conf/bacula-sd2.conf", "DedupDirectory", "${working}2", "Storage")'
-   $bperl -e 'add_attribute("$conf/bacula-sd2.conf", "MaximumContainerSize", "50MB", "Storage")'
+   $bperl -e 'add_attribute("$conf/bacula-sd2.conf", "Dedupengine", "Dedupengine-sd2", "Device")'
+   cat >> $conf/bacula-sd2.conf <<EOF
+
+Dedupengine {
+  Name = Dedupengine-sd2
+  DedupDirectory = "${working}2/dde"
+  Driver = Legacy
+}
+
+EOF
+   $bperl -e 'add_attribute("$conf/bacula-sd2.conf", "MaximumContainerSize", "50MB", "Dedup")'
 fi
 
 
 rm -rf $cwd/working2 $cwd/tmp2
-mkdir -p $cwd/working2 $cwd/tmp2
+mkdir -p $cwd/working2 $cwd/tmp2 $cwd/tmp2/cloud
 cp -r $tmp/disk-changer $cwd/tmp2
 
-$bperl -e "add_attribute('$conf/bacula-dir.conf', 'SDPort', $BASEPORT + 10, 'Storage', 'File')"
+$bperl -e "add_attribute('$conf/bacula-dir.conf', 'SDPort', '$PORT', 'Storage', 'File')"
 $bperl -e "add_attribute('$conf/bacula-dir.conf', 'Media Type', 'File2', 'Storage', 'File')"
+
+if [ x$FORCE_TLS = xyes ]; then
+    $bperl -e "setup_sd_tls('$conf/bacula-sd2.conf')"
+fi
 
 # Here, File is pointing to SD2 and DiskChanger is pointing to SD1
 
@@ -51,6 +73,7 @@ trap "kill $pid" INT
 
 change_jobname NightlySave $JobName
 start_test
+
 
 #
 # Note, we first backup into Pool Default, 
