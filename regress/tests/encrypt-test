@@ -1,0 +1,133 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Run tests with encryption configuration (cipher and digest)
+#
+TestName="encrypt-test"
+JobName=Crypto
+. scripts/functions
+
+scripts/cleanup
+scripts/copy-crypto-confs
+echo "${cwd}/build" >${cwd}/tmp/file-list
+
+$bperl -e 'add_attribute("$conf/bacula-fd.conf", "Pki Cipher", "aes256", "FileDaemon")'
+
+change_jobname NightlySave $JobName
+start_test
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@output /dev/null
+messages
+@$out ${cwd}/tmp/log1.out
+label storage=File volume=TestVolume001
+END_OF_DATA
+
+run_bacula
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@$out ${cwd}/tmp/log1.out
+@#setdebug level=10 fd
+purge volume=TestVolume001 yes
+run level=full job=$JobName yes
+wait
+messages
+@# 
+@# now do a restore
+@#
+@$out ${cwd}/tmp/log2.out
+@#setdebug level=10 fd
+restore where=${cwd}/tmp/bacula-restores storage=File
+5
+mark *
+done
+yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+
+check_two_logs
+check_restore_diff
+
+################################################################
+# test with a different combination
+
+$bperl -e 'add_attribute("$conf/bacula-fd.conf", "Pki Digest", "sha256", "FileDaemon")'
+$bperl -e 'add_attribute("$conf/bacula-fd.conf", "Pki Cipher", "aes192", "FileDaemon")'
+$scripts/bacula-ctl-fd restart
+
+rm -rf $cwd/tmp/bacula-restores
+
+run_bconsole
+check_two_logs
+check_restore_diff
+
+################################################################
+
+# $bperl -e 'add_attribute("$conf/bacula-fd.conf", "Pki Digest", "sha512", "FileDaemon")'
+# $scripts/bacula-ctl-fd restart
+# 
+# rm -rf $cwd/tmp/bacula-restores
+# 
+# run_bconsole
+# check_two_logs
+# check_restore_diff
+
+################################################################
+
+$bperl -e 'add_attribute("$conf/bacula-fd.conf", "Pki Cipher", "blowfish", "FileDaemon")'
+$scripts/bacula-ctl-fd restart
+
+rm -rf $cwd/tmp/bacula-restores
+
+run_bconsole
+check_two_logs
+check_restore_diff
+
+################################################################
+
+touch $cwd/build/po/fr.po
+
+$bperl -e 'add_attribute("$conf/bacula-fd.conf", "Pki Cipher", "aes256", "FileDaemon")'
+
+# run incremental job with a different cipher
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@$out ${cwd}/tmp/log1.out
+@#setdebug level=10 fd
+run job=$JobName yes
+wait
+messages
+@# 
+@# now do a restore
+@#
+@$out ${cwd}/tmp/log2.out
+@#setdebug level=10 fd
+restore where=${cwd}/tmp/bacula-restores storage=File
+5
+mark *
+done
+yes
+wait
+messages
+quit
+END_OF_DATA
+
+$scripts/bacula-ctl-fd restart
+
+rm -rf $cwd/tmp/bacula-restores
+
+run_bconsole
+check_two_logs
+check_restore_diff
+
+################################################################
+
+check_for_zombie_jobs storage=File 
+stop_bacula
+
+end_test
