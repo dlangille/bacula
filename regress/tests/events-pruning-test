@@ -1,0 +1,97 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Test the events pruning code
+#
+TestName="events-pruning-test"
+JobName=backup
+. scripts/functions
+
+scripts/cleanup
+scripts/copy-confs
+
+#
+# Zap out any schedule in default conf file so that
+#  it doesn't start during our test
+#
+outf="$tmp/sed_tmp"
+echo "s%  Schedule =%# Schedule =%g" >${outf}
+cp $scripts/bacula-dir.conf $tmp/1
+sed -f ${outf} $tmp/1 >$scripts/bacula-dir.conf
+
+$bperl -e "add_attribute('$conf/bacula-dir.conf', 'EventsRetention', '2sec', 'Director')"
+$bperl -e "add_attribute('$conf/bacula-dir.conf', 'catalog', 'all,events', 'Messages')"
+
+change_jobname BackupClient1 $JobName
+start_test
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out $tmp/log1.out
+run job=$JobName level=full yes
+wait
+run job=$JobName level=full yes
+wait
+messages
+delete jobid=1
+purge volume=Vol-0001 yes
+run job=$JobName level=full yes
+cancel jobid=3 yes
+wait
+delete volume=Vol-0001 yes
+.events type=bweb source=eric text="User login"
+.events type=bweb source=eric text="User logout"
+.events type="*error*" source=eric text="error!!"
+quit
+END_OF_DATA
+
+run_bacula
+stop_bacula
+
+sleep 2
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out $tmp/log2.out
+@sleep 1
+prune events yes
+list events
+@$out $tmp/log3.out
+llist events
+@$out $tmp/log4.out
+prune events
+yes
+prune
+6
+yes
+quit
+END_OF_DATA
+
+run_bacula
+stop_bacula
+
+grep "Director startup" $tmp/log2.out > /dev/null
+if [ $? = 0 ]; then
+    print_debug "ERROR: should not find Director startup message in $tmp/log2.out"
+    estat=1
+fi
+
+grep "Director shutdown" $tmp/log2.out > /dev/null
+if [ $? = 0 ]; then
+    print_debug "ERROR: should not find Director shutdown message in $tmp/log2.out"
+    estat=1
+fi
+
+grep "delete volume" $tmp/log2.out > /dev/null
+if [ $? = 0 ]; then
+    print_debug "ERROR: should not find delete volume message in $tmp/log2.out"
+    estat=1
+fi
+
+nb=`grep "Pruned Events from catalog" $tmp/log2.out $tmp/log4.out | wc -l`
+if [ $nb != 3 ]; then
+    print_debug "ERROR: Should find 3 pruning message"
+    estat=1
+fi
+
+end_test
