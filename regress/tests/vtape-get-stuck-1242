@@ -1,0 +1,101 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Run backups with dummy tape driver
+# This test setups an Autochanger with 80 slots
+# and 5 drives (3 LTO3 and 2 LTO1)
+#
+# TAPE_DRIVE="$cwd/working/ach/drive0"
+# TAPE_DRIVE1="$cwd/working/ach/drive0"
+# AUTOCHANGER="$cwd/working/ach/conf"
+# USE_VTAPE=yes
+# AUTOCHANGER_SCRIPT=disk-changer
+# 
+
+TestName="vtape-test-changer"
+JobName=backup
+. scripts/functions
+
+require_vtape
+
+scripts/cleanup
+scripts/copy-tape-confs
+cp $rscripts/bacula-dir-vtape.conf $conf/bacula-dir.conf
+cp $rscripts/bacula-sd-vtape.conf $conf/bacula-sd.conf
+scripts/prepare-fake-autochanger
+
+echo "${cwd}/build" >${cwd}/tmp/file-list
+
+start_test
+
+clientname=`awk '/Name = .*-fd/ { if (!ok) { print $3 ; ok=1 } }' bin/bacula-dir.conf`
+
+# Catalog record for cleaning tape "CLN01" successfully created.
+# CLN01      | Cleaning
+
+$bperl -e 'add_attribute("$conf/bacula-sd.conf", "MaximumVolumeSize", "3GB", "Device")'
+$bperl -e 'add_attribute("$conf/bacula-sd.conf", "Maximum Job Spool Size", "1GB", "Device")'
+$bperl -e 'add_attribute("$conf/bacula-sd.conf", "Media Type", "LTO3.dis", "Device", "LTO3_1")'
+$bperl -e 'add_attribute("$conf/bacula-sd.conf", "Media Type", "LTO3.dis", "Device", "LTO3_2")'
+
+# Write out bconsole commands
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@$out /dev/null
+messages
+@$out ${cwd}/tmp/log6.out
+@#setdebug level=200 storage=LTO3
+label barcodes pool=Scratch slots=15-20 storage=LTO3 drive=0
+yes
+messages
+list volumes
+END_OF_DATA
+
+run_bacula
+
+when1=`perl -MPOSIX -e "print strftime('%F %T', localtime(time+30))"`
+when2=`perl -MPOSIX -e "print strftime('%F %T', localtime(time+32))"`
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@$out ${cwd}/tmp/log7.out
+list volumes
+@$out ${cwd}/tmp/log1.out
+setbandwidth limit="3000 kb/s" client=$clientname
+setdebug level=400 options=t trace=1 storage=LTO3
+run storage=LTO3 when="$when1" job=NightlySave   pool=Inc     yes spooldata=no
+run storage=LTO3 when="$when2" job=NightlySave1  pool=Default yes spooldata=no
+run storage=LTO3 when="$when1" job=NightlySave2  pool=Inc     yes spooldata=no
+run storage=LTO3 when="$when2" job=NightlySave3  pool=Default yes spooldata=no
+wait
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+check_for_zombie_jobs storage=LTO3 client=$clientname
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+setdebug level=0 trace=0 storage=LTO3
+@$out ${cwd}/tmp/log2.out  
+@# 
+@# now do a restore
+@#
+restore client=$clientname fileset="Full Set" pool=Inc where=${cwd}/tmp/bacula-restores select all done
+yes
+wait
+messages
+wait
+messages
+END_OF_DATA
+
+run_bconsole
+check_for_zombie_jobs storage=LTO3 client=$clientname
+
+stop_bacula
+
+check_two_logs
+check_restore_diff
+
+
+end_test
