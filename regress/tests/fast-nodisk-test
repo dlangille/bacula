@@ -1,0 +1,137 @@
+#!/bin/bash
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# this script is dedicated to be use as a base for throughput testing
+# no as a regress test to highlight bug 
+# Use the dedup-plugin to generate the data and store data to /dev/null
+# use "CatalogFiles = no"
+#
+# XPARAM COMMCOMP=(yes|no)
+# set COMMCOMP=no to disable comm line compression
+# XPARAM TLSPSKENABLE=(yes|no)
+# set TLSPSKENABLE=no to disable TLS-PSK
+# XPARAM LARGECHUNK=(yes|no)
+# when using the test-dedup plugin, set LARGECHUNK=no to use 5Kb chunk instead
+# of 64K
+# XPARAM SOURCE=(dedupplugin|zero|urandom)
+# by default the dedup plugin (qis used to generate data stream, you can use
+# /dev/zero or /dev/urandom
+# the size are fixed to 64GB for dedup plugin and /dev/zero and 64MB for urandom
+# This is about 1min, change the "size=64G" in the stream0.dedup file
+# or count=XXX in the dd command
+# use it like this
+# - setup the variables
+# - use grep to get the values you want
+# - also use some for loop to run multiple test at one
+# COMMCOMP=no TLSPSKENABLE=no SOURCE=dedupplugin LARGECHUNK=yes REGRESS_DEBUG=1 \
+# tests/fast-nodisk-test 2>&1 | egrep \
+# "Elapsed time:|SD Bytes Written:|Rate:|Comm Line Compression:"
+#
+# for t in yes no ; do TLSPSKENABLE=$t REGRESS_DEBUG=1 tests/fast-nodisk-test \
+# 2>&1 | egrep "Elapsed time:|SD Bytes Written:|Rate:|Comm Line Compression:" ; done
+#
+
+TestName="fast-nodisk-test"
+JobName=DedupPluginTest
+. scripts/functions
+
+scripts/cleanup
+scripts/copy-fifo-confs
+
+make -C $src/src/plugins/fd install install-test-dedup
+
+# Not compatible with a backup to /dev/null
+unset FORCE_DEDUP
+unset FORCE_ALIGNED
+unset FORCE_CLOUD
+
+LARGECHUNK=${LARGECHUNK:-yes}
+if [ "$LARGECHUNK" != "yes" ] ; then
+   chunk_min_size=5K
+   chunk_max_size=5K
+else
+   chunk_min_size=64K
+   chunk_max_size=64K
+fi
+
+TLSPSKENABLE=${TLSPSKENABLE:-yes}
+if [ "$TLSPSKENABLE" != "yes" ] ; then
+   $bperl -e 'add_attribute("$conf/bacula-fd.conf", "TlsPskEnable", "no", "FileDaemon")'
+   $bperl -e 'add_attribute("$conf/bacula-sd.conf", "TlsPskEnable", "no", "Storage")'
+fi
+
+COMMCOMP=${COMMCOMP:-yes}
+echo $COMMCOMP
+if [ "$COMMCOMP" != "yes" ] ; then
+   $bperl -e "add_attribute('$conf/bacula-sd.conf',  'CommCompression', 'no', 'Storage')"
+   $bperl -e "add_attribute('$conf/bacula-dir.conf', 'CommCompression', 'no', 'Director')"
+   $bperl -e "add_attribute('$conf/bacula-fd.conf',  'CommCompression', 'no', 'FileDaemon')"
+fi
+
+SOURCE=${SOURCE:-dedupplugin}
+if [ "$SOURCE" == "zero" ] ; then
+   sed -i "s%.*Plugin = .test-dedup.*%Plugin = \"bpipe:/bigfile:dd if=/dev/zero bs=64k count=1000000:/bin/true\"%" bin/*dir.conf
+fi
+if [ "$SOURCE" == "urandom" ] ; then
+   sed -i "s%.*Plugin = .test-dedup.*%Plugin = \"bpipe:/bigfile:dd if=/dev/urandom bs=64k count=1000:/bin/true\"%" bin/*dir.conf
+fi
+
+echo === SETUP === LARGECHUNK=$LARGECHUNK TLSPSKENABLE=$TLSPSKENABLE COMMCOMP=$COMMCOMP SOURCE=$SOURCE
+
+start_test
+
+# create a big stream of data of 64K chunks
+cat > ${tmp}/stream0.dedup <<EOF
+global_size=1000T
+chunk_min_size=$chunk_min_size
+chunk_max_size=$chunk_max_size
+deviation=10
+seed=123
+size=8G
+start=0M
+EOF
+
+# configure the stream
+echo ${tmp}/stream0.dedup >> ${tmp}/dedupstreams.conf
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@output /dev/null
+messages
+@$out ${cwd}/tmp/log1.out
+label storage=Dummy volume=TestVolume001 slot=0 pool=ZeroCatalog
+quit
+END_OF_DATA
+run_bacula
+
+fdpid=`cat working/bacula-fd.*.pid`
+sdpid=`cat working/bacula-sd.*.pid`
+start_time=`cut -d " " -f 22 /proc/self/stat`
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@output /dev/null
+messages
+@$out ${cwd}/tmp/log1.out
+@#setdebug level=150 client=$CLIENT
+run job=$JobName storage=Dummy yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+
+end_time=`cut -d " " -f 22 /proc/self/stat`
+delta=$((end_time-start_time))
+fd_utime=`cut -d " " -f 14 /proc/$fdpid/stat`
+fd_stime=`cut -d " " -f 15 /proc/$fdpid/stat`
+sd_utime=`cut -d " " -f 14 /proc/$sdpid/stat`
+sd_stime=`cut -d " " -f 15 /proc/$sdpid/stat`
+
+echo CPU USAGE FD utime=$((fd_utime*100/delta)) stime=$((fd_stime*100/delta)) total=$(((fd_utime+fd_stime)*100/delta))
+echo CPU USAGE SD utime=$((sd_utime*100/delta)) stime=$((sd_stime*100/delta)) total=$(((sd_utime+sd_stime)*100/delta))
+
+stop_bacula
+
+end_test
