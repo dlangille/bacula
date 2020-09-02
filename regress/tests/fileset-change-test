@@ -1,0 +1,163 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Run huge number of jobs at the same time
+#
+TestName=fileset-change-test
+JobName=BackupJob
+. scripts/functions
+
+scripts/cleanup
+scripts/copy-test-confs
+echo "${cwd}/build/po/fr.po" >${cwd}/tmp/file-list
+
+change_jobname NightlySave $JobName
+
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "SpoolData", "no", "Job")'
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "FileSet", "MyFS", "Job", "BackupJob")'
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "AutoPrune", "No", "Director")'
+
+cat <<EOF >> $conf/bacula-dir.conf
+@$tmp/fileset.conf
+EOF
+
+cat <<EOF > $tmp/fileset.conf
+FileSet {
+  Name = MyFS
+  Include {
+    File = $conf/bacula-dir.conf
+  }
+}
+EOF
+
+start_test
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@output /dev/null
+messages
+@$out ${cwd}/tmp/log1.out
+label storage=File volume=TestVolume001
+quit
+END_OF_DATA
+
+run_bacula
+
+cat <<END_OF_DATA >$tmp/bconcmds
+reload
+@$out $tmp/log1.out
+run job=BackupJob yes
+wait
+messages
+show fileset=MyFS
+quit
+END_OF_DATA
+
+run_bconsole
+
+cat <<EOF > $tmp/fileset.conf
+FileSet {
+  Name = MyFS
+  Include {
+    File = $conf/bacula-sd.conf
+  }
+}
+EOF
+
+run_bconsole
+
+sleep 1
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "MaxFullInterval", "1s", "Job", "BackupJob")'
+
+run_bconsole
+
+cat <<EOF > $tmp/fileset.conf
+FileSet {
+  Name = MyFS
+  Include {
+    File = $conf/bacula-dir.conf
+  }
+}
+EOF
+
+sleep 1
+run_bconsole
+
+sleep 1
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "MaxFullInterval", "10min", "Job", "BackupJob")'
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "MaxDiffInterval", "1s", "Job", "BackupJob")'
+
+run_bconsole
+
+cat <<EOF > $tmp/fileset.conf
+FileSet {
+  Name = MyFS
+  Include {
+    File = $conf/bacula-fd.conf
+  }
+}
+EOF
+
+sleep 1
+run_bconsole
+
+grep "1: No prior or suitable Full backup found in catalog. Doing FULL backup." $tmp/log1.out > /dev/null
+if [ $? != 0 ]; then
+    print_debug "ERROR: The first job should print an upgrade message"
+    estat=1
+fi
+
+grep '2: The FileSet "MyFS" was modified on' $tmp/log1.out > /dev/null
+if [ $? != 0 ]; then
+    print_debug "ERROR: The second job should print an upgrade message with the fileset modification"
+    estat=1
+fi
+
+grep '2: No prior or suitable Full backup found in catalog for the current FileSet. Doing FULL backup.' $tmp/log1.out > /dev/null
+if [ $? != 0 ]; then
+    print_debug "ERROR: The second job should print an upgrade message"
+    estat=1
+fi
+
+grep '3: Max Full Interval exceeded. Doing FULL backup.' $tmp/log1.out > /dev/null
+if [ $? != 0 ]; then
+    print_debug "ERROR: The third job should print an upgrade message"
+    estat=1
+fi
+
+grep '4: Max Full Interval exceeded. Doing FULL backup.' $tmp/log1.out > /dev/null
+if [ $? != 0 ]; then
+    print_debug "ERROR: The 4th job should print an upgrade message"
+    estat=1
+fi
+
+grep '4: The FileSet was modified the "20.*" after the last backup on the "20.*".' $tmp/log1.out > /dev/null
+if [ $? = 0 ]; then
+    print_debug "ERROR: The 4th job should NOT print an upgrade message with the fileset modification"
+    estat=1
+fi
+
+grep '5: Max Diff Interval exceeded. Doing Differential backup.' $tmp/log1.out > /dev/null
+if [ $? != 0 ]; then
+    print_debug "ERROR: The job 5 should print an upgrade message"
+    estat=1
+fi
+
+grep '6: The FileSet "MyFS" was modified' $tmp/log1.out > /dev/null
+if [ $? != 0 ]; then
+    print_debug "ERROR: The job 6 should print an upgrade message with the fileset modification"
+    estat=1
+fi
+
+grep '6: No prior or suitable Full backup found in catalog for the current FileSet. Doing FULL backup.' $tmp/log1.out > /dev/null
+if [ $? != 0 ]; then
+    print_debug "ERROR: The job 6 should print an upgrade message"
+    estat=1
+fi
+
+
+check_for_zombie_jobs storage=File
+stop_bacula
+
+end_test
