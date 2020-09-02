@@ -1,0 +1,149 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Run a simple backup of the Bacula build directory with TLS
+#   communications code enabled then restore it.
+#
+# The test will check the logs to make sure the TLS require/enable/psk
+# are working correctly
+#
+TestName="tls-check-test"
+JobName=tls
+. scripts/functions
+
+scripts/cleanup
+scripts/copy-tls-confs
+echo "${cwd}/build" >${cwd}/tmp/file-list
+
+change_jobname CompressedTest $JobName
+start_test
+
+cat <<END_OF_DATA > $tmp/bconcmds
+messages
+@$out tmp/log1.out
+setdebug level=0 options=c trace=0 client
+setdebug level=0 options=c trace=0 storage
+setdebug level=0 options=c trace=0 dir
+setdebug level=50 tags=network trace=1 client
+setdebug level=50 tags=network trace=1 storage
+setdebug level=50 tags=network trace=1 dir
+label volume=TestVolume001 pool=Default storage=File drive=0 slot=0
+run job=$JobName yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bacula
+stop_bacula
+
+# No need to label volumes anymore
+sed -i s/label/@#label/ $tmp/bconcmds
+
+mkdir tmp/TLS
+for file in $working/*trace
+do
+    $bperl -e "check_tls_traces('$file', 'TLS')" | tee -a $tmp/check_tls_traces-tls.log
+done
+
+grep ERROR $tmp/check_tls_traces-tls.log
+if [ $? = 0 ]; then
+    print_debug "Found errors in $tmp/check_tls_traces-tls.log"
+    estat=1
+fi
+
+mv $working/*trace $tmp/TLS
+
+
+
+sed -i "s/TLS/#TLS/" $conf/*.conf
+
+run_bacula
+stop_bacula
+
+mkdir tmp/PSK
+for file in $working/*trace
+do
+    $bperl -e "check_tls_traces('$file', 'PSK')" | tee -a $tmp/check_tls_traces-psk.log
+done
+
+grep ERROR $tmp/check_tls_traces-psk.log
+if [ $? = 0 ]; then
+    print_debug "Found errors in $tmp/check_tls_traces-psk.log"
+    estat=1
+fi
+
+mv $working/*trace $tmp/PSK
+
+
+sed -i "s/#TLS Require/TLS Require/" $conf/*.conf
+
+run_bacula
+stop_bacula
+
+mkdir tmp/PSK-Require
+for file in $working/*trace
+do
+    $bperl -e "check_tls_traces('$file', 'PSK')" | tee -a $tmp/check_tls_traces-psk-require.log
+done
+
+grep ERROR $tmp/check_tls_traces-psk-require.log
+if [ $? = 0 ]; then
+    print_debug "Found errors in $tmp/check_tls_traces-psk-require.log"
+    estat=1
+fi
+
+mv $working/*trace $tmp/PSK-Require
+
+# Now we create a version of the FD without PSK
+# 
+
+cp -r $BACULA_SOURCE $tmp/build
+mkdir $tmp/nopsk
+cp config $tmp/nopsk
+echo WHICHDB=--enable-client-only >> $tmp/nopsk/config
+make -C $tmp/build distclean
+cd $tmp/build
+$rscripts/regress-config $tmp/nopsk
+sed -i "s:#define HAVE_TLS_PSK://#define HAVE_TLS_PSK:" $tmp/build/src/config.h
+make -C $tmp/build install
+
+cd $cwd
+
+sed -i "s/TLS Require/#TLS Require/" $conf/*.conf
+$tmp/nopsk/bin/bacula-fd -c $conf/bacula-fd.conf
+
+run_bacula
+stop_bacula
+
+mkdir tmp/NOPSK
+file=`ls $working/*-fd.trace`
+$bperl -e "check_tls_traces('$file', 'CLEAR')" | tee -a $tmp/check_tls_traces-nopsk.log
+
+grep ERROR $tmp/check_tls_traces-nopsk.log
+if [ $? = 0 ]; then
+    print_debug "Found errors in $tmp/check_tls_traces-nopsk.log"
+    estat=1
+fi
+
+mv $working/*trace $tmp/NOPSK
+
+
+# Now we test for errors
+
+print_debug "Now testing for expected errors"
+sed -i "s/#TLS Require/TLS Require/" $conf/bconsole.conf $conf/bacula-dir.conf $conf/bacula-sd.conf
+$tmp/nopsk/bin/bacula-fd -c $conf/bacula-fd.conf
+
+run_bacula
+stop_bacula
+
+grep "Authentication error with FD" $working/*-dir.trace > /dev/null
+if [ $? -ne 0 ]; then
+    print_debug "Should find errors with the FD"
+    estat=1
+fi
+
+end_test
