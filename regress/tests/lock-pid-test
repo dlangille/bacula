@@ -1,0 +1,122 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# check that daemons don't start if already started
+# check that daemon starts if the pid file refer an existing process
+#
+TestName="lock-pid-test"
+JobName=Simple
+. scripts/functions
+
+scripts/cleanup
+scripts/copy-test-confs
+echo "${cwd}/build" >${cwd}/tmp/file-list
+
+start_test
+
+cat >${cwd}/tmp/bconcmds <<END_OF_DATA
+@output /dev/null
+messages
+@$out ${cwd}/tmp/log1.out
+status client
+status storage=File
+messages
+quit
+END_OF_DATA
+
+run_bacula
+
+DIRPORT=$BASEPORT
+FDPORT=$(($BASEPORT + 1))
+SDPORT=$(($BASEPORT + 2))
+
+FDPID=`cat $working/bacula-fd.$FDPORT.pid`
+SDPID=`cat $working/bacula-sd.$SDPORT.pid`
+#
+# Try to start both daemon twice
+#
+print_debug "Try to "double" start both daemons"
+$scripts/bacula-ctl-sd start 2>&1 | grep "is already running" >/dev/null
+if [ $? -ne 0 ] ; then
+   print_debug "Expect a warning if SD is already running"
+   estat=1
+fi
+$scripts/bacula-ctl-fd start 2>&1 | grep "is already running" >/dev/null
+if [ $? -ne 0 ] ; then
+   print_debug "Expect a warning if FD is already running"
+   estat=1
+fi
+
+FDPID2=`cat $working/bacula-fd.$FDPORT.pid`
+SDPID2=`cat $working/bacula-sd.$SDPORT.pid`
+
+if [ "$FDPID" != "$FDPID2" -o "$SDPID" != "$SDPID2" ] ; then
+   print_debug "Second start should not change pid file"
+   estat=1
+fi
+
+#
+#stop the SD and FD
+#
+$scripts/bacula-ctl-sd stop >/dev/null
+$scripts/bacula-ctl-fd stop >/dev/null
+
+if [ -f $working/bacula-fd.$FDPORT.pid -o -f $working/bacula-sd.$SDPORT.pid ] ; then
+   print_debug "pid file not deleted by stop"
+   estat=1
+fi
+
+#
+# create dummies pid file (using the DIR pid)
+#
+cp $working/bacula-dir.$DIRPORT.pid $working/bacula-fd.$FDPORT.pid
+cp $working/bacula-dir.$DIRPORT.pid $working/bacula-sd.$SDPORT.pid
+
+#
+# start both daemon
+#
+$scripts/bacula-ctl-sd start -d >/dev/null
+$scripts/bacula-ctl-fd start -d >/dev/null
+
+# run once more
+run_bconsole
+
+daemon_cnt=`grep "Daemon started" ${cwd}/tmp/log1.out | wc -l`
+if test $daemon_cnt -ne 4; then
+   print_debug "Both SD and FD daemons didn't restart ($daemon_cnt)"
+   estat=1
+fi
+
+# now test director
+$scripts/bacula-ctl-dir stop >/dev/null
+
+cp $working/bacula-fd.$FDPORT.pid $working/bacula-dir.$DIRPORT.pid
+#
+# start director
+#
+$scripts/bacula-ctl-dir start >/dev/null
+
+
+cat >${cwd}/tmp/bconcmds <<END_OF_DATA
+@output /dev/null
+messages
+@$out ${cwd}/tmp/log2.out
+status dir
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+
+dir_cnt=`grep "Daemon started" ${cwd}/tmp/log2.out | wc -l`
+if test $dir_cnt -ne 1; then
+   print_debug "Director didn't restart ($dir_cnt)"
+   estat=1
+fi
+
+check_for_zombie_jobs storage=File
+stop_bacula
+
+end_test
