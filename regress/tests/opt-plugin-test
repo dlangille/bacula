@@ -1,0 +1,112 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Attempt to backup and restore a file with the rot13 option plugin
+#
+TestName="opt-plugin-test"
+JobName=optPluginTest
+. scripts/functions
+
+scripts/cleanup
+scripts/copy-plugin-confs
+make -C $src/src/plugins/fd install-test-plugin 1>${cwd}/tmp/log1.out 2>${cwd}/tmp/log1.out
+if [ $? != 0 ]; then
+  cat ${cwd}/tmp/log1.out
+  exit 1
+fi
+
+rm -rf ${cwd}/tmp/*
+echo "${cwd}/DartTestfile.txt" >${cwd}/tmp/file-list
+echo "${cwd}/README" >>${cwd}/tmp/file-list
+
+start_test
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@output /dev/null
+messages
+@$out ${cwd}/tmp/log1.out
+label storage=File1 volume=TestVolume001
+setdebug level=150 client=$CLIENT
+estimate job=$JobName level=Full
+run job=$JobName storage=File1 yes
+wait
+status client=$CLIENT
+messages
+quit
+END_OF_DATA
+
+
+run_bacula
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+messages
+@# 
+@# now do a restore
+@#
+@$out ${cwd}/tmp/log2.out
+setdebug level=50 client=$CLIENT
+restore fileset="Plugin Option Set" where=${cwd}/tmp  select all storage=File1 done
+yes
+wait
+setdebug level=0 client=$CLIENT
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+
+stop_bacula
+
+
+diff ${cwd}/DartTestfile.txt ${cwd}/tmp/$cwd/DartTestfile.txt > /dev/null
+estat=$?
+
+#
+# Remove plugin so we can try the restore without the plugin
+#
+mv -f ${cwd}/bin/plugins/rot13-fd.so ${cwd}/bin/plugins/rot13-fd.sox 1>/dev/null 2>/dev/null
+rm -rf $cwd/tmp/$cwd 
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@$out ${cwd}/tmp/log2.out
+@# remove plugin
+@exec "sh -c 'rm -f ${cwd}/bin/plugins/bpipe-fd.so'"
+@# 
+@# now do a restore without the plugin
+@#
+@$out ${cwd}/tmp/log2.out
+@#setdebug level=50 client=$CLIENT
+restore fileset="Plugin Option Set" where=${cwd}/tmp  select all storage=File1 done
+yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bacula -d50
+run_bconsole
+
+check_for_zombie_jobs storage=File1
+stop_bacula
+
+# the file should be encrypted
+test -f $cwd/tmp/$cwd/DartTestfile.txt
+diff ${cwd}/DartTestfile.txt ${cwd}/tmp/$cwd/DartTestfile.txt > /dev/null
+if [ $? = 0 ]; then
+    estat=1
+fi
+
+
+#
+# Restore plugin
+#
+mv -f ${cwd}/bin/plugins/rot13-fd.sox ${cwd}/bin/plugins/rot13-fd.so
+
+check_two_logs
+#
+# ****FIXME**** test that all three files are restored correctly
+#
+
+end_test
