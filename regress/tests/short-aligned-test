@@ -1,0 +1,101 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Test aligned data volumes with ZFS deduplication
+# This test expects that you have created a ZFS pool named
+#  tank, and that you have also created tank/volumes
+#
+TestName="short-aligned-test"
+JobName=NightlySave
+. scripts/functions
+
+if test x$FORCE_CLOUD = xyes ; then
+  echo "\n=== Test $TestName skipped not compatible with Cloud  ==="
+  exit 0
+fi
+
+scripts/cleanup
+echo "Skip copy of confs ..."
+scripts/copy-test-confs
+cp scripts/aligned-bacula-sd.conf bin/bacula-sd.conf
+
+# install the aligned volume plugin
+#make -C build/src/plugins/sd install-aligned-plugin >/dev/null
+
+#ls -1 ${cwd}/build/*.py >${cwd}/tmp/file-list
+#echo "${cwd}/build/Makefile.in" >${cwd}/tmp/file-list
+#echo "${cwd}/build/Makefile" >>${cwd}/tmp/file-list
+#echo "${cwd}/build/libtool" >${cwd}/tmp/file-list
+echo "${cwd}/build/diff" >${cwd}/tmp/file-list
+
+
+start_test
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@output /dev/null
+messages
+@$out ${cwd}/tmp/log1.out
+label storage=File volume=Vol1
+END_OF_DATA
+
+# do label
+run_bacula
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@output /dev/null
+messages
+@$out ${cwd}/tmp/log1.out
+@#setdebug level=300 storage
+run job=$JobName level=Full yes
+wait
+list volumes
+messages
+END_OF_DATA
+
+for i in 1 ; do
+  #echo "Running job $i"
+  run_bconsole
+  ls -l tmp/Vol* >${cwd}/tmp/log5.out
+  du -h tmp/Vol1.add >>${cwd}/tmp/log5.out
+done
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds-form
+@# 
+@# now do a restore
+@#
+@$out ${cwd}/tmp/log2.out
+@#setdebug level=200 client
+@#setdebug level=350 storage
+restore where=${cwd}/tmp/bacula-restores storage=File jobid=@jobid@
+mark *
+done
+yes
+wait
+messages
+sql
+select * from JobMedia;
+
+quit
+END_OF_DATA
+
+# Restore and check each job
+for i in 1; do
+   rm -rf ${cwd}/tmp/bacula-restores
+   echo "s%@jobid@%$i%" >${cwd}/tmp/in
+   sed -f ${cwd}/tmp/in ${cwd}/tmp/bconcmds-form >${cwd}/tmp/bconcmds
+   run_bconsole
+#   check_restore_diff
+done
+
+ls -l tmp/Vol* >>${cwd}/tmp/log5.out
+du -h tmp/Vol1.add >>${cwd}/tmp/log5.out
+
+sleep 2
+check_for_zombie_jobs storage=File 
+stop_bacula
+
+check_two_logs
+#check_restore_diff
+end_test
