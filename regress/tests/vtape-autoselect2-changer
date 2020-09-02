@@ -1,0 +1,110 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Run backups with dummy tape driver
+# This test setups an Autochanger with 80 slots
+# and 5 drives (3 LTO3 and 2 LTO1)
+#
+# TAPE_DRIVE="$cwd/working/ach/drive0"
+# TAPE_DRIVE1="$cwd/working/ach/drive0"
+# AUTOCHANGER="$cwd/working/ach/conf"
+# USE_VTAPE=yes
+# AUTOCHANGER_SCRIPT=disk-changer
+# 
+
+TestName="vtape-autoselect2-changer"
+JobName=backup
+. scripts/functions
+
+require_vtape
+
+scripts/cleanup
+scripts/copy-tape-confs
+cp $rscripts/bacula-dir-vtape.conf $conf/bacula-dir.conf
+cp $rscripts/bacula-sd-vtape.conf $conf/bacula-sd.conf
+scripts/prepare-fake-autochanger
+
+echo "${cwd}/build" >${cwd}/tmp/file-list
+$bperl -e "add_attribute('$conf/bacula-sd.conf', 'AutoSelect', 'no', 'Device', 'LTO3_0')"
+
+
+start_test
+
+clientname=`awk '/Name = .*-fd/ { if (!ok) { print $3 ; ok=1 } }' bin/bacula-dir.conf`
+
+# Catalog record for cleaning tape "CLN01" successfully created.
+# CLN01      | Cleaning
+
+# Write out bconsole commands
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@$out /dev/null
+messages
+@$out $tmp/log1.out
+@# use LTO3_1 to label volumes
+label barcodes pool=Scratch slots=1-14 storage=LTO3 drive=1
+yes
+umount storage=LTO3_1 drive=1
+mount storage=LTO3_1 drive=1 slot=0
+messages
+run storage=LTO3 job=NightlySave1 pool=Default yes
+wait
+umount storage=LTO3_1 drive=1
+mount storage=LTO3_1 drive=1 slot=0
+messages
+quit
+END_OF_DATA
+
+run_bacula
+
+touch ${cwd}/build/po/*.po
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@$out $tmp/log2.out
+restore client=$clientname storage=LTO3_0 where=${cwd}/tmp/bacula-restores select all done yes
+wait
+messages
+@$out $tmp/log3.out
+@exec "touch $cwd/build/po/fr.po"
+run storage=LTO3 job=NightlySave1 pool=Default  yes
+wait
+messages
+@$out $tmp/log4.out
+@exec "touch $cwd/build/po/fr.po"
+run job=NightlySave1 storage=LTO3_0 pool=Default  yes
+wait
+messages
+@$out $tmp/log5.out
+umount storage=LTO3_0 drive=0
+mount storage=LTO3_0 drive=0 slot=0
+@exec "touch $cwd/build/po/fr.po"
+run job=NightlySave1 storage=LTO3_0 pool=Default  yes
+wait
+messages
+END_OF_DATA
+
+run_bconsole
+
+check_two_logs
+#check_restore_diff
+
+grep 'Using Device "LTO3_0"' $tmp/log3.out > /dev/null
+if [ $? = 0 ]; then
+    print_debug "ERROR: in $tmp/log3.out, the backup job shouldn't use LTO3_0 which is autoselect=no"
+    bstat=1
+fi
+
+grep 'Using Device "LTO3_0"' $tmp/log4.out > /dev/null
+if [ $? != 0 ]; then
+    print_debug "ERROR: in $tmp/log4.out, the backup job should use LTO3_0"
+    bstat=1
+fi
+
+grep 'Using Device "LTO3_0"' $tmp/log5.out > /dev/null
+if [ $? != 0 ]; then
+    print_debug "ERROR: in $tmp/log5.out, the backup job should use LTO3_0"
+    bstat=1
+fi
+
+end_test
