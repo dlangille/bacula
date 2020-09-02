@@ -3,8 +3,6 @@
 # Copyright (C) 2000-2020 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
-
-#
 # Test lockmanager
 #
 TestName="lockmgr-test"
@@ -60,7 +58,7 @@ END_OF_DATA
 run_bacula
 stop_bacula
 
-nb=`ls $working/*.traceback $working/*.lockdump | wc -l`
+nb=`ls $working/*.traceback $working/*.traceback | wc -l`
 if [ $nb != 4 ]; then
     print_debug "ERROR: Should find 4 traces, not $nb"
     estat=1
