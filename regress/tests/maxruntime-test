@@ -3,8 +3,6 @@
 # Copyright (C) 2000-2020 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
-
-#
 #  Test MaxRunTime
 #  Note: this test doesn't really do anything yet. It is used in helping
 #    to duplicate bug #1268, but so far not successful ...
@@ -33,7 +31,7 @@ label volume=TestVolume002 pool=Default
 mount
 wait
 messages
-setdebug level=60 dir
+setdebug trace=1 level=60 dir
 run job=RUN_MAXRUNTIME pool=PoolA yes
 run job=RUN_MAXRUNTIME fileset=FS_TESTJOB pool=PoolA yes
 wait
