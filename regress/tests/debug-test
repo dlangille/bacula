@@ -3,8 +3,6 @@
 # Copyright (C) 2000-2020 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
-
-#
 # Attempt to backup and restore a file with the bpipe plugin
 #
 TestName="debug-test"
@@ -34,12 +32,6 @@ run_bacula
 
 killall -SEGV bacula-dir bacula-sd bacula-fd
 
-test -f working/*dir*lockdump
-dstat=$?
-test -f working/*fd*lockdump
-dstat=`expr $dstat + $?`
-test -f working/*sd*lockdump
-dstat=`expr $dstat + $?`
 test -f working/*dir*traceback
 dstat=`expr $dstat + $?`
 test -f working/*fd*traceback
@@ -47,11 +39,11 @@ dstat=`expr $dstat + $?`
 test -f working/*sd*traceback
 dstat=`expr $dstat + $?`
 
-grep $JobName working/*dir*lockdump > /dev/null 2>&1
+grep $JobName working/*dir*traceback > /dev/null 2>&1
 dstat=`expr $dstat + $?`
-grep bpipe-fd.so working/*fd*lockdump > /dev/null 2>&1
+grep bpipe-fd.so working/*fd*traceback > /dev/null 2>&1
 dstat=`expr $dstat + $?`
-grep $JobName working/*fd*lockdump > /dev/null 2>&1
+grep $JobName working/*fd*traceback > /dev/null 2>&1
 dstat=`expr $dstat + $?`
 
 bstat=0
