@@ -1,0 +1,45 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Test the query parameter interface for plugins
+
+TestName="query-parameter-test"
+JobName=query
+. scripts/functions
+
+scripts/cleanup
+scripts/copy-test-confs
+
+change_jobname CompressedTest $JobName
+start_test
+
+make -C build/src/plugins/fd install-test-plugin install-postgresql
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@output /dev/null
+messages
+@$out $tmp/log1.out
+setdebug level=50 trace=1 client=$HOST-fd
+status client=$HOST-fd
+@#.query client=$HOST-fd parameter="auth" plugin="ndmp: user=root password=root host=netapp"
+@#.query client=$HOST-fd parameter="volume" plugin="ndmp: user=root password=root host=netapp"
+@#.query client=$HOST-fd parameter="dest_volume" plugin="ndmp: user=root password=root host=netapp"
+@#.query client=$HOST-fd parameter="type" plugin="ndmp: user=root password=root host=netapp"
+@#.query client=$HOST-fd parameter="profile" plugin="ndmp"
+.query client=$HOST-fd parameter="volume" plugin="ndmp: profile=root"
+@#.query client=$HOST-fd parameter="volume" plugin="ndmp: user=root password=root"
+@#.query client=$HOST-fd parameter="volume" plugin="ndmp: user=root host=netapp"
+
+.query client=$HOST-fd parameter="database" plugin="postgresql:"
+.query client=$HOST-fd parameter="database" plugin="postgresql: user=toto unix_user=titi"
+.query client=$HOST-fd parameter="withsleep" plugin="test-plugin"
+messages
+quit
+END_OF_DATA
+
+run_bacula
+stop_bacula
+
+end_test
