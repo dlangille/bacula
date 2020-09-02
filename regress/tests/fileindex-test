@@ -1,0 +1,90 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Run a simple backup with an indexed file
+#   then restore it.
+#
+TestName="fileindex-test"
+JobName=backup
+. scripts/functions
+
+scripts/cleanup
+scripts/copy-confs
+
+make -C $cwd/build/src/plugins/fd install-test-plugin
+
+$bperl -e 'add_attribute("$conf/bacula-sd.conf", "MaximumFileIndex", "32K", "Device")'
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "FileSet", "BPIPE_OFFSET", "Job")'
+cat <<EOF >> $conf/bacula-dir.conf
+FileSet {
+ Name = BPIPE_OFFSET
+ Include {
+   Options { signature = md5 }
+   Plugin = "test-bpipe:/fr.po:cat $cwd/build/po/fr.po:cat > $tmp/fr.po"
+   Plugin = "test-bpipe:/configure:cat $cwd/build/configure:cat > $tmp/configure"
+ }
+}
+EOF
+
+#
+# Zap out any schedule in default conf file so that
+#  it doesn't start during our test
+#
+outf="$tmp/sed_tmp"
+echo "s%  Schedule =%# Schedule =%g" >${outf}
+cp $scripts/bacula-dir.conf $tmp/1
+sed -f ${outf} $tmp/1 >$scripts/bacula-dir.conf
+
+change_jobname BackupClient1 $JobName
+start_test
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@output /dev/null
+messages
+@$out $tmp/log1.out
+label volume=TestVolume001 storage=File1 pool=File slot=1 drive=0
+setdebug level=250 tags=record storage=File1 trace=1
+run job=$JobName yes
+wait
+messages
+@# 
+@# now do a restore
+@#
+@$out $tmp/log2.out  
+setdebug level=250 tags=record storage=File1 trace=1
+restore where=$tmp/bacula-restores select all done
+yes
+wait
+messages
+@$out $tmp/filemedia.log
+list filemedia jobid=1
+quit
+END_OF_DATA
+
+run_bacula
+
+check_for_zombie_jobs storage=File1
+stop_bacula
+
+diff $cwd/build/po/fr.po $tmp/fr.po > /dev/null
+if [ $? -ne 0 ]; then
+    print_debug "ERROR: $cwd/build/po/fr.po $tmp/fr.po should be identical"
+    estat=1
+fi
+
+diff $cwd/build/configure $tmp/configure > /dev/null
+if [ $? -ne 0 ]; then
+    print_debug "ERROR: $cwd/build/configure $tmp/configure should be identical"
+    estat=1
+fi
+
+nb=`grep TestVolume001 $tmp/filemedia.log | wc -l`
+if [ "$nb" -eq 0 ]; then
+    print_debug "ERROR: Should find filemedia in $tmp/filemedia.log"
+    estat=1
+fi
+
+check_two_logs
+end_test
