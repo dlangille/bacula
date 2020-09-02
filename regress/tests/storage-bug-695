@@ -1,0 +1,132 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# This should expose bug #695
+#
+# This script uses the virtual disk autochanger
+#
+TestName="storage-bug-695"
+JobName="backup"
+. scripts/functions
+
+scripts/cleanup
+scripts/copy-2disk-virtual-confs
+CLIENT=2drive2disk
+
+echo "${cwd}/build" >${cwd}/tmp/file-list
+
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "Storage", "Virtual", "Job")'
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "SpoolData", "no", "Job")'
+
+change_jobname NightlySave $JobName
+start_test
+
+rm -f $tmp/stop
+
+cat <<EOF >$tmp/cmd
+@sleep 5
+sql
+update Media SET VolStatus='Purged', VolBytes=100000 WHERE VolumeName LIKE 'test%';
+
+truncate mediatype=Disk storage=Virtual allpools
+.status dir running
+EOF
+
+# Write out bconsole commands
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@out /dev/null
+messages
+@$out ${cwd}/tmp/log1.out
+setdebug level=150 storage=Virtual trace=1
+setdebug level=50 dir trace=1
+label volume=test1 Pool=Default slot=0 drive=0 storage=Virtual
+label volume=test2 Pool=Default slot=0 drive=0 storage=Virtual
+label volume=test3 Pool=Default slot=0 drive=0 storage=Virtual
+update volume=test1 volstatus=Error
+update volume=test2 volstatus=Error
+update volume=test3 volstatus=Error
+run job=$JobName level=Full Pool=PoolA-MCJ1 yes
+run job=$JobName level=Full Pool=PoolB-MCJ1 yes
+run job=$JobName level=Full Pool=PoolC-MCJ1 yes
+run job=$JobName level=Full Pool=PoolD-MCJ1 yes
+run job=$JobName level=Full Pool=PoolE-MCJ1 yes
+run job=$JobName level=Full Pool=PoolA-MCJ1 yes
+run job=$JobName level=Full Pool=PoolB-MCJ1 yes
+run job=$JobName level=Full Pool=PoolC-MCJ1 yes
+run job=$JobName level=Full Pool=PoolD-MCJ1 yes
+run job=$JobName level=Full Pool=PoolE-MCJ1 yes
+run job=$JobName level=Full Pool=PoolA-MCJ1 yes
+run job=$JobName level=Full Pool=PoolB-MCJ1 yes
+run job=$JobName level=Full Pool=PoolC-MCJ1 yes
+run job=$JobName level=Full Pool=PoolD-MCJ1 yes
+run job=$JobName level=Full Pool=PoolE-MCJ1 yes
+run job=$JobName level=Full Pool=PoolA-MCJ1 yes
+run job=$JobName level=Full Pool=PoolB-MCJ1 yes
+run job=$JobName level=Full Pool=PoolC-MCJ1 yes
+run job=$JobName level=Full Pool=PoolD-MCJ1 yes
+run job=$JobName level=Full Pool=PoolE-MCJ1 yes
+run job=$JobName level=Full Pool=PoolA-MCJ1 yes
+run job=$JobName level=Full Pool=PoolB-MCJ1 yes
+run job=$JobName level=Full Pool=PoolC-MCJ1 yes
+run job=$JobName level=Full Pool=PoolD-MCJ1 yes
+run job=$JobName level=Full Pool=PoolE-MCJ1 yes
+run job=$JobName level=Full Pool=PoolA-MCJ1 yes
+run job=$JobName level=Full Pool=PoolB-MCJ1 yes
+run job=$JobName level=Full Pool=PoolC-MCJ1 yes
+run job=$JobName level=Full Pool=PoolD-MCJ1 yes
+run job=$JobName level=Full Pool=PoolE-MCJ1 yes
+run job=$JobName level=Full Pool=PoolA-MCJ1 yes
+run job=$JobName level=Full Pool=PoolB-MCJ1 yes
+run job=$JobName level=Full Pool=PoolC-MCJ1 yes
+run job=$JobName level=Full Pool=PoolD-MCJ1 yes
+run job=$JobName level=Full Pool=PoolE-MCJ1 yes
+wait
+messages
+quit
+END_OF_DATA
+
+# exit
+
+(
+ while [ ! -f $tmp/stop ]; do
+     run_bconsole $tmp/cmd
+ done
+) &
+
+run_bacula
+
+touch $tmp/stop
+
+sleep 6
+
+for i in `seq 1 35`
+do
+    cat <<EOF > $tmp/cmd
+@tee $tmp/log2.out
+restore
+3
+$i
+m *
+done
+yes
+wait
+messages
+EOF
+    run_bconsole $tmp/cmd
+
+    check_restore_diff &> /dev/null
+    if [ "$rstat" -gt 0 ]; then
+        exit 1
+    fi
+    rm -rf $tmp/bacula-restores
+done
+
+check_for_zombie_jobs storage=tape
+stop_bacula
+
+touch $tmp/log2.out
+check_two_logs
+
+end_test
