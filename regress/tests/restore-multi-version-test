@@ -1,0 +1,77 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Run a simple backup of 1 files two times, and restore
+#   them with the regex %m option. Files will be restored
+#   in $tmp with the mtime postfixed (fr.po -> fr.po.1534256893)
+#
+TestName="restore-multi-version-test"
+JobName=backup
+. scripts/functions
+
+${rscripts}/cleanup
+${rscripts}/copy-test-confs
+echo "$tmp/fr.po" >${tmp}/file-list
+
+cp $cwd/build/po/fr.po $tmp
+
+change_jobname CompressedTest $JobName
+start_test
+
+cat <<END_OF_DATA >${tmp}/bconcmds
+@output /dev/null
+messages
+@$out ${tmp}/log1.out
+label storage=File volume=TestVolume001
+run job=$JobName yes
+wait
+messages
+@exec "touch $tmp/fr.po"
+run job=$JobName yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bacula
+
+cat <<END_OF_DATA >${tmp}/bconcmds
+@output /dev/null
+messages
+@$out ${tmp}/log2.out
+.bvfs_restore jobid=1 fileid=1 path=b21$$
+restore  file="?b21$$" regexwhere="!\$!.\$m!" yes
+.bvfs_cleanup path=b21$$
+.bvfs_restore jobid=2 fileid=2 path=b21$$
+restore  file="?b21$$" regexwhere="!\$!.\$m!" yes
+.bvfs_cleanup path=b21$$
+wait
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+
+check_for_zombie_jobs storage=File
+stop_bacula
+
+cnt=0
+for i in $tmp/fr.po.*
+do
+    cnt=`expr $cnt + 1`
+    diff $cwd/build/po/fr.po $i
+    if [ $? != 0 ]; then
+        print_debug "ERROR: found restore error for $i"
+        estat=1
+    fi
+done
+
+if [ "$cnt" != 2 ]; then
+    print_debug "ERROR: should found 2 files restored"
+    estat=1
+fi
+
+check_two_logs
+end_test
