@@ -1,0 +1,664 @@
+#!/bin/bash
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Run a simple backup of the Bacula build directory then restore it.
+# And then do the same but with the the blowup or hangup enable
+#
+# - tests the setdebug blowup and hangup options
+# - For some tests the SD or FD don't terminate or behave has expected,
+#  see "THIS IS NOT WORKING FIX IT" below
+# - For blowup, this is often ok if the daemon is restarted. The dir
+#   need to contact the "restarted" daemon to "terminate" the pending jobs.
+# - for extending/debuging ONE case, use SKIP to disable all test
+#  and replace the "if" that you want to try with a bin/true to force this test
+#
+# Author: alain.spineux@baculasystems.com
+
+TestName="hangup-blowup-test"
+JobName=backup
+. scripts/functions
+
+monitor_and_restart()
+{
+   daemon="$1"
+   # be sure that the daemon is started or wait for it to be started
+   pidfile="$cwd/working/bacula-${daemon}.*.pid"
+   count=20
+   while [ ! -f $pidfile -a "$count" -gt "0" ] ; do
+      count=`expr $count - 1`
+      sleep 1
+   done
+   echo REMOVE ME monitor_and_restart count=$count
+
+   if [ ! -f $pidfile ]; then
+      die_test 1 "pid file for daemon $daemon not found: $pidfile"
+   fi
+
+   # wait for the daemon to blowup
+   pid=`cat $pidfile`
+   while ps $pid | grep "$pid" > /dev/null; do
+      sleep 1
+   done
+
+   #restar the daemon
+   sleep 2
+   $scripts/bacula-ctl-${daemon} start
+}
+
+scripts/cleanup
+scripts/copy-confs
+
+# used for debugging to skip tests that already works
+SKIP="no"
+
+if [ "$REGRESS_DEBUG" != "1" ] ; then
+   SKIP="no"
+fi
+
+file_limit=100
+byte_limit=2048 # in KB
+
+#
+# Zap out any schedule in default conf file so that
+#  it doesn't start during our test
+#
+outf="$tmp/sed_tmp"
+echo "s%  Schedule =%# Schedule =%g" >${outf}
+cp $scripts/bacula-dir.conf $tmp/1
+sed -f ${outf} $tmp/1 >$scripts/bacula-dir.conf
+
+change_jobname BackupClient1 $JobName
+start_test
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out /dev/null
+messages
+@$out $tmp/log1.out
+setdebug level=4 storage=File1
+label volume=TestVolume001 storage=File1 pool=File slot=1 drive=0
+run job=$JobName yes
+wait
+messages
+@# 
+@# now do a restore
+@#
+@$out $tmp/log2.out
+setdebug level=4 storage=File1
+restore where=$tmp/bacula-restores select all done
+yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bacula
+check_for_zombie_jobs storage=File1
+check_two_logs
+check_restore_diff
+
+#
+case="${LINENO}:RESTORE HANGUP in FD files"
+# 
+rm -rf $tmp/bacula-restores
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out /dev/null
+messages
+@$out $tmp/out1.out w
+setdebug level=1000 client hangup=$file_limit
+restore where=$tmp/bacula-restores select all done
+yes
+wait
+messages
+quit
+@$out $tmp/fdstat.out w
+status client
+@$out $tmp/sdstat.out w
+status storage=File1
+@$out $tmp/dirstat.out w
+status dir
+END_OF_DATA
+
+echo THIS IS NOT WORKING FIX IT: $case
+if /bin/false; then
+   print_debug "Now testing: $case"
+   run_bconsole
+   grep "Debug hangup requested after $file_limit files" $tmp/out1.out> /dev/null || die_test 1 "$case: hangup message missing in job log"
+   grep "Restore Error" $tmp/out1.out > /dev/null|| die_test 1 "$case: Error message missing in job log"
+   grep "No Jobs running." $tmp/fdstat.out > /dev/null || die_test 1 "$case: job still running on Client"
+   grep "No Jobs running." $tmp/sdstat.out > /dev/null || die_test 1 "$case: job still running on SD"
+   grep "No Jobs running." $tmp/dirstat.out > /dev/null || die_test 1 "$case: job still running on DIR"
+   print_debug "Success: $case"
+   $scripts/bacula-ctl-fd restart
+fi
+
+#
+case="${LINENO}:RESTORE HANGUP in FD bytes"
+# 
+rm -rf $tmp/bacula-restores
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out /dev/null
+messages
+@$out $tmp/out1.out w
+setdebug level=4 client hangup=-$byte_limit
+restore where=$tmp/bacula-restores select all done
+yes
+wait
+messages
+@$out $tmp/fdstat.out w
+status client
+@$out $tmp/sdstat.out w
+status storage=File1
+@$out $tmp/dirstat.out w
+status dir
+quit
+END_OF_DATA
+
+echo THIS IS NOT WORKING FIX IT: $case
+if /bin/false; then
+   print_debug "Now testing: $case"
+   run_bconsole
+
+   grep "Debug hangup requested after $byte_limit Kbytes" $tmp/out1.out> /dev/null || die_test 1 "$case: hangup message missing in job log"
+   grep "Restore Error" $tmp/out1.out > /dev/null|| die_test 1 "$case: Error message missing in job log"
+   grep "No Jobs running." $tmp/fdstat.out > /dev/null || die_test 1 "$case: job still running on Client"
+   grep "No Jobs running." $tmp/sdstat.out > /dev/null || die_test 1 "$case: job still running on SD"
+   grep "No Jobs running." $tmp/dirstat.out > /dev/null || die_test 1 "$case: job still running on DIR"
+   print_debug "Success: $case"
+   $scripts/bacula-ctl-fd restart
+fi
+
+#
+case="${LINENO}:RESTORE BLOWUP in FD files"
+# 
+rm -rf $tmp/bacula-restores
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out /dev/null
+messages
+@$out $tmp/out1.out w
+setdebug level=4 client blowup=$file_limit
+restore where=$tmp/bacula-restores select all done
+yes
+wait
+messages
+@$out $tmp/fdstat.out w
+status client
+@$out $tmp/sdstat.out w
+status storage=File1
+@$out $tmp/dirstat.out w
+status dir
+quit
+END_OF_DATA
+
+if [ "$SKIP" != "yes" ] ; then
+   print_debug "Now testing: $case"
+   monitor_and_restart fd &
+   run_bconsole
+
+   grep "Socket error on Store end command" $tmp/out1.out> /dev/null || die_test 1 "$case: hangup message missing in job log"
+   grep "Restore Error" $tmp/out1.out > /dev/null|| die_test 1 "$case: Error message missing in job log"
+   grep "No Jobs running." $tmp/fdstat.out > /dev/null || die_test 1 "$case: job still running on Client"
+   grep "No Jobs running." $tmp/sdstat.out > /dev/null || die_test 1 "$case: job still running on SD"
+   grep "No Jobs running." $tmp/dirstat.out > /dev/null || die_test 1 "$case: job still running on DIR"
+   print_debug "Success: $case"
+fi
+
+#
+case="${LINENO}:RESTORE BLOWUP in FD bytes"
+# 
+rm -rf $tmp/bacula-restores
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out /dev/null
+messages
+@$out $tmp/out1.out w
+setdebug level=4 client blowup=-$byte_limit
+restore where=$tmp/bacula-restores select all done
+yes
+wait
+messages
+@$out $tmp/fdstat.out w
+status client
+@$out $tmp/sdstat.out w
+status storage=File1
+@$out $tmp/dirstat.out w
+status dir
+quit
+END_OF_DATA
+
+if [ "$SKIP" != "yes" ] ; then
+   print_debug "Now testing: $case"
+   monitor_and_restart fd &
+   run_bconsole
+
+   grep "Socket error on Store end command" $tmp/out1.out> /dev/null || die_test 1 "$case: hangup message missing in job log"
+   grep "Restore Error" $tmp/out1.out > /dev/null|| die_test 1 "$case: Error message missing in job log"
+   grep "No Jobs running." $tmp/fdstat.out > /dev/null || die_test 1 "$case: job still running on Client"
+   grep "No Jobs running." $tmp/sdstat.out > /dev/null || die_test 1 "$case: job still running on SD"
+   grep "No Jobs running." $tmp/dirstat.out > /dev/null || die_test 1 "$case: job still running on DIR"
+   print_debug "Success: $case"
+fi
+
+#
+
+#
+case="${LINENO}:RESTORE HANGUP in SD files"
+# 
+rm -rf $tmp/bacula-restores
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out /dev/null
+messages
+@$out $tmp/out1.out w
+setdebug level=4 storage=File1 hangup=$file_limit
+restore where=$tmp/bacula-restores select all done
+yes
+wait
+messages
+@$out $tmp/fdstat.out w
+status client
+@$out $tmp/sdstat.out w
+status storage=File1
+@$out $tmp/dirstat.out w
+status dir
+quit
+END_OF_DATA
+
+if [ "$SKIP" != "yes" ] ; then
+   print_debug "Now testing: $case"
+   run_bconsole
+
+   grep "Debug hangup requested after $file_limit files" $tmp/out1.out> /dev/null || die_test 1 "$case: hangup message missing in job log"
+   grep "Restore Error" $tmp/out1.out > /dev/null|| die_test 1 "$case: Error message missing in job log"
+   grep "No Jobs running." $tmp/fdstat.out > /dev/null || die_test 1 "$case: job still running on Client"
+   grep "No Jobs running." $tmp/sdstat.out > /dev/null || die_test 1 "$case: job still running on SD"
+   grep "No Jobs running." $tmp/dirstat.out > /dev/null || die_test 1 "$case: job still running on DIR"
+   print_debug "Success: $case"
+   $scripts/bacula-ctl-sd restart
+fi
+
+#
+case="${LINENO}:RESTORE HANGUP in SD bytes"
+# 
+rm -rf $tmp/bacula-restores
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out /dev/null
+messages
+@$out $tmp/out1.out w
+setdebug level=4 storage=File1 hangup=-$byte_limit
+restore where=$tmp/bacula-restores select all done
+yes
+wait
+messages
+@$out $tmp/fdstat.out w
+status client
+@$out $tmp/sdstat.out w
+status storage=File1
+@$out $tmp/dirstat.out w
+status dir
+quit
+END_OF_DATA
+
+if [ "$SKIP" != "yes" ] ; then
+   print_debug "Now testing: $case"
+   run_bconsole
+   grep "Debug hangup requested after $byte_limit Kbytes" $tmp/out1.out> /dev/null || die_test 1 "$case: hangup message missing in job log"
+   grep "Restore Error" $tmp/out1.out > /dev/null|| die_test 1 "$case: Error message missing in job log"
+   grep "No Jobs running." $tmp/fdstat.out > /dev/null || die_test 1 "$case: job still running on Client"
+   grep "No Jobs running." $tmp/sdstat.out > /dev/null || die_test 1 "$case: job still running on SD"
+   grep "No Jobs running." $tmp/dirstat.out > /dev/null || die_test 1 "$case: job still running on DIR"
+   print_debug "Success: $case"
+   $scripts/bacula-ctl-sd restart
+fi
+
+#
+case="${LINENO}:RESTORE BLOWUP in SD files"
+# 
+rm -rf $tmp/bacula-restores
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out /dev/null
+messages
+@$out $tmp/out1.out w
+setdebug level=4 storage=File1 blowup=$file_limit
+restore where=$tmp/bacula-restores select all done
+yes
+wait
+messages
+@$out $tmp/fdstat.out w
+status client
+@$out $tmp/sdstat.out w
+status storage=File1
+@$out $tmp/dirstat.out w
+status dir
+quit
+END_OF_DATA
+
+if [ "$SKIP" != "yes" ] ; then
+   print_debug "Now testing: $case"
+   monitor_and_restart sd &
+   run_bconsole
+
+   grep "connection to SD for this Job was lost" $tmp/out1.out> /dev/null || die_test 1 "$case: hangup message missing in job log"
+   grep "Restore Error" $tmp/out1.out > /dev/null|| die_test 1 "$case: Error message missing in job log"
+   grep "No Jobs running." $tmp/fdstat.out > /dev/null || die_test 1 "$case: job still running on Client"
+   grep "No Jobs running." $tmp/sdstat.out > /dev/null || die_test 1 "$case: job still running on SD"
+   grep "No Jobs running." $tmp/dirstat.out > /dev/null || die_test 1 "$case: job still running on DIR"
+   print_debug "Success: $case"
+fi
+
+#
+case="${LINENO}:RESTORE BLOWUP in SD bytes"
+# 
+rm -rf $tmp/bacula-restores
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out /dev/null
+messages
+@$out $tmp/out1.out w
+setdebug level=4 storage=File1 blowup=-$byte_limit
+restore where=$tmp/bacula-restores select all done
+yes
+wait
+messages
+@$out $tmp/fdstat.out w
+status client
+@$out $tmp/sdstat.out w
+status storage=File1
+@$out $tmp/dirstat.out w
+status dir
+quit
+END_OF_DATA
+
+if [ "$SKIP" != "yes" ] ; then
+   print_debug "Now testing: $case"
+   monitor_and_restart sd &
+   run_bconsole
+   grep "connection to SD for this Job was lost" $tmp/out1.out> /dev/null || die_test 1 "$case: hangup message missing in job log"
+   grep "Restore Error" $tmp/out1.out > /dev/null|| die_test 1 "$case: Error message missing in job log"
+   grep "No Jobs running." $tmp/fdstat.out > /dev/null || die_test 1 "$case: job still running on Client"
+   grep "No Jobs running." $tmp/sdstat.out > /dev/null || die_test 1 "$case: job still running on SD"
+   grep "No Jobs running." $tmp/dirstat.out > /dev/null || die_test 1 "$case: job still running on DIR"
+   print_debug "Success: $case"
+fi
+
+#
+case="${LINENO}:BACKUP HANGUP in FD files"
+# 
+rm -rf $tmp/bacula-restores
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out /dev/null
+messages
+@$out $tmp/out1.out w
+setdebug level=4 client hangup=$file_limit
+run job=$JobName level=full yes 
+wait
+messages
+@$out $tmp/fdstat.out w
+status client
+@$out $tmp/sdstat.out w
+status storage=File1
+@$out $tmp/dirstat.out w
+status dir
+quit
+END_OF_DATA
+
+echo THIS IS NOT WORKING FIX IT: $case
+if /bin/false; then
+   print_debug "Now testing: $case"
+   run_bconsole
+
+   grep "Debug hangup requested after $file_limit files" $tmp/out1.out> /dev/null || die_test 1 "$case: hangup message missing in job log"
+   grep "Backup Error" $tmp/out1.out > /dev/null|| die_test 1 "$case: Error message missing in job log"
+   grep "No Jobs running." $tmp/fdstat.out > /dev/null || die_test 1 "$case: job still running on Client"
+   grep "No Jobs running." $tmp/sdstat.out > /dev/null || die_test 1 "$case: job still running on SD"
+   grep "No Jobs running." $tmp/dirstat.out > /dev/null || die_test 1 "$case: job still running on DIR"
+   print_debug "Success: $case"
+   $scripts/bacula-ctl-fd restart
+fi
+
+#
+case="${LINENO}:BACKUP HANGUP in FD bytes"
+# 
+rm -rf $tmp/bacula-restores
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out /dev/null
+messages
+@$out $tmp/out1.out w
+setdebug level=4 client hangup=-$byte_limit
+run job=$JobName level=full yes 
+wait
+messages
+@$out $tmp/fdstat.out w
+status client
+@$out $tmp/sdstat.out w
+status storage=File1
+@$out $tmp/dirstat.out w
+status dir
+quit
+END_OF_DATA
+
+echo THIS IS NOT WORKING FIX IT: $case
+if false; then
+   print_debug "Now testing: $case"
+   run_bconsole
+
+   grep "Debug hangup requested after $byte_limit Kbytes" $tmp/out1.out> /dev/null || die_test 1 "$case: hangup message missing in job log"
+   grep "Backup Error" $tmp/out1.out > /dev/null|| die_test 1 "$case: Error message missing in job log"
+   grep "No Jobs running." $tmp/fdstat.out > /dev/null || die_test 1 "$case: job still running on Client"
+   grep "No Jobs running." $tmp/sdstat.out > /dev/null || die_test 1 "$case: job still running on SD"
+   grep "No Jobs running." $tmp/dirstat.out > /dev/null || die_test 1 "$case: job still running on DIR"
+   print_debug "Success: $case"
+   $scripts/bacula-ctl-fd restart
+fi
+
+#
+case="${LINENO}:BACKUP BLOWUP in FD files"
+#
+rm -rf $tmp/bacula-restores
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out /dev/null
+messages
+@$out $tmp/out1.out w
+setdebug level=4 client blowup=$file_limit
+run job=$JobName level=full yes 
+wait
+messages
+@$out $tmp/fdstat.out w
+status client
+@$out $tmp/sdstat.out w
+status storage=File1
+@$out $tmp/dirstat.out w
+status dir
+quit
+END_OF_DATA
+
+echo THIS IS NOT WORKING FIX IT: $case
+if /bin/false; then 
+   print_debug "Now testing: $case"
+   monitor_and_restart fd &
+   run_bconsole
+
+   grep "Director's connection to SD for this Job was lost" $tmp/out1.out> /dev/null || die_test 1 "$case: hangup message missing in job log"
+   grep "Backup Error" $tmp/out1.out > /dev/null|| die_test 1 "$case: Error message missing in job log"
+   grep "No Jobs running." $tmp/fdstat.out > /dev/null || die_test 1 "$case: job still running on Client"
+   grep "No Jobs running." $tmp/sdstat.out > /dev/null || die_test 1 "$case: job still running on SD"
+   grep "No Jobs running." $tmp/dirstat.out > /dev/null || die_test 1 "$case: job still running on DIR"
+   print_debug "Success: $case"
+fi
+
+#
+case="${LINENO}:BACKUP BLOWUP in FD bytes"
+#
+rm -rf $tmp/bacula-restores
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out /dev/null
+messages
+@$out $tmp/out1.out w
+setdebug level=4 client blowup=-$byte_limit
+run job=$JobName level=full yes 
+wait
+messages
+@$out $tmp/fdstat.out w
+status client
+@$out $tmp/sdstat.out w
+status storage=File1
+@$out $tmp/dirstat.out w
+status dir
+quit
+END_OF_DATA
+
+echo THIS IS NOT WORKING FIX IT: $case
+if /bin/false; then
+   print_debug "Now testing: $case"
+   monitor_and_restart fd &
+   run_bconsole
+
+   grep "Director's connection to SD for this Job was lost" $tmp/out1.out> /dev/null || die_test 1 "$case: hangup message missing in job log"
+   grep "Backup Error" $tmp/out1.out > /dev/null|| die_test 1 "$case: Error message missing in job log"
+   grep "No Jobs running." $tmp/fdstat.out > /dev/null || die_test 1 "$case: job still running on Client"
+   grep "No Jobs running." $tmp/sdstat.out > /dev/null || die_test 1 "$case: job still running on SD"
+   grep "No Jobs running." $tmp/dirstat.out > /dev/null || die_test 1 "$case: job still running on DIR"
+   print_debug "Success: $case"
+fi
+
+#
+case="${LINENO}:BACKUP HANGUP in SD files"
+# 
+rm -rf $tmp/bacula-restores
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out /dev/null
+messages
+@$out $tmp/out1.out w
+setdebug level=4 storage=File1 hangup=$file_limit
+run job=$JobName level=full yes 
+wait
+messages
+@$out $tmp/fdstat.out w
+status client
+@$out $tmp/sdstat.out w
+status storage=File1
+@$out $tmp/dirstat.out w
+status dir
+quit
+END_OF_DATA
+
+echo THIS IS NOT WORKING FIX IT: $case
+if /bin/false; then
+   print_debug "Now testing: $case"
+   run_bconsole
+
+   grep "Debug hangup requested after $file_limit files" $tmp/out1.out> /dev/null || die_test 1 "$case: hangup message missing in job log"
+   grep "Backup Error" $tmp/out1.out > /dev/null|| die_test 1 "$case: Error message missing in job log"
+   grep "No Jobs running." $tmp/fdstat.out > /dev/null || die_test 1 "$case: job still running on Client"
+   grep "No Jobs running." $tmp/sdstat.out > /dev/null || die_test 1 "$case: job still running on SD"
+   grep "No Jobs running." $tmp/dirstat.out > /dev/null || die_test 1 "$case: job still running on DIR"
+   print_debug "Success: $case"
+   $scripts/bacula-ctl-sd restart
+fi
+
+#
+case="${LINENO}:BACKUP HANGUP in SD bytes"
+# 
+rm -rf $tmp/bacula-restores
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out /dev/null
+messages
+@$out $tmp/out1.out w
+setdebug level=4 storage=File1 hangup=-$byte_limit
+run job=$JobName level=full yes 
+wait
+messages
+@$out $tmp/fdstat.out w
+status client
+@$out $tmp/sdstat.out w
+status storage=File1
+@$out $tmp/dirstat.out w
+status dir
+quit
+END_OF_DATA
+
+echo THIS IS NOT WORKING FIX IT: $case
+if /bin/false; then
+   print_debug "Now testing: $case"
+   run_bconsole
+
+   grep "Debug hangup requested after $byte_limit Kbytes" $tmp/out1.out> /dev/null || die_test 1 "$case: hangup message missing in job log"
+   grep "Backup Error" $tmp/out1.out > /dev/null|| die_test 1 "$case: Error message missing in job log"
+   grep "No Jobs running." $tmp/fdstat.out > /dev/null || die_test 1 "$case: job still running on Client"
+   grep "No Jobs running." $tmp/sdstat.out > /dev/null || die_test 1 "$case: job still running on SD"
+   grep "No Jobs running." $tmp/dirstat.out > /dev/null || die_test 1 "$case: job still running on DIR"
+   print_debug "Success: $case"
+   $scripts/bacula-ctl-sd restart
+fi
+
+#
+case="${LINENO}:BACKUP BLOWUP in SD files"
+#
+rm -rf $tmp/bacula-restores
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out /dev/null
+messages
+@$out $tmp/out1.out w
+setdebug level=4 storage=File1 blowup=$file_limit
+run job=$JobName level=full yes 
+wait
+messages
+@$out $tmp/fdstat.out w
+status client
+@$out $tmp/sdstat.out w
+status storage=File1
+@$out $tmp/dirstat.out w
+status dir
+quit
+END_OF_DATA
+
+if [ "$SKIP" != "yes" ] ; then
+   print_debug "Now testing: $case"
+   monitor_and_restart sd &
+   run_bconsole
+
+   grep "Director's connection to SD for this Job was lost" $tmp/out1.out> /dev/null || die_test 1 "$case: hangup message missing in job log"
+   grep "Backup Error" $tmp/out1.out > /dev/null|| die_test 1 "$case: Error message missing in job log"
+   grep "No Jobs running." $tmp/fdstat.out > /dev/null || die_test 1 "$case: job still running on Client"
+   grep "No Jobs running." $tmp/sdstat.out > /dev/null || die_test 1 "$case: job still running on SD"
+   grep "No Jobs running." $tmp/dirstat.out > /dev/null || die_test 1 "$case: job still running on DIR"
+   print_debug "Success: $case"
+fi
+
+#
+case="${LINENO}:BACKUP BLOWUP in SD bytes"
+#
+rm -rf $tmp/bacula-restores
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out /dev/null
+messages
+@$out $tmp/out1.out w
+setdebug level=4 storage=File1 blowup=-$byte_limit
+run job=$JobName level=full yes 
+wait
+messages
+@$out $tmp/fdstat.out w
+status client
+@$out $tmp/sdstat.out w
+status storage=File1
+@$out $tmp/dirstat.out w
+status dir
+quit
+END_OF_DATA
+
+if [ "$SKIP" != "yes" ] ; then
+   print_debug "Now testing: $case"
+   monitor_and_restart sd &
+   run_bconsole
+
+   grep "Director's connection to SD for this Job was lost" $tmp/out1.out> /dev/null || die_test 1 "$case: hangup message missing in job log"
+   grep "Backup Error" $tmp/out1.out > /dev/null|| die_test 1 "$case: Error message missing in job log"
+   grep "No Jobs running." $tmp/fdstat.out > /dev/null || die_test 1 "$case: job still running on Client"
+   grep "No Jobs running." $tmp/sdstat.out > /dev/null || die_test 1 "$case: job still running on SD"
+   grep "No Jobs running." $tmp/dirstat.out > /dev/null || die_test 1 "$case: job still running on DIR"
+   print_debug "Success: $case"
+fi
+
+
+check_for_zombie_jobs storage=File1
+stop_bacula
+
+end_test
