@@ -1,0 +1,81 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Run a simple backup of a single file then restore that file.
+#
+TestName="one-file-test"
+JobName=Simple
+. scripts/functions
+
+${rscripts}/cleanup
+${rscripts}/copy-test-confs
+echo "${tmpsrc}" >${tmp}/file-list
+# File to deal with
+file=${src}/src/filed/xattr.c
+#file=${src}/src/testprogs.tar.gz
+#file=${src}/src/dird/xxx
+mkdir -p ${tmpsrc}
+#echo "111111111111111111111" >${src}/src/dird/xxx
+cp -p $file ${tmpsrc}
+cd ${tmp}
+#echo "${tmpsrc}/xxx" >restore-list
+#echo "${tmpsrc}/testprogs.tar.gz" >restore-list
+echo "${tmpsrc}/xattr.c" >restore-list
+
+cd ${cwd}
+
+#change_jobname CompressedTest $JobName
+start_test
+
+cat <<END_OF_DATA >${tmp}/bconcmds
+@output /dev/null
+messages
+@$out ${tmp}/log1.out
+setdebug level=100 storage=File
+@#setdebug level=200 client
+@#setdebug level=100 director
+label storage=File volume=TestVolume001
+@#label storage=File volume=TestVolume002
+run job=$JobName yes
+status client
+wait
+@#run level=Full job=$JobName yes
+@#wait
+messages
+quit
+END_OF_DATA
+
+run_bacula
+check_for_zombie_jobs storage=File
+$bin/bls -d 104 -v -c $conf/bacula-sd.conf -V 'TestVolume001' FileStorage
+
+
+cat <<END_OF_DATA >${tmp}/bconcmds
+@output /dev/null
+messages
+@# 
+@# now do a restore
+@#
+@$out ${tmp}/log2.out
+setdebug level=100 storage=File
+restore where=${tmp}/bacula-restores storage=File file=<${tmp}/restore-list
+yes
+wait
+@#status client
+@#status storage=File
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+check_for_zombie_jobs storage=File
+stop_bacula
+
+#check_two_logs
+#
+# Delete .c files because we will only restored the txt files
+#
+check_restore_tmp_build_diff
+end_test
