@@ -1,0 +1,96 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Test fstype feature
+#
+TestName="fstype-test"
+JobName=FSType
+. scripts/functions
+
+${rscripts}/cleanup
+${rscripts}/copy-test-confs
+echo "$cwd/build/po" >${tmp}/file-list
+
+# it might not work everywhere...
+# df -PT /tmp/
+# Filesystem     Type  1K-blocks    Used Available Use% Mounted on
+# tmpfs          tmpfs   6145692 1259584   4886108  21% /tmp
+
+if ! df -PT $cwd > /dev/null 2>&1
+then
+    print_debug "Skip fstype test, df -PT not supported"
+    exit 0
+fi
+   
+
+fs=`df -PT $cwd | tail -1 | awk '{print $2}'`
+
+sed  "s/fstype = ext4/fstype = $fs/" $conf/bacula-dir.conf > $tmp/1
+cp -f $tmp/1 $conf/bacula-dir.conf
+
+start_test
+
+cat <<END_OF_DATA >${tmp}/bconcmds
+@output /dev/null
+messages
+@$out ${tmp}/log1.out
+setdebug level=4 storage=File
+@#setdebug level=200 client
+@#setdebug level=100 director
+label storage=File volume=TestVolume001
+run job=$JobName yes
+wait
+messages
+run job=$JobName fileset=FSTypeFSEmpty yes
+wait
+status client
+messages
+@output $tmp/job1
+llist jobid=1
+@output $tmp/job2
+llist jobid=2
+END_OF_DATA
+
+run_bacula
+check_for_zombie_jobs storage=File
+
+cat <<END_OF_DATA >${tmp}/bconcmds
+@output /dev/null
+messages
+@# 
+@# now do a restore
+@#
+@$out ${tmp}/log2.out
+setdebug level=10 storage=File
+restore jobid=1 where=${tmp}/bacula-restores storage=File
+mark *
+done
+yes
+wait
+status client
+status storage=File
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+check_for_zombie_jobs storage=File
+stop_bacula
+
+job1=`grep -i jobfiles: $tmp/job1 | awk '{print $2}'`
+job2=`grep -i jobfiles: $tmp/job2 | awk '{print $2}'`
+
+if [ $job1 -lt 10 ]; then
+    print_debug "ERROR: not enough files in job1"
+    bstat=1
+fi
+
+if [ $job2 -ne 0 ]; then
+    print_debug "ERROR: too much files in job2"
+    bstat=1
+fi
+
+check_two_logs
+end_test
