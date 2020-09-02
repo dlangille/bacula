@@ -1,0 +1,215 @@
+#!/bin/bash
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# create zfs volume and play with snapshots
+#
+TestName="snapshot-zfs-test"
+JobName=Incremental
+. scripts/functions
+
+${rscripts}/cleanup
+${rscripts}/copy-test-confs
+
+USE_SUDO=${USE_SUDO:-sudo}
+
+if [ "$USE_SUDO" = sudo ]; then
+    echo sudo=yes > $conf/bsnapshot.conf
+fi
+
+fdir=$cwd/zfs
+ZFS="$USE_SUDO zfs"
+ZPOOL="$USE_SUDO zpool"
+
+cleanup()
+{
+    $ZFS unmount bpool/test/subvol
+    $ZFS unmount bpool/test
+
+    $ZFS destroy bpool/test/subvol
+    $ZFS destroy bpool/test
+}
+
+if [ ! -f $fdir.img ]; then
+    dd of=$fdir.img if=/dev/zero seek=600 bs=1MB count=1
+    $ZPOOL create bpool $fdir.img
+fi
+
+mkdir -p $fdir
+$ZFS create bpool/test
+$ZFS set mountpoint=$fdir bpool/test
+$ZFS mount bpool/test
+
+trap EXIT cleanup
+
+if [ $? -ne 0 ]; then
+    print_debug "ERROR: Unable to mount zfs image"
+    exit 1
+fi
+
+GID=`id -g`
+$USE_SUDO chown $USER:$GID $fdir
+
+echo "$fdir" >${tmp}/file-list
+cp -p ${src}/src/dird/*.c $fdir
+
+make -C $cwd/build/src/tools install-bsnapshot
+
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "Enable Snapshot", "yes", "FileSet")'
+
+change_jobname CompressedTest $JobName
+start_test
+
+cat <<END_OF_DATA >${tmp}/bconcmds
+@output /dev/null
+messages
+@$out ${tmp}/log1.out
+setdebug level=20 tags=snapshot fd trace=1
+label storage=File volume=TestVolume001
+run job=$JobName yes
+status client
+wait
+messages
+@output ${tmp}/list1
+list files jobid=1
+END_OF_DATA
+
+run_bacula
+check_for_zombie_jobs storage=File
+
+cat <<END_OF_DATA >${tmp}/bconcmds
+@# 
+@# now do a restore
+@#
+@$out ${tmp}/log2.out
+restore where=${tmp}/bacula-restores storage=File select all yes done
+wait
+status client
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+
+$SUDO zfs set snapdir=hidden bpool/test
+$rscripts/diff.pl -s $fdir -d $tmp/bacula-restores/$fdir
+
+grep .zfs/snapshots $tmp/list1
+if [ $? -eq 0 ]; then
+    print_debug "ERROR: Should not find .zfs/snapshots directory"
+    estat=1
+fi
+
+f=`ls $working/*.trace`
+cp $f $working/job1.trace
+cp /dev/null $f
+
+grep -E "Adding $fdir dev=[0-9]+ snap.=1 to the mount list" $working/job1.trace > /dev/null
+if [ $? -ne 0 ]; then
+    print_debug "ERROR: Should find $fdir in the FD $working/job1.trace file"
+    estat=1
+fi
+
+grep "$fdir snapshot support status=1" $working/job1.trace > /dev/null
+if [ $? -ne 0 ]; then
+    print_debug "ERROR: Should find $fdir snapshot support in the FD $working/job1.trace file"
+    estat=1
+fi
+
+grep "Create Snapshot of $fdir $JobName" $working/job1.trace > /dev/null
+if [ $? -ne 0 ]; then
+    print_debug "ERROR: Should find snapshot creation in FD $working/job1.trace file"
+    estat=1
+fi
+
+grep "fname=$fdir/.snapshots/Incremental.*/admin.c stripped=$fdir/admin.c link=$fdir/admin.c" $working/job1.trace > /dev/null
+if [ $? -ne 0 ]; then
+    print_debug "ERROR: Should path convertion in FD $working/job1.trace trace file"
+    estat=1
+fi
+
+$ZFS create $fdir/subvol
+$USE_SUDO chown $USER:$GID $fdir/subvol
+cp $cwd/build/README $fdir/subvol
+
+cat <<END_OF_DATA >${tmp}/bconcmds
+@$out ${tmp}/log3.out
+setdebug level=20 tags=snapshot fd trace=1
+run level=full job=$JobName yes
+wait
+messages
+@output ${tmp}/list3
+list files jobid=3
+@# 
+@# now do a restore
+@#
+@$out ${tmp}/log4.out
+restore where=${tmp}/bacula-restores4 storage=File select all yes done
+wait
+status client
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+
+cp $f $working/job3.trace
+
+grep -E "Adding $fdir dev=[0-9]+ snap.=1 to the mount list" $working/job3.trace > /dev/null
+if [ $? -ne 0 ]; then
+    print_debug "ERROR: Should find $fdir in the FD $working/job3.trace file"
+    estat=1
+fi
+
+grep "$fdir snapshot support status=1" $working/job3.trace > /dev/null
+if [ $? -ne 0 ]; then
+    print_debug "ERROR: Should find $fdir snapshot support in the FD $working/job3.trace file"
+    estat=1
+fi
+
+grep "Create Snapshot of $fdir $JobName" $working/job3.trace > /dev/null
+if [ $? -ne 0 ]; then
+    print_debug "ERROR: Should find snapshot creation in FD $working/job3.trace file"
+    estat=1
+fi
+
+grep "fname=$fdir/.zfs/snapshots/Incremental.*/admin.c stripped=$fdir/admin.c link=$fdir/admin.c" $working/job3.trace > /dev/null
+if [ $? -ne 0 ]; then
+    print_debug "ERROR: Should path convertion in FD $working/job3.trace trace file"
+    estat=1
+fi
+
+grep -E "Adding $fdir/subvol dev=[0-9]+ snap.=1 to the mount list" $working/job3.trace > /dev/null
+if [ $? -ne 0 ]; then
+    print_debug "ERROR: Should find $fdir/subvol in the FD $working/job3.trace file"
+    estat=1
+fi
+
+grep "$fdir/subvol snapshot support status=1" $working/job3.trace > /dev/null
+if [ $? -ne 0 ]; then
+    print_debug "ERROR: Should find $fdir snapshot support in the FD $working/job3.trace file"
+    estat=1
+fi
+
+grep "Create Snapshot of $fdir/subvol $JobName" $working/job3.trace > /dev/null
+if [ $? -ne 0 ]; then
+    print_debug "ERROR: Should find snapshot creation in FD $working/job3.trace file"
+    estat=1
+fi
+
+grep "fname=$fdir/subvol/.zfs/snapshots/Incremental.*/README stripped=$fdir/subvol/README link=$fdir/subvol/README" $working/job3.trace > /dev/null
+if [ $? -ne 0 ]; then
+    print_debug "ERROR: Should path convertion in FD $working/job3.trace trace file"
+    estat=1
+fi
+
+$USER_SUDO zfs set snapdir=hidden bpool/test/subvol
+$rscripts/diff.pl -s $fdir -d $tmp/bacula-restores4/$fdir
+
+
+stop_bacula
+
+check_two_logs
+
+end_test
