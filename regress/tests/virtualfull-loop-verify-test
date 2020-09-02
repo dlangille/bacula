@@ -1,0 +1,209 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Run a couple of jobs, then do virtualfull of them many times
+# and compare the result at the end with verify data job
+#
+export FORCE_DEDUP=yes
+TestName="virtualfull-loop-verify-test"
+. scripts/functions
+
+# Setup conf files
+scripts/cleanup
+scripts/copy-test-confs
+cp scripts/virtualfull-extreme-bacula-dir.conf bin/bacula-dir.conf
+cp scripts/migrate-bacula-sd.conf bin/bacula-sd.conf
+
+sed -i 's/Compression = LZO//' $conf/bacula-dir.conf
+sed -i 's/ACL Support = Yes//' $conf/bacula-dir.conf
+sed -i 's/Signature = SHA1/Signature = MD5/' $conf/bacula-dir.conf
+
+$bperl -e 'add_attribute("$conf/bacula-sd.conf", "MaximumConcurrentJobs", 4, "Device")'
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "MaximumVolumeJobs", 5, "Pool")'
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "MaximumConcurrentJobs", 1, "Job")'
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "MaximumVolumeBytes", "50MB", "Pool")'
+$bperl -e 'create_many_files("$cwd/files", 3000, 256000)'
+
+tmpsrc=$tmp/data
+rm -rf $tmpsrc
+mkdir -p $tmpsrc
+echo "$cwd/build"   > $tmp/file-list
+echo "$cwd/files " >> $tmp/file-list
+echo "$tmpsrc"     >> $tmp/file-list
+start_test
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@output /dev/null
+messages
+@$out ${cwd}/tmp/log0.out
+run job=HotV01 level=Full yes
+run job=HotV02 level=Full yes
+run job=HotV03 level=Full yes
+run job=HotV04 level=Full yes
+run job=HotV05 level=Full yes
+run job=HotV06 level=Full yes
+@#run job=HotV07 level=Full yes
+@#run job=HotV08 level=Full yes
+@#run job=HotV09 level=Full yes
+@#run job=HotV10 level=Full yes
+wait
+list volumes
+messages
+END_OF_DATA
+
+run_bacula
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@output /dev/null
+messages
+END_OF_DATA
+
+touch $tmp/dovacuum
+trap EXIT "rm -f $tmp/dovacuum"
+
+cat <<EOF > $tmp/cmd
+@out $tmp/v.log
+dedup vacuum storage=File
+@sleep 30
+dedup vacuum forceoptimize storage=File
+@sleep 30
+truncate storage=File allpools yes
+@sleep 30
+dedup usage storage=File
+EOF
+
+(
+    jid=40
+    while [ -f $tmp/dovacuum ]
+    do
+        jid=`echo $jid | awk '{ print ($1 > 55) ? 40 : ++$1 }'`
+        echo "purge jobs=$jid yes" | $bin/bconsole -c $conf/bconsole.conf
+        run_bconsole $tmp/cmd 
+    done
+)&
+
+# add more files to backup source, so following incrementals
+# have something to back up
+for a in console filed lib tools ; do
+  #echo ">>> adding ${a} to backup"
+  for i in `ls ${src}/src/${a}/*` ; do
+    cp -p "$i" ${tmpsrc}  >/dev/null 2>&1
+  done
+  #echo "now $(ls ${tmpsrc}|wc -l) files to back up"
+
+  cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@$out ${cwd}/tmp/log1.out
+time
+run job=HotV01 level=Incremental yes
+run job=HotV02 level=Incremental yes
+run job=HotV03 level=Incremental yes
+run job=HotV04 level=Incremental yes
+run job=HotV05 level=Incremental yes
+run job=HotV06 level=Incremental yes
+@#run job=HotV07 level=Incremental yes
+@#run job=HotV08 level=Incremental yes
+@#run job=HotV09 level=Incremental yes
+@#run job=HotV10 level=Incremental yes
+wait
+list volumes
+messages
+END_OF_DATA
+# Run Backup Jobs
+  run_bconsole
+done
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@output /dev/null
+messages
+@$out ${cwd}/tmp/log1.out
+@#setdebug level=100 storage
+run job=HotV01 level=VirtualFull yes
+run job=HotV02 level=VirtualFull yes
+run job=HotV03 level=VirtualFull yes
+run job=HotV04 level=VirtualFull yes
+run job=HotV05 level=VirtualFull yes
+run job=HotV06 level=VirtualFull yes
+run job=HotV01 level=VirtualFull yes
+run job=HotV02 level=VirtualFull yes
+run job=HotV03 level=VirtualFull yes
+run job=HotV04 level=VirtualFull yes
+run job=HotV05 level=VirtualFull yes
+run job=HotV06 level=VirtualFull yes
+run job=HotV01 level=VirtualFull yes
+run job=HotV02 level=VirtualFull yes
+run job=HotV03 level=VirtualFull yes
+run job=HotV04 level=VirtualFull yes
+run job=HotV05 level=VirtualFull yes
+run job=HotV06 level=VirtualFull yes
+run job=HotV01 level=VirtualFull yes
+run job=HotV02 level=VirtualFull yes
+run job=HotV03 level=VirtualFull yes
+run job=HotV04 level=VirtualFull yes
+run job=HotV05 level=VirtualFull yes
+run job=HotV06 level=VirtualFull yes
+run job=HotV07 level=VirtualFull yes
+@#run job=HotV08 level=VirtualFull yes
+@#run job=HotV09 level=VirtualFull yes
+@#run job=HotV10 level=VirtualFull yes
+wait
+sql
+select pool.name as poolname,volumename,volstatus,volbytes,voljobs,lastwritten from Pool,Media where Pool.PoolId=Media.MediaId order by poolname,volumename;
+
+list jobs
+messages
+END_OF_DATA
+
+# Run Virtual Full Jobs
+for i in `seq 1 50`
+#for i in `seq 1 2`
+do
+    run_bconsole
+done
+
+# stop the vacuum process
+rm -f $tmp/dovacuum
+
+for jid in `seq 1 200`
+#for jid in 1 20
+do
+    rm -rf $tmp/bacula-restore
+    cat <<EOF > $tmp/bconcmds
+@$out $tmp/$jid.log
+restore where=$tmp/bacula-restore restoreclient=HotV01-fd client=HotV01-fd
+12
+$jid
+m *
+done
+yes
+run job=VerifyData client=HotV01-fd jobid=$jid yes
+wait
+messages
+EOF
+    run_bconsole
+    echo $rscripts/diff.pl -s $cwd/files -d $tmp/bacula-restore/$cwd/files
+    $rscripts/diff.pl -s $cwd/files -d $tmp/bacula-restore/$cwd/files
+    estat=`expr $rstat + $?`
+    echo $rstat
+
+    echo $rscripts/diff.pl -s $cwd/build -d $tmp/bacula-restore/$cwd/build
+    $rscripts/diff.pl -s $cwd/build -d $tmp/bacula-restore/$cwd/build
+    estat=`expr $rstat + $?`
+    echo $rstat
+    
+    if [ $rstat -ne 0 ]; then
+        print_debug "ERROR: Bad restore $rstat"
+        exit $rstat
+    fi
+done
+    
+touch $tmp/log2.out
+
+wait
+
+stop_bacula
+
+check_two_logs
+end_test
+
