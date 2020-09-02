@@ -62,13 +62,18 @@ cat <<EOF >$tmp/bconcmds
 .bvfs_lsdirs jobid=1,2,3,4 path=
 @$out $tmp/log3.out
 .bvfs_lsfiles jobid=1,2,3,4 path=$tmp/hl/ pattern=verify.c
+@$out $tmp/log4.out
+.bvfs_lsdirs path=$tmp/ jobid=1 pattern=hl
 quit
 EOF
 
 run_bconsole
 
+# The hl/ directory ID can change, we take it from a bvfs_lsdir
+hldirid=`awk '/hl\/$/ { print $1 }' $tmp/log4.out`
+fid=`awk "/^$hldirid/"' { m=(m>$2)?m:$2 } END { print m }' $tmp/log3.out`
+
 dirid=`awk '/\/$/ { print $1 }' $tmp/log0.out`
-fid=`awk '/^1/ { m=(m>$2)?m:$2 } END { print m }' $tmp/log3.out`
 
 cat <<EOF >$tmp/bconcmds
 @$out $tmp/log2.out
