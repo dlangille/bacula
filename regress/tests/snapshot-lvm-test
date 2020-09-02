@@ -1,0 +1,212 @@
+#!/bin/bash
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# create LVM volume and play with snapshots
+#
+set -x
+TestName="snapshot-lvm-test"
+JobName=Incremental
+. scripts/functions
+
+${rscripts}/cleanup
+${rscripts}/copy-test-confs
+
+USE_SUDO=${USE_SUDO:-sudo}
+
+if [ "$USE_SUDO" = sudo ]; then
+    echo sudo=yes > $conf/bsnapshot.conf
+fi
+
+mkdir -p $cwd/lvm
+
+loop_dev="" # no loop used
+vg=`$USE_SUDO vgs | awk '{if (FNR == 2) { print $1; exit }}'`
+if [ -z $vg ] ; then
+    # create a 4GB loop device for LVM
+    lvm_img=$tmp/lvm0.img
+    cleanup_lvmloop()
+    {
+       $USE_SUDO vgremove $vg
+       $USE_SUDO losetup -d $loop_dev
+       # rm -f $lvm_img
+    }
+    trap cleanup_lvmloop EXIT
+    $USE_SUDO dd if=/dev/zero of=$lvm_img bs=1M count=4096
+    loop_dev=`$USE_SUDO losetup --show -f $lvm_img`
+    $USE_SUDO vgcreate regress$$ $loop_dev
+    vg=`$USE_SUDO vgs | awk '{if (FNR == 2) { print $1; exit }}'`
+fi
+
+$USE_SUDO lvcreate -L512M -n test$$ $vg
+if [ $? != 0 ]; then
+    print_debug "ERROR: unable to create lv directory"
+    exit 1
+fi
+
+$USE_SUDO mkfs.ext4 /dev/$vg/test$$
+
+$USE_SUDO mount /dev/$vg/test$$ $cwd/lvm
+if [ $? != 0 ]; then
+    $USE_SUDO lvremove -f /dev/$vg/test$$
+    print_debug "ERROR: unable to mount lv directory"
+    exit 1
+fi
+
+trap "$USE_SUDO umount $cwd/lvm/sub1 ; $USE_SUDO umount $cwd/lvm ; $USE_SUDO lvremove -f /dev/$vg/test$$ ; $USE_SUDO lvremove -f /dev/$vg/testx$$ ; $USE_SUDO lvremove -f /dev/$vg/testbig$$ ; [ -z $loop_dev ] || cleanup_lvmloop" EXIT
+
+GID=`id -g`
+$USE_SUDO chown -R $USER:$GID $cwd/lvm
+
+$USE_SUDO lvcreate -L512M -n testx$$ $vg
+if [ $? != 0 ]; then
+    print_debug "ERROR: unable to create lv directory"
+    exit 1
+fi
+
+$USE_SUDO mkfs.ext4 /dev/$vg/testx$$
+
+mkdir $cwd/lvm/sub1
+$USE_SUDO mount /dev/$vg/testx$$ $cwd/lvm/sub1
+if [ $? != 0 ]; then
+    print_debug "ERROR: unable to mount lv directory"
+    exit 1
+fi
+
+$USE_SUDO chown -R $USER:$GID $cwd/lvm
+
+cp $cwd/build/po/{fr,de}.po $cwd/lvm/sub1
+
+echo "$cwd/lvm" >${tmp}/file-list
+cp -p ${src}/src/dird/job.c ${src}/src/dird/admin.c $cwd/lvm
+
+df $cwd/lvm
+df $cwd/lvm/sub1
+find $cwd/lvm -ls
+$USE_SUDO vgdisplay
+$USE_SUDO lvdisplay
+
+make -C $cwd/build/src/tools install-bsnapshot
+
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "Enable Snapshot", "yes", "FileSet")'
+
+change_jobname CompressedTest $JobName
+start_test
+
+cat <<END_OF_DATA >${tmp}/bconcmds
+@output /dev/null
+messages
+@$out ${tmp}/log1.out
+setdebug level=200 tags=snapshot fd trace=1
+label storage=File volume=TestVolume001
+run job=$JobName yes
+status client
+wait
+messages
+@output ${tmp}/list1
+list files jobid=1
+END_OF_DATA
+
+run_bacula
+check_for_zombie_jobs storage=File
+
+cat <<END_OF_DATA >${tmp}/bconcmds
+@# 
+@# now do a restore
+@#
+@$out ${tmp}/log2.out
+restore where=${tmp}/bacula-restores storage=File select all yes done
+wait
+status client
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+
+rmdir $cwd/lvm/.snapshots
+rmdir $cwd/lvm/sub1/.snapshots
+$rscripts/diff.pl -s $cwd/lvm -d $tmp/bacula-restores/$cwd/lvm
+
+if [ $? -ne 0 ]; then
+    print_debug "ERROR: Found differences"
+    estat=1
+fi
+
+grep .snapshots $tmp/list1
+if [ $? -eq 0 ]; then
+    print_debug "ERROR: Should not find .snapshots directory"
+    estat=1
+fi
+
+f=`ls $working/*-fd.trace`
+cp $f $working/job1.trace
+cp /dev/null $f
+
+grep -E "Adding $cwd/lvm dev=[0-9]+ snap.=1 to the mount list" $working/job1.trace > /dev/null
+if [ $? -ne 0 ]; then
+    print_debug "ERROR: Should find $cwd/lvm in the FD $working/job1.trace file"
+    estat=1
+fi
+
+grep "Create Snapshot of /dev/$vg/test$$ $JobName" $working/job1.trace > /dev/null
+if [ $? -ne 0 ]; then
+    print_debug "ERROR: Should find snapshot creation in FD $working/job1.trace file"
+    estat=1
+fi
+
+grep "fname=$cwd/lvm/admin.c snap=$cwd/lvm/.snapshots/Incremental.*/admin.c link=$cwd/lvm/admin.c" $working/job1.trace > /dev/null
+if [ $? -ne 0 ]; then
+    print_debug "ERROR: Should find original and snapshot path in FD $working/job1.trace trace file"
+    estat=1
+fi
+
+#  Alloc PE / Size       125 / 500.00 MiB
+fpe=`$USE_SUDO vgdisplay $vg | awk '/Free  PE/ { print $5 }'`
+$USE_SUDO lvcreate -n testbig$$ -l $fpe $vg
+
+cat <<END_OF_DATA >${tmp}/bconcmds
+@output /dev/null
+messages
+@$out ${tmp}/log3.out
+setdebug level=30 fd trace=1
+run job=$JobName level=full yes
+wait
+messages
+END_OF_DATA
+
+cat <<EOF >> $conf/bsnapshot.conf
+lvm_snapshot_size=/dev/$vg/test$$:100G
+EOF
+
+run_bconsole
+
+mv $tmp/log3.out $tmp/log3-fatal.out
+
+cat <<EOF >> $conf/bsnapshot.conf
+fail_job_on_error=no
+EOF
+
+run_bconsole
+
+mv $tmp/log3.out $tmp/log3-error.out
+
+stop_bacula
+
+check_two_logs
+
+grep "Backup Error" $tmp/log3-fatal.out > /dev/null
+if [ $? -ne 0 ]; then
+    print_debug "ERROR: Should find Backup Error in $tmp/log3-fatal.out"
+    estat=1
+fi
+
+grep "Backup OK -- with warnings" $tmp/log3-error.out > /dev/null
+if [ $? -ne 0 ]; then
+    print_debug "ERROR: Should find Backup Warning in $tmp/log3-error.out"
+    estat=1
+fi
+
+
+end_test
