@@ -1,0 +1,88 @@
+#!/usr/bin/perl -w
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Small test to setup a backup with special unix rights
+#
+use strict;
+
+# use bacula functions
+use scripts::functions;
+
+sub check_diff
+{
+    foreach my $l (qw/A B C D/) {
+        system("./scripts/diff.pl --src $cwd/files/$l --dst $tmp/$cwd/files/$l");
+        if ($? != 0) {
+            print "ERROR: found errors between restore and backup\n";
+            $rstat++;
+        }
+    }
+}
+
+my $nb_files = 2500;
+
+# initialize the configuration
+system("scripts/copy-test-confs");
+
+start_test();
+
+# cleanup the previous conf
+cleanup();
+
+# Create $nb_files*2 files in files directory
+create_many_files_size("$cwd/files", $nb_files);
+chmod(02775, <$cwd/files/A>);
+chmod(02775, <$cwd/files/B>);
+chmod(01775, <$cwd/files/C>);
+chmod(07775, <$cwd/files/D>);
+
+# initialize the fileset
+add_to_backup_list("$cwd/files");
+
+start_bacula();
+
+create_bconcmds(
+    "$out $tmp/log1.out",
+    "label volume=TestVolume001 storage=File");
+
+run_bconsole();
+
+create_bconcmds("
+run job=NightlySave yes
+wait
+messages
+$out $tmp/log2.out
+restore where=$tmp
+5
+cd $cwd/files
+dir
+m A
+m B
+m C
+m D
+lsmark
+done
+yes
+wait
+messages
+");
+
+run_bconsole();
+
+check_diff();
+
+update_some_files("$cwd/files/A");
+system("touch $cwd/files/A");
+
+# cleanup before doing a new restore
+system("rm -rf $tmp/$cwd/files");
+
+run_bconsole();
+
+check_diff();
+
+stop_bacula();
+
+end_test();
