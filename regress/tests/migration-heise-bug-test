@@ -1,0 +1,116 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Test for a bug at Heise that causes migration jobs to
+#  deadlock.  First create a lot of backups, then run
+#  a migration on them.
+#
+TestName="migration-heise-bug-test"
+. scripts/functions
+
+# Setup conf files
+scripts/cleanup
+scripts/copy-test-confs
+cp scripts/migrate-bacula-dir.conf bin/bacula-dir.conf
+cp scripts/migrate-bacula-sd.conf bin/bacula-sd.conf
+
+# Backup Bacula stored+objects directory
+# Backup director
+rm -rf ${tmpsrc}
+mkdir ${tmpsrc}
+echo "${tmpsrc}" >${tmp}/file-list
+ls ${src}/src/stored/* >${tmp}/restore-list
+# restore file list
+for i in `cat ${tmp}/restore-list` ; do
+  cp -p $i ${tmpsrc}
+done
+# Get path to temp source files to restore
+ls ${tmpsrc}/* >${tmp}/restore-list
+
+start_test
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@output /dev/null
+messages
+@$out ${cwd}/tmp/log1.out
+@# No prelabeled volumes needed since they are automatically created
+@#label storage=File slot=0 drive=0 Pool=Heise1 volume=Vol1
+@#list volumes
+END_OF_DATA
+
+# Start Bacula and do label
+run_bacula
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@output /dev/null
+messages
+@$out ${cwd}/tmp/log1.out
+run job=HeiseV01 level=Incremental yes
+run job=HeiseV02 level=Incremental yes
+run job=HeiseV03 level=Incremental yes
+run job=HeiseV04 level=Incremental yes
+run job=HeiseV05 level=Incremental yes
+run job=HeiseV06 level=Incremental yes
+run job=HeiseV07 level=Incremental yes
+run job=HeiseV08 level=Incremental yes
+run job=HeiseV09 level=Incremental yes
+run job=HeiseV10 level=Incremental yes
+run job=HeiseV11 level=Incremental yes
+run job=HeiseV12 level=Incremental yes
+run job=HeiseV13 level=Incremental yes
+run job=HeiseV14 level=Incremental yes
+run job=HeiseV15 level=Incremental yes
+run job=HeiseV16 level=Incremental yes
+run job=HeiseV17 level=Incremental yes
+run job=HeiseV18 level=Incremental yes
+run job=HeiseV19 level=Incremental yes
+run job=HeiseV20 level=Incremental yes
+wait
+list volumes
+messages
+END_OF_DATA
+
+# Run Backup Jobs
+run_bconsole
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@output /dev/null
+messages
+@$out ${cwd}/tmp/log1.out
+run job=HeiseMig yes
+wait
+sql
+select mediaid,volumename,volstatus,volbytes,voljobs,lastwritten from Media where poolid=1 order by mediaid;
+
+sql
+select mediaid,volumename,volstatus,volbytes,voljobs,lastwritten from Media where poolid=2 order by mediaid;
+
+sql
+select mediaid,volumename,volstatus,volbytes,voljobs,lastwritten from Media where poolid=3 order by mediaid;
+
+list jobs
+messages
+END_OF_DATA
+
+# Run Migration Job, which spawns many jobs
+run_bconsole
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@output /dev/null
+messages
+@$out ${cwd}/tmp/log2.out
+restore client=HeiseV20-fd where=$tmp/bacula-restores select all done yes
+wait
+messages
+END_OF_DATA
+
+# Do restore
+run_bconsole
+sleep 2
+stop_bacula
+
+check_two_logs
+check_restore_tmp_build_diff
+end_test
