@@ -1,0 +1,98 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Run a couple of job and make sure the the PrevJob
+# is always correct
+#
+# This script uses the virtual disk autochanger
+#
+TestName="migration-prevjob-test"
+JobName=MigJobSave
+. scripts/functions
+
+scripts/cleanup
+scripts/copy-migration-confs
+echo "${cwd}/build" >${cwd}/tmp/file-list
+
+$bperl -e 'add_attribute("$conf/bacula-sd.conf", "Device", "Drive-0,Drive-1", "Autochanger", "DiskChanger")'
+$bperl -e 'extract_resource("$conf/bacula-sd.conf", "Device", "Drive-0")' > $tmp/1
+sed 's/Drive-0/Drive-1/' $tmp/1 >> $conf/bacula-sd.conf
+
+change_jobname NightlySave $JobName
+start_test
+
+#
+# Note, we first backup into Pool Default, 
+#          then Copy into Pool Full. 
+#              Pool Default uses Storage=File
+#              Pool Full    uses Storage=DiskChanger
+
+# Write out bconsole commands
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@output /dev/null
+messages
+@$out ${cwd}/tmp/log1.out
+@# setdebug level=100 storage=File
+setdebug level=100 client trace=1
+label storage=File volume=FileVolume001 Pool=Default
+label storage=DiskChanger volume=ChangerVolume001 slot=1 Pool=Full drive=0
+label storage=DiskChanger volume=ChangerVolume002 slot=2 Pool=Full drive=0
+@# run two jobs (both will be copied)
+run job=$JobName level=full yes
+wait
+messages
+run job=migrate-job jobid=1 yes
+wait
+messages
+@$out ${cwd}/tmp/log3.out
+@#
+@# Now do another backup, but level Incremental
+@#
+run job=$JobName level=Incremental yes
+wait
+messages
+run job=migrate-job jobid=3 yes
+wait
+messages
+run job=$JobName level=Differential yes
+wait
+messages
+list jobs
+@# 
+@# now do a restore
+@#
+@$out ${cwd}/tmp/log2.out
+list volumes 
+@#setdebug level=15 director
+@#setdebug level=150 storage=DiskChanger
+@# Note, here we are restoring from the original backup,
+@#  so if you specify storage=DiskChanger the restore will fail
+restore where=${cwd}/tmp/bacula-restores select
+unmark *
+mark *
+done
+yes
+list volumes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bacula
+check_for_zombie_jobs storage=File
+stop_bacula
+
+check_two_logs
+check_restore_diff
+
+job=`awk '/Job:/ { print $2 ; exit }' $tmp/log1.out`
+
+nb=`grep level_cmd: $working/*.trace | grep "prev_job=$job" | wc -l`
+if [ "$nb" != 2 ]; then
+    bstat=2
+    print_debug "We should find the Job 1 in the file daemon trace for Incr and Diff"
+fi
+
+end_test
