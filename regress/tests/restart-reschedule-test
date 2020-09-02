@@ -31,6 +31,7 @@ $bperl -e 'add_attribute("$conf/bacula-dir.conf", "RescheduleInterval", "10", "J
 $bperl -e 'add_attribute("$conf/bacula-dir.conf", "RescheduleTimes", "3", "Job")'
 $bperl -e 'add_attribute("$conf/bacula-dir.conf", "LabelFormat", "Vol", "Pool")'
 $bperl -e 'add_attribute("$conf/bacula-sd.conf", "LabelMedia", "Yes", "Device", "FileStorage")'
+$bperl -e "add_attribute('$conf/bacula-dir.conf', 'AllowIncompleteJobs', 'yes', 'Job')"
 
 change_jobname NightlySave $JobName
 start_test
