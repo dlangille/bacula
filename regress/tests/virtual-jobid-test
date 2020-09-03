@@ -48,26 +48,31 @@ label storage=File volume=FileVolume001 Pool=Default
 label storage=DiskChanger volume=ChangerVolume001 slot=1 Pool=Full drive=0
 label storage=DiskChanger volume=ChangerVolume002 slot=2 Pool=Full drive=0
 @# run several jobs
+@# JobId 1
 @exec "sh -c 'date > ${cwd}/build/date'"
 run job=$JobName level=Full yes
 wait
 messages
 list jobs
 @exec "sh -c 'touch ${cwd}/build/inc1'"
+@# JobId 2
 run job=$JobName level=Incremental yes
 wait
 messages
 list jobs
 @exec "sh -c 'touch ${cwd}/build/diff1'"
+@# JobId 3
 run job=$JobName level=Differential yes
 wait
 messages
 list jobs
 @exec "sh -c 'touch ${cwd}/build/inc2'"
+@# JobId 4
 run job=$JobName level=Incremental yes
 wait
 messages
 list jobs
+@# JobId 5
 run job=Save level=Full yes
 wait
 messages
@@ -75,51 +80,61 @@ list jobs
 @# should Consolidate Full, Incremental
 @$out $tmp/log5.out
 setdebug level=100 dir trace=1
+@# JobId 6 -- should consolidate JobIds 1,3,4
 run job=$JobName jobid=4 level=VirtualFull yes
 wait
 messages
 list jobs
 @$out $tmp/log6.out
+@# JobId 7
 run job=$JobName jobid=3 level=VirtualFull yes
 wait
 messages
 list jobs
 @$out $tmp/log7.out
+@# JobId 8  - Should consolidate JobIds 1,2
 run job=$JobName jobid=2 level=VirtualFull yes
 wait
 messages
 list jobs
 @$out $tmp/log8.out
+@# JobId 9
 run job=$JobName jobid=1,2 level=VirtualFull yes
 wait
 messages
 list jobs
 @$out $tmp/log9.out
+@# JobId 10
 run job=$JobName jobid=1,3 level=VirtualFull yes
 wait
 messages
 list jobs
 @$out $tmp/log10.out
+@# JobId 11
 run job=$JobName jobid=1,3,4 level=VirtualFull yes
 wait
 messages
 list jobs
 @$out $tmp/log11.out
+@# JobId 12 -- should consolidate JobIds 1,2,3,4
 run job=$JobName jobid=1-5 level=VirtualFull yes
 wait
 messages
 list jobs
 @$out $tmp/log12.out
+@# JobId 13 -- should consolidate JobIds 2,4
 run job=$JobName jobid=2-5 level=VirtualFull yes
 wait
 messages
 list jobs
 @$out $tmp/log13.out
+@# JobId 14
 run job=$JobName jobid=2,4 level=VirtualFull yes
 wait
 messages
 list jobs
 @$out $tmp/log14.out
+@# JobId 15 -- should consolidate 1-5 (note alljobid)
 run job=$JobName alljobid=1-5 level=VirtualFull yes
 wait
 messages
