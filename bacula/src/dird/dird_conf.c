@@ -424,9 +424,8 @@ static RES_ITEM con_items[] = {
    {"RestoreClientAcl", store_acl, ITEM(res_con.ACL_lists), RestoreClient_ACL, 0, 0},
    {"BackupClientAcl",  store_acl, ITEM(res_con.ACL_lists), BackupClient_ACL, 0, 0},
    {"PluginOptionsAcl", store_acl, ITEM(res_con.ACL_lists), PluginOptions_ACL, 0, 0},
-#if BEEF
+   // Not implemented
    {"UserIdAcl",   store_acl,      ITEM(res_con.ACL_lists), UserId_ACL, 0, 0},
-#endif
    {"DirectoryAcl",store_acl,      ITEM(res_con.ACL_lists), Directory_ACL, 0, 0},
    {"TlsAuthenticate",      store_bool,      ITEM(res_con.tls_authenticate), 0, 0, 0},
    {"TlsEnable",            store_bool,      ITEM(res_con.tls_enable), 0, 0, 0},
