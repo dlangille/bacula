@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (C) 2000-2017 Kern Sibbald
+# Copyright (C) 2000-2020 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
 
@@ -17,6 +17,18 @@ ${rscripts}/create_sed
 #sed -f ${out} ${rscripts}/bacula-fd.conf.in >${rscripts}/bacula-fd.conf
 #sed -f ${out} ${rscripts}/bacula-sd.conf.in >${rscripts}/bacula-sd.conf
 #sed -f ${out} ${rscripts}/bconsole.conf.in >${rscripts}/bconsole.conf
+sed -f ${out} ${rscripts}/win32-bacula-dir.conf.in >${rscripts}/win32-bacula-dir.conf
+sed -f ${out} ${rscripts}/win32-bacula-dir-systemstate.conf.in >${rscripts}/win32-bacula-dir-systemstate.conf
+sed -f ${out} ${rscripts}/plugin-test-bacula-dir.conf.in >${rscripts}/plugin-test-bacula-dir.conf
+sed -f ${out} ${rscripts}/plugin-handleXACL-test-bacula-dir.conf.in >${rscripts}/plugin-handleXACL-test-bacula-dir.conf
+sed -f ${out} ${rscripts}/swift-plugin-test-bacula-dir.conf.in >${rscripts}/swift-plugin-test-bacula-dir.conf
+sed -f ${out} ${rscripts}/kubernetes-plugin-test-bacula-dir.conf.in >${rscripts}/kubernetes-plugin-test-bacula-dir.conf
+sed -f ${out} ${rscripts}/k8s_backend.in >${rscripts}/k8s_backend
+sed -f ${out} ${rscripts}/xenserver-plugin-test-bacula-dir.conf.in >${rscripts}/xenserver-plugin-test-bacula-dir.conf
+sed -f ${out} ${rscripts}/xenserver-plugin-test-bacula-sd.conf.in >${rscripts}/xenserver-plugin-test-bacula-sd.conf
+sed -f ${out} ${rscripts}/proxmox-plugin-test-bacula-dir.conf.in >${rscripts}/proxmox-plugin-test-bacula-dir.conf
+sed -f ${out} ${rscripts}/docker-plugin-test-bacula-dir.conf.in >${rscripts}/docker-plugin-test-bacula-dir.conf
+sed -f ${out} ${rscripts}/sybase-plugin-test-dir.conf.in >${rscripts}/sybase-plugin-test-bacula-dir.conf
 sed -f ${out} ${rscripts}/bacula-sd-2disk-virtual.conf.in >${rscripts}/bacula-sd-2disk-virtual.conf
 sed -f ${out} ${rscripts}/bacula-sd-virtual-tape.conf.in >${rscripts}/bacula-sd-virtual-tape.conf
 sed -f ${out} ${rscripts}/bacula-dir.conf.errors.in >${rscripts}/bacula-dir.conf.errors
@@ -71,11 +83,12 @@ sed -f ${out} ${rscripts}/bacula-dir-vtape.conf.in >${rscripts}/bacula-dir-vtape
 sed -f ${out} ${rscripts}/bacula-dir-vtape2.conf.in >${rscripts}/bacula-dir-vtape2.conf
 sed -f ${out} ${rscripts}/bacula-sd-vtape.conf.in >${rscripts}/bacula-sd-vtape.conf
 sed -f ${out} ${rscripts}/prepare-fake-autochanger.in >${rscripts}/prepare-fake-autochanger
+sed -f ${out} ${rscripts}/tls-console.conf.in >${rscripts}/tls-console.conf
 sed -f ${out} ${rscripts}/tls-bacula-fd.conf.in >${rscripts}/tls-bacula-fd.conf
 sed -f ${out} ${rscripts}/tls-crypto-bacula-fd.conf.in >${rscripts}/tls-crypto-bacula-fd.conf
 sed -f ${out} ${rscripts}/tls-bacula-sd.conf.in >${rscripts}/tls-bacula-sd.conf
 sed -f ${out} ${rscripts}/tls-bacula-dir.conf.in >${rscripts}/tls-bacula-dir.conf
-sed -f ${out} ${rscripts}/docker-plugin-test-bacula-dir.conf.in >${rscripts}/docker-plugin-test-bacula-dir.conf
+
 sed -f ${out} ${rscripts}/collect-bacula-dir.conf.in >${rscripts}/collect-bacula-dir.conf
 sed -f ${out} ${rscripts}/collect-bacula-sd.conf.in >${rscripts}/collect-bacula-sd.conf
 sed -f ${out} ${rscripts}/collect-bacula-fd.conf.in >${rscripts}/collect-bacula-fd.conf
@@ -84,13 +97,18 @@ sed -f ${out} ${rscripts}/tls-auth-bacula-fd.conf.in >${rscripts}/tls-auth-bacul
 sed -f ${out} ${rscripts}/tls-auth-bacula-sd.conf.in >${rscripts}/tls-auth-bacula-sd.conf
 sed -f ${out} ${rscripts}/tls-auth-bacula-dir.conf.in >${rscripts}/tls-auth-bacula-dir.conf
 
+
 sed -f ${out} ${rscripts}/bacula-fd-2d.conf.in >${rscripts}/bacula-fd-2d.conf
 sed -f ${out} ${rscripts}/bacula-sd-2d.conf.in >${rscripts}/bacula-sd-2d.conf
 sed -f ${out} ${rscripts}/bacula-dir-2d.conf.in >${rscripts}/bacula-dir-2d.conf
 sed -f ${out} ${rscripts}/bconsole-2d.conf.in >${rscripts}/bconsole-2d.conf
 sed -f ${out} ${rscripts}/regress-config.in >${rscripts}/regress-config
-chmod 755 ${rscripts}/regress-config
+sed -f ${out} ${rscripts}/swift-plugin-test-bacula-dir.conf.in >${rscripts}/swift-plugin-test-bacula-dir.conf
+sed -f ${out} ${rscripts}/hdfs-plugin-test-bacula-dir.conf.in >${rscripts}/hdfs-plugin-test-bacula-dir.conf
+sed -f ${out} ${rscripts}/cdp-plugin-test-bacula-dir.conf.in >${rscripts}/cdp-plugin-test-bacula-dir.conf
+sed -f ${out} ${rscripts}/cdp-plugin-test-bacula-sd.conf.in >${rscripts}/cdp-plugin-test-bacula-sd.conf
 
+chmod 755 ${rscripts}/regress-config
 
 if test -f ${conf}/bacula-sd.conf ; then
   cp ${conf}/bacula-sd.conf ${tmp}/bac$$
