@@ -1,0 +1,123 @@
+Autochanger {
+  Name = VirtCh
+  Device = Virt0, Virt1, Virt2, Virt3, Virt4, Virt5, Virt6, Virt7, Virt8
+  Changer Command = ""
+  Changer Device = /dev/null
+}
+
+Device {
+  Name = Virt1
+  Media Type = VirtMedia1
+  Archive Device = @tmpdir@
+  Automatic Mount = Yes
+  Always Open = Yes
+  Removable Media = Yes
+  Autochanger = Yes
+  Maximum Concurrent Jobs = 1
+  Label Media = Yes
+  Maximum Volume Size = 512m
+}
+
+Device {
+  Name = Virt2
+  Media Type = VirtMedia1
+  Archive Device = @tmpdir@
+  Automatic Mount = Yes
+  Always Open = Yes
+  Removable Media = Yes
+  Autochanger = Yes
+  Maximum Concurrent Jobs = 1
+  Label Media = Yes
+  Maximum Volume Size = 512m
+}
+
+Device {
+  Name = Virt3
+  Media Type = VirtMedia1
+  Archive Device = @tmpdir@
+  Automatic Mount = Yes
+  Always Open = Yes
+  Removable Media = Yes
+  Autochanger = Yes
+  Maximum Concurrent Jobs = 1
+  Label Media = Yes
+  Maximum Volume Size = 512m
+}
+
+Device {
+  Name = Virt4
+  Media Type = VirtMedia1
+  Archive Device = @tmpdir@
+  Automatic Mount = Yes
+  Always Open = Yes
+  Removable Media = Yes
+  Autochanger = Yes
+  Maximum Concurrent Jobs = 1
+  Label Media = Yes
+  Maximum Volume Size = 512m
+}
+
+Device {
+  Name = Virt5
+  Media Type = VirtMedia1
+  Archive Device = @tmpdir@
+  Automatic Mount = Yes
+  Always Open = Yes
+  Removable Media = Yes
+  Autochanger = Yes
+  Maximum Concurrent Jobs = 1
+  Label Media = Yes
+  Maximum Volume Size = 512m
+}
+
+Device {
+  Name = Virt6
+  Media Type = VirtMedia1
+  Archive Device = @tmpdir@
+  Automatic Mount = Yes
+  Always Open = Yes
+  Removable Media = Yes
+  Autochanger = Yes
+  Maximum Concurrent Jobs = 1
+  Label Media = Yes
+  Maximum Volume Size = 512m
+}
+
+Device {
+  Name = Virt7
+  Media Type = VirtMedia1
+  Archive Device = @tmpdir@
+  Automatic Mount = Yes
+  Always Open = Yes
+  Removable Media = Yes
+  Autochanger = Yes
+  Maximum Concurrent Jobs = 1
+  Label Media = Yes
+  Maximum Volume Size = 512m
+}
+
+Device {
+  Name = Virt8
+  Media Type = VirtMedia1
+  Archive Device = @tmpdir@
+  Automatic Mount = Yes
+  Always Open = Yes
+  Removable Media = Yes
+  Autochanger = Yes
+  Maximum Concurrent Jobs = 1
+  Label Media = Yes
+  Maximum Volume Size = 512m
+}
+
+Device {
+  Name = Virt0
+  Media Type = VirtMedia0
+  Archive Device = @tmpdir@
+  Automatic Mount = Yes
+  Always Open = Yes
+  Removable Media = Yes
+  Autochanger = Yes
+  Maximum Concurrent Jobs = 3
+  Label Media = Yes
+  Maximum Volume Size = 512m
+}
