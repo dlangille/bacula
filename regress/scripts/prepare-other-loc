@@ -19,3 +19,4 @@ if [ x$plugins != x ]; then
     mv $cwd/bin/plugins $cwd/bin/plugins.org
     ln -s $plugins $cwd/bin/plugins
 fi
+

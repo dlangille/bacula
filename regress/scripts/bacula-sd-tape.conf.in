@@ -56,14 +56,3 @@ Messages {
   director = @hostname@-dir = all, !terminate
   append = "@working_dir@/log1.sd" = all
 }
-
-Cloud {
-  Name = DummyCloud
-  Driver = "File"
-  HostName = "@tmpdir@/cloud"
-  BucketName = "DummyBucket"
-  AccessKey = "DummyAccessKey"
-  SecretKey = "DummySecretKey"
-  Protocol = HTTPS
-  UriStyle = VirtualHost
-}
