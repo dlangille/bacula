@@ -70,6 +70,18 @@ Job {
 }
 
 Job {
+  Name = "DedupPluginTest"
+  Type = Backup
+  Client=@hostname@-fd
+  FileSet="DedupPluginSet"
+  Storage = Dummy
+  Messages = Standard
+  Pool = ZeroCatalog
+  Write Bootstrap = "@working_dir@/dedupplugintest.bsr"
+  Maximum Concurrent Jobs = 4
+}
+
+Job {
   Name = "VerifyTape"
   Type = Verify
   Level = VolumeToCatalog
@@ -105,6 +117,16 @@ FileSet {
   Name = "Full Set"
   Include { Options { signature=MD5 }
     File =  <@tmpdir@/file-list
+  }
+}
+
+FileSet {
+  Name = "DedupPluginSet"
+  Include {
+    Options {
+#      signature=MD5
+    }
+    Plugin = "test-dedup:@tmpdir@/dedupstreams.conf"
   }
 }
 
@@ -226,4 +248,13 @@ Pool {
   Recycle = yes                       # Bacula can automatically recycle Volumes
   AutoPrune = yes                     # Prune expired volumes
   Volume Retention = 365d             # one year
+}
+
+Pool {
+  Name = ZeroCatalog
+  Pool Type = Backup
+  Recycle = yes                       # Bacula can automatically recycle Volumes
+  AutoPrune = yes                     # Prune expired volumes
+  Volume Retention = 365d             # one year
+  CatalogFiles = no
 }
