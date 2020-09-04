@@ -1,5 +1,6 @@
 #
-# Copyright (C) 2000-2017 Kern Sibbald
+#
+# Copyright (C) 2000-2020 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
 # A set of useful functions to be sourced in each test
@@ -7,11 +8,129 @@
 
 . ./config
 
+if [ "$TestName" ]; then
+   export TestName
+fi
+
 check_encoding()
 {
    if ${bin}/bacula-dir -d50 -t -c ${conf}/bacula-dir.conf 2>&1 | grep 'Wanted SQL_ASCII, got UTF8' >/dev/null ; then
        echo "Found database encoding problem, please modify the database encoding (SQL_ASCII)"
        exit 1
+   fi
+}
+
+update_cloud()
+{
+   make -C build/src/stored install-cloud install-s3-cloud install-s3-glacier-cloud install-oci-cloud install-gs-cloud install-swift-cloud install-generic-cloud install-bcloud > /dev/null 2>&1
+   make -C build/scripts install-regress-drivers > /dev/null 2>&1
+   $bperl -e 'add_attribute("$conf/bacula-sd.conf", "Plugin Directory", "$plugins", "Storage")'
+
+   CLOUD_NAME=${CLOUD_NAME:-RegressCloud}
+   # try to launch the emulators
+   if [ x$CLOUD_NAME = xFakeS3Cloud ]; then   #S3 Emulator
+      mkdir -p $tmp/cloud
+      fakes3 --root=$tmp/cloud --port=4567 &
+      aws s3api --endpoint-url='http://localhost:4567' create-bucket --bucket ${1:-regressbucket}
+      CLOUD_MAXIMUM_PART_SIZE=50MB
+   fi
+
+   if [ x$CLOUD_NAME = xScalabilityCloud ]; then   # like S3
+      aws s3api --endpoint-url='http://localhost:8000' create-bucket --bucket ${1:-regressbucket}
+   fi
+
+   if [ x$CLOUD_NAME = xAzuriteCloud ]; then  #WAS Emulator
+      azurite &
+   fi 
+
+   if [ x$CLOUD_NAME = xFakeAzureCloud ]; then  #WAS Emulator
+      make -C build/scripts install-generic-cloud-as-was > /dev/null 2>&1
+   fi 
+
+   #FIXME : if we find an existing Cloud, might be worth it to remove it here
+   grep $CLOUD_NAME $conf/bacula-sd.conf > /dev/null
+   if [ $? != 0 ]; then
+      cfile="$cwd/cloud.conf.sample"
+      if [ -f "$cwd/cloud.conf" ]; then
+          cfile="$cwd/cloud.conf"
+      fi
+      if grep $CLOUD_NAME $cfile > /dev/null; then
+         $bperl -e "extract_resource('$cfile', 'Cloud', '$CLOUD_NAME')" >> $conf/bacula-sd.conf
+      else 
+          echo "Missing cloud $CLOUD_NAME in $cfile. Contact R@D manager for more info."
+          exit 1
+      fi
+   fi
+
+   if [ x$CLOUD_NAME = xOracleCloud -a -f $HOME/.oci/config ]; then
+       oci  os bucket create --name ${1:-regressbucket}
+       $bperl -e "add_attribute('$conf/bacula-sd.conf', 'HostName', '$HOME/.oci/config', 'Cloud', 'OracleCloud')"
+   fi
+
+   if [ x$CLOUD_NAME = xGoogleCloud -a -d $HOME/.gsutil ]; then
+       # Command line buckets are not working correctly, permissions are not set
+       gsutil list | grep ${1:-regressbucket}
+       $bperl -e "add_attribute('$conf/bacula-sd.conf', 'HostName', '$HOME', 'Cloud', 'GoogleCloud')"
+   fi
+
+   #File driver
+   if [ x$CLOUD_NAME = xRegressCloud ]; then
+       $bperl -e "add_attribute('$conf/bacula-sd.conf', 'HostName', '$tmp/cloud', 'Cloud', 'RegressCloud')"
+       mkdir -p $tmp/cloud
+   fi
+
+   # update Devices to use this Cloud
+   $bperl -e 'add_attribute("$conf/bacula-sd.conf", "Device Type", "Cloud", "Device")'
+   $bperl -e 'add_attribute("$conf/bacula-sd.conf", "Cloud", "'$CLOUD_NAME'", "Device")'
+
+   # overwrites from the config file (for personnal account use)
+   if [ "$CLOUD_HOSTNAME" ]; then
+         $bperl -e "add_attribute('$conf/bacula-sd.conf', 'HostName', '\"$CLOUD_HOSTNAME\"', 'Cloud')"
+   fi
+   if [ "$CLOUD_BUCKETNAME" ]; then
+         $bperl -e "add_attribute('$conf/bacula-sd.conf', 'BucketName', '\"$CLOUD_BUCKETNAME\"', 'Cloud')"
+   fi
+   if [ "$CLOUD_ACCESSKEY" ]; then
+         $bperl -e "add_attribute('$conf/bacula-sd.conf', 'AccessKey', '\"$CLOUD_ACCESSKEY\"', 'Cloud')"
+   fi
+   if [ "$CLOUD_SECRETKEY" ]; then
+         $bperl -e "add_attribute('$conf/bacula-sd.conf', 'SecretKey', '\"$CLOUD_SECRETKEY\"', 'Cloud')"
+   fi
+   if [ "$CLOUD_REGION" ]; then
+         $bperl -e "add_attribute('$conf/bacula-sd.conf', 'Region', '\"$CLOUD_REGION\"', 'Cloud')"
+   fi
+   if [ "$CLOUD_PROTOCOL" ]; then
+         $bperl -e "add_attribute('$conf/bacula-sd.conf', 'Protocol', '$CLOUD_PROTOCOL', 'Cloud')"
+   fi
+   if [ "$CLOUD_URISTYLE" ]; then
+         $bperl -e "add_attribute('$conf/bacula-sd.conf', 'UriStyle', '$CLOUD_URISTYLE', 'Cloud')"
+   fi
+   if [ "$CLOUD_BLOBENDPOINT" ]; then
+         $bperl -e "add_attribute('$conf/bacula-sd.conf', 'BlobEndpoint', '\"$CLOUD_BLOBENDPOINT\"', 'Cloud')"
+   fi
+   if [ "$CLOUD_FILEENDPOINT" ]; then
+         $bperl -e "add_attribute('$conf/bacula-sd.conf', 'FileEndpoint', '\"$CLOUD_FILEENDPOINT\"', 'Cloud')"
+   fi
+   if [ "$CLOUD_QUEUEENDPOINT" ]; then
+         $bperl -e "add_attribute('$conf/bacula-sd.conf', 'QueueEndpoint', '\"$CLOUD_QUEUEENDPOINT\"', 'Cloud')"
+   fi
+   if [ "$CLOUD_TABLEENDPOINT" ]; then
+         $bperl -e "add_attribute('$conf/bacula-sd.conf', 'TableEndpoint', '\"$CLOUD_TABLEENDPOINT\"', 'Cloud')"
+   fi
+   if [ "$CLOUD_ENDPOINTSUFFIX" ]; then
+         $bperl -e "add_attribute('$conf/bacula-sd.conf', 'EndpointSuffix', '\"$CLOUD_ENDPOINTSUFFIX\"', 'Cloud')"
+   fi
+   if [ "$CLOUD_DRIVER" ]; then
+         $bperl -e "add_attribute('$conf/bacula-sd.conf', 'Driver', '\"$CLOUD_DRIVER\"', 'Cloud')"
+   fi
+   if [ "$CLOUD_MAXIMUM_PART_SIZE" ]; then
+         $bperl -e "add_attribute('$conf/bacula-sd.conf', 'MaximumPartSize', '$CLOUD_MAXIMUM_PART_SIZE', 'Device')"
+   fi
+   if [ "$CLOUD_TRUNCATE_CACHE" ]; then
+         $bperl -e "add_attribute('$conf/bacula-sd.conf', 'TruncateCache', '$CLOUD_TRUNCATE_CACHE', 'Cloud')"
+   fi
+   if [ "$CLOUD_DRIVER_COMMAND" ]; then
+         $bperl -e "add_attribute('$conf/bacula-sd.conf', 'DriverCommand', '$CLOUD_DRIVER_COMMAND', 'Cloud')"
    fi
 }
 
@@ -33,6 +152,9 @@ start_test()
       cp ${conf}/bacula-dir.conf ${tmp}/1
       sed -f ${outf} ${tmp}/1 > ${conf}/bacula-dir.conf
    fi
+   if [ x$FORCE_DOT_STATUS = xyes ]; then
+      $bperl -e "check_dot_status()" 2> /dev/null > $tmp/check_dot_status.out &
+   fi
    echo $TestName | grep aligned > /dev/null
    if [ $? -eq 0 -o x$FORCE_ALIGNED = xyes ]; then
       make -C build/src/stored install-aligned > /dev/null 2>&1
@@ -42,52 +164,37 @@ start_test()
       devicetype=`expr $devicetype + 1`
    fi
    if [ x$FORCE_CLOUD = xyes ]; then
-      make -C build/src/stored install-cloud > /dev/null 2>&1
-      grep DummyCloud $conf/bacula-sd.conf > /dev/null
-      if [ $? != 0 ]; then
-         $bperl -e 'extract_resource("$rscripts/test-bacula-sd.conf", "Cloud", "DummyCloud")' >> $conf/bacula-sd.conf
-      fi
-      $bperl -e 'add_attribute("$conf/bacula-sd.conf", "Device Type", "Cloud", "Device")'
-      $bperl -e 'add_attribute("$conf/bacula-sd.conf", "Cloud", "DummyCloud", "Device")'
+      update_cloud
+      variant_name="$CLOUD_NAME"
+      devicetype=`expr $devicetype + 1`
+   fi
+   if [ x$FORCE_DEDUP = xyes ]; then
+      make -C build/src/stored install-dedup > /dev/null 2>&1
+      make -C build/src/plugins/fd install-test-dedup >/dev/null 2>&1
+      make -C build/scripts install-btools >/dev/null 2>&1
+      DEDUP_FS_OPTION=${DEDUP_FS_OPTION:-bothsides}
+      mkdir ${working}/dde
+      DEDUP_MAXIMUM_CONTAINER_SIZE=${DEDUP_MAXIMUM_CONTAINER_SIZE:-10MB}
+      touch ${working}/dde/dde.conf # When dde.conf exists, DDE create a smaller Index
       $bperl -e 'add_attribute("$conf/bacula-sd.conf", "Plugin Directory", "$plugins", "Storage")'
-      mkdir -p $tmp/cloud
-      if [ "$CLOUD_HOSTNAME" ]; then
-          $bperl -e "add_attribute('$conf/bacula-sd.conf', 'HostName', '\"$CLOUD_HOSTNAME\"', 'Cloud')"
-      fi
-      if [ "$CLOUD_BUCKETNAME" ]; then
-          $bperl -e "add_attribute('$conf/bacula-sd.conf', 'BucketName', '\"$CLOUD_BUCKETNAME\"', 'Cloud')"
-      fi
-      if [ "$CLOUD_ACCESSKEY" ]; then
-          $bperl -e "add_attribute('$conf/bacula-sd.conf', 'AccessKey', '\"$CLOUD_ACCESSKEY\"', 'Cloud')"
-      fi
-      if [ "$CLOUD_SECRETKEY" ]; then
-          $bperl -e "add_attribute('$conf/bacula-sd.conf', 'SecretKey', '\"$CLOUD_SECRETKEY\"', 'Cloud')"
-      fi
-      if [ "$CLOUD_REGION" ]; then
-          $bperl -e "add_attribute('$conf/bacula-sd.conf', 'Region', '\"$CLOUD_REGION\"', 'Cloud')"
-      fi
-      if [ "$CLOUD_PROTOCOL" ]; then
-          $bperl -e "add_attribute('$conf/bacula-sd.conf', 'Protocol', '$CLOUD_PROTOCOL', 'Cloud')"
-      fi
-      if [ "$CLOUD_URISTYLE" ]; then
-          $bperl -e "add_attribute('$conf/bacula-sd.conf', 'UriStyle', '$CLOUD_URISTYLE', 'Cloud')"
-      fi
-      if [ "$CLOUD_DRIVER" ]; then
-          driver=`echo $CLOUD_DRIVER | tr 'A-Z' 'a-z'`
-          # FakeS3 is useful but keeps big parts in memory. So we must limit parts.
-          if [ "$driver" = "fakes3" ]; then
-             if [ "$CLOUD_MAXIMUM_PART_SIZE" = "" ]; then
-                CLOUD_MAXIMUM_PART_SIZE=50MB
-             fi
-             CLOUD_DRIVER=S3
-          fi
-          $bperl -e "add_attribute('$conf/bacula-sd.conf', 'Driver', '\"$CLOUD_DRIVER\"', 'Cloud')"
-      fi
-      if [ "$CLOUD_MAXIMUM_PART_SIZE" ]; then
-          $bperl -e "add_attribute('$conf/bacula-sd.conf', 'MaximumPartSize', '$CLOUD_MAXIMUM_PART_SIZE', 'Device')"
-      fi
+      $bperl -e 'add_attribute("$conf/bacula-sd.conf", "Device Type", "Dedup", "Device")'
+      $bperl -e 'add_attribute("$conf/bacula-sd.conf", "Dedupengine", "Dedupengine1", "Device")'
+      cat >> $conf/bacula-sd.conf <<EOF
 
-      variant_name="Cloud"
+Dedupengine {
+  Name = Dedupengine1
+  DedupDirectory = "${working}/dde"
+  Driver = Legacy
+}
+
+EOF
+      $bperl -e 'add_attribute("$conf/bacula-dir.conf", "Dedup", "'$DEDUP_FS_OPTION'", "Options")'
+      $bperl -e 'add_attribute("$conf/bacula-sd.conf", "MaximumContainerSize", "'$DEDUP_MAXIMUM_CONTAINER_SIZE'", "Dedup")'
+      DEDUP_FD_CACHE=${DEDUP_FD_CACHE:-no}
+      if [ x$DEDUP_FD_CACHE = xyes ]; then
+            $bperl -e 'add_attribute("$conf/bacula-fd.conf", "DedupIndexDirectory", "$working/ddefd", "FileDaemon")'
+      fi
+      variant_name="Dedup($DEDUP_FS_OPTION,fdcache=$DEDUP_FD_CACHE)"
       devicetype=`expr $devicetype + 1`
    fi
    if [ x$FORCE_SDCALLS = xyes ]; then
@@ -163,12 +270,14 @@ reset_test()
    export TestName
    export zstat
    export estat
+   export ddestat
    estat=0
    zstat=0
    bstat=0
    rstat=0
    vstat=0
    dstat=0
+   ddestat=0
 }
 
 # Change setup so that we run with shared storage plugin
@@ -218,6 +327,11 @@ if test x$FORCE_CLOUD = xyes; then
    echo "$TestName test not compatible with FORCE_CLOUD."
    exit 0
 fi
+#  tape not comptible with dedup
+if test x$FORCE_DEDUP = xyes; then
+   echo "$TestName test not compatible with FORCE_DEDUP."
+   exit 0
+fi
 if test x${TAPE_DRIVE} = x/dev/null ; then
    echo "$TestName test needs a tape drive, but has none."
    exit 1
@@ -252,6 +366,11 @@ if test x$FORCE_CLOUD = xyes; then
    echo "$TestName test not compatible with FORCE_CLOUD."
    exit 0
 fi
+#  vtape not comptible with dedup
+if test x$FORCE_DEDUP = xyes; then
+   echo "$TestName test not compatible with FORCE_DEDUP."
+   exit 0
+fi
 if test x${USE_VTAPE} = x ; then
    echo "$TestName test needs the vtape driver."
    exit 0
@@ -268,6 +387,11 @@ fi
 #  vtape not comptible with cloud
 if test x$FORCE_CLOUD = xyes; then
    echo "$TestName test not compatible with FORCE_CLOUD."
+   exit 0
+fi
+#  vtape not comptible with dedup
+if test x$FORCE_DEDUP = xyes; then
+   echo "$TestName test not compatible with FORCE_DEDUP."
    exit 0
 fi
 if test x${USE_VTAPE} = xyes ; then
@@ -429,6 +553,36 @@ bscan_libdbi()
 
 stop_bacula()
 {
+   if [ x$FORCE_DOT_STATUS = xyes ]; then
+      rm -f $tmp/check_dot_status.ctrl
+   fi
+   if [ "$CHECK_OPENFILE" != 0 ]; then
+      rm -f $tmp/stop.$$.out
+      cat << EOF > $tmp/stop.$$
+@output /dev/null
+message
+@output $tmp/stop.$$.out
+.api 2
+.status storage header
+quit
+EOF
+      cat  $tmp/stop.$$ | $bin/bconsole -c $conf/bconsole.conf -u 1
+      pid=`awk -F= '/pid=/ { print $2; exit; }' $tmp/stop.$$.out 2> /dev/null`
+      if [ "$pid" != "" ]; then
+         $bperl -e "check_openfile('/proc/$pid/fd')"
+         if [ $? -ne 0 ]; then
+            echo " "
+            echo "  !!!!! $TestName ${variant_name} failed!!! `date +%R:%S` !!!!! "
+            echo "     Files still open!!"
+            echo " " >>test.out
+            echo " " >>test.out
+            echo "  !!!!! $TestName ${variant_name} failed!!! `date +%R:%S` !!!!! " >>test.out
+            echo "     Files still open!!" >>test.out
+            echo " "
+            exit 1
+         fi
+      fi
+   fi
    if [ "$CHECK_JOBMEDIA" != 0 ]; then
       $bperl -e 'check_jobmedia()'
       if [ $? -ne 0 ]; then
@@ -443,7 +597,35 @@ stop_bacula()
          exit 1
       fi
    fi
-   if [ "$FORCE_CLOUD" = yes ]; then
+   if [ "$CHECK_ENCRYPTION" != 0 -a "$FORCE_ENCRYPTION" = yes ]; then
+      $bperl -e 'check_encryption("$tmp/log1.out")'
+      if [ $? -ne 0 ]; then
+         echo " "
+         echo "  !!!!! $TestName ${variant_name} failed!!! `date +%R:%S` !!!!! "
+         echo "     Encryption problem"
+         echo " " >>test.out
+         echo " " >>test.out
+         echo "  !!!!! $TestName ${variant_name} failed!!! `date +%R:%S` !!!!! " >>test.out
+         echo "     Encryption problem" >>test.out
+         echo " "
+         exit 1
+      fi
+   fi
+   if [ "$CHECK_JSON" != 0 ]; then
+      $bperl -e 'check_json_tools()'
+      if [ $? -ne 0 ]; then
+         echo " "
+         echo "  !!!!! $TestName ${variant_name} failed!!! `date +%R:%S` !!!!! "
+         echo "     JSON Data is incorrect"
+         echo " " >>test.out
+         echo " " >>test.out
+         echo "  !!!!! $TestName ${variant_name} failed!!! `date +%R:%S` !!!!! " >>test.out
+         echo "     JSON Data is incorrect" >>test.out
+         echo " "
+         exit 1
+      fi
+   fi
+   if [ "x$FORCE_CLOUD" = xyes ]; then
       $bperl -e 'check_parts()'
       if [ $? -ne 0 ]; then
 	      print_debug "ERROR: FORCE_CLOUD check_parts"
@@ -507,6 +689,11 @@ change_jobname()
 check_two_logs()
 {
    bstat=${bstat:-99}   # We must find at least one job in log1.out
+   echo "$TestName" | grep restart.*-test > /dev/null
+   restartjob=0
+   if [ $? -eq 0 ]; then
+      restartjob=1
+   fi
    grep "^  Termination: *Backup OK" ${tmp}/log1.out 2>&1 >/dev/null
    if test $? -ne 0; then
       bstat=2
@@ -516,8 +703,7 @@ check_two_logs()
       bstat=2
    fi
    # Do not check for restart jobs in restart tests
-   echo "$TestName" | grep restart.*-test > /dev/null
-   if [ $? -ne 0 ]; then
+   if [ $restartjob = 0 ]; then
       grep "^  Termination: .*Backup failed" ${tmp}/log1.out 2>&1 >/dev/null
       if test $? -eq 0; then
          bstat=3
@@ -528,6 +714,12 @@ check_two_logs()
    grep "^  Termination: .*Restore Error" ${tmp}/log2.out 2>&1 >/dev/null
    if test $? -eq 0; then
       rstat=2
+   fi
+   if [ $restartjob = 0 ]; then
+      grep "SD Errors: *[1-9]" ${tmp}/log1.out 2>&1 >/dev/null
+      if test $? -eq 0; then
+         bstat=3
+      fi
    fi
    grep "^  Termination: *Restore OK -- warning file count mismatch" ${tmp}/log2.out 2>&1 >/dev/null
    if test $? -eq 0; then
@@ -556,6 +748,21 @@ check_two_logs()
    fi
 }
 
+die_dde()
+{
+   code=$1
+   msg=$2
+   
+   print_debug $msg
+   stop_bacula
+   
+   if test "$code" -gt "$ddestat" ; then
+      ddestat=$code
+   fi
+   end_test
+   exit 1
+}
+
 die_test()
 {
    code=$1
@@ -569,6 +776,92 @@ die_test()
    fi
    end_test
    exit 1
+}
+
+die_early()
+{
+   msg=$1
+   print_debug $msg
+   exit 2
+}
+
+#
+# must be called just after "functions" by tests that can run only when dedup is on
+#
+check_dedup_enable()
+{
+   if [ "$FORCE_DEDUP" != "yes" ] ; then 
+      print_debug "This test is dedicated to DEDUP, set variable FORCE_DEDUP to 'yes'"
+      exit 0
+   fi
+   if [ "$DEDUP_FS_OPTION" != "bothsides" -a "$DEDUP_FS_OPTION" != "storage" -a "$DEDUP_FS_OPTION" != "none" ] ; then
+      print_debug "variable DEDUP_FS_OPTION must be set to bothsides, storage or none"
+      exit 1
+   fi
+}
+
+
+#
+# be sure that dedup is on and DDE will receive data
+#
+check_dedup_forced()
+{
+   check_dedup_enable
+   if [ "$DEDUP_FS_OPTION" = "none" ] ; then
+      print_debug "This test expect to see the DDE grow then DEDUP_FS_OPTION cannot be none"
+      exit 0
+   fi
+}
+
+#
+# load all the modules required by query_dde, if not yet loaded
+#
+require_query_dde()
+{
+   QUERY_DDE_ADVANCED="yes" $rscripts/query_dde.py checkmodules
+   if [ $? -eq 0 ] ; then
+      return
+   fi
+   local query_dde_url=https://www.baculasystems.com/ml/ohweekah9WawuiB/depkgs-query-dde
+   local name
+   for name in lz4.so pytc.so argparse.py ; do
+      if [ ! -f $rscripts/$name ] ; then
+         if ! wget -O $rscripts/$name $query_dde_url/$name ; then
+            echo Failed to load $query_dde_url/$name
+            exit 1
+         fi
+      fi
+   done
+}
+
+check_dedupengine_health()
+{
+   local logfile=$1
+   if grep "dde_errors=[1-9]" $logfile >/dev/null; then
+      ddestat=99
+   fi
+   if grep "containers_errors=[1-9]" $logfile >/dev/null; then
+      ddestat=99
+   fi
+   if grep "vacuum_errors=[1-9]" $logfile >/dev/null; then
+      ddestat=99
+   fi
+}
+
+check_dde_status()
+{
+   local filename="$1"
+   local hash_count=$2
+   local chunk_used=$3
+   
+   grep "DDE:" ${filename} | grep "hash_count=${hash_count}" >/dev/null && \
+      grep "Containers:" ${filename} | grep "chunk_used=${chunk_used}" >/dev/null
+}
+
+is_dde_empty()
+{
+   filename="$1"
+   check_dde_status "$filename" 0 0
 }
 
 dtitle()
@@ -674,6 +967,7 @@ check_restore_tmp_build_diff()
 # rstat is restore status
 # zstat is zombie job(s)
 # vstat is verify status
+# ddestat is dedupengine error
 #
 end_test()
 {
@@ -686,6 +980,13 @@ end_test()
    fi
    d=`./test_duration`
    t=`date +%R:%S`
+   if [ $ddestat != 0 ] ; then
+      echo " " | tee -a test.out
+      echo "  !!!!! $TestName ${variant_name} failed!!! $t $d !!!!! " | tee -a test.out
+      echo "     Status: estat=$estat zombie=$zstat backup=$bstat restore=$rstat diff=$dstat verify=$vstat dde=$ddestat" | tee -a test.out
+      echo " "
+      exit 1
+   fi
    if [ $estat != 0 ] ; then
       echo " "
       echo "  !!!!! $TestName ${variant_name} failed!!! $t $d !!!!! "
@@ -751,6 +1052,7 @@ copy_test_confs()
 
 disable_plugins()
 {
+   local i
    for i in ${conf}/bacula-fd.conf; do
       sed 's/Plugin/#Plugin/' $i > $tmp/1
       cp -f $tmp/1 $i
@@ -862,6 +1164,32 @@ case $1 in
 esac
 }
 
+check_variable()
+{
+   if [ "x$1" = "x" ]
+   then
+       echo "Variable $2 not set."
+       exit -1
+   fi
+}
+
+check_path()
+{
+   if [ ! -d $1 ]
+   then
+       echo "Path $2 does not exist: $1"
+       exit -1
+   fi
+}
+
+check_file()
+{
+   if [ ! -f $1 ]
+   then
+       echo "File $2 does not exist: $1"
+       exit -1
+   fi
+}
 
 # Save current directory
 cwd=`pwd`
@@ -880,6 +1208,9 @@ db_password=${db_password:-""}
 working=${working:-"$cwd/working"}
 dumps=${dumps:-"$cwd/dumps"}
 bin=${bin:-"$cwd/bin"}
+FORCE_DEDUP=${PREVAIL_FORCE_DEDUP:-$FORCE_DEDUP}
+DEDUP_FS_OPTION=${PREVAIL_DEDUP_FS_OPTION:-$DEDUP_FS_OPTION}
+DEDUP_FD_CACHE=${PREVAIL_DEDUP_FD_CACHE:-$DEDUP_FD_CACHE}
 PERL5LIB=${PERL5LIB}:$cwd
 
 # Bacula scripts
@@ -900,6 +1231,9 @@ src=${src:-"$cwd/build"}
 # Temp source directory so we don't mess up $src
 tmpsrc=${tmpsrc:-"$cwd/tmp/build"}
 
+# Unit Tests source directory 
+unitsrc=${unitsrc:-"$cwd/src"}
+
 export bin
 export conf
 export working
@@ -910,9 +1244,12 @@ export tmp
 export src
 export tmpsrc
 export PERL5LIB
+export unitsrc
 
 bperl="perl -Mscripts::functions"
 export bperl
+btools="$scripts/btools.py"
+export btools
 
 mkdir -p ${tmp}
 touch ${tmp}/dir.out ${tmp}/fd.out ${tmp}/sd.out
