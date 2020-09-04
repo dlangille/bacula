@@ -1,7 +1,7 @@
 #
 # Default Bacula Storage Daemon Configuration file
 #
-#  For Bacula release 9.0.8
+#  For Bacula release 1.33
 #
 # You may need to change the name of your tape drive
 #   on the "Archive Device" directive in the Device
@@ -41,7 +41,7 @@ Device {
   AlwaysOpen = yes;
   RemovableMedia = yes;
   @@sbindir@/tape_options
-  Control Device = /dev/sg0
+  Control Device = /dev/sg1
   Alert Command = "@scriptdir@/tapealert %l"
 # Maximum File Size = 1000000
 # MaximumVolumeSize = 400M
