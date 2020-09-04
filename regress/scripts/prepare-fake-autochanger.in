@@ -36,7 +36,7 @@ EOF
 touch $adir/log
 
 # the standard script is looking for a real sg device
-sed -i 's/test -c /test -f/g' $bin/storage-ctl	2> /dev/null
+sed -i 's/test -c /test -f/g' $bin/storage-ctl  2> /dev/null
 sed -i 's/test -c /test -f/g' $bin/storage2-ctl 2> /dev/null
 
 # create generic device for bsg_persist
