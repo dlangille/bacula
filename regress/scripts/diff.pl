@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 #
-# Copyright (C) 2000-2019 Kern Sibbald
+# Copyright (C) 2000-2020 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
 
@@ -33,6 +33,7 @@ my @exclude;
 my $hash;
 my $ret=0;
 my $notop=0;
+my $plain=0;
 
 GetOptions("src=s"   => \$src,        # source directory
            "dst=s"   => \$dst,        # dest directory
@@ -41,6 +42,7 @@ GetOptions("src=s"   => \$src,        # source directory
            "wattr"   => \$wattr,      # windows attributes
            "mtime-dir" => \$mtimedir, # check mtime on directories
            "exclude=s@" => \@exclude, # exclude some files
+           "plain"   => \$plain,      # compare plain files
            "notop"   => \$notop,      # Exclude top directory
            "help"    => \$help,
     ) or pod2usage(-verbose => 1, 
@@ -171,15 +173,21 @@ sub wanted_src
         return;
     }
     if (-l $f) {
+        if ($plain) {
+            return;
+        }
         my ($dev,$ino,$mode,$nlink,$uid,$gid,$rdev,$size,
             $atime,$mtime,$ctime,$blksize,$blocks) = lstat($f);
- 
+        if ($^O ne 'linux') {
+            # for any OS that don't support lutimes()
+            $mtime = 0;
+        }
         my $target = readlink($f);
         $hash->{$File::Find::name} = {
             nlink => $nlink,
             uid => $uid,
             gid => $gid,
-            mtime => 0,
+            mtime => $mtime,
             target => $target,
             type => 'l',
             file => $File::Find::name,
@@ -218,6 +226,9 @@ sub wanted_src
         };
 
     } elsif (-b $f or -c $f) { # dev
+        if ($plain) {
+            return;
+        }
         $hash->{$File::Find::name} = {
             mode => $mode,
             uid => $uid,
@@ -229,6 +240,9 @@ sub wanted_src
         };
         
     } elsif (-p $f) { # named pipe
+        if ($plain) {
+            return;
+        }
         $hash->{$File::Find::name} = {
             mode => $mode,
             uid => $uid,
