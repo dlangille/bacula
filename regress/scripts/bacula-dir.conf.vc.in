@@ -1,0 +1,60 @@
+
+Storage {
+  Name = VirtA
+  Address = @hostname@
+  SDPort = @sdport@
+  Password = "ccV3lVTsQRsdIUGyab0N4sMDavui2hOBkmpBU0aQKOr9"
+  Device = VirtCh
+  Media Type = VirtMedia0
+  Autochanger = Yes
+  Maximum Concurrent Jobs = 10
+  # 9 drives so we fix read to less than half
+  Maximum Concurrent Read Jobs = 4
+}
+
+Storage {
+  Name = VirtB
+  Address = @hostname@
+  SDPort = @sdport@
+  Password = "ccV3lVTsQRsdIUGyab0N4sMDavui2hOBkmpBU0aQKOr9"
+  Device = VirtCh
+  Media Type = VirtMedia1
+  Autochanger = Yes
+  Maximum Concurrent Jobs = 50
+  Maximum Concurrent Read Jobs = 4
+}
+
+Pool {
+  Name = "Pool1"
+  Pool Type = Backup
+  Storage = "VirtA"
+  Job Retention = 2 hours
+  File Retention = 100 min
+  Volume Retention = 3 hours
+  Maximum Volume Jobs = 7
+  Label Format = "Pool1-"
+  Next Pool = "Pool2"
+}
+
+Pool {
+  Name = "Pool2"
+  Pool Type = Backup
+  Storage = "VirtA"
+  Job Retention = 2 hours
+  File Retention = 100 min
+  Volume Retention = 3 hours
+  Maximum Volume Jobs = 7
+  Label Format = "Pool2-"
+  Next Pool = "Pool3"
+}
+
+Pool {
+  Name = "Pool3"
+  Pool Type = Backup
+  Storage = "VirtB"
+  Job Retention = 2 hours
+  File Retention = 105 min
+  Volume Retention = 2.5 hours
+  Maximum Volume Jobs = 1
+  Label Format = "Pool3-"
+}
