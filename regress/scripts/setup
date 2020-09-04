@@ -97,6 +97,8 @@ if [ x$PREBUILT = xyes ]; then
   cp ${bin}/../scripts/storage*-ctl.conf ${cwd}/bin
   cp ${bin}/../scripts/mtx-changer ${cwd}/bin
   cp ${bin}/../scripts/mtx-changer.conf ${cwd}/bin
+  cp ${bin}/../scripts/btools.py ${cwd}/bin
+  cp -a ${bin}/../scripts/btoolslib ${cwd}/bin
   cp ${bin}/bconsole ${cwd}/bin
   cd ${cwd}/bin
   for i in create_*_database drop_*_database drop_*_tables make_*_tables grant_*_privileges; do
@@ -122,7 +124,10 @@ cd ${cwd}
 bin/bacula stop -KILL
 
 mkdir -p working
+chmod 755 bin
 cd bin
+# workaround for postgres user when permission denied
+chown postgres *_postgresql_* 2> /dev/null
 echo "Running database creation scripts"
 ./create_bacula_database
 ./drop_bacula_tables
