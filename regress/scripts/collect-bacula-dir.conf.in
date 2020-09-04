@@ -401,7 +401,7 @@ FileSet {
 
 FileSet {
   Name = "FS5nocheck"
-  Include  { Options { verify="nog"; signature=MD5 }
+  Include  { Options { verify="ng"; signature=MD5 }
     File = <@tmpdir@/file-list
   }
   Include  { Options { signature=MD5; sparse=yes }
