@@ -171,4 +171,3 @@ Messages {
   Name = Standard
   director = @hostname@-dir = all, !terminate
 }
-
