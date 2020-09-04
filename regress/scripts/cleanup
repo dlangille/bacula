@@ -1,6 +1,6 @@
-#!/bin/sh
+#!/bin/bash
 #
-# Copyright (C) 2000-2016 Kern Sibbald
+# Copyright (C) 2000-2020 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
 # Cleanup left over files -- both before and after test run
@@ -49,59 +49,95 @@ fi
 
 # Remove cloud test volumes
 if [ x$FORCE_CLOUD = xyes ]; then
-   drv=`echo $CLOUD_DRIVER | tr 'A-Z' 'a-z'`
-   if [ "${drv}" = s3 -o "${drv}" = fakes3 ]; then
-      if [ x${CLOUD_HOSTNAME} != x ]; then
-         if [ x${CLOUD_PROTOCOL} = xHTTPS ]; then
-            endpoint=""
-         else
-            endpoint="--endpoint-url=http://${CLOUD_HOSTNAME}"
-         fi
-      fi
-      if [ x${CLOUD_REGION} != x ]; then
-         region="--region ${CLOUD_REGION}"
-      else
-         region=""
-      fi
-      aws configure set default.s3.signature_version s3v4
-      aws s3 rm s3://${CLOUD_BUCKETNAME} $endpoint --recursive --include 'TestVol*' --include 'Vol*' $region 2>/dev/null >/dev/null
+
+   # update cloud before cleanup so we can retrieve accurate information
+   update_cloud
+
+   args=""
+   cloud_attr=$($bperl -e "get_attribute('$conf/bacula-sd.conf', 'Cloud', '$CLOUD_NAME', 'HostName')")
+   if [ "${cloud_attr}" ]; then 
+      args="${args} -h ${cloud_attr}"
    fi
-   if [ x${CLOUD_BUCKETNAME} != x ]; then
-      args="${args} -n ${CLOUD_BUCKETNAME}"
+   cloud_attr=$($bperl -e "get_attribute('$conf/bacula-sd.conf', 'Cloud', '$CLOUD_NAME', 'BucketName')")
+   if [ "${cloud_attr}" ]; then 
+      args="${args} -n ${cloud_attr}"
    fi
-   if [ x${CLOUD_ACCESSKEY} != x ]; then
-      args="${args} -a ${CLOUD_ACCESSKEY}"
+   cloud_attr=$($bperl -e "get_attribute('$conf/bacula-sd.conf', 'Cloud', '$CLOUD_NAME', 'AccessKey')")
+   if [ "${cloud_attr}" ]; then 
+      args="${args} -a ${cloud_attr}"
    fi
-   if [ x${CLOUD_SECRETKEY} != x ]; then
-      args="${args} -s ${CLOUD_SECRETKEY}"
+   cloud_attr=$($bperl -e "get_attribute('$conf/bacula-sd.conf', 'Cloud', '$CLOUD_NAME', 'SecretKey')")
+   if [ "${cloud_attr}" ]; then 
+      args="${args} -s ${cloud_attr}"
    fi
-   if [ x${CLOUD_PROTOCOL} != x ]; then
-      args="${args} -p ${CLOUD_PROTOCOL}"
+   cloud_attr=$($bperl -e "get_attribute('$conf/bacula-sd.conf', 'Cloud', '$CLOUD_NAME', 'Protocol')")
+   if [ "${cloud_attr}" ]; then 
+      args="${args} -p ${cloud_attr}"
    fi
-   if [ x${CLOUD_REGION} != x ]; then
-      args="${args} -r ${CLOUD_REGION}"
+   cloud_attr=$($bperl -e "get_attribute('$conf/bacula-sd.conf', 'Cloud', '$CLOUD_NAME', 'Region')")
+   if [ "${cloud_attr}" ]; then 
+      args="${args} -r ${cloud_attr}"
    fi
-   if [ x${CLOUD_DRIVER} != x ]; then
-      args="${args} -y ${CLOUD_DRIVER}"
+   cloud_attr=$($bperl -e "get_attribute('$conf/bacula-sd.conf', 'Cloud', '$CLOUD_NAME', 'Driver')")
+   if [ "${cloud_attr}" ]; then 
+      args="${args} -y ${cloud_attr}"
+
+      shopt -s nocasematch
+      case "${cloud_attr}" in
+         "google") 
+            args="${args} -c ${cwd}/bin/plugins/google_cloud_driver"
+         ;;
+         "oracle") 
+            args="${args} -c ${cwd}/bin/plugins/oracle_cloud_driver"
+         ;;
+         "swift") 
+            args="${args} -c ${cwd}/bin/plugins/swift_cloud_driver"
+         ;;
+         "generic") 
+            args="${args} -c ${cwd}/bin/plugins/generic_cloud_driver"
+         ;;
+         "azure") 
+            args="${args} -c ${cwd}/bin/plugins/was_cloud_driver"
+         ;;
+         *)
+         ;;
+      esac
    fi
-   if [ x${CLOUD_URISTYLE} != x ]; then
-      args="${args} -u ${CLOUD_URISTYLE}"
+   cloud_attr=$($bperl -e "get_attribute('$conf/bacula-sd.conf', 'Cloud', '$CLOUD_NAME', 'UriStyle')")
+   if [ "${cloud_attr}" ]; then 
+      args="${args} -u ${cloud_attr}"
    fi
-   if [ x${CLOUD_BLOBENDPOINT} != x ]; then
-      args="${args} -b ${CLOUD_BLOBENDPOINT}"
+   cloud_attr=$($bperl -e "get_attribute('$conf/bacula-sd.conf', 'Cloud', '$CLOUD_NAME', 'BlobEndpoint')")
+   if [ "${cloud_attr}" ]; then 
+      args="${args} -b ${cloud_attr}"
    fi
-   if [ x${CLOUD_TABLEENDPOINT} != x ]; then
-      args="${args} -t ${CLOUD_TABLEENDPOINT}"
+   cloud_attr=$($bperl -e "get_attribute('$conf/bacula-sd.conf', 'Cloud', '$CLOUD_NAME', 'TableEndpoint')")
+   if [ "${cloud_attr}" ]; then 
+      args="${args} -t ${cloud_attr}"
    fi
-   if [ x${CLOUD_QUEUEENDPOINT} != x ]; then
-      args="${args} -q ${CLOUD_QUEUEENDPOINT}"
+   cloud_attr=$($bperl -e "get_attribute('$conf/bacula-sd.conf', 'Cloud', '$CLOUD_NAME', 'QueueEndpoint')")
+   if [ "${cloud_attr}" ]; then 
+      args="${args} -q ${cloud_attr}"
    fi
-   #${bin}/bcloud ${args} -v 'Vol' clean
-   #${bin}/bcloud ${args} -v 'vol' clean
-   #${bin}/bcloud ${args} -v 'TestVol' clean
-   #${bin}/bcloud ${args} -v 'Small' clean
-   #${bin}/bcloud ${args} -v 'TEST' clean
-   #${bin}/bcloud ${args} -v 'Backup-' clean
+   cloud_attr=$($bperl -e "get_attribute('$conf/bacula-sd.conf', 'Cloud', '$CLOUD_NAME', 'DriverCommand')")
+   if [ "${cloud_attr}" ]; then 
+      args="${args} -c ${cloud_attr}"
+   fi
+   args="${args} -l ${cwd}/bin/plugins/"
+
+   if [ -d ${bin} ] ; then
+     if [ -f ${bin}/bcloud ] ; then
+        ${bin}/bcloud ${args} -v 'Vol' clean
+        ${bin}/bcloud ${args} -v 'vol' clean
+        ${bin}/bcloud ${args} -v 'TestVol' clean   
+        ${bin}/bcloud ${args} -v 'Small' clean   
+        ${bin}/bcloud ${args} -v 'TEST' clean   
+        ${bin}/bcloud ${args} -v 'Backup-' clean
+     fi
+   fi
+
+   # try to shutdown emulators
+
    # Might report incorrect error if not setup correctly
    true
 fi
