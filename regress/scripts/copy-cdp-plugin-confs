@@ -1,0 +1,8 @@
+#!/bin/sh
+cp -f scripts/cdp-plugin-test-bacula-dir.conf ${conf}/bacula-dir.conf
+cp -f scripts/cdp-plugin-test-bacula-sd.conf ${conf}/bacula-sd.conf
+cp -f scripts/test-bacula-fd.conf ${conf}/bacula-fd.conf
+cp -f scripts/test-console.conf ${conf}/bconsole.conf
+cp -f scripts/test-console.conf ${conf}/bat.conf
+
+scripts/set_tape_options
