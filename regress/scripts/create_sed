@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (C) 2000-2015 Kern Sibbald
+# Copyright (C) 2000-2020 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
 
@@ -38,6 +38,7 @@ dbengine=`echo ${WHICHDB} | sed -e 's/--with-//' -e 's/=.*//'`
 bversion=`sed -n -e 's/^#define VERSION.*"\(.*\)"$/\1/p' ${srcdir}/src/version.h`
 bdate=`sed -n -e 's/^#define LSMDATE.*"\(.*\)"$/\1/p' ${srcdir}/src/version.h`
 builddir="${src}"
+win32_wsep_file=`echo $WIN32_FILE | sed -e 's=/=\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\=g'`
 
 # Create sed command script
 echo "s%@remotehostaddr@%${REMOTE_HOST_ADDR}%g" >${out}
@@ -85,10 +86,17 @@ echo "s%@win32_client@%${WIN32_CLIENT}%g" >>${out}
 echo "s%@win32_addr@%${WIN32_ADDR}%g" >>${out}
 echo "s%@win32_store_addr@%${WIN32_STORE_ADDR}%g" >>${out}
 echo "s%@win32_file@%${WIN32_FILE}%g" >>${out}
+echo "s%@win32_wsep_file@%${win32_wsep_file}%g" >>${out}
 echo "s%@win32_port@%${WIN32_PORT}%g" >>${out}
 echo "s%@win32_password@%${WIN32_PASSWORD}%g" >>${out}
 echo "s%@db_name@%${db_name}%g" >>${out}
 echo "s%@db_user@%${db_user}%g" >>${out}
 echo "s%@db_password@%${db_password}%g" >>${out}
 echo "s%@builddir@%${builddir}%g" >>${out}
+echo "s%@kvm_host1@%${KVM_HOST1}%g" >> ${out}
+echo "s%@kvm_host2@%${KVM_HOST2}%g" >> ${out}
+echo "s%@st_auth@%${ST_AUTH}%g" >>${out}
+echo "s%@st_user@%${ST_USER}%g" >>${out}
+echo "s%@st_key@%${ST_KEY}%g" >>${out}
 echo "s%@plugdockerhost@%${PLUGDOCKERHOST}%g" >>${out}
+echo "s%@k8spwd@%${cwd}%g" >>${out}
