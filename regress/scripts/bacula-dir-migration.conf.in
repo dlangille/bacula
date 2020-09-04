@@ -162,6 +162,16 @@ Job {
   Where = @tmpdir@/bacula-restores
 }
 
+Job {
+  Name = "DedupPluginTest"
+  Type = Backup
+  Client=@hostname@-fd
+  FileSet="DedupPluginSet"
+  Storage = File
+  Messages = Standard
+  Pool = Default
+  Write Bootstrap = "@working_dir@/dedupplugintest.bsr"
+}
 
 # List of files to be backed up
 FileSet {
@@ -171,6 +181,16 @@ FileSet {
   }
 }
 
+FileSet {
+  Name = "DedupPluginSet"
+  Include {
+    Options {
+#      signature=MD5 
+    }
+#    File = <@tmpdir@/file-list
+    Plugin = "test-dedup:@tmpdir@/dedupstreams.conf"
+  }
+}
 
 #
 # When to do the backups, full backup on first sunday of the month,
