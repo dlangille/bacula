@@ -1,0 +1,10 @@
+#!/bin/sh
+cp -f ${rscripts}/kubernetes-plugin-test-bacula-dir.conf ${conf}/bacula-dir.conf
+cp -f ${rscripts}/test-bacula-sd.conf ${conf}/bacula-sd.conf
+cp -f ${rscripts}/test-bacula-fd.conf ${conf}/bacula-fd.conf
+cp -f ${rscripts}/test-console.conf ${conf}/bconsole.conf
+cp -f ${rscripts}/test-console.conf ${conf}/bat.conf
+cp -f ${rscripts}/k8s_backend ${bin}/k8s_backend
+chmod +x ${bin}/k8s_backend
+
+scripts/set_tape_options
