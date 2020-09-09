@@ -146,7 +146,6 @@ Function EnterConfigPage1
 
     ; Client Name
     !insertmacro MUI_INSTALLOPTIONS_READ $HCTL "ConfigPage1.ini" "Field $R6" "HWND"
-    SendMessage $HCTL ${EM_LIMITTEXT} 30 0
 
     IntOp $R6 $R6 + 2
 
@@ -169,7 +168,6 @@ Function EnterConfigPage1
 
     ; Storage Name
     !insertmacro MUI_INSTALLOPTIONS_READ $HCTL "ConfigPage1.ini" "Field $R6" "HWND"
-    SendMessage $HCTL ${EM_LIMITTEXT} 30 0
 
     IntOp $R6 $R6 + 2
 

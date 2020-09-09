@@ -275,7 +275,6 @@ Function EnterConfigPage2
     ; Name
     IntOp $R6 $R6 + 1
     !insertmacro MUI_INSTALLOPTIONS_READ $HCTL "ConfigPage2.ini" "Field $R6" "HWND"
-    SendMessage $HCTL ${EM_LIMITTEXT} 30 0
     IntOp $R6 $R6 + 1
 
     ${If} $AutomaticInstall = 0
@@ -328,7 +327,6 @@ Function EnterConfigPage2
     ${If} $R0 <> 0
       IntOp $R6 $R6 + 2
       !insertmacro MUI_INSTALLOPTIONS_READ $HCTL "ConfigPage2.ini" "Field $R6" "HWND"
-      SendMessage $HCTL ${EM_LIMITTEXT} 30 0
       IntOp $R6 $R6 + 2
     ${EndIf}
   ${EndIf}
