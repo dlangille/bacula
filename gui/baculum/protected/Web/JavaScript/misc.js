@@ -286,7 +286,10 @@ var Formatters = {
 function render_date(data, type, row) {
 	var t = data;
 	if (t) {
-		var d = (new Date(t)).getTime();
+		var dati = t.split(' ');
+		var da = dati[0].split('-');
+		var ti = dati[1].split(':');
+		var d = (new Date(da[0], (da[1] - 1), da[2], ti[0], ti[1], ti[2], 0)).getTime();
 		if (type == 'display') {
 			t = Units.format_date(d);
 		} else {
