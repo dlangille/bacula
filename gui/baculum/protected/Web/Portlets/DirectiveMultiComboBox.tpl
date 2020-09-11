@@ -9,7 +9,7 @@
 					ActiveControl.EnableUpdate="false"
 				/> 	<com:TActiveLinkButton ID="AddFieldBtn"
 						OnCommand="SourceTemplateControl.addField"
-						CommandParameter="add_multicombobox"
+						CommandParameter="save"
 					>
 					<i class="fa fa-plus" title="<%[ Add directive ]%>" alt="<%[ Add directive ]%>"></i>
 				</com:TActiveLinkButton>
