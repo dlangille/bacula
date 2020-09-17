@@ -667,7 +667,7 @@ bool select_pool_dbr(UAContext *ua, POOL_DBR *pr, const char *argk)
      }
    }
 
-   memcpy(pr, &opr, sizeof(opr));
+   memcpy((void*)pr, &opr, sizeof(opr));
    return true;
 }
 

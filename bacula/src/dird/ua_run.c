@@ -71,7 +71,7 @@ public:
    bool ignoreduplicatecheck_set;
    alist *plugin_config;                           /* List of all plugin_item */
    /* Methods */
-   run_ctx() { memset(this, 0, sizeof(run_ctx));
+   run_ctx() { bmemset(this, 0, sizeof(run_ctx));
                store = new USTORE; };
    ~run_ctx() {
       delete store;
