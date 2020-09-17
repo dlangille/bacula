@@ -220,7 +220,7 @@ class Miscellaneous extends TModule {
 	}
 
 	public function isValidState($state) {
-		return (preg_match('/^\w+$/', $state) === 1);
+		return (preg_match('/^[\w\-]+$/', $state) === 1);
 	}
 
 	public function isValidInteger($num) {
