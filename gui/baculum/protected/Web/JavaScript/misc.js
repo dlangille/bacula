@@ -187,9 +187,9 @@ var Units = {
 		return dt;
 	},
 	format_date_str: function(date) {
-		var d;
-		if (date && date != 'no date') {
-			var t = (new Date(date)).getTime();
+		var d = date;
+		if (/^\d{4}-\d{2}-\d{2} \d{1,2}:\d{2}:\d{2}$/.test(d)) {
+			var t = date_time_to_ts(d);
 			d = Units.format_date(t);
 		}
 		return d;
@@ -280,16 +280,23 @@ var Formatters = {
 	}
 }
 
+function date_time_to_ts(datetime) {
+	var d = datetime;
+	if (/^\d{4}-\d{2}-\d{2} \d{1,2}:\d{2}:\d{2}$/.test(d)) {
+		var dati = datetime.split(' ');
+		var da = dati[0].split('-');
+		var ti = dati[1].split(':');
+		d = (new Date(da[0], (da[1] - 1), da[2], ti[0], ti[1], ti[2], 0)).getTime();
+	}
+	return d;
+}
 
 /** Data tables formatters **/
 
 function render_date(data, type, row) {
 	var t = data;
 	if (t) {
-		var dati = t.split(' ');
-		var da = dati[0].split('-');
-		var ti = dati[1].split(':');
-		var d = (new Date(da[0], (da[1] - 1), da[2], ti[0], ti[1], ti[2], 0)).getTime();
+		var d = date_time_to_ts(t);
 		if (type == 'display') {
 			t = Units.format_date(d);
 		} else {
