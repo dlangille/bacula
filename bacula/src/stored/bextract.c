@@ -487,8 +487,7 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
             wsize = rec->data_len - OFFSET_FADDR_SIZE;
             ser_begin(rec->data, OFFSET_FADDR_SIZE);
             unser_uint64(faddr);
-            /* We seek only for real SPARSE data, not for OFFSET option */
-            if ((rec->Stream & STREAM_BIT_OFFSETS) == 0 && fileAddr != faddr) {
+            if (fileAddr != faddr) {
                fileAddr = faddr;
                if (blseek(&bfd, (boffset_t)fileAddr, SEEK_SET) < 0) {
                   berrno be;

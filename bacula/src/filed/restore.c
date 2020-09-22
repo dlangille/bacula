@@ -1218,8 +1218,7 @@ bool sparse_data(JCR *jcr, BFILE *bfd, uint64_t *addr, char **data, uint32_t *le
    char ec1[50];
    unser_begin(*data, OFFSET_FADDR_SIZE);
    unser_uint64(faddr);
-   /* We seek only if we have a SPARSE stream, not for OFFSET */
-   if ((flags & FO_SPARSE) && *addr != faddr) {
+   if (*addr != faddr) {
       *addr = faddr;
       if (blseek(bfd, (boffset_t)*addr, SEEK_SET) < 0) {
          berrno be;
