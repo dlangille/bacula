@@ -20,31 +20,31 @@
 # first and the archive extracted into it.  It is assigned to the variable
 # MKD_[field1]
 # 
-CMD_UTILS|https://www.bacula.org/downloads/depkgs-mingw32/cmd-utils-0.1.tar.gz
-MT|http://old.bacula.org/downloads/depkgs-mingw32/mt-st-0.9b.tar.gz
-MTX|http://www.bacula.org/downloads/depkgs-mingw32/mtx-1.3.9.tar.gz
-SCONS|http://www.bacula.org/downloads/depkgs-mingw32/scons-0.96.92.tar.gz
-SED|https://www.bacula.org/downloads/depkgs-mingw32/sed-4.2k.tar.gz
-LZO|https://www.bacula.org/downloads/depkgs-mingw32/lzo-2.10.tar.gz
-ZLIB|https://www.bacula.org/downloads/depkgs-mingw32/zlib-1.2.8.tar.gz
-RSYNC|https://www.bacula.org/downloads/depkgs-mingw32/librsync-0.9.7b.tar.gz
-OPENSSL|https://www.bacula.org/downloads/depkgs-mingw32/openssl-1.0.2k.tar.gz
-PCRE|https://www.bacula.org/downloads/depkgs-mingw32/pcre-6.3.tar.bz2
-PTHREADS|https://www.bacula.org/downloads/depkgs-mingw32/pthreads-w32-2-9-1-release.tar.gz
-Qt4|https://www.bacula.org/downloads/depkgs-mingw32/qt-everywhere-opensource-src-4.8.4.tar.gz
-MSSQL|https://www.bacula.org/downloads/depkgs-mingw32/depkgs-mssql-08Jun17.tar.gz
-
-#POSTGRESQL|http://www.bacula.org/depkgs-mingw32/postgresql-base-8.1.4.tar.bz2|postgresql-8.1.4
+CMD_UTILS|https://www.baculasystems.com/dl/Depkgs-mingw32-6.6-paa9aiMa/cmd-utils-0.1.tar.gz
+MT|http://old.bacula.org/depkgs-mingw32/mt-st-0.9b.tar.gz
+MTX|http://www.bacula.org/depkgs-mingw32/mtx-1.3.9.tar.gz
+SCONS|http://www.bacula.org/depkgs-mingw32/scons-0.96.92.tar.gz
+SED|https://www.baculasystems.com/dl/Depkgs-mingw32-6.6-paa9aiMa/sed-4.5.tar.xz
 #DVD_RW_TOOLS|http://www.bacula.org/depkgs-mingw32/dvd+rw-tools-7.0.tar.gz
 #MKISOFS|http://www.bacula.org/depkgs-mingw32/mkisofs.exe
 #MYSQL|http://www.bacula.org/depkgs-mingw32/mysql-noinstall-5.0.27-win32.zip|mysql-5.0.27-win32
 #NSIS_BIN|http://www.bacula.org/depkgs-mingw32/nsis-2.17.zip
 #NSIS_SRC|http://www.bacula.org/depkgs-mingw32/nsis-2.17-src.tar.bz2
+OPENSSL|https://www.openssl.org/source/openssl-1.1.1f.tar.gz
+PCRE|https://www.baculasystems.com/dl/Depkgs-mingw32-6.6-paa9aiMa/pcre-6.3.tar.bz2
+#POSTGRESQL|http://www.bacula.org/depkgs-mingw32/postgresql-base-8.1.4.tar.bz2|postgresql-8.1.4
+PTHREADS|https://www.baculasystems.com/dl/Depkgs-mingw32-6.6-paa9aiMa/pthreads-w32-2-9-1-release.tar.gz
+Qt5|http://download.qt.io/archive/qt/5.14/5.14.2/single/qt-everywhere-src-5.14.2.tar.xz
 #SCONS|http://www.bacula.org/depkgs-mingw32/scons-0.96.92.tar.gz
 #SQLITE|http://www.bacula.org/depkgs-mingw32/sqlite-3.3.17.tar.gz
 #STAB2CV|http://www.bacula.org/depkgs-mingw32/stab2cv-0.1.tar.bz2
 #WX|http://www.bacula.org/depkgs-mingw32/wxWidgets-2.8.7.tar.gz
+ZLIB|https://www.baculasystems.com/dl/Depkgs-mingw32-6.6-paa9aiMa/zlib-1.2.8.tar.gz
+RSYNC|https://www.baculasystems.com/dl/Depkgs-mingw32-6.6-paa9aiMa/librsync-0.9.7b.tar.gz
 #DB|http://www.bacula.org/depkgs-mingw32/db-4.7.25.tar.gz
+LZO|https://www.baculasystems.com/dl/Depkgs-mingw32-6.6-paa9aiMa/lzo-2.10.tar.gz
+REGWIZ|https://www.baculasystems.com/dl/Depkgs-mingw32-6.6-paa9aiMa/depkgs-registrationWizard-64bit-02Aug19.tar.gz|depkgs_registrationWizard_02Aug19
+MSSQL|https://www.baculasystems.com/dl/Depkgs-mingw32-6.6-paa9aiMa/depkgs-mssql-18Sep19.tar.gz
 # 
 # 
 # Original file locations
