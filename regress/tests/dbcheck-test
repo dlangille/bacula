@@ -1,0 +1,101 @@
+#!/bin/bash
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Run a simple backup of the Bacula build directory, delete jobs
+#   then stop bacula and run dbcheck
+#
+TestName="dbcheck-test"
+JobName=backup
+. scripts/functions
+
+scripts/cleanup
+scripts/copy-confs
+
+#
+# Zap out any schedule in default conf file so that
+#  it doesn't start during our test
+#
+outf="$tmp/sed_tmp"
+echo "s%  Schedule =%# Schedule =%g" >${outf}
+cp $scripts/bacula-dir.conf $tmp/1
+sed -f ${outf} $tmp/1 >$scripts/bacula-dir.conf
+
+change_jobname BackupClient1 $JobName
+start_test
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@output /dev/null
+messages
+@$out $tmp/log1.out
+setdebug level=4 storage=File1
+label volume=TestVolume001 storage=File1 pool=File slot=1 drive=0
+run job=$JobName yes
+wait
+messages
+@$out $tmp/log2.out
+@exec "touch $cwd/build/po/fr.po"
+run job=$JobName level=Incremental yes
+wait
+messages
+sql
+DELETE FROM Job WHERE JobId=1;
+
+quit
+END_OF_DATA
+
+run_bacula
+check_for_zombie_jobs storage=File1
+stop_bacula
+
+cat <<END_OF_DATA >$tmp/dbcheck.cmd
+1
+14
+15
+END_OF_DATA
+
+cat $tmp/dbcheck.cmd | $bin/dbcheck -n 10 $working $db_name $db_user $db_password | tee $tmp/1.out
+
+grep "Deleting 1 orphaned JobMedia records" $tmp/1.out > /dev/null
+if [ $? != 0 ]; then
+    print_debug "ERROR: Should find 1 JobMedia to delete"
+    estat=1
+fi
+
+nb=`awk '/FD Files Written:/ { gsub(/,/, ""); print $4 }' $tmp/log1.out`
+nb2=`awk '/Deleting [0-9]+ orphaned File records/ { total+=$2 } END { print total }' $tmp/1.out`
+nb3=`awk '/Deleting [0-9]+ orphaned File records/ { total++ } END { print total }' $tmp/1.out`
+if [ $nb != $nb2 ]; then
+    print_debug "ERROR: Should find $nb File to delete"
+    estat=1
+fi
+
+if [ $nb3 -lt 2 ]; then
+    print_debug "ERROR: Should find $nb File to delete records"
+    estat=1
+fi
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out /dev/null
+messages
+@$out $tmp/log3.out
+list jobmedia
+sql
+SELECT Path FROM Path;
+SELECT 'NB', count(1) AS CNT from Path;
+
+quit
+END_OF_DATA
+
+run_bacula
+check_for_zombie_jobs storage=File1
+stop_bacula
+
+nb=`awk '/ NB / { print $4 }' $tmp/log3.out`
+if [ $nb != 1 ]; then
+    print_debug "ERROR: Should find only one Path in the database ($tmp/log3.out)"
+    estat=1
+fi
+
+end_test
