@@ -476,14 +476,16 @@ void BDB_MYSQL::bdb_unescape_object(JCR *jcr, char *from, int32_t expected_len,
 } 
  
 void BDB_MYSQL::bdb_start_transaction(JCR *jcr) 
-{ 
-   if (!jcr->attr) { 
-      jcr->attr = get_pool_memory(PM_FNAME); 
-   } 
-   if (!jcr->ar) { 
-      jcr->ar = (ATTR_DBR *)malloc(sizeof(ATTR_DBR)); 
-      memset(jcr->ar, 0, sizeof(ATTR_DBR));
-   } 
+{
+   if (jcr) {
+      if (!jcr->attr) {
+         jcr->attr = get_pool_memory(PM_FNAME);
+      }
+      if (!jcr->ar) {
+         jcr->ar = (ATTR_DBR *)malloc(sizeof(ATTR_DBR));
+         memset(jcr->ar, 0, sizeof(ATTR_DBR));
+      }
+   }
 } 
  
 void BDB_MYSQL::bdb_end_transaction(JCR *jcr) 

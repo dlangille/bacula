@@ -517,12 +517,13 @@ void BDB_POSTGRESQL::bdb_start_transaction(JCR *jcr)
 {
    BDB_POSTGRESQL *mdb = this;
 
-   if (!jcr->attr) { 
-      jcr->attr = get_pool_memory(PM_FNAME); 
-   }
-   if (!jcr->ar) { 
-      jcr->ar = (ATTR_DBR *)malloc(sizeof(ATTR_DBR));
-      memset(jcr->ar, 0, sizeof(ATTR_DBR));
+   if (jcr) {
+      if (!jcr->attr) { 
+         jcr->attr = get_pool_memory(PM_FNAME); 
+      }
+      if (!jcr->ar) { 
+         jcr->ar = (ATTR_DBR *)bmalloc(sizeof(ATTR_DBR));
+      }
    }
 
    /* 

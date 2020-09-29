@@ -390,14 +390,16 @@ void BDB_SQLITE::bdb_unescape_object(JCR *jcr, char *from, int32_t expected_len,
 void BDB_SQLITE::bdb_start_transaction(JCR *jcr) 
 {  
    BDB_SQLITE *mdb = this; 
- 
-   if (!jcr->attr) { 
-      jcr->attr = get_pool_memory(PM_FNAME); 
-   } 
-   if (!jcr->ar) { 
-      jcr->ar = (ATTR_DBR *)malloc(sizeof(ATTR_DBR));
-      memset(jcr->ar, 0, sizeof(ATTR_DBR));
-   } 
+
+   if (jcr) {
+      if (!jcr->attr) {
+         jcr->attr = get_pool_memory(PM_FNAME);
+      }
+      if (!jcr->ar) {
+         jcr->ar = (ATTR_DBR *)malloc(sizeof(ATTR_DBR));
+         memset(jcr->ar, 0, sizeof(ATTR_DBR));
+      }
+   }
  
    if (!mdb->m_allow_transactions) { 
       return; 

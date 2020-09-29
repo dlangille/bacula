@@ -58,7 +58,8 @@ static NAME_LIST name_list;
 static char buf[20000];
 static bool quit = false;
 static CONFIG *config;
-static const char *idx_tmp_name; 
+static const char *idx_tmp_name;
+static uint64_t nb_changes = 300000;
 
 #define MAX_ID_LIST_LEN 10000000
 
@@ -102,6 +103,7 @@ PROG_COPYRIGHT
 "       -c              Director conf filename\n"
 "       -B              print catalog configuration and exit\n"
 "       -d <nn>         set debug level to <nn>\n"
+"       -n <nn>         maximum number of changes\n"
 "       -dt             print a timestamp in debug output\n"
 "       -f              fix inconsistencies\n"
 "       -v              verbose\n"
@@ -134,8 +136,11 @@ int main (int argc, char *argv[])
    memset(&id_list, 0, sizeof(id_list));
    memset(&name_list, 0, sizeof(name_list));
 
-   while ((ch = getopt(argc, argv, "bc:C:d:fvB?")) != -1) { 
+   while ((ch = getopt(argc, argv, "bc:C:d:fvB?n:")) != -1) { 
       switch (ch) {
+      case 'n':                    /* Number of changes we can make in one run */
+         nb_changes = str_to_uint64(optarg);
+         break;
       case 'B':
          print_catalog = true;     /* get catalog information from config */
          break;
@@ -606,6 +611,7 @@ static int make_id_list(const char *query, ID_LIST *id_list)
 static int delete_id_list(const char *query, ID_LIST *id_list)
 {
    char ed1[50];
+   db_start_transaction(NULL, db);
    for (int i=0; i < id_list->num_ids; i++) {
       bsnprintf(buf, sizeof(buf), query, edit_int64(id_list->Id[i], ed1));
       if (verbose) {
@@ -613,6 +619,7 @@ static int delete_id_list(const char *query, ID_LIST *id_list)
       }
       db_sql_query(db, buf, NULL, NULL);
    }
+   db_end_transaction(NULL, db);
    return 1;
 }
 
@@ -791,12 +798,14 @@ static void eliminate_duplicate_paths()
 
 static void eliminate_orphaned_jobmedia_records()
 {
-   const char *query = "SELECT JobMedia.JobMediaId,Job.JobId FROM JobMedia "
+   POOL_MEM query;
+   const char *q = "SELECT JobMedia.JobMediaId,Job.JobId FROM JobMedia "
                 "LEFT OUTER JOIN Job ON (JobMedia.JobId=Job.JobId) "
-                "WHERE Job.JobId IS NULL LIMIT 300000";
+                "WHERE Job.JobId IS NULL LIMIT %llu";
+   Mmsg(query, q, nb_changes);
 
    printf(_("Checking for orphaned JobMedia entries.\n"));
-   if (!make_id_list(query, &id_list)) {
+   if (!make_id_list(query.c_str(), &id_list)) {
       exit(1);
    }
    /* Loop doing 300000 at a time */
@@ -824,7 +833,7 @@ static void eliminate_orphaned_jobmedia_records()
       } else {
          break;                       /* get out if not updating db */
       }
-      if (!make_id_list(query, &id_list)) {
+      if (!make_id_list(query.c_str(), &id_list)) {
          exit(1);
       }
    }
@@ -832,15 +841,17 @@ static void eliminate_orphaned_jobmedia_records()
 
 static void eliminate_orphaned_file_records()
 {
-   const char *query = "SELECT File.FileId,Job.JobId FROM File "
+   POOL_MEM query;
+   const char *q = "SELECT File.FileId,Job.JobId FROM File "
                 "LEFT OUTER JOIN Job ON (File.JobId=Job.JobId) "
-               "WHERE Job.JobId IS NULL LIMIT 300000";
+               "WHERE Job.JobId IS NULL LIMIT %llu";
+   Mmsg(query, q, nb_changes);
 
    printf(_("Checking for orphaned File entries. This may take some time!\n"));
    if (verbose > 1) {
-      printf("%s\n", query);
+      printf("%s\n", query.c_str());
    }
-   if (!make_id_list(query, &id_list)) {
+   if (!make_id_list(query.c_str(), &id_list)) {
       exit(1);
    }
    /* Loop doing 300000 at a time */
@@ -867,7 +878,7 @@ static void eliminate_orphaned_file_records()
       } else {
          break;                       /* get out if not updating db */
       }
-      if (!make_id_list(query, &id_list)) {
+      if (!make_id_list(query.c_str(), &id_list)) {
          exit(1);
       }
    }
@@ -898,15 +909,17 @@ static void eliminate_orphaned_path_records()
       }
    }
 
-   const char *query = "SELECT DISTINCT Path.PathId,File.PathId FROM Path "
+   POOL_MEM query;
+   const char *q = "SELECT DISTINCT Path.PathId,File.PathId FROM Path "
                "LEFT OUTER JOIN File ON (Path.PathId=File.PathId) "
-               "WHERE File.PathId IS NULL LIMIT 300000";
+               "WHERE File.PathId IS NULL LIMIT %llu";
+   Mmsg(query, q, nb_changes);
 
    printf(_("Checking for orphaned Path entries. This may take some time!\n"));
    if (verbose > 1) {
-      printf("%s\n", query);
+      printf("%s\n", query.c_str());
    }
-   if (!make_id_list(query, &id_list)) {
+   if (!make_id_list(query.c_str(), &id_list)) {
       exit(1);
    }
    /* Loop doing 300000 at a time */
@@ -929,7 +942,7 @@ static void eliminate_orphaned_path_records()
       } else {
          break;                       /* get out if not updating db */
       }
-      if (!make_id_list(query, &id_list)) {
+      if (!make_id_list(query.c_str(), &id_list)) {
          exit(1);
       }
    } 
