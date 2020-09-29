@@ -160,7 +160,6 @@ class JSONToolsError extends GenericError {
 	const ERROR_JSON_TOOLS_UNABLE_TO_PARSE_OUTPUT = 83;
 	const ERROR_JSON_TOOL_NOT_CONFIGURED = 84;
 
-
 	const MSG_ERROR_JSON_TOOLS_DISABLED = 'JSON tools support is disabled.';
 	const MSG_ERROR_JSON_TOOLS_CONNECTION_PROBLEM = 'Problem with connection to a JSON tool.';
 	const MSG_ERROR_JSON_TOOLS_WRONG_EXITCODE = 'JSON tool returned wrong exitcode.';
@@ -197,10 +196,34 @@ class ActionsError extends GenericError {
 	const ERROR_ACTIONS_WRONG_EXITCODE = 112;
 	const ERROR_ACTIONS_NOT_CONFIGURED = 113;
 
-
 	const MSG_ERROR_ACTIONS_ACTION_DOES_NOT_EXIST = 'Action does not exist.';
 	const MSG_ERROR_ACTIONS_DISABLED = 'Actions support is disabled.';
 	const MSG_ERROR_ACTIONS_WRONG_EXITCODE = 'Action command returned wrong exitcode.';
 	const MSG_ERROR_ACTIONS_NOT_CONFIGURED = 'Action is not configured.';
+}
+
+class OAuth2Error extends GenericError {
+
+	const ERROR_OAUTH2_CLIENT_DOES_NOT_EXIST = 120;
+	const ERROR_OAUTH2_CLIENT_ALREADY_EXISTS = 121;
+	const ERROR_OAUTH2_CLIENT_INVALID_CLIENT_ID = 122;
+	const ERROR_OAUTH2_CLIENT_INVALID_CLIENT_SECRET = 123;
+	const ERROR_OAUTH2_CLIENT_INVALID_REDIRECT_URI = 124;
+	const ERROR_OAUTH2_CLIENT_INVALID_SCOPE = 125;
+	const ERROR_OAUTH2_CLIENT_INVALID_BCONSOLE_CFG_PATH = 126;
+	const ERROR_OAUTH2_CLIENT_INVALID_NAME = 127;
+	const ERROR_OAUTH2_CLIENT_INVALID_CONSOLE = 128;
+	const ERROR_OAUTH2_CLIENT_INVALID_DIRECTOR = 129;
+
+	const MSG_ERROR_OAUTH2_CLIENT_DOES_NOT_EXIST = 'OAuth2 client does not exist.';
+	const MSG_ERROR_OAUTH2_CLIENT_ALREADY_EXISTS = 'OAuth2 client already exists.';
+	const MSG_ERROR_OAUTH2_CLIENT_INVALID_CLIENT_ID = 'Invalid OAuth2 client ID.';
+	const MSG_ERROR_OAUTH2_CLIENT_INVALID_CLIENT_SECRET = 'Invalid OAuth2 client secret.';
+	const MSG_ERROR_OAUTH2_CLIENT_INVALID_REDIRECT_URI = 'Invalid OAuth2 redirect URI.';
+	const MSG_ERROR_OAUTH2_CLIENT_INVALID_SCOPE = 'Invalid OAuth2 scope.';
+	const MSG_ERROR_OAUTH2_CLIENT_INVALID_BCONSOLE_CFG_PATH = 'Invalid Bconsole config path.';
+	const MSG_ERROR_OAUTH2_CLIENT_INVALID_NAME = 'Invalid OAuth2 client name.';
+	const MSG_ERROR_OAUTH2_CLIENT_INVALID_CONSOLE = 'Invalid Console name.';
+	const MSG_ERROR_OAUTH2_CLIENT_INVALID_DIRECTOR = 'Invalid Director name.';
 }
 ?>

@@ -3078,3 +3078,72 @@ msgstr "This type of authentication is fully realized by Baculum Web. To authent
 
 msgid "This type of authentication is realized by an external directory service. To authenticate it uses the Baculum Web login form. The web server basic authentication can be disabled in this method."
 msgstr "This type of authentication is realized by an external directory service. To authenticate it uses the Baculum Web login form. The web server basic authentication can be disabled in this method."
+
+msgid "Console ACLs"
+msgstr "Console ACLs"
+
+msgid "Add new console"
+msgstr "Add new console"
+
+msgid "Edit console"
+msgstr "Edit console"
+
+msgid "Add console"
+msgstr "Add console"
+
+msgid "OAuth2 clients"
+msgstr "OAuth2 clients"
+
+msgid "Short name"
+msgstr "Short name"
+
+msgid "Add new OAuth2 client"
+msgstr "Add new OAuth2 client"
+
+msgid "Short name:"
+msgstr "Short name:"
+
+msgid "Add OAuth2 client account"
+msgstr "Add OAuth2 client account"
+
+msgid "set all scopes"
+msgstr "set all scopes"
+
+msgid "Edit OAuth2 client account"
+msgstr "Edit OAuth2 client account"
+
+msgid "Add new API host"
+msgstr "Add new API host"
+
+msgid "Get existing API host settings:"
+msgstr "Get existing API host settings:"
+
+msgid "Get existing OAuth2 client settings:"
+msgstr "Get existing OAuth2 client settings:"
+
+msgid "API hosts"
+msgstr "API hosts"
+
+msgid "Edit API host"
+msgstr "Edit API host"
+
+msgid "Create dedicated Bconsole config file:"
+msgstr "Create dedicated Bconsole config file:"
+
+msgid "Console ACL to use in new Bconsole config file:"
+msgstr "Console ACL to use in new Bconsole config file:"
+
+msgid "Director for Bconsole config:"
+msgstr "Director for Bconsole config:"
+
+msgid "The console ACLs enable to define available resources for users. The consoles are used in the Bacula configuration on the API host side. There is possible to assign the consoles to the OAuth2 clients that can be used in API hosts. The assign relation is: Console ACL -&gt; OAuth2 client -&gt; API host -&gt; User account."
+msgstr "The console ACLs enable to define available resources for users. The consoles are used in the Bacula configuration on the API host side. There is possible to assign the consoles to the OAuth2 clients that can be used in API hosts. The assign relation is: Console ACL -&gt; OAuth2 client -&gt; API host -&gt; User account."
+
+msgid "The OAuth2 clients are configured on the API hosts. To create the OAuth2 clients from this page, you need to have an 'oauth2' scope in OAuth2 account related to your current admin user account. The OAuth2 client accounts are also possible to create directly in the panel of the Baculum API."
+msgstr "The OAuth2 clients are configured on the API hosts. To create the OAuth2 clients from this page, you need to have an 'oauth2' scope in OAuth2 account related to your current admin user account. The OAuth2 client accounts are also possible to create directly in the panel of the Baculum API."
+
+msgid "The API hosts define connection parameters to hosts with the Baculum API instances. You can create the API host connections dedicated for specific users by assigning API hosts to them on the Users tab. There is possible to create many API host connections to the same Baculum API instance."
+msgstr "The API hosts define connection parameters to hosts with the Baculum API instances. You can create the API host connections dedicated for specific users by assigning API hosts to them on the Users tab. There is possible to create many API host connections to the same Baculum API instance."
+
+msgid "Set all CommandAcls used by Baculum Web"
+msgstr "Set all CommandAcls used by Baculum Web"

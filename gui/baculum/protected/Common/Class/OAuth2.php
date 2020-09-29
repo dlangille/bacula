@@ -48,6 +48,13 @@ abstract class OAuth2 extends CommonModule {
 	const CLIENT_SECRET_PATTERN = '^\S{6,50}$';
 
 	/**
+	 * Very basic redirect URI validation pattern.
+	 *
+	 * @see https://tools.ietf.org/html/rfc3986#appendix-B
+	 */
+	const REDIRECT_URI_PATTERN = '^(([^:\/?#]+):)?(\/\/([^\/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?$';
+
+	/**
 	 * Authorization ID (known also as 'authorization_code') regular expression pattern
 	 * allow to set hexadecimal value of the authorization ID with length equal 40 chars.
 	 * 
@@ -85,7 +92,7 @@ abstract class OAuth2 extends CommonModule {
 	/**
 	 * Scope pattern.
 	 */
-	const SCOPE_PATTERN = '^[a-zA-Z:]+$';
+	const SCOPE_PATTERN = '^[a-zA-Z0-9:]+$';
 
 	/**
 	 * State pattern.
@@ -136,6 +143,17 @@ abstract class OAuth2 extends CommonModule {
 	 */
 	final public function validateClientSecret($secret) {
 		return (preg_match('/' . self::CLIENT_SECRET_PATTERN . '/', $secret) === 1);
+	}
+
+	/**
+	 * Validate redirect URI syntax.
+	 *
+	 * @access public
+	 * @param string $redirect_uri redirect URI value
+	 * @return boolean true if redirect URI is valid, otherwise false
+	 */
+	final public function validateRedirectUri($redirect_uri) {
+		return (preg_match('/' . self::REDIRECT_URI_PATTERN . '/', $redirect_uri) === 1);
 	}
 
 	/**

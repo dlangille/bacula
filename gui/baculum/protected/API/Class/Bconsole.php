@@ -44,17 +44,17 @@ class Bconsole extends APIModule {
 	const PTYPE_CONFIRM_YES_CMD = 3;
 	const PTYPE_CONFIRM_YES_BG_CMD = 4;
 
-	const BCONSOLE_COMMAND_PATTERN = "%s%s -c %s %s 2>&1 <<END_OF_DATA\ngui on\n%s\nquit\nEND_OF_DATA";
+	const BCONSOLE_COMMAND_PATTERN = "%s%s -c \"%s\" %s 2>&1 <<END_OF_DATA\ngui on\n%s\nquit\nEND_OF_DATA";
 
-	const BCONSOLE_BG_COMMAND_PATTERN = "echo 'gui on\n%s\nquit\n' | nohup %s%s -c %s %s >%s 2>&1 &";
+	const BCONSOLE_BG_COMMAND_PATTERN = "echo 'gui on\n%s\nquit\n' | nohup %s%s -c \"%s\" %s >%s 2>&1 &";
 
-	const BCONSOLE_CONFIRM_YES_COMMAND_PATTERN = "%s%s -c %s %s 2>&1 <<END_OF_DATA\ngui on\n%s\nyes\nquit\nEND_OF_DATA";
+	const BCONSOLE_CONFIRM_YES_COMMAND_PATTERN = "%s%s -c \"%s\" %s 2>&1 <<END_OF_DATA\ngui on\n%s\nyes\nquit\nEND_OF_DATA";
 
-	const BCONSOLE_CONFIRM_YES_BG_COMMAND_PATTERN = "echo 'gui on\n%s\nyes\nquit\n' | nohup %s%s -c %s %s >%s 2>&1 &";
+	const BCONSOLE_CONFIRM_YES_BG_COMMAND_PATTERN = "echo 'gui on\n%s\nyes\nquit\n' | nohup %s%s -c \"%s\" %s >%s 2>&1 &";
 
-	const BCONSOLE_API_COMMAND_PATTERN = "%s%s -c %s %s 2>&1 <<END_OF_DATA\ngui on\n.api 2 nosignal api_opts=o\n%s\nquit\nEND_OF_DATA";
+	const BCONSOLE_API_COMMAND_PATTERN = "%s%s -c \"%s\" %s 2>&1 <<END_OF_DATA\ngui on\n.api 2 nosignal api_opts=o\n%s\nquit\nEND_OF_DATA";
 
-	const BCONSOLE_DIRECTORS_PATTERN = "%s%s -c %s -l 2>&1";
+	const BCONSOLE_DIRECTORS_PATTERN = "%s%s -c \"%s\" -l 2>&1";
 
 	const OUTPUT_FILE_PREFIX = 'output_';
 

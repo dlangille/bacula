@@ -59,21 +59,21 @@ class BaculaConfig extends ConfigFileModule {
 	 * @access public
 	 * @param string $component_type Bacula component type
 	 * @param array $config config
+	 * @param string $file config file path
 	 * @return array validation result, validation output and write to config result
 	 */
-	public function setConfig($component_type, array $config) {
+	public function setConfig($component_type, array $config, $file = null) {
 		$result = array('is_valid' => false, 'save_result' => false, 'output' => null);
 		$config_content = $this->prepareConfig($config, self::CONFIG_FILE_FORMAT);
 		$validation = $this->validateConfig($component_type, $config_content);
 		$result['is_valid'] = $validation['is_valid'];
 		$result['result'] = $validation['result'];
 		if ($result['is_valid'] === true) {
-			$tool_config = $this->getModule('api_config')->getJSONToolConfig($component_type);
-			/**
-			 * @TODO: Add option to save config in a specific directory. Users may want
-			 * to see config and put it manually to production.
-			 */
-			$result['save_result'] = $this->writeConfig($config, $tool_config['cfg'], self::CONFIG_FILE_FORMAT);
+			if (is_null($file)) {
+				$tool_config = $this->getModule('api_config')->getJSONToolConfig($component_type);
+				$file = $tool_config['cfg'];
+			}
+			$result['save_result'] = $this->writeConfig($config, $file, self::CONFIG_FILE_FORMAT);
 		}
 		return $result;
 	}

@@ -51,6 +51,7 @@ class BaculaConfigDirectives extends DirectiveListTemplate {
 	const SHOW_REMOVE_BUTTON = 'ShowRemoveButton';
 	const SHOW_CANCEL_BUTTON = 'ShowCancelButton';
 	const SHOW_ALL_DIRECTIVES = 'ShowAllDirectives';
+	const SHOW_BOTTOM_BUTTONS = 'ShowBottomButtons';
 	const SAVE_DIRECTIVE_ACTION_OK = 'SaveDirectiveActionOk';
 
 	private $show_all_directives = false;
@@ -122,6 +123,7 @@ class BaculaConfigDirectives extends DirectiveListTemplate {
 		$directives = array();
 		$parent_directives = array();
 		$config = new stdClass;
+		$predefined = false;
 		if ($load_values === true) {
 			$config = $this->getConfigData($host, array(
 				$component_type,
@@ -139,6 +141,13 @@ class BaculaConfigDirectives extends DirectiveListTemplate {
 					$config->JobDefs
 				));
 			}
+		} else {
+			// Pre-defined config for new resource can be provided in Data property.
+			$data = $this->getData();
+			if (!empty($data)) {
+				$config = $data;
+				$predefined = true;
+			}
 		}
 
 		$data_desc = $this->Application->getModule('data_desc');
@@ -150,7 +159,7 @@ class BaculaConfigDirectives extends DirectiveListTemplate {
 			}
 
 			$directive_value = null;
-			if ($in_config === true && $load_values === true) {
+			if (($in_config === true && $load_values === true) || ($predefined && property_exists($config, $directive_name))) {
 				$directive_value = $config->{$directive_name};
 			}
 
@@ -163,7 +172,7 @@ class BaculaConfigDirectives extends DirectiveListTemplate {
 			if (is_object($directive_desc)) {
 				if (property_exists($directive_desc, 'Required')) {
 					$required = $directive_desc->Required;
-					if ($load_values === true && array_key_exists($directive_name, $parent_directives)) {
+					if ($load_values === true && key_exists($directive_name, $parent_directives)) {
 						// values can be taken from JobDefs
 						$required = false;
 					}
@@ -377,6 +386,7 @@ class BaculaConfigDirectives extends DirectiveListTemplate {
 			$this->SaveDirectiveErrMsg->Display = 'Dynamic';
 			$this->SaveDirectiveErrMsg->Text = "Error {$result->error}: {$result->output}";
 		}
+		$this->onSave(null);
 	}
 
 	public function setShowAllDirectives($show_all_directives) {
@@ -573,6 +583,29 @@ class BaculaConfigDirectives extends DirectiveListTemplate {
 	 */
 	public function getShowCancelButton() {
 		return $this->getViewState(self::SHOW_CANCEL_BUTTON, true);
+	}
+
+	/**
+	 * Set if buttons should be flexible and available at the bottom of the page.
+	 *
+	 * @return none;
+	 */
+	public function setShowBottomButtons($show) {
+		$show = TPropertyValue::ensureBoolean($show);
+		$this->setViewState(self::SHOW_BOTTOM_BUTTONS, $show);
+	}
+
+	/**
+	 * Get if buttons should be flexible and available at the bottom of the page.
+	 *
+	 * @return bool true if buttons are available at the bottom of the page, otherwise false
+	 */
+	public function getShowBottomButtons() {
+		return $this->getViewState(self::SHOW_BOTTOM_BUTTONS, true);
+	}
+
+	public function onSave($param) {
+		$this->raiseEvent('OnSave', $this, $param);
 	}
 }
 ?>

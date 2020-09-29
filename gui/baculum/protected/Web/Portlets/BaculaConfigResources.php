@@ -37,7 +37,7 @@ class BaculaConfigResources extends ResourceListTemplate {
 
 	public $resource_names = array();
 
-	private function getConfigData($host, $component_type) {
+	public function getConfigData($host, $component_type) {
 		$params = array('config', $component_type);
 		$result = $this->Application->getModule('api')->get($params, $host, false);
 		$config = array();
@@ -222,7 +222,7 @@ class BaculaConfigResources extends ResourceListTemplate {
 	 * @param string $resource_name resource name to remove
 	 * @return none
 	 */
-	private function removeResourceFromConfig(&$config, $resource_type, $resource_name) {
+	public function removeResourceFromConfig(&$config, $resource_type, $resource_name) {
 		for ($i = 0; $i < count($config); $i++) {
 			foreach ($config[$i] as $rtype => $resource) {
 				if (!property_exists($resource, 'Name')) {
@@ -231,7 +231,7 @@ class BaculaConfigResources extends ResourceListTemplate {
 				if ($rtype === $resource_type && $resource->Name === $resource_name) {
 					// remove resource
 					array_splice($config, $i, 1);
-					break;
+					break 2;
 				}
 			}
 		}

@@ -93,4 +93,7 @@
 	<url ServiceParameter="ComponentStatus" pattern="api/v1/status/{component}/" parameters.component="(director|storage|client)" />
 	<!-- actions endpoints -->
 	<url ServiceParameter="Actions" pattern="api/v1/actions/{component}/{action}/" parameters.component="(director|storage|client)" parameters.action="(start|stop|restart)" />
+	<!-- OAuth2 client endpoints -->
+	<url ServiceParameter="OAuth2Clients" pattern="api/v1/oauth2/clients/" />
+	<url ServiceParameter="OAuth2Client" pattern="api/v1/oauth2/clients/{id}/" parameters.id="[a-zA-Z0-9\-_]{32}" />
 </urls>

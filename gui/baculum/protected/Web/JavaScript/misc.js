@@ -369,6 +369,23 @@ function render_time_period(data, type, row) {
 	return ret;
 }
 
+function render_string_short(data, type, row) {
+	ret = data;
+	if (type == 'display') {
+		var span = document.createElement('SPAN');
+		span.title = data;
+		if (data.length > 40) {
+			span.textContent = data.substring(0, 40) + '...';
+		} else {
+			span.textContent = data;
+		}
+		ret = span.outerHTML;
+	} else {
+		ret = data;
+	}
+	return ret;
+}
+
 function set_formatters() {
 	Formatters.set_formatters();
 }
@@ -891,6 +908,26 @@ W3SubTabs = {
 		W3TabsCommon.open.call(this, btn_id, item_id);
 	}
 };
+var OAuth2Scopes = [
+	'console',
+	'jobs',
+	'directors',
+	'clients',
+	'storages',
+	'volumes',
+	'pools',
+	'bvfs',
+	'joblog',
+	'filesets',
+	'schedules',
+	'config',
+	'status',
+	'actions',
+	'oauth2'
+];
+var set_scopes = function(field_id) {
+	document.getElementById(field_id).value = OAuth2Scopes.join(' ');
+}
 
 function estimate_job(jobs, job, level) {
 	var bytes = 0;

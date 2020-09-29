@@ -27,6 +27,7 @@ Prado::using('System.Web.UI.ActiveControls.TActiveHiddenField');
 Prado::using('System.Web.UI.ActiveControls.TActiveLabel');
 Prado::using('System.Web.UI.ActiveControls.TActiveLinkButton');
 Prado::using('System.Web.UI.ActiveControls.TActiveListBox');
+Prado::using('System.Web.UI.ActiveControls.TActiveRadioButton');
 Prado::using('System.Web.UI.ActiveControls.TActiveTextBox');
 Prado::using('System.Web.UI.ActiveControls.TCallback');
 Prado::using('System.Web.UI.WebControls.TCheckBox');
@@ -38,7 +39,9 @@ Prado::using('System.Web.UI.WebControls.TRequiredFieldValidator');
 Prado::using('System.Web.UI.WebControls.TValidationSummary');
 Prado::using('Application.Common.Class.Crypto');
 Prado::using('Application.Common.Class.Ldap');
+Prado::using('Application.Common.Class.OAuth2');
 Prado::using('Application.Web.Class.BaculumWebPage');
+Prado::using('Application.Web.Portlets.BaculaConfigResources');
 
 /**
  * Security page (auth methods, users, roles...).
@@ -75,6 +78,11 @@ class Security extends BaculumWebPage {
 	 * Store web user config.
 	 */
 	private $user_config = [];
+
+	/**
+	 * Store console ACL config.
+	 */
+	private $console_config = [];
 
 	/**
 	 * Initialize page.
@@ -1168,6 +1176,546 @@ class Security extends BaculumWebPage {
 		$allow_manage_users = (isset($this->web_config['auth_basic']['allow_manage_users']) &&
 			$this->web_config['auth_basic']['allow_manage_users'] == 1);
 		return (($is_basic && $allow_manage_users) || $is_local);
+	}
+
+	/**
+	 * Set and load console ACL list.
+	 *
+	 * @param TCallback $sender sender object
+	 * @param TCallbackEventParameter callback parameter
+	 * @return none
+	 */
+	public function setConsoleList($sender, $param) {
+		$config = $this->getModule('api')->get(['config', 'dir', 'Console']);
+		$console_directives = [
+			'Description' => '',
+			'JobAcl' => '',
+			'ClientAcl' => '',
+			'StorageAcl' => '',
+			'ScheduleAcl' => '',
+			'RunAcl' => '',
+			'PoolAcl' => '',
+			'CommandAcl' => '',
+			'FilesetAcl' => '',
+			'CatalogAcl' => '',
+			'WhereAcl' => '',
+			'PluginOptionsAcl' => '',
+			'BackupClientAcl' => '',
+			'RestoreClientAcl' => '',
+			'DirectoryAcl' => ''
+		];
+		$consoles = [];
+		function join_cons($item) {
+			if (is_array($item)) {
+				$item = implode(',', $item);
+			}
+			return $item;
+		}
+		if ($config->error == 0) {
+			for ($i = 0; $i < count($config->output); $i++) {
+				$cons = (array)$config->output[$i]->Console;
+				$cons = array_map('join_cons', $cons);
+				$consoles[] = array_merge($console_directives, $cons);
+			}
+		}
+		$this->getCallbackClient()->callClientFunction('oConsoles.load_console_list_cb', [
+			$consoles
+		]);
+		$this->console_config = $consoles;
+	}
+
+	/**
+	 * Load data in console modal window.
+	 *
+	 * @param TCallback $sender sender object
+	 * @param TCallbackEventParameter $param callback parameter
+	 * @return none
+	 */
+	public function loadConsoleWindow($sender, $param) {
+		$name = $param->getCallbackParameter();
+		if (!empty($name)) {
+			// edit existing console
+			$this->ConsoleConfig->setResourceName($name);
+			$this->ConsoleConfig->setLoadValues(true);
+		} else {
+			// add new console
+			$this->ConsoleConfig->setLoadValues(false);
+			$this->getCallbackClient()->callClientFunction('oBaculaConfigSection.show_sections', [true]);
+		}
+		$this->ConsoleConfig->setHost($this->User->getAPIHosts());
+		$this->ConsoleConfig->setComponentName($_SESSION['dir']);
+		$this->ConsoleConfig->raiseEvent('OnDirectiveListLoad', $this, null);
+	}
+
+	/**
+	 * Remove consoles action.
+	 * Here is possible to remove one console or many.
+	 * This action is linked with table bulk actions.
+	 *
+	 * @param TCallback $sender sender object
+	 * @param TCallbackEventParameter $param callback parameter
+	 * @return none
+	 */
+	public function removeConsoles($sender, $param) {
+		$consoles = explode('|', $param->getCallbackParameter());
+		$res = new BaculaConfigResources();
+		$config = $res->getConfigData($this->User->getAPIHosts(), 'dir');
+		for ($i = 0; $i < count($consoles); $i++) {
+			$res->removeResourceFromConfig(
+				$config,
+				'Console',
+				$consoles[$i]
+			);
+		}
+		$this->getModule('api')->set(
+			array('config', 'dir'),
+			array('config' => json_encode($config)),
+			$this->User->getAPIHosts(),
+			false
+		);
+
+		// refresh console list
+		$this->setConsoleList(null, null);
+
+		// refresh OAuth2 client console combobox
+		$this->loadOAuth2ClientConsole(null, null);
+	}
+
+	public function setAllCommandAcls($sender, $param) {
+		$config = (object)[
+			"CommandAcl" => [
+				'gui',
+				'.api',
+				'.jobs',
+				'.ls',
+				'.client',
+				'.fileset',
+				'.pool',
+				'.status',
+				'.storage',
+				'.bvfs_get_jobids',
+				'.bvfs_update',
+				'.bvfs_lsdirs',
+				'.bvfs_lsfiles',
+				'.bvfs_versions',
+				'.bvfs_restore',
+				'.bvfs_cleanup',
+				'restore',
+				'show',
+				'estimate',
+				'run',
+				'delete',
+				'cancel'
+			]
+		];
+		$this->ConsoleConfig->setData($config);
+		$this->ConsoleConfig->raiseEvent('OnDirectiveListLoad', $this, null);
+		$this->getCallbackClient()->callClientFunction('oBaculaConfigSection.show_sections', [true]);
+	}
+
+	/**
+	 * Set and load OAuth2 client list.
+	 *
+	 * @param TCallback $sender sender object
+	 * @param TCallbackEventParameter callback parameter
+	 * @return none
+	 */
+	public function setOAuth2ClientList($sender, $param) {
+		$oauth2_clients = $this->getModule('api')->get(['oauth2', 'clients']);
+		$this->getCallbackClient()->callClientFunction('oOAuth2Clients.load_oauth2_client_list_cb', [
+			$oauth2_clients->output,
+			$oauth2_clients->error
+		]);
+	}
+
+	public function loadOAuth2ClientConsole($sender, $param) {
+		$cons = $this->getModule('api')->get(['config', 'dir', 'Console']);
+		$console = ['' => ''];
+		if ($cons->error == 0) {
+			for ($i = 0; $i < count($cons->output); $i++) {
+				$console[$cons->output[$i]->Console->Name] = $cons->output[$i]->Console->Name;
+			}
+		}
+		$this->OAuth2ClientConsole->DataSource = $console;
+		$this->OAuth2ClientConsole->dataBind();
+	}
+
+	/**
+	 * Load data in OAuth2 client modal window.
+	 *
+	 * @param TCallback $sender sender object
+	 * @param TCallbackEventParameter $param callback parameter
+	 * @return none
+	 */
+	public function loadOAuth2ClientWindow($sender, $param) {
+		$client_id = $param->getCallbackParameter();
+		if (!empty($client_id)) {
+			$oauth2_cfg = $this->getModule('api')->get(['oauth2', 'clients', $client_id]);
+			if ($oauth2_cfg->error === 0 && is_object($oauth2_cfg->output)) {
+				// It is done only for existing OAuth2 client accounts
+				$this->OAuth2ClientClientId->Text = $oauth2_cfg->output->client_id;
+				$this->OAuth2ClientClientSecret->Text = $oauth2_cfg->output->client_secret;
+				$this->OAuth2ClientRedirectURI->Text = $oauth2_cfg->output->redirect_uri;
+				$this->OAuth2ClientScope->Text = $oauth2_cfg->output->scope;
+				$this->OAuth2ClientBconsoleCfgPath->Text = $oauth2_cfg->output->bconsole_cfg_path;
+				$this->OAuth2ClientName->Text = $oauth2_cfg->output->name;
+			}
+		}
+		$this->loadOAuth2ClientConsole(null, null);
+
+		$dirs = $this->getModule('api')->get(['config', 'bcons', 'Director']);
+		$dir_names = [];
+		if ($dirs->error == 0) {
+			for ($i = 0; $i < count($dirs->output); $i++) {
+				$dir_names[$dirs->output[$i]->Director->Name] = $dirs->output[$i]->Director->Name;
+			}
+		}
+		$this->OAuth2ClientDirector->DataSource = $dir_names;
+		$this->OAuth2ClientDirector->dataBind();
+	}
+
+	/**
+	 * Save OAuth2 client.
+	 * It works both for new OAuth2 client and for edited OAuth2 client.
+	 * Saves values from modal popup.
+	 *
+	 * @param TCallback $sender sender object
+	 * @param TCallbackEventParameter $param callback parameter
+	 * @return none
+	 */
+	public function saveOAuth2Client($sender, $param) {
+		$client_id = $this->OAuth2ClientClientId->Text;
+		$cfg = [];
+		$cfg['client_id'] = $client_id;
+		$cfg['client_secret'] = $this->OAuth2ClientClientSecret->Text;
+		$cfg['redirect_uri'] = $this->OAuth2ClientRedirectURI->Text;
+		$cfg['scope'] = $this->OAuth2ClientScope->Text;
+		$cfg['bconsole_cfg_path'] = $this->OAuth2ClientBconsoleCfgPath->Text;
+		if ($this->OAuth2ClientBconsoleCreate->Checked) {
+			$cfg['console'] = $this->OAuth2ClientConsole->SelectedValue;
+			$cfg['director'] = $this->OAuth2ClientDirector->SelectedValue;
+		}
+		$cfg['name'] = $this->OAuth2ClientName->Text;
+
+		$win_type = $this->OAuth2ClientWindowType->Value;
+		$result = (object)['error' => -1];
+		if ($win_type === self::TYPE_ADD_WINDOW) {
+			$result = $this->getModule('api')->create(['oauth2', 'clients', $client_id], $cfg);
+		} elseif ($win_type === self::TYPE_EDIT_WINDOW) {
+			$result = $this->getModule('api')->set(['oauth2', 'clients', $client_id], $cfg);
+		}
+
+		if ($result->error === 0) {
+			// Refresh OAuth2 client list
+			$this->setOAuth2ClientList(null, null);
+		}
+		$this->getCallbackClient()->callClientFunction('oOAuth2Clients.save_oauth2_client_cb', [
+			$result
+		]);
+	}
+
+	/**
+	 * Remove OAuth2 client action.
+	 * Here is possible to remove one OAuth2 client or many.
+	 * This action is linked with table bulk actions.
+	 *
+	 * @param TCallback $sender sender object
+	 * @param TCallbackEventParameter $param callback parameter
+	 * @return none
+	 */
+	public function removeOAuth2Clients($sender, $param) {
+		$client_ids = explode('|', $param->getCallbackParameter());
+		for ($i = 0; $i < count($client_ids); $i++) {
+			$result = $this->getModule('api')->remove(['oauth2', 'clients', $client_ids[$i]]);
+			if ($result->error !== 0) {
+				break;
+			}
+		}
+
+		if (count($client_ids) > 0) {
+			// Refresh OAuth2 client list
+			$this->setOAuth2ClientList(null, null);
+		}
+	}
+
+	/**
+	 * Set and load OAuth2 client settings to API host modal window.
+	 *
+	 * @param TActiveDropDownList $sender sender object
+	 * @param TCallbackEventParameter callback parameter
+	 * @return none
+	 */
+	public function loadOAuth2ClientSettings($sender, $param) {
+		$client_id = $this->APIHostOAuth2ClientSettings->SelectedValue;
+		if (!empty($client_id)) {
+			$host = $this->APIHostSettings->SelectedValue ?: null;
+			$oauth2_cfg = $this->getModule('api')->get(['oauth2', 'clients', $client_id], $host);
+			if ($oauth2_cfg->error === 0 && is_object($oauth2_cfg->output)) {
+				$this->APIHostOAuth2ClientId->Text = $oauth2_cfg->output->client_id;
+				$this->APIHostOAuth2ClientSecret->Text = $oauth2_cfg->output->client_secret;
+				$this->APIHostOAuth2RedirectURI->Text = $oauth2_cfg->output->redirect_uri;
+				$this->APIHostOAuth2Scope->Text = $oauth2_cfg->output->scope;
+			}
+		}
+	}
+
+	/**
+	 * Load OAuth2 client list to get OAuth2 client settings.
+	 *
+	 * @return none
+	 */
+	private function loadOAuth2ClientList() {
+		$host = $this->APIHostSettings->SelectedValue ?: null;
+		$oauth2_clients = $this->getModule('api')->get(['oauth2', 'clients'], $host);
+		$oauth2_client_list = ['' => ''];
+		if ($oauth2_clients->error == 0 && is_array($oauth2_clients->output)) {
+			for ($i = 0; $i < count($oauth2_clients->output); $i++) {
+				$name = $oauth2_clients->output[$i]->name ?: $oauth2_clients->output[$i]->client_id;
+				$oauth2_client_list[$oauth2_clients->output[$i]->client_id] = $name;
+			}
+		}
+		$this->APIHostOAuth2ClientSettings->DataSource = $oauth2_client_list;
+		$this->APIHostOAuth2ClientSettings->dataBind();
+	}
+
+	/**
+	 * Set and load API hosts list.
+	 *
+	 * @param TCallback $sender sender object
+	 * @param TCallbackEventParameter callback parameter
+	 * @return none
+	 */
+	public function setAPIHostList($sender, $param) {
+		$api_hosts = $this->getModule('host_config')->getConfig();
+		$shortnames = array_keys($api_hosts);
+		$attributes = array_values($api_hosts);
+		for ($i = 0; $i < count($attributes); $i++) {
+			$attributes[$i]['name'] = $shortnames[$i];
+		}
+
+		$this->getCallbackClient()->callClientFunction('oAPIHosts.load_api_host_list_cb', [
+			$attributes
+		]);
+	}
+
+	/**
+	 * Load data in API host modal window.
+	 *
+	 * @param TCallback $sender sender object
+	 * @param TCallbackEventParameter $param callback parameter
+	 * @return none
+	 */
+	public function loadAPIHostWindow($sender, $param) {
+		$name = $param->getCallbackParameter();
+
+		// prepare API host combobox
+		$api_hosts = $this->getModule('host_config')->getConfig();
+
+		if (!empty($name) && key_exists($name, $api_hosts)) {
+			$this->APIHostAddress->Text = $api_hosts[$name]['address'];
+			$this->APIHostProtocol->SelectedValue = $api_hosts[$name]['protocol'];
+			$this->APIHostPort->Text = $api_hosts[$name]['port'];
+			$this->APIHostOAuth2ClientId->Text = $api_hosts[$name]['client_id'];
+			$this->APIHostOAuth2ClientSecret->Text = $api_hosts[$name]['client_secret'];
+			$this->APIHostOAuth2RedirectURI->Text = $api_hosts[$name]['redirect_uri'];
+			$this->APIHostOAuth2Scope->Text = $api_hosts[$name]['scope'];
+			$this->APIHostName->Text = $name;
+			$this->APIHostBasicLogin->Text = $api_hosts[$name]['login'];
+			$this->APIHostBasicPassword->Text = $api_hosts[$name]['password'];
+			if ($api_hosts[$name]['auth_type'] == 'basic') {
+				$this->APIHostAuthBasic->Checked = true;
+				$this->getCallbackClient()->hide('configure_oauth2_auth');
+				$this->getCallbackClient()->show('configure_basic_auth');
+			} elseif ($api_hosts[$name]['auth_type'] == 'oauth2') {
+				$this->APIHostAuthOAuth2->Checked = true;
+				$this->getCallbackClient()->hide('configure_basic_auth');
+				$this->getCallbackClient()->show('configure_oauth2_auth');
+			}
+		}
+
+		$shortnames = array_keys($api_hosts);
+
+		$api_host_names = array_combine($shortnames, $shortnames);
+		$this->APIHostSettings->DataSource = array_merge(['' => ''], $api_host_names);
+		$this->APIHostSettings->dataBind();
+
+		// prepare OAuth2 client combobox
+		$this->loadOAuth2ClientList();
+	}
+
+	/**
+	 * Load API host settings to API host modal window.
+	 *
+	 * @param TActiveDropDownList $sender sender object
+	 * @param TCallbackEventParameter callback parameter
+	 * @return none
+	 */
+	public function loadAPIHostSettings($sender, $param) {
+		$api_host = $this->APIHostSettings->SelectedValue;
+		if (!empty($api_host)) {
+			$config = $this->getModule('host_config')->getConfig();
+			if (key_exists($api_host, $config)) {
+				// load OAuth2 clients to combobox from selected API host
+				$this->loadOAuth2ClientList();
+
+				$this->APIHostProtocol->SelectedValue = $config[$api_host]['protocol'];
+				$this->APIHostAddress->Text = $config[$api_host]['address'];
+				$this->APIHostPort->Text = $config[$api_host]['port'];
+				if ($config[$api_host]['auth_type'] == 'basic') {
+					$this->APIHostAuthBasic->Checked = true;
+					$this->getCallbackClient()->hide('configure_oauth2_auth');
+					$this->getCallbackClient()->show('configure_basic_auth');
+				} elseif ($config[$api_host]['auth_type'] == 'oauth2') {
+					$this->APIHostAuthOAuth2->Checked = true;
+					$this->getCallbackClient()->hide('configure_basic_auth');
+					$this->getCallbackClient()->show('configure_oauth2_auth');
+				}
+			}
+		}
+	}
+
+	public function connectionAPITest($sender, $param) {
+		$host = $this->APIHostAddress->Text;
+		if (empty($host)) {
+			$host = false;
+		}
+		$host_params = array(
+			'protocol' => $this->APIHostProtocol->SelectedValue,
+			'address' => $this->APIHostAddress->Text,
+			'port' => $this->APIHostPort->Text,
+			'url_prefix' => ''
+		);
+
+		if ($this->APIHostAuthBasic->Checked) {
+			$host_params['auth_type'] = 'basic';
+			$host_params['login'] = $this->APIHostBasicLogin->Text;
+			$host_params['password'] = $this->APIHostBasicPassword->Text;
+		} elseif ($this->APIHostAuthOAuth2->Checked) {
+			$host_params['auth_type'] = 'oauth2';
+			$host_params['client_id'] = $this->APIHostOAuth2ClientId->Text;
+			$host_params['client_secret'] = $this->APIHostOAuth2ClientSecret->Text;
+			$host_params['redirect_uri'] = $this->APIHostOAuth2RedirectURI->Text;
+			$host_params['scope'] = $this->APIHostOAuth2Scope->Text;
+		}
+		$api = $this->getModule('api');
+
+		// Catalog test
+		OAuth2Record::deleteByPk($host);
+		$api->setHostParams($host, $host_params);
+		$catalog = $api->get(array('catalog'), $host, false);
+
+		// Console test
+		OAuth2Record::deleteByPk($host);
+		$api->setHostParams($host, $host_params);
+		$director = null;
+		if (array_key_exists('director', $_SESSION)) {
+			// Current director can't be passed to new remote host.
+			$director = $_SESSION['director'];
+			unset($_SESSION['director']);
+		}
+
+		$console = $api->set(array('console'), array('version'), $host, false);
+		if (!is_null($director)) {
+			// Revert director setting if any
+			$_SESSION['director'] = $director;
+		}
+
+		// Config test
+		OAuth2Record::deleteByPk($host);
+		$api->setHostParams($host, $host_params);
+		$config = $api->get(array('config'), $host, false);
+
+		$is_catalog = (is_object($catalog) && $catalog->error === 0);
+		$is_console = (is_object($console) && $console->error === 0);
+		$is_config = (is_object($config) && $config->error === 0);
+
+		$status_ok = $is_catalog;
+		if ($status_ok) {
+			$status_ok = $is_console;
+		}
+
+		if (!$is_catalog) {
+			$this->APIHostTestResultErr->Text .= $catalog->output . '<br />';
+		}
+		if (!$is_console) {
+			$this->APIHostTestResultErr->Text .= $console->output . '<br />';
+		}
+		if (!$is_config) {
+			$this->APIHostTestResultErr->Text .= $config->output . '<br />';
+		}
+
+		$this->APIHostTestResultOk->Display = ($status_ok === true) ? 'Dynamic' : 'None';
+		$this->APIHostTestResultErr->Display = ($status_ok === false) ? 'Dynamic' : 'None';
+		$this->APIHostCatalogSupportYes->Display = ($is_catalog === true) ? 'Dynamic' : 'None';
+		$this->APIHostCatalogSupportNo->Display = ($is_catalog === false) ? 'Dynamic' : 'None';
+		$this->APIHostConsoleSupportYes->Display = ($is_console === true) ? 'Dynamic' : 'None';
+		$this->APIHostConsoleSupportNo->Display = ($is_console === false) ? 'Dynamic' : 'None';
+		$this->APIHostConfigSupportYes->Display = ($is_config === true) ? 'Dynamic' : 'None';
+		$this->APIHostConfigSupportNo->Display = ($is_config === false) ? 'Dynamic' : 'None';
+	}
+
+	public function saveAPIHost($sender, $param) {
+		$cfg_host = array(
+			'auth_type' => '',
+			'login' => '',
+			'password' => '',
+			'client_id' => '',
+			'client_secret' => '',
+			'redirect_uri' => '',
+			'scope' => ''
+		);
+		$cfg_host['protocol'] = $this->APIHostProtocol->Text;
+		$cfg_host['address'] = $this->APIHostAddress->Text;
+		$cfg_host['port'] = $this->APIHostPort->Text;
+		$cfg_host['url_prefix'] = '';
+		if ($this->APIHostAuthBasic->Checked == true) {
+			$cfg_host['auth_type'] = 'basic';
+			$cfg_host['login'] = $this->APIHostBasicLogin->Text;
+			$cfg_host['password'] = $this->APIHostBasicPassword->Text;
+		} elseif($this->APIHostAuthOAuth2->Checked == true) {
+			$cfg_host['auth_type'] = 'oauth2';
+			$cfg_host['client_id'] = $this->APIHostOAuth2ClientId->Text;
+			$cfg_host['client_secret'] = $this->APIHostOAuth2ClientSecret->Text;
+			$cfg_host['redirect_uri'] = $this->APIHostOAuth2RedirectURI->Text;
+			$cfg_host['scope'] = $this->APIHostOAuth2Scope->Text;
+		}
+		$hc = $this->getModule('host_config');
+		$config = $hc->getConfig();
+		$host_name = trim($this->APIHostName->Text);
+		if (empty($host_name)) {
+			$host_name = $cfg_host['address'];
+		}
+		$config[$host_name] = $cfg_host;
+		$hc->setConfig($config);
+		$this->setAPIHostList(null, null);
+		$this->getCallbackClient()->hide('api_host_window');
+
+		// refresh user window
+		$this->initUserWindow();
+	}
+
+	/**
+	 * Remove API host action.
+	 * Here is possible to remove one API host or many.
+	 * This action is linked with table bulk actions.
+	 *
+	 * @param TCallback $sender sender object
+	 * @param TCallbackEventParameter $param callback parameter
+	 * @return none
+	 */
+	public function removeAPIHosts($sender, $param) {
+		$names = explode('|', $param->getCallbackParameter());
+		$hc = $this->getModule('host_config');
+		$config = $hc->getConfig();
+		$cfg = [];
+		foreach ($config as $host => $opts) {
+			if (in_array($host, $names)) {
+				continue;
+			}
+			$cfg[$host] = $opts;
+		}
+		$hc->setConfig($cfg);
+		$this->setAPIHostList(null, null);
 	}
 
 	/**

@@ -98,6 +98,15 @@
 			},
 			"Schedule": {
 				"$ref": "#/definitions/Schedule"
+			},
+			"OAuth2Clients": {
+				"type": "array",
+				"items": {
+					"$ref": "#/definitions/OAuth2Client"
+				}
+			},
+			"OAuth2Client": {
+				"$ref": "#/definitions/OAuth2Client"
 			}
 		},
 		"parameters": {
@@ -4260,7 +4269,7 @@
 				}]
 			}
 		},
-		"/api/v1/status/director/": {
+		"/api/v1/status/director": {
 			"get": {
 				"tags": ["status"],
 				"summary": "Get director status",
@@ -4553,7 +4562,7 @@
 				]
 			}
 		},
-		"/api/v1/status/storage/": {
+		"/api/v1/status/storage": {
 			"get": {
 				"tags": ["status"],
 				"summary": "Get storage status",
@@ -4931,7 +4940,7 @@
 				]
 			}
 		},
-		"/api/v1/status/client/": {
+		"/api/v1/status/client": {
 			"get": {
 				"tags": ["status"],
 				"summary": "Get client status",
@@ -5181,6 +5190,285 @@
 						"name": "type",
 						"in": "query",
 						"description": "Output type (header, running, terminated)",
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/api/v1/oauth2/clients": {
+			"get": {
+				"tags": ["oauth2"],
+				"summary": "OAuth2 client account list",
+				"description": "Get OAuth2 client account list.",
+				"responses": {
+					"200": {
+						"description": "List of OAuth2 clients properties",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"$ref": "#/components/schemas/OAuth2Clients"
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 6, 7, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/api/v1/oauth2/clients/{client_id}": {
+			"get": {
+				"tags": ["oauth2"],
+				"summary": "Specific OAuth2 client account config",
+				"description": "Get specific OAuth2 client account config",
+				"responses": {
+					"200": {
+						"description": "Specific OAuth2 client account config",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"$ref": "#/components/schemas/OAuth2Client"
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 6, 7, 120, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					{
+						"name": "client_id",
+						"in": "path",
+						"required": true,
+						"description": "Client identifier (OAuth2 Client ID)",
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			},
+			"put": {
+				"tags": ["oauth2"],
+				"summary": "Set OAuth2 client settings",
+				"description": "Set specific OAuth2 client settings",
+				"consumes": [ "application/x-www-form-urlencoded" ],
+				"responses": {
+					"200": {
+						"description": "Set OAuth2 client settings",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"type": "object",
+											"description": "Updated OAuth2 client settings"
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 6, 7, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					{
+						"name": "client_id",
+						"in": "body",
+						"required": true,
+						"description": "Client identifier (OAuth2 Client ID)",
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"name": "client_secret",
+						"in": "body",
+						"required": true,
+						"description": "OAuth2 client secret",
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"name": "redirect_uri",
+						"in": "body",
+						"required": true,
+						"description": "OAuth2 redirect URI (OAuth2 callback)",
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"name": "scope",
+						"in": "body",
+						"required": true,
+						"description": "Comma separated OAuth2 scopes",
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"name": "bconsole_cfg_path",
+						"in": "body",
+						"required": true,
+						"description": "Bconsole config file path",
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"name": "name",
+						"in": "body",
+						"required": false,
+						"description": "OAuth2 client account name",
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			},
+			"post": {
+				"tags": ["oauth2"],
+				"summary": "Create OAuth2 client settings",
+				"description": "Create specific OAuth2 client settings",
+				"consumes": [ "application/x-www-form-urlencoded" ],
+				"responses": {
+					"200": {
+						"description": "Create OAuth2 client settings",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"type": "object",
+											"description": "New OAuth2 client settings"
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 6, 7, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					{
+						"name": "client_id",
+						"in": "body",
+						"required": true,
+						"description": "Client identifier (OAuth2 Client ID)",
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"name": "client_secret",
+						"in": "body",
+						"required": true,
+						"description": "OAuth2 client secret",
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"name": "redirect_uri",
+						"in": "body",
+						"required": true,
+						"description": "OAuth2 redirect URI (OAuth2 callback)",
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"name": "scope",
+						"in": "body",
+						"required": true,
+						"description": "Comma separated OAuth2 scopes",
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"name": "bconsole_cfg_path",
+						"in": "body",
+						"required": true,
+						"description": "Bconsole config file path",
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"name": "name",
+						"in": "body",
+						"required": false,
+						"description": "OAuth2 client account name",
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			},
+			"delete": {
+				"tags": ["oauth2"],
+				"summary": "Delete OAuth2 client account",
+				"description": "Delete OAuth2 client account.",
+				"responses": {
+					"200": {
+						"description": "Delete OAuth2 client account",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"type": "array",
+											"items": {
+											}
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 6, 7, 120, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					{
+						"name": "client_id",
+						"in": "path",
+						"required": true,
+						"description": "Client identifier (OAuth2 Client ID)",
 						"schema": {
 							"type": "string"
 						}
@@ -5817,6 +6105,37 @@
 					"description": "Schedule name",
 					"type": "string",
 					"pattern": "[a-zA-Z0-9:.-_ ]+"
+				}
+			}
+		},
+		"OAuth2Client": {
+			"type": "object",
+			"properties": {
+				"client_id": {
+					"description": "OAuth2 client identifier (Client ID)",
+					"type": "string",
+					"pattern": "[a-zA-Z0-9-_]{32}"
+				},
+				"client_secret": {
+					"description": "OAuth2 client secret",
+					"type": "string",
+					"pattern": "\\S{6,50}"
+				},
+				"redirect_uri": {
+					"description": "Redirect URI (OAuth2 callback)",
+					"type": "string"
+				},
+				"scope": {
+					"description": "Comma separated OAuth2 scopes",
+					"type": "string"
+				},
+				"bconsole_cfg_path": {
+					"description": "Dedicated Bconsole configuration file",
+					"type": "string"
+				},
+				"name": {
+					"description": "OAuth2 client name (optional)",
+					"type": "string"
 				}
 			}
 		}

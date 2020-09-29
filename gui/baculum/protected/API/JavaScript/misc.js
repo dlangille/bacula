@@ -20,7 +20,8 @@ var OAuth2Scopes = [
 	'schedules',
 	'config',
 	'status',
-	'actions'
+	'actions',
+	'oauth2'
 ];
 var set_scopes = function(field_id) {
 	document.getElementById(field_id).value = OAuth2Scopes.join(' ');

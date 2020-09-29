@@ -129,7 +129,7 @@ class BaculumAPIClient extends WebModule {
 				$this->authToHost($host, $host_cfg);
 				$auth = OAuth2Record::findByPk($host);
 			}
-			if (is_array($auth) && array_key_exists('tokens', $auth)) {
+			if (is_array($auth) && key_exists('tokens', $auth) && is_array($auth['tokens'])) {
 				$headers[] = "Authorization: {$auth['tokens']['token_type']} {$auth['tokens']['access_token']}";
 			}
 		}

@@ -340,7 +340,7 @@ abstract class BaculumAPIServer extends TPage {
 	private function delete() {
 		$id = null;
 		if ($this->Request->contains('id')) {
-			$id = intval($this->Request['id']);
+			$id = $this->Request['id'];
 		}
 		$this->remove($id);
 	}
