@@ -667,7 +667,7 @@ const char *uar_jobid_fileindex_from_dir[] =
    "AND Client.Name='%s' "
    "AND Job.ClientId=Client.ClientId "
    "AND Path.PathId=File.Pathid "
-   "GROUP BY File.FileIndex ",
+   "GROUP BY File.FileIndex ORDER BY Job.StartTime",
  
    /* PostgreSQL */
    "SELECT Job.JobId,File.FileIndex FROM Job,File,Path,Client "
@@ -676,7 +676,7 @@ const char *uar_jobid_fileindex_from_dir[] =
    "AND Path.Path='%s' "
    "AND Client.Name='%s' "
    "AND Job.ClientId=Client.ClientId "
-   "AND Path.PathId=File.Pathid ",
+   "AND Path.PathId=File.Pathid ORDER BY Job.StartTime ",
  
    /* SQLite */
    "SELECT Job.JobId,File.FileIndex FROM Job,File,Path,Client "
@@ -686,7 +686,7 @@ const char *uar_jobid_fileindex_from_dir[] =
    "AND Client.Name='%s' "
    "AND Job.ClientId=Client.ClientId "
    "AND Path.PathId=File.Pathid "
-   "GROUP BY File.FileIndex "
+   "GROUP BY File.FileIndex ORDER BY Job.StartTime "
 }; 
  
 const char *sql_media_order_most_recently_written[] =
