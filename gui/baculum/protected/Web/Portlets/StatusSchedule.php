@@ -104,11 +104,11 @@ class StatusSchedule extends Portlets {
 		if ($result->error === 0) {
 			$schedules = $result->output;
 			if ($this->getPage()->IsCallBack) {
-				$this->getpage()->getcallbackclient()->callclientfunction(
+				$this->getPage()->getCallbackClient()->callClientFunction(
 					'set_job_schedule_data',
 					json_encode($schedules)
 				);
-				$this->getpage()->getcallbackclient()->callclientfunction(
+				$this->getPage()->getCallbackClient()->callClientFunction(
 					'init_job_schedule'
 				);
 			} else {
