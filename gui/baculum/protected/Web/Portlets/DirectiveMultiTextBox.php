@@ -58,8 +58,12 @@ class DirectiveMultiTextBox extends DirectiveListTemplate {
 		$directive_name = $this->getDirectiveName();
 
 		$data = $this->getData();
-		if (!is_array($data) ) {
-			$data = array($data);
+		if (!is_array($data)) {
+			if ($this->getShow()) {
+				$data = [$data];
+			} else {
+				$data = [];
+			}
 		}
 		$values = array();
 		for ($i = 0; $i < count($data); $i++) {

@@ -60,7 +60,11 @@ class DirectiveMultiComboBox extends DirectiveListTemplate {
 		$items = array();
 
 		if (!is_array($data)) {
-			$data = array($data);
+			if ($this->getShow()) {
+				$data = [$data];
+			} else {
+				$data = [];
+			}
 		}
 		if (is_array($resource_names)) {
 			if (key_exists($directive_name, $resource_names)) {
