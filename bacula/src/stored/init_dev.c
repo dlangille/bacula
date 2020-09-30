@@ -103,33 +103,39 @@ void sd_list_loaded_drivers(alist *list)
  * thus we neither allocate it nor free it. This allows
  * the caller to put the packet in shared memory.
  *
+ * clone = true allows to create a clone of an existing device for special
+ *       purpose, like the vacuum
  *  Note, for a tape, the device->device_name is the device name
  *     (e.g. /dev/nst0), and for a file, the device name
  *     is the directory in which the file will be placed.
  *
  */
-DEVICE *init_dev(JCR *jcr, DEVRES *device, bool adata, bstatcollect *statcollector)
+DEVICE *init_dev(JCR *jcr, DEVRES *device, bool adata, bstatcollect *statcollector, bool clone)
 {
    struct stat statp;
    DEVICE *dev = NULL;
    uint32_t n_drivers;
+
+   bool cloning = clone; /* && device->init_state=='R' */
 
    /* Try to avoid concurrent initialization of the same device.
     * The initial initialization is sequential then no worry here, but if
     * it failed, any later use of the device trigger a new initialization attempt
     * that could be concurrent with each other
     */
-   P(mutex_dev_init);
-   if (device->init_state != 0) {
-      /* It looks like the device is already initialized or being initialized */
+   if (!cloning) {
+      P(mutex_dev_init);
+      if (device->init_state) {
+         /* It looks like the device is already initialized or being initialized */
+         V(mutex_dev_init);
+         /* The initialization failed, return NULL, maybe device->dev != NULL now
+          * but let the caller check for that and call init_dev() again if needed
+          */
+         return NULL;
+      }
+      device->init_state = 'B'; // busy initializing
       V(mutex_dev_init);
-      /* The initialization failed, return NULL, maybe device->dev != NULL now
-       * but let the caller check for that and call init_dev() again if needed
-       */
-      return NULL;
    }
-   device->init_state = 'B'; // busy initializing
-   V(mutex_dev_init);
 
    generate_global_plugin_event(bsdGlobalEventDeviceInit, device);
    Dmsg1(150, "init_dev dev_type=%d\n", device->dev_type);
@@ -250,9 +256,11 @@ DEVICE *init_dev(JCR *jcr, DEVRES *device, bool adata, bstatcollect *statcollect
 
    dev->register_metrics(statcollector);
 
-   P(mutex_dev_init);
-   device->init_state = 'R'; // The device is ready
-   V(mutex_dev_init);
+   if (!cloning) {
+      P(mutex_dev_init);
+      device->init_state = 'R'; // The device is ready
+      V(mutex_dev_init);
+   }
    return dev;
 
 bailout:
@@ -265,9 +273,11 @@ never_try_again:
    // This should never happens, no need to make a special case, just report
    // the problem and let it try again anyway
 try_again_later:
-   P(mutex_dev_init);
-   device->init_state = 0; // The initialization failed, try again later
-   V(mutex_dev_init);
+   if (!cloning) {
+      P(mutex_dev_init);
+      device->init_state = 0; // The initialization failed, try again later
+      V(mutex_dev_init);
+   }
    return NULL;
 }
 

@@ -145,7 +145,8 @@ void    display_tape_error_status(JCR *jcr, DEVICE *dev);
 
 /* From dev.c */
 void     sd_list_loaded_drivers(alist *list);
-DEVICE  *init_dev(JCR *jcr, DEVRES *device, bool adata=false, bstatcollect *statcollector=NULL);
+DEVICE  *init_dev(JCR *jcr, DEVRES *device, bool adata=false,
+            bstatcollect *statcollector=NULL, bool clone=false);
 bool     can_open_mounted_dev(DEVICE *dev);
 bool     load_dev(DEVICE *dev);
 int      write_block(DEVICE *dev);
