@@ -308,7 +308,7 @@ function render_date(data, type, row) {
 
 function render_date_ts(data, type, row) {
 	var t;
-	if (type == 'display') {
+	if (type == 'display' || type == 'filter') {
 		t = Units.format_date(data)
 	} else {
 		t = data;
