@@ -293,6 +293,7 @@ static void do_extract(char *devname)
    if (is_bopen(&bfd)) {
       set_attributes(jcr, attr, &bfd);
    }
+   dev->free_dedup_rehydration_interface(dcr); // disconnect from the DDE
    release_device(dcr);
    free_attr(attr);
    free_jcr(jcr);
