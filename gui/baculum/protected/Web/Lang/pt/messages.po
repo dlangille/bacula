@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2020-06-25 17:10\n"
+"PO-Revision-Date: 2020-10-04 11:17\n"
 "Project-Id-Version: b02f04a28aec0155df9503e3b78ae8cc\n"
 "POT-Creation-Date: \n"
 "Last-Translator: Wanderlei Hüttel <wanderlei.huttel@gmail.com>\n"
@@ -3007,67 +3007,68 @@ msgid "Console ACLs"
 msgstr "Console ACLs"
 
 msgid "Add new console"
-msgstr "Add new console"
+msgstr "Adicionar novo console"
 
 msgid "Edit console"
-msgstr "Edit console"
+msgstr "Editar console"
 
 msgid "Add console"
-msgstr "Add console"
+msgstr "Adicionar console"
 
 msgid "OAuth2 clients"
-msgstr "OAuth2 clients"
+msgstr "Clientes OAuth2"
 
 msgid "Short name"
-msgstr "Short name"
+msgstr "Apelido"
 
 msgid "Add new OAuth2 client"
-msgstr "Add new OAuth2 client"
+msgstr "Adicionar novos clientes OAuth2"
 
 msgid "Short name:"
-msgstr "Short name:"
+msgstr "Apelido:"
 
 msgid "Add OAuth2 client account"
-msgstr "Add OAuth2 client account"
+msgstr "Adicionar conta de cliente OAuth2"
 
 msgid "set all scopes"
-msgstr "set all scopes"
+msgstr "definir todos os escopos"
 
 msgid "Edit OAuth2 client account"
-msgstr "Edit OAuth2 client account"
+msgstr "Editar conta de cliente OAuth2"
 
 msgid "Add new API host"
-msgstr "Add new API host"
+msgstr "Adicionar novo host de API"
 
 msgid "Get existing API host settings:"
-msgstr "Get existing API host settings:"
+msgstr "Obter configurações de host de API existentes:"
 
 msgid "Get existing OAuth2 client settings:"
-msgstr "Get existing OAuth2 client settings:"
+msgstr "Obter as configurações de cliente OAuth2 existentes:"
 
 msgid "API hosts"
-msgstr "API hosts"
+msgstr "Hosts da API"
 
 msgid "Edit API host"
-msgstr "Edit API host"
+msgstr "Editar host da API"
 
 msgid "Create dedicated Bconsole config file:"
-msgstr "Create dedicated Bconsole config file:"
+msgstr "Criar arquivo de configuração do Bconsole dedicado:"
 
 msgid "Console ACL to use in new Bconsole config file:"
-msgstr "Console ACL to use in new Bconsole config file:"
+msgstr "Console ACL para usar no novo arquivo de configuração do Bconsole:"
 
 msgid "Director for Bconsole config:"
-msgstr "Director for Bconsole config:"
+msgstr "Configuração do director do Bconsole:"
 
 msgid "The console ACLs enable to define available resources for users. The consoles are used in the Bacula configuration on the API host side. There is possible to assign the consoles to the OAuth2 clients that can be used in API hosts. The assign relation is: Console ACL -&gt; OAuth2 client -&gt; API host -&gt; User account."
-msgstr "The console ACLs enable to define available resources for users. The consoles are used in the Bacula configuration on the API host side. There is possible to assign the consoles to the OAuth2 clients that can be used in API hosts. The assign relation is: Console ACL -&gt; OAuth2 client -&gt; API host -&gt; User account."
+msgstr "As ACLs de console ativam a definição de recursos disponíveis para os usuários. Os consoles são usados na configuração Bacula no lado de host da API. Existe a possibilidade de atribuir os consoles para os clientes OAuth2 que podem ser usados em hosts API. A relação de atribuição é: Console ACL -&gt; Cliente OAuth2 -&gt; Servidor de API -&gt; Conta de usuário."
 
 msgid "The OAuth2 clients are configured on the API hosts. To create the OAuth2 clients from this page, you need to have an 'oauth2' scope in OAuth2 account related to your current admin user account. The OAuth2 client accounts are also possible to create directly in the panel of the Baculum API."
-msgstr "The OAuth2 clients are configured on the API hosts. To create the OAuth2 clients from this page, you need to have an 'oauth2' scope in OAuth2 account related to your current admin user account. The OAuth2 client accounts are also possible to create directly in the panel of the Baculum API."
+msgstr "Os clientes OAuth2 estão configurados nos hosts API. Para criar os clientes OAuth2 a partir desta página, você precisa ter um escopo 'oauth2' na conta OAuth2 relacionada com sua conta de administrador atual. As contas de cliente OAuth2 também são possíveis de criar diretamente no painel da API Baculum."
 
 msgid "The API hosts define connection parameters to hosts with the Baculum API instances. You can create the API host connections dedicated for specific users by assigning API hosts to them on the Users tab. There is possible to create many API host connections to the same Baculum API instance."
-msgstr "The API hosts define connection parameters to hosts with the Baculum API instances. You can create the API host connections dedicated for specific users by assigning API hosts to them on the Users tab. There is possible to create many API host connections to the same Baculum API instance."
+msgstr "O host de API define parâmetros de conexão para hosts com as instâncias da API do Baculum. Você pode criar as conexões de host de API dedicadas a usuários específicos atribuindo hosts de API a eles na guia Usuários. É possível criar muitas conexões de host de API para a mesma instância do Baculum API."
 
 msgid "Set all CommandAcls used by Baculum Web"
-msgstr "Set all CommandAcls used by Baculum Web"
+msgstr "Definir todos os comandos ACL's usados pelo Baculum"
+
