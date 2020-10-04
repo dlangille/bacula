@@ -31,6 +31,16 @@ Prado::using('Application.API.Class.Bconsole');
  */
 class ScheduleStatus extends BaculumAPIServer {
 
+	/**
+	 * Default days limit.
+	 */
+	const DEF_DAYS = 30;
+
+	/**
+	 * Default list items limit.
+	 */
+	const DEF_LIMIT = 30;
+
 	public function get() {
 		$misc = $this->getModule('misc');
 		$cmd = array('status', 'schedule');
@@ -45,9 +55,19 @@ class ScheduleStatus extends BaculumAPIServer {
 		}
 		if ($this->Request->contains('days') && $misc->isValidInteger($this->Request['days'])) {
 			$cmd[] = 'days="' . $this->Request['days'] . '"';
+		} else {
+			/**
+			 * For Director < 9.6.0 there was a bug in displaying the full schedule status
+			 * that caused showing an incomplete schedule list. Providing days limit
+			 * is a workaround to have always complete schedule list for all Director versions
+			 * which support 'status schedule' command.
+			 */
+			$cmd[] = 'days="' . self::DEF_DAYS . '"';
 		}
 		if ($this->Request->contains('limit') && $misc->isValidInteger($this->Request['limit'])) {
 			$cmd[] = 'limit="' . $this->Request['limit'] . '"';
+		} elseif (!$this->Request->contains('days')) {
+			$cmd[] = 'limit="' . self::DEF_LIMIT . '"';
 		}
 		if ($this->Request->contains('time') && $misc->isValidBDateAndTime($this->Request['time'])) {
 			$cmd[] = 'time="' . $this->Request['time'] . '"';

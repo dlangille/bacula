@@ -3409,6 +3409,7 @@
 						"description": "Days number to show schedule",
 						"schema": {
 							"type": "integer",
+							"default": 30,
 							"minimum": 1
 						}
 					},
@@ -3416,10 +3417,11 @@
 						"name": "limit",
 						"in": "query",
 						"required": false,
-						"description": "Schedule results limit",
+						"description": "Schedule results limit. Setting zero disables the limit. Default value is taken into account only if the days parameter is not set.",
 						"schema": {
 							"type": "integer",
-							"minimum": 1
+							"default": 30,
+							"minimum": 0
 						}
 					},
 					{

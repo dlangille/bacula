@@ -31,7 +31,6 @@
 		<%[ Days: ]%> <com:TTextBox
 			ID="Days"
 			Style.Width="50px"
-			Text="90"
 		/>
 		<com:TRequiredFieldValidator
 			ValidationGroup="ScheduleFilters"

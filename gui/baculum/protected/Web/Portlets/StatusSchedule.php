@@ -33,6 +33,11 @@ Prado::using('Application.Web.Portlets.Portlets');
  */
 class StatusSchedule extends Portlets {
 
+	/**
+	 * Default days limit.
+	 */
+	const DEF_DAYS = 90;
+
 	const JOB = 'Job';
 	const CLIENT = 'Client';
 	const SCHEDULE = 'Schedule';
@@ -50,6 +55,7 @@ class StatusSchedule extends Portlets {
 			return;
 		}
 		$this->loadSchedules();
+		$this->Days->Text = self::DEF_DAYS;
 		$this->DatePicker->setDate(date('Y-m-d'));
 
 		if ($this->getShowClientFilter()) {
@@ -86,10 +92,14 @@ class StatusSchedule extends Portlets {
 		$days = $this->getDays();
 		if (!empty($days)) {
 			$query[] = 'days=' . $days;
+		} else {
+			$query[] = 'days=' . self::DEF_DAYS;
 		}
 		$limit = $this->getLimit();
 		if (!empty($limit)) {
 			$query[] = 'limit=' . $limit;
+		} else {
+			$query[] = 'limit=0';
 		}
 		$time = $this->getTime();
 		if (!empty($time)) {
