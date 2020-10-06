@@ -1,4 +1,23 @@
 
+               Release Notes for Baculum 9.6.6.1
+
+This is a minor new feature and bug fix release. It introduces new functions
+to the Security page which help creating user accounts with restricted Bacula
+resources access.
+
+New changes and fixes:
+
+ - New features and improvements to multi-user interface and restricted access
+ - Add default days and limit values to status schedules API endpoint
+ - Update Portuguese translations
+ - Fix displaying multitextbox and multicombobox directive controls
+ - Fix date filter on status schedule page
+ - Fix #2570 fileset excludes settings with PHP 7.4
+
+Bugs fixed/closed since last release:
+2570
+
+
                Release Notes for Baculum 9.6.5.1
 
 This is a minor new feature and bug fix release. Main change is a new local user
