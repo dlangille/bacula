@@ -132,6 +132,12 @@ bool fstype(FF_PKT *ff_pkt, char *fs, int fslen)
    Dmsg1(50, "statfs() failed for \"%s\"\n", fname);
    return false;
 }
+
+bool fstype(char *fname, FF_PKT *ff_pkt, char *fs, int fslen)
+{
+   return fstype(ff_pkt, fs, fslen);
+}
+
 #elif defined(HAVE_NETBSD_OS)
 #include <sys/param.h>
 #include <sys/mount.h>
@@ -168,7 +174,13 @@ bool fstype(FF_PKT *ff_pkt, char *fs, int fslen)
    Dmsg1(50, "statfs() failed for \"%s\"\n", fname);
    return false;
 }
-#elif defined(HAVE_HPUX_OS) \
+
+bool fstype(char *fname, FF_PKT *ff_pkt, char *fs, int fslen)
+{
+   return fstype(ff_pkt, fs, fslen);
+}
+
+#elif defined(HAVE_HPUX_OS)                     \
    || defined(HAVE_IRIX_OS)
 
 #include <sys/types.h>
@@ -204,6 +216,11 @@ bool fstype(FF_PKT *ff_pkt, char *fs, int fslen)
    }
    Dmsg1(50, "statfs() failed for \"%s\"\n", fname);
    return false;
+}
+
+bool fstype(char *fname, FF_PKT *ff_pkt, char *fs, int fslen)
+{
+   return fstype(ff_pkt, fs, fslen);
 }
 
 #elif defined(HAVE_LINUX_OS)
@@ -364,6 +381,11 @@ bool fstype(FF_PKT *ff_pkt, char *fs, int fslen)
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/statvfs.h>
+
+#ifndef NAME_MAX
+#define NAME_MAX FSTYPSZ
+#endif
 
 /*
  * simple return fs type magic number
@@ -384,7 +406,12 @@ bool fstype(FF_PKT *ff_pkt, char *fs, int fslen)
    bstrncpy(fs, ff_pkt->statp.st_fstype, fslen);
    return true;
 }
- 
+
+bool fstype(char *fname, FF_PKT *ff_pkt, char *fs, int fslen)
+{
+   return fstype(ff_pkt, fs, fslen);
+}
+
 #elif defined (__digital__) && defined (__unix__)  /* Tru64 */
 /* Tru64 */
 #include <sys/stat.h>
@@ -425,6 +452,12 @@ bool fstype(FF_PKT *ff_pkt, char *fs, int fslen)
    Dmsg1(50, "statfs() failed for \"%s\"\n", fname);
    return false;
 }
+
+bool fstype(char *fname, FF_PKT *ff_pkt, char *fs, int fslen)
+{
+   return fstype(ff_pkt, fs, fslen);
+}
+
 /* Tru64 */
 
 #elif defined (HAVE_WIN32)
