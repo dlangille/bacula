@@ -50,7 +50,7 @@ void RUN::clearall()
    MaxRunSchedTime_set = spool_data =  spool_data_set = accurate = accurate_set = false;
    write_part_after_job = write_part_after_job_set = priority_set = level_set = false;
 
-   pool = next_pool = full_pool = inc_pool = diff_pool = NULL;
+   pool = next_pool = full_pool = inc_pool = diff_pool = vfull_pool = NULL;
    storage  = NULL;
    msgs = NULL;
    since = NULL;
