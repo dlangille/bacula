@@ -10,10 +10,12 @@
 #
 # This script uses the disk autochanger
 #
+# XPARAM USE_SCHEDULER=(no|yes)
+#   if yes then schedule the job for 2min in the future instead of using a "run"
+#
 TestName="virtual-backup-test"
 JobName=Vbackup
 . scripts/functions
-
 
 scripts/cleanup
 scripts/copy-migration-confs
@@ -21,6 +23,24 @@ scripts/prepare-disk-changer
 echo "${cwd}/build" >${cwd}/tmp/file-list
 
 change_jobname NightlySave $JobName
+
+USE_SCHEDULER=${USE_SCHEDULER:-no}
+if [ "$USE_SCHEDULER" = "yes" ] ; then
+   $bperl -e "add_attribute('$conf/bacula-dir.conf', 'Schedule', 'Vbackup', 'Job', 'Vbackup')"
+   now_plus_2min=`python -c "import time; print(time.strftime('%H:%M', time.localtime(time.time()+119)))"`
+   echo $conf/bacula-dir.conf
+   cat >> $conf/bacula-dir.conf <<EOF
+
+Schedule {
+  Name = "Vbackup"
+  Run =  Level="VirtualFull" at $now_plus_2min
+}
+EOF
+   RUN_OR_WAIT_SCHEDULER="@sleep 119"
+else
+   RUN_OR_WAIT_SCHEDULER="run job=$JobName level=VirtualFull yes"
+fi
+
 start_test
 
 #
@@ -74,7 +94,7 @@ list volumes
 @# should Consolidate Full, Differential and Incremental
 @#setdebug level=150 storage=DiskChanger
 @#setdebug level=100 dir
-run job=$JobName level=VirtualFull yes
+$RUN_OR_WAIT_SCHEDULER
 wait
 messages
 list volumes
