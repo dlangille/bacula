@@ -16,6 +16,9 @@
 			<com:BClientScript ScriptUrl=<%~ ../JavaScript/datatables.js %> />
 			<com:BClientScript ScriptUrl=<%~ ../JavaScript/dataTables.responsive.js %> />
 			<com:BClientScript ScriptUrl=<%~ ../JavaScript/responsive.jqueryui.js %> />
+			<com:BClientScript ScriptUrl=<%~ ../JavaScript/dataTables.buttons.js %> />
+			<com:BClientScript ScriptUrl=<%~ ../JavaScript/buttons.html5.js %> />
+			<com:BClientScript ScriptUrl=<%~ ../JavaScript/buttons.colVis.js %> />
 			<com:BClientScript ScriptUrl=<%~ ../JavaScript/opentip.js %> />
 			<com:BClientScript ScriptUrl=<%~ ../JavaScript/tooltip.js %> />
 			<com:BClientScript ScriptUrl=<%~ ../JavaScript/misc.js %> />

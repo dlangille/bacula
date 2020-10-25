@@ -3072,3 +3072,15 @@ msgstr "Hosty API definiują parametry połączenia do hostów z instancjami Bac
 
 msgid "Set all CommandAcls used by Baculum Web"
 msgstr "Ustaw wszystkie wartości CommandAcl używane przez Baculum Web"
+
+msgid "Find job by filename (without path):"
+msgstr "Znajdź zadanie według nazwy pliku (bez ścieżki):"
+
+msgid "File"
+msgstr "Plik"
+
+msgid "match exact filename"
+msgstr "dopasuj dokładną nazwę pliku"
+
+msgid "With this option are searched files with names equal provided filename, otherwise there are searched files with names containing provided filename like *filename*."
+msgstr "Z tą opcją są przeszukiwane pliki z nazwą równą dostarczonej nazwie pliku, w przeciwnym razie są wyszukiwane pliki z nazwami zawierającymi podaną nazwę pliku, np. *nazwapliku*."

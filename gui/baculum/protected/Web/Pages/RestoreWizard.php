@@ -51,6 +51,9 @@ class RestoreWizard extends BaculumWebPage
 	 */
 	private $jobstatus = ['T', 'W', 'A', 'E', 'e', 'f'];
 
+	const JOB_LIST_BY_CLIENT = 1;
+	const JOB_LIST_BY_FILENAME = 2;
+
 	/**
 	 * File browser special directories.
 	 */
@@ -306,7 +309,67 @@ class RestoreWizard extends BaculumWebPage
 			['clients', $clientid, 'jobs']
 		)->output;
 		$jobs = $this->getModule('misc')->objectToArray($jobs_for_client);
-		$this->jobs_to_restore = array_filter($jobs, [$this, 'isJobToRestore']);
+		function add_file($item) {
+			$item['file'] = '';
+			return $item;
+		}
+		$jobs = array_map('add_file', $jobs);
+		return array_filter($jobs, [$this, 'isJobToRestore']);
+	}
+
+	/**
+	 * Load backups for selected client by filename (Step 2).
+	 *
+	 * @param string $filename filename to find a backup
+	 * @param boolean $strict strict mode with exact matching name == filename
+	 * @return array job list with files
+	 */
+	private function loadBackupsByFilename($filename, $strict) {
+		$clientid = $this->BackupClient->SelectedValue;
+		$query = [
+			'clientid' => $clientid,
+			'filename' => rawurlencode($filename),
+			'strict' => $strict
+		];
+		$params = [
+			'jobs',
+			'files',
+			'?' . http_build_query($query)
+		];
+		$result = $this->getModule('api')->get($params);
+		$ret = [];
+		if ($result->error == 0) {
+			$jobs = $this->getModule('misc')->objectToArray($result->output);
+			$ret = array_filter($jobs, [$this, 'isJobToRestore']);
+		}
+		return $ret;
+	}
+
+	/**
+	 * Load job list.
+	 * Common method both for loading job list for a client and for job list displayed
+	 * after providing filename saved in backup.
+	 * It is responsible for loading job list to select by user for restore.
+	 *
+	 * @param TCallback $sender sender object
+	 * @param TCallbackEventParameter $param param object
+	 * @return none
+	 */
+	public function loadJobList($sender, $param) {
+		$prop = $param->getCallbackParameter();
+		$jobs = [];
+		$list_type = self::JOB_LIST_BY_CLIENT;
+		if (is_object($prop) && !empty($prop->filename)) {
+			$list_type = self::JOB_LIST_BY_FILENAME;
+			$jobs = $this->loadBackupsByFilename($prop->filename, $prop->strict);
+		} else {
+			$list_type = self::JOB_LIST_BY_CLIENT;
+			$jobs = $this->loadBackupsForClient();
+		}
+		$this->getCallbackClient()->callClientFunction(
+			'oJobsToRestoreList.update_table',
+			[array_values($jobs), $list_type]
+		);
 	}
 
 	/**

@@ -3072,3 +3072,14 @@ msgstr "O host de API define parâmetros de conexão para hosts com as instânci
 msgid "Set all CommandAcls used by Baculum Web"
 msgstr "Definir todos os comandos ACL's usados pelo Baculum"
 
+msgid "Find job by filename (without path):"
+msgstr "Find job by filename (without path):"
+
+msgid "File"
+msgstr "File"
+
+msgid "match exact filename"
+msgstr "match exact filename"
+
+msgid "With this option are searched files with names equal provided filename, otherwise there are searched files with names containing provided filename like *filename*."
+msgstr "With this option are searched files with names equal provided filename, otherwise there are searched files with names containing provided filename like *filename*."

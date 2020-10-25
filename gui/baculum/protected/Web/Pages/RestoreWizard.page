@@ -92,9 +92,10 @@
 					<i class="fa fa-angle-left"></i> &nbsp;<%[ Previous ]%>
 				</com:TLinkButton>
 				<com:TLinkButton
+					ID="NextStepBtn"
 					CommandName="NextStep"
 					CssClass="w3-button w3-green"
-					Visible="<%=($this->getPage()->RestoreWizard->ActiveStepIndex != 1 || ($this->getPage()->RestoreWizard->ActiveStepIndex == 1 && count($this->getPage()->jobs_to_restore) > 0))%>"
+					Display="<%=($this->getPage()->RestoreWizard->ActiveStepIndex != 1) ? 'Dynamic' : 'None'%>"
 				>
 					<%[ Next ]%>&nbsp; <i class="fa fa-angle-right"></i>
 				</com:TLinkButton>
@@ -160,20 +161,26 @@
 					/>
 					<com:TLabel ForControl="GroupBackupSelection" Text="<%[ Group most recent backups ]%>" /></div>
 			</div>
-			<com:TLabel Text="<%[ There is no backup for restore. Please go to previous step and select another client for restore or proceed backups for the client selected in previous step. ]%>" CssClass="w3-text-red" Visible="<%=(count($this->getPage()->jobs_to_restore) === 0 && $this->GroupBackupToRestore->ItemCount == 0)%>"/>
+			<span id="no_backup_to_restore_msg" class="w3-text-red" style="display: none"><%[ There is no backup for restore. Please go to previous step and select another client for restore or proceed backups for the client selected in previous step. ]%></span>
 			<div id="backup_to_restore_field" style="display: <%=!$this->OnlySelectedBackupSelection->Checked ? 'none' : 'block'%>">
 				<p><strong><%[ Note: if you select incremental or differential backup, on the next step will be also loaded all directories and files from older backups required to do the job restore. In other words, the selected backup determines time point from which will be loaded the selected backup and other older backups (incremental, differential) backups up till closest full backup. ]%></strong></p>
+				<div id="table_filters_body">
+					<span class="text"><%[ Find job by filename (without path): ]%></span> <input type="text" class="w3-text" id="restore_wizard_find_job_by_filename" /> <i id="restore_wizard_find_job_by_filename_btn" class="fas fa-search"  style="cursor: pointer"></i>
+					<span  title="<%[ With this option are searched files with names equal provided filename, otherwise there are searched files with names containing provided filename like *filename*. ]%>" style="margin-left: 10px"><input type="checkbox" class="w3-check" id="restore_wizard_find_strict" value="1" /> <span class="text"><%[ match exact filename ]%></span></span> &nbsp;<i id="restore_wizard_find_job_by_filename_loader" class="fas fa-sync fa-spin" style="display: none"></i>
+				</div>
 				<table id="job_to_restore_list" style="width: 100%">
 					<thead>
 						<tr>
 							<th></th>
 							<th>JobId</th>
 							<th><%[ Job name ]%></th>
+							<th><%[ File ]%></th>
 							<th><%[ Type ]%></th>
 							<th><%[ Level ]%></th>
 							<th><%[ Job status ]%></th>
 							<th><%[ Size ]%></th>
 							<th><%[ Files ]%></th>
+							<th><%[ Start time ]%></th>
 							<th><%[ End time ]%></th>
 							<th><%[ Select ]%></th>
 						</tr>
@@ -184,29 +191,159 @@
 							<th></th>
 							<th>JobId</th>
 							<th><%[ Job name ]%></th>
+							<th><%[ File ]%></th>
 							<th><%[ Type ]%></th>
 							<th><%[ Level ]%></th>
 							<th><%[ Job status ]%></th>
 							<th><%[ Size ]%></th>
 							<th><%[ Files ]%></th>
+							<th><%[ Start time ]%></th>
 							<th><%[ End time ]%></th>
 							<th><%[ Select ]%></th>
 						</tr>
 					</tfoot>
 				</table>
+<com:TCallback
+	ID="JobListCb"
+	OnCallback="loadJobList"
+>
+	<prop:ClientSide.OnLoading>
+		oJobsToRestoreList.show_find_job_by_filename_loader(true);
+	</prop:ClientSide.OnLoading>
+	<prop:ClientSide.OnComplete>
+		oJobsToRestoreList.show_find_job_by_filename_loader(false);
+		<%=$this->Session->contains('restore_jobid') ? 'oJobsToRestoreList.set_jobid(' . $this->Session['restore_jobid'] . ');' : ''%>
+	</prop:ClientSide.OnComplete>
+</com:TCallback>
 <script type="text/javascript">
 var oJobsToRestoreList = {
 	ids: {
 		job_list: 'job_to_restore_list',
-		job_list_body: 'job_to_restore_list_body'
+		job_list_body: 'job_to_restore_list_body',
+		filters: 'table_filters',
+		filters_body: 'table_filters_body',
+		find_job_by_filename: 'restore_wizard_find_job_by_filename',
+		find_job_by_filename_btn: 'restore_wizard_find_job_by_filename_btn',
+		find_job_by_filename_loader: 'restore_wizard_find_job_by_filename_loader',
+		find_strict: 'restore_wizard_find_strict',
+		no_backup_msg: 'no_backup_to_restore_msg'
 	},
-	init: function() {
-		this.set_table();
+	data: [],
+	opts: {},
+	table: null,
+	initialize: true,
+	init: function(opts) {
+		this.opts = opts;
+		if (this.table) {
+			var page = this.table.page();
+			this.table.clear().rows.add(this.data).draw();
+			this.initialize = false;
+			this.table.page(page).draw(false);
+		} else {
+			this.set_table();
+			this.set_filters();
+			this.set_events();
+			this.set_msgs();
+		}
+		this.set_btns();
+		this.set_column_visibility();
+	},
+	set_events: function() {
+		document.getElementById(this.ids.find_job_by_filename).addEventListener('keyup', function(e) {
+			if (e.keyCode == 13) {
+				e.preventDefault();
+				this.load_jobs();
+			}
+		}.bind(this));
+		document.getElementById(this.ids.find_job_by_filename_btn).addEventListener('click', function(e) {
+			this.load_jobs();
+		}.bind(this));
+	},
+	load_jobs: function() {
+		var cb = <%=$this->JobListCb->ActiveControl->Javascript%>;
+		var fjbf = document.getElementById(this.ids.find_job_by_filename);
+		var fs = document.getElementById(this.ids.find_strict);
+		cb.setCallbackParameter({
+			filename: fjbf.value,
+			strict: fs.checked
+		});
+		cb.dispatch();
+	},
+	show_find_job_by_filename_loader: function(show) {
+		var loader = document.getElementById(this.ids.find_job_by_filename_loader);
+		loader.style.display = (show) ? '' : 'none';
+	},
+	update_table: function(data, list_type) {
+		oJobsToRestoreList.data = data;
+		oJobsToRestoreList.init({
+			list_type: list_type
+		});
+	},
+	set_column_visibility: function() {
+		if (!this.opts.hasOwnProperty('list_type')) {
+			return;
+		}
+		if (this.opts.list_type == <%=RestoreWizard::JOB_LIST_BY_CLIENT%>) {
+			this.table.columns([4, 5, 9, 10]).visible(true);
+			this.table.column(3).visible(false);
+			this.table.columns.adjust();
+		} else if (this.opts.list_type == <%=RestoreWizard::JOB_LIST_BY_FILENAME%>) {
+			this.table.columns([4, 5, 9, 10]).visible(false);
+			this.table.column(3).visible(true);
+			this.table.columns.adjust();
+		}
+	},
+	set_msgs: function() {
+		if (this.initialize) {
+			var group_backup = document.getElementById('<%=$this->GroupBackupToRestore->ClientID%>');
+			if (this.data.length == 0 && group_backup.options.length == 0) {
+				document.getElementById(this.ids.no_backup_msg).style.display = '';
+			}
+		}
+	},
+	set_btns: function() {
+		var active_step_idx = '<%=$this->RestoreWizard->ActiveStepIndex%>';
+		var next_step = document.getElementById('<%=$this->RestoreWizard->getStepNavigation()->NextStepBtn->ClientID%>');
+		if (active_step_idx != 1 || this.data.length > 0) {
+			next_step.style.display = '';
+		} else {
+			next_step.style.display = 'none';
+		}
+	},
+	set_jobid: function(jobid) {
+		if (!this.table) {
+			return;
+		}
+		var data_len = this.table.data().length;
+		var page_len = this.table.page.info().length; // data length on the page
+		if (data_len > page_len) {
+			//var sel_node = this.table.row({jobid: jobid}).node();
+			//var node_pos = this.table.rows({order: 'current'}).nodes().indexOf(sel_node);
+			var node_pos = -1;
+			this.table.rows({
+				order: 'applied',
+				filter: 'applied'
+			}).data().filter(function(value, index) {
+				if (value.jobid == jobid) {
+					node_pos = index;
+					return true;
+				}
+				return false;
+			});
+			if (node_pos != -1) {
+				var page_number = Math.floor(node_pos / page_len);
+				this.table.page(page_number).draw(false);
+			}
+		}
 	},
 	set_table: function() {
-		var table = $('#' + this.ids.job_list).DataTable({
-			data: <%=json_encode(array_values($this->getPage()->jobs_to_restore))%>,
+		this.table = $('#' + this.ids.job_list).DataTable({
+			data: this.data,
 			deferRender: true,
+			dom: 'lB<"#' + this.ids.filters + '">frtip',
+			buttons: [
+				'copy', 'csv', 'colvis'
+			],
 			stateSave: true,
 			columns: [
 				{
@@ -248,6 +385,26 @@ var oJobsToRestoreList = {
 					}
 				},
 				{
+					data: 'file',
+					responsivePriority: 11,
+					visible: false,
+					width: '50%',
+					render: function(data, type, row) {
+						var ret = data;
+						if (type === 'display') {
+							var span = document.createElement('SPAN');
+							span.title = data;
+							if (data.length > 111) {
+								span.textContent = data.substr(0, 52) + ' (...) ' + data.substr(-52);
+							} else {
+								span.textContent = data;
+							}
+							ret = span.outerHTML;
+						}
+						return ret;
+					},
+				},
+				{
 					data: 'type',
 					render: function(data, type, row) {
 						return JobType.get_type(data);
@@ -274,6 +431,12 @@ var oJobsToRestoreList = {
 				{
 					data: 'jobfiles',
 					responsivePriority: 8
+				},
+				{
+					data: 'starttime',
+					render: render_date,
+					visible: false,
+					responsivePriority: 10
 				},
 				{
 					data: 'endtime',
@@ -314,15 +477,15 @@ var oJobsToRestoreList = {
 			},
 			{
 				className: "dt-center",
-				targets: [ 1, 3, 4, 5, 7, 8, 9 ]
+				targets: [ 1, 4, 5, 6, 8, 9, 10, 11 ]
 			},
 			{
 				className: "dt-body-right",
-				targets: [ 6 ]
+				targets: [ 7 ]
 			}],
 			order: [1, 'desc'],
 			initComplete: function () {
-				this.api().columns([2, 3, 4, 5]).every(function () {
+				this.api().columns([2, 4, 5, 6]).every(function () {
 					var column = this;
 					var select = $('<select><option value=""></option></select>')
 					.appendTo($(column.footer()).empty())
@@ -334,21 +497,36 @@ var oJobsToRestoreList = {
 						.search(val ? '^' + val + '$' : '', true, false)
 						.draw();
 					});
-					if (column[0][0] === 2 || column[0][0] == 5) {
+					if (column[0][0] === 2 || column[0][0] == 6) {
 						column.data().unique().sort().each(function (d, j) {
-							select.append('<option value="' + d + '" title="' + JobStatus.get_desc(d) + '">' + d + '</option>');
+							if (column.search() == '^' + dtEscapeRegex(d) + '$') {
+								select.append('<option value="' + d + '" title="' + JobStatus.get_desc(d) + '" selected>' + d + '</option>');
+							} else {
+								select.append('<option value="' + d + '" title="' + JobStatus.get_desc(d) + '">' + d + '</option>');
+							}
 						});
 					} else {
 						column.cells('', column[0]).render('display').unique().sort().each(function(d, j) {
-							select.append('<option value="' + d + '">' + d + '</option>');
+							if (column.search() == '^' + dtEscapeRegex(d) + '$') {
+								select.append('<option value="' + d + '" selected>' + d + '</option>');	
+							} else {
+								select.append('<option value="' + d + '">' + d + '</option>');	
+							}
 						});
 					}
 				});
 			}
 		});
+	},
+	set_filters: function() {
+		var filters = document.getElementById(this.ids.filters);
+		var filters_body = document.getElementById(this.ids.filters_body);
+		filters.appendChild(filters_body);
 	}
 };
-oJobsToRestoreList.init();
+$(function() {
+	oJobsToRestoreList.load_jobs();
+});
 </script>
 			</div>
 			<div id="group_backup_to_restore_field" style="display: <%=!$this->GroupBackupSelection->Checked ? 'none' : 'block'%>">

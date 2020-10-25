@@ -133,6 +133,20 @@ div.table_toolbar select {
 	margin-right: 2px;
 }
 
+#table_filters {
+	display: inline-block;
+	vertical-align: text-top;
+}
+
+#table_filters span.text {
+	font-size: 12px;
+}
+
+#table_filters input, span.text {
+	vertical-align: middle;
+	top: 0;
+}
+
 table.dataTable tbody > tr.selected, table.dataTable tbody > tr > .selected {
 	background-color: #f5a55b !important;
 }
