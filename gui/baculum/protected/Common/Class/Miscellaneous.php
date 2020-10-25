@@ -247,6 +247,10 @@ class Miscellaneous extends TModule {
 		return (preg_match('/^[\p{L}\p{N}\p{Z}\p{Sc}\p{Pd}\[\]\-\'\/\\(){}:.#~_,+!$]{0,10000}$/u', $path) === 1);
 	}
 
+	public function isValidFilename($path) {
+		return (preg_match('/^[\p{L}\p{N}\p{Z}\p{Sc}\p{Pd}\[\]\-\'\\(){}:.#~_,+!$]{0,1000}$/u', $path) === 1);
+	}
+
 	public function isValidReplace($replace) {
 		return in_array($replace, $this->replace_opts);
 	}

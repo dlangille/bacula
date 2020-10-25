@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2019 Kern Sibbald
+ * Copyright (C) 2013-2020 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -32,11 +32,13 @@ class GenericError {
 	const ERROR_INVALID_COMMAND = 1;
 	const ERROR_INTERNAL_ERROR = 1000;
 	const ERROR_INVALID_PATH = 8;
+	const ERROR_WRONG_EXITCODE = 9;
 
 	const MSG_ERROR_NO_ERRORS = '';
 	const MSG_ERROR_INVALID_COMMAND = 'Invalid command.';
 	const MSG_ERROR_INTERNAL_ERROR = 'Internal error.';
 	const MSG_ERROR_INVALID_PATH = 'Invalid path.';
+	const MSG_ERROR_WRONG_EXITCODE = 'Wrong exitcode.';
 }
 
 class DatabaseError extends GenericError {
@@ -114,6 +116,7 @@ class JobError extends GenericError {
 	const ERROR_INVALID_RPATH = 56;
 	const ERROR_INVALID_WHERE_OPTION = 57;
 	const ERROR_INVALID_REPLACE_OPTION = 58;
+	const ERROR_INVALID_FILENAME = 59;
 
 	const MSG_ERROR_JOB_DOES_NOT_EXISTS = 'Job does not exist.';
 	const MSG_ERROR_INVALID_JOBLEVEL = 'Inputted job level is invalid.';
@@ -124,6 +127,7 @@ class JobError extends GenericError {
 	const MSG_ERROR_INVALID_RPATH = 'Inputted rpath for restore is invalid. Proper format is b2[0-9]+.';
 	const MSG_ERROR_INVALID_WHERE_OPTION = 'Inputted "where" option is invalid.';
 	const MSG_ERROR_INVALID_REPLACE_OPTION = 'Inputted "replace" option is invalid.';
+	const MSG_ERROR_INVALID_FILENAME = 'Inputted "filename" option is invalid.';
 }
 
 class FileSetError extends GenericError {

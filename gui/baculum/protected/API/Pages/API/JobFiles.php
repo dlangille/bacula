@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2019 Kern Sibbald
+ * Copyright (C) 2013-2020 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -21,7 +21,8 @@
  */
 
 /**
- * List files from 'list files jobid=xx' bconsole command.
+ * Job files endpoint.
+ * It finds job by file criteria.
  *
  * @author Marcin Haba <marcin.haba@bacula.pl>
  * @category API
@@ -31,62 +32,43 @@ class JobFiles extends BaculumAPIServer {
 
 	public function get() {
 		$misc = $this->getModule('misc');
-		$jobid = $this->Request->contains('id') ? intval($this->Request['id']) : 0;
-		$type = $this->Request->contains('type') && $misc->isValidListFilesType($this->Request['type']) ? $this->Request['type'] : null;
-		$offset = $this->Request->contains('offset') ? intval($this->Request['offset']) : 0;
-		$limit = $this->Request->contains('limit') ? intval($this->Request['limit']) : 0;
-		$search = $this->Request->contains('search') && $misc->isValidPath($this->Request['search']) ? $this->Request['search'] : null;
+		$filename = $this->Request->contains('filename') && $misc->isValidFilename($this->Request['filename']) ? $this->Request['filename'] : null;
+		$strict_mode = ($this->Request->contains('strict') && $misc->isValidBooleanTrue($this->Request['strict']));
+
+		$clientid = null;
+		if ($this->Request->contains('clientid')) {
+			$clientid = intval($this->Request['clientid']);
+		} elseif ($this->Request->contains('client') && $this->getModule('misc')->isValidName($this->Request['client'])) {
+			$client_row = $this->getModule('client')->getClientByName($this->Request['client']);
+			$clientid = is_object($client_row) ? intval($client_row->clientid) : null;
+		}
+
+		if (is_null($clientid)) {
+			$this->output = JobError::MSG_ERROR_CLIENT_DOES_NOT_EXISTS;
+			$this->error = JobError::ERROR_CLIENT_DOES_NOT_EXISTS;
+			return;
+		}
+
+		if (is_null($filename)) {
+			$this->output = JobError::MSG_ERROR_INVALID_FILENAME;
+			$this->error = JobError::ERROR_INVALID_FILENAME;
+			return;
+		}
 
 		$result = $this->getModule('bconsole')->bconsoleCommand(
 			$this->director,
 			array('.jobs')
 		);
+
 		if ($result->exitcode === 0) {
 			array_shift($result->output);
-			$job = $this->getModule('job')->getJobById($jobid);
-			if (is_object($job) && in_array($job->name, $result->output)) {
-				$cmd = array('list', 'files');
-				if (is_string($type)) {
-					/**
-					 * NOTE: type param has to be used BEFORE jobid=xx, otherwise it doesn't work.
-					 * This behavior is also described in Bacula source code (src/dird/ua_output.c).
-					 */
-					$cmd[] = 'type="' . $type . '"';
-				}
-				$cmd[] = 'jobid="' . $jobid . '"';
-				$result = $this->getModule('bconsole')->bconsoleCommand(
-					$this->director,
-					$cmd
-				);
-				if ($result->exitcode === 0) {
-					$file_list = $this->getModule('list')->parseListFilesOutput($result->output);
-					if (is_string($search)) {
-						// Find items
-						$file_list = $this->getModule('list')->findFileListItems($file_list, $search);
-					}
-					$total_items = count($file_list);
-					if ($offset > 0) {
-						if ($limit > 0) {
-							$file_list = array_slice($file_list, $offset, $limit);
-						} else {
-							$file_list = array_slice($file_list, $offset);
-						}
-					} elseif ($limit > 0) {
-						$file_list = array_slice($file_list, 0, $limit);
-					}
-					$this->output = array('items' => $file_list, 'total' => $total_items);
-					$this->error = GenericError::ERROR_NO_ERRORS;
-				} else {
-					$this->output = $result->output;
-					$this->error = $result->exitcode;
-				}
-			} else {
-				$this->output = JobError::MSG_ERROR_JOB_DOES_NOT_EXISTS;
-				$this->error = JobError::ERROR_JOB_DOES_NOT_EXISTS;
-			}
+			$job = $this->getModule('job')->getJobsByFilename($clientid, $filename, $strict_mode, $result->output);
+			$this->output = $job;
+			$this->error = JobError::ERROR_NO_ERRORS;
 		} else {
-			$this->output = $result->output;
-			$this->error = $result->exitcode;
+			$result = is_array($result->output) ? implode('', $result->output) : $result->output;
+			$this->output = JobError::MSG_ERROR_WRONG_EXITCODE . $result;
+			$this->error = JobError::ERROR_WRONG_EXITCODE;
 		}
 	}
 }

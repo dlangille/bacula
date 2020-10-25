@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2019 Kern Sibbald
+ * Copyright (C) 2013-2020 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -242,6 +242,61 @@ LEFT JOIN Pool USING (PoolId)
 LEFT JOIN FileSet USING (FilesetId) 
 WHERE Client.ClientId='$clientid' $jobs_criteria";
 		return JobRecord::finder()->findAllBySql($sql);
+	}
+
+	/**
+	 * Get jobs where specific filename is stored
+	 *
+	 * @param string $clientid client identifier
+	 * @param string $filename filename without path
+	 * @param boolean $strict_mode if true then it maches exact filename, otherwise with % around filename
+	 * @param array $allowed_jobs jobs allowed to show
+	 * @return array jobs for specific client and filename
+	 */
+	public function getJobsByFilename($clientid, $filename, $strict_mode = false, $allowed_jobs = array()) {
+		$jobs_criteria = '';
+		if (count($allowed_jobs) > 0) {
+			$jobs_sql = implode("', '", $allowed_jobs);
+			$jobs_criteria = " AND Job.Name IN ('" . $jobs_sql . "')";
+		}
+
+		if ($strict_mode === false) {
+			$filename = '%' . $filename . '%';
+		}
+
+		$fname_col = 'Path.Path || Filename.Name';
+		$db_params = $this->getModule('api_config')->getConfig('db');
+		if ($db_params['type'] === Database::MYSQL_TYPE) {
+			$fname_col = 'CONCAT(Path.Path, Filename.Name)';
+		}
+
+		$sql = "SELECT Job.JobId AS JobId,
+                               Job.Name AS name,
+                               $fname_col AS file,
+                               Job.StartTime AS starttime,
+                               Job.EndTime AS endtime,
+                               Job.Type AS type,
+                               Job.Level AS level,
+                               Job.JobStatus AS jobstatus,
+                               Job.JobFiles AS jobfiles,
+                               Job.JobBytes AS jobbytes 
+                      FROM Client, Job, File, Filename,Path 
+                      WHERE Client.ClientId='$clientid' 
+                            AND Client.ClientId=Job.ClientId 
+                            AND Job.JobId=File.JobId 
+                            AND File.FileIndex > 0 
+                            AND Path.PathId=File.PathId 
+                            AND Filename.FilenameId=File.FilenameId 
+                            AND Filename.Name LIKE :filename 
+                      $jobs_criteria 
+                      ORDER BY starttime DESC";
+		$connection = JobRecord::finder()->getDbConnection();
+		$connection->setActive(true);
+		$pdo = $connection->getPdoInstance();
+		$sth = $pdo->prepare($sql);
+		$sth->bindParam(':filename', $filename, PDO::PARAM_STR, 200);
+		$sth->execute();
+		return $sth->fetchAll(PDO::FETCH_ASSOC);
 	}
 }
 ?>

@@ -1088,6 +1088,123 @@
 				]
 			}
 		},
+		"/api/v1/jobs/files": {
+			"get": {
+				"tags": ["jobs"],
+				"summary": "Search jobs by file criteria",
+				"description": "Get job list by file criteria.",
+				"responses": {
+					"200": {
+						"description": "Show job list by file criteria",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"type": "array",
+											"items": {
+												"type": "object",
+												"properties": {
+													"jobid": {
+														"type": "integer",
+														"description": "Job identifier"
+													},
+													"name": {
+														"type": "string",
+														"description": "Job name"
+													},
+													"file": {
+														"type": "string",
+														"description": "Filename with full path"
+													},
+													"starttime": {
+														"type": "string",
+														"description": "Job start time"
+													},
+													"endtime": {
+														"type": "string",
+														"description": "Job end time"
+													},
+													"type": {
+														"type": "string",
+														"description": "Job type",
+														"enum": ["B", "M", "V", "R", "I", "D", "A", "C", "c", "g"]
+													},
+													"level": {
+														"type": "string",
+														"description": "Job level",
+														"enum": ["F","I", "D"]
+													},
+													"jobstatus": {
+														"type": "string",
+														"description": "Job status. Note, some statuses can be not visible outside (used internally by Bacula)",
+														"enum": ["C", "R", "B", "T", "W", "E", "e", "f", "D", "A", "I", "F", "S", "m", "M", "s", "j", "c", "d", "t", "p", "i", "a", "l", "L"]
+													},
+													"jobfiles": {
+														"type": "integer",
+														"description": "Job files"
+													},
+													"jobbytes": {
+														"type": "integer",
+														"description": "Job bytes"
+													}
+												}
+											}
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 53, 59, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					{
+						"name": "clientid",
+						"in": "query",
+						"description": "Client identifier (used instead of 'client' parameter)",
+						"required":  true,
+						"schema": {
+							"type": "integer"
+						}
+					},
+					{
+						"name": "client",
+						"in": "query",
+						"description": "Client name (used instead of 'clientid' parameter)",
+						"required":  true,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"name": "filename",
+						"in": "query",
+						"description": "Filename to find jobs containing the file. Normally it searches for files which have given 'filename' in name, like \\*filename\\*. If strict mode is used then is done equal matching filename == name.",
+						"required":  true,
+						"schema": {
+							"type": "string",
+							"maxLength": 200
+						}
+					},
+					{
+						"name": "strict",
+						"in": "query",
+						"description": "Enables strict file matching filename == name",
+						"required":  false,
+						"default": false,
+						"schema": {
+							"type": "boolean"
+						}
+					}
+				]
+			}
+		},
 		"/api/v1/jobs/resnames": {
 			"get": {
 				"tags": ["jobs"],
