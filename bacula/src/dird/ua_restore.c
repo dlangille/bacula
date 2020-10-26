@@ -566,7 +566,7 @@ static int user_select_jobids_or_files(UAContext *ua, RESTORE_CTX *rx)
    utime_t now = time(NULL) + 1;
    JobId_t JobId;
    JOB_DBR jr = { (JobId_t)-1 };
-   bool done = false;
+   bool done = false, copies = false;
    int i, j;
    const char *list[] = {
       _("List last 20 Jobs run"),
@@ -710,9 +710,9 @@ static int user_select_jobids_or_files(UAContext *ua, RESTORE_CTX *rx)
       case 7:                         /* all specified */
          rx->all = true;
          break;
-      /*
-       * All keywords 7 or greater are ignored or handled by a select prompt
-       */
+      case 20:             /* copies */
+         copies = true;
+         break;
       default:
          break;
       }
@@ -987,6 +987,12 @@ static int user_select_jobids_or_files(UAContext *ua, RESTORE_CTX *rx)
    if (*rx->JobIds == 0) {
       ua->warning_msg(_("No Jobs selected.\n"));
       return 0;
+   }
+
+   if (copies) {
+      /* Display a list of all copies for selected jobs */
+      db_list_copies_records(ua->jcr, ua->db, 0, rx->JobIds,
+                             prtit, ua, HORZ_LIST);
    }
 
    if (strchr(rx->JobIds,',')) {
@@ -1663,11 +1669,6 @@ static bool select_backups_before_date(UAContext *ua, RESTORE_CTX *rx, char *dat
    }
 
    if (rx->JobIds[0] != 0) {
-      if (find_arg(ua, NT_("copies")) > 0) {
-         /* Display a list of all copies */
-         db_list_copies_records(ua->jcr, ua->db, 0, rx->JobIds,
-                                prtit, ua, HORZ_LIST);
-      }
       /* Display a list of Jobs selected for this restore */
       db_list_sql_query(ua->jcr, ua->db, uar_list_temp, prtit, ua, 1,HORZ_LIST);
       ok = true;
