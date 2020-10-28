@@ -33,13 +33,32 @@
 	<div id="job_list_files_no_result" class="w3-panel w3-center" style="display: none"><strong><%[ No item result ]%></strong></div>
 	<com:TActiveRepeater ID="FileList">
 		<prop:HeaderTemplate>
-			<ul>
+			<table class="w3-table w3-striped w3-white w3-margin-bottom dataTable dtr-column" style="table-layout: fixed">
+				<thead>
+					<tr class="row">
+						<th class="w3-center w3-hide-small" style="width: 65px"><%[ Attributes ]%></th>
+						<th class="w3-center w3-hide-small" style="width: 39px; padding: 10px 3px">UID</th>
+						<th class="w3-center w3-hide-small" style="width: 39px; padding: 10px 3px">GID</th>
+						<th class="w3-center w3-hide-small" style="width: 40px">Size</th>
+						<th class="w3-center w3-hide-small" style="width: 125px">MTIME</th>
+						<th class="w3-center"><%[ File ]%></th>
+						<th class="w3-center w3-hide-small" style="width: 50px"><%[ State ]%></th>
+					</tr>
+				</thead>
 		</prop:HeaderTemplate>
 		<prop:ItemTemplate>
-			<li><%=$this->Data%></li>
+			<tr class="row">
+				<td class="w3-hide-small"><%#$this->Data->lstat->mode%></td>
+				<td class="w3-center w3-hide-small"><%#$this->Data->lstat->uid%></td>
+				<td class="w3-center w3-hide-small"><%#$this->Data->lstat->gid%></td>
+				<td class="w3-hide-small"><span class="size w3-right"><%#$this->Data->lstat->size%></span></td>
+				<td class="udatetime w3-hide-small"><%#$this->Data->lstat->mtime%></td>
+				<td style="word-wrap: break-word"><%#$this->Data->file%></td>
+				<td class="<%#$this->Data->fileindex > 0 ? 'w3-text-green' : 'w3-text-orange'%> w3-center w3-hide-small"><strong><%#$this->Data->fileindex > 0 ? Prado::localize('saved') : Prado::localize('deleted')%></strong></td>
+			</tr>
 		</prop:ItemTemplate>
 		<prop:FooterTemplate>
-			</ul>
+			</table>
 		</prop:FooterTemplate>
 	</com:TActiveRepeater>
 </div>
@@ -47,7 +66,7 @@
 	ID="LoadJobFileList"
 	OnCallback="loadFileList"
 	ClientSide.OnLoading="show_job_list_files_loader(true)"
-	ClientSide.OnComplete="job_list_files_msg(); show_job_list_files_loader(false)"
+	ClientSide.OnComplete="job_list_files_msg(); show_job_list_files_loader(false); Formatters.set_formatters();"
 />
 <script>
 function get_job_list_files(page_direction) {

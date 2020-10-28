@@ -3084,3 +3084,12 @@ msgstr "dopasuj dokładną nazwę pliku"
 
 msgid "With this option are searched files with names equal provided filename, otherwise there are searched files with names containing provided filename like *filename*."
 msgstr "Z tą opcją są przeszukiwane pliki z nazwą równą dostarczonej nazwie pliku, w przeciwnym razie są wyszukiwane pliki z nazwami zawierającymi podaną nazwę pliku, np. *nazwapliku*."
+
+msgid "State"
+msgstr "Stan"
+
+msgid "saved"
+msgstr "zapisany"
+
+msgid "deleted"
+msgstr "skasowany"

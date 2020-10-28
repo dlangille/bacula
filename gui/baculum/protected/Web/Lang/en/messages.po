@@ -3073,3 +3073,12 @@ msgstr "match exact filename"
 
 msgid "With this option are searched files with names equal provided filename, otherwise there are searched files with names containing provided filename like *filename*."
 msgstr "With this option are searched files with names equal provided filename, otherwise there are searched files with names containing provided filename like *filename*."
+
+msgid "State"
+msgstr "State"
+
+msgid "saved"
+msgstr "saved"
+
+msgid "deleted"
+msgstr "deleted"

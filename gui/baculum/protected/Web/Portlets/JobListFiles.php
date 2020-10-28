@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2019 Kern Sibbald
+ * Copyright (C) 2013-2020 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -61,18 +61,19 @@ class JobListFiles extends Portlets {
 		if (!empty($this->FileListSearch->Text)) {
 			$params['search'] = $this->FileListSearch->Text;
 		}
+		$params['details'] = '1';
 		$query = '?' . http_build_query($params);
 		$result = $this->getModule('api')->get(
 			array('jobs', $this->getJobId(), 'files', $query)
 		);
 		if ($result->error === 0) {
-			$file_list = $result->output->items;
+			$file_list = $result->output;
 			if (!empty($this->FileListSearch->Text)) {
-				$file_list = $this->findFileListItems($file_list, $this->FileListSearch->Text);
+				$this->findFileListItems($file_list, $this->FileListSearch->Text);
 			}
 			$this->FileList->DataSource = $file_list;
 			$this->FileList->dataBind();
-			$this->FileListCount->Text = $result->output->total;
+			$this->FileListCount->Text = count($file_list);
 		} else {
 			$this->FileList->DataSource = array();
 			$this->FileList->dataBind();
@@ -80,17 +81,15 @@ class JobListFiles extends Portlets {
 		}
 	}
 
-	private function findFileListItems($file_list, $keyword) {
-		$result = array();
+	private function findFileListItems(&$file_list, $keyword) {
 		for ($i = 0; $i < count($file_list); $i++) {
-			$pos = stripos($file_list[$i], $keyword);
-			$str1 = substr($file_list[$i], 0, $pos);
+			$pos = stripos($file_list[$i]->file, $keyword);
+			$str1 = substr($file_list[$i]->file, 0, $pos);
 			$key_len = strlen($keyword);
-			$key = substr($file_list[$i], $pos, $key_len);
-			$str2 = substr($file_list[$i], ($pos + $key_len));
-			$result[] = $str1 . '<strong class="w3-text-red">' . $key . '</strong>' . $str2;
+			$key = substr($file_list[$i]->file, $pos, $key_len);
+			$str2 = substr($file_list[$i]->file, ($pos + $key_len));
+			$file_list[$i]->file = $str1 . '<strong class="w3-text-red">' . $key . '</strong>' . $str2;
 		}
-		return $result;
 	}
 
 	/**

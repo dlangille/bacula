@@ -258,7 +258,8 @@ var Formatters = {
 	formatter: [
 		{css_class: 'size', format_func: function(val) { return Units.get_formatted_size(val); }},
 		{css_class: 'time', format_func: function(val) { return Units.format_time_period(val); }},
-		{css_class: 'datetime', format_func: function(val) { return Units.format_date_str(val); }}
+		{css_class: 'datetime', format_func: function(val) { return Units.format_date_str(val); }},
+		{css_class: 'udatetime', format_func: function(val) { return Units.format_date(val); }}
 	],
 	set_formatters: function() {
 		var elements, formatter, txt, val;
