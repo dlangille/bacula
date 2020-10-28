@@ -329,14 +329,14 @@ WHERE Client.ClientId='$clientid' $jobs_criteria";
 			$fname_col = 'CONCAT(Path.Path, Filename.Name)';
 		}
 
-		$offset_sql = '';
-		if ($offset) {
-			$offset_sql = ' OFFSET ' . $offset;
-		}
-
 		$limit_sql = '';
 		if ($limit) {
 			$limit_sql = ' LIMIT ' . $limit;
+		}
+
+		$offset_sql = '';
+		if ($offset) {
+			$offset_sql = ' OFFSET ' . $offset;
 		}
 
 		$sql = "SELECT $fname_col  AS file, 
@@ -365,7 +365,7 @@ WHERE Client.ClientId='$clientid' $jobs_criteria";
                         WHERE Filename.FilenameId=F.FilenameId 
                         AND Path.PathId=F.PathId 
                         $search_crit 
-			$offset_sql $limit_sql";
+			$limit_sql $offset_sql";
 		$connection = JobRecord::finder()->getDbConnection();
 		$connection->setActive(true);
 		$pdo = $connection->getPdoInstance();
