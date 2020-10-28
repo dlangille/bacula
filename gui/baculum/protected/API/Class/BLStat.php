@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2019 Kern Sibbald
+ * Copyright (C) 2013-2020 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -103,6 +103,47 @@ class BLStat extends APIModule {
 			$ret[$key] = ($is_minus === true) ? -$result : $result;
 		}
 		return $ret;
+	}
+
+	/**
+	 * Get decoded and human readable LStat values.
+	 *
+	 * @param string $lstat LStat value to decode
+	 * @return array decoded LStat values
+	 */
+	public function lstat_human($lstat) {
+		$value = $this->decode($lstat);
+		$value['mode'] = $this->get_human_mode($value['mode']);
+		return $value;
+	}
+
+	/**
+	 * Get human readable mode/attributes (ex. drwx-r-xr-x).
+	 *
+	 * @param integer $dmode mode value in decimal LStat form
+	 * @return string mode in human readable form
+	 */
+	private function get_human_mode($dmode) {
+		$ts = [
+			0140000 => 'ssocket',
+			0120000 => 'llink',
+			0100000 => '-file',
+			0060000 => 'bblock',
+			0040000 => 'ddir',
+			0020000 => 'cchar',
+			0010000 => 'pfifo'
+		];
+
+		$p = $dmode;
+		$t = decoct($dmode & 0170000); // File Encoding Bit
+		$mode = (key_exists(octdec($t), $ts)) ? $ts[octdec($t)]{0} : 'u';
+		$mode .= (($p & 0x0100) ? 'r' : '-') . (($p & 0x0080) ? 'w' : '-');
+		$mode .= (($p & 0x0040) ? (($p & 0x0800) ?'s':'x'):(($p & 0x0800) ? 'S' : '-'));
+		$mode .= (($p & 0x0020) ? 'r':'-').(($p & 0x0010)? 'w' : '-');
+		$mode .= (($p & 0x0008) ? (($p & 0x0400) ?'s':'x'):(($p & 0x0400) ? 'S' : '-'));
+		$mode .= (($p & 0x0004) ? 'r':'-').(($p & 0x0002) ? 'w' : '-');
+		$mode .= (($p & 0x0001) ? (($p & 0x0200) ?'t':'x'):(($p & 0x0200) ? 'T' : '-'));
+		return $mode;
 	}
 }
 ?>

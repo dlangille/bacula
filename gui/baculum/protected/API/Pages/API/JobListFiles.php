@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2019 Kern Sibbald
+ * Copyright (C) 2013-2020 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -36,6 +36,7 @@ class JobListFiles extends BaculumAPIServer {
 		$offset = $this->Request->contains('offset') ? intval($this->Request['offset']) : 0;
 		$limit = $this->Request->contains('limit') ? intval($this->Request['limit']) : 0;
 		$search = $this->Request->contains('search') && $misc->isValidPath($this->Request['search']) ? $this->Request['search'] : null;
+		$details = $this->Request->contains('details') && $misc->isValidBooleanTrue($this->Request['details']) ? $this->Request['details'] : false;
 
 		$result = $this->getModule('bconsole')->bconsoleCommand(
 			$this->director,
@@ -45,41 +46,30 @@ class JobListFiles extends BaculumAPIServer {
 			array_shift($result->output);
 			$job = $this->getModule('job')->getJobById($jobid);
 			if (is_object($job) && in_array($job->name, $result->output)) {
-				$cmd = array('list', 'files');
-				if (is_string($type)) {
-					/**
-					 * NOTE: type param has to be used BEFORE jobid=xx, otherwise it doesn't work.
-					 * This behavior is also described in Bacula source code (src/dird/ua_output.c).
-					 */
-					$cmd[] = 'type="' . $type . '"';
-				}
-				$cmd[] = 'jobid="' . $jobid . '"';
-				$result = $this->getModule('bconsole')->bconsoleCommand(
-					$this->director,
-					$cmd
-				);
-				if ($result->exitcode === 0) {
-					$file_list = $this->getModule('list')->parseListFilesOutput($result->output);
-					if (is_string($search)) {
-						// Find items
-						$file_list = $this->getModule('list')->findFileListItems($file_list, $search);
-					}
-					$total_items = count($file_list);
-					if ($offset > 0) {
-						if ($limit > 0) {
-							$file_list = array_slice($file_list, $offset, $limit);
-						} else {
-							$file_list = array_slice($file_list, $offset);
-						}
-					} elseif ($limit > 0) {
-						$file_list = array_slice($file_list, 0, $limit);
-					}
-					$this->output = array('items' => $file_list, 'total' => $total_items);
-					$this->error = GenericError::ERROR_NO_ERRORS;
+				if ($details) {
+					$result = $this->getDetailedOutput([
+						'jobid' => $jobid,
+						'type' => $type,
+						'offset' => $offset,
+						'limit' => $limit,
+						'search' => $search
+					]);
 				} else {
-					$this->output = $result->output;
-					$this->error = $result->exitcode;
+					$result = $this->getSimpleOutput([
+						'jobid' => $jobid,
+						'type' => $type,
+						'offset' => $offset,
+						'limit' => $limit,
+						'search' => $search
+					]);
+					//NOTE: Standarize raw and json output in new version API v2
+					$result = [
+						'items' => $result,
+						'totals' => count($result)
+					];
 				}
+				$this->output = $result;
+				$this->error = GenericError::ERROR_NO_ERRORS;
 			} else {
 				$this->output = JobError::MSG_ERROR_JOB_DOES_NOT_EXISTS;
 				$this->error = JobError::ERROR_JOB_DOES_NOT_EXISTS;
@@ -88,6 +78,42 @@ class JobListFiles extends BaculumAPIServer {
 			$this->output = $result->output;
 			$this->error = $result->exitcode;
 		}
+	}
+
+	/**
+	 * Get simple output with file list and total number of items.
+	 *
+	 * @params array $params job parameters to get file list
+	 * @return array file list
+	 */
+	protected function getSimpleOutput($params = []) {
+		$result = $this->getModule('job')->getJobFiles(
+			$params['jobid'],
+			$params['type'],
+			$params['offset'],
+			$params['limit'],
+			$params['search'],
+			true
+		);
+		return $result;
+	}
+
+	/**
+	 * Get detailed output with file list.
+	 * It also includes LStat value.
+	 *
+	 * @params array $params job parameters to get file list
+	 * @return array file list
+	 */
+	protected function getDetailedOutput($params = []) {
+		$result = $this->getModule('job')->getJobFiles(
+			$params['jobid'],
+			$params['type'],
+			$params['offset'],
+			$params['limit'],
+			$params['search']
+		);
+		return $result;
 	}
 }
 ?>

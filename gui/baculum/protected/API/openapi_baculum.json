@@ -1084,6 +1084,15 @@
 						"schema": {
 							"type": "string"
 						}
+					},
+					{
+						"name": "details",
+						"in": "query",
+						"description": "Show more details (including LStat value)",
+						"required":  false,
+						"schema": {
+							"type": "boolean"
+						}
 					}
 				]
 			}

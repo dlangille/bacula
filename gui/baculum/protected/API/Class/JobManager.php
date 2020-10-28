@@ -298,5 +298,95 @@ WHERE Client.ClientId='$clientid' $jobs_criteria";
 		$sth->execute();
 		return $sth->fetchAll(PDO::FETCH_ASSOC);
 	}
+
+	/**
+	 * Get job file list
+	 *
+	 * @param integer $jobid job identifier
+	 * @param string $type file list type: saved, deleted or all.
+	 * @param integer $offset SQL query offset
+	 * @param integer $limit SQL query limit
+	 * @param string $search search file keyword
+	 * @return array jobs job list
+	 */
+	public function getJobFiles($jobid, $type, $offset = 0, $limit = 100, $search = null, $fetch_group = false) {
+		$type_crit = '';
+		switch ($type) {
+			case 'saved': $type_crit = ' AND FileIndex > 0 '; break;
+			case 'deleted': $type_crit = ' AND FileIndex <= 0 '; break;
+			case 'all': $type_crit = ''; break;
+			default: $type_crit = ' AND FileIndex > 0 '; break;
+		}
+
+		$search_crit = '';
+		if (is_string($search)) {
+			$search_crit = " AND (LOWER(Path.Path) LIKE LOWER('%$search%') OR LOWER(Filename.Name) LIKE LOWER('%$search%')) ";
+		}
+
+		$fname_col = 'Path.Path || Filename.Name';
+		$db_params = $this->getModule('api_config')->getConfig('db');
+		if ($db_params['type'] === Database::MYSQL_TYPE) {
+			$fname_col = 'CONCAT(Path.Path, Filename.Name)';
+		}
+
+		$offset_sql = '';
+		if ($offset) {
+			$offset_sql = ' OFFSET ' . $offset;
+		}
+
+		$limit_sql = '';
+		if ($limit) {
+			$limit_sql = ' LIMIT ' . $limit;
+		}
+
+		$sql = "SELECT $fname_col  AS file, 
+                               F.lstat     AS lstat, 
+                               F.fileindex AS fileindex 
+                        FROM ( 
+                            SELECT PathId     AS pathid, 
+                                   FilenameId AS filenameid, 
+                                   Lstat      AS lstat, 
+                                   FileIndex  AS fileindex 
+                            FROM 
+                                File 
+                            WHERE 
+                                JobId=$jobid 
+                                $type_crit 
+                            UNION ALL 
+                            SELECT PathId         AS pathid, 
+                                   FilenameId     AS filenameid, 
+                                   File.Lstat     AS lstat, 
+                                   File.FileIndex AS fileindex 
+                                FROM BaseFiles 
+                                JOIN File ON (BaseFiles.FileId = File.FileId) 
+                                WHERE 
+                                   BaseFiles.JobId=$jobid 
+                        ) AS F, Filename, Path 
+                        WHERE Filename.FilenameId=F.FilenameId 
+                        AND Path.PathId=F.PathId 
+                        $search_crit 
+			$offset_sql $limit_sql";
+		$connection = JobRecord::finder()->getDbConnection();
+		$connection->setActive(true);
+		$pdo = $connection->getPdoInstance();
+		$sth = $pdo->prepare($sql);
+		$sth->execute();
+		$result = [];
+		if ($fetch_group) {
+			$result = $sth->fetchAll(PDO::FETCH_COLUMN);
+		} else {
+			$result = $sth->fetchAll(PDO::FETCH_ASSOC);
+
+			// decode LStat value
+			if (is_array($result)) {
+				$blstat = $this->getModule('blstat');
+				$result_len = count($result);
+				for ($i = 0; $i < $result_len; $i++) {
+					$result[$i]['lstat'] = $blstat->lstat_human($result[$i]['lstat']);
+				}
+			}
+		}
+		return $result;
+	}
 }
 ?>
