@@ -3082,3 +3082,6 @@ msgstr "saved"
 
 msgid "deleted"
 msgstr "deleted"
+
+msgid "last %days days"
+msgstr "last %days days"

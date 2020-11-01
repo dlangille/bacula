@@ -797,7 +797,10 @@ var Dashboard = {
 		if (this.pie != null) {
 			this.pie.pie.destroy();
 		}
-		this.pie = new GraphPieClass(this.stats.jobs_summary, this.ids.pie_summary);
+		this.pie = new GraphPieClass({
+			jobs: this.stats.jobs_summary,
+			container_id: this.ids.pie_summary
+		});
 	}
 }
 

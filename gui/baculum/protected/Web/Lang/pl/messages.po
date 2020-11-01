@@ -3093,3 +3093,6 @@ msgstr "zapisany"
 
 msgid "deleted"
 msgstr "skasowany"
+
+msgid "last %days days"
+msgstr "ostatnie %days dni"

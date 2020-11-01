@@ -44,10 +44,6 @@ class RunJob extends Portlets {
 
 	const USE_CACHE = true;
 
-	const RESOURCE_SHOW_PATTERN = '/^\s+--> %resource: name=(.+?(?=\s\S+\=.+)|.+$)/i';
-	const JOB_SHOW_PATTERN = '/^Job:\sname=(?P<jobname>.+)\sJobType=\d+\slevel=(?P<level>\w+)?\sPriority=(?P<priority>\d+)/i';
-	const ACCURATE_PATTERN = '/^\s+Accurate=(?P<accurate>\d)/i';
-
 	const DEFAULT_JOB_PRIORITY = 10;
 
 	public $job_to_verify = array('C', 'O', 'd', 'A');
@@ -58,15 +54,36 @@ class RunJob extends Portlets {
 		$jobid = $this->getJobId();
 		$jobname = $this->getJobName();
 		$jobdata = null;
+		$job_info = [];
+
 		if ($jobid > 0) {
-			$jobdata = $this->getModule('api')->get(array('jobs', $jobid), null, true, self::USE_CACHE)->output;
-			$job_show = $this->getModule('api')->get(
-				array('jobs', 'show', '?name='. rawurlencode($jobdata->name)),
+			$jobdata = $this->getModule('api')->get(
+				['jobs', $jobid],
 				null,
 				true,
 				self::USE_CACHE
-			)->output;
-			$jobdata->storage = $this->getResourceName('(?:storage|autochanger)', $job_show);
+			);
+			if ($jobdata->error == 0) {
+				$jobname = $jobdata->name;
+			}
+		}
+
+		if (!empty($jobname)) {
+			$job_show = $this->getModule('api')->get(
+				['jobs', 'show', '?name='. rawurlencode($jobname)],
+				null,
+				true,
+				self::USE_CACHE
+			);
+			if ($job_show->error == 0) {
+				$job_info = $this->getModule('job_info')->parseResourceDirectives($job_show->output);
+			}
+		}
+
+		if ($jobid > 0) {
+			$storage = key_exists('storage', $job_info) ? $job_info['storage']['name'] : null;
+			$autochanger = key_exists('autochanger', $job_info) ? $job_info['autochanger']['name'] : null;
+			$jobdata->storage = $storage ?: $autochanger;
 			$this->getPage()->getCallbackClient()->show('run_job_storage_from_config_info');
 		} elseif (!empty($jobname)) {
 			$jobdata = new stdClass;
@@ -78,17 +95,23 @@ class RunJob extends Portlets {
 			)->output;
 			$levels = $this->getModule('misc')->getJobLevels();
 			$levels_flip = array_flip($levels);
-			$job_attr = $this->getJobAttr($job_show);
 
-			if (!empty($job_attr['level'])) {
-				$jobdata->level = $levels_flip[$job_attr['level']];
+			if (key_exists('job', $job_info) && !empty($job_info['job']['level'])) {
+				$jobdata->level = $levels_flip[$job_info['job']['level']];
 			}
-			$jobdata->client = $this->getResourceName('client', $job_show);
-			$jobdata->fileset = $this->getResourceName('fileset', $job_show);
-			$jobdata->pool = $this->getResourceName('pool', $job_show);
-			$jobdata->storage = $this->getResourceName('(?:storage|autochanger)', $job_show);
-			$jobdata->priorjobid = $job_attr['priority'];
-			$jobdata->accurate = (key_exists('accurate', $job_attr) && $job_attr['accurate'] == 1);
+			$client = key_exists('client', $job_info) ? $job_info['client']['name'] : null;
+			$fileset = key_exists('fileset', $job_info) ? $job_info['fileset']['name'] : null;
+			$pool = key_exists('pool', $job_info) ? $job_info['pool']['name'] : null;
+			$storage = key_exists('storage', $job_info) ? $job_info['storage']['name'] : null;
+			$autochanger = key_exists('autochanger', $job_info) ? $job_info['autochanger']['name'] : null;
+			$priority = key_exists('job', $job_info) ? $job_info['job']['priority'] : self::DEFAULT_JOB_PRIORITY;
+			$accurate = key_exists('job', $job_info) && key_exists('accurate', $job_info['job']) ? $job_info['job']['accurate'] : 0;
+			$jobdata->client = $client;
+			$jobdata->fileset = $fileset;
+			$jobdata->pool = $pool;
+			$jobdata->storage = $storage ?: $autochanger;
+			$jobdata->priorjobid = $priority;
+			$jobdata->accurate = ($accurate == 1);
 		} else {
 			$jobs = array();
 			$job_list = $this->getModule('api')->get(array('jobs', 'resnames'), null, true, self::USE_CACHE)->output;
@@ -279,35 +302,6 @@ class RunJob extends Portlets {
 		$verifyVals = array_combine($verifyOpt, $verifyOpt);
 		return $verifyVals;
 	}
-
-	public function getResourceName($resource, $jobshow) {
-		$resource_name = null;
-		$pattern = str_replace('%resource', $resource, self::RESOURCE_SHOW_PATTERN);
-		for ($i = 0; $i < count($jobshow); $i++) {
-			if (preg_match($pattern, $jobshow[$i], $match) === 1) {
-				$resource_name = $match[1];
-				break;
-			}
-		}
-		return $resource_name;
-	}
-
-	public function getJobAttr($jobshow) {
-		$attr = array();
-		for ($i = 0; $i < count($jobshow); $i++) {
-			if (preg_match(self::JOB_SHOW_PATTERN, $jobshow[$i], $match) === 1) {
-				$attr['jobname'] = $match['jobname'];
-				$attr['level'] = $match['level'];
-				$attr['priority'] = $match['priority'];
-			}
-			if (preg_match(self::ACCURATE_PATTERN, $jobshow[$i], $match) === 1) {
-				$attr['accurate'] = $match['accurate'];
-				break;
-			}
-		}
-		return $attr;
-	}
-
 
 	public function estimate($sender, $param) {
 		$params = array();

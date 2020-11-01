@@ -41,13 +41,318 @@
 	</div>
 	<div class="w3-container tab_item" id="job_actions">
 		<com:TActiveLinkButton
-			CssClass="w3-button w3-green w3-margin-bottom"
+			CssClass="w3-button w3-green"
 			OnClick="loadRunJobModal"
 			Attributes.onclick="document.getElementById('run_job').style.display='block'"
 		>
 			<prop:Text><%=Prado::localize('Run job')%> &nbsp;<i class="fa fa-undo"></i></prop:Text>
 		</com:TActiveLinkButton>
 		<com:Application.Web.Portlets.RunJob ID="RunJobModal" />
+		<div id="job_graph_container">
+			<div>
+				<div id="jobs_summary_graph"></div>
+			</div>
+			<div>
+				<div id="job_size_graph" style="height: 390px"></div>
+			</div>
+			<div>
+				<div id="job_files_graph" style="height: 390px"></div>
+			</div>
+		</div>
+		<script>
+var oJobGraphs = {
+	ids: {
+		jobs_summary_graph : 'jobs_summary_graph',
+		job_size_graph : 'job_size_graph',
+		job_files_graph : 'job_files_graph',
+		job_actions: 'job_actions'
+	},
+	graphs: {
+		job_summary: null,
+		job_size: null,
+		job_files: null
+	},
+	colors: {
+		F: '#63c422',
+		I: '#2980B9',
+		D: '#D68910',
+		O: 'red'
+	},
+	graph_options: {
+		legend: {
+			show: true,
+			noColumns: 9,
+			labelBoxHeight: 10,
+			fontColor: '#000000',
+			position : 'ne'
+		},
+		bars: {
+			show: true,
+			fill: true,
+			horizontal : false,
+			shadowSize : 0
+		},
+		xaxis: {
+			mode : 'time',
+			timeMode: 'local',
+			labelsAngle : 45,
+			autoscale: true,
+			color: 'black',
+			showLabels: true
+		},
+		yaxis: {
+			color: 'black',
+			min: 0
+		},
+		lines: {
+			show: true,
+			lineWidth: 0,
+			fill: true,
+			steps: true
+		},
+		selection: {
+			mode : 'x'
+		},
+		grid: {
+			color: '#000000',
+			outlineWidth: 0
+		},
+		HtmlText: false
+	},
+	txt: {
+		job_summary: {
+			graph_title: '<%[ Job status summary ]%>'
+		},
+		job_size: {
+			graph_title: '<%[ Job size / Time ]%> - <%[ last %days days ]%>'.replace('%days', 30),
+			xaxis_title: '<%[ Time ]%>',
+			yaxis_title: '<%[ Job size ]%>'
+		},
+		job_files: {
+			graph_title: '<%[ Job files / Time ]%> - <%[ last %days days ]%>'.replace('%days', 30),
+			xaxis_title: '<%[ Time ]%>',
+			yaxis_title: '<%[ Files count ]%>'
+		},
+	},
+	initialized: false,
+	extended_graph_jt: ['B'],
+	job_info: <%=json_encode($this->getJobInfo())%>,
+	init: function() {
+		this.set_events();
+	},
+	update: function() {
+		if (!$('#' + this.ids.job_actions).is(':visible') || oData.jobs.length == 0) {
+			// do update only if tab with graphs is opened and if there are finished jobs
+			return;
+		}
+
+		// job summary pie graph
+		this.prepare_job_summary();
+
+		if (this.display_extended_graphs()) {
+			// job size - last 30 days
+			this.prepare_job_size();
+
+			// job files - last 30 days
+			this.prepare_job_files();
+		}
+
+		if (!this.initialized) {
+			/**
+			 * Initialization and events has to be done when graphs already exists.
+			 * From this reason it is done at the end of update and only once.
+			 */
+			this.initialized = true;
+			this.init();
+		}
+	},
+	display_extended_graphs: function() {
+		var disp_ext_graphs = false;
+		if (this.job_info.hasOwnProperty('job') && this.job_info.job.hasOwnProperty('jobtype')) {
+			job_type = String.fromCharCode(this.job_info.job.jobtype);
+			disp_ext_graphs = (this.extended_graph_jt.indexOf(job_type) !== -1);
+		}
+		return disp_ext_graphs;
+	},
+	set_events: function() {
+		if (!this.display_extended_graphs()) {
+			return;
+		}
+
+		var select_area = function(area) {
+			var opts = {
+				xaxis : {
+					min : area.x1,
+					max : area.x2,
+					mode : 'time',
+					timeMode: 'local',
+					labelsAngle : 45,
+					color: 'black',
+					autoscale: true
+					},
+				yaxis : {
+					min : area.y1,
+					max : area.y2,
+					color: 'black',
+					autoscale: true
+				}
+			};
+			return opts;
+		};
+
+		// JOB SIZE
+
+		var job_size_select_cb = function(area) {
+			var opts = select_area(area);
+			this.prepare_job_size(opts);
+		}.bind(this);
+
+		var job_size_graph_container = document.getElementById(this.ids.job_size_graph);
+
+		// set Flotr-specific select area event for job size graph
+		Flotr.EventAdapter.observe(job_size_graph_container, 'flotr:select', job_size_select_cb);
+
+		// set Flotr-specific click area event (zoom reset) for job size graph
+		Flotr.EventAdapter.observe(job_size_graph_container, 'flotr:click', function () {
+			this.prepare_job_size();
+		}.bind(this));
+
+		// JOB FILES
+
+		var job_files_select_cb = function(area) {
+			var opts = select_area(area);
+			this.prepare_job_files(opts);
+		}.bind(this);
+
+		var job_files_graph_container = document.getElementById(this.ids.job_files_graph);
+
+		// set Flotr-specific select area event for job files graph
+		Flotr.EventAdapter.observe(job_files_graph_container, 'flotr:select', job_files_select_cb);
+
+		// set Flotr-specific click area event (zoom reset) for job files graph
+		Flotr.EventAdapter.observe(job_files_graph_container, 'flotr:click', function (e) {
+			this.prepare_job_files();
+		}.bind(this));
+	},
+	prepare_job_objs: function(jobs, graph_type)  {
+		var job;
+		var job_objs = [];
+		for (var i = 0; i < jobs.length; i++) {
+			if (jobs[i].jobstatus == 'R' || jobs[i].jobstatus == 'C' || jobs[i].endtime === null) {
+				continue;
+			}
+			job = new JobClass(jobs[i], graph_type);
+			job_objs.push(job);
+		}
+		return job_objs;
+	},
+	prepare_job_summary: function() {
+		this.destroy_job_summary();
+
+		Statistics.grab_statistics(oData, JobStatus.get_states());
+		this.graphs.job_summary = new GraphPieClass({
+			jobs: Statistics.jobs_summary,
+			container_id: this.ids.jobs_summary_graph,
+			title: this.txt.job_summary.graph_title
+		});
+	},
+	prepare_job_size: function(opts) {
+		var options = {
+			title: this.txt.job_size.graph_title,
+			xaxis: {
+				title: this.txt.job_size.xaxis_title
+			},
+			yaxis: {
+				title: this.txt.job_size.yaxis_title,
+				tickFormatter: function(val, axis_opts) {
+					return Units.get_formatted_size(val);
+				}
+			}
+		};
+		var jobs = this.prepare_job_objs(oData.jobs, 'job_size');
+		var container = document.getElementById(this.ids.job_size_graph);
+		opts = $.extend(true, opts || {}, options);
+		this.graphs.job_size = this.prepare_job_graph(jobs, container, opts);
+	},
+	prepare_job_files: function(opts) {
+		var options = {
+			title: this.txt.job_files.graph_title,
+			xaxis: {
+				title: this.txt.job_files.xaxis_title
+			},
+			yaxis: {
+				title: this.txt.job_files.yaxis_title,
+				tickFormatter: function(val, axis_opts) {
+					return parseInt(val, 10);
+				}
+			}
+		};
+		var jobs = this.prepare_job_objs(oData.jobs, 'job_files');
+		var container = document.getElementById(this.ids.job_files_graph);
+		opts = $.extend(true, opts || {}, options);
+		this.graphs.job_files = this.prepare_job_graph(jobs, container, opts);
+	},
+	prepare_job_graph: function(jobs, container, opts) {
+		var now = (new Date()).getTime();
+		var options = $.extend(true, this.graph_options, {
+			xaxis: {
+				min: (now - 2592000000),
+				max: now
+			},
+			yaxis: {
+				autoscale: true,
+				min: 0,
+				max: null
+			}
+		});
+		if (opts) {
+			options = $.extend(true, options, opts);
+		}
+
+		var series_uniq = {};
+		for (var i = 0; i < jobs.length; i++) {
+			if(jobs[i].start_stamp < this.graph_options.xaxis.min || jobs[i].end_stamp > this.graph_options.xaxis.max) {
+				continue;
+			}
+			if (series_uniq.hasOwnProperty(jobs[i].job.level) == false) {
+				series_uniq[jobs[i].job.level] = [];
+			}
+			series_uniq[jobs[i].job.level].push(jobs[i].start_point, jobs[i].end_point, [null, null]);
+
+		}
+		var serie, series = [], label;
+		for (var key in series_uniq) {
+			serie = [];
+			for (var i = 0; i < series_uniq[key].length; i++) {
+				serie.push(series_uniq[key][i]);
+			}
+			label = JobLevel.get_level(key);
+			var color = this.colors.O;
+			if (this.colors.hasOwnProperty(key)) {
+				color = this.colors[key];
+			}
+			series.push({
+				data: serie,
+				label: label,
+				color: color
+			});
+		}
+		return this.draw_graph(container, series, options);
+	},
+	draw_graph: function(container, series, opts) {
+		return Flotr.draw(
+			container,
+			series,
+			opts
+		);
+	},
+	destroy_job_summary: function() {
+		if (this.graphs.job_summary) {
+			this.graphs.job_summary.pie.destroy();
+		}
+	}
+};
+		</script>
 	</div>
 	<div class="w3-container tab_item" id="job_config" style="display: none">
 		<com:Application.Web.Portlets.BaculaConfigDirectives
@@ -380,7 +685,10 @@ MonitorParams = {
 	}
 };
 $(function() {
-	MonitorCallsInterval.push(function() { oJobHistoryList.init(); });
+	MonitorCallsInterval.push(function() {
+		oJobGraphs.update();
+		oJobHistoryList.init();
+	});
 });
 </script>
 	</div>

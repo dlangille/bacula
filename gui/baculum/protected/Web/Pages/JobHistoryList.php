@@ -36,6 +36,8 @@ class JobHistoryList extends BaculumWebPage {
 
 	const USE_CACHE = true;
 
+	const DEFAULT_JOB_PRIORITY = 10;
+
 	public function loadRunJobModal($sender, $param) {
 		$this->RunJobModal->loadData();
 	}
@@ -54,26 +56,35 @@ class JobHistoryList extends BaculumWebPage {
 			$level = trim($jobdata->level);
 			$params['level'] = !empty($level) ? $level : 'F'; // Admin job has empty level
 			$job_show = $this->getModule('api')->get(
-				array('jobs', $jobid, 'show'), null, true, self::USE_CACHE
+				['jobs', $jobid, 'show'],
+				null,
+				true,
+				self::USE_CACHE
 			)->output;
+			$job_info = $this->getModule('job_info')->parseResourceDirectives($job_show);
 			if ($jobdata->filesetid > 0) {
 				$params['filesetid'] = $jobdata->filesetid;
 			} else {
-				$params['fileset'] = RunJob::getResourceName('fileset', $job_show);
+				$params['fileset'] = key_exists('fileset', $job_info) ? $job_info['fileset']['name'] : '';
 			}
 			$params['clientid'] = $jobdata->clientid;
-			$params['storage'] = RunJob::getResourceName('storage', $job_show);
-			if (empty($params['storage'])) {
-				$params['storage'] = RunJob::getResourceName('autochanger', $job_show);
-			}
-			if ($jobdata->poolid > 0) {
+			$storage = key_exists('storage', $job_info) ? $job_info['storage']['name'] : null;
+			$autochanger = key_exists('autochanger', $job_info) ? $job_info['autochanger']['name'] : null;
+			$params['storage'] = $storage ?: $autochanger;
+
+			/**
+			 * For 'c' type (Copy Job) and 'g' type (Migration Job) the in job table in poolid property is written
+			 * write pool, not read pool. Here in 'pool' property is set read pool and from this reason for 'c'
+			 * and 'g' types the pool cannot be taken from job table.
+			 */
+			if ($jobdata->poolid > 0 && $jobdata->type != 'c' && $jobdata->type != 'g') {
 				$params['poolid'] = $jobdata->poolid;
 			} else {
-				$params['pool'] = RunJob::getResourceName('pool', $job_show);
+				$params['pool'] = key_exists('pool', $job_info) ? $job_info['pool']['name'] : '';
 			}
-			$job_attr = RunJob::getJobAttr($job_show);
-			$params['priority'] = key_exists('priority', $job_attr) ? $job_attr['priority'] : 10;
-			$params['accurate'] = (key_exists('accurate', $job_attr) && $job_attr['accurate'] == 1);
+			$params['priority'] = key_exists('job', $job_info) ? $job_info['job']['priority'] : self::DEFAULT_JOB_PRIORITY;
+			$accurate = key_exists('job', $job_info) && key_exists('accurate', $job_info['job']) ? $job_info['job']['accurate'] : 0;
+			$params['accurate'] =  ($accurate == 1);
 
 			$result = $this->getModule('api')->create(array('jobs', 'run'), $params);
 			if ($result->error === 0) {

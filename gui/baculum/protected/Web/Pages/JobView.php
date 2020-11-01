@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2019 Kern Sibbald
+ * Copyright (C) 2013-2020 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -35,18 +35,11 @@ Prado::using('Application.Web.Class.BaculumWebPage');
 class JobView extends BaculumWebPage {
 
 	const JOB_NAME = 'JobName';
-
-	const USE_CACHE = true;
-
-	const RESOURCE_SHOW_PATTERN = '/^\s+--> %resource: name=(.+?(?=\s\S+\=.+)|.+$)/i';
-
-	private $jobdata;
-	public $is_running = false;
-	public $fileset;
-	public $schedule;
+	const JOB_INFO = 'JobInfo';
 
 	public function onInit($param) {
 		parent::onInit($param);
+		$this->JobConfig->attachEventHandler('OnSave', [$this, 'reloadJobInfo']);
 		if ($this->IsCallBack || $this->IsPostBack) {
 			return;
 		}
@@ -58,6 +51,7 @@ class JobView extends BaculumWebPage {
 		$this->setJobName($job_name);
 		$this->Schedules->setJob($job_name);
 		$this->Schedules->setDays(90);
+		$this->setJobInfo($job_name);
 	}
 
 	/**
@@ -78,6 +72,45 @@ class JobView extends BaculumWebPage {
 		return $this->getViewState(self::JOB_NAME);
 	}
 
+	/**
+	 * Set job information from show job output.
+	 *
+	 * @return none
+	 */
+	public function setJobInfo($job_name) {
+		$job_show = $this->getModule('api')->get(
+			array('jobs', 'show', '?name='. rawurlencode($job_name)),
+			null,
+			true,
+			false
+		);
+		if ($job_show->error == 0) {
+			$job_info = $this->getModule('job_info')->parseResourceDirectives($job_show->output);
+			$this->setViewState(self::JOB_INFO, $job_info);
+		}
+	}
+
+	/**
+	 * Get job information.
+	 *
+	 * @return array job information
+	 */
+	public function getJobInfo() {
+		return $this->getViewState(self::JOB_INFO, []);
+	}
+
+	/**
+	 * Reload job information.
+	 *
+	 * @param mixed $param save event parameter
+	 * @return none
+	 */
+	public function reloadJobInfo($param) {
+		if ($this->Request->contains('job')) {
+			$this->setJobInfo($this->Request['job']);
+		}
+	}
+
 	public function loadRunJobModal($sender, $param) {
 		$this->RunJobModal->loadData();
 	}
@@ -91,41 +124,29 @@ class JobView extends BaculumWebPage {
 		}
 	}
 
-	public function getResourceName($resource, $jobshow) {
-		$resource_name = null;
-		$pattern = str_replace('%resource', $resource, self::RESOURCE_SHOW_PATTERN);
-		for ($i = 0; $i < count($jobshow); $i++) {
-			if (preg_match($pattern, $jobshow[$i], $match) === 1) {
-				$resource_name = $match[1];
-				break;
-			}
-		}
-		return $resource_name;
-	}
-
 	public function loadFileSetConfig($sender, $param) {
 		if (!empty($_SESSION['dir'])) {
-			$jobshow = $this->getModule('api')->get(array(
-				'jobs', 'show', '?name=' . rawurlencode($this->getJobName())
-			))->output;
-			$fileset = $this->getResourceName('fileset', $jobshow);
-			$this->FileSetConfig->setComponentName($_SESSION['dir']);
-			$this->FileSetConfig->setResourceName($fileset);
-			$this->FileSetConfig->setLoadValues(true);
-			$this->FileSetConfig->raiseEvent('OnDirectiveListLoad', $this, null);
+			$job_info = $this->getJobInfo();
+			if (key_exists('fileset', $job_info)) {
+				$this->FileSetConfig->setComponentName($_SESSION['dir']);
+				$this->FileSetConfig->setResourceName($job_info['fileset']['name']);
+				$this->FileSetConfig->setLoadValues(true);
+				$this->FileSetConfig->raiseEvent('OnDirectiveListLoad', $this, null);
+			}
 		}
 	}
 
 	public function loadScheduleConfig($sender, $param) {
 		if (!empty($_SESSION['dir'])) {
-			$jobshow = $this->getModule('api')->get(array(
-				'jobs', 'show', '?name=' . rawurlencode($this->getJobName())
-			))->output;
-			$schedule = $this->getResourceName('schedule', $jobshow);
-			$this->ScheduleConfig->setComponentName($_SESSION['dir']);
-			$this->ScheduleConfig->setResourceName($schedule);
-			$this->ScheduleConfig->setLoadValues(true);
-			$this->ScheduleConfig->raiseEvent('OnDirectiveListLoad', $this, null);
+			$job_info = $this->getJobInfo();
+			if (key_exists('schedule', $job_info)) {
+				$this->ScheduleConfig->setComponentName($_SESSION['dir']);
+				$this->ScheduleConfig->setResourceName($job_info['schedule']['name']);
+				$this->ScheduleConfig->setLoadValues(true);
+				$this->ScheduleConfig->raiseEvent('OnDirectiveListLoad', $this, null);
+			} else {
+				$this->ScheduleConfig->unloadDirectives();
+			}
 		}
 	}
 

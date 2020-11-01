@@ -1238,13 +1238,14 @@ var GraphPieClass = jQuery.klass({
 	series: null,
 	pie: null,
 	graph_options: {
-		colors: ['#63c422', '#d70808', '#FFFF66', 'orange', 'blue'],
+		colors: ['#63c422', '#d70808', '#FFFF66', 'orange', '#2980B9'],
 		HtmlText: false,
 		fontColor: '#000000',
 		grid: {
 			verticalLines : false,
 			horizontalLines : false,
 			outlineWidth: 0,
+			color: 'black'
 		},
 		xaxis: { showLabels : false,},
 		yaxis: { showLabels : false },
@@ -1253,7 +1254,6 @@ var GraphPieClass = jQuery.klass({
 			explode : 6,
 			labelFormatter: PieGraph.pie_label_formatter,
 			shadowSize: 4,
-			fillOpacity: 1,
 			sizeRatio: 0.77
 		},
 		mouse: {
@@ -1268,9 +1268,10 @@ var GraphPieClass = jQuery.klass({
 			margin: 0
 		}
 	},
-	initialize: function(jobs, container_id) {
-		this.jobs = jobs;
-		this.container = document.getElementById(container_id);
+	initialize: function(prop) {
+		this.jobs = prop.jobs;
+		this.title = prop.hasOwnProperty('title') ? prop.title : null;
+		this.container = document.getElementById(prop.container_id);
 		this.series = this.prepare_series();
 		this.draw_grah();
 	},
@@ -1284,14 +1285,21 @@ var GraphPieClass = jQuery.klass({
 			jobs_count = this.jobs[label].length;
 			serie = {
 				data: [[0, jobs_count]],
-				label: label + ' (' + jobs_count.toString() + ')'
+				label: label + ' (' + jobs_count.toString() + ')',
+				pie: {
+					explode: 12
+				}
 			}
 			series.push(serie);
 		}
 		return series;
 	},
 	draw_grah: function() {
-		this.pie = Flotr.draw(this.container, this.series, this.graph_options);
+		var graph_options = $.extend({}, this.graph_options);
+		if (this.title) {
+			graph_options.title = this.title;
+		}
+		this.pie = Flotr.draw(this.container, this.series, graph_options);
 	}
 });
 

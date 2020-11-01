@@ -8,10 +8,6 @@
 	z-index: 0;
 }
 
-#jobs_summary_graph canvas:nth-child(2) {
-	position: static !important;
-}
-
 .monospace {
 	font-family: "Courier New", Courier, monospace !important;
 }
@@ -431,4 +427,14 @@ table.component td:nth-of-type(1) {
 
 .field_invalid {
 	border: 1px solid red !important;
+}
+
+#job_graph_container {
+	display: flex;
+	flex-wrap: wrap;
+}
+
+#job_graph_container > div {
+	width: 420px;
+	margin: 10px;
 }
