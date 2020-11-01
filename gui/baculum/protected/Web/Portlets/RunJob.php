@@ -57,14 +57,15 @@ class RunJob extends Portlets {
 		$job_info = [];
 
 		if ($jobid > 0) {
-			$jobdata = $this->getModule('api')->get(
+			$job = $this->getModule('api')->get(
 				['jobs', $jobid],
 				null,
 				true,
 				self::USE_CACHE
 			);
-			if ($jobdata->error == 0) {
-				$jobname = $jobdata->name;
+			if ($job->error == 0) {
+				$jobdata = $job->output;
+				$jobname = $job->output->name;
 			}
 		}
 
@@ -87,12 +88,6 @@ class RunJob extends Portlets {
 			$this->getPage()->getCallbackClient()->show('run_job_storage_from_config_info');
 		} elseif (!empty($jobname)) {
 			$jobdata = new stdClass;
-			$job_show = $this->getModule('api')->get(
-				array('jobs', 'show', '?name='. rawurlencode($jobname)),
-				null,
-				true,
-				self::USE_CACHE
-			)->output;
 			$levels = $this->getModule('misc')->getJobLevels();
 			$levels_flip = array_flip($levels);
 
