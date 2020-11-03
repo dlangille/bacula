@@ -264,7 +264,7 @@ const char *AuthenticateBase::GetRemoteClassShortName()
 
 const char *AuthenticateBase::GetRemoteClassLongName()
 {
-   return dc_long_name[local_class];
+   return dc_long_name[remote_class];
 };
 
 int AuthenticateBase::GetTLSPSKLocalNeed()
