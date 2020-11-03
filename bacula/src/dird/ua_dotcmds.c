@@ -2376,7 +2376,7 @@ static bool defaultscmd(UAContext *ua, const char *cmd)
          ua->send_msg("enabled=%d", job->is_enabled());
          ua->send_msg("catalog=%s", job->client?job->client->catalog->name():_("*None*"));
          ua->send_msg("priority=%d", job->Priority);
-         ua->send_msg("replace=%s", job->replace);
+         ua->send_msg("replace=%c", job->replace);
       }
    }
    /* Send Pool defaults */
