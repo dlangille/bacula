@@ -35,7 +35,7 @@ extern bool parse_sd_config(CONFIG *config, const char *configfile, int exit_cod
 /* Forward referenced functions */
 static void do_scan(void);
 static bool record_cb(DCR *dcr, DEV_RECORD *rec);
-static int  create_file_attributes_record(BDB *db, JCR *mjcr, ATTR *attrs, DEV_RECORD *rec);
+static int  create_file_attributes_record(JCR *mjcr, ATTR *attrs, DEV_RECORD *rec);
 static int  create_media_record(BDB *db, MEDIA_DBR *mr, VOLUME_LABEL *vl);
 static bool update_media_record(BDB *db, MEDIA_DBR *mr);
 static int  create_pool_record(BDB *db, POOL_DBR *pr);
@@ -307,12 +307,13 @@ int main (int argc, char *argv[])
          edit_uint64(currentVolumeSize, ed1));
    }
 
+   //TODO 'mult_db_connections' arg could be passed from commandline if needed
    db = db_init_database(NULL, db_driver, db_name, db_user, db_password,
                          db_host, db_port, NULL,
                          db_ssl_mode, db_ssl_key,
                          db_ssl_cert, db_ssl_ca,
                          db_ssl_capath, db_ssl_cipher,
-                         false, false);
+                         true, false);
    if (!db || !db_open_database(NULL, db)) {
       Pmsg2(000, _("Could not open Catalog \"%s\", database \"%s\".\n"),
            db_driver, db_name);
@@ -745,7 +746,7 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
                      edit_uint64_with_commas(rec->Addr, ed2),
                      edit_uint64_with_commas(mr.VolBytes, ed3));
       }
-      create_file_attributes_record(db, mjcr, attr, rec);
+      create_file_attributes_record(mjcr, attr, rec);
       break;
 
    case STREAM_RESTORE_OBJECT:
@@ -926,6 +927,22 @@ static void bscan_free_jcr(JCR *jcr)
       free_dcr(jcr->read_dcr);
       jcr->read_dcr = NULL;
    }
+   /* Flush any left file records from batch session */
+   if (!db_write_batch_file_records(jcr)) {
+      Emsg0(M_ERROR, 0, _("Failed to flush file records!\n"));
+   }
+
+   /* Close thej jcr's db connections */
+   if (jcr->db_batch) {
+      db_close_database(jcr, jcr->db_batch);
+      jcr->db_batch = NULL;
+      jcr->batch_started = false;
+   }
+   if (jcr->db) {
+      db_close_database(jcr, jcr->db);
+      jcr->db = NULL;
+   }
+
    Dmsg0(200, "End bscan free_jcr\n");
 }
 
@@ -933,7 +950,7 @@ static void bscan_free_jcr(JCR *jcr)
  * We got a File Attributes record on the tape.  Now, lookup the Job
  *   record, and then create the attributes record.
  */
-static int create_file_attributes_record(BDB *db, JCR *mjcr, ATTR *attrs, DEV_RECORD *rec)
+static int create_file_attributes_record(JCR *mjcr, ATTR *attrs, DEV_RECORD *rec)
 {
    DCR *dcr = mjcr->read_dcr;
    ar.fname = attrs->fname;
@@ -958,8 +975,8 @@ static int create_file_attributes_record(BDB *db, JCR *mjcr, ATTR *attrs, DEV_RE
       return 1;
    }
 
-   if (!db_create_file_attributes_record(bjcr, db, &ar)) {
-      Pmsg1(0, _("Could not create File Attributes record. ERR=%s\n"), db_strerror(db));
+   if (!db_create_attributes_record(mjcr, mjcr->db, &ar)) {
+      Pmsg1(0, _("Could not create File Attributes record. ERR=%s\n"), db_strerror(mjcr->db));
       return 0;
    }
    mjcr->FileId = ar.FileId;
@@ -1155,6 +1172,27 @@ static JCR *create_job_record(BDB *db, JOB_DBR *jr, SESSION_LABEL *label,
 
    /* Now create a JCR as if starting the Job */
    mjcr = create_jcr(jr, rec, label->JobId);
+
+   /* Create another db connection per-job so that each job
+    * will be able to perform batch queries in its own context */
+   mjcr->db = db_init_database(NULL, db_driver, db_name, db_user, db_password,
+                         db_host, db_port, NULL,
+                         db_ssl_mode, db_ssl_key,
+                         db_ssl_cert, db_ssl_ca,
+                         db_ssl_capath, db_ssl_cipher,
+                         true, false);
+   if (!mjcr->db || !db_open_database(NULL, mjcr->db)) {
+      //TODO add some err handling, bscan will crash at calling db stuff against this jcr otherwise
+      Pmsg2(000, _("Could not open Catalog \"%s\", database \"%s\".\n"),
+           db_driver, db_name);
+      if (mjcr->db) {
+         Jmsg(NULL, M_FATAL, 0, _("%s"), db_strerror(mjcr->db));
+         Pmsg1(000, "%s", db_strerror(mjcr->db));
+         db_close_database(NULL, mjcr->db);
+      }
+      Jmsg(NULL, M_ERROR_TERM, 0, _("Could not open Catalog \"%s\", database \"%s\".\n"),
+           db_driver, db_name);
+   }
 
    if (!update_db) {
       return mjcr;
