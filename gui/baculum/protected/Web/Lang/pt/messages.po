@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2020-10-04 11:17\n"
+"PO-Revision-Date: 2020-11-05 04:08\n"
 "Project-Id-Version: b02f04a28aec0155df9503e3b78ae8cc\n"
 "POT-Creation-Date: \n"
 "Last-Translator: Wanderlei Hüttel <wanderlei.huttel@gmail.com>\n"
@@ -3073,25 +3073,26 @@ msgid "Set all CommandAcls used by Baculum Web"
 msgstr "Definir todos os comandos ACL's usados pelo Baculum"
 
 msgid "Find job by filename (without path):"
-msgstr "Find job by filename (without path):"
+msgstr "Procurar job pelo nome do arquivo (sem o caminho):"
 
 msgid "File"
-msgstr "File"
+msgstr "Arquivo"
 
 msgid "match exact filename"
-msgstr "match exact filename"
+msgstr "corresponder ao nome do arquivo exato"
 
 msgid "With this option are searched files with names equal provided filename, otherwise there are searched files with names containing provided filename like *filename*."
-msgstr "With this option are searched files with names equal provided filename, otherwise there are searched files with names containing provided filename like *filename*."
+msgstr "Com esta opção, serão pesquisados arquivos com nomes iguais ao nome do arquivo fornecido, caso contrário, serão pesquisados arquivos com nomes que contêm o nome do arquivo fornecido como *nome do arquivo*."
 
 msgid "State"
-msgstr "State"
+msgstr "Estado"
 
 msgid "saved"
-msgstr "saved"
+msgstr "itens salvos"
 
 msgid "deleted"
-msgstr "deleted"
+msgstr "itens excluídos"
 
 msgid "last %days days"
-msgstr "last %days days"
+msgstr "últimos %days dias"
+
