@@ -1,4 +1,23 @@
 
+               Release Notes for Baculum 9.6.6.2
+
+This is a minor new feature and bug fix release. There have been done
+improvements to the restore wizard, the job view and the job history view pages.
+
+New changes and fixes:
+
+ - Add searching jobs by filename in restore wizard - idea proposed by Wanderlei Huttel
+ - Show more detailed job file list - idea proposed by Wanderlei Huttel
+ - Add graphs to job view page
+ - Add job files API endpoint
+ - Update Portuguese translations
+ - Ajax queue improvement in framework
+ - Rework job file list API endpoint
+ - Fix renaming config resources
+ - Fix selecting pool for copy or migrate jobs running from job history page by 'Run job again' button
+ - Improved pie graphs look
+
+
                Release Notes for Baculum 9.6.6.1
 
 This is a minor new feature and bug fix release. It introduces new functions
