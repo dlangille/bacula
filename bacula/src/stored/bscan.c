@@ -654,6 +654,7 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
             create_jobmedia_record(db, mjcr);
          }
          free_dcr(mjcr->read_dcr);
+         mjcr->dec_use_count(); /* Decrease reference counter increased by get_jcr_by_session call */
          free_jcr(mjcr);
 
          break;
