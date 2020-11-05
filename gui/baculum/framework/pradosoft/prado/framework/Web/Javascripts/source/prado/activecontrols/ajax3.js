@@ -94,6 +94,8 @@ Prado.CallbackRequestManager =
 
 		// run the actual query
 		function doRequest( next ) {
+			// Add request data just before send to have it actual
+			ajaxOpts.data = ajaxOpts.context.getParameters();
 			jqXHR = jQuery.ajax( ajaxOpts );
 			jqXHR.done( dfd.resolve )
 				.fail( dfd.reject )
@@ -262,7 +264,6 @@ Prado.CallbackRequest = jQuery.klass(Prado.PostBack,
 			this.options.onPreDispatch(this,null);
 
 		// prepare callback paramters
-		this.options.data = this.getParameters();
 		this.options.url = this.getCallbackUrl();
 		this.options.timeout = this.getRequestTimeOut();
 
