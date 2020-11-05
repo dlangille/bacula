@@ -586,7 +586,7 @@ class BaculaConfigDirectives extends DirectiveListTemplate {
 			$deps,
 			$resource_type,
 			$resource_name,
-			$resource_name_new,
+			$resource_name_new
 		);
 		$result = $this->getModule('api')->set(
 			array('config',	$component_type),
