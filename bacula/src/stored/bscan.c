@@ -339,6 +339,7 @@ int main (int argc, char *argv[])
    }
 
    bjcr->read_dcr->dev->free_dedup_rehydration_interface(bjcr->read_dcr);
+   db_close_database(bjcr, db);
    free_jcr(bjcr);
    // Notice that one jcr remains 'open' for every SOS_LABEL that don't have a
    // matching EOS_LABEL (jcr created by create_job_record())
