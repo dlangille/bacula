@@ -1,0 +1,34 @@
+From 349cb06887e0a80746bf2e83e92856788b569b0a Mon Sep 17 00:00:00 2001
+From: Marcin Haba <marcin.haba@bacula.pl>
+Date: Thu, 5 Nov 2020 05:05:07 +0100
+Subject: [PATCH] baculum: Ajax queue improvement in framework
+
+See: https://github.com/pradosoft/prado/issues/724
+---
+ .../Web/Javascripts/source/prado/activecontrols/ajax3.js       | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/gui/baculum/framework/pradosoft/prado/framework/Web/Javascripts/source/prado/activecontrols/ajax3.js b/gui/baculum/framework/pradosoft/prado/framework/Web/Javascripts/source/prado/activecontrols/ajax3.js
+index 455291b7df..b44da1f845 100644
+--- a/gui/baculum/framework/pradosoft/prado/framework/Web/Javascripts/source/prado/activecontrols/ajax3.js
++++ b/gui/baculum/framework/pradosoft/prado/framework/Web/Javascripts/source/prado/activecontrols/ajax3.js
+@@ -94,6 +94,8 @@ Prado.CallbackRequestManager =
+ 
+ 		// run the actual query
+ 		function doRequest( next ) {
++			// Add request data just before send to have it actual
++			ajaxOpts.data = ajaxOpts.context.getParameters();
+ 			jqXHR = jQuery.ajax( ajaxOpts );
+ 			jqXHR.done( dfd.resolve )
+ 				.fail( dfd.reject )
+@@ -262,7 +264,6 @@ Prado.CallbackRequest = jQuery.klass(Prado.PostBack,
+ 			this.options.onPreDispatch(this,null);
+ 
+ 		// prepare callback paramters
+-		this.options.data = this.getParameters();
+ 		this.options.url = this.getCallbackUrl();
+ 		this.options.timeout = this.getRequestTimeOut();
+ 
+-- 
+2.26.2
+
