@@ -71,8 +71,6 @@ BDB *db_init_database(JCR *jcr, const char *db_driver, const char *db_name,
            mdb->bdb_open_database(jcr)
 #define db_close_database(jcr, mdb) \
            mdb->bdb_close_database(jcr)
-#define db_close_database(jcr, mdb) \
-           mdb->bdb_close_database(jcr)
 #define db_start_transaction(jcr, mdb) \
            mdb->bdb_start_transaction(jcr)
 #define db_end_transaction(jcr, mdb) \
