@@ -53,6 +53,7 @@ class DirectiveTemplate extends DirectiveControlTemplate implements IDirectiveFi
 	const IS_DIRECTIVE_CREATED = 'IsDirectiveCreated';
 	const VALIDATION_GROUP = 'ValidationGroup';
 	const CSSCLASS = 'CssClass';
+	const DISABLED = 'Disabled';
 
 	public $display_directive;
 
@@ -276,6 +277,15 @@ class DirectiveTemplate extends DirectiveControlTemplate implements IDirectiveFi
 
 	public function setCssClass($cssclass) {
 		$this->setViewState(self::CSSCLASS, $cssclass);
+	}
+
+	public function getDisabled() {
+		return $this->getViewState(self::DISABLED);
+	}
+
+	public function setDisabled($disabled) {
+		$disabled = TPropertyValue::ensureBoolean($disabled);
+		$this->setViewState(self::DISABLED, $disabled);
 	}
 }
 ?>

@@ -53,6 +53,9 @@ class DirectiveTextBox extends DirectiveTemplate {
 			}
 		}
 		$this->Directive->setText($directive_value);
+		if ($this->getDisabled()) {
+			$this->Directive->setReadOnly(true);
+		}
 		$validate = $this->getRequired();
 		$this->DirectiveValidator->setVisible($validate);
 		$cssclass = $this->getCssClass();

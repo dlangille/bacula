@@ -115,6 +115,9 @@ class DirectiveRenderer extends TItemDataRenderer {
 			$control->setGroupName($data['group_name']);
 			$control->setParentName($data['parent_name']);
 			$control->setResourceNames($this->SourceTemplateControl->getResourceNames());
+			if ($data['directive_name'] === 'Name') {
+				$control->setDisabled($this->SourceTemplateControl->getDisableRename());
+			}
 		} elseif (in_array($type, $this->directive_list_types)) {
 			$control->setHost($data['host']);
 			$control->setComponentType($data['component_type']);

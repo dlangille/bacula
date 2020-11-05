@@ -53,6 +53,7 @@ class BaculaConfigDirectives extends DirectiveListTemplate {
 	const SHOW_ALL_DIRECTIVES = 'ShowAllDirectives';
 	const SHOW_BOTTOM_BUTTONS = 'ShowBottomButtons';
 	const SAVE_DIRECTIVE_ACTION_OK = 'SaveDirectiveActionOk';
+	const DISABLE_RENAME = 'DisableRename';
 
 	private $show_all_directives = false;
 
@@ -149,7 +150,6 @@ class BaculaConfigDirectives extends DirectiveListTemplate {
 				$predefined = true;
 			}
 		}
-
 		$data_desc = $this->Application->getModule('data_desc');
 		$resource_desc = $data_desc->getDescription($component_type, $resource_type);
 		foreach ($resource_desc as $directive_name => $directive_desc) {
@@ -285,6 +285,7 @@ class BaculaConfigDirectives extends DirectiveListTemplate {
 				}
 				$directive_name = $controls[$j]->getDirectiveName();
 				$directive_value = $controls[$j]->getDirectiveValue();
+
 				$default_value = null;
 				if (key_exists($directive_name, $resource_desc)) {
 					$default_value = $resource_desc[$directive_name]->DefaultValue;
@@ -355,10 +356,19 @@ class BaculaConfigDirectives extends DirectiveListTemplate {
 			}
 		}
 		$load_values = $this->getLoadValues();
+		$res_name_dir = key_exists('Name', $directives) ? $directives['Name'] : '';
+		$resource_name = $this->getResourceName();
 		if ($load_values === true) {
-			$resource_name = $this->getResourceName();
+			if ($resource_name !== $res_name_dir) {
+				// RENAME RESOURCE
+				if ($this->renameResource($res_name_dir)) {
+					// set new resource name
+					$this->setResourceName($res_name_dir);
+					$resource_name = $res_name_dir;
+				}
+			}
 		} else {
-			$resource_name = array_key_exists('Name', $directives) ? $directives['Name'] : '';
+			$resource_name = $res_name_dir;
 		}
 
 		$params = array(
@@ -548,6 +558,84 @@ class BaculaConfigDirectives extends DirectiveListTemplate {
 	}
 
 	/**
+	 * Rename resource.
+	 * This rename method takes into account resource dependencies
+	 * and updates them as well.
+	 *
+	 * @param string $new_resource_name new resource name to set
+	 * @return boolean true on success, false on failure
+	 */
+	public function renameResource($resource_name_new) {
+		$success = true;
+		$component_type = $this->getComponentType();
+		if (empty($_SESSION[$component_type])) {
+			return false;
+		}
+		$host = null;
+		$resource_type = $this->getResourceType();
+		$resource_name = $this->getResourceName();
+		$config = $this->getConfigData($host, array($component_type));
+		$deps = $this->getModule('data_deps')->checkDependencies(
+			$component_type,
+			$resource_type,
+			$resource_name,
+			$config
+		);
+		$this->renameResourceInConfig(
+			$config,
+			$deps,
+			$resource_type,
+			$resource_name,
+			$resource_name_new,
+		);
+		$result = $this->getModule('api')->set(
+			array('config',	$component_type),
+			array('config' => json_encode($config)),
+			$host,
+			false
+		);
+		if ($result->error != 0) {
+			$success = false;
+			$emsg = 'Error while renaming resource: ' . $result->output;
+			$this->Application->getModule('logging')->log(
+				__FUNCTION__,
+				$emsg,
+				Logging::CATEGORY_APPLICATION,
+				__FILE__,
+				__LINE__
+			);
+		}
+		return $success;
+	}
+
+	/**
+	 * Rename resource in config.
+	 * Note, passing config by reference.
+	 *
+	 * @param array $config entire config
+	 * @param string $resource_type resource type to rename
+	 * @param string $resource_name resource name to rename
+	 * @param string $resource_name_new new resource name to set
+	 * @return none
+	 */
+	private function renameResourceInConfig(&$config, $deps, $resource_type, $resource_name, $resource_name_new) {
+		for ($i = 0; $i < count($config); $i++) {
+			foreach ($config[$i] as $rtype => $resource) {
+				for ($j = 0; $j < count($deps); $j++) {
+					if ($rtype === $deps[$j]['resource_type'] && $resource->Name === $deps[$j]['resource_name']) {
+						// Change resource name in dependent resources
+						$config[$i]->{$rtype}->{$deps[$j]['directive_name']} = $resource_name_new;
+					}
+				}
+				if ($rtype === $resource_type && $resource->Name === $resource_name) {
+					// Change resource name
+					$config[$i]->{$rtype}->Name = $resource_name_new;
+				}
+			}
+		}
+	}
+
+	/**
 	 * Set if remove button should be available.
 	 *
 	 * @return none;
@@ -606,6 +694,25 @@ class BaculaConfigDirectives extends DirectiveListTemplate {
 
 	public function onSave($param) {
 		$this->raiseEvent('OnSave', $this, $param);
+	}
+
+	/**
+	 * Set if name field should be disabled.
+	 *
+	 * @return none;
+	 */
+	public function setDisableRename($rename) {
+		$rename = TPropertyValue::ensureBoolean($rename);
+		$this->setViewState(self::DISABLE_RENAME, $rename);
+	}
+
+	/**
+	 * Get if name field should be disabled.
+	 *
+	 * @return bool true if field is disabled, otherwise false
+	 */
+	public function getDisableRename() {
+		return $this->getViewState(self::DISABLE_RENAME, false);
 	}
 }
 ?>

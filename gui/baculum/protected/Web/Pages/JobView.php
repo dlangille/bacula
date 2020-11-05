@@ -39,7 +39,6 @@ class JobView extends BaculumWebPage {
 
 	public function onInit($param) {
 		parent::onInit($param);
-		$this->JobConfig->attachEventHandler('OnSave', [$this, 'reloadJobInfo']);
 		if ($this->IsCallBack || $this->IsPostBack) {
 			return;
 		}
@@ -102,10 +101,11 @@ class JobView extends BaculumWebPage {
 	/**
 	 * Reload job information.
 	 *
+	 * @param BaculaConfigDirectives $sender sender object
 	 * @param mixed $param save event parameter
 	 * @return none
 	 */
-	public function reloadJobInfo($param) {
+	public function reloadJobInfo($sender, $param) {
 		if ($this->Request->contains('job')) {
 			$this->setJobInfo($this->Request['job']);
 		}
@@ -121,6 +121,8 @@ class JobView extends BaculumWebPage {
 			$this->JobConfig->setResourceName($this->getJobName());
 			$this->JobConfig->setLoadValues(true);
 			$this->JobConfig->raiseEvent('OnDirectiveListLoad', $this, null);
+			$this->FileSetConfig->unloadDirectives();
+			$this->ScheduleConfig->unloadDirectives();
 		}
 	}
 
@@ -132,6 +134,8 @@ class JobView extends BaculumWebPage {
 				$this->FileSetConfig->setResourceName($job_info['fileset']['name']);
 				$this->FileSetConfig->setLoadValues(true);
 				$this->FileSetConfig->raiseEvent('OnDirectiveListLoad', $this, null);
+				$this->JobConfig->unloadDirectives();
+				$this->ScheduleConfig->unloadDirectives();
 			}
 		}
 	}
@@ -144,6 +148,8 @@ class JobView extends BaculumWebPage {
 				$this->ScheduleConfig->setResourceName($job_info['schedule']['name']);
 				$this->ScheduleConfig->setLoadValues(true);
 				$this->ScheduleConfig->raiseEvent('OnDirectiveListLoad', $this, null);
+				$this->JobConfig->unloadDirectives();
+				$this->FileSetConfig->unloadDirectives();
 			} else {
 				$this->ScheduleConfig->unloadDirectives();
 			}

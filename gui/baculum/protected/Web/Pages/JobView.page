@@ -12,21 +12,21 @@
 		<button id="btn_job_actions" type="button" class="w3-bar-item w3-button tab_btn w3-grey" onclick="W3Tabs.open(this.id, 'job_actions');"><%[ Actions ]%></button>
 		<com:TActiveLinkButton
 			CssClass="w3-bar-item w3-button tab_btn"
-			Attributes.onclick="W3Tabs.open(this.id, 'job_config'); clear_node('#fileset_config div.directive_field'); clear_node('#schedule_config div.directive_field');"
+			Attributes.onclick="W3Tabs.open(this.id, 'job_config')"
 			Text="<%[ Configure job ]%>"
 			Visible="<%=!empty($_SESSION['dir'])%>"
 			OnClick="loadJobConfig"
 		/>
 		<com:TActiveLinkButton
 			CssClass="w3-bar-item w3-button tab_btn"
-			Attributes.onclick="W3Tabs.open(this.id, 'fileset_config'); clear_node('#job_config div.directive_field'); clear_node('#schedule_config  div.directive_field');"
+			Attributes.onclick="W3Tabs.open(this.id, 'fileset_config')"
 			Text="<%[ Configure fileset ]%>"
 			Visible="<%=!empty($_SESSION['dir'])%>"
 			OnClick="loadFileSetConfig"
 		/>
 		<com:TActiveLinkButton
 			CssClass="w3-bar-item w3-button tab_btn"
-			Attributes.onclick="W3Tabs.open(this.id, 'schedule_config'); clear_node('#job_config div.directive_field'); clear_node('#fileset_config div.directive_field');"
+			Attributes.onclick="W3Tabs.open(this.id, 'schedule_config')"
 			Text="<%[ Configure schedule ]%>"
 			Visible="<%=!empty($_SESSION['dir'])%>"
 			OnClick="loadScheduleConfig"
@@ -36,7 +36,7 @@
 			CssClass="w3-bar-item w3-button tab_btn"
 			Text="<%[ Job schedules ]%>"
 			OnCallback="loadSchedules"
-			Attributes.onclick="W3Tabs.open(this.id, 'job_schedules'); clear_node('#job_config div.directive_field'); clear_node('#fileset_config div.directive_field'); clear_node('#schedule_config  div.directive_field');"
+			Attributes.onclick="W3Tabs.open(this.id, 'job_schedules');"
 		/>
 	</div>
 	<div class="w3-container tab_item" id="job_actions">
@@ -360,6 +360,8 @@ var oJobGraphs = {
 			ComponentType="dir"
 			ResourceType="Job"
 			ShowCancelButton="false"
+			OnSave="reloadJobInfo"
+			DisableRename="true"
 		/>
 	</div>
 	<div class="w3-container tab_item" id="fileset_config" style="display: none">
@@ -369,6 +371,7 @@ var oJobGraphs = {
 			ResourceType="Fileset"
 			ShowRemoveButton="false"
 			ShowCancelButton="false"
+			OnSave="reloadJobInfo"
 		/>
 	</div>
 	<div class="w3-container tab_item" id="schedule_config" style="display: none">
@@ -378,6 +381,7 @@ var oJobGraphs = {
 			ResourceType="Schedule"
 			ShowRemoveButton="false"
 			ShowCancelButton="false"
+			OnSave="reloadJobInfo"
 		/>
 	</div>
 	<div class="w3-container tab_item" id="job_history" style="display: none">
