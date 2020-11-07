@@ -33,10 +33,20 @@ class JobsForClient extends BaculumAPIServer {
 		$allowed_jobs = array();
 		$clientid = $this->Request->contains('id') ? intval($this->Request['id']) : 0;
 		$error = false;
-		$result = $this->getModule('bconsole')->bconsoleCommand($this->director, array('.jobs'));
+		$result = $this->getModule('bconsole')->bconsoleCommand(
+			$this->director,
+			['.jobs'],
+			null,
+			true
+		);
 		if ($result->exitcode === 0) {
-			array_shift($result->output);
 			$allowed_jobs = $result->output;
+			if (count($allowed_jobs) == 0) {
+				// no $allowed_jobs means that user has no job resources assigned.
+				$error = true;
+				$this->output = [];
+				$this->error = JobError::ERROR_NO_ERRORS;
+			}
 		} else {
 			$error = true;
 			$this->output = $result->output;

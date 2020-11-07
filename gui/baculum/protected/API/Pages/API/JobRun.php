@@ -94,9 +94,13 @@ class JobRun extends BaculumAPIServer {
 			$this->error = JobError::ERROR_JOB_DOES_NOT_EXISTS;
 			return;
 		} else {
-			$result = $this->getModule('bconsole')->bconsoleCommand($this->director, array('.jobs'));
+			$result = $this->getModule('bconsole')->bconsoleCommand(
+				$this->director,
+				['.jobs'],
+				null,
+				true
+			);
 			if ($result->exitcode === 0) {
-				array_shift($result->output);
 				if (!in_array($job, $result->output)) {
 					$this->output = JobError::MSG_ERROR_JOB_DOES_NOT_EXISTS;
 					$this->error = JobError::ERROR_JOB_DOES_NOT_EXISTS;

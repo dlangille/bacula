@@ -30,11 +30,21 @@
 class JobTotals extends BaculumAPIServer {
 	public function get() {
 		$error = false;
-		$allowed = array();
-		$result = $this->getModule('bconsole')->bconsoleCommand($this->director, array('.jobs'));
+		$allowed = [];
+		$result = $this->getModule('bconsole')->bconsoleCommand(
+			$this->director,
+			['.jobs'],
+			null,
+			true
+		);
 		if ($result->exitcode === 0) {
-			array_shift($result->output);
 			$allowed = $result->output;
+			if (count($allowed) == 0) {
+				// no $allowed means that user has no job resource assigned.
+				$error = true;
+				$this->output = [];
+				$this->error = JobError::ERROR_NO_ERRORS;
+			}
 		} else {
 			$error = true;
 			$this->output = $result->output;

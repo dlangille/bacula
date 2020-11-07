@@ -34,10 +34,11 @@ class VolumesRequired extends BaculumAPIServer {
 		$fileid = $this->Request->contains('fileid') ? intval($this->Request['fileid']) : 0;
 		$result = $this->getModule('bconsole')->bconsoleCommand(
 			$this->director,
-			array('.jobs')
+			['.jobs'],
+			null,
+			true
 		);
 		if ($result->exitcode === 0) {
-			array_shift($result->output);
 			$job = $this->getModule('job')->getJobById($jobid);
 			if(is_object($job) && in_array($job->name, $result->output)) {
 				$volumes = $this->getModule('volume')->getVolumesForJob($jobid, $fileid);

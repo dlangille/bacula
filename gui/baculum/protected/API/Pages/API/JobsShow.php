@@ -32,11 +32,12 @@ class JobsShow extends BaculumAPIServer {
 	public function get() {
 		$result = $this->getModule('bconsole')->bconsoleCommand(
 			$this->director,
-			array('.jobs')
+			['.jobs'],
+			null,
+			true
 		);
 		$job = null;
 		if ($result->exitcode === 0) {
-			array_shift($result->output);
 			if ($this->Request->contains('name')) {
 				if (in_array($this->Request['name'], $result->output)) {
 					$job = $this->Request['name'];

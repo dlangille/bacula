@@ -50,7 +50,7 @@ class Jobs extends BaculumAPIServer {
 			return;
 		}
 
-		$params = array();
+		$params = [];
 		$jobstatuses = array_keys($misc->getJobState());
 		$sts = str_split($jobstatus);
 		for ($i = 0; $i < count($sts); $i++) {
@@ -69,16 +69,27 @@ class Jobs extends BaculumAPIServer {
 			$params['Job.Type']['operator'] = '';
 			$params['Job.Type']['vals'] = $type;
 		}
-		$allowed = array();
-		$result = $this->getModule('bconsole')->bconsoleCommand($this->director, array('.jobs'));
+		$allowed = [];
+		$result = $this->getModule('bconsole')->bconsoleCommand(
+			$this->director,
+			['.jobs'],
+			null,
+			true
+		);
 		if ($result->exitcode === 0) {
-			array_shift($result->output);
-			$vals = array();
+			$vals = [];
 			if (!empty($jobname) && in_array($jobname, $result->output)) {
-				$vals = array($jobname);
+				$vals = [$jobname];
 			} else {
 				$vals = $result->output;
 			}
+			if (count($vals) == 0) {
+				// no $vals criteria means that user has no job resources assigned.
+				$this->output = [];
+				$this->error = JobError::ERROR_NO_ERRORS;
+				return;
+			}
+
 			$params['Job.Name']['operator'] = 'OR';
 			$params['Job.Name']['vals'] = $vals;
 
@@ -96,7 +107,7 @@ class Jobs extends BaculumAPIServer {
 					}
 					if (is_object($cli) && in_array($cli->name, $result->output)) {
 						$params['Job.ClientId']['operator'] = 'AND';
-						$params['Job.ClientId']['vals'] = array($cli->clientid);
+						$params['Job.ClientId']['vals'] = [$cli->clientid];
 					} else {
 						$error = true;
 						$this->output = JobError::MSG_ERROR_CLIENT_DOES_NOT_EXISTS;

@@ -59,9 +59,13 @@ class JobsRecent extends BaculumAPIServer {
 			$this->output = FileSetError::MSG_ERROR_FILESET_DOES_NOT_EXISTS;
 			$this->error = FileSetError::ERROR_FILESET_DOES_NOT_EXISTS;
 		} else {
-			$result = $this->getModule('bconsole')->bconsoleCommand($this->director, array('.jobs'));
+			$result = $this->getModule('bconsole')->bconsoleCommand(
+				$this->director,
+				['.jobs'],
+				null,
+				true
+			);
 			if ($result->exitcode === 0) {
-				array_shift($result->output);
 				if (in_array($jobname, $result->output)) {
 					$jobs = $this->getModule('job')->getRecentJobids($jobname, $clientid, $filesetid, $inc_copy_job);
 					if (is_array($jobs)) {

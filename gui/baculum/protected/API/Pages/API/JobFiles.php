@@ -57,14 +57,21 @@ class JobFiles extends BaculumAPIServer {
 
 		$result = $this->getModule('bconsole')->bconsoleCommand(
 			$this->director,
-			array('.jobs')
+			['.jobs'],
+			null,
+			true
 		);
 
 		if ($result->exitcode === 0) {
-			array_shift($result->output);
-			$job = $this->getModule('job')->getJobsByFilename($clientid, $filename, $strict_mode, $result->output);
-			$this->output = $job;
-			$this->error = JobError::ERROR_NO_ERRORS;
+			if (count($result->output) == 0) {
+				// no allowed jobs means that user has no job resource assigned.
+				$this->output = [];
+				$this->error = JobError::ERROR_NO_ERRORS;
+			} else {
+				$job = $this->getModule('job')->getJobsByFilename($clientid, $filename, $strict_mode, $result->output);
+				$this->output = $job;
+				$this->error = JobError::ERROR_NO_ERRORS;
+			}
 		} else {
 			$result = is_array($result->output) ? implode('', $result->output) : $result->output;
 			$this->output = JobError::MSG_ERROR_WRONG_EXITCODE . $result;

@@ -32,7 +32,7 @@ Prado::using('Application.API.Class.Bconsole');
 class JobEstimate extends BaculumAPIServer {
 
 	public function get() {
-		$output = array();
+		$output = [];
 		$misc = $this->getModule('misc');
 		if ($this->Request->contains('out_id') && $misc->isValidAlphaNumeric($this->Request->itemAt('out_id'))) {
 			$out_id = $this->Request->itemAt('out_id');
@@ -78,9 +78,13 @@ class JobEstimate extends BaculumAPIServer {
 			$this->error = JobError::ERROR_JOB_DOES_NOT_EXISTS;
 			return;
 		} else {
-			$result = $this->getModule('bconsole')->bconsoleCommand($this->director, array('.jobs'));
+			$result = $this->getModule('bconsole')->bconsoleCommand(
+				$this->director,
+				['.jobs'],
+				null,
+				true
+			);
 			if ($result->exitcode === 0) {
-				array_shift($result->output);
 				if (!in_array($job, $result->output)) {
 					$this->output = JobError::MSG_ERROR_JOB_DOES_NOT_EXISTS;
 					$this->error = JobError::ERROR_JOB_DOES_NOT_EXISTS;

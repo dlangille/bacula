@@ -31,9 +31,13 @@ class Pools extends BaculumAPIServer {
 	public function get() {
 		$limit = $this->Request->contains('limit') ? intval($this->Request['limit']) : 0;
 		$pools = $this->getModule('pool')->getPools($limit);
-		$result = $this->getModule('bconsole')->bconsoleCommand($this->director, array('.pool'));
+		$result = $this->getModule('bconsole')->bconsoleCommand(
+			$this->director,
+			['.pool'],
+			null,
+			true
+		);
 		if ($result->exitcode === 0) {
-			array_shift($result->output);
 			if (is_array($pools) && count($pools) > 0) {
 				$pools_output = array();
 				foreach($pools as $pool) {

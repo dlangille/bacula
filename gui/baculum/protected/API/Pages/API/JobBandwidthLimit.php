@@ -36,9 +36,13 @@ class JobBandwidthLimit extends BaculumAPIServer {
 		}
 
 		$jobid = null;
-		$result = $this->getModule('bconsole')->bconsoleCommand($this->director, array('.jobs'));
+		$result = $this->getModule('bconsole')->bconsoleCommand(
+			$this->director,
+			['.jobs'],
+			null,
+			true
+		);
 		if ($result->exitcode === 0) {
-			array_shift($result->output);
 			if(is_object($job) && in_array($job->name, $result->output)) {
 				$jobid = $job->jobid;
 			}

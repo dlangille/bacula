@@ -32,10 +32,11 @@ class Pool extends BaculumAPIServer {
 		$poolid = $this->Request->contains('id') ? intval($this->Request['id']) : 0;
 		$result = $this->getModule('bconsole')->bconsoleCommand(
 			$this->director,
-			array('.pool')
+			['.pool'],
+			null,
+			true
 		);
 		if ($result->exitcode === 0) {
-			array_shift($result->output);
 			$pool = $this->getModule('pool')->getPoolById($poolid);
 			if(!is_null($pool) && in_array($pool->name, $result->output)) {
 				$this->output = $pool;

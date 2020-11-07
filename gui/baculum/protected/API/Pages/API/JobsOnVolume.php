@@ -34,11 +34,18 @@ class JobsOnVolume extends BaculumAPIServer {
 		$error = false;
 		$result = $this->getModule('bconsole')->bconsoleCommand(
 			$this->director,
-			array('.jobs')
+			['.jobs'],
+			null,
+			true
 		);
 		if ($result->exitcode === 0) {
-			array_shift($result->output);
 			$allowed = $result->output;
+			if (count($allowed) == 0) {
+				// no $allowed means that user has no job resources assigned.
+				$error = true;
+				$this->output = [];
+				$this->error = JobError::ERROR_NO_ERRORS;
+			}
 		} else {
 			$error = true;
 			$this->output = $result->output;

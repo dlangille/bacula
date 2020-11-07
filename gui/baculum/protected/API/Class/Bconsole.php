@@ -174,7 +174,7 @@ class Bconsole extends APIModule {
 		return (object)array('output' => $output, 'exitcode' => (integer)$exitcode);
 	}
 
-	public function bconsoleCommand($director, array $command, $ptype = null) {
+	public function bconsoleCommand($director, array $command, $ptype = null, $without_cmd = false) {
 		$result = null;
 		if (count($this->config) > 0 && $this->config['enabled'] !== '1') {
 			throw new BConsoleException(
@@ -185,6 +185,9 @@ class Bconsole extends APIModule {
 		$base_command = count($command) > 0 ? $command[0] : null;
 		if($this->isCommandValid($base_command) === true) {
 			$result = $this->execCommand($director, $command, $ptype);
+			if ($without_cmd) {
+				array_shift($result->output);
+			}
 		} else {
 			throw new BConsoleException(
 				BconsoleError::MSG_ERROR_INVALID_COMMAND,

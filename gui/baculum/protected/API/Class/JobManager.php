@@ -227,10 +227,19 @@ WHERE JobMedia.MediaId='$mediaid' $jobs_criteria";
 	 * @return array jobs for specific client
 	 */
 	public function getJobsForClient($clientid, $allowed_jobs = array()) {
-		$jobs_criteria = '';
+		$where = '';
 		if (count($allowed_jobs) > 0) {
-			$jobs_sql = implode("', '", $allowed_jobs);
-			$jobs_criteria = " AND Job.Name IN ('" . $jobs_sql . "')";
+			$criteria = [
+				'Job.Name' => [
+					'vals' => $allowed_jobs,
+					'operator' => 'OR'
+				]
+			];
+			$where = Database::getWhere($criteria, true);
+			$wh = '';
+			if (count($where['params']) > 0) {
+				$wh = ' AND ' . $where['where'];
+			}
 		}
 		$sql = "SELECT DISTINCT Job.*, 
 Client.Name as client, 
@@ -240,8 +249,8 @@ FROM Job
 LEFT JOIN Client USING (ClientId) 
 LEFT JOIN Pool USING (PoolId) 
 LEFT JOIN FileSet USING (FilesetId) 
-WHERE Client.ClientId='$clientid' $jobs_criteria";
-		return JobRecord::finder()->findAllBySql($sql);
+WHERE Client.ClientId='$clientid' $wh";
+		return JobRecord::finder()->findAllBySql($sql, $where['params']);
 	}
 
 	/**

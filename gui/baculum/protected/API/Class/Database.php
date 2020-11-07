@@ -158,7 +158,7 @@ class Database extends APIModule {
 		return $dbsize;
 	}
 
-	public static function getWhere(array $params) {
+	public static function getWhere(array $params, $without_where = false) {
 		$where = '';
 		$parameters = array();
 		if (count($params) > 0) {
@@ -181,7 +181,12 @@ class Database extends APIModule {
 					$parameters[$pkey] = $pval;
 				}
 			}
-			$where = ' WHERE (' . implode(') AND (' , $condition) . ')';
+			if (count($condition) > 0) {
+				$where = ' (' . implode(') AND (' , $condition) . ')';
+				if ($without_where === false)  {
+					$where = ' WHERE ' . $where;
+				}
+			}
 		}
 		return array('where' => $where, 'params' => $parameters);
 	}

@@ -30,7 +30,7 @@
 class JobResNames extends BaculumAPIServer {
 	public function get() {
 		$limit = $this->Request->contains('limit') ? intval($this->Request['limit']) : 0;
-		$jobs_cmd = array('.jobs');
+		$jobs_cmd = ['.jobs'];
 		$types = $this->getModule('misc')->job_types;
 		if ($this->Request->contains('type') && key_exists($this->Request['type'], $types)) {
 			array_push($jobs_cmd, 'type="' . $this->Request['type']. '"');
@@ -42,19 +42,22 @@ class JobResNames extends BaculumAPIServer {
 			$this->error = $directors->exitcode;
 			return;
 		}
-		$jobs = array();
+		$jobs = [];
 		$error = false;
 		$error_obj = null;
 		for ($i = 0; $i < count($directors->output); $i++) {
-			$job_list = $this->getModule('bconsole')->bconsoleCommand($directors->output[$i], $jobs_cmd);
+			$job_list = $this->getModule('bconsole')->bconsoleCommand(
+				$directors->output[$i],
+				$jobs_cmd,
+				null,
+				true
+			);
 			if ($job_list->exitcode != 0) {
 				$error_obj = $job_list;
 				$error = true;
 				break;
 			}
-			// shift command
-			array_shift($job_list->output);
-			$jobs[$directors->output[$i]] = array();
+			$jobs[$directors->output[$i]] = [];
 			for ($j = 0; $j < count($job_list->output); $j++) {
 				$jobs[$directors->output[$i]][] = $job_list->output[$j];
 
