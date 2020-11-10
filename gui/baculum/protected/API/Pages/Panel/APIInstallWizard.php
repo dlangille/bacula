@@ -79,14 +79,16 @@ class APIInstallWizard extends BaculumAPIPage {
 
 	public function onInit($param) {
 		parent::onInit($param);
-		if (isset($_SESSION['language'])) {
-			$this->Lang->SelectedValue = $_SESSION['language'];
-		}
 		$config = $this->getModule('api_config');
 		$this->config = $config->getConfig();
 		$this->first_run = (count($this->config) === 0);
 		$oauth2_cfg = $this->getModule('oauth2_config')->getConfig();
 		$this->add_auth_params = (count($oauth2_cfg) === 0);
+		if (isset($_SESSION['language'])) {
+			$this->Lang->SelectedValue = $_SESSION['language'];
+		} elseif (!$this->first_run && isset($this->config['api']['lang'])) {
+			$this->Lang->SelectedValue = $this->config['api']['lang'];
+		}
 	}
 
 	public function onLoad($param) {

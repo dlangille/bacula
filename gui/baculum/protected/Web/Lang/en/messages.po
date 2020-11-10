@@ -17,18 +17,6 @@ msgstr "Language:"
 msgid "select language"
 msgstr "select language"
 
-msgid "English"
-msgstr "English"
-
-msgid "Polish"
-msgstr "Polish"
-
-msgid "Portuguese"
-msgstr "Portuguese"
-
-msgid "Japanese"
-msgstr "Japanese"
-
 msgid "Language"
 msgstr "Language"
 

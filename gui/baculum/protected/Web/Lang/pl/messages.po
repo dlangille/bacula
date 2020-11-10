@@ -23,18 +23,6 @@ msgstr "Język:"
 msgid "select language"
 msgstr "wybierz język"
 
-msgid "English"
-msgstr "angielski"
-
-msgid "Polish"
-msgstr "polski"
-
-msgid "Portuguese"
-msgstr "portugalski"
-
-msgid "Japanese"
-msgstr "japoński"
-
 msgid "Language"
 msgstr "Język"
 

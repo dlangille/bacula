@@ -24,15 +24,6 @@ msgstr "Język"
 msgid "select language"
 msgstr "wybierz język"
 
-msgid "English"
-msgstr "angielski"
-
-msgid "Polish"
-msgstr "polski"
-
-msgid "Portuguese"
-msgstr "portugalski"
-
 msgid "&laquo; Previous"
 msgstr "&laquo; Wstecz"
 

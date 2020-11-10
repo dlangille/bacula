@@ -477,9 +477,6 @@ msgstr "Enabled:"
 msgid "End time"
 msgstr "終了時間"
 
-msgid "English"
-msgstr "English"
-
 msgid "Enter"
 msgstr "Enter"
 
@@ -690,9 +687,6 @@ msgid ""
 msgstr ""
 "It seems that there is no files for choosing or file records in database for "
 "this job has been purged (file retention period expired)"
-
-msgid "Japanese"
-msgstr "Japanese"
 
 msgid "Job Retention"
 msgstr "Job Retention"
@@ -1126,9 +1120,6 @@ msgstr "Please select language."
 msgid "Please unassign resource %s \"%s\" from these resources and try again."
 msgstr "Please unassign resource %s \"%s\" from these resources and try again."
 
-msgid "Polish"
-msgstr "Polish"
-
 msgid "Pool"
 msgstr "Pool"
 
@@ -1152,9 +1143,6 @@ msgstr "Pools"
 
 msgid "Port:"
 msgstr "ポート番号:"
-
-msgid "Portuguese"
-msgstr "Portuguese"
 
 msgid "Previous"
 msgstr "戻る"
