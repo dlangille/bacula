@@ -335,7 +335,7 @@ h4 {
 
 #actions_fields .button {
 	display: inline-block;
-	width: 50px;
+	min-width: 50px;
 }
 
 #actions_fields .button input[type="submit"] {
