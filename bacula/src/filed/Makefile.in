@@ -81,11 +81,11 @@ bacgpfs.o: bacgpfs.c bacgpfs.h
 
 bacl.o: bacl.c bacgpfs.o
 	@echo "Compiling $<"
-	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) $(LZO_INC) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) $(AFS_CFLAGS)$<
+	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) $(LZO_INC) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) $(AFS_CFLAGS) $<
 
 bxattr.o: bxattr.c bacgpfs.o
 	@echo "Compiling $<"
-	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) $(LZO_INC) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS)$<
+	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) $(LZO_INC) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) $<
 
 win32/winlib.a:
 	@if test -f win32/Makefile -a "${GMAKE}" != "none"; then \
