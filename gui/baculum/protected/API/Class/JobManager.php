@@ -259,10 +259,11 @@ WHERE Client.ClientId='$clientid' $wh";
 	 * @param string $clientid client identifier
 	 * @param string $filename filename without path
 	 * @param boolean $strict_mode if true then it maches exact filename, otherwise with % around filename
+	 * @param string $path path to narrow results to one specific path
 	 * @param array $allowed_jobs jobs allowed to show
 	 * @return array jobs for specific client and filename
 	 */
-	public function getJobsByFilename($clientid, $filename, $strict_mode = false, $allowed_jobs = array()) {
+	public function getJobsByFilename($clientid, $filename, $strict_mode = false, $path = '', $allowed_jobs = array()) {
 		$jobs_criteria = '';
 		if (count($allowed_jobs) > 0) {
 			$jobs_sql = implode("', '", $allowed_jobs);
@@ -273,13 +274,18 @@ WHERE Client.ClientId='$clientid' $wh";
 			$filename = '%' . $filename . '%';
 		}
 
+		$path_criteria = '';
+		if (!empty($path)) {
+			$path_criteria = ' AND Path.Path = :path ';
+		}
+
 		$fname_col = 'Path.Path || Filename.Name';
 		$db_params = $this->getModule('api_config')->getConfig('db');
 		if ($db_params['type'] === Database::MYSQL_TYPE) {
 			$fname_col = 'CONCAT(Path.Path, Filename.Name)';
 		}
 
-		$sql = "SELECT Job.JobId AS JobId,
+		$sql = "SELECT Job.JobId AS jobid,
                                Job.Name AS name,
                                $fname_col AS file,
                                Job.StartTime AS starttime,
@@ -297,13 +303,17 @@ WHERE Client.ClientId='$clientid' $wh";
                             AND Path.PathId=File.PathId 
                             AND Filename.FilenameId=File.FilenameId 
                             AND Filename.Name LIKE :filename 
-                      $jobs_criteria 
-                      ORDER BY starttime DESC";
+		      $jobs_criteria 
+		      $path_criteria 
+		      ORDER BY starttime DESC";
 		$connection = JobRecord::finder()->getDbConnection();
 		$connection->setActive(true);
 		$pdo = $connection->getPdoInstance();
 		$sth = $pdo->prepare($sql);
 		$sth->bindParam(':filename', $filename, PDO::PARAM_STR, 200);
+		if (!empty($path)) {
+			$sth->bindParam(':path', $path, PDO::PARAM_STR, 400);
+		}
 		$sth->execute();
 		return $sth->fetchAll(PDO::FETCH_ASSOC);
 	}

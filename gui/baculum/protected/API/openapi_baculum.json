@@ -1210,6 +1210,16 @@
 						"schema": {
 							"type": "boolean"
 						}
+					},
+					{
+						"name": "path",
+						"in": "query",
+						"description": "Path to narrow down the results to files from one specific path. The path must be finished with a slash.",
+						"required":  false,
+						"schema": {
+							"type": "string",
+							"maxLength": 400
+						}
 					}
 				]
 			}

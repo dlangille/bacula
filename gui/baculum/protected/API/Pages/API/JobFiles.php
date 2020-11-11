@@ -34,6 +34,7 @@ class JobFiles extends BaculumAPIServer {
 		$misc = $this->getModule('misc');
 		$filename = $this->Request->contains('filename') && $misc->isValidFilename($this->Request['filename']) ? $this->Request['filename'] : null;
 		$strict_mode = ($this->Request->contains('strict') && $misc->isValidBooleanTrue($this->Request['strict']));
+		$path = $this->Request->contains('path') && $misc->isValidPath($this->Request['path']) ? $this->Request['path'] : '';
 
 		$clientid = null;
 		if ($this->Request->contains('clientid')) {
@@ -68,7 +69,7 @@ class JobFiles extends BaculumAPIServer {
 				$this->output = [];
 				$this->error = JobError::ERROR_NO_ERRORS;
 			} else {
-				$job = $this->getModule('job')->getJobsByFilename($clientid, $filename, $strict_mode, $result->output);
+				$job = $this->getModule('job')->getJobsByFilename($clientid, $filename, $strict_mode, $path, $result->output);
 				$this->output = $job;
 				$this->error = JobError::ERROR_NO_ERRORS;
 			}
