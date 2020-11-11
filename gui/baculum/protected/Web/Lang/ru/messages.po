@@ -3084,3 +3084,9 @@ msgstr "удалено"
 msgid "last %days days"
 msgstr "последние %days дней"
 
+msgid "Path (optional):"
+msgstr "Path (optional):"
+
+msgid "With the given path, the results narrow down to the files in the path only."
+msgstr "With the given path, the results narrow down to the files in the path only."
+

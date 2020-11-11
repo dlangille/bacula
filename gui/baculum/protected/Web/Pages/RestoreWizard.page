@@ -165,8 +165,9 @@
 			<div id="backup_to_restore_field" style="display: <%=!$this->OnlySelectedBackupSelection->Checked ? 'none' : 'block'%>">
 				<p><strong><%[ Note: if you select incremental or differential backup, on the next step will be also loaded all directories and files from older backups required to do the job restore. In other words, the selected backup determines time point from which will be loaded the selected backup and other older backups (incremental, differential) backups up till closest full backup. ]%></strong></p>
 				<div id="table_filters_body">
-					<span class="text"><%[ Find job by filename (without path): ]%></span> <input type="text" class="w3-text" id="restore_wizard_find_job_by_filename" /> <i id="restore_wizard_find_job_by_filename_btn" class="fas fa-search"  style="cursor: pointer"></i>
-					<span  title="<%[ With this option are searched files with names equal provided filename, otherwise there are searched files with names containing provided filename like *filename*. ]%>" style="margin-left: 10px"><input type="checkbox" class="w3-check" id="restore_wizard_find_strict" value="1" /> <span class="text"><%[ match exact filename ]%></span></span> &nbsp;<i id="restore_wizard_find_job_by_filename_loader" class="fas fa-sync fa-spin" style="display: none"></i>
+					<span class="text"><%[ Find job by filename (without path): ]%></span> <input type="text" class="w3-text" id="restore_wizard_find_job_by_filename" /> <i id="restore_wizard_find_job_by_filename_btn" class="fas fa-search" style="cursor: pointer; margin-right: 10px;"></i>
+					<span  title="<%[ With this option are searched files with names equal provided filename, otherwise there are searched files with names containing provided filename like *filename*. ]%>" style="margin-right: 10px"><input type="checkbox" class="w3-check" id="restore_wizard_find_strict" value="1" /> <span class="text"><%[ match exact filename ]%></span></span>
+					<span title="<%[ With the given path, the results narrow down to the files in the path only. ]%>"><span class="text"><%[ Path (optional): ]%></span><input type="text" class="w3-text" id="restore_wizard_find_using_path" /> &nbsp;<i id="restore_wizard_find_job_by_filename_loader" class="fas fa-sync fa-spin" style="visibility: hidden;"></i>
 				</div>
 				<table id="job_to_restore_list" style="width: 100%">
 					<thead>
@@ -226,6 +227,7 @@ var oJobsToRestoreList = {
 		find_job_by_filename_btn: 'restore_wizard_find_job_by_filename_btn',
 		find_job_by_filename_loader: 'restore_wizard_find_job_by_filename_loader',
 		find_strict: 'restore_wizard_find_strict',
+		find_path: 'restore_wizard_find_using_path',
 		no_backup_msg: 'no_backup_to_restore_msg'
 	},
 	data: [],
@@ -258,20 +260,31 @@ var oJobsToRestoreList = {
 		document.getElementById(this.ids.find_job_by_filename_btn).addEventListener('click', function(e) {
 			this.load_jobs();
 		}.bind(this));
+		document.getElementById(this.ids.find_path).addEventListener('keyup', function(e) {
+			if (e.keyCode == 13) {
+				e.preventDefault();
+				this.load_jobs();
+			}
+		}.bind(this));
 	},
 	load_jobs: function() {
 		var cb = <%=$this->JobListCb->ActiveControl->Javascript%>;
-		var fjbf = document.getElementById(this.ids.find_job_by_filename);
-		var fs = document.getElementById(this.ids.find_strict);
+		var fjbf = document.getElementById(this.ids.find_job_by_filename).value.trim();
+		var fs = document.getElementById(this.ids.find_strict).checked;
+		var fp = document.getElementById(this.ids.find_path).value.trim();
+		if (fp.length > 0 && fp.slice(-1) !== '/') {
+			fp += '/';
+		}
 		cb.setCallbackParameter({
-			filename: fjbf.value,
-			strict: fs.checked
+			filename: fjbf,
+			strict: fs,
+			path: fp
 		});
 		cb.dispatch();
 	},
 	show_find_job_by_filename_loader: function(show) {
 		var loader = document.getElementById(this.ids.find_job_by_filename_loader);
-		loader.style.display = (show) ? '' : 'none';
+		loader.style.visibility = (show) ? 'visible' : 'hidden';
 	},
 	update_table: function(data, list_type) {
 		oJobsToRestoreList.data = data;

@@ -322,14 +322,16 @@ class RestoreWizard extends BaculumWebPage
 	 *
 	 * @param string $filename filename to find a backup
 	 * @param boolean $strict strict mode with exact matching name == filename
+	 * @param string $path path to narrow down results to given path
 	 * @return array job list with files
 	 */
-	private function loadBackupsByFilename($filename, $strict) {
+	private function loadBackupsByFilename($filename, $strict, $path) {
 		$clientid = $this->BackupClient->SelectedValue;
 		$query = [
 			'clientid' => $clientid,
 			'filename' => rawurlencode($filename),
-			'strict' => $strict
+			'strict' => $strict,
+			'path' => $path
 		];
 		$params = [
 			'jobs',
@@ -361,7 +363,7 @@ class RestoreWizard extends BaculumWebPage
 		$list_type = self::JOB_LIST_BY_CLIENT;
 		if (is_object($prop) && !empty($prop->filename)) {
 			$list_type = self::JOB_LIST_BY_FILENAME;
-			$jobs = $this->loadBackupsByFilename($prop->filename, $prop->strict);
+			$jobs = $this->loadBackupsByFilename($prop->filename, $prop->strict, $prop->path);
 		} else {
 			$list_type = self::JOB_LIST_BY_CLIENT;
 			$jobs = $this->loadBackupsForClient();

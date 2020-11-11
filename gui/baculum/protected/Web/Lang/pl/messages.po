@@ -3084,3 +3084,10 @@ msgstr "skasowany"
 
 msgid "last %days days"
 msgstr "ostatnie %days dni"
+
+msgid "Path (optional):"
+msgstr "Ścieżka (opcjonalna):"
+
+msgid "With the given path, the results narrow down to the files in the path only."
+msgstr "Z podaną ścieżką wyniki zawężają się wyłącznie do plików w ścieżce."
+

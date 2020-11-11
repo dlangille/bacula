@@ -131,7 +131,7 @@ div.table_toolbar select {
 
 #table_filters {
 	display: inline-block;
-	vertical-align: text-top;
+	vertical-align: top;
 }
 
 #table_filters span.text {
@@ -141,6 +141,14 @@ div.table_toolbar select {
 #table_filters input, span.text {
 	vertical-align: middle;
 	top: 0;
+}
+
+#table_filters_body {
+	border: 1px solid gray;
+	padding: 9px 13px;
+	border-radius: 4px;
+	position: relative;
+	top: -6px;
 }
 
 table.dataTable tbody > tr.selected, table.dataTable tbody > tr > .selected {
