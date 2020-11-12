@@ -670,6 +670,9 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
           */
          if (update_db) {
             DCR *mdcr;
+            /* Temporary list needed for freeing dcr's outsisde of foreach_dlist loop */
+            alist dcrs_to_delete(10, false);
+
             foreach_dlist(mdcr, dev->attached_dcrs) {
                JCR *mjcr = mdcr->jcr;
                if (!mjcr || mjcr->JobId == 0) {
@@ -688,7 +691,13 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
                   Pmsg1(0, _("Could not update job record. ERR=%s\n"), db_strerror(db));
                }
                mjcr->read_dcr = NULL;
+               dcrs_to_delete.append(mdcr);
                free_jcr(mjcr);
+            }
+
+            /* Now free dcr's if needed */
+            foreach_alist(mdcr, &dcrs_to_delete) {
+               free_dcr(mdcr);
             }
          }
          mr.VolFiles = (uint32_t)(rec->Addr >> 32);
@@ -919,10 +928,7 @@ static void bscan_free_jcr(JCR *jcr)
    if (jcr->RestoreBootstrap) {
       bfree_and_null(jcr->RestoreBootstrap);
    }
-   if (jcr->dcr) {
-      free_dcr(jcr->dcr);
-      jcr->dcr = NULL;
-   }
+
    if (jcr->read_dcr) {
       free_dcr(jcr->read_dcr);
       jcr->read_dcr = NULL;
