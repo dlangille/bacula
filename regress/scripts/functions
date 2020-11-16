@@ -194,7 +194,7 @@ EOF
       if [ x$DEDUP_FD_CACHE = xyes ]; then
             $bperl -e 'add_attribute("$conf/bacula-fd.conf", "DedupIndexDirectory", "$working/ddefd", "FileDaemon")'
       fi
-      variant_name="Dedup($DEDUP_FS_OPTION,fdcache=$DEDUP_FD_CACHE)"
+      variant_name="Dedup($DEDUP_DRIVER,$DEDUP_FS_OPTION,fdcache=$DEDUP_FD_CACHE)"
       devicetype=`expr $devicetype + 1`
    fi
    if [ x$FORCE_SDCALLS = xyes ]; then
