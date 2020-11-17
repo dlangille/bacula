@@ -791,13 +791,30 @@ die_early()
 #
 check_dedup_enable()
 {
-   if [ "$FORCE_DEDUP" != "yes" ] ; then 
-      print_debug "This test is dedicated to DEDUP, set variable FORCE_DEDUP to 'yes'"
+   dedup_drivers=${1:-Legacy}
+   if [ "$FORCE_DEDUP" != "yes" ] ; then
+      echo "This test is dedicated to DEDUP, set variable FORCE_DEDUP to 'yes'"
       exit 0
    fi
    if [ "$DEDUP_FS_OPTION" != "bothsides" -a "$DEDUP_FS_OPTION" != "storage" -a "$DEDUP_FS_OPTION" != "none" ] ; then
-      print_debug "variable DEDUP_FS_OPTION must be set to bothsides, storage or none"
+      echo "variable DEDUP_FS_OPTION must be set to bothsides, storage or none"
       exit 1
+   fi
+   if [ -n $dedup_drivers ] ; then
+      # a list of valid drivers for the test has been specified
+      # check if one match the active one
+      active_driver=${DEDUP_DRIVER=:-Legacy}
+      result="no"
+      for driver in $dedup_drivers ; do
+         if [ "$driver" = "$active_driver" ] ; then
+            result="ok"
+            break
+         fi
+      done
+      if [ $result != ok ] ; then
+         echo "This test is designed for dedup drivers: "$dedup_drivers", not $active_driver"
+         exit 0
+      fi
    fi
 }
 
@@ -807,9 +824,9 @@ check_dedup_enable()
 #
 check_dedup_forced()
 {
-   check_dedup_enable
+   check_dedup_enable $*
    if [ "$DEDUP_FS_OPTION" = "none" ] ; then
-      print_debug "This test expect to see the DDE grow then DEDUP_FS_OPTION cannot be none"
+      echo "This test expect to see the DDE grow then DEDUP_FS_OPTION cannot be none"
       exit 0
    fi
 }
