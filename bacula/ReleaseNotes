@@ -1,3 +1,71 @@
+               Release Notes for Bacula 11.0.0
+
+This is a major new release with many new features and a number of
+changes. Please take care to test this code carefully before putting it into
+production.  Although the new features have been tested, they have not run in a
+production environment.
+
+Compatibility:
+--------------
+As always, both the Director and Storage daemon(s) must be upgraded at
+the same time. Any File daemon running on the same machine as a Director
+or Storage daemon must be of the same version.
+
+Older File Daemons should be compatible with the 11.0.0 Director and Storage
+daemons.  There should be no need to upgrade older File Daemons.
+
+New Catalog format in version 11.0.0 and greater
+-----------------------------------------------
+
+This release of Bacula uses a new catalog format.  We provide a set of scripts
+that permit to convert a 9.x and earlier versions to the new 11.0.0 format
+(1023).  Normally, it is automatic, though this is a big change that takes
+longer than usual. The upgrade process will require more or less twice the
+size of the actual database.
+
+This database upgrade should significantly increase performance when inserting
+large number of Jobs with lots of Files into the database catalog.
+
+If you start from scratch, you don't need to run the update_bacula_tables
+script because the create_bacula_tables script automatically creates the new
+table format.  However, if you are using a version of Bacula older than 5.0.0
+(e.g.  3.0.3) then you need to run the update_bacula_tables script that will be
+found in the <bacula>/src/cats directory after you run the ./configure command.
+As mentioned above, before running this script, please backup your catalog
+database, and when you do running it, be sure shutdown Bacula and be aware that
+running the script can take some time depending on your database size.
+
+----------------------------------------------------------------
+
+Release 11.0.0 01 December 2020
+
+11.0.0 is a major release.
+
+New Features:
+-------------
+ - New catalog format
+ - Automatic TLS PSK encrypted communication
+ - Support for Client behind NAT
+ - Continious Data Protection (CDP) Plugin
+ - Global Director Autoprune flag
+ - Events/Audit features
+ - New Baculum features
+
+Misc:
+-----
+ - New Prune Command Option
+ - Dynamic Client Address Directive
+ - Ability to disable Volume Retention
+ - Ask to mount/create volume when the disk space is low
+ - Simplification of the Windows FileSet with File=/
+ - Use of QT5 for Bat on Windows
+ - Support for Windows files with non-UTF16 names
+ - Windows Snapshot management has been improved
+ - Support for the system.cifs_acl extended attribute backup with Linux CIFS
+ - Built-in Client Scheduler
+
+
+----------------------------------------------------------------
 
                Release Notes for Bacula 9.6.3
 
