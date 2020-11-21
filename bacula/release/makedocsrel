@@ -16,18 +16,22 @@
 
 tagbase=Release-
 base_dir=docs
-base_pkg=bacula-$base_dir
-remote=$3
-branch=$4
-ver=$5
+base_name=bacula
+base_pkg=${base_name}-${base_dir}
+srcbranch=$2
+docs=$3
+remote=$4
+branch=$5
+ver=$6
 fulltag=$tagbase$ver
 
-if [ $# != 5 ] ; then
-  echo "Need $0 <bacula-source-directory> <docs-source-directory> <remote-name> <branch> <version>"
-  echo "e.g. $0 bacula-source docs-source bee Branch-4.0 4.0.3"
+if [ $# != 6 ] ; then
+  echo "Need $0 <bacula-source-directory> <src-branch> <docs-source-directory> <remote-name> <branch> <version>"
+  echo "e.g. $0 bacula-source master docs-source bee Branch-4.0 4.0.3"
   exit 1
 fi
 cd $1
+echo "cd `pwd`"
 if [ $? -ne 0 ]; then
    echo "Directory: $1 does not exist"
    exit 1
@@ -38,31 +42,36 @@ if [ $?  -ne 0 ]; then
    exit 1
 fi
 bcurrent=`git branch | awk '/*/ { print $2 }'`
-git checkout ${branch}
+echo "git checkout ${srcbranch}"
+git checkout ${srcbranch}
 if [ $? -ne 0 ]; then
-   echo "Checkout of branch ${branch} in $1/bacula failed."
+   echo "Checkout of branch ${srcbranch} in $1/bacula failed."
    exit 1
 fi
-git pull ${remote} ${branch}
+echo "git pull ${remote} ${srcbranch}"
+git pull ${remote} ${srcbranch}
 bsrc=`pwd` 
 cd ${cwd}
-cd $2
+cd ${docs}
+echo "cd `pwd`"
 if [ $? -ne 0 ]; then
-   echo "Directory: $2 does not exist"
+   echo "Directory: ${docs} does not exist"
    exit 1
 fi
 cd $base_dir
 if [ $?  -ne 0 ]; then
-   echo "Directory: $2 does not exist"
+   echo "Directory: ${base_dir} does not exist"
    exit 1
 fi
 current=`git branch | awk '/*/ { print $2 }'`
 src=`pwd` 
+echo "git checkout ${branch}"
 git checkout ${branch}
 if [ $? -ne 0 ]; then
    echo "Checkout of branch ${branch} in ${src} failed."
    exit 1
 fi
+echo "git pull ${remote} ${branch}"
 git pull ${remote} ${branch}
 echo " "
 echo "Making $reltype for $base_pkg-$ver ..."
@@ -93,22 +102,28 @@ if [ $? != 0 ] ; then
 fi
 echo "Exported release into ${cwd}/$base_pkg-$ver.tar.gz"
 cd ${cwd}
-tar xfz $base_pkg-$ver.tar.gz 
+tar xfz $base_pkg-$ver.tar.gz
 cd $base_pkg-$ver/
-mv docs $base_pkg-$ver
-cd $base_pkg-$ver
+#mv docs $base_pkg-$ver
+#cd $base_pkg-$ver
+#./configure --with-bacula=$bsrc
 ./update_version
-rm -rf home-page cvt.scr presentations send techlogs upload rss_web.php
-make
-make mini-clean
+make en
 cd ${cwd}
 echo "Tarring docs ..."
 tar cf $base_pkg-$ver.tar $base_pkg-$ver
+
+echo "Creating online doc"
+cd $base_pkg-$ver/manuals/en/main
+make html
+
+cd ${cwd}
 rm -rf $base_pkg-$ver $base_pkg-$ver.tar.*
 echo "bzip2 docs ..."
 bzip2 $base_pkg-$ver.tar
 ./sign $base_pkg-$ver.tar.bz2
-ls -l $base_pkg-$ver.tar.*
+./sign $bweb_name-$ver.tar.gz
+ls -l $base_pkg-$ver.tar.* $bweb_name-$ver.tar.gz
 
 if [ a$push != ano ]; then
    cd ${src}
@@ -122,3 +137,4 @@ git checkout ${current}
 
 cd ${bsrc}
 git checkout ${bcurrent}
+exit 0
