@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (C) 2000-2018 Kern Sibbald
+# Copyright (C) 2000-2020 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
 #  This file may help you build the dependency packages that
@@ -65,6 +65,7 @@ fi
 [ ! -e ${TOP_DIR}/depkgs-mingw-w64 ] && mkdir ${TOP_DIR}/depkgs-mingw-w64
 cd ${TOP_DIR}/depkgs-mingw-w64
 DEPPKG_DIR=`pwd`
+DEPKGS_DIR=`pwd`
 
 export PATH=${BIN_DIR}:${PATH}
 
@@ -96,6 +97,7 @@ get_source()
    *.tar.bz2)      ARCHIVER="tar xjf";    [ -z "${SRC_DIR}" ] && SRC_DIR=`expr "${ARCHIVE}" : '\(.*\)\.tar\.bz2'`;;
    *.zip)          ARCHIVER="unzip -d .";   [ -z "${SRC_DIR}" ] && SRC_DIR=`expr "${ARCHIVE}" : '\(.*\)\.zip'`;;
    *.exe)          ARCHIVER="";           [ -z "${SRC_DIR}" ] && SRC_DIR=`expr "${ARCHIVE}" : '\(.*\)\.zip'`;;
+   *.xz)       ARCHIVER="tar xf";    [ -z "${SRC_DIR}" ] && SRC_DIR=`expr "${ARCHIVE}" : '\(.*\)\.tar\.xz'`;;
    *)              echo Unsupported archive type - $ARCHIVE; exit 1;;
    esac
    
@@ -173,15 +175,6 @@ do_make()
    fi | tee -a make.log | parse_output
 }
 
-process_rsync()
-{
-   get_source "${URL_RSYNC}" "${DIR_RSYNC}" "${MKD_RSYNC}"
-   ./configure --host=${BASE}
-   make -k # rdiff.exe has a problem
-   cp .libs/librsync.a ${DEPPKG_DIR}/lib
-   cp librsync*h ${DEPPKG_DIR}/include
-}
-
 process_zlib()
 {
    if get_source "${URL_ZLIB}" "${DIR_ZLIB}" "${MKD_ZLIB}"
@@ -238,7 +231,6 @@ process_pthreads()
       echo "No patch needed for this package"
    fi
    echo Building pthreads
-   cd pthreads.2
    > make.log
    do_make GNUmakefile CROSS=${BASE}- clean GCE-inlined
    echo Installing pthreads
@@ -260,11 +252,16 @@ process_openssl()
                        --with-zlib-include=${DEPPKG_DIR}/include \
                        mingw64 > make.log 2>&1
    fi
+   echo Patching openssl
+   sed -i "s;OPENSSLDIR_dev=C:;OPENSSLDIR_dev=;" Makefile
+   sed -i "s;OPENSSLDIR_dir=.*;OPENSSLDIR_dir=${DEPPKG_DIR}/openssl;" Makefile
    echo Building openssl
    do_make Makefile all
    echo Installing openssl
    do_make Makefile -k install_sw install
    cp *.dll ${DEPPKG_DIR}/bin
+   mkdir ${DEPPKG_DIR}/ssl
+   cp -f apps/openssl.cnf ${DEPPKG_DIR}/ssl
 }
 
 process_lzo()
@@ -280,69 +277,73 @@ process_lzo()
    do_make Makefile -k PREFIX=${DEPPKG_DIR}/ install
 }
 
-process_qt4()
+process_qt5()
 {
-   if get_source "${URL_Qt4}" "${DIR_Qt4}" "${MKD_Qt4}"
-   then
-      echo Patching Qt4
-      >patch.log
-      patch -p1 < ${SCRIPT_DIR}/patches/qt4-intrinsics.patch
-      patch -p1 < ${SCRIPT_DIR}/patches/qt4-widget-ui.patch
-      patch -p1 < ${SCRIPT_DIR}/patches/qt4-compilation-see.patch
-      patch -p1 < ${SCRIPT_DIR}/patches/qt4-compilation.patch
-   fi
-   echo "Configuring Qt4"
-   ./configure -opensource -confirm-license -fast -xplatform win32-g++-4.6 \
-   -device-option CROSS_COMPILE=x86_64-w64-mingw32- -device-option \
-   PKG_CONFIG='x86_64-w64-mingw32-pkg-config' -force-pkg-config -release \
-   -exceptions -shared -prefix ${DEPPKG_DIR}/qt-out -prefix-install -no-script \
-   -no-iconv -no-webkit -no-glib -no-gstreamer -no-phonon -no-phonon-backend \
-   -accessibility -no-reduce-exports -no-rpath -make libs -nomake demos \
-   -nomake docs -nomake examples -system-zlib -no-mitshm -no-libjpeg \
-   -no-libmng -no-libtiff -no-sql-db2 -no-sql-ibase -no-sql-mysql -no-sql-oci \
-   -no-sql-odbc -no-sql-psql -no-sql-sqlite -no-sql-sqlite2 \
-   -no-sql-sqlite_symbian -no-sql-symsql -no-sql-tds -no-nis -no-cups -no-dbus \
-   -no-openvg -no-openssl -no-nas-sound -no-audio-backend -no-sm -no-opengl \
-   -no-javascript-jit -no-qt3support -nomake tools \
-   -no-xmlpatterns -no-multimedia -nomake tools -silent
-
-   local qt_source_dir=`pwd`
-   # Required libz.dll.a, zlib.h and zconf.h for proper Qt build purpose
+    # Required libz.dll.a, zlib.h and zconf.h for proper Qt build purpose
    process_zlib
-   cd "${qt_source_dir}"
-   local zlib_dir=`basename "${URL_ZLIB}" | sed 's/.tar.gz//'`
-   cp "../${zlib_dir}/libz.dll.a" ./lib/
-   cp "../${zlib_dir}/zlib.h" ./include/
-   cp "../${zlib_dir}/zconf.h" ./include/
+   process_openssl
+
+   if get_source "${URL_Qt5}" "${DIR_Qt5}" "${MKD_Qt5}"
+   then
+       echo Patching Qt5
+   fi
+   if [ -f done ]; then
+        return
+   fi
+   echo "Configuring Qt5"
+   export OPENSSL_LIBS="-lssl -lcrypto"
+   echo y | ./configure \
+-xplatform win32-g++  \
+-device-option CROSS_COMPILE=/usr/bin/x86_64-w64-mingw32-  \
+-prefix ${DEPKGS_DIR}/  \
+-opensource -confirm-license \
+-no-compile-examples -nomake examples -nomake tests \
+-skip qtactiveqt -skip qtcharts -skip qtdoc -skip qtlocation \
+-skip qtremoteobjects -skip qtserialbus -skip qtwebchannel \
+-skip qtwebview -skip qtandroidextras -skip qtconnectivity \
+-skip qtgamepad -skip qtmacextras -skip qtpurchasing -skip qtscript \
+-skip qttranslations -skip qtwebengine -skip qtwinextras \
+-skip qtdatavis3d -skip qtgraphicaleffects -skip qtmultimedia \
+-skip qtquickcontrols -skip qtscxml -skip qtspeech \
+-skip qtvirtualkeyboard -skip qtwebglplugin -skip qtx11extras \
+-skip qt3d -skip qtcanvas3d -skip qtdeclarative \
+-skip qtimageformats -skip qtquickcontrols2  -no-opengl \
+-skip qtsensors -skip qtwayland -skip qtwebsockets -I ${DEPKGS_DIR}/include -L ${DEPKGS_DIR}/lib
 
    make
-
-   echo "Installing Qt4"
-   rm -rf ${DEPPKG_DIR}/include/qt ${DEPPKG_DIR}/lib/qt
-   mkdir -p ${DEPPKG_DIR}/include/qt ${DEPPKG_DIR}/lib/qt
-   cp -rf include/* ${DEPPKG_DIR}/include/qt
-   cp -rf lib/* ${DEPPKG_DIR}/lib/qt
+   make install
+   
+   echo "Installing Qt5"
+   # TODO: Not working
+   cd qtbase
+   cp -f ./plugins/platforms/qwindows.dll $DEPPKG_DIR/bin
+   cp -r ./plugins/platforms $DEPPKG_DIR/bin
+   cp -r ./plugins/platforms $DEPPKG_DIR/lib
    cp -rf src/corelib ${DEPPKG_DIR}/src/
    cp -rf src/gui ${DEPPKG_DIR}/src/
-   cp -rf lib/QtCore4.dll lib/QtGui4.dll ${DEPPKG_DIR}/bin/
-   cp -rf lib/QtCore4.dll lib/QtGui4.dll ${DEPPKG_DIR}/lib/qt/
+   cp -rf src/network ${DEPPKG_DIR}/src/
+   cd $DEPPKG_DIR/src
 }
 
 
 process_mingw()
 {
    if test -f /usr/lib/gcc/${BASE}/*posix/libstdc++-6.dll; then
-      cp -f /usr/lib/gcc/${BASE}/*posix/libstdc++-6.dll ${DEPPKG_DIR}/bin
-      cp -f /usr/lib/gcc/${BASE}/*posix/libgcc*dll ${DEPPKG_DIR}/bin
+      cp /usr/lib/gcc/${BASE}/*posix/libstdc++-6.dll ${DEPPKG_DIR}/bin
+      cp /usr/lib/gcc/${BASE}/*posix/libgcc*dll ${DEPPKG_DIR}/bin
    elif test -f /usr/lib/gcc/${BASE}/*/libstdc++-6.dll; then
-      cp -f /usr/${BASE}/lib/libstdc++-6.dll ${DEPPKG_DIR}/bin
-      cp -f /usr/${BASE}/lib/libgcc*dll ${DEPPKG_DIR}/bin
+      cp /usr/lib/gcc/${BASE}/*/libstdc++-6.dll ${DEPPKG_DIR}/bin
+      cp /usr/lib/gcc/${BASE}/*/libgcc*dll ${DEPPKG_DIR}/bin
+   elif test -f /usr/${BASE}/lib/libstdc++-6.dll; then
+      cp /usr/${BASE}/lib/libstdc++-6.dll ${DEPPKG_DIR}/bin
+      cp /usr/${BASE}/lib/libgcc*dll ${DEPPKG_DIR}/bin
    else
       echo "ERROR: Unable to find ${BASE} on this system"
    fi
    if test -f /usr/$BASE/lib/libwinpthread-1.dll; then
-      cp -f /usr/$BASE/lib/libwinpthread-1.dll ${DEPPKG_DIR}/bin
+      cp /usr/$BASE/lib/libwinpthread-1.dll ${DEPPKG_DIR}/bin
    fi
+
 }
 
 process_mtx()
@@ -384,8 +385,7 @@ process_sed()
    then
            echo Patching sed
            >patch.log
-           # patch not needed for 4.2k which is already updated
-           # do_patch sed.patch
+           do_patch sed.patch
            echo Configuring sed
            ./configure --host=$BASE \
                        --prefix=${DEPPKG_DIR} \
@@ -416,29 +416,18 @@ process_cmd_utils()
    do_make Makefile install
 }
 
-# MSSQL dlls are created from Visual Studio
-process_mssql()
-{
-   get_source "${URL_MSSQL}" "${DIR_MSSQL}" "${MKD_MSSQL}"
-   echo Installing MSSQL driver
-   cp include/*.h ${DEPPKG_DIR}/include
-   cp x64/mssql-driver.dll ${DEPPKG_DIR}/bin
-   cp x64/mssql-regression.exe ${DEPPKG_DIR}/bin
-}
 
 if [ "$#" -eq 0 ]
 then
    process_mingw
-   process_rsync
    process_lzo
    process_zlib
 #   process_pcre
-   process_pthreads
+#   process_pthreads
    process_openssl
-   process_qt4
+   process_qt5
    process_sed
    process_cmd_utils
-   process_mssql
 #   process_mtx
 #   process_mt
 else

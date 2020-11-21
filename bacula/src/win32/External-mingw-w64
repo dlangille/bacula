@@ -40,11 +40,8 @@ Qt5|http://download.qt.io/archive/qt/5.14/5.14.2/single/qt-everywhere-src-5.14.2
 #STAB2CV|http://www.bacula.org/depkgs-mingw32/stab2cv-0.1.tar.bz2
 #WX|http://www.bacula.org/depkgs-mingw32/wxWidgets-2.8.7.tar.gz
 ZLIB|https://www.baculasystems.com/dl/Depkgs-mingw32-6.6-paa9aiMa/zlib-1.2.8.tar.gz
-RSYNC|https://www.baculasystems.com/dl/Depkgs-mingw32-6.6-paa9aiMa/librsync-0.9.7b.tar.gz
 #DB|http://www.bacula.org/depkgs-mingw32/db-4.7.25.tar.gz
 LZO|https://www.baculasystems.com/dl/Depkgs-mingw32-6.6-paa9aiMa/lzo-2.10.tar.gz
-REGWIZ|https://www.baculasystems.com/dl/Depkgs-mingw32-6.6-paa9aiMa/depkgs-registrationWizard-64bit-02Aug19.tar.gz|depkgs_registrationWizard_02Aug19
-MSSQL|https://www.baculasystems.com/dl/Depkgs-mingw32-6.6-paa9aiMa/depkgs-mssql-18Sep19.tar.gz
 # 
 # 
 # Original file locations
