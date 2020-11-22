@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2019 Kern Sibbald
+ * Copyright (C) 2013-2020 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -71,26 +71,62 @@ class StatusStorage extends ComponentStatusModule {
 	 * @return array array with parsed storage status values
 	 */
 	public function parseStatus(array $output, $type) {
-		$result = array();
+		$result = [];
 		$line = null;
-		$opts = array();
+		$part = [];
+		$autochanger = null;
+		$autochangers = [];
+		$ach_dev = [];
+		$empty_lines = 0;
 		for($i = 0; $i < count($output); $i++) {
 			if (empty($output[$i])) {
-				if  (count($opts) > 10) {
-					$result[] = $opts;
+				$empty_lines++;
+				if  (count($part) > 10) {
+					$result[] = $part;
+					$part = [];
 				}
-				if (count($opts) > 0) {
-					$opts = array();
+				if (count($ach_dev) == 2) {
+					$autochangers[$autochanger]['devices'][]  = $ach_dev;
+					$ach_dev = [];
+				}
+				if ($empty_lines == 4 && $autochanger) {
+					$autochanger = null;
 				}
 			} else {
+				$empty_lines = 0;
 				$line = $this->parseLine($output[$i]);
-				if (is_array($line)) {
-					$opts[$line['key']] = $line['value'];
+				if (!is_array($line)) {
+					continue;
+				}
+
+				if ($line['key'] == 'autochanger') {
+					$autochanger  = $line['value'];
+					$autochangers[$autochanger] = ['devices' => []];
+				} elseif ($autochanger) {
+					$ach_dev[$line['key']] = $line['value'];
+				} else {
+					$part[$line['key']] = $line['value'];
 				}
 			}
 		}
 		if ($type === self::OUTPUT_TYPE_HEADER) {
 			$result = array_pop($result);
+		} elseif ($type === self::OUTPUT_TYPE_DEVICES) {
+			for ($i = 0; $i < count($result); $i++) {
+				$found = false;
+				foreach ($autochangers as $ach => $devs) {
+					for ($j = 0; $j < count($devs['devices']); $j++) {
+						if ($result[$i]['name'] === $devs['devices'][$j]['name']) {
+							$result[$i]['autochanger'] = $ach;
+							$found = true;
+							break 2;
+						}
+					}
+				}
+				if (!$found) {
+					$result[$i]['autochanger'] = null;
+				}
+			}
 		}
 		return $result;
 	}

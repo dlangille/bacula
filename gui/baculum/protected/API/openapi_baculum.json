@@ -1981,9 +1981,14 @@
 						}
 					}
 				},
-				"parameters": [{
-					"$ref": "#/components/parameters/StorageId"
-				}]
+				"parameters": [
+					{
+						"$ref": "#/components/parameters/StorageId"
+					},
+					{
+						"$ref": "#/components/parameters/Output"
+					}
+				]
 			}
 		},
 		"/api/v1/storages/{storageid}/status": {
@@ -2198,6 +2203,9 @@
 							"type": "string",
 							"pattern": "[a-zA-Z0-9:.-_ ]+"
 						}
+					},
+					{
+						"$ref": "#/components/parameters/Output"
 					}
 				]
 			}
