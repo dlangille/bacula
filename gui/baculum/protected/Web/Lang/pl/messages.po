@@ -3091,3 +3091,120 @@ msgstr "Ścieżka (opcjonalna):"
 msgid "With the given path, the results narrow down to the files in the path only."
 msgstr "Z podaną ścieżką wyniki zawężają się wyłącznie do plików w ścieżce."
 
+msgid "Storage Daemon:"
+msgstr "Magazyn danych:"
+
+msgid "# Autochangers:"
+msgstr "# Urządzenia Autochanger:"
+
+msgid "# Devices:"
+msgstr "# Urządzenia:"
+
+msgid "Devices"
+msgstr "Urządzenia"
+
+msgid "Archive device:"
+msgstr "Urządzenie archiwizujące:"
+
+msgid "Device type:"
+msgstr "Typ urządzenia:"
+
+msgid "Media type:"
+msgstr "Typ media:"
+
+msgid "Device type"
+msgstr "Typ urządzenia"
+
+msgid "Media type"
+msgstr "Typ media"
+
+msgid "Maximum concurrent jobs:"
+msgstr "Maksymalna ilość jednoczesnych zadań:"
+
+msgid "Maximum volume size:"
+msgstr "Maksymalny rozmiar wolumena:"
+
+msgid "Mounted:"
+msgstr "Zamontowany:"
+
+msgid "Opened:"
+msgstr "Otwarty:"
+
+msgid "Waiting:"
+msgstr "Oczekujący:"
+
+msgid "Blocked:"
+msgstr "Zablokowany:"
+
+msgid "Blocked description:"
+msgstr "Opis zablokowania:"
+
+msgid "Read-only:"
+msgstr "Tylko do odczytu:"
+
+msgid "Last speed:"
+msgstr "Prędkość chwilowa:"
+
+msgid "Write pool:"
+msgstr "Pula do zapisu:"
+
+msgid "Write device:"
+msgstr "Urządzenie zapisujące:"
+
+msgid "Write volume:"
+msgstr "Zapisywany wolumen:"
+
+msgid "Read pool:"
+msgstr "Pula do odczytu:"
+
+msgid "Read device:"
+msgstr "Urządzenie odczytujące:"
+
+msgid "Read volume:"
+msgstr "Odczytywany wolumen:"
+
+msgid "Used space:"
+msgstr "Użyte miejsce:"
+
+msgid "Status:"
+msgstr "Status:"
+
+msgid "running"
+msgstr "działający"
+
+msgid "idle"
+msgstr "bezczynny"
+
+msgid "Autochanger:"
+msgstr "Autochanger:"
+
+msgid "Single devices"
+msgstr "Pojedyncze urządzenia"
+
+msgid "Start time:"
+msgstr "Czas rozpoczęcia:"
+
+msgid "End time:"
+msgstr "Czas zakończenia:"
+
+msgid "Terminated jobs"
+msgstr "Zakończone zadania"
+
+msgid "All devices"
+msgstr "Wszystkie urządzenia"
+
+msgid "All device types"
+msgstr "Wszystkie typy urządzeń"
+
+msgid "All media types"
+msgstr "Wszystkie typy media"
+
+msgid "All statuses"
+msgstr "Wszystkie statusy"
+
+msgid "Graphical storage status is supported for Bacula storages version 9.0 and greater."
+msgstr "Graficzny status magazynu jest wspierany dla magazynów Bacula w wersji 9.0 i większych."
+
+msgid "Status request timed out. The most probably the Bacula storage is not available or it is not running."
+msgstr "Przekroczono limit czasu żądania statusu. Najprawdopodobniej magazyn Bacula jest niedostępny lub nie jest uruchomiony."
+

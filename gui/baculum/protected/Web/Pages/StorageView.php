@@ -25,6 +25,7 @@ Prado::using('System.Web.UI.ActiveControls.TActivePanel');
 Prado::using('System.Web.UI.ActiveControls.TActiveTextBox');
 Prado::using('System.Web.UI.ActiveControls.TActiveRepeater');
 Prado::using('System.Web.UI.ActiveControls.TActiveLinkButton');
+Prado::using('Application.Common.Class.Params');
 Prado::using('Application.Web.Class.BaculumWebPage'); 
 
 /**
@@ -76,7 +77,7 @@ class StorageView extends BaculumWebPage {
 		$storageshow = $this->Application->getModule('api')->get(
 			array('storages', $storage->storageid, 'show')
 		)->output;
-		$this->StorageLog->Text = implode(PHP_EOL, $storageshow);
+		$this->StorageActionLog->Text = implode(PHP_EOL, $storageshow);
 		$this->setStorageDevice($storageshow);
 		$this->setDevices();
 	}
@@ -197,51 +198,113 @@ class StorageView extends BaculumWebPage {
 	}
 
 	public function status($sender, $param) {
-		$status = $this->getModule('api')->get(
-			array('storages', $this->getStorageId(), 'status')
+		$raw_status = $this->getModule('api')->get(
+			['storages', $this->getStorageId(), 'status']
 		)->output;
-		$this->StorageLog->Text = implode(PHP_EOL, $status);
+		$this->StorageLog->Text = implode(PHP_EOL, $raw_status);
+
+		$query_str = '?name=' . rawurlencode($this->getStorageName()) . '&type=header';
+		$graph_status = $this->getModule('api')->get(
+			['status', 'storage', $query_str]
+		);
+		$storage_status = [
+			'header' => [],
+			'devices' => [],
+			'running' => [],
+			'terminated' => [],
+			'version' => Params::getComponentVersion($raw_status)
+		];
+		if ($graph_status->error === 0) {
+			$storage_status['header'] = $graph_status->output;
+		}
+
+		// running
+		$query_str = '?name=' . rawurlencode($this->getStorageName()) . '&type=running';
+		$graph_status = $this->getModule('api')->get(
+			array('status', 'storage', $query_str)
+		);
+		if ($graph_status->error === 0) {
+			$storage_status['running'] = $graph_status->output;
+		}
+
+		// terminated
+		$query_str = '?name=' . rawurlencode($this->getStorageName()) . '&type=terminated';
+		$graph_status = $this->getModule('api')->get(
+			array('status', 'storage', $query_str)
+		);
+		if ($graph_status->error === 0) {
+			$storage_status['terminated'] = $graph_status->output;
+		}
+
+		// devices
+		$query_str = '?name=' . rawurlencode($this->getStorageName()) . '&type=devices';
+		$graph_status = $this->getModule('api')->get(
+			array('status', 'storage', $query_str)
+		);
+		if ($graph_status->error === 0) {
+			$storage_status['devices'] = $graph_status->output;
+		}
+
+		// show
+		$query_str = '?output=json';
+		$show = $this->getModule('api')->get(
+			array('storages', 'show', $query_str)
+		);
+		if ($show->error === 0) {
+			$storage_status['show'] = $show->output;
+		}
+
+		$this->getCallbackClient()->callClientFunction('init_graphical_storage_status', [$storage_status]);
 	}
 
 	public function mount($sender, $param) {
 		$drive = $this->getIsAutochanger() ? intval($this->Drive->Text) : 0;
 		$slot = $this->getIsAutochanger() ? intval($this->Slot->Text) : 0;
-		$query = '?drive=' . rawurlencode($drive);
-		$query .= 'slot=' . rawurlencode($slot);
+		$params = [
+			'drive' => $drive,
+			'slot' => $slot
+		];
+		$query = '?' . http_build_query($params);
 		$mount = $this->getModule('api')->get(
 			array('storages', $this->getStorageId(), 'mount', $query)
 		);
 		if ($mount->error === 0) {
-			$this->StorageLog->Text = implode(PHP_EOL, $mount->output);
+			$this->StorageActionLog->Text = implode(PHP_EOL, $mount->output);
 		} else {
-			$this->StorageLog->Text = $mount->output;
+			$this->StorageActionLog->Text = $mount->output;
 		}
 	}
 
 	public function umount($sender, $param) {
 		$drive = $this->getIsAutochanger() ? intval($this->Drive->Text) : 0;
-		$query = '?drive=' . rawurlencode($drive);
+		$params = [
+			'drive' => $drive
+		];
+		$query = '?' . http_build_query($params);
 		$umount = $this->getModule('api')->get(
 			array('storages', $this->getStorageId(), 'umount', $query)
 		);
 		if ($umount->error === 0) {
-			$this->StorageLog->Text = implode(PHP_EOL, $umount->output);
+			$this->StorageActionLog->Text = implode(PHP_EOL, $umount->output);
 		} else {
-			$this->StorageLog->Text = $umount->output;
+			$this->StorageActionLog->Text = $umount->output;
 		}
 
 	}
 
 	public function release($sender, $param) {
 		$drive = $this->getIsAutochanger() ? intval($this->Drive->Text) : 0;
-		$query = '?drive=' . rawurlencode($drive);
+		$params = [
+			'drive' => $drive
+		];
+		$query = '?' . http_build_query($params);
 		$release = $this->getModule('api')->get(
 			array('storages', $this->getStorageId(), 'release', $query)
 		);
 		if ($release->error === 0) {
-			$this->StorageLog->Text = implode(PHP_EOL, $release->output);
+			$this->StorageActionLog->Text = implode(PHP_EOL, $release->output);
 		} else {
-			$this->StorageLog->Text = $release->output;
+			$this->StorageActionLog->Text = $release->output;
 		}
 	}
 

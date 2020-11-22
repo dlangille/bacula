@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2019 Kern Sibbald
+ * Copyright (C) 2013-2020 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -147,6 +147,26 @@ class Params extends CommonModule {
 	 */
 	public static function getBoolValue($value) {
 		return ($value ? 'yes' : 'no');
+	}
+
+	/**
+	 * Get component version basing on given output.
+	 * The version string in output should be component status command compatible.
+	 *
+	 * @param array $output component status output
+	 * @return array major, minor and release numbers.
+	 */
+	public static function getComponentVersion(array $output) {
+		$version = array('major' => 0, 'minor' => 0, 'release' => 0);
+		for ($i = 0; $i < count($output); $i++) {
+			if (preg_match('/^[\w\d\s:.\-]+Version:\s+(?P<major>\d+)\.(?P<minor>\d+)\.(?P<release>\d+)\s+\(/', $output[$i], $match) === 1) {
+				$version['major'] = intval($match['major']);
+				$version['minor'] = intval($match['minor']);
+				$version['release'] = intval($match['release']);
+				break;
+			}
+		}
+		return $version;
 	}
 }
 ?>

@@ -3090,3 +3090,120 @@ msgstr "Path (optional):"
 msgid "With the given path, the results narrow down to the files in the path only."
 msgstr "With the given path, the results narrow down to the files in the path only."
 
+msgid "Storage Daemon:"
+msgstr "Storage Daemon:"
+
+msgid "# Autochangers:"
+msgstr "# Autochangers:"
+
+msgid "# Devices:"
+msgstr "# Devices:"
+
+msgid "Devices"
+msgstr "Devices"
+
+msgid "Archive device:"
+msgstr "Archive device:"
+
+msgid "Device type:"
+msgstr "Device type:"
+
+msgid "Media type:"
+msgstr "Media type:"
+
+msgid "Device type"
+msgstr "Device type"
+
+msgid "Media type"
+msgstr "Media type"
+
+msgid "Maximum concurrent jobs:"
+msgstr "Maximum concurrent jobs:"
+
+msgid "Maximum volume size:"
+msgstr "Maximum volume size:"
+
+msgid "Mounted:"
+msgstr "Mounted:"
+
+msgid "Opened:"
+msgstr "Opened:"
+
+msgid "Waiting:"
+msgstr "Waiting:"
+
+msgid "Blocked:"
+msgstr "Blocked:"
+
+msgid "Blocked description:"
+msgstr "Blocked description:"
+
+msgid "Read-only:"
+msgstr "Read-only:"
+
+msgid "Last speed:"
+msgstr "Last speed:"
+
+msgid "Write pool:"
+msgstr "Write pool:"
+
+msgid "Write device:"
+msgstr "Write device:"
+
+msgid "Write volume:"
+msgstr "Write volume:"
+
+msgid "Read pool:"
+msgstr "Read pool:"
+
+msgid "Read device:"
+msgstr "Read device:"
+
+msgid "Read volume:"
+msgstr "Read volume:"
+
+msgid "Used space:"
+msgstr "Used space:"
+
+msgid "Status:"
+msgstr "Status:"
+
+msgid "running"
+msgstr "running"
+
+msgid "idle"
+msgstr "idle"
+
+msgid "Autochanger:"
+msgstr "Autochanger:"
+
+msgid "Single devices"
+msgstr "Single devices"
+
+msgid "Start time:"
+msgstr "Start time:"
+
+msgid "End time:"
+msgstr "End time:"
+
+msgid "Terminated jobs"
+msgstr "Terminated jobs"
+
+msgid "All devices"
+msgstr "All devices"
+
+msgid "All device types"
+msgstr "All device types"
+
+msgid "All media types"
+msgstr "All media types"
+
+msgid "All statuses"
+msgstr "All statuses"
+
+msgid "Graphical storage status is supported for Bacula storages version 9.0 and greater."
+msgstr "Graphical storage status is supported for Bacula storages version 9.0 and greater."
+
+msgid "Status request timed out. The most probably the Bacula storage is not available or it is not running."
+msgstr "Status request timed out. The most probably the Bacula storage is not available or it is not running."
+

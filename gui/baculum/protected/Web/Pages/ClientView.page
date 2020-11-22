@@ -157,8 +157,7 @@ var oGraphicalClientStatus = {
 			return el;
 		},
 		started_epoch: function(value) {
-			var t = parseInt(value, 10) * 1000;
-			return (new Date(t)).toLocaleString();
+			return Units.format_date(value);
 		},
 		jobs_run: function(value) {
 			return (this.data.hasOwnProperty('running') ? this.data.running.length : 0);

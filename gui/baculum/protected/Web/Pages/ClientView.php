@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2019 Kern Sibbald
+ * Copyright (C) 2013-2020 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -24,6 +24,7 @@ Prado::using('System.Web.UI.ActiveControls.TActiveLabel');
 Prado::using('System.Web.UI.ActiveControls.TActiveLinkButton');
 Prado::using('System.Web.UI.ActiveControls.TCallback');
 Prado::using('System.Web.UI.JuiControls.TJuiProgressbar');
+Prado::using('Application.Common.Class.Params');
 Prado::using('Application.Web.Class.BaculumWebPage'); 
 
 /**
@@ -139,7 +140,7 @@ class ClientView extends BaculumWebPage {
 		$client_status = array(
 			'header' => array(),
 			'running' => array(),
-			'version' => $this->getClientVersion($raw_status)
+			'version' => Params::getComponentVersion($raw_status)
 		);
 		if ($graph_status->error === 0) {
 			$client_status['header'] = $graph_status->output;
@@ -177,19 +178,6 @@ class ClientView extends BaculumWebPage {
 			$this->JobBandwidth->setJobId($jobid);
 			$this->JobBandwidth->setJobUname($job_uname);
 		}
-	}
-
-	private function getClientVersion($output) {
-		$version = array('major' => 0, 'minor' => 0, 'release' => 0);
-		for ($i = 0; $i < count($output); $i++) {
-			if (preg_match('/^[\w\d\s:.\-]+Version:\s+(?P<major>\d+)\.(?P<minor>\d+)\.(?P<release>\d+)\s+\(/', $output[$i], $match) === 1) {
-				$version['major'] = intval($match['major']);
-				$version['minor'] = intval($match['minor']);
-				$version['release'] = intval($match['release']);
-				break;
-			}
-		}
-		return $version;
 	}
 }
 ?>
