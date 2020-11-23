@@ -413,8 +413,6 @@ bool send_hello_client(JCR *jcr, char *Job)
 
 static bool send_sdcaps(JCR *jcr, BSOCK *cl) { return false; }
 static bool recv_fdcaps(JCR *jcr, BSOCK *cl, caps_fd *caps) { return false; }
-static bool send_fdcaps(JCR *jcr, BSOCK *cl) { return false; }
-static bool recv_sdcaps(JCR *jcr, BSOCK *cl) { return false; }
 
 #else
 
