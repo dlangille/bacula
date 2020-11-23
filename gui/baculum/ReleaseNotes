@@ -1,4 +1,25 @@
 
+               Release Notes for Baculum 9.6.6.3
+
+This is a minor new feature and bug fix release. In this release is a new
+Russian translations available, thanks to Sergey Zhidkov. Besides of that new
+functions are: graphical status storage and a path field in the restore wizard.
+
+New changes and fixes:
+
+ - Add Russian translations
+ - Implement graphical status storage
+ - Add path field to restore wizard to narrow down search file results to specific path - idea proposed by Wanderlei Huttel
+ - Update Portuguese translations
+ - Add json output option to show storages and show single storage endpoints
+ - Add path parameter to job files API endpoint
+ - Fix #2565 status icon overlaps action buttons in API wizard
+ - Fix access to job resources if no job assigned to user
+
+Bugs fixed/closed since last release:
+2565
+
+
                Release Notes for Baculum 9.6.6.2
 
 This is a minor new feature and bug fix release. There have been done
