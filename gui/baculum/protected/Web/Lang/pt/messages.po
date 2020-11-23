@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2020-11-05 04:08\n"
+"PO-Revision-Date: 2020-11-23 19:33\n"
 "Project-Id-Version: b02f04a28aec0155df9503e3b78ae8cc\n"
 "POT-Creation-Date: \n"
 "Last-Translator: Wanderlei Hüttel <wanderlei.huttel@gmail.com>\n"
@@ -3085,125 +3085,125 @@ msgid "last %days days"
 msgstr "últimos %days dias"
 
 msgid "Path (optional):"
-msgstr "Path (optional):"
+msgstr "Caminho (opcional):"
 
 msgid "With the given path, the results narrow down to the files in the path only."
-msgstr "With the given path, the results narrow down to the files in the path only."
+msgstr "Com o caminho informado, os resultados se restringem apenas aos arquivos no caminho."
 
 msgid "Storage Daemon:"
-msgstr "Storage Daemon:"
+msgstr "Nome do Storage:"
 
 msgid "# Autochangers:"
 msgstr "# Autochangers:"
 
 msgid "# Devices:"
-msgstr "# Devices:"
+msgstr "# Dispositivos:"
 
 msgid "Devices"
-msgstr "Devices"
+msgstr "Dispositivos"
 
 msgid "Archive device:"
 msgstr "Archive device:"
 
 msgid "Device type:"
-msgstr "Device type:"
+msgstr "Tipo de dispositivo:"
 
 msgid "Media type:"
-msgstr "Media type:"
+msgstr "Tipo de mídia:"
 
 msgid "Device type"
-msgstr "Device type"
+msgstr "Tipo de dispositivo"
 
 msgid "Media type"
-msgstr "Media type"
+msgstr "Tipo de mídia"
 
 msgid "Maximum concurrent jobs:"
-msgstr "Maximum concurrent jobs:"
+msgstr "Máximo de jobs simultâneos:"
 
 msgid "Maximum volume size:"
-msgstr "Maximum volume size:"
+msgstr "Tamanho máximo do volume:"
 
 msgid "Mounted:"
-msgstr "Mounted:"
+msgstr "Montado:"
 
 msgid "Opened:"
-msgstr "Opened:"
+msgstr "Aberto:"
 
 msgid "Waiting:"
-msgstr "Waiting:"
+msgstr "Aguardando:"
 
 msgid "Blocked:"
-msgstr "Blocked:"
+msgstr "Bloqueado:"
 
 msgid "Blocked description:"
-msgstr "Blocked description:"
+msgstr "Descrição bloqueada:"
 
 msgid "Read-only:"
-msgstr "Read-only:"
+msgstr "Somente leitura:"
 
 msgid "Last speed:"
-msgstr "Last speed:"
+msgstr "Última velocidade:"
 
 msgid "Write pool:"
-msgstr "Write pool:"
+msgstr "Pool de gravação:"
 
 msgid "Write device:"
-msgstr "Write device:"
+msgstr "Dispositivo de gravação:"
 
 msgid "Write volume:"
-msgstr "Write volume:"
+msgstr "Volume de gravação:"
 
 msgid "Read pool:"
-msgstr "Read pool:"
+msgstr "Pool de leitura:"
 
 msgid "Read device:"
-msgstr "Read device:"
+msgstr "Dispositivo de leitura:"
 
 msgid "Read volume:"
-msgstr "Read volume:"
+msgstr "Volume de leitura:"
 
 msgid "Used space:"
-msgstr "Used space:"
+msgstr "Espaço usado:"
 
 msgid "Status:"
 msgstr "Status:"
 
 msgid "running"
-msgstr "running"
+msgstr "executando"
 
 msgid "idle"
-msgstr "idle"
+msgstr "inativo"
 
 msgid "Autochanger:"
 msgstr "Autochanger:"
 
 msgid "Single devices"
-msgstr "Single devices"
+msgstr "Dispositivos individuais"
 
 msgid "Start time:"
-msgstr "Start time:"
+msgstr "Início:"
 
 msgid "End time:"
-msgstr "End time:"
+msgstr "Término:"
 
 msgid "Terminated jobs"
-msgstr "Terminated jobs"
+msgstr "Jobs finalizados"
 
 msgid "All devices"
-msgstr "All devices"
+msgstr "Todos os dispositivos"
 
 msgid "All device types"
-msgstr "All device types"
+msgstr "Todos os tipos de dispositivos"
 
 msgid "All media types"
-msgstr "All media types"
+msgstr "Todos os tipos de mídia"
 
 msgid "All statuses"
-msgstr "All statuses"
+msgstr "Todos os estados"
 
 msgid "Graphical storage status is supported for Bacula storages version 9.0 and greater."
-msgstr "Graphical storage status is supported for Bacula storages version 9.0 and greater."
+msgstr "O status gráfico de armazenamento é suportado para armazenamento Bacula versão 9.0 ou superior."
 
 msgid "Status request timed out. The most probably the Bacula storage is not available or it is not running."
-msgstr "Status request timed out. The most probably the Bacula storage is not available or it is not running."
+msgstr "A solicitação de status expirou. O mais provavelmente o armazenamento Bacula não está disponível ou não está em execução."
 
