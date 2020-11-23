@@ -17,18 +17,9 @@ ${rscripts}/create_sed
 #sed -f ${out} ${rscripts}/bacula-fd.conf.in >${rscripts}/bacula-fd.conf
 #sed -f ${out} ${rscripts}/bacula-sd.conf.in >${rscripts}/bacula-sd.conf
 #sed -f ${out} ${rscripts}/bconsole.conf.in >${rscripts}/bconsole.conf
-sed -f ${out} ${rscripts}/win32-bacula-dir.conf.in >${rscripts}/win32-bacula-dir.conf
-sed -f ${out} ${rscripts}/win32-bacula-dir-systemstate.conf.in >${rscripts}/win32-bacula-dir-systemstate.conf
-sed -f ${out} ${rscripts}/plugin-test-bacula-dir.conf.in >${rscripts}/plugin-test-bacula-dir.conf
 sed -f ${out} ${rscripts}/plugin-handleXACL-test-bacula-dir.conf.in >${rscripts}/plugin-handleXACL-test-bacula-dir.conf
-sed -f ${out} ${rscripts}/swift-plugin-test-bacula-dir.conf.in >${rscripts}/swift-plugin-test-bacula-dir.conf
 sed -f ${out} ${rscripts}/kubernetes-plugin-test-bacula-dir.conf.in >${rscripts}/kubernetes-plugin-test-bacula-dir.conf
-sed -f ${out} ${rscripts}/k8s_backend.in >${rscripts}/k8s_backend
-sed -f ${out} ${rscripts}/xenserver-plugin-test-bacula-dir.conf.in >${rscripts}/xenserver-plugin-test-bacula-dir.conf
-sed -f ${out} ${rscripts}/xenserver-plugin-test-bacula-sd.conf.in >${rscripts}/xenserver-plugin-test-bacula-sd.conf
-sed -f ${out} ${rscripts}/proxmox-plugin-test-bacula-dir.conf.in >${rscripts}/proxmox-plugin-test-bacula-dir.conf
 sed -f ${out} ${rscripts}/docker-plugin-test-bacula-dir.conf.in >${rscripts}/docker-plugin-test-bacula-dir.conf
-sed -f ${out} ${rscripts}/sybase-plugin-test-dir.conf.in >${rscripts}/sybase-plugin-test-bacula-dir.conf
 sed -f ${out} ${rscripts}/bacula-sd-2disk-virtual.conf.in >${rscripts}/bacula-sd-2disk-virtual.conf
 sed -f ${out} ${rscripts}/bacula-sd-virtual-tape.conf.in >${rscripts}/bacula-sd-virtual-tape.conf
 sed -f ${out} ${rscripts}/bacula-dir.conf.errors.in >${rscripts}/bacula-dir.conf.errors
@@ -103,8 +94,6 @@ sed -f ${out} ${rscripts}/bacula-sd-2d.conf.in >${rscripts}/bacula-sd-2d.conf
 sed -f ${out} ${rscripts}/bacula-dir-2d.conf.in >${rscripts}/bacula-dir-2d.conf
 sed -f ${out} ${rscripts}/bconsole-2d.conf.in >${rscripts}/bconsole-2d.conf
 sed -f ${out} ${rscripts}/regress-config.in >${rscripts}/regress-config
-sed -f ${out} ${rscripts}/swift-plugin-test-bacula-dir.conf.in >${rscripts}/swift-plugin-test-bacula-dir.conf
-sed -f ${out} ${rscripts}/hdfs-plugin-test-bacula-dir.conf.in >${rscripts}/hdfs-plugin-test-bacula-dir.conf
 sed -f ${out} ${rscripts}/cdp-plugin-test-bacula-dir.conf.in >${rscripts}/cdp-plugin-test-bacula-dir.conf
 sed -f ${out} ${rscripts}/cdp-plugin-test-bacula-sd.conf.in >${rscripts}/cdp-plugin-test-bacula-sd.conf
 
