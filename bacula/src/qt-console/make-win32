@@ -7,43 +7,6 @@
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
 
-
-prepare_regw_build()
-{
-    local version=$1
-    local dpkgs_mingw
-    if test -d ../win32/release${version}; then
-      if [ ${version} -eq 32 ]
-      then
-        depkgs_mingw='depkgs-mingw32'
-
-      elif [ ${version} -eq 64 ]
-      then
-        depkgs_mingw='depkgs-mingw-w64'
-      else
-        echo "wrong version - '${version}'."
-        exit 1
-      fi
-
-      cd RegistrationWizard
-      qmake -spec $PWD/../win32 -unix -o Makefile.mingw${version} "CONFIG += mingw${version}" RegistrationWizard.pro
-
-      # Don't know why this libGL is added
-      sed -i s/-lGL// Makefile.mingw${version}
-      # Linux headers are also added automatically
-      perl -plne  "s:-I/usr/[^ ]+::g" Makefile.mingw${version} > 1
-      perl -plne  "s:-L/usr/[^ ]+::g" 1 > Makefile.mingw${version}
-
-      echo "Make Windows RegistrationWizard"
-      make -j3 -f Makefile.mingw${version} $2
-      if test -f RegistrationWizard.exe; then
-          cp -f RegistrationWizard.exe ../../win32/release${version}
-      fi
-      rm -f RegistrationWizard.exe
-    fi
-    cd ..
-}
-
 prepare_bat_build ()
 {
    local version=$1
@@ -126,8 +89,6 @@ prepare_tray_monitor_build ()
 }
 
 readonly BUILD_ARCH="$1"
-
-prepare_regw_build ${BUILD_ARCH:-64}
 
 rm -f debug/bat.exe
 if test -f ../config.h ; then
