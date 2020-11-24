@@ -32,10 +32,16 @@ DEFINES = \
 # Look files in src/lib and plugins/fd mainly for SAP and Oracle
 vpath %.c $(MAINDIR)/src/lib $(MAINDIR)/src/plugins/fd
 vpath %.h $(MAINDIR)/src/lib $(MAINDIR)/src/plugins/fd
+vpath %.cpp $(MAINDIR)/src/tools/cdp-client
 
 ######################################################################
 
 # Files files in src/win32/filed/plugins
+
+CDP_OBJS = $(OBJDIR)/cdp-fd.o \
+          $(OBJDIR)/backupservice.o \
+          $(OBJDIR)/journal.o \
+          $(OBJDIR)/folderwatcher.o
 
 EXCHANGE_OBJS = \
 	$(OBJDIR)/exchange-fd.o \
@@ -67,7 +73,7 @@ LIBS_DLL = \
 
 .PHONY: all clean distclean
 
-all: $(BINDIR)/exchange-fd.dll $(BINDIR)/bpipe-fd.dll $(BINDIR)/alldrives-fd.dll
+all: $(BINDIR)/exchange-fd.dll $(BINDIR)/bpipe-fd.dll $(BINDIR)/alldrives-fd.dll $(BINDIR)/cdp-fd.dll
 
 clean:
 	@echo "Cleaning `pwd`"
@@ -81,6 +87,13 @@ distclean: clean
 #
 # Rules for generating from ../lib
 #
+
+$(BINDIR)/cdp-fd.dll: DLL_DEFINE=BUILDING_DLL
+
+$(BINDIR)/cdp-fd.dll: $(CDP_OBJS) $(LIBS_BACULA)
+	@echo "Linking $@"
+	$(call checkdir,$@)
+	$(ECHO_CMD)$(CXX) $(LDFLAGS) -mdll -mwindows -Wl,--out-implib,$(OBJDIR)/cdp-fd.a $^ $(LIBS_DLL) -o $@
 
 #$(LIBDIR)/libexchange-fd.a: DLL_DEFINE=USING_DLL
 
