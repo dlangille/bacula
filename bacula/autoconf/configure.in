@@ -3732,6 +3732,7 @@ AC_CONFIG_FILES([
    src/cats/install-default-backend \
    src/findlib/Makefile \
    src/tools/Makefile \
+   src/tools/cdp-client/Makefile \
    src/plugins/fd/Makefile \
    src/plugins/sd/Makefile \
    src/plugins/dir/Makefile \
