@@ -1,0 +1,32 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2019 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# CDP Unit Tests 
+#
+
+. scripts/functions
+
+BIN_DIR="$unitsrc/cdp/bin"
+
+exec_bin()
+{
+LOGFILE=$tmp/$1.log
+(cd $BIN_DIR; ./$1 > $LOGFILE)
+
+nb=`grep 'ERROR' $LOGFILE | wc -l`
+if [ $nb -gt 0 ]; then
+    print_debug "ERROR: One or more tests failed."
+    exit 1
+fi
+}
+
+(cd $src/src/plugins/fd; make cdp)
+(cd $unitsrc/cdp; make)
+cp -a $src/src/plugins/fd/.libs/cdp-fd.so $unitsrc/cdp/bin 
+
+exec_bin "journal-test"
+exec_bin "folderwatcher-test" 
+exec_bin "backupservice-test"
+exec_bin "cdp-plugin-test"

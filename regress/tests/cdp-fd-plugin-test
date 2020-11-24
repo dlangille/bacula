@@ -1,0 +1,139 @@
+#!/bin/sh
+
+#export REGRESS_DEBUG=1
+
+TestName="cdp-plugin-test"
+JobName="PluginCdpTest"
+. scripts/functions
+UserHome="$tmp/testUserHome"
+WatchedDir="$UserHome/watched-dir"
+SpoolDir="$UserHome/spool-dir"
+RestoreDir="$tmp/brestores"
+
+make_cdp_plugin()
+{
+(cd $src/src/plugins/fd; make cdp)
+cp -a build/src/plugins/fd/.libs/cdp-fd.so $bin/plugins
+}  
+ 
+write_tests_bcommands()
+{
+cat <<END_OF_DATA >$tmp/bconcmds
+@output /dev/null
+messages
+@$out $tmp/log_backup.out
+setdebug level=4 storage=File1
+label volume=TestVolume001 storage=File1 pool=Default slot=1 drive=0
+show job=$JobName
+run job=$JobName yes
+status storage=File1
+@sleep 1
+@sleep 1
+wait
+messages
+list files jobid=1
+@#
+@# now do a restore
+@#
+@$out $tmp/log_restore.out
+setdebug level=4 storage=File1
+restore where=$RestoreDir select all done
+yes
+wait
+messages
+quit
+END_OF_DATA
+}
+
+create_journal()
+{
+cat <<END_OF_DATA > $UserHome/.bcdp-cli.journal
+Settings {
+spooldir=$SpoolDir
+heartbeat=-1
+jversion=1
+}
+Folder {
+path=$WatchedDir
+}
+File {
+name=$WatchedDir/test_file1
+sname=$SpoolDir/1553697755_test_file1
+atime=1553697755
+attrs=gE VBM6 IGk B Po Po A b BAA I Bcm4vb Bcm4vb Bcm4vb A A A 
+}
+File {
+name=$WatchedDir/test_file2
+sname=$SpoolDir/1553697777_test_file2
+atime=1553697777
+attrs=gE VBM6 IGk B Po Po A b BAA I Bcm4vb Bcm4vb Bcm4vb A A A 
+}
+File {
+name=$WatchedDir/test_file3
+sname=$SpoolDir/1553697799_test_file3
+atime=1553697799
+attrs=gE VBM6 IGk B Po Po A b BAA I Bcm4vb Bcm4vb Bcm4vb A A A 
+}
+END_OF_DATA
+}
+
+create_testfiles()
+{
+#If you change the file size, remember to change it's attributes as well
+echo "kflasflsalfsaklsaffsfasfsa" > $WatchedDir/test_file1
+echo "kflasflsalfsaklsaffsfasfsa" > $SpoolDir/1553697755_test_file1
+
+echo "kflasflsalf18sdakdjsakl121" > $WatchedDir/test_file2
+echo "kflasflsalf18sdakdjsakl121" > $SpoolDir/1553697777_test_file2
+
+echo "kflasa9s6dsa968dsa986d1289" > $WatchedDir/test_file3
+echo "kflasa9s6dsa968dsa986d1289" > $SpoolDir/1553697799_test_file3
+}
+
+verify_backup_ok()
+{
+nb=`grep 'Backup OK' $tmp/log_backup.out | wc -l`
+if [ $nb -lt 1 ]; then
+    print_debug "ERROR: should have found Backup OK message"
+    bstat=1
+fi
+}
+
+verify_restore_ok()
+{
+nb=`grep 'Restore OK' $tmp/log_restore.out | wc -l`
+if [ $nb -lt 1 ]; then
+    print_debug "ERROR: should have found Restore OK message"
+    bstat=1
+fi
+
+backup_count=`find $UserHome -type f | wc -l`
+#Do not count the Journal, which was not backed up
+backup_count=$((backup_count-1))
+restore_count=`find $RestoreDir$UserHome -type f | wc -l`
+
+if [ $backup_count != $restore_count ]; then
+    print_debug "ERROR: File count mismatch. Backup count: $backup_count. Restore Count: $restore_count"
+fi
+}
+
+scripts/cleanup
+scripts/copy-cdp-plugin-confs
+
+start_test
+
+make_cdp_plugin
+mkdir $UserHome 
+mkdir $SpoolDir
+mkdir $WatchedDir
+create_journal
+create_testfiles
+
+write_tests_bcommands
+run_bacula
+stop_bacula
+
+verify_backup_ok
+verify_restore_ok
+
+end_test

@@ -1,0 +1,97 @@
+#
+# Copyright (C) 2000-2019 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+
+RMF = /bin/rm -f
+CXX = x86_64-w64-mingw32-g++ 
+NO_ECHO = @
+
+#
+# Flags
+#
+
+CXXFLAGS = -DHAVE_MINGW -DHAVE_WIN32 -DHAVE_MINGW_W64 -DHAVE_ZLIB_H -DHAVE_LIBZ -g -O2 -Wall -DUNICODE
+
+#
+# Paths 
+#
+
+DEPKGS = ../../../depkgs-mingw-w64
+COMMON_PATH = ../common
+BUILD_PATH = ../../build
+SRC_PATH = $(BUILD_PATH)/src
+JOURNAL_PATH = $(SRC_PATH)/plugins/fd
+CDP_FD_PATH = $(SRC_PATH)/plugins/fd
+CLIENT_PATH = $(SRC_PATH)/tools/cdp-client
+
+BIN_DIR = bin
+
+#
+# Libs and Includes
+#
+
+LIBS = -lwsock32 -lstdc++ -L../../../bacula/src/win32/release64 -lbacula -lpthread 
+
+INCLUDES = -I. -I../../../bacula/src/ -I../../../bacula/src/filed -I$(COMMON_PATH) -I$(SRC_PATH) -I$(CLIENT_PATH) -I$(CDP_FD_PATH) -I$(JOURNAL_PATH) -I../../../bacula/src/win32/compat -I$(DEPKGS)/include/ -I$(DEPKGS)/include/pthreads 
+
+#
+# Libtool specific settings
+#
+
+LINK = x86_64-w64-mingw32-g++
+LFLAGS = -static-libgcc -static-libstdc++ -mthreads -Wl,-enable-stdcall-fixup -Wl,-enable-auto-import -fno-strict-aliasing -Wl,-enable-runtime-pseudo-reloc -mconsole
+
+.SUFFIXES: .c .cpp .o 
+
+# inference rules
+.c.o:
+	@echo "Compiling $<"
+	$(NO_ECHO) $(CXX) -c $(CXXFLAGS) $(INCLUDES) $<
+.cpp.o:
+	@echo "Compiling $<"
+	$(NO_ECHO) $(CXX) -c $(CXXFLAGS) $(INCLUDES) $<
+
+#-------------------------------------------------------------------------
+
+all: Makefile test-dirs backupservice-test.exe journal-test.exe folderwatcher-test.exe cdp-plugin-test.exe
+	@echo "==== Make of cdp-tests (WIN_64) is good ===="
+	@echo " "
+
+test-dirs:
+	mkdir -p $(BIN_DIR)
+
+clean: 
+	@$(RMF) -r $(BIN_DIR) .libs _libs ./tmp ./*.o 
+
+JTEST_OBJS = journal-test.o journal.o
+journal-test.exe: Makefile $(JTEST_OBJS) win-test-process.exe  
+	$(LINK) $(LFLAGS) -o $(BIN_DIR)/$@ $(JTEST_OBJS) $(LIBS) 
+
+win-test-process.exe: Makefile win-test-process.o 
+	$(LINK) $(LFLAGS) -o $(BIN_DIR)/$@ win-test-process.o $(LIBS) 
+
+FTEST_OBJS = folderwatcher-test.o folderwatcher.o
+folderwatcher-test.exe: Makefile $(FTEST_OBJS) 
+	$(LINK) $(LFLAGS) -o $(BIN_DIR)/$@ $(FTEST_OBJS) $(LIBS) 
+
+BTEST_OBJS = backupservice-test.o backupservice.o folderwatcher.o journal.o  
+backupservice-test.exe: Makefile $(BTEST_OBJS) 
+	$(LINK) $(LFLAGS) -o $(BIN_DIR)/$@ $(BTEST_OBJS) $(LIBS) 
+
+PTEST_OBJS = cdp-plugin-test.o journal.o
+cdp-plugin-test.exe: Makefile $(PTEST_OBJS) 
+	$(LINK) $(LFLAGS) -o $(BIN_DIR)/$@ $(PTEST_OBJS) $(LIBS) 
+
+#-------------------------------------------------------------------------
+
+backupservice.o: $(CLIENT_PATH)/backupservice.h $(CLIENT_PATH)/backupservice.cpp
+	$(CXX) -c $(CXXFLAGS) $(INCLUDES) -o backupservice.o $(CLIENT_PATH)/backupservice.cpp
+
+journal.o: $(JOURNAL_PATH)/journal.c $(JOURNAL_PATH)/journal.h
+	$(CXX) -c $(CXXFLAGS) $(INCLUDES) -o journal.o $(JOURNAL_PATH)/journal.c
+
+folderwatcher.o: $(CLIENT_PATH)/folderwatcher.cpp $(CLIENT_PATH)/folderwatcher.h
+	$(CXX) -c $(CXXFLAGS) $(INCLUDES) -o folderwatcher.o $(CLIENT_PATH)/folderwatcher.cpp 
+
+   
