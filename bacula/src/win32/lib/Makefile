@@ -33,9 +33,8 @@ EXTRA_LIB_OBJS = $(addprefix $(OBJDIR)/, $(EXTRA_LIB_OBJS_ORG))
 COMPAT_OBJS = \
 	$(OBJDIR)/compat.o \
 	$(OBJDIR)/print.o \
-	$(OBJDIR)/winapi.o
-
-#	$(OBJDIR)/getopt.o \
+	$(OBJDIR)/winapi.o \
+	$(OBJDIR)/mtab.o
 
 FIND_OBJS = \
 	$(OBJDIR)/attribs.o \

@@ -1,9 +1,11 @@
 #
-# Copyright (C) 2000-2018 Kern Sibbald
-# License: BSD 2-Clause; see file LICENSE-FOSS
-#
 # Makefile for win32 bacula executables
 # Using MinGW cross-compiler on GNU/Linux
+#
+#
+# Author: Robert Nelson
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
 #
 #  Written by Robert Nelson, June 2006
 #
@@ -25,9 +27,10 @@ define makedep
 	@echo "Generating dependencies for $<"
 	$(call checkdir,$@)
 	$(ECHO_CMD)$(CXX) -MM $(CPPFLAGS) $< > $@.$$$$; \
-	sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; \
+	sed 's,\($*\)\.o[ :]*,$(OBJDIR)/\1.o $@ : ,g' < $@.$$$$ > $@; \
 	rm -f $@.$$$$
 endef
+
 
 define link_conapp
 	@echo "Linking $@"
@@ -74,6 +77,6 @@ $(OBJDIR)/%.d: %.cpp
 
 ifneq ($(ALL_OBJS),)
 ifneq ($(MAKECMDGOALS),clean)
-include $(patsubst %.o,%.d,$(filter-out %.res,$(ALL_OBJS)))
+-include $(patsubst %.o,%.d,$(filter-out %.res,$(ALL_OBJS)))
 endif
 endif

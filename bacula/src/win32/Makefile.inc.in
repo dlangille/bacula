@@ -3,7 +3,7 @@
 # Using MinGW cross-compiler on GNU/Linux
 #
 # Author: Robert Nelson
-# Copyright (C), Kern Sibbald 2006-2018
+# Copyright (C), Kern Sibbald 2006-2020
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
 #  Written by Robert Nelson, June 2006
@@ -18,7 +18,7 @@
 
 # Global Configuration
 
-ECHO_CMD = @
+ECHO_CMD=@
 
 # Main Bacula source dir
 MAINDIR := @WIN32MAINDIR@
@@ -79,16 +79,16 @@ LDFLAGS := -g -Wall
 ifeq ($(MINGW_BASE),i686-w64-mingw32)
    CFLAGS += -DHAVE_MINGW_W64
    WINDRESFLAGS := -DHAVE_MINGW_W64
-   LIBS_PTHREADS := $(DEPKGS)/lib/libpthreadGCE2.a
+   LIBS_PTHREADS := -lwinpthread
 
 else ifeq ($(MINGW_BASE),x86_64-w64-mingw32)
    CFLAGS += -DHAVE_MINGW_W64
    WINDRESFLAGS := -DHAVE_MINGW_W64
-   LIBS_PTHREADS := $(DEPKGS)/lib/libpthreadGCE2.a
+   LIBS_PTHREADS := -lwinpthread
 
 else 
    # old mingw
-   LIBS_PTHREADS := $(DEPKGS)/lib/libpthreadGCE.a
+   LIBS_PTHREADS := -lwinpthread
    LDFLAGS += -mno-cygwin -Wl,--disable-auto-import
 endif
 
@@ -104,7 +104,7 @@ OBJDIRS := obj32 obj64
 
 INCLUDE_DDK := -I$(MINGW_INCLUDE)/ddk
 INCLUDE_BACULA := -I$(MAINDIR)/src -I$(BUILDDIR)/compat
-INCLUDE_PTHREADS := -I$(DEPKGS)/include/pthreads
+INCLUDE_PTHREADS :=
 INCLUDE_ZLIB := -I$(DEPKGS)/include
 INCLUDE_VSS := -I$(DEPKGS)/vss
 INCLUDE_ICONS := -I../libwin32

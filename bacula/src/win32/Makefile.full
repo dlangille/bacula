@@ -1,3 +1,6 @@
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+
 ECHO_CMD=@
 
 WIN32_DIRS=lib cats filed filed/plugins dird stored \

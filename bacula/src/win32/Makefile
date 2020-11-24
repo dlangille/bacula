@@ -1,7 +1,5 @@
-#
-# Copyright (C) 2000-2018 Kern Sibbald
+# Copyright (C) 2000-2020 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
-#
 #
 #  Makefile for Win32/Win64 Bacula File daemon
 #
@@ -12,6 +10,9 @@
 #     built.
 #
 
+# ignore "make -j N" option at this level
+.NOTPARALLEL:
+
 ECHO_CMD=@
 
 WIN32_DIRS=lib filed filed/plugins console scripts stored
@@ -20,19 +21,19 @@ WIN64_DIRS=lib filed filed/plugins console scripts stored
 ifeq ($(win64),yes)
 	 DIRS=$(WIN64_DIRS)
 	 INSTALLER=win64_installer
-	 SPECIAL=bat64 bsmtp
+	 SPECIAL=bat64 bsmtp tools
 else
 	 DIRS=$(WIN32_DIRS)
 	 INSTALLER=win32_installer
-	 SPECIAL=bat32 bsmtp
+	 SPECIAL=bat32 bsmtp tools
 endif
 
 ifeq ($(bat),no)
-	 SPECIAL=bsmtp
+	 SPECIAL=bsmtp tools
 endif	
 
 .PHONY: $(DIRS) clean all Makefile.inc win32_installer full_win32_installer \
-	 win64_installer bsmtp distclean
+	 win64_installer bsmtp tools distclean
 
 all: Makefile.inc $(DIRS) $(SPECIAL) $(INSTALLER)
 
@@ -41,10 +42,10 @@ distclean: clean
 clean: $(DIRS) win32_installer win64_installer
 	$(MAKE) -C tools clean
 	$(ECHO_CMD)-rm -rf release32 release64
-	$(ECHO_CMD)-rm -rf ../qt-console/obj32 ../qt-console/obj64
-	$(ECHO_CMD)-rm -f ../qt-console/release/bat.exe ../qt-console/debug/bat.exe
-	$(ECHO_CMD)-rm -rf ../qt-console/tray-monitor/obj32 ../qt-console/tray-monitor/obj64
-	$(ECHO_CMD)-rm -f ../qt-console/tray-monitor/release/bacula-tray-monitor.exe ../qt-console/tray-monitor/debug/bacula-tray-monitor.exe
+	$(ECHO_CMD)-rm -rf ../qt-console/obj32 ../qt-console/obj64 ../qt-console/ui32 ../qt-console/ui64
+	$(ECHO_CMD)-rm -rf ../qt-console/release ../qt-console/debug
+	$(ECHO_CMD)-rm -rf ../qt-console/tray-monitor/obj32 ../qt-console/tray-monitor/obj64 ../qt-console/tray-monitor/ui32 ../qt-console/tray-monitor/ui64
+	$(ECHO_CMD)-rm -rf ../qt-console/tray-monitor/release ../qt-console/tray-monitor/debug
 
 is_depkgs_set:
 	@if test -z $${DEPKGS} ; then \
@@ -56,14 +57,24 @@ is_depkgs_set:
 release32/bat.exe: is_depkgs_set
 	( cd ../qt-console; ./make-win32 "32" )
 	test -f release32/bat.exe
+	test -f release32/bacula-tray-monitor.exe
 
-bat32: release32/bat.exe
+bat32: release32/bat.exe release32/bacula-tray-monitor.exe
 
 release64/bat.exe: is_depkgs_set
 	( cd ../qt-console; ./make-win32 "64" )
 	test -f release64/bat.exe
+	test -f release64/bacula-tray-monitor.exe
 
-bat64: release64/bat.exe
+bat64: release64/bat.exe release64/bacula-tray-monitor.exe
+
+# a target that quickly build windows bacula-fd.exe
+winfiled:
+	@for I in lib filed filed/plugins console; \
+	  do (cd $$I; echo "==>Entering directory `pwd`"; \
+	      $(MAKE) DESTDIR=$(DESTDIR)  || (echo ""; echo ""; echo "  ====== Error in `pwd` ======"; \
+	                    echo ""; echo ""; false ) || false) || exit 1; \
+	done
 
 full_win32_installer:
 	@if test -f Makefile.inc; then \
@@ -113,7 +124,14 @@ bsmtp:
 	   fi ; \
 	fi
 
-
+tools:
+	@if test -f Makefile.inc; then \
+	   if $(MAKE) -C tools all $(MAKECMDGOALS); then \
+		echo "\n===== Make of tools/all succeeded =====\n\n" ; \
+	   else  \
+		echo "\n!!!!! Make of tools/all failed !!!!!\n\n" ; exit 1; \
+	   fi ; \
+	fi
 
 Makefile.inc:
 	@echo Creating $@
@@ -166,3 +184,4 @@ Makefile.inc:
 		-e "s^@WIN32BINDIR@^$${BINDIR}^" \
 		-e "s^@WIN32INCDIR@^$${INCDIR}^" \
 		-e "s^@WIN32DLLDIR@^$${DLLDIR}^" < Makefile.inc.in > $@
+	@grep EXTRA ../../autoconf/Make.common >> $@
