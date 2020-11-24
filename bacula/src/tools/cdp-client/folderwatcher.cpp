@@ -68,7 +68,7 @@ POOLMEM *FolderWatcher::watch(const char *folder)
    if (rc) {
       POOLMEM *err_msg = get_pool_memory(PM_EMSG);
       Mmsg(err_msg, "Error: could not start INotify Thread."
-            "Please, contact Bacula Systems.\n");
+            "Please, contact Bacula Support.\n");
       return err_msg;
    }
 
@@ -116,7 +116,7 @@ POOLMEM *FolderWatcher::watchDirRecursive(const char *dir)
             break;
 
          default:
-            Mmsg(err_msg, "Unknown Error. Please contact Bacula Systems.");
+            Mmsg(err_msg, "Unknown Error. Please contact Bacula Support.");
             break;
       }
 
@@ -411,7 +411,7 @@ POOLMEM *FolderWatcher::watch(const char *folder)
       _dirHandle = NULL;
       POOLMEM *err_msg = get_pool_memory(PM_EMSG);
       Mmsg(err_msg, "Error: could not create handle for folder %s. "
-            "Please, contact Bacula Systems.\n", folder);
+            "Please, contact Bacula Support.\n", folder);
       return err_msg;
    }
 
@@ -421,7 +421,7 @@ POOLMEM *FolderWatcher::watch(const char *folder)
    if (rc) {
       POOLMEM *err_msg = get_pool_memory(PM_EMSG);
       Mmsg(err_msg, "Error: could not start Watcher Thread. "
-            "Please, contact Bacula Systems.\n");
+            "Please, contact Bacula Support.\n");
       return err_msg;
    }
 
