@@ -219,7 +219,6 @@ Function EnterConfigPage2
 
   ${If} $AutomaticInstall = 0
     IntOp $R0 $NewComponents & ${ComponentsFileAndStorageAndDirector}
-    IntOp $R0 0 & 0
     ${If} $R0 <> 0
       IntOp $R8 $R7 + 42
 
