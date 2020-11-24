@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2020-11-10 01:16\n"
+"PO-Revision-Date: 2020-11-24 16:56\n"
 "Project-Id-Version: b02f04a28aec0155df9503e3b78ae8cc\n"
 "POT-Creation-Date: \n"
 "Last-Translator: Sergey Zhidkov <zhsv@bk.ru>\n"
@@ -3085,125 +3085,125 @@ msgid "last %days days"
 msgstr "последние %days дней"
 
 msgid "Path (optional):"
-msgstr "Path (optional):"
+msgstr "Путь (необязательно):"
 
 msgid "With the given path, the results narrow down to the files in the path only."
-msgstr "With the given path, the results narrow down to the files in the path only."
+msgstr "С указанием пути результаты сужаются только до файлов только по данному пути."
 
 msgid "Storage Daemon:"
-msgstr "Storage Daemon:"
+msgstr "Демон хранения:"
 
 msgid "# Autochangers:"
-msgstr "# Autochangers:"
+msgstr "# Авточейнджеры:"
 
 msgid "# Devices:"
-msgstr "# Devices:"
+msgstr "# Устройства:"
 
 msgid "Devices"
-msgstr "Devices"
+msgstr "Устройства"
 
 msgid "Archive device:"
-msgstr "Archive device:"
+msgstr "Устройство архивации:"
 
 msgid "Device type:"
-msgstr "Device type:"
+msgstr "Тип устройства:"
 
 msgid "Media type:"
-msgstr "Media type:"
+msgstr "Тип медиа:"
 
 msgid "Device type"
-msgstr "Device type"
+msgstr "Тип устройства"
 
 msgid "Media type"
-msgstr "Media type"
+msgstr "Тип медиа"
 
 msgid "Maximum concurrent jobs:"
-msgstr "Maximum concurrent jobs:"
+msgstr "Максимум одновременных задач:"
 
 msgid "Maximum volume size:"
-msgstr "Maximum volume size:"
+msgstr "Максимальный размер тома:"
 
 msgid "Mounted:"
-msgstr "Mounted:"
+msgstr "Смонтировано:"
 
 msgid "Opened:"
-msgstr "Opened:"
+msgstr "Открытый:"
 
 msgid "Waiting:"
-msgstr "Waiting:"
+msgstr "Ожидание:"
 
 msgid "Blocked:"
-msgstr "Blocked:"
+msgstr "Заблокированный:"
 
 msgid "Blocked description:"
-msgstr "Blocked description:"
+msgstr "Описание блокировки:"
 
 msgid "Read-only:"
-msgstr "Read-only:"
+msgstr "Только для чтения:"
 
 msgid "Last speed:"
-msgstr "Last speed:"
+msgstr "Последняя скорость:"
 
 msgid "Write pool:"
-msgstr "Write pool:"
+msgstr "Пул записей:"
 
 msgid "Write device:"
-msgstr "Write device:"
+msgstr "Устройство записи:"
 
 msgid "Write volume:"
-msgstr "Write volume:"
+msgstr "Записать том:"
 
 msgid "Read pool:"
-msgstr "Read pool:"
+msgstr "Чтение пула:"
 
 msgid "Read device:"
-msgstr "Read device:"
+msgstr "Чтение устройства:"
 
 msgid "Read volume:"
-msgstr "Read volume:"
+msgstr "Чтение тома:"
 
 msgid "Used space:"
-msgstr "Used space:"
+msgstr "Использованное пространство:"
 
 msgid "Status:"
-msgstr "Status:"
+msgstr "Статус:"
 
 msgid "running"
-msgstr "running"
+msgstr "запущенный"
 
 msgid "idle"
-msgstr "idle"
+msgstr "простое"
 
 msgid "Autochanger:"
-msgstr "Autochanger:"
+msgstr "Авточейнджер:"
 
 msgid "Single devices"
-msgstr "Single devices"
+msgstr "Одиночные устройства"
 
 msgid "Start time:"
-msgstr "Start time:"
+msgstr "Время начала:"
 
 msgid "End time:"
-msgstr "End time:"
+msgstr "Время окончания:"
 
 msgid "Terminated jobs"
-msgstr "Terminated jobs"
+msgstr "Завершенные задания"
 
 msgid "All devices"
-msgstr "All devices"
+msgstr "Все устройства"
 
 msgid "All device types"
-msgstr "All device types"
+msgstr "Все типы устройств"
 
 msgid "All media types"
-msgstr "All media types"
+msgstr "Все типы медиа"
 
 msgid "All statuses"
-msgstr "All statuses"
+msgstr "Все статусы"
 
 msgid "Graphical storage status is supported for Bacula storages version 9.0 and greater."
-msgstr "Graphical storage status is supported for Bacula storages version 9.0 and greater."
+msgstr "Графическое отображение состояния хранилища поддерживается для хранилищ Bacula версии 9.0 и выше."
 
 msgid "Status request timed out. The most probably the Bacula storage is not available or it is not running."
-msgstr "Status request timed out. The most probably the Bacula storage is not available or it is not running."
+msgstr "Истекло время ожидания. Скорее всего, хранилище Bacula недоступно или не работает."
 
