@@ -104,7 +104,6 @@ Page custom EnterConfigPage1 LeaveConfigPage1
 Page custom EnterConfigPage2 LeaveConfigPage2
 !Define      MUI_PAGE_CUSTOMFUNCTION_LEAVE LeaveInstallPage
 !InsertMacro MUI_PAGE_INSTFILES
-Page custom EnterWriteTemplates
 !Define      MUI_FINISHPAGE_SHOWREADME $INSTDIR\Readme.txt
 !InsertMacro MUI_PAGE_FINISH
 
@@ -182,6 +181,7 @@ Var InstallType
 Var OldInstallDir
 Var PreviousComponents
 Var NewComponents
+Var TmpComponent
 
 ; Bit 0 = File Service
 ;     1 = Storage Service
@@ -191,10 +191,9 @@ Var NewComponents
 ;     5 = wxWidgits Console
 ;     6 = Documentation (PDF)
 ;     7 = Documentation (HTML)
-;     8 = alldrives Plugin
-;     9 = Old Exchange Plugin
-;    10 = Tray Monitor
-;    11 = winbmr Plugin
+;     8 = CDP Plugin
+;     9 = Tray Monitor
+;    10 = alldrives Plugin
 
 !define ComponentFile                   1
 !define ComponentStorage                2
@@ -205,10 +204,9 @@ Var NewComponents
 !define ComponentPDFDocs                64
 !define ComponentHTMLDocs               128
 !define MUI_PAGE_LICENSE "${SRC_DIR}\INSTALL"
-!define ComponentAllDrivesPlugin        256
-!define ComponentOldExchangePlugin      512
-!define ComponentTrayMonitor            1024
-; !define ComponentWinBMRPlugin           2048
+!define ComponentCDPPlugin              256
+!define ComponentTrayMonitor            512
+!define ComponentAllDrivesPlugin        1024
 
 !define ComponentsRequiringUserConfig           63
 !define ComponentsFileAndStorage                3
@@ -276,31 +274,186 @@ Function .onInit
 
   ; Configuration Defaults
 
-  StrCpy $ConfigClientName               "$HostName-fd"
-  StrCpy $ConfigClientPort               9102
-  StrCpy $ConfigClientMaxJobs            10
-  ;StrCpy $ConfigClientPassword
-  StrCpy $ConfigClientInstallService     "$OptService"
-  StrCpy $ConfigClientStartService       "$OptStart"
-
-  StrCpy $ConfigStorageName              "$HostName-sd"
-  StrCpy $ConfigStoragePort              9103
-  StrCpy $ConfigStorageMaxJobs           10
-  ;StrCpy $ConfigStoragePassword
-  StrCpy $ConfigStorageInstallService    "$OptService"
-  StrCpy $ConfigStorageStartService      "$OptStart"
-
-  StrCpy $ConfigDirectorPort             9101
-
-  StrCpy $ConfigMonitorName              "$HostName-mon"
-  ;StrCpy $ConfigMonitorPassword
+  ClearErrors
+  ${GetOptions} $CMDLINE "-ConfigClientName" $ConfigClientName
+  IfErrors 0 +2
+    StrCpy $ConfigClientName               "$HostName-fd"
+  ClearErrors
+  ${GetOptions} $CMDLINE "-ConfigClientPort" $ConfigClientPort
+  IfErrors 0 +2
+    StrCpy $ConfigClientPort               9102
+  ClearErrors
+  ${GetOptions} $CMDLINE "-ConfigClientMaxJobs" $ConfigClientMaxJobs
+  IfErrors 0 +2
+    StrCpy $ConfigClientMaxJobs            5
+  ClearErrors
+  ${GetOptions} $CMDLINE "-ConfigClientPassword" $ConfigClientPassword
+  IfErrors 0 +2
+    StrCpy $ConfigClientPassword          ""
+  ClearErrors
+  ${GetOptions} $CMDLINE "-ConfigClientInstallService" $ConfigClientInstallService
+  IfErrors 0 +2
+    StrCpy $ConfigClientInstallService     "$OptService"
+  ClearErrors
+  ${GetOptions} $CMDLINE "-ConfigClientStartService" $ConfigClientStartService
+  IfErrors 0 +2
+    StrCpy $ConfigClientStartService       "$OptStart"
+  ClearErrors
+  ${GetOptions} $CMDLINE "-ConfigStorageName" $ConfigStorageName
+  IfErrors 0 +2
+    StrCpy $ConfigStorageName              "$HostName-sd"
+  ClearErrors
+  ${GetOptions} $CMDLINE "-ConfigStoragePort" $ConfigStoragePort
+  IfErrors 0 +2
+    StrCpy $ConfigStoragePort              9103
+  ClearErrors
+  ${GetOptions} $CMDLINE "-ConfigStorageMaxJobs" $ConfigStorageMaxJobs
+  IfErrors 0 +2
+    StrCpy $ConfigStorageMaxJobs           10
+  ClearErrors
+  ${GetOptions} $CMDLINE "-ConfigStoragePassword" $ConfigStoragePassword
+  IfErrors 0 +2
+    StrCpy $ConfigStoragePassword          ""
+  ClearErrors
+  ${GetOptions} $CMDLINE "-ConfigStorageInstallService" $ConfigStorageInstallService
+  IfErrors 0 +2
+    StrCpy $ConfigStorageInstallService    "$OptService"
+  ClearErrors
+  ${GetOptions} $CMDLINE "-ConfigStorageStartService" $ConfigStorageStartService
+  IfErrors 0 +2
+    StrCpy $ConfigStorageStartService      "$OptStart"
+  ClearErrors
+  ${GetOptions} $CMDLINE "-ConfigDirectorName" $ConfigDirectorName
+  IfErrors 0 +2
+    StrCpy $ConfigDirectorName            "$HostName-dir"
+  ClearErrors
+  ${GetOptions} $CMDLINE "-ConfigDirectorPort" $ConfigDirectorPort
+  IfErrors 0 +2
+    StrCpy $ConfigDirectorPort             9101
+  ClearErrors
+  ${GetOptions} $CMDLINE "-ConfigDirectorMaxJobs" $ConfigDirectorMaxJobs
+  IfErrors 0 +2
+    StrCpy $ConfigDirectorMaxJobs          1
+  ClearErrors
+  ${GetOptions} $CMDLINE "-ConfigDirectorPassword" $ConfigDirectorPassword
+  IfErrors 0 +2
+    StrCpy $ConfigDirectorPassword         ""
+  ClearErrors
+  ${GetOptions} $CMDLINE "-ConfigDirectorDB" $ConfigDirectorDB
+  IfErrors 0 +2
+    StrCpy $ConfigDirectorDB               0
+  ClearErrors
+  ${GetOptions} $CMDLINE "-ConfigDirectorInstallService" $ConfigDirectorInstallService
+  IfErrors 0 +2
+    StrCpy $ConfigDirectorInstallService   "$OptService"
+  ClearErrors
+  ${GetOptions} $CMDLINE "-ConfigDirectorStartService" $ConfigDirectorStartService
+  IfErrors 0 +2
+    StrCpy $ConfigDirectorStartService     "$OptStart"
+  ClearErrors
+  ${GetOptions} $CMDLINE "-ConfigMonitorName" $ConfigMonitorName
+  IfErrors 0 +2
+    StrCpy $ConfigMonitorName              "$HostName-mon"
+  ClearErrors
+  ${GetOptions} $CMDLINE "-ConfigMonitorPassword" $ConfigMonitorPassword
+  IfErrors 0 +2
+    StrCpy $ConfigMonitorPassword          ""
+  ClearErrors
+  ${GetOptions} $CMDLINE "-ConfigClientName" $ConfigClientName
+  IfErrors 0 +2
+    StrCpy $ConfigClientName               "$HostName-fd"
+  ClearErrors
+  ${GetOptions} $CMDLINE "-ConfigClientPort" $ConfigClientPort
+  IfErrors 0 +2
+    StrCpy $ConfigClientPort               9102
+  ClearErrors
+  ${GetOptions} $CMDLINE "-ConfigClientMaxJobs" $ConfigClientMaxJobs
+  IfErrors 0 +2
+    StrCpy $ConfigClientMaxJobs            5
+  ClearErrors
+  ${GetOptions} $CMDLINE "-ConfigClientPassword" $ConfigClientPassword
+  IfErrors 0 +2
+    StrCpy $ConfigClientPassword          ""
+  ClearErrors
+  ${GetOptions} $CMDLINE "-ConfigClientInstallService" $ConfigClientInstallService
+  IfErrors 0 +2
+    StrCpy $ConfigClientInstallService     "$OptService"
+  ClearErrors
+  ${GetOptions} $CMDLINE "-ConfigClientStartService" $ConfigClientStartService
+  IfErrors 0 +2
+    StrCpy $ConfigClientStartService       "$OptStart"
+  ClearErrors
+  ${GetOptions} $CMDLINE "-ConfigStorageName" $ConfigStorageName
+  IfErrors 0 +2
+    StrCpy $ConfigStorageName              "$HostName-sd"
+  ClearErrors
+  ${GetOptions} $CMDLINE "-ConfigStoragePort" $ConfigStoragePort
+  IfErrors 0 +2
+    StrCpy $ConfigStoragePort              9103
+  ClearErrors
+  ${GetOptions} $CMDLINE "-ConfigStorageMaxJobs" $ConfigStorageMaxJobs
+  IfErrors 0 +2
+    StrCpy $ConfigStorageMaxJobs           10
+  ClearErrors
+  ${GetOptions} $CMDLINE "-ConfigStoragePassword" $ConfigStoragePassword
+  IfErrors 0 +2
+    StrCpy $ConfigStoragePassword          ""
+  ClearErrors
+  ${GetOptions} $CMDLINE "-ConfigStorageInstallService" $ConfigStorageInstallService
+  IfErrors 0 +2
+    StrCpy $ConfigStorageInstallService    "$OptService"
+  ClearErrors
+  ${GetOptions} $CMDLINE "-ConfigStorageStartService" $ConfigStorageStartService
+  IfErrors 0 +2
+    StrCpy $ConfigStorageStartService      "$OptStart"
+  ClearErrors
+  ${GetOptions} $CMDLINE "-ConfigDirectorName" $ConfigDirectorName
+  IfErrors 0 +2
+    StrCpy $ConfigDirectorName            "$HostName-dir"
+  ClearErrors
+  ${GetOptions} $CMDLINE "-ConfigDirectorPort" $ConfigDirectorPort
+  IfErrors 0 +2
+    StrCpy $ConfigDirectorPort             9101
+  ClearErrors
+  ${GetOptions} $CMDLINE "-ConfigDirectorMaxJobs" $ConfigDirectorMaxJobs
+  IfErrors 0 +2
+    StrCpy $ConfigDirectorMaxJobs          1
+  ClearErrors
+  ${GetOptions} $CMDLINE "-ConfigDirectorPassword" $ConfigDirectorPassword
+  IfErrors 0 +2
+    StrCpy $ConfigDirectorPassword         ""
+  ClearErrors
+  ${GetOptions} $CMDLINE "-ConfigDirectorDB" $ConfigDirectorDB
+  IfErrors 0 +2
+    StrCpy $ConfigDirectorDB               0
+  ClearErrors
+  ${GetOptions} $CMDLINE "-ConfigDirectorInstallService" $ConfigDirectorInstallService
+  IfErrors 0 +2
+    StrCpy $ConfigDirectorInstallService   "$OptService"
+  ClearErrors
+  ${GetOptions} $CMDLINE "-ConfigDirectorStartService" $ConfigDirectorStartService
+  IfErrors 0 +2
+    StrCpy $ConfigDirectorStartService     "$OptStart"
+  ClearErrors
+  ${GetOptions} $CMDLINE "-ConfigMonitorName" $ConfigMonitorName
+  IfErrors 0 +2
+    StrCpy $ConfigMonitorName              "$HostName-mon"
+  ClearErrors
+  ${GetOptions} $CMDLINE "-ConfigMonitorPassword" $ConfigMonitorPassword
+  IfErrors 0 +2
+    StrCpy $ConfigMonitorPassword          ""
+  ClearErrors
+  IfSilent 0 +2
+    Call SilentSelectComponents
 
 ; PLUGINSDIR refers to temporary helper programs and not Bacula plugins!
   InitPluginsDir
   File "/oname=$PLUGINSDIR\openssl.exe"  "${SRC_DIR}\openssl.exe"
-  File "/oname=$PLUGINSDIR\libeay32.dll" "${SRC_DIR}\libeay32.dll"
-  File "/oname=$PLUGINSDIR\ssleay32.dll" "${SRC_DIR}\ssleay32.dll"
+  File "/oname=$PLUGINSDIR\libssl-1_1.dll" "${SRC_DIR}\libssl-1_1.dll"
+  File "/oname=$PLUGINSDIR\libcrypto-1_1.dll" "${SRC_DIR}\libcrypto-1_1.dll"
   File "/oname=$PLUGINSDIR\sed.exe"      "${SRC_DIR}\sed.exe"
+  File "/oname=$PLUGINSDIR\libwinpthread-1.dll" "${SRC_DIR}\libwinpthread-1.dll"
+  File "/oname=$PLUGINSDIR\libgcc_s_sjlj-1.dll" "${SRC_DIR}\libgcc_s_sjlj-1.dll"
 
   !InsertMacro MUI_INSTALLOPTIONS_EXTRACT "InstallType.ini"
   !InsertMacro MUI_INSTALLOPTIONS_EXTRACT "WriteTemplates.ini"
@@ -357,17 +510,15 @@ Function InstallCommonFiles
 
     SetOutPath "$INSTDIR"
 !if "${BUILD_TOOLS}" == "MinGW32"
-    File "${SRC_DIR}\pthreadGCE2.dll"
-    File "${SRC_DIR}\ssleay32.dll"
-    File "${SRC_DIR}\libeay32.dll"
+    File "${SRC_DIR}\libcrypto-1_1.dll"
+    File "${SRC_DIR}\libssl-1_1.dll"
     File "${SRC_DIR}\libwinpthread-1.dll"
     File "${SRC_DIR}\libgcc_s_sjlj-1.dll"
     File "${SRC_DIR}\libstdc++-6.dll"
 !endif
 !if "${BUILD_TOOLS}" == "MinGW64"
-    File "${SRC_DIR}\pthreadGCE.dll"
-    File "${SRC_DIR}\cryptoeay32-0.9.8.dll"
-    File "${SRC_DIR}\ssleay32-0.9.8.dll"
+    File "${SRC_DIR}\libssl-1_1.dll"
+    File "${SRC_DIR}\libcrypto-1_1.dll"
 !endif
     File "${SRC_DIR}\zlib1.dll"
     File "${SRC_DIR}\bacula.dll"
@@ -494,6 +645,7 @@ Section "File Service" SecFileDaemon
   SetOutPath "$INSTDIR"
 
   File "${SRC_DIR}\bacula-fd.exe"
+
   File "/oname=$PLUGINSDIR\bacula-fd.conf" "bacula-fd.conf.in"
 
   StrCpy $0 "$INSTDIR"
@@ -569,16 +721,21 @@ Section "Bat Console" SecBatConsole
 
 !if "${BUILD_BAT}" == "yes"
   Call InstallCommonFiles
-  File "${SRC_DIR}\QtCore4.dll"
-  File "${SRC_DIR}\QtGui4.dll"
+  File "${SRC_DIR}\Qt5Core.dll"
+  File "${SRC_DIR}\Qt5Gui.dll"
+  File "${SRC_DIR}\Qt5Network.dll"
+  File "${SRC_DIR}\Qt5Widgets.dll"
   File "${SRC_DIR}\libgcc_s_sjlj-1.dll"
 
   File "${SRC_DIR}\bat.exe"
-
   File "/oname=$PLUGINSDIR\bat.conf" "bat.conf.in"
   StrCpy $0 "$INSTDIR"
   StrCpy $1 bat.conf
   Call ConfigEditAndCopy
+
+  SetOutPath "$INSTDIR\platforms"
+  File "${SRC_DIR}\qwindows.dll"
+  SetOutPath "$INSTDIR"
 
   SetOutPath "$INSTDIR\help"
   File "${SRC_DIR}\help\*"
@@ -598,18 +755,26 @@ Section "Bacula Tray Monitor" SecTrayMonitor
 
 !if "${BUILD_BAT}" == "yes"
   Call InstallCommonFiles
-  File "${SRC_DIR}\QtCore4.dll"
-  File "${SRC_DIR}\QtGui4.dll"
+  File "${SRC_DIR}\libssl-1_1.dll"
+  File "${SRC_DIR}\libcrypto-1_1.dll"
+  File "${SRC_DIR}\Qt5Gui.dll"
+  File "${SRC_DIR}\Qt5Core.dll"
+  File "${SRC_DIR}\Qt5Network.dll"
+  File "${SRC_DIR}\Qt5Widgets.dll"
   File "${SRC_DIR}\libgcc_s_sjlj-1.dll"
   File "${SRC_DIR}\bacula-tray-monitor.exe"
 
-  ;File "/oname=$PLUGINSDIR\bacula-tray-monitor.conf" "bacula-tray-monitor.conf.in"
-  StrCpy $0 "$INSTDIR"
-  StrCpy $1 bacula-tray-monitor.conf
-  ;Call ConfigEditAndCopy
+ SetOutPath "$INSTDIR\platforms"
+ File "${SRC_DIR}\qwindows.dll"
+ SetOutPath "$INSTDIR"
+
+ File "/oname=$PLUGINSDIR\bacula-tray-monitor.conf" "bacula-tray-monitor.conf.in"
+ StrCpy $0 "$INSTDIR"
+ StrCpy $1 bacula-tray-monitor.conf
+ Call ConfigEditAndCopy
 
   ; Create Start Menu entry
-   CreateShortCut "$SMPROGRAMS\Bacula\TrayMonitor.lnk" "$INSTDIR\bacula-tray-monitor.exe" "" "$INSTDIR\bacula-tray-monitor.exe" 0
+  CreateShortCut "$SMPROGRAMS\Bacula\TrayMonitor.lnk" "$INSTDIR\bacula-tray-monitor.exe" "" "$INSTDIR\bacula-tray-monitor.exe" 0
 !endif
 
 SectionEnd
@@ -630,67 +795,22 @@ SectionGroup "Plugins" SecGroupPlugins
 
 Section "alldrives Plugin" SecAllDrivesPlugin
   SectionIn 1 2 3
-
+ 
   SetOutPath "$INSTDIR\plugins"
   File "${SRC_DIR}\alldrives-fd.dll"
-  SetOutPath "$INSTDIR"
-
+  SetOutPath "$INSTDIR" 
 SectionEnd
 
-;Section "winbmr Plugin" SecWinBMRPlugin
-;  SectionIn 1 2 3
 
-;  SetOutPath "$INSTDIR\plugins"
-;  File "${SRC_DIR}\winbmr-fd.dll"
-;  SetOutPath "$INSTDIR"
-
-;SectionEnd
-
-Section "Old (deprecated) Exchange Plugin" SecOldExchangePlugin
+Section /o "CDP Plugin" SecCDPPlugin
   SectionIn 1 2 3
 
   SetOutPath "$INSTDIR\plugins"
-  File "${SRC_DIR}\exchange-fd.dll"
+  File "${SRC_DIR}\cdp-fd.dll"
   SetOutPath "$INSTDIR"
-
+  File "${SRC_DIR}\cdp-client.exe"
+  
 SectionEnd
-
-SectionGroupEnd
-
-
-
-SectionGroup "Documentation" SecGroupDocumentation
-
-Section "Documentation (Acrobat Format)" SecDocPdf
-  SectionIn 1 2 3
-
-  SetOutPath "$INSTDIR\doc"
-  CreateDirectory "$INSTDIR\doc"
-
-  File "${SRC_DIR}\docs\manuals\en\console\console.pdf"
-  File "${SRC_DIR}\docs\manuals\en\misc\misc.pdf"
-  File "${SRC_DIR}\docs\manuals\en\main\main.pdf"
-  File "${SRC_DIR}\docs\manuals\en\utility\utility.pdf"
-  File "${SRC_DIR}\docs\manuals\en\problems\problems.pdf"
-  CreateShortCut "$SMPROGRAMS\Bacula\Documentation\Console.lnk" '"$INSTDIR\doc\console.pdf"'
-  CreateShortCut "$SMPROGRAMS\Bacula\Documentation\Main.lnk" '"$INSTDIR\doc\main.pdf"'
-  CreateShortCut "$SMPROGRAMS\Bacula\Documentation\Misc.lnk" '"$INSTDIR\doc\misc.pdf"'
-  CreateShortCut "$SMPROGRAMS\Bacula\Documentation\Utility.lnk" '"$INSTDIR\doc\utility.pdf"'
-  CreateShortCut "$SMPROGRAMS\Bacula\Documentation\Problems.lnk" '"$INSTDIR\doc\problems.pdf"'
-  SetOutPath "$INSTDIR"
-SectionEnd
-
-;Section "Documentation (HTML Format)" SecDocHtml
-;  SectionIn 3
-
-; SetOutPath "$INSTDIR\doc"
-; CreateDirectory "$INSTDIR\doc"
-
-; File "${SRC_DIR}\manual\bacula\*.html"
-; File "${SRC_DIR}\manual\bacula\*.png"
-; File "${SRC_DIR}\manual\bacula\*.css"
-; CreateShortCut "$SMPROGRAMS\Bacula\Documentation\Manual (HTML).lnk" '"$INSTDIR\doc\index.html"'
-;SectionEnd
 
 SectionGroupEnd
 
@@ -739,8 +859,7 @@ LangString DESC_SecConsole ${LANG_ENGLISH} "Install bconsole program on this sys
 LangString DESC_SecBatConsole ${LANG_ENGLISH} "Install Bat graphical console program on this system."
 LangString DESC_SecTrayMonitor ${LANG_ENGLISH} "Install Tray Monitor graphical program on this system."
 LangString DESC_SecAllDrivesPlugin ${LANG_ENGLISH} "Install alldrives Plugin on this system."
-; LangString DESC_SecWinBMRPlugin ${LANG_ENGLISH} "Install winbmr Plugin on this system."
-LangString DESC_SecOldExchangePlugin ${LANG_ENGLISH} "Install old (deprecated) Exchange Plugin on this system."
+LangString DESC_SecCDPPlugin ${LANG_ENGLISH} "Install CDP Plugin and CDP client on this system."
 
 
 LangString TITLE_ConfigPage1 ${LANG_ENGLISH} "Configuration"
@@ -760,10 +879,9 @@ LangString SUBTITLE_WriteTemplates ${LANG_ENGLISH} "Create a resource template f
   !InsertMacro MUI_DESCRIPTION_TEXT ${SecStorageDaemon} $(DESC_SecStorageDaemon)
   !InsertMacro MUI_DESCRIPTION_TEXT ${SecConsole} $(DESC_SecConsole)
   !InsertMacro MUI_DESCRIPTION_TEXT ${SecBatConsole} $(DESC_SecBatConsole)
-  !InsertMacro MUI_DESCRIPTION_TEXT ${SecTrayMonitor} $(DESC_SecTrayMonitor)
   !InsertMacro MUI_DESCRIPTION_TEXT ${SecAllDrivesPlugin} $(DESC_SecAllDrivesPlugin)
-;  !InsertMacro MUI_DESCRIPTION_TEXT ${SecWinBMRPlugin} $(DESC_SecWinBMRPlugin)
-  !InsertMacro MUI_DESCRIPTION_TEXT ${SecOldExchangePlugin} $(DESC_SecOldExchangePlugin)
+  !InsertMacro MUI_DESCRIPTION_TEXT ${SecTrayMonitor} $(DESC_SecTrayMonitor)
+  !InsertMacro MUI_DESCRIPTION_TEXT ${SecCDPPlugin} $(DESC_SecCDPPlugin)
 !InsertMacro MUI_FUNCTION_DESCRIPTION_END
 
 ; Uninstall section
@@ -774,7 +892,7 @@ Section "Uninstall"
   ; Shutdown any baculum that could be running
   nsExec::ExecToLog '"$INSTDIR\bacula-fd.exe" /kill'
   nsExec::Exec /TIMEOUT=200 'net stop bacula-fd'
-  Sleep 3000
+  Sleep 1000
 
 ; ReadRegDWORD $R0 HKLM "Software\Bacula" "Service_Bacula-fd"
   ; Remove Bacula File Daemon service
@@ -796,6 +914,7 @@ Section "Uninstall"
   Delete /REBOOTOK "$INSTDIR\doc\*"
   Delete /REBOOTOK "$INSTDIR\openssl.exe"
   Delete /REBOOTOK "$INSTDIR\bacula-fd.exe"
+  Delete /REBOOTOK "$INSTDIR\bacula-tray-monitor.exe"
   Delete /REBOOTOK "$INSTDIR\bsleep.exe"
   Delete /REBOOTOK "$INSTDIR\bsmtp.exe"
   Delete /REBOOTOK "$INSTDIR\bconsole.exe"
@@ -809,9 +928,6 @@ Section "Uninstall"
   Delete /REBOOTOK "$INSTDIR\*.cmd"
   Delete /REBOOTOK "$INSTDIR\*.sql"
   Delete /REBOOTOK "$INSTDIR\help\*"
-  Delete /REBOOTOK "$INSTDIR\plugins\alldrives-fd.dll"
-  Delete /REBOOTOK "$INSTDIR\plugins\exchange-fd.dll"
-;  Delete /REBOOTOK "$INSTDIR\plugins\winbmr-fd.dll"
 
   ; Check for existing installation
   IfSilent +2
@@ -977,16 +1093,10 @@ Function GetSelectedComponents
      IntOp $R0 $R0 | ${ComponentTrayMonitor}
    ${EndIf}
   ${If} ${SectionIsSelected} ${SecAllDrivesPlugin}
-    IntOp $R0 $R0 | ${ComponentAllDrivesPlugin}
+     IntOp $R0 $R0 | ${ComponentAllDrivesPlugin}
   ${EndIf}
-;  ${If} ${SectionIsSelected} ${SecWinBMRPlugin}
-;    IntOp $R0 $R0 | ${ComponentWinBMRPlugin}
-;  ${EndIf}
-  ${If} ${SectionIsSelected} ${SecOldExchangePlugin}
-    IntOp $R0 $R0 | ${ComponentOldExchangePlugin}
-  ${EndIf}
-  ${If} ${SectionIsSelected} ${SecDocPdf}
-    IntOp $R0 $R0 | ${ComponentPDFDocs}
+  ${If} ${SectionIsSelected} ${SecCDPPlugin}
+    IntOp $R0 $R0 | ${ComponentCDPPlugin}
   ${EndIf}
   Exch $R0
 FunctionEnd
@@ -1008,80 +1118,50 @@ Function LeaveInstallPage
   Call DumpLog
 FunctionEnd
 
-Function EnterWriteTemplates
-  Push $R0
-  Push $R1
-
-  Call GetSelectedComponents
-  Pop $R0
-
-  IntOp $R0 $R0 & ${ComponentDirector}
-  IntOp $R1 $NewComponents & ${ComponentsFileAndStorage}
-
-  ${If} $R0 <> 0
-  ${OrIf} $R1 = 0
-    Pop $R1
-    Pop $R0
-    Abort
-  ${EndIf}
-
-  IntOp $R0 $NewComponents & ${ComponentFile}
-  ${If} $R0 = 0
-    WriteINIStr "$PLUGINSDIR\WriteTemplates.ini" "Field 2" State 0
-    WriteINIStr "$PLUGINSDIR\WriteTemplates.ini" "Field 2" Flags DISABLED
-    DeleteINIStr "$PLUGINSDIR\WriteTemplates.ini" "Field 3" State
-    WriteINIStr "$PLUGINSDIR\WriteTemplates.ini" "Field 3" Flags REQ_SAVE|FILE_EXPLORER|WARN_IF_EXIST|DISABLED
+; in silent mode, we manually select or deselect modules, depending on cmdline parameter
+Function SilentSelectComponents
+  ; by default fd and plugins are selected
+  !InsertMacro SelectSection ${SecFileDaemon}
+  !InsertMacro SetSectionFlag ${SecFileDaemon} ${SF_RO}
+  !InsertMacro SelectSection ${SecCDPPlugin}
+  !InsertMacro SetSectionFlag ${SecCDPPlugin} ${SF_RO}
+  ClearErrors
+  ${GetOptions} $CMDLINE "-ComponentStorage" $TmpComponent
+  ${IfNot} ${Errors}
+    !InsertMacro SelectSection ${SecStorageDaemon}
+    !InsertMacro SetSectionFlag ${SecStorageDaemon} ${SF_RO}
   ${Else}
-    ;; TODO: See why this procedure causes a problem on Windows 2012
-    WriteINIStr "$PLUGINSDIR\WriteTemplates.ini" "Field 2" State 0
-    DeleteINIStr "$PLUGINSDIR\WriteTemplates.ini" "Field 2" Flags
-    WriteINIStr "$PLUGINSDIR\WriteTemplates.ini" "Field 3" State "$INSTDIR\$ConfigClientName.conf"
-    WriteINIStr "$PLUGINSDIR\WriteTemplates.ini" "Field 5" Flags REQ_SAVE|FILE_EXPLORER|WARN_IF_EXIST
-
+    !InsertMacro UnselectSection ${SecStorageDaemon}
+    !InsertMacro ClearSectionFlag ${SecStorageDaemon} ${SF_RO}
   ${EndIf}
-
-  IntOp $R0 $NewComponents & ${ComponentStorage}
-  ${If} $R0 = 0
-    WriteINIStr "$PLUGINSDIR\WriteTemplates.ini" "Field 4" State 0
-    WriteINIStr "$PLUGINSDIR\WriteTemplates.ini" "Field 4" Flags DISABLED
-    DeleteINIStr "$PLUGINSDIR\WriteTemplates.ini" "Field 5" State
-    WriteINIStr "$PLUGINSDIR\WriteTemplates.ini" "Field 5" Flags REQ_SAVE|FILE_EXPLORER|WARN_IF_EXIST|DISABLED
+  ClearErrors
+  ${GetOptions} $CMDLINE "-ComponentTextConsole" $TmpComponent
+  ${IfNot} ${Errors}
+    !InsertMacro SelectSection ${SecConsole}
+    !InsertMacro SetSectionFlag ${SecConsole} ${SF_RO}
   ${Else}
-    ;; TODO: See why this procedure causes a problem on Windows 2012
-    WriteINIStr "$PLUGINSDIR\WriteTemplates.ini" "Field 4" State 0
-    DeleteINIStr "$PLUGINSDIR\WriteTemplates.ini" "Field 4" Flags
-    WriteINIStr "$PLUGINSDIR\WriteTemplates.ini" "Field 5" State "$INSTDIR\$ConfigStorageName.conf"
-    WriteINIStr "$PLUGINSDIR\WriteTemplates.ini" "Field 5" Flags REQ_SAVE|FILE_EXPLORER|WARN_IF_EXIST
+    !InsertMacro UnselectSection ${SecConsole}
+    !InsertMacro ClearSectionFlag ${SecConsole} ${SF_RO}
   ${EndIf}
-
-  !InsertMacro MUI_HEADER_TEXT "$(TITLE_WriteTemplates)" "$(SUBTITLE_WriteTemplates)"
-  !InsertMacro MUI_INSTALLOPTIONS_DISPLAY "WriteTemplates.ini"
-
-  !InsertMacro MUI_INSTALLOPTIONS_READ $R0 "WriteTemplates.ini" "Field 2" State
-  ${If} $R0 <> 0
-    File "/oname=$PLUGINSDIR\client.conf.in" "client.conf.in"
-
-    nsExec::ExecToLog '$PLUGINSDIR\sed.exe -f "$PLUGINSDIR\config.sed" -i.bak "$PLUGINSDIR\client.conf.in"'
-    !InsertMacro MUI_INSTALLOPTIONS_READ $R0 "WriteTemplates.ini" "Field 3" State
-    ${If} $R0 != ""
-      CopyFiles "$PLUGINSDIR\client.conf.in" "$R0"
-    ${EndIf}
+  ClearErrors
+  ${GetOptions} $CMDLINE "-ComponentBatConsole" $TmpComponent
+  ${IfNot} ${Errors}
+    !InsertMacro SelectSection ${SecBatConsole}
+    !InsertMacro SetSectionFlag ${SecBatConsole} ${SF_RO}
+  ${Else}
+    !InsertMacro UnselectSection ${SecBatConsole}
+    !InsertMacro ClearSectionFlag ${SecBatConsole} ${SF_RO}
   ${EndIf}
-
-
-  !InsertMacro MUI_INSTALLOPTIONS_READ $R0 "WriteTemplates.ini" "Field 4" State
-  ${If} $R0 <> 0
-    File "/oname=$PLUGINSDIR\storage.conf.in" "storage.conf.in"
-
-    nsExec::ExecToLog '$PLUGINSDIR\sed.exe -f "$PLUGINSDIR\config.sed" -i.bak "$PLUGINSDIR\storage.conf.in"'
-    !InsertMacro MUI_INSTALLOPTIONS_READ $R0 "WriteTemplates.ini" "Field 5" State
-    ${If} $R0 != ""
-      CopyFiles "$PLUGINSDIR\storage.conf.in" "$R0"
-    ${EndIf}
+  ClearErrors
+  ${GetOptions} $CMDLINE "-ComponentTrayMonitor" $TmpComponent
+  ${IfNot} ${Errors}
+    !InsertMacro SelectSection ${SecTrayMonitor}
+    !InsertMacro SetSectionFlag ${SecTrayMonitor} ${SF_RO}
+  ${Else}
+    !InsertMacro UnselectSection ${SecTrayMonitor}
+    !InsertMacro ClearSectionFlag ${SecTrayMonitor} ${SF_RO}
   ${EndIf}
-
-  Pop $R1
-  Pop $R0
+  ClearErrors
 FunctionEnd
 
 Function SelectPreviousComponents
@@ -1118,45 +1198,29 @@ Function SelectPreviousComponents
       !InsertMacro UnselectSection ${SecBatConsole}
       !InsertMacro ClearSectionFlag ${SecBatConsole} ${SF_RO}
     ${EndIf}
-     IntOp $R1 $PreviousComponents & ${ComponentTrayMonitor}
-     ${If} $R1 <> 0
-       !InsertMacro SelectSection ${SecTrayMonitor}
-       !InsertMacro SetSectionFlag ${SecTrayMonitor} ${SF_RO}
-     ${Else}
-       !InsertMacro UnselectSection ${SecTrayMonitor}
-       !InsertMacro ClearSectionFlag ${SecTrayMonitor} ${SF_RO}
-     ${EndIf}
+    IntOp $R1 $PreviousComponents & ${ComponentTrayMonitor}
+    ${If} $R1 <> 0
+      !InsertMacro SelectSection ${SecTrayMonitor}
+      !InsertMacro SetSectionFlag ${SecTrayMonitor} ${SF_RO}
+    ${Else}
+      !InsertMacro UnselectSection ${SecTrayMonitor}
+      !InsertMacro ClearSectionFlag ${SecTrayMonitor} ${SF_RO}
+    ${EndIf}
     IntOp $R1 $PreviousComponents & ${ComponentAllDrivesPlugin}
-    ${If} $R1 <> 0
-      !InsertMacro SelectSection ${SecAllDrivesPlugin}
-      !InsertMacro SetSectionFlag ${SecAllDrivesPlugin} ${SF_RO}
-    ${Else}
-      !InsertMacro UnselectSection ${SecAllDrivesPlugin}
-      !InsertMacro ClearSectionFlag ${SecAllDrivesPlugin} ${SF_RO}
+     ${If} $R1 <> 0
+       !InsertMacro SelectSection ${SecAllDrivesPlugin}
+       !InsertMacro SetSectionFlag ${SecAllDrivesPlugin} ${SF_RO}
+     ${Else}
+       !InsertMacro UnselectSection ${SecAllDrivesPlugin}
+       !InsertMacro ClearSectionFlag ${SecAllDrivesPlugin} ${SF_RO}
     ${EndIf}
-;    IntOp $R1 $PreviousComponents & ${ComponentWinBMRPlugin}
-;    ${If} $R1 <> 0
-;      !InsertMacro SelectSection ${SecWinBMRPlugin}
-;      !InsertMacro SetSectionFlag ${SecWinBMRPlugin} ${SF_RO}
-;    ${Else}
-;      !InsertMacro UnselectSection ${SecWinBMRPlugin}
-;      !InsertMacro ClearSectionFlag ${SecWinBMRPlugin} ${SF_RO}
-;    ${EndIf}
-    IntOp $R1 $PreviousComponents & ${ComponentOldExchangePlugin}
+    IntOp $R1 $PreviousComponents & ${ComponentCDPPlugin}
     ${If} $R1 <> 0
-      !InsertMacro SelectSection ${SecOldExchangePlugin}
-      !InsertMacro SetSectionFlag ${SecOldExchangePlugin} ${SF_RO}
+      !InsertMacro SelectSection ${SecCDPPlugin}
+      !InsertMacro SetSectionFlag ${SecCDPPlugin} ${SF_RO}
     ${Else}
-      !InsertMacro UnselectSection ${SecOldExchangePlugin}
-      !InsertMacro ClearSectionFlag ${SecOldExchangePlugin} ${SF_RO}
-    ${EndIf}
-    IntOp $R1 $PreviousComponents & ${ComponentPDFDocs}
-    ${If} $R1 <> 0
-      !InsertMacro SelectSection ${SecDocPdf}
-      !InsertMacro SetSectionFlag ${SecDocPdf} ${SF_RO}
-    ${Else}
-      !InsertMacro UnselectSection ${SecDocPdf}
-      !InsertMacro ClearSectionFlag ${SecDocPdf} ${SF_RO}
+      !InsertMacro UnselectSection ${SecCDPPlugin}
+      !InsertMacro ClearSectionFlag ${SecCDPPlugin} ${SF_RO}
     ${EndIf}
   ${EndIf}
 FunctionEnd
@@ -1196,29 +1260,17 @@ Function UpdateComponentUI
     ${Else}
       !InsertMacro ClearSectionFlag ${SecBatConsole} ${SF_BOLD}
     ${EndIf}
-     IntOp $R1 $NewComponents & ${ComponentTrayMonitor}
-     ${If} $R1 <> 0
-       !InsertMacro SetSectionFlag ${SecTrayMonitor} ${SF_BOLD}
-     ${Else}
-       !InsertMacro ClearSectionFlag ${SecTrayMonitor} ${SF_BOLD}
-     ${EndIf}
-    IntOp $R1 $NewComponents & ${ComponentAllDrivesPlugin}
+    IntOp $R1 $NewComponents & ${ComponentTrayMonitor}
     ${If} $R1 <> 0
-      !InsertMacro SetSectionFlag ${SecAllDrivesPlugin} ${SF_BOLD}
+      !InsertMacro SetSectionFlag ${SecTrayMonitor} ${SF_BOLD}
     ${Else}
-      !InsertMacro ClearSectionFlag ${SecAllDrivesPlugin} ${SF_BOLD}
+      !InsertMacro ClearSectionFlag ${SecTrayMonitor} ${SF_BOLD}
     ${EndIf}
-    IntOp $R1 $NewComponents & ${ComponentOldExchangePlugin}
+    IntOp $R1 $NewComponents & ${ComponentCDPPlugin}
     ${If} $R1 <> 0
-      !InsertMacro SetSectionFlag ${SecOldExchangePlugin} ${SF_BOLD}
+      !InsertMacro SetSectionFlag ${SecCDPPlugin} ${SF_BOLD}
     ${Else}
-      !InsertMacro ClearSectionFlag ${SecOldExchangePlugin} ${SF_BOLD}
-    ${EndIf}
-    IntOp $R1 $NewComponents & ${ComponentPDFDocs}
-    ${If} $R1 <> 0
-      !InsertMacro SetSectionFlag ${SecDocPdf} ${SF_BOLD}
-    ${Else}
-      !InsertMacro ClearSectionFlag ${SecDocPdf} ${SF_BOLD}
+      !InsertMacro ClearSectionFlag ${SecCDPPlugin} ${SF_BOLD}
     ${EndIf}
   ${EndIf}
 

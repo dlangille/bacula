@@ -18,16 +18,19 @@ DEFINES := \
 	-DVERSION=$(VERSION) \
 	-DOUT_DIR=$(BUILDDIR)/release32 \
 	-DSRC_DIR=release32 \
+	-DREGWIZ_SRC_DIR=$(DEPKGS)/release32 \
 	-DBUILD_TOOLS=MinGW32 \
 	-DWINVER=32 \
+	-DPRODUCT_PUBLISHER="Bacula Community" \
 	-DBUILD_BAT=$(BUILD_BAT)
 
 INSTALL_EXE := $(BUILDDIR)/release32/winbacula-$(VERSION).exe
 
 BACULABINARIES := \
 	bacula.dll \
-	alldrives-fd.dll \
-	exchange-fd.dll \
+        alldrives-fd.dll \
+        cdp-fd.dll \
+        cdp-client.exe \
 	bacula-fd.exe \
 	bconsole.exe \
 	bsleep.exe \
@@ -51,19 +54,21 @@ EXTRA=
 
 
 DEPKGS_BINARIES := \
-	libeay32.dll \
-	pthreadGCE2.dll \
+	libcrypto-1_1.dll \
 	zlib1.dll \
-	ssleay32.dll \
+	libssl-1_1.dll \
 	openssl.exe \
 	sed.exe \
 	expr64.exe \
 	snooze.exe \
-	QtCore4.dll \
-	QtGui4.dll  \
+	Qt5Core.dll \
+	Qt5Gui.dll  \
+	Qt5Network.dll  \
+	Qt5Widgets.dll  \
+	qwindows.dll \
 	libwinpthread-1.dll \
 	libgcc_s_sjlj-1.dll \
-	libstdc++-6.dll
+	libstdc++-6.dll \
 #	libgcc_s_dw2-1.dll
 
 
@@ -91,9 +96,9 @@ LICENSE_FILES := \
 
 .PHONY: all clean installer distclean
 
-all:	      $(HELP) docs $(INSTALL_EXE) $(EXTRA)
+all:	      $(HELP) $(INSTALL_EXE) $(EXTRA)
 
-installer:    $(HELP) docs $(INSTALL_EXE)
+installer:    $(HELP) $(INSTALL_EXE)
 
 distclean: clean
 
@@ -106,19 +111,6 @@ help:
 	rm -rf release32/help
 	mkdir -p release32/help
 	cp -f $(BINDIR)/help/* release32/help/
-
-docs:
-	rm -rf release32/docs
-	mkdir -p release32/docs/manuals/en/console
-	mkdir -p release32/docs/manuals/en/main
-	mkdir -p release32/docs/manuals/en/misc
-	mkdir -p release32/docs/manuals/en/problems
-	mkdir -p release32/docs/manuals/en/utility
-	cp -f $(DOCDIR)/docs/manuals/en/pdf-and-html/console/console.pdf release32/docs/manuals/en/console/
-	cp -f $(DOCDIR)/docs/manuals/en/pdf-and-html/main/main.pdf release32/docs/manuals/en/main/
-	cp -f $(DOCDIR)/docs/manuals/en/pdf-and-html/misc/misc.pdf release32/docs/manuals/en/misc/
-	cp -f $(DOCDIR)/docs/manuals/en/pdf-and-html/problems/problems.pdf release32/docs/manuals/en/problems/
-	cp -f $(DOCDIR)/docs/manuals/en/pdf-and-html/utility/utility.pdf release32/docs/manuals/en/utility/
 
 #
 # Rules
