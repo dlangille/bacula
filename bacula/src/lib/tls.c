@@ -137,7 +137,7 @@ static unsigned int psk_server_cb(SSL * ssl, const char *identity,
       Dmsg0(0, "ERROR psk_key not set!\n");
       ret = 0;
    } else {
-      strncpy((char*)psk, shared_key, max_psk_len);
+      bstrncpy((char*)psk, shared_key, max_psk_len);
       if (strlen(shared_key)+1>=max_psk_len){
          Dmsg0(0, "Error, psk_key too long, truncate\n");
       }
@@ -231,7 +231,7 @@ static unsigned int psk_client_cb(SSL *ssl, const char *hint, char *identity,
       Dmsg0(0, "ERROR psk_key not set!\n");
       ret = 0;
    } else {
-      strncpy((char*)psk, shared_key, max_psk_len);
+      bstrncpy((char*)psk, shared_key, max_psk_len);
       if (strlen(shared_key)+1>=max_psk_len){
          Dmsg0(0, "Error, psk_key too long, truncate\n");
       }
