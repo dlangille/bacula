@@ -199,7 +199,7 @@ static char OKsession[]   = "2000 OK session\n";
 static char OKstore[]     = "2000 OK storage\n";
 static char OKstoreend[]  = "2000 OK storage end\n";
 static char OKjob[]       = "2000 OK Job %s (%s) %s,%s,%s";
-static char OKsetdebug[]  = "2000 OK setdebug=%lld trace=%d hangup=%d"
+static char OKsetdebug[]  = "2000 OK setdebug=%ld trace=%d hangup=%d"
                             " blowup=%d options=%s tags=%s\n";
 static char BADjob[]      = "2901 Bad Job\n";
 static char EndJob[]      = "2800 End Job TermCode=%d JobFiles=%d ReadBytes=%lld"
@@ -1068,7 +1068,7 @@ static int setdebug_cmd(JCR *jcr)
    /* handle other options */
    set_debug_flags(options);
 
-   Dmsg6(150, "level=%lld trace=%d hangup=%d blowup=%d options=%s tags=%s\n",
+   Dmsg6(150, "level=%ld trace=%d hangup=%d blowup=%d options=%s tags=%s\n",
          lvl, get_trace(), get_hangup(), get_blowup(), options, tags);
    return dir->fsend(OKsetdebug, lvl, get_trace(), get_hangup(),
              get_blowup(), options, tags);
