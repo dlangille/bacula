@@ -50,6 +50,7 @@ New Features:
  - Global Director Autoprune flag
  - Events/Audit features
  - New Baculum features
+ - Support for GPFS
 
 Misc:
 -----
@@ -63,7 +64,8 @@ Misc:
  - Windows Snapshot management has been improved
  - Support for the system.cifs_acl extended attribute backup with Linux CIFS
  - Built-in Client Scheduler
-
+ - Reload command improvements (Keep IP address, Maximum Concurrent value, ...)
+ - Support for GLOB pattern in Console ACL directives
 
 ----------------------------------------------------------------
 
