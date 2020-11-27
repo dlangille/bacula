@@ -77,7 +77,9 @@ static RES_ITEM cons_items[] = {
    {"Description",    store_str,      ITEM(res_cons.hdr.desc), 0, 0, 0},
    {"RCFile",         store_dir,      ITEM(res_cons.rc_file), 0, 0, 0},
    {"Password",       store_password, ITEM(res_cons.password), 0, ITEM_REQUIRED, 0},
+#if BEEF
    {"FipsRequire",     store_bool,    ITEM(res_cons.require_fips), 0, 0, 0},
+#endif
    {"TlsAuthenticate",store_bool,    ITEM(res_cons.tls_authenticate), 0, 0, 0},
    {"TlsEnable",      store_bool,    ITEM(res_cons.tls_enable), 0, 0, 0},
    {"TlsPskEnable",   store_bool,    ITEM(res_cons.tls_psk_enable), 0, ITEM_DEFAULT, tls_psk_default},

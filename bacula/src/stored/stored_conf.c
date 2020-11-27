@@ -73,7 +73,9 @@ static RES_ITEM store_items[] = {
    {"MaximumConcurrentJobs", store_pint32, ITEM(res_store.max_concurrent_jobs), 0, ITEM_DEFAULT, 20},
    {"ClientConnectTimeout",  store_time, ITEM(res_store.ClientConnectTimeout), 0, ITEM_DEFAULT, 60 * 30},
    {"HeartbeatInterval",     store_time, ITEM(res_store.heartbeat_interval), 0, ITEM_DEFAULT, 5 * 60},
+#if BEEF
    {"FipsRequire",            store_bool, ITEM(res_store.require_fips), 0, 0, 0},
+#endif
    {"TlsAuthenticate",       store_bool,    ITEM(res_store.tls_authenticate), 0, 0, 0},
    {"TlsEnable",             store_bool,    ITEM(res_store.tls_enable), 0, 0, 0},
    {"TlsPskEnable",          store_bool,    ITEM(res_store.tls_psk_enable), 0, ITEM_DEFAULT, tls_psk_default},
@@ -311,11 +313,13 @@ void store_devtype(LEX *lc, RES_ITEM *item, int index, int pass)
 s_kw cloud_drivers[] = {
    {"S3",           C_S3_DRIVER},
    {"File",         C_FILE_DRIVER},
+#if BEEF
    {"Azure",        C_WAS_DRIVER},
    {"Google",       C_GOOGLE_DRIVER},
    {"Oracle",       C_ORACLE_DRIVER},
    {"Generic",      C_GEN_DRIVER},
    {"Swift",        C_SWIFT_DRIVER},
+#endif
    {NULL,           0}
 };
 
