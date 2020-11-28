@@ -205,6 +205,24 @@
 		</li>
 		<li><com:TActiveLinkButton
 			OnCommand="Parent.SourceTemplateControl.newResource"
+			CommandParameter="Schedule|<%=$this->getHost()%>|<%=$this->getComponentType()%>|<%=$this->getComponentName()%>"
+			ClientSide.OnComplete="BaculaConfig.show_new_config('<%=$this->getHost()%>new_resource', '<%=$this->getComponentType()%>', '<%=$this->getComponentName()%>', 'Schedule');"
+			Attributes.onclick="$(this).closest('div.config_new_resource').hide();$('div.config_directives').slideUp();"
+			>
+			<i class='fa fa-plus'></i> &nbsp;Schedule
+		</com:TActiveLinkButton>
+		</li>
+		<li><com:TActiveLinkButton
+			OnCommand="Parent.SourceTemplateControl.newResource"
+			CommandParameter="Console|<%=$this->getHost()%>|<%=$this->getComponentType()%>|<%=$this->getComponentName()%>"
+			ClientSide.OnComplete="BaculaConfig.show_new_config('<%=$this->getHost()%>new_resource', '<%=$this->getComponentType()%>', '<%=$this->getComponentName()%>', 'Console');"
+			Attributes.onclick="$(this).closest('div.config_new_resource').hide();$('div.config_directives').slideUp();"
+			>
+			<i class='fa fa-plus'></i> &nbsp;Console
+		</com:TActiveLinkButton>
+		</li>
+		<li><com:TActiveLinkButton
+			OnCommand="Parent.SourceTemplateControl.newResource"
 			CommandParameter="Statistics|<%=$this->getHost()%>|<%=$this->getComponentType()%>|<%=$this->getComponentName()%>"
 			ClientSide.OnComplete="BaculaConfig.show_new_config('<%=$this->getHost()%>new_resource', '<%=$this->getComponentType()%>', '<%=$this->getComponentName()%>', 'Statistics');"
 			Attributes.onclick="$(this).closest('div.config_new_resource').hide();$('div.config_directives').slideUp();"

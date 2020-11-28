@@ -288,7 +288,7 @@ class BaculaSetting extends APIModule {
 			$resource_type = $resource_type_new;
 			$resource = array($resource_type => array());
 			foreach ($resource_new[$resource_type] as $directive_name => $directive_value) {
-				if ($directive_name === 'Run') {
+				if ($directive_name === 'Run' || $directive_name === 'Connect') {
 					for($i = 0; $i < count($directive_value); $i++) {
 						if (is_array($directive_value[$i])) {
 							if (key_exists('Hour', $directive_value[$i])) {
@@ -600,7 +600,8 @@ function overwrite_directives_callback($directive_name, $directive_value) {
 		'Priority',
 		'SpoolData',
 		'MaxRunSchedTime',
-		'NextPool'
+		'NextPool',
+		'MaxConnectTime'
 	);
 	if (in_array($directive_name, $overwrite_directives)) {
 		$directive = "{$directive_name}={$directive_value}";

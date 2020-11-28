@@ -43,7 +43,7 @@ class DirectiveSchedule extends DirectiveListTemplate {
 		'DirectiveTimePeriod'
 	);
 
-	private $overwrite_directives = array(
+	private $directives_dir = [
 		'Pool',
 		'FullPool',
 		'IncrementalPool',
@@ -56,7 +56,16 @@ class DirectiveSchedule extends DirectiveListTemplate {
 		'MaxRunSchedTime',
 		'Accurate',
 		'NextPool'
-	);
+	];
+
+	private $directives_fd = [
+		'MaxConnectTime'
+	];
+
+	private $directive_name = [
+		'dir' => 'Run',
+		'fd' => 'Connect'
+	];
 
 	private $time_values = array(
 		'Minute',
@@ -94,18 +103,18 @@ class DirectiveSchedule extends DirectiveListTemplate {
 		$component_name = $this->getComponentName();
 		$resource_type = $this->getResourceType();
 		$resource_name = $this->getResourceName();
-		$data_desc = $this->Application->getModule('data_desc');
-		$resource_desc = $data_desc->getDescription($this->getComponentType(), 'Job');
-		$overwrite_directives = $time_directives = $directive_values = array();
+		$subdirectives = $this->getSubDirectives();
+		$resource_desc = $this->getResourceDesc();
+		$time_directives = $directive_values = array();
 		foreach ($directives as $index => $directive) {
-			for ($i = 0; $i < count($this->overwrite_directives); $i++) {
+			for ($i = 0; $i < count($subdirectives); $i++) {
 				$default_value = null;
 				$data = null;
 				$resource = null;
 				$directive_desc = null;
 				$required = false;
-				if (array_key_exists($this->overwrite_directives[$i], $resource_desc)) {
-					$directive_desc = $resource_desc[$this->overwrite_directives[$i]];
+				if (key_exists($subdirectives[$i], $resource_desc)) {
+					$directive_desc = $resource_desc[$subdirectives[$i]];
 				}
 				if (is_object($directive_desc)) {
 					if (property_exists($directive_desc, 'DefaultValue')) {
@@ -118,28 +127,28 @@ class DirectiveSchedule extends DirectiveListTemplate {
 						$resource = $directive_desc->Resource;
 					}
 				}
-				if (preg_match('/^(Full|Incremental|Differential)Pool$/', $this->overwrite_directives[$i]) === 1) {
+				if (preg_match('/^(Full|Incremental|Differential)Pool$/', $subdirectives[$i]) === 1) {
 					$resource = 'Pool';
 				}
 				$in_config = false;
 				if ($load_values === true) {
-					$in_config = property_exists($directive, $this->overwrite_directives[$i]);
+					$in_config = property_exists($directive, $subdirectives[$i]);
 				}
 
-				$directive_value = $in_config ? $directive->{$this->overwrite_directives[$i]} : null;
-				$overwrite_directives[$this->overwrite_directives[$i]] = array(
+				$directive_value = $in_config ? $directive->{$subdirectives[$i]} : null;
+				$overwrite_directives[$subdirectives[$i]] = array(
 					'host' => $host,
 					'component_type' => $component_type,
 					'component_name' => $component_name,
 					'resource_type' => $resource_type,
 					'resource_name' => $resource_name,
-					'directive_name' => $this->overwrite_directives[$i],
+					'directive_name' => $subdirectives[$i],
 					'directive_value' => $directive_value,
 					'default_value' => $default_value,
 					'required' => $required,
 					'data' => $data,
 					'resource' => $resource,
-					'label' => $this->overwrite_directives[$i],
+					'label' => $subdirectives[$i],
 					'in_config' => $in_config,
 					'show' => $in_config || !$load_values || $this->SourceTemplateControl->getShowAllDirectives(),
 					'resource_names' => $this->getResourceNames(),
@@ -171,12 +180,45 @@ class DirectiveSchedule extends DirectiveListTemplate {
 		$this->RepeaterScheduleRuns->dataBind();
 	}
 
+	private function getSubDirectives() {
+		$subdirectives = [];
+		$component_type = $this->getComponentType();
+		if ($component_type === 'dir') {
+			$subdirectives = $this->directives_dir;
+		} elseif ($component_type === 'fd') {
+			$subdirectives = $this->directives_fd;
+		}
+		return $subdirectives;
+	}
+
+	private function getResourceDesc() {
+		$desc = [];
+		$component_type = $this->getComponentType();
+		if ($component_type === 'dir') {
+			$data_desc = $this->Application->getModule('data_desc');
+			$desc = $data_desc->getDescription($this->getComponentType(), 'Job');
+		} elseif ($component_type === 'fd') {
+			// TODO: Move it to data_desc.json
+			$desc = [
+				'MaxConnectTime' => (object)[
+					'Required' => false,
+					'ValueType' => 'str',
+					'DefaultValue' => 0,
+					'FieldType' => 'TextBox',
+					'Section' => 'General'
+				]
+			];
+		}
+		return $desc;
+	}
+
 	public function createRunItem($sender, $param) {
 		$load_values = $this->getLoadValues();
-		for ($i = 0; $i < count($this->overwrite_directives); $i++) {
-			$control = $param->Item->{$this->overwrite_directives[$i]};
+		$subdirectives = $this->getSubDirectives();
+		for ($i = 0; $i < count($subdirectives); $i++) {
+			$control = $param->Item->{$subdirectives[$i]};
 			if (is_object($control)) {
-				$data = $param->Item->Data['overwrite_directives'][$this->overwrite_directives[$i]];
+				$data = $param->Item->Data['overwrite_directives'][$subdirectives[$i]];
 				$control->setHost($data['host']);
 				$control->setComponentType($data['component_type']);
 				$control->setComponentName($data['component_name']);
@@ -367,36 +409,39 @@ class DirectiveSchedule extends DirectiveListTemplate {
 	}
 
 	public function getDirectiveValue($ret_obj = false) {
-		$directive_values = array();
-		$values = array('Run' => array());
+		$directive_values = [];
 		$component_type = $this->getComponentType();
 		$resource_type = $this->getResourceType();
-		$objs = array();
+		$subdirectives = $this->getSubDirectives();
+		$directive_name = $this->directive_name[$component_type];
+		$values = [];
+		$values[$directive_name] = [];
+		$objs = [];
 
 		$ctrls = $this->RepeaterScheduleRuns->getItems();
 		foreach ($ctrls as $value) {
 			$obj = new StdClass;
-			for ($i = 0; $i < count($this->overwrite_directives); $i++) {
-				$control = $value->{$this->overwrite_directives[$i]};
-				$directive_name = $control->getDirectiveName();
-				$directive_value = $control->getDirectiveValue();
+			for ($i = 0; $i < count($subdirectives); $i++) {
+				$control = $value->{$subdirectives[$i]};
+				$subdirective_name = $control->getDirectiveName();
+				$subdirective_value = $control->getDirectiveValue();
 				$default_value = $control->getDefaultValue();
-				if (is_null($directive_value)) {
+				if (is_null($subdirective_value)) {
 					continue;
 				}
 				if (get_class($control) === 'DirectiveCheckBox') {
 					settype($default_value, 'bool');
 				}
 
-				if ($directive_value === $default_value) {
+				if ($subdirective_value === $default_value) {
 					// value the same as default value, skip it
 					continue;
 				}
-				$obj->{$directive_name} = $directive_value;
+				$obj->{$subdirective_name} = $subdirective_value;
 				if (get_class($control) === 'DirectiveCheckBox') {
-					$directive_value = Params::getBoolValue($directive_value);
+					$subdirective_value = Params::getBoolValue($subdirective_value);
 				}
-				$directive_values[] = "{$directive_name}=\"{$directive_value}\"";
+				$directive_values[] = "{$subdirective_name}=\"{$subdirective_value}\"";
 			}
 
 			$obj->Month = range(0, 11);
@@ -472,7 +517,7 @@ class DirectiveSchedule extends DirectiveListTemplate {
 				$obj->Hour = range(0, 23);
 				$obj->Minute = $value->TimeMinHourly->getDirectiveValue();
 			}
-			$values['Run'][] = implode(' ', $directive_values);
+			$values[$directive_name][] = implode(' ', $directive_values);
 			$objs[] = $obj;
 			$directive_values = array();
 			$obj = null;

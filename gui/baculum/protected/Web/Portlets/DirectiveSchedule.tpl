@@ -11,7 +11,7 @@
 		>
 			<i class="fa fa-trash-alt"></i> &nbsp;<%[ Remove ]%>
 		</com:TActiveLinkButton>
-			<h2 class="schedule_options"><%[ Run ]%> #<%=($this->ItemIndex+1)%></h2>
+			<h2 class="schedule_options"><%=$this->SourceTemplateControl->ComponentType == 'dir' ? 'Run' : ($this->SourceTemplateControl->ComponentType == 'fd' ? 'Connect' : '')%> #<%=($this->ItemIndex+1)%></h2>
 			<com:Application.Web.Portlets.DirectiveComboBox
 				ID="Level"
 			/>
@@ -48,6 +48,9 @@
 			/>
 			<com:Application.Web.Portlets.DirectiveTimePeriod
 				ID="MaxRunSchedTime"
+			/>
+			<com:Application.Web.Portlets.DirectiveTimePeriod
+				ID="MaxConnectTime"
 			/>
 		<div class="w3-border w3-padding w3-margin-top w3-margin-bottom">
 			<h3><%[ Month ]%></h3>

@@ -208,7 +208,7 @@ class BaculaConfigDirectives extends DirectiveListTemplate {
 				}
 			}
 
-			if ($resource_type === 'Schedule' && $directive_name === 'Run') {
+			if ($resource_type === 'Schedule' && in_array($directive_name, ['Run', 'Connect'])) {
 				$directive_value = array($directive_value);
 			}
 
