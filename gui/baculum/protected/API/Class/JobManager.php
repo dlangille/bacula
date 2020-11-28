@@ -279,10 +279,10 @@ WHERE Client.ClientId='$clientid' $wh";
 			$path_criteria = ' AND Path.Path = :path ';
 		}
 
-		$fname_col = 'Path.Path || Filename.Name';
+		$fname_col = 'Path.Path || File.Filename';
 		$db_params = $this->getModule('api_config')->getConfig('db');
 		if ($db_params['type'] === Database::MYSQL_TYPE) {
-			$fname_col = 'CONCAT(Path.Path, Filename.Name)';
+			$fname_col = 'CONCAT(Path.Path, File.Filename)';
 		}
 
 		$sql = "SELECT Job.JobId AS jobid,
@@ -295,14 +295,13 @@ WHERE Client.ClientId='$clientid' $wh";
                                Job.JobStatus AS jobstatus,
                                Job.JobFiles AS jobfiles,
                                Job.JobBytes AS jobbytes 
-                      FROM Client, Job, File, Filename,Path 
+                      FROM Client, Job, File, Path 
                       WHERE Client.ClientId='$clientid' 
                             AND Client.ClientId=Job.ClientId 
                             AND Job.JobId=File.JobId 
                             AND File.FileIndex > 0 
                             AND Path.PathId=File.PathId 
-                            AND Filename.FilenameId=File.FilenameId 
-                            AND Filename.Name LIKE :filename 
+                            AND File.Filename LIKE :filename 
 		      $jobs_criteria 
 		      $path_criteria 
 		      ORDER BY starttime DESC";
@@ -339,13 +338,13 @@ WHERE Client.ClientId='$clientid' $wh";
 
 		$search_crit = '';
 		if (is_string($search)) {
-			$search_crit = " AND (LOWER(Path.Path) LIKE LOWER('%$search%') OR LOWER(Filename.Name) LIKE LOWER('%$search%')) ";
+			$search_crit = " AND (LOWER(Path.Path) LIKE LOWER('%$search%') OR LOWER(File.Filename) LIKE LOWER('%$search%')) ";
 		}
 
-		$fname_col = 'Path.Path || Filename.Name';
+		$fname_col = 'Path.Path || File.Filename';
 		$db_params = $this->getModule('api_config')->getConfig('db');
 		if ($db_params['type'] === Database::MYSQL_TYPE) {
-			$fname_col = 'CONCAT(Path.Path, Filename.Name)';
+			$fname_col = 'CONCAT(Path.Path, File.Filename)';
 		}
 
 		$limit_sql = '';
@@ -363,9 +362,9 @@ WHERE Client.ClientId='$clientid' $wh";
                                F.fileindex AS fileindex 
                         FROM ( 
                             SELECT PathId     AS pathid, 
-                                   FilenameId AS filenameid, 
                                    Lstat      AS lstat, 
-                                   FileIndex  AS fileindex 
+                                   FileIndex  AS fileindex, 
+                                   FileId     AS fileid 
                             FROM 
                                 File 
                             WHERE 
@@ -373,16 +372,15 @@ WHERE Client.ClientId='$clientid' $wh";
                                 $type_crit 
                             UNION ALL 
                             SELECT PathId         AS pathid, 
-                                   FilenameId     AS filenameid, 
                                    File.Lstat     AS lstat, 
-                                   File.FileIndex AS fileindex 
+                                   File.FileIndex AS fileindex, 
+                                   File.FileId    AS fileid 
                                 FROM BaseFiles 
                                 JOIN File ON (BaseFiles.FileId = File.FileId) 
                                 WHERE 
-                                   BaseFiles.JobId=$jobid 
-                        ) AS F, Filename, Path 
-                        WHERE Filename.FilenameId=F.FilenameId 
-                        AND Path.PathId=F.PathId 
+                                   BaseFiles.JobId = $jobid 
+                        ) AS F, File, Path 
+                        WHERE File.FileId = F.FileId AND Path.PathId = F.PathId 
                         $search_crit 
 			$limit_sql $offset_sql";
 		$connection = JobRecord::finder()->getDbConnection();

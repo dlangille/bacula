@@ -60,6 +60,7 @@ class JobRecord extends APIDbModule {
 	public $reviewed;
 	public $comment;
 	public $filetable;
+	public $priorjob;
 
 	// Additional values (not from Job table)
 	public $client;

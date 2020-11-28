@@ -58,6 +58,7 @@ class PoolRecord extends APIDbModule {
 	public $migrationlowbytes;
 	public $migrationtime;
 	public $cacheretention;
+	public $maxpoolbytes;
 
 	public static function finder($className = __CLASS__) {
 		return parent::finder($className);
