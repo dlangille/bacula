@@ -1473,7 +1473,7 @@ msgid "Status storage"
 msgstr "Status storage"
 
 msgid "Storages"
-msgstr "Storages"
+msgstr "Storage"
 
 msgid "Client list"
 msgstr "Client list"
