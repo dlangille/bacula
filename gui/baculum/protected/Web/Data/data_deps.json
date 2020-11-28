@@ -58,6 +58,12 @@
 	"fd": {
 		"Messages": {
 			"FileDaemon": ["Messages"]
+		},
+		"Schedule": {
+			"Director": ["Schedule"]
+		},
+		"Console": {
+			"Director": ["Console"]
 		}
 	},
 	"bcons": {
