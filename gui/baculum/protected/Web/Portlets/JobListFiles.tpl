@@ -33,14 +33,14 @@
 	<div id="job_list_files_no_result" class="w3-panel w3-center" style="display: none"><strong><%[ No item result ]%></strong></div>
 	<com:TActiveRepeater ID="FileList">
 		<prop:HeaderTemplate>
-			<table class="w3-table w3-striped w3-white w3-margin-bottom dataTable dtr-column" style="table-layout: fixed">
+			<table class="w3-table w3-striped w3-white w3-margin-bottom dataTable dtr-column">
 				<thead>
 					<tr class="row">
 						<th class="w3-center w3-hide-small" style="width: 65px"><%[ Attributes ]%></th>
 						<th class="w3-center w3-hide-small" style="width: 39px; padding: 10px 3px">UID</th>
 						<th class="w3-center w3-hide-small" style="width: 39px; padding: 10px 3px">GID</th>
 						<th class="w3-center w3-hide-small" style="width: 40px">Size</th>
-						<th class="w3-center w3-hide-small" style="width: 125px">MTIME</th>
+						<th class="w3-center w3-hide-small" style="width: 135px">MTIME</th>
 						<th class="w3-center"><%[ File ]%></th>
 						<th class="w3-center w3-hide-small" style="width: 50px"><%[ State ]%></th>
 					</tr>
