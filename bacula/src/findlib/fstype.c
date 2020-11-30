@@ -277,7 +277,7 @@ bool fstype(char *fname, FF_PKT *ff_pkt, char *fs, int fslen)
        *
        *    $ grep -r SUPER_MAGIC /usr/include/linux
        */
-      switch (st.f_type) {
+      switch ((unsigned int)st.f_type) {
       /* Known good values */
       /* ext2, ext3, and ext4 have the same code */
       case 0xef53:         fstype = "ext2"; break;          /* EXT2_SUPER_MAGIC */
