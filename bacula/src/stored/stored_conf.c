@@ -69,7 +69,9 @@ static RES_ITEM store_items[] = {
    {"SubsysDirectory",       store_dir,  ITEM(res_store.subsys_directory), 0, 0, 0},
    {"PluginDirectory",       store_dir,  ITEM(res_store.plugin_directory), 0, 0, 0},
    {"ScriptsDirectory",      store_dir,  ITEM(res_store.scripts_directory), 0, 0, 0},
+#if BEEF
    {"SsdDirectory",          store_dir,  ITEM(res_store.ssd_directory), 0, 0, 0},
+#endif
    {"MaximumConcurrentJobs", store_pint32, ITEM(res_store.max_concurrent_jobs), 0, ITEM_DEFAULT, 20},
    {"ClientConnectTimeout",  store_time, ITEM(res_store.ClientConnectTimeout), 0, ITEM_DEFAULT, 60 * 30},
    {"HeartbeatInterval",     store_time, ITEM(res_store.heartbeat_interval), 0, ITEM_DEFAULT, 5 * 60},
