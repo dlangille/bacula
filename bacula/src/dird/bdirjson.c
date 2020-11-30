@@ -1183,6 +1183,9 @@ static bool check_resources(bool apply_jobdefs)
             OK = false;
          }
       }
+      if (!director->catalog) { /* If catalog message resource not specified */
+         director->catalog = (CAT *)GetNextRes(R_CATALOG, NULL);
+      }
       if (GetNextRes(R_DIRECTOR, (RES *)director) != NULL) {
          Jmsg(NULL, M_FATAL, 0, _("Only one Director resource permitted in %s\n"),
             configfile);
