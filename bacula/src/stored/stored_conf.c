@@ -818,6 +818,9 @@ void free_resource(RES *sres, int type)
       if (res->res_store.scripts_directory) {
          free(res->res_store.scripts_directory);
       }
+      if (res->res_store.ssd_directory) {
+         free(res->res_store.ssd_directory);
+      }
       if (res->res_store.tls_ctx) {
          free_tls_context(res->res_store.tls_ctx);
       }
