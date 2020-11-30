@@ -20,7 +20,8 @@ SELECT DISTINCT Job.JobId as JobId, Client.Name as Client,
  FROM Client,Job,File,Filename,Path WHERE Client.ClientId=Job.ClientId
  AND JobStatus IN ('T','W') AND Job.JobId=File.JobId
  AND Path.PathId=File.PathId AND Filename.FilenameId=File.FilenameId
- AND Filename.Name='%1' 
+ AND Filename.Name='%1'
+ AND File.FileIndex > 0
  ORDER BY Job.StartTime LIMIT 20;
 # 2
 :List where the most recent copies of a file are saved
@@ -30,6 +31,7 @@ SELECT DISTINCT Job.JobId as JobId, Client.Name as Client,
 SELECT DISTINCT Job.JobId,StartTime AS JobStartTime,VolumeName,Client.Name AS ClientName
  FROM Job,File,Path,Filename,Media,JobMedia,Client
  WHERE File.JobId=Job.JobId
+ AND File.FileIndex > 0
  AND Path.Path='%1'
  AND Filename.Name='%2'
  AND Client.Name='%3'
@@ -160,6 +162,7 @@ SELECT count(*) AS Jobs,sum(JobFiles) AS Files,sum(JobBytes) AS Bytes,VolumeName
 :List Files for a selected JobId
 *Enter JobId:
 SELECT Path.Path,Filename.Name FROM File,Filename,Path WHERE File.JobId=%1 
+ AND File.FileIndex > 0
  AND Filename.FilenameId=File.FilenameId 
  AND Path.PathId=File.PathId ORDER BY
  Path.Path,Filename.Name;
