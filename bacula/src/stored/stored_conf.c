@@ -211,7 +211,7 @@ static RES_ITEM cloud_items[] = {
    {"Name",              store_name,      ITEM(res_cloud.hdr.name),        0, ITEM_REQUIRED, 0},
    {"Description",       store_str,       ITEM(res_cloud.hdr.desc),        0, 0, 0},
    {"Driver",            store_cloud_driver, ITEM(res_cloud.driver_type), 0, ITEM_REQUIRED, 0},
-   {"HostName",          store_strname,ITEM(res_cloud.host_name), 0, 0, 0},
+   {"HostName",          store_strname,ITEM(res_cloud.host_name), 0, 0, ITEM_REQUIRED}, // Only S3/File
    {"BucketName",        store_strname,ITEM(res_cloud.bucket_name), 0, ITEM_REQUIRED, 0},
    {"Region",            store_strname,ITEM(res_cloud.region), 0, 0, 0},
    {"AccessKey",         store_strname,ITEM(res_cloud.access_key), 0, 0, 0},
