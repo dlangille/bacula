@@ -32,6 +32,7 @@ public:
    bool eod(DCR *dcr);
    bool open_device(DCR *dcr, int omode);
    const char *print_type();
+   virtual int device_specific_init(JCR *jcr, DEVRES *device);
 };
 
 #endif /* __FILE_DEV_ */

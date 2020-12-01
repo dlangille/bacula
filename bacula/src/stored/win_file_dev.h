@@ -27,5 +27,9 @@ public:
 
    win_file_dev() { };
    ~win_file_dev() { m_fd = -1; };
+   virtual int device_specific_init(JCR *jcr, DEVRES *device) {
+      // Don't forget to do capabilities |= CAP_LSEEK in device_specific_init()
+      return file_dev::device_specific_init(jcr, device);
+   }
 };
 #endif

@@ -50,3 +50,9 @@ const char *fifo_dev::print_type()
    return "FIFO";
 }
 
+int fifo_dev::device_specific_init(JCR *jcr, DEVRES *device)
+{
+   capabilities |= CAP_STREAM;
+   return 0;
+}
+

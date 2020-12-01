@@ -199,7 +199,6 @@ DEVICE *init_dev(JCR *jcr, DEVRES *device, bool adata, bstatcollect *statcollect
       case B_ALIGNED_DEV:
       case B_FILE_DEV:
          dev = New(win_file_dev);
-         dev->capabilities |= CAP_LSEEK;
          break;
       case B_NULL_DEV:
          dev = New(win_file_dev);
@@ -213,7 +212,6 @@ DEVICE *init_dev(JCR *jcr, DEVRES *device, bool adata, bstatcollect *statcollect
          break;
       case B_FILE_DEV:
          dev = New(file_dev);
-         dev->capabilities |= CAP_LSEEK;
          break;
       case B_NULL_DEV:
          dev = New(null_dev);
@@ -247,11 +245,6 @@ DEVICE *init_dev(JCR *jcr, DEVRES *device, bool adata, bstatcollect *statcollect
    /* Do device specific initialization */
    if (dev->device_specific_init(jcr, device)) {
       goto bailout;
-   }
-
-   /* ***FIXME*** move to fifo driver */
-   if (dev->is_fifo()) {
-      dev->capabilities |= CAP_STREAM; /* set stream device */
    }
 
    dev->register_metrics(statcollector);

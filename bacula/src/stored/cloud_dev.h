@@ -128,6 +128,7 @@ public:
    void get_api_cloud_upload_transfer_status(OutputWriter &ow, bool verbose);
    uint32_t get_cloud_download_transfer_status(POOL_MEM &msg, bool verbose);
    void get_api_cloud_download_transfer_status(OutputWriter &ow, bool verbose);
+   virtual int device_specific_init(JCR *jcr, DEVRES *device);
 };
 
 /* Exported subroutines */

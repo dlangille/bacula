@@ -83,7 +83,6 @@ DEVICE *BaculaSDdriver(JCR *jcr, DEVRES *device)
       return NULL;
    }
    dev = New(cloud_dev(jcr, device));
-   dev->capabilities |= CAP_LSEEK;
    return dev;
 }
 
@@ -917,7 +916,6 @@ cloud_dev::cloud_dev(JCR *jcr, DEVRES *device)
    Enter(dbglvl);
    m_fd = -1;
    *full_type = 0;
-   capabilities |= CAP_LSEEK;
 
    /* Initialize Cloud driver */
    if (!driver) {
@@ -1039,6 +1037,12 @@ cloud_dev::cloud_dev(JCR *jcr, DEVRES *device)
 
    /* the cloud proxy owns its cloud_parts, so we can 'set and forget' them */
    cloud_prox = cloud_proxy::get_instance();
+}
+
+int cloud_dev::device_specific_init(JCR *jcr, DEVRES *device)
+{
+   // Don't forget to do capabilities |= CAP_LSEEK in device_specific_init()
+   return file_dev::device_specific_init(jcr, device);
 }
 
 /*
@@ -2773,3 +2777,4 @@ bail_out:
    Leave(dbglvl);
    return ret;
 }
+

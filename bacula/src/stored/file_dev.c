@@ -539,3 +539,10 @@ const char *file_dev::print_type()
 {
    return "File";
 }
+
+int file_dev::device_specific_init(JCR *jcr, DEVRES *device)
+{
+   // Called by child to get the CAP_LSEEK
+   capabilities |= CAP_LSEEK;
+   return 0;
+}

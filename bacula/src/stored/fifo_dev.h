@@ -34,6 +34,7 @@ public:
    boffset_t lseek(DCR *dcr, boffset_t offset, int whence);
    bool truncate(DCR *dcr);
    const char *print_type();
+   virtual int device_specific_init(JCR *jcr, DEVRES *device);
 };
 
 #endif /* __FIFO_DEV_ */
