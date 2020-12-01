@@ -657,18 +657,6 @@ uint64_t cloud_dev::get_full_addr(boffset_t addr)
    return pos;
 }
 
-
-
-#ifdef is_loadable_driver
-/* Main entry point when loaded */
-extern "C" cloud_dev  *BaculaSDdriver(JCR *jcr, DEVRES *device)
-{
-   Enter(dbglvl);
-   cloud_dev *dev = New(cloud_dev);
-   return dev;
-}
-#endif
-
 #if 0
 static transfer* find_transfer(DCR *dcr, const char *VolumeName, uint32_t part)
 {
