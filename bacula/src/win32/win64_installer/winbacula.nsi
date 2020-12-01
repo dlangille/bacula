@@ -395,38 +395,43 @@ Function .onInit
   SetPluginUnload alwaysoff
 
 ; Generate random File daemon password
-  nsExec::Exec '"$PLUGINSDIR\openssl.exe" rand -base64 -out $PLUGINSDIR\pw.txt 33'
-  pop $R0
-  ${If} $R0 = 0
-   FileOpen $R1 "$PLUGINSDIR\pw.txt" r
-   IfErrors +4
-     FileRead $R1 $R0
-     ${StrTrimNewLines} $ConfigClientPassword $R0
-     FileClose $R1
+  ${If} $ConfigClientPassword == ""
+    nsExec::Exec '"$PLUGINSDIR\openssl.exe" rand -base64 -out $PLUGINSDIR\pw.txt 33'
+    pop $R0
+    ${If} $R0 = 0
+    FileOpen $R1 "$PLUGINSDIR\pw.txt" r
+    IfErrors +4
+      FileRead $R1 $R0
+      ${StrTrimNewLines} $ConfigClientPassword $R0
+      FileClose $R1
+    ${EndIf}
   ${EndIf}
 
 ; Generate random Storage daemon password
-  nsExec::Exec '"$PLUGINSDIR\openssl.exe" rand -base64 -out $PLUGINSDIR\pw.txt 33'
-  pop $R0
-  ${If} $R0 = 0
-   FileOpen $R1 "$PLUGINSDIR\pw.txt" r
-   IfErrors +4
-     FileRead $R1 $R0
-     ${StrTrimNewLines} $ConfigStoragePassword $R0
-     FileClose $R1
+  ${If} $ConfigStoragePassword == ""
+    nsExec::Exec '"$PLUGINSDIR\openssl.exe" rand -base64 -out $PLUGINSDIR\pw.txt 33'
+    pop $R0
+    ${If} $R0 = 0
+    FileOpen $R1 "$PLUGINSDIR\pw.txt" r
+    IfErrors +4
+      FileRead $R1 $R0
+      ${StrTrimNewLines} $ConfigStoragePassword $R0
+      FileClose $R1
+    ${EndIf}
   ${EndIf}
-
   SetPluginUnload manual
 
 ; Generate random monitor password
-  nsExec::Exec '"$PLUGINSDIR\openssl.exe" rand -base64 -out $PLUGINSDIR\pw.txt 33'
-  pop $R0
-  ${If} $R0 = 0
-   FileOpen $R1 "$PLUGINSDIR\pw.txt" r
-   IfErrors +4
-     FileRead $R1 $R0
-     ${StrTrimNewLines} $ConfigMonitorPassword $R0
-     FileClose $R1
+  ${If} $ConfigMonitorPassword == ""
+    nsExec::Exec '"$PLUGINSDIR\openssl.exe" rand -base64 -out $PLUGINSDIR\pw.txt 33'
+    pop $R0
+    ${If} $R0 = 0
+    FileOpen $R1 "$PLUGINSDIR\pw.txt" r
+    IfErrors +4
+      FileRead $R1 $R0
+      ${StrTrimNewLines} $ConfigMonitorPassword $R0
+      FileClose $R1
+    ${EndIf}
   ${EndIf}
 
   Pop $R1
