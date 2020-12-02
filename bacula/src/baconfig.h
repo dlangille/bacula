@@ -65,17 +65,17 @@
 
 #ifdef DEBUG
 #define ASSERT(x) if (!(x)) { \
-   char *jcr = NULL; \
+   char *tjcr = NULL; \
    Emsg1(M_ERROR, 0, _("Failed ASSERT: %s\n"), #x); \
    Pmsg1(000, _("Failed ASSERT: %s\n"), #x); \
-   jcr[0] = 0; }
+   tjcr[0] = 0; }
 
 #define ASSERT2(x,y) if (!(x)) { \
    set_assert_msg(__FILE__, __LINE__, y); \
    Emsg1(M_ERROR, 0, _("Failed ASSERT: %s\n"), #x); \
    Pmsg1(000, _("Failed ASSERT: %s\n"), #x); \
-   char *jcr = NULL; \
-   jcr[0] = 0; }
+   char *tjcr = NULL; \
+   tjcr[0] = 0; }
 #else
 #define ASSERT(x)
 #define ASSERT2(x, y)
