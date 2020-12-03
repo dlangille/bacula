@@ -1,4 +1,141 @@
 
+        ChangeLog for Bacula Enterprise version 11.0.0
+
+03Dec20
+ - Sync FD/SD Version with Enterprise
+ - Enable SD CAPS in hello()
+ - Fix tools/Makefile.in
+ - Fix compilation of s3_driver
+
+02Dec20
+ - Fix Id type in MySQL make/update script
+
+01Dec20
+ - Fix org#2567 Device don't always get the right "capabilities"
+ - baculum: Update script version
+
+30Nov20
+ - Fix org#2573 About Syntax error in granting privileges script with MySQL if 
+  --with-db-password parameter is used
+ - Fix org#2471 About deleted files are listed as being present in an accurate 
+  backup by various sample queries
+ - Fix org#2571 About errors in es_AR.po file
+ - Fix org#2568 About compilation issue on gcc10
+ - Fix org#2584 About inconsitancies in the make_mysql_tables script
+ - Disable SSD Directory for community
+ - Fix memory small loss in SD
+ - Fix Cloud::Hostname configuration flag
+ - Fix bdirjson segfault when the Catalog resource is set
+
+28Nov20
+ - baculum: Fix English text noticed by Peter McDonald
+ - baculum: Prepare new FD scheduler support
+ - baculum: Add new directives support
+ - baculum: Adapt API part to new catalog format
+
+25Nov20
+ - Fix 32/64bit issue with setdebug command
+
+24Nov20
+ - baculum: Update Russian translations
+ - Remove unless file
+ - Add CDP to win32 Makefile
+ - BEE Backport for win64 packages
+ - BEE Backport win32 build scripts
+ - BEE Backport tray monitor images
+ - Add tools/cdp-client to ./confgure
+ - Add install-cdp target to Makefile
+ - BEE Backport CDP Plugin
+ - win32: Fix compilation
+ - Add missing files
+ - BEE Backport Android part
+ - Replace strncpy by bstrncpy in tls.c
+ - BEE Backport win32 Makefiles
+
+23Nov20
+ - baculum: Update Portuguese translations
+ - Fix compilation warning
+
+22Nov20
+ - baculum: Implement graphical status storage
+ - baculum: Add gauge.js library
+ - baculum: Add json output option to show storages and show single storage 
+  endpoints
+
+21Nov20
+ - udpate git2changelog.pl
+ - Update makedocsrel
+
+11Nov20
+ - baculum: Add path field to restore wizard to narrow down search file results 
+  to specific path - idea proposed by Wanderlei Huttel
+ - baculum: Add path parameter to job files API endpoint
+
+10Nov20
+ - baculum: Fix #2565 status icon overlaps action buttons in API wizard
+ - baculum: Add Sergey Zhidkov to AUTHORS
+ - baculum: Add Russian translations
+
+07Nov20
+ - baculum: Fix access to job resources if no job assigned to user
+
+05Nov20
+ - baculum: Update Portuguese translations
+ - baculum: Ajax queue improvement in framework
+ - baculum: Fix renaming config resources
+
+01Nov20
+ - baculum: Add graphs to job view page
+
+28Oct20
+ - baculum: Fix using offset in job file list query with MySQL catalog database
+ - baculum: Show more detailed job file list - idea proposed by Wanderlei 
+  Huttel
+ - baculum: Rework job file list API endpoint
+
+25Oct20
+ - baculum: Add searching jobs by filename in restore wizard - idea proposed by 
+  Wanderlei Huttel
+ - baculum: Add job files API endpoint
+
+20Oct20
+ - Add code to retry a MySQL query after a deadlock
+
+04Oct20
+ - baculum: Update Portuguese translations
+ - baculum: Add default days and limit values to status schedules API endpoint
+
+30Sep20
+ - baculum: Fix displaying multitextbox and multicombobox directive controls
+ - baculum: Fix date filter on status schedule page
+ - baculum: Fix #2570 fileset excludes settings with PHP 7.4
+
+29Sep20
+ - baculum: New features and improvements to multi-user interface and restricted 
+  access
+
+18Sep20
+ - baculum: Fix displaying date and time on volume view page
+
+17Sep20
+ - baculum: Fix #2564 changing volume status to Read-Only
+
+11Sep20
+ - baculum: Fix saving multicombobox control values
+ - baculum: Fix multicombobox and multitextbox controls to work with PHP 7.4
+
+10Sep20
+ - baculum: Fix #2562 displaying date and time in tables on Safari
+
+09Aug20
+ - baculum: Fix #2558 saving day or day range in schedule resource - reported by 
+  Jose Alberto
+
+08Jul20
+ - docker: Fix #6402 About docker_host option not overwriten in a restore
+
+09Feb16
+ - Fix bug #2197 -- build failure with --disable-libtool
 
 12Nov20
  - Fix #6940 about bscan segfaulting

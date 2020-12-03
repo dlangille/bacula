@@ -66,6 +66,7 @@ Misc:
  - Built-in Client Scheduler
  - Reload command improvements (Keep IP address, Maximum Concurrent value, ...)
  - Support for GLOB pattern in Console ACL directives
+ - Faster CRC32 algorithm
 
 ----------------------------------------------------------------
 
