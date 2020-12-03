@@ -176,10 +176,11 @@
  *    305 04Jun15 - Added JobMedia queueing
  *    306 20Mar15 - Added comm line compression
  *    307 06Feb20 - Added can_create to the Find media request
+ *  30007 02Dec20 - Sync with Enterprise
  */
 
 #ifdef COMMUNITY
-#define SD_VERSION 307     /* Community SD version */
+#define SD_VERSION 30007   /* Community SD version */
 #else
 #define SD_VERSION 30007   /* Enterprise SD version */
 #endif
@@ -204,10 +205,11 @@
  *  Community:
  * 213 04Feb15 - added snapshot protocol with the DIR
  * 214 20Mar17 - added comm line compression
+ *  14 02Dec20 - Sync with Enterprise
  */
 
 #ifdef COMMUNITY
-#define FD_VERSION 214  /* make same as community Linux FD */
+#define FD_VERSION 14  /* make same as community Linux FD */
 #else
 #define FD_VERSION 14 /* Enterprise FD version */
 #endif
