@@ -43,9 +43,6 @@ scripts/prepare-two-tapes
 scripts/regress-config
 scripts/update-ctest
 scripts/mtx-changer
-<<<<<<< HEAD
-=======
 scripts/k8s_backend
 scripts/bacula-dir.conf.gpfs
->>>>>>> e694fcf7a1... regress: Add regress script for GPFS code
 /tmp2/
