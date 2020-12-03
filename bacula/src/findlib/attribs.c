@@ -645,6 +645,14 @@ bool set_attributes(JCR *jcr, ATTR *attr, BFILE *ofd)
          ok = false;
       }
 #endif
+#ifdef HAVE_LCHMOD
+      if (lchmod(attr->ofname, attr->statp.st_mode) < 0 && print_error(jcr)) {
+         berrno be;
+         Jmsg2(jcr, M_ERROR, 0, _("Unable to set file modes %s: ERR=%s\n"),
+            attr->ofname, be.bstrerror());
+         ok = false;
+      }
+#endif
 #ifdef HAVE_LUTIMES
       struct timeval times[2];
       times[0].tv_sec = attr->statp.st_atime;
