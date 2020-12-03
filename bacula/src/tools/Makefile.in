@@ -54,7 +54,7 @@ INSTTESTS = breaddir_test bpipe_test tags_test xattr_append_test
 # inference rules
 .c.o:
 	@echo "Compiling $<"
-	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) $(TOKYOCABINET_INC) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) $<
+	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) $<
 #-------------------------------------------------------------------------
 all: Makefile $(TOOLS) gigaslam grow
 	@echo "==== Make of tools is good ===="
@@ -258,7 +258,7 @@ depend:
 	@$(MV) Makefile Makefile.bak
 	@$(SED) "/^# DO NOT DELETE:/,$$ d" Makefile.bak > Makefile
 	@$(ECHO) "# DO NOT DELETE: nice dependency list follows" >> Makefile
-	@$(CXX) -S -M $(CPPFLAGS) $(TOKYOCABINET_INC) -I$(srcdir) -I$(basedir) -I../stored *.c >> Makefile
+	@$(CXX) -S -M $(CPPFLAGS) -I$(srcdir) -I$(basedir) -I../stored *.c >> Makefile
 	@if test -f Makefile ; then \
 	    $(RMF) Makefile.bak; \
 	else \
