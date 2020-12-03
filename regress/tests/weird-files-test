@@ -34,6 +34,13 @@ cd weird-files
 perl socket.pl
 cd ..
 
+# some system like MacOS & FreeBSD have a lchmod() system call
+# and the chmod command has a "-h" option to not follow the symlink
+# lets try to use the "-h" option and ignore the error
+if ! chmod -h 751 "${cwd}/weird-files"/soft-file2 2> /dev/null ; then
+   true # ignore the error
+fi
+
 start_test
 
 cat <<END_OF_DATA >tmp/bconcmds
