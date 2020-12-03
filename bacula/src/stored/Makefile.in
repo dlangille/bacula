@@ -85,18 +85,6 @@ CLOUD_S3_SRCS = \
 CLOUD_S3_OBJS = $(CLOUD_S3_SRCS:.c=.o)
 CLOUD_S3_LOBJS = $(CLOUD_S3_SRCS:.c=.lo)
 
-CLOUD_S3_GLACIER_SRCS = \
-   $(CLOUD_COMMON_SRCS) bee_s3_cloud_glacier.c
-
-CLOUD_S3_GLACIER_OBJS = $(CLOUD_S3_GLACIER_SRCS:.c=.o)
-CLOUD_S3_GLACIER_LOBJS = $(CLOUD_S3_GLACIER_SRCS:.c=.lo)
-
-CLOUD_GENERIC_SRCS = \
-   $(CLOUD_COMMON_SRCS) generic_driver.c
-
-CLOUD_GENERIC_OBJS = $(CLOUD_GENERIC_SRCS:.c=.o)
-CLOUD_GENERIC_LOBJS = $(CLOUD_GENERIC_SRCS:.c=.lo)
-
 CLOUD_ALL_SRCS = \
    $(CLOUD_COMMON_SRCS) cloud_dev.c file_driver.c
 
@@ -108,20 +96,6 @@ CLOUDTESTOBJS = cloud_test.o $(SDCORE_OBJS)
 
 # cloud_cli
 CLOUDCLIOBJS = bcloud.o $(SDCORE_OBJS) $(CLOUD_ALL_LOBJS)
-
-DEDUP_SRCS = \
-   bitarray.c dde_cmd.c dde_status.c dde_vacuum.c \
-   dedupstored.c dedupengine.c dde_scrub.c \
-   dedup_dev.c
-
-DEDUP_OBJS = $(DEDUP_SRCS:.c=.o)
-DEDUP_LOBJS = $(DEDUP_SRCS:.c=.lo)
-# ACSLS changer objects
-ACSLSAPILIB = $(ACSLS_LIBDIR)/lib/libapi.a
-ACSLSIPCLIB = $(ACSLS_LIBDIR)/lib/libipc.a
-ACSLSUTLLIB = $(ACSLS_LIBDIR)/lib/libutl.a
-ACSLSCLLIB = $(ACSLS_LIBDIR)/lib/libcl.a
-ACSLSCHGOBJS = acsls-changer.o $(ACSLSAPILIB) $(ACSLSUTLLIB) $(ACSLSIPCLIB) $(ACSLSCLLIB) $(ACSLSAPILIB)
 
 # libbacsd objects
 LIBBACSD_SRCS = \
@@ -137,9 +111,6 @@ LIBBACSD_SRCS = \
 LIBBACSD_OBJS = $(LIBBACSD_SRCS:.c=.o)
 LIBBACSD_LOBJS = $(LIBBACSD_SRCS:.c=.lo)
 LIBBACSD_LT_RELEASE = @LIBBAC_LT_RELEASE@
-
-
-TUNEDDEOBJS = bitarray.o dedupengine.o dde_scrub.o tune-dde.o
 
 
 # these are the objects that are changed by the .configure process
@@ -204,47 +175,14 @@ libbacsd.la: Makefile $(LIBBACSD_LOBJS)
 
 drivers: bacula-sd-cloud-driver.la ${CLOUD_DRIVERS}
 
-s3-driver: bacula-sd-cloud-s3-driver.la bacula-sd-cloud-glacier-s3-driver.la
-
-generic-driver: bacula-sd-cloud-generic-driver.la
-
-oci-driver: bacula-sd-cloud-oci-driver.la
-
-gs-driver: bacula-sd-cloud-gs-driver.la
-
-swift-driver: bacula-sd-cloud-swift-driver.la
-
-dedup2: Makefile
-	(cd dedup2 && make DESTDIR=$(DESTDIR) || exit 1)
+s3-driver: bacula-sd-cloud-s3-driver.la
 
 bacula-sd-cloud-driver.la: Makefile $(CLOUD_ALL_LOBJS)
 	 $(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -shared $(CLOUD_ALL_LOBJS) -o $@ -R $(libdir) -rpath $(libdir) -module -export-dynamic -release $(LIBBACSD_LT_RELEASE)
 
-bacula-sd-cloud-was-driver.la: Makefile $(CLOUD_GENERIC_LOBJS)
-	 $(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -shared $(CLOUD_GENERIC_LOBJS) -o $@ -R $(libdir) -rpath $(libdir) -module -export-dynamic -release $(LIBBACSD_LT_RELEASE)
-
 bacula-sd-cloud-s3-driver.la: Makefile $(CLOUD_S3_LOBJS)
 	 $(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -shared $(CLOUD_S3_LOBJS) -o $@ $(S3_LIBS) -R $(libdir) -rpath $(libdir) -module -export-dynamic -release $(LIBBACSD_LT_RELEASE)
 
-bacula-sd-cloud-glacier-s3-driver.la: Makefile $(CLOUD_S3_GLACIER_LOBJS)
-	 $(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -shared $(CLOUD_S3_GLACIER_LOBJS) -o $@ $(S3_LIBS) -R $(libdir) -rpath $(libdir) -module -export-dynamic -release $(LIBBACSD_LT_RELEASE)
-
-bacula-sd-cloud-generic-driver.la: Makefile $(CLOUD_GENERIC_LOBJS)
-	 $(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -shared $(CLOUD_GENERIC_LOBJS) -o $@ -R $(libdir) -rpath $(libdir) -module -export-dynamic -release $(LIBBACSD_LT_RELEASE)
-
-bacula-sd-cloud-oci-driver.la: Makefile $(CLOUD_GENERIC_LOBJS)
-	 $(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -shared $(CLOUD_GENERIC_LOBJS) -o $@ -R $(libdir) -rpath $(libdir) -module -export-dynamic -release $(LIBBACSD_LT_RELEASE)
-
-bacula-sd-cloud-gs-driver.la: Makefile $(CLOUD_GENERIC_LOBJS)
-	 $(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -shared $(CLOUD_GENERIC_LOBJS) -o $@ -R $(libdir) -rpath $(libdir) -module -export-dynamic -release $(LIBBACSD_LT_RELEASE)
-
-bacula-sd-cloud-swift-driver.la: Makefile $(CLOUD_GENERIC_LOBJS)
-	 $(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -shared $(CLOUD_GENERIC_LOBJS) -o $@ -R $(libdir) -rpath $(libdir) -module -export-dynamic -release $(LIBBACSD_LT_RELEASE)
-
-bacula-sd-dedup-driver.la: Makefile $(DEDUP_LOBJS)
-	 $(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -shared $(DEDUP_LOBJS) -o $@ -rpath $(libdir) -module -export-dynamic -release $(LIBBACSD_LT_RELEASE) \
-	  $(TOKYOCABINET_LIBS)
-  
 bacula-sd-aligned-driver.la: Makefile $(ALIGNED_LOBJS)
 	 $(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -shared $(ALIGNED_LOBJS) -o $@ -rpath $(plugindir) \
 	     -module -export-dynamic -release $(LIBBACSD_LT_RELEASE)
@@ -329,38 +267,12 @@ bcopy:	Makefile $(COPYOBJS) libbacsd.la drivers ../findlib/libbacfind$(DEFAULT_A
 	$(LIBTOOL_LINK) $(CXX) $(TTOOL_LDFLAGS) $(LDFLAGS) -L../lib -L../findlib -o $@ $(COPYOBJS) \
 	   $(SD_LIBS) -lm $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
 
-tune-dde: Makefile $(TUNEDDEOBJS) ../lib/libbac$(DEFAULT_ARCHIVE_TYPE)
-	@echo "Linking $@ ..."
-	$(LIBTOOL_LINK) $(CXX) $(WLDFLAGS) $(LDFLAGS) -L../lib -o $@ $(TUNEDDEOBJS) $(ZLIBS) \
-	   -lbac -lm $(DLIB) $(LIBS) $(TOKYOCABINET_LIBS) \
-	$(GETTEXT_LIBS)
-
 cloud_parts_test: Makefile cloud_parts.c
 	$(RMF) cloud_parts.o
 	$(CXX) -DTEST_PROGRAM $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE)  $(CFLAGS) cloud_parts.c
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L../lib -o $@ cloud_parts.o $(DLIB) -lbac -lm $(LIBS) $(OPENSSL_LIBS)
 	rm -f cloud_parts.o
 	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) cloud_parts.c
-
-generic_driver_test: Makefile generic_driver.c
-	$(RMF) generic_driver.o
-	$(CXX) -DTEST_PROGRAM $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE)  $(CFLAGS) generic_driver.c
-	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L../lib -o $@ generic_driver.o $(DLIB) -lbac -lm cloud_transfer_mgr.lo cloud_parts.lo $(LIBS) $(OPENSSL_LIBS)
-	rm -f generic_driver.o
-	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) generic_driver.c
-
-acsls-changer.o: acsls-changer.c
-	@echo "Compiling $<"
-	$(CXX) $(ACSLS_OS_DEFINE) $(DEFS) $(DEBUG) -c $(CPPFLAGS) -I$(srcdir) -I$(basedir) $(DINCLUDE) $(CFLAGS) -I$(ACSLS_LIBDIR)/src/h $<
-
-# this is a dirty fix for linking problem of the ACSLS static libraries. ACSLS libs are not compatible
-# with libtool.
-#
-# libdir points to /opt/bacula/lib, but libtools decides to store libraries to
-# /opt/bacula/lib64 on some platforms. We can add the two directories in rpath
-# to workaround the problem.
-acsls-changer: Makefile $(ACSLSCHGOBJS) 
-	$(CXX) $(TTOOL_LDFLAGS) $(LDFLAGS) -L../lib/.libs $(ACSLSCHGOBJS) -L../lib -lbac $(LIBS) $(GETTEXT_LIBS) -Wl,-rpath $(libdir) -o $@
 
 Makefile: $(srcdir)/Makefile.in $(topdir)/config.status
 	cd $(topdir) \
@@ -373,9 +285,6 @@ libtool-install: all
 
 libtool-uninstall:
 	$(LIBTOOL_UNINSTALL) $(RMF) $(DESTDIR)$(libdir)/libbacsd.la
-
-install-tune-dde: tune-dde
-	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) tune-dde $(DESTDIR)$(sbindir)/tune-dde
 
 install: all @LIBTOOL_INSTALL_TARGET@ $(CLOUD_INSTALL_TARGETS)
 	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bacula-sd $(DESTDIR)$(sbindir)/bacula-sd
@@ -401,21 +310,6 @@ install: all @LIBTOOL_INSTALL_TARGET@ $(CLOUD_INSTALL_TARGETS)
 	   chgrp -f ${sd_group} ${DESTDIR}${sysconfdir}/$$destconf; \
 	fi
 
-install-acsls-changer: acsls-changer
-	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) acsls-changer $(DESTDIR)$(sbindir)/acsls-changer
-	@srcconf=acsls-changer.conf; \
-	if  test -f ${DESTDIR}${sysconfdir}/$$srcconf; then \
-	   destconf=$$srcconf.new; \
-	   echo "  ==> Found existing $$srcconf, installing new conf file as $$destconf"; \
-	else \
-	   destconf=$$srcconf; \
-	fi; \
-	echo "${INSTALL_CONFIG} $$srcconf ${DESTDIR}${sysconfdir}/$$destconf"; \
-	${INSTALL_CONFIG} $$srcconf ${DESTDIR}${sysconfdir}/$$destconf
-	@if test "x${sd_group}" != "x" -a "x${DESTDIR}" = "x" ; then \
-	   chgrp -f ${sd_group} ${DESTDIR}${sysconfdir}/$$destconf; \
-	fi
-
 install-bcloud: bcloud
 	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bcloud $(DESTDIR)$(sbindir)/bcloud
 
@@ -424,50 +318,15 @@ install-cloud: bacula-sd-cloud-driver.la
 	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bacula-sd-cloud-driver$(DEFAULT_SHARED_OBJECT_TYPE) $(DESTDIR)$(plugindir)
 	$(RMF) $(DESTDIR)$(plugindir)/bacula-sd-cloud-driver.la
 
-install-was-cloud: bacula-sd-cloud-was-driver.la
-	$(MKDIR) $(DESTDIR)$(plugindir)
-	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bacula-sd-cloud-was-driver$(DEFAULT_SHARED_OBJECT_TYPE) $(DESTDIR)$(plugindir)
-	$(RMF) $(DESTDIR)$(plugindir)/bacula-sd-cloud-was-driver.la
-
 install-s3-cloud: bacula-sd-cloud-s3-driver.la
 	$(MKDIR) $(DESTDIR)$(plugindir)
 	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bacula-sd-cloud-s3-driver$(DEFAULT_SHARED_OBJECT_TYPE) $(DESTDIR)$(plugindir)
 	$(RMF) $(DESTDIR)$(plugindir)/bacula-sd-cloud-s3-driver.la
 
-install-s3-glacier-cloud: bacula-sd-cloud-glacier-s3-driver.la
-	$(MKDIR) $(DESTDIR)$(plugindir)
-	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bacula-sd-cloud-glacier-s3-driver$(DEFAULT_SHARED_OBJECT_TYPE) $(DESTDIR)$(plugindir)
-	$(RMF) $(DESTDIR)$(plugindir)/bacula-sd-cloud-glacier-s3-driver.la
-
-install-generic-cloud: bacula-sd-cloud-generic-driver.la
-	$(MKDIR) $(DESTDIR)$(plugindir)
-	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bacula-sd-cloud-generic-driver$(DEFAULT_SHARED_OBJECT_TYPE) $(DESTDIR)$(plugindir)
-	$(RMF) $(DESTDIR)$(plugindir)/bacula-sd-cloud-generic-driver.la
-
-install-gs-cloud: bacula-sd-cloud-gs-driver.la
-	$(MKDIR) $(DESTDIR)$(plugindir)
-	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bacula-sd-cloud-gs-driver$(DEFAULT_SHARED_OBJECT_TYPE) $(DESTDIR)$(plugindir)
-	$(RMF) $(DESTDIR)$(plugindir)/bacula-sd-cloud-gs-driver.la
-
-install-oci-cloud: bacula-sd-cloud-oci-driver.la
-	$(MKDIR) $(DESTDIR)$(plugindir)
-	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bacula-sd-cloud-oci-driver$(DEFAULT_SHARED_OBJECT_TYPE) $(DESTDIR)$(plugindir)
-	$(RMF) $(DESTDIR)$(plugindir)/bacula-sd-cloud-oci-driver.la
-
-install-swift-cloud: bacula-sd-cloud-swift-driver.la
-	$(MKDIR) $(DESTDIR)$(plugindir)
-	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bacula-sd-cloud-swift-driver$(DEFAULT_SHARED_OBJECT_TYPE) $(DESTDIR)$(plugindir)
-	$(RMF) $(DESTDIR)$(plugindir)/bacula-sd-cloud-swift-driver.la
-
 install-aligned:  bacula-sd-aligned-driver.la 
 	$(MKDIR) $(DESTDIR)$(plugindir)
 	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bacula-sd-aligned-driver$(DEFAULT_SHARED_OBJECT_TYPE) $(DESTDIR)$(plugindir)
 	$(RMF) $(DESTDIR)$(plugindir)/bacula-sd-aligned-driver.la
-
-install-dedup: bacula-sd-dedup-driver.la 
-	$(MKDIR) $(DESTDIR)$(plugindir)
-	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bacula-sd-dedup-driver$(DEFAULT_SHARED_OBJECT_TYPE) $(DESTDIR)$(plugindir)
-	$(RMF) $(DESTDIR)$(plugindir)/bacula-sd-dedup-driver.la
 
 uninstall:
 	(cd $(DESTDIR)$(sbindir); $(RMF) bacula-sd bsdjson)
@@ -476,9 +335,7 @@ uninstall:
 	(cd $(DESTDIR)$(sbindir); $(RMF) bcopy)
 	(cd $(DESTDIR)$(sbindir); $(RMF) bscan)
 	(cd $(DESTDIR)$(sbindir); $(RMF) btape)
-	(cd $(DESTDIR)$(sbindir); $(RMF) acsls-changer)
 	(cd $(DESTDIR)$(sysconfdir); $(RMF) bacula-sd.conf bacula-sd.conf.new)
-	(cd $(DESTDIR)$(sysconfdir); $(RMF) acsls-changer.conf acsls-changer.conf.new)
 
 libtool-clean:
 	@find . -name '*.lo' -print | xargs $(LIBTOOL_CLEAN) $(RMF)
@@ -509,8 +366,8 @@ depend:
 	@$(MV) Makefile Makefile.bak
 	@$(SED) "/^# DO NOT DELETE:/,$$ d" Makefile.bak > Makefile
 	@$(ECHO) "# DO NOT DELETE: nice dependency list follows" >> Makefile
-	@$(CXX) -S -M $(CPPFLAGS) $(XINC) $(S3_INC) $(TOKYOCABINET_INC) -I$(srcdir) -I$(basedir) -I$(ACSLS_LIBDIR)/src/h *.c >> Makefile
-	@$(CXX) -S -M $(CPPFLAGS) $(XINC) $(S3_INC) $(TOKYOCABINET_INC) -I$(srcdir) -I$(basedir) -std=c++11 *.cpp >> Makefile || true
+	@$(CXX) -S -M $(CPPFLAGS) $(XINC) $(S3_INC) -I$(srcdir) -I$(basedir)  *.c >> Makefile
+	@$(CXX) -S -M $(CPPFLAGS) $(XINC) $(S3_INC) -I$(srcdir) -I$(basedir) -std=c++11 *.cpp >> Makefile || true
 	@if test -f Makefile ; then \
 	    $(RMF) Makefile.bak; \
 	else \
