@@ -17,4 +17,4 @@ cd $cwd
 echo "Creating main Bacula release"
 ./makebacularel $bacula $remote $branch $ver
 echo "Creating docs release"
-./makedocsrel $bacula $docs $remote $branch $ver
+./makedocsrel $bacula $branch $docs $remote $branch $ver

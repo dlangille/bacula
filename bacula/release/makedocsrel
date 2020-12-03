@@ -122,8 +122,6 @@ rm -rf $base_pkg-$ver $base_pkg-$ver.tar.*
 echo "bzip2 docs ..."
 bzip2 $base_pkg-$ver.tar
 ./sign $base_pkg-$ver.tar.bz2
-./sign $bweb_name-$ver.tar.gz
-ls -l $base_pkg-$ver.tar.* $bweb_name-$ver.tar.gz
 
 if [ a$push != ano ]; then
    cd ${src}
