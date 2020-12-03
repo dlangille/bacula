@@ -377,7 +377,6 @@ bool send_hello_sd(JCR *jcr, char *Job, int tlspsk)
       return false;
    }
 
-#ifndef COMMUNITY
    /* Receive and send capabilities */
    if (!recv_sdcaps(jcr, sd)) {
       return false;
@@ -385,7 +384,6 @@ bool send_hello_sd(JCR *jcr, char *Job, int tlspsk)
    if (!send_fdcaps(jcr, sd)) {
       return false;
    }
-#endif
    return true;
 }
 
@@ -408,13 +406,6 @@ bool send_hello_client(JCR *jcr, char *Job)
    }
    return rtn;
 }
-
-#ifdef COMMUNITY
-
-static bool send_sdcaps(JCR *jcr, BSOCK *cl) { return false; }
-static bool recv_fdcaps(JCR *jcr, BSOCK *cl, caps_fd *caps) { return false; }
-
-#else
 
 /*
  * Capabilities Exchange
@@ -516,4 +507,3 @@ static bool recv_sdcaps(JCR *jcr, BSOCK *sd)
         dedup, hash, block_size, min_block_size, max_block_size);
    return true;
 }
-#endif
