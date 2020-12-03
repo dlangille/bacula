@@ -14,7 +14,7 @@ reltype=release
 repo=$reltype
 
 # Bacula git repos
-drivers=${bacula:-${HOME}/bacula/drivers}
+drivers=${drivers:-${HOME}/bacula/drivers}
 bacula=${bacula:-${HOME}/bacula/k}
 docs=${docs:-${HOME}/bacula/docs}
 
