@@ -34444,7 +34444,7 @@ fi
 cd src/qt-console
 chmod 755 install_conf_file build-depkgs-qt-console
 cd tray-monitor
-chmod 755 install_conf_file build-depkgs-qt-console
+chmod 755 install_conf_file
 cd ${BUILD_DIR}
 
 cd scripts
