@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Bacula 1.38\n"
 "Report-Msgid-Bugs-To: bacula-devel@lists.sourceforge.net\n"
-"POT-Creation-Date: 2018-08-11 21:43+0200\n"
+"POT-Creation-Date: 2020-12-04 16:47+0100\n"
 "PO-Revision-Date: 2009-10-18 14:04+0000\n"
 "Last-Translator: Eric Bollengier <eric@eb.homelinux.org>\n"
 "Language-Team: French <bacula-devel-fr@lists.sourceforge.net>\n"
@@ -18,13 +18,13 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
-#: src/baconfig.h:62 src/baconfig.h:63 src/baconfig.h:68 src/baconfig.h:69
-#: src/baconfig.h:80 src/baconfig.h:81
+#: src/baconfig.h:69 src/baconfig.h:70 src/baconfig.h:75 src/baconfig.h:76
+#: src/baconfig.h:87 src/baconfig.h:88
 #, c-format
 msgid "Failed ASSERT: %s\n"
 msgstr ""
 
-#: src/baconfig.h:89
+#: src/baconfig.h:104
 msgid "*None*"
 msgstr ""
 
@@ -87,39 +87,44 @@ msgstr "%6d  %-6s %8s %10s %-7s  %-8s %s\n"
 msgid "%6d  %-6s %8s %10s  %-7s  %-8s %s\n"
 msgstr "%6d  %-6s %8s %10s %-7s  %-8s %s\n"
 
-#: src/lib/status.h:214 src/lib/status.h:225 src/lib/status.h:239
-#: src/lib/status.h:243 src/lib/status.h:247
+#: src/lib/status.h:261
+#, c-format
+msgid " Ulimits: nofile=%s memlock=%s status=%s\n"
+msgstr ""
+
+#: src/lib/status.h:281 src/lib/status.h:292 src/lib/status.h:306
+#: src/lib/status.h:310 src/lib/status.h:314
 msgid "Bacula "
 msgstr "Bacula "
 
-#: src/qt-console/bat_conf.cpp:133
+#: src/qt-console/bat_conf.cpp:135
 #, c-format
 msgid "No record for %d %s\n"
 msgstr ""
 
-#: src/qt-console/bat_conf.cpp:142
+#: src/qt-console/bat_conf.cpp:144
 #, c-format
 msgid "Director: name=%s address=%s DIRport=%d\n"
 msgstr ""
 
-#: src/qt-console/bat_conf.cpp:146
+#: src/qt-console/bat_conf.cpp:148
 #, fuzzy, c-format
 msgid "Console: name=%s\n"
 msgstr "Console connecté à %s\n"
 
-#: src/qt-console/bat_conf.cpp:149
+#: src/qt-console/bat_conf.cpp:151
 #, c-format
 msgid "ConsoleFont: name=%s font face=%s\n"
 msgstr ""
 
-#: src/qt-console/bat_conf.cpp:153 src/qt-console/bat_conf.cpp:235
-#: src/qt-console/bat_conf.cpp:282 src/qt-console/bat_conf.cpp:312
+#: src/qt-console/bat_conf.cpp:155 src/qt-console/bat_conf.cpp:243
+#: src/qt-console/bat_conf.cpp:290 src/qt-console/bat_conf.cpp:320
 #, c-format
 msgid "Unknown resource type %d\n"
 msgstr ""
 
-#: src/qt-console/bat_conf.cpp:259
-#: src/qt-console/tray-monitor/tray_conf.cpp:311
+#: src/qt-console/bat_conf.cpp:267
+#: src/qt-console/tray-monitor/tray_conf.cpp:315
 #, c-format
 msgid "\"%s\" directive is required in \"%s\" resource, but not found.\n"
 msgstr ""
@@ -146,90 +151,85 @@ msgstr "Connexion au Director %s:%d\n"
 msgid "Failed to initialize TLS context for Console \"%s\".\n"
 msgstr "Impossible d'initialiser le contexte TLS pour la Console \"%s\".\n"
 
-#: src/qt-console/bcomm/dircomm.cpp:176
+#: src/qt-console/bcomm/dircomm.cpp:178
 #, c-format
 msgid "Failed to initialize TLS context for Director \"%s\".\n"
 msgstr "Impossible d'initialiser le contexte TLS pour le Director \"%s\".\n"
 
-#: src/qt-console/bcomm/dircomm.cpp:198
-#: src/qt-console/tray-monitor/task.cpp:233
+#: src/qt-console/bcomm/dircomm.cpp:203
+#: src/qt-console/tray-monitor/task.cpp:240
 #, fuzzy
 msgid "Director daemon"
 msgstr "Director"
 
-#: src/qt-console/bcomm/dircomm.cpp:236
+#: src/qt-console/bcomm/dircomm.cpp:241
 msgid "Initializing ..."
 msgstr ""
 
-#: src/qt-console/bcomm/dircomm.cpp:252 src/qt-console/console/console.cpp:133
+#: src/qt-console/bcomm/dircomm.cpp:257 src/qt-console/console/console.cpp:133
 #, fuzzy
 msgid "Connected"
 msgstr "Connexion...\n"
 
-#: src/qt-console/bcomm/dircomm.cpp:377
+#: src/qt-console/bcomm/dircomm.cpp:382
 #, fuzzy
 msgid "Command completed ..."
 msgstr "Commande annulée.\n"
 
-#: src/qt-console/bcomm/dircomm.cpp:384 src/qt-console/console/console.cpp:370
+#: src/qt-console/bcomm/dircomm.cpp:389 src/qt-console/console/console.cpp:370
 msgid "Processing command ..."
 msgstr ""
 
-#: src/qt-console/bcomm/dircomm.cpp:391
+#: src/qt-console/bcomm/dircomm.cpp:396
 msgid "At main prompt waiting for input ..."
 msgstr ""
 
-#: src/qt-console/bcomm/dircomm.cpp:398 src/qt-console/bcomm/dircomm.cpp:408
+#: src/qt-console/bcomm/dircomm.cpp:403 src/qt-console/bcomm/dircomm.cpp:413
 msgid "At prompt waiting for input ..."
 msgstr ""
 
-#: src/qt-console/bcomm/dircomm.cpp:416
+#: src/qt-console/bcomm/dircomm.cpp:421
 #, fuzzy
 msgid "Command failed."
 msgstr "Commande annulée.\n"
 
-#: src/qt-console/bcomm/dircomm.cpp:488
+#: src/qt-console/bcomm/dircomm.cpp:493
 #, fuzzy
 msgid "Director disconnected."
 msgstr "Connexion du director le %s\n"
 
-#: src/qt-console/bcomm/dircomm_auth.cpp:110
+#: src/qt-console/bcomm/dircomm_auth.cpp:77
 #, fuzzy, c-format
-msgid "Director authorization problem at \"%s:%d\"\n"
-msgstr "Pas d'enregistrement trouvé en base pour : %s\n"
+msgid "TLS negotiation failed with Director at \"%s:%d\"\n"
+msgstr "Négociation TLS échouée avec le SD \"%s:%d\".\n"
 
-#: src/qt-console/bcomm/dircomm_auth.cpp:117
-#, c-format
-msgid ""
-"Authorization problem: Remote server at \"%s:%d\" did not advertise required "
-"TLS support.\n"
-msgstr ""
-
-#: src/qt-console/bcomm/dircomm_auth.cpp:125
+#: src/qt-console/bcomm/dircomm_auth.cpp:86
 #, c-format
 msgid ""
 "Authorization problem with Director at \"%s:%d\": Remote server requires "
 "TLS.\n"
 msgstr ""
 
-#: src/qt-console/bcomm/dircomm_auth.cpp:136
-#, fuzzy, c-format
-msgid "TLS negotiation failed with Director at \"%s:%d\"\n"
-msgstr "Négociation TLS échouée avec le SD \"%s:%d\".\n"
+#: src/qt-console/bcomm/dircomm_auth.cpp:92
+#, c-format
+msgid ""
+"Authorization problem: Remote server at \"%s:%d\" did not advertise required "
+"TLS support.\n"
+msgstr ""
 
-#: src/qt-console/bcomm/dircomm_auth.cpp:148
+#: src/qt-console/bcomm/dircomm_auth.cpp:141
 #, fuzzy, c-format
 msgid ""
 "Bad response to Hello command: ERR=%s\n"
 "The Director at \"%s:%d\" is probably not running.\n"
 msgstr "Mauvaise réponse à la commande Hello : ERR=%s\n"
 
-#: src/qt-console/bcomm/dircomm_auth.cpp:165
+#: src/qt-console/bcomm/dircomm_auth.cpp:157
 #, fuzzy, c-format
 msgid "Director at \"%s:%d\" rejected Hello command\n"
 msgstr "Le File Daemon  \"%s:%d\" a rejeté la commande Hello\n"
 
-#: src/qt-console/bcomm/dircomm_auth.cpp:182
+#: src/qt-console/bcomm/dircomm_auth.cpp:173
 #, fuzzy, c-format
 msgid ""
 "Authorization problem with Director at \"%s:%d\"\n"
@@ -246,7 +246,7 @@ msgstr ""
 "Vous trouverez de l'aide sur\n"
 "http://www.bacula.org/rel-manual/faq.html#AuthorizationErrors\n"
 
-#: src/qt-console/main.cpp:160
+#: src/qt-console/main.cpp:160 src/qt-console/tray-monitor/tray-monitor.cpp:364
 msgid "Cryptography library initialization failed.\n"
 msgstr ""
 
@@ -305,7 +305,8 @@ msgid ""
 "Console \"%s\" in %s.\n"
 msgstr ""
 
-#: src/qt-console/tray-monitor/authenticate.cpp:86
+#: src/qt-console/tray-monitor/authenticate.cpp:116
+#: src/qt-console/tray-monitor/authenticate.cpp:186
 #, fuzzy
 msgid ""
 "Authorization problem.\n"
@@ -317,26 +318,28 @@ msgstr ""
 "Vous trouverez de l'aide sur\n"
 "http://www.bacula.org/rel-manual/faq.html#AuthorizationErrors\n"
 
-#: src/qt-console/tray-monitor/authenticate.cpp:94
+#: src/qt-console/tray-monitor/authenticate.cpp:128
+#: src/qt-console/tray-monitor/authenticate.cpp:217
+#, c-format
+msgid "Bad response to Hello command: ERR=%s\n"
+msgstr "Mauvaise réponse à la commande Hello : ERR=%s\n"
+
+#: src/qt-console/tray-monitor/authenticate.cpp:145
+#: src/qt-console/tray-monitor/authenticate.cpp:234
+#, fuzzy
+msgid "Daemon rejected Hello command\n"
+msgstr "Le Client a rejeté la commande Hello\\n\n"
+
+#: src/qt-console/tray-monitor/authenticate.cpp:194
 msgid ""
 "Authorization problem: Remote server did not advertise required TLS "
 "support.\n"
 msgstr ""
 
-#: src/qt-console/tray-monitor/authenticate.cpp:110
+#: src/qt-console/tray-monitor/authenticate.cpp:210
 #, fuzzy
 msgid "TLS negotiation failed\n"
 msgstr "Négociation TLS échouée.\n"
-
-#: src/qt-console/tray-monitor/authenticate.cpp:117
-#, c-format
-msgid "Bad response to Hello command: ERR=%s\n"
-msgstr "Mauvaise réponse à la commande Hello : ERR=%s\n"
-
-#: src/qt-console/tray-monitor/authenticate.cpp:134
-#, fuzzy
-msgid "Daemon rejected Hello command\n"
-msgstr "Le Client a rejeté la commande Hello\\n\n"
 
 #: src/qt-console/tray-monitor/conf.cpp:89
 msgid "The Name of the Monitor should be set"
@@ -394,17 +397,17 @@ msgstr ""
 msgid "Bandwidth parameter is invalid"
 msgstr "La création de la signature a échouée"
 
-#: src/qt-console/tray-monitor/task.cpp:177
+#: src/qt-console/tray-monitor/task.cpp:184
 #, fuzzy
 msgid "Client daemon"
 msgstr "Director"
 
-#: src/qt-console/tray-monitor/task.cpp:205
+#: src/qt-console/tray-monitor/task.cpp:212
 #, fuzzy
 msgid "Storage daemon"
 msgstr "En attente du Storage"
 
-#: src/qt-console/tray-monitor/tray-monitor.cpp:45
+#: src/qt-console/tray-monitor/tray-monitor.cpp:67
 #, fuzzy, c-format
 msgid ""
 "\n"
@@ -428,74 +431,74 @@ msgstr ""
 "       -t          test - lecture de la configuration et sortie\n"
 "\n"
 
-#: src/qt-console/tray-monitor/tray-monitor.cpp:118
+#: src/qt-console/tray-monitor/tray-monitor.cpp:148
 msgid "TLS PassPhrase"
 msgstr ""
 
-#: src/qt-console/tray-monitor/tray-monitor.cpp:164
+#: src/qt-console/tray-monitor/tray-monitor.cpp:194
 #, c-format
 msgid ""
 "Error: %d Monitor resources defined in %s. You must define one Monitor "
 "resource.\n"
 msgstr ""
 
-#: src/qt-console/tray-monitor/tray-ui.h:105
+#: src/qt-console/tray-monitor/tray-ui.h:115
 #, fuzzy, c-format
 msgid "Failed to initialize TLS context for \"%s\".\n"
 msgstr "Impossible d'initialiser le contexte TLS pour la Console \"%s\".\n"
 
-#: src/qt-console/tray-monitor/tray-ui.h:320
+#: src/qt-console/tray-monitor/tray-ui.h:350
 #, fuzzy
 msgid "Select a Director"
 msgstr "Director"
 
-#: src/qt-console/tray-monitor/tray_conf.cpp:172
+#: src/qt-console/tray-monitor/tray_conf.cpp:176
 #, c-format
 msgid "No %s resource defined\n"
 msgstr ""
 
-#: src/qt-console/tray-monitor/tray_conf.cpp:181
+#: src/qt-console/tray-monitor/tray_conf.cpp:185
 #, fuzzy, c-format
 msgid "Monitor: name=%s\n"
 msgstr "Console connecté à %s\n"
 
-#: src/qt-console/tray-monitor/tray_conf.cpp:184
+#: src/qt-console/tray-monitor/tray_conf.cpp:188
 #, fuzzy, c-format
 msgid "Director: name=%s address=%s port=%d\n"
 msgstr "Client \"%s\" adresse positionné à %s\n"
 
-#: src/qt-console/tray-monitor/tray_conf.cpp:188
+#: src/qt-console/tray-monitor/tray_conf.cpp:192
 #, fuzzy, c-format
 msgid "Client: name=%s address=%s port=%d\n"
 msgstr "Client \"%s\" adresse positionné à %s\n"
 
-#: src/qt-console/tray-monitor/tray_conf.cpp:192
+#: src/qt-console/tray-monitor/tray_conf.cpp:196
 #, fuzzy, c-format
 msgid "Storage: name=%s address=%s port=%d\n"
 msgstr "Client \"%s\" adresse positionné à %s\n"
 
-#: src/qt-console/tray-monitor/tray_conf.cpp:196
+#: src/qt-console/tray-monitor/tray_conf.cpp:200
 #, c-format
 msgid "Unknown resource type %d in dump_resource.\n"
 msgstr ""
 
-#: src/qt-console/tray-monitor/tray_conf.cpp:284
+#: src/qt-console/tray-monitor/tray_conf.cpp:288
 #, c-format
 msgid "Unknown resource type %d in free_resource.\n"
 msgstr ""
 
-#: src/qt-console/tray-monitor/tray_conf.cpp:318
+#: src/qt-console/tray-monitor/tray_conf.cpp:322
 #, fuzzy, c-format
 msgid "Too many directives in \"%s\" resource\n"
 msgstr "Trop d'éléments dans la ressource \"%s\"\n"
 
-#: src/qt-console/tray-monitor/tray_conf.cpp:338
-#: src/qt-console/tray-monitor/tray_conf.cpp:372
+#: src/qt-console/tray-monitor/tray_conf.cpp:342
+#: src/qt-console/tray-monitor/tray_conf.cpp:376
 #, c-format
 msgid "Unknown resource type %d in save_resource.\n"
 msgstr ""
 
-#: src/win32/compat/compat.cpp:2879
+#: src/win32/compat/compat.cpp:3116
 #, fuzzy
 msgid ""
 "\n"
@@ -503,22 +506,22 @@ msgid ""
 "Bacula ERROR: "
 msgstr "Bacula "
 
-#: src/win32/filed/vss.cpp:244 src/win32/filed/vss.cpp:259
+#: src/win32/filed/vss.cpp:249 src/win32/filed/vss.cpp:264
 #, c-format
 msgid "pthread key create failed: ERR=%s\n"
 msgstr "erreur sur pthread_key_create. ERR=%s\n"
 
-#: src/win32/filed/vss.cpp:267
+#: src/win32/filed/vss.cpp:272
 #, fuzzy, c-format
 msgid "pthread_setspecific failed: ERR=%s\n"
 msgstr "Erreur sur l'ouverture du périphérique. ERR=%s\n"
 
-#: src/win32/filed/vss_generic.cpp:725
+#: src/win32/filed/vss_generic.cpp:726
 #, fuzzy, c-format
 msgid "Unable to find volume %ls in the device list\n"
 msgstr "Le nouveau volume \"%s\" a été labélisé sur le device %s.\n"
 
-#: src/win32/libwin32/main.cpp:227
+#: src/win32/libwin32/main.cpp:228
 #, fuzzy
 msgid "Bad Command Line Option"
 msgstr "Erreur sur la commande : %s\n"
@@ -675,6 +678,10 @@ msgstr ""
 #, fuzzy
 msgid "Could not lock database"
 msgstr "Impossible d'ouvrir la base de données \"%s\".\n"
+
+#, fuzzy
+#~ msgid "Director authorization problem at \"%s:%d\"\n"
+#~ msgstr "Pas d'enregistrement trouvé en base pour : %s\n"
 
 #, fuzzy
 #~ msgid "Query failed: %s: ERR=%s\n"
