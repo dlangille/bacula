@@ -158,11 +158,10 @@ bool send_fdcaps(JCR *jcr, BSOCK *sd)
    do_dedup=1;
 #endif
 
-   Dmsg1(200, "Send caps to SD dedup=0 rehydration=%d\n",
-         do_dedup,
-         rehydration);
+   Dmsg3(200, "Send caps to SD dedup=%d rehydration=%d proxy=%d\n",
+         do_dedup, rehydration, jcr->director->remote);
 
-   return sd->fsend("fdcaps: dedup=0 rehydration=%d proxy=%d\n",
+   return sd->fsend("fdcaps: dedup=%d rehydration=%d proxy=%d\n",
                     do_dedup, rehydration,
                     jcr->director->remote);
 }
