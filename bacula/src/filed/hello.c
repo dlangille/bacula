@@ -148,12 +148,23 @@ bool send_hello_sd(JCR *jcr, char *Job, int tlspsk)
  */
 bool send_fdcaps(JCR *jcr, BSOCK *sd)
 {
+   int do_dedup=0;
    int rehydration = 0; /* 0 : the SD do rehydration */
+
+#if BEEF
    if (jcr->dedup_use_cache) {
       rehydration = 1; /* 1 : the FD do rehydration */
    }
-   Dmsg1(200, "Send caps to SD dedup=1 rehydration=%d\n", rehydration);
-   return sd->fsend("fdcaps: dedup=1 rehydration=%d proxy=%d\n", rehydration, jcr->director->remote);
+   do_dedup=1;
+#endif
+
+   Dmsg1(200, "Send caps to SD dedup=0 rehydration=%d\n",
+         do_dedup,
+         rehydration);
+
+   return sd->fsend("fdcaps: dedup=0 rehydration=%d proxy=%d\n",
+                    do_dedup, rehydration,
+                    jcr->director->remote);
 }
 
 bool recv_sdcaps(JCR *jcr)
