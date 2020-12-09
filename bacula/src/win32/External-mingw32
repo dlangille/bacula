@@ -28,7 +28,7 @@ MTX|http://www.bacula.org/depkgs-mingw32/mtx-1.3.9.tar.gz
 MYSQL|http://www.bacula.org/depkgs-mingw32/mysql-noinstall-5.0.27-win32.zip|mysql-5.0.27-win32
 NSIS_BIN|http://www.bacula.org/depkgs-mingw32/nsis-2.17.zip
 NSIS_SRC|http://www.bacula.org/depkgs-mingw32/nsis-2.17-src.tar.bz2
-OPENSSL|https://www.openssl.org/source/openssl-1.1.1f.tar.gz
+OPENSSL|https://www.openssl.org/source/openssl-1.1.1i.tar.gz
 PCRE|http://www.bacula.org/depkgs-mingw32/pcre-6.3.tar.bz2
 POSTGRESQL|http://www.bacula.org/depkgs-mingw32/postgresql-base-8.1.4.tar.bz2|postgresql-8.1.4
 PTHREADS|https://www.baculasystems.com/dl/Depkgs-mingw32-6.6-paa9aiMa/pthreads-w32-2-9-1-release.tar.gz
