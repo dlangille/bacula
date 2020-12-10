@@ -188,9 +188,9 @@ s_kw FS_option_kw[] = {
  */
 struct s_fs_opt FS_options[] = {
    {"Md5",      INC_KW_DIGEST,        "M"},
-   {"Sha1",     INC_KW_DIGEST,        "S"},
    {"Sha256",   INC_KW_DIGEST,       "S2"},
    {"Sha512",   INC_KW_DIGEST,       "S3"},
+   {"Sha1",     INC_KW_DIGEST,        "S"},
    {"Gzip",     INC_KW_COMPRESSION,  "Z6"},
    {"Gzip1",    INC_KW_COMPRESSION,  "Z1"},
    {"Gzip2",    INC_KW_COMPRESSION,  "Z2"},
