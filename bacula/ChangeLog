@@ -1,7 +1,21 @@
-
         ChangeLog for Bacula Enterprise version 11.0.0
 
+10Dec20
+ - Fix #7165 About incorrect JSON output for SHA256/SHA512 option
+
+09Dec20
+ - win32: Update openssl for Windows to 1.1.1i
+
+07Dec20
+ - Fix debug message
+ - Do not hardcode FD Caps
+
+04Dec20
+ - Fix MySQL update scripts for new MariaDB
+ - Fix warning in ./configure
+
 03Dec20
+ - Restore custom permission of symlink on FreeBSD and MacOS
  - Sync FD/SD Version with Enterprise
  - Enable SD CAPS in hello()
  - Fix tools/Makefile.in

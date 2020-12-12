@@ -37,7 +37,7 @@ running the script can take some time depending on your database size.
 
 ----------------------------------------------------------------
 
-Release 11.0.0 01 December 2020
+Release 11.0.0 12 December 2020
 
 11.0.0 is a major release.
 
@@ -68,7 +68,11 @@ Misc:
  - Support for GLOB pattern in Console ACL directives
  - Faster CRC32 algorithm
 
+Please see the New Features chapter of the manual for documentation on
+the new features.
+
 ----------------------------------------------------------------
+
 
                Release Notes for Bacula 9.6.3
 
