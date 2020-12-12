@@ -71,7 +71,194 @@ Misc:
 Please see the New Features chapter of the manual for documentation on
 the new features.
 
+
 ----------------------------------------------------------------
+
+               Release Notes for Bacula 9.6.7
+
+Release 9.6.7
+
+10Dec20
+
+This is a minor bug fix that corrects among other things the MySQL/MariaDB
+schemas.  This is the last release of the 9.6.x series.
+
+03Dec20
+ - Restore custom permission of symlink on FreeBSD and MacOS
+ - Fix #2582 bextract is broken for sparse gzip and compressed streams
+ - Fix org#2567 device capabilities overwritten
+ - baculum: Update script version
+ - Fix org#2573 About Syntax error in granting privileges script with MySQL if 
+  --with-db-password parameter is used
+ - Fix org#2471 About deleted files are listed as being present in an accurate 
+  backup by various sample queries
+ - Fix org#2571 About errors in es_AR.po file
+ - Fix org#2568 About compilation issue on gcc10
+ - Fix org#2584 About inconsitancies in the make_mysql_tables script
+ - baculum: Fix English text noticed by Peter McDonald
+ - baculum: Update Russian translations
+ - baculum: Update Portuguese translations
+ - baculum: Implement graphical status storage
+ - baculum: Add gauge.js library
+ - baculum: Add json output option to show storages and show single storage 
+  endpoints
+ - baculum: Add path field to restore wizard to narrow down search file results 
+  to specific path - idea proposed by Wanderlei Huttel
+ - baculum: Add path parameter to job files API endpoint
+ - baculum: Fix #2565 status icon overlaps action buttons in API wizard
+ - baculum: Add Sergey Zhidkov to AUTHORS
+ - baculum: Add Russian translations
+ - baculum: Fix access to job resources if no job assigned to user
+ - baculum: Update Portuguese translations
+ - baculum: Ajax queue improvement in framework
+ - baculum: Fix renaming config resources
+ - baculum: Add graphs to job view page
+ - baculum: Fix using offset in job file list query with MySQL catalog database
+ - baculum: Show more detailed job file list - idea proposed by Wanderlei 
+  Huttel
+ - baculum: Rework job file list API endpoint
+ - baculum: Add searching jobs by filename in restore wizard - idea proposed by 
+  Wanderlei Huttel
+ - baculum: Add job files API endpoint
+ - Add code to retry a MySQL query after a deadlock
+ - baculum: Update Portuguese translations
+ - baculum: Add default days and limit values to status schedules API endpoint
+ - baculum: Fix displaying multitextbox and multicombobox directive controls
+ - baculum: Fix date filter on status schedule page
+ - baculum: Fix #2570 fileset excludes settings with PHP 7.4
+ - baculum: New features and improvements to multi-user interface and restricted 
+  access
+
+
+
+==================================================================
+
+Release 9.6.6
+
+20Sep20
+
+This is a minor bug fix release. Unless there is some new major bug found,
+this will be the last of the 9.6.x releases.  The next release major
+release (a really big one) is currently scheduled for December.  More 
+about this in a subsequent status report ...
+
+
+
+18Sep20
+ - baculum: Fix displaying date and time on volume view page
+ - baculum: Fix #2564 changing volume status to Read-Only
+ - baculum: Fix saving multicombobox control values
+ - baculum: Fix multicombobox and multitextbox controls to work with PHP 7.4
+ - baculum: Fix #2562 displaying date and time in tables on Safari
+ - Update copyright year
+ - Clarify SD vbackup device error message
+ - Fix MT2554 :update upload_cache call in dircmd.c
+ - zero malloced memory when SMARTALLOC not enabled
+ - baculum: Fix #2558 saving day or day range in schedule resource - reported by 
+   Jose Alberto
+ - Fix MT2554 :upgrade upload_cache interface.
+ - Eliminate compiler errors when smartalloc is turned off
+ - baculum: Fix date formatter to work with PHP 7.4
+ - baculum: Fix configure Bacula hosts page to work with PHP 7.4
+ - baculum: Update Portuguese translations
+ - baculum: Change colours in table headers and borders
+ - baculum: Add remove runscript button
+ - Fix #6366 About an issue with verify job level=DiskToCatalog
+ - baculum: Close modal windows on pressing ESC key
+ - baculum: Fix logout button on authorization failed page
+ - baculum: Add local user authentication method support
+ - baculum: Add date and time formatters - idea proposed by Wanderlei Huttel
+ - baculum: Enable re-running jobs in async way and visual improvements
+ - baculum: Change cursor over selectable table
+ - Fix build script copyright detection
+ - release: add code to detect Bacula Systems copyrights and fail release
+ - Fix compilation of bsnapshot on Fedora
+
+Bugs fixed/closed since last release:
+2558 6366
+
+
+===================================================================
+
+Release 9.6.4
+
+This is a major security and bug fix release. We suggest everyone
+to upgrade as soon as possible.
+
+One significant improvement is for the AWS S3 cloud driver. First the
+code base has been brought much closer to the Enterprise version (still
+a long ways to go). Second is that the community code now uses the latest
+version of libs3 as maintained by Bacula Systems.  The libs3 code is
+available as a tar file for Bacula version 9.6.4 at: 
+
+   www.bacula.org/downloads/libs3-20200523.tar.gz
+
+Note: Version 9.6.4 must be compiled with the above libs3 version or later.
+To build libs3:
+- Remove any libs3 package loaded by your OS
+- Download above link
+- tar xvfz libs3-20200523.tar.gz
+- cd libs3-20200523
+- make  # should have no errors
+- sudo make install
+
+Then when you do your Bacula ./configure <args> it should automatically
+detect and use the libs3. The output from the ./configure will show
+whether or not libs3 was found during the configuration. E.g.
+   S3 support:                yes
+in the output from ./configure.
+
+08Jun20
+ - Add configure variables to baculabackupreport. Patch from bug #2538
+ - Fix orphaned buffers in cloud by adding truncate argument to end_of_job()
+ - Improve clarity of Cloud part mismatches and make it an INFO message rather 
+   than a WARNING since it corrects the catalog.
+ - Small trivial change to check_parts
+ - Backport more Enterprise cloud parts changes
+ - Backport cloud upload code from Enterprise
+ - Update s3_driver.c to new libs3 API calling sequence
+ - Fix tray-monitor installation
+ - Recompile ./configure
+ - Add ./configure code to check for and enable/disable S3 support
+ - win32: Fix org#2547 About possible NULL pointer dereference in get_memory_info
+ - Ensure cloud driver loaded when listing cloud volumes
+ - baculum: Request #2546 support for full restore when file records for backup 
+   job are pruned
+ - baculum: Fix problem with authorization error after upgrade
+ - baculum: Add UPGRADE file
+ - baculum: Fix returning value in TStyleDiff - generated notice with PHP 
+   7.4
+ - baculum: Remove execute bit for framework scripts
+ - baculum: Fix displaying empty column button in table column visibility menu - 
+  reported by Wanderlei Huttel
+ - baculum: Update Polish translations
+ - baculum: Update Portuguese translations
+ - baculum: New user management. LDAP support. Role-based access control.
+ - Fix new compiler warnings + always use bstrncpy not strncpy to ensure EOS at 
+   end of string
+ - Return smartalloc buffers zeroed -- future performance improvement
+ - Improve scanning data/time, fixes bug #2472
+ - Make ABORT mention segfault to clarify non-bug #2528
+ - Make reading a short block a warning rather than error
+ - baculum: Fix validators in run job modal window
+ - Remove unused -t option in dbcheck.c -- fixes bug #2453
+ - Fix bug 2523 -- spurious extra linking
+ - Fix bug #2534 possible double free in error case
+ - Fix possible sscanf overflows
+ - Fix overflow from malicious FD reported by Pasi Saarinen
+ - baculum: Add option to show time in job log - idea proposed by Wanderlei 
+   Huttel
+ - baculum: Add show log time parameter to job log endpoint
+ - baculum: Add tip about using table row selection
+ - Fix bug #2525 seg fault when doing estimate with accurate and MD5
+ - baculum: Fix issues with SELinux support reported by Neil MacGregor
+ - Correct some copyrights
+ - Add Docker plugin rpm spec files
+
+Bugs fixed/closed since last release:
+2453 2472 2525 2528 2534 2538 2546 2547
+
+===================================================================
 
 
                Release Notes for Bacula 9.6.3
