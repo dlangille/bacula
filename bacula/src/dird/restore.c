@@ -703,11 +703,11 @@ void restore_cleanup(JCR *jcr, int TermCode)
       sprintf(term_code, _("Inappropriate term code: %c\n"), TermCode);
       break;
    }
-   bstrftimes(sdt, sizeof(sdt), jcr->jr.StartTime);
-   bstrftimes(edt, sizeof(edt), jcr->jr.EndTime);
+   bstrftimes_na(sdt, sizeof(sdt), jcr->jr.StartTime);
+   bstrftimes_na(edt, sizeof(edt), jcr->jr.EndTime);
 
    RunTime = jcr->jr.EndTime - jcr->jr.StartTime;
-   if (RunTime <= 0) {
+   if (jcr->jr.StartTime == 0 || RunTime <= 0) {
       RunTime = 1;
    }
    kbps = (double)jcr->jr.JobBytes / (1000.0 * (double)RunTime);

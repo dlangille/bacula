@@ -65,6 +65,15 @@ char *bstrftime(char *dt, int maxlen, utime_t utime)
    return dt;
 }
 
+char *bstrftimes_na(char *dt, int maxlen, utime_t utime)
+{
+   if (utime == 0) {
+      return bstrncpy(dt, "", maxlen);
+   } else {
+      return bstrftimes(dt, maxlen, utime);
+   }
+}
+
 /* Formatted time for user display: dd-Mon-yyyy hh:mm:ss */
 char *bstrftimes(char *dt, int maxlen, utime_t utime)
 {

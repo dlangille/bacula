@@ -103,9 +103,9 @@ void admin_cleanup(JCR *jcr, int TermCode)
       sprintf(term_code, _("Inappropriate term code: %c\n"), jcr->JobStatus);
       break;
    }
-   bstrftimes(schedt, sizeof(schedt), jcr->jr.SchedTime);
-   bstrftimes(sdt, sizeof(sdt), jcr->jr.StartTime);
-   bstrftimes(edt, sizeof(edt), jcr->jr.EndTime);
+   bstrftimes_na(schedt, sizeof(schedt), jcr->jr.SchedTime);
+   bstrftimes_na(sdt, sizeof(sdt), jcr->jr.StartTime);
+   bstrftimes_na(edt, sizeof(edt), jcr->jr.EndTime);
 
 
    Jmsg(jcr, msg_type, 0, _("Bacula " VERSION " (" LSMDATE "): %s\n"
