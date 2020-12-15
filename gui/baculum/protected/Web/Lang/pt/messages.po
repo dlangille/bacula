@@ -2409,9 +2409,6 @@ msgstr "Hora e minuto"
 msgid "Validation error"
 msgstr "Erro de validação"
 
-msgid "Please choose at least month or week or day of week or hour in Run block"
-msgstr "Por favor selecione pelo menos o mês ou semana ou dia da semana ou hora no bloco Executar"
-
 msgid "Please select month in Run block"
 msgstr "Selecione o mês no bloco Executar"
 

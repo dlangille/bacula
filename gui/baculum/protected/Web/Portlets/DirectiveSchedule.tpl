@@ -427,24 +427,6 @@
 			</div>
 		</div>
 	</div>
-	<com:TCustomValidator
-		ValidationGroup="Directive"
-		ControlToValidate="TimeDisable"
-		Display="None"
-		ClientValidationFunction="schedule_required_fields_validator"
-		ErrorMessage="<%=Prado::localize('Please choose at least month or week or day of week or hour in Run block')%> #<%=($this->ItemIndex+1)%>.">
-		<prop:ClientSide.OnValidate>
-			var m = ($('#<%=$this->MonthSingle->ClientID%>').prop('checked') && $('#<%=$this->Month->ClientID%>_Directive').val());
-			var m_r = ($('#<%=$this->MonthRange->ClientID%>').prop('checked') && $('#<%=$this->MonthRangeFrom->ClientID%>_Directive').val() && $('#<%=$this->MonthRangeTo->ClientID%>_Directive').val());
-			var w = ($('#<%=$this->WeekSingle->ClientID%>').prop('checked') && $('#<%=$this->Week->ClientID%>_Directive').val());
-			var w_r = ($('#<%=$this->WeekRange->ClientID%>').prop('checked') && $('#<%=$this->WeekRangeFrom->ClientID%>_Directive').val() && $('#<%=$this->WeekRangeTo->ClientID%>_Directive').val());
-			var wd = ($('#<%=$this->WdaySingle->ClientID%>').prop('checked') && $('#<%=$this->Wday->ClientID%>_Directive').val());
-			var wd_r = ($('#<%=$this->WdayRange->ClientID%>').prop('checked') && $('#<%=$this->WdayRangeFrom->ClientID%>_Directive').val() && $('#<%=$this->WdayRangeTo->ClientID%>_Directive').val());
-			var t = ($('#<%=$this->TimeAt->ClientID%>').prop('checked') && $('#<%=$this->TimeHourAt->ClientID%>_Directive').val() && $('#<%=$this->TimeMinAt->ClientID%>_Directive').val());
-			var t_h = ($('#<%=$this->TimeHourly->ClientID%>').prop('checked') && $('#<%=$this->TimeMinHourly->ClientID%>_Directive').val());
-			sender.enabled = (!t && !t_h && !m && !m_r && !w && !w_r && !wd && !wd_r);
-		</prop:ClientSide.OnValidate>
-	</com:TCustomValidator>
 	</prop:ItemTemplate>
 </com:TActiveRepeater>
 <com:TValidationSummary

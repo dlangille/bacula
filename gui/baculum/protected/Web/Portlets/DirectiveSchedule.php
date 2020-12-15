@@ -516,6 +516,8 @@ class DirectiveSchedule extends DirectiveListTemplate {
 				$directive_values[] = "hourly at {$hour}:{$minute}";
 				$obj->Hour = range(0, 23);
 				$obj->Minute = $value->TimeMinHourly->getDirectiveValue();
+			} else {
+				$directive_values[] = 'hourly';
 			}
 			$values[$directive_name][] = implode(' ', $directive_values);
 			$objs[] = $obj;
