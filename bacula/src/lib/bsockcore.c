@@ -61,14 +61,14 @@ static void win_close_wait(int fd);
  * make a nice dump of a message
  */
 void BSOCKCORE::dump_bsock_msg(int sock, uint32_t msgno, const char *what, uint32_t rc, int32_t pktsize, uint32_t flags,
-                               POOLMEM *msg, int32_t msglen)
+                               POOLMEM *amsg, int32_t amsglen)
 {
    char buf[54];
    bool is_ascii;
    int dbglvl = DT_NETWORK;
 
-   if (msglen<0) {
-      Dmsg5(dbglvl, "0x%p: %s %d:%d SIGNAL=%s\n", this, what, sock, msgno, bnet_sig_to_ascii(msglen));
+   if (amsglen<0) {
+      Dmsg5(dbglvl, "0x%p: %s %d:%d SIGNAL=%s\n", this, what, sock, msgno, bnet_sig_to_ascii(amsglen));
    } else if (flags & BNET_IS_CMD) {
       /* this is a command */
       int32_t command;
@@ -79,15 +79,15 @@ void BSOCKCORE::dump_bsock_msg(int sock, uint32_t msgno, const char *what, uint3
       char *block;
       int hash_size;
       unser_declare;
-      unser_begin(msg, msglen);
+      unser_begin(amsg, amsglen);
       unser_int32(command);
       switch (command) {
       case BNET_CMD_GET_HASH:
       case BNET_CMD_ACK_HASH:
       case BNET_CMD_UNK_HASH:
          unser_assign(hash, sizeof(int)); /* I use only 4 bytes of the hash */
-         unser_end(msg, msglen);
-         Dmsg6(dbglvl, "%s %d:%d %s len=%ld #%08x\n", what, sock, msgno, bnet_cmd_to_name(command), msglen, hash2int(hash));
+         unser_end(amsg, amsglen);
+         Dmsg6(dbglvl, "%s %d:%d %s len=%ld #%08x\n", what, sock, msgno, bnet_cmd_to_name(command), amsglen, hash2int(hash));
          break;
       case BNET_CMD_STO_BLOCK:
          /* unfortunately we don't know the hash size and don't know the offset
@@ -96,10 +96,10 @@ void BSOCKCORE::dump_bsock_msg(int sock, uint32_t msgno, const char *what, uint3
           */
          hash_size=bhash_info(DEDUP_DEFAULT_HASH_ID, NULL);
          unser_assign(hash, hash_size); /* I only display the 4 first byte of the hash */
-         size=msglen-(BNET_CMD_SIZE+hash_size);
+         size=amsglen-(BNET_CMD_SIZE+hash_size);
          if (size>0) {
             unser_assign(block, size);
-            unser_end(msg, msglen);
+            unser_end(amsg, amsglen);
             smartdump(block, size, buf, sizeof(buf)-9, &is_ascii);
          } else {
             buf[0] = '\0';
@@ -114,22 +114,22 @@ void BSOCKCORE::dump_bsock_msg(int sock, uint32_t msgno, const char *what, uint3
       case BNET_CMD_REC_ACK:
          unser_int32(capacity);
          unser_int64(counter);
-         unser_end(msg, msglen);
+         unser_end(amsg, amsglen);
          Dmsg6(dbglvl, "%s %d:%d %s cnt=%lld cap=%ld\n", what, sock, msgno, bnet_cmd_to_name(command), counter, capacity);
          break;
       case BNET_CMD_NONE:
       case BNET_CMD_STP_THREAD:
       default:
-         Dmsg5(dbglvl, "%s %d:%d %s len=%ld\n", what, sock, msgno, bnet_cmd_to_name(command), msglen);
+         Dmsg5(dbglvl, "%s %d:%d %s len=%ld\n", what, sock, msgno, bnet_cmd_to_name(command), amsglen);
          break;
       }
    } else {
       // data
-      smartdump(msg, msglen, buf, sizeof(buf)-9, &is_ascii);
+      smartdump(amsg, amsglen, buf, sizeof(buf)-9, &is_ascii);
       if (is_ascii) {
-         Dmsg6(dbglvl, "0x%p: %s %d:%d len=%d \"%s\"\n", this, what, sock, msgno, msglen, buf);
+         Dmsg6(dbglvl, "0x%p: %s %d:%d len=%d \"%s\"\n", this, what, sock, msgno, amsglen, buf);
       } else {
-         Dmsg6(dbglvl, "0x%p: %s %d:%d len=%d %s\n", this, what, sock, msgno, msglen, buf);
+         Dmsg6(dbglvl, "0x%p: %s %d:%d len=%d %s\n", this, what, sock, msgno, amsglen, buf);
       }
    }
 }
