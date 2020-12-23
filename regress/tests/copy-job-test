@@ -14,6 +14,10 @@
 # XPARAM SPOOLDATA_RUN=(default|yes|no)
 # enable spooldata=(yes|no) in the run command or let the default,
 # don't specify the spooldata option in the run command
+# XPARAM NEXT_NODEDUP=(default|yes|no)
+# if dedup is enable and NEXT_NODEDUP=yes, then change the
+# target device of the copy job to a normal device (not a dedup one)
+# this force the copy job to rehydrate the data
 #
 # use it this way
 # ( for run in default no yes ; do for job in default no yes ; do SPOOLDATA_RUN=$run \
@@ -50,9 +54,18 @@ else
    run_spooldata=""
 fi
 
-echo === SETUP === SPOOLDATA_JOB=$SPOOLDATA_JOB SPOOLDATA_RUN=$SPOOLDATA_RUN
-
 start_test
+
+NEXT_NODEDUP=${NEXT_NODEDUP:-default}
+if [ "$NEXT_NODEDUP" = "yes" -a "$FORCE_DEDUP" = 1 ] ; then
+   $bperl -e "add_attribute('$conf/bacula-sd.conf', 'Device Type', 'File', 'Device', 'Drive-0')"
+elif [ "$NEXT_NODEDUP" = "no" -a "$FORCE_DEDUP" = 1 ] ; then
+   /bin/true # don't change anything
+elif [ "$FORCE_DEDUP" = 1 ] ; then
+   /bin/true # don't change anything
+fi
+
+echo === SETUP === SPOOLDATA_JOB=$SPOOLDATA_JOB SPOOLDATA_RUN=$SPOOLDATA_RUN NEXT_NODEDUP=$NEXT_NODEDUP
 
 #
 # Note, we first backup into Pool Default, 
@@ -80,6 +93,7 @@ list volumes
 @# should copy two jobs
 @#setdebug level=51 storage=DiskChanger
 @#setdebug level=100 storage=File tags=dedup,asx,network options=h
+dedup rehydra_check_hash=1
 run job=copy-job $run_spooldata yes
 wait
 messages
