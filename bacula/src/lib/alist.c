@@ -183,7 +183,7 @@ void * baselist::remove_item(int index)
 /* Get the index item -- we should probably allow real indexing here */
 void * baselist::get(int index)
 {
-   if (items == NULL || index < 0 || index > last_item) {
+   if (items == NULL || index < 0 || index >= last_item) {
       return NULL;
    }
    return items[index];
