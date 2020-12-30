@@ -100,7 +100,7 @@ PROG_COPYRIGHT
 "       -c              Director conf filename\n"
 "       -B              print catalog configuration and exit\n"
 "       -d <nn>         set debug level to <nn>\n"
-"       -n <nn>         maximum number of changes\n"
+"       -n <nn>         custom number of records selected at a time for large pruning operations done in a loop (orphan paths/files, ...)\n"
 "       -dt             print a timestamp in debug output\n"
 "       -f              fix inconsistencies\n"
 "       -v              verbose\n"
