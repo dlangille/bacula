@@ -212,11 +212,13 @@ static POOLMEM *substitute_prompts(UAContext *ua,
                      q += 2;
                      break;
                   }
+                  /* Copy the new input to the subst table */
+                  len = strlen(ua->cmd);
+                  p = (char *)malloc(len * 2 + 1);
+                  db_escape_string(ua->jcr, ua->db, p, ua->cmd, len);
+                  subst[n] = p;
                }
-               len = strlen(ua->cmd);
-               p = (char *)malloc(len * 2 + 1);
-               db_escape_string(ua->jcr, ua->db, p, ua->cmd, len);
-               subst[n] = p;
+               p = subst[n];
                olen = o - new_query;
                new_query = check_pool_memory_size(new_query, olen + strlen(p) + 10);
                o = new_query + olen;
