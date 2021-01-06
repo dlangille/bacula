@@ -516,7 +516,7 @@ CREATE TABLE TagObject
 
 CREATE TABLE Object
 (
-   ObjectId     serial   not null,
+   ObjectId     bigserial   not null,
 
    JobId        integer  not null,
    Path         text     not null,
