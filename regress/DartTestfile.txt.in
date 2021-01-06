@@ -39,6 +39,8 @@ ADD_TEST(misc:restart-reschedule-test "@regressdir@/tests/restart-reschedule-tes
 ADD_TEST(misc:console-delete-test "@regressdir@/tests/console-delete-test")
 ADD_TEST(misc:prune-expired-test "@regressdir@/tests/prune-expired-test")
 ADD_TEST(misc:prune-all-test "@regressdir@/tests/prune-all-test")
+ADD_TEST(misc:director-autoprune-test "@regressdir@/tests/director-autoprune-test")
+ADD_TEST(misc:query-subst-test "@regressdir@/tests/query-subst-test")
 # ADD_TEST(misc:priority-test "@regressdir@/tests/priority-test")
 
 
@@ -125,7 +127,6 @@ ADD_TEST(disk:prune-copy-test "@regressdir@/tests/prune-copy-test")
 ADD_TEST(disk:prune-migration-test "@regressdir@/tests/prune-migration-test")
 ADD_TEST(disk:prune-pool-test "@regressdir@/tests/prune-pool-test")
 ADD_TEST(disk:prune-test "@regressdir@/tests/prune-test")
-ADD_TEST(disk:query-test "@regressdir@/tests/query-test")
 ADD_TEST(disk:recycle-test "@regressdir@/tests/recycle-test")
 ADD_TEST(disk:regexwhere-test "@regressdir@/tests/regexwhere-test")
 #ADD_TEST(disk:remote-console-test "@regressdir@/tests/remote-console-test")
