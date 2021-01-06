@@ -34,6 +34,12 @@ WD="$3"
 if [ "$WD" = "" ]; then
     WD=/tmp
 fi
+
+# Start constructing message. Point to log files for better user
+# experience, append backtrace or message about missing debugger later
+echo "Check the log files for more information." > ${WD}/bacula.$2.traceback
+echo "" >> ${WD}/bacula.$2.traceback
+
 case `uname -s` in
 SunOS)
    #
@@ -57,14 +63,17 @@ SunOS)
    elif [ ! -z "${MDB}" ]; then
       ${MDB} -u -p $2 < @scriptdir@/btraceback.mdb >> ${WD}/bacula.$2.traceback 2>&1
    fi
-   PNAME="${PNAME} on `hostname`"
-   cat ${WD}/bacula.$2.traceback \
-    | @sbindir@/bsmtp -h @smtp_host@ -f @dump_email@ -s "Bacula DBX traceback of ${PNAME}" @dump_email@
    ;;
 *)
-   gdb -quiet -batch -x @scriptdir@/btraceback.gdb $1 $2 >> ${WD}/bacula.$2.traceback 2>&1
-   PNAME="${PNAME} on `hostname`"
-   cat ${WD}/bacula.$2.traceback \
-    | @sbindir@/bsmtp -h @smtp_host@ -f @dump_email@ -s "Bacula GDB traceback of ${PNAME}" @dump_email@
+    which gdb > /dev/null 2>&1 && GDB=`which gdb` || GDB=''
+    if  [ ! -z "${GDB}" ]; then
+        gdb -quiet -batch -x @scriptdir@/btraceback.gdb $1 $2 >> ${WD}/bacula.$2.traceback 2>&1
+    else
+        echo "Please install a debugger (gdb) to receive a traceback." >> ${WD}/bacula.$2.traceback 2>&1
+    fi
    ;;
 esac
+
+PNAME="${PNAME} on `hostname`"
+cat ${WD}/bacula.$2.traceback \
+    | @sbindir@/bsmtp -h @smtp_host@ -f @dump_email@ -s "Bacula traceback. Process crashed ${PNAME}" @dump_email@
