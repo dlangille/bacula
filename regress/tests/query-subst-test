@@ -1,0 +1,70 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Test the substitution on the query.sql file
+
+
+TestName="query-subst-test"
+JobName=query
+. scripts/functions
+
+scripts/cleanup
+scripts/copy-test-confs
+
+start_test
+
+cat <<EOF > $conf/query.sql
+# 1
+:Query to test substitutions
+*Enter a
+*Enter b
+*Enter c
+*Enter d
+*Enter e
+*Enter f
+*Enter g
+*Enter h
+SELECT '%1' as "a", '%2' as "b", '%3' as "c", '%4' as "d", '%1' as "a", '%2' as "b", '%3' as "c", '%8' as "h";
+# 2
+:Query to test substitutions with error
+*Enter a
+SELECT '%2' as "a";
+EOF
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@output /dev/null
+messages
+@$out ${cwd}/tmp/log1.out
+query
+1
+a
+b
+c
+d
+h
+
+@$out ${cwd}/tmp/log2.out
+query
+2
+quit
+END_OF_DATA
+
+run_bacula
+stop_bacula
+
+nb=`awk '/a.+b.+c.+d.+a.+b.+c.+h/ { print "OK" }' $tmp/log1.out | grep OK | wc -l`
+if [ $nb != 2 ]; then
+    print_debug "ERROR: should find 2 lines of the pattern in $tmp/log1.out"
+    estat=1
+fi
+
+grep "Warning prompt 2 missing" $tmp/log2.out > /dev/null
+if [ $? != 0 ]; then
+    print_debug "ERROR: should find error line in $tmp/log2.out"
+    estat=1
+fi
+
+
+end_test
