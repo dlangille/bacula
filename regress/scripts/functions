@@ -493,6 +493,7 @@ run_bacula()
    debug_wait
    zstat=0
    estat=0
+   ddestat=0
    if test "$debug" -eq 1 ; then
 
      ${scripts}/bacula-ctl-sd start -m
@@ -980,7 +981,7 @@ end_test()
    fi
    d=`./test_duration`
    t=`date +%R:%S`
-   if [ $ddestat != 0 ] ; then
+   if [ "$ddestat" != 0 ] ; then
       echo " " | tee -a test.out
       echo "  !!!!! $TestName ${variant_name} failed!!! $t $d !!!!! " | tee -a test.out
       echo "     Status: estat=$estat zombie=$zstat backup=$bstat restore=$rstat diff=$dstat verify=$vstat dde=$ddestat" | tee -a test.out
@@ -1233,6 +1234,16 @@ tmpsrc=${tmpsrc:-"$cwd/tmp/build"}
 
 # Unit Tests source directory 
 unitsrc=${unitsrc:-"$cwd/src"}
+
+estat=0
+bstat=0
+rstat=0
+ddestat=0
+zstat=0
+dstat=0
+vstat=0
+export estat bstat rstat ddestat zstat dstat vstat
+
 
 export bin
 export conf
