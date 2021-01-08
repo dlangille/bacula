@@ -48,7 +48,7 @@ int       base64_to_bin(char *dest, int destlen, char *src, int srclen);
 void strip_long_opts(char *out, const char *in);
 void edit_alist(HPKT &hpkt);
 void edit_msg_types(HPKT &hpkt, DEST *dest);
-void display_msgs(HPKT &hpkt);
+bool display_msgs(HPKT &hpkt);
 void display_alist(HPKT &hpkt);
 bool display_alist_str(HPKT &hpkt);
 bool display_alist_res(HPKT &hpkt);
@@ -63,7 +63,7 @@ void display_bit_array(char *array, int num);
 void display_last(HPKT &hpkt);
 void init_hpkt(HPKT &hpkt);
 void term_hpkt(HPKT &hpkt);
-bool display_global_item(HPKT &hpkt);
+int display_global_item(HPKT &hpkt); // 
 void display_collector_types(HPKT &hpkt);
 
 /* bsys.c */

@@ -380,8 +380,14 @@ static void dump_json(display_filter *filter)
             hpkt.ritem = &items[item];
             if (bit_is_set(item, res_all.hdr.item_present)) {
                if (!first_directive) printf(",");
-               if (display_global_item(hpkt)) {
+               /* 1: found, 0: not found, -1 found but empty */
+               int ret = display_global_item(hpkt);
+               if (ret == -1) {
+                  /* Do not print a comma after this empty directive */
+                  first_directive = 0;
+               } else if (ret == 1) {
                   /* Fall-through wanted */
+
                } else {
                   printf("\n      \"%s\": null", items[item].name);
                }

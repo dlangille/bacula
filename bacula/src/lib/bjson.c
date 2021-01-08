@@ -203,10 +203,11 @@ void edit_msg_types(HPKT &hpkt, DEST *dest)
    pm_strcat(hpkt.edbuf, "]");
 }
 
-bool display_global_item(HPKT &hpkt)
+/* -1 nothing displayed, 1 found, 0 not found */
+int display_global_item(HPKT &hpkt)
 {
    bool found = true;
-
+   bool has_something = true;
    if (hpkt.ritem->handler == store_res) {
       display_res(hpkt);
    } else if (hpkt.ritem->handler == store_str ||
@@ -227,24 +228,28 @@ bool display_global_item(HPKT &hpkt)
    } else if (hpkt.ritem->handler == store_bool) {
       display_bool_pair(hpkt);
    } else if (hpkt.ritem->handler == store_msgs) {
-      display_msgs(hpkt);
+      has_something = display_msgs(hpkt);
    } else if (hpkt.ritem->handler == store_bit) {
       display_bit_pair(hpkt);
    } else if (hpkt.ritem->handler == store_alist_res) {
-      found = display_alist_res(hpkt); /* In some cases, the list is null... */
+      has_something = display_alist_res(hpkt); /* In some cases, the list is null... */
    } else if (hpkt.ritem->handler == store_alist_str) {
-      found = display_alist_str(hpkt); /* In some cases, the list is null... */
+      has_something = display_alist_str(hpkt); /* In some cases, the list is null... */
    } else {
       found = false;
    }
 
-   return found;
+   if (found) {
+      return has_something ? 1 : -1;
+   } else {
+      return 0;
+   }
 }
 
 /*
  * Called here for each store_msgs resource
  */
-void display_msgs(HPKT &hpkt)
+bool display_msgs(HPKT &hpkt)
 {
    MSGS *msgs = (MSGS *)hpkt.ritem->value;  /* Message res */
    DEST *dest;   /* destination chain */
@@ -293,9 +298,12 @@ void display_msgs(HPKT &hpkt)
             sendit(NULL, "        \"Command\": %s\n      }",
                quote_string(hpkt.edbuf, dest->mail_cmd));
             break;
+         default:
+            Dmsg1(50, "got %d\n", hpkt.ritem->code);
          }
       }
    }
+   return (first == false);      // We found nothing to display
 }
 
 /*

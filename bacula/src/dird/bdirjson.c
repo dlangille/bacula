@@ -1036,10 +1036,18 @@ static void dump_json(display_filter *filter)
                   }
                   continue;
                }
+               if (first_directive++ > 0) {
+                  sendit(NULL, ",");
+               }
 
-               if (first_directive++ > 0) sendit(NULL, ",");
-               if (display_global_item(hpkt)) {
+               /* 1: found, 0: not found, -1 found but empty */
+               int ret = display_global_item(hpkt);
+               if (ret == -1) {
+                  /* Do not print a comma after this empty directive */
+                  first_directive = 0;
+               } else if (ret == 1) {
                   /* Fall-through wanted */
+
                } else if (items[item].handler == store_jobtype) {
                   display_jobtype(hpkt);
                } else if (items[item].handler == store_label) {

@@ -465,8 +465,15 @@ static void dump_json(display_filter *filter)
             hpkt.ritem = &items[item];
             if (bit_is_set(item, res_all.hdr.item_present)) {
                if (first_directive++ > 0) printf(",");
-               if (display_global_item(hpkt)) {
+
+               /* 1: found, 0: not found, -1 found but empty */
+               int ret = display_global_item(hpkt);
+               if (ret == -1) {
+                  /* Do not print a comma after this empty directive */
+                  first_directive = 0;
+               } else if (ret == 1) {
                   /* Fall-through wanted */
+
                } else if (items[item].handler == store_maxblocksize) {
                   display_int32_pair(hpkt);
                } else if (items[item].handler == store_devtype) {
