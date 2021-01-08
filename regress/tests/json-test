@@ -1,0 +1,39 @@
+#!/bin/bash
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Test the configuration with json tools
+#
+TestName="json-test"
+JobName=backup
+. scripts/functions
+
+scripts/cleanup
+scripts/copy-confs
+
+cat <<EOF >> $tmp/1
+Messages {
+  Name = "Standard1"
+  MailCommand = "/usr/sbin/bsmtp -h localhost -f \"(Bacula) no-reply@homeserver \" -s \"Bacula: %t %e of %c %l\" %r"
+  OperatorCommand = "/usr/sbin/bsmtp -h localhost -f \"(Bacula) no-reply@homeserver \" -s \"Bacula: Intervention needed for %j\" %r"
+  Mail = root@localhost = All, Fatal, Error, Warning, Mount
+  Append = $working/bacula.log = !Debug, !Saved, !Skipped
+  Console = !Debug, !Saved, !Skipped
+  Operator = root@localhost = Fatal, Error, Warning, Mount
+  Catalog = All, !Debug, !Skipped, !Saved
+}
+EOF
+
+cat $tmp/1 >> $conf/bacula-dir.conf
+cat $tmp/1 >> $conf/bacula-sd.conf
+cat $tmp/1 >> $conf/bacula-fd.conf
+
+start_test
+
+$bperl -e 'check_json_tools()'
+if [ $? -ne 0 ]; then
+    print_debug "ERROR: Issue while checking json output"
+    estat=1
+fi
+end_test
