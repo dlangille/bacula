@@ -20,7 +20,7 @@ ADD_TEST(misc:backup-to-null-crc32 "@regressdir@/tests/backup-to-null-crc32")
 ADD_TEST(misc:console-acl-test "@regressdir@/tests/console-acl-test")
 ADD_TEST(misc:hangup-blowup-test "@regressdir@/tests/hangup-blowup-test")
 SET_TESTS_PROPERTIES(misc:hangup-blowup-test PROPERTIES TIMEOUT "60")
-
+ADD_TEST(misc:json-test "@regressdir@/tests/json-test")
 ADD_TEST(misc:reload-client-address-test "@regressdir@/tests/reload-client-address-test")
 ADD_TEST(misc:reload-many-test "@regressdir@/tests/reload-many-test")
 ADD_TEST(misc:reload-status-test "@regressdir@/tests/reload-status-test")
