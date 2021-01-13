@@ -387,6 +387,7 @@ void pause_msg(const char *file, const char *func, int line, const char *msg)
 #define PRODUCT_BUSINESS 0x00000006
 #define PRODUCT_BUSINESS_N 0x00000010
 #define PRODUCT_CLUSTER_SERVER 0x00000012
+#define PRODUCT_CLUSTER_SERVER_V 0x00000040
 #define PRODUCT_DATACENTER_SERVER 0x00000008
 #define PRODUCT_DATACENTER_SERVER_CORE 0x0000000C
 #define PRODUCT_DATACENTER_SERVER_CORE_V 0x00000027
@@ -399,12 +400,20 @@ void pause_msg(const char *file, const char *func, int line, const char *msg)
 #define PRODUCT_ENTERPRISE_SERVER_CORE_V 0x00000029
 #define PRODUCT_ENTERPRISE_SERVER_IA64 0x0000000F
 #define PRODUCT_ENTERPRISE_SERVER_V 0x00000026
+#define PRODUCT_ENTERPRISE_EVALUATION 0x00000048
+#define PRODUCT_ENTERPRISE_N_EVALUATION 0x00000054
+#define PRODUCT_ENTERPRISE_S 0x0000007D
+#define PRODUCT_ENTERPRISE_S_EVALUATION 0x00000081
+#define PRODUCT_ENTERPRISE_S_N 0x0000007E
+#define PRODUCT_ENTERPRISE_S_N_EVALUATION 0x00000082
 #define PRODUCT_HOME_BASIC 0x00000002
 #define PRODUCT_HOME_BASIC_E 0x00000043
 #define PRODUCT_HOME_BASIC_N 0x00000005
 #define PRODUCT_HOME_PREMIUM 0x00000003
 #define PRODUCT_HOME_PREMIUM_E 0x00000044
 #define PRODUCT_HOME_PREMIUM_N 0x0000001A
+#define PRODUCT_HOME_PREMIUM_SERVER 0x00000022
+#define PRODUCT_HOME_SERVER 0x00000013
 #define PRODUCT_HYPERV 0x0000002A
 #define PRODUCT_MEDIUMBUSINESS_SERVER_MANAGEMENT 0x0000001E
 #define PRODUCT_MEDIUMBUSINESS_SERVER_MESSAGING 0x00000020
@@ -425,15 +434,51 @@ void pause_msg(const char *file, const char *func, int line, const char *msg)
 #define PRODUCT_STARTER_E 0x00000042
 #define PRODUCT_STARTER_N 0x0000002F
 #define PRODUCT_STORAGE_ENTERPRISE_SERVER 0x00000017
+#define PRODUCT_STORAGE_ENTERPRISE_SERVER_CORE 0x0000002E
 #define PRODUCT_STORAGE_EXPRESS_SERVER 0x00000014
+#define PRODUCT_STORAGE_EXPRESS_SERVER_CORE 0x0000002B
 #define PRODUCT_STORAGE_STANDARD_SERVER 0x00000015
+#define PRODUCT_STORAGE_STANDARD_SERVER_CORE 0x0000002C
+#define PRODUCT_STORAGE_STANDARD_EVALUATION_SERVER 0x00000060
 #define PRODUCT_STORAGE_WORKGROUP_SERVER  0x00000016
+#define PRODUCT_STORAGE_WORKGROUP_SERVER_CORE 0x0000002D
+#define PRODUCT_STORAGE_WORKGROUP_EVALUATION_SERVER 0x0000005F
 #define PRODUCT_UNDEFINED 0x00000000
 #define PRODUCT_ULTIMATE 0x00000001
 #define PRODUCT_ULTIMATE_E 0x00000047
 #define PRODUCT_ULTIMATE_N 0x0000001C
 #define PRODUCT_WEB_SERVER 0x00000011
 #define PRODUCT_WEB_SERVER_CORE 0x0000001D
+#define PRODUCT_CORE 0x00000065
+#define PRODUCT_CORE_COUNTRYSPECIFIC 0x00000063
+#define PRODUCT_CORE_N 0x00000062
+#define PRODUCT_CORE_SINGLELANGUAGE 0x00000064
+#define PRODUCT_DATACENTER_EVALUATION_SERVER 0x00000050
+#define PRODUCT_DATACENTER_A_SERVER_CORE 0x00000091
+#define PRODUCT_STANDARD_A_SERVER_CORE 0x00000092
+#define PRODUCT_EDUCATION 0x00000079
+#define PRODUCT_EDUCATION_N 0x0000007A
+#define PRODUCT_ESSENTIALBUSINESS_SERVER_ADDL 0x0000003C
+#define PRODUCT_ESSENTIALBUSINESS_SERVER_ADDLSVC 0x0000003E
+#define PRODUCT_ESSENTIALBUSINESS_SERVER_MGMT 0x0000003B
+#define PRODUCT_ESSENTIALBUSINESS_SERVER_MGMTSVC 0x0000003D
+#define PRODUCT_IOTUAP 0x0000007B
+#define PRODUCT_IOTUAPCOMMERCIAL 0x00000083
+#define PRODUCT_MOBILE_CORE 0x00000068
+#define PRODUCT_MOBILE_ENTERPRISE 0x00000085
+#define PRODUCT_MULTIPOINT_PREMIUM_SERVER 0x0000004D
+#define PRODUCT_MULTIPOINT_STANDARD_SERVER 0x0000004C
+#define PRODUCT_PRO_WORKSTATION 0x000000A1
+#define PRODUCT_PRO_WORKSTATION_N 0x000000A2
+#define PRODUCT_PROFESSIONAL_WMC 0x00000067
+#define PRODUCT_SB_SOLUTION_SERVER 0x00000032
+#define PRODUCT_SB_SOLUTION_SERVER_EM 0x0000004D
+#define PRODUCT_SERVER_FOR_SB_SOLUTIONS 0x00000033
+#define PRODUCT_SERVER_FOR_SB_SOLUTIONS_EM 0x00000037
+#define PRODUCT_SMALLBUSINESS_SERVER_PREMIUM_CORE 0x0000003F
+#define PRODUCT_STANDARD_EVALUATION_SERVER 0x0000004F
+#define PRODUCT_STANDARD_SERVER_SOLUTIONS 0x00000034
+#define PRODUCT_STANDARD_SERVER_SOLUTIONS_CORE 0x00000035
 
 #define PRODUCT_SMALLBUSINESS_SERVER_PREMIUM 0x19
 #define SM_SERVERR2 89
@@ -494,6 +539,314 @@ bool GetWindowsVersionString(LPTSTR osbuf, int maxsiz)
 
       // Test for the specific product.
 
+      if (osvi.dwMajorVersion == 10) {
+         if (osvi.dwMinorVersion == 0) {
+            if (osvi.wProductType == VER_NT_WORKSTATION)
+                bstrncat(osbuf, TEXT("Windows 10 "), maxsiz);
+            else 
+                bstrncat(osbuf, TEXT("Windows Server 2016 " ), maxsiz);
+         }
+
+         pGPI = (PGPI)GetProcAddress(GetModuleHandle(TEXT("kernel32.dll")), 
+            "GetProductInfo");
+
+         if (pGPI) {
+            pGPI(osvi.dwMajorVersion, osvi.dwMinorVersion, 0, 0, &dwType);
+         } else {
+            dwType = PRODUCT_HOME_BASIC;
+         }
+
+         switch (dwType) {
+            case PRODUCT_ULTIMATE:
+               bstrncat(osbuf, TEXT("Ultimate Edition" ), maxsiz);
+               break;
+            case PRODUCT_PROFESSIONAL:
+               bstrncat(osbuf, TEXT("Professional" ), maxsiz);
+               break;
+            case PRODUCT_HOME_PREMIUM:
+               bstrncat(osbuf, TEXT("Home Premium Edition" ), maxsiz);
+               break;
+            case PRODUCT_HOME_BASIC:
+               bstrncat(osbuf, TEXT("Home Basic Edition" ), maxsiz);
+               break;
+            case PRODUCT_ENTERPRISE:
+               bstrncat(osbuf, TEXT("Enterprise Edition" ), maxsiz);
+               break;
+            case PRODUCT_BUSINESS:
+               bstrncat(osbuf, TEXT("Business Edition" ), maxsiz);
+               break;
+            case PRODUCT_BUSINESS_N:
+               bstrncat(osbuf, TEXT("Business Edition N" ), maxsiz);
+               break;
+            case PRODUCT_CORE:
+               bstrncat(osbuf, TEXT("Home Edition" ), maxsiz);
+               break;
+            case PRODUCT_CORE_COUNTRYSPECIFIC:
+               bstrncat(osbuf, TEXT("Home China Edition" ), maxsiz);
+               break;
+            case PRODUCT_CORE_N:
+               bstrncat(osbuf, TEXT("Home N Edition" ), maxsiz);
+               break;
+            case PRODUCT_CORE_SINGLELANGUAGE:
+               bstrncat(osbuf, TEXT("Home Single Language Edition" ), maxsiz);
+               break;
+            case PRODUCT_DATACENTER_EVALUATION_SERVER:
+               bstrncat(osbuf, TEXT("Server Datacenter (evaluation installation)" ), maxsiz);
+               break;
+            case PRODUCT_DATACENTER_A_SERVER_CORE:
+               bstrncat(osbuf, TEXT("Server Datacenter, Semi-Annual Channel (core installation)" ), maxsiz);
+               break;
+            case PRODUCT_STANDARD_A_SERVER_CORE:
+               bstrncat(osbuf, TEXT("Server Standard, Semi-Annual Channel (core installation)" ), maxsiz);
+               break;
+            case PRODUCT_DATACENTER_SERVER_CORE_V:
+               bstrncat(osbuf, TEXT("Server Datacenter without Hyper-V (core installation)" ), maxsiz);
+               break;
+            case PRODUCT_DATACENTER_SERVER_V:
+               bstrncat(osbuf, TEXT("Server Datacenter without Hyper-V (full installation)" ), maxsiz);
+               break;
+            case PRODUCT_EDUCATION:
+               bstrncat(osbuf, TEXT("Education" ), maxsiz);
+               break;
+            case PRODUCT_EDUCATION_N:
+               bstrncat(osbuf, TEXT("Education N" ), maxsiz);
+               break;
+            case PRODUCT_ENTERPRISE_E:
+               bstrncat(osbuf, TEXT("Enterprise E" ), maxsiz);
+               break;
+            case PRODUCT_ENTERPRISE_EVALUATION:
+               bstrncat(osbuf, TEXT("Enterprise Evaluation" ), maxsiz);
+               break;
+            case PRODUCT_ENTERPRISE_N:
+               bstrncat(osbuf, TEXT("Enterprise N" ), maxsiz);
+               break;
+            case PRODUCT_ENTERPRISE_N_EVALUATION:
+               bstrncat(osbuf, TEXT("Enterprise N Evaluation" ), maxsiz);
+               break;
+            case PRODUCT_ENTERPRISE_S:
+               bstrncat(osbuf, TEXT("Enterprise 2015 LTSB" ), maxsiz);
+               break;
+            case PRODUCT_ENTERPRISE_S_EVALUATION:
+               bstrncat(osbuf, TEXT("Enterprise 2015 LTSB Evaluation" ), maxsiz);
+               break;
+            case PRODUCT_ENTERPRISE_S_N:
+               bstrncat(osbuf, TEXT("Enterprise 2015 LTSB N" ), maxsiz);
+               break;
+            case PRODUCT_ENTERPRISE_S_N_EVALUATION:
+               bstrncat(osbuf, TEXT("Enterprise 2015 LTSB N Evaluation" ), maxsiz);
+               break;
+            case PRODUCT_ENTERPRISE_SERVER:
+               bstrncat(osbuf, TEXT("Enterprise (full installation)" ), maxsiz);
+               break;
+            case PRODUCT_ENTERPRISE_SERVER_CORE_V:
+               bstrncat(osbuf, TEXT("Server Enterprise without Hyper-V (core installation)" ), maxsiz);
+               break;
+            case PRODUCT_ENTERPRISE_SERVER_IA64:
+               bstrncat(osbuf, TEXT("Server Enterprise for Itanium-based Systems" ), maxsiz);
+               break;
+            case PRODUCT_ENTERPRISE_SERVER_V:
+               bstrncat(osbuf, TEXT("Server Enterprise without Hyper-V (full installation)" ), maxsiz);
+               break;
+            case PRODUCT_ESSENTIALBUSINESS_SERVER_ADDL:
+               bstrncat(osbuf, TEXT("Essential Server Solution Additional" ), maxsiz);
+               break;
+            case PRODUCT_ESSENTIALBUSINESS_SERVER_ADDLSVC:
+               bstrncat(osbuf, TEXT("Essential Server Solution Additional SVC" ), maxsiz);
+               break;
+            case PRODUCT_ESSENTIALBUSINESS_SERVER_MGMT:
+               bstrncat(osbuf, TEXT("Essential Server Solution Management" ), maxsiz);
+               break;
+            case PRODUCT_ESSENTIALBUSINESS_SERVER_MGMTSVC:
+               bstrncat(osbuf, TEXT("Essential Server Solution Management SVC" ), maxsiz);
+               break;
+            case PRODUCT_HOME_BASIC_E:
+               bstrncat(osbuf, TEXT("Not supported" ), maxsiz);
+               break;
+            case PRODUCT_HOME_BASIC_N:
+               bstrncat(osbuf, TEXT("Home Basic N" ), maxsiz);
+               break;
+            case PRODUCT_HOME_PREMIUM_E:
+               bstrncat(osbuf, TEXT("Not supported" ), maxsiz);
+               break;
+            case PRODUCT_HOME_PREMIUM_N:
+               bstrncat(osbuf, TEXT("Home Premium N" ), maxsiz);
+               break;
+            case PRODUCT_HOME_PREMIUM_SERVER:
+               bstrncat(osbuf, TEXT("Home Server 2011" ), maxsiz);
+               break;
+            case PRODUCT_HOME_SERVER:
+               bstrncat(osbuf, TEXT("Storage Server 2008 R2 Essentials" ), maxsiz);
+               break;
+            case PRODUCT_HYPERV:
+               bstrncat(osbuf, TEXT("Hyper-V Server" ), maxsiz);
+               break;
+            case PRODUCT_IOTUAP:
+               bstrncat(osbuf, TEXT("IoT Core" ), maxsiz);
+               break;
+            case PRODUCT_IOTUAPCOMMERCIAL:
+               bstrncat(osbuf, TEXT("IoT Core Commercial" ), maxsiz);
+               break;
+            case PRODUCT_MEDIUMBUSINESS_SERVER_MANAGEMENT:
+               bstrncat(osbuf, TEXT("Essential Business Server Management Server" ), maxsiz);
+               break;
+            case PRODUCT_MEDIUMBUSINESS_SERVER_MESSAGING:
+               bstrncat(osbuf, TEXT("Essential Business Server Messaging Server" ), maxsiz);
+               break;
+            case PRODUCT_MEDIUMBUSINESS_SERVER_SECURITY:
+               bstrncat(osbuf, TEXT("Essential Business Server Security Server" ), maxsiz);
+               break;
+            case PRODUCT_MOBILE_CORE:
+               bstrncat(osbuf, TEXT("Mobile" ), maxsiz);
+               break;
+            case PRODUCT_MOBILE_ENTERPRISE:
+               bstrncat(osbuf, TEXT("Mobile Enterprise" ), maxsiz);
+               break;
+            case PRODUCT_MULTIPOINT_PREMIUM_SERVER:
+               bstrncat(osbuf, TEXT("MultiPoint Server Premium (full installation)" ), maxsiz);
+               break;
+            case PRODUCT_MULTIPOINT_STANDARD_SERVER:
+               bstrncat(osbuf, TEXT("MultiPoint Server Standard (full installation)" ), maxsiz);
+               break;
+            case PRODUCT_PRO_WORKSTATION:
+               bstrncat(osbuf, TEXT("Pro for Workstations" ), maxsiz);
+               break;
+            case PRODUCT_PRO_WORKSTATION_N:
+               bstrncat(osbuf, TEXT("Pro for Workstations N" ), maxsiz);
+               break;
+            case PRODUCT_PROFESSIONAL_E:
+               bstrncat(osbuf, TEXT("Not supported" ), maxsiz);
+               break;
+            case PRODUCT_PROFESSIONAL_N:
+               bstrncat(osbuf, TEXT("Pro N" ), maxsiz);
+               break;
+            case PRODUCT_PROFESSIONAL_WMC:
+               bstrncat(osbuf, TEXT("Professional with Media Center" ), maxsiz);
+               break;
+            case PRODUCT_SB_SOLUTION_SERVER:
+               bstrncat(osbuf, TEXT("Small Business Server 2011 Essentials" ), maxsiz);
+               break;
+            case PRODUCT_SB_SOLUTION_SERVER_EM:
+               bstrncat(osbuf, TEXT("Server For SB Solutions EM" ), maxsiz);
+               break;
+            case PRODUCT_SERVER_FOR_SB_SOLUTIONS:
+               bstrncat(osbuf, TEXT("Server For SB Solutions" ), maxsiz);
+               break;
+            case PRODUCT_SERVER_FOR_SB_SOLUTIONS_EM:
+               bstrncat(osbuf, TEXT("Server For SB Solutions EM" ), maxsiz);
+               break;
+            case PRODUCT_SERVER_FOR_SMALLBUSINESS:
+               bstrncat(osbuf, TEXT("for Windows Essential Server Solutions" ), maxsiz);
+               break;
+            case PRODUCT_SERVER_FOR_SMALLBUSINESS_V:
+               bstrncat(osbuf, TEXT("without Hyper-V for Windows Essential Server Solutions" ), maxsiz);
+               break;
+            case PRODUCT_SERVER_FOUNDATION:
+               bstrncat(osbuf, TEXT("Server Foundation" ), maxsiz);
+               break;
+            case PRODUCT_SMALLBUSINESS_SERVER_PREMIUM_CORE:
+               bstrncat(osbuf, TEXT("Small Business Server Premium (core installation)" ), maxsiz);
+               break;
+            case PRODUCT_SOLUTION_EMBEDDEDSERVER:
+               bstrncat(osbuf, TEXT("Windows MultiPoint Server" ), maxsiz);
+               break;
+            case PRODUCT_STANDARD_EVALUATION_SERVER:
+               bstrncat(osbuf, TEXT("Server Standard (evaluation installation)" ), maxsiz);
+               break;
+            case PRODUCT_STANDARD_SERVER_CORE_V:
+               bstrncat(osbuf, TEXT("Server Standard without Hyper-V" ), maxsiz);
+               break;
+            case PRODUCT_STANDARD_SERVER_SOLUTIONS:
+               bstrncat(osbuf, TEXT("Server Solutions Premium" ), maxsiz);
+               break;
+            case PRODUCT_STANDARD_SERVER_SOLUTIONS_CORE:
+               bstrncat(osbuf, TEXT("Server Solutions Premium (core installation)" ), maxsiz);
+               break;
+            case PRODUCT_STARTER_E:
+               bstrncat(osbuf, TEXT("Not supported" ), maxsiz);
+               break;
+            case PRODUCT_STARTER_N:
+               bstrncat(osbuf, TEXT("Starter N" ), maxsiz);
+               break;
+            case PRODUCT_STORAGE_ENTERPRISE_SERVER:
+               bstrncat(osbuf, TEXT("Storage Server Enterprise" ), maxsiz);
+               break;
+            case PRODUCT_STORAGE_ENTERPRISE_SERVER_CORE:
+               bstrncat(osbuf, TEXT("Storage Server Enterprise (core installation)" ), maxsiz);
+               break;
+            case PRODUCT_STORAGE_EXPRESS_SERVER:
+               bstrncat(osbuf, TEXT("Storage Server Express" ), maxsiz);
+               break;
+            case PRODUCT_STORAGE_EXPRESS_SERVER_CORE:
+               bstrncat(osbuf, TEXT("Storage Server Express (core installation)" ), maxsiz);
+               break;
+            case PRODUCT_STORAGE_STANDARD_EVALUATION_SERVER:
+               bstrncat(osbuf, TEXT("Storage Server Standard (evaluation installation)" ), maxsiz);
+               break;
+            case PRODUCT_STORAGE_STANDARD_SERVER:
+               bstrncat(osbuf, TEXT("Storage Server Standard" ), maxsiz);
+               break;
+            case PRODUCT_STORAGE_STANDARD_SERVER_CORE:
+               bstrncat(osbuf, TEXT("Storage Server Standard (core installation)" ), maxsiz);
+               break;
+            case PRODUCT_STORAGE_WORKGROUP_EVALUATION_SERVER:
+               bstrncat(osbuf, TEXT("Storage Server Workgroup (evaluation installation)" ), maxsiz);
+               break;
+            case PRODUCT_STORAGE_WORKGROUP_SERVER:
+               bstrncat(osbuf, TEXT("Storage Server Workgroup" ), maxsiz);
+               break;
+            case PRODUCT_STORAGE_WORKGROUP_SERVER_CORE:
+               bstrncat(osbuf, TEXT("Storage Server Workgroup (core installation)" ), maxsiz);
+               break;
+            case PRODUCT_ULTIMATE_E:
+               bstrncat(osbuf, TEXT("Not supported" ), maxsiz);
+               break;
+            case PRODUCT_ULTIMATE_N:
+               bstrncat(osbuf, TEXT("Ultimate N" ), maxsiz);
+               break;
+            case PRODUCT_UNDEFINED:
+               bstrncat(osbuf, TEXT("Unknown product" ), maxsiz);
+               break;
+            case PRODUCT_WEB_SERVER_CORE:
+               bstrncat(osbuf, TEXT("Web Server (core installation)" ), maxsiz);
+               break;
+            case PRODUCT_STARTER:
+               bstrncat(osbuf, TEXT("Starter Edition" ), maxsiz);
+               break;
+            case PRODUCT_CLUSTER_SERVER_V:
+               bstrncat(osbuf, TEXT("Server Hyper Core V" ), maxsiz);
+               break;
+            case PRODUCT_CLUSTER_SERVER:
+               bstrncat(osbuf, TEXT("Cluster Server Edition" ), maxsiz);
+               break;
+            case PRODUCT_DATACENTER_SERVER:
+               bstrncat(osbuf, TEXT("Datacenter Edition" ), maxsiz);
+               break;
+            case PRODUCT_DATACENTER_SERVER_CORE:
+               bstrncat(osbuf, TEXT("Datacenter Edition (core installation)" ), maxsiz);
+               break;
+            case PRODUCT_ENTERPRISE_SERVER:
+               bstrncat(osbuf, TEXT("Enterprise Edition" ), maxsiz);
+               break;
+            case PRODUCT_ENTERPRISE_SERVER_CORE:
+               bstrncat(osbuf, TEXT("Enterprise Edition (core installation)" ), maxsiz);
+               break;
+            case PRODUCT_SMALLBUSINESS_SERVER:
+               bstrncat(osbuf, TEXT("Small Business Server" ), maxsiz);
+               break;
+            case PRODUCT_SMALLBUSINESS_SERVER_PREMIUM:
+               bstrncat(osbuf, TEXT("Small Business Server Premium Edition" ), maxsiz);
+               break;
+            case PRODUCT_STANDARD_SERVER:
+               bstrncat(osbuf, TEXT("Standard Edition" ), maxsiz);
+               break;
+            case PRODUCT_STANDARD_SERVER_CORE:
+               bstrncat(osbuf, TEXT("Standard Edition (core installation)" ), maxsiz);
+               break;
+            case PRODUCT_WEB_SERVER:
+               bstrncat(osbuf, TEXT("Web Server Edition" ), maxsiz);
+               break;
+         }
+      }
       if (osvi.dwMajorVersion == 6) {
          if (osvi.dwMinorVersion == 0) {
             if (osvi.wProductType == VER_NT_WORKSTATION)
@@ -507,6 +860,18 @@ bool GetWindowsVersionString(LPTSTR osbuf, int maxsiz)
                 bstrncat(osbuf, TEXT("Windows 7 "), maxsiz);
             else 
                 bstrncat(osbuf, TEXT("Windows Server 2008 R2 " ), maxsiz);
+         }
+         if (osvi.dwMinorVersion == 2) {
+            if (osvi.wProductType == VER_NT_WORKSTATION )
+                bstrncat(osbuf, TEXT("Windows 8 "), maxsiz);
+            else 
+                bstrncat(osbuf, TEXT("Windows Server 2012 " ), maxsiz);
+         }
+         if (osvi.dwMinorVersion == 3) {
+            if (osvi.wProductType == VER_NT_WORKSTATION )
+                bstrncat(osbuf, TEXT("Windows 8.1 "), maxsiz);
+            else 
+                bstrncat(osbuf, TEXT("Windows Server 2012 RC2 " ), maxsiz);
          }
          
          pGPI = (PGPI)GetProcAddress(GetModuleHandle(TEXT("kernel32.dll")), 
