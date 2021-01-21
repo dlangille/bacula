@@ -236,7 +236,13 @@ abstract class BaculumAPIServer extends TPage {
 	private function getOutput() {
 		$output = array('output' => $this->output, 'error' => $this->error);
 		$this->setOutputHeaders();
-		$json = json_encode($output);
+		$json = '';
+		if (PHP_VERSION_ID >= 70200) {
+			// Allow displaying characters encoded in non-UTF encoding (supported from PHP 7.2.0)
+			$json = json_encode($output, JSON_INVALID_UTF8_SUBSTITUTE);
+		} else {
+			$json = json_encode($output);
+		}
 		return $json;
 	}
 
