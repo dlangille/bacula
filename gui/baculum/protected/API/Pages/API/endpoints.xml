@@ -78,6 +78,8 @@
 	<url ServiceParameter="BVFSCleanUp" pattern="api/v1/bvfs/cleanup/" />
 	<!-- joblog endpoints -->
 	<url ServiceParameter="JobLog" pattern="api/v1/joblog/{id}/" parameters.id="\d+" />
+	<!-- @TODO: Separate this endpoint outside 'joblog' -->
+	<url ServiceParameter="Messages" pattern="api/v1/joblog/messages" />
 	<!-- fileset endpoints -->
 	<url ServiceParameter="FileSets" pattern="api/v1/filesets/" />
 	<url ServiceParameter="FileSet" pattern="api/v1/filesets/{id}/" parameters.id="\d+" />

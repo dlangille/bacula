@@ -4415,6 +4415,49 @@
 				}]
 			}
 		},
+		"/api/v1/joblog/messages": {
+			"get": {
+				"tags": ["joblog"],
+				"summary": "Get console messages log.",
+				"description": "Get messages log. Note, because there are returned all current Bacula messages, this endpoint should not be shared non-admin users.",
+				"responses": {
+					"200": {
+						"description": "Job messages log output",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"type": "array",
+											"items": {
+												"description": "Job log output",
+												"type": "string"
+											}
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 4, 5, 6, 7, 9, 11, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [{
+					"name": "limit",
+					"in": "query",
+					"description": "Set messages log Limit.",
+					"required": false,
+					"default": 0,
+					"schema": {
+						"type": "integer"
+					}
+				}]
+			}
+		},
 		"/api/v1/status/director": {
 			"get": {
 				"tags": ["status"],
