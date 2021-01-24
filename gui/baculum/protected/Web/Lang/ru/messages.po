@@ -3204,3 +3204,11 @@ msgstr "Графическое отображение состояния хра�
 msgid "Status request timed out. The most probably the Bacula storage is not available or it is not running."
 msgstr "Истекло время ожидания. Скорее всего, хранилище Bacula недоступно или не работает."
 
+msgid "Display messages log window"
+msgstr "Display messages log window"
+
+msgid "Truncate log"
+msgstr "Truncate log"
+
+msgid "Messages"
+msgstr "Messages"

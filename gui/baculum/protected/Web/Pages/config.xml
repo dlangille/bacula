@@ -27,5 +27,6 @@
 		<module id="users" class="Application.Web.Class.WebUserManager" UserClass="Application.Web.Class.WebUser" />
 		<!-- data modules -->
 		<module id="job_info" class="Application.Web.Class.JobInfo" />
+		<module id="messages_log" class="Application.Web.Class.MessagesLog" />
 	</modules>
 </configuration>

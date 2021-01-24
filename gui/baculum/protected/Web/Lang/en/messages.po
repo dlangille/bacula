@@ -3194,3 +3194,11 @@ msgstr "Graphical storage status is supported for Bacula storages version 9.0 an
 msgid "Status request timed out. The most probably the Bacula storage is not available or it is not running."
 msgstr "Status request timed out. The most probably the Bacula storage is not available or it is not running."
 
+msgid "Display messages log window"
+msgstr "Display messages log window"
+
+msgid "Truncate log"
+msgstr "Truncate log"
+
+msgid "Messages"
+msgstr "Messages"

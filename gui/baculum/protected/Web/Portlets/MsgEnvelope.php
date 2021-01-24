@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2019 Kern Sibbald
+ * Copyright (C) 2013-2021 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -19,24 +19,26 @@
  *
  * Bacula(R) is a registered trademark of Kern Sibbald.
  */
- 
-Prado::using('Application.Common.Class.Params');
+
+
+Prado::using('System.Web.UI.ActiveControls.TCallback');
 Prado::using('Application.Web.Class.WebUserRoles');
+Prado::using('Application.Web.Portlets.Portlets');
 
 /**
- * Main layout class.
+ * Message envelope control.
  *
  * @author Marcin Haba <marcin.haba@bacula.pl>
- * @category Layout
+ * @category Control
  * @package Baculum Web
  */
-class Main extends TTemplateControl {
+class MsgEnvelope extends Portlets {
 
-	public $web_config;
-
-	public function onPreRender($param) {
-		parent::onPreRender($param);
-		$this->web_config = $this->Application->getModule('web_config')->getConfig();
+	public function truncate() {
+		if (!$this->User->isInRole(WebUserRoles::ADMIN)) {
+			return;
+		}
+		$this->getModule('messages_log')->truncate();
 	}
 }
 ?>

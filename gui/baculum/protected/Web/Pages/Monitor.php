@@ -20,6 +20,7 @@
  * Bacula(R) is a registered trademark of Kern Sibbald.
  */
 Prado::using('Application.Web.Class.BaculumWebPage');
+Prado::using('Application.Web.Class.WebUserRoles');
 
 /**
  * Monitor class.
@@ -37,16 +38,17 @@ class Monitor extends BaculumPage {
 
 	public function onInit($param) {
 		parent::onInit($param);
-		$monitor_data = array(
-			'jobs' => array(),
-			'running_jobs' => array(),
-			'terminated_jobs' => array(),
-			'pools' => array(),
-			'clients' => array(),
-			'jobtotals' => array(),
-			'dbsize' => array(),
-			'error' => array('error' => 0, 'output' => '')
-		);
+		$monitor_data = [
+			'jobs' => [],
+			'running_jobs' => [],
+			'terminated_jobs' => [],
+			'pools' => [],
+			'clients' => [],
+			'jobtotals' => [],
+			'dbsize' => [],
+			'messages' => [],
+			'error' => ['error' => 0, 'output' => '']
+		];
 
 		// Initialize session cache to have clear session for Monitor
 		$this->getModule('api')->initSessionCache(true);
@@ -58,10 +60,10 @@ class Monitor extends BaculumPage {
 		}
 
 		$error = null;
-		$params = $this->Request->contains('params') ? $this->Request['params'] : array();
+		$params = $this->Request->contains('params') ? $this->Request['params'] : [];
 		if (is_array($params) && key_exists('jobs', $params)) {
-			$job_params = array('jobs');
-			$job_query = array();
+			$job_params = ['jobs'];
+			$job_query = [];
 			if (is_array($params['jobs'])) {
 				if (key_exists('name', $params['jobs']) && is_array($params['jobs']['name'])) {
 					for ($i = 0; $i < count($params['jobs']['name']); $i++) {
@@ -88,7 +90,7 @@ class Monitor extends BaculumPage {
 			}
 		}
 		if (!$error) {
-			$result = $this->getModule('api')->get(array('jobs', '?jobstatus=CR'));
+			$result = $this->getModule('api')->get(['jobs', '?jobstatus=CR']);
 			if ($result->error === 0) {
 				$monitor_data['running_jobs'] = $result->output;
 			} else {
@@ -96,7 +98,7 @@ class Monitor extends BaculumPage {
 			}
 		}
 		if (!$error && key_exists('clients', $params)) {
-			$result = $this->getModule('api')->get(array('clients'));
+			$result = $this->getModule('api')->get(['clients']);
 			if ($result->error === 0) {
 				$monitor_data['clients'] = $result->output;
 			} else {
@@ -104,7 +106,7 @@ class Monitor extends BaculumPage {
 			}
 		}
 		if (!$error && key_exists('pools', $params)) {
-			$result = $this->getModule('api')->get(array('pools'));
+			$result = $this->getModule('api')->get(['pools']);
 			if ($result->error === 0) {
 				$monitor_data['pools'] = $result->output;
 			} else {
@@ -112,7 +114,7 @@ class Monitor extends BaculumPage {
 			}
 		}
 		if (!$error && key_exists('job_totals', $params)) {
-			$result = $this->getModule('api')->get(array('jobs', 'totals'));
+			$result = $this->getModule('api')->get(['jobs', 'totals']);
 			if ($result->error === 0) {
 				$monitor_data['jobtotals'] = $result->output;
 			} else {
@@ -120,9 +122,23 @@ class Monitor extends BaculumPage {
 			}
 		}
 		if (!$error && key_exists('dbsize', $params)) {
-			$result = $this->getModule('api')->get(array('dbsize'));
+			$result = $this->getModule('api')->get(['dbsize']);
 			if ($result->error === 0) {
 				$monitor_data['dbsize'] = $result->output;
+			} else {
+				$error = $result;
+			}
+		}
+		if (!$error && $this->User->isInRole(WebUserRoles::ADMIN)) {
+			$result = $this->getModule('api')->get(['joblog', 'messages']);
+			if ($result->error === 0) {
+				$ml = [];
+				if (count($result->output) > 0 && $result->output[0] != 'You have no messages.') {
+					$ml = $this->getModule('messages_log')->append($result->output);
+				} else {
+					$ml = $this->getModule('messages_log')->read();
+				}
+				$monitor_data['messages'] = $this->getModule('log_parser')->parse($ml);
 			} else {
 				$error = $result;
 			}

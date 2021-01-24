@@ -516,3 +516,13 @@ table.component td:nth-of-type(1) {
 		display: inline;
 	}
 }
+
+@keyframes blinker {
+	50% {
+		opacity: 0;
+	}
+}
+
+.blink {
+  animation: blinker 4s linear infinite;
+}

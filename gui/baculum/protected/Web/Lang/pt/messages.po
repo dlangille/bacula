@@ -3204,3 +3204,11 @@ msgstr "O status gráfico de armazenamento é suportado para armazenamento Bacul
 msgid "Status request timed out. The most probably the Bacula storage is not available or it is not running."
 msgstr "A solicitação de status expirou. O mais provavelmente o armazenamento Bacula não está disponível ou não está em execução."
 
+msgid "Display messages log window"
+msgstr "Display messages log window"
+
+msgid "Truncate log"
+msgstr "Truncate log"
+
+msgid "Messages"
+msgstr "Messages"

@@ -3205,3 +3205,11 @@ msgstr "Graficzny status magazynu jest wspierany dla magazynów Bacula w wersji 
 msgid "Status request timed out. The most probably the Bacula storage is not available or it is not running."
 msgstr "Przekroczono limit czasu żądania statusu. Najprawdopodobniej magazyn Bacula jest niedostępny lub nie jest uruchomiony."
 
+msgid "Display messages log window"
+msgstr "Wyświetl okno z wiadomościami"
+
+msgid "Truncate log"
+msgstr "Przytnij dziennik"
+
+msgid "Messages"
+msgstr "Wiadomości"

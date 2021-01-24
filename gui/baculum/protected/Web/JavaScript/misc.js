@@ -802,7 +802,118 @@ var Dashboard = {
 			container_id: this.ids.pie_summary
 		});
 	}
-}
+};
+
+var MsgEnvelope = {
+	ids: {
+		envelope: 'msg_envelope',
+		modal: 'msg_envelope_modal',
+		container: 'msg_envelope_container',
+		content: 'msg_envelope_content'
+	},
+	issue_regex: { // @TODO: add more regexes
+		warning: [
+			/Cannot find any appendable volumes/g
+		],
+		error: [
+			/ERR=/g
+		]
+	},
+	init: function() {
+		this.set_events();
+		this.set_actions();
+	},
+	set_events: function() {
+		document.getElementById(this.ids.envelope).addEventListener('click', function(e) {
+			this.open();
+			var container = document.getElementById(this.ids.container);
+			// set scroll to the bottom
+			container.scrollTop = container.scrollHeight;
+		}.bind(this));
+	},
+	set_actions: function() {
+		var monitor_func = function() {
+			var is_bottom = false;
+			var container = document.getElementById(this.ids.container);
+
+			// detect if before adding content, scroll is at the bottom
+			if (container.scrollTop === (container.scrollHeight - container.offsetHeight)) {
+				is_bottom = true
+			}
+
+			// add logs
+			var logs = oData.messages;
+			MsgEnvelope.set_logs(logs);
+
+			// set scroll to the bottom
+			if (is_bottom) {
+				container.scrollTop = container.scrollHeight;
+			}
+		}.bind(this);
+		MonitorCallsInterval.push(monitor_func);
+	},
+	open: function() {
+		document.getElementById(this.ids.modal).style.display = 'block';
+	},
+	close: function() {
+		document.getElementById(this.ids.modal).style.display = 'none';
+	},
+	set_logs: function(logs) {
+		this.find_issues(logs);
+		document.getElementById(this.ids.content).innerHTML = logs.join("\n");
+	},
+	mark_envelope_error: function() {
+		var envelope = document.getElementById(this.ids.envelope);
+		if (envelope.classList.contains('w3-green')) {
+			envelope.classList.replace('w3-green', 'w3-red');
+		}
+		if (envelope.classList.contains('w3-orange')) {
+			envelope.classList.replace('w3-orange', 'w3-red');
+		}
+		envelope.querySelector('I').classList.add('blink');
+	},
+	mark_envelope_warning: function() {
+		var envelope = document.getElementById(this.ids.envelope);
+		if (envelope.classList.contains('w3-green')) {
+			envelope.classList.replace('w3-green', 'w3-orange');
+		}
+		envelope.querySelector('I').classList.add('blink');
+	},
+	mark_envelope_ok: function() {
+		var envelope = document.getElementById(this.ids.envelope);
+		if (envelope.classList.contains('w3-red')) {
+			envelope.classList.replace('w3-red', 'w3-green');
+		}
+		if (envelope.classList.contains('w3-orange')) {
+			envelope.classList.replace('w3-orange', 'w3-green');
+		}
+		envelope.querySelector('I').classList.remove('blink');
+	},
+	find_issues: function(logs) {
+		var error = warning = false;
+		var logs_len = logs.length;
+		for (var i = 0; i < logs_len; i++) {
+			for (var j = 0; j < this.issue_regex.warning.length; j++) {
+				if (this.issue_regex.warning[j].test(logs[i])) {
+					logs[i] = '<span class="w3-orange">' + logs[i] + '</span>';
+					warning = true;
+				}
+			}
+			for (var j = 0; j < this.issue_regex.error.length; j++) {
+				if (this.issue_regex.error[j].test(logs[i])) {
+					logs[i] = '<span class="w3-red">' + logs[i] + '</span>';
+					error = true;
+				}
+			}
+		}
+
+		if (error) {
+			this.mark_envelope_error();
+		} else if (warning) {
+			this.mark_envelope_warning();
+		}
+	}
+};
 
 var W3SideBar = {
 	ids: {

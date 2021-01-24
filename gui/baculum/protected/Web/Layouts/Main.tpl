@@ -36,6 +36,9 @@
 				<span class="w3-tag w3-large w3-purple w3-right w3-padding-small w3-margin-top w3-margin-right">
 					<i class="fa fa-cogs w3-large"></i> <%[ Running jobs: ]%> <span id="running_jobs"></span>
 				</span>
+				<span id="msg_envelope" class="w3-tag w3-large w3-green w3-text-white w3-right w3-padding-small w3-margin-top w3-margin-right" style="cursor: pointer;<%=$this->User->isInRole(WebUserRoles::ADMIN) === false ? 'display: none' : ''%>" title="<%[ Display messages log window ]%>">
+					<i class="fas fa-envelope w3-large"></i>
+				</span>
 				<script type="text/javascript">
 					var SIZE_VALUES_UNIT = '<%=(count($this->web_config) > 0 && key_exists('size_values_unit', $this->web_config['baculum'])) ? $this->web_config['baculum']['size_values_unit'] : WebConfig::DEF_SIZE_VAL_UNIT%>';
 					var DATE_TIME_FORMAT = '<%=(count($this->web_config) > 0 && key_exists('date_time_format', $this->web_config['baculum'])) ? $this->web_config['baculum']['date_time_format'] : WebConfig::DEF_DATE_TIME_FORMAT%>';
@@ -139,5 +142,6 @@ function show_error(output, error) {
 	err_box.style.display = 'block';
 }
 	</script>
+	<com:Application.Web.Portlets.MsgEnvelope Visible="<%=$this->User->isInRole(WebUserRoles::ADMIN)%>" />
 	</body>
 </html>
