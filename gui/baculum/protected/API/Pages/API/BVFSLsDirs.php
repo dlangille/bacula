@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2019 Kern Sibbald
+ * Copyright (C) 2013-2021 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -36,7 +36,8 @@ class BVFSLsDirs extends ConsoleOutputPage {
 		$limit = $this->Request->contains('limit') ? intval($this->Request['limit']) : 0;
 		$offset = $this->Request->contains('offset') ? intval($this->Request['offset']) : 0;
 		$jobids = $this->Request->contains('jobids') && $misc->isValidIdsList($this->Request['jobids']) ? $this->Request['jobids'] : null;
-		$path = $this->Request->contains('path') && $misc->isValidPath($this->Request['path']) ? $this->Request['path'] : null;
+		$path = $this->Request->contains('path') && $misc->isValidPath($this->Request['path']) ? $this->Request['path'] : '';
+		$pathid = $this->Request->contains('pathid') ? intval($this->Request['pathid']) : null;
 		$out_format = $this->Request->contains('output') && $this->isOutputFormatValid($this->Request['output']) ? $this->Request['output'] : parent::OUTPUT_FORMAT_RAW;
 
 		if (is_null($jobids)) {
@@ -54,6 +55,7 @@ class BVFSLsDirs extends ConsoleOutputPage {
 		$params = [
 			'jobids' => $jobids,
 			'path' => $path,
+			'pathid' => $pathid,
 			'offset' => $offset,
 			'limit' => $limit
 		];
@@ -77,9 +79,14 @@ class BVFSLsDirs extends ConsoleOutputPage {
 	protected function getRawOutput($params = []) {
 		$cmd = [
 			'.bvfs_lsdirs',
-			'jobid="' . $params['jobids'] . '"',
-			'path="' . $params['path'] . '"'
+			'jobid="' . $params['jobids'] . '"'
 		];
+
+		if ($params['pathid']) {
+			array_push($cmd, 'pathid="' .  $params['pathid'] . '"');
+		} else {
+			array_push($cmd, 'path="' .  $params['path'] . '"');
+		}
 
 		if ($params['offset'] > 0) {
 			array_push($cmd, 'offset="' .  $params['offset'] . '"');

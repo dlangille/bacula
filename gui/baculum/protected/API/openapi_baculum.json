@@ -3658,10 +3658,19 @@
 					{
 						"name": "path",
 						"in": "query",
-						"description": "Path to list",
+						"description": "Path to list (used instead of pathid parameter)",
 						"required": true,
 						"schema": {
 							"type": "string"
+						}
+					},
+					{
+						"name": "pathid",
+						"in": "query",
+						"description": "Path identifier to list path (used instead of path parameter)",
+						"required": true,
+						"schema": {
+							"type": "integer"
 						}
 					},
 					{
@@ -3732,10 +3741,19 @@
 					{
 						"name": "path",
 						"in": "query",
-						"description": "Path to list",
+						"description": "Path to list (used instead of pathid parameter)",
 						"required": true,
 						"schema": {
 							"type": "string"
+						}
+					},
+					{
+						"name": "pathid",
+						"in": "query",
+						"description": "Path identifier to list path (used instead of path parameter)",
+						"required": true,
+						"schema": {
+							"type": "integer"
 						}
 					},
 					{
