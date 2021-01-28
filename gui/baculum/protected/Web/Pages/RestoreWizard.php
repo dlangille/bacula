@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2020 Kern Sibbald
+ * Copyright (C) 2013-2021 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -471,11 +471,17 @@ class RestoreWizard extends BaculumWebPage
 			$this->generateBvfsCache($jobids);
 
 			// get directory and file list
-			$query = '?' . http_build_query([
+			$q = [
 				'jobids' => $jobids,
-				'path' => implode($this->Session['restore_path']),
 				'output' => 'json'
-			]);
+			];
+			if ($this->Session->contains('restore_pathid'))  {
+				$q['pathid'] = $this->Session['restore_pathid'];
+				$this->Session->remove('restore_pathid');
+			} else {
+				$q['path'] = implode($this->Session['restore_path']);
+			}
+			$query = '?' . http_build_query($q);
 			$bvfs_dirs = $this->getModule('api')->get(
 				['bvfs', 'lsdirs', $query]
 			);
@@ -629,6 +635,18 @@ class RestoreWizard extends BaculumWebPage
 	}
 
 	/**
+	 * Go to specific path in the file browser by pathid.
+	 *
+	 * @param string $pathid path to go
+	 * @return none
+	 */
+	private function goToPathByPathId($pathid) {
+		$this->setRestorePathId($pathid);
+		$this->loadBrowserPath();
+		$this->prepareBrowserContent();
+	}
+
+	/**
 	 * Add/mark file to restore.
 	 * Used as callback to drag&drop browser elements.
 	 *
@@ -675,7 +693,14 @@ class RestoreWizard extends BaculumWebPage
 	public function getVersions($sender, $param) {
 		list($filename, $pathid, $filenameid, $jobid) = explode('|', $param->CallbackParameter, 4);
 		if ($filenameid == 0) {
-			$this->goToPath($filename);
+			if ($filename == $this->browser_root_dir['name'] || $filename == $this->browser_up_dir['name']) {
+				$this->goToPath($filename);
+			} else {
+				$rp = $this->Session['restore_path'];
+				array_push($rp, $filename);
+				$this->setRestorePath($rp); // to fill path field in the wizard
+				$this->goToPathByPathId($pathid); // to go by pathid
+			}
 			return;
 		}
 		$clientid = $this->BackupClient->SelectedValue;
@@ -809,11 +834,21 @@ class RestoreWizard extends BaculumWebPage
 	/**
 	 * Set restore browser path.
 	 *
-	 * @param array $files file list
+	 * @param array $path path
 	 * @return none
 	 */
 	private function setRestorePath($path = []) {
 		$this->Session->add('restore_path', $path);
+	}
+
+	/**
+	 * Set restore browser pathid.
+	 *
+	 * @param integer $pathid pathid
+	 * @return none
+	 */
+	private function setRestorePathId($pathid) {
+		$this->Session->add('restore_pathid', $pathid);
 	}
 
 	/**
@@ -1067,6 +1102,7 @@ class RestoreWizard extends BaculumWebPage
 		$this->Session->remove('files_restore');
 		$this->loadRestoreJobs();
 		$this->Session->remove('restore_path');
+		$this->Session->remove('restore_pathid');
 		$this->Session->remove('restore_jobid');
 		$this->Session->remove('file_relocation');
 	}
