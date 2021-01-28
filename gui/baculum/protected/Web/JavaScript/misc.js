@@ -813,7 +813,9 @@ var MsgEnvelope = {
 	},
 	issue_regex: { // @TODO: add more regexes
 		warning: [
-			/Cannot find any appendable volumes/g
+			/Cannot find any appendable volumes/g,
+			/Please mount read Volume/g,
+			/Please mount append Volume/g
 		],
 		error: [
 			/ERR=/g
