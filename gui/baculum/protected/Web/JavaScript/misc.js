@@ -818,7 +818,8 @@ var MsgEnvelope = {
 			/Please mount append Volume/g
 		],
 		error: [
-			/ERR=/g
+			/ERR=/g,
+			/error: /ig
 		]
 	},
 	init: function() {
@@ -899,12 +900,14 @@ var MsgEnvelope = {
 				if (this.issue_regex.warning[j].test(logs[i])) {
 					logs[i] = '<span class="w3-orange">' + logs[i] + '</span>';
 					warning = true;
+					break;
 				}
 			}
 			for (var j = 0; j < this.issue_regex.error.length; j++) {
 				if (this.issue_regex.error[j].test(logs[i])) {
 					logs[i] = '<span class="w3-red">' + logs[i] + '</span>';
 					error = true;
+					break;
 				}
 			}
 		}
