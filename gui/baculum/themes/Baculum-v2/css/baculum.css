@@ -526,3 +526,11 @@ table.component td:nth-of-type(1) {
 .blink {
   animation: blinker 4s linear infinite;
 }
+
+img.job_weather_icon {
+	display: block;
+	margin: 0 auto;
+	height: 32px;
+	width: 32px;
+	cursor: help;
+}

@@ -3213,3 +3213,9 @@ msgstr "Przytnij dziennik"
 
 msgid "Messages"
 msgstr "Wiadomości"
+
+msgid "Last %errors/%count jobs finished with error."
+msgstr "Ostatnie %errors/%count zadań zakończyło się błędem."
+
+msgid "All last %count jobs finished successfully."
+msgstr "Wszystkie ostatnie %count zadań zakończyło się pomyślnie."

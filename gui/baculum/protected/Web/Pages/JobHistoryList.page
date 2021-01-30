@@ -149,7 +149,7 @@ function hide_btn_loader(jobid) {
 	}
 }
 
-var oJobList = {
+var oJobHistoryList = {
 	table: null,
 	table_toolbar: null,
 	actions: [
@@ -469,7 +469,7 @@ var oJobList = {
 };
 MonitorParams = {jobs: null};
 $(function() {
-	MonitorCallsInterval.push(function() { oJobList.init(); });
+	MonitorCallsInterval.push(function() { oJobHistoryList.init(); });
 });
 
 /**
@@ -496,7 +496,7 @@ var bulk_actions_output_id = '<%=$this->SourceTemplateControl->BulkActions->Bulk
 	</prop:ClientSide.OnLoading>
 	<prop:ClientSide.OnComplete>
 		oBulkActionsModal.show_loader(false);
-		oJobList.table_toolbar.style.display = 'none';
+		oJobHistoryList.table_toolbar.style.display = 'none';
 		oMonitor();
 	</prop:ClientSide.OnComplete>
 </com:TCallback>

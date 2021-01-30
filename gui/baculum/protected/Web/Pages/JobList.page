@@ -22,6 +22,7 @@
 			<thead>
 				<tr>
 					<th></th>
+					<th><%[ Status ]%></th>
 					<th><%[ Name ]%></th>
 					<th><%[ Director ]%></th>
 					<th><%[ Actions ]%></th>
@@ -31,6 +32,7 @@
 			<tfoot>
 				<tr>
 					<th></th>
+					<th><%[ Status ]%></th>
 					<th><%[ Name ]%></th>
 					<th><%[ Director ]%></th>
 					<th><%[ Actions ]%></th>
@@ -40,16 +42,21 @@
 	</div>
 	<com:Application.Web.Portlets.RunJob ID="RunJobModal" />
 <script type="text/javascript">
-var oJobHistoryList = {
+var oJobList = {
 	ids: {
 		job_history_list: 'job_history_list',
 		job_history_list_body: 'job_history_list_body'
 	},
+	css: {
+		weather_icon: 'job_weather_icon'
+	},
+	table: null,
+	job_weather: {},
 	init: function() {
 		this.set_table();
 	},
 	set_table: function() {
-		var table = $('#' + this.ids.job_history_list).DataTable({
+		this.table = $('#' + this.ids.job_history_list).DataTable({
 			data: <%=json_encode($this->jobs)%>,
 			deferRender: true,
 			dom: 'lBfrtip',
@@ -64,11 +71,42 @@ var oJobHistoryList = {
 					data: null,
 					defaultContent: '<button type="button" class="w3-button w3-blue"><i class="fa fa-angle-down"></i></button>'
 				},
+				{
+					data: 'job',
+					render: function(data, type, row) {
+						var ret = '';
+						if (Object.keys(this.job_weather).length > 0) {
+							if (type == 'display' || type == 'filter') {
+								if (!this.job_weather.hasOwnProperty(data)) {
+									// for jobs that haven't been never running
+									this.job_weather[data] = {count: 0, error: 0};
+								}
+								var icon = Weather.get_weather_icon(this.job_weather[data].error);
+								var img = document.createElement('IMG');
+								img.src = '<%=$this->getPage()->getTheme()->getBaseUrl()%>/' + icon;
+								img.className = this.css.weather_icon;
+								var title;
+								if (this.job_weather[data].error > 0) {
+									title = '<%[ Last %errors/%count jobs finished with error. ]%>';
+								} else {
+									title = '<%[ All last %count jobs finished successfully. ]%>';
+								}
+								title = title.replace('%errors', this.job_weather[data].error);
+								title = title.replace('%count', this.job_weather[data].count);
+								img.title = title;
+								ret = img.outerHTML;
+							} else if (type == 'sort') {
+								ret = this.job_weather[data].error;
+							}
+						}
+						return ret;
+					}.bind(this)
+				},
 				{data: 'job'},
 				{data: 'director'},
 				{
 					data: 'job',
-					render: function (data, type, row) {
+					render: function(data, type, row) {
 						var btn = document.createElement('BUTTON');
 						btn.className = 'w3-button w3-green';
 						btn.type = 'button';
@@ -95,11 +133,11 @@ var oJobHistoryList = {
 			},
 			{
 				className: "dt-center",
-				targets: [ 3 ]
+				targets: [ 4 ]
 			}],
-			order: [1, 'asc'],
+			order: [2, 'asc'],
 			initComplete: function () {
-				this.api().columns([1, 2]).every(function () {
+				this.api().columns([2, 3]).every(function () {
 					var column = this;
 					var select = $('<select><option value=""></option></select>')
 					.appendTo($(column.footer()).empty())
@@ -121,8 +159,29 @@ var oJobHistoryList = {
 				});
 			}
 		});
+	},
+	set_weather: function() {
+		var jobs = oData.terminated_jobs;
+		var jobs_len = jobs.length;
+		for (var i = 0; i < jobs_len; i++) {
+			if (!this.job_weather.hasOwnProperty(jobs[i].name)) {
+				this.job_weather[jobs[i].name] = {count: 0, error: 0};
+			}
+			if (this.job_weather[jobs[i].name].count >= 5) {
+				continue;
+			}
+			this.job_weather[jobs[i].name].count++;
+			if (JobStatus.is_error(jobs[i].jobstatus)) {
+				this.job_weather[jobs[i].name].error++;
+			}
+		}
+		this.table.rows().invalidate('data').draw(false);
 	}
 };
-oJobHistoryList.init();
+oJobList.init();
+MonitorParams = {jobs: null};
+$(function() {
+	MonitorCalls.push(oJobList.set_weather.bind(oJobList));
+});
 </script>
 </com:TContent>

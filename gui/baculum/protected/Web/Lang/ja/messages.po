@@ -3288,3 +3288,9 @@ msgstr "Truncate log"
 
 msgid "Messages"
 msgstr "Messages"
+
+msgid "Last %errors/%count jobs finished with error."
+msgstr "Last %errors/%count jobs finished with error."
+
+msgid "All last %count jobs finished successfully."
+msgstr "All last %count jobs finished successfully."

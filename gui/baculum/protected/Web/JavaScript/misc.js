@@ -920,6 +920,20 @@ var MsgEnvelope = {
 	}
 };
 
+var Weather = {
+	icons: [
+		'weather_sunny.png',
+		'weather_sun_behind_small_cloud.png',
+		'weather_sun_behind_large_cloud.png',
+		'weather_sun_behind_rain_cloud.png',
+		'weather_cloud_with_rain.png',
+		'weather_cloud_with_lighting_and_rain.png'
+	],
+	get_weather_icon(idx) {
+		return this.icons[idx];
+	}
+};
+
 var W3SideBar = {
 	ids: {
 		sidebar: 'sidebar',
