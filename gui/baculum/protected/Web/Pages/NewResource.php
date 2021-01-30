@@ -154,6 +154,8 @@ class NewResource extends BaculumWebPage {
 					"Director",
 					"FileDaemon",
 					"Messages",
+					"Schedule",
+					"Console",
 					"Statistics"
 				);
 			} elseif ($component_type == 'bcons') {
