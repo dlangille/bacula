@@ -17,7 +17,6 @@
 			<com:BClientScript ScriptUrl=<%~ ../JavaScript/buttons.html5.js %> />
 			<com:BClientScript ScriptUrl=<%~ ../JavaScript/buttons.colVis.js %> />
 			<com:BClientScript ScriptUrl=<%~ ../JavaScript/dataTables.select.js %> />
-			<com:BClientScript ScriptUrl=<%~ ../JavaScript/excanvas.js %> />
 			<com:BClientScript ScriptUrl=<%~ ../JavaScript/bacula-config.js %> />
 			<com:BClientScript ScriptUrl=<%~ ../JavaScript/misc.js %> />
 			<com:BClientScript ScriptUrl=<%~ ../JavaScript/graph.js %> />
