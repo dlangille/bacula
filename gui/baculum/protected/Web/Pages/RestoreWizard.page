@@ -297,11 +297,11 @@ var oJobsToRestoreList = {
 			return;
 		}
 		if (this.opts.list_type == <%=RestoreWizard::JOB_LIST_BY_CLIENT%>) {
-			this.table.columns([4, 5, 9, 10]).visible(true);
+			this.table.columns([4, 10]).visible(true);
 			this.table.column(3).visible(false);
 			this.table.columns.adjust();
 		} else if (this.opts.list_type == <%=RestoreWizard::JOB_LIST_BY_FILENAME%>) {
-			this.table.columns([4, 5, 9, 10]).visible(false);
+			this.table.columns([4, 10]).visible(false);
 			this.table.column(3).visible(true);
 			this.table.columns.adjust();
 		}
@@ -448,13 +448,12 @@ var oJobsToRestoreList = {
 				{
 					data: 'starttime',
 					render: render_date,
-					visible: false,
-					responsivePriority: 10
+					responsivePriority: 9
 				},
 				{
 					data: 'endtime',
 					render: render_date,
-					responsivePriority: 9
+					responsivePriority: 10
 				},
 				{
 					data: 'jobid',

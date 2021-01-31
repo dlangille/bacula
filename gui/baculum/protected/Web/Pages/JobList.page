@@ -133,7 +133,7 @@ var oJobList = {
 			},
 			{
 				className: "dt-center",
-				targets: [ 4 ]
+				targets: [ 1, 4 ]
 			}],
 			order: [2, 'asc'],
 			initComplete: function () {
