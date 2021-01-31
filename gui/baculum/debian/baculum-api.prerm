@@ -2,6 +2,20 @@
 
 set -e
 
+# remove debug files if any
+[ ! -e /usr/share/baculum/htdocs/protected/API/Logs/baculum-api.log ] ||
+	rm /usr/share/baculum/htdocs/protected/API/Logs/baculum-api.log*
+
+if [ -L /usr/share/baculum/htdocs/protected/API/Logs ] ; then
+	rm /usr/share/baculum/htdocs/protected/API/Logs
+elif [ -d /usr/share/baculum/htdocs/protected/API/Logs ] ; then
+	rmdir /usr/share/baculum/htdocs/protected/API/Logs
+fi
+rm /usr/share/baculum/htdocs/protected/API/Lang/en/messages.mo
+rm /usr/share/baculum/htdocs/protected/API/Lang/pl/messages.mo
+rm /usr/share/baculum/htdocs/protected/API/Lang/pt/messages.mo
+rm /usr/share/baculum/htdocs/protected/API/Lang/ru/messages.mo
+
 #DEBHELPER#
 
 exit 0

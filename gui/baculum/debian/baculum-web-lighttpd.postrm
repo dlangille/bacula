@@ -1,0 +1,19 @@
+#!/bin/sh
+
+set -e
+
+if [ "$1" = "purge" ]
+then
+	[ ! -e /etc/baculum/Config-web-lighttpd/users.conf ] ||
+		rm /etc/baculum/Config-web-lighttpd/users.conf
+	[ ! -e /etc/baculum/Config-web-lighttpd/session.dump ] ||
+		rm /etc/baculum/Config-web-lighttpd/session.dump
+	[ ! -e /etc/baculum/Config-web-lighttpd/hosts.conf ] ||
+		rm /etc/baculum/Config-web-lighttpd/hosts.conf
+	[ ! -e /etc/baculum/Config-web-lighttpd/settings.conf ] ||
+		rm /etc/baculum/Config-web-lighttpd/settings.conf
+fi
+
+#DEBHELPER#
+
+exit 0

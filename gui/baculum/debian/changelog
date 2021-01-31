@@ -1,6 +1,69 @@
-baculum (9.4.4~stretch) stretch; urgency=low
+baculum (9.6.6.3~buster) buster; urgency=low
 
   [ Marcin Haba ]
-  * new upstream 9.4.4
+  * new upstream 9.6.6.3
 
- -- Marcin Haba <marcin.haba@bacula.pl>  Thu, 30 May 2019 06:08:21 +0200
+ -- Marcin Haba <marcin.haba@bacula.pl>  Tue, 24 Nov 2020 18:48:11 +0100
+
+baculum (9.6.6.2~buster) buster; urgency=low
+
+  [ Marcin Haba ]
+  * new upstream 9.6.6.2
+
+ -- Marcin Haba <marcin.haba@bacula.pl>  Thu, 05 Nov 2020 06:32:46 +0100
+
+baculum (9.6.6.1~buster) buster; urgency=low
+
+  [ Marcin Haba ]
+  * new upstream 9.6.6.1
+
+ -- Marcin Haba <marcin.haba@bacula.pl>  Wed, 07 Oct 2020 03:20:10 +0200
+
+baculum (9.6.5.1~buster) buster; urgency=low
+
+  [ Marcin Haba ]
+  * new upstream 9.6.5.1
+
+ -- Marcin Haba <marcin.haba@bacula.pl>  Sun, 28 Jun 2020 15:57:02 +0200
+
+baculum (9.6.5~buster2) buster; urgency=low
+
+  [ Marcin Haba ]
+  * Fix problem with non-empty log dir during upgrade
+
+ -- Marcin Haba <marcin.haba@bacula.pl>  Mon, 15 Jun 2020 06:47:01 +0200
+
+baculum (9.6.5~buster) buster; urgency=low
+
+  [ Marcin Haba ]
+  * new upstream 9.6.5
+
+ -- Marcin Haba <marcin.haba@bacula.pl>  Fri, 12 Jun 2020 07:50:28 +0200
+
+baculum (9.6.4~buster) buster; urgency=medium
+
+  [ Marcin Haba ]
+  * new upstream 9.6.4
+
+ -- Marcin Haba <marcin.haba@bacula.pl>  Tue, 09 Jun 2020 20:34:15 +0200
+
+baculum (9.6.3~buster) buster; urgency=low
+
+  [ Marcin Haba ]
+  * new upstream 9.6.3
+
+ -- Marcin Haba <marcin.haba@bacula.pl>  Thu, 19 Mar 2020 20:24:27 +0100
+
+baculum (9.6.2~buster) buster; urgency=low
+
+  [ Marcin Haba ]
+  * new upstream 9.6.2
+
+ -- Marcin Haba <marcin.haba@bacula.pl>  Thu, 27 Feb 2020 20:22:41 +0100
+
+baculum (9.6.0~beta1~buster) buster; urgency=low
+
+  [ Marcin Haba ]
+  * new upstream 9.6.0beta1
+
+ -- Marcin Haba <marcin.haba@bacula.pl>  Sat, 18 Jan 2020 06:47:41 +0100

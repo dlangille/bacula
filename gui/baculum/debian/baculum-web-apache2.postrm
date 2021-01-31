@@ -1,0 +1,19 @@
+#!/bin/sh
+
+set -e
+
+if [ "$1" = "purge" ]
+then
+	[ ! -e /etc/baculum/Config-web-apache/users.conf ] ||
+		rm /etc/baculum/Config-web-apache/users.conf
+	[ ! -e /etc/baculum/Config-web-apache/session.dump ] ||
+		rm /etc/baculum/Config-web-apache/session.dump
+	[ ! -e /etc/baculum/Config-web-apache/hosts.conf ] ||
+		rm /etc/baculum/Config-web-apache/hosts.conf
+	[ ! -e /etc/baculum/Config-web-apache/settings.conf ] ||
+		rm /etc/baculum/Config-web-apache/settings.conf
+fi
+
+#DEBHELPER#
+
+exit 0

@@ -2,15 +2,14 @@
 
 set -e
 
-if [ "$1" = "remove" ]
+if [ "$1" = "remove" -o "$1" = "upgrade" ]
 then
-	[ ! -e /usr/share/baculum/htdocs/protected/API/Config/api.conf ] ||
-		mv /usr/share/baculum/htdocs/protected/API/Config/api.conf \
-		/usr/share/baculum/htdocs/protected/API/Config/api.conf.apache
 	# remove debug files if any
 	[ ! -e /usr/share/baculum/htdocs/protected/API/Logs/baculum-api.log ] ||
-		rm /usr/share/baculum/htdocs/protected/API/Logs/baculum-api*.log
+		rm /usr/share/baculum/htdocs/protected/API/Logs/baculum-api.log*
 fi
+
+rm /usr/share/baculum/htdocs/protected/API/Config
 
 #DEBHELPER#
 

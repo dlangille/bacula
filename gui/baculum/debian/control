@@ -18,7 +18,7 @@ Description: Baculum is web based tool to configure, manage, administer and moni
 Package: baculum-api
 Section: web
 Architecture: all
-Depends: ${misc:Depends}, php-cgi, php-mysql, php-pgsql, php-sqlite3, php-json, php-xml, baculum-common
+Depends: ${misc:Depends}, php-pgsql, php-mysql, php-sqlite3, php-json, php-xml, php-bcmath, baculum-common
 Description: API for Baculum Web GUI
  This package provides the API files for Baculum.
  This module is a part of Baculum.
@@ -26,7 +26,7 @@ Description: API for Baculum Web GUI
 Package: baculum-web
 Section: web
 Architecture: all
-Depends: ${misc:Depends}, php-cgi, php-curl, php-json, php-xml, php-bcmath, libjs-excanvas, baculum-common
+Depends: ${misc:Depends}, php-curl, php-json, php-ldap, php-xml, baculum-common
 Description: WebGUI tool for Bacula Community program
  This package provides the Web files for Baculum.
  This module is a part of Baculum.
@@ -34,7 +34,7 @@ Description: WebGUI tool for Bacula Community program
 Package: baculum-api-lighttpd
 Section: web
 Architecture: all
-Depends: ${misc:Depends}, lighttpd, baculum-common, baculum-api
+Depends: ${misc:Depends}, php-cgi, lighttpd, baculum-common, baculum-api
 Conflicts: baculum-httpd
 Description: Lighttpd configuration for Baculum API
  This package provides the Lighttpd configuration for Baculum API.
@@ -53,7 +53,7 @@ Description: Apache configuration for Baculum API
 Package: baculum-web-lighttpd
 Section: web
 Architecture: all
-Depends: ${misc:Depends}, lighttpd, baculum-common, baculum-web
+Depends: ${misc:Depends}, php-cgi, lighttpd, baculum-common, baculum-web
 Conflicts: baculum-httpd
 Description: Lighttpd configuration for Baculum Web
  This package provides the Lighttpd configuration for Baculum Web GUI tool.

@@ -2,7 +2,20 @@
 
 set -e
 
-rm /usr/share/baculum/htdocs/protected/Web/JavaScript/excanvas.js
+# remove debug files if any
+[ ! -e /usr/share/baculum/htdocs/protected/Web/Logs/baculum-web.log ] ||
+	rm /usr/share/baculum/htdocs/protected/Web/Logs/baculum-web.log*
+
+if [ -L /usr/share/baculum/htdocs/protected/Web/Logs ] ; then
+	rm /usr/share/baculum/htdocs/protected/Web/Logs
+elif [ -d /usr/share/baculum/htdocs/protected/Web/Logs ] ; then
+	rmdir /usr/share/baculum/htdocs/protected/Web/Logs
+fi
+rm /usr/share/baculum/htdocs/protected/Web/Lang/en/messages.mo
+rm /usr/share/baculum/htdocs/protected/Web/Lang/pl/messages.mo
+rm /usr/share/baculum/htdocs/protected/Web/Lang/pt/messages.mo
+rm /usr/share/baculum/htdocs/protected/Web/Lang/ja/messages.mo
+rm /usr/share/baculum/htdocs/protected/Web/Lang/ru/messages.mo
 
 #DEBHELPER#
 

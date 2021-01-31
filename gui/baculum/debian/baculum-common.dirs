@@ -1,3 +1,4 @@
 usr/share/baculum/htdocs/framework
 usr/share/baculum/htdocs/protected/Common
 var/cache/baculum
+var/lib/baculum

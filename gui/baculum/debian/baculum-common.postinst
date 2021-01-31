@@ -6,6 +6,12 @@ case "$1" in
     configure)
 	chown -R www-data:www-data /usr/share/baculum/htdocs
 	chown -R www-data:www-data /var/cache/baculum
+	chown -R www-data:www-data /var/lib/baculum
+	chmod 750 /var/cache/baculum
+	chmod 750 /var/lib/baculum
+	if [ -e /var/cache/baculum/application.xml-*/config.cache ] ; then
+		rm /var/cache/baculum/application.xml-*/config.cache
+	fi
     ;;
 esac
 

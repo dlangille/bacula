@@ -4,7 +4,7 @@ set -e
 
 rm /usr/share/baculum/htdocs/LICENSE
 rm /usr/share/baculum/htdocs/assets
-rm usr/share/baculum/htdocs/protected/runtime
+rm /usr/share/baculum/htdocs/protected/runtime
 
 #DEBHELPER#
 

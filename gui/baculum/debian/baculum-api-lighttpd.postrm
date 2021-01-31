@@ -1,0 +1,17 @@
+#!/bin/sh
+
+set -e
+
+if [ "$1" = "purge" ]
+then
+	[ ! -e /etc/baculum/Config-api-lighttpd/api.conf ] ||
+		rm /etc/baculum/Config-api-lighttpd/api.conf
+	[ ! -e /etc/baculum/Config-api-lighttpd/oauth2.conf ] ||
+		rm /etc/baculum/Config-api-lighttpd/oauth2.conf
+	[ ! -e /etc/baculum/Config-api-lighttpd/session.dump ] ||
+		rm /etc/baculum/Config-api-lighttpd/session.dump
+fi
+
+#DEBHELPER#
+
+exit 0
