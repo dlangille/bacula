@@ -329,7 +329,7 @@ class RestoreWizard extends BaculumWebPage
 		$clientid = $this->BackupClient->SelectedValue;
 		$query = [
 			'clientid' => $clientid,
-			'filename' => rawurlencode($filename),
+			'filename' => $filename,
 			'strict' => $strict,
 			'path' => $path
 		];
