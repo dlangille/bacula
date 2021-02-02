@@ -919,8 +919,17 @@ AC_HELP_STRING([--with-postgresql@<:@=DIR@:>@], [Include PostgreSQL support. DIR
           fi
           POSTGRESQL_BINDIR=$withval/bin
       else
-          AC_MSG_RESULT(no)
-          AC_MSG_ERROR(Invalid PostgreSQL directory $withval - unable to find libpq-fe.h under $withval)
+         localloc=`find $withval/include/postgresql* -name libpq-fe.h | head -1`
+         if test "x$localloc" != "x"; then
+            inclocaldir=`ls -d $withval/include/postgresql* | head -1`
+            liblocaldir=`ls -d $withval/lib/postgresql* | head -1`
+            POSTGRESQL_INCDIR=$inclocaldir
+            POSTGRESQL_LIBDIR=$liblocaldir
+            POSTGRESQL_BINDIR=$withval/bin
+         else
+            AC_MSG_RESULT(no)
+            AC_MSG_ERROR(Invalid PostgreSQL directory $withval - unable to find libpq-fe.h under $withval)
+         fi
       fi
      AC_DEFINE(HAVE_POSTGRESQL, 1, [Set if you have an PostgreSQL Database])
      AC_MSG_RESULT(yes)
