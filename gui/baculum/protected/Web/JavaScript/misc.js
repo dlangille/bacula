@@ -815,7 +815,8 @@ var MsgEnvelope = {
 		warning: [
 			/Cannot find any appendable volumes/i,
 			/Please mount read Volume/i,
-			/Please mount append Volume/i
+			/Please mount append Volume/i,
+			/warning: /i
 		],
 		error: [
 			/ERR=/i,
