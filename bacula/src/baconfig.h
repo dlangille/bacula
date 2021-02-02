@@ -121,8 +121,6 @@ void InitWinAPIWrapper();
 
 #define  OSDependentInit()    InitWinAPIWrapper()
 
-#define sbrk(x)  0
-
 #define clear_thread_id(x) memset(&(x), 0, sizeof(x))
 
 #if defined(BUILDING_DLL)

@@ -67,7 +67,6 @@ static uint64_t fileAddr = 0;         /* file write address */
 static CONFIG *config;
 #define CONFIG_FILE "bacula-sd.conf"
 
-void *start_heap;
 char *configfile = NULL;
 bool skip_extract = false;
 

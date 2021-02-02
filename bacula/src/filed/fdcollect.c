@@ -29,7 +29,6 @@
 #include "filed.h"
 
 /* imported functions and variables */
-extern void *start_heap;
 extern const char collect_all_cmd[];
 extern const char collect_metrics_cmd[];
 
@@ -83,7 +82,7 @@ bool update_permanent_stats(void *data)
    memused = get_memory_info(NULL, 0);
    statcollector->set_value_int64(fdstatmetrics.bacula_client_memory_heap, memused);
 #else
-   statcollector->set_value_int64(fdstatmetrics.bacula_client_memory_heap, (char *)sbrk(0)-(char *)start_heap);
+   statcollector->set_value_int64(fdstatmetrics.bacula_client_memory_heap, heap_used());
 #endif
    statcollector->set_value_int64(fdstatmetrics.bacula_client_memory_maxbufs, sm_max_buffers);
    statcollector->set_value_int64(fdstatmetrics.bacula_client_memory_maxbytes, sm_max_bytes);

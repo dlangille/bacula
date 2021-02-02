@@ -31,9 +31,6 @@
 #include "dird.h"
 
 /* imported variables */
-extern void *start_heap;
-
-/* imported variables */
 static bool collector_threads_started = false;
 
 /*
@@ -75,7 +72,7 @@ bool update_permanent_stats(void *data)
    memused = get_memory_info(NULL, 0);
    statcollector->set_value_int64(dirstatmetrics.bacula_dir_memory_heap, memused);
 #else
-   statcollector->set_value_int64(dirstatmetrics.bacula_dir_memory_heap, (char *)sbrk(0)-(char *)start_heap);
+   statcollector->set_value_int64(dirstatmetrics.bacula_dir_memory_heap, heap_used());
 #endif
    statcollector->set_value_int64(dirstatmetrics.bacula_dir_memory_maxbufs, sm_max_buffers);
    statcollector->set_value_int64(dirstatmetrics.bacula_dir_memory_maxbytes, sm_max_bytes);

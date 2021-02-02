@@ -636,11 +636,9 @@ int accurate_cmd(JCR *jcr)
    }
 
 #ifdef DEBUG
-   extern void *start_heap;
-
    char b1[50], b2[50], b3[50], b4[50], b5[50];
    Dmsg5(dbglvl," Heap: heap=%s smbytes=%s max_bytes=%s bufs=%s max_bufs=%s\n",
-         edit_uint64_with_commas((char *)sbrk(0)-(char *)start_heap, b1),
+         edit_uint64_with_commas(heap_used(), b1),
          edit_uint64_with_commas(sm_bytes, b2),
          edit_uint64_with_commas(sm_max_bytes, b3),
          edit_uint64_with_commas(sm_buffers, b4),

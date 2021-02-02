@@ -73,7 +73,6 @@ DIRRES *director;                     /* Director resource */
 int FDConnectTimeout;
 int SDConnectTimeout;
 char *configfile = NULL;
-void *start_heap;
 utime_t last_reload_time = 0;
 bstatcollect *statcollector = NULL;
 dirdstatmetrics_t dirstatmetrics;
@@ -259,7 +258,7 @@ int main (int argc, char *argv[])
    /* DELETE ME when bugs in MA1512, MA1632 MA1639 are fixed */
    MA1512_reload_job_end_cb = reload_job_end_cb;
 
-   start_heap = sbrk(0);
+   mark_heap();
    setlocale(LC_ALL, "");
    bindtextdomain("bacula", LOCALEDIR);
    textdomain("bacula");

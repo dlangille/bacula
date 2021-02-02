@@ -27,8 +27,6 @@
 #include "filed.h"
 #include "lib/status.h"
 
-extern void *start_heap;
-
 extern bool GetWindowsVersionString(char *buf, int maxsiz);
 
 
@@ -134,7 +132,7 @@ static void  list_status_header(STATUS_PKT *sp)
 {
    POOL_MEM msg(PM_MESSAGE);
    char b1[32], b2[32], b3[32], b4[32], b5[35];
-   int64_t memused = (char *)sbrk(0)-(char *)start_heap;
+   int64_t memused = heap_used();
    int len;
    char dt[MAX_TIME_LENGTH];
 

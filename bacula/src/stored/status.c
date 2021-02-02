@@ -34,7 +34,6 @@ extern void dbg_print_plugin(FILE *fp);
 
 /* Imported variables */
 extern BSOCK *filed_chan;
-extern void *start_heap;
 
 /* Static variables */
 static char OKqstatus[]   = "3000 OK .status\n";
@@ -598,7 +597,7 @@ static void list_status_header(STATUS_PKT *sp)
    list_resource_limits(sp, nofile_l, memlock_l);
 
    len = Mmsg(msg, _(" Heap: heap=%s smbytes=%s max_bytes=%s bufs=%s max_bufs=%s\n"),
-         edit_uint64_with_commas((char *)sbrk(0)-(char *)start_heap, b1),
+         edit_uint64_with_commas(heap_used(), b1),
          edit_uint64_with_commas(sm_bytes, b2),
          edit_uint64_with_commas(sm_max_bytes, b3),
          edit_uint64_with_commas(sm_buffers, b4),

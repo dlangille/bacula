@@ -36,7 +36,6 @@ static bool check_resources();
 /* Exported variables */
 CLIENT *me;                           /* my resource */
 bool no_signals = false;
-void *start_heap;
 extern struct s_cmds cmds[];
 bstatcollect *statcollector = NULL;
 fdstatmetrics_t fdstatmetrics;
@@ -95,7 +94,7 @@ int main (int argc, char *argv[])
    char *uid = NULL;
    char *gid = NULL;
 
-   start_heap = sbrk(0);
+   mark_heap();
    setlocale(LC_ALL, "");
    bindtextdomain("bacula", LOCALEDIR);
    textdomain("bacula");

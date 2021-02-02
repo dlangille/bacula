@@ -52,7 +52,6 @@ extern "C" void *device_initialization(void *arg);
 /* Global variables exported */
 char OK_msg[]   = "3000 OK\n";
 char TERM_msg[] = "3999 Terminate\n";
-void *start_heap;
 static bool test_config = false;
 bstatcollect *statcollector = NULL;
 sdstatmetrics_t sdstatmetrics;
@@ -132,7 +131,7 @@ int main (int argc, char *argv[])
 
    device_default_open_mode = omd_write;
 
-   start_heap = sbrk(0);
+   mark_heap();
    setlocale(LC_ALL, "");
    bindtextdomain("bacula", LOCALEDIR);
    textdomain("bacula");

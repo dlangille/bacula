@@ -448,9 +448,7 @@ int main (int argc, char *argv[])
 {
    pthread_attr_t attr;
 
-   void * start_heap = sbrk(0);
-   (void)start_heap;
-
+   mark_heap();
    setlocale(LC_ALL, "");
    bindtextdomain("bacula", LOCALEDIR);
    textdomain("bacula");

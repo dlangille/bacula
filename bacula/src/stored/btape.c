@@ -42,7 +42,6 @@ extern bool parse_sd_config(CONFIG *config, const char *configfile, int exit_cod
 extern void free_config_resources();
 
 /* Exported variables */
-void *start_heap;
 int quit = 0;
 char buf[100000];
 int bsize = TAPE_BSIZE;

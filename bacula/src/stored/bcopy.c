@@ -50,7 +50,6 @@ static SESSION_LABEL sessrec;
 static CONFIG *config;
 #define CONFIG_FILE "bacula-sd.conf"
 
-void *start_heap;
 char *configfile = NULL;
 
 static void usage()

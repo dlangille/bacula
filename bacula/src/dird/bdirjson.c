@@ -37,7 +37,6 @@ DIRRES *director;                     /* Director resource */
 int FDConnectTimeout;
 int SDConnectTimeout;
 char *configfile = NULL;
-void *start_heap;
 
 /* Globals Imported */
 extern RES_ITEM job_items[];

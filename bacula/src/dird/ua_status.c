@@ -28,7 +28,6 @@
 #include "bacula.h"
 #include "dird.h"
 
-extern void *start_heap;
 extern utime_t last_reload_time;
 
 static void list_scheduled_jobs(UAContext *ua);
@@ -489,7 +488,7 @@ void list_dir_status_header(UAContext *ua)
    ua->send_msg(_(" Crypto: fips=%s crypto=%s\n"), crypto_get_fips_enabled(), crypto_get_version());
 
    ua->send_msg(_(" Heap: heap=%s smbytes=%s max_bytes=%s bufs=%s max_bufs=%s\n"),
-      edit_uint64_with_commas((char *)sbrk(0)-(char *)start_heap, b1),
+      edit_uint64_with_commas(heap_used(), b1),
       edit_uint64_with_commas(sm_bytes, b2),
       edit_uint64_with_commas(sm_max_bytes, b3),
       edit_uint64_with_commas(sm_buffers, b4),

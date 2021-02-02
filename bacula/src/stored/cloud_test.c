@@ -24,7 +24,6 @@ extern bool parse_sd_config(CONFIG *config, const char *configfile, int exit_cod
 
 static CONFIG *config;
 
-void *start_heap;
 #define CONFIG_FILE "bacula-sd.conf"
 char *configfile = NULL;
 bool detect_errors = false;

@@ -1191,7 +1191,46 @@ int fs_get_free_space(const char *path, int64_t *freeval, int64_t *totalval)
    return -1;
 }
 
-/* This function is used after a fork, the memory manager is not be initialized
+#if defined(HAVE_DARWIN_OS)
+#include <malloc/malloc.h>
+#endif
+
+/*
+ * Determine the amount of heap used
+ * macOS - sbrk(0) is deprecated, use malloc info
+ * Windows - not implemented
+ * others - use sbrk(0)
+ */
+
+/* the initial heap value */
+static int64_t start_heap = 0;
+
+void mark_heap()
+{
+#if defined(HAVE_WIN32)
+   start_heap = 0;
+#elif defined(HAVE_DARWIN_OS)
+   struct mstats ms = mstats();
+   start_heap = (int64_t) ms.bytes_used;
+#else
+   start_heap = (int64_t) sbrk(0);
+#endif
+}
+
+int64_t heap_used()
+{
+#if defined(HAVE_WIN32)
+   return get_memory_info(NULL, 0);
+#elif defined(HAVE_DARWIN_OS)
+   struct mstats ms = mstats();
+   return (int64_t) ms.bytes_used - start_heap;
+#else
+   return (int64_t) sbrk(0) - start_heap;
+#endif
+}
+
+/*
+ * This function is used after a fork, the memory manager is not be initialized
  * properly, so we must stay simple.
  */
 void setup_env(char *envp[])
@@ -1470,7 +1509,7 @@ uint64_t bget_max_mlock(int64_t value)
       if (value < 0) {
          Dmsg0(50, "Limit incorrect set, use the maximum for mlock_max\n");
          /* Request to keep 2GB, we have only 1GB, something is incorrect, so
-          * we take the maximum 
+          * we take the maximum
           */
          value = sys;
       }
@@ -1541,7 +1580,7 @@ static int init_size=1024;
 static int dbglevel=500;
 
 /* alist(100, owned_by_alist) */
-/* return 0: ok, -1: error, 1: not found 
+/* return 0: ok, -1: error, 1: not found
  * Will return a list of users for a group. We look for /etc/groups
  * and in /etc/passwd
  */
@@ -1574,7 +1613,7 @@ again:
 
    } else if (ret == EINTR) {
       goto again;
-      
+
    } else if (ret != 0) {
       berrno be;
       Dmsg1(dbglevel, "Got error for getgrnam_r %s\n", be.bstrerror(ret));
@@ -1656,7 +1695,7 @@ int get_user_home_directory(const char *user, POOLMEM *&home)
    struct passwd pw, *ppw;
    int size = init_size;
    char *buf = (char *)malloc(size);
-   
+
 again:
    errno = 0;
    ret =  getpwnam_r(user, &pw, buf, size, &ppw);
@@ -1901,7 +1940,7 @@ int main(int argc, char **argv)
    POOL_MEM home;
    char *name;
    int ret;
-   
+
    ret = get_group_members("bin", &a);
    ok(ret == 0, "get_group_members()");
    ok(a.size() > 0, "get_group_members() size");
@@ -1919,7 +1958,7 @@ int main(int argc, char **argv)
    }
 
    ok(get_user_home_directory("root", home.addr()) == 0, "get_user_home_directory()");
- 
+
    return report();
 }
 #endif
