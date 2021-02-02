@@ -153,7 +153,10 @@ AC_PATH_PROG(PYTHON, python, python)
 AC_PATH_PROG(GROWISOFS, growisofs, growisofs)
 AC_PATH_PROG(DVDRWMEDIAINFO, dvd+rw-mediainfo, dvd+rw-mediainfo)
 AC_PATH_PROG(DVDRWFORMAT, dvd+rw-format, dvd+rw-format)
-AC_PATH_PROG(PKGCONFIG, pkg-config, pkg-config)
+dnl Using AC_PATH_PROG() to find pkg-config is not cross-compile safe.
+dnl The macro PKG_PROG_PKG_CONFIG avoids this problem.
+dnl AC_PATH_PROG(PKGCONFIG, pkg-config, pkg-config)
+PKG_PROG_PKG_CONFIG()
 AC_PATH_PROG(QMAKE, qmake, none)
 AC_PATH_PROG(GMAKE, gmake, none)
 AC_PATH_PROG(PIDOF, pidof, pidof)
@@ -418,13 +421,13 @@ AC_ARG_ENABLE(bat,
 BAT_DIR=
 if test x$support_bat = xyes; then
 dnl look for Qt4
-   abc=`$PKGCONFIG QtGui`
+   abc=`$PKG_CONFIG QtGui`
    pkg=$?
    if test $pkg = 0; then
       BAT_DIR=src/qt-console
    else
 dnl look for Qt5
-     abc=`$PKGCONFIG Qt5Gui`
+     abc=`$PKG_CONFIG Qt5Gui`
      pkg=$?
      if test $pkg = 0; then
 	BAT_DIR="src/qt-console src/qt-console/tray-monitor"
@@ -3800,7 +3803,7 @@ fi
 cd src/qt-console
 chmod 755 install_conf_file build-depkgs-qt-console
 cd tray-monitor
-chmod 755 install_conf_file 
+chmod 755 install_conf_file
 cd ${BUILD_DIR}
 
 cd scripts
