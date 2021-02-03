@@ -32,10 +32,11 @@ nice ctest --output-on-failure -D Nightly -R "^disk:"
 rtn=$?
 i=0
 while [ $i -le 5 ]; do
-   if [ $rtn = 0 ] || [ "$rtn" = "8" ]; then
+   # No idea what is the return 3
+   if [ $rtn = 0 -o "$rtn" = "8" -o "$rtn" = 3 -o  "$rtn" = 11 ]; then
       break;
    fi
-   echo "Submit failed, waiting 5 mins"
+   echo "Submit failed, waiting 5 mins rtn=$rtn"
    sleep 300
    echo "ctest failed re-running Submit"
    ctest -D NightlySubmit
