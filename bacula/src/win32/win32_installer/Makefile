@@ -11,6 +11,8 @@
 
 include ../Makefile.inc
 
+PWD   := $(shell pwd)
+
 VERSION := $(shell sed -ne 's/^.define[ \t]VERSION[ \t][ \t]*"\(.*\)"/\1/p' < ../../version.h)
 RELEASE ?= $(shell awk '/define RELEASE [0-9]+/ { print $$3 }' ../../version.h)
 
@@ -121,11 +123,13 @@ release32/$$(notdir $(1)): $(1)
 	$$(call checkdir,$$@)
 	$(ECHO_CMD)cp -f $$^ $$@ ; \
 	$(STAB2CV) $$@
+	$(BUILDDIR)/sign-binaries release32/$$(notdir $(1))
 endef
 
 define Copy_Binary
 release32/$$(notdir $(1)): $(1)
 	$$(call checkdir,$$@)
+	$(BUILDDIR)/sign-binaries $$^
 	$(ECHO_CMD)cp -f $$^ $$@
 endef
 
@@ -166,5 +170,6 @@ $(foreach file,$(addprefix $(MAINDIR)/, $(LICENSE_FILES)),$(eval $(call Copy_Lic
 $(INSTALL_EXE): winbacula.nsi $(addprefix release32/,$(BACULA_BINARIES) $(SCRIPT_FILES) $(CAT_FILES) $(DEPKGS_BINARIES) $(NONGCC_BINARIES) $(NONGCC_LIBRARIES) $(MINGW_BINARIES) $(SSL_FILES) $(DIRD_FILES) $(LICENSE_FILES) )
 	echo "makensis -V3 $(DEFINES) winbacula.nsi"
 	makensis -V3 $(DEFINES) winbacula.nsi
+	../sign-binaries ../release32/bacula-*$(VERSION).exe 
 
 include $(BUILDDIR)/Makefile.rules

@@ -174,6 +174,7 @@ $(BINDIR)/bacula.dll: $(DLL_OBJS) bacula$(WIN_VERSION).def
 	@echo "Linking $@"
 	$(call checkdir,$@)
 	$(ECHO_CMD)$(CXX) $(LDFLAGS) -mdll -mwindows -Wl,--out-implib,$(OBJDIR)/bacula.a $^ $(LIBS_DLL) -o $@
+	$(BUILDDIR)/sign-binaries $@
 
 bacula$(WIN_VERSION).def: $(DLL_OBJS)
 	./make_def$(WIN_VERSION) $(DLL_OBJS) >bacula$(WIN_VERSION).def.new && \

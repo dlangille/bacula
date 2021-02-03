@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (C) 2000-2020 Kern Sibbald
+# Copyright (C) 2000-2021 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
 #  This file may help you build the dependency packages that

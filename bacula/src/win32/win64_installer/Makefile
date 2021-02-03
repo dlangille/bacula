@@ -8,6 +8,8 @@
 
 include ../Makefile.inc
 
+PWD   := $(shell pwd)
+
 VERSION := $(shell sed -ne 's/^.define[ \t]VERSION[ \t][ \t]*"\(.*\)"/\1/p' < ../../version.h)
 RELEASE ?= $(shell awk '/define RELEASE [0-9]+/ { print $$3 }' ../../version.h)
 
@@ -150,12 +152,14 @@ help:
 define Convert_Binary
 release64/$$(notdir $(1)): $(1)
 	$$(call checkdir,$$@)
+	$(BUILDDIR)/sign-binaries $$^
 	$(ECHO_CMD)cp -f $$^ $$@
 endef
 
 define Copy_Binary
 release64/$$(notdir $(1)): $(1)
 	$$(call checkdir,$$@)
+	$(BUILDDIR)/sign-binaries $$^
 	$(ECHO_CMD)cp -f $$^ $$@
 endef
 
@@ -195,6 +199,7 @@ $(foreach file,$(addprefix $(MAINDIR)/, $(LICENSE_FILES)),$(eval $(call Copy_Lic
 
 $(INSTALL_EXE): winbacula.nsi $(addprefix release64/,$(BACULA_BINARIES) $(DEPKGS_BINARIES) $(SSL_FILES) $(LICENSE_FILES))
 	makensis -V3 $(DEFINES) winbacula.nsi
+	../sign-binaries ../release64/bacula-*$(VERSION).exe
 	echo " "
 
 include $(BUILDDIR)/Makefile.rules

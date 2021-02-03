@@ -4,7 +4,7 @@
 #
 #
 # Author: Robert Nelson
-# Copyright (C) 2000-2020 Kern Sibbald
+# Copyright (C) 2000-2021 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
 #  Written by Robert Nelson, June 2006
@@ -36,12 +36,14 @@ define link_conapp
 	@echo "Linking $@"
 	$(call checkdir,$@)
 	$(ECHO_CMD)$(CXX) $(CFLAGS) $(LDFLAGS) -mconsole $^ $(1) -o $@
+        $(BUILDDIR)/sign-binaries $@
 endef
 
 define link_winapp
 	@echo "Linking $@"
 	$(call checkdir,$@)
 	$(ECHO_CMD)$(CXX) $(CFLAGS) $(LDFLAGS) -mwindows $^ $(1) -o $@
+        $(BUILDDIR)/sign-binaries $@
 endef
 
 define makedbg
