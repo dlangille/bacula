@@ -377,7 +377,7 @@ bool do_mac(JCR *jcr)
            jcr->get_ActionName(0),
            db_strerror(jcr->db));
       jcr->setJobStatus(JS_Terminated);
-      mac_cleanup(jcr, JS_Terminated, JS_Terminated);
+      mac_cleanup(jcr, JS_Canceled, JS_Canceled);
       return true;
    }
    /* Make sure this job was not already migrated */
@@ -388,7 +388,7 @@ bool do_mac(JCR *jcr)
          jcr->get_ActionName(1),
          jcr->get_OperationName());
       jcr->setJobStatus(JS_Terminated);
-      mac_cleanup(jcr, JS_Terminated, JS_Terminated);
+      mac_cleanup(jcr, JS_Canceled, JS_Canceled);
       return true;
    }
 

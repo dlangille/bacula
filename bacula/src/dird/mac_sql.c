@@ -72,7 +72,8 @@ static const char *sql_job =
 /* Get JobIds from regex'ed Job names */
 static const char *sql_jobids_from_job =
    "SELECT DISTINCT Job.JobId,Job.StartTime FROM Job,Pool"
-   " WHERE Job.Name='%s' AND Pool.Name='%s' AND Job.PoolId=Pool.PoolId"
+   " WHERE Job.Name='%s' AND Pool.Name='%s' AND Job.Type IN ('B','C') "
+   " AND Job.JobStatus IN ('T','W') AND Job.PoolId=Pool.PoolId "
    " ORDER by Job.StartTime";
 
 /* Get Client names in Pool */
