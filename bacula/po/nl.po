@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Bacula 5.2.7\n"
 "Report-Msgid-Bugs-To: bacula-devel@lists.sourceforge.net\n"
-"POT-Creation-Date: 2020-12-04 16:47+0100\n"
+"POT-Creation-Date: 2021-02-04 16:04+0100\n"
 "PO-Revision-Date: 2012-05-05 11:52+0100\n"
 "Last-Translator: W. van den Akker <wvdakker@wilsoft.nl>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -427,7 +427,7 @@ msgstr ""
 msgid "Failed to initialize TLS context for \"%s\".\n"
 msgstr ""
 
-#: src/qt-console/tray-monitor/tray-ui.h:350
+#: src/qt-console/tray-monitor/tray-ui.h:349
 #, fuzzy
 msgid "Select a Director"
 msgstr "Selecteer Job media:"

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: de\n"
 "Report-Msgid-Bugs-To: bacula-devel@lists.sourceforge.net\n"
-"POT-Creation-Date: 2020-12-04 16:47+0100\n"
+"POT-Creation-Date: 2021-02-04 16:04+0100\n"
 "PO-Revision-Date: 2007-06-25 20:38+0200\n"
 "Last-Translator: Kern Sibbald <kern@sibbald.com>\n"
 "Language-Team: \n"
@@ -454,7 +454,7 @@ msgstr ""
 msgid "Failed to initialize TLS context for \"%s\".\n"
 msgstr "Konnte TLS context für Storage \"%s\" in %s nicht initialisieren.\n"
 
-#: src/qt-console/tray-monitor/tray-ui.h:350
+#: src/qt-console/tray-monitor/tray-ui.h:349
 #, fuzzy
 msgid "Select a Director"
 msgstr "Pool Ressource"
