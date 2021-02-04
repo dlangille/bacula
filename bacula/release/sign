@@ -3,6 +3,6 @@
 # Copyright (C) 2000-2017 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
 #
-gpgkey=${gpgkey:-bacula}
-gpg --digest-algo=SHA256 --detach-sign --armor --default-key $gpgkey -o $1.sig $1
+gpgkey=${gpgkey:-"Bacula 4096 Distribution Verification Key"}
+gpg --digest-algo=SHA256 --detach-sign --armor --default-key "$gpgkey" -o $1.sig $1
 gpg --verify $1.sig
