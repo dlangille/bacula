@@ -1,3 +1,90 @@
+        ChangeLog for Bacula Enterprise version 11.0.1
+
+04Feb21
+ - win32: backport sining tools
+
+03Feb21
+ - win32: Backport signing procedures to 11.0
+ - Fix copy/migration job selection
+
+02Feb21
+ - Add PGSQL detection for macOS and MacPorts.
+ - Remove deprecated sbrk in macOS and Windows.
+ - Use PKG_PROG_PKG_CONFIG macro to search for pkg-config. It is cross-compile 
+  safe.
+
+01Feb21
+ - Initialize StartTime in db_create_job_record()
+
+31Jan21
+ - baculum: Fix finding jobs by filename in restore wizard if filename contains 
+  whitespace characters
+ - baculum: Update spec files
+ - baculum: Update debian files to latest version
+ - baculum: Remove excanvas.js dependency
+
+30Jan21
+ - baculum: Add job status weather on job list page
+ - baculum: Add new icons for job status weather purpose
+ - baculum: Add capability to create filedaemon console and schedule on new 
+  resource page
+
+28Jan21
+ - baculum: Browser paths in restore browser using pathid
+ - baculum: Add to Bvfs lsdirs and lsfiles API endpoints pathid parameter
+
+24Jan21
+ - baculum: Add console messages log envelope
+ - baculum: Add console messages log API endpoint
+
+21Jan21
+ - baculum: Fix #2560 in restore wizard display names encoded in non-UTF encoding
+
+15Jan21
+ - win32: Fix conditional #define's
+
+13Jan21
+ - win32: Fix #7256 Update Windows version detection with latest versions 
+  (Windows 10).
+
+08Jan21
+ - Fix org#2579 About incorrect JSON generated from empty Messages resource
+
+06Jan21
+ - Fix org#2587 Improve btraceback output
+ - Fix org#2588 About incorrect Object/ObjectId type in update_postgresql_tables
+ - Fix #7247 About incorrect variable substitution with the query command
+
+31Dec20
+ - Fix #7214 Adapt mtx-changer.conf for GNU cpio mt version
+
+30Dec20
+ - Fix #7207 About 'dbcheck -n' not working properly
+
+24Dec20
+ - alist: Fix for memory overflow access.
+
+16Dec20
+ - BEE Backport bacula/src/tools/dbcheck.c
+
+15Dec20
+ - Fix #7168 About incorrect start time displayed for canceled jobs not yet 
+  running
+ - Fix compilation warnings with Solaris Studio
+ - baculum: Fix problem with setting hourly schedule - reported by Elias Pereira
+ - Fix MySQL update procedure with incorrect handling of the FileIndex type
+ - Fix update_sqlite3_tables to upgrade from 9.6 to 11.0
+
+01Dec20
+ - win32: Fix #7094 bypass random pwd generation when pwd is provided
+
+25Nov20
+ - Fix #7079 About a segfault in a copyjob when the fileset is no longer defined
+
+Bugs fixed/closed since last release:
+2560 2579 2587 2588 7079 7094 7168 7207 7214 7247 7256
+
+
         ChangeLog for Bacula Enterprise version 11.0.0
 
 10Dec20

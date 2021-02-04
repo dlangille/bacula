@@ -37,6 +37,59 @@ running the script can take some time depending on your database size.
 
 ----------------------------------------------------------------
 
+Release 11.0.1 04 February 2021
+
+11.0.1 is a minor bug fix release.
+
+ - Add PGSQL detection for macOS and MacPorts.
+ - BEE Backport bacula/src/tools/dbcheck.c
+ - Fix #7079 About a segfault in a copyjob when the fileset is no longer defined
+ - Fix #7168 About incorrect start time displayed for canceled jobs not yet 
+  running
+ - Fix #7207 About 'dbcheck -n' not working properly
+ - Fix #7214 Adapt mtx-changer.conf for GNU cpio mt version
+ - Fix #7247 About incorrect variable substitution with the query command
+ - Fix MySQL update procedure with incorrect handling of the FileIndex type
+ - Fix compilation warnings with Solaris Studio
+ - Fix copy/migration job selection
+ - Fix org#2579 About incorrect JSON generated from empty Messages resource
+ - Fix org#2587 Improve btraceback output
+ - Fix org#2588 About incorrect Object/ObjectId type in update_postgresql_tables
+ - Fix update_sqlite3_tables to upgrade from 9.6 to 11.0
+ - Initialize StartTime in db_create_job_record()
+ - Remove deprecated sbrk in macOS and Windows.
+ - Use PKG_PROG_PKG_CONFIG macro to search for pkg-config. It is cross-compile 
+  safe.
+ - alist: Fix for memory overflow access.
+
+ - baculum: Add capability to create filedaemon console and schedule on new 
+  resource page
+ - baculum: Add console messages log API endpoint
+ - baculum: Add console messages log envelope
+ - baculum: Add job status weather on job list page
+ - baculum: Add new icons for job status weather purpose
+ - baculum: Add to Bvfs lsdirs and lsfiles API endpoints pathid parameter
+ - baculum: Browser paths in restore browser using pathid
+ - baculum: Fix #2560 in restore wizard display names encoded in non-UTF encoding
+ - baculum: Fix finding jobs by filename in restore wizard if filename contains 
+  whitespace characters
+ - baculum: Fix problem with setting hourly schedule - reported by Elias Pereira
+ - baculum: Remove excanvas.js dependency
+ - baculum: Update debian files to latest version
+ - baculum: Update spec files
+
+ - win32: Backport signing procedures to 11.0
+ - win32: Fix #7094 bypass random pwd generation when pwd is provided
+ - win32: Fix conditional #define's
+ - win32: Fix #7256 Update Windows version detection with latest versions 
+  (Windows 10).
+
+
+Bugs fixed/closed since last release:
+2560 2579 2587 2588 7079 7094 7168 7207 7214 7247 7256
+
+----------------------------------------------------------------
+
 Release 11.0.0 12 December 2020
 
 11.0.0 is a major release.
