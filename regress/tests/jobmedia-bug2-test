@@ -98,17 +98,7 @@ run job=$JobName level=Full storage=vDrive-1 yes
 run job=$JobName level=Full storage=vDrive-1 yes
 run job=$JobName level=Full storage=vDrive-1 yes
 run job=$JobName level=Full storage=vDrive-1 yes
-@sleep 30
-.status dir running
-@sleep 30
-.status dir running
-@sleep 30
-.status dir running
-@sleep 30
-.status dir running
-@sleep 30
-.status dir running
-@sleep 30
+@sleep 15
 .status dir running
 @sleep 30
 .status dir running
