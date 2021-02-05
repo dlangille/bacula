@@ -20,6 +20,8 @@
  *  Kern Sibbald, June MMIII
  */
 
+#ifndef ALIST_H
+#define ALIST_H
 
 extern bool is_null(const void *ptr);
 
@@ -66,7 +68,9 @@ class baselist : public SMARTALLOC {
 protected:
    void **items;                /* from  0..n-1 */
    int num_items;               /* from  1..n   */
-   int last_item;               /* maximum item index (1..n) */
+
+   int last_item;               /* maximum item index (1..n). */
+
    int max_items;               /* maximum possible items (array size) (1..n) */
    int num_grow;
    int cur_item;                /* from 1..n */
@@ -103,17 +107,6 @@ public:
    void *first();
    void prepend(void *item);
    void *remove(int index) { return remove_item(index);};
-};
-
-/*
- * Indexed list -- much like a simplified STL vector
- *   array of pointers to inserted items
- */
-class ilist : public baselist {
-public:
-   ilist(int num = 100, bool own=true): baselist(num, own) {};
-    /* put() is not compatible with remove(), prepend() or foreach_alist */
-   void put(int index, void *item);
 };
 
 /*
@@ -170,3 +163,5 @@ inline void baselist::grow(int num)
 {
    num_grow = num;
 }
+
+#endif // ALIST_H

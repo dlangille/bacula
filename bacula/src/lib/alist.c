@@ -45,7 +45,8 @@ void baselist::grow_list()
    int new_max_items;
 
    /* put() can insert and item anywhere in the list so
-   it's important to allocate at least last_item+1 items */
+    * it's important to allocate at least last_item+1 items 
+    */
    int min_grow = MAX(10, last_item+1);
    if (num_grow < min_grow) {
       num_grow = min_grow;               /* default if not initialized */
@@ -126,7 +127,6 @@ void alist::prepend(void *item)
    last_item++;
 }
 
-
 /*
  * Append an item to the list
  */
@@ -136,22 +136,6 @@ void baselist::append(void *item)
    items[last_item++] = item;
    num_items++;
 }
-
-/*
- * Put an item at a particular index
- */
-void ilist::put(int index, void *item)
-{
-   if (index > last_item) {
-      last_item = index;
-   }
-   grow_list();
-   if (items[index] == NULL) {
-      num_items++;
-   }
-   items[index] = item;
-}
-
 
 /*
  * Remove an item from the list
@@ -220,6 +204,23 @@ struct FILESET {
    alist mylist;
 };
 
+void check_all_alist_indexes2(alist *mlist)
+{
+   bool check_cont = true;
+   char *bp;
+   int i = 0;
+   int nb;
+
+   foreach_alist_index(i, bp, mlist) {
+      nb = atoi(bp);
+      if (nb != i){
+         Dmsg2(0, "nb=%d != i=%d\n", nb, i);
+         check_cont = false;
+      }
+   }
+   ok(check_cont, "Check all alist indexes 2");
+};
+
 void check_all_alist_contents(alist *mlist)
 {
    bool check_cont = true;
@@ -233,21 +234,6 @@ void check_all_alist_contents(alist *mlist)
       }
    }
    ok(check_cont, "Checking alist contents");
-};
-
-void check_all_ilist_contents(ilist *vlist, int start)
-{
-   bool check_cont = true;
-   char buf[30];
-   int i;
-
-   for (i = start; i< vlist->size(); i++) {
-      sprintf(buf, "This is item %d", i);
-      if (strcmp(buf, (char*)vlist->get(i)) != 0){
-         check_cont = false;
-      }
-   }
-   ok(check_cont, "Checking ilist contents");
 };
 
 void check_all_alist_indexes(alist *mlist)
@@ -274,33 +260,25 @@ void check_alist_destroy_and_delete(alist *mlist)
    delete mlist;
 };
 
-void check_ilist_destroy_delete(ilist *vlist)
-{
-   vlist->destroy();
-   ok(vlist->size() == 0, "Check ilist size after destroy");
-   delete vlist;
-}
-
 int main()
 {
    Unittests alist_test("alist_test");
    FILESET *fileset;
    char buf[30];
    alist *mlist;
-   ilist *vlist;
    char *bp;
    int i;
    bool check_cont;
    bool check_indx;
 
-   Pmsg0(0, "Initialize tests ...\n");
+   log("Initialize tests ...");
    fileset = (FILESET *)malloc(sizeof(FILESET));
    bmemzero(fileset, sizeof(FILESET));
    fileset->mylist.init();
    ok(fileset && fileset->mylist.empty() && fileset->mylist.max_size() == 0,
       "Default initialization");
 
-   Pmsg0(0, "Automatic allocation/destruction of alist:\n");
+   log("Automatic allocation/destruction of alist:");
 
    for (int i = 0; i < NUMITEMS; i++) {
       sprintf(buf, "This is item %d", i);
@@ -309,12 +287,13 @@ int main()
    ok(fileset->mylist.size() == NUMITEMS, "Checking size");
 
    check_all_alist_contents(&fileset->mylist);
+
    fileset->mylist.destroy();
    ok(fileset->mylist.size() == 0, "Check size after delete");
    ok(fileset->mylist.last() == NULL, "Check last after delete");
    free(fileset);
 
-   Pmsg0(0, "Allocation/destruction using new delete\n");
+   log("Allocation/destruction using new delete");
 
    mlist = New(alist(50));
    ok(mlist && mlist->empty() && mlist->max_size() == 0,
@@ -327,7 +306,7 @@ int main()
    check_all_alist_contents(mlist);
    check_alist_destroy_and_delete(mlist);
 
-   Pmsg0(0, "Test alist::remove(0)\n");
+   log("Test alist::remove(0)");
    mlist = New(alist(10, owned_by_alist));
    mlist->append(bstrdup("trash"));
    mlist->append(bstrdup("0"));
@@ -342,7 +321,7 @@ int main()
    check_all_alist_indexes(mlist);
    check_alist_destroy_and_delete(mlist);
 
-   Pmsg0(0, "Test alist::remove(3)\n");
+   log("Test alist::remove(3)");
    mlist = New(alist(10, owned_by_alist));
    mlist->append(bstrdup("0"));
    mlist->append(bstrdup("1"));
@@ -357,7 +336,7 @@ int main()
    check_all_alist_indexes(mlist);
    check_alist_destroy_and_delete(mlist);
 
-   Pmsg0(0, "Test alist::remove(last)\n");
+   log("Test alist::remove(last)");
    mlist = New(alist(10, owned_by_alist));
    mlist->append(bstrdup("0"));
    mlist->append(bstrdup("1"));
@@ -371,21 +350,23 @@ int main()
    check_all_alist_indexes(mlist);
    check_alist_destroy_and_delete(mlist);
 
-   Pmsg0(0, "Test alist::remove(last+1)\n");
+   log("Test alist::remove(last+1)");
    mlist = New(alist(10, owned_by_alist));
    mlist->append(bstrdup("0"));
    mlist->append(bstrdup("1"));
    mlist->append(bstrdup("2"));
    mlist->append(bstrdup("3"));
    mlist->append(bstrdup("4"));
+   check_all_alist_indexes2(mlist);
    ok(mlist && mlist->size() == 5, "Checking size");
    ok(mlist->last_index() == 5, "Check last_index");
    ok(mlist->remove(5) == NULL, "Check remove returns null");
    ok(mlist->size() == 5, "Remove test size");
    check_all_alist_indexes(mlist);
+   check_all_alist_indexes2(mlist);   
    check_alist_destroy_and_delete(mlist);
 
-   Pmsg0(0, "Test alist::pop()\n");
+   log("Test alist::pop()");
    mlist = New(alist(10, owned_by_alist));
    mlist->append(bstrdup("0"));
    mlist->append(bstrdup("1"));
@@ -399,37 +380,7 @@ int main()
    check_all_alist_indexes(mlist);
    check_alist_destroy_and_delete(mlist);
 
-   Pmsg0(0, "Test ilist::put()\n");
-   vlist = New(ilist(10, owned_by_alist));
-   sprintf(buf, "This is item 10");
-   vlist->put(10, bstrdup(buf));
-   ok(vlist && vlist->size() == 1, "Checking size after put()");
-   ok(vlist->last_index() == 10, "Check last_index");
-   check_ilist_destroy_delete(vlist);
-
-   Pmsg0(0, "Test ilist with multiple put()\n");
-   vlist = New(ilist(50, owned_by_alist));
-   sprintf(buf, "This is item 10");
-   vlist->put(10, bstrdup(buf));
-   ok(vlist && vlist->size() == 1, "Checking size after put()");
-   ok(vlist->last_index() == 10, "Check last_index");
-   sprintf(buf, "This is item 15");
-   vlist->put(15, bstrdup(buf));
-   ok(vlist->size() == 2, "Checking size after put()");
-   ok(vlist->last_index() == 15, "Check last_index");
-   for (i = NUMITEMS; i < NUMITEMS + MORENUMITEMS; i++) {
-      sprintf(buf, "This is item %d", i);
-      vlist->put(i, bstrdup(buf));
-   }
-   ok(vlist->size() == 2 + MORENUMITEMS, "Checking size after put()");
-   ok(vlist->last_index() == NUMITEMS + MORENUMITEMS - 1, "Check last_index");
-   /* check contents, first two sparse elements */
-   ok(strcmp("This is item 10", (char *)vlist->get(10)) == 0, "Check ilist content at 10");
-   ok(strcmp("This is item 15", (char *)vlist->get(15)) == 0, "Check ilist content at 15");
-   check_all_ilist_contents(vlist, NUMITEMS);
-   check_ilist_destroy_delete(vlist);
-
-   Pmsg0(0, "Test alist::push()\n");
+   log("Test alist::push()");
    mlist = New(alist(10, owned_by_alist));
    check_cont = true;
    check_indx = true;
@@ -445,7 +396,7 @@ int main()
    }
    ok(check_cont, "Check all sizes after push");
    ok(check_indx, "Check all last_indexes after push");
-   Pmsg0(0, "Test alist::pop()\n");
+   log("Test alist::pop()");
    check_cont = true;
    for (i = NUMITEMS-1; (bp = (char *)mlist->pop()); i--) {
       sprintf(buf, "This is item %d", i);
@@ -468,6 +419,26 @@ int main()
    ok(check_cont, "Check get() after pop() contents.");
    check_alist_destroy_and_delete(mlist);
 
+   log("Test alist::foreach_alist_index()");
+   mlist = New(alist(10, owned_by_alist));
+   mlist->append(bstrdup("0"));
+   mlist->append(bstrdup("1"));
+   mlist->append(bstrdup("2"));
+   mlist->append(bstrdup("3"));
+   mlist->append(bstrdup("4"));
+   mlist->append(bstrdup("5"));
+   mlist->append(bstrdup("6"));
+   mlist->append(bstrdup("7"));
+   mlist->append(bstrdup("8"));
+   mlist->append(bstrdup("9"));
+   check_all_alist_indexes2(mlist);
+   ok(mlist && mlist->size() == 10, "Checking size");
+   ok(mlist->last_index() == 10, "Check last_index");
+   foreach_alist_index(i, bp, mlist) {
+      ok(i < mlist->size(), "check index");
+      ok(bp != NULL, "check element of alist");
+   }
+   check_alist_destroy_and_delete(mlist);
    return report();
 }
 #endif

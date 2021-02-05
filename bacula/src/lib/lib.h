@@ -27,6 +27,7 @@
 
 #include "smartall.h"
 #include "lockmgr.h"
+#include "ilist.h"
 #include "alist.h"
 #include "dlist.h"
 #include "flist.h"
