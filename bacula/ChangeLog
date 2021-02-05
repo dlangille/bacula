@@ -1,5 +1,8 @@
         ChangeLog for Bacula Enterprise version 11.0.1
 
+05Feb21
+ - Split alist/ilist
+
 04Feb21
  - win32: backport sining tools
 
