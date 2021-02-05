@@ -97,6 +97,7 @@ void *alist::next()
    }
 }
 
+/* Do not mix prev() and next() calls */
 void *alist::prev()
 {
    if (cur_item <= 1) {
