@@ -8,6 +8,7 @@
 	</paths>
 	<modules>
 		<!-- generic common modules -->
+		<module id="asset" class="Application.Common.Class.BAssetManager" />
 		<module id="logging" class="Application.Common.Class.Logging" />
 		<module id="misc" class="Application.Common.Class.Miscellaneous" />
 		<module id="config_ini" class="Application.Common.Class.ConfigIni" />
