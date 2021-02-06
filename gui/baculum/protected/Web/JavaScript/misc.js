@@ -896,19 +896,20 @@ var MsgEnvelope = {
 	find_issues: function(logs) {
 		var error = warning = false;
 		var logs_len = logs.length;
+		OUTER:
 		for (var i = 0; i < logs_len; i++) {
 			for (var j = 0; j < this.issue_regex.warning.length; j++) {
 				if (this.issue_regex.warning[j].test(logs[i])) {
 					logs[i] = '<span class="w3-orange">' + logs[i] + '</span>';
 					warning = true;
-					break;
+					continue OUTER;
 				}
 			}
 			for (var j = 0; j < this.issue_regex.error.length; j++) {
 				if (this.issue_regex.error[j].test(logs[i])) {
 					logs[i] = '<span class="w3-red">' + logs[i] + '</span>';
 					error = true;
-					break;
+					continue OUTER;
 				}
 			}
 		}
