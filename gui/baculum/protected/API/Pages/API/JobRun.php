@@ -113,7 +113,7 @@ class JobRun extends BaculumAPIServer {
 			}
 		}
 
-		$is_valid_level = $this->getModule('misc')->isValidJobLevel($params->level);
+		$is_valid_level = $this->getModule('misc')->isValidJobLevel($level);
 		if(!$is_valid_level) {
 			$this->output = JobError::MSG_ERROR_INVALID_JOBLEVEL;
 			$this->error = JobError::ERROR_INVALID_JOBLEVEL;
