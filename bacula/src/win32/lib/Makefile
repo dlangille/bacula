@@ -52,6 +52,7 @@ FIND_OBJS = \
 LIB_OBJS = \
 	$(OBJDIR)/address_conf.o \
 	$(OBJDIR)/alist.o \
+	$(OBJDIR)/ilist.o \
 	$(OBJDIR)/attr.o \
 	$(OBJDIR)/base64.o \
 	$(OBJDIR)/berrno.o \
