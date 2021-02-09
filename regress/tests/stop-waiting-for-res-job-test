@@ -1,0 +1,60 @@
+#!/bin/bash
+#
+# Copyright (C) 2000-2021 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Run a job which is waiting for storage resource to appear and try to stop it
+# Tests #7321
+#
+TestName="stop-waiting-for-res-job-test"
+JobName=backup
+. scripts/functions
+
+scripts/cleanup
+scripts/copy-confs
+
+#
+# Zap out any schedule in default conf file so that
+#  it doesn't start during our test
+#
+outf="$tmp/sed_tmp"
+echo "s%  Schedule =%# Schedule =%g" >${outf}
+cp $scripts/bacula-dir.conf $tmp/1
+sed -f ${outf} $tmp/1 >$scripts/bacula-dir.conf
+$bperl -e 'set_global_maximum_concurrent_jobs(1)'
+
+change_jobname BackupClient1 $JobName
+start_test
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@output /dev/null
+messages
+@$out $tmp/log1.out
+run job=$JobName yes Pool=Default
+run job=$JobName yes Pool=Default
+@sleep 5
+list jobs
+@$out $tmp/log2.out
+stop jobid=2
+@sleep 3
+stop jobid=1
+@$out $tmp/log3.out
+list jobs
+wait
+messages
+list jobs
+quit
+END_OF_DATA
+
+run_bacula
+
+#Check if job was stopped correctly
+n_lines=`cat $tmp/log3.out | tr -s ' ' | grep "Termination: Backup Canceled" | wc -l`
+if [ $n_lines -ne 2 ]; then
+   estat=1
+   print_debug "Job not stopped as expected (cancelled jobs: ${n_lines}). See ${tmp}/log3.out"
+fi
+
+stop_bacula
+
+end_test
