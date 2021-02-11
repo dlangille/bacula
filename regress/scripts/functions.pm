@@ -946,9 +946,9 @@ sub set_global_maximum_concurrent_jobs
     add_attribute("$conf/bacula-dir.conf", "MaximumConcurrentJobs", $nb, "Client");
     add_attribute("$conf/bacula-dir.conf", "MaximumConcurrentJobs", $nb, "Director");
     add_attribute("$conf/bacula-dir.conf", "MaximumConcurrentJobs", $nb, "Storage");
-    add_attribute("$conf/bacula-sd.conf", "MaximumConcurrentJobs", $nb, "Storage");
+    add_attribute("$conf/bacula-sd.conf", "MaximumConcurrentJobs", $nb+1, "Storage");
     add_attribute("$conf/bacula-sd.conf", "MaximumConcurrentJobs", $nb, "Device");
-    add_attribute("$conf/bacula-fd.conf", "MaximumConcurrentJobs", $nb, "FileDaemon");
+    add_attribute("$conf/bacula-fd.conf", "MaximumConcurrentJobs", $nb+1, "FileDaemon");
 }
 
 # You can change the maximum concurrent jobs for any config file
