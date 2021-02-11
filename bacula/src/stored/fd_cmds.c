@@ -225,7 +225,7 @@ void do_client_commands(JCR *jcr)
             jcr->errmsg[0] = 0;
             if (!fd_cmds[i].func(jcr)) {    /* do command */
                /* Note fd->msg command may be destroyed by comm activity */
-               if (!job_canceled(jcr)) {
+               if (!job_canceled(jcr) && !jcr->is_incomplete()) {
                   strip_trailing_junk(fd->msg);
                   if (jcr->errmsg[0]) {
                      strip_trailing_junk(jcr->errmsg);

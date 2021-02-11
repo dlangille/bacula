@@ -418,7 +418,7 @@ DCR *acquire_device_for_append(DCR *dcr)
       dev->Unlock();
       Dmsg1(190, "jid=%u Do mount_next_write_vol\n", (uint32_t)jcr->JobId);
       if (!dcr->mount_next_write_volume()) {
-         if (!job_canceled(jcr)) {
+         if (!job_canceled(jcr) && !jcr->is_incomplete()) {
             /* Reduce "noise" -- don't print if job canceled */
             Mmsg2(jcr->errmsg, _("Could not ready %s device %s for append.\n"),
                dev->print_type(), dev->print_name());

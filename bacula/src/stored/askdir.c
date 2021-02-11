@@ -867,6 +867,15 @@ bool dir_ask_sysop_to_create_appendable_volume(DCR *dcr)
          continue;
       }
 
+      if (stat == W_WAKE) {
+         /* Job could be marked to stopped, need to brea */
+         Mmsg0(dev->errmsg, _("Job was stopped by the user.\n"));
+         Jmsg(jcr, M_FATAL, 0, "%s", dev->errmsg);
+         Dmsg1(dbglvl, "Job marked to be stopped. Gave up waiting on device %s\n", dev->print_name());
+         dev->poll = false;
+         return false;
+      }
+
       if (stat == W_TIMEOUT) {
          if (!double_dev_wait_time(dev)) {
             Mmsg(dev->errmsg, _("Max time exceeded waiting to mount Storage Device %s for Job %s\n"),

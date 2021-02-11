@@ -696,6 +696,7 @@ cancel_job(UAContext *ua, JCR *jcr, int wait,  bool cancel)
    char ed1[50];
    int32_t old_status = jcr->JobStatus;
    int status;
+   bool ret = false;
    const char *reason, *cmd;
 
    /* Keep track of this important event */
@@ -735,20 +736,26 @@ cancel_job(UAContext *ua, JCR *jcr, int wait,  bool cancel)
    case JS_WaitMaxJobs:
    case JS_WaitStartTime:
    case JS_WaitDevice:
-      ua->info_msg(_("JobId %s, Job %s marked to be %s.\n"),
-              edit_uint64(jcr->JobId, ed1), jcr->Job,
-              reason);
-      jobq_remove(&job_queue, jcr); /* attempt to remove it from queue */
+      status = jobq_remove(&job_queue, jcr); /* attempt to remove it from queue */
+      if (status != 0) {
+         ua->error_msg(_("Cannot %s JobId %s, Job %s is not in work queue\n"),
+                       cmd, edit_uint64(jcr->JobId, ed1), jcr->Job);
+         goto bail_out;
+      }
       break;
 
    default:
+      ret = true; /* This will be set to false in case of error from any daemon below */
 
       /* Cancel File daemon */
       if (jcr->file_bsock) {
          btimer_t *tid;
          /* do not return now, we want to try to cancel the sd */
          tid = start_bsock_timer(jcr->file_bsock, 120);
-         cancel_file_daemon_job(ua, cmd, jcr);
+         if (!cancel_file_daemon_job(ua, cmd, jcr)) {
+            Dmsg1(400, "Failed to cancel file dameon job id=%d\n", jcr->JobId);
+            ret = false;
+         }
          stop_bsock_timer(tid);
       }
 
@@ -765,7 +772,10 @@ cancel_job(UAContext *ua, JCR *jcr, int wait,  bool cancel)
          btimer_t *tid;
          /* do not return now, we want to try to cancel the sd socket */
          tid = start_bsock_timer(jcr->store_bsock, 120);
-         cancel_sd_job(ua, cmd, jcr);
+         if (!cancel_sd_job(ua, cmd, jcr)) {
+            Dmsg1(400, "Failed to cancel storage dameon job id=%d\n", jcr->JobId);
+            ret = false;
+         }
          stop_bsock_timer(tid);
       }
 
@@ -788,7 +798,10 @@ cancel_job(UAContext *ua, JCR *jcr, int wait,  bool cancel)
              btimer_t *tid;
             /* do not return now, we want to try to cancel the sd socket */
             tid = start_bsock_timer(wjcr->store_bsock, 120);
-            cancel_sd_job(ua, cmd, wjcr);
+            if (!cancel_sd_job(ua, cmd, wjcr)) {
+               Dmsg1(400, "Failed to cancel storage dameon job id=%d\n", jcr->JobId);
+               ret = false;
+            }
             stop_bsock_timer(tid);
          }
          /* We test store_bsock because the previous operation can take
@@ -801,10 +814,20 @@ cancel_job(UAContext *ua, JCR *jcr, int wait,  bool cancel)
             wjcr->my_thread_send_signal(TIMEOUT_SIGNAL);
          }
       }
+
+      if (!ret) {
+         goto bail_out;
+      }
+
       break;
    }
 
-   return true;
+   ua->info_msg(_("JobId %s, Job %s marked to be %s.\n"),
+           edit_uint64(jcr->JobId, ed1), jcr->Job,
+           reason);
+
+bail_out:
+   return ret;
 }
 
 void cancel_storage_daemon_job(JCR *jcr)

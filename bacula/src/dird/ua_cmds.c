@@ -507,6 +507,14 @@ static int cancel_cmd(UAContext *ua, const char *cmd)
    foreach_alist(jcr, jcrs) {
       /* Execute the cancel command only if we don't have an error */
       if (nb != -1) {
+         /* If runtime is not set it means that job is waiting on something (e.g. some resource to appear).
+          * It then makes more sense to cancel job rather than stop it since it hasn't been started at all. */
+         if (!jcr->run_time && !cancel) {
+            ua->info_msg(_("1000 Trying to cancel Job %s since it was not started yet hence "
+                           "no need for stopping it.\n"), jcr->Job);
+         }
+         cancel = jcr->run_time ? cancel : true;
+
          ret &= cancel_job(ua, jcr, 60, cancel);
       }
       free_jcr(jcr);
@@ -2367,6 +2375,7 @@ int wait_cmd(UAContext *ua, const char *cmd)
       for (bool running=true; running; ) {
          running = false;
          foreach_jcr(jcr) {
+
             if (!jcr->is_internal_job()) {
                running = true;
                break;
