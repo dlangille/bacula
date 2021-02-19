@@ -1461,7 +1461,7 @@ bool BDB::bdb_get_accurate_jobids(JCR *jcr,
    char clientid[50], jobid[50], filesetid[50];
    char date[MAX_TIME_LENGTH];
    char esc[MAX_ESCAPE_NAME_LENGTH];
-   POOL_MEM query(PM_MESSAGE), name(PM_FNAME);
+   POOL_MEM query(PM_MESSAGE), name(PM_FNAME), aux(PM_FNAME);
 
    /* Take the current time as upper limit if nothing else specified */
    utime_t StartTime = (jr->StartTime)?jr->StartTime:time(NULL);
@@ -1478,11 +1478,13 @@ bool BDB::bdb_get_accurate_jobids(JCR *jcr,
       V(btemp_mutex);
    } else {
       edit_uint64(jcr->JobId, jobid);
+      Mmsg(aux, " AND JobId = %s ", jobid);
    }
 
    if (jr->Name[0] != 0) {
       bdb_escape_string(jcr, esc, jr->Name, strlen(jr->Name));
       Mmsg(name, " AND Name = '%s' ", esc);
+      aux.strcat(name.c_str());
    }
 
    /* First, find the last good Full backup for this job/client/fileset */
@@ -1491,7 +1493,7 @@ bool BDB::bdb_get_accurate_jobids(JCR *jcr,
         edit_uint64(jr->ClientId, clientid),
         date,
         edit_uint64(jr->FileSetId, filesetid),
-        name.c_str()
+        aux.c_str()
       );
 
    if (!bdb_sql_query(query.c_str(), NULL, NULL)) {
