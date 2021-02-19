@@ -228,7 +228,7 @@ class Ldap extends CommonModule {
 	 */
 	public function getLdapUri() {
 		$protocol = self::PROTOCOL_PLAIN;
-		if (key_exists('ldaps', $this->params) && $this->params['ldaps'] === 1) {
+		if (key_exists('ldaps', $this->params) && $this->params['ldaps'] == 1) {
 			$protocol = self::PROTOCOL_SSL;
 		}
 		return sprintf(
