@@ -629,7 +629,9 @@ static bool bvfs_parse_arg(UAContext *ua,
          /* Store the jobid after the ua->cmd, a bit kluggy */
          int len = strlen(ua->cmd);
          ua->cmd = check_pool_memory_size(ua->cmd, len + 1 + 50);
-         *jobid = edit_uint64(jr.JobId, ua->cmd + len + 1);
+         if (jobid) {
+            *jobid = edit_uint64(jr.JobId, ua->cmd + len + 1);
+         }
       }
 
       if (strcasecmp(ua->argk[i], NT_("limit")) == 0) {
