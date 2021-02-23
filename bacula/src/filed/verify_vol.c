@@ -187,6 +187,7 @@ void v_ctx::skip_sparse_header(char **data, uint32_t *length)
    
    *data += OFFSET_FADDR_SIZE;
    *length -= OFFSET_FADDR_SIZE;
+   Dmsg0(0, "Skipping SPARSE HEADER\n");
 }
 
 void v_ctx::check_accurate()
@@ -310,7 +311,7 @@ void do_verify_volume(JCR *jcr)
          goto bail_out;
       }
       vctx.stream = vctx.full_stream & STREAMMASK_TYPE;
-      Dmsg4(30, "Got hdr: FilInx=%d FullStream=%d Stream=%d size=%d.\n",
+      Dmsg4(0, "Got hdr: FilInx=%d FullStream=%d Stream=%d size=%d.\n",
             file_index, vctx.full_stream, vctx.stream, size);
 
       /*
@@ -504,7 +505,8 @@ void do_verify_volume(JCR *jcr)
 
             if (vctx.stream == STREAM_SPARSE_DATA
                 || vctx.stream == STREAM_SPARSE_COMPRESSED_DATA
-                || vctx.stream == STREAM_SPARSE_GZIP_DATA) {
+                || vctx.stream == STREAM_SPARSE_GZIP_DATA
+                || vctx.full_stream & STREAM_BIT_OFFSETS) {
                vctx.skip_sparse_header(&wbuf, &wsize);
             }
 
