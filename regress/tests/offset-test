@@ -99,8 +99,12 @@ m configure
 done
 yes
 wait
-setdebug level=0 client=$CLIENT trace=0
 messages
+@$out $tmp/log3.out
+run job=VerifyVolume jobid=2 storage=File1 yes
+wait
+messages
+setdebug level=0 client=$CLIENT trace=0
 quit
 END_OF_DATA
 
@@ -130,6 +134,12 @@ nb=`grep TestVolume001 $tmp/filemedia.log | wc -l`
 if [ "$nb" -eq 0 ]; then
     print_debug "ERROR: Should find filemedia in $tmp/filemedia.log"
     estat=1
+fi
+
+grep "Verify OK" $tmp/log3.out > /dev/null
+if [ $? != 0 ]; then
+    print_debug "ERROR: Found error in verify job status in $tmp/log3.out"
+    vstat=1
 fi
 
 end_test
