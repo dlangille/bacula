@@ -60,49 +60,52 @@ END
 /********************************************************************
  *
  * Version
- *
+ */
+
+#ifdef _DEBUG
+#define FILEFLAGS_ARG VS_FF_DEBUG
+#else
+#define FILEFLAGS_ARG 0x0L
+#endif
+#ifdef _WIN64
+#define FILEDESCRIPTION_ARG "Bacula (TM) File daemon for Win64\0"
+#define PRODUCTNAME_ARG "Bacula (TM) - Win64 Version\0"
+#else
+#define FILEDESCRIPTION_ARG "Bacula (TM) File daemon for Win32\0"
+#define PRODUCTNAME_ARG "Bacula (TM) - Win32 Version\0"
+#endif
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,1,0,0
- PRODUCTVERSION 1,1,0,0
- FILEFLAGSMASK VS_FFI_FILEFLAGSMASK
-#ifdef _DEBUG
- FILEFLAGS 0x1L
-#else
- FILEFLAGS 0
-#endif
- FILEOS VOS_NT_WINDOWS32
- FILETYPE VFT_APP
- FILESUBTYPE 0
-BEGIN
-    BLOCK "StringFileInfo"
+    FILEVERSION VER_MAJOR,VER_MINOR,VER_BUILD,VER_REVISION
+    PRODUCTVERSION VER_MAJOR,VER_MINOR,VER_BUILD,VER_REVISION
+    FILEFLAGSMASK 0x3fL
+    FILEFLAGS FILEFLAGS_ARG
+    FILEOS VOS_NT_WINDOWS32
+    FILETYPE VFT_APP
+    FILESUBTYPE 0x0L
     BEGIN
-        BLOCK "040904E0" // Lang=US English, CharSet=Windows Multiligual
+        BLOCK "StringFileInfo"
         BEGIN
-            VALUE "Comments", "by Kern Sibbald\0"
-            VALUE "CompanyName", "Bacula\0"
-#ifdef _WIN64
-            VALUE "FileDescription", "Bacula File daemon for Win64\0"
-            VALUE "ProductName", "Bacula(R) - Win64 Version\0"
-#else
-            VALUE "FileDescription", "Bacula File daemon for Win32\0"
-            VALUE "ProductName", "Bacula(R) - Win32 Version\0"
-#endif
-            VALUE "FileVersion", VERSION "\0"
-            VALUE "InternalName", "Bacula\0"
-            VALUE "LegalCopyright", "Copyright Kern Sibbald, 2000-2020\0"
-            VALUE "LegalTrademarks", "Bacula(R)\0"
-            VALUE "OriginalFilename", "bacula-fd.exe\0"
-            VALUE "PrivateBuild", "\0"
-            VALUE "ProductVersion", VERSION
-            VALUE "SpecialBuild", "\0"
+            BLOCK "040904e4"
+            BEGIN
+                VALUE "Comments", "by Kern Sibbald\0"
+                VALUE "CompanyName", "Bacula\0"
+                VALUE "FileDescription", FILEDESCRIPTION_ARG
+                VALUE "ProductName", PRODUCTNAME_ARG
+                VALUE "FileVersion", VERSION
+                VALUE "InternalName", "Bacula\0"
+                VALUE "LegalCopyright", "Copyright (C) 1999-2021 Kern Sibbald.\0"
+                VALUE "LegalTrademarks", "Bacula (R)\0"
+                VALUE "ProductVersion", VERSION
+            END
+        END
+        BLOCK "VarFileInfo"
+        BEGIN
+            VALUE "Translation", 0x0409, 1252
         END
     END
-    BLOCK "VarFileInfo"
-    BEGIN
-        VALUE "Translation", 0x409, 1252 // US English, Multilingual
-    END
-END
+/* End of Version info */
+
 
 
 /***********************************************************************
@@ -144,8 +147,8 @@ BEGIN
     LTEXT           "      by Kern Sibbald",-1,134,38,78,10
     LTEXT           "For more information, see:",-1,115,60,100,10
     LTEXT           "         www.bacula.org",-1,115,70,100,10
-    LTEXT           "Copyright (C) 2000-2020, Kern Sibbald",-1,7,120,175,10
-    LTEXT           "Licensed by Kern Sibbald",-1,7,130,175,10
+    LTEXT           "Copyright (C) 1999-2021, Kern Sibbald",-1,7,120,175,10
+    LTEXT           "Licensed by Kern Sibbald.",-1,7,130,175,10
     RTEXT           "Build Date:",-1,108,24,42,8
     RTEXT           "Bacula Version:",-1,100,9,50,8
     LTEXT           VERSION,-1,159,10,65,8
