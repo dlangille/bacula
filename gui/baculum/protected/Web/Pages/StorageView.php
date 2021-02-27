@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2020 Kern Sibbald
+ * Copyright (C) 2013-2021 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -203,9 +203,9 @@ class StorageView extends BaculumWebPage {
 		)->output;
 		$this->StorageLog->Text = implode(PHP_EOL, $raw_status);
 
-		$query_str = '?name=' . rawurlencode($this->getStorageName()) . '&type=header';
+		$query_str = '?output=json&type=header';
 		$graph_status = $this->getModule('api')->get(
-			['status', 'storage', $query_str]
+			['storages', $this->getStorageId(), 'status', $query_str]
 		);
 		$storage_status = [
 			'header' => [],
@@ -219,27 +219,27 @@ class StorageView extends BaculumWebPage {
 		}
 
 		// running
-		$query_str = '?name=' . rawurlencode($this->getStorageName()) . '&type=running';
+		$query_str = '?output=json&type=running';
 		$graph_status = $this->getModule('api')->get(
-			array('status', 'storage', $query_str)
+			['storages', $this->getStorageId(), 'status', $query_str]
 		);
 		if ($graph_status->error === 0) {
 			$storage_status['running'] = $graph_status->output;
 		}
 
 		// terminated
-		$query_str = '?name=' . rawurlencode($this->getStorageName()) . '&type=terminated';
+		$query_str = '?output=json&type=terminated';
 		$graph_status = $this->getModule('api')->get(
-			array('status', 'storage', $query_str)
+			['storages', $this->getStorageId(), 'status', $query_str]
 		);
 		if ($graph_status->error === 0) {
 			$storage_status['terminated'] = $graph_status->output;
 		}
 
 		// devices
-		$query_str = '?name=' . rawurlencode($this->getStorageName()) . '&type=devices';
+		$query_str = '?output=json&type=devices';
 		$graph_status = $this->getModule('api')->get(
-			array('status', 'storage', $query_str)
+			['storages', $this->getStorageId(), 'status', $query_str]
 		);
 		if ($graph_status->error === 0) {
 			$storage_status['devices'] = $graph_status->output;

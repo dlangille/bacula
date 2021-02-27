@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2020 Kern Sibbald
+ * Copyright (C) 2013-2021 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -47,7 +47,7 @@ class BaculumAPIClient extends WebModule {
 	/**
 	 * API version used by Web
 	 */
-	const API_VERSION = 'v1';
+	const API_VERSION = 'v2';
 
 	/**
 	 * OAuth2 authorization endpoints
@@ -337,7 +337,7 @@ class BaculumAPIClient extends WebModule {
 		$host_cfg = $this->getHostParams($host);
 		$uri = $this->getURIResource($host, $params);
 		$ch = $this->getConnection($host_cfg);
-		$data = http_build_query(array('update' => $options));
+		$data = json_encode($options);
 		curl_setopt($ch, CURLOPT_URL, $uri);
 		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'PUT');
 		curl_setopt($ch, CURLOPT_HTTPHEADER, array_merge(
@@ -374,7 +374,7 @@ class BaculumAPIClient extends WebModule {
 		$host_cfg = $this->getHostParams($host);
 		$uri = $this->getURIResource($host, $params);
 		$ch = $this->getConnection($host_cfg);
-		$data = http_build_query(array('create' => $options));
+		$data = json_encode($options);
 		curl_setopt($ch, CURLOPT_URL, $uri);
 		curl_setopt($ch, CURLOPT_HTTPHEADER, array_merge($this->getAPIHeaders($host, $host_cfg), array('Expect:')));
 		curl_setopt($ch, CURLOPT_POST, true);

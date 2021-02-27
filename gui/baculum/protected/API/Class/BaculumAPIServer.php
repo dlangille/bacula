@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2019 Kern Sibbald
+ * Copyright (C) 2013-2021 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -29,6 +29,7 @@ Prado::using('Application.API.Class.BAPIException');
 Prado::using('Application.API.Class.APIDbModule');
 Prado::using('Application.API.Class.Bconsole');
 Prado::using('Application.API.Class.OAuth2.TokenRecord');
+Prado::using('Application.API.Class.APIServer');
 
 /**
  * Abstract module from which inherits each of API module.
@@ -43,7 +44,7 @@ abstract class BaculumAPIServer extends TPage {
 	/**
 	 * API server version (used in HTTP header)
 	 */
-	const API_SERVER_VERSION = 0.1;
+	const API_SERVER_VERSION = 0.2;
 
 	/**
 	 * Storing output from API commands in numeric array.
@@ -174,22 +175,36 @@ abstract class BaculumAPIServer extends TPage {
 			header(OAuth2::HEADER_UNAUTHORIZED);
 			return;
 		}
+		$this->runResource();
+	}
+
+	/**
+	 * Run requested resource.
+	 * It sets output and error values.
+	 *
+	 * @return none
+	 */
+	private function runResource() {
+		$version = APIServer::getVersion();
+		$api = $this->getModule('api_server_v' . $version);
+		$api->setServerObj($this);
+
 		try {
 			switch($_SERVER['REQUEST_METHOD']) {
 				case self::GET_METHOD: {
-					$this->get();
+					$api->get();
 					break;
 				}
 				case self::POST_METHOD: {
-					$this->post();
+					$api->post();
 					break;
 				}
 				case self::PUT_METHOD: {
-					$this->put();
+					$api->put();
 					break;
 				}
 				case self::DELETE_METHOD: {
-					$this->delete();
+					$api->delete();
 					break;
 				}
 			}
@@ -208,7 +223,7 @@ abstract class BaculumAPIServer extends TPage {
 				$this->output = GenericError::MSG_ERROR_INTERNAL_ERROR . ' ' . $e->getErrorMessage();
 				$this->error = GenericError::ERROR_INTERNAL_ERROR;
 			}
-		} 
+		}
 	}
 
 	/**
@@ -266,89 +281,6 @@ abstract class BaculumAPIServer extends TPage {
 	public function onLoad($params) {
 		parent::onLoad($params);
 		echo $this->getOutput();
-	}
-
-	/**
-	 * Changing/updating values via API.
-	 *
-	 * @access private
-	 * @return none
-	 */
-	private function put() {
-		$id = $this->Request->contains('id') ? intval($this->Request['id']) : 0;
-
-		/**
-		 * Check if it is possible to read PUT method data.
-		 * Note that some clients sends data in PUT request as PHP input stream which
-		 * is not possible to read by $_REQUEST data. From this reason, when is
-		 * not possible to ready by superglobal $_REQUEST variable, then is try to
-		 * read PUT data by PHP input stream.
-		 */
-		if ($this->Request->contains('update') && is_array($this->Request['update']) && count($this->Request['update']) > 0) {
-			// $_REQUEST available to read
-			$params = (object)$this->Request['update'];
-			$this->set($id, $params);
-		} else {
-			// no possibility to read data from $_REQUEST. Try to load from input stream.
-			$inputstr = file_get_contents("php://input");
-
-			/**
-			 * Read using chunks for case large updates (over 1000 values).
-			 * Otherwise max_input_vars limitation in php.ini can be reached (usually
-			 * set to 1000 variables)
-			 * @see http://php.net/manual/en/info.configuration.php#ini.max-input-vars
-			 */
-			$chunks = explode('&', $inputstr);
-
-			$response_data = array();
-			for($i = 0; $i<count($chunks); $i++) {
-				// if chunks would not be used, then here occurs reach max_input_vars limit
-				parse_str($chunks[$i], $response_el);
-				if (is_array($response_el) && array_key_exists('update', $response_el) && is_array($response_el['update'])) {
-					$key = key($response_el['update']);
-					$response_data['update'][$key] = $response_el['update'][$key];
-				}
-			}
-			if (is_array($response_data) && array_key_exists('update', $response_data)) {
-				$params = (object)$response_data['update'];
-				$this->set($id, $params);
-			} else {
-				/**
-				 * This case should never occur because it means that there is
-				 * given nothing to update.
-				 */
-				$params = new stdClass;
-				$this->set($id, $params);
-			}
-		}
-	}
-
-	/**
-	 * Creating new elements.
-	 *
-	 * @access private
-	 * @return none
-	 */
-	private function post() {
-		$params = new stdClass;
-		if ($this->Request->contains('create') && is_array($this->Request['create']) && count($this->Request['create']) > 0) {
-			$params = (object)$this->Request['create'];
-		}
-		$this->create($params);
-	}
-
-	/**
-	 * Deleting element by element ID.
-	 *
-	 * @access private
-	 * @return none
-	 */
-	private function delete() {
-		$id = null;
-		if ($this->Request->contains('id')) {
-			$id = $this->Request['id'];
-		}
-		$this->remove($id);
 	}
 
 	/**

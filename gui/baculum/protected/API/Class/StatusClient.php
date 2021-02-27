@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2019 Kern Sibbald
+ * Copyright (C) 2013-2021 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -55,10 +55,11 @@ class StatusClient extends ComponentStatusModule {
 		);
 		if ($result->exitcode === 0) {
 			$ret['output'] = $this->parseStatus($result->output, $type);
+			$ret['error'] = $result->exitcode;
 		} else {
 			$ret['output'] = $result->output;
+			$ret['error'] = GenericError::ERROR_WRONG_EXITCODE;
 		}
-		$ret['error'] = $result->exitcode;
 		return $ret;
 	}
 

@@ -24,14 +24,14 @@ msgstr "Idioma"
 msgid "select language"
 msgstr "selecione o idioma"
 
-msgid "&laquo; Previous"
-msgstr "&laquo; Voltar"
+msgid "Previous"
+msgstr "Voltar"
 
 msgid "Cancel"
 msgstr "Cancelar"
 
-msgid "Next &raquo;"
-msgstr "Avançar &raquo;"
+msgid "Next"
+msgstr "Avançar"
 
 msgid "Step 1 - select language"
 msgstr "Passo 1 - Selecionar o idioma"
@@ -234,8 +234,8 @@ msgstr "Utilizar sudo para executar bconsole:"
 msgid "Save"
 msgstr "Salvar"
 
-msgid "Step 7 - Finish"
-msgstr "Passo 7 - Finalizar"
+msgid "Step 6 - Finish"
+msgstr "Passo 6 - Finalizar"
 
 msgid "Use sudo for Bacula JSON tools:"
 msgstr "Utilizar o sudo para os utilitários JSON:"
@@ -315,9 +315,6 @@ msgstr "Não se esqueça de desativar a autenticação HTTP Basic na configuraç
 msgid "Refresh token"
 msgstr "Atualizar token"
 
-msgid "New HTTP Basic user"
-msgstr "Novo usuário HTTP Básico"
-
 msgid "New OAuth2 client"
 msgstr "Novo cliente OAuth2"
 
@@ -348,17 +345,8 @@ msgstr "Problema durante a gravação do arquivo de configuração. Verifique a 
 msgid "Given user already exists in config file."
 msgstr "O usuário já existe no arquivo de configuração."
 
-msgid "List HTTP Basic users"
-msgstr "Listar usuários HTTP Básico"
-
-msgid "List OAuth2 clients"
-msgstr "Listar usuários OAuth2"
-
 msgid "set all scopes"
 msgstr "definir todos os escopos"
-
-msgid "Go to configuration wizard"
-msgstr "Ir para o assistente de configuração"
 
 msgid "Welcome on the Baculum API default page"
 msgstr "Bem-vindo à página padrão do Baculum API"
@@ -432,8 +420,8 @@ msgstr "Autenticação REST API do Baculum"
 msgid "Authentication type:"
 msgstr "Tipo de autenticação:"
 
-msgid "Step 6 - authentication to API"
-msgstr "Passo 6 - Autenticação da API"
+msgid "Step 5 - authentication to API"
+msgstr "Passo 5 - Autenticação da API"
 
 msgid "Actions"
 msgstr "Ações"
@@ -513,3 +501,71 @@ msgstr "Nota"
 msgid "Please use visudo to add this configuration, otherwise please do remember to add empty line at the end of file."
 msgstr "Por favor, use o visudo para adicionar essa configuração, caso contrário, lembre-se de adicionar uma linha vazia no final do arquivo."
 
+msgid "Dashboard"
+msgstr "Painel de controle"
+
+msgid "Basic users"
+msgstr "Basic users"
+
+msgid "OAuth2 clients"
+msgstr "OAuth2 clients"
+
+msgid "Settings"
+msgstr "Settings"
+
+msgid "Configuration wizard"
+msgstr "Configuration wizard"
+
+msgid "Welcome"
+msgstr "Seja bem vindo"
+
+msgid "Add user"
+msgstr "Adicionar usuário"
+
+msgid "Edit user"
+msgstr "Edit user"
+
+msgid "Add OAuth2 client"
+msgstr "Add OAuth2 client"
+
+msgid "Are you sure?"
+msgstr "Are you sure?"
+
+msgid "API settings"
+msgstr "API settings"
+
+msgid "General"
+msgstr "General"
+
+msgid "Catalog"
+msgstr "Catalog"
+
+msgid "Console"
+msgstr "Console"
+
+msgid "Config"
+msgstr "Config"
+
+msgid "Enabled:"
+msgstr "Enabled:"
+
+msgid "Debug:"
+msgstr "Debug:"
+
+msgid "Add client"
+msgstr "Add client"
+
+msgid "Edit client"
+msgstr "Edit client"
+
+msgid "Invalid user. User may contain a-z A-Z 0-9 characters."
+msgstr "Invalid user. User may contain a-z A-Z 0-9 characters."
+
+msgid "Show/hide"
+msgstr "Show/hide"
+
+msgid "Copy to clipboard"
+msgstr "Copy to clipboard"
+
+msgid "Logout"
+msgstr "Logout"

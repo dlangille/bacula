@@ -815,13 +815,13 @@ THE SOFTWARE.
 Baculum uses DataTables library for tables.
 
 Files:
-  protected/Web/JavaScript/datatables.js
-  protected/Web/JavaScript/dataTables.responsive.js
-  protected/Web/JavaScript/dataTables.buttons.js
-  protected/Web/JavaScript/dataTables.select.js
-  protected/Web/JavaScript/responsive.jqueryui.js
-  protected/Web/JavaScript/buttons.colVis.js
-  protected/Web/JavaScript/buttons.html5.js
+  protected/Common/JavaScript/datatables.js
+  protected/Common/JavaScript/dataTables.responsive.js
+  protected/Common/JavaScript/dataTables.buttons.js
+  protected/Common/JavaScript/dataTables.select.js
+  protected/Common/JavaScript/responsive.jqueryui.js
+  protected/Common/JavaScript/buttons.colVis.js
+  protected/Common/JavaScript/buttons.html5.js
   themes/Baculum-v2/css/datatables.css
   themes/Baculum-v2/css/responsive.dataTables.css
   themes/Baculum-v2/css/buttons.dataTables.css
@@ -852,7 +852,7 @@ The Buttons DataTables plugin uses FileSaver.js for saving files on
 the client-side.
 
 Files:
-  protected/Web/JavaScript/buttons.html5.js
+  protected/Common/JavaScript/buttons.html5.js
 
 FileSaver.js (1.3.3) - MIT license
 Copyright © 2016 Eli Grey - http://eligrey.com
@@ -862,7 +862,7 @@ Copyright © 2016 Eli Grey - http://eligrey.com
 Baculum uses Font Awesome Free for icons.
 
 Files:
-  protected/Web/JavaScript/fontawesome.min.js
+  protected/Common/JavaScript/fontawesome.min.js
   themes/Baculum-v2/css/fontawesome-all.min.css
   themes/Baculum-v2/webfonts/fa-brands-400.eot
   themes/Baculum-v2/webfonts/fa-brands-400.svg

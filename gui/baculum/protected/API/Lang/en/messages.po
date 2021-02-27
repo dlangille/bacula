@@ -20,14 +20,14 @@ msgstr "Language"
 msgid "select language"
 msgstr "select language"
 
-msgid "&laquo; Previous"
-msgstr "&laquo; Previous"
+msgid "Previous"
+msgstr "Previous"
 
 msgid "Cancel"
 msgstr "Cancel"
 
-msgid "Next &raquo;"
-msgstr "Next &raquo;"
+msgid "Next"
+msgstr "Next"
 
 msgid "Step 1 - select language"
 msgstr "Step 1 - select language"
@@ -230,8 +230,8 @@ msgstr "Use sudo for bconsole requests:"
 msgid "Save"
 msgstr "Save"
 
-msgid "Step 7 - Finish"
-msgstr "Step 7 - Finish"
+msgid "Step 6 - Finish"
+msgstr "Step 6 - Finish"
 
 msgid "Use sudo for Bacula JSON tools:"
 msgstr "Use sudo for Bacula JSON tools:"
@@ -311,9 +311,6 @@ msgstr "Please do not forget to disable HTTP Basic auth in the API web server co
 msgid "Refresh token"
 msgstr "Refresh token"
 
-msgid "New HTTP Basic user"
-msgstr "New HTTP Basic user"
-
 msgid "New OAuth2 client"
 msgstr "New OAuth2 client"
 
@@ -344,17 +341,8 @@ msgstr "Problem during save to config file. Please check users config file permi
 msgid "Given user already exists in config file."
 msgstr "Given user already exists in config file."
 
-msgid "List HTTP Basic users"
-msgstr "List HTTP Basic users"
-
-msgid "List OAuth2 clients"
-msgstr "List OAuth2 clients"
-
 msgid "set all scopes"
 msgstr "set all scopes"
-
-msgid "Go to configuration wizard"
-msgstr "Go to configuration wizard"
 
 msgid "Welcome on the Baculum API default page"
 msgstr "Welcome on the Baculum API default page"
@@ -428,8 +416,8 @@ msgstr "Authentication to Baculum REST API"
 msgid "Authentication type:"
 msgstr "Authentication type:"
 
-msgid "Step 6 - authentication to API"
-msgstr "Step 6 - authentication to API"
+msgid "Step 5 - authentication to API"
+msgstr "Step 5 - authentication to API"
 
 msgid "Actions"
 msgstr "Actions"
@@ -509,3 +497,71 @@ msgstr "Note"
 msgid "Please use visudo to add this configuration, otherwise please do remember to add empty line at the end of file."
 msgstr "Please use visudo to add this configuration, otherwise please do remember to add empty line at the end of file."
 
+msgid "Dashboard"
+msgstr "Dashboard"
+
+msgid "Basic users"
+msgstr "Basic users"
+
+msgid "OAuth2 clients"
+msgstr "OAuth2 clients"
+
+msgid "Settings"
+msgstr "Settings"
+
+msgid "Configuration wizard"
+msgstr "Configuration wizard"
+
+msgid "Welcome"
+msgstr "Welcome"
+
+msgid "Add user"
+msgstr "Add user"
+
+msgid "Edit user"
+msgstr "Edit user"
+
+msgid "Add OAuth2 client"
+msgstr "Add OAuth2 client"
+
+msgid "Are you sure?"
+msgstr "Are you sure?"
+
+msgid "API settings"
+msgstr "API settings"
+
+msgid "General"
+msgstr "General"
+
+msgid "Catalog"
+msgstr "Catalog"
+
+msgid "Console"
+msgstr "Console"
+
+msgid "Config"
+msgstr "Config"
+
+msgid "Enabled:"
+msgstr "Enabled:"
+
+msgid "Debug:"
+msgstr "Debug:"
+
+msgid "Add client"
+msgstr "Add client"
+
+msgid "Edit client"
+msgstr "Edit client"
+
+msgid "Invalid user. User may contain a-z A-Z 0-9 characters."
+msgstr "Invalid user. User may contain a-z A-Z 0-9 characters."
+
+msgid "Show/hide"
+msgstr "Show/hide"
+
+msgid "Copy to clipboard"
+msgstr "Copy to clipboard"
+
+msgid "Logout"
+msgstr "Logout"

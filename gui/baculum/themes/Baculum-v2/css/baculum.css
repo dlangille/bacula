@@ -534,3 +534,14 @@ img.job_weather_icon {
 	width: 32px;
 	cursor: help;
 }
+
+/* API server OAuth2 progress bar */
+
+#progress_label {
+	position: absolute;
+	width: 100%;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	font-weight: bold;
+}

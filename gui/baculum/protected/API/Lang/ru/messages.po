@@ -26,14 +26,14 @@ msgstr "Язык"
 msgid "select language"
 msgstr "выберите язык"
 
-msgid "&laquo; Previous"
-msgstr "&laquo; Назад"
+msgid "Previous"
+msgstr "Назад"
 
 msgid "Cancel"
 msgstr "Отмена"
 
-msgid "Next &raquo;"
-msgstr "Дальше &raquo;"
+msgid "Next"
+msgstr "Дальше"
 
 msgid "Step 1 - select language"
 msgstr "Шаг 1 - выбор языка"
@@ -236,8 +236,8 @@ msgstr "Использовать sudo для запросов bconsole:"
 msgid "Save"
 msgstr "Сохранить"
 
-msgid "Step 7 - Finish"
-msgstr "Шаг 7 - Завершение"
+msgid "Step 6 - Finish"
+msgstr "Шаг 6 - Завершение"
 
 msgid "Use sudo for Bacula JSON tools:"
 msgstr "Использовать sudo для инструментов Bacula JSON:"
@@ -317,9 +317,6 @@ msgstr "Не забудьте отключить базовую аутентиф
 msgid "Refresh token"
 msgstr "Обновить токен"
 
-msgid "New HTTP Basic user"
-msgstr "Новый базовый пользователь HTTP"
-
 msgid "New OAuth2 client"
 msgstr "Новый OAuth2 клиент"
 
@@ -350,17 +347,8 @@ msgstr "Возникла проблема при сохранении конфи
 msgid "Given user already exists in config file."
 msgstr "Данный пользователь уже существует в файле конфигурации."
 
-msgid "List HTTP Basic users"
-msgstr "Список базовых пользователей HTTP"
-
-msgid "List OAuth2 clients"
-msgstr "Список OAuth2 клиентов"
-
 msgid "set all scopes"
 msgstr "установить все области"
-
-msgid "Go to configuration wizard"
-msgstr "Перейти к мастеру настройки"
 
 msgid "Welcome on the Baculum API default page"
 msgstr "Добро пожаловать. Страница по умолчанию Baculum API."
@@ -434,8 +422,8 @@ msgstr "Аутентификация в Baculum REST API"
 msgid "Authentication type:"
 msgstr "Тип аутентификации:"
 
-msgid "Step 6 - authentication to API"
-msgstr "Шаг 6 - аутентификация в API"
+msgid "Step 5 - authentication to API"
+msgstr "Шаг 5 - аутентификация в API"
 
 msgid "Actions"
 msgstr "Действия"
@@ -515,3 +503,71 @@ msgstr "Примечание"
 msgid "Please use visudo to add this configuration, otherwise please do remember to add empty line at the end of file."
 msgstr "Пожалуйста, используйте visudo для добавления этой конфигурации, в противном случае не забудьте добавить пустую строку в конце файла."
 
+msgid "Dashboard"
+msgstr "Панель управления"
+
+msgid "Basic users"
+msgstr "Basic users"
+
+msgid "OAuth2 clients"
+msgstr "OAuth2 clients"
+
+msgid "Settings"
+msgstr "Settings"
+
+msgid "Configuration wizard"
+msgstr "Configuration wizard"
+
+msgid "Welcome"
+msgstr "Добро пожаловать"
+
+msgid "Add user"
+msgstr "Добавить пользователя"
+
+msgid "Edit user"
+msgstr "Edit user"
+
+msgid "Add OAuth2 client"
+msgstr "Add OAuth2 client"
+
+msgid "Are you sure?"
+msgstr "Are you sure?"
+
+msgid "API settings"
+msgstr "API settings"
+
+msgid "General"
+msgstr "General"
+
+msgid "Catalog"
+msgstr "Catalog"
+
+msgid "Console"
+msgstr "Console"
+
+msgid "Config"
+msgstr "Config"
+
+msgid "Enabled:"
+msgstr "Enabled:"
+
+msgid "Debug:"
+msgstr "Debug:"
+
+msgid "Add client"
+msgstr "Add client"
+
+msgid "Edit client"
+msgstr "Edit client"
+
+msgid "Invalid user. User may contain a-z A-Z 0-9 characters."
+msgstr "Invalid user. User may contain a-z A-Z 0-9 characters."
+
+msgid "Show/hide"
+msgstr "Show/hide"
+
+msgid "Copy to clipboard"
+msgstr "Copy to clipboard"
+
+msgid "Logout"
+msgstr "Logout"

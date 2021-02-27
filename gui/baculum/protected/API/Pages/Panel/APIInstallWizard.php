@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2020 Kern Sibbald
+ * Copyright (C) 2013-2021 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -94,130 +94,86 @@ class APIInstallWizard extends BaculumAPIPage {
 	public function onLoad($param) {
 		parent::onLoad($param);
 		$this->Port->setViewState('port', $this->Port->Text);
-		if(!$this->IsPostBack && !$this->IsCallBack) {
-			if($this->first_run === true) {
-				$this->DBName->Text = self::DEFAULT_DB_NAME;
-				$this->Login->Text = self::DEFAULT_DB_LOGIN;
-				$this->BconsolePath->Text = self::DEFAULT_BCONSOLE_BIN;
-				$this->BconsoleConfigPath->Text = self::DEFAULT_BCONSOLE_CONF;
-				$this->BDirJSONPath->Text = self::DEFAULT_BDIRJSON_BIN;
-				$this->DirCfgPath->Text = self::DEFAULT_DIR_CONF;
-				$this->BSdJSONPath->Text = self::DEFAULT_BSDJSON_BIN;
-				$this->SdCfgPath->Text = self::DEFAULT_SD_CONF;
-				$this->BFdJSONPath->Text = self::DEFAULT_BFDJSON_BIN;
-				$this->FdCfgPath->Text = self::DEFAULT_FD_CONF;
-				$this->BBconsJSONPath->Text = self::DEFAULT_BBCONJSON_BIN;
-				$this->BconsCfgPath->Text = self::DEFAULT_BCONSOLE_CONF;
+		if ($this->IsPostBack || $this->IsCallBack) {
+			return;
+		}
 
-				$this->DirStartAction->Text = self::DEFAULT_ACTION_DIR_START;
-				$this->DirStopAction->Text = self::DEFAULT_ACTION_DIR_STOP;
-				$this->DirRestartAction->Text = self::DEFAULT_ACTION_DIR_RESTART;
-				$this->SdStartAction->Text = self::DEFAULT_ACTION_SD_START;
-				$this->SdStopAction->Text = self::DEFAULT_ACTION_SD_STOP;
-				$this->SdRestartAction->Text = self::DEFAULT_ACTION_SD_RESTART;
-				$this->FdStartAction->Text = self::DEFAULT_ACTION_FD_START;
-				$this->FdStopAction->Text = self::DEFAULT_ACTION_FD_STOP;
-				$this->FdRestartAction->Text = self::DEFAULT_ACTION_FD_RESTART;
+		if ($this->first_run === true) {
+			$this->DBName->Text = self::DEFAULT_DB_NAME;
+			$this->Login->Text = self::DEFAULT_DB_LOGIN;
+			$this->BconsolePath->Text = self::DEFAULT_BCONSOLE_BIN;
+			$this->BconsoleConfigPath->Text = self::DEFAULT_BCONSOLE_CONF;
+			$this->BDirJSONPath->Text = self::DEFAULT_BDIRJSON_BIN;
+			$this->DirCfgPath->Text = self::DEFAULT_DIR_CONF;
+			$this->BSdJSONPath->Text = self::DEFAULT_BSDJSON_BIN;
+			$this->SdCfgPath->Text = self::DEFAULT_SD_CONF;
+			$this->BFdJSONPath->Text = self::DEFAULT_BFDJSON_BIN;
+			$this->FdCfgPath->Text = self::DEFAULT_FD_CONF;
+			$this->BBconsJSONPath->Text = self::DEFAULT_BBCONJSON_BIN;
+			$this->BconsCfgPath->Text = self::DEFAULT_BCONSOLE_CONF;
 
-				$this->DatabaseNo->Checked = true;
-				$this->ConsoleNo->Checked = true;
-				$this->ConfigNo->Checked = true;
-				$this->ActionsNo->Checked = true;
+			$this->DatabaseNo->Checked = true;
+			$this->ConsoleNo->Checked = true;
+			$this->ConfigNo->Checked = true;
+		} else {
+			// Database param settings
+			if ($this->config['db']['enabled'] == 1) {
+				$this->DatabaseYes->Checked = true;
+				$this->DatabaseNo->Checked = false;
 			} else {
-				// Database param settings
-				if ($this->config['db']['enabled'] == 1) {
-					$this->DatabaseYes->Checked = true;
-					$this->DatabaseNo->Checked = false;
-				} else {
-					$this->DatabaseYes->Checked = false;
-					$this->DatabaseNo->Checked = true;
-				}
-				$this->DBType->SelectedValue = $this->config['db']['type'];
-				$this->DBName->Text = $this->config['db']['name'];
-				$this->Login->Text = $this->config['db']['login'];
-				$this->Password->Text = $this->config['db']['password'];
-				$this->IP->Text = $this->config['db']['ip_addr'];
-				$this->Port->Text = $this->config['db']['port'];
-				$this->Port->setViewState('port', $this->config['db']['port']);
-				$this->DBPath->Text = $this->config['db']['path'];
+				$this->DatabaseYes->Checked = false;
+				$this->DatabaseNo->Checked = true;
+			}
+			$this->DBType->SelectedValue = $this->config['db']['type'];
+			$this->DBName->Text = $this->config['db']['name'];
+			$this->Login->Text = $this->config['db']['login'];
+			$this->Password->Text = $this->config['db']['password'];
+			$this->IP->Text = $this->config['db']['ip_addr'];
+			$this->Port->Text = $this->config['db']['port'];
+			$this->Port->setViewState('port', $this->config['db']['port']);
+			$this->DBPath->Text = $this->config['db']['path'];
 
-				// Bconsole param settings
-				if ($this->config['bconsole']['enabled'] == 1) {
-					$this->ConsoleYes->Checked = true;
-					$this->ConsoleNo->Checked = false;
-				} else {
-					$this->ConsoleYes->Checked = false;
-					$this->ConsoleNo->Checked = true;
-				}
-				$this->BconsolePath->Text = $this->config['bconsole']['bin_path'];
-				$this->BconsoleConfigPath->Text = $this->config['bconsole']['cfg_path'];
-				$this->UseSudo->Checked = $this->getPage()->config['bconsole']['use_sudo'] == 1;
+			// Bconsole param settings
+			if ($this->config['bconsole']['enabled'] == 1) {
+				$this->ConsoleYes->Checked = true;
+				$this->ConsoleNo->Checked = false;
+			} else {
+				$this->ConsoleYes->Checked = false;
+				$this->ConsoleNo->Checked = true;
+			}
+			$this->BconsolePath->Text = $this->config['bconsole']['bin_path'];
+			$this->BconsoleConfigPath->Text = $this->config['bconsole']['cfg_path'];
+			$this->UseSudo->Checked = $this->getPage()->config['bconsole']['use_sudo'] == 1;
 
-				$api_config = $this->getModule('api_config');
+			$api_config = $this->getModule('api_config');
 
-				// JSONTools param settings
-				if ($api_config->isJSONToolsEnabled() === true) {
-					$this->ConfigYes->Checked = true;
-					$this->ConfigNo->Checked = false;
-				} else {
-					$this->ConfigYes->Checked = false;
-					$this->ConfigNo->Checked = true;
-				}
-				$this->BConfigDir->Text = $this->config['jsontools']['bconfig_dir'];
-				$this->BJSONUseSudo->Checked = ($this->config['jsontools']['use_sudo'] == 1);
-				$this->BDirJSONPath->Text = $this->config['jsontools']['bdirjson_path'];
-				$this->DirCfgPath->Text = $this->config['jsontools']['dir_cfg_path'];
-				$this->BSdJSONPath->Text = $this->config['jsontools']['bsdjson_path'];
-				$this->SdCfgPath->Text = $this->config['jsontools']['sd_cfg_path'];
-				$this->BFdJSONPath->Text = $this->config['jsontools']['bfdjson_path'];
-				$this->FdCfgPath->Text = $this->config['jsontools']['fd_cfg_path'];
-				$this->BBconsJSONPath->Text = $this->config['jsontools']['bbconsjson_path'];
-				$this->BconsCfgPath->Text = $this->config['jsontools']['bcons_cfg_path'];
+			// JSONTools param settings
+			if ($api_config->isJSONToolsEnabled() === true) {
+				$this->ConfigYes->Checked = true;
+				$this->ConfigNo->Checked = false;
+			} else {
+				$this->ConfigYes->Checked = false;
+				$this->ConfigNo->Checked = true;
+			}
+			$this->BConfigDir->Text = $this->config['jsontools']['bconfig_dir'];
+			$this->BJSONUseSudo->Checked = ($this->config['jsontools']['use_sudo'] == 1);
+			$this->BDirJSONPath->Text = $this->config['jsontools']['bdirjson_path'];
+			$this->DirCfgPath->Text = $this->config['jsontools']['dir_cfg_path'];
+			$this->BSdJSONPath->Text = $this->config['jsontools']['bsdjson_path'];
+			$this->SdCfgPath->Text = $this->config['jsontools']['sd_cfg_path'];
+			$this->BFdJSONPath->Text = $this->config['jsontools']['bfdjson_path'];
+			$this->FdCfgPath->Text = $this->config['jsontools']['fd_cfg_path'];
+			$this->BBconsJSONPath->Text = $this->config['jsontools']['bbconsjson_path'];
+			$this->BconsCfgPath->Text = $this->config['jsontools']['bcons_cfg_path'];
 
-				if ($api_config->isActionsConfigured()) {
-					// Action params
-					if ($api_config->isActionsEnabled() === true) {
-						$this->ActionsYes->Checked = true;
-						$this->ActionsNo->Checked = false;
-					} else {
-						$this->ActionsYes->Checked = false;
-						$this->ActionsNo->Checked = true;
-					}
-
-					$this->ActionsUseSudo->Checked = ($this->config['actions']['use_sudo'] == 1);
-					$this->DirStartAction->Text = $this->config['actions']['dir_start'];
-					$this->DirStopAction->Text = $this->config['actions']['dir_stop'];
-					$this->DirRestartAction->Text = $this->config['actions']['dir_restart'];
-					$this->SdStartAction->Text = $this->config['actions']['sd_start'];
-					$this->SdStopAction->Text = $this->config['actions']['sd_stop'];
-					$this->SdRestartAction->Text = $this->config['actions']['sd_restart'];
-					$this->FdStartAction->Text = $this->config['actions']['fd_start'];
-					$this->FdStopAction->Text = $this->config['actions']['fd_stop'];
-					$this->FdRestartAction->Text = $this->config['actions']['fd_restart'];
-				} else {
-					$this->ActionsYes->Checked = false;
-					$this->ActionsNo->Checked = true;
-					$this->ActionsUseSudo->Checked = false;
-					$this->DirStartAction->Text = self::DEFAULT_ACTION_DIR_START;
-					$this->DirStopAction->Text = self::DEFAULT_ACTION_DIR_STOP;
-					$this->DirRestartAction->Text = self::DEFAULT_ACTION_DIR_RESTART;
-					$this->SdStartAction->Text = self::DEFAULT_ACTION_SD_START;
-					$this->SdStopAction->Text = self::DEFAULT_ACTION_SD_STOP;
-					$this->SdRestartAction->Text = self::DEFAULT_ACTION_SD_RESTART;
-					$this->FdStartAction->Text = self::DEFAULT_ACTION_FD_START;
-					$this->FdStopAction->Text = self::DEFAULT_ACTION_FD_STOP;
-					$this->FdRestartAction->Text = self::DEFAULT_ACTION_FD_RESTART;
-				}
-
-				if ($this->config['api']['auth_type'] === 'basic') {
-					// API basic auth data
-					$this->AuthBasic->Checked = true;
-					$this->AuthOAuth2->Checked = false;
-				} elseif ($this->config['api']['auth_type'] === 'oauth2') {
-					// API oauth2 auth data
-					$this->AuthBasic->Checked = false;
-					$this->AuthOAuth2->Checked = true;
-				}
+			if ($this->config['api']['auth_type'] === 'basic') {
+				// API basic auth data
+				$this->AuthBasic->Checked = true;
+				$this->AuthOAuth2->Checked = false;
+			} elseif ($this->config['api']['auth_type'] === 'oauth2') {
+				// API oauth2 auth data
+				$this->AuthBasic->Checked = false;
+				$this->AuthOAuth2->Checked = true;
 			}
 		}
 	}
@@ -237,8 +193,7 @@ class APIInstallWizard extends BaculumAPIPage {
 			'api' => array(),
 			'db' => array(),
 			'bconsole' => array(),
-			'jsontools' => array(),
-			'actions' => array()
+			'jsontools' => array()
 		);
 		if ($this->AuthBasic->Checked) {
 			$cfg_data['api']['auth_type'] =  'basic';
@@ -270,17 +225,6 @@ class APIInstallWizard extends BaculumAPIPage {
 		$cfg_data['jsontools']['fd_cfg_path'] = $this->FdCfgPath->Text;
 		$cfg_data['jsontools']['bbconsjson_path'] = $this->BBconsJSONPath->Text;
 		$cfg_data['jsontools']['bcons_cfg_path'] = $this->BconsCfgPath->Text;
-		$cfg_data['actions']['enabled'] = (integer)($this->ActionsYes->Checked === true);
-		$cfg_data['actions']['use_sudo'] = (integer)($this->ActionsUseSudo->Checked === true);
-		$cfg_data['actions']['dir_start'] = $this->DirStartAction->Text;
-		$cfg_data['actions']['dir_stop'] = $this->DirStopAction->Text;
-		$cfg_data['actions']['dir_restart'] = $this->DirRestartAction->Text;
-		$cfg_data['actions']['sd_start'] = $this->SdStartAction->Text;
-		$cfg_data['actions']['sd_stop'] = $this->SdStopAction->Text;
-		$cfg_data['actions']['sd_restart'] = $this->SdRestartAction->Text;
-		$cfg_data['actions']['fd_start'] = $this->FdStartAction->Text;
-		$cfg_data['actions']['fd_stop'] = $this->FdStopAction->Text;
-		$cfg_data['actions']['fd_restart'] = $this->FdRestartAction->Text;
 
 		$ret = $this->getModule('api_config')->setConfig($cfg_data);
 		if ($ret) {
@@ -388,7 +332,6 @@ class APIInstallWizard extends BaculumAPIPage {
 		$this->PortValidator->Display = ($this->Port->Enabled === true) ? 'Dynamic' : 'None';
 		$this->IPValidator->Display = ($this->IP->Enabled === true) ? 'Dynamic' : 'None';
 		$this->DBPathValidator->Display = ($this->DBPath->Enabled === true) ? 'Dynamic' : 'None';
-		$this->DbTestResultOk->Display = 'None';
 		$this->DbTestResultErr->Display = 'None';
 		$this->Step2Content->render($param->NewWriter);
 	}
@@ -415,15 +358,21 @@ class APIInstallWizard extends BaculumAPIPage {
 			try {
 				$is_validate = $this->getModule('db')->testDbConnection($db_params);
 			} catch (BAPIException $e) {
-				$emsg = $e;
+				$emsg = $e->getErrorMessage();
 			}
 		}
-		$this->DbTestResultOk->Display = ($is_validate === true) ? 'Dynamic' : 'None';
-		if ($emsg instanceof BAPIException) {
+		if (!empty($emsg)) {
 			$this->DbTestResultErr->Text = $emsg;
 		}
-		$this->DbTestResultErr->Display = ($is_validate === false) ? 'Dynamic' : 'None';
-		$this->Step2Content->render($param->NewWriter);
+		if ($is_validate === true) {
+			$this->getCallbackClient()->show('db_test_result_ok');
+			$this->getCallbackClient()->hide('db_test_result_err');
+			$this->getCallbackClient()->hide($this->DbTestResultErr);
+		} else {
+			$this->getCallbackClient()->hide('db_test_result_ok');
+			$this->getCallbackClient()->show('db_test_result_err');
+			$this->getCallbackClient()->show($this->DbTestResultErr);
+		}
 	}
 
 	public function connectionBconsoleTest($sender, $param) {
@@ -438,8 +387,15 @@ class APIInstallWizard extends BaculumAPIPage {
 		if (!$is_validate) {
 			$this->BconsoleTestResultErr->Text = $result->output;
 		}
-		$this->BconsoleTestResultOk->Display = ($is_validate === true) ? 'Dynamic' : 'None';
-		$this->BconsoleTestResultErr->Display = ($is_validate === false) ? 'Dynamic' : 'None';
+		if ($is_validate === true) {
+			$this->getCallbackClient()->show('bconsole_test_result_ok');
+			$this->getCallbackClient()->hide('bconsole_test_result_err');
+			$this->getCallbackClient()->hide($this->BconsoleTestResultErr);
+		} else {
+			$this->getCallbackClient()->hide('bconsole_test_result_ok');
+			$this->getCallbackClient()->show('bconsole_test_result_err');
+			$this->getCallbackClient()->show($this->BconsoleTestResultErr);
+		}
 	}
 
 	public function testJSONToolsCfg($sender, $param) {
@@ -501,24 +457,6 @@ class APIInstallWizard extends BaculumAPIPage {
 			$this->BConfigDirTestErr->Display = 'Dynamic';
 		}
 		$param->setIsValid($valid);
-	}
-
-	public function testExecActionCommand($sender, $param) {
-		$action = $param->CommandParameter;
-		$cmd = '';
-		switch ($action) {
-			case 'dir_start': $cmd = $this->DirStartAction->Text; break;
-			case 'dir_stop': $cmd = $this->DirStopAction->Text; break;
-			case 'dir_restart': $cmd = $this->DirRestartAction->Text; break;
-			case 'sd_start': $cmd = $this->SdStartAction->Text; break;
-			case 'sd_stop': $cmd = $this->SdStopAction->Text; break;
-			case 'sd_restart': $cmd = $this->SdRestartAction->Text; break;
-			case 'fd_start': $cmd = $this->FdStartAction->Text; break;
-			case 'fd_stop': $cmd = $this->FdStopAction->Text; break;
-			case 'fd_restart': $cmd = $this->FdRestartAction->Text; break;
-		};
-		$result = $this->getModule('comp_actions')->execCommand($cmd, $this->ActionsUseSudo->Checked);
-		$this->getCallbackClient()->callClientFunction('set_action_command_output', array($action, (array)$result));
 	}
 }
 ?>

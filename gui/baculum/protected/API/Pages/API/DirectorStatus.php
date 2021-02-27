@@ -19,48 +19,37 @@
  *
  * Bacula(R) is a registered trademark of Kern Sibbald.
  */
- 
+
 Prado::using('Application.API.Class.ConsoleOutputPage');
 
 /**
- * Client status.
+ * Director status command endpoint.
  *
  * @author Marcin Haba <marcin.haba@bacula.pl>
  * @category API
  * @package Baculum API
  */
-class ClientStatus extends ConsoleOutputPage {
+class DirectorStatus extends ConsoleOutputPage {
 
 	public function get() {
-		$clientid = $this->Request->contains('id') ? intval($this->Request['id']) : 0;
-		$client = $this->getModule('client')->getClientById($clientid);
-		$status = $this->getModule('status_fd');
+		$status = $this->getModule('status_dir');
+		$director = $this->Request->contains('name') && $this->getModule('misc')->isValidName($this->Request['name']) ? $this->Request['name'] : null;
 		$type = $this->Request->contains('type') && $status->isValidOutputType($this->Request['type']) ? $this->Request['type'] : null;
 		$out_format = $this->Request->contains('output') && $this->isOutputFormatValid($this->Request['output']) ? $this->Request['output'] : parent::OUTPUT_FORMAT_RAW;
-		$result = $this->getModule('bconsole')->bconsoleCommand(
-			$this->director,
-			array('.client'),
-			null,
-			true
-		);
 
-		$client_exists = false;
-		if ($result->exitcode === 0) {
-			$client_exists = (is_object($client) && in_array($client->name, $result->output));
-		}
-
-		if ($client_exists == false) {
-			// Client doesn't exist or is not available for user because of ACL restrictions
-			$this->output = ClientError::MSG_ERROR_CLIENT_DOES_NOT_EXISTS;
-			$this->error = ClientError::ERROR_CLIENT_DOES_NOT_EXISTS;
+		if (is_null($director)) {
+			// Invalid director
+			$this->output = BconsoleError::MSG_ERROR_INVALID_DIRECTOR;
+			$this->error = BconsoleError::ERROR_INVALID_DIRECTOR;
 			return;
 		}
+
 		$out = (object)['output' => [], 'error' => 0];
 		if ($out_format === parent::OUTPUT_FORMAT_RAW) {
-			$out = $this->getRawOutput(['client' => $client->name]);
+			$out = $this->getRawOutput(['director' => $director]);
 		} elseif ($out_format === parent::OUTPUT_FORMAT_JSON) {
 			$out = $this->getJSONOutput([
-				'client' => $client->name,
+				'director' => $director,
 				'type' => $type
 			]);
 		}
@@ -69,12 +58,12 @@ class ClientStatus extends ConsoleOutputPage {
 	}
 
 	protected function getRawOutput($params = []) {
-		// traditional status client output
+		// traditional status director output
 		$result = $this->getModule('bconsole')->bconsoleCommand(
-			$this->director,
+			$params['director'],
 			[
 				'status',
-				'client="' . $params['client'] . '"'
+				'director'
 			]
 		);
 		$error = $result->exitcode == 0 ? $result->exitcode : GenericError::ERROR_WRONG_EXITCODE;
@@ -86,11 +75,11 @@ class ClientStatus extends ConsoleOutputPage {
 	}
 
 	protected function getJSONOutput($params = []) {
-		// status client JSON output by API 2 interface
-		$status = $this->getModule('status_fd');
+		// status director JSON output by API 2 interface
+		$status = $this->getModule('status_dir');
 		return $status->getStatus(
-			$this->director,
-			$params['client'],
+			$params['director'],
+			null,
 			$params['type']
 		);
 	}

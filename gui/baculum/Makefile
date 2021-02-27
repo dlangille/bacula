@@ -48,13 +48,16 @@ webdatadirsrc = $(datadir)/$(webdir)/Class \
 
 apidatadirsrc = $(datadir)/$(apidir)/Class \
 	$(datadir)/$(apidir)/Config \
-	$(datadir)/$(apidir)/JavaScript \
 	$(datadir)/$(apidir)/Layouts \
 	$(datadir)/$(apidir)/Logs \
-	$(datadir)/$(apidir)/Pages
+	$(datadir)/$(apidir)/Pages \
+	$(datadir)/$(apidir)/Portlets
 
 commondatadirsrc = $(datadir)/$(commondir)/Class \
+	$(datadir)/$(commondir)/JavaScript \
+	$(datadir)/$(commondir)/Pages \
 	$(datadir)/$(commondir)/Portlets
+
 
 datafilesrc = $(datadir)/application.xml
 

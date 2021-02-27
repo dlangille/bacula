@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2020 Kern Sibbald
+ * Copyright (C) 2013-2021 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -129,13 +129,13 @@ class ClientView extends BaculumWebPage {
 
 	public function status($sender, $param) {
 		$raw_status = $this->getModule('api')->get(
-			array('clients', $this->getClientId(), 'status')
+			['clients', $this->getClientId(), 'status']
 		)->output;
 		$this->ClientLog->Text = implode(PHP_EOL, $raw_status);
 
-		$query_str = '?name=' . rawurlencode($this->getClientName()) . '&type=header';
+		$query_str = '?output=json&type=header';
 		$graph_status = $this->getModule('api')->get(
-			array('status', 'client', $query_str)
+			['clients', $this->getClientId(), 'status', $query_str]
 		);
 		$client_status = array(
 			'header' => array(),
@@ -153,9 +153,9 @@ class ClientView extends BaculumWebPage {
 			}
 		}
 
-		$query_str = '?name=' . rawurlencode($this->getClientName()) . '&type=running';
+		$query_str = '?output=json&type=running';
 		$graph_status = $this->getModule('api')->get(
-			array('status', 'client', $query_str)
+			['clients', $this->getClientId(), 'status', $query_str]
 		);
 		if ($graph_status->error === 0) {
 			$client_status['running'] = $graph_status->output;

@@ -12,7 +12,7 @@
 			"name": "AGPLv3",
 			"url": "https://www.gnu.org/licenses/agpl-3.0-standalone.html"
 		},
-		"version": "1.0.0"
+		"version": "2.0.0"
 	},
 	"server": {
 		"servers": [{
@@ -250,7 +250,7 @@
 		"description": "Bacula Client endpoints",
 		"externalDocs": {
 			"description": "Find out more",
-			"url": "https://www.bacula.org/9.6.x-manuals/en/main/Configuring_Director.html#SECTION0021130000000000000000"
+			"url": "https://www.bacula.org/11.0.x-manuals/en/main/Client_File_daemon_Configur.html#SECTION0022100000000000000000"
 		}
 	},
 	{
@@ -258,7 +258,7 @@
 		"description": "Bacula Job endpoints",
 		"externalDocs": {
 			"description": "Find out more",
-			"url": "https://www.bacula.org/9.6.x-manuals/en/main/Configuring_Director.html#SECTION002130000000000000000"
+			"url": "https://www.bacula.org/11.0.x-manuals/en/main/Configuring_Director.html#SECTION0021300000000000000000"
 		}
 	},
 	{
@@ -266,7 +266,7 @@
 		"description": "Bacula Storage endpoints",
 		"externalDocs": {
 			"description": "Find out more",
-			"url": "https://www.bacula.org/9.6.x-manuals/en/main/Configuring_Director.html#SECTION0021140000000000000000"
+			"url": "https://www.bacula.org/11.0.x-manuals/en/main/Configuring_Director.html#SECTION00211400000000000000000"
 		}
 	},
 	{
@@ -274,7 +274,7 @@
 		"description": "Bacula Pool endpoints",
 		"externalDocs": {
 			"description": "Find out more",
-			"url": "https://www.bacula.org/9.6.x-manuals/en/main/Configuring_Director.html#SECTION0021160000000000000000"
+			"url": "https://www.bacula.org/11.0.x-manuals/en/main/Configuring_Director.html#SECTION00211600000000000000000"
 		}
 	},
 	{
@@ -282,7 +282,7 @@
 		"description": "Bacula Volume endpoints",
 		"externalDocs": {
 			"description": "Find out more",
-			"url": "https://www.bacula.org/9.6.x-manuals/en/main/Basic_Volume_Management.html"
+			"url": "https://www.bacula.org/11.0.x-manuals/en/main/Basic_Volume_Management.html"
 		}
 	},
 	{
@@ -290,7 +290,7 @@
 		"description": "Bacula FileSet endpoints",
 		"externalDocs": {
 			"description": "Find out more",
-			"url": "https://www.bacula.org/9.6.x-manuals/en/main/Configuring_Director.html#SECTION002170000000000000000"
+			"url": "https://www.bacula.org/11.0.x-manuals/en/main/Configuring_Director.html#SECTION0021700000000000000000"
 		}
 	},
 	{
@@ -298,7 +298,7 @@
 		"description": "Bacula Schedule endpoints",
 		"externalDocs": {
 			"description": "Find out more",
-			"url": "https://www.bacula.org/9.6.x-manuals/en/main/Configuring_Director.html#SECTION002150000000000000000"
+			"url": "https://www.bacula.org/11.0.x-manuals/en/main/Configuring_Director.html#SECTION0021500000000000000000"
 		}
 	},
 	{
@@ -306,7 +306,7 @@
 		"description": "Bacula BVFS endpoints",
 		"externalDocs": {
 			"description": "Find out more",
-			"url": "https://www.bacula.org/9.6.x-manuals/en/main/New_Features_in_5_2_13.html#SECTION001014000000000000000"
+			"url": "https://www.bacula.org/11.0.x-manuals/en/main/New_Features_in_5_2_13.html#SECTION0010140000000000000000"
 		}
 	},
 	{
@@ -318,11 +318,16 @@
 		"description": "Bacula joblog endpoints"
 	},
 	{
-		"name": "status",
-		"description": "Bacula status endpoints"
-	}],
+		"name": "directors",
+		"description": "Bacula director endpoints",
+		"externalDocs": {
+			"description": "Find out more",
+			"url": "https://www.bacula.org/11.0.x-manuals/en/main/Configuring_Director.html"
+		}
+	}
+	],
 	"paths": {
-		"/api/v1/clients": {
+		"/api/v2/clients": {
 			"get": {
 				"tags": ["clients"],
 				"summary": "Client list",
@@ -354,7 +359,7 @@
 				}]
 			}
 		},
-		"/api/v1/clients/{clientid}": {
+		"/api/v2/clients/{clientid}": {
 			"get": {
 				"tags": ["clients"],
 				"summary": "Find client by ClientId",
@@ -386,7 +391,7 @@
 				}]
 			}
 		},
-		"/api/v1/clients/{clientid}/show": {
+		"/api/v2/clients/{clientid}/show": {
 			"get": {
 				"tags": ["clients"],
 				"summary": "Show client",
@@ -481,7 +486,7 @@
 				]
 			}
 		},
-		"/api/v1/clients/{clientid}/status": {
+		"/api/v2/clients/{clientid}/status": {
 			"get": {
 				"tags": ["clients"],
 				"summary": "Client status",
@@ -498,7 +503,7 @@
 											"type": "array",
 											"items": {
 												"type": "string",
-												"description": "Client status"
+												"description": "Client status output"
 											}
 										},
 										"error": {
@@ -512,12 +517,26 @@
 						}
 					}
 				},
-				"parameters": [{
-					"$ref": "#/components/parameters/ClientId"
-				}]
+				"parameters": [
+					{
+						"$ref": "#/components/parameters/ClientId"
+					},
+					{
+						"$ref": "#/components/parameters/Output"
+					},
+					{
+						"name": "type",
+						"in": "query",
+						"description": "Output type using together with output=json parameter.",
+						"schema": {
+							"type": "string",
+							"enum": ["header", "running", "terminated"]
+						}
+					}
+				]
 			}
 		},
-		"/api/v1/clients/{clientid}/jobs": {
+		"/api/v2/clients/{clientid}/jobs": {
 			"get": {
 				"tags": ["clients"],
 				"summary": "Jobs for client",
@@ -549,7 +568,7 @@
 				}]
 			}
 		},
-		"/api/v1/clients/{clientid}/ls": {
+		"/api/v2/clients/{clientid}/ls": {
 			"get": {
 				"tags": ["clients"],
 				"summary": "List Client files/directories",
@@ -597,7 +616,7 @@
 				]
 			}
 		},
-		"/api/v1/clients/{clientid}/bandwidth": {
+		"/api/v2/clients/{clientid}/bandwidth": {
 			"put": {
 				"tags": ["clients"],
 				"summary": "Set Client bandwidth limit",
@@ -645,7 +664,7 @@
 				]
 			}
 		},
-		"/api/v1/clients/show": {
+		"/api/v2/clients/show": {
 			"get": {
 				"tags": ["clients"],
 				"summary": "Show clients",
@@ -690,7 +709,7 @@
 				]
 			}
 		},
-		"/api/v1/jobs": {
+		"/api/v2/jobs": {
 			"get": {
 				"tags": ["jobs"],
 				"summary": "Job list",
@@ -779,7 +798,7 @@
 				]
 			}
 		},
-		"/api/v1/jobs/{jobid}": {
+		"/api/v2/jobs/{jobid}": {
 			"get": {
 				"tags": ["jobs"],
 				"summary": "Find job by JobId",
@@ -861,12 +880,12 @@
 				]
 			}
 		},
-		"/api/v1/jobs/{jobid}/cancel": {
+		"/api/v2/jobs/{jobid}/cancel": {
 			"put": {
 				"tags": ["jobs"],
 				"summary": "Cancel job",
 				"description": "Cancel running job.",
-				"consumes": [ "application/x-www-form-urlencoded" ],
+				"consumes": [ "application/json" ],
 				"responses": {
 					"200": {
 						"description": "Cancel command output",
@@ -906,7 +925,7 @@
 				]
 			}
 		},
-		"/api/v1/jobs/{jobid}/show": {
+		"/api/v2/jobs/{jobid}/show": {
 			"get": {
 				"tags": ["jobs"],
 				"summary": "Show job",
@@ -950,7 +969,7 @@
 				]
 			}
 		},
-		"/api/v1/jobs/{jobid}/bandwidth": {
+		"/api/v2/jobs/{jobid}/bandwidth": {
 			"put": {
 				"tags": ["jobs"],
 				"summary": "Set Job bandwidth limit",
@@ -998,7 +1017,7 @@
 				]
 			}
 		},
-		"/api/v1/jobs/{jobid}/files": {
+		"/api/v2/jobs/{jobid}/files": {
 			"get": {
 				"tags": ["jobs"],
 				"summary": "Show job files and directories",
@@ -1097,7 +1116,7 @@
 				]
 			}
 		},
-		"/api/v1/jobs/files": {
+		"/api/v2/jobs/files": {
 			"get": {
 				"tags": ["jobs"],
 				"summary": "Search jobs by file criteria",
@@ -1224,7 +1243,7 @@
 				]
 			}
 		},
-		"/api/v1/jobs/resnames": {
+		"/api/v2/jobs/resnames": {
 			"get": {
 				"tags": ["jobs"],
 				"summary": "Job resource names",
@@ -1262,7 +1281,7 @@
 				]
 			}
 		},
-		"/api/v1/jobs/recent/{jobname}": {
+		"/api/v2/jobs/recent/{jobname}": {
 			"get": {
 				"tags": ["jobs"],
 				"summary": "Get most recent jobids for job to restore",
@@ -1344,7 +1363,7 @@
 				]
 			}
 		},
-		"/api/v1/jobs/estimate": {
+		"/api/v2/jobs/estimate": {
 			"get": {
 				"tags": ["jobs"],
 				"summary": "Get estimate output",
@@ -1389,7 +1408,7 @@
 			"post": {
 				"tags": ["jobs"],
 				"summary": "Estimate job bytes and files",
-				"consumes": [ "application/x-www-form-urlencoded" ],
+				"consumes": [ "application/json" ],
 				"description": "Estimate job bytes and files before real job run. There can be used (id OR name) and (clientid OR client)",
 				"responses": {
 					"200": {
@@ -1419,7 +1438,7 @@
 				},
 				"parameters": [
 					{
-						"name": "create[id]",
+						"name": "id",
 						"in": "body",
 						"description": "Job identifier",
 						"required": true,
@@ -1428,7 +1447,7 @@
 						}
 					},
 					{
-						"name": "create[name]",
+						"name": "name",
 						"in": "body",
 						"description": "Job name (can be used instead id)",
 						"required": true,
@@ -1438,7 +1457,7 @@
 						}
 					},
 					{
-						"name": "create[clientid]",
+						"name": "clientid",
 						"in": "body",
 						"description": "Client identifier",
 						"required":  true,
@@ -1447,7 +1466,7 @@
 						}
 					},
 					{
-						"name": "create[client]",
+						"name": "client",
 						"in": "body",
 						"description": "Client name (can be used instead clientid)",
 						"required":  true,
@@ -1457,7 +1476,7 @@
 						}
 					},
 					{
-						"name": "create[fileset]",
+						"name": "fileset",
 						"in": "body",
 						"description": "FileSet name",
 						"required": true,
@@ -1467,7 +1486,7 @@
 						}
 					},
 					{
-						"name": "create[accurate]",
+						"name": "accurate",
 						"in": "body",
 						"description": "Accurate mode, 1 if enabled, otherwise 0",
 						"required": false,
@@ -1478,11 +1497,11 @@
 				]
 			}
 		},
-		"/api/v1/jobs/run": {
+		"/api/v2/jobs/run": {
 			"post": {
 				"tags": ["jobs"],
 				"summary": "Run job",
-				"consumes": [ "application/x-www-form-urlencoded" ],
+				"consumes": [ "application/json" ],
 				"description": "Run job with specific parameters. There can be used (id OR name) and (clientid OR client)",
 				"responses": {
 					"200": {
@@ -1512,7 +1531,7 @@
 				},
 				"parameters": [
 					{
-						"name": "create[id]",
+						"name": "id",
 						"in": "body",
 						"description": "Job identifier",
 						"required": true,
@@ -1521,7 +1540,7 @@
 						}
 					},
 					{
-						"name": "create[name]",
+						"name": "name",
 						"in": "body",
 						"description": "Job name (can be used instead id)",
 						"required": true,
@@ -1531,7 +1550,17 @@
 						}
 					},
 					{
-						"name": "create[clientid]",
+						"name": "level",
+						"in": "body",
+						"description": "Job level",
+						"required": true,
+						"schema": {
+							"type": "string",
+							"enum": ["F","I", "D", "B", "f", "V", "C", "O", "d"]
+						}
+					},
+					{
+						"name": "clientid",
 						"in": "body",
 						"description": "Client identifier",
 						"required":  true,
@@ -1540,7 +1569,7 @@
 						}
 					},
 					{
-						"name": "create[client]",
+						"name": "client",
 						"in": "body",
 						"description": "Client name (can be used instead clientid)",
 						"required":  true,
@@ -1550,7 +1579,7 @@
 						}
 					},
 					{
-						"name": "create[storageid]",
+						"name": "storageid",
 						"in": "body",
 						"description": "Storage identifier",
 						"required":  true,
@@ -1559,7 +1588,7 @@
 						}
 					},
 					{
-						"name": "create[storage]",
+						"name": "storage",
 						"in": "body",
 						"description": "Storage name (can be used instead storageid)",
 						"required":  true,
@@ -1569,7 +1598,7 @@
 						}
 					},
 					{
-						"name": "create[poolid]",
+						"name": "poolid",
 						"in": "body",
 						"description": "Pool identifier",
 						"required":  true,
@@ -1578,7 +1607,7 @@
 						}
 					},
 					{
-						"name": "create[pool]",
+						"name": "pool",
 						"in": "body",
 						"description": "Pool name (can be used instead poolid)",
 						"required":  true,
@@ -1588,7 +1617,7 @@
 						}
 					},
 					{
-						"name": "create[filesetid]",
+						"name": "filesetid",
 						"in": "body",
 						"description": "FileSet identifier",
 						"required":  true,
@@ -1597,7 +1626,7 @@
 						}
 					},
 					{
-						"name": "create[fileset]",
+						"name": "fileset",
 						"in": "body",
 						"description": "FileSet name (can be used instead filesetid)",
 						"required": true,
@@ -1607,7 +1636,7 @@
 						}
 					},
 					{
-						"name": "create[priority]",
+						"name": "priority",
 						"in": "body",
 						"description": "Job priority",
 						"required":  false,
@@ -1616,7 +1645,7 @@
 						}
 					},
 					{
-						"name": "create[accurate]",
+						"name": "accurate",
 						"in": "body",
 						"description": "Accurate mode, 1 if enabled, otherwise 0",
 						"required": false,
@@ -1625,7 +1654,7 @@
 						}
 					},
 					{
-						"name": "create[jobid]",
+						"name": "jobid",
 						"in": "body",
 						"description": "Job identifier for verify job",
 						"required":  false,
@@ -1634,7 +1663,7 @@
 						}
 					},
 					{
-						"name": "create[verifyjob]",
+						"name": "verifyjob",
 						"in": "body",
 						"description": "Verify job name",
 						"required":  false,
@@ -1646,7 +1675,7 @@
 				]
 			}
 		},
-		"/api/v1/jobs/show": {
+		"/api/v2/jobs/show": {
 			"get": {
 				"tags": ["jobs"],
 				"summary": "Show jobs",
@@ -1691,7 +1720,7 @@
 				]
 			}
 		},
-		"/api/v1/jobs/totals": {
+		"/api/v2/jobs/totals": {
 			"get": {
 				"tags": ["jobs"],
 				"summary": "Show job total bytes and files",
@@ -1730,11 +1759,11 @@
 				}
 			}
 		},
-		"/api/v1/jobs/restore": {
+		"/api/v2/jobs/restore": {
 			"post": {
 				"tags": ["jobs"],
 				"summary": "Restore job",
-				"consumes": [ "application/x-www-form-urlencoded" ],
+				"consumes": [ "application/json" ],
 				"description": "Restore backup job.",
 				"responses": {
 					"200": {
@@ -1764,7 +1793,7 @@
 				},
 				"parameters": [
 					{
-						"name": "create[id]",
+						"name": "id",
 						"in": "body",
 						"description": "Job identifier (for full restore)",
 						"required": false,
@@ -1773,7 +1802,7 @@
 						}
 					},
 					{
-						"name": "create[clientid]",
+						"name": "clientid",
 						"in": "body",
 						"description": "Client identifier",
 						"required":  true,
@@ -1782,7 +1811,7 @@
 						}
 					},
 					{
-						"name": "create[client]",
+						"name": "client",
 						"in": "body",
 						"description": "Client name (can be used instead clientid)",
 						"required":  true,
@@ -1792,7 +1821,7 @@
 						}
 					},
 					{
-						"name": "create[where]",
+						"name": "where",
 						"in": "body",
 						"description": "Where to restore files",
 						"required":  true,
@@ -1801,7 +1830,7 @@
 						}
 					},
 					{
-						"name": "create[rpath]",
+						"name": "rpath",
 						"in": "body",
 						"description": "Rpath (restore path)",
 						"required": false,
@@ -1811,7 +1840,7 @@
 						}
 					},
 					{
-						"name": "create[full]",
+						"name": "full",
 						"in": "body",
 						"description": "Full restore all files",
 						"required":  false,
@@ -1820,7 +1849,7 @@
 						}
 					},
 					{
-						"name": "create[filesetid]",
+						"name": "filesetid",
 						"in": "body",
 						"description": "FileSet identifier (for full restore)",
 						"required":  false,
@@ -1829,7 +1858,7 @@
 						}
 					},
 					{
-						"name": "create[fileset]",
+						"name": "fileset",
 						"in": "body",
 						"description": "FileSet (can be used instead of filesetid) (for full restore)",
 						"required":  false,
@@ -1838,7 +1867,7 @@
 						}
 					},
 					{
-						"name": "create[restorejob]",
+						"name": "restorejob",
 						"in": "body",
 						"description": "Restore job name",
 						"required": false,
@@ -1848,7 +1877,7 @@
 						}
 					},
 					{
-						"name": "create[strip_prefix]",
+						"name": "strip_prefix",
 						"in": "body",
 						"description": "Strip prefix in restored paths",
 						"required": false,
@@ -1857,7 +1886,7 @@
 						}
 					},
 					{
-						"name": "create[add_prefix]",
+						"name": "add_prefix",
 						"in": "body",
 						"description": "Add prefix to restored paths",
 						"required": false,
@@ -1866,7 +1895,7 @@
 						}
 					},
 					{
-						"name": "create[add_suffix]",
+						"name": "add_suffix",
 						"in": "body",
 						"description": "Add suffix to restored paths",
 						"required": false,
@@ -1875,7 +1904,7 @@
 						}
 					},
 					{
-						"name": "create[regex_where]",
+						"name": "regex_where",
 						"in": "body",
 						"description": "Use regex to file relocation",
 						"required": false,
@@ -1886,7 +1915,7 @@
 				]
 			}
 		},
-		"/api/v1/storages": {
+		"/api/v2/storages": {
 			"get": {
 				"tags": ["storages"],
 				"summary": "Storage list",
@@ -1918,7 +1947,7 @@
 				}]
 			}
 		},
-		"/api/v1/storages/{storageid}": {
+		"/api/v2/storages/{storageid}": {
 			"get": {
 				"tags": ["storages"],
 				"summary": "Find storage by StorageId",
@@ -1950,7 +1979,7 @@
 				}]
 			}
 		},
-		"/api/v1/storages/{storageid}/show": {
+		"/api/v2/storages/{storageid}/show": {
 			"get": {
 				"tags": ["storages"],
 				"summary": "Show storage",
@@ -1991,7 +2020,7 @@
 				]
 			}
 		},
-		"/api/v1/storages/{storageid}/status": {
+		"/api/v2/storages/{storageid}/status": {
 			"get": {
 				"tags": ["storages"],
 				"summary": "Storage status",
@@ -2008,13 +2037,13 @@
 											"type": "array",
 											"items": {
 												"type": "string",
-												"description": "Storage status"
+												"description": "Storage status output"
 											}
 										},
 										"error": {
 											"type": "integer",
 											"description": "Error code",
-											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 10, 11, 1000]
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 11, 20, 1000]
 										}
 									}
 								}
@@ -2022,12 +2051,26 @@
 						}
 					}
 				},
-				"parameters": [{
-					"$ref": "#/components/parameters/StorageId"
-				}]
+				"parameters": [
+					{
+						"$ref": "#/components/parameters/StorageId"
+					},
+					{
+						"$ref": "#/components/parameters/Output"
+					},
+					{
+						"name": "type",
+						"in": "query",
+						"description": "Output type using together with output=json parameter.",
+						"schema": {
+							"type": "string",
+							"enum": ["header", "running", "devices", "terminated"]
+						}
+					}
+				]
 			}
 		},
-		"/api/v1/storages/{storageid}/mount": {
+		"/api/v2/storages/{storageid}/mount": {
 			"get": {
 				"tags": ["storages"],
 				"summary": "Mount storage",
@@ -2074,7 +2117,7 @@
 				]
 			}
 		},
-		"/api/v1/storages/{storageid}/umount": {
+		"/api/v2/storages/{storageid}/umount": {
 			"get": {
 				"tags": ["storages"],
 				"summary": "Umount storage",
@@ -2118,7 +2161,7 @@
 				]
 			}
 		},
-		"/api/v1/storages/{storageid}/release": {
+		"/api/v2/storages/{storageid}/release": {
 			"get": {
 				"tags": ["storages"],
 				"summary": "Release storage",
@@ -2162,7 +2205,7 @@
 				]
 			}
 		},
-		"/api/v1/storages/show": {
+		"/api/v2/storages/show": {
 			"get": {
 				"tags": ["storages"],
 				"summary": "Show storages",
@@ -2210,7 +2253,7 @@
 				]
 			}
 		},
-		"/api/v1/pools": {
+		"/api/v2/pools": {
 			"get": {
 				"tags": ["pools"],
 				"summary": "Pool list",
@@ -2242,7 +2285,7 @@
 				}]
 			}
 		},
-		"/api/v1/pools/{poolid}": {
+		"/api/v2/pools/{poolid}": {
 			"get": {
 				"tags": ["pools"],
 				"summary": "Find pool by PoolId",
@@ -2274,7 +2317,7 @@
 				}]
 			}
 		},
-		"/api/v1/pools/{poolid}/volumes": {
+		"/api/v2/pools/{poolid}/volumes": {
 			"get": {
 				"tags": ["pools"],
 				"summary": "Get all volumes in pool",
@@ -2306,7 +2349,7 @@
 				}]
 			}
 		},
-		"/api/v1/pools/{poolid}/show": {
+		"/api/v2/pools/{poolid}/show": {
 			"get": {
 				"tags": ["pools"],
 				"summary": "Show pool",
@@ -2342,12 +2385,12 @@
 				}]
 			}
 		},
-		"/api/v1/pools/{poolid}/update": {
+		"/api/v2/pools/{poolid}/update": {
 			"put": {
 				"tags": ["pools"],
 				"summary": "Update pool properties",
 				"description": "Update properties in specific pool",
-				"consumes": [ "application/x-www-form-urlencoded" ],
+				"consumes": [ "application/json" ],
 				"responses": {
 					"200": {
 						"description": "Update pool output",
@@ -2379,12 +2422,12 @@
 				}]
 			}
 		},
-		"/api/v1/pools/{poolid}/update/volumes": {
+		"/api/v2/pools/{poolid}/update/volumes": {
 			"put": {
 				"tags": ["pools"],
 				"summary": "Update properties all volumes in pool",
 				"description": "Update properties all volumes in specific pool",
-				"consumes": [ "application/x-www-form-urlencoded" ],
+				"consumes": [ "application/json" ],
 				"responses": {
 					"200": {
 						"description": "Update all volumes in pool output",
@@ -2416,7 +2459,7 @@
 				}]
 			}
 		},
-		"/api/v1/pools/show": {
+		"/api/v2/pools/show": {
 			"get": {
 				"tags": ["pools"],
 				"summary": "Show pools",
@@ -2461,7 +2504,7 @@
 				]
 			}
 		},
-		"/api/v1/volumes": {
+		"/api/v2/volumes": {
 			"get": {
 				"tags": ["volumes"],
 				"summary": "Volume list",
@@ -2493,7 +2536,7 @@
 				}]
 			}
 		},
-		"/api/v1/volumes/{mediaid}": {
+		"/api/v2/volumes/{mediaid}": {
 			"get": {
 				"tags": ["volumes"],
 				"summary": "Find volume by MediaId",
@@ -2528,7 +2571,7 @@
 				"tags": ["volumes"],
 				"summary": "Update volume properties",
 				"description": "Update specific volume properties.",
-				"consumes": [ "application/x-www-form-urlencoded" ],
+				"consumes": [ "application/json" ],
 				"responses": {
 					"200": { 
 						"description": "Update volume output",
@@ -2560,7 +2603,7 @@
 						"$ref": "#/components/parameters/MediaId"
 					},
 					{
-						"name": "update[volstatus]",
+						"name": "volstatus",
 						"in": "body",
 						"description": "Volume status",
 						"required": false,
@@ -2569,7 +2612,7 @@
 						}
 					},
 					{
-						"name": "update[poolid]",
+						"name": "poolid",
 						"in": "body",
 						"description": "Update Volume Pool by Pool identifier",
 						"required": false,
@@ -2578,7 +2621,7 @@
 						}
 					},
 					{
-						"name": "update[volretention]",
+						"name": "volretention",
 						"in": "body",
 						"description": "Volume retention time",
 						"required": false,
@@ -2587,7 +2630,7 @@
 						}
 					},
 					{
-						"name": "update[voluseduration]",
+						"name": "voluseduration",
 						"in": "body",
 						"description": "Volume use duration time",
 						"required": false,
@@ -2596,7 +2639,7 @@
 						}
 					},
 					{
-						"name": "update[maxvoljobs]",
+						"name": "maxvoljobs",
 						"in": "body",
 						"description": "Maximum volume jobs",
 						"required": false,
@@ -2605,7 +2648,7 @@
 						}
 					},
 					{
-						"name": "update[maxvolfiles]",
+						"name": "maxvolfiles",
 						"in": "body",
 						"description": "Maximum volume files",
 						"required": false,
@@ -2614,7 +2657,7 @@
 						}
 					},
 					{
-						"name": "update[maxvolbytes]",
+						"name": "maxvolbytes",
 						"in": "body",
 						"description": "Maximum volume bytes",
 						"required": false,
@@ -2623,7 +2666,7 @@
 						}
 					},
 					{
-						"name": "update[slot]",
+						"name": "slot",
 						"in": "body",
 						"description": "Volume slot",
 						"required": false,
@@ -2632,7 +2675,7 @@
 						}
 					},
 					{
-						"name": "update[recycle]",
+						"name": "recycle",
 						"in": "body",
 						"description": "Volume recycle flag",
 						"required": false,
@@ -2643,7 +2686,7 @@
 						}
 					},
 					{
-						"name": "update[enabled]",
+						"name": "enabled",
 						"in": "body",
 						"description": "Volume enabled flag",
 						"required": false,
@@ -2654,7 +2697,7 @@
 						}
 					},
 					{
-						"name": "update[inchanger]",
+						"name": "inchanger",
 						"in": "body",
 						"description": "Volume InChanger flag",
 						"required": false,
@@ -2667,12 +2710,12 @@
 				]
 			}
 		},
-		"/api/v1/volumes/{mediaid}/prune": {
+		"/api/v2/volumes/{mediaid}/prune": {
 			"put": {
 				"tags": ["volumes"],
 				"summary": "Prune volume",
 				"description": "Do prunning on volume.",
-				"consumes": [ "application/x-www-form-urlencoded" ],
+				"consumes": [ "application/json" ],
 				"responses": {
 					"200": { 
 						"description": "Prune volume output",
@@ -2706,12 +2749,12 @@
 				]
 			}
 		},
-		"/api/v1/volumes/{mediaid}/purge": {
+		"/api/v2/volumes/{mediaid}/purge": {
 			"put": {
 				"tags": ["volumes"],
 				"summary": "Purge volume",
 				"description": "Do purging on volume.",
-				"consumes": [ "application/x-www-form-urlencoded" ],
+				"consumes": [ "application/json" ],
 				"responses": {
 					"200": { 
 						"description": "Purge volume output",
@@ -2745,7 +2788,7 @@
 				]
 			}
 		},
-		"/api/v1/volumes/{mediaid}/jobs": {
+		"/api/v2/volumes/{mediaid}/jobs": {
 			"get": {
 				"tags": ["volumes"],
 				"summary": "Jobs on volume",
@@ -2777,7 +2820,7 @@
 				}]
 			}
 		},
-		"/api/v1/volumes/required/{jobid}/{fileid}": {
+		"/api/v2/volumes/required/{jobid}/{fileid}": {
 			"get": {
 				"tags": ["volumes"],
 				"summary": "Get volumes required to restore file",
@@ -2842,7 +2885,7 @@
 				]
 			}
 		},
-		"/api/v1/volumes/label": {
+		"/api/v2/volumes/label": {
 			"get": {
 				"tags": ["volumes"],
 				"summary": "Get label volume output",
@@ -2888,7 +2931,7 @@
 				"tags": ["volumes"],
 				"summary": "Label volume",
 				"description": "Label volume with specified name (without using barcode).",
-				"consumes": [ "application/x-www-form-urlencoded" ],
+				"consumes": [ "application/json" ],
 				"responses": {
 					"200": {
 						"description": "Label volume with specified name (without barcode)",
@@ -2917,7 +2960,7 @@
 				},
 				"parameters": [
 					{
-						"name": "create[volume]",
+						"name": "volume",
 						"in": "body",
 						"description": "Volume name",
 						"required": true,
@@ -2926,7 +2969,7 @@
 						}
 					},
 					{
-						"name": "create[slot]",
+						"name": "slot",
 						"in": "body",
 						"description": "Slot number",
 						"required": true,
@@ -2936,7 +2979,7 @@
 						}
 					},
 					{
-						"name": "create[drive]",
+						"name": "drive",
 						"in": "body",
 						"description": "Drive number",
 						"required":  true,
@@ -2946,7 +2989,7 @@
 						}
 					},
 					{
-						"name": "create[storageid]",
+						"name": "storageid",
 						"in": "body",
 						"description": "Storage identifier",
 						"required":  true,
@@ -2956,7 +2999,7 @@
 						}
 					},
 					{
-						"name": "create[storage]",
+						"name": "storage",
 						"in": "body",
 						"description": "Storage name can be used instead of storageid",
 						"required":  true,
@@ -2966,7 +3009,7 @@
 						}
 					},
 					{
-						"name": "create[poolid]",
+						"name": "poolid",
 						"in": "body",
 						"description": "Pool identifier",
 						"required":  true,
@@ -2976,7 +3019,7 @@
 						}
 					},
 					{
-						"name": "create[pool]",
+						"name": "pool",
 						"in": "body",
 						"description": "Pool name can be used instead of poolid",
 						"required":  true,
@@ -2988,7 +3031,7 @@
 				]
 			}
 		},
-		"/api/v1/volumes/label/barcodes": {
+		"/api/v2/volumes/label/barcodes": {
 			"get": {
 				"tags": ["volumes"],
 				"summary": "Get label barcodes volume output",
@@ -3034,7 +3077,7 @@
 				"tags": ["volumes"],
 				"summary": "Label volume using barcodes",
 				"description": "Label volume with specified name (with using barcode).",
-				"consumes": [ "application/x-www-form-urlencoded" ],
+				"consumes": [ "application/json" ],
 				"responses": {
 					"200": {
 						"description": "Label volume with specified name (with barcode)",
@@ -3063,7 +3106,7 @@
 				},
 				"parameters": [
 					{
-						"name": "create[slots]",
+						"name": "slots",
 						"in": "body",
 						"description": "Slots numbers or slots range (ex. 1-3,5,10)",
 						"required": true,
@@ -3072,7 +3115,7 @@
 						}
 					},
 					{
-						"name": "create[drive]",
+						"name": "drive",
 						"in": "body",
 						"description": "Drive number",
 						"required":  true,
@@ -3082,7 +3125,7 @@
 						}
 					},
 					{
-						"name": "create[storageid]",
+						"name": "storageid",
 						"in": "body",
 						"description": "Storage identifier",
 						"required":  true,
@@ -3092,7 +3135,7 @@
 						}
 					},
 					{
-						"name": "create[storage]",
+						"name": "storage",
 						"in": "body",
 						"description": "Storage name can be used instead of storageid",
 						"required":  true,
@@ -3102,7 +3145,7 @@
 						}
 					},
 					{
-						"name": "create[poolid]",
+						"name": "poolid",
 						"in": "body",
 						"description": "Pool identifier",
 						"required":  true,
@@ -3112,7 +3155,7 @@
 						}
 					},
 					{
-						"name": "create[pool]",
+						"name": "pool",
 						"in": "body",
 						"description": "Pool name can be used instead of poolid",
 						"required":  true,
@@ -3124,7 +3167,7 @@
 				]
 			}
 		},
-		"/api/v1/volumes/update": {
+		"/api/v2/volumes/update": {
 			"get": {
 				"tags": ["volumes"],
 				"summary": "Get update slots output",
@@ -3170,7 +3213,7 @@
 				"tags": ["volumes"],
 				"summary": "Update slots",
 				"description": "Update volume slots (without using barcode).",
-				"consumes": [ "application/x-www-form-urlencoded" ],
+				"consumes": [ "application/json" ],
 				"responses": {
 					"200": {
 						"description": "Update volume slots (without barcode)",
@@ -3199,7 +3242,7 @@
 				},
 				"parameters": [
 					{
-						"name": "update[slots]",
+						"name": "slots",
 						"in": "body",
 						"description": "Slots numbers or slots range (ex. 1-3,5,10)",
 						"required": true,
@@ -3209,7 +3252,7 @@
 						}
 					},
 					{
-						"name": "update[drive]",
+						"name": "drive",
 						"in": "body",
 						"description": "Drive number",
 						"required":  true,
@@ -3219,7 +3262,7 @@
 						}
 					},
 					{
-						"name": "update[storageid]",
+						"name": "storageid",
 						"in": "body",
 						"description": "Storage identifier",
 						"required":  true,
@@ -3229,7 +3272,7 @@
 						}
 					},
 					{
-						"name": "update[storage]",
+						"name": "storage",
 						"in": "body",
 						"description": "Storage name can be used instead of storageid",
 						"required":  true,
@@ -3241,7 +3284,7 @@
 				]
 			}
 		},
-		"/api/v1/volumes/update/barcodes": {
+		"/api/v2/volumes/update/barcodes": {
 			"get": {
 				"tags": ["volumes"],
 				"summary": "Get update slots output using barcodes",
@@ -3287,7 +3330,7 @@
 				"tags": ["volumes"],
 				"summary": "Update slots using barcodes",
 				"description": "Update volume slots (with using barcode).",
-				"consumes": [ "application/x-www-form-urlencoded" ],
+				"consumes": [ "application/json" ],
 				"responses": {
 					"200": {
 						"description": "Update volume slots (with barcode)",
@@ -3316,7 +3359,7 @@
 				},
 				"parameters": [
 					{
-						"name": "update[slots]",
+						"name": "slots",
 						"in": "body",
 						"description": "Slots numbers or slots range (ex. 1-3,5,10)",
 						"required": true,
@@ -3326,7 +3369,7 @@
 						}
 					},
 					{
-						"name": "update[drive]",
+						"name": "drive",
 						"in": "body",
 						"description": "Drive number",
 						"required":  true,
@@ -3336,7 +3379,7 @@
 						}
 					},
 					{
-						"name": "update[storageid]",
+						"name": "storageid",
 						"in": "body",
 						"description": "Storage identifier",
 						"required":  true,
@@ -3346,7 +3389,7 @@
 						}
 					},
 					{
-						"name": "update[storage]",
+						"name": "storage",
 						"in": "body",
 						"description": "Storage name can be used instead of storageid",
 						"required":  true,
@@ -3358,7 +3401,7 @@
 				]
 			}
 		},
-		"/api/v1/filesets": {
+		"/api/v2/filesets": {
 			"get": {
 				"tags": ["filesets"],
 				"summary": "FileSet list",
@@ -3390,7 +3433,7 @@
 				}]
 			}
 		},
-		"/api/v1/filesets/{filesetid}": {
+		"/api/v2/filesets/{filesetid}": {
 			"get": {
 				"tags": ["filesets"],
 				"summary": "Find FileSet by FileSetId",
@@ -3422,7 +3465,7 @@
 				}]
 			}
 		},
-		"/api/v1/filesets/resnames": {
+		"/api/v2/filesets/resnames": {
 			"get": {
 				"tags": ["filesets"],
 				"summary": "FileSet resource names",
@@ -3455,7 +3498,7 @@
 				}
 			}
 		},
-		"/api/v1/schedules/resnames": {
+		"/api/v2/schedules/resnames": {
 			"get": {
 				"tags": ["schedules"],
 				"summary": "Schedule resource names",
@@ -3488,7 +3531,7 @@
 				}
 			}
 		},
-		"/api/v1/schedules/status": {
+		"/api/v2/schedules/status": {
 			"get": {
 				"tags": ["schedules"],
 				"summary": "Schedule status",
@@ -3580,12 +3623,12 @@
 				]
 			}
 		},
-		"/api/v1/bvfs/update": {
+		"/api/v2/bvfs/update": {
 			"put": {
 				"tags": ["bvfs"],
 				"summary": "Update BVFS cache",
 				"description": "Update BVFS cache for specific jobs identifiers",
-				"consumes": [ "application/x-www-form-urlencoded" ],
+				"consumes": [ "application/json" ],
 				"responses": {
 					"200": {
 						"description": "BVFS update command output",
@@ -3614,7 +3657,7 @@
 				}
 			}
 		},
-		"/api/v1/bvfs/lsdirs": {
+		"/api/v2/bvfs/lsdirs": {
 			"get": {
 				"tags": ["bvfs"],
 				"summary": "BVFS list directories",
@@ -3697,7 +3740,7 @@
 				]
 			}
 		},
-		"/api/v1/bvfs/lsfiles": {
+		"/api/v2/bvfs/lsfiles": {
 			"get": {
 				"tags": ["bvfs"],
 				"summary": "BVFS list files",
@@ -3780,7 +3823,7 @@
 				]
 			}
 		},
-		"/api/v1/bvfs/versions": {
+		"/api/v2/bvfs/versions": {
 			"get": {
 				"tags": ["bvfs"],
 				"summary": "BVFS list file versions",
@@ -3873,7 +3916,7 @@
 				]
 			}
 		},
-		"/api/v1/bvfs/getjobids": {
+		"/api/v2/bvfs/getjobids": {
 			"get": {
 				"tags": ["bvfs"],
 				"summary": "BVFS get particular jobids to restore",
@@ -3917,11 +3960,11 @@
 				]
 			}
 		},
-		"/api/v1/bvfs/restore": {
+		"/api/v2/bvfs/restore": {
 			"post": {
 				"tags": ["bvfs"],
 				"summary": "Prepare BVFS restore",
-				"consumes": [ "application/x-www-form-urlencoded" ],
+				"consumes": [ "application/json" ],
 				"description": "Prepare BVFS restore",
 				"responses": {
 					"200": {
@@ -3951,7 +3994,7 @@
 				},
 				"parameters": [
 					{
-						"name": "create[path]",
+						"name": "path",
 						"in": "body",
 						"description": "Path in format b2[0-9]+",
 						"required": true,
@@ -3960,7 +4003,7 @@
 						}
 					},
 					{
-						"name": "create[jobids]",
+						"name": "jobids",
 						"in": "body",
 						"description": "Comma separated job identifiers",
 						"required": true,
@@ -3969,7 +4012,7 @@
 						}
 					},
 					{
-						"name": "create[fileid]",
+						"name": "fileid",
 						"in": "body",
 						"description": "Comma seprated file identifiers",
 						"required": false,
@@ -3978,7 +4021,7 @@
 						}
 					},
 					{
-						"name": "create[dirid]",
+						"name": "dirid",
 						"in": "body",
 						"description": "Comma seprated directory identifiers",
 						"required": false,
@@ -3987,7 +4030,7 @@
 						}
 					},
 					{
-						"name": "create[findex]",
+						"name": "findex",
 						"in": "body",
 						"description": "Comma seprated directory file indexes",
 						"required": false,
@@ -3998,12 +4041,12 @@
 				]
 			}
 		},
-		"/api/v1/bvfs/clear": {
+		"/api/v2/bvfs/clear": {
 			"put": {
 				"tags": ["bvfs"],
 				"summary": "Clear BVFS cache",
 				"description": "Clear BVFS cache",
-				"consumes": [ "application/x-www-form-urlencoded" ],
+				"consumes": [ "application/json" ],
 				"responses": {
 					"200": {
 						"description": "BVFS clear cache command output",
@@ -4032,12 +4075,12 @@
 				}
 			}
 		},
-		"/api/v1/bvfs/cleanup": {
+		"/api/v2/bvfs/cleanup": {
 			"put": {
 				"tags": ["bvfs"],
 				"summary": "Cleanup BVFS (remove temporary table)",
 				"description": "Cleanup BVFS",
-				"consumes": [ "application/x-www-form-urlencoded" ],
+				"consumes": [ "application/json" ],
 				"responses": {
 					"200": {
 						"description": "BVFS cleanup output",
@@ -4066,7 +4109,7 @@
 				},
 				"parameters": [
 					{
-						"name": "update[path]",
+						"name": "path",
 						"in": "body",
 						"description": "Path in format b2[0-9]+",
 						"required": true,
@@ -4077,7 +4120,7 @@
 				]
 			}
 		},
-		"/api/v1/config": {
+		"/api/v2/config": {
 			"get": {
 				"tags": ["config"],
 				"summary": "Get components information",
@@ -4127,7 +4170,7 @@
 				}
 			}
 		},
-		"/api/v1/config/{component_type}": {
+		"/api/v2/config/{component_type}": {
 			"get": {
 				"tags": ["config"],
 				"summary": "Get component config",
@@ -4168,7 +4211,7 @@
 				"tags": ["config"],
 				"summary": "Set component config",
 				"description": "Set specific component config",
-				"consumes": [ "application/x-www-form-urlencoded" ],
+				"consumes": [ "application/json" ],
 				"responses": {
 					"200": {
 						"description": "Set config status",
@@ -4197,7 +4240,7 @@
 						"$ref": "#/components/parameters/ComponentType"
 					},
 					{
-						"name": "update[config]",
+						"name": "config",
 						"in": "body",
 						"description": "Config in JSON form to set",
 						"required": true,
@@ -4208,7 +4251,7 @@
 				]
 			}
 		},
-		"/api/v1/config/{component_type}/{resource_type}": {
+		"/api/v2/config/{component_type}/{resource_type}": {
 			"get": {
 				"tags": ["config"],
 				"summary": "Get component resources config",
@@ -4252,7 +4295,7 @@
 				"tags": ["config"],
 				"summary": "Set component resources config",
 				"description": "Set specific component resources config",
-				"consumes": [ "application/x-www-form-urlencoded" ],
+				"consumes": [ "application/json" ],
 				"responses": {
 					"200": {
 						"description": "Set resources config",
@@ -4284,7 +4327,7 @@
 						"$ref": "#/components/parameters/ResourceType"
 					},
 					{
-						"name": "update[config]",
+						"name": "config",
 						"in": "body",
 						"description": "Config in JSON form to set",
 						"required": true,
@@ -4295,7 +4338,7 @@
 				]
 			}
 		},
-		"/api/v1/config/{component_type}/{resource_type}/{resource_name}": {
+		"/api/v2/config/{component_type}/{resource_type}/{resource_name}": {
 			"get": {
 				"tags": ["config"],
 				"summary": "Get component resource config",
@@ -4342,7 +4385,7 @@
 				"tags": ["config"],
 				"summary": "Set component resource config",
 				"description": "Set specific component resource config",
-				"consumes": [ "application/x-www-form-urlencoded" ],
+				"consumes": [ "application/json" ],
 				"responses": {
 					"200": {
 						"description": "Set single resource config",
@@ -4377,7 +4420,7 @@
 						"$ref": "#/components/parameters/ResourceName"
 					},
 					{
-						"name": "update[config]",
+						"name": "config",
 						"in": "body",
 						"description": "Config in JSON form to set",
 						"required": true,
@@ -4388,7 +4431,7 @@
 				]
 			}
 		},
-		"/api/v1/joblog/{jobid}": {
+		"/api/v2/joblog/{jobid}": {
 			"get": {
 				"tags": ["joblog"],
 				"summary": "Get job log for jobid",
@@ -4433,7 +4476,7 @@
 				}]
 			}
 		},
-		"/api/v1/joblog/messages": {
+		"/api/v2/joblog/messages": {
 			"get": {
 				"tags": ["joblog"],
 				"summary": "Get console messages log.",
@@ -4476,9 +4519,9 @@
 				}]
 			}
 		},
-		"/api/v1/status/director": {
+		"/api/v2/directors/{director_name}/status": {
 			"get": {
-				"tags": ["status"],
+				"tags": ["directors"],
 				"summary": "Get director status",
 				"description": "Get director status",
 				"responses": {
@@ -4759,652 +4802,30 @@
 				},
 				"parameters": [
 					{
-						"name": "type",
-						"in": "query",
-						"description": "Output type (header, scheduled, running, terminated)",
-						"schema": {
-							"type": "string"
-						}
-					}
-				]
-			}
-		},
-		"/api/v1/status/storage": {
-			"get": {
-				"tags": ["status"],
-				"summary": "Get storage status",
-				"description": "Get storage status",
-				"responses": {
-					"200": {
-						"description": "Storage status output",
-						"content": {
-							"application/json": {
-								"schema": {
-									"type": "object",
-									"properties": {
-										"output": {
-											"description": "Storage status output",
-											"type": "object",
-											"properties": {
-												"header": {
-													"description": "Status header",
-													"type": "array",
-													"items": {
-														"type": "object",
-														"properties": {
-															"name": {
-																"description": "Storage name",
-																"type": "string"
-															},
-															"version": {
-																"description": "Storage version",
-																"type": "string"
-															},
-															"uname": {
-																"description": "Storage uname",
-																"type": "string"
-															},
-															"started_epoch": {
-																"description": "Started epoch",
-																"type": "string"
-															},
-															"started": {
-																"description": "Started time",
-																"type": "string"
-															},
-															"jobs_run": {
-																"description": "Jobs run",
-																"type": "string"
-															},
-															"jobs_running": {
-																"description": "Jobs running",
-																"type": "string"
-															},
-															"ndevices": {
-																"description": "Number of devices",
-																"type": "string"
-															},
-															"nautochgr": {
-																"description": "Number of autochangers",
-																"type": "string"
-															},
-															"plugins": {
-																"description": "Plugins",
-																"type": "string"
-															},
-															"drivers": {
-																"description": "Drivers",
-																"type": "string"
-															}
-														}
-													}
-												},
-												"devices": {
-													"description": "Storage devices",
-													"type": "array",
-													"items": {
-														"type": "object",
-														"properties": {
-															"name": {
-																"description": "Device name",
-																"type": "string"
-															},
-															"archive_device": {
-																"description": "Archive device",
-																"type": "string"
-															},
-															"type": {
-																"description": "Device type",
-																"type": "string"
-															},
-															"media_type": {
-																"description": "Media type",
-																"type": "string"
-															},
-															"open": {
-																"description": "Open",
-																"type": "string"
-															},
-															"writers": {
-																"description": "Writers",
-																"type": "string"
-															},
-															"maximum_concurrent_jobs": {
-																"description": "Maximum concurrent jobs",
-																"type": "string"
-															},
-															"maximum_volume_size": {
-																"description": "Maximum volume size",
-																"type": "string"
-															},
-															"read_only": {
-																"description": "Read only",
-																"type": "string"
-															},
-															"autoselect": {
-																"description": "Auto select",
-																"type": "string"
-															},
-															"enabled": {
-																"description": "Enabled",
-																"type": "string"
-															},
-															"free_space": {
-																"description": "Free space",
-																"type": "string"
-															},
-															"total_space": {
-																"description": "Total space",
-																"type": "string"
-															},
-															"devno": {
-																"description": "Device number",
-																"type": "string"
-															},
-															"mounted": {
-																"description": "Mounted",
-																"type": "string"
-															},
-															"waiting": {
-																"description": "Waiting",
-																"type": "string"
-															},
-															"volume": {
-																"description": "Volume name",
-																"type": "string"
-															},
-															"pool": {
-																"description": "Pool name",
-																"type": "string"
-															},
-															"blocked_desc": {
-																"description": "Blocked description",
-																"type": "string"
-															},
-															"blocked": {
-																"description": "Blocked",
-																"type": "string"
-															},
-															"append": {
-																"description": "Append",
-																"type": "string"
-															},
-															"bytes": {
-																"description": "Bytes",
-																"type": "string"
-															},
-															"blocks": {
-																"description": "Blocks",
-																"type": "string"
-															},
-															"file": {
-																"description": "File",
-																"type": "string"
-															},
-															"block": {
-																"description": "Block",
-																"type": "string"
-															}
-														}
-													}
-												},
-												"running": {
-													"description": "Running jobs",
-													"type": "array",
-													"items": {
-														"type": "object",
-														"properties": {
-															"jobid": {
-																"description": "Job identifier",
-																"type": "string"
-															},
-															"job": {
-																"description": "Job uname",
-																"type": "string"
-															},
-															"level": {
-																"description": "Job level",
-																"type": "string"
-															},
-															"type": {
-																"description": "Job type",
-																"type": "string"
-															},
-															"status": {
-																"description": "Job status letter",
-																"type": "string"
-															},
-															"status_desc": {
-																"description": "Status description",
-																"type": "string"
-															},
-															"jobbytes": {
-																"description": "jobbytes",
-																"type": "string"
-															},
-															"jobfiles": {
-																"description": "Job files",
-																"type": "string"
-															},
-															"starttime_epoch": {
-																"description": "Start time epoch",
-																"type": "string"
-															},
-															"starttime": {
-																"description": "Start time",
-																"type": "string"
-															},
-															"errors": {
-																"description": "Errors",
-																"type": "string"
-															},
-															"newbsr": {
-																"description": "New BSR",
-																"type": "string"
-															},
-															"read_volume": {
-																"description": "Read volume",
-																"type": "string"
-															},
-															"read_pool": {
-																"description": "Read pool",
-																"type": "string"
-															},
-															"read_device": {
-																"description": "Read device",
-																"type": "string"
-															},
-															"write_volume": {
-																"description": "Write volume",
-																"type": "string"
-															},
-															"write_pool": {
-																"description": "Write pool",
-																"type": "string"
-															},
-															"write_device": {
-																"description": "Write device",
-																"type": "string"
-															},
-															"spooling": {
-																"description": "Spooling",
-																"type": "string"
-															},
-															"despooling": {
-																"description": "Despooling",
-																"type": "string"
-															},
-															"despool_wait": {
-																"description": "Despool wait",
-																"type": "string"
-															},
-															"avebytes_sec": {
-																"description": "Averate bytes/second",
-																"type": "string"
-															},
-															"lastbytes_sec": {
-																"description": "Last bytes/second",
-																"type": "string"
-															}
-														}
-													}
-												},
-												"terminated": {
-													"description": "Terminated jobs",
-													"type": "array",
-													"items": {
-														"type": "object",
-														"properties": {
-															"jobid": {
-																"description": "Job identifier",
-																"type": "string"
-															},
-															"level": {
-																"description": "Job level",
-																"type": "string"
-															},
-															"type": {
-																"description": "Job type",
-																"type": "string"
-															},
-															"status": {
-																"description": "Job status letter",
-																"type": "string"
-															},
-															"status_desc": {
-																"description": "Status description",
-																"type": "string"
-															},
-															"jobbytes": {
-																"description": "jobbytes",
-																"type": "string"
-															},
-															"jobfiles": {
-																"description": "Job files",
-																"type": "string"
-															},
-															"job": {
-																"description": "Job uname",
-																"type": "string"
-															},
-															"name": {
-																"description": "Job name",
-																"type": "string"
-															},
-															"starttime_epoch": {
-																"description": "Start time epoch",
-																"type": "string"
-															},
-															"starttime": {
-																"description": "Start time",
-																"type": "string"
-															},
-															"endtime_epoch": {
-																"description": "End time epoch",
-																"type": "string"
-															},
-															"endtime": {
-																"description": "End time",
-																"type": "string"
-															},
-															"errors": {
-																"description": "Errors",
-																"type": "string"
-															}
-														}
-													}
-												}
-											}
-										},
-										"error": {
-											"type": "integer",
-											"description": "Error code",
-											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 11, 1000]
-										}
-									}
-								}
-							}
-						}
-					}
-				},
-				"parameters": [
-					{
-						"name": "name",
-						"in": "query",
-						"description": "Storage name to get status",
+						"name": "director_name",
+						"in": "path",
+						"description": "Director name",
+						"required": true,
 						"schema": {
 							"type": "string"
 						}
 					},
 					{
-						"name": "type",
-						"in": "query",
-						"description": "Output type (header, devices, running, terminated)",
-						"schema": {
-							"type": "string"
-						}
-					}
-				]
-			}
-		},
-		"/api/v1/status/client": {
-			"get": {
-				"tags": ["status"],
-				"summary": "Get client status",
-				"description": "Get client status",
-				"responses": {
-					"200": {
-						"description": "Client status output",
-						"content": {
-							"application/json": {
-								"schema": {
-									"type": "object",
-									"properties": {
-										"output": {
-											"description": "Client status output",
-											"type": "object",
-											"properties": {
-												"header": {
-													"description": "Status header",
-													"type": "array",
-													"items": {
-														"type": "object",
-														"properties": {
-															"name": {
-																"description": "Client name",
-																"type": "string"
-															},
-															"version": {
-																"description": "Client version",
-																"type": "string"
-															},
-															"uname": {
-																"description": "Client uname",
-																"type": "string"
-															},
-															"started_epoch": {
-																"description": "Started epoch",
-																"type": "string"
-															},
-															"started": {
-																"description": "Started time",
-																"type": "string"
-															},
-															"jobs_run": {
-																"description": "Jobs run",
-																"type": "string"
-															},
-															"jobs_running": {
-																"description": "Jobs running",
-																"type": "string"
-															},
-															"winver": {
-																"description": "Winver",
-																"type": "string"
-															},
-															"debug": {
-																"description": "Debug state",
-																"type": "string"
-															},
-															"trace": {
-																"description": "Trace state",
-																"type": "string"
-															},
-															"bwlimit": {
-																"description": "Bandwidth limit",
-																"type": "string"
-															},
-															"plugins": {
-																"description": "Plugins",
-																"type": "string"
-															}
-														}
-													}
-												},
-												"running": {
-													"description": "Running jobs",
-													"type": "array",
-													"items": {
-														"type": "object",
-														"properties": {
-															"jobid": {
-																"description": "Job identifier",
-																"type": "string"
-															},
-															"job": {
-																"description": "Job uname",
-																"type": "string"
-															},
-															"vss": {
-																"description": "VSS state",
-																"type": "string"
-															},
-															"level": {
-																"description": "Job level",
-																"type": "string"
-															},
-															"type": {
-																"description": "Job type",
-																"type": "string"
-															},
-															"status": {
-																"description": "Job status letter",
-																"type": "string"
-															},
-															"jobbytes": {
-																"description": "jobbytes",
-																"type": "string"
-															},
-															"jobfiles": {
-																"description": "Job files",
-																"type": "string"
-															},
-															"starttime_epoch": {
-																"description": "Start time epoch",
-																"type": "string"
-															},
-															"starttime": {
-																"description": "Start time",
-																"type": "string"
-															},
-															"errors": {
-																"description": "Errors",
-																"type": "string"
-															},
-															"bytes_sec": {
-																"description": "Averate bytes/second",
-																"type": "string"
-															},
-															"readbytes": {
-																"description": "Bytes read",
-																"type": "string"
-															},
-															"files_examined": {
-																"description": "Examined files count",
-																"type": "string"
-															},
-															"processing_file": {
-																"description": "Processing file",
-																"type": "string"
-															},
-															"sdreadseqno": {
-																"description": "SD read seq number",
-																"type": "string"
-															},
-															"fd": {
-																"description": "FD",
-																"type": "string"
-															},
-															"bwlimit": {
-																"description": "Bandwidth limit",
-																"type": "string"
-															},
-															"sdtls": {
-																"description": "SD Tls option",
-																"type": "string"
-															}
-														}
-													}
-												},
-												"terminated": {
-													"description": "Terminated jobs",
-													"type": "array",
-													"items": {
-														"type": "object",
-														"properties": {
-															"jobid": {
-																"description": "Job identifier",
-																"type": "string"
-															},
-															"level": {
-																"description": "Job level",
-																"type": "string"
-															},
-															"type": {
-																"description": "Job type",
-																"type": "string"
-															},
-															"status": {
-																"description": "Job status letter",
-																"type": "string"
-															},
-															"status_desc": {
-																"description": "Status description",
-																"type": "string"
-															},
-															"jobbytes": {
-																"description": "Job bytes",
-																"type": "string"
-															},
-															"jobfiles": {
-																"description": "Job files",
-																"type": "string"
-															},
-															"job": {
-																"description": "Job uname",
-																"type": "string"
-															},
-															"name": {
-																"description": "Job name",
-																"type": "string"
-															},
-															"starttime_epoch": {
-																"description": "Start time epoch",
-																"type": "string"
-															},
-															"starttime": {
-																"description": "Start time",
-																"type": "string"
-															},
-															"endtime_epoch": {
-																"description": "End time epoch",
-																"type": "string"
-															},
-															"endtime": {
-																"description": "End time",
-																"type": "string"
-															},
-															"errors": {
-																"description": "Errors",
-																"type": "string"
-															}
-														}
-													}
-												}
-											}
-										},
-										"error": {
-											"type": "integer",
-											"description": "Error code",
-											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 11, 1000]
-										}
-									}
-								}
-							}
-						}
-					}
-				},
-				"parameters": [
-					{
-						"name": "name",
-						"in": "query",
-						"description": "Client name to get status",
-						"schema": {
-							"type": "string"
-						}
+						"$ref": "#/components/parameters/Output"
 					},
 					{
 						"name": "type",
 						"in": "query",
-						"description": "Output type (header, running, terminated)",
+						"description": "Output type using together with output=json parameter.",
 						"schema": {
-							"type": "string"
+							"type": "string",
+							"enum": ["header", "scheduled", "running", "terminated"]
 						}
 					}
 				]
 			}
 		},
-		"/api/v1/oauth2/clients": {
+		"/api/v2/oauth2/clients": {
 			"get": {
 				"tags": ["oauth2"],
 				"summary": "OAuth2 client account list",
@@ -5433,7 +4854,7 @@
 				}
 			}
 		},
-		"/api/v1/oauth2/clients/{client_id}": {
+		"/api/v2/oauth2/clients/{client_id}": {
 			"get": {
 				"tags": ["oauth2"],
 				"summary": "Specific OAuth2 client account config",
@@ -5476,7 +4897,7 @@
 				"tags": ["oauth2"],
 				"summary": "Set OAuth2 client settings",
 				"description": "Set specific OAuth2 client settings",
-				"consumes": [ "application/x-www-form-urlencoded" ],
+				"consumes": [ "application/json" ],
 				"responses": {
 					"200": {
 						"description": "Set OAuth2 client settings",
@@ -5561,7 +4982,7 @@
 				"tags": ["oauth2"],
 				"summary": "Create OAuth2 client settings",
 				"description": "Create specific OAuth2 client settings",
-				"consumes": [ "application/x-www-form-urlencoded" ],
+				"consumes": [ "application/json" ],
 				"responses": {
 					"200": {
 						"description": "Create OAuth2 client settings",

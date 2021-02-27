@@ -1,5 +1,8 @@
 <urls>
 	<!-- Pages -->
-	<url ServiceParameter="APIInstallWizard" pattern="panel/config/" />
 	<url ServiceParameter="APIHome" pattern="panel/" />
+	<url ServiceParameter="APIInstallWizard" pattern="panel/config/" />
+	<url ServiceParameter="APIBasicUsers" pattern="panel/basic/" />
+	<url ServiceParameter="APIOAuth2Clients" pattern="panel/oauth2/" />
+	<url ServiceParameter="APISettings" pattern="panel/settings/" />
 </urls>

@@ -10,6 +10,10 @@
 		<module id="oauth2_authid" class="Application.API.Class.OAuth2.AuthIdManager" />
 		<module id="oauth2_token" class="Application.API.Class.OAuth2.TokenManager" />
 
+		<!-- API Server modules -->
+		<module id="api_server_v1" class="Application.API.Class.APIServerV1" />
+		<module id="api_server_v2" class="Application.API.Class.APIServerV2" />
+
 		<!-- database modules -->
 		<module id="db" class="Application.API.Class.Database" />
 		<module id="client" class="Application.API.Class.ClientManager" />

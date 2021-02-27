@@ -20,33 +20,25 @@
  * Bacula(R) is a registered trademark of Kern Sibbald.
  */
 
-session_start();
-
-Prado::using('Application.API.Pages.Requirements');
-Prado::using('Application.Common.Class.BaculumPage');
-Prado::using('Application.API.Class.APIConfig');
-
 /**
- * Main API pages class.
+ * API interfaces.
  *
  * @author Marcin Haba <marcin.haba@bacula.pl>
- * @category Page
+ * @category Interfaces
  * @package Baculum API
  */
-class BaculumAPIPage extends BaculumPage {
 
-	public function onPreInit($param) {
-		parent::onPreInit($param);
-		$config = $this->getModule('api_config')->getConfig('api');
-		if (count($config) === 0) {
-			if ($this->Service->getRequestedPagePath() != 'APIInstallWizard') {
-				$this->goToPage('APIInstallWizard');
-			}
-			// without config there is no way to use API panel
-			return;
-		}
-		$lang = key_exists('lang', $config) ? $config['lang'] : APIConfig::DEF_LANG;
-		$this->Application->getGlobalization()->Culture = $lang;
-	}
+/**
+ * Defines methods to work with API Server.
+ */
+interface IAPIServer {
+
+	public function get();
+
+	public function put();
+
+	public function post();
+
+	public function delete();
 }
 ?>

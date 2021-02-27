@@ -1,29 +1,37 @@
-<%@ MasterClass="Application.API.Layouts.Main" Theme="Baculum-v1"%>
+<%@ MasterClass="Application.API.Layouts.Main" Theme="Baculum-v2"%>
 <com:TContent ID="Main">
-	<com:BClientScript ScriptUrl=<%~ ../../JavaScript/misc.js %> />
-	<h3 style="clear: left"><%[ Welcome on the Baculum API default page ]%> <input type="button" class="bbutton" onclick="window.location.href='<%=$this->getService()->constructUrl('APIInstallWizard')%>'" value="<%[ Go to configuration wizard ]%>" style="float: right" /></h3>
-	<div id="tabs">
-		<ul>
-			<li><a href="#tab1"><%[ Baculum API Client ]%></a></li>
-			<li><a href="#tab2"><%[ List HTTP Basic users ]%></a></li>
-			<li><a href="#tab3"><%[ List OAuth2 clients ]%></a></li>
-		</ul>
-		<div id="tab1">
+	<div class="w3-container">
+		<h3><%[ Welcome on the Baculum API default page ]%></h3>
+		<header class="w3-container w3-white">
+			<h5>
+				<i class="fas fa-user-lock"></i> <%[ Baculum API Client ]%>
+			</h5>
+		</header>
+		<div class="w3-container w3-white">
 			<p><%[ Here you can try one from API commands ]%></p>
 			<div>
-				<com:TJuiProgressbar ID="Progress" Options.Max="3" Options.Value="false" Width="700px" CssClass="center" Style="float: left">
+				<com:TJuiProgressbar ID="Progress" Options.Max="3" Options.Value="false" Width="700px" CssClass="w3-center w3-margin-bottom" Style="float: left; position: relative">
 					<span id="progress_label"><%[ Starting... ]%></span>
 				</com:TJuiProgressbar>
-				<img id="api_refresh" src="<%=$this->getPage()->getTheme()->getBaseUrl()%>/icon_refresh.png" alt="<%[ Refresh token ]%>" title="<%[ Refresh token ]%>" onclick="oAPIHome.init_oauth2_client();" />
+				<span  id="api_refresh" style="cursor: pointer">
+					<i class="w3-padding w3-large fas fa-sync-alt" title="<%[ Refresh token ]%>" onclick="oAPIHome.init_oauth2_client();"></i>
+					<i class="w3-padding-right w3-large fas fa-eye fa-fw" title="<%[ Show/hide ]%>" onclick="oAPIHome.show_hide_token(this);"></i>
+					<i class="w3-padding w3-large fas fa-copy" title="<%[ Copy to clipboard ]%>" onclick="copy_to_clipboard(oAPIHome.token);"></i>
+				</span>
+
 			</div>
-			<div class="line" id="auth_params_combo_container" style="margin-top: 10px; width: 700px; display: none">
-				<div class="text"><com:TLabel ForControl="AuthParamsCombo" Text="<%[ Select: ]%>" /></div>
-				<div class="field">
-					<com:TActiveDropDownList ID="AuthParamsCombo" AutoPostBack="false" />
+			<div class="w3-row w3-section" id="auth_params_combo_container" style="margin-top: 10px; width: 700px; display: none">
+				<div class="w3-quarter w3-center"><com:TLabel ForControl="AuthParamsCombo" Text="<%[ Select: ]%>" /></div>
+				<div class="w3-rest">
+					<com:TActiveDropDownList
+						ID="AuthParamsCombo"
+						AutoPostBack="false"
+						CssClass="w3-select w3-border"
+					/>
 				</div>
 			</div>
-			<div style="clear: left; margin-top: 60px;">
-				<select id="section" class="api_select">
+			<div class="w3-row w3-section w3-margin-top">
+				<select id="section" class="w3-select w3-border w3-left" style="width: 200px;">
 					<option value="none"><%[ Please select API endpoint ]%></option>
 					<option value="storages">storages</option>
 					<option value="clients">clients</option>
@@ -32,209 +40,12 @@
 					<option value="joblog">joblog</option>
 					<option value="bvfs">bvfs</option>
 				</select>
-				<input id="api_command" name="command" onkeydown="if (event.keyCode == 13) { oAPIHome.send_request(); }" /> <input class="api_button" type="button" name="apply" value="<%[ Send request ]%>" onclick="oAPIHome.send_request();" />
+				<input id="api_command" class="w3-input w3-border w3-left" name="command" onkeydown="if (event.keyCode == 13) { oAPIHome.send_request(); }" style="width: 600px;" /> <a class="w3-button w3-green" type="button" name="apply" onclick="oAPIHome.send_request();"><i class="fas fa-paper-plane"></i> &nbsp;<%[ Send request ]%></a>
 			</div>
 			<div id="api_output">
 				<pre id="api_result"></pre>
 			</div>
 		</div>
-		<div id="tab2">
-			<input type="button" class="bbutton" onclick="$('#<%=$this->NewBasicClient->ClientID%>new_auth_client').slideToggle();" value="<%[ New HTTP Basic user ]%>" />
-			<com:Application.Common.Portlets.NewAuthClient ID="NewBasicClient" AuthType="basic" OnCallback="loadBasicUsers" />
-			<com:TActiveDataGrid
-				ID="BasicClientList"
-				AutoGenerateColumns="false"
-				CellPadding="2"
-				AlternatingItemStyle.BackColor="#4e4e50"
-				CssClass="tab-grid"
-			>
-				<com:TBoundColumn
-					ID="BasicUsernameColumn"
-					HeaderText="<%[ Username ]%>"
-					DataField="username"
-				/>
-				<com:TTemplateColumn
-					ID="BasicDeleteColumn"
-					HeaderText="<%[ Delete ]%>"
-					ItemStyle.HorizontalAlign="Center"
-				>
-				<prop:ItemTemplate>
-					<com:TActiveLinkButton
-						Text="<%[ Delete ]%>"
-						OnCommand="SourceTemplateControl.deleteBasicItem"
-						CommandParameter="<%#$this->getParent()->Data['username']%>"
-						Attributes.onclick="return confirm('<%[ Are you sure? ]%>')"
-						Visible="<%=($this->getParent()->getParent()->getItemCount() > 1)%>"
-					/>
-				</prop:ItemTemplate>
-				</com:TTemplateColumn>
-			</com:TActiveDataGrid>
-		</div>
-		<div id="tab3">
-			<input type="button" class="bbutton" onclick="$('#<%=$this->NewOAuth2Client->ClientID%>new_auth_client').slideToggle();" value="<%[ New OAuth2 client ]%>" />
-			<com:Application.Common.Portlets.NewAuthClient ID="NewOAuth2Client" AuthType="oauth2" OnCallback="loadOAuth2Users" />
-			<com:TActiveDataGrid
-				ID="OAuth2ClientList"
-				AutoGenerateColumns="false"
-				CellPadding="2"
-				AlternatingItemStyle.BackColor="#4e4e50"
-				CssClass="tab-grid"
-			>
-				<com:TBoundColumn
-					HeaderText="<%[ Name ]%>"
-					DataField="name"
-				/>
-				<com:TBoundColumn
-					ID="ClientIDColumn"
-					HeaderText="<%[ Client ID ]%>"
-					DataField="client_id"
-				/>
-				<com:TBoundColumn
-					HeaderText="<%[ Redirect URI ]%>"
-					DataField="redirect_uri"
-				/>
-				<com:TTemplateColumn
-					ID="OAuth2DeleteColumn"
-					HeaderText="<%[ Delete ]%>"
-					ItemStyle.HorizontalAlign="Center"
-				>
-				<prop:ItemTemplate>
-					<com:TActiveLinkButton
-						Text="<%[ Edit ]%>"
-						OnCommand="SourceTemplateControl.editOAuth2Item"
-						CommandParameter="<%#$this->getParent()->Data['client_id']%>"
-					/>
-					<com:TActiveLinkButton
-						Text="<%[ Delete ]%>"
-						OnCommand="SourceTemplateControl.deleteOAuth2Item"
-						CommandParameter="<%#$this->getParent()->Data['client_id']%>"
-						Attributes.onclick="if(!confirm('<%[ Are you sure? ]%>')) return false;"
-						Visible="<%=($this->getParent()->getParent()->getItemCount() > 1)%>"
-					/>
-				</prop:ItemTemplate>
-				</com:TTemplateColumn>
-			</com:TActiveDataGrid>
-		</div>
-		<com:TJuiDialog
-			ID="APIOAuth2EditPopup"
-			Options.Title="<%[ Edit OAuth2 client parameters ]%>"
-			Options.AutoOpen="False"
-			Options.Width="700px"
-		>
-			<com:TPanel DefaultButton="APIOAuth2SaveBtn">
-			<div class="line">
-				<div class="text"><com:TLabel ForControl="APIOAuth2ClientId" Text="<%[ OAuth2 Client ID: ]%>" /></div>
-				<div class="field">
-					<com:TActiveTextBox
-						ID="APIOAuth2ClientId"
-						CssClass="textbox"
-						ReadOnly="true"
-					/>
-				</div>
-			</div>
-			<div class="line">
-				<div class="text"><com:TLabel ForControl="APIOAuth2ClientSecret" Text="<%[ OAuth2 Client Secret: ]%>" /></div>
-				<div class="field">
-					<com:TActiveTextBox
-						ID="APIOAuth2ClientSecret"
-						CssClass="textbox"
-						CausesValidation="false"
-						MaxLength="50"
-					/>
-					<com:TRequiredFieldValidator
-						CssClass="validator-block"
-						Display="Dynamic"
-						ControlCssClass="invalidate"
-						ControlToValidate="APIOAuth2ClientSecret"
-						ValidationGroup="APIOAuth2Edit"
-						Text="<%[ Please enter Client Secret. ]%>"
-					/>
-					<com:TRegularExpressionValidator
-						CssClass="validator-block"
-						Display="Dynamic"
-						ControlCssClass="invalidate"
-						ControlToValidate="APIOAuth2ClientSecret"
-						RegularExpression="<%=OAuth2::CLIENT_SECRET_PATTERN%>"
-						ValidationGroup="APIOAuth2Edit"
-						Text="<%[ Invalid Client Secret value. Client Secret may contain any character that is not a whitespace character. ]%>"
-					/>
-					<a href="javascript:void(0)" onclick="document.getElementById('<%=$this->APIOAuth2ClientSecret->ClientID%>').value = get_random_string('ABCDEFabcdef0123456789', 40); return false;"><%[ generate ]%></a>
-				</div>
-			</div>
-			<div class="line">
-				<div class="text"><com:TLabel ForControl="APIOAuth2RedirectURI" Text="<%[ OAuth2 Redirect URI (example: https://baculumgui:9095/web/redirect): ]%>" /></div>
-				<div class="field">
-					<com:TActiveTextBox
-						ID="APIOAuth2RedirectURI"
-						CssClass="textbox"
-						CausesValidation="false"
-					/>
-					<com:TRequiredFieldValidator
-						CssClass="validator-block"
-						Display="Dynamic"
-						ControlCssClass="invalidate"
-						ControlToValidate="APIOAuth2RedirectURI"
-						ValidationGroup="APIOAuth2Edit"
-						Text="<%[ Please enter Redirect URI. ]%>"
-					/>
-				</div>
-			</div>
-			<div class="line">
-				<div class="text"><com:TLabel ForControl="APIOAuth2Scope" Text="<%[ OAuth2 scopes (space separated): ]%>" /></div>
-				<div class="field">
-					<com:TActiveTextBox
-						ID="APIOAuth2Scope"
-						CssClass="textbox"
-						CausesValidation="false"
-						TextMode="MultiLine"
-					/>
-					<a href="javascript:void(0)" onclick="set_scopes('<%=$this->APIOAuth2Scope->ClientID%>'); return false;" style="vertical-align: top"><%[ set all scopes ]%></a>
-					<com:TRequiredFieldValidator
-						CssClass="validator-block"
-						Display="Dynamic"
-						ControlCssClass="invalidate"
-						ControlToValidate="APIOAuth2Scope"
-						ValidationGroup="APIOAuth2Edit"
-						Text="<%[ Please enter OAuth2 scopes. ]%>"
-					/>
-				</div>
-			</div>
-			<div class="line">
-				<div class="text"><com:TLabel ForControl="APIOAuth2BconsoleCfgPath" Text="<%[ Dedicated Bconsole config file path: ]%>" /></div>
-				<div class="field">
-					<com:TActiveTextBox
-						ID="APIOAuth2BconsoleCfgPath"
-						CssClass="textbox"
-						CausesValidation="false"
-					/> <%[ (optional) ]%>
-				</div>
-			</div>
-			<div class="line">
-				<div class="text"><com:TLabel ForControl="APIOAuth2Name" Text="<%[ Short name: ]%>" /></div>
-				<div class="field">
-					<com:TActiveTextBox
-						ID="APIOAuth2Name"
-						CssClass="textbox"
-						CausesValidation="false"
-					/> <%[ (optional) ]%>
-				</div>
-			</div>
-			<div class="center">
-				<com:BButton
-					Text="<%[ Cancel ]%>"
-					CausesValidation="false"
-					Attributes.onclick="$('#<%=$this->APIOAuth2EditPopup->ClientID%>').dialog('close'); return false;"
-				/>
-				<com:BActiveButton
-					ID="APIOAuth2SaveBtn"
-					ValidationGroup="APIOAuth2Edit"
-					OnCommand="TemplateControl.saveOAuth2Item"
-					Text="<%[ Save ]%>"
-				>
-				</com:BActiveButton>
-			</div>
-			</com:TPanel>
-		</com:TJuiDialog>
 	</div>
 	<com:TActiveHiddenField ID="AuthParamsInput" />
 	<com:TCallback ID="AuthParamsCallback" OnCallback="setAuthParams">
@@ -248,21 +59,23 @@
 			ids: {
 				section: 'section',
 				command: 'api_command',
+				output: 'api_output',
 				result: 'api_result',
 				progress_bar: '<%=$this->Progress->ClientID%>',
 				progress_label: 'progress_label',
+				progress_content: 'progress_content',
 				refresh_token: 'api_refresh',
 				auth_params_combo_container: 'auth_params_combo_container',
 				auth_params_combo: '<%=$this->AuthParamsCombo->ClientID%>',
 				auth_params_input: '<%=$this->AuthParamsInput->ClientID%>'
 			},
 			default_commands: {
-				storages: '/api/v1/storages/',
-				clients: '/api/v1/clients?limit=5',
-				volumes: '/api/v1/volumes?limit=4',
-				jobs: '/api/v1/jobs?limit=10',
-				joblog: '/api/v1/joblog/1/',
-				bvfs: '/api/v1/bvfs/lsdirs?jobids=1&path=&limit=8'
+				storages: '/api/v2/storages/',
+				clients: '/api/v2/clients?limit=5',
+				volumes: '/api/v2/volumes?limit=4',
+				jobs: '/api/v2/jobs?limit=10',
+				joblog: '/api/v2/joblog/1/',
+				bvfs: '/api/v2/bvfs/lsdirs?jobids=1&path=&limit=8'
 			},
 			token: null,
 			auth_params_cb: <%=$this->AuthParamsCallback->ActiveControl->Javascript%>,
@@ -270,7 +83,6 @@
 				this.set_events();
 				this.set_auth_params();
 				this.init_auth();
-				this.init_tabs();
 				this.change_auth_params();
 			},
 			init_auth: function() {
@@ -287,12 +99,9 @@
 				var params = document.getElementById(this.ids.auth_params_input).value;
 				this.baculum_auth = JSON.parse(params);
 			},
-			set_progress: function(value, text) {
+			set_progress: function(value, content) {
 				$('#' + this.ids.progress_bar).progressbar('value', value);
-				$('#' + this.ids.progress_label).text(text);
-			},
-			init_tabs: function() {
-				$('#tabs').tabs({active: 0});
+				$('#' + this.ids.progress_label).html(content);
 			},
 			init_basic: function() {
 				this.set_progress(3, '<%[ Basic auth ready... ]%>');
@@ -346,7 +155,14 @@
 				request.done(function(data) {
 					if (typeof(data) == 'object' && data.hasOwnProperty('access_token')) {
 						this.token = data.access_token;
-						this.set_progress(3, '<%[ Access token: ]%> ' + this.token);
+						var text = document.createTextNode('<%[ Access token: ]%> ');
+						var span_out = document.createElement('SPAN');
+						var span_in = document.createElement('SPAN');
+						span_in.id = this.ids.progress_content;
+						span_in.textContent = this.get_masked_token();
+						span_out.appendChild(text);
+						span_out.appendChild(span_in);
+						this.set_progress(3, span_out.outerHTML);
 					}
 				}.bind(this));
 			},
@@ -370,6 +186,9 @@
 			},
 			send_request: function() {
 				var url = document.getElementById(this.ids.command).value;
+				if (!url) {
+					return;
+				}
 				var headers = {};
 				if (this.baculum_auth.auth_type == 'oauth2' && this.token) {
 					headers = {'Authorization': 'Bearer ' + this.token};
@@ -389,10 +208,27 @@
 				}.bind(this));
 			},
 			show_result: function(data) {
+				document.getElementById(this.ids.output).className = 'w3-code';
 				document.getElementById(this.ids.result).textContent = JSON.stringify(data, null, 2);
 			},
 			clear_result: function() {
+				document.getElementById(this.ids.output).className = '';
 				document.getElementById(this.ids.result).textContent = '';
+			},
+			show_hide_token: function(el) {
+				var span = document.getElementById(this.ids.progress_content);
+				if (el.classList.contains('fa-eye')) {
+					span.textContent = this.token;
+					el.classList.remove('fa-eye');
+					el.classList.add('fa-eye-slash');
+				} else {
+					span.textContent = this.get_masked_token();
+					el.classList.remove('fa-eye-slash');
+					el.classList.add('fa-eye');
+				}
+			},
+			get_masked_token: function(token) {
+				return this.token.substr(0, 7) + this.token.substr(8).replace(/./g, '*');
 			}
 		};
 		$(function() {

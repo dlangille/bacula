@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2020 Kern Sibbald
+ * Copyright (C) 2013-2021 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -45,9 +45,8 @@ class APIHome extends BaculumAPIPage {
 			$this->goToPage('APIInstallWizard');
 			return;
 		} elseif (!$this->IsCallback) {
-			$this->loadBasicUsers(null, null);
-			$this->loadOAuth2Users(null, null);
 			$this->setAuthParams(null, null);
+			$this->loadAuthParams(null, null);
 		}
 	}
 
@@ -82,20 +81,6 @@ class APIHome extends BaculumAPIPage {
 		$this->AuthParamsInput->Value = json_encode($params);
 	}
 
-	public function loadBasicUsers($sender, $param) {
-		$basic_users = $this->getBasicUsers();
-		$this->BasicClientList->dataSource = $basic_users;
-		$this->BasicClientList->dataBind();
-		$this->BasicClientList->ensureChildControls();
-	}
-
-	public function loadOAuth2Users($sender, $param) {
-		$oauth2_cfg = $this->getModule('oauth2_config')->getConfig();
-		$this->OAuth2ClientList->dataSource = array_values($oauth2_cfg);
-		$this->OAuth2ClientList->dataBind();
-		$this->loadAuthParams(null, null);
-	}
-
 	public function loadAuthParams($sender, $param) {
 		$ids = $values = array();
 		$config = $this->getModule('api_config')->getConfig();
@@ -114,67 +99,5 @@ class APIHome extends BaculumAPIPage {
 		$this->AuthParamsCombo->dataBind();
 	}
 
-	private function getBasicUsers() {
-		$basic_users = array();
-		$basic_cfg = $this->getModule('basic_apiuser')->getUsers();
-		foreach($basic_cfg as $user => $pwd) {
-			$basic_users[] = array('username' => $user);
-		}
-		return $basic_users;
-	}
-
-	public function deleteBasicItem($sender, $param) {
-		$config = $this->getModule('basic_apiuser');
-		$config->removeUser($param->getCommandParameter());
-		$this->BasicClientList->DataSource = $this->getBasicUsers();
-		$this->BasicClientList->dataBind();
-	}
-
-	public function deleteOAuth2Item($sender, $param) {
-		$config = $this->getModule('oauth2_config');
-		$clients = $config->getConfig();
-		$client_id = $param->getCommandParameter();
-		if (key_exists($client_id, $clients)) {
-			unset($clients[$client_id]);
-		}
-		$config->setConfig($clients);
-		$this->OAuth2ClientList->DataSource = array_values($config->getConfig());
-		$this->OAuth2ClientList->dataBind();
-		$this->loadAuthParams(null, null);
-	}
-
-	public function editOAuth2Item($sender, $param) {
-		$config = $this->getModule('oauth2_config');
-		$clients = $config->getConfig();
-		$client_id = $param->getCommandParameter();
-		if (key_exists($client_id, $clients)) {
-			$this->APIOAuth2ClientId->Text = $clients[$client_id]['client_id'];
-			$this->APIOAuth2ClientSecret->Text = $clients[$client_id]['client_secret'];
-			$this->APIOAuth2RedirectURI->Text = $clients[$client_id]['redirect_uri'];
-			$this->APIOAuth2Scope->Text = $clients[$client_id]['scope'];
-			$this->APIOAuth2BconsoleCfgPath->Text = $clients[$client_id]['bconsole_cfg_path'];
-			$this->APIOAuth2Name->Text = $clients[$client_id]['name'];
-		}
-		$this->APIOAuth2EditPopup->open();
-	}
-
-	public function saveOAuth2Item($sender, $param) {
-		$config = $this->getModule('oauth2_config');
-		$clients = $config->getConfig();
-		$client_id = $this->APIOAuth2ClientId->Text;
-		if (key_exists($client_id, $clients)) {
-			$clients[$client_id]['client_id'] = $client_id;
-			$clients[$client_id]['client_secret'] = $this->APIOAuth2ClientSecret->Text;
-			$clients[$client_id]['redirect_uri'] = $this->APIOAuth2RedirectURI->Text;
-			$clients[$client_id]['scope'] = $this->APIOAuth2Scope->Text;
-			$clients[$client_id]['bconsole_cfg_path'] = $this->APIOAuth2BconsoleCfgPath->Text;
-			$clients[$client_id]['name'] = $this->APIOAuth2Name->Text;
-			$config->setConfig($clients);
-		}
-		$this->APIOAuth2EditPopup->close();
-		$this->OAuth2ClientList->DataSource = array_values($clients);
-		$this->OAuth2ClientList->dataBind();
-		$this->loadAuthParams(null, null);
-	}
 }
 ?>
