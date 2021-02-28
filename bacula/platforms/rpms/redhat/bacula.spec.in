@@ -887,7 +887,8 @@ rm -f $RPM_BUILD_DIR/Release_Notes-%{version}-%{release}.txt
 %attr(-, root, %{storage_daemon_group}) /etc/init.d/bacula-sd
 %endif
 
-/etc/logrotate.d/bacula
+%attr(644, root, root) /etc/logrotate.d/bacula
+
 %{logwatch_dir}/scripts/services/bacula
 %{logwatch_dir}/scripts/shared/applybaculadate
 %attr(-, root, %{daemon_group}) %config(noreplace) %{sysconf_dir}/bacula-dir.conf
@@ -1256,7 +1257,7 @@ fi
 /etc/init.d/bacula-fd
 %endif
 
-/etc/logrotate.d/bacula
+%attr(644, root, root) /etc/logrotate.d/bacula
 
 %attr(-, root, %{daemon_group}) %config(noreplace) %{sysconf_dir}/bacula-fd.conf
 %attr(-, root, %{daemon_group}) %config(noreplace) %{sysconf_dir}/bconsole.conf
