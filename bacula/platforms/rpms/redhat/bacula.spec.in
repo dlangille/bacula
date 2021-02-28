@@ -762,6 +762,7 @@ cp -p updatedb/* $RPM_BUILD_ROOT%{script_dir}/updatedb/
 %if ! %{client_only}
 # install the sample-query.sql file
 cp -p examples/sample-query.sql $RPM_BUILD_ROOT%{script_dir}/sample-query.sql
+cp -p src/dird/query.sql $RPM_BUILD_ROOT%{script_dir}/query.sql
 
 # install the logwatch scripts
 cp -p scripts/logwatch/bacula $RPM_BUILD_ROOT%{logwatch_dir}/scripts/services/bacula
