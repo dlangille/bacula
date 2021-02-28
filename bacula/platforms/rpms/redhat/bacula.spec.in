@@ -574,11 +574,14 @@ make sqlite3
 cd ${cwd}
 %endif
 
+## Do not build lzo on rhel8/centos8
+%if !%{rhel8}
 cd %{depkgs}
 make lzo
 export LDFLAGS="${LDFLAGS} -L${PWD}/lzo/lib"
 export CPPFLAGS="${CPPFLAGS} -I${PWD}/lzo/include"
 cd ${cwd}
+%endif
 
 # hostname is the build hostname, so use XXX_HOSTNAME_XXX for Address parameter
 sed -i s/hostname/basename/ src/console/bconsole.conf.in src/dird/bacula-dir.conf.in src/qt-console/bat.conf.in
