@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2020-11-10 01:19\n"
+"PO-Revision-Date: 2021-02-28 05:35\n"
 "Project-Id-Version: b02f04a28aec0155df9503e3b78ae8cc\n"
 "POT-Creation-Date: \n"
 "Last-Translator: Sergey Zhidkov <zhsv@bk.ru>\n"
@@ -33,7 +33,7 @@ msgid "Cancel"
 msgstr "Отмена"
 
 msgid "Next"
-msgstr "Дальше"
+msgstr "Вперёд"
 
 msgid "Step 1 - select language"
 msgstr "Шаг 1 - выбор языка"
@@ -507,16 +507,16 @@ msgid "Dashboard"
 msgstr "Панель управления"
 
 msgid "Basic users"
-msgstr "Basic users"
+msgstr "Основные пользователи"
 
 msgid "OAuth2 clients"
-msgstr "OAuth2 clients"
+msgstr "Клиенты OAuth2"
 
 msgid "Settings"
-msgstr "Settings"
+msgstr "Настройки"
 
 msgid "Configuration wizard"
-msgstr "Configuration wizard"
+msgstr "Мастер настройки"
 
 msgid "Welcome"
 msgstr "Добро пожаловать"
@@ -525,49 +525,50 @@ msgid "Add user"
 msgstr "Добавить пользователя"
 
 msgid "Edit user"
-msgstr "Edit user"
+msgstr "Изменить пользователя"
 
 msgid "Add OAuth2 client"
-msgstr "Add OAuth2 client"
+msgstr "Добавить нового OAuth2 клиента"
 
 msgid "Are you sure?"
-msgstr "Are you sure?"
+msgstr "Вы уверены?"
 
 msgid "API settings"
-msgstr "API settings"
+msgstr "Настройки API"
 
 msgid "General"
-msgstr "General"
+msgstr "Основное"
 
 msgid "Catalog"
-msgstr "Catalog"
+msgstr "Каталог"
 
 msgid "Console"
-msgstr "Console"
+msgstr "Консоль"
 
 msgid "Config"
-msgstr "Config"
+msgstr "Настройка"
 
 msgid "Enabled:"
-msgstr "Enabled:"
+msgstr "Включено:"
 
 msgid "Debug:"
-msgstr "Debug:"
+msgstr "Отладка:"
 
 msgid "Add client"
-msgstr "Add client"
+msgstr "Добавить клиента"
 
 msgid "Edit client"
-msgstr "Edit client"
+msgstr "Изменить клиента"
 
 msgid "Invalid user. User may contain a-z A-Z 0-9 characters."
-msgstr "Invalid user. User may contain a-z A-Z 0-9 characters."
+msgstr "Недопустимый пользователь. Пользователь может содержать символы a-z A-Z 0-9."
 
 msgid "Show/hide"
-msgstr "Show/hide"
+msgstr "Показать/скрыть"
 
 msgid "Copy to clipboard"
-msgstr "Copy to clipboard"
+msgstr "Копировать в буфер обмена"
 
 msgid "Logout"
-msgstr "Logout"
+msgstr "Выйти"
+

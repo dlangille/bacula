@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2020-11-24 16:56\n"
+"PO-Revision-Date: 2021-02-28 05:38\n"
 "Project-Id-Version: b02f04a28aec0155df9503e3b78ae8cc\n"
 "POT-Creation-Date: \n"
 "Last-Translator: Sergey Zhidkov <zhsv@bk.ru>\n"
@@ -3073,7 +3073,7 @@ msgid "State"
 msgstr "Состояние"
 
 msgid "saved"
-msgstr "сохранить"
+msgstr "сохранено"
 
 msgid "deleted"
 msgstr "удалено"
@@ -3187,10 +3187,10 @@ msgid "Terminated jobs"
 msgstr "Завершенные задания"
 
 msgid "All devices"
-msgstr "Все устройства"
+msgstr "Все"
 
 msgid "All device types"
-msgstr "Все типы устройств"
+msgstr "Все"
 
 msgid "All media types"
 msgstr "Все типы медиа"
@@ -3205,16 +3205,17 @@ msgid "Status request timed out. The most probably the Bacula storage is not ava
 msgstr "Истекло время ожидания. Скорее всего, хранилище Bacula недоступно или не работает."
 
 msgid "Display messages log window"
-msgstr "Display messages log window"
+msgstr "Отображать окно журнала лога"
 
 msgid "Truncate log"
-msgstr "Truncate log"
+msgstr "Обрезать журнал"
 
 msgid "Messages"
-msgstr "Messages"
+msgstr "Сообщения"
 
 msgid "Last %errors/%count jobs finished with error."
-msgstr "Last %errors/%count jobs finished with error."
+msgstr "Последнее %errors/%count заданий закончились с ошибкой."
 
 msgid "All last %count jobs finished successfully."
-msgstr "All last %count jobs finished successfully."
+msgstr "Все последние %count задания успешно завершены."
+
