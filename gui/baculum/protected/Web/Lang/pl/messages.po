@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2020-06-25 17:11\n"
+"PO-Revision-Date: 2021-02-28 06:29\n"
 "Project-Id-Version: b02f04a28aec0155df9503e3b78ae8cc\n"
 "POT-Creation-Date: \n"
 "Last-Translator: Marcin Haba <marcin.haba@bacula.pl>\n"
@@ -3004,7 +3004,7 @@ msgid "OAuth2 clients"
 msgstr "Klienci OAuth2"
 
 msgid "Short name"
-msgstr "Nazwa"
+msgstr "Krótka nazwa"
 
 msgid "Add new OAuth2 client"
 msgstr "Dodaj nowego klienta OAuth2"
@@ -3048,12 +3048,11 @@ msgstr "Zarządca dla pliku konfiguracyjnego Bconsole:"
 msgid "The console ACLs enable to define available resources for users. The consoles are used in the Bacula configuration on the API host side. There is possible to assign the consoles to the OAuth2 clients that can be used in API hosts. The assign relation is: Console ACL -&gt; OAuth2 client -&gt; API host -&gt; User account."
 msgstr "Konsole ACL umożliwiają zdefiniowanie dostępnych zasobów dla użytkowników. Konsole są używane w konfiguracji Bacula po stronie hosta API. Jest możliwe przypisanie konsoli do klientów OAuth2, którzy mogą być użyci w hostach API. Relacja przypisania jest: Console ACL -&gt; Klient OAuth2 -&gt; Host API -&gt; Konto użytkownika."
 
-
 msgid "The OAuth2 clients are configured on the API hosts. To create the OAuth2 clients from this page, you need to have an 'oauth2' scope in OAuth2 account related to your current admin user account. The OAuth2 client accounts are also possible to create directly in the panel of the Baculum API."
-msgstr "Klienci OAuth2 są konfigurowani na hostach API. Aby stworzyć klienta OAuth2 z tej strony, potrzebujesz przypisać zakres 'oauth2' na koncie OAuth2 powiązanym z twoim obecnym kontem administratora."
+msgstr "Klienci OAuth2 są konfigurowani na hostach API. Aby stworzyć klienta OAuth2 z tej strony, potrzebujesz przypisać zakres 'oauth2' na koncie OAuth2 powiązanym z twoim obecnym kontem administratora. Konto klienta OAuth2 można stworzyć również bezpośrednio w panelu Baculum API."
 
 msgid "The API hosts define connection parameters to hosts with the Baculum API instances. You can create the API host connections dedicated for specific users by assigning API hosts to them on the Users tab. There is possible to create many API host connections to the same Baculum API instance."
-msgstr "Hosty API definiują parametry połączenia do hostów z instancjami Baculum API. Możesz stworzyć połączenia do hostów API dedykowane dla określonych użytkowników poprzez przypisanie hostów API do  nich na zakładce Użytkownicy. Jest możliwe utworzenie wielu połączeń do hostów API dla tej samej instancji Baculum API."
+msgstr "Hosty API definiują parametry połączenia do hostów z instancjami Baculum API. Możesz stworzyć połączenia do hostów API dedykowane dla określonych użytkowników poprzez przypisanie hostów API do nich na zakładce Użytkownicy. Jest możliwe utworzenie wielu połączeń do hostów API dla tej samej instancji Baculum API."
 
 msgid "Set all CommandAcls used by Baculum Web"
 msgstr "Ustaw wszystkie wartości CommandAcl używane przez Baculum Web"
@@ -3206,7 +3205,7 @@ msgid "Status request timed out. The most probably the Bacula storage is not ava
 msgstr "Przekroczono limit czasu żądania statusu. Najprawdopodobniej magazyn Bacula jest niedostępny lub nie jest uruchomiony."
 
 msgid "Display messages log window"
-msgstr "Wyświetl okno z wiadomościami"
+msgstr "Wyświetl okno dziennika wiadomości"
 
 msgid "Truncate log"
 msgstr "Przytnij dziennik"
@@ -3219,3 +3218,4 @@ msgstr "Ostatnie %errors/%count zadań zakończyło się błędem."
 
 msgid "All last %count jobs finished successfully."
 msgstr "Wszystkie ostatnie %count zadań zakończyło się pomyślnie."
+

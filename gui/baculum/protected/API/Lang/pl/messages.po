@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2019-12-09 06:55\n"
+"PO-Revision-Date: 2021-02-28 06:28\n"
 "Project-Id-Version: b02f04a28aec0155df9503e3b78ae8cc\n"
 "POT-Creation-Date: \n"
 "Last-Translator: Marcin Haba <marcin.haba@bacula.pl>\n"
@@ -9,11 +9,13 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: crowdin.com\n"
+"X-Generator: Poedit 1.5.4\n"
 "Plural-Forms: nplurals=4; plural=(n==1 ? 0 : (n%10>=2 && n%10<=4) && (n%100<12 || n%100>14) ? 1 : n!=1 && (n%10>=0 && n%10<=1) || (n%10>=5 && n%10<=9) || (n%100>=12 && n%100<=14) ? 2 : 3);\n"
 "X-Crowdin-Project: b02f04a28aec0155df9503e3b78ae8cc\n"
+"X-Crowdin-Project-ID: 1\n"
 "X-Crowdin-Language: pl\n"
 "X-Crowdin-File: /Baculum API/messages.po\n"
+"X-Crowdin-File-ID: 51\n"
 
 msgid "Language:"
 msgstr "Język:"
@@ -421,7 +423,7 @@ msgid "Authentication type:"
 msgstr "Typ uwierzytelniania:"
 
 msgid "Step 5 - authentication to API"
-msgstr "Krok 5 - uwierzytelnianie do API"
+msgstr "Krok 5 - uwierzytelnianie API"
 
 msgid "Actions"
 msgstr "Akcje"
@@ -505,16 +507,16 @@ msgid "Dashboard"
 msgstr "Start"
 
 msgid "Basic users"
-msgstr "Basic users"
+msgstr "Użytkownicy Basic"
 
 msgid "OAuth2 clients"
-msgstr "OAuth2 clients"
+msgstr "Klienci OAuth2"
 
 msgid "Settings"
-msgstr "Settings"
+msgstr "Ustawienia"
 
 msgid "Configuration wizard"
-msgstr "Configuration wizard"
+msgstr "Kreator konfiguracji"
 
 msgid "Welcome"
 msgstr "Witaj"
@@ -529,7 +531,7 @@ msgid "Add OAuth2 client"
 msgstr "Dodaj klienta OAuth2"
 
 msgid "Are you sure?"
-msgstr "Czy jesteś pewien?"
+msgstr "Jesteś pewien?"
 
 msgid "API settings"
 msgstr "Ustawienia API"
@@ -538,7 +540,7 @@ msgid "General"
 msgstr "Ogólne"
 
 msgid "Catalog"
-msgstr "Baza danych"
+msgstr "Baza katalogowa"
 
 msgid "Console"
 msgstr "Konsola"
@@ -547,7 +549,7 @@ msgid "Config"
 msgstr "Konfiguracja"
 
 msgid "Enabled:"
-msgstr "Włączone:"
+msgstr "Włączony:"
 
 msgid "Debug:"
 msgstr "Debug:"
@@ -559,7 +561,7 @@ msgid "Edit client"
 msgstr "Edytuj klienta"
 
 msgid "Invalid user. User may contain a-z A-Z 0-9 characters."
-msgstr "Niepoprawna nazwa użytkownika. Użytkownik może zawierać znaki: a-z A-Z 0-9"
+msgstr "Niepoprawny użytkownik. Użytkownik może zawierać znaki z zakresu: a-z A-Z 0-9."
 
 msgid "Show/hide"
 msgstr "Pokaż/ukryj"
@@ -568,4 +570,5 @@ msgid "Copy to clipboard"
 msgstr "Kopiuj do schowka"
 
 msgid "Logout"
-msgstr "Wyloguj się"
+msgstr "Wyloguj"
+
