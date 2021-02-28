@@ -154,6 +154,9 @@ Source2: Release_Notes-%{version}-%{release}.tar.gz
 %define rhel7 0
 %{?build_rhel7:%define rhel7 1}
 %{?build_el7:%define rhel7 1}
+%define rhel8 0
+%{?build_rhel8:%define rhel8 1}
+%{?build_el8:%define rhel8 1}
 # CentOS build
 %define centos3 0
 %{?build_centos3:%define centos3 1}
@@ -211,7 +214,7 @@ Source2: Release_Notes-%{version}-%{release}.tar.gz
 # if the platform is using systemd
 %define usesystemd 0
 
-%if %{rhel7} || %{fc22}|| %{fc25} || %{fc26} || %{fc27} || %{centos7}
+%if %{rhel7} || %{rhel8} || %{fc22}|| %{fc25} || %{fc26} || %{fc27} || %{centos7}
 %define usesystemd 1
 %endif
 
@@ -238,7 +241,7 @@ Source2: Release_Notes-%{version}-%{release}.tar.gz
 %define suse 1
 %endif
 %define rhel 0
-%if %{rhel3} || %{rhel4} || %{rhel5} || %{rhel6} || %{rhel7} || %{centos3} || %{centos4} || %{centos5} || %{centos6} || %{centos7}
+%if %{rhel3} || %{rhel4} || %{rhel5} || %{rhel6} || %{rhel7} || %{rhel8} || %{centos3} || %{centos4} || %{centos5} || %{centos6} || %{centos7}
 %define rhel 1
 %endif
 %define scil 0
