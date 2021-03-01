@@ -25,6 +25,22 @@
 
 class IPADDR : public SMARTALLOC {
  public:
+   /* At initialization time of a resource, every addresses inside the resources
+    * are initialized with a R_DEFAULT address.
+    * This address is a dummy address that is replaced by any address specified
+    * by the user inside the resource definition.
+    * R_MULTIPLE allows to specify multiple address (?or port?) in the list
+    * while R_SINGLE_* only allows one single address.
+    * When "adding" a R_SINGLE_* address to a list, then the supposed unique address
+    * in the list is replaced.
+    * When adding a R_MULTIPLE address to a list, if a R_DEFAULT remain then
+    * it is replaced, else the address is added to the other already in the list
+    * R_MULTIPLE is used by store_addresses() to create list of more than one address
+    * in the resource but also outside of the resources to create list of one
+    * (like in bnet_host2ipaddrs()) or more addresses (like in resolv_host())
+    * Notice that R_SINGLE_PORT & R_SINGLE_ADDR are converted into R_SINGLE
+    * when stored in the list
+    */
    typedef enum { R_SINGLE, R_SINGLE_PORT, R_SINGLE_ADDR, R_MULTIPLE,
                   R_DEFAULT, R_EMPTY
    } i_type;
