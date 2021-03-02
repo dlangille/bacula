@@ -64,14 +64,13 @@ int DEVICE::read_dev_volume_label(DCR *dcr)
    char *VolName = dcr->VolumeName;
    DEV_RECORD *record;
    bool ok = false;
-   DEV_BLOCK *block = dcr->block;
    int stat;
    bool want_ansi_label;
    bool have_ansi_label = false;
 
    Enter(dbglvl);
    Dmsg5(dbglvl, "Enter read_volume_label adata=%d res=%d device=%s vol=%s dev_Vol=%s\n",
-      block->adata, num_reserved(), print_name(), VolName,
+         dcr->block->adata, num_reserved(), print_name(), VolName,
       VolHdr.VolumeName[0]?VolHdr.VolumeName:"*NULL*");
 
 
@@ -124,7 +123,7 @@ int DEVICE::read_dev_volume_label(DCR *dcr)
 
    /* Read the Bacula Volume label block */
    record = new_record();
-   empty_block(block);
+   empty_block(dcr->block);
 
    Dmsg0(130, "Big if statement in read_volume_label\n");
    dcr->reading_label = true;
@@ -165,7 +164,7 @@ int DEVICE::read_dev_volume_label(DCR *dcr)
          if (jcr->errmsg[0]) {
             Jmsg(jcr, M_ERROR, 0, "%s", jcr->errmsg);
          }
-         empty_block(block);
+         empty_block(dcr->block);
          Leave(dbglvl);
          return VOL_OK;
       }
@@ -293,14 +292,14 @@ int DEVICE::read_dev_volume_label(DCR *dcr)
    }
 
    if (dcr->is_writing()) {
-       empty_block(block);
+       empty_block(dcr->block);
    }
 
    Leave(dbglvl);
    return VOL_OK;
 
 bail_out:
-   empty_block(block);
+   empty_block(dcr->block);
    rewind(dcr);
    Dmsg2(dbglvl, "return stat=%d %s", stat, jcr->errmsg);
    Leave(dbglvl);
@@ -319,22 +318,20 @@ bail_out:
 bool DEVICE::write_volume_label_to_block(DCR *dcr)
 {
    DEVICE *dev;
-   DEV_BLOCK *block;
    DEV_RECORD rec;
    JCR *jcr = dcr->jcr;
    bool ok = true;
 
    Enter(100);
    dev = dcr->dev;
-   block = dcr->block;
    memset(&rec, 0, sizeof(rec));
    rec.data = get_memory(SER_LENGTH_Volume_Label);
    memset(rec.data, 0, SER_LENGTH_Volume_Label);
-   empty_block(block);                /* Volume label always at beginning */
+   empty_block(dcr->block);     /* Volume label always at beginning */
 
    create_volume_label_record(dcr, dcr->dev, &rec, dcr->block->adata);
 
-   block->BlockNumber = 0;
+   dcr->block->BlockNumber = 0;
    /* Note for adata this also writes to disk */
    Dmsg1(100, "write_record_to_block adata=%d\n", dcr->dev->adata);
    if (!write_record_to_block(dcr, &rec)) {
@@ -345,7 +342,7 @@ bool DEVICE::write_volume_label_to_block(DCR *dcr)
       goto get_out;
    } else {
       Dmsg4(100, "Wrote fd=%d adata=%d label of %d bytes to block. Vol=%s\n",
-         dev->fd(), block->adata, rec.data_len, dcr->VolumeName);
+         dev->fd(), dcr->block->adata, rec.data_len, dcr->VolumeName);
    }
    free_pool_memory(rec.data);
 
@@ -453,16 +450,14 @@ bool DEVICE::write_volume_label_to_dev(DCR *dcr, const char *VolName,
               const char *PoolName, bool relabel, bool no_prelabel)
 {
    DEVICE *dev, *ameta_dev;
-   DEV_BLOCK *block;
    DEV_RECORD *rec = new_record();
    bool rtn = false;
 
    Enter(100);
    dev = dcr->dev;
    ameta_dev = dcr->ameta_dev;
-   block = dcr->block;
 
-   empty_block(block);
+   empty_block(dcr->block);
    if (!dev->rewind(dcr)) {
       Dmsg2(130, "Bad status on %s from rewind: ERR=%s\n", dev->print_name(), dev->print_errmsg());
       goto bail_out;
@@ -479,7 +474,7 @@ bool DEVICE::write_volume_label_to_dev(DCR *dcr, const char *VolName,
     *   to skip past it. Otherwise, we write a new one if
     *   so requested.
     */
-   if (!block->adata) {
+   if (!dcr->block->adata) {
       if (dev->label_type != B_BACULA_LABEL) {
          if (read_ansi_ibm_label(dcr) != VOL_OK) {
             dev->rewind(dcr);
@@ -490,7 +485,7 @@ bool DEVICE::write_volume_label_to_dev(DCR *dcr, const char *VolName,
       }
    }
 
-   create_volume_label_record(dcr, dev, rec, block->adata);
+   create_volume_label_record(dcr, dev, rec, dcr->block->adata);
    rec->Stream = 0;
    rec->maskedStream = 0;
 
@@ -502,17 +497,17 @@ bool DEVICE::write_volume_label_to_dev(DCR *dcr, const char *VolName,
       Dmsg2(40, "Bad Label write on %s: ERR=%s\n", dev->print_name(), dev->print_errmsg());
       goto bail_out;
    } else {
-      Dmsg3(100, "Wrote label=%d bytes adata=%d block: %s\n", rec->data_len, block->adata, dev->print_name());
+      Dmsg3(100, "Wrote label=%d bytes adata=%d block: %s\n", rec->data_len, dcr->block->adata, dev->print_name());
    }
    Dmsg3(100, "New label adata=%d VolCatBytes=%lld VolCatStatus=%s\n",
       dev->adata, ameta_dev->VolCatInfo.VolCatBytes, ameta_dev->VolCatInfo.VolCatStatus);
 
-   if (block->adata) {
+   if (dcr->block->adata) {
       /* Empty block and set data start address */
       empty_block(dcr->adata_block);
    } else {
       Dmsg4(130, "Call write_block_to_dev() fd=%d adata=%d block=%p Addr=%lld\n",
-         dcr->dev->fd(), dcr->block->adata, dcr->block, block->dev->lseek(dcr, 0, SEEK_CUR));
+         dcr->dev->fd(), dcr->block->adata, dcr->block, dcr->block->dev->lseek(dcr, 0, SEEK_CUR));
       Dmsg1(100, "write_record_to_dev adata=%d\n", dcr->dev->adata);
       /* Write ameta block to device */
       if (!dcr->write_block_to_dev()) {
