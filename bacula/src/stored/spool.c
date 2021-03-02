@@ -304,6 +304,10 @@ static bool despool_data(DCR *dcr, bool commit)
 
    dcr->block = block;                /* reset block */
 
+#if defined(HAVE_POSIX_FADVISE) && defined(POSIX_FADV_DONTNEED)
+   posix_fadvise(rdcr->spool_fd, 0, 0, POSIX_FADV_DONTNEED);
+#endif
+
    lseek(rdcr->spool_fd, 0, SEEK_SET); /* rewind */
    if (ftruncate(rdcr->spool_fd, 0) != 0) {
       berrno be;
