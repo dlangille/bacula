@@ -849,6 +849,7 @@ bool s3_driver::init(CLOUD *cloud, POOLMEM *&err)
       return false;
    }
 
+#if BEEF
    /*load glacier */
    if (me) {
       load_glacier_driver(me->plugin_directory);
@@ -869,6 +870,7 @@ bool s3_driver::init(CLOUD *cloud, POOLMEM *&err)
          }
       }
    }
+#endif
 
    return true;
 }
