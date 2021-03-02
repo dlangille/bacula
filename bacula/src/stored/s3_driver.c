@@ -30,6 +30,8 @@
 #include "s3_driver.h"
 #ifdef BEE
 #include "bee_s3_cloud_glacier.h"
+#else
+#include "cloud_glacier.h"
 #endif
 #include <dlfcn.h>
 #include <fcntl.h>
