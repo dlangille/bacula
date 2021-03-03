@@ -27,7 +27,6 @@ fi
 
 if $bindir/mysql $* -u root -f <<END-OF-DATA
 use mysql
-grant all privileges on ${db_name}.* to ${db_user}@localhost ${ssl_options};
 grant all privileges on ${db_name}.* to ${db_user}@"%" ${ssl_options};
 select * from user;
 flush privileges;
