@@ -43,7 +43,7 @@ public:
    cloud_glacier() {};
    virtual ~cloud_glacier() {};
    
-   virtual bool init(cloud_glacier_ctx *ctx, POOLMEM *&err) = 0;
+   virtual bool init(CLOUD *cloud, POOLMEM *&err) = 0;
    virtual bool restore_cloud_object(transfer *xfer, const char *cloud_fname) = 0;
    virtual bool is_waiting_on_server(transfer *xfer, const char *cloud_fname) = 0;
 };
@@ -51,7 +51,7 @@ public:
 class dummy_glacier: public cloud_glacier {
 public:
    dummy_glacier() {};
-   bool init (cloud_glacier_ctx *ctx, POOLMEM *&err)
+   bool init (CLOUD *cloud, POOLMEM *&err)
    {
       Mmsg(err, "Cloud glacier not properly loaded");
       return false;

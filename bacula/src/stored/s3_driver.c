@@ -854,18 +854,7 @@ bool s3_driver::init(CLOUD *cloud, POOLMEM *&err)
    if (me) {
       load_glacier_driver(me->plugin_directory);
       if (glacier_item.ptr) {
-         s3_cloud_glacier_ctx glacier_ctx;
-         glacier_ctx.host_name = cloud->host_name;
-         glacier_ctx.bucket_name = cloud->bucket_name;
-         glacier_ctx.protocol = (S3Protocol)cloud->protocol;
-         glacier_ctx.uri_style = (S3UriStyle)cloud->uri_style;
-         glacier_ctx.access_key = cloud->access_key;
-         glacier_ctx.secret_key = cloud->secret_key;
-         glacier_ctx.region = cloud->region;
-         glacier_ctx.transfer_priority = cloud->transfer_priority;
-         glacier_ctx.transfer_retention = cloud->transfer_retention;
-
-         if (!glacier_item.ptr->init(&glacier_ctx, err)) {
+         if (!glacier_item.ptr->init(cloud, err)) {
             return false;
          }
       }
