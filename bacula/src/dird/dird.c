@@ -1144,7 +1144,7 @@ static bool check_resources()
             Emsg0(M_ERROR_TERM, 0, _("Too many items in Job resource\n"));
          }
       }
-      if (!job->storage && !job->pool->storage) {
+      if (!job->storage && (job->pool && !job->pool->storage)) {
          Jmsg(NULL, M_FATAL, 0, _("No storage specified in Job \"%s\" nor in Pool.\n"),
             job->name());
          OK = false;
