@@ -2722,10 +2722,10 @@ bool open_db(UAContext *ua)
     * private or the shared link
     */
    if (ua->force_mult_db_connections) {
-      ua->db = ua->private_db;
+      ua->jcr->db = ua->db = ua->private_db;
 
    } else {
-      ua->db = ua->shared_db;
+      ua->jcr->db = ua->db = ua->shared_db;
    }
 
    if (ua->db) {
