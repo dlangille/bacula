@@ -1031,19 +1031,10 @@
 									"type": "object",
 									"properties": {
 										"output": {
-											"type": "object",
-											"properties": {
-												"items": {
-													"type": "array",
-													"items": {
-														"type": "string",
-														"description": "Show job files output list"
-													}
-												},
-												"total": {
-													"type": "integer",
-													"description": "Total number of items"
-												}
+											"type": "array",
+											"items": {
+												"type": "string",
+												"description": "Job files output list"
 											}
 										},
 										"error": {

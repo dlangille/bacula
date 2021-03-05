@@ -63,11 +63,13 @@ class JobListFiles extends BaculumAPIServer {
 						'limit' => $limit,
 						'search' => $search
 					]);
-					//NOTE: Standarize raw and json output in new version API v2
-					$result = [
-						'items' => $result,
-						'totals' => count($result)
-					];
+					if (APIServer::getVersion() === 1) {
+						// TODO: Remove it when APIv1 will not be used
+						$result = [
+							'items' => $result,
+							'totals' => count($result)
+						];
+					}
 				}
 				$this->output = $result;
 				$this->error = GenericError::ERROR_NO_ERRORS;
