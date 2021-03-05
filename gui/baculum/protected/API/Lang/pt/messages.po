@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2019-12-17 17:21\n"
+"PO-Revision-Date: 2021-03-05 03:45\n"
 "Project-Id-Version: b02f04a28aec0155df9503e3b78ae8cc\n"
 "POT-Creation-Date: \n"
 "Last-Translator: Wanderlei Hüttel <wanderlei.huttel@gmail.com>\n"
@@ -12,8 +12,10 @@ msgstr ""
 "X-Generator: Poedit 1.5.4\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "X-Crowdin-Project: b02f04a28aec0155df9503e3b78ae8cc\n"
+"X-Crowdin-Project-ID: 1\n"
 "X-Crowdin-Language: pt-BR\n"
 "X-Crowdin-File: /Baculum API/messages.po\n"
+"X-Crowdin-File-ID: 51\n"
 
 msgid "Language:"
 msgstr "Idioma:"
@@ -235,7 +237,7 @@ msgid "Save"
 msgstr "Salvar"
 
 msgid "Step 6 - Finish"
-msgstr "Passo 6 - Finalizar"
+msgstr "Etapa 6 - Finalizar"
 
 msgid "Use sudo for Bacula JSON tools:"
 msgstr "Utilizar o sudo para os utilitários JSON:"
@@ -421,7 +423,7 @@ msgid "Authentication type:"
 msgstr "Tipo de autenticação:"
 
 msgid "Step 5 - authentication to API"
-msgstr "Passo 5 - Autenticação da API"
+msgstr "Etapa 5 - Autenticação para API"
 
 msgid "Actions"
 msgstr "Ações"
@@ -505,16 +507,16 @@ msgid "Dashboard"
 msgstr "Painel de controle"
 
 msgid "Basic users"
-msgstr "Basic users"
+msgstr "Usuários básicos"
 
 msgid "OAuth2 clients"
-msgstr "OAuth2 clients"
+msgstr "Clientes OAuth2"
 
 msgid "Settings"
-msgstr "Settings"
+msgstr "Configurações"
 
 msgid "Configuration wizard"
-msgstr "Configuration wizard"
+msgstr "Assistente de configuração"
 
 msgid "Welcome"
 msgstr "Seja bem vindo"
@@ -523,49 +525,50 @@ msgid "Add user"
 msgstr "Adicionar usuário"
 
 msgid "Edit user"
-msgstr "Edit user"
+msgstr "Editar usuário"
 
 msgid "Add OAuth2 client"
-msgstr "Add OAuth2 client"
+msgstr "Adicionar conta de cliente OAuth2"
 
 msgid "Are you sure?"
-msgstr "Are you sure?"
+msgstr "Você tem certeza?"
 
 msgid "API settings"
-msgstr "API settings"
+msgstr "Configurações de API"
 
 msgid "General"
-msgstr "General"
+msgstr "Geral"
 
 msgid "Catalog"
-msgstr "Catalog"
+msgstr "Catálogo"
 
 msgid "Console"
 msgstr "Console"
 
 msgid "Config"
-msgstr "Config"
+msgstr "Configuração"
 
 msgid "Enabled:"
-msgstr "Enabled:"
+msgstr "Habilitar:"
 
 msgid "Debug:"
 msgstr "Debug:"
 
 msgid "Add client"
-msgstr "Add client"
+msgstr "Adicionar cliente"
 
 msgid "Edit client"
-msgstr "Edit client"
+msgstr "Editar cliente"
 
 msgid "Invalid user. User may contain a-z A-Z 0-9 characters."
-msgstr "Invalid user. User may contain a-z A-Z 0-9 characters."
+msgstr "Usuário inválido. O usuário pode conter apenas os seguintes caracteres a-z A-Z 0-9."
 
 msgid "Show/hide"
-msgstr "Show/hide"
+msgstr "Mostrar/ocultar"
 
 msgid "Copy to clipboard"
-msgstr "Copy to clipboard"
+msgstr "Copiar para área de transferência"
 
 msgid "Logout"
-msgstr "Logout"
+msgstr "Sair"
+

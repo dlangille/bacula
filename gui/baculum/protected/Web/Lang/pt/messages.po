@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2020-11-23 19:33\n"
+"PO-Revision-Date: 2021-03-05 04:07\n"
 "Project-Id-Version: b02f04a28aec0155df9503e3b78ae8cc\n"
 "POT-Creation-Date: \n"
 "Last-Translator: Wanderlei Hüttel <wanderlei.huttel@gmail.com>\n"
@@ -3205,16 +3205,17 @@ msgid "Status request timed out. The most probably the Bacula storage is not ava
 msgstr "A solicitação de status expirou. O mais provavelmente o armazenamento Bacula não está disponível ou não está em execução."
 
 msgid "Display messages log window"
-msgstr "Display messages log window"
+msgstr "Exibir janela de log de mensagens"
 
 msgid "Truncate log"
-msgstr "Truncate log"
+msgstr "Truncar log"
 
 msgid "Messages"
-msgstr "Messages"
+msgstr "Mensagens"
 
 msgid "Last %errors/%count jobs finished with error."
-msgstr "Last %errors/%count jobs finished with error."
+msgstr "Últimos %errors/%count jobs concluídos com erro."
 
 msgid "All last %count jobs finished successfully."
-msgstr "All last %count jobs finished successfully."
+msgstr "Todos os últimos %count jobs foram concluídos com sucesso."
+
