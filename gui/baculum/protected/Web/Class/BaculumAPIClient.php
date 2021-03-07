@@ -40,9 +40,10 @@ class BaculumAPIClient extends WebModule {
 	 * API client version (used in HTTP header)
 	 *
 	 * 0.2 -
-	 * 0.3 - sending config as json instead of serialized array
+	 * 0.3 - sending config as JSON instead of serialized array
+	 * 0.4 - sending POST and PUT requests body parameters as JSON instead of POST form params
 	 */
-	const API_CLIENT_VERSION = 0.3;
+	const API_CLIENT_VERSION = 0.4;
 
 	/**
 	 * API version used by Web
