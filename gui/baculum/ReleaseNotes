@@ -1,4 +1,26 @@
 
+               Release Notes for Baculum 11.0.1.1
+
+This is a minor new feature and bug fix release. Main changes are a new
+API version 2 and new API panel. The API version 1 is still possible
+to use and it is preserved.
+
+New changes and fixes:
+
+ - Implement API version 2
+ - New modern API panel
+ - Improve updating asset files after upgrade
+ - Update Russian translations
+ - Update Portuguese translations
+ - Update Polish translations
+ - Fix #2597 LDAP login with LDAPS option
+ - Fix displaying warning messages in messages window
+ - Fix undefined property error in run job API endpoint if level value is not provided
+ - Fix cancel button in new job wizard
+
+Bugs fixed/closed since last release:
+2597
+
                Release Notes for Baculum 9.6.6.3
 
 This is a minor new feature and bug fix release. In this release is a new
