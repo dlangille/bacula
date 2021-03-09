@@ -590,8 +590,15 @@ static bool create_bootstrap_file(JCR *jcr, char *jobids)
       Jmsg0(jcr, M_FATAL, 0, "Can't get batch sql connexion");
       return false;
    }
-
-   if (!db_get_file_list(jcr, jcr->db_batch, jobids, DBL_USE_DELTA | DBL_ALL_FILES,
+   /* If the new Job is a Full, we don't need to keep deleted records,
+    * however, if it's an incremental/differential, we should not restore
+    * the files from the Full, so we keep the deleted records
+    */
+   int opt = DBL_USE_DELTA;
+   if (jcr->jr.JobLevel != 'F') {
+      opt |= DBL_ALL_FILES;
+   }
+   if (!db_get_file_list(jcr, jcr->db_batch, jobids, opt,
                          insert_bootstrap_handler, (void *)rx.bsr_list))
    {
       Jmsg(jcr, M_ERROR, 0, "%s", db_strerror(jcr->db_batch));
