@@ -42,17 +42,20 @@ enum HFUNC {
 struct HPKT {
    POOLMEM *edbuf;                    /* editing buffer */
    POOLMEM *edbuf2;                   /* editing buffer */
+   POOLMEM *out;                      /* output buffer */
    RES_ITEM *ritem;                   /* RES_ITEM for call */
    RES *res;                          /* Pointer to resource header */
    HFUNC hfunc;                       /* Handler function to do */
    bool json;                         /* set to display Json */
    bool in_store_msg;                 /* set when doing store_msg */
    bool exclude;                      /* Include/Exclude flage */
-   void (*sendit)(void *sock, const char *fmt, ...); /* print routine */
+   void (*sendit)(HPKT &hpkt, const char *fmt, ...); /* print routine */
    LEX *lc;                           /* Lex packet */
    int index;                         /* Index item ITEM table */
    int pass;                          /* Store pass number */
    alist *list;                       /* alist to edit */
 };
+
+void bjson_sendit(HPKT &hpkt, const char *fmt, ...);
 
 #endif /* __BJSON_H__ */

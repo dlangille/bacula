@@ -961,9 +961,9 @@ int main(int argc, char *argv[])
 
    int x, y;
 
-   printf("\n\tTesting bsnprintf against system sprintf...\n\n");
+   log("Testing bsnprintf against system sprintf...");
 #ifdef FP_OUTPUT
-   printf("Testing bsnprintf float format codes\n");
+   log("Testing bsnprintf float format codes");
    for (x = 0; fp_fmt[x] != NULL; x++){
       check_cont = true;
       check_nr = true;
@@ -984,7 +984,7 @@ int main(int argc, char *argv[])
    }
 #endif
 
-   printf("Testing bsnprintf int format codes\n");
+   log("Testing bsnprintf int format codes");
    for (x = 0; int_fmt[x] != NULL; x++){
       check_cont = true;
       check_nr = true;
@@ -1004,7 +1004,7 @@ int main(int argc, char *argv[])
       ok(check_cont, msg);
    }
 
-   printf("Testing bsnprintf long format codes\n");
+   log("Testing bsnprintf long format codes");
    for (x = 0; ll_fmt[x] != NULL; x++) {
       check_cont = true;
       check_nr = true;
@@ -1024,7 +1024,7 @@ int main(int argc, char *argv[])
       ok(check_cont, msg);
    }
 
-   printf("Testing bsnprintf str format codes\n");
+   log("Testing bsnprintf str format codes");
    for (x = 0; s_fmt[x] != NULL; x++) {
       check_cont = true;
       check_nr = true;
@@ -1044,7 +1044,7 @@ int main(int argc, char *argv[])
       ok(check_cont, msg);
    }
 
-   printf("Testing bsnprintf long str format codes\n");
+   log("Testing bsnprintf long str format codes");
    for (x = 0; ls_fmt[x] != NULL; x++) {
       check_cont = true;
       check_nr = true;
@@ -1064,6 +1064,17 @@ int main(int argc, char *argv[])
       ok(check_cont, msg);
    }
 
+   log("Testing bsnprintf return bytes");
+   bcount = bsnprintf(buf1, sizeof(buf1), "This is a format with a number %d", 1);
+   pcount = sprintf(buf1, "This is a format with a number %d", 1);
+   is (strlen(buf1), bcount, "Checking the return code against strlen()");
+   is (bcount, pcount, "Checking the return code of sprintf()");
+
+   bcount = bsnprintf(buf1, 10, "This is a format with a number %d", 1);
+   pcount = snprintf(buf1, 10, "This is a format with a number %d", 1);
+   is (strlen(buf1), 9, "Checking the return code against strlen()");
+   is (bcount, 10, "Checking the return code of sprintf()");
+   is (bcount, pcount, "Checking difference between bsnprintf() and snprintf()");
    return report();
 }
 #endif /* TEST_PROGRAM */

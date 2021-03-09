@@ -55,15 +55,29 @@ struct display_filter
    regex_t directive_reg;
 };
 
-static void sendit(void *sock, const char *fmt, ...)
+void bjson_sendit(HPKT &hpkt, const char *fmt, ...)
 {
-   char buf[3000];
    va_list arg_ptr;
+   bool done=false;
 
-   va_start(arg_ptr, fmt);
-   bvsnprintf(buf, sizeof(buf), (char *)fmt, arg_ptr);
-   va_end(arg_ptr);
-   fputs(buf, stdout);
+   while (!done) {
+      uint32_t len = sizeof_pool_memory(hpkt.out);
+      va_start(arg_ptr, fmt);
+      // The return value of our bvsnprintf() doesn't represent
+      // the full length of the string, we need to check it afterward
+      bvsnprintf(hpkt.out, len, (char *)fmt, arg_ptr);
+      va_end(arg_ptr);
+
+      if (strlen(hpkt.out) >= (len - 1)) {
+         // We got an overflow, we need more room to display the output
+         hpkt.out = check_pool_memory_size(hpkt.out, len*2);
+
+      } else {
+         done = true;
+      }
+   }
+
+   fputs(hpkt.out, stdout);
    fflush(stdout);
 }
 
@@ -72,15 +86,17 @@ void init_hpkt(HPKT &hpkt)
    memset(&hpkt, 0, sizeof(hpkt));
    hpkt.edbuf = get_pool_memory(PM_EMSG);
    hpkt.edbuf2 = get_pool_memory(PM_EMSG);
+   hpkt.out = get_pool_memory(PM_EMSG);
    hpkt.json = true;
    hpkt.hfunc = HF_DISPLAY;
-   hpkt.sendit = sendit;
+   hpkt.sendit = bjson_sendit;
 }
 
 void term_hpkt(HPKT &hpkt)
 {
    free_pool_memory(hpkt.edbuf);
    free_pool_memory(hpkt.edbuf2);
+   free_pool_memory(hpkt.out);
    memset(&hpkt, 0, sizeof(hpkt));
 }
 
@@ -150,7 +166,7 @@ void edit_msg_types(HPKT &hpkt, DEST *dest)
             }
          }
          if (!found) {
-            sendit(NULL, "No find for type=%d\n", i);
+            bjson_sendit(hpkt, "No find for type=%d\n", i);
          }
          count++;
       }
@@ -182,7 +198,7 @@ void edit_msg_types(HPKT &hpkt, DEST *dest)
                }
             }
             if (!found) {
-               sendit(NULL, "No find for type=%d in second loop\n", i);
+               bjson_sendit(hpkt, "No find for type=%d in second loop\n", i);
             }
          } else if (i == M_SAVED) {
             /* Saved is not set by default, users must explicitly use it
@@ -257,11 +273,11 @@ bool display_msgs(HPKT &hpkt)
 
    if (!hpkt.in_store_msg) {
       hpkt.in_store_msg = true;
-      sendit(NULL, "\n    \"Destinations\": [");
+      bjson_sendit(hpkt, "\n    \"Destinations\": [");
    }
    for (dest=msgs->dest_chain; dest; dest=dest->next) {
       if (dest->dest_code == hpkt.ritem->code) {
-         if (!first) sendit(NULL, ",");
+         if (!first) bjson_sendit(hpkt, ",");
          first = false;
          edit_msg_types(hpkt, dest);
          switch (hpkt.ritem->code) {
@@ -271,7 +287,7 @@ bool display_msgs(HPKT &hpkt)
          case MD_SYSLOG:
          case MD_CONSOLE:
          case MD_CATALOG:
-            sendit(NULL, "\n      {\n        \"Type\": \"%s\","
+            bjson_sendit(hpkt, "\n      {\n        \"Type\": \"%s\","
                          "\n        \"MsgTypes\": %s\n      }",
                hpkt.ritem->name, hpkt.edbuf);
             break;
@@ -279,10 +295,10 @@ bool display_msgs(HPKT &hpkt)
          case MD_DIRECTOR:
          case MD_FILE:
          case MD_APPEND:
-            sendit(NULL, "\n      {\n        \"Type\": \"%s\","
+            bjson_sendit(hpkt, "\n      {\n        \"Type\": \"%s\","
                          "\n        \"MsgTypes\": %s,\n",
                hpkt.ritem->name, hpkt.edbuf);
-            sendit(NULL, "        \"Where\": [%s]\n      }",
+            bjson_sendit(hpkt, "        \"Where\": [%s]\n      }",
                quote_where(hpkt.edbuf, dest->where));
             break;
          /* Now we edit MsgTypes, Where, and Command */
@@ -290,12 +306,12 @@ bool display_msgs(HPKT &hpkt)
          case MD_OPERATOR:
          case MD_MAIL_ON_ERROR:
          case MD_MAIL_ON_SUCCESS:
-            sendit(NULL, "\n      {\n        \"Type\": \"%s\","
+            bjson_sendit(hpkt, "\n      {\n        \"Type\": \"%s\","
                          "\n        \"MsgTypes\": %s,\n",
                hpkt.ritem->name, hpkt.edbuf);
-            sendit(NULL, "        \"Where\": [%s],\n",
+            bjson_sendit(hpkt, "        \"Where\": [%s],\n",
                quote_where(hpkt.edbuf, dest->where));
-            sendit(NULL, "        \"Command\": %s\n      }",
+            bjson_sendit(hpkt, "        \"Command\": %s\n      }",
                quote_string(hpkt.edbuf, dest->mail_cmd));
             break;
          default:
@@ -316,14 +332,14 @@ void display_last(HPKT &hpkt)
 {
    if (hpkt.in_store_msg) {
       hpkt.in_store_msg = false;
-      sendit(NULL, "\n    ]");
+      bjson_sendit(hpkt, "\n    ]");
    }
 }
 
 void display_alist(HPKT &hpkt)
 {
    edit_alist(hpkt);
-   sendit(NULL, "%s", hpkt.edbuf);
+   bjson_sendit(hpkt, "%s", hpkt.edbuf);
 }
 
 bool display_alist_str(HPKT &hpkt)
@@ -332,7 +348,7 @@ bool display_alist_str(HPKT &hpkt)
    if (!hpkt.list) {
       return false;
    }
-   sendit(NULL, "\n    \"%s\":", hpkt.ritem->name);
+   bjson_sendit(hpkt, "\n    \"%s\":", hpkt.ritem->name);
    display_alist(hpkt);
    return true;
 }
@@ -347,16 +363,16 @@ bool display_alist_res(HPKT &hpkt)
    if (!list) {
       return false;
    }
-   sendit(NULL, "\n    \"%s\":", hpkt.ritem->name);
-   sendit(NULL, " [");
+   bjson_sendit(hpkt, "\n    \"%s\":", hpkt.ritem->name);
+   bjson_sendit(hpkt, " [");
    foreach_alist(res, list) {
       if (!f) {
-         sendit(NULL, ", ");
+         bjson_sendit(hpkt, ", ");
       }
-      sendit(NULL, "%s", quote_string(hpkt.edbuf, res->name));
+      bjson_sendit(hpkt, "%s", quote_string(hpkt.edbuf, res->name));
       f = false;
    }
-   sendit(NULL, "]");
+   bjson_sendit(hpkt, "]");
    return true;
 }
 
@@ -365,39 +381,39 @@ void display_res(HPKT &hpkt)
    RES *res;
 
    res = (RES *)*hpkt.ritem->value;
-   sendit(NULL, "\n    \"%s\": %s", hpkt.ritem->name,
+   bjson_sendit(hpkt, "\n    \"%s\": %s", hpkt.ritem->name,
       quote_string(hpkt.edbuf, res->name));
 }
 
 void display_string_pair(HPKT &hpkt)
 {
-   sendit(NULL, "\n    \"%s\": %s", hpkt.ritem->name,
+   bjson_sendit(hpkt, "\n    \"%s\": %s", hpkt.ritem->name,
       quote_string(hpkt.edbuf, *hpkt.ritem->value));
 }
 
 void display_int32_pair(HPKT &hpkt)
 {
    char ed1[50];
-   sendit(NULL, "\n    \"%s\": %s", hpkt.ritem->name,
+   bjson_sendit(hpkt, "\n    \"%s\": %s", hpkt.ritem->name,
       edit_int64(*(int32_t *)hpkt.ritem->value, ed1));
 }
 
 void display_int64_pair(HPKT &hpkt)
 {
    char ed1[50];
-   sendit(NULL, "\n    \"%s\": %s", hpkt.ritem->name,
+   bjson_sendit(hpkt, "\n    \"%s\": %s", hpkt.ritem->name,
       edit_int64(*(int64_t *)hpkt.ritem->value, ed1));
 }
 
 void display_bool_pair(HPKT &hpkt)
 {
-   sendit(NULL, "\n    \"%s\": %s", hpkt.ritem->name,
+   bjson_sendit(hpkt, "\n    \"%s\": %s", hpkt.ritem->name,
       ((*(bool *)(hpkt.ritem->value)) == 0)?"false":"true");
 }
 
 void display_bit_pair(HPKT &hpkt)
 {
-   sendit(NULL, "\n    \"%s\": %s", hpkt.ritem->name,
+   bjson_sendit(hpkt, "\n    \"%s\": %s", hpkt.ritem->name,
       ((*(uint32_t *)(hpkt.ritem->value) & hpkt.ritem->code)
          == 0)?"false":"true");
 }
@@ -415,19 +431,19 @@ bool byte_is_set(char *byte, int num)
    return found;
 }
 
-void display_bit_array(char *array, int num)
+void display_bit_array(HPKT &hpkt, char *array, int num)
 {
    int i;
    bool first = true;
-   sendit(NULL, " [");
+   bjson_sendit(hpkt, " [");
    for (i=0; i<num; i++) {
       if (bit_is_set(i, array)) {
-         if (!first) sendit(NULL, ", ");
+         if (!first) bjson_sendit(hpkt, ", ");
          first = false;
-         sendit(NULL, "%d", i);
+         bjson_sendit(hpkt, "%d", i);
       }
    }
-   sendit(NULL, "]");
+   bjson_sendit(hpkt, "]");
 }
 
 void display_collector_types(HPKT &hpkt)
@@ -435,7 +451,7 @@ void display_collector_types(HPKT &hpkt)
    int i;
    for (i=0; collectortypes[i].type_name; i++) {
       if (*(int32_t *)(hpkt.ritem->value) == collectortypes[i].coll_type) {
-         sendit(NULL, "\n    \"%s\": %s", hpkt.ritem->name,
+         bjson_sendit(hpkt, "\n    \"%s\": %s", hpkt.ritem->name,
             quote_string(hpkt.edbuf, collectortypes[i].type_name));
          return;
       }

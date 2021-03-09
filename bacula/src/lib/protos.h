@@ -59,7 +59,7 @@ void display_int64_pair(HPKT &hpkt);
 void display_bool_pair(HPKT &hpkt);
 void display_bit_pair(HPKT &hpkt);
 bool byte_is_set(char *byte, int num);
-void display_bit_array(char *array, int num);
+void display_bit_array(HPKT &hpkt, char *array, int num);
 void display_last(HPKT &hpkt);
 void init_hpkt(HPKT &hpkt);
 void term_hpkt(HPKT &hpkt);

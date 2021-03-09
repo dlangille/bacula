@@ -72,7 +72,6 @@ static void dump_json(display_filter *filter);
 /* Static variables */
 static char *configfile = NULL;
 static FILE *output = stdout;
-static bool teeout = false;               /* output to output and stdout */
 static int numdir;
 static POOLMEM *args;
 static CONFIG *config;
@@ -559,7 +558,6 @@ static void dump_directives()
    }
    printf("\n]\n");
 }
-#endif
 
 /*
  * Send a line to the output file and or the terminal
@@ -574,6 +572,8 @@ void senditf(const char *fmt,...)
    va_end(arg_ptr);
    sendit(buf);
 }
+
+static bool teeout = false;               /* output to output and stdout */
 
 void sendit(const char *buf)
 {
@@ -613,3 +613,4 @@ void sendit(const char *buf)
    }
 #endif
 }
+#endif

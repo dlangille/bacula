@@ -92,7 +92,7 @@ static void display_cipher(HPKT &hpkt)
    int i;
    for (i=0; ciphertypes[i].type_name; i++) {
       if (*(int32_t *)(hpkt.ritem->value) == ciphertypes[i].type_value) {
-         sendit(NULL, "\n    \"%s\": \"%s\"", hpkt.ritem->name,
+         hpkt.sendit(hpkt, "\n    \"%s\": \"%s\"", hpkt.ritem->name,
                 ciphertypes[i].type_name);
          return;
       }
@@ -104,7 +104,7 @@ static void display_digest(HPKT &hpkt)
    int i;
    for (i=0; digesttypes[i].type_name; i++) {
       if (*(int32_t *)(hpkt.ritem->value) == digesttypes[i].type_value) {
-         sendit(NULL, "\n    \"%s\": \"%s\"", hpkt.ritem->name,
+         hpkt.sendit(hpkt, "\n    \"%s\": \"%s\"", hpkt.ritem->name,
                 digesttypes[i].type_name);
          return;
       }
@@ -285,19 +285,19 @@ static void display_runres(HPKT &hpkt)
    bool first = true;
    bool first_run = true;
 
-   sendit(NULL, "\n    \"%s\": [\n", hpkt.ritem->name);
+   hpkt.sendit(hpkt, "\n    \"%s\": [\n", hpkt.ritem->name);
    for ( ; run; run=run->next) {
-      if (!first_run) sendit(NULL, ",\n");
+      if (!first_run) hpkt.sendit(hpkt, ",\n");
       first_run = false;
       first = true;
-      sendit(NULL, "     {\n");
+      hpkt.sendit(hpkt, "     {\n");
       /* First do override fields */
       for (i=0; ConnectFields[i].name; i++) {
          switch (ConnectFields[i].token) {
          case 'm':  /* MaxConnectTime */
             if (run->MaxConnectTime_set) {
-               if (!first) sendit(NULL, ",\n");
-               sendit(NULL, "      \"%s\": %lld", ConnectFields[i].name,
+               if (!first) hpkt.sendit(hpkt, ",\n");
+               hpkt.sendit(hpkt, "      \"%s\": %lld", ConnectFields[i].name,
                      run->MaxConnectTime);
                first = false;
             }
@@ -308,52 +308,52 @@ static void display_runres(HPKT &hpkt)
       } /* End all ConnectFields (overrides) */
       /* Now handle timing */
       if (byte_is_set(run->hour, sizeof(run->hour))) {
-         if (!first) sendit(NULL, ",\n");
-         sendit(NULL, "      \"Hour\":");
-         display_bit_array(run->hour, 24);
-         sendit(NULL, ",\n      \"Minute\": %d", run->minute);
+         if (!first) hpkt.sendit(hpkt, ",\n");
+         hpkt.sendit(hpkt, "      \"Hour\":");
+         display_bit_array(hpkt, run->hour, 24);
+         hpkt.sendit(hpkt, ",\n      \"Minute\": %d", run->minute);
          first = false;
       }
       /* bit 32 is used to store the keyword LastDay, so we look up to 0-31 */
       if (byte_is_set(run->mday, sizeof(run->mday))) {
-         if (!first) sendit(NULL, ",\n");
-         sendit(NULL, "      \"Day\":");
-         display_bit_array(run->mday, 31);
+         if (!first) hpkt.sendit(hpkt, ",\n");
+         hpkt.sendit(hpkt, "      \"Day\":");
+         display_bit_array(hpkt, run->mday, 31);
          first = false;
       }
       if (run->last_day_set) {
-         if (!first) sendit(NULL, ",\n");
-         sendit(NULL, "      \"LastDay\": 1");
+         if (!first) hpkt.sendit(hpkt, ",\n");
+         hpkt.sendit(hpkt, "      \"LastDay\": 1");
          first = false;
       }
       if (byte_is_set(run->month, sizeof(run->month))) {
-         if (!first) sendit(NULL, ",\n");
-         sendit(NULL, "      \"Month\":");
-         display_bit_array(run->month, 12);
+         if (!first) hpkt.sendit(hpkt, ",\n");
+         hpkt.sendit(hpkt, "      \"Month\":");
+         display_bit_array(hpkt, run->month, 12);
          first = false;
       }
       if (byte_is_set(run->wday, sizeof(run->wday))) {
-         if (!first) sendit(NULL, ",\n");
-         sendit(NULL, "      \"DayOfWeek\":");
-         display_bit_array(run->wday, 7);
+         if (!first) hpkt.sendit(hpkt, ",\n");
+         hpkt.sendit(hpkt, "      \"DayOfWeek\":");
+         display_bit_array(hpkt, run->wday, 7);
          first = false;
       }
       if (byte_is_set(run->wom, sizeof(run->wom))) {
-         if (!first) sendit(NULL, ",\n");
-         sendit(NULL, "      \"WeekOfMonth\":");
-         display_bit_array(run->wom, 6);
+         if (!first) hpkt.sendit(hpkt, ",\n");
+         hpkt.sendit(hpkt, "      \"WeekOfMonth\":");
+         display_bit_array(hpkt, run->wom, 6);
          first = false;
       }
       if (byte_is_set(run->woy, sizeof(run->woy))) {
-         if (!first) sendit(NULL, ",\n");
-         sendit(NULL, "      \"WeekOfYear\":");
-         display_bit_array(run->woy, 54);
+         if (!first) hpkt.sendit(hpkt, ",\n");
+         hpkt.sendit(hpkt, "      \"WeekOfYear\":");
+         display_bit_array(hpkt, run->woy, 54);
          first = false;
       }
-      sendit(NULL, "\n     }");
+      hpkt.sendit(hpkt, "\n     }");
 
    } /* End this Run directive */
-   sendit(NULL, "\n    ]");
+   hpkt.sendit(hpkt, "\n    ]");
 }
 
 /*
@@ -376,18 +376,18 @@ static void dump_json(display_filter *filter)
    me = (CLIENT *)GetNextRes(R_CLIENT, NULL);
 
    if (filter->do_only_data) {
-      sendit(NULL, "[");
+      hpkt.sendit(hpkt, "[");
 
    /* List resources and directives */
    /* { "aa": { "Name": "aa",.. }, "bb": { "Name": "bb", ... }
     * or print a single item
     */
    } else if (filter->do_one || filter->do_list) {
-      sendit(NULL, "{");
+      hpkt.sendit(hpkt, "{");
 
    } else {
    /* [ { "Client": { "Name": "aa",.. } }, { "Director": { "Name": "bb", ... } } ]*/
-      sendit(NULL, "[");
+      hpkt.sendit(hpkt, "[");
    }
 
    first_res = true;
@@ -446,7 +446,7 @@ static void dump_json(display_filter *filter)
          first_directive = 0;
 
          if (filter->do_only_data) {
-            sendit(NULL, " {");
+            hpkt.sendit(hpkt, " {");
 
          } else if (filter->do_one) {
             /* Nothing to print */
@@ -458,13 +458,13 @@ static void dump_json(display_filter *filter)
             /* Search and display Name, should be the first item */
             for (item=0; items[item].name; item++) {
                if (strcmp(items[item].name, "Name") == 0) {
-                  sendit(NULL, "%s: {\n", quote_string(hpkt.edbuf2, *items[item].value));
+                  hpkt.sendit(hpkt, "%s: {\n", quote_string(hpkt.edbuf2, *items[item].value));
                   break;
                }
             }
          } else {
             /* Begin new resource */
-            sendit(NULL, "{\n  \"%s\": {", resources[resinx].name);
+            hpkt.sendit(hpkt, "{\n  \"%s\": {", resources[resinx].name);
          }
 
          /* dirtry trick for a deprecated directive */
@@ -549,15 +549,15 @@ static void dump_json(display_filter *filter)
 
          /* { "aa": { "Name": "aa",.. }, "bb": { "Name": "bb", ... } */
          if (filter->do_only_data || filter->do_list) {
-            sendit(NULL, "\n }"); /* Finish the Resource with a single } */
+            hpkt.sendit(hpkt, "\n }"); /* Finish the Resource with a single } */
 
          } else {
             if (filter->do_one) {
                /* don't print anything */
             } else if (first_directive > 0) {
-               sendit(NULL, "\n  }\n}");  /* end of resource */
+               hpkt.sendit(hpkt, "\n  }\n}");  /* end of resource */
             } else {
-               sendit(NULL, "}\n}");
+               hpkt.sendit(hpkt, "}\n}");
             }
          }
          first_res = false;
@@ -565,14 +565,14 @@ static void dump_json(display_filter *filter)
    } /* End loop all resource types */
 
    if (filter->do_only_data) {
-      sendit(NULL, "\n]\n");
+      hpkt.sendit(hpkt, "\n]\n");
 
    /* In list context, we are dealing with a hash */
    } else if (filter->do_one || filter->do_list) {
-      sendit(NULL, "\n}\n");
+      hpkt.sendit(hpkt, "\n}\n");
 
    } else {
-      sendit(NULL, "\n]\n");
+      hpkt.sendit(hpkt, "\n]\n");
    }
    term_hpkt(hpkt);
 }

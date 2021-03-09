@@ -63,7 +63,6 @@ typedef struct
 /* Forward referenced functions */
 void terminate_stored(int sig);
 static int check_resources();
-static void sendit(void *sock, const char *fmt, ...);
 static void dump_json(display_filter *filter);
 
 #define CONFIG_FILE "bacula-sd.conf"  /* Default config file */
@@ -75,7 +74,7 @@ char *configfile = NULL;
 
 /* Global static variables */
 static CONFIG *config;
-
+static void sendit(void *sock, const char *fmt, ...);
 
 static void usage()
 {
@@ -239,7 +238,7 @@ static void display_devtype(HPKT &hpkt)
    int i;
    for (i=0; dev_types[i].name; i++) {
       if (*(int32_t *)(hpkt.ritem->value) == dev_types[i].token) {
-         sendit(NULL, "\n    \"%s\": \"%s\"", hpkt.ritem->name,
+         hpkt.sendit(hpkt, "\n    \"%s\": \"%s\"", hpkt.ritem->name,
                 dev_types[i].name);
          return;
       }
@@ -251,7 +250,7 @@ static void display_label(HPKT &hpkt)
    int i;
    for (i=0; tapelabels[i].name; i++) {
       if (*(int32_t *)(hpkt.ritem->value) == tapelabels[i].token) {
-         sendit(NULL, "\n      \"%s\": \"%s\"", hpkt.ritem->name,
+         hpkt.sendit(hpkt, "\n      \"%s\": \"%s\"", hpkt.ritem->name,
                 tapelabels[i].name);
          return;
       }
@@ -263,7 +262,7 @@ static void display_cloud_driver(HPKT &hpkt)
    int i;
    for (i=0; cloud_drivers[i].name; i++) {
       if (*(int32_t *)(hpkt.ritem->value) == cloud_drivers[i].token) {
-         sendit(NULL, "\n    \"%s\": \"%s\"", hpkt.ritem->name,
+         hpkt.sendit(hpkt, "\n    \"%s\": \"%s\"", hpkt.ritem->name,
                 cloud_drivers[i].name);
          return;
       }
@@ -276,7 +275,7 @@ static void display_dedup_driver(HPKT &hpkt)
    int i;
    for (i=0; dedup_drivers[i].name; i++) {
       if (*(int32_t *)(hpkt.ritem->value) == dedup_drivers[i].token) {
-         sendit(NULL, "\n      \"%s\": \"%s\"", hpkt.ritem->name,
+         hpkt.sendit(hpkt, "\n      \"%s\": \"%s\"", hpkt.ritem->name,
                 dedup_drivers[i].name);
          return;
       }
@@ -289,7 +288,7 @@ static void display_protocol(HPKT &hpkt)
    int i;
    for (i=0; proto_opts[i].name; i++) {
       if (*(int32_t *)(hpkt.ritem->value) == proto_opts[i].token) {
-         sendit(NULL, "\n    \"%s\": \"%s\"", hpkt.ritem->name,
+         hpkt.sendit(hpkt, "\n    \"%s\": \"%s\"", hpkt.ritem->name,
                 proto_opts[i].name);
          return;
       }
@@ -301,7 +300,7 @@ static void display_truncate_cache(HPKT &hpkt)
    int i;
    for (i=0; trunc_opts[i].name; i++) {
       if (*(int32_t *)(hpkt.ritem->value) == trunc_opts[i].token) {
-         sendit(NULL, "\n    \"%s\": \"%s\"", hpkt.ritem->name,
+         hpkt.sendit(hpkt, "\n    \"%s\": \"%s\"", hpkt.ritem->name,
                 trunc_opts[i].name);
          return;
       }
@@ -313,7 +312,7 @@ static void display_uri_style(HPKT &hpkt)
    int i;
    for (i=0; uri_opts[i].name; i++) {
       if (*(int32_t *)(hpkt.ritem->value) == uri_opts[i].token) {
-         sendit(NULL, "\n    \"%s\": \"%s\"", hpkt.ritem->name,
+         hpkt.sendit(hpkt, "\n    \"%s\": \"%s\"", hpkt.ritem->name,
                 uri_opts[i].name);
          return;
       }
@@ -325,7 +324,7 @@ static void display_upload(HPKT &hpkt)
    int i;
    for (i=0; upload_opts[i].name; i++) {
       if (*(int32_t *)(hpkt.ritem->value) == upload_opts[i].token) {
-         sendit(NULL, "\n    \"%s\": \"%s\"", hpkt.ritem->name,
+         hpkt.sendit(hpkt, "\n    \"%s\": \"%s\"", hpkt.ritem->name,
                 upload_opts[i].name);
          return;
       }
@@ -338,7 +337,7 @@ static void display_transfer_priority(HPKT &hpkt)
    int i;
    for (i=0; restore_prio_opts[i].name; i++) {
       if (*(int32_t *)(hpkt.ritem->value) == restore_prio_opts[i].token) {
-         sendit(NULL, "\n    \"%s\": \"%s\"", hpkt.ritem->name,
+         hpkt.sendit(hpkt, "\n    \"%s\": \"%s\"", hpkt.ritem->name,
                 restore_prio_opts[i].name);
          return;
       }
@@ -367,18 +366,18 @@ static void dump_json(display_filter *filter)
    init_hpkt(hpkt);
 
    if (filter->do_only_data) {
-      sendit(NULL, "[");
+      hpkt.sendit(hpkt, "[");
 
    /* List resources and directives */
    /* { "aa": { "Name": "aa",.. }, "bb": { "Name": "bb", ... }
     * or print a single item
     */
    } else if (filter->do_one || filter->do_list) {
-      sendit(NULL, "{");
+      hpkt.sendit(hpkt, "{");
 
    } else {
    /* [ { "Device": { "Name": "aa",.. } }, { "Director": { "Name": "bb", ... } } ]*/
-      sendit(NULL, "[");
+      hpkt.sendit(hpkt, "[");
    }
 
    first_res = true;
@@ -423,13 +422,13 @@ static void dump_json(display_filter *filter)
          }
 
          if (first_res) {
-            sendit(NULL, "\n");
+            hpkt.sendit(hpkt, "\n");
          } else {
-            sendit(NULL, ",\n");
+            hpkt.sendit(hpkt, ",\n");
          }
 
          if (filter->do_only_data) {
-            sendit(NULL, " {");
+            hpkt.sendit(hpkt, " {");
 
          } else if (filter->do_one) {
             /* Nothing to print */
@@ -441,13 +440,13 @@ static void dump_json(display_filter *filter)
             /* Search and display Name, should be the first item */
             for (item=0; items[item].name; item++) {
                if (strcmp(items[item].name, "Name") == 0) {
-                  sendit(NULL, "%s: {\n", quote_string(hpkt.edbuf2, *items[item].value));
+                  hpkt.sendit(hpkt, "%s: {\n", quote_string(hpkt.edbuf2, *items[item].value));
                   break;
                }
             }
          } else {
             /* Begin new resource */
-            sendit(NULL, "{\n  \"%s\": {", resources[resinx].name);
+            hpkt.sendit(hpkt, "{\n  \"%s\": {", resources[resinx].name);
          }
 
          first_res = false;
@@ -507,16 +506,16 @@ static void dump_json(display_filter *filter)
                if (me && strcmp(resources[resinx].name, "Storage") == 0) {
                   if (strcmp(items[item].name, "SdPort") == 0) {
                      if (get_first_port_host_order(me->sdaddrs) != items[item].default_value) {
-                        if (first_directive++ > 0) sendit(NULL, ",");
-                        sendit(NULL, "\n    \"SdPort\": %d",
+                        if (first_directive++ > 0) hpkt.sendit(hpkt, ",");
+                        hpkt.sendit(hpkt, "\n    \"SdPort\": %d",
                            get_first_port_host_order(me->sdaddrs));
                      }
                   } else if (me && strcmp(items[item].name, "SdAddress") == 0) {
                      char buf[500];
                      get_first_address(me->sdaddrs, buf, sizeof(buf));
                      if (strcmp(buf, "0.0.0.0") != 0) {
-                        if (first_directive++ > 0) sendit(NULL, ",");
-                        sendit(NULL, "\n    \"SdAddress\": \"%s\"", buf);
+                        if (first_directive++ > 0) hpkt.sendit(hpkt, ",");
+                        hpkt.sendit(hpkt, "\n    \"SdAddress\": \"%s\"", buf);
                      }
                   }
                }
@@ -528,17 +527,17 @@ static void dump_json(display_filter *filter)
 
          /* { "aa": { "Name": "aa",.. }, "bb": { "Name": "bb", ... } */
          if (filter->do_only_data || filter->do_list) {
-            sendit(NULL, "\n }"); /* Finish the Resource with a single } */
+            hpkt.sendit(hpkt, "\n }"); /* Finish the Resource with a single } */
 
          } else {
             if (filter->do_one) {
                /* don't print anything */
 
             } else if (first_directive > 0) {
-               sendit(NULL, "\n  }\n}");  /* end of resource */
+               hpkt.sendit(hpkt, "\n  }\n}");  /* end of resource */
 
             } else {
-               sendit(NULL, "}\n }");
+               hpkt.sendit(hpkt, "}\n }");
             }
          }
 
@@ -546,14 +545,14 @@ static void dump_json(display_filter *filter)
    } /* End loop all resource types */
 
    if (filter->do_only_data) {
-      sendit(NULL, "\n]\n");
+      hpkt.sendit(hpkt, "\n]\n");
 
    /* In list context, we are dealing with a hash */
    } else if (filter->do_one || filter->do_list) {
-      sendit(NULL, "\n}\n");
+      hpkt.sendit(hpkt, "\n}\n");
 
    } else {
-      sendit(NULL, "\n]\n");
+      hpkt.sendit(hpkt, "\n]\n");
    }
    term_hpkt(hpkt);
 }

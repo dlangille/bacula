@@ -296,7 +296,7 @@ static void display_jobtype(HPKT &hpkt)
    int i;
    for (i=0; jobtypes[i].type_name; i++) {
       if (*(int32_t *)(hpkt.ritem->value) == jobtypes[i].job_type) {
-         sendit(NULL, "\n    \"%s\": %s", hpkt.ritem->name,
+         hpkt.sendit(hpkt, "\n    \"%s\": %s", hpkt.ritem->name,
             quote_string(hpkt.edbuf, jobtypes[i].type_name));
          return;
       }
@@ -308,7 +308,7 @@ static void display_label(HPKT &hpkt)
    int i;
    for (i=0; tapelabels[i].name; i++) {
       if (*(int32_t *)(hpkt.ritem->value) == tapelabels[i].token) {
-         sendit(NULL, "\n    \"%s\": %s", hpkt.ritem->name,
+         hpkt.sendit(hpkt, "\n    \"%s\": %s", hpkt.ritem->name,
             quote_string(hpkt.edbuf, tapelabels[i].name));
          return;
       }
@@ -320,7 +320,7 @@ static void display_joblevel(HPKT &hpkt)
    int i;
    for (i=0; joblevels[i].level_name; i++) {
       if (*(int32_t *)(hpkt.ritem->value) == joblevels[i].level) {
-         sendit(NULL, "\n    \"%s\": %s", hpkt.ritem->name,
+         hpkt.sendit(hpkt, "\n    \"%s\": %s", hpkt.ritem->name,
             quote_string(hpkt.edbuf, joblevels[i].level_name));
          return;
       }
@@ -332,7 +332,7 @@ static void display_replace(HPKT &hpkt)
    int i;
    for (i=0; ReplaceOptions[i].name; i++) {
       if (*(int32_t *)(hpkt.ritem->value) == ReplaceOptions[i].token) {
-         sendit(NULL, "\n    \"%s\": %s", hpkt.ritem->name,
+         hpkt.sendit(hpkt, "\n    \"%s\": %s", hpkt.ritem->name,
             quote_string(hpkt.edbuf, ReplaceOptions[i].name));
          return;
       }
@@ -344,7 +344,7 @@ static void display_migtype(HPKT &hpkt)
    int i;
    for (i=0; migtypes[i].type_name; i++) {
       if (*(int32_t *)(hpkt.ritem->value) == migtypes[i].job_type) {
-         sendit(NULL, "\n    \"%s\": %s", hpkt.ritem->name,
+         hpkt.sendit(hpkt, "\n    \"%s\": %s", hpkt.ritem->name,
             quote_string(hpkt.edbuf, migtypes[i].type_name));
          return;
       }
@@ -353,17 +353,17 @@ static void display_migtype(HPKT &hpkt)
 
 static void display_actiononpurge(HPKT &hpkt)
 {
-   sendit(NULL, "\n    \"%s\":", hpkt.ritem->name);
+   hpkt.sendit(hpkt, "\n    \"%s\":", hpkt.ritem->name);
    if (*(uint32_t *)(hpkt.ritem->value) | ON_PURGE_TRUNCATE) {
-      sendit(NULL, "\"Truncate\"");
+      hpkt.sendit(hpkt, "\"Truncate\"");
    } else {
-      sendit(NULL, "null");
+      hpkt.sendit(hpkt, "null");
    }
 }
 
 static void display_acl(HPKT &hpkt)
 {
-   sendit(NULL, "\n    \"%s\":", hpkt.ritem->name);
+   hpkt.sendit(hpkt, "\n    \"%s\":", hpkt.ritem->name);
    hpkt.list = ((alist **)hpkt.ritem->value)[hpkt.ritem->code];
    display_alist(hpkt);
 }
@@ -377,11 +377,11 @@ static void display_options(HPKT &hpkt, INCEXE *ie)
    int i, j, k;
    alist *list;
 
-   sendit(NULL, "      \"Options\": [ \n       {\n");
+   hpkt.sendit(hpkt, "      \"Options\": [ \n       {\n");
    for (i=0; i<ie->num_opts; i++) {
       FOPTS *fo = ie->opts_list[i];
       if (!first_opt) {
-         sendit(NULL, ",\n       {\n");
+         hpkt.sendit(hpkt, ",\n       {\n");
       }
       first_dir = true;
       for (j=0; options_items[j].name; j++) {
@@ -399,9 +399,9 @@ static void display_options(HPKT &hpkt, INCEXE *ie)
             }
             if (list->size() > 0) {
                if (!first_dir) {
-                  sendit(NULL, ",\n");
+                  hpkt.sendit(hpkt, ",\n");
                }
-               sendit(NULL, "         \"%s\":", options_items[j].name);
+               hpkt.sendit(hpkt, "         \"%s\":", options_items[j].name);
                hpkt.list = list;
                display_alist(hpkt);
                first_dir = false;
@@ -438,9 +438,9 @@ static void display_options(HPKT &hpkt, INCEXE *ie)
             }
             if (list->size() > 0) {
                if (!first_dir) {
-                  sendit(NULL, ",\n");
+                  hpkt.sendit(hpkt, ",\n");
                }
-               sendit(NULL, "         \"%s\":", options_items[j].name);
+               hpkt.sendit(hpkt, "         \"%s\":", options_items[j].name);
                hpkt.list = list;
                display_alist(hpkt);
                first_dir = false;
@@ -450,9 +450,9 @@ static void display_options(HPKT &hpkt, INCEXE *ie)
             list = &fo->base;
             if (list->size() > 0) {
                if (!first_dir) {
-                  sendit(NULL, ",\n");
+                  hpkt.sendit(hpkt, ",\n");
                }
-               sendit(NULL, "         \"%s\":", options_items[j].name);
+               hpkt.sendit(hpkt, "         \"%s\":", options_items[j].name);
                hpkt.list = list;
                display_alist(hpkt);
                first_dir = false;
@@ -467,9 +467,9 @@ static void display_options(HPKT &hpkt, INCEXE *ie)
                      strip_long_opts(lopts, fo->opts);
                      if (strstr(lopts, FS_options[k].option)) {
                         if (!first_dir) {
-                           sendit(NULL, ",\n");
+                           hpkt.sendit(hpkt, ",\n");
                         }
-                        sendit(NULL, "         \"%s\": %s", options_items[j].name,
+                        hpkt.sendit(hpkt, "         \"%s\": %s", options_items[j].name,
                            quote_string(hpkt.edbuf, FS_options[k].name));
                         found = true;
                         break;
@@ -498,9 +498,9 @@ static void display_options(HPKT &hpkt, INCEXE *ie)
                      *end = 0;       /* terminate this string */
                   }
                   if (!first_dir) {
-                     sendit(NULL, ",\n");
+                     hpkt.sendit(hpkt, ",\n");
                   }
-                  sendit(NULL, "         \"%s\": %s", options_items[j].name,
+                  hpkt.sendit(hpkt, "         \"%s\": %s", options_items[j].name,
                      quote_string(hpkt.edbuf, pos));
                   found = true;
                   if (end) {    /* Still have other options to parse */
@@ -515,9 +515,9 @@ static void display_options(HPKT &hpkt, INCEXE *ie)
          } else if (options_items[j].handler == store_plugin) {
             if (fo->plugin) {
                if (!first_dir) {
-                  sendit(NULL, ",\n");
+                  hpkt.sendit(hpkt, ",\n");
                }
-               sendit(NULL, "         \"%s\": %s", options_items[j].name,
+               hpkt.sendit(hpkt, "         \"%s\": %s", options_items[j].name,
                   quote_string(hpkt.edbuf, fo->plugin));
                first_dir = false;
                first_opt = false;
@@ -526,9 +526,9 @@ static void display_options(HPKT &hpkt, INCEXE *ie)
             list = &fo->fstype;
             if (list->size() > 0) {
                if (!first_dir) {
-                  sendit(NULL, ",\n");
+                  hpkt.sendit(hpkt, ",\n");
                }
-               sendit(NULL, "         \"%s\":", options_items[j].name);
+               hpkt.sendit(hpkt, "         \"%s\":", options_items[j].name);
                hpkt.list = list;
                display_alist(hpkt);
                first_dir = false;
@@ -538,9 +538,9 @@ static void display_options(HPKT &hpkt, INCEXE *ie)
             list = &fo->drivetype;
             if (list->size() > 0) {
                if (!first_dir) {
-                  sendit(NULL, ",\n");
+                  hpkt.sendit(hpkt, ",\n");
                }
-               sendit(NULL, "         \"%s\":", options_items[j].name);
+               hpkt.sendit(hpkt, "         \"%s\":", options_items[j].name);
                hpkt.list = list;
                display_alist(hpkt);
                first_dir = false;
@@ -548,9 +548,9 @@ static void display_options(HPKT &hpkt, INCEXE *ie)
             }
          }
       }
-      sendit(NULL, "\n       }");
+      hpkt.sendit(hpkt, "\n       }");
    }
-   sendit(NULL, "\n      ]");
+   hpkt.sendit(hpkt, "\n      ]");
 }
 
 /*
@@ -573,68 +573,68 @@ static void display_include_exclude(HPKT &hpkt)
 
    if (hpkt.ritem->code == 0) { /* Include */
       INCEXE *ie;
-      sendit(NULL, "\n    \"%s\": [{\n", hpkt.ritem->name);
+      hpkt.sendit(hpkt, "\n    \"%s\": [{\n", hpkt.ritem->name);
       for (j=0; j<fs->num_includes; j++) {
          if (j > 0) {
-            sendit(NULL, ",\n    {\n");
+            hpkt.sendit(hpkt, ",\n    {\n");
          }
          first_dir = true;
          ie = fs->include_items[j];
          for (i=0; newinc_items[i].name; i++) {
             if (strcasecmp(newinc_items[i].name, "File") == 0) {
                if (!first_dir) {
-                  sendit(NULL, ",\n");
+                  hpkt.sendit(hpkt, ",\n");
                }
-               sendit(NULL, "      \"%s\":", newinc_items[i].name);
+               hpkt.sendit(hpkt, "      \"%s\":", newinc_items[i].name);
                first_dir = false;
                hpkt.list = &ie->name_list;
                display_alist(hpkt);
             } if (strcasecmp(newinc_items[i].name, "Plugin") == 0 &&
                   ie->plugin_list.size() > 0) {
                if (!first_dir) {
-                  sendit(NULL, ",\n");
+                  hpkt.sendit(hpkt, ",\n");
                }
-               sendit(NULL, "      \"%s\":", newinc_items[i].name);
+               hpkt.sendit(hpkt, "      \"%s\":", newinc_items[i].name);
                first_dir = false;
                hpkt.list = &ie->plugin_list;
                display_alist(hpkt);
             } if (strcasecmp(newinc_items[i].name, "Options") == 0 &&
                   ie->num_opts > 0) {
                if (!first_dir) {
-                  sendit(NULL, ",\n");
+                  hpkt.sendit(hpkt, ",\n");
                }
                display_options(hpkt, ie);
             } if (strcasecmp(newinc_items[i].name, "ExcludeDirContaining") == 0 &&
                   ie->ignoredir) {
                if (!first_dir) {
-                  sendit(NULL, ",\n");
+                  hpkt.sendit(hpkt, ",\n");
                }
-               sendit(NULL, "      \"%s\": %s ", newinc_items[i].name,
+               hpkt.sendit(hpkt, "      \"%s\": %s ", newinc_items[i].name,
                   quote_string(hpkt.edbuf, ie->ignoredir));
                first_dir = false;
             }
          }
-         sendit(NULL, "\n    }");
+         hpkt.sendit(hpkt, "\n    }");
       }
-      sendit(NULL, "]");
+      hpkt.sendit(hpkt, "]");
    } else {
       /* Exclude */
-      sendit(NULL, "\n    \"%s\": {\n", hpkt.ritem->name);
+      hpkt.sendit(hpkt, "\n    \"%s\": {\n", hpkt.ritem->name);
       first_dir = true;
       for (int i=0; newinc_items[i].name; i++) {
          INCEXE *ie;
          if (strcasecmp(newinc_items[i].name, "File") == 0) {
             if (!first_dir) {
-               sendit(NULL, ",\n");
+               hpkt.sendit(hpkt, ",\n");
             }
-            sendit(NULL, "      \"%s\": ", newinc_items[i].name);
+            hpkt.sendit(hpkt, "      \"%s\": ", newinc_items[i].name);
             first_dir = false;
             ie = fs->exclude_items[0];
             hpkt.list = &ie->name_list;
             display_alist(hpkt);
          }
       }
-      sendit(NULL, "\n    }");
+      hpkt.sendit(hpkt, "\n    }");
    }
 }
 
@@ -649,53 +649,53 @@ static bool display_runscript(HPKT &hpkt)
       return false;
    }
 
-   sendit(NULL, "\n    \"Runscript\": [\n");
+   hpkt.sendit(hpkt, "\n    \"Runscript\": [\n");
 
    foreach_alist(script, *runscripts) {
       if (first) {
-         sendit(NULL, "      {\n");
+         hpkt.sendit(hpkt, "      {\n");
       } else {
-         sendit(NULL, ",\n      {\n");
+         hpkt.sendit(hpkt, ",\n      {\n");
       }
       if (script->when == SCRIPT_Any) {
-         sendit(NULL, "        \"RunsWhen\": \"Always\",\n");
+         hpkt.sendit(hpkt, "        \"RunsWhen\": \"Always\",\n");
 
       } else if (script->when == SCRIPT_After) {
-         sendit(NULL, "        \"RunsWhen\": \"After\",\n");
+         hpkt.sendit(hpkt, "        \"RunsWhen\": \"After\",\n");
 
       } else if (script->when == SCRIPT_Before) {
-         sendit(NULL, "        \"RunsWhen\": \"Before\",\n");
+         hpkt.sendit(hpkt, "        \"RunsWhen\": \"Before\",\n");
 
       } else if (script->when == SCRIPT_AfterVSS) {
-         sendit(NULL, "        \"RunsWhen\": \"AfterVSS\",\n");
+         hpkt.sendit(hpkt, "        \"RunsWhen\": \"AfterVSS\",\n");
       }
 
       if (script->fail_on_error != def->fail_on_error) {
-         sendit(NULL, "        \"FailJobOnError\": %s,\n", script->fail_on_error?"true":"false");
+         hpkt.sendit(hpkt, "        \"FailJobOnError\": %s,\n", script->fail_on_error?"true":"false");
       }
 
       if (script->on_success != def->on_success) {
-         sendit(NULL, "        \"RunsOnSuccess\": %s,\n", script->on_success?"true":"false");
+         hpkt.sendit(hpkt, "        \"RunsOnSuccess\": %s,\n", script->on_success?"true":"false");
       }
 
       if (script->on_failure != def->on_failure) {
-         sendit(NULL, "        \"RunsOnFailure\": %s,\n", script->on_failure?"true":"false");
+         hpkt.sendit(hpkt, "        \"RunsOnFailure\": %s,\n", script->on_failure?"true":"false");
       }
 
       if (script->is_local()) {
-         sendit(NULL, "        \"RunsOnClient\": false,\n");
+         hpkt.sendit(hpkt, "        \"RunsOnClient\": false,\n");
       }
 
       if (script->command) {
-         sendit(NULL, "        \"%s\": %s\n",
+         hpkt.sendit(hpkt, "        \"%s\": %s\n",
                 (script->cmd_type == SHELL_CMD)?"Command":"Console",
                 quote_string(hpkt.edbuf, script->command));
       }
-      sendit(NULL, "      }");
+      hpkt.sendit(hpkt, "      }");
       first = false;
    }
 
-   sendit(NULL, "\n    ]\n");
+   hpkt.sendit(hpkt, "\n    ]\n");
    free_runscript(def);
    return true;
 }
@@ -709,20 +709,20 @@ static void display_run(HPKT &hpkt)
    bool first_run = true;
    RES *res;
 
-   sendit(NULL, "\n    \"%s\": [\n", hpkt.ritem->name);
+   hpkt.sendit(hpkt, "\n    \"%s\": [\n", hpkt.ritem->name);
    for ( ; run; run=run->next) {
-      if (!first_run) sendit(NULL, ",\n");
+      if (!first_run) hpkt.sendit(hpkt, ",\n");
       first_run = false;
       first = true;
-      sendit(NULL, "     {\n");
+      hpkt.sendit(hpkt, "     {\n");
       /* First do override fields */
       for (i=0; RunFields[i].name; i++) {
          switch (RunFields[i].token) {
          case 'f':  /* FullPool */
             if (run->full_pool) {
                res = (RES *)run->full_pool;
-               if (!first) sendit(NULL, ",\n");
-               sendit(NULL, "      \"%s\": %s", RunFields[i].name,
+               if (!first) hpkt.sendit(hpkt, ",\n");
+               hpkt.sendit(hpkt, "      \"%s\": %s", RunFields[i].name,
                      quote_string(hpkt.edbuf, res->name));
                first = false;
             }
@@ -730,8 +730,8 @@ static void display_run(HPKT &hpkt)
          case 'i':  /* IncrementalPool */
             if (run->inc_pool) {
                res = (RES *)run->inc_pool;
-               if (!first) sendit(NULL, ",\n");
-               sendit(NULL, "      \"%s\": %s", RunFields[i].name,
+               if (!first) hpkt.sendit(hpkt, ",\n");
+               hpkt.sendit(hpkt, "      \"%s\": %s", RunFields[i].name,
                      quote_string(hpkt.edbuf, res->name));
                first = false;
             }
@@ -739,8 +739,8 @@ static void display_run(HPKT &hpkt)
          case 'd':  /* Differential Pool */
             if (run->diff_pool) {
                res = (RES *)run->diff_pool;
-               if (!first) sendit(NULL, ",\n");
-               sendit(NULL, "      \"%s\": %s", RunFields[i].name,
+               if (!first) hpkt.sendit(hpkt, ",\n");
+               hpkt.sendit(hpkt, "      \"%s\": %s", RunFields[i].name,
                      quote_string(hpkt.edbuf, res->name));
                first = false;
             }
@@ -748,8 +748,8 @@ static void display_run(HPKT &hpkt)
          case 'N':  /* Next Pool */
             if (run->next_pool) {
                res = (RES *)run->next_pool;
-               if (!first) sendit(NULL, ",\n");
-               sendit(NULL, "      \"%s\": %s", RunFields[i].name,
+               if (!first) hpkt.sendit(hpkt, ",\n");
+               hpkt.sendit(hpkt, "      \"%s\": %s", RunFields[i].name,
                      quote_string(hpkt.edbuf, res->name));
                first = false;
             }
@@ -759,8 +759,8 @@ static void display_run(HPKT &hpkt)
             //if (run->level_set) {
                for (j=0; joblevels[j].level_name; j++) {
                   if ((int)run->level == joblevels[j].level) {
-                     if (!first) sendit(NULL, ",\n");
-                     sendit(NULL, "      \"%s\": \"%s\"", RunFields[i].name,
+                     if (!first) hpkt.sendit(hpkt, ",\n");
+                     hpkt.sendit(hpkt, "      \"%s\": \"%s\"", RunFields[i].name,
                         joblevels[j].level_name);
                      first = false;
                   }
@@ -770,8 +770,8 @@ static void display_run(HPKT &hpkt)
          case 'P':  /* Pool */
             if (run->pool) {
                res = (RES *)run->pool;
-               if (!first) sendit(NULL, ",\n");
-               sendit(NULL, "      \"%s\": %s", RunFields[i].name,
+               if (!first) hpkt.sendit(hpkt, ",\n");
+               hpkt.sendit(hpkt, "      \"%s\": %s", RunFields[i].name,
                      quote_string(hpkt.edbuf, res->name));
                first = false;
             }
@@ -779,8 +779,8 @@ static void display_run(HPKT &hpkt)
          case 'S':  /* Storage */
             if (run->storage) {
                res = (RES *)run->storage;
-               if (!first) sendit(NULL, ",\n");
-               sendit(NULL, "      \"%s\": %s", RunFields[i].name,
+               if (!first) hpkt.sendit(hpkt, ",\n");
+               hpkt.sendit(hpkt, "      \"%s\": %s", RunFields[i].name,
                      quote_string(hpkt.edbuf, res->name));
                first = false;
             }
@@ -788,48 +788,48 @@ static void display_run(HPKT &hpkt)
          case 'M':  /* Messages */
             if (run->msgs) {
                res = (RES *)run->msgs;
-               if (!first) sendit(NULL, ",\n");
-               sendit(NULL, "      \"%s\": %s", RunFields[i].name,
+               if (!first) hpkt.sendit(hpkt, ",\n");
+               hpkt.sendit(hpkt, "      \"%s\": %s", RunFields[i].name,
                      quote_string(hpkt.edbuf, res->name));
                first = false;
             }
             break;
          case 'p':  /* priority */
             if (run->priority_set) {
-               if (!first) sendit(NULL, ",\n");
-               sendit(NULL, "      \"%s\": %d", RunFields[i].name,
+               if (!first) hpkt.sendit(hpkt, ",\n");
+               hpkt.sendit(hpkt, "      \"%s\": %d", RunFields[i].name,
                      run->Priority);
                first = false;
             }
             break;
          case 's':  /* Spool Data */
             if (run->spool_data_set) {
-               if (!first) sendit(NULL, ",\n");
-               sendit(NULL, "      \"%s\": %s", RunFields[i].name,
+               if (!first) hpkt.sendit(hpkt, ",\n");
+               hpkt.sendit(hpkt, "      \"%s\": %s", RunFields[i].name,
                      run->spool_data?"true":"false");
                first = false;
             }
             break;
          case 'W':  /* Write Part After Job */
             if (run->write_part_after_job_set) {
-               if (!first) sendit(NULL, ",\n");
-               sendit(NULL, "      \"%s\": %s", RunFields[i].name,
+               if (!first) hpkt.sendit(hpkt, ",\n");
+               hpkt.sendit(hpkt, "      \"%s\": %s", RunFields[i].name,
                      run->write_part_after_job?"true":"false");
                first = false;
             }
             break;
          case 'm':  /* MaxRunScheduledTime */
             if (run->MaxRunSchedTime_set) {
-               if (!first) sendit(NULL, ",\n");
-               sendit(NULL, "      \"%s\": %lld", RunFields[i].name,
+               if (!first) hpkt.sendit(hpkt, ",\n");
+               hpkt.sendit(hpkt, "      \"%s\": %lld", RunFields[i].name,
                      run->MaxRunSchedTime);
                first = false;
             }
             break;
          case 'a':  /* Accurate */
             if (run->accurate_set) {
-               if (!first) sendit(NULL, ",\n");
-               sendit(NULL, "      \"%s\": %s", RunFields[i].name,
+               if (!first) hpkt.sendit(hpkt, ",\n");
+               hpkt.sendit(hpkt, "      \"%s\": %s", RunFields[i].name,
                      run->accurate?"true":"false");
                first = false;
             }
@@ -840,52 +840,52 @@ static void display_run(HPKT &hpkt)
       } /* End all RunFields (overrides) */
       /* Now handle timing */
       if (byte_is_set(run->hour, sizeof(run->hour))) {
-         if (!first) sendit(NULL, ",\n");
-         sendit(NULL, "      \"Hour\":");
-         display_bit_array(run->hour, 24);
-         sendit(NULL, ",\n      \"Minute\": %d", run->minute);
+         if (!first) hpkt.sendit(hpkt, ",\n");
+         hpkt.sendit(hpkt, "      \"Hour\":");
+         display_bit_array(hpkt, run->hour, 24);
+         hpkt.sendit(hpkt, ",\n      \"Minute\": %d", run->minute);
          first = false;
       }
       /* bit 32 is used to store the keyword LastDay, so we look up to 0-31 */
       if (byte_is_set(run->mday, sizeof(run->mday))) {
-         if (!first) sendit(NULL, ",\n");
-         sendit(NULL, "      \"Day\":");
-         display_bit_array(run->mday, 31);
+         if (!first) hpkt.sendit(hpkt, ",\n");
+         hpkt.sendit(hpkt, "      \"Day\":");
+         display_bit_array(hpkt, run->mday, 31);
          first = false;
       }
       if (run->last_day_set) {
-         if (!first) sendit(NULL, ",\n");
-         sendit(NULL, "      \"LastDay\": 1");
+         if (!first) hpkt.sendit(hpkt, ",\n");
+         hpkt.sendit(hpkt, "      \"LastDay\": 1");
          first = false;
       }
       if (byte_is_set(run->month, sizeof(run->month))) {
-         if (!first) sendit(NULL, ",\n");
-         sendit(NULL, "      \"Month\":");
-         display_bit_array(run->month, 12);
+         if (!first) hpkt.sendit(hpkt, ",\n");
+         hpkt.sendit(hpkt, "      \"Month\":");
+         display_bit_array(hpkt, run->month, 12);
          first = false;
       }
       if (byte_is_set(run->wday, sizeof(run->wday))) {
-         if (!first) sendit(NULL, ",\n");
-         sendit(NULL, "      \"DayOfWeek\":");
-         display_bit_array(run->wday, 7);
+         if (!first) hpkt.sendit(hpkt, ",\n");
+         hpkt.sendit(hpkt, "      \"DayOfWeek\":");
+         display_bit_array(hpkt, run->wday, 7);
          first = false;
       }
       if (byte_is_set(run->wom, sizeof(run->wom))) {
-         if (!first) sendit(NULL, ",\n");
-         sendit(NULL, "      \"WeekOfMonth\":");
-         display_bit_array(run->wom, 6);
+         if (!first) hpkt.sendit(hpkt, ",\n");
+         hpkt.sendit(hpkt, "      \"WeekOfMonth\":");
+         display_bit_array(hpkt, run->wom, 6);
          first = false;
       }
       if (byte_is_set(run->woy, sizeof(run->woy))) {
-         if (!first) sendit(NULL, ",\n");
-         sendit(NULL, "      \"WeekOfYear\":");
-         display_bit_array(run->woy, 54);
+         if (!first) hpkt.sendit(hpkt, ",\n");
+         hpkt.sendit(hpkt, "      \"WeekOfYear\":");
+         display_bit_array(hpkt, run->woy, 54);
          first = false;
       }
-      sendit(NULL, "\n     }");
+      hpkt.sendit(hpkt, "\n     }");
 
    } /* End this Run directive */
-   sendit(NULL, "\n    ]");
+   hpkt.sendit(hpkt, "\n    ]");
 }
 
 /*
@@ -908,18 +908,18 @@ static void dump_json(display_filter *filter)
    /* List resources and directives */
    if (filter->do_only_data) {
       /* Skip the Name */
-      sendit(NULL, "[");
+      hpkt.sendit(hpkt, "[");
 
    /*
     * { "aa": { "Name": "aa",.. }, "bb": { "Name": "bb", ... }
     * or print a single item
     */
    } else if (filter->do_one || filter->do_list) {
-      sendit(NULL, "{");
+      hpkt.sendit(hpkt, "{");
 
    } else {
    /* [ { "Client": { "Name": "aa",.. } }, { "Director": { "Name": "bb", ... } } ]*/
-      sendit(NULL, "[");
+      hpkt.sendit(hpkt, "[");
    }
 
    first_res = true;
@@ -967,9 +967,9 @@ static void dump_json(display_filter *filter)
          }
 
          if (first_res) {
-            sendit(NULL, "\n");
+            hpkt.sendit(hpkt, "\n");
          } else {
-            sendit(NULL, ",\n");
+            hpkt.sendit(hpkt, ",\n");
          }
 
          /* Find where the Name is defined, should always be 0 */
@@ -981,7 +981,7 @@ static void dump_json(display_filter *filter)
          }
 
          if (filter->do_only_data) {
-            sendit(NULL, " {");
+            hpkt.sendit(hpkt, " {");
 
          } else if (filter->do_one) {
             /* Nothing to print */
@@ -993,13 +993,13 @@ static void dump_json(display_filter *filter)
             /* Search and display Name, should be the first item */
             for (item=0; items[item].name; item++) {
                if (strcmp(items[item].name, "Name") == 0) {
-                  sendit(NULL, "%s: {\n", quote_string(hpkt.edbuf2, *items[item].value));
+                  hpkt.sendit(hpkt, "%s: {\n", quote_string(hpkt.edbuf2, *items[item].value));
                   break;
                }
             }
          } else {
             /* Begin new resource */
-            sendit(NULL, "{\n  \"%s\": {", resources[resinx].name);
+            hpkt.sendit(hpkt, "{\n  \"%s\": {", resources[resinx].name);
          }
 
          first_res = false;
@@ -1036,7 +1036,7 @@ static void dump_json(display_filter *filter)
                   continue;
                }
                if (first_directive++ > 0) {
-                  sendit(NULL, ",");
+                  hpkt.sendit(hpkt, ",");
                }
 
                /* 1: found, 0: not found, -1 found but empty */
@@ -1078,7 +1078,7 @@ static void dump_json(display_filter *filter)
                } else if (items[item].handler == store_coll_type) {
                   display_collector_types(hpkt);
                } else {
-                  sendit(NULL, "\n    \"%s\": null", items[item].name);
+                  hpkt.sendit(hpkt, "\n    \"%s\": null", items[item].name);
                }
             } else { /* end if is present */
                /* For some directive, the bitmap is not set (like addresses) */
@@ -1088,12 +1088,12 @@ static void dump_json(display_filter *filter)
                       && items[item].handler == store_bool /* yes or no */
                       && *(bool *)(items[item].value) == true)
                   {
-                     if (first_directive++ > 0) sendit(NULL, ",");
+                     if (first_directive++ > 0) hpkt.sendit(hpkt, ",");
                      if (*(items[item-1].value) == NULL) {
-                        sendit(NULL, "\n    \"Autochanger\": %s", quote_string(hpkt.edbuf2, *items[name_pos].value));
+                        hpkt.sendit(hpkt, "\n    \"Autochanger\": %s", quote_string(hpkt.edbuf2, *items[name_pos].value));
                      } else {
                         STORE *r = (STORE *)*(items[item-1].value);
-                        sendit(NULL, "\n    \"Autochanger\": %s", quote_string(hpkt.edbuf2, r->name()));
+                        hpkt.sendit(hpkt, "\n    \"Autochanger\": %s", quote_string(hpkt.edbuf2, r->name()));
                      }
                   }
                }
@@ -1101,8 +1101,8 @@ static void dump_json(display_filter *filter)
                if (strcmp(resources[resinx].name, "Director") == 0) {
                   if (strcmp(items[item].name, "DirPort") == 0) {
                      if (get_first_port_host_order(director->DIRaddrs) != items[item].default_value) {
-                        if (first_directive++ > 0) sendit(NULL, ",");
-                        sendit(NULL, "\n    \"DirPort\": %d",
+                        if (first_directive++ > 0) hpkt.sendit(hpkt, ",");
+                        hpkt.sendit(hpkt, "\n    \"DirPort\": %d",
                            get_first_port_host_order(director->DIRaddrs));
                      }
 
@@ -1110,16 +1110,16 @@ static void dump_json(display_filter *filter)
                      char buf[500];
                      get_first_address(director->DIRaddrs, buf, sizeof(buf));
                      if (strcmp(buf, "0.0.0.0") != 0) {
-                        if (first_directive++ > 0) sendit(NULL, ",");
-                        sendit(NULL, "\n    \"DirAddress\": \"%s\"", buf);
+                        if (first_directive++ > 0) hpkt.sendit(hpkt, ",");
+                        hpkt.sendit(hpkt, "\n    \"DirAddress\": \"%s\"", buf);
                      }
 
                   } else if (strcmp(items[item].name, "DirSourceAddress") == 0 && director->DIRsrc_addr) {
                      char buf[500];
                      get_first_address(director->DIRsrc_addr, buf, sizeof(buf));
                      if (strcmp(buf, "0.0.0.0") != 0) {
-                        if (first_directive++ > 0) sendit(NULL, ",");
-                        sendit(NULL, "\n    \"DirSourceAddress\": \"%s\"", buf);
+                        if (first_directive++ > 0) hpkt.sendit(hpkt, ",");
+                        hpkt.sendit(hpkt, "\n    \"DirSourceAddress\": \"%s\"", buf);
                      }
                   }
                }
@@ -1131,31 +1131,31 @@ static void dump_json(display_filter *filter)
 
          /* { "aa": { "Name": "aa",.. }, "bb": { "Name": "bb", ... } */
          if (filter->do_only_data || filter->do_list) {
-            sendit(NULL, "\n }"); /* Finish the Resource with a single } */
+            hpkt.sendit(hpkt, "\n }"); /* Finish the Resource with a single } */
 
          } else {
             if (filter->do_one) {
                /* don't print anything */
 
             } else if (first_directive > 0) {
-               sendit(NULL, "\n  }\n}");  /* end of resource */
+               hpkt.sendit(hpkt, "\n  }\n}");  /* end of resource */
 
             } else {
-               sendit(NULL, "}\n}");
+               hpkt.sendit(hpkt, "}\n}");
             }
          }
       } /* End loop over all resources of this type */
    } /* End loop all resource types */
 
    if (filter->do_only_data) {
-      sendit(NULL, "\n]\n");
+      hpkt.sendit(hpkt, "\n]\n");
 
    /* In list context, we are dealing with a hash */
    } else if (filter->do_one || filter->do_list) {
-      sendit(NULL, "\n}\n");
+      hpkt.sendit(hpkt, "\n}\n");
 
    } else {
-      sendit(NULL, "\n]\n");
+      hpkt.sendit(hpkt, "\n]\n");
    }
    term_hpkt(hpkt);
 }
