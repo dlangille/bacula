@@ -25,6 +25,11 @@ Messages {
 }
 EOF
 
+VAR=START
+for i in $(seq 1 1000); do VAR=$VAR,www$i.superdomain.org ; done
+
+$bperl -e 'add_attribute("$conf/bacula-sd.conf", "TlsAllowedCn", "'$VAR',END", "Storage")'
+
 cat $tmp/1 >> $conf/bacula-dir.conf
 cat $tmp/1 >> $conf/bacula-sd.conf
 cat $tmp/1 >> $conf/bacula-fd.conf
@@ -36,4 +41,12 @@ if [ $? -ne 0 ]; then
     print_debug "ERROR: Issue while checking json output"
     estat=1
 fi
+
+min=`echo $VAR | wc -c`
+nb=`$bin/bsdjson  -r Storage -l Tls | wc -c`
+if [ $nb -lt $min ]; then
+    print_debug "ERROR: long directive was truncated"
+    estat=1
+fi
+
 end_test
