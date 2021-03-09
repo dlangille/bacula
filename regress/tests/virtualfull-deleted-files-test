@@ -1,0 +1,119 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Run a simple backup of the Bacula build directory then do a 
+#   Virtual Full backup to another device. We check how deleted
+#   files are handled.
+#
+#
+# This script uses the disk autochanger
+#
+TestName="virtualfull-deleted-files-test"
+JobName=Vbackup
+. scripts/functions
+
+
+scripts/cleanup
+scripts/copy-migration-confs
+echo "${cwd}/build" >${cwd}/tmp/file-list
+
+rm -f $cwd/build/inc1 $cwd/build/inc2 $cwd/build/diff1
+
+change_jobname NightlySave $JobName
+
+$bperl -e "add_attribute('$conf/bacula-dir.conf', 'SpoolData', 'no', 'Job', 'Vbackup')"
+$bperl -e "add_attribute('$conf/bacula-dir.conf', 'NextPool', 'Full', 'Pool', 'Full')"
+$bperl -e "add_attribute('$conf/bacula-dir.conf', 'Accurate', 'yes', 'Job')" 
+
+
+# Add few more drives
+rm -f $tmp/1
+for i in 1 2 3 4; do
+    $bperl -e "extract_resource('$conf/bacula-sd.conf', 'Device', 'Drive-0')" | sed s/Drive-0/Drive-$i/ >> $tmp/1
+done
+cat $tmp/1 >> $conf/bacula-sd.conf
+$bperl -e "add_attribute('$conf/bacula-sd.conf', 'Device', 'Drive-0,Drive-1,Drive-2,Drive-3,Drive-4', 'Autochanger', 'DiskChanger')"
+
+start_test
+
+#
+# Note, we first backup into Pool Default, 
+#          then Migrate into Pool Full. 
+#              Pool Default uses Storage=File
+#              Pool Full    uses Storage=DiskChanger
+
+# Write out bconsole commands
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@output /dev/null
+messages
+@$out ${cwd}/tmp/log1.out
+@#setdebug level=100 storage=File
+label storage=File volume=FileVolume001 Pool=Default
+label storage=DiskChanger volume=ChangerVolume001 slot=1 Pool=Full drive=0
+label storage=DiskChanger volume=ChangerVolume002 slot=2 Pool=Full drive=0
+@# run several jobs
+@exec "sh -c 'date > ${cwd}/build/date'"
+run job=$JobName level=Full yes
+wait
+messages
+list jobs
+@exec "sh -c 'touch ${cwd}/build/inc1'"
+run job=$JobName level=Incremental yes
+wait
+messages
+list jobs
+@exec "sh -c 'touch ${cwd}/build/inc2'"
+run job=$JobName level=Incremental yes
+wait
+messages
+list jobs
+@exec "sh -c 'rm ${cwd}/build/inc1'"
+run job=$JobName level=Incremental yes
+wait
+messages
+list jobs
+@exec "sh -c 'rm ${cwd}/build/inc2'"
+run job=$JobName level=Incremental yes
+wait
+messages
+@$out $tmp/log5.out
+run job=$JobName level=VirtualFull yes
+wait
+messages
+@$out $tmp/files6.out
+list files type=all jobid=6
+@# 
+@# now do a restore of the consolidated Full
+@#
+@$out $tmp/log2.out
+restore where=${cwd}/tmp/bacula-restores
+5
+m *
+done
+yes
+wait
+messages
+@$out $tmp/log3.out
+quit
+END_OF_DATA
+
+run_bacula
+check_for_zombie_jobs storage=File
+stop_bacula
+
+#
+# We only used one log so copy it to the second log
+#  so that any restore errors will be picked up
+#
+check_two_logs
+check_restore_diff
+
+grep /inc1 $tmp/files6.out > /dev/null
+if [ $? = 0 ]; then
+    print_debug "ERROR: Should not find deleted files in the VF $tmp/files6.out"
+    estat=1
+fi
+
+end_test
