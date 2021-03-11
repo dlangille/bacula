@@ -1,0 +1,14 @@
+#!/bin/sh
+# Copyright (C) 2000-2021 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+
+V=$1
+P=$2
+
+if [ ! -f "$V" -o "$P" = "" ]; then
+    echo "ERROR: Usage $0: ../version.h part"
+    exit 1
+fi
+
+#  #define VERSION "12.6.1"   =>  12.6.1        => 12   /  6   /  1
+awk -F '"' '/#define VERSION / { print $2 }' $V | cut -d . -f $P

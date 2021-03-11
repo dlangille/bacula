@@ -125,9 +125,4 @@ clean:
 $(BINDIR)/bacula-fd.exe: $(FILED_OBJS) $(LIBS_BACULA)
 	$(call link_winapp,$(FILED_LIBS))
 
-$(OBJDIR)/winres.res: $(BUILDDIR)/libwin32/winres.rc
-	@echo "Compiling $@"
-	$(call checkdir,$@)
-	$(ECHO_CMD)$(WINDRES) $(INCLUDE_ICONS) -DMINGW64 -O coff $< -o $@
-
 include $(BUILDDIR)/Makefile.rules

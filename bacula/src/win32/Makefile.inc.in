@@ -92,6 +92,13 @@ else
    LDFLAGS += -mno-cygwin -Wl,--disable-auto-import
 endif
 
+# Assign the version inside the binaries
+VER_MAJOR=$(shell $(BUILDDIR)/scripts/get_version $(MAINDIR)/src/version.h 1)
+VER_MINOR=$(shell $(BUILDDIR)/scripts/get_version $(MAINDIR)/src/version.h 2)
+VER_BUILD=$(shell $(BUILDDIR)/scripts/get_version $(MAINDIR)/src/version.h 3)
+
+WINDRESFLAGS += -DVER_MAJOR=$(VER_MAJOR) -DVER_MINOR=$(VER_MINOR) -DVER_BUILD=$(VER_BUILD) -DVER_REVISION=0
+
 bat=@BAT@
 
 ifeq ($(bat),no)

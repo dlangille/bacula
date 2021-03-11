@@ -184,9 +184,4 @@ $(OBJDIR)/mtops.o: mtops.cpp
 	$(call checkdir,$@)
 	$(ECHO_CMD)$(CXX) $(CFLAGS) $(INCLUDE_DDK) -I../../stored -c $< -o $@
 
-$(OBJDIR)/winres.res:	  baculasd/winres.rc
-	@echo "Compiling $@"
-	$(call checkdir,$@)
-	$(ECHO_CMD)$(WINDRES) $(INCLUDE_ICONS) -I baculasd -O coff $< -o $@
-
 include ../Makefile.rules
