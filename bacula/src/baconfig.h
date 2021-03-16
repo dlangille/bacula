@@ -603,8 +603,18 @@ void t_msg(const char *file, int line, int64_t level, const char *fmt,...);
 #endif
 
 /** Macro to simplify free/reset pointers */
-#define bfree_and_null(a) do{if(a){bfree(a); (a)=NULL;}} while(0)
-#define bdelete_and_null(a) do{if(a){delete a; (a)=NULL;}} while(0)
+#define bfree_and_null(a) do{if(a){void *b__=(void*)a; (a)=NULL; bfree(b__);}} while(0)
+
+/* If changed, please run the tests in tools/test-cpp.c */
+#if __cplusplus >= 201103L
+# define bdelete_and_null(a) do{if(a){auto b__ = a; (a)=NULL; delete b__;}} while(0)
+#else
+# ifdef HAVE_TYPEOF
+#  define bdelete_and_null(a) do{if(a){typeof(a) b__ = a; (a)=NULL; delete b__;}} while(0)
+# else
+#  define bdelete_and_null(a) do{if(a){delete a; (a)=NULL;}} while(0)
+# endif
+#endif
 
 /**
  * Replace codes needed in both file routines and non-file routines
