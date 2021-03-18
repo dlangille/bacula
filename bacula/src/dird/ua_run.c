@@ -1033,6 +1033,15 @@ configure_again:
          if (found) {
             ini->items[i].val.int64val = ua->int64_val;
          }
+
+      } else if (h == ini_store_alist_str) {
+         found = ini->items[i].found = get_cmd(ua, prompt.c_str());
+         if (found) {
+            if (!ini->items[i].val.alistval) {
+               ini->items[i].val.alistval = New(alist(10, owned_by_alist));
+            }
+            ini->items[i].val.alistval->append(bstrdup(ua->cmd));
+         }
       }
       goto configure_again;
    }

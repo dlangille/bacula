@@ -125,12 +125,10 @@ void ConfigFile::clear_items()
       if (items[i].found) {
          /* special members require delete or free */
          if (items[i].handler == ini_store_str) {
-            free(items[i].val.strval);
-            items[i].val.strval = NULL;
+            bfree_and_null(items[i].val.strval);
 
          } else if (items[i].handler == ini_store_alist_str) {
-            delete items[i].val.alistval;
-            items[i].val.alistval = NULL;
+            bdelete_and_null(items[i].val.alistval);
          }
          items[i].found = false;
       }
@@ -541,7 +539,20 @@ bool ini_store_alist_str(LEX *lc, ConfigFile *inifile, ini_items *item)
 {
    alist *list = item->val.alistval;
    if (!lc) {
-      /* TODO, write back the alist to edit buffer */
+      bool first=true;
+      char *str;
+      pm_strcpy(inifile->edit, "");
+      if (list) {
+         POOL_MEM tmp;
+         foreach_alist(str, list) {
+            if (first) {
+               first = false;
+            } else {
+               pm_strcat(inifile->edit, ",");
+            }
+            pm_strcat(inifile->edit, quote_string(tmp.addr(), str));
+         }
+      }
       return true;
    }
 
