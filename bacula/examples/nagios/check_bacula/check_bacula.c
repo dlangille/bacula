@@ -319,44 +319,48 @@ int docmd(monitoritem* item, const char* command, char *answer) {
    while(1) {
       if ((stat = item->D_sock->recv()) >= 0) {
 
-        /* welcome message of director */
-        if ((item->type == R_DIRECTOR) && (strncmp(item->D_sock->msg, "Using ", 6) == 0))
-                continue;
+         /* welcome message of director */
+         if ((item->type == R_DIRECTOR) && (strncmp(item->D_sock->msg, "Using ", 6) == 0)) {
+            continue;
+         }
+
+        if (strncmp(item->D_sock, "Events:", strlen("Events:")) == 0) {
+           /* Daemons can send events to the director, ignore them here */
+           continue;
+        }
 
         if (sscanf(item->D_sock->msg, OKqstatus, &num) != 1) {
-                /* Error, couldn't find OK */
-                sprintf (answer, "BACULA CRITICAL - %s Status: %s", dname, item->D_sock->msg);
-                return STATE_CRITICAL;
+           /* Error, couldn't find OK */
+           sprintf (answer, "BACULA CRITICAL - %s Status: %s", dname, item->D_sock->msg);
+           return STATE_CRITICAL;
         } else {
-                sprintf (answer, "BACULA OK - %s Status OK", dname);
-                return STATE_OK;
+           sprintf (answer, "BACULA OK - %s Status OK", dname);
+           return STATE_OK;
         }
-      }
-      else if (stat == BNET_SIGNAL) {
-                if (item->D_sock->msglen == BNET_EOD) {
-                strcpy(answer, "BACULA WARNING - << EOD >>");
-                return STATE_WARNING;
-         }
-         else if (item->D_sock->msglen == BNET_SUB_PROMPT) {
+
+      } else if (stat == BNET_SIGNAL) {
+         if (item->D_sock->msglen == BNET_EOD) {
+            strcpy(answer, "BACULA WARNING - << EOD >>");
+            return STATE_WARNING;
+
+         } else if (item->D_sock->msglen == BNET_SUB_PROMPT) {
             strcpy(answer, "BACULA WARNING - BNET_SUB_PROMPT signal received.");
             return STATE_WARNING;
-         }
-         else if (item->D_sock->msglen == BNET_HEARTBEAT) {
+
+         } else if (item->D_sock->msglen == BNET_HEARTBEAT) {
             item->D_sock->signal(BNET_HB_RESPONSE);
+         } else {
+            sprintf(answer, "BACULA WARNING - Unexpected signal received : %s ", bnet_sig_to_ascii(item->D_sock->msglen));
          }
-         else {
-                sprintf(answer, "BACULA WARNING - Unexpected signal received : %s ", bnet_sig_to_ascii(item->D_sock->msglen));
-         }
-      }
-      else { /* BNET_HARDEOF || BNET_ERROR */
-                 strcpy(answer, "BACULA CRITICAL - ERROR: BNET_HARDEOF or BNET_ERROR");
-                 item->D_sock = NULL;
-                 return STATE_CRITICAL;
+      } else { /* BNET_HARDEOF || BNET_ERROR */
+         strcpy(answer, "BACULA CRITICAL - ERROR: BNET_HARDEOF or BNET_ERROR");
+         item->D_sock = NULL;
+         return STATE_CRITICAL;
       }
 
       if (item->D_sock->is_stop()) {
-                 item->D_sock = NULL;
-                 return STATE_WARNING;
+         item->D_sock = NULL;
+         return STATE_WARNING;
       }
    }
 }
