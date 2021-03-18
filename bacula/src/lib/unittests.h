@@ -61,6 +61,8 @@ int report();
 void terminate(int sig);
 void prolog(const char *name, bool lmgr=false, bool motd=true);
 void epilog();
+int unittest_get_nb_tests();
+int unittest_get_nb_errors();
 
 /* The class based approach for C++ geeks */
 class Unittests

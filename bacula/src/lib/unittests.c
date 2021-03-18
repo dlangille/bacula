@@ -77,6 +77,18 @@ void configure_test(uint64_t options)
    }
 }
 
+/* Get the total number of tests */
+int unittest_get_nb_tests()
+{
+   return nb;
+}
+
+/* Get the total number of tests in error */
+int unittest_get_nb_errors()
+{
+   return err;
+}
+
 /*
  * Test success if value is not zero.
  */
