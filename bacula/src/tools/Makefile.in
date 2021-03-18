@@ -61,6 +61,9 @@ all: Makefile $(TOOLS) gigaslam grow
 	@echo "==== Make of tools is good ===="
 	@echo " "
 
+test-cpp: test-cpp.o ../lib/unittests.o
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS)  -L../lib -o $@ test-cpp.o ../lib/unittests.o -lbac $(DLIB) $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
+
 fs-io-error: fs-io-error.c
 	$(CXX) -Wall fs-io-error.c -D_FILE_OFFSET_BITS=64 -lfuse  -o fs-io-error
 
