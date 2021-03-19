@@ -94,7 +94,7 @@ enum {
    M_SECURITY,                        /* security violation */
    M_ALERT,                           /* tape alert messages */
    M_VOLMGMT,                         /* Volume management messages */
-   M_EVENTS                           /* Event messages use event_send_msg() */
+   M_EVENTS                           /* Event messages use events_send_msg() */
 };
 
 #define M_MAX      M_EVENTS           /* keep this updated ! */
