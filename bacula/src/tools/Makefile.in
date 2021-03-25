@@ -61,6 +61,9 @@ all: Makefile $(TOOLS) gigaslam grow
 	@echo "==== Make of tools is good ===="
 	@echo " "
 
+../lib/unittests.o: ../lib/unittests.c
+	(cd ../lib ; make unittests.o)
+
 test-cpp: test-cpp.o ../lib/unittests.o
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS)  -L../lib -o $@ test-cpp.o ../lib/unittests.o -lbac $(DLIB) $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS)
 
