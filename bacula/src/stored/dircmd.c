@@ -479,9 +479,6 @@ static bool setdebug_cmd(JCR *jcr)
    debug_level_tags = level_tags;
 
    bee_setdebug_cmd_parse_options(jcr, options);
-
-   Dmsg6(150, "Level=%lld trace=%d hangup=%d blowup=%d options=%s tags=%s\n",
-         lvl, get_trace(), get_hangup(), get_blowup(), options, tags);
    return dir->fsend(OKsetdebug, lvl, trace_flag, options, tags);
 }
 
