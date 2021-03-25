@@ -274,7 +274,7 @@ void DEVICE::set_volcatinfo_from_dcr(DCR *dcr)
 
 bool DEVICE::sync_data(DCR *dcr)
 {
-   int ret=false;
+   int ret=true;
 
 #ifndef HAVE_WIN32
    if (!has_cap(CAP_SYNCONCLOSE)) {
