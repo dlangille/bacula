@@ -25,13 +25,13 @@
 
 /* Note: there can be only *one* VERSION in this file */
 #define VERSION "11.0.1"
-#define BDATE   "05 February 2020"
-#define LSMDATE "05Feb20"
+#define BDATE   "26 March 2021"
+#define LSMDATE "26Mar21"
 
 #define RELEASE 1   /* Use ONLY in rpms */
 
-#define PROG_COPYRIGHT "Copyright (C) %d-2020 Kern Sibbald.\n"
-#define BYEAR "2020"       /* year for copyright messages in progs */
+#define PROG_COPYRIGHT "Copyright (C) %d-2021 Kern Sibbald.\n"
+#define BYEAR "2021"       /* year for copyright messages in progs */
 
 /*
  * Versions of packages needed to build Bacula components
