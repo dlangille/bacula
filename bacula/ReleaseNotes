@@ -18,24 +18,77 @@ New Catalog format in version 11.0.0 and greater
 -----------------------------------------------
 
 This release of Bacula uses a new catalog format.  We provide a set of scripts
-that permit to convert a 9.x and earlier versions to the new 11.0.0 format
-(1023).  Normally, it is automatic, though this is a big change that takes
-longer than usual. The upgrade process will require more or less twice the
-size of the actual database.
+that permit conversion from 9.x and earlier versions to the new 11.0.0 format
+(1023).  Normally the conversion/upgrade is automatic, though there is a big
+change that takes longer than usual. The upgrade process will require about
+twice the disk space of the actual database.
 
 This database upgrade should significantly increase performance when inserting
-large number of Jobs with lots of Files into the database catalog.
+a large number of Jobs with a lot of Files into the database catalog.
 
 If you start from scratch, you don't need to run the update_bacula_tables
 script because the create_bacula_tables script automatically creates the new
 table format.  However, if you are using a version of Bacula older than 5.0.0
 (e.g.  3.0.3) then you need to run the update_bacula_tables script that will be
 found in the <bacula>/src/cats directory after you run the ./configure command.
+
 As mentioned above, before running this script, please backup your catalog
-database, and when you do running it, be sure shutdown Bacula and be aware that
-running the script can take some time depending on your database size.
+database, be sure to shutdown Bacula and be aware that running the script can
+take some time depending on your database size.
 
 ----------------------------------------------------------------
+Release 11.0.2 26 March 2021
+
+11.0.2 is a minor bug fix release.
+
+ - Add functions to unittests library
+ - Add support for store_alist_str() in plugin configuration items
+ - Enhance bdelete_and_free() macro
+ - Update baculabackupreport script
+
+ - Fix #7286 DIR segfault when doing a "dir" command in a restore
+ - Fix #7321 About issue when stopping jobs waiting for resources
+ - Fix #7396 GRANT command error in granting privileges script for MySQL
+ - Fix #7449 About incorrect JSON output with 'TLS Allowed CN' directive
+ - Fix #7451 About deleted files incorrectly kept in Virtual Full
+ - Fix S3 compilation
+ - Fix Verify job issue with offset stream and compressed blocks
+ - Fix bug #2498 - Wrong mode for /etc/logrotate.d/bacula
+ - Fix check_bacula.c to ignore daemon events
+ - Fix possible memory corruption in the label process
+ - Fix reload issue when a Job doesn't have a Pool defined
+ - Possible fix for SD high memory usage problem
+ - Remove suspicious debug line on setdebug()
+
+ - baculum: Add Craig Holyoak to AUTHORS
+ - baculum: Fix #2597 LDAP login with LDAPS option
+ - baculum: Fix cancel button in new job wizard
+ - baculum: Fix displaying warning messages in messages window
+ - baculum: Fix undefined property error in run job API endpoint if level value 
+   is not provided
+ - baculum: Implement API version 2
+ - baculum: Improve updating asset files after upgrade
+ - baculum: Unify jobs/{jobid}/files endpoint output for detailed and normal 
+   modes
+ - baculum: Update Polish translations
+ - baculum: Update Portuguese translations
+ - baculum: Update Russian translations
+ - baculum: Use new APIv2 status client request on job history view page
+
+ - rpms: Fix bacula.spec for Fedora 31
+ - rpms: Fix bacula.spec for rhel8 / centos 8
+ - rpms: Fix missing query.sql
+ - rpms: Update bacula.spec for rhel8
+
+ - win32: Fill the version information as CFLAGS
+ - win32: Fix #7373 binaries are tagged with correct resource
+ - win32: Fix error message when labeling volume on Windows SD
+ - win32: Update openssl version to 1.1.1k
+
+
+Bugs fixed/closed since last release:
+2498 2597 7286 7321 7373 7396 7449 7451
+
 
 Release 11.0.1 04 February 2021
 

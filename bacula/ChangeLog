@@ -1,3 +1,90 @@
+        ChangeLog for Bacula Enterprise version 11.0.2
+
+
+25Mar21
+ - update baculabackupreport script
+ - win32: Update openssl version to 1.1.1k
+ - Remove suspicious debug line on setdebug()
+ - win32: Fix error message when labeling volume on Windows SD
+
+18Mar21
+ - Add support for store_alist_str() in plugin configuration items
+ - Add functions to unittests library
+ - Fix check_bacula.c to ignore daemon events
+
+16Mar21
+ - Enhance bdelete_and_free() macro
+
+11Mar21
+ - win32: Fill the version information as CFLAGS
+
+09Mar21
+ - Fix #7449 About incorrect JSON output with 'TLS Allowed CN' directive
+ - Fix #7451 About deleted files incorrectly kept in Virtual Full
+
+07Mar21
+ - baculum: Use new APIv2 status client request on job history view page
+
+05Mar21
+ - baculum: Update Portuguese translations
+ - baculum: Unify /jobs/{jobid}/files endpoint output for detailed and normal 
+  modes
+
+03Mar21
+ - Fix Bacula_11.0 build by inverting dependencies
+ - Fix reload issue when a Job doesn't have a Pool defined
+ - Fix #7396 GRANT command error in granting privileges script for MySQL
+ - Fix #7286 DIR segfault when doing a "dir" command in a restore
+
+02Mar21
+ - Fix possible memory corruption in the label process
+ - Possible fix for SD high memory usage problem
+ - Fix S3 compilation
+ - Fix compilation issue of the cloud driver
+
+28Feb21
+ - baculum: Update Polish translations
+ - baculum: Update Russian translations
+ - rpms: Fix bacula.spec for Fedora 31
+ - rpms: Fix bacula.spec for rhel8 / centos 8
+ - rpms: Update bacula.spec for rhel8
+ - Fix bug #2498 - Wrong mode for /etc/logrotate.d/bacula
+ - rpms: Fix missing query.sql
+
+27Feb21
+ - baculum: Implement API version 2
+
+25Feb21
+ - win32: Fix #7373 binaries are tagged with correct resource
+
+23Feb21
+ - Fix Verify job issue with offset stream and compressed blocks
+
+19Feb21
+ - baculum: Add Craig Holyoak to AUTHORS
+ - baculum: Fix #2597 LDAP login with LDAPS option
+
+16Feb21
+ - win32: Update to OpenSSL 1.1.1j
+
+13Feb21
+ - baculum: Fix cancel button in new job wizard
+
+11Feb21
+ - Fix #7321 About issue when stopping jobs waiting for resources
+
+07Feb21
+ - baculum: Fix undefined property error in run job API endpoint if level value 
+  is not provided
+
+06Feb21
+ - baculum: Fix displaying warning messages in messages window
+ - baculum: Improve updating asset files after upgrade
+
+Bugs fixed/closed since last release:
+2498 2597 7286 7321 7373 7396 7449 7451
+
+
         ChangeLog for Bacula Enterprise version 11.0.1
 
 05Feb21
