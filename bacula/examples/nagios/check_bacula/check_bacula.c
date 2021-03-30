@@ -324,7 +324,7 @@ int docmd(monitoritem* item, const char* command, char *answer) {
             continue;
          }
 
-        if (strncmp(item->D_sock, "Events:", strlen("Events:")) == 0) {
+        if (strncmp(item->D_sock->msg, "Events:", strlen("Events:")) == 0) {
            /* Daemons can send events to the director, ignore them here */
            continue;
         }
