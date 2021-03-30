@@ -26,13 +26,13 @@
 #if __cplusplus >= 201103L
 # define bdelete_and_null_auto(a) do{if(a){auto b__ = a; (a)=NULL; delete b__;}} while(0)
 #else
-# define do{ok(1, "auto not available")
+# define do{ok(1, "auto not available");} while (0)
 #endif
 
 # ifdef HAVE_TYPEOF
 #  define bdelete_and_null_typeof(a) do{if(a){typeof(a) b__ = a; (a)=NULL; delete b__;}} while(0)
 # else
-# define ok(1, "typeof not available")
+# define do{ok(1, "typeof not available");} while (0)
 #endif
 
 class obj
