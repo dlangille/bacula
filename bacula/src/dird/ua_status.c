@@ -1512,7 +1512,7 @@ static void list_terminated_jobs(UAContext *ua)
    struct s_last_job *je;
    if (!ua->api) {
       ua->send_msg(_("\nTerminated Jobs:\n"));
-      ua->send_msg(_(" JobId  Level    Files      Bytes   Status   Finished        Name \n"));
+      ua->send_msg(_(" JobId  Level     Files      Bytes   Status   Finished        Name \n"));
       ua->send_msg(_("====================================================================\n"));
    } else if (ua->api > 1) {
       ua->send_msg(ow.start_group("terminated"));
@@ -1575,7 +1575,7 @@ static void list_terminated_jobs(UAContext *ua)
          break;
       }
       if (ua->api == 1) {
-         ua->send_msg(_("%7d\t%-6s\t%8s\t%10s\t%-7s\t%-8s\t%s\n"),
+         ua->send_msg(_("%7d\t%-7s\t%8s\t%10s\t%-7s\t%-8s\t%s\n"),
             je->JobId,
             level,
             edit_uint64_with_commas(je->JobFiles, b1),
@@ -1601,7 +1601,7 @@ static void list_terminated_jobs(UAContext *ua)
                                     OT_END));
 
       } else {
-         ua->send_msg(_("%6d  %-6s %8s %10s  %-7s  %-8s %s\n"),
+         ua->send_msg(_("%6d  %-7s %8s %10s  %-7s  %-8s %s\n"),
             je->JobId,
             level,
             edit_uint64_with_commas(je->JobFiles, b1),
