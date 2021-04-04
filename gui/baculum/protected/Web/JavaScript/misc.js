@@ -343,7 +343,11 @@ function render_jobstatus(data, type, row) {
 function render_bytes(data, type, row) {
 	var s;
 	if (type == 'display') {
-		s = Units.get_formatted_size(data)
+		if (/^\d+$/.test(data)) {
+			s = Units.get_formatted_size(data);
+		} else {
+			s = '';
+		}
 	} else {
 		s = data;
 	}
@@ -1106,17 +1110,6 @@ function update_job_table(table_obj, new_data) {
 }
 
 /**
- * Used to escape values before putting them into regular expression.
- * Dedicated to use in table values.
- */
-dtEscapeRegex = function(value) {
-	if (typeof(value) != 'string' && typeof(value.toString) == 'function') {
-		value = value.toString();
-	}
-	return $.fn.dataTable.util.escapeRegex(value);
-};
-
-/**
  * Do validation comma separated list basing on regular expression
  * for particular values.
  */
@@ -1184,9 +1177,11 @@ function get_table_toolbar(table, actions, txt) {
 			acts[select.value].before();
 		}
 		selected = selected.join('|');
-		acts[select.value].callback.options.RequestTimeOut = 60000; // Timeout set to 1 minute
-		acts[select.value].callback.setCallbackParameter(selected);
-		acts[select.value].callback.dispatch();
+		if (acts[select.value].hasOwnProperty('callback')) {
+			acts[select.value].callback.options.RequestTimeOut = 60000; // Timeout set to 1 minute
+			acts[select.value].callback.setCallbackParameter(selected);
+			acts[select.value].callback.dispatch();
+		}
 	});
 	table_toolbar.appendChild(title);
 	table_toolbar.appendChild(select);

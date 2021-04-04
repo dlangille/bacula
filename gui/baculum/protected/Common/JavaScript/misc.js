@@ -206,6 +206,7 @@ var OAuth2Scopes = [
 	'directors',
 	'clients',
 	'storages',
+	'devices',
 	'volumes',
 	'pools',
 	'bvfs',
@@ -229,6 +230,17 @@ function copy_to_clipboard(text) {
 	document.execCommand('copy');
 	document.body.removeChild(input);
 }
+
+/**
+ * Used to escape values before putting them into regular expression.
+ * Dedicated to use in table values.
+ */
+dtEscapeRegex = function(value) {
+	if (typeof(value) != 'string' && typeof(value.toString) == 'function') {
+		value = value.toString();
+	}
+	return $.fn.dataTable.util.escapeRegex(value);
+};
 
 $(function() {
 	W3SideBar.init();

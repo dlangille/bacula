@@ -20,27 +20,17 @@
  * Bacula(R) is a registered trademark of Kern Sibbald.
  */
 
-Prado::using('System.Web.UI.WebControls.TClientScript');
+Prado::using('System.Web.UI.JuiControls.TJuiDialog');
+Prado::using('Application.Common.Portlets.PortletTemplate');
 
 /**
- * Baculum client script class.
+ * Sudo config control.
+ * It displays dialog window with sudo config for specific operating systems.
  *
  * @author Marcin Haba <marcin.haba@bacula.pl>
- * @category Client Script
- * @package Baculum Common
+ * @category Control
+ * @package Baculum API
  */
-class BClientScript extends TClientScript {
-
-	const SCRIPTS_VERSION = 18;
-
-	public function getScriptUrl()
-	{
-		$url = parent::getScriptUrl();
-		if (!empty($url)) {
-			$url .= '?ver=' . self::SCRIPTS_VERSION;
-		}
-		return $url;
-	}
-
+class SudoConfig extends PortletTemplate {
 }
 ?>

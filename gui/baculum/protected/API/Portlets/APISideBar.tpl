@@ -33,6 +33,7 @@
 		<a href="<%=$this->Service->constructUrl('APIHome')%>" class="w3-bar-item w3-button w3-padding<%=$this->Service->getRequestedPagePath() == 'APIHome' ? ' w3-blue': ''%>"><i class="fas fa-tachometer-alt fa-fw"></i> &nbsp;<%[ Dashboard ]%></a>
 		<a href="<%=$this->Service->constructUrl('APIBasicUsers')%>" class="w3-bar-item w3-button w3-padding<%=$this->Service->getRequestedPagePath() == 'APIBasicUsers' ? ' w3-blue': ''%>"><i class="fa fa-users fa-fw"></i> &nbsp;<%[ Basic users ]%></a>
 		<a href="<%=$this->Service->constructUrl('APIOAuth2Clients')%>" class="w3-bar-item w3-button w3-padding<%=$this->Service->getRequestedPagePath() == 'APIOAuth2Clients' ? ' w3-blue': ''%>"><i class="fa fa-user-shield fa-fw"></i> &nbsp;<%[ OAuth2 clients ]%></a>
+		<a href="<%=$this->Service->constructUrl('APIDevices')%>" class="w3-bar-item w3-button w3-padding<%=$this->Service->getRequestedPagePath() == 'APIDevices' ? ' w3-blue': ''%>"><i class="fa fa-server fa-fw"></i> &nbsp;<%[ Devices ]%></a>
 		<a href="<%=$this->Service->constructUrl('APISettings')%>" class="w3-bar-item w3-button w3-padding<%=$this->Service->getRequestedPagePath() == 'APISettings' ? ' w3-blue': ''%>"><i class="fa fa-wrench fa-fw"></i> &nbsp;<%[ Settings ]%></a>
 		<a href="<%=$this->Service->constructUrl('APIInstallWizard')%>" class="w3-bar-item w3-button w3-padding<%=$this->Service->getRequestedPagePath() == 'APIInstallWizard' ? ' w3-blue': ''%>"><i class="fa fa-hat-wizard fa-fw"></i> &nbsp;<%[ Configuration wizard ]%></a>
 	</div>

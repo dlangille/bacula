@@ -33,6 +33,7 @@
 		<module id="api_config" class="Application.API.Class.APIConfig" />
 		<module id="bacula_config" class="Application.API.Class.BaculaConfig" />
 		<module id="bacula_setting" class="Application.API.Class.BaculaSetting" />
+		<module id="device_config" class="Application.API.Class.DeviceConfig" />
 		<!-- logging modules -->
 		<module id="log" class="System.Util.TLogRouter">
 			<route class="TFileLogRoute"  Categories="Execute, External, Application, General, Security" LogPath="Application.API.Logs" LogFile="baculum-api.log" MaxFileSize="1000" MaxLogFiles="5" />
@@ -46,5 +47,7 @@
 		<!-- bconsole command modules -->
 		<module id="ls" class="Application.API.Class.Ls" />
 		<module id="list" class="Application.API.Class.BList" />
+		<!-- changer command modules -->
+		<module id="changer_command" class="Application.API.Class.ChangerCommand" />
 	</modules>
 </configuration>

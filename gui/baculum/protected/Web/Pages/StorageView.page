@@ -31,6 +31,13 @@
 			Visible="<%=!empty($_SESSION['sd']) && $this->getIsAutochanger()%>"
 			OnClick="setAutochanger"
 		/>
+		<com:TActiveLinkButton
+			CssClass="w3-bar-item w3-button tab_btn"
+			Attributes.onclick="W3Tabs.open(this.id, 'manage_autochanger');"
+			Text="<%[ Manage autochanger ]%>"
+			Visible="<%=!empty($_SESSION['sd']) && $this->getIsAutochanger()%>"
+			OnCallback="loadAutochanger"
+		/>
 	</div>
 	<div class="w3-container tab_item" id="storage_actions">
 		<com:TValidationSummary
@@ -59,8 +66,7 @@
 			CssClass="w3-button w3-green w3-margin-bottom"
 			ValidationGroup="AutoChangerGroup"
 			CausesValidation="true"
-			ClientSide.OnLoading="$('#status_storage_loading').show();"
-			ClientSide.OnSuccess="$('#status_storage_loading').hide();$('#storage_action_text_output').slideDown();"
+			ClientSide.OnLoading="oStorageActions.show_loader(true);"
 		>
 			<prop:Text><%=Prado::localize('Mount')%> &nbsp;<i class="fa fa-caret-down"></i></prop:Text>
 		</com:TActiveLinkButton>
@@ -70,8 +76,7 @@
 			CssClass="w3-button w3-green w3-margin-bottom"
 			ValidationGroup="AutoChangerGroup"
 			CausesValidation="true"
-			ClientSide.OnLoading="$('#status_storage_loading').show();"
-			ClientSide.OnSuccess="$('#status_storage_loading').hide();$('#storage_action_text_output').slideDown();"
+			ClientSide.OnLoading="oStorageActions.show_loader(true);"
 		>
 			<prop:Text><%=Prado::localize('Release')%> &nbsp;<i class="fa fa-caret-right"></i></prop:Text>
 		</com:TActiveLinkButton>
@@ -81,26 +86,102 @@
 			CssClass="w3-button w3-green w3-margin-bottom"
 			ValidationGroup="AutoChangerGroup"
 			CausesValidation="true"
-			ClientSide.OnLoading="$('#status_storage_loading').show();"
-			ClientSide.OnSuccess="$('#status_storage_loading').hide();$('#storage_action_text_output').slideDown();"
+			ClientSide.OnLoading="oStorageActions.show_loader(true);"
 		>
 			<prop:Text><%=Prado::localize('Umount')%> &nbsp;<i class="fa fa-caret-up"></i></prop:Text>
 		</com:TActiveLinkButton>
+		<com:TCallback ID="MountLoading" OnCallback="mountLoading" />
+		<com:TCallback ID="ReleaseLoading" OnCallback="releaseLoading" />
+		<com:TCallback ID="UmountLoading" OnCallback="umountLoading" />
+		<script>
+var oStorageActions = {
+	ids: {
+		log: 'storage_action_log',
+		log_container: 'storage_action_text_output',
+		loader: 'status_storage_loading'
+	},
+	refresh_mount: function(out_id) {
+		setTimeout(function() {
+			var cb = <%=$this->MountLoading->ActiveControl->Javascript%>;
+			cb.setCallbackParameter(out_id);
+			cb.dispatch();
+		}, 2000);
+	},
+	refresh_release: function(out_id) {
+		setTimeout(function() {
+			var cb = <%=$this->ReleaseLoading->ActiveControl->Javascript%>;
+			cb.setCallbackParameter(out_id);
+			cb.dispatch();
+		}, 2000);
+	},
+	refresh_umount: function(out_id) {
+		setTimeout(function() {
+			var cb = <%=$this->UmountLoading->ActiveControl->Javascript%>;
+			cb.setCallbackParameter(out_id);
+			cb.dispatch();
+		}, 2000);
+	},
+	log: function(output) {
+		var log = document.getElementById(oStorageActions.ids.log);
+		log.textContent = output;
+	},
+	clear_log: function() {
+		document.getElementById(oStorageActions.ids.log_container).style.display = 'none';
+		oStorageActions.log('');
+	},
+	show_loader: function(show) {
+		var loader = document.getElementById(oStorageActions.ids.loader);
+		if (show) {
+			oStorageActions.clear_log();
+			$('#' + oStorageActions.ids.log_container).slideDown();
+			loader.style.display = '';
+		} else {
+			loader.style.display = 'none';
+		}
+	}
+};
+		</script>
 		<i id="status_storage_loading" class="fa fa-sync w3-spin" style="display: none; vertical-align: super;"></i> <span id="status_storage_error" class="w3-text-red" style="display: none"></span>
 		<com:TActivePanel ID="Autochanger" Display="None" Height="61px">
 				<div class="w3-left w3-margin-right">
-						<label><%[ Drive number: ]%></label>
-						<com:TActiveTextBox ID="Drive" AutoPostBack="false" Text="0" MaxLength="3" CssClass="w3-input smallbox" />
-						<com:TDataTypeValidator ID="DriveValidator" ValidationGroup="AutoChangerGroup" ControlToValidate="Drive" ErrorMessage="<%[ Drive number must be integer. ]%>" Display="None" DataType="Integer" />
+					<label><%[ Drive number: ]%></label>
+					<com:TActiveTextBox
+						ID="Drive"
+						AutoPostBack="false"
+						Text="0"
+						MaxLength="3"
+						CssClass="w3-input smallbox"
+					/>
+					<com:TDataTypeValidator
+						ID="DriveValidator"
+						ValidationGroup="AutoChangerGroup"
+						ControlToValidate="Drive"
+						ErrorMessage="<%[ Drive number must be integer. ]%>"
+						Display="None"
+						DataType="Integer"
+					/>
 				</div>
 				<div class="w3-left">
 					<%[ Slot number: ]%>
-					<com:TActiveTextBox ID="Slot" AutoPostBack="false" Text="0" MaxLength="3" CssClass="w3-input smallbox" />
-					<com:TDataTypeValidator ID="SlotValidator" ValidationGroup="AutoChangerGroup" ControlToValidate="Slot" ErrorMessage="<%[ Slot number must be integer. ]%>" Display="None" DataType="Integer" />
+					<com:TActiveTextBox
+						ID="Slot"
+						AutoPostBack="false"
+						Text="0"
+						MaxLength="3"
+						CssClass="w3-input smallbox"
+					/>
+					<com:TDataTypeValidator
+						ID="SlotValidator"
+						ValidationGroup="AutoChangerGroup"
+						ControlToValidate="Slot"
+						ErrorMessage="<%[ Slot number must be integer. ]%>"
+						Display="None"
+						DataType="Integer"
+					/>
 				</div>
 		</com:TActivePanel>
 		<div id="storage_action_text_output" class="w3-code" style="display: none; clear: both;">
-			<pre><com:TActiveLabel ID="StorageActionLog" /></pre>
+			<pre id="storage_action_log"></pre>
 		</div>
 		<div id="status_storage_container" class="w3-clear w3-margin-top" style="display: none">
 			<div class="w3-right w3-margin-top w3-margin-right" title="<%[ To disable refreshing please type 0. ]%>">
@@ -1559,4 +1640,920 @@ MonitorParams = {
 			ShowCancelButton="false"
 		/>
 	</div>
+	<div class="w3-container tab_item" id="manage_autochanger" style="display: none">
+		<div id="manage_autochanger_not_available">
+			<strong><%[ Autochanger management is unavailable. To manage autochanger from here, add it to the API host devices on the API host side. ]%></strong>
+		</div>
+		<div id="drive_list_container">
+			<h5><%[ Tape drives ]%></h5>
+			<table id="drive_list" class="w3-table w3-striped w3-hoverable w3-white w3-margin-bottom" style="width: 100%">
+				<thead>
+					<tr>
+						<th></th>
+						<th><%[ Drive index ]%></th>
+						<th><%[ Drive name ]%></th>
+						<th><%[ Device ]%></th>
+						<th><%[ Volume ]%></th>
+						<th><%[ Slot ]%></th>
+						<th><%[ Actions ]%></th>
+					</tr>
+				</thead>
+				<tbody id="drive_list_body"></tbody>
+				<tfoot>
+					<tr>
+						<th></th>
+						<th><%[ Drive index ]%></th>
+						<th><%[ Drive name ]%></th>
+						<th><%[ Device ]%></th>
+						<th><%[ Volume ]%></th>
+						<th><%[ Slot ]%></th>
+						<th><%[ Actions ]%></th>
+					</tr>
+				</tfoot>
+			</table>
+		</div>
+		<com:TCallback ID="UnloadDrive" OnCallback="unloadDrive" />
+		<com:TCallback ID="UnloadedDrive" OnCallback="unloadedDrive" />
+		<script>
+var oDriveList = {
+	ids: {
+		drive_list: 'drive_list',
+		drive_list_body: 'drive_list_body'
+	},
+	table: null,
+	data: [],
+	init: function() {
+		if (!this.table) {
+			this.set_table();
+		} else {
+			var page = this.table.page();
+			this.table.clear().rows.add(this.data).draw();
+			this.table.page(page).draw(false);
+		}
+	},
+	set_table: function() {
+		this.table = $('#' + this.ids.drive_list).DataTable({
+			data: this.data,
+			deferRender: true,
+			dom: 'lBfrtip',
+			stateSave: true,
+			buttons: [
+				'copy', 'csv', 'colvis'
+			],
+			columns: [
+				{
+					className: 'details-control',
+					orderable: false,
+					data: null,
+					defaultContent: '<button type="button" class="w3-button w3-blue"><i class="fa fa-angle-down"></i></button>'
+				},
+				{data: 'index'},
+				{data: 'drive'},
+				{data: 'device'},
+				{
+					data: 'volume',
+					render: function(data, type, row) {
+						var v = data;
+						if (type == 'display' && row.mediaid > 0) {
+							var a = document.createElement('A');
+							a.href = '/web/volume/' + row.mediaid + '/';
+							var icon = document.createElement('I');
+							icon.className  = 'fa fa-external-link-alt fa-xs';
+							a.appendChild(icon);
+							v += ' ' + a.outerHTML;
+						}
+						return v;
+					}
+				},
+				{data: 'slot_ach'},
+				{
+					data: 'slot_ach',
+					render: function(data, type, row) {
+						var btn = document.createElement('BUTTON');
+						btn.className = 'w3-button w3-green';
+						btn.type = 'button';
+						var i = document.createElement('I');
+						i.className = 'fa fa-upload';
+						var label = document.createTextNode(' <%[ Unload ]%>');
+						btn.appendChild(i);
+						btn.innerHTML += '&nbsp';
+						btn.appendChild(label);
+						btn.setAttribute('onclick', 'oDrives.unload_drive("' + row.drive + '", ' + data + ')');
+						if (data === '')  {
+							btn.style.visibility = 'hidden';
+						}
+						return btn.outerHTML;
+					}
+				}
+			],
+			responsive: {
+				details: {
+					type: 'column'
+				}
+			},
+			columnDefs: [{
+				className: 'control',
+				orderable: false,
+				targets: 0
+			},
+			{
+				className: "dt-center",
+				targets: [ 1, 5, 6 ]
+			}],
+			order: [1, 'asc']
+		});
+	}
+};
+
+var oDrives = {
+	unload_drive_timeout: 300000, // 5 minutes
+	load_drives_cb: function(data) {
+		oDriveList.data = data;
+		oDriveList.init();
+	},
+	unload_drive: function(drive, slot) {
+		var cb = <%=$this->UnloadDrive->ActiveControl->Javascript%>;
+		var param = {
+			drive: drive,
+			slot: slot
+		};
+		cb.setCallbackParameter(param);
+		cb.setRequestTimeOut(this.unload_drive_timeout);
+		cb.dispatch();
+		oSlots.show_changer_loader(true);
+	},
+	set_drive_unloading_output: function(out_id) {
+		var cb = <%=$this->UnloadedDrive->ActiveControl->Javascript%>;
+		cb.setCallbackParameter(out_id);
+		cb.dispatch();
+	},
+	refresh_drive_unloading: function(out_id) {
+		setTimeout(function() {
+			oDrives.set_drive_unloading_output(out_id);
+		}, 2000)
+	}
+};
+		</script>
+		<div id="slot_list_container">
+			<h5 class="w3-show-inline-block"><%[ Changer slots ]%> &nbsp;<i id="changer_loader" class="fas fa-sync-alt w3-spin" style="display: none"></i></h5>
+			<p class="info w3-right"><%[ Tip: To use bulk autochanger actions, please select table rows. ]%></p>
+			<button type="button" id="release_all_ie_btn" class="w3-button w3-green" style="display: none" onclick="oSlots.release_all_ie();">
+				<i class="fas fa-share-square"></i> &nbsp;<%[ Release all I/E slots ]%>
+			</button>
+			<table id="slot_list" class="w3-table w3-striped w3-hoverable w3-white w3-margin-bottom" style="width: 100%">
+				<thead>
+					<tr>
+						<th></th>
+						<th><%[ Slot in device ]%></th>
+						<th><%[ Slot in catalog ]%></th>
+						<th><%[ Volume ]%></th>
+						<th><%[ Vol. status ]%></th>
+						<th><%[ Vol. bytes ]%></th>
+						<th><%[ Pool ]%></th>
+						<th>MediaType</th>
+						<th><%[ Last written ]%></th>
+						<th><%[ When expire ]%></th>
+						<th><%[ Actions ]%></th>
+					</tr>
+				</thead>
+				<tbody id="slot_list_body"></tbody>
+				<tfoot>
+					<tr>
+						<th></th>
+						<th><%[ Slot in device ]%></th>
+						<th><%[ Slot in catalog ]%></th>
+						<th><%[ Volume ]%></th>
+						<th><%[ Vol. status ]%></th>
+						<th><%[ Vol. bytes ]%></th>
+						<th><%[ Pool ]%></th>
+						<th>MediaType</th>
+						<th><%[ Last written ]%></th>
+						<th><%[ When expire ]%></th>
+						<th><%[ Actions ]%></th>
+					</tr>
+				</tfoot>
+			</table>
+			<p class="info w3-hide-medium w3-hide-small"><%[ Tip: Use left-click to select table row. Use CTRL + left-click to multiple row selection. Use SHIFT + left-click to add a range of rows to selection. ]%></p>
+		</div>
+		<com:TCallback ID="LabelUsingBarcodesAction" OnCallback="labelBarcodes" />
+		<com:TCallback ID="UpdateSlotsBarcodesAction" OnCallback="updateSlotsBarcodes" />
+		<com:TCallback ID="UpdateSlotsAction" OnCallback="updateSlots" />
+		<com:TCallback ID="MoveToImportExportSlot" OnCallback="moveToIE" />
+		<com:TCallback ID="MovingToImportExportSlot" OnCallback="movingToIE" />
+		<com:TCallback ID="MoveFromImportExportSlot" OnCallback="moveFromIE" />
+		<com:TCallback ID="MovingFromImportExportSlot" OnCallback="movingFromIE" />
+		<com:TCallback ID="ReleaseImportExportSlot" OnCallback="releaseIE" />
+		<com:TCallback ID="ReleasingImportExportSlot" OnCallback="releasingIE" />
+		<com:Application.Web.Portlets.LabelVolume
+			ID="LabelBarcodes"
+			ShowButton="false"
+			BarcodeLabel="true"
+			Storage="<%=$this->StorageName%>"
+			OnLabelStart="showChangerLoading"
+			OnLabelComplete="loadAutochanger"
+			OnLabelSuccess="hideChangerLoading"
+			OnLabelFail="hideChangerLoading"
+		/>
+		<com:Application.Web.Portlets.UpdateSlots
+			ID="UpdateSlots"
+			ShowButton="false"
+			Storage="<%=$this->StorageName%>"
+			OnUpdateStart="showChangerLoading"
+			OnUpdateComplete="loadAutochanger"
+			OnUpdateSuccess="hideChangerLoading"
+			OnUpdateFail="hideChangerLoading"
+		/>
+		<com:TActiveHiddenField ID="IESlots" />
+		<script>
+var oSlotList = {
+	table_toolbar: null,
+	actions: [
+		{
+			action: 'label',
+			label: '<%[ Label using barcodes ]%>',
+			value: 'slot_ach',
+			callback: <%=$this->LabelUsingBarcodesAction->ActiveControl->Javascript%>,
+			before: function() {
+				show_label_volume_window(true);
+			}
+		},
+		{
+			action: 'move_to_ie',
+			label: '<%[ Move to import/export slot ]%>',
+			value: 'slot_ach',
+			before: function() {
+				oSlots.show_move_to_ie_window(true);
+			},
+			validate: function(selected) {
+				oSlots.set_move_to_ie_slots();
+				var ie_slots = oSlots.get_slots(['ie_slot'], ['E']);
+				var ie_slots_count = ie_slots.length;
+				var vols_count =  oSlots.move_to_ie_slots.length;
+				if (vols_count > ie_slots_count) {
+					var emsg = '<%[ There are to few import/export slots to transfer selected volumes. Free import/export slots count: %slots_count, selected volumes count: %vols_count. ]%>';
+					emsg = emsg.replace('%slots_count', ie_slots_count);
+					emsg = emsg.replace('%vols_count', vols_count);
+					oBulkActionsModal.set_error(emsg);
+					return false;
+				}
+				return true;
+			}
+		},
+		{
+			action: 'update_barcodes',
+			label: '<%[ Update slots using barcodes ]%>',
+			value: 'slot_ach',
+			callback: <%=$this->UpdateSlotsBarcodesAction->ActiveControl->Javascript%>,
+			before: function() {
+				set_update_slots_barcodes(true);
+				show_update_slots_window(true);
+			}
+		},
+		{
+			action: 'update',
+			label: '<%[ Update slots ]%>',
+			value: 'slot_ach',
+			callback: <%=$this->UpdateSlotsAction->ActiveControl->Javascript%>,
+			before: function() {
+				set_update_slots(true);
+				show_update_slots_window(true);
+			}
+		}
+	],
+	ids: {
+		slot_list: 'slot_list',
+		slot_list_body: 'slot_list_body',
+		release_all_ie_btn: 'release_all_ie_btn'
+	},
+	table: null,
+	data: [],
+	init: function() {
+		if (!this.table) {
+			this.set_table();
+			this.set_bulk_actions();
+			this.init_release_all_ie_btn();
+			this.set_events();
+		} else {
+			var page = this.table.page();
+			this.table.clear().rows.add(this.data).draw();
+			this.table.page(page).draw(false);
+		}
+		oSlots.init();
+		this.set_release_all_ie_btn();
+	},
+	set_events: function() {
+		document.getElementById(this.ids.slot_list).addEventListener('click', function(e) {
+			$(function() {
+				this.table_toolbar.style.display = this.table.rows({selected: true}).data().length > 0 ? '' : 'none';
+			}.bind(this));
+		}.bind(this));
+	},
+	set_table: function() {
+		this.table = $('#' + this.ids.slot_list).DataTable({
+			data: this.data,
+			pageLength: 100,
+			deferRender: true,
+			dom: 'lB<"table_toolbar">frtip',
+			stateSave: true,
+			buttons: [
+				'copy', 'csv', 'colvis'
+			],
+			columns: [
+				{
+					className: 'details-control',
+					orderable: false,
+					data: null,
+					defaultContent: '<button type="button" class="w3-button w3-blue"><i class="fa fa-angle-down"></i></button>'
+				},
+				{data: 'slot_ach'},
+				{data: 'slot_cat'},
+				{
+					data: 'volume',
+					render: function(data, type, row) {
+						var v = data;
+						var link = '';
+						if (!row.slot_cat) {
+							for (var i = 0; i < oDriveList.data.length; i++) {
+								if (row.slot_ach === oDriveList.data[i].slot_ach) {
+									v = '<%[ In drive %index (%drive) ]%>';
+									v = v.replace('%index', oDriveList.data[i].index);
+									v = v.replace('%drive', oDriveList.data[i].drive);
+									break;
+								}
+							}
+						}
+						if (type == 'display' && row.mediaid > 0) {
+							var a = document.createElement('A');
+							a.href = '/web/volume/' + row.mediaid + '/';
+							var icon = document.createElement('I');
+							icon.className  = 'fa fa-external-link-alt fa-xs';
+							a.appendChild(icon);
+							link = ' ' + a.outerHTML;
+						}
+						if (!data && !v) {
+							if (row.state == 'F') {
+								v = '<%[ Full ]%>';
+							} else if (row.state == 'E') {
+								v = '<%[ Empty ]%>';
+							}
+						}
+						return (v + link);
+					}
+				},
+				{data: 'volstatus'},
+				{
+					data: 'volbytes',
+					render: render_bytes
+				},
+				{data: 'pool'},
+				{data: 'mediatype'},
+				{
+					data: 'lastwritten',
+					render: render_date
+				},
+				{
+					data: 'whenexpire',
+					render: render_date_ex
+				},
+				{
+					data: 'slot_ach',
+					render: function(data, type, row) {
+						var ret = '';
+						if (row.type == 'ie_slot')  {
+							if (row.state === 'F') {
+								var clear_io = document.createElement('BUTTON');
+								clear_io.className = 'w3-button w3-green';
+								clear_io.type = 'button';
+								var i = document.createElement('I');
+								i.className = 'fa fa-sign-out-alt';
+								var label = document.createTextNode(' <%[ Release I/E ]%>');
+								clear_io.appendChild(i);
+								clear_io.innerHTML += '&nbsp';
+								clear_io.appendChild(label);
+								clear_io.setAttribute('onclick', 'oSlots.release_ie_window(' + data + ');');
+								ret = clear_io.outerHTML;
+							} else {
+								ret = '<%[ Import/Export ]%>';
+							}
+						} else {
+							var load_btn = document.createElement('BUTTON');
+							load_btn.className = 'w3-button w3-green';
+							load_btn.type = 'button';
+							var i = document.createElement('I');
+							i.className = 'fa fa-download';
+							var label = document.createTextNode(' <%[ Load ]%>');
+							load_btn.appendChild(i);
+							load_btn.innerHTML += '&nbsp';
+							load_btn.appendChild(label);
+							load_btn.setAttribute('onclick', 'oSlots.load_drive_window(' + data + ');');
+							if (row.state === 'E')  {
+								load_btn.style.visibility = 'hidden';
+							}
+							ret = load_btn.outerHTML;
+						}
+						return ret;
+					}
+				}
+			],
+			responsive: {
+				details: {
+					type: 'column'
+				}
+			},
+			columnDefs: [{
+				className: 'control',
+				orderable: false,
+				targets: 0
+			},
+			{
+				className: "dt-right",
+				targets: [ 5 ]
+			},
+			{
+				className: "dt-center",
+				targets: [ 1, 2, 4 ]
+			}],
+			select: {
+				style:    'os',
+				selector: 'td:not(:last-child):not(:first-child)',
+				blurable: false
+			},
+			order: [1, 'asc']
+		});
+	},
+	set_bulk_actions: function() {
+		this.table_toolbar = get_table_toolbar(this.table, this.actions, {
+			actions: '<%[ Actions ]%>',
+			ok: '<%[ OK ]%>'
+		});
+	},
+	init_release_all_ie_btn: function() {
+		var btn = document.getElementById(this.ids.release_all_ie_btn);
+		var toolbar = document.querySelector('#' + this.ids.slot_list + '_wrapper div.dt-buttons');
+		toolbar.appendChild(btn);
+	},
+	show_release_all_ie_btn: function(show) {
+		var btn = document.getElementById(this.ids.release_all_ie_btn);
+		if (show) {
+			btn.style.display = '';
+		}  else {
+			btn.style.display = 'none';
+		}
+	},
+	set_release_all_ie_btn: function() {
+		var full = oSlots.get_slots(['ie_slot'], ['F']);
+		if (full.length > 0) {
+			this.show_release_all_ie_btn(true);
+		} else {
+			this.show_release_all_ie_btn(false);
+		}
+	}
+};
+
+var oSlots = {
+	ids: {
+		load_drive_window: 'load_drive_window',
+		load_drive_drives: 'load_drive_drives',
+		load_drive_out: 'load_drive_out',
+		load_drive_loading: 'load_drive_loading',
+		load_drive_slot: 'load_drive_slot',
+		move_to_ie_window: 'move_to_ie_window',
+		move_to_ie_slots: 'move_to_ie_slots',
+		move_to_ie_window_log: 'move_to_ie_window_log',
+		move_to_ie_loading: 'move_to_ie_loading',
+		release_ie_window: 'release_ie_window',
+		release_ie_slot: 'release_ie_slot',
+		release_ie_loading: 'release_ie_loading',
+		release_ie_window_log: 'release_ie_window_log',
+		release_ie_dest_slot: 'release_ie_dest_slot',
+		changer_loader: 'changer_loader'
+	},
+	load_drive_timeout: 300000, // 5 minutes
+	move_to_ie_timeout: 300000, // 5 minutes
+	move_from_ie_timeout: 300000, // 5 minutes
+	release_ie_timeout: 300000, // 5 minutes
+	slot: null,
+	ie_slot: null,
+	empty_slots: [],
+	full_slots: [],
+	empty_ie_slots: [],
+	full_ie_slots: [],
+	move_to_ie_slots: [],
+	free_ie_slots: [],
+	init: function() {
+		this.set_slots();
+	},
+	set_slots: function() {
+		this.empty_slots = this.get_slots(['slot'], ['E']);
+		this.full_slots = this.get_slots(['slot'], ['F']);
+		this.empty_ie_slots = this.get_slots(['ie_slot'], ['F']);
+		this.full_ie_slots = this.get_slots(['ie_slot'], ['F']);
+	},
+	load_slots_cb: function(data) {
+		oSlotList.data = data;
+		oSlotList.init();
+	},
+	load_drive_window: function(slot) {
+		this.slot = slot;
+		this.prepare_drive_list();
+		this.show_load_drive_window(true);
+	},
+	prepare_drive_list: function() {
+		var sel = document.getElementById(this.ids.load_drive_drives);
+		while(sel.firstChild) {
+			sel.removeChild(sel.firstChild);
+		}
+		var opt, text, label, state;
+		for (var i = 0; i < oDriveList.data.length; i++) {
+			opt = document.createElement('OPTION');
+			opt.value = oDriveList.data[i].drive;
+			if (oDriveList.data[i].state === 'F') {
+				opt.setAttribute('disabled', 'disabled');
+				state = '[<%[ Full ]%>] ';
+			} else if (oDriveList.data[i].state === 'E') {
+				state = '[<%[ Empty ]%>] ';
+			}
+			text = state + oDriveList.data[i].drive + ' (<%[ index ]%>: ' + oDriveList.data[i].index + ', <%[ device ]%>: ' + oDriveList.data[i].device + ')';
+			label = document.createTextNode(text);
+			opt.appendChild(label);
+			sel.appendChild(opt);
+		}
+	},
+	show_load_drive_window: function(show) {
+		this.set_load_drive_window_slot();
+		var win = document.getElementById(oSlots.ids.load_drive_window);
+		if (show) {
+			win.style.display = 'block';
+		} else {
+			win.style.display = 'none';
+		}
+	},
+	set_load_drive_window_slot: function() {
+		document.getElementById(this.ids.load_drive_slot).textContent  = this.slot;
+	},
+	load_drive_loading: function(show) {
+		var loader = document.getElementById(oSlots.ids.load_drive_loading);
+		if (show) {
+			loader.style.visibility = 'visible';
+		} else {
+			loader.style.visibility = 'hidden';
+		}
+	},
+	set_drive_window_ok: function() {
+		oSlots.load_drive_loading(false);
+		oSlots.show_load_drive_window(false);
+	},
+	load_drive: function() {
+		var sel = document.getElementById(this.ids.load_drive_drives);
+		var cb = <%=$this->LoadDrive->ActiveControl->Javascript%>;
+		if (!sel.value) {
+			// no free tape drive available
+			return false;
+		}
+		var param = {
+			drive: sel.value,
+			slot: this.slot
+		};
+		cb.setCallbackParameter(param);
+		cb.setRequestTimeOut(this.load_drive_timeout);
+		cb.dispatch();
+		this.show_changer_loader(true);
+		this.load_drive_loading(true);
+	},
+	set_drive_with_mount_loading_output: function(out_id) {
+		var cb = <%=$this->LoadedDriveWithMount->ActiveControl->Javascript%>;
+		cb.setCallbackParameter(out_id);
+		cb.dispatch();
+	},
+	refresh_drive_with_mount_loading: function(out_id) {
+		setTimeout(function() {
+			oSlots.set_drive_with_mount_loading_output(out_id);
+		}, 2000)
+	},
+	set_drive_without_mount_loading_output: function(out_id) {
+		var cb = <%=$this->LoadedDriveWithoutMount->ActiveControl->Javascript%>;
+		cb.setCallbackParameter(out_id);
+		cb.dispatch();
+	},
+	refresh_drive_without_mount_loading: function(out_id) {
+		setTimeout(function() {
+			oSlots.set_drive_without_mount_loading_output(out_id);
+		}, 2000)
+	},
+	get_slots: function(types, states) {
+		if (!states) {
+			states = ['E', 'F'];
+		}
+		if (!types) {
+			types = ['slot', 'ie_slot']
+		}
+		var ie_slots = [];
+		for (var i = 0; i < oSlotList.data.length; i++) {
+			if (types.indexOf(oSlotList.data[i].type) != -1 && states.indexOf(oSlotList.data[i].state) != -1) {
+				ie_slots.push(oSlotList.data[i].slot_ach);
+			}
+		}
+		return ie_slots;
+	},
+	set_ie_slots: function() {
+		this.free_ie_slots = oSlots.get_slots(['ie_slot'], ['E']);
+	},
+	show_move_to_ie_window: function(show) {
+		this.set_ie_slots();
+		this.set_move_to_ie_slots();
+		this.move_to_ie_loading(false);
+		var win = document.getElementById(oSlots.ids.move_to_ie_window);
+		if (show) {
+			win.style.display = 'block';
+		} else {
+			win.style.display = 'none';
+		}
+	},
+	set_move_to_ie_slots: function() {
+		var slots = [];
+		var selected = oSlotList.table.rows({selected: true}).data();
+		for (var i = 0; i < selected.length; i++) {
+			if (selected[i].state == 'F') {
+				slots.push(selected[i].slot_ach);
+			}
+		}
+		this.move_to_ie_slots = slots;
+		document.getElementById(this.ids.move_to_ie_slots).textContent = slots.join(',');
+	},
+	move_to_ie_loading: function(show) {
+		var loader = document.getElementById(oSlots.ids.move_to_ie_loading);
+		if (show) {
+			loader.style.visibility = 'visible';
+		} else {
+			loader.style.visibility = 'hidden';
+		}
+	},
+	move_to_ie: function() {
+		var slot = oSlots.move_to_ie_slots.shift();
+		var ie_slot = oSlots.free_ie_slots.shift();
+		if (slot && ie_slot) {
+			oSlots.move_to_ie_loading(true);
+			var param = [slot, ie_slot].join(',');
+			var cb = <%=$this->MoveToImportExportSlot->ActiveControl->Javascript%>;
+			cb.setCallbackParameter(param);
+			cb.RequestTimeOut = oSlots.move_to_ie_timeout;
+			cb.dispatch();
+			oSlots.show_changer_loader(true);
+		} else if (!slot) {
+			oSlots.show_move_to_ie_window(false);
+			oSlotList.set_release_all_ie_btn();
+		} else if (!ie_slot) {
+			// There is not enough import/export slots to transfer all selected tapes.
+			// It shouldn't happen.
+		}
+	},
+	set_move_to_ie_log: function(log) {
+		var logbox = document.getElementById(oSlots.ids.move_to_ie_window_log);
+		if (log && logbox.style.display == 'none') {
+			logbox.style.display = 'block';
+		}
+		logbox.getElementsByTagName('PRE')[0].textContent = log;
+	},
+	set_move_to_ie_output: function(out_id) {
+		var cb = <%=$this->MovingToImportExportSlot->ActiveControl->Javascript%>;
+		cb.setCallbackParameter(out_id);
+		cb.dispatch();
+	},
+	refresh_move_to_ie_loading: function(out_id) {
+		setTimeout(function() {
+			oSlots.set_move_to_ie_output(out_id);
+		}, 2000)
+	},
+	show_release_ie_window: function(show) {
+		var win = document.getElementById(oSlots.ids.release_ie_window);
+		if (show) {
+			oSlots.release_ie_loading(false);
+			oSlots.set_release_ie_log('');
+			win.style.display = 'block';
+		} else {
+			win.style.display = 'none';
+		}
+	},
+	set_release_ie_window_slot: function() {
+		document.getElementById(this.ids.release_ie_slot).textContent  = this.ie_slot;
+	},
+	release_ie_loading: function(show) {
+		var loader = document.getElementById(oSlots.ids.release_ie_loading);
+		if (show) {
+			loader.style.visibility = 'visible';
+		} else {
+			loader.style.visibility = 'hidden';
+		}
+	},
+	release_ie_window: function(slot) {
+		this.ie_slot = slot;
+		this.prepare_release_ie();
+		this.set_release_ie_window_slot();
+		this.show_release_ie_window(true);
+	},
+	prepare_release_ie: function() {
+		var sel = document.getElementById(this.ids.release_ie_dest_slot);
+		while(sel.firstChild) {
+			sel.removeChild(sel.firstChild);
+		}
+		var opt, text, label, state;
+		for (var i = 0; i < oSlotList.data.length; i++) {
+			opt = document.createElement('OPTION');
+			opt.value = oSlotList.data[i].slot_ach;
+			if (oSlotList.data[i].state === 'F') {
+				opt.setAttribute('disabled', 'disabled');
+				state = '[<%[ Full ]%>] ';
+			} else if (oSlotList.data[i].state === 'E') {
+				state = '[<%[ Empty ]%>] ';
+			}
+			text = state + '<%[ Slot ]%>: ' + oSlotList.data[i].slot_ach;
+			label = document.createTextNode(text);
+			opt.appendChild(label);
+			sel.appendChild(opt);
+		}
+	},
+	release_ie: function(finish) {
+		var sel = document.getElementById(oSlots.ids.release_ie_dest_slot);
+		if (oSlots.ie_slot && sel.value && !finish) {
+			oSlots.release_ie_loading(true);
+			var param = [oSlots.ie_slot, sel.value].join(',');
+			var cb = <%=$this->ReleaseImportExportSlot->ActiveControl->Javascript%>;
+			cb.setCallbackParameter(param);
+			cb.RequestTimeOut = oSlots.release_ie_timeout;
+			cb.dispatch();
+			oSlots.show_changer_loader(true);
+		} else if (finish) {
+			oSlots.show_release_ie_window(false);
+			oSlotList.set_release_all_ie_btn();
+		}
+	},
+	set_release_ie_log: function(log) {
+		var logbox = document.getElementById(oSlots.ids.release_ie_window_log);
+		if (log && logbox.style.display == 'none') {
+			logbox.style.display = 'block';
+		}
+		logbox.getElementsByTagName('PRE')[0].textContent = log;
+	},
+	set_release_ie_output: function(out_id) {
+		var cb = <%=$this->ReleasingImportExportSlot->ActiveControl->Javascript%>;
+		cb.setCallbackParameter(out_id);
+		cb.dispatch();
+	},
+	refresh_release_ie_loading: function(out_id) {
+		setTimeout(function() {
+			oSlots.set_release_ie_output(out_id);
+		}, 2000)
+	},
+	release_all_ie: function() {
+		var fie_len = oSlots.full_ie_slots.length;
+		var es_len = oSlots.empty_slots.length;
+		if  (fie_len > es_len) {
+			var emsg = '<%[ There are to few regular slots to transfer selected volumes from import/export slots. Full import/export slot count: %ie_slot_count, free regular slot count: %slot_count. ]%>';
+			emsg = emsg.replace('%ie_slot_count', fie_len);
+			emsg = emsg.replace('%slot_count', es_len);
+			oBulkActionsModal.set_error(emsg);
+			return false;
+		}
+		var ie_slot = oSlots.full_ie_slots.shift()
+		var slot = oSlots.empty_slots.shift();
+
+		if (slot && ie_slot) {
+			var param = [ie_slot, slot].join(',');
+			var cb = <%=$this->MoveFromImportExportSlot->ActiveControl->Javascript%>;
+			cb.setCallbackParameter(param);
+			cb.RequestTimeOut = oSlots.move_from_ie_timeout;
+			cb.dispatch();
+			oSlots.show_changer_loader(true);
+		} else if (!slot) {
+			oSlotList.set_release_all_ie_btn();
+		}
+	},
+	set_release_all_ie_output: function(out_id) {
+		var cb = <%=$this->MovingFromImportExportSlot->ActiveControl->Javascript%>;
+		cb.setCallbackParameter(out_id);
+		cb.dispatch();
+	},
+	refresh_release_all_ie_loading: function(out_id) {
+		setTimeout(function() {
+			oSlots.set_release_all_ie_output(out_id);
+		}, 2000)
+	},
+	show_changer_loader: function(show) {
+		var loader = document.getElementById(oSlots.ids.changer_loader);
+		if (show) {
+			loader.style.display = '';
+		} else {
+			loader.style.display = 'none';
+		}
+	}
+};
+		</script>
+		<com:TCallback ID="LoadDrive" OnCallback="loadDrive" />
+		<com:TCallback ID="LoadedDriveWithoutMount" OnCallback="loadedDriveWithoutMount" />
+		<com:TCallback ID="LoadedDriveWithMount" OnCallback="loadedDriveWithMount" />
+		<div id="load_drive_window" class="w3-modal">
+			<div class="w3-modal-content w3-animate-top w3-card-4">
+				<header class="w3-container w3-teal">
+					<span onclick="oSlots.show_load_drive_window(false);" class="w3-button w3-display-topright">&times;</span>
+					<h2><%[ Load drive ]%></h2>
+				</header>
+				<div class="w3-container w3-margin-left w3-margin-right w3-margin-top w3-text-teal">
+					<div class="w3-row w3-section">
+						<div class="w3-col w3-third">
+							<%[ Slot ]%>:
+						</div>
+						<div class="w3-col w3-half">
+							<strong id="load_drive_slot"></strong>
+						</div>
+					</div>
+					<div class="w3-row w3-section">
+						<div class="w3-col w3-third">
+							<label for="load_drive_drives"><%[ Drive ]%>:</label>
+						</div>
+						<div class="w3-col w3-half">
+							<select id="load_drive_drives" class="w3-select w3-border"></select>
+						</div>
+					</div>
+					<div class="w3-row w3-section">
+						<div class="w3-col w3-third">
+							<label for="load_drive_mount"><%[ Mount volume ]%>:</label>
+						</div>
+						<div class="w3-col w3-half">
+							<com:TActiveCheckBox ID="LoadDriveMount" CssClass="w3-check" Checked="true" />
+						</div>
+					</div>
+				</div>
+				<footer class="w3-container w3-center w3-padding">
+					<button type="button" class="w3-button w3-red" onclick="oSlots.show_load_drive_window(false);"><i class="fas fa-times"></i> &nbsp;<%[ Cancel ]%></button>
+					<button type="button" class="w3-button w3-green w3-show-inline-block" onclick="oSlots.load_drive();"><i class="fas fa-download"></i> &nbsp;<%[ Load drive ]%></button>
+					<i id="load_drive_loading" class="fas fa-sync-alt fa-spin" style="visibility: hidden"></i>
+				</footer>
+			</div>
+		</div>
+		<div id="move_to_ie_window" class="w3-modal">
+			<div class="w3-modal-content w3-animate-top w3-card-4">
+				<header class="w3-container w3-teal">
+					<span onclick="oSlots.show_move_to_ie_window(false);" class="w3-button w3-display-topright">&times;</span>
+					<h2><%[ Move to import/export slot ]%></h2>
+				</header>
+				<div class="w3-container w3-margin-left w3-margin-right w3-margin-top w3-text-teal">
+					<div class="w3-row w3-section">
+						<div class="w3-col w3-third">
+							<%[ Slots ]%>:
+						</div>
+						<div class="w3-col w3-half">
+							<strong id="move_to_ie_slots"></strong>
+						</div>
+					</div>
+				</div>
+				<footer class="w3-container w3-center w3-padding">
+					<button type="button" class="w3-button w3-red" onclick="oSlots.show_move_to_ie_window(false);"><i class="fas fa-times"></i> &nbsp;<%[ Cancel ]%></button>
+					<button type="button" class="w3-button w3-green w3-show-inline-block" onclick="oSlots.move_to_ie();"><i class="fas fa-download"></i> &nbsp;<%[ Move to import/export slots ]%></button>
+					<i id="move_to_ie_loading" class="fas fa-sync-alt fa-spin" style="visibility: hidden"></i>
+				</footer>
+				<div class="w3-margin-left w3-margin-right" style="max-height: 400px; overflow-x: auto;">
+					<div id="move_to_ie_window_log" class="w3-code" style="display: none">
+						<pre></pre>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div id="release_ie_window" class="w3-modal">
+			<div class="w3-modal-content w3-animate-top w3-card-4">
+				<header class="w3-container w3-teal">
+					<span onclick="oSlots.show_release_ie_window(false);" class="w3-button w3-display-topright">&times;</span>
+					<h2><%[ Release import/export slot ]%></h2>
+				</header>
+				<div class="w3-container w3-margin-left w3-margin-right w3-margin-top w3-text-teal">
+					<div class="w3-row w3-section">
+						<div class="w3-col w3-third">
+							<%[ Import/export slot ]%>:
+						</div>
+						<div class="w3-col w3-half">
+							<strong id="release_ie_slot"></strong>
+						</div>
+					</div>
+					<div class="w3-row w3-section">
+						<div class="w3-col w3-third">
+							<label for="release_ie_dest_slot"><%[ Destination slot ]%>:</label>
+						</div>
+						<div class="w3-col w3-half">
+							<select id="release_ie_dest_slot" class="w3-select w3-border"></select>
+						</div>
+					</div>
+				</div>
+				<footer class="w3-container w3-center w3-padding">
+					<button type="button" class="w3-button w3-red" onclick="oSlots.show_release_ie_window(false);"><i class="fas fa-times"></i> &nbsp;<%[ Cancel ]%></button>
+					<button type="button" class="w3-button w3-green w3-show-inline-block" onclick="oSlots.release_ie();"><i class="fas fa-download"></i> &nbsp;<%[ Release I/E ]%></button>
+					<i id="release_ie_loading" class="fas fa-sync-alt fa-spin" style="visibility: hidden"></i>
+				</footer>
+				<div class="w3-margin-left w3-margin-right" style="max-height: 400px; overflow-x: auto;">
+					<div id="release_ie_window_log" class="w3-code" style="display: none">
+						<pre></pre>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<com:Application.Web.Portlets.BulkActionsModal ID="BulkActions" />
 </com:TContent>

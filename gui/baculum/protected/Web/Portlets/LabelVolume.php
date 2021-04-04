@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2019 Kern Sibbald
+ * Copyright (C) 2013-2021 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -36,6 +36,10 @@ Prado::using('Application.Web.Portlets.Portlets');
  */
 class LabelVolume extends Portlets {
 
+	const SHOW_BUTTON = 'ShowButton';
+	const BARCODE_LABEL = 'BarcodeLabel';
+	const STORAGE = 'Storage';
+
 	public function loadValues() {
 		$storages = $this->getModule('api')->get(array('storages'));
 		$storage_list = array();
@@ -44,7 +48,11 @@ class LabelVolume extends Portlets {
 				$storage_list[$storage->storageid] = $storage->name;
 			}
 		}
-		$this->StorageLabel->dataSource = $storage_list;
+		$this->StorageLabel->DataSource = $storage_list;
+		if ($this->Storage) {
+			$storage_list_flip =array_flip($storage_list);
+			$this->StorageLabel->SelectedValue = $storage_list_flip[$this->Storage];
+		}
 		$this->StorageLabel->dataBind();
 
 		$pools = $this->Application->getModule('api')->get(array('pools'));
@@ -60,7 +68,7 @@ class LabelVolume extends Portlets {
 
 	public function labelVolumes($sender, $param) {
 		$result = null;
-		if ($this->Barcodes->Checked == true) {
+		if ($this->Barcodes->Checked || $this->BarcodeLabel) {
 			$params = array(
 				'slots' => $this->SlotsLabel->Text,
 				'drive' => $this->DriveLabel->Text,
@@ -95,8 +103,10 @@ class LabelVolume extends Portlets {
 		if ($result->error === 0) {
 			$this->getPage()->getCallbackClient()->callClientFunction('set_labeling_status', array('loading'));
 			$this->LabelVolumeLog->Text = implode('', $result->output);
+			$this->onLabelStart($param);
 		} else {
 			$this->LabelVolumeLog->Text = $result->output;
+			$this->onLabelFail($param);
 		}
 	}
 
@@ -129,10 +139,60 @@ class LabelVolume extends Portlets {
 				$this->getPage()->getCallbackClient()->callClientFunction('label_volume_output_refresh', array($out_id));
 			} else {
 				$this->getPage()->getCallbackClient()->callClientFunction('set_labeling_status', array('finish'));
+				$this->onLabelSuccess($param);
+				$this->onLabelComplete($param);
 			}
 		} else {
 			$this->LabelVolumeLog->Text = $result->output;
+			$this->onLabelFail($param);
+			$this->onLabelComplete($param);
 		}
+	}
+
+	public function onLabelStart($param) {
+		$this->raiseEvent('OnLabelStart', $this, $param);
+	}
+
+	public function onLabelComplete($param) {
+		$this->raiseEvent('OnLabelComplete', $this, $param);
+	}
+
+	public function onLabelSuccess($param) {
+		$this->raiseEvent('OnLabelSuccess', $this, $param);
+	}
+
+	public function onLabelFail($param) {
+		$this->raiseEvent('OnLabelFail', $this, $param);
+	}
+
+	public function setSlots(array $slots) {
+		$this->SlotsLabel->Text = implode(',', $slots);
+	}
+
+	public function setShowButton($show) {
+		$show = TPropertyValue::ensureBoolean($show);
+		$this->setViewState(self::SHOW_BUTTON, $show);
+	}
+
+	public function getShowButton() {
+		return $this->getViewState(self::SHOW_BUTTON, true);
+	}
+
+	public function setBarcodeLabel($barcode_label) {
+		$barcode_label = TPropertyValue::ensureBoolean($barcode_label);
+		$this->setViewState(self::BARCODE_LABEL, $barcode_label);
+	}
+
+	public function getBarcodeLabel() {
+		return $this->getViewState(self::BARCODE_LABEL);
+	}
+
+	public function setStorage($storage) {
+		$this->setViewState(self::STORAGE, $storage);
+	}
+
+	public function getStorage() {
+		return $this->getViewState(self::STORAGE);
 	}
 }
 ?>

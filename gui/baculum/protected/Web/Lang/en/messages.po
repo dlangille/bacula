@@ -3208,3 +3208,96 @@ msgstr "Last %errors/%count jobs finished with error."
 
 msgid "All last %count jobs finished successfully."
 msgstr "All last %count jobs finished successfully."
+
+msgid "Drive index"
+msgstr "Drive index"
+
+msgid "Drive name"
+msgstr "Drive name"
+
+msgid "Unload"
+msgstr "Unload"
+
+msgid "Manage autochanger"
+msgstr "Manage autochanger"
+
+msgid "Slot in device"
+msgstr "Slot in device"
+
+msgid "Slot in catalog"
+msgstr "Slot in catalog"
+
+msgid "Load"
+msgstr "Load"
+
+msgid "Load drive"
+msgstr "Load drive"
+
+msgid "index"
+msgstr "index"
+
+msgid "device"
+msgstr "device"
+
+msgid "Drive"
+msgstr "Drive"
+
+msgid "Empty"
+msgstr "Empty"
+
+msgid "In drive %index (%drive)"
+msgstr "In drive %index (%drive)"
+
+msgid "Import/Export"
+msgstr "Import/Export"
+
+msgid "Label using barcodes"
+msgstr "Label using barcodes"
+
+msgid "Move to import/export slot"
+msgstr "Move to import/export slot"
+
+msgid "Autochanger management is unavailable. To manage autochanger from here, add it to the API host devices on the API host side."
+msgstr  "Autochanger management is unavailable. To manage autochanger from here, add it to the API host devices on the API host side."
+
+msgid "Drive index:"
+msgstr "Drive index:"
+
+msgid "Slots"
+msgstr "Slots"
+
+msgid "Release I/E"
+msgstr "Release I/E"
+
+msgid "Move to import/export slots"
+msgstr "Move to import/export slots"
+
+msgid "There are to few import/export slots to transfer selected volumes. Free import/export slots count: %slots_count, selected volumes count: %vols_count."
+msgstr "There are to few import/export slots to transfer selected volumes. Free import/export slots count: %slots_count, selected volumes count: %vols_count."
+
+msgid "Import/export slot"
+msgstr "Import/export slot"
+
+msgid "Destination slot"
+msgstr "Destination slot"
+
+msgid "Release import/export slot"
+msgstr "Release import/export slot"
+
+msgid "Tape drives"
+msgstr "Tape drives"
+
+msgid "Changer slots"
+msgstr "Changer slots"
+
+msgid "Release all I/E slots"
+msgstr "Release all I/E slots"
+
+msgid "There are to few regular slots to transfer selected volumes from import/export slots. Full import/export slot count: %ie_slot_count, free regular slot count: %slot_count."
+msgstr "There are to few regular slots to transfer selected volumes from import/export slots. Full import/export slot count: %ie_slot_count, free regular slot count: %slot_count."
+
+msgid "Tip: To use bulk autochanger actions, please select table rows."
+msgstr "Tip: To use bulk autochanger actions, please select table rows."
+
+msgid "Mount volume"
+msgstr "Mount volume"

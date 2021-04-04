@@ -230,4 +230,21 @@ class OAuth2Error extends GenericError {
 	const MSG_ERROR_OAUTH2_CLIENT_INVALID_CONSOLE = 'Invalid Console name.';
 	const MSG_ERROR_OAUTH2_CLIENT_INVALID_DIRECTOR = 'Invalid Director name.';
 }
+class DeviceError extends GenericError {
+
+	const ERROR_DEVICE_DEVICE_CONFIG_DOES_NOT_EXIST = 130;
+	const ERROR_DEVICE_INVALID_COMMAND = 131;
+	const ERROR_DEVICE_AUTOCHANGER_DOES_NOT_EXIST = 132;
+	const ERROR_DEVICE_AUTOCHANGER_DRIVE_DOES_NOT_EXIST = 132;
+	const ERROR_DEVICE_WRONG_SLOT_NUMBER = 133;
+	const ERROR_DEVICE_DRIVE_DOES_NOT_BELONG_TO_AUTOCHANGER = 134;
+
+	const MSG_ERROR_DEVICE_DEVICE_CONFIG_DOES_NOT_EXIST = 'Device config does not exist.';
+	const MSG_ERROR_DEVICE_INVALID_COMMAND = 'Invalid changer command.';
+	const MSG_ERROR_DEVICE_AUTOCHANGER_DOES_NOT_EXIST = 'Autochanger does not exist.';
+	const MSG_ERROR_DEVICE_AUTOCHANGER_DRIVE_DOES_NOT_EXIST = 'Autochanger drive does not exist.';
+	const MSG_ERROR_DEVICE_WRONG_SLOT_NUMBER = 'Wrong slot number.';
+	const MSG_ERROR_DEVICE_DRIVE_DOES_NOT_BELONG_TO_AUTOCHANGER = 'Drive does not belong to selected autochanger.';
+}
+
 ?>

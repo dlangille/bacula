@@ -34,6 +34,14 @@
 	<url ServiceParameter="StorageMount" pattern="api/v2/storages/{id}/mount/" parameters.id="\d+" />
 	<url ServiceParameter="StorageUmount" pattern="api/v2/storages/{id}/umount/" parameters.id="\d+" />
 	<url ServiceParameter="StorageRelease" pattern="api/v2/storages/{id}/release/" parameters.id="\d+" />
+	<!-- devices endpoints -->
+	<url ServiceParameter="ChangerDriveLoad" pattern="api/v2/devices/{device_name}/load/" parameters.device_name="[a-zA-Z0-9:.\-_ ]+" />
+	<url ServiceParameter="ChangerDriveUnload" pattern="api/v2/devices/{device_name}/unload/" parameters.device_name="[a-zA-Z0-9:.\-_ ]+" />
+	<url ServiceParameter="ChangerDriveLoaded" pattern="api/v2/devices/{device_name}/loaded/" parameters.device_name="[a-zA-Z0-9:.\-_ ]+" />
+	<url ServiceParameter="ChangerList" pattern="api/v2/devices/{device_name}/list/" parameters.device_name="[a-zA-Z0-9:.\-_ ]+" />
+	<url ServiceParameter="ChangerListAll" pattern="api/v2/devices/{device_name}/listall/" parameters.device_name="[a-zA-Z0-9:.\-_ ]+" />
+	<url ServiceParameter="ChangerSlots" pattern="api/v2/devices/{device_name}/slots/" parameters.device_name="[a-zA-Z0-9:.\-_ ]+" />
+	<url ServiceParameter="ChangerSlotsTransfer" pattern="api/v2/devices/{device_name}/transfer/" parameters.device_name="[a-zA-Z0-9:.\-_ ]+" />
 	<!-- volumes (media) endpoints-->
 	<url ServiceParameter="Volumes" pattern="api/v2/volumes/" />
 	<url ServiceParameter="Volume" pattern="api/v2/volumes/{id}/" parameters.id="\d+" />
@@ -126,9 +134,9 @@
 	<url ServiceParameter="StoragesShow" pattern="api/v1/storages/show/" />
 	<url ServiceParameter="StorageShow" pattern="api/v1/storages/{id}/show/" parameters.id="\d+" />
 	<url ServiceParameter="StorageStatus" pattern="api/v1/storages/{id}/status/" parameters.id="\d+" />
-	<url ServiceParameter="StorageMount" pattern="api/v1/storages/{id}/mount/" parameters.id="\d+" />
-	<url ServiceParameter="StorageUmount" pattern="api/v1/storages/{id}/umount/" parameters.id="\d+" />
-	<url ServiceParameter="StorageRelease" pattern="api/v1/storages/{id}/release/" parameters.id="\d+" />
+	<url ServiceParameter="StorageMountV1" pattern="api/v1/storages/{id}/mount/" parameters.id="\d+" />
+	<url ServiceParameter="StorageUmountV1" pattern="api/v1/storages/{id}/umount/" parameters.id="\d+" />
+	<url ServiceParameter="StorageReleaseV1" pattern="api/v1/storages/{id}/release/" parameters.id="\d+" />
 	<!-- volumes (media) endpoints-->
 	<url ServiceParameter="Volumes" pattern="api/v1/volumes/" />
 	<url ServiceParameter="Volume" pattern="api/v1/volumes/{id}/" parameters.id="\d+" />

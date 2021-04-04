@@ -401,7 +401,7 @@
 						<com:TCheckBox
 							ID="UseSudo"
 							CssClass="w3-check"
-						/> &nbsp;<a href="javascript:void(0)" onclick="get_sudo_config('bconsole');"><%[ Get sudo configuration ]%></a>
+						/> &nbsp;<a href="javascript:void(0)" onclick="oSudoConfig.get_config('bconsole');"><%[ Get sudo configuration ]%></a>
 
 					</div>
 				</div>
@@ -534,7 +534,7 @@
 							<com:TCheckBox
 								ID="BJSONUseSudo"
 								CssClass="w3-check"
-							/> &nbsp;<a href="javascript:void(0)" onclick="get_sudo_config('config');"><%[ Get sudo configuration ]%></a>
+							/> &nbsp;<a href="javascript:void(0)" onclick="oSudoConfig.get_config('config');"><%[ Get sudo configuration ]%></a>
 						</div>
 					</div>
 				</fieldset>
@@ -1248,22 +1248,7 @@
 			</fieldset>
 		</com:TWizardStep>
 	</com:TWizard>
-<com:TJuiDialog
-	ID="SudoConfigPopup"
-	Options.title="<%[ Sudo configuration ]%>"
-	Options.autoOpen="false",
-	Options.minWidth="820"
-	Options.minHeight="200"
->
-	<p><%[ Please copy appropriate sudo configuration and put it to a new sudoers.d file for example /etc/sudoers.d/baculum-api ]%></p>
-	<p><strong><%[ Note ]%></strong> <%[ Please use visudo to add this configuration, otherwise please do remember to add empty line at the end of file. ]%>
-	<p><%[ Example sudo configuration for Apache web server user (RHEL, CentOS and others): ]%></p>
-	<pre id="sudo_config_apache"></pre>
-	<p><%[ Example sudo configuration for Lighttpd web server user (RHEL, CentOS and others): ]%></p>
-	<pre id="sudo_config_lighttpd"></pre>
-	<p><%[ Example sudo configuration for Apache and Lighttpd web servers user (Debian, Ubuntu and others): ]%></p>
-	<pre id="sudo_config_www_data"></pre>
-</com:TJuiDialog>
+	<com:Application.API.Portlets.SudoConfig ID="SudoConfig" />
 <script type="text/javascript">
 var bjsontools_fields = {
 	General: {
@@ -1371,33 +1356,17 @@ var actions_hide_test_results = function(action) {
 	result.textContent = '';
 };
 
-function get_sudo_config(type) {
-	var bin_fields = {
-		bconsole: [
-			'<%=$this->BconsolePath->ClientID%>'
-		],
-		config: [
-			'<%=$this->BDirJSONPath->ClientID%>',
-			'<%=$this->BSdJSONPath->ClientID%>',
-			'<%=$this->BFdJSONPath->ClientID%>',
-			'<%=$this->BBconsJSONPath->ClientID%>',
-		]
-	}
-	var val, pre;
-	var cfg = '';
-	var users = ['apache', 'lighttpd', 'www-data'];
-	var fields = bin_fields.hasOwnProperty(type) ? bin_fields[type] : [];
-	for (var i = 0; i < users.length; i++) {
-		var pre = document.getElementById('sudo_config_' + users[i].replace(/-/g, '_'));
-		pre.textContent = 'Defaults:' + users[i] + ' !requiretty' + "\n";
-		for (var j = 0; j < fields.length; j++) {
-			val = document.getElementById(fields[j]).value.trim();
-			if (val) {
-				pre.textContent += users[i] + ' ALL = (root) NOPASSWD: ' + val + "\n";
-			}
-		}
-	}
-	$('#<%=$this->SudoConfigPopup->ClientID%>').dialog('open');
-}
+var bin_fields = {
+	bconsole: [
+		'<%=$this->BconsolePath->ClientID%>'
+	],
+	config: [
+		'<%=$this->BDirJSONPath->ClientID%>',
+		'<%=$this->BSdJSONPath->ClientID%>',
+		'<%=$this->BFdJSONPath->ClientID%>',
+		'<%=$this->BBconsJSONPath->ClientID%>',
+	]
+};
+oSudoConfig.set_bin_fields(bin_fields);
 </script>
 </com:TContent>

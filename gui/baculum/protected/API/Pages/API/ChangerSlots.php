@@ -20,27 +20,30 @@
  * Bacula(R) is a registered trademark of Kern Sibbald.
  */
 
-Prado::using('System.Web.UI.WebControls.TClientScript');
-
 /**
- * Baculum client script class.
+ * How many slots has autochanger.
  *
  * @author Marcin Haba <marcin.haba@bacula.pl>
- * @category Client Script
- * @package Baculum Common
+ * @category API
+ * @package Baculum API
  */
-class BClientScript extends TClientScript {
+class ChangerSlots extends BaculumAPIServer {
 
-	const SCRIPTS_VERSION = 18;
+	public function get() {
+		$misc = $this->getModule('misc');
+		$device_name = $this->Request->contains('device_name') && $misc->isValidName($this->Request['device_name']) ? $this->Request['device_name'] : null;
 
-	public function getScriptUrl()
-	{
-		$url = parent::getScriptUrl();
-		if (!empty($url)) {
-			$url .= '?ver=' . self::SCRIPTS_VERSION;
+		$result = $this->getModule('changer_command')->execChangerCommand(
+			$device_name,
+			'slots'
+		);
+
+		if ($result->error === 0 && count($result->output)) {
+			$this->output = ['slots' => intval($result->output[0])];
+		} else {
+			$this->output = $result->output;
 		}
-		return $url;
+		$this->error = $result->error;
 	}
-
 }
 ?>

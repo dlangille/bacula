@@ -20,8 +20,6 @@
  * Bacula(R) is a registered trademark of Kern Sibbald.
  */
  
-Prado::using('Application.API.Class.Bconsole');
-
 /**
  * Mount storage command endpoint.
  *
@@ -29,42 +27,29 @@ Prado::using('Application.API.Class.Bconsole');
  * @category API
  * @package Baculum API
  */
-class StorageMount extends BaculumAPIServer {
-
+class StorageMountV1 extends BaculumAPIServer {
 	public function get() {
-		$output = [];
-		$misc = $this->getModule('misc');
-		if ($this->Request->contains('out_id') && $misc->isValidAlphaNumeric($this->Request->itemAt('out_id'))) {
-			$out_id = $this->Request->itemAt('out_id');
-			$output = Bconsole::readOutputFile($out_id);
-		}
-		$this->output = $output;
-		$this->error = StorageError::ERROR_NO_ERRORS;
-	}
-
-	public function set($id, $params) {
+		$storageid = $this->Request->contains('id') ? intval($this->Request['id']) : 0;
 		$drive = $this->Request->contains('drive') ? intval($this->Request['drive']) : 0;
 		$device = ($this->Request->contains('device') && $this->getModule('misc')->isValidName($this->Request['device'])) ? $this->Request['device'] : null;
 		$slot = $this->Request->contains('slot') ? intval($this->Request['slot']) : 0;
 
 		$result = $this->getModule('bconsole')->bconsoleCommand(
 			$this->director,
-			['.storage']
+			array('.storage')
 		);
 		if ($result->exitcode === 0) {
 			array_shift($result->output);
-			$storage = $this->getModule('storage')->getStorageById($id);
+			$storage = $this->getModule('storage')->getStorageById($storageid);
 			if (is_object($storage) && in_array($storage->name, $result->output)) {
 				$result = $this->getModule('bconsole')->bconsoleCommand(
 					$this->director,
-					[
+					array(
 						'mount',
 						'storage="' . $storage->name . '"',
 						(is_string($device) ? 'device="' . $device . '" drive=0' : 'drive=' . $drive),
 						'slot=' . $slot
-					],
-					Bconsole::PTYPE_BG_CMD,
-					true
+					)
 				);
 				$this->output = $result->output;
 				$this->error = $result->exitcode;

@@ -84,10 +84,10 @@ abstract class OAuth2 extends CommonModule {
 	/**
 	 * Expiration time in seconds for access token.
 	 * 
-	 * Temportary set to 60 seconds for testst purposes.
+	 * Temportary set to 15 minutes for testst purposes.
 	 * In production the value SHOULD BE changed.
 	 */
-	const ACCESS_TOKEN_EXPIRES_TIME = 60;
+	const ACCESS_TOKEN_EXPIRES_TIME = 90000;
 
 	/**
 	 * Scope pattern.

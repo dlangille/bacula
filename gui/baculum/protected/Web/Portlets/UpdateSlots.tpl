@@ -1,14 +1,9 @@
 <com:TActiveLinkButton
 	CssClass="w3-button w3-green"
 	OnClick="loadValues"
+	Visible="<%=$this->ShowButton%>"
 >
 	<prop:Attributes.onclick>
-		var logbox = document.getElementById('<%=$this->UpdateSlotsLog->ClientID%>');
-		logbox.innerHTML = '';
-		var logbox_container = document.getElementById('update_slots_log');
-		logbox_container.style.display = 'none';
-		set_updating_status('start');
-		document.getElementById('update_slots').style.display = 'block';
 	</prop:Attributes.onclick>
 	<i class="fa fa-retweet"></i> &nbsp;<%[ Update slots ]%>
 </com:TActiveLinkButton>
@@ -48,9 +43,9 @@
 			/>
 			<div class="w3-row-padding w3-section-padding w3-section">
 				<div class="w3-col w3-half"><com:TLabel ForControl="Barcodes" Text="<%[ Update slots using barcodes ]%>" /></div>
-				<div class="w3-col w3-half"><com:TActiveCheckBox ID="Barcodes" CssClass="w3-check" Checked="true" /></div>
+				<div class="w3-col w3-half"><com:TActiveCheckBox ID="Barcodes" CssClass="w3-check" Checked="true" Attributes.onclick="set_update_slots_barcodes();" /></div>
 			</div>
-			<div class="w3-row-padding w3-section">
+			<div class="w3-row-padding w3-section"<%=$this->Storage ? ' style="display: none"' : ''%>>
 				<div class="w3-col w3-half"><com:TLabel ForControl="StorageUpdate" Text="<%[ Storage: ]%>" /></div>
 				<div class="w3-col w3-half"><com:TActiveDropDownList ID="StorageUpdate" CssClass="w3-select w3-border" /></div>
 			</div>
@@ -135,6 +130,20 @@
 </com:TCallback>
 <script type="text/javascript">
 var update_slots_logbox_scroll = false;
+function set_update_slots_barcodes(force_barcodes) {
+	var chkb = document.getElementById('<%=$this->Barcodes->ClientID%>');
+	if (force_barcodes) {
+		chkb.checked = true;
+		chkb.setAttribute('disabled', 'disabled');
+	}
+}
+function set_update_slots(force) {
+	var chkb = document.getElementById('<%=$this->Barcodes->ClientID%>');
+	if (force) {
+		chkb.checked = false;
+		chkb.setAttribute('disabled', 'disabled');
+	}
+}
 function set_updating_status(status) {
 	var start = document.getElementById('update_slots_status_start');
 	var loading = document.getElementById('update_slots_status_loading');
@@ -165,4 +174,13 @@ function set_update_slots_output(out_id) {
 	cb.setCallbackParameter(out_id);
 	cb.dispatch();
 }
+function show_update_slots_window() {
+	var logbox = document.getElementById('<%=$this->UpdateSlotsLog->ClientID%>');
+	logbox.innerHTML = '';
+	var logbox_container = document.getElementById('update_slots_log');
+	logbox_container.style.display = 'none';
+	set_updating_status('start');
+	document.getElementById('update_slots').style.display = 'block';
+}
+<%=$this->getBarcodeUpdate() ? 'set_update_slots_barcodes(true);' : ''%>
 </script>

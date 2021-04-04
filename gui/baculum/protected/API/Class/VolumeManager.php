@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2019 Kern Sibbald
+ * Copyright (C) 2013-2021 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -172,6 +172,23 @@ LEFT JOIN Storage USING (StorageId)
 					'inchanger' => $ret[$i]['inchanger']
 				);
 			}
+		}
+		return $volumes;
+	}
+
+	/**
+	 * Get volumes basing on specific criteria and return results as an array
+	 * with volume names as keys.
+	 *
+	 * @param array $criteria array with criterias (@see VolumeManager::getVolumes)
+	 * @param integer $limit_val limit results value
+	 * @return array volume list with volume names as keys
+	 */
+	public function getVolumesKeys($criteria = array(), $limit_val = 0) {
+		$volumes = [];
+		$vols = $this->getVolumes($criteria, $limit_val);
+		for ($i = 0; $i < count($vols); $i++) {
+			$volumes[$vols[$i]->volumename] = $vols[$i];
 		}
 		return $volumes;
 	}

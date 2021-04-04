@@ -1,14 +1,10 @@
 <com:TActiveLinkButton
 	CssClass="w3-button w3-green"
 	OnClick="loadValues"
+	Visible="<%=$this->ShowButton%>"
 >
 	<prop:Attributes.onclick>
-		var logbox = document.getElementById('<%=$this->LabelVolumeLog->ClientID%>');
-		logbox.innerHTML = '';
-		var logbox_container = document.getElementById('label_volume_log');
-		logbox_container.style.display = 'none';
-		set_labeling_status('start');
-		document.getElementById('label_volume').style.display = 'block';
+		show_label_volume_window(true);
 	</prop:Attributes.onclick>
 	<i class="fa fa-tag"></i> &nbsp;<%[ Label volume(s) ]%>
 </com:TActiveLinkButton>
@@ -16,7 +12,7 @@
 <div id="label_volume" class="w3-modal">
 	<div class="w3-modal-content w3-animate-top w3-card-4">
 		<header class="w3-container w3-teal"> 
-			<span onclick="document.getElementById('label_volume').style.display='none'" class="w3-button w3-display-topright">&times;</span>
+			<span onclick="show_label_volume_window(false);" class="w3-button w3-display-topright">&times;</span>
 			<h2><%[ Label volume(s) ]%></h2>
 		</header>
 		<div class="w3-padding">
@@ -56,7 +52,7 @@
 			/>
 			<div class="w3-row-padding w3-section-padding w3-section">
 				<div class="w3-col w3-half"><com:TLabel ForControl="Barcodes" Text="<%[ Use barcodes as label: ]%>" /></div>
-				<div class="w3-col w3-half"><com:TActiveCheckBox ID="Barcodes" CssClass="w3-check" Attributes.onclick="set_barcodes();"/></div>
+				<div class="w3-col w3-half"><com:TActiveCheckBox ID="Barcodes" CssClass="w3-check" Attributes.onclick="set_label_volume_barcodes();"/></div>
 			</div>
 			<div id="label_with_name" class="w3-row-padding w3-section">
 				<div class="w3-col w3-half"><com:TLabel ForControl="LabelName" Text="<%[ Label name: ]%>" /></div>
@@ -94,12 +90,12 @@
 				<div class="w3-col w3-half"><com:TLabel ForControl="PoolLabel" Text="<%[ Pool: ]%>" /></div>
 				<div class="w3-col w3-half"><com:TActiveDropDownList ID="PoolLabel" CssClass="w3-select w3-border" /></div>
 			</div>
-			<div class="w3-row-padding w3-section">
+			<div class="w3-row-padding w3-section"<%=$this->Storage ? ' style="display: none"' : ''%>>
 				<div class="w3-col w3-half"><com:TLabel ForControl="StorageLabel" Text="<%[ Storage: ]%>" /></div>
 				<div class="w3-col w3-half"><com:TActiveDropDownList ID="StorageLabel" CssClass="w3-select w3-border" /></div>
 			</div>
 			<div class="w3-row-padding w3-section">
-				<div class="w3-col w3-half"><com:TLabel ForControl="DriveLabel" Text="<%[ Drive number: ]%>" /></div>
+				<div class="w3-col w3-half"><com:TLabel ForControl="DriveLabel" Text="<%[ Drive index: ]%>" /></div>
 				<div class="w3-col w3-half">
 					<com:TActiveTextBox ID="DriveLabel" CssClass="w3-input w3-border" Text="0" />
 					<com:TRequiredFieldValidator
@@ -140,7 +136,7 @@
 				</div>
 			</div>
 			<div class="w3-container w3-center w3-section">
-				<button type="button" class="w3-button w3-red" onclick="document.getElementById('label_volume').style.display='none';"><i class="fa fa-times"></i> &nbsp;<%[ Close ]%></button>
+				<button type="button" class="w3-button w3-red" onclick="show_label_volume_window(false);"><i class="fa fa-times"></i> &nbsp;<%[ Close ]%></button>
 				<com:TActiveLinkButton
 					ID="LabelButton"
 					CausesValidation="true"
@@ -184,8 +180,12 @@
 </com:TCallback>
 <script type="text/javascript">
 var label_volume_logbox_scroll = false;
-function set_barcodes() {
+function set_label_volume_barcodes(force_barcodes) {
 	var chkb = document.getElementById('<%=$this->Barcodes->ClientID%>');
+	if (force_barcodes) {
+		chkb.checked = true;
+		chkb.setAttribute('disabled', 'disabled');
+	}
 	var name_el = document.getElementById('label_with_name');
 	var with_barcodes_el = document.getElementById('label_with_barcodes');
 	var without_barcodes_el = document.getElementById('label_without_barcodes');
@@ -230,4 +230,15 @@ function set_label_volume_output(out_id) {
 	cb.setCallbackParameter(out_id);
 	cb.dispatch();
 }
+
+function show_label_volume_window(show) {
+	var logbox = document.getElementById('<%=$this->LabelVolumeLog->ClientID%>');
+	logbox.innerHTML = '';
+	var logbox_container = document.getElementById('label_volume_log');
+	logbox_container.style.display = 'none';
+	set_labeling_status('start');
+	document.getElementById('label_volume').style.display = show ? 'block' : 'none';
+}
+
+<%=$this->getBarcodeLabel() ? 'set_label_volume_barcodes(true);' : ''%>
 </script>

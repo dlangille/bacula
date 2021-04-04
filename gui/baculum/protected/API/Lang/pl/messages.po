@@ -572,3 +572,74 @@ msgstr "Kopiuj do schowka"
 msgid "Logout"
 msgstr "Wyloguj"
 
+msgid "Devices"
+msgstr "Urządzenia"
+
+msgid "Autochangers"
+msgstr "Zmieniarki taśm"
+
+msgid "Add autochanger"
+msgstr "Dodaj zmieniarkę taśm"
+
+msgid "Device"
+msgstr "Urządzenie"
+
+msgid "Name:"
+msgstr "Nazwa:"
+
+msgid "Changer device:"
+msgstr "Urządzenie zmieniarki taśm:"
+
+msgid "Changer command:"
+msgstr "Komenda zmieniarki taśm:"
+
+msgid "Drive index:"
+msgstr "Indeks napędu:"
+
+msgid "Drive index"
+msgstr "Indeks napędu"
+
+msgid "Devices:"
+msgstr "Urządzenia:"
+
+msgid "Add device"
+msgstr "Dodaj urządzenie"
+
+msgid "Field cannot be empty."
+msgstr "Pole nie może być puste."
+
+msgid "Invalid value."
+msgstr "Niepoprawna wartość."
+
+msgid "Device with the given name already exists."
+msgstr "Urządzenie o podanej nazwie już istnieje."
+
+msgid "Edit device"
+msgstr "Edytuj urządzenie"
+
+msgid "Use CTRL + left-click to multiple item selection"
+msgstr "Aby zaznaczyć wiele elementów użyj CTRL + lewy-klik"
+
+msgid "Device path:"
+msgstr "Ścieżka urządzenia:"
+
+msgid "Edit autochanger"
+msgstr "Edytuj zmieniarkę taśm"
+
+msgid "Autochanger"
+msgstr "Zmieniarka taśm"
+
+msgid "Unable to delete device. Please unassign it from autochanger '%s' first."
+msgstr "Nie można usunąć urządzenia. Proszę napierw wypisać go ze zmieniarki taśm '%s'."
+
+msgid "Autochanger with the given name already exists."
+msgstr "Zmieniarka taśm o podanej nazwie już istnieje."
+
+msgid "Copy from Bacula SD config:"
+msgstr "Kopiuj z konfiguracji Bacula SD:"
+
+msgid "Changer command test:"
+msgstr "Test komendy zmieniarki:"
+
+msgid "Changer command error"
+msgstr "Błąd komendy zmieniarki"

@@ -572,3 +572,74 @@ msgstr "Copiar para área de transferência"
 msgid "Logout"
 msgstr "Sair"
 
+msgid "Devices"
+msgstr "Devices"
+
+msgid "Autochangers"
+msgstr "Autochangers"
+
+msgid "Add autochanger"
+msgstr "Add autochanger"
+
+msgid "Device"
+msgstr "Device"
+
+msgid "Name:"
+msgstr "Name:"
+
+msgid "Changer device:"
+msgstr "Changer device:"
+
+msgid "Changer command:"
+msgstr "Changer command:"
+
+msgid "Drive index:"
+msgstr "Drive index:"
+
+msgid "Drive index"
+msgstr "Drive index"
+
+msgid "Devices:"
+msgstr "Devices:"
+
+msgid "Add device"
+msgstr "Add device"
+
+msgid "Field cannot be empty."
+msgstr "Field cannot be empty."
+
+msgid "Invalid value."
+msgstr "Invalid value."
+
+msgid "Device with the given name already exists."
+msgstr "Device with the given name already exists."
+
+msgid "Edit device"
+msgstr "Edit device"
+
+msgid "Use CTRL + left-click to multiple item selection"
+msgstr "Use CTRL + left-click to multiple item selection"
+
+msgid "Device path:"
+msgstr "Device path:"
+
+msgid "Edit autochanger"
+msgstr "Edit autochanger"
+
+msgid "Autochanger"
+msgstr "Autochanger"
+
+msgid "Unable to delete device. Please unassign it from autochanger '%s' first."
+msgstr "Unable to delete device. Please unassign it from autochanger '%s' first."
+
+msgid "Autochanger with the given name already exists."
+msgstr "Autochanger with the given name already exists."
+
+msgid "Copy from Bacula SD config:"
+msgstr "Copy from Bacula SD config:"
+
+msgid "Changer command test:"
+msgstr "Changer command test:"
+
+msgid "Changer command error"
+msgstr "Changer command error"

@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2019 Kern Sibbald
+ * Copyright (C) 2013-2021 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -19,6 +19,8 @@
  *
  * Bacula(R) is a registered trademark of Kern Sibbald.
  */
+
+Prado::using('Application.API.Class.Bconsole');
  
 /**
  * Storage umount command endpoint.
@@ -28,26 +30,39 @@
  * @package Baculum API
  */
 class StorageUmount extends BaculumAPIServer {
+
 	public function get() {
-		$storageid = $this->Request->contains('id') ? intval($this->Request['id']) : 0;
+		$output = [];
+		$misc = $this->getModule('misc');
+		if ($this->Request->contains('out_id') && $misc->isValidAlphaNumeric($this->Request->itemAt('out_id'))) {
+			$out_id = $this->Request->itemAt('out_id');
+			$output = Bconsole::readOutputFile($out_id);
+		}
+		$this->output = $output;
+		$this->error = StorageError::ERROR_NO_ERRORS;
+	}
+
+	public function set($id, $params) {
 		$drive = $this->Request->contains('drive') ? intval($this->Request['drive']) : 0;
 		$device = $this->Request->contains('device') ? $this->Request['device'] : null;
 
 		$result = $this->getModule('bconsole')->bconsoleCommand(
 			$this->director,
-			array('.storage')
+			['.storage']
 		);
 		if ($result->exitcode === 0) {
 			array_shift($result->output);
-			$storage = $this->getModule('storage')->getStorageById($storageid);
+			$storage = $this->getModule('storage')->getStorageById($id);
 			if (is_object($storage) && in_array($storage->name, $result->output)) {
 				$result = $this->getModule('bconsole')->bconsoleCommand(
 					$this->director,
-					array(
+					[
 						'umount',
 						'storage="' . $storage->name . '"',
 						(is_string($device) ? 'device="' . $device . '" slot=0 drive=0' : 'drive=' . $drive . ' slot=0')
-					)
+					],
+					Bconsole::PTYPE_BG_CMD,
+					true
 				);
 				$this->output = $result->output;
 				$this->error = $result->exitcode;

@@ -49,14 +49,14 @@ class VolumeLabel extends BaculumAPIServer {
 		$misc = $this->getModule('misc');
 
 		if (!$misc->isValidName($volume)) {
-			$this->output = VolumeError::ERROR_INVALID_VOLUME;
-			$this->error = VolumeError::MSG_ERROR_INVALID_VOLUME;
+			$this->output = VolumeError::MSG_ERROR_INVALID_VOLUME;
+			$this->error = VolumeError::ERROR_INVALID_VOLUME;
 			return;
 		}
 
 		if (!$misc->isValidInteger($slot)) {
-			$this->output = VolumeError::ERROR_INVALID_SLOT;
-			$this->error = VolumeError::MSG_ERROR_INVALID_SLOT;
+			$this->output = VolumeError::MSG_ERROR_INVALID_SLOT;
+			$this->error = VolumeError::ERROR_INVALID_SLOT;
 			return;
 		}
 
