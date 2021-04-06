@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2021-03-05 03:45\n"
+"PO-Revision-Date: 2021-04-06 18:07\n"
 "Project-Id-Version: b02f04a28aec0155df9503e3b78ae8cc\n"
 "POT-Creation-Date: \n"
 "Last-Translator: Wanderlei Hüttel <wanderlei.huttel@gmail.com>\n"
@@ -573,25 +573,25 @@ msgid "Logout"
 msgstr "Sair"
 
 msgid "Devices"
-msgstr "Devices"
+msgstr "Dispositivos"
 
 msgid "Autochangers"
 msgstr "Autochangers"
 
 msgid "Add autochanger"
-msgstr "Add autochanger"
+msgstr "Adicionar autochanger"
 
 msgid "Device"
 msgstr "Device"
 
 msgid "Name:"
-msgstr "Name:"
+msgstr "Nome:"
 
 msgid "Changer device:"
-msgstr "Changer device:"
+msgstr "Dispositivo trocador:"
 
 msgid "Changer command:"
-msgstr "Changer command:"
+msgstr "Comando trocador:"
 
 msgid "Drive index:"
 msgstr "Drive index:"
@@ -600,46 +600,47 @@ msgid "Drive index"
 msgstr "Drive index"
 
 msgid "Devices:"
-msgstr "Devices:"
+msgstr "Dispositivos:"
 
 msgid "Add device"
-msgstr "Add device"
+msgstr "Adicionar device"
 
 msgid "Field cannot be empty."
-msgstr "Field cannot be empty."
+msgstr "O campo não pode estar vazio."
 
 msgid "Invalid value."
-msgstr "Invalid value."
+msgstr "Valor inválido."
 
 msgid "Device with the given name already exists."
-msgstr "Device with the given name already exists."
+msgstr "Dispositivo com esse nome já existe."
 
 msgid "Edit device"
-msgstr "Edit device"
+msgstr "Editar dispositivo"
 
 msgid "Use CTRL + left-click to multiple item selection"
-msgstr "Use CTRL + left-click to multiple item selection"
+msgstr "Use CTRL + botão esquerdo do mouse para seleção múltipla"
 
 msgid "Device path:"
-msgstr "Device path:"
+msgstr "Caminho do dispositivo:"
 
 msgid "Edit autochanger"
-msgstr "Edit autochanger"
+msgstr "Editar autochanger"
 
 msgid "Autochanger"
 msgstr "Autochanger"
 
 msgid "Unable to delete device. Please unassign it from autochanger '%s' first."
-msgstr "Unable to delete device. Please unassign it from autochanger '%s' first."
+msgstr "Não é possível excluir o dispositivo. Por favor, desvincule do autochanger '%s' primeiro."
 
 msgid "Autochanger with the given name already exists."
-msgstr "Autochanger with the given name already exists."
+msgstr "O Autochanger com este nome já existe."
 
 msgid "Copy from Bacula SD config:"
-msgstr "Copy from Bacula SD config:"
+msgstr "Copiar da configuração do Bacula SD:"
 
 msgid "Changer command test:"
-msgstr "Changer command test:"
+msgstr "Teste de comando do trocador:"
 
 msgid "Changer command error"
-msgstr "Changer command error"
+msgstr "Erro de comando do trocador"
+

@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2021-03-05 04:07\n"
+"PO-Revision-Date: 2021-04-06 18:07\n"
 "Project-Id-Version: b02f04a28aec0155df9503e3b78ae8cc\n"
 "POT-Creation-Date: \n"
 "Last-Translator: Wanderlei Hüttel <wanderlei.huttel@gmail.com>\n"
@@ -3223,52 +3223,52 @@ msgid "Drive index"
 msgstr "Drive index"
 
 msgid "Drive name"
-msgstr "Drive name"
+msgstr "Nome do drive"
 
 msgid "Unload"
-msgstr "Unload"
+msgstr "Descarregar"
 
 msgid "Manage autochanger"
-msgstr "Manage autochanger"
+msgstr "Gerenciar autochanger"
 
 msgid "Slot in device"
-msgstr "Slot in device"
+msgstr "Slot no dipositivo"
 
 msgid "Slot in catalog"
-msgstr "Slot in catalog"
+msgstr "Slot no catálogo"
 
 msgid "Load"
-msgstr "Load"
+msgstr "Carregar"
 
 msgid "Load drive"
-msgstr "Load drive"
+msgstr "Carregar drive"
 
 msgid "index"
-msgstr "index"
+msgstr "indíce"
 
 msgid "device"
-msgstr "device"
+msgstr "dispositivo"
 
 msgid "Drive"
 msgstr "Drive"
 
 msgid "Empty"
-msgstr "Empty"
+msgstr "Vazio"
 
 msgid "In drive %index (%drive)"
-msgstr "In drive %index (%drive)"
+msgstr "Na unidade %index (%drive)"
 
 msgid "Import/Export"
-msgstr "Import/Export"
+msgstr "Importar/Exportar"
 
 msgid "Label using barcodes"
-msgstr "Label using barcodes"
+msgstr "Rotular usando códigos de barras"
 
 msgid "Move to import/export slot"
-msgstr "Move to import/export slot"
+msgstr "Mover para slot de importação/exportação"
 
 msgid "Autochanger management is unavailable. To manage autochanger from here, add it to the API host devices on the API host side."
-msgstr  "Autochanger management is unavailable. To manage autochanger from here, add it to the API host devices on the API host side."
+msgstr "O gerenciamento de Autochanger não está disponível. Para gerenciar o autochanger aqui, adicione-o aos dispositivos de host API no lado de host API."
 
 msgid "Drive index:"
 msgstr "Drive index:"
@@ -3277,37 +3277,38 @@ msgid "Slots"
 msgstr "Slots"
 
 msgid "Release I/E"
-msgstr "Release I/E"
+msgstr "Liberar I/E"
 
 msgid "Move to import/export slots"
-msgstr "Move to import/export slots"
+msgstr "Mover para slots de importação/exportação"
 
 msgid "There are to few import/export slots to transfer selected volumes. Free import/export slots count: %slots_count, selected volumes count: %vols_count."
-msgstr "There are to few import/export slots to transfer selected volumes. Free import/export slots count: %slots_count, selected volumes count: %vols_count."
+msgstr "Há poucos slots de importação/exportação para transferir os volumes selecionados. Contagem de slots de importação/exportação livres: %slots_count, contagem de volumes selecionados: %vols_count."
 
 msgid "Import/export slot"
-msgstr "Import/export slot"
+msgstr "Importar/exportar slot"
 
 msgid "Destination slot"
-msgstr "Destination slot"
+msgstr "Slot de destino"
 
 msgid "Release import/export slot"
-msgstr "Release import/export slot"
+msgstr "Liberar slot de importação/exportação"
 
 msgid "Tape drives"
-msgstr "Tape drives"
+msgstr "Unidades de fitas"
 
 msgid "Changer slots"
-msgstr "Changer slots"
+msgstr "Slots do trocador"
 
 msgid "Release all I/E slots"
-msgstr "Release all I/E slots"
+msgstr "Liberar todos os I/E slots"
 
 msgid "There are to few regular slots to transfer selected volumes from import/export slots. Full import/export slot count: %ie_slot_count, free regular slot count: %slot_count."
-msgstr "There are to few regular slots to transfer selected volumes from import/export slots. Full import/export slot count: %ie_slot_count, free regular slot count: %slot_count."
+msgstr "Existem poucos slots regulares para transferir os volumes selecionados dos espaços de importação/exportação. Contagem completa de espaços de importação/exportação: %ie_slot_count, contagem de espaços regulares livres: %slot_count."
 
 msgid "Tip: To use bulk autochanger actions, please select table rows."
-msgstr "Tip: To use bulk autochanger actions, please select table rows."
+msgstr "Dica: Para usar ações do autochanger em massa, selecione linhas de tabela."
 
 msgid "Mount volume"
-msgstr "Mount volume"
+msgstr "Montar volume"
+
