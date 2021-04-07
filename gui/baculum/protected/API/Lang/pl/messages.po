@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2021-02-28 06:28\n"
+"PO-Revision-Date: 2021-04-07 04:40\n"
 "Project-Id-Version: b02f04a28aec0155df9503e3b78ae8cc\n"
 "POT-Creation-Date: \n"
 "Last-Translator: Marcin Haba <marcin.haba@bacula.pl>\n"
@@ -630,7 +630,7 @@ msgid "Autochanger"
 msgstr "Zmieniarka taśm"
 
 msgid "Unable to delete device. Please unassign it from autochanger '%s' first."
-msgstr "Nie można usunąć urządzenia. Proszę napierw wypisać go ze zmieniarki taśm '%s'."
+msgstr "Nie można usunąć urządzenia. Proszę najpierw wypisać je ze zmieniarki taśm '%s'."
 
 msgid "Autochanger with the given name already exists."
 msgstr "Zmieniarka taśm o podanej nazwie już istnieje."
@@ -643,3 +643,4 @@ msgstr "Test komendy zmieniarki:"
 
 msgid "Changer command error"
 msgstr "Błąd komendy zmieniarki"
+

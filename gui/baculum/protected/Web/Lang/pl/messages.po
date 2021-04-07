@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2021-02-28 06:29\n"
+"PO-Revision-Date: 2021-04-07 04:36\n"
 "Project-Id-Version: b02f04a28aec0155df9503e3b78ae8cc\n"
 "POT-Creation-Date: \n"
 "Last-Translator: Marcin Haba <marcin.haba@bacula.pl>\n"
@@ -3268,7 +3268,7 @@ msgid "Move to import/export slot"
 msgstr "Przenieś do slotu import/eksport"
 
 msgid "Autochanger management is unavailable. To manage autochanger from here, add it to the API host devices on the API host side."
-msgstr  "Zarządzanie zmieniarką taśm jest niedostępne. W celu zarządzania zmieniarką taśm z tego miejsce, dodaj ją do urządzeń hosta API po stronie hosta API."
+msgstr "Zarządzanie zmieniarką taśm jest niedostępne. W celu zarządzania zmieniarką taśm z tego miejsca, dodaj ją do urządzeń hosta API po stronie hosta API."
 
 msgid "Drive index:"
 msgstr "Indeks napędu:"
@@ -3283,7 +3283,7 @@ msgid "Move to import/export slots"
 msgstr "Przenieś do slotów import/eksport"
 
 msgid "There are to few import/export slots to transfer selected volumes. Free import/export slots count: %slots_count, selected volumes count: %vols_count."
-msgstr "Jest za mało slotów import/eksport do przetrasferowania wybranych wolumenów. Ilość wolnych slotów import/eksport: %slots_count, ilość wybranych wolumenów: %vols_count."
+msgstr "Jest za mało slotów import/eksport do transferu wybranych wolumenów. Ilość wolnych slotów import/eksport: %slots_count, ilość wybranych wolumenów: %vols_count."
 
 msgid "Import/export slot"
 msgstr "Sloty import/eksport"
@@ -3304,10 +3304,11 @@ msgid "Release all I/E slots"
 msgstr "Zwolnij wszystkie sloty I/E"
 
 msgid "There are to few regular slots to transfer selected volumes from import/export slots. Full import/export slot count: %ie_slot_count, free regular slot count: %slot_count."
-msgstr "Jest za mało regularnych slotów do przetrasferowania wybranych wolumenów ze slotów import/eksport. Ilość pełnych slotów import/eksport: %ie_slot_count, ilość wolnych regularnych slotów: %slot_count."
+msgstr "Jest za mało regularnych slotów do transferu wybranych wolumenów ze slotów import/eksport. Ilość pełnych slotów import/eksport: %ie_slot_count, ilość wolnych regularnych slotów: %slot_count."
 
 msgid "Tip: To use bulk autochanger actions, please select table rows."
 msgstr "Wskazówka: W celu użycia akcji zbiorczych zmieniarki taśm, proszę zaznaczyć wiersze tabeli."
 
 msgid "Mount volume"
 msgstr "Montuj wolumen"
+
