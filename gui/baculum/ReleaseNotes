@@ -1,3 +1,14 @@
+               Release Notes for Baculum 11.0.2.1
+
+This is a minor new feature release. It provides the autochanger management
+function and updated Portuguese, Russian and Polish translations.
+
+New changes:
+
+ - Implement autochanger management
+ - Update Russian translations
+ - Update Portuguese translations
+ - Update Polish translations
 
                Release Notes for Baculum 11.0.1.1
 
