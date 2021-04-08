@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2021-02-28 05:35\n"
+"PO-Revision-Date: 2021-04-08 16:02\n"
 "Project-Id-Version: b02f04a28aec0155df9503e3b78ae8cc\n"
 "POT-Creation-Date: \n"
 "Last-Translator: Sergey Zhidkov <zhsv@bk.ru>\n"
@@ -573,73 +573,74 @@ msgid "Logout"
 msgstr "Выйти"
 
 msgid "Devices"
-msgstr "Devices"
+msgstr "Устройства"
 
 msgid "Autochangers"
-msgstr "Autochangers"
+msgstr "Авточейнджер"
 
 msgid "Add autochanger"
-msgstr "Add autochanger"
+msgstr "Добавить авточейнджер"
 
 msgid "Device"
-msgstr "Device"
+msgstr "Устройство"
 
 msgid "Name:"
-msgstr "Name:"
+msgstr "Имя:"
 
 msgid "Changer device:"
-msgstr "Changer device:"
+msgstr "Устройство для смены:"
 
 msgid "Changer command:"
-msgstr "Changer command:"
+msgstr "Команда смены:"
 
 msgid "Drive index:"
-msgstr "Drive index:"
+msgstr "Индекс диска:"
 
 msgid "Drive index"
-msgstr "Drive index"
+msgstr "Индекс диска"
 
 msgid "Devices:"
-msgstr "Devices:"
+msgstr "Устройства:"
 
 msgid "Add device"
-msgstr "Add device"
+msgstr "Добавить устройство"
 
 msgid "Field cannot be empty."
-msgstr "Field cannot be empty."
+msgstr "Поле не может быть пустым."
 
 msgid "Invalid value."
-msgstr "Invalid value."
+msgstr "Неверное значение."
 
 msgid "Device with the given name already exists."
-msgstr "Device with the given name already exists."
+msgstr "Устройство с таким именем уже существует."
 
 msgid "Edit device"
-msgstr "Edit device"
+msgstr "Изменить устройство"
 
 msgid "Use CTRL + left-click to multiple item selection"
-msgstr "Use CTRL + left-click to multiple item selection"
+msgstr "Использовать CTRL + левый клик для выбора нескольких пунктов"
 
 msgid "Device path:"
-msgstr "Device path:"
+msgstr "Путь к устройству:"
 
 msgid "Edit autochanger"
-msgstr "Edit autochanger"
+msgstr "Изменить авточейнджер"
 
 msgid "Autochanger"
-msgstr "Autochanger"
+msgstr "Авточейнджер"
 
 msgid "Unable to delete device. Please unassign it from autochanger '%s' first."
-msgstr "Unable to delete device. Please unassign it from autochanger '%s' first."
+msgstr "Не удается удалить устройство. Пожалуйста, удалите его из autochanger '%s' '."
 
 msgid "Autochanger with the given name already exists."
-msgstr "Autochanger with the given name already exists."
+msgstr "Авточейнджер с таким именем уже существует."
 
 msgid "Copy from Bacula SD config:"
-msgstr "Copy from Bacula SD config:"
+msgstr "Копировать из конфига Bacula SD:"
 
 msgid "Changer command test:"
-msgstr "Changer command test:"
+msgstr "Тест команды чейнджера:"
 
 msgid "Changer command error"
-msgstr "Changer command error"
+msgstr "Чейнджер ошибка команды"
+

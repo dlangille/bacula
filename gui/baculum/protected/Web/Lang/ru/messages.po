@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2021-02-28 05:38\n"
+"PO-Revision-Date: 2021-04-08 16:03\n"
 "Project-Id-Version: b02f04a28aec0155df9503e3b78ae8cc\n"
 "POT-Creation-Date: \n"
 "Last-Translator: Sergey Zhidkov <zhsv@bk.ru>\n"
@@ -3220,94 +3220,95 @@ msgid "All last %count jobs finished successfully."
 msgstr "Все последние %count задания успешно завершены."
 
 msgid "Drive index"
-msgstr "Drive index"
+msgstr "Индекс диска"
 
 msgid "Drive name"
-msgstr "Drive name"
+msgstr "Имя устройства"
 
 msgid "Unload"
-msgstr "Unload"
+msgstr "Выгрузить"
 
 msgid "Manage autochanger"
-msgstr "Manage autochanger"
+msgstr "Управление авточейнджером"
 
 msgid "Slot in device"
-msgstr "Slot in device"
+msgstr "Слот в устройстве"
 
 msgid "Slot in catalog"
-msgstr "Slot in catalog"
+msgstr "Слот в каталоге"
 
 msgid "Load"
-msgstr "Load"
+msgstr "Загрузка"
 
 msgid "Load drive"
-msgstr "Load drive"
+msgstr "Загрузка привода"
 
 msgid "index"
-msgstr "index"
+msgstr "индекс"
 
 msgid "device"
-msgstr "device"
+msgstr "устройство"
 
 msgid "Drive"
-msgstr "Drive"
+msgstr "Привод"
 
 msgid "Empty"
-msgstr "Empty"
+msgstr "Пустой"
 
 msgid "In drive %index (%drive)"
-msgstr "In drive %index (%drive)"
+msgstr "На диске %index (%drive)"
 
 msgid "Import/Export"
-msgstr "Import/Export"
+msgstr "Импорт/Экспорт"
 
 msgid "Label using barcodes"
-msgstr "Label using barcodes"
+msgstr "Метка с использованием штрих-кодов"
 
 msgid "Move to import/export slot"
-msgstr "Move to import/export slot"
+msgstr "Переместить в слот для импорта/экспорта"
 
 msgid "Autochanger management is unavailable. To manage autochanger from here, add it to the API host devices on the API host side."
-msgstr  "Autochanger management is unavailable. To manage autochanger from here, add it to the API host devices on the API host side."
+msgstr "Управление автоматическим чейнджером недоступно. Чтобы управлять авточейнджером отсюда, добавьте его к устройствам хоста API на стороне хоста API."
 
 msgid "Drive index:"
-msgstr "Drive index:"
+msgstr "Индекс диска:"
 
 msgid "Slots"
-msgstr "Slots"
+msgstr "Слоты"
 
 msgid "Release I/E"
-msgstr "Release I/E"
+msgstr "Релиз I/E"
 
 msgid "Move to import/export slots"
-msgstr "Move to import/export slots"
+msgstr "Переместить в слот для импорта/экспорта"
 
 msgid "There are to few import/export slots to transfer selected volumes. Free import/export slots count: %slots_count, selected volumes count: %vols_count."
-msgstr "There are to few import/export slots to transfer selected volumes. Free import/export slots count: %slots_count, selected volumes count: %vols_count."
+msgstr "Есть несколько слотов импорта / экспорта для переноса выбранных томов. Количество свободных слотов для импорта / экспорта: %slots_count, количество выбранных томов: %vols_count."
 
 msgid "Import/export slot"
-msgstr "Import/export slot"
+msgstr "Слот для импорта / экспорта"
 
 msgid "Destination slot"
-msgstr "Destination slot"
+msgstr "Слот назначения"
 
 msgid "Release import/export slot"
-msgstr "Release import/export slot"
+msgstr ""
 
 msgid "Tape drives"
-msgstr "Tape drives"
+msgstr "Ленточные накопители"
 
 msgid "Changer slots"
-msgstr "Changer slots"
+msgstr "Слоты чейнджера"
 
 msgid "Release all I/E slots"
-msgstr "Release all I/E slots"
+msgstr ""
 
 msgid "There are to few regular slots to transfer selected volumes from import/export slots. Full import/export slot count: %ie_slot_count, free regular slot count: %slot_count."
-msgstr "There are to few regular slots to transfer selected volumes from import/export slots. Full import/export slot count: %ie_slot_count, free regular slot count: %slot_count."
+msgstr "Есть несколько обычных слотов для переноса выбранных томов из слотов импорта / экспорта. Полное количество слотов импорта / экспорта: %ie_slot_count, количество свободных обычных слотов: %slot_count."
 
 msgid "Tip: To use bulk autochanger actions, please select table rows."
-msgstr "Tip: To use bulk autochanger actions, please select table rows."
+msgstr "Подсказка: Чтобы использовать массовые действия автосмены, выберите строку таблицы."
 
 msgid "Mount volume"
-msgstr "Mount volume"
+msgstr "Монтировать том"
+
