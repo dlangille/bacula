@@ -4,6 +4,7 @@
 	Visible="<%=$this->ShowButton%>"
 >
 	<prop:Attributes.onclick>
+		show_update_slots_window();
 	</prop:Attributes.onclick>
 	<i class="fa fa-retweet"></i> &nbsp;<%[ Update slots ]%>
 </com:TActiveLinkButton>
