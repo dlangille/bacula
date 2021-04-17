@@ -59,7 +59,15 @@ class ChangerListAll extends BaculumAPIServer {
 	private function parseListAll($device_name, $output) {
 		$list = ['drives' => [], 'slots' => [], 'ie_slots' => []];
 		$drives = $this->getModule('device_config')->getChangerDrives($device_name);
-		$volumes = $this->getModule('volume')->getVolumesKeys();
+		$volumes = [];
+		$db_params = $this->getModule('api_config')->getConfig('db');
+		if (key_exists('enabled', $db_params) && $db_params['enabled'] == 1) {
+			/**
+			 * Volume information is provided only if on API host with autochanger
+			 * enabled is access to the Catalog database for the API instance.
+			 */
+			$volumes = $this->getModule('volume')->getVolumesKeys();
+		}
 		$get_volume_info  = function($volname) use ($volumes) {
 			$volume = [
 				'mediaid' => 0,
